@@ -15,15 +15,24 @@ The test routine for TRSM is still being developed; all of the others are more o
 #include <iostream>
 #include <string>
 #include "Teuchos_BLAS.hpp"
+
+#ifdef HAVE_TEUCHOS_ARPREC
 #include "mp/mpreal.h"
+#endif
 
 using namespace std;
 using namespace Teuchos;
 
 // SType1 and SType2 define the datatypes for which BLAS output will be compared.
 // SType2 should generally be a control datatype "officially" supported by the BLAS; SType1 should be the experimental type being checked.
+
+#ifdef HAVE_TEUCHOS_ARPREC
+#define SType1	   mp_real
+#else
 #define SType1     float
+#endif
 #define SType2     double
+
 // TOL defines the tolerance allowed for differences in BLAS output. Set to 0 for strict comparisons.
 #define TOL        1
 // MVMIN/MAX define the minimum and maximum dimensions of generated matrices and vectors, respectively.
@@ -36,20 +45,20 @@ using namespace Teuchos;
 // Large values of SCALARMAX may cause problems with SType2 = int, as large integer values will overflow floating-point types.
 #define SCALARMAX  10
 // These define the number of tests to be run for each individual BLAS routine.
-#define ASUMTESTS  0
-#define AXPYTESTS  0
-#define COPYTESTS  0
-#define DOTTESTS   0
-#define IAMAXTESTS 0
-#define NRM2TESTS  0
-#define SCALTESTS  0
-#define GEMVTESTS  0
-#define GERTESTS   0
-#define TRMVTESTS  0
-#define GEMMTESTS  0
-#define SYMMTESTS  0
-#define TRMMTESTS  0
-#define TRSMTESTS  1
+#define ASUMTESTS  5
+#define AXPYTESTS  5
+#define COPYTESTS  5
+#define DOTTESTS   5
+#define IAMAXTESTS 5
+#define NRM2TESTS  5
+#define SCALTESTS  5
+#define GEMVTESTS  5
+#define GERTESTS   5
+#define TRMVTESTS  5
+#define GEMMTESTS  5
+#define SYMMTESTS  5
+#define TRMMTESTS  5
+#define TRSMTESTS  5
 
 // Returns ScalarTraits<TYPE>::random() (the input parameters are ignored)
 template<typename TYPE>
@@ -67,7 +76,7 @@ template<typename TYPE>
 void PrintVector(TYPE*, int, string, bool = 0);
 
 template<typename TYPE>
-void PrintMatrix(TYPE*, int, int, string, bool = 0);
+void PrintMatrix(TYPE*, int, int, int, string, bool = 0);
 
 template<typename TYPE1, typename TYPE2>
 bool CompareScalars(TYPE1, TYPE2, double = 0);
@@ -76,15 +85,17 @@ template<typename TYPE1, typename TYPE2>
 bool CompareVectors(TYPE1*, TYPE2*, int, double = 0);
 
 template<typename TYPE1, typename TYPE2>
-bool CompareMatrices(TYPE1*, TYPE2*, int, int, double = 0);
+bool CompareMatrices(TYPE1*, TYPE2*, int, int, int, double = 0);
 
 // For most types, this function is just a wrapper for static_cast(), but for mp_real/double, it calls mp::dble()
 // The second input parameter is not used; it is only needed to determine what type to convert *to*
 template<typename TYPE1, typename TYPE2>
 TYPE2 ConvertType(TYPE1, TYPE2);
 
+#ifdef HAVE_TEUCHOS_ARPREC
 template<>
 double ConvertType(mp_real, double);
+#endif
 
 // These functions return a random character appropriate for the BLAS arguments that share their names (uses GetRandom())
 char RandomSIDE();
@@ -98,7 +109,7 @@ int main(int argc, char *argv[])
   bool debug = 0;
   bool matlab = 0;
   bool InvalidCmdLineArgs = 0;
-  int i, j;
+  int i, j, k;
   for(i = 1; i < argc; i++)
     {
       if(argv[i][0] == '-')
@@ -176,7 +187,10 @@ int main(int argc, char *argv[])
   SType2 convertTo;
 
   srand(time(NULL));
+
+#ifdef HAVE_TEUCHOS_ARPREC
   mp::mp_init(200);
+#endif
 
   // Begin ASUM Tests
   GoodTestSubcount = 0;
@@ -491,10 +505,10 @@ int main(int argc, char *argv[])
 	  cout << "SType2alpha = " << SType2alpha << endl;
 	  cout << "SType1beta = " << SType1beta << endl;
 	  cout << "SType2beta = " << SType2beta << endl;
-	  PrintMatrix(SType1A, M, N, "SType1A", matlab);
+	  PrintMatrix(SType1A, M, N, M, "SType1A", matlab);
 	  PrintVector(SType1x, N, "SType1x", matlab);
 	  PrintVector(SType1y, M, "SType1y_before_operation", matlab);
-	  PrintMatrix(SType2A, M, N, "SType2A", matlab);
+	  PrintMatrix(SType2A, M, N, M, "SType2A", matlab);
 	  PrintVector(SType2x, N, "SType2x", matlab);
 	  PrintVector(SType2y, M, "SType2y_before_operation", matlab);
 	}
@@ -541,9 +555,9 @@ int main(int argc, char *argv[])
       if(debug)
 	{
 	  cout << "Test #" << TotalTestCount << " --" << endl;
-	  PrintMatrix(SType1A, M, M, "SType1A", matlab);
+	  PrintMatrix(SType1A, M, M, M,"SType1A", matlab);
 	  PrintVector(SType1x, M, "SType1x_before_operation", matlab);
-	  PrintMatrix(SType2A, M, M, "SType2A", matlab);
+	  PrintMatrix(SType2A, M, M, M, "SType2A", matlab);
 	  PrintVector(SType2x, M, "SType2x_before_operation", matlab);
 	}
       TotalTestCount++;
@@ -599,10 +613,10 @@ int main(int argc, char *argv[])
 	  cout << "Test #" << TotalTestCount << " --" << endl;
 	  cout << "SType1alpha = " << SType1alpha << endl;
 	  cout << "SType2alpha = " << SType2alpha << endl;
-	  PrintMatrix(SType1A, M, N, "SType1A_before_operation", matlab);
+	  PrintMatrix(SType1A, M, N, M,"SType1A_before_operation", matlab);
 	  PrintVector(SType1x, M, "SType1x", matlab);
 	  PrintVector(SType1y, N, "SType1y", matlab);
-	  PrintMatrix(SType2A, M, N, "SType2A_before_operation", matlab);
+	  PrintMatrix(SType2A, M, N, M,"SType2A_before_operation", matlab);
 	  PrintVector(SType2x, M, "SType2x", matlab);
 	  PrintVector(SType2y, N, "SType2y", matlab);
 	}
@@ -611,10 +625,10 @@ int main(int argc, char *argv[])
       SType2BLAS.GER(M, N, SType2alpha, SType2x, 1, SType2y, 1, SType2A, M);
       if(debug)
 	{
-	  PrintMatrix(SType1A, M, N, "SType1A_after_operation", matlab);
-	  PrintMatrix(SType2A, M, N, "SType2A_after_operation", matlab);
+	  PrintMatrix(SType1A, M, N, M, "SType1A_after_operation", matlab);
+	  PrintMatrix(SType2A, M, N, M,"SType2A_after_operation", matlab);
 	}
-      GoodTestSubcount += CompareMatrices(SType1A, SType2A, M, N, TOL);
+      GoodTestSubcount += CompareMatrices(SType1A, SType2A, M, N, M, TOL);
       delete [] SType1A;
       delete [] SType1x;
       delete [] SType1y;
@@ -662,12 +676,12 @@ int main(int argc, char *argv[])
       if(debug)
 	{
 	  cout << "Test #" << TotalTestCount << " --" << endl;
-	  PrintMatrix(SType1A, M, P, "SType1A", matlab);
-	  PrintMatrix(SType1B, P, N, "SType1B", matlab);
-	  PrintMatrix(SType1C, M, N, "SType1C_before_operation", matlab);
-	  PrintMatrix(SType2A, M, P, "SType2A", matlab);
-	  PrintMatrix(SType2B, P, N, "SType2B", matlab);
-	  PrintMatrix(SType2C, M, N, "SType2C_before_operation", matlab);
+	  PrintMatrix(SType1A, M, P, M, "SType1A", matlab);
+	  PrintMatrix(SType1B, P, N, P,"SType1B", matlab);
+	  PrintMatrix(SType1C, M, N, M,"SType1C_before_operation", matlab);
+	  PrintMatrix(SType2A, M, P, M,"SType2A", matlab);
+	  PrintMatrix(SType2B, P, N, P,"SType2B", matlab);
+	  PrintMatrix(SType2C, M, N, M,"SType2C_before_operation", matlab);
 	}
       TotalTestCount++;
       TRANSA = RandomTRANS();
@@ -692,10 +706,10 @@ int main(int argc, char *argv[])
       SType2BLAS.GEMM(TRANSA, TRANSB, M, N, P, SType2alpha, SType2A, LDA, SType2B, LDB, SType2beta, SType2C, M);
       if(debug)
 	{
-	  PrintMatrix(SType1C, M, N, "SType1C_after_operation", matlab);
-	  PrintMatrix(SType2C, M, N, "SType2C_after_operation", matlab);
+	  PrintMatrix(SType1C, M, N, M, "SType1C_after_operation", matlab);
+	  PrintMatrix(SType2C, M, N, M, "SType2C_after_operation", matlab);
 	}
-      GoodTestSubcount += CompareMatrices(SType1C, SType2C, M, N, TOL);
+      GoodTestSubcount += CompareMatrices(SType1C, SType2C, M, N, M, TOL);
       delete [] SType1A;
       delete [] SType1B;
       delete [] SType1C;
@@ -762,18 +776,18 @@ int main(int argc, char *argv[])
 	  cout << "SType2beta = " << SType2beta << endl;
 	  if(SIDE == 'L')
 	    {
-	      PrintMatrix(SType1A, M, M, "SType1A", matlab);
-	      PrintMatrix(SType2A, M, M, "SType2A", matlab);
+	      PrintMatrix(SType1A, M, M, M,"SType1A", matlab);
+	      PrintMatrix(SType2A, M, M, M,"SType2A", matlab);
 	    }
 	  else
 	    {
-	      PrintMatrix(SType1A, N, N, "SType1A", matlab);
-	      PrintMatrix(SType2A, N, N, "SType2A", matlab);
+	      PrintMatrix(SType1A, N, N, N, "SType1A", matlab);
+	      PrintMatrix(SType2A, N, N, N, "SType2A", matlab);
 	    }
-	  PrintMatrix(SType1B, M, N, "SType1B", matlab);
-	  PrintMatrix(SType1C, M, N, "SType1C_before_operation", matlab);
-	  PrintMatrix(SType2B, M, N, "SType2B", matlab);
-	  PrintMatrix(SType2C, M, N, "SType2C_before_operation", matlab);
+	  PrintMatrix(SType1B, M, N, M,"SType1B", matlab);
+	  PrintMatrix(SType1C, M, N, M,"SType1C_before_operation", matlab);
+	  PrintMatrix(SType2B, M, N, M,"SType2B", matlab);
+	  PrintMatrix(SType2C, M, N, M,"SType2C_before_operation", matlab);
 	}
       TotalTestCount++;
       UPLO = RandomUPLO();
@@ -781,10 +795,10 @@ int main(int argc, char *argv[])
       SType2BLAS.SYMM(SIDE, UPLO, M, N, SType2alpha, SType2A, LDA, SType2B, M, SType2beta, SType2C, M);
       if(debug)
 	{
-	  PrintMatrix(SType1C, M, N, "SType1C_after_operation", matlab);
-	  PrintMatrix(SType2C, M, N, "SType2C_after_operation", matlab);
+	  PrintMatrix(SType1C, M, N, M,"SType1C_after_operation", matlab);
+	  PrintMatrix(SType2C, M, N, M,"SType2C_after_operation", matlab);
 	}
-      GoodTestSubcount += CompareMatrices(SType1C, SType2C, M, N, TOL);
+      GoodTestSubcount += CompareMatrices(SType1C, SType2C, M, N, M, TOL);
       delete [] SType1A;
       delete [] SType1B;
       delete [] SType1C;
@@ -844,20 +858,20 @@ int main(int argc, char *argv[])
 	  cout << "Test #" << TotalTestCount << " --" << endl;
 	  cout << "SType1alpha = " << SType1alpha << endl;
 	  cout << "SType2alpha = " << SType2alpha << endl;
-	  PrintMatrix(SType1A, LDA, LDA, "SType1A", matlab);
-	  PrintMatrix(SType2A, LDA, LDA, "SType2A", matlab);
-	  PrintMatrix(SType1B, M, N, "SType1B_before_operation", matlab);
-	  PrintMatrix(SType2B, M, N, "SType2B_before_operation", matlab);
+	  PrintMatrix(SType1A, LDA, LDA, LDA, "SType1A", matlab);
+	  PrintMatrix(SType2A, LDA, LDA, LDA,"SType2A", matlab);
+	  PrintMatrix(SType1B, M, N, M,"SType1B_before_operation", matlab);
+	  PrintMatrix(SType2B, M, N, M,"SType2B_before_operation", matlab);
 	}
       TotalTestCount++;
       SType1BLAS.TRMM(SIDE, UPLO, TRANSA, DIAG, M, N, SType1alpha, SType1A, LDA, SType1B, M);
       SType2BLAS.TRMM(SIDE, UPLO, TRANSA, DIAG, M, N, SType2alpha, SType2A, LDA, SType2B, M);
       if(debug)
 	{
-	  PrintMatrix(SType1B, M, N, "SType1B_after_operation", matlab);
-	  PrintMatrix(SType2B, M, N, "SType2B_after_operation", matlab);
+	  PrintMatrix(SType1B, M, N, M, "SType1B_after_operation", matlab);
+	  PrintMatrix(SType2B, M, N, M, "SType2B_after_operation", matlab);
 	}
-      GoodTestSubcount += CompareMatrices(SType1B, SType2B, M, N, TOL);
+      GoodTestSubcount += CompareMatrices(SType1B, SType2B, M, N, M, TOL);
       delete [] SType1A;
       delete [] SType1B;
       delete [] SType2A;
@@ -876,80 +890,190 @@ int main(int argc, char *argv[])
       M = GetRandom(MVMIN, MVMAX);
       N = GetRandom(MVMIN, MVMAX);
 
-      M = 3;
-      N = 3;
+      LDB = GetRandom(MVMIN, MVMAX);
+      while (LDB < M) {
+	  LDB = GetRandom(MVMIN, MVMAX);
+      }
 
-      SType1B = new SType1[M * N];
-      SType2B = new SType2[M * N];
+      SType1B = new SType1[LDB * N];
+      SType2B = new SType2[LDB * N];
 
       SIDE = RandomSIDE();
+      UPLO = RandomUPLO();
+      TRANSA = RandomTRANS();
+      //DIAG = RandomDIAG();  
+      // Since the entries are integers, we don't want to use the unit diagonal feature,
+      // this creates ill-conditioned, nearly-singular matrices.
+      DIAG = 'N';
 
-      SIDE = 'R';
-
-      if(SIDE == 'L')
+      if(SIDE == 'L')  // The operator is on the left side
 	{
-	  SType1A = new SType1[M * M];
-	  SType2A = new SType2[M * M];
-	  for(j = 0; j < M * M; j++)
+          LDA = GetRandom(MVMIN, MVMAX);
+      	  while (LDA < M) {
+	      LDA = GetRandom(MVMIN, MVMAX);
+       	  }
+
+	  SType1A = new SType1[LDA * M];
+	  SType2A = new SType2[LDA * M];
+
+	  for(j = 0; j < M; j++)
+	    {	     
+	      if(UPLO == 'U') {
+		// The operator is upper triangular, make sure that the entries are
+		// only in the upper triangular part of A and the diagonal is non-zero.
+		for(k = 0; k < M; k++) 
+		{
+		    if(k < j) {
+	      		SType1A[j*LDA+k] = GetRandom(-SCALARMAX, SCALARMAX);
+		    } else {
+			SType1A[j*LDA+k] = SType1zero;
+		    }
+	      	    SType2A[j*LDA+k] = ConvertType(SType1A[j*LDA+k], convertTo);
+		    if(k == j) {
+			if (DIAG == 'N') {
+	      		    SType1A[j*LDA+k] = GetRandom(-SCALARMAX, SCALARMAX);
+			    while (SType1A[j*LDA+k] == SType1zero) {
+				SType1A[j*LDA+k] = GetRandom(-SCALARMAX, SCALARMAX);
+			    }
+	      	    	    SType2A[j*LDA+k] = ConvertType(SType1A[j*LDA+k], convertTo);	
+		    	} else {
+	      		    SType1A[j*LDA+k] = SType1one;
+	      	    	    SType2A[j*LDA+k] = SType2one;
+		    	}			
+		    }
+		}
+	      } else {
+		// The operator is lower triangular, make sure that the entries are
+		// only in the lower triangular part of A and the diagonal is non-zero.
+		for(k = 0; k < M; k++) 
+		{
+		    if(k > j) {
+	      		SType1A[j*LDA+k] = GetRandom(-SCALARMAX, SCALARMAX);
+		    } else {
+			SType1A[j*LDA+k] = SType1zero;
+		    }
+	      	    SType2A[j*LDA+k] = ConvertType(SType1A[j*LDA+k], convertTo);
+		    if(k == j) {
+			if (DIAG == 'N') {
+      			    SType1A[j*LDA+k] = GetRandom(-SCALARMAX, SCALARMAX);
+			    while (SType1A[j*LDA+k] == SType1zero) {
+				SType1A[j*LDA+k] = GetRandom(-SCALARMAX, SCALARMAX);
+			    }
+	      	    	    SType2A[j*LDA+k] = ConvertType(SType1A[j*LDA+k], convertTo);
+		    	} else {
+	      		    SType1A[j*LDA+k] = SType1one;
+	      	    	    SType2A[j*LDA+k] = SType2one;
+			}
+		    }			
+		} // end for(k=0 ...		
+	      } // end if(UPLO == 'U') ...
+	    } // end for(j=0 ...
+	} // if(SIDE == 'L') ...
+      else // The operator is on the right side
+	{
+          LDA = GetRandom(MVMIN, MVMAX);
+      	  while (LDA < N) {
+	      LDA = GetRandom(MVMIN, MVMAX);
+       	  }
+
+	  SType1A = new SType1[LDA * N];
+	  SType2A = new SType2[LDA * N];
+
+	  for(j = 0; j < N; j++)
+	    {	     
+	      if(UPLO == 'U') {
+		// The operator is upper triangular, make sure that the entries are
+		// only in the upper triangular part of A and the diagonal is non-zero.
+		for(k = 0; k < N; k++) 
+		{
+		    if(k < j) {
+	      		SType1A[j*LDA+k] = GetRandom(-SCALARMAX, SCALARMAX);
+		    } else {
+			SType1A[j*LDA+k] = SType1zero;
+		    }
+	      	    SType2A[j*LDA+k] = ConvertType(SType1A[j*LDA+k], convertTo);
+		    if(k == j) {
+			if (DIAG == 'N') {
+	      		    SType1A[j*LDA+k] = GetRandom(-SCALARMAX, SCALARMAX);
+			    while (SType1A[j*LDA+k] == SType1zero) {
+				SType1A[j*LDA+k] = GetRandom(-SCALARMAX, SCALARMAX);
+			    }
+	      	    	    SType2A[j*LDA+k] = ConvertType(SType1A[j*LDA+k], convertTo);
+		    	} else {
+	      		    SType1A[j*LDA+k] = SType1one;
+	      	    	    SType2A[j*LDA+k] = SType2one;
+			}
+		    }			
+		}
+	      } else {
+		// The operator is lower triangular, make sure that the entries are
+		// only in the lower triangular part of A and the diagonal is non-zero.
+		for(k = 0; k < N; k++) 
+		{
+		    if(k > j) {
+	      		SType1A[j*LDA+k] = GetRandom(-SCALARMAX, SCALARMAX);
+		    } else {
+			SType1A[j*LDA+k] = SType1zero;
+		    }
+	      	    SType2A[j*LDA+k] = ConvertType(SType1A[j*LDA+k], convertTo);
+		    if(k == j) {
+			if (DIAG == 'N') {
+	      		    SType1A[j*LDA+k] = GetRandom(-SCALARMAX, SCALARMAX);
+			    while (SType1A[j*LDA+k] == SType1zero) {
+				SType1A[j*LDA+k] = GetRandom(-SCALARMAX, SCALARMAX);
+			    }
+	      	    	    SType2A[j*LDA+k] = ConvertType(SType1A[j*LDA+k], convertTo);
+		    	} else {
+	      		    SType1A[j*LDA+k] = SType1one;
+	      	    	    SType2A[j*LDA+k] = SType2one;
+			}
+		    }			
+		} // end for(k=0 ...		
+	      } // end if(UPLO == 'U') ...
+	    } // end for(j=0 ...
+	} // end if(SIDE == 'L') ...
+
+      // Fill in the right hand side block B.
+      for(j = 0; j < N; j++)
+	{
+	  for(k = 0; k < M; k++) 
 	    {
-	     
-	      SType1A[j] = GetRandom(-SCALARMAX, SCALARMAX);
-	      SType2A[j] = ConvertType(SType1A[j], convertTo);
+	  	SType1B[j*LDB+k] = GetRandom(-SCALARMAX, SCALARMAX);
+	  	SType2B[j*LDB+k] = ConvertType(SType1B[j*LDB+k], convertTo);
 	    }
-	  LDA = M;
-	}
-      else
-	{
-	  SType1A = new SType1[N * N];
-	  SType2A = new SType2[N * N];
-	  for(j = 0; j < N * N; j++)
-	    {
-	      SType1A[j] = GetRandom(-SCALARMAX, SCALARMAX);
-	      SType2A[j] = ConvertType(SType1A[j], convertTo);
-	    }
-	  LDA = N;
-	}
-
-      for(j = 0; j < M * N; j++)
-	{
-	  SType1B[j] = GetRandom(-SCALARMAX, SCALARMAX);
-	  SType2B[j] = ConvertType(SType1B[j], convertTo);
 	}
       
       SType1alpha = GetRandom(-SCALARMAX, SCALARMAX);
-      SType1alpha = 1;
+      //SType1alpha = 1;
       SType2alpha = ConvertType(SType1alpha, convertTo);
- 
-      UPLO = RandomUPLO();
-      TRANSA = RandomTRANS();
-      DIAG = RandomDIAG();
-
-      UPLO = 'U';
-      TRANSA = 'N';
-      DIAG = 'N';
  
       if(debug)
 	{
 	  cout << "Test #" << TotalTestCount << " --" << endl;
 	  cout << "SType1alpha = " << SType1alpha << endl;
 	  cout << "SType2alpha = " << SType2alpha << endl;
-	  PrintMatrix(SType1A, LDA, LDA, "SType1A", matlab);
-	  PrintMatrix(SType2A, LDA, LDA, "SType2A", matlab);
-	  PrintMatrix(SType1B, M, N, "SType1B_before_operation", matlab);
-	  PrintMatrix(SType2B, M, N, "SType2B_before_operation", matlab);
+	  if (SIDE == 'L') {
+	      PrintMatrix(SType1A, M, M, LDA, "SType1A", matlab);
+	      PrintMatrix(SType2A, M, M, LDA, "SType2A", matlab);
+	  } else {
+	      PrintMatrix(SType1A, N, N, LDA, "SType1A", matlab);
+	      PrintMatrix(SType2A, N, N, LDA, "SType2A", matlab);
+	  }
+	  PrintMatrix(SType1B, M, N, LDB, "SType1B_before_operation", matlab);
+	  PrintMatrix(SType2B, M, N, LDB, "SType2B_before_operation", matlab);
 	}
       TotalTestCount++;
 
-      SType1BLAS.TRSM(SIDE, UPLO, TRANSA, DIAG, M, N, SType1alpha, SType1A, LDA, SType1B, M);
-      SType2BLAS.TRSM(SIDE, UPLO, TRANSA, DIAG, M, N, SType2alpha, SType2A, LDA, SType2B, M);
+      SType1BLAS.TRSM(SIDE, UPLO, TRANSA, DIAG, M, N, SType1alpha, SType1A, LDA, SType1B, LDB);
+      SType2BLAS.TRSM(SIDE, UPLO, TRANSA, DIAG, M, N, SType2alpha, SType2A, LDA, SType2B, LDB);
  
       if(debug)
 	{
-	  PrintMatrix(SType1B, M, N, "SType1B_after_operation", matlab);
-	  PrintMatrix(SType2B, M, N, "SType2B_after_operation", matlab);
+	  PrintMatrix(SType1B, M, N, LDB, "SType1B_after_operation", matlab);
+	  PrintMatrix(SType2B, M, N, LDB, "SType2B_after_operation", matlab);
 	}
 
-      GoodTestSubcount += CompareMatrices(SType1B, SType2B, M, N, TOL);
+      GoodTestSubcount += CompareMatrices(SType1B, SType2B, M, N, LDB, TOL);
 
       delete [] SType1A;
       delete [] SType1B;
@@ -960,8 +1084,10 @@ int main(int argc, char *argv[])
   if(verbose || debug) cout << "TRSM: " << GoodTestSubcount << " of " << TRSMTESTS << " tests were successful." << endl;
   if(debug) cout << endl;
   // End TRSM Tests
-  
+
+#ifdef HAVE_TEUCHOS_ARPREC  
   mp::mp_finalize();
+#endif
 
   if((((TotalTestCount - 1) - GoodTestCount) != 0) || (verbose) || (debug))
     {
@@ -1011,17 +1137,17 @@ void PrintVector(TYPE* Vector, int Size, string Name, bool Matlab = 0)
 }
 
 template<typename TYPE>
-void PrintMatrix(TYPE* Matrix, int Rows, int Columns, string Name, bool Matlab = 0)
+void PrintMatrix(TYPE* Matrix, int Rows, int Columns, int LDM, string Name, bool Matlab = 0)
 {
   if(!Matlab)
     {
       cout << Name << " =" << endl;
       int i, j;
-      for(j = 0; j < Rows; j++)
+      for(i = 0; i < Columns; i++)
 	{
-	  for(i = 0; i < Columns; i++)
+      	  for(j = 0; j < Rows; j++)
 	    {
-	      cout << Matrix[j + (i * Rows)] << " ";
+	      cout << Matrix[j + (i * LDM)] << " ";
 	    }
 	  cout << endl;
 	}
@@ -1032,12 +1158,12 @@ void PrintMatrix(TYPE* Matrix, int Rows, int Columns, string Name, bool Matlab =
       cout << Name << " = ";
       int i, j;
       cout << "[";
-      for(i = 0; i < Rows; i++)
-	{
+      for(j = 0; j < Columns; j++)
+        {
 	  cout << "[";
-	  for(j = 0; j < Columns; j++)
+      	  for(i = 0; i < Rows; i++)
 	    {
-	      cout << Matrix[i + (j * Rows)] << " ";
+	      cout << Matrix[i + (j * LDM)] << " ";
 	    }
 	  cout << "];";
 	}
@@ -1069,17 +1195,20 @@ bool CompareVectors(TYPE1* Vector1, TYPE2* Vector2, int Size, double Tolerance =
 }
 
 template<typename TYPE1, typename TYPE2>
-bool CompareMatrices(TYPE1* Matrix1, TYPE2* Matrix2, int Rows, int Columns, double Tolerance = 0)
+bool CompareMatrices(TYPE1* Matrix1, TYPE2* Matrix2, int Rows, int Columns, int LDM, double Tolerance = 0)
 {
   TYPE2 convertTo;
-  int i;
-  for(i = 0; i < (Rows * Columns); i++)
-    {
-      if(ScalarTraits<TYPE2>::magnitude(ScalarTraits<TYPE2>::magnitude(ConvertType(Matrix1[i], convertTo)) - ScalarTraits<TYPE2>::magnitude(Matrix2[i])) > Tolerance)
-	{
-	  return 0;
-	}
-    }
+  int i,j;
+  for(j = 0; j < Columns; j++)
+     {
+  	for(i = 0; i < Rows; i++)
+    	   {
+      	      if(ScalarTraits<TYPE2>::magnitude(ScalarTraits<TYPE2>::magnitude(ConvertType(Matrix1[j*LDM + i], convertTo)) - ScalarTraits<TYPE2>::magnitude(Matrix2[j*LDM + i])) > Tolerance)
+		{
+	  	   return 0;
+		}
+	   }
+     }
   return 1;
 }
 
@@ -1089,11 +1218,13 @@ TYPE2 ConvertType(TYPE1 T1, TYPE2 T2)
   return static_cast<TYPE2>(T1);
 }
 
+#ifdef HAVE_TEUCHOS_ARPREC
 template<>
 double ConvertType(mp_real T1, double T2)
 {
   return dble(T1);
 }
+#endif
 
 char RandomSIDE()
 {

@@ -44,7 +44,7 @@
 # Optional 3rd argument is email address for bugs.
 
 #  #np# - package name, version number, and e-mail address below
-AC_INIT(teuchos, 0.1, kwkamps@sandia.gov)
+AC_INIT(teuchos, 0.1, hkthorn@sandia.gov)
 
 # Hello World!
 #  #np# - package name below
@@ -199,6 +199,16 @@ AC_CXX_NEW_FOR_SCOPING
 #AC_CXX_STD_IOS_BASE_FMTFLAGS
 AC_CXX_STD_SPRINTF
 
+#
+# ------------------------------------------------------------------------
+# Specify other directories 
+# ------------------------------------------------------------------------
+
+# enable use of --with-libdirs="-Llibdir1 -Llibdir2 ..." to prepend to LDFLAGS
+TAC_ARG_WITH_LIBDIRS
+# enable use of --with-incdirs="-Lincdir1 -Lincdir2 ..." to prepend to CPPFLAGS
+TAC_ARG_WITH_INCDIRS
+
 # ------------------------------------------------------------------------
 # Checks for special package flags
 # ------------------------------------------------------------------------
@@ -225,11 +235,10 @@ AC_CXX_STD_SPRINTF
 #
 #TAC_ARG_ENABLE_OPTION(newp_swahili, [enable swahili support], NEWP_SWAHILI, no)
 #AM_CONDITIONAL(HAVE_NEWP_SWAHILI, [test "X$ac_cv_use_newp_swahili" != "Xno"])
-
+#
 # ------------------------------------------------------------------------
 # Checks for special package flags
 # ------------------------------------------------------------------------
-
 #
 #  #np# - These options are specific to Epetra and are left only as examples.
 #         If uncommented, the following lines would define HAVE_FATAL_MESSAGES
@@ -253,18 +262,43 @@ AC_CXX_STD_SPRINTF
 # TAC_ARG_WITH_PACKAGE(superlu, [Enable SuperLU interface support], SUPERLU, no)
 
 # ------------------------------------------------------------------------
-# Specify other directories 
+# Checks for addons 
 # ------------------------------------------------------------------------
+#
+#  --enable-teuchos-arprec --with-teuchos-arprecdir 
+#  --with-teuchos-arpreclib --with-teuchos-arprecincdir
+# 
+ 
+TAC_ARG_ENABLE_FEATURE_SUB( teuchos, arprec, [Enable Teuchos interface support for the ARbitrary PRECision Library], 
+		TEUCHOS_ARPREC, no)  
 
-# enable use of --with-libdirs="-Llibdir1 -Llibdir2 ..." to prepend to LDFLAGS
-TAC_ARG_WITH_LIBDIRS
-# enable use of --with-incdirs="-Lincdir1 -Lincdir2 ..." to prepend to CPPFLAGS
-TAC_ARG_WITH_INCDIRS
+if test "X$ac_cv_use_teuchos_arprec" != "Xno"; then
 
-# #np# - Yet another opportunity to remove code if you aren't
-# using Fortran
-# Define F77_FUNC that will be used to link with Fortran subroutines, e.g., BLAS/LAPACK - trash WORKGXX 
-AC_F77_WRAPPERS
+#  TAC_ARG_WITH( trilinos3pldir, [Set Trilinos3PL directory], trilinos3pldir_is_not_specified )
+#  if test "X${tac_with_teuchos_trilinos3pldir}" != "Xtrilinos3pldir_is_not_specified"; then
+
+  TAC_ARG_WITH_SUB( teuchos, arprecdir, [Set ARPREC dist directory], arprecdir_is_not_specified )
+
+  if test "X${tac_with_teuchos_arprecdir}" != "Xarprecdir_is_not_specified"; then
+     TAC_ARG_WITH_SUB( teuchos, arpreclib, [Set ARPREC dist library], ${tac_with_teuchos_arprecdir}/lib/libmp.a )
+     TAC_ARG_WITH_SUB( teuchos, arprecincdir, [Set ARPREC dist include directory], ${tac_with_teuchos_arprecdir}/include )
+
+     CPPFLAGS="-I${tac_with_teuchos_arprecincdir} ${CPPFLAGS}"
+     LDFLAGS="${tac_with_teuchos_arpreclib} ${LDFLAGS}"
+  fi
+     AC_MSG_CHECKING(for mp/mpreal.h)
+     AC_TRY_CPP([#include "mp/mpreal.h"],
+	[AC_MSG_RESULT(yes)],  
+	[
+	 AC_MSG_RESULT(no)
+	 echo "-----"
+     	 echo "Cannot find ARPREC library."
+     	 echo "Try --with-arprecdir to specify ARPREC directory."
+	 echo "Or try --with-arpreclib, --with-arprecincdir to specify exact paths."
+     	 echo "-----"
+     	 AC_MSG_ERROR(ARPREC cannot link)
+     	])
+fi
 
 # ------------------------------------------------------------------------
 # Checks for libraries
@@ -278,6 +312,11 @@ dnl Replace `main' with a function in -lm:
 #  #np# These lines can be removed if the math lib is not needed.
 AC_SEARCH_LIBS(pow,[m],,AC_MSG_ERROR(Cannot find math library))
 AC_SEARCH_LIBS(sqrt,[m],,AC_MSG_ERROR(Cannot find math library))
+
+# #np# - Yet another opportunity to remove code if you aren't
+# using Fortran
+# Define F77_FUNC that will be used to link with Fortran subroutines, e.g., BLAS/LAPACK - trash WORKGXX 
+AC_F77_WRAPPERS
 
 ### Include Blas/Lapack example here. ###  For now, developers should see
 ### The configure.ac file for epetra (Trilinos/packages/epetra) if blas and
@@ -356,7 +395,6 @@ AC_CONFIG_FILES([
 		test/LAPACK/Makefile
 		test/DenseMatrix/Makefile
 		test/ParameterList/Makefile
-		example/Hilbert/Makefile
 		])
 
 AC_OUTPUT()

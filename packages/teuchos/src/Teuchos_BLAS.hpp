@@ -12,6 +12,7 @@
 //             * All of the L2/L3 routines assume that the entire matrix is being used (that is, if A is mxn, LDA = m); they don't work on submatrices yet. This *should* be a reasonably trivial thing to fix, as well.
 //          -- Removed warning messages for generic calls
 // 08.08.03 -- TRSM now works for all cases where SIDE == L and DIAG == N. DIAG == U is implemented but does not work correctly; SIDE == R is not yet implemented.
+// 08.14.03 -- TRSM now works for all cases and accepts (and uses) leading-dimension information.
 
 #ifndef _TEUCHOS_BLAS_HPP_
 #define _TEUCHOS_BLAS_HPP_
@@ -692,10 +693,11 @@ namespace Teuchos
   }
   
   template<typename OrdinalType, typename ScalarType>
-  void BLAS<OrdinalType, ScalarType>::TRSM(char Side, char Triangular, char TransposeA, char UnitDiagonal, int m, int n, ScalarType alpha, ScalarType* A, int LDA, ScalarType* B, int LDB)
+  void BLAS<OrdinalType, ScalarType>::TRSM(char Side, char Triangular, char TransposeA, char UnitDiagonal, int m, int n, ScalarType alpha, ScalarType* A, int lda, ScalarType* B, int ldb)
   {
     ScalarType zero = ScalarTraits<ScalarType>::zero();
     ScalarType one = ScalarTraits<ScalarType>::one();
+    ScalarType temp;
     bool BadArgument = 0;
     if(!((Side == 'L') || (Side == 'R'))) {
       cout << "BLAS::GEMM Error: SIDE == " << Side << endl;
@@ -709,200 +711,228 @@ namespace Teuchos
     if(!((UnitDiagonal == 'N') || (UnitDiagonal == 'U'))) {
       cout << "BLAS::GEMM Error: DIAG == " << UnitDiagonal << endl;
       BadArgument = 1; }
-    if(!BadArgument)
+    if(!BadArgument && n!=0)
       {
 	int i, j, k;
-	if(alpha == zero)
-	  {
-	    for(i = 0; i < (m * n); i++)
-	      {
-		B[i] = zero;
-	      }
-	  }
-	else
-	  {
-	    if(alpha != one)
-	      {
-		for(i = 0; i < (m * n); i++)
-		  {
-		    B[i] *= alpha;
-		  }
-	      }
-	    if(Side == 'L')
-	      {
-		cout << "L";
-		if(Triangular == 'U')
-		  {
-		    cout << "U";
-		    if(TransposeA == 'N')
-		      {
-			cout << "N";
-			if(UnitDiagonal == 'N')
-			  {
-			    cout << "N";
-			    for(j = 0; j < n; j++)
-			      {
-				for(k = (m - 1); k > -1; k--)
-				  {
-				    if(B[k + (j * m)] != zero)
-				      {
-					B[k + (j * m)] = B[k + (j * m)] / A[k + (k * m)];
-					for(i = 0; i < k; i++)
-					  {
-					    B[i + (j * m)] = B[i + (j * m)] - (B[k + (j * m)] * A[i + (k * m)]);
-					  }
-				      }
-				  }
-			      }
-			  }
-			else // UnitDiagonal == U
-			  {
-			    cout << "U";
-			    for(j = 0; j < n; j++)
-			      {
-				for(k = (m - 1); k > -1; k--)
-				  {
-				    if(B[k + (j * m)] != zero)
-				      {
-					for(i = 0; i < k; i++)
-					  {
-					    B[i + (j * m)] = B[i + (j * m)] - (B[k + (j * m)] * A[i + (k * m)]);
-					  }
-				      }
-				  }
-			      }
-			  }
-		      }
-		    else // TransposeA == T or C
-		      {
-			cout << "T";
-			if(UnitDiagonal == 'N')
-			  {
-			    cout << "N";
-			    ScalarType temp;
-			    for(j = 0; j < n; j++)
-			      {
-				for(i = 0; i < m; i++)
-				  {
-				    temp = alpha * B[i + (j * m)];
-				    for(k = 0; k < (i - 0); k++)
-				      {
-					temp -= (A[k + (i * m)] * B[k + (j * m)]);
-				      }
-				    temp /= A[i + (i * m)];
-				    B[i + (j * m)] = temp;
-				  }
-			      }
-			  }
-			else if(UnitDiagonal == 'U')
-			  {
-			    cout << "U";
-			    ScalarType temp;
-			    for(j = 0; j < n; j++)
-			      {
-				for(i = 0; i < m; i++)
-				  {
-				    temp = alpha * B[i + (j * m)];
-				    for(k = 0; k < (i - 0); k++)
-				      {
-					temp -= (A[k + (i * m)] * B[k + (j * m)]);
-				      }
-				    B[i + (j * m)] = temp;
-				  }
-			      }
-			  }
-		      }
-		  }
-		else // Triangular == L
-		  {
-		    cout << "L";
-		    if(TransposeA == 'N')
-		      {
-			cout << "N";
-			if(UnitDiagonal == 'N')
-			  {
-			    cout << "N";
-			    for(j = 0; j < n; j++)
-			      {
-				for(k = 0; k < m; k++)
-				  {
-				    if(B[k + (j * m)] != zero)
-				      {
-					B[k + (j * m)] = B[k + (j * m)] / A[k + (k * m)];
-					for(i = (k + 1); i < m; i++)
-					  {
-					    B[i + (j * m)] = B[i + (j * m)] - (B[k + (j * m)] * A[i + (k * m)]);
-					  }
-				      }
-				  }
-			      }
-			  }
-			else // UnitDiagonal == U
-			  {
-			    cout << "U";
-			    for(j = 0; j < n; j++)
-			      {
-				for(k = 0; k < m; k++)
-				  {
-				    if(B[k + (j * m)] != zero)
-				      {
-					for(i = (k + 1); i < m; i++)
-					  {
-					    B[i + (j * m)] = B[i + (j * m)] - (B[k + (j * m)] * A[i + (k * m)]);
-					  }
-				      }
-				  }
-			      }
-			  }
-		      }
-		    else // TransposeA == T or C
-		      {
-			cout << "T";
-			if(UnitDiagonal == 'N')
-			  {
-			    cout << "N";
-			    ScalarType temp;
-			    for(j = 0; j < n; j++)
-			      {
-				for(i = (m - 1); i > -1; i--)
-				  {
-				    temp = alpha * B[i + (j * m)];
-				    for(k = (i + 1); k < m; k++)
-				      {
-					temp -= (A[k + (i * m)] * B[k + (j * m)]);
-				      }
-				    temp /= A[i + (i * m)];
-				    B[i + (j * m)] = temp;
-				  }
-			      }
-			  }
-			else if(UnitDiagonal == 'U')
-			  {
-			    cout << "U";
-			    ScalarType temp;
-			    for(j = 0; j < n; j++)
-			      {
-				for(i = (m - 1); i > -1; i--)
-				  {
-				    temp = alpha * B[i + (j * m)];
-				    for(k = (i + 1); k < m; k++)
-				      {
-					temp -= (A[k + (i * m)] * B[k + (j * m)]);
-				      }
-				    B[i + (j * m)] = temp;
-				  }
-			      }
-			  }
-		      }
-		  }
-	      }
-	    else // Side == R
-	      {
-
-	      }
-	  }
-      }
-    cout << endl;
+	// Set the solution to the zero vector.
+	if(alpha == zero) {
+	    for(j = 0; j < n; j++) {
+	    	for( i = 0; i < m; i++) {
+		    B[j*ldb+i] = zero;
+	      	}
+	    }
+	}
+	else 
+	{ // Start the operations.
+	    if(Side == 'L') {
+		//
+	    	// Perform computations for OP(A)*X = alpha*B	    
+		//
+		if(TransposeA == 'N') {
+		    //
+		    //  Compute B = alpha*inv( A )*B
+		    //
+		    if(Triangular == 'U') { 
+			// A is upper triangular.
+			for(j = 0; j < n; j++) {
+	    		    // Perform alpha*B if alpha is not 1.
+	    		    if(alpha != one) {
+	    	    		for( i = 0; i < m; i++) {
+		    		    B[j*ldb+i] *= alpha;
+		    		}
+			    }
+			    // Perform a backsolve for column j of B.
+			    for(k = (m - 1); k > -1; k--) {
+				// If this entry is zero, we don't have to do anything.
+				if (B[j*ldb + k] != zero) {
+				    if (UnitDiagonal == 'N') {
+					B[j*ldb + k] /= A[k*lda + k];
+				    }
+				    for(i = 0; i < k; i++) {
+					B[j*ldb + i] -= B[j*ldb + k] * A[k*lda + i];
+				    }
+				}
+			    }
+			}
+		    }
+		    else 
+		    { // A is lower triangular.
+                        for(j = 0; j < n; j++) {
+                            // Perform alpha*B if alpha is not 1.
+                            if(alpha != one) {
+                                for( i = 0; i < m; i++) {
+                                    B[j*ldb+i] *= alpha;
+                                }
+                            }
+                            // Perform a forward solve for column j of B.
+                            for(k = 0; k < m; k++) {
+                                // If this entry is zero, we don't have to do anything.
+                                if (B[j*ldb + k] != zero) {   
+                                    if (UnitDiagonal == 'N') {
+                                        B[j*ldb + k] /= A[k*lda + k];
+                                    }
+                                    for(i = k+1; i < m; i++) {
+                                        B[j*ldb + i] -= B[j*ldb + k] * A[k*lda + i];
+                                    }
+                                }
+                            }
+                        }
+		    } // end if (Triangular == 'U')
+		}  // if (TransposeA =='N')	
+	    	else { 
+		    //
+		    //  Compute B = alpha*inv( A' )*B
+		    //
+		    if(Triangular == 'U') { 
+			// A is upper triangular.
+			for(j = 0; j < n; j++) {
+	    	    	    for( i = 0; i < m; i++) {
+		    		temp = alpha*B[j*ldb+i];
+			    	for(k = 0; k < i; k++) {
+				    temp -= A[i*lda + k] * B[j*ldb + k];
+				}
+				if (UnitDiagonal == 'N') {
+				    temp /= A[i*lda + i];
+				}
+				B[j*ldb + i] = temp;
+			    }
+			}
+		    }
+		    else
+		    { // A is lower triangular.
+                        for(j = 0; j < n; j++) {
+                            for(i = (m - 1) ; i > -1; i--) {
+                                temp = alpha*B[j*ldb+i];
+                            	for(k = i+1; k < m; k++) {
+				    temp -= A[i*lda + k] * B[j*ldb + k];
+				}
+				if (UnitDiagonal == 'N') {
+				    temp /= A[i*lda + i];
+				}
+				B[j*ldb + i] = temp;
+                            }
+                        }
+		    }
+		}
+	    }  // if (Side == 'L')
+	    else { 
+	       // Side == 'R'
+	       //
+	       // Perform computations for X*OP(A) = alpha*B	    
+	       //
+	      if (TransposeA == 'N') {
+		    //
+		    //  Compute B = alpha*B*inv( A )
+		    //
+		    if(Triangular == 'U') { 
+			// A is upper triangular.
+	    		// Perform a backsolve for column j of B.
+			for(j = 0; j < n; j++) {
+	    		    // Perform alpha*B if alpha is not 1.
+	    		    if(alpha != one) {
+	    	    		for( i = 0; i < m; i++) {
+		    		    B[j*ldb+i] *= alpha;
+		    		}
+			    }
+			    for(k = 0; k < j; k++) {
+				// If this entry is zero, we don't have to do anything.
+				if (A[j*lda + k] != zero) {
+				    for(i = 0; i < m; i++) {
+					B[j*ldb + i] -= A[j*lda + k] * B[k*ldb + i];
+				    }
+				}
+			    }
+			    if (UnitDiagonal == 'N') {
+				temp = one/A[j*lda + j];
+				for(i = 0; i < m; i++) {
+				    B[j*ldb + i] *= temp;
+				}
+			    }
+			}
+		    }
+		    else 
+		    { // A is lower triangular.
+                        for(j = (n - 1); j > -1; j--) {
+                            // Perform alpha*B if alpha is not 1.
+                            if(alpha != one) {
+                                for( i = 0; i < m; i++) {
+                                    B[j*ldb+i] *= alpha;
+                                }
+                            }
+                            // Perform a forward solve for column j of B.
+                            for(k = j+1; k < n; k++) {
+                                // If this entry is zero, we don't have to do anything.
+				if (A[j*lda + k] != zero) {
+				    for(i = 0; i < m; i++) {
+                                        B[j*ldb + i] -= A[j*lda + k] * B[k*ldb + i]; 
+                                    }
+                                } 
+                            }
+			    if (UnitDiagonal == 'N') {
+				temp = one/A[j*lda + j];
+				for(i = 0; i < m; i++) {
+				    B[j*ldb + i] *= temp;
+				}
+			    }			
+                        }
+		    } // end if (Triangular == 'U')
+		}  // if (TransposeA =='N')	
+	    	else { 
+		    //
+		    //  Compute B = alpha*B*inv( A' )
+		    //
+		    if(Triangular == 'U') { 
+			// A is upper triangular.
+			for(k = (n - 1); k > -1; k--) {
+			    if (UnitDiagonal == 'N') {
+				temp = one/A[k*lda + k];
+	    	    	    	for(i = 0; i < m; i++) {
+		    		    B[k*ldb + i] *= temp;
+				}
+			    }
+			    for(j = 0; j < k; j++) {
+				if (A[k*lda + j] != zero) {
+				    temp = A[k*lda + j];
+				    for(i = 0; i < m; i++) {
+					B[j*ldb + i] -= temp*B[k*ldb + i];
+				    }
+				}
+			    }
+			    if (alpha != one) {
+				for (i = 0; i < m; i++) {
+				    B[k*ldb + i] *= alpha;
+				}
+			    }
+			}
+		    }
+		    else
+		    { // A is lower triangular.
+			for(k = 0; k < n; k++) {
+			    if (UnitDiagonal == 'N') {
+				temp = one/A[k*lda + k];
+				for (i = 0; i < m; i++) {
+				    B[k*ldb + i] *= temp;
+				}
+			    }
+			    for(j = k+1; j < n; j++) {
+				if(A[k*lda + j] != zero) {
+				    temp = A[k*lda + j];
+				    for(i = 0; i < m; i++) {
+					B[j*ldb + i] -= temp*B[k*ldb + i];
+				    }
+				}
+			    }
+			    if (alpha != one) {
+				for (i = 0; i < m; i++) {
+				    B[k*ldb + i] *= alpha;
+				}
+			    }
+                        }
+		    }
+		}		
+	    }
+	}
+    }
   }
   
   template<typename OrdinalType, typename ScalarType>

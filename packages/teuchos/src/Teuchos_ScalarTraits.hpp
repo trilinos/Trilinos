@@ -17,7 +17,10 @@
 #define ComplexFloat std::complex<float>
 #define ComplexDouble std::complex<double>
 #endif
+
+#ifdef HAVE_TEUCHOS_ARPREC
 #include "mp/mpreal.h"
+#endif
 
 namespace Teuchos {
   /** The Teuchos ScalarTraits file.
@@ -228,6 +231,8 @@ namespace Teuchos {
 
 #endif  // NO_COMPLEX
 
+#ifdef HAVE_TEUCHOS_ARPREC
+
   template<>
   struct ScalarTraits<mp_real>
   {
@@ -261,6 +266,8 @@ namespace Teuchos {
     static inline mp_real squareroot(mp_real x) { return sqrt(x); };
   };
   
+#endif
+
 } // Teuchos namespace
 
 #endif // _TEUCHOS_SCALARTRAITS_HPP_

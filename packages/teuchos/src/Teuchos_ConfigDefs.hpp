@@ -8,6 +8,10 @@
 #define __cplusplus
 #endif
 
+#ifdef HAVE_CONFIG_H
+#include "Teuchos_config.h"
+#endif
+
 // configs from ScalarTraits
 
 //  If we're using a Sun compiler, version earlier than 5.0,
