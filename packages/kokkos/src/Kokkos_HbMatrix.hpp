@@ -67,7 +67,7 @@ namespace Kokkos {
       This interface supports matrices that are stored in the classical Harwell-Boeing format.
       \param numRows (In)  Row dimension.
       \param numCols (In)  Column dimension.
-      \param isRowOriented - If true, the compressed index storage will be interpreted as row indices.  
+      \param isRowOriented - (In) If true, the compressed index storage will be interpreted as row indices.  
       If false, then indices will be interpreted as column indices.
       \param pntr (In)  Array of offsets into indx.  indx[pntr[i]] contains the first index of the ith row
       (if isRowOriented is true) or ith column (if isRowOriented is false).
