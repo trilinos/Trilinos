@@ -548,20 +548,21 @@ static int LB_ParMetis_Jostle(
     if (num_border > num_obj) num_border = num_obj;
      
     /* Assume that the edges are approx. evenly distributed among the objs. */
-    if (num_obj>0)
+    if (num_obj>0){
        max_proc_list_len = num_edges * num_border / num_obj;
+       if (max_proc_list_len < CHUNKSIZE)
+          max_proc_list_len = CHUNKSIZE;
+    }
     else
        max_proc_list_len = 0;
     
     /* Allocate edge list data */
     nbors_global = (LB_GID *)LB_MALLOC(max_edges * sizeof(LB_GID));
     nbors_proc = (int *)LB_MALLOC(max_edges * sizeof(int));
-    proc_list = (struct LB_edge_info *) LB_MALLOC(max_proc_list_len *
-      sizeof(struct LB_edge_info) );
     plist = (int *)LB_MALLOC(lb->Num_Proc * sizeof(int));
 
     if ((max_edges && ((!nbors_global) || (!nbors_proc))) || 
-        (max_proc_list_len && !proc_list) || (!plist)){
+        (!plist)){
       /* Not enough memory */
       FREE_MY_MEMORY;
       LB_TRACE_EXIT(lb, yo);
@@ -570,6 +571,28 @@ static int LB_ParMetis_Jostle(
     for (i=0; i<lb->Num_Proc; i++)
       plist[i] = -1;
   
+    if (max_proc_list_len){
+      /* Allocate space for processor list */
+      while ((proc_list==NULL) && (max_proc_list_len>=CHUNKSIZE)){
+        proc_list = (struct LB_edge_info *) LB_MALLOC(max_proc_list_len *
+          sizeof(struct LB_edge_info) );
+        if (!proc_list){
+          /* Not enough memory, try shorter list */
+          if (lb->Debug_Level >= LB_DEBUG_ALL) {
+            printf("[%1d] Debug: Could not allocate %d list nodes, trying %d instead.\n", 
+                   max_proc_list_len, max_proc_list_len/2);
+          }
+          max_proc_list_len /= 2;
+        }
+      }
+      if (!proc_list){
+        /* Not enough memory */
+        FREE_MY_MEMORY;
+        LB_TRACE_EXIT(lb, yo);
+        return LB_MEMERR;
+      }
+    }
+
     /* proc_list[i] will contain a struct with data to send
      * to another processor. We don't know yet the total number
      * of inter-proc edges so we may have to adjust the size of 
