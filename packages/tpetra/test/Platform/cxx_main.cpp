@@ -32,13 +32,11 @@
 #define SCALARTYPE float
 #define ORDINALTYPE int
 
-#ifdef HAVE_MPI
-#include "Tpetra_MpiPlatform.hpp"
-#endif // HAVE_MPI
-
 #include "Tpetra_SerialPlatform.hpp"
 #include "Tpetra_Version.hpp"
-#include "Tpetra_Util.hpp"
+//if mpi
+#include "Tpetra_MpiPlatform.hpp"
+//end if
 
 int main(int argc, char* argv[]) {
 	// initialize verbose & debug flags
@@ -61,46 +59,44 @@ int main(int argc, char* argv[]) {
 	
 	if(verbose) cout << "Creating SerialPlatform object...";
 	Tpetra::SerialPlatform<ORDINALTYPE, SCALARTYPE> platform;
-	//if(debug) cout << platform.label() << endl;
+	if(debug) cout << platform << endl;
 	if(verbose) cout << "Successful." << endl;
 	
-	if(verbose) cout << "Creating Comm objects...";
+	if(verbose) cout << "Creating SerialComm objects...";
 	Tpetra::Comm<SCALARTYPE, ORDINALTYPE>* comm1 = platform.createScalarComm();
 	Tpetra::Comm<ORDINALTYPE, ORDINALTYPE>* comm2 = platform.createOrdinalComm();
 	delete comm1;
 	delete comm2;
 	if(verbose) cout << "Successful." << endl;
 	
-	if(verbose) cout << "Creating Distributor objects...";
+	if(verbose) cout << "Creating SerialDistributor objects...";
 	Tpetra::Distributor<SCALARTYPE, ORDINALTYPE>* distributor1 = platform.createScalarDistributor();
 	Tpetra::Distributor<ORDINALTYPE, ORDINALTYPE>* distributor2 = platform.createOrdinalDistributor();
 	delete distributor1;
 	delete distributor2;
 	if(verbose) cout << "Successful." << endl;
 
-#ifdef HAVE_MPI
-
-	cout << "MPI is enabled." << endl;
+  //if mpi
 	if(verbose) cout << "Creating MpiPlatform object...";
-	Tpetra::MpiPlatform<ORDINALTYPE, SCALARTYPE> platform2();
+	Tpetra::MpiPlatform<ORDINALTYPE, SCALARTYPE> platform2;
 	if(verbose) cout << "Successful." << endl;
 
 	if(verbose) cout << "Creating MpiComm objects...";
-	Tpetra::Comm<SCALARTYPE, ORDINALTYPE>* comm3 = platform2.createScalarComm();
+	Tpetra::Comm<SCALARTYPE, ORDINALTYPE>* comm3 = platform2.createScalarComm(); 
 	Tpetra::Comm<ORDINALTYPE, ORDINALTYPE>* comm4 = platform2.createOrdinalComm();
-	delete comm3;
-	delete comm4;
+  delete comm3;
+  delete comm4;
 	if(verbose) cout << "Successful." << endl;
 
-#else
+	if(verbose) cout << "Creating MpiDistributor objects...";
+	Tpetra::Distributor<SCALARTYPE, ORDINALTYPE>* distributor3 = platform2.createScalarDistributor();
+	Tpetra::Distributor<ORDINALTYPE, ORDINALTYPE>* distributor4 = platform2.createOrdinalDistributor();
+	delete distributor3;
+	delete distributor4;
+	if(verbose) cout << "Successful." << endl;
+  //end if
 
-	cout << "MPI is not enabled." << endl;
-
-#endif // HAVE_MPI
-  
 	if(verbose) cout << "Platform test successful." << endl;
-	
-	Tpetra::efficientAddOrUpdate();
 
 	return(0);
 }

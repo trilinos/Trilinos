@@ -45,10 +45,11 @@ CORE =
 UTIL_H = \
 	$(srcdir)/Tpetra_ConfigDefs.hpp \
 	$(srcdir)/Tpetra_PacketTraits.hpp \
-  $(srcdir)/Tpetra_Version.hpp \
+	$(srcdir)/Tpetra_Version.hpp \
 	$(srcdir)/Tpetra_Util.hpp
 
-UTIL =
+UTIL = \
+	$(srcdir)/Tpetra_Version.cpp
 
 ENUM_H = \
 	$(srcdir)/Tpetra_CombineMode.hpp
@@ -61,7 +62,11 @@ SERIAL_H = \
 	$(srcdir)/Tpetra_SerialPlatform.hpp \
 	$(srcdir)/Tpetra_SerialComm.hpp \
 	$(srcdir)/Tpetra_SerialDistributor.hpp \
-	$(srcdir)/Tpetra_SerialDirectory.hpp
+	$(srcdir)/Tpetra_SerialDirectory.hpp \
+	$(srcdir)/Tpetra_MpiPlatform.hpp \
+	$(srcdir)/Tpetra_MpiComm.hpp \
+	$(srcdir)/Tpetra_MpiDistributor.hpp \
+	$(srcdir)/Tpetra_MpiDirectory.hpp
 
 SERIAL = 
 
@@ -71,8 +76,6 @@ EXTRA_MPI =
 
 if HAVE_MPI 
 MPI_H = \
-	$(srcdir)/Tpetra_MpiPlatform.hpp \
-	$(srcdir)/Tpetra_MpiComm.hpp \
 	$(EXTRA_MPI_H)
 MPI = \
 	$(EXTRA_MPI)

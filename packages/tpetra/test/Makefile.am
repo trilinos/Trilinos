@@ -26,4 +26,8 @@
 # ************************************************************************
 #@HEADER
 
-SUBDIRS = Comm Platform Distributor ElementSpace BlockElementSpace VectorSpace Vector CisMatrix BasicPerfTest scripts
+#if BUILD_TPETRA_TESTS
+STANDARD_SUBDIRS = Comm Platform Distributor ElementSpace BlockElementSpace VectorSpace Vector CisMatrix BasicPerfTest scripts
+#endif
+
+SUBDIRS = $(STANDARD_SUBDIRS)

@@ -26,9 +26,13 @@
 # ************************************************************************
 #@HEADER
 
+#if BUILD_TPETRA_EXAMPLES
 if BUILD_PROFILE_EXAMPLE
 EPETRA_TPETRA_PROFILE=EpetraTpetraProfile
 endif
+STANDARD_SUBDIRS = $(EPETRA_TPETRA_PROFILE) verySimple
+#endif
 
-SUBDIRS = $(EPETRA_TPETRA_PROFILE) verySimple
+SUBDIRS = $(STANDARD_SUBDIRS)
+
 

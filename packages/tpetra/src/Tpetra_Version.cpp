@@ -26,15 +26,13 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef TPETRA_VERSION_HPP
-#define TPETRA_VERSION_HPP
-
-#include "Tpetra_ConfigDefs.hpp"
+#include "Tpetra_Version.hpp"
 
 namespace Tpetra {
 
-	std::string Tpetra_Version();
+	std::string Tpetra_Version() { 
+		return("Tpetra Version 1.1d - 5/26/2004"); 
+	}
 
 } // namespace Tpetra
 
-#endif // TPETRA_VERSION_HPP

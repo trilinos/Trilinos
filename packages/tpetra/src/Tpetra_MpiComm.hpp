@@ -29,44 +29,61 @@
 #ifndef _TPETRA_MPICOMM_HPP_
 #define _TPETRA_MPICOMM_HPP_
 
-#include "Tpetra_Comm.hpp"
 #include "Tpetra_Object.hpp"
+#include "Tpetra_Comm.hpp"
 
 namespace Tpetra {
 
-	//! Tpetra::MpiComm:  The Tpetra MPI Communication Class.
-	/*! The MpiComm class is an implementation of Tpetra::Comm, providing the general
-		information and services needed for other Tpetra classes to run on a parallel 
-		computer using MPI.
-	*/
-	
 	template<typename PacketType, typename OrdinalType>
 	class MpiComm : public Object, public virtual Comm<PacketType, OrdinalType> {
 	public:
-		//@{ \name Constructor/Destructor Methods
-		//! Constructor
-		/*! Builds an instance of an MPI communicator.  
-		 */
+    
+    //@{ \name Constructor/Destructor Methods
 		MpiComm() : Object("Tpetra::Comm[MPI]") {};
-		
-		//! Destructor.
-		/*! Completely deletes a MpiComm object.  
-			\warning Note:  All objects that depend on a MpiComm instance 
-			should be destroyed prior to calling this function.
-		*/
+
+    MpiComm(MpiComm<PacketType, OrdinalType> const& comm) {};
+
 		~MpiComm() {};
-		//@}
-		
-		//@{ \name I/O Methods
-		//! print - implements Tpetra::Object virtual print method.
-		void print(ostream& os) const { os << label() << endl;};
-		
-		//! printInfo - implements Tpetra::Platform virtual printInfo method.
-		void printInfo(ostream& os) const {print(os);};
-		//@}
-		
-	}; // class MpiComm
-	
+    //@}
+    
+    //@{ \name Image Info Methods
+    int getMyImageID() const {return(-1);};
+    int getNumImages() const {return(-1);};
+    //@}
+    
+    //@{ \name Barrier Methods
+    void barrier() const {};
+    //@}
+    
+    //@{ \name Broadcast Methods
+    void broadcast(PacketType* myVals, OrdinalType const count, int const root) const {};
+    //@}
+    
+    //@{ \name Gather Methods
+    void gatherAll(PacketType* myVals, PacketType* allVals, OrdinalType const count) const {};
+    //@}
+    
+    //@{ \name Sum Methods
+    void sumAll(PacketType* partialSums, PacketType* globalSums, OrdinalType const count) const {};
+    //@}
+    
+    //@{ \name Max/Min Methods
+    void maxAll(PacketType* partialMaxs, PacketType* globalMaxs, OrdinalType const count) const {};
+    void minAll(PacketType* partialMins, PacketType* globalMins, OrdinalType const count) const {};
+    //@}
+    
+    //@{ \name Parallel Prefix Methods
+    void scanSum(PacketType* myVals, PacketType* scanSums, OrdinalType const count) const {};
+    //@}
+    
+    //@{ \name I/O Methods
+    //! Print methods
+    void print(ostream& os) const {os << "MpiComm print function." << endl;};
+    void printInfo(ostream& os) const {print(os);};
+    //@}
+    
+	}; // MpiComm class
+  
 } // namespace Tpetra
 
 #endif // _TPETRA_MPICOMM_HPP_

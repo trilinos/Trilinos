@@ -32,50 +32,78 @@
 #include "Tpetra_Object.hpp"
 #include "Tpetra_Platform.hpp"
 #include "Tpetra_MpiComm.hpp"
+#include "Tpetra_MpiDirectory.hpp"
+#include "Tpetra_MpiDistributor.hpp"
 
 namespace Tpetra {
 
-	//! Tpetra::MpiPlatform: Mpi Implementation of the Platform class.
+	//! Tpetra::MpiPlatform: MPI Implementation of the Platform class.
 
 	template<typename OrdinalType, typename ScalarType>
 	class MpiPlatform : public Object, public virtual Platform<OrdinalType, ScalarType> {
 	public:
 
-		//@{ \name Constructor/Destructor Methods
+    //@{ \name Constructor/Destructor Methods
 
 		//! Constructor
 		MpiPlatform() : Object("Tpetra::Platform[MPI]") {};
-		//! Destructor
+
+    //! Copy Constructor
+    MpiPlatform(MpiPlatform<OrdinalType, ScalarType> const& platform) : Object(platform.label()) {};
+
+    //! Destructor
 		~MpiPlatform() {};
-		
-		//@}
-		
-		//@{ \name Class Creation and Accessor Methods
+
+    //! Clone Constructor - implements Tpetra::Platform virtual clone method.
+		Platform<OrdinalType, ScalarType>* clone() const {
+      MpiPlatform<OrdinalType, ScalarType>* platform = new MpiPlatform<OrdinalType, ScalarType>(*this);
+      return(platform);
+		};
+
+    //@}
+
+    //@{ \name Class Creation and Accessor Methods
 
 		//! Comm Instances
-		Comm<ScalarType, OrdinalType>* createScalarComm() const {
-			// static_cast casts MpiComm* to Comm*
-			Comm<ScalarType, OrdinalType>* comm = static_cast<Comm<ScalarType, OrdinalType>*>(new MpiComm<ScalarType, OrdinalType>());
-			return(comm);
+    Comm<ScalarType, OrdinalType>* createScalarComm() const {
+			MpiComm<ScalarType, OrdinalType>* comm = new MpiComm<ScalarType, OrdinalType>();
+      return(comm);
 		};
 		Comm<OrdinalType, OrdinalType>* createOrdinalComm() const {
-			// static_cast casts MpiComm* to Comm*
-			Comm<OrdinalType, OrdinalType>* comm = static_cast<Comm<OrdinalType, OrdinalType>*>(new MpiComm<OrdinalType, OrdinalType>());
-			return(comm);
+			MpiComm<OrdinalType, OrdinalType>* comm = new MpiComm<OrdinalType, OrdinalType>();
+      return(comm);
 		};
 
-		//@}
+    //! Distributor Instances
+		Distributor<ScalarType, OrdinalType>* createScalarDistributor() const {
+			MpiDistributor<ScalarType, OrdinalType>* distributor = new MpiDistributor<ScalarType, OrdinalType>();
+      return(distributor);
+		};
+		Distributor<OrdinalType, OrdinalType>* createOrdinalDistributor() const {
+			MpiDistributor<OrdinalType, OrdinalType>* distributor = new MpiDistributor<OrdinalType, OrdinalType>();
+      return(distributor);
+		};
+
+		//! Directory Instance
+		Directory<OrdinalType>* createDirectory(ElementSpace<OrdinalType> const& elementSpace) const {
+		  MpiDirectory<OrdinalType>* dir = new MpiDirectory<OrdinalType>(elementSpace); 
+      return(dir);
+		};
+
+    //@}
 
 		//@{ \name I/O Methods
+
 		//! print - implements Tpetra::Object virtual print method.
 		void print(ostream& os) const { os << label() << endl;};
 
 		//! printInfo - implements Tpetra::Platform virtual printInfo method.
 		void printInfo(ostream& os) const {print(os);};
+
 		//@}
-
+    
 	}; // MpiPlatform class
-
+  
 } // namespace Tpetra
 
 #endif // _TPETRA_MPIPLATFORM_HPP_
