@@ -21,26 +21,23 @@
 
 <H2>
 <A NAME="Migration-Help Functions"></A>Migration-Help Functions</H2>
-If requested, Zoltan can automatically transfer an application's data
-between processors to realize the new decomposition.  This functionality
-will be performed as part of the call to
-<B><A HREF="ug_interface_lb.html#LB_Balance">LB_Balance</A></B> if
-the <B>AUTO_MIGRATE</B> parameter to TRUE (nonzero) via a call to
-<B><A HREF="ug_interface_lb.html#LB_Set_Param">LB_Set_Param</A></B>.
-Alternatively, the application can leave <B>AUTO_MIGRATE</B> FALSE
-and call <B><A HREF="#LB_Help_Migrate">LB_Help_Migrate</A></B> itself.
-In either case, <A HREF="ug_query_mig.html#Migration-Help Query Functions">
-routines to pack and unpack object data</A> must be provided by the application.
-See <A HREF="ug_examples_mig.html#Migration Example">Migration Example</A>
-for an example using auto-migration.
+If requested, Zoltan can automatically transfer an application's data between
+processors to realize the new decomposition. This functionality will be
+performed as part of the call to <B><A HREF="ug_interface_lb.html#LB_Balance">LB_Balance</A></B>
+if the <B><A HREF="ug_alg.html#General_Parameters">AUTO_MIGRATE</A></B>
+parameter is set to TRUE (nonzero) via a call to <B><A HREF="ug_interface_lb.html#LB_Set_Param">LB_Set_Param</A></B>.
+Alternatively, the application can leave <B><A HREF="ug_alg.html#General_Parameters">AUTO_MIGRATE</A></B>
+FALSE and call <B><A HREF="#LB_Help_Migrate">LB_Help_Migrate</A></B> itself.
+In either case, <A HREF="ug_query_mig.html#Migration-Help Query Functions">routines
+to pack and unpack object data</A> must be provided by the application.
+See <A HREF="ug_examples_mig.html#Migration Example">Migration Examples</A>
+for examples with and without auto-migration.
 
-The functions are the migration-help interface functions. Their 
-detailed descriptions can be found below.
-<BLOCKQUOTE>
-    <B><A HREF="#LB_Compute_Destinations">LB_Compute_Destinations</A></B>
+<P>The following functions are the migration-help interface functions.
+Their detailed descriptions can be found below.
+<BLOCKQUOTE><B><A HREF="#LB_Compute_Destinations">LB_Compute_Destinations</A></B>
 <BR><B><A HREF="#LB_Help_Migrate">LB_Help_Migrate</A></B></BLOCKQUOTE>
 
-<P>
 <HR WIDTH="100%">
 <TABLE WIDTH="100%" NOSAVE >
 <TR NOSAVE>
@@ -50,7 +47,7 @@ detailed descriptions can be found below.
 <B>LB_Struct</B> * <I>lb</I>, int <I>num_import</I>,<B> LB_GID </B>* <I>import_global_ids</I>,
 <B>LB_LID</B> * <I>import_local_ids</I>,&nbsp; int * <I>import_procs</I>,
 int * <I>num_export</I>, <B>LB_GID</B> ** <I>export_global_ids</I>, <B>LB_LID</B>
-** <I>export_local_ids</I>, int ** <I>export_procs</I>);&nbsp;&nbsp;
+** <I>export_local_ids</I>, int ** <I>export_procs</I>);&nbsp;
 <BR>&nbsp;</TD>
 </TR>
 
@@ -69,7 +66,7 @@ export_procs</I>)&nbsp;
 <BR>INTEGER(LB_INT), POINTER, DIMENSION(:) :: import_procs, export_procs&nbsp;
 
 <P>&lt;<I>type-gid</I>> can be either INTEGER(LB_INT) or TYPE(LB_GID)&nbsp;
-<BR>&lt;<I>type-lid</I>> can be either INTEGER(LB_INT) or TYPE(LB_LID)&nbsp;&nbsp;</TD>
+<BR>&lt;<I>type-lid</I>> can be either INTEGER(LB_INT) or TYPE(LB_LID)&nbsp;</TD>
 </TR>
 </TABLE>
 

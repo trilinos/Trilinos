@@ -37,13 +37,11 @@ routines.
 <TR NOSAVE>
 <TD NOSAVE><A NAME="Init Example Fig"></A><TT>/* Initialize the LB library
 */</TT>&nbsp;
-<BR><TT>double lb_params[LB_MAX_PARAMS_SIZE];</TT>&nbsp;
 <BR><TT>struct LB_Struct *lb;</TT>&nbsp;
 <BR><TT>float version;</TT>&nbsp;
 <BR><TT>...</TT>&nbsp;
 <BR><TT><A HREF="ug_interface_init.html#LB_Initialize">LB_Initialize</A>(argc,
-argv, &amp;version);</TT>&nbsp;
-<BR><TT><A HREF="ug_interface_init.html#LB_Initialize_Params_Array">LB_Initialize_Params_Array</A>(&amp;(lb_params[0]));</TT>&nbsp;
+argv, &amp;version);</TT>&nbsp;&nbsp;
 <BR><TT>lb = <A HREF="ug_interface_init.html#LB_Create_Object">LB_Create_Object</A>(MPI_COMM_WORLD);</TT></TD>
 </TR>
 

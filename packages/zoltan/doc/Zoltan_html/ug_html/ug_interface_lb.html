@@ -1,7 +1,7 @@
 <HTML>
 <HEAD>
    <META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-1">
-   <META NAME="GENERATOR" CONTENT="Mozilla/4.04 [en] (X11; U; SunOS 5.6 sun4m) [Netscape]">
+   <META NAME="GENERATOR" CONTENT="Mozilla/4.04 [en] (X11; U; SunOS 4.1.3_U1 sun4m) [Netscape]">
    <TITLE>Zoltan User's Guide:  Interface</TITLE>
 <!
   ------------------------
@@ -319,12 +319,11 @@ IDs of processors that will own the exported objects in the new decomposition
 <TR NOSAVE>
 <TD VALIGN=TOP NOSAVE>C:</TD>
 
-<TD><A NAME="LB_Free_Data"></A>void <B>LB_Eval</B>(struct <B>LB_struct
-*</B><I>lb</I>, int <I>print_stats</I>, int <I>vwgt_dim</I>, int <I>ewgt_dim</I>,
-int *<I>nobj</I>, float *o<I>bj_wgt</I>, int *<I>cut_wgt</I>, int *<I>nboundary</I>,
-int *<I>nadj</I>, int *<I>ierr</I>);
-
-<P>&nbsp;</TD>
+<TD><A NAME="LB_Eval"></A>void <B>LB_Eval</B>(struct <B>LB_struct *</B><I>lb</I>,
+int <I>print_stats</I>, int <I>vwgt_dim</I>, int <I>ewgt_dim</I>, int *<I>nobj</I>,
+float *o<I>bj_wgt</I>, int *<I>cut_wgt</I>, int *<I>nboundary</I>, int
+*<I>nadj</I>, int *<I>ierr</I>);&nbsp;
+<BR>&nbsp;</TD>
 </TR>
 
 <TR NOSAVE>
@@ -335,7 +334,7 @@ int *<I>nadj</I>, int *<I>ierr</I>);
 </TABLE>
 
 <HR WIDTH="100%"><B>LB_Eval </B>evaluates the quality of the load balance
-in the load balance object pointed to by <I>lb</I>. Some quality metrics
+in the load-balance object pointed to by <I>lb</I>. Some quality metrics
 are only available if the graph query functions have been registered. <B>LB_Eval
 </B>may either print a summary of the results to <I>stdout</I> or return
 the results in the output parameters.
@@ -402,14 +401,14 @@ processor.</TD>
 <TR>
 <TD>&nbsp;&nbsp;&nbsp; <I>nadj</I></TD>
 
-<TD>Upon return,&nbsp; the number of adjacent processors as defined by the
-communication graph.</TD>
+<TD>Upon return,&nbsp; the number of adjacent processors as defined by
+the communication graph.</TD>
 </TR>
 
 <TR>
 <TD>&nbsp;&nbsp;&nbsp; <I>ierr</I></TD>
 
-<TD>Upon return, an error code.</TD>
+<TD>Upon return, an <A HREF="ug_interface.html#Error Codes">error code</A>.</TD>
 </TR>
 
 <TR>
@@ -432,39 +431,37 @@ communication graph.</TD>
 </TR>
 
 <TR VALIGN=TOP NOSAVE>
-<TD><B>Query functions:</B>
+<TD><B>Query functions:</B>&nbsp;
 <BR>&nbsp;&nbsp;&nbsp;&nbsp; Required:</TD>
 
-<TD NOSAVE>
-
-<P>LB_NUM_OBJ_FN&nbsp;
-<BR>LB_OBJ_LIST_FN or LB_FIRST_OBJ_FN/LB_NEXT_OBJ_FN</TD>
+<TD NOSAVE>&nbsp;
+<BR><A HREF="ug_query_lb.html#LB_NUM_OBJ_FN">LB_NUM_OBJ_FN</A>
+<BR><A HREF="ug_query_lb.html#LB_OBJ_LIST_FN">LB_OBJ_LIST_FN</A> or <A HREF="ug_query_lb.html#LB_FIRST_OBJ_FN">LB_FIRST_OBJ_FN</A>/<A HREF="ug_query_lb.html#LB_NEXT_OBJ_FN">LB_NEXT_OBJ_FN</A></TD>
 </TR>
 
 <TR VALIGN=TOP NOSAVE>
 <TD>&nbsp;&nbsp;&nbsp;&nbsp; Optional:</TD>
 
-<TD NOSAVE>LB_NUM_EDGES_FN
-<BR>LB_EDGE_LIST_FN</TD>
+<TD NOSAVE><A HREF="ug_query_lb.html#LB_NUM_EDGES">LB_NUM_EDGES_FN</A>&nbsp;
+<BR><A HREF="ug_query_lb.html#LB_EDGE_LIST_FN">LB_EDGE_LIST_FN</A></TD>
 </TR>
 </TABLE>
+An output parameter is returned only if the input value of that parameter
+was not NULL. (An exception is that the error code is always returned.)
+The rationale for this feature is that if one wishes just to print the
+evaluation results, one can simply set all (or some of) the output parameters
+to NULL in the function call.
 
 <P>
-An output parameter is only returned if the input value of that
-parameter was not NULL. (Except that the error code is always returned.)
-The rationale for this feature is that if one wishes just to print the 
-evaluation results, one can simply set all (or some of) the output
-parameters to NULL in the function call.
-
 <HR WIDTH="100%">
 <TABLE WIDTH="100%" NOSAVE >
 <TR NOSAVE>
 <TD VALIGN=TOP NOSAVE>C:</TD>
 
-<TD><A NAME="LB_Eval"></A>int <B>LB_Free_Data</B>(<B>LB_GID</B> ** <I>import_global_ids</I>,
-<B>LB_LID</B> ** <I>import_local_ids</I>, int ** <I>import_procs</I>, <B>LB_GID
-</B>** <I>export_global_ids</I>, <B>LB_LID</B> ** <I>export_local_ids</I>,
-int ** <I>export_procs</I>);&nbsp;
+<TD><A NAME="LB_Free_Data"></A>int <B>LB_Free_Data</B>(<B>LB_GID</B> **
+<I>import_global_ids</I>, <B>LB_LID</B> ** <I>import_local_ids</I>, int
+** <I>import_procs</I>, <B>LB_GID </B>** <I>export_global_ids</I>, <B>LB_LID</B>
+** <I>export_local_ids</I>, int ** <I>export_procs</I>);&nbsp;
 <BR>&nbsp;</TD>
 </TR>
 

@@ -12,14 +12,12 @@
   $Date$
   $Revision$
 >
-
 </HEAD>
 <BODY BGCOLOR="#FFFFFF">
 
 <DIV ALIGN=right>
 <H3>
-<IMG SRC="figures/ug_header.gif" ALT="Zoltan User's Guide">
-</H3></DIV>
+<IMG SRC="figures/ug_header.gif" ALT="Zoltan User's Guide" ></H3></DIV>
 
 <H2>
 <A NAME="Migration-Help Query Functions"></A>Migration-Help Query Functions</H2>
@@ -29,10 +27,9 @@ tools described in <A HREF="ug_interface_mig.html">Migration-Help Functions</A>:
 <BR><B><A HREF="#LB_PACK_OBJ_FN">LB_PACK_OBJ_FN</A></B>
 <BR><B><A HREF="#LB_UNPACK_OBJ_FN">LB_UNPACK_OBJ_FN</A></B></BLOCKQUOTE>
 Optional, additional query functions for migration-help may also be registered:
-<BLOCKQUOTE><B><A HREF="#LB_PRE_MIGRATE_FN">LB_PRE_MIGRATE_FN</A></B></BLOCKQUOTE>
+<BLOCKQUOTE><B><A HREF="#LB_PRE_MIGRATE_FN">LB_PRE_MIGRATE_FN</A></B>
+<BR><B><A HREF="#LB_POST_MIGRATE_FN">LB_POST_MIGRATE_FN</A></B></BLOCKQUOTE>
 
-
-<P>
 <HR WIDTH="100%"><A NAME="LB_OBJ_SIZE_FN"></A>typedef int <B>LB_OBJ_SIZE_FN</B>(void
 *<I> data</I>,<I> </I>int<I> *ierr</I>);&nbsp;
 <HR WIDTH="100%">An <B>LB_OBJ_SIZE_FN</B> query function returns the size
@@ -80,9 +77,7 @@ This assumption may be relaxed in future releases of the library.
 <TD>The size (in bytes) of the required data buffer.</TD>
 </TR>
 </TABLE>
-
-
-<P>&nbsp;
+&nbsp;
 
 <P>
 <HR WIDTH="100%"><A NAME="LB_PRE_MIGRATE_FN"></A>typedef void <B>LB_PRE_MIGRATE_FN</B>(void
@@ -192,11 +187,117 @@ destination processors.</TD>
 <TD>No pre-processing is done if an <B>LB_PRE_MIGRATE_FN</B> is not registered.</TD>
 </TR>
 </TABLE>
+&nbsp;
+<BR>
+<HR WIDTH="100%"><A NAME="LB_POST_MIGRATE_FN"></A>typedef void <B>LB_POST_MIGRATE_FN</B>(void
+*<I> data</I>, int <I>num_import</I>, <B>LB_GID </B>*<I> import_global_ids</I>,
+<B>LB_LID</B> *<I> import_local_ids</I>, int *<I> import_procs</I>, int
+<I>num_export</I>, <B>LB_GID </B>*<I> export_global_ids</I>, <B>LB_LID
+</B>*<I> export_local_ids</I>, int *<I> export_procs</I>,<I> </I>int<I>
+*ierr</I>);&nbsp;
+<HR WIDTH="100%">An <B>LB_POST_MIGRATE_FN</B> query function performs any
+post-processing desired by the application. If it is registered, it is
+called at the end of the <B><A HREF="ug_interface_mig.html#LB_Help_Migrate">LB_Help_Migrate</A></B>
+routine. The arguments passed to <B><A HREF="ug_interface_mig.html#LB_Help_Migrate">LB_Help_Migrate</A></B>
+are made available for use in the post-processing routine.
+<BR>&nbsp;
+<TABLE WIDTH="100%" >
+<TR>
+<TD VALIGN=TOP WIDTH="20%"><B>Function Type:</B></TD>
 
+<TD><B>LB_POST_MIGRATE_FN_TYPE</B></TD>
+</TR>
 
-<P>&nbsp;
+<TR>
+<TD VALIGN=TOP><B>Parameters:</B></TD>
 
-<P>
+<TD></TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; data</I></TD>
+
+<TD>Pointer to user-defined data.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; num_import</I></TD>
+
+<TD>The number of objects that will be received by this processor.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; import_global_ids</I></TD>
+
+<TD>An array of size <I>num_import</I> listing the global IDs of objects
+to be received by this processor. This array may be NULL, as the processor
+does not necessarily need to know which objects it will receive.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; import_local_ids</I></TD>
+
+<TD>An array of size <I>num_import</I> listing the local IDs of objects
+to be received by this processor. This array may be NULL, as the processor
+does not necessarily need to know which objects it will receive.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; import_procs</I></TD>
+
+<TD>An array of size <I>num_import</I> listing the processor IDs of the
+source processors. This array may be NULL, as the processor does not necessarily
+need to know from which processors it will be receiving objects.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; num_export</I></TD>
+
+<TD>The number of objects that will be sent from this processor to other
+processors.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; export_global_ids</I></TD>
+
+<TD>An array of size <I>num_export</I> listing the global IDs of objects
+to be sent from this processor.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; export_local_ids</I></TD>
+
+<TD>An array of size <I>num_export</I> listing the local IDs of objects
+to be sent from this processor.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; export_procs</I></TD>
+
+<TD>An array of size <I>num_export</I> listing the processor IDs of the
+destination processors.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; ierr</I></TD>
+
+<TD>Error code to be set by function.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><B>Default:</B></TD>
+
+<TD></TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP></TD>
+
+<TD>No post-processing is done if an <B>LB_POST_MIGRATE_FN</B> is not registered.</TD>
+</TR>
+</TABLE>
+&nbsp;
+<BR>
 <HR WIDTH="100%"><A NAME="LB_PACK_OBJ_FN"></A>typedef void <B>LB_PACK_OBJ_FN</B>(void
 *<I> data</I>, <B>LB_GID</B> <I>global_id</I>, <B>LB_LID</B><I>local_id</I>,
 int <I>dest_proc</I>, int <I>size</I>, char *<I> buf</I>,<I> </I>int<I>
@@ -270,9 +371,7 @@ data should be packed.</TD>
 <TD>Error code to be set by function.</TD>
 </TR>
 </TABLE>
-
-
-<P>&nbsp;
+&nbsp;
 
 <P>
 <HR WIDTH="100%"><A NAME="LB_UNPACK_OBJ_FN"></A>typedef void <B>LB_UNPACK_OBJ_FN</B>(void
@@ -333,9 +432,7 @@ buffer.</TD>
 <TD>Error code to be set by function.</TD>
 </TR>
 </TABLE>
-
-
-<P>&nbsp;
+&nbsp;
 
 <P>
 <HR WIDTH="100%">[<A HREF="ug.html">Table of Contents</A>&nbsp; |&nbsp;

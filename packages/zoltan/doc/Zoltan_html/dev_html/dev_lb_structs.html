@@ -1,7 +1,7 @@
 <HTML>
 <HEAD>
    <META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-1">
-   <META NAME="GENERATOR" CONTENT="Mozilla/4.04 [en] (X11; U; SunOS 5.6 sun4m) [Netscape]">
+   <META NAME="GENERATOR" CONTENT="Mozilla/4.04 [en] (X11; U; SunOS 4.1.3_U1 sun4m) [Netscape]">
    <TITLE> Zoltan Developer's Guide:  Load Balancing</TITLE>
 <!
   ------------------------
@@ -100,10 +100,9 @@ for different LB objects to have different parameter settings.</TD>
 <TR>
 <TD VALIGN=TOP>double <I>Imbalance_Tol</I></TD>
 
-<TD>The degree of load balance which is considered acceptable.
-A value of 0.1 implies a 10% imbalance is acceptable, i.e. that the maximum
-load over the average should be less than 1.1.  Set via a call to
-<B><A HREF="dev_util_params.html#LB_Set_Param">LB_Set_Param</A></B>.</TD>
+<TD>The degree of load balance which is considered acceptable. A value
+of 0.1 implies a 10% imbalance is acceptable, i.e. that the maximum load
+over the average should be less than 1.1. Set via a call to <B><A HREF="dev_util_params.html#LB_Set_Param">LB_Set_Param</A></B>.</TD>
 </TR>
 
 <TR>
@@ -320,7 +319,7 @@ and are used in <B><A HREF="../ug_html/ug_interface_mig.html#LB_Help_Migrate">LB
 The fields of the <B>LB_Migrate</B> structure are listed and described
 in in the following <A HREF="#Migrate_Fields">table</A>.
 <BR>&nbsp;
-<CENTER><TABLE BORDER WIDTH="90%" >
+<CENTER><TABLE BORDER WIDTH="90%" NOSAVE >
 <TR>
 <TH><A NAME="Migrate_Fields"></A>Fields of LB_Migrate</TH>
 
@@ -328,13 +327,13 @@ in in the following <A HREF="#Migrate_Fields">table</A>.
 </TR>
 
 <TR>
-<TD VALIGN=TOP>int <I>Help_Migrate</I></TD>
+<TD VALIGN=TOP>int <I>Auto_Migrate</I></TD>
 
 <TD>A flag indicating whether the load-balancing library should perform
 auto-migration for the application. If true, the load-balancing library
 calls <B><A HREF="../ug_html/ug_interface_mig.html#LB_Help_Migrate">LB_Help_Migrate</A></B>
 to move objects to their new processors; if false, data migration is left
-to the user. Set in <B><A HREF="../ug_html/ug_interface_mig.html#LB_Help_Migrate">LB_Help_Migrate</A></B>.</TD>
+to the user. Set in <B><A HREF="dev_util_params.html#LB_Set_Param">LB_Set_Param</A></B>.</TD>
 </TR>
 
 <TR>
@@ -351,6 +350,21 @@ before data migration is performed. Set in <B><A HREF="../ug_html/ug_interface_i
 
 <TD>A pointer to data provided by the user that will be passed to the function
 pointed to by <I>Pre_Process</I>. Set in <B><A HREF="../ug_html/ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</A></B>.</TD>
+</TR>
+
+<TR NOSAVE>
+<TD VALIGN=TOP NOSAVE><A HREF="../ug_html/ug_query_mig.html#LB_POST_MIGRATE_FN">LB_POST_MIGRATE_FN</A>&nbsp;*<I>Post_Process</I></TD>
+
+<TD>A pointer to an application-registered function that performs post-processing
+for data migration. The function is called by <B><A HREF="../ug_html/ug_interface_mig.html#LB_Help_Migrate">LB_Help_Migrate</A></B>
+after data migration is performed. Set in <B><A HREF="../ug_html/ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</A></B>.</TD>
+</TR>
+
+<TR NOSAVE>
+<TD VALIGN=TOP NOSAVE>void *<I>Post_Process_Data</I></TD>
+
+<TD>A pointer to data provided by the user that will be passed to the function
+pointed to by <I>Post_Process</I>.&nbsp; Set in <B><A HREF="../ug_html/ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</A></B>.&nbsp;</TD>
 </TR>
 
 <TR>

@@ -1,7 +1,7 @@
 <HTML>
 <HEAD>
    <META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-1">
-   <META NAME="GENERATOR" CONTENT="Mozilla/4.04 [en] (X11; U; IRIX 6.2 IP22) [Netscape]">
+   <META NAME="GENERATOR" CONTENT="Mozilla/4.04 [en] (X11; U; SunOS 4.1.3_U1 sun4m) [Netscape]">
    <TITLE> Zoltan Developer's Guide: Using Test Driver - zdrive</TITLE>
 <!
   ------------------------
@@ -20,7 +20,7 @@
 <IMG SRC="figures/dev_header.gif" ALT="Zoltan Developer's Guide" ></H3></DIV>
 
 <H2>
-<A NAME="Zdrive"></A>Appendix: Using Test Driver - <I>zdrive</I></H2>
+<A NAME="Zdrive"></A>Appendix: Using the Test Driver - <I>zdrive</I></H2>
 
 <H3>
 <A NAME="Introduction"></A>Introduction</H3>
@@ -28,22 +28,19 @@ In order to facilitate development and testing of the Zoltan library, a
 simple driver program, <I>zdrive</I>,&nbsp; is included with the library
 distribution. The concept behind this driver is to read in mesh or graph
 information from files, run Zoltan, and then output the new assignments
-for each processor to another file. Because it is widely used Sandia applications,
-the first version of the test driver reads ExodusII/NemesisI parallel FEM
-files. Parallel NemesisI files can be created from ExodusII or Genesis
-file using the NemesisI utilities <I>nem_slice</I> and <I>nem_spread</I>.
-Future versions will have the ability to read Chaco graph and geometry
-files as well.
+for each processor to another file. The test driver reads ExodusII/NemesisI
+parallel FEM files and Chaco input files. Parallel NemesisI files can be
+created from ExodusII or Genesis file using the NemesisI utilities <I>nem_slice</I>
+and <I>nem_spread</I>.
 
 <P>All source code for the driver is in the <I>driver/</I> directory of
 the DLB distribution. In order to compile the test driver for a specific
 platform, use the following command:
-
-<P>gmake &lt;platform>-dr
-
-<P>Where &lt;platform> is the target OS platform. Currently, the supported
-platforms are <I>sun</I>, <I>tflop</I> and <I>smos</I>. The driver will
-be placed in the OBJ_&lt;platform>/ directory.
+<UL>gmake [options] &lt;platform>-dr</UL>
+where &lt;platform> is the target OS platform and the options are described
+below. Currently, the supported platforms are <I>sun</I> (for Solaris)<I>,
+sunos</I> (for SunOS<I>), tflop, cplant, </I>and <I>smos</I>. The driver
+<I>zdrive</I> will be placed in the Obj_&lt;platform>/ directory.
 <H3>
 <A NAME="running zdrive"></A>Running <I>zdrive</I></H3>
 Zdrive is run using an input command file. A fully commented example of
@@ -57,9 +54,8 @@ Paragon sipapu, see the <A HREF="#zdrive input">figure</A> below. In this
 problem, there are four parallel mesh files named <I>testa.par.4.0</I>...
 <I>testa.par.4.3</I>, and they reside in the directories <I>pfs/io_01...
 io_04/mmstjohn/</I> respectively. The method being used for dynamic load
-balancing is <A HREF="dev_rcb.html#RCB">RCB</A>, and the tolerance is 0.9.
-All of the parameters are set to defaults by Zoltan since none are set
-in the input file.
+balancing is <A HREF="dev_rcb.html#RCB">RCB</A>. All of the parameters
+are set to defaults by Zoltan since none are set in the input file.
 <BR>&nbsp;
 <CENTER><TABLE BORDER=2 COLS=1 WIDTH="90%" NOSAVE >
 <TR>
@@ -69,7 +65,7 @@ in the input file.
 = number=4,zeros&nbsp;
 <BR>Parallel File Location&nbsp;&nbsp;&nbsp; = root=/pfs/io_, subdir=mmstjohn&nbsp;
 
-<P>Decomposition Info&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; = method=RCB, tol=0.9</TD>
+<P>Decomposition Info&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; = method=RCB</TD>
 </TR>
 
 <CAPTION ALIGN=BOTTOM><I><FONT SIZE=-1>example zdrive.inp file</FONT></I></CAPTION>
@@ -86,73 +82,7 @@ The driver has been set up in such a way that testing new algorithms that
 have been added to Zoltan is relatively simple. The method that is in the
 input file is passed directly to Zoltan. So, this string must be the same
 string that the library function <A HREF="../ug_html/ug_interface_lb.html#LB_Set_Method">LB_Set_Method
-</A>is expecting. In order to check the input and set some internal flags,
-information about the load-balance algorithms must be added to the <I>check_inp()</I>
-routine in the file <I>driver/dr_input.c</I>. In this function, there are
-the following lines:
-<BR>&nbsp;
-<CENTER><TABLE BORDER=2 COLS=1 WIDTH="90%" NOSAVE >
-<TR NOSAVE>
-<TD NOSAVE>/*+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/&nbsp;
-<BR>/*&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-Check the Zoltan specifications&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-*/&nbsp;
-<BR>/*+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/&nbsp;
-<BR>&nbsp; /*&nbsp;
-<BR>&nbsp;&nbsp; * check the method being used, and determine what needs
-to&nbsp;
-<BR>&nbsp;&nbsp; * be read in and generated to support it&nbsp;
-<BR>&nbsp;&nbsp; *&nbsp;
-<BR>&nbsp;&nbsp; * A new section needs to be added for every new load balancing&nbsp;
-<BR>&nbsp;&nbsp; * algorithm added to Zoltan.&nbsp;
-<BR>&nbsp;&nbsp; */&nbsp;
-<BR>&nbsp; if (strlen(prob->method) == 0) {&nbsp;
-<BR>&nbsp;&nbsp;&nbsp; Gen_Error(0, "fatal: load balance method must be
-specified");&nbsp;
-<BR>&nbsp;&nbsp;&nbsp; return 0;&nbsp;
-<BR>&nbsp; }&nbsp;
-
-<P>&nbsp; if (strcasecmp(prob->method, "RCB") == 0) {&nbsp;
-<BR>&nbsp;&nbsp;&nbsp; prob->read_coord = 1;&nbsp;
-<BR>&nbsp;&nbsp;&nbsp; prob->gen_graph = 0;&nbsp;
-<BR>&nbsp; }&nbsp;
-<BR>&nbsp; else if (strcasecmp(prob->method, "OCTPART") == 0) {&nbsp;
-<BR>&nbsp;&nbsp;&nbsp; prob->read_coord = 1;&nbsp;
-<BR>&nbsp;&nbsp;&nbsp; prob->gen_graph = 0;&nbsp;
-<BR>&nbsp; }&nbsp;
-<BR>&nbsp; /*&nbsp;
-<BR>&nbsp;&nbsp; * Add information about new methods here&nbsp;
-<BR>&nbsp;&nbsp; */&nbsp;
-<BR>&nbsp; else {&nbsp;
-<BR>&nbsp;&nbsp;&nbsp; sprintf(cmesg, "fatal: unknown loadbalance method,
-%s", prob->method);&nbsp;
-<BR>&nbsp;&nbsp;&nbsp; Gen_Error(0, cmesg);&nbsp;
-<BR>&nbsp;&nbsp;&nbsp; return 0;&nbsp;
-<BR>&nbsp; }&nbsp;
-<BR>....</TD>
-</TR>
-
-<CAPTION ALIGN=BOTTOM><I><FONT SIZE=-1>code segment from dr_input.c</FONT></I></CAPTION>
-</TABLE></CENTER>
-
-
-<P>A new <I>if-else </I>statement must be added for each new algorithm.
-Where the two flags that are set are:
-
-<P>prob->read_coord =&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 1 - This method requires
-that zdrive read in or calculate coordinates for each element.
-<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-0 - This method does not require coordinates.
-<BR>prob->gen_graph&nbsp; =&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 1 - A graph must
-be generated or read in for this method.
-<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-0 - No graph is required for this method.
-
-<P>In addition to these changes, any changes or additions to the callback
-functions must be made. All of the callback function in the driver are
-located in the file, <I>dr_loadbal.c</I>. NOTE: Currently, only geometric
-algorithms are supported in Zoltan, so only callback functions needed for
-geometric algorithms are currently written in <I>dr_loadbal.c</I>.
+</A>is expecting.
 
 <P>
 <HR WIDTH="100%">

@@ -12,14 +12,12 @@
   $Date$
   $Revision$
 >
-
 </HEAD>
 <BODY BGCOLOR="#FFFFFF">
 
 <DIV ALIGN=right>
 <H3>
-<IMG SRC="figures/dev_header.gif" ALT="Zoltan Developer's Guide">
-</H3></DIV>
+<IMG SRC="figures/dev_header.gif" ALT="Zoltan Developer's Guide" ></H3></DIV>
 
 <H2>
 <A NAME="Memory"></A>Memory Management Utilities</H2>
@@ -27,9 +25,8 @@ Several memory allocation and deallocation routines are provided in the
 load-balancing library. They are defined in the file <I>all/all_allo.c</I>;
 their prototypes for inclusion in other files are in <I>all/all_allo_const.h</I>.
 The use of these routines is not mandatory in algorithm development, but
-the routines provide helpful error-checking and
-<A HREF="#Debug_Memory"> debugging capabilities</A>,
-and the use of them is strongly suggested.
+the routines provide helpful error-checking and <A HREF="#Debug_Memory">debugging
+capabilities</A>, and the use of them is strongly suggested.
 
 <P>The routines included in the utility are listed below.
 <BLOCKQUOTE><B><A HREF="#LB_Array_Alloc">LB_Array_Alloc</A></B>:&nbsp;
@@ -38,8 +35,8 @@ Allocates arrays of dimension <I>n</I>, <I>n</I>=0,1,...,4
 malloc.
 <BR><B><A HREF="#LB_Realloc">LB_Realloc</A></B>:&nbsp; Wrapper for system
 realloc.
-<BR><B><A HREF="#LB_Free">LB_Free</A></B>:&nbsp; Frees memory
-and sets the pointer to NULL.</BLOCKQUOTE>
+<BR><B><A HREF="#LB_Free">LB_Free</A></B>:&nbsp; Frees memory and sets
+the pointer to NULL.</BLOCKQUOTE>
 
 <HR><A NAME="LB_Array_Alloc"></A>double *<B>LB_Array_Alloc</B>(char *<I>
 file</I>, int <I>line</I>, int <I>n</I>, int <I>d1</I>, int <I>d2</I>,
@@ -48,10 +45,10 @@ file</I>, int <I>line</I>, int <I>n</I>, int <I>d1</I>, int <I>d2</I>,
 
 <P>The <B>LB_Array_Alloc</B> routine dynamically allocates an array of
 dimension <I>n</I>, <I>n </I>= 0, 1, ..., 4 with size (<I>d1</I> x <I>d2</I>
-x ... x <I>dn</I>).  It is intended to be used for 2, 3 and 4 dimensional
-arrays - <B>LB_Malloc</B> should be used for the simpler cases.  The memory
-allocated by <B>LB_Array_Alloc</B> is contiguous, and can be freed by
-a single call to <B>LB_Free</B>.
+x ... x <I>dn</I>). It is intended to be used for 2, 3 and 4 dimensional
+arrays - <B>LB_Malloc</B> should be used for the simpler cases. The memory
+allocated by <B>LB_Array_Alloc</B> is contiguous, and can be freed by a
+single call to <B>LB_Free</B>.
 <BR>&nbsp;
 <TABLE WIDTH="100%" >
 <TR VALIGN=TOP>
@@ -128,26 +125,23 @@ or NULL if the allocation fails.</TD>
 <TD>Allocates a two-dimensional, 5x6-element array of integers.</TD>
 </TR>
 </TABLE>
-
-
-<P>&nbsp;
+&nbsp;
 
 <P>
-<HR><A NAME="LB_Malloc"></A>double *<B>LB_Malloc</B>(int <I>n</I>,
-char *<I> file</I> , int <I>line</I>);&nbsp;
+<HR><A NAME="LB_Malloc"></A>double *<B>LB_Malloc</B>(int <I>n</I>, char
+*<I> file</I> , int <I>line</I>);&nbsp;
 <HR>
 
 <P>The <B>LB_Malloc</B> function is a wrapper around the standard C malloc
-routine. It allocates a block of memory of size <I>n</I> bytes.
-The principle advantage of using the wrapper is that it allows you
-to track memory leaks via the DEBUG_MEMORY parameter.
+routine. It allocates a block of memory of size <I>n</I> bytes. The principle
+advantage of using the wrapper is that it allows you to track memory leaks
+via the DEBUG_MEMORY parameter.
 
 <P>A macro <B>LB_MALLOC</B> is defined in <I>all/all_allo_const.h</I>.
 It takes the argument <I>n</I>, and adds the <I>__FILE__</I> and <I>__LINE__</I>
 macros to the argument list of the <B>LB_Malloc</B> call:
-<BLOCKQUOTE>#define&nbsp;&nbsp;&nbsp; <B>LB_MALLOC</B>(<I>n</I>)
-&nbsp;&nbsp;&nbsp; <B>LB_Malloc</B>((<I>n</I>),
-<I>__FILE__</I>, <I>__LINE__</I>)</BLOCKQUOTE>
+<BLOCKQUOTE>#define&nbsp;&nbsp;&nbsp; <B>LB_MALLOC</B>(<I>n</I>)&nbsp;&nbsp;&nbsp;&nbsp;
+<B>LB_Malloc</B>((<I>n</I>), <I>__FILE__</I>, <I>__LINE__</I>)</BLOCKQUOTE>
 Using this macro, the developer gains the file and line debugging information
 without having to type file and line information in each memory allocation
 call.
@@ -213,9 +207,7 @@ returned if <I>n</I> = 0 or the routine is unsuccessful.</TD>
 <TD>Allocates memory for one <B>LB_Struct</B> data structure.&nbsp;</TD>
 </TR>
 </TABLE>
-
-
-<P>&nbsp;
+&nbsp;
 
 <P>
 <HR><A NAME="LB_Realloc"></A>double *<B>LB_Realloc</B>(void *<I>ptr</I>,
@@ -232,10 +224,8 @@ space is available to be allocated are performed.
 It takes the arguments <I>ptr</I> and <I>n</I>, and adds the <I>__FILE__</I>
 and <I>__LINE__</I> macros to the argument list of the <B>LB_Realloc</B>
 call:
-<BLOCKQUOTE>#define&nbsp;&nbsp;&nbsp;
-<B>LB_REALLOC</B>(<I>ptr</I>, <I>n</I>)&nbsp;&nbsp;&nbsp;
-<B>LB_Realloc</B>((<I>ptr</I>),
-(<I>n</I>), <I>__FILE__</I>, <I>__LINE__</I>)</BLOCKQUOTE>
+<BLOCKQUOTE>#define&nbsp;&nbsp;&nbsp; <B>LB_REALLOC</B>(<I>ptr</I>, <I>n</I>)&nbsp;&nbsp;&nbsp;
+<B>LB_Realloc</B>((<I>ptr</I>), (<I>n</I>), <I>__FILE__</I>, <I>__LINE__</I>)</BLOCKQUOTE>
 Using this macro, the developer gains the file and line debugging information
 without having to type file and line information in each memory allocation
 call.
@@ -308,30 +298,26 @@ routine is unsuccessful, NULL is returned and *<I>ptr</I> is unchanged.</TD>
 <TD>Reallocates memory for <I>b</I> from length <I>n</I> to length 2*<I>n</I>.&nbsp;</TD>
 </TR>
 </TABLE>
-
-
-<P>&nbsp;
+&nbsp;
 
 <P>
-<HR><A NAME="LB_Free"></A>void <B>LB_Free</B>(void **<I>ptr</I>,
-char *<I> file</I> , int <I>line</I>);&nbsp;
+<HR><A NAME="LB_Free"></A>void <B>LB_Free</B>(void **<I>ptr</I>, char *<I>
+file</I> , int <I>line</I>);&nbsp;
 <HR>
 
-<P>The <B>LB_Free</B> function calls the system's "free" function
-for the memory pointed to by <I>*ptr</I>.  Note that the argument to
-this routine has an extra level of indirection when compared to the
-standard C "free" call.  This allows the pointer being freed to be
-set to NULL, which can help find errors in which a pointer is used
-after it is deallocated.  Error checking is performed to prevent
-attempts to free NULL pointers.  When <B>LB_Free</B> is used with the
-DEBUG_MEMORY options, it can help identify memory leaks.
+<P>The <B>LB_Free</B> function calls the system's "free" function for the
+memory pointed to by <I>*ptr</I>. Note that the argument to this routine
+has an extra level of indirection when compared to the standard C "free"
+call. This allows the pointer being freed to be set to NULL, which can
+help find errors in which a pointer is used after it is deallocated. Error
+checking is performed to prevent attempts to free NULL pointers. When <B>LB_Free</B>
+is used with the DEBUG_MEMORY options, it can help identify memory leaks.
 
-<P>A macro <B>LB_FREE</B> is defined in <I>all/all_allo_const.h</I>.
-It takes the argument <I>ptr</I>, and adds the <I>__FILE__</I> and <I>__LINE__</I>
+<P>A macro <B>LB_FREE</B> is defined in <I>all/all_allo_const.h</I>. It
+takes the argument <I>ptr</I>, and adds the <I>__FILE__</I> and <I>__LINE__</I>
 macros to the argument list of the <B>LB_Free</B> call:
-<BLOCKQUOTE>#define&nbsp;&nbsp;&nbsp; <B>LB_FREE</B>(<I>ptr</I>)
-&nbsp;&nbsp;&nbsp; <B>LB_Free</B>((void **)(<I>ptr</I>),
-<I>__FILE__</I>, <I>__LINE__</I>)</BLOCKQUOTE>
+<BLOCKQUOTE>#define&nbsp;&nbsp;&nbsp; <B>LB_FREE</B>(<I>ptr</I>)&nbsp;&nbsp;&nbsp;&nbsp;
+<B>LB_Free</B>((void **)(<I>ptr</I>), <I>__FILE__</I>, <I>__LINE__</I>)</BLOCKQUOTE>
 Using this macro, the developer gains the file and line debugging information
 without having to type file and line information in each memory allocation
 call.
@@ -370,30 +356,27 @@ is NULL.</TD>
 </TR>
 </TABLE>
 
-<P>
-<HR>
-<A NAME="Debug_Memory"></A><H3><B>Debugging Memory Errors:</B></H3>
-The principle reason that Zoltan has wrappers around the system
-memory routines is to facilitate debugging of memory problems.
-These capabilities are supported by the <B>DEBUG_MEMORY</B> parameter
-whose value can be altered via the <A HREF="dev_util_params.html#Set_Param">
-LB_Set_Param</A> routine.  Valid values for this integer parameter
-range from 0 through 3.  A value of 0 turns off all debugging.  With
-a value of 1 (the default), the number of calls to <B>LB_Malloc</B>
-and the number of calls to <B>LB_Free</B> are tallied, and can be
-printed by call to <B>LB_Memory_Stats</B> (type void, no arguments).
-If <B>DEBUG_MEMORY</B> is 2, then Zoltan keeps a list of all
-calls to <B>LB_Malloc</B> which have not yet been freed.  This
-list is outputed by a call to <B>LB_Memory_Stats</B>.  This is a
-useful tool for detecting memory leaks.  Also, any calls to
-<B>LB_Free</B> with addresses not in this list trigger warning
-messages.  (Note that allocations which occurred prior to setting
-<B>DEBUG_MEMORY</B> to 2 will not be in this list and so can
-generate spurious warnings.)  If additional information is needed,
-then a value for <B>DEBUG_MEMORY</B> of 3 also prints information
-about each allocation as it happens.  We have found values of 1 and
-2 to be very helpful in our development efforts.
-
+<HR><A NAME="Debug_Memory"></A>
+<H3>
+<B>Debugging Memory Errors</B></H3>
+The principle reason that Zoltan has wrappers around the system memory
+routines is to facilitate debugging of memory problems. These capabilities
+are supported by the <B>DEBUG_MEMORY</B> parameter whose value can be altered
+via the <A HREF="dev_util_params.html#Set_Param">LB_Set_Param</A> routine.
+Valid values for this integer parameter range from 0 through 3. A value
+of 0 turns off all debugging. With a value of 1 (the default), the number
+of calls to <B>LB_Malloc</B> and the number of calls to <B>LB_Free</B>
+are tallied, and can be printed by call to <B>LB_Memory_Stats</B> (type
+void, no arguments). If <B>DEBUG_MEMORY</B> is 2, then Zoltan keeps a list
+of all calls to <B>LB_Malloc</B> which have not yet been freed. This list
+is outputed by a call to <B>LB_Memory_Stats</B>. This is a useful tool
+for detecting memory leaks. Also, any calls to <B>LB_Free</B> with addresses
+not in this list trigger warning messages. (Note that allocations which
+occurred prior to setting <B>DEBUG_MEMORY</B> to 2 will not be in this
+list and so can generate spurious warnings.) If additional information
+is needed, then a value for <B>DEBUG_MEMORY</B> of 3 also prints information
+about each allocation as it happens. We have found values of 1 and 2 to
+be very helpful in our development efforts.&nbsp;
 <HR WIDTH="100%">
 <BR>[<A HREF="dev.html">Table of Contents</A>&nbsp; |&nbsp; <A HREF="dev_util_params.html">Next:&nbsp;
 Parameter Setting Routines</A>&nbsp; |&nbsp; <A HREF="dev_util.html">Previous:&nbsp;

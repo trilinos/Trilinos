@@ -1,7 +1,7 @@
 <HTML>
 <HEAD>
    <META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-1">
-   <META NAME="GENERATOR" CONTENT="Mozilla/4.04 [en] (X11; U; SunOS 5.6 sun4m) [Netscape]">
+   <META NAME="GENERATOR" CONTENT="Mozilla/4.04 [en] (X11; U; SunOS 4.1.3_U1 sun4m) [Netscape]">
    <TITLE>Zoltan User's Guide:  Algorithms</TITLE>
 <!
   ------------------------
@@ -23,29 +23,24 @@
 <A NAME="Algorithms"></A>Algorithms</H2>
 The following dynamic load-balancing algorithms are currently included
 in the Zoltan library:
-<BLOCKQUOTE>
-    <A HREF="ug_alg_rcb.html#RCB">Recursive Coordinate Bisection (RCB)</A>
+<BLOCKQUOTE><A HREF="ug_alg_rcb.html#RCB">Recursive Coordinate Bisection
+(RCB)</A>
 <BR><A HREF="ug_alg_parmetis.html">ParMETIS (PARMETIS)</A>
-<BR><A HREF="ug_alg_oct.html#Octree">Octree Partitioning (OCTPART)</A>
-</BLOCKQUOTE>
-The parenthetical string is the input argument for
-<B><A HREF="ug_interface_lb.html#LB_Set_Method">LB_Set_Method</A></B>
-to enable the corresponding method.  
-For further analysis and discussion of the algorithms, see
-[<A HREF="ug_refs.html#hendrickson-devine">Hendrickson and Devine</A>].
-The behavior of each method is controlled
-by several parameters which can be set by calls to
-<B><A HREF="ug_interface_lb.html#LB_Set_Param">LB_Set_Param</A></B>.
+<BR><A HREF="ug_alg_oct.html#Octree">Octree Partitioning (OCTPART)</A></BLOCKQUOTE>
+The parenthetical string is the input argument for <B><A HREF="ug_interface_lb.html#LB_Set_Method">LB_Set_Method</A></B>
+to enable the corresponding method. For further analysis and discussion
+of the algorithms, see [<A HREF="ug_refs.html#hendrickson-devine">Hendrickson
+and Devine</A>].
+
+<P>The behavior of each method is controlled by several parameters which
+can be set by calls to <B><A HREF="ug_interface_lb.html#LB_Set_Param">LB_Set_Param</A></B>.
 Although many of the parameters are specific to individual partitioning
-algorithms, several have meaning across multiple algorithms.  These
-more general parameters include the following.
+algorithms, several have meaning across multiple algorithms. These more
+general parameters include the following.
 <BR>&nbsp;
-
-
 <TABLE WIDTH="100%" NOSAVE >
-
 <TR>
-<TD><B>General Parameters:</B></TD>
+<TD><A NAME="General_Parameters"></A><B>General Parameters:</B></TD>
 
 <TD></TD>
 </TR>
@@ -54,40 +49,33 @@ more general parameters include the following.
 <TD VALIGN=TOP>&nbsp;&nbsp;&nbsp; <I>IMBALANCE_TOL</I></TD>
 
 <TD>The amount of load imbalance the partitioning algorithm should deem
-acceptable.  The load on each processor is computed as the sum of the
-weights of vertices it is assigned.  The imbalance is then computed
-as the maximum load divided by the average load.  An value for
-IMBALANCE_TOL of .2 indicates that 20% imbalance is OK; that is the
-max over the average shouldn't exceed 1.2.
-</TD></TR>
-<TR>
-
-<TD></TD>
+acceptable. The load on each processor is computed as the sum of the weights
+of objects it is assigned. The imbalance is then computed as the maximum
+load divided by the average load. An value for IMBALANCE_TOL of .2 indicates
+that 20% imbalance is OK; that is, the max over the average shouldn't exceed
+1.2.&nbsp;</TD>
 </TR>
 
 <TR>
 <TD VALIGN=TOP>&nbsp;&nbsp;&nbsp; <I>AUTO_MIGRATE</I></TD>
 
-<TD>If this value is set to TRUE (nonzero) then Zoltan will
-automatically perform the data migration 
-during calls to <B><A HREF="ug_interface_lb.html#LB_Balance">LB_Balance</A></B>.
+<TD>If this value is set to TRUE (nonzero) then Zoltan will automatically
+perform the data migration during calls to <B><A HREF="ug_interface_lb.html#LB_Balance">LB_Balance</A></B>.
 A full discussion of automatic migration can be found in the description
-of the <A HREF="ug_interface_mig.html">migration interface functions</A>.
-</TD></TR>
+of the <A HREF="ug_interface_mig.html">migration interface functions</A>.&nbsp;</TD>
+</TR>
 
 <TR>
 <TD VALIGN=TOP>&nbsp;&nbsp;&nbsp; <I>KEEP_CUTS</I></TD>
 
-<TD>The recursive geometric partitioning algorithms have the nice
-property that each processor owns a portion of the global geometric
-space.  With this geometric decompsition, it is possible to determine
-which processor a new object should be assigned to via the 
-<B><A HREF="ug_interface_augment.html#LB_Point_Assign">LB_Point_Assign</A></B>
+<TD>The recursive geometric partitioning algorithms have the nice property
+that each processor owns a portion of the global geometric space. With
+this geometric decomposition, it is possible to determine which processor
+a new object should be assigned to via the <B><A HREF="ug_interface_augment.html#LB_Point_Assign">LB_Point_Assign</A></B>
 or <B><A HREF="ug_interface_augment.html#LB_Box_Assign">LB_Box_Assign</A></B>
-functions.  If you intend to use these functions, then information about
-the geometric partitioning must be retained by setting KEEP_CUTS to 1.
-</TD></TR>
-
+functions. If you intend to use these functions, then information about
+the geometric partitioning must be retained by setting KEEP_CUTS to 1.&nbsp;</TD>
+</TR>
 
 <TR>
 <TD VALIGN=TOP><B>Default:</B></TD>
@@ -112,11 +100,8 @@ the geometric partitioning must be retained by setting KEEP_CUTS to 1.
 
 <TD><I>KEEP_CUTS</I> = 0</TD>
 </TR>
-
 </TABLE>
 
-
-<P>
 <HR WIDTH="100%">[<A HREF="ug.html">Table of Contents</A>&nbsp; |&nbsp;
 <A HREF="ug_alg_rcb.html">Next:&nbsp; Recursive Coordinate Bisection (RCB)</A>&nbsp;
 |&nbsp; <A HREF="ug_query_mig.html">Previous:&nbsp; Migration-Help Query

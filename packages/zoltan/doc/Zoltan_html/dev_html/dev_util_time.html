@@ -1,7 +1,7 @@
 <HTML>
 <HEAD>
    <META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-1">
-   <META NAME="GENERATOR" CONTENT="Mozilla/4.04 [en] (X11; U; SunOS 5.6 sun4m) [Netscape]">
+   <META NAME="GENERATOR" CONTENT="Mozilla/4.04 [en] (X11; U; SunOS 4.1.3_U1 sun4m) [Netscape]">
    <TITLE> Zoltan Developer's Guide:  Utilities</TITLE>
 <!
   ------------------------
@@ -38,7 +38,7 @@ calls MPI_Wtime.
 <BR><I>cpu</I>&nbsp; : cpu time.&nbsp; On most systems, this timer calls
 the ANSI C function clock(). Note that this timer may roll over at just
 36 minutes. LB_Time attempts to keep track of the number of roll-overs
-but this feature will only work if LB_Time is called at least once during
+but this feature will work only if LB_Time is called at least once during
 every period between roll-overs.</BLOCKQUOTE>
 The default value of <I>TIMER</I> is <I>wall</I>. The timer setting is
 global. Consequently, one cannot use different timers for different load-balancing
@@ -51,7 +51,7 @@ objects.
 <P><B>LB_Time</B> returns the time in seconds, measured from some fixed
 reference time. Note that the time is <I>not </I>synchronized among different
 processors or processes. The time may be either CPU time or wall-clock
-time. The timer is selected through <B>LB_Set_Param</B>.
+time. The timer is selected through <B><A HREF="../ug_html/ug_interface_lb.html#LB_Set_Param">LB_Set_Param</A></B>.
 <BR>&nbsp;
 <TABLE WIDTH="100%" >
 <TR VALIGN=TOP>
@@ -132,8 +132,8 @@ zero is returned.</TD>
 <BR>LB_Print_Stats(lb, t2-t0, "Total time :");</UL>
 
 <HR WIDTH="100%">
-<BR>[<A HREF="dev.html">Table of Contents</A>&nbsp;
-|&nbsp; <A HREF="dev_add.html">Next:&nbsp; Adding New Load-Balancing Algorithms</A>
-|&nbsp; <A HREF="dev_util_parallel.html">Previous:&nbsp; Parallel Utilities</A>]
+<BR>[<A HREF="dev.html">Table of Contents</A>&nbsp; |&nbsp; <A HREF="dev_add.html">Next:&nbsp;
+Adding New Load-Balancing Algorithms</A> |&nbsp; <A HREF="dev_util_parallel.html">Previous:&nbsp;
+Parallel Utilities</A>]
 </BODY>
 </HTML>
