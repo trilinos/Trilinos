@@ -592,6 +592,8 @@ double ML_Operator_MaxNorm(ML_Operator *matrix, int divide_diag)
    }
    ML_free(val);
    ML_free(bindx);
+   largest = ML_Comm_GmaxDouble(matrix->comm, largest);
+
    return largest;
 }
 
