@@ -182,14 +182,16 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
     minproc = ML_gmax_int((minrows == Pe->outvec_leng ? Pe->comm->ML_mypid:0),
                            Pe->comm);
 
-    /*
+/*
     if (Pe->getrow->pre_comm != NULL) {
        ML_CommInfoOP_Compute_TotalRcvLength(Pe->getrow->pre_comm);
-       printf("(level %d, pid %d) Ke: Total receive length = %d\n",
-              fine_level, Pe->comm->ML_mypid,
-              Pe->getrow->pre_comm->total_rcv_length);
+       if (ML_Get_PrintLevel() > 0) {
+         printf("(level %d, pid %d) Ke: Total receive length = %d\n",
+                fine_level, Pe->comm->ML_mypid,
+                Pe->getrow->pre_comm->total_rcv_length);
+       }
     }
-    */
+*/
 
     if (ml_edges->comm->ML_mypid==0 && ML_Get_PrintLevel() > 0)
       printf("(level %d) Ke: Global nonzeros = %d, global rows = %d, avg num neighbors = %e, largest num of rows = %d (pid %d), smallest num of rows = %d (pid %d)\n",
@@ -225,15 +227,17 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
     minproc = ML_gmax_int((minrows == Pe->outvec_leng ? Pe->comm->ML_mypid:0),
                            Pe->comm);
 
-    /*
+/*
     if (Pe->getrow->pre_comm != NULL) {
        ML_CommInfoOP_Compute_TotalRcvLength(Pe->getrow->pre_comm);
-       printf("(level %d, pid %d) Kn: Total receive length = %d\n",
-              fine_level, Pe->comm->ML_mypid,
-              Pe->getrow->pre_comm->total_rcv_length);
-       fflush(stdout);
+       if (ML_Get_PrintLevel() > 0) {
+         printf("(level %d, pid %d) Kn: Total receive length = %d\n",
+                fine_level, Pe->comm->ML_mypid,
+                Pe->getrow->pre_comm->total_rcv_length);
+         fflush(stdout);
+      }
     }
-    */
+*/
 
     if (ml_edges->comm->ML_mypid==0 && ML_Get_PrintLevel() > 0)
       printf("(level %d) Kn: Global nonzeros = %d, global rows = %d, avg num neighbors = %e, num active proc = %d, largest num of rows = %d (pid %d), smallest num of rows = %d (pid %d)\n",
@@ -538,15 +542,17 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
         minproc = ML_gmax_int((minrows == Pe->outvec_leng ? Pe->comm->ML_mypid:0),
                            Pe->comm);
 
-        /*
+/*
         if (Pe->getrow->pre_comm != NULL) {
           ML_CommInfoOP_Compute_TotalRcvLength(Pe->getrow->pre_comm);
-          printf("(level %d, pid %d) Kn: Total receive length = %d\n",
-                 grid_level, Pe->comm->ML_mypid,
-                 Pe->getrow->pre_comm->total_rcv_length);
-          fflush(stdout);
+          if (ML_Get_PrintLevel() > 5) {
+            printf("(level %d, pid %d) Kn: Total receive length = %d\n",
+                   grid_level, Pe->comm->ML_mypid,
+                   Pe->getrow->pre_comm->total_rcv_length);
+            fflush(stdout);
+          }
         }
-        */
+*/
 
         /* printf("level %d) pid %d owns %d rows of Kn\n",grid_level, Pe->comm->ML_mypid, Pe->outvec_leng); */
 
@@ -1471,10 +1477,12 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
 /*
         if (Pe->getrow->pre_comm != NULL) {
           ML_CommInfoOP_Compute_TotalRcvLength(Pe->getrow->pre_comm);
-          printf("(level %d, pid %d) Ke before repart: Total receive length = %d\n",
-                 grid_level, Pe->comm->ML_mypid,
-                 Pe->getrow->pre_comm->total_rcv_length);
-          fflush(stdout);
+          if (ML_Get_PrintLevel() > 0) {
+            printf("(level %d, pid %d) Ke before repart: Total receive length = %d\n",
+                   grid_level, Pe->comm->ML_mypid,
+                   Pe->getrow->pre_comm->total_rcv_length);
+            fflush(stdout);
+          }
         }
 */
 
@@ -1593,10 +1601,12 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
 /*
         if (Pe->getrow->pre_comm != NULL) {
           ML_CommInfoOP_Compute_TotalRcvLength(Pe->getrow->pre_comm);
-          printf("(level %d, pid %d) Ke after repart: Total receive length = %d\n",
+          if (ML_Get_PrintLevel() > 0) {
+            printf("(level %d, pid %d) Ke after repart: Total receive length = %d\n",
                  grid_level, Pe->comm->ML_mypid,
                  Pe->getrow->pre_comm->total_rcv_length);
-          fflush(stdout);
+            fflush(stdout);
+          }
         }
 */
 
