@@ -56,7 +56,7 @@ void ML_matmat_mult(ML_Operator *Amatrix, ML_Operator *Bmatrix,
    int    *Bptr, *Bcols;
    int *col_inds, B_total_Nnz, itemp, B_allocated, hash_val, *accum_index, lots_of_space;
    int rows_that_fit, rows_length, *rows, NBrows, end, start = 0;
-   int subB_Nnz;
+   int subB_Nnz, Next_est, total_cols = 0;
    double t1,t6;
 
    t1 = GetClock();
@@ -102,11 +102,35 @@ void ML_matmat_mult(ML_Operator *Amatrix, ML_Operator *Bmatrix,
       Bmatrix->max_nz_per_row = Bmatrix->getrow->Nrows;
    /********************************************************/
 
-   /* how big is the biggest row in the resulting */
+   /*********************************************************/
+   /* Count the number of external variables. Unfortunately */
+   /* ML_exch_row() does not properly put the correct       */
+   /* communication information ... and so this is just an  */
+   /* estimate of how many externals there are.             */
+   /* ------------------------------------------------------*/
 
-   accum_size = Bmatrix->invec_leng + 1;
-   if (Bmatrix->getrow->pre_comm != NULL) 
-      accum_size += Bmatrix->getrow->pre_comm->total_rcv_length;
+   current = Bmatrix;
+   Next_est = 0;
+   while(current != NULL) {
+      if (current->getrow->pre_comm != NULL) {
+         Next_est += current->getrow->pre_comm->total_rcv_length;
+      }
+      current = current->sub_matrix;
+   }
+
+   /* Estimate the total number of columns in Bmatrix. Actually,  */
+   /* we need a crude estimate. We will use twice this number for */
+   /* hashing the columns. Once we are finished hashing columns   */
+   /* we will count the number of columns and revise the estimate */
+   /* for the number of externals and increase the size of the    */
+   /* accumulator if needed.                                      */
+   /* ----------------------------------------------------------- */
+
+   accum_size = Bmatrix->invec_leng + 75;
+   accum_size += 3*Next_est;
+           /* the '3' above is a total kludge. the problem is that we   */
+           /* need to know the number of neighbors in the external rows */
+           /* and this is annoying to compute */
 
    /**************************************************************************/
    /* allocate space to hold a single row of Amatrix and the accumulator     */
@@ -212,11 +236,14 @@ void ML_matmat_mult(ML_Operator *Amatrix, ML_Operator *Bmatrix,
    }
    else B_total_Nnz = Bmatrix->N_nonzeros;
 
-   Ncols = Bmatrix->invec_leng + 1;
-   if (Bmatrix->getrow->pre_comm != NULL) 
-      Ncols += Bmatrix->getrow->pre_comm->total_rcv_length;
-
    index_length = 2*accum_size;
+   dtemp = 2.*((double) accum_size);
+   while (index_length < 0 ) { /* overflow */
+     dtemp *= 1.7;
+     index_length = (int) dtemp;
+   }
+
+
    accum_index  = (int *) ML_allocate(index_length*sizeof(int));
    col_inds     = (int *) ML_allocate(index_length*sizeof(int));
 
@@ -267,14 +294,13 @@ if ((lots_of_space < 4) && (B_allocated > 500)) Bvals = NULL; else
 
    Bptr[0] = 0;
    if (lots_of_space) {
-   for (i = 0; i < Bmatrix->getrow->Nrows; i++ ) {
-      Bgetrow(Bmatrix, 1, &i, &B_allocated, &Bcols, &Bvals, &row2_N, itemp);
-      itemp += row2_N;
-      Bptr[i+1] = itemp;
+     for (i = 0; i < Bmatrix->getrow->Nrows; i++ ) {
+       Bgetrow(Bmatrix, 1, &i, &B_allocated, &Bcols, &Bvals, &row2_N, itemp);
+       itemp += row2_N;
+       Bptr[i+1] = itemp;
+     }
+     subB_Nnz = itemp;
    }
-   subB_Nnz = itemp;
-   }
-
 
    if (!lots_of_space) {
       NBrows = 0;
@@ -285,20 +311,20 @@ if ((lots_of_space < 4) && (B_allocated > 500)) Bvals = NULL; else
 		       &rows, &rows_length, &NBrows,
 			 &rows_that_fit, Agetrow);
 
-  jj = 0;
-  itemp = 0;
-  ML_az_sort(rows, NBrows, NULL, NULL);
-  for (i = 0; i < Bmatrix->getrow->Nrows; i++ ) {
-     if (rows[jj] == i) {
-        jj++;
-	k = B_allocated;
-        Bgetrow(Bmatrix, 1, &i, &B_allocated, &Bcols, &Bvals, &row2_N, itemp);
-        itemp += row2_N;
-     }
-     Bptr[i+1] = itemp;
+      jj = 0;
+      itemp = 0;
+      ML_az_sort(rows, NBrows, NULL, NULL);
+      for (i = 0; i < Bmatrix->getrow->Nrows; i++ ) {
+	if (rows[jj] == i) {
+	  jj++;
+	  k = B_allocated;
+	  Bgetrow(Bmatrix,1, &i, &B_allocated, &Bcols, &Bvals, &row2_N, itemp);
+	  itemp += row2_N;
+	}
+	Bptr[i+1] = itemp;
+      }
+      subB_Nnz = itemp;
    }
-   subB_Nnz = itemp;
-}
 
    for (i = 0; i < index_length; i++) accum_index[i] = -1;
    for (i = 0; i < index_length; i++) col_inds[i] = -1;
@@ -308,6 +334,26 @@ if ((lots_of_space < 4) && (B_allocated > 500)) Bvals = NULL; else
      col_inds[hash_val] = Bcols[i];
      Bcols[i] = hash_val;
    }
+
+   /* Count how many columns there are, record the number of   */
+   /* columns and change the size of the accumulator if needed */
+
+   jj = 0;
+   for (i = 0; i < index_length; i++) { 
+      if (col_inds[i] == -1) jj++;
+   }
+   total_cols += (index_length - jj);
+   if (accum_size < total_cols) {
+      ML_free(accum_col);
+      ML_free(accum_val);
+      accum_size = total_cols + 1;
+      accum_col = (int *) ML_allocate(accum_size*sizeof(int));
+      accum_val = (double *) ML_allocate(accum_size*sizeof(double));
+      if (accum_val == NULL) 
+	pr_error("ML_matmat_mult: no room for accumulator\n");
+   }
+
+
 
    /**************************************************************************/
    /* Perform the matrix-matrix multiply operation by computing one new row  */
@@ -424,7 +470,7 @@ if ((lots_of_space < 4) && (B_allocated > 500)) Bvals = NULL; else
    ML_free(A_i_vals);
    ML_free(A_i_cols);
    t6 = GetClock();
-   printf("matmat  ==> %e\n", t6-t1);
+   printf("matmat  ==> %e   %d\n", t6-t1,Bmatrix->comm->ML_mypid); fflush(stdout);
 
    /* create 'parent' object corresponding to the resulting matrix */
 
@@ -444,6 +490,9 @@ if ((lots_of_space < 4) && (B_allocated > 500)) Bvals = NULL; else
    (*Cmatrix)->sub_matrix     = previous_matrix;
    if (A_i_allocated-1 > Amatrix->max_nz_per_row) 
       Amatrix->max_nz_per_row = A_i_allocated;
+   (*Cmatrix)->getrow->pre_comm = ML_CommInfoOP_Create();
+   (*Cmatrix)->getrow->pre_comm->total_rcv_length = total_cols - 
+                                                    Bmatrix->invec_leng;
 
 }
 
