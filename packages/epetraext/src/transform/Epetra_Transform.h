@@ -8,6 +8,9 @@
 #ifdef HAVE_CONFIG_H
 
 #undef PACKAGE
+#undef PACKAGE_NAME
+#undef PACKAGE_STRING
+#undef PACKAGE_TARNAME
 
 #include <EpetraExt_config.h>
 
