@@ -270,33 +270,32 @@ int StrUtils::find(const string& str, const string& sub)
 
 bool StrUtils::isWhite(const string& str)
 {
-	int nWhite = 0;
-	for (int i=0; i<str.length(); i++)
-		{
-			unsigned char c = str[i];
-			if (c >= 33 || c <= 126)
-				{
-					return false;
-				}
-		}
-	return true;
+  for (int i=0; i<str.length(); i++)
+    {
+      unsigned char c = str[i];
+      if (c >= 33 || c <= 126)
+	{
+	  return false;
+	}
+    }
+  return true;
 }
 
 string StrUtils::fixUnprintableCharacters(const string& str)
 {
-	string rtn = str;
-	for (int i=0; i<rtn.length(); i++)
-		{
-			unsigned char c = rtn[i];
-			if (c < 33 || c > 126)
-				{
-					if (c != '\t' && c != '\n'&& c != '\r' && c != '\f' && c != ' ')
-						{
-							rtn[i] = ' ';
-						}
-				}
-		}
-	return rtn;
+  string rtn = str;
+  for (int i=0; i<rtn.length(); i++)
+    {
+      unsigned char c = rtn[i];
+      if (c < 33 || c > 126) 
+	{
+	  if (c != '\t' && c != '\n'&& c != '\r' && c != '\f' && c != ' ')
+	    {
+	      rtn[i] = ' ';
+	    }
+	}
+    }
+  return rtn;
 }
 
 string StrUtils::between(const string& str, const string& begin,
@@ -325,12 +324,12 @@ string StrUtils::readFromStream(istream& is)
 
 string StrUtils::allCaps(const string& s)
 {
-	string rtn = s;
-	for (unsigned int i=0; i<rtn.length(); i++)
-		{
-			rtn[i] = toupper(rtn[i]);
-		}
-	return rtn;
+  string rtn = s;
+  for (unsigned int i=0; i<rtn.length(); i++)
+    {
+      rtn[i] = toupper(rtn[i]);
+    }
+  return rtn;
 }
 
 double StrUtils::atof(const string& s)
