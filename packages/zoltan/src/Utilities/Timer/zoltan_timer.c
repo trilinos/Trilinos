@@ -125,6 +125,34 @@ int i;
 }
 
 /****************************************************************************/
+int Zoltan_Timer_Copy(ZTIMER **to, ZTIMER *from)
+{
+  ZTIMER *new = NULL;
+  int nrecs;
+
+  if (from) {
+    new = (ZTIMER *) ZOLTAN_MALLOC(sizeof(ZTIMER));
+    nrecs = from->Length;
+
+    if (nrecs > 0){
+      new->Times = (ZTIMER_TS *) ZOLTAN_MALLOC(sizeof(ZTIMER_TS) * nrecs);
+      memcpy(new->Times, from->Times, sizeof(ZTIMER_TS) * nrecs);
+    }
+    else {
+      new->Times = NULL;
+    }
+    
+    new->Timer_Flag = from->Timer_Flag;
+    new->NextTimeStruct = from->NextTimeStruct;
+    new->Length = nrecs;
+  }
+
+  *to = new;
+
+  return ZOLTAN_OK;
+}
+
+/****************************************************************************/
 int Zoltan_Timer_Init(
   ZTIMER *zt,           /* Ptr to Timer object */
   int use_barrier,      /* Flag indicating whether to perform a 

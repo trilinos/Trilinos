@@ -42,6 +42,7 @@ struct Zoltan_Timer;
 
 struct Zoltan_Timer *Zoltan_Timer_Create(int);
 int Zoltan_Timer_Init(struct Zoltan_Timer *, int, char *);
+int Zoltan_Timer_Copy(struct Zoltan_Timer **to, struct Zoltan_Timer *from);
 int Zoltan_Timer_Reset(struct Zoltan_Timer *, int, int, char*);
 int Zoltan_Timer_ChangeFlag(struct Zoltan_Timer *, int);
 int Zoltan_Timer_Start(struct Zoltan_Timer *, int, MPI_Comm, char *, int);
