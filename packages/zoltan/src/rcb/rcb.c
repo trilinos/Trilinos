@@ -654,24 +654,20 @@ static int rcb(
 
   *num_import = dotnum - dottop;
   if (*num_import > 0) {
-    *import_global_ids = (LB_GID *) LB_Malloc((*num_import)*sizeof(LB_GID),
-        __FILE__, __LINE__);
-    if (!(*import_global_ids))
+    if (!LB_Special_Malloc(lb,(void **)import_global_ids,*num_import,
+                           LB_SPECIAL_MALLOC_GID))
       RCB_error(lb, *num_import*sizeof(LB_GID));
-    *import_local_ids  = (LB_LID *) LB_Malloc((*num_import)*sizeof(LB_LID),
-        __FILE__, __LINE__);
-    if (!(*import_local_ids)) {
-      LB_FREE(import_global_ids);
+    if (!LB_Special_Malloc(lb,(void **)import_local_ids,*num_import,
+                           LB_SPECIAL_MALLOC_LID)) {
+      LB_Special_Free(lb,(void **)import_global_ids,LB_SPECIAL_MALLOC_GID);
       RCB_error(lb, *num_import*sizeof(LB_LID));
-    }
-    *import_procs      = (int *) LB_Malloc((*num_import)*sizeof(int),
-        __FILE__, __LINE__);
-    if (!(*import_procs)) {
-      LB_FREE(import_global_ids);
-      LB_FREE(import_local_ids);
+}
+    if (!LB_Special_Malloc(lb,(void **)import_procs,*num_import,
+                           LB_SPECIAL_MALLOC_INT)) {
+      LB_Special_Free(lb,(void **)import_global_ids,LB_SPECIAL_MALLOC_GID);
+      LB_Special_Free(lb,(void **)import_local_ids,LB_SPECIAL_MALLOC_LID);
       RCB_error(lb, *num_import*sizeof(int));
     }
-
 
     for (i = 0; i < *num_import; i++) {
       ii = i + dottop;
