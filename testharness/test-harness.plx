@@ -714,7 +714,7 @@ report($SUMMARY);
             close COMPONENT;      
         } else {
             my $message = "";
-            $message .= "$options{'TRILINOS_DIR'}[0]/testharness/elements-machine";
+            $message .= "$options{'TRILINOS_DIR'}[0]/testharness/elements-trilinos";
             $message .= "/$options{'TRILINOS_CONFIG_FILE'}[0] does not exist\n";
             report($FILE_SYSTEM_ERROR, $message);
             printEvent($message);
