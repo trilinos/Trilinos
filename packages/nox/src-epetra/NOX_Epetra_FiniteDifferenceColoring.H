@@ -57,7 +57,7 @@ namespace Epetra {
   
 Currently, only a serial implementation of this class is available.
 
-The Jacobian entries are calculated via 1st order finite differencing.  This requires \f$ N  + 1 \f$ calls to computeF() where \f$ N \f$ is the number of colors.
+The Jacobian entries are calculated via 1st or 2nd order finite differencing.  This requires \f$ N  + 1 \f$ or \f$ 2N + 1 \f$ calls to computeF(), respectively, where \f$ N \f$ is the number of colors.
 
   \f[ J_{ij} = \frac{\partial F_i}{\partial x_j} = \frac{F_i(x+\delta\mathbf{e}_j) - F_i(x)}{\delta}  \f]
 
@@ -67,12 +67,17 @@ Coloring is based on a user-supplied color map generated using an appropriate
 algorithm, eg greedy-algorithm - Y. Saad, Iterative Methods for Sparse
 Linear Systems.
 
-  Because several problem degrees of freedom are perturbed at the same time, ie all having the same color attribute, the perturbation, \f$ \delta \f$, is simply specified as a constant value with a default value of 1.0e-6. More flexible choices which can improve accuracy of the perturbation values such as used in FiniteDifference are yet to be implemented.
+The perturbation, \f$ \delta \f$, is calculated using the following equation:
 
-  Since this inherits from the Epetra_RowMatrix class, it can be used as the preconditioning matrix for AztecOO preconditioners.  This method is more efficient
-than that employed in FiniteDifference by reducing the number of function evaluations from \f$ N_{dof} + 1 \f$ to \f$ N + 1 \f$ where \f$ N_{dof} \f$ is the
-total number of problem degres of fredom.
+\f[ \delta = \alpha * | x_j | + \beta \f]
+
+where \f$ \alpha \f$ is a scalar value (defaults to 1.0e-4) and \f$ \beta \f$ is another scalar (defaults to 1.0e-6).  
+
+  Since this inherits from the Epetra_RowMatrix class, it can be used as the preconditioning matrix for AztecOO preconditioners.  This method is more efficient than that employed in FiniteDifference by reducing for 1st order approximations the number of function evaluations from \f$ N_{dof} + 1 \f$ to \f$ N + 1 \f$ where \f$ N_{dof} \f$ is the total number of problem degres of fredom.  This relative savings in computational cost also applies to 2nd order approximation.
+
+As for FiniteDifference, 1st order Forward and Backward differences as well as 2nd order Centered difference can be specified using setDifferenceMethod with the appropriate enumerated type passed as the argument.
   */
+
 class FiniteDifferenceColoring : public FiniteDifference {
       
  public:
@@ -123,6 +128,9 @@ protected:
 
   //! Color vector based on Color Map containing perturbations
   Epetra_Vector* colorVect;
+
+  //! Color vector based on Color Map containing beta value(s)
+  Epetra_Vector* betaColorVect;
 
   //! Color vector based on unColorred Map containing perturbations
   Epetra_Vector mappedColorVect;

@@ -52,6 +52,7 @@ FiniteDifferenceColoring::FiniteDifferenceColoring(Interface& i,
   cMap(0),
   Importer(0),
   colorVect(0),
+  betaColorVect(0),
   mappedColorVect(x)
 {
   label = "NOX::FiniteDifferenceColoring Jacobian";
@@ -71,6 +72,7 @@ FiniteDifferenceColoring::FiniteDifferenceColoring(Interface& i,
   cMap(0),
   Importer(0),
   colorVect(0),
+  betaColorVect(0),
   mappedColorVect(x)
 {
   label = "NOX::FiniteDifferenceColoring Jacobian";
@@ -81,6 +83,7 @@ FiniteDifferenceColoring::~FiniteDifferenceColoring()
   delete cMap; cMap = 0;
   delete Importer; Importer = 0;
   delete colorVect; colorVect = 0;
+  delete betaColorVect; betaColorVect = 0;
 }
 
 bool FiniteDifferenceColoring::computeJacobian(const Epetra_Vector& x)
@@ -106,7 +109,7 @@ bool FiniteDifferenceColoring::computeJacobian(const Epetra_Vector& x, Epetra_Op
   Epetra_CrsMatrix& jac = *testMatrix->jacobian;
 
   // Zero out Jacobian
-  jac->PutScalar(0.0);
+  jac.PutScalar(0.0);
 
   // Create an extra perturbed residual vector pointer if needed
   if ( diffType == Centered )
@@ -120,9 +123,6 @@ bool FiniteDifferenceColoring::computeJacobian(const Epetra_Vector& x, Epetra_Op
   if ( diffType == Backward )
     scaleFactor = -1.0;
 
-  double eta = 0.0;  // Value to perturb the solution vector 
-  eta = beta;
-  
   int min = map.MinAllGID();  // Minimum Global ID value
   int max = map.MaxAllGID();  // Maximum Global ID value
   int myMin = map.MinMyGID(); // Minimum Local ID value
@@ -137,13 +137,26 @@ bool FiniteDifferenceColoring::computeJacobian(const Epetra_Vector& x, Epetra_Op
   for (int k = 0; k < numColors; k++) {
 
     // Perturb the solution vector using coloring
+    
+    // ----- First create color map and assoc perturbation vectors
     cMap = colorMap->GenerateMap(colorList[k]);
     colorVect = new Epetra_Vector(*cMap);
+    betaColorVect = new Epetra_Vector(*cMap);
+    betaColorVect->PutScalar(beta);
+
+    // ----- Create Importer for this color
     Importer = new Epetra_Import(map, *cMap);
-    colorVect->PutScalar( scaleFactor * eta );
+
+    // ----- Fill colorVect with computed perturbation values
+    colorVect->Export(x, *Importer, Insert);
+    colorVect->Abs(*colorVect);
+    colorVect->Update(1.0, *betaColorVect, alpha);
+
+    // ----- Map perturbation vector to original index space 
+    // ----- and use it 
     mappedColorVect.PutScalar(0.0);
     mappedColorVect.Import(*colorVect, *Importer, Insert);
-    x_perturb.Update(1.0, mappedColorVect, 1.0);
+    x_perturb.Update(scaleFactor, mappedColorVect, 1.0);
 
     // Compute the perturbed RHS
     interface.computeF(x_perturb, fp, Interface::Jacobian);
@@ -154,19 +167,26 @@ bool FiniteDifferenceColoring::computeJacobian(const Epetra_Vector& x, Epetra_Op
     }
 
     // Compute the column k of the Jacobian
+    // Note that division by the perturbation is delayed until insertion below
     if ( diffType != Centered ) {
       Jc.Update(1.0, fp, -1.0, fo, 0.0);
-      Jc.Scale( 1.0/(scaleFactor * eta) );
     }
     else {
       Jc.Update(1.0, fp, -1.0, fm, 0.0);
-      Jc.Scale( 1.0/(2.0 * eta) );
     }
 
     // Insert nonzero column entries into the jacobian    
     for (int j = myMin; j < myMax+1; j++) {
       int globalColumnID = columns->operator[](k)[j];
       if( globalColumnID >= 0) { 
+
+        // Now complete the approximation to the derivative by dividing by
+        // the appropriate perturbation
+        if ( diffType != Centered ) 
+          Jc[map.LID(j)] /= (scaleFactor * mappedColorVect[globalColumnID]);
+        else
+          Jc[map.LID(j)] /= (2.0 * mappedColorVect[globalColumnID]);
+
 	int err = jac.ReplaceGlobalValues(j,1,&Jc[map.LID(j)],&globalColumnID);
         if(err) {
           cout << "ERROR: Inserting global value with indices (" << j << ","
@@ -177,6 +197,7 @@ bool FiniteDifferenceColoring::computeJacobian(const Epetra_Vector& x, Epetra_Op
 
     // Clean up memory for color-dependent objects
     delete Importer; Importer = 0;
+    delete betaColorVect; betaColorVect = 0;
     delete colorVect; colorVect = 0;
     delete cMap; cMap = 0;
 
