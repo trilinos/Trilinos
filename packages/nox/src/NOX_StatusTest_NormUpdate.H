@@ -47,7 +47,7 @@ namespace NOX {
 
 namespace StatusTest {
 
-//! Various convergence tests based on the norm of the change in the solution vector, \f$ x \f$ between outer iterations.
+//! Various convergence tests based on the norm of the change in the solution vector, \f$ x \f$, between outer iterations.
 /*! 
 
   Return \c StatusTest::Converged if \f$\alpha < \beta\f$ where \f$\alpha\f$
