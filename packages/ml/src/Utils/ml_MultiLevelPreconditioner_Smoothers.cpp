@@ -122,9 +122,9 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
   // cycle over all levels //
   // ===================== //
  
-  for( int level=0 ; level<SmootherLevels ; ++level ) {
+  for (int level = 0 ; level < SmootherLevels ; ++level) {
 
-    if(  verbose_ ) cout << endl;
+    if (verbose_) cout << endl;
 
     Time.ResetStartTime();
 
@@ -150,6 +150,17 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
 
     char msg[80];
     sprintf(msg,"Smoother (level %d) : ", LevelID_[level]);
+
+    { // minor information about matrix size on each level
+      int local[2];
+      int global[2];
+      local[0] = ml_->Amat[LevelID_[level]].invec_leng;
+      local[1] = ml_->Amat[LevelID_[level]].N_nonzeros;
+      Comm().SumAll(local,global,2);
+      if (verbose_)
+        cout << msg << "# global rows = " << local[0] 
+             << ", # global nonzeros = " << local[1] << endl;
+    }
 
     if( Smoother == "Jacobi" ) {
 
