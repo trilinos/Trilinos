@@ -1,0 +1,25 @@
+##############################################################################
+# Zoltan Dynamic Load-Balancing Library for Parallel Applications            #
+# Copyright (c) 2000, Sandia National Laboratories.                          #
+# For more info, see the README file in the top-level Zoltan directory.      # 
+##############################################################################
+##############################################################################
+# CVS File Information
+#    $RCSfile$
+#    $Author$
+#    $Date$
+#    $Revision$
+##############################################################################
+
+
+MEMORY UTILITIES   -- Routines for memory allocation and deallocation.
+----------------------------------------------------------------
+
+Files compiled into Zoltan:
+
+mem_const.h        -- Prototypes for memory allocation and deallocation
+                      routines in mem.c.  Definition of LB_MALLOC.
+
+mem.c              -- Memory allocation routines LB_array_alloc and LB_malloc.
+                      Memory deallocation routine LB_free.
+		      Parameter setting routing LB_Set_Malloc_Param.
