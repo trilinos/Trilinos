@@ -28,9 +28,24 @@
 // @HEADER
 */
 
-void	  init_seg(DATA_TYPE *seg, int seg_num);
-void	  init_rhs(DATA_TYPE *rhs, DATA_TYPE *seg, int seg_num);
-double    one_norm(DATA_TYPE *seg, int seg_num);
-double    inf_norm(DATA_TYPE *seg, int seg_num);
+
+#ifndef __INITH__
+#define __INITH__
+
+#include defines.h
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+void	  init_seg(DATA_TYPE *, int );
+void	  init_rhs(DATA_TYPE *, DATA_TYPE *, int );
+double    one_norm(DATA_TYPE * , int );
+double    inf_norm(DATA_TYPE *, int );
 double    init_eps(void);
-void      mat_vec(DATA_TYPE *seg, int seg_num, DATA_TYPE *vec);
+void      mat_vec(DATA_TYPE *, int , DATA_TYPE *);
+
+#ifdef __cplusplus
+}
+#endif 
+#endif
