@@ -1,0 +1,24 @@
+----
+Test NOX interface
+----
+Test the NOX.Parameter.List fake existence ... ok
+Test the NOX.Parameter.List float existence ... ok
+Test the NOX.Parameter.List float value ... ok
+Test the NOX.Parameter.List integer existence ... ok
+Test the NOX.Parameter.List integer value ... ok
+Test the NOX.Parameter.List string existence ... ok
+Test the NOX.Parameter.List string value ... ok
+Test the NOX.Parameter.List sublists ... ok
+Test the NOX.StatusTest.NormF getStatus method ... ok
+Test the NOX.StatusTest.Combo constructor with AND option ... ok
+Test the NOX.StatusTest.Combo constructor with OR option ... ok
+Test the NOX.StatusTest.FiniteValue getStatus method ... ok
+Test the NOX.StatusTest.MaxIters getStatus method ... ok
+Test the NOX.StatusTest.NormUpdate getStatus method ... ok
+Test the NOX.StatusTest.NormWRMS getStatus method ... ok
+Test the NOX.StatusTest.NormF getStatus method ... ok
+Test the NOX.StatusTest.Stagnate getStatus method ... ok
+
+----------------------------------------------------------------------
+
+OK
