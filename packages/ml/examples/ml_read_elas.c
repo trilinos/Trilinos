@@ -67,14 +67,14 @@ double *mode, *rigid;
 char filename[80];
 double alpha;
 int    one = 1;
-int allocated, *newbindx, offset, current, *block_list = NULL,  k, block;
+int allocated = 0, *newbindx, offset, current, *block_list = NULL,  k, block;
 double *newval;
 int old_prec, old_sol;
 double old_tol;
 double *Amode, beta, biggest;
 ML_Operator *Amatrix;
-int *rowi_col, rowi_N, count2, ccc;
-double *rowi_val;
+int *rowi_col = NULL, rowi_N, count2, ccc;
+double *rowi_val = NULL;
 int max_nz_row, big_ind = -1, ii;
 #ifdef ML_partition
    FILE *fp2;
@@ -235,7 +235,6 @@ int max_nz_row, big_ind = -1, ii;
        if (i == -4) {
           for (iii = 0; iii < leng; iii++) xxx[iii] = mode[iii];
 
-          allocated = 0; rowi_col = NULL; rowi_val = NULL;
           ccc = 0;
           Amatrix = &(ml->Amat[N_levels-1]);
           for (iii = 0; iii < Amatrix->outvec_leng; iii++) {
@@ -245,6 +244,8 @@ int max_nz_row, big_ind = -1, ii;
              for (j = 0; j < rowi_N; j++) if (rowi_val[j] != 0.) count2++;
              if (count2 <= 1) { xxx[iii] = 0.; ccc++; }
           }
+          free(rowi_col); free(rowi_val);
+          allocated = 0; rowi_col = NULL; rowi_val = NULL;
        }
 
        /*
@@ -300,8 +301,10 @@ int max_nz_row, big_ind = -1, ii;
         free(garbage);
     }
 
-    if (Nrigid != 0) 
+    if (Nrigid != 0) {
        ML_Aggregate_Set_NullSpace(ag, num_PDE_eqns, Nrigid, rigid, N_update);
+       free(rigid);
+    }
 
     coarsest_level = ML_Gen_MGHierarchy_UsingAggregation(ml, N_levels-1, 
 				ML_DECREASING, ag);
@@ -311,7 +314,6 @@ int max_nz_row, big_ind = -1, ii;
 	printf("Coarse level = %d \n", coarsest_level);
 	
    /* set up smoothers */
-   blocks = (int *) ML_allocate(sizeof(int)*N_update);
 	
    for (level = N_levels-1; level > coarsest_level; level--) {
 		
@@ -356,6 +358,7 @@ int max_nz_row, big_ind = -1, ii;
       /* elasticity problems.  However, I don't believe that this is very */
       /* efficient in parallel.                                           */       
       nblocks = ml->Amat[level].invec_leng/num_PDE_eqns;
+      blocks = (int *) ML_allocate(sizeof(int)*N_update);
       for (i =0; i < ml->Amat[level].invec_leng; i++) 
          blocks[i] = i/num_PDE_eqns;
 
@@ -363,6 +366,7 @@ int max_nz_row, big_ind = -1, ii;
                                                   nsmooth, 1., nblocks, blocks);
       ML_Gen_Smoother_VBlockSymGaussSeidelSequential(ml, level, ML_POSTSMOOTHER,
                                                   nsmooth, 1., nblocks, blocks);
+      free(blocks);
 
       /* Jacobi Smoothing                                                 */
       /*              
@@ -377,6 +381,7 @@ int max_nz_row, big_ind = -1, ii;
       ML_Gen_Blocks_Metis(ml, level, &nblocks, &blocks);
       ML_Gen_Smoother_VBlockSymGaussSeidel(ml , level, ML_BOTH, nsmooth,1.,
                                         nblocks, blocks);
+      free(blocks);
       */
       num_PDE_eqns = 6;
    }
