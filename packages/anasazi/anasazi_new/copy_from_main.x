@@ -23,6 +23,8 @@ cp ../example/BlockKrylovSchur/*.cpp ./example/BlockKrylovSchur/.
 cp ../test/Makefile* ./test/.
 cp ../test/ModalSolverUtils/Makefile* ./test/ModalSolverUtils/.
 cp ../test/ModalSolverUtils/*.cpp ./test/ModalSolverUtils/.
+cp ../test/BlockDavidson/Makefile* ./test/BlockDavidson/.
+cp ../test/BlockDavidson/*.cpp ./test/BlockDavidson/.
 
 # Remove files from main so that they are not commited
 ./remove_from_main.x

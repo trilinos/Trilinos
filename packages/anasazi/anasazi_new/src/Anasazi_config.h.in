@@ -14,6 +14,9 @@
 /* Define if F77 and FC dummy `main' functions are identical. */
 #undef FC_DUMMY_MAIN_EQ_F77
 
+/* Define if want to build with aztecoo enabled */
+#undef HAVE_ANASAZI_AZTECOO
+
 /* Define if want to build with belos enabled */
 #undef HAVE_ANASAZI_BELOS
 

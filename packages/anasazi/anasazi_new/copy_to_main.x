@@ -27,4 +27,7 @@ cp ./test/Makefile* ../test/.
 mkdir ../test/ModalSolverUtils
 cp ./test/ModalSolverUtils/*.cpp ../test/ModalSolverUtils/.
 cp ./test/ModalSolverUtils/Makefile* ../test/ModalSolverUtils/.
+mkdir ../test/BlockDavidson
+cp ./test/BlockDavidson/*.cpp ../test/BlockDavidson/.
+cp ./test/BlockDavidson/Makefile* ../test/BlockDavidson/.
 

@@ -26,4 +26,4 @@
 # ************************************************************************
 #@HEADER
 
-SUBDIRS = ModalSolverUtils
+SUBDIRS = ModalSolverUtils BlockDavidson

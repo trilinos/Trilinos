@@ -288,9 +288,11 @@ AM_CONDITIONAL(BUILD_TRIUTILS, test "X$ac_cv_use_triutils" != "Xno")
 TAC_ARG_ENABLE_CAN_USE_PACKAGE(belos, [Build examples which use Belos], ANASAZI_BELOS)
 AM_CONDITIONAL(BUILD_BELOS, test "X$ac_cv_use_belos" != "Xno")
 
+TAC_ARG_ENABLE_CAN_USE_PACKAGE(aztecoo, [Build examples which use AztecOO], ANASAZI_AZTECOO)
+AM_CONDITIONAL(BUILD_AZTECOO, test "X$ac_cv_use_aztecoo" != "Xno")
+
 TAC_ARG_ENABLE_CAN_USE_PACKAGE(ifpack, [Build examples which use Ifpack], ANASAZI_IFPACK)
 AM_CONDITIONAL(BUILD_IFPACK, test "X$ac_cv_use_ifpack" != "Xno")
-
 
 # ------------------------------------------------------------------------
 # Specify other directories 
@@ -403,6 +405,7 @@ AC_CONFIG_FILES([
 		example/BlockKrylovSchur/Makefile
 		test/Makefile
 		test/ModalSolverUtils/Makefile
+		test/BlockDavidson/Makefile
 		])
 
 AC_OUTPUT()

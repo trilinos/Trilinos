@@ -35,7 +35,7 @@
 #include "AnasaziOperatorTraits.hpp"
 #include "AnasaziSortManager.hpp"
 #include "AnasaziOutputManager.hpp"
-#include "AnasaziModalSolverTools.hpp"
+#include "AnasaziModalSolverUtils.hpp"
 
 #include "Teuchos_LAPACK.hpp"
 #include "Teuchos_BLAS.hpp"
@@ -160,7 +160,7 @@ namespace Anasazi {
     //
     // Internal utilities class required by eigensolver.
     //
-    ModalSolverUtils<STYPE,MV,OP> MSUtils;
+    ModalSolverUtils<STYPE,MV,OP> _MSUtils;
     //
     // Internal storage for eigensolver
     //
@@ -194,8 +194,8 @@ namespace Anasazi {
     _evecs(_problem->GetEvecs()), 
     _nev(problem->GetNEV()), 
     _blockSize(problem->GetBlockSize()), 
-    _evals(problem->GetEvals()) 
-    _numBlock(numBlock), 
+    _evals(problem->GetEvals()), 
+    _numBlocks(numBlocks), 
     _restarts(25),
     _step(step),
     _maxIter(maxIter),
@@ -203,7 +203,7 @@ namespace Anasazi {
     _restartiter(0), 
     _iter(0), 
     _dimSearch(0),
-    _MSUtils(om),
+    _MSUtils(om)
   {     
     //
     // Retrieve the initial vector and operator information from the Anasazi::Eigenproblem.
@@ -321,16 +321,16 @@ namespace Anasazi {
 	if (nb == bStart) {
 	  if (nFound > 0) {
 	    if (knownEV == 0) {
-	      info = MSUtils.massOrthonormalize( Xcurrent, MX, _BOp->get(), Xprev, nFound, 2 );
+	      info = _MSUtils.massOrthonormalize( Xcurrent, MX, _BOp->get(), Xprev, nFound, 2 );
 	    }
 	    else {
-	      info = MSUtils.massOrthonormalize( Xcurrent, MX, _BOp->get(), Xprev, nFound, 0 );
+	      info = _MSUtils.massOrthonormalize( Xcurrent, MX, _BOp->get(), Xprev, nFound, 0 );
 	    }
 	  }
 	  nFound = 0;
 	} 
 	else {
-	  info = MSUtils.massOrthonormalize( Xcurrent, MX, _BOp->get(), Xprev, _blockSize, 0 );
+	  info = _MSUtils.massOrthonormalize( Xcurrent, MX, _BOp->get(), Xprev, _blockSize, 0 );
 	}
 	//
 	// Exit the code if there has been a problem.
@@ -363,7 +363,7 @@ namespace Anasazi {
 	//
 	// Perform spectral decomposition
 	//
-	info = MSUtils.directSolver(localSize+_blockSize, _KK, 0, &_S, &theta, localSize+_blockSize, 10);
+	info = _MSUtils.directSolver(localSize+_blockSize, _KK, 0, &_S, &theta, localSize+_blockSize, 10);
 	//
 	// Exit the code if there has been a problem.
 	//
@@ -648,7 +648,7 @@ namespace Anasazi {
     // Sort the eigenvectors
     //
     if ((info==0) && (knownEV > 0))
-      MSUtils.sortScalars_Vectors(knownEV, _evals, _evecs);
+      _MSUtils.sortScalars_Vectors(knownEV, _evals, _evecs);
  
   } // end solve()
 
@@ -666,16 +666,16 @@ namespace Anasazi {
       if (X) {
 	if (M) {
 	  if (MX) {
-	    tmp = MSUtils.errorEquality(X, MX, M);
+	    tmp = _MSUtils.errorEquality(X, MX, M);
 	    if (myPid == 0)
 	      cout << " >> Difference between MX and M*X = " << tmp << endl;
 	  }
-	  tmp = MSUtils.errorOrthonormality(X, M);
+	  tmp = _MSUtils.errorOrthonormality(X, M);
 	  if (myPid == 0)
 	    cout << " >> Error in X^T M X - I = " << tmp << endl;
 	}
 	else {
-	  tmp = MSUtils.errorOrthonormality(X, 0);
+	  tmp = _MSUtils.errorOrthonormality(X, 0);
 	  if (myPid == 0)
 	    cout << " >> Error in X^T X - I = " << tmp << endl;
 	}
@@ -685,21 +685,21 @@ namespace Anasazi {
 	return;
       
       if (M) {
-	tmp = MSUtils.errorOrthonormality(Q, M);
+	tmp = _MSUtils.errorOrthonormality(Q, M);
 	if (myPid == 0)
 	  cout << " >> Error in Q^T M Q - I = " << tmp << endl;
 	if (X) {
-	  tmp = MSUtils.errorOrthogonality(Q, X, M);
+	  tmp = _MSUtils.errorOrthogonality(Q, X, M);
 	  if (myPid == 0)
 	    cout << " >> Orthogonality Q^T M X up to " << tmp << endl;
 	}
       }
       else {
-	tmp = MSUtils.errorOrthonormality(Q, 0);
+	tmp = _MSUtils.errorOrthonormality(Q, 0);
 	if (myPid == 0)
 	  cout << " >> Error in Q^T Q - I = " << tmp << endl;
 	if (X) {
-	  tmp = MSUtils.errorOrthogonality(Q, X, 0);
+	  tmp = _MSUtils.errorOrthogonality(Q, X, 0);
 	  if (myPid == 0)
 	    cout << " >> Orthogonality Q^T X up to " << tmp << endl;
 	}
