@@ -113,6 +113,7 @@ ac_subdirs_all="$ac_subdirs_all packages/triutils"
 ac_subdirs_all="$ac_subdirs_all packages/ifpack"
 ac_subdirs_all="$ac_subdirs_all packages/aztecoo"
 ac_subdirs_all="$ac_subdirs_all packages/komplex"
+ac_subdirs_all="$ac_subdirs_all packages/nox"
 
 # Initialize some variables set by options.
 ac_init_help=
@@ -626,6 +627,7 @@ Optional Features:
   --enable-dependency-tracking  Do not reject slow dependency extractors
   --enable-referencey12m  Build y12m lib included in the distribution (default
                           is no)
+  --enable-nox            Build nox (default is no)
   --enable-komplex        Build komplex (default is yes)
   --enable-aztecoo        Build aztecoo (default is yes)
   --enable-ifpack         Build ifpack (default is yes)
@@ -816,7 +818,7 @@ if test -z "$CONFIG_SITE"; then
 fi
 for ac_site_file in $CONFIG_SITE; do
   if test -r "$ac_site_file"; then
-    { echo "$as_me:819: loading site script $ac_site_file" >&5
+    { echo "$as_me:821: loading site script $ac_site_file" >&5
 echo "$as_me: loading site script $ac_site_file" >&6;}
     cat "$ac_site_file" >&5
     . "$ac_site_file"
@@ -827,7 +829,7 @@ if test -r "$cache_file"; then
   # Some versions of bash will fail to source /dev/null (special
   # files actually), so we avoid doing that.
   if test -f "$cache_file"; then
-    { echo "$as_me:830: loading cache $cache_file" >&5
+    { echo "$as_me:832: loading cache $cache_file" >&5
 echo "$as_me: loading cache $cache_file" >&6;}
     case $cache_file in
       [\\/]* | ?:[\\/]* ) . $cache_file;;
@@ -835,7 +837,7 @@ echo "$as_me: loading cache $cache_file" >&6;}
     esac
   fi
 else
-  { echo "$as_me:838: creating cache $cache_file" >&5
+  { echo "$as_me:840: creating cache $cache_file" >&5
 echo "$as_me: creating cache $cache_file" >&6;}
   >$cache_file
 fi
@@ -851,21 +853,21 @@ for ac_var in `(set) 2>&1 |
   eval ac_new_val="\$ac_env_${ac_var}_value"
   case $ac_old_set,$ac_new_set in
     set,)
-      { echo "$as_me:854: error: \`$ac_var' was set to \`$ac_old_val' in the previous run" >&5
+      { echo "$as_me:856: error: \`$ac_var' was set to \`$ac_old_val' in the previous run" >&5
 echo "$as_me: error: \`$ac_var' was set to \`$ac_old_val' in the previous run" >&2;}
       ac_cache_corrupted=: ;;
     ,set)
-      { echo "$as_me:858: error: \`$ac_var' was not set in the previous run" >&5
+      { echo "$as_me:860: error: \`$ac_var' was not set in the previous run" >&5
 echo "$as_me: error: \`$ac_var' was not set in the previous run" >&2;}
       ac_cache_corrupted=: ;;
     ,);;
     *)
       if test "x$ac_old_val" != "x$ac_new_val"; then
-        { echo "$as_me:864: error: \`$ac_var' has changed since the previous run:" >&5
+        { echo "$as_me:866: error: \`$ac_var' has changed since the previous run:" >&5
 echo "$as_me: error: \`$ac_var' has changed since the previous run:" >&2;}
-        { echo "$as_me:866:   former value:  $ac_old_val" >&5
+        { echo "$as_me:868:   former value:  $ac_old_val" >&5
 echo "$as_me:   former value:  $ac_old_val" >&2;}
-        { echo "$as_me:868:   current value: $ac_new_val" >&5
+        { echo "$as_me:870:   current value: $ac_new_val" >&5
 echo "$as_me:   current value: $ac_new_val" >&2;}
         ac_cache_corrupted=:
       fi;;
@@ -884,9 +886,9 @@ echo "$as_me:   current value: $ac_new_val" >&2;}
   fi
 done
 if $ac_cache_corrupted; then
-  { echo "$as_me:887: error: changes in the environment can compromise the build" >&5
+  { echo "$as_me:889: error: changes in the environment can compromise the build" >&5
 echo "$as_me: error: changes in the environment can compromise the build" >&2;}
-  { { echo "$as_me:889: error: run \`make distclean' and/or \`rm $cache_file' and start over" >&5
+  { { echo "$as_me:891: error: run \`make distclean' and/or \`rm $cache_file' and start over" >&5
 echo "$as_me: error: run \`make distclean' and/or \`rm $cache_file' and start over" >&2;}
    { (exit 1); exit 1; }; }
 fi
@@ -906,10 +908,10 @@ esac
 echo "#! $SHELL" >conftest.sh
 echo  "exit 0"   >>conftest.sh
 chmod +x conftest.sh
-if { (echo "$as_me:909: PATH=\".;.\"; conftest.sh") >&5
+if { (echo "$as_me:911: PATH=\".;.\"; conftest.sh") >&5
   (PATH=".;."; conftest.sh) 2>&5
   ac_status=$?
-  echo "$as_me:912: \$? = $ac_status" >&5
+  echo "$as_me:914: \$? = $ac_status" >&5
   (exit $ac_status); }; then
   ac_path_separator=';'
 else
@@ -940,7 +942,7 @@ for ac_dir in $srcdir $srcdir/.. $srcdir/../..; do
   fi
 done
 if test -z "$ac_aux_dir"; then
-  { { echo "$as_me:943: error: cannot find install-sh or install.sh in $srcdir $srcdir/.. $srcdir/../.." >&5
+  { { echo "$as_me:945: error: cannot find install-sh or install.sh in $srcdir $srcdir/.. $srcdir/../.." >&5
 echo "$as_me: error: cannot find install-sh or install.sh in $srcdir $srcdir/.. $srcdir/../.." >&2;}
    { (exit 1); exit 1; }; }
 fi
@@ -960,7 +962,7 @@ ac_configure="$SHELL $ac_aux_dir/configure" # This should be Cygnus configure.
 # AFS /usr/afsws/bin/install, which mishandles nonexistent args
 # SVR4 /usr/ucb/install, which tries to use the nonexistent group "staff"
 # ./install, which can be erroneously created by make from ./install.sh.
-echo "$as_me:963: checking for a BSD compatible install" >&5
+echo "$as_me:965: checking for a BSD compatible install" >&5
 echo $ECHO_N "checking for a BSD compatible install... $ECHO_C" >&6
 if test -z "$INSTALL"; then
 if test "${ac_cv_path_install+set}" = set; then
@@ -1009,7 +1011,7 @@ fi
     INSTALL=$ac_install_sh
   fi
 fi
-echo "$as_me:1012: result: $INSTALL" >&5
+echo "$as_me:1014: result: $INSTALL" >&5
 echo "${ECHO_T}$INSTALL" >&6
 
 # Use test -z because SunOS4 sh mishandles braces in ${var-val}.
@@ -1020,7 +1022,7 @@ test -z "$INSTALL_SCRIPT" && INSTALL_SCRIPT='${INSTALL}'
 
 test -z "$INSTALL_DATA" && INSTALL_DATA='${INSTALL} -m 644'
 
-echo "$as_me:1023: checking whether build environment is sane" >&5
+echo "$as_me:1025: checking whether build environment is sane" >&5
 echo $ECHO_N "checking whether build environment is sane... $ECHO_C" >&6
 # Just in case
 sleep 1
@@ -1044,7 +1046,7 @@ if (
       # if, for instance, CONFIG_SHELL is bash and it inherits a
       # broken ls alias from the environment.  This has actually
       # happened.  Such a system could not be considered "sane".
-      { { echo "$as_me:1047: error: ls -t appears to fail.  Make sure there is not a broken
+      { { echo "$as_me:1049: error: ls -t appears to fail.  Make sure there is not a broken
 alias in your environment" >&5
 echo "$as_me: error: ls -t appears to fail.  Make sure there is not a broken
 alias in your environment" >&2;}
@@ -1057,13 +1059,13 @@ then
    # Ok.
    :
 else
-   { { echo "$as_me:1060: error: newly created file is older than distributed files!
+   { { echo "$as_me:1062: error: newly created file is older than distributed files!
 Check your system clock" >&5
 echo "$as_me: error: newly created file is older than distributed files!
 Check your system clock" >&2;}
    { (exit 1); exit 1; }; }
 fi
-echo "$as_me:1066: result: yes" >&5
+echo "$as_me:1068: result: yes" >&5
 echo "${ECHO_T}yes" >&6
 test "$program_prefix" != NONE &&
   program_transform_name="s,^,$program_prefix,;$program_transform_name"
@@ -1088,7 +1090,7 @@ if eval "$MISSING --run true"; then
 else
   am_missing_run=
   am_backtick='`'
-  { echo "$as_me:1091: WARNING: ${am_backtick}missing' script is too old or missing" >&5
+  { echo "$as_me:1093: WARNING: ${am_backtick}missing' script is too old or missing" >&5
 echo "$as_me: WARNING: ${am_backtick}missing' script is too old or missing" >&2;}
 fi
 
@@ -1096,7 +1098,7 @@ for ac_prog in mawk gawk nawk awk
 do
   # Extract the first word of "$ac_prog", so it can be a program name with args.
 set dummy $ac_prog; ac_word=$2
-echo "$as_me:1099: checking for $ac_word" >&5
+echo "$as_me:1101: checking for $ac_word" >&5
 echo $ECHO_N "checking for $ac_word... $ECHO_C" >&6
 if test "${ac_cv_prog_AWK+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
@@ -1111,7 +1113,7 @@ for ac_dir in $ac_dummy; do
   test -z "$ac_dir" && ac_dir=.
   $as_executable_p "$ac_dir/$ac_word" || continue
 ac_cv_prog_AWK="$ac_prog"
-echo "$as_me:1114: found $ac_dir/$ac_word" >&5
+echo "$as_me:1116: found $ac_dir/$ac_word" >&5
 break
 done
 
@@ -1119,17 +1121,17 @@ fi
 fi
 AWK=$ac_cv_prog_AWK
 if test -n "$AWK"; then
-  echo "$as_me:1122: result: $AWK" >&5
+  echo "$as_me:1124: result: $AWK" >&5
 echo "${ECHO_T}$AWK" >&6
 else
-  echo "$as_me:1125: result: no" >&5
+  echo "$as_me:1127: result: no" >&5
 echo "${ECHO_T}no" >&6
 fi
 
   test -n "$AWK" && break
 done
 
-echo "$as_me:1132: checking whether ${MAKE-make} sets \${MAKE}" >&5
+echo "$as_me:1134: checking whether ${MAKE-make} sets \${MAKE}" >&5
 echo $ECHO_N "checking whether ${MAKE-make} sets \${MAKE}... $ECHO_C" >&6
 set dummy ${MAKE-make}; ac_make=`echo "$2" | sed 'y,./+-,__p_,'`
 if eval "test \"\${ac_cv_prog_make_${ac_make}_set+set}\" = set"; then
@@ -1149,11 +1151,11 @@ fi
 rm -f conftest.make
 fi
 if eval "test \"`echo '$ac_cv_prog_make_'${ac_make}_set`\" = yes"; then
-  echo "$as_me:1152: result: yes" >&5
+  echo "$as_me:1154: result: yes" >&5
 echo "${ECHO_T}yes" >&6
   SET_MAKE=
 else
-  echo "$as_me:1156: result: no" >&5
+  echo "$as_me:1158: result: no" >&5
 echo "${ECHO_T}no" >&6
   SET_MAKE="MAKE=${MAKE-make}"
 fi
@@ -1189,7 +1191,7 @@ rmdir .deps 2>/dev/null
 # test to see if srcdir already configured
 if test "`CDPATH=:; cd $srcdir && pwd`" != "`pwd`" &&
    test -f $srcdir/config.status; then
-  { { echo "$as_me:1192: error: source directory already configured; run \"make distclean\" there first" >&5
+  { { echo "$as_me:1194: error: source directory already configured; run \"make distclean\" there first" >&5
 echo "$as_me: error: source directory already configured; run \"make distclean\" there first" >&2;}
    { (exit 1); exit 1; }; }
 fi
@@ -1240,6 +1242,11 @@ INSTALL_STRIP_PROGRAM="\${SHELL} \$(install_sh) -c -s"
 
 # Specify required version of autoconf.
 
+# Must indicate for packages that can be configured from the package level that the
+# configure/build process is happening within Trilinos.
+
+ac_configure_args="$ac_configure_args --with-trilinos"
+
 # Check whether --enable-referencey12m or --disable-referencey12m was given.
 if test "${enable_referencey12m+set}" = set; then
   enableval="$enable_referencey12m"
@@ -1248,11 +1255,11 @@ else
   ac_cv_use_referencey12m=no
 fi;
 
-echo "$as_me:1251: checking whether to use referencey12m" >&5
+echo "$as_me:1258: checking whether to use referencey12m" >&5
 echo $ECHO_N "checking whether to use referencey12m... $ECHO_C" >&6
 
 if test "X$ac_cv_use_referencey12m" != "Xno"; then
-  echo "$as_me:1255: result: yes" >&5
+  echo "$as_me:1262: result: yes" >&5
 echo "${ECHO_T}yes" >&6
 
 cat >>confdefs.h <<\EOF
@@ -1260,7 +1267,7 @@ cat >>confdefs.h <<\EOF
 EOF
 
 else
-  echo "$as_me:1263: result: no" >&5
+  echo "$as_me:1270: result: no" >&5
 echo "${ECHO_T}no" >&6
 fi
 
@@ -1279,6 +1286,41 @@ fi
 #TAC_ARG_ENABLE_FEATURE(referencelapack, [Build lapack lib included in the distribution], LAPACK, no)
 #AM_CONDITIONAL(BUILD_LAPACK, test "X$ac_cv_use_referencelapack" != "Xno" || test "X$ac_cv_use_referenceblasandlapack" != "Xno")
 
+# After building Nox from the Trilinos level is stabilized, the default should be
+# changed to yes.
+
+# Check whether --enable-nox or --disable-nox was given.
+if test "${enable_nox+set}" = set; then
+  enableval="$enable_nox"
+  ac_cv_use_nox=$enableval
+else
+  ac_cv_use_nox=no
+fi;
+
+echo "$as_me:1300: checking whether to use nox" >&5
+echo $ECHO_N "checking whether to use nox... $ECHO_C" >&6
+
+if test "X$ac_cv_use_nox" != "Xno"; then
+  echo "$as_me:1304: result: yes" >&5
+echo "${ECHO_T}yes" >&6
+
+cat >>confdefs.h <<\EOF
+#define HAVE_NOX
+EOF
+
+else
+  echo "$as_me:1312: result: no" >&5
+echo "${ECHO_T}no" >&6
+fi
+
+if test "X$ac_cv_use_nox" != "Xno"; then
+  BUILD_NOX_TRUE=
+  BUILD_NOX_FALSE='#'
+else
+  BUILD_NOX_TRUE='#'
+  BUILD_NOX_FALSE=
+fi
+
 # Check whether --enable-komplex or --disable-komplex was given.
 if test "${enable_komplex+set}" = set; then
   enableval="$enable_komplex"
@@ -1287,11 +1329,11 @@ else
   ac_cv_use_komplex=yes
 fi;
 
-echo "$as_me:1290: checking whether to use komplex" >&5
+echo "$as_me:1332: checking whether to use komplex" >&5
 echo $ECHO_N "checking whether to use komplex... $ECHO_C" >&6
 
 if test "X$ac_cv_use_komplex" != "Xno"; then
-  echo "$as_me:1294: result: yes" >&5
+  echo "$as_me:1336: result: yes" >&5
 echo "${ECHO_T}yes" >&6
 
 cat >>confdefs.h <<\EOF
@@ -1299,7 +1341,7 @@ cat >>confdefs.h <<\EOF
 EOF
 
 else
-  echo "$as_me:1302: result: no" >&5
+  echo "$as_me:1344: result: no" >&5
 echo "${ECHO_T}no" >&6
 fi
 
@@ -1319,11 +1361,11 @@ else
   ac_cv_use_aztecoo=yes
 fi;
 
-echo "$as_me:1322: checking whether to use aztecoo" >&5
+echo "$as_me:1364: checking whether to use aztecoo" >&5
 echo $ECHO_N "checking whether to use aztecoo... $ECHO_C" >&6
 
 if test "X$ac_cv_use_aztecoo" != "Xno"; then
-  echo "$as_me:1326: result: yes" >&5
+  echo "$as_me:1368: result: yes" >&5
 echo "${ECHO_T}yes" >&6
 
 cat >>confdefs.h <<\EOF
@@ -1331,7 +1373,7 @@ cat >>confdefs.h <<\EOF
 EOF
 
 else
-  echo "$as_me:1334: result: no" >&5
+  echo "$as_me:1376: result: no" >&5
 echo "${ECHO_T}no" >&6
 fi
 
@@ -1352,11 +1394,11 @@ else
   ac_cv_use_ifpack=yes
 fi;
 
-echo "$as_me:1355: checking whether to use ifpack" >&5
+echo "$as_me:1397: checking whether to use ifpack" >&5
 echo $ECHO_N "checking whether to use ifpack... $ECHO_C" >&6
 
 if test "X$ac_cv_use_ifpack" != "Xno"; then
-  echo "$as_me:1359: result: yes" >&5
+  echo "$as_me:1401: result: yes" >&5
 echo "${ECHO_T}yes" >&6
 
 cat >>confdefs.h <<\EOF
@@ -1364,7 +1406,7 @@ cat >>confdefs.h <<\EOF
 EOF
 
 else
-  echo "$as_me:1367: result: no" >&5
+  echo "$as_me:1409: result: no" >&5
 echo "${ECHO_T}no" >&6
 fi
 
@@ -1376,11 +1418,11 @@ else
   ac_cv_use_oldifpack=no
 fi;
 
-echo "$as_me:1379: checking whether to use oldifpack" >&5
+echo "$as_me:1421: checking whether to use oldifpack" >&5
 echo $ECHO_N "checking whether to use oldifpack... $ECHO_C" >&6
 
 if test "X$ac_cv_use_oldifpack" != "Xno"; then
-  echo "$as_me:1383: result: yes" >&5
+  echo "$as_me:1425: result: yes" >&5
 echo "${ECHO_T}yes" >&6
 
 cat >>confdefs.h <<\EOF
@@ -1388,7 +1430,7 @@ cat >>confdefs.h <<\EOF
 EOF
 
 else
-  echo "$as_me:1391: result: no" >&5
+  echo "$as_me:1433: result: no" >&5
 echo "${ECHO_T}no" >&6
 fi
 
@@ -1409,11 +1451,11 @@ else
   ac_cv_use_triutils=yes
 fi;
 
-echo "$as_me:1412: checking whether to use triutils" >&5
+echo "$as_me:1454: checking whether to use triutils" >&5
 echo $ECHO_N "checking whether to use triutils... $ECHO_C" >&6
 
 if test "X$ac_cv_use_triutils" != "Xno"; then
-  echo "$as_me:1416: result: yes" >&5
+  echo "$as_me:1458: result: yes" >&5
 echo "${ECHO_T}yes" >&6
 
 cat >>confdefs.h <<\EOF
@@ -1421,7 +1463,7 @@ cat >>confdefs.h <<\EOF
 EOF
 
 else
-  echo "$as_me:1424: result: no" >&5
+  echo "$as_me:1466: result: no" >&5
 echo "${ECHO_T}no" >&6
 fi
 
@@ -1441,11 +1483,11 @@ else
   ac_cv_use_epetra=yes
 fi;
 
-echo "$as_me:1444: checking whether to use epetra" >&5
+echo "$as_me:1486: checking whether to use epetra" >&5
 echo $ECHO_N "checking whether to use epetra... $ECHO_C" >&6
 
 if test "X$ac_cv_use_epetra" != "Xno"; then
-  echo "$as_me:1448: result: yes" >&5
+  echo "$as_me:1490: result: yes" >&5
 echo "${ECHO_T}yes" >&6
 
 cat >>confdefs.h <<\EOF
@@ -1453,7 +1495,7 @@ cat >>confdefs.h <<\EOF
 EOF
 
 else
-  echo "$as_me:1456: result: no" >&5
+  echo "$as_me:1498: result: no" >&5
 echo "${ECHO_T}no" >&6
 fi
 
@@ -1519,6 +1561,12 @@ fi
 if test "X$ac_cv_use_komplex" != "Xno"; then
 
 subdirs="$subdirs packages/komplex"
+
+fi
+
+if test "X$ac_cv_use_nox" != "Xno"; then
+
+subdirs="$subdirs packages/nox"
 
 fi
 
@@ -1603,7 +1651,7 @@ DEFS=-DHAVE_CONFIG_H
 : ${CONFIG_STATUS=./config.status}
 ac_clean_files_save=$ac_clean_files
 ac_clean_files="$ac_clean_files $CONFIG_STATUS"
-{ echo "$as_me:1606: creating $CONFIG_STATUS" >&5
+{ echo "$as_me:1654: creating $CONFIG_STATUS" >&5
 echo "$as_me: creating $CONFIG_STATUS" >&6;}
 cat >$CONFIG_STATUS <<_ACEOF
 #! $SHELL
@@ -1776,7 +1824,7 @@ cat >>$CONFIG_STATUS <<\EOF
     echo "$ac_cs_version"; exit 0 ;;
   --he | --h)
     # Conflict between --help and --header
-    { { echo "$as_me:1779: error: ambiguous option: $1
+    { { echo "$as_me:1827: error: ambiguous option: $1
 Try \`$0 --help' for more information." >&5
 echo "$as_me: error: ambiguous option: $1
 Try \`$0 --help' for more information." >&2;}
@@ -1795,7 +1843,7 @@ Try \`$0 --help' for more information." >&2;}
     ac_need_defaults=false;;
 
   # This is an error.
-  -*) { { echo "$as_me:1798: error: unrecognized option: $1
+  -*) { { echo "$as_me:1846: error: unrecognized option: $1
 Try \`$0 --help' for more information." >&5
 echo "$as_me: error: unrecognized option: $1
 Try \`$0 --help' for more information." >&2;}
@@ -1834,7 +1882,7 @@ do
   "packages/Makefile" ) CONFIG_FILES="$CONFIG_FILES packages/Makefile" ;;
   "external/Makefile" ) CONFIG_FILES="$CONFIG_FILES external/Makefile" ;;
   "Trilinos_config.h" ) CONFIG_HEADERS="$CONFIG_HEADERS Trilinos_config.h:Trilinos_config.h.in" ;;
-  *) { { echo "$as_me:1837: error: invalid argument: $ac_config_target" >&5
+  *) { { echo "$as_me:1885: error: invalid argument: $ac_config_target" >&5
 echo "$as_me: error: invalid argument: $ac_config_target" >&2;}
    { (exit 1); exit 1; }; };;
   esac
@@ -1938,6 +1986,8 @@ s,@AMDEPBACKSLASH@,$AMDEPBACKSLASH,;t t
 s,@DEPDIR@,$DEPDIR,;t t
 s,@BUILD_Y12M_TRUE@,$BUILD_Y12M_TRUE,;t t
 s,@BUILD_Y12M_FALSE@,$BUILD_Y12M_FALSE,;t t
+s,@BUILD_NOX_TRUE@,$BUILD_NOX_TRUE,;t t
+s,@BUILD_NOX_FALSE@,$BUILD_NOX_FALSE,;t t
 s,@BUILD_KOMPLEX_TRUE@,$BUILD_KOMPLEX_TRUE,;t t
 s,@BUILD_KOMPLEX_FALSE@,$BUILD_KOMPLEX_FALSE,;t t
 s,@BUILD_AZTECOO_TRUE@,$BUILD_AZTECOO_TRUE,;t t
@@ -2063,7 +2113,7 @@ done; }
   esac
 
   if test x"$ac_file" != x-; then
-    { echo "$as_me:2066: creating $ac_file" >&5
+    { echo "$as_me:2116: creating $ac_file" >&5
 echo "$as_me: creating $ac_file" >&6;}
     rm -f "$ac_file"
   fi
@@ -2081,7 +2131,7 @@ echo "$as_me: creating $ac_file" >&6;}
       -) echo $tmp/stdin ;;
       [\\/$]*)
          # Absolute (can't be DOS-style, as IFS=:)
-         test -f "$f" || { { echo "$as_me:2084: error: cannot find input file: $f" >&5
+         test -f "$f" || { { echo "$as_me:2134: error: cannot find input file: $f" >&5
 echo "$as_me: error: cannot find input file: $f" >&2;}
    { (exit 1); exit 1; }; }
          echo $f;;
@@ -2094,7 +2144,7 @@ echo "$as_me: error: cannot find input file: $f" >&2;}
            echo $srcdir/$f
          else
            # /dev/null tree
-           { { echo "$as_me:2097: error: cannot find input file: $f" >&5
+           { { echo "$as_me:2147: error: cannot find input file: $f" >&5
 echo "$as_me: error: cannot find input file: $f" >&2;}
    { (exit 1); exit 1; }; }
          fi;;
@@ -2155,7 +2205,7 @@ for ac_file in : $CONFIG_HEADERS; do test "x$ac_file" = x: && continue
   * )   ac_file_in=$ac_file.in ;;
   esac
 
-  test x"$ac_file" != x- && { echo "$as_me:2158: creating $ac_file" >&5
+  test x"$ac_file" != x- && { echo "$as_me:2208: creating $ac_file" >&5
 echo "$as_me: creating $ac_file" >&6;}
 
   # First look for the input files in the build tree, otherwise in the
@@ -2166,7 +2216,7 @@ echo "$as_me: creating $ac_file" >&6;}
       -) echo $tmp/stdin ;;
       [\\/$]*)
          # Absolute (can't be DOS-style, as IFS=:)
-         test -f "$f" || { { echo "$as_me:2169: error: cannot find input file: $f" >&5
+         test -f "$f" || { { echo "$as_me:2219: error: cannot find input file: $f" >&5
 echo "$as_me: error: cannot find input file: $f" >&2;}
    { (exit 1); exit 1; }; }
          echo $f;;
@@ -2179,7 +2229,7 @@ echo "$as_me: error: cannot find input file: $f" >&2;}
            echo $srcdir/$f
          else
            # /dev/null tree
-           { { echo "$as_me:2182: error: cannot find input file: $f" >&5
+           { { echo "$as_me:2232: error: cannot find input file: $f" >&5
 echo "$as_me: error: cannot find input file: $f" >&2;}
    { (exit 1); exit 1; }; }
          fi;;
@@ -2296,7 +2346,7 @@ cat >>$CONFIG_STATUS <<\EOF
   rm -f $tmp/in
   if test x"$ac_file" != x-; then
     if cmp -s $ac_file $tmp/config.h 2>/dev/null; then
-      { echo "$as_me:2299: $ac_file is unchanged" >&5
+      { echo "$as_me:2349: $ac_file is unchanged" >&5
 echo "$as_me: $ac_file is unchanged" >&6;}
     else
       ac_dir=`$as_expr X"$ac_file" : 'X\(.*[^/]\)//*[^/][^/]*/*$' \| \
@@ -2406,7 +2456,7 @@ if test "$no_recursion" != yes; then
     # parts of a large source tree are present.
     test -d $srcdir/$ac_subdir || continue
 
-    { echo "$as_me:2409: configuring in $ac_subdir" >&5
+    { echo "$as_me:2459: configuring in $ac_subdir" >&5
 echo "$as_me: configuring in $ac_subdir" >&6;}
     case $srcdir in
     .) ;;
@@ -2428,7 +2478,7 @@ done; }
 
        if test -d ./$ac_subdir; then :;
        else
-         { { echo "$as_me:2431: error: cannot create \`pwd\`/$ac_subdir" >&5
+         { { echo "$as_me:2481: error: cannot create \`pwd\`/$ac_subdir" >&5
 echo "$as_me: error: cannot create \`pwd\`/$ac_subdir" >&2;}
    { (exit 1); exit 1; }; }
        fi
@@ -2459,7 +2509,7 @@ echo "$as_me: error: cannot create \`pwd\`/$ac_subdir" >&2;}
     elif test -f $ac_sub_srcdir/configure.in; then
       ac_sub_configure=$ac_configure
     else
-      { echo "$as_me:2462: WARNING: no configuration information is in $ac_subdir" >&5
+      { echo "$as_me:2512: WARNING: no configuration information is in $ac_subdir" >&5
 echo "$as_me: WARNING: no configuration information is in $ac_subdir" >&2;}
       ac_sub_configure=
     fi
@@ -2473,12 +2523,12 @@ echo "$as_me: WARNING: no configuration information is in $ac_subdir" >&2;}
         ac_sub_cache_file=$ac_dots$cache_file ;;
       esac
 
-      { echo "$as_me:2476: running $ac_sub_configure $ac_sub_configure_args --cache-file=$ac_sub_cache_file --srcdir=$ac_sub_srcdir" >&5
+      { echo "$as_me:2526: running $ac_sub_configure $ac_sub_configure_args --cache-file=$ac_sub_cache_file --srcdir=$ac_sub_srcdir" >&5
 echo "$as_me: running $ac_sub_configure $ac_sub_configure_args --cache-file=$ac_sub_cache_file --srcdir=$ac_sub_srcdir" >&6;}
       # The eval makes quoting arguments work.
       eval $ac_sub_configure $ac_sub_configure_args \
            --cache-file=$ac_sub_cache_file --srcdir=$ac_sub_srcdir ||
-        { { echo "$as_me:2481: error: $ac_sub_configure failed for $ac_subdir" >&5
+        { { echo "$as_me:2531: error: $ac_sub_configure failed for $ac_subdir" >&5
 echo "$as_me: error: $ac_sub_configure failed for $ac_subdir" >&2;}
    { (exit 1); exit 1; }; }
     fi

@@ -12,6 +12,10 @@ AM_INIT_AUTOMAKE(Trilinos, 2.1)
 
 AC_PREREQ(2.52)
 
+# Must indicate for packages that can be configured from the package level that the 
+# configure/build process is happening within Trilinos.
+
+ac_configure_args="$ac_configure_args --with-trilinos"
 
 TAC_ARG_ENABLE_FEATURE(referencey12m, [Build y12m lib included in the distribution], Y12M, no)
 AM_CONDITIONAL(BUILD_Y12M, test "X$ac_cv_use_referencey12m" != "Xno")
@@ -23,6 +27,10 @@ AM_CONDITIONAL(BUILD_Y12M, test "X$ac_cv_use_referencey12m" != "Xno")
 #TAC_ARG_ENABLE_FEATURE(referencelapack, [Build lapack lib included in the distribution], LAPACK, no)
 #AM_CONDITIONAL(BUILD_LAPACK, test "X$ac_cv_use_referencelapack" != "Xno" || test "X$ac_cv_use_referenceblasandlapack" != "Xno")
 
+# After building Nox from the Trilinos level is stabilized, the default should be 
+# changed to yes.
+TAC_ARG_ENABLE_FEATURE(nox, [Build nox], NOX, no)
+AM_CONDITIONAL(BUILD_NOX, test "X$ac_cv_use_nox" != "Xno")
 
 TAC_ARG_ENABLE_FEATURE(komplex, [Build komplex], KOMPLEX, yes)
 AM_CONDITIONAL(BUILD_KOMPLEX, test "X$ac_cv_use_komplex" != "Xno")
@@ -86,6 +94,10 @@ fi
 
 if test "X$ac_cv_use_komplex" != "Xno"; then
   AC_CONFIG_SUBDIRS([packages/komplex])
+fi
+
+if test "X$ac_cv_use_nox" != "Xno"; then
+  AC_CONFIG_SUBDIRS([packages/nox])
 fi
 
 AC_CONFIG_FILES([

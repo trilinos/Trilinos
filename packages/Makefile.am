@@ -65,8 +65,12 @@ ACLOCAL	= aclocal -I config
 ## #######################################################################
 #SUBDIRS = aztecoo epetra ifpack komplex petra tpetra triutils tsf TSF
 
+if BUILD_NOX
+NOX_SUBDIR = nox
+endif
+
 if BUILD_KOMPLEX
-KOMPLEX_SRCDIR = komplex
+KOMPLEX_SUBDIR = komplex
 endif
 
 if BUILD_AZTECOO
@@ -87,5 +91,5 @@ endif
 
 #Epetra must be listed first due to aztecoo's dependence on Epetra
 SUBDIRS = $(EPETRA_SUBDIR) $(TRIUTILS_SUBDIR) $(IFPACK_SUBDIR) \
-	  $(AZTECOO_SUBDIR) $(KOMPLEX_SRCDIR)
+	  $(AZTECOO_SUBDIR) $(KOMPLEX_SUBDIR) $(NOX_SUBDIR)
 
