@@ -81,7 +81,7 @@ namespace Teuchos
     
     //@{ \name Level 3 BLAS Routines. 
     void GEMM(char TransA, char TransB, int m, int n, int k, ScalarType alpha, ScalarType* A, int lda,
-                ScalarType* B, int lda, ScalarType beta, ScalarType* C, int ldc);
+                ScalarType* B, int ldb, ScalarType beta, ScalarType* C, int ldc);
     void SYMM(char Side, char Uplo, int m, int n, ScalarType alpha, ScalarType* A, int lda,
                 ScalarType* B, int ldb, ScalarType beta, ScalarType* C, int ldc);
     void TRMM(char Side, char Uplo, char TransA, char Diag, int m, int n,

@@ -72,19 +72,19 @@ template<>
 double GetRandom(double, double);
 
 template<typename TYPE>
-void PrintVector(TYPE*, int, string, bool = 0);
+void PrintVector(TYPE* Vector, int Size, string Name, bool Matlab = 0);
 
 template<typename TYPE>
-void PrintMatrix(TYPE*, int, int, int, string, bool = 0);
+void PrintMatrix(TYPE* Matrix, int Rows, int Columns, int LDM, string Name, bool Matlab = 0);
 
 template<typename TYPE1, typename TYPE2>
-bool CompareScalars(TYPE1, TYPE2, double = 0);
+bool CompareScalars(TYPE1 Scalar1, TYPE2 Scalar2, double Tolerance = 0);
 
 template<typename TYPE1, typename TYPE2>
-bool CompareVectors(TYPE1*, TYPE2*, int, double = 0);
+bool CompareVectors(TYPE1* Vector1, TYPE2* Vector2, int Size, double Tolerance = 0);
 
 template<typename TYPE1, typename TYPE2>
-bool CompareMatrices(TYPE1*, TYPE2*, int, int, int, double = 0);
+bool CompareMatrices(TYPE1* Matrix1, TYPE2* Matrix2, int Rows, int Columns, int LDM, double Tolerance = 0);
 
 // For most types, this function is just a wrapper for static_cast(), but for mp_real/double, it calls mp::dble()
 // The second input parameter is not used; it is only needed to determine what type to convert *to*
@@ -1224,7 +1224,7 @@ double GetRandom(double Low, double High)
 }
 
 template<typename TYPE>
-void PrintVector(TYPE* Vector, int Size, string Name, bool Matlab = 0)
+void PrintVector(TYPE* Vector, int Size, string Name, bool Matlab)
 {
   cout << Name << " =" << endl;
   int i;
@@ -1245,7 +1245,7 @@ void PrintVector(TYPE* Vector, int Size, string Name, bool Matlab = 0)
 }
 
 template<typename TYPE>
-void PrintMatrix(TYPE* Matrix, int Rows, int Columns, int LDM, string Name, bool Matlab = 0)
+void PrintMatrix(TYPE* Matrix, int Rows, int Columns, int LDM, string Name, bool Matlab)
 {
   if(!Matlab)
     {
@@ -1280,14 +1280,14 @@ void PrintMatrix(TYPE* Matrix, int Rows, int Columns, int LDM, string Name, bool
 }
 
 template<typename TYPE1, typename TYPE2>
-bool CompareScalars(TYPE1 Scalar1, TYPE2 Scalar2, double Tolerance = 0)
+bool CompareScalars(TYPE1 Scalar1, TYPE2 Scalar2, double Tolerance)
 {
   TYPE2 convertTo;
   return(ScalarTraits<TYPE2>::magnitude(ScalarTraits<TYPE2>::magnitude(ConvertType(Scalar1, convertTo)) - ScalarTraits<TYPE2>::magnitude(Scalar2)) <= Tolerance);
 }
 
 template<typename TYPE1, typename TYPE2>
-bool CompareVectors(TYPE1* Vector1, TYPE2* Vector2, int Size, double Tolerance = 0)
+bool CompareVectors(TYPE1* Vector1, TYPE2* Vector2, int Size, double Tolerance)
 {
   TYPE2 convertTo;
   int i;
@@ -1303,7 +1303,7 @@ bool CompareVectors(TYPE1* Vector1, TYPE2* Vector2, int Size, double Tolerance =
 }
 
 template<typename TYPE1, typename TYPE2>
-bool CompareMatrices(TYPE1* Matrix1, TYPE2* Matrix2, int Rows, int Columns, int LDM, double Tolerance = 0)
+bool CompareMatrices(TYPE1* Matrix1, TYPE2* Matrix2, int Rows, int Columns, int LDM, double Tolerance)
 {
   TYPE2 convertTo;
   int i,j;
