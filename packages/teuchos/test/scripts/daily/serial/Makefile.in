@@ -90,7 +90,7 @@ POST_UNINSTALL = :
 OBJEXT = @OBJEXT@
 PATH_SEPARATOR = @PATH_SEPARATOR@
 
-EXEEXT = .pl
+EXEEXT = .pl.exe
 ALTERNATE_AR = @ALTERNATE_AR@
 AMTAR = @AMTAR@
 AWK = @AWK@
@@ -328,8 +328,12 @@ uninstall-am: uninstall-info-am
 	uninstall-info-am
 
 
-run-teuchos-tests$(EXEEXT) :
-	cp $(srcdir)/run-teuchos-tests$(EXEEXT) .
+# This program name is not the program that is actually copied.
+# Therefore, this target will always be built.  This was the only
+# way that I could get the makefile working.
+
+run-teuchos-tests$(EXEEXT) :    
+	cp $(srcdir)/run-teuchos-tests.pl .
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

@@ -26,9 +26,13 @@
 # ************************************************************************
 #@HEADER
 
-EXEEXT = .pl
+EXEEXT = .pl.exe
 
 noinst_PROGRAMS = run-teuchos-tests
 
-run-teuchos-tests$(EXEEXT) :
-	cp $(srcdir)/run-teuchos-tests$(EXEEXT) .
+# This program name is not the program that is actually copied.
+# Therefore, this target will always be built.  This was the only
+# way that I could get the makefile working.
+
+run-teuchos-tests$(EXEEXT) :    
+	cp $(srcdir)/run-teuchos-tests.pl .
