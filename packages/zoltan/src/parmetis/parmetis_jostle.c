@@ -408,10 +408,11 @@ static int Zoltan_ParMetis_Jostle(
   int i, j, k, ierr, tmp, flag, ndims; 
   int obj_wgt_dim, edge_wgt_dim, check_graph, scatter;
   int num_obj, num_edges, edgecut;
-  int nsend, wgtflag, numflag; 
+  int nsend, wgtflag, numflag, global_graph; 
   int get_graph_data, get_geom_data, get_times; 
   idxtype *vtxdist, *xadj, *adjncy, *vwgt, *adjwgt, *part, *part2, *vsize;
   idxtype *sep_sizes;
+  int *tmp_rank;
   int tmp_num_obj, ncon, compute_order;
   int startindex = 0; /* EB: get value from parameter */
   float *float_vwgt, *ewgts, *xyz, *imb_tols, *tpwgt; 
@@ -448,7 +449,7 @@ static int Zoltan_ParMetis_Jostle(
    * because we free all non-NULL pointers upon errors.
    */
   vtxdist = xadj = adjncy = vwgt = adjwgt = part = NULL;
-  vsize = sep_sizes = NULL;
+  vsize = sep_sizes = tmp_rank = NULL;
   local_ids = NULL;
   global_ids = NULL;
   float_vwgt = ewgts = xyz = imb_tols = tpwgt = NULL;
@@ -509,7 +510,9 @@ static int Zoltan_ParMetis_Jostle(
 
     /* Allocate space for separator sizes */
     sep_sizes = (idxtype *) ZOLTAN_MALLOC(2*num_proc*sizeof(idxtype));
-    if (!sep_sizes){
+    /* EB: Temp hack; allocate temp rank array here if local ordering */
+    if (!global_graph) tmp_rank = (int *) ZOLTAN_MALLOC(num_obj*sizeof(int));
+    if ((!sep_sizes) || (!global_graph && !tmp_rank)){
       /* Not enough memory */
       ZOLTAN_PARMETIS_ERROR(ZOLTAN_MEMERR, "Out of memory.");
     }
@@ -522,6 +525,9 @@ static int Zoltan_ParMetis_Jostle(
       options[0], options[1], options[2], options[3]);
   }
   
+  /* Usually we need the entire global graph. */
+  global_graph = 1;
+
   /* Most ParMetis methods use only graph data */
   get_graph_data = 1;
   get_geom_data = 0;
@@ -574,7 +580,7 @@ static int Zoltan_ParMetis_Jostle(
   }
   
   /* Build ParMetis data structures, or just get vtxdist. */
-  ierr = Zoltan_Build_Graph(zz, get_graph_data, check_graph,
+  ierr = Zoltan_Build_Graph(zz, get_graph_data, global_graph, check_graph,
          global_ids, local_ids, obj_wgt_dim, edge_wgt_dim,
          &vtxdist, &xadj, &adjncy, &ewgts);
   if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN){
@@ -856,10 +862,18 @@ static int Zoltan_ParMetis_Jostle(
     ZOLTAN_TRACE_DETAIL(zz, yo, "Returned from the ParMETIS library");
   }
   else if (strcmp(alg, "NODEND") == 0){
-    ZOLTAN_TRACE_DETAIL(zz, yo, "Calling the ParMETIS 3 library");
-    ParMETIS_V3_NodeND (vtxdist, xadj, adjncy, 
-      &numflag, options, part, sep_sizes, &comm);
-    ZOLTAN_TRACE_DETAIL(zz, yo, "Returned from the ParMETIS library");
+    if (global_graph){
+      ZOLTAN_TRACE_DETAIL(zz, yo, "Calling the ParMETIS 3 library");
+      ParMETIS_V3_NodeND (vtxdist, xadj, adjncy, 
+        &numflag, options, part, sep_sizes, &comm);
+      ZOLTAN_TRACE_DETAIL(zz, yo, "Returned from the ParMETIS library");
+    }
+    else {
+      ZOLTAN_TRACE_DETAIL(zz, yo, "Calling the METIS library");
+      METIS_NodeND (&tmp_num_obj, xadj, adjncy, 
+        &numflag, options, part, tmp_rank, &comm);
+      ZOLTAN_TRACE_DETAIL(zz, yo, "Returned from the METIS library");
+    }
   }
 #endif  /* PARMETIS_MAJOR_VERSION >= 3 */
   /* Check for ParMetis 2.0 routines */
@@ -912,10 +926,18 @@ static int Zoltan_ParMetis_Jostle(
     ZOLTAN_TRACE_DETAIL(zz, yo, "Returned from the ParMETIS library");
   }
   else if (strcmp(alg, "NODEND") == 0){
-    ZOLTAN_TRACE_DETAIL(zz, yo, "Calling the ParMETIS 2 library");
-    ParMETIS_NodeND (vtxdist, xadj, adjncy, 
-      &numflag, options, part, sep_sizes, &comm);
-    ZOLTAN_TRACE_DETAIL(zz, yo, "Returned from the ParMETIS library");
+    if (global_graph){
+      ZOLTAN_TRACE_DETAIL(zz, yo, "Calling the ParMETIS 2 library");
+      ParMETIS_NodeND (vtxdist, xadj, adjncy, 
+        &numflag, options, part, sep_sizes, &comm);
+      ZOLTAN_TRACE_DETAIL(zz, yo, "Returned from the ParMETIS library");
+    }
+    else {
+      ZOLTAN_TRACE_DETAIL(zz, yo, "Calling the METIS library");
+      METIS_NodeND (&tmp_num_obj, xadj, adjncy, 
+        &numflag, options, part, tmp_rank, &comm);
+      ZOLTAN_TRACE_DETAIL(zz, yo, "Returned from the METIS library");
+    }
   }
   else {
     /* Sanity check: This should never happen! */
@@ -982,10 +1004,17 @@ static int Zoltan_ParMetis_Jostle(
       ZOLTAN_PRINT_WARN(zz->Proc, yo, "iperm is NULL, no data returned");
       ierr = ZOLTAN_WARN;
     }
+    /* If we did local ordering via METIS, then we also have the rank. */
+    if (rank && tmp_rank){
+      for (i=0; i<num_obj; i++){
+        rank[i] = tmp_rank[i] + startindex;
+      }
+    }
 
     /* Fill in the Zoltan Order Struct */
-    /* EB: For now, discard separator info */ 
+    /* EB: For now, discard separator info and rank */ 
     ZOLTAN_FREE(&sep_sizes); 
+    if (tmp_rank) ZOLTAN_FREE(&tmp_rank); 
   }
   else{
     /* Partitioning */
