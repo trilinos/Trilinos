@@ -53,35 +53,33 @@ int main(int argc, char *argv[]) {
 
   int i, ierr=0, returnierr=0;
 
+  bool verbose = false;
+
 #ifdef EPETRA_MPI
 
   // Initialize MPI
 
   MPI_Init(&argc,&argv);
-  int size, rank; // Number of MPI processes, My process ID
-
-  MPI_Comm_size(MPI_COMM_WORLD, &size);
-  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-
-#else
-
-  int size = 1; // Serial case (not using MPI)
-  int rank = 0;
-
-#endif
-
-  bool verbose = false;
-
-  // Check if we should print results to standard out
-  if (argc>1) if (argv[1][0]=='-' && argv[1][1]=='v') verbose = true;
-
-
-#ifdef EPETRA_MPI
   Epetra_MpiComm Comm(MPI_COMM_WORLD);
+
 #else
   Epetra_SerialComm Comm;
 #endif
-  if (!verbose) Comm.SetTracebackMode(0); // This should shut down any error traceback reporting
+
+  // Check if we should print results to standard out
+  if (argc>1) {
+    if (argv[1][0]=='-' && argv[1][1]=='v') verbose = true;
+  }
+
+  //Make sure the value of verbose is consistent across processors.
+  int verbose_int = verbose ? 1 : 0;
+  Comm.Broadcast(&verbose_int, 1, 0);
+  verbose = verbose_int==1 ? true : false;
+
+  if (!verbose) {
+    Comm.SetTracebackMode(0); // This should shut down error traceback reporting
+  }
+
 
   EPETRA_CHK_ERR( check_rowpermute_crsmatrix_local_diagonal( Comm, verbose ) );
 
@@ -95,6 +93,7 @@ int main(int argc, char *argv[]) {
 
   EPETRA_CHK_ERR( check_rowpermute_multivector_local( Comm, verbose) );
 
+
 #ifdef EPETRA_MPI
   MPI_Finalize();
 #endif
@@ -102,6 +101,7 @@ int main(int argc, char *argv[]) {
   return returnierr;
 }
 
+//------------------------------------------------------------------------------
 int check_rowpermute_crsmatrix_local_diagonal(Epetra_Comm& Comm,
 					   bool verbose)
 {
@@ -180,6 +180,7 @@ int check_rowpermute_crsmatrix_local_diagonal(Epetra_Comm& Comm,
   return(0);
 }
 
+//------------------------------------------------------------------------------
 int check_rowpermute_crsgraph_local_diagonal(Epetra_Comm& Comm,
 					  bool verbose)
 {
@@ -256,15 +257,12 @@ int check_rowpermute_crsgraph_local_diagonal(Epetra_Comm& Comm,
   return(0);
 }
 
+//------------------------------------------------------------------------------
 int check_colpermute_crsgraph(Epetra_Comm& Comm,
 			      bool verbose)
 {
   int MyPID = Comm.MyPID();
   int NumProc = Comm.NumProc();
-
-  if (NumProc > 1) {
-    return(0);
-  }
 
   Comm.Barrier();
   bool verbose1 = verbose;
@@ -287,9 +285,6 @@ int check_colpermute_crsgraph(Epetra_Comm& Comm,
   int* p = new int[NumMyElements];
   int firstGlobalRow = MyPID*NumMyElements;
 
-  //Set up a permutation that will reverse the order of all LOCAL rows. (i.e.,
-  //this test won't cause any inter-processor data movement.)
-
   if (verbose) {
     cout << "Permutation P:"<<endl;
   }
@@ -297,7 +292,8 @@ int check_colpermute_crsgraph(Epetra_Comm& Comm,
   int i;
 
   for(i=0; i<NumMyElements; ++i) {
-    p[i] = firstGlobalRow+NumMyElements-1-i;
+    int row = firstGlobalRow+i;
+    p[i] = NumGlobalElements - row - 1;
     if (verbose1) {
       cout << "p["<<firstGlobalRow+i<<"]: "<<p[i]<<endl;
     }
@@ -343,9 +339,12 @@ int check_colpermute_crsgraph(Epetra_Comm& Comm,
     cout << Bgrph << endl;
   }
 
+  delete [] p;
+
   return(0);
 }
 
+//-------------------------------------------------------------------------------
 int check_rowpermute_crsmatrix_global_diagonal(Epetra_Comm& Comm,
 			bool verbose)
 {
@@ -426,6 +425,7 @@ int check_rowpermute_crsmatrix_global_diagonal(Epetra_Comm& Comm,
   return(0);
 }
 
+//-------------------------------------------------------------------------------
 int check_colpermute_crsmatrix(Epetra_Comm& Comm,
 			       bool verbose)
 {
@@ -453,9 +453,6 @@ int check_colpermute_crsmatrix(Epetra_Comm& Comm,
   int* p = new int[NumMyElements];
   int firstGlobalRow = MyPID*NumMyElements;
 
-  //Set up a permutation that will reverse the order of all LOCAL rows. (i.e.,
-  //this test won't cause any inter-processor data movement.)
-
   if (verbose) {
     cout << "Permutation P:"<<endl;
   }
@@ -463,7 +460,8 @@ int check_colpermute_crsmatrix(Epetra_Comm& Comm,
   int i;
 
   for(i=0; i<NumMyElements; ++i) {
-    p[i] = firstGlobalRow+NumMyElements-1-i;
+    int row = firstGlobalRow+i;
+    p[i] = NumGlobalElements - row - 1;
     if (verbose1) {
       cout << "p["<<firstGlobalRow+i<<"]: "<<p[i]<<endl;
     }
@@ -478,21 +476,21 @@ int check_colpermute_crsmatrix(Epetra_Comm& Comm,
 
   for(i=0; i<NumMyElements; ++i) {
     int row = firstGlobalRow+i;
-    col = row;
+    col = NumGlobalElements - row - 1;
     val = 1.0*col;
 
     A.InsertGlobalValues(row, 1, &val, &col);
 
-    if (row > 0) {
-      col = row-1;
-      val = 1.0*col;
-      A.InsertGlobalValues(row, 1, &val, &col);
+    if (col > 0) {
+      int colm1 = col-1;
+      val = 1.0*colm1;
+      A.InsertGlobalValues(row, 1, &val, &colm1);
     }
 
-    if (row < NumGlobalElements-1) {
-      col = row+1;
-      val = 1.0*col;
-      A.InsertGlobalValues(row, 1, &val, &col);
+    if (col < NumGlobalElements-1) {
+      int colp1 = col+1;
+      val = 1.0*colp1;
+      A.InsertGlobalValues(row, 1, &val, &colp1);
     }
   }
  
@@ -513,11 +511,14 @@ int check_colpermute_crsmatrix(Epetra_Comm& Comm,
     cout << B << endl;
   }
 
+  delete [] p;
+
   return(0);
 }
 
+//------------------------------------------------------------------------------
 int check_rowpermute_multivector_local(Epetra_Comm& Comm,
-				    bool verbose)
+				       bool verbose)
 {
   int MyPID = Comm.MyPID();
   int NumProc = Comm.NumProc();

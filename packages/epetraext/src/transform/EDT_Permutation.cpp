@@ -142,6 +142,8 @@ struct Perm_traits<Epetra_CrsMatrix> {
 
     Permutation<Epetra_CrsMatrix>* colperm =
       new Permutation<Epetra_CrsMatrix>(origColMap);
+    colperm->PutValue(0);
+
     Epetra_Export p_exporter(perm->Map(), origColMap);
     colperm->Export(*perm, p_exporter, Add);
 
@@ -155,8 +157,8 @@ struct Perm_traits<Epetra_CrsMatrix> {
 
     for(int i=0; i<numMyRows; ++i) {
       int globalRow = myGlobalRows[i];
-
       int len = srcObj->NumGlobalEntries(globalRow);
+
       int numIndices;
       double* src_values = new double[len];
       int* src_indices = new int[len];
@@ -249,6 +251,8 @@ struct Perm_traits<Epetra_CrsGraph> {
 
     Permutation<Epetra_CrsGraph>* colperm =
       new Permutation<Epetra_CrsGraph>(origColMap);
+    colperm->PutValue(0);
+
     Epetra_Export p_exporter(perm->Map(), origColMap);
     colperm->Export(*perm, p_exporter, Add);
 
@@ -263,6 +267,7 @@ struct Perm_traits<Epetra_CrsGraph> {
     for(int i=0; i<numMyRows; ++i) {
       int globalRow = myGlobalRows[i];
       int len = srcObj->NumGlobalIndices(globalRow);
+
       int numIndices;
       int* src_indices = new int[len];
       int err = srcObj->ExtractGlobalRowCopy(globalRow, len, numIndices, src_indices);

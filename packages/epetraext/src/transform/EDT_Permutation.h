@@ -132,17 +132,29 @@ class Permutation : public Epetra_IntVector,
   typedef typename EpetraExt::SameTypeTransform<T>::TransformTypePtr InputPtr;
 
   /** This method creates a new object which is a permuted copy of
-      the input argument. Note that the new object will be destroyed by this
-      permutation object.
+      the input argument.
+
+      Notes:
+      <ul>
+      <li> This is a collective function, so in a parallel setting it must be
+      called by all processors before any will complete it. (This is because
+      map objects are being created, and import/export operations are being
+      performed.)
+      <li> The new object that is created, if it is a graph or matrix, has
+      already had FillComplete() called before it is returned to the user.
+      <li> The new object will be destroyed by this permutation object,
+      so the caller should not delete it.
+      </ul>
 
       @param orig Input Object to be permuted.
   */
   OutputRef operator()( InputRef orig );
 
   /** This method creates a new object which is a permuted copy of
-      the input argument. Note: Column permutations are not yet implemented.
-      Note that the new object will be destroyed by this
-      permutation object.
+      the input argument.
+
+      The same notes apply to this method (regarding collective communications
+      etc.) as to the row-permutation operator method above.
 
       @param orig Input Object to be permuted.
 
