@@ -578,37 +578,16 @@ report($SUMMARY);
                             my $invokeConfigure ="$options{'TRILINOS_DIR'}[0]/$buildDir[$j]/invoke-configure";
                             (my $fixFailed, my $brokenPackage) = fixInvokeConfigure($log, $invokeConfigure, $comm);
                             
-                            if ($fixFailed == $SUCCESS || $fixFailed == $IC_FIX_FAIL_NO_CHANGE) {
-                                # descend into $brokenPackage and capture output from "make clean"
-                                chdir "$options{'TRILINOS_DIR'}[0]/$buildDir[$j]/packages/$dirNames{$brokenPackage}";
-                            
-                                my $command = "";
-                                if (defined $options{'MAKE_FLAGS'} && defined $options{'MAKE_FLAGS'}[0]) {
-                                    $command .= "make $options{'MAKE_FLAGS'}[0] clean &> /dev/null";
-                                } else {
-                                    $command .= "make clean &> /dev/null";
-                                }
-                                system $command;        
-                                                    
-                                $command = "";
-                                if (defined $options{'MAKE_FLAGS'} && defined $options{'MAKE_FLAGS'}[0]) {
-                                    $command .= "make $options{'MAKE_FLAGS'}[0] >> ";
-                                    $command .= "$options{'TRILINOS_DIR'}[0]/testharness/temp/";
-                                    $command .= $hostOS."_".$comm."_".$brokenPackage."_build.log".($isLinux?" 2>&1":"");
-                                } else {
-                                    $command .= "make >> ";
-                                    $command .= "$options{'TRILINOS_DIR'}[0]/testharness/temp/";
-                                    $command .= $hostOS."_".$comm."_".$brokenPackage."_build.log".($isLinux?" 2>&1":"");
-                                }
-                                system $command;
-                
-                                # return to build dir
-                                chdir"$options{'TRILINOS_DIR'}[0]/$buildDir[$j]";                           
+                            my $command = "";
+                            $command .= "cat $options{'TRILINOS_DIR'}[0]/testharness/temp/";
+                            $command .= "trilinos_build_log_$hostOS.txt | tail -300 > ";
+                            $command .= "$options{'TRILINOS_DIR'}[0]/testharness/temp/";
+                            $command .= $hostOS."_".$comm."_".$brokenPackage."_build.log";
+                            system $command;     
                                 
-                                # remove broken package (in recover mode only)
-                                if ($flags{r}) {                            
-                                    system "rm -rf $options{'TRILINOS_DIR'}[0]/$buildDir[$j]/packages/$dirNames{$brokenPackage}";
-                                }
+                            # remove broken package (in recover mode only)
+                            if ($flags{r}) {                            
+                                system "rm -rf $options{'TRILINOS_DIR'}[0]/$buildDir[$j]/packages/$dirNames{$brokenPackage}";
                             }
                             
                             # quit if error fixing invoke-configure
