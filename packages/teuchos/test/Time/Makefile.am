@@ -22,6 +22,6 @@ Time_test_CXXFLAGS = -I$(top_srcdir)/src
 
 #np# One LDADD primary can be defined for each exe.  Include any LDFLAGS necessary for 
 #np# building the exe.
-Time_test_LDADD = $(top_builddir)/src/libteuchos.a $(Time_LIBS) $(LIBS) $(FLIBS)
+Time_test_LDADD = $(top_builddir)/src/libteuchos.a $(Time_LIBS) $(BLAS_LIBS) $(LIBS) $(FLIBS)
 
 

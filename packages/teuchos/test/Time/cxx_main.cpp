@@ -2,6 +2,7 @@
 #include "Teuchos_TimeMonitor.hpp"
 #include "Teuchos_Out.hpp"
 #include "Teuchos_MPISession.hpp"
+#include "Teuchos_ScalarTraits.hpp"
 
 using namespace Teuchos;
 using std::string;
@@ -73,9 +74,9 @@ double sqrtFunc()
 
   for (int i=0; i<10000; i++) 
     {
-      TEST_FOR_EXCEPTION(std::sqrt((double) i) > 1000.0, std::runtime_error,
+      TEST_FOR_EXCEPTION(ScalarTraits<double>::squareroot((double) i) > 1000.0, std::runtime_error,
                          "throw an exception");
-      sum += std::sqrt((double) i);
+      sum += ScalarTraits<double>::squareroot((double) i);
     }
 
   return sum;
@@ -103,9 +104,9 @@ double exceptFunc()
   double sum = 0.0;
   for (int i=0; i<10000; i++)
     {
-      TEST_FOR_EXCEPTION(std::sqrt((double) i) > 60.0, std::runtime_error,
+      TEST_FOR_EXCEPTION(ScalarTraits<double>::squareroot((double) i) > 60.0, std::runtime_error,
                          "throw an exception");
-      sum += std::sqrt((double) i);
+      sum += ScalarTraits<double>::squareroot((double) i);
     }
   return sum;
 }
