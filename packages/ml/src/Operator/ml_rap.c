@@ -32,7 +32,7 @@ void ML_rap(ML *ml, ML_Operator *Rmat, ML_Operator *Amat,
    int         max_per_proc, i, j;
    ML_Operator *APmat, *RAPmat, *Pcomm, *RAPcomm, *APcomm, *AP2comm, *tptr;
    ML_CommInfoOP *getrow_comm; 
-   double      *scales;
+   double      *scales = NULL;
 
    /* Check that N_input_vector is reasonable */
 
@@ -91,7 +91,8 @@ void ML_rap(ML *ml, ML_Operator *Rmat, ML_Operator *Amat,
 
    /* Take into account any scaling in Amat */
 
-   ML_DVector_GetDataPtr(Rmat->from->Amat_Normalization,&scales);
+   if (Rmat->from != NULL)
+      ML_DVector_GetDataPtr(Rmat->from->Amat_Normalization,&scales);
    if (scales != NULL) 
       ML_Scale_CSR(APcomm, scales, 0);
 
@@ -118,7 +119,9 @@ void ML_rap(ML *ml, ML_Operator *Rmat, ML_Operator *Amat,
       ML_exchange_rows( RAPmat, &RAPcomm, Rmat->getrow->post_comm);
    else RAPcomm = RAPmat;
 
-   ML_DVector_GetDataPtr(Rmat->to->Amat_Normalization,&scales);
+   scales = NULL;
+   if (Rmat->to != NULL)
+      ML_DVector_GetDataPtr(Rmat->to->Amat_Normalization,&scales);
    if (scales != NULL) 
       ML_Scale_CSR(RAPcomm, scales, 1);
 
