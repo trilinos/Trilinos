@@ -91,7 +91,8 @@ STATUS_H = \
 	$(srcdir)/NOX_Status_Combo.H \
 	$(srcdir)/NOX_Status_MaxResid.H \
 	$(srcdir)/NOX_Status_RelResid.H \
-	$(srcdir)/NOX_Status_MaxIters.H 
+	$(srcdir)/NOX_Status_MaxIters.H \
+	$(srcdir)/NOX_Status_RelUpdate.H 
 
 STATUS = \
 	$(srcdir)/NOX_Status_Test.C \
@@ -99,7 +100,8 @@ STATUS = \
 	$(srcdir)/NOX_Status_Combo.C \
 	$(srcdir)/NOX_Status_MaxResid.C \
 	$(srcdir)/NOX_Status_RelResid.C \
-	$(srcdir)/NOX_Status_MaxIters.C 
+	$(srcdir)/NOX_Status_MaxIters.C \
+	$(srcdir)/NOX_Status_RelUpdate.C 
 
 UTILS_H = \
 	$(srcdir)/NOX_Utils.H 
