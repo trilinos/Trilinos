@@ -741,9 +741,12 @@
  \definecolor{TrilinosRed}{rgb}{0,0,0}
  \definecolor{TrilinosDeepRed}{rgb}{0,0,0}
  \definecolor{turquoise}{rgb}{0,0,0}
- \definecolor{grey}{rgb}{0.5,0.5,0.5}
- \definecolor{shadecolor}{rgb}{0.753,0.753,0.753}
- \definecolor{pink}{rgb}{0.5,0.5,0.5}
+ \definecolor{grey}{rgb}{0,0,0}
+ \definecolor{shadecolor}{rgb}{0,0,0}
+ \definecolor{pink}{rgb}{0,0,0}
+% \definecolor{grey}{rgb}{0.5,0.5,0.5}
+% \definecolor{shadecolor}{rgb}{0.753,0.753,0.753}
+% \definecolor{pink}{rgb}{0.5,0.5,0.5}
 
 % Trilinos Colors
 % \definecolor{TrilinosBlue}{rgb}{0.498,0.749,1}
