@@ -119,16 +119,24 @@ struct LB_Migrate_Struct {
   LB_PRE_MIGRATE_FN *Pre_Process;      /* Function that performs application
                                           specific pre-processing.  Optional
                                           for help-migration.                */
+  void *Pre_Process_Data;              /* Ptr to user defined data to be
+                                          passed to Pre_Process()            */
   LB_OBJ_SIZE_FN *Get_Obj_Size;        /* Function that returns the size of
                                           contiguous memory needed to store
                                           the data for a single object for
                                           migration.                         */
+  void *Get_Obj_Size_Data;             /* Ptr to user defined data to be
+                                          passed to Get_Obj_Size()           */
   LB_PACK_OBJ_FN *Pack_Obj;            /* Routine that packs object data for
                                           a given object into contiguous 
                                           memory for migration.              */
+  void *Pack_Obj_Data;                 /* Ptr to user defined data to be
+                                          passed to Pack_Obj()               */
   LB_UNPACK_OBJ_FN *Unpack_Obj;        /* Routine that unpacks object data for
                                           a given object from contiguous 
                                           memory after migration.            */
+  void *Unpack_Obj_Data;               /* Ptr to user defined data to be
+                                          passed to Unpack_Obj()             */
 };
 
 typedef struct LB_Migrate_Struct LB_MIGRATE;
@@ -173,36 +181,78 @@ struct LB_Struct {
                                       to the appropriate data type.          */
   LB_OBJ_WEIGHT_FN *Get_Obj_Weight;            /* Fn ptr to get an object's
                                                   weight.                    */
+  void *Get_Obj_Weight_Data;                   /* Ptr to user defined data
+                                                  to be passed to
+                                                  Get_Obj_Weight()           */
   LB_NUM_EDGES_FN *Get_Num_Edges;              /* Fn ptr to get an object's
                                                   number of edges.           */
+  void *Get_Num_Edges_Data;                    /* Ptr to user defined data
+                                                  to be passed to
+                                                  Get_Num_Edges()            */
   LB_EDGE_LIST_FN *Get_Edge_List;              /* Fn ptr to get an object's
                                                   edge list.                 */
+  void *Get_Edge_List_Data;                    /* Ptr to user defined data
+                                                  to be passed to
+                                                  Get_Edge_List()            */
   LB_NUM_GEOM_FN *Get_Num_Geom;                /* Fn ptr to get an object's
                                                   number of geometry values. */
+  void *Get_Num_Geom_Data;                     /* Ptr to user defined data
+                                                  to be passed to
+                                                  Get_Num_Geom()             */
   LB_GEOM_FN *Get_Geom;                        /* Fn ptr to get an object's
                                                   geometry values.           */
+  void *Get_Geom_Data;                         /* Ptr to user defined data
+                                                  to be passed to
+                                                  Get_Geom()                 */
   LB_NUM_OBJ_FN *Get_Num_Obj;                  /* Fn ptr to get a proc's  
                                                   number of local objects.   */
+  void *Get_Num_Obj_Data;                      /* Ptr to user defined data
+                                                  to be passed to
+                                                  Get_Num_Obj()              */
   LB_OBJ_LIST_FN *Get_Obj_List;                /* Fn ptr to get all local
                                                   objects on a proc.         */
+  void *Get_Obj_List_Data;                     /* Ptr to user defined data
+                                                  to be passed to
+                                                  Get_Obj_List()             */
   LB_FIRST_OBJ_FN *Get_First_Obj;              /* Fn ptr to get the first   
                                                   local obj on a proc.       */
+  void *Get_First_Obj_Data;                    /* Ptr to user defined data
+                                                  to be passed to
+                                                  Get_First_Obj()            */
   LB_NEXT_OBJ_FN *Get_Next_Obj;                /* Fn ptr to get the next   
                                                   local obj on a proc.       */
+  void *Get_Next_Obj_Data;                     /* Ptr to user defined data
+                                                  to be passed to
+                                                  Get_Next_Obj()             */
   LB_NUM_BORDER_OBJ_FN *Get_Num_Border_Obj;    /* Fn ptr to get a proc's 
                                                   number of border objs wrt
                                                   a given processor.         */
+  void *Get_Num_Border_Obj_Data;               /* Ptr to user defined data
+                                                  to be passed to
+                                                  Get_Num_Border_Obj()       */
   LB_BORDER_OBJ_LIST_FN *Get_Border_Obj_List;  /* Fn ptr to get all objects
                                                   sharing a border with a
                                                   given processor.           */
+  void *Get_Border_Obj_List_Data;              /* Ptr to user defined data
+                                                  to be passed to
+                                                  Get_Border_Obj_List()      */
   LB_FIRST_BORDER_OBJ_FN *Get_First_Border_Obj;/* Fn ptr to get the first 
                                                   object sharing a border 
                                                   with a given processor.    */
+  void *Get_First_Border_Obj_Data;             /* Ptr to user defined data
+                                                  to be passed to
+                                                  Get_First_Border_Obj()     */
   LB_NEXT_BORDER_OBJ_FN *Get_Next_Border_Obj;  /* Fn ptr to get the next 
                                                   object sharing a border 
                                                   with a given processor.    */
+  void *Get_Next_Border_Obj_Data;              /* Ptr to user defined data
+                                                  to be passed to
+                                                  Get_Next_Border_Obj()      */
   LB_MIGRATE Migrate;                          /* Struct with info for helping
                                                   with migration.            */
+  void *Migrate_Data;                          /* Ptr to user defined data
+                                                  to be passed to
+                                                  Migrate()                  */
 };
 
 /*****************************************************************************/

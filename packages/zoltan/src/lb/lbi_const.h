@@ -84,13 +84,14 @@ struct LB_Struct;
  *  Function to return the weight of the object with a given ID.
  *  
  *  Input:  
- *    LB_GID global_id           --  the Global ID for the object
- *    LB_LID local_id            --  the Local ID for the object
+ *    void *data                --  pointer to user defined data structure
+ *    LB_GID global_id          --  the Global ID for the object
+ *    LB_LID local_id           --  the Local ID for the object
  *  Returned value:
  *    double                    --  the weight for the object.
  */
 
-typedef double LB_OBJ_WEIGHT_FN(LB_GID global_id, LB_LID local_id);
+typedef double LB_OBJ_WEIGHT_FN(void *data, LB_GID global_id, LB_LID local_id);
 
 /*****************************************************************************/
 /*
@@ -98,13 +99,14 @@ typedef double LB_OBJ_WEIGHT_FN(LB_GID global_id, LB_LID local_id);
  *  the object's number of edges (i.e., the number of objects with which
  *  the given object must communicate).
  *  Input:  
+ *    void *data                --  pointer to user defined data structure
  *    LB_GID global_id          --  the Global ID for the object
  *    LB_LID local_id           --  the Local ID for the object
  *  Returned value:
  *    int                       --  the number of neighbor objects.
  */
 
-typedef int LB_NUM_EDGES_FN(LB_GID global_id, LB_LID local_id);
+typedef int LB_NUM_EDGES_FN(void *data, LB_GID global_id, LB_LID local_id);
 
 /*****************************************************************************/
 /*
@@ -112,6 +114,7 @@ typedef int LB_NUM_EDGES_FN(LB_GID global_id, LB_LID local_id);
  *  the object's edge list (i.e., objects with which the given object must
  *  communicate.
  *  Input:  
+ *    void *data                --  pointer to user defined data structure
  *    LB_GID global_id          --  the Global ID for the object
  *    LB_LID local_id           --  the Local ID for the object
  *  Output:
@@ -119,7 +122,7 @@ typedef int LB_NUM_EDGES_FN(LB_GID global_id, LB_LID local_id);
  *    LB_LID *nbor_local_ids    --  Array of Local IDs of neighboring objects.
  */
 
-typedef void LB_EDGE_LIST_FN(LB_GID global_id, LB_LID local_id,
+typedef void LB_EDGE_LIST_FN(void *data, LB_GID global_id, LB_LID local_id,
                              LB_GID *nbor_global_id, LB_LID *nbor_local_id);
 
 /*****************************************************************************/
@@ -128,17 +131,19 @@ typedef void LB_EDGE_LIST_FN(LB_GID global_id, LB_LID local_id,
  *  the number of geometry fields per object (e.g., the number of values
  *  used to express the coordinates of the object).
  *  Input:  
+ *    void *data                --  pointer to user defined data structure
  *  Returned value:
  *    int                       --  the number of geometry fields.
  */
 
-typedef int LB_NUM_GEOM_FN();
+typedef int LB_NUM_GEOM_FN(void *data);
 
 /*****************************************************************************/
 /*
  *  Function to return, for the object with a given ID,
  *  the geometry information for the object (e.g., coordinates).
  *  Input:  
+ *    void *data                --  pointer to user defined data structure
  *    LB_GID global_id          --  the Global ID for the object
  *    LB_LID local_id           --  the Local ID for the object
  *  Output:
@@ -146,25 +151,26 @@ typedef int LB_NUM_GEOM_FN();
  *                                  (e.g., coordinates)
  */
 
-typedef void LB_GEOM_FN(LB_GID global_id, LB_LID local_id, double *geom_vec);
+typedef void LB_GEOM_FN(void *data, LB_GID global_id, LB_LID local_id,
+                        double *geom_vec);
 
 /*****************************************************************************/
 /*
  *  Function to return, for the calling processor, the number of objects 
  *  located in that processor's memory.
  *  Input:  
- *    none
+ *    void *data                --  pointer to user defined data structure
  *  Returned value:
  *    int                       --  the number of local objects.
  */
 
-typedef int LB_NUM_OBJ_FN();
+typedef int LB_NUM_OBJ_FN(void *data);
 
 /*****************************************************************************/
 /*
  *  Function to return a list of all local objects on a processor.
  *  Input:  
- *    none
+ *    void *data                --  pointer to user defined data structure
  *  Output:
  *    LB_GID *global_ids        --  array of Global IDs of all objects on the
  *                                  processor.
@@ -172,12 +178,14 @@ typedef int LB_NUM_OBJ_FN();
  *                                  processor.
  */
 
-typedef void LB_OBJ_LIST_FN(LB_GID *global_ids, LB_LID *local_ids);
+typedef void LB_OBJ_LIST_FN(void *data, LB_GID *global_ids, LB_LID *local_ids);
 
 /*****************************************************************************/
 /*
  *  Iterator function for local objects; return the first local object on
  *  the processor.  This function should be used with LB_NEXT_OBJ_FN.
+ *  Input:
+ *    void *data                --  pointer to user defined data structure
  *  Output:
  *    LB_GID *first_global_id   --  Global ID of the first object; NULL if no
  *                                  objects.
@@ -188,13 +196,15 @@ typedef void LB_OBJ_LIST_FN(LB_GID *global_ids, LB_LID *local_ids);
  *                                  no more objects exist on the processor.
  */
 
-typedef int LB_FIRST_OBJ_FN(LB_GID *first_global_id, LB_LID *first_local_id);
+typedef int LB_FIRST_OBJ_FN(void *data, LB_GID *first_global_id,
+                            LB_LID *first_local_id);
 
 /*****************************************************************************/
 /*
  *  Iterator function for local objects; return the next local object.
  *  This function should be used with LB_FIRST_OBJ_FN.
  *  Input:  
+ *    void *data                --  pointer to user defined data structure
  *    LB_GID global_id          --  Global ID of the previous object.
  *    LB_LID local_id           --  Local ID of the previous object.
  *  Output:
@@ -208,7 +218,7 @@ typedef int LB_FIRST_OBJ_FN(LB_GID *first_global_id, LB_LID *first_local_id);
  *                                  the last object).
  */
 
-typedef int LB_NEXT_OBJ_FN(LB_GID global_id, LB_LID local_id,
+typedef int LB_NEXT_OBJ_FN(void *data, LB_GID global_id, LB_LID local_id,
                            LB_GID *next_global_id, LB_LID *next_local_id);
 
 /*****************************************************************************/
@@ -216,18 +226,20 @@ typedef int LB_NEXT_OBJ_FN(LB_GID global_id, LB_LID local_id,
  *  Function to return, for the calling processor, the number of objects 
  *  sharing a subdomain border with a given processor.
  *  Input:  
+ *    void *data                --  pointer to user defined data structure
  *    int nbor_proc             --  processor ID of the neighboring processor.
  *  Returned value:
  *    int                       --  the number of local objects.
  */
 
-typedef int LB_NUM_BORDER_OBJ_FN(int nbor_proc);
+typedef int LB_NUM_BORDER_OBJ_FN(void *data, int nbor_proc);
 
 /*****************************************************************************/
 /*
  *  Function to return a list of all objects sharing a subdomain border 
  *  with a given processor.
  *  Input:  
+ *    void *data                --  pointer to user defined data structure
  *    int nbor_proc             --  processor ID of the neighboring processor.
  *  Output:
  *    LB_GID *global_ids        --  array of Global IDs of all objects on the
@@ -238,14 +250,15 @@ typedef int LB_NUM_BORDER_OBJ_FN(int nbor_proc);
  *                                  processor.
  */
 
-typedef void LB_BORDER_OBJ_LIST_FN(int nbor_proc, LB_GID *global_ids,
-                                   LB_LID *local_ids);
+typedef void LB_BORDER_OBJ_LIST_FN(void *data, int nbor_proc,
+                                   LB_GID *global_ids, LB_LID *local_ids);
 
 /*****************************************************************************/
 /*
  *  Iterator function for border objects; return the first local object 
  *  along the subdomain boundary with a given processor.
  *  Input:  
+ *    void *data                --  pointer to user defined data structure
  *    int nbor_proc             --  processor ID of the neighboring processor.
  *  Output:
  *    LB_GID *first_global_id   --  Global ID of the next object; NULL if no
@@ -258,7 +271,8 @@ typedef void LB_BORDER_OBJ_LIST_FN(int nbor_proc, LB_GID *global_ids,
  *                                  the last object).
  */
 
-typedef int LB_FIRST_BORDER_OBJ_FN(int nbor_proc, LB_GID *first_global_id,
+typedef int LB_FIRST_BORDER_OBJ_FN(void *data, int nbor_proc,
+                                   LB_GID *first_global_id,
                                    LB_LID *first_local_id);
 
 /*****************************************************************************/
@@ -266,6 +280,7 @@ typedef int LB_FIRST_BORDER_OBJ_FN(int nbor_proc, LB_GID *first_global_id,
  *  Iterator function for border objects; return the next local object 
  *  along the subdomain boundary with a given processor.
  *  Input:  
+ *    void *data                --  pointer to user defined data structure
  *    LB_GID global_id          --  Global ID of the previous object.
  *    LB_LID local_id           --  Local ID of the previous object.
  *    int nbor_proc             --  processor ID of the neighboring processor.
@@ -280,9 +295,10 @@ typedef int LB_FIRST_BORDER_OBJ_FN(int nbor_proc, LB_GID *first_global_id,
  *                                  the last object).
  */
 
-typedef int LB_NEXT_BORDER_OBJ_FN(LB_GID global_id, LB_LID local_id, 
-                                 int nbor_proc,
-                                 LB_GID *next_global_id, LB_LID *next_local_id);
+typedef int LB_NEXT_BORDER_OBJ_FN(void *data, LB_GID global_id,
+                                  LB_LID local_id, int nbor_proc,
+                                  LB_GID *next_global_id,
+                                  LB_LID *next_local_id);
 
 /*****************************************************************************/
 /*
@@ -291,12 +307,12 @@ typedef int LB_NEXT_BORDER_OBJ_FN(LB_GID global_id, LB_LID local_id,
  *  wants the load-balancer to help migrate the data.  It is used by the
  *  comm.c routines to allocate message buffers.
  *  Input:  
- *    none
+ *    void *data                --  pointer to user defined data structure
  *  Returned value:
  *    int                       --  the size of data of local objects.
  */
 
-typedef int LB_OBJ_SIZE_FN();
+typedef int LB_OBJ_SIZE_FN(void *data);
 
 /*****************************************************************************/
 /*
@@ -305,6 +321,7 @@ typedef int LB_OBJ_SIZE_FN();
  *  to help migrate the data.  The application can perform any type of 
  *  pre-processing in this function.
  *  Input:  
+ *    void *data                --  pointer to user defined data structure
  *    int num_import            --  Number of objects to be imported.
  *    LB_GID *import_global_ids --  Global IDs of objects to be imported.
  *    LB_LID *import_local_ids  --  Local IDs of objects to be imported.
@@ -318,7 +335,8 @@ typedef int LB_OBJ_SIZE_FN();
  *    none                      --  the application performs pre-processing.
  */
 
-typedef void LB_PRE_MIGRATE_FN(int num_import, LB_GID *import_global_ids,
+typedef void LB_PRE_MIGRATE_FN(void *data, int num_import,
+                               LB_GID *import_global_ids,
                                LB_LID *import_local_ids, int *import_procs,
                                int num_export, LB_GID *export_global_ids,
                                LB_LID *export_local_ids, int *export_procs);
@@ -331,6 +349,7 @@ typedef void LB_PRE_MIGRATE_FN(int num_import, LB_GID *import_global_ids,
  *  into a communication buffer, the starting address of which is provided
  *  by the load-balancer.
  *  Input:  
+ *    void *data                --  pointer to user defined data structure
  *    LB_GID global_id          --  Global ID of the object to be packed.
  *    LB_LID local_id           --  Local ID of the object to be packed.
  *    int dest_proc             --  Processor ID of the destination processor.
@@ -343,8 +362,8 @@ typedef void LB_PRE_MIGRATE_FN(int num_import, LB_GID *import_global_ids,
  *                                  data.
  */
 
-typedef void LB_PACK_OBJ_FN(LB_GID global_id, LB_LID local_id, int dest_proc,
-                               int size, char *buf);
+typedef void LB_PACK_OBJ_FN(void *data, LB_GID global_id, LB_LID local_id,
+                            int dest_proc, int size, char *buf);
 
 /*****************************************************************************/
 /*
@@ -353,6 +372,7 @@ typedef void LB_PACK_OBJ_FN(LB_GID global_id, LB_LID local_id, int dest_proc,
  *  to help migrate the data.  The data is stored in a buffer (char *); the
  *  size of the data for the object is included.
  *  Input:  
+ *    void *data                --  pointer to user defined data structure
  *    LB_GID global_id          --  Global ID of the object to be unpacked.
  *    int size                  --  number of bytes in the buffer for the
  *                                  object.
@@ -363,7 +383,8 @@ typedef void LB_PACK_OBJ_FN(LB_GID global_id, LB_LID local_id, int dest_proc,
  *                                  buffer.
  */
 
-typedef void LB_UNPACK_OBJ_FN(LB_GID global_id, int size, char *buf);
+typedef void LB_UNPACK_OBJ_FN(void *data, LB_GID global_id, int size,
+                              char *buf);
 
 /*****************************************************************************/
 /*****************************************************************************/
@@ -408,10 +429,13 @@ extern struct LB_Struct *LB_Create_Object(MPI_Comm communicator);
  *                                   set.
  *    void *()fn_ptr             --  Pointer to the function to be used in the 
  *                                   assignment.
+ *    void *data_ptr             --  Pointer to data that the DLB library will
+ *                                   pass as an argument to fn(). May be NULL.
  *  Output:
  *    struct LB_Struct *lb       --  Appropriate field set to value in fn_ptr.
  */
-extern void LB_Set_Fn(struct LB_Struct *lb, LB_FN_TYPE fn_type, void *fn_ptr());
+extern void LB_Set_Fn(struct LB_Struct *lb, LB_FN_TYPE fn_type,
+                      void *fn_ptr(), void *data_ptr);
 
 /*****************************************************************************/
 /*

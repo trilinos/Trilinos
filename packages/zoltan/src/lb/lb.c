@@ -150,7 +150,7 @@ int flag;
 /****************************************************************************/
 /****************************************************************************/
 
-void LB_Set_Fn(LB *lb, LB_FN_TYPE fn_type, void *fn())
+void LB_Set_Fn(LB *lb, LB_FN_TYPE fn_type, void *fn(), void *data)
 {
 /*
  *  Function to initialize a given LB interface function.
@@ -159,6 +159,8 @@ void LB_Set_Fn(LB *lb, LB_FN_TYPE fn_type, void *fn())
  *    fn_type           --  Enum type indicating the function to be set.
  *    fn                --  Pointer to the function to be used in the
  *                          assignment.
+ *    data              --  Pointer to data that the DLB library will
+ *                          pass as an argument to fn(). May be NULL.
  *  Output:
  *    lb                --  Appropriate field set to value in void *().
  */
@@ -167,55 +169,72 @@ char *yo = "LB_Set_Fn";
 
   switch (fn_type) {
   case LB_OBJ_WEIGHT_FN_TYPE:
-    lb->Get_Obj_Weight = (LB_OBJ_WEIGHT_FN *) fn; 
+    lb->Get_Obj_Weight = (LB_OBJ_WEIGHT_FN *) fn;
+    lb->Get_Obj_Weight_Data = data;
     break;
   case LB_NUM_EDGES_FN_TYPE:
     lb->Get_Num_Edges = (LB_NUM_EDGES_FN *) fn;
+    lb->Get_Num_Edges_Data = data;
     break;
   case LB_EDGE_LIST_FN_TYPE:
     lb->Get_Edge_List = (LB_EDGE_LIST_FN *) fn;
+    lb->Get_Edge_List_Data = data;
     break;
   case LB_NUM_GEOM_FN_TYPE:
     lb->Get_Num_Geom = (LB_NUM_GEOM_FN *) fn;
+    lb->Get_Num_Geom_Data = data;
     break;
   case LB_GEOM_FN_TYPE:
     lb->Get_Geom = (LB_GEOM_FN *) fn;
+    lb->Get_Geom_Data = data;
     break;
   case LB_NUM_OBJ_FN_TYPE:
     lb->Get_Num_Obj = (LB_NUM_OBJ_FN *) fn;
+    lb->Get_Num_Obj_Data = data;
     break;
   case LB_OBJ_LIST_FN_TYPE:
     lb->Get_Obj_List = (LB_OBJ_LIST_FN *) fn;
+    lb->Get_Obj_List_Data = data;
     break;
   case LB_FIRST_OBJ_FN_TYPE:
     lb->Get_First_Obj = (LB_FIRST_OBJ_FN *) fn;
+    lb->Get_First_Obj_Data = data;
     break;
   case LB_NEXT_OBJ_FN_TYPE:
     lb->Get_Next_Obj = (LB_NEXT_OBJ_FN *) fn;
+    lb->Get_Next_Obj_Data = data;
     break;
   case LB_NUM_BORDER_OBJ_FN_TYPE:
     lb->Get_Num_Border_Obj = (LB_NUM_BORDER_OBJ_FN *) fn;
+    lb->Get_Num_Border_Obj_Data = data;
     break;
   case LB_BORDER_OBJ_LIST_FN_TYPE:
     lb->Get_Border_Obj_List = (LB_BORDER_OBJ_LIST_FN *) fn;
+    lb->Get_Border_Obj_List_Data = data;
     break;
   case LB_FIRST_BORDER_OBJ_FN_TYPE:
     lb->Get_First_Border_Obj = (LB_FIRST_BORDER_OBJ_FN *) fn;
+    lb->Get_First_Border_Obj_Data = data;
     break;
   case LB_NEXT_BORDER_OBJ_FN_TYPE:
     lb->Get_Next_Border_Obj = (LB_NEXT_BORDER_OBJ_FN *) fn;
+    lb->Get_Next_Border_Obj_Data = data;
     break;
   case LB_PRE_MIGRATE_FN_TYPE:
     lb->Migrate.Pre_Process = (LB_PRE_MIGRATE_FN *) fn;
+    lb->Migrate.Pre_Process_Data = data;
     break;
   case LB_OBJ_SIZE_FN_TYPE:
     lb->Migrate.Get_Obj_Size = (LB_OBJ_SIZE_FN *) fn;
+    lb->Migrate.Get_Obj_Size_Data = data;
     break;
   case LB_PACK_OBJ_FN_TYPE:
     lb->Migrate.Pack_Obj = (LB_PACK_OBJ_FN *) fn;
+    lb->Migrate.Pack_Obj_Data = data;
     break;
   case LB_UNPACK_OBJ_FN_TYPE:
     lb->Migrate.Unpack_Obj = (LB_UNPACK_OBJ_FN *) fn;
+    lb->Migrate.Unpack_Obj_Data = data;
     break;
   default:
     fprintf(stderr, "Error from %s:  LB_FN_TYPE %d is invalid.\n", yo, fn_type);
@@ -774,7 +793,8 @@ COMM_OBJ *comm_plan;     /* Communication object returned
   }
 
   if (lb->Migrate.Pre_Process != NULL) {
-    lb->Migrate.Pre_Process(num_import, import_global_ids,
+    lb->Migrate.Pre_Process(lb->Migrate.Pre_Process_Data,
+                            num_import, import_global_ids,
                             import_local_ids, import_procs,
                             num_export, export_global_ids,
                             export_local_ids, export_procs);
@@ -782,7 +802,7 @@ COMM_OBJ *comm_plan;     /* Communication object returned
       printf("DLBLIB %d %s Done Pre-Process\n", lb->Proc, yo);
   }
 
-  size = lb->Migrate.Get_Obj_Size();
+  size = lb->Migrate.Get_Obj_Size(lb->Migrate.Get_Obj_Size_Data);
 
   if (num_export > 0) {
     export_buf = (char *) LB_array_alloc(__FILE__, __LINE__, 1, num_export,
@@ -798,8 +818,8 @@ COMM_OBJ *comm_plan;     /* Communication object returned
     tmp = export_buf;
     for (i = 0; i < num_export; i++) {
       proc_list[i] = export_procs[i];
-      lb->Migrate.Pack_Obj(export_global_ids[i], export_local_ids[i],
-                                export_procs[i], size, tmp);
+      lb->Migrate.Pack_Obj(lb->Migrate.Pack_Obj_Data, export_global_ids[i],
+                           export_local_ids[i], export_procs[i], size, tmp);
       tmp += size;
     }
   }
@@ -841,7 +861,7 @@ COMM_OBJ *comm_plan;     /* Communication object returned
   for (i = 0; i < num_import; i++) {
     if (import_global_ids != NULL) 
       LB_SET_GID(global_id, import_global_ids[i]);
-    lb->Migrate.Unpack_Obj(global_id, size, tmp);
+    lb->Migrate.Unpack_Obj(lb->Migrate.Unpack_Obj_Data, global_id, size, tmp);
     tmp += size;
   }
 
