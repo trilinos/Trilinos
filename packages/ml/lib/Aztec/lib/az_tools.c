@@ -2578,7 +2578,7 @@ void AZ_read_update(int *N_update, int *update[], int proc_config[],
 
     t1 = 0;            /* total number of points distributed */
     if (proc == 0) {
-      (void) printf("reading from file .update\n"); fflush(stdout);
+      (void) printf("Reading from file .update\n"); fflush(stdout);
 
       if ( (fp = fopen(".update", "r")) == NULL) {
         (void) fprintf(stderr, "ERROR: file '.update' not found\n");
@@ -3678,7 +3678,8 @@ file specified by the input argument datafile instead from a file called
       (void) fprintf(stderr, "ERROR: Matrix data file %s not found\n", datafile);
       exit(-1);
     }
-    (void) fprintf(stdout, " reading matrix (current version is very slow) .");
+    (void) fprintf(stdout, "Reading matrix from %s "
+                           "(current version is very slow) .",datafile);
     (void) fflush(stdout);
 
     /* read in number of blks */
