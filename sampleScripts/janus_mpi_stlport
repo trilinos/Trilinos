@@ -9,5 +9,5 @@
     --enable-ml \
     --with-mpi-incdir="." \
     --with-mpi-libdir="." \
-      CPPFLAGS="-I$TFLOPS_XDEV/tflops/include -I/home/jmwille/STLport" \
+      CPPFLAGS="-DJANUS_STLPORT -I$TFLOPS_XDEV/tflops/include -I/home/jmwille/STLport" \
       CXX=$TFLOPS_XDEV/tflops/bin.solaris/iCC CC=$TFLOPS_XDEV/tflops/bin.solaris/icc F77=$TFLOPS_XDEV/tflops/bin.solaris/if77

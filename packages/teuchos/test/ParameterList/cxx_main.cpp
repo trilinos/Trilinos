@@ -29,7 +29,6 @@
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
 
-using namespace std;
 using namespace Teuchos;
 
 void print_break() { cout << "---------------------------------------------------" << endl; }
@@ -38,8 +37,6 @@ double Plus ( double a, double b ) { return a+b; }
 int main(int argc, char *argv[])
 {
   bool verbose = false;
-  bool debug = false;
-  bool InvalidCmdLineArgs = false;
   int FailedTests = 0;
 
   // Read options from the command line. 
@@ -200,7 +197,7 @@ int main(int argc, char *argv[])
       max_iters = PL_My_Polynomial.template get<int>("Max Iters");
       nonlin_solver = PL_Main.template get<string>("Nonlinear Solver");
     }
-    catch( exception& e ) { tempMeth = false; }  
+    catch( std::exception& e ) { tempMeth = false; }  
     if (verbose) {
 	cout<< "Is the templated 'get' method functional ... "<<endl;
 	cout<< "  Can we retrieve information using the CORRECT variable type ... ";
@@ -218,7 +215,7 @@ int main(int argc, char *argv[])
     try {
 	mbf = PL_LinSol.template get<float>( "Tol" );
     }
-    catch( exception& e ) {
+    catch( std::exception& e ) {
 	tempMeth = true;
 	FailedTests--;		
     }
@@ -240,7 +237,7 @@ int main(int argc, char *argv[])
     	def_step = getParameter<int>(PL_Polynomial, "Default Step");
 	alpha_fact = getParameter<double>(PL_Polynomial, "Alpha Factor");
     }
-    catch( exception& e ) { tempMeth = false; }
+    catch( std::exception& e ) { tempMeth = false; }
     if (verbose && def_step==1) {
 	cout<< "Is the helper function 'getParameter' functional ... ";
     }
@@ -315,7 +312,9 @@ int main(int argc, char *argv[])
     //-----------------------------------------------------------
     // Can we pass a pointer to a function to the parameter list.
     // Use a simple function, pass it in and get it back out ...
+    // ( HKT 03/23/2004 This test is not supported on Janus )
     //-----------------------------------------------------------
+#ifndef JANUS_STLPORT 
     double (*pt2Function) (double, double);
     PL_Main.set( "Address to Simple Function", &Plus );
     pt2Function = getParameter<double(*)(double,double)>( PL_Main, "Address to Simple Function" ); 
@@ -328,7 +327,9 @@ int main(int argc, char *argv[])
     } else {
 	if (verbose) cout<<"yes"<<endl;
     }    
+#endif
   }	
+
 
   //-----------------------------------------------------------
   // Print out main list

@@ -212,6 +212,10 @@ typedef ostringstream TeuchosOStringStream;
 #elif HAVE_STRSTREAM
 #include <strstream>
 typedef std::ostrstream TeuchosOStringStream;
+/* STLPort is not configured on Janus to inject strstream into "std" namespace */ 
+#if JANUS_STLPORT
+ namespace std { class ostrstream; }
+#endif
 #define TEUCHOS_OSTRINGSTREAM_GET_C_STR(OSS) (OSS).str()
 #elif HAVE_STRSTREAM_H
 #include <strstream.h>
@@ -221,7 +225,21 @@ typedef ostrstream TeuchosOStringStream;
 #error "Found neither sstream, sstream.h, strstream.h, nor strstream"
 #endif
 
-#ifndef TFLOP
+#if defined(TFLOP) || defined(JANUS_STLPORT)
+#ifdef HAVE_STRING
+using std::string;
+#endif
+#ifdef HAVE_IOSTREAM
+using std::istream;
+using std::ostream;
+using std::cerr;
+using std::cout;
+using std::endl;
+#endif
+#ifdef HAVE_COMPLEX
+using std::complex;
+#endif
+# else /* NOT ON JANUS */ 
 #if HAVE_CMATH
 #include <cmath>
 #elif HAVE_MATH_H
@@ -230,21 +248,7 @@ typedef ostrstream TeuchosOStringStream;
 #error "Found neither cmath nor math.h"
 #endif
 using namespace std;
-#else /*TFLOP defined */
-#ifdef HAVE_STRING
-using std::string;
-#endif
-#ifdef HAVE_IOSTREAM
-using std::istream;
-using std::ostream;  
-using std::cerr;
-using std::cout;
-using std::endl;
-#endif
-#ifdef HAVE_COMPLEX
-using std::complex;
-#endif
-#endif /* TFLOP */
+#endif /* defined(TFLOP) || defined(JANUS_STLPORT) */
 
 // RAB: 20031002: Added this for all platforms in addition to TFLOPS?
 #ifdef HAVE_IOMANIP
