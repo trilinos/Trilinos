@@ -41,11 +41,6 @@ struct LB_hash_node {
   struct LB_hash_node * next;
 };
 
-/* Function prototypes */
-
-extern int LB_Set_ParMetis_Param(char *, char *);
-extern int LB_Set_Jostle_Param(char *, char *);
-
 
 /* ParMETIS data types and definitions. */
 
@@ -61,6 +56,12 @@ typedef short idxtype;
 typedef int idxtype;
 #define IDX_DATATYPE    MPI_INT
 #endif
+
+/* Zoltan function prototypes */
+extern int LB_Set_ParMetis_Param(char *, char *);
+extern int LB_Set_Jostle_Param(char *, char *);
+extern int LB_verify_graph(MPI_Comm comm, idxtype *vtxdist, idxtype *xadj, idxtype *adjncy,
+              idxtype *vwgt, idxtype *adjwgt, int wgtflag, int check_graph, char *yo);
 
 /* ParMetis 2.0 function prototypes */
 extern void ParMETIS_PartKway(idxtype *, idxtype *, idxtype *, idxtype *, idxtype *, int *, int *, int *, int *, int *, idxtype *, MPI_Comm *);

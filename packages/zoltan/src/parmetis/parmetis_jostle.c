@@ -267,15 +267,15 @@ static int LB_ParMetis_Jostle(
 )
 {
   static char *yo = "LB_ParMetis_Jostle";
-  int i, j, ierr, packet_size, offset, tmp, flag, ndims; 
-  int check_graph, scale; 
+  int i, j, jj, ierr, packet_size, offset, tmp, flag, ndims; 
+  int obj_wgt_dim, comm_wgt_dim, check_graph, scale; 
   int num_obj, nedges, num_edges, cross_edges, max_edges, edgecut;
   int *nbors_proc, *plist;
   int nsend, nrecv, wgtflag, numflag, num_border, max_proc_list_len;
   int get_graph_data, get_geom_data, get_times; 
-  idxtype *vtxdist, *xadj, *adjncy, *adjptr, *vwgt, *adjwgt, *part;
+  idxtype *vtxdist, *xadj, *adjncy, *vwgt, *adjwgt, *ewgt, *part;
   int network[4] = {0, 1, 1, 1};
-  float  *float_vwgt, *xyz, max_wgt, max_local;
+  float  *float_vwgt, *xyz, *max_wgt;
   double geom_vec[6];
   struct LB_edge_info  *proc_list, *ptr;
   struct LB_hash_node **hashtab, *hash_nodes;
@@ -300,17 +300,35 @@ static int LB_ParMetis_Jostle(
    * because we free all non-NULL pointers upon errors.
    */
   nbors_proc = NULL;
-  vtxdist = xadj = adjncy = adjptr = vwgt = adjwgt = part = NULL;
-  float_vwgt = xyz = NULL;
+  vtxdist = xadj = adjncy = vwgt = adjwgt = part = NULL;
+  float_vwgt = max_wgt = xyz = NULL;
   ptr = proc_list = NULL;
   hashtab = NULL;
   hash_nodes = NULL;
   sendbuf = recvbuf = NULL;
   plist = NULL;
 
+  /* Check weight dimensions */
+  if (lb->Obj_Weight_Dim>1){
+    fprintf(stderr, "Zoltan warning: This method does not support multidimensional "
+            "object weights. Using Obj_Weight_Dim = 1.\n");
+    obj_wgt_dim = 1;
+  }
+  else {
+    obj_wgt_dim = lb->Obj_Weight_Dim;
+  }
+  if (lb->Comm_Weight_Dim>1){
+    fprintf(stderr, "Zoltan warning: This method does not support multidimensional "
+            "communication weights. Using Comm_Weight_Dim = 1.\n");
+    comm_wgt_dim = 1;
+  }
+  else {
+    comm_wgt_dim = lb->Comm_Weight_Dim;
+  }
+
   if (lb->Debug_Level >= LB_DEBUG_ALL) {
     printf("[%1d] Debug: alg=%s, Obj_Weight_Dim=%d, Comm_Weight_Dim=%d\n", 
-      lb->Proc, alg, lb->Obj_Weight_Dim, lb->Comm_Weight_Dim);
+      lb->Proc, alg, obj_wgt_dim, comm_wgt_dim);
     printf("[%1d] Debug: ParMetis options = %d, %d, %d, %d\n", lb->Proc,
       options[0], options[1], options[2], options[3]);
   }
@@ -355,24 +373,25 @@ static int LB_ParMetis_Jostle(
   
   if (lb->Debug_Level >= LB_DEBUG_ALL)
     printf("[%1d] Debug: num_obj =%d\n", lb->Proc, num_obj);
+
   
   vtxdist = (idxtype *)LB_MALLOC((lb->Num_Proc+1)* sizeof(idxtype));
   if (num_obj>0){
     global_ids = (LB_GID *) LB_MALLOC(num_obj * sizeof(LB_GID) );
     local_ids = (LB_LID *) LB_MALLOC(num_obj * sizeof(LB_LID) );
-    if (lb->Obj_Weight_Dim)
-      float_vwgt = (float *)LB_MALLOC((lb->Obj_Weight_Dim)*num_obj * sizeof(float));
+    if (obj_wgt_dim)
+      float_vwgt = (float *)LB_MALLOC(obj_wgt_dim*num_obj * sizeof(float));
     else {
       float_vwgt = NULL;
       vwgt = NULL;
     }
-    if (!vtxdist || !global_ids || !local_ids || (lb->Obj_Weight_Dim && !float_vwgt)){
+    if (!vtxdist || !global_ids || !local_ids || (obj_wgt_dim && !float_vwgt)){
       /* Not enough memory */
       FREE_MY_MEMORY;
       LB_TRACE_EXIT(lb, yo);
       return LB_MEMERR;
     }
-    LB_Get_Obj_List(lb, global_ids, local_ids, lb->Obj_Weight_Dim, float_vwgt, &ierr);
+    LB_Get_Obj_List(lb, global_ids, local_ids, obj_wgt_dim, float_vwgt, &ierr);
     if (ierr){
       /* Return error */
       FREE_MY_MEMORY;
@@ -402,6 +421,11 @@ static int LB_ParMetis_Jostle(
     printf("\n");
   }
   
+  if (check_graph >= 1){
+     if ((lb->Proc ==0) && (vtxdist[lb->Num_Proc]==0))
+        fprintf(stderr, "Zoltan warning: No objects to balance in %s\n", yo);
+  }
+
   if (get_graph_data){
 
     num_edges = 0;
@@ -420,15 +444,22 @@ static int LB_ParMetis_Jostle(
     }
     if (lb->Debug_Level >= LB_DEBUG_ALL)
       printf("[%1d] Debug: num_edges = %d\n", lb->Proc, num_edges);
+
+    if (check_graph >= 1){
+       ierr = MPI_Reduce(&nedges, &tmp, 1, MPI_INT, MPI_SUM, 0, lb->Communicator);
+       if ((lb->Proc ==0) && (tmp==0))
+          fprintf(stderr, "Zoltan warning: No edges in graph.\n");
+    }
+
   
     /* Allocate space for ParMETIS data structs */
     xadj   = (idxtype *)LB_MALLOC((num_obj+1) * sizeof(idxtype));
     adjncy = (idxtype *)LB_MALLOC((num_edges+1) * sizeof(idxtype));
-    if (lb->Comm_Weight_Dim) 
-      adjwgt = (idxtype *)LB_MALLOC((lb->Comm_Weight_Dim) 
+    if (comm_wgt_dim) 
+      adjwgt = (idxtype *)LB_MALLOC(comm_wgt_dim 
                 * num_edges * sizeof(idxtype));
   
-    if (!xadj || !adjncy || (num_edges && lb->Comm_Weight_Dim && !adjwgt)){
+    if (!xadj || !adjncy || (num_edges && comm_wgt_dim && !adjwgt)){
       /* Not enough memory */
       FREE_MY_MEMORY;
       LB_TRACE_EXIT(lb, yo);
@@ -509,16 +540,19 @@ static int LB_ParMetis_Jostle(
     
     nsend = 0;      /* Number of objects we need to send info about */
     offset = 0;     /* Index of next available node in proc_list */
-    adjptr = adjncy;
     ptr = proc_list;
+    ewgt = NULL;
     xadj[0] = 0;
+    jj = 0;
   
     for (i=0; i< num_obj; i++){
       nedges = lb->Get_Num_Edges(lb->Get_Edge_List_Data, global_ids[i], 
                local_ids[i], &ierr);
       xadj[i+1] = xadj[i] + nedges;
+      if (comm_wgt_dim)
+          ewgt = &adjwgt[jj*comm_wgt_dim];
       lb->Get_Edge_List(lb->Get_Edge_List_Data, global_ids[i], local_ids[i],
-          nbors_global, nbors_proc, lb->Comm_Weight_Dim, adjwgt, &ierr);
+          nbors_global, nbors_proc, comm_wgt_dim, ewgt, &ierr);
       if (ierr){
         /* Return error */
         FREE_MY_MEMORY;
@@ -532,10 +566,10 @@ static int LB_ParMetis_Jostle(
       }
 
       /* Separate inter-processor edges from the local ones */
-      for (j=0; j<nedges; j++){
+      for (j=0; j<nedges; j++, jj++){
         if (nbors_proc[j] == lb->Proc){
           /* local edge */
-          *adjptr++ = hash_lookup(hashtab, nbors_global[j], num_obj);
+          adjncy[jj] = hash_lookup(hashtab, nbors_global[j], num_obj);
         } else {
           /* Inter-processor edge. */
           /* Check if we already have gid[i] in proc_list with */
@@ -573,14 +607,14 @@ static int LB_ParMetis_Jostle(
             ptr->nbor_proc = nbors_proc[j];
           else
             ptr->nbor_proc = -1;
-          ptr->adj = adjptr;
+          ptr->adj = &adjncy[jj];
 
           if (lb->Debug_Level >= LB_DEBUG_ALL)
             printf("[%1d] Debug: proc_list[%1d] my_gid=%d, my_gno=%d, "
                    "nbor_proc=%d\n",
                    lb->Proc, offset, ptr->my_gid, ptr->my_gno, ptr->nbor_proc);
 
-          *adjptr++ = -1; /* We need to come back here later */
+          adjncy[jj] = -1; /* We need to come back here later */
           offset++;
         }
       }
@@ -592,11 +626,9 @@ static int LB_ParMetis_Jostle(
     LB_FREE(&nbors_proc);
 
     /* Sanity check */
-    if (((int)adjptr - (int)adjncy)/sizeof(int) != xadj[num_obj]){
-      fprintf(stderr, "[%1d] ZOLTAN ERROR: Internal error in %s, "
-              "incorrect pointer.\n", lb->Proc, yo);
-      fprintf(stderr, "ZOLTAN adjptr-adjncy =%d, #edges =%d\n", 
-              ((int)adjptr - (int)adjncy)/sizeof(int), xadj[num_obj]);
+    if ((check_graph >= 1) && (jj != xadj[num_obj])){
+      fprintf(stderr, "[%1d] ZOLTAN ERROR: Internal error in %s. "
+              "Something may be wrong with the edges in the graph\n", lb->Proc, yo);
       FREE_MY_MEMORY;
       LB_TRACE_EXIT(lb, yo);
       return LB_FATAL;
@@ -743,29 +775,42 @@ static int LB_ParMetis_Jostle(
     LB_FREE(&hashtab);
   
     /* Get vertex weights if needed */
-    if (lb->Obj_Weight_Dim){
-      if (lb->Debug_Level >= LB_DEBUG_ALL)
-        printf("[%1d] Debug: Converting vertex weights...\n", lb->Proc);
-      vwgt = (idxtype *)LB_MALLOC((lb->Obj_Weight_Dim*num_obj)
+    if (obj_wgt_dim){
+      vwgt = (idxtype *)LB_MALLOC(obj_wgt_dim*num_obj
                           * sizeof(idxtype));
-      /* Compute global max of the weights */
-      max_local = 0;
+      max_wgt = (float *)LB_MALLOC(2*obj_wgt_dim * sizeof(float));
+
+      /* Compute local max of the obj weights (for each dimension ) */
+      for (j=0; j<obj_wgt_dim; j++)
+        max_wgt[j] = 0;
       for (i=0; i<num_obj; i++){
-        if (float_vwgt[i]>max_local) max_local = float_vwgt[i];
+        for (j=0; j<obj_wgt_dim; j++){
+          if (float_vwgt[i*obj_wgt_dim+j]>max_wgt[j]) 
+              max_wgt[j] = float_vwgt[i*obj_wgt_dim+j];
+        }
       }
-      MPI_Allreduce(&max_local, &max_wgt, 1, MPI_FLOAT, MPI_MAX, 
-          lb->Communicator);
+      /* Compute global max of the obj weights (for each dimension ) */
+      MPI_Allreduce(max_wgt, &max_wgt[obj_wgt_dim], obj_wgt_dim, 
+          MPI_FLOAT, MPI_MAX, lb->Communicator);
+
+      if (lb->Debug_Level >= LB_DEBUG_ALL)
+        printf("[%1d] Debug: Converting vertex weights, scale = %d, max_wgt = %g\n", 
+                lb->Proc, scale, max_wgt[obj_wgt_dim]);
 
       /* Convert weights to integers between 1 and SCALED_WEIGHT_MAX */
-      for (i=0; i<(lb->Obj_Weight_Dim)*num_obj; i++){
-        if (scale>0)
-           vwgt[i] = (int) ceil(float_vwgt[i]*scale/max_wgt);
-        else if (scale<0)
-           vwgt[i] = (int) (-float_vwgt[i]*scale/max_wgt);
-        else /* scale == 0 */
-           vwgt[i] = (int) float_vwgt[i];
+      jj = 0;
+      for (i=0; i<num_obj; i++){
+        for (j=0; j<obj_wgt_dim; j++, jj++){
+          if (scale>0)
+             vwgt[jj] = (int) ceil(float_vwgt[jj]*scale/max_wgt[obj_wgt_dim +j]);
+          else if (scale<0)
+             vwgt[jj] = (int) (-float_vwgt[jj]*scale/max_wgt[obj_wgt_dim +j]);
+          else /* scale == 0 */
+             vwgt[jj] = (int) float_vwgt[jj];
+        }
       }
       LB_FREE(&float_vwgt);
+      LB_FREE(&max_wgt);
     }
 
   } /* end get_graph_data */
@@ -803,7 +848,7 @@ static int LB_ParMetis_Jostle(
   }
 
   /* Get ready to call ParMETIS */
-  wgtflag = 2*(lb->Obj_Weight_Dim>0) + (lb->Comm_Weight_Dim>0); /* Multidim wgts not supported yet */
+  wgtflag = 2*(obj_wgt_dim>0) + (comm_wgt_dim>0); /* Multidim wgts not supported yet */
   numflag = 0;
   part = (idxtype *)LB_MALLOC((num_obj+1) * sizeof(idxtype));
   if (!part){
@@ -811,6 +856,12 @@ static int LB_ParMetis_Jostle(
     FREE_MY_MEMORY;
     LB_TRACE_EXIT(lb, yo);
     return LB_MEMERR;
+  }
+
+  /* Verify that graph is correct */
+  if (get_graph_data){
+     ierr = LB_verify_graph(lb->Communicator, vtxdist, xadj, adjncy, vwgt, adjwgt, 
+                            wgtflag, check_graph, yo);
   }
   
   /* Get a time here */
@@ -896,8 +947,8 @@ static int LB_ParMetis_Jostle(
            "edgecut= %d\n", lb->Proc, edgecut);
 
   /* Free weights; they are no longer needed */
-  if (lb->Obj_Weight_Dim) LB_FREE(&vwgt);
-  if (lb->Comm_Weight_Dim) LB_FREE(&adjwgt);
+  if (obj_wgt_dim) LB_FREE(&vwgt);
+  if (comm_wgt_dim) LB_FREE(&adjwgt);
 
   /* Determine number of objects to export */
   nsend = 0;
@@ -961,6 +1012,7 @@ static int LB_ParMetis_Jostle(
   LB_TRACE_EXIT(lb, yo);
   return LB_OK;
 }
+
 #endif /* defined (LB_JOSTLE) || !defined (LB_NO_PARMETIS) */
 
 
