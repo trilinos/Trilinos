@@ -70,12 +70,13 @@ char *yo = "Zoltan_HG_PaToH";
     scale_round_weights(hg->ewgt, iewgts, hg->nEdge, hg->EdgeWeightDim, 0);
   }
 
+
   PaToH_Initialize_Parameters(&pargs, PATOH_CONPART, PATOH_SUGPARAM_DEFAULT);
 
+  pargs._k = nparts;
   PaToH_Alloc(&pargs, hg->nVtx, hg->nEdge, hg->VtxWeightDim, 
               ivwgts, iewgts, hg->hindex, hg->hvertex);
 
-  pargs._k = nparts;
 
   cnt = (cnt > 12345 ? 0 : cnt + 1);  /* Reset seed for call to PaToH. */
   pargs.seed = cnt;                   /* Differ each call to allow     */
