@@ -628,6 +628,38 @@ fi
 #AC_SUBST(PETSC_CXXFLAGS)
 
 # ------------------------------------------------------------------------
+# LOCA Library Check
+# ------------------------------------------------------------------------
+
+AC_ARG_ENABLE(loca,
+[  --enable-loca           compile the loca library],
+[BUILD_LIBLOCA=${enableval}],
+[BUILD_LIBLOCA=no]
+)
+AC_MSG_CHECKING(whether we should build the loca library)
+AC_MSG_RESULT([${BUILD_LIBLOCA}])
+AM_CONDITIONAL(BUILD_LIBLOCA, test X${BUILD_LIBLOCA} = Xyes)
+
+# ------------------------------------------------------------------------
+# LOCA-Epetra Library Check
+# ------------------------------------------------------------------------
+
+AC_ARG_ENABLE(loca-epetra,
+[  --enable-loca-epetra    compile the locaepetra library],
+[BUILD_LIBLOCAEPETRA=${enableval}],
+[BUILD_LIBLOCAEPETRA=no]
+)
+
+# Cannot build the locaepetra library if we don't build the loca library
+if test X${BUILD_LIBLOCA} != Xyes; then
+   BUILD_LIBLOCAEPETRA=no
+fi
+
+AC_MSG_CHECKING(whether we should build the locaepetra library)
+AC_MSG_RESULT([${BUILD_LIBLOCAEPETRA}])
+AM_CONDITIONAL(BUILD_LIBLOCAEPETRA, test X${BUILD_LIBLOCAEPETRA} = Xyes)
+
+# ------------------------------------------------------------------------
 # Checks for building simple examples
 # ------------------------------------------------------------------------
 
@@ -678,10 +710,31 @@ AC_MSG_CHECKING(whether we should build the noxpetsc examples)
 AC_MSG_RESULT(${BUILD_PETSC_EXAMPLES})
 
 # ------------------------------------------------------------------------
+# Checks for building loca epetra examples 
+# ------------------------------------------------------------------------
+
+AC_ARG_ENABLE(loca-epetra-examples,
+[  --enable-loca-epetra-examples   compile loca epetra examples],
+[BUILD_LOCA_EPETRA_EXAMPLES=${enableval}],
+[BUILD_LOCA_EPETRA_EXAMPLES=no]
+)
+
+# Cannot build the epetra example if we don't build the epetra libraries
+if test X${BUILD_LIBNOXEPETRA} != Xyes; then
+   BUILD_LOCA_EPETRA_EXAMPLES=no
+fi
+if test X${BUILD_LIBLOCAEPETRA} != Xyes; then
+   BUILD_LOCA_EPETRA_EXAMPLES=no
+fi
+
+AC_MSG_CHECKING(whether we should build the locaepetra examples)
+AC_MSG_RESULT(${BUILD_LOCA_EPETRA_EXAMPLES})
+
+# ------------------------------------------------------------------------
 # Checks for basic libraries for examples
 # ------------------------------------------------------------------------
 
-if test ${BUILD_EXAMPLES} = yes || test ${BUILD_EPETRA_EXAMPLES} = yes; then
+if test ${BUILD_EXAMPLES} = yes || test ${BUILD_EPETRA_EXAMPLES} = yes || test ${BUILD_LOCA_EPETRA_EXAMPLES} = yes; then
 
   AC_SEARCH_LIBS(pow,[m],,AC_MSG_ERROR(Cannot find math library))
   AC_SEARCH_LIBS(sqrt,[m],,AC_MSG_ERROR(Cannot find math library))
@@ -695,7 +748,6 @@ if test ${BUILD_EXAMPLES} = yes || test ${BUILD_EPETRA_EXAMPLES} = yes; then
 
   # Find valid BLAS
   ACX_BLAS([LIBS="${BLAS_LIBS} ${LIBS}"],[AC_MSG_ERROR([Cannot find BLAS library])])
-
 
   # Find valid LAPACK
   ACX_LAPACK([LIBS=" ${LAPACK_LIBS} ${LIBS}"],[AC_MSG_ERROR([Cannot find LAPACK library])])
@@ -767,7 +819,7 @@ AC_DEFUN(TRILINOS_LIB_CHECK,
 
 ])
 
-if test X${BUILD_EPETRA_EXAMPLES} = Xyes; then
+if test X${BUILD_EPETRA_EXAMPLES} = Xyes || test X${BUILD_LOCA_EPETRA_EXAMPLES} = Xyes; then
 
   # Determine TRILINOS_TARGET
   AC_MSG_CHECKING(whether TRILINOS_ARCH is defined)
@@ -893,31 +945,10 @@ AM_CONDITIONAL(BUILD_LIBNOXPETSC, test X${BUILD_LIBNOXPETSC} = Xyes)
 AM_CONDITIONAL(BUILD_PETSC_EXAMPLES, test X${BUILD_PETSC_EXAMPLES} = Xyes)
 
 # ------------------------------------------------------------------------
-# LOCA Library Check
+# Checks for LOCA status 
 # ------------------------------------------------------------------------
 
-AC_ARG_ENABLE(loca,
-[  --enable-loca           compile the loca library],
-[BUILD_LIBLOCA=${enableval}],
-[BUILD_LIBLOCA=no]
-)
-AC_MSG_CHECKING(whether we should build the loca library)
-AC_MSG_RESULT([${BUILD_LIBLOCA}])
-AM_CONDITIONAL(BUILD_LIBLOCA, test X${BUILD_LIBLOCA} = Xyes)
-
-# ------------------------------------------------------------------------
-# LOCA-Epetra Library Check
-# ------------------------------------------------------------------------
-
-AC_ARG_ENABLE(loca-epetra,
-[  --enable-loca-epetra    compile the locaepetra library],
-[BUILD_LIBLOCAEPETRA=${enableval}],
-[BUILD_LIBLOCAEPETRA=no]
-)
-
-AC_MSG_CHECKING(whether we should build the locaepetra library)
-AC_MSG_RESULT([${BUILD_LIBLOCAEPETRA}])
-AM_CONDITIONAL(BUILD_LIBLOCAEPETRA, test X${BUILD_LIBLOCAEPETRA} = Xyes)
+AM_CONDITIONAL(BUILD_LOCA_EPETRA_EXAMPLES, test X${BUILD_LOCA_EPETRA_EXAMPLES} = Xyes)
 
 # ------------------------------------------------------------------------
 # Checks for types
@@ -1005,7 +1036,10 @@ AC_CONFIG_FILES([
                 example-petsc/Makefile
                 example-petsc/DS6.5.1/Makefile
 		src-loca/Makefile
+		src-loca/src/Makefile
                 src-loca/src-epetra/Makefile
+                src-loca/example-epetra/Makefile
+                src-loca/example-epetra/1Dfem/Makefile
 		])
 
 AC_OUTPUT()
