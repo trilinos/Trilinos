@@ -5,7 +5,7 @@
 #define TEUCHOS_COMPOBJECT_HPP
 
 #include "Teuchos_Object.hpp"
-#include "Teuchos_Flops.cpp"
+#include "Teuchos_Flops.hpp"
 
 namespace Teuchos
 {
