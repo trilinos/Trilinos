@@ -29,12 +29,18 @@ include $(TRILINOS_HOME)/build/makefile.$(TRILINOS_ARCH)
 MY_COMPILER_FLAGS = -DHAVE_CONFIG_H $(CXXFLAGS) -c -g\
 	            -I$(TRILINOS_LIB)/include/
 
+# Amesos may need additional libs, change the following line
+# as necessary. Add -L<location-of-libs> -l<lib-names>.
+# Exact line depends on your Amesos configuration. If you
+# configured Amesos with support for KLU only (default only),
+# then leave AMESOS_LIBS empty.
+AMESOS_LIBS = 
 MY_LINKER_FLAGS = $(LDFLAGS) $(TEST_C_OBJ) \
 	-L$(TRILINOS_LIB)/lib/ \
 	-lamesos \
-	-L/home/msala/lib/LINUX_MPI \
 	-ltriutils -lteuchos -lepetra  \
-	-lumfpack -lamd $(LIB_PATHS) $(ARCH_LIBS) -llapack -lblas
+	$(AMESOS_LIBS) \
+	$(LIB_PATHS) $(ARCH_LIBS) -llapack -lblas
 
 all: ex1
 

@@ -45,6 +45,8 @@
 #include "Trilinos_Util_CommandLineParser.h"
 #include "Trilinos_Util_CrsMatrixGallery.h"
 
+using namespace Trilinos_Util;
+
 int main(int argc, char *argv[]) {
 
 #ifdef HAVE_MPI
@@ -55,10 +57,10 @@ int main(int argc, char *argv[]) {
 #endif
 
   // initialize the command line parser
-  Trilinos_Util_CommandLineParser CLP(argc,argv);
+  CommandLineParser CLP(argc,argv);
 
   // initialize an Gallery object
-  Trilinos_Util_CrsMatrixGallery Gallery("", Comm);
+  CrsMatrixGallery Gallery("", Comm);
 
   // add default values
   if( CLP.Has("-problem_type") == false ) CLP.Add("-problem_type", "laplace_2d" ); 
@@ -73,14 +75,14 @@ int main(int argc, char *argv[]) {
   // after the solution of the linear system. However, users may define as well
   // their own vectors for solution and RHS. 
   Epetra_CrsMatrix * Matrix = Gallery.GetMatrix();
-  Epetra_Vector * LHS = Gallery.GetStartingSolution();
-  Epetra_Vector * RHS = Gallery.GetRHS();
+  Epetra_MultiVector * LHS = Gallery.GetStartingSolution();
+  Epetra_MultiVector * RHS = Gallery.GetRHS();
   
   Epetra_LinearProblem * Problem = Gallery.GetLinearProblem();
 
   // initialize Amesos solver  
   Amesos_BaseSolver * Solver;
-  Amesos Amesos_Factory;
+  Amesos Factory;
 
   // empty parameter list
   Teuchos::ParameterList List;
@@ -90,11 +92,11 @@ int main(int argc, char *argv[]) {
 
   switch( choice ) {
   case 0:
-    Solver = A_Factory.Create("Amesos_Klu", *Problem);
+    Solver = Factory.Create("Amesos_Klu", *Problem);
     break;
 
   case 1:
-    Solver = A_Factory.Create("Amesos_Umfpack", *Problem);
+    Solver = Factory.Create("Amesos_Umfpack", *Problem);
     break;
 
   }
@@ -107,8 +109,8 @@ int main(int argc, char *argv[]) {
   // verify that residual is really small  
   double residual, diff;
 
-  Gallery.ComputeResidual(residual);
-  Gallery.ComputeDiffBetweenStartingAndExactSolutions(diff);
+  Gallery.ComputeResidual(&residual);
+  Gallery.ComputeDiffBetweenStartingAndExactSolutions(&diff);
 
   if( Comm.MyPID() == 0 ) {
     cout << "||b-Ax||_2 = " << residual << endl;
