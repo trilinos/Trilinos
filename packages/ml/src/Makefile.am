@@ -161,6 +161,7 @@ $(srcdir)/Utils/ml_MultiLevelPreconditioner_Defaults.cpp \
 $(srcdir)/Utils/ml_MultiLevelPreconditioner_Smoothers.cpp \
 $(srcdir)/Utils/ml_MultiLevelPreconditioner_Viz.cpp \
 $(srcdir)/Utils/ml_MultiLevelPreconditioner_Analyze.cpp \
+$(srcdir)/Utils/ml_MultiLevelPreconditioner_Test.cpp \
 $(srcdir)/Utils/ml_MultiLevelPreconditioner_CLP.cpp \
 $(srcdir)/Utils/ml_anasazi.cpp
 

@@ -122,6 +122,7 @@ am__objects_2 = ml_rbm.$(OBJEXT) ml_aztec_utils.$(OBJEXT) \
 	ml_MultiLevelPreconditioner_Smoothers.$(OBJEXT) \
 	ml_MultiLevelPreconditioner_Viz.$(OBJEXT) \
 	ml_MultiLevelPreconditioner_Analyze.$(OBJEXT) \
+	ml_MultiLevelPreconditioner_Test.$(OBJEXT) \
 	ml_MultiLevelPreconditioner_CLP.$(OBJEXT) ml_anasazi.$(OBJEXT)
 am__objects_3 =
 @HAVE_MPI_TRUE@am__objects_4 = $(am__objects_3)
@@ -140,6 +141,7 @@ am__depfiles_maybe = depfiles
 @AMDEP_TRUE@	./$(DEPDIR)/ml_MultiLevelPreconditioner_Filtering.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/ml_MultiLevelPreconditioner_NullSpace.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/ml_MultiLevelPreconditioner_Smoothers.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/ml_MultiLevelPreconditioner_Test.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/ml_MultiLevelPreconditioner_Viz.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/ml_agg_METIS.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/ml_agg_MIS.Po \
@@ -492,6 +494,7 @@ $(srcdir)/Utils/ml_MultiLevelPreconditioner_Defaults.cpp \
 $(srcdir)/Utils/ml_MultiLevelPreconditioner_Smoothers.cpp \
 $(srcdir)/Utils/ml_MultiLevelPreconditioner_Viz.cpp \
 $(srcdir)/Utils/ml_MultiLevelPreconditioner_Analyze.cpp \
+$(srcdir)/Utils/ml_MultiLevelPreconditioner_Test.cpp \
 $(srcdir)/Utils/ml_MultiLevelPreconditioner_CLP.cpp \
 $(srcdir)/Utils/ml_anasazi.cpp
 
@@ -747,6 +750,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_MultiLevelPreconditioner_Filtering.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_MultiLevelPreconditioner_NullSpace.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_MultiLevelPreconditioner_Smoothers.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_MultiLevelPreconditioner_Test.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_MultiLevelPreconditioner_Viz.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_agg_METIS.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_agg_MIS.Po@am__quote@
@@ -2031,6 +2035,22 @@ ml_MultiLevelPreconditioner_Analyze.obj: $(srcdir)/Utils/ml_MultiLevelPreconditi
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ml_MultiLevelPreconditioner_Analyze.Po' tmpdepfile='$(DEPDIR)/ml_MultiLevelPreconditioner_Analyze.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ml_MultiLevelPreconditioner_Analyze.obj `if test -f '$(srcdir)/Utils/ml_MultiLevelPreconditioner_Analyze.cpp'; then $(CYGPATH_W) '$(srcdir)/Utils/ml_MultiLevelPreconditioner_Analyze.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Utils/ml_MultiLevelPreconditioner_Analyze.cpp'; fi`
+
+ml_MultiLevelPreconditioner_Test.o: $(srcdir)/Utils/ml_MultiLevelPreconditioner_Test.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ml_MultiLevelPreconditioner_Test.o -MD -MP -MF "$(DEPDIR)/ml_MultiLevelPreconditioner_Test.Tpo" -c -o ml_MultiLevelPreconditioner_Test.o `test -f '$(srcdir)/Utils/ml_MultiLevelPreconditioner_Test.cpp' || echo '$(srcdir)/'`$(srcdir)/Utils/ml_MultiLevelPreconditioner_Test.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ml_MultiLevelPreconditioner_Test.Tpo" "$(DEPDIR)/ml_MultiLevelPreconditioner_Test.Po"; else rm -f "$(DEPDIR)/ml_MultiLevelPreconditioner_Test.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Utils/ml_MultiLevelPreconditioner_Test.cpp' object='ml_MultiLevelPreconditioner_Test.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ml_MultiLevelPreconditioner_Test.Po' tmpdepfile='$(DEPDIR)/ml_MultiLevelPreconditioner_Test.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ml_MultiLevelPreconditioner_Test.o `test -f '$(srcdir)/Utils/ml_MultiLevelPreconditioner_Test.cpp' || echo '$(srcdir)/'`$(srcdir)/Utils/ml_MultiLevelPreconditioner_Test.cpp
+
+ml_MultiLevelPreconditioner_Test.obj: $(srcdir)/Utils/ml_MultiLevelPreconditioner_Test.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ml_MultiLevelPreconditioner_Test.obj -MD -MP -MF "$(DEPDIR)/ml_MultiLevelPreconditioner_Test.Tpo" -c -o ml_MultiLevelPreconditioner_Test.obj `if test -f '$(srcdir)/Utils/ml_MultiLevelPreconditioner_Test.cpp'; then $(CYGPATH_W) '$(srcdir)/Utils/ml_MultiLevelPreconditioner_Test.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Utils/ml_MultiLevelPreconditioner_Test.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ml_MultiLevelPreconditioner_Test.Tpo" "$(DEPDIR)/ml_MultiLevelPreconditioner_Test.Po"; else rm -f "$(DEPDIR)/ml_MultiLevelPreconditioner_Test.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Utils/ml_MultiLevelPreconditioner_Test.cpp' object='ml_MultiLevelPreconditioner_Test.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ml_MultiLevelPreconditioner_Test.Po' tmpdepfile='$(DEPDIR)/ml_MultiLevelPreconditioner_Test.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ml_MultiLevelPreconditioner_Test.obj `if test -f '$(srcdir)/Utils/ml_MultiLevelPreconditioner_Test.cpp'; then $(CYGPATH_W) '$(srcdir)/Utils/ml_MultiLevelPreconditioner_Test.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Utils/ml_MultiLevelPreconditioner_Test.cpp'; fi`
 
 ml_MultiLevelPreconditioner_CLP.o: $(srcdir)/Utils/ml_MultiLevelPreconditioner_CLP.cpp
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ml_MultiLevelPreconditioner_CLP.o -MD -MP -MF "$(DEPDIR)/ml_MultiLevelPreconditioner_CLP.Tpo" -c -o ml_MultiLevelPreconditioner_CLP.o `test -f '$(srcdir)/Utils/ml_MultiLevelPreconditioner_CLP.cpp' || echo '$(srcdir)/'`$(srcdir)/Utils/ml_MultiLevelPreconditioner_CLP.cpp; \
