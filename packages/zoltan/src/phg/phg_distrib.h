@@ -24,7 +24,9 @@ int Zoltan_PHG_Gno_To_Proc_Block(int gno, int *dist_dim, int nProc_dim);
 
     
 int Zoltan_PHG_Redistribute(
-    ZZ *zz, 
+    ZZ *zz,
+    PHGPartParams *hgp,     /* Input: parameters; used only for user's
+                               request of nProc_x and nProc_y */
     HGraph  *ohg,           /* Input: Local part of distributed hypergraph */
     int     lo, int hi,     /* Input: range of proc ranks (inclusive)
                                to be included in new communicator: ncomm */

@@ -356,6 +356,8 @@ static int Zoltan_PHG_Redistribute_Hypergraph(
 /**********************************************************************/
 int Zoltan_PHG_Redistribute(
   ZZ *zz, 
+  PHGPartParams *hgp,     /* Input: parameters; used only for user's
+                             request of nProc_x and nProc_y */
   HGraph  *ohg,           /* Input: Local part of distributed hypergraph */
   int     lo, int hi,     /* Input: range of proc ranks (inclusive)
                              to be included in new communicator: ncomm */
@@ -369,12 +371,13 @@ int Zoltan_PHG_Redistribute(
 {
     char * yo = "Zoltan_PHG_Redistribute";
     PHGComm *ocomm = ohg->comm;
-    int     *v2Col, *n2Row, ierr=ZOLTAN_OK, tmp, i, *ranks;
+    int     *v2Col, *n2Row, ierr=ZOLTAN_OK, i, *ranks;
     float   frac;
     MPI_Group allgrp, newgrp;
+    MPI_Comm  nmpicomm;
 
     if (ocomm->nProc==1){
-        errexit("Zoltan_PHG_Redistribute: ocomm->nProc==1");
+        errexit("%s: ocomm->nProc==1", yo);
         return ZOLTAN_FATAL;
     }
 
@@ -385,40 +388,25 @@ int Zoltan_PHG_Redistribute(
         ranks[i-lo] = i;
     
     MPI_Group_incl(allgrp, hi-lo+1, ranks, &newgrp);
-    MPI_Comm_create(ocomm->Communicator, newgrp, &ncomm->Communicator);
+    MPI_Comm_create(ocomm->Communicator, newgrp, &nmpicomm);
     MPI_Group_free(&newgrp);
     MPI_Group_free(&allgrp);   
     ZOLTAN_FREE(&ranks);
-
     
     /* fill ncomm */
-    ncomm->zz = ocomm->zz;
-    ncomm->nProc = hi-lo+1;
-    tmp = (int) sqrt((double)ncomm->nProc+0.1);
-    while (ncomm->nProc % tmp)
-        --tmp;
-    ncomm->nProc_y = tmp;
-    ncomm->nProc_x = ncomm->nProc / tmp;
-    ncomm->col_comm = ncomm->row_comm = MPI_COMM_NULL;
-
+    ierr = Zoltan_PHG_Set_2D_Proc_Distrib(ocomm->zz, nmpicomm, ocomm->myProc-lo, hi-lo+1, 
+                                          hgp->nProc_x_req, hgp->nProc_y_req, 
+                                          ncomm);
+    
     /* if new communicator is not NULL; this process is in that group
        so compute the rest of the stuff that it will need */
-    if (ncomm->Communicator!=MPI_COMM_NULL) {
-        MPI_Comm_rank(ncomm->Communicator, &ncomm->myProc);
+    if (nmpicomm!=MPI_COMM_NULL) {        
 #ifdef _DEBUG1
+        MPI_Comm_rank(nmpicomm, &ncomm->myProc);
         if (ncomm->myProc != ocomm->myProc-lo)
             errexit("Zoltan_PHG_Redistribute: ncomm->myProc(%d) != ocomm->myProc(%d)-lo(%d)", ncomm->myProc, ocomm->myProc, lo);
 #endif
-        ncomm->myProc_x = ncomm->myProc % ncomm->nProc_x;
-        ncomm->myProc_y = ncomm->myProc / ncomm->nProc_x;
-
-        if ((MPI_Comm_split(ncomm->Communicator, ncomm->myProc_x, ncomm->myProc_y, 
-                            &ncomm->col_comm) != MPI_SUCCESS)
-            || (MPI_Comm_split(ncomm->Communicator, ncomm->myProc_y, ncomm->myProc_x, 
-                               &ncomm->row_comm) != MPI_SUCCESS)) {
-            ZOLTAN_PRINT_ERROR(zz->Proc, yo, "MPI_Comm_Split failed");
-            return ZOLTAN_FATAL;
-        }        
+        
         Zoltan_Srand_Sync(Zoltan_Rand(NULL), &(ncomm->RNGState_row),
                           ncomm->row_comm);
         Zoltan_Srand_Sync(Zoltan_Rand(NULL), &(ncomm->RNGState_col),
@@ -442,7 +430,7 @@ int Zoltan_PHG_Redistribute(
     for (i=0; i<ohg->nEdge; ++i) 
         n2Row[i] = (int) ((float) i / frac);
 
-    ierr = Zoltan_PHG_Redistribute_Hypergraph(zz, ohg, lo, v2Col, n2Row, ncomm, nhg, vmap, vdest);
+    ierr |= Zoltan_PHG_Redistribute_Hypergraph(zz, ohg, lo, v2Col, n2Row, ncomm, nhg, vmap, vdest);
     Zoltan_Multifree(__FILE__, __LINE__, 2,
                      &v2Col, &n2Row);
     

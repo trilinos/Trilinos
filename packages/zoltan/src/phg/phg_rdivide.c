@@ -157,7 +157,7 @@ int Zoltan_PHG_rdivide(int lo, int hi, Partition final, ZZ *zz, HGraph *hg,
       uprintf(hgc, "before redistribute for left procmid=%d ------------------\n", procmid);
 #endif
       
-      Zoltan_PHG_Redistribute(zz, left, 0, procmid, &leftcomm, &newleft, &leftvmap, &leftdest);
+      Zoltan_PHG_Redistribute(zz, hgp, left, 0, procmid, &leftcomm, &newleft, &leftvmap, &leftdest);
       if (hgp->output_level >= PHG_DEBUG_LIST)     
           uprintf(hgc, "Left: H(%d, %d, %d) ----> H(%d, %d, %d)\n", left->nVtx, left->nEdge, left->nPins, newleft.nVtx, newleft.nEdge, newleft.nPins);
       Zoltan_HG_HGraph_Free (left);
@@ -165,7 +165,7 @@ int Zoltan_PHG_rdivide(int lo, int hi, Partition final, ZZ *zz, HGraph *hg,
 #ifdef _DEBUG1
       uprintf(hgc, "before redistribute for right ++++++++++++++++++++++\n");
 #endif
-      Zoltan_PHG_Redistribute(zz, right, procmid+1, hgc->nProc-1, &rightcomm, &newright, &rightvmap, &rightdest);
+      Zoltan_PHG_Redistribute(zz, hgp, right, procmid+1, hgc->nProc-1, &rightcomm, &newright, &rightvmap, &rightdest);
       if (hgp->output_level >= PHG_DEBUG_LIST)     
           uprintf(hgc, "Right: H(%d, %d, %d) ----> H(%d, %d, %d)\n", right->nVtx, right->nEdge, right->nPins, newright.nVtx, newright.nEdge, newright.nPins);
       Zoltan_HG_HGraph_Free (right);

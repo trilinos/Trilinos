@@ -143,7 +143,11 @@ struct PHGPartParamsStruct {
        comm of hg should be used in coarsening/initpart/refinement codes
        because of possible processor splits in recursive bisection
     */
-  PHGComm globalcomm;   
+  PHGComm globalcomm;
+  int nProc_x_req;  /* user's request for nProc_x (PHG_NPROC_X)
+                       -1 if not specificed/auto */
+  int nProc_y_req;  /* user's request for nProc_y (PHG_NPROC_Y)
+                       -1 if not specificed/auto */
   int proc_split;   /* 0 means processors will not be split in RB,
                        >0 means they will be split into two parts for each side
                        of the recursion */

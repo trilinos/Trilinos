@@ -266,13 +266,13 @@ static int Zoltan_PHG_Initialize_Params(
   PHGPartParams *hgp
 )
 {
-  int err, nProc_x, nProc_y;
+  int err;
   
   
   Zoltan_Bind_Param(PHG_params, "PHG_OUTPUT_LEVEL", &hgp->output_level);
   Zoltan_Bind_Param(PHG_params, "PCHECK_GRAPH", &hgp->check_graph);   
-  Zoltan_Bind_Param(PHG_params, "PHG_NPROC_X", &nProc_x);
-  Zoltan_Bind_Param(PHG_params, "PHG_NPROC_Y", &nProc_y);
+  Zoltan_Bind_Param(PHG_params, "PHG_NPROC_X", &hgp->nProc_x_req);
+  Zoltan_Bind_Param(PHG_params, "PHG_NPROC_Y", &hgp->nProc_y_req);
   Zoltan_Bind_Param(PHG_params, "PHG_PROC_SPLIT", &hgp->proc_split);  
   Zoltan_Bind_Param(PHG_params, "PHG_REDUCTION_LIMIT", &hgp->redl);
   Zoltan_Bind_Param(PHG_params, "PHG_REDUCTION_METHOD", hgp->redm_str);
@@ -313,8 +313,8 @@ static int Zoltan_PHG_Initialize_Params(
   hgp->bal_tol = zz->LB.Imbalance_Tol[0];
   hgp->redl = MAX(2*zz->LB.Num_Global_Parts, 100);
   hgp->output_level = PHG_DEBUG_LIST;
-  nProc_x = -1;
-  nProc_y = -1;
+  hgp->nProc_x_req = -1;
+  hgp->nProc_y_req = -1;
   hgp->kway = 0;
   hgp->fm_loop_limit = 99;
   hgp->fm_max_neg_move = 250;  
@@ -326,7 +326,7 @@ static int Zoltan_PHG_Initialize_Params(
                            zz->Debug_Proc);
 
   err = Zoltan_PHG_Set_2D_Proc_Distrib(zz, zz->Communicator, zz->Proc, 
-                                       zz->Num_Proc, nProc_x, nProc_y, 
+                                       zz->Num_Proc, hgp->nProc_x_req, hgp->nProc_y_req, 
                                        &hgp->globalcomm);
   if (err != ZOLTAN_OK) 
       goto End;
@@ -523,11 +523,11 @@ int ierr = ZOLTAN_OK;
     comm->nProc_y = tmp;
     comm->nProc_x = nProc / tmp;
   } else if (nProc_x == -1) {
-    comm->nProc_y = nProc_y;
-    comm->nProc_x = nProc / nProc_y;
+    comm->nProc_y = MIN(nProc_y, nProc);
+    comm->nProc_x = nProc / comm->nProc_y;
   } else if (nProc_y == -1) {
-    comm->nProc_y = nProc / nProc_x;
-    comm->nProc_x = nProc_x;
+    comm->nProc_x = MIN(nProc_x, nProc);
+    comm->nProc_y = nProc / comm->nProc_x;
   }
     
   /* Error check */
@@ -546,14 +546,16 @@ int ierr = ZOLTAN_OK;
   comm->Communicator = Communicator;
   comm->myProc = proc;
   comm->nProc = nProc;
-    
-  if ((MPI_Comm_split(Communicator, comm->myProc_x, comm->myProc_y, 
-                      &comm->col_comm) != MPI_SUCCESS)
-   || (MPI_Comm_split(Communicator, comm->myProc_y, comm->myProc_x, 
-                      &comm->row_comm) != MPI_SUCCESS)) {
-    ZOLTAN_PRINT_ERROR(proc, yo, "MPI_Comm_Split failed");
-    return ZOLTAN_FATAL;
-  }
+
+  if (Communicator==MPI_COMM_NULL) {
+      comm->col_comm = comm->row_comm = MPI_COMM_NULL;
+  } else if ((MPI_Comm_split(Communicator, comm->myProc_x, comm->myProc_y, 
+                             &comm->col_comm) != MPI_SUCCESS)
+             || (MPI_Comm_split(Communicator, comm->myProc_y, comm->myProc_x, 
+                                &comm->row_comm) != MPI_SUCCESS)) {
+      ZOLTAN_PRINT_ERROR(proc, yo, "MPI_Comm_Split failed");
+      return ZOLTAN_FATAL;
+  } 
 /*  printf("(%d, %d) of [%d, %d] -> After Comm_split col_comm=%d  row_comm=%d\n", hgp->myProc_x, hgp->myProc_y, hgp->nProc_x, hgp->nProc_y, (int)hgp->col_comm, (int)hgp->row_comm);  */
   
     
