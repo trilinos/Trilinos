@@ -132,6 +132,8 @@ extern int southeastback3d(int i, int j, int k, int n);
 extern int southeastfront3d(int i, int j, int k, int n);
 extern int northeastback3d(int i, int j, int k, int n);
 extern int northeastfront3d(int i, int j, int k, int n);
+extern void compress_matrix(double val[], int bindx[], int N_update);
+
 
 
 
@@ -210,6 +212,7 @@ int main(int argc, char *argv[])
 #ifndef debugSmoother
   double *xxx;
 #endif
+  int Ndirichlet, *dirichlet;
 
 #ifdef ML_partition
   FILE *fp2;
@@ -273,7 +276,9 @@ int main(int argc, char *argv[])
     scanf("%d",&Nglobal_edges);
 #ifdef HARDWIRE3D
     Nglobal_nodes = Nglobal_edges*Nglobal_edges*Nglobal_edges;
+Nglobal_nodes = (Nglobal_edges+1)*(Nglobal_edges+1)*(Nglobal_edges+1); /* rst dirichlet */
     Nglobal_edges = Nglobal_edges*Nglobal_edges*Nglobal_edges*3;
+
 #else
     Nglobal_nodes = Nglobal_edges*Nglobal_edges;
     Nglobal_edges = Nglobal_edges*Nglobal_edges*2;
@@ -346,7 +351,9 @@ int main(int argc, char *argv[])
      printf("Reading edge matrix.\n"); fflush(stdout);
   }
 #if defined(HARDWIRE3D) || defined(HARDWIRE2D)
-  sigma = 0.0001;
+  sigma = 1.0e-14;
+  sigma = 0.000000001;
+  sigma = 0.0;
 #ifdef HARDWIRE2D
   nx = (int) sqrt( ((double) Nglobal_nodes) + .00001);
   Ke_bindx = (int    *) malloc((8*Nlocal_edges+5)*sizeof(int));
@@ -410,8 +417,7 @@ int main(int argc, char *argv[])
     }
   }
 #else
-  nx = (int) pow( ((double) Nglobal_nodes) + .00001,.333333333334);
-
+  nx = (int) pow( ((double) Nglobal_edges/3) + .00001,.333333333334);
   Ke_bindx = (int    *) malloc((35*Nlocal_edges+5)*sizeof(int));
   Ke_val   = (double *) malloc((35*Nlocal_edges+5)*sizeof(double));
   Ke_bindx[0] = Nlocal_edges+1;
@@ -463,52 +469,79 @@ int main(int argc, char *argv[])
       else jj--;
       Ke_val[nz_ptr] = c4;
       Ke_bindx[nz_ptr++] =  southback3d(ii,jj,kk,nx);  /* H -,-1,0 */
+if (jj == nx-1) Ke_bindx[nz_ptr-1] = -1; /* rst dirichlet */
       Ke_val[nz_ptr] = -c2;
       Ke_bindx[nz_ptr++] =  westback3d(ii,jj,kk,nx);   /* V 0,-1,0 */
+if (jj == nx-1) Ke_bindx[nz_ptr-1] = -1; /* rst dirichlet */
       Ke_val[nz_ptr] = c2;
       Ke_bindx[nz_ptr++] =  eastback3d(ii,jj,kk,nx);   /* V 1,-1,0 */
+if (jj == nx-1) Ke_bindx[nz_ptr-1] = -1; /* rst dirichlet */
       Ke_val[nz_ptr] = -c1;
       Ke_bindx[nz_ptr++] =  westfront3d(ii,jj,kk,nx); /* V 0,-1,1 */
+if (jj == nx-1) Ke_bindx[nz_ptr-1] = -1; /* rst dirichlet */
       Ke_val[nz_ptr] = c1;
       Ke_bindx[nz_ptr++] =  eastfront3d(ii,jj,kk,nx); /* V 1,-1,1 */
+if (jj == nx-1) Ke_bindx[nz_ptr-1] = -1; /* rst dirichlet */
       Ke_val[nz_ptr] = c5;
       Ke_bindx[nz_ptr++] =  southfront3d(ii,jj,kk,nx); /* H -1,1 */
+if (jj == nx-1) Ke_bindx[nz_ptr-1] = -1; /* rst dirichlet */
       Ke_val[nz_ptr] = c1;
       Ke_bindx[nz_ptr++] =  southwest3d(ii,jj,kk,nx); /* I 0,-1,0 */
+if (jj == nx-1) Ke_bindx[nz_ptr-1] = -1; /* rst dirichlet */
       Ke_val[nz_ptr] = -c1;
       Ke_bindx[nz_ptr++] =  southeast3d(ii,jj,kk,nx); /* I 1,-1,0 */
+if (jj == nx-1) Ke_bindx[nz_ptr-1] = -1; /* rst dirichlet */
 
       if (kk == 0) kk = nx - 1;
       else kk--;
       Ke_val[nz_ptr] = c5;
       Ke_bindx[nz_ptr++] =  southback3d(ii,jj,kk,nx); /* H -1,-1 */
+if ((jj == nx-1) || (kk == nx-1)) Ke_bindx[nz_ptr-1] = -1; /* rst dirichlet */
       Ke_val[nz_ptr] = -c1;
       Ke_bindx[nz_ptr++] =  westback3d(ii,jj,kk,nx); /* V 0,-1,-1 */
+if ((jj == nx-1) || (kk == nx-1)) Ke_bindx[nz_ptr-1] = -1; /* rst dirichlet */
       Ke_val[nz_ptr] = c1;
       Ke_bindx[nz_ptr++] =  eastback3d(ii,jj,kk,nx); /* V 1,-1,-1 */
+if ((jj == nx-1) || (kk == nx-1)) Ke_bindx[nz_ptr-1] = -1; /* rst dirichlet */
       Ke_val[nz_ptr] = c4;
       Ke_bindx[nz_ptr++] =  northback3d(ii,jj,kk,nx); /* H 0,-1 */
+if ((jj == nx-1) || (kk == nx-1)) Ke_bindx[nz_ptr-1] = -1; /* rst dirichlet */
       Ke_val[nz_ptr] = -c1;
       Ke_bindx[nz_ptr++] =  southwest3d(ii,jj,kk,nx); /* I 0,-1,-1 */
+if ((jj == nx-1) || (kk == nx-1)) Ke_bindx[nz_ptr-1] = -1; /* rst dirichlet */
       Ke_val[nz_ptr] = c1;
       Ke_bindx[nz_ptr++] =  southeast3d(ii,jj,kk,nx); /* I 1,-1,-1 */
+if ((jj == nx-1) || (kk == nx-1)) Ke_bindx[nz_ptr-1] = -1; /* rst dirichlet */
 
       if (jj == nx-1) jj = 0;
       else jj++;
       Ke_val[nz_ptr] = c5;
       Ke_bindx[nz_ptr++] =  northback3d(ii,jj,kk,nx); /* H 1,-1 */
+if (kk == nx-1) Ke_bindx[nz_ptr-1] = -1; /* rst dirichlet */
       Ke_val[nz_ptr] = c1;
       Ke_bindx[nz_ptr++] =  westback3d(ii,jj,kk,nx); /* V 0,0,-1 */
+if (kk == nx-1) Ke_bindx[nz_ptr-1] = -1; /* rst dirichlet */
       Ke_val[nz_ptr] = -c1;
       Ke_bindx[nz_ptr++] =  eastback3d(ii,jj,kk,nx); /* V 1,0,-1 */
+if (kk == nx-1) Ke_bindx[nz_ptr-1] = -1; /* rst dirichlet */
       Ke_val[nz_ptr] = -c2;
       Ke_bindx[nz_ptr++] =  southwest3d(ii,jj,kk,nx); /* I 0,0,-1 */
+if (kk == nx-1) Ke_bindx[nz_ptr-1] = -1; /* rst dirichlet */
       Ke_val[nz_ptr] = c2;
       Ke_bindx[nz_ptr++] =  southeast3d(ii,jj,kk,nx); /* I 1,0,-1 */
+if (kk == nx-1) Ke_bindx[nz_ptr-1] = -1; /* rst dirichlet */
       Ke_val[nz_ptr] = -c1;
       Ke_bindx[nz_ptr++] =  northwest3d(ii,jj,kk,nx); /* I 0,1,-1 */
+if (kk == nx-1) Ke_bindx[nz_ptr-1] = -1; /* rst dirichlet */
       Ke_val[nz_ptr] = c1;
       Ke_bindx[nz_ptr++] =  northeast3d(ii,jj,kk,nx); /* I 1,1,-1 */
+if (kk == nx-1) Ke_bindx[nz_ptr-1] = -1; /* rst dirichlet */
+ if (kk == nx-1) kk = 0;
+ else kk++;
+
+if ((jj==0) || (kk==0)) { /* rst dirichlet */
+  for (ii = Ke_bindx[i] ; ii < Ke_bindx[i+1]; ii++) Ke_bindx[ii]=-1;
+}
     }
 
     if (horv == VERTICAL) {
@@ -540,52 +573,78 @@ int main(int argc, char *argv[])
       else ii--;
       Ke_val[nz_ptr] = c4;
       Ke_bindx[nz_ptr++] =  westback3d(ii,jj,kk,nx);  /* H -,-1,0 */
+if (ii == nx-1) Ke_bindx[nz_ptr-1] = -1; /* rst dirichlet */
       Ke_val[nz_ptr] = c2;
       Ke_bindx[nz_ptr++] =  northback3d(ii,jj,kk,nx);   /* V 0,-1,0 */
+if (ii == nx-1) Ke_bindx[nz_ptr-1] = -1; /* rst dirichlet */
       Ke_val[nz_ptr] = -c2;
       Ke_bindx[nz_ptr++] =  southback3d(ii,jj,kk,nx);   /* V 1,-1,0 */
+if (ii == nx-1) Ke_bindx[nz_ptr-1] = -1; /* rst dirichlet */
       Ke_val[nz_ptr] = c1;
       Ke_bindx[nz_ptr++] =  northfront3d(ii,jj,kk,nx); /* V 0,-1,1 */
+if (ii == nx-1) Ke_bindx[nz_ptr-1] = -1; /* rst dirichlet */
       Ke_val[nz_ptr] = -c1;
       Ke_bindx[nz_ptr++] =  southfront3d(ii,jj,kk,nx); /* V 1,-1,1 */
+if (ii == nx-1) Ke_bindx[nz_ptr-1] = -1; /* rst dirichlet */
       Ke_val[nz_ptr] = c5;
       Ke_bindx[nz_ptr++] =  westfront3d(ii,jj,kk,nx); /* H -1,1 */
+if (ii == nx-1) Ke_bindx[nz_ptr-1] = -1; /* rst dirichlet */
       Ke_val[nz_ptr] = c1;
       Ke_bindx[nz_ptr++] =  northwest3d(ii,jj,kk,nx); /* I 0,-1,0 */
+if (ii == nx-1) Ke_bindx[nz_ptr-1] = -1; /* rst dirichlet */
       Ke_val[nz_ptr] = -c1;
       Ke_bindx[nz_ptr++] =  southwest3d(ii,jj,kk,nx); /* I 1,-1,0 */
+if (ii == nx-1) Ke_bindx[nz_ptr-1] = -1; /* rst dirichlet */
       if (kk == 0) kk = nx - 1;
       else kk--;
       Ke_val[nz_ptr] = c5;
       Ke_bindx[nz_ptr++] =  westback3d(ii,jj,kk,nx); /* H -1,-1 */
+if ((kk==nx-1) || (ii == nx-1)) Ke_bindx[nz_ptr-1] = -1; /* rst dirichlet */
       Ke_val[nz_ptr] = c1;
       Ke_bindx[nz_ptr++] =  northback3d(ii,jj,kk,nx); /* V 0,-1,-1 */
+if ((kk==nx-1) || (ii == nx-1)) Ke_bindx[nz_ptr-1] = -1; /* rst dirichlet */
       Ke_val[nz_ptr] = -c1;
       Ke_bindx[nz_ptr++] =  southback3d(ii,jj,kk,nx); /* V 1,-1,-1 */
+if ((kk==nx-1) || (ii == nx-1)) Ke_bindx[nz_ptr-1] = -1; /* rst dirichlet */
       Ke_val[nz_ptr] = c4;
       Ke_bindx[nz_ptr++] =  eastback3d(ii,jj,kk,nx); /* H 0,-1 */
+if ((kk==nx-1) || (ii == nx-1)) Ke_bindx[nz_ptr-1] = -1; /* rst dirichlet */
       Ke_val[nz_ptr] = -c1;
       Ke_bindx[nz_ptr++] =  northwest3d(ii,jj,kk,nx); /* I 0,-1,-1 */
+if ((kk==nx-1) || (ii == nx-1)) Ke_bindx[nz_ptr-1] = -1; /* rst dirichlet */
       Ke_val[nz_ptr] = c1;
       Ke_bindx[nz_ptr++] =  southwest3d(ii,jj,kk,nx); /* I 1,-1,-1 */
+if ((kk==nx-1) || (ii == nx-1)) Ke_bindx[nz_ptr-1] = -1; /* rst dirichlet */
 
       if (ii == nx-1) ii = 0;
       else ii++;
       Ke_val[nz_ptr] = c5;
       Ke_bindx[nz_ptr++] =  eastback3d(ii,jj,kk,nx); /* H 1,-1 */
+if (kk==nx-1) Ke_bindx[nz_ptr-1] = -1; /* rst dirichlet */
       Ke_val[nz_ptr] = -c1;
       Ke_bindx[nz_ptr++] =  northback3d(ii,jj,kk,nx); /* V 0,0,-1 */
+if (kk==nx-1) Ke_bindx[nz_ptr-1] = -1; /* rst dirichlet */
       Ke_val[nz_ptr] = c1;
       Ke_bindx[nz_ptr++] =  southback3d(ii,jj,kk,nx); /* V 1,0,-1 */
+if (kk==nx-1) Ke_bindx[nz_ptr-1] = -1; /* rst dirichlet */
 
       Ke_val[nz_ptr] = -c2;
       Ke_bindx[nz_ptr++] =  northwest3d(ii,jj,kk,nx); /* I 0,0,-1 */
+if (kk==nx-1) Ke_bindx[nz_ptr-1] = -1; /* rst dirichlet */
       Ke_val[nz_ptr] = c2;
       Ke_bindx[nz_ptr++] =  southwest3d(ii,jj,kk,nx); /* I 1,0,-1 */
+if (kk==nx-1) Ke_bindx[nz_ptr-1] = -1; /* rst dirichlet */
       Ke_val[nz_ptr] = -c1;
       Ke_bindx[nz_ptr++] =  northeast3d(ii,jj,kk,nx); /* I 0,1,-1 */
+if (kk==nx-1) Ke_bindx[nz_ptr-1] = -1; /* rst dirichlet */
       Ke_val[nz_ptr] = c1;
       Ke_bindx[nz_ptr++] =  southeast3d(ii,jj,kk,nx); /* I 1,1,-1 */
+if (kk==nx-1) Ke_bindx[nz_ptr-1] = -1; /* rst dirichlet */
+if (kk == nx-1) kk = 0;
+else kk++;
+if ((ii==0) || (kk==0)) { /* rst dirichlet */
+  for (jj = Ke_bindx[i] ; jj < Ke_bindx[i+1]; jj++) Ke_bindx[jj]=-1;
+}
     }
 
     if (horv == OUT) {
@@ -616,54 +675,82 @@ int main(int argc, char *argv[])
       else jj--;
       Ke_val[nz_ptr] = c4;
       Ke_bindx[nz_ptr++] =  southwest3d(ii,jj,kk,nx);  /* H -,-1,0 */
+if (jj==nx-1) Ke_bindx[nz_ptr-1] = -1; /* rst dirichlet */
       Ke_val[nz_ptr] = -c2;
       Ke_bindx[nz_ptr++] =  westfront3d(ii,jj,kk,nx);   /* V 0,-1,0 */
+if (jj==nx-1) Ke_bindx[nz_ptr-1] = -1; /* rst dirichlet */
       Ke_val[nz_ptr] = c2;
       Ke_bindx[nz_ptr++] =  westback3d(ii,jj,kk,nx);   /* V 1,-1,0 */
+if (jj==nx-1) Ke_bindx[nz_ptr-1] = -1; /* rst dirichlet */
       Ke_val[nz_ptr] = -c1;
       Ke_bindx[nz_ptr++] =  eastfront3d(ii,jj,kk,nx); /* V 0,-1,1 */
+if (jj==nx-1) Ke_bindx[nz_ptr-1] = -1; /* rst dirichlet */
       Ke_val[nz_ptr] = c1;
       Ke_bindx[nz_ptr++] =  eastback3d(ii,jj,kk,nx); /* V 1,-1,1 */
+if (jj==nx-1) Ke_bindx[nz_ptr-1] = -1; /* rst dirichlet */
       Ke_val[nz_ptr] = c5;
       Ke_bindx[nz_ptr++] =  southeast3d(ii,jj,kk,nx); /* H -1,1 */
+if (jj==nx-1) Ke_bindx[nz_ptr-1] = -1; /* rst dirichlet */
       Ke_val[nz_ptr] = -c1;
       Ke_bindx[nz_ptr++] =  southfront3d(ii,jj,kk,nx); /* I 0,-1,0 */
+if (jj==nx-1) Ke_bindx[nz_ptr-1] = -1; /* rst dirichlet */
       Ke_val[nz_ptr] = c1;
       Ke_bindx[nz_ptr++] =  southback3d(ii,jj,kk,nx); /* I 1,-1,0 */
+if (jj==nx-1) Ke_bindx[nz_ptr-1] = -1; /* rst dirichlet */
 
       if (ii == 0) ii = nx - 1;
       else ii--;
       Ke_val[nz_ptr] = c5;
       Ke_bindx[nz_ptr++] =  southwest3d(ii,jj,kk,nx); /* H -1,-1 */
+if ((ii==nx-1)||(jj==nx-1)) Ke_bindx[nz_ptr-1] = -1; /* rst dirichlet */
       Ke_val[nz_ptr] = -c1;
       Ke_bindx[nz_ptr++] =  westfront3d(ii,jj,kk,nx); /* V 0,-1,-1 */
+if ((ii==nx-1)||(jj==nx-1)) Ke_bindx[nz_ptr-1] = -1; /* rst dirichlet */
       Ke_val[nz_ptr] = c1;
       Ke_bindx[nz_ptr++] =  westback3d(ii,jj,kk,nx); /* V 1,-1,-1 */
+if ((ii==nx-1)||(jj==nx-1)) Ke_bindx[nz_ptr-1] = -1; /* rst dirichlet */
       Ke_val[nz_ptr] = c4;
       Ke_bindx[nz_ptr++] =  northwest3d(ii,jj,kk,nx); /* H 0,-1 */
+if ((ii==nx-1)||(jj==nx-1)) Ke_bindx[nz_ptr-1] = -1; /* rst dirichlet */
       Ke_val[nz_ptr] = c1;
       Ke_bindx[nz_ptr++] =  southfront3d(ii,jj,kk,nx); /* I 0,-1,-1 */
+if ((ii==nx-1)||(jj==nx-1)) Ke_bindx[nz_ptr-1] = -1; /* rst dirichlet */
       Ke_val[nz_ptr] = -c1;
       Ke_bindx[nz_ptr++] =  southback3d(ii,jj,kk,nx); /* I 1,-1,-1 */
+if ((ii==nx-1)||(jj==nx-1)) Ke_bindx[nz_ptr-1] = -1; /* rst dirichlet */
 
       if (jj == nx-1) jj = 0;
       else jj++;
       Ke_val[nz_ptr] = c5;
       Ke_bindx[nz_ptr++] =  northwest3d(ii,jj,kk,nx); /* H 1,-1 */
+if (ii==nx-1) Ke_bindx[nz_ptr-1] = -1; /* rst dirichlet */
       Ke_val[nz_ptr] = c1;
       Ke_bindx[nz_ptr++] =  westfront3d(ii,jj,kk,nx); /* V 0,0,-1 */
+if (ii==nx-1) Ke_bindx[nz_ptr-1] = -1; /* rst dirichlet */
       Ke_val[nz_ptr] = -c1;
       Ke_bindx[nz_ptr++] =  westback3d(ii,jj,kk,nx); /* V 1,0,-1 */
+if (ii==nx-1) Ke_bindx[nz_ptr-1] = -1; /* rst dirichlet */
       Ke_val[nz_ptr] = c2;
       Ke_bindx[nz_ptr++] =  southfront3d(ii,jj,kk,nx); /* I 0,0,-1 */
+if (ii==nx-1) Ke_bindx[nz_ptr-1] = -1; /* rst dirichlet */
       Ke_val[nz_ptr] = -c2;
       Ke_bindx[nz_ptr++] =  southback3d(ii,jj,kk,nx); /* I 1,0,-1 */
+if (ii==nx-1) Ke_bindx[nz_ptr-1] = -1; /* rst dirichlet */
       Ke_val[nz_ptr] = c1;
       Ke_bindx[nz_ptr++] =  northfront3d(ii,jj,kk,nx); /* I 0,1,-1 */
+if (ii==nx-1) Ke_bindx[nz_ptr-1] = -1; /* rst dirichlet */
       Ke_val[nz_ptr] = -c1;
       Ke_bindx[nz_ptr++] =  northback3d(ii,jj,kk,nx); /* I 1,1,-1 */
+if (ii==nx-1) Ke_bindx[nz_ptr-1] = -1; /* rst dirichlet */
+if (ii == nx-1) ii = 0;
+else ii++;
+if ((jj==0) || (ii==0)) { /* rst dirichlet */
+  for (kk = Ke_bindx[i] ; kk < Ke_bindx[i+1]; kk++) Ke_bindx[kk]=-1;
+}
     }
   }
+  compress_matrix(Ke_val, Ke_bindx, Nlocal_edges);
+
 #endif
 #else
   AZ_input_msr_matrix("Ke_mat.az", global_edge_inds, &Ke_val, &Ke_bindx, 
@@ -710,6 +797,30 @@ int main(int argc, char *argv[])
 	      ML_allocate((Nlocal_edges + Ke_mat->data_org[AZ_N_external])
                       *sizeof(double)); 
     for (i = 0; i < Nlocal_edges; i++) rhs[i] = 0.0;
+    rhs[Nlocal_edges/2] = 1.;
+    rhs[Nlocal_edges/2+1] = -1.;
+
+xxx = (double *) ML_allocate((3 + Nlocal_edges + Ke_mat->data_org[AZ_N_external])
+                               *sizeof(double)); 
+for (i = 0; i < Nlocal_edges; i++) {
+  inv3dindex(global_edge_inds[i], &ii, &jj, &kk, nx, &horv);
+  rhs[i] = 
+    sin(( (double) ii*1)/( (double) nx) ) *
+    sin(( (double) jj*1)/( (double) nx) ) *
+    sin(( (double) kk*1)/( (double) nx) );
+    if (horv == HORIZONTAL) {
+      if ((jj==0) || (kk==0)) rhs[i] = 0.;/* rst dirichlet */
+    }
+    if (horv == VERTICAL) {
+      if ((ii==0) || (kk==0)) rhs[i] = 0.;/* rst dirichlet */
+    }
+    if (horv == OUT) {
+      if ((ii==0) || (jj==0)) rhs[i] = 0.;/* rst dirichlet */
+    }
+}
+Ke_mat->matvec(rhs, xxx, Ke_mat, proc_config);
+for (i = 0; i < Nlocal_edges; i++) rhs[i] = xxx[i];
+free(xxx);
 
 
   }
@@ -819,41 +930,67 @@ int main(int argc, char *argv[])
     if (ii == 0) ii = nx -1;
     else ii--;
     Kn_bindx[Kn_bindx[i]+10] = northwestfront3d(ii,jj,kk,nx);  
+if (ii==nx-1) Kn_bindx[Kn_bindx[i]+10] = -1; /* rst dirichlet */
     Kn_bindx[Kn_bindx[i]+11] = northwestback3d(ii,jj,kk,nx);  
+if (ii==nx-1) Kn_bindx[Kn_bindx[i]+11] = -1; /* rst dirichlet */
     Kn_bindx[Kn_bindx[i]+12] = southwestfront3d(ii,jj,kk,nx);  
+if (ii==nx-1) Kn_bindx[Kn_bindx[i]+12] = -1; /* rst dirichlet */
     Kn_bindx[Kn_bindx[i]+13] = southwestback3d(ii,jj,kk,nx);  
+if (ii==nx-1) Kn_bindx[Kn_bindx[i]+13] = -1; /* rst dirichlet */
 
     if (jj == 0) jj = nx -1;
     else jj--;
     Kn_bindx[Kn_bindx[i]+14] = southwestback3d(ii,jj,kk,nx);  
+if ((ii==nx-1) || (jj==nx-1)) Kn_bindx[Kn_bindx[i]+14] = -1; /* rst dirichlet */
     Kn_bindx[Kn_bindx[i]+15] = southwestfront3d(ii,jj,kk,nx);  
+if ((ii==nx-1) || (jj==nx-1)) Kn_bindx[Kn_bindx[i]+15] = -1; /* rst dirichlet */
     Kn_bindx[Kn_bindx[i]+16] = southeastfront3d(ii,jj,kk,nx);  
+if (ii==nx-1) Kn_bindx[Kn_bindx[i]+16] = southwestfront3d(0,jj,kk,nx);  
+if (jj==nx-1) Kn_bindx[Kn_bindx[i]+16] = -1; /* rst dirichlet */
     Kn_bindx[Kn_bindx[i]+17] = southeastback3d(ii,jj,kk,nx);  
+if (ii==nx-1) Kn_bindx[Kn_bindx[i]+17] = southwestback3d(0,jj,kk,nx);  
+if (jj==nx-1) Kn_bindx[Kn_bindx[i]+17] = -1; /* rst dirichlet */
 
     if (ii == nx-1) ii = 0;
     else ii++;
     Kn_bindx[Kn_bindx[i]+18] = southeastback3d(ii,jj,kk,nx);  
+if (jj==nx-1) Kn_bindx[Kn_bindx[i]+18] = -1; /* rst dirichlet */
     Kn_bindx[Kn_bindx[i]+19] = southeastfront3d(ii,jj,kk,nx);  
+if (jj==nx-1) Kn_bindx[Kn_bindx[i]+19] = -1; /* rst dirichlet */
 
     if (kk == 0) kk = nx -1;
     else kk--;
     Kn_bindx[Kn_bindx[i]+20] = northeastback3d(ii,jj,kk,nx);
+if (jj==nx-1) Kn_bindx[Kn_bindx[i]+20] = southeastback3d(ii,0,kk,nx);
+if (kk==nx-1) Kn_bindx[Kn_bindx[i]+20] = -1; /* rst dirichlet */
     Kn_bindx[Kn_bindx[i]+21] = northwestback3d(ii,jj,kk,nx);
+if (jj==nx-1) Kn_bindx[Kn_bindx[i]+21] = southwestback3d(ii,0,kk,nx);
+if (kk==nx-1) Kn_bindx[Kn_bindx[i]+21] = -1; /* rst dirichlet */
     Kn_bindx[Kn_bindx[i]+22] = southeastback3d(ii,jj,kk,nx);
+if ((jj==nx-1)||(kk==nx-1)) Kn_bindx[Kn_bindx[i]+22] = -1; /* rst dirichlet */
     Kn_bindx[Kn_bindx[i]+23] = southwestback3d(ii,jj,kk,nx);
+if ((jj==nx-1)||(kk==nx-1)) Kn_bindx[Kn_bindx[i]+23] = -1; /* rst dirichlet */
 
     if (ii == 0) ii = nx -1;
     else ii--;
     Kn_bindx[Kn_bindx[i]+24] = southwestback3d(ii,jj,kk,nx);
+if ((ii==nx-1)||(jj==nx-1)||(kk==nx-1)) Kn_bindx[Kn_bindx[i]+24] = -1; /* rst dirichlet */
     Kn_bindx[Kn_bindx[i]+25] = northwestback3d(ii,jj,kk,nx);
+if (jj==nx-1)  Kn_bindx[Kn_bindx[i]+25] = southwestback3d(ii,0,kk,nx);
+if ((ii==nx-1)||(kk==nx-1)) Kn_bindx[Kn_bindx[i]+25] = -1; /* rst dirichlet */
     if (jj == nx-1) jj = 0;
     else jj++;
     Kn_bindx[Kn_bindx[i]+3] = northwestback3d(ii,jj,kk,nx);
+if ((ii==nx-1)||(kk==nx-1)) Kn_bindx[Kn_bindx[i]+3] = -1; /* rst dirichlet */
     Kn_bindx[Kn_bindx[i]+4] = northeastback3d(ii,jj,kk,nx);
+if(ii==nx-1) Kn_bindx[Kn_bindx[i]+4] = northwestback3d(0,jj,kk,nx);
+if (kk==nx-1) Kn_bindx[Kn_bindx[i]+4] = -1; /* rst dirichlet */
     if (ii == nx-1) ii = 0;
     else ii++;
     Kn_bindx[Kn_bindx[i]+5] = northeastback3d(ii,jj,kk,nx);
+if (kk==nx-1) Kn_bindx[Kn_bindx[i]+5] = -1; /* rst dirichlet */
   }
+  compress_matrix(Kn_val, Kn_bindx, Nlocal_nodes);
 
 #endif
 #else
@@ -895,6 +1032,7 @@ int main(int argc, char *argv[])
   }
 
 #if defined(HARDWIRE3D) || defined(HARDWIRE2D)
+  nx = (int) pow( ((double) Nglobal_edges/3) + .00001,.333333333334);
   Tmat_bindx = (int    *) malloc((3*Nlocal_edges+5)*sizeof(int));
   Tmat_val   = (double *) malloc((3*Nlocal_edges+5)*sizeof(double));
   Tmat_bindx[0] = Nlocal_edges + 1;
@@ -917,26 +1055,38 @@ int main(int argc, char *argv[])
     }
 #else
     inv3dindex(global_edge_inds[i], &ii, &jj, &kk, nx, &horv);
+nx++; /* rst dirichlet */
     if (horv == HORIZONTAL) {
       Tmat_bindx[Tmat_bindx[i]] = southwestback3d(ii,jj,kk,nx); 
       Tmat_val[Tmat_bindx[i]] = -1.;
+if ((ii==0)||(jj==0)||(kk==0)) Tmat_val[Tmat_bindx[i]]=0.; /* rst dirichlet */
       Tmat_bindx[Tmat_bindx[i]+1] = southeastback3d(ii,jj,kk,nx);
       Tmat_val[Tmat_bindx[i]+1] = 1.;
+if ((ii==nx-2)||(jj==0)||(kk==0)) Tmat_val[Tmat_bindx[i]+1]=0.; /* rst dirichlet */
+      if ((jj==0) || (kk==0)) Tmat_bindx[i+1]=Tmat_bindx[i];/* rst dirichlet */
     }
     else if (horv == VERTICAL) {
       Tmat_bindx[Tmat_bindx[i]] = northwestback3d(ii,jj,kk,nx);
       Tmat_val[Tmat_bindx[i]] = -1.;
+if ((ii==0)||(jj==nx-2)||(kk==0)) Tmat_val[Tmat_bindx[i]]=0.; /* rst dirichlet */
       Tmat_bindx[Tmat_bindx[i]+1] = southwestback3d(ii,jj,kk,nx);
       Tmat_val[Tmat_bindx[i]+1] = 1.;
+
+if ((ii==0)||(jj==0)||(kk==0)) Tmat_val[Tmat_bindx[i]+1]=0.; /* rst dirichlet */
+      if ((ii==0) || (kk==0)) Tmat_bindx[i+1]=Tmat_bindx[i];/* rst dirichlet */
     }
     else {
       Tmat_bindx[Tmat_bindx[i]] = southwestback3d(ii,jj,kk,nx);
       Tmat_val[Tmat_bindx[i]] = 1.;
+if ((ii==0)||(jj==0)||(kk==0)) Tmat_val[Tmat_bindx[i]]=0.; /* rst dirichlet */
       Tmat_bindx[Tmat_bindx[i]+1] = southwestfront3d(ii,jj,kk,nx);
       Tmat_val[Tmat_bindx[i]+1] = -1.;
+if ((ii==0)||(jj==0)||(kk==nx-2)) Tmat_val[Tmat_bindx[i]+1]=0.; /* rst dirichlet */
+      if ((ii==0) || (jj==0)) Tmat_bindx[i+1]=Tmat_bindx[i];/* rst dirichlet */
     }
+nx = nx--; /* rst dirichlet */
 #endif
-    AZ_sort(&(Tmat_bindx[Tmat_bindx[i]]),2,NULL,&(Tmat_val[Tmat_bindx[i]]));
+    AZ_sort(&(Tmat_bindx[Tmat_bindx[i]]),Tmat_bindx[i+1]-Tmat_bindx[i],NULL,&(Tmat_val[Tmat_bindx[i]]));
   }
 #else
   AZ_input_msr_matrix_nodiag("Tmat.az", global_edge_inds, &Tmat_val, 
@@ -1422,7 +1572,7 @@ int main(int argc, char *argv[])
   }
 
 #ifdef HierarchyCheck
-  xxx = (double *) ML_allocate((Nlocal_edges + Ke_mat->data_org[AZ_N_external])
+  xxx = (double *) ML_allocate((3+Nlocal_edges + Ke_mat->data_org[AZ_N_external])
                                *sizeof(double)); 
 
 
@@ -1449,12 +1599,12 @@ int main(int argc, char *argv[])
      coarsest_level = ML_Gen_MGHierarchy_UsingReitzinger(ml_edges, ml_nodes,
 						         N_levels-1, ML_DECREASING, ag, Tmatbc,
                                  Tmat_transbc, &Tmat_array, &Tmat_trans_array,
-							 ML_YES, 0.0);
+							 ML_NO, 1.0);
   else
      coarsest_level = ML_Gen_MGHierarchy_UsingReitzinger(ml_edges, ml_nodes,
 						         N_levels-1, ML_DECREASING, ag, Tmat,
                                  Tmat_trans, &Tmat_array, &Tmat_trans_array,
-							 ML_YES, 0.0);
+							 ML_NO, 1.0);
 
 #ifdef ReuseOps
   {printf("Starting reuse\n"); fflush(stdout);}
@@ -1471,36 +1621,36 @@ int main(int argc, char *argv[])
   /* smoother.                                                     */
 
   if (ML_strcmp(context->smoother,"Hiptmair") == 0)
-  {
-     nodal_its      = 1;
-     edge_its       = 1;
-     if (ML_strcmp(context->subsmoother,"GaussSeidel") == 0
-         || ML_strcmp(context->subsmoother,"default") == 0)
-     {
-        nodal_smoother = (void *) ML_Gen_Smoother_SymGaussSeidel;
-        edge_smoother  = (void *) ML_Gen_Smoother_SymGaussSeidel;
-        nodal_omega    = ML_DDEFAULT;
-        edge_omega     = ML_DDEFAULT;
-        nodal_args = ML_Smoother_Arglist_Create(2);
-        ML_Smoother_Arglist_Set(nodal_args, 0, &nodal_its);
-        ML_Smoother_Arglist_Set(nodal_args, 1, &nodal_omega);
-   
-        edge_args = ML_Smoother_Arglist_Create(2);
-        ML_Smoother_Arglist_Set(edge_args, 0, &edge_its);
-        ML_Smoother_Arglist_Set(edge_args, 1, &edge_omega);
-     }
-     else if (ML_strcmp(context->subsmoother,"MLS") == 0)
-     {
-        edge_smoother  = (void *) ML_Gen_Smoother_MLS;
-        nodal_smoother = (void *) ML_Gen_Smoother_MLS;
-        nodal_omega    = 1.0;
-        edge_omega     = 1.0;
-        nodal_args = ML_Smoother_Arglist_Create(1);
-        ML_Smoother_Arglist_Set(nodal_args, 0, &nodal_its);
-        edge_args = ML_Smoother_Arglist_Create(1);
-        ML_Smoother_Arglist_Set(edge_args, 0, &edge_its);
-     }
-  }
+    {
+      nodal_its      = 1;
+      edge_its       = 1;
+      if (ML_strcmp(context->subsmoother,"GaussSeidel") == 0
+	  || ML_strcmp(context->subsmoother,"default") == 0)
+	{
+	  nodal_smoother = (void *) ML_Gen_Smoother_SymGaussSeidel;
+	  edge_smoother  = (void *) ML_Gen_Smoother_SymGaussSeidel;
+	  nodal_omega    = ML_DDEFAULT;
+	  edge_omega     = ML_DDEFAULT;
+	  nodal_args = ML_Smoother_Arglist_Create(2);
+	  ML_Smoother_Arglist_Set(nodal_args, 0, &nodal_its);
+	  ML_Smoother_Arglist_Set(nodal_args, 1, &nodal_omega);
+
+	  edge_args = ML_Smoother_Arglist_Create(2);
+	  ML_Smoother_Arglist_Set(edge_args, 0, &edge_its);
+	  ML_Smoother_Arglist_Set(edge_args, 1, &edge_omega);
+	}
+      else if (ML_strcmp(context->subsmoother,"MLS") == 0)
+	{
+	  edge_smoother  = (void *) ML_Gen_Smoother_MLS;
+	  nodal_smoother = (void *) ML_Gen_Smoother_MLS;
+	  nodal_omega    = 1.0;
+	  edge_omega     = 1.0;
+	  nodal_args = ML_Smoother_Arglist_Create(1);
+	  ML_Smoother_Arglist_Set(nodal_args, 0, &nodal_its);
+	  edge_args = ML_Smoother_Arglist_Create(1);
+	  ML_Smoother_Arglist_Set(edge_args, 0, &edge_its);
+	}
+    }
 
   /****************************************************
   * Set up smoothers for all levels but the coarsest. *
@@ -1780,11 +1930,10 @@ edge_smoother,edge_args, nodal_smoother,nodal_args);
   AZ_set_ML_preconditioner(&Pmat, Ke_mat, ml_edges, options); 
   setup_time = AZ_second() - start_time;
 	
-  xxx = (double *) ML_allocate((Nlocal_edges + Ke_mat->data_org[AZ_N_external])
+  xxx = (double *) ML_allocate((3+Nlocal_edges + Ke_mat->data_org[AZ_N_external])
                                *sizeof(double)); 
 
   for (iii = 0; iii < Nlocal_edges; iii++) xxx[iii] = 0.0; 
-  AZ_random_vector(xxx, Ke_data_org, proc_config);
 
 
   /* Set xxx */
@@ -2098,6 +2247,7 @@ int inv2dnodeindex(int index, int *i, int *j, int n)
 }
 int inv3dnodeindex(int index, int *i, int *j, int *k, int n)
 {
+  /*n++; */ /* rst dirichlet */
   *i = (index%n);
   index = (index - (*i))/n;
   *j = (index%n);
@@ -2108,43 +2258,63 @@ int inv3dnodeindex(int index, int *i, int *j, int *k, int n)
 
 int southwestback3d(int i, int j, int k, int n)
 {
+  /*n++; */ /* rst dirichlet */
   return(i + j*n + k*n*n);
 }
 int southwestfront3d(int i, int j, int k, int n)
 {
+  /*n++; */ /* rst dirichlet */
+if (k == n-1) return(-1); /* rst dirichlet */
   if (k == n-1) k = -1;
   return(i + j*n + (k+1)*n*n);
 }
 int northwestback3d(int i, int j, int k, int n)
 {
+  /* n++; */  /* rst dirichlet */
+if (j == n-1) return(-1); /* rst dirichlet */
   if (j == n-1) j = -1;
   return(i + (j+1)*n + k*n*n);
 }
 int northwestfront3d(int i, int j, int k, int n)
 {
+  /* n++; */ /* rst dirichlet */
+if (j == n-1) return(-1); /* rst dirichlet */
+if (k == n-1) return(-1); /* rst dirichlet */
   if (j == n-1) j = -1;
   if (k == n-1) k = -1;
   return(i + (j+1)*n + (k+1)*n*n);
 }
 int southeastback3d(int i, int j, int k, int n)
 {
+  /* n++; */ /* rst dirichlet */
+if (i == n-1) return(-1); /* rst dirichlet */
   if (i == n-1) i = -1;
   return(i+1 + j*n + k*n*n);
 }
 int southeastfront3d(int i, int j, int k, int n)
 {
+  /* n++; */ /* rst dirichlet */
+if (i == n-1) return(-1); /* rst dirichlet */
+if (k == n-1) return(-1); /* rst dirichlet */
   if (i == n-1) i = -1;
   if (k == n-1) k = -1;
   return(i+1 + j*n + (k+1)*n*n);
 }
 int northeastback3d(int i, int j, int k, int n)
 {
+  /* n++; */ /* rst dirichlet */
+if (i == n-1) return(-1); /* rst dirichlet */
+if (j == n-1) return(-1); /* rst dirichlet */
   if (i == n-1) i = -1;
   if (j == n-1) j = -1;
   return(i+1 + (j+1)*n + k*n*n);
 }
 int northeastfront3d(int i, int j, int k, int n)
 {
+  /* n++; */ /* rst dirichlet */
+if (i == n-1) return(-1); /* rst dirichlet */
+if (j == n-1) return(-1); /* rst dirichlet */
+if (k == n-1) return(-1); /* rst dirichlet */
   if (i == n-1) i = -1;
   if (j == n-1) j = -1;
   if (k == n-1) k = -1;
@@ -2153,62 +2323,130 @@ int northeastfront3d(int i, int j, int k, int n)
 
 int southback3d(int i, int j, int k, int n)
 {
+if (k == 0) return(-1); /* rst dirichlet */
+if (j == 0) return(-1); /* rst dirichlet */
   return(i + j*n + k*n*n);
 }
 int southfront3d(int i, int j, int k, int n)
 {
+if (j == 0) return(-1);   /* rst dirichlet */
+if (k == n-1) return(-1); /* rst dirichlet */
   if (k == n-1) k = -1;
   return(i + j*n + (k+1)*n*n);
 }
 int northback3d(int i, int j, int k, int n)
 {
+if (k == 0) return(-1); /* rst dirichlet */
+if (j == n-1) return(-1); /* rst dirichlet */
   if (j == n-1) j = -1;
   return(i + (j+1)*n + k*n*n);
 }
 int northfront3d(int i, int j, int k, int n)
 {
+if (j == n-1) return(-1); /* rst dirichlet */
+if (k == n-1) return(-1); /* rst dirichlet */
   if (j == n-1) j = -1;
   if (k == n-1) k = -1;
   return(i + (j+1)*n + (k+1)*n*n);
 }
 int westback3d(int i, int j, int k, int n)
 {
+if (i == 0) return(-1); /* rst dirichlet */
+if (k == 0) return(-1); /* rst dirichlet */
   return(i + j*n + k*n*n + n*n*n);
 }
 int westfront3d(int i, int j, int k, int n)
 {
+if (k == n-1) return(-1); /* rst dirichlet */
+if (i == 0) return(-1); /* rst dirichlet */
   if (k == n-1) k = -1;
   return(i + j*n + (k+1)*n*n + n*n*n);
 }
 int eastfront3d(int i, int j, int k, int n)
 {
+if (k == n-1) return(-1); /* rst dirichlet */
+if (i == n-1) return(-1); /* rst dirichlet */
   if (i == n-1) i = -1;
   if (k == n-1) k = -1;
   return(i+1 + (j)*n + (k+1)*n*n + n*n*n);
 }
 int eastback3d(int i, int j, int k, int n)
 {
+if (k == 0) return(-1); /* rst dirichlet */
+if (i == n-1) return(-1); /* rst dirichlet */
   if (i == n-1) i = -1;
   return(i+1 + (j)*n + k*n*n + n*n*n);
 }
 int southwest3d(int i, int j, int k, int n)
 {
+if (j == 0) return(-1); /* rst dirichlet */
+if (i == 0) return(-1); /* rst dirichlet */
   return(i + j*n + k*n*n + 2*n*n*n);
 }
 int southeast3d(int i, int j, int k, int n)
 {
+if (j == 0) return(-1); /* rst dirichlet */
+if (i == n-1) return(-1); /* rst dirichlet */
   if (i == n-1) i = -1;
   return(i+1 + j*n + k*n*n + 2*n*n*n);
 }
 int northwest3d(int i, int j, int k, int n)
 {
+if (i == 0) return(-1); /* rst dirichlet */
+if (j == n-1) return(-1); /* rst dirichlet */
   if (j == n-1) j = -1;
   return(i + (j+1)*n + k*n*n + 2*n*n*n);
 }
 int northeast3d(int i, int j, int k, int n)
 {
+if (i == n-1) return(-1); /* rst dirichlet */
+if (j == n-1) return(-1); /* rst dirichlet */
   if (i == n-1) i = -1;
   if (j == n-1) j = -1;
   return(i+1 + (j+1)*n + k*n*n + 2*n*n*n);
 }
 
+void compress_matrix(double val[], int bindx[], int N_points)
+
+/*
+ * Take an existing MSR matrix which contains some columns labeled '-1'
+ * and compress the matrix by eliminating all the columns labeled '-1'.
+ * Note: this routine is usually used in conjunction with init_msr().
+ */
+
+{
+
+  int free_ptr,start,end,i,j;
+  int temp;
+
+  free_ptr = bindx[0];
+  start    = bindx[0];
+
+  for (i = 0 ; i < N_points ; i++ ) {
+    bindx[i] = bindx[i+1] - bindx[i];
+  }
+  for (i = 0 ; i < N_points ; i++ ) {
+    end   = start + bindx[i] -1;
+
+
+    for (j = start ; j <= end ; j++ ) {
+      if (bindx[j] != -1) {
+        val[free_ptr]   = val[j];
+        bindx[free_ptr] = bindx[j];
+        free_ptr++;
+      }
+      else {
+        bindx[i]--;
+      }
+    }
+    start = end+1;
+  }
+
+  start = N_points+1;
+  for (i = 0 ; i <= N_points ; i++ ) {
+    temp = bindx[i];
+    bindx[i] = start;
+    start += temp;
+  }
+
+} /* compress_matrix */
