@@ -111,13 +111,6 @@ AZTEC_OBJ = $(AZTEC_C:.c=.$(OBJ_EXT)) $(AZTEC_F:.f=.$(OBJ_EXT)) $(AZTEC_CC:.cpp=
 LIBAZTECOO: $(AZTEC_OBJ)
 	mkdir -p $(TRILINOS_HOME)/lib/$(TRILINOS_TARGET)
 	$(AR) $(ARFLAGS) $(LIB_WIN_FLAGS)$(LIBAZTECOO) $(AZTEC_OBJ)
-# following ranlib commented out by rbl
-#	$(RANLIB) $(LIBAZTECOO)
-
-#
-# dependencies for 'f' files (none at this time)
-#
-#include ../../build/depends.aztecoo
 
 clean:
 	@echo "junk" > dummy.$(OBJ_EXT)
