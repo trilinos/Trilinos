@@ -66,7 +66,6 @@ public:
   ~List();
 
   //! List %unused parameters
-  /*! \todo Need to make this automatically parse sublists. */
   void unused() const;
 
   //! Creates and empty sublist and returns a reference to the
