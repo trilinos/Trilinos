@@ -4,6 +4,7 @@ class Epetra_Map;
 class Epetra_BlockMap;
 class Epetra_CrsMatrix;
 class Epetra_VbrMatrix;
+class Epetra_MultiVector;
 
 #define Trilinos_Util_max(x,y) (( x > y ) ? x : y)     /* max function  */
 #define Trilinos_Util_min(x,y) (( x < y ) ? x : y)     /* min function */
@@ -158,4 +159,20 @@ void  Trilinos_Util_duscr_vbr(int n, double *val, int *indx, int *bindx,
 void Trilinos_Util_dusmm(int m, int nrhs, int k, double alpha, SPBLASMAT *A,
 		 double *x, int xstride, double beta, double *b, int bstride);
 void  Trilinos_Util_dusds_vbr( SPBLASMAT *A);
+
+void Trilinos_Util_GenerateCrsProblem(int nx, int ny, int npoints, int * xoff, int * yoff,
+																			const Epetra_Comm  &comm, 
+																			Epetra_Map *& map, 
+																			Epetra_CrsMatrix *& A, 
+																			Epetra_Vector *& x, 
+																			Epetra_Vector *& b,
+																			Epetra_Vector *&xexact);
+
+void Trilinos_Util_GenerateCrsProblem(int nx, int ny, int npoints, int * xoff, int * yoff, int nrhs,
+																			const Epetra_Comm  &comm, 
+																			Epetra_Map *& map, 
+																			Epetra_CrsMatrix *& A, 
+																			Epetra_MultiVector *& x, 
+																			Epetra_MultiVector *& b,
+																			Epetra_MultiVector *&xexact);
 
