@@ -856,7 +856,7 @@ Optional Features:
                           (and sometimes confusing) to the casual installer
   --disable-dependency-tracking Speeds up one-time builds
   --enable-dependency-tracking  Do not reject slow dependency extractors
-  --enable-mpi            enable MPI using mpiCC C++ compiler
+  --enable-mpi            MPI support
   --enable-threads        enable shared memory threads (default is no)
   --enable-fatal_messages enable printing of fatal error messages (default is
                           yes)
@@ -869,13 +869,18 @@ Optional Features:
 Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
   --without-PACKAGE       do not use PACKAGE (same as --with-PACKAGE=no)
-  --with-mpi              specify root directory of MPI installation
-  --with-mpi-cxx          specify MPI C++ compiler
-  --with-mpi-cc           specify MPI C compiler
-  --with-mpi-f77          specify MPI Fortran 77 compiler
-  --with-mpi-include      specify include directory for MPI
-  --with-mpi-libs         specify MPI libraries
-  --with-mpi-libdir       specify location of MPI libraries
+  --with-mpi=MPIROOT      use MPI root directory (enables MPI)
+  --with-mpi-cxx          use MPI C++ compiler (enables MPI) [mpiCC]
+  --with-mpi-cc           use MPI C compiler (enables MPI) [mpicc]
+  --with-mpi-f77          use MPI Fortran 77 compiler (enables MPI)
+                          [mpicc]
+  --with-mpi-include      Obsolete. Use --with-mpi-incdir=DIR instead. Do not
+                          prefix DIR with '-I'.
+  --with-mpi-libs="LIBS"  MPI libraries ["-lmpi"]
+  --with-mpi-incdir=DIR   MPI include directory [MPIROOT/include] Do not
+                          use -I
+  --with-mpi-libdir=DIR   MPI library directory [MPIROOT/lib] Do not use
+                          -L
   --with-ccflags          additional CCFLAGS flags to be added: will prepend
                           to CCFLAGS
   --with-cxxflags         additional CXXFLAGS flags to be added: will
@@ -891,9 +896,8 @@ Optional Packages:
   --with-rtop             Enable RTOp interface support (default is no)
   --with-esi              Enable ESI interface support (default is yes)
   --with-superlu          Enable SuperLU interface support (default is no)
-  --with-libdirs          additional directories containing libraries: will
-                          prepend to search here for libraries, use -Ldir
-                          format
+  --with-libdirs          OBSOLETE use --with-ldflags instead. (ex.
+                          --with-ldflags="-L<DIR> -L<DIR2>")
   --with-incdirs          additional directories containing include files:
                           will prepend to search here for includes, use -Idir
                           format
@@ -1774,10 +1778,8 @@ INSTALL_STRIP_PROGRAM="\${SHELL} \$(install_sh) -c -s"
 if test "${enable_mpi+set}" = set; then
   enableval="$enable_mpi"
 
-HAVE_PKG_MPI=yes
-MPI_CXX=mpiCC
-MPI_CC=mpicc
-MPI_F77=mpif77
+HAVE_PKG_MPI=$enableval
+#MPI_CXX=mpiCC
 
 else
   HAVE_PKG_MPI=no
@@ -1789,11 +1791,11 @@ fi;
 if test "${with_mpi+set}" = set; then
   withval="$with_mpi"
 
-HAVE_PKG_MPI=yes
-MPI_DIR=${withval}
-echo "$as_me:$LINENO: checking MPI directory" >&5
+  HAVE_PKG_MPI=yes
+  MPI_DIR=${withval}
+  echo "$as_me:$LINENO: checking MPI directory" >&5
 echo $ECHO_N "checking MPI directory... $ECHO_C" >&6
-echo "$as_me:$LINENO: result: ${MPI_DIR}" >&5
+  echo "$as_me:$LINENO: result: ${MPI_DIR}" >&5
 echo "${ECHO_T}${MPI_DIR}" >&6
 
 
@@ -1804,11 +1806,15 @@ fi;
 if test "${with_mpi_cxx+set}" = set; then
   withval="$with_mpi_cxx"
 
-HAVE_PKG_MPI=yes
-MPI_CXX=${withval}
-echo "$as_me:$LINENO: checking user-defined MPI C++ compiler" >&5
+  HAVE_PKG_MPI=yes
+  if test X${withval} = Xyes; then
+    MPI_CXX=mpiCC
+  else
+    MPI_CXX=${withval}
+  fi
+  echo "$as_me:$LINENO: checking user-defined MPI C++ compiler" >&5
 echo $ECHO_N "checking user-defined MPI C++ compiler... $ECHO_C" >&6
-echo "$as_me:$LINENO: result: ${MPI_CXX}" >&5
+  echo "$as_me:$LINENO: result: ${MPI_CXX}" >&5
 echo "${ECHO_T}${MPI_CXX}" >&6
 
 
@@ -1819,11 +1825,15 @@ fi;
 if test "${with_mpi_cc+set}" = set; then
   withval="$with_mpi_cc"
 
-HAVE_PKG_MPI=yes
-MPI_CC=${withval}
-echo "$as_me:$LINENO: checking user-defined MPI C compiler" >&5
+  HAVE_PKG_MPI=yes
+  if test X${withval} = Xyes; then
+    MPI_CC=mpicc
+  else
+    MPI_CC=${withval}
+  fi
+  echo "$as_me:$LINENO: checking user-defined MPI C compiler" >&5
 echo $ECHO_N "checking user-defined MPI C compiler... $ECHO_C" >&6
-echo "$as_me:$LINENO: result: ${MPI_CC}" >&5
+  echo "$as_me:$LINENO: result: ${MPI_CC}" >&5
 echo "${ECHO_T}${MPI_CC}" >&6
 
 
@@ -1834,8 +1844,12 @@ fi;
 if test "${with_mpi_f77+set}" = set; then
   withval="$with_mpi_f77"
 
-HAVE_PKG_MPI=yes
-MPI_F77=${withval}
+  HAVE_PKG_MPI=yes
+  if test X${withval} = Xyes; then
+    MPI_F77=mpif77
+  else
+    MPI_F77=${withval}
+  fi
 echo "$as_me:$LINENO: checking user-defined MPI Fortran 77 compiler" >&5
 echo $ECHO_N "checking user-defined MPI Fortran 77 compiler... $ECHO_C" >&6
 echo "$as_me:$LINENO: result: ${MPI_F77}" >&5
@@ -1848,14 +1862,9 @@ fi;
 # Check whether --with-mpi-include or --without-mpi-include was given.
 if test "${with_mpi_include+set}" = set; then
   withval="$with_mpi_include"
-
-HAVE_PKG_MPI=yes
-MPI_INC=${withval}
-echo "$as_me:$LINENO: checking user-defined MPI includes" >&5
-echo $ECHO_N "checking user-defined MPI includes... $ECHO_C" >&6
-echo "$as_me:$LINENO: result: ${MPI_INC}" >&5
-echo "${ECHO_T}${MPI_INC}" >&6
-
+  { { echo "$as_me:$LINENO: error: --with-mpi-include is an obsolte option.   Use --with-mpi-incdir=DIR instead.  Do not prefix DIR with '-I'.  For example '--with-mpi-incdir=/usr/lam_path/include'." >&5
+echo "$as_me: error: --with-mpi-include is an obsolte option.   Use --with-mpi-incdir=DIR instead.  Do not prefix DIR with '-I'.  For example '--with-mpi-incdir=/usr/lam_path/include'." >&2;}
+   { (exit 1); exit 1; }; }
 
 fi;
 
@@ -1864,12 +1873,25 @@ fi;
 if test "${with_mpi_libs+set}" = set; then
   withval="$with_mpi_libs"
 
-HAVE_PKG_MPI=yes
-MPI_LIBS=${withval}
-echo "$as_me:$LINENO: checking user-defined MPI libraries" >&5
+  MPI_LIBS=${withval}
+  echo "$as_me:$LINENO: checking user-defined MPI libraries" >&5
 echo $ECHO_N "checking user-defined MPI libraries... $ECHO_C" >&6
-echo "$as_me:$LINENO: result: ${MPI_LIBS}" >&5
+  echo "$as_me:$LINENO: result: ${MPI_LIBS}" >&5
 echo "${ECHO_T}${MPI_LIBS}" >&6
+
+
+fi;
+
+
+# Check whether --with-mpi-incdir or --without-mpi-incdir was given.
+if test "${with_mpi_incdir+set}" = set; then
+  withval="$with_mpi_incdir"
+
+  MPI_INC=${withval}
+  echo "$as_me:$LINENO: checking user-defined MPI includes" >&5
+echo $ECHO_N "checking user-defined MPI includes... $ECHO_C" >&6
+  echo "$as_me:$LINENO: result: ${MPI_INC}" >&5
+echo "${ECHO_T}${MPI_INC}" >&6
 
 
 fi;
@@ -1879,12 +1901,11 @@ fi;
 if test "${with_mpi_libdir+set}" = set; then
   withval="$with_mpi_libdir"
 
-HAVE_PKG_MPI=yes
-MPI_LIBDIR=${withval}
-echo "$as_me:$LINENO: checking user-defined MPI libraries" >&5
-echo $ECHO_N "checking user-defined MPI libraries... $ECHO_C" >&6
-echo "$as_me:$LINENO: result: ${MPI_LIBS}" >&5
-echo "${ECHO_T}${MPI_LIBS}" >&6
+  MPI_LIBDIR=${withval}
+  echo "$as_me:$LINENO: checking user-defined MPI library directory" >&5
+echo $ECHO_N "checking user-defined MPI library directory... $ECHO_C" >&6
+  echo "$as_me:$LINENO: result: ${MPI_LIBDIR}" >&5
+echo "${ECHO_T}${MPI_LIBDIR}" >&6
 
 
 fi;
@@ -3220,7 +3241,7 @@ fi
 
 
 # Provide some information about the compiler.
-echo "$as_me:3223:" \
+echo "$as_me:3244:" \
      "checking for Fortran 77 compiler version" >&5
 ac_compiler=`set X $ac_compile; echo $2`
 { (eval echo "$as_me:$LINENO: \"$ac_compiler --version </dev/null >&5\"") >&5
@@ -3642,110 +3663,6 @@ fi
 # MPI link check
 # ------------------------------------------------------------------------
 
-
-
-if test "X${HAVE_PKG_MPI}" = "Xyes"; then
-
-  if test -n "${MPI_DIR}" && test -z "${MPI_INC}"; then
-    MPI_INC=${MPI_DIR}/include
-  fi
-
-  if test -n "${MPI_DIR}" && test -z "${MPI_LIBDIR}"; then
-    MPI_LIBDIR=${MPI_DIR}/lib
-  fi
-
-  if test -n "${MPI_INC}"; then
-    CPPFLAGS="${CPPFLAGS} ${MPI_INC}"
-  fi
-
-  if test -n "${MPI_LIBDIR}"; then
-    LDFLAGS="${LDFLAGS} ${MPI_LIBDIR}"
-  fi
-
-  if test -z "${MPI_LIBS}" && test -n "${MPI_LIBDIR}"; then
-    MPI_LIBS="-lmpi"
-  fi
-
-  if test -n "${MPI_LIBS}"; then
-    LIBS="${MPI_LIBS}"
-  fi
-
-  ac_ext=cc
-ac_cpp='$CXXCPP $CPPFLAGS'
-ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
-
-  echo "$as_me:$LINENO: checking whether MPI will link using C++ compiler" >&5
-echo $ECHO_N "checking whether MPI will link using C++ compiler... $ECHO_C" >&6
-  cat >conftest.$ac_ext <<_ACEOF
-#line $LINENO "configure"
-#include "confdefs.h"
-#include <mpi.h>
-#ifdef F77_DUMMY_MAIN
-#  ifdef __cplusplus
-     extern "C"
-#  endif
-   int F77_DUMMY_MAIN() { return 1; }
-#endif
-int
-main ()
-{
-int c; char** v; MPI_Init(&c,&v);
-  ;
-  return 0;
-}
-_ACEOF
-rm -f conftest.$ac_objext conftest$ac_exeext
-if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
-  (eval $ac_link) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); } &&
-         { ac_try='test -s conftest$ac_exeext'
-  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
-  (eval $ac_try) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }; }; then
-  echo "$as_me:$LINENO: result: yes" >&5
-echo "${ECHO_T}yes" >&6
-else
-  echo "$as_me: failed program was:" >&5
-cat conftest.$ac_ext >&5
-echo "$as_me:$LINENO: result: no" >&5
-echo "${ECHO_T}no" >&6
-   { { echo "$as_me:$LINENO: error: MPI cannot link" >&5
-echo "$as_me: error: MPI cannot link" >&2;}
-   { (exit 1); exit 1; }; }
-
-fi
-rm -f conftest.$ac_objext conftest$ac_exeext conftest.$ac_ext
-fi
-
-
-# ------------------------------------------------------------------------
-# Special check for case of running on TFLOP
-# ------------------------------------------------------------------------
-echo "$as_me:$LINENO: checking if host is TFLOP (and therefore needs special TFLOP define statement)" >&5
-echo $ECHO_N "checking if host is TFLOP (and therefore needs special TFLOP define statement)... $ECHO_C" >&6
-if test "X${host}" = "Xtflop"; then
-  echo "$as_me:$LINENO: result: yes" >&5
-echo "${ECHO_T}yes" >&6
-
-cat >>confdefs.h <<\_ACEOF
-#define TFLOP
-_ACEOF
-
-else
-  echo "$as_me:$LINENO: result: no" >&5
-echo "${ECHO_T}no" >&6
-fi
-
-# ------------------------------------------------------------------------
-# Checks for header files
-# ------------------------------------------------------------------------
-
 ac_ext=cc
 ac_cpp='$CXXCPP $CPPFLAGS'
 ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
@@ -3942,6 +3859,110 @@ ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 
+
+
+
+if test "X${HAVE_PKG_MPI}" = "Xyes"; then
+
+  if test -n "${MPI_DIR}" && test -z "${MPI_INC}"; then
+    MPI_INC="${MPI_DIR}/include"
+  fi
+
+  if test -n "${MPI_DIR}" && test -z "${MPI_LIBDIR}"; then
+    MPI_LIBDIR="${MPI_DIR}/lib"
+  fi
+
+  if test -n "${MPI_INC}"; then
+    CPPFLAGS="${CPPFLAGS} -I${MPI_INC}"
+  fi
+
+  if test -n "${MPI_LIBDIR}"; then
+    LDFLAGS="${LDFLAGS} -L${MPI_LIBDIR}"
+  fi
+
+  if test -z "${MPI_LIBS}" && test -n "${MPI_LIBDIR}"; then
+    MPI_LIBS="-lmpi"
+  fi
+
+  if test -n "${MPI_LIBS}"; then
+    LIBS="${MPI_LIBS} ${LIBS}"
+  fi
+
+  ac_ext=cc
+ac_cpp='$CXXCPP $CPPFLAGS'
+ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
+
+  echo "$as_me:$LINENO: checking for mpi.h" >&5
+echo $ECHO_N "checking for mpi.h... $ECHO_C" >&6
+  cat >conftest.$ac_ext <<_ACEOF
+#line $LINENO "configure"
+#include "confdefs.h"
+#include "mpi.h"
+_ACEOF
+if { (eval echo "$as_me:$LINENO: \"$ac_cpp conftest.$ac_ext\"") >&5
+  (eval $ac_cpp conftest.$ac_ext) 2>conftest.er1
+  ac_status=$?
+  egrep -v '^ *\+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } >/dev/null; then
+  if test -s conftest.err; then
+    ac_cpp_err=$ac_cxx_preproc_warn_flag
+  else
+    ac_cpp_err=
+  fi
+else
+  ac_cpp_err=yes
+fi
+if test -z "$ac_cpp_err"; then
+  echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6
+else
+  echo "$as_me: failed program was:" >&5
+  cat conftest.$ac_ext >&5
+
+     echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+     echo "-----"
+     echo "Cannot link simple MPI program."
+     echo "Try --with-mpi-cxx to specify MPI C++ compile script."
+     echo "Or try --with-mpi-libs, --with-mpi-incdir, --with-mpi-libdir"
+     echo "to specify all the specific MPI compile options."
+     echo "-----"
+     { { echo "$as_me:$LINENO: error: MPI cannot link" >&5
+echo "$as_me: error: MPI cannot link" >&2;}
+   { (exit 1); exit 1; }; }
+
+
+fi
+rm -f conftest.err conftest.$ac_ext
+fi
+
+
+# ------------------------------------------------------------------------
+# Special check for case of running on TFLOP
+# ------------------------------------------------------------------------
+echo "$as_me:$LINENO: checking if host is TFLOP (and therefore needs special TFLOP define statement)" >&5
+echo $ECHO_N "checking if host is TFLOP (and therefore needs special TFLOP define statement)... $ECHO_C" >&6
+if test "X${host}" = "Xtflop"; then
+  echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6
+
+cat >>confdefs.h <<\_ACEOF
+#define TFLOP
+_ACEOF
+
+else
+  echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+fi
+
+# ------------------------------------------------------------------------
+# Checks for header files
+# ------------------------------------------------------------------------
 
 echo "$as_me:$LINENO: checking for ANSI C header files" >&5
 echo $ECHO_N "checking for ANSI C header files... $ECHO_C" >&6
@@ -5592,7 +5613,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:5595: \"$ac_link\") >&5
+(eval echo $as_me:5616: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -5671,7 +5692,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:5674: \"$ac_link\") >&5
+(eval echo $as_me:5695: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -6502,14 +6523,13 @@ if test "X${USE_LAPACKLIB}" = "Xyes"; then
 fi
 
 
-## FIX-IT NOTE:: Make sure that using --with-libdirs and --with-blaslib still
 ## works with the ACX_BLAS macro
 
 # find or choose to supply valid blas and lapack libraries
 #TAC_ARG_ENABLE_FEATURE(referenceblasandlapack, [Build blas and lapack libs included in the distribution], BLASANDLAPACK, no)
 #AM_CONDITIONAL(BUILD_BLAS, test "X$ac_cv_use_referenceblasandlapack" != "Xno")
 #if test "X$ac_cv_use_referenceblasandlapack" = "Xno"; then
-#  ACX_BLAS([], [AC_MSG_ERROR([[Cannot find blas library, please specify additional locations using --with-libdirs, additional lib names using --with-blaslib or type --with-referenceblasandlapack on the configure line in the Trilinos level directory to use the blas and lapack libraries included in the distribution]])])
+#  ACX_BLAS([], [AC_MSG_ERROR([[Cannot find blas library, please specify additional locations using --with-ldflags, additional lib names using --with-blas or type --with-referenceblasandlapack on the configure line in the Trilinos level directory to use the blas and lapack libraries included in the distribution]])])
 
 
 
@@ -7627,8 +7647,8 @@ _ACEOF
         :
 else
         acx_blas_ok=no
-        { { echo "$as_me:$LINENO: error: Cannot find blas library, please specify additional locations using --with-libdirs or additional lib names using --with-blaslib" >&5
-echo "$as_me: error: Cannot find blas library, please specify additional locations using --with-libdirs or additional lib names using --with-blaslib" >&2;}
+        { { echo "$as_me:$LINENO: error: Cannot find blas library, specify a path using --with-ldflags=-I<DIR> (ex. --with-ldflags=-I/usr/path/lib) or a specific library using --with-blas=DIR/LIB (for example --with-blas=/usr/path/lib/libcxml.a)" >&5
+echo "$as_me: error: Cannot find blas library, specify a path using --with-ldflags=-I<DIR> (ex. --with-ldflags=-I/usr/path/lib) or a specific library using --with-blas=DIR/LIB (for example --with-blas=/usr/path/lib/libcxml.a)" >&2;}
    { (exit 1); exit 1; }; }
 fi
 
@@ -7636,7 +7656,7 @@ fi
 #TAC_ARG_ENABLE_FEATURE(referencelapack, [Build lapack lib included in the distribution], LAPACK, no)
 #AM_CONDITIONAL(BUILD_LAPACK, test "X$ac_cv_use_referencelapack" != "Xno" || test "X$ac_cv_use_referenceblasandlapack" != "Xno")
 #if test "X$ac_cv_use_referencelapack" = "Xno" && test "X$ac_cv_use_referenceblasandlapack" = "Xno"; then
-#  ACX_LAPACK([], [AC_MSG_ERROR([[Cannot find lapack library, please specify additional locations using --with-libdirs, additional lib names using --with-lapacklib or type --with-referencelapack on the configure line in the Trilinos level directory to use the lapack library included in the distribution]])])
+#  ACX_LAPACK([], [AC_MSG_ERROR([[Cannot find lapack library, please specify additional locations using --with-ldflags, additional lib names using --with-lapack or type --with-referencelapack on the configure line in the Trilinos level directory to use the lapack library included in the distribution]])])
 
 
 acx_lapack_ok=no
@@ -7882,8 +7902,8 @@ _ACEOF
         :
 else
         acx_lapack_ok=no
-        { { echo "$as_me:$LINENO: error: Cannot find lapack library, please specify additional locations using --with-libdirs or additional lib names using --with-lapacklib" >&5
-echo "$as_me: error: Cannot find lapack library, please specify additional locations using --with-libdirs or additional lib names using --with-lapacklib" >&2;}
+        { { echo "$as_me:$LINENO: error: Cannot find lapack library, specify a path using --with-ldflags=-I<DIR> (ex. --with-dlflags=-I/usr/path/lib) or a specific library using --with-lapack=DIR/LIB (ex. --with-lapack=/usr/path/lib/libcxml.a)" >&5
+echo "$as_me: error: Cannot find lapack library, specify a path using --with-ldflags=-I<DIR> (ex. --with-dlflags=-I/usr/path/lib) or a specific library using --with-lapack=DIR/LIB (ex. --with-lapack=/usr/path/lib/libcxml.a)" >&2;}
    { (exit 1); exit 1; }; }
 fi
 
@@ -7945,7 +7965,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:7948: \"$ac_link\") >&5
+(eval echo $as_me:7968: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -8024,7 +8044,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:8027: \"$ac_link\") >&5
+(eval echo $as_me:8047: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS

@@ -13,7 +13,7 @@ AC_DEFUN([TAC_ARG_WITH_LIBDIRS],
 AC_MSG_CHECKING([whether additional library search paths defined])
 AC_ARG_WITH(libdirs,
 AC_HELP_STRING([--with-libdirs], 
-[additional directories containing libraries: will prepend to search here for libraries, use -Ldir format]),
+[OBSOLETE use --with-ldflags instead.  (ex. --with-ldflags="-L<DIR> -L<DIR2>")]),
 [
 LDFLAGS="${withval} ${LDFLAGS}"
 AC_MSG_RESULT([${withval}])
