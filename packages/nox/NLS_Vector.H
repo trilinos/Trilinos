@@ -49,8 +49,11 @@ public:
 
   //@{ \name Update methods
 
-  //! Compute this = alpha * this + beta * y
-  virtual NLS_Vector& update(double alpha, const NLS_Vector& y, double beta) = 0;
+  //! Compute this = (alpha * x) + (beta * y) + (gamma * this)
+  virtual NLS_Vector& update(const NLS_Vector& x, double alpha, const NLS_Vector& y, double beta, double gamma) = 0;
+
+  //! Compute this = x + (step * d)
+  virtual NLS_Vector& update(const NLS_Vector& x, const NLS_Vector& d, double step) = 0;
 
   //! this = alpha * this
   virtual NLS_Vector& scale(double alpha) = 0;
