@@ -42,42 +42,46 @@ namespace Direction {
 //! %Newton direction computation
 /*! 
   Computes the Newton direction by solving
-  \f[ Js = -f. \f]
+  \f[ Js = -F. \f]
   
   To use this direction, specify that the "Method" is "Newton" in the
   "Direction" sublist of the parameters that are passed to the solver
   (see NOX::Direction::Manager for more information on choosing the
   search direction).
 
-  We may optionally use a \b Forcing \b Term, as described in [1] and
+  If the underlying linear solver for this comupation is an iterative method, 
+  this direction computation becomes an inexact %Newton method.  The 
+  tolerance used in terminating the linear solve (called a \b Forcing \b Term) 
+  may be constant or it can be adjusted for each successive linear solve.
+  Adjustable Forcing Terms are implemented as described in [1] and
   originally introduced in [2]. In this case, we choose a convergence
-  tolerance for the linear solve. In other words, at iteration \f$k\f$
-  we choose \f$\eta_k \in \left[ \eta_{\min}, \eta_{\max} \right] \f$
+  tolerance for the linear solve. In other words, at nonlinear iteration 
+  \f$k\f$ we choose \f$\eta_k \in \left[ \eta_{\min}, \eta_{\max} \right] \f$
   and solve for \f$s_k\f$ such that
 
   \f[
-  \frac{\|F_k + J_k^T s_k \|}{\|F_k\|} \leq \eta_k
+  \frac{\|F_k + J_k s_k \|}{\|F_k\|} \leq \eta_k
   \f]
 
-  The \b Type \b 1 methods sets the forcing term as follows:
+  The \b Type \b 1 method sets the forcing term as follows:
 
   \f[
   \eta_k = \left\vert \frac{\| F_k \| - \|F_{k-1} + J_{k-1} s_{k-1} \| }
   {\|F_{k-1}\|} \right\vert
   \f]
 
-  We impose the following safeguards.
+  With the following safeguards imposed:
   \f[
   \max\{\eta_{k-1}^{\frac{1 + \sqrt{5}}{2}}, \eta_{\min} \} \leq \eta_k \leq \eta_{\max}
   \f]
 
-  The \b Type \b 2 methods sets the forcing term as follows:
+  The \b Type \b 2 method sets the forcing term as follows:
 
   \f[
   \eta_k = \gamma \left( \frac{\|F_k\|}{\|F_{k-1}\|} \right)^\alpha
   \f]
 
-  We impose the following safeguards.
+  With the following safeguards imposed:
   \f[
   \max\{\gamma \eta_{k-1}^{\alpha}, \eta_{\min} \} \leq \eta_k \leq \eta_{\max}
   \f]
@@ -109,6 +113,26 @@ namespace Direction {
   - "Forcing Term Gamma" - Gamma (\f$\gamma\f$) used for the "Type 2"
     forcing term calcuation. Defaults to 0.9.
 
+  <B> Important Note: Using inexact %Newton methods with adjustable forcing terms </B> <br>
+The performance of adjustable forcing terms can be affected if the linear solver solves a linear system that is scaled.  The forcing term algorithm assumes that the linear solver achieves the following tolerance:
+
+  \f[
+  \frac{\|F_k + J_k s_k \|}{\|F_k\|} \leq \eta_k
+  \f]
+
+However, if we are solving a scaled linear system we are actually solving to the following criteria:
+
+  \f[
+  \frac{\|D_k^{-1}F_k + D_k^{-1}J_k s_k \|}{\|D_k^{-1}F_k\|} \leq \eta_k
+  \f]
+
+Where \f$ D_k \f$ is the scaling matrix (typically a diagonal row sum matrix is used).  This is a different tolerance than the one expected in the adjustable forcing term algorithm.  To account for this, one would have to have the NOX::Direction::Newton compute \f$ D \f$-norms in the direction computations.  This breaks the abstract design (and bloats the NOX::Abstract::Group) since now NOX::Direction::Newton would have to know details about the linear solver and then access scaling objects to compute these special norms.  Alternatively, we have chosen to change the convergence test in the linear solver to achieve the same goal.  The linear solver must now account for scaling in the termination criteria.  In %NOX, if an adjustable forcing term is used in conjunction with scaling of the linear system by a scaling matrix \f$ D \f$, the following convergence criteria should instead be used to terminate the linear solve:
+
+  \f[
+  \frac{\| D\left[D^{-1}F_k + D^{-1}J_k s_k \right] \|}{\|F_k\|} \leq \eta_k
+  \f]
+
+NOX::Direction::Newton will set a boolean parameter called "Using Adjustable Forcing Term" in the "%Linear %Solver" sublist of the "%Newton" direction sublist.  This parameter will be set to \b true if the "Forcing Term Method" is set to "Type 1" or "Type 2".  It is set to \b false if the "Forcing Term Method" is set to "Constant".  A linear solver can check this parameter and thus adjust it's convergence criteria accordingly.
 
   \b References
 
