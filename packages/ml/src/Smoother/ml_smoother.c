@@ -824,7 +824,6 @@ int ML_Smoother_SGS(void *sm,int inlen,double x[],int outlen, double rhs[])
 /* ************************************************************************* */
 /* Hiptmair smoother with matrix products                                    */
 /* ------------------------------------------------------------------------- */
-
 #ifdef MatrixProductHiptmair
 /* Block Hiptmair Smoother */
 int ML_Smoother_BlockHiptmair(void *sm, int inlen, double x[], int outlen, 
@@ -1151,7 +1150,6 @@ int ML_Smoother_Hiptmair(void *sm, int inlen, double x[], int outlen,
 
    if (Ke_mat->getrow->ML_id == ML_EMPTY) 
       pr_error("Error(ML_Hiptmair): Need getrow() for Hiptmair smoother\n");
-
 #ifdef ML_DEBUG_SMOOTHER
    printf("\n--------------------------------\n");
    printf("Coming into matrix Hiptmair\n");
@@ -3657,7 +3655,11 @@ void *edge_smoother, void **edge_args, void *nodal_smoother, void **nodal_args)
    /* For the MLS ... we really want to switch to a complex version */
 #ifdef GREG
    if (edge_smoother == (void *) ML_Gen_Smoother_MLS) {
+
      dataptr->ml_edge->pre_smoother[0].smoother->internal = ML_complex_Cheby;
+#ifdef IWANTONESTEP
+     dataptr->ml_edge->pre_smoother[0].smoother->internal = ML_DiagScaled_1stepKrylov;
+#endif
      widget = (struct MLSthing *) dataptr->ml_edge->pre_smoother[0].smoother->data;
      if (Amat->lambda_max_img != 0.0) {
        widget->beta_real = Amat->lambda_max;
@@ -3946,7 +3948,6 @@ void *edge_smoother, void **edge_args, void *nodal_smoother, void **nodal_args)
    dataptr->sm_nodal->my_level->Amat = tmpmat;
    dataptr->sm_nodal->my_level->comm = tmpmat->comm;
    dataptr->TtATmat = tmpmat;
-
 
    ML_Smoother_HiptmairSubsmoother_Create(&(dataptr->ml_nodal),tmpmat,
 					  nodal_smoother, nodal_args, 
@@ -7028,12 +7029,17 @@ int ML_Smoother_HiptmairSubsmoother_Create(ML **ml_subproblem,
 {
   double omega, *dbl_arg1;
   int *int_arg1, *int_arg2, *int_arg3;
+#ifdef BLOCKMLS
+  int nblocks, *block_list;
+#endif
 
    ML_Create(ml_subproblem,1);
    ML_Operator_halfClone_Init( &((*ml_subproblem)->Amat[0]),
 				   Amat);
 
    if (smoother == (void *) ML_Gen_Smoother_MLS) {
+
+
      if (ML_Smoother_Arglist_Nargs(args) != 2) {
        printf("ML_Smoother_Gen_Hiptmair_Data: Need 2 arguments for ML_Gen_Smoother_MLS() got %d arguments\n", ML_Smoother_Arglist_Nargs(args));
        exit(1);
@@ -7041,9 +7047,28 @@ int ML_Smoother_HiptmairSubsmoother_Create(ML **ml_subproblem,
      dbl_arg1 = (double *) ML_Smoother_Arglist_Get(args, 1); /* eig ratio     */
      int_arg2 = (int *) ML_Smoother_Arglist_Get(args, 0);    /* poly degree   */
      if (Amat->comm->ML_mypid == 0 && 2 < ML_Get_PrintLevel() )
-       printf("Generating subsmoother MLS\n");
-     ML_Gen_Smoother_MLS(*ml_subproblem, 0, ML_PRESMOOTHER,*dbl_arg1,
-			 *int_arg2);
+       printf("Generating subsmoother MLS   %d\n",*int_arg2);
+#ifdef BLOCKMLS
+     printf("size is %d\n",(*ml_subproblem)->Amat[0].invec_leng);
+     if (((*ml_subproblem)->Amat[0].invec_leng != 13322) &&
+	 ((*ml_subproblem)->Amat[0].invec_leng != 655) &&
+	 ((*ml_subproblem)->Amat[0].invec_leng != 4) ) {
+       printf("CHANGING TO BLOCK CHEBY\n");
+       nblocks = (int) (((double) (*ml_subproblem)->Amat[0].invec_leng)/50.);
+       nblocks++;
+       ML_Gen_Blocks_Metis(*ml_subproblem, 0, &nblocks, &block_list);
+       ML_Gen_Smoother_BlockDiagScaledCheby(*ml_subproblem, 0, ML_PRESMOOTHER, 
+					  *dbl_arg1,*int_arg2,
+					  nblocks, block_list); 
+     }
+     else
+       ML_Gen_Smoother_MLS(*ml_subproblem, 0, ML_PRESMOOTHER,*dbl_arg1,
+			   *int_arg2*10);
+#else
+       ML_Gen_Smoother_MLS(*ml_subproblem, 0, ML_PRESMOOTHER,*dbl_arg1,
+			   *int_arg2);
+#endif
+
    }
    else if (smoother == (void *) ML_Gen_Smoother_ERF_1StepKrylov) {
      if (ML_Smoother_Arglist_Nargs(args) != 0) {
@@ -7176,12 +7201,6 @@ int ML_Cheby(void *sm, int inlen, double x[], int outlen, double rhs[])
      lambda_max = Amat->lambda_max;
    }
 
-   /* This is meant for the case when the matrix is the identity.*/
-   if ((lambda_min == 1.0) && (lambda_min == lambda_max)) {
-     for (i = 0; i < n; i++) x[i] = rhs[i];
-     return 0;
-   }
-
    pAux  = (double *) ML_allocate((n+1)*sizeof(double));
    dk     = (double *) ML_allocate((n+1)*sizeof(double));
 
@@ -7245,6 +7264,15 @@ int ML_Cheby(void *sm, int inlen, double x[], int outlen, double rhs[])
    }
    if (widget->block_scaling == NULL)
      ML_DVector_GetDataPtr( Amat->diagonal, &diagonal);
+
+   /* This is meant for the case when the matrix is the identity.*/
+
+   if ((lambda_min == 1.0) && (lambda_min == lambda_max)) {
+     for (i = 0; i < n; i++) x[i] = rhs[i]/diagonal[i];
+     return 0;
+   }
+
+
 
    if (widget->block_scaling == NULL) { /* normal point scaling */
 
