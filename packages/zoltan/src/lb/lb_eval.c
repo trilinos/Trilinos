@@ -42,7 +42,7 @@ extern "C" {
 #define NUM_STATS_PART 3 /* Number of graph stats for partitions. */
 
 static int eval_edge_list(ZZ *, int, int, ZOLTAN_ID_PTR, int *, ZOLTAN_ID_PTR,
-  int *, float *, int, int, int, int *, int *, int *, int *, int *, float *,
+  int *, float *, int, int, int, int *, int *, int *, float *,
   int *, float *, int *);
 
 /*****************************************************************************/
@@ -80,7 +80,7 @@ int Zoltan_LB_Eval (ZZ *zz, int print_stats,
 {
   char *yo = "Zoltan_LB_Eval";
   int i, j, k, max_edges, num_edges;
-  int cuts, proc_flag, part_flag;
+  int cuts;
   int num_obj = 0, num_adj, num_boundary, ierr, compute_part;
   int nproc = zz->Num_Proc, nparts, maxpart, obj_wgt_dim;
   int stats[4*NUM_STATS];
@@ -267,13 +267,12 @@ int Zoltan_LB_Eval (ZZ *zz, int print_stats,
       }
       sum = 0;
       for (k = 0; k < num_obj; k++) {
-        proc_flag = part_flag = 0;
         ierr = eval_edge_list(zz, k, num_gid_entries, global_ids, part, 
                               &(nbors_global[sum]), &(nbors_proc[sum]), 
                               &(ewgts[sum*zz->Edge_Weight_Dim]), 
                               edges_per_obj[k],
                               num_obj, compute_part, proc_count,
-                              &proc_flag, &part_flag, &cuts, &num_boundary, 
+                              &cuts, &num_boundary, 
                               tmp_cutwgt, cut_arr, cutwgt_arr, bndry_arr);
         if (ierr) {
           ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error in eval_edge_list");
@@ -284,7 +283,6 @@ int Zoltan_LB_Eval (ZZ *zz, int print_stats,
     }
     else {
       for (k=0; k<num_obj; k++){
-        proc_flag = part_flag = 0;
         gid_off = k * num_gid_entries;
         lid_off = k * num_lid_entries;
         lid = (num_lid_entries > 0 ? &(local_ids[lid_off]) : NULL);
@@ -303,7 +301,7 @@ int Zoltan_LB_Eval (ZZ *zz, int print_stats,
         ierr = eval_edge_list(zz, k, num_gid_entries, global_ids, part, 
                               nbors_global, nbors_proc, ewgts, edges_per_obj[k],
                               num_obj, compute_part, proc_count,
-                              &proc_flag, &part_flag, &cuts, &num_boundary, 
+                              &cuts, &num_boundary, 
                               tmp_cutwgt, cut_arr, cutwgt_arr, bndry_arr);
         if (ierr) {
           ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error in eval_edge_list");
@@ -626,10 +624,6 @@ static int eval_edge_list(
   int num_obj,                /* # of objs on this proc */
   int compute_part,           /* Flag:  compute partition stats */
   int *proc_count,            /* # of nbors on each other proc */
-  int *proc_flag,             /* Flag:  indicates whether this obj has been
-                                 counted as a boundary object yet. */
-  int *part_flag,             /* Flag:  indicates whether this obj has been
-                                 counted as a partition boundary obj yet. */
   int *cuts,                  /* # of cut edges */
   int *num_boundary,          /* # of boundary objs */
   float *tmp_cutwgt,          /* total weight of cut edges (and other stats) */
@@ -642,6 +636,11 @@ static int eval_edge_list(
 char *yo = "eval_edge_list";
 int i, j, p, found;
 int ierr = ZOLTAN_OK;
+int proc_flag, part_flag;
+
+  /* Set flags to 0; we have not counted object k as a boundary vertex. */
+  proc_flag = 0;
+  part_flag = 0;
 
   /* Check for cut edges */
   for (j=0; j<nedges; j++){
@@ -649,9 +648,9 @@ int ierr = ZOLTAN_OK;
       (*cuts)++;
       for (i=0; i<zz->Edge_Weight_Dim; i++)
         tmp_cutwgt[i] += ewgts[j*(zz->Edge_Weight_Dim)+i];
-      if ((*proc_flag)==0){
+      if (proc_flag==0){
         (*num_boundary)++;
-        (*proc_flag) = 1;
+        proc_flag = 1;
       }
       proc_count[nbors_proc[j]]++;
     }
@@ -691,9 +690,9 @@ int ierr = ZOLTAN_OK;
         for (i=0; i<zz->Edge_Weight_Dim; i++)
           cutwgt_arr[part[k]*zz->Edge_Weight_Dim+i] 
             += ewgts[j*zz->Edge_Weight_Dim+i];
-        if ((*part_flag)==0){
+        if (part_flag==0){
           bndry_arr[part[k]]++;
-          (*part_flag) = 1;
+          part_flag = 1;
         }
       }
     }
