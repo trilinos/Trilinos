@@ -30,13 +30,13 @@ UTIL_H = \
 	$(srcdir)/Epetra_Util.h \
 	$(srcdir)/Epetra_DataAccess.h \
 	$(srcdir)/Epetra_HashTable.h \
-	$(srcdir)/Epetra_CrsMatrixTransposer.h
+	$(srcdir)/Epetra_RowMatrixTransposer.h
 
 UTIL = \
 	$(srcdir)/Epetra_Flops.cpp \
 	$(srcdir)/Epetra_Time.cpp \
 	$(srcdir)/Epetra_Util.cpp \
-	$(srcdir)/Epetra_CrsMatrixTransposer.cpp
+	$(srcdir)/Epetra_RowMatrixTransposer.cpp
 
 ENUM_H = \
 	$(srcdir)/Epetra_CombineMode.h \
