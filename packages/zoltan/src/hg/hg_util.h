@@ -19,13 +19,17 @@
 extern "C" {
 #endif
 
+
 #ifdef HGEXEC
 #include "hypergraph.h"
 #else
 #include "zz_const.h"
 #endif
 
+
 #include "hg_hypergraph.h"
+
+
 
 /* Hypergraph utilities */
 extern void Zoltan_HG_HGraph_Init (HGraph*);

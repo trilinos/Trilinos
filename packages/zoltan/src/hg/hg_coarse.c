@@ -43,6 +43,7 @@ char *yo = "Zoltan_HG_Coarsening";
 
   Zoltan_HG_HGraph_Init(c_hg);
   c_hg->info = hg->info + 1;
+  c_hg->ratio = hg->ratio;
 
   /* Calculate the number of coarse vertices. pack[vertex] -> -pack[vertex]-1 */
   c_hg->nVtx = 0;

@@ -34,6 +34,7 @@ static ZOLTAN_HG_MATCHING_FN matching_pgm;  /* path growing matching */
 static ZOLTAN_HG_MATCHING_FN matching_aug2; /* post matching optimizer */
 
 static double sim (HGraph*, int, int);
+
 /* static void check_upper_bound_of_matching_weight (Graph*, ZZ*, Matching); */
 /* static int graph_connected_components (int, int*, int*, int);             */
 /*****************************************************************************/
@@ -78,6 +79,7 @@ int found = 1;
    The similarity is equal to the scaled weight of the edge in the
    transformed graph. But with this function we calculate the edge
    weights on the fly without explicitly constructing the graph. */
+
 static double sim (HGraph *hg, int a, int b)
 {
 int    i, j, edge, pins, end;
@@ -140,7 +142,7 @@ char  *yo = "Zoltan_HG_Matching";
   /* Optimization */
   if (hgp->matching_opt)
      err = hgp->matching_opt (zz, hg, match, limit);
-
+     
 End:
 
   /* Restore the old edge weights */
@@ -182,6 +184,7 @@ char *yo = "matching_mxm";
               }
            }
         }
+        
   ZOLTAN_FREE ((void**) &Hindex);
   return ZOLTAN_OK;
 }
@@ -700,7 +703,7 @@ char  *yo = "matching_pgm";
       }
   for (i = 0; i < hg->nVtx; i++)
      Match[1][i] = i;
-
+     
   for (i = 0; i < hg->nVtx  &&  limits[side] > 0; i++)
      if (Match[0][i] == i && Match[1][i] == i) {
         vertex = i;
@@ -721,6 +724,7 @@ char  *yo = "matching_pgm";
                      sims[neighbor] += weight;
                  }
               }
+
         for (j = hg->vindex[vertex]; j < hg->vindex[vertex+1]; j++) {
            edge = hg->vedge[j];
            for (k = hg->hindex[edge]; k < hg->hindex[edge+1]; k++) {

@@ -39,6 +39,7 @@ void Zoltan_HG_HGraph_Init(
   hgraph->nDim  = 0;
   hgraph->EdgeWeightDim   = 0;
   hgraph->VertexWeightDim = 0;
+  hgraph->ratio = 0.5;
 
   hgraph->coor    = NULL;
   hgraph->vwgt    = NULL;
@@ -48,6 +49,7 @@ void Zoltan_HG_HGraph_Init(
   hgraph->vindex  = NULL;
   hgraph->vedge   = NULL;
   hgraph->vtxdist = NULL;
+  hgraph->vmap    = NULL;
 }
 
 /*****************************************************************************/
@@ -86,8 +88,9 @@ int Zoltan_HG_HGraph_Free(
 )
 {
   if (hg)
-     Zoltan_Multifree (__FILE__, __LINE__, 8, &hg->coor, &hg->vwgt, &hg->ewgt,
-      &hg->hindex, &hg->hvertex, &hg->vindex, &hg->vedge, &hg->vtxdist);
+     Zoltan_Multifree (__FILE__, __LINE__, 9, &hg->coor, &hg->vwgt, &hg->ewgt,
+      &hg->hindex, &hg->hvertex, &hg->vindex, &hg->vedge, &hg->vtxdist, 
+      &hg->vmap);
 
   return ZOLTAN_OK;
 }
@@ -142,6 +145,7 @@ char *yo = "Zoltan_HG_Info";
       wgt_tot/hg->nVtx, wgt_max, wgt_tot);
 
      mean = wgt_tot / hg->nVtx;
+     var = 0.0;
      for (i = 0; i < hg->nVtx; i++) {
         temp = hg->vwgt[i] - mean;
         var += (temp*temp);
@@ -784,8 +788,8 @@ unsigned Zoltan_HG_Rand (void) {
    return idum = (1664525U * idum) + 1013904223U;
    }
 
-   
-   
+
+
 void Zoltan_HG_Srand (unsigned int seed) {
    idum = seed;
    }

@@ -4,7 +4,12 @@
  * For more info, see the README file in the top-level Zoltan directory.     *
  *****************************************************************************/
 
+
 #include "hypergraph.h"
+#include <math.h>
+
+static double hcut_size_links (ZZ *zz, HGraph *hg, int p, Partition part);
+int hg_readfile (ZZ*, HGraph*, char*, int*);
 
 
 /* =========== TIME */
@@ -45,20 +50,18 @@ static void times_output () {}
 #endif
 
 
-int hg_readfile (ZZ*, HGraph*, char*, int*);
-
 
 /* The main procedure for the executable hg_test */
 
 int main (int argc, char **argv)
 {
-int    i, p = 2, *part, memory_graph;
+int    i, p = 2, *part, *part2, memory_graph;
 char   hgraphfile[100] = "grid5x5.hg";
 HGraph hg;
 HGPartParams hgp;
 ZZ     zz;
 int    base;   /* minimum vertex number in input file; usually 0 or 1. */
-
+int err;
 
 /* Pre-set parameter values */
   hgp.check_graph = 1;
@@ -66,6 +69,17 @@ int    base;   /* minimum vertex number in input file; usually 0 or 1. */
   hgp.redl = 0;
   hgp.ews  = 1;
   hgp.output_level = HG_DEBUG_LIST;
+
+hgp.fmswitch        = -1;
+hgp.noimprove_limit = 0.25;
+hgp.nlevelrepeat    = 0;
+hgp.tollevelswitch  = 10000;
+hgp.tolfactor       = 0.5;
+hgp.cleanup         = 0;
+hgp.cleanuprepeat   = 0;
+hgp.tiestrategy     = 0;
+hgp.hyperedge_limit = 10000;
+hgp.orphan_flag = 0;
 
   strcpy(hgp.redm_str,   "grg");
   strcpy(hgp.redmo_str,  "aug2");
@@ -125,6 +139,10 @@ int    base;   /* minimum vertex number in input file; usually 0 or 1. */
      return 1;
   ADD_NEW_TIME(t_rest);
 
+  /* tighten balance tolerance for recursive bisection process */
+  if (p > 2)
+     hgp.bal_tol = pow (hgp.bal_tol, 1.0 / ceil (log((double)p) / log(2.0)));
+
   /* load hypergraph and print its info */
   if (hg_readfile(&zz,&hg,hgraphfile,&base))
      return 1;
@@ -143,11 +161,50 @@ int    base;   /* minimum vertex number in input file; usually 0 or 1. */
      return 1;
   ADD_NEW_TIME(t_load);
 
+  /* vmap associates original vertices to sub hypergraphs */
+  hg.vmap = (int*) ZOLTAN_MALLOC (hg.nVtx * sizeof (int));
+  if (hg.vmap == NULL)
+     return 1;
+  for (i = 0; i < hg.nVtx; i++)
+     hg.vmap[i] = i;
+
   /* partition hypergraph */
-  if (!((part) = (int*)calloc((unsigned)(hg.nVtx),sizeof(int))))
+  if (!((part) = (int*) calloc ((unsigned)(hg.nVtx), sizeof(int))))
      return 1;
-  if (Zoltan_HG_HPart_Lib(&zz, &hg, p, part, &hgp))
-     return 1;
+  err = Zoltan_HG_rdivide (1, p, (Partition) part, &zz, &hg, &hgp, 0);
+  if (err != ZOLTAN_OK)
+     return err;
+  ZOLTAN_FREE (&hg.vmap);
+
+
+if (zz.Proc == 0)
+{
+double subtotal[30];
+double total, top;
+int cuts, temp;
+
+for (i = 0; i < p; i++)
+   subtotal[i] = 0.0;
+total = 0.0;
+for (i = 0; i < hg.nVtx; i++)
+   subtotal[part[i]] += ((hg.vwgt == NULL) ? 1.0 : hg.vwgt[i]);
+for (i = 0; i < p; i++)
+   total += subtotal[i];
+top = 0.0;
+for (i = 0; i < p; i++)
+   {
+   subtotal[i] = subtotal[i]/total;
+   if (subtotal[i] > top)
+      top = subtotal[i];
+   }
+cuts = (int) hcut_size_links (&zz, &hg, p, part);
+printf ("RTHRTHp=%d, cuts %4d%c tol %.3f (%.3f):  ", p, cuts, hgp.orphan_flag ? '*' : ' ', hgp.bal_tol, top*p);
+temp = ((p > 8) ? 8 : p);
+for (i = 0; i < temp; i++)
+   printf ("%4.2f  ", subtotal[i]);
+printf ("\n");
+}
+
   ADD_NEW_TIME(t_part);
 
   /* partition info */
@@ -176,4 +233,29 @@ int    base;   /* minimum vertex number in input file; usually 0 or 1. */
 
   Zoltan_Memory_Stats();
   return 0;
+}
+
+
+static double hcut_size_links (ZZ *zz, HGraph *hg, int p, Partition part)
+{
+int i, j, *parts, nparts;
+double cut = 0.0;
+char *yo = "hcut_size_links";
+
+  if (!(parts = (int*) ZOLTAN_CALLOC (p, sizeof(int)))) {
+     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
+     return ZOLTAN_MEMERR;
+     }
+
+  for (i = 0; i < hg->nEdge; i++) {
+     nparts = 0;
+     for (j = hg->hindex[i]; j < hg->hindex[i+1]; j++) {
+        if (parts[part[hg->hvertex[j]]] < i + 1)
+           nparts++;
+        parts[part[hg->hvertex[j]]] = i + 1;
+        }
+     cut += (nparts-1) * (hg->ewgt ? hg->ewgt[i] : 1.0);
+     }
+  ZOLTAN_FREE ((void**) &parts);
+  return cut;
 }

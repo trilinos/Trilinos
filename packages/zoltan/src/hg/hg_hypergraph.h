@@ -71,6 +71,9 @@ typedef struct {
    int *vtxdist;  /* distributions of vertices to processors, as in ParMETIS.
                      Vertices vtxdist[n] to vtxdist[n+1]-1 are stored on
                      processor n.   KDD:  temporary; may change later. */
+                     
+   int *vmap;     /* used when recursively dividing for p > 2 */
+   double ratio;  /* split when recursively dividing for p > 2 */
    } HGraph;
 
 

@@ -1,5 +1,5 @@
 # Used for switching on memory checking
-#C_pre          = purify -best-effort -cache-dir=/tmp
+# C_pre          = purify -best-effort -cache-dir=/tmp
 
 #Compiler
 C_comp		= cc -DHGEXEC -DZOLTAN_NO_MPI -DZOLTAN_HG
@@ -8,7 +8,7 @@ C_comp		= cc -DHGEXEC -DZOLTAN_NO_MPI -DZOLTAN_HG
 # OSTYPE        = solaris
 # OSTYPE        = linux
 
-C_flag_solaris  = #-fast
+C_flag_solaris  = -g #-fast
 C_flag_linux    = -g -Wall
 
 # Use to switch off time measurement
@@ -22,7 +22,7 @@ L		= -L. -lhg -lm
 src.c		= hg_exec.c hg_readfile.c hg_util.c hg_plot.c \
 		  hg_part.c hg_match.c hg_pack.c hg_group.c hg_scale.c \
 		  hg_coarse.c hg_global.c hg_local.c hg_sort.c hg_heap.c \
-		  mem.c
+		  mem.c hg_rdivide.c
 
 all:            	./hg_exec
 ./hg_exec:		./libhg.a hg_exec.o

@@ -24,8 +24,8 @@ extern "C" {
 /*****************************************************************************/
 /* Function prototypes */
 
-static int hash_lookup(ZZ *, ZHG *, ZOLTAN_ID_PTR, int, struct Hash_Node **);
-static int Zoltan_HG_Fill_Hypergraph(ZZ *, ZHG *);
+static int hash_lookup (ZZ*, ZHG*, ZOLTAN_ID_PTR, int, struct Hash_Node**);
+static int Zoltan_HG_Fill_Hypergraph (ZZ*, ZHG*);
 
 /*****************************************************************************/
 
@@ -36,15 +36,15 @@ int Zoltan_HG_Build_Hypergraph(
 )
 {
 /* allocates and builds hypergraph data structure using callback routines */
-char *yo = "Zoltan_HG_Build_Hypergraph";
 ZHG *zhg;                     /* Temporary pointer to Zoltan_HGraph. */
 HGraph *hgraph;               /* Temporary pointer to HG field */
 int ierr = ZOLTAN_OK;
+char *yo = "Zoltan_HG_Build_Hypergraph";
 
   ZOLTAN_TRACE_ENTER(zz, yo);
 
   /* Allocate a Zoltan hypergraph.  */
-  zhg = *zoltan_hg = (ZHG *) ZOLTAN_MALLOC(sizeof(ZHG));
+  zhg = *zoltan_hg = (ZHG*) ZOLTAN_MALLOC (sizeof(ZHG));
   if (zhg == NULL) {
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
     ierr = ZOLTAN_MEMERR;
@@ -61,15 +61,11 @@ int ierr = ZOLTAN_OK;
 
   /* Use callback functions to build the hypergraph. */
   if (zz->Get_Num_HG_Edges && zz->Get_HG_Edge_List && zz->Get_Num_HG_Pins){
-    /* 
-     * Hypergraph callback functions exist; 
-     * call them and build the HG directly.
-     */
+    /* Hypergraph callback functions exist; call them and build the HG directly */
     ZOLTAN_TRACE_DETAIL(zz, yo, "Using Hypergraph Callbacks.");
 
     ierr = Zoltan_Get_Obj_List(zz, &(hgraph->nVtx), &(zhg->Global_IDs),
-                               &(zhg->Local_IDs), zz->Obj_Weight_Dim, 
-                               &(hgraph->vwgt), &(zhg->Parts));
+     &(zhg->Local_IDs), zz->Obj_Weight_Dim, &(hgraph->vwgt), &(zhg->Parts));
     if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
       ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error getting object data");
       goto End;
@@ -83,17 +79,14 @@ int ierr = ZOLTAN_OK;
   }
 
   else if (zz->Get_Num_Edges != NULL && zz->Get_Edge_List != NULL) {
-    /* 
-     * Hypergraph callback functions don't exist, but graph functions do;
-     * call the graph callback, build a graph, and convert it to a hypergraph. 
-     */
+     /* Hypergraph callback functions don't exist, but graph functions do;     */
+     /* call the graph callback, build a graph, and convert it to a hypergraph */
     Graph graph;             /* Temporary graph. */
 
     ZOLTAN_TRACE_DETAIL(zz, yo, "Using Graph Callbacks.");
     Zoltan_HG_Graph_Init(&graph);
     ierr = Zoltan_Get_Obj_List(zz, &(graph.nVtx), &(zhg->Global_IDs),
-                               &(zhg->Local_IDs), zz->Obj_Weight_Dim, 
-                               &(graph.vwgt), &(zhg->Parts));
+     &(zhg->Local_IDs), zz->Obj_Weight_Dim, &(graph.vwgt), &(zhg->Parts));
     if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
       ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error getting object data");
       Zoltan_HG_Graph_Free(&graph);
@@ -101,10 +94,8 @@ int ierr = ZOLTAN_OK;
     }
 
     ierr = Zoltan_Build_Graph(zz, 1, hgp->check_graph, graph.nVtx,
-                              zhg->Global_IDs, zhg->Local_IDs, 
-                              zz->Obj_Weight_Dim, zz->Edge_Weight_Dim,
-                              &(graph.vtxdist), &(graph.nindex), 
-                              &(graph.neigh), &(graph.ewgt));
+     zhg->Global_IDs, zhg->Local_IDs, zz->Obj_Weight_Dim, zz->Edge_Weight_Dim,
+     &(graph.vtxdist), &(graph.nindex), &(graph.neigh), &(graph.ewgt));
     if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
       ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error building graph");
       Zoltan_HG_Graph_Free(&graph);
@@ -124,14 +115,11 @@ int ierr = ZOLTAN_OK;
 
   if (zz->Get_Num_Geom != NULL && 
       (zz->Get_Geom != NULL || zz->Get_Geom_Multi != NULL)) {
-    /* 
-     * Geometric callbacks are registered;
-     * get coordinates for hypergraph objects. 
-     */
-    ZOLTAN_TRACE_DETAIL(zz, yo, "Getting Coordinates.");
-    ierr = Zoltan_Get_Coordinates(zz, hgraph->nVtx, zhg->Global_IDs,
-                                  zhg->Local_IDs, &(hgraph->nDim),
-                                  &(hgraph->coor));
+     /* Geometric callbacks are registered;       */
+     /* get coordinates for hypergraph objects.   */
+     ZOLTAN_TRACE_DETAIL(zz, yo, "Getting Coordinates.");
+     ierr = Zoltan_Get_Coordinates(zz, hgraph->nVtx, zhg->Global_IDs,
+      zhg->Local_IDs, &(hgraph->nDim), &(hgraph->coor));
   }
 
   if (hgp->check_graph) {
@@ -153,9 +141,7 @@ End:
     /* Return NULL zhg */
     Zoltan_HG_HGraph_Free(&(zhg->HG));
     Zoltan_Multifree(__FILE__, __LINE__, 4, &(zhg->Global_IDs),
-                                            &(zhg->Local_IDs),
-                                            &(zhg->Parts),
-                                            zoltan_hg);
+     &(zhg->Local_IDs), &(zhg->Parts), zoltan_hg);
   }
     
   ZOLTAN_TRACE_EXIT(zz, yo);

@@ -17,8 +17,9 @@ extern "C" {
 #endif
 
 #include "hypergraph.h"
-static double hcut_size_links (ZZ *zz, HGraph *hg, int p, Partition part);
-
+static double hcut_size_links (ZZ*, HGraph*, int p, Partition);
+static int orphan (ZZ*, HGraph*, int p, Partition, HGPartParams*);
+static double calc_bal (ZZ*, HGraph*, Partition);
 
 
 /****************************************************************************/
@@ -69,7 +70,8 @@ int Zoltan_HG_HPart_Lib (
   HGraph *hg,          /* Input hypergraph to be partitioned */
   int p,               /* Input:  number partitions to be generated */
   Partition part,      /* Output:  partition #s; aligned with vertex arrays. */
-  HGPartParams *hgp    /* Input:  parameters for hgraph partitioning. */
+  HGPartParams *hgp,   /* Input:  parameters for hgraph partitioning. */
+int level
 )
 {
 int  i, err = ZOLTAN_OK;
@@ -195,7 +197,7 @@ char *yo = "Zoltan_HG_HPart_Lib";
         }
 
      /* Recursively partition coarse hypergraph */
-     err = Zoltan_HG_HPart_Lib (zz, &c_hg, p, c_part, hgp);
+     err = Zoltan_HG_HPart_Lib (zz, &c_hg, p, c_part, hgp, level);
      if (err != ZOLTAN_OK && err != ZOLTAN_WARN) {
         Zoltan_Multifree (__FILE__, __LINE__, 2, &c_part, &LevelMap);
         goto End;
@@ -212,8 +214,78 @@ char *yo = "Zoltan_HG_HPart_Lib";
 
   /* Locally refine partition */
   err = Zoltan_HG_Local (zz, hg, p, part, hgp);
-  if (err != ZOLTAN_OK && err != ZOLTAN_WARN)
-     goto End;
+
+
+if (hg->info == 0 && level < 2)
+   if (orphan (zz, hg, p, part, hgp))
+       {
+       hgp->orphan_flag = 1;
+       /* printf ("RTHRTH fixing orphans\n"); */
+       }
+
+if (hg->info == 0 && hgp->cleanup == 1)
+{
+int total, best;
+int i, j;
+int part0, part1, vertex, edge;
+int *t;
+int pass = 0;
+
+
+t = (int*) ZOLTAN_MALLOC (hg->nVtx * sizeof(int));
+
+while (pass++ < hgp->cleanuprepeat)
+   {
+   best = hcut_size_links (zz, hg, p, part);
+   for (i = 0; i < hg->nVtx; i++)
+      t[i] = part[i];
+
+   total = 0;
+   for (vertex = 0; vertex < hg->nVtx; vertex++)
+      {
+      part0 = part1 = 0;
+      for (i = hg->vindex[vertex]; i < hg->vindex[vertex+1]; i++)
+         {
+         edge = hg->vedge[i];
+         if (hg->hindex[edge+1] - hg->hindex[edge] < hgp->hyperedge_limit)
+            for (j = hg->hindex[edge]; j < hg->hindex[edge+1]; j++)
+               {
+               if      (hg->hvertex[j] != vertex && part[hg->hvertex[j]] == 0) part0++;
+               else if (hg->hvertex[j] != vertex && part[hg->hvertex[j]] == 1) part1++;
+               }
+         }
+
+      if (part0 + part1 == 0)
+         continue;
+      if ((part1 == 0 && part[vertex] == 1) || (part0 == 0 && part[vertex] == 0))
+          {
+          total++;
+          part[vertex] = 1 - part[vertex];
+          }
+      }
+
+   if (total == 0)
+      break;
+
+   if (total > 0)
+      {
+      hgp->fmswitch = -1;      /* force conservative FM in HG_Local call */
+      hg->info = 0;
+      Zoltan_HG_Local (zz, hg, p, part, hgp);
+      printf ("RTHRTH: total %d\n", total);
+      }
+
+   if (hcut_size_links(zz, hg, p, part) > best)
+      {
+      printf ("RTHRTH: final optimizer is worse!\n");
+      for (i = 0; i < hg->nVtx; i++)
+         part[i] = t[i];
+      }
+   }
+ZOLTAN_FREE (&t);
+}
+
+
 
   /* print useful information (conditionally) */
   if (hgp->output_level > HG_DEBUG_LIST) {
@@ -306,6 +378,7 @@ static int hmin_max (ZZ *zz, int P, int *q, HGPartParams *hgp)
         }
      if (hgp->output_level >= HG_DEBUG_LIST)
         printf("%9d    %12.2f %9d    %9d\n", values[0], (double)(values[2]) / P,
+
          values[1],values[2]);
      if (hgp->output_level > HG_DEBUG_LIST) {
         for (i = 0; i < P; i++)
@@ -403,7 +476,90 @@ char *yo = "Zoltan_HG_HPart_Info";
 
 /****************************************************************************/
 
+/* counts and fixes orphans, points that have no hyperedges in their partition */
+static int orphan (ZZ *zz, HGraph *hg, int p, Partition part,HGPartParams *hgp)
+{
+int total;
+int i, j;
+int part0, part1, vertex, edge;
+int source, dest;
 
+double part_weight[2], total_weight, max_weight[2], weight;
+double bal_tol, ratio;
+
+bal_tol = hgp->bal_tol;
+ratio = hg->ratio;
+
+  /* Calculate the weights in each partition and total, then maxima */
+  part_weight[0] = 0.0;
+  part_weight[1] = 0.0;
+  if (hg->vwgt)  {
+     for (i = 0; i < hg->nVtx; i++)
+        part_weight[part[i]] += hg->vwgt[i];
+     total_weight = part_weight[0] + part_weight[1];
+     }
+  else  {
+     total_weight = (double)(hg->nVtx);
+     for (i = 0; i < hg->nVtx; i++)
+        part_weight[part[i]] += 1.0;
+     }
+  max_weight[0] = total_weight * bal_tol *      ratio;
+  max_weight[1] = total_weight * bal_tol * (1 - ratio);
+
+   total = 0;
+   for (vertex = 0; vertex < hg->nVtx; vertex++)
+      {
+      part0 = part1 = 0;
+      for (i = hg->vindex[vertex]; i < hg->vindex[vertex+1]; i++)
+         {
+         edge = hg->vedge[i];
+         for (j = hg->hindex[edge]; j < hg->hindex[edge+1]; j++)
+            {
+            if      (hg->hvertex[j] != vertex && part[hg->hvertex[j]] == 0) part0++;
+            else if (hg->hvertex[j] != vertex && part[hg->hvertex[j]] == 1) part1++;
+            }
+         }
+
+      if (part0 + part1 == 0)
+         continue;
+      if ((part1 == 0 && part[vertex] == 1) || (part0 == 0 && part[vertex] == 0))
+          {
+          source = part[vertex];
+          dest   = 1 - source;
+          weight = (hg->vwgt) ? hg->vwgt[vertex] : 1.0;
+#ifdef RTHRTH
+          if (part_weight[dest] + weight <= max_weight[dest])
+#endif
+             {
+#ifdef RTHRTH
+             part[vertex] = 1 - part[vertex];    /* fixes orphans */
+             part_weight[source] -= weight;
+             part_weight[dest]   += weight;
+#endif
+             total++;  /* only counts "fixable" orphans */
+             }
+          }
+      }
+   return total;
+}
+
+
+
+static double calc_bal (ZZ *zz, HGraph *hg, Partition part)
+{
+double total, subtotal[2];
+int i;
+
+subtotal[0] = subtotal[1] = 0.0;
+total = 0.0;
+for (i = 0; i < hg->nVtx; i++)
+   subtotal[part[i]] += ((hg->vwgt == NULL) ? 1.0 : hg->vwgt[i]);
+total = subtotal[0] + subtotal[1];
+if (subtotal[0] > subtotal[1])
+   return 2.0 * subtotal[0]/total;
+else
+   return 2.0 * subtotal[1]/total;
+}
 
 #ifdef __cplusplus
 } /* closing bracket for extern "C" */

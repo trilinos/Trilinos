@@ -659,8 +659,7 @@ static int greedy_order (
 
     cutoff = weight_sum/p;  /* Cutoff for current partition */
     if (hgp->output_level >= HG_DEBUG_ALL)
-      printf("GLOBAL_PART weight_sum=%f, cutoff=%f\n",weight_sum,
-cutoff);
+      printf("GLOBAL_PART weight_sum=%f, cutoff=%f\n",weight_sum, cutoff);
   }
 
   if (hgp->output_level >= HG_DEBUG_ALL)
@@ -692,8 +691,7 @@ cutoff);
     else{
       sprintf(msg, "Vertex %d in heap already labeled", vtx);
       ZOLTAN_PRINT_ERROR(-1, yo, msg);
-      sprintf(msg, "bfsnumber=%d, rank[vtx] = %d", bfsnumber,
-rank[vtx]);
+      sprintf(msg, "bfsnumber=%d, rank[vtx] = %d", bfsnumber, rank[vtx]);
       ZOLTAN_PRINT_ERROR(-1, yo, msg);
       ierr = ZOLTAN_FATAL;
       goto error;

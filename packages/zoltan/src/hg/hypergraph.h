@@ -36,6 +36,9 @@ typedef struct
   int Debug_Level;
   } ZZ;
 
+#include "hg_hypergraph.h"
+#include "hg_util.h"
+
 #define ZOLTAN_DEBUG_LIST            8
 #define ZOLTAN_DEBUG_ALL             10
 #define ZOLTAN_TRACE_ENTER(a,b)      {strlen(b);}   /* NOP using variable to avoid compiler warning */
@@ -74,19 +77,12 @@ typedef int *Grouping;  /* length |V|, grouping information of vertices */
 typedef int *LevelMap;  /* length |V|, mapping of fine vertices onto coarse vertices */
 typedef int *Partition; /* length |V|, partition ID for each vertex */
 
-
-#include "hg_hypergraph.h"
-
-
 typedef struct {
    HGraph *hg;
    Partition part;
    Packing pack;
    LevelMap lmap;
    } HGraphLevel;
-
-
-#include "hg_util.h"
 
 /* Hypergraph Partitioning */
 /* Function types for options to hypergraph partitioning */
@@ -137,6 +133,30 @@ struct HGPartParamsStruct {
   int output_level;                     /* Flag indicating amount of output
                                            from HG algorithms.  See levels
                                            HG_DEBUG_* below.  */
+                                           
+int rthflag;
+
+  int orphan_flag;            /* indicates orphans have been removed */
+
+
+  int   fmswitch;             /* -1 -> conservative FM only, 
+                                 -2 -> aggressive FM only,
+                                 0 aggresive @ even levels
+                                 1 aggresive @ odd levels */
+  float noimprove_limit;      /*  > 1.0, max number of steps after last max,
+                                  < 1.0, multiplier times nVtx for steps after last max */
+  int   nlevelrepeat;         /* minimum number of FM tries at each level */
+  int   hyperedge_limit;      /* ignore hyperedges larger than this limit */
+  int   tollevelswitch;       /* change tolerance below this level */
+  float tolfactor;            /* factor to modify user tolerance */
+  int   cleanup;              /* 1 -> yes, 0 -> no */
+  int   cleanuprepeat;        /* number of times for last cleanup */
+  int   tiestrategy;          /* 0 -> ignore ties,
+                                 1 -> alternate moves via step%2
+                                 2 -> move to lighter weight partition on tie */
+
+
+
 };
 typedef struct HGPartParamsStruct HGPartParams;
 
@@ -149,9 +169,10 @@ typedef struct HGPartParamsStruct HGPartParams;
 #define HG_DEBUG_PRINT 3
 #define HG_DEBUG_PLOT 4
 
+int Zoltan_HG_rdivide (int, int, Partition, ZZ*, HGraph*, HGPartParams*, int);
 
 int Zoltan_HG_Set_Part_Options  (ZZ*, HGPartParams*);
-int Zoltan_HG_HPart_Lib    (ZZ*, HGraph*, int, Partition, HGPartParams*);
+int Zoltan_HG_HPart_Lib    (ZZ*, HGraph*, int, Partition, HGPartParams*, int);
 int Zoltan_HG_HPart_Info   (ZZ*, HGraph*, int, Partition, HGPartParams*);
 double Zoltan_HG_hcut_size_total (HGraph*, Partition);
 

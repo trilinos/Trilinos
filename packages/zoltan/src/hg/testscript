@@ -10,7 +10,9 @@ set redm = (mxm rrm rem rhm grm lhm pgm gm2 rm2 gm3 gm4 mxp rep rhp grp lhp rrp 
 #set testname = (avqlar baluu biomed bm1u golem3 ind2u ind3u prim1u prim2u s13207 s15850 s35932\
 # s38417 s38584 s9234u struct t2u t3u t4u t5u t6u)
 
-#set testname = (ibm01)
+#set testname = (PolyDFT.hb)
+
+#set testname = (ibm01 ibm02 ibm03 ibm04 ibm05 ibm06 ibm07 ibm08 ibm09 ibm10 ibm11 ibm12)
 #set redm = (rrm)
 set greedy = (gr0)
 
@@ -25,7 +27,8 @@ foreach test($testname)
    foreach method ($redm)
       foreach global ($greedy)
          echo "Running test case $test.$ext using method $method global $global"
-         ./hg_exec -f ../test/hg_test/$test.$ext -redm $method > answers/$test-$global.$method
+#         ./hg_exec -f ../test/tramonto/$test.$ext -redm $method -p 8 > answers/$test-$global.$method
+          ./hg_exec -f ../test/hg_test/$test.$ext -redm $method -p 2  > answers/$test-$global.$method
 #         hg_exec -f ../test/hg_test/umit/chip/$test.$ext -redm $method  >> answers/$test-$global.$method
          end
       end
@@ -33,15 +36,20 @@ foreach test($testname)
 date
 
 rm -f reportfile reportfile.*
-foreach test($testname)
-   foreach method ($redm)
-      foreach global ($greedy)
-         ./tools/report $test-$global.$method
-         end
-      end
-   end
+#foreach test($testname)
+#   foreach method ($redm)
+#      foreach global ($greedy)
+#         ./tools/report $test-$global.$method
+#         end
+#      end
+#   end
 
-sort +0 -1 +11n -12 +10n -11 reportfile > reportfile.sorted
+grep RTHRTH answers/* > reportfile
+./tools/new_report
+sort +0 -1 +4n -5 reportfile.tmp > reportfile.sorted
+./tools/new_evaluate
+
+#sort +0 -1 +11n -12 +10n -11 reportfile > reportfile.sorted
 echo "done"
 
 

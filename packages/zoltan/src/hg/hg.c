@@ -113,7 +113,7 @@ char *yo = "Zoltan_HG";
 
   /* Call partitioning routine. */
   ierr = Zoltan_HG_HPart_Lib(zz, &zoltan_hg->HG, zz->LB.Num_Global_Parts,
-                             output_parts, &hgp);
+                             output_parts, &hgp, 0);
   if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error partitioning hypergraph.");
     goto End;
@@ -143,8 +143,7 @@ ZHG *zoltan_hg = (ZHG *)(zz->LB.Data_Structure);
 
   if (zoltan_hg != NULL) {
     Zoltan_Multifree(__FILE__, __LINE__, 3, &zoltan_hg->Global_IDs,
-                                            &zoltan_hg->Local_IDs,
-                                            &zoltan_hg->Parts);
+     &zoltan_hg->Local_IDs, &zoltan_hg->Parts);
     Zoltan_HG_HGraph_Free(&zoltan_hg->HG);
     ZOLTAN_FREE((void**) &zz->LB.Data_Structure);
   }
@@ -226,7 +225,6 @@ static int Zoltan_HG_Return_Lists(
 )
 {
 /* Routine to build export lists of ZOLTAN_LB_FN. */
-char *yo = "Zoltan_HG_Return_Lists";
 int i, j;
 int eproc;
 int num_gid_entries   = zz->Num_GID;
@@ -235,6 +233,7 @@ int nVtx              = zoltan_hg->HG.nVtx;
 Partition input_parts = zoltan_hg->Parts;
 ZOLTAN_ID_PTR gids    = zoltan_hg->Global_IDs;
 ZOLTAN_ID_PTR lids    = zoltan_hg->Local_IDs;
+char *yo = "Zoltan_HG_Return_Lists";
 
   if (zz->LB.Return_Lists) {
     /* Count number of objects with new partitions or new processors. */
@@ -300,9 +299,9 @@ void Zoltan_HG_HGraph_Print(
  * Lots of output; synchronized across processors, so is a bottleneck.
  */
 int i;
-char *yo = "Zoltan_HG_HGraph_Print";
 int num_gid = zz->Num_GID;
 int num_lid = zz->Num_LID;
+char *yo = "Zoltan_HG_HGraph_Print";
 
   if (zoltan_hg != NULL  &&  hg != &zoltan_hg->HG) {
     ZOLTAN_PRINT_WARN(zz->Proc, yo, "Input hg != Zoltan HG");
