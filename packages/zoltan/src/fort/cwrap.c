@@ -64,7 +64,9 @@ extern "C" {
 #define Zfw_LB_Partition               zfw_lb_partition
 #define Zfw_LB_Eval                    zfw_lb_eval
 #define Zfw_LB_Point_Assign            zfw_lb_point_assign
+#define Zfw_LB_Point_PP_Assign         zfw_lb_point_pp_assign
 #define Zfw_LB_Box_Assign              zfw_lb_box_assign
+#define Zfw_LB_Box_PP_Assign           zfw_lb_box_pp_assign
 #define Zfw_Invert_Lists               zfw_invert_lists
 #define Zfw_Compute_Destinations       zfw_compute_destinations
 #define Zfw_Migrate                    zfw_migrate  
@@ -111,7 +113,9 @@ extern "C" {
 #define Zfw_LB_Partition               ZFW_LB_PARTITION
 #define Zfw_LB_Eval                    ZFW_LB_EVAL
 #define Zfw_LB_Point_Assign            ZFW_LB_POINT_ASSIGN
+#define Zfw_LB_Point_PP_Assign         ZFW_LB_POINT_PP_ASSIGN
 #define Zfw_LB_Box_Assign              ZFW_LB_BOX_ASSIGN
+#define Zfw_LB_Box_PP_Assign           ZFW_LB_BOX_PP_ASSIGN
 #define Zfw_Invert_Lists               ZFW_INVERT_LISTS
 #define Zfw_Compute_Destinations       ZFW_COMPUTE_DESTINATIONS  
 #define Zfw_Migrate                    ZFW_MIGRATE  
@@ -157,7 +161,9 @@ extern "C" {
 #define Zfw_LB_Partition               zfw_lb_partition_
 #define Zfw_LB_Eval                    zfw_lb_eval_
 #define Zfw_LB_Point_Assign            zfw_lb_point_assign_
+#define Zfw_LB_Point_PP_Assign         zfw_lb_point_pp_assign_
 #define Zfw_LB_Box_Assign              zfw_lb_box_assign_
+#define Zfw_LB_Box_PP_Assign           zfw_lb_box_pp_assign_
 #define Zfw_Invert_Lists               zfw_invert_lists_
 #define Zfw_Compute_Destinations       zfw_compute_destinations_
 #define Zfw_Migrate                    zfw_migrate_
@@ -204,7 +210,9 @@ extern "C" {
 #define Zfw_LB_Partition               zfw_lb_partition__
 #define Zfw_LB_Eval                    zfw_lb_eval__
 #define Zfw_LB_Point_Assign            zfw_lb_point_assign__
+#define Zfw_LB_Point_PP_Assign         zfw_lb_point_pp_assign__
 #define Zfw_LB_Box_Assign              zfw_lb_box_assign__
+#define Zfw_LB_Box_PP_Assign           zfw_lb_box_pp_assign__
 #define Zfw_Invert_Lists               zfw_invert_lists__
 #define Zfw_Compute_Destinations       zfw_compute_destinations__
 #define Zfw_Migrate                    zfw_migrate__
@@ -1362,6 +1370,20 @@ int Zfw_LB_Point_Assign(int *addr_lb, int *nbytes, double *coords, int *proc)
 }
 
 /*****************************************************************************/
+int Zfw_LB_Point_PP_Assign(int *addr_lb, int *nbytes, double *coords, int *proc,
+                           int *part)
+{
+   struct Zoltan_Struct *lb;
+   unsigned char *p;
+   int i;
+   p = (unsigned char *) &lb;
+   for (i=0; i<(*nbytes); i++) {*p = (unsigned char)addr_lb[i]; p++;}
+   Zoltan_Current = lb;
+
+   return Zoltan_LB_Point_PP_Assign(lb, coords, proc, part);
+}
+
+/*****************************************************************************/
 int Zfw_LB_Box_Assign(int *addr_lb, int *nbytes, double *xmin, double *ymin,
                      double *zmin, double *xmax, double *ymax, double *zmax,
                      int *procs, int *numprocs)
@@ -1373,8 +1395,24 @@ int Zfw_LB_Box_Assign(int *addr_lb, int *nbytes, double *xmin, double *ymin,
    for (i=0; i<(*nbytes); i++) {*p = (unsigned char)addr_lb[i]; p++;}
    Zoltan_Current = lb;
 
-   return Zoltan_LB_Box_Assign(lb, *xmin, *ymin, *zmin, *xmax, *ymax, *zmax, procs,
-                        numprocs);
+   return Zoltan_LB_Box_Assign(lb, *xmin, *ymin, *zmin, *xmax, *ymax, *zmax, 
+                               procs, numprocs);
+}
+
+/*****************************************************************************/
+int Zfw_LB_Box_PP_Assign(int *addr_lb, int *nbytes, double *xmin, double *ymin,
+                     double *zmin, double *xmax, double *ymax, double *zmax,
+                     int *procs, int *numprocs, int *parts, int *numparts)
+{
+   struct Zoltan_Struct *lb;
+   unsigned char *p;
+   int i;
+   p = (unsigned char *) &lb;
+   for (i=0; i<(*nbytes); i++) {*p = (unsigned char)addr_lb[i]; p++;}
+   Zoltan_Current = lb;
+
+   return Zoltan_LB_Box_PP_Assign(lb, *xmin, *ymin, *zmin, *xmax, *ymax, *zmax,
+                                  procs, numprocs, parts, numparts);
 }
 
 /*****************************************************************************/

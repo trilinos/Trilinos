@@ -112,7 +112,9 @@ public :: &
    Zoltan_LB_Free_Part, &
    Zoltan_LB_Free_Data, &
    Zoltan_LB_Point_Assign, &
+   Zoltan_LB_Point_PP_Assign, &
    Zoltan_LB_Box_Assign, &
+   Zoltan_LB_Box_PP_Assign, &
    Zoltan_LB_Balance, &
    Zoltan_Invert_Lists, &
    Zoltan_Compute_Destinations, &
@@ -749,6 +751,22 @@ end function Zfw_LB_Point_Assign
 end interface
 
 interface
+!NAS$ ALIEN "F77 zfw_point_pp_assign"
+function Zfw_LB_Point_PP_Assign(zz,nbytes,coords,proc,part)
+use zoltan_types
+use lb_user_const
+use zoltan_user_data
+implicit none
+integer(Zoltan_INT) :: Zfw_LB_Point_PP_Assign
+integer(Zoltan_INT), dimension(*) INTENT_IN zz
+integer(Zoltan_INT) INTENT_IN nbytes
+real(Zoltan_DOUBLE), dimension(*) INTENT_IN coords
+integer(Zoltan_INT), intent(out) :: proc
+integer(Zoltan_INT), intent(out) :: part
+end function Zfw_LB_Point_PP_Assign
+end interface
+
+interface
 !NAS$ ALIEN "F77 zfw_box_assign"
 function Zfw_LB_Box_Assign(zz,nbytes,xmin,ymin,zmin,xmax,ymax,zmax,procs,numprocs)
 use zoltan_types
@@ -762,6 +780,24 @@ real(Zoltan_DOUBLE) INTENT_IN xmin,ymin,zmin,xmax,ymax,zmax
 integer(Zoltan_INT), dimension(*), intent(out) :: procs
 integer(Zoltan_INT), intent(out) :: numprocs
 end function Zfw_LB_Box_Assign
+end interface
+
+interface
+!NAS$ ALIEN "F77 zfw_box_pp_assign"
+function Zfw_LB_Box_PP_Assign(zz,nbytes,xmin,ymin,zmin,xmax,ymax,zmax,procs,numprocs,parts,numparts)
+use zoltan_types
+use lb_user_const
+use zoltan_user_data
+implicit none
+integer(Zoltan_INT) :: Zfw_LB_Box_PP_Assign
+integer(Zoltan_INT), dimension(*) INTENT_IN zz
+integer(Zoltan_INT) INTENT_IN nbytes
+real(Zoltan_DOUBLE) INTENT_IN xmin,ymin,zmin,xmax,ymax,zmax
+integer(Zoltan_INT), dimension(*), intent(out) :: procs
+integer(Zoltan_INT), intent(out) :: numprocs
+integer(Zoltan_INT), dimension(*), intent(out) :: parts
+integer(Zoltan_INT), intent(out) :: numparts
+end function Zfw_LB_Box_PP_Assign
 end interface
 
 interface
@@ -979,8 +1015,16 @@ interface Zoltan_LB_Point_Assign
    module procedure Zf90_LB_Point_Assign
 end interface
 
+interface Zoltan_LB_Point_PP_Assign
+   module procedure Zf90_LB_Point_PP_Assign
+end interface
+
 interface Zoltan_LB_Box_Assign
    module procedure Zf90_LB_Box_Assign
+end interface
+
+interface Zoltan_LB_Box_PP_Assign
+   module procedure Zf90_LB_Box_PP_Assign
 end interface
 
 interface Zoltan_Invert_Lists
@@ -1738,6 +1782,22 @@ Zf90_LB_Point_Assign = Zfw_LB_Point_Assign(zz_addr,nbytes,coords,proc)
 end function Zf90_LB_Point_Assign
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+function Zf90_LB_Point_PP_Assign(zz,coords,proc,part)
+integer(Zoltan_INT) :: Zf90_LB_Point_PP_Assign
+type(Zoltan_Struct) INTENT_IN zz
+real(Zoltan_DOUBLE), dimension(*) INTENT_IN coords
+integer(Zoltan_INT), intent(out) :: proc
+integer(Zoltan_INT), intent(out) :: part
+integer(Zoltan_INT), dimension(Zoltan_PTR_LENGTH) :: zz_addr
+integer(Zoltan_INT) :: nbytes, i
+nbytes = Zoltan_PTR_LENGTH
+do i=1,nbytes
+   zz_addr(i) = ichar(zz%addr%addr(i:i))
+end do
+Zf90_LB_Point_PP_Assign = Zfw_LB_Point_PP_Assign(zz_addr,nbytes,coords,proc,part)
+end function Zf90_LB_Point_PP_Assign
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 function Zf90_LB_Box_Assign(zz,xmin,ymin,zmin,xmax,ymax,zmax,procs,numprocs)
 integer(Zoltan_INT) :: Zf90_LB_Box_Assign
 type(Zoltan_Struct) INTENT_IN zz
@@ -1753,6 +1813,25 @@ end do
 Zf90_LB_Box_Assign = Zfw_LB_Box_Assign(zz_addr,nbytes,xmin,ymin,zmin,xmax,ymax, &
                                     zmax,procs,numprocs)
 end function Zf90_LB_Box_Assign
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+function Zf90_LB_Box_PP_Assign(zz,xmin,ymin,zmin,xmax,ymax,zmax,procs,numprocs,parts,numparts)
+integer(Zoltan_INT) :: Zf90_LB_Box_PP_Assign
+type(Zoltan_Struct) INTENT_IN zz
+real(Zoltan_DOUBLE) INTENT_IN xmin,ymin,zmin,xmax,ymax,zmax
+integer(Zoltan_INT), intent(out), dimension(*) :: procs
+integer(Zoltan_INT), intent(out) :: numprocs
+integer(Zoltan_INT), intent(out), dimension(*) :: parts
+integer(Zoltan_INT), intent(out) :: numparts
+integer(Zoltan_INT), dimension(Zoltan_PTR_LENGTH) :: zz_addr
+integer(Zoltan_INT) :: nbytes, i
+nbytes = Zoltan_PTR_LENGTH
+do i=1,nbytes
+   zz_addr(i) = ichar(zz%addr%addr(i:i))
+end do
+Zf90_LB_Box_PP_Assign = Zfw_LB_Box_PP_Assign(zz_addr,nbytes,xmin,ymin,zmin,xmax,ymax, &
+                                    zmax,procs,numprocs,parts,numparts)
+end function Zf90_LB_Box_PP_Assign
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 function Zf90_Invert_Lists(zz, &
