@@ -1,0 +1,121 @@
+\begin{itemize}
+\item[Trilinos]
+The name of the project.  Also a Greek term which,
+loosely translated means ``a string of pearls,'' 
+meant to evoke an image that each Trilinos package is a pearl in its 
+own right, but is even more valuable when combined with other 
+packages.
+
+\item[Package]
+A self-contained collection of software in Trilinos
+focused on one primary class of numerical
+methods.  Also a fundamental, integral unit in the Trilinos framework.
+
+\item[new\_package] A sample Trilinos package containing all of the
+infrastructure to install a new package into the Trilinos framework.
+Contains the basic directory structure, a collection of sample
+configuration and build files and a sample ``Hello World'' package.
+Also a website.
+
+\item[Anasazi]
+An extensible and interoperable framework for large-scale eigenvalue
+algorithms.The motivation for this framework is to provide a generic
+interface to a collection of algorithms for solving large-scale 
+eigenvalue problems.
+
+\item[AztecOO] 
+Linear solver package based on preconditioned Krylov methods.  A 
+follow-on to the Aztec solver package~\cite{Aztec2.1}.  
+Supports all Aztec 
+interfaces and functionality, but also provides significant new 
+functionality.
+
+\item[Belos] A Greek term meaning ``arrow.'' Belos is the next
+generation of iterative solvers.  Belos solvers are written using
+``generic'' programming techniques.  In other words, Belos is written
+using TSF abstract interfaces and therefore has no explicit dependence
+on any concrete linear algebra library.  Instead, Belos solvers can be
+used with any concrete linear algebra library that implements the TSF
+abstract interfaces. 
+
+\item[Ifpack] 
+Object-oriented algebraic preconditioner, compatible with 
+Epetra and AztecOO.  Supports construction and use of parallel
+distributed memory preconditioners such as overlapping Schwarz domain
+decomposition, Jacobi scaling and local Gauss-Seidel relaxations.
+
+\item[Komplex] 
+Complex linear equation solver using equivalent real 
+formulations~\cite{DayHero2000}, built on top of Epetra and AztecOO.
+
+\item[LOCA]
+Library of continuation algorithms. A package of scalable stability 
+analysis algorithms (available as part of 
+the NOX nonlinear solver package). When integrated into an application code, 
+LOCA enables the tracking of solution branches as a function of system 
+parameters and the direct tracking of bifurcation points.
+
+\item[Meros]
+Segregated preconditioning package.  Provides scalable block
+preconditioning for problems that couple simultaneous solution
+variables such as Navier-Stokes problems. 
+
+\item[ML]
+Algebraic multi-level preconditioner package.  Provides scalable
+preconditioning capabilities for a variety of problem classes.  
+
+\item[NOX]
+A collection of nonlinear solvers, designed to be easily integrated
+into an application and used with many different linear solvers.
+
+\item[Petra]
+A Greek term meaning ``foundation.''  Trilinos has three Petra 
+libraries: Epetra, Tpetra and Jpetra that provide basic classes 
+for constructing and manipulating matrix, graph and vector
+objects.  Epetra is the current production version that is
+split into two packages, one core and one extensions.
+
+\begin{itemize}
+
+\item[Epetra] Current C++ production implementation of the Petra
+Object Model.  The ``E'' in Epetra stands for ``essential'' implying
+that this version provides the most important capabilities that are
+commonly needed by our target application base.  Epetra supports real,
+double-precision floating point data only (no single-precision or
+complex).  Epetra avoids explicit use of some of the more
+advanced features of C++, including templates and the Standard
+Template Library, that can be impediments to portability.
+
+\item[Tpetra] The future C++ version of Petra, using templates and
+other more advanced features of C++.  Tpetra supports arbitrary scalar
+and ordinal types, and makes extensive use of advanced C++ features.
+
+\item[Jpetra] A Java implementation of Petra, supporting real,
+double-precision data.  Written in pure Java, it is designed to be
+byte-code portable and can be executed across multiple compute nodes.
+
+\end{itemize}
+
+\item[Teuchos] A collection of classes and service software that is
+useful to almost almost all Trilinos packages.  Includes
+reference-counted pointers, parameter lists, templated interfaces to
+BLAS, LAPACK and traits for templates.  
+
+\item[TSF] A collection of abstract interfaces that supports application
+access to a variety of Trilinos capabilities, supports
+interoperability betweeen Trilinos packages and provides future extensibility.
+TSF is composed of several packages.  The primary user packages are:  
+\begin{itemize}
+
+\item[TSFCore] TSFCore provides 
+a basic collection of abstract interfaces to vectors, linear
+operators, solvers, etc.  These interfaces provide a common
+interface for applications to access one or more packages that
+implement the abstract interface.  These interfaces can also be used
+by other packages in Trilinos to accomplish the same purpose.
+
+\item[TSFExtended] TSFExtended builds on top of TSFCore, providing implicit
+aggregation capabilities and overloaded operators.  
+\end{itemize}
+\end{itemize}
+
