@@ -276,6 +276,9 @@ void AnasaziLOCAVec<TYPE>::MvTimesMatAddMv ( TYPE alpha, AnasaziMultiVec<TYPE>& 
 	int n = B.getcols();
 	int ldb = B.getld();
 	TYPE *Bvals = B.getarray();  	
+	AnasaziLOCAVec *temp_vec = new AnasaziLOCAVec(*(mvPtrs[0]),n);
+	temp_vec->MvInit(0.0);
+	TYPE one = 1.0;
 //
 //	*this <- beta * (*this)
 //
@@ -287,9 +290,11 @@ void AnasaziLOCAVec<TYPE>::MvTimesMatAddMv ( TYPE alpha, AnasaziMultiVec<TYPE>& 
 //
 	for (j=0; j<n; j++) {
 		for (i=0; i<m; i++) {
-			mvPtrs[j]->update(Bvals[j*ldb + i],*(A_vec->mvPtrs[i]),alpha);
-		}
+			temp_vec->mvPtrs[j]->update(Bvals[j*ldb+i], *(A_vec->mvPtrs[i]),one);
+		}				
+		mvPtrs[j]->update(one,*(temp_vec->mvPtrs[j]),alpha);
 	}
+	delete temp_vec;
 }
 //
 // *this <- alpha * A + beta * B
@@ -400,6 +405,7 @@ void AnasaziLOCAMat<TYPE>::ApplyMatrix ( const AnasaziMultiVec<TYPE>& x,
 	for (int i=0; i<NumVecs; i++) {
 		res = locaGroup.applyJacobianInverse(locaParams, *(x_vec->mvPtrs[i]), 
 						*(y_vec->mvPtrs[i])); 
+//		res = locaGroup.applyJacobian(*(x_vec->mvPtrs[i]), *(y_vec->mvPtrs[i])); 
 		if (res != NOX::Abstract::Group::Ok)
 			std::cout << "Error in applyJacobianInverse "<<std::endl;
 	}
