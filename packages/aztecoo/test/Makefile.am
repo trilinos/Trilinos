@@ -26,4 +26,4 @@
 # ************************************************************************
 #@HEADER
 
-SUBDIRS = AztecOO_UserOpUserMat AztecOO_SetParameters scripts
+SUBDIRS = AztecOO AztecOO_UserOpUserMat AztecOO_SetParameters scripts
