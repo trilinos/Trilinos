@@ -220,7 +220,7 @@ int main(int argc, char * argv[]) {
   } // end col loop
 
   // New section to Epetra_MapColoring
-  Epetra_MapColoring C1(color_map, Map);
+  Epetra_MapColoring C1(Map, color_map);
 
   cout << C1;
   
