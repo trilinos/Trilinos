@@ -1086,7 +1086,7 @@ int CSR_denseserialmatvec(void *Amat_in, int ilen, double p[], int olen, double 
      *ap2++ = sum;
    }
 
-   if (Amat->getrow->pre_comm != NULL) ML_free(p2);
+   if (Amat->getrow->pre_comm != NULL) ML_free(oldp2);
 
    if (getrow_comm != NULL) {
       if (getrow_comm->remap != NULL) {
