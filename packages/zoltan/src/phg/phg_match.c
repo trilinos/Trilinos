@@ -499,10 +499,12 @@ static int pmatching_ipm(
   int nEdgebuf, nPermute;                             /* array size in ints */
   PHGComm *hgc = hg->comm;
   int err = ZOLTAN_OK, old_row, row, col, nPins, nVtx;
+  int mdata_size;
   int **rows = NULL; 
   int bestlno, vertex, nselect;
   char *yo = "pmatching_ipm";
   int *master_data = NULL, *master_procs = NULL, *mp = NULL, nmaster = 0;
+
   
   /* this restriction will be removed later, but for now NOTE this test */
   if (sizeof(int) != sizeof (float))  {
@@ -525,6 +527,7 @@ static int pmatching_ipm(
        nVtx = count;
     nTotal += calc_nCandidates (count, hgc->nProc_x);
   }
+mdata_size = 3 * nTotal;
                  
   /* allocate working and fixed sized array storage */
   sums = NULL;
@@ -579,9 +582,9 @@ static int pmatching_ipm(
    * No conflict resolution required because temp locking prevents conflicts. */
   
   pvisit = 0;                                    /* marks position in visit[] */
-  mp = master_data;
-  nmaster = 0;                      /* count of data accumulted in master row */
   for (round = 0; round < nRounds; round++)  {
+    mp = master_data;
+    nmaster = 0;                   /* count of data accumulted in master row */    
     memcpy (cmatch, match, hg->nVtx * sizeof(int));  /* for temporary locking */
          
     /************************ PHASE 1: ***************************************/
@@ -733,17 +736,21 @@ static int pmatching_ipm(
           break;
         }  
       }                  /* DONE: loop over k */          
-      
+           
       /* synchronize all rows in this column to next kstart value */
       old_kstart = kstart;      
       MPI_Allreduce (&k, &kstart, 1, MPI_INT, MPI_MIN, hgc->col_comm);
-      
+            
       /* Send inner product data in send buffer to appropriate rows */
-      err = communication_by_plan (zz, nsend, dest, size, 1, send, &nrec, 
-       &recsize, &nRec, &rec, hgc->col_comm, IPM_TAG);
-      if (err != ZOLTAN_OK)
-        goto fini;
-       
+      MPI_Allreduce (&nsend, &nrec, 1, MPI_INT, MPI_SUM, hgc->col_comm);
+recsize = 0;
+      if (nrec)  {
+        err = communication_by_plan (zz, nsend, dest, size, 1, send, &nrec, 
+         &recsize, &nRec, &rec, hgc->col_comm, IPM_TAG);
+        if (err != ZOLTAN_OK)
+          goto fini;
+      }
+      
       /* build index into receive buffer pointer for each new row of data */
       old_row = -1;
       k = 0;
@@ -764,7 +771,7 @@ static int pmatching_ipm(
         rows[i] = &rec[index[i]];
       for (i = k; i < hgc->nProc_y; i++)
         rows[i] = &rec[recsize];       /* in case no data came from a row */
-      rows[i] = &rec[recsize]; 
+      rows[i] = &rec[recsize];         /* sentinel */
       
       /* merge partial i.p. sum data to compute total inner products */ 
       s = send; 
@@ -799,12 +806,14 @@ static int pmatching_ipm(
         /* create <gno, count, <lno, tsum>> in send array */           
         if (count > 0)  {
           if ( (s - send) + (2 + 2 * count) > nSend ) {
+            sendsize = s - send;
             nSend += (2 + 2 * count);
             send = (int*) ZOLTAN_REALLOC (send, nSend * sizeof(int));
             if (send == NULL)  {
               ZOLTAN_PRINT_ERROR (zz->Proc, yo, "Insufficient memory");
               return ZOLTAN_MEMERR;
             }
+           s = send + sendsize;   /* since realloc buffer may move */ 
           }      
           *s++ = gno;
           *s++ = count;
@@ -825,7 +834,7 @@ static int pmatching_ipm(
       MPI_Allgather (&sendsize, 1, MPI_INT, size, 1, MPI_INT, hgc->col_comm);
       recsize = 0;
       for (i = 0; i < hgc->nProc_y; i++)
-        recsize += size[i];
+        recsize += size[i];        
           
       dest[0] = 0;
       for (i = 1; i < hgc->nProc_y; i++)
@@ -839,13 +848,11 @@ static int pmatching_ipm(
           return ZOLTAN_MEMERR;
         }
       }    
-        
-      MPI_Gatherv (send, sendsize, MPI_INT, rec, size, dest, MPI_INT, 0,
-       hgc->col_comm);
+      if (recsize)  
+        MPI_Gatherv (send, sendsize, MPI_INT, rec, size, dest, MPI_INT, 0,
+         hgc->col_comm);
        
       /* Determine best vertex and best sum for each candidate */
-      s = send;
-      nsend = 0;      
       if (hgc->myProc_y == 0)
         for (r = rec; r < rec + recsize;)  {
           gno   = *r++;                    /* candidate's GNO */
@@ -874,14 +881,16 @@ static int pmatching_ipm(
           }
         } 
     }                                       /* DONE: kstart < nTotal loop */
-
+     
     /* MASTER ROW only: send best results to candidates' owners */
-    err = communication_by_plan (zz, nmaster, master_procs, NULL, 3, 
-     master_data, &nrec, &recsize, &nRec, &rec, hgc->row_comm, IPM_TAG+5);
-    if (err != ZOLTAN_OK)
-      goto fini;
-    nmaster = 0;
-    mp = master_data;
+    MPI_Allreduce (&nsend, &nrec, 1, MPI_INT, MPI_SUM, hgc->row_comm);
+recsize = 0;    
+    if (nrec)  {    
+      err = communication_by_plan (zz, nmaster, master_procs, NULL, 3,
+       master_data, &nrec, &recsize, &nRec, &rec, hgc->row_comm, IPM_TAG+5);
+      if (err != ZOLTAN_OK)
+        goto fini;  
+    }  
 
     /* read each message (candidate id, best match id, and best i.p.) */ 
     if (hgc->myProc_y == 0) 
@@ -890,7 +899,6 @@ static int pmatching_ipm(
         vertex = *r++;
         f      = (float*) r++;
         bestsum = *f;            
-
                              
         /* Note: ties are broken to favor local over global matches */   
         lno =  VTX_GNO_TO_LNO (hg, gno);  
@@ -928,10 +936,14 @@ static int pmatching_ipm(
       }
         
     /* send match results only to impacted parties */
-    err = communication_by_plan (zz, nsend, dest, NULL, 2, send, &nrec,
-     &recsize, &nRec, &rec, hgc->row_comm, IPM_TAG+10);
-    if (err != ZOLTAN_OK)
-      goto fini;
+    MPI_Allreduce (&nsend, &nrec, 1, MPI_INT, MPI_SUM, hgc->row_comm);
+recsize = 0;
+    if (nrec)  {    
+      err = communication_by_plan (zz, nsend, dest, NULL, 2, send, &nrec,
+       &recsize, &nRec, &rec, hgc->row_comm, IPM_TAG+10);
+      if (err != ZOLTAN_OK)
+        goto fini;
+    }
                     
     /* update match array with current selections */
     /* Note: -gno-1 designates an external match as a negative number */
@@ -1032,14 +1044,13 @@ static int communication_by_plan (ZZ* zz, int nsend, int* dest, int* size,
    int err;
    char *yo = "communication_by_plan";
    
-   
    /* communicate send buffer messages to other row/columns in my comm */  
    err = Zoltan_Comm_Create (&plan, nsend, dest, comm, tag, nrec);
    if (err != ZOLTAN_OK) {
      ZOLTAN_PRINT_ERROR (zz->Proc, yo, "failed to create plan");
      return err;
    }
-   
+        
    /* resize plan if necessary */
    if (size != NULL) {
      err = Zoltan_Comm_Resize (plan, size, tag+1, recsize);
