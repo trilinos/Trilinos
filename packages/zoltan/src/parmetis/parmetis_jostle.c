@@ -468,11 +468,12 @@ static int Zoltan_ParMetis_Jostle(
 )
 {
   static char *yo = "Zoltan_ParMetis_Jostle";
-  int i, j, k, ierr, tmp, flag, ndims; 
+  int i, j, k, ierr, tmp, flag, ndims;
   int obj_wgt_dim, edge_wgt_dim, check_graph, scatter;
   int num_obj=0, num_edges, edgecut;
   int nsend, wgtflag, numflag, graph_type; 
   int get_graph_data, get_geom_data, get_times; 
+  int compute_only_part_changes=1; /* EBEB: Read parameter when implemented. */
   idxtype *vtxdist, *xadj, *adjncy, *vwgt, *adjwgt, *part, *part2, *vsize;
   idxtype *sep_sizes;
   int tmp_num_obj, ncon, start_index, compute_order=0;
@@ -480,10 +481,10 @@ static int Zoltan_ParMetis_Jostle(
   double geom_vec[6];
   ZOLTAN_ID_PTR local_ids;
   ZOLTAN_ID_PTR global_ids;    
-  ZOLTAN_ID_PTR lid;            /* Temporary pointer to a local id; used to pass
+  ZOLTAN_ID_PTR lid;        /* Temporary pointer to a local id; used to pass
                                NULL to query fns when NUM_LID_ENTRIES == 0. */
-  int *parts;               /* Currently UNUSED:  Initial partitions for 
-                               objects.  */
+  int *parts;               /* Initial partitions for objects. */
+  int *newproc;             /* New processor for each object. */
   ZOLTAN_COMM_OBJ *comm_plan;
   double times[5];
   char msg[256];
@@ -1099,11 +1100,22 @@ static int Zoltan_ParMetis_Jostle(
   }
   else{
     /* Partitioning */
-    /* Determine number of objects to export */
-    /* EBEB: Assume we export if partition number has changed. */
+    /* Determine new processor and number of objects to export */
     nsend = 0;
+    newproc = (int *) ZOLTAN_MALLOC(num_obj * sizeof(int));
+    if (num_obj && !newproc){
+      /* Not enough memory */
+      ZOLTAN_PARMETIS_ERROR(ZOLTAN_MEMERR, "Out of memory. ");
+    }
     for (i=0; i<num_obj; i++){
-      if (part[i] != parts[i]) nsend++;
+      newproc[i] = Zoltan_LB_Part_To_Proc(zz, part[i]);
+      if (newproc[i]<0){
+        ZOLTAN_PARMETIS_ERROR(ZOLTAN_FATAL, 
+         "Zoltan_LB_Part_To_Proc returned invalid processor number.");
+      }
+      if ((part[i] != parts[i]) || ((!compute_only_part_changes) && 
+                                   (newproc[i] != zz->Proc))) 
+        nsend++;
       if (zz->Debug_Level >= ZOLTAN_DEBUG_ALL)
         printf("[%1d] DEBUG: local object %1d: old part = %1d, new part = %1d\n", 
         zz->Proc, i, parts[i], part[i]);
@@ -1133,17 +1145,18 @@ static int Zoltan_ParMetis_Jostle(
         }
         j = 0;
         for (i=0; i<num_obj; i++){
-          if (part[i] != parts[i]){ /* object should move to new partition */
+          if ((part[i] != parts[i]) || ((!compute_only_part_changes) 
+               && (newproc[i] != zz->Proc))){ 
+            /* Object should move to new partition or processor */
             ZOLTAN_SET_GID(zz, &((*exp_gids)[j*num_gid_entries]),
                            &(global_ids[i*num_gid_entries]));
             if (num_lid_entries)
               ZOLTAN_SET_LID(zz, &((*exp_lids)[j*num_lid_entries]),
                              &(local_ids[i*num_lid_entries]));
             (*exp_to_part)[j] = part[i];  
-            if (Zoltan_LB_Part_To_Proc == NULL)
-              (*exp_procs)[j] = part[i];
-            else
-              (*exp_procs)[j] = Zoltan_LB_Part_To_Proc(zz, part[i]);
+            (*exp_procs)[j] = newproc[i];
+            /* printf("[%1d] Debug: Move object %1d to part %1d, proc %1d\n",
+                zz->Proc, i, part[i], newproc[i]); */
             j++;
           }
         }
@@ -1164,6 +1177,7 @@ End:
   if (vsize)     ZOLTAN_FREE(&vsize); 
   if (tpwgt)     ZOLTAN_FREE(&tpwgt);
   if (sep_sizes) ZOLTAN_FREE(&sep_sizes);
+  if (newproc)   ZOLTAN_FREE(&newproc);
 
   /* Free local_ids and global_ids if they were allocated here */
   if (!compute_order){
