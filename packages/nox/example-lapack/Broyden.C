@@ -1,3 +1,6 @@
+// $Id$ 
+// $Source$ 
+
 #ifdef WITH_PRERELEASE
 //@HEADER
 // ************************************************************************
@@ -169,7 +172,7 @@ int main()
 
   // Set the nonlinear solver method
   //solverParameters.setParameter("Nonlinear Solver", "Tensor Based");
-  solverParameters.setParameter("Nonlinear Solver", "Block Tensor Based");
+  solverParameters.setParameter("Nonlinear Solver", "Tensor Based Test");
   
   // Sublist for printing parameters
   NOX::Parameter::List& printParams = solverParameters.sublist("Printing");
@@ -193,15 +196,16 @@ int main()
   // Sublist for local solver parameters
   NOX::Parameter::List& localSolverParameters = 
     directionParameters.sublist("Tensor").sublist("Linear Solver");
-  localSolverParameters.setParameter("Compute Step","Tensor2");
-  localSolverParameters.setParameter("Tolerance",1e-4);
-  localSolverParameters.setParameter("Reorthogonalize","Always");
-  localSolverParameters.setParameter("Output Frequency",1);
-  localSolverParameters.setParameter("Max Restarts",2);
-  localSolverParameters.setParameter("Size of Krylov Subspace",100);
+  //directionParameters.sublist("Newton").sublist("Linear Solver");
+  localSolverParameters.setParameter("Compute Step","Tensor");
+  //localSolverParameters.setParameter("Tolerance",1e-4);
+  //localSolverParameters.setParameter("Reorthogonalize","Always");
+  //localSolverParameters.setParameter("Output Frequency",1);
+  //localSolverParameters.setParameter("Max Restarts",2);
+  //localSolverParameters.setParameter("Size of Krylov Subspace",100);
   //localSolverParameters.setParameter("Preconditioning","Tridiagonal");
-  localSolverParameters.setParameter("Preconditioning Side","None");
-  localSolverParameters.setParameter("Use Shortcut Method",false);
+  //localSolverParameters.setParameter("Preconditioning Side","None");
+  //localSolverParameters.setParameter("Use Shortcut Method",false);
 
   // Sublist for line search parameters
   NOX::Parameter::List& lineSearchParameters = 
