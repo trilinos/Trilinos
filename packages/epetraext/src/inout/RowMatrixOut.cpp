@@ -26,7 +26,9 @@
 // ************************************************************************
 //@HEADER
 #include "RowMatrixOut.h"
+extern "C" {
 #include "mmio.h"
+}
 #include "Epetra_Comm.h"
 #include "Epetra_Map.h"
 #include "Epetra_Vector.h"
@@ -38,27 +40,33 @@
 
 int RowMatrixToFile( const char *filename, const char * matrixName,
 		     const char *matrixDescription, const Epetra_RowMatrix & A) {
-  FILE * handle = fopen(filename,"w");
-  if (!handle) return(-1);
-  MM_typecode matcode;
   int M = A.NumGlobalRows();
   int N = A.NumGlobalCols();
   int nz = A.NumGlobalNonzeros();
 
-  if (mm_initialize_typecode(&matcode)) return(-1);
-  if (mm_set_matrix(&matcode)) return(-1);
-  if (mm_set_coordinate(&matcode)) return(-1);
-      if (mm_set_real(&matcode)) return(-1);
-  
-  if (mm_write_banner(handle, matcode)) return(-1);
-  if (mm_write_mtx_crd_size(handle, M, N, nz)) return(-1);
+  FILE * handle = 0;
 
-  fprintf(handle, "% %s\n", matrixName);
-  fprintf(handle, "% %s\n", matrixDescription);
+  if (A.RowMatrixRowMap().Comm().MyPID()==0) { // Only PE 0 does this section
 
+    handle = fopen(filename,"w");
+    if (!handle) return(-1);
+    MM_typecode matcode;
+    mm_initialize_typecode(&matcode);
+    mm_set_matrix(&matcode);
+    mm_set_coordinate(&matcode);
+    mm_set_real(&matcode);
+    
+    fprintf(handle, "%% \n%% %s\n", matrixName);
+    fprintf(handle, "%% %s\n%% \n", matrixDescription);
+    
+    if (mm_write_banner(handle, matcode)) return(-1);
+    if (mm_write_mtx_crd_size(handle, M, N, nz)) return(-1);
+  }
+    
+  if (RowMatrixToHandle(handle, A)) return(-1); // Everybody calls this routine
 
-  if (RowMatrixToHandle(handle, A)) return(-1);
-  if (fclose(handle)) return(-1);
+  if (A.RowMatrixRowMap().Comm().MyPID()==0) // Only PE 0 opened a file
+    if (fclose(handle)) return(-1);
   return(0);
 }
 
@@ -108,7 +116,9 @@ int RowMatrixToHandle(FILE * handle, const Epetra_RowMatrix & A) {
       Epetra_Import importer(importMap, map);
       Epetra_CrsMatrix importA(Copy, importMap, 0);
       if (importA.Import(A, importer, Insert)) return(-1); 
+      cout << "Calling FillComplete on PE" << comm.MyPID() << endl;
       if (importA.FillComplete()) return(-1);
+      cout << "Done with FillComplete on PE" << comm.MyPID() << endl;
 
       // Finally we are ready to write this strip of the matrix to ostream
       if (writeRowMatrix(handle, importA)) return(-1);
