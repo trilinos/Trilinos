@@ -76,6 +76,11 @@ namespace LOCA {
       virtual NOX::Abstract::Group::ReturnType
       computeEigenvalues(NOX::Parameter::List& params);
 
+     NOX::Abstract::Group::ReturnType  
+     applyAnasaziOperator (NOX::Parameter::List &params, 
+                           const NOX::Abstract::Vector &input, 
+                           NOX::Abstract::Vector &result) const;
+
     protected:
 
       /*! 
@@ -83,6 +88,7 @@ namespace LOCA {
        * continuation steps
        */
       int eigenvalCounter;
+      bool hasMassMatrix;
 
     };
   } // namespace Continuation
