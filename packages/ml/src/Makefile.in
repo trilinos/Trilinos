@@ -115,7 +115,11 @@ am__objects_2 = ml_rbm.$(OBJEXT) ml_aztec_utils.$(OBJEXT) \
 	ml_agg_info.$(OBJEXT) ml_viz_opendx.$(OBJEXT) \
 	ml_amesos.$(OBJEXT) ml_amesos_wrap.$(OBJEXT) \
 	ml_ifpack.$(OBJEXT) ml_ifpack_wrap.$(OBJEXT) \
-	ml_epetra_preconditioner.$(OBJEXT) ml_anasazi.$(OBJEXT)
+	ml_MultiLevelPreconditioner.$(OBJEXT) \
+	ml_MultiLevelPreconditioner_Adaptive.$(OBJEXT) \
+	ml_MultiLevelPreconditioner_NullSpace.$(OBJEXT) \
+	ml_MultiLevelPreconditioner_Defaults.$(OBJEXT) \
+	ml_anasazi.$(OBJEXT)
 am__objects_3 =
 @HAVE_MPI_TRUE@am__objects_4 = $(am__objects_3)
 am_libml_a_OBJECTS = $(am__objects_1) $(am__objects_2) \
@@ -126,6 +130,10 @@ DEFAULT_INCLUDES = -I. -I$(srcdir) -I.
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
 @AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/driver.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/ml_MultiLevelPreconditioner.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/ml_MultiLevelPreconditioner_Adaptive.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/ml_MultiLevelPreconditioner_Defaults.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/ml_MultiLevelPreconditioner_NullSpace.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/ml_agg_METIS.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/ml_agg_MIS.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/ml_agg_ParMETIS.Po \
@@ -150,7 +158,6 @@ am__depfiles_maybe = depfiles
 @AMDEP_TRUE@	./$(DEPDIR)/ml_csolve.Po ./$(DEPDIR)/ml_eigf2c.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/ml_elementagx.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/ml_epetra_operator.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/ml_epetra_preconditioner.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/ml_epetra_utils.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/ml_exch_row.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/ml_get_basis.Po ./$(DEPDIR)/ml_ggb.Po \
@@ -469,7 +476,10 @@ $(srcdir)/Utils/ml_amesos.c \
 $(srcdir)/Utils/ml_amesos_wrap.cpp \
 $(srcdir)/Utils/ml_ifpack.c \
 $(srcdir)/Utils/ml_ifpack_wrap.cpp \
-$(srcdir)/Utils/ml_epetra_preconditioner.cpp \
+$(srcdir)/Utils/ml_MultiLevelPreconditioner.cpp \
+$(srcdir)/Utils/ml_MultiLevelPreconditioner_Adaptive.cpp \
+$(srcdir)/Utils/ml_MultiLevelPreconditioner_NullSpace.cpp \
+$(srcdir)/Utils/ml_MultiLevelPreconditioner_Defaults.cpp \
 $(srcdir)/Utils/ml_anasazi.cpp
 
 ENUM_H = 
@@ -717,6 +727,10 @@ distclean-compile:
 	-rm -f *.tab.c
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/driver.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_MultiLevelPreconditioner.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_MultiLevelPreconditioner_Adaptive.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_MultiLevelPreconditioner_Defaults.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_MultiLevelPreconditioner_NullSpace.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_agg_METIS.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_agg_MIS.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_agg_ParMETIS.Po@am__quote@
@@ -745,7 +759,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_eigf2c.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_elementagx.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_epetra_operator.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_epetra_preconditioner.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_epetra_utils.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_exch_row.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_get_basis.Po@am__quote@
@@ -1907,21 +1920,69 @@ ml_ifpack_wrap.obj: $(srcdir)/Utils/ml_ifpack_wrap.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ml_ifpack_wrap.obj `if test -f '$(srcdir)/Utils/ml_ifpack_wrap.cpp'; then $(CYGPATH_W) '$(srcdir)/Utils/ml_ifpack_wrap.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Utils/ml_ifpack_wrap.cpp'; fi`
 
-ml_epetra_preconditioner.o: $(srcdir)/Utils/ml_epetra_preconditioner.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ml_epetra_preconditioner.o -MD -MP -MF "$(DEPDIR)/ml_epetra_preconditioner.Tpo" -c -o ml_epetra_preconditioner.o `test -f '$(srcdir)/Utils/ml_epetra_preconditioner.cpp' || echo '$(srcdir)/'`$(srcdir)/Utils/ml_epetra_preconditioner.cpp; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ml_epetra_preconditioner.Tpo" "$(DEPDIR)/ml_epetra_preconditioner.Po"; else rm -f "$(DEPDIR)/ml_epetra_preconditioner.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Utils/ml_epetra_preconditioner.cpp' object='ml_epetra_preconditioner.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ml_epetra_preconditioner.Po' tmpdepfile='$(DEPDIR)/ml_epetra_preconditioner.TPo' @AMDEPBACKSLASH@
+ml_MultiLevelPreconditioner.o: $(srcdir)/Utils/ml_MultiLevelPreconditioner.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ml_MultiLevelPreconditioner.o -MD -MP -MF "$(DEPDIR)/ml_MultiLevelPreconditioner.Tpo" -c -o ml_MultiLevelPreconditioner.o `test -f '$(srcdir)/Utils/ml_MultiLevelPreconditioner.cpp' || echo '$(srcdir)/'`$(srcdir)/Utils/ml_MultiLevelPreconditioner.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ml_MultiLevelPreconditioner.Tpo" "$(DEPDIR)/ml_MultiLevelPreconditioner.Po"; else rm -f "$(DEPDIR)/ml_MultiLevelPreconditioner.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Utils/ml_MultiLevelPreconditioner.cpp' object='ml_MultiLevelPreconditioner.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ml_MultiLevelPreconditioner.Po' tmpdepfile='$(DEPDIR)/ml_MultiLevelPreconditioner.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ml_epetra_preconditioner.o `test -f '$(srcdir)/Utils/ml_epetra_preconditioner.cpp' || echo '$(srcdir)/'`$(srcdir)/Utils/ml_epetra_preconditioner.cpp
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ml_MultiLevelPreconditioner.o `test -f '$(srcdir)/Utils/ml_MultiLevelPreconditioner.cpp' || echo '$(srcdir)/'`$(srcdir)/Utils/ml_MultiLevelPreconditioner.cpp
 
-ml_epetra_preconditioner.obj: $(srcdir)/Utils/ml_epetra_preconditioner.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ml_epetra_preconditioner.obj -MD -MP -MF "$(DEPDIR)/ml_epetra_preconditioner.Tpo" -c -o ml_epetra_preconditioner.obj `if test -f '$(srcdir)/Utils/ml_epetra_preconditioner.cpp'; then $(CYGPATH_W) '$(srcdir)/Utils/ml_epetra_preconditioner.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Utils/ml_epetra_preconditioner.cpp'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ml_epetra_preconditioner.Tpo" "$(DEPDIR)/ml_epetra_preconditioner.Po"; else rm -f "$(DEPDIR)/ml_epetra_preconditioner.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Utils/ml_epetra_preconditioner.cpp' object='ml_epetra_preconditioner.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ml_epetra_preconditioner.Po' tmpdepfile='$(DEPDIR)/ml_epetra_preconditioner.TPo' @AMDEPBACKSLASH@
+ml_MultiLevelPreconditioner.obj: $(srcdir)/Utils/ml_MultiLevelPreconditioner.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ml_MultiLevelPreconditioner.obj -MD -MP -MF "$(DEPDIR)/ml_MultiLevelPreconditioner.Tpo" -c -o ml_MultiLevelPreconditioner.obj `if test -f '$(srcdir)/Utils/ml_MultiLevelPreconditioner.cpp'; then $(CYGPATH_W) '$(srcdir)/Utils/ml_MultiLevelPreconditioner.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Utils/ml_MultiLevelPreconditioner.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ml_MultiLevelPreconditioner.Tpo" "$(DEPDIR)/ml_MultiLevelPreconditioner.Po"; else rm -f "$(DEPDIR)/ml_MultiLevelPreconditioner.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Utils/ml_MultiLevelPreconditioner.cpp' object='ml_MultiLevelPreconditioner.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ml_MultiLevelPreconditioner.Po' tmpdepfile='$(DEPDIR)/ml_MultiLevelPreconditioner.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ml_epetra_preconditioner.obj `if test -f '$(srcdir)/Utils/ml_epetra_preconditioner.cpp'; then $(CYGPATH_W) '$(srcdir)/Utils/ml_epetra_preconditioner.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Utils/ml_epetra_preconditioner.cpp'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ml_MultiLevelPreconditioner.obj `if test -f '$(srcdir)/Utils/ml_MultiLevelPreconditioner.cpp'; then $(CYGPATH_W) '$(srcdir)/Utils/ml_MultiLevelPreconditioner.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Utils/ml_MultiLevelPreconditioner.cpp'; fi`
+
+ml_MultiLevelPreconditioner_Adaptive.o: $(srcdir)/Utils/ml_MultiLevelPreconditioner_Adaptive.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ml_MultiLevelPreconditioner_Adaptive.o -MD -MP -MF "$(DEPDIR)/ml_MultiLevelPreconditioner_Adaptive.Tpo" -c -o ml_MultiLevelPreconditioner_Adaptive.o `test -f '$(srcdir)/Utils/ml_MultiLevelPreconditioner_Adaptive.cpp' || echo '$(srcdir)/'`$(srcdir)/Utils/ml_MultiLevelPreconditioner_Adaptive.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ml_MultiLevelPreconditioner_Adaptive.Tpo" "$(DEPDIR)/ml_MultiLevelPreconditioner_Adaptive.Po"; else rm -f "$(DEPDIR)/ml_MultiLevelPreconditioner_Adaptive.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Utils/ml_MultiLevelPreconditioner_Adaptive.cpp' object='ml_MultiLevelPreconditioner_Adaptive.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ml_MultiLevelPreconditioner_Adaptive.Po' tmpdepfile='$(DEPDIR)/ml_MultiLevelPreconditioner_Adaptive.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ml_MultiLevelPreconditioner_Adaptive.o `test -f '$(srcdir)/Utils/ml_MultiLevelPreconditioner_Adaptive.cpp' || echo '$(srcdir)/'`$(srcdir)/Utils/ml_MultiLevelPreconditioner_Adaptive.cpp
+
+ml_MultiLevelPreconditioner_Adaptive.obj: $(srcdir)/Utils/ml_MultiLevelPreconditioner_Adaptive.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ml_MultiLevelPreconditioner_Adaptive.obj -MD -MP -MF "$(DEPDIR)/ml_MultiLevelPreconditioner_Adaptive.Tpo" -c -o ml_MultiLevelPreconditioner_Adaptive.obj `if test -f '$(srcdir)/Utils/ml_MultiLevelPreconditioner_Adaptive.cpp'; then $(CYGPATH_W) '$(srcdir)/Utils/ml_MultiLevelPreconditioner_Adaptive.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Utils/ml_MultiLevelPreconditioner_Adaptive.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ml_MultiLevelPreconditioner_Adaptive.Tpo" "$(DEPDIR)/ml_MultiLevelPreconditioner_Adaptive.Po"; else rm -f "$(DEPDIR)/ml_MultiLevelPreconditioner_Adaptive.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Utils/ml_MultiLevelPreconditioner_Adaptive.cpp' object='ml_MultiLevelPreconditioner_Adaptive.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ml_MultiLevelPreconditioner_Adaptive.Po' tmpdepfile='$(DEPDIR)/ml_MultiLevelPreconditioner_Adaptive.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ml_MultiLevelPreconditioner_Adaptive.obj `if test -f '$(srcdir)/Utils/ml_MultiLevelPreconditioner_Adaptive.cpp'; then $(CYGPATH_W) '$(srcdir)/Utils/ml_MultiLevelPreconditioner_Adaptive.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Utils/ml_MultiLevelPreconditioner_Adaptive.cpp'; fi`
+
+ml_MultiLevelPreconditioner_NullSpace.o: $(srcdir)/Utils/ml_MultiLevelPreconditioner_NullSpace.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ml_MultiLevelPreconditioner_NullSpace.o -MD -MP -MF "$(DEPDIR)/ml_MultiLevelPreconditioner_NullSpace.Tpo" -c -o ml_MultiLevelPreconditioner_NullSpace.o `test -f '$(srcdir)/Utils/ml_MultiLevelPreconditioner_NullSpace.cpp' || echo '$(srcdir)/'`$(srcdir)/Utils/ml_MultiLevelPreconditioner_NullSpace.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ml_MultiLevelPreconditioner_NullSpace.Tpo" "$(DEPDIR)/ml_MultiLevelPreconditioner_NullSpace.Po"; else rm -f "$(DEPDIR)/ml_MultiLevelPreconditioner_NullSpace.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Utils/ml_MultiLevelPreconditioner_NullSpace.cpp' object='ml_MultiLevelPreconditioner_NullSpace.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ml_MultiLevelPreconditioner_NullSpace.Po' tmpdepfile='$(DEPDIR)/ml_MultiLevelPreconditioner_NullSpace.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ml_MultiLevelPreconditioner_NullSpace.o `test -f '$(srcdir)/Utils/ml_MultiLevelPreconditioner_NullSpace.cpp' || echo '$(srcdir)/'`$(srcdir)/Utils/ml_MultiLevelPreconditioner_NullSpace.cpp
+
+ml_MultiLevelPreconditioner_NullSpace.obj: $(srcdir)/Utils/ml_MultiLevelPreconditioner_NullSpace.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ml_MultiLevelPreconditioner_NullSpace.obj -MD -MP -MF "$(DEPDIR)/ml_MultiLevelPreconditioner_NullSpace.Tpo" -c -o ml_MultiLevelPreconditioner_NullSpace.obj `if test -f '$(srcdir)/Utils/ml_MultiLevelPreconditioner_NullSpace.cpp'; then $(CYGPATH_W) '$(srcdir)/Utils/ml_MultiLevelPreconditioner_NullSpace.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Utils/ml_MultiLevelPreconditioner_NullSpace.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ml_MultiLevelPreconditioner_NullSpace.Tpo" "$(DEPDIR)/ml_MultiLevelPreconditioner_NullSpace.Po"; else rm -f "$(DEPDIR)/ml_MultiLevelPreconditioner_NullSpace.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Utils/ml_MultiLevelPreconditioner_NullSpace.cpp' object='ml_MultiLevelPreconditioner_NullSpace.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ml_MultiLevelPreconditioner_NullSpace.Po' tmpdepfile='$(DEPDIR)/ml_MultiLevelPreconditioner_NullSpace.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ml_MultiLevelPreconditioner_NullSpace.obj `if test -f '$(srcdir)/Utils/ml_MultiLevelPreconditioner_NullSpace.cpp'; then $(CYGPATH_W) '$(srcdir)/Utils/ml_MultiLevelPreconditioner_NullSpace.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Utils/ml_MultiLevelPreconditioner_NullSpace.cpp'; fi`
+
+ml_MultiLevelPreconditioner_Defaults.o: $(srcdir)/Utils/ml_MultiLevelPreconditioner_Defaults.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ml_MultiLevelPreconditioner_Defaults.o -MD -MP -MF "$(DEPDIR)/ml_MultiLevelPreconditioner_Defaults.Tpo" -c -o ml_MultiLevelPreconditioner_Defaults.o `test -f '$(srcdir)/Utils/ml_MultiLevelPreconditioner_Defaults.cpp' || echo '$(srcdir)/'`$(srcdir)/Utils/ml_MultiLevelPreconditioner_Defaults.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ml_MultiLevelPreconditioner_Defaults.Tpo" "$(DEPDIR)/ml_MultiLevelPreconditioner_Defaults.Po"; else rm -f "$(DEPDIR)/ml_MultiLevelPreconditioner_Defaults.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Utils/ml_MultiLevelPreconditioner_Defaults.cpp' object='ml_MultiLevelPreconditioner_Defaults.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ml_MultiLevelPreconditioner_Defaults.Po' tmpdepfile='$(DEPDIR)/ml_MultiLevelPreconditioner_Defaults.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ml_MultiLevelPreconditioner_Defaults.o `test -f '$(srcdir)/Utils/ml_MultiLevelPreconditioner_Defaults.cpp' || echo '$(srcdir)/'`$(srcdir)/Utils/ml_MultiLevelPreconditioner_Defaults.cpp
+
+ml_MultiLevelPreconditioner_Defaults.obj: $(srcdir)/Utils/ml_MultiLevelPreconditioner_Defaults.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ml_MultiLevelPreconditioner_Defaults.obj -MD -MP -MF "$(DEPDIR)/ml_MultiLevelPreconditioner_Defaults.Tpo" -c -o ml_MultiLevelPreconditioner_Defaults.obj `if test -f '$(srcdir)/Utils/ml_MultiLevelPreconditioner_Defaults.cpp'; then $(CYGPATH_W) '$(srcdir)/Utils/ml_MultiLevelPreconditioner_Defaults.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Utils/ml_MultiLevelPreconditioner_Defaults.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ml_MultiLevelPreconditioner_Defaults.Tpo" "$(DEPDIR)/ml_MultiLevelPreconditioner_Defaults.Po"; else rm -f "$(DEPDIR)/ml_MultiLevelPreconditioner_Defaults.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Utils/ml_MultiLevelPreconditioner_Defaults.cpp' object='ml_MultiLevelPreconditioner_Defaults.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ml_MultiLevelPreconditioner_Defaults.Po' tmpdepfile='$(DEPDIR)/ml_MultiLevelPreconditioner_Defaults.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ml_MultiLevelPreconditioner_Defaults.obj `if test -f '$(srcdir)/Utils/ml_MultiLevelPreconditioner_Defaults.cpp'; then $(CYGPATH_W) '$(srcdir)/Utils/ml_MultiLevelPreconditioner_Defaults.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Utils/ml_MultiLevelPreconditioner_Defaults.cpp'; fi`
 
 ml_anasazi.o: $(srcdir)/Utils/ml_anasazi.cpp
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ml_anasazi.o -MD -MP -MF "$(DEPDIR)/ml_anasazi.Tpo" -c -o ml_anasazi.o `test -f '$(srcdir)/Utils/ml_anasazi.cpp' || echo '$(srcdir)/'`$(srcdir)/Utils/ml_anasazi.cpp; \

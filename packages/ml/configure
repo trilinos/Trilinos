@@ -987,6 +987,8 @@ Optional Packages:
                           --with-ml_metis. (default is no)
   --with-ml_parmetis3x    Enable ParMETIS support, version 3.x. See notes for
                           --with-ml_metis. (default is no)
+  --with-ml_arpack        Enable ARPACK support. See notes for
+                          --with-ml_metis. (default is no)
   --with-libdirs          OBSOLETE use --with-ldflags instead. (ex.
                           --with-ldflags="-L<DIR> -L<DIR2>")
   --with-incdirs          additional directories containing include files:
@@ -3854,7 +3856,7 @@ fi
 
 
 # Provide some information about the compiler.
-echo "$as_me:3857:" \
+echo "$as_me:3859:" \
      "checking for Fortran 77 compiler version" >&5
 ac_compiler=`set X $ac_compile; echo $2`
 { (eval echo "$as_me:$LINENO: \"$ac_compiler --version </dev/null >&5\"") >&5
@@ -6606,6 +6608,33 @@ echo "${ECHO_T}no" >&6
 fi
 
 #
+
+
+# Check whether --with-ml_arpack or --without-ml_arpack was given.
+if test "${with_ml_arpack+set}" = set; then
+  withval="$with_ml_arpack"
+  ac_cv_use_ml_arpack=$withval
+else
+  ac_cv_use_ml_arpack=no
+fi;
+
+echo "$as_me:$LINENO: checking whether to use ml_arpack" >&5
+echo $ECHO_N "checking whether to use ml_arpack... $ECHO_C" >&6
+
+if test "X$ac_cv_use_ml_arpack" != "Xno"; then
+  echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_ML_ARPACK
+_ACEOF
+
+else
+  echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+fi
+
+#
 ############################################
 #### interfaces to other Trilinos packages
 ############################################
@@ -6970,7 +6999,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:6973: \"$ac_link\") >&5
+(eval echo $as_me:7002: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -7048,7 +7077,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:7051: \"$ac_link\") >&5
+(eval echo $as_me:7080: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -9916,7 +9945,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:9919: \"$ac_link\") >&5
+(eval echo $as_me:9948: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -9994,7 +10023,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:9997: \"$ac_link\") >&5
+(eval echo $as_me:10026: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS

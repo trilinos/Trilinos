@@ -68,6 +68,9 @@
 /* Define if want to build with anasazi enabled */
 #undef HAVE_ML_ANASAZI
 
+/* Define if want to build with ml_arpack enabled */
+#undef HAVE_ML_ARPACK
+
 /* Define if want to build with aztecoo enabled */
 #undef HAVE_ML_AZTEC
 
