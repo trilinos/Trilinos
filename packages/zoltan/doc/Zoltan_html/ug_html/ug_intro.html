@@ -1,7 +1,7 @@
 <HTML>
 <HEAD>
    <META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-1">
-   <META NAME="GENERATOR" CONTENT="Mozilla/4.04 [en] (X11; U; IRIX 6.2 IP22) [Netscape]">
+   <META NAME="GENERATOR" CONTENT="Mozilla/4.04 [en] (X11; U; SunOS 4.1.3_U1 sun4m) [Netscape]">
    <TITLE>Zoltan User's Guide:  Introduction</TITLE>
 <!
   ------------------------
@@ -31,38 +31,43 @@ with portions of the problem domain being assigned uniquely to individual
 processors. This static decomposition of the domain is done as a pre-processing
 step to the actual computation either by the application itself or by some
 static partitioning tool such as <A HREF="ug_refs.html#chaco">Chaco</A>,
-<A HREF="ug_refs.html#parmetis">Metis</A>, or <A HREF="ug_refs.html#jostle">Jostle</A>.&nbsp;
-As the desire for simulations with greater complexity and resolution arises,
-new numerical schemes have been developed, such as adaptive numerical methods,
-multiphysics simulations, and adaptive physics models. In these applications,
-the amount of work per processor can vary over time. For example, in adaptive
-finite element methods, the number of degrees of freedom within a processor
-can increase or decrease as the method requires greater or lower accuracy
-in a region of the problem domain. The changing processor work-loads make
-a static decomposition of the domain insufficient; a dynamic load-balancing
-strategy is needed to readjust work- loads as the computation proceeds.Several
-important differences exist between static and dynamic load-balancing strategies.
-Dynamic strategies are complicated by the fact that they must be implemented
-in parallel without interfering with the scalability of the application.
-Thus, they must use little memory and execute quickly. Also because they
-run side-by-side with an application, dynamic strategies must use a subroutine
-interface, rather than the file-based interface used by most static partitioners.
-Additionally, dynamic load-balancing algorithms should be "incremental";
-that is, small changes in the processor work loads should produce only
-small changes in the decomposition so that little data movement is required
-to establish the new decomposition. Most static decomposition strategies
-do not explicitly enforce this incremental property; good dynamic strategies
-must either implicitly or explicitly enforce it.In the past, most dynamic
-load-balancing strategies have been implemented on a case-by-case basis
-within application programs. Typically, a single strategy was implemented
-in an application, relying heavily upon the data structures of the particular
-application. This approach has two disadvantages. First, because its implementation
-relies heavily upon a single application, the load-balancing algorithm
-is not easily re-used by other applications. Second, because the application
-developer is usually interested more in the physics of the simulation than
-in the performance of dynamic load-balancing algorithms, only one algorithm
-is implemented and comparisons to other load-balancing methods are not
-performed to find, perhaps, a more effective strategy.&nbsp; See [<A HREF="ug_refs.html#hendrickson-devine">Hendrickson
+<A HREF="ug_refs.html#parmetis">Metis</A>, or <A HREF="ug_refs.html#jostle">Jostle</A>.
+
+<P>As the desire for simulations with greater complexity and resolution
+arises, new numerical schemes have been developed, such as adaptive numerical
+methods, multiphysics simulations, and adaptive physics models. In these
+applications, the amount of work per processor can vary over time. For
+example, in adaptive finite element methods, the number of degrees of freedom
+within a processor can increase or decrease as the method requires greater
+or lower accuracy in a region of the problem domain. The changing processor
+work-loads make a static decomposition of the domain insufficient; a dynamic
+load-balancing strategy is needed to readjust work- loads as the computation
+proceeds.
+
+<P>Several important differences exist between static and dynamic load-balancing
+strategies. Dynamic strategies are complicated by the fact that they must
+be implemented in parallel without interfering with the scalability of
+the application. Thus, they must use little memory and execute quickly.
+Also because they run side-by-side with an application, dynamic strategies
+must use a subroutine interface, rather than the file-based interface used
+by most static partitioners. Additionally, dynamic load-balancing algorithms
+should be "incremental"; that is, small changes in the processor work loads
+should produce only small changes in the decomposition so that little data
+movement is required to establish the new decomposition. Most static decomposition
+strategies do not explicitly enforce this incremental property; good dynamic
+strategies must either implicitly or explicitly enforce it.
+
+<P>In the past, most dynamic load-balancing strategies have been implemented
+on a case-by-case basis within application programs. Typically, a single
+strategy was implemented in an application, relying heavily upon the data
+structures of the particular application. This approach has two disadvantages.
+First, because its implementation relies heavily upon a single application,
+the load-balancing algorithm is not easily re-used by other applications.
+Second, because the application developer is usually interested more in
+the physics of the simulation than in the performance of dynamic load-balancing
+algorithms, only one algorithm is implemented and comparisons to other
+load-balancing methods are not performed to find, perhaps, a more effective
+strategy.&nbsp; See [<A HREF="ug_refs.html#hendrickson-devine">Hendrickson
 and Devine</A>] for a more thorough discussion of these issues.
 
 <P>The goal of the Zoltan Dynamic Load-Balancing Library project is to
@@ -93,7 +98,9 @@ data to establish a new decomposition. Each set of tools is described below.
 <P>Also included with the library package is a test driver, <I>zdrive</I>,
 which allows developers to test changes to the library without having to
 compile the library into and run a large simulation code. For information
-on how to build and use <I>zdrive</I>, see the Test Driver section.
+on how to build and use <I>zdrive</I>, see the <A HREF="../dev_html/dev_driver.html">Test
+Driver</A> section of the <A HREF="../dev_html/dev.html">Zoltan Developer's
+Guide</A>.
 <H2>
 <A NAME="Load-Balancing Tools"></A>Load-Balancing Tools</H2>
 Within the Zoltan library, many algorithms for dynamically determining
@@ -104,8 +111,9 @@ provided include both geometric queries (supplying information such as
 coordinates for objects) and graph-based queries (supplying such information
 as edge lists for objects in the communication graph of the computation).
 Capability for tree-based algorithms, using, say, the refinement tree of
-an adaptive mesh-refinement application, will be added in the future.A
-typical interaction between an application and the dynamic load-balancing
+an adaptive mesh-refinement application, will be added in the future.
+
+<P>A typical interaction between an application and the dynamic load-balancing
 tools is shown in the <A HREF="#lb_interaction.gif">figure</A> below. Through
 a call to <B><A HREF="ug_interface_init.html#LB_Create_Object">LB_Create_Object</A></B>,
 the application creates a load-balancing object, which is storage space
@@ -120,19 +128,20 @@ number of objects on the processor (<I>user_return_num_elems_fn</I>), a
 list of the objects (<I>user_return_elem_list_fn</I>), and the coordinates
 for a given object (<I>user_return_coords_fn</I>). After some computation,
 the application calls <B><A HREF="ug_interface_lb.html#LB_Balance">LB_Balance</A></B>
-to compute a new decomposition on the processors.The load-balancing library
-then follows pointers to the registered query functions to build the data
-structures needed for the RCB algorithm. An array of data is built, with
-one entry for each object owned by the processor. The number of objects
-is determined by following the <I>Get_Num_Obj</I> pointer to the <I>user_return_num_elems_fn</I>.
-Storage is allocated for the objects, and lists of the objects' identification
-numbers are obtained by following the <I>Get_Obj_List</I> function pointer
-to the <I>user_return_elem_list_fn</I>. Then, for each object, the object's
-coordinates are obtained through calls through the <I>Get_Geom</I> function
-pointer to the registered function <I>user_return_coords_fn</I>. Once the
-data structures are built, the load-balancing library can perform the RCB
-decomposition and return arrays of information describing the new decomposition
-to the application.
+to compute a new decomposition on the processors.
+
+<P>The load-balancing library then follows pointers to the registered query
+functions to build the data structures needed for the RCB algorithm. An
+array of data is built, with one entry for each object owned by the processor.
+The number of objects is determined by following the <I>Get_Num_Obj</I>
+pointer to the <I>user_return_num_elems_fn</I>. Storage is allocated for
+the objects, and lists of the objects' identification numbers are obtained
+by following the <I>Get_Obj_List</I> function pointer to the <I>user_return_elem_list_fn</I>.
+Then, for each object, the object's coordinates are obtained through calls
+through the <I>Get_Geom</I> function pointer to the registered function
+<I>user_return_coords_fn</I>. Once the data structures are built, the load-balancing
+library can perform the RCB decomposition and return arrays of information
+describing the new decomposition to the application.
 <BR>&nbsp;
 <BR>&nbsp;
 <TABLE WIDTH="100%" NOSAVE >
@@ -165,7 +174,7 @@ to the application.
 <TR>
 <TD>
 <DIV ALIGN=right>Dynamic Load Balancer</DIV>
-&nbsp;&nbsp;
+
 <DIV ALIGN=right><TABLE BORDER=2 WIDTH="80%" NOSAVE >
 <TR>
 <TD><TT>...</TT>&nbsp;
@@ -188,9 +197,7 @@ local_ids[i], lb->Data[i].Coords, &amp;ierr);</TT>&nbsp;
 <BR><TT>...</TT></TD>
 </TR>
 </TABLE></DIV>
-&nbsp;&nbsp;
-<DIV ALIGN=right>&nbsp;</DIV>
-</TD>
+&nbsp;&nbsp;</TD>
 </TR>
 
 <CAPTION ALIGN=BOTTOM><I>Example of interaction between the application
@@ -208,12 +215,13 @@ have to be sent to the new processor to support the objects migrated there.
 For example, in a finite element application, the "objects" used in load
 balancing may be elements. But when elements are migrated to new processors,
 the nodes associated with those elements must also be sent to the new processors,
-increasing the dependence of data migration on the application.A general-purpose
-load-balancing library can not perform all the operations required for
-data migration in all applications. However, it can assist an application
-with the communication required for data migration. As a result of the
-load-balancing algorithm, the library knows where data must be sent to
-establish the new decomposition and can perform all needed communication
+increasing the dependence of data migration on the application.
+
+<P>A general-purpose load-balancing library can not perform all the operations
+required for data migration in all applications. However, it can assist
+an application with the communication required for data migration. As a
+result of the load-balancing algorithm, the library knows where data must
+be sent to establish the new decomposition and can perform all needed communication
 using communication tools within the library. The application, then, must
 specify how to gather data associated with migrating objects and how to
 insert that data into the new processor's data structures. Following the
@@ -225,13 +233,14 @@ that returns the size (in bytes) of the data buffer needed to gather all
 of one object's data (<I>user_elem_size_fn</I>), a function that packs
 one object's data into a buffer (<I>user_pack_one_elem_fn</I>), and a function
 that unpacks one object's data and inserts it into the new processor's
-data structure (<I>user_unpack_one_elem_fn</I>).The migration-help tools
-then use these registered functions with the results of the load-balancing
-algorithm to move data between processors. The migration-help tools follow
-the <I>Get_Obj_Data_Size</I> function pointer to <I>user_elem_size_fn</I>
-to obtain the size of the data buffer needed for an object's data. They
-allocate appropriately sized import and export buffers. Through repeated
-calls to the <I>Pack_Object</I> function (<I>user_pack_one_elem_fn</I>),
+data structure (<I>user_unpack_one_elem_fn</I>).
+
+<P>The migration-help tools then use these registered functions with the
+results of the load-balancing algorithm to move data between processors.
+The migration-help tools follow the <I>Get_Obj_Data_Size</I> function pointer
+to <I>user_elem_size_fn</I> to obtain the size of the data buffer needed
+for an object's data. They allocate appropriately sized import and export
+buffers. Through repeated calls to the <I>Pack_Object</I> function (<I>user_pack_one_elem_fn</I>),
 the migration-help tools fill the export buffer with data for each object
 to be exported. The migration-help tools then send the export buffer data
 to other processors and receive import data from other processors. Then,
@@ -242,9 +251,9 @@ Under this model, the application developer does not have to implement
 addition communication routines to perform data migration; the migration-help
 tools handle all communication required for data movement.
 <BR>&nbsp;
-<TABLE BORDER WIDTH="100%" NOSAVE >
-<TR>
-<TD><A NAME="mig_interaction.gif"></A>Application&nbsp;
+<TABLE WIDTH="100%" NOSAVE >
+<TR NOSAVE>
+<TD NOSAVE><A NAME="mig_interaction.gif"></A>Application&nbsp;
 <TABLE BORDER=2 WIDTH="80%" NOSAVE >
 <TR>
 <TD><TT>...</TT>&nbsp;
@@ -268,7 +277,7 @@ tools handle all communication required for data movement.
 <TR>
 <TD>
 <DIV ALIGN=right>Migration-Help Tools</DIV>
-&nbsp;&nbsp;
+
 <DIV ALIGN=right><TABLE BORDER=2 COLS=1 WIDTH="80%" NOSAVE >
 <TR NOSAVE>
 <TD NOSAVE><TT>...</TT>&nbsp;
@@ -292,9 +301,7 @@ size, import_buf[i], &amp;ierr);</TT>&nbsp;
 <BR><TT>...</TT></TD>
 </TR>
 </TABLE></DIV>
-&nbsp;&nbsp;
-<DIV ALIGN=right>&nbsp;</DIV>
-</TD>
+&nbsp;&nbsp;</TD>
 </TR>
 
 <CAPTION ALIGN=BOTTOM><I>Example of interaction between the application

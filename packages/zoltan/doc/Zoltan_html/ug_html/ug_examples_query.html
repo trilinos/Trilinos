@@ -1,0 +1,464 @@
+<HTML>
+<HEAD>
+   <META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-1">
+   <META NAME="GENERATOR" CONTENT="Mozilla/4.04 [en] (X11; U; SunOS 4.1.3_U1 sun4m) [Netscape]">
+   <TITLE>Zoltan User's Guide:  Examples</TITLE>
+<!
+  ------------------------
+  | CVS File Information |
+  ------------------------
+  $RCSfile$
+  $Author$
+  $Date$
+  $Revision$
+>
+</HEAD>
+<BODY BGCOLOR="#FFFFFF">
+
+<DIV ALIGN=right>
+<H3>
+<IMG SRC="figures/ug_header.gif" ALT="Zoltan Developer's Guide" ></H3></DIV>
+
+<H2>
+<A NAME="Load-Balancing Example"></A>Query-Function Examples</H2>
+Examples of query functions provided by a simple application are included
+below.&nbsp; The load-balancing examples include a simple implementation
+of <B><A HREF="ug_query_lb.html#LB_GEOM_FN">LB_GEOM_FN</A> </B>and <B><A HREF="ug_query_lb.html#LB_OBJ_LIST_FN">LB_OBJ_LIST_FN</A></B>
+query functions and variants of the simple implementation that exploit
+local identifiers and data pointers.&nbsp; Migration-help examples for
+packing and unpacking objects are also included.&nbsp;&nbsp; Robust error
+checking is not included in the routines; application developers should
+include more explicit error checking in their query functions.
+<UL><A HREF="#lb_query_example">Load-Balancing Examples</A>
+<UL><A HREF="#basic_query_example">Basic example</A>
+<BR><A HREF="#lb_lid_query_example">User-defined local identifiers (LB_LID)</A>
+<BR><A HREF="#data_ptr_query_example">User-defined data pointer</A></UL>
+<A HREF="#mig_query_example">Migration-Help Examples</A>
+<UL><A HREF="#mig_pack_example">Packing and unpacking functions</A></UL>
+</UL>
+All the examples use a mesh data structure consisting of nodes in the mesh.&nbsp;
+Load balancing is performed on the nodes.&nbsp; A node is described by
+its 3D coordinates and a global ID number that is unique across all processors.&nbsp;&nbsp;
+The type definitions for the mesh and node data structures used in the
+examples are included <A HREF="#query example data types">below</A>.
+<BR>&nbsp;
+<CENTER><TABLE BORDER=2 COLS=1 WIDTH="90%" NOSAVE >
+<TR>
+<TD><A NAME="query example data types"></A><TT>/*<I> Node data structure.</I>
+*/</TT>&nbsp;
+<BR><TT>/* <I>A node consists of its 3D coordinates and</I> */</TT>&nbsp;
+<BR><TT>/* <I>an ID number that is unique across all processors.</I> */</TT>&nbsp;
+<BR><TT>struct Node_Type {&nbsp;</TT>&nbsp;
+<BR><TT>&nbsp; double Coordinates[3];&nbsp;</TT>&nbsp;
+<BR><TT>&nbsp; int Global_ID_Num;&nbsp;</TT>&nbsp;
+<BR><TT>};&nbsp;</TT>&nbsp;
+
+<P><TT>/*<I> Mesh data structure.</I> */&nbsp;</TT>&nbsp;
+<BR><TT>/* <I>Mesh consists of an array of nodes and</I> */</TT>&nbsp;
+<BR><TT>/* <I>the number of nodes owned by the processor.</I> */</TT>&nbsp;
+<BR><TT>struct Mesh_Type {</TT>&nbsp;
+<BR><TT>&nbsp; struct Node_Type Nodes[MAX_NODES];&nbsp;</TT>&nbsp;
+<BR><TT>&nbsp; int Number_Owned;&nbsp;</TT>&nbsp;
+<BR><TT>};</TT>&nbsp;</TD>
+</TR>
+
+<CAPTION ALIGN=BOTTOM><I>Data types for the query-function examples.</I></CAPTION>
+</TABLE></CENTER>
+&nbsp;
+<H3>
+<A NAME="lb_query_example"></A>Load-Balancing Query Function Examples</H3>
+In the following examples, <B><A HREF="ug_query_lb.html#LB_OBJ_LIST_FN">LB_OBJ_LIST_FN</A></B>
+and <B><A HREF="ug_query_lb.html#LB_GEOM_FN">LB_GEOM_FN </A></B>query functions
+are implemented for an application using the mesh and node data structures
+described <A HREF="#query example data types">above</A>.&nbsp; Dynamic
+load-balancing is performed on the nodes of the mesh.
+
+<P>Through a call to <B><A HREF="ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</A></B>,
+the function <I>user_return_owned_nodes</I> is registered as the <B><A HREF="ug_query_lb.html#LB_OBJ_LIST_FN">LB_OBJ_LIST_FN</A></B>
+query function.&nbsp; It returns&nbsp; global and local identifiers for
+each node owned by a processor.
+
+<P>The function <I>user_return_coords</I> is registered as an&nbsp; <B><A HREF="ug_query_lb.html#LB_GEOM_FN">LB_GEOM_FN</A></B>
+query function.&nbsp; Given the global and local identifiers for a node,
+this function returns the node's coordinates.&nbsp; All the examples exploit
+the local identifier to quickly locate nodal data.&nbsp; If such an identifier
+is not available in an application, a search using the global identifier
+can be performed.
+
+<P>The <A HREF="#basic_query_example">Basic Example</A> includes the simplest
+implementation of the query routines.&nbsp; In the query routines, it uses
+global application data structures and a local numbering scheme for the
+local identifiers.&nbsp; The <A HREF="#lb_lid_query_example">User-Defined
+Local Identifier Example</A> defines local identifiers as pointers to nodes;
+this model is useful for applications that use dynamic data structures
+or don't have a local ordering.&nbsp; The <A HREF="#data_ptr_query_example">User-Defined
+Data Pointer Example</A> uses only local application data structures; this
+model is useful if the application does not have global data structures
+or if load-balancing is to be performed on more than one data structure.&nbsp;
+Differences between the latter two examples and the Basic Example are shown
+in <FONT COLOR="#FF0000">red</FONT>.
+<H4>
+<A NAME="basic_query_example"></A>Basic Example</H4>
+In the simplest example, the query functions access the application data
+through a global data structure (<I>Mesh</I>) representing the mesh.&nbsp;
+In the calls to <B><A HREF="ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</A></B>,
+no pointers to application data are registered with the query function
+(i.e., the <I>data</I> pointer is not used).&nbsp;&nbsp; A node's local
+identifier is an integer representing the index in the <I>Mesh.Nodes</I>
+array of the node.&nbsp; In <I>lb/lb_user_const.h</I>, <A HREF="ug_usage.html#Macro defs">LB_LID</A>
+is defined as an integer.&nbsp; The local identifier is set to the index's
+value in<I> user_return_owned_nodes</I>.&nbsp; It is used to access the
+global <I>Mesh.Nodes</I> array in <I>user_return_coords</I>.
+<BR>&nbsp;
+<CENTER><TABLE BORDER=2 COLS=1 WIDTH="90%" NOSAVE >
+<TR>
+<TD><A NAME="query example one"></A><TT>/* <I>included in file lb/lb_user_const.h</I>
+*/</TT>&nbsp;
+<BR><TT>/* <I>Both global and local identifiers are integers */</I></TT>&nbsp;
+<BR><TT>#define <A HREF="ug_usage.html#Macro defs">LB_GID</A> int</TT>&nbsp;
+<BR><TT>#define <A HREF="ug_usage.html#Macro defs">LB_LID</A> int</TT>&nbsp;
+
+<P>
+<HR WIDTH="100%"><TT>/* <I>in application's program file</I> */&nbsp;</TT>&nbsp;
+<BR><TT>#include "lb/lbi_const.h"</TT>&nbsp;
+<BR><TT>#include "lb/lb_user_const.h"&nbsp;</TT>&nbsp;
+
+<P><TT>/* <I>Declare a global Mesh data structure.</I> */</TT>&nbsp;
+<BR><TT>struct Mesh_Type Mesh;</TT>&nbsp;
+
+<P><TT>main()&nbsp;</TT>&nbsp;
+<BR><TT>{&nbsp;</TT>&nbsp;
+<BR><TT>...&nbsp;</TT>&nbsp;
+<BR><TT>&nbsp;&nbsp;&nbsp; /* <I>Register load-balancing query functions.</I>
+*/</TT>&nbsp;
+<BR><TT>&nbsp;&nbsp;&nbsp; /* <I>Do not register a data pointer with the
+functions;</I> */</TT>&nbsp;
+<BR><TT>&nbsp;&nbsp;&nbsp; /* <I>the global Mesh data structure will be
+used.</I> */</TT>&nbsp;
+<BR><TT>&nbsp;&nbsp;&nbsp; <A HREF="ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</A>(lb,
+<A HREF="ug_query_lb.html#LB_GEOM_FN">LB_GEOM_FN_TYPE</A>,&nbsp;</TT>&nbsp;
+<BR><TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+user_return_coords, NULL);&nbsp;&nbsp;</TT>&nbsp;
+<BR><TT>&nbsp;&nbsp;&nbsp; <A HREF="ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</A>(lb,
+<A HREF="ug_query_lb.html#LB_OBJ_LIST_FN">LB_OBJ_LIST_FN_TYPE</A>,&nbsp;</TT>&nbsp;
+<BR><TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+user_return_owned_nodes, NULL);&nbsp;&nbsp;</TT>&nbsp;
+<BR><TT>...&nbsp;</TT>&nbsp;
+<BR><TT>}&nbsp;</TT>&nbsp;
+
+<P><TT>void user_return_owned_nodes(void *data,&nbsp;&nbsp;</TT>&nbsp;
+<BR><TT>&nbsp;&nbsp;&nbsp;&nbsp; LB_GID *global_ids, LB_LID *local_ids,
+int *ierr)&nbsp;</TT>&nbsp;
+<BR><TT>{&nbsp;</TT>&nbsp;
+<BR><TT>int i;&nbsp;</TT>&nbsp;
+<BR><TT>&nbsp;&nbsp;&nbsp; /* <I>return global node numbers as global_ids.</I>
+*/&nbsp;</TT>&nbsp;
+<BR><TT>&nbsp;&nbsp;&nbsp; /* <I>return index into Nodes array for local_ids.</I>
+*/&nbsp;</TT>&nbsp;
+<BR><TT>&nbsp;&nbsp;&nbsp; for (i = 0; i &lt; Mesh.Number_Owned; i++){&nbsp;</TT>&nbsp;
+<BR><TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; global_ids[i] = Mesh.Nodes[i].Global_ID_Num;&nbsp;</TT>&nbsp;
+<BR><TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; local_ids[i] = i;&nbsp;</TT>&nbsp;
+<BR><TT>&nbsp;&nbsp;&nbsp; }&nbsp;</TT>&nbsp;
+<BR><TT>&nbsp;&nbsp;&nbsp; *ierr = DLB_OK;&nbsp;</TT>&nbsp;
+<BR><TT>}&nbsp;</TT>&nbsp;
+
+<P><TT>void user_return_coords(void *data,&nbsp;</TT>&nbsp;
+<BR><TT>&nbsp;&nbsp;&nbsp;&nbsp; LB_GID global_id, LB_LID local_id,&nbsp;</TT>&nbsp;
+<BR><TT>&nbsp;&nbsp;&nbsp;&nbsp; double *geom_vec, int *ierr)&nbsp;</TT>&nbsp;
+<BR><TT>{&nbsp;</TT>&nbsp;
+<BR><TT>&nbsp;&nbsp;&nbsp; /* <I>use local_id to index into the Nodes array.</I>
+*/&nbsp;</TT>
+<BR><TT>&nbsp;&nbsp;&nbsp; geom_vec[0] = Mesh.Nodes[local_id].Coordinates[0];&nbsp;</TT>&nbsp;
+<BR><TT>&nbsp;&nbsp;&nbsp; geom_vec[1] = Mesh.Nodes[local_id].Coordinates[1];&nbsp;</TT>&nbsp;
+<BR><TT>&nbsp;&nbsp;&nbsp; geom_vec[2] = Mesh.Nodes[local_id].Coordinates[2];&nbsp;</TT>&nbsp;
+<BR><TT>&nbsp;&nbsp;&nbsp; *ierr = DLB_OK;&nbsp;</TT>&nbsp;
+<BR><TT>}</TT></TD>
+</TR>
+
+<CAPTION ALIGN=BOTTOM><I>Example of load-balancing query functions (simplest
+implementation).</I></CAPTION>
+</TABLE></CENTER>
+&nbsp;
+<H4>
+<A NAME="lb_lid_query_example"></A>User-Defined Local Identifiers Example</H4>
+In this example, a node's local identifier is defined as a pointer to the
+node's data in the global <I>Mesh.Nodes</I> array.&nbsp; Thus, an index
+into the array is not needed.&nbsp; In <I>lb/lb_user_const.h</I>, <A HREF="ug_usage.html#Macro defs">LB_LID</A>
+is defined as a pointer.&nbsp; In <I>user_return_owned_nodes</I>, the address
+of a node's data is returned as the local identifier.&nbsp; This address
+is then used in <I>user_return_coords</I> to access the nodal coordinates.
+<BR>&nbsp;
+<BR>This model is useful when a local numbering scheme (such as the array
+index) is not available because the application uses dynamic data structures.&nbsp;
+Differences between this example and the <A HREF="#basic_query_example">Basic
+Example</A> are shown in <FONT COLOR="#FF0000">red</FONT>.
+<BR>&nbsp;
+<CENTER><TABLE BORDER=2 COLS=1 WIDTH="90%" NOSAVE >
+<TR>
+<TD><A NAME="query example two"></A><TT>/* <I>included in file lb/lb_user_const.h</I>
+*/</TT>&nbsp;
+<BR><TT>/* <I>Global identifiers are integers. </I>*/</TT>&nbsp;
+<BR><TT>/* <I>Local identifiers are pointers.</I> */</TT>&nbsp;
+<BR><TT>#define <A HREF="ug_usage.html#Macro defs">LB_GID</A> int</TT>&nbsp;
+<BR><TT>#define <A HREF="ug_usage.html#Macro defs">LB_LID</A> <FONT COLOR="#FF0000">void
+*</FONT></TT>&nbsp;
+
+<P>
+<HR WIDTH="100%"><TT>/* <I>in application's program file</I> */&nbsp;</TT>&nbsp;
+<BR><TT>#include "lb/lbi_const.h"</TT>&nbsp;
+<BR><TT>#include "lb/lb_user_const.h"</TT>&nbsp;
+
+<P><TT>/* <I>Declare a global Mesh data structure.</I> */</TT>&nbsp;
+<BR><TT>struct Mesh_Type Mesh;</TT>&nbsp;
+
+<P><TT>main()</TT>&nbsp;
+<BR><TT>{</TT>&nbsp;
+<BR><TT>...</TT>&nbsp;
+<BR><TT>&nbsp;&nbsp;&nbsp; /* <I>Register load-balancing query functions.</I>
+*/&nbsp;</TT>&nbsp;
+<BR><TT>&nbsp;&nbsp;&nbsp; /* <I>Do not register a data pointer with the
+functions;</I> */</TT>&nbsp;
+<BR><TT>&nbsp;&nbsp;&nbsp; /* <I>the global Mesh data structure will be
+used.</I> */</TT>&nbsp;
+<BR><TT>&nbsp;&nbsp;&nbsp; <A HREF="ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</A>(lb,
+<A HREF="ug_query_lb.html#LB_GEOM_FN">LB_GEOM_FN_TYPE</A>,</TT>&nbsp;
+<BR><TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+user_return_coords, NULL);&nbsp;</TT>&nbsp;
+<BR><TT>&nbsp;&nbsp;&nbsp; <A HREF="ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</A>(lb,
+<A HREF="ug_query_lb.html#LB_OBJ_LIST_FN">LB_OBJ_LIST_FN_TYPE</A>,</TT>&nbsp;
+<BR><TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+user_return_owned_nodes, NULL);&nbsp;</TT>&nbsp;
+<BR><TT>...</TT>&nbsp;
+<BR><TT>}</TT>&nbsp;
+
+<P><TT>void user_return_owned_nodes(void *data,&nbsp;</TT>&nbsp;
+<BR><TT>&nbsp;&nbsp;&nbsp;&nbsp; LB_GID *global_ids, LB_LID *local_ids,
+int *ierr)</TT>&nbsp;
+<BR><TT>{</TT>&nbsp;
+<BR><TT>int i;</TT>&nbsp;
+<BR><TT>&nbsp;&nbsp;&nbsp; /* <I>return global node numbers as global_ids.</I>
+*/</TT>&nbsp;
+<BR><TT>&nbsp;&nbsp;&nbsp; /* <I><FONT COLOR="#FF0000">return address of
+Nodes array entries for local_ids.</FONT></I> */</TT>&nbsp;
+<BR><TT>&nbsp;&nbsp;&nbsp; for (i = 0; i &lt; Mesh.Number_Owned; i++){</TT>&nbsp;
+<BR><TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; global_ids[i] = Mesh.Nodes[i].Global_ID_Num;</TT>&nbsp;
+<BR><TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; local_ids[i] = <FONT COLOR="#FF0000">(void
+*) &amp;(Mesh.Nodes[i])</FONT>;</TT>&nbsp;
+<BR><TT>&nbsp;&nbsp;&nbsp; }</TT>&nbsp;
+<BR><TT>&nbsp;&nbsp;&nbsp; *ierr = DLB_OK;</TT>&nbsp;
+<BR><TT>}</TT>&nbsp;
+
+<P><TT>void user_return_coords(void *data,&nbsp;</TT>&nbsp;
+<BR><TT>&nbsp;&nbsp;&nbsp;&nbsp; LB_GID global_id, LB_LID local_id,&nbsp;</TT>&nbsp;
+<BR><TT>&nbsp;&nbsp;&nbsp;&nbsp; double *geom_vec, int *ierr)</TT>&nbsp;
+<BR><TT>{</TT>&nbsp;
+<BR><TT>&nbsp;&nbsp;&nbsp; /* <I>use local_id to <FONT COLOR="#FF0000">address</FONT>
+the requested node.</I> */</TT>&nbsp;
+<BR><TT>&nbsp;&nbsp;&nbsp; geom_vec[0] = ((struct Node_Type *) local_id)->Coordinates[0];</TT>&nbsp;
+<BR><TT>&nbsp;&nbsp;&nbsp; geom_vec[1] = ((struct Node_Type *) local_id)->Coordinates[1];</TT>&nbsp;
+<BR><TT>&nbsp;&nbsp;&nbsp; geom_vec[2] = ((struct Node_Type *) local_id)->Coordinates[2];</TT>&nbsp;
+<BR><TT>&nbsp;&nbsp;&nbsp; *ierr = DLB_OK;</TT>&nbsp;
+<BR><TT>}</TT></TD>
+</TR>
+
+<CAPTION ALIGN=BOTTOM><I>Example of load-balancing query functions using
+addresses as local identifiers.</I></CAPTION>
+</TABLE></CENTER>
+
+<H4>
+<A NAME="data_ptr_query_example"></A>User-Defined Data Pointer Example</H4>
+In this example, the address of a local mesh data structure is registered
+with the query functions for use by those functions.&nbsp; This change
+eliminates the need for a global mesh data structure in the application.&nbsp;
+The address of the local data structure is included as an argument in calls
+to <B><A HREF="ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</A></B>.&nbsp;
+This address is then used in <I>user_return_owned_nodes</I> and <I>user_return_coords</I>
+to provide data for these routines.&nbsp; It is cast to the <I><A HREF="#query example data types">Mesh_Type</A></I>
+data type and accessed with local identifiers as in the <A HREF="#basic_query_example">Basic
+Example</A>.&nbsp; Differences between this example and the <A HREF="#basic_query_example">Basic
+Example</A> are shown in <FONT COLOR="#FF0000">red</FONT>.
+
+<P>This model is useful when the application does not have a global data
+structure that can be accessed by the query functions.&nbsp; It can also
+be used for load balancing on different data objects.&nbsp; For example,
+if an application had more than one mesh, load balancing could be performed
+separately on each mesh without having different query routines for each
+mesh.&nbsp; Calls to <B><A HREF="ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</A></B>
+would define which mesh should be balanced, and the query routines would
+access the mesh currently designated by the <B><A HREF="ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</A></B>
+calls.
+<BR>&nbsp;
+<CENTER><TABLE BORDER=2 COLS=1 WIDTH="90%" NOSAVE >
+<TR>
+<TD><A NAME="query example three"></A><TT>/* <I>included in file lb/lb_user_const.h</I>
+*/</TT>&nbsp;
+<BR><TT>/* <I>Both global and local identifiers are integers */</I></TT>&nbsp;
+<BR><TT>#define <A HREF="ug_usage.html#Macro defs">LB_GID</A> int</TT>&nbsp;
+<BR><TT>#define <A HREF="ug_usage.html#Macro defs">LB_LID</A> int</TT>&nbsp;
+
+<P>
+<HR WIDTH="100%"><TT>/* <I>in application's program file</I> */</TT>&nbsp;
+<BR><TT>#include "lb/lbi_const.h"</TT>&nbsp;
+<BR><TT>#include "lb/lb_user_const.h"</TT>&nbsp;
+
+<P><TT>main()</TT>&nbsp;
+<BR><TT>{</TT>&nbsp;
+<BR><TT><FONT COLOR="#FF0000">/* <I>declare a local mesh data structure.</I>
+*/</FONT></TT>&nbsp;
+<BR><TT><FONT COLOR="#FF0000">struct Mesh_Type mesh;</FONT></TT>&nbsp;
+<BR><TT>...</TT>&nbsp;
+<BR><TT>&nbsp;&nbsp;&nbsp; /* <I>Register load-balancing query functions.</I>
+*/</TT>&nbsp;
+<BR><TT>&nbsp;&nbsp;&nbsp; /* <I><FONT COLOR="#FF0000">Register the address
+of mesh as the data pointer.</FONT></I> */</TT>&nbsp;
+<BR><TT>&nbsp;&nbsp;&nbsp; <A HREF="ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</A>(lb,
+<A HREF="ug_query_lb.html#LB_GEOM_FN">LB_GEOM_FN_TYPE</A>,</TT>&nbsp;
+<BR><TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+user_return_coords, <FONT COLOR="#FF0000">&amp;mesh</FONT>);&nbsp;</TT>&nbsp;
+<BR><TT>&nbsp;&nbsp;&nbsp; <A HREF="ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</A>(lb,
+<A HREF="ug_query_lb.html#LB_OBJ_LIST_FN">LB_OBJ_LIST_FN_TYPE</A>,</TT>&nbsp;
+<BR><TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+user_return_owned_nodes, <FONT COLOR="#FF0000">&amp;mesh</FONT>);&nbsp;</TT>&nbsp;
+<BR><TT>...</TT>&nbsp;
+<BR><TT>}</TT>&nbsp;
+
+<P><TT>void user_return_owned_nodes(void *data,&nbsp;</TT>&nbsp;
+<BR><TT>&nbsp;&nbsp;&nbsp;&nbsp; LB_GID *global_ids, LB_LID *local_ids,
+int *ierr)</TT>&nbsp;
+<BR><TT>{</TT>&nbsp;
+<BR><TT>int i;&nbsp;</TT>&nbsp;
+<BR><TT><FONT COLOR="#FF0000">/* <I>cast data pointer to type Mesh_Type.</I>
+*/</FONT></TT>&nbsp;
+<BR><TT><FONT COLOR="#FF0000">struct Mesh_Type *mesh_ptr = (struct Mesh_Type
+*) data;</FONT></TT>&nbsp;
+
+<P><TT>&nbsp;&nbsp;&nbsp; /* <I>return global node numbers as global_ids.</I>
+*/</TT>&nbsp;<TT>&nbsp;</TT>&nbsp;
+<BR><TT>&nbsp;&nbsp;&nbsp; /* <I>return index into Nodes array for local_ids.</I>
+*/</TT>&nbsp;
+<BR><TT>&nbsp;&nbsp;&nbsp; for (i = 0; i &lt; Number_Owned; i++) {</TT>&nbsp;
+<BR><TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; global_ids[i] = <FONT COLOR="#FF0000">mesh_ptr->Nodes[i].Global_ID_Num</FONT>;</TT>&nbsp;
+<BR><TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; local_ids[i] = i;</TT>&nbsp;
+<BR><TT>&nbsp;&nbsp;&nbsp; }</TT>&nbsp;
+<BR><TT>&nbsp;&nbsp;&nbsp; *ierr = DLB_OK;</TT>&nbsp;
+<BR><TT>}</TT>&nbsp;
+
+<P><TT>void user_return_coords(void *data,&nbsp;</TT>&nbsp;
+<BR><TT>&nbsp;&nbsp;&nbsp;&nbsp; LB_GID global_id, LB_LID local_id,&nbsp;</TT>&nbsp;
+<BR><TT>&nbsp;&nbsp;&nbsp;&nbsp; double *geom_vec, int *ierr)</TT>&nbsp;
+<BR><TT>{</TT>&nbsp;
+
+<P><TT><FONT COLOR="#FF0000">/* <I>cast data pointer to type Mesh_Type.</I>
+*/</FONT></TT>&nbsp;
+<BR><TT><FONT COLOR="#FF0000">struct Mesh_Type *mesh_ptr = (struct Mesh_Type
+*) data;</FONT></TT>&nbsp;
+
+<P><TT>&nbsp;&nbsp;&nbsp; /* <I>use local_id to address the requested node.</I>
+*/</TT>&nbsp;
+<BR><TT>&nbsp;&nbsp;&nbsp; geom_vec[0] = <FONT COLOR="#FF0000">mesh_ptr->Nodes[local_id].Coordinates[0]</FONT>;</TT>&nbsp;
+<BR><TT>&nbsp;&nbsp;&nbsp; geom_vec[1] = <FONT COLOR="#FF0000">mesh_ptr->Nodes[local_id].Coordinates[1]</FONT>;</TT>&nbsp;
+<BR><TT>&nbsp;&nbsp;&nbsp; geom_vec[2] = <FONT COLOR="#FF0000">mesh_ptr->Nodes[local_id].Coordinates[2]</FONT>;</TT>&nbsp;
+<BR><TT>&nbsp;&nbsp;&nbsp; *ierr = DLB_OK;</TT>&nbsp;
+<BR><TT>}</TT></TD>
+</TR>
+
+<CAPTION ALIGN=BOTTOM><I>Example of load-balancing query functions using
+the application-defined data pointer.</I></CAPTION>
+</TABLE></CENTER>
+&nbsp;
+<H3>
+<A NAME="mig_query_example"></A>Migration-Help Examples</H3>
+
+<H4>
+<A NAME="mig_pack_example"></A>Packing and Unpacking Data</H4>
+Simple migration-help query functions for the <A HREF="#basic_query_example">Basic
+Example</A> are included<A HREF="#query example four"> below</A>.&nbsp;
+These functions are used by the migration-help tools to move nodes among
+the processors.&nbsp; The functions <I>user_size_node</I>, <I>user_pack_node</I>,
+and <I>user_unpack_node</I> are registered through calls to <B><A HREF="ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</A></B>.&nbsp;
+Query function <I>user_size_node</I> returns the size (in bytes) of data
+representing a single node.&nbsp; Query function <I>user_pack_node</I>
+copies a given node's data into the communication buffer<I> buf</I>.&nbsp;
+Query function <I>user_unpack_node</I> copies a data for one node from
+the communication buffer <I>buf</I> into the <I>Mesh.Nodes</I> array on
+its new processor.
+
+<P>These query routines are simple because the application does not dynamically
+allocate memory for each node.&nbsp; Such dynamic allocation would have
+to be accounted for in the <A HREF="ug_query_mig.html#LB_OBJ_SIZE_FN">LB_OBJ_SIZE_FN</A>,
+<A HREF="ug_query_mig.html#LB_PACK_OBJ_FN">LB_PACK_OBJ_FN</A>, and <A HREF="ug_query_mig.html#LB_UNPACK_OBJ_FN">LB_UNPACK_OBJ_FN</A>
+routines.&nbsp; The <A HREF="ug_query_mig.html#LB_OBJ_SIZE_FN">LB_OBJ_SIZE_FN</A>
+should return the size of the largest object to be migrated among all processors,
+as all migrating objects must have the same size.
+<BR>&nbsp;
+<CENTER><TABLE BORDER=2 COLS=1 WIDTH="90%" NOSAVE >
+<TR>
+<TD><A NAME="query example four"></A><TT>main()&nbsp;</TT>&nbsp;
+<BR><TT>{&nbsp;</TT>&nbsp;
+<BR><TT>...&nbsp;</TT>&nbsp;
+<BR><TT>&nbsp;&nbsp;&nbsp; /* <I>Register migration-help query functions.</I>
+*/</TT>&nbsp;
+<BR><TT>&nbsp;&nbsp;&nbsp; /* <I>Do not register a data pointer with the
+functions;</I> */</TT>&nbsp;
+<BR><TT>&nbsp;&nbsp;&nbsp; /* <I>the global Mesh data structure will be
+used.</I> */</TT>&nbsp;
+<BR><TT>&nbsp;&nbsp;&nbsp; <A HREF="ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</A>(lb,
+<A HREF="ug_query_mig.html#LB_OBJ_SIZE_FN">LB_OBJ_SIZE_FN_TYPE</A>, user_size_node,
+NULL);&nbsp;&nbsp;</TT>&nbsp;
+<BR><TT>&nbsp;&nbsp;&nbsp; <A HREF="ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</A>(lb,
+<A HREF="ug_query_mig.html#LB_PACK_OBJ_FN">LB_PACK_OBJ_FN_TYPE</A>, user_pack_node,
+NULL);&nbsp;</TT>
+<BR><TT>&nbsp;&nbsp;&nbsp; <A HREF="ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</A>(lb,
+<A HREF="ug_query_mig.html#LB_UNPACK_OBJ_FN">LB_UNPACK_OBJ_FN_TYPE</A>,
+user_unpack_node, NULL);&nbsp;&nbsp;</TT>&nbsp;
+<BR><TT>...&nbsp;</TT>&nbsp;
+<BR><TT>}&nbsp;</TT>&nbsp;
+
+<P><TT>int user_size_node(void *data, int *ierr)</TT>
+<BR><TT>{</TT>
+<BR><TT>/* <I>Return the size of data associated with one node.</I> */</TT>
+<BR><TT>&nbsp;&nbsp;&nbsp; *ierr = DLB_OK;</TT>
+<BR><TT>&nbsp;&nbsp;&nbsp; return(sizeof(struct Node_Type));</TT>
+<BR><TT>}</TT><TT></TT>
+
+<P><TT>void user_pack_node(void *data, LB_GID global_id, LB_LID local_id,&nbsp;</TT>
+<BR><TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+int dest_proc, int size, char *buf, int *ierr)&nbsp;</TT>
+<BR><TT>{</TT>
+<BR><TT>/* Copy<I> the specified node's data into buffer buf.</I> */</TT>
+<BR><TT>struct Node_Type *node_buf = (struct Node_Type *) buf;</TT><TT></TT>
+
+<P><TT>&nbsp;&nbsp;&nbsp; *ierr = DLB_OK;</TT>
+<BR><TT>&nbsp;&nbsp;&nbsp; node_buf->Coordinates[0] = Mesh.Nodes[local_id].Coordinates[0];</TT>
+<BR><TT>&nbsp;&nbsp;&nbsp; node_buf->Coordinates[1] = Mesh.Nodes[local_id].Coordinates[1];</TT>
+<BR><TT>&nbsp;&nbsp;&nbsp; node_buf->Coordinates[2] = Mesh.Nodes[local_id].Coordinates[2];</TT>
+<BR><TT>&nbsp;&nbsp;&nbsp; node_buf->Global_ID_Num = Mesh.Nodes[local_id].Global_ID_Num;</TT>
+<BR><TT>}</TT><TT></TT>
+
+<P><TT>void user_unpack_node(void *data, LB_GID global_id, int size,&nbsp;</TT>
+<BR><TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+char *buf, int *ierr)</TT>
+<BR><TT>{</TT>
+<BR><TT>/* <I>Copy the node data in buf into the Mesh data structure. </I>*/</TT>
+<BR><TT>int i;</TT>
+<BR><TT>struct Node_Type *node_buf = (struct Node_Type *) buf;</TT><TT></TT>
+
+<P><TT>&nbsp;&nbsp;&nbsp; *ierr = DLB_OK;</TT>
+<BR><TT>&nbsp;&nbsp;&nbsp; i = Mesh.Number_Owned;</TT>
+<BR><TT>&nbsp;&nbsp;&nbsp; Mesh.Number_Owned = Mesh.Number_Owned + 1;</TT>
+<BR><TT>&nbsp;&nbsp;&nbsp; Mesh.Nodes[i].Coordinates[0] = node_buf->Coordinates[0];</TT>
+<BR><TT>&nbsp;&nbsp;&nbsp; Mesh.Nodes[i].Coordinates[1] = node_buf->Coordinates[1];</TT>
+<BR><TT>&nbsp;&nbsp;&nbsp; Mesh.Nodes[i].Coordinates[2] = node_buf->Coordinates[2];</TT>
+<BR><TT>&nbsp;&nbsp;&nbsp; Mesh.Nodes[i].Global_ID_Num = node_buf->Global_ID_Num;</TT>
+<BR><TT>}</TT>&nbsp;</TD>
+</TR>
+
+<CAPTION ALIGN=BOTTOM><I>Example of migration-help query functions for
+the <A HREF="#basic_query_example">Basic Example</A>.</I></CAPTION>
+</TABLE></CENTER>
+
+<HR WIDTH="100%">[<A HREF="ug.html">Table of Contents</A>&nbsp; |&nbsp;
+<A HREF="ug_future.html">Next:&nbsp; Future Work</A>&nbsp; |&nbsp; <A HREF="ug_examples_mig.html">Previous:&nbsp;
+Migration Examples</A>]
+</BODY>
+</HTML>
