@@ -33,6 +33,7 @@ $(srcdir)/FEGrid/ml_gridagx.h \
 $(srcdir)/FEGrid/ml_pde.h       $(srcdir)/FEGrid/ml_bdrypts.h \
 $(srcdir)/Coarsen/ml_agg_reitzinger.h \
 $(srcdir)/Coarsen/ml_agg_METIS.h \
+$(srcdir)/Coarsen/ml_agg_user.h \
 $(srcdir)/Coarsen/ml_agg_VBMETIS.h \
 $(srcdir)/Coarsen/ml_agg_Zoltan.h \
 $(srcdir)/Coarsen/ml_agg_ParMETIS.h \
@@ -74,6 +75,7 @@ $(srcdir)/Coarsen/ml_agg_genP.c \
 $(srcdir)/Coarsen/ml_amg_MIS.c \
 $(srcdir)/Coarsen/ml_agg_MIS.c \
 $(srcdir)/Coarsen/ml_agg_METIS.c \
+$(srcdir)/Coarsen/ml_agg_user.c \
 $(srcdir)/Coarsen/ml_agg_VBMETIS.c \
 $(srcdir)/Coarsen/ml_agg_Zoltan.c \
 $(srcdir)/Coarsen/ml_agg_ParMETIS.c \
