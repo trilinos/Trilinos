@@ -63,7 +63,6 @@ WITH_CPP = \
 UTIL_H = 
 
 UTIL = \
-	$(srcdir)/az_capt2read.c \
 	$(srcdir)/az_check.c \
 	$(srcdir)/az_flop_cnt.c \
 	$(srcdir)/az_ilu_util.c \
@@ -181,8 +180,8 @@ COMP = \
 	$(srcdir)/az_old_matvec_mult.c \
 	$(srcdir)/az_precond.c \
 	$(srcdir)/az_reorder.f \
-	$(srcdir)/dlaic1.f
-	$(srcdir)/dlaswp.f
+	$(srcdir)/dlaic1.f \
+	$(srcdir)/dlaswp.f \
 	$(srcdir)/az_scaling.c \
 	$(srcdir)/az_solve.c \
 	$(srcdir)/az_sort.c 
