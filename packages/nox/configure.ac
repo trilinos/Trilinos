@@ -1291,6 +1291,7 @@ AC_CONFIG_FILES([
 		src-loca/example-lapack/Makefile
 		src-loca/example-lapack/Chan/Makefile
 		src-loca/example-lapack/1Dfd_pitchfork/Makefile
+		src-loca/example-lapack/Brusselator/Makefile
 		])
 
 AC_OUTPUT()
