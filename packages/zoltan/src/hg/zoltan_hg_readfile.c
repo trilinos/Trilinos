@@ -234,7 +234,7 @@ static int patoh_readfile (int Proc,
     if (!((*index)  = (int *) ZOLTAN_MALLOC (sizeof (int) * (*nEdge+1))) ||
         !((*vertex) = (int *) ZOLTAN_MALLOC (sizeof (int) *  *nPin)))
            {
-           ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
+           ZOLTAN_PRINT_ERROR(Proc, yo, "Insufficient memory.");
            ierr = ZOLTAN_MEMERR;
            goto End;
            }
