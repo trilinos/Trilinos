@@ -49,8 +49,9 @@
 #define USR_COMM int
 #define USR_REQ  int
 
-#ifdef ML_CATCH_MPI_ERRORS_IN_DEBUGGER
 #define USR_ERRHANDLER int
+
+#ifdef ML_CATCH_MPI_ERRORS_IN_DEBUGGER
 #define USR_ERRHANDLER_FUNCTION void
 #endif /* ifdef ML_CATCH_MPI_ERRORS_IN_DEBUGGER */
 
