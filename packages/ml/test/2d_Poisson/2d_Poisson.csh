@@ -1,4 +1,4 @@
-#!/bin/csh -x
+#!/bin/csh
 # ############################################################################ #
 #
 # This script runs the ML executable 2d_Poisson.exe with a variety of ML input
@@ -53,7 +53,6 @@ else
   # execute any file that starts with ml_inputfile ...
   foreach j ( ml_inputfile* )
   
-    echo "using inputfile ${j}"
     set testnum=`echo $j | sed "s/ml_inputfile//"`
     ${CP} $j ml_inputfile
   
@@ -88,19 +87,18 @@ else
       wc difs${testnum} | sed "s/difs${testnum}//" >> ${SUMMARY_FILE}
       # grep the dif file for significant changes:
       #   operator complexity, number of iterations, or solution entries
-      echo "testnum = ${testnum}"
       cat difs${testnum} | grep "complexity" >> ${SUMMARY_FILE}
-      set tempo=`egrep complexity difs${testnum} | sed "s/ /x/g" | sed "s/	/x/g"`tt
+      set tempo=`egrep complexity difs${testnum} | wc | sed "s/ //g"`
       set check1=1
-      if ( ${tempo} != 'tt' ) set check1=0
+      if ( ${tempo} != '000' ) set check1=0
       cat difs${testnum} | grep "gid = " >> ${SUMMARY_FILE}
-      set tempo=`egrep 'gid = ' difs${testnum} | sed "s/ /x/g | sed "s/	/x/g""`tt
+      set tempo=`egrep 'gid = ' difs${testnum} | wc | sed "s/ //g"`
       set check2=1
-      if ( ${tempo} != 'tt' ) set check2=0
+      if ( ${tempo} != '000' ) set check2=0
       cat difs${testnum} | grep "total iterations" >> ${SUMMARY_FILE}
-      set tempo=`egrep 'total iterations' difs${testnum} | sed "s/ /x/g" | sed "s/	/x/g"`tt
+      set tempo=`egrep 'total iterations' difs${testnum} | wc | sed "s/ //g"`
       set check3=1
-      if ( ${tempo} != 'tt' ) set check3=0
+      if ( ${tempo} != '000' ) set check3=0
   
       # If any diffs occured, then the test fails.
       #if ( "${check3}" == "0" ) then
