@@ -1,0 +1,97 @@
+/* ******************************************************************** */
+/* See the file COPYRIGHT for a complete copyright notice, contact      */
+/* person and disclaimer.                                               */        
+/* ******************************************************************** */
+
+/* ******************************************************************** */
+/* Declaration of matrix-format specific stuff                          */
+/* ******************************************************************** */
+/* Author        : Charles Tong (LLNL) and Ray Tuminaro (SNL)           */
+/* Date          : April,    1999                                       */
+/* ******************************************************************** */
+
+#ifndef _MLMATFORMATS_
+#define _MLMATFORMATS_
+
+/* ******************************************************************** */
+/* Structure used for ML_MSR_getrows and ML_CSR_getrows                 */
+/*                                                                      */
+/* For CSR matrices, we have                                            */
+/*    A(i,j) where 0 <= i < N |    j = columns[k] , A(i,j) = values[k]  */
+/*           and   0 <= j < N |    where  rowptr[i] <= k <rowptr[i+1]   */
+/*                                                                      */
+/* For MSR matrices, we have                                            */
+/*    A(i,j) where 0 <= i < N,|    j = columns[k] , A(i,j) = values[k]  */
+/*                 i != j ,   |    where  columns[i] <= k < columns[i+1]*/
+/*             and 0 <= j < N |                                         */
+/*    A(i,i) where 0 <= i < N,|    A(i,j) = values[i]                   */
+/* -------------------------------------------------------------------- */
+
+struct ML_CSR_MSRdata 
+{
+   int    *columns, *rowptr;
+   double *values;
+};
+struct ML_vbrdata 
+{
+   int    *bindx, *bpntr, *cpntr, *rpntr, *indx;
+   double *val;
+};
+
+typedef struct ML_Matrix_DCSR_Struct
+{
+   int           ML_id;
+   int           mat_n;
+   int           *mat_ia;
+   int           *mat_ja;
+   double        *mat_a;
+   ML_CommInfoOP *comminfo;
+
+} ML_Matrix_DCSR;
+
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+
+extern void ML_RECUR_CSR_MSRdata_Destroy(ML_Operator *matrix);
+extern void ML_CSR_MSRdata_Destroy(void *data);
+
+extern void ML_restricted_MSR_mult(ML_Operator *matrix, int Nrows,
+                                   double b[], double c[], int Nsend);
+
+extern void ML_Scale_CSR(ML_Operator *input_matrix,
+                         double scale_factors[], int mult_or_divide);
+
+extern int CSR_getrows(void *data,int N_requested_rows,int requested_rows[],
+                       int allocated_space, int columns[], double values[],
+                       int row_lengths[]);
+
+extern int MSR_getrows(void *data, int N_requested_rows, int requested_rows[],
+                       int allocated_space, int columns[], double values[],
+                       int row_lengths[]);
+
+extern int MSR_matvec(void *Amat, int, double p[], int, double ap[]);
+extern int CSR_matvec(void *Amat, int, double p[], int, double ap[]);
+
+extern int VBR_cnst_blk_getrows(void *data, int N_requested_rows,
+                                int requested_rows[], int allocated_space,
+                                int columns[], double values[],
+                                int row_lengths[]);
+
+extern int VECTOR_getrows(void *data,int N_requested_rows,int requested_rows[],
+                          int allocated_space, int columns[], double values[],
+                          int row_lengths[]);
+
+
+extern int  ML_Matrix_DCSR_Create( ML_Matrix_DCSR ** );
+extern int  ML_Matrix_DCSR_Destroy( ML_Matrix_DCSR ** );
+extern int  ML_Matrix_DCSR_Set( ML_Matrix_DCSR *,int,int*,int*,double*);
+extern int  ML_Matrix_DCSR_Set_Comm( ML_Matrix_DCSR *, ML_CommInfoOP *);
+
+#ifdef __cplusplus
+}
+#endif
+#endif
+
