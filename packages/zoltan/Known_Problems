@@ -55,6 +55,16 @@ PROBLEMS EXISTING IN PARMETIS
 (Reported to the ParMETIS development team at the University of Minnesota,
  metis@cs.umn.edu)
 
+Name: PartGeom limitation
+Version: ParMETIS 3.0, 3.1
+Symptom: inaccurate number of partitions when # partitions != # processors
+Description:
+  ParMETIS method PartGeom produces decompositions with #-processor 
+  partitions only.  Zoltan parameters NUM_GLOBAL_PARTITIONS and 
+  NUM_LOCAL_PARTITIONS will be ignored.
+Reported: Not yet reported.  
+Status: Not yet reported.
+
 Name: vsize array freed in ParMetis 
 Version: ParMETIS 3.0 and 3.1
 Symptom: seg. fault, core dump at runtime
