@@ -3147,7 +3147,6 @@ int ML_Operator_Get_Nnz(ML_Operator *A)
       ML_get_matrix_row(A, 1, &i, &space, &columns, &values, &row_lengths, 0);
       A->N_nonzeros += row_lengths;
     }
-    printf("\n\n*** Ke fine nnz = %d\n",A->N_nonzeros);
   }
   return A->N_nonzeros; 
 }
