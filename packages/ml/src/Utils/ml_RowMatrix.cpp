@@ -13,7 +13,8 @@
 //==============================================================================
 ML_Epetra::RowMatrix::RowMatrix(ML_Operator* Op,
                                 const Epetra_Comm* UserComm,
-                                const bool cheap) :
+                                const bool cheap,
+                                USR_COMM comm) :
   Op_(0),
   FreeCommObject_(false),
   NumMyRows_(-1),
@@ -39,7 +40,7 @@ ML_Epetra::RowMatrix::RowMatrix(ML_Operator* Op,
     // otherwise we create a default communicator object,
     // and track down the need of freeing it in the dtor
 #ifdef HAVE_MPI
-    Comm_ = new Epetra_MpiComm(MPI_COMM_WORLD);
+    Comm_ = new Epetra_MpiComm(comm);
 #else
     Comm_ = new Epetra_SerialComm;
 #endif
@@ -252,7 +253,7 @@ ExtractMyRowCopy(int MyRow, int Length, int & NumEntries,
     ML_CHK_ERR(-1); // not a local row
 
   if (NumMyRowEntries_[MyRow] > Length) {
-    cerr << NumMyRowEntries_[MyRow] << " " << Length << endl;
+    cerr << MyRow << " " << NumMyRowEntries_[MyRow] << " " << Length << endl;
     ML_CHK_ERR(-2); // need more space
   }
 
