@@ -22,12 +22,15 @@
 </HEAD>
 <BODY BGCOLOR="#FFFFFF">
 
-<div ALIGN=right><b><i><a href="dev.html">Zoltan Developer's Guide</a>&nbsp; |&nbsp; <a href="dev_parmetis.html">Next</a>&nbsp; |&nbsp; <a href="dev_test_script.html">Previous</a></i></b></div>
+<div ALIGN=right><b><i><a href="dev.html">Zoltan Developer's Guide</a>&nbsp; |&nbsp; <a href="dev_irb.html">Next</a>&nbsp; |&nbsp; <a href="dev_test_script.html">Previous</a></i></b></div>
 
 
 <H2>
 <A NAME="RCB"></A>Appendix: Recursive Coordinate Bisection (RCB)</H2>
 &nbsp;
+
+<H3>
+Outline of Algorithm</H3>
 
 <P>The implementation of Recursive Coordinate Bisection (RCB) in Zoltan
 is due to Steve Plimpton of Sandia National Laboratories and was modified
@@ -104,14 +107,48 @@ terminal node is encountered which contains the processor number that the
 object belongs to.
 
 <BR>&nbsp;
+
+<H3>
+Data Structure Definitions</H3>
+
+<P>There are three major data structures in RCB and they are defined in
+rcb_const.h.  The points which are being load balanced are represented as a
+structure rcb_dot which contains the location of the point, its weight, and
+a tag to identify the point.  The nodes on the decomposition tree are
+represented by the structure rcb_tree which contains the position of the cut,
+the dimension that the cut is perpendicular to, and the node's parent and two
+children (if they exist) in the tree.  The structure RCB_Struct is the RCB data
+structure which holds pointers to all of the other data structures needed for
+RCB.  It contains an array of rcb_dot to represent the points being load
+balanced and an array of rcb_tree (whose length is the number of processors)
+which contains the decomposition tree.
+
+<BR>&nbsp;
+
+<H3>
+Parameters</H3>
+
+<P>The parameters used by RCB and their default values are described in the
+RCB section of the <B><A HREF="../ug_html/ug_alg_rcb.html#RCB">Zoltan User's
+Guide</A></B>.  These can be set by use of the LB_Set_RCB_Param subroutine
+in the file rcb.c.
+ 
+<BR>&nbsp;
+
+<H3>
+Main Routine</H3>
+
+<P>The main routine for RCB is LB_rcb in the file rcb.c.
+
+<BR>&nbsp;
 <BR>&nbsp;
 <BR>&nbsp;
 
 <P>
 <HR WIDTH="100%">
 <BR>[<A HREF="dev.html">Table of 
-Contents</A>&nbsp; |&nbsp; <a href="dev_parmetis.html">Next:&nbsp; ParMETIS and 
-Jostle</a>&nbsp; |&nbsp; <A HREF="dev_test_script.html">Previous:&nbsp; Using 
-the Test Script</A>]
+Contents</A>&nbsp; |&nbsp; <a href="dev_irb.html">Next:&nbsp; Inertial
+Recursive Bisection (IRB)</a>&nbsp; |&nbsp; <A HREF="dev_test_script.html">
+Previous:&nbsp; Using the Test Script</A>]
 </BODY>
 </HTML>
