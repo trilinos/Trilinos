@@ -1,6 +1,6 @@
 #!/bin/csh
 #
-#  TestAmesos.csh, the Direct Sparse Solver Regresion Test, tests and times the 
+#  TestAmesosJanus.csh, the Direct Sparse Solver Regresion Test, tests and times the 
 #  direct sparse solvers supported by the AME interface.  At present, it 
 #  tests two direct solvers:  Kundert and SuperLU MPI.  It also tests an 
 #  indirect solver, AZTEC, for comparison.  
@@ -29,7 +29,7 @@
 #
 #
 #  A typical call to cxx_AME_mpi.exe is:
-#COMMENT       mpirun -np 1 cxx_AME_mpi.exe SuperLUdist SuperLU.rua 0 1 1 0 1e-14 1e-14
+#COMMENT   yod -sz 1 cxx_AME_mpi.exe SuperLUdist SuperLU.rua 0 1 1 0 1e-14 1e-14
 #  where:
 #     SuperLUdist SuperLU.rua - The solver to use and the matrix to solve
 #     0 1 1 0                 - MatrixType, Special, NumSolves, Transpose
@@ -46,7 +46,7 @@
 
 touch SST.summary
 cat >>AME.summary <SST.summary 
-echo "COMMENT Start TestAmesos.csh, the Direct Sparse Solver Regresion Test" > SST.summary 
+echo "COMMENT Start TestAmesosJanus.csh, the Direct Sparse Solver Regresion Test" > SST.summary 
 echo "COMMENT column 1 - machine name " >> SST.summary 
 echo "COMMENT column 2 - solver name " >> SST.summary 
 echo "COMMENT column 3 - timestamp" >> SST.summary 
@@ -135,12 +135,12 @@ yod -sz 1 cxx_AME_mpi.exe AZTEC   bcsstk18.rsa 0 1 1 0 1e30 1e30  >>SST.stdout
 yod -sz 1 cxx_AME_mpi.exe AZTEC   bcsstk24.rsa 1 1 1 0 1e30 1e30  >>SST.stdout
 
 
-echo "\nCOMMENT End TestAmesos.csh" >> SST.summary 
+echo "\nCOMMENT End TestAmesosJanus.csh" >> SST.summary 
 
 #
 #  Make sure that the tests ran 
 #
-set expected_lines = `grep mpirun TestAmesos.csh | grep -v COMMENT | wc`
+set expected_lines = `grep yod TestAmesosJanus.csh | grep -v COMMENT | wc`
 set results = `grep OK SST.summary | wc`
 if ($results[1] != $expected_lines[1] ) then
     echo 'I expected ' $expected_lines[1] ' correct test results, but only saw: ' $results[1] 
