@@ -1,4 +1,6 @@
 #include "ml_agg_reitzinger.h"
+#define NEW_T_PE
+
 extern int ML_Gen_SmoothPnodal(ML *ml,int level, int clevel, void *data,
 			       double smoothP_damping_factor,
 			       ML_Operator *SPn_mat);
