@@ -29,15 +29,14 @@
 \section{Iterative Solution of Linear Systems with AztecOO}
 \label{chap:aztecoo}
 
-AztecOO is package which extends the Aztec library~\cite{Aztec2.1}.
+The AztecOO \cite{AztecOO-Users-Guide} package extends the Aztec library~\cite{Aztec2.1}.
 Aztec is the legacy iterative solver at the Sandia National
 Laboratories.  It has been extracted from the MPSalsa reacting flow
 code~\cite{MPSalsa-Theory,MPSalsa-User-Guide}, and it is currently
 installed in dozens of Sandia's applications. AztecOO extends this
 package, using C++ classes to enable more sophisticated uses.
 
-AztecOO is intended for the iterative solution of linear systems of the
-form
+AztecOO is intended for the iterative solution of linear systems of the form
 \begin{equation}
   \label{eq:linear_sys}
   A \; X = B ,
@@ -48,16 +47,16 @@ independently of Epetra, in this tutorial it is supposed that $A$ is an
 Epetra\_RowMatrix, and both $X$ and $B$ are Epetra\_Vector or
 Epetra\_MultiVector objects.
 
-In this Chapter, we  will:
+The Chapter reviews the following topics:
 \begin{itemize}
 \item Outline the basic issued of the iterative solution of linear
-  systems (in Section~\ref{aztecoo:theoretical});
+  systems (in \S~\ref{aztecoo:theoretical});
 \item Present the basic usage of AztecOO (in
-  Section~\ref{sec:basic_aztecoo});
+  \S~\ref{sec:basic_aztecoo});
 \item Define one-level domain decomposition preconditioners (in
-  Section~\ref{sec:aztecoo_dd});
+  \S~\ref{sec:aztecoo_dd});
 \item Use of AztecOO problems as preconditioners to other AztecOO
-  problems (in Section~\ref{sec:prec_aztecoo}).
+  problems (in \S~\ref{sec:prec_aztecoo}).
 \end{itemize}
 
 %%%
@@ -67,11 +66,11 @@ In this Chapter, we  will:
 \subsection{Theoretical Background}
 \label{aztecoo:theoretical}
 
-Aim of this Section is to briefly present some aspects of the iterative
-solution of linear systems, to establish a notation. The Section is not
-supposed to be exhaustive, nor complete on this subject. The reader is
-referred to the existing literature for a rigorous presentation (see,
-for instance, \cite{axelsson94iterative,saad96iterative}).
+Our aim is to briefly present the vocabulary and notation 
+required to define the main features available to users.
+The Section is neither exhaustive, nor complete. Readers are
+referred to the existing literature for a comprehensive presentation (see,
+for instance, \cite{temp94,axelsson94iterative,saad96iterative}).
 
 \medskip
 
@@ -82,7 +81,7 @@ technique used to construct a new approximation for the solution, with
 information from previous approximations.  This leads to specific
 iteration methods, generally of Krylov type, such as conjugate gradient
 or GMRES. The second aspect is the transformation of the given system to
-one that can be more efficiently solved by a particular iteration
+one that is solved more efficiently by a particular iteration
 method. This is called {\em preconditioning}.  A good preconditioner
 improves the convergence of the iterative method, sufficiently to
 overcome the extra cost of its construction and application. Indeed,
@@ -92,36 +91,33 @@ in practice.
 The convergence of iterative methods depends on the spectral properties
 of the linear system matrix. The basic idea is to replace the original
 system~(\ref{eq:linear_sys}) by
+the left preconditioned system,
 \[
-P^{-1} A X = P^{-1} B
+P^{-1} A ~ X = P^{-1} B
 \]
-(left-preconditioning), or by
+or the right preconditioned system
 \[
-A P^{-1} P B = B
+A P^{-1} ~ P X = B
 \]
-(right-preconditioning), using a linear transformation $P^{-1}$,
+using the linear transformation $P^{-1}$,
 called preconditioner, in order to improve the spectral properties of
 the linear system matrix. In general terms, a preconditioner is any
 kind of transformation applied to the original system which makes it
 easier to solve.
 
-In a modern perspective, the general problem of finding an efficient
+From a modern perspective, the general problem of finding an efficient
 preconditioner is to identify a linear operator $P$ with the following
 properties:
 \begin{enumerate}
-\item $P$ is a good approximation of $A$ is some sense. Although no
-  general theory is available, we can say that $P$ should act so that
-  $P^{-1} A$ is near to being the identity matrix and its eigenvalues
-  are clustered within a sufficiently small region of the complex plane;
-\item $P$ is efficient, in the sense that the iteration method converges
-  much faster, in terms of CPU time, for the preconditioned system.  In
-  other words, preconditioners must be selected in such a way that the
-  cost of constructing and using them is offset by the improved
-  convergence properties they permit to achieve;
-\item $P$ or $P^{-1}$ can take advantage of the architecture of modern
-  supercomputers, that is, can be constructed and applied in parallel
-  environments.
+\item $P^{-1} A$ is {\em near} to the identity matrix 
+\item The cost of applying the preconditioner is relatively low.
+\item Preconditioning is scalable.
 \end{enumerate}
+
+The role of the $P$ in the iterative method is simple. At each
+iteration, it is necessary to solve an auxiliary linear system
+$P z_m = r_m$ for $z_m$ given $r_m$.
+It is unnecessary to explicitly invert $P$.
 
 It should be stressed that computing the inverse of $P$ is not
 mandatory; actually, the role of $P$ is to ``preconditioning'' the
@@ -131,23 +127,25 @@ to solve than the original system.
 
 \smallskip
 
-The choice of $P$ varies from ``black-box'' algebraic techniques which
-can be applied to general matrices to ``problem dependent''
-preconditioners which exploit special features of a particular class
-of problems. Although problem dependent preconditioners can be very
+The choice of $P$ varies from ``black-box'' algebraic techniques
+for general matrices to ``problem dependent''
+preconditioners that exploit special features of a particular class
+of problems. Although problem dependent preconditioners may be very
 powerful, there is still a practical need for efficient
-preconditioning techniques for large classes of problems. Between
-these two extrema, there is a class of preconditioners which are
+preconditioning techniques for large classes of problems. 
+Even the ``black-box'' preconditioners require parameters, and suitable
+parameter settings do vary.  Between these two extrema, 
+there is a class of preconditioners which are
 ``general-purpose'' for a particular -- although large -- class of
 problems.  These preconditioners are sometimes called ``gray-box''
-preconditioners, since the user has to supply few information about
+preconditioners; users supply a little information about
 the matrix and the problem to be solved.
 
-AztecOO itself implements a variety of balck-box preconditioners, from
-``classical'' methods such as Jacobi and Gauss-Seidel, to polynomial and
-domain-decomposition based preconditioners. More preconditioners can be
+The AztecOO preconditioners include Jacobi, Gauss-Seidel, polynomial and
+domain decomposition based methods \cite{smbg:96}. 
+Furthermore preconditioners can be
 given to an AztecOO Krylov accelerator, by using the Trilinos packages
-IFPACK and ML, covered in Chapter~\ref{chap:ifpack} and \ref{chap:ml},
+IFPACK and ML, covered in \S~\ref{chap:ifpack} and \ref{chap:ml},
 respectively.
 
 %%%
@@ -157,40 +155,45 @@ respectively.
 \subsection{Basic Usage}
 \label{sec:basic_aztecoo}
 
+First we delineate the steps required to apply 
+AztecOO to a linear system.
 To solve a linear system with AztecOO, one must create an
 \verb!Epetra_LinearProblem!  object (see
-Section~\ref{sec:linear_problem}) with the command
+\S~\ref{sec:linear_problem}) with the command
 \begin{verbatim}
 Epetra_LinearProblem Problem(&A,&x,&b);
 \end{verbatim}
-where \verb!A! is an Epetra matrix, and \verb!x,b! two Epetra
+\verb!A! is an Epetra matrix, and both \verb!x! and \verb!b! are Epetra
 vectors\footnote{At the current stage of development, AztecOO does not
   take advantage of the Epetra\_MultiVectors. It accepts Multi\_Vectors,
   but it will solve the linear system corresponding to the first
-  multivector only.}.  Then, the user must create an AztecOO object,
+  multivector only.
+  The Belos package implements block Krylov subspace methods that are
+  significantly more efficient for linear systems with multiple simultaneous right-hand sides.
+}.  Second create an AztecOO object,
 \begin{verbatim}
 AztecOO Solver(Problem);
 \end{verbatim}
-and specify how to solve the linear system. All AztecOO options are set
+Next specify how to solve the linear system. All AztecOO options are set
 using two vectors, one of integers and the other of doubles, as detailed
-in the Aztec's User Guide.
+in the Aztec's User Guide \cite{Aztec2.1}.
 
 To choose among the different AztecOO parameters, the user can create
 two vectors, usually called \verb!options! and \verb!params!, set them
 to the default values, and then override with the desired parameters.
-Default values can be set by
+Here's how to set default values: 
 \begin{verbatim}
 int    options[AZ_OPTIONS_SIZE];
 double params[AZ_PARAMS_SIZE];
 AZ_defaults(options, params);
 \end{verbatim}
-followed by, for instance,
 \begin{verbatim}
 Solver.SetAllAztecOptions( options );
 Solver.SetAllAztecParams( params );
 \end{verbatim}
-Those two functions will copy the values of \verb!options! and
-\verb!params! in internal variables of the AztecOO object.
+The latter two functions copy the values of \verb!options! and
+\verb!params! 
+to variables internal to the AztecOO object.
 
 Alternatively, it is possible to set specific parameters without
 creating \verb!options! and \verb!params!, using the AztecOO methods
@@ -199,107 +202,111 @@ For instance,
 \begin{verbatim}
 Solver.SetAztecOption( AZ_precond, AZ_Jacobi );
 \end{verbatim}
-to specify a point Jacobi preconditioner.  (We refer to the Aztec
-documentation for more details about the various Aztec settings.)
+to specify a point Jacobi preconditioner.  (Please see to the Aztec
+documentation \cite{AztecOO-Users-Guide} for more details about the various Aztec settings.)
 
-To solve the linear system, with maximum number of 1550 iterations and a
-tolerance of $10^{-9}$, the user may call
+Finally solve the linear system, say with a maximum of $1550$ iterations and
+the residual error norm threshold $10^{-9}$:
 \begin{verbatim}
 Solver.Iterate(1550,1E-9);
 \end{verbatim}
 The complete code is in \TriExe{aztec/ex1.cpp}.
 
 Note that the matrix must be in local form (that is, the command
-\verb!A.FillComplete()! has been called before attempting to solve the
-linear system).  Note also that the procedure to solve a linear system
-with AztecOO is identical for sequential and parallel runs.  However
-(for certain choices of the preconditioners), the convergence rate can
-change as the number of processes used in the computation varies.
+\verb!A.FillComplete()! {\em must} have been invoked before solving the
+linear system).  The same AztecOO linear system solution procedure 
+applies in serial and in parallel.  However for some preconditioners,
+the convergence rate (and the number of iterations) 
+depends on the number of processor.
 
 When \verb!Iterate()! returns, one can query for the number of
 iterations performed by the linear solver using
 \verb!Solver.NumIters()!, while \verb!Solver.TrueResidual()! gives the
-(nonscaled) norm the residual.
+(unscaled) norm the residual.
 
 %%%
 %%%
 %%%
-
-
-\subsection{One-level Domain Decomposition Preconditioners}
+\subsection{Overlapping Domain Decomposition Preconditioners}
 \label{sec:aztecoo_dd}
-
-In this Section, we will consider preconditioners based on one-level
-overlapping domain decomposition preconditioners, of the form
+A one level overlapping domain decomposition preconditioners $P$ takes the form
 \begin{equation}
   \label{eq:prec_dd}
   P^{-1} = \sum_{i=1}^M R_i^T \tilde{A}_i^{-1} R_i,
 \end{equation}
-where $P$ is the preconditioning operator, $M$ the number of subdomains.
-$R_i$ is a rectangular matrix, composed by 0's and 1's, which restricts
-a global vector to the subspace defined by the interior of each
-subdomain, and $\tilde{A}_i$ is an approximation of
+The number of subdomains is $M$, 
+$R_i$ is a rectangular Boolean matrix that restricts
+a global vector to the subspace defined by the interior of the $i$th
+subdomain, and $\tilde{A}_i$ approximates
 \begin{equation}
   \label{eq:aztecoo_tilde_a}
   A_i = R_i A R_i^T .
 \end{equation}
-($\tilde{A}_i$ can be equal to $A_i$). Typically, $\tilde{A}_i$ differs
+($\tilde{A}_i$ may equal $A_i$). Typically, $\tilde{A}_i$ differs
 from $A_i$ when incomplete factorizations are used in (\ref{eq:prec_dd})
 to apply $\tilde{A}_i^{-1}$, or when a matrix different from $A$ is used
 in (\ref{eq:aztecoo_tilde_a}).
 
-In order to use a preconditioner of the form (\ref{eq:aztecoo_tilde_a}),
-the user has to specify
+(\ref{eq:aztecoo_tilde_a}),
+The specification starts with
 \begin{verbatim}
 Solver.SetAztecOption( AZ_precond, AZ_dom_decomp );
 \end{verbatim}
-followed by the choice of incomplete factorization (and possibly with
-that of corresponding parameters, for instance the level-of-fill),
+Next if an incomplete factorization of $A_i$ will be used, then specify its parameters:
 \begin{verbatim}
 Solver.SetAztecOption( AZ_subdomain_solve, AZ_ilu );
 Solver.SetAztecOption( AZ_graph_fill, 1 );
 \end{verbatim}
-Exact subdomain solves can be used setting\footnote{AztecOO must be
+On the other hand, exact subdomain solves 
+\footnote{AztecOO must be
   configured with the option {\tt --enable-aztecoo-azlu}, and the
   package Y12M is required.}
+are specified like this:
 \begin{verbatim}
 Solver.SetAztecOption( AZ_subdomain_solve, AZ_lu );
 \end{verbatim}
 
-By default, AztecOO will consider zero-overlap among the rows of
-$A$\footnote{For point matrices arising from the FE discretization of
-  the PDE problem with local functions, this is equivalent to one mesh
-  element of overlap.}. However, this value of overlap can be changed by,
-for instance,
+The default amount of overlap is $0$; this is equivalent to
+``block" Jacobi preconditioning with block size equal to the size of the subdomain. 
+If amount of overlap is one ($k$),
 \begin{verbatim}
 Solver.SetAztecOption( AZ_overlap, 1 );
 \end{verbatim}
+then the ``block" is augmented by all distance one ($k$),
+neighbors in the sparse matrix graph.
 
-\begin{remark} By using AztecOO in conjunction with ML, one can easily
-  implement a two-level domain decomposition schemes. The reader is
-  referred to Section~\ref{sec:ml_DD}.
+\begin{remark} 
+  Two-level domain decomposition schemes \cite{smbg:96}
+are available through AztecOO in conjunction with ML.
+Please see \S~\ref{sec:ml_DD}.
 \end{remark}
 
-\begin{remark} Another Trilinos package can be used to compute
-  incomplete factorizations, IFPACK. It is covered in
-  Chapter~\ref{chap:ifpack}.
+\begin{remark} The IFPACK Trilinos package (see \S~\ref{chap:ifpack})
+computes different incomplete factorizations. 
 \end{remark}
 
-An example of the performances of AztecOO preconditioners is reported in
-Table~\ref{tab:aztecoo:dd}. The table reports the estimated condition
-number of one-level Schwarz preconditioner with mininal overlap. The
-problem is a 2D Laplace operator, discretized using a 5-point formula on
-a regular Cartesian grid. As predicted by theory, the condition number
-is linear $\mathcal{O}(1/hH)$, where $h$ is the mesh size, and $H$ is
-the size of each (square) subdomain.
+Consider for example a Laplace equation descretized with the $5$-point stencil 
+over a regular Cartesian grid on a square.
+If $h$ is the mesh size, then the condition number of the unpreconditioned system
+is $\mathcal{O}(h)^{-2}$.
+In theory \cite{smbg:96} if $H$ is the size of each (square) subdomain,
+a one level Schwarz preconditioner with minimal overlap
+yields a preconditioned linear system with condition number
+$\mathcal{O}(hH)^{-1}$.
+The AztecOO preconditioner delivers the 
+Table~\ref{tab:aztecoo:dd} gives the estimated condition
+numbers for the corresponding AztecOO preconditioner.
 
-File \TriExe{aztecoo/ex3.cpp} reports the code used to obtain these
-retults. The code uses the Trilinos\_Util\_CrsMatrixGallery class to
-create the matrix. For instance, to estimate the condition number with
-$h=1/60$ and $H=1/3$, one may have:
+The corresponding source code is contained in
+\newline
+\TriExe{aztecoo/ex3.cpp} 
+\newline
+The code uses the Trilinos\_Util\_CrsMatrixGallery class to
+create the matrix. The command to estimate the condition number with
+$h=1/60$ and $H=1/3$ is 
 \begin{verbatim}
-[msala:aztecoo]> mpirun -np 9 ex3.exe -problem_type=laplace_2d \
-                 -problem_size=900 -map_type=box
+mpirun -np 9 ex3.exe -problem_type=laplace_2d \
+       -problem_size=900 -map_type=box
 \end{verbatim}
 
 \begin{table}[htbp]
@@ -310,11 +317,11 @@ $h=1/60$ and $H=1/3$, one may have:
     \hline
     $H=1/3$ & 40.01 & 83.80 & 183.41 \\
     $H=1/4$ & 51.46 & 106.01 & 223.22 \\
-    $H=1/6$ & 79.19 & 15040 & 311.26 \\
+    $H=1/6$ & 79.19 & 150.40 & 311.26 \\
     $H=1/8$ & -     & 191.06 & 403.29 \\
     \hline
   \end{tabular}
-  \caption{Condition number for one-level domain decomposition precondititoner on a square.}
+  \caption{Condition number for one-level domain decomposition preconditioner on a square.}
   \label{tab:aztecoo:dd}
 \end{table}
 
@@ -325,16 +332,29 @@ $h=1/60$ and $H=1/3$, one may have:
 \subsection{AztecOO Problems as Preconditioners}
 \label{sec:prec_aztecoo}
 
-AztecOO can accept Epetra\_Operator objects as preconditioners. This
-means that any class, derived from Epetra\_Operator an implementing
-method \verb!ApplyInverse()!, can be used in the preconditioning phase,
+Preconditioners fall into two categories.
+In the first category 
+are preconditioners that are a function of the entires of the coefficient matrix.
+Examples include Jacobi, Gauss-Seidel, incomplete factorizations, and domain
+decomposition preconditioners.
+The second category contains preconditioners 
+such as polynomial preconditioners
+that are defined by the action of
+the matrix on some set of vectors.
+For example only category two preconditioners apply in matrix free mode.
+The topic of this section is another type of category two preconditioner, 
+preconditioning one Krylov subspace method by another Krylov subspace method, 
+
+AztecOO accepts Epetra\_Operator objects as preconditioners. That is
+any class, derived from an Epetra\_Operator implementing the
+method \verb!ApplyInverse()! may also be used as a preconditioner,
 using \verb!SetPreOperator()!. AztecOO itself can be used to define a
-preconditioner for AztecOO, as class AztecOO\_Operator (which takes an
+preconditioner for AztecOO; the class AztecOO\_Operator (which takes an
 AztecOO object in the construction phase) is derived from
 Epetra\_Operator.
 
 File \TriExe{aztecoo/ex2.cpp} shows how to use an AztecOO solver in the
-preconditioning phase.  The main steps are here reported.
+preconditioning phase.  The main steps are sketched here.
 
 First, we have to specify the linear problem to be solved (set the
 linear operator, the solution and the right-hand side), and create an
@@ -343,39 +363,37 @@ AztecOO object:
 Epetra_LinearProblem A_Problem(&A, &x, &b);
 AztecOO A_Solver(A_Problem);
 \end{verbatim}
-Now, we have to define the preconditioner. For the sake of simplicity,
-we here suppose to use the same Epetra\_Matrix \verb!A! in the
-preconditioning phase. However, the two matrices can in principle be
-different (although of the same size).
+Now, we have to define the preconditioner. For the sake of clarity,
+we use the same Epetra\_Matrix \verb!A! in the
+preconditioning phase. However, the two matrices may differ.
 \begin{verbatim}
 Epetra_CrsMatrix P(A);
 \end{verbatim}
-(This operation is in general expensive as involves the copy
-constructor, and it is used here for the sake of simplicity.)  Then, we
-create the linear problem which will be used as preconditioner.  This
-requires several steps.  (Note that all the \verb!P! prefix identifies
-preconditioner' objects.)
+(This operation is in general expensive as it involves the copy
+constructor. It is used here for the sake of clarity.)  Then, we
+create the linear problem that will be used as a preconditioner.  This
+takes a few steps to explain.  Note that all the \verb!P! prefix identifies
+preconditioner' objects.
 \begin{enumerate}
-\item We create the linear system solve at each prec step, and and we
+\item Create the linear system solve at each preconditioning step, and and we
   assign the linear operator (in this case, the matrix A itself)
 \begin{verbatim}
 Epetra_LinearProblem P_Problem;
 P_Problem.SetOperator(&P);
 \end{verbatim}
-\item As we wish to use AztecOO to solve the prec step (in a recursive
-  way), we have to define an AztecOO object:
+\item As we wish to use AztecOO to solve the preconditioner step recursively, 
+we have to define an AztecOO object:
 \begin{verbatim}
 AztecOO P_Solver(P_Problem);  
 \end{verbatim}
-\item Now, we customize certain parameters:
+\item Specify a particular preconditioner:
 \begin{verbatim}
 P_Solver.SetAztecOption(AZ_precond, AZ_Jacobi);
 P_Solver.SetAztecOption(AZ_output, AZ_none);
 P_Solver.SetAztecOption(AZ_solver, AZ_cg);
 \end{verbatim}
-\item The last step is to create an AztecOO\_Operator, so that we can set
-  the Aztec's preconditioner with, and we set the user's defined
-  preconditioners:
+\item Create an AztecOO\_Operator, to set
+  the Aztec's preconditioner with and set the users defined preconditioners:
 \begin{verbatim}
 AztecOO_Operator
 P_Operator(&P_Solver, 10);  
@@ -383,7 +401,7 @@ A_Solver.SetPrecOperator(&P_Operator);
 \end{verbatim}
 (Here 10 is the maximum number of iterations of the AztecOO solver in
 the preconditioning phase.)
-\item Finally, we solve the linear system:
+\item Solve the linear system:
 \begin{verbatim}
 int Niters=100;
 A_Solver.SetAztecOption(AZ_kspace, Niters);
@@ -395,25 +413,20 @@ A_Solver.Iterate(Niters, 1.0E-12);
 
 \begin{table}
 \begin{center}
-\begin{tabular}{ | p{5cm} | p{10cm} | }
-\hline
-\verb!AZ_cg! & Conjugate gradient (only applicable to symmetric positive
-definite matrices). \\
-\verb!AZ_cg_condnum! & As \verb!AZ_cg!, but also estimates the condition
-number of the preconditioned linear operator. \\
-\verb!AZ_gmres! & Restarted generalized minimal residual (returned in
-\verb!params[AZ_condnum]!). \\ 
-\verb!AZ_gmres_condnum! & As \verb!AZ_gmres!, but also estimates the condition
-number of the preconditioned linear operator  (returned in
-\verb!params[AZ_condnum]!). \\ 
-\verb!AZ_cgs! &  Conjugate gradient squared.\\
-\verb!AZ_tfqmr! & Transpose-free quasi minimal residual. \\
-\verb!AZ_bicgstab! &  Bi-conjugate gradient with stabilization.\\
-\verb!AZ_lu! & Sparse direct solver (one process only). This requires
-AztecOO to be configured with {\tt --enable-aztecoo-azlu}. \\
-\hline
-\end{tabular}
-\caption{Avialable choices for {\tt options[AZ\_solver]}.}
+\begin{tabular}{ | p{5cm} | p{10cm} | } \hline
+\verb!AZ_cg!         & Conjugate Gradient method (intended for symmetric positive definite matrices). \\
+\verb!AZ_cg_condnum! & \verb!AZ_cg! that also estimates the condition number of the preconditioned linear system
+                       (returned in \verb!params[AZ_condnum]!)\\ 
+\verb!AZ_gmres!      & restarted Generalized Minimal Residual method \\
+\verb!AZ_gmres_condnum! & \verb!AZ_gmres! that also estimates the condition number of the preconditioned linear operator
+                          (returned in \verb!params[AZ_condnum]!)\\ 
+\verb!AZ_cgs! &  Conjugate Gradient Squared method\\
+\verb!AZ_tfqmr! & Transpose-Free Quasi Minimal Residual method \\
+\verb!AZ_bicgstab! &  Bi-Conjugate Gradient with Stabilization method\\
+\verb!AZ_lu! & Serial sparse direct linear solver available if
+               AztecOO is configured with {\tt --enable-aztecoo-azlu}\\
+\hline \end{tabular}
+\caption{ {\tt options[AZ\_solver]} Choices}
 \label{tab:aztec:solver}
 \end{center}
 \end{table}
@@ -433,7 +446,10 @@ The following methods are often used:
 \item \verb!SetAztecDefaults()! can be used to restore default values in
   the options and params vectors.
 \end{itemize}
-
-The official documentation of AztecOO can be found in
-\cite{AztecOO-Users-Guide}.
-
+\verb!NumIters()! is useful in performance optimization.
+A less costly preconditioner is viable if \verb!NumIters()! is ``small", 
+and a more costly preconditioner may be worthwhile if \verb!NumIters()! is ``large".
+Many iterative methods with right preconditioning 
+apply the residual error norm threshold to the preconditioned residual,
+$P^{-1}r$, instead of $r=b-Ax$.
+\verb!TrueResidal()! will always return the unscaled residual norm.
