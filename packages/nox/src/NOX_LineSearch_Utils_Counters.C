@@ -62,22 +62,22 @@ bool NOX::LineSearch::Utils::Counters::setValues(NOX::Parameter::List& lineSearc
   return true;
 }
 
-void NOX::LineSearch::Utils::Counters::increaseNumLineSearches(int numLS)
+void NOX::LineSearch::Utils::Counters::incrementNumLineSearches(int numLS)
 {
   totalNumLineSearchCalls += numLS;
 }
 
-void NOX::LineSearch::Utils::Counters::increaseNumNonTrivialLineSearches(int numNonTrivialLS)
+void NOX::LineSearch::Utils::Counters::incrementNumNonTrivialLineSearches(int numNonTrivialLS)
 {
   totalNumNonTrivialLineSearches += numNonTrivialLS;
 }
  
-void NOX::LineSearch::Utils::Counters::increaseNumFailedLineSearches(int numFailedLS)
+void NOX::LineSearch::Utils::Counters::incrementNumFailedLineSearches(int numFailedLS)
 {
   totalNumFailedLineSearches += numFailedLS;
 }
 
-void NOX::LineSearch::Utils::Counters::increaseNumIterations(int numInnerIters)
+void NOX::LineSearch::Utils::Counters::incrementNumIterations(int numInnerIters)
 {
   totalNumIterations += numInnerIters;
 }
