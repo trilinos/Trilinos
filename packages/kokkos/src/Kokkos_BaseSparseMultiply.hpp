@@ -34,33 +34,36 @@
 
 namespace Kokkos {
 
-//! Kokkos::BaseSparseMultiply: A class for constructing and using real-valued double-precision sparse compressed row matrices.
+//! Kokkos::BaseSparseMultiply: A reference class for computing sparse matrix multiplication operations.
 
-/*! The Kokkos::BaseSparseMultiply enables the piecewise construction and use of real-valued double-precision sparse matrices
-  where matrix entries are intended for row access.
-
-  At this time, the primary function provided by Kokkos::BaseSparseMultiply is matrix times vector and matrix 
-  times multi-vector multiplication.  It is also possible to extract matrix rows from a constructed matrix.
+/*! The Kokkos::BaseSparseMultiply provide basic functionality for computing sparse matrix times vector, or
+    sparse matrix times multivector operations.  This class is templated on the ordinal (integer) and 
+    scalar (floating point) types, so it can compute using any reasonable data type.
 
   <b>Constructing Kokkos::BaseSparseMultiply objects</b>
 
   Constructing Kokkos::BaseSparseMultiply objects is a multi-step process.  The basic steps are as follows:
   <ol>
-  <li> Create Kokkos::BaseSparseMultiply instance, including storage,  via constructor.
-  <li> Enter values via one or more Put or SumInto functions.
-  <li> Complete construction via FillComplete call.
+  <li> Create Kokkos::BaseSparseMultiply instance:  The constructor takes no arguments.
+  <li> Register the structure of a Kokkos::CisMatrix object using initializeStructure(): 
+       We provide this method so that derived implementations can
+       take advantage of multiple problems that have the same structure.  In this situation, 
+       initializeStructure() would
+       be called once and then initializeValues() would be called repeatedly, amortizing the cost of 
+       setting up the structure.
+       This method may be called only once.
+  <li> Register the values of a Kokkos::CisMatrix object using initializeValues(): This method is 
+       used to pass values to the
+       multiply class.  It can be called repeatedly if multiple matrices have the same structure.
   </ol>
-
-  Note that, even after a matrix is constructed, it is possible to update existing matrix entries.  It is \e not possible to
-  create new entries.
 
   <b> Counting Floating Point Operations </b>
 
   Each Kokkos::BaseSparseMultiply object keeps track of the number
-  of \e serial floating point operations performed using the specified object as the \e this argument
-  to the function.  The Flops() function returns this number as a double precision number.  Using this 
-  information, in conjunction with the Kokkos::Time class, one can get accurate parallel performance
-  numbers.  The ResetFlops() function resets the floating point counter.
+  of floating point operations performed using the specified object as the \e this argument
+  to the function.  The getFlops() function returns this number as a double precision number.  Using this 
+  information, in conjunction with the Kokkos::Time class, one can get accurate  performance
+  numbers.  The resetFlops() function resets the floating point counter.
 
 
 */    
@@ -85,31 +88,33 @@ namespace Kokkos {
     /*!
       This interface supports matrices that implement the Kokkos::CisMatrix matrix interface.
       \param A (In)  An instance of a class that implements the Kokkos::CisMatrix.  All necessary information
-      about the matrix can be obtained via this interface.
+             about the matrix can be obtained via this interface.
       \param willKeepStructure (In) If set to true, the user is asserting that the strucuture of the matrix, as
-      defined in the getIndices() method of the CisMatrix object A will be kept.  Specifically, the pointer to an 
-      array of indices returned for each i in that method will continue to point to valid index data.  By default,
-      this argument is set to false, implying that the calling routine is \e not required to maintain the validity 
-      of this data.  If the calling routine is planning to keep this data anyway, setting this argument to true can
-      reduce the overall memory requirements.
+             defined in the getIndices() method of the CisMatrix object A will be kept.  Specifically, the pointer to an 
+	     array of indices returned for each i in that method will continue to point to valid index data.  By default,
+	     this argument is set to false, implying that the calling routine is \e not required to maintain the validity 
+	     of this data.  If the calling routine is planning to keep this data anyway, setting this argument to true can
+	     reduce the overall memory requirements.
       \return Integer error code, set to 0 if successful.
     */
     virtual int initializeStructure(const CisMatrix<OrdinalType, ScalarType>& A, bool willKeepStructure = false);
  
     //! Initialize values of matrix
     /*!
-      This interface supports matrices that implement the Kokkos::CisMatrix matrix interface.
+      This interface supports matrices that implement the Kokkos::CisMatrix matrix interface
+.
       \param A (In)  An instance of a class that implements the Kokkos::CisMatrix.  All necessary information
-      about the matrix can be obtained via this interface.
+             about the matrix can be obtained via this interface.
       \param willKeepValues (In) If set to true, the user is asserting that the strucuture of the matrix, as
-      defined in the getIndices() method of the CisMatrix object A will be kept.  Specifically, the pointer to an 
-      array of indices returned for each i in that method will continue to point to valid index data.  By default,
-      this argument is set to false, implying that the calling routine is \e not required to maintain the validity 
-      of this data.  If the calling routine is planning to keep this data anyway, setting this argument to true can
-      reduce the overall memory requirements.
+             defined in the getIndices() method of the CisMatrix object A will be kept.  Specifically, the pointer to an 
+	     array of indices returned for each i in that method will continue to point to valid index data.  By default,
+	     this argument is set to false, implying that the calling routine is \e not required to maintain the validity 
+	     of this data.  If the calling routine is planning to keep this data anyway, setting this argument to true can
+	     reduce the overall memory requirements.
       \param checkStructure (In) If set to true, the structure of A will be checked against the structure of
-      the matrix passed in to the initializeStructure() methods.  This parameter is false by default.
-      \return Integer error code, set to 0 if successful.
+             the matrix passed in to the initializeStructure() methods.  This parameter is false by default.
+
+      \return Integer error code, set to 0 if successful, returns - 1 if checkStructure is true and structure is changed.
     */
     virtual int initializeValues(const CisMatrix<OrdinalType, ScalarType>& A, bool willKeepValues = false,
 				 bool checkStructure = false);
@@ -163,6 +168,7 @@ namespace Kokkos {
     */
     virtual bool getCanUseValues() const {return(true);};
 
+    //! Returns a reference to the most recent Kokkos::CisMatrix that was passed into the \e this object.
     virtual const CisMatrix<OrdinalType, ScalarType> & getMatrix() const {
       if (matrixForValues_==0) return(*matrixForStructure_);
       else return(*matrixForValues_);
@@ -171,10 +177,11 @@ namespace Kokkos {
     //@}
   
   protected:
+    void copyProfile();
     void copyStructure();
-    void deleteStructure();
-    void copyOrdinals(OrdinalType * vec, OrdinalType len);
-    void copyScalars(ScalarType * vec, OrdinalType len);
+    void deleteStructureAndProfile();
+    void copyOrdinals(OrdinalType len, OrdinalType * vecIn, OrdinalType * vecOut);
+    void copyScalars(OrdinalType len, ScalarType * vecIn, ScalarType * vecOut);
     void copyValues();
     void deleteValues();
 
@@ -196,6 +203,8 @@ namespace Kokkos {
 
     OrdinalType ** indices_;
     OrdinalType * profile_;
+    ScalarType * allValues_;
+    OrdinalType * allIndices_;
     double costOfMatVec_;
 
   };
@@ -218,12 +227,15 @@ namespace Kokkos {
       values_(0),
       indices_(0),
       profile_(0),
-      costOfMatVec_(0) {
+      allValues_(0),
+      allIndices_(0),
+      costOfMatVec_(0.0) {
   }
 
   //==============================================================================
   template<typename OrdinalType, typename ScalarType>
-  BaseSparseMultiply<OrdinalType, ScalarType>::BaseSparseMultiply(const BaseSparseMultiply<OrdinalType, ScalarType> &source) 
+  BaseSparseMultiply<OrdinalType, ScalarType>::BaseSparseMultiply(const BaseSparseMultiply<OrdinalType,
+								  ScalarType> &source) 
     : CompObject(source),
       matrixForStructure_(source.matrixForStructure_),
       matrixForValues_(source.matrixForValues_),
@@ -239,33 +251,44 @@ namespace Kokkos {
       values_(source.values_),
       indices_(source.indices_),
       profile_(source.profile_),
+      allValues_(source.allValues_),
+      allIndices_(source.allIndices_),
       costOfMatVec_(source.costOfMatVec_) {
 
+    copyProfile();
     copyStructure();
     copyValues();
   }
 
   //==============================================================================
   template<typename OrdinalType, typename ScalarType>
+  void BaseSparseMultiply<OrdinalType, ScalarType>::copyProfile() {
+
+    if (profile_!=0) {
+      OrdinalType * old_profiles = profiles_;
+      profiles_ = new OrdinalType*[NumRC_];
+      copyOrdinals(numRC_, old_profiles, profiles_);
+    }
+  }
+
+  //==============================================================================
+  template<typename OrdinalType, typename ScalarType>
   void BaseSparseMultiply<OrdinalType, ScalarType>::copyStructure() {
 
-    // Note:  In order to call this function, the following attributes must be set, and pointers
-    //        must be set to the data that is being copied:
-    // numCols_, numRows_, isRowOriented_ must be set
-    // pntr_, profile_, allIndices_, indices_ must be set to data that will be copied.
-    // These pointers will be set to new memory that is a copy of these arrays (except 
-    // for pointers that are null.
-
-    OrdinalType i;
-
-    if (profile_!=0) copyOrdinals(profiles_, numRC_);
     if (indices_!=0) {
       OrdinalType ** tmp_indices =indices_;
       indices_ = new OrdinalType*[numRC_];
-      for (i=0; i< numRC_; i++) {
-	indices_[i] = tmp_indices[i];
-	if (!willKeepStructure_) 
-	  copyOrdinals(indices_[i], profiles_[i]);
+      if (willKeepStructure_) {
+	for (OrdinalType i=0; i< numRC_; i++) indices_[i] = tmp_indices[i];
+      }
+      else {
+	allIndices_ = new OrdinalType[numEntries_]; // Allocate storage for all entries at once
+	OrdinalType offset = 0;
+	for (OrdinalType i=0; i< numRC_; i++) {
+	  indices_[i] = allIndices_+offset;
+	  copyOrdinals(profiles_[i], tmp_indices_[i], indices_[i]);
+	  offset += profiles_[i];
+	}
       }
     }
     return;
@@ -275,22 +298,20 @@ namespace Kokkos {
   template<typename OrdinalType, typename ScalarType>
   void BaseSparseMultiply<OrdinalType, ScalarType>::copyValues() {
 
-    // Note:  In order to call this function, the following attributes must be set, and pointers
-    //        must be set to the data that is being copied:
-    // numCols_, numRows_, isRowOriented_ must be set
-    // allValues_, values_ must be set to data that will be copied.
-    // These pointers will be set to new memory that is a copy of these arrays (except 
-    // for pointers that are null.
-
-    OrdinalType i;
-
     if (values_!=0) {
       ScalarType ** tmp_values =values_;
       values_ = new ScalarType*[numRC_];
-      for (i=0; i< numRC_; i++) {
-	values_[i] = tmp_values[i];
-	if (!willKeepValues_) 
-	copyScalars(values_[i], profiles_[i]);
+      if (willKeepValues_) {
+	for (OrdinalType i=0; i< numRC_; i++) values_[i] = tmp_values[i];
+      }
+      else {
+	allValues_ = new ScalarType[numEntries_]; // Allocate storage for all entries at once
+	OrdinalType offset = 0;
+	for (OrdinalType i=0; i< numRC_; i++) {
+	  values_[i] = allValues_+offset;
+	  copyScalars(profiles_[i], tmp_values_[i], values_[i]);
+	  offset += profiles_[i];
+	}
       }
     }
     return;
@@ -298,23 +319,17 @@ namespace Kokkos {
 
   //==============================================================================
   template<typename OrdinalType, typename ScalarType>
-  void BaseSparseMultiply<OrdinalType, ScalarType>::deleteStructure() {
+  void BaseSparseMultiply<OrdinalType, ScalarType>::deleteStructureAndProfile() {
 
-    // Note:  In order to call this function, the following attributes must be set, and pointers
-    //        must be set to the data that is being copied:
-    // numCols_, numRows_, isRowOriented_ must be set
-    // pntr_, profile_, allIndices_, indices_ must be set to data that will be copied.
-    // These pointers will be set to new memory that is a copy of these arrays (except 
-    // for pointers that are null.
 
-    OrdinalType i;
+    // If profile is present, then delete it
+    // If indices are present and we allocated the storage, then delete it
 
-    if (profile_!=0) delete [] profile_;
     if (indices_!=0) {
-      if (!willKeepStructure_) 
-	for (i=0; i< numRC_; i++) delete [] indices_[i];
+      if (!willKeepStructure_ && allIndices_!=0) delete [] allIndices_;
       delete [] indices_;
       }
+    if (profile_!=0) delete [] profile_;
     return;
   }
 
@@ -322,41 +337,29 @@ namespace Kokkos {
   template<typename OrdinalType, typename ScalarType>
   void BaseSparseMultiply<OrdinalType, ScalarType>::deleteValues() {
 
-    // Note:  In order to call this function, the following attributes must be set, and pointers
-    //        must be set to the data that is being copied:
-    // numCols_, numRows_, isRowOriented_ must be set
-    // allValues_, values_ must be set to data that will be copied.
-    // These pointers will be set to new memory that is a copy of these arrays (except 
-    // for pointers that are null.
-
-    OrdinalType i;
+    // If values are present and we allocated the storage, then delete it
 
     if (values_!=0) {
-      if (!willKeepValues_) 
-	for (i=0; i< numRC_; i++) delete [] values_[i];
+      if (!willKeepValues_ && allValues_!=0) delete [] allValues_;
       delete [] values_;
     }
     return;
   }
   //==============================================================================
   template<typename OrdinalType, typename ScalarType>
-  void BaseSparseMultiply<OrdinalType, ScalarType>::copyOrdinals(OrdinalType * vec, OrdinalType len) {
-
-    OrdinalType i;
-    OrdinalType * tmp_pntr = vec;
-    vec = new OrdinalType[len];
-    for (i=0; i<len; i++) vec[i] = tmp_pntr[i];
+  void BaseSparseMultiply<OrdinalType, ScalarType>::copyOrdinals(OrdinalType len, 
+								 OrdinalType * vecIn, 
+								 OrdinalType * vecOut) {
+    for (OrdinalType i=0; i<len; i++) vecOut[i] = vecIn[i];
     return;
   }
 
   //==============================================================================
   template<typename OrdinalType, typename ScalarType>
-  void BaseSparseMultiply<OrdinalType, ScalarType>::copyScalars(ScalarType * vec, OrdinalType len) {
-
-    OrdinalType i;
-    ScalarType * tmp_vals = vec;
-    vec = new OrdinalType[len];
-    for (i=0; i<len; i++) vec[i] = tmp_vals[i];
+  void BaseSparseMultiply<OrdinalType, ScalarType>::copyScalars(OrdinalType len, 
+								ScalarType * vecIn,
+								ScalarType * vecOut) {
+    for (OrdinalType i=0; i<len; i++) vecOut[i] = vecIn[i];
     return;
   }
 
@@ -364,8 +367,8 @@ namespace Kokkos {
   template<typename OrdinalType, typename ScalarType>
   BaseSparseMultiply<OrdinalType, ScalarType>::~BaseSparseMultiply(){
 
-    deleteStructure();
     deleteValues();
+    deleteStructureAndProfile();
 
   }
 
@@ -388,27 +391,33 @@ namespace Kokkos {
     if (isRowOriented_) numRC_ = numRows_;
 
     profile_ = new OrdinalType[numRC_];
-    
     indices_ = new OrdinalType*[numRC_];
-
     OrdinalType numRCEntries;
     OrdinalType * indicesRC;
 
-    for (i=0; i<numRC_; i++) {
-      int ierr = A.getIndices(i, numRCEntries, indicesRC);
-      if (ierr!=0) return(ierr);
-      profile_[i] = numRCEntries;
-      indices_[i] = indicesRC;
+    if (willKeepStructure) {
+      for (i=0; i<numRC_; i++) {
+	int ierr = A.getIndices(i, numRCEntries, indicesRC);
+	if (ierr!=0) return(ierr);
+	profile_[i] = numRCEntries;
+	indices_[i] = indicesRC;
+      }
+    }
+    else { // If user will not keep structure, we must copy it
+      
+      allIndices_ = new OrdinalType[numEntries_]; // Allocate storage for all entries at once
+      
+      OrdinalType offset = 0;
+      for (i=0; i< numRC_; i++) {
+	int ierr = A.getIndices(i, numRCEntries, indicesRC);
+	if (ierr!=0) return(ierr);
+	profile_[i] = numRCEntries;
+	indices_[i] = allIndices_+offset;
+	copyOrdinals(numRCEntries, indicesRC, indices_[i]);
+	offset += numRCEntries;
+      }
     }
 
-    // If user will not keep structure, we must copy it
-    if (!willKeepStructure_)
-      for (i=0; i< numRC_; i++) {
-	OrdinalType numIndices = profile_[i];
-	OrdinalType * new_indices = new OrdinalType[numIndices];
-	OrdinalType * old_indices = indices_[i];
-	for (j=0; j<numIndices; j++) new_indices[j] = old_indices[j];
-      }
     costOfMatVec_ = 2.0 * ((double) numEntries_);
     haveStructure_ = true;
     return(0);
@@ -430,21 +439,41 @@ namespace Kokkos {
 
     ScalarType * valuesRC;
 
-    for (i=0; i<numRC_; i++) {
-      int ierr = A.getValues(i, valuesRC);
-      if (ierr!=0) return(ierr);
-      values_[i] = valuesRC;
-    }
-
-    // If user will not keep structure, we must copy it
-    if (!willKeepValues_)
-      for (i=0; i< numRC_; i++) {
-	OrdinalType numIndices = profile_[i];
-	ScalarType * new_values = new ScalarType[numIndices];
-	ScalarType * old_values = values_[i];
-	for (j=0; j<numIndices; j++) new_values[j] = old_values[j];
+    if (willKeepValues_) {
+      for (i=0; i<numRC_; i++) {
+	int ierr = A.getValues(i, valuesRC);
+	if (ierr!=0) return(ierr);
+	values_[i] = valuesRC;
       }
+    }
+    else { // If user will not keep values, we must copy it
+      if (allValues_==0) allValues_ = new ScalarType[numEntries_]; // Allocate storage for all entries at once
+      OrdinalType offset = 0;
+      for (i=0; i< numRC_; i++) {
+	int ierr = A.getValues(i, valuesRC);
+	if (ierr!=0) return(ierr);
+	values_[i] = allValues_+offset;
+	copyScalars(profile_[i], valuesRC, values_[i]);
+	offset += profile_[i];
+      }
+    }
     haveValues_ = true;
+
+    if (checkStructure) { // Compare strucuture of current matrix to structure of matrix used in initializeStructure
+      if (matrixForValues_==matrixForStructure_) return(0); // Pointing to the same matrix, assume structure is same
+      OrdinalType numRCEntries;
+      OrdinalType * indicesRC_ref;
+      OrdinalType * indicesRC;
+
+      for (i=0; i<numRC_; i++) {
+	int ierr = matrixForValues_->getIndices(i, numRCEntries, indicesRC);
+	if (ierr!=0) return(-1);
+	if (numRCEntries!=profile_[i]) return(-1);
+	indicesRC_ref = indices_[i];
+	for (j=0; j<numRCEntries; j++) if (indicesRC[j]!=indicesRC_ref[j]) return(-1);
+	
+      }
+    }
     return(0);
   }
 
@@ -457,7 +486,7 @@ namespace Kokkos {
     if (!haveValues_) return(-1); // Can't compute without values!
     if (conjA) return(-2); // Unsupported at this time
     if (x.getLength()!=numCols_) return(-3); // Number of cols in A not same as number of rows in x
-    if (y.getLength()!=numRows_) return(-4); // Number of rows in A not same as number of rows in x				    
+    if (y.getLength()!=numRows_) return(-4); // Number of rows in A not same as number of rows in x
 
     OrdinalType i, j, curNumEntries;
     OrdinalType * curIndices;

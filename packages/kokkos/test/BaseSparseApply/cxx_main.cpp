@@ -5,6 +5,7 @@
 #include "Kokkos_DenseVector.hpp"
 #include "Kokkos_HbMatrix.hpp"
 #include "Kokkos_BaseSparseMultiply.hpp"
+#include "Kokkos_PackedSparseMultiply.hpp"
 #include "Kokkos_Time.hpp"
 #include "Kokkos_Flops.hpp"
 #include "GenerateHbProblem.hpp"
@@ -12,8 +13,9 @@
 using namespace std;
 using namespace Kokkos;
 
-#define OTYPE int
+#define OTYPE long long
 #define STYPE double
+#define MULTCLASS PackedSparseMultiply
 
 template<typename TYPE>
 int PrintTestResults(string, TYPE, TYPE, bool);
@@ -62,12 +64,12 @@ int main(int argc, char* argv[])
   DMultiVector * xm;
   DMultiVector * bm;
   DMultiVector * xexactm;
-  OTYPE nx = 300;
+  OTYPE nx = 100;
   OTYPE ny = nx;
-  OTYPE npoints = 7;
+  OTYPE npoints = 11;
  
-  OTYPE xoff[] = {-1,  0,  1, -1,  0,  1,  0};
-  OTYPE yoff[] = {-1, -1, -1,  0,  0,  0,  1};
+  OTYPE xoff[] = {-2, -1, -1,  0,  1, -1,  0,  1,  0, 1, 2};
+  OTYPE yoff[] = {-1, -2, -1, -1, -1,  0,  0,  0,  1, 2, 1};
 
   OTYPE numEquations = nx*ny;
   OTYPE numEntries; 
@@ -91,7 +93,7 @@ int main(int argc, char* argv[])
     } else {
       if (verbose) cout << "successful."<<endl;
     }
-    Kokkos::BaseSparseMultiply<OTYPE, STYPE> opA;
+    Kokkos::MULTCLASS<OTYPE, STYPE> opA;
     opA.initializeStructure(*A, true);
     opA.initializeValues(*A, true);
     
@@ -133,7 +135,7 @@ int main(int argc, char* argv[])
     } else {
       if (verbose) cout << "successful."<<endl;
     }
-    Kokkos::BaseSparseMultiply<OTYPE, STYPE> opA;
+    Kokkos::MULTCLASS<OTYPE, STYPE> opA;
     opA.initializeStructure(*A, true);
     opA.initializeValues(*A, true);
     
