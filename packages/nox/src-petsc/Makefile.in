@@ -132,13 +132,21 @@ PETSC = \
 # ------------------------------------------------------------------------
 # Noxpetsc library specifications
 # ------------------------------------------------------------------------
-@BUILD_LIBNOXPETSC_TRUE@NOXPETSC_LIB = libnoxpetsc.a
-
-NOXPETSC_H = $(PETSC_H)
-
-libnoxpetsc_a_SOURCES = $(PETSC)
+libnoxpetsc_a_SOURCES = $(PETSC) $(PETSC_H)
 
 libnoxpetsc_a_CXXFLAGS = -I$(top_srcdir)/src $(PETSC_CXXFLAGS)
+
+
+# ------------------------------------------------------------------------
+# When to turn it on
+# ------------------------------------------------------------------------
+
+# List of all libraries to install in $(libexecdir)
+@BUILD_LIBNOXPETSC_TRUE@lib_LIBRARIES = libnoxpetsc.a
+
+
+# List of all headers to install in $(pkgincludedir)
+@BUILD_LIBNOXPETSC_TRUE@pkginclude_HEADERS = $(PETSC_H)
 
 
 # ------------------------------------------------------------------------
@@ -157,18 +165,6 @@ libnoxpetsc_a_CXXFLAGS = -I$(top_srcdir)/src $(PETSC_CXXFLAGS)
 # be sure to include these, and this is the hack to do it.
 # ------------------------------------------------------------------------
 libnoxpetsc_a_LIBADD = $(XTRALDADD)
-
-
-# ------------------------------------------------------------------------
-# List of all libraries to install in $(libexecdir)
-# ------------------------------------------------------------------------
-lib_LIBRARIES = $(NOXPETSC_LIB)
-
-
-# ------------------------------------------------------------------------
-# List of all headers to install in $(pkgincludedir)
-# ------------------------------------------------------------------------
-pkginclude_HEADERS = $(NOXPETSC_H)
 
 
 # ------------------------------------------------------------------------
@@ -202,6 +198,11 @@ CXXLD = $(CXX)
 CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
 	-o $@
 CXXFLAGS = @CXXFLAGS@
+CFLAGS = @CFLAGS@
+COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
+	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
+CCLD = $(CC)
+LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
 DIST_SOURCES = $(libnoxpetsc_a_SOURCES)
 HEADERS = $(pkginclude_HEADERS)
 

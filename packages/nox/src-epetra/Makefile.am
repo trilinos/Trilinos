@@ -60,17 +60,25 @@ EPETRA = \
 # Noxepetra library specifications
 # ------------------------------------------------------------------------
 
-if BUILD_LIBNOXEPETRA
-
-NOXEPETRA_LIB = libnoxepetra.a
-
-endif
-
-NOXEPETRA_H = $(EPETRA_H)
-
-libnoxepetra_a_SOURCES = $(EPETRA)
+libnoxepetra_a_SOURCES = $(EPETRA) $(EPETRA_H)
 
 libnoxepetra_a_CXXFLAGS = -I$(top_srcdir)/src $(TRILINOS_CXXFLAGS)
+
+# ------------------------------------------------------------------------
+# When to turn it on
+# ------------------------------------------------------------------------
+
+if BUILD_LIBNOXEPETRA
+
+# List of all libraries to install in $(libexecdir)
+
+lib_LIBRARIES = libnoxepetra.a
+
+# List of all headers to install in $(pkgincludedir)
+
+pkginclude_HEADERS = $(EPETRA_H)
+
+endif
 
 # ------------------------------------------------------------------------
 # For using a special archiver
@@ -96,18 +104,6 @@ endif
 # ------------------------------------------------------------------------
 
 libnoxepetra_a_LIBADD = $(XTRALDADD)
-
-# ------------------------------------------------------------------------
-# List of all libraries to install in $(libexecdir)
-# ------------------------------------------------------------------------
-
-lib_LIBRARIES = $(NOXEPETRA_LIB)
-
-# ------------------------------------------------------------------------
-# List of all headers to install in $(pkgincludedir)
-# ------------------------------------------------------------------------
-
-pkginclude_HEADERS = $(NOXEPETRA_H)
 
 # ------------------------------------------------------------------------
 # Files to be deleted by 'make maintainer-clean'

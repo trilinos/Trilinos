@@ -53,17 +53,25 @@ PETSC = \
 # Noxpetsc library specifications
 # ------------------------------------------------------------------------
 
-if BUILD_LIBNOXPETSC
-
-NOXPETSC_LIB = libnoxpetsc.a
-
-endif
-
-NOXPETSC_H = $(PETSC_H)
-
-libnoxpetsc_a_SOURCES = $(PETSC)
+libnoxpetsc_a_SOURCES = $(PETSC) $(PETSC_H)
 
 libnoxpetsc_a_CXXFLAGS = -I$(top_srcdir)/src $(PETSC_CXXFLAGS)
+
+# ------------------------------------------------------------------------
+# When to turn it on
+# ------------------------------------------------------------------------
+
+if BUILD_LIBNOXPETSC
+
+# List of all libraries to install in $(libexecdir)
+
+lib_LIBRARIES = libnoxpetsc.a
+
+# List of all headers to install in $(pkgincludedir)
+
+pkginclude_HEADERS = $(PETSC_H)
+
+endif
 
 # ------------------------------------------------------------------------
 # For using a special archiver
@@ -89,18 +97,6 @@ endif
 # ------------------------------------------------------------------------
 
 libnoxpetsc_a_LIBADD = $(XTRALDADD)
-
-# ------------------------------------------------------------------------
-# List of all libraries to install in $(libexecdir)
-# ------------------------------------------------------------------------
-
-lib_LIBRARIES = $(NOXPETSC_LIB)
-
-# ------------------------------------------------------------------------
-# List of all headers to install in $(pkgincludedir)
-# ------------------------------------------------------------------------
-
-pkginclude_HEADERS = $(NOXPETSC_H)
 
 # ------------------------------------------------------------------------
 # Files to be deleted by 'make maintainer-clean'

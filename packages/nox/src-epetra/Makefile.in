@@ -139,13 +139,21 @@ EPETRA = \
 # ------------------------------------------------------------------------
 # Noxepetra library specifications
 # ------------------------------------------------------------------------
-@BUILD_LIBNOXEPETRA_TRUE@NOXEPETRA_LIB = libnoxepetra.a
-
-NOXEPETRA_H = $(EPETRA_H)
-
-libnoxepetra_a_SOURCES = $(EPETRA)
+libnoxepetra_a_SOURCES = $(EPETRA) $(EPETRA_H)
 
 libnoxepetra_a_CXXFLAGS = -I$(top_srcdir)/src $(TRILINOS_CXXFLAGS)
+
+
+# ------------------------------------------------------------------------
+# When to turn it on
+# ------------------------------------------------------------------------
+
+# List of all libraries to install in $(libexecdir)
+@BUILD_LIBNOXEPETRA_TRUE@lib_LIBRARIES = libnoxepetra.a
+
+
+# List of all headers to install in $(pkgincludedir)
+@BUILD_LIBNOXEPETRA_TRUE@pkginclude_HEADERS = $(EPETRA_H)
 
 
 # ------------------------------------------------------------------------
@@ -164,18 +172,6 @@ libnoxepetra_a_CXXFLAGS = -I$(top_srcdir)/src $(TRILINOS_CXXFLAGS)
 # be sure to include these, and this is the hack to do it.
 # ------------------------------------------------------------------------
 libnoxepetra_a_LIBADD = $(XTRALDADD)
-
-
-# ------------------------------------------------------------------------
-# List of all libraries to install in $(libexecdir)
-# ------------------------------------------------------------------------
-lib_LIBRARIES = $(NOXEPETRA_LIB)
-
-
-# ------------------------------------------------------------------------
-# List of all headers to install in $(pkgincludedir)
-# ------------------------------------------------------------------------
-pkginclude_HEADERS = $(NOXEPETRA_H)
 
 
 # ------------------------------------------------------------------------
@@ -216,6 +212,11 @@ CXXLD = $(CXX)
 CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
 	-o $@
 CXXFLAGS = @CXXFLAGS@
+CFLAGS = @CFLAGS@
+COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
+	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
+CCLD = $(CC)
+LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
 DIST_SOURCES = $(libnoxepetra_a_SOURCES)
 HEADERS = $(pkginclude_HEADERS)
 
