@@ -46,11 +46,39 @@ public:
 	};
 	
 	//! Tpetra::VectorSpace constructor taking a BlockElementSpace object.
-	//VectorSpace(BlockElementSpace<OrdinalType> const& blockElementSpace, Platform<OrdinalType, ScalarType> const& platform);
+	VectorSpace(BlockElementSpace<OrdinalType> const& blockElementSpace, Platform<OrdinalType, ScalarType> const& platform)
+		: Object("Tpetra::VectorSpace")
+			, blockspace_(true)
+			, zero_(Teuchos::OrdinalTraits<OrdinalType>::zero())
+			, one_(Teuchos::OrdinalTraits<OrdinalType>::one())
+			, indexBase_(elementSpace.getIndexBase())
+			, numMyEntries_(blockElementSpace.getNumMyPoints())
+			, numGlobalEntries_(blockElementSpace.getNumGlobalPoints())
+			, ElementSpace_()
+			, BlockElementSpace_()
+			, Platform_()
+			, Comm_()
+	{
+		BlockElementSpace_ = Teuchos::rcp(new BlockElementSpace<OrdinalType>(blockElementSpace));
+		Platform_ = Teuchos::rcp(platform.clone());
+		Comm_ = Teuchos::rcp(platform.createScalarComm());
+	};
 	
 	//! Tpetra::VectorSpace copy constructor.
-	VectorSpace(VectorSpace<OrdinalType, ScalarType> const& vectorSpace); // declared but not defined
-	
+	VectorSpace(VectorSpace<OrdinalType, ScalarType> const& vectorSpace)
+		: Object(vectorSpace.label())
+		, blockspace_(vectorSpace.blockspace_)
+		, zero_(vectorSpace.zero_)
+		, one_(vectorSpace.one_)
+		, indexBase_(vectorSpace.indexBase_)
+		, numMyEntries_(vectorSpace.numMyEntries_)
+		, numGlobalEntries_(vectorSpace.numGlobalEntries_)
+		, ElementSpace_(vectorSpace.ElementSpace_)
+		, BlockElementSpace_(vectorSpace.BlockElementSpace_)
+		, Platform_(vectorSpace.Platform_)
+		, Comm_(vectorSpace.Comm_)
+	{}
+
 	//! Tpetra::VectorSpace destructor.
 	~VectorSpace() {};
   
@@ -78,14 +106,16 @@ public:
 	OrdinalType getLocalIndex(OrdinalType globalIndex) const {
 		if(!blockspace_)
 			return(elementSpace().getLID(globalIndex));
-		// *** ADD CODE FOR BLOCKSPACE HERE ***
+		else
+			throw reportError("no global indices for blockspace", 1);
 	};
 	
 	//! Return the global index for a given local index
 	OrdinalType getGlobalIndex(OrdinalType localIndex) const {
 		if(!blockspace_)
 			return(elementSpace().getGID(localIndex));
-		// *** ADD CODE FOR BLOCKSPACE HERE ***
+		else
+			throw reportError("no global indices for blockspace", 1);
 	};
 	
 	//@}
@@ -136,9 +166,11 @@ public:
 		}
 		if(blockspace_) {
 			os << "Built on a BlockElementSpace" << endl;
+			blockElementSpace().print(os);
 		}
 		else {
 			os << "Built on an ElementSpace" << endl;
+			elementSpace().print(os);
 		}
 	};
 	

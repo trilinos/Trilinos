@@ -28,6 +28,7 @@ int main(int argc, char* argv[]) {
 
   const Tpetra::SerialPlatform<int, float> platformV;
 	Tpetra::VectorSpace<int, float> vectorspace(elementspace, platformV);
+	Tpetra::VectorSpace<int, float> v2(vectorspace);
 
 	return(0);
 }
