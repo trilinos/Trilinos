@@ -675,6 +675,10 @@ int ML_Operator_ColPartition2RowPartition(ML_Operator *A, ML_Operator *Atrans)
             ML_EXTERNAL,NULL, A->invec_leng, eye_matvec, 0);
   ML_Operator_Set_Getrow(eye2, ML_EXTERNAL, A->invec_leng, eye_getrows);
   ML_2matmult(A, eye1, Atrans);
+
+  ML_Operator_Destroy(eye1);
+  ML_Operator_Destroy(eye2);
+
  
   return 1;
 }  
@@ -769,5 +773,6 @@ int ML_Operator_Transpose_byrow(ML_Operator *A, ML_Operator *Atrans)
   temp = ML_Operator_Create(A->comm);
   ML_Operator_Transpose(A, temp);
   ML_Operator_ColPartition2RowPartition(temp, Atrans);
+  ML_Operator_Destroy(temp);
   return 1;
 }
