@@ -329,6 +329,8 @@ static int LB_ParMetis_Jostle(
                                proc_list (LB_edge_info); these data structures
                                point to global IDs in this array. */
   LB_ID_PTR nbors_global;
+  LB_ID_PTR lid;            /* Temporary pointer to a local id; used to pass
+                               NULL to query fns when NUM_LID_ENTRIES == 0. */
   char *sendbuf; 
   char *recvbuf;            /* Do not deallocate while still using the hash
                                table with nrecv; the hash_nodes point to 
@@ -454,7 +456,8 @@ static int LB_ParMetis_Jostle(
     local_ids =  LB_MALLOC_LID_ARRAY(lb, num_obj);
     if (obj_wgt_dim)
       float_vwgt = (float *)LB_MALLOC(obj_wgt_dim*num_obj * sizeof(float));
-    if (!vtxdist || !global_ids || !local_ids || (obj_wgt_dim && !float_vwgt)){
+    if (!vtxdist || !global_ids || (num_lid_entries && !local_ids) || 
+        (obj_wgt_dim && !float_vwgt)){
       /* Not enough memory */
       FREE_MY_MEMORY;
       LB_TRACE_EXIT(lb, yo);
@@ -503,10 +506,11 @@ static int LB_ParMetis_Jostle(
     num_edges = 0;
     max_edges = 0;
     for (i=0; i< num_obj; i++){
+      lid = (num_lid_entries ? &(local_ids[i*num_lid_entries]) : NULL);
       nedges = lb->Get_Num_Edges(lb->Get_Edge_List_Data, 
                                  num_gid_entries, num_lid_entries,
                                  &(global_ids[i*num_gid_entries]), 
-                                 &(local_ids[i*num_lid_entries]), &ierr);
+                                 lid, &ierr);
       if (ierr){
         /* Return error */
         FREE_MY_MEMORY;
@@ -658,16 +662,17 @@ static int LB_ParMetis_Jostle(
     for (i=0; i< num_obj; i++){
       gid_off = i * num_gid_entries;
       lid_off = i * num_lid_entries;
+      lid = (num_lid_entries ? &(local_ids[lid_off]) : NULL);
       nedges = lb->Get_Num_Edges(lb->Get_Edge_List_Data, 
                                  num_gid_entries, num_lid_entries,
-                                 &(global_ids[gid_off]), &(local_ids[lid_off]),
+                                 &(global_ids[gid_off]), lid, 
                                  &ierr);
       xadj[i+1] = xadj[i] + nedges;
       if (comm_wgt_dim)
           eptr = &ewgt[jj*comm_wgt_dim];
       lb->Get_Edge_List(lb->Get_Edge_List_Data,
                         num_gid_entries, num_lid_entries,
-                        &(global_ids[gid_off]), &(local_ids[lid_off]),
+                        &(global_ids[gid_off]), lid, 
                         nbors_global, nbors_proc, comm_wgt_dim, eptr, &ierr);
       if (ierr){
         /* Return error */
@@ -680,7 +685,7 @@ static int LB_ParMetis_Jostle(
         printf("[%1d] Debug: i=%d, gid=", lb->Proc, i);
         LB_PRINT_GID(lb, &(global_ids[gid_off]));
         printf("lid=");
-        LB_PRINT_LID(lb, &(local_ids[lid_off]));
+        LB_PRINT_LID(lb, lid);
         printf("nedges=%d\n", nedges);
       }
 
@@ -959,11 +964,11 @@ static int LB_ParMetis_Jostle(
     }
     /* Get the geometry data */
     for (i=0; i<num_obj; i++){
+      lid = (num_lid_entries ? &(local_ids[i*num_lid_entries]) : NULL);
       lb->Get_Geom(lb->Get_Geom_Data, 
                    num_gid_entries, num_lid_entries,
                    &(global_ids[i*num_gid_entries]), 
-                   &(local_ids[i*num_lid_entries]), 
-                   geom_vec, &ierr);
+                   lid, geom_vec, &ierr);
       if (ierr) {
         /* Return error code */
         FREE_MY_MEMORY;

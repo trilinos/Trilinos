@@ -506,6 +506,10 @@ static void LB_get_bounds(LB *lb, pRegion *ptr1, int *num_objs,
   char *yo = "LB_get_bounds";
   LB_ID_PTR obj_global_ids = NULL; 
   LB_ID_PTR obj_local_ids = NULL;
+  LB_ID_PTR lid;       /* Temporary pointer to a local ID; used to pass NULL 
+                          to query functions when NUM_LID_ENTRIES == 0. */
+  LB_ID_PTR next_lid;  /* Temporary pointer to a local ID; used to pass NULL 
+                          to query functions when NUM_LID_ENTRIES == 0. */
   float *obj_wgts = NULL;
   int i, found;
   pRegion tmp, ptr;
@@ -530,7 +534,7 @@ static void LB_get_bounds(LB *lb, pRegion *ptr1, int *num_objs,
     obj_global_ids = LB_MALLOC_GID_ARRAY(lb,(*num_objs));
     obj_local_ids  = LB_MALLOC_LID_ARRAY(lb,(*num_objs));
     obj_wgts       = (float *) LB_MALLOC((*num_objs) * sizeof(float));
-    if (!obj_global_ids || !obj_local_ids || !obj_wgts) {
+    if (!obj_global_ids || (num_lid_entries && !obj_local_ids) || !obj_wgts) {
       fprintf(stderr, "OCT [%d] Error from %s: Insufficient memory\n",lb->Proc,yo);
       exit(-1);
     }
@@ -553,9 +557,10 @@ static void LB_get_bounds(LB *lb, pRegion *ptr1, int *num_objs,
       found = TRUE;
     }
     else {
+      lid = (num_lid_entries ? &(obj_local_ids[0]) : NULL);
       found = lb->Get_First_Obj(lb->Get_First_Obj_Data, 
                                 num_gid_entries, num_lid_entries,
-                                &(obj_global_ids[0]), &(obj_local_ids[0]),
+                                &(obj_global_ids[0]), lid, 
                                 wgtflag, &(obj_wgts[0]), &ierr);
     }
     if (ierr) {
@@ -565,7 +570,7 @@ static void LB_get_bounds(LB *lb, pRegion *ptr1, int *num_objs,
     }
 
     if(found) {
-      initialize_region(lb, &tmp, &(obj_global_ids[0]), &(obj_local_ids[0]),
+      initialize_region(lb, &tmp, &(obj_global_ids[0]), lid,
                         wgtflag, obj_wgts[0]);
       *c0 = (float)tmp->Weight;
       vector_set(min, tmp->Coord);
@@ -574,12 +579,18 @@ static void LB_get_bounds(LB *lb, pRegion *ptr1, int *num_objs,
     *ptr1 = tmp;
     for (i = 1; i < (*num_objs); i++) {
       if (lb->Get_Obj_List == NULL) {
+        if (num_lid_entries) {
+          lid = &(obj_local_ids[(i-1)*num_lid_entries]);
+          next_lid = &(obj_local_ids[i*num_lid_entries]);
+        }
+        else
+          lid = next_lid = NULL;
         found = lb->Get_Next_Obj(lb->Get_Next_Obj_Data, 
                                  num_gid_entries, num_lid_entries,
                                  &(obj_global_ids[(i-1)*num_gid_entries]),
-                                 &(obj_local_ids[(i-1)*num_lid_entries]), 
+                                 lid,
                                  &(obj_global_ids[i*num_gid_entries]),
-                                 &(obj_local_ids[i*num_lid_entries]), 
+                                 next_lid,
                                  wgtflag, &(obj_wgts[i]), &ierr);
         if (ierr) {
           fprintf(stderr, "OCT [%d] %s: Error returned from user defined "
@@ -594,8 +605,7 @@ static void LB_get_bounds(LB *lb, pRegion *ptr1, int *num_objs,
         exit(-1);
       }
       initialize_region(lb, &(ptr), &(obj_global_ids[i*num_gid_entries]), 
-                        &(obj_local_ids[i*num_lid_entries]),
-                        wgtflag, obj_wgts[i]);
+                        next_lid, wgtflag, obj_wgts[i]);
       *c0 += (float)ptr->Weight;
       /* the following is really a hack, since it has no real basis 
          in vector mathematics.... */

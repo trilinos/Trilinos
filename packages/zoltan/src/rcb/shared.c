@@ -90,9 +90,9 @@ int i, ierr = 0;
   *max_obj = (int)(1.5 * *num_obj) + 1;
   *global_ids = LB_MALLOC_GID_ARRAY(lb, (*max_obj));
   *local_ids  = LB_MALLOC_LID_ARRAY(lb, (*max_obj));
-  *dots = (struct Dot_Struct *) LB_MALLOC((*max_obj)*sizeof(struct Dot_Struct));
+  *dots = (struct Dot_Struct *)LB_MALLOC((*max_obj)*sizeof(struct Dot_Struct));
 
-  if (!(*global_ids) || !(*local_ids) || !(*dots)) {
+  if (!(*global_ids) || (lb->Num_LID && !(*local_ids)) || !(*dots)) {
     LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
     return(LB_MEMERR);
   }
@@ -272,7 +272,7 @@ int LB_RB_Send_Outgoing(
     *lidpt = LB_REALLOC_LID_ARRAY(lb, *lidpt, *dotmax);
     *dotpt = (struct Dot_Struct *) 
              LB_REALLOC(*dotpt,(unsigned) *dotmax * sizeof(struct Dot_Struct));
-    if (!*gidpt || !*lidpt || !*dotpt) {
+    if (!*gidpt || (num_lid_entries && !*lidpt) || !*dotpt) {
       LB_TRACE_EXIT(lb, yo);
       return LB_MEMERR;
     }
@@ -293,7 +293,7 @@ int LB_RB_Send_Outgoing(
     lidbuf = LB_MALLOC_LID_ARRAY(lb, outgoing);
     dotbuf = (struct Dot_Struct *)
               LB_MALLOC(outgoing * sizeof(struct Dot_Struct));
-    if (!gidbuf || !lidbuf || !dotbuf) {
+    if (!gidbuf || (num_lid_entries && !lidbuf) || !dotbuf) {
       LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
       LB_FREE(&gidbuf);
       LB_FREE(&lidbuf);
@@ -346,18 +346,20 @@ int LB_RB_Send_Outgoing(
     return (ierr == COMM_MEMERR ? LB_MEMERR : LB_FATAL);
   }
 
-  /* Communicate Global IDs */
-  message_tag--;
-  ierr = LB_Comm_Do(cobj, message_tag, (char *) lidbuf, 
-                    sizeof(LB_ID_TYPE)*num_lid_entries,
-                    (char *) &((*lidpt)[keep*num_lid_entries]));
-  if (ierr != COMM_OK && ierr != COMM_WARN) {
-    LB_PRINT_ERROR(lb->Proc, yo, "Error returned from LB_Comm_Do.");
-    LB_FREE(&gidbuf);
-    LB_FREE(&lidbuf);
-    LB_FREE(&dotbuf);
-    LB_TRACE_EXIT(lb, yo);
-    return (ierr == COMM_MEMERR ? LB_MEMERR : LB_FATAL);
+  /* Communicate Local IDs, if any */
+  if (num_lid_entries) {
+    message_tag--;
+    ierr = LB_Comm_Do(cobj, message_tag, (char *) lidbuf, 
+                      sizeof(LB_ID_TYPE)*num_lid_entries,
+                      (char *) &((*lidpt)[keep*num_lid_entries]));
+    if (ierr != COMM_OK && ierr != COMM_WARN) {
+      LB_PRINT_ERROR(lb->Proc, yo, "Error returned from LB_Comm_Do.");
+      LB_FREE(&gidbuf);
+      LB_FREE(&lidbuf);
+      LB_FREE(&dotbuf);
+      LB_TRACE_EXIT(lb, yo);
+      return (ierr == COMM_MEMERR ? LB_MEMERR : LB_FATAL);
+    }
   }
 
   /* Communicate Dots */

@@ -182,7 +182,7 @@ static void tag_regions(LB *lb, pOctant *octs, int *newpids, int nocts,
     }
     *export_gids = LB_MALLOC_GID_ARRAY(lb, count);
     *export_lids = LB_MALLOC_LID_ARRAY(lb, count);
-    if(!(*export_gids) || !(*export_lids)) {
+    if(!(*export_gids) || (num_lid_entries && !(*export_lids))) {
       fprintf(stderr, "OCT ERROR: Insuffcient memory in %s\n", yo);
       abort();
     }
@@ -207,8 +207,8 @@ static void tag_regions(LB *lb, pOctant *octs, int *newpids, int nocts,
     }
     *prev_gids = LB_MALLOC_GID_ARRAY(lb, count2);
     *prev_lids = LB_MALLOC_LID_ARRAY(lb, count2);
-    if(!(*prev_gids) || !(*prev_lids)) {
-      fprintf(stderr, "OCT ERROR: Insuffcient memory in %s\n", yo);
+    if(!(*prev_gids) || (num_lid_entries && !(*prev_lids))) {
+      fprintf(stderr, "OCT ERROR: Insufficient memory in %s\n", yo);
       abort();
     }
   }
@@ -305,7 +305,7 @@ static void malloc_new_objects(LB *lb, int nsentags, pRegion export_tags,
     tmp = (pRegion) LB_MALLOC(nreceives * sizeof(Region));
     tmp_gids = LB_MALLOC_GID_ARRAY(lb, nreceives);
     tmp_lids = LB_MALLOC_LID_ARRAY(lb, nreceives);
-    if(tmp == NULL || !tmp_gids || !tmp_lids) {
+    if(tmp == NULL || !tmp_gids || (num_lid_entries && !tmp_lids)) {
       fprintf(stderr,"OCT %s ERROR cannot allocate memory for import_objs.",yo);
       abort();
     }
@@ -335,16 +335,18 @@ static void malloc_new_objects(LB *lb, int nsentags, pRegion export_tags,
     abort();
   }
 
-  msgtag2--;
-  ierr = LB_Comm_Do(comm_plan, msgtag2, (char *) export_lids, 
-                    sizeof(LB_ID_TYPE)*num_lid_entries, (char *) tmp_lids);
-  if (ierr != COMM_OK && ierr != COMM_WARN) {
-    fprintf(stderr, "OCT %s Error %s returned from LB_Comm_Do\n", yo, 
-            (ierr == COMM_MEMERR ? "COMM_MEMERR" : "COMM_FATAL"));
-    LB_FREE(&tmp);
-    LB_FREE(&tmp_gids);
-    LB_FREE(&tmp_lids);
-    abort();
+  if (num_lid_entries > 0) {
+    msgtag2--;
+    ierr = LB_Comm_Do(comm_plan, msgtag2, (char *) export_lids, 
+                      sizeof(LB_ID_TYPE)*num_lid_entries, (char *) tmp_lids);
+    if (ierr != COMM_OK && ierr != COMM_WARN) {
+      fprintf(stderr, "OCT %s Error %s returned from LB_Comm_Do\n", yo, 
+              (ierr == COMM_MEMERR ? "COMM_MEMERR" : "COMM_FATAL"));
+      LB_FREE(&tmp);
+      LB_FREE(&tmp_gids);
+      LB_FREE(&tmp_lids);
+      abort();
+    }
   }
 
   LB_Comm_Destroy(&comm_plan);
@@ -377,7 +379,7 @@ static void malloc_new_objects(LB *lb, int nsentags, pRegion export_tags,
       imp[j] = tmp[i];
       imp[j].Global_ID = LB_MALLOC_GID(lb);
       imp[j].Local_ID  = LB_MALLOC_LID(lb);
-      if (!(imp[j].Global_ID) || !(imp[j].Local_ID)) {
+      if (!(imp[j].Global_ID) || (num_lid_entries && !(imp[j].Local_ID))) {
         fprintf(stderr, "OCT %s ERROR unable to malloc import array.", yo);
         abort();
       }
@@ -392,7 +394,7 @@ static void malloc_new_objects(LB *lb, int nsentags, pRegion export_tags,
       imp[j] = prev_tags[i];
       imp[j].Global_ID = LB_MALLOC_GID(lb);
       imp[j].Local_ID  = LB_MALLOC_LID(lb);
-      if (!(imp[j].Global_ID) || !(imp[j].Local_ID)) {
+      if (!(imp[j].Global_ID) || (num_lid_entries && !(imp[j].Local_ID))) {
         fprintf(stderr, "OCT %s ERROR unable to malloc import array.", yo);
         abort();
       }

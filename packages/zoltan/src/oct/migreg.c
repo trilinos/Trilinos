@@ -51,9 +51,9 @@ void LB_migreg_migrate_regions(LB *lb, Region *regions, LB_ID_PTR gids,
     import_gids = LB_MALLOC_GID_ARRAY(lb, n_import);
     import_lids = LB_MALLOC_LID_ARRAY(lb, n_import);
 
-    if(import_objs == NULL) {
-      fprintf(stderr,"ERROR in %s: cannot allocate memory for import_objs.\n", 
-              yo);
+    if (!import_objs || !import_gids || (num_lid_entries && !import_lids)) {
+      fprintf(stderr,"ERROR in %s: Insufficient memory %d.\n", 
+              yo, __LINE__);
       abort();
     }
   }
@@ -82,21 +82,25 @@ void LB_migreg_migrate_regions(LB *lb, Region *regions, LB_ID_PTR gids,
     abort();
   }
 
-  msgtag2--;
-  ierr = LB_Comm_Do(comm_plan, msgtag2, (char *) lids, 
-                    sizeof(LB_ID_TYPE)*num_lid_entries, (char *) import_lids);
-  if (ierr != COMM_OK && ierr != COMM_WARN) {
-    fprintf(stderr, "OCT %s Error %s returned from LB_Comm_Do\n", yo, 
-            (ierr == COMM_MEMERR ? "COMM_MEMERR" : "COMM_FATAL"));
-    LB_FREE(&import_objs);
-    LB_FREE(&import_gids);
-    LB_FREE(&import_lids);
-    abort();
+  if (num_lid_entries > 0) {
+    msgtag2--;
+    ierr = LB_Comm_Do(comm_plan, msgtag2, (char *) lids, 
+                      sizeof(LB_ID_TYPE)*num_lid_entries, (char *) import_lids);
+    if (ierr != COMM_OK && ierr != COMM_WARN) {
+      fprintf(stderr, "OCT %s Error %s returned from LB_Comm_Do\n", yo, 
+              (ierr == COMM_MEMERR ? "COMM_MEMERR" : "COMM_FATAL"));
+      LB_FREE(&import_objs);
+      LB_FREE(&import_gids);
+      LB_FREE(&import_lids);
+      abort();
+    }
   }
 
   for (i=0; i<n_import; i++) {
     import_objs[i].Global_ID = &(import_gids[i*num_gid_entries]);
-    import_objs[i].Local_ID = &(import_lids[i*num_lid_entries]);
+    import_objs[i].Local_ID = (num_lid_entries 
+                                 ? &(import_lids[i*num_lid_entries]) 
+                                 : NULL);
     LB_insert_orphan(lb, import_objs[i]);
   }
 
@@ -281,7 +285,9 @@ void LB_migreg_migrate_orphans(LB *lb, pRegion RegionList, int nregions,
     vector_set(regions2[i].Coord, regions[i]->Coord);
     regions2[i].Weight = regions[i]->Weight;
     regions2[i].Global_ID = &(gids2[i*num_gid_entries]);
-    regions2[i].Local_ID = &(lids2[i*num_lid_entries]);
+    regions2[i].Local_ID = (num_lid_entries 
+                              ? &(lids2[i*num_lid_entries]) 
+                              : NULL);
     LB_SET_GID(lb, &(gids2[i*num_gid_entries]), regions[i]->Global_ID);
     LB_SET_LID(lb, &(lids2[i*num_lid_entries]), regions[i]->Local_ID);
     regions2[i].Proc = regions[i]->Proc;
@@ -321,6 +327,10 @@ static void LB_copy_info(LB *lb, pRegion src, pRegion *dest) {
   }
   copy->Global_ID = LB_MALLOC_GID(lb);
   copy->Local_ID  = LB_MALLOC_LID(lb);
+  if (copy->Global_ID == NULL || (lb->Num_LID && copy->Local_ID == NULL)) {
+    fprintf(stderr,"ERROR in LB_copy_info, cannot allocate memory\n");
+    abort();
+  }
   
   /* set up return pointer */
   *dest = copy;
