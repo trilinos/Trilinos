@@ -94,6 +94,10 @@ if BUILD_NEW_PACKAGE
 NEW_PACKAGE_SUBDIR = new_package
 endif
 
+if BUILD_TPETRA
+TPETRA_SUBDIR = tpetra
+endif
+
 if BUILD_TEUCHOS
 TEUCHOS_SUBDIR = teuchos
 endif
@@ -137,7 +141,7 @@ endif
 #Epetra must be listed first due to aztecoo's dependence on Epetra
 ## #np# - Add your subdir, i.e. $(NEW_PACKAGE_SUBDIR) which is defined 
 ## above, to this list
-SUBDIRS = $(TEUCHOS_SUBDIR) $(EPETRA_SUBDIR) $(TRIUTILS_SUBDIR) \
+SUBDIRS = $(TEUCHOS_SUBDIR) $(EPETRA_SUBDIR) $(TPETRA_SUBDIR) $(TRIUTILS_SUBDIR) \
 	  $(IFPACK_SUBDIR) \
 	  $(AZTECOO_SUBDIR) $(ML_SUBDIR) $(KOMPLEX_SUBDIR) \
 	  $(TSFCOREUTILS_SUBDIR) $(TSFCORE_SUBDIR) $(TSF_SUBDIR) \

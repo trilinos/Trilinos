@@ -84,8 +84,12 @@ AM_CONDITIONAL(BUILD_TRIUTILS, test "X$ac_cv_use_triutils" != "Xno" ||
 TAC_ARG_ENABLE_FEATURE(epetraext, [Build epetraext], EPETRAEXT, yes)
 AM_CONDITIONAL(BUILD_EPETRAEXT, test "X$ac_cv_use_epetraext" != "Xno")
 
+TAC_ARG_ENABLE_FEATURE(tpetra, [Build tpetra], TPETRA, no)
+AM_CONDITIONAL(BUILD_TPETRA, test "X$ac_cv_use_tpetra" != "Xno")
+
 TAC_ARG_ENABLE_FEATURE(teuchos, [Build teuchos], TEUCHOS, no)
 AM_CONDITIONAL(BUILD_TEUCHOS, test "X$ac_cv_use_teuchos" != "Xno" ||
+	test "X$ac_cv_use_tpetra" != "Xno" || 
 	test "X$ac_cv_use_belos" != "Xno" || 
 	test "X$ac_cv_use_anasazi" != "Xno") 
 
@@ -97,8 +101,8 @@ TAC_ARG_ENABLE_FEATURE(new_package, [Build new_package], NEW_PACKAGE, yes)
 AM_CONDITIONAL(BUILD_NEW_PACKAGE, test "X$ac_cv_use_new_package" != "Xno")
 
 
-
 if test "X$ac_cv_use_teuchos" != "Xno" ||
+	test "X$ac_cv_use_tpetra" != "Xno" ||
 	test "X$ac_cv_use_anasazi" != "Xno" ||
 	test "X$ac_cv_use_belos" != "Xno"; then
   AC_CONFIG_SUBDIRS([packages/teuchos])
@@ -201,6 +205,10 @@ fi
 ## #np# - Copy the next three lines, and change package name
 if test "X$ac_cv_use_new_package" != "Xno"; then
   AC_CONFIG_SUBDIRS([packages/new_package])
+fi
+
+if test "X$ac_cv_use_tpetra" != "Xno"; then
+  AC_CONFIG_SUBDIRS([packages/tpetra])
 fi
 
 AC_ARG_ENABLE(,[
