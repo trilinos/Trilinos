@@ -294,8 +294,14 @@ class Epetra_MpiComm: public Epetra_Object, public virtual Epetra_Comm {
   MPI_Comm Comm_; //!< \internal MPI_Comm variable.
   int rank_;
   int size_;
-  static const int minTag_= 24050;
-  static const int maxTag_= 24099;
+  enum {minTag_= 24050};
+  enum {maxTag_= 24099};
+
+  // Some day, when the Microsoft 6.0 C++ compiler disappears, we can use ANSI/ISO standard
+  // declarations for minTag_ and maxTag_
+  //static const int minTag_= 24050;
+  //static const int maxTag_= 24099;
+
   mutable int curTag_;
 };
 #endif /* _EPETRA_MPICOMM_H_ */

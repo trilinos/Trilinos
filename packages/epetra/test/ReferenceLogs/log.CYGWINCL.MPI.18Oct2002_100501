@@ -1,0 +1,3538 @@
+Date:  Fri Oct 18 10:05:01 2002
+CYGWIN_NT-5.0 HEROUXWTP 1.3.12(0.54/3/2) 2002-07-06 02:16 i686 unknown
+############ cxx_BlockMap_mpi.exe ##############
+Epetra::MpiComm
+  Processor 3 of 4 total processors
+Epetra::MpiComm
+  Processor 0 of 4 total processors
+Epetra::MpiComm
+  Processor 1 of 4 total processors
+Epetra::MpiComm
+  Processor 2 of 4 total processors
+*******************************************************************************************
+        Testing Exceptions (Expect error messages if EPETRA_NO_ERROR_REPORTS is not defined
+*******************************************************************************************
+
+
+Checking Epetra_BlockMap(-2, ElementSize, IndexBase, Comm)
+Checked OK
+
+
+Checking Epetra_BlockMap(2, 3, ElementSize, IndexBase, Comm)
+Checked OK
+
+
+
+
+*******************************************************************************************
+        Testing valid constructor now......................................................
+*******************************************************************************************
+
+
+Checking Epetra_BlockMap(NumGlobalElements, ElementSize, IndexBase, Comm)
+Checked OK
+
+
+Checking Epetra_BlockMap(NumGlobalElements, NumMyElements, ElementSize, IndexBase, Comm)
+Checked OK
+
+
+Checking Epetra_BlockMap(NumGlobalElements, NumMyElements, MyGlobalElements,  ElementSize, IndexBase, Comm)
+Checked OK
+
+
+Checking Epetra_BlockMap(NumGlobalElements, NumMyElements, MyGlobalElements,  ElementSizeList, IndexBase, Comm)
+Checked OK
+
+
+Checking Epetra_BlockMap(*Map)
+Checked OK
+
+
+Test ostream << operator
+Epetra::BlockMap
+Epetra::BlockMap
+Epetra::BlockMap
+
+Number of Global Elements  = 46
+Number of Global Points = 198
+Maximum of all GIDs        = 40002
+Minimum of all GIDs        = 9991
+Index Base                 = 0
+0
+
+Number of Local Elements   = 10
+Number of Local Points  = 41
+Maximum of my GIDs         = 10000
+Minimum of my GIDs         = 9991
+
+         MyPID           Local Index        Global Index   FirstPointInElement     ElementSize  
+             0                 0             10000                 0                 2    
+             0                 1              9999                 2                 3    
+             0                 2              9998                 5                 4    
+             0                 3              9997                 9                 5    
+             0                 4              9996                14                 6    
+             0                 5              9995                20                 7    
+             0                 6              9994                27                 2    
+             0                 7              9993                29                 3    
+             0                 8              9992                32                 4    
+             0                 9              9991                36                 5    
+Epetra::BlockMap
+
+Number of Local Elements   = 11
+Number of Local Points  = 47
+Maximum of my GIDs         = 20001
+Minimum of my GIDs         = 19991
+
+         MyPID           Local Index        Global Index   FirstPointInElement     ElementSize  
+             1                 0             20001                 0                 2    
+             1                 1             20000                 2                 3    
+             1                 2             19999                 5                 4    
+             1                 3             19998                 9                 5    
+             1                 4             19997                14                 6    
+             1                 5             19996                20                 7    
+             1                 6             19995                27                 2    
+             1                 7             19994                29                 3    
+             1                 8             19993                32                 4    
+             1                 9             19992                36                 5    
+             1                10             19991                41                 6    
+
+Number of Local Elements   = 12
+Number of Local Points  = 54
+Maximum of my GIDs         = 30002
+Minimum of my GIDs         = 29991
+
+         MyPID           Local Index        Global Index   FirstPointInElement     ElementSize  
+             2                 0             30002                 0                 2    
+             2                 1             30001                 2                 3    
+             2                 2             30000                 5                 4    
+             2                 3             29999                 9                 5    
+             2                 4             29998                14                 6    
+             2                 5             29997                20                 7    
+             2                 6             29996                27                 2    
+             2                 7             29995                29                 3    
+             2                 8             29994                32                 4    
+             2                 9             29993                36                 5    
+             2                10             29992                41                 6    
+             2                11             29991                47                 7    
+
+Number of Local Elements   = 13
+Number of Local Points  = 56
+Maximum of my GIDs         = 40002
+Minimum of my GIDs         = 39990
+
+         MyPID           Local Index        Global Index   FirstPointInElement     ElementSize  
+             3                 0             40002                 0                 2    
+             3                 1             40001                 2                 3    
+             3                 2             40000                 5                 4    
+             3                 3             39999                 9                 5    
+             3                 4             39998                14                 6    
+             3                 5             39997                20                 7    
+             3                 6             39996                27                 2    
+             3                 7             39995                29                 3    
+             3                 8             39994                32                 4    
+             3                 9             39993                36                 5    
+             3                10             39992                41                 6    
+             3                11             39991                47                 7    
+             3                12             39990                54                 2    
+############ cxx_Comm_mpi.exe ##############
+Epetra::MpiComm
+  Processor 3 of 4 total processors.  Using MPI_Comm from Petra_Comm: Processor 3 of 4 (should be the same).
+Processor 3 Time to reach barrier: 0.0663464
+Epetra::MpiComm
+  Processor 1 of 4 total processors.  Using MPI_Comm from Petra_Comm: Processor 1 of 4 (should be the same).
+Processor 1 Time to reach barrier: 0.0330936
+Epetra::MpiComm
+  Processor 2 of 4 total processors.  Using MPI_Comm from Petra_Comm: Processor 2 of 4 (should be the same).
+Processor 2 Time to reach barrier: 0.049649
+Epetra::MpiComm
+  Processor 0 of 4 total processors.  Using MPI_Comm from Petra_Comm: Processor 0 of 4 (should be the same).
+Processor 0 Time to reach barrier: 0.0165571
+Processor 3 Sum result  500247 Time to get beyond barrier: 0.172752
+Processor 1 Sum result  500355 Time to get beyond barrier: 0.106334
+Processor 2 Sum result  500238 Time to get beyond barrier: 0.0731682
+Processor 0 Sum result  500137 Time to get beyond barrier: 0.0230934
+The values on the root processor are: 0 1 2 3 
+The values on processor 1 are: 0 1 2 3 
+The values on processor 2 are: 0 1 2 3 
+The values on processor 3 are: 0 1 2 3 
+
+Broadcast (type int) test passed!
+
+The values on the root processor are: 0 1 2 3 
+The values on processor 1 are: 0 1 2 3 
+The values on processor 2 are: 0 1 2 3 
+The values on processor 3 are: 0 1 2 3 
+
+Broadcast (type double) test passed!
+
+The values on processor 0 are: -20 -10 0 10 
+The values on processor 1 are: -9 1 11 21 
+The values on processor 3 are: 13 23 33 43 
+The values on processor 2 are: 2 12 22 32 
+The max values according to processor 1 are: 13 23 33 43 
+The max values according to processor 3 are: 13 23 33 43 
+The max values according to processor 2 are: 13 23 33 43 
+The max values according to processor 0 are: 13 23 33 43 
+
+MaxAll (type int) test passed!
+
+The values on processor 1 are: 0.5 1 2 4 
+The values on processor 3 are: 0.125 0.25 0.5 1 
+The values on processor 2 are: 0.25 0.5 1 2 
+The values on processor 0 are: 1 2 4 8 
+The max values according to processor 2 are: 1 2 4 8 
+The max values according to processor 0 are: 1 2 4 8 
+The max values according to processor 3 are: 1 2 4 8 
+The max values according to processor 1 are: 1 2 4 8 
+
+MaxAll (type double) test passed!
+
+The values on processor 2 are: 2 12 22 32 
+The values on processor 0 are: -20 -10 0 10 
+The values on processor 3 are: 13 23 33 43 
+The values on processor 1 are: -9 1 11 21 
+The min values according to processor 3 are: -20 -10 0 10 
+The min values according to processor 1 are: -20 -10 0 10 
+The min values according to processor 2 are: -20 -10 0 10 
+The min values according to processor 0 are: -20 -10 0 10 
+
+MinAll (type int) test passed!
+
+The values on processor 3 are: 0.125 0.25 0.5 1 
+The values on processor 1 are: 0.5 1 2 4 
+The values on processor 2 are: 0.25 0.5 1 2 
+The values on processor 0 are: 1 2 4 8 
+The min values according to processor 2 are: 0.125 0.25 0.5 1 
+The min values according to processor 0 are: 0.125 0.25 0.5 1 
+The min values according to processor 3 are: 0.125 0.25 0.5 1 
+The min values according to processor 1 are: 0.125 0.25 0.5 1 
+
+MinAll (type double) test passed!
+
+The values on processor 3 are: 13 23 33 43 
+The values on processor 1 are: -9 1 11 21 
+The values on processor 2 are: 2 12 22 32 
+The values on processor 0 are: -20 -10 0 10 
+The sums of all values according to processor 2 are: -14 26 66 106 
+The sums of all values according to processor 0 are: -14 26 66 106 
+The sums of all values according to processor 3 are: -14 26 66 106 
+The sums of all values according to processor 1 are: -14 26 66 106 
+
+SumAll (type int) test passed!
+
+The values on processor 2 are: 0.25 0.5 1 2 
+The values on processor 0 are: 1 2 4 8 
+The values on processor 3 are: 0.125 0.25 0.5 1 
+The values on processor 1 are: 0.5 1 2 4 
+The sums of all values according to processor 3 are: 1.875 3.75 7.5 15 
+The sums of all values according to processor 1 are: 1.875 3.75 7.5 15 
+The sums of all values according to processor 2 are: 1.875 3.75 7.5 15 
+The sums of all values according to processor 0 are: 1.875 3.75 7.5 15 
+
+SumAll (type double) test passed!
+
+The values on processor 3 are: 13 23 33 43 
+The values on processor 1 are: -9 1 11 21 
+The values on processor 2 are: 2 12 22 32 
+The values on processor 0 are: -20 -10 0 10 
+The sums of all values on processors 0 - 2 are: -27 3 33 63 
+The sums of all values on processors 0 - 0 are: -20 -10 0 10 
+The sums of all values on processors 0 - 3 are: -14 26 66 106 
+The sums of all values on processors 0 - 1 are: -29 -9 11 31 
+
+ScanSum (type int) test passed!
+
+The values on processor 2 are: 0.25 0.5 1 2 
+The values on processor 0 are: 1 2 4 8 
+The values on processor 3 are: 0.125 0.25 0.5 1 
+The values on processor 1 are: 0.5 1 2 4 
+The sums of all values on processors 0 - 3 are: 1.875 3.75 7.5 15 
+The sums of all values on processors 0 - 1 are: 1.5 3 6 12 
+The sums of all values on processors 0 - 2 are: 1.75 3.5 7 14 
+The sums of all values on processors 0 - 0 are: 1 2 4 8 
+
+ScanSum (type double) test passed!
+
+The values on processor 3 are: 13 23 33 43 
+The values on processor 1 are: -9 1 11 21 
+The values on processor 2 are: 2 12 22 32 
+The values on processor 0 are: -20 -10 0 10 
+The combined list of all values from all processors according to processor 2 is: -20 -10 0 10 -9 1 11 21 2 12 22 32 13 23 33 43 
+The combined list of all values from all processors according to processor 0 is: -20 -10 0 10 -9 1 11 21 2 12 22 32 13 23 33 43 
+The combined list of all values from all processors according to processor 3 is: -20 -10 0 10 -9 1 11 21 2 12 22 32 13 23 33 43 
+The combined list of all values from all processors according to processor 1 is: -20 -10 0 10 -9 1 11 21 2 12 22 32 13 23 33 43 
+
+GatherAll (type int) test passed!
+
+The values on processor 2 are: 0.25 0.5 1 2 
+The values on processor 0 are: 1 2 4 8 
+The values on processor 3 are: 0.125 0.25 0.5 1 
+The values on processor 1 are: 0.5 1 2 4 
+The combined list of all values from all processors according to processor 3 is: 1 2 4 8 0.5 1 2 4 0.25 0.5 1 2 0.125 0.25 0.5 1 
+The combined list of all values from all processors according to processor 1 is: 1 2 4 8 0.5 1 2 4 0.25 0.5 1 2 0.125 0.25 0.5 1 
+The combined list of all values from all processors according to processor 2 is: 1 2 4 8 0.5 1 2 4 0.25 0.5 1 2 0.125 0.25 0.5 1 
+The combined list of all values from all processors according to processor 0 is: 1 2 4 8 0.5 1 2 4 0.25 0.5 1 2 0.125 0.25 0.5 1 
+
+GatherAll (type double) test passed!
+
+Epetra::Comm
+::Processor 0 of 1 total processors
+Epetra::Comm
+::Processor 0 of 1 total processors is past serial barrier.
+Epetra::Comm
+::Processor 0 of 1 total processors
+Epetra::Comm
+::Processor 0 of 1 total processors is past serial barrier.
+Epetra::Comm
+::Processor 0 of 1 total processors
+Epetra::Comm
+::Processor 0 of 1 total processors is past serial barrier.
+Epetra::Comm
+::Processor 0 of 1 total processors
+Epetra::Comm
+::Processor 0 of 1 total processors is past serial barrier.
+
+ Epetra_Comm Check OK.
+
+ Epetra_Comm Check OK.
+
+ Epetra_Comm Check OK.
+
+ Epetra_Comm Check OK.
+############ cxx_CrsGraph_mpi.exe ##############
+Processor 1 of 4 is alive.
+Processor 2 of 4 is alive.
+Processor 3 of 4 is alive.
+Processor 0 of 4 is alive.
+
+
+*****Testing variable entry constructor
+
+
+
+Number of local Rows = 6
+
+
+
+Number of local Nonzero entries = 17
+
+
+
+Number of global Rows = 23
+
+
+
+Number of global Nonzero entries = 67
+
+
+
+Rows sorted check OK
+
+
+
+NumIndices function check OK
+
+
+
+*****Testing constant entry constructor
+
+
+
+Number of local Rows = 6
+
+
+
+Number of local Nonzero entries = 6
+
+
+
+Number of global Rows = 23
+
+
+
+Number of global Nonzero entries = 23
+
+
+
+Rows sorted check OK
+
+
+
+NumIndices function check OK
+
+
+
+*****Testing copy constructor
+
+
+
+Number of local Rows = 6
+
+
+
+Number of local Nonzero entries = 6
+
+
+
+Number of global Rows = 23
+
+
+
+Number of global Nonzero entries = 23
+
+
+
+Rows sorted check OK
+
+
+
+NumIndices function check OK
+
+
+
+*****Testing post construction modifications
+
+
+
+Print out tridiagonal matrix, each part on each processor. Index base is one.
+
+
+Epetra::CrsGraph
+
+Number of Global Block Rows  = 16
+Number of Global Block Cols  = 16
+Number of Global Block Diags = 16
+Number of Global Entries     = 46
+
+Number of Global Rows        = 16
+Number of Global Cols        = 16
+Number of Global Diagonals   = 16
+Number of Global Nonzeros    = 46
+
+Global Maximum Block Row Dim = 1
+Global Maximum Block Col Dim = 1
+Global Maximum Num Indices   = 3
+
+
+
+
+
+Number of My Block Rows  = 4
+Number of My Block Cols  = 5
+Number of My Block Diags = 4
+Number of My Entries     = 11
+
+Number of My Rows        = 4
+Number of My Cols        = 5
+Number of My Diagonals   = 4
+Number of My Nonzeros    = 11
+
+My Maximum Block Row Dim = 1
+My Maximum Block Col Dim = 1
+My Maximum Num Indices   = 3
+
+       Row Index     Col Index         Col Index         Col Index      
+             1               1               2    
+             2               1               2               3    
+             3               2               3               4    
+             4               3               4               5    
+Epetra::CrsGraph
+Epetra::CrsGraph
+Epetra::CrsGraph
+
+Number of My Block Rows  = 4
+Number of My Block Cols  = 6
+Number of My Block Diags = 4
+Number of My Entries     = 12
+
+Number of My Rows        = 4
+Number of My Cols        = 6
+Number of My Diagonals   = 4
+Number of My Nonzeros    = 12
+
+My Maximum Block Row Dim = 1
+My Maximum Block Col Dim = 1
+My Maximum Num Indices   = 3
+
+       Row Index     Col Index         Col Index         Col Index      
+             5               5               6               4    
+             6               5               6               7    
+             7               6               7               8    
+             8               7               8               9    
+
+Number of My Block Rows  = 4
+Number of My Block Cols  = 6
+Number of My Block Diags = 4
+Number of My Entries     = 12
+
+Number of My Rows        = 4
+Number of My Cols        = 6
+Number of My Diagonals   = 4
+Number of My Nonzeros    = 12
+
+My Maximum Block Row Dim = 1
+My Maximum Block Col Dim = 1
+My Maximum Num Indices   = 3
+
+       Row Index     Col Index         Col Index         Col Index      
+             9               9              10               8    
+            10               9              10              11    
+            11              10              11              12    
+            12              11              12              13    
+
+Number of My Block Rows  = 4
+Number of My Block Cols  = 5
+Number of My Block Diags = 4
+Number of My Entries     = 11
+
+Number of My Rows        = 4
+Number of My Cols        = 5
+Number of My Diagonals   = 4
+Number of My Nonzeros    = 11
+
+My Maximum Block Row Dim = 1
+My Maximum Block Col Dim = 1
+My Maximum Num Indices   = 3
+
+       Row Index     Col Index         Col Index         Col Index      
+            13              13              14              12    
+            14              13              14              15    
+            15              14              15              16    
+            16              15              16    
+
+
+
+
+############ cxx_CrsMatrix_mpi.exe ##############
+Processor 2 of 4 is alive.
+Processor 3 of 4 is alive.
+Processor 1 of 4 is alive.
+Processor 0 of 4 is alive.
+
+
+Number of local Rows = 10001
+
+
+
+Number of local Nonzero entries = 30002
+
+
+
+Number of global Rows = 40003
+
+
+
+Number of global Nonzero entries = 120007
+
+
+
+Rows sorted check OK
+
+
+
+NumEntries function check OK
+
+Iter = 0  Lambda = 1.98799  Residual of A*q - lambda*q = 1.41122
+Iter = 100  Lambda = 3.98966  Residual of A*q - lambda*q = 0.0141748
+
+
+Total MFLOPs for first solve = 28.4934
+
+
+
+Using transpose of matrix and solving again (should give same result).
+
+
+Iter = 0  Lambda = 1.99632  Residual of A*q - lambda*q = 1.41471
+Iter = 100  Lambda = 3.98981  Residual of A*q - lambda*q = 0.0137967
+
+
+Total MFLOPs for transpose solve = 15.0504
+
+
+
+Increasing the magnitude of first diagonal term and solving again
+
+
+Iter = 0  Lambda = 2.00166  Residual of A*q - lambda*q = 1.40934
+Iter = 100  Lambda = 20.0556  Residual of A*q - lambda*q = 1.69407e-021
+
+
+Total MFLOPs for second solve = 23.1115
+
+
+
+Using transpose of matrix and solving again (should give same result).
+
+
+Iter = 0  Lambda = 1.99346  Residual of A*q - lambda*q = 1.41562
+Iter = 100  Lambda = 20.0556  Residual of A*q - lambda*q = 1.69407e-021
+
+
+Total MFLOPs for tranpose of second solve = 26.0474
+
+
+
+*****Testing constant entry constructor
+
+
+
+Number of local Rows = 10001
+
+
+
+Number of local Nonzero entries = 10001
+
+
+
+Number of global Rows = 40003
+
+
+
+Number of global Nonzero entries = 40003
+
+
+
+Rows sorted check OK
+
+
+
+NumEntries function check OK
+
+
+
+*****Testing copy constructor
+
+
+
+Number of local Rows = 10001
+
+
+
+Number of local Nonzero entries = 10001
+
+
+
+Number of global Rows = 40003
+
+
+
+Number of global Nonzero entries = 40003
+
+
+
+Rows sorted check OK
+
+
+
+NumEntries function check OK
+
+
+
+*****Testing lccal view constructor
+
+
+
+Number of local Rows = 10001
+
+
+
+Number of local Nonzero entries = 10001
+
+
+
+Number of global Rows = 40003
+
+
+
+Number of global Nonzero entries = 40003
+
+
+
+Rows sorted check OK
+
+
+
+NumEntries function check OK
+
+
+
+*****Testing post construction modifications
+
+
+
+Print out tridiagonal matrix, each part on each processor.
+
+
+Epetra::CrsMatrix
+
+Number of Global Rows        = 8
+Number of Global Cols        = 8
+Number of Global Diagonals   = 8
+Number of Global Nonzeros    = 22
+Global Maximum Num Entries   = 3
+
+
+
+
+
+Number of My Rows        = 2
+Number of My Cols        = 3
+Number of My Diagonals   = 2
+Number of My Nonzeros    = 5
+My Maximum Num Entries   = 3
+
+Epetra::CrsMatrix
+Epetra::CrsMatrix
+Epetra::CrsMatrix
+
+Number of My Rows        = 2
+Number of My Cols        = 4
+Number of My Diagonals   = 2
+Number of My Nonzeros    = 6
+My Maximum Num Entries   = 3
+
+
+Number of My Rows        = 2
+Number of My Cols        = 4
+Number of My Diagonals   = 2
+Number of My Nonzeros    = 6
+My Maximum Num Entries   = 3
+
+
+Number of My Rows        = 2
+Number of My Cols        = 3
+Number of My Diagonals   = 2
+Number of My Nonzeros    = 5
+My Maximum Num Entries   = 3
+
+   Processor    Row Index    Col Index           Value     
+       0             0             0     2.000000000000e+000    
+       0             0             1    -1.000000000000e+000    
+       0             1             0    -1.000000000000e+000    
+       0             1             1     2.000000000000e+000    
+       0             1             2    -1.000000000000e+000    
+       1             2             2     2.000000000000e+000    
+       1             2             3    -1.000000000000e+000    
+       1             2             1    -1.000000000000e+000    
+       1             3             2    -1.000000000000e+000    
+       1             3             3     2.000000000000e+000    
+       1             3             4    -1.000000000000e+000    
+       2             4             4     2.000000000000e+000    
+       2             4             5    -1.000000000000e+000    
+       2             4             3    -1.000000000000e+000    
+       2             5             4    -1.000000000000e+000    
+       2             5             5     2.000000000000e+000    
+       2             5             6    -1.000000000000e+000    
+       3             6             6     2.000000000000e+000    
+       3             6             7    -1.000000000000e+000    
+       3             6             5    -1.000000000000e+000    
+       3             7             6    -1.000000000000e+000    
+       3             7             7     2.000000000000e+000    
+
+
+
+
+############ cxx_CrsRectMatrix_mpi.exe ##############
+Processor 1 of 4 is alive.
+Processor 0 of 4 is alive.
+Processor 2 of 4 is alive.
+Processor 3 of 4 is alive.
+
+
+Total MFLOPs for B*Y = 17.4191
+
+
+
+Total MFLOPs for A^T*Y = 8.43909
+
+
+
+Total MFLOPs for A*X = 12.6421
+
+Residual = 4.76382e-015
+
+############ cxx_FECrsMatrix_mpi.exe ##############
+Epetra::MpiComm
+  Processor 1 of 4 total processors
+Epetra::MpiComm
+  Processor 2 of 4 total processors
+Epetra::MpiComm
+  Processor 3 of 4 total processors
+Epetra::MpiComm
+  Processor 0 of 4 total processors
+
+*********************************************************
+Checking Epetra_Map(NumGlobalElements, NumMyElements, IndexBase, Comm)
+*********************************************************
+constructing Epetra_FECrsMatrix
+calling A.SumIntoGlobalValues with 1-D data array
+calling A.SumIntoGlobalValues with 2 values
+calling A.ReplaceGlobalValues with 3 values
+calling A.SumIntoGlobalValues with 3 values
+calling A.ReplaceGlobalValues with 3 values
+calling A.SumIntoGlobalValues with 3 values
+calling A.ReplaceGlobalValues with 3 values
+calling A.SumIntoGlobalValues with 3 values
+calling A.ReplaceGlobalValues with 3 values
+calling A.SumIntoGlobalValues with 3 values
+calling A.ReplaceGlobalValues with 3 values
+calling A.SumIntoGlobalValues with 3 values
+calling A.ReplaceGlobalValues with 3 values
+calling A.SumIntoGlobalValues with 3 values
+calling A.ReplaceGlobalValues with 3 values
+calling A.SumIntoGlobalValues with 3 values
+calling A.ReplaceGlobalValues with 2 values
+calling A.GlobalAssemble()
+after globalAssemble
+after globalAssemble
+after globalAssemble
+after globalAssemble
+
+Number of Global Rows        = 16
+Number of Global Cols        = 16
+Number of Global Diagonals   = 16
+Number of Global Nonzeros    = 54
+Global Maximum Num Entries   = 4
+
+
+
+
+
+Number of My Rows        = 4
+Number of My Cols        = 5
+Number of My Diagonals   = 4
+Number of My Nonzeros    = 13
+My Maximum Num Entries   = 4
+
+
+Number of My Rows        = 4
+Number of My Cols        = 6
+Number of My Diagonals   = 4
+Number of My Nonzeros    = 14
+My Maximum Num Entries   = 4
+
+
+Number of My Rows        = 4
+Number of My Cols        = 6
+Number of My Diagonals   = 4
+Number of My Nonzeros    = 14
+My Maximum Num Entries   = 4
+
+
+Number of My Rows        = 4
+Number of My Cols        = 5
+Number of My Diagonals   = 4
+Number of My Nonzeros    = 13
+My Maximum Num Entries   = 4
+
+   Processor    Row Index    Col Index           Value     
+       0             0             0                      11    
+       0             0             1                      -1    
+       0             0             2                       3    
+       0             1             0                      -1    
+       0             1             1                      11    
+       0             1             2                      -1    
+       0             2             0                       3    
+       0             2             1                      -1    
+       0             2             2                      11    
+       0             2             3                      -4    
+       0             3             2                      -4    
+       0             3             3                       8    
+       0             3             4                      -4    
+       1             4             4                      11    
+       1             4             5                      -1    
+       1             4             6                      -1    
+       1             4             3                      -4    
+       1             5             4                      -1    
+       1             5             5                      11    
+       1             5             6                      -1    
+       1             6             4                       3    
+       1             6             5                      -1    
+       1             6             6                      11    
+       1             6             7                      -4    
+       1             7             6                      -4    
+       1             7             7                       8    
+       1             7             8                      -4    
+       2             8             8                      11    
+       2             8             9                      -1    
+       2             8            10                      -1    
+       2             8             7                      -4    
+       2             9             8                      -1    
+       2             9             9                      11    
+       2             9            10                      -1    
+       2            10             8                       3    
+       2            10             9                      -1    
+       2            10            10                      11    
+       2            10            11                      -4    
+       2            11            10                      -4    
+       2            11            11                       8    
+       2            11            12                      -4    
+       3            12            12                      11    
+       3            12            13                      -1    
+       3            12            14                      -1    
+       3            12            11                      -4    
+       3            13            12                      -1    
+       3            13            13                      11    
+       3            13            14                      -1    
+       3            14            12                       3    
+       3            14            13                      -1    
+       3            14            14                      11    
+       3            14            15                      -4    
+       3            15            14                      -4    
+       3            15            15                       8    
+############ cxx_FEVector_mpi.exe ##############
+Epetra::MpiComm
+  Processor 1 of 4 total processors
+Epetra::MpiComm
+  Processor 3 of 4 total processors
+Epetra::MpiComm
+  Processor 0 of 4 total processors
+
+*********************************************************
+Checking Epetra_BlockMap(NumGlobalElements, NumMyElements, ElementSize, IndexBase, Comm)
+*********************************************************
+Epetra::MpiComm
+  Processor 2 of 4 total processors
+constructing Epetra_FEVector
+calling A.SumIntoGlobalValues with 16 values
+calling A.GlobalAssemble()
+after globalAssemble
+after globalAssemble
+after globalAssemble
+after globalAssemble
+     MyPID           GID               Value  
+         0             0                       4
+         0             1                       4
+         0             2                       4
+         0             3                       4
+         1             4                       4
+         1             5                       4
+         1             6                       4
+         1             7                       4
+         2             8                       4
+         2             9                       4
+         2            10                       4
+         2            11                       4
+         3            12                       4
+         3            13                       4
+         3            14                       4
+         3            15                       4
+############ cxx_ImportExport_mpi.exe ##############
+Processor 1 of 4 is alive.
+Processor 2 of 4 is alive.
+Processor 3 of 4 is alive.
+Processor 0 of 4 is alive.
+MultiVector Import using Importer Check OK
+
+Vector Export using Importer Check OK
+
+Matrix Export Check OK
+############ cxx_Map_mpi.exe ##############
+Epetra::MpiComm
+  Processor 1 of 4 total processors
+Epetra::MpiComm
+  Processor 2 of 4 total processors
+Epetra::MpiComm
+  Processor 3 of 4 total processors
+Epetra::MpiComm
+  Processor 0 of 4 total processors
+*******************************************************************************************
+        Testing Exceptions (Expect error messages if EPETRA_NO_ERROR_REPORTS is not defined
+*******************************************************************************************
+
+
+Checking Epetra_Map(-2, IndexBase, Comm)
+Checked OK
+
+
+Checking Epetra_Map(2, 3, IndexBase, Comm)
+Checked OK
+
+
+
+
+*******************************************************************************************
+        Testing valid constructor now......................................................
+*******************************************************************************************
+
+
+Checking Epetra_Map(NumGlobalElements, IndexBase, Comm)
+Checked OK
+
+
+Checking Epetra_Map(NumGlobalElements, NumMyElements, IndexBase, Comm)
+Checked OK
+
+
+Checking Epetra_Map(NumGlobalElements, NumMyElements, MyGlobalElements,  IndexBase, Comm)
+Checked OK
+
+
+Checking Epetra_Map(*Map)
+Checked OK
+
+
+Checking Epetra_LocalMap(NumMyElements1, IndexBase, Comm)
+Checked OK
+
+
+Checking Epetra_LocalMap(*LocalMap)
+Checked OK
+
+
+Test ostream << operator
+Epetra::Map
+
+Number of Global Elements  = 46
+Number of Global Points = 46
+Maximum of all GIDs        = 40002
+Minimum of all GIDs        = 9991
+Index Base                 = 0
+Constant Element Size      = 1
+
+Number of Local Elements   = 10
+Number of Local Points  = 10
+Maximum of my GIDs         = 10000
+Minimum of my GIDs         = 9991
+
+         MyPID           Local Index        Global Index  
+             0                 0             10000    
+             0                 1              9999    
+             0                 2              9998    
+             0                 3              9997    
+             0                 4              9996    
+             0                 5              9995    
+             0                 6              9994    
+             0                 7              9993    
+             0                 8              9992    
+             0                 9              9991    
+Epetra::Map
+Epetra::Map
+Epetra::Map
+
+Number of Local Elements   = 11
+Number of Local Points  = 11
+Maximum of my GIDs         = 20001
+Minimum of my GIDs         = 19991
+
+         MyPID           Local Index        Global Index  
+             1                 0             20001    
+             1                 1             20000    
+             1                 2             19999    
+             1                 3             19998    
+             1                 4             19997    
+             1                 5             19996    
+             1                 6             19995    
+             1                 7             19994    
+             1                 8             19993    
+             1                 9             19992    
+             1                10             19991    
+
+Number of Local Elements   = 12
+Number of Local Points  = 12
+Maximum of my GIDs         = 30002
+Minimum of my GIDs         = 29991
+
+         MyPID           Local Index        Global Index  
+             2                 0             30002    
+             2                 1             30001    
+             2                 2             30000    
+             2                 3             29999    
+             2                 4             29998    
+             2                 5             29997    
+             2                 6             29996    
+             2                 7             29995    
+             2                 8             29994    
+             2                 9             29993    
+             2                10             29992    
+             2                11             29991    
+
+Number of Local Elements   = 13
+Number of Local Points  = 13
+Maximum of my GIDs         = 40002
+Minimum of my GIDs         = 39990
+
+         MyPID           Local Index        Global Index  
+             3                 0             40002    
+             3                 1             40001    
+             3                 2             40000    
+             3                 3             39999    
+             3                 4             39998    
+             3                 5             39997    
+             3                 6             39996    
+             3                 7             39995    
+             3                 8             39994    
+             3                 9             39993    
+             3                10             39992    
+             3                11             39991    
+             3                12             39990    
+############ cxx_MapColoring_mpi.exe ##############
+Epetra::MpiComm
+  Processor 0 of 4 total processors
+Epetra::MpiComm
+  Processor 1 of 4 total processors
+Epetra::MpiComm
+  Processor 3 of 4 total processors
+Epetra::MpiComm
+  Processor 2 of 4 total processors
+Checked OK
+
+
+Test ostream << operator
+Epetra::MapColoring
+
+ *****************************************
+ Coloring information arranged map element
+ *****************************************
+
+     MyPID           GID               Color  
+         0             0                       5
+         0             2                       2
+         0             4                       9
+         0             6                       4
+         0             8                      13
+         0            10                       1
+         0            12                      11
+         0            14                       3
+         0            16                      15
+         0            18                       5
+         0            20                      19
+         0            22                       2
+         0            24                      17
+         0            26                       4
+         0            28                       7
+         0            30                       1
+         0            32                      11
+         0            34                       3
+         0            36                       9
+         0            38                       5
+         0            40                      13
+         0            42                       2
+         0            44                      17
+         0            46                       4
+         0            48                      15
+         0            50                       1
+         0            52                      19
+         0            54                       3
+         0            56                       9
+         0            58                       5
+         0            60                       7
+         0            62                       2
+         0            64                      11
+         0            66                       4
+         0            68                      15
+         0            70                       1
+         0            72                      13
+         0            74                       3
+         0            76                      17
+         0            78                       5
+         0            80                      21
+         0            82                       2
+         0            84                       5
+         0            86                       4
+         0            88                       9
+         0            90                       1
+         0            92                      13
+         0            94                       3
+         0            96                      11
+         0            98                       5
+         0           100                      15
+         0           102                       2
+         0           104                      19
+         0           106                       4
+         0           108                      17
+         0           110                       1
+         0           112                       7
+         0           114                       3
+         0           116                      11
+         0           118                       5
+         0           120                       9
+         0           122                       2
+         0           124                      13
+         0           126                       4
+         0           128                      17
+         0           130                       1
+         0           132                      15
+         0           134                       3
+         0           136                      19
+         0           138                       5
+         0           140                       9
+         0           142                       2
+         0           144                       7
+         0           146                       4
+         0           148                      11
+         0           150                       1
+         0           152                      15
+         0           154                       3
+         0           156                      13
+         0           158                       5
+         0           160                      17
+         0           162                       2
+         0           164                      21
+         0           166                       4
+         0           168                       5
+         0           170                       1
+         0           172                       9
+         0           174                       3
+         0           176                      13
+         0           178                       5
+         0           180                      11
+         0           182                       2
+         0           184                      15
+         0           186                       4
+         0           188                      19
+         0           190                       1
+         0           192                      17
+         0           194                       3
+         0           196                       7
+         0           198                       5
+Epetra::MapColoring
+Epetra::MapColoring
+Epetra::MapColoring
+         1           208                       5
+         1           210                       2
+         1           212                       9
+         1           214                       4
+         1           216                      13
+         1           218                       1
+         1           220                      11
+         1           222                       3
+         1           224                      15
+         1           226                       5
+         1           228                      19
+         1           230                       2
+         1           232                      17
+         1           234                       4
+         1           236                       7
+         1           238                       1
+         1           240                      11
+         1           242                       3
+         1           244                       9
+         1           246                       5
+         1           248                      13
+         1           250                       2
+         1           252                      17
+         1           254                       4
+         1           256                      15
+         1           258                       1
+         1           260                      19
+         1           262                       3
+         1           264                       9
+         1           266                       5
+         1           268                       7
+         1           270                       2
+         1           272                      11
+         1           274                       4
+         1           276                      15
+         1           278                       1
+         1           280                      13
+         1           282                       3
+         1           284                      17
+         1           286                       5
+         1           288                      21
+         1           290                       2
+         1           292                       5
+         1           294                       4
+         1           296                       9
+         1           298                       1
+         1           300                      13
+         1           302                       3
+         1           304                      11
+         1           306                       5
+         1           308                      15
+         1           310                       2
+         1           312                      19
+         1           314                       4
+         1           316                      17
+         1           318                       1
+         1           320                       7
+         1           322                       3
+         1           324                      11
+         1           326                       5
+         1           328                       9
+         1           330                       2
+         1           332                      13
+         1           334                       4
+         1           336                      17
+         1           338                       1
+         1           340                      15
+         1           342                       3
+         1           344                      19
+         1           346                       5
+         1           348                       9
+         1           350                       2
+         1           352                       7
+         1           354                       4
+         1           356                      11
+         1           358                       1
+         1           360                      15
+         1           362                       3
+         1           364                      13
+         1           366                       5
+         1           368                      17
+         1           370                       2
+         1           372                      21
+         1           374                       4
+         1           376                       5
+         1           378                       1
+         1           380                       9
+         1           382                       3
+         1           384                      13
+         1           386                       5
+         1           388                      11
+         1           390                       2
+         1           392                      15
+         1           394                       4
+         1           396                      19
+         1           398                       1
+         1           400                      17
+         1           402                       3
+         1           404                       7
+         1           406                       5
+         1           408                      11
+         2           420                       5
+         2           422                       2
+         2           424                       9
+         2           426                       4
+         2           428                      13
+         2           430                       1
+         2           432                      11
+         2           434                       3
+         2           436                      15
+         2           438                       5
+         2           440                      19
+         2           442                       2
+         2           444                      17
+         2           446                       4
+         2           448                       7
+         2           450                       1
+         2           452                      11
+         2           454                       3
+         2           456                       9
+         2           458                       5
+         2           460                      13
+         2           462                       2
+         2           464                      17
+         2           466                       4
+         2           468                      15
+         2           470                       1
+         2           472                      19
+         2           474                       3
+         2           476                       9
+         2           478                       5
+         2           480                       7
+         2           482                       2
+         2           484                      11
+         2           486                       4
+         2           488                      15
+         2           490                       1
+         2           492                      13
+         2           494                       3
+         2           496                      17
+         2           498                       5
+         2           500                      21
+         2           502                       2
+         2           504                       5
+         2           506                       4
+         2           508                       9
+         2           510                       1
+         2           512                      13
+         2           514                       3
+         2           516                      11
+         2           518                       5
+         2           520                      15
+         2           522                       2
+         2           524                      19
+         2           526                       4
+         2           528                      17
+         2           530                       1
+         2           532                       7
+         2           534                       3
+         2           536                      11
+         2           538                       5
+         2           540                       9
+         2           542                       2
+         2           544                      13
+         2           546                       4
+         2           548                      17
+         2           550                       1
+         2           552                      15
+         2           554                       3
+         2           556                      19
+         2           558                       5
+         2           560                       9
+         2           562                       2
+         2           564                       7
+         2           566                       4
+         2           568                      11
+         2           570                       1
+         2           572                      15
+         2           574                       3
+         2           576                      13
+         2           578                       5
+         2           580                      17
+         2           582                       2
+         2           584                      21
+         2           586                       4
+         2           588                       5
+         2           590                       1
+         2           592                       9
+         2           594                       3
+         2           596                      13
+         2           598                       5
+         2           600                      11
+         2           602                       2
+         2           604                      15
+         2           606                       4
+         2           608                      19
+         2           610                       1
+         2           612                      17
+         2           614                       3
+         2           616                       7
+         2           618                       5
+         2           620                      11
+         2           622                       2
+         3           636                       5
+         3           638                       2
+         3           640                       9
+         3           642                       4
+         3           644                      13
+         3           646                       1
+         3           648                      11
+         3           650                       3
+         3           652                      15
+         3           654                       5
+         3           656                      19
+         3           658                       2
+         3           660                      17
+         3           662                       4
+         3           664                       7
+         3           666                       1
+         3           668                      11
+         3           670                       3
+         3           672                       9
+         3           674                       5
+         3           676                      13
+         3           678                       2
+         3           680                      17
+         3           682                       4
+         3           684                      15
+         3           686                       1
+         3           688                      19
+         3           690                       3
+         3           692                       9
+         3           694                       5
+         3           696                       7
+         3           698                       2
+         3           700                      11
+         3           702                       4
+         3           704                      15
+         3           706                       1
+         3           708                      13
+         3           710                       3
+         3           712                      17
+         3           714                       5
+         3           716                      21
+         3           718                       2
+         3           720                       5
+         3           722                       4
+         3           724                       9
+         3           726                       1
+         3           728                      13
+         3           730                       3
+         3           732                      11
+         3           734                       5
+         3           736                      15
+         3           738                       2
+         3           740                      19
+         3           742                       4
+         3           744                      17
+         3           746                       1
+         3           748                       7
+         3           750                       3
+         3           752                      11
+         3           754                       5
+         3           756                       9
+         3           758                       2
+         3           760                      13
+         3           762                       4
+         3           764                      17
+         3           766                       1
+         3           768                      15
+         3           770                       3
+         3           772                      19
+         3           774                       5
+         3           776                       9
+         3           778                       2
+         3           780                       7
+         3           782                       4
+         3           784                      11
+         3           786                       1
+         3           788                      15
+         3           790                       3
+         3           792                      13
+         3           794                       5
+         3           796                      17
+         3           798                       2
+         3           800                      21
+         3           802                       4
+         3           804                       5
+         3           806                       1
+         3           808                       9
+         3           810                       3
+         3           812                      13
+         3           814                       5
+         3           816                      11
+         3           818                       2
+         3           820                      15
+         3           822                       4
+         3           824                      19
+         3           826                       1
+         3           828                      17
+         3           830                       3
+         3           832                       7
+         3           834                       5
+         3           836                      11
+         3           838                       2
+         3           840                       9
+
+ **************************************
+ Coloring information arranged by color
+ **************************************
+
+Number of colors in map = 13
+Default color           = 0
+
+     MyPID           LID               Color  
+         0             5                       1
+         0            15                       1
+         0            25                       1
+         0            35                       1
+         0            45                       1
+         0            55                       1
+         0            65                       1
+         0            75                       1
+         0            85                       1
+         0            95                       1
+         0             1                       2
+         0            11                       2
+         0            21                       2
+         0            31                       2
+         0            41                       2
+         0            51                       2
+         0            61                       2
+         0            71                       2
+         0            81                       2
+         0            91                       2
+         0             7                       3
+         0            17                       3
+         0            27                       3
+         0            37                       3
+         0            47                       3
+         0            57                       3
+         0            67                       3
+         0            77                       3
+         0            87                       3
+         0            97                       3
+         0             3                       4
+         0            13                       4
+         0            23                       4
+         0            33                       4
+         0            43                       4
+         0            53                       4
+         0            63                       4
+         0            73                       4
+         0            83                       4
+         0            93                       4
+         0             0                       5
+         0             9                       5
+         0            19                       5
+         0            29                       5
+         0            39                       5
+         0            42                       5
+         0            49                       5
+         0            59                       5
+         0            69                       5
+         0            79                       5
+         0            84                       5
+         0            89                       5
+         0            99                       5
+         0            14                       7
+         0            30                       7
+         0            56                       7
+         0            72                       7
+         0            98                       7
+         0             2                       9
+         0            18                       9
+         0            28                       9
+         0            44                       9
+         0            60                       9
+         0            70                       9
+         0            86                       9
+         0             6                      11
+         0            16                      11
+         0            32                      11
+         0            48                      11
+         0            58                      11
+         0            74                      11
+         0            90                      11
+         0             4                      13
+         0            20                      13
+         0            36                      13
+         0            46                      13
+         0            62                      13
+         0            78                      13
+         0            88                      13
+         0             8                      15
+         0            24                      15
+         0            34                      15
+         0            50                      15
+         0            66                      15
+         0            76                      15
+         0            92                      15
+         0            12                      17
+         0            22                      17
+         0            38                      17
+         0            54                      17
+         0            64                      17
+         0            80                      17
+         0            96                      17
+         0            10                      19
+         0            26                      19
+         0            52                      19
+         0            68                      19
+         0            94                      19
+         0            40                      21
+         0            82                      21
+Number of colors in map = 13
+Default color           = 0
+
+         1             5                       1
+         1            15                       1
+         1            25                       1
+         1            35                       1
+         1            45                       1
+         1            55                       1
+         1            65                       1
+         1            75                       1
+         1            85                       1
+         1            95                       1
+         1             1                       2
+         1            11                       2
+         1            21                       2
+         1            31                       2
+         1            41                       2
+         1            51                       2
+         1            61                       2
+         1            71                       2
+         1            81                       2
+         1            91                       2
+         1             7                       3
+         1            17                       3
+         1            27                       3
+         1            37                       3
+         1            47                       3
+         1            57                       3
+         1            67                       3
+         1            77                       3
+         1            87                       3
+         1            97                       3
+         1             3                       4
+         1            13                       4
+         1            23                       4
+         1            33                       4
+         1            43                       4
+         1            53                       4
+         1            63                       4
+         1            73                       4
+         1            83                       4
+         1            93                       4
+         1             0                       5
+         1             9                       5
+         1            19                       5
+         1            29                       5
+         1            39                       5
+         1            42                       5
+         1            49                       5
+         1            59                       5
+         1            69                       5
+         1            79                       5
+         1            84                       5
+         1            89                       5
+         1            99                       5
+         1            14                       7
+         1            30                       7
+         1            56                       7
+         1            72                       7
+         1            98                       7
+         1             2                       9
+         1            18                       9
+         1            28                       9
+         1            44                       9
+         1            60                       9
+         1            70                       9
+         1            86                       9
+         1             6                      11
+         1            16                      11
+         1            32                      11
+         1            48                      11
+         1            58                      11
+         1            74                      11
+         1            90                      11
+         1           100                      11
+         1             4                      13
+         1            20                      13
+         1            36                      13
+         1            46                      13
+         1            62                      13
+         1            78                      13
+         1            88                      13
+         1             8                      15
+         1            24                      15
+         1            34                      15
+         1            50                      15
+         1            66                      15
+         1            76                      15
+         1            92                      15
+         1            12                      17
+         1            22                      17
+         1            38                      17
+         1            54                      17
+         1            64                      17
+         1            80                      17
+         1            96                      17
+         1            10                      19
+         1            26                      19
+         1            52                      19
+         1            68                      19
+         1            94                      19
+         1            40                      21
+         1            82                      21
+Number of colors in map = 13
+Default color           = 0
+
+         2             5                       1
+         2            15                       1
+         2            25                       1
+         2            35                       1
+         2            45                       1
+         2            55                       1
+         2            65                       1
+         2            75                       1
+         2            85                       1
+         2            95                       1
+         2             1                       2
+         2            11                       2
+         2            21                       2
+         2            31                       2
+         2            41                       2
+         2            51                       2
+         2            61                       2
+         2            71                       2
+         2            81                       2
+         2            91                       2
+         2           101                       2
+         2             7                       3
+         2            17                       3
+         2            27                       3
+         2            37                       3
+         2            47                       3
+         2            57                       3
+         2            67                       3
+         2            77                       3
+         2            87                       3
+         2            97                       3
+         2             3                       4
+         2            13                       4
+         2            23                       4
+         2            33                       4
+         2            43                       4
+         2            53                       4
+         2            63                       4
+         2            73                       4
+         2            83                       4
+         2            93                       4
+         2             0                       5
+         2             9                       5
+         2            19                       5
+         2            29                       5
+         2            39                       5
+         2            42                       5
+         2            49                       5
+         2            59                       5
+         2            69                       5
+         2            79                       5
+         2            84                       5
+         2            89                       5
+         2            99                       5
+         2            14                       7
+         2            30                       7
+         2            56                       7
+         2            72                       7
+         2            98                       7
+         2             2                       9
+         2            18                       9
+         2            28                       9
+         2            44                       9
+         2            60                       9
+         2            70                       9
+         2            86                       9
+         2             6                      11
+         2            16                      11
+         2            32                      11
+         2            48                      11
+         2            58                      11
+         2            74                      11
+         2            90                      11
+         2           100                      11
+         2             4                      13
+         2            20                      13
+         2            36                      13
+         2            46                      13
+         2            62                      13
+         2            78                      13
+         2            88                      13
+         2             8                      15
+         2            24                      15
+         2            34                      15
+         2            50                      15
+         2            66                      15
+         2            76                      15
+         2            92                      15
+         2            12                      17
+         2            22                      17
+         2            38                      17
+         2            54                      17
+         2            64                      17
+         2            80                      17
+         2            96                      17
+         2            10                      19
+         2            26                      19
+         2            52                      19
+         2            68                      19
+         2            94                      19
+         2            40                      21
+         2            82                      21
+Number of colors in map = 13
+Default color           = 0
+
+         3             5                       1
+         3            15                       1
+         3            25                       1
+         3            35                       1
+         3            45                       1
+         3            55                       1
+         3            65                       1
+         3            75                       1
+         3            85                       1
+         3            95                       1
+         3             1                       2
+         3            11                       2
+         3            21                       2
+         3            31                       2
+         3            41                       2
+         3            51                       2
+         3            61                       2
+         3            71                       2
+         3            81                       2
+         3            91                       2
+         3           101                       2
+         3             7                       3
+         3            17                       3
+         3            27                       3
+         3            37                       3
+         3            47                       3
+         3            57                       3
+         3            67                       3
+         3            77                       3
+         3            87                       3
+         3            97                       3
+         3             3                       4
+         3            13                       4
+         3            23                       4
+         3            33                       4
+         3            43                       4
+         3            53                       4
+         3            63                       4
+         3            73                       4
+         3            83                       4
+         3            93                       4
+         3             0                       5
+         3             9                       5
+         3            19                       5
+         3            29                       5
+         3            39                       5
+         3            42                       5
+         3            49                       5
+         3            59                       5
+         3            69                       5
+         3            79                       5
+         3            84                       5
+         3            89                       5
+         3            99                       5
+         3            14                       7
+         3            30                       7
+         3            56                       7
+         3            72                       7
+         3            98                       7
+         3             2                       9
+         3            18                       9
+         3            28                       9
+         3            44                       9
+         3            60                       9
+         3            70                       9
+         3            86                       9
+         3           102                       9
+         3             6                      11
+         3            16                      11
+         3            32                      11
+         3            48                      11
+         3            58                      11
+         3            74                      11
+         3            90                      11
+         3           100                      11
+         3             4                      13
+         3            20                      13
+         3            36                      13
+         3            46                      13
+         3            62                      13
+         3            78                      13
+         3            88                      13
+         3             8                      15
+         3            24                      15
+         3            34                      15
+         3            50                      15
+         3            66                      15
+         3            76                      15
+         3            92                      15
+         3            12                      17
+         3            22                      17
+         3            38                      17
+         3            54                      17
+         3            64                      17
+         3            80                      17
+         3            96                      17
+         3            10                      19
+         3            26                      19
+         3            52                      19
+         3            68                      19
+         3            94                      19
+         3            40                      21
+         3            82                      21
+
+
+
+
+############ cxx_MultiVector_mpi.exe ##############
+Epetra::MpiComm
+  Processor 2 of 4 total processors
+Epetra::MpiComm
+  Processor 0 of 4 total processors
+
+*********************************************************
+Checking Epetra_LocalMap(NumMyElements1, IndexBase, Comm)
+     and Epetra_BlockMap(NumGlobalElements, ElementSize, IndexBase, Comm)
+*********************************************************
+Epetra::MpiComm
+  Processor 1 of 4 total processors
+Epetra::MpiComm
+  Processor 3 of 4 total processors
+XXXXX Testing alpha * A     	 Checked OK
+XXXXX Testing C = alpha * A + B      	 Checked OK
+XXXXX Testing C += B      	 Checked OK
+XXXXX Testing A.dotProd(B)     	 Checked OK
+XXXXX Testing norm1_A      	 Checked OK
+XXXXX Testing norm2_sqrtA     	 Checked OK
+XXXXX Testing norminf_A     	 Checked OK
+XXXXX Testing normw_A     	 Checked OK
+XXXXX Testing minval_A     	 Checked OK
+XXXXX Testing maxval_A     	 Checked OK
+XXXXX Testing meanval_A     	 Checked OK
+XXXXX Testing abs_A     	 Checked OK
+
+
+XXXXX Testing Post-construction modification of a multivector
+
+X[2][35000] = 4 should = 4
+X[2][35006] = 8 should = 8
+X[2][35000] = 2 should = 1
+X[2][35006] = 4 should = 2
+
+
+XXXXX Testing Post-construction modification of a vector
+
+x[35000] = 2 should = 2
+x[35007] = 4 should = 4
+x[35006] = 4 should = 4
+x[35013] = 8 should = 8
+x[35000] = 2 should = 2
+x[35007] = 2 should = 2
+x[35006] = 4 should = 4
+x[35013] = 8 should = 8
+XXXXX Replicated Local MultiVector GEMM tests (Non-Strided Multivectors)
+  alpha = 3,  beta = 1, transa = T, transb = N	 Checked OK
+XXXXX Replicated Local MultiVector GEMM tests (Strided Multivectors)
+  alpha = 3,  beta = 1, transa = T, transb = N	 Checked OK
+XXXXX Generalized 2D dot product via GEMM call     
+  alpha = 2,  beta = 1, transa = T, transb = N	 Checked OK
+XXXXX Generalized 2D vector update via GEMM call     
+  alpha = 2,  beta = 1.1, transa = N, transb = N	 Checked OK
+XXXXX Generalized 2D vector update via GEMM call     
+  alpha = 2,  beta = 1.1, transa = N, transb = T	 Checked OK
+
+*********************************************************
+Checking Epetra_BlockMap(NumGlobalElements, NumMyElements, ElementSize, IndexBase, Comm)
+*********************************************************
+XXXXX Testing alpha * A     	 Checked OK
+XXXXX Testing C = alpha * A + B      	 Checked OK
+XXXXX Testing C += B      	 Checked OK
+XXXXX Testing A.dotProd(B)     	 Checked OK
+XXXXX Testing norm1_A      	 Checked OK
+XXXXX Testing norm2_sqrtA     	 Checked OK
+XXXXX Testing norminf_A     	 Checked OK
+XXXXX Testing normw_A     	 Checked OK
+XXXXX Testing minval_A     	 Checked OK
+XXXXX Testing maxval_A     	 Checked OK
+XXXXX Testing meanval_A     	 Checked OK
+XXXXX Testing abs_A     	 Checked OK
+
+
+XXXXX Testing Post-construction modification of a multivector
+
+X[2][35000] = 4 should = 4
+X[2][35006] = 8 should = 8
+X[2][35000] = 2 should = 1
+X[2][35006] = 4 should = 2
+
+
+XXXXX Testing Post-construction modification of a vector
+
+x[35000] = 2 should = 2
+x[35007] = 4 should = 4
+x[35006] = 4 should = 4
+x[35013] = 8 should = 8
+x[35000] = 2 should = 2
+x[35007] = 2 should = 2
+x[35006] = 4 should = 4
+x[35013] = 8 should = 8
+XXXXX Replicated Local MultiVector GEMM tests (Non-Strided Multivectors)
+  alpha = 3,  beta = 1, transa = T, transb = N	 Checked OK
+XXXXX Replicated Local MultiVector GEMM tests (Strided Multivectors)
+  alpha = 3,  beta = 1, transa = T, transb = N	 Checked OK
+XXXXX Generalized 2D dot product via GEMM call     
+  alpha = 2,  beta = 1, transa = T, transb = N	 Checked OK
+XXXXX Generalized 2D vector update via GEMM call     
+  alpha = 2,  beta = 1.1, transa = N, transb = N	 Checked OK
+XXXXX Generalized 2D vector update via GEMM call     
+  alpha = 2,  beta = 1.1, transa = N, transb = T	 Checked OK
+
+*********************************************************
+Checking Epetra_BlockMap(NumGlobalElements, NumMyElements, MyGlobalElements,  ElementSize, IndexBase, Comm)
+*********************************************************
+XXXXX Testing alpha * A     	 Checked OK
+XXXXX Testing C = alpha * A + B      	 Checked OK
+XXXXX Testing C += B      	 Checked OK
+XXXXX Testing A.dotProd(B)     	 Checked OK
+XXXXX Testing norm1_A      	 Checked OK
+XXXXX Testing norm2_sqrtA     	 Checked OK
+XXXXX Testing norminf_A     	 Checked OK
+XXXXX Testing normw_A     	 Checked OK
+XXXXX Testing minval_A     	 Checked OK
+XXXXX Testing maxval_A     	 Checked OK
+XXXXX Testing meanval_A     	 Checked OK
+XXXXX Testing abs_A     	 Checked OK
+
+
+XXXXX Testing Post-construction modification of a multivector
+
+X[2][35000] = 4 should = 4
+X[2][35006] = 8 should = 8
+X[2][35000] = 2 should = 1
+X[2][35006] = 4 should = 2
+
+
+XXXXX Testing Post-construction modification of a vector
+
+x[35000] = 2 should = 2
+x[35007] = 4 should = 4
+x[35006] = 4 should = 4
+x[35013] = 8 should = 8
+x[35000] = 2 should = 2
+x[35007] = 2 should = 2
+x[35006] = 4 should = 4
+x[35013] = 8 should = 8
+XXXXX Replicated Local MultiVector GEMM tests (Non-Strided Multivectors)
+  alpha = 3,  beta = 1, transa = T, transb = N	 Checked OK
+XXXXX Replicated Local MultiVector GEMM tests (Strided Multivectors)
+  alpha = 3,  beta = 1, transa = T, transb = N	 Checked OK
+XXXXX Generalized 2D dot product via GEMM call     
+  alpha = 2,  beta = 1, transa = T, transb = N	 Checked OK
+XXXXX Generalized 2D vector update via GEMM call     
+  alpha = 2,  beta = 1.1, transa = N, transb = N	 Checked OK
+XXXXX Generalized 2D vector update via GEMM call     
+  alpha = 2,  beta = 1.1, transa = N, transb = T	 Checked OK
+
+*********************************************************
+Checking Epetra_BlockMap(NumGlobalElements, NumMyElements, MyGlobalElements,  ElementSizeList, IndexBase, Comm)
+*********************************************************
+XXXXX Testing alpha * A     	 Checked OK
+XXXXX Testing C = alpha * A + B      	 Checked OK
+XXXXX Testing C += B      	 Checked OK
+XXXXX Testing A.dotProd(B)     	 Checked OK
+XXXXX Testing norm1_A      	 Checked OK
+XXXXX Testing norm2_sqrtA     	 Checked OK
+XXXXX Testing norminf_A     	 Checked OK
+XXXXX Testing normw_A     	 Checked OK
+XXXXX Testing minval_A     	 Checked OK
+XXXXX Testing maxval_A     	 Checked OK
+XXXXX Testing meanval_A     	 Checked OK
+XXXXX Testing abs_A     	 Checked OK
+
+
+XXXXX Testing Post-construction modification of a multivector
+
+X[2][22496] = 4 should = 4
+X[2][22499] = 8 should = 8
+X[2][22496] = 2 should = 1
+X[2][22499] = 4 should = 2
+
+
+XXXXX Testing Post-construction modification of a vector
+
+x[22496] = 2 should = 2
+x[22500] = 4 should = 4
+x[22499] = 4 should = 4
+x[22503] = 8 should = 8
+x[22496] = 2 should = 2
+x[22500] = 2 should = 2
+x[22499] = 4 should = 4
+x[22503] = 8 should = 8
+XXXXX Replicated Local MultiVector GEMM tests (Non-Strided Multivectors)
+  alpha = 3,  beta = 1, transa = T, transb = N	 Checked OK
+XXXXX Replicated Local MultiVector GEMM tests (Strided Multivectors)
+  alpha = 3,  beta = 1, transa = T, transb = N	 Checked OK
+XXXXX Generalized 2D dot product via GEMM call     
+  alpha = 2,  beta = 1, transa = T, transb = N	 Checked OK
+XXXXX Generalized 2D vector update via GEMM call     
+  alpha = 2,  beta = 1.1, transa = N, transb = N	 Checked OK
+XXXXX Generalized 2D vector update via GEMM call     
+  alpha = 2,  beta = 1.1, transa = N, transb = T	 Checked OK
+
+*********************************************************
+Checking Epetra_BlockMap(*BlockMap)
+*********************************************************
+XXXXX Testing alpha * A     	 Checked OK
+XXXXX Testing C = alpha * A + B      	 Checked OK
+XXXXX Testing C += B      	 Checked OK
+XXXXX Testing A.dotProd(B)     	 Checked OK
+XXXXX Testing norm1_A      	 Checked OK
+XXXXX Testing norm2_sqrtA     	 Checked OK
+XXXXX Testing norminf_A     	 Checked OK
+XXXXX Testing normw_A     	 Checked OK
+XXXXX Testing minval_A     	 Checked OK
+XXXXX Testing maxval_A     	 Checked OK
+XXXXX Testing meanval_A     	 Checked OK
+XXXXX Testing abs_A     	 Checked OK
+
+
+XXXXX Testing Post-construction modification of a multivector
+
+X[2][22496] = 4 should = 4
+X[2][22499] = 8 should = 8
+X[2][22496] = 2 should = 1
+X[2][22499] = 4 should = 2
+
+
+XXXXX Testing Post-construction modification of a vector
+
+x[22496] = 2 should = 2
+x[22500] = 4 should = 4
+x[22499] = 4 should = 4
+x[22503] = 8 should = 8
+x[22496] = 2 should = 2
+x[22500] = 2 should = 2
+x[22499] = 4 should = 4
+x[22503] = 8 should = 8
+XXXXX Replicated Local MultiVector GEMM tests (Non-Strided Multivectors)
+  alpha = 3,  beta = 1, transa = T, transb = N	 Checked OK
+XXXXX Replicated Local MultiVector GEMM tests (Strided Multivectors)
+  alpha = 3,  beta = 1, transa = T, transb = N	 Checked OK
+XXXXX Generalized 2D dot product via GEMM call     
+  alpha = 2,  beta = 1, transa = T, transb = N	 Checked OK
+XXXXX Generalized 2D vector update via GEMM call     
+  alpha = 2,  beta = 1.1, transa = N, transb = N	 Checked OK
+XXXXX Generalized 2D vector update via GEMM call     
+  alpha = 2,  beta = 1.1, transa = N, transb = T	 Checked OK
+
+*********************************************************
+Checking Epetra_Map(NumGlobalElements, IndexBase, Comm)
+*********************************************************
+XXXXX Testing alpha * A     	 Checked OK
+XXXXX Testing C = alpha * A + B      	 Checked OK
+XXXXX Testing C += B      	 Checked OK
+XXXXX Testing A.dotProd(B)     	 Checked OK
+XXXXX Testing norm1_A      	 Checked OK
+XXXXX Testing norm2_sqrtA     	 Checked OK
+XXXXX Testing norminf_A     	 Checked OK
+XXXXX Testing normw_A     	 Checked OK
+XXXXX Testing minval_A     	 Checked OK
+XXXXX Testing maxval_A     	 Checked OK
+XXXXX Testing meanval_A     	 Checked OK
+XXXXX Testing abs_A     	 Checked OK
+
+
+XXXXX Testing Post-construction modification of a multivector
+
+X[2][5000] = 4 should = 4
+X[2][5000] = 8 should = 8
+X[2][5000] = 2 should = 1
+X[2][5000] = 4 should = 2
+
+
+XXXXX Testing Post-construction modification of a vector
+
+x[5000] = 2 should = 2
+x[5001] = 4 should = 4
+x[5000] = 4 should = 4
+x[5001] = 8 should = 8
+x[5000] = 2 should = 2
+x[5001] = 2 should = 2
+x[5000] = 4 should = 4
+x[5001] = 8 should = 8
+XXXXX Replicated Local MultiVector GEMM tests (Non-Strided Multivectors)
+  alpha = 3,  beta = 1, transa = T, transb = N	 Checked OK
+XXXXX Replicated Local MultiVector GEMM tests (Strided Multivectors)
+  alpha = 3,  beta = 1, transa = T, transb = N	 Checked OK
+XXXXX Generalized 2D dot product via GEMM call     
+  alpha = 2,  beta = 1, transa = T, transb = N	 Checked OK
+XXXXX Generalized 2D vector update via GEMM call     
+  alpha = 2,  beta = 1.1, transa = N, transb = N	 Checked OK
+XXXXX Generalized 2D vector update via GEMM call     
+  alpha = 2,  beta = 1.1, transa = N, transb = T	 Checked OK
+
+*********************************************************
+Checking Epetra_Map(NumGlobalElements, NumMyElements, IndexBase, Comm)
+*********************************************************
+XXXXX Testing alpha * A     	 Checked OK
+XXXXX Testing C = alpha * A + B      	 Checked OK
+XXXXX Testing C += B      	 Checked OK
+XXXXX Testing A.dotProd(B)     	 Checked OK
+XXXXX Testing norm1_A      	 Checked OK
+XXXXX Testing norm2_sqrtA     	 Checked OK
+XXXXX Testing norminf_A     	 Checked OK
+XXXXX Testing normw_A     	 Checked OK
+XXXXX Testing minval_A     	 Checked OK
+XXXXX Testing maxval_A     	 Checked OK
+XXXXX Testing meanval_A     	 Checked OK
+XXXXX Testing abs_A     	 Checked OK
+
+
+XXXXX Testing Post-construction modification of a multivector
+
+X[2][5000] = 4 should = 4
+X[2][5000] = 8 should = 8
+X[2][5000] = 2 should = 1
+X[2][5000] = 4 should = 2
+
+
+XXXXX Testing Post-construction modification of a vector
+
+x[5000] = 2 should = 2
+x[5001] = 4 should = 4
+x[5000] = 4 should = 4
+x[5001] = 8 should = 8
+x[5000] = 2 should = 2
+x[5001] = 2 should = 2
+x[5000] = 4 should = 4
+x[5001] = 8 should = 8
+XXXXX Replicated Local MultiVector GEMM tests (Non-Strided Multivectors)
+  alpha = 3,  beta = 1, transa = T, transb = N	 Checked OK
+XXXXX Replicated Local MultiVector GEMM tests (Strided Multivectors)
+  alpha = 3,  beta = 1, transa = T, transb = N	 Checked OK
+XXXXX Generalized 2D dot product via GEMM call     
+  alpha = 2,  beta = 1, transa = T, transb = N	 Checked OK
+XXXXX Generalized 2D vector update via GEMM call     
+  alpha = 2,  beta = 1.1, transa = N, transb = N	 Checked OK
+XXXXX Generalized 2D vector update via GEMM call     
+  alpha = 2,  beta = 1.1, transa = N, transb = T	 Checked OK
+
+*********************************************************
+Checking Epetra_Map(NumGlobalElements, NumMyElements, MyGlobalElements,  IndexBase, Comm)
+*********************************************************
+XXXXX Testing alpha * A     	 Checked OK
+XXXXX Testing C = alpha * A + B      	 Checked OK
+XXXXX Testing C += B      	 Checked OK
+XXXXX Testing A.dotProd(B)     	 Checked OK
+XXXXX Testing norm1_A      	 Checked OK
+XXXXX Testing norm2_sqrtA     	 Checked OK
+XXXXX Testing norminf_A     	 Checked OK
+XXXXX Testing normw_A     	 Checked OK
+XXXXX Testing minval_A     	 Checked OK
+XXXXX Testing maxval_A     	 Checked OK
+XXXXX Testing meanval_A     	 Checked OK
+XXXXX Testing abs_A     	 Checked OK
+
+
+XXXXX Testing Post-construction modification of a multivector
+
+X[2][5000] = 4 should = 4
+X[2][5000] = 8 should = 8
+X[2][5000] = 2 should = 1
+X[2][5000] = 4 should = 2
+
+
+XXXXX Testing Post-construction modification of a vector
+
+x[5000] = 2 should = 2
+x[5001] = 4 should = 4
+x[5000] = 4 should = 4
+x[5001] = 8 should = 8
+x[5000] = 2 should = 2
+x[5001] = 2 should = 2
+x[5000] = 4 should = 4
+x[5001] = 8 should = 8
+XXXXX Replicated Local MultiVector GEMM tests (Non-Strided Multivectors)
+  alpha = 3,  beta = 1, transa = T, transb = N	 Checked OK
+XXXXX Replicated Local MultiVector GEMM tests (Strided Multivectors)
+  alpha = 3,  beta = 1, transa = T, transb = N	 Checked OK
+XXXXX Generalized 2D dot product via GEMM call     
+  alpha = 2,  beta = 1, transa = T, transb = N	 Checked OK
+XXXXX Generalized 2D vector update via GEMM call     
+  alpha = 2,  beta = 1.1, transa = N, transb = N	 Checked OK
+XXXXX Generalized 2D vector update via GEMM call     
+  alpha = 2,  beta = 1.1, transa = N, transb = T	 Checked OK
+
+*********************************************************
+Checking Epetra_Map(*Map)
+*********************************************************
+XXXXX Testing alpha * A     	 Checked OK
+XXXXX Testing C = alpha * A + B      	 Checked OK
+XXXXX Testing C += B      	 Checked OK
+XXXXX Testing A.dotProd(B)     	 Checked OK
+XXXXX Testing norm1_A      	 Checked OK
+XXXXX Testing norm2_sqrtA     	 Checked OK
+XXXXX Testing norminf_A     	 Checked OK
+XXXXX Testing normw_A     	 Checked OK
+XXXXX Testing minval_A     	 Checked OK
+XXXXX Testing maxval_A     	 Checked OK
+XXXXX Testing meanval_A     	 Checked OK
+XXXXX Testing abs_A     	 Checked OK
+
+
+XXXXX Testing Post-construction modification of a multivector
+
+X[2][5000] = 4 should = 4
+X[2][5000] = 8 should = 8
+X[2][5000] = 2 should = 1
+X[2][5000] = 4 should = 2
+
+
+XXXXX Testing Post-construction modification of a vector
+
+x[5000] = 2 should = 2
+x[5001] = 4 should = 4
+x[5000] = 4 should = 4
+x[5001] = 8 should = 8
+x[5000] = 2 should = 2
+x[5001] = 2 should = 2
+x[5000] = 4 should = 4
+x[5001] = 8 should = 8
+XXXXX Replicated Local MultiVector GEMM tests (Non-Strided Multivectors)
+  alpha = 3,  beta = 1, transa = T, transb = N	 Checked OK
+XXXXX Replicated Local MultiVector GEMM tests (Strided Multivectors)
+  alpha = 3,  beta = 1, transa = T, transb = N	 Checked OK
+XXXXX Generalized 2D dot product via GEMM call     
+  alpha = 2,  beta = 1, transa = T, transb = N	 Checked OK
+XXXXX Generalized 2D vector update via GEMM call     
+  alpha = 2,  beta = 1.1, transa = N, transb = N	 Checked OK
+XXXXX Generalized 2D vector update via GEMM call     
+  alpha = 2,  beta = 1.1, transa = N, transb = T	 Checked OK
+On PE 3  A[1][1] should equal = 4.00004 and it does!
+On PE 1  A[1][1] should equal = 2.00002 and it does!
+Testing Assignment operator
+On PE 0  A[1][1] should equal = 1.00001 and it does!
+On PE 2  A[1][1] should equal = 3.00003 and it does!
+Testing MFLOPs
+
+
+Total FLOPs = 5.83207e+007
+Total Time  = 0.0600803
+MFLOPs      = 970.714
+Epetra::MultiVector
+Epetra::MultiVector
+
+
+Testing ostream operator:  Multivector  should be 100-by-2 and print i,j indices
+
+Epetra::MultiVector
+     MyPID           GID               Value               Value  
+         0             0     0.000000000000e+000 1.000000000000e+002
+         0             1     1.000000000000e+000 1.010000000000e+002
+         0             2     2.000000000000e+000 1.020000000000e+002
+         0             3     3.000000000000e+000 1.030000000000e+002
+         0             4     4.000000000000e+000 1.040000000000e+002
+         0             5     5.000000000000e+000 1.050000000000e+002
+         0             6     6.000000000000e+000 1.060000000000e+002
+         0             7     7.000000000000e+000 1.070000000000e+002
+         0             8     8.000000000000e+000 1.080000000000e+002
+         0             9     9.000000000000e+000 1.090000000000e+002
+         0            10     1.000000000000e+001 1.100000000000e+002
+         0            11     1.100000000000e+001 1.110000000000e+002
+         0            12     1.200000000000e+001 1.120000000000e+002
+         0            13     1.300000000000e+001 1.130000000000e+002
+         0            14     1.400000000000e+001 1.140000000000e+002
+         0            15     1.500000000000e+001 1.150000000000e+002
+         0            16     1.600000000000e+001 1.160000000000e+002
+         0            17     1.700000000000e+001 1.170000000000e+002
+         0            18     1.800000000000e+001 1.180000000000e+002
+         0            19     1.900000000000e+001 1.190000000000e+002
+         0            20     2.000000000000e+001 1.200000000000e+002
+         0            21     2.100000000000e+001 1.210000000000e+002
+         0            22     2.200000000000e+001 1.220000000000e+002
+         0            23     2.300000000000e+001 1.230000000000e+002
+         0            24     2.400000000000e+001 1.240000000000e+002
+Epetra::MultiVector
+         1            25     0.000000000000e+000 1.000000000000e+002
+         1            26     1.000000000000e+000 1.010000000000e+002
+         1            27     2.000000000000e+000 1.020000000000e+002
+         1            28     3.000000000000e+000 1.030000000000e+002
+         1            29     4.000000000000e+000 1.040000000000e+002
+         1            30     5.000000000000e+000 1.050000000000e+002
+         1            31     6.000000000000e+000 1.060000000000e+002
+         1            32     7.000000000000e+000 1.070000000000e+002
+         1            33     8.000000000000e+000 1.080000000000e+002
+         1            34     9.000000000000e+000 1.090000000000e+002
+         1            35     1.000000000000e+001 1.100000000000e+002
+         1            36     1.100000000000e+001 1.110000000000e+002
+         1            37     1.200000000000e+001 1.120000000000e+002
+         1            38     1.300000000000e+001 1.130000000000e+002
+         1            39     1.400000000000e+001 1.140000000000e+002
+         1            40     1.500000000000e+001 1.150000000000e+002
+         1            41     1.600000000000e+001 1.160000000000e+002
+         1            42     1.700000000000e+001 1.170000000000e+002
+         1            43     1.800000000000e+001 1.180000000000e+002
+         1            44     1.900000000000e+001 1.190000000000e+002
+         1            45     2.000000000000e+001 1.200000000000e+002
+         1            46     2.100000000000e+001 1.210000000000e+002
+         1            47     2.200000000000e+001 1.220000000000e+002
+         1            48     2.300000000000e+001 1.230000000000e+002
+         1            49     2.400000000000e+001 1.240000000000e+002
+         2            50     0.000000000000e+000 1.000000000000e+002
+         2            51     1.000000000000e+000 1.010000000000e+002
+         2            52     2.000000000000e+000 1.020000000000e+002
+         2            53     3.000000000000e+000 1.030000000000e+002
+         2            54     4.000000000000e+000 1.040000000000e+002
+         2            55     5.000000000000e+000 1.050000000000e+002
+         2            56     6.000000000000e+000 1.060000000000e+002
+         2            57     7.000000000000e+000 1.070000000000e+002
+         2            58     8.000000000000e+000 1.080000000000e+002
+         2            59     9.000000000000e+000 1.090000000000e+002
+         2            60     1.000000000000e+001 1.100000000000e+002
+         2            61     1.100000000000e+001 1.110000000000e+002
+         2            62     1.200000000000e+001 1.120000000000e+002
+         2            63     1.300000000000e+001 1.130000000000e+002
+         2            64     1.400000000000e+001 1.140000000000e+002
+         2            65     1.500000000000e+001 1.150000000000e+002
+         2            66     1.600000000000e+001 1.160000000000e+002
+         2            67     1.700000000000e+001 1.170000000000e+002
+         2            68     1.800000000000e+001 1.180000000000e+002
+         2            69     1.900000000000e+001 1.190000000000e+002
+         2            70     2.000000000000e+001 1.200000000000e+002
+         2            71     2.100000000000e+001 1.210000000000e+002
+         2            72     2.200000000000e+001 1.220000000000e+002
+         2            73     2.300000000000e+001 1.230000000000e+002
+         2            74     2.400000000000e+001 1.240000000000e+002
+         3            75     0.000000000000e+000 1.000000000000e+002
+         3            76     1.000000000000e+000 1.010000000000e+002
+         3            77     2.000000000000e+000 1.020000000000e+002
+         3            78     3.000000000000e+000 1.030000000000e+002
+         3            79     4.000000000000e+000 1.040000000000e+002
+         3            80     5.000000000000e+000 1.050000000000e+002
+         3            81     6.000000000000e+000 1.060000000000e+002
+         3            82     7.000000000000e+000 1.070000000000e+002
+         3            83     8.000000000000e+000 1.080000000000e+002
+         3            84     9.000000000000e+000 1.090000000000e+002
+         3            85     1.000000000000e+001 1.100000000000e+002
+         3            86     1.100000000000e+001 1.110000000000e+002
+         3            87     1.200000000000e+001 1.120000000000e+002
+         3            88     1.300000000000e+001 1.130000000000e+002
+         3            89     1.400000000000e+001 1.140000000000e+002
+         3            90     1.500000000000e+001 1.150000000000e+002
+         3            91     1.600000000000e+001 1.160000000000e+002
+         3            92     1.700000000000e+001 1.170000000000e+002
+         3            93     1.800000000000e+001 1.180000000000e+002
+         3            94     1.900000000000e+001 1.190000000000e+002
+         3            95     2.000000000000e+001 1.200000000000e+002
+         3            96     2.100000000000e+001 1.210000000000e+002
+         3            97     2.200000000000e+001 1.220000000000e+002
+         3            98     2.300000000000e+001 1.230000000000e+002
+         3            99     2.400000000000e+001 1.240000000000e+002
+
+
+
+
+Epetra::MultiVector
+Epetra::MultiVector
+
+
+Testing ostream operator:  Same Multivector as before except using BlockMap of 25x4
+
+Epetra::MultiVector
+     MyPID         GID/Point             Value               Value  
+         0             0/0     0.000000000000e+000 1.000000000000e+002
+         0             0/1     1.000000000000e+000 1.010000000000e+002
+         0             0/2     2.000000000000e+000 1.020000000000e+002
+         0             0/3     3.000000000000e+000 1.030000000000e+002
+         0             1/0     4.000000000000e+000 1.040000000000e+002
+         0             1/1     5.000000000000e+000 1.050000000000e+002
+         0             1/2     6.000000000000e+000 1.060000000000e+002
+         0             1/3     7.000000000000e+000 1.070000000000e+002
+         0             2/0     8.000000000000e+000 1.080000000000e+002
+         0             2/1     9.000000000000e+000 1.090000000000e+002
+         0             2/2     1.000000000000e+001 1.100000000000e+002
+         0             2/3     1.100000000000e+001 1.110000000000e+002
+         0             3/0     1.200000000000e+001 1.120000000000e+002
+         0             3/1     1.300000000000e+001 1.130000000000e+002
+         0             3/2     1.400000000000e+001 1.140000000000e+002
+         0             3/3     1.500000000000e+001 1.150000000000e+002
+         0             4/0     1.600000000000e+001 1.160000000000e+002
+         0             4/1     1.700000000000e+001 1.170000000000e+002
+         0             4/2     1.800000000000e+001 1.180000000000e+002
+         0             4/3     1.900000000000e+001 1.190000000000e+002
+         0             5/0     2.000000000000e+001 1.200000000000e+002
+         0             5/1     2.100000000000e+001 1.210000000000e+002
+         0             5/2     2.200000000000e+001 1.220000000000e+002
+         0             5/3     2.300000000000e+001 1.230000000000e+002
+         0             6/0     2.400000000000e+001 1.240000000000e+002
+         0             6/1     2.500000000000e+001 1.250000000000e+002
+         0             6/2     2.600000000000e+001 1.260000000000e+002
+         0             6/3     2.700000000000e+001 1.270000000000e+002
+         0             7/0     2.800000000000e+001 1.280000000000e+002
+         0             7/1     2.900000000000e+001 1.290000000000e+002
+         0             7/2     3.000000000000e+001 1.300000000000e+002
+         0             7/3     3.100000000000e+001 1.310000000000e+002
+         0             8/0     3.200000000000e+001 1.320000000000e+002
+         0             8/1     3.300000000000e+001 1.330000000000e+002
+         0             8/2     3.400000000000e+001 1.340000000000e+002
+         0             8/3     3.500000000000e+001 1.350000000000e+002
+         0             9/0     3.600000000000e+001 1.360000000000e+002
+         0             9/1     3.700000000000e+001 1.370000000000e+002
+         0             9/2     3.800000000000e+001 1.380000000000e+002
+         0             9/3     3.900000000000e+001 1.390000000000e+002
+         0            10/0     4.000000000000e+001 1.400000000000e+002
+         0            10/1     4.100000000000e+001 1.410000000000e+002
+         0            10/2     4.200000000000e+001 1.420000000000e+002
+         0            10/3     4.300000000000e+001 1.430000000000e+002
+         0            11/0     4.400000000000e+001 1.440000000000e+002
+         0            11/1     4.500000000000e+001 1.450000000000e+002
+         0            11/2     4.600000000000e+001 1.460000000000e+002
+         0            11/3     4.700000000000e+001 1.470000000000e+002
+         0            12/0     4.800000000000e+001 1.480000000000e+002
+         0            12/1     4.900000000000e+001 1.490000000000e+002
+         0            12/2     5.000000000000e+001 1.500000000000e+002
+         0            12/3     5.100000000000e+001 1.510000000000e+002
+         0            13/0     5.200000000000e+001 1.520000000000e+002
+         0            13/1     5.300000000000e+001 1.530000000000e+002
+         0            13/2     5.400000000000e+001 1.540000000000e+002
+         0            13/3     5.500000000000e+001 1.550000000000e+002
+         0            14/0     5.600000000000e+001 1.560000000000e+002
+         0            14/1     5.700000000000e+001 1.570000000000e+002
+         0            14/2     5.800000000000e+001 1.580000000000e+002
+         0            14/3     5.900000000000e+001 1.590000000000e+002
+         0            15/0     6.000000000000e+001 1.600000000000e+002
+         0            15/1     6.100000000000e+001 1.610000000000e+002
+         0            15/2     6.200000000000e+001 1.620000000000e+002
+         0            15/3     6.300000000000e+001 1.630000000000e+002
+         0            16/0     6.400000000000e+001 1.640000000000e+002
+         0            16/1     6.500000000000e+001 1.650000000000e+002
+         0            16/2     6.600000000000e+001 1.660000000000e+002
+         0            16/3     6.700000000000e+001 1.670000000000e+002
+         0            17/0     6.800000000000e+001 1.680000000000e+002
+         0            17/1     6.900000000000e+001 1.690000000000e+002
+         0            17/2     7.000000000000e+001 1.700000000000e+002
+         0            17/3     7.100000000000e+001 1.710000000000e+002
+         0            18/0     7.200000000000e+001 1.720000000000e+002
+         0            18/1     7.300000000000e+001 1.730000000000e+002
+         0            18/2     7.400000000000e+001 1.740000000000e+002
+         0            18/3     7.500000000000e+001 1.750000000000e+002
+         0            19/0     7.600000000000e+001 1.760000000000e+002
+         0            19/1     7.700000000000e+001 1.770000000000e+002
+         0            19/2     7.800000000000e+001 1.780000000000e+002
+         0            19/3     7.900000000000e+001 1.790000000000e+002
+         0            20/0     8.000000000000e+001 1.800000000000e+002
+         0            20/1     8.100000000000e+001 1.810000000000e+002
+         0            20/2     8.200000000000e+001 1.820000000000e+002
+         0            20/3     8.300000000000e+001 1.830000000000e+002
+         0            21/0     8.400000000000e+001 1.840000000000e+002
+         0            21/1     8.500000000000e+001 1.850000000000e+002
+         0            21/2     8.600000000000e+001 1.860000000000e+002
+         0            21/3     8.700000000000e+001 1.870000000000e+002
+         0            22/0     8.800000000000e+001 1.880000000000e+002
+         0            22/1     8.900000000000e+001 1.890000000000e+002
+         0            22/2     9.000000000000e+001 1.900000000000e+002
+         0            22/3     9.100000000000e+001 1.910000000000e+002
+         0            23/0     9.200000000000e+001 1.920000000000e+002
+         0            23/1     9.300000000000e+001 1.930000000000e+002
+         0            23/2     9.400000000000e+001 1.940000000000e+002
+         0            23/3     9.500000000000e+001 1.950000000000e+002
+         0            24/0     9.600000000000e+001 1.960000000000e+002
+         0            24/1     9.700000000000e+001 1.970000000000e+002
+         0            24/2     9.800000000000e+001 1.980000000000e+002
+         0            24/3     9.900000000000e+001 1.990000000000e+002
+Epetra::MultiVector
+         1            25/0     0.000000000000e+000 1.000000000000e+002
+         1            25/1     1.000000000000e+000 1.010000000000e+002
+         1            25/2     2.000000000000e+000 1.020000000000e+002
+         1            25/3     3.000000000000e+000 1.030000000000e+002
+         1            26/0     4.000000000000e+000 1.040000000000e+002
+         1            26/1     5.000000000000e+000 1.050000000000e+002
+         1            26/2     6.000000000000e+000 1.060000000000e+002
+         1            26/3     7.000000000000e+000 1.070000000000e+002
+         1            27/0     8.000000000000e+000 1.080000000000e+002
+         1            27/1     9.000000000000e+000 1.090000000000e+002
+         1            27/2     1.000000000000e+001 1.100000000000e+002
+         1            27/3     1.100000000000e+001 1.110000000000e+002
+         1            28/0     1.200000000000e+001 1.120000000000e+002
+         1            28/1     1.300000000000e+001 1.130000000000e+002
+         1            28/2     1.400000000000e+001 1.140000000000e+002
+         1            28/3     1.500000000000e+001 1.150000000000e+002
+         1            29/0     1.600000000000e+001 1.160000000000e+002
+         1            29/1     1.700000000000e+001 1.170000000000e+002
+         1            29/2     1.800000000000e+001 1.180000000000e+002
+         1            29/3     1.900000000000e+001 1.190000000000e+002
+         1            30/0     2.000000000000e+001 1.200000000000e+002
+         1            30/1     2.100000000000e+001 1.210000000000e+002
+         1            30/2     2.200000000000e+001 1.220000000000e+002
+         1            30/3     2.300000000000e+001 1.230000000000e+002
+         1            31/0     2.400000000000e+001 1.240000000000e+002
+         1            31/1     2.500000000000e+001 1.250000000000e+002
+         1            31/2     2.600000000000e+001 1.260000000000e+002
+         1            31/3     2.700000000000e+001 1.270000000000e+002
+         1            32/0     2.800000000000e+001 1.280000000000e+002
+         1            32/1     2.900000000000e+001 1.290000000000e+002
+         1            32/2     3.000000000000e+001 1.300000000000e+002
+         1            32/3     3.100000000000e+001 1.310000000000e+002
+         1            33/0     3.200000000000e+001 1.320000000000e+002
+         1            33/1     3.300000000000e+001 1.330000000000e+002
+         1            33/2     3.400000000000e+001 1.340000000000e+002
+         1            33/3     3.500000000000e+001 1.350000000000e+002
+         1            34/0     3.600000000000e+001 1.360000000000e+002
+         1            34/1     3.700000000000e+001 1.370000000000e+002
+         1            34/2     3.800000000000e+001 1.380000000000e+002
+         1            34/3     3.900000000000e+001 1.390000000000e+002
+         1            35/0     4.000000000000e+001 1.400000000000e+002
+         1            35/1     4.100000000000e+001 1.410000000000e+002
+         1            35/2     4.200000000000e+001 1.420000000000e+002
+         1            35/3     4.300000000000e+001 1.430000000000e+002
+         1            36/0     4.400000000000e+001 1.440000000000e+002
+         1            36/1     4.500000000000e+001 1.450000000000e+002
+         1            36/2     4.600000000000e+001 1.460000000000e+002
+         1            36/3     4.700000000000e+001 1.470000000000e+002
+         1            37/0     4.800000000000e+001 1.480000000000e+002
+         1            37/1     4.900000000000e+001 1.490000000000e+002
+         1            37/2     5.000000000000e+001 1.500000000000e+002
+         1            37/3     5.100000000000e+001 1.510000000000e+002
+         1            38/0     5.200000000000e+001 1.520000000000e+002
+         1            38/1     5.300000000000e+001 1.530000000000e+002
+         1            38/2     5.400000000000e+001 1.540000000000e+002
+         1            38/3     5.500000000000e+001 1.550000000000e+002
+         1            39/0     5.600000000000e+001 1.560000000000e+002
+         1            39/1     5.700000000000e+001 1.570000000000e+002
+         1            39/2     5.800000000000e+001 1.580000000000e+002
+         1            39/3     5.900000000000e+001 1.590000000000e+002
+         1            40/0     6.000000000000e+001 1.600000000000e+002
+         1            40/1     6.100000000000e+001 1.610000000000e+002
+         1            40/2     6.200000000000e+001 1.620000000000e+002
+         1            40/3     6.300000000000e+001 1.630000000000e+002
+         1            41/0     6.400000000000e+001 1.640000000000e+002
+         1            41/1     6.500000000000e+001 1.650000000000e+002
+         1            41/2     6.600000000000e+001 1.660000000000e+002
+         1            41/3     6.700000000000e+001 1.670000000000e+002
+         1            42/0     6.800000000000e+001 1.680000000000e+002
+         1            42/1     6.900000000000e+001 1.690000000000e+002
+         1            42/2     7.000000000000e+001 1.700000000000e+002
+         1            42/3     7.100000000000e+001 1.710000000000e+002
+         1            43/0     7.200000000000e+001 1.720000000000e+002
+         1            43/1     7.300000000000e+001 1.730000000000e+002
+         1            43/2     7.400000000000e+001 1.740000000000e+002
+         1            43/3     7.500000000000e+001 1.750000000000e+002
+         1            44/0     7.600000000000e+001 1.760000000000e+002
+         1            44/1     7.700000000000e+001 1.770000000000e+002
+         1            44/2     7.800000000000e+001 1.780000000000e+002
+         1            44/3     7.900000000000e+001 1.790000000000e+002
+         1            45/0     8.000000000000e+001 1.800000000000e+002
+         1            45/1     8.100000000000e+001 1.810000000000e+002
+         1            45/2     8.200000000000e+001 1.820000000000e+002
+         1            45/3     8.300000000000e+001 1.830000000000e+002
+         1            46/0     8.400000000000e+001 1.840000000000e+002
+         1            46/1     8.500000000000e+001 1.850000000000e+002
+         1            46/2     8.600000000000e+001 1.860000000000e+002
+         1            46/3     8.700000000000e+001 1.870000000000e+002
+         1            47/0     8.800000000000e+001 1.880000000000e+002
+         1            47/1     8.900000000000e+001 1.890000000000e+002
+         1            47/2     9.000000000000e+001 1.900000000000e+002
+         1            47/3     9.100000000000e+001 1.910000000000e+002
+         1            48/0     9.200000000000e+001 1.920000000000e+002
+         1            48/1     9.300000000000e+001 1.930000000000e+002
+         1            48/2     9.400000000000e+001 1.940000000000e+002
+         1            48/3     9.500000000000e+001 1.950000000000e+002
+         1            49/0     9.600000000000e+001 1.960000000000e+002
+         1            49/1     9.700000000000e+001 1.970000000000e+002
+         1            49/2     9.800000000000e+001 1.980000000000e+002
+         1            49/3     9.900000000000e+001 1.990000000000e+002
+         2            50/0     0.000000000000e+000 1.000000000000e+002
+         2            50/1     1.000000000000e+000 1.010000000000e+002
+         2            50/2     2.000000000000e+000 1.020000000000e+002
+         2            50/3     3.000000000000e+000 1.030000000000e+002
+         2            51/0     4.000000000000e+000 1.040000000000e+002
+         2            51/1     5.000000000000e+000 1.050000000000e+002
+         2            51/2     6.000000000000e+000 1.060000000000e+002
+         2            51/3     7.000000000000e+000 1.070000000000e+002
+         2            52/0     8.000000000000e+000 1.080000000000e+002
+         2            52/1     9.000000000000e+000 1.090000000000e+002
+         2            52/2     1.000000000000e+001 1.100000000000e+002
+         2            52/3     1.100000000000e+001 1.110000000000e+002
+         2            53/0     1.200000000000e+001 1.120000000000e+002
+         2            53/1     1.300000000000e+001 1.130000000000e+002
+         2            53/2     1.400000000000e+001 1.140000000000e+002
+         2            53/3     1.500000000000e+001 1.150000000000e+002
+         2            54/0     1.600000000000e+001 1.160000000000e+002
+         2            54/1     1.700000000000e+001 1.170000000000e+002
+         2            54/2     1.800000000000e+001 1.180000000000e+002
+         2            54/3     1.900000000000e+001 1.190000000000e+002
+         2            55/0     2.000000000000e+001 1.200000000000e+002
+         2            55/1     2.100000000000e+001 1.210000000000e+002
+         2            55/2     2.200000000000e+001 1.220000000000e+002
+         2            55/3     2.300000000000e+001 1.230000000000e+002
+         2            56/0     2.400000000000e+001 1.240000000000e+002
+         2            56/1     2.500000000000e+001 1.250000000000e+002
+         2            56/2     2.600000000000e+001 1.260000000000e+002
+         2            56/3     2.700000000000e+001 1.270000000000e+002
+         2            57/0     2.800000000000e+001 1.280000000000e+002
+         2            57/1     2.900000000000e+001 1.290000000000e+002
+         2            57/2     3.000000000000e+001 1.300000000000e+002
+         2            57/3     3.100000000000e+001 1.310000000000e+002
+         2            58/0     3.200000000000e+001 1.320000000000e+002
+         2            58/1     3.300000000000e+001 1.330000000000e+002
+         2            58/2     3.400000000000e+001 1.340000000000e+002
+         2            58/3     3.500000000000e+001 1.350000000000e+002
+         2            59/0     3.600000000000e+001 1.360000000000e+002
+         2            59/1     3.700000000000e+001 1.370000000000e+002
+         2            59/2     3.800000000000e+001 1.380000000000e+002
+         2            59/3     3.900000000000e+001 1.390000000000e+002
+         2            60/0     4.000000000000e+001 1.400000000000e+002
+         2            60/1     4.100000000000e+001 1.410000000000e+002
+         2            60/2     4.200000000000e+001 1.420000000000e+002
+         2            60/3     4.300000000000e+001 1.430000000000e+002
+         2            61/0     4.400000000000e+001 1.440000000000e+002
+         2            61/1     4.500000000000e+001 1.450000000000e+002
+         2            61/2     4.600000000000e+001 1.460000000000e+002
+         2            61/3     4.700000000000e+001 1.470000000000e+002
+         2            62/0     4.800000000000e+001 1.480000000000e+002
+         2            62/1     4.900000000000e+001 1.490000000000e+002
+         2            62/2     5.000000000000e+001 1.500000000000e+002
+         2            62/3     5.100000000000e+001 1.510000000000e+002
+         2            63/0     5.200000000000e+001 1.520000000000e+002
+         2            63/1     5.300000000000e+001 1.530000000000e+002
+         2            63/2     5.400000000000e+001 1.540000000000e+002
+         2            63/3     5.500000000000e+001 1.550000000000e+002
+         2            64/0     5.600000000000e+001 1.560000000000e+002
+         2            64/1     5.700000000000e+001 1.570000000000e+002
+         2            64/2     5.800000000000e+001 1.580000000000e+002
+         2            64/3     5.900000000000e+001 1.590000000000e+002
+         2            65/0     6.000000000000e+001 1.600000000000e+002
+         2            65/1     6.100000000000e+001 1.610000000000e+002
+         2            65/2     6.200000000000e+001 1.620000000000e+002
+         2            65/3     6.300000000000e+001 1.630000000000e+002
+         2            66/0     6.400000000000e+001 1.640000000000e+002
+         2            66/1     6.500000000000e+001 1.650000000000e+002
+         2            66/2     6.600000000000e+001 1.660000000000e+002
+         2            66/3     6.700000000000e+001 1.670000000000e+002
+         2            67/0     6.800000000000e+001 1.680000000000e+002
+         2            67/1     6.900000000000e+001 1.690000000000e+002
+         2            67/2     7.000000000000e+001 1.700000000000e+002
+         2            67/3     7.100000000000e+001 1.710000000000e+002
+         2            68/0     7.200000000000e+001 1.720000000000e+002
+         2            68/1     7.300000000000e+001 1.730000000000e+002
+         2            68/2     7.400000000000e+001 1.740000000000e+002
+         2            68/3     7.500000000000e+001 1.750000000000e+002
+         2            69/0     7.600000000000e+001 1.760000000000e+002
+         2            69/1     7.700000000000e+001 1.770000000000e+002
+         2            69/2     7.800000000000e+001 1.780000000000e+002
+         2            69/3     7.900000000000e+001 1.790000000000e+002
+         2            70/0     8.000000000000e+001 1.800000000000e+002
+         2            70/1     8.100000000000e+001 1.810000000000e+002
+         2            70/2     8.200000000000e+001 1.820000000000e+002
+         2            70/3     8.300000000000e+001 1.830000000000e+002
+         2            71/0     8.400000000000e+001 1.840000000000e+002
+         2            71/1     8.500000000000e+001 1.850000000000e+002
+         2            71/2     8.600000000000e+001 1.860000000000e+002
+         2            71/3     8.700000000000e+001 1.870000000000e+002
+         2            72/0     8.800000000000e+001 1.880000000000e+002
+         2            72/1     8.900000000000e+001 1.890000000000e+002
+         2            72/2     9.000000000000e+001 1.900000000000e+002
+         2            72/3     9.100000000000e+001 1.910000000000e+002
+         2            73/0     9.200000000000e+001 1.920000000000e+002
+         2            73/1     9.300000000000e+001 1.930000000000e+002
+         2            73/2     9.400000000000e+001 1.940000000000e+002
+         2            73/3     9.500000000000e+001 1.950000000000e+002
+         2            74/0     9.600000000000e+001 1.960000000000e+002
+         2            74/1     9.700000000000e+001 1.970000000000e+002
+         2            74/2     9.800000000000e+001 1.980000000000e+002
+         2            74/3     9.900000000000e+001 1.990000000000e+002
+         3            75/0     0.000000000000e+000 1.000000000000e+002
+         3            75/1     1.000000000000e+000 1.010000000000e+002
+         3            75/2     2.000000000000e+000 1.020000000000e+002
+         3            75/3     3.000000000000e+000 1.030000000000e+002
+         3            76/0     4.000000000000e+000 1.040000000000e+002
+         3            76/1     5.000000000000e+000 1.050000000000e+002
+         3            76/2     6.000000000000e+000 1.060000000000e+002
+         3            76/3     7.000000000000e+000 1.070000000000e+002
+         3            77/0     8.000000000000e+000 1.080000000000e+002
+         3            77/1     9.000000000000e+000 1.090000000000e+002
+         3            77/2     1.000000000000e+001 1.100000000000e+002
+         3            77/3     1.100000000000e+001 1.110000000000e+002
+         3            78/0     1.200000000000e+001 1.120000000000e+002
+         3            78/1     1.300000000000e+001 1.130000000000e+002
+         3            78/2     1.400000000000e+001 1.140000000000e+002
+         3            78/3     1.500000000000e+001 1.150000000000e+002
+         3            79/0     1.600000000000e+001 1.160000000000e+002
+         3            79/1     1.700000000000e+001 1.170000000000e+002
+         3            79/2     1.800000000000e+001 1.180000000000e+002
+         3            79/3     1.900000000000e+001 1.190000000000e+002
+         3            80/0     2.000000000000e+001 1.200000000000e+002
+         3            80/1     2.100000000000e+001 1.210000000000e+002
+         3            80/2     2.200000000000e+001 1.220000000000e+002
+         3            80/3     2.300000000000e+001 1.230000000000e+002
+         3            81/0     2.400000000000e+001 1.240000000000e+002
+         3            81/1     2.500000000000e+001 1.250000000000e+002
+         3            81/2     2.600000000000e+001 1.260000000000e+002
+         3            81/3     2.700000000000e+001 1.270000000000e+002
+         3            82/0     2.800000000000e+001 1.280000000000e+002
+         3            82/1     2.900000000000e+001 1.290000000000e+002
+         3            82/2     3.000000000000e+001 1.300000000000e+002
+         3            82/3     3.100000000000e+001 1.310000000000e+002
+         3            83/0     3.200000000000e+001 1.320000000000e+002
+         3            83/1     3.300000000000e+001 1.330000000000e+002
+         3            83/2     3.400000000000e+001 1.340000000000e+002
+         3            83/3     3.500000000000e+001 1.350000000000e+002
+         3            84/0     3.600000000000e+001 1.360000000000e+002
+         3            84/1     3.700000000000e+001 1.370000000000e+002
+         3            84/2     3.800000000000e+001 1.380000000000e+002
+         3            84/3     3.900000000000e+001 1.390000000000e+002
+         3            85/0     4.000000000000e+001 1.400000000000e+002
+         3            85/1     4.100000000000e+001 1.410000000000e+002
+         3            85/2     4.200000000000e+001 1.420000000000e+002
+         3            85/3     4.300000000000e+001 1.430000000000e+002
+         3            86/0     4.400000000000e+001 1.440000000000e+002
+         3            86/1     4.500000000000e+001 1.450000000000e+002
+         3            86/2     4.600000000000e+001 1.460000000000e+002
+         3            86/3     4.700000000000e+001 1.470000000000e+002
+         3            87/0     4.800000000000e+001 1.480000000000e+002
+         3            87/1     4.900000000000e+001 1.490000000000e+002
+         3            87/2     5.000000000000e+001 1.500000000000e+002
+         3            87/3     5.100000000000e+001 1.510000000000e+002
+         3            88/0     5.200000000000e+001 1.520000000000e+002
+         3            88/1     5.300000000000e+001 1.530000000000e+002
+         3            88/2     5.400000000000e+001 1.540000000000e+002
+         3            88/3     5.500000000000e+001 1.550000000000e+002
+         3            89/0     5.600000000000e+001 1.560000000000e+002
+         3            89/1     5.700000000000e+001 1.570000000000e+002
+         3            89/2     5.800000000000e+001 1.580000000000e+002
+         3            89/3     5.900000000000e+001 1.590000000000e+002
+         3            90/0     6.000000000000e+001 1.600000000000e+002
+         3            90/1     6.100000000000e+001 1.610000000000e+002
+         3            90/2     6.200000000000e+001 1.620000000000e+002
+         3            90/3     6.300000000000e+001 1.630000000000e+002
+         3            91/0     6.400000000000e+001 1.640000000000e+002
+         3            91/1     6.500000000000e+001 1.650000000000e+002
+         3            91/2     6.600000000000e+001 1.660000000000e+002
+         3            91/3     6.700000000000e+001 1.670000000000e+002
+         3            92/0     6.800000000000e+001 1.680000000000e+002
+         3            92/1     6.900000000000e+001 1.690000000000e+002
+         3            92/2     7.000000000000e+001 1.700000000000e+002
+         3            92/3     7.100000000000e+001 1.710000000000e+002
+         3            93/0     7.200000000000e+001 1.720000000000e+002
+         3            93/1     7.300000000000e+001 1.730000000000e+002
+         3            93/2     7.400000000000e+001 1.740000000000e+002
+         3            93/3     7.500000000000e+001 1.750000000000e+002
+         3            94/0     7.600000000000e+001 1.760000000000e+002
+         3            94/1     7.700000000000e+001 1.770000000000e+002
+         3            94/2     7.800000000000e+001 1.780000000000e+002
+         3            94/3     7.900000000000e+001 1.790000000000e+002
+         3            95/0     8.000000000000e+001 1.800000000000e+002
+         3            95/1     8.100000000000e+001 1.810000000000e+002
+         3            95/2     8.200000000000e+001 1.820000000000e+002
+         3            95/3     8.300000000000e+001 1.830000000000e+002
+         3            96/0     8.400000000000e+001 1.840000000000e+002
+         3            96/1     8.500000000000e+001 1.850000000000e+002
+         3            96/2     8.600000000000e+001 1.860000000000e+002
+         3            96/3     8.700000000000e+001 1.870000000000e+002
+         3            97/0     8.800000000000e+001 1.880000000000e+002
+         3            97/1     8.900000000000e+001 1.890000000000e+002
+         3            97/2     9.000000000000e+001 1.900000000000e+002
+         3            97/3     9.100000000000e+001 1.910000000000e+002
+         3            98/0     9.200000000000e+001 1.920000000000e+002
+         3            98/1     9.300000000000e+001 1.930000000000e+002
+         3            98/2     9.400000000000e+001 1.940000000000e+002
+         3            98/3     9.500000000000e+001 1.950000000000e+002
+         3            99/0     9.600000000000e+001 1.960000000000e+002
+         3            99/1     9.700000000000e+001 1.970000000000e+002
+         3            99/2     9.800000000000e+001 1.980000000000e+002
+         3            99/3     9.900000000000e+001 1.990000000000e+002
+
+
+
+
+Traceback Mode value = 0
+############ cxx_Object_mpi.exe ##############
+Epetra::MpiComm
+  Processor 1 of 4 total processors
+
+
+This should say Epetra::Object: Epetra::Object
+
+
+
+This should say New name for Epetra_Object: New name for Epetra_Object
+
+
+
+Default Traceback Mode value = 1
+Set Traceback Mode value to one less than default = 0
+
+
+
+This should say 1: 1
+
+
+
+This should say New name for Epetra_Object: New name for Epetra_Object
+
+
+
+This should say New name for Epetra_Object,1: New name for Epetra_Object,1
+
+
+
+This should say New name for Epetra_Object,1: New name for Epetra_Object,1
+
+
+Epetra::MpiComm
+  Processor 3 of 4 total processors
+
+
+This should say Epetra::Object: Epetra::Object
+
+
+
+This should say New name for Epetra_Object: New name for Epetra_Object
+
+
+
+Default Traceback Mode value = 1
+Set Traceback Mode value to one less than default = 0
+
+
+
+This should say 1: 1
+
+
+
+This should say New name for Epetra_Object: New name for Epetra_Object
+
+
+
+This should say New name for Epetra_Object,1: New name for Epetra_Object,1
+
+
+
+This should say New name for Epetra_Object,1: New name for Epetra_Object,1
+
+
+Epetra::MpiComm
+  Processor 2 of 4 total processors
+
+
+This should say Epetra::Object: Epetra::Object
+
+
+
+This should say New name for Epetra_Object: New name for Epetra_Object
+
+
+
+Default Traceback Mode value = 1
+Set Traceback Mode value to one less than default = 0
+
+
+
+This should say 1: 1
+
+
+
+This should say New name for Epetra_Object: New name for Epetra_Object
+
+
+
+This should say New name for Epetra_Object,1: New name for Epetra_Object,1
+
+
+
+This should say New name for Epetra_Object,1: New name for Epetra_Object,1
+
+
+Epetra::MpiComm
+  Processor 0 of 4 total processors
+
+
+This should say Epetra::Object: Epetra::Object
+
+
+
+This should say New name for Epetra_Object: New name for Epetra_Object
+
+
+
+Default Traceback Mode value = 1
+Set Traceback Mode value to one less than default = 0
+
+
+
+This should say 1: 1
+
+
+
+This should say New name for Epetra_Object: New name for Epetra_Object
+
+
+
+This should say New name for Epetra_Object,1: New name for Epetra_Object,1
+
+
+
+This should say New name for Epetra_Object,1: New name for Epetra_Object,1
+
+
+############ cxx_VbrMatrix_mpi.exe ##############
+Processor 1 of 4 is alive.
+Processor 2 of 4 is alive.
+Processor 3 of 4 is alive.
+Processor 0 of 4 is alive.
+
+
+Number of local Rows = 3003
+
+
+
+Number of local Rows should = 3003
+
+
+
+Number of local Nonzero entries = 27018
+
+
+
+Number of global Rows = 12009
+
+
+
+Number of global Nonzero entries = 108063
+
+
+
+Number of local Block Rows = 1001
+
+
+
+Number of local Nonzero Block entries = 3002
+
+
+
+Number of global Block Rows = 4003
+
+
+
+Number of global Nonzero Block entries = 12007
+
+
+
+Number of nonzero values in last row = 9
+
+
+
+Rows sorted check OK
+
+
+
+NumEntries function check OK
+
+Iter = 0  Lambda = -1.02833  Residual of A*q - lambda*q = 9.37308
+Iter = 99  Lambda = 16.1803  Residual of A*q - lambda*q = 2.91201e-015
+
+
+Total MFLOPs for first solve = 18.8387
+
+
+
+Using transpose of matrix and solving again (should give same result).
+
+
+Iter = 0  Lambda = -1.02833  Residual of A*q - lambda*q = 9.37617
+Iter = 99  Lambda = 16.1803  Residual of A*q - lambda*q = 9.36684e-016
+
+
+Total MFLOPs for transpose solve = 18.7982
+
+
+
+Increasing the magnitude of first diagonal term and solving again
+
+
+Iter = 0  Lambda = -1.00813  Residual of A*q - lambda*q = 9.48138
+Iter = 99  Lambda = 89.953  Residual of A*q - lambda*q = 1.42195e-014
+
+
+Total MFLOPs for second solve = 19.1067
+
+
+
+Using transpose of matrix and solving again (should give same result).
+
+
+Iter = 0  Lambda = -1.00813  Residual of A*q - lambda*q = 9.48267
+Iter = 99  Lambda = 89.953  Residual of A*q - lambda*q = 1.43302e-014
+
+
+Total MFLOPs for tranpose of second solve = 18.7358
+
+
+
+*****Testing copy constructor
+
+
+
+Number of local Rows = 3003
+
+
+
+Number of local Rows should = 3003
+
+
+
+Number of local Nonzero entries = 27018
+
+
+
+Number of global Rows = 12009
+
+
+
+Number of global Nonzero entries = 108063
+
+
+
+Number of local Block Rows = 1001
+
+
+
+Number of local Nonzero Block entries = 3002
+
+
+
+Number of global Block Rows = 4003
+
+
+
+Number of global Nonzero Block entries = 12007
+
+
+
+Number of nonzero values in last row = 9
+
+
+
+Rows sorted check OK
+
+
+
+*****Testing post construction modifications
+
+############ cxx_Vector_mpi.exe ##############
+Epetra::MpiComm
+  Processor 3 of 4 total processors
+Epetra::MpiComm
+  Processor 0 of 4 total processors
+
+*********************************************************
+Checking Epetra_LocalMap(NumMyElements1, IndexBase, Comm)
+     and Epetra_BlockMap(NumGlobalElements, ElementSize, IndexBase, Comm)
+*********************************************************
+Epetra::MpiComm
+  Processor 1 of 4 total processors
+Epetra::MpiComm
+  Processor 2 of 4 total processors
+XXXXX Testing alpha * A     	 Checked OK
+XXXXX Testing C = alpha * A + B      	 Checked OK
+XXXXX Testing C += B      	 Checked OK
+XXXXX Testing A.dotProd(B)     	 Checked OK
+XXXXX Testing norm1_A      	 Checked OK
+XXXXX Testing norm2_sqrtA     	 Checked OK
+XXXXX Testing norminf_A     	 Checked OK
+XXXXX Testing normw_A     	 Checked OK
+XXXXX Testing minval_A     	 Checked OK
+XXXXX Testing maxval_A     	 Checked OK
+XXXXX Testing meanval_A     	 Checked OK
+XXXXX Testing abs_A     	 Checked OK
+XXXXX Replicated Local Vector GEMM tests (Non-Strided Multivectors)
+  alpha = 3,  beta = 1, transa = T, transb = N	 Checked OK
+XXXXX Replicated Local Vector GEMM tests (Strided Multivectors)
+  alpha = 3,  beta = 1, transa = T, transb = N	 Checked OK
+XXXXX Generalized 2D dot product via GEMM call     
+  alpha = 2,  beta = 1, transa = T, transb = N	 Checked OK
+XXXXX Generalized 2D vector update via GEMM call     
+  alpha = 2,  beta = 1.1, transa = N, transb = N	 Checked OK
+XXXXX Generalized 2D vector update via GEMM call     
+  alpha = 2,  beta = 1.1, transa = N, transb = T	 Checked OK
+
+*********************************************************
+Checking Epetra_BlockMap(NumGlobalElements, NumMyElements, ElementSize, IndexBase, Comm)
+*********************************************************
+XXXXX Testing alpha * A     	 Checked OK
+XXXXX Testing C = alpha * A + B      	 Checked OK
+XXXXX Testing C += B      	 Checked OK
+XXXXX Testing A.dotProd(B)     	 Checked OK
+XXXXX Testing norm1_A      	 Checked OK
+XXXXX Testing norm2_sqrtA     	 Checked OK
+XXXXX Testing norminf_A     	 Checked OK
+XXXXX Testing normw_A     	 Checked OK
+XXXXX Testing minval_A     	 Checked OK
+XXXXX Testing maxval_A     	 Checked OK
+XXXXX Testing meanval_A     	 Checked OK
+XXXXX Testing abs_A     	 Checked OK
+XXXXX Replicated Local Vector GEMM tests (Non-Strided Multivectors)
+  alpha = 3,  beta = 1, transa = T, transb = N	 Checked OK
+XXXXX Replicated Local Vector GEMM tests (Strided Multivectors)
+  alpha = 3,  beta = 1, transa = T, transb = N	 Checked OK
+XXXXX Generalized 2D dot product via GEMM call     
+  alpha = 2,  beta = 1, transa = T, transb = N	 Checked OK
+XXXXX Generalized 2D vector update via GEMM call     
+  alpha = 2,  beta = 1.1, transa = N, transb = N	 Checked OK
+XXXXX Generalized 2D vector update via GEMM call     
+  alpha = 2,  beta = 1.1, transa = N, transb = T	 Checked OK
+
+*********************************************************
+Checking Epetra_BlockMap(NumGlobalElements, NumMyElements, MyGlobalElements,  ElementSize, IndexBase, Comm)
+*********************************************************
+XXXXX Testing alpha * A     	 Checked OK
+XXXXX Testing C = alpha * A + B      	 Checked OK
+XXXXX Testing C += B      	 Checked OK
+XXXXX Testing A.dotProd(B)     	 Checked OK
+XXXXX Testing norm1_A      	 Checked OK
+XXXXX Testing norm2_sqrtA     	 Checked OK
+XXXXX Testing norminf_A     	 Checked OK
+XXXXX Testing normw_A     	 Checked OK
+XXXXX Testing minval_A     	 Checked OK
+XXXXX Testing maxval_A     	 Checked OK
+XXXXX Testing meanval_A     	 Checked OK
+XXXXX Testing abs_A     	 Checked OK
+XXXXX Replicated Local Vector GEMM tests (Non-Strided Multivectors)
+  alpha = 3,  beta = 1, transa = T, transb = N	 Checked OK
+XXXXX Replicated Local Vector GEMM tests (Strided Multivectors)
+  alpha = 3,  beta = 1, transa = T, transb = N	 Checked OK
+XXXXX Generalized 2D dot product via GEMM call     
+  alpha = 2,  beta = 1, transa = T, transb = N	 Checked OK
+XXXXX Generalized 2D vector update via GEMM call     
+  alpha = 2,  beta = 1.1, transa = N, transb = N	 Checked OK
+XXXXX Generalized 2D vector update via GEMM call     
+  alpha = 2,  beta = 1.1, transa = N, transb = T	 Checked OK
+
+*********************************************************
+Checking Epetra_BlockMap(NumGlobalElements, NumMyElements, MyGlobalElements,  ElementSizeList, IndexBase, Comm)
+*********************************************************
+XXXXX Testing alpha * A     	 Checked OK
+XXXXX Testing C = alpha * A + B      	 Checked OK
+XXXXX Testing C += B      	 Checked OK
+XXXXX Testing A.dotProd(B)     	 Checked OK
+XXXXX Testing norm1_A      	 Checked OK
+XXXXX Testing norm2_sqrtA     	 Checked OK
+XXXXX Testing norminf_A     	 Checked OK
+XXXXX Testing normw_A     	 Checked OK
+XXXXX Testing minval_A     	 Checked OK
+XXXXX Testing maxval_A     	 Checked OK
+XXXXX Testing meanval_A     	 Checked OK
+XXXXX Testing abs_A     	 Checked OK
+XXXXX Replicated Local Vector GEMM tests (Non-Strided Multivectors)
+  alpha = 3,  beta = 1, transa = T, transb = N	 Checked OK
+XXXXX Replicated Local Vector GEMM tests (Strided Multivectors)
+  alpha = 3,  beta = 1, transa = T, transb = N	 Checked OK
+XXXXX Generalized 2D dot product via GEMM call     
+  alpha = 2,  beta = 1, transa = T, transb = N	 Checked OK
+XXXXX Generalized 2D vector update via GEMM call     
+  alpha = 2,  beta = 1.1, transa = N, transb = N	 Checked OK
+XXXXX Generalized 2D vector update via GEMM call     
+  alpha = 2,  beta = 1.1, transa = N, transb = T	 Checked OK
+
+*********************************************************
+Checking Epetra_BlockMap(*BlockMap)
+*********************************************************
+XXXXX Testing alpha * A     	 Checked OK
+XXXXX Testing C = alpha * A + B      	 Checked OK
+XXXXX Testing C += B      	 Checked OK
+XXXXX Testing A.dotProd(B)     	 Checked OK
+XXXXX Testing norm1_A      	 Checked OK
+XXXXX Testing norm2_sqrtA     	 Checked OK
+XXXXX Testing norminf_A     	 Checked OK
+XXXXX Testing normw_A     	 Checked OK
+XXXXX Testing minval_A     	 Checked OK
+XXXXX Testing maxval_A     	 Checked OK
+XXXXX Testing meanval_A     	 Checked OK
+XXXXX Testing abs_A     	 Checked OK
+XXXXX Replicated Local Vector GEMM tests (Non-Strided Multivectors)
+  alpha = 3,  beta = 1, transa = T, transb = N	 Checked OK
+XXXXX Replicated Local Vector GEMM tests (Strided Multivectors)
+  alpha = 3,  beta = 1, transa = T, transb = N	 Checked OK
+XXXXX Generalized 2D dot product via GEMM call     
+  alpha = 2,  beta = 1, transa = T, transb = N	 Checked OK
+XXXXX Generalized 2D vector update via GEMM call     
+  alpha = 2,  beta = 1.1, transa = N, transb = N	 Checked OK
+XXXXX Generalized 2D vector update via GEMM call     
+  alpha = 2,  beta = 1.1, transa = N, transb = T	 Checked OK
+
+*********************************************************
+Checking Epetra_Map(NumGlobalElements, IndexBase, Comm)
+*********************************************************
+XXXXX Testing alpha * A     	 Checked OK
+XXXXX Testing C = alpha * A + B      	 Checked OK
+XXXXX Testing C += B      	 Checked OK
+XXXXX Testing A.dotProd(B)     	 Checked OK
+XXXXX Testing norm1_A      	 Checked OK
+XXXXX Testing norm2_sqrtA     	 Checked OK
+XXXXX Testing norminf_A     	 Checked OK
+XXXXX Testing normw_A     	 Checked OK
+XXXXX Testing minval_A     	 Checked OK
+XXXXX Testing maxval_A     	 Checked OK
+XXXXX Testing meanval_A     	 Checked OK
+XXXXX Testing abs_A     	 Checked OK
+XXXXX Replicated Local Vector GEMM tests (Non-Strided Multivectors)
+  alpha = 3,  beta = 1, transa = T, transb = N	 Checked OK
+XXXXX Replicated Local Vector GEMM tests (Strided Multivectors)
+  alpha = 3,  beta = 1, transa = T, transb = N	 Checked OK
+XXXXX Generalized 2D dot product via GEMM call     
+  alpha = 2,  beta = 1, transa = T, transb = N	 Checked OK
+XXXXX Generalized 2D vector update via GEMM call     
+  alpha = 2,  beta = 1.1, transa = N, transb = N	 Checked OK
+XXXXX Generalized 2D vector update via GEMM call     
+  alpha = 2,  beta = 1.1, transa = N, transb = T	 Checked OK
+
+*********************************************************
+Checking Epetra_Map(NumGlobalElements, NumMyElements, IndexBase, Comm)
+*********************************************************
+XXXXX Testing alpha * A     	 Checked OK
+XXXXX Testing C = alpha * A + B      	 Checked OK
+XXXXX Testing C += B      	 Checked OK
+XXXXX Testing A.dotProd(B)     	 Checked OK
+XXXXX Testing norm1_A      	 Checked OK
+XXXXX Testing norm2_sqrtA     	 Checked OK
+XXXXX Testing norminf_A     	 Checked OK
+XXXXX Testing normw_A     	 Checked OK
+XXXXX Testing minval_A     	 Checked OK
+XXXXX Testing maxval_A     	 Checked OK
+XXXXX Testing meanval_A     	 Checked OK
+XXXXX Testing abs_A     	 Checked OK
+XXXXX Replicated Local Vector GEMM tests (Non-Strided Multivectors)
+  alpha = 3,  beta = 1, transa = T, transb = N	 Checked OK
+XXXXX Replicated Local Vector GEMM tests (Strided Multivectors)
+  alpha = 3,  beta = 1, transa = T, transb = N	 Checked OK
+XXXXX Generalized 2D dot product via GEMM call     
+  alpha = 2,  beta = 1, transa = T, transb = N	 Checked OK
+XXXXX Generalized 2D vector update via GEMM call     
+  alpha = 2,  beta = 1.1, transa = N, transb = N	 Checked OK
+XXXXX Generalized 2D vector update via GEMM call     
+  alpha = 2,  beta = 1.1, transa = N, transb = T	 Checked OK
+
+*********************************************************
+Checking Epetra_Map(NumGlobalElements, NumMyElements, MyGlobalElements,  IndexBase, Comm)
+*********************************************************
+XXXXX Testing alpha * A     	 Checked OK
+XXXXX Testing C = alpha * A + B      	 Checked OK
+XXXXX Testing C += B      	 Checked OK
+XXXXX Testing A.dotProd(B)     	 Checked OK
+XXXXX Testing norm1_A      	 Checked OK
+XXXXX Testing norm2_sqrtA     	 Checked OK
+XXXXX Testing norminf_A     	 Checked OK
+XXXXX Testing normw_A     	 Checked OK
+XXXXX Testing minval_A     	 Checked OK
+XXXXX Testing maxval_A     	 Checked OK
+XXXXX Testing meanval_A     	 Checked OK
+XXXXX Testing abs_A     	 Checked OK
+XXXXX Replicated Local Vector GEMM tests (Non-Strided Multivectors)
+  alpha = 3,  beta = 1, transa = T, transb = N	 Checked OK
+XXXXX Replicated Local Vector GEMM tests (Strided Multivectors)
+  alpha = 3,  beta = 1, transa = T, transb = N	 Checked OK
+XXXXX Generalized 2D dot product via GEMM call     
+  alpha = 2,  beta = 1, transa = T, transb = N	 Checked OK
+XXXXX Generalized 2D vector update via GEMM call     
+  alpha = 2,  beta = 1.1, transa = N, transb = N	 Checked OK
+XXXXX Generalized 2D vector update via GEMM call     
+  alpha = 2,  beta = 1.1, transa = N, transb = T	 Checked OK
+
+*********************************************************
+Checking Epetra_Map(*Map)
+*********************************************************
+XXXXX Testing alpha * A     	 Checked OK
+XXXXX Testing C = alpha * A + B      	 Checked OK
+XXXXX Testing C += B      	 Checked OK
+XXXXX Testing A.dotProd(B)     	 Checked OK
+XXXXX Testing norm1_A      	 Checked OK
+XXXXX Testing norm2_sqrtA     	 Checked OK
+XXXXX Testing norminf_A     	 Checked OK
+XXXXX Testing normw_A     	 Checked OK
+XXXXX Testing minval_A     	 Checked OK
+XXXXX Testing maxval_A     	 Checked OK
+XXXXX Testing meanval_A     	 Checked OK
+XXXXX Testing abs_A     	 Checked OK
+XXXXX Replicated Local Vector GEMM tests (Non-Strided Multivectors)
+  alpha = 3,  beta = 1, transa = T, transb = N	 Checked OK
+XXXXX Replicated Local Vector GEMM tests (Strided Multivectors)
+  alpha = 3,  beta = 1, transa = T, transb = N	 Checked OK
+XXXXX Generalized 2D dot product via GEMM call     
+  alpha = 2,  beta = 1, transa = T, transb = N	 Checked OK
+XXXXX Generalized 2D vector update via GEMM call     
+  alpha = 2,  beta = 1.1, transa = N, transb = N	 Checked OK
+XXXXX Generalized 2D vector update via GEMM call     
+  alpha = 2,  beta = 1.1, transa = N, transb = T	 Checked OK
+
+
+This should say Epetra::Vector: Epetra::Vector
+
+
+Testing Assignment operator
+On PE 0  A[1] should equal = 1.00001 and it does!
+On PE 2  A[1] should equal = 3.00003 and it does!
+On PE 1  A[1] should equal = 2.00002 and it does!
+On PE 3  A[1] should equal = 4.00004 and it does!
+
+
+Testing MFLOPs
+
+
+Total FLOPs = 8e+006
+Total Time  = 0.0674315
+MFLOPs      = 118.639
+
+
+Testing ostream operator:  Multivector  should be 100-by-2 and print i,j indices
+
+Epetra::Vector
+     MyPID           GID               Value  
+         0             0     0.000000000000e+000
+         0             1     1.000000000000e+000
+         0             2     2.000000000000e+000
+         0             3     3.000000000000e+000
+         0             4     4.000000000000e+000
+         0             5     5.000000000000e+000
+         0             6     6.000000000000e+000
+         0             7     7.000000000000e+000
+         0             8     8.000000000000e+000
+         0             9     9.000000000000e+000
+         0            10     1.000000000000e+001
+         0            11     1.100000000000e+001
+         0            12     1.200000000000e+001
+         0            13     1.300000000000e+001
+         0            14     1.400000000000e+001
+         0            15     1.500000000000e+001
+         0            16     1.600000000000e+001
+         0            17     1.700000000000e+001
+         0            18     1.800000000000e+001
+         0            19     1.900000000000e+001
+         0            20     2.000000000000e+001
+         0            21     2.100000000000e+001
+         0            22     2.200000000000e+001
+         0            23     2.300000000000e+001
+         0            24     2.400000000000e+001
+Epetra::Vector
+Epetra::Vector
+Epetra::Vector
+         1            25     0.000000000000e+000
+         1            26     1.000000000000e+000
+         1            27     2.000000000000e+000
+         1            28     3.000000000000e+000
+         1            29     4.000000000000e+000
+         1            30     5.000000000000e+000
+         1            31     6.000000000000e+000
+         1            32     7.000000000000e+000
+         1            33     8.000000000000e+000
+         1            34     9.000000000000e+000
+         1            35     1.000000000000e+001
+         1            36     1.100000000000e+001
+         1            37     1.200000000000e+001
+         1            38     1.300000000000e+001
+         1            39     1.400000000000e+001
+         1            40     1.500000000000e+001
+         1            41     1.600000000000e+001
+         1            42     1.700000000000e+001
+         1            43     1.800000000000e+001
+         1            44     1.900000000000e+001
+         1            45     2.000000000000e+001
+         1            46     2.100000000000e+001
+         1            47     2.200000000000e+001
+         1            48     2.300000000000e+001
+         1            49     2.400000000000e+001
+         2            50     0.000000000000e+000
+         2            51     1.000000000000e+000
+         2            52     2.000000000000e+000
+         2            53     3.000000000000e+000
+         2            54     4.000000000000e+000
+         2            55     5.000000000000e+000
+         2            56     6.000000000000e+000
+         2            57     7.000000000000e+000
+         2            58     8.000000000000e+000
+         2            59     9.000000000000e+000
+         2            60     1.000000000000e+001
+         2            61     1.100000000000e+001
+         2            62     1.200000000000e+001
+         2            63     1.300000000000e+001
+         2            64     1.400000000000e+001
+         2            65     1.500000000000e+001
+         2            66     1.600000000000e+001
+         2            67     1.700000000000e+001
+         2            68     1.800000000000e+001
+         2            69     1.900000000000e+001
+         2            70     2.000000000000e+001
+         2            71     2.100000000000e+001
+         2            72     2.200000000000e+001
+         2            73     2.300000000000e+001
+         2            74     2.400000000000e+001
+         3            75     0.000000000000e+000
+         3            76     1.000000000000e+000
+         3            77     2.000000000000e+000
+         3            78     3.000000000000e+000
+         3            79     4.000000000000e+000
+         3            80     5.000000000000e+000
+         3            81     6.000000000000e+000
+         3            82     7.000000000000e+000
+         3            83     8.000000000000e+000
+         3            84     9.000000000000e+000
+         3            85     1.000000000000e+001
+         3            86     1.100000000000e+001
+         3            87     1.200000000000e+001
+         3            88     1.300000000000e+001
+         3            89     1.400000000000e+001
+         3            90     1.500000000000e+001
+         3            91     1.600000000000e+001
+         3            92     1.700000000000e+001
+         3            93     1.800000000000e+001
+         3            94     1.900000000000e+001
+         3            95     2.000000000000e+001
+         3            96     2.100000000000e+001
+         3            97     2.200000000000e+001
+         3            98     2.300000000000e+001
+         3            99     2.400000000000e+001
+
+Traceback Mode value = 0
+
+
+

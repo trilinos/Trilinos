@@ -10,7 +10,7 @@
 #include "../epetra_test_err.h"
 
 int main(int argc, char *argv[]) {
-  int ierr = 0, forierr = 0;
+  int i, j, ierr = 0, forierr = 0;
 
 #ifdef EPETRA_MPI
 
@@ -64,8 +64,8 @@ int main(int argc, char *argv[]) {
   // Time before barrier should increase roughly linearly
   // Time after barrier should be same for all processors
   double sum = 0.0;
-  for (int j=0; j<rank+1; j++)
-    for (int i=0; i<1000000; i++) sum += drand48();
+  for (j=0; j<rank+1; j++)
+    for (i=0; i<1000000; i++) sum += ((double )rand())/((double) RAND_MAX);
   sum /= rank+1;
   if (verbose1) cout << "Processor "<<MyPID
 		    <<" Time to reach barrier: "
@@ -80,68 +80,68 @@ int main(int argc, char *argv[]) {
 // Some vars needed for the following tests
   int count = 4;
   int *iInputs = new int[count]; // General array for int type tests
-  for (int i=0; i<count; i++)
+  for (i=0; i<count; i++)
     iInputs[i] = 10*(i + rank - 2) + rank; // if these values are changed, the expected maxs, mins, sums, etc must also change.  NOTE: Broadcst() does not use these values.  The lines that need to be changed are located in the "Values for ****** tests" sections directly below.
   double *dInputs = new double[count]; // General array for double type tests
-  for (int i=0; i<count; i++)
+  for (i=0; i<count; i++)
     dInputs[i] = pow(2.0,i-rank);// if these values are changed, the expected maxs, mins, sums, etc must also change.  NOTE: Broadcst() does not use these values.  The lines that need to be changed are located in the "Values for ****** tests" sections directly below.
 
   // Values for Broadcast tests
   int *iVals = new int[count];
   if (rank == 0) {
-     for (int i=0; i<count; i++)
+     for (i=0; i<count; i++)
        iVals[i] = i; // if these values are changed, the values in iBVals must also be changed
   }
   int *iBVals = new int[count]; // Values to be checked against the values broadcast to the non root processors
-  for (int i=0; i<count; i++)
+  for (i=0; i<count; i++)
     iBVals[i] = i; // if these values are changed, the values in iVals must also be changed
   double *dVals = new double[count];
   if (rank == 0) {
-     for (int i=0; i<count; i++)
+     for (i=0; i<count; i++)
        dVals[i] = double(i); // if these values are changed, the values in dBVals must also be changed
   }    
   double *dBVals = new double[count];// Values to be checked against the values broadcast to the non root processors
-  for (int i=0; i<count; i++)
+  for (i=0; i<count; i++)
     dBVals[i] = i; // if these values are changed, the values in dVals must also be changed
 
   // Values for MaxAll tests
   int *iMyGlobalMaxs = new int[count];
-  for (int i=0; i<count; i++)
+  for (i=0; i<count; i++)
     iMyGlobalMaxs[i]=10 * (i + NumProc-1 -2) +  NumProc-1; // if these values are changed, iInput must be changed as well as all other values dependent on iInput
   double *dMyGlobalMaxs = new double[count];
-  for (int i=0; i<count; i++)
+  for (i=0; i<count; i++)
     dMyGlobalMaxs[i]= pow(2.0,i); //if these values are changed, dInput must be changed as well as all other values dependent on dInput
 
   // Values for MinAll tests
   int *iMyGlobalMins = new int[count];
-  for (int i=0; i<count; i++)
+  for (i=0; i<count; i++)
     iMyGlobalMins[i]= 10 * (i - 2); // if these values are changed, iInput must be changed as well as all other values dependent on iInput
   double *dMyGlobalMins = new double[count];
-  for (int i=0; i<count; i++)
+  for (i=0; i<count; i++)
     dMyGlobalMins[i]= pow(2.0,i-(NumProc-1)); //if these values are changed, dInput must be changed as well as all other values dependent on dInput
 
   // Values for SumAll tests
   int *iMyGlobalSums = new int[count];
-  for (int i=0; i<count; i++){
+  for (i=0; i<count; i++){
     iMyGlobalSums[i]=0;
-    for (int j=0; j<NumProc; j++)
+    for (j=0; j<NumProc; j++)
       iMyGlobalSums[i] += 10*(i+j-2) + j;// if these values are changed, iInput must be changed as well as all other values dependent on iInput
   }
   double *dMyGlobalSums = new double[count];
-  for (int i=0; i<count; i++){
+  for (i=0; i<count; i++){
     dMyGlobalSums[i]=0;
-    for (int j=0; j<NumProc; j++)
+    for (j=0; j<NumProc; j++)
       dMyGlobalSums[i] += pow(2.0,i-j);// if these values are changed, dInput must be changed as well as all other values dependent on dInput
   }
 
   // Values for ScanSum tests
   int *iMyScanSums = new int[count];
-  for (int i=0; i<count; i++)
+  for (i=0; i<count; i++)
     iMyScanSums[i] = int((rank+1)*(10*(2*i+rank-4)+rank)*.5);// if these values are changed, iInput must be changed as well as all other values dependent on iInput
   double *dMyScanSums = new double[count];
-  for (int i=0; i<count; i++) {
+  for (i=0; i<count; i++) {
     dMyScanSums[i] = 0;
-    for (int j=0; j<=rank; j++)
+    for (j=0; j<=rank; j++)
       dMyScanSums[i] += pow(2.0,i-j); //if these values are changed, dInput must be changed as well as all other values dependent on dInput
   }
   // Values for Gather tests
@@ -149,8 +149,8 @@ int main(int argc, char *argv[]) {
   int *iMyOrderedVals = new int[totalVals];
   double *dMyOrderedVals = new double[totalVals];
   int k=0;
-  for (int j=0; j<NumProc; j++) {
-    for (int i=0; i<count; i++) {
+  for (j=0; j<NumProc; j++) {
+    for (i=0; i<count; i++) {
       iMyOrderedVals[k] = 10*(i + j - 2) + j;; // if these values are changed, iInput must be changed as well as all other values dependent on iInput
       dMyOrderedVals[k] = pow(2.0,i-j); // if these values are changed, dInput must be changed as well as all other values dependent on dInput
       k++;
@@ -166,13 +166,13 @@ int main(int argc, char *argv[]) {
       cout << "The values on the root processor are: ";
     else
       cout << "The values on processor " << rank << " are: ";
-    for (int i=0; i<count; i++) 
+    for (i=0; i<count; i++) 
       cout << iVals[i] << " ";
     cout << endl;
   }
   // ierr = 0; need to track errors the whole way through the file - this line of code seems like a bad idea 
   forierr = 0;
-  for (int i=0; i<count; i++)
+  for (i=0; i<count; i++)
     forierr += !(iVals[i] == iBVals[i]); // otherwise Broadcast didn't occur properly
   EPETRA_TEST_ERR(forierr,ierr);
   delete [] iVals;
@@ -187,12 +187,12 @@ int main(int argc, char *argv[]) {
       cout << "The values on the root processor are: ";
     else
       cout << "The values on processor " << rank << " are: ";
-    for (int i=0; i<count; i++) 
+    for (i=0; i<count; i++) 
       cout << dVals[i] << " ";
     cout << endl;
   }
   forierr = 0;
-  for (int i=0; i<count; i++)
+  for (i=0; i<count; i++)
     forierr += !(dVals[i] == dBVals[i]); // otherwise Broadcast didn't occur properly
   EPETRA_TEST_ERR(forierr,ierr);
   delete [] dVals;
@@ -205,7 +205,7 @@ int main(int argc, char *argv[]) {
   int *iGlobalMaxs = new int[count];
   if (verbose1) {
     cout << "The values on processor " << rank << " are: ";
-    for (int i=0; i<count; i++) 
+    for (i=0; i<count; i++) 
       cout << iInputs[i] << " ";
     cout << endl;
   }
@@ -214,12 +214,12 @@ int main(int argc, char *argv[]) {
   
   if (verbose1) {
     cout << "The max values according to processor " << rank << " are: ";
-    for (int i=0; i<count; i++) 
+    for (i=0; i<count; i++) 
       cout << iGlobalMaxs[i] << " ";
     cout << endl;
   }
   forierr = 0;
-  for (int i=0; i<count; i++) 
+  for (i=0; i<count; i++) 
     forierr += !(iMyGlobalMaxs[i] == iGlobalMaxs[i]);
   EPETRA_TEST_ERR(forierr,ierr);
 
@@ -232,7 +232,7 @@ int main(int argc, char *argv[]) {
   double *dGlobalMaxs = new double[count];
   if (verbose1) {
     cout << "The values on processor " << rank << " are: ";
-    for (int i=0; i<count; i++) 
+    for (i=0; i<count; i++) 
       cout << dInputs[i] << " ";
     cout << endl;
   }
@@ -241,12 +241,12 @@ int main(int argc, char *argv[]) {
   
   if (verbose1) {
     cout << "The max values according to processor " << rank << " are: ";
-    for (int i=0; i<count; i++) 
+    for (i=0; i<count; i++) 
       cout << dGlobalMaxs[i] << " ";
     cout << endl;
   }
   forierr = 0;
-  for (int i=0; i<count; i++)
+  for (i=0; i<count; i++)
     forierr += !(Epetra_Util::Chop(dMyGlobalMaxs[i] - dGlobalMaxs[i]) == 0);
   EPETRA_TEST_ERR(forierr,ierr);
   delete [] dGlobalMaxs;
@@ -259,7 +259,7 @@ int main(int argc, char *argv[]) {
   int *iGlobalMins = new int[count];
   if (verbose1) {
     cout << "The values on processor " << rank << " are: ";
-    for (int i=0; i<count; i++) 
+    for (i=0; i<count; i++) 
       cout << iInputs[i] << " ";
     cout << endl;
   }
@@ -268,12 +268,12 @@ int main(int argc, char *argv[]) {
 
   if (verbose1) {
     cout << "The min values according to processor " << rank << " are: ";
-    for (int i=0; i<count; i++) 
+    for (i=0; i<count; i++) 
       cout << iGlobalMins[i] << " ";
     cout << endl;
   }
   forierr = 0;
-  for (int i=0; i<count; i++) 
+  for (i=0; i<count; i++) 
     forierr += !(iMyGlobalMins[i] == iGlobalMins[i]); // otherwise calculated min is wrong
   EPETRA_TEST_ERR(forierr,ierr);
   delete [] iGlobalMins;
@@ -285,7 +285,7 @@ int main(int argc, char *argv[]) {
   double *dGlobalMins = new double[count];
   if (verbose1) {
     cout << "The values on processor " << rank << " are: ";
-    for (int i=0; i<count; i++) 
+    for (i=0; i<count; i++) 
       cout << dInputs[i] << " ";
     cout << endl;
   }
@@ -294,12 +294,12 @@ int main(int argc, char *argv[]) {
 
   if (verbose1) {
     cout << "The min values according to processor " << rank << " are: ";
-    for (int i=0; i<count; i++) 
+    for (i=0; i<count; i++) 
       cout << dGlobalMins[i] << " ";
     cout << endl;
   }
   forierr = 0;
-  for (int i=0; i<count; i++)
+  for (i=0; i<count; i++)
     forierr += !(Epetra_Util::Chop(dMyGlobalMins[i] - dGlobalMins[i]) == 0); // otherwise calculated min is wrong
   EPETRA_TEST_ERR(forierr,ierr);
   delete [] dGlobalMins;
@@ -312,7 +312,7 @@ int main(int argc, char *argv[]) {
   int *iGlobalSums = new int[count];
   if (verbose1) {
     cout << "The values on processor " << rank << " are: ";
-    for (int i=0; i<count; i++) 
+    for (i=0; i<count; i++) 
       cout << iInputs[i] << " ";
     cout << endl;
   }
@@ -321,12 +321,12 @@ int main(int argc, char *argv[]) {
 
   if (verbose1) {
     cout << "The sums of all values according to processor " << rank << " are: ";
-    for (int i=0; i<count; i++) 
+    for (i=0; i<count; i++) 
       cout << iGlobalSums[i] << " ";
     cout << endl;
   }
   forierr = 0;
-  for (int i=0; i<count; i++)
+  for (i=0; i<count; i++)
     forierr += !(iMyGlobalSums[i] == iGlobalSums[i]); // otherwise calculated sum is wrong
   EPETRA_TEST_ERR(forierr,ierr);
   delete [] iGlobalSums;
@@ -338,7 +338,7 @@ int main(int argc, char *argv[]) {
   double *dGlobalSums = new double[count];
   if (verbose1) {
     cout << "The values on processor " << rank << " are: ";
-    for (int i=0; i<count; i++) 
+    for (i=0; i<count; i++) 
       cout << dInputs[i] << " ";
     cout << endl;
   }
@@ -347,12 +347,12 @@ int main(int argc, char *argv[]) {
 
   if (verbose1) {
     cout << "The sums of all values according to processor " << rank << " are: ";
-    for (int i=0; i<count; i++) 
+    for (i=0; i<count; i++) 
       cout << dGlobalSums[i] << " ";
     cout << endl;
   }
   forierr = 0;
-  for (int i=0; i<count; i++)
+  for (i=0; i<count; i++)
     forierr += !(Epetra_Util::Chop(dMyGlobalSums[i] - dGlobalSums[i]) == 0); // otherwise calculated sum is wrong
   EPETRA_TEST_ERR(forierr,ierr);
 
@@ -366,7 +366,7 @@ int main(int argc, char *argv[]) {
   int *iScanSums = new int[count];
   if (verbose1) {
     cout << "The values on processor " << rank << " are: ";
-    for (int i=0; i<count; i++) 
+    for (i=0; i<count; i++) 
       cout << iInputs[i] << " ";
     cout << endl;
   }
@@ -376,13 +376,13 @@ int main(int argc, char *argv[]) {
 
   if (verbose1) {
     cout << "The sums of all values on processors 0 - " << rank << " are: ";
-    for (int i=0; i<count; i++) {
+    for (i=0; i<count; i++) {
       cout << iScanSums[i] << " ";
     }
     cout << endl;
   }
   forierr = 0;
-  for (int i=0; i<count; i++)
+  for (i=0; i<count; i++)
     forierr += !(iMyScanSums[i] == iScanSums[i]);
   EPETRA_TEST_ERR(forierr,ierr);
   delete [] iScanSums;
@@ -394,7 +394,7 @@ int main(int argc, char *argv[]) {
   double *dScanSums = new double[count];
   if (verbose1) {
     cout << "The values on processor " << rank << " are: ";
-    for (int i=0; i<count; i++)
+    for (i=0; i<count; i++)
       cout << dInputs[i] << " ";
     cout << endl;
   }
@@ -404,13 +404,13 @@ int main(int argc, char *argv[]) {
 
   if (verbose1) {
     cout << "The sums of all values on processors 0 - " << rank << " are: ";
-    for (int i=0; i<count; i++) {
+    for (i=0; i<count; i++) {
       cout << dScanSums[i] << " ";
     }
     cout << endl;
   }
   forierr = 0;
-  for (int i=0; i<count; i++)
+  for (i=0; i<count; i++)
     forierr += !(Epetra_Util::Chop(dMyScanSums[i] - dScanSums[i])== 0);
   EPETRA_TEST_ERR(forierr,ierr);
   delete [] dScanSums;
@@ -423,7 +423,7 @@ int main(int argc, char *argv[]) {
   int *iOrderedVals = new int[totalVals];
   if (verbose1) {
     cout << "The values on processor " << rank << " are: ";
-    for (int i=0; i<count; i++) 
+    for (i=0; i<count; i++) 
       cout << iInputs[i] << " ";
     cout << endl;
   }
@@ -433,13 +433,13 @@ int main(int argc, char *argv[]) {
 
   if (verbose1) {
     cout << "The combined list of all values from all processors according to processor " << rank << " is: ";
-    for (int i=0; i<totalVals; i++) {
+    for (i=0; i<totalVals; i++) {
       cout << iOrderedVals[i] << " ";
     }
     cout << endl;
   }
   forierr = 0;
-  for (int i=0; i<totalVals; i++)
+  for (i=0; i<totalVals; i++)
     forierr += !(iMyOrderedVals[i] == iOrderedVals[i]);
   EPETRA_TEST_ERR(forierr,ierr);
   delete [] iOrderedVals;
@@ -451,7 +451,7 @@ int main(int argc, char *argv[]) {
   double *dOrderedVals = new double[totalVals];
   if (verbose1) {
     cout << "The values on processor " << rank << " are: ";
-    for (int i=0; i<count; i++) 
+    for (i=0; i<count; i++) 
       cout << dInputs[i] << " ";
     cout << endl;
   }
@@ -461,13 +461,13 @@ int main(int argc, char *argv[]) {
 
   if (verbose1) {
     cout << "The combined list of all values from all processors according to processor " << rank << " is: ";
-    for (int i=0; i<totalVals; i++) {
+    for (i=0; i<totalVals; i++) {
       cout << dOrderedVals[i] << " ";
     }
     cout << endl;
   }
   forierr = 0;
-  for (int i=0; i<totalVals; i++)
+  for (i=0; i<totalVals; i++)
     forierr += !(Epetra_Util::Chop(dMyOrderedVals[i] - dOrderedVals[i]) == 0);
   EPETRA_TEST_ERR(forierr,ierr);
   delete [] dOrderedVals;
