@@ -1103,7 +1103,7 @@ extern int LB_Free_Data(LB_GID **import_global_ids, LB_LID **import_local_ids,
 /* 
  * Routine to determine which processor a new point should be assigned to.
  * Note that this only works of the current partition was produced via a
- * geometric algorithm - currently only RCB.
+ * geometric algorithm - currently RCB and IRB.
  * 
  * Input:
  *   lb          -- pointer to lb structure
@@ -1122,7 +1122,7 @@ extern int LB_Point_Assign(struct LB_Struct *lb, double *coords, int *proc);
 /* 
  * Routine to determine which processors a bounding box intersects.
  * Note that this only works of the current partition was produced via a
- * geometric algorithm - currently only RCB.
+ * geometric algorithm - currently RCB and IRB.
  * 
  * Input:
  *   lb                -- pointer to lb structure

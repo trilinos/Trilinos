@@ -80,6 +80,7 @@ typedef enum LB_Method {
   PARMETIS,
   JOSTLE,
   REFTREE,
+  IRB,
   LB_MAX_METHODS                  /*  This entry should always be last.      */
 } LB_METHOD;
 
@@ -465,6 +466,7 @@ extern LB_FN LB_octpart;
 extern LB_FN LB_ParMetis;
 extern LB_FN LB_Jostle;
 extern LB_FN LB_Reftree_Part;
+extern LB_FN LB_irb;
 
 #include "par_const.h"
 
