@@ -1,9 +1,7 @@
-<HTML>
-<HEAD>
-   <META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-1">
-   <META HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
-   <META NAME="GENERATOR" CONTENT="Mozilla/4.04 [en] (X11; U; SunOS 4.1.3_U1 sun4m) [Netscape]">
-   <TITLE>Zoltan User's Guide</TITLE>
+<!doctype html public "-//Netscape Comm. Corp.//DTD HTML//EN">
+<html>
+<head>
+
 <!
   ------------------------
   | CVS File Information |
@@ -13,34 +11,156 @@
   $Date$
   $Revision$
 >
-</HEAD>
-<BODY BGCOLOR="#FFFFFF">
 
-<DIV ALIGN=right>
-<H3>
-<IMG SRC="figures/ug_header.gif" ALT="Zoltan Developer's Guide" ></H3></DIV>
+<!----CHANGE INFORMATION IN AREAS WITH THIS HEADER---->
+<!----SCROLL DOWN TO FIND OTHER AREAS TO BE CHANGED---->
 
-<CENTER>
-<H1>
-Zoltan:<BR>
-A Dynamic Load-Balancing Library for Parallel Applications</H1></CENTER>
+<title>Sandia National Laboratories - Zoltan User's Guide</title>
+<!--------CHANGE THE NAME AFTER THE DASH-------->
 
-<CENTER>
-<H1>
-User's Guide</H1></CENTER>
+<meta name="filename" content="ug.html">
+<!--------CHANGE THE FILENAME-------->
 
-<H1>
-<BR>
+<meta name="review" content="28 May, 1999">
+<!--------CHANGE THE REVIEW DATE-------->
+
+<meta name="subject" content="Zoltan User's Guide">
+<!--------CHANGE THE SUBJECT-------->
+
+<link rel="schema.sandia" href="http://www.sandia.gov/html_schema.htm"> 
+<meta name="sandia.approval_type" content="formal">
+
+<meta name="sandia.approved" content="1997-0405">
+<!--------CHANGE THE SAND NUMBER INFO-------->
+
+<meta name="sandia.create_date" content="05/28/99">
+<!--------INSERT THE DATE DOCUMENT CREATED-------->
+
+<link rev="owns" title="name of contact" href="mailto:kddevin@cs.sandia.gov">
+<!--------CHANGE THE PAGE OWNER AND EMAIL ADDRESS-------->
+
+<link rev="made" title="name of contact" href="mailto:kddevin@cs.sandia.gov">
+<!--------CHANGE THE PAGE MAKER AND EMAIL ADDRESS-------->
+
+<meta name = "keywords" content = "Zoltan, dynamic load balancing, parallel computing">
+<!--------PLACE FIVE KEY WORDS WITHIN THE QUOTES-------->
+<!---------------END OF THIS CHANGE AREA--------------->
+
+</head>
+
+<body background="http://www.sandia.gov/images/bkgrnd.gif" text="#000000" >
+<! KDD Turned off alternative link colors in template; the >
+<! following line was part of the above body command. >
+<! link="#003366" vlink="#cc0033" alink="#000000">
+
+<a name="TOP"></a>
+
+<!---TOP BANNER AREA STARTS HERE--->
+<table valign=top border="0">
+<tr valign=top><td valign=top width="140">
+
+<table valign=top border="0" width="130">
+<tr valign=top><td width="128" valign=top>
+<!--SANDIA LOGO AT TOP LEFT-->
+
+<a href="http://www.sandia.gov/Main.html"><img valign="top" src="http://www.sandia.gov/images/snlstkdc.gif" border="0" width="126" height="49" alt="[Sandia National Laboratories]"></a>
+<br>
+<!---TOP LEFT NAVIGATION BUTTONS--->
+<a href="http://www.sandia.gov/About.htm"><img src="http://www.sandia.gov/images/1pixel.gif" border="0" alt="[About Sandia]"></a><br>
+<a href="http://www.sandia.gov/Solution.htm"><img src="http://www.sandia.gov/images/1pixel.gif" border="0" alt="[Unique Solutions]"></a><br>
+<a href="http://www.sandia.gov/Working.htm"><img src="http://www.sandia.gov/images/1pixel.gif" border="0" alt="[Working With Us]"></a><br>
+<a href="http://www.sandia.gov/Contacting.htm"><img src="http://www.sandia.gov/images/1pixel.gif" border="0" alt="[Contacting Us]"></a><br>
+<a href="http://www.sandia.gov/News.htm"><img src="http://www.sandia.gov/images/1pixel.gif" border="0" alt="[News Center]"></a><br>
+<a href="http://www.sandia.gov/search.html"><img src="http://www.sandia.gov/images/1pixel.gif" border="0" alt="[Search]"></a><br>
+<a href="http://www.sandia.gov/Main.html"><img src="http://www.sandia.gov/images/1pixel.gif" border="0" alt="[Home]"></a><br>
+
+<img ismap usemap="#shortMap" src="http://www.sandia.gov/images/labelNEW.gif" width="111" height="119"  hspace="2" border="0" alt="[navigation panel]">
+</td>
+
+<td><img src="http://www.sandia.gov/images/1pixel.gif" border="0" width="10" height="1"></td>
+
+</td></tr>
+</table>
+
+<br>
+
+
+<table border="0" width="140" valign="top">
+<tr valign="top" align="left"><td width="114" valign="top">
+<!----------- 1st little turquoise bevel button ------------>
+<table border="0" width="114" bgcolor="#00ccff" cellspacing="0" cellpadding="0"><tr valign="top" bgcolor="#99ffff"><td align="left"><img src="http://www.sandia.gov/images/1pixel.gif" height="1" width="1"></td><td align="right"><img src="http://www.sandia.gov/images/1pixel.gif" width="1" height="1"></td></tr>
+<tr align="center" valign="center"><td colspan="2"><b><font face="Verdana, Arial, Helvetica" size="+1" style="family: Verdana, Arial, Helvetica"><a href="../Zoltan.html">Zoltan Home Page</a></font></b></td>
+</tr>
+<tr valign="bottom" bgcolor="#006699">
+<td align="left"><img src="http://www.sandia.gov/images/1pixel.gif" width="1" height="1"></td><td align="right"><img src="http://www.sandia.gov/images/1pixel.gif" width="1" height="1"></td></tr>
+</table>
+
+
+</td>
+<td width="20" valign="top">
+<br>
+</td></tr>
+
+
+<tr valign="top">
+<td colspan="2">
+</td></tr>
+
+<tr valign="top" align="left"><td width="114" valign="top">
+<!----------- 2nd little turquoise bevel button ------------>
+<table border="0" width="114" bgcolor="#00ccff" cellspacing="0" cellpadding="0"><tr valign="top" bgcolor="#99ffff"><td align="left"><img src="http://www.sandia.gov/images/1pixel.gif" height="1" width="1"></td><td align="right"><img src="http://www.sandia.gov/images/1pixel.gif" width="1" height="1"></td></tr>
+<tr align="center" valign="center"><td colspan="2"><b><font face="Verdana, Arial, Helvetica" size="+1" style="family: Verdana, Arial, Helvetica"><a href="../dev_html/dev.html">Zoltan Developer's Guide</a></font></b></td>
+</tr>
+<tr valign="bottom" bgcolor="#006699">
+<td align="left"><img src="http://www.sandia.gov/images/1pixel.gif" width="1" height="1"></td><td align="right"><img src="http://www.sandia.gov/images/1pixel.gif" width="1" height="1"></td></tr>
+</table>
+</td>
+<td width="20" valign="top">
+<br>
+</td></tr>
+
+<tr valign="top">
+<td colspan="2">
+</td></tr>
+
+</table>
+
+
+<td valign="top">
+
+<!--MAIN CONTENT AREA STARTS HERE-->
+<!----------------THIS IS A CHANGE AREA----------------> 
+<!------HEADER TEXT SHOULD BE REPLACE THIS TEXT------>
+<b><font face="Verdana, Arial, Helvetica" size=5 style="font-family: Verdana, Arial, Helvetica">
+Zoltan: <br>
+A Dynamic Load-Balancing Library for Parallel Applications<br><br>
+User's Guide
+</font></center></b><p>
+<!---------------END OF THIS CHANGE AREA--------------->
+
+
+
+<!----------------THIS IS A CHANGE AREA----------------> 
+<!--MAIN CONTENT SHOULD BE PLACED IN THE AREA BELOW-->
+
+
+<HR WIDTH="100%">
+<H4>
 <B><A HREF="http://www.cs.sandia.gov/~kddevin">Karen Devine<BR>
 </A><A HREF="http://www.cs.sandia.gov/~bahendr">Bruce Hendrickson<BR>
 </A>Matthew St. John<BR>
 Erik Boman<BR>
-Courtenay Vaughan</B></H1>
+Courtenay Vaughan</B></H4>
 <B>Sandia National Laboratories</B>
 <BR><B>P.O. Box 5800</B>
 <BR><B>Albuquerque, NM&nbsp; 87185-1111</B>
 <BR>
 <HR WIDTH="100%">
+
+<DIV ALIGN=right>
+<H4>
+<IMG SRC="figures/ug_header.gif" ALT="Zoltan User's Guide" ></H4></DIV>
+
 <H4>
 <A HREF="ug_intro.html">Introduction</A></H4>
 
@@ -101,5 +221,34 @@ Functions</A>
 
 <HR WIDTH="100%">[<A HREF="../Zoltan.html">Zoltan Home Page</A>&nbsp; |&nbsp;
 <A HREF="ug_intro.html">Next:&nbsp; Introduction</A>]
-</BODY>
-</HTML>
+<!---------MAIN CONTENT AREA ENDS HERE--------->
+
+<!-- CHANGE CONTACT + E-MAIL, NOTE "SUBJECT" IN E-MAIL CODE -->
+<p>
+</td></tr></table>
+
+<hr width="100%">
+
+</td>
+
+
+</tr></table>
+
+<!--Image maps below--><map name="shortMap">
+<area shape="rect" coords="2,2,108,14"href="http://www.sandia.gov/About.htm"></area>
+<area shape="rect" coords="2,19,108,31"href="http://www.sandia.gov/Solution.htm"></area>
+<area shape="rect" coords="2,36,108,48"href="http://www.sandia.gov/Working.htm"></area>
+<area shape="rect" coords="2,53,108,65"href="http://www.sandia.gov/Contacting.htm"></area>
+<area shape="rect" coords="2,70,108,82"href="http://www.sandia.gov/News.htm"></area>
+<area shape="rect" coords="2,87,108,99"href="http://www.sandia.gov/search.html"></area>
+<area shape="rect" coords="2,104,108,116"href="http://www.sandia.gov/Main.html"></area>
+</map>
+
+
+<!----------------THIS IS A CHANGE AREA---------------->
+<!----NAME AND DATE OF LAST REVISION SHOULD BE HERE---->
+<!---------------END OF THIS CHANGE AREA--------------->
+
+
+</body>
+</html>
