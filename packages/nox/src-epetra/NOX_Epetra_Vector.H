@@ -120,9 +120,9 @@ class Vector : public Abstract::Vector {
 
   virtual double norm(NormType type = TWO) const;
 
-  virtual double norm(const Vector& weights, NormType type = TWO) const;
+  virtual double norm(const Vector& weights) const;
   //! See above.
-  virtual double norm(const Abstract::Vector& weights, NormType type = TWO) const;
+  virtual double norm(const Abstract::Vector& weights) const;
 
   //@}
 
