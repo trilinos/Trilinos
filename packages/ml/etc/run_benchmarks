@@ -294,7 +294,7 @@ then
     echo "         of either ml or mlbench. Benchmarks " >> ${SUMMARY_FILE}
     echo "         cancelled!                          " >> ${SUMMARY_FILE}
     echo "*********************************************"  >> ${SUMMARY_FILE}
-    echo >> ${SUMMARY_FILE}; echo; >> ${SUMMARY_FILE}
+    echo >> ${SUMMARY_FILE}; echo >> ${SUMMARY_FILE};
     exit
   fi
 fi
