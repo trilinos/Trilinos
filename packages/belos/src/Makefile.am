@@ -14,8 +14,7 @@ CORE_H = \
 	$(srcdir)/AnasaziMatrix.hpp \
 	$(srcdir)/AnasaziMultiVec.hpp \
 	$(srcdir)/AnasaziPetra.hpp \
-	$(srcdir)/AnasaziPrecondition.hpp \
-	$(srcdir)/Epetra_Operator_Anasazi_Prec.hpp
+	$(srcdir)/AnasaziPrecondition.hpp
 
 CORE = 
 
