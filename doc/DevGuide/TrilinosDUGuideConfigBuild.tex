@@ -367,6 +367,14 @@ Other important notes about the configure and build processes.
 \item Any code that links to Trilinos should define 
 \InlineCommand{HAVE\_CONFIG\_H}.
 
+\item When building with LAM under RH9 Linux, configure complains that it 
+cannot find mpi++.h.  The message in the config.log file is:
+\begin{verbatim}
+/usr/include/mpi.h:1064:19: mpi++.h: No such file or directory
+\end{verbatim}
+The following modified configure invocation works:
+\DisplayCommand{../configure --enable-mpi CXX="mpiCC -DLAM\_BUILDING"}
+
 \item The build process will fail on OSX if ``DropZip'' is used to 
 unzip the Trilinos tarball.  This utility truncates long file names.
 
