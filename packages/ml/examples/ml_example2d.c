@@ -802,9 +802,15 @@ null_vect[ i*ndim+ leng + 1 ]=-1.;
 	ML_Gen_Smoother_VBlockSymGaussSeidel(ml , coarsest_level, ML_BOTH,
 					     nsmooth,1., nblocks, blocks);
       }
+#ifdef HAVE_ML_SUPERLU
       else if (ML_strcmp(context->coarse_solve,"SuperLU") == 0) {
 	ML_Gen_CoarseSolverSuperLU( ml, coarsest_level);
       }
+#elif defined(HAVE_ML_AMESOS)
+      else if (ML_strcmp(context->coarse_solve,"KLU") == 0) {
+	ML_Gen_Smoother_Amesos( ml, coarsest_level, ML_AMESOS_KLU,-1);
+      }
+#endif
       else {
 	pr_error("unknown coarse grid solver %s\n",context->coarse_solve);
       }

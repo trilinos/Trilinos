@@ -55,12 +55,26 @@ GetNecessaryFiles: $(EXTRA_DIST)
 
 #2d_Poisson$(REALEXT): $(2d_Poisson_SOURCES)
 
+if ML_USING_TEUCHOS 
+teuchos_lib = $(top_builddir)/../teuchos/src/libteuchos.a
+else
+teuchos_lib =
+endif
+
+if ML_USING_AMESOS
+# Amesos require Teuchos
+amesos_lib = $(top_builddir)/../amesos/src/libamesos.a \
+             $(top_builddir)/../teuchos/src/libteuchos.a
+else
+amesos_lib =
+endif
 
 2d_Poisson_DEPENDENCIES = \
 	$(top_builddir)/src/libml.a \
 	$(top_builddir)/../aztecoo/src/libaztecoo.a \
+    ${amesos_lib} \
 	$(top_builddir)/../epetra/src/libepetra.a \
-	$(top_builddir)/../teuchos/src/libteuchos.a  \
+    ${teuchos_lib} \
 	GetNecessaryFiles
 
 ml_common_include_locations = -I$(top_srcdir)/src/Include          \
@@ -77,10 +91,12 @@ ml_common_include_locations = -I$(top_srcdir)/src/Include          \
                    -I$(top_builddir)/../aztecoo/src \
                    -I$(top_srcdir)/../epetra/src            \
                    -I$(top_builddir)/../epetra/src          \
-                   -I$(top_builddir)/../teuchos/src
+                   -I$(top_builddir)/../teuchos/src        \
+                   -I$(top_builddir)/../amesos/src
 
 ml_libs = $(top_builddir)/src/libml.a        \
                 $(top_builddir)/../aztecoo/src/libaztecoo.a        \
+	            $(top_builddir)/../amesos/src/libamesos.a  \
                 $(top_builddir)/../epetra/src/libepetra.a \
 	            $(top_builddir)/../teuchos/src/libteuchos.a  \
                 $(LIBS) \

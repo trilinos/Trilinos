@@ -14,7 +14,7 @@
 #
 #       Create two new files:
 #           - an input deck called ml_inputfileX
-#           - an expected results file called baselineX,
+#           - an file called baselineX that contains known good results,
 #       where X is some positive integer.
 #
 # To run this script:
@@ -78,7 +78,9 @@ else
     if ( ${VERBOSE} == '-vtt' ) then
       cat output${testnum}
     else
-      diff -w baseline${testnum} output${testnum} > difs${testnum}
+      diff -w baseline${testnum} output${testnum} > tempdifs${testnum}
+      cat tempdifs${testnum} | grep -v "Amesos (level" > difs${testnum}
+      ${RM} -f tempdifs${testnum}
       # wc prints newline, word and byte counts
       echo "" >> ${SUMMARY_FILE}
       echo "**************************** regression test ${testnum} ******************************" >> ${SUMMARY_FILE}
