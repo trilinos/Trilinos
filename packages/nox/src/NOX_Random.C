@@ -50,6 +50,9 @@ void NOX::Random::setSeed(double s)
 
 double NOX::Random::operator() ()
 {
+  const double a = 16807.0;
+  const double bigInt = 2147483647.0;
+
   seed = fmod(a*seed, bigInt);
-  return dbleTwo*(seed/bigInt)-dbleOne;
+  return 2.0*(seed/bigInt)-1.0;
 }

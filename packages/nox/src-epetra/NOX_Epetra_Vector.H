@@ -71,10 +71,7 @@ class Vector : public virtual Abstract::Vector {
   virtual Abstract::Vector& init(double value);
 
   //! Initialize every element of this vector with random values
-  virtual NOX::Abstract::Vector& random();
-
-  //! Set seed for random number generator
-  virtual NOX::Abstract::Vector& setSeed(double s);
+  virtual NOX::Abstract::Vector& random(bool useSeed = false, double seed = 0.0);
 
   //! Copies source vector into "this".
   virtual Abstract::Vector& operator=(const Epetra_Vector& y);

@@ -109,15 +109,11 @@ Abstract::Vector& Vector::init(double value)
   return *this;
 }
 
-Abstract::Vector& Vector::random()
+Abstract::Vector& Vector::random(bool useSeed, double seed)
 {
+  if (useSeed)
+    epetraVec->SetSeed(seed);
   epetraVec->Random();
-  return *this;
-}
-
-Abstract::Vector& Vector::setSeed(double s)
-{
-  epetraVec->SetSeed(s);
   return *this;
 }
 

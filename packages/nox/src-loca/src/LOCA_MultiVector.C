@@ -92,18 +92,13 @@ NOX::Abstract::Vector& MultiVector::init(double gamma)
   return *this;
 }
 
-NOX::Abstract::Vector& LOCA::MultiVector::random() {
+NOX::Abstract::Vector& LOCA::MultiVector::random(bool useSeed, double seed) {
   for (int i=0; i<vectorPtrs.size(); i++)
-    vectorPtrs[i]->random();
+    vectorPtrs[i]->random(useSeed, seed);
+  if (useSeed)
+    urand.setSeed(seed);
   for (int i=0; i<scalars.size(); i++)
     scalars[i] = urand();
-  return *this;
-}
-
-NOX::Abstract::Vector& LOCA::MultiVector::setSeed(double s) {
-  for (int i=0; i<vectorPtrs.size(); i++)
-    vectorPtrs[i]->setSeed(s);
-  urand.setSeed(s);
   return *this;
 }
 

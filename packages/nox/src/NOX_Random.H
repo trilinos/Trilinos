@@ -62,18 +62,6 @@ namespace NOX {
       
     //! Seed value
     double seed;
-
-    //! Quantity used by random number generator
-    static const double a = 16807.0;
-
-    //! Quantity used by random number generator
-    static const double bigInt = 2147483647.0;
-
-    //! Quantity used by random number generator
-    static const double dbleOne = 1.0;
-
-    //! Quantity used by random number generator
-    static const double dbleTwo = 2.0;
   };
 
 }

@@ -72,16 +72,12 @@ NOX::Abstract::Vector& NOX::LAPACK::Vector::init(double value)
   return *this;
 }
 
-NOX::Abstract::Vector& NOX::LAPACK::Vector::random() 
+NOX::Abstract::Vector& NOX::LAPACK::Vector::random(bool useSeed, double seed) 
 {
+  if (useSeed)
+    urand.setSeed(seed);
   for (int i=0; i<x.size(); i++) 
     x[i] = urand();
-  return *this;
-}
-
-NOX::Abstract::Vector& NOX::LAPACK::Vector::setSeed(double s) 
-{
-  urand.setSeed(s);
   return *this;
 }
 
