@@ -44,6 +44,50 @@ MultiVector operator-(const MultiVector& x, const MultiVector& y)
 }
 
 // ====================================================================== 
+MultiVector operator+(const MultiVector& x, const double alpha)
+{
+  MultiVector res(x.GetVectorSpace());
+  res = alpha;
+  res.Update(1.0, x, 1.0);
+  return(res);
+}
+
+// ====================================================================== 
+MultiVector operator-(const MultiVector& x, const double alpha)
+{
+  MultiVector res(x.GetVectorSpace());
+  res = -alpha;
+  res.Update(1.0, x, 1.0);
+  return(res);
+}
+
+// ====================================================================== 
+MultiVector operator+(const double alpha, const MultiVector& x)
+{
+  return(x + alpha);
+}
+
+// ====================================================================== 
+MultiVector operator-(const double alpha, const MultiVector& x)
+{
+  return(x - alpha);
+}
+
+#if 0
+// ====================================================================== 
+MultiVector operator+= (const double alpha)
+{
+  return(x + alpha);
+}
+
+// ====================================================================== 
+MultiVector operator-= (const double alpha)
+{
+  return(x - alpha);
+}
+#endif
+
+// ====================================================================== 
 Operator operator+(const Operator& A, const Operator& B)
 {
   if (A.GetDomainSpace() != B.GetDomainSpace() ||

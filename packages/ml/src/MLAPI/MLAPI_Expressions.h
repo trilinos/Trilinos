@@ -33,6 +33,44 @@ MultiVector operator+(const MultiVector& x, const MultiVector& y);
 MultiVector operator-(const MultiVector& x, const MultiVector& y);
 
 // ====================================================================== 
+//! Creates a new MultiVector, defined as x + y
+// ====================================================================== 
+
+MultiVector operator+(const MultiVector& x, const double alpha);
+
+// ====================================================================== 
+//! Creates a new MultiVector, defined as x - y
+// ====================================================================== 
+
+MultiVector operator-(const MultiVector& x, const double alpha);
+
+// ====================================================================== 
+//! Creates a new MultiVector, defined as x + y
+// ====================================================================== 
+
+MultiVector operator+(const double alpha, const MultiVector& x);
+
+// ====================================================================== 
+//! Creates a new MultiVector, defined as x - y
+// ====================================================================== 
+
+MultiVector operator-(const double alpha, const MultiVector& x);
+
+#if 0
+// ====================================================================== 
+//! Adds a constant to a vector
+// ====================================================================== 
+
+MultiVector operator+= (const double alpha);
+
+// ====================================================================== 
+//! Subtracts a constant to a vector
+// ====================================================================== 
+
+MultiVector operator-= (const double alpha);
+#endif
+
+// ====================================================================== 
 //! Creates a new Operator, defined as A + B
 // ====================================================================== 
 
@@ -81,10 +119,11 @@ MultiVector operator/(const MultiVector& x, const double alpha);
 MultiVector operator*(const BaseOperator& A, const MultiVector& x);
 
 // ====================================================================== 
-//! computes the dot product between the first vector in x and y
+//! Computes the dot product between the first vector in x and y
 // ====================================================================== 
 
 double operator* (const MultiVector& x, const MultiVector& y);
+
 
 } // namespace MLAPI
 
