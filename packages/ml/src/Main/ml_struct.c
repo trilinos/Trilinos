@@ -15,6 +15,7 @@
 #include "ml_agg_genP.h"
 #include "ml_amg_genP.h"
 #include "ml_smoother.h"
+#include "ml_op_utils.h"
 #ifdef ML_MPI
 #include "mpi.h"
 #endif
@@ -204,7 +205,7 @@ int ML_Destroy(ML **ml_ptr)
 }
 
 /* ************************************************************************* */
-/* set symmetrize option
+/* set symmetrize option                                                     */
 /* ------------------------------------------------------------------------- */
 
 int ML_Set_Symmetrize(ML *ml, int true_or_false)
@@ -1943,7 +1944,7 @@ int ML_Gen_Smoother_MLS(ML *ml, int nl, int pre_or_post,
    double          *tdiag;
    char             str[80];
    int                (*fun)(void *, int, double *, int, double *);
-   int iii, jjj, degree;
+   int iii, degree;
    ML_Krylov   *kdata;
    int ntimes = 1;
    ML_Operator *t2, *t3;
@@ -4872,7 +4873,7 @@ int ML_Gen_Smoother_BlockHiptmair( ML *ml , int nl, int pre_or_post, int ntimes,
 			      ML_Operator **Tmat_trans_array, 
 			      ML_Operator *Tmat_bc, 
 			      void *edge_smoother, void **edge_args,
-			      void *nodal_smoother, void **nodal_args)
+			      void *nodal_smoother, void **nodal_args, int type)
      /*
 			      int (*edge_smoother )(void), void *edge_args[],
 			      int (*nodal_smoother)(void), void *nodal_args[])
@@ -4917,6 +4918,7 @@ int ML_Gen_Smoother_BlockHiptmair( ML *ml , int nl, int pre_or_post, int ntimes,
 			          Tmat_array[i], Tmat_trans_array[i], Tmat_bc,
                                   BClength, BClist, 
              edge_smoother, edge_args, nodal_smoother, nodal_args );
+             data->reduced_smoother = type;
 	     ml->pre_smoother[i].data_destroy = ML_Smoother_Destroy_BlockHiptmair_Data;
          sprintf(str,"Hiptmair_pre%d",i);
          status = ML_Smoother_Set(&(ml->pre_smoother[i]), ML_INTERNAL, 
@@ -4957,6 +4959,7 @@ int ML_Gen_Smoother_BlockHiptmair( ML *ml , int nl, int pre_or_post, int ntimes,
 			          Tmat_array[i], Tmat_trans_array[i], Tmat_bc,
 					   BClength, BClist, 
 edge_smoother, edge_args, nodal_smoother, nodal_args );
+	     data->reduced_smoother = type;
 	     ml->post_smoother[i].data_destroy =
 			                            ML_Smoother_Destroy_BlockHiptmair_Data;
          sprintf(str,"Hiptmair_pre%d",i);
@@ -4987,7 +4990,7 @@ int ML_Gen_Smoother_Hiptmair( ML *ml , int nl, int pre_or_post, int ntimes,
 			      ML_Operator **Tmat_trans_array, 
 			      ML_Operator *Tmat_bc, 
 			      void *edge_smoother, void **edge_args,
-			      void *nodal_smoother, void **nodal_args)
+			      void *nodal_smoother, void **nodal_args, int type)
      /*
 			      int (*edge_smoother )(void), void *edge_args[],
 			      int (*nodal_smoother)(void), void *nodal_args[])
@@ -5032,6 +5035,7 @@ int ML_Gen_Smoother_Hiptmair( ML *ml , int nl, int pre_or_post, int ntimes,
 			          Tmat_array[i], Tmat_trans_array[i], Tmat_bc,
                       BClength, BClist, 
 edge_smoother, edge_args, nodal_smoother, nodal_args );
+	     data->reduced_smoother = type;
 	     ml->pre_smoother[i].data_destroy = ML_Smoother_Destroy_Hiptmair_Data;
          sprintf(str,"Hiptmair_pre%d",i);
          status = ML_Smoother_Set(&(ml->pre_smoother[i]), ML_INTERNAL, 
@@ -5045,19 +5049,28 @@ edge_smoother, edge_args, nodal_smoother, nodal_args );
    }
    else if (pre_or_post == ML_POSTSMOOTHER)
    {
-      printf("ML_Gen_Smoother_Hiptmair: ML_POSTSMOOTHER isn't done.\n");
-      for (i = start_level; i <= end_level; i++)
-	  {
-             sprintf(str,"Hiptmair_post%d",i);
-             status = ML_Smoother_Set(&(ml->post_smoother[i]),ML_INTERNAL,
+      for (i = start_level; i <= end_level; i++) {
+         /* Get list of Dirichlet bc, if any. */
+         ml_bc = ml->SingleLevel[i].BCs;
+         if (ML_BdryPts_Check_Dirichlet_Grid(ml_bc))
+            ML_BdryPts_Get_Dirichlet_Grid_Info(ml_bc,&BClength,&BClist);
+         ML_Smoother_Create_Hiptmair_Data(&data);
+	 ML_Smoother_Gen_Hiptmair_Data(&data, &(ml->Amat[i]),
+				       Tmat_array[i], Tmat_trans_array[i], Tmat_bc,
+				       BClength, BClist, 
+				       edge_smoother, edge_args, nodal_smoother, nodal_args );
+	 data->reduced_smoother = type;
+	 ml->post_smoother[i].data_destroy = ML_Smoother_Destroy_Hiptmair_Data;
+         sprintf(str,"Hiptmair_post%d",i);
+         status = ML_Smoother_Set(&(ml->post_smoother[i]), ML_INTERNAL,
 				      (void *) data, fun, NULL, ntimes, 1.0, str);
+         ml->post_smoother[i].pre_or_post = ML_TAG_POSTSM;
+         BClist = NULL; BClength = 0;
 #ifdef ML_TIMING
          ml->post_smoother[i].build_time = GetClock() - t0;
          ml->timing->total_build_time   += ml->post_smoother[i].build_time;
 #endif
-
       }
-
    }
    else if (pre_or_post == ML_BOTH)
    {
@@ -5072,6 +5085,7 @@ edge_smoother, edge_args, nodal_smoother, nodal_args );
 			          Tmat_array[i], Tmat_trans_array[i], Tmat_bc,
 					   BClength, BClist, 
 edge_smoother, edge_args, nodal_smoother, nodal_args );
+	     data->reduced_smoother = type;
 	     ml->post_smoother[i].data_destroy =
 			                            ML_Smoother_Destroy_Hiptmair_Data;
          sprintf(str,"Hiptmair_pre%d",i);
