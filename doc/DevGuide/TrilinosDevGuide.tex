@@ -1,4 +1,4 @@
- \documentclass[12pt,relax]{TrilinosDevGuide}
+ \documentclass[12pt,strict]{TrilinosDevGuide}
 \usepackage{array}
     \title{Trilinos Developers Guide}
 \SANDsubtitle{}
@@ -7,11 +7,14 @@
 Michael A. Heroux \\
 James M. Willenbring\\
 Computational Mathematics \& Algorithms \\
+ \\
 Robert Heaphy \\
 Discrete Algorithms and Math Department \\
+ \\
 Sandia National Laboratories\\
 P.O. Box 5800\\
 Albuquerque, NM 87185-1110 \\
+ \\
 maherou@sandia.gov \\
 jmwille@sandia.gov \\
 rheaph@sandia.gov \\
@@ -25,7 +28,8 @@ rheaph@sandia.gov \\
 \SANDnum{SAND2003-xxxx}
 \SANDprintDate{April 2003}
 \SANDauthor{
-Michael A. Heroux, James M. Willenbring, Robert Heaphy, 
+Michael A. Heroux, James M. Willenbring, \\
+Robert Heaphy, \\
 Sandia National Laboratories}
 
 
@@ -36,7 +40,7 @@ Sandia National Laboratories}
 
 \begin{document}
 \maketitle
-
+\setcounter{page}{3} % Accounts for blank page at beginning
 \begin{abstract}
 
 The Trilinos Project is an effort to facilitate the design, development,
@@ -198,9 +202,9 @@ of the Trilinos Project~\cite{Trilinos-Overview}. The current set of
 packages in Trilinos is shown in Figure~\ref{Figure:TrilinosPackages}.
 
 \begin{figure}
-%\begin{center}
-\includegraphics[height=8in]{TrilinosPackagesDiagram}
-%\end{center}
+\begin{center}
+\includegraphics[height=9in]{TrilinosPackagesDiagram}
+\end{center}
 \label{Figure:TrilinosPackages}
 \caption{Current collection of Trilinos Packages}
 \end{figure}
@@ -300,7 +304,7 @@ Setting up a build tree is straight-forward.
 Figure~\ref{Figure:TrilinosDirectoryStructure} illustrates the
 \begin{figure}
 \begin{center}
-\includegraphics[width=4in]{TrilinosDirectoryStructure}
+\includegraphics[width=6in]{TrilinosDirectoryStructure}
 \end{center}
 \label{Figure:TrilinosDirectoryStructure}
 \caption{Recommended Layout for Trilinos Build Directories}
@@ -1631,7 +1635,7 @@ checks performed during the configure stage.
 Figure~\ref{Figure:TrilinosPackageDependencies} shows how the present
 \begin{figure}
 %\begin{center}
-\includegraphics[height=6in,angle=270]{TrilinosPackageDependencies}
+\includegraphics[height=8in]{TrilinosPackageDependencies}
 %\end{center}
 \label{Figure:TrilinosPackageDependencies}
 \caption{Current Trilinos Package Dependencies}
@@ -1710,8 +1714,8 @@ relative directory \InlineDirectory'{examples}, type
 %... Must be expanded, add info about when to check in, and which branch... also move much of the cvs stuff from the add/remove file section to here
 \end{itemize}
 
-\section{Common Bugzilla Tasks}
-\label{Section:BugzillaTasks}
+%\section{Common Bugzilla Tasks}
+%\label{Section:BugzillaTasks}
 
 
 \end{document}

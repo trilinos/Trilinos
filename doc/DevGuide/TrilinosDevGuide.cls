@@ -734,28 +734,28 @@
 %\newcolumntype{W}{>{\centering\arraybackslash}X}
 
 % Trilinos Colors remapped to BW
-% \definecolor{TrilinosBlue}{rgb}{0,0,0}
-% \definecolor{TrilinosDeepBlue}{rgb}{0,0,0}
-% \definecolor{TrilinosDarkBlue}{rgb}{0,0,0}
-% \definecolor{TrilinosTextBlue}{rgb}{0,0,0}
-% \definecolor{TrilinosRed}{rgb}{0,0,0}
-% \definecolor{TrilinosDeepRed}{rgb}{0,0,0}
-% \definecolor{turquoise}{rgb}{0,0,0}
-% \definecolor{grey}{rgb}{0.5,0.5,0.5}
-% \definecolor{shadecolor}{rgb}{0.753,0.753,0.753}
-% \definecolor{pink}{rgb}{0.5,0.5,0.5}
-
-% Trilinos Colors
- \definecolor{TrilinosBlue}{rgb}{0.498,0.749,1}
- \definecolor{TrilinosDeepBlue}{rgb}{0.4,0.4,0.6}
- \definecolor{TrilinosDarkBlue}{rgb}{0,0,0.5}
- \definecolor{TrilinosTextBlue}{rgb}{0.2,0,0.6}
- \definecolor{TrilinosRed}{rgb}{1,0,0}
- \definecolor{TrilinosDeepRed}{rgb}{0.502,0,0}
- \definecolor{turquoise}{rgb}{0.5,1,1}
+\definecolor{TrilinosBlue}{rgb}{0,0,0}
+\definecolor{TrilinosDeepBlue}{rgb}{0,0,0}
+ \definecolor{TrilinosDarkBlue}{rgb}{0,0,0}
+ \definecolor{TrilinosTextBlue}{rgb}{0,0,0}
+ \definecolor{TrilinosRed}{rgb}{0,0,0}
+ \definecolor{TrilinosDeepRed}{rgb}{0,0,0}
+ \definecolor{turquoise}{rgb}{0,0,0}
  \definecolor{grey}{rgb}{0.5,0.5,0.5}
  \definecolor{shadecolor}{rgb}{0.753,0.753,0.753}
- \definecolor{pink}{rgb}{1,.6,.8}
+ \definecolor{pink}{rgb}{0.5,0.5,0.5}
+
+% Trilinos Colors
+% \definecolor{TrilinosBlue}{rgb}{0.498,0.749,1}
+% \definecolor{TrilinosDeepBlue}{rgb}{0.4,0.4,0.6}
+% \definecolor{TrilinosDarkBlue}{rgb}{0,0,0.5}
+% \definecolor{TrilinosTextBlue}{rgb}{0.2,0,0.6}
+% \definecolor{TrilinosRed}{rgb}{1,0,0}
+% \definecolor{TrilinosDeepRed}{rgb}{0.502,0,0}
+% \definecolor{turquoise}{rgb}{0.5,1,1}
+% \definecolor{grey}{rgb}{0.5,0.5,0.5}
+% \definecolor{shadecolor}{rgb}{0.753,0.753,0.753}
+% \definecolor{pink}{rgb}{1,.6,.8}
 
 % Define strings
 %\def\Trilinos{{\color{TrilinosBlue}{\bf \textsf{Trilinos}}}
