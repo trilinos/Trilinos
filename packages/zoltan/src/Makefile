@@ -118,12 +118,13 @@ SUB_VPATH	= ../all ../lb ../par ../rcb ../oct \
 		  ../params ../driver ../ch ../parmetis ../timer \
                   ../ha ../reftree \
 		  ../Utilities/Communication ../Utilities/Memory
-SUBINCPATH	= -I../all -I../lb -I../par -I../rcb -I../comm -I../oct \
+SUBINCPATH	= -I../all -I../lb -I../par -I../rcb  -I../oct \
 		  -I../params -I../driver -I../ch -I../parmetis -I../timer \
                   -I../ha -I../reftree \
 		  -I../Utilities/Communication -I../Utilities/Memory
-SUBDIRS		= driver ch all lb par rcb comm oct parmetis params timer ha \
-		  reftree Utilities/Communication Utilities/Memory
+SUBDIRS		= driver ch all lb par rcb oct parmetis params timer ha \
+		  reftree 
+UTIL_SUBDIRS	= Utilities/Communication Utilities/Memory
 
 
 ALL_CSRC	= all_allo.c free_structure.c
@@ -202,7 +203,7 @@ ZOLTAN_OBJ	= $(ZOLTAN_CSRC:.c=.o)
 ZDRIVE_CSRC 	= $(DR_CSRC) $(CH_CSRC)
 ZDRIVE_OBJ	= $(ZDRIVE_CSRC:.c=.o)
 ZDRIVE_LIBS	= -L. -l$(LIB_TARGET) \
-		  -L../Utilities/$(ZOLTAN_OBJ_DIR) -lzoltan_comm -lzoltan_mem \
+		  -lzoltan_comm -lzoltan_mem \
 	          $(THIRD_PARTY_LIBPATH) $(THIRD_PARTY_LIBS) \
 		  $(MPI_LIBPATH) $(MPI_LIB) -lm
 
@@ -217,7 +218,7 @@ F90COMP		= $(F90) $(CFLAGS) $(FFLAGS)
 #
 LINT		= lint
 LINT_INC_PATH	= -Idriver -Ich -Iall -Ilb -Ipar -Ircb -Iparams\
-		  -Icomm -Ioct -Iparmetis -Itimer -Iha -Ireftree\
+		  -Ioct -Iparmetis -Itimer -Iha -Ireftree\
 		  -I$(ZOLTAN_INC_PATH)
 #		  -I/Net/local/lang/SC3.0.1/include \
 #		  -I/Net/local/lang/SC3.0.1/ansi_include \
@@ -227,7 +228,7 @@ LINT_INC_PATH	= -Idriver -Ich -Iall -Ilb -Ipar -Ircb -Iparams\
 #		  -I/Net/proj/zoltan/arch/sun/include
 LINT_FLAGS	= $(LINT_INC_PATH) $(GDEFINES)
 LINT_TARGET	= llib-l$(LIB_TARGET).ln
-VPATH		= $(SUBDIRS) $(THIRD_PARTY_VPATH)
+VPATH		= $(SUBDIRS) $(UTIL_SUBDIRS) $(THIRD_PARTY_VPATH)
 
 ###########################################################################
 #      HELP HELP HELP HELP HELP  
@@ -262,6 +263,9 @@ help:
 
 
 zoltan:
+	@if [ ! -d $(ZOLTAN_LIB_DIR) ];		\
+	then mkdir $(ZOLTAN_LIB_DIR);		\
+	fi;					\
 	@cd Utilities; \
 	$(MAKE) libzoltan_mem.a; \
 	$(MAKE) libzoltan_comm.a  
@@ -286,12 +290,8 @@ zoltan:
 	"AR=$(AR)" 				\
 	"RANLIB=$(RANLIB)" 			\
 	"ZOLTAN_OBJ_DIR=$(ZOLTAN_OBJ_DIR)" 
-	@if [ $(ZOLTAN_OBJ_DIR) != $(ZOLTAN_LIB_DIR) ]; \
-	then  						\
-          if [ ! -d $(ZOLTAN_LIB_DIR) ];		\
-	  then mkdir $(ZOLTAN_LIB_DIR);			\
-	  fi;						\
-	  mv -f $(ZOLTAN_OBJ_DIR)/$(LIB_NAME) $(ZOLTAN_LIB_DIR); \
+	@if [ $(ZOLTAN_OBJ_DIR) != $(ZOLTAN_LIB_DIR) ]; 		\
+	then mv -f $(ZOLTAN_OBJ_DIR)/$(LIB_NAME) $(ZOLTAN_LIB_DIR); 	\
 	fi
 
 zdrive:
@@ -448,7 +448,8 @@ clean:
          echo $$a; \
 	 cd fort; $(MAKE) "ZOLTAN_OBJ_DIR=$$a" clean; cd ..; \
 	 cd fdriver; $(MAKE) "ZOLTAN_OBJ_DIR=$$a" clean; cd ..; \
-	 cd $$a; $(RM) -f *.o *.d *.d@ $(TARGET) $(TARGET).pure $(LIB_NAME); cd ..; \
+	 $(RM) -rf $$a/*; \
 	 done;
+	 cd Utilities; $(MAKE) clean; cd ..
 	 $(RM) $(LINT_TARGET)
 	 exit 0
