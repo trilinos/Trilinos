@@ -104,15 +104,15 @@ UMFPACK_H =
 UMFPACK =
 endif
 
-if HAVE_AMESOS_SCALAPACK
-SCALAPACK_H = \
-	$(srcdir)/Amesos_Scalapack.h
-SCALAPACK = \
-	$(srcdir)/Amesos_Scalapack.cpp
-else
-SCALAPACK_H =
-SCALAPACK =
-endif
+#if HAVE_AMESOS_SCALAPACK
+#SCALAPACK_H = \
+#	$(srcdir)/Amesos_Scalapack.h
+#SCALAPACK = \
+#	$(srcdir)/Amesos_Scalapack.cpp
+#else
+#SCALAPACK_H =
+#SCALAPACK =
+#endif
 
 if HAVE_AMESOS_MERIKOS
 MERIKOS_H = \
@@ -272,7 +272,6 @@ AMESOS_H = \
 	$(PARAM_H) \
 	$(DSCPACK_H) \
 	$(UMFPACK_H) \
-	$(SCALAPACK_H) \
 	$(MERIKOS_H) \
 	$(KLU_H) \
 	$(MUMPS_H) \
@@ -292,7 +291,6 @@ libamesos_a_SOURCES = \
 	$(DSCPACK) \
 	$(KLU) \
 	$(UMFPACK) \
-	$(SCALAPACK) \
 	$(MERIKOS) \
 	$(MUMPS) \
 	$(FACTORY) \

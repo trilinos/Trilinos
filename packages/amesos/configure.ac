@@ -481,8 +481,9 @@ fi
 #  B L A C S  #
 #  =========  #
 
-if test "X$ac_cv_use_amesos_scalapack" != "Xno" || 
-   test "X$ac_cv_use_amesos_mumps" != "Xno"; then
+#if test "X$ac_cv_use_amesos_scalapack" != "Xno" || 
+#   test "X$ac_cv_use_amesos_mumps" != "Xno"; then
+if test "X$ac_cv_use_amesos_mumps" != "Xno"; then
 
   AC_F77_FUNC(dgebs2d)
 
@@ -495,8 +496,9 @@ fi
 #  C B L A C S  #
 #  ===========  #
 
-if test "X$ac_cv_use_amesos_scalapack" != "Xno" || 
-   test "X$ac_cv_use_amesos_mumps" != "Xno"; then
+#if test "X$ac_cv_use_amesos_scalapack" != "Xno" || 
+#   test "X$ac_cv_use_amesos_mumps" != "Xno"; then
+if test "X$ac_cv_use_amesos_mumps" != "Xno"; then
 
   AC_TRY_LINK_FUNC(Cdgebs2d,,
   AC_MSG_ERROR([[Cannot find the CBLACS library (used by MUMPS and/or ScaLAPACK), specify a location using for example --with-libs=/home/username/lib/libblacs.a, or --with-libs=-lblacs --with-ldflags=-L/home/username/lib).]]))  
@@ -507,18 +509,18 @@ fi
 #  S C A L A P A C K  #
 #  =================  #
 
-if test "X$ac_cv_use_amesos_scalapack" != "Xno"; then
-
-  AC_F77_FUNC(pdgetrf)
-
-  AC_TRY_LINK_FUNC($pdgetrf,,
-  AC_MSG_ERROR([[Cannot find the SCALAPACK library, specify a location using --with-libs, (ex.  --with-libs=/home/username/lib/libscalack.a, or use --with-libs=-lscalapack --with-ldflags=-L/hhome/username/lib).]]))  
-
-  AM_CONDITIONAL(HAVE_AMESOS_SCALAPACK, true ) 
-  AM_CONDITIONAL(NEED_PARAMETER_LIST, true ) 
-else
-  AM_CONDITIONAL(HAVE_AMESOS_SCALAPACK, false ) 
-fi
+#if test "X$ac_cv_use_amesos_scalapack" != "Xno"; then
+#
+#  AC_F77_FUNC(pdgetrf)
+#
+#  AC_TRY_LINK_FUNC($pdgetrf,,
+#  AC_MSG_ERROR([[Cannot find the SCALAPACK library, specify a location using --with-libs, (ex.  --with-libs=/home/username/lib/libscalack.a, or use --with-libs=-lscalapack --with-ldflags=-L/hhome/username/lib).]]))  
+#
+#  AM_CONDITIONAL(HAVE_AMESOS_SCALAPACK, true ) 
+#  AM_CONDITIONAL(NEED_PARAMETER_LIST, true ) 
+#else
+#  AM_CONDITIONAL(HAVE_AMESOS_SCALAPACK, false ) 
+#fi
 
 #  =========  #
 #  M U M P S  #
