@@ -399,7 +399,7 @@ int main(int argc, char *argv[])
         ML_Gen_Smoother_ParaSails(ml , level, ML_PRESMOOTHER, nsmooth, 
                                 parasails_sym, parasails_thresh, 
                                 parasails_nlevels, parasails_filter,
-                                parasails_loadbal, parasails_factorized);
+                                (int) parasails_loadbal, parasails_factorized);
      }
 
      /* This is the symmetric Gauss-Seidel smoothing that we usually use. */
@@ -469,7 +469,7 @@ int main(int argc, char *argv[])
         ML_Gen_Smoother_ParaSails(ml , coarsest_level, ML_PRESMOOTHER, nsmooth, 
                                 parasails_sym, parasails_thresh, 
                                 parasails_nlevels, parasails_filter,
-                                parasails_loadbal, parasails_factorized);
+                                (int) parasails_loadbal, parasails_factorized);
    }
 
    else if (ML_strcmp(context->coarse_solve,"GaussSeidel") == 0) {
