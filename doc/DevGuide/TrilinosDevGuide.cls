@@ -64,7 +64,6 @@
 \RequirePackage{calc}
 
 % Needed for Trilinos
-\RequirePackage{color}
 \RequirePackage{eepic}
 \RequirePackage{amssymb}
 \RequirePackage{scalefnt}
@@ -73,8 +72,6 @@
 %\RequirePackage{tabularx}
 %\RequirePackage{supertabular}
 \RequirePackage{alltt}
-%\RequirePackage{colortbl}
-%\RequirePackage{framed}
 \RequirePackage{verbatim}
 \RequirePackage{fancybox}
 \RequirePackage{float}
@@ -120,14 +117,10 @@
 % Page header and foooter
 \pagestyle{fancyplain}
 \addtolength{\headwidth}{\marginparsep}
-%\addtolength{\headwidth}{0.5in}
-%\addtolength{\headwidth}{\marginparsep}
-%\addtolength{\headwidth}{\marginparwidth}
 \renewcommand{\headrulewidth}{1.6pt}
 \setlength{\headheight}{48pt}
 \setlength{\headsep}{24pt}
 
-%\setlength{\textheight}{9in - \footskip - \headheight - \headsep}
 \setlength{\textheight}{10in - \footskip - \headheight - \headsep}
 \setlength{\topmargin}{-0.5in}
 
@@ -338,21 +331,6 @@
 } % End of AtBeginDocument{}
 
 
-\AtEndDocument{
-  % Do some more usage checking
-%   \ifthenelse{\boolean{SANDmainProvided}}   {
-%   }{
-%     \ClassError{TrilinosDevGuide.cls}{\@backslashchar SANDmain
-%       not provided}{Add \@backslashchar SANDmain before your
-%       introduction (first) section of your document}
-%   }
-%  \ifthenelse{\boolean{SANDdistributionProvided}}   {
-%  }{
-%    \ClassError{TrilinosDevGuide.cls}{\@backslashchar SANDdistribution
-%      not provided}{Add \@backslashchar SANDdistribution at the
-%      end of your document}
-%  }
-} % End of AtEndDocument{}
 
 
 % ---------------------------------------------------------------------------- %
@@ -511,12 +489,8 @@
     % and tables. Only list Sections and Subsections.
     %
 \renewcommand{\contentsname}{\bf Contents}
-%\renewcommand{\contentsname}{\raggedright \normalfont\Large\bfseries
-%  Contents}
 \renewcommand{\listfigurename}{\bf Figures}
 \renewcommand{\listtablename}{\bf Tables}
-%\renewcommand\refname{\raggedright \bf References}
-%\setcounter{tocdepth}{2}
 
     %
     % Don't enter figures, tables, and subsections of an appendix in
@@ -560,7 +534,6 @@
 
 % Changed this from 1.5em to 2.5em since if the number of sections went to
 % double digits the TOC entry was screwed up - SAH, 20 Sep. 2002.
-%  \setlength\@tempdima{1.5em}
   \setlength\@tempdima{2.5em}
   \begingroup
   \parindent \z@ \rightskip \@pnumwidth
@@ -588,7 +561,6 @@
 \renewcommand\appendix{
   \setboolean{inAppendix}{true}
   \par
-  %\setcounter{chapter}{0}
   \setcounter{section}{0}
   \setcounter{subsection}{0}
   \setcounter{subsubsection}{0}
@@ -612,11 +584,10 @@
 %    \@startsection {section}{1}{\z@}%
     {-3.5ex \@plus -1ex \@minus -.2ex}%
     {2.3ex \@plus.2ex}%
-    {\normalfont\Huge\color{TrilinosTextBlue}}
+    {\normalfont\Huge}
   }
 
   \renewcommand{\sectionmark}{\markboth%
-%    {\appendixname~\thesection}%
     {\appendixname~\thesection}%
   }
 }
@@ -634,11 +605,6 @@
   \setcounter{secnumdepth}{2}
 }
 
-% Instead of this, use the Trilinos definition below.
-%\renewcommand\section{\@startsection {section}{1}{0mm}
-%  {-3.5ex \@plus -1ex \@minus -.2ex}
-%  {2.3ex \@plus.2ex}
-%  {\normalfont\Large\bfseries\centering}}
 
 
     % ------------------------------------------------------------------------ %
@@ -703,12 +669,10 @@
     \let \footnote \thanks
     {\LARGE \bf \@title\par%
     \Large\bf \SANDsubtitleVar\par}
-%    {\@title\par}
     \vskip 1.5em
     {\large
       \lineskip .5em%
       \begin{tabular}[t]{c}
-%        \@author
         \SANDauthorVar
       \end{tabular}
       \par
@@ -727,54 +691,17 @@
 \setlength{\parindent}{0pt}
 \setlength{\parskip}{1ex plus0.5ex minus0.2ex}
 
-% Tabularx environment changes
-%\renewcommand{\tabularxcolumn}[1]{>{\vspace{0.5em}}m{#1}}
-%\newcolumntype{Y}{>{\raggedright\arraybackslash}X}
-%\newcolumntype{Z}{>{\raggedright\arraybackslash}X}
-%\newcolumntype{W}{>{\centering\arraybackslash}X}
-
-% Trilinos Colors remapped to BW
-\definecolor{TrilinosBlue}{rgb}{0,0,0}
-\definecolor{TrilinosDeepBlue}{rgb}{0,0,0}
- \definecolor{TrilinosDarkBlue}{rgb}{0,0,0}
- \definecolor{TrilinosTextBlue}{rgb}{0,0,0}
- \definecolor{TrilinosRed}{rgb}{0,0,0}
- \definecolor{TrilinosDeepRed}{rgb}{0,0,0}
- \definecolor{turquoise}{rgb}{0,0,0}
- \definecolor{grey}{rgb}{0,0,0}
- \definecolor{shadecolor}{rgb}{0,0,0}
- \definecolor{pink}{rgb}{0,0,0}
-% \definecolor{grey}{rgb}{0.5,0.5,0.5}
-% \definecolor{shadecolor}{rgb}{0.753,0.753,0.753}
-% \definecolor{pink}{rgb}{0.5,0.5,0.5}
-
-% Trilinos Colors
-% \definecolor{TrilinosBlue}{rgb}{0.498,0.749,1}
-% \definecolor{TrilinosDeepBlue}{rgb}{0.4,0.4,0.6}
-% \definecolor{TrilinosDarkBlue}{rgb}{0,0,0.5}
-% \definecolor{TrilinosTextBlue}{rgb}{0.2,0,0.6}
-% \definecolor{TrilinosRed}{rgb}{1,0,0}
-% \definecolor{TrilinosDeepRed}{rgb}{0.502,0,0}
-% \definecolor{turquoise}{rgb}{0.5,1,1}
-% \definecolor{grey}{rgb}{0.5,0.5,0.5}
-% \definecolor{shadecolor}{rgb}{0.753,0.753,0.753}
-% \definecolor{pink}{rgb}{1,.6,.8}
 
 % Define strings
-%\def\Trilinos{{\color{TrilinosBlue}{\bf \textsf{Trilinos}}}
 \def\Trilinos{\textsf{\bf Trilinos}}
-\def\TrilinosTM{{\color{TrilinosBlue} \bf
+\def\TrilinosTM{{ \bf
       \textsf{Trilinos}}\textsuperscript{\tiny{\texttrademark}}}
 \def\TrilinosTitle{\bf
-%  {\color{TrilinosBlue}{\Huge\scalefont{1.45}\bf
-%  {\color{TrilinosBlue}{\Huge\scalefont{1.00}\bf
   {
     \linethickness{6pt}
-    \raggedright{\color{TrilinosDeepBlue}\line(1,0){450}} \\
+    \raggedright{\line(1,0){450}} \\
     \vspace{0.125in}
-    \color{TrilinosBlue}
     {
-%      \textsf{Trilinos}}}\textsuperscript{\small{\texttrademark}}}
       \textsf{Trilinos}}}\textsuperscript{\small\scalefont{1.1}{\texttrademark}}}
 
 % New commands
@@ -790,7 +717,6 @@
 }
 
 % Footer
-%\cfoot{\bfseries\thepage \\ DRAFT - Not Approved for External Release}
 \cfoot{\bfseries\thepage}
 
 \renewcommand{\familydefault}{phv}
@@ -799,7 +725,7 @@
 % Heading
 \newcommand{\HeadingC}[1]{%
   \par\vspace{\baselineskip}%
-  {\Large\color{TrilinosTextBlue}#1}%
+  {\Large#1}%
   \par\vspace{\baselineskip}}
 
 % Examples
@@ -828,7 +754,7 @@
 
 % Trilinos itemize environment
 \newenvironment{TrilinosItemize}{%
-  \renewcommand{\labelitemi}{{\color{TrilinosRed}$\blacksquare$}}%
+  \renewcommand{\labelitemi}{{$\blacksquare$}}%
   \begin{itemize}}{\end{itemize}}
 
 % Trilinos chapter style
@@ -838,18 +764,13 @@
 
 \def\@chapapp{\chaptername}
 
-%\newcommand{\chapterrulecolor}{TrilinosDeepRed}
-%\newcommand{\chapterrulewidth}{1.6pt}
-%\newcommand{\plainchapterrulewidth}{\z@skip}
-%\def\chapterrule{{\if@fancyplain\let\chapterrulewidth\plainchapterrulewidth\fi
-%    \color{\chapterrulecolor}\hrule\@height\chapterrulewidth}}
 
 \def\@makechapterhead#1{{\parindent0pt\raggedright
     \hyphenpenalty \@M
-    \Huge\scalefont{1.45}\color{TrilinosTextBlue}
+    \Huge\scalefont{1.45}
     \sec@hangfrom{\thechapter.\hspace{1em}}%
     \ignorespaces#1\par
-    \color{TrilinosDeepRed}\vspace{0.5ex}\headrule
+    \vspace{0.5ex}\headrule
     \ifdim\pagetotal>118pt
       \vskip 24pt
     \else
@@ -904,20 +825,13 @@
 % Chapter Overview style
 \newcommand{\chapteroverview}[2]{%
   \vspace{\baselineskip}%
-  {\Huge\color{TrilinosTextBlue}#1}%
+  {\Huge#1}%
   \vspace{\baselineskip}\\ #2 \clearpage}
 
 % Trilinos Abstract style
 \renewcommand{\abstractname}%
 {\raggedright\Large Abstract}
-%{\raggedright\Large\color{TrilinosTextBlue} Abstract}
 
-% Trilinos Contents heading style
-%\renewcommand{\contentsname}{\raggedright\Huge\color{TrilinosTextBlue} Contents}
-
-% Trilinos List of Figures heading style
-%\renewcommand{\listfigurename}{\raggedright\normalfont\Large\bfseries\color{TrilinosTextBlue}
-%List of Figures}
 
 % Trilinos section style
 \renewcommand{\section}{\@startsection
@@ -926,8 +840,7 @@
   {-0.25in}
   {1ex plus 0.5ex minus 0.5ex}
   {1ex plus 1ex minus 0ex}
-  {\raggedright\Huge\color{TrilinosTextBlue}}
-%  {\clearpage\raggedright\Huge\color{TrilinosTextBlue}}
+  {\raggedright\Huge}
 }
 
 % Trilinos subsection style
@@ -937,7 +850,7 @@
   {-0.25in}
   {1ex plus 0.5ex minus 0.5ex}
   {0.5ex plus 1ex minus 0ex}
-  {\raggedright\LARGE\color{TrilinosTextBlue}}
+  {\raggedright\LARGE}
 }
 
 % Trilinos subsubsection style
@@ -947,7 +860,7 @@
   {-0.25in}
   {0.75ex plus 0.5ex minus 0.5ex}
   {0.5ex plus 0.5ex minus 0ex}
-  {\raggedright\large\color{TrilinosTextBlue}}
+  {\raggedright\large}
 }
 
 % Trilinos paragraph style
@@ -957,7 +870,7 @@
   {\z@}
   {0ex plus 0.1ex minus 0.1ex}
   {0.3ex plus 0.2ex minus 0ex}
-  {\raggedright\bfseries\large\color{TrilinosTextBlue}}
+  {\raggedright\bfseries\large}
 }
 
 % Trilinos subparagraph style
@@ -967,7 +880,6 @@
   {\z@}
   {0ex plus 0.1ex minus 0.1ex}
   {0.3ex plus 0.2ex minus 0ex}
-%  {\color{TrilinosTextBlue}\raggedright\normalsize\underline}
   {\raggedright\normalsize\underline}
 }
 
