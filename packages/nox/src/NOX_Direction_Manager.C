@@ -57,7 +57,7 @@ Manager::~Manager()
 
 bool Manager::reset(Parameter::List& params)
 {
-   string newmethod = params.sublist("Direction").getParameter("Method", "None");
+   string newmethod = params.getParameter("Method", "None");
 
   if (method != newmethod) {
     

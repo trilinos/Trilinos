@@ -107,7 +107,7 @@ int main(int argc, char *argv[])
   Problem_Interface interface(Problem);
 
   // Sublist for linear solver
-  NOX::Parameter::List& lsParams = nlParams.sublist("Linear Solver");
+  NOX::Parameter::List& lsParams = dirParams.sublist("Linear Solver");
   lsParams.setParameter("Max Iterations", 800);  
   lsParams.setParameter("Tolerance", 1e-4);
   lsParams.setParameter("Iteration Output Frequency", 50);   
