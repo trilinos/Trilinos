@@ -27,11 +27,12 @@
 
 #include "Epetra_RowMatrix.h"	// base class
 
+#include "Epetra_Import.h"
+#include "Epetra_Vector.h"
+
 // Forward Declarations
 class Epetra_Comm;
 class Epetra_Map;
-class Epetra_Import;
-class Epetra_Vector;
 
 namespace NOX {
 namespace Epetra {
@@ -59,6 +60,20 @@ class MatrixFree : public Epetra_RowMatrix {
 
   //! Pure virtual destructor
   virtual ~MatrixFree();
+
+  virtual int SetUseTranspose(bool UseTranspose);
+
+  virtual int Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const;
+
+  virtual int ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const;
+
+  virtual bool UseTranspose() const;
+
+  virtual bool HasNormInf() const;
+
+  virtual const Epetra_BlockMap & DomainMap() const;
+
+  virtual const Epetra_BlockMap & RangeMap() const;
 
   virtual bool Filled() const;
 

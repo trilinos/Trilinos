@@ -65,7 +65,7 @@ Newton::Newton(Abstract::Group& xgrp, Status::Test& t, const Parameter::List& p)
   testptr(&t),			// pointer to t
   iparams(p),			// copy p
   linesearch(iparams.sublist("Line Search")), // initialize line search
-  direction(iparams.sublist("Direction")) // initialize direction
+  direction(iparams) // initialize direction
 {
   init();
 }

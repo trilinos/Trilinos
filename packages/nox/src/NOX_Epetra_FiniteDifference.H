@@ -62,6 +62,28 @@ class FiniteDifference : public Epetra_RowMatrix {
   //! Pure virtual destructor
   virtual ~FiniteDifference();
 
+/*! NOTE FROM ROGER: The next five functions are used by the new
+ * Trilinos Epetra_Operator class.  They are not defined in Trilinos 2.0
+ * and must be ifdefed out for the old library
+ */ 
+#ifdef TRILINOS_OPERATOR
+
+  virtual int SetUseTranspose(bool UseTranspose);
+
+  virtual int Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const;
+
+  virtual int ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const;
+
+  virtual bool UseTranspose() const;
+
+  virtual bool HasNormInf() const;
+
+#endif // of TRILINOS_OPERATOR
+
+  virtual const Epetra_BlockMap & DomainMap() const;
+
+  virtual const Epetra_BlockMap & RangeMap() const;
+
   virtual bool Filled() const;
 
   virtual int NumMyRowEntries(int MyRow, int & NumEntries) const;

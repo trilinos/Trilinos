@@ -11,9 +11,9 @@
 // Different RowMatrix implementations
 //#include "NOX_Epetra_RowMatrix_ExplicitJacobian.H"
 
-#include <string>
 #include "NOX_Epetra_Group.H"
 
+#include "NOX_Common.H"
 #include "NOX_Epetra_LinearOperator.H" 
 #include "NOX_Parameter_List.H"
 #include "NOX_Epetra_SharedJacobian.H"
@@ -84,9 +84,9 @@ void LinearOperator::setAztecOptions(const Parameter::List& p, AztecOO& aztec)
 {
 
   // Preconditioning Matrix Type 
-    if (p.isParameterEqual("Preconditioning Matrix Type", "None")) 
-      aztec.SetAztecOption(AZ_precond, AZ_none);
-     
+  if (p.isParameterEqual("Preconditioning Matrix Type", "None"))
+    aztec.SetAztecOption(AZ_precond, AZ_none);
+
   // Preconditioning options
   if (p.isParameter("Preconditioning")) {
     
@@ -120,7 +120,7 @@ void LinearOperator::setAztecOptions(const Parameter::List& p, AztecOO& aztec)
 bool LinearOperator::solveLinearSystem(const Parameter::List& params, 
 				       Group* g)
 {
- 
+  
   // Get the Jacobian 
   /* (Have to get non-const version which requires reasserting
      ownership. This is due to a flaw in Epetra_LinearProblem). */
@@ -128,23 +128,23 @@ bool LinearOperator::solveLinearSystem(const Parameter::List& params,
 
   // Create Epetra problem for the linear solve
   Epetra_LinearProblem Problem(&Jacobian, 
-			       &(g->NewtonVector.getEpetraVector()), 
+  			       &(g->NewtonVector.getEpetraVector()), 
 			       &(g->RHSVector.getEpetraVector()));
 
-  // Set the default Problem parameters to "hard" (this sets Aztec deafuats
+  // Set the default Problem parameters to "hard" (this sets Aztec defaults
   // during the AztecOO instantiation)
   Problem.SetPDL(hard);
 
   // Create aztec problem
-  AztecOO aztec(Problem);
+  AztecOO aztec(Problem);  
 
   // Set specific Aztec parameters requested by NOX
   setAztecOptions(params, aztec);
-
+  
   int maxit = params.getParameter("Max Iterations", 400);
   double tol = params.getParameter("Tolerance", 1.0e-6);
 
-  // Solve Aztex problem
+  // Solve Aztec problem
   aztec.Iterate(maxit, tol);
 
   // For now return true.  We should put a check in here.

@@ -24,8 +24,6 @@
 
 #include "Epetra_Comm.h"
 #include "Epetra_Map.h"
-#include "Epetra_Import.h"
-#include "Epetra_Vector.h"
 #include "Epetra_RowMatrix.h"
 #include "NOX_Epetra_Interface.H"
 
@@ -50,6 +48,44 @@ MatrixFree::MatrixFree(Interface& i, const Epetra_Vector& x) :
 
 MatrixFree::~MatrixFree()
 {
+}
+
+int MatrixFree::SetUseTranspose(bool UseTranspose) 
+{
+  return (-1);
+}
+
+int MatrixFree::Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
+{
+  return Multiply(false, X, Y);
+}
+
+int MatrixFree::ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
+{
+  cout << "ERROR: NOX::MatrixFree::ApplyInverse - Not available for Matrix Free!"
+       << endl;
+  throw "NOX Error";
+  return (-1);
+}
+
+bool MatrixFree::UseTranspose() const
+{
+  return false;
+}
+
+bool MatrixFree::HasNormInf() const
+{
+  return false;
+}
+
+const Epetra_BlockMap& MatrixFree::DomainMap() const
+{
+  return currentX.Map();
+}
+
+const Epetra_BlockMap& MatrixFree::RangeMap() const
+{
+  return currentX.Map();
 }
 
 bool MatrixFree::Filled() const

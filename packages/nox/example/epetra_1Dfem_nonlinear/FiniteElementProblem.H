@@ -16,6 +16,7 @@
 class Epetra_Comm;
 class Epetra_Map; 
 class Epetra_Vector;
+class Epetra_Import;
 class Epetra_CrsGraph;
 class Epetra_CrsMatrix;
 

@@ -57,7 +57,7 @@ Manager::~Manager()
 
 bool Manager::reset(Parameter::List& params)
 {
-   string newmethod = params.getParameter("Method", "Newton");
+   string newmethod = params.sublist("Direction").getParameter("Method", "None");
 
   if (method != newmethod) {
     
@@ -79,7 +79,7 @@ bool Manager::reset(Parameter::List& params)
     */
     else {
       ptr = NULL;
-      cerr << "ERROR: NOX::Direction::Manager - invalid choice \"" 
+      cerr << "ERROR: NOX::Direction::Manager::reset() - invalid choice \"" 
 	   << method << "\" for direction method " << endl;
       throw "NOX Error";
     }

@@ -81,7 +81,7 @@ bool Newton::operator()(Abstract::Vector& dir,
     cerr << "NOX::Direction::Newton::operator() - Unable to compute Jacobian." << endl;
     throw "NOX Error";
   }
-
+  
   // Compute the Newton direction
   ok = soln.computeNewton(paramsptr->sublist("Linear Solver"));
 

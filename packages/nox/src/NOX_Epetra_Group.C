@@ -38,7 +38,8 @@
 
 // External include files - linking to Aztec00 and Epetra in Trilinos
 #include "AztecOO.h"
-#include "Epetra_LinearProblem.h" 
+#include "Epetra_LinearProblem.h"
+#include "Epetra_Vector.h" 
 
 using namespace NOX;
 using namespace NOX::Epetra;
