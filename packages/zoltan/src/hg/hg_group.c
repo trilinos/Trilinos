@@ -23,24 +23,55 @@ static ZOLTAN_HG_GROUPING_FN grouping_reg;  /* random edge grouping */
 static ZOLTAN_HG_GROUPING_FN grouping_rrg;  /* random, random grouping */
 static ZOLTAN_HG_GROUPING_FN grouping_rhg;  /* random, heavy grouping */
 static ZOLTAN_HG_GROUPING_FN grouping_grg;  /* greedy grouping */
+static ZOLTAN_HG_GROUPING_FN grouping_aug2; /* augmenting path; length 2 */
+static ZOLTAN_HG_GROUPING_FN grouping_aug3; /* augmenting path; length 3 */
+
+static ZOLTAN_HG_GROUPING_EWS_FN grouping_ews_vp;
+static ZOLTAN_HG_GROUPING_EWS_FN grouping_ews_vs;
+
 
 /****************************************************************************/
 
-ZOLTAN_HG_GROUPING_FN *Zoltan_HG_Set_Grouping_Fn(char *str)
+int Zoltan_HG_Set_Grouping_Fn(HGPartParams *hgp)
 {
-  static int srand_set ;
+  char *str;
+  int found = 0;
+  static int srand_set = 0;
   if (srand_set == 0)
      {
      srand_set = 1 ;
      srand ((unsigned long) RANDOM_SEED) ;
      }
 
-  if      (!strcasecmp(str, "mxg"))  return grouping_mxg;
-  else if (!strcasecmp(str, "reg"))  return grouping_reg;
-  else if (!strcasecmp(str, "rrg"))  return grouping_rrg;
-  else if (!strcasecmp(str, "rhg"))  return grouping_rhg;
-  else if (!strcasecmp(str, "grg"))  return grouping_grg;
-  else                               return NULL;
+  str = hgp->redm_str;
+  if      (!strcasecmp(str, "mxg"))  hgp->grouping = grouping_mxg;
+  else if (!strcasecmp(str, "reg"))  hgp->grouping = grouping_reg;
+  else if (!strcasecmp(str, "rrg"))  hgp->grouping = grouping_rrg;
+  else if (!strcasecmp(str, "rhg"))  hgp->grouping = grouping_rhg;
+  else if (!strcasecmp(str, "grg"))  hgp->grouping = grouping_grg;
+  else                               hgp->grouping = NULL;
+
+  if (hgp->grouping) {
+
+    found = 1;
+
+    /*
+     * If reduction method is a grouping, set the improvement and
+     * edge weight scaling functions accordingly.
+     */
+    str = hgp->rli_str;
+    if      (!strcasecmp(str, "aug2"))  hgp->grouping_rli = grouping_aug2;
+    else if (!strcasecmp(str, "aug3"))  hgp->grouping_rli = grouping_aug3;
+    else                                hgp->grouping_rli = NULL;
+
+    str = hgp->ews_str;
+    if (!strcasecmp(str, "vertex_product")) hgp->grouping_ews = grouping_ews_vp;
+    else if (!strcasecmp(str,"vertex_sum")) hgp->grouping_ews = grouping_ews_vs;
+    else                                    hgp->grouping_ews = NULL;
+
+  }
+
+  return found;
 }
 
 /****************************************************************************/
@@ -51,8 +82,10 @@ int Zoltan_HG_Grouping (ZZ *zz, HGraph *hg, Packing pack, HGPartParams *hgp)
   float *old_ewgt, *new_ewgt;
   char  *yo = "Zoltan_HG_Grouping";
 
+  ZOLTAN_TRACE_ENTER(zz, yo);
   if (!(new_ewgt = (float *) ZOLTAN_MALLOC (sizeof (float) * hg->nEdge)))
   { ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
+    ZOLTAN_TRACE_EXIT(zz, yo);
     return ZOLTAN_MEMERR;
   }
 
@@ -61,8 +94,18 @@ int Zoltan_HG_Grouping (ZZ *zz, HGraph *hg, Packing pack, HGPartParams *hgp)
   old_ewgt = hg->ewgt;
   hg->ewgt = new_ewgt;
   ierr = hgp->grouping(zz,hg,pack,limit);
+  if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
+    goto End;
+  }
+
+  /* Optimization */
+  if (hgp->grouping_rli != NULL)
+   ierr = hgp->grouping_rli (zz,hg,pack,limit);
+
+End:
   hg->ewgt = old_ewgt;
   ZOLTAN_FREE ((void **) &new_ewgt);
+  ZOLTAN_TRACE_EXIT(zz, yo);
   return ierr;
 }
 
@@ -278,6 +321,38 @@ static int grouping_grg (ZZ *zz, HGraph *hg, Packing pack, int limit)
   ZOLTAN_FREE ((void **) &sorted);
   return ZOLTAN_OK;
   }
+
+/****************************************************************************/
+static int grouping_aug2 (ZZ *zz, HGraph *hg, Packing pack, int limit)
+{
+/* Placeholder for grouping_aug2. */
+  return ZOLTAN_OK;
+}
+
+/****************************************************************************/
+static int grouping_aug3 (ZZ *zz, HGraph *hg, Packing pack, int limit)
+{
+/* Placeholder for grouping_aug3. */
+  return ZOLTAN_OK;
+}
+
+/****************************************************************************/
+static int grouping_ews_vp (ZZ *zz, HGraph *hg)
+{
+/* Placeholder for grouping_ews_vp */
+/* Vertex-product edge weight scaling. */
+
+  return ZOLTAN_OK;
+}
+
+/****************************************************************************/
+static int grouping_ews_vs (ZZ *zz, HGraph *hg)
+{
+/* Placeholder for grouping_ews_vs */
+/* Vertex-sum edge weight scaling. */
+
+  return ZOLTAN_OK;
+}
 
 /****************************************************************************/
 

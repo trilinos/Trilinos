@@ -46,6 +46,8 @@ int main (int argc, char **argv)
   strcpy(hgp.redm_str, "grg");
   strcpy(hgp.global_str, "lin");
   strcpy(hgp.local_str, "no");
+  strcpy(hgp.rli_str, "aug3");
+  strcpy(hgp.ews_str, "no");
 
   zz.Debug_Level = 1;
 

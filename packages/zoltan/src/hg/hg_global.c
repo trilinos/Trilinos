@@ -49,7 +49,7 @@ static int global_ran (
 { 
   int i, j, number, vertex, *order=NULL, new_part;
   float *weight=NULL;
-  static int srand_set ;
+  static int srand_set = 0;
   char *yo = "global_ran" ;
 
   if (srand_set == 0)

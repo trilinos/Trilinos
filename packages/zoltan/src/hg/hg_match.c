@@ -24,26 +24,55 @@ static ZOLTAN_HG_MATCHING_FN matching_rhm; /* random, heavy edge matching */
 static ZOLTAN_HG_MATCHING_FN matching_grm; /* greedy edge matching */
 static ZOLTAN_HG_MATCHING_FN matching_lhm; /* locally heaviest matching */
 static ZOLTAN_HG_MATCHING_FN matching_pgm; /* path growing matching */
-static ZOLTAN_HG_MATCHING_FN matching_w3;  /* post matching optimizer */
+static ZOLTAN_HG_MATCHING_FN matching_aug2;/* post matching optimizer */
+static ZOLTAN_HG_MATCHING_FN matching_aug3;/* post matching optimizer */
+
+static ZOLTAN_HG_MATCHING_EWS_FN matching_ews_vp;
+static ZOLTAN_HG_MATCHING_EWS_FN matching_ews_vs;
 
 /*****************************************************************************/
 
-ZOLTAN_HG_MATCHING_FN *Zoltan_HG_Set_Matching_Fn(char *str)
+int Zoltan_HG_Set_Matching_Fn(HGPartParams *hgp)
 {
-  static int srand_set ;
+  char *str;
+  int found = 0;
+  static int srand_set = 0;
   if (srand_set == 0)
      {
      srand_set = 1 ;
      srand ((unsigned long) RANDOM_SEED) ;
      }
 
-  if      (!strcasecmp(str, "mxm"))  return matching_mxm;
-  else if (!strcasecmp(str, "rrm"))  return matching_rrm;
-  else if (!strcasecmp(str, "rhm"))  return matching_rhm;
-  else if (!strcasecmp(str, "grm"))  return matching_grm;
-  else if (!strcasecmp(str, "lhm"))  return matching_lhm;
-  else if (!strcasecmp(str, "pgm"))  return matching_pgm;
-  else                               return NULL;
+  str = hgp->redm_str;
+  if      (!strcasecmp(str, "mxm"))  hgp->matching = matching_mxm;
+  else if (!strcasecmp(str, "rrm"))  hgp->matching = matching_rrm;
+  else if (!strcasecmp(str, "rhm"))  hgp->matching = matching_rhm;
+  else if (!strcasecmp(str, "grm"))  hgp->matching = matching_grm;
+  else if (!strcasecmp(str, "lhm"))  hgp->matching = matching_lhm;
+  else if (!strcasecmp(str, "pgm"))  hgp->matching = matching_pgm;
+  else                               hgp->matching = NULL;
+
+  if (hgp->matching) {
+
+    found = 1;
+
+    /*
+     * If reduction method is a matching, set the improvement and
+     * edge weight scaling functions accordingly.
+     */
+
+    str = hgp->rli_str;
+    if      (!strcasecmp(str, "aug2"))  hgp->matching_rli = matching_aug2;
+    else if (!strcasecmp(str, "aug3"))  hgp->matching_rli = matching_aug3;
+    else                                hgp->matching_rli = NULL;
+
+    str = hgp->ews_str;
+    if (!strcasecmp(str,"vertex_product"))  hgp->matching_ews = matching_ews_vp;
+    else if (!strcasecmp(str,"vertex_sum")) hgp->matching_ews = matching_ews_vs;
+    else                                    hgp->matching_ews = NULL;
+
+  }
+  return found;
 }
 
 /*****************************************************************************/
@@ -55,18 +84,25 @@ int Zoltan_HG_Matching (
   HGPartParams *hgp,
   int limit)
 { int ierr;
+  char *yo = "Zoltan_HG_Matching";
+
+  ZOLTAN_TRACE_ENTER(zz, yo);
 
   if (g->vwgt)
     Zoltan_HG_Scale_Graph_Weight (zz,g);
 
   /* Call matching routine specified by parameters. */
   ierr = hgp->matching(zz,g,match,limit);
-  if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN)
-    return ierr;
+  if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
+    goto End;
+  }
 
   /* Optimization */
-  ierr = matching_w3 (zz,g,match,limit);
+  if (hgp->matching_rli != NULL)
+   ierr = hgp->matching_rli (zz,g,match,limit);
 
+End:
+  ZOLTAN_TRACE_EXIT(zz, yo);
   return ierr;
 }
 
@@ -343,11 +379,11 @@ static int matching_pgm (ZZ *zz, Graph *g, Matching match, int limit)
 
 /*****************************************************************************/
 
-static int matching_w3 (ZZ *zz, Graph *g, Matching match, int limit)
+static int matching_aug3 (ZZ *zz, Graph *g, Matching match, int limit)
 { int		i, j, k, size=0, *stack, free_p=0, best_2=-1, best_near=-1,
 		best_middle=-1, best_distant=-1, neigh1, neigh2, neigh3;
   float		w_1, w_2, w_3, gain_2, gain_3;
-  char *yo = "matching_w3" ;
+  char *yo = "matching_aug3" ;
 
   if (!(stack = (int*) ZOLTAN_MALLOC (sizeof (int) * g->nVtx)))
      {
@@ -412,7 +448,32 @@ static int matching_w3 (ZZ *zz, Graph *g, Matching match, int limit)
   return ZOLTAN_OK;
 }
 
+/*****************************************************************************/
+static int matching_aug2 (ZZ *zz, Graph *g, Matching match, int limit)
+{
+/* Placeholder for matching_aug2. */
+  return ZOLTAN_OK;
+}
 
+/****************************************************************************/
+static int matching_ews_vp (ZZ *zz, Graph *hg)
+{
+/* Placeholder for matching_ews_vp */
+/* Vertex-product edge weight scaling. */
+
+  return ZOLTAN_OK;
+}
+
+/****************************************************************************/
+static int matching_ews_vs (ZZ *zz, Graph *hg)
+{
+/* Placeholder for matching_ews_vs */
+/* Vertex-sum edge weight scaling. */
+  return ZOLTAN_OK;
+}
+
+
+/*****************************************************************************/
 #ifdef __cplusplus
 } /* closing bracket for extern "C" */
 #endif

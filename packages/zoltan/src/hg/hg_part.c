@@ -26,31 +26,37 @@ static float hcut_size_links (ZZ *, HGraph *, int, Partition);
 int Zoltan_HG_Set_Options(ZZ *zz, HGPartParams *hgp)
 {
   char *yo = "Zoltan_HG_Set_Options";
+  int ierr = ZOLTAN_OK;
 
   /* Set reduction method. */
-   hgp->packing  = NULL ;
-   hgp->matching = NULL ;
-   hgp->grouping = NULL ;
-   if (!(hgp->packing  = Zoltan_HG_Set_Packing_Fn  (hgp->redm_str))
-    && !(hgp->matching = Zoltan_HG_Set_Matching_Fn (hgp->redm_str))
-    && !(hgp->grouping = Zoltan_HG_Set_Grouping_Fn (hgp->redm_str)))
+   hgp->packing  = hgp->packing_rli  = NULL ;
+   hgp->matching = hgp->matching_rli = NULL ;
+   hgp->grouping = hgp->grouping_rli = NULL ;
+   hgp->packing_ews = NULL;
+   hgp->matching_ews = NULL;
+   hgp->grouping_ews = NULL;
+
+   if (!(Zoltan_HG_Set_Packing_Fn  (hgp))
+    && !(Zoltan_HG_Set_Matching_Fn (hgp))
+    && !(Zoltan_HG_Set_Grouping_Fn (hgp)))
    { ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Invalid HG_REDUCTION_METHOD.");
-     return ZOLTAN_FATAL;
+     ierr = ZOLTAN_FATAL;
    }
 
    /* Set global partitioning method */
    if (!(hgp->global_part = Zoltan_HG_Set_Global_Part_Fn(hgp->global_str)))
-   { ZOLTAN_PRINT_ERROR(zz->Proc,yo,"Invalid HG_GLOBAL_PARTITIONING specified.");
-     return ZOLTAN_FATAL;
+   { ZOLTAN_PRINT_ERROR(zz->Proc,yo,"Invalid HG_GLOBAL_PARTITIONING.");
+     ierr = ZOLTAN_FATAL;
    }
 
    /* Set local refinement method, if any. */
    hgp->local_ref = Zoltan_HG_Set_Local_Ref_Fn(hgp->local_str);
    if (strcmp(hgp->local_str,"no") && !(hgp->local_ref))
-   { ZOLTAN_PRINT_ERROR(zz->Proc,yo,"Invalid HG_LOCAL_REFINEMENT specified.");
-     return ZOLTAN_FATAL;
+   { ZOLTAN_PRINT_ERROR(zz->Proc,yo,"Invalid HG_LOCAL_REFINEMENT.");
+     ierr = ZOLTAN_FATAL;
    }
-   return ZOLTAN_OK;
+
+   return ierr;
 }
 
 /****************************************************************************/

@@ -148,19 +148,45 @@ typedef int ZOLTAN_HG_GROUPING_FN (ZZ *, HGraph *, Grouping, int);
 typedef int ZOLTAN_HG_GLOBAL_PART_FN(ZZ *, HGraph *, int, Partition);
 typedef int ZOLTAN_HG_LOCAL_REF_FN(ZZ *, HGraph *);
 
+/* Function types for edge-weight scaling functions. */
+/* Placeholder for now; if these functions end up having the same argument */
+/* list for each type, do not need separate types here or separate pointers */
+/* in HGPartParams.  KDD */
+typedef int ZOLTAN_HG_MATCHING_EWS_FN (ZZ *, Graph *);
+typedef int ZOLTAN_HG_PACKING_EWS_FN  (ZZ *, HGraph *);
+typedef int ZOLTAN_HG_GROUPING_EWS_FN (ZZ *, HGraph *);
+
+
 /* Parameters to the hypergraph functions */
 
 typedef struct {
   int redl;                              /* Reduction limit. */
+
   char redm_str[MAX_PARAM_STRING_LEN];   /* Reduction method string. */
   ZOLTAN_HG_MATCHING_FN *matching;       /* Pointers to Matching, Packing and */
   ZOLTAN_HG_PACKING_FN  *packing;        /* Grouping fn specified by */
   ZOLTAN_HG_GROUPING_FN *grouping;       /* redm_str; NULL if not used */
+
   char global_str[MAX_PARAM_STRING_LEN]; /* Global partitioning string and */
   ZOLTAN_HG_GLOBAL_PART_FN *global_part; /* pointer to Global partitioning fn */
+
   char local_str[MAX_PARAM_STRING_LEN];  /* Local refinement string and */
   ZOLTAN_HG_LOCAL_REF_FN *local_ref;     /* pointer to Local refinement fn */
-  int check_graph;
+
+  char rli_str[MAX_PARAM_STRING_LEN];    /* Reduction Local Improvement string*/
+  ZOLTAN_HG_MATCHING_FN *matching_rli;   /* Pointers to Matching, Packing and */
+  ZOLTAN_HG_PACKING_FN  *packing_rli;    /* Grouping improvement fn specified */
+  ZOLTAN_HG_GROUPING_FN *grouping_rli;   /* by rli_str; NULL if not used */
+
+  char ews_str[MAX_PARAM_STRING_LEN];    /* Edge weight scale string and */
+  ZOLTAN_HG_MATCHING_EWS_FN *matching_ews; /* Pointers to edge weight */
+  ZOLTAN_HG_PACKING_EWS_FN  *packing_ews;  /* scaling fn for Matching,*/
+  ZOLTAN_HG_GROUPING_EWS_FN *grouping_ews; /* Packing and Grouping,   */
+                                           /* specified by ews_str.   */
+
+  int check_graph;                       /* Flag indicating whether the input
+                                            hypergraph should be checked for 
+                                            errors. */
 } HGPartParams;
 
 int Zoltan_HG_Set_Options  (ZZ *, HGPartParams *);
@@ -171,15 +197,15 @@ int Zoltan_HG_Scale_HGraph_Weight (ZZ *, HGraph *, float *);
 
 /* Matching functions */
 int Zoltan_HG_Matching (ZZ *, Graph *, Matching, HGPartParams *, int);
-ZOLTAN_HG_MATCHING_FN *Zoltan_HG_Set_Matching_Fn(char *);
+int Zoltan_HG_Set_Matching_Fn(HGPartParams *);
 
 /* Packing */
 int Zoltan_HG_Packing (ZZ *, HGraph *, Packing, HGPartParams *);
-ZOLTAN_HG_PACKING_FN *Zoltan_HG_Set_Packing_Fn(char *);
+int Zoltan_HG_Set_Packing_Fn(HGPartParams *);
 
 /* Grouping */
 int Zoltan_HG_Grouping (ZZ *, HGraph *, Packing, HGPartParams *);
-ZOLTAN_HG_GROUPING_FN *Zoltan_HG_Set_Grouping_Fn(char *);
+int Zoltan_HG_Set_Grouping_Fn(HGPartParams *);
 
 /* Coarsening */
 int Zoltan_HG_Coarsening   (ZZ *, HGraph *, Packing, HGraph *, int *);

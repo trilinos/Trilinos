@@ -25,26 +25,55 @@ static ZOLTAN_HG_PACKING_FN packing_rhp; /* random, heavy edge packing */
 static ZOLTAN_HG_PACKING_FN packing_grp; /* greedy packing */
 static ZOLTAN_HG_PACKING_FN packing_lhp; /* locally heaviest packing */
 static ZOLTAN_HG_PACKING_FN packing_pgp; /* path growing packing */
+static ZOLTAN_HG_PACKING_FN packing_aug2;/* augmenting path; length 2 */
+static ZOLTAN_HG_PACKING_FN packing_aug3;/* augmenting path; length 3 */
+
+static ZOLTAN_HG_PACKING_EWS_FN packing_ews_vp;
+static ZOLTAN_HG_PACKING_EWS_FN packing_ews_vs;
 
 /****************************************************************************/
 
-ZOLTAN_HG_PACKING_FN *Zoltan_HG_Set_Packing_Fn(char *str)
+int Zoltan_HG_Set_Packing_Fn(HGPartParams *hgp)
 {
-  static int srand_set ;
+  int found = 0;
+  char *str;
+  static int srand_set = 0;
   if (srand_set == 0)
      {
      srand_set = 1 ;
      srand ((unsigned long) RANDOM_SEED) ;
      }
 
-  if      (!strcasecmp(str, "mxp"))  return packing_mxp;
-  else if (!strcasecmp(str, "rep"))  return packing_rep;
-  else if (!strcasecmp(str, "rrp"))  return packing_rrp;
-  else if (!strcasecmp(str, "rhp"))  return packing_rhp;
-  else if (!strcasecmp(str, "grp"))  return packing_grp;
-  else if (!strcasecmp(str, "lhp"))  return packing_lhp;
-  else if (!strcasecmp(str, "pgp"))  return packing_pgp;
-  else                               return NULL;
+  str = hgp->redm_str;
+  if      (!strcasecmp(str, "mxp"))  hgp->packing = packing_mxp;
+  else if (!strcasecmp(str, "rep"))  hgp->packing = packing_rep;
+  else if (!strcasecmp(str, "rrp"))  hgp->packing = packing_rrp;
+  else if (!strcasecmp(str, "rhp"))  hgp->packing = packing_rhp;
+  else if (!strcasecmp(str, "grp"))  hgp->packing = packing_grp;
+  else if (!strcasecmp(str, "lhp"))  hgp->packing = packing_lhp;
+  else if (!strcasecmp(str, "pgp"))  hgp->packing = packing_pgp;
+  else                               hgp->packing = NULL;
+
+  if (hgp->packing) {
+
+    found = 1;
+
+    /* 
+     * If reduction method is a packing, set the improvement and 
+     * edge weight scaling functions accordingly.
+     */
+    str = hgp->rli_str;
+    if      (!strcasecmp(str, "aug2"))  hgp->packing_rli = packing_aug2;
+    else if (!strcasecmp(str, "aug3"))  hgp->packing_rli = packing_aug3;
+    else                                hgp->packing_rli = NULL;
+
+    str = hgp->ews_str;
+    if (!strcasecmp(str, "vertex_product"))  hgp->packing_ews = packing_ews_vp;
+    else if (!strcasecmp(str, "vertex_sum")) hgp->packing_ews = packing_ews_vs;
+    else                                     hgp->packing_ews = NULL;
+    
+  }
+  return found;
 }
 
 /****************************************************************************/
@@ -56,8 +85,10 @@ int Zoltan_HG_Packing (ZZ *zz, HGraph *hg, Packing pack, HGPartParams *hgp)
   float *old_ewgt, *new_ewgt;
   char  *yo = "Zoltan_HG_Packing";
 
+  ZOLTAN_TRACE_ENTER(zz, yo);
   if (!(new_ewgt = (float *) ZOLTAN_MALLOC (sizeof (float) * hg->nEdge)))
   { ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
+    ZOLTAN_TRACE_EXIT(zz, yo);
     return ZOLTAN_MEMERR;
   }
 
@@ -65,9 +96,21 @@ int Zoltan_HG_Packing (ZZ *zz, HGraph *hg, Packing pack, HGPartParams *hgp)
 
   old_ewgt = hg->ewgt;
   hg->ewgt = new_ewgt;
+
   ierr = hgp->packing(zz,hg,pack, limit);
+  if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
+    goto End;
+  }
+
+
+  /* Optimization */
+  if (hgp->packing_rli != NULL)
+   ierr = hgp->packing_rli (zz,hg,pack,limit);
+
+End:
   hg->ewgt = old_ewgt;
   ZOLTAN_FREE ((void **) &new_ewgt);
+  ZOLTAN_TRACE_EXIT(zz, yo);
   return ierr;
 }
 
@@ -434,7 +477,36 @@ static int packing_pgp (ZZ *zz, HGraph *hg, Packing pack, int limit)
 }
 
 /****************************************************************************/
+static int packing_aug2 (ZZ *zz, HGraph *hg, Packing pack, int limit)
+{
+/* Placeholder for packing_aug2 */
+  return ZOLTAN_OK;
+}
 
+/****************************************************************************/
+static int packing_aug3 (ZZ *zz, HGraph *hg, Packing pack, int limit)
+{
+/* Placeholder for packing_aug3 */
+  return ZOLTAN_OK;
+}
+
+/****************************************************************************/
+static int packing_ews_vp (ZZ *zz, HGraph *hg)
+{
+/* Placeholder for packing_ews_vp */
+/* Vertex-product edge weight scaling. */
+  return ZOLTAN_OK;
+}
+
+/****************************************************************************/
+static int packing_ews_vs (ZZ *zz, HGraph *hg)
+{
+/* Placeholder for packing_ews_vs */
+/* Vertex-sum edge weight scaling. */
+  return ZOLTAN_OK;
+}
+
+/****************************************************************************/
 #ifdef __cplusplus
 } /* closing bracket for extern "C" */
 #endif

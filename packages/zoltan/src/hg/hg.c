@@ -31,9 +31,11 @@ extern "C" {
 static PARAM_VARS HG_params[] = {
  /* Add parameters here. */
  { "HG_REDUCTION_LIMIT", NULL, "INT" },
+ { "HG_EDGE_WEIGHT_SCALING", NULL, "STRING" },
  { "HG_REDUCTION_METHOD", NULL, "STRING" },
  { "HG_GLOBAL_PARTITIONING", NULL, "STRING" },
  { "HG_LOCAL_REFINEMENT", NULL, "STRING" },
+ { "HG_REDUCTION_LOCAL_IMPROVEMENT", NULL, "STRING" },
  { "CHECK_GRAPH", NULL, "INT" },
  { NULL, NULL, NULL } };
 
@@ -91,7 +93,8 @@ Partition output_parts = NULL;  /* Output partition from HG partitioner. */
   zz->LB.Data_Structure = zoltan_hg;
   nVtx = zoltan_hg->HG.nVtx;
 
-  Zoltan_HG_HGraph_Print(zz, zoltan_hg, &(zoltan_hg->HG));
+  if (zz->Debug_Level >= ZOLTAN_DEBUG_ALL)
+    Zoltan_HG_HGraph_Print(zz, zoltan_hg, &(zoltan_hg->HG));
 
   /* Call partitioning routines. */
   output_parts = (Partition) ZOLTAN_MALLOC(nVtx * sizeof(int));
@@ -156,14 +159,20 @@ int ierr = ZOLTAN_OK;
                                 (void *) hgp->local_str);
   Zoltan_Bind_Param(HG_params, "HG_GLOBAL_PARTITIONING",
                                 (void *) hgp->global_str);
+  Zoltan_Bind_Param(HG_params, "HG_REDUCTION_LOCAL_IMPROVEMENT",
+                                (void *) hgp->rli_str);
+  Zoltan_Bind_Param(HG_params, "HG_EDGE_WEIGHT_SCALING", 
+                                (void *) &(hgp->ews_str));
   Zoltan_Bind_Param(HG_params, "CHECK_GRAPH",
                                 (void *) &(hgp->check_graph));
 
   /* Set default values */
   hgp->redl = zz->LB.Num_Global_Parts;
-  strcpy(hgp->redm_str, "dep");
+  strcpy(hgp->redm_str, "pgp");
   strcpy(hgp->local_str, "no");
   strcpy(hgp->global_str, "lin");
+  strcpy(hgp->rli_str, "aug3");
+  strcpy(hgp->ews_str, "no");
   hgp->check_graph = 1;
 
   /* Get application values of parameters. */
