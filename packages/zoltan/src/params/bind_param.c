@@ -17,6 +17,7 @@
 #include "lb_const.h"
 #include "lb_util_const.h"
 #include "params_const.h"
+#include "all_allo_const.h"
 
 int       LB_Bind_Param(
 PARAM_VARS *params,		/* parameter structure */
@@ -46,10 +47,12 @@ void *var)			/* pointer to variable to be associated with the parameter name */
     for (ptr = params; ptr->name != NULL; ptr++) {
 	if (!strcmp(name2, ptr->name)) {	/* string match */
 	    ptr->ptr = var;
+            LB_FREE(&name2);
 	    return (LB_OK);
 	}
     }
 
     /* If we reach this point, the parameter name must be invalid */
+    LB_FREE(&name2);
     return (LB_WARN);
 }

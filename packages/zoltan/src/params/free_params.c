@@ -18,22 +18,23 @@
 
 
 void LB_Free_Params(
-LB *lb)				/* load balance structure */
+LB_PARAM **params)				/* load balance structure */
 {
 /*
  * Free the list of new parameter values.
  */
-    LB_PARAM *ptr, *ptr2;	/* loops through parameter list */
+    LB_PARAM *ptr, *next;
 
+    if (params == NULL) return;
 
-    ptr = lb->Params;
+    ptr = *params;
     while (ptr != NULL) {
-	ptr2 = ptr->next;
+	next = ptr->next;
 	LB_FREE(&(ptr->name));
 	LB_FREE(&(ptr->new_val));
 	LB_FREE(&ptr);
-	ptr = ptr2;
+	ptr = next;
     }
 
-    lb->Params = NULL;
+    *params = NULL;
 }
