@@ -45,6 +45,8 @@
 #include "ml_vampir.h"
 #include "ml_amesos.h"
 #include "ml_ifpack.h"
+#include "ml_agg_METIS.h"
+#include "ml_agg_ParMETIS.h"
 
 #endif
 
