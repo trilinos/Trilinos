@@ -44,10 +44,10 @@ CORE =
 
 UTIL_H = \
 	$(srcdir)/Tpetra_ConfigDefs.hpp \
-	$(srcdir)/Tpetra_PacketTraits.hpp
+	$(srcdir)/Tpetra_PacketTraits.hpp \
+        $(srcdir)/Tpetra_Version.hpp
 
-UTIL = \
-	$(srcdir)/Tpetra_Version.cpp
+UTIL =
 
 ENUM_H = \
 	$(srcdir)/Tpetra_CombineMode.hpp

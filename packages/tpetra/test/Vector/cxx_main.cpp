@@ -36,7 +36,7 @@
 #include "Tpetra_SerialPlatform.hpp"
 #include "Tpetra_VectorSpace.hpp"
 #include "Tpetra_Vector.hpp"
-#include "Tpetra_Version.cpp"
+#include "Tpetra_Version.hpp"
 
 // function prototype
 template <typename OrdinalType, typename ScalarType>

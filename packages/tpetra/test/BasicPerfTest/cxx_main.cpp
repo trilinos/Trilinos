@@ -29,7 +29,7 @@
 #include "Tpetra_ConfigDefs.hpp" // for <iostream> and <stdlib>
 #include <Teuchos_Time.hpp>
 #include <Teuchos_ScalarTraits.hpp>
-#include "Tpetra_Version.cpp"
+#include "Tpetra_Version.hpp"
 
 //function prototypes
 void doSumRuns(int size, int numRuns, bool verbose);

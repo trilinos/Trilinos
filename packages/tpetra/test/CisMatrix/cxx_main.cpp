@@ -36,7 +36,7 @@
 #include "Tpetra_CombineMode.hpp"
 #include <Teuchos_OrdinalTraits.hpp>
 #include <Teuchos_ScalarTraits.hpp>
-#include "Tpetra_Version.cpp"
+#include "Tpetra_Version.hpp"
 
 // function prototype
 template <typename OrdinalType, typename ScalarType>

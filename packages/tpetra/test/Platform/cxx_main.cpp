@@ -33,7 +33,7 @@
 #define ORDINALTYPE int
 
 #include "Tpetra_SerialPlatform.hpp"
-#include "Tpetra_Version.cpp"
+#include "Tpetra_Version.hpp"
 
 int main(int argc, char* argv[]) {
     bool verbose = false;

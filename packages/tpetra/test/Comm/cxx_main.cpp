@@ -35,7 +35,7 @@
 
 #include <iostream>
 #include "Tpetra_SerialComm.hpp"
-#include "Tpetra_Version.cpp"
+#include "Tpetra_Version.hpp"
 
 // function prototypes
 template<typename PacketType, typename OrdinalType> void setRandom(PacketType& vals, OrdinalType count);

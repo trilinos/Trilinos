@@ -45,7 +45,7 @@
 #include "Tpetra_ElementSpace.hpp"
 #include "Tpetra_VectorSpace.hpp"
 #include "Tpetra_CisMatrix.hpp"
-#include "Tpetra_Version.cpp"
+#include "Tpetra_Version.hpp"
 
 void test(Epetra_Comm& comm, Epetra_Map*& map, Epetra_CrsMatrix*& A, Epetra_Vector*& xexact,
 					Epetra_Vector*& b, int dim, int nnz, bool verbose, bool smallProblem);

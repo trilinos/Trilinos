@@ -35,7 +35,7 @@
 #include <iomanip>
 #include "Tpetra_SerialPlatform.hpp" 
 #include "Tpetra_ElementSpace.hpp"
-#include "Tpetra_Version.cpp"
+#include "Tpetra_Version.hpp"
 
 void platformTester(bool verbose, bool debug);
 void esTester(bool verbose, bool debug);

@@ -31,7 +31,7 @@
 */
 
 #include "Tpetra_ScalarTraits.hpp"
-#include "Tpetra_Version.cpp"
+#include "Tpetra_Version.hpp"
 
 #define PACKETTYPE int
 #define ORDINALTYPE int

@@ -34,7 +34,7 @@
 
 
 #include "Tpetra_SerialDistributor.hpp"
-#include "Tpetra_Version.cpp"
+#include "Tpetra_Version.hpp"
 
 int main(int argc, char* argv[]) {
 	bool verbose = false;

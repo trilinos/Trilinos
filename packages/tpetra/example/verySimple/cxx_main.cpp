@@ -29,7 +29,7 @@
 #include "Tpetra_Object.hpp"
 #include "Tpetra_SerialComm.hpp"
 #include "Tpetra_SerialPlatform.hpp"
-#include "Tpetra_Version.cpp"
+#include "Tpetra_Version.hpp"
 
 int main(int argc, char *argv[])
 {
