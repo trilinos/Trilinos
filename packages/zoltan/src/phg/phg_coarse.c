@@ -33,7 +33,9 @@ extern "C" {
 
 #ifdef USE_NEW_COARSENING
 
-
+    /*
+#define _DEBUG
+    */
 
 typedef struct _TagSortItem
 {
@@ -500,20 +502,39 @@ int Zoltan_PHG_Coarsening
       
   idx = 0;
   memset(listproc, 0, sizeof(int)*size);
-  for (j=0, i=1; i<size; ++i) {
-      while (i<size && slist[j].val==slist[i].val) {
-          int n1=slist[j].id, n2=slist[i].id;
-
-          if (hlsize[n1]==hlsize[n2] &&
-              !memcmp(&ahvertex[ahindex[n1]], &ahvertex[ahindex[n2]], sizeof(int)*hlsize[n1])) {
-              listproc[n2] = 1+n1; /* n2 is potentially identical to n1 */
-              ++idx;
+  for (j=0; j<size; ++j) {
+      int n1=slist[j].id;
+      if (!listproc[n1]) {
+          for (i = j+1; i<size && slist[j].val==slist[i].val; ++i) {
+              int n2=slist[i].id;
+              if (!listproc[n2] && hlsize[n1]==hlsize[n2] && 
+                  !memcmp(&ahvertex[ahindex[n1]], &ahvertex[ahindex[n2]],
+                          sizeof(int)*hlsize[n1])) {
+                  listproc[n2] = 1+n1; /* n2 is potentially identical to n1 */
+                  ++idx;
+              }
           }
-          ++i;
       }
-      j = i;
-  }  
-  ZOLTAN_FREE(&slist);
+  }
+
+#ifdef _DEBUG
+  printf("H(%d, %d, %d) CH(%d, %d, %d) size=%d\n", hg->nVtx, hg->nEdge, hg->nPins, c_hg->nVtx, c_hg->nEdge, c_hg->nPins, size);
+  for (j=0; j<size; ++j)
+      for (i=j+1; i<size; ++i) {
+          if (hlsize[i]==hlsize[j] && !memcmp(&ahvertex[ahindex[i]], &ahvertex[ahindex[j]], sizeof(int)*hlsize[i])) {
+              if (listproc[i]==0 && listproc[j]==0) {
+                  int k;
+                  printf("NET %d: ", i);
+                  for (k=ahindex[i]; k<ahindex[i+1]; ++k)
+                      printf("%d ", ahvertex[k]);
+                  printf("\n");
+                  errexit("ERROR:net %d (%lx) is identical to net %d (%lx) but none marked as identical\n", i, lhash[i], j, lhash[j]);
+              }
+          }
+      }
+#endif
+  
+  ZOLTAN_FREE(&slist); 
   ip = (int *) lhash; /* UVC: should be safe; it is always sizeof(int)<=sizeof(long) */
   MPI_Allreduce(listproc, ip, size, MPI_INT, MPI_LAND, hgc->row_comm);
   MPI_Allreduce(hlsize, hsize, size, MPI_INT, MPI_SUM, hgc->row_comm);
