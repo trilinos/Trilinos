@@ -45,7 +45,7 @@ static int ML_DecomposeGraph_with_METIS( ML_Operator *Amatrix,
 					 int local_or_global,
 					 int offsets[],
 					 int reorder_flag,
-					 int current_level, int *total_nz );
+					 int current_level, int *total_nz, int * );
 static int find_max(int length, int vector[] );
 static int find_index( int key, int list[], int N );
 static int ML_LocalReorder_with_METIS( int Nrows, int xadj[], int adjncy[] ,
@@ -740,7 +740,8 @@ static int ML_DecomposeGraph_with_METIS( ML_Operator *Amatrix,
 					 int offsets[],
 					 int reorder_flag,
 					 int current_level,
-					 int *total_nz )
+					 int *total_nz,
+					 int * radius)
 {
 
   int i, j,jj,  count, count2, col;
@@ -759,7 +760,7 @@ static int ML_DecomposeGraph_with_METIS( ML_Operator *Amatrix,
   double t0;
   int start, end, freeptr, nextptr;
   int * dep = NULL;
-  int radius, NcenterNodes;
+  int NcenterNodes;
   int * perm = NULL;
   FILE *fp;
   char str[80];
@@ -1126,8 +1127,7 @@ static int ML_DecomposeGraph_with_METIS( ML_Operator *Amatrix,
   /* the entire graph in input; in output, we will have the max radius.     */
   /* ********************************************************************** */
 
-  if( ML_Get_Compute_GraphRadiusFlag() == ML_YES &&
-      5 < ML_Get_PrintLevel() ) {
+  if( ML_Get_Compute_GraphRadiusFlag() == ML_YES || 1 ) {
   
     dep = (int *) malloc(sizeof(int) * Nrows );
     for( i=0 ; i<NrowsMETIS ; i++ ) dep[i] = -7;
@@ -1145,8 +1145,7 @@ static int ML_DecomposeGraph_with_METIS( ML_Operator *Amatrix,
     }
         
     ML_Compute_AggregateGraphRadius( NrowsMETIS, xadj, adjncy, dep,
-				     &radius, &NcenterNodes );
-    printf("Max radius of aggregates (based on graph): %d\n", radius );
+				     radius, &NcenterNodes );
     
     ML_free( dep );
     
@@ -1246,7 +1245,8 @@ int agg_offset, vertex_offset;
  int mod, Nprocs;
  int optimal_value;
  char * unamalg_bdry = NULL;
-
+ int radius;
+ 
 #ifdef EXTREME_DEBUGGING
  set_print(comm->ML_mypid);
 #endif
@@ -1520,6 +1520,11 @@ int agg_offset, vertex_offset;
    /* matrix, so with dropped elements)                                      */
    /* ********************************************************************** */
 
+   if( ml_ag->aggr_viz_and_stats != NULL ) {
+     radius = -1;
+     ML_Set_Compute_GraphRadiusFlag(ML_YES);     
+   }
+   
    unamalg_bdry = (char *) ML_allocate( sizeof(char) * (Nrows+1) );
 
    if( unamalg_bdry == NULL ) {
@@ -1543,7 +1548,7 @@ int agg_offset, vertex_offset;
 					      aggr_index, unamalg_bdry,
 					      ML_LOCAL_INDICES, NULL,
 					      reorder_flag, ml_ag->cur_level,
-					      &total_nz);
+					      &total_nz,&radius);
 
 
 #ifdef ML_MPI
@@ -1608,7 +1613,8 @@ int agg_offset, vertex_offset;
      aggr_viz_and_stats[ml_ag->cur_level].Naggregates = aggr_count;
      aggr_viz_and_stats[ml_ag->cur_level].local_or_global = ML_LOCAL_INDICES;
      aggr_viz_and_stats[ml_ag->cur_level].is_filled = ML_YES;
-     
+     aggr_viz_and_stats[ml_ag->cur_level].Amatrix = Amatrix;
+     aggr_viz_and_stats[ml_ag->cur_level].graph_radius = radius;
    }
 
    /* ********************************************************************** */

@@ -24,6 +24,7 @@
  --with-incdirs="-I/home/msala/Trilinos3PL/DSuperLU/SRC -I/home/msala/include/"
 
                                                                              */
+
 /* ************************************************************************* */
 /* Author        : Marzio Sala (SNL)                                         */
 /* Date          : November 2003                                             */
@@ -84,7 +85,7 @@ extern ML_Operator * ML_BuildQ( int StartingNumElements,
 static int OPTIMAL_VALUE = 27*27; /* don't ask me why */
 
 static int PARMETIS_DEBUG_LEVEL = 0;
-static int OPTIMAL_LOCAL_COARSE_SIZE = 100;
+static int OPTIMAL_LOCAL_COARSE_SIZE = 128;
 
 /* ======================================================================== */
 /*!
@@ -399,9 +400,8 @@ static int ML_BuildReorderedDecomposition( int starting_decomposition[],
   /* compute the ID of the first node belonging to an aggregate             */
 #ifdef ML_MPI
   MPI_Scan( count, offset, Naggregates, MPI_INT, MPI_SUM, comm);
-#endif
-  
   for( i=0 ; i<Naggregates ; i++ ) offset[i] -= count[i];
+#endif  
 
   for( i=0 ; i<Naggregates ; i++ ) count[i] = 0, offset2[i] = 0;
 
@@ -469,12 +469,13 @@ static int ML_DecomposeGraph_with_ParMETIS( ML_Operator *Amatrix,
   int ncon = 1;
   float * tpwgts = NULL;
   int ubvec; /* size = ncon */
-  int local_rows;
   int * proc_with_parmetis = NULL;
 #ifdef ML_MPI
-  MPI_Comm ParMETISComm;  
   MPI_Group orig_group, parmetis_group;
   MPI_Comm orig_comm;
+  MPI_Comm ParMETISComm;
+#else
+  int orig_group, parmetis_group, orig_comm, ParMETISComm;
 #endif
   int N_procs_with_parmetis;
   int ok;
@@ -492,8 +493,6 @@ static int ML_DecomposeGraph_with_ParMETIS( ML_Operator *Amatrix,
     debug_starting_time = GetClock();
   }
 
-#ifdef ML_MPI
-
   t0 = GetClock();
   
   /* ********************************************************************** */
@@ -502,10 +501,16 @@ static int ML_DecomposeGraph_with_ParMETIS( ML_Operator *Amatrix,
   
   Nrows = Amatrix->getrow->Nrows;
   Nghosts = Amatrix->getrow->pre_comm->total_rcv_length;
+#ifdef ML_MPI
   orig_comm = Amatrix->comm->USR_comm;
-
+#endif
+  
+#ifdef ML_MPI
   MPI_Allreduce( &Nrows, &j, 1, MPI_INT, MPI_SUM, orig_comm );
-
+#else
+  j = Nrows;
+#endif
+  
   if( N_parts <= 0 ) N_parts = 1;
 
 #ifdef MAYBE
@@ -547,8 +552,6 @@ static int ML_DecomposeGraph_with_ParMETIS( ML_Operator *Amatrix,
   ML_DecomposeGraph_BuildOffsets( Nrows, offsets, N_procs,
 				  Amatrix->comm->USR_comm );
 
-  local_rows = offsets[mypid+1] - offsets[mypid];
-  
   proc_with_parmetis = (int *) malloc( sizeof(int) * N_procs );
   
   N_procs_with_parmetis = 0;
@@ -676,14 +679,16 @@ static int ML_DecomposeGraph_with_ParMETIS( ML_Operator *Amatrix,
   /* po` in termini di CPU, ma e` sicuro. Il caso N_parts == 1 e` trattato  */
   /* separatamente.                                                         */
   /* ********************************************************************** */
-  
+
+#ifdef ML_MPI
   MPI_Comm_group( orig_comm, &orig_group );
   
   MPI_Group_incl( orig_group, N_procs_with_parmetis,
 		  proc_with_parmetis, &parmetis_group );
   
   MPI_Comm_create( orig_comm, parmetis_group, &ParMETISComm );
-
+#endif
+  
   /* Only processes beloning to ParMETISComm will enter this `if'           */
 
   if( Nrows > 0 ) {
@@ -695,11 +700,11 @@ static int ML_DecomposeGraph_with_ParMETIS( ML_Operator *Amatrix,
       for( i=0 ; i<Nrows ; i++ ) part[i] = -7;
       skip_check = 0; 
 
-#if defined(HAVE_ML_PARMETIS_2x)
+#if defined(HAVE_ML_PARMETIS_2x) && defined(ML_MPI)
       ParMETIS_PartKway(vtxdist, xadj, adjncy, vwgt, adjwgt,
 			wgtflag, &numflag, &N_parts,
 			options, &edgecut, part, &ParMETISComm);
-#elif defined(HAVE_ML_PARMETIS_3x)
+#elif defined(HAVE_ML_PARMETIS_3x)  && defined(ML_MPI)
       /* never tested right now... */
       ParMETIS_V3_PartKway (vtxdist, xadj, adjncy, vwgt, adjwgt,
 			    wgtflag, &numflag, &ncon, &N_parts, tpwgts,
@@ -716,6 +721,7 @@ static int ML_DecomposeGraph_with_ParMETIS( ML_Operator *Amatrix,
 		 __LINE__);
       }
       for( i=0 ; i<Nrows ; i++ ) part[i] = 0;
+      edgecut = 0;
       N_parts = 1;
       ok = 1;
       skip_check = 1;
@@ -723,6 +729,7 @@ static int ML_DecomposeGraph_with_ParMETIS( ML_Operator *Amatrix,
       
       ok = 1;
 
+#ifdef ML_MPI      
       if( skip_check == 0 ) {
 
 	/* **************************************************************** */
@@ -796,12 +803,13 @@ static int ML_DecomposeGraph_with_ParMETIS( ML_Operator *Amatrix,
 	}
 	
       } /* if( skip_check == 1 ) */
+#endif
       
     } /* while( ok == 0 ) */
-
+#ifdef ML_MPI
     MPI_Group_free( &parmetis_group );
     MPI_Comm_free( &ParMETISComm );      
-
+#endif
   } /* if( Nrows>0 ) */
 
   for( i=0 ; i<Nrows ; i++ )  graph_decomposition[i] = (int)part[i];
@@ -835,21 +843,6 @@ static int ML_DecomposeGraph_with_ParMETIS( ML_Operator *Amatrix,
   }
 
   return N_parts;
-  
-#else
-
-  fprintf( stderr,
-	   "*ML*WRN* ParMETIS supported only through MPI. Here, I decompose\n"
-	   "*ML*WRN* the graph into ONE subgraph, this time...\n" );
-  N_parts = 1;
-
-  Nrows = Amatrix->getrow->Nrows;
-  for( i=0 ; i<Nrows ; i++ ) {
-    graph_decomposition[i] = 0;
-  }
-
-  return N_parts;  
-#endif /* ifdef ML_MPI */
   
 } /* ML_DecomposeGraph_with_ParMETIS *
 
@@ -1035,7 +1028,14 @@ int ML_Aggregate_CoarsenParMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
    Nnonzeros2 = 0, N_bdry_nodes = 0;
    for (i = 0; i < Nrows; i++) {
       ML_get_matrix_row(Amatrix, 1, &i, &allocated, &rowi_col, &rowi_val,
-                        &rowi_N, 0);      
+                        &rowi_N, 0);
+
+      printf("--%d-->  row %d ", mypid, i);
+      for( j=0 ; j<rowi_N ; ++j ) {
+	printf(" %d ",rowi_col[j]);
+      }
+      puts("");
+      
       if (rowi_N > 1) {
         starting_amalg_bdry[i] = 0.0;
         Nnonzeros2 += rowi_N;
@@ -1646,6 +1646,8 @@ int ML_Aggregate_CoarsenParMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
 
       length = aggr_cnt_array[i];
 
+      new_nullspace_vect = NULL;
+      
       if (new_nullspace_vect == NULL) 
       {
          for (j = 0; j < length; j++)
