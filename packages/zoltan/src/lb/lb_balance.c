@@ -541,13 +541,6 @@ int max_global_parts = 0;   /* Max value of Num_Global_Parts on all procs. */
   local_parts_set = outflag[1];
   max_global_parts = outflag[2];
 
-  if (global_parts_set && local_parts_set) {
-    ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Illegally setting NUM_GLOBAL_PARTITIONS "
-                      "on some processors and NUM_LOCAL_PARTITIONS on others.");
-    ierr = ZOLTAN_FATAL;
-    goto End;
-  }
-
   if (!global_parts_set && !local_parts_set) {
     /* No need to build the PartDist array. */
     zz->LB.PartDist = NULL;
@@ -576,6 +569,9 @@ int max_global_parts = 0;   /* Max value of Num_Global_Parts on all procs. */
         goto End;
       }
     }
+    else
+      tmp = zz->LB.PartDist;
+
     MPI_Scan (&(zz->LB.Num_Local_Parts), tmp, 1, MPI_INT, MPI_SUM, 
               zz->Communicator);
     /* Gather data from all procs */

@@ -195,6 +195,11 @@ int main(int argc, char *argv[])
       exit(1);
     }
 
+/* KDD Cool test of changing number of partitions 
+    sprintf(cmesg, "%d", Num_Proc * iteration);
+    Zoltan_Set_Param(zz, "NUM_GLOBAL_PARTITIONS", cmesg);
+*/
+
     /*
      * Produce files to verify input.
      */

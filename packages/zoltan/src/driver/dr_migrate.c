@@ -198,8 +198,9 @@ char *yo = "migrate_elements";
     /* Have to "manually" call migrate_pre_process and migrate_post_process. */
     int ierr = 0;
     migrate_pre_process((void *) mesh, 1, 1,
-                        num_imp, imp_gids, imp_lids, imp_procs,
-                        num_exp, exp_gids, exp_lids, exp_procs, &ierr);
+                        num_imp, imp_gids, imp_lids, imp_procs, imp_to_part,
+                        num_exp, exp_gids, exp_lids, exp_procs, exp_to_part,
+                        &ierr);
     if (Zoltan_Migrate(zz, -1, NULL, NULL, NULL, NULL,
                            num_exp, exp_gids, exp_lids, exp_procs, exp_to_part)
         == ZOLTAN_FATAL) {
@@ -207,8 +208,9 @@ char *yo = "migrate_elements";
       return 0;
     }
     migrate_post_process((void *) mesh, 1, 1,  
-                         num_imp, imp_gids, imp_lids, imp_procs,
-                         num_exp, exp_gids, exp_lids, exp_procs, &ierr);
+                         num_imp, imp_gids, imp_lids, imp_procs, imp_to_part,
+                         num_exp, exp_gids, exp_lids, exp_procs, exp_to_part,
+                         &ierr);
   }
 
   DEBUG_TRACE_END(Proc, yo);
@@ -220,12 +222,14 @@ char *yo = "migrate_elements";
 /*****************************************************************************/
 /*****************************************************************************/
 void migrate_pre_process(void *data, int num_gid_entries, int num_lid_entries, 
-                               int num_import, 
-                               ZOLTAN_ID_PTR import_global_ids,
-                               ZOLTAN_ID_PTR import_local_ids, int *import_procs,
-                               int num_export, ZOLTAN_ID_PTR export_global_ids,
-                               ZOLTAN_ID_PTR export_local_ids, int *export_procs,
-                               int *ierr)
+                         int num_import, 
+                         ZOLTAN_ID_PTR import_global_ids,
+                         ZOLTAN_ID_PTR import_local_ids, int *import_procs,
+                         int *import_to_part,
+                         int num_export, ZOLTAN_ID_PTR export_global_ids,
+                         ZOLTAN_ID_PTR export_local_ids, int *export_procs,
+                         int *export_to_part,
+                         int *ierr)
 {
 int i, j, k, idx, maxlen, proc, offset;
 int *proc_ids = NULL;   /* Temp array of processor assignments for elements.*/
@@ -308,16 +312,22 @@ char msg[256];
       search_by_global_id(mesh, export_global_ids[gid+i*num_gid_entries], 
                           &exp_elem);
 
-    New_Elem_Index[exp_elem] = -1;
-    proc_ids[exp_elem] = export_procs[i];
+    if (export_procs[i] != proc) {
+      /* Export is moving to a new partition, but not to a new processor */
+      New_Elem_Index[exp_elem] = -1;
+      proc_ids[exp_elem] = export_procs[i];
+    }
   }
 
   for (i = 0; i < num_import; i++) {
-    /* search for first free location */
-    for (j = 0; j < New_Elem_Index_Size; j++) 
-      if (New_Elem_Index[j] == -1) break;
+    if (import_procs[i] != proc) {
+      /* Import is moving from a new processor, not just from a new partition */
+      /* search for first free location */
+      for (j = 0; j < New_Elem_Index_Size; j++) 
+        if (New_Elem_Index[j] == -1) break;
 
-    New_Elem_Index[j] = import_global_ids[gid+i*num_gid_entries];
+      New_Elem_Index[j] = import_global_ids[gid+i*num_gid_entries];
+    }
   }
 
   /* 
@@ -327,11 +337,21 @@ char msg[256];
   /* Set change flag for elements whose adjacent elements are being exported */
 
   for (i = 0; i < num_export; i++) {
+
     if (num_lid_entries)
       exp_elem = export_local_ids[lid+i*num_lid_entries];
     else  /* testing num_lid_entries == 0 */
       search_by_global_id(mesh, export_global_ids[gid+i*num_gid_entries], 
                           &exp_elem);
+
+    if (export_to_part != NULL)
+      elements[exp_elem].my_part = export_to_part[i];
+    else
+      elements[exp_elem].my_part = export_procs[i];
+
+    if (export_procs[i] == proc) 
+      continue;  /* No adjacency changes needed if export is changing
+                    only partition, not processor. */
 
     for (j = 0; j < elements[exp_elem].adj_len; j++) {
 
@@ -463,12 +483,14 @@ char msg[256];
 /*****************************************************************************/
 /*****************************************************************************/
 void migrate_post_process(void *data, int num_gid_entries, int num_lid_entries,
-                               int num_import, 
-                               ZOLTAN_ID_PTR import_global_ids,
-                               ZOLTAN_ID_PTR import_local_ids, int *import_procs,
-                               int num_export, ZOLTAN_ID_PTR export_global_ids,
-                               ZOLTAN_ID_PTR export_local_ids, int *export_procs,
-                               int *ierr)
+                          int num_import, 
+                          ZOLTAN_ID_PTR import_global_ids,
+                          ZOLTAN_ID_PTR import_local_ids, int *import_procs,
+                          int *import_to_part,
+                          int num_export, ZOLTAN_ID_PTR export_global_ids,
+                          ZOLTAN_ID_PTR export_local_ids, int *export_procs,
+                          int *export_to_part,
+                          int *ierr)
 {
 MESH_INFO_PTR mesh;
 ELEM_INFO *elements;
@@ -654,7 +676,6 @@ void migrate_pack_elem(void *data, int num_gid_entries, int num_lid_entries,
                    ? &(elem[elem_lid[lid]])
                    : search_by_global_id(mesh, elem_gid[gid], &idx));
   num_nodes = mesh->eb_nnodes[current_elem->elem_blk];
-  current_elem->my_part = mig_part;
 
   elem_mig = (ELEM_INFO *) buf; /* this is the element struct to be migrated */
 

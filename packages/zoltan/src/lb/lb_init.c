@@ -28,6 +28,7 @@ extern "C" {
 void Zoltan_Migrate_Init(struct Zoltan_Migrate_Struct *mig)
 {
   mig->Auto_Migrate = ZOLTAN_AUTO_MIGRATE_DEF;
+  mig->Only_Proc_Changes = ZOLTAN_MIGRATE_ONLY_PROC_CHANGES_DEF;
   mig->Pre_Migrate = NULL;
   mig->Mid_Migrate = NULL;
   mig->Post_Migrate = NULL;

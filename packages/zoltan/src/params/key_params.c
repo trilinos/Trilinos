@@ -44,6 +44,7 @@ static PARAM_VARS Key_params[] = {
                                       /* Prefer use of EDGE_WEIGHT_DIM.   */
   { "NUM_GLOBAL_PARTITIONS", NULL, "INT" },
   { "NUM_LOCAL_PARTITIONS", NULL, "INT" },
+  { "MIGRATE_ONLY_PROC_CHANGES", NULL, "INT" },
   { NULL, NULL, NULL } };
 /*****************************************************************************/
 /*****************************************************************************/
@@ -244,6 +245,7 @@ char *val)			/* value of variable */
             result.ival = zz->Num_Proc;
         }
         zz->LB.Num_Global_Parts = result.ival;
+        zz->LB.Num_Local_Parts = 1;  /* Reset Num_Local_Parts to default */
         status = 3;
         break;
 
@@ -257,8 +259,18 @@ char *val)			/* value of variable */
             result.ival = 1;
         }
         zz->LB.Num_Local_Parts = result.ival;
+        zz->LB.Num_Global_Parts = zz->Num_Proc;  /* Reset Num_Global_Parts */
+                                                 /* to default */
         status = 3;
         break;
+
+      case 16:		/* Migrate_Only_Proc_Changes */
+        if (result.def)
+            result.ival = ZOLTAN_MIGRATE_ONLY_PROC_CHANGES_DEF;
+	zz->Migrate.Only_Proc_Changes = result.ival;
+	status = 3;		/* Don't add to Params field of ZZ */
+        break;
+
 
       }  /* end switch (index) */
     }
@@ -277,6 +289,8 @@ void Zoltan_Print_Key_Params(ZZ *zz)
          zz->LB.Imbalance_Tol);
   printf("ZOLTAN Parameter %s = %s\n", Key_params[1].name, 
          (zz->Migrate.Auto_Migrate ? "TRUE" : "FALSE"));
+  printf("ZOLTAN Parameter %s = %d\n", Key_params[16].name, 
+         zz->Migrate.Only_Proc_Changes);
   printf("ZOLTAN Parameter %s = %d\n", Key_params[2].name, 
          zz->Obj_Weight_Dim);
   printf("ZOLTAN Parameter %s = %d\n", Key_params[3].name, 

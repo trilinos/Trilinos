@@ -95,7 +95,7 @@ int tag_size;            /* size (in bytes) of ZOLTAN_GID + one int
 char *export_buf = NULL; /* buffer for packing export data.                 */
 char *import_buf = NULL; /* buffer for receiving imported data.             */
 char *tmp;               /* temporary pointer into buffers.                 */
-int i;                   /* loop counter.                                   */
+int i, j;                /* loop counter.                                   */
 int actual_import;       /* number of objects to be imported.               */
 int tmp_size;            /* size of a single object's data.                 */
 int *idx = NULL;         /* index used for multi-fn packs and unpacks.      */
@@ -111,6 +111,12 @@ int total_recv_size;     /* Total size of incoming message (in #items)      */
 int aligned_int;         /* size of an int padded for alignment             */
 int dest;                /* temporary destination partition.                */
 int ierr = 0;
+int actual_num_exp = 0;
+int actual_allocated = 0;
+ZOLTAN_ID_PTR actual_exp_gids = NULL;    /* Arrays containing only objs to  */
+ZOLTAN_ID_PTR actual_exp_lids = NULL;    /* actually be packed.  Objs that  */
+int *actual_exp_procs = NULL;            /* are changing partition but not  */
+int *actual_exp_to_part = NULL;          /* processor may not be included.  */
 
   ZOLTAN_TRACE_ENTER(zz, yo);
 
@@ -176,13 +182,80 @@ int ierr = 0;
     return (ZOLTAN_FATAL);
   }
 
+  /*
+   *  Test whether to pack objects that have changed partition
+   *  but not changed processor.  
+   *  If packing them, the actual exports == exports passed to this function.
+   *  If not packing them, build arrays with them stripped out.
+   */
+
+  if (!(zz->Migrate.Only_Proc_Changes)) {
+    /* Pack all exports, even if they are not changing processor. */
+    actual_num_exp = num_export;
+    actual_exp_gids = export_global_ids;
+    actual_exp_lids = export_local_ids;
+    actual_exp_procs = export_procs;
+    actual_exp_to_part = export_to_part;
+  }
+  else {  /* zz->Migrate.Only_Proc_Changes */
+    /* Pack only exports that are actually changing processor. */
+    actual_num_exp = 0;
+    for (i = 0; i < num_export; i++) 
+      if (export_procs[i] != zz->Proc)
+        actual_num_exp++;
+
+    if (actual_num_exp == num_export) {
+      /*  Number of actual exports == number of exports in input arrays. */
+      /*  No stripping needed. */
+      actual_exp_gids = export_global_ids;
+      actual_exp_lids = export_local_ids;
+      actual_exp_procs = export_procs;
+      actual_exp_to_part = export_to_part;
+    }
+    else if (actual_num_exp != num_export && actual_num_exp > 0) {
+      /*  Number of actual exports < num_exports.  Build arrays  */
+      /*  containing only actual exports. */
+      actual_allocated = 1;
+      actual_exp_gids = ZOLTAN_MALLOC_GID_ARRAY(zz, actual_num_exp);
+      actual_exp_lids = ZOLTAN_MALLOC_LID_ARRAY(zz, actual_num_exp);
+      actual_exp_procs = (int *) ZOLTAN_MALLOC(sizeof(int) * actual_num_exp);
+      if (export_to_part != NULL)
+        actual_exp_to_part = (int *) ZOLTAN_MALLOC(sizeof(int)*actual_num_exp);
+      if (actual_exp_gids == NULL || actual_exp_lids == NULL ||
+          actual_exp_procs == NULL || 
+          (export_to_part != NULL && actual_exp_to_part == NULL)) {
+        Zoltan_Multifree(__FILE__, __LINE__, 4, 
+                         &actual_exp_gids, &actual_exp_lids, 
+                         &actual_exp_procs, &actual_exp_to_part);
+        ZOLTAN_TRACE_EXIT(zz, yo);
+        return (ZOLTAN_MEMERR);
+      }
+     
+      for (j = 0, i = 0; i < num_export; i++) {
+        if (export_procs[i] != zz->Proc) {
+          ZOLTAN_SET_GID(zz, 
+                        &(actual_exp_gids[j*num_gid_entries]),
+                        &(export_global_ids[i*num_gid_entries]));
+          if (num_lid_entries)
+            ZOLTAN_SET_LID(zz, 
+                          &(actual_exp_lids[j*num_lid_entries]),
+                          &(export_local_ids[i*num_lid_entries]));
+          actual_exp_procs[j] = export_procs[i];
+          if (export_to_part) actual_exp_to_part[j] = export_to_part[i];
+          j++;
+        }
+      }
+    }
+  }
+
   if (zz->Migrate.Pre_Migrate != NULL) {
     zz->Migrate.Pre_Migrate(zz->Migrate.Pre_Migrate_Data,
                             num_gid_entries, num_lid_entries,
                             num_import, import_global_ids,
-                            import_local_ids, import_procs,
+                            import_local_ids, import_procs, import_to_part,
                             num_export, export_global_ids,
-                            export_local_ids, export_procs, &ierr);
+                            export_local_ids, export_procs, export_to_part,
+                            &ierr);
     if (ierr) {
       ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error returned from user defined "
                       "Migrate.Pre_Migrate function.");
@@ -209,8 +282,8 @@ int ierr = 0;
    * Zoltan also needs to communicate the sizes of the objects because
    * only the sender knows the size of each object.
    */
-  if (num_export > 0) {
-    sizes = (int *) ZOLTAN_MALLOC(num_export * sizeof(int));
+  if (actual_num_exp > 0) {
+    sizes = (int *) ZOLTAN_MALLOC(actual_num_exp * sizeof(int));
     if (!sizes) {
       ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
       ZOLTAN_TRACE_EXIT(zz, yo);
@@ -219,8 +292,8 @@ int ierr = 0;
 
     if (zz->Get_Obj_Size_Multi != NULL) {
       zz->Get_Obj_Size_Multi(zz->Get_Obj_Size_Multi_Data, 
-                             num_gid_entries, num_lid_entries, num_export,
-                             export_global_ids, export_local_ids, sizes, &ierr);
+                             num_gid_entries, num_lid_entries, actual_num_exp,
+                             actual_exp_gids, actual_exp_lids, sizes, &ierr);
       if (ierr) {
         ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error returned from "
                         "ZOLTAN_OBJ_SIZE_MULTI function.");
@@ -229,11 +302,11 @@ int ierr = 0;
       }
     }
     else {
-      for (i = 0; i < num_export; i++){
-        lid = (num_lid_entries ? &(export_local_ids[i*num_lid_entries]) : NULL);
+      for (i = 0; i < actual_num_exp; i++){
+        lid = (num_lid_entries ? &(actual_exp_lids[i*num_lid_entries]) : NULL);
         sizes[i] = zz->Get_Obj_Size(zz->Get_Obj_Size_Data, 
                        num_gid_entries, num_lid_entries,
-                       &(export_global_ids[i*num_gid_entries]), 
+                       &(actual_exp_gids[i*num_gid_entries]), 
                        lid, &ierr);
         if (ierr) {
           ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error returned from "
@@ -246,7 +319,7 @@ int ierr = 0;
 
     total_send_size = 0;
 
-    for (i = 0; i < num_export; i++) {
+    for (i = 0; i < actual_num_exp; i++) {
       sizes[i] = Zoltan_Align(sizes[i]);
       total_send_size += sizes[i] + tag_size;
     }
@@ -260,7 +333,7 @@ int ierr = 0;
 
     if (zz->Pack_Obj_Multi != NULL) {
       /* Allocate an index array for ZOLTAN_PACK_OBJ_MULTI_FN. */
-      idx = (int *) ZOLTAN_MALLOC(num_export * sizeof(int));
+      idx = (int *) ZOLTAN_MALLOC(actual_num_exp * sizeof(int));
       if (!idx) {
         ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
         ZOLTAN_FREE(&export_buf);
@@ -276,11 +349,11 @@ int ierr = 0;
   
     idx_cnt = 0;
     tmp = export_buf;
-    for (i = 0; i < num_export; i++) {
+    for (i = 0; i < actual_num_exp; i++) {
 
       /* Pack the object's global ID */
       tmp_id = (ZOLTAN_ID_PTR) tmp;
-      ZOLTAN_SET_GID(zz, tmp_id, &(export_global_ids[i*num_gid_entries]));
+      ZOLTAN_SET_GID(zz, tmp_id, &(actual_exp_gids[i*num_gid_entries]));
       tmp += id_size;
     
       /* Pack the object's size */
@@ -302,9 +375,9 @@ int ierr = 0;
                zz->Proc, yo);
       }
       zz->Pack_Obj_Multi(zz->Pack_Obj_Multi_Data,
-                         num_gid_entries, num_lid_entries, num_export,
-                         export_global_ids, export_local_ids, 
-                         (export_to_part!=NULL ? export_to_part : export_procs),
+                         num_gid_entries, num_lid_entries, actual_num_exp,
+                         actual_exp_gids, actual_exp_lids, 
+                         (actual_exp_to_part!=NULL ? actual_exp_to_part : actual_exp_procs),
                          sizes, idx, export_buf, &ierr);
       if (ierr) {
         ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error returned from user defined "
@@ -318,19 +391,19 @@ int ierr = 0;
     }
     else {
       tmp = export_buf + tag_size;
-      for (i = 0; i < num_export; i++) {
+      for (i = 0; i < actual_num_exp; i++) {
         if (zz->Debug_Level >= ZOLTAN_DEBUG_ALL){
           printf("[%1d] DEBUG in %s: Packing object with gid ", zz->Proc, yo);
-          ZOLTAN_PRINT_GID(zz, tmp_id);
+          ZOLTAN_PRINT_GID(zz, &(actual_exp_gids[i*num_gid_entries]));
           printf("size = %d bytes\n", sizes[i]); 
         }
 
         /* Pack the object's data */
-        lid = (num_lid_entries ? &(export_local_ids[i*num_lid_entries]) : NULL);
-        dest = (export_to_part != NULL ? export_to_part[i] : export_procs[i]);
+        lid = (num_lid_entries ? &(actual_exp_lids[i*num_lid_entries]) : NULL);
+        dest = (actual_exp_to_part != NULL ? actual_exp_to_part[i] : actual_exp_procs[i]);
         zz->Pack_Obj(zz->Pack_Obj_Data, 
                            num_gid_entries, num_lid_entries,
-                           &(export_global_ids[i*num_gid_entries]), lid, dest,
+                           &(actual_exp_gids[i*num_gid_entries]), lid, dest,
                            sizes[i], tmp, &ierr);
         if (ierr) {
           ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error returned from user defined "
@@ -355,7 +428,7 @@ int ierr = 0;
    */
 
   msgtag = 32767;
-  ierr = Zoltan_Comm_Create(&comm_plan, num_export, export_procs, zz->Communicator,
+  ierr = Zoltan_Comm_Create(&comm_plan, actual_num_exp, actual_exp_procs, zz->Communicator,
                         msgtag, &actual_import);
   if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
     sprintf(msg, "Error %s returned from Zoltan_Comm_Create.", 
@@ -366,14 +439,9 @@ int ierr = 0;
     ZOLTAN_TRACE_EXIT(zz, yo);
     return (ierr);
   }
-  if ((num_import != -1) && (actual_import != num_import)) {
-    sprintf(msg, "actual_import %d != num_import %d.", 
-            actual_import, num_import);
-    ZOLTAN_PRINT_WARN(zz->Proc, yo, msg);
-  }
 
   /* Modify sizes[] to contain message sizes, not object sizes */
-  for (i=0; i<num_export; i++)
+  for (i=0; i<actual_num_exp; i++)
     sizes[i] += tag_size;
   msgtag--;
   ierr = Zoltan_Comm_Resize(comm_plan, sizes, msgtag, &total_recv_size);
@@ -433,9 +501,10 @@ int ierr = 0;
     zz->Migrate.Mid_Migrate(zz->Migrate.Mid_Migrate_Data,
                             num_gid_entries, num_lid_entries,
                             num_import, import_global_ids,
-                            import_local_ids, import_procs,
+                            import_local_ids, import_procs, import_to_part,
                             num_export, export_global_ids,
-                            export_local_ids, export_procs, &ierr);
+                            export_local_ids, export_procs, export_to_part,
+                            &ierr);
     if (ierr) {
       ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error returned from user defined "
                       "Migrate.Mid_Migrate function.");
@@ -540,9 +609,10 @@ int ierr = 0;
     zz->Migrate.Post_Migrate(zz->Migrate.Post_Migrate_Data,
                              num_gid_entries, num_lid_entries,
                              num_import, import_global_ids,
-                             import_local_ids, import_procs,
+                             import_local_ids, import_procs, import_to_part,
                              num_export, export_global_ids,
-                             export_local_ids, export_procs, &ierr);
+                             export_local_ids, export_procs, export_to_part,
+                             &ierr);
     if (ierr) {
       ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error returned from user defined "
                       "Migrate.Post_Migrate function.");
@@ -551,6 +621,12 @@ int ierr = 0;
     }
 
     ZOLTAN_TRACE_DETAIL(zz, yo, "Done post-migration processing");
+  }
+
+  if (actual_allocated) {
+    Zoltan_Multifree(__FILE__, __LINE__, 4, 
+                     &actual_exp_gids, &actual_exp_lids, 
+                     &actual_exp_procs, &actual_exp_to_part);
   }
 
   ZOLTAN_TRACE_EXIT(zz, yo);

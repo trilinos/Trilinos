@@ -79,6 +79,7 @@ typedef enum Zoltan_LB_Method {
  */
 #define ZOLTAN_LB_IMBALANCE_TOL_DEF  1.1
 #define ZOLTAN_AUTO_MIGRATE_DEF   FALSE
+#define ZOLTAN_MIGRATE_ONLY_PROC_CHANGES_DEF  1
 #define ZOLTAN_LB_RETURN_LISTS_DEF   ZOLTAN_LB_ALL_LISTS
 
 
@@ -124,6 +125,11 @@ struct Zoltan_Migrate_Struct {
                                           help the application
                                           migrate data.  Some applications may
                                           prefer to do it themselves.        */
+  int Only_Proc_Changes;              /*  Pack and unpack objects during
+                                          migration ONLY if they are assigned
+                                          to a new processor.  If partition
+                                          number changes but processor does
+                                          not, do not pack and unpack.       */
   /*
    *  Pointers to routines that depend on the application.
    */
