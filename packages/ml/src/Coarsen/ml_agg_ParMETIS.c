@@ -49,17 +49,17 @@ extern "C"
 #endif
 #endif
 
-static int ML_BuildReorderedDecomposition( int starting_decomposition[],
+int ML_BuildReorderedDecomposition( int starting_decomposition[],
 					   int reordered_decomposition[],
 					   int Nrows, int Naggregates,
 					   int nodes_per_aggre[],
 					   USR_COMM comm );
-static int ML_DecomposeGraph_with_ParMETIS( ML_Operator *Amatrix,
+int ML_DecomposeGraph_with_ParMETIS( ML_Operator *Amatrix,
 					    int N_parts,
 					    int graph_decomposition[],
 					    double bdry_nodes[],
 					    int, int);
-static int ML_CountNodesPerAggre(int Nrows, int GraphDecomposition[],
+int ML_CountNodesPerAggre(int Nrows, int GraphDecomposition[],
 					int Naggre, int * NnodesPerAggre,
 					USR_COMM Comm);
 extern ML_Operator * ML_BuildQ( int StartingNumElements,
@@ -96,10 +96,10 @@ extern void ML_DestroyQ(void);
 #define idxtype int
 #endif
 
-static int OPTIMAL_VALUE = 27*27; /* don't ask me why */
+int OPTIMAL_VALUE = 27*27; /* don't ask me why */
 
-static int PARMETIS_DEBUG_LEVEL = 0;
-static int OPTIMAL_LOCAL_COARSE_SIZE = 128;
+int PARMETIS_DEBUG_LEVEL = 0;
+int OPTIMAL_LOCAL_COARSE_SIZE = 128;
 
 /* ======================================================================== */
 /*!
@@ -289,7 +289,7 @@ int ML_Aggregate_Set_ReqLocalCoarseSize( ML *ml, ML_Aggregate *ag,
 /* on the coarser level.                                                  */
 /* ********************************************************************** */
 
-static int ML_BuildReorderedOffset( int starting_offset[],
+int ML_BuildReorderedOffset( int starting_offset[],
 				    int desired_aggre_per_proc, int Nprocs,
 				    int nodes_per_aggre[], int Naggregates,
 				    int reordered_offset[], int mypid ) 
@@ -361,7 +361,7 @@ static int ML_BuildReorderedOffset( int starting_offset[],
   
 } /* ML_BuildReorderedOffset */
 
-static int ML_BuildReorderedDecomposition( int starting_decomposition[],
+int ML_BuildReorderedDecomposition( int starting_decomposition[],
 					    int reordered_decomposition[],
 					    int Nrows, int Naggregates,
 					    int nodes_per_aggre[],
@@ -452,7 +452,7 @@ static int ML_BuildReorderedDecomposition( int starting_decomposition[],
 */
 /* ------------------------------------------------------------------------ */
 
-static int ML_DecomposeGraph_with_ParMETIS( ML_Operator *Amatrix,
+int ML_DecomposeGraph_with_ParMETIS( ML_Operator *Amatrix,
 					    int N_parts,
 					    int graph_decomposition[],
 					    double bdry_nodes[],
@@ -1949,7 +1949,7 @@ int ML_Aggregate_CoarsenParMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
 /* Count the nodes contained in each global aggregate                     */
 /* ********************************************************************** */
 
-static int ML_CountNodesPerAggre(int Nrows, int GraphDecomposition[],
+int ML_CountNodesPerAggre(int Nrows, int GraphDecomposition[],
 				 int Naggre, int * NnodesPerAggre,
 				 USR_COMM Comm) 
 {
