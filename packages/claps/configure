@@ -311,7 +311,7 @@ ac_includes_default="\
 # include <unistd.h>
 #endif"
 
-ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS MAINTAINER_MODE_TRUE MAINTAINER_MODE_FALSE MAINT build build_cpu build_vendor build_os host host_cpu host_vendor host_os target target_cpu target_vendor target_os INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA CYGPATH_W PACKAGE VERSION ACLOCAL AUTOCONF AUTOMAKE AUTOHEADER MAKEINFO AMTAR install_sh STRIP ac_ct_STRIP INSTALL_STRIP_PROGRAM mkdir_p AWK SET_MAKE am__leading_dot MPI_TEMP_CXX MPI_CXX HAVE_MPI_TRUE HAVE_MPI_FALSE MPI_CXX_EXISTS MPI_CC_EXISTS MPI_F77_EXISTS CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT DEPDIR am__include am__quote AMDEP_TRUE AMDEP_FALSE AMDEPBACKSLASH CCDEPMODE am__fastdepCC_TRUE am__fastdepCC_FALSE CXX CXXFLAGS ac_ct_CXX CXXDEPMODE am__fastdepCXX_TRUE am__fastdepCXX_FALSE F77 FFLAGS ac_ct_F77 RANLIB ac_ct_RANLIB USE_ALTERNATE_AR_TRUE USE_ALTERNATE_AR_FALSE ALTERNATE_AR CXXCPP EGREP HAVE_CLOP_TRUE HAVE_CLOP_FALSE HAVE_SCLOP_TRUE HAVE_SCLOP_FALSE FLIBS BLAS_LIBS LAPACK_LIBS ac_aux_dir LIBOBJS LTLIBOBJS'
+ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS MAINTAINER_MODE_TRUE MAINTAINER_MODE_FALSE MAINT build build_cpu build_vendor build_os host host_cpu host_vendor host_os target target_cpu target_vendor target_os INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA CYGPATH_W PACKAGE VERSION ACLOCAL AUTOCONF AUTOMAKE AUTOHEADER MAKEINFO AMTAR install_sh STRIP ac_ct_STRIP INSTALL_STRIP_PROGRAM mkdir_p AWK SET_MAKE am__leading_dot MPI_TEMP_CXX MPI_CXX HAVE_MPI_TRUE HAVE_MPI_FALSE MPI_CXX_EXISTS MPI_CC_EXISTS MPI_F77_EXISTS CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT DEPDIR am__include am__quote AMDEP_TRUE AMDEP_FALSE AMDEPBACKSLASH CCDEPMODE am__fastdepCC_TRUE am__fastdepCC_FALSE CXX CXXFLAGS ac_ct_CXX CXXDEPMODE am__fastdepCXX_TRUE am__fastdepCXX_FALSE F77 FFLAGS ac_ct_F77 RANLIB ac_ct_RANLIB USE_ALTERNATE_AR_TRUE USE_ALTERNATE_AR_FALSE ALTERNATE_AR CXXCPP EGREP HAVE_SCLOP_TRUE HAVE_SCLOP_FALSE HAVE_CLOP_TRUE HAVE_CLOP_FALSE FLIBS BLAS_LIBS LAPACK_LIBS ac_aux_dir LIBOBJS LTLIBOBJS'
 ac_subst_files=''
 
 # Initialize some variables set by options.
@@ -875,9 +875,9 @@ Optional Features:
   --enable-mpi            MPI support
   --disable-dependency-tracking  speeds up one-time build
   --enable-dependency-tracking   do not reject slow dependency extractors
-  --enable-claps-clop     enable Clop solver (default is no)
   --enable-claps-sclop    enable Sandia Clop interface (requires Salinas
                           header files) (default is no)
+  --enable-claps-clop     enable Clop solver (default is no)
   --enable-libcheck       Check for some third-party libraries including BLAS
                           and LAPACK. (Cannot be disabled unless tests and
                           examples are also disabled.) (default is yes)
@@ -6812,42 +6812,6 @@ fi
 # ------------------------------------------------------------------------
 
 
-# Check whether --enable-claps-clop or --disable-claps-clop was given.
-if test "${enable_claps_clop+set}" = set; then
-  enableval="$enable_claps_clop"
-  ac_cv_use_claps_clop=$enableval
-else
-  ac_cv_use_claps_clop=no
-fi;
-
-echo "$as_me:$LINENO: checking whether to use claps-clop" >&5
-echo $ECHO_N "checking whether to use claps-clop... $ECHO_C" >&6
-
-if test "X$ac_cv_use_claps_clop" != "Xno"; then
-  echo "$as_me:$LINENO: result: yes" >&5
-echo "${ECHO_T}yes" >&6
-
-cat >>confdefs.h <<\_ACEOF
-#define HAVE_CLAPS_CLOP
-_ACEOF
-
-else
-  echo "$as_me:$LINENO: result: no" >&5
-echo "${ECHO_T}no" >&6
-fi
-
-
-
-if test "X$ac_cv_use_claps_clop" != "Xno"; then
-  HAVE_CLOP_TRUE=
-  HAVE_CLOP_FALSE='#'
-else
-  HAVE_CLOP_TRUE='#'
-  HAVE_CLOP_FALSE=
-fi
-
-
-
 # Check whether --enable-claps-sclop or --disable-claps-sclop was given.
 if test "${enable_claps_sclop+set}" = set; then
   enableval="$enable_claps_sclop"
@@ -6880,6 +6844,42 @@ if test "X$ac_cv_use_claps_sclop" != "Xno"; then
 else
   HAVE_SCLOP_TRUE='#'
   HAVE_SCLOP_FALSE=
+fi
+
+
+
+# Check whether --enable-claps-clop or --disable-claps-clop was given.
+if test "${enable_claps_clop+set}" = set; then
+  enableval="$enable_claps_clop"
+  ac_cv_use_claps_clop=$enableval
+else
+  ac_cv_use_claps_clop=no
+fi;
+
+echo "$as_me:$LINENO: checking whether to use claps-clop" >&5
+echo $ECHO_N "checking whether to use claps-clop... $ECHO_C" >&6
+
+if test "X$ac_cv_use_claps_clop" != "Xno"; then
+  echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_CLAPS_CLOP
+_ACEOF
+
+else
+  echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+fi
+
+
+
+if test "X$ac_cv_use_claps_clop" != "Xno" || test "X$ac_cv_use_claps_sclop" != "Xno"; then
+  HAVE_CLOP_TRUE=
+  HAVE_CLOP_FALSE='#'
+else
+  HAVE_CLOP_TRUE='#'
+  HAVE_CLOP_FALSE=
 fi
 
 
@@ -10298,17 +10298,17 @@ echo "$as_me: error: conditional \"USE_ALTERNATE_AR\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
-if test -z "${HAVE_CLOP_TRUE}" && test -z "${HAVE_CLOP_FALSE}"; then
-  { { echo "$as_me:$LINENO: error: conditional \"HAVE_CLOP\" was never defined.
-Usually this means the macro was only invoked conditionally." >&5
-echo "$as_me: error: conditional \"HAVE_CLOP\" was never defined.
-Usually this means the macro was only invoked conditionally." >&2;}
-   { (exit 1); exit 1; }; }
-fi
 if test -z "${HAVE_SCLOP_TRUE}" && test -z "${HAVE_SCLOP_FALSE}"; then
   { { echo "$as_me:$LINENO: error: conditional \"HAVE_SCLOP\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
 echo "$as_me: error: conditional \"HAVE_SCLOP\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+if test -z "${HAVE_CLOP_TRUE}" && test -z "${HAVE_CLOP_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"HAVE_CLOP\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"HAVE_CLOP\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
@@ -10919,10 +10919,10 @@ s,@USE_ALTERNATE_AR_FALSE@,$USE_ALTERNATE_AR_FALSE,;t t
 s,@ALTERNATE_AR@,$ALTERNATE_AR,;t t
 s,@CXXCPP@,$CXXCPP,;t t
 s,@EGREP@,$EGREP,;t t
-s,@HAVE_CLOP_TRUE@,$HAVE_CLOP_TRUE,;t t
-s,@HAVE_CLOP_FALSE@,$HAVE_CLOP_FALSE,;t t
 s,@HAVE_SCLOP_TRUE@,$HAVE_SCLOP_TRUE,;t t
 s,@HAVE_SCLOP_FALSE@,$HAVE_SCLOP_FALSE,;t t
+s,@HAVE_CLOP_TRUE@,$HAVE_CLOP_TRUE,;t t
+s,@HAVE_CLOP_FALSE@,$HAVE_CLOP_FALSE,;t t
 s,@FLIBS@,$FLIBS,;t t
 s,@BLAS_LIBS@,$BLAS_LIBS,;t t
 s,@LAPACK_LIBS@,$LAPACK_LIBS,;t t

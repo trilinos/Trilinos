@@ -69,30 +69,29 @@ EXTRA_SCLOP = \
 	$(srcdir)/salinas/SCLOP_interface.cpp \
 	$(srcdir)/salinas/SCLOP_solver.cpp
 
-#if HAVE_SCLOP
+if HAVE_SCLOP
 
 SCLOP = $(EXTRA_SCLOP)
 SCLOP_H = $(EXTRA_SCLOP_H)
+
+else
+
+SCLOP =
+SCLOP_H =
+                                                                                
+endif
+
+if HAVE_CLOP
+
 CLOP = $(EXTRA_CLOP)
 CLOP_H = $(EXTRA_CLOP_H)
 
-#else
-#if HAVE_CLOP
+else
 
-#CLOP = $(EXTRA_CLOP)
-#CLOP_H = $(EXTRA_CLOP_H)
-#SCLOP = 
-#SCLOP_H = 
+CLOP = 
+CLOP_H =
 
-#else
-
-#CLOP = 
-#CLOP_H =
-#SCLOP = 
-#SCLOP_H = 
-
-#endif
-#endif
+endif
 
 #
 #np#  Files which are included in select builds are typically have

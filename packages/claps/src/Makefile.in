@@ -119,9 +119,9 @@ am__libclaps_a_SOURCES_DIST = $(srcdir)/clop/CLOP_constraint.cpp \
 am__objects_1 = CLOP_constraint.$(OBJEXT) CLOP_graph.$(OBJEXT) \
 	CLOP_solver.$(OBJEXT) CLOP_sub.$(OBJEXT) CRD_utils.$(OBJEXT) \
 	EpetraExtCD_MatrixMatrix.$(OBJEXT) sparse_lu.$(OBJEXT)
-am__objects_2 = $(am__objects_1)
+@HAVE_CLOP_TRUE@am__objects_2 = $(am__objects_1)
 am__objects_3 = SCLOP_interface.$(OBJEXT) SCLOP_solver.$(OBJEXT)
-am__objects_4 = $(am__objects_3)
+@HAVE_SCLOP_TRUE@am__objects_4 = $(am__objects_3)
 @HAVE_MPI_TRUE@am__objects_5 = $(am__objects_2) $(am__objects_4)
 am_libclaps_a_OBJECTS = $(am__objects_5)
 libclaps_a_OBJECTS = $(am_libclaps_a_OBJECTS)
@@ -310,31 +310,15 @@ EXTRA_SCLOP = \
 	$(srcdir)/salinas/SCLOP_interface.cpp \
 	$(srcdir)/salinas/SCLOP_solver.cpp
 
-
-#if HAVE_SCLOP
-SCLOP = $(EXTRA_SCLOP)
-SCLOP_H = $(EXTRA_SCLOP_H)
-CLOP = $(EXTRA_CLOP)
-CLOP_H = $(EXTRA_CLOP_H)
+@HAVE_SCLOP_FALSE@SCLOP = 
+@HAVE_SCLOP_TRUE@SCLOP = $(EXTRA_SCLOP)
+@HAVE_SCLOP_FALSE@SCLOP_H = 
+@HAVE_SCLOP_TRUE@SCLOP_H = $(EXTRA_SCLOP_H)
+@HAVE_CLOP_FALSE@CLOP = 
+@HAVE_CLOP_TRUE@CLOP = $(EXTRA_CLOP)
+@HAVE_CLOP_FALSE@CLOP_H = 
+@HAVE_CLOP_TRUE@CLOP_H = $(EXTRA_CLOP_H)
 @HAVE_MPI_FALSE@MPI_H = 
-
-#else
-#if HAVE_CLOP
-
-#CLOP = $(EXTRA_CLOP)
-#CLOP_H = $(EXTRA_CLOP_H)
-#SCLOP = 
-#SCLOP_H = 
-
-#else
-
-#CLOP = 
-#CLOP_H =
-#SCLOP = 
-#SCLOP_H = 
-
-#endif
-#endif
 
 #
 #np#  Files which are included in select builds are typically have

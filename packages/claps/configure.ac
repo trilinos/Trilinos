@@ -238,12 +238,12 @@ AC_CXX_STD_SPRINTF
 # Checks for special package flags
 # ------------------------------------------------------------------------
 
-TAC_ARG_ENABLE_FEATURE_SUB( claps, clop, [enable Clop solver], CLAPS_CLOP, no)
-AM_CONDITIONAL(HAVE_CLOP, [test "X$ac_cv_use_claps_clop" != "Xno"])
-
 TAC_ARG_ENABLE_FEATURE_SUB( claps, sclop, [enable Sandia Clop interface (requires Salinas header files)], CLAPS_SCLOP, no)
 AM_CONDITIONAL(HAVE_SCLOP, [test "X$ac_cv_use_claps_sclop" != "Xno"])
 
+TAC_ARG_ENABLE_FEATURE_SUB( claps, clop, [enable Clop solver], CLAPS_CLOP, no)
+AM_CONDITIONAL(HAVE_CLOP, [test "X$ac_cv_use_claps_clop" != "Xno" || test "X$ac_cv_use_claps_sclop" != "Xno"])
+                                                                                
 
 #
 #  #np# - These options are specific to Epetra and are left only as examples.
