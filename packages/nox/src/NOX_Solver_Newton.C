@@ -75,20 +75,23 @@ void Newton::init()
   // Set up utilities (i.e., set print processor, etc)
   Utils::setUtils(iparams);
   
+  // Print out initialization information
+  if (Utils::doPrint(Utils::Parameters)) {
+    cout << "\n" << Utils::fill(72) << "\n";
+    cout << "\n-- Parameters Passed to Nonlinear Solver --\n\n";
+    iparams.print(cout,5);
+  }
+
   // Compute RHS of initital guess
   solnptr->computeRHS();
 
-  // Print out initialization information
-  if (Utils::doPrint(Utils::Parameters)) {
+  // Test the initial guess
+  status = testptr->operator()(*this);
 
-    cout << "\n" << Utils::fill(72) << "\n";
-    cout << "\n-- Parameters Passed to Nonlinear Solver on Print Processor --\n\n";
-    iparams.print(cout,5);
-    cout << "\n-- Status Tests Passed to Nonlinear Solver on Print Processor --\n\n";
-    testptr->operator()(*this);
+  if (Utils::doPrint(Utils::Parameters)) {
+    cout << "\n-- Status Tests Passed to Nonlinear Solver --\n\n";
     testptr->print(cout, 5);
     cout <<"\n" << Utils::fill(72) << "\n";
-
   }
 
 }
@@ -191,31 +194,31 @@ const Parameter::List& Newton::getOutputParameters() const
 // protected
 void Newton::printUpdate() 
 {
-  double norm_k;
-  double norm_newton;
+  double norm_soln;
+  double norm_step;
 
   // All processes participate in the computation of these norms...
   if (Utils::doAllPrint(Utils::OuterIteration)) {
-    norm_k = solnptr->getNormRHS();
-    //norm_newton = (niter > 0) ? oldsoln.getNewton().norm() : 0;
-    norm_newton = (niter > 0) ? dir.norm() : 0;
+    norm_soln = solnptr->getNormRHS();
+    norm_step = (niter > 0) ? dir.norm() : 0;
   }
 
   // ...But only the print process actually prints the result.
   if (Utils::doPrint(Utils::OuterIteration)) {
     cout << "\n" << Utils::fill(72) << "\n";
     cout << "-- Newton Step " << niter << " -- \n";
-    cout << "f = " << Utils::sci(norm_k);
+    cout << "f = " << Utils::sci(norm_soln);
     cout << "  step = " << Utils::sci(step);
-    cout << "  dx = " << Utils::sci(norm_newton);
-    if (status > 0)
+    cout << "  dx = " << Utils::sci(norm_step);
+    if (status == Status::Converged)
       cout << " (Converged!)";
-    if (status < 0)
+    if (status == Status::Failed)
       cout << " (Failed!)";
     cout << "\n" << Utils::fill(72) << "\n" << endl;
   }
   
-  if ((status != 0) && (Utils::doPrint(Utils::OuterIteration))) {
+  if ((status != Status::Unconverged) && 
+      (Utils::doPrint(Utils::OuterIteration))) {
     cout << Utils::fill(72) << "\n";
     cout << "-- Final Status Test Results --\n";    
     testptr->print(cout);
