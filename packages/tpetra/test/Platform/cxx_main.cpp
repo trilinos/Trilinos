@@ -26,20 +26,21 @@
 // ***********************************************************************
 // @HEADER
 
-// Tpetra Platform tester
-// Modified: 21-Jan-2003
-
-#define SCALARTYPE float
-#define ORDINALTYPE int
-
-#include "Tpetra_SerialPlatform.hpp"
+#include <iostream>
 #include "Tpetra_Version.hpp"
-//if mpi
+#include "Tpetra_SerialPlatform.hpp"
+
+#ifdef TPETRA_MPI
 #include "Tpetra_MpiPlatform.hpp"
-//end if
+template <typename OrdinalType, typename ScalarType>
+int mpiTests(bool verbose, bool debug);
+#endif // TPETRA_MPI
+
+template <typename OrdinalType, typename ScalarType>
+int serialTests(bool verbose, bool debug);
 
 int main(int argc, char* argv[]) {
-	// initialize verbose & debug flags
+  // initialize verbose & debug flags
 	bool verbose = false;
 	bool debug = false;
 	if(argc > 1) {
@@ -51,52 +52,71 @@ int main(int argc, char* argv[]) {
 		}
 	}
 
-	int size = 1; // Serial case (not using MPI)
-	int rank = 0;
+	if(verbose) 
+    cout << Tpetra::Tpetra_Version() << endl << endl;
+  
+	// call test routine
+	int ierr = 0;
+	if(verbose) cout << "Starting PlatformTest..." << endl;
+	ierr += serialTests<int, double>(verbose, debug);
+#ifdef TPETRA_MPI
+	ierr += mpiTests<int, double>(verbose, debug);
+#endif
+  
+	// finish up
+	if(verbose) 
+		if(ierr == 0)
+			cout << "Platform test passed." << endl;
+		else
+			cout << "Platform test failed." << endl;
+	return(ierr);
+}
 
-	if(verbose)
-		cout << Tpetra::Tpetra_Version() << endl << endl;
-	
+template <typename OrdinalType, typename ScalarType>
+int serialTests(bool verbose, bool debug) {
 	if(verbose) cout << "Creating SerialPlatform object...";
-	Tpetra::SerialPlatform<ORDINALTYPE, SCALARTYPE> platform;
+	Tpetra::SerialPlatform<OrdinalType, ScalarType> platform;
 	if(debug) cout << platform << endl;
 	if(verbose) cout << "Successful." << endl;
 	
 	if(verbose) cout << "Creating SerialComm objects...";
-	Tpetra::Comm<SCALARTYPE, ORDINALTYPE>* comm1 = platform.createScalarComm();
-	Tpetra::Comm<ORDINALTYPE, ORDINALTYPE>* comm2 = platform.createOrdinalComm();
+	Tpetra::Comm<ScalarType, OrdinalType>* comm1 = platform.createScalarComm();
+	Tpetra::Comm<OrdinalType, OrdinalType>* comm2 = platform.createOrdinalComm();
 	delete comm1;
 	delete comm2;
 	if(verbose) cout << "Successful." << endl;
 	
 	if(verbose) cout << "Creating SerialDistributor objects...";
-	Tpetra::Distributor<SCALARTYPE, ORDINALTYPE>* distributor1 = platform.createScalarDistributor();
-	Tpetra::Distributor<ORDINALTYPE, ORDINALTYPE>* distributor2 = platform.createOrdinalDistributor();
+	Tpetra::Distributor<ScalarType, OrdinalType>* distributor1 = platform.createScalarDistributor();
+	Tpetra::Distributor<OrdinalType, OrdinalType>* distributor2 = platform.createOrdinalDistributor();
 	delete distributor1;
 	delete distributor2;
 	if(verbose) cout << "Successful." << endl;
+  
+  return(0);
+}
 
-  //if mpi
+#ifdef TPETRA_MPI
+template <typename OrdinalType, typename ScalarType>
+int mpiTests(bool verbose, bool debug) {
 	if(verbose) cout << "Creating MpiPlatform object...";
-	Tpetra::MpiPlatform<ORDINALTYPE, SCALARTYPE> platform2;
+	Tpetra::MpiPlatform<OrdinalType, ScalarType> platform2;
 	if(verbose) cout << "Successful." << endl;
 
 	if(verbose) cout << "Creating MpiComm objects...";
-	Tpetra::Comm<SCALARTYPE, ORDINALTYPE>* comm3 = platform2.createScalarComm(); 
-	Tpetra::Comm<ORDINALTYPE, ORDINALTYPE>* comm4 = platform2.createOrdinalComm();
+	Tpetra::Comm<ScalarType, OrdinalType>* comm3 = platform2.createScalarComm(); 
+	Tpetra::Comm<OrdinalType, OrdinalType>* comm4 = platform2.createOrdinalComm();
   delete comm3;
   delete comm4;
 	if(verbose) cout << "Successful." << endl;
 
 	if(verbose) cout << "Creating MpiDistributor objects...";
-	Tpetra::Distributor<SCALARTYPE, ORDINALTYPE>* distributor3 = platform2.createScalarDistributor();
-	Tpetra::Distributor<ORDINALTYPE, ORDINALTYPE>* distributor4 = platform2.createOrdinalDistributor();
+	Tpetra::Distributor<ScalarType, OrdinalType>* distributor3 = platform2.createScalarDistributor();
+	Tpetra::Distributor<OrdinalType, OrdinalType>* distributor4 = platform2.createOrdinalDistributor();
 	delete distributor3;
 	delete distributor4;
 	if(verbose) cout << "Successful." << endl;
-  //end if
-
-	if(verbose) cout << "Platform test successful." << endl;
 
 	return(0);
 }
+#endif // TPETRA_MPI

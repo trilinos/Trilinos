@@ -63,14 +63,14 @@ SERIAL_H = \
 	$(srcdir)/Tpetra_SerialComm.hpp \
 	$(srcdir)/Tpetra_SerialDistributor.hpp \
 	$(srcdir)/Tpetra_SerialDirectory.hpp \
+
+SERIAL = 
+
+EXTRA_MPI_H = \
 	$(srcdir)/Tpetra_MpiPlatform.hpp \
 	$(srcdir)/Tpetra_MpiComm.hpp \
 	$(srcdir)/Tpetra_MpiDistributor.hpp \
 	$(srcdir)/Tpetra_MpiDirectory.hpp
-
-SERIAL = 
-
-EXTRA_MPI_H = 
 
 EXTRA_MPI = 
 
