@@ -44,10 +44,12 @@ int Epetra_SerialComm::Broadcast(int * Values, int Count, int Root) const {
 }
 //=============================================================================
 int Epetra_SerialComm::GatherAll(double * MyVals, double * AllVals, int Count) const {
+  for (int i=0; i<Count; ++i) AllVals[i] = MyVals[i];
   return(0);
 }
 //=============================================================================
 int Epetra_SerialComm::GatherAll(int * MyVals, int * AllVals, int Count) const {
+  for (int i=0; i<Count; ++i) AllVals[i] = MyVals[i];
   return(0);
 }
 //=============================================================================

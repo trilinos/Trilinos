@@ -4,6 +4,10 @@
 class Epetra_Comm;
 class Epetra_CrsGraph;
 
+#ifdef EPETRA_SERIAL
+#define MPI_Comm int
+#define MPI_SUCCESS 0
+#endif
 #include "ESI_Broker.h"
 #include "esi/ESI.h"
 #include "Epetra_Array.h"

@@ -1,7 +1,10 @@
 #ifndef _Aztec_ESI_Solver_cpp_
 #define _Aztec_ESI_Solver_cpp_
 
+#include "Aztec_ESI_Translator.h"
 #include "Aztec_ESI_Solver.h"
+
+#include "Epetra_ESI_utils.h"
 
 //------------------------------------------------------------------------------
 template<class Scalar, class Ordinal>
@@ -80,11 +83,11 @@ esi::ErrorCode aztecoo_esi::Solver<Scalar,Ordinal>::parameters(int numParams,
   //First, let's get those string-arrays in Epetra_Array objects...
   //(This is a very light-weight operation.)
 
-  Epetra_Array<const char*>& azDefStrings = get_az_def_map();
+  Epetra_Array<const char*>& azDefStrings = Translator::get_az_def_map();
 
-  Epetra_Array<const char*>& azOptionStrings = get_az_option_strs();
+  Epetra_Array<const char*>& azOptionStrings = Translator::get_az_option_strs();
 
-  Epetra_Array<const char*>& azParamStrings = get_az_param_strs();
+  Epetra_Array<const char*>& azParamStrings = Translator::get_az_param_strs();
 
   //Now let's set up some work-strings...
 
@@ -106,65 +109,15 @@ esi::ErrorCode aztecoo_esi::Solver<Scalar,Ordinal>::parameters(int numParams,
     //an aztec-option AND an aztec-param. So, we jump out of this loop-
     //iteration if it's an aztec-option.)
 
-    int optIndx = findString(azOptionStrings, keyStr);
+    int optIndx = epetra_esi::findString(azOptionStrings, keyStr);
     if (optIndx >= 0) {
       handleAzOption(optIndx, keyStr, valStr, azDefStrings);
       continue;
     }
 
-    int prmIndx = findString(azParamStrings, keyStr);
+    int prmIndx = epetra_esi::findString(azParamStrings, keyStr);
     if (prmIndx >= 0) {
       handleAzParam(prmIndx, keyStr, valStr, azDefStrings);
-    }
-  }
-
-  return(0);
-}
-
-//------------------------------------------------------------------------------
-template<class Scalar, class Ordinal>
-int aztecoo_esi::Solver<Scalar,Ordinal>::translateStringsToAztecSettings(
-                            int numParams, char** paramStrings,
-                            int* options, double* params)
-{
-  //First, let's get those string-arrays in Epetra_Array objects...
-  //(This is a very light-weight operation.)
-
-  Epetra_Array<const char*>& azDefStrings = get_az_def_map();
-
-  Epetra_Array<const char*>& azOptionStrings = get_az_option_strs();
-
-  Epetra_Array<const char*>& azParamStrings = get_az_param_strs();
-
-  //Now let's set up some work-strings...
-
-  Epetra_Array<char> keyString(128), valString(128);
-  char* keyStr = keyString.dataPtr();
-  char* valStr = valString.dataPtr();
-
-  //Now loop over the input parameters, and do the deciphering.
-  for(int i=0; i<numParams; i++) {
-    //
-    //first see if this input parameter is a space-separated pair of strings.
-    //if it isn't, we aren't interested in it.
-    //
-    int num = sscanf(paramStrings[i], "%s %s", keyStr, valStr);
-    if (num < 2) continue;
-
-    //Now we need to determine whether the key-string is an aztec-option
-    //or an aztec-param. (Note the implicit assumption: it can't be both
-    //an aztec-option AND an aztec-param. So, we jump out of this loop-
-    //iteration if it's an aztec-option.)
-
-    int optIndx = findString(azOptionStrings, keyStr);
-    if (optIndx >= 0) {
-      options[optIndx] = azOptionValue(valStr, azDefStrings);
-      continue;
-    }
-
-    int prmIndx = findString(azParamStrings, keyStr);
-    if (prmIndx >= 0) {
-      params[prmIndx] = azParamValue(valStr, azDefStrings);
     }
   }
 
@@ -185,7 +138,7 @@ int aztecoo_esi::Solver<Scalar,Ordinal>::handleAzOption(int optionIndx,
   int num = sscanf(valStr, "%d", &optionValue);
 
   if (num == 0) {
-    int indx = findHasSubString(azDefStrings, valStr);
+    int indx = epetra_esi::findHasSubString(azDefStrings, valStr);
     if (indx >= 0) {
       num = sscanf(azDefStrings[indx], "%s %d", tmpStr, &optionValue);
     }
@@ -199,32 +152,6 @@ int aztecoo_esi::Solver<Scalar,Ordinal>::handleAzOption(int optionIndx,
   }
 
   cerr << "aztecoo_esi::Solver warning: handleAzOption("<<keyStr<<") failed to"
-       << " convert '"<< valStr << "' to an integer." << endl;
-  return(0);
-}
-
-//------------------------------------------------------------------------------
-template<class Scalar, class Ordinal>
-int aztecoo_esi::Solver<Scalar,Ordinal>::azOptionValue(const char* valStr,
-                                        Epetra_Array<const char*>& azDefStrings)
-{
-  static char tmpStr[128];
-
-  int optionValue;
-  int num = sscanf(valStr, "%d", &optionValue);
-
-  if (num == 0) {
-    int indx = findHasSubString(azDefStrings, valStr);
-    if (indx >= 0) {
-      num = sscanf(azDefStrings[indx], "%s %d", tmpStr, &optionValue);
-    }
-  }
-
-  if (num > 0) {
-    return(optionValue);
-  }
-
-  cerr << "aztecoo_esi::Solver warning: azOptionValue failed to"
        << " convert '"<< valStr << "' to an integer." << endl;
   return(0);
 }
@@ -244,7 +171,7 @@ int aztecoo_esi::Solver<Scalar,Ordinal>::handleAzParam(int paramIndx,
   int num = sscanf(valStr, "%e", &paramValue);
 
   if (num == 0) {
-    int indx = findHasSubString(azDefStrings, valStr);
+    int indx = epetra_esi::findHasSubString(azDefStrings, valStr);
     if (indx >= 0) {
       num = sscanf(azDefStrings[indx], "%s %e", tmpStr, &paramValue);
     }
@@ -260,32 +187,6 @@ int aztecoo_esi::Solver<Scalar,Ordinal>::handleAzParam(int paramIndx,
   cerr << "aztecoo_esi::Solver warning: handleAzParam("<<keyStr<<") failed to"
        << " convert '"<< valStr << "' to a double." << endl;
   return(0);
-}
-
-//------------------------------------------------------------------------------
-template<class Scalar, class Ordinal>
-float aztecoo_esi::Solver<Scalar,Ordinal>::azParamValue(const char* valStr,
-                                        Epetra_Array<const char*>& azDefStrings)
-{
-  static char tmpStr[128];
-
-  float paramValue;
-  int num = sscanf(valStr, "%e", &paramValue);
-
-  if (num == 0) {
-    int indx = findHasSubString(azDefStrings, valStr);
-    if (indx >= 0) {
-      num = sscanf(azDefStrings[indx], "%s %e", tmpStr, &paramValue);
-    }
-  }
-
-  if (num > 0) {
-    return(paramValue);
-  }
-
-  cerr << "aztecoo_esi::Solver warning: azParamValue failed to"
-       << " convert '"<< valStr << "' to a double." << endl;
-  return(0.0);
 }
 
 //------------------------------------------------------------------------------

@@ -5,6 +5,9 @@
 #include "Epetra_ESI_Argv.h"
 #include "Epetra_ESI_Argv.cpp"
 
+#include "Epetra_ESI_utils.h"
+#include "Epetra_ESI_utils.cpp"
+
 #include "Epetra_ESI_Object.h"
 #include "Epetra_ESI_Object.cpp"
 
@@ -17,14 +20,17 @@
 #include "Epetra_ESI_CrsMatrix.h"
 #include "Epetra_ESI_CrsMatrix.cpp"
 
+#include "Epetra_ESI_ostream.h"
+#include "Epetra_ESI_ostream.cpp"
+
 #include "Epetra_ESI_Operator.h"
 #include "Epetra_ESI_Operator.cpp"
 
+#include "Aztec_ESI_Translator.h"
+#include "Aztec_ESI_Translator.cpp"
+
 #include "Aztec_ESI_Solver.h"
 #include "Aztec_ESI_Solver.cpp"
-
-#include "Epetra_ESI_utils.h"
-#include "Epetra_ESI_utils.cpp"
 
 #include "Trilinos_ESI_Broker.h"
 #include "Trilinos_ESI_Broker.cpp"

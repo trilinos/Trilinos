@@ -15,6 +15,9 @@ included more than once in a compilation unit.
 
 #include "Epetra_ESI_CHK_ERR.h"
 
+#include "Epetra_Array.h"
+#include "Epetra_ESI_utils.h"
+
 #include "Epetra_ESI_Argv.h"
 #include "Epetra_ESI_Object.h"
 #include "Epetra_ESI_IndexSpace.h"
@@ -23,8 +26,6 @@ included more than once in a compilation unit.
 #include "Epetra_ESI_Operator.h"
 
 #include "Aztec_ESI_Solver.h"
-
-#include "Epetra_ESI_utils.h"
 
 #endif
 

@@ -434,7 +434,7 @@ int Aztec_OO::AdaptiveIterate(int MaxIters, double Tolerance) {
   SetAztecParam(AZ_tol, Tolerance);
 
   // Make sure we are using IFPACK BILU
-  if (options_[AZ_subdomain_solve] == AZ_bilu) options_[AZ_subdomain_solve] == AZ_bilu_ifp;
+  if (options_[AZ_subdomain_solve] == AZ_bilu) options_[AZ_subdomain_solve] = AZ_bilu_ifp;
 
   // Construct adaptive strategy if necessary
   if (useAdaptiveDefaults_) {

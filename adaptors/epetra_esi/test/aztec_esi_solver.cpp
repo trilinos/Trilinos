@@ -65,8 +65,10 @@ int main(int argc, char** argv) {
    esi::IndexSpace<int>* esiIndexSpace = NULL;
    CHK_ERR( create_ESI_IndexSpace(numGlobal, numLocal, *comm, esiIndexSpace) );
 
+#ifdef EPETRA_MPI
    MPI_Comm* mpicomm;
    CHK_ERR( esiIndexSpace->getRunTimeModel("MPI", (void*&)mpicomm));
+#endif
 
 
    //Now create an esi::Operator. The run-time type of the esi::Operator will
@@ -79,7 +81,9 @@ int main(int argc, char** argv) {
    esi::Operator<double,int>* A = NULL;
    CHK_ERR( create_ESI_Operator(numGlobal, numLocal, esiIndexSpace, graph, A) );
 
+#ifdef EPETRA_MPI
    CHK_ERR( A->getRunTimeModel("MPI", (void*&)mpicomm));
+#endif
 
    //now let's create a vector x and then clone it to create a vector b
    esi::Vector<double,int> *x = NULL, *b = NULL;

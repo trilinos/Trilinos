@@ -135,28 +135,6 @@ class Object : public virtual esi::Object
 
  protected:
 
-  /** check whether one string occurs as a substring of another string.
-    @param string Input, the string to be searched.
-    @param sub Input, the substring to be searched for.
-    @return true if sub occurs within string, false if it doesn't.
-  */
-  static bool hasSubString(const char* string, const char* sub);
-
-
-  //check whether two strings are the same.
-  static bool stringsMatch(const char* str1, const char* str2);
-
-
-  //if 'string' is contained in 'strings', return its index. return -1 if it
-  //is not present.
-  static int findString(Epetra_Array<const char*>& strings, const char* string);
-
-
-  //if 'sub' is a substring of any string in 'strings', return the index of
-  //that string.  return -1 if sub is not a substring of any of them.
-  static int findHasSubString(Epetra_Array<const char*>& strings, const char* string);
-
-
   //add an interface that this object is capable of returning a pointer to.
   int addInterface(const char* ifName, void* ifPtr);
 

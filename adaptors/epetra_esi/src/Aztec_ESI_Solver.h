@@ -167,93 +167,6 @@ class Solver : public virtual esi::Object,
   virtual esi::ErrorCode getNumIterationsTaken(Ordinal& itersTaken)
     { itersTaken = (Ordinal)(status_[AZ_its]); return(0); }
 
-  /** Non-ESI function for translating string parameters to Aztec options
-      and params settings.
-     @param numParams Input, number of parameter strings.
-     @param paramStrings Input, list of strings.
-     @param options Input/Output, user-allocated Aztec options array (of length
-               AZ_OPTIONS_SIZE).
-     @param params Input/Output, user-allocated Aztec params array (of length
-               AZ_PARAMS_SIZE).
-     @return error-code 0 if successful.
-  */
-  static int translateStringsToAztecSettings(int numParams, char** paramStrings,
-                                             int* options, double* params);
-
-//
-//Note from ABW: The following is ugly, but for now I can't think of
-//a clean way to translate string parameters into Aztec options/params....
-//The string-lists need to be updated whenever changes are
-//made in az_aztec_defs.h.
-//
-//az_def_map.h contains a list of symbol-value pairs gleaned directly
-//from az_aztec_defs.h by a script that uses awk. This is what we'll use to
-//figure out that, for example, "AZ_gmres" has the value 1.
-//
-  static Epetra_Array<const char*>& get_az_def_map()
-    {
-#include "az_def_map.h"
-      static Epetra_Array<const char*> azDefMap(num_def_strs, num_def_strs,
-                                                (const char**)az_def_map);
-      return(azDefMap);
-    }
-
-//
-//And here's the REALLY bad part: the order of the strings in az_option_strs
-//and az_param_strs matters, because their positions are used for the
-//index into the Aztec options_ and params_ arrays... In other words, don't
-//mess with these string lists.
-//Don't try this at home, folks.
-//
-  static Epetra_Array<const char*>& get_az_option_strs()
-    {
-      static const char* az_option_strs[] = {
-      "AZ_solver",
-      "AZ_scaling",
-      "AZ_precond",
-      "AZ_conv",
-      "AZ_output",
-      "AZ_pre_calc",
-      "AZ_max_iter",
-      "AZ_poly_ord",
-      "AZ_overlap",
-      "AZ_type_overlap",
-      "AZ_kspace",
-      "AZ_orthog",
-      "AZ_aux_vec",
-      "AZ_reorder",
-      "AZ_keep_info",
-      "AZ_recursion_level",
-      "AZ_print_freq",
-      "AZ_graph_fill",
-      "AZ_subdomain_solve",
-      "AZ_init_guess"
-      };
-       static int num_option_strs = 20;
-      static Epetra_Array<const char*> azOptionStrs(num_option_strs,
-                                                    num_option_strs,
-                                                  (const char**)az_option_strs);
-      return(azOptionStrs);
-    }
-
-  static Epetra_Array<const char*>& get_az_param_strs()
-    {
-      static const char* az_param_strs[] = {
-        "AZ_tol",
-        "AZ_drop",
-        "AZ_ilut_fill",
-        "AZ_omega",
-        "AZ_rthresh",
-        "AZ_athresh",
-        "AZ_weights"
-      };
-      static int num_param_strs = 7;
-      static Epetra_Array<const char*> azParamStrs(num_param_strs,
-                                                   num_param_strs,
-                                            (const char**)az_param_strs);
-      return(azParamStrs);
-    }
-
  private:
   int addInterfaces();
 
@@ -266,12 +179,6 @@ class Solver : public virtual esi::Object,
                     const char* keyStr,
                     const char* valStr,
                     Epetra_Array<const char*>& azDefStrings);
-
-  static int azOptionValue(const char* valStr,
-                           Epetra_Array<const char*>& azDefStrings);
-
-  static float azParamValue(const char* valStr, 
-                             Epetra_Array<const char*>& azDefStrings);
 
   int createPetraVectorsThenSolve(esi::Vector<Scalar, Ordinal>& b,
                                   esi::Vector<Scalar, Ordinal>& x);

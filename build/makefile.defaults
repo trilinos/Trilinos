@@ -125,7 +125,8 @@ SPBLAS_INCLUDES = -I$(TRILINOS_HOME)/external/spblas
 # A library file is expected to be in this directory.
 # e.g., in $BLAS_LIB there must be a file libblas.a
 # 
-# For typical users, these variable probably don't need to be modified
+# For typical users, these variables probably don't need to be modified
+ARCH_LIBDIR=$(TRILINOS_TARGET)
 
 LIBBLAS   = $(TRILINOS_HOME)/extenal/blas/lib/$(ARCH_LIBDIR)/libblas.a
 LIBLAPACK = $(TRILINOS_HOME)/external/lapack/lib/$(ARCH_LIBDIR)/liblapack.a

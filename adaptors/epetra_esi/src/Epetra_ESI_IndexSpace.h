@@ -3,7 +3,9 @@
 
 #include "Epetra_Comm.h"
 #include "Epetra_SerialComm.h"
+#ifdef EPETRA_MPI
 #include "Epetra_MpiComm.h"
+#endif
 #include "Epetra_Map.h"
 
 #include "Epetra_ESI_CHK_ERR.h"

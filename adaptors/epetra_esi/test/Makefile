@@ -14,6 +14,7 @@ TRILINOS_TARGET = $(TRILINOS_ARCH).$(TRILINOS_COMM)$(TRILINOS_ID)
 LIBEPETRA_ESI= $(TRILINOS_HOME)/lib/$(TRILINOS_TARGET)/libepetra_esi.a
 LIBEPETRA= $(TRILINOS_HOME)/lib/$(TRILINOS_TARGET)/libepetra.a
 LIBAZTEC=$(TRILINOS_HOME)/lib/$(TRILINOS_TARGET)/libaztecoo.a
+LIBIFPACK=$(TRILINOS_HOME)/lib/$(TRILINOS_TARGET)/libifpack.a
 LIBY12M=$(TRILINOS_HOME)/external/y12m/lib/$(TRILINOS_TARGET)/liby12m.a
 
 include $(TRILINOS_HOME)/build/makefile.$(TRILINOS_TARGET)
@@ -41,7 +42,7 @@ purify=purify -best-effort -cache-dir=$(HOME)/purify-cache -chain-length=15
 purify=
 
 
-LIB_PATHS= $(LIBEPETRA_ESI) $(LIBAZTEC) $(LIBEPETRA) $(LIBY12M) $(LIBLAPACK) $(LIBBLAS) 
+LIB_PATHS= $(LIBEPETRA_ESI) $(LIBAZTEC) $(LIBIFPACK) $(LIBEPETRA) $(LIBY12M) $(LIBLAPACK) $(LIBBLAS) 
 
 #=======================================================================
 # Petra test source files

@@ -157,11 +157,13 @@ Trilinos_ESI_Broker::Trilinos_ESI_Broker(MPI_Comm comm)
    if (libName_ == NULL) voidERReturn;
    sprintf(libName_, "Trilinos");
 
+#ifdef EPETRA_MPI
    if (MPI_Comm_rank(comm_, &localProc_) != MPI_SUCCESS) voidERReturn;
    if (localProc_ < 0) voidERReturn;
 
    if (MPI_Comm_size(comm_, &numProcs_) != MPI_SUCCESS) voidERReturn;
    if (numProcs_ < 1) voidERReturn;
+#endif
 }
 
 //------------------------------------------------------------------------------
@@ -205,6 +207,9 @@ int Trilinos_ESI_Broker::setMPIComm(MPI_Comm comm)
 {
   haveMPIComm_ = true;
 
+#ifdef EPETRA_SERIAL
+  petra_comm_ = new Epetra_SerialComm;
+#else
   petra_comm_ = new Epetra_MpiComm(comm);
 
   if (MPI_Comm_rank(comm_, &localProc_) != MPI_SUCCESS) ERReturn(-1);
@@ -212,6 +217,7 @@ int Trilinos_ESI_Broker::setMPIComm(MPI_Comm comm)
 
   if (MPI_Comm_size(comm_, &numProcs_) != MPI_SUCCESS) ERReturn(-1);
   if (numProcs_ < 1) ERReturn(-1);
+#endif
 
   return(0);
 }
@@ -309,7 +315,11 @@ int Trilinos_ESI_Broker::setGlobalOffsets(int len, int* nodeOffsets,
      cerr << "Trilinos_ESI_Broker::setGlobalOffsets: ERROR, len is " << len
           << " but localProc_ is " << localProc_ << ". len needs to be > "
           << "localProc_+1. Calling MPI_Abort..." << endl;
+#ifdef EPETRA_SERIAL
+     abort();
+#else
      MPI_Abort(comm_, -1);
+#endif
      ERReturn(-1);
    }
 

@@ -1,58 +1,51 @@
 #ifndef _Epetra_ESI_utils_cpp_
 #define _Epetra_ESI_utils_cpp_
 
-//
-//A convenience: an ostream << operator for epetra_esi::CrsMatrix.
-//
-ostream& operator<<(ostream& os, epetra_esi::CrsMatrix<double,int>& mat)
+bool epetra_esi::stringsMatch(const char* str1, const char* str2)
 {
-  //This function allows an instance of a "epetra_esi::CrsMatrix" to
-  //be given directly to an ostream for output.
-  //
-  esi::IndexSpace<int>* indexspace = NULL, *dummy = NULL;
-  int err = mat.getIndexSpaces(indexspace, dummy);
-  if (err != 0) {
-    cerr << "Epetra_ESI ostrm ERROR in mat.getIndexSpaces"<<endl;
-    return(os);
+  int len1 = strlen(str1);   int len2 = strlen(str2);
+
+  if (len1 != len2) return(false);
+
+  if (strncmp(str1, str2, len1) == 0) return(true);
+  else return(false);
+}
+
+int epetra_esi::findString(Epetra_Array<const char*>& strings,
+                                 const char* string)
+{
+  int index = -1;
+  for(int i=0; i<strings.length(); i++) {
+    if (stringsMatch(strings[i], string)) { index = i; break; }
   }
 
-  int localSize = 0, localOffset = 0;
-  err = indexspace->getLocalSize(localSize);
-  err += indexspace->getLocalPartitionOffset(localOffset);
+  return(index);
+}
 
-  if (err != 0) {
-    cerr <<"Epetra_ESI ostrm ERROR in indexspace->getLocalSize or offset."<<endl;
-    return(os);
+bool epetra_esi::hasSubString(const char* string, const char* sub)
+{
+  int len1 = strlen(string);  int len2 = strlen(sub);
+  if (len1 < len2) return(false);
+
+  char* strptr = (char*)string;
+  for(int i=0; i<(len1-len2); i++) {
+    if (strncmp(strptr, sub, len2) == 0) return(true);
+    strptr++;
   }
 
+  return(false);
+}
 
-  Epetra_Array<double> coefs(50);
-  Epetra_Array<int> colInds(50);
-
-  for(int i=0; i<localSize; i++) {
-    int numnz = 0;
-    err = mat.getRowNonzeros(i+localOffset, numnz);
-    if (err != 0) {
-      cerr << "Epetra_ESI ostrm ERROR in mat.getRowNonzeros" << endl;
-      return(os);
-    }
-
-    coefs.resize(numnz);
-    colInds.resize(numnz);
-    err = mat.copyOutRow(i+localOffset, coefs.dataPtr(), colInds.dataPtr(),
-                         colInds.length(), numnz);
-    if (err != 0) {
-      cerr << "Epetra_ESI ostrm ERROR in mat.copyOutRow " << i+localOffset<<endl;
-      return(os);
-    }
-
-    for(int j=0; j<numnz; j++) {
-      os << " " << i+localOffset << " " << colInds[j] << " " << coefs[j]<<endl;
-    }
+int epetra_esi::findHasSubString(Epetra_Array<const char*>& strings,
+                                       const char* string)
+{
+  int index = -1;
+  for(int i=0; i<strings.length(); i++) {
+    if (epetra_esi::hasSubString(strings[i], string)) { index = i; break; }
   }
 
-  return(os);
-};
+  return(index);
+}
 
 #endif
 

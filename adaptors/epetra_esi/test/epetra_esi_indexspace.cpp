@@ -113,6 +113,9 @@ int main(int argc, char** argv) {
    //Make sure that "our" entry in the globalOffsets list matches our previously
    //calculated value for localOffset.
    if (globalOffsets[localRank] != localOffset) {
+     cerr << "esi::IndexSpace produced globalOffsets["<<localRank<<"]: "
+          << globalOffsets[localRank] << " and localOffset = " << localOffset
+          << endl;
      cerr << "esi::IndexSpace's globalOffsets are not correct." << endl;
      return(-1);
    }
