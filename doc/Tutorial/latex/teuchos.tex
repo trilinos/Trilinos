@@ -693,7 +693,7 @@ To use the \verb!Teuchos::TimeMonitor! class, include the header:
 To create a timer for the TimeMonitor to manage, call:
 {\small 
 \begin{verbatim}
-RefCountPtr<Time> SetupTime = TimeMonitor::getNewTimer("Setup Time");
+RefCountPtr<Time> FactTime = TimeMonitor::getNewTimer("Factorial Time");
 \end{verbatim}}
 \noindent The {\tt getNewTimer} method creates a new reference-counted
 {\tt Teuchos::Time} object and adds it to the internal array.  To avoid
@@ -703,7 +703,7 @@ we want to time a part of the code, the appropriate timer should be used to
 construct a local TimeMonitor:
 {\small
 \begin{verbatim}
-Teuchos::TimeMonitor LocalTimer(*SetupTime);
+Teuchos::TimeMonitor LocalTimer(*FactTime);
 \end{verbatim}}
 \noindent This timer will be started during the construction of {\tt LocalTimer}
 and stopped when the destructor is called on {\tt LocalTimer}.
