@@ -32,10 +32,9 @@ my $CONFIG_ERROR = 2;                 # test-harness configure file isn't valid
 my $UPDATE_ERROR = 3;                 # cvs update failed
 my $TRILINOS_CONFIGURE_ERROR = 4;     # Trilinos configure failed
 my $TRILINOS_BUILD_ERROR = 5;         # Trilinos build failed
-my $TEST_COMPILE_ERROR = 6;           # test compile failed
-my $TEST_FAILED = 7;                  # test failed
-my $TEST_PASSED = 8;                  # test passed
-my $SUMMARY = 9;                      # test-harness summary
+my $TEST_FAILED = 6;                  # test failed
+my $TEST_PASSED = 7;                  # test passed
+my $SUMMARY = 8;                      # test-harness summary
         
 ################################################################################
 # Execution ####################################################################
@@ -159,14 +158,12 @@ report($SUMMARY);
         $codes[$UPDATE_ERROR] = "cvs update error";
         $codes[$TRILINOS_CONFIGURE_ERROR] = "Trilinos configure error";
         $codes[$TRILINOS_BUILD_ERROR] = "Trilinos build error";
-        $codes[$TEST_COMPILE_ERROR] = "test compile error";
         $codes[$TEST_FAILED] = "test failed";
         $codes[$TEST_PASSED] = "test passed";
         $codes[$SUMMARY] = "summary";
             
         $summary{$TRILINOS_CONFIGURE_ERROR} = ();
         $summary{$TRILINOS_BUILD_ERROR} = ();
-        $summary{$TEST_COMPILE_ERROR} = ();
         $summary{$TEST_FAILED} = ();
         $summary{$TEST_PASSED} = ();
         
@@ -324,9 +321,9 @@ report($SUMMARY);
         for (my $j=0; $j<=$#buildDir; $j++) {
         
             my $comm; 
-            if ($buildDir[$j] eq $options{'MPI_DIR'}[0]) {
+            if (defined $options{'MPI_DIR'}[0] && $buildDir[$j] eq $options{'MPI_DIR'}[0]) {
                 $comm = "mpi";
-            } elsif ($buildDir[$j] eq $options{'SERIAL_DIR'}[0]) {
+            } elsif (defined $options{'SERIAL_DIR'}[0] && $buildDir[$j] eq $options{'SERIAL_DIR'}[0]) {
                 $comm = "serial";
             } 
 
@@ -507,6 +504,8 @@ report($SUMMARY);
                                     # test
                                     my $testFailed = test($buildDir[$j], $potentialScript);
                                     
+##################################### figure out difference between compile fail and test fail
+                                    
                                     # extract test name from path (for printing)
                                     my $testNameOnly = $potentialScript;
                                     $testNameOnly =~ s/.*\///; 
@@ -681,8 +680,8 @@ report($SUMMARY);
 	    if ($log =~ m/configure/) {
     	    $file =~ m/.*^Running(.*?)Configure Script/ms;
 	        if (defined $1) { $brokenPackage = $1; }
-    	} elsif ($log =~ m/build/) {    	    
-    	    $file =~ m/.*\/packages\/(.*?)'/ms;
+    	} elsif ($log =~ m/build/) {    
+    	    $file =~ m/.*\/packages\/(.*?)\b/ms;
 	        if (defined $1) { $brokenPackage = $1; }
         }
 	    
@@ -883,7 +882,7 @@ report($SUMMARY);
         if ($code == $TRILINOS_CONFIGURE_ERROR || $code == $TRILINOS_BUILD_ERROR) {
             push (@{$summary{$code}}, "$comm ($message broke)");
         }        
-        if ($code == $TEST_COMPILE_ERROR || $code == $TEST_FAILED || $code == $TEST_PASSED) {
+        if ($code == $TEST_FAILED || $code == $TEST_PASSED) {
             my $package;                
     	    $testDir =~ m/packages\/(.*?)\//;
 	        if ($1) { 
@@ -917,7 +916,7 @@ report($SUMMARY);
                 } # if (configure/build-related)
             
                 # test-related
-                if ($code == $TEST_COMPILE_ERROR || $code == $TEST_FAILED || $code == $TEST_PASSED) {
+                if ($code == $TEST_FAILED || $code == $TEST_PASSED) {
             
                     # extract $scriptOwner email from first line of log$hostOS.txt
                     # (note: the name "log$hostOS.txt" is functional--it is written to 
@@ -1032,7 +1031,7 @@ report($SUMMARY);
                 $filename .= "($message)";
             }
             
-            if ($code == $TEST_COMPILE_ERROR || $code == $TEST_FAILED || $code == $TEST_PASSED) {
+            if ($code == $TEST_FAILED || $code == $TEST_PASSED) {
                 my $package = "";              
         	    $testDir =~ m/packages\/(.*?)\//;
     	        if ($1) { $package = $1; }
@@ -1206,7 +1205,7 @@ report($SUMMARY);
         }
         
         # test compile log
-        if ($code == $TEST_COMPILE_ERROR && -f "test_compile_log.txt") {
+        if (-f "test_compile_log.txt") {
             $attachmentsExist = 1;
             my $log = "test_compile_log.txt";     
             my $logPath = "$options{'TRILINOS_DIR'}[0]/testharness/temp/$log";       
@@ -1367,7 +1366,7 @@ report($SUMMARY);
         
         # Trilinos configure/build or test compile/pass/fail email
         if ($code == $TRILINOS_CONFIGURE_ERROR || $code == $TRILINOS_BUILD_ERROR 
-            || $code == $TEST_COMPILE_ERROR || $code == $TEST_FAILED || $code == $TEST_PASSED) {
+            || $code == $TEST_FAILED || $code == $TEST_PASSED) {
             
             # build directory
             my $buildDir = "";
@@ -1389,7 +1388,7 @@ report($SUMMARY);
                 }   
             } 
             
-            elsif (($code == $TEST_COMPILE_ERROR || $code == $TEST_FAILED || $code == $TEST_PASSED)
+            elsif (($code == $TEST_FAILED || $code == $TEST_PASSED)
                 && -f $invokeConfigure && ! -z $invokeConfigure) {
                 $attachmentsExist = 1;
                 my $log = "invoke-configure";     
@@ -1552,7 +1551,7 @@ report($SUMMARY);
         print "\n";
         print "  -p FILE  : Parse given test-harness-config file and exit. This is useful\n";
         print "             for catching errors and inconsistencies without running the\n";
-        print "             entire test-harness. (no ouput indicates a valid config file)\n";
+        print "             entire test-harness.\n";
         print "\n";
         print "  -g FILE  : Generate template configuration file (with defaults) named \n";
         print "             FILE and exit\n";
@@ -1736,6 +1735,10 @@ report($SUMMARY);
     #   - returns: 
 
     sub validateOptions {
+    
+        my $configError = 0;
+             
+        # conversions, fixes, etc. =============================================
              
         # convert <TRILINOS_DIR> psuedo-variable
         for my $name (keys %options) {
@@ -1752,11 +1755,10 @@ report($SUMMARY);
                         $options{$name}[$i] =~ s/<HOST_FILE>/$options{'HOST_FILE'}[0]/;
                     } else {
                         my $message = "";
-                        $message .= "attempting to use <HOST_FILE> value, but HOST_FILE wasn't given";
-                        report($CONFIG_ERROR, $message);
+                        $message .= "attempting to use <HOST_FILE> value, but HOST_FILE wasn't given\n";
+                        if (!$flags{p}) { report($CONFIG_ERROR, $message); }
                         printEvent($message);
-                        die " *** test-harness-config error - aborting test-harness ***\n";
-                        
+                        $configError = 1;
                     }
                 } 
             }         
@@ -1775,6 +1777,332 @@ report($SUMMARY);
             system "mkdir $options{'TRILINOS_DIR'}[0]/testharness/results";
         }
         
+        # validations, enforcements, etc. ======================================
+        
+        # MACHINE_CONFIG_FILE --------------------------------------------------
+        
+        # enforce MACHINE_CONFIG_FILE requirement
+        if (!defined $options{'MACHINE_CONFIG_FILE'} || !defined $options{'MACHINE_CONFIG_FILE'}[0]) {
+            my $message = "";
+            $message .= "MACHINE_CONFIG_FILE required\n";
+            if (!$flags{p}) { report($CONFIG_ERROR, $message); }
+            printEvent($message);
+            $configError = 1;
+        }
+        
+        # enforce only one MACHINE_CONFIG_FILE
+        elsif (defined $options{'MACHINE_CONFIG_FILE'}[1]) {
+            my $message = "";
+            $message .= "only one MACHINE_CONFIG_FILE allowed\n";
+            if (!$flags{p}) { report($CONFIG_ERROR, $message); }
+            printEvent($message);
+            $configError = 1;
+        }
+        
+        # MACHINE_MPI_CONFIG_FILE ----------------------------------------------
+        
+        # enforce presence of MACHINE_MPI_CONFIG_FILE if MPI_DIR exists
+        if (defined $options{'MPI_DIR'} && defined $options{'MPI_DIR'}[0]
+            && (!defined $options{'MACHINE_MPI_CONFIG_FILE'} 
+            || !defined $options{'MACHINE_MPI_CONFIG_FILE'}[0])) {
+            my $message = "";
+            $message .= "MACHINE_MPI_CONFIG_FILE must be supplied if MPI_DIR is present\n";
+            if (!$flags{p}) { report($CONFIG_ERROR, $message); }
+            printEvent($message);
+            $configError = 1;
+        }
+        
+        # enforce only one MACHINE_MPI_CONFIG_FILE
+        elsif (defined $options{'MACHINE_MPI_CONFIG_FILE'}[1]) {
+            my $message = "";
+            $message .= "only one MACHINE_MPI_CONFIG_FILE allowed\n";
+            if (!$flags{p}) { report($CONFIG_ERROR, $message); }
+            printEvent($message);
+            $configError = 1;
+        }
+        
+        # TRILINOS_CONFIG_FILE -------------------------------------------------
+        
+        # enforce TRILINOS_CONFIG_FILE requirement
+        if (!defined $options{'TRILINOS_CONFIG_FILE'} || !defined $options{'TRILINOS_CONFIG_FILE'}[0]) {
+            my $message = "";
+            $message .= "TRILINOS_CONFIG_FILE required\n";
+            if (!$flags{p}) { report($CONFIG_ERROR, $message); }
+            printEvent($message);
+            $configError = 1;
+        }
+        
+        # enforce only one TRILINOS_CONFIG_FILE
+        elsif (defined $options{'TRILINOS_CONFIG_FILE'}[1]) {
+            my $message = "";
+            $message .= "only one TRILINOS_CONFIG_FILE allowed\n";
+            if (!$flags{p}) { report($CONFIG_ERROR, $message); }
+            printEvent($message);
+            $configError = 1;
+        }
+        
+        # REPORT_METHOD --------------------------------------------------------
+        
+        # enforce REPORT_METHOD requirement
+        if (!defined $options{'REPORT_METHOD'} || !defined $options{'REPORT_METHOD'}[0]) {
+            my $message = "";
+            $message .= "REPORT_METHOD required\n";
+            if (!$flags{p}) { report($CONFIG_ERROR, $message); }
+            printEvent($message);
+            $configError = 1;
+        }
+        
+        # enforce only one REPORT_METHOD
+        elsif (defined $options{'REPORT_METHOD'}[1]) {
+            my $message = "";
+            $message .= "only one REPORT_METHOD allowed\n";
+            if (!$flags{p}) { report($CONFIG_ERROR, $message); }
+            printEvent($message);
+            $configError = 1;
+        }
+        
+        # enforce correct REPORT_METHOD value
+        elsif (!($options{'REPORT_METHOD'}[0] eq "EMAIL" 
+            || $options{'REPORT_METHOD'}[0] eq "LOCAL_FILESYSTEM")) {
+            my $message = "";
+            $message .= "invalid value for REPORT_METHOD\n";
+            if (!$flags{p}) { report($CONFIG_ERROR, $message); }
+            printEvent($message);
+            $configError = 1;
+        }
+        
+        # SERIAL_DIR & MPI_DIR -------------------------------------------------
+        
+        # enforce existence of SERIAL_DIR or MPI_DIR
+        if ((!defined $options{'SERIAL_DIR'} || !defined $options{'SERIAL_DIR'}[0])
+            && (!defined $options{'MPI_DIR'} || !defined $options{'MPI_DIR'}[0])) {
+            my $message = "";
+            $message .= "at least one SERIAL_DIR or MPI_DIR required\n";
+            if (!$flags{p}) { report($CONFIG_ERROR, $message); }
+            printEvent($message);
+            $configError = 1;
+        }
+                
+        # enforce only one SERIAL_DIR
+        if (defined $options{'SERIAL_DIR'}[1]) {
+            my $message = "";
+            $message .= "only one SERIAL_DIR allowed\n";
+            if (!$flags{p}) { report($CONFIG_ERROR, $message); }
+            printEvent($message);
+            $configError = 1;
+        }
+                
+        # enforce only one MPI_DIR
+        if (defined $options{'MPI_DIR'}[1]) {
+            my $message = "";
+            $message .= "only one MPI_DIR allowed\n";
+            if (!$flags{p}) { report($CONFIG_ERROR, $message); }
+            printEvent($message);
+            $configError = 1;
+        }
+        
+        # HOST_FILE ------------------------------------------------------------
+                
+        # enforce only one HOST_FILE
+        if (defined $options{'HOST_FILE'}[1]) {
+            my $message = "";
+            $message .= "only one HOST_FILE allowed\n";
+            if (!$flags{p}) { report($CONFIG_ERROR, $message); }
+            printEvent($message);
+            $configError = 1;
+        }
+        
+        # MPI_STARTUP_CMD ------------------------------------------------------
+        
+        # enforce presence of MPI_STARTUP_CMD if MPI_DIR exists
+        if (defined $options{'MPI_DIR'} && defined $options{'MPI_DIR'}[0]
+            && (!defined $options{'MPI_STARTUP_CMD'} 
+            || !defined $options{'MPI_STARTUP_CMD'}[0])) {
+            my $message = "";
+            $message .= "MPI_STARTUP_CMD must be supplied if MPI_DIR is present\n";
+            if (!$flags{p}) { report($CONFIG_ERROR, $message); }
+            printEvent($message);
+            $configError = 1;
+        }
+        
+        # MPI_SHUTDOWN_CMD -----------------------------------------------------
+                
+        # enforce only one MPI_SHUTDOWN_CMD
+        if (defined $options{'MPI_SHUTDOWN_CMD'}[1]) {
+            my $message = "";
+            $message .= "only one MPI_SHUTDOWN_CMD allowed\n";
+            if (!$flags{p}) { report($CONFIG_ERROR, $message); }
+            printEvent($message);
+            $configError = 1;
+        }
+        
+        # MAKE_FLAGS -----------------------------------------------------------
+                
+        # enforce only one MAKE_FLAGS
+        if (defined $options{'MAKE_FLAGS'}[1]) {
+            my $message = "";
+            $message .= "only one MAKE_FLAGS value allowed\n";
+            if (!$flags{p}) { report($CONFIG_ERROR, $message); }
+            printEvent($message);
+            $configError = 1;
+        }
+        
+        # CVS_UPDATE -----------------------------------------------------------
+        
+        # enforce CVS_UPDATE requirement
+        if (!defined $options{'CVS_UPDATE'} || !defined $options{'CVS_UPDATE'}[0]) {
+            my $message = "";
+            $message .= "CVS_UPDATE required\n";
+            if (!$flags{p}) { report($CONFIG_ERROR, $message); }
+            printEvent($message);
+            $configError = 1;
+        }
+        
+        # enforce only one CVS_UPDATE
+        elsif (defined $options{'CVS_UPDATE'}[1]) {
+            my $message = "";
+            $message .= "only one CVS_UPDATE allowed\n";
+            if (!$flags{p}) { report($CONFIG_ERROR, $message); }
+            printEvent($message);
+            $configError = 1;
+        }
+        
+        # enforce correct CVS_UPDATE value
+        elsif (!($options{'CVS_UPDATE'}[0] eq "YES" 
+            || $options{'CVS_UPDATE'}[0] eq "NO")) {
+            my $message = "";
+            $message .= "invalid value for CVS_UPDATE\n";
+            if (!$flags{p}) { report($CONFIG_ERROR, $message); }
+            printEvent($message);
+            $configError = 1;
+        }
+        
+        # CVS_CMD --------------------------------------------------------------
+        
+        # enforce presence of CVS_CMD if CVS_UPDATE is set to YES
+        if (defined $options{'CVS_UPDATE'} && defined $options{'CVS_UPDATE'}[0]
+            && $options{'CVS_UPDATE'}[0] eq "YES"
+            && (!defined $options{'CVS_CMD'} 
+            || !defined $options{'CVS_CMD'}[0])) {
+            my $message = "";
+            $message .= "CVS_CMD must be supplied if CVS_UPDATE is set to YES\n";
+            if (!$flags{p}) { report($CONFIG_ERROR, $message); }
+            printEvent($message);
+            $configError = 1;
+        }
+                
+        # enforce only one CVS_CMD
+        if (defined $options{'CVS_CMD'}[1]) {
+            my $message = "";
+            $message .= "only one CVS_CMD allowed\n";
+            if (!$flags{p}) { report($CONFIG_ERROR, $message); }
+            printEvent($message);
+            $configError = 1;
+        }
+        
+        # REPORT_NAMES ---------------------------------------------------------
+        
+        # enforce presence of REPORT_NAMES if REPORT_METHOD is set to LOCAL_FILESYSTEM
+        if (defined $options{'REPORT_METHOD'} && defined $options{'REPORT_METHOD'}[0]
+            && $options{'REPORT_METHOD'}[0] eq "LOCAL_FILESYSTEM"
+            && (!defined $options{'REPORT_NAMES'} 
+            || !defined $options{'REPORT_NAMES'}[0])) {
+            my $message = "";
+            $message .= "REPORT_NAMES must be supplied if REPORT_METHOD is set to LOCAL_FILESYSTEM\n";
+            if (!$flags{p}) { report($CONFIG_ERROR, $message); }
+            printEvent($message);
+            $configError = 1;
+        }
+        
+        # enforce correct REPORT_NAMES value
+        elsif (!($options{'REPORT_NAMES'}[0] eq "ORDER" 
+            || $options{'REPORT_NAMES'}[0] eq "EVENT")) {
+            my $message = "";
+            $message .= "invalid value for REPORT_NAMES\n";
+            if (!$flags{p}) { report($CONFIG_ERROR, $message); }
+            printEvent($message);
+            $configError = 1;
+        }
+                
+        # enforce only one REPORT_NAMES
+        if (defined $options{'REPORT_NAMES'}[1]) {
+            my $message = "";
+            $message .= "only one REPORT_NAMES value allowed\n";
+            if (!$flags{p}) { report($CONFIG_ERROR, $message); }
+            printEvent($message);
+            $configError = 1;
+        }
+        
+        # MAIL_METHOD ----------------------------------------------------------
+        
+        # enforce presence of MAIL_METHOD if REPORT_METHOD is set to EMAIL
+        if (defined $options{'REPORT_METHOD'} && defined $options{'REPORT_METHOD'}[0]
+            && $options{'REPORT_METHOD'}[0] eq "EMAIL"
+            && (!defined $options{'MAIL_METHOD'} 
+            || !defined $options{'MAIL_METHOD'}[0])) {
+            my $message = "";
+            $message .= "MAIL_METHOD must be supplied if REPORT_METHOD is set to EMAIL\n";
+            if (!$flags{p}) { report($CONFIG_ERROR, $message); }
+            printEvent($message);
+            $configError = 1;
+        }
+                
+        # enforce only one MAIL_METHOD if first isn't smtp
+        if (defined $options{'MAIL_METHOD'}[1] && $options{'MAIL_METHOD'}[0] ne "smtp") {
+            my $message = "";
+            $message .= "only one MAIL_METHOD value allowed if first value isn't \"smtp\"\n";
+            if (!$flags{p}) { report($CONFIG_ERROR, $message); }
+            printEvent($message);
+            $configError = 1;
+        }
+                
+        # enforce only two MAIL_METHOD if first is smtp
+        if ($options{'MAIL_METHOD'}[0] eq "smtp" && defined $options{'MAIL_METHOD'}[2]) {
+            my $message = "";
+            $message .= "only two MAIL_METHOD values allowed (if first value is \"smtp\")\n";
+            if (!$flags{p}) { report($CONFIG_ERROR, $message); }
+            printEvent($message);
+            $configError = 1;
+        }
+        
+        # SUMMARY_EMAIL --------------------------------------------------------
+        
+            # No enforcable requirements
+        
+        # ALL_EMAILS -----------------------------------------------------------
+        
+            # No enforcable requirements
+        
+        # SEND_TO_DEFAULTS -----------------------------------------------------
+        
+        # enforce SEND_TO_DEFAULTS requirement
+        if (!defined $options{'SEND_TO_DEFAULTS'} || !defined $options{'SEND_TO_DEFAULTS'}[0]) {
+            my $message = "";
+            $message .= "SEND_TO_DEFAULTS required\n";
+            if (!$flags{p}) { report($CONFIG_ERROR, $message); }
+            printEvent($message);
+            $configError = 1;
+        }
+        
+        # enforce only one SEND_TO_DEFAULTS
+        elsif (defined $options{'SEND_TO_DEFAULTS'}[1]) {
+            my $message = "";
+            $message .= "only one SEND_TO_DEFAULTS allowed\n";
+            if (!$flags{p}) { report($CONFIG_ERROR, $message); }
+            printEvent($message);
+            $configError = 1;
+        }
+        
+        # enforce correct SEND_TO_DEFAULTS value
+        elsif (!($options{'SEND_TO_DEFAULTS'}[0] eq "YES" 
+            || $options{'SEND_TO_DEFAULTS'}[0] eq "NO")) {
+            my $message = "";
+            $message .= "invalid value for SEND_TO_DEFAULTS\n";
+            if (!$flags{p}) { report($CONFIG_ERROR, $message); }
+            printEvent($message);
+            $configError = 1;
+        }
+        
         # print the options hash of arrays -------------------------------------
         #print "\n\%options:\n\n";                       # debugging
         #for my $name (keys %options) {                  # debugging
@@ -1784,6 +2112,16 @@ report($SUMMARY);
         #        print "    $i = $options{$name}[$i]\n"; # debugging
         #    }                                           # debugging
         #}            
+        
+        # if config error and not just parsing, die
+        if ($configError && !$flags{p}) { 
+            die " *** test-harness-config error - aborting test-harness ***\n"; 
+        }
+        
+        # report successful parse and validation if parse flag
+        if (!$configError && $flags{p}) {
+            print "test-harness config file \"$flags{p}\" successfully parsed and validated\n"
+        }
             
     } # validateOptions()
     
@@ -1961,7 +2299,7 @@ report($SUMMARY);
             print outFile "# Specify the command to start up the MPI implementation on this machine.\n";
             print outFile "#\n";
             print outFile "# - multiple values recognized: NO\n";
-            print outFile "# - value required: YES MPI_DIR is supplied\n";
+            print outFile "# - value required: YES if MPI_DIR is supplied\n";
             print outFile "# - the value of the HOST_FILE option can be referred to with the value\n";
             print outFile "#   <HOST_FILE>\n";   
             print outFile "\n";

@@ -22,7 +22,10 @@
                                     only run tests (for cross-compiling 
                                     machines)
 
- ./test-harness.plx -p FILENAME		parse FILENAME config file and exit
+ ./test-harness.plx -p FILENAME		parse FILENAME config file and exit--this is 
+                                    useful for catching errors and 
+                                    inconsistencies without running the entire 
+                                    test-harness
 
  ./test-harness.plx -g FILENAME		generate commented config file (with 
 									defaults) named FILENAME and exit
@@ -60,6 +63,9 @@ README					- this README file
 config/					- test-harness config files
 elements-machine/		- machine-dependent invoke-configure elements
 elements-trilinos/		- machine-independent invoke-configure elements
+
+results/                - location of output if REPORT_METHOD is 
+                          LOCAL_FILESYSTEM
 
 --------------------------------------------------------------------------------
  FAQ
