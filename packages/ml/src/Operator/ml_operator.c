@@ -512,6 +512,7 @@ int ML_Operator_Set_Label( ML_Operator *mat, char *label)
 {
   int size;
 
+   if (mat->label != NULL) { free(mat->label); mat->label == NULL; }
    size = strlen(label) + 1;
    mat->label = (char *) malloc(size*sizeof(char));
    if (mat->label == NULL) pr_error("Not enough space in ML_Operator_Set_Label\n");
