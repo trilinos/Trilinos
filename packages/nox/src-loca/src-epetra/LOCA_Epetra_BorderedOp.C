@@ -37,8 +37,8 @@
 #include "LOCA_Epetra_BorderedOp.H"
 
 LOCA::Epetra::BorderedOp::BorderedOp(Epetra_Operator& jac, 
-			     const Epetra_Vector& a, 
-			     const Epetra_Vector& b) :
+				     const Epetra_Vector& a, 
+				     const Epetra_Vector& b) :
   label("LOCA::Epetra::BorderedOp"),
   jacOperator(jac),
   aVecPtr(&a),

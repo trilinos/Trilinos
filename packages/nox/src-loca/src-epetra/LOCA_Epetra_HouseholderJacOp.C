@@ -36,7 +36,7 @@
 #include "LOCA_Epetra_HouseholderJacOp.H"
 
 LOCA::Epetra::HouseholderJacOp::HouseholderJacOp(
-					 Epetra_Operator& jac, 
+					 const Epetra_Operator& jac, 
 					 const Epetra_MultiVector& dfdpVec, 
 					 const Epetra_MultiVector& houseVec_x,
 					 double houseVec_p, double b) :

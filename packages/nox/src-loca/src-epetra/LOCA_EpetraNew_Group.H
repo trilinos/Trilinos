@@ -203,6 +203,37 @@ namespace LOCA {
       virtual void printSolution(const NOX::Abstract::Vector& x,
                                  const double conParam) const;
 
+      //! Solve arclength continuation equations using Householder projection
+      /*!
+       * This method computes a solution to the following system
+       * of equations
+       * \f[
+       *    \begin{bmatrix}
+       *      J & \frac{df}{dp}
+       *   \end{bmatrix} Q \Delta x = f 
+       * \f]
+       * where \f$Q\in\Re^{n+1\times n}$\f$ is an orthogonal matrix such that
+       * for any \f$z\in\Re^n\f$,
+       * \f[
+       *    Q z = P \begin{bmatrix} z \\ 0 \end{bmatrix}.
+       * \f]
+       * Here \f$P = I - \beta u u^T\in\Re^{n+1\times n+1}\f$ is a Householder
+       * transformation such that \f$P v = \|v\|_2 e_{n+1}\f$ and 
+       * \f$u_{n+1} = 1\f$ where \f$v\in\Re^{n+1}\f$ is the predictor 
+       * vector and \f$e_{n+1}\f$ is the \f$n+1\f$ column of the identity.
+       *
+       * The implementation here uses Aztec with an Ifpack preconditioner
+       * for \f$J\f$.
+       */
+      virtual NOX::Abstract::Group::ReturnType
+      applyHouseholderJacobianInverse(NOX::Parameter::List& params,
+				      const NOX::Abstract::Vector& f,
+				      const NOX::Abstract::Vector& dfdp,
+				      const NOX::Abstract::Vector& ux,
+				      double up, double beta,
+				      NOX::Abstract::Vector& result_x,
+				      double& result_p) const;
+
       //@}
 
       //! Return the userInterface.
@@ -214,6 +245,43 @@ namespace LOCA {
 
       //! Sets the scale vector.  
       void setScaleVector(const NOX::Abstract::Vector& s);
+
+      /*! 
+       * @name Implementation of LOCA::Bifurcation::TPBord::AbstractGroup virtual methods.
+       */
+      //@{
+
+      /*!
+       * \brief Solve a bordered system of equations
+       */
+      /*!
+       * Compute the solution to the bordered system of equations
+       * \f[
+       *     \begin{bmatrix}
+       *        J & a \\
+       *        b^T & 0
+       *     \end{bmatrix}
+       *     \begin{bmatrix}
+       *        \text{vResult} \\
+       *        \text{sResult}
+       *     \end{bmatrix} = 
+       *     \begin{bmatrix}
+       *        \text{vInput} \\
+       *        \text{sInput}
+       *     \end{bmatrix}
+       * \f]
+       */
+      virtual NOX::Abstract::Group::ReturnType
+      applyBorderedJacobianInverse(bool trans,
+				   NOX::Parameter::List& params,
+				   const NOX::Abstract::Vector& a,
+				   const NOX::Abstract::Vector& b,
+				   const NOX::Abstract::Vector& vInput,
+				   double sInput,
+				   NOX::Abstract::Vector& vResult,
+				   double& sResult) const;
+
+      //@}
 
     protected:
 

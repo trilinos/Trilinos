@@ -37,6 +37,8 @@
 #include "Epetra_Vector.h"
 #include "LOCA_Utils.H"
 #include "LOCA_ErrorCheck.H"
+#include "LOCA_Epetra_BorderedOp.H"
+#include "LOCA_Epetra_HouseholderJacOp.H"
 
 LOCA::EpetraNew::Group::Group(NOX::Parameter::List& printingParams, 
 			      LOCA::EpetraNew::Interface::Required& i, 
@@ -243,4 +245,146 @@ LOCA::EpetraNew::Group::setScaleVector(const NOX::Abstract::Vector& s)
   scaleVecPtr = s.clone(NOX::DeepCopy);
 
   return;
+}
+
+NOX::Abstract::Group::ReturnType 
+LOCA::EpetraNew::Group::applyHouseholderJacobianInverse(
+					  NOX::Parameter::List& p,
+					  const NOX::Abstract::Vector& cf,
+					  const NOX::Abstract::Vector& cdfdp,
+					  const NOX::Abstract::Vector& cux,
+					  double up, double beta,
+					  NOX::Abstract::Vector& result_x,
+					  double& result_p) const
+{
+  // Get non-const input
+  NOX::Abstract::Vector& f = const_cast<NOX::Abstract::Vector&>(cf);
+  NOX::Abstract::Vector& dfdp = const_cast<NOX::Abstract::Vector&>(cdfdp);
+  NOX::Abstract::Vector& ux = const_cast<NOX::Abstract::Vector&>(cux);
+
+  // cast vectors to nox epetra vectors
+  NOX::Epetra::Vector& nox_epetra_f = 
+    dynamic_cast<NOX::Epetra::Vector&>(f);
+  NOX::Epetra::Vector& nox_epetra_dfdp = 
+    dynamic_cast<NOX::Epetra::Vector&>(dfdp);
+  NOX::Epetra::Vector& nox_epetra_ux = 
+    dynamic_cast<NOX::Epetra::Vector&>(ux);
+  NOX::Epetra::Vector& nox_epetra_result_x = 
+    dynamic_cast<NOX::Epetra::Vector&>(result_x);
+  
+  // Get underlying epetra vectors
+  Epetra_Vector& epetra_f = nox_epetra_f.getEpetraVector();
+  Epetra_Vector& epetra_dfdp = nox_epetra_dfdp.getEpetraVector();
+  Epetra_Vector& epetra_ux = nox_epetra_ux.getEpetraVector();
+  Epetra_Vector& epetra_result_x = nox_epetra_result_x.getEpetraVector();
+
+  // Get Jacobian operator
+  const Epetra_Operator& jac = 
+    sharedLinearSystem.getObject(this).getJacobianOperator();
+
+  // Build Householder projection-Jacobian operator
+  LOCA::Epetra::HouseholderJacOp houseJac(jac, epetra_dfdp, epetra_ux,
+					  up, beta);
+
+  // Initialize operator
+  houseJac.init(epetra_result_x);
+
+  bool status = 
+    sharedLinearSystem.getObject(this).applyJacobianInverse(
+							 p, 
+							 nox_epetra_f, 
+							 nox_epetra_result_x,
+							 &houseJac);
+
+  // Apply Householder transformation to result
+  result_p = 0.0;
+  houseJac.applyHouse(epetra_result_x, result_p);
+
+  // Finalize operator
+  houseJac.finish();
+
+  if (status) 
+    return NOX::Abstract::Group::Ok;
+  else
+    return NOX::Abstract::Group::NotConverged;
+}
+
+NOX::Abstract::Group::ReturnType 
+LOCA::EpetraNew::Group::applyBorderedJacobianInverse(
+				     bool trans,
+				     NOX::Parameter::List& p,
+				     const NOX::Abstract::Vector& ca,
+				     const NOX::Abstract::Vector& cb,
+				     const NOX::Abstract::Vector& cvInput,
+				     double sInput,
+				     NOX::Abstract::Vector& vResult,
+				     double& sResult) const
+{
+  // Get non-const input
+  NOX::Abstract::Vector& vInput = const_cast<NOX::Abstract::Vector&>(cvInput);
+  NOX::Abstract::Vector& a = const_cast<NOX::Abstract::Vector&>(ca);
+  NOX::Abstract::Vector& b = const_cast<NOX::Abstract::Vector&>(cb);
+
+  // cast vectors to nox epetra vectors
+  NOX::Epetra::Vector& nox_epetra_vInput = 
+    dynamic_cast<NOX::Epetra::Vector&>(vInput);
+  NOX::Epetra::Vector& nox_epetra_a = 
+    dynamic_cast<NOX::Epetra::Vector&>(a);
+  NOX::Epetra::Vector& nox_epetra_b = 
+    dynamic_cast<NOX::Epetra::Vector&>(b);
+  NOX::Epetra::Vector& nox_epetra_vResult = 
+    dynamic_cast<NOX::Epetra::Vector&>(vResult);
+  
+  // Get underlying epetra vectors
+  Epetra_Vector& epetra_vInput = nox_epetra_vInput.getEpetraVector();
+  Epetra_Vector& epetra_a = nox_epetra_a.getEpetraVector();
+  Epetra_Vector& epetra_b = nox_epetra_b.getEpetraVector();
+  Epetra_Vector& epetra_vResult = nox_epetra_vResult.getEpetraVector();
+
+  // Get Jacobian, preconditioner operators
+  const Epetra_Operator& cjac = 
+    sharedLinearSystem.getObject(this).getJacobianOperator();
+  const Epetra_Operator& cprec = 
+    sharedLinearSystem.getObject(this).getGeneratedPrecOperator();
+  Epetra_Operator& jac = const_cast<Epetra_Operator&>(cjac);
+  Epetra_Operator& prec = const_cast<Epetra_Operator&>(cprec);
+
+  // Build bordered matrix-free Jacobian, preconditioning operator
+  LOCA::Epetra::BorderedOp extended_jac(jac, epetra_a, epetra_b);
+  LOCA::Epetra::BorderedOp extended_prec(prec, epetra_a, epetra_b);
+  extended_jac.SetUseTranspose(trans);
+  extended_prec.SetUseTranspose(trans);
+
+  // Build extended epetra vectors
+  Epetra_Vector *epetra_extended_input = 
+    extended_jac.buildEpetraExtendedVec(epetra_vInput, sInput, true);
+  Epetra_Vector *epetra_extended_result = 
+    extended_jac.buildEpetraExtendedVec(epetra_vResult, 0.0, false);
+
+  // Build extended NOX::Epetra vectors
+  NOX::Epetra::Vector nox_epetra_extended_input(*epetra_extended_input,
+						NOX::DeepCopy,
+						true);
+  NOX::Epetra::Vector nox_epetra_extended_result(*epetra_extended_result,
+						 NOX::DeepCopy,
+						 true);
+
+  bool status = 
+    sharedLinearSystem.getObject(this).applyJacobianInverse(
+						   p, 
+						   nox_epetra_extended_input, 
+						   nox_epetra_extended_result,
+						   &extended_jac,
+						   &extended_prec);
+
+  extended_jac.setEpetraExtendedVec(epetra_vResult, sResult, 
+				    *epetra_extended_result);
+  
+  delete epetra_extended_input;
+  delete epetra_extended_result;
+
+  if (status) 
+    return NOX::Abstract::Group::Ok;
+  else
+    return NOX::Abstract::Group::NotConverged;
 }

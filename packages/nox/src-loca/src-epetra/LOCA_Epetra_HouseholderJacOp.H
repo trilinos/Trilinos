@@ -95,7 +95,7 @@ namespace LOCA {
        * vector, \em houseVec_p is the parameter component, and \em b is
        * the scalar in the Householder transformation.
        */
-      HouseholderJacOp(Epetra_Operator& jac, 
+      HouseholderJacOp(const Epetra_Operator& jac, 
 		       const Epetra_MultiVector& dfdpVec, 
 		       const Epetra_MultiVector& houseVec_x,
 		       double houseVec_p, double b);
@@ -191,7 +191,7 @@ namespace LOCA {
       string label;
     
       //! Stores operator representing \f$J\f$
-      Epetra_Operator& jacOperator;
+      const Epetra_Operator& jacOperator;
   
       //! Stores reference to \f$df/dp\f$ vector
       const Epetra_MultiVector& dfdp;
