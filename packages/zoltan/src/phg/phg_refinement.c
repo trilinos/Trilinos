@@ -339,16 +339,24 @@ static int refine_fm2 (ZZ *zz,
     max_weight[0] = total_weight * bal_tol *      ratio;
     max_weight[1] = total_weight * bal_tol * (1 - ratio);
 
-    lmax_weight[0] = lweights[0] + (max_weight[0] - weights[0]) * ( lweights[0] / weights[0] );
-    lmax_weight[1] = lweights[1] + (max_weight[1] - weights[1]) * ( lweights[1] / weights[1] );
-    ltargetw0 = targetw0 * ( lweights[0] / weights[0] ); /* local target weight */
+    if (weights[0]==0.0) 
+        ltargetw0 = lmax_weight[0] = 0.0;
+    else {
+        lmax_weight[0] = lweights[0] +
+            (max_weight[0] - weights[0]) * ( lweights[0] / weights[0] );
+        ltargetw0 = targetw0 * ( lweights[0] / weights[0] ); /* local target weight */
+    }
+    lmax_weight[1] = (weights[1]==0.0) ? 0.0 : lweights[1] +
+        (max_weight[1] - weights[1]) * ( lweights[1] / weights[1] );
+
+
     /* Our strategy is to stay close to the current local weight balance.
        We do not need the same local balance on each proc, as long as
        we achieve approximate global balance.                            */
 
 #ifdef _DEBUG
-    imbal = fabs(weights[0]-targetw0)/targetw0;
-    limbal = fabs(lweights[0]-ltargetw0)/ltargetw0;
+    imbal = (targetw0==0.0) ? 0.0 : fabs(weights[0]-targetw0)/targetw0;
+    limbal = (ltargetw0==0.0) ? 0.0 : fabs(lweights[0]-ltargetw0)/ltargetw0;
     uprintf(hgc, "FM2: W[%.1lf, %.1lf] MW:[%.1lf, %.1lf] I=%.3lf  LW[%.1lf, %.1lf] LMW[%.1lf, %.1lf] LI=%.3lf\n", weights[0], weights[1], max_weight[0], max_weight[1], imbal, lweights[0], lweights[1], lmax_weight[0], lmax_weight[1], limbal);
 #endif
 
@@ -393,13 +401,15 @@ static int refine_fm2 (ZZ *zz,
         }
         MPI_Allreduce(&cutsize, &best_cutsize, 1, MPI_DOUBLE, MPI_SUM, hgc->col_comm);
         cutsize = best_cutsize;
-        best_imbal = imbal = fabs(weights[0]-targetw0)/targetw0;
-        best_limbal = limbal = fabs(lweights[0]-ltargetw0)/ltargetw0;
 
+        best_imbal = imbal = (targetw0==0.0) ? 0.0
+            : fabs(weights[0]-targetw0)/targetw0;
+        best_limbal = limbal = (ltargetw0==0.0) ? 0.0
+            : fabs(lweights[0]-ltargetw0)/ltargetw0;
 
-        /* UVCUVC: it looks like instead of moving always from overloaded part,
-           alternating the 'from' part gives better results. Hence it is default
-           in the code */
+        /* UVCUVC: it looks like instead of moving always from overloaded
+           part, alternating the 'from' part gives better results.
+           Hence it is default in the code */
 #if 1 
         from = passcnt % 2; 
 #else
@@ -496,8 +506,10 @@ static int refine_fm2 (ZZ *zz,
                 cutsize -= gain[v];
 
                 fm2_move_vertex_oneway(v, hg, part, gain, heap, pins, lpins, weights, lweights, mark, adj);
-                imbal = fabs(weights[0]-targetw0)/targetw0;
-                limbal = fabs(lweights[0]-ltargetw0)/ltargetw0;
+                imbal = (targetw0==0.0) ? 0.0
+                    : fabs(weights[0]-targetw0)/targetw0;
+                limbal = (ltargetw0==0.0) ? 0.0
+                    : fabs(lweights[0]-ltargetw0)/ltargetw0;
 
                 if ((cutsize<best_cutsize) || (cutsize==best_cutsize && limbal < best_limbal)) {
 #ifdef _DEBUG2                    
@@ -571,9 +583,16 @@ static int refine_fm2 (ZZ *zz,
 
         
         MPI_Allreduce(lweights, weights, 2, MPI_DOUBLE, MPI_SUM, hgc->row_comm);
-        lmax_weight[0] = lweights[0] + (max_weight[0] - weights[0]) * ( lweights[0] / weights[0] );
-        lmax_weight[1] = lweights[1] + (max_weight[1] - weights[1]) * ( lweights[1] / weights[1] );
-        ltargetw0 = targetw0 * ( lweights[0] / weights[0] );
+
+        if (weights[0]==0.0) 
+            ltargetw0 = lmax_weight[0] = 0.0;
+        else {
+            lmax_weight[0] = lweights[0] +
+                (max_weight[0] - weights[0]) * ( lweights[0] / weights[0] );
+            ltargetw0 = targetw0 * ( lweights[0] / weights[0] ); /* local target weight */
+        }
+        lmax_weight[1] = (weights[1]==0.0) ? 0.0 : lweights[1] +
+            (max_weight[1] - weights[1]) * ( lweights[1] / weights[1] );
         
         cont = 0;
         MPI_Allreduce(&best_cutsizeat, &cont, 1, MPI_INT, MPI_LOR, hgc->row_comm);
@@ -587,7 +606,7 @@ static int refine_fm2 (ZZ *zz,
 #ifdef _DEBUG
     /* Just for debugging */
         best_cutsize = Zoltan_PHG_hcut_size_total(hgc, hg, part, p);
-        imbal = fabs(weights[0]-targetw0)/targetw0;
+        imbal = (targetw0 == 0.0) ? 0.0 : fabs(weights[0]-targetw0)/targetw0;
         printf("%s End of Pass %d Comp.Cut=%.2lf RealCut=%.2lf W[%5.0lf, %5.0lf] Imbal=%.2lf\n", uMe(hgc), passcnt, cutsize, best_cutsize, weights[0], weights[1], imbal);
         if (cutsize<best_cutsize) {
             errexit("*** HEY HEY Invalid cut!!!");
