@@ -270,5 +270,14 @@ revert to their default values.
 
   int MaxProcs_;
   
+  // track memory (as reported by DSCPACK routines)
+  int TotalMemory_;                       // estimates of the total memory requirements
+                                          // for the factorization step as a
+					  // whole number of Mbytes. As
+					  // reported in the manual, this is a
+					  // "fair" estimation, but not
+					  // accurate at the last byte.
+
+  
 };  // End of  class Amesos_Dscpack  
 #endif /* _AMESOS_DSCPACK_H_ */

@@ -50,11 +50,11 @@ At present, either USE_LOCAL or USE_STL_SORT is required
 
 //=============================================================================
 Amesos_Dscpack::Amesos_Dscpack(const Epetra_LinearProblem &prob ) : 
-  UseTranspose_(false), // Dscpack is only for symmetric systems
-  DscNumProcs(-1), // will be set later
-  DscGraph_(0), 
   SymbolicFactorizationOK_(false), 
   NumericFactorizationOK_(false),
+  DscGraph_(0), 
+  UseTranspose_(false), // Dscpack is only for symmetric systems
+  DscNumProcs(-1), // will be set later
   PrintTiming_(false),
   PrintStatus_(false),
   ComputeVectorNorms_(false),
@@ -292,10 +292,10 @@ int Amesos_Dscpack::PerformSymbolicFactorization()
   }
   
   if ( MyDscRank >= 0 ) { 
-    int TotalMemory, MaxSingleBlock; 
+    int MaxSingleBlock; 
     
     const int Limit = 5000000 ;  //  Memory Limit set to 5 Terabytes 
-    EPETRA_CHK_ERR( DSC_SFactor ( MyDSCObject, &TotalMemory, 
+    EPETRA_CHK_ERR( DSC_SFactor ( MyDSCObject, &TotalMemory_, 
 				  &MaxSingleBlock, Limit, DSC_LBLAS3, DSC_DBLAS2 ) ) ; 
     
   }
@@ -329,8 +329,6 @@ int Amesos_Dscpack::PerformNumericFactorization()
   MPIC = comm1.Comm() ;
 
   int numrows = CastCrsMatrixA->NumGlobalRows();
-  int numentries = CastCrsMatrixA->NumGlobalNonzeros();
-
   assert( numrows == CastCrsMatrixA->NumGlobalCols() );
   
   //
@@ -528,8 +526,6 @@ int Amesos_Dscpack::Solve()
 
   // MS // some checks on matrix size
   int numrows = RowMatrixA->NumGlobalRows();
-  int numentries = RowMatrixA->NumGlobalNonzeros();
-
   assert( numrows == RowMatrixA->NumGlobalCols() );
 
   //
@@ -651,8 +647,11 @@ void Amesos_Dscpack::PrintStatus()
   cout << "Amesos_Dscpack : Available process(es) = " << Comm().NumProc() << endl;
   cout << "Amesos_Dscpack : Process(es) used = " << DscNumProcs
        << ", idle = " << Comm().NumProc() - DscNumProcs << endl;
+  cout << "Amesos_Dscpack : Estimated total memory for factorization =  " 
+       << TotalMemory_ << " Mbytes" << endl; 
   cout << "----------------------------------------------------------------------------" << endl;
 
+  DSC_DoStats( MyDSCObject );
   return;
 
 }
