@@ -1,3 +1,11 @@
+<!doctype html public "-//w3c//dtd html 4.0 transitional//en">
+<html>
+<head>
+   <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+   <meta name="GENERATOR" content="Mozilla/4.7 [en] (X11; U; SunOS 5.6 sun4m) [Netscape]">
+   <meta name="sandia.approved" content="SAND99-1377">
+   <meta name="author" content="karen devine, kddevin@sandia.gov">
+   <title>Zoltan User's Guide:  Migration Query Functions</title>
 <!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
  ! Zoltan Dynamic Load-Balancing Library for Parallel Applications            !
  ! Copyright (c) 2000, Sandia National Laboratories.                          !
@@ -10,820 +18,807 @@
      $Date$
      $Revision$
 >
+</head>
+<body bgcolor="#FFFFFF">
 
-<HTML>
-<HEAD>
-   <META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-1">
-   <META NAME="GENERATOR" CONTENT="Mozilla/4.04 [en] (X11; U; SunOS 4.1.3_U1 sun4m) [Netscape]">
-   <META NAME="sandia.approved" CONTENT="SAND99-1377">
-   <META NAME="author" CONTENT="karen devine, kddevin@sandia.gov">
+<div align=right><b><i><a href="ug.html">Zoltan User's Guide</a>&nbsp;
+|&nbsp; <a href="ug_alg.html">Next</a>&nbsp; |&nbsp; <a href="ug_query_lb.html">Previous</a></i></b></div>
 
-   <TITLE>Zoltan User's Guide:  Migration Query Functions</TITLE>
-</HEAD>
-<BODY BGCOLOR="#FFFFFF">
-
-<div ALIGN=right><b><i><a href="ug.html">Zoltan User's Guide</a>&nbsp; |&nbsp; <a href="ug_alg.html">Next</a>&nbsp; |&nbsp; <a href="ug_query_lb.html">Previous</a></i></b></div>
-
-
-<H2>
-<A NAME="Migration Query Functions"></A>Migration Query Functions</H2>
+<h2>
+<a NAME="Migration Query Functions"></a>Migration Query Functions</h2>
 The following query functions must be registered to use any of the migration
-tools described in <A HREF="ug_interface_mig.html">Migration Functions</A>:
-<BLOCKQUOTE><B><A HREF="#LB_OBJ_SIZE_FN">LB_OBJ_SIZE_FN</A></B>
-<BR><B><A HREF="#LB_PACK_OBJ_FN">LB_PACK_OBJ_FN</A></B>
-<BR><B><A HREF="#LB_UNPACK_OBJ_FN">LB_UNPACK_OBJ_FN</A></B></BLOCKQUOTE>
+tools described in <a href="ug_interface_mig.html">Migration Functions</a>:
+<blockquote><b><a href="#LB_OBJ_SIZE_FN">LB_OBJ_SIZE_FN</a></b>
+<br><b><a href="#LB_PACK_OBJ_FN">LB_PACK_OBJ_FN</a></b>
+<br><b><a href="#LB_UNPACK_OBJ_FN">LB_UNPACK_OBJ_FN</a></b></blockquote>
 Optional, additional query functions for migration may also be registered:
-<BLOCKQUOTE><B><A HREF="#LB_PRE_MIGRATE_FN">LB_PRE_MIGRATE_FN</A></B>
-<br><B><A HREF="#LB_MID_MIGRATE_FN">LB_MID_MIGRATE_FN</A></B>
-<BR><B><A HREF="#LB_POST_MIGRATE_FN">LB_POST_MIGRATE_FN</A></B></BLOCKQUOTE>
+<blockquote><b><a href="#LB_PRE_MIGRATE_FN">LB_PRE_MIGRATE_FN</a></b>
+<br><b><a href="#LB_MID_MIGRATE_FN">LB_MID_MIGRATE_FN</a></b>
+<br><b><a href="#LB_POST_MIGRATE_FN">LB_POST_MIGRATE_FN</a></b></blockquote>
 
-<HR WIDTH="100%">
-<TABLE WIDTH="100%" NOSAVE >
-<TR NOSAVE>
-<TD VALIGN=TOP NOSAVE>C:</TD>
+<hr WIDTH="100%">
+<table WIDTH="100%" NOSAVE >
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>C:</td>
 
-<TD><A NAME="LB_OBJ_SIZE_FN"></A>typedef int <B>LB_OBJ_SIZE_FN</B>(void
-*<I> data</I>,<I> </I>int<I> *ierr</I>);&nbsp;
-<BR>&nbsp;</TD>
-</TR>
+<td><a NAME="LB_OBJ_SIZE_FN"></a>typedef int <b>LB_OBJ_SIZE_FN</b>(void
+*<i> data</i>, int <i>num_gid_entries</i>,&nbsp; int <i>num_lid_entries</i>,
+<b><a href="ug_usage.html#Data Types for Object IDs">LB_ID_PTR</a></b>
+<i>global_id,</i> <b><a href="ug_usage.html#Data Types for Object IDs">LB_ID_PTR</a></b>
+<i>local_id,</i> int *i<i>err</i>);
+<br>&nbsp;</td>
+</tr>
 
-<TR NOSAVE>
-<TD VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</TD>
+<tr NOSAVE>
+<td VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</td>
 
-<TD> FUNCTION <B><I>Obj_Size</I></B>(<I>data, ierr</I>)&nbsp;
-<BR>INTEGER(LB_INT) :: Obj_Size&nbsp;
-<BR>&lt;<I>type-data</I>>, INTENT(IN) :: data&nbsp;
-<BR>INTEGER(LB_INT), INTENT(OUT) :: ierr&nbsp;
+<td>FUNCTION <b><i>Obj_Size</i></b>(<i>data, num_gid_entries,&nbsp; num_lid_entries</i>,
+<i>global_id, local_id, ierr</i>)&nbsp;
+<br>INTEGER(LB_INT) :: Obj_Size&nbsp;
+<br>&lt;<i>type-data</i>>, INTENT(IN) :: data&nbsp;
+<br>INTEGER(LB_INT), INTENT(IN) :: num_gid_entries, num_lid_entries
+<br>INTEGER(LB_INT), INTENT(IN), DIMENSION(*) :: global_id,&nbsp; local_id
+<br>INTEGER(LB_INT), INTENT(OUT) :: ierr&nbsp;
+<p>&lt;<i>type-data</i>> can be any of INTEGER(LB_INT), DIMENSION(*) or
+REAL(LB_FLOAT), DIMENSION(*) or REAL(LB_DOUBLE), DIMENSION(*) or TYPE(LB_User_Data_<i>x</i>)
+where <i>x</i> is 1, 2, 3 or 4. See the section on
+<a href="ug_fortran_api.html#fortran ug api query">Fortran
+query functions</a> for an explanation.&nbsp;</td>
+</tr>
+</table>
 
-<P>&lt;<I>type-data</I>> can be any of INTEGER(LB_INT), DIMENSION(*) or
-REAL(LB_FLOAT), DIMENSION(*) or REAL(LB_DOUBLE), DIMENSION(*) or TYPE(LB_User_Data_<I>x</I>)
-where <I>x</I> is 1, 2, 3 or 4. See the section on
-<A HREF="ug_fortran_api.html#fortran ug api query"> Fortran query functions</A>
-for an explanation.&nbsp;
-</TD>
-</TR>
-</TABLE>
-
-<HR WIDTH="100%">An <B>LB_OBJ_SIZE_FN</B> query function returns the size
+<hr WIDTH="100%">An <b>LB_OBJ_SIZE_FN</b> query function returns the size
 (in bytes) of the data buffer that is needed to pack all of a single object's
-data. It is assumed that all objects to be packed in a single <B><A HREF="ug_interface_mig.html#LB_Help_Migrate">LB_Help_Migrate</A></B>
-call are of the same size. When this assumption is not true, the maximum
-size of the objects to be packed should be returned by <B>LB_OBJ_SIZE_FN</B>.
-This assumption may be relaxed in future releases of the library.
-<BR>&nbsp;
-<BR>&nbsp;
-<TABLE WIDTH="100%" >
-<TR>
-<TD VALIGN=TOP WIDTH="20%"><B>Function Type:</B></TD>
+data.
+<br>&nbsp;
+<table WIDTH="100%" NOSAVE >
+<tr>
+<td VALIGN=TOP WIDTH="20%"><b>Function Type:</b></td>
 
-<TD><B>LB_OBJ_SIZE_FN_TYPE</B></TD>
-</TR>
+<td><b>LB_OBJ_SIZE_FN_TYPE</b></td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP><B>Parameters:</B></TD>
+<tr>
+<td VALIGN=TOP><b>Parameters:</b></td>
 
-<TD></TD>
-</TR>
+<td></td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; data</I></TD>
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; data</i></td>
 
-<TD>Pointer to user-defined data.</TD>
-</TR>
+<td>Pointer to user-defined data.</td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; ierr</I></TD>
+<tr VALIGN=TOP NOSAVE>
+<td>&nbsp;&nbsp; <i>num_gid_entries</i></td>
 
-<TD>Error code to be set by function.</TD>
-</TR>
+<td NOSAVE>The number of array entries used to describe a single global
+ID.&nbsp; This value is the maximum value over all processors of the parameter
+<a href="ug_alg.html#NUM_GID_ENTRIES">NUM_GID_ENTRIES</a>.</td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP><B>Returned Value:</B></TD>
+<tr VALIGN=TOP NOSAVE>
+<td><i>&nbsp;&nbsp; num_lid_entries</i></td>
 
-<TD></TD>
-</TR>
+<td NOSAVE>The number of array entries used to describe a single local
+ID.&nbsp; This value is the maximum value over all processors of the parameter
+<a href="ug_alg.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>.</td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP>&nbsp;&nbsp;&nbsp; int</TD>
+<tr>
+<td>&nbsp;&nbsp; <i>global_id</i></td>
 
-<TD>The size (in bytes) of the required data buffer.</TD>
-</TR>
-</TABLE>
-&nbsp;
+<td>Pointer to the global id of the object.</td>
+</tr>
 
-<P>
-<HR WIDTH="100%">
-<TABLE WIDTH="100%" NOSAVE >
-<TR NOSAVE>
-<TD VALIGN=TOP NOSAVE>C:</TD>
+<tr>
+<td>&nbsp;&nbsp; <i>local_id</i></td>
 
-<TD><A NAME="LB_PRE_MIGRATE_FN"></A>typedef void <B>LB_PRE_MIGRATE_FN</B>
-(void&nbsp;*<I>data</I>, 
-int&nbsp;<i>num_gid_entries</i>,
-int&nbsp;<i>num_lid_entries</i>,
-int&nbsp;<I>num_import</I>, 
-<a href="ug_usage.html#Data Types for Object IDs"><b>LB_ID_PTR</b></a>&nbsp;<I>import_global_ids</I>,
-<a href="ug_usage.html#Data Types for Object IDs"><b>LB_ID_PTR</b></a>&nbsp;<I>import_local_ids</I>, int&nbsp;*<I>import_procs</I>, int&nbsp;<I>num_export</I>, 
-<a href="ug_usage.html#Data Types for Object IDs"><b>LB_ID_PTR</b></a>&nbsp;<I>export_global_ids</I>, 
-<a href="ug_usage.html#Data Types for Object IDs"><b>LB_ID_PTR</b></a>&nbsp;<I>export_local_ids</I>, int&nbsp;*<I>export_procs</I>, int&nbsp;*<I>ierr</I>);&nbsp;
-<BR>&nbsp;</TD>
-</TR>
+<td>Pointer to the local id of the object.</td>
+</tr>
 
-<TR NOSAVE>
-<TD VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</TD>
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; ierr</i></td>
 
-<TD> SUBROUTINE <B><I>Pre_Migrate</I></B>(<I>data, num_gid_entries, num_lid_entries, num_import,
-import_global_ids, import_local_ids, import_procs, num_export,
-export_global_ids, export_local_ids, export_procs, ierr</I>)&nbsp;
-<BR>&lt;<I>type-data</I>>, INTENT(INOUT) :: data&nbsp;
-<BR>INTEGER(LB_INT), INTENT(IN) :: num_gid_entries, num_lid_entries&nbsp;
-<BR>INTEGER(LB_INT), INTENT(IN) :: num_import, num_export&nbsp;
-<BR>INTEGER(LB_INT), INTENT(IN), DIMENSION(*) :: import_global_ids, export_global_ids&nbsp;
-<BR>INTEGER(LB_INT), INTENT(IN), DIMENSION(*) :: import_local_ids, export_local_ids&nbsp;
-<BR>INTEGER(LB_INT), INTENT(IN), DIMENSION(*) :: import_procs, export_procs&nbsp;
-<BR>INTEGER(LB_INT), INTENT(OUT) :: ierr&nbsp;
+<td>Error code to be set by function.</td>
+</tr>
 
-<p>&lt;<I>type-data</I>> can be any of INTEGER(LB_INT), DIMENSION(*) or
-REAL(LB_FLOAT), DIMENSION(*) or REAL(LB_DOUBLE), DIMENSION(*) or TYPE(LB_User_Data_<I>x</I>)
-where <I>x</I> is 1, 2, 3 or 4. See the section on
-<A HREF="ug_fortran_api.html#fortran ug api query"> Fortran query functions</A>
-for an explanation.&nbsp;
-</TD>
-</TR>
-</TABLE>
+<tr>
+<td VALIGN=TOP><b>Returned Value:</b></td>
 
-<HR WIDTH="100%">An <B>LB_PRE_MIGRATE_FN</B> query function performs any
+<td></td>
+</tr>
+
+<tr>
+<td VALIGN=TOP>&nbsp;&nbsp;&nbsp; int</td>
+
+<td>The size (in bytes) of the required data buffer.</td>
+</tr>
+</table>
+
+<p>
+<hr WIDTH="100%">
+<table WIDTH="100%" NOSAVE >
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>C:</td>
+
+<td><a NAME="LB_PRE_MIGRATE_FN"></a>typedef void <b>LB_PRE_MIGRATE_FN</b>
+(void *<i>data</i>, int <i>num_gid_entries</i>, int <i>num_lid_entries</i>,
+int <i>num_import</i>, <b><a href="ug_usage.html#Data Types for Object IDs">LB_ID_PTR</a></b>
+<i>import_global_ids</i>,
+<b><a href="ug_usage.html#Data Types for Object IDs">LB_ID_PTR</a></b>
+<i>import_local_ids</i>, int *<i>import_procs</i>, int <i>num_export</i>,
+<b><a href="ug_usage.html#Data Types for Object IDs">LB_ID_PTR</a></b>
+<i>export_global_ids</i>, <b><a href="ug_usage.html#Data Types for Object IDs">LB_ID_PTR</a></b>
+<i>export_local_ids</i>, int *<i>export_procs</i>, int *<i>ierr</i>);&nbsp;</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</td>
+
+<td>SUBROUTINE <b><i>Pre_Migrate</i></b>(<i>data, num_gid_entries, num_lid_entries,
+num_import, import_global_ids, import_local_ids, import_procs, num_export,
+export_global_ids, export_local_ids, export_procs, ierr</i>)&nbsp;
+<br>&lt;<i>type-data</i>>, INTENT(INOUT) :: data&nbsp;
+<br>INTEGER(LB_INT), INTENT(IN) :: num_gid_entries, num_lid_entries&nbsp;
+<br>INTEGER(LB_INT), INTENT(IN) :: num_import, num_export&nbsp;
+<br>INTEGER(LB_INT), INTENT(IN), DIMENSION(*) :: import_global_ids, export_global_ids&nbsp;
+<br>INTEGER(LB_INT), INTENT(IN), DIMENSION(*) :: import_local_ids, export_local_ids&nbsp;
+<br>INTEGER(LB_INT), INTENT(IN), DIMENSION(*) :: import_procs, export_procs&nbsp;
+<br>INTEGER(LB_INT), INTENT(OUT) :: ierr&nbsp;
+<p>&lt;<i>type-data</i>> can be any of INTEGER(LB_INT), DIMENSION(*) or
+REAL(LB_FLOAT), DIMENSION(*) or REAL(LB_DOUBLE), DIMENSION(*) or TYPE(LB_User_Data_<i>x</i>)
+where <i>x</i> is 1, 2, 3 or 4. See the section on
+<a href="ug_fortran_api.html#fortran ug api query">Fortran
+query functions</a> for an explanation.&nbsp;</td>
+</tr>
+</table>
+
+<hr WIDTH="100%">An <b>LB_PRE_MIGRATE_FN</b> query function performs any
 pre-processing desired by the application. If it is registered, it is called
-at the beginning of the <B><A HREF="ug_interface_mig.html#LB_Help_Migrate">LB_Help_Migrate</A></B>
-routine. The arguments passed to <B><A HREF="ug_interface_mig.html#LB_Help_Migrate">LB_Help_Migrate</A></B>
+at the beginning of the <b><a href="ug_interface_mig.html#LB_Help_Migrate">LB_Help_Migrate</a></b>
+routine. The arguments passed to <b><a href="ug_interface_mig.html#LB_Help_Migrate">LB_Help_Migrate</a></b>
 are made available for use in the pre-processing routine.
-<BR>&nbsp;
-<TABLE WIDTH="100%" >
-<TR>
-<TD VALIGN=TOP WIDTH="20%"><B>Function Type:</B></TD>
+<br>&nbsp;
+<table WIDTH="100%" >
+<tr>
+<td VALIGN=TOP WIDTH="20%"><b>Function Type:</b></td>
 
-<TD><B>LB_PRE_MIGRATE_FN_TYPE</B></TD>
-</TR>
+<td><b>LB_PRE_MIGRATE_FN_TYPE</b></td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP><B>Parameters:</B></TD>
+<tr>
+<td VALIGN=TOP><b>Parameters:</b></td>
 
-<TD></TD>
-</TR>
+<td></td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; data</I></TD>
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; data</i></td>
 
-<TD>Pointer to user-defined data.</TD>
-</TR>
+<td>Pointer to user-defined data.</td>
+</tr>
 
 <tr NOSAVE>
 <td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>num_gid_entries</i></td>
 
-<td>The number of array entries used to describe a single
-global ID.&nbsp; This value is the maximum value over all processors of
-the parameter <a href="ug_alg.html#NUM_GID_ENTRIES">NUM_GID_ENTRIES</a>.</td>
+<td>The number of array entries used to describe a single global ID.&nbsp;
+This value is the maximum value over all processors of the parameter <a href="ug_alg.html#NUM_GID_ENTRIES">NUM_GID_ENTRIES</a>.</td>
 </tr>
 
 <tr NOSAVE>
 <td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>num_lid_entries</i></td>
 
-<td>The number of array entries used to describe a single
-local ID.&nbsp; This value is the maximum value over all processors of
-the parameter <a href="ug_alg.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>.</td>
+<td>The number of array entries used to describe a single local ID.&nbsp;
+This value is the maximum value over all processors of the parameter <a href="ug_alg.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>.</td>
 </tr>
 
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; num_import</i></td>
 
-<TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; num_import</I></TD>
+<td>The number of objects that will be received by this processor.</td>
+</tr>
 
-<TD>The number of objects that will be received by this processor.</TD>
-</TR>
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; import_global_ids</i></td>
 
-<TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; import_global_ids</I></TD>
-
-<TD>An array of size <I>num_import</I> listing the global IDs of objects
+<td>An array of size <i>num_import</i> listing the global IDs of objects
 to be received by this processor. This array may be NULL, as the processor
-does not necessarily need to know which objects it will receive.</TD>
-</TR>
+does not necessarily need to know which objects it will receive.</td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; import_local_ids</I></TD>
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; import_local_ids</i></td>
 
-<TD>An array of size <I>num_import</I> listing the local IDs of objects
+<td>An array of size <i>num_import</i> listing the local IDs of objects
 to be received by this processor. This array may be NULL, as the processor
-does not necessarily need to know which objects it will receive.</TD>
-</TR>
+does not necessarily need to know which objects it will receive.</td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; import_procs</I></TD>
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; import_procs</i></td>
 
-<TD>An array of size <I>num_import</I> listing the processor IDs of the
+<td>An array of size <i>num_import</i> listing the processor IDs of the
 source processors. This array may be NULL, as the processor does not necessarily
-need to know from which processors it will be receiving objects.</TD>
-</TR>
+need to know from which processors it will be receiving objects.</td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; num_export</I></TD>
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; num_export</i></td>
 
-<TD>The number of objects that will be sent from this processor to other
-processors.</TD>
-</TR>
+<td>The number of objects that will be sent from this processor to other
+processors.</td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; export_global_ids</I></TD>
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; export_global_ids</i></td>
 
-<TD>An array of size <I>num_export</I> listing the global IDs of objects
-to be sent from this processor.</TD>
-</TR>
+<td>An array of size <i>num_export</i> listing the global IDs of objects
+to be sent from this processor.</td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; export_local_ids</I></TD>
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; export_local_ids</i></td>
 
-<TD>An array of size <I>num_export</I> listing the local IDs of objects
-to be sent from this processor.</TD>
-</TR>
+<td>An array of size <i>num_export</i> listing the local IDs of objects
+to be sent from this processor.</td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; export_procs</I></TD>
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; export_procs</i></td>
 
-<TD>An array of size <I>num_export</I> listing the processor IDs of the
-destination processors.</TD>
-</TR>
+<td>An array of size <i>num_export</i> listing the processor IDs of the
+destination processors.</td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; ierr</I></TD>
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; ierr</i></td>
 
-<TD>Error code to be set by function.</TD>
-</TR>
+<td>Error code to be set by function.</td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP><B>Default:</B></TD>
+<tr>
+<td VALIGN=TOP><b>Default:</b></td>
 
-<TD></TD>
-</TR>
+<td></td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP></TD>
+<tr>
+<td VALIGN=TOP></td>
 
-<TD>No pre-processing is done if an <B>LB_PRE_MIGRATE_FN</B> is not registered.</TD>
-</TR>
-</TABLE>
-&nbsp;
+<td>No pre-processing is done if an <b>LB_PRE_MIGRATE_FN</b> is not registered.</td>
+</tr>
+</table>
 
-<P>
-<HR WIDTH="100%">
-<TABLE WIDTH="100%" NOSAVE >
-<TR NOSAVE>
-<TD VALIGN=TOP NOSAVE>C:</TD>
+<p>
+<hr WIDTH="100%">
+<table WIDTH="100%" NOSAVE >
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>C:</td>
 
-<TD><A NAME="LB_MID_MIGRATE_FN"></A>typedef void <B>LB_MID_MIGRATE_FN</B>
-(void&nbsp;*<I>data</I>, 
-int&nbsp;<i>num_gid_entries</i>,
-int&nbsp;<i>num_lid_entries</i>,
-int&nbsp;<I>num_import</I>, 
-<a href="ug_usage.html#Data Types for Object IDs"><b>LB_ID_PTR</b></a>&nbsp;<I>import_global_ids</I>,
-<a href="ug_usage.html#Data Types for Object IDs"><b>LB_ID_PTR</b></a>&nbsp;<I>import_local_ids</I>, int&nbsp;*<I>import_procs</I>, int&nbsp;<I>num_export</I>, 
-<a href="ug_usage.html#Data Types for Object IDs"><b>LB_ID_PTR</b></a>&nbsp;<I>export_global_ids</I>, 
-<a href="ug_usage.html#Data Types for Object IDs"><b>LB_ID_PTR</b></a>&nbsp;<I>export_local_ids</I>, int&nbsp;*<I>export_procs</I>, int&nbsp;*<I>ierr</I>);&nbsp;
-<BR>&nbsp;</TD>
-</TR>
+<td><a NAME="LB_MID_MIGRATE_FN"></a>typedef void <b>LB_MID_MIGRATE_FN</b>
+(void *<i>data</i>, int <i>num_gid_entries</i>, int <i>num_lid_entries</i>,
+int <i>num_import</i>, <b><a href="ug_usage.html#Data Types for Object IDs">LB_ID_PTR</a></b>
+<i>import_global_ids</i>,
+<b><a href="ug_usage.html#Data Types for Object IDs">LB_ID_PTR</a></b>
+<i>import_local_ids</i>, int *<i>import_procs</i>, int <i>num_export</i>,
+<b><a href="ug_usage.html#Data Types for Object IDs">LB_ID_PTR</a></b>
+<i>export_global_ids</i>, <b><a href="ug_usage.html#Data Types for Object IDs">LB_ID_PTR</a></b>
+<i>export_local_ids</i>, int *<i>export_procs</i>, int *<i>ierr</i>);&nbsp;</td>
+</tr>
 
-<TR NOSAVE>
-<TD VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</TD>
+<tr NOSAVE>
+<td VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</td>
 
-<TD> SUBROUTINE <B><I>Mid_Migrate</I></B>(<I>data, num_gid_entries, num_lid_entries, num_import,
-import_global_ids, import_local_ids, import_procs, num_export,
-export_global_ids, export_local_ids, export_procs, ierr</I>)&nbsp;
-<BR>&lt;<I>type-data</I>>, INTENT(INOUT) :: data&nbsp;
-<BR>INTEGER(LB_INT), INTENT(IN) :: num_gid_entries, num_lid_entries&nbsp;
-<BR>INTEGER(LB_INT), INTENT(IN) :: num_import, num_export&nbsp;
-<BR>INTEGER(LB_INT), INTENT(IN), DIMENSION(*) :: import_global_ids, export_global_ids&nbsp;
-<BR>INTEGER(LB_INT), INTENT(IN), DIMENSION(*) :: import_local_ids, export_local_ids&nbsp;
-<BR>INTEGER(LB_INT), INTENT(IN), DIMENSION(*) :: import_procs, export_procs&nbsp;
-<BR>INTEGER(LB_INT), INTENT(OUT) :: ierr&nbsp;
+<td>SUBROUTINE <b><i>Mid_Migrate</i></b>(<i>data, num_gid_entries, num_lid_entries,
+num_import, import_global_ids, import_local_ids, import_procs, num_export,
+export_global_ids, export_local_ids, export_procs, ierr</i>)&nbsp;
+<br>&lt;<i>type-data</i>>, INTENT(INOUT) :: data&nbsp;
+<br>INTEGER(LB_INT), INTENT(IN) :: num_gid_entries, num_lid_entries&nbsp;
+<br>INTEGER(LB_INT), INTENT(IN) :: num_import, num_export&nbsp;
+<br>INTEGER(LB_INT), INTENT(IN), DIMENSION(*) :: import_global_ids, export_global_ids&nbsp;
+<br>INTEGER(LB_INT), INTENT(IN), DIMENSION(*) :: import_local_ids, export_local_ids&nbsp;
+<br>INTEGER(LB_INT), INTENT(IN), DIMENSION(*) :: import_procs, export_procs&nbsp;
+<br>INTEGER(LB_INT), INTENT(OUT) :: ierr&nbsp;
+<p>&lt;<i>type-data</i>> can be any of INTEGER(LB_INT), DIMENSION(*) or
+REAL(LB_FLOAT), DIMENSION(*) or REAL(LB_DOUBLE), DIMENSION(*) or TYPE(LB_User_Data_<i>x</i>)
+where <i>x</i> is 1, 2, 3 or 4. See the section on
+<a href="ug_fortran_api.html#fortran ug api query">Fortran
+query functions</a> for an explanation.&nbsp;</td>
+</tr>
+</table>
 
-<p>&lt;<I>type-data</I>> can be any of INTEGER(LB_INT), DIMENSION(*) or
-REAL(LB_FLOAT), DIMENSION(*) or REAL(LB_DOUBLE), DIMENSION(*) or TYPE(LB_User_Data_<I>x</I>)
-where <I>x</I> is 1, 2, 3 or 4. See the section on
-<A HREF="ug_fortran_api.html#fortran ug api query"> Fortran query functions</A>
-for an explanation.&nbsp;
-</TD>
-</TR>
-</TABLE>
-
-<HR WIDTH="100%">An <B>LB_MID_MIGRATE_FN</B> query function performs any
-processing desired by the application between the packing and unpacking of
-objects being migrated. If it is registered, it is called
-after export objects are packed in <B><A HREF="ug_interface_mig.html#LB_Help_Migrate">LB_Help_Migrate</A></B>; imported objects are unpacked after the 
-<b>LB_MID_MIGRATE_FN</b> query function is called.
-The arguments passed to <B><A HREF="ug_interface_mig.html#LB_Help_Migrate">LB_Help_Migrate</A></B>
+<hr WIDTH="100%">An <b>LB_MID_MIGRATE_FN</b> query function performs any
+processing desired by the application between the packing and unpacking
+of objects being migrated. If it is registered, it is called after export
+objects are packed in <b><a href="ug_interface_mig.html#LB_Help_Migrate">LB_Help_Migrate</a></b>;
+imported objects are unpacked after the <b>LB_MID_MIGRATE_FN</b> query
+function is called. The arguments passed to <b><a href="ug_interface_mig.html#LB_Help_Migrate">LB_Help_Migrate</a></b>
 are made available for use in the processing routine.
-<BR>&nbsp;
-<TABLE WIDTH="100%" >
-<TR>
-<TD VALIGN=TOP WIDTH="20%"><B>Function Type:</B></TD>
+<br>&nbsp;
+<table WIDTH="100%" >
+<caption>,&nbsp;</caption>
 
-<TD><B>LB_MID_MIGRATE_FN_TYPE</B></TD>
-</TR>
+<tr>
+<td VALIGN=TOP WIDTH="20%"><b>Function Type:</b></td>
 
-<TR>
-<TD VALIGN=TOP><B>Parameters:</B></TD>
+<td><b>LB_MID_MIGRATE_FN_TYPE</b></td>
+</tr>
 
-<TD></TD>
-</TR>
+<tr>
+<td VALIGN=TOP><b>Parameters:</b></td>
 
-<TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; data</I></TD>
+<td></td>
+</tr>
 
-<TD>Pointer to user-defined data.</TD>
-</TR>
-, 
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; data</i></td>
+
+<td>Pointer to user-defined data.</td>
+</tr>
+
 <tr NOSAVE>
 <td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>num_gid_entries</i></td>
 
-<td>The number of array entries used to describe a single
-global ID.&nbsp; This value is the maximum value over all processors of
-the parameter <a href="ug_alg.html#NUM_GID_ENTRIES">NUM_GID_ENTRIES</a>.</td>
+<td>The number of array entries used to describe a single global ID.&nbsp;
+This value is the maximum value over all processors of the parameter <a href="ug_alg.html#NUM_GID_ENTRIES">NUM_GID_ENTRIES</a>.</td>
 </tr>
 
 <tr NOSAVE>
 <td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>num_lid_entries</i></td>
 
-<td>The number of array entries used to describe a single
-local ID.&nbsp; This value is the maximum value over all processors of
-the parameter <a href="ug_alg.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>.</td>
+<td>The number of array entries used to describe a single local ID.&nbsp;
+This value is the maximum value over all processors of the parameter <a href="ug_alg.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>.</td>
 </tr>
 
-<TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; num_import</I></TD>
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; num_import</i></td>
 
-<TD>The number of objects that will be received by this processor.</TD>
-</TR>
+<td>The number of objects that will be received by this processor.</td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; import_global_ids</I></TD>
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; import_global_ids</i></td>
 
-<TD>An array of size <I>num_import</I> listing the global IDs of objects
+<td>An array of size <i>num_import</i> listing the global IDs of objects
 to be received by this processor. This array may be NULL, as the processor
-does not necessarily need to know which objects it will receive.</TD>
-</TR>
+does not necessarily need to know which objects it will receive.</td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; import_local_ids</I></TD>
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; import_local_ids</i></td>
 
-<TD>An array of size <I>num_import</I> listing the local IDs of objects
+<td>An array of size <i>num_import</i> listing the local IDs of objects
 to be received by this processor. This array may be NULL, as the processor
-does not necessarily need to know which objects it will receive.</TD>
-</TR>
+does not necessarily need to know which objects it will receive.</td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; import_procs</I></TD>
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; import_procs</i></td>
 
-<TD>An array of size <I>num_import</I> listing the processor IDs of the
+<td>An array of size <i>num_import</i> listing the processor IDs of the
 source processors. This array may be NULL, as the processor does not necessarily
-need to know from which processors it will be receiving objects.</TD>
-</TR>
+need to know from which processors it will be receiving objects.</td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; num_export</I></TD>
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; num_export</i></td>
 
-<TD>The number of objects that will be sent from this processor to other
-processors.</TD>
-</TR>
+<td>The number of objects that will be sent from this processor to other
+processors.</td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; export_global_ids</I></TD>
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; export_global_ids</i></td>
 
-<TD>An array of size <I>num_export</I> listing the global IDs of objects
-to be sent from this processor.</TD>
-</TR>
+<td>An array of size <i>num_export</i> listing the global IDs of objects
+to be sent from this processor.</td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; export_local_ids</I></TD>
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; export_local_ids</i></td>
 
-<TD>An array of size <I>num_export</I> listing the local IDs of objects
-to be sent from this processor.</TD>
-</TR>
+<td>An array of size <i>num_export</i> listing the local IDs of objects
+to be sent from this processor.</td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; export_procs</I></TD>
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; export_procs</i></td>
 
-<TD>An array of size <I>num_export</I> listing the processor IDs of the
-destination processors.</TD>
-</TR>
+<td>An array of size <i>num_export</i> listing the processor IDs of the
+destination processors.</td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; ierr</I></TD>
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; ierr</i></td>
 
-<TD>Error code to be set by function.</TD>
-</TR>
+<td>Error code to be set by function.</td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP><B>Default:</B></TD>
+<tr>
+<td VALIGN=TOP><b>Default:</b></td>
 
-<TD></TD>
-</TR>
+<td></td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP></TD>
+<tr>
+<td VALIGN=TOP></td>
 
-<TD>No processing is done if an <B>LB_MID_MIGRATE_FN</B> is not registered.</TD>
-</TR>
-</TABLE>
-&nbsp;
+<td>No processing is done if an <b>LB_MID_MIGRATE_FN</b> is not registered.</td>
+</tr>
+</table>
 
-<BR>
-<HR WIDTH="100%">
-<TABLE WIDTH="100%" NOSAVE >
-<TR NOSAVE>
-<TD VALIGN=TOP NOSAVE>C:</TD>
-<TD><A NAME="LB_POST_MIGRATE_FN"></A>typedef void <B>LB_POST_MIGRATE_FN</B>
-(void&nbsp;*<I>data</I>, 
-int&nbsp;<i>num_gid_entries</i>,
-int&nbsp;<i>num_lid_entries</i>,
-int&nbsp;<I>num_import</I>, 
-<a href="ug_usage.html#Data Types for Object IDs"><b>LB_ID_PTR</b></a>&nbsp;<I>import_global_ids</I>,
-<a href="ug_usage.html#Data Types for Object IDs"><b>LB_ID_PTR</b></a>&nbsp;<I>import_local_ids</I>, int&nbsp;*<I>import_procs</I>, int&nbsp;<I>num_export</I>, 
-<a href="ug_usage.html#Data Types for Object IDs"><b>LB_ID_PTR</b></a>&nbsp;<I>export_global_ids</I>, 
-<a href="ug_usage.html#Data Types for Object IDs"><b>LB_ID_PTR</b></a>&nbsp;<I>export_local_ids</I>, int&nbsp;*<I>export_procs</I>, int&nbsp;*<I>ierr</I>);&nbsp;
-<BR>&nbsp;</TD>
-</TR>
+<p>
+<hr WIDTH="100%">
+<table WIDTH="100%" NOSAVE >
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>C:</td>
 
-<TR NOSAVE>
-<TD VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</TD>
-<TD> SUBROUTINE <B><I>Post_Migrate</I></B>(<I>data, num_gid_entries, num_lid_entries, num_import,
-import_global_ids, import_local_ids, import_procs, num_export,
-export_global_ids, export_local_ids, export_procs, ierr</I>)&nbsp;
-<BR>&lt;<I>type-data</I>>, INTENT(INOUT) :: data&nbsp;
-<BR>INTEGER(LB_INT), INTENT(IN) :: num_gid_entries, num_lid_entries&nbsp;
-<BR>INTEGER(LB_INT), INTENT(IN) :: num_import, num_export&nbsp;
-<BR>INTEGER(LB_INT), INTENT(IN), DIMENSION(*) :: import_global_ids, export_global_ids&nbsp;
-<BR>INTEGER(LB_INT), INTENT(IN), DIMENSION(*) :: import_local_ids, export_local_ids&nbsp;
-<BR>INTEGER(LB_INT), INTENT(IN), DIMENSION(*) :: import_procs, export_procs&nbsp;
-<BR>INTEGER(LB_INT), INTENT(OUT) :: ierr&nbsp;
+<td><a NAME="LB_POST_MIGRATE_FN"></a>typedef void <b>LB_POST_MIGRATE_FN</b>
+(void *<i>data</i>, int <i>num_gid_entries</i>, int <i>num_lid_entries</i>,
+int <i>num_import</i>, <b><a href="ug_usage.html#Data Types for Object IDs">LB_ID_PTR</a></b>
+<i>import_global_ids</i>,
+<b><a href="ug_usage.html#Data Types for Object IDs">LB_ID_PTR</a></b>
+<i>import_local_ids</i>, int *<i>import_procs</i>, int <i>num_export</i>,
+<b><a href="ug_usage.html#Data Types for Object IDs">LB_ID_PTR</a></b>
+<i>export_global_ids</i>, <b><a href="ug_usage.html#Data Types for Object IDs">LB_ID_PTR</a></b>
+<i>export_local_ids</i>, int *<i>export_procs</i>, int *<i>ierr</i>);&nbsp;</td>
+</tr>
 
-<p>&lt;<I>type-data</I>> can be any of INTEGER(LB_INT), DIMENSION(*) or
-REAL(LB_FLOAT), DIMENSION(*) or REAL(LB_DOUBLE), DIMENSION(*) or TYPE(LB_User_Data_<I>x</I>)
-where <I>x</I> is 1, 2, 3 or 4. See the section on
-<A HREF="ug_fortran_api.html#fortran ug api query"> Fortran query functions</A>
-for an explanation.&nbsp;
-</TD>
-</TR>
-</TABLE>
+<tr NOSAVE>
+<td VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</td>
 
-<HR WIDTH="100%">An <B>LB_POST_MIGRATE_FN</B> query function performs any
+<td>SUBROUTINE <b><i>Post_Migrate</i></b>(<i>data, num_gid_entries, num_lid_entries,
+num_import, import_global_ids, import_local_ids, import_procs, num_export,
+export_global_ids, export_local_ids, export_procs, ierr</i>)&nbsp;
+<br>&lt;<i>type-data</i>>, INTENT(INOUT) :: data&nbsp;
+<br>INTEGER(LB_INT), INTENT(IN) :: num_gid_entries, num_lid_entries&nbsp;
+<br>INTEGER(LB_INT), INTENT(IN) :: num_import, num_export&nbsp;
+<br>INTEGER(LB_INT), INTENT(IN), DIMENSION(*) :: import_global_ids, export_global_ids&nbsp;
+<br>INTEGER(LB_INT), INTENT(IN), DIMENSION(*) :: import_local_ids, export_local_ids&nbsp;
+<br>INTEGER(LB_INT), INTENT(IN), DIMENSION(*) :: import_procs, export_procs&nbsp;
+<br>INTEGER(LB_INT), INTENT(OUT) :: ierr&nbsp;
+<p>&lt;<i>type-data</i>> can be any of INTEGER(LB_INT), DIMENSION(*) or
+REAL(LB_FLOAT), DIMENSION(*) or REAL(LB_DOUBLE), DIMENSION(*) or TYPE(LB_User_Data_<i>x</i>)
+where <i>x</i> is 1, 2, 3 or 4. See the section on
+<a href="ug_fortran_api.html#fortran ug api query">Fortran
+query functions</a> for an explanation.&nbsp;</td>
+</tr>
+</table>
+
+<hr WIDTH="100%">An <b>LB_POST_MIGRATE_FN</b> query function performs any
 post-processing desired by the application. If it is registered, it is
-called at the end of the <B><A HREF="ug_interface_mig.html#LB_Help_Migrate">LB_Help_Migrate</A></B>
-routine. The arguments passed to <B><A HREF="ug_interface_mig.html#LB_Help_Migrate">LB_Help_Migrate</A></B>
+called at the end of the <b><a href="ug_interface_mig.html#LB_Help_Migrate">LB_Help_Migrate</a></b>
+routine. The arguments passed to <b><a href="ug_interface_mig.html#LB_Help_Migrate">LB_Help_Migrate</a></b>
 are made available for use in the post-processing routine.
-<BR>&nbsp;
-<TABLE WIDTH="100%" >
-<TR>
-<TD VALIGN=TOP WIDTH="20%"><B>Function Type:</B></TD>
+<br>&nbsp;
+<table WIDTH="100%" >
+<tr>
+<td VALIGN=TOP WIDTH="20%"><b>Function Type:</b></td>
 
-<TD><B>LB_POST_MIGRATE_FN_TYPE</B></TD>
-</TR>
+<td><b>LB_POST_MIGRATE_FN_TYPE</b></td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP><B>Parameters:</B></TD>
+<tr>
+<td VALIGN=TOP><b>Parameters:</b></td>
 
-<TD></TD>
-</TR>
+<td></td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; data</I></TD>
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; data</i></td>
 
-<TD>Pointer to user-defined data.</TD>
-</TR>
+<td>Pointer to user-defined data.</td>
+</tr>
 
 <tr NOSAVE>
 <td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>num_gid_entries</i></td>
 
-<td>The number of array entries used to describe a single
-global ID.&nbsp; This value is the maximum value over all processors of
-the parameter <a href="ug_alg.html#NUM_GID_ENTRIES">NUM_GID_ENTRIES</a>.</td>
+<td>The number of array entries used to describe a single global ID.&nbsp;
+This value is the maximum value over all processors of the parameter <a href="ug_alg.html#NUM_GID_ENTRIES">NUM_GID_ENTRIES</a>.</td>
 </tr>
 
 <tr NOSAVE>
 <td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>num_lid_entries</i></td>
 
-<td>The number of array entries used to describe a single
-local ID.&nbsp; This value is the maximum value over all processors of
-the parameter <a href="ug_alg.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>.</td>
+<td>The number of array entries used to describe a single local ID.&nbsp;
+This value is the maximum value over all processors of the parameter <a href="ug_alg.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>.</td>
 </tr>
 
-<TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; num_import</I></TD>
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; num_import</i></td>
 
-<TD>The number of objects that will be received by this processor.</TD>
-</TR>
+<td>The number of objects that will be received by this processor.</td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; import_global_ids</I></TD>
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; import_global_ids</i></td>
 
-<TD>An array of size <I>num_import</I> listing the global IDs of objects
+<td>An array of size <i>num_import</i> listing the global IDs of objects
 to be received by this processor. This array may be NULL, as the processor
-does not necessarily need to know which objects it will receive.</TD>
-</TR>
+does not necessarily need to know which objects it will receive.</td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; import_local_ids</I></TD>
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; import_local_ids</i></td>
 
-<TD>An array of size <I>num_import</I> listing the local IDs of objects
+<td>An array of size <i>num_import</i> listing the local IDs of objects
 to be received by this processor. This array may be NULL, as the processor
-does not necessarily need to know which objects it will receive.</TD>
-</TR>
+does not necessarily need to know which objects it will receive.</td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; import_procs</I></TD>
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; import_procs</i></td>
 
-<TD>An array of size <I>num_import</I> listing the processor IDs of the
+<td>An array of size <i>num_import</i> listing the processor IDs of the
 source processors. This array may be NULL, as the processor does not necessarily
-need to know from which processors it will be receiving objects.</TD>
-</TR>
+need to know from which processors it will be receiving objects.</td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; num_export</I></TD>
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; num_export</i></td>
 
-<TD>The number of objects that will be sent from this processor to other
-processors.</TD>
-</TR>
+<td>The number of objects that will be sent from this processor to other
+processors.</td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; export_global_ids</I></TD>
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; export_global_ids</i></td>
 
-<TD>An array of size <I>num_export</I> listing the global IDs of objects
-to be sent from this processor.</TD>
-</TR>
+<td>An array of size <i>num_export</i> listing the global IDs of objects
+to be sent from this processor.</td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; export_local_ids</I></TD>
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; export_local_ids</i></td>
 
-<TD>An array of size <I>num_export</I> listing the local IDs of objects
-to be sent from this processor.</TD>
-</TR>
+<td>An array of size <i>num_export</i> listing the local IDs of objects
+to be sent from this processor.</td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; export_procs</I></TD>
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; export_procs</i></td>
 
-<TD>An array of size <I>num_export</I> listing the processor IDs of the
-destination processors.</TD>
-</TR>
+<td>An array of size <i>num_export</i> listing the processor IDs of the
+destination processors.</td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; ierr</I></TD>
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; ierr</i></td>
 
-<TD>Error code to be set by function.</TD>
-</TR>
+<td>Error code to be set by function.</td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP><B>Default:</B></TD>
+<tr>
+<td VALIGN=TOP><b>Default:</b></td>
 
-<TD></TD>
-</TR>
+<td></td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP></TD>
+<tr>
+<td VALIGN=TOP></td>
 
-<TD>No post-processing is done if an <B>LB_POST_MIGRATE_FN</B> is not registered.</TD>
-</TR>
-</TABLE>
-&nbsp;
-<BR>
-<HR WIDTH="100%">
-<TABLE WIDTH="100%" NOSAVE >
-<TR NOSAVE>
-<TD VALIGN=TOP NOSAVE>C:</TD>
+<td>No post-processing is done if an <b>LB_POST_MIGRATE_FN</b> is not registered.</td>
+</tr>
+</table>
 
-<TD><A NAME="LB_PACK_OBJ_FN"></A>typedef void <B>LB_PACK_OBJ_FN</B>
-(void&nbsp;*<I>data</I>, 
-int&nbsp;<i>num_gid_entries</i>,
-int&nbsp;<i>num_lid_entries</i>,
-<a href="ug_usage.html#Data Types for Object IDs"><b>LB_ID_PTR</b></a>&nbsp;<I>global_id</I>, 
-<a href="ug_usage.html#Data Types for Object IDs"><b>LB_ID_PTR</b></a>&nbsp;<I>local_id</I>,
-int&nbsp;<I>dest_proc</I>,
-int&nbsp;<I>size</I>,
-char&nbsp;*<I>buf</I>,
-int&nbsp;*<I>ierr</I>);&nbsp;
-<BR>&nbsp;</TD>
-</TR>
+<p>
+<hr WIDTH="100%">
+<table WIDTH="100%" NOSAVE >
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>C:</td>
 
-<TR NOSAVE>
-<TD VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</TD>
+<td><a NAME="LB_PACK_OBJ_FN"></a>typedef void <b>LB_PACK_OBJ_FN</b> (void
+*<i>data</i>, int <i>num_gid_entries</i>, int <i>num_lid_entries</i>,
+<b><a href="ug_usage.html#Data Types for Object IDs">LB_ID_PTR</a></b>
+<i>global_id</i>, <b><a href="ug_usage.html#Data Types for Object IDs">LB_ID_PTR</a></b>
+<i>local_id</i>, int <i>dest_proc</i>, int <i>size</i>, char *<i>buf</i>,
+int *<i>ierr</i>);&nbsp;</td>
+</tr>
 
-<TD> SUBROUTINE <B><I>Pack_Obj</I></B>(<I>data, num_gid_entries, num_lid_entries, global_id, local_id,
-dest_proc, size, buf, ierr</I>)&nbsp;
-<BR>&lt;<I>type-data</I>>, INTENT(IN) :: data&nbsp;
-<BR>INTEGER(LB_INT), INTENT(IN) :: num_gid_entries, num_lid_entries&nbsp;
-<BR>INTEGER(LB_INT), INTENT(IN), DIMENSION(*) :: global_id&nbsp;
-<BR>INTEGER(LB_INT), INTENT(IN), DIMENSION(*) :: local_id&nbsp;
-<BR>INTEGER(LB_INT), INTENT(IN) :: dest_proc, size&nbsp;
-<BR>INTEGER(LB_INT), INTENT(OUT), DIMENSION(*) :: buf&nbsp;
-<BR>INTEGER(LB_INT), INTENT(OUT) :: ierr&nbsp;
+<tr NOSAVE>
+<td VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</td>
 
-<p>&lt;<I>type-data</I>> can be any of INTEGER(LB_INT), DIMENSION(*) or
-REAL(LB_FLOAT), DIMENSION(*) or REAL(LB_DOUBLE), DIMENSION(*) or TYPE(LB_User_Data_<I>x</I>)
-where <I>x</I> is 1, 2, 3 or 4. See the section on
-<A HREF="ug_fortran_api.html#fortran ug api query"> Fortran query functions</A>
-for an explanation.&nbsp;
-</TD>
-</TR>
-</TABLE>
+<td>SUBROUTINE <b><i>Pack_Obj</i></b>(<i>data, num_gid_entries, num_lid_entries,
+global_id, local_id, dest_proc, size, buf, ierr</i>)&nbsp;
+<br>&lt;<i>type-data</i>>, INTENT(IN) :: data&nbsp;
+<br>INTEGER(LB_INT), INTENT(IN) :: num_gid_entries, num_lid_entries&nbsp;
+<br>INTEGER(LB_INT), INTENT(IN), DIMENSION(*) :: global_id&nbsp;
+<br>INTEGER(LB_INT), INTENT(IN), DIMENSION(*) :: local_id&nbsp;
+<br>INTEGER(LB_INT), INTENT(IN) :: dest_proc, size&nbsp;
+<br>INTEGER(LB_INT), INTENT(OUT), DIMENSION(*) :: buf&nbsp;
+<br>INTEGER(LB_INT), INTENT(OUT) :: ierr&nbsp;
+<p>&lt;<i>type-data</i>> can be any of INTEGER(LB_INT), DIMENSION(*) or
+REAL(LB_FLOAT), DIMENSION(*) or REAL(LB_DOUBLE), DIMENSION(*) or TYPE(LB_User_Data_<i>x</i>)
+where <i>x</i> is 1, 2, 3 or 4. See the section on
+<a href="ug_fortran_api.html#fortran ug api query">Fortran
+query functions</a> for an explanation.&nbsp;</td>
+</tr>
+</table>
 
-<HR WIDTH="100%">An <B>LB_PACK_OBJ_FN</B> query function allows the application
+<hr WIDTH="100%">An <b>LB_PACK_OBJ_FN</b> query function allows the application
 to tell the load-balancing library how to copy all needed data for a given
 object into a communication buffer. The object's data can then be sent
 to another processor as part of data migration. It may also perform other
 computation, such as removing the object from the processor's data structure.
-This routine is called by <B><A HREF="ug_interface_mig.html#LB_Help_Migrate">LB_Help_Migrate</A></B>
+This routine is called by <b><a href="ug_interface_mig.html#LB_Help_Migrate">LB_Help_Migrate</a></b>
 for each object to be sent to another processor.
-<BR>&nbsp;
-<TABLE WIDTH="100%" >
-<TR>
-<TD VALIGN=TOP WIDTH="20%"><B>Function Type:</B></TD>
+<br>&nbsp;
+<table WIDTH="100%" >
+<tr>
+<td VALIGN=TOP WIDTH="20%"><b>Function Type:</b></td>
 
-<TD><B>LB_PACK_OBJ_FN_TYPE</B></TD>
-</TR>
+<td><b>LB_PACK_OBJ_FN_TYPE</b></td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP><B>Parameters:</B></TD>
+<tr>
+<td VALIGN=TOP><b>Parameters:</b></td>
 
-<TD></TD>
-</TR>
+<td></td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; data</I></TD>
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; data</i></td>
 
-<TD>Pointer to user-defined data.</TD>
-</TR>
+<td>Pointer to user-defined data.</td>
+</tr>
 
 <tr NOSAVE>
 <td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>num_gid_entries</i></td>
 
-<td>The number of array entries used to describe a single
-global ID.&nbsp; This value is the maximum value over all processors of
-the parameter <a href="ug_alg.html#NUM_GID_ENTRIES">NUM_GID_ENTRIES</a>.</td>
+<td>The number of array entries used to describe a single global ID.&nbsp;
+This value is the maximum value over all processors of the parameter <a href="ug_alg.html#NUM_GID_ENTRIES">NUM_GID_ENTRIES</a>.</td>
 </tr>
 
 <tr NOSAVE>
 <td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>num_lid_entries</i></td>
 
-<td>The number of array entries used to describe a single
-local ID.&nbsp; This value is the maximum value over all processors of
-the parameter <a href="ug_alg.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>.</td>
+<td>The number of array entries used to describe a single local ID.&nbsp;
+This value is the maximum value over all processors of the parameter <a href="ug_alg.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>.</td>
 </tr>
 
-<TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; global_id</I></TD>
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; global_id</i></td>
 
-<TD>The global ID of the object for which data should be copied into the
-communication buffer.</TD>
-</TR>
+<td>The global ID of the object for which data should be copied into the
+communication buffer.</td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; local_id</I></TD>
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; local_id</i></td>
 
-<TD>The local ID of the object for which data should be copied into the
-communication buffer.</TD>
-</TR>
+<td>The local ID of the object for which data should be copied into the
+communication buffer.</td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; dest_proc</I></TD>
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; dest_proc</i></td>
 
-<TD>The destination processor ID (i.e., the processor to which the object
-is being sent)</TD>
-</TR>
+<td>The destination processor ID (i.e., the processor to which the object
+is being sent)</td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; size</I></TD>
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; size</i></td>
 
-<TD>The size (in bytes) of the communication buffer for the specified object
-(as returned by the <B><A HREF="#LB_OBJ_SIZE_FN">LB_OBJ_SIZE_FN</A></B>
-query function).</TD>
-</TR>
+<td>The size (in bytes) of the communication buffer for the specified object
+(as returned by the <b><a href="#LB_OBJ_SIZE_FN">LB_OBJ_SIZE_FN</a></b>
+query function).</td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; buf</I></TD>
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; buf</i></td>
 
-<TD>The starting address of the communication buffer into which the object's
-data should be packed.</TD>
-</TR>
+<td>The starting address of the communication buffer into which the object's
+data should be packed.</td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; ierr</I></TD>
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; ierr</i></td>
 
-<TD>Error code to be set by function.</TD>
-</TR>
-</TABLE>
-&nbsp;
+<td>Error code to be set by function.</td>
+</tr>
+</table>
 
-<P>
-<HR WIDTH="100%">
-<TABLE WIDTH="100%" NOSAVE >
-<TR NOSAVE>
-<TD VALIGN=TOP NOSAVE>C:</TD>
+<p>
+<hr WIDTH="100%">
+<table WIDTH="100%" NOSAVE >
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>C:</td>
 
-<TD><A NAME="LB_UNPACK_OBJ_FN"></A>typedef void <B>LB_UNPACK_OBJ_FN</B>
-(void&nbsp;*<I>data</I>,
-int&nbsp;<i>num_gid_entries</i>,
-<a href="ug_usage.html#Data Types for Object IDs"><b>LB_ID_PTR</b></a>&nbsp;<I>global_id</I>,
-int&nbsp;<I>size</I>,
-char&nbsp;*<I>buf</I>,
-int&nbsp;*<I>ierr</I>);&nbsp;
-<BR>&nbsp;</TD>
-</TR>
+<td><a NAME="LB_UNPACK_OBJ_FN"></a>typedef void <b>LB_UNPACK_OBJ_FN</b>
+(void *<i>data</i>, int <i>num_gid_entries</i>,
+<b><a href="ug_usage.html#Data Types for Object IDs">LB_ID_PTR</a></b>
+<i>global_id</i>, int <i>size</i>, char *<i>buf</i>, int *<i>ierr</i>);&nbsp;</td>
+</tr>
 
-<TR NOSAVE>
-<TD VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</TD>
+<tr NOSAVE>
+<td VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</td>
 
-<TD> SUBROUTINE <B><I>Unpack_Obj</I></B>(<I>data, num_gid_entries, global_id,
-size, buf, ierr</I>)&nbsp;
-<BR>&lt;<I>type-data</I>>, INTENT(INOUT) :: data&nbsp;
-<BR>INTEGER(LB_INT), INTENT(IN) :: num_gid_entries&nbsp;
-<BR>INTEGER(LB_INT), INTENT(IN), DIMENSION(*) :: global_id&nbsp;
-<BR>INTEGER(LB_INT), INTENT(IN) :: size&nbsp;
-<BR>INTEGER(LB_INT), INTENT(IN), DIMENSION(*) :: buf&nbsp;
-<BR>INTEGER(LB_INT), INTENT(OUT) :: ierr&nbsp;
+<td>SUBROUTINE <b><i>Unpack_Obj</i></b>(<i>data, num_gid_entries, global_id,
+size, buf, ierr</i>)&nbsp;
+<br>&lt;<i>type-data</i>>, INTENT(INOUT) :: data&nbsp;
+<br>INTEGER(LB_INT), INTENT(IN) :: num_gid_entries&nbsp;
+<br>INTEGER(LB_INT), INTENT(IN), DIMENSION(*) :: global_id&nbsp;
+<br>INTEGER(LB_INT), INTENT(IN) :: size&nbsp;
+<br>INTEGER(LB_INT), INTENT(IN), DIMENSION(*) :: buf&nbsp;
+<br>INTEGER(LB_INT), INTENT(OUT) :: ierr&nbsp;
+<p>&lt;<i>type-data</i>> can be any of INTEGER(LB_INT), DIMENSION(*) or
+REAL(LB_FLOAT), DIMENSION(*) or REAL(LB_DOUBLE), DIMENSION(*) or TYPE(LB_User_Data_<i>x</i>)
+where <i>x</i> is 1, 2, 3 or 4. See the section on
+<a href="ug_fortran_api.html#fortran ug api query">Fortran
+query functions</a> for an explanation.&nbsp;</td>
+</tr>
+</table>
 
-<p>&lt;<I>type-data</I>> can be any of INTEGER(LB_INT), DIMENSION(*) or
-REAL(LB_FLOAT), DIMENSION(*) or REAL(LB_DOUBLE), DIMENSION(*) or TYPE(LB_User_Data_<I>x</I>)
-where <I>x</I> is 1, 2, 3 or 4. See the section on
-<A HREF="ug_fortran_api.html#fortran ug api query"> Fortran query functions</A>
-for an explanation.&nbsp;
-</TD>
-</TR>
-</TABLE>
-
-<HR WIDTH="100%">An <B>LB_UNPACK_OBJ_FN</B> query function allows the application
+<hr WIDTH="100%">An <b>LB_UNPACK_OBJ_FN</b> query function allows the application
 to tell the load-balancing library how to copy all needed data for a given
 object from a communication buffer into the application's data structure.
 This operation is needed as the final step of importing objects during
 data migration. The query function may also perform other computation,
 such as building request lists for related data. This routine is called
-by <B><A HREF="ug_interface_mig.html#LB_Help_Migrate">LB_Help_Migrate</A></B>
+by <b><a href="ug_interface_mig.html#LB_Help_Migrate">LB_Help_Migrate</a></b>
 for each object to be received by the processor. (Note: a local ID for
 the object is not included in this function, as the local ID is local to
 the exporting, not the importing, processor.)
-<BR>&nbsp;
-<TABLE WIDTH="100%" >
-<TR>
-<TD VALIGN=TOP WIDTH="20%"><B>Function Type:</B></TD>
+<br>&nbsp;
+<table WIDTH="100%" >
+<tr>
+<td VALIGN=TOP WIDTH="20%"><b>Function Type:</b></td>
 
-<TD><B>LB_UNPACK_OBJ_FN_TYPE</B></TD>
-</TR>
+<td><b>LB_UNPACK_OBJ_FN_TYPE</b></td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP><B>Parameters:</B></TD>
+<tr>
+<td VALIGN=TOP><b>Parameters:</b></td>
 
-<TD></TD>
-</TR>
+<td></td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; data</I></TD>
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; data</i></td>
 
-<TD>Pointer to user-defined data.</TD>
-</TR>
+<td>Pointer to user-defined data.</td>
+</tr>
 
 <tr NOSAVE>
 <td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>num_gid_entries</i></td>
 
-<td>The number of array entries used to describe a single
-global ID.&nbsp; This value is the maximum value over all processors of
-the parameter <a href="ug_alg.html#NUM_GID_ENTRIES">NUM_GID_ENTRIES</a>.</td>
+<td>The number of array entries used to describe a single global ID.&nbsp;
+This value is the maximum value over all processors of the parameter <a href="ug_alg.html#NUM_GID_ENTRIES">NUM_GID_ENTRIES</a>.</td>
 </tr>
 
-<TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; global_id</I></TD>
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; global_id</i></td>
 
-<TD>The global ID of the object whose data has been received in the communication
-buffer.</TD>
-</TR>
+<td>The global ID of the object whose data has been received in the communication
+buffer.</td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; size</I></TD>
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; size</i></td>
 
-<TD>The size (in bytes) of the object's data in the communication buffer.</TD>
-</TR>
+<td>The size (in bytes) of the object's data in the communication buffer.</td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; buf</I></TD>
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; buf</i></td>
 
-<TD>The starting address of the communication buffer for this object.</TD>
-</TR>
+<td>The starting address of the communication buffer for this object.</td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; ierr</I></TD>
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; ierr</i></td>
 
-<TD>Error code to be set by function.</TD>
-</TR>
-</TABLE>
-&nbsp;
+<td>Error code to be set by function.</td>
+</tr>
+</table>
 
-<P>
-<HR WIDTH="100%">[<A HREF="ug.html">Table of Contents</A>&nbsp; |&nbsp;
-<A HREF="ug_alg.html">Next:&nbsp; Algorithms</A>&nbsp; |&nbsp; <A HREF="ug_query_lb.html">Previous:&nbsp;
-Load-Balancing Query Functions</A>]
-</BODY>
-</HTML>
+<p>
+<hr WIDTH="100%">[<a href="ug.html">Table of Contents</a>&nbsp; | 
+<a href="ug_alg.html">Next:&nbsp;
+Algorithms</a>&nbsp; |&nbsp; <a href="ug_query_lb.html">Previous:&nbsp;
+Load-Balancing Query Functions</a>]
+</body>
+</html>
