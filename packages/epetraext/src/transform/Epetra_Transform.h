@@ -54,7 +54,9 @@ struct StructuralSameTypeTransform : public SameTypeTransform<T>
 template<class T>
 struct InPlaceTransform : public SameTypeTransform<T>
 {
-  NewTypePtr operator()( OriginalTypeRef old )
+  typename InPlaceTransform<T>::NewTypePtr
+  operator()
+  ( typename InPlaceTransform<T>::OriginalTypeRef old )
   { return NewTypePtr(0); }
 
   virtual ~InPlaceTransform() {}
