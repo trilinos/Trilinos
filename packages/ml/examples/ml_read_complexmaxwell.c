@@ -2104,7 +2104,8 @@ edge_smoother,edge_args, nodal_smoother,nodal_args);
   options[AZ_output]   = 1;
   options[AZ_max_iter] = 10; 
   options[AZ_poly_ord] = 5;
-  options[AZ_kspace]   = 15;
+  options[AZ_kspace]   = 30;
+  options[AZ_orthog]   = AZ_classic;
   params[AZ_tol]       = context->tol;
   options[AZ_output]   = context->output;
 	
@@ -2273,7 +2274,7 @@ edge_smoother,edge_args, nodal_smoother,nodal_args);
     dtemp = sqrt(ML_gdot(Amat->outvec_leng, yyy, yyy, ml_edges->comm));
     printf("||Ke_mat * rhs|| = %20.15e\n",dtemp);
 
-    //ML_Operator_Print(Amat,"crap");
+    //ML_Operator_Print(Amat,"Amat1");
     
     ML_Operator_Apply(Amat, Amat->invec_leng, xxx,Amat->outvec_leng,yyy);
     dtemp = sqrt(ML_gdot(Amat->outvec_leng, yyy, yyy, ml_edges->comm));
@@ -2822,19 +2823,38 @@ int ML_Gen_Hierarchy_ComplexMaxwell(ML *ml_edges, ML_Operator **Tmat_array,
 /* ML type of matvec that corresponds to a 2x2 block matrix. */
 /* We basically call the same matvec function for the (1,1)  */
 /* block matrix two times                                    */
-int blockdiag_matvec(void *data, int inlen, double invec[],
+int block_matvec(void *data, int inlen, double invec[],
 		      int outlen, double outvec[])
 {
   ML_Operator *mat;
   struct ml_operator_wrapper *ml_operator_wrapper;
+  double *z;
+  int i;
 
   mat = (ML_Operator *) data;
   ml_operator_wrapper = (struct ml_operator_wrapper *) mat->data;
+  /* workspace vector */
+  z = (double *) ML_allocate (outlen * sizeof(double) );
+
+  /* multiply by (1,1) block (stiffness)*/
   ml_operator_wrapper->diag_matvec(ml_operator_wrapper->diag_matvec_data, inlen/2,
 				     invec, outlen/2, outvec);
-  return( ml_operator_wrapper->diag_matvec(ml_operator_wrapper->diag_matvec_data, inlen/2,
-				     &(invec[mat->invec_leng/2]), outlen/2, 
-				     &(outvec[mat->outvec_leng/2])));
+
+  /* multiply by (1,2) block (-mass)*/
+  ml_operator_wrapper->offdiag_matvec(ml_operator_wrapper->offdiag_matvec_data, inlen/2,
+				     &(invec[inlen/2]), outlen/2, z);
+  for (i=0; i< outlen/2; i++) outvec[i] -= z[i];
+  /***********/
+  /* multiply by (2,2) block (stiffness)*/
+  ml_operator_wrapper->diag_matvec(ml_operator_wrapper->diag_matvec_data, inlen/2,
+				     &(invec[inlen/2]), outlen/2, 
+				     &(outvec[outlen/2]));
+  /* multiply by (2,1) block (mass)*/
+  ml_operator_wrapper->offdiag_matvec(ml_operator_wrapper->offdiag_matvec_data, inlen/2,
+				     invec, outlen/2, z);
+  for (i=0; i < outlen/2; i++) outvec[i+outlen/2] += z[i];
+
+  ML_free(z);
 }
 
 /* ML type of getrow that corresponds to a 2x2 block matrix. */
@@ -2972,6 +2992,7 @@ int  ML_make_block_matrix(ML_Operator *blockmat, ML_Operator *original1,
   /* will use. Shove the new data structure into blockmat along with the       */
   /* 'blockdiag_matvec' and 'blockdiag_getrow'.                                */
   ML_Operator_Init(blockmat,original1->comm);
+  blockmat->max_nz_per_row = 50;
 
   ml_operator_wrapper = (struct ml_operator_wrapper *) AZ_allocate(
 				       sizeof(struct ml_operator_wrapper));
@@ -3004,7 +3025,7 @@ int  ML_make_block_matrix(ML_Operator *blockmat, ML_Operator *original1,
 				scale_fact*original1->outvec_leng, ML_INTERNAL,
 				ml_operator_wrapper,
 				scale_fact*original1->outvec_leng,
-				blockdiag_matvec,0);
+				block_matvec,0);
 
   /* set getrow for diagonal block */
   if (original1->getrow->ML_id == ML_INTERNAL) {
