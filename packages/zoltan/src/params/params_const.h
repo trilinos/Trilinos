@@ -53,8 +53,8 @@ typedef struct Param_Utype {
   char cval;
 } PARAM_UTYPE;
 
-/* string length limit for param val. Allocate space of this + 1 */
-
+/* API for general parameter setting functions */
+typedef int LB_SET_PARAM_FN(char *, char *); 
 
 /* function declarations for parameter modification routines */
 

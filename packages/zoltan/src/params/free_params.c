@@ -13,6 +13,8 @@
  *
  *====================================================================*/
 
+#include <stdio.h>
+#include <stdlib.h>
 #include "lb_const.h"
 #include "all_allo_const.h"
 

@@ -13,6 +13,13 @@
  *
  *====================================================================*/
 
+#include <stdio.h>
+#include <stdlib.h>
+#ifdef __STDC__
+#include <string.h>
+#else
+#include <strings.h>
+#endif  /* __STDC__ */
 #include "lbi_const.h"
 #include "lb_const.h"
 #include "lb_util_const.h"

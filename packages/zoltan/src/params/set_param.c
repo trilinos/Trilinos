@@ -13,6 +13,12 @@
  *
  *====================================================================*/
 
+#include <stdio.h>
+#ifdef __STDC__
+#include <string.h>
+#else
+#include <strings.h>
+#endif  /* __STDC__ */
 #include "lbi_const.h"
 #include "lb_const.h"
 #include "lb_util_const.h"
@@ -27,6 +33,19 @@
 
 static int add_param(LB *, char *, char *);
 
+/* List of set_parameter functions to be called */
+static LB_SET_PARAM_FN * Param_func[] = {
+        LB_Set_Malloc_Param,
+        LB_Set_RCB_Param,
+        LB_Set_ParMetis_Param,
+        LB_Set_Jostle_Param,
+        LB_Set_Octpart_Param,
+        LB_Set_Reftree_Param,
+        LB_Set_Timer_Param,
+     /* LB_Set_Machine_Param, */
+        /*** Add your new parameter setting function here! ***/
+        NULL /* Last entry must be NULL! */
+};
 
 int       LB_Set_Param(
 LB *lb,				/* load balance structure */
@@ -45,6 +64,7 @@ char *val1)			/* value to set this parameter to */
     char     *name, *val;	/* clean versions of name1, val1 */
     int       flag;		/* return value from function */
     int       status;		/* has character string been matched? */
+    LB_SET_PARAM_FN **func;     /* pointer to parameter setting functions */
 
     /* Status flag is used as follows:
      *  0 -> matched and value passed all checks. 
@@ -63,35 +83,14 @@ char *val1)			/* value to set this parameter to */
 	return (flag);
     }
 
-    /* Now call all the parameter setting routines. */
-    /* New parameter routines should be added here. */
-
+    /* Call the key parameter routine. This one is Zoltan-specific. */
     status = LB_Set_Key_Param(lb, name, val);
 
-    if (status == 1)
-        status = LB_Set_Malloc_Param(name, val);
-
-    if (status == 1)
-        status = LB_Set_RCB_Param(name, val);
-
-    if (status == 1)
-        status = LB_Set_ParMetis_Param(name, val);
-
-    if (status == 1)
-        status = LB_Set_Octpart_Param(name, val);
-
-    if (status == 1)
-        status = LB_Set_Reftree_Param(name, val);
-
-    if (status == 1)
-        status = LB_Set_Timer_Param(name, val);
-
-    if (status == 1)
-        status = LB_Set_Machine_Param(name, val);
-/*
-    if (status == 1)
-	status = LB_Set_SFC_Param(name, val);
-*/
+    /* Now call all the other parameter setting routines. */
+    for (func = Param_func; *func != NULL; func++) {
+        if (status == 1)
+            status = (**func)(name, val);
+    }
 
     /* All parameter setting routines have been called, now finish up. */
 
