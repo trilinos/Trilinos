@@ -13,6 +13,9 @@
 #include <stdlib.h>
 #include "ml_csolve.h"
 #include <string.h>
+#ifdef SUPERLU
+#include "dsp_defs.h"
+#endif
 #include "ml_superlu.h"
 
 /* *********************************************************************** */
