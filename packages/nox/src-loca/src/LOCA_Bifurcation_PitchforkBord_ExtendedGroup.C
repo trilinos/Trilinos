@@ -30,96 +30,102 @@
 // ************************************************************************
 //@HEADER
 
-#include "LOCA_Bifurcation_PitchforkBordGroup.H"
+#include "LOCA_Bifurcation_PitchforkBord_ExtendedGroup.H"
+#include "LOCA_Bifurcation_TPBord_AbstractGroup.H"
 #include "LOCA_Parameter_Vector.H"
 #include "NOX_Parameter_List.H"
 
-LOCA::Bifurcation::PitchforkBordGroup::PitchforkBordGroup(
-                                          const LOCA::Abstract::Group& g,
-					  const NOX::Abstract::Vector& asymVec,
-					  const NOX::Abstract::Vector& lenVec,
-					  int paramId,
-					  const DerivUtils& d)
-  : grpPtr(dynamic_cast<LOCA::Abstract::Group*>(g.clone(NOX::DeepCopy))), 
+LOCA::Bifurcation::PitchforkBord::ExtendedGroup::ExtendedGroup(
+                         LOCA::Bifurcation::TPBord::AbstractGroup& g,
+			 const NOX::Abstract::Vector& asymVec,
+			 const NOX::Abstract::Vector& lenVec,
+			 int paramId)
+  : grpPtr(&g), 
     pfXVec(g.getX(), lenVec, 0.0, 0.0),
     pfFVec(lenVec, lenVec, 0.0, 0.0),
     pfNewtonVec(lenVec, lenVec, 0.0, 0.0),
     asymVecPtr(asymVec.clone(NOX::DeepCopy)),
     lengthVecPtr(lenVec.clone(NOX::DeepCopy)), 
-    pfScaleVec(g.getScaleVec(), g.getScaleVec(), 1.0, 1.0),
     bifParamId(paramId), 
     derivResidualParamPtr(lenVec.clone(NOX::ShapeCopy)), 
     derivNullResidualParamPtr(lenVec.clone(NOX::ShapeCopy)), 
-    derivPtr(d.clone(NOX::DeepCopy)), 
+    ownsGroup(false),
     isValidF(false),
     isValidJacobian(false),
     isValidNewton(false)
 {
-  pfXVec.getBifParam() = getBifParam();
-
-  // Rescale length vector so that the normalization condition is met
-  double lVecDotNullVec;
-  lVecDotNullVec = lengthVecPtr->dot(pfXVec.getNullVec());
-  if (lVecDotNullVec == 0.0) {
-    cout << "ERROR: LOCA::Bifurcation::PitchforkBordGroup::PitchforkBordGroup\n"
-         << "     : length vector can not have Norm zero " << endl;
-
-    throw "LOCA Error";
-  }
-  cout << "\tIn PotchforkBordGroup Constructor, scaling lenVec by:" 
-       << (1.0 / lVecDotNullVec) << endl;
-  lengthVecPtr->scale(1.0 / lVecDotNullVec);
+  init();
 }
 
-LOCA::Bifurcation::PitchforkBordGroup::PitchforkBordGroup(
-                         const LOCA::Bifurcation::PitchforkBordGroup& source, 
-			 NOX::CopyType type)
-  : grpPtr(dynamic_cast<LOCA::Abstract::Group*>(source.grpPtr->clone(type))), 
+LOCA::Bifurcation::PitchforkBord::ExtendedGroup::ExtendedGroup(
+                         const LOCA::Bifurcation::TPBord::AbstractGroup& g,
+			 const NOX::Abstract::Vector& asymVec,
+			 const NOX::Abstract::Vector& lenVec,
+			 int paramId)
+  : grpPtr(dynamic_cast<LOCA::Bifurcation::TPBord::AbstractGroup*>(g.clone())),
+    pfXVec(g.getX(), lenVec, 0.0, 0.0),
+    pfFVec(lenVec, lenVec, 0.0, 0.0),
+    pfNewtonVec(lenVec, lenVec, 0.0, 0.0),
+    asymVecPtr(asymVec.clone(NOX::DeepCopy)),
+    lengthVecPtr(lenVec.clone(NOX::DeepCopy)), 
+    bifParamId(paramId), 
+    derivResidualParamPtr(lenVec.clone(NOX::ShapeCopy)), 
+    derivNullResidualParamPtr(lenVec.clone(NOX::ShapeCopy)), 
+    ownsGroup(true),
+    isValidF(false),
+    isValidJacobian(false),
+    isValidNewton(false)
+{
+  init();
+}
+
+LOCA::Bifurcation::PitchforkBord::ExtendedGroup::ExtendedGroup(
+               const LOCA::Bifurcation::PitchforkBord::ExtendedGroup& source, 
+	       NOX::CopyType type)
+  :  grpPtr(dynamic_cast<LOCA::Bifurcation::TPBord::AbstractGroup*>(source.grpPtr->clone())),
     pfXVec(source.pfXVec, type),
     pfFVec(source.pfFVec, type),
     pfNewtonVec(source.pfNewtonVec, type),
     asymVecPtr(source.asymVecPtr->clone(type)),
     lengthVecPtr(source.lengthVecPtr->clone(type)), 
-    pfScaleVec(source.pfScaleVec, type),
     bifParamId(source.bifParamId),
     derivResidualParamPtr(source.derivResidualParamPtr->clone(type)),
     derivNullResidualParamPtr(source.derivNullResidualParamPtr->clone(type)),
-    derivPtr(source.derivPtr->clone(type)),
+    ownsGroup(true),
     isValidF(source.isValidF),
     isValidJacobian(source.isValidJacobian),
     isValidNewton(source.isValidNewton) {}
 
 
-LOCA::Bifurcation::PitchforkBordGroup::~PitchforkBordGroup() 
+LOCA::Bifurcation::PitchforkBord::ExtendedGroup::~ExtendedGroup() 
 {
-  delete grpPtr;
+  if (ownsGroup)
+    delete grpPtr;
   delete asymVecPtr;
   delete lengthVecPtr;
   delete derivResidualParamPtr;
   delete derivNullResidualParamPtr;
-  delete derivPtr;
-  
 }
 
-LOCA::Abstract::Group&
-LOCA::Bifurcation::PitchforkBordGroup::operator=(
-                                          const LOCA::Abstract::Group& source)
+LOCA::Continuation::AbstractGroup&
+LOCA::Bifurcation::PitchforkBord::ExtendedGroup::operator=(
+                             const LOCA::Continuation::AbstractGroup& source)
 {
   return *this = 
-    dynamic_cast<const LOCA::Bifurcation::PitchforkBordGroup&>(source);
+    dynamic_cast<const LOCA::Bifurcation::PitchforkBord::ExtendedGroup&>(source);
 }
 
 NOX::Abstract::Group&
-LOCA::Bifurcation::PitchforkBordGroup::operator=(
+LOCA::Bifurcation::PitchforkBord::ExtendedGroup::operator=(
                                            const NOX::Abstract::Group& source)
 {
   return *this = 
-    dynamic_cast<const LOCA::Bifurcation::PitchforkBordGroup&>(source);
+    dynamic_cast<const LOCA::Bifurcation::PitchforkBord::ExtendedGroup&>(source);
 }
 
-LOCA::Bifurcation::PitchforkBordGroup&
-LOCA::Bifurcation::PitchforkBordGroup::operator=(
-                          const LOCA::Bifurcation::PitchforkBordGroup& source) 
+LOCA::Bifurcation::PitchforkBord::ExtendedGroup&
+LOCA::Bifurcation::PitchforkBord::ExtendedGroup::operator=(
+                       const LOCA::Bifurcation::PitchforkBord::ExtendedGroup& source) 
 {
 
   // Protect against A = A
@@ -127,24 +133,20 @@ LOCA::Bifurcation::PitchforkBordGroup::operator=(
     NOX::CopyType type = NOX::DeepCopy;
 
     // Delete old values
-    delete grpPtr;
     delete asymVecPtr;
     delete lengthVecPtr;
     delete derivResidualParamPtr;
     delete derivNullResidualParamPtr;
-    delete derivPtr;
 
     // Copy values
-    grpPtr = dynamic_cast<LOCA::Abstract::Group*>(source.grpPtr->clone(type));
+    *grpPtr = *source.grpPtr;
     pfXVec = source.pfXVec;
     pfFVec = source.pfFVec;
     pfNewtonVec = source.pfNewtonVec;
     asymVecPtr = source.asymVecPtr->clone(type);
     lengthVecPtr = source.lengthVecPtr->clone(type);
-    pfScaleVec = source.pfScaleVec;
     derivResidualParamPtr = source.derivResidualParamPtr->clone(type);
     derivNullResidualParamPtr = source.derivNullResidualParamPtr->clone(type);
-    derivPtr = source.derivPtr->clone(type);
     bifParamId = source.bifParamId;
     isValidF = source.isValidF;
     isValidJacobian = source.isValidJacobian;
@@ -155,13 +157,13 @@ LOCA::Bifurcation::PitchforkBordGroup::operator=(
 }
 
 NOX::Abstract::Group*
-LOCA::Bifurcation::PitchforkBordGroup::clone(NOX::CopyType type) const 
+LOCA::Bifurcation::PitchforkBord::ExtendedGroup::clone(NOX::CopyType type) const 
 {
-  return new LOCA::Bifurcation::PitchforkBordGroup(*this, type);
+  return new LOCA::Bifurcation::PitchforkBord::ExtendedGroup(*this, type);
 }
 
 void
-LOCA::Bifurcation::PitchforkBordGroup::setParams(
+LOCA::Bifurcation::PitchforkBord::ExtendedGroup::setParams(
                                                const LOCA::ParameterVector& p) 
 {
   isValidF = false;
@@ -172,44 +174,79 @@ LOCA::Bifurcation::PitchforkBordGroup::setParams(
 }
 
 const LOCA::ParameterVector&
-LOCA::Bifurcation::PitchforkBordGroup::getParams() const 
+LOCA::Bifurcation::PitchforkBord::ExtendedGroup::getParams() const 
 {
   return grpPtr->getParams();
 }
 
 void
-LOCA::Bifurcation::PitchforkBordGroup::setParam(int paramID, double val)
+LOCA::Bifurcation::PitchforkBord::ExtendedGroup::setParam(int paramID, double val)
 {
   grpPtr->setParam(paramID, val);
 }
 
 double
-LOCA::Bifurcation::PitchforkBordGroup::getParam(int paramID) const
+LOCA::Bifurcation::PitchforkBord::ExtendedGroup::getParam(int paramID) const
 {
   return grpPtr->getParam(paramID);
 }
 
 void
-LOCA::Bifurcation::PitchforkBordGroup::setParam(string paramID, double val)
+LOCA::Bifurcation::PitchforkBord::ExtendedGroup::setParam(string paramID, double val)
 {
   grpPtr->setParam(paramID, val);
 }
 
 double
-LOCA::Bifurcation::PitchforkBordGroup::getParam(string paramID) const
+LOCA::Bifurcation::PitchforkBord::ExtendedGroup::getParam(string paramID) const
 {
   return grpPtr->getParam(paramID);
 }
 
+NOX::Abstract::Group::ReturnType
+LOCA::Bifurcation::PitchforkBord::ExtendedGroup::computeDfDp(int paramID, 
+					      NOX::Abstract::Vector& result)
+{
+  NOX::Abstract::Group::ReturnType res;
+
+  // Cast result to TP vector
+  LOCA::Bifurcation::PitchforkBord::ExtendedVector& pf_result = 
+    dynamic_cast<LOCA::Bifurcation::PitchforkBord::ExtendedVector&>(result);
+
+  // Compute f, J, J*n
+  res = computeF();
+  if (res != NOX::Abstract::Group::Ok)
+    return res;
+
+  // Compute df/dp
+  res = grpPtr->computeDfDp(paramID, pf_result.getXVec());
+  if (res != NOX::Abstract::Group::Ok)
+    return res;
+
+  // Compute d(Jn)/dp
+  res = grpPtr->computeDJnDp(pfXVec.getNullVec(), paramID,
+			     pfFVec.getNullVec(), pf_result.getNullVec());
+  if (res != NOX::Abstract::Group::Ok)
+    return res;
+
+  // Set slack componenet
+  pf_result.getSlackVar() = 0.0;
+
+  // Set parameter componenet
+  pf_result.getBifParam() = 0.0;
+
+  return res;
+}
+
 double
-LOCA::Bifurcation::PitchforkBordGroup::getBifParam() const 
+LOCA::Bifurcation::PitchforkBord::ExtendedGroup::getBifParam() const 
 {
   LOCA::ParameterVector params(grpPtr->getParams());
   return params[bifParamId];
 }
 
 void
-LOCA::Bifurcation::PitchforkBordGroup::setBifParam(double param) 
+LOCA::Bifurcation::PitchforkBord::ExtendedGroup::setBifParam(double param) 
 {
   LOCA::ParameterVector params(grpPtr->getParams());
 
@@ -222,14 +259,14 @@ LOCA::Bifurcation::PitchforkBordGroup::setBifParam(double param)
 }
 
 void
-LOCA::Bifurcation::PitchforkBordGroup::setX(const NOX::Abstract::Vector& y) 
+LOCA::Bifurcation::PitchforkBord::ExtendedGroup::setX(const NOX::Abstract::Vector& y) 
 {
-  setX( dynamic_cast<const LOCA::Bifurcation::PitchforkBordVector&>(y) );
+  setX( dynamic_cast<const LOCA::Bifurcation::PitchforkBord::ExtendedVector&>(y) );
 }
 
 void
-LOCA::Bifurcation::PitchforkBordGroup::setX(
-                              const LOCA::Bifurcation::PitchforkBordVector& y) 
+LOCA::Bifurcation::PitchforkBord::ExtendedGroup::setX(
+                              const LOCA::Bifurcation::PitchforkBord::ExtendedVector& y) 
 {
   grpPtr->setX( y.getXVec() );
   pfXVec = y;
@@ -240,20 +277,21 @@ LOCA::Bifurcation::PitchforkBordGroup::setX(
 }
 
 void
-LOCA::Bifurcation::PitchforkBordGroup::computeX(const NOX::Abstract::Group& g, 
-						const NOX::Abstract::Vector& d,
-						double step) 
+LOCA::Bifurcation::PitchforkBord::ExtendedGroup::computeX(
+					      const NOX::Abstract::Group& g, 
+					      const NOX::Abstract::Vector& d,
+					      double step) 
 {
-  computeX( dynamic_cast<const LOCA::Bifurcation::PitchforkBordGroup&>(g),
-	    dynamic_cast<const LOCA::Bifurcation::PitchforkBordVector&>(d),
+  computeX( dynamic_cast<const LOCA::Bifurcation::PitchforkBord::ExtendedGroup&>(g),
+	    dynamic_cast<const LOCA::Bifurcation::PitchforkBord::ExtendedVector&>(d),
 	    step);
 }
 
 void
-LOCA::Bifurcation::PitchforkBordGroup::computeX(
-                               const LOCA::Bifurcation::PitchforkBordGroup& g, 
-			       const LOCA::Bifurcation::PitchforkBordVector& d,
-			       double step) 
+LOCA::Bifurcation::PitchforkBord::ExtendedGroup::computeX(
+                            const LOCA::Bifurcation::PitchforkBord::ExtendedGroup& g, 
+			    const LOCA::Bifurcation::PitchforkBord::ExtendedVector& d,
+			    double step) 
 {
   isValidF = false;
   isValidJacobian = false;
@@ -265,7 +303,7 @@ LOCA::Bifurcation::PitchforkBordGroup::computeX(
 }
 
 NOX::Abstract::Group::ReturnType
-LOCA::Bifurcation::PitchforkBordGroup::computeF() 
+LOCA::Bifurcation::PitchforkBord::ExtendedGroup::computeF() 
 {
   if (isValidF)
     return NOX::Abstract::Group::Ok;
@@ -305,7 +343,7 @@ LOCA::Bifurcation::PitchforkBordGroup::computeF()
 }
 
 NOX::Abstract::Group::ReturnType
-LOCA::Bifurcation::PitchforkBordGroup::computeJacobian() 
+LOCA::Bifurcation::PitchforkBord::ExtendedGroup::computeJacobian() 
 {
   if (isValidJacobian)
     return NOX::Abstract::Group::Ok;
@@ -318,15 +356,12 @@ LOCA::Bifurcation::PitchforkBordGroup::computeJacobian()
   if (res != NOX::Abstract::Group::Ok)
     return res;
   
-  res = derivPtr->computeDfDp(*grpPtr, bifParamId, 
-			      *derivResidualParamPtr);
+  res = grpPtr->computeDfDp(bifParamId, *derivResidualParamPtr);
   if (res != NOX::Abstract::Group::Ok)
     return res;
 
-  res = derivPtr->computeDJnDp(*grpPtr, pfXVec.getNullVec(), 
-			       bifParamId,
-			       pfFVec.getNullVec(), 
-			       *derivNullResidualParamPtr);
+  res = grpPtr->computeDJnDp(pfXVec.getNullVec(), bifParamId,
+			     pfFVec.getNullVec(), *derivNullResidualParamPtr);
   if (res != NOX::Abstract::Group::Ok)
     return res;
 
@@ -336,13 +371,13 @@ LOCA::Bifurcation::PitchforkBordGroup::computeJacobian()
 }
 
 NOX::Abstract::Group::ReturnType
-LOCA::Bifurcation::PitchforkBordGroup::computeGradient() 
+LOCA::Bifurcation::PitchforkBord::ExtendedGroup::computeGradient() 
 {
   return NOX::Abstract::Group::NotDefined;
 }
    
 NOX::Abstract::Group::ReturnType
-LOCA::Bifurcation::PitchforkBordGroup::computeNewton(
+LOCA::Bifurcation::PitchforkBord::ExtendedGroup::computeNewton(
                                                  NOX::Parameter::List& params) 
 {
   if (isValidNewton)
@@ -367,15 +402,15 @@ LOCA::Bifurcation::PitchforkBordGroup::computeNewton(
 }
 
 NOX::Abstract::Group::ReturnType
-LOCA::Bifurcation::PitchforkBordGroup::applyJacobian(
+LOCA::Bifurcation::PitchforkBord::ExtendedGroup::applyJacobian(
                                           const NOX::Abstract::Vector& input,
 					  NOX::Abstract::Vector& result) const 
 {
-  // Cast vectors to PitchforkBordVectors
-  const LOCA::Bifurcation::PitchforkBordVector& pf_input = 
-    dynamic_cast<const LOCA::Bifurcation::PitchforkBordVector&>(input);
-  LOCA::Bifurcation::PitchforkBordVector& pf_result = 
-    dynamic_cast<LOCA::Bifurcation::PitchforkBordVector&>(result);
+  // Cast vectors to PitchforkBord::Vectors
+  const LOCA::Bifurcation::PitchforkBord::ExtendedVector& pf_input = 
+    dynamic_cast<const LOCA::Bifurcation::PitchforkBord::ExtendedVector&>(input);
+  LOCA::Bifurcation::PitchforkBord::ExtendedVector& pf_result = 
+    dynamic_cast<LOCA::Bifurcation::PitchforkBord::ExtendedVector&>(result);
 
   // Get constant references to input vector components
   const NOX::Abstract::Vector& input_x = pf_input.getXVec();
@@ -413,8 +448,8 @@ LOCA::Bifurcation::PitchforkBordGroup::applyJacobian(
   result_null.update(input_param, *derivNullResidualParamPtr, 1.0);
 
   // compute (dJy/dx)*x
-  res = derivPtr->computeDJnDxa(*grpPtr, pfXVec.getNullVec(), input_x, 
-				pfFVec.getNullVec(), *tmp);
+  res = grpPtr->computeDJnDxa(pfXVec.getNullVec(), input_x, 
+			      pfFVec.getNullVec(), *tmp);
   if (res != NOX::Abstract::Group::Ok)
     return res;
   
@@ -433,7 +468,7 @@ LOCA::Bifurcation::PitchforkBordGroup::applyJacobian(
 }
 
 NOX::Abstract::Group::ReturnType
-LOCA::Bifurcation::PitchforkBordGroup::applyJacobianTranspose(
+LOCA::Bifurcation::PitchforkBord::ExtendedGroup::applyJacobianTranspose(
 					  const NOX::Abstract::Vector& input,
 					  NOX::Abstract::Vector& result) const 
 {
@@ -441,7 +476,7 @@ LOCA::Bifurcation::PitchforkBordGroup::applyJacobianTranspose(
 }
 
 NOX::Abstract::Group::ReturnType
-LOCA::Bifurcation::PitchforkBordGroup::applyJacobianInverse(
+LOCA::Bifurcation::PitchforkBord::ExtendedGroup::applyJacobianInverse(
 					 NOX::Parameter::List& params,
 					 const NOX::Abstract::Vector& input,
 					 NOX::Abstract::Vector& result) const 
@@ -456,7 +491,7 @@ LOCA::Bifurcation::PitchforkBordGroup::applyJacobianInverse(
 }
 
 NOX::Abstract::Group::ReturnType
-LOCA::Bifurcation::PitchforkBordGroup::applyJacobianInverseMulti(
+LOCA::Bifurcation::PitchforkBord::ExtendedGroup::applyJacobianInverseMulti(
 			    NOX::Parameter::List& params,
 			    const NOX::Abstract::Vector* const* inputs,
 			    NOX::Abstract::Vector** results, int nVecs) const 
@@ -481,19 +516,19 @@ LOCA::Bifurcation::PitchforkBordGroup::applyJacobianInverseMulti(
   double** results_params = new double*[m];
   NOX::Abstract::Vector** tmp = new NOX::Abstract::Vector*[m+2];
 
-  const LOCA::Bifurcation::PitchforkBordVector* constPitchforkVecPtr;
-  LOCA::Bifurcation::PitchforkBordVector* pitchforkVecPtr;
+  const LOCA::Bifurcation::PitchforkBord::ExtendedVector* constPitchforkVecPtr;
+  LOCA::Bifurcation::PitchforkBord::ExtendedVector* pitchforkVecPtr;
 
   for (int i=0; i<m; i++) {
     constPitchforkVecPtr = 
-      dynamic_cast<const LOCA::Bifurcation::PitchforkBordVector*>(inputs[i]);
+      dynamic_cast<const LOCA::Bifurcation::PitchforkBord::ExtendedVector*>(inputs[i]);
     inputs_x[i] = &(constPitchforkVecPtr->getXVec());
     inputs_null[i] = &(constPitchforkVecPtr->getNullVec());
     inputs_slacks[i] = constPitchforkVecPtr->getSlackVar();
     inputs_params[i] = constPitchforkVecPtr->getBifParam();
  
     pitchforkVecPtr = 
-      dynamic_cast<LOCA::Bifurcation::PitchforkBordVector*>(results[i]);
+      dynamic_cast<LOCA::Bifurcation::PitchforkBord::ExtendedVector*>(results[i]);
     results_x[i] = &(pitchforkVecPtr->getXVec());
     results_null[i] = &(pitchforkVecPtr->getNullVec());
     results_slacks[i] = &(pitchforkVecPtr->getSlackVar());
@@ -516,18 +551,18 @@ LOCA::Bifurcation::PitchforkBordGroup::applyJacobianInverseMulti(
   tmp[m+1] = inputs_x[m+1]->clone(NOX::ShapeCopy);
 
   // Solve J*results_x = inputs_x
-  res = underlyingGroupApplyJacobianInverseManagerMulti(params, inputs_x, 
-							pfXVec.getNullVec(),
-							pfFVec.getNullVec(),
-							results_x, m+2);
+  res = grpPtr->applySingularJacobianInverseMulti(params, inputs_x, 
+						  pfXVec.getNullVec(),
+						  pfFVec.getNullVec(),
+						  results_x, m+2);
   if (res != NOX::Abstract::Group::Ok)
     return res;
   
 
   // Compute tmp = inputs_null - (dJy/dx)*results_x
   for (int i=0; i<m+2; i++) {
-    res = derivPtr->computeDJnDxa(*grpPtr, pfXVec.getNullVec(), *results_x[i],
-				  pfFVec.getNullVec(), *tmp[i]);
+    res = grpPtr->computeDJnDxa(pfXVec.getNullVec(), *results_x[i],
+				pfFVec.getNullVec(), *tmp[i]);
 
     if (res != NOX::Abstract::Group::Ok)
       return res;
@@ -540,10 +575,10 @@ LOCA::Bifurcation::PitchforkBordGroup::applyJacobianInverseMulti(
   } 
 
   // Solve J*results_null = tmp
-  res = underlyingGroupApplyJacobianInverseManagerMulti(params, tmp, 
-							pfXVec.getNullVec(),
-							pfFVec.getNullVec(),
-							results_null, m+2);
+  res = grpPtr->applySingularJacobianInverseMulti(params, tmp, 
+						  pfXVec.getNullVec(),
+						  pfFVec.getNullVec(),
+						  results_null, m+2);
   if (res != NOX::Abstract::Group::Ok)
     return res;
   
@@ -591,232 +626,67 @@ LOCA::Bifurcation::PitchforkBordGroup::applyJacobianInverseMulti(
   return res;
 }
 
-NOX::Abstract::Group::ReturnType
-LOCA::Bifurcation::PitchforkBordGroup::underlyingGroupApplyJacobianInverseManagerMulti(
-                       NOX::Parameter::List& params,
-                       const NOX::Abstract::Vector*const* inputs,
-                       const NOX::Abstract::Vector& approxNullVec,
-                       const NOX::Abstract::Vector& jacTimesApproxNullVec,
-                       NOX::Abstract::Vector** results, int nVecs) const
-{
-
-  NOX::Abstract::Group::ReturnType res;
-  string singularSolveOption = params.getParameter("Bifurcation Solve", "Default");
-
-  if (singularSolveOption == "Nic") {
-
-    // Solve of near-singular matrix with Nic method
-    res = grpPtr->applyJacobianInverseNicMulti(params, inputs, approxNullVec,
-					       jacTimesApproxNullVec, results,
-					       nVecs);
-  }
-  else if (singularSolveOption == "NicDay") {
-
-    // Solve of near-singular matrix with Nic method
-    res = grpPtr->applyJacobianInverseNicDayMulti(params, inputs, 
-						  approxNullVec,
-						  jacTimesApproxNullVec, 
-						  results, nVecs);
-  }
-  else if (singularSolveOption == "Iterative Refinement") {
-
-    // Solve of near-singular matrix with Nic method
-    res = grpPtr->applyJacobianInverseItRefMulti(params, inputs, results, 
-						 nVecs);
-  }
-  else {
-    if (singularSolveOption != "Default") {
-      cout << "WARNING: LOCA::Bifurcation::PitchforkBordGroup::"
-           << "underlyingGroupApplyJacobianInverseManager\n\t"
-           << "Unknown Bifurcation Solve Option<" << singularSolveOption
-           << ">:  Resetting to Default." << endl;
-
-      params.setParameter("Bifurcation Solve", "Default");
-    }
-    
-    // Default solve of matrix that is approaching singular
-    res = grpPtr->applyJacobianInverseMulti(params, inputs, results, nVecs);
-  }
-
-  return res;
-}
-
-NOX::Abstract::Group::ReturnType
-LOCA::Bifurcation::PitchforkBordGroup::applyRightPreconditioning(
-                                         NOX::Parameter::List& params, 
-		                         const NOX::Abstract::Vector& input, 
-		                         NOX::Abstract::Vector& result) const 
-{
-  // Cast vectors to PitchforkBordVectors
-  const LOCA::Bifurcation::PitchforkBordVector& pf_input = 
-    dynamic_cast<const LOCA::Bifurcation::PitchforkBordVector&>(input);
-  LOCA::Bifurcation::PitchforkBordVector& pf_result = 
-    dynamic_cast<LOCA::Bifurcation::PitchforkBordVector&>(result);
-
-  // Get constant references to input vector components
-  const NOX::Abstract::Vector& input_x = pf_input.getXVec();
-  const NOX::Abstract::Vector& input_null = pf_input.getNullVec();
-  double input_slack = pf_input.getSlackVar();
-  double input_param = pf_input.getBifParam();
-
-  // Get non-constant references to result vector components
-  NOX::Abstract::Vector& result_x = pf_result.getXVec();
-  NOX::Abstract::Vector& result_null = pf_result.getNullVec();
-  double& result_slack = pf_result.getSlackVar();
-  double& result_param = pf_result.getBifParam();
-
-  // Temporary vectors
-  NOX::Abstract::Vector *b = input_x.clone(NOX::ShapeCopy);
-  NOX::Abstract::Vector *c = input_x.clone(NOX::ShapeCopy);
-  NOX::Abstract::Vector *e = input_x.clone(NOX::ShapeCopy);
-  NOX::Abstract::Vector *f = input_x.clone(NOX::ShapeCopy);
-  NOX::Abstract::Vector *derivJ = input_x.clone(NOX::ShapeCopy);
-
-  // Return value
-  NOX::Abstract::Group::ReturnType res;
-
-  // Solve J*result_x = input_x
-  res = grpPtr->applyRightPreconditioning(params, input_x, result_x);
-  if (res != NOX::Abstract::Group::Ok)
-    return res;
-
-  // Solve J*b = dR/dp
-  res = grpPtr->applyRightPreconditioning(params, *derivResidualParamPtr, *b);
-  if (res != NOX::Abstract::Group::Ok)
-    return res;
-
-  // Solve J*c = psi
-  res = grpPtr->applyRightPreconditioning(params, *asymVecPtr, *c);
-  if (res != NOX::Abstract::Group::Ok)
-    return res;
-
-  // Compute (dJy/dx)*result_x
-  res = derivPtr->computeDJnDxa(*grpPtr, pfXVec.getNullVec(), result_x, 
-				pfFVec.getNullVec(), *derivJ);
-
-  // Compute input_null - (dJy/dx)*result_x
-  derivJ->update(1.0, input_null, -1.0);
-
-  // Solve J*result_null = input_null - (dJy/dx)*result_x
-  res = grpPtr->applyRightPreconditioning(params, *derivJ, result_null);
-  if (res != NOX::Abstract::Group::Ok)
-    return res;
-
-  // Compute (dJy/dx)*b
-  res = derivPtr->computeDJnDxa(*grpPtr, pfXVec.getNullVec(), *b, 
-				pfFVec.getNullVec(), *derivJ);
-  if (res != NOX::Abstract::Group::Ok)
-    return res;
-
-  // Compute dJy/dp - (dJy/dx)*b 
-  derivJ->update(1.0, *derivNullResidualParamPtr, -1.0);
-
-  // Solve J*e = dJy/dp - (dJy/dx)*b
-  res = grpPtr->applyRightPreconditioning(params, *derivJ, *e);
-  if (res != NOX::Abstract::Group::Ok)
-    return res;
-
-  // Compute (dJy/dx)*c
-  res = derivPtr->computeDJnDxa(*grpPtr, pfXVec.getNullVec(), *c, 
-				pfFVec.getNullVec(), *derivJ);
-  if (res != NOX::Abstract::Group::Ok)
-    return res;
-
-  // Compute -(dJy/dx)*c
-  derivJ->scale(-1.0);
-
-  // Solve J*f = -(dJy/dx)*c
-  res = grpPtr->applyRightPreconditioning(params, *derivJ, *f);
-  if (res != NOX::Abstract::Group::Ok)
-    return res;
-
-  double ipa = grpPtr->innerProduct(result_x, *asymVecPtr);
-  double ipb = grpPtr->innerProduct(*b, *asymVecPtr);
-  double ipc = grpPtr->innerProduct(*c, *asymVecPtr);
-  double ltd = lengthVecPtr->dot(result_null);
-  double lte = lengthVecPtr->dot(*e);
-  double ltf = lengthVecPtr->dot(*f);
-
-  result_slack = (lte*(ipa - input_slack) - ipb*(ltd - input_param)) /
-    (lte*ipc - ltf*ipb);
-
-  result_param = (ltd - input_param - ltf*result_slack) / lte;
-
-  result_x.update(-result_param, *b, -result_slack, *c, 1.0);
-
-  result_null.update(-result_param, *e, -result_slack, *f, 1.0);
-
-  // Clean up memory
-  delete b;
-  delete c;
-  delete e;
-  delete f;
-  delete derivJ;
-
-  return res;
-}
-
 bool
-LOCA::Bifurcation::PitchforkBordGroup::isF() const 
+LOCA::Bifurcation::PitchforkBord::ExtendedGroup::isF() const 
 {
   return isValidF;
 }
 
 bool
-LOCA::Bifurcation::PitchforkBordGroup::isJacobian() const 
+LOCA::Bifurcation::PitchforkBord::ExtendedGroup::isJacobian() const 
 {
   return isValidJacobian;
 }
 
 bool
-LOCA::Bifurcation::PitchforkBordGroup::isGradient() const 
+LOCA::Bifurcation::PitchforkBord::ExtendedGroup::isGradient() const 
 {
   return false;
 }
 
 bool
-LOCA::Bifurcation::PitchforkBordGroup::isNewton() const 
+LOCA::Bifurcation::PitchforkBord::ExtendedGroup::isNewton() const 
 {
   return isValidNewton;
 }
   
 const NOX::Abstract::Vector&
-LOCA::Bifurcation::PitchforkBordGroup::getX() const 
+LOCA::Bifurcation::PitchforkBord::ExtendedGroup::getX() const 
 {
   return pfXVec;
 }
 
 const NOX::Abstract::Vector&
-LOCA::Bifurcation::PitchforkBordGroup::getF() const 
+LOCA::Bifurcation::PitchforkBord::ExtendedGroup::getF() const 
 {
   return pfFVec;
 }
 
 double
-LOCA::Bifurcation::PitchforkBordGroup::getNormF() const 
+LOCA::Bifurcation::PitchforkBord::ExtendedGroup::getNormF() const 
 {
   return pfFVec.norm();
 }
 
 const NOX::Abstract::Vector&
-LOCA::Bifurcation::PitchforkBordGroup::getGradient() const 
+LOCA::Bifurcation::PitchforkBord::ExtendedGroup::getGradient() const 
 {
-  cout << "ERROR: LOCA::Bifurcation::PitchforkBordGroup::getGradient() "
+  cout << "ERROR: LOCA::Bifurcation::PitchforkBord::ExtendedGroup::getGradient() "
        << " - not implemented" << endl;
   throw "LOCA Error";
   return getNewton();
 }
 
 const NOX::Abstract::Vector&
-LOCA::Bifurcation::PitchforkBordGroup::getNewton() const 
+LOCA::Bifurcation::PitchforkBord::ExtendedGroup::getNewton() const 
 {
   return pfNewtonVec;
 }
 
 double
-LOCA::Bifurcation::PitchforkBordGroup::getNormNewtonSolveResidual() const 
+LOCA::Bifurcation::PitchforkBord::ExtendedGroup::getNormNewtonSolveResidual() const 
 {
-  LOCA::Bifurcation::PitchforkBordVector residual = pfFVec;
+  LOCA::Bifurcation::PitchforkBord::ExtendedVector residual = pfFVec;
   
   NOX::Abstract::Group::ReturnType res = applyJacobian(pfNewtonVec, residual);
   if (res != NOX::Abstract::Group::Ok) {
@@ -831,9 +701,9 @@ LOCA::Bifurcation::PitchforkBordGroup::getNormNewtonSolveResidual() const
 }
 
 void
-LOCA::Bifurcation::PitchforkBordGroup::printSolution(const double conParam) const 
+LOCA::Bifurcation::PitchforkBord::ExtendedGroup::printSolution(const double conParam) const 
 {
-  cout << "LOCA::Bifurcation::PitchforkBordGroup::printSolution\n";
+  cout << "LOCA::Bifurcation::PitchforkBord::ExtendedGroup::printSolution\n";
   cout << "\tSlack variable sigma = " << pfXVec.getSlackVar() << endl;
   cout << "\tPrinting Solution Vector for conParam = " << conParam << endl;
   grpPtr->printSolution(conParam);
@@ -842,17 +712,33 @@ LOCA::Bifurcation::PitchforkBordGroup::printSolution(const double conParam) cons
   grpPtr->printSolution(pfXVec.getNullVec(), pfXVec.getBifParam());
 }
 
-void
-LOCA::Bifurcation::PitchforkBordGroup::setScaleVec(const NOX::Abstract::Vector& s) {
-  setScaleVec( dynamic_cast<const LOCA::Bifurcation::PitchforkBordVector&>(s) );
+const  LOCA::Continuation::AbstractGroup&
+LOCA::Bifurcation::PitchforkBord::ExtendedGroup::getUnderlyingGroup() const
+{
+  return grpPtr->getUnderlyingGroup();
+}
+
+ LOCA::Continuation::AbstractGroup&
+LOCA::Bifurcation::PitchforkBord::ExtendedGroup::getUnderlyingGroup()
+{
+  return grpPtr->getUnderlyingGroup();
 }
 
 void
-LOCA::Bifurcation::PitchforkBordGroup::setScaleVec(const LOCA::Bifurcation::PitchforkBordVector& s) {
-  pfScaleVec = s;
-}
+LOCA::Bifurcation::PitchforkBord::ExtendedGroup::init()
+{
+  pfXVec.getBifParam() = getBifParam();
 
-const NOX::Abstract::Vector&
-LOCA::Bifurcation::PitchforkBordGroup::getScaleVec() const {
-  return pfScaleVec;
+  // Rescale length vector so that the normalization condition is met
+  double lVecDotNullVec;
+  lVecDotNullVec = lengthVecPtr->dot(pfXVec.getNullVec());
+  if (lVecDotNullVec == 0.0) {
+    cout << "ERROR: LOCA::Bifurcation::PitchforkBord::ExtendedGroup::init\n"
+         << "     : length vector can not have Norm zero " << endl;
+
+    throw "LOCA Error";
+  }
+  cout << "\tIn LOCA::Bifurcation::PitchforkBord::ExtendedGroup::init, scaling lenVec by:" 
+       << (1.0 / lVecDotNullVec) << endl;
+  lengthVecPtr->scale(1.0 / lVecDotNullVec);
 }

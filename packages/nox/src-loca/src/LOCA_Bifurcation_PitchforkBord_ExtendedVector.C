@@ -30,13 +30,13 @@
 // ************************************************************************
 //@HEADER
 
-#include "LOCA_Bifurcation_PitchforkBordVector.H"  // Class definition
+#include "LOCA_Bifurcation_PitchforkBord_ExtendedVector.H"  // Class definition
 
-LOCA::Bifurcation::PitchforkBordVector::PitchforkBordVector(
+LOCA::Bifurcation::PitchforkBord::ExtendedVector::ExtendedVector(
 			                const NOX::Abstract::Vector& xVec,
 					const NOX::Abstract::Vector& nullVec,
 					double slackVar, double bifParam) :
-  LOCA::MultiVector(2,2)
+  LOCA::ExtendedVector(2,2)
 {
   setVector(0, xVec);
   setVector(1, nullVec);
@@ -44,47 +44,48 @@ LOCA::Bifurcation::PitchforkBordVector::PitchforkBordVector(
   setScalar(1, bifParam);
 }
 
-LOCA::Bifurcation::PitchforkBordVector::PitchforkBordVector(
-                         const LOCA::Bifurcation::PitchforkBordVector& source, 
-			 NOX::CopyType type) :
-  LOCA::MultiVector(source, type)
+LOCA::Bifurcation::PitchforkBord::ExtendedVector::ExtendedVector(
+              const LOCA::Bifurcation::PitchforkBord::ExtendedVector& source, 
+	      NOX::CopyType type) :
+  LOCA::ExtendedVector(source, type)
 {
 }
 
 
-LOCA::Bifurcation::PitchforkBordVector::~PitchforkBordVector()
+LOCA::Bifurcation::PitchforkBord::ExtendedVector::~ExtendedVector()
 {
 }
 
 NOX::Abstract::Vector& 
-LOCA::Bifurcation::PitchforkBordVector::operator=(
-                                                const NOX::Abstract::Vector& y)
+LOCA::Bifurcation::PitchforkBord::ExtendedVector::operator=(
+                                             const NOX::Abstract::Vector& y)
 {
-  return operator=(dynamic_cast<const LOCA::Bifurcation::PitchforkBordVector&>(y));
+  return operator=(dynamic_cast<const LOCA::Bifurcation::PitchforkBord::ExtendedVector&>(y));
 }
 
-LOCA::MultiVector& 
-LOCA::Bifurcation::PitchforkBordVector::operator=(const LOCA::MultiVector& y)
+LOCA::ExtendedVector& 
+LOCA::Bifurcation::PitchforkBord::ExtendedVector::operator=(
+						const LOCA::ExtendedVector& y)
 {
-  return operator=(dynamic_cast<const LOCA::Bifurcation::PitchforkBordVector&>(y));
+  return operator=(dynamic_cast<const LOCA::Bifurcation::PitchforkBord::ExtendedVector&>(y));
 }
 
-LOCA::Bifurcation::PitchforkBordVector& 
-LOCA::Bifurcation::PitchforkBordVector::operator=(
-                              const LOCA::Bifurcation::PitchforkBordVector& y)
+LOCA::Bifurcation::PitchforkBord::ExtendedVector& 
+LOCA::Bifurcation::PitchforkBord::ExtendedVector::operator=(
+                    const LOCA::Bifurcation::PitchforkBord::ExtendedVector& y)
 { 
-  LOCA::MultiVector::operator=(y);
+  LOCA::ExtendedVector::operator=(y);
   return *this;
 }
 
 NOX::Abstract::Vector* 
-LOCA::Bifurcation::PitchforkBordVector::clone(NOX::CopyType type) const
+LOCA::Bifurcation::PitchforkBord::ExtendedVector::clone(NOX::CopyType type) const
 {
-  return new LOCA::Bifurcation::PitchforkBordVector(*this, type);
+  return new LOCA::Bifurcation::PitchforkBord::ExtendedVector(*this, type);
 }
 
 void 
-LOCA::Bifurcation::PitchforkBordVector::setVec(
+LOCA::Bifurcation::PitchforkBord::ExtendedVector::setVec(
                                          const NOX::Abstract::Vector& xVec,
 					 const NOX::Abstract::Vector& nullVec,
 					 double slackVar, double bifPar)
@@ -96,49 +97,49 @@ LOCA::Bifurcation::PitchforkBordVector::setVec(
 }
 
 const NOX::Abstract::Vector& 
-LOCA::Bifurcation::PitchforkBordVector::getXVec() const
+LOCA::Bifurcation::PitchforkBord::ExtendedVector::getXVec() const
 {
   return getVector(0);
 }
 
 const NOX::Abstract::Vector& 
-LOCA::Bifurcation::PitchforkBordVector::getNullVec() const
+LOCA::Bifurcation::PitchforkBord::ExtendedVector::getNullVec() const
 {
   return getVector(1);
 }
 
 double 
-LOCA::Bifurcation::PitchforkBordVector::getSlackVar() const
+LOCA::Bifurcation::PitchforkBord::ExtendedVector::getSlackVar() const
 {
   return getScalar(0);
 }
 
 double 
-LOCA::Bifurcation::PitchforkBordVector::getBifParam() const
+LOCA::Bifurcation::PitchforkBord::ExtendedVector::getBifParam() const
 {
   return getScalar(1);
 }
 
 NOX::Abstract::Vector& 
-LOCA::Bifurcation::PitchforkBordVector::getXVec()
+LOCA::Bifurcation::PitchforkBord::ExtendedVector::getXVec()
 {
   return getVector(0);
 }
 
 NOX::Abstract::Vector& 
-LOCA::Bifurcation::PitchforkBordVector::getNullVec()
+LOCA::Bifurcation::PitchforkBord::ExtendedVector::getNullVec()
 {
   return getVector(1);
 }
 
 double& 
-LOCA::Bifurcation::PitchforkBordVector::getSlackVar()
+LOCA::Bifurcation::PitchforkBord::ExtendedVector::getSlackVar()
 {
   return getScalar(0);
 }
 
 double& 
-LOCA::Bifurcation::PitchforkBordVector::getBifParam()
+LOCA::Bifurcation::PitchforkBord::ExtendedVector::getBifParam()
 {
   return getScalar(1);
 }
