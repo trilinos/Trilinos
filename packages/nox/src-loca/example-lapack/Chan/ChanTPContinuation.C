@@ -70,9 +70,6 @@ int main()
     NOX::LAPACK::Vector nullVec(n);  // length 1
     nullVec.init(1.0);             // initial value 1.0
 
-    // Create a turning point group that uses the lapack group
-    LOCA::Bifurcation::TPBord::ExtendedGroup tpgrp(grp, nullVec, 0);
-
     // Create parameter list
     NOX::Parameter::List paramList;
 
@@ -142,10 +139,18 @@ int main()
     NOX::Parameter::List& searchParams = nlParams.sublist("Line Search");
     searchParams.setParameter("Method", "Full Step");
 
+    // Create the newton and  linear solver parameters sublist
+  NOX::Parameter::List& directionParameters = nlParams.sublist("Direction");
+  NOX::Parameter::List& newtonParameters = directionParameters.sublist("Newton");
+  NOX::Parameter::List& linearSolverParameters = newtonParameters.sublist("Linear Solver");
+
     // Set up the status tests
     NOX::StatusTest::NormF statusTestA(1.0e-6, NOX::StatusTest::NormF::Scaled);
     NOX::StatusTest::MaxIters statusTestB(maxNewtonIters);
     NOX::StatusTest::Combo combo(NOX::StatusTest::Combo::OR, statusTestA, statusTestB);
+
+    // Create a turning point group that uses the lapack group
+    LOCA::Bifurcation::TPBord::ExtendedGroup tpgrp(grp, nullVec, linearSolverParameters, 0);
 
     // Create the stepper  
     LOCA::Stepper stepper(tpgrp, combo, paramList);
