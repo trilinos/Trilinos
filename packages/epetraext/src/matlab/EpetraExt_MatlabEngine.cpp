@@ -42,7 +42,7 @@ MatlabEngine::MatlabEngine (const Epetra_Comm& Comm):Comm_(Comm) {
     if (MyPID_ == 0) {
 	cout << "Hello.  I am matlab " << endl ; 
 	// Gentlemen, start your engines ...
-	Engine_ = engOpen ((char *) 0) ;
+	Engine_ = engOpen (NULL) ;
     }
 
 } 

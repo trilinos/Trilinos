@@ -60,8 +60,7 @@ int main(int argc, char *argv[]) {
   int MyPID = comm.MyPID();
 
   char s [BUFSIZE] ;
-  EpetraExt_MatlabEngine engine = new EpetraExt_MatlabEngine(comm);
-
+  EpetraExt::MatlabEngine engine (comm);
   while(1) {
       // Prompt the user and get a string
       printf (">> ") ;
@@ -76,7 +75,7 @@ int main(int argc, char *argv[]) {
       engine.EvalString (s) ;
   }
   
-  delete engine ;
+  //delete engine ;
   
   return (0) ;
   
