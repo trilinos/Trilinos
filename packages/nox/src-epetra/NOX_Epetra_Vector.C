@@ -282,7 +282,7 @@ NOX::Epetra::Vector::createMultiVector(int numVecs, NOX::CopyType type) const
   }
 
   NOX::Epetra::MultiVector* mv = 
-    new NOX::Epetra::MultiVector(*epetra_mv, type, true);
+    new NOX::Epetra::MultiVector(*epetra_mv, type, false);
 
   delete epetra_mv;
 
