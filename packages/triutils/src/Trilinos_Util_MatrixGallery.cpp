@@ -42,14 +42,12 @@
 #include "Epetra_Export.h"
 #include "Epetra_LinearProblem.h"
 #include "Epetra_Time.h"
+#include "Epetra_Util.h"
 #include "Trilinos_Util.h"
 #include <string>
 
 #include "Trilinos_Util_MatrixGallery.h"
-
-#ifdef TRILINOS_UTIL_MATRIX_GALLERY_WITH_SHELL_OPTIONS
 #include "Trilinos_Util_ShellOptions.h"
-#endif
 
 // ================================================ ====== ==== ==== == =
 Trilinos_Util_MatrixGallery::Trilinos_Util_MatrixGallery(const string name, 
@@ -95,7 +93,7 @@ Trilinos_Util_MatrixGallery::~Trilinos_Util_MatrixGallery(void)
   if( VbrLinearProblem_ != NULL ) delete VbrLinearProblem_;
 
   // VBR data
-  //~!@ ?????? crashes on west ?????? if( VbrMatrix_ != NULL ) delete VbrMatrix_;  
+  if( VbrMatrix_ != NULL ) delete VbrMatrix_;  
   if( VbrExactSolution_ != NULL ) delete VbrExactSolution_;
   if( VbrStartingSolution_ != NULL ) delete VbrStartingSolution_;
   if( VbrRhs_ != NULL ) delete VbrRhs_;
@@ -317,73 +315,66 @@ int Trilinos_Util_MatrixGallery::Set(const string parameter, const Epetra_Vector
 }
 
 // ================================================ ====== ==== ==== == =  
-#ifdef TRILINOS_UTIL_MATRIX_GALLERY_WITH_SHELL_OPTIONS
-#include <set>
 
-int Trilinos_Util_MatrixGallery::Set(const Trilinos_Util_ShellOptions & S)
+int Trilinos_Util_MatrixGallery::Set(Trilinos_Util_ShellOptions & S)
 {
-  
-  // iterate on this set
-  set<string>::const_iterator current;
+  // this can be done with STL: iterators and sets.
+  // However, on some Sandia computers, STL is not that simple
+  // to use. For this reason, I prefered this ugliest way
 
-  // all options with strings
-  set<string> StrOptions;
-  StrOptions.insert("problem_type");
-  StrOptions.insert("map_type");
-  StrOptions.insert("exact_solution");
-  StrOptions.insert("matrix_name");
-  StrOptions.insert("starting_solution");
-  StrOptions.insert("output");
+  string Options[10];
   
-  for( current=StrOptions.begin() ; current != StrOptions.end();
-       ++current ) {
-    string parameter = "-"+*current;    
+  // all options with strings
+  Options[0] = "problem_type";
+  Options[1] = "map_type";
+  Options[2] = "exact_solution";
+  Options[3] = "matrix_name";
+  Options[4] = "starting_solution";
+  Options[5] = "output";
+  
+  for( int i=0 ; i<5 ; i++ ) {
+    string parameter = "-"+Options[i];    
     if( S.HaveOption(parameter) == true ) {
       string value = S.GetStringOption(parameter);
-      Set(*current,value);
+      Set(Options[i],value);
       
     }
   }
 
   // all options with integers
-  set<string>  IntOptions;
-  IntOptions.insert("problem_size");
-  IntOptions.insert("nx");
-  IntOptions.insert("ny");
-  IntOptions.insert("nz");
-  IntOptions.insert("mx");
-  IntOptions.insert("my");
-  IntOptions.insert("mz");
-  IntOptions.insert("num_pde_eqns");
+  Options[0] = "problem_size";
+  Options[1] = "nx";
+  Options[2] = "ny";
+  Options[3] = "nz";
+  Options[4] = "mx";
+  Options[5] = "my";
+  Options[6] = "mz";
+  Options[7] = "num_pde_eqns";
 
-  for( current=IntOptions.begin() ; current != IntOptions.end();
-       ++current ) {
-    string parameter = "-"+*current;    
+  for(  int i=0 ; i<7 ; i++ ) {
+    string parameter = "-"+Options[i];   
     if( S.HaveOption(parameter) == true ) {
-      Set(*current,S.GetIntOption(parameter));
+      Set(Options[i],S.GetIntOption(parameter));
     }
   }
   
   // all options with doubles
-  set<string>  DoubleOptions;
-  DoubleOptions.insert("a");
-  DoubleOptions.insert("b");
-  DoubleOptions.insert("c");
-  DoubleOptions.insert("d");
-  DoubleOptions.insert("e");
-  DoubleOptions.insert("f");
-  DoubleOptions.insert("g");
-  for( current=DoubleOptions.begin() ; current != DoubleOptions.end();
-       ++current ) {
-    string parameter = "-"+*current;    
+  Options[0] = "a";
+  Options[1] = "b";
+  Options[2] = "c";
+  Options[3] = "d";
+  Options[4] = "e";
+  Options[5] = "f";
+  Options[6] = "g";
+  for( int i=0 ; i<6 ; i++ ) {
+    string parameter = "-"+Options[i];   
     if( S.HaveOption(parameter) == true ) {
-      Set(*current,S.GetDoubleOption(parameter));
+      Set(Options[i],S.GetDoubleOption(parameter));
     }
   }
 
   return 0;
 }
-#endif
 
 // ================================================ ====== ==== ==== == =  
 Epetra_CrsMatrix * Trilinos_Util_MatrixGallery::GetMatrix(void) 
@@ -525,7 +516,7 @@ int Trilinos_Util_MatrixGallery::ComputeResidual(double & residual)
   if( rhs_ == NULL ) CreateRHS();
 
   Epetra_Vector Ax(*map_);
-  assert(matrix_->Multiply(false, *ExactSolution_, Ax)==0);
+  assert(matrix_->Multiply(false, *StartingSolution_, Ax)==0);
 
   assert(Ax.Update(1.0, *rhs_, -1.0)==0);
 
@@ -533,6 +524,7 @@ int Trilinos_Util_MatrixGallery::ComputeResidual(double & residual)
 
   return 0;
 }
+
 // ================================================ ====== ==== ==== == =
 int Trilinos_Util_MatrixGallery::ComputeDiffBetweenStartingAndExactSolutions(double & residual)
 {
@@ -555,10 +547,16 @@ int Trilinos_Util_MatrixGallery::CreateMap(void)
 {
 
   Epetra_Time Time(*comm_);
-  
+
   if( verbose_ == true ) {
     cout << OutputMsg << "Creating Map...\n";
   }
+
+  // first get the problem size. For some problems. the user can
+  // specify the problem size using different parameters (e.g.,
+  // nx and ny for a 2D Laplace problem). I need the internal
+  // variable NumGlobalElements_ properly set before continuing.
+  // NOTE: for HB problems, this value has already been set
   
   if( name_ == "diag" || name_ == "tridiag"  ||
       name_ == "laplace 1d" || name_ == "eye" ||
@@ -609,7 +607,17 @@ int Trilinos_Util_MatrixGallery::CreateMap(void)
     exit( EXIT_FAILURE );
 
   }
-    
+
+  // check out whether one is using only one proc or not.
+  // If yes, creation of map is straightforward. Then return.
+  
+  if( comm_->NumProc() == 1 ) {
+    map_ = new Epetra_Map(NumGlobalElements_,0,*comm_);
+    return 0;
+  }
+
+  // Here below more than one processor.
+  
   if( MapType_ == "linear" ) {
       
     map_ = new Epetra_Map (NumGlobalElements_,0,*comm_);
@@ -672,6 +680,11 @@ int Trilinos_Util_MatrixGallery::CreateMap(void)
       
   } else if( MapType_ == "interlaced" ) {
 
+    // this is the first funky map. Nodes are assigned so that
+    // node 0 is given to proc 0, node 1 to proc 1, and
+    // node i to proc i%NumProcs. Probably not the best, but it
+    // results in decompositions with lots of boundary nodes.
+    
     int NumProcs = comm_->NumProc();
     int MyPID = comm_->MyPID();
       
@@ -695,10 +708,54 @@ int Trilinos_Util_MatrixGallery::CreateMap(void)
     
     map_ = new Epetra_Map (NumGlobalElements_,NumMyElements,MyGlobalElements,0,*comm_);
     delete MyGlobalElements;
+    
+  } else if( MapType_ == "random" ) {
 
+    // this is even funkier. Random decomposition of nodes into procs.
+    // It should result in a more ordered decomposition than "interlaced"
+    // This is the idea: I create the map on proc 0, then I broadcast
+    // it to all procs. This is not very efficient, but saves some
+    // MPI calls.
+
+    int * part = new int[NumGlobalElements_];
+    
+    if( comm_->MyPID() == 0 ) {
+      Epetra_Util Util;
+      
+      for( int i=0 ; i<NumGlobalElements_ ; ++i ) {
+	unsigned int r = Util.RandomInt();	
+	part[i] = r%(comm_->NumProc());
+      }
+    }
+
+    comm_->Broadcast(part,NumGlobalElements_,0);
+
+    // count the elements assigned to this proc
+    int NumMyElements = 0;
+    for( int i=0 ; i<NumGlobalElements_ ; ++i ) {
+      if( part[i] == comm_->MyPID() ) NumMyElements++;
+    }
+
+    cout << NumMyElements << endl;
+    
+    // get the loc2global list
+    int * MyGlobalElements = new int[NumMyElements];
+    int count = 0;
+    for( int i=0 ; i<NumGlobalElements_ ; ++i ) {
+      if( part[i] == comm_->MyPID() ) MyGlobalElements[count++] = i;
+    }
+    
+    map_ = new Epetra_Map (NumGlobalElements_,NumMyElements,MyGlobalElements,
+			   0,*comm_);
+
+    delete MyGlobalElements;
+    delete part;
+    
   } else {
+    
     cerr << ErrorMsg << "MapType has an incorrect value (" << MapType_ << ")\n";
     return -1;
+    
   }
     
   // local number of rows
@@ -848,7 +905,7 @@ void Trilinos_Util_MatrixGallery::CreateStartingSolution(void)
     if( StartingSolutionType_ == "random" ) {
       StartingSolution_->Random();
     } else if( StartingSolutionType_ == "zero" ) {
-      StartingSolution_->PutScalar(1.0);
+      StartingSolution_->PutScalar(0.0);
     } else {
       cerr << ErrorMsg << "starting solution type is not correct : "
 	   << StartingSolutionType_ << endl;
@@ -887,19 +944,19 @@ void Trilinos_Util_MatrixGallery::CreateVbrStartingSolution(void)
 void Trilinos_Util_MatrixGallery::CreateRHS(void)
 {
 
-  if( verbose_ == true ) {
-    cout << OutputMsg << "Creating RHS...\n";
-  }
-
   if( map_ == NULL ) CreateMap();
   if( matrix_ == NULL ) CreateMatrix();
   if( ExactSolution_ == NULL )  CreateExactSolution();
 
-  if( rhs_ == NULL ) {
-    rhs_ = new Epetra_Vector(*map_);
-    matrix_->Multiply(false,*ExactSolution_,*rhs_);
+  if( rhs_ != NULL ) delete rhs_;
+  
+  if( verbose_ == true ) {
+    cout << OutputMsg << "Creating RHS...\n";
   }
-    
+  
+  rhs_ = new Epetra_Vector(*map_);
+  matrix_->Multiply(false,*ExactSolution_,*rhs_);
+      
 }
 
 // ================================================ ====== ==== ==== == =
@@ -962,7 +1019,7 @@ int Trilinos_Util_MatrixGallery::CreateMatrixDiag(void)
       
   }
     
-  assert(matrix_->TransformToLocal()==0);
+  assert(matrix_->FillComplete()==0);
 
   return 0;
     
@@ -1010,7 +1067,7 @@ int Trilinos_Util_MatrixGallery::CreateMatrixTriDiag(void)
   
   // Finish up, trasforming the matrix entries into local numbering,
   // to optimize data transfert during matrix-vector products
-  assert(matrix_->TransformToLocal()==0);
+  assert(matrix_->FillComplete()==0);
 
   delete Values;
   delete Indices;
@@ -1105,7 +1162,7 @@ int Trilinos_Util_MatrixGallery::CreateMatrixCrossStencil2d(void)
     assert(matrix_->InsertGlobalValues(MyGlobalElements_[i], 1, 
 				       &diag, MyGlobalElements_+i)==0);
   }
-  matrix_->TransformToLocal();
+  matrix_->FillComplete();
 
   return 0;
       
@@ -1236,7 +1293,7 @@ int Trilinos_Util_MatrixGallery::CreateMatrixCrossStencil3d(void)
 				       &diag, MyGlobalElements_+i)==0);
   }
 
-  matrix_->TransformToLocal();
+  matrix_->FillComplete();
   return 0;
       
 }
@@ -1270,7 +1327,7 @@ int Trilinos_Util_MatrixGallery::CreateMatrixLehmer(void)
   delete Indices;
   delete Values;
 
-  assert(matrix_->TransformToLocal()==0);
+  assert(matrix_->FillComplete()==0);
   
   return 0;
 }
@@ -1304,7 +1361,7 @@ int Trilinos_Util_MatrixGallery::CreateMatrixMinij(void)
   delete Indices;
   delete Values;
 
-  assert(matrix_->TransformToLocal()==0);
+  assert(matrix_->FillComplete()==0);
   
   return 0;
 }
@@ -1338,7 +1395,7 @@ int Trilinos_Util_MatrixGallery::CreateMatrixRis(void)
   delete Indices;
   delete Values;
 
-  assert(matrix_->TransformToLocal()==0);
+  assert(matrix_->FillComplete()==0);
   
   return 0;
 }
@@ -1371,7 +1428,7 @@ int Trilinos_Util_MatrixGallery::CreateMatrixHilbert(void)
   delete Indices;
   delete Values;
 
-  assert(matrix_->TransformToLocal()==0);
+  assert(matrix_->FillComplete()==0);
   
   return 0;
 }
@@ -1407,7 +1464,7 @@ int Trilinos_Util_MatrixGallery::CreateMatrixJordblock(void)
       
   }
     
-  assert(matrix_->TransformToLocal()==0);
+  assert(matrix_->FillComplete()==0);
   
   return 0;
 }
@@ -1433,25 +1490,142 @@ int Trilinos_Util_MatrixGallery::ReadHBMatrix(void)
     
   NumGlobalElements_ = readMap->NumGlobalElements();
 
-  // Create uniform distributed map
-  //  map_ = new Epetra_Map(NumGlobalElements_, 0, *comm_);
   if( map_ != NULL ) delete map_;
-  assert(CreateMap()==0);
+  
+  // create map for matrix. Use the normal function CreateMap
+  // if the user has not specified "greedy" as map type.
+  // In this latter case, form on proc 0 a map corresponding to
+  // the greedy algorithm. This is some kind of graph decomposition
+  // stuff, only cheaper (and that does not required any external
+  // library)
+
+  if( MapType_ == "greedy" ) {
+
+    int * part = new int[NumGlobalElements_];
+
+    if( comm_->MyPID() == 0 ) {
+
+      int NumProcs = comm_->NumProc();
+      int * ElementsPerDomain = new int[NumProcs];
+      int * count = new int[NumProcs];
+
+      // define how many nodes have to be put on each proc
+      
+      int div = NumGlobalElements_/NumProcs;
+      int mod = NumGlobalElements_%NumProcs;
+
+      for( int i=0 ; i<NumProcs ; ++i ) {
+	count[i] = 0;
+	ElementsPerDomain[i] = div;
+	if( i<mod ) ElementsPerDomain[i]++;
+      }
+      
+      for( int i=0 ; i<NumGlobalElements_ ; ++i ) {
+	part[i] = -1;
+      }
+      
+      int MaxNnzPerRow = readA->MaxNumEntries();
+      if( MaxNnzPerRow == 0 ) {
+	cerr << ErrorMsg << "something went wrong in `CreateMatrix'\n"
+	     << ErrorMsg << "MaxNnzPerRow == 0 \n";
+	exit( EXIT_FAILURE );
+      }
+
+      int CrsNumEntries;
+      int * CrsIndices;
+      double * CrsValues;
+
+      // start from row 0, assigned to domain 0
+      int RootNode = 0;
+      part[0] = 0;      
+      int CurrentDomain = 0;
+      
+      bool ok = true;
+      
+      while( ok == true ) {
+
+	readA->ExtractMyRowView(RootNode,CrsNumEntries,
+				CrsValues,CrsIndices);
+
+	ok = false;
+	
+	for( int j=0 ; j<CrsNumEntries ; ++j ) {
+
+	  if( count[CurrentDomain] == ElementsPerDomain[CurrentDomain] ) {
+	    CurrentDomain++;
+	  }
+	  
+	  if( part[CrsIndices[j]] == -1 ) {
+	    part[CrsIndices[j]] = CurrentDomain;
+	    if( ok == false ) {
+	      ok = true;
+	      RootNode = CrsIndices[j];
+	    }
+	    count[CurrentDomain]++;
+	  }
+	}
+
+	// check if some -1 nodes are still available
+	if( ok == false ) {
+	  for( int j=0 ; j<NumGlobalElements_ ; ++j ) {
+	    if( part[j] == -1 ) {
+	      RootNode = j;
+	      ok = true;
+	      break;
+	    }
+	  }
+	}
+	      
+      }
+
+      delete ElementsPerDomain, count;
+	
+    }
+
+    // now broadcast on all procs. This might be pretty expensive...
+    comm_->Broadcast(part,NumGlobalElements_,0);
+
+    for( int j=0 ; j<NumGlobalElements_ ; ++j ) {
+      if( part[j] == -1 ) {
+	cerr << ErrorMsg << "part[" << j << "] = -1 \n";
+      }
+    }    
+
+    // count the elements assigned to this proc
+    int NumMyElements = 0;
+    for( int i=0 ; i<NumGlobalElements_ ; ++i ) {
+      if( part[i] == comm_->MyPID() ) NumMyElements++;
+    }
+
+    // get the loc2global list
+    int * MyGlobalElements = new int[NumMyElements];
+    int count = 0;
+    for( int i=0 ; i<NumGlobalElements_ ; ++i ) {
+      if( part[i] == comm_->MyPID() ) MyGlobalElements[count++] = i;
+    }
+
+    map_ = new Epetra_Map (NumGlobalElements_,NumMyElements,MyGlobalElements,
+			   0,*comm_);
+    
+    delete MyGlobalElements;
+    delete part;
+
+  } else {    
+    assert(CreateMap()==0);
+  }
 
   // Create Exporter to distribute read-in matrix and vectors
   Epetra_Export exporter(*readMap, *map_);
-    
   matrix_ = new Epetra_CrsMatrix(Copy, *map_, 0);
   StartingSolution_ = new Epetra_Vector(*map_);
   rhs_ = new Epetra_Vector(*map_);
   ExactSolution_ = new Epetra_Vector(*map_);
-
   StartingSolution_->Export(*readx, exporter, Add);
   rhs_->Export(*readb, exporter, Add);
   ExactSolution_->Export(*readxexact, exporter, Add);
   matrix_->Export(*readA, exporter, Add);
-
-  assert(matrix_->TransformToLocal()==0);    
+  
+  assert(matrix_->FillComplete()==0);    
 
   delete readA;
   delete readx;
@@ -1463,7 +1637,7 @@ int Trilinos_Util_MatrixGallery::ReadHBMatrix(void)
   NumMyElements_ = map_->NumMyElements();
   // get update list
   MyGlobalElements_ = map_->MyGlobalElements( );
-    
+  
   return 0;
 
 }
@@ -1484,9 +1658,8 @@ void Trilinos_Util_MatrixGallery::CreateBlockMap(void)
     NumPDEEqns_ = 1;
   }
 
-  cout << NumGlobalElements_ << endl;
-  cout << NumMyElements_ << endl;  
-
+  MaxBlkSize_ = NumPDEEqns_;
+  
   BlockMap_ = new Epetra_BlockMap(NumGlobalElements_,NumMyElements_,
 				  map_->MyGlobalElements(), 
 				  NumPDEEqns_,0,*comm_);
@@ -1501,7 +1674,6 @@ void Trilinos_Util_MatrixGallery::CreateVbrMatrix(void)
     cout << OutputMsg << "Creating VBR matrix...\n";
   }
 
-  if( map_ == NULL ) CreateMap();
   if( matrix_ == NULL ) CreateMatrix();
   if( BlockMap_ == NULL ) CreateBlockMap();
 
@@ -1534,9 +1706,14 @@ void Trilinos_Util_MatrixGallery::CreateVbrMatrix(void)
     // get GID of local row
     int GlobalNode = MyGlobalElements_[i];
     // extract Crs row
+
     ierr = matrix_->ExtractMyRowView(i,CrsNumEntries,
 				     CrsValues,CrsIndices);
 
+    // matrix_ is in local form. Need global indices
+    for( int kk=0 ; kk<CrsNumEntries ; ++kk) 
+      CrsIndices[kk] = matrix_->GCID(CrsIndices[kk]);
+    
     // with VBR matrices, we have to insert one block at time.
     // This required two more instructions, one to start this
     // process (BeginInsertGlobalValues), and another one to
@@ -1563,8 +1740,8 @@ void Trilinos_Util_MatrixGallery::CreateVbrMatrix(void)
   delete Indices;
   delete Values;
 
-  VbrMatrix_->TransformToLocal();
-  
+  VbrMatrix_->FillComplete();
+
 }
 
 // ================================================ ====== ==== ==== == =

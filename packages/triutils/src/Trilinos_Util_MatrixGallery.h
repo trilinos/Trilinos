@@ -38,17 +38,8 @@ class Epetra_CrsMatrix;
 class Epetra_VbrMatrix;
 class Epetra_Export;
 class Epetra_LinearProblem;
-
 #include <string>
-
-// NOTE: on some architectures (e.g., west), it may be difficult to
-// use STL, required by ShellOptions. In this case, undefine
-// the variable below. MatrixGallery will no longer use ShellOptions.
-//#define TRILINOS_UTIL_MATRIX_GALLERY_WITH_SHELL_OPTIONS
-
-#ifdef TRILINOS_UTIL_MATRIX_GALLERY_WITH_SHELL_OPTIONS
 class Trilinos_Util_ShellOptions;
-#endif
 
 class Trilinos_Util_MatrixGallery 
 {
@@ -240,9 +231,7 @@ return 0 ;
   int Set(const string parameter, const Epetra_Vector & value);
 
   //! Sets gallery options using values passed from the shell
-#ifdef TRILINOS_UTIL_MATRIX_GALLERY_WITH_SHELL_OPTIONS
-  int Set(const Trilinos_Util_ShellOptions & ShellOptions);
-#endif
+  int Set(Trilinos_Util_ShellOptions & ShellOptions);
 
   //@}
 
@@ -351,6 +340,12 @@ private:
 
   - interlaces: elements are subdivided so that element i is assigned to
   process i%NumProcs.
+
+  - random: assign each node to a random process
+  
+  - greedy: (only for HB matrices) implements a greedy algorithm to
+    decompose the graph of the HB matrix among the processes
+    
   */
   int CreateMap();
   
