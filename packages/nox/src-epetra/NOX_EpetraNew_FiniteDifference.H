@@ -83,22 +83,44 @@ class FiniteDifference : public Epetra_RowMatrix,
   //! Define types for use of the perturbation parameter \f$ \delta\f$. 
   enum DifferenceType {Forward, Backward, Centered};
 
-  //! Constructor 
-  FiniteDifference(Interface::Required& i, const Epetra_Vector& initialGuess, 
+  //! Constructor with output control 
+  FiniteDifference(NOX::Parameter::List& printingParams,
+                   Interface::Required& i, const Epetra_Vector& initialGuess, 
 		   double beta = 1.0e-6, double alpha = 1.0e-4);
 
   //! Constructor
-  FiniteDifference(Interface::Required& i, const Epetra_Vector& initialGuess,
+  FiniteDifference( Interface::Required& i, const Epetra_Vector& initialGuess, 
+		   double beta = 1.0e-6, double alpha = 1.0e-4);
+
+  //! Constructor with output control
+  FiniteDifference(NOX::Parameter::List& printingParams,
+                   Interface::Required& i, const Epetra_Vector& initialGuess,
 		   const Epetra_Vector& beta, double alpha = 1.0e-4);
 
-  //! Constructor that takes a pre-constructed Epetra_CrsGraph so it does not have to determine the non-zero entries in the matrix.
-  FiniteDifference(Interface::Required& i, const Epetra_Vector& initialGuess,
-		   const Epetra_CrsGraph& g, double beta = 1.0e-6, 
+  //! Constructor
+  FiniteDifference( Interface::Required& i, const Epetra_Vector& initialGuess,
+		   const Epetra_Vector& beta, double alpha = 1.0e-4);
+
+  //! Constructor with output control that takes a pre-constructed Epetra_CrsGraph so it does not have to determine the non-zero entries in the matrix.
+  FiniteDifference(NOX::Parameter::List& printingParams,
+                   Interface::Required& i, const Epetra_Vector& initialGuess,
+		   Epetra_CrsGraph& g, double beta = 1.0e-6, 
 		   double alpha = 1.0e-4);
 
   //! Constructor that takes a pre-constructed Epetra_CrsGraph so it does not have to determine the non-zero entries in the matrix.
   FiniteDifference(Interface::Required& i, const Epetra_Vector& initialGuess,
-		   const Epetra_CrsGraph& g, const Epetra_Vector& beta, 
+		   Epetra_CrsGraph& g, double beta = 1.0e-6, 
+		   double alpha = 1.0e-4);
+
+  //! Constructor with output control that takes a pre-constructed Epetra_CrsGraph so it does not have to determine the non-zero entries in the matrix.
+  FiniteDifference(NOX::Parameter::List& printingParams,
+                   Interface::Required& i, const Epetra_Vector& initialGuess,
+		   Epetra_CrsGraph& g, const Epetra_Vector& beta, 
+		   double alpha = 1.0e-4);
+
+  //! Constructor that takes a pre-constructed Epetra_CrsGraph so it does not have to determine the non-zero entries in the matrix.
+  FiniteDifference(Interface::Required& i, const Epetra_Vector& initialGuess,
+		   Epetra_CrsGraph& g, const Epetra_Vector& beta, 
 		   double alpha = 1.0e-4);
 
   //! Pure virtual destructor
@@ -243,6 +265,9 @@ protected:
 		NOX::EpetraNew::Interface::Required::FillType); 
 
 protected:
+
+  //! Printing Utilities object
+  const NOX::Utils utils;
 
   //! Map that contains element distribution data
   const Epetra_BlockMap& map;

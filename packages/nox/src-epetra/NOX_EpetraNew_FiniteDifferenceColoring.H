@@ -124,12 +124,31 @@ class FiniteDifferenceColoring : public FiniteDifference {
 
   enum ColoringType { SERIAL, PARALLEL };
 
+  //! Constructor with output control
+  FiniteDifferenceColoring(NOX::Parameter::List& printingParams,
+                           Interface::Required& i, 
+			   const Epetra_Vector& initialGuess, 
+                           Epetra_MapColoring& colorMap,
+                           vector<Epetra_IntVector>& columns,
+                           bool parallelColoring = false, 
+                           double beta = 1.0e-6, double alpha = 1.0e-4);
+
   //! Constructor
   FiniteDifferenceColoring(Interface::Required& i, 
 			   const Epetra_Vector& initialGuess, 
                            Epetra_MapColoring& colorMap,
                            vector<Epetra_IntVector>& columns,
                            bool parallelColoring = false, 
+                           double beta = 1.0e-6, double alpha = 1.0e-4);
+
+  //! Constructor with output control
+  FiniteDifferenceColoring(NOX::Parameter::List& printingParams,
+                           Interface::Required& i, 
+			   const Epetra_Vector& initialGuess, 
+                           Epetra_CrsGraph& rawGraph,
+                           Epetra_MapColoring& colorMap,
+                           vector<Epetra_IntVector>& columns,
+                           bool parallelColoring = false,
                            double beta = 1.0e-6, double alpha = 1.0e-4);
 
   //! Constructor

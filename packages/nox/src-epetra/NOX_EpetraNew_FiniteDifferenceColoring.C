@@ -36,6 +36,8 @@
 #include "Epetra_CrsGraph.h"
 #include "Epetra_CrsMatrix.h"
 
+#include "Epetra_Time.h" // For timing performance
+
 #include "NOX_EpetraNew_Interface_Required.H"
 #include "NOX_Utils.H"
 
@@ -46,7 +48,40 @@ using namespace NOX::EpetraNew;
 
 // This constructor is needed for inheritance but is inadequate for using
 // coloring in parallel since the raw matrix graph is not known.
-FiniteDifferenceColoring::FiniteDifferenceColoring(Interface::Required& i, 
+FiniteDifferenceColoring::FiniteDifferenceColoring(
+                             NOX::Parameter::List& printingParams,
+                             Interface::Required& i, 
+                             const Epetra_Vector& x, 
+                             Epetra_MapColoring& colorMap_,
+                             vector<Epetra_IntVector>& columns_,
+			     bool parallelColoring,
+                             double beta_, double alpha_) :
+  FiniteDifference(printingParams, i, x, beta_, alpha_),
+  coloringType(SERIAL),
+  colorMap(&colorMap_),
+  columns(&columns_),
+  numColors(colorMap->NumColors()),
+  maxNumColors(colorMap->MaxNumColors()),
+  colorList(colorMap->ListOfColors()),
+  cMap(0),
+  Importer(0),
+  colorVect(0),
+  betaColorVect(0),
+  mappedColorVect(0),
+  columnMap(0),
+  rowColImporter(0),
+  xCol_perturb(0)
+{
+  label = "NOX::FiniteDifferenceColoring Jacobian";
+
+  if( parallelColoring )
+    coloringType = PARALLEL;
+
+  createColorContainers();
+}
+
+FiniteDifferenceColoring::FiniteDifferenceColoring(
+                             Interface::Required& i, 
                              const Epetra_Vector& x, 
                              Epetra_MapColoring& colorMap_,
                              vector<Epetra_IntVector>& columns_,
@@ -76,7 +111,41 @@ FiniteDifferenceColoring::FiniteDifferenceColoring(Interface::Required& i,
   createColorContainers();
 }
 
-FiniteDifferenceColoring::FiniteDifferenceColoring(Interface::Required& i, 
+FiniteDifferenceColoring::FiniteDifferenceColoring(
+                             NOX::Parameter::List& printingParams,
+                             Interface::Required& i, 
+                             const Epetra_Vector& x, 
+                             Epetra_CrsGraph& rawGraph_,
+                             Epetra_MapColoring& colorMap_,
+                             vector<Epetra_IntVector>& columns_,
+			     bool parallelColoring,
+                             double beta_, double alpha_) :
+  FiniteDifference(printingParams, i, x, rawGraph_, beta_, alpha_),
+  coloringType(SERIAL),
+  colorMap(&colorMap_),
+  columns(&columns_),
+  numColors(colorMap->NumColors()),
+  maxNumColors(colorMap->MaxNumColors()),
+  colorList(colorMap->ListOfColors()),
+  cMap(0),
+  Importer(0),
+  colorVect(0),
+  betaColorVect(0),
+  columnMap(&rawGraph_.ColMap()),
+  rowColImporter(new Epetra_Import(*columnMap, map)),
+  xCol_perturb(new Epetra_Vector(rawGraph_.ColMap())),
+  mappedColorVect(new Epetra_Vector(rawGraph_.ColMap()))
+{
+  label = "NOX::FiniteDifferenceColoring Jacobian";
+
+  if( parallelColoring ) 
+    coloringType = PARALLEL;
+
+  createColorContainers();
+}
+
+FiniteDifferenceColoring::FiniteDifferenceColoring(
+                             Interface::Required& i, 
                              const Epetra_Vector& x, 
                              Epetra_CrsGraph& rawGraph_,
                              Epetra_MapColoring& colorMap_,
@@ -135,6 +204,9 @@ bool FiniteDifferenceColoring::computeJacobian(const Epetra_Vector& x, Epetra_Op
          << endl;
     throw "NOX Error";
   } 
+
+  // Create a timer for performance
+  Epetra_Time fillTimer(x.Comm());
 
   // We need the Epetra_CrsMatrix inside the FiniteDifferenceColoring object 
   // for the correct insertion commands.
@@ -287,12 +359,20 @@ bool FiniteDifferenceColoring::computeJacobian(const Epetra_Vector& x, Epetra_Op
     xCol_perturb->Import(x, *rowColImporter, Insert);
   }
 
-  // Use a barrier to be safe
+  double fillTime = fillTimer.ElapsedTime();
   x.Comm().Barrier();
 
-  jac.TransformToLocal();
+  if (utils.isPrintType(Utils::Details)) {
+    for(int n = 0; n < map.Comm().NumProc(); n++) {
+      if(map.Comm().MyPID() == n)
+        cout << "\tTime to fill Jacobian [" << n << "] --> " 
+             << fillTime << " sec." << endl;
+      x.Comm().Barrier();
+    }
+    cout << endl;
+  }
 
-//  jac.Print(cout);
+  jac.TransformToLocal();
 
   return true;
 }

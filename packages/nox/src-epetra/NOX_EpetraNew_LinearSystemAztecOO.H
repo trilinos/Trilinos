@@ -1,6 +1,3 @@
-// $Id$ 
-// $Source$ 
-
 //@HEADER
 // ************************************************************************
 // 
@@ -37,6 +34,7 @@
 #include "NOX_Epetra_Vector.H"	// class data element
 #include "NOX_Utils.H"          // class data element
 #include "NOX_Common.H"         // class data element (string)
+#include "NOX_Parameter_List.H"
 #include "Epetra_Time.h"        // class data element
 #ifdef HAVE_NOX_ML_EPETRA
 #include "ml_epetra_preconditioner.h"
@@ -469,6 +467,9 @@ protected:
   virtual bool checkPreconditionerReuse();
 
 protected:
+
+  //! Printing Parameters List
+  NOX::Parameter::List printParams;
 
   //! Printing Utilities object
   const NOX::Utils utils;

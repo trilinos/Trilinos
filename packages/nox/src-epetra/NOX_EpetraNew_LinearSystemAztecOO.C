@@ -67,12 +67,13 @@
 
 //***********************************************************************
 NOX::EpetraNew::LinearSystemAztecOO::
-LinearSystemAztecOO(NOX::Parameter::List& printParams, 
+LinearSystemAztecOO(NOX::Parameter::List& printParams_, 
 		    NOX::Parameter::List& linearSolverParams, 
 		    NOX::EpetraNew::Interface::Required& iReq, 
 		    Epetra_Vector& cloneVector,
 		    NOX::EpetraNew::Scaling* s):
-  utils(printParams),
+  printParams(printParams_),
+  utils(printParams_),
   jacInterfacePtr(0),
   jacType(EpetraOperator),
   jacPtr(0),
@@ -107,14 +108,15 @@ LinearSystemAztecOO(NOX::Parameter::List& printParams,
 
 //***********************************************************************
 NOX::EpetraNew::LinearSystemAztecOO::
-LinearSystemAztecOO(NOX::Parameter::List& printParams, 
+LinearSystemAztecOO(NOX::Parameter::List& printParams_, 
 		    NOX::Parameter::List& linearSolverParams,  
 		    NOX::EpetraNew::Interface::Required& iReq, 
 		    NOX::EpetraNew::Interface::Jacobian& iJac, 
 		    Epetra_Operator& jacobian,
 		    Epetra_Vector& cloneVector,
 		    NOX::EpetraNew::Scaling* s):
-  utils(printParams),
+  printParams(printParams_),
+  utils(printParams_),
   jacInterfacePtr(&iJac),
   jacType(EpetraOperator),
   jacPtr(&jacobian),
@@ -150,14 +152,15 @@ LinearSystemAztecOO(NOX::Parameter::List& printParams,
 
 //***********************************************************************
 NOX::EpetraNew::LinearSystemAztecOO::
-LinearSystemAztecOO(NOX::Parameter::List& printParams, 
+LinearSystemAztecOO(NOX::Parameter::List& printParams_, 
 		    NOX::Parameter::List& linearSolverParams, 
 		    NOX::EpetraNew::Interface::Required& iReq, 
 		    NOX::EpetraNew::Interface::Preconditioner& iPrec, 
 		    Epetra_Operator& preconditioner,
 		    Epetra_Vector& cloneVector,
 		    NOX::EpetraNew::Scaling* s):
-  utils(printParams),
+  printParams(printParams_),
+  utils(printParams_),
   jacInterfacePtr(0),
   jacType(EpetraOperator),
   jacPtr(0),
@@ -193,7 +196,7 @@ LinearSystemAztecOO(NOX::Parameter::List& printParams,
 
 //***********************************************************************
 NOX::EpetraNew::LinearSystemAztecOO::
-LinearSystemAztecOO(NOX::Parameter::List& printParams, 
+LinearSystemAztecOO(NOX::Parameter::List& printParams_, 
 		    NOX::Parameter::List& linearSolverParams,
 		    NOX::EpetraNew::Interface::Jacobian& iJac, 
 		    Epetra_Operator& jacobian,
@@ -201,7 +204,8 @@ LinearSystemAztecOO(NOX::Parameter::List& printParams,
 		    Epetra_Operator& preconditioner,
 		    Epetra_Vector& cloneVector,
 		    NOX::EpetraNew::Scaling* s):
-  utils(printParams),
+  printParams(printParams_),
+  utils(printParams_),
   jacInterfacePtr(&iJac),
   jacType(EpetraOperator),
   jacPtr(&jacobian),
@@ -314,6 +318,7 @@ reset(NOX::Parameter::List& linearSolverParams)
   setAztecOptions(linearSolverParams, *aztecSolverPtr);
 
   maxAgeOfPrec = linearSolverParams.getParameter("Max Age Of Prec", 1);
+  precQueryCounter = 0;
 }
 
 //***********************************************************************
@@ -363,7 +368,7 @@ setAztecOptions(const Parameter::List& p, AztecOO& aztec) const
       aztec.SetAztecOption(AZ_precond, AZ_Jacobi);
       aztec.SetAztecOption(AZ_poly_ord, p.getParameter("Steps", 3));
     }
-    else if (aztecPreconditioner == "Symmetric Gauss-Siedel") {
+    else if (aztecPreconditioner == "Symmetric Gauss-Seidel") {
       aztec.SetAztecOption(AZ_precond, AZ_sym_GS);
       aztec.SetAztecOption(AZ_poly_ord, p.getParameter("Steps", 3));
     }
@@ -478,7 +483,7 @@ createJacobianOperator(NOX::Parameter::List& lsParams,
     ownsJacOperator = true;
   }
   else if (choice == "Finite Difference") {
-    jacPtr = new FiniteDifference(iReq, cloneVector);
+    jacPtr = new FiniteDifference(printParams, iReq, cloneVector);
     jacInterfacePtr = 
       dynamic_cast<NOX::EpetraNew::Interface::Jacobian*>(jacPtr);
     jacType = EpetraRowMatrix;
@@ -508,7 +513,7 @@ createPrecOperator(NOX::Parameter::List& lsParams,
     precMatrixSource = UseJacobian;
   }
   else if (choice == "Finite Difference") {
-    precPtr = new FiniteDifference(iReq, cloneVector);
+    precPtr = new FiniteDifference(printParams, iReq, cloneVector);
     precInterfacePtr = 
       dynamic_cast<NOX::EpetraNew::Interface::Preconditioner*>(precPtr);
     precType = EpetraRowMatrix;
@@ -838,6 +843,11 @@ createIfpackPreconditioner(Parameter::List& p) const
   if (ifpackPreconditionerPtr != 0) 
     throwError("createIfpackPreconditioner", "Ifpack Prec NOT NULL");
 
+  if (utils.isPrintProcessAndType(Utils::Debug))
+    cout << "NOX::EpetraNew::LinearSolverAztecOO : createIfpackPrecon - \n"
+         << "  using Fill Factor --> " << p.getParameter("Fill Factor", 1)
+         << endl;
+
   //check to see if it is a VBR matrix
   if (precType == EpetraVbrMatrix) {
 
@@ -1141,30 +1151,39 @@ NOX::EpetraNew::LinearSystemAztecOO::getGeneratedPrecOperator() const
 //***********************************************************************
 bool NOX::EpetraNew::LinearSystemAztecOO::checkPreconditionerReuse()
 {
-  if (!isPrecConstructed)
+  if (!isPrecConstructed) {
+    precQueryCounter++;
     return false;
+  }
 
-  precQueryCounter++;
+  if (utils.isPrintProcessAndType(Utils::Details)) 
+    cout << "\n\tLinearSystemAztecOO: Age of Prec --> " 
+         << precQueryCounter << " / " << maxAgeOfPrec << endl;
 
   // This allows reuse for the entire nonlinear solve
-  if( maxAgeOfPrec == -2 )
+  if( maxAgeOfPrec == -2 ) {
+    precQueryCounter++;
     return true;
+  }
   
   // This allows one recompute of the preconditioner followed by reuse 
   // for the remainder of the nonlinear solve
   else if( maxAgeOfPrec == -1 ) {
+    precQueryCounter++;
     maxAgeOfPrec = -2;
     return false;
   }
   
   // This is the typical use 
   else
-    if( precQueryCounter == maxAgeOfPrec ) {
-      precQueryCounter = 0;
+    if( precQueryCounter == 0 || precQueryCounter >= maxAgeOfPrec ) {
+      precQueryCounter = 1;
       return false;
     }
-    else
+    else {
+      precQueryCounter++;
       return true;
+    }
 }
 
 //***********************************************************************
