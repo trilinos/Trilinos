@@ -18,6 +18,7 @@
 #include "ml_amg_genP.h"
 #include "ml_smoother.h"
 #include "ml_op_utils.h"
+
 #ifdef ML_MPI
 #include "mpi.h"
 #endif
@@ -29,13 +30,6 @@ extern int ML_Anasazi_Get_SpectralNorm_Anasazi(ML_Operator * Amat,
 					       double * LambdaMax );
 #endif
 
-/* Definitions for the GGB method */
-#if defined(HAVE_ML_ARPACK) || defined(HAVE_ML_PARPACK)
-#define GGBcycSecond     /* #define GGBcycFirst  */
-#define store_AQ        /* May not be defined if storage is an issue (but slower) */
-#define newrap              /* Should always be defined for better performance */
-#define ML_ggb_SymmetricCycle  /* May not be defined. In my experence is better */
-#endif
 
 /* ************************************************************************* *
  * Structure to hold user-selected ML output level.                          *
@@ -2871,16 +2865,51 @@ int ML_Iterate(ML *ml, double *sol, double *rhs)
 /*****************************************************************************/
 /* set to 1 to use another ML cycle after ggb, to 0 otherwise                */
 /*-------------------------------------------------------------------------- */
-/*
+
 static int ML_ggb_SymmetricCycle = 1;
 int ML_ggb_Set_SymmetricCycle(int flag) 
 {
   ML_ggb_SymmetricCycle = flag;
   return 0;
 }
-*/
 
+/*****************************************************************************/
+/* set to 1 to use First GGB cycle and then ML cycle, to 0 for ML first      */
+/*-------------------------------------------------------------------------- */
+static int ML_GGBcycFirst = 0;
+static int store_AQ = 0;       /* May not be defined if storage is an issue. Works only with GGBcycFirst
+                                  and SuperLU   */
+int ML_ggb_Set_GGBCycle(int flag) 
+{
+  ML_GGBcycFirst = flag;
+  store_AQ = flag;
+  return 0;
+}
+
+
+
+/****************************************************/
+/* Switch between SuperLU (default) and Amesos      */
+/* Note: store AQ option works only with SuperLU    */
+/*       (For Now...) and   ML_GGBcycFirst = 1      */ 
+/*------------------------------------------------- */
+
+#if defined(HAVE_ML_SUPERLU) || defined(HAVE_ML_AMESOS)
+#ifdef HAVE_ML_SUPERLU
 static int ML_ggb_CoarseSolver = 1;
+#else
+static int ML_ggb_CoarseSolver = 2;
+#endif
+
+#else
+ fprintf( stderr,
+	   "ERROR: ML has not been configured with either AMESOS or SUPERLU support.\n"
+	   "ERROR: Please reconfigure.\n"
+	   "ERROR: (file %s, line %d)\n",
+	   __FILE__, __LINE__ );
+  exit(-1);
+#endif
+
 int ML_ggb_Set_CoarseSolver(int flag) 
 {
   ML_ggb_CoarseSolver = flag;
@@ -2894,11 +2923,8 @@ int ML_Solve_MGV( ML *ml , double *din, double *dout)
 {
   int    i, leng, dir_leng, *dir_list, k, level;
   double *diag, *scales, *din_temp, *dout_tmp;
-   ML     *ml_ggb;
-#ifdef GGBcycFirst
-       double *sol;
-#endif
-
+  ML     *ml_ggb;
+ 
    /* ------------------------------------------------------------ */
    /* initially set the solution to be all 0           	           */
    /* ------------------------------------------------------------ */
@@ -2959,47 +2985,77 @@ int ML_Solve_MGV( ML *ml , double *din, double *dout)
        
        ml_ggb = (ML *) ml->void_options;
        
-#ifdef GGBcycFirst
-       sol  = (double *) ML_allocate(leng*sizeof(double));
-    
-       
-       /* Manualy perform the 2 level GGB cycle */       
-       ML_Cycle_GGB(ml_ggb, sol, din_temp);
-       
-       ML_Cycle_MG(&(ml->SingleLevel[ml->ML_finest_level]), dout, din_temp,
-		   ML_ZERO, ml->comm, ML_NO_RES_NORM, ml);
-       
-       /* Add both solutions to get the right one */ 
-       for ( i = 0; i < leng; i++ ) dout[i] += sol[i];    
-       ML_free(sol);
-       
-#endif
-       
-       
-#ifdef GGBcycSecond
-       
-       /* First do the MG part */
-       ML_Cycle_MG(&(ml->SingleLevel[ml->ML_finest_level]), dout, din_temp,
-		   ML_ZERO, ml->comm, ML_NO_RES_NORM, ml);
-   
-
-       /* Manualy perform the 2 level GGB cycle */
-       ML_Cycle_GGB(ml_ggb, dout, din_temp);
-
-
-       /* Used for symmetric GGB cycle */
-#ifdef ML_ggb_SymmetricCycle
-   	 ML_Cycle_MG(&(ml->SingleLevel[ml->ML_finest_level]), dout, din_temp,
-		     ML_NONZERO, ml->comm, ML_NO_RES_NORM, ml);
-#endif
-
-
-#endif
-     }
 
        
-       /*
+       /* Notify user */
+       if (ML_GGBcycFirst == 1 && ML_ggb_SymmetricCycle == 1) {
+	 ML_ggb_SymmetricCycle =0;
+	 printf(" Symmetric cycle goes only when GGB is the second cycle \n");
+	 printf(" Switching to Nonsymmetric mode     \n"); 	 
+       }
+
+
+       if (ML_GGBcycFirst == 1) { /* First Do GGB cycle then MG */ 
+
+	 /* Option for SuperLU solver */
+	 if (ML_ggb_CoarseSolver == 1) {
+	   double    *sol;
+	   
+	   sol  = (double *) ML_allocate(leng*sizeof(double));
+	   
+	   /* Manualy perform the 2 level GGB cycle */       
+	   ML_Cycle_GGB(ml_ggb, sol, din_temp);
+	   
+	   ML_Cycle_MG(&(ml->SingleLevel[ml->ML_finest_level]), dout, din_temp,
+		       ML_ZERO, ml->comm, ML_NO_RES_NORM, ml);
+	   
+	   /* Add both solutions to get the right one */ 
+	   for ( i = 0; i < leng; i++ ) dout[i] += sol[i];    	 
+	   
+	   ML_free(sol);
+	   
+	 }
+	 else /* Option for Amesos solver */
+	   {
+	     ML_Cycle_MG(&(ml_ggb->SingleLevel[ml_ggb->ML_finest_level]), dout,
+			 din_temp, ML_ZERO, ml_ggb->comm, ML_NO_RES_NORM, ml_ggb);	   
+	     
+	     ML_Cycle_MG(&(ml->SingleLevel[ml->ML_finest_level]), dout, din_temp,
+			 ML_NONZERO, ml->comm, ML_NO_RES_NORM, ml);
+	     
+	   }		       
+       } 
+       else  /* Do GGB cycle second */
+	 {
+	 /* First do the MG part */
+	 ML_Cycle_MG(&(ml->SingleLevel[ml->ML_finest_level]), dout, din_temp,
+		     ML_ZERO, ml->comm, ML_NO_RES_NORM, ml);
 	 
+	 
+	 if (ML_ggb_CoarseSolver == 1) {
+	   /* Manualy perform the 2 level GGB cycle */
+	   ML_Cycle_GGB(ml_ggb, dout, din_temp);
+	 }
+	 else  /* Option for Amesos solver */
+	   {
+	     ML_Cycle_MG(&(ml_ggb->SingleLevel[ml_ggb->ML_finest_level]), dout,
+			 din_temp, ML_NONZERO, ml_ggb->comm, ML_NO_RES_NORM, ml_ggb);	 
+	   }
+	 
+	 
+	 /* Used for symmetric GGB cycle */
+	 
+	 if (ML_ggb_SymmetricCycle == 1)
+	   ML_Cycle_MG(&(ml->SingleLevel[ml->ML_finest_level]), dout, din_temp,
+		       ML_NONZERO, ml->comm, ML_NO_RES_NORM, ml);
+	 
+	 
+	 
+	 }
+     }
+   
+       
+       /*	 
        ML_Cycle_MG(&(ml_ggb->SingleLevel[ml_ggb->ML_finest_level]), dout,
        din_temp, ML_NONZERO, ml_ggb->comm, ML_NO_RES_NORM, ml_ggb);
        */          
@@ -3028,10 +3084,9 @@ int ML_Solve_MGV( ML *ml , double *din, double *dout)
    
    
    /*
-     ML_Cycle_MG(&(ml->SingleLevel[ml->ML_finest_level]), dout, din_temp,
-     ML_NONZERO, ml->comm, ML_NO_RES_NORM, ml);
+   ML_Cycle_MG(&(ml->SingleLevel[ml->ML_finest_level]), dout, din_temp,
+	       ML_NONZERO, ml->comm, ML_NO_RES_NORM, ml);
    */
-   
    ML_free(din_temp);
    return 0;
 }
@@ -3053,10 +3108,8 @@ extern int ML_Cycle_GGB(ML *ml_ggb, double *sol, double *rhs)
   Rmat   = &(ml_ggb->Rmat[1]);
   Pmat   = &(ml_ggb->Pmat[0]);
   
-  /* Haim Trying Dense Mat vec */
   
-
-
+  /* Haim Trying Dense Mat vec */
   lengc = Rmat->outvec_leng;
   lengf = Pmat->outvec_leng;
   
@@ -3064,102 +3117,102 @@ extern int ML_Cycle_GGB(ML *ml_ggb, double *sol, double *rhs)
   sol0  = (double *) ML_allocate(lengc*sizeof(double));
   
 
-#ifdef GGBcycFirst       
-  double  *tmp1;
-  tmp1  = (double *) ML_allocate(lengf*sizeof(double));
+  if (ML_GGBcycFirst == 1) {  /* Do GGB cycle First and later MG */
 
-  /* get Q'*b */
-  ML_Operator_Apply(Rmat, lengf, rhs, lengc, rhs0);
-   
-  /* Solve coarse grid problem */
-  ML_CSolve_Apply( Rmat->to->csolve, lengc, sol0, lengc, rhs0);  
-     
-  /* Need to do it anyway */
-  ML_Operator_Apply(Pmat, lengc, sol0, lengf, sol);
-  
-  
-  
-  /* Use this option if A*Q was stored in the process of computing rap in GGB build */
-
-
-#ifdef store_AQ 
-
+    double  *tmp1;
+    tmp1  = (double *) ML_allocate(lengf*sizeof(double));
     
-  /* Qtilde = Q'*A  qas stored in the coarse grid build */
-  Qtilde = (ML_Operator *) ml_ggb->void_options; 
-
-  /* Interpolate to fine mesh */ /* Here we should put Qtilde */
-  ML_Operator_Apply(Qtilde, lengc, sol0, lengf, tmp1);
-
-
-#else
-
-  /* Compute K*u . Can drop this line after we put Qtilde*/ 
-  ML_Operator_Apply( &(ml_ggb->Amat[1]), lengf, sol, lengf, tmp1);
-#endif
+    /* get Q'*b */
+    ML_Operator_Apply(Rmat, lengf, rhs, lengc, rhs0);
     
-  /* Correct the residual term */
-  for ( i = 0; i < lengf; i++ ) rhs[i] = rhs[i] - tmp1[i];
+    /* Solve coarse grid problem */
+    ML_CSolve_Apply( Rmat->to->csolve, lengc, sol0, lengc, rhs0);  
+    
+    
+    /* Need to do it anyway */
+    ML_Operator_Apply(Pmat, lengc, sol0, lengf, sol);
+      
+    
+    /* Use this option if A*Q was stored in the process of computing rap in GGB build */    
+    if (store_AQ == 1) {
+      
+      /* Qtilde = Q'*A  qas stored in the coarse grid build */
+      Qtilde = (ML_Operator *) ml_ggb->void_options; 
+      
+      /* Interpolate to fine mesh */ /* Here we should put Qtilde */
+      ML_Operator_Apply(Qtilde, lengc, sol0, lengf, tmp1);
+    }
+    else 
+      
+      /* Compute K*u . Can drop this line after we put Qtilde*/ 
+      ML_Operator_Apply( &(ml_ggb->Amat[1]), lengf, sol, lengf, tmp1);
+    
+    
+    /* Correct the residual term */
+    for ( i = 0; i < lengf; i++ ) rhs[i] = rhs[i] - tmp1[i];
+    
+    ML_free(tmp1);
+    
+  }
   
-  ML_free(tmp1);
-  
-#endif
+  else /* If GGB cycle is second */
+    {
 
-
-#ifdef GGBcycSecond
+      //#ifdef GGBcycSecond
        /* We need to compute the following coarse grid correction:  
         *	  u = u + Q*(Ac)^(-1) *Q'A*r =
 	*           = u + Q*(Ac)^(-1) *(Qtilde*u - Q'*b)	  
        */  
-  double *tmp1, *tmp2, *rhs_tmp;
-  tmp1  = (double *) ML_allocate(lengc*sizeof(double));
-  tmp2  = (double *) ML_allocate(lengf*sizeof(double));
-  rhs_tmp = (double *) ML_allocate(lengf*sizeof(double));
-
+      double *tmp1, *tmp2, *rhs_tmp;
+      tmp1  = (double *) ML_allocate(lengc*sizeof(double));
+      tmp2  = (double *) ML_allocate(lengf*sizeof(double));
+      rhs_tmp = (double *) ML_allocate(lengf*sizeof(double));
+      
 #ifdef store_QtransA       
-
-  /* Qtilde = Q'*A  qas stored in the coarse grid build */
-  Qtilde = (ML_Operator *) ml_ggb->void_options; 
-
-  
-  /* get Q'*b */
-  ML_Operator_Apply(Rmat, lengf, rhs, lengc, rhs0);
-  
-  
-  /* get Qtilde*u */
-  ML_Operator_Apply(Qtilde, lengf, sol, lengc, tmp1);
-   
-  /* compute   Qtilde*u - Q'*b. which forms the right hand side of the coarse grid */
-  for ( i = 0; i < lengc; i++ )  rhs0[i] =  rhs0[i] - tmp1[i];
-  
+      
+      /* Qtilde = Q'*A  qas stored in the coarse grid build */
+      Qtilde = (ML_Operator *) ml_ggb->void_options; 
+      
+      
+      /* get Q'*b */
+      ML_Operator_Apply(Rmat, lengf, rhs, lengc, rhs0);
+      
+      
+      /* get Qtilde*u */
+      ML_Operator_Apply(Qtilde, lengf, sol, lengc, tmp1);
+      
+      /* compute   Qtilde*u - Q'*b. which forms the right hand side of the coarse grid */
+      for ( i = 0; i < lengc; i++ )  rhs0[i] =  rhs0[i] - tmp1[i];
+      
 #else 
-  
-  /* first compute K*u */
-  ML_Operator_Apply( &(ml_ggb->Amat[1]), lengf, sol, lengf, tmp2);
-  
-  /* Get the fine grid residual */
-  for ( i = 0; i < lengf; i++ )  rhs_tmp[i] =  rhs[i] - tmp2[i];
-  
-  /* Compute the rhs on the coarse grid */
-  ML_Operator_Apply(Rmat, lengf, rhs_tmp, lengc, rhs0);
- 
+      
+      /* first compute K*u */
+      ML_Operator_Apply( &(ml_ggb->Amat[1]), lengf, sol, lengf, tmp2);
+      
+      /* Get the fine grid residual */
+      for ( i = 0; i < lengf; i++ )  rhs_tmp[i] =  rhs[i] - tmp2[i];
+      
+      /* Compute the rhs on the coarse grid */
+      ML_Operator_Apply(Rmat, lengf, rhs_tmp, lengc, rhs0);
+      
 #endif  
-  
-  /* Solve coarse grid problem */
-  ML_CSolve_Apply( Rmat->to->csolve, lengc, sol0, lengc, rhs0);  
+      
+      /* Solve coarse grid problem */
+      ML_CSolve_Apply( Rmat->to->csolve, lengc, sol0, lengc, rhs0);  
+      
+      /* Interpolate to fine mesh */
+      ML_Operator_Apply(Pmat, lengc, sol0, lengf, tmp2);
+      
+      /* Correct the solution */
+      for ( i = 0; i < lengf; i++ ) sol[i] += tmp2[i];
+      
+      
+      ML_free(tmp1);
+      ML_free(tmp2);
+      ML_free(rhs_tmp);
+      
+    }
 
-  /* Interpolate to fine mesh */
-  ML_Operator_Apply(Pmat, lengc, sol0, lengf, tmp2);
-  
-  /* Correct the solution */
-  for ( i = 0; i < lengf; i++ ) sol[i] += tmp2[i];
-
-       
-  ML_free(tmp1);
-  ML_free(tmp2);
-  ML_free(rhs_tmp);
-
-#endif
 
 
 
@@ -5882,7 +5935,7 @@ edge_smoother, edge_args, nodal_smoother, nodal_args );
 }
 
 #include "ml_amesos.h"
-
+#define newrap       /* Should always be defined for better performance */
 
 int ML_build_ggb(ML *ml, void *data)
 {
@@ -6017,15 +6070,13 @@ int ML_build_ggb(ML *ml, void *data)
   temp  = (double *) ML_allocate( Nrows*sizeof(double));
   values = csr_data->values;
 
-
-#ifdef store_AQ  
-  /* Define Qtilde = K*Q;  to be used later in the GGB cycle (GGB first) */
-  Qtilde_data = (struct ML_CSR_MSRdata *) ML_allocate(sizeof(struct ML_CSR_MSRdata));
-  Qtilde_data->values  =  (double *) ML_allocate((Ncols*Nrows+1)*sizeof(double));
-  Qtilde_data->columns =  (int *) ML_allocate(sizeof(int)*(Nrows*Ncols+1));
-  Qtilde_data->rowptr  =  (int *) ML_allocate(sizeof(int)*(Nrows+1));
-  
-#endif
+  if (store_AQ == 1) {
+    /* Define Qtilde = K*Q;  to be used later in the GGB cycle (GGB first) */
+    Qtilde_data = (struct ML_CSR_MSRdata *) ML_allocate(sizeof(struct ML_CSR_MSRdata));
+    Qtilde_data->values  =  (double *) ML_allocate((Ncols*Nrows+1)*sizeof(double));
+    Qtilde_data->columns =  (int *) ML_allocate(sizeof(int)*(Nrows*Ncols+1));
+    Qtilde_data->rowptr  =  (int *) ML_allocate(sizeof(int)*(Nrows+1));
+  }
 
   values = csr_data->values;
   
@@ -6033,46 +6084,46 @@ int ML_build_ggb(ML *ml, void *data)
   for (i = 0; i < Ncols; i++) {
     for (j = 0; j < Nrows; j++) temp[j] = values[j*Ncols+i];
     
-     ML_Operator_Apply( &(ml_ggb->Amat[1]),Nrows, temp,  Nrows, &(zdata[i*Nrows]));
-   
+    ML_Operator_Apply( &(ml_ggb->Amat[1]),Nrows, temp,  Nrows, &(zdata[i*Nrows]));
+    
+    
+    if (store_AQ == 1)
+      for (j = 0; j < Nrows; j++) Qtilde_data->values[j*Ncols+i] = zdata[i*Nrows+j];    
 
-#ifdef store_AQ      
-    for (j = 0; j < Nrows; j++) Qtilde_data->values[j*Ncols+i] = zdata[i*Nrows+j];    
-#endif   
 }
 
-#ifdef store_AQ  
 
+  if (store_AQ == 1) {
   
-  for (j = 0; j < Nrows+1; j++)      Qtilde_data->rowptr[j]  = mydata->rowptr[j];
-  for (j = 0; j < Nrows*Ncols; j++)  Qtilde_data->columns[j] = mydata->columns[j];
+    for (j = 0; j < Nrows+1; j++)      Qtilde_data->rowptr[j]  = mydata->rowptr[j];
+    for (j = 0; j < Nrows*Ncols; j++)  Qtilde_data->columns[j] = mydata->columns[j];
     
-
-  /* Define Qtilde */
-  Qtilde = ML_Operator_Create(Pmat->comm);
-  ML_CommInfoOP_Clone(  &(Qtilde->getrow->pre_comm),  Pmat->getrow->pre_comm);
-  
-  
-  if (ml_ggb->comm->ML_mypid == 0) 
-    ML_Operator_Set_ApplyFuncData(Qtilde, Ncols, Nrows, Qtilde_data,
-				  Nrows, NULL, 0);
-  
-  else 
     
-    ML_Operator_Set_ApplyFuncData(Qtilde, 0, Nrows, Qtilde_data,
-				  Nrows, NULL, 0);
-  
-  
-  
-  ML_Operator_Set_Getrow(Qtilde, Nrows, CSR_getrow);
-  ML_Operator_Set_ApplyFunc (Qtilde, CSR_densematvec); 
-  Qtilde->data_destroy = ML_CSR_MSRdata_Destroy;
+    /* Define Qtilde */
+    Qtilde = ML_Operator_Create(Pmat->comm);
+    ML_CommInfoOP_Clone(  &(Qtilde->getrow->pre_comm),  Pmat->getrow->pre_comm);
+    
+    
+    if (ml_ggb->comm->ML_mypid == 0) 
+      ML_Operator_Set_ApplyFuncData(Qtilde, Ncols, Nrows, Qtilde_data,
+				    Nrows, NULL, 0);
+    
+    else 
+      
+      ML_Operator_Set_ApplyFuncData(Qtilde, 0, Nrows, Qtilde_data,
+				    Nrows, NULL, 0);
+    
+    
+    
+    ML_Operator_Set_Getrow(Qtilde, Nrows, CSR_getrow);
+    ML_Operator_Set_ApplyFunc (Qtilde, CSR_densematvec); 
+    Qtilde->data_destroy = ML_CSR_MSRdata_Destroy;
+    
+    
+    ml_ggb->void_options = (void *) Qtilde;
+    
+  }
 
-  
-  ml_ggb->void_options = (void *) Qtilde;
-
-
-#endif
 
   /*
   printf("before the dump\n"); fflush(stdout);  
