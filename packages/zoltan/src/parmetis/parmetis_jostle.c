@@ -83,7 +83,7 @@ int LB_ParMetis(
   char alg[MAX_PARAM_STRING_LEN+1];
 
   /* Set parameters */
-  strcpy(alg, "PARTKWAY");
+  strcpy(alg, "REPARTLDIFFUSION");
   for (i=0; i<MAX_OPTIONS; i++)
     options[i] = -1;
 
@@ -253,8 +253,6 @@ int LB_Jostle(
 /****************************************************************/
 
 #if (defined(LB_JOSTLE) || defined(LB_PARMETIS))
-/* Misc. local constants */
-#define CHUNKSIZE 20  /* Number of nodes to allocate in one chunk. */
 
 /* Macro to free all allocated memory */
 #define FREE_MY_MEMORY \
@@ -533,8 +531,8 @@ static int LB_ParMetis_Jostle(
     num_border = 4*sqrt((double) num_obj);
     if (num_border > num_obj) num_border = num_obj;
      
-    /* Assume that the edges are evenly distributed among the objs. */
-    max_proc_list_len = num_edges * num_border / num_obj;
+    /* Assume that the edges are approx. evenly distributed among the objs. */
+    max_proc_list_len = num_edges * num_border / num_obj + 1;
     
     /* Allocate edge list data */
     nbors_global = (LB_GID *)LB_MALLOC(max_edges * sizeof(LB_GID));
@@ -542,6 +540,7 @@ static int LB_ParMetis_Jostle(
     proc_list = (struct LB_edge_info *) LB_MALLOC(max_proc_list_len *
       sizeof(struct LB_edge_info) );
     plist = (int *)LB_MALLOC(lb->Num_Proc * sizeof(int));
+
     if ((max_edges && ((!nbors_global) || (!nbors_proc))) || 
         (!proc_list) || (!plist)){
       /* Not enough memory */
