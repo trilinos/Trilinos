@@ -55,13 +55,12 @@ int HG_readfile (
   *vwgt = *ewgt = NULL;
   
   /* Skip comments. */
-  while (1)
-     {
+  while (1) {
      fgets (string, BUF_LEN-1, f);
      
      if (*string != '%')
         break;
-     }
+  }
      
   /* Extended format: nVtx nEdge nPins NM where both N&M are [0,9]. N is the
    * number of dimension for vertex weights and M is number of dimensions for
@@ -69,18 +68,16 @@ int HG_readfile (
   if (sscanf(string, "%d %d %d %1d%1d", nVtx,nEdge,nPins,vwgt_dim,ewgt_dim) != 5)
     ERROR (Proc, yo, "Unrecognized file format.", ZOLTAN_FATAL);
 
-  if (*nVtx <= 1)                    /* wrong guess if nVtx really is one! */
-     {
+  if (*nVtx <= 1) {                  /* wrong guess if nVtx really is one! */
      sscanf (string, "%d %d %d %d %d", base, nVtx, nEdge, nPins, vwgt_dim);
      return readfile (Proc, f, nVtx, nEdge, nPins, hindex, hvertex, vwgt_dim, 
       vwgt, ewgt_dim, ewgt, base);                         /* patoh format */
-     }
-  else
-     {
+  }
+  else {
      *base = 1;
      return readfile (Proc, f, nVtx, nEdge, nPins, hindex, hvertex, vwgt_dim,
       vwgt, ewgt_dim, ewgt, base);                         /* IBM format */
-     }
+  }
 }
 
 
@@ -115,31 +112,28 @@ static int readfile (
              
   pin = 0;
   p = *ewgt;  
-  for (i = 0; i < *nEdge; i++)
-     {
+  for (i = 0; i < *nEdge; i++) {
      (*index)[i] = pin;
-     for (j = 0; j < *ewgt_dim; j++)
-        {
+     for (j = 0; j < *ewgt_dim; j++) {
         if (nextstr (f, string) != 1)
            ERROR (Proc, yo, "Wrong number of edge weights", ZOLTAN_FATAL)
         *p++ = atof (string);      
-        }      
+     }      
      while (nextstr (f,string) == 1)
         (*vertex)[pin++] = atoi(string);
-     }
+  }
   (*index)[i] = pin; 
   if (pin != *nPins)
      ERROR (Proc, yo, "Assertion Error in readfile.", ZOLTAN_FATAL);
 
   p = *vwgt;     
   if (*vwgt_dim > 0)
-     for (i = 0; i < *nVtx; i++)
-        {
+     for (i = 0; i < *nVtx; i++) {
         for (j = 0; nextstr (f, string) == 1 && j < *vwgt_dim; j++)
            *p++ = atof (string);
         if (j != *vwgt_dim)
            ERROR (Proc, yo, "Wrong number of vertex weights", ZOLTAN_FATAL)    
-        }
+     }
         
   if (nextstr (f, string) == 1)
      ERROR (Proc, yo, "Input file is longer than expected", ZOLTAN_FATAL)      

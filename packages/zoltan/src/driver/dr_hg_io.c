@@ -522,7 +522,8 @@ int num_dist_procs;
     *hindex = (int *) malloc((hcnt[0]+1) * sizeof(int));
     *hvertex = (int *) malloc(hcnt[1] * sizeof(int));
     *hvertex_proc = (int *) malloc(hcnt[1] * sizeof(int));
-    *hewgts = (float *) malloc(hcnt[0] * *hewgt_dim * sizeof(float));
+    if (*hewgt_dim)
+      *hewgts = (float *) malloc(hcnt[0] * *hewgt_dim * sizeof(float));
     MPI_Recv(*hgid, hcnt[0], MPI_INT, host_proc, 2, comm, &status);
     MPI_Recv(*hindex, hcnt[0]+1, MPI_INT, host_proc, 3, comm, &status);
     MPI_Recv(*hvertex, hcnt[1], MPI_INT, host_proc, 4, comm, &status);
