@@ -37,27 +37,24 @@
 #include "LOCA_Bifurcation_TPBord_SingularSolveGroup.H"       // base class
 #include "LOCA_Homotopy_AbstractGroup.H"                      // base class
 
-/*! \brief Library of continuation algorithms namespace.
- */
-/*! All classes, functions, and global variables written for %LOCA reside
-in the LOCA namespace.
-*/
 namespace LOCA { 
 
   //! %LOCA abstract interface namespace
   namespace Abstract { 
 
-    /*!  \brief %LOCA abstract interface to a group, derived from the 
-      NOX::Abstract::Group.  %LOCA %abstract groups provide the interface 
-      necessary to perform continuation, i.e., compute families of solutions to
-      \f$ F(x,p) = 0 \f$.
-    */
-    /*! 
-      Concrete implemenations of this interface must provide implementations of
-      all of the methods in the NOX::Abstract::Group interface as well as the
-      parameter and scale vector setting/retrieval methods.
-    */
-
+    /*!
+     * \brief Compatiblity class for AbstractGroup hierarchy.
+     */
+    /*!
+     * This class is derived from all %LOCA AbstractGroup abstract base
+     * classes as well as all FiniteDifference groups and any other groups
+     * that provided default implementations for AbstractGroup pure virtual
+     * methods.  This class provides definitions for all needed assignment
+     * operators and provides definitions for some pure virtual methods by
+     * printing error messages.  This class exists primarily for compatiblity
+     * to an older class hierarchy and will most likely be removed in the
+     * future.
+     */
     class Group : 
       public LOCA::Bifurcation::HopfBord::FiniteDifferenceGroup,
       public LOCA::Bifurcation::TPBord::SingularSolveGroup,
@@ -69,7 +66,10 @@ namespace LOCA {
       //! Default constructor.
       Group(const DerivUtils& deriv = LOCA::DerivUtils());
   
-      //! Default constructor.
+      /*! 
+       * \brief Constructor with parameter list 
+       * (for LOCA::Bifurcation::TPBord::SingularSolveGroup).
+       */
       Group(NOX::Parameter::List& params,
 	    const DerivUtils& deriv = LOCA::DerivUtils());
  
@@ -80,54 +80,105 @@ namespace LOCA {
       virtual ~Group();
 
       //! Assignment operator
+      virtual Group& operator=(const Group& source);
+
+      /*! 
+       * @name Implementation of LOCA::Continuation::AbstractGroup virtual methods.
+       */
+      //@{
+
+      //! Assignment operator
       virtual LOCA::Continuation::AbstractGroup& 
       operator=(const LOCA::Continuation::AbstractGroup& source);
+
+      //@}
+
+      
+      /*! 
+       * @name Implementation of LOCA::Continuation::FiniteDifferenceGroup virtual methods.
+       */
+      //@{
 
       //! Assignment operator
       virtual LOCA::Continuation::FiniteDifferenceGroup& 
       operator=(const LOCA::Continuation::FiniteDifferenceGroup& source);
 
+      //@}
+
+      /*! 
+       * @name Implementation of LOCA::Bifurcation::TPBord::AbstractGroup virtual methods.
+       */
+      //@{
+
       //! Assignment operator
       virtual LOCA::Bifurcation::TPBord::AbstractGroup& 
       operator=(const LOCA::Bifurcation::TPBord::AbstractGroup& source);
 
+      //@}
+
+      /*! 
+       * @name Implementation of LOCA::Bifurcation::TPBord::FiniteDiffernceGroup virtual methods.
+       */
+      //@{
+
       //! Assignment operator
       virtual LOCA::Bifurcation::TPBord::FiniteDifferenceGroup& 
       operator=(const LOCA::Bifurcation::TPBord::FiniteDifferenceGroup& source);
+      //@}
+
+      /*! 
+       * @name Implementation of LOCA::Bifurcation::TPBord::SingularSolveGroup virtual methods.
+       */
+      //@{
 
       //! Assignment operator
       virtual LOCA::Bifurcation::TPBord::SingularSolveGroup& 
       operator=(const LOCA::Bifurcation::TPBord::SingularSolveGroup& source);
 
+      //@}
+
+      /*! 
+       * @name Implementation of LOCA::TimeDependent::AbstractGroup virtual methods.
+       */
+      //@{
+
       //! Assignment operator
       virtual LOCA::TimeDependent::AbstractGroup& 
       operator=(const LOCA::TimeDependent::AbstractGroup& source);
 
-      //! Assignment operator
-      virtual LOCA::Bifurcation::HopfBord::AbstractGroup& 
-      operator=(const LOCA::Bifurcation::HopfBord::AbstractGroup& source);
-
-      //! Assignment operator
-      virtual LOCA::Bifurcation::HopfBord::FiniteDifferenceGroup& 
-      operator=(const LOCA::Bifurcation::HopfBord::FiniteDifferenceGroup& source);
-
-      //! Assignment operator
-      virtual LOCA::Homotopy::AbstractGroup& 
-      operator=(const LOCA::Homotopy::AbstractGroup& source);
-  
-      //! Assignment operator
-      virtual Group& operator=(const Group& source);
-
-      virtual NOX::Abstract::Group::ReturnType 
-      augmentJacobianForHomotopy(double conParamValue);
-
+      //! Compute the mass matrix of the system
+      /*!
+       * Implementation here prints an error message and returns 
+       * NOX::Abstract::Group::NotDefined.
+       */
       virtual NOX::Abstract::Group::ReturnType
       computeMassMatrix();
 
+      //! Multiply the mass matrix by a vector
+      /*!
+       * Implementation here prints an error message and returns 
+       * NOX::Abstract::Group::NotDefined.
+       */
       virtual NOX::Abstract::Group::ReturnType
       applyMassMatrix(const NOX::Abstract::Vector& input,
 		      NOX::Abstract::Vector& result) const;
 
+      //@}
+
+      /*! 
+       * @name Implementation of LOCA::Bifurcation::HopfBord::AbstractGroup virtual methods.
+       */
+      //@{
+      
+      //! Assignment operator
+      virtual LOCA::Bifurcation::HopfBord::AbstractGroup& 
+      operator=(const LOCA::Bifurcation::HopfBord::AbstractGroup& source);
+
+      //! Solve \f$(J+i\omega B)(y+iz) = a+ib\f$
+      /*!
+       * Implementation here prints an error message and returns 
+       * NOX::Abstract::Group::NotDefined.
+       */
       virtual NOX::Abstract::Group::ReturnType
       applyComplexInverse(NOX::Parameter::List& params,
 			  const NOX::Abstract::Vector& input_real,
@@ -135,6 +186,42 @@ namespace LOCA {
 			  double frequency,
 			  NOX::Abstract::Vector& result_real,
 			  NOX::Abstract::Vector& result_imag) const;
+
+      //@}
+
+      /*! 
+       * @name Implementation of LOCA::Bifurcation::HopfBord::FiniteDiffernceGroup virtual methods.
+       */
+      //@{
+
+      //! Assignment operator
+      virtual LOCA::Bifurcation::HopfBord::FiniteDifferenceGroup& 
+      operator=(const LOCA::Bifurcation::HopfBord::FiniteDifferenceGroup& source);
+
+      //@}
+
+      /*! 
+       * @name Implementation of LOCA::Homotopy::AbstractGroup virtual methods.
+       */
+      //@{
+
+      //! Assignment operator
+      virtual LOCA::Homotopy::AbstractGroup& 
+      operator=(const LOCA::Homotopy::AbstractGroup& source);
+
+      /*! 
+       * \brief Replace Jacobian \f$J\f$ by \f$J+pI\f$ where \f$I\f$ is the 
+       * identity matrix and \f$p\f$ is a scalar (\b conParamValue).
+       */
+      /*!
+       * Implementation here prints an error message and returns 
+       * NOX::Abstract::Group::NotDefined.
+       */
+      virtual NOX::Abstract::Group::ReturnType 
+      augmentJacobianForHomotopy(double conParamValue);
+
+      //@}
+    
     };
   } // namespace Abstract
 } // namespace LOCA

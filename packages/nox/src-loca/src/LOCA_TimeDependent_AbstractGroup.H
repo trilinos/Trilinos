@@ -39,7 +39,15 @@ namespace LOCA {
 
   namespace TimeDependent {
 
-    /*!  \brief Interface to underlying groups for time dependent systems
+    /*!  
+     * \brief Interface to underlying groups for time dependent systems
+     */
+    /*!
+     * This abstract class provides an interface for time dependent problems,
+     * i.e., problems with a mass matrix (typically used in eignvalue or
+     * Hopf calculations).  It provides two pure virtual methods, one to
+     * compute the mass matrix and the second to apply the mass matrix to 
+     * a vector.
      */
     class AbstractGroup : 
       public virtual LOCA::Continuation::AbstractGroup {
@@ -52,16 +60,27 @@ namespace LOCA {
       //! Destructor
       virtual ~AbstractGroup() {}
 
+      /*! 
+       * @name Pure virtual methods 
+       * These methods must be defined by any concrete implementation
+       */
+      //@{
+      
       //! Assignment operator
       virtual AbstractGroup& 
       operator=(const AbstractGroup& source) = 0;
-
+      
+      //! Compute the mass matrix of the system
       virtual NOX::Abstract::Group::ReturnType
       computeMassMatrix() = 0;
 
+      //! Multiply the mass matrix by a vector.
       virtual NOX::Abstract::Group::ReturnType
       applyMassMatrix(const NOX::Abstract::Vector& input,
 		      NOX::Abstract::Vector& result) const = 0;
+
+      //@}
+
     };
   } // namespace TimeDependent
 } // namespace LOCA

@@ -40,9 +40,33 @@ namespace LOCA {
   
   namespace Bifurcation { 
 
+    /*! 
+     * \brief Groups and vectors for locating Hopf bifurcations
+     * using bordering techniques.
+     */
     namespace HopfBord {
 
-      /*!  \brief Interface to underlying groups for Hopf calculations
+      /*! 
+       * \brief Interface to underlying groups for Hopf point calculations
+       */
+      /*!
+       * This abstract class provides the required interface for underlying
+       * groups to locate Hopf bifurcations using the bordering
+       * algorithms (see LOCA::Bifurcation::HopfBord::ExtendedGroup for a 
+       * description of the governing equations and bordering algorithms).  
+       *
+       * This class
+       * is derived from the LOCA::Bifurcation::TPBord::AbstractGroup and
+       * LOCA::TimeDependent::AbstractGroup and declares several pure virtual
+       * methods for applying, solving, and computing derivatives of the
+       * complex matrix \f$J+i\omega B\f$ where \f$J\f$ is the Jacobian matrix,
+       * \f$B\f$ is the mass matrix, and \f$\omega\f$ is a (real) scalar.
+       *
+       * The last virtual method, applyComplexInverseMulti() for solving 
+       * systems with multiple right-hand-sides, has a default
+       * implementation to serially call applyComplexInverse() for each
+       * right-hand-side.  This should be overloaded for problems where
+       * a block-complex solver is available.
        */
       class AbstractGroup : 
 	public virtual LOCA::Bifurcation::TPBord::AbstractGroup,
@@ -56,11 +80,28 @@ namespace LOCA {
 	//! Destructor
 	virtual ~AbstractGroup() {}
 
+	/*! 
+	 * @name Pure virtual methods 
+	 * These methods must be defined by any concrete implementation
+	 */
+	//@{
+
 	//! Assignment operator
 	virtual AbstractGroup& 
 	operator=(const AbstractGroup& source) = 0;
 
-	// Solve (J+iwB)*(y+iz) = (a+ib)
+	//! Compute \f$(J+i\omega B)(y+iz)\f$
+	virtual NOX::Abstract::Group::ReturnType
+	applyComplex(const NOX::Abstract::Vector& input_real,
+		     const NOX::Abstract::Vector& input_imag,
+		     double frequency,
+		     NOX::Abstract::Vector& result_real,
+		     NOX::Abstract::Vector& result_imag) const;
+
+	//! Solve \f$(J+i\omega B)(y+iz) = a+ib\f$
+	/*!
+	 * The argument \b frequency stores \f$\omega\f$.
+	 */
 	virtual NOX::Abstract::Group::ReturnType
 	applyComplexInverse(NOX::Parameter::List& params,
 			    const NOX::Abstract::Vector& input_real,
@@ -69,16 +110,12 @@ namespace LOCA {
 			    NOX::Abstract::Vector& result_real,
 			    NOX::Abstract::Vector& result_imag) const = 0;
 
-	// Compute (J+iwB)*(y+iz)
-	virtual NOX::Abstract::Group::ReturnType
-	applyComplex(const NOX::Abstract::Vector& input_real,
-		     const NOX::Abstract::Vector& input_imag,
-		     double frequency,
-		     NOX::Abstract::Vector& result_real,
-		     NOX::Abstract::Vector& result_imag) const;
 
-	//! Compute derivative of (J+iwB)(y+iz) with respect to particular 
-	//! parameter param_id
+	/*! 
+	 * \brief Computes the derivative 
+	 * \f$\frac{\partial (J+i\omega B)(y+iz)}{\partial p}\f$ 
+	 * where \f$p\f$ is the parameter indexed by \b param_id.
+	 */
 	virtual NOX::Abstract::Group::ReturnType 
 	computeDCeDp(const NOX::Abstract::Vector& yVector,
 		     const NOX::Abstract::Vector& zVector,
@@ -87,8 +124,13 @@ namespace LOCA {
 		     NOX::Abstract::Vector& result_real,
 		     NOX::Abstract::Vector& result_imag) = 0;
 
-	//! Compute derivative of (J+iwB)(y+iz) with respect to parameter, 
-	//! given (J+iwB)(y+iz) vectors
+	/*! 
+	 * \brief Computes the derivative 
+	 * \f$\frac{\partial (J+i\omega B)(y+iz)}{\partial p}\f$ 
+	 * where \f$p\f$ is the parameter indexed by \b param_id.  The 
+	 * arguments \b Ce_real and \b Ce_imag hold the real and imaginary
+	 * components of \f$(J+i\omega B)(y+iz)\f$.
+	 */
 	virtual NOX::Abstract::Group::ReturnType 
 	computeDCeDp(const NOX::Abstract::Vector& yVector,
 		     const NOX::Abstract::Vector& zVector,
@@ -99,7 +141,11 @@ namespace LOCA {
 		     NOX::Abstract::Vector& result_real,
 		     NOX::Abstract::Vector& result_imag) = 0;
 
-	//! Compute vector (J+iwB)(y+iz))_{x}a  given vector a
+	/*! 
+	 * \brief Computes the directional derivative 
+	 * \f$\frac{\partial (J+i\omega B)(y+iz)}{\partial x} a\f$ for the 
+	 * given direction \f$a\f$. 
+	 */
 	virtual NOX::Abstract::Group::ReturnType 
 	computeDCeDxa(const NOX::Abstract::Vector& yVector,
 		      const NOX::Abstract::Vector& zVector,
@@ -108,8 +154,13 @@ namespace LOCA {
 		      NOX::Abstract::Vector& result_real,
 		      NOX::Abstract::Vector& result_imag) = 0;
   
-	//! Compute vector (J+iwB)(y+iz))_{x}a  given vector a, given 
-	//! (J+iwB)(y+iz) vector
+	/*! 
+	 * \brief Computes the directional derivative 
+	 * \f$\frac{\partial (J+i\omega B)(y+iz)}{\partial x} a\f$ for the 
+	 * given direction \f$a\f$. The 
+	 * arguments \b Ce_real and \b Ce_imag hold the real and imaginary
+	 * components of \f$(J+i\omega B)(y+iz)\f$.
+	 */
 	virtual NOX::Abstract::Group::ReturnType 
 	computeDCeDxa(const NOX::Abstract::Vector& yVector,
 		      const NOX::Abstract::Vector& zVector,
@@ -120,7 +171,22 @@ namespace LOCA {
 		      NOX::Abstract::Vector& result_real,
 		      NOX::Abstract::Vector& result_imag) = 0;
 
-	// Solve Complex system for multiple RHS
+	//@}
+
+      
+	/*! 
+	 * @name Virtual methods with default implementations 
+	 * These methods should be overloaded in a concrete implementation
+	 * if more appropriate/efficient approaches are available.
+	 */
+	//@{
+
+	//! Solve Complex system for multiple RHS
+	/*!
+	 * The default implementation here is to call applyComplexInverse()
+	 * for each right-hand-side.  This method should be overloaded if
+	 * a block-complex solver is available.
+	 */
 	virtual NOX::Abstract::Group::ReturnType
 	applyComplexInverseMulti(
 			     NOX::Parameter::List& params,
@@ -131,9 +197,11 @@ namespace LOCA {
 			     NOX::Abstract::Vector** results_imag,
 			     int nVecs) const;
 
+	//@}
+
       };
     } // namespace HopfBord
-  } // namespace Continuation
+  } // namespace Bifurcation
 } // namespace LOCA
 
 #endif

@@ -47,10 +47,8 @@ namespace LOCA {
 }
 namespace LOCA { 
 
-  //! %LOCA bifurcation vectors and groups
   namespace Bifurcation { 
     
-    //! %Turning point bordering groups and vectors
     namespace TPBord {
 
       /*! 

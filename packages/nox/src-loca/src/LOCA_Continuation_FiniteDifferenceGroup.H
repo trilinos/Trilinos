@@ -40,15 +40,18 @@ namespace LOCA {
 
   namespace Continuation { 
 
-    /*!  \brief %LOCA abstract interface to a group, derived from the 
-      NOX::Abstract::Group.  %LOCA %continuation underlying groups provide 
-      the interface necessary to perform continuation, i.e., compute families 
-      of solutions to \f$ F(x,p) = 0 \f$.
+    /*!  
+     * \brief Concrete class that provides a concrete implementation of the
+     * computeDfDp() method of the LOCA::Continuation::AbstractGroup using
+     * first-order finite differencing.
     */
     /*! 
-      Concrete implemenations of this interface must provide implementations of
-      all of the methods in the NOX::Abstract::Group interface as well as the
-      parameter and scale vector setting/retrieval methods.
+     * The finite-differencing calculations are actually implemented by
+     * the LOCA::DerivUtils class, and a custom DerivUtils object can be
+     * passed through the constructor of this class.  However, in the future
+     * the calculations encapsulated in the DerivUtils class may be 
+     * incorporated directly into this class and other finite-differencing
+     * child classes.
     */
 
     class FiniteDifferenceGroup : 
@@ -56,7 +59,7 @@ namespace LOCA {
 
     public:
   
-      //! Default constructor.
+      //! Constructor.
       FiniteDifferenceGroup(const DerivUtils& deriv);
  
       //! Copy constructor
@@ -70,7 +73,15 @@ namespace LOCA {
       virtual FiniteDifferenceGroup& 
       operator=(const FiniteDifferenceGroup& source);
 
-      //! Compute \f$dF/dp\f$ using DerivUtils derivative object
+      /*! 
+       * \brief Compute \f$\partial F/\partial p\f$ where \f$p\f$ is the 
+       * parameter indexed by paramID.
+       */
+      /*! 
+       * The calculation is implemented by calling the corresponding
+       * LOCA::DerivUtils::computeDfDp() method of the passed 
+       * LOCA::DerivUtils object.
+       */
       virtual NOX::Abstract::Group::ReturnType
       computeDfDp(int paramID, NOX::Abstract::Vector& result);
 

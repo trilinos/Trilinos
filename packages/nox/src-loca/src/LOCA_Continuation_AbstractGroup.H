@@ -45,19 +45,28 @@ namespace LOCA {
   class ParameterVector;
 }
 
+/*! 
+ * \brief Library of continuation algorithms namespace.
+ */
+/*! 
+ * All classes, functions, and global variables written for %LOCA reside
+ * in the LOCA namespace.
+*/
 namespace LOCA { 
 
+  //! Groups and vectors for continuation
   namespace Continuation { 
 
-    /*!  \brief %LOCA abstract interface to a group, derived from the 
-      NOX::Abstract::Group.  %LOCA %continuation underlying groups provide 
-      the interface necessary to perform continuation, i.e., compute families 
-      of solutions to \f$ F(x,p) = 0 \f$.
+    /*! 
+     * \brief %LOCA abstract interface for continuation, derived from the 
+     * NOX::Abstract::Group.  This abstract class provides 
+     * the interface necessary to perform continuation, i.e., compute 
+     * families of solutions to \f$ F(x,p) = 0 \f$.
     */
     /*! 
-      Concrete implemenations of this interface must provide implementations of
-      all of the methods in the NOX::Abstract::Group interface as well as the
-      parameter and scale vector setting/retrieval methods.
+     * Concrete implemenations of this interface must provide implementations 
+     * of all of the methods in the NOX::Abstract::Group interface as well as 
+     * the additional interface defined here.
     */
 
     class AbstractGroup : public virtual NOX::Abstract::Group {
@@ -69,62 +78,127 @@ namespace LOCA {
  
       //! Destructor.
       virtual ~AbstractGroup() {}
-  
+
+      /*! 
+       * @name Pure virtual methods 
+       * These methods must be defined by any concrete implementation
+       */
+      //@{
+
       //! Assignment operator
-      virtual AbstractGroup& 
-      operator=(const AbstractGroup& source) = 0;
+      virtual AbstractGroup& operator=(const AbstractGroup& source) = 0;
 
       //! Set the parameter vector in the group to p (pVector = p).  
       virtual void setParams(const ParameterVector& p) = 0;
 
-       //! Set parameter indexed by paramID
+       //! Set parameter indexed by (integer) paramID
       virtual void setParam(int paramID, double val) = 0;
 
-      //! Set parameter indexed by paramID
+      //! Set parameter indexed by (string) paramID
       virtual void setParam(string paramID, double val) = 0;
 
       //! Return a const reference to the ParameterVector owned by the group. 
       virtual const ParameterVector& getParams() const = 0;
 
-      //! Return copy of parameter indexed by paramID
+      //! Return copy of parameter indexed by (integer) paramID
       virtual double getParam(int paramID) const = 0;
 
-      //! Return copy of parameter indexed by paramID
+      //! Return copy of parameter indexed by (string) paramID
       virtual double getParam(string paramID) const = 0;
 
-      //! Compute \f$dF/dp\f$ using DerivUtils derivative object
+      /*! 
+       * Compute \f$\partial F/\partial p\f$ where \f$p\f$ is the 
+       * parameter indexed by paramID.
+       */
       virtual NOX::Abstract::Group::ReturnType
       computeDfDp(int paramID, NOX::Abstract::Vector& result) = 0;
 
+      //@}
+
+      
+      /*! 
+       * @name Virtual methods with default implementations 
+       * These methods should be overloaded in a concrete implementation
+       * if more appropriate/efficient approaches are available.
+       */
+      //@{
+
       //! applyJacobianInverse for multiple right-hand sides
+      /*! 
+       * The default implementation here calls applyJacobianInverse() for
+       * each right hand side serially but should be overloaded if a 
+       * block solver is available.
+       */
       virtual NOX::Abstract::Group::ReturnType
       applyJacobianInverseMulti(NOX::Parameter::List& params,
 			const NOX::Abstract::Vector* const* inputs,
 			NOX::Abstract::Vector** outputs, int nVecs) const;
 
       //! Compute a scaled dot product
+      /*! 
+       * The default implementation here just computes a.dot(b) but should
+       * be overloaded for any problem that his difficult scaling.
+       */
       virtual double
       computeScaledDotProduct(const NOX::Abstract::Vector& a,
 			      const NOX::Abstract::Vector& b) const;
 
-      //! Compute eigenvalues/eigenvectors
-      virtual NOX::Abstract::Group::ReturnType
-      computeEigenvalues(NOX::Parameter::List& params);
-
-      //! Function to print out solution and parameter after successful step
-      virtual void printSolution(const double conParam) const {};
-
-      //! Function to print out a vector and parameter after successful step
-      virtual void printSolution(const NOX::Abstract::Vector& x_,
-                                 const double conParam) const  {}
-
       //! Return underlying group
+      /*!
+       * Default implementation is to return *this.  This method is intended
+       * for composite groups (such as extended  %bifurcation groups) which
+       * have an underlying group as a data member.  This method is supposed 
+       * to return the base level group and therefore any extended group
+       * should return the result of calling this method on its underlying
+       * group data member.
+       */
       virtual const LOCA::Continuation::AbstractGroup& 
       getUnderlyingGroup() const;
       
       //! Return underlying group
+       /*!
+       * Default implementation is to return *this.  This method is intended
+       * for composite groups (such as extended  %bifurcation groups) which
+       * have an underlying group as a data member.  This method is supposed 
+       * to return the base level group and therefore any extended group
+       * should return the result of calling this method on its underlying
+       * group data member.
+       */
       virtual LOCA::Continuation::AbstractGroup& 
       getUnderlyingGroup();
+
+      //@}
+
+      /*! 
+       * @name Virtual methods with empty or trivial implementations 
+       * These methods should be overloaded in a concrete implementation
+       * but their implementation is not critical to the rest of %LOCA and
+       * therefore have empty or trivial implementations.
+       */
+      //@{
+
+      //! Compute eigenvalues/eigenvectors
+      /*! 
+       * Default implementation prints an error message and throws an 
+       * error string.
+       */
+      virtual NOX::Abstract::Group::ReturnType
+      computeEigenvalues(NOX::Parameter::List& params);
+
+      //! Function to print out solution and parameter after successful step
+      /*! 
+       * Empty default definition. 
+       */
+      virtual void printSolution(const double conParam) const {};
+
+      //! Function to print out a vector and parameter after successful step
+      /*! 
+       * Empty default definition. 
+       */
+      virtual void printSolution(const NOX::Abstract::Vector& x_,
+                                 const double conParam) const  {}
+
+      //@}
 
     };
   } // namespace Continuation

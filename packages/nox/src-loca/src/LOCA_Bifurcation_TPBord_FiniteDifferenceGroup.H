@@ -42,7 +42,19 @@ namespace LOCA {
 
     namespace TPBord {
 
-      /*!  \brief Interface to underlying groups for turning point calculations
+      /*!  
+       * \brief Concrete class that provides concrete implementations of the
+       * derivative computation methods of the 
+       * LOCA::Bifurcation::TPBord::AbstractGroup using first-order finite 
+       * differencing.
+       */
+      /*! 
+       * The finite-differencing calculations are actually implemented by
+       * the LOCA::DerivUtils class, and a custom DerivUtils object can be
+       * passed through the constructor of this class.  However, in the future
+       * the calculations encapsulated in the DerivUtils class may be 
+       * incorporated directly into this class and other finite-differencing
+       * child classes.
        */
       class FiniteDifferenceGroup : 
 	public virtual LOCA::Bifurcation::TPBord::AbstractGroup,
@@ -50,7 +62,7 @@ namespace LOCA {
 
       public:
   
-	//! Default constructor.
+	//! Constructor.
 	FiniteDifferenceGroup(const LOCA::DerivUtils& deriv);
  
 	//! Copy constructor
@@ -64,32 +76,75 @@ namespace LOCA {
 	virtual FiniteDifferenceGroup& 
 	operator=(const FiniteDifferenceGroup& source);
 
-	//! Compute derivative of Jn w.r.t particular parameter param_id
+	/*! 
+	 * \brief Computes the derivative \f$\partial Jn/\partial p\f$ 
+	 * where \f$p\f$ is the parameter indexed by \b param_id.
+	 */
+	/*! 
+	 * The calculation is implemented by calling the corresponding
+	 * LOCA::DerivUtils::computeDJnDp() method of the passed 
+	 * LOCA::DerivUtils object.
+	 */
 	virtual NOX::Abstract::Group::ReturnType 
 	computeDJnDp(const NOX::Abstract::Vector& nullVector,
 		     const int param_id, NOX::Abstract::Vector& result);
 
-	//! Compute derivative of Jn with respect to parameter, given JnVector
+	/*! 
+	 * \brief Computes the derivative \f$\partial Jn/\partial p\f$ 
+	 * where \f$p\f$ is the parameter indexed by \b param_id.  The argument
+	 * \b JnVector stores \f$Jn\f$.
+	 */
+	/*! 
+	 * The calculation is implemented by calling the corresponding
+	 * LOCA::DerivUtils::computeDJnDp() method of the passed 
+	 * LOCA::DerivUtils object.
+	 */
 	virtual NOX::Abstract::Group::ReturnType 
 	computeDJnDp(const NOX::Abstract::Vector& nullVector,
 		     const int param_id,
 		     const NOX::Abstract::Vector& JnVector,
 		     NOX::Abstract::Vector& result);
 
-	//! Compute vector (Jn)_{x}a  given vector a
+	/*! 
+	 * \brief Computes the directional derivative 
+	 * \f$\frac{\partial Jn}{\partial x} a\f$ for the given direction 
+	 * \f$a\f$. 
+	 */
+	/*! 
+	 * The calculation is implemented by calling the corresponding
+	 * LOCA::DerivUtils::computeDJnDxa() method of the passed 
+	 * LOCA::DerivUtils object.
+	 */
 	virtual NOX::Abstract::Group::ReturnType 
 	computeDJnDxa(const NOX::Abstract::Vector& nullVector,
 		      const NOX::Abstract::Vector& aVector,
 		      NOX::Abstract::Vector& result);
   
-	//! Compute vector (Jn)_{x}a  given vector a, given JnVector
+	/*! 
+	 * \brief Computes the directional derivative 
+	 * \f$\frac{\partial Jn}{\partial x} a\f$ for the given direction 
+	 * \f$a\f$. The argument \b JnVector stores \f$Jn\f$.
+	 */
+	/*! 
+	 * The calculation is implemented by calling the corresponding
+	 * LOCA::DerivUtils::computeDJnDxa() method of the passed 
+	 * LOCA::DerivUtils object.
+	 */
 	virtual NOX::Abstract::Group::ReturnType 
 	computeDJnDxa(const NOX::Abstract::Vector& nullVector,
 		      const NOX::Abstract::Vector& aVector,
 		      const NOX::Abstract::Vector& JnVector,
 		      NOX::Abstract::Vector& result);
 
-	//! Compute vector (Jn)_{x}a+(Jn)_p given vector a, param_id 
+	/*! 
+	 * \brief Computes the  derivative 
+	 * \f$\frac{\partial Jn}{\partial p} + \frac{\partial Jn}{\partial x} a\f$.
+	 */
+	/*! 
+	 * The calculation is implemented by calling the corresponding
+	 * LOCA::DerivUtils::computeDJnDxaDp() method of the passed 
+	 * LOCA::DerivUtils object.
+	 */
 	virtual NOX::Abstract::Group::ReturnType 
 	computeDJnDxaDp(const NOX::Abstract::Vector& nullVector,
 			const NOX::Abstract::Vector& aVector,
@@ -97,7 +152,7 @@ namespace LOCA {
 			NOX::Abstract::Vector& result);
       };
     } // namespace TPBord
-  } // namespace Continuation
+  } // namespace Bifurcation
 } // namespace LOCA
 
 #endif

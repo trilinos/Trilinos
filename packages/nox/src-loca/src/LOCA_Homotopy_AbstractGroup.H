@@ -39,7 +39,15 @@ namespace LOCA {
 
   namespace Homotopy {
 
-    /*!  \brief Interface to underlying groups for time dependent systems
+    /*!  
+     * \brief Interface to underlying groups for homotopy calculations
+     */
+    /*!
+     * This abstract class provides an interface for a homotopy technique
+     * for solving nonlinear equations.  See LOCA::Homotopy::Group for a 
+     * description of the technique used.  This class provides a single
+     * pure virtual method, augmentJacobianForHomotopy(), which scales the
+     * diagonal of the Jacobian by a constant times the identity matrix.
      */
     class AbstractGroup : 
       public virtual LOCA::Continuation::AbstractGroup {
@@ -52,11 +60,23 @@ namespace LOCA {
       //! Destructor
       virtual ~AbstractGroup() {}
 
+      /*! 
+       * @name Pure virtual methods 
+       * These methods must be defined by any concrete implementation
+       */
+      //@{
+
       //! Assignment operator
       virtual AbstractGroup& operator=(const AbstractGroup& source) = 0;
 
+      /*! 
+       * \brief Replace Jacobian \f$J\f$ by \f$J+pI\f$ where \f$I\f$ is the 
+       * identity matrix and \f$p\f$ is a scalar (\b conParamValue).
+       */
       virtual NOX::Abstract::Group::ReturnType 
       augmentJacobianForHomotopy(double conParamValue) = 0;
+
+      //@}
 
     };
   } // namespace Homotopy

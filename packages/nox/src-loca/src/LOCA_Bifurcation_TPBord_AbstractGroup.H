@@ -37,11 +37,40 @@
 
 namespace LOCA { 
   
+  //! Groups and vectors for locating bifurcations
   namespace Bifurcation { 
 
+    /*! 
+     * \brief Groups and vectors for locating turning point bifurcations
+     * using bordering techniques.
+     */
     namespace TPBord {
 
-      /*!  \brief Interface to underlying groups for turning point calculations
+      /*! 
+       * \brief Interface to underlying groups for turning point calculations
+       */
+      /*!
+       * This abstract class provides the required interface for underlying
+       * groups to locate turning points and pitchforks using the bordering
+       * algorithms (see LOCA::Bifurcation::TPBord::ExtendedGroup and
+       * LOCA::Bifurcation::PitchforkBord::ExtendedGroup for a description
+       * of the governing equations and bordering algorithms).  
+       *
+       * This class
+       * is derived from the LOCA::Continuation::AbstractGroup and declares
+       * several pure virtual methods to solve the linear set of equations
+       * \f$Jx=b\f$ for \f$J\f$ nearly singular, and to compute various 
+       * derivatives of \f$Jn\f$ for a given \f$n\f$.  Default implementations
+       * for the singular solves are encapsulated in the 
+       * LOCA::Bifurcation::TPBord::SingularSolveGroup and for the derivatives
+       * using finite differencing in the 
+       * LOCA::Bifurcation::TPBord::FiniteDifferenceGroup.
+       *
+       * The last virtual method, innerProduct() has a default implementation
+       * given by the dot product, but should be overloaded for any 
+       * problem that has a different definition for the inner product (this
+       * is only used in the LOCA::Bifurcation::PitchforkBord::ExtendedGroup
+       * for the assymetry).
        */
       class AbstractGroup : 
 	public virtual LOCA::Continuation::AbstractGroup {
@@ -53,11 +82,25 @@ namespace LOCA {
 
 	//! Destructor
 	virtual ~AbstractGroup() {}
+
+	/*! 
+	 * @name Pure virtual methods 
+	 * These methods must be defined by any concrete implementation
+	 */
+	//@{
   
 	//! Assignment operator
 	virtual AbstractGroup& operator=(const AbstractGroup& source) = 0;
 
 	//! applyJacobianInverse for nearly singular systems
+	/*!
+	 * This method is to compute the solution to \f$Jx=b\f$ for nearly
+	 * singular \f$J\f$.  \b approxNullVec contains an approximation to the
+	 * null vector \f$n\f$ such that \f$Jn\approx0\f$, and 
+	 * \b jacApproxNullVec
+	 * contains \f$Jn\f$.  The idea is these quantities are supposed to
+	 * help in obtaining an accurate solution to \f$Jx=b\f$.
+	 */
 	virtual NOX::Abstract::Group::ReturnType
 	applySingularJacobianInverse(
 				NOX::Parameter::List& params,
@@ -66,7 +109,7 @@ namespace LOCA {
 				const NOX::Abstract::Vector& jacApproxNullVec,
 				NOX::Abstract::Vector& result) = 0;
 
-	//! applyJacobianInverse for nearly singular systems, multiple RHS
+	//! Version of applySingularJacobianInverse() for multiple RHS.
 	virtual NOX::Abstract::Group::ReturnType 
 	applySingularJacobianInverseMulti(
 			       NOX::Parameter::List& params,
@@ -76,44 +119,77 @@ namespace LOCA {
 			       NOX::Abstract::Vector** results,
 			       int nVecs) = 0;
 
-	//! Compute derivative of Jn w.r.t particular parameter param_id
+	/*! 
+	 * \brief Computes the derivative \f$\partial Jn/\partial p\f$ 
+	 * where \f$p\f$ is the parameter indexed by \b param_id.
+	 */
 	virtual NOX::Abstract::Group::ReturnType 
 	computeDJnDp(const NOX::Abstract::Vector& nullVector,
 		     const int param_id, NOX::Abstract::Vector& result) = 0;
 
-	//! Compute derivative of Jn with respect to parameter, given JnVector
+	/*! 
+	 * \brief Computes the derivative \f$\partial Jn/\partial p\f$ 
+	 * where \f$p\f$ is the parameter indexed by \b param_id.  The argument
+	 * \b JnVector stores \f$Jn\f$.
+	 */
 	virtual NOX::Abstract::Group::ReturnType 
 	computeDJnDp(const NOX::Abstract::Vector& nullVector,
 		     const int param_id,
 		     const NOX::Abstract::Vector& JnVector,
 		     NOX::Abstract::Vector& result) = 0;
 
-	//! Compute vector (Jn)_{x}a  given vector a
+	/*! 
+	 * \brief Computes the directional derivative 
+	 * \f$\frac{\partial Jn}{\partial x} a\f$ for the given direction 
+	 * \f$a\f$. 
+	 */
 	virtual NOX::Abstract::Group::ReturnType 
 	computeDJnDxa(const NOX::Abstract::Vector& nullVector,
 		      const NOX::Abstract::Vector& aVector,
 		      NOX::Abstract::Vector& result) = 0;
   
-	//! Compute vector (Jn)_{x}a  given vector a, given JnVector
+	/*! 
+	 * \brief Computes the directional derivative 
+	 * \f$\frac{\partial Jn}{\partial x} a\f$ for the given direction 
+	 * \f$a\f$. The argument \b JnVector stores \f$Jn\f$.
+	 */
 	virtual NOX::Abstract::Group::ReturnType 
 	computeDJnDxa(const NOX::Abstract::Vector& nullVector,
 		      const NOX::Abstract::Vector& aVector,
 		      const NOX::Abstract::Vector& JnVector,
 		      NOX::Abstract::Vector& result) = 0;
 
-	//! Compute vector (Jn)_{x}a+(Jn)_p given vector a, param_id 
+	/*! 
+	 * \brief Computes the  derivative 
+	 * \f$\frac{\partial Jn}{\partial p} + \frac{\partial Jn}{\partial x} a\f$.
+	 */
 	virtual NOX::Abstract::Group::ReturnType 
 	computeDJnDxaDp(const NOX::Abstract::Vector& nullVector,
 			const NOX::Abstract::Vector& aVector,
 			const int param_id,
 			NOX::Abstract::Vector& result) = 0;
 
-	//! Compute inner product between two vectors
+	//@}
+
+      
+	/*! 
+	 * @name Virtual methods with default implementations 
+	 * These methods should be overloaded in a concrete implementation
+	 * if more appropriate/efficient approaches are available.
+	 */
+	//@{
+
+	//! Compute inner product between two vectors.  
+	/*
+	 * Default definition is x.dot(y).
+	 */
 	virtual double innerProduct(const NOX::Abstract::Vector& x,
 				    const NOX::Abstract::Vector& y);
+
+	//@}
       };
     } // namespace TPBord
-  } // namespace Continuation
+  } // namespace Bifurcation
 } // namespace LOCA
 
 #endif

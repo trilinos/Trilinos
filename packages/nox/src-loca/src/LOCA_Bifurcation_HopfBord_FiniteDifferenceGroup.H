@@ -42,7 +42,19 @@ namespace LOCA {
 
     namespace HopfBord {
 
-      /*!  \brief Interface to underlying groups for Hopf calculations
+      /*!  
+       * \brief Concrete class that provides concrete implementations of the
+       * derivative computation methods of the 
+       * LOCA::Bifurcation::HopfBord::AbstractGroup using first-order finite 
+       * differencing.
+       */
+      /*! 
+       * The finite-differencing calculations are actually implemented by
+       * the LOCA::DerivUtils class, and a custom DerivUtils object can be
+       * passed through the constructor of this class.  However, in the future
+       * the calculations encapsulated in the DerivUtils class may be 
+       * incorporated directly into this class and other finite-differencing
+       * child classes.
        */
       class FiniteDifferenceGroup : 
 	public virtual LOCA::Bifurcation::HopfBord::AbstractGroup,
@@ -50,7 +62,7 @@ namespace LOCA {
 
       public:
   
-	//! Default constructor.
+	//! Constructor.
 	FiniteDifferenceGroup(const LOCA::DerivUtils& deriv);
  
 	//! Copy constructor
@@ -64,8 +76,16 @@ namespace LOCA {
 	virtual FiniteDifferenceGroup& 
 	operator=(const FiniteDifferenceGroup& source);
 
-	//! Compute derivative of (J+iwB)(y+iz) with respect to particular 
-	//! parameter param_id
+	/*! 
+	 * \brief Computes the derivative 
+	 * \f$\frac{\partial (J+i\omega B)(y+iz)}{\partial p}\f$ 
+	 * where \f$p\f$ is the parameter indexed by \b param_id.
+	 */
+	/*! 
+	 * The calculation is implemented by calling the corresponding
+	 * LOCA::DerivUtils::computeDCeDp() method of the passed 
+	 * LOCA::DerivUtils object.
+	 */
 	virtual NOX::Abstract::Group::ReturnType 
 	computeDCeDp(const NOX::Abstract::Vector& yVector,
 		     const NOX::Abstract::Vector& zVector,
@@ -74,8 +94,18 @@ namespace LOCA {
 		     NOX::Abstract::Vector& result_real,
 		     NOX::Abstract::Vector& result_imag);
 
-	//! Compute derivative of (J+iwB)(y+iz) with respect to parameter, 
-	//! given (J+iwB)(y+iz) vectors
+	/*! 
+	 * \brief Computes the derivative 
+	 * \f$\frac{\partial (J+i\omega B)(y+iz)}{\partial p}\f$ 
+	 * where \f$p\f$ is the parameter indexed by \b param_id.  The 
+	 * arguments \b Ce_real and \b Ce_imag hold the real and imaginary
+	 * components of \f$(J+i\omega B)(y+iz)\f$.
+	 */
+	/*! 
+	 * The calculation is implemented by calling the corresponding
+	 * LOCA::DerivUtils::computeDCeDp() method of the passed 
+	 * LOCA::DerivUtils object.
+	 */
 	virtual NOX::Abstract::Group::ReturnType 
 	computeDCeDp(const NOX::Abstract::Vector& yVector,
 		     const NOX::Abstract::Vector& zVector,
@@ -86,7 +116,16 @@ namespace LOCA {
 		     NOX::Abstract::Vector& result_real,
 		     NOX::Abstract::Vector& result_imag);
 
-	//! Compute vector (J+iwB)(y+iz))_{x}a  given vector a
+	/*! 
+	 * \brief Computes the directional derivative 
+	 * \f$\frac{\partial (J+i\omega B)(y+iz)}{\partial x} a\f$ for the 
+	 * given direction \f$a\f$. 
+	 */
+	/*! 
+	 * The calculation is implemented by calling the corresponding
+	 * LOCA::DerivUtils::computeDCeDxa() method of the passed 
+	 * LOCA::DerivUtils object.
+	 */
 	virtual NOX::Abstract::Group::ReturnType 
 	computeDCeDxa(const NOX::Abstract::Vector& yVector,
 		      const NOX::Abstract::Vector& zVector,
@@ -95,8 +134,18 @@ namespace LOCA {
 		      NOX::Abstract::Vector& result_real,
 		      NOX::Abstract::Vector& result_imag);
   
-	//! Compute vector (J+iwB)(y+iz))_{x}a  given vector a, given 
-	//! (J+iwB)(y+iz) vector
+	/*! 
+	 * \brief Computes the directional derivative 
+	 * \f$\frac{\partial (J+i\omega B)(y+iz)}{\partial x} a\f$ for the 
+	 * given direction \f$a\f$. The 
+	 * arguments \b Ce_real and \b Ce_imag hold the real and imaginary
+	 * components of \f$(J+i\omega B)(y+iz)\f$.
+	 */
+	/*! 
+	 * The calculation is implemented by calling the corresponding
+	 * LOCA::DerivUtils::computeDCeDxa() method of the passed 
+	 * LOCA::DerivUtils object.
+	 */
 	virtual NOX::Abstract::Group::ReturnType 
 	computeDCeDxa(const NOX::Abstract::Vector& yVector,
 		      const NOX::Abstract::Vector& zVector,
@@ -108,7 +157,7 @@ namespace LOCA {
 		      NOX::Abstract::Vector& result_imag);
       };
     } // namespace HopfBord
-  } // namespace Continuation
+  } // namespace Bifurcation
 } // namespace LOCA
 
 #endif

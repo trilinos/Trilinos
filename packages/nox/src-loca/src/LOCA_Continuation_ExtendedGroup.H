@@ -41,57 +41,99 @@
 
 namespace LOCA { 
 
-  //! %Continuation vectors and groups
   namespace Continuation { 
 
     /*!
-      \brief %Generic wrapper group for computing continuation curves.
-    */
+     * \brief Base class for all continuation groups. 
+     */
     /*!
-      %Continuation is defined as computing some curve 
-      \f$(x(s),p(s))\in\Re^{n+1}\f$ such that \f$F(x(s),p(s))=0\f$ for some
-      parameterization \f$s\f$.  Given some point \f$(x_0,p_0)\f$ on the
-      curve, another nearby point on the curve is calculated by first 
-      computing a predictor direction \f$v\f$ and the approximate point
-      \f$(x^\ast,p^\ast) = (x_0,p_0) + v\Delta s\f$ where \f$\Delta s\f$ is
-      the step size.  Then the next point on the curve is computed by
-      solving the extended set of equations
-      \f[
-          \begin{array}{cc}
-             F(x,p) &= 0 \\
-	     g(x,p,x_0,p_0,x^\ast,p^\ast,v,\Delta s) &= 0
-	  \end{array}
-      \f]
-      for \f$(x,p)\f$.  The equation 
-      \f$g(x,p,x_0,p_0,x^\ast,p^\ast,v,\Delta s)=0\f$ is called the 
-      continuation equation
-      and different choices of \f$g\f$ yield different continuation methods.
-
-      This group, derived from the NOX::Abstract::Group, defines an additional
-      interface that continuation groups should implement, as well as some
-      generic algorithms for commom computations among continuation groups.
-    */
-
+     * %Continuation is defined as computing some curve 
+     * \f$(x(s),p(s))\in\Re^{n+1}\f$ such that \f$F(x(s),p(s))=0\f$ for some
+     * parameterization \f$s\f$.  Given some point \f$(x_0,p_0)\f$ on the
+     * curve, another nearby point on the curve is calculated by first 
+     * computing a predictor direction \f$v\in\Re^{n+1}\f$ and the 
+     * approximate point \f$(x^\ast,p^\ast) = (x_0,p_0) + v\Delta s\f$ 
+     * where \f$\Delta s\f$ is the step size.  Then the next point on the 
+     * curve is computed by solving the extended set of equations
+     *  \f[
+     *      \begin{array}{cc}
+     *         F(x,p) &= 0 \\
+     *         g(x,p,x_0,p_0,x^\ast,p^\ast,v,\Delta s) &= 0
+     *      \end{array}
+     *  \f]
+     *  for \f$(x,p)\f$.  The equation 
+     *  \f$g(x,p,x_0,p_0,x^\ast,p^\ast,v,\Delta s)=0\f$ is called the 
+     *  continuation equation
+     *  and different choices of \f$g\f$ yield different continuation methods.
+     *
+     * This group, derived from the NOX::Abstract::Group, defines an 
+     * additional interface that continuation groups should implement, 
+     * as well as some generic algorithms for commom computations among 
+     * continuation groups.  It stores a pointer to the underlying group,
+     * a class of the type LOCA::Continuation::AbstractGroup.
+     *
+     * The constructors take two parameter list arguments:  the first stores
+     * the linear solver parameters required for the underlying group's 
+     * applyJacobianInverse() routine (used by the computeTangent() method),
+     * and the second stores parameters relevant to the continuation group.
+     * These parameters are:
+     * <ul>
+     * <li> "Initial Scale Factor" The initial scale factor for parameter 
+     *      componenet scaling (defaults to 1.0).
+     * </ul>
+     */
     class ExtendedGroup : public virtual NOX::Abstract::Group {
 
     public:
   
       //! Constructor with integer continuation parameter id
+      /*!
+       * The argument grp is the underlying group which implements \f$F\f$,
+       * paramID is the index of the continuation parameter, linSolverParams
+       * is the parameter list passed to the underlying groups 
+       * applyJacobianInverse() routine (for computeTangent()), and params
+       * is the parameter list for the continuation groups described above.
+       *
+       * The grp argument is a non-const reference and may be modified.
+       */
       ExtendedGroup(LOCA::Continuation::AbstractGroup& grp, int paramID,
 		    NOX::Parameter::List& linSolverParams,
 		    NOX::Parameter::List& params);
 
       //! Constructor with const grp, integer continuation parameter id
+      /*!
+       * The argument grp is the underlying group which implements \f$F\f$,
+       * paramID is the index of the continuation parameter, linSolverParams
+       * is the parameter list passed to the underlying groups 
+       * applyJacobianInverse() routine (for computeTangent()), and params
+       * is the parameter list for the continuation groups described above.
+       */
       ExtendedGroup(const LOCA::Continuation::AbstractGroup& grp, int paramID,
 		    NOX::Parameter::List& linSolverParams,
 		    NOX::Parameter::List& params);
 
       //! Constructor with string continuation parameter id
+     /*!
+       * The argument grp is the underlying group which implements \f$F\f$,
+       * paramID is the index of the continuation parameter, linSolverParams
+       * is the parameter list passed to the underlying groups 
+       * applyJacobianInverse() routine (for computeTangent()), and params
+       * is the parameter list for the continuation groups described above.
+       *
+       * The grp argument is a non-const reference and may be modified.
+       */ 
       ExtendedGroup(LOCA::Continuation::AbstractGroup& grp, string paramID,
 		    NOX::Parameter::List& linSolverParams,
 		    NOX::Parameter::List& params);
 
       //! Constructor with const grp, string continuation parameter id
+      /*!
+       * The argument grp is the underlying group which implements \f$F\f$,
+       * paramID is the index of the continuation parameter, linSolverParams
+       * is the parameter list passed to the underlying groups 
+       * applyJacobianInverse() routine (for computeTangent()), and params
+       * is the parameter list for the continuation groups described above.
+       */
       ExtendedGroup(const LOCA::Continuation::AbstractGroup& grp, 
 		    string paramID,
 		    NOX::Parameter::List& linSolverParams,

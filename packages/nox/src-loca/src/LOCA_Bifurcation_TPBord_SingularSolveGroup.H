@@ -43,17 +43,31 @@ namespace LOCA {
 
     namespace TPBord {
 
-      /*!  \brief Interface to underlying groups for turning point calculations
+      /*!  
+       * \brief Concrete class that provides concrete implementations of the
+       * singular Jacobian solve methods of the 
+       * LOCA::Bifurcation::TPBord::AbstractGroup.
+       */
+      /*!
+       * The singular Jacobian solve methods are implemented by calling the
+       * corresponding compute methods of the 
+       * LOCA::SingularJacobianSolve::Manager class.  It is through this class,
+       * and the passed parameter list in the constructor, that the particular
+       * algorithm for performing the singular solves is chosen.  See the
+       * LOCA::SingularJacobianSolve::Manager class description for a 
+       * description of the relevant parameters and the corresponding
+       * singular solve algorithms.  In the future, the functionality provided
+       * by the manager class will be directly incorporated into this class.
        */
       class SingularSolveGroup : 
 	public virtual LOCA::Bifurcation::TPBord::AbstractGroup {
 
       public:
 
-	//! Default constructor.
+	//! Constructor with const parameter list
 	SingularSolveGroup(const NOX::Parameter::List& params = NOX::Parameter::List());
   
-	//! Default constructor.
+	//! Constructor with non-const parameter list
 	SingularSolveGroup(NOX::Parameter::List& params);
  
 	//! Copy constructor
@@ -68,6 +82,18 @@ namespace LOCA {
 	operator=(const SingularSolveGroup& source);
 
 	//! applyJacobianInverse for nearly singular systems
+	/*!
+	 * This method is to compute the solution to \f$Jx=b\f$ for nearly
+	 * singular \f$J\f$.  \b approxNullVec contains an approximation to the
+	 * null vector \f$n\f$ such that \f$Jn\approx0\f$, and 
+	 * \b jacApproxNullVec
+	 * contains \f$Jn\f$.  The idea is these quantities are supposed to
+	 * help in obtaining an accurate solution to \f$Jx=b\f$.
+	 *
+	 * The method is implemented by calling the 
+	 * LOCA::SingularJacobianSolve::Manager::compute() method of the 
+	 * LOCA::SingularJacobianSolve::Manager class.
+	 */
 	virtual NOX::Abstract::Group::ReturnType
 	applySingularJacobianInverse(
 				NOX::Parameter::List& params,
@@ -76,7 +102,12 @@ namespace LOCA {
 				const NOX::Abstract::Vector& jacApproxNullVec,
 				NOX::Abstract::Vector& result);
 
-	//! applyJacobianInverse for nearly singular systems, multiple RHS
+	//! Version of applySingularJacobianInverse() for multiple RHS.
+	/*!
+	 * The method is implemented by calling the 
+	 * LOCA::SingularJacobianSolve::Manager::computeMulti() method of the 
+	 * LOCA::SingularJacobianSolve::Manager class.
+	 */
 	virtual NOX::Abstract::Group::ReturnType 
 	applySingularJacobianInverseMulti(
 			       NOX::Parameter::List& params,
@@ -92,7 +123,7 @@ namespace LOCA {
 	LOCA::SingularJacobianSolve::Manager singularSolveManager;
       };
     } // namespace TPBord
-  } // namespace Continuation
+  } // namespace Bifurcation
 } // namespace LOCA
 
 #endif
