@@ -10,6 +10,7 @@
 
 #include "NOX_Status_Combo.H"
 #include "NOX_Solver_Generic.H"
+#include "NOX_Utils.H"
 
 using namespace NOX::Status;
 
@@ -23,6 +24,15 @@ Combo& Combo::addTest(Test& a)
 {
   if (isSafe(a))
     tests.push_back(&a);
+  else 
+    if (Utils::doPrint(1)) {
+      cout << "\n*** WARNING! ***\n";
+      cout << "This combo tests currently consists of the following:\n";
+      this->print(cout, 2);
+      cout << "Unable to add the following test:\n";
+      a.print(cout, 2);
+      cout << "\n";
+    }
   return *this;
 }
 
