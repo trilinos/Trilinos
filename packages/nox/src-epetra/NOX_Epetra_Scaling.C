@@ -132,18 +132,23 @@ void NOX::Epetra::Scaling::unscaleLinearSystem(Epetra_LinearProblem& problem)
 void NOX::Epetra::Scaling::applyRightScaling(const Epetra_Vector& input, 
 					     Epetra_Vector& result)
 {
-  Epetra_Vector* diagonal = 0;
-  for (unsigned int i = 0; i < scaleVector.size(); i ++) {
-
-    if (scaleType[i] == Right) {
-      diagonal = scaleVector[i];
-
-      if (tmpVectorPtr == 0)
-	tmpVectorPtr = new Epetra_Vector(*diagonal);
-     
-      tmpVectorPtr->Reciprocal(*diagonal);
-
-      result.Multiply(1.0, input, *tmpVectorPtr, 0.0);
+  if (scaleVector.size() == 0) {
+    result = input;
+  }
+  else {
+    Epetra_Vector* diagonal = 0;
+    for (unsigned int i = 0; i < scaleVector.size(); i ++) {
+      
+      if (scaleType[i] == Right) {
+	diagonal = scaleVector[i];
+	
+	if (tmpVectorPtr == 0)
+	  tmpVectorPtr = new Epetra_Vector(*diagonal);
+	
+	tmpVectorPtr->Reciprocal(*diagonal);
+	
+	result.Multiply(1.0, input, *tmpVectorPtr, 0.0);
+      }
     }
   }
 }
@@ -151,18 +156,23 @@ void NOX::Epetra::Scaling::applyRightScaling(const Epetra_Vector& input,
 void NOX::Epetra::Scaling::applyLeftScaling(const Epetra_Vector& input, 
 					    Epetra_Vector& result)
 { 
-  Epetra_Vector* diagonal = 0;
-  for (unsigned int i = 0; i < scaleVector.size(); i ++) {
-    
-    if (scaleType[i] == Left) {
-      diagonal = scaleVector[i];
-
-      if (tmpVectorPtr == 0)
-	tmpVectorPtr = new Epetra_Vector(*diagonal);
-     
-      tmpVectorPtr->Reciprocal(*diagonal);
-
-      result.Multiply(1.0, input, *tmpVectorPtr, 0.0);
+  if (scaleVector.size() == 0) {
+    result = input;
+  }
+  else {
+    Epetra_Vector* diagonal = 0;
+    for (unsigned int i = 0; i < scaleVector.size(); i ++) {
+      
+      if (scaleType[i] == Left) {
+	diagonal = scaleVector[i];
+	
+	if (tmpVectorPtr == 0)
+	  tmpVectorPtr = new Epetra_Vector(*diagonal);
+	
+	tmpVectorPtr->Reciprocal(*diagonal);
+	
+	result.Multiply(1.0, input, *tmpVectorPtr, 0.0);
+      }
     }
   }
 }
