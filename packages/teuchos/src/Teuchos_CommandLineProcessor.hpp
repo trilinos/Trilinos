@@ -36,7 +36,7 @@
 	\brief Basic command line parser for input from <tt>(argc,argv[])</tt> 
 */
 #include "Teuchos_map.hpp"
-#include "Teuchos_ConfigDefs.hpp"
+#include "Teuchos_CompileTimeAssert.hpp"
 
 namespace Teuchos {
 
@@ -161,7 +161,46 @@ public:
 		,std::string   *option_val
 		,const char    documentation[] = NULL
 		);
-
+	
+	///
+	/** \brief Set an enumeration option (templated by enumeration type).
+	 *
+	 * @param  enum_option_name
+	 *              [in] (null terminated string) The name of the option
+	 *              (without the leading '--' or trailing '=').
+	 * @param  enum_option_val
+	 *              [in/out] On input, <tt>*enum_option_val</tt> give the default
+	 *              value of the enumeration (used for printing in --help).
+	 *              After <tt>parse()</tt> finished executing successfully, 
+	 *              <tt>*enum_option_val</tt> will contain the user-selected
+	 *              value of the enumeration.
+	 * @param  num_enum_opt_values
+	 *              [in] Gives the number of possible option values to select
+	 * @param  enum_opt_values
+	 *              [in] Array (length <tt>num_enum_opt_values</tt>)) that gives
+	 *              the numeric values for each option.  The values in this
+	 *              array are used to set the actual option <tt>*enum_option_val</tt>.
+	 * @param  enum_opt_names
+	 *              [in] Array (length <tt>num_enum_opt_values</tt>)) that gives
+	 *              the string names for each option.  The strings in this function
+	 *              are what is used in the commandline.
+	 * @param  documentation
+	 *              [in] If <tt>!=NULL</tt>, then this null terminated string
+	 *              gives the documentation for the option.
+	 *
+	 * Warning! Only use enumeration or <tt>int</tt> for <tt>EType</tt>.
+	 * Using any other type for <tt>EType</tt> could be trouble!
+	 */
+	template <class EType>
+	void setOption(
+		const char    enum_option_name[]
+		,EType       *enum_option_val
+		,const int    num_enum_opt_values
+		,const EType  enum_opt_values[]
+		,const char*  enum_opt_names[]
+		,const char   documentation[] = NULL
+		);
+	
 	//@}
 
 	//@{ \name Parse methods
@@ -175,16 +214,24 @@ public:
 	 * @param  errout  [out] If <tt>!=NULL</tt> then error and help messages are sent here.
 	 *                 The default is set to <tt>&std::cerr</tt>.
 	 *
-	 * Postconditions:<ul>
-	 * <li>If an unrecognized option if found
+	 * Postconditions:
+	 * <ul>
+	 * <li>If an unrecognized option is found
 	 *     <ul>
-	 *     <li>If <tt>this->throwExceptions()==true</tt>
-	 *         <ul><li>This method will throw an <tt>UnrecognizedOption</tt> exception</ul>
+	 *     <li>If <tt>this->recogniseAllOptions()==true</tt>
+	 *         <ul>
+	 *         <li>An error message will be printed to <tt>*errout</tt> and parsing will stop as follows:
+	 *         <li>If <tt>this->throwExceptions()==true</tt>
+	 *             <ul><li>This method will throw an <tt>UnrecognizedOption</tt> exception</ul>
+	 *         <li>else
+	 *             <ul><li>This method will return <tt>PARSE_UNRECOGNIZED_OPTION</tt></ul>
+	 *         <li>endif
+	 *         </ul>
 	 *     <li>else
-	 *         <ul><li>This method will return <tt>PARSE_UNRECOGNIZED_OPTION</tt></ul>
+	 *         <ul><li>A warning message will be printed to <tt>*errout</tt> and parsing will continue</ul>
 	 *     <li>endif
 	 *     </ul>
-	 * <li>Else if the option <tt>--help</tt> is found
+	 * <li>else if the option <tt>--help</tt> is found
 	 *     <ul>
 	 *     <li>If <tt>this->throwExceptions()==true</tt>
 	 *         <ul><li>This method will throw a <tt>HelpPrinted</tt> exception</ul>
@@ -192,15 +239,46 @@ public:
 	 *         <ul><li>This method will return <tt>PARSE_HELP_PRINTED</tt></ul>
 	 *     <li>endif
 	 *     </ul>
-	 * <li>Else
+	 * <li>else
 	 *     <ul><li>This method will return <tt>PARSE_SUCCESSFUL</tt></ul>
+	 * <li>endif
 	 * </ul>
+	 *
+	 * Note that if the option <tt>--pause-for-debugging</tt> is
+	 * present, then string <tt>Type 0 and press enter to continue
+	 * :</tt> will be printed to standard error (<tt>std::cerr</tt>) and
+	 * execution will be suspended until the user enters any non-null
+	 * character(s).  This option is designed to make it easier to
+	 * attach a debugger, especially in a parallel MPI program.  If
+	 * HAVE_MPI is defined, then output/input is only performed with the
+	 * process with rank 0 and then MPI calls insure that all processors
+	 * wait (using <tt>MPI_Barrier(MPI_COMM_WORLD)</tt>) until the user
+	 * has entered something.  This allows the user to attach a debugger
+	 * to one or more parallel MPI processes and set breakpoints before
+	 * execution resumes.  Note that the stream <tt>*errout</tt> is not
+	 * used for this output/input but instead <tt>std::cerr</tt> is
+	 * directly used.
 	 */
 	EParseCommandLineReturn  parse(
 		int             argc
 		,char*          argv[]
 		,std::ostream   *errout    = &std::cerr
 		) const;
+
+	//@}
+
+	//@{ \name Miscellaneous method
+
+	///
+	/** \brief Print the help message.
+	 *
+	 * @param  out  [in/out] The stream the documentation will be printed to.
+	 *
+	 * This will print a formatted set of documentation that shows what
+	 * options are set, what their default values are and any
+	 * user-supplied documentation about each option.
+	 */
+ 	void printHelpMessage( const char program_name[], std::ostream &out ) const;
 
 	//@}
 
@@ -238,7 +316,7 @@ public:
 
 public:
 	//
-	enum EOptType { OPT_NONE, OPT_BOOL_TRUE, OPT_BOOL_FALSE, OPT_INT, OPT_DOUBLE, OPT_STRING };
+	enum EOptType { OPT_NONE, OPT_BOOL_TRUE, OPT_BOOL_FALSE, OPT_INT, OPT_DOUBLE, OPT_STRING, OPT_ENUM_INT };
 	// RAB: 2003/10/10: Note: I had to move this out of the private section since
 	// the sun compiler (version 7) complained (rightly it now appears after looking
 	// up what the ISO/ANSI C++ standard says) about the declaration for opt_val_val_t
@@ -249,6 +327,10 @@ private:
 	// /////////////////////////////////
 	// Private types
 
+	// ToDo: RAB: 2004/05/25: Clean up these data structures and add
+	// support for a templated enum type.  This will clean up usage
+	// quite a bit.
+
 	//
 	struct opt_val_val_t {
 		opt_val_val_t()
@@ -258,7 +340,7 @@ private:
 			:opt_type(opt_type_in),opt_val(opt_val_in)
 			{}
 		EOptType     opt_type;
-		void         *opt_val; // Will be bool*, int* or double*
+		void         *opt_val; // Will be bool*, int*, double*, string* or a small int (for OPT_ENUM_INT)
 	};
 
 	//
@@ -284,16 +366,83 @@ private:
 	//
 	typedef std::vector<opt_doc_t>   options_documentation_list_t;
 
+	//
+	struct enum_opt_data_t {
+		enum_opt_data_t()
+			:enum_option_val(NULL), num_enum_opt_values(0)
+			{}
+		enum_opt_data_t(
+			int          *_enum_option_val
+			,const int    _num_enum_opt_values
+			,const int    _enum_opt_values[]
+			,const char*  _enum_opt_names[]
+			)
+			:enum_option_val(_enum_option_val)
+			,num_enum_opt_values(_num_enum_opt_values)
+			,enum_opt_values(_enum_opt_values,_enum_opt_values+_num_enum_opt_values)
+			,enum_opt_names(_enum_opt_names,_enum_opt_names+_num_enum_opt_values)
+			{}
+		int                  *enum_option_val;
+		int                  num_enum_opt_values;
+		std::vector<int>     enum_opt_values;
+		std::vector<string>  enum_opt_names;
+	};
+
+	//
+	typedef std::vector<enum_opt_data_t> enum_opt_data_list_t;
+
 	// /////////////////////////////////
 	// Private data members
 
-	bool 				throwExceptions_;
-	bool				recogniseAllOptions_;
+	bool 				                     throwExceptions_;
+	bool				                     recogniseAllOptions_;
 	options_list_t                   options_list_;
 	options_documentation_list_t     options_documentation_list_;
+	enum_opt_data_list_t             enum_opt_data_list_;
 
 	// /////////////////////////////////
 	// Private member functions
+
+	// Set an integer enumeration option
+	void setEnumOption(
+		const char    enum_option_name[]
+		,int          *enum_option_val
+		,const int    num_enum_opt_values
+		,const int    enum_opt_values[]
+		,const char*  enum_opt_names[]
+		,const char   documentation[]
+		);
+
+	// Set an enum int option
+	bool set_enum_value(
+		int                  argv_i
+		,char*               argv[]
+		,const std::string   &enum_opt_name
+		,const int           enum_id
+		,const std::string   &enum_str_val
+		,std::ostream        *errout
+		) const;
+
+	// Print the valid enum values
+	void print_enum_opt_names(
+		const int            enum_id
+		,std::ostream        &out
+		) const;
+
+	// Return the name of the default value for an enum
+	std::string enum_opt_default_val_name(
+		const std::string    &enum_name
+		,const int           enum_id
+		,std::ostream        *errout
+		) const;
+	
+	// Return the index given and option value
+	int find_enum_opt_index(
+		const std::string           &enum_opt_name
+		,const int                  opt_value
+		,const enum_opt_data_t      &enum_data
+		,std::ostream               *errout
+		) const; 
 
 	// Get the option and the value from an entry in argv[].
 	// Will return false if entry is not formated properly.
@@ -301,13 +450,6 @@ private:
 		const char     str[]
 		,std::string   *opt_name
 		,std::string   *opt_val_str // May be empty on return
-		) const;
-
-	// Print help message
-	void print_help_msg(
-		int             argc
-		,char*          argv[]
-		,std::ostream   *errout
 		) const;
 
 	// String for option type
@@ -319,12 +461,41 @@ private:
 		,char*          argv[]
 		,std::ostream   *errout
 		) const;
-	
 
 }; // end class CommandLineProcessor
 
 // /////////////////////////
 // Inline members
+
+template <class EType>
+inline
+void CommandLineProcessor::setOption(
+	const char    enum_option_name[]
+	,EType       *enum_option_val
+	,const int    num_enum_opt_values
+	,const EType  enum_opt_values[]
+	,const char*  enum_opt_names[]
+	,const char   documentation[]
+	)
+{
+	// RAB: 2004/05/25: Every C++ implementation that I know of just
+	// represents enumerations as int's and therefore this will compile
+	// just fine.  However, the ISO/ANSI C++ standard says that
+	// compilers are allowed to use a smaller storage type for an enum
+	// but must not require storage any larger than an 'int'.  If the
+	// below compile-time assertion does not compile then we need to do
+	// something different but it will be a lot of work!
+	CompileTimeAssert<sizeof(int)-sizeof(EType)>();
+	//CompileTimeAssert<sizeof(int)-sizeof(EType)-1>(); // Uncomment to see compilation error
+	setEnumOption(
+		enum_option_name
+		,reinterpret_cast<int*>(enum_option_val)
+		,num_enum_opt_values
+		,reinterpret_cast<const int*>(enum_opt_values)
+		,enum_opt_names
+		,documentation
+		);
+}
 
 inline
 std::string CommandLineProcessor::opt_type_str( EOptType opt_type ) const
@@ -342,6 +513,9 @@ std::string CommandLineProcessor::opt_type_str( EOptType opt_type ) const
 			break;
 		case OPT_STRING:
 			str = "string";
+			break;
+		case OPT_ENUM_INT:
+			str = "enum";
 			break;
 		default:
 			assert(0); // Local programming error only

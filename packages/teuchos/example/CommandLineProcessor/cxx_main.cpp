@@ -23,21 +23,56 @@ int main(int argc, char* argv[])
   bool Precondition;
   My_CLP.setOption("precondition","no-precondition",
 		   &Precondition,"Preconditioning flag");
+	// Set an enumeration command line option
+	enum ESpeed { SPEED_SLOW=-1, SPEED_MEDIUM=0, SPEED_FAST=+1 };
+	const int    num_speed_values  = 3;
+	const ESpeed speed_opt_values[] = { SPEED_SLOW, SPEED_MEDIUM, SPEED_FAST };
+	const char*  speed_opt_names[]  = { "slow",     "medium",     "fast"     };
+	ESpeed       Speed = SPEED_MEDIUM;
+	My_CLP.setOption(
+		"speed", &Speed,
+		num_speed_values, speed_opt_values, speed_opt_names,
+		"Speed of our solver"
+		);
 
-  /* There are also two methods that control the strictness of the command line processor.
-     For a command line processor to be sensitive to any bad command line option that it 
-     does not recognize use:
+  /* There are also two methods that control the behavior of the
+		 command line processor.  First, for the command line processor to
+		 allow an unrecognized a command line option to be ignored (and
+		 only have a warning printed), use:
   */
   My_CLP.recogniseAllOptions(false);
   
-  /* Then, if the parser finds a command line option it doesn't recognize, it will
-     throw an exception.  To prevent a command line processor from throwing an exception 
-     when it encounters a unrecognized option or help is printed, use:
+  /* Second, by default, if the parser finds a command line option it
+		 doesn't recognize or finds the --help option, it will throw an
+		 exception.  If you want prevent a command line processor from
+		 throwing an exception (which is important in this program since
+		 we don't have an try/catch around this) when it encounters a
+		 unrecognized option or help is printed, use:
   */
   My_CLP.throwExceptions(false);
-  
-  //Finally, to parse the command line, argc and argv are passed to the parse method:
-  My_CLP.parse( argc, argv );
 
+	/* We now parse the command line where argc and argv are passed to
+		 the parse method.  Note that since we have turned off exception
+		 throwing above we had better grab the return argument so that
+		 we can see what happened and act accordingly.
+	*/
+  Teuchos::CommandLineProcessor::EParseCommandLineReturn
+		parseReturn= My_CLP.parse( argc, argv );
+	if( parseReturn == Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED ) return 0;
+	if( parseReturn != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL   ) return 1; // Error!
+
+	// Here is where you would use these command line arguments but for this example program
+	// we will just print the help message with the new values of the command-line arguments.
+	std::cout << "\nPrinting help message with new values of command-line arguments ...\n\n";
+	My_CLP.printHelpMessage(argv[0],std::cout);
+
+	// Now we will print the option values
+	std::cout << "\nPrinting user options after parsing ...\n\n";
+	std::cout << "NumIters     = " << NumIters << std::endl;
+	std::cout << "Tolerance    = " << Tolerance << std::endl;
+	std::cout << "Solver       = \"" << Solver << "\"\n";
+	std::cout << "Precondition = " << Precondition << std::endl;
+	std::cout << "Speed        = " << Speed << std::endl;
+	
   return 0;
 }
