@@ -1,0 +1,11 @@
+mkdir -p old
+\rm -f old/*
+
+echo "This script removes trailing ^M characters. Original files are in directory old."
+
+foreach f (*.h *.cc *.cpp *.hpp *akefile)
+  echo "Removing ^M characters (if any) from " $f
+  cp $f old
+  sed -f $TRILINOS_HOME/build/removeCtrlM.sed old/$f > $f
+  diff old/$f $f
+end
