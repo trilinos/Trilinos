@@ -95,9 +95,9 @@ int Zoltan_PHG_HPart_Lib (
      "coarsening plot");
 
   if (hgp->output_level >= PHG_DEBUG_LIST) {
-    printf("START %3d |V|=%6d |E|=%6d |I|=%6d %d/%s-%s/%s-%s p=%d...\n",
+    printf("START %3d |V|=%6d |E|=%6d |I|=%6d %d/%s/%s-%s p=%d...\n",
      hg->info, hg->nVtx, hg->nEdge, hg->nInput, hg->redl, hgp->redm_str,
-     hgp->redmo_str, hgp->coarsepartition_str, hgp->refinement_str, p);
+     hgp->coarsepartition_str, hgp->refinement_str, p);
     if (hgp->output_level > PHG_DEBUG_LIST) {
       err = Zoltan_PHG_Info(zz, hg);
       if (err != ZOLTAN_OK && err != ZOLTAN_WARN)
@@ -215,9 +215,9 @@ int Zoltan_PHG_HPart_Lib (
       goto End;
   }
   if (hgp->output_level >= PHG_DEBUG_LIST)
-    printf("FINAL %3d |V|=%6d |E|=%6d |I|=%6d %d/%s-%s/%s-%s p=%d bal=%.2f cutl=%.2f\n",
+    printf("FINAL %3d |V|=%6d |E|=%6d |I|=%6d %d/%s/%s-%s p=%d bal=%.2f cutl=%.2f\n",
      hg->info, hg->nVtx, hg->nEdge, hg->nInput, hg->redl, hgp->redm_str,
-     hgp->redmo_str, hgp->coarsepartition_str, hgp->refinement_str, p,
+     hgp->coarsepartition_str, hgp->refinement_str, p,
      Zoltan_PHG_HPart_balance(zz, hg, p, part),
      Zoltan_PHG_hcut_size_links(zz, hg, part));
 

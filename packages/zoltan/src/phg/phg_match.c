@@ -33,57 +33,15 @@ static double sim (PHGraph*, int, int);
 /*****************************************************************************/
 int Zoltan_PHG_Set_Matching_Fn (PHGPartParams *hgp)
 {
-  int found = 1;
-
   if (!strcasecmp(hgp->redm_str, "no"))   hgp->matching = matching_no ;
-  else  {
-    found = 0;
-    hgp->matching = NULL;
-  }
+  else                                    hgp->matching = NULL;
 
-  if (hgp->matching) {
-     /* If reduction method is a matching, set the improvement and edge weight
-        scaling functions accordingly. */
-
-     /* Note: matching_aug1 is identical to matching_mxm -> it was eliminated */
-
-     hgp->matching_opt=NULL;
-     }
-  return found;
+  return (hgp->matching == NULL) ? 0 : 1;
 }
 
 
 
-/****************************************************************************/
-/* This is the similarity measure between two vertices in a hypergraph.
-   The similarity is equal to the scaled weight of the edge in the
-   transformed graph. But with this function we calculate the edge
-   weights on the fly without explicitly constructing the graph. */
-
-static double sim (PHGraph *hg, int a, int b)
-{
-int    i, j, edge, pins, end;
-double  weight, sim = 0.0;
-
-  /* First calculate the edge weight of the graph between a and b */
-  for (i = hg->vindex[a]; i < hg->vindex[a+1]; i++) {
-     edge = hg->vedge[i];
-     end  = hg->hindex[edge+1];
-     j    = hg->hindex[edge];
-     while (j < end && hg->hvertex[j] != b)
-        j++;
-     if (j < end) {
-        pins = end - hg->hindex[edge];
-        weight = 2.0 / ((pins-1) * pins);
-        if (hg->ewgt)
-           weight *= hg->ewgt[edge];
-        sim += weight;
-        }
-     }
-  return sim;
-}
-
-
+/* Removed sim() from serial version at this point */
 
 /*****************************************************************************/
 
@@ -119,10 +77,8 @@ char  *yo = "Zoltan_PHG_Matching";
         goto End;
      }
 
-  /* Optimization */
-  if (hgp->matching_opt)
-     err = hgp->matching_opt (zz, hg, match, limit);
-     
+  /* Removed serial Optimization here */
+
 End:
 
   /* Restore the old edge weights */

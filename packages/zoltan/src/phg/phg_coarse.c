@@ -34,7 +34,7 @@ int Zoltan_PHG_Coarsening
 ( ZZ *zz,             /* the Zoltan data structure */
   PHGraph *hg,
   int    *match,      /* Matching, Packing or Grouping array */
-  PHGraph *c_hg,      /* points to a copy of hg structure */
+  PHGraph *c_hg,      /* points to a working copy of hg structure */
   int    *LevelMap)
 {
   int i, j, k, l, old, vertex, new_vertex, deleted_he, deleted_pins, *hsize=NULL;
@@ -126,79 +126,10 @@ int Zoltan_PHG_Coarsening
     return Zoltan_PHG_Create_Mirror(zz, c_hg);
   }
 
-  /* Move weight of identical hyperedges to one of them */
-  if (!(sorted = (int*) ZOLTAN_MALLOC (c_hg->nEdge * sizeof(int)))
-   || !(hsize  = (int*) ZOLTAN_MALLOC (c_hg->nEdge * sizeof(int)))
-   || !(sum    = (int*) ZOLTAN_CALLOC (c_hg->nEdge,  sizeof(int)))  ) {
-    Zoltan_Multifree (__FILE__, __LINE__, 6, &c_ewgt, &c_hindex, &c_hvertex,
-     &sorted, &hsize, &sum);
-    ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
-    ZOLTAN_TRACE_EXIT (zz, yo);
-    return ZOLTAN_MEMERR;
-  }
-  for (i = 0; i < c_hg->nEdge; i++) {
-    sorted[i] = i;
-    hsize[i] = c_hindex[i+1] - c_hindex[i];
-    for (j = c_hindex[i]; j < c_hindex[i+1]; j++)
-      sum[i] += c_hvertex[j];
-  }
-
-  /* sort the edges according to their size and their sum of vertexIDs */
-  Zoltan_quicksort_pointer_inc_int_int (sorted, sum, hsize, 0, c_hg->nEdge-1);
-  i = 0;
-  while (i < c_hg->nEdge) {
-    j = i + 1;
-    while (j < c_hg->nEdge  &&  sum[sorted[j]] == sum[sorted[i]]
-     && hsize[sorted[j]] == hsize[sorted[i]])
-      j++;
-    if (j > i+1) {
-      for (k = i; k < j; k++)
-        /* sort the vertex list of these edges */
-        Zoltan_quicksort_list_inc_int (&(c_hvertex[c_hindex[sorted[k]]]), 0,
-         c_hindex[sorted[k]+1] - c_hindex[sorted[k]]-1);
-
-      /* sort edges according to their sorted vertex lists */
-      Zoltan_quicksort_pointer_inc_int_mult (sorted,i,j-1,c_hindex,c_hvertex);
-
-      /* check if the vertex lists of two hyperedges are identical */
-      for (k = i; k < j-1; k++) {
-        l = 0;
-        while (l < hsize[sorted[i]] && c_hvertex[c_hindex[sorted[k]]+l]
-         == c_hvertex[c_hindex[sorted[k+1]]+l])
-          l++;
-        if (l == hsize[sorted[i]]) {
-          c_ewgt[sorted[k+1]] += c_ewgt[sorted[k]];
-          c_ewgt[sorted[k]]    = 0.0;
-        }
-      }
-      i = j;
-    }
-    else
-      i++;
-  }
-  Zoltan_Multifree (__FILE__, __LINE__, 3, &sorted, &hsize, &sum);
-
-  /* delete hyperedges without weight */
-  deleted_he = deleted_pins = 0;
-  for (i = 0; i < c_hg->nEdge; i++) {
-    if (c_ewgt[i] <= EPS) {
-      deleted_he ++;
-      deleted_pins += c_hindex[i+1] - c_hindex[i];
-    }
-    else if (deleted_pins > 0) {
-      for (j = c_hindex[i]; j < c_hindex[i+1]; j++)
-        c_hvertex[j-deleted_pins] = c_hvertex[j];
-      c_ewgt[i-deleted_he]     = c_ewgt[i];
-      c_hindex[i+1-deleted_he] = c_hindex[i+1] - deleted_pins;
-    }
-  }
-  c_hg->nEdge -= deleted_he;
-  c_hg->nInput = c_hindex[c_hg->nEdge];
-
-  /* Reallocate the arrays to their exact size */
-  c_hg->ewgt    =(float*)ZOLTAN_REALLOC(c_ewgt,    c_hg->nEdge  * sizeof(float));
-  c_hg->hindex  =(int*)  ZOLTAN_REALLOC(c_hindex, (c_hg->nEdge+1) * sizeof(int));
-  c_hg->hvertex =(int*)  ZOLTAN_REALLOC(c_hvertex, c_hg->nInput   * sizeof(int));
+  /* RTHRTH: NOTE removed code per Umit's speedup hack from serial version HERE*/  
+  c_hg->ewgt    = c_ewgt;
+  c_hg->hindex  = c_hindex;
+  c_hg->hvertex = c_hvertex;
 
   ZOLTAN_TRACE_EXIT (zz, yo);
   return Zoltan_PHG_Create_Mirror(zz, c_hg);

@@ -32,24 +32,23 @@ extern "C" {
 
 
 /*****************************************************************************/
-/*  Parameters structure for HG method.  */
+/*  Parameters structure for parallel HG method.  */
 static PARAM_VARS PHG_params[] = {
   /* Add parameters here. */
-  {"PHG_REDUCTION_LIMIT",             NULL, "INT",    0},
-  {"PHG_EDGE_WEIGHT_SCALING",         NULL, "INT",    0},
-  {"PHG_REDUCTION_METHOD",            NULL, "STRING", 0},
-  {"PHG_COARSE_PARTITIONING",         NULL, "STRING", 0},
-  {"PHG_REFINEMENT",                  NULL, "STRING", 0},
-  {"PHG_REDUCTION_LOCAL_IMPROVEMENT", NULL, "STRING", 0},
-  {"PHG_NPROC_X",                     NULL, "INT",    0},
-  {"PHG_NPROC_Y",                     NULL, "INT",    0},
-  {"PCHECK_GRAPH",                    NULL, "INT",    0},
-  {"PHG_OUTPUT_LEVEL",                NULL, "INT",    0},
-  {NULL,                              NULL,  NULL,    0} 
+  {"PHG_REDUCTION_LIMIT",        NULL, "INT",    0},
+  {"PHG_EDGE_WEIGHT_SCALING",    NULL, "INT",    0},
+  {"PHG_REDUCTION_METHOD",       NULL, "STRING", 0},
+  {"PHG_COARSE_PARTITIONING",    NULL, "STRING", 0},
+  {"PHG_REFINEMENT",             NULL, "STRING", 0},
+  {"PHG_NPROC_X",                NULL, "INT",    0},
+  {"PHG_NPROC_Y",                NULL, "INT",    0},
+  {"PCHECK_GRAPH",               NULL, "INT",    0},
+  {"PHG_OUTPUT_LEVEL",           NULL, "INT",    0},
+  {NULL,                         NULL,  NULL,    0} 
 };
 
 /* prototypes for static functions: */
-static int set_proc_distrib(int, int, int*, int*, int*, int*);
+static int set_proc_distrib (int, int, int*, int*, int*, int*);
 static int Zoltan_PHG_Initialize_Params (ZZ*, PHGPartParams*);
 static int Zoltan_PHG_Return_Lists (ZZ*, ZHG*, Partition, int*,
  ZOLTAN_ID_PTR*, ZOLTAN_ID_PTR*, int**, int**);
@@ -109,6 +108,7 @@ int Zoltan_PHG(
   zz->LB.Data_Structure = zoltan_hg;
   nVtx = zoltan_hg->HG.nVtx;
   zoltan_hg->HG.redl = hgp.redl;     /* redl needs to be dynamic */
+  /* RTHRTH -- redl may need to be scaled by number of procs */
  
   /* allocate output partition memory */
   output_parts = (Partition) ZOLTAN_MALLOC (nVtx * sizeof(int));
@@ -167,30 +167,19 @@ static int Zoltan_PHG_Initialize_Params(
 {
 int ierr;
 
-  Zoltan_Bind_Param(PHG_params, "PHG_OUTPUT_LEVEL",
-                                (void*) &hgp->output_level);
-  Zoltan_Bind_Param(PHG_params, "PHG_NPROC_X",
-                                (void*) &(hgp->nProc_x));
-  Zoltan_Bind_Param(PHG_params, "PHG_NPROC_Y",
-                                (void*) &(hgp->nProc_y));
-  Zoltan_Bind_Param(PHG_params, "PHG_REDUCTION_LIMIT",
-                                (void*) &hgp->redl);
-  Zoltan_Bind_Param(PHG_params, "PHG_REDUCTION_METHOD",
-                                (void*) hgp->redm_str);
-  Zoltan_Bind_Param(PHG_params, "PHG_EDGE_WEIGHT_SCALING",
-                                (void*) &hgp->ews);
+  Zoltan_Bind_Param(PHG_params, "PHG_OUTPUT_LEVEL",  (void*) &hgp->output_level);
+  Zoltan_Bind_Param(PHG_params, "PHG_NPROC_X",          (void*) &(hgp->nProc_x));
+  Zoltan_Bind_Param(PHG_params, "PHG_NPROC_Y",          (void*) &(hgp->nProc_y));
+  Zoltan_Bind_Param(PHG_params, "PHG_REDUCTION_LIMIT",  (void*) &hgp->redl);
+  Zoltan_Bind_Param(PHG_params, "PHG_REDUCTION_METHOD", (void*) hgp->redm_str);
+  Zoltan_Bind_Param(PHG_params, "PHG_EDGE_WEIGHT_SCALING",    (void*) &hgp->ews);
+  Zoltan_Bind_Param(PHG_params, "PCHECK_GRAPH",       (void*) &hgp->check_graph);   
+  Zoltan_Bind_Param(PHG_params, "PHG_REFINEMENT",   (void*) hgp->refinement_str);
   Zoltan_Bind_Param(PHG_params, "PHG_COARSE_PARTITIONING", 
                                 (void*) hgp->coarsepartition_str);
-  Zoltan_Bind_Param(PHG_params, "PHG_REFINEMENT",
-                                (void*) hgp->refinement_str);
-  Zoltan_Bind_Param(PHG_params, "PCHECK_GRAPH",
-                                (void*) &hgp->check_graph);
-  Zoltan_Bind_Param(PHG_params, "PHG_REDUCTION_LOCAL_IMPROVEMENT",
-                                (void*) hgp->redmo_str);
 
   /* Set default values */
   strncpy(hgp->redm_str,            "no",  MAX_PARAM_STRING_LEN);
-  strncpy(hgp->redmo_str,           "no",  MAX_PARAM_STRING_LEN);
   strncpy(hgp->coarsepartition_str, "gr0", MAX_PARAM_STRING_LEN);
   strncpy(hgp->refinement_str,      "no",  MAX_PARAM_STRING_LEN);
   
@@ -406,6 +395,8 @@ End:
 
   return ierr;
 }
+
+
 
 #ifdef __cplusplus
 } /* closing bracket for extern "C" */

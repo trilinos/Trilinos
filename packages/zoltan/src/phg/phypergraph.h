@@ -75,7 +75,6 @@ struct PHGPartParamsStruct {
   int redl;                      /* Reduction limit (constant). */
   char redm_str[MAX_PARAM_STRING_LEN];   /* Reduction method string. */
   ZOLTAN_PHG_MATCHING_FN *matching;      /* Pointers to Matching function */
-  char redmo_str[MAX_PARAM_STRING_LEN];  /* Matching optimization string */
   ZOLTAN_PHG_MATCHING_FN *matching_opt;  /* Pointers to Matching opt function */
   int ews;                               /* type of hyperedge weight scaling */
   char coarsepartition_str[MAX_PARAM_STRING_LEN]; 
