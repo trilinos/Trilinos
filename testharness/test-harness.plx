@@ -1496,13 +1496,14 @@ report($SUMMARY);
         
         # update failed
         if ($code == $UPDATE_ERROR && -f "update_log.txt") {
-            $attachmentsExist = 1;
             my $log = "update_log.txt";     
             my $logPath = "$options{'TRILINOS_DIR'}[0]/testharness/temp/$log";       
             if ($options{'REPORT_METHOD'}[0] eq "EMAIL") {
-                $attachmentText .= "    $log\n";
-                $email->attach(Type=>'TEXT', Path=>"$logPath", Disposition=>'attachment');
+                #$attachmentsExist = 1;
+                #$attachmentText .= "    $log\n";
+                #$email->attach(Type=>'TEXT', Path=>"$logPath", Disposition=>'attachment');
             } elsif ($options{'REPORT_METHOD'}[0] eq "LOCAL_FILESYSTEM") { 
+                $attachmentsExist = 1;
                 $attachmentText .= appendFile($log, $logPath);                
             }
         } 
