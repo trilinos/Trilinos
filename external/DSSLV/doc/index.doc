@@ -1,0 +1,27 @@
+/*! \mainpage Trilinos/DSS:  Direct Sparse Solver Package.
+\htmlonly
+\endhtmlonly
+
+\section intro Introduction 
+DSS provides an object-oriented interface
+to several direct sparse solvers.  The first direct sparse solver to
+be added to DSS is SuperLU MPI, the distributed memory version of
+SuperLU.  DSS allows flexible construction of matrix and vector
+arguments via Epetra matrix and vector classes.  
+
+\section startup Overview of DSS.
+
+DSS contains one class:
+
+<ul> 
+
+<li> SuperludistOO - Interface to SuperLU MPI. 
+
+
+</ul>
+
+\htmlonly
+For details of Epetra, see the <a href="../../../epetra/doc/html/index.html">Epetra home page</a>.
+\endhtmlonly
+
+*/

@@ -1,0 +1,55 @@
+include $(TRILINOS_HOME)/build/TRILINOS_TARGET_DEFS
+TRILINOS_TARGET = $(TRILINOS_ARCH).$(TRILINOS_COMM)$(TRILINOS_ID)
+include $(TRILINOS_HOME)/build/makefile.$(TRILINOS_TARGET)
+
+KUNDERT_INCLUDE = -I$(TRILINOS_HOME)/contrib/Epetra_CrsKundertSparse/src
+
+DEFINES= -D$(TRILINOS_ARCH) $(EPETRA_ARCH_DEFINES) -D$(EPETRA_COMM) $(EPETRA_DEFAULT_DEFINES) -DDEBUG
+DEFINES= -D$(TRILINOS_ARCH) $(EPETRA_ARCH_DEFINES) -D$(EPETRA_COMM) $(EPETRA_DEFAULT_DEFINES) 
+
+INCLUDES = $(ARCH_INCLUDES) $(EPETRA_INCLUDES) $(KUNDERT_INCLUDE)
+
+CFLAGS=$(ARCH_CFLAGS) $(DEFINES) $(INCLUDES)
+FFLAGS=$(ARCH_FFLAGS) 
+CXXFLAGS=$(ARCH_CXXFLAGS) $(DEFINES) $(INCLUDES)
+CCFLAGS=$(CXXFLAGS)
+#=======================================================================
+# DSSLV source files
+#=======================================================================
+
+TEMPORARY_DSSLV_CC = CrsMatrixTranspose.cpp CrsMatricesAreIdentical.cpp \
+	ExtractCrsFromRowMatrix.cpp Comm_assert_equal.cpp 
+TEMPORARY_DSSLV_CC =  CrsMatrixTranspose.cpp 
+
+DSSLV_CC = SuperludistOO.cpp KundertOO.cpp $(TEMPORARY_DSSLV_CC) 
+
+DSSLV_F =
+
+#=======================================================================
+# DSSLV include files
+#=======================================================================
+
+TEMPORARY_DSSLV_INC =  CrsMatrixTranspose.h CrsMatricesAreIdentical.h \
+	ExtractCrsFromRowMatrix.h  Comm_assert_equal.h
+TEMPORARY_DSSLV_INC =  CrsMatrixTranspose.h 
+
+SUPERLUDIST_INCLUDE = DSSsupermatrix.h DSSsuperlu_ddefs.h DSSutil.h
+
+DSSLV_INC = SuperludistOO.h KundertOO.h  $(TEMPORARY_DSSLV_INC) \
+	$(SUPERLUDIST_INCLUDE)
+
+DSSLV_OBJ = $(DSSLV_CC:.cpp=.$(OBJ_EXT)) $(DSSLV_C:.c=.$(OBJ_EXT)) $(DSSLV_F:.f=.$(OBJ_EXT))
+
+#$(LIBDSSLV): $(DSSLV_OBJ)
+LIBDSSLV: $(DSSLV_OBJ)
+	mkdir -p $(TRILINOS_HOME)/lib/$(TRILINOS_TARGET)
+	$(AR) $(ARFLAGS) $(LIB_WIN_FLAGS)$(LIBDSSLV) $(DSSLV_OBJ) $(TEMPLATE_OBJS)
+
+# Remove object code and library
+
+clean:
+	@echo "junk" > dummy.$(OBJ_EXT)
+	@rm -f *.$(OBJ_EXT)  $(LIBDSSLV) *~
+
+tar:
+	tar cf DSSLVsrc.tar $(DSSLV_CC) $(DSSLV_INC)  classicMakefile 
