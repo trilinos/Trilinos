@@ -871,7 +871,7 @@ static int rcb_fn(
       ZOLTAN_FREE(&dotlist);
       if (!(dotmark = (int *) ZOLTAN_MALLOC(dotmax*sizeof(int)))
        || !(coord = (double *) ZOLTAN_MALLOC(dotmax*sizeof(double)))
-       || !(wgts = (double *) ZOLTAN_MALLOC(dotmax*sizeof(double)))
+       || !(wgts = (double *) ZOLTAN_MALLOC(wgtflag*dotmax*sizeof(double)))
        || !(dotlist = (int *) ZOLTAN_MALLOC(dotmax*sizeof(int)))) {
         ZOLTAN_PRINT_ERROR(proc, yo, "Memory error.");
         ierr = ZOLTAN_MEMERR;
