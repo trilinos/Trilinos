@@ -37,7 +37,7 @@ HbMatrix_test_DEPENDENCIES = $(top_builddir)/src/libkokkos.a
 
 HbMatrix_test_CXXFLAGS = -I$(top_srcdir)/src
 
-HbMatrix_test_LDADD = $(top_builddir)/src/libkokkos.a $(BLAS_LIBS) \
-	$(LIBS) $(FLIBS)
+HbMatrix_test_LDADD = $(top_builddir)/src/libkokkos.a $(LIBS) \
+	$(BLAS_LIBS) $(FLIBS)
 
 

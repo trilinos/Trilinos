@@ -45,9 +45,9 @@ MultiVec_tgemmV1_CXXFLAGS = -I$(top_srcdir)/src
                                                                                 
 MultiVec_tgemmV2_CXXFLAGS = -I$(top_srcdir)/src
 
-MultiVec_tgemmV1_LDADD = $(top_builddir)/src/libkokkos.a $(BLAS_LIBS) \
-        $(LIBS) $(FLIBS)
+MultiVec_tgemmV1_LDADD = $(top_builddir)/src/libkokkos.a $(LIBS) \
+        $(BLAS_LIBS) $(FLIBS)
                                                                                 
-MultiVec_tgemmV2_LDADD = $(top_builddir)/src/libkokkos.a $(BLAS_LIBS) \
-	$(LIBS) $(FLIBS)
+MultiVec_tgemmV2_LDADD = $(top_builddir)/src/libkokkos.a $(LIBS) \
+	$(BLAS_LIBS) $(FLIBS)
 

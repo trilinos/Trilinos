@@ -224,8 +224,8 @@ target_vendor = @target_vendor@
 DenseMultiVector_test_SOURCES = $(srcdir)/cxx_main.cpp
 DenseMultiVector_test_DEPENDENCIES = $(top_builddir)/src/libkokkos.a
 DenseMultiVector_test_CXXFLAGS = -I$(top_srcdir)/src
-DenseMultiVector_test_LDADD = $(top_builddir)/src/libkokkos.a $(BLAS_LIBS) \
-	$(LIBS) $(FLIBS)
+DenseMultiVector_test_LDADD = $(top_builddir)/src/libkokkos.a $(LIBS) \
+	$(BLAS_LIBS) $(FLIBS)
 
 all: all-am
 

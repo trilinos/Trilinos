@@ -42,5 +42,5 @@ SparseMatByMultiVec5_example_SOURCES = $(srcdir)/csrcsc.f $(srcdir)/scscmm1a.f \
 #SparseMatByMultiVec5_example_CXXFLAGS = -I$(top_srcdir)/src
 
 #SparseMatByMultiVec5_example_LDADD = $(top_builddir)/src/libkokkos.a \
-#	$(BLAS_LIBS) $(LIBS) $(FLIBS)
+#	$(LIBS) $(BLAS_LIBS) $(FLIBS)
 

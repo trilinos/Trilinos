@@ -38,7 +38,7 @@ BaseSparseMultiply_test_DEPENDENCIES = $(top_builddir)/src/libkokkos.a
 
 BaseSparseMultiply_test_CXXFLAGS = -I$(top_srcdir)/src
 
-BaseSparseMultiply_test_LDADD = $(top_builddir)/src/libkokkos.a $(BLAS_LIBS) \
-	$(LIBS) $(FLIBS)
+BaseSparseMultiply_test_LDADD = $(top_builddir)/src/libkokkos.a $(LIBS) \
+	$(BLAS_LIBS) $(FLIBS)
 
 

@@ -37,7 +37,7 @@ Permutation_test_DEPENDENCIES = $(top_builddir)/src/libkokkos.a
 
 Permutation_test_CXXFLAGS = -I$(top_srcdir)/src
 
-Permutation_test_LDADD = $(top_builddir)/src/libkokkos.a $(BLAS_LIBS) \
-	$(LIBS) $(FLIBS)
+Permutation_test_LDADD = $(top_builddir)/src/libkokkos.a $(LIBS) \
+	$(BLAS_LIBS) $(FLIBS)
 
 
