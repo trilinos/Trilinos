@@ -545,7 +545,7 @@ int ML_Operator_Print(ML_Operator *matrix, char label[])
       ML_get_matrix_row(matrix, 1, &i, &allocated, &bindx, &val,
                         &row_length, 0);
       for  (j = 0; j < row_length; j++) {
-         printf("%s(%d,%d) = %20.13e;\n",label,i+1,bindx[j]+1, val[j]);
+         printf("%s(%d,%d) = %10.6e;\n",label,i+1,bindx[j]+1, val[j]);
 /*
          printf("%d  %d %20.13e\n",i+1,bindx[j]+1, val[j]);
 */
