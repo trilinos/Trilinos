@@ -102,7 +102,7 @@ NOX::Abstract::Group::applyJacobianMultiVector(
     if (status == NotDefined || status == BadDependency)
       return status;
     else if (status == Failed)
-      finalStatus == Failed;
+      finalStatus = Failed;
     else if (status == NotConverged && finalStatus != Failed)
       finalStatus = NotConverged;
   }
@@ -124,7 +124,7 @@ NOX::Abstract::Group::applyJacobianTransposeMultiVector(
     if (status == NotDefined || status == BadDependency)
       return status;
     else if (status == Failed)
-      finalStatus == Failed;
+      finalStatus = Failed;
     else if (status == NotConverged && finalStatus != Failed)
       finalStatus = NotConverged;
   }
@@ -147,7 +147,7 @@ NOX::Abstract::Group::applyJacobianInverseMultiVector(
     if (status == NotDefined || status == BadDependency)
       return status;
     else if (status == Failed)
-      finalStatus == Failed;
+      finalStatus = Failed;
     else if (status == NotConverged && finalStatus != Failed)
       finalStatus = NotConverged;
   }
@@ -172,7 +172,7 @@ NOX::Abstract::Group::applyRightPreconditioningMultiVector(
     if (status == NotDefined || status == BadDependency)
       return status;
     else if (status == Failed)
-      finalStatus == Failed;
+      finalStatus = Failed;
     else if (status == NotConverged && finalStatus != Failed)
       finalStatus = NotConverged;
   }
