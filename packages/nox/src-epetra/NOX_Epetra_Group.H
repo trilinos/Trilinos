@@ -143,6 +143,13 @@ A NOX::ParameterList is supplied in the constructor and during calls to the NOX:
   </ul>
 
 </ul>
+<B>"Output" sublist</B><br>
+The parameter list passed into the group during a computeNewton() or ApplyJacobianInverse() will have an "Output" sublist created that contains the following parameters:
+<ul>
+<li> "Number of Linear Iterations" - Number of iterations used by the linear solver <br>
+<li> "True Unscaled Residual"<br>
+</ul><br>
+
  */
 
 class Group : public Abstract::Group {

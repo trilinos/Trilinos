@@ -639,6 +639,11 @@ bool Group::applyJacobianInverse (Parameter::List &p, const Vector &input, Vecto
   if (aztecStatus != 0) 
     return false;
   
+  // Set the output parameters
+  NOX::Parameter::List& outputList = p.sublist("Output");
+  p.setParameter("Number of Linear Iterations", aztec.NumIters());
+  p.setParameter("True Unscaled Residual", aztec.TrueResidual());
+
   return true;
 }
 
