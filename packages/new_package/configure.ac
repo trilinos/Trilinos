@@ -402,6 +402,7 @@ AC_CONFIG_FILES([
 		example/Makefile
 		test/Makefile
 		test/Hello_Test/Makefile
+		test/Jambo_Test/Makefile
 		test/scripts/Makefile
 		test/scripts/daily/Makefile
 		test/scripts/daily/serial/Makefile

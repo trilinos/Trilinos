@@ -1,7 +1,7 @@
-#!/usr/bin/perl
-# ***********************************************************************
+#@HEADER
+# ************************************************************************
 # 
-#                    New_Package Example Package
+#                     New_Package Example Package
 #                 Copyright (2004) Sandia Corporation
 # 
 # Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
@@ -22,18 +22,25 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
 # USA
 # Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-# ***********************************************************************
+# 
+# ************************************************************************
+#@HEADER
+#Builds a simple tester program.  Note that executables must end with a .exe
+#to allow certain proprietary operating systems to use them.
 
-# The test that this script relies on has issues with optimization.
-# As such this script is not currently useful, to prevent the
-# testharness from crashing.
+#This test should only be built if --enable-newp_swahili is specified
 
-exit(0);
+if HAVE_NEWP_SWAHILI
 
-#@results = `./Hello_Test/Hello_Test.exe`;
+bin_PROGRAMS = Jambo_Test.exe
 
-#if(pop(@results) eq "Test Passed!"){
-#    exit(0);
-#}else{
-#    exit(1);
-#}
+Jambo_Test_exe_SOURCES = Jambo_Test.cpp
+
+Jambo_Test_exe_DEPENDENCIES = $(top_builddir)/src/libnew_package.a $(top_builddir)/../epetra/src/libepetra.a
+
+Jambo_Test_exe_LDADD = $(top_builddir)/src/libnew_package.a $(top_builddir)/../epetra/src/libepetra.a $(LIBS) $(BLAS_LIBS) $(FLIBS)
+
+AM_CPPFLAGS = -I$(top_srcdir)/../epetra/src -I$(top_builddir)/../epetra/src -I$(top_srcdir)/../new_package/src -I$(top_builddir)../new_package/src
+
+else
+endif

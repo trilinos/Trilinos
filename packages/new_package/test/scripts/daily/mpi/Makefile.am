@@ -40,12 +40,13 @@ EXEEXT = .exe
 # Nothing should be done for a serial build
 if  HAVE_MPI
 
-noinst_PROGRAMS = autotoolsTestAllMpi
+noinst_PROGRAMS = new_packageTestAllMpi
 
-autotoolsTestAllMpi_SOURCES = $(srcdir)/autotoolsTestAllMpi
+new_packageTestAllMpi_SOURCES = $(srcdir)/new_packageTestAllMpi
 
-autotoolsTestAllMpi$(EXEEXT): $(srcdir)/autotoolsTestAllMpi
-	cp $(srcdir)/autotoolsTestAllMpi autotoolsTestAllMpi$(EXEEXT) 
+new_packageTestAllMpi$(EXEEXT): $(srcdir)/new_packageTestAllMpi
+	cp $(srcdir)/new_packageTestAllMpi new_packageTestAllMpi$(EXEEXT) 
+	chmod u+x new_packageTestAllMpi$(EXEEXT)
 
 endif
 

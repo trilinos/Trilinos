@@ -52,7 +52,7 @@
 #np# directory is for mpi scripts only.  Keep all rules and primaries within 
 #np# the "if HAVE_MPI" statement.
 
-SOURCES = $(autotoolsTestAllMpi_SOURCES)
+SOURCES = $(new_packageTestAllMpi_SOURCES)
 
 srcdir = @srcdir@
 top_srcdir = @top_srcdir@
@@ -75,7 +75,7 @@ NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
 host_triplet = @host@
-@HAVE_MPI_TRUE@noinst_PROGRAMS = autotoolsTestAllMpi$(EXEEXT)
+@HAVE_MPI_TRUE@noinst_PROGRAMS = new_packageTestAllMpi$(EXEEXT)
 subdir = test/scripts/daily/mpi
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -104,17 +104,18 @@ mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/New_Package_config.h
 CONFIG_CLEAN_FILES =
 PROGRAMS = $(noinst_PROGRAMS)
-am__autotoolsTestAllMpi_SOURCES_DIST = $(srcdir)/autotoolsTestAllMpi
-am_autotoolsTestAllMpi_OBJECTS =
-autotoolsTestAllMpi_OBJECTS = $(am_autotoolsTestAllMpi_OBJECTS)
-autotoolsTestAllMpi_LDADD = $(LDADD)
+am__new_packageTestAllMpi_SOURCES_DIST =  \
+	$(srcdir)/new_packageTestAllMpi
+am_new_packageTestAllMpi_OBJECTS =
+new_packageTestAllMpi_OBJECTS = $(am_new_packageTestAllMpi_OBJECTS)
+new_packageTestAllMpi_LDADD = $(LDADD)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/src
 COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
 CCLD = $(CC)
 LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
-SOURCES = $(autotoolsTestAllMpi_SOURCES)
-DIST_SOURCES = $(am__autotoolsTestAllMpi_SOURCES_DIST)
+SOURCES = $(new_packageTestAllMpi_SOURCES)
+DIST_SOURCES = $(am__new_packageTestAllMpi_SOURCES_DIST)
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 ACLOCAL = @ACLOCAL@
 ALTERNATE_AR = @ALTERNATE_AR@
@@ -230,7 +231,7 @@ target_alias = @target_alias@
 target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
-@HAVE_MPI_TRUE@autotoolsTestAllMpi_SOURCES = $(srcdir)/autotoolsTestAllMpi
+@HAVE_MPI_TRUE@new_packageTestAllMpi_SOURCES = $(srcdir)/new_packageTestAllMpi
 all: all-am
 
 .SUFFIXES:
@@ -266,9 +267,9 @@ $(ACLOCAL_M4): @MAINTAINER_MODE_TRUE@ $(am__aclocal_m4_deps)
 
 clean-noinstPROGRAMS:
 	-test -z "$(noinst_PROGRAMS)" || rm -f $(noinst_PROGRAMS)
-@HAVE_MPI_FALSE@autotoolsTestAllMpi$(EXEEXT): $(autotoolsTestAllMpi_OBJECTS) $(autotoolsTestAllMpi_DEPENDENCIES) 
-@HAVE_MPI_FALSE@	@rm -f autotoolsTestAllMpi$(EXEEXT)
-@HAVE_MPI_FALSE@	$(LINK) $(autotoolsTestAllMpi_LDFLAGS) $(autotoolsTestAllMpi_OBJECTS) $(autotoolsTestAllMpi_LDADD) $(LIBS)
+@HAVE_MPI_FALSE@new_packageTestAllMpi$(EXEEXT): $(new_packageTestAllMpi_OBJECTS) $(new_packageTestAllMpi_DEPENDENCIES) 
+@HAVE_MPI_FALSE@	@rm -f new_packageTestAllMpi$(EXEEXT)
+@HAVE_MPI_FALSE@	$(LINK) $(new_packageTestAllMpi_LDFLAGS) $(new_packageTestAllMpi_OBJECTS) $(new_packageTestAllMpi_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -395,8 +396,9 @@ uninstall-am: uninstall-info-am
 	uninstall uninstall-am uninstall-info-am
 
 
-@HAVE_MPI_TRUE@autotoolsTestAllMpi$(EXEEXT): $(srcdir)/autotoolsTestAllMpi
-@HAVE_MPI_TRUE@	cp $(srcdir)/autotoolsTestAllMpi autotoolsTestAllMpi$(EXEEXT) 
+@HAVE_MPI_TRUE@new_packageTestAllMpi$(EXEEXT): $(srcdir)/new_packageTestAllMpi
+@HAVE_MPI_TRUE@	cp $(srcdir)/new_packageTestAllMpi new_packageTestAllMpi$(EXEEXT) 
+@HAVE_MPI_TRUE@	chmod u+x new_packageTestAllMpi$(EXEEXT)
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

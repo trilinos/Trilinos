@@ -51,7 +51,7 @@
 #np# is for serial scripts only.  Keep all rules and primaries within 
 #np# the "else" portion of the "if HAVE_MPI" statement.
 
-SOURCES = $(autotoolsTestAllSerial_SOURCES)
+SOURCES = $(new_packageTestAllSerial_SOURCES)
 
 srcdir = @srcdir@
 top_srcdir = @top_srcdir@
@@ -74,7 +74,7 @@ NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
 host_triplet = @host@
-@HAVE_MPI_FALSE@noinst_PROGRAMS = autotoolsTestAllSerial$(EXEEXT)
+@HAVE_MPI_FALSE@noinst_PROGRAMS = new_packageTestAllSerial$(EXEEXT)
 subdir = test/scripts/daily/serial
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -103,18 +103,19 @@ mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/New_Package_config.h
 CONFIG_CLEAN_FILES =
 PROGRAMS = $(noinst_PROGRAMS)
-am__autotoolsTestAllSerial_SOURCES_DIST =  \
-	$(srcdir)/autotoolsTestAllSerial
-am_autotoolsTestAllSerial_OBJECTS =
-autotoolsTestAllSerial_OBJECTS = $(am_autotoolsTestAllSerial_OBJECTS)
-autotoolsTestAllSerial_LDADD = $(LDADD)
+am__new_packageTestAllSerial_SOURCES_DIST =  \
+	$(srcdir)/new_packageTestAllSerial
+am_new_packageTestAllSerial_OBJECTS =
+new_packageTestAllSerial_OBJECTS =  \
+	$(am_new_packageTestAllSerial_OBJECTS)
+new_packageTestAllSerial_LDADD = $(LDADD)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/src
 COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
 CCLD = $(CC)
 LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
-SOURCES = $(autotoolsTestAllSerial_SOURCES)
-DIST_SOURCES = $(am__autotoolsTestAllSerial_SOURCES_DIST)
+SOURCES = $(new_packageTestAllSerial_SOURCES)
+DIST_SOURCES = $(am__new_packageTestAllSerial_SOURCES_DIST)
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 ACLOCAL = @ACLOCAL@
 ALTERNATE_AR = @ALTERNATE_AR@
@@ -230,7 +231,7 @@ target_alias = @target_alias@
 target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
-@HAVE_MPI_FALSE@autotoolsTestAllSerial_SOURCES = $(srcdir)/autotoolsTestAllSerial
+@HAVE_MPI_FALSE@new_packageTestAllSerial_SOURCES = $(srcdir)/new_packageTestAllSerial
 all: all-am
 
 .SUFFIXES:
@@ -266,9 +267,9 @@ $(ACLOCAL_M4): @MAINTAINER_MODE_TRUE@ $(am__aclocal_m4_deps)
 
 clean-noinstPROGRAMS:
 	-test -z "$(noinst_PROGRAMS)" || rm -f $(noinst_PROGRAMS)
-@HAVE_MPI_TRUE@autotoolsTestAllSerial$(EXEEXT): $(autotoolsTestAllSerial_OBJECTS) $(autotoolsTestAllSerial_DEPENDENCIES) 
-@HAVE_MPI_TRUE@	@rm -f autotoolsTestAllSerial$(EXEEXT)
-@HAVE_MPI_TRUE@	$(LINK) $(autotoolsTestAllSerial_LDFLAGS) $(autotoolsTestAllSerial_OBJECTS) $(autotoolsTestAllSerial_LDADD) $(LIBS)
+@HAVE_MPI_TRUE@new_packageTestAllSerial$(EXEEXT): $(new_packageTestAllSerial_OBJECTS) $(new_packageTestAllSerial_DEPENDENCIES) 
+@HAVE_MPI_TRUE@	@rm -f new_packageTestAllSerial$(EXEEXT)
+@HAVE_MPI_TRUE@	$(LINK) $(new_packageTestAllSerial_LDFLAGS) $(new_packageTestAllSerial_OBJECTS) $(new_packageTestAllSerial_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -395,8 +396,9 @@ uninstall-am: uninstall-info-am
 	uninstall uninstall-am uninstall-info-am
 
 
-@HAVE_MPI_FALSE@autotoolsTestAllSerial$(EXEEXT): $(srcdir)/autotoolsTestAllSerial
-@HAVE_MPI_FALSE@	cp $ $(srcdir)/autotoolsTestAllSerial autotoolsTestAllSerial$(EXEEXT)
+@HAVE_MPI_FALSE@new_packageTestAllSerial$(EXEEXT): $(srcdir)/new_packageTestAllSerial
+@HAVE_MPI_FALSE@	cp $(srcdir)/new_packageTestAllSerial new_packageTestAllSerial$(EXEEXT)
+@HAVE_MPI_FALSE@	chmod u+x new_packageTestAllSerial$(EXEEXT)
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

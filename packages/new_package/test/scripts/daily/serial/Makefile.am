@@ -41,10 +41,11 @@ EXEEXT = .exe
 if HAVE_MPI
 else
 
-noinst_PROGRAMS = autotoolsTestAllSerial
+noinst_PROGRAMS = new_packageTestAllSerial
 
-autotoolsTestAllSerial_SOURCES = $(srcdir)/autotoolsTestAllSerial
+new_packageTestAllSerial_SOURCES = $(srcdir)/new_packageTestAllSerial
 
-autotoolsTestAllSerial$(EXEEXT): $(srcdir)/autotoolsTestAllSerial
-	cp $ $(srcdir)/autotoolsTestAllSerial autotoolsTestAllSerial$(EXEEXT)
+new_packageTestAllSerial$(EXEEXT): $(srcdir)/new_packageTestAllSerial
+	cp $(srcdir)/new_packageTestAllSerial new_packageTestAllSerial$(EXEEXT)
+	chmod u+x new_packageTestAllSerial$(EXEEXT)
 endif

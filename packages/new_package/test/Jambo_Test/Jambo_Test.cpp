@@ -29,7 +29,7 @@
 
 #include "Epetra_Comm.h"
 #include "Epetra_SerialComm.h"
-#include "Newp_Hello.h"
+#include "Newp_Jambo.h"
 #include <iostream>
 #include <sstream>
 #include <istream>
@@ -47,12 +47,12 @@ int main(){
   iostream io(sb);
   ostream * os;
   os = dynamic_cast<ostream*>(&io);
-  Newp_Hello nph(*ec);
-  nph.Print(*os);
+  Newp_Jambo npj(*ec);
+  npj.Print(*os);
   char results[100];
   io.readsome(results, 99);
   char * expected1 = "This will print out one line for each of the 1 processes";
-  char * expected2 = "Hello.  I am process 0";
+  char * expected2 = "Jambo.  I am process 0";
   if(strstr(results, expected1) == NULL || strstr(results, expected2) == NULL){
     cout << "Test failed!" << endl;
     cout << "Expected:" << endl << expected1 << endl << expected2 << endl;
