@@ -1,0 +1,22 @@
+PROJECT_NAME           = "Reverse engineered belos"
+OUTPUT_DIRECTORY       = reverse-engineer
+ALWAYS_DETAILED_SEC    = YES
+TAB_SIZE               = 2
+EXTRACT_ALL            = YES
+EXTRACT_PRIVATE        = YES
+EXTRACT_STATIC         = YES
+INPUT                  = ./src
+FILE_PATTERNS          = *.cpp *.hpp
+RECURSIVE              = YES
+SOURCE_BROWSER         = YES
+ALPHABETICAL_INDEX     = YES
+GENERATE_HTML          = YES
+GENERATE_LATEX         = NO
+GENERATE_RTF           = NO
+GENERATE_MAN           = NO
+GENERATE_XML           = NO
+TAGFILES               = ../../../../Trilinos/packages/teuchos/doc/teuchos.tag=../../../../../Trilinos/packages/teuchos/doc/html
+HAVE_DOT               = YES
+UML_LOOK               = NO
+CALL_GRAPH             = YES
+GRAPHICAL_HIERARCHY    = YES
