@@ -29,7 +29,7 @@
 #ifndef _TPETRA_OBJECT_HPP_
 #define _TPETRA_OBJECT_HPP_
 
-#include "Tpetra_ConfigDefs.hpp" // for iostream
+#include "Tpetra_ConfigDefs.hpp" // for iostream and string
 
 namespace Tpetra
 {
@@ -50,19 +50,17 @@ class Object
       used explictly.
   */
   Object(int tracebackModeIn = -1) 
-		: label_(0)
+		: label_("Tpetra::Object")
 	{
-	  setLabel("Tpetra::Object");
 		tracebackMode = (tracebackModeIn != -1) ? tracebackModeIn : tracebackMode;
 	};
 
   //! Object Constructor.
   /*! Creates an Object with the given label.
   */
-  Object(const char* const label, int tracebackModeIn = -1)
-		: label_(0)
+  Object(string const label, int tracebackModeIn = -1)
+		: label_(label)
 	{
-	  setLabel(label);
 		tracebackMode = (tracebackModeIn != -1) ? tracebackModeIn : tracebackMode;
 	};
 
@@ -70,41 +68,32 @@ class Object
   /*! Makes an exact copy of an existing Object instance.
   */
   Object(const Object& obj)
-		: label_(0)
+		: label_(obj.label_)
 	{
-	  setLabel(obj.label());
 	};
 
   //! Object Destructor.
   /*! Completely deletes an Object object.  
   */
   virtual ~Object()
-	{
-		if (label_!=0) {
-			delete[] label_;
-			label_ = 0;
-		}
-	};
+	{};
 	
   //@}
   
   //@{ \name Attribute set/get methods.
 
-  //! Object Label definition using char*.
+  //! Object Label definition using string.
   /*! Defines the label used to describe the \e this object.  
   */
-  virtual void setLabel(const char* const label)
+  virtual void setLabel(string const label)
 	{ 
-		if(label_ != 0)
-			delete[] label_;
-		label_ = new char[strlen(label) + 1];
-		strcpy(label_, label);
-	};
+		label_ = label;
+  }
 
   //! Object Label access funtion.
   /*! Returns the string used to define this object.  
   */
-  virtual char* label() const
+  virtual string label() const
 	{
 		return(label_);
 	};
@@ -150,12 +139,12 @@ class Object
 	};
 
 	//! Error reporting method.
-	virtual int reportError(const string message, int errorCode) const {
+	virtual int reportError(string const message, int errorCode) const {
   // NOTE:  We are extracting a C-style string from Message because 
   //        the SGI compiler does not have a real string class with 
   //        the << operator.  Some day we should get rid of ".c_str()"
 		cerr << endl << "Error in Tpetra Object with label: " << label_ << endl 
-				 << "Tpetra Error:  " << message.c_str() << "  Error Code:  " << errorCode << endl;
+				 << "Tpetra Error:  " << message << "  Error Code:  " << errorCode << endl;
 		return(errorCode);
 	}
   
@@ -182,12 +171,12 @@ protected:
 		char s[100];
 		sprintf(s, "%g", x);
 		return string(s);
-	}
+  }
   
 	
 private:
 	
-  char* label_;
+  string label_;
 
 	//! Assignment operator (declared but not defined, do not use)
 	Object& operator = (Object const& Source);

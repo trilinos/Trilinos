@@ -61,7 +61,7 @@ int main(int argc, char* argv[]) {
 	ierr += unitTests<int, float>(verbose, debug);
 	ierr += unitTests<int, double>(verbose, debug);
     
-	if(verbose) checkOutputs();
+	if(debug) checkOutputs();
 
 	// finish up
 	if(verbose) 
@@ -201,10 +201,10 @@ int unitTests(bool verbose, bool debug) {
 	// dot product
 	if(verbose) cout << "dot product..." << endl;
 	vector.dotProduct(v2); // throw away return value
-    // absolute value
+  // absolute value
 	if(verbose) cout << "absolute value..." << endl;
 	vector.absoluteValue(v2);
-    // reciprocal
+  // reciprocal
 	if(verbose) cout << "reciprocal..." << endl;
 	vector.reciprocal(v2);
 	// scale
@@ -247,6 +247,10 @@ int unitTests(bool verbose, bool debug) {
 	// elementwiseReciprocalMultiply
 	if(verbose) cout << "elementwiseReciprocalMultiply..." << endl;
 	vector.elementwiseMultiply(temp1, vector1a, v2, scalar3);
+
+  // assignment operator
+  if(verbose) cout << "assignment operator..." << endl;
+  v2 = vector;
 
 	if(verbose) cout << "Code coverage section finished." << endl;
 

@@ -133,6 +133,16 @@ public:
 	OrdinalType getGlobalIndex(OrdinalType localIndex) const {
 		return(elementSpace().getGID(localIndex));
 	};
+
+  //! Returns true if the local index value passed in is found on the calling image, returns false if it doesn't.
+  bool isMyLocalIndex(OrdinalType localIndex) const {
+    return(elementSpace().isMyLID(localIndex));
+  }
+
+  //! Returns true if the global index value passed in is found the calling image, returns false if it doesn't.
+  bool isMyGlobalIndex(OrdinalType globalIndex) const {
+    return(elementSpace().isMyGID(globalIndex));
+  }
 	
 	//@}
 	
@@ -205,12 +215,15 @@ public:
 	};
 	
 	
-	//! Access function for the Tpetra::Platform and Tpetra::Comm communicators.
+	//! Access functions for the Tpetra::Platform and Tpetra::Comm communicators.
 	Platform<OrdinalType, ScalarType> const& platform() const {return(*VectorSpaceData_->Platform_);};
 	Comm<ScalarType, OrdinalType> const& comm() const {return(*VectorSpaceData_->Comm_);}; // Comm is <ST, OT> because ST represents PT
 	
-	//! Assignment operator (declared but not defined, do not use)
-	VectorSpace<OrdinalType, ScalarType>& operator = (VectorSpace<OrdinalType, ScalarType> const& Source);
+	//! Assignment operator
+	VectorSpace<OrdinalType, ScalarType>& operator = (VectorSpace<OrdinalType, ScalarType> const& Source) {
+    VectorSpaceData_ = Source.VectorSpaceData_;
+    return(*this);
+  }
 
 	//@}
 	

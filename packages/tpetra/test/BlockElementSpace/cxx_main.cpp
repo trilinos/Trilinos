@@ -74,11 +74,12 @@ int main(int argc, char* argv[]) {
   //if(debug) cout << es;
 
   //BlockElementSpace
-  if(verbose) cout << "Creating bes, constructor1" << endl;
-  Tpetra::BlockElementSpace<ORDINALTYPE> bes(es, ELEMENTSIZE);
-  if(debug) cout << bes;
+  if(verbose) cout << "Creating bes1(fixed-size)...";
+  Tpetra::BlockElementSpace<ORDINALTYPE> bes1(es, ELEMENTSIZE);
+  if(verbose) cout << "Successful." << endl;
+  if(debug) cout << bes1;
 
-	if(verbose) cout << "Creating bes, constructor2" << endl;
+	if(verbose) cout << "Creating bes2(variable-sized)...";
 	ORDINALTYPE* esizelist = new ORDINALTYPE[NUMELEMENTS];
 	esizelist[0] = 1;
 	esizelist[1] = 1;
@@ -88,7 +89,25 @@ int main(int argc, char* argv[]) {
 	Tpetra::BlockElementSpace<ORDINALTYPE> bes2(es, esizelist);
 	delete[] esizelist;
 	esizelist = 0;
+  if(verbose) cout << "Successful." << endl;
 	if(debug) cout << bes2;
+
+  if(verbose) cout <<"Creating bes3(copy constructor)...";
+  Tpetra::BlockElementSpace<ORDINALTYPE> bes3(bes1);
+  if(verbose) cout << "Successful." << endl;
+  if(debug) cout << bes3;
+
+  if(verbose) cout << "Checking isSameAs...";
+  Tpetra::BlockElementSpace<ORDINALTYPE> bes4(es, ELEMENTSIZE+1);
+  assert(bes1.isSameAs(bes3) == true);
+  assert(bes1.isSameAs(bes4) == false);
+  if(verbose) cout << "Successful." << endl;
+
+  if(verbose) cout << "Checking assignment operator...";
+  assert(bes1.isSameAs(bes4) == false);
+  bes4 = bes1;
+  assert(bes1.isSameAs(bes4) == true);
+  if(verbose) cout << "Successful." << endl;
 
 	if(verbose) cout << "Creating compatible ElementSpace" << endl;
 	Tpetra::ElementSpace<ORDINALTYPE> const* bes2es = bes2.generateCompatibleElementSpace();

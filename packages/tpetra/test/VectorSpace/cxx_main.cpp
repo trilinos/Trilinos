@@ -63,7 +63,7 @@ int main(int argc, char* argv[]) {
 	// finish up
 	if(verbose) 
 		if(ierr == 0)
-			cout << "VectorSpace test successfull." << endl;
+			cout << "VectorSpace test passed." << endl;
 		else
 			cout << "VectorSpace test failed." << endl;
 	return(ierr);
@@ -95,7 +95,7 @@ int unitTests(bool verbose, bool debug) {
 	Tpetra::VectorSpace<OrdinalType, ScalarType> v2(vectorspace);
 
 	// print
-	if(verbose) {
+	if(debug) {
 		cout << "Overloaded << operator..." << endl;
 		cout << vectorspace << endl;
 	}
@@ -113,6 +113,8 @@ int unitTests(bool verbose, bool debug) {
 	temp = 0;
 	temp = vectorspace.getGlobalIndex(temp);
 	temp = vectorspace.getLocalIndex(temp);
+  bool tempB = vectorspace.isMyLocalIndex(temp);
+  tempB = vectorspace.isMyGlobalIndex(temp);
 
 	// vector creation
 	if(verbose) cout << "Vector creation..." << endl;
@@ -159,6 +161,23 @@ int unitTests(bool verbose, bool debug) {
 	same = vectorspace.isSameAs(differentVS);
 	if(same)
 		ierr++;
+	if(verbose)
+		if(ierr == 0) 
+			cout << "Passed" << endl;
+		else
+			cout << "Failed" << endl;
+	returnierr += ierr;
+	ierr = 0;
+
+  // assignment operator
+  if(verbose) cout << "Testing asignment operator... ";
+  same = vectorspace.isSameAs(differentVS);
+  if(same)
+    ierr++;
+  differentVS = vectorspace;
+  same = vectorspace.isSameAs(differentVS);
+  if(!same)
+    ierr++;
 	if(verbose)
 		if(ierr == 0) 
 			cout << "Passed" << endl;

@@ -26,178 +26,423 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef _TPETRA_SPARSEMATRIX_HPP_
-#define _TPETRA_SPARSEMATRIX_HPP_
+#ifndef _TPETRA_CISMATRIX_HPP_
+#define _TPETRA_CISMATRIX_HPP_
 
 #include <Teuchos_RefCountPtr.hpp>
 #include <Teuchos_CompObject.hpp>
+//#include <Kokkos_HbMatrix.hpp>
 #include "Tpetra_Object.hpp"
 #include "Tpetra_CombineMode.hpp"
 #include "Tpetra_VectorSpace.hpp"
 
 namespace Tpetra {
 
-// forward declaration of SparseMatrixData, needed to prevent circular inclusions
+// forward declaration of CisMatrixData, needed to prevent circular inclusions
 // actual #include statement at the end of this file
-template<typename OrdinalType, typename ScalarType> class SparseMatrixData;
+template<typename OrdinalType, typename ScalarType> class CisMatrixData;
 
-//! Tpetra::SparseMatrix
-/*! 
+//! Tpetra::CisMatrix: A class for constructing and using sparse compressed index matrices.
+/*! CisMatrix enables the piecewise construction and use of sparse matrices
+    where matrix entries are intended for either row or column access.
+
+    At this time, the primary function provided by CisMatrix is matrix times vector and multiplication.
+    It is also possible to extract a Kokkos::HBMatrix so that a Tpetra::CisMatrix can be used in Kokkos kernels.
+
+<b>Constructing CisMatrix objects</b>
+
+Constructing CisMatrix objects is a multi-step process.  The basic steps are as follows:
+<ol>
+  <li> Create a CisMatrix instance, using one of the constructors.
+  <li> Enter values using the submitEntries methods.
+  <li> Complete construction by calling fillComplete.
+</ol>
+
+<b>Primary and Secondary Distributions</b>
+CisMatrix stores data using Compressed Index Space Storage. This is a generalization of Compressed Row Storage,
+but allows the matrix to be either row-oriented or column oriented. Accordingly, CisMatrix refers to data using
+a generalized vocabulary. The two main terms are the primary distribution and the secondary distribution:
+
+In a row-oriented matrix, the primary distribution refers to rows, and the secondary distribution refers to columns.
+In a column-oriented matrix, the primary distribution refers to columns, and the secondary distribution refers to rows.
+
+These distributions are specified by Tpetra::VectorSpace objects. If both the primary and secondary distributions are
+specified at construction, information about the secondary distribution is available from then on. But if only the primary
+distribution is specified at construction, then CisMatrix will analyze the structure of the matrix and generate a 
+VectorSpace that matches the distribution found in the matrix. Note that this is done when fillComplete is called, and so
+information about the secondary distribution is not available prior to that.
+
+<b> Counting Floating Point Operations </b>
+
+CisMatrix inherits from Teuchos::CompObject, and keeps track of the number of floating point operations
+associated with the \e this object. In conjunction with a timing object (such as Teuchos::Time), accurate
+parallel performance information can be obtained. Further information can be found in the Teuchos documentation.
+
+CisMatrix error codes (positive for non-fatal, negative for fatal):
+<ol>
+<li> +1  That global ID is not owned by this image.
+<li> +2  Unsupported combine mode specified.
+<li> +3  Requested distribution is not currently defined.
+<li> +4  Cannot call that method until after fillComplete.
+<li> -99 Internal CisMatrix error. Contact developer.
+</ol>
+
 */
 
 template<typename OrdinalType, typename ScalarType>
-class SparseMatrix : public Object, public Teuchos::CompObject {
+class CisMatrix : public Object, public Teuchos::CompObject {
 
 public:
   
 	//@{ \name Constructor/Destructor Methods
   
-	//! Constructor with variable number of indices per row/column.
-	SparseMatrix(VectorSpace<OrdinalType, ScalarType> const& rowMap, OrdinalType* numEntriesPerIndex)
-		: Object("Tpetra::SparseMatrix")
-		, SparseMatrixData_()
-	{
-		SparseMatrixData_ = Teuchos::rcp(new SparseMatrixData<OrdinalType, ScalarType>());
-	}
-  
-  //! Constructor with fixed number of indices per row/column.
-	SparseMatrix(VectorSpace<OrdinalType, ScalarType> const& rowMap, OrdinalType numEntriesPerIndex)
-		: Object("Tpetra::SparseMatrix")
-		, SparseMatrixData_()
+  //! Constructor specifying the primary distribution only.
+	CisMatrix(VectorSpace<OrdinalType, ScalarType> const& primaryDist, bool rowOriented = true)
+		: Object("Tpetra::CisMatrix")
+		, CisMatrixData_()
   {
-    SparseMatrixData_ = Teuchos::rcp(new SparseMatrixData<OrdinalType, ScalarType>());
+    CisMatrixData_ = Teuchos::rcp(new CisMatrixData<OrdinalType, ScalarType>(primaryDist, rowOriented));
   }
   
-  //! Constructor with variable number of indices per row/column.
-	SparseMatrix(VectorSpace<OrdinalType, ScalarType> const& rowMap, 
-               VectorSpace<OrdinalType, ScalarType> const& colMap, 
-               OrdinalType* numEntriesPerIndex)
-		: Object("Tpetra::SparseMatrix")
-		, SparseMatrixData_()
+  //! Constructor specifying both row and column distribution.
+	CisMatrix(VectorSpace<OrdinalType, ScalarType> const& primaryDist, 
+							 VectorSpace<OrdinalType, ScalarType> const& secondaryDist, 
+							 bool rowOriented = true)
+		: Object("Tpetra::CisMatrix")
+		, CisMatrixData_()
   {
-    SparseMatrixData_ = Teuchos::rcp(new SparseMatrixData<OrdinalType, ScalarType>());
-  }
-  
-  //! Constructor with fixed number of indices per row/column.
-	SparseMatrix(VectorSpace<OrdinalType, ScalarType> const& rowMap, 
-               VectorSpace<OrdinalType, ScalarType> const& colMap, 
-               OrdinalType numEntriesPerIndex)
-		: Object("Tpetra::SparseMatrix")
-		, SparseMatrixData_()
-  {
-    SparseMatrixData_ = Teuchos::rcp(new SparseMatrixData<OrdinalType, ScalarType>());
+		CisMatrixData_ = Teuchos::rcp(new CisMatrixData<OrdinalType, ScalarType>(primaryDist, secondaryDist, rowOriented));
   }
 	
 	//! copy constructor.
-	SparseMatrix(SparseMatrix<OrdinalType, ScalarType> const& rhs)
-		: Object(rhs.label())
-		, SparseMatrixData_(rhs.SparseMatrixData_)
+	CisMatrix(CisMatrix<OrdinalType, ScalarType> const& Source)
+		: Object(Source.label())
+		, CisMatrixData_(Source.CisMatrixData_)
 	{}
 
 	//! destructor.
-	~SparseMatrix() {}
+	~CisMatrix() {}
   
 	//@}
   
   //@{ \name Post-Construction Modification Routines
   
   //! Set all matrix entries equal to scalarThis
-  void setAllToScalar(ScalarType scalarThis);
+  void setAllToScalar(ScalarType scalarThis) {
+    typedef std::map<OrdinalType, ScalarType> OrdScalMap;
+    typedef std::map<OrdinalType, OrdScalMap> MapOfMaps;
+    MapOfMaps& outermap = CisMatrixData_->indicesAndValues_;
+    for(typename MapOfMaps::iterator i = outermap.begin(); i != outermap.end(); i++) {
+      OrdScalMap& innermap = (*i).second;
+      for(typename OrdScalMap::iterator j = innermap.begin(); j != innermap.end(); j++)
+        (*j).second = scalarThis;
+    }
+  }
   
   //! Scale the current values of a matrix, \e this = scalarThis*\e this.
-  void scale(ScalarType scalarThis);
+  void scale(ScalarType scalarThis) {
+    typedef std::map<OrdinalType, ScalarType> OrdScalMap;
+    typedef std::map<OrdinalType, OrdScalMap> MapOfMaps;
+    MapOfMaps& outermap = CisMatrixData_->indicesAndValues_;
+    for(typename MapOfMaps::iterator i = outermap.begin(); i != outermap.end(); i++) {
+      OrdScalMap& innermap = (*i).second;
+      for(typename OrdScalMap::iterator j = innermap.begin(); j != innermap.end(); j++)
+        (*j).second *= scalarThis;
+    }
+
+    // update flops counter: n
+    updateFlops(data().numMyNonzeros_);
+  }
+
+  //! Submit multiple entries, using global IDs.
+  /*! All index values must be in the global space. Behavoir is defined by the CombineMode passed in. */
+  void submitEntries(CombineMode CM, OrdinalType myRowOrColumn, OrdinalType numEntries, ScalarType const* values, OrdinalType const* indices) {
+    OrdinalType const zero = Teuchos::OrdinalTraits<OrdinalType>::zero();
+    for(OrdinalType i = zero; i < numEntries; i++)
+      submitEntry(CM, myRowOrColumn, *values++, *indices++);
+  }
+
+  //! Submit a single entry, using global IDs.
+  /*! All index values must be in the global space. Behavoir is defined by the CombineMode passed in. */
+  void submitEntry(CombineMode CM, OrdinalType myRowOrColumn, ScalarType value, OrdinalType index) {
+    // first check for proper index values
+    if(!getPrimaryDist().isMyGlobalIndex(myRowOrColumn))
+      throw reportError("Global primary index " + toString(myRowOrColumn) + " is not owned by this image.", 1);
+    if(CisMatrixData_->haveSecondary_)
+      if(!getSecondaryDist().isMyGlobalIndex(index))
+        throw reportError("Global secondary index " + toString(myRowOrColumn) + "is not owned by this image.", 1);
+
+    // only do the insertion if value is non-zero
+    if(value != Teuchos::ScalarTraits<ScalarType>::zero()) {
+      // create a map for that row/column if it doesn't exist
+      if(CisMatrixData_->indicesAndValues_.find(myRowOrColumn) == CisMatrixData_->indicesAndValues_.end()) {
+        std::map<OrdinalType, ScalarType> temp;
+        CisMatrixData_->indicesAndValues_[myRowOrColumn] = temp;
+      }
+      
+      // then submit the actual value
+      std::map<OrdinalType, ScalarType>& innerMap = CisMatrixData_->indicesAndValues_[myRowOrColumn];
+      if(CM == Add) {
+        // innerMap[index] += value; // will this work??
+        if(innerMap.find(index) != innerMap.end())
+          innerMap[index] = innerMap[index] + value;
+        else
+          innerMap[index] = value;
+
+        // update flops counter: 1
+        updateFlops(Teuchos::OrdinalTraits<OrdinalType>::one());
+      }
+      else if(CM == Replace) {
+        innerMap[index] = value;
+      }
+      else if(CM == Insert) {
+        innerMap[index] = value; // change this to a call to insert
+      }
+      else
+        throw reportError("Unknown Combine Mode.", 2);
+      
+      data().numMyNonzeros_++;
+    }
+  }
   
-  //! Submit entries using global IDs. Behavoir is defined by the CombineMode passed in.
-  void submitGlobalValues(CombineMode CM, OrdinalType numEntries, ScalarType* values, OrdinalType* indices);
+  //! Signals that data entry is complete. Matrix data is converted into a more optimized form.
+  /*! The domain distribution and range distribution will be set equal to the primary distribution. */
+  void fillComplete() {
+    fillComplete(getPrimaryDist(), getPrimaryDist());
+  }
   
-  //! Submit entries using local IDs. Behavoir is defined by the CombineMode passed in.
-  void submitLocalValues(CombineMode CM, OrdinalType numEntries, ScalarType* values, OrdinalType* indices);
-  
-  //! Signal that data entry is complete. Matrix data is converted into a more optimized form.
-  void fillComplete();
-  
-  //! Signal that data entry is complete. Matrix data is converted into a more optimized form.
-  void fillComplete(VectorSpace<OrdinalType, ScalarType> const& domainMap, VectorSpace<OrdinalType, ScalarType> const& rangeMap);
+  //! Signals that data entry is complete. Matrix data is converted into a more optimized form.
+  /*! The VectorSpaces passed in will be used for the domain and range distributions. */
+  void fillComplete(VectorSpace<OrdinalType, ScalarType> const& domainSpace, VectorSpace<OrdinalType, ScalarType> const& rangeSpace) {
+    // set domain and range distributions
+    data().domain_ = domainSpace;
+    data().range_ = rangeSpace;
+    data().haveDomain_ = true;
+    data().haveRange_ = true;
+    
+    // fill pntr_, indx_ and values_ arrays from map values
+    OrdinalType const numPrimaryIndices = getPrimaryDist().getNumMyEntries();
+    data().pntr_.reserve(numPrimaryIndices + Teuchos::OrdinalTraits<OrdinalType>::one());
+    data().indx_.reserve(numPrimaryIndices);   // reserve enough space in the vectors now
+    data().values_.reserve(numPrimaryIndices); // so they don't have to reallocate later
+
+    OrdinalType pntr_loc = Teuchos::OrdinalTraits<OrdinalType>::zero();   // current index in pntr_
+    OrdinalType pntr_value = Teuchos::OrdinalTraits<OrdinalType>::zero(); // value to put into pntr_[pntr_loc]
+
+    typedef std::map<OrdinalType, ScalarType> OrdScalMap;
+    typedef std::map<OrdinalType, OrdScalMap> MapOfMaps;
+    MapOfMaps& outermap = CisMatrixData_->indicesAndValues_;
+    for(typename MapOfMaps::iterator i = outermap.begin(); i != outermap.end(); i++) {
+      OrdScalMap& innermap = (*i).second;
+      data().pntr_[pntr_loc] = pntr_value;
+      for(typename OrdScalMap::iterator j = innermap.begin(); j != innermap.end(); j++) {
+        data().indx_[pntr_value] = (*j).first;
+        data().values_[pntr_value] = (*j).second;
+        pntr_value++;
+      }
+      pntr_loc++;
+    }
+    data().pntr_[pntr_loc] = pntr_value; // pntr_ has an extra element on the end
+
+    // create ElementSpace for secondary distribution if we need to
+    if(!data().haveSecondary_) {
+      cerr << "*** elementspace creation not implemented yet ***" << endl;
+    }
+
+    // initialize Kokkos::HbMatrix
+    cerr << "*** HbMatrix creation not implemented yet ***" << endl;
+
+    data().fillCompleted_ = true;
+  }
   
   //@}
   
   //@{ \name Computational Methods
   
   //! Computes the matrix-vector multiplication y = Ax
-  void apply(Vector<OrdinalType, ScalarType> const& x, Vector<OrdinalType, ScalarType>& y) const;
+  void apply(Vector<OrdinalType, ScalarType> const& x, Vector<OrdinalType, ScalarType>& y) const {
+    if(!data().fillCompleted_)
+      throw reportError("Cannot apply until after fillComplete.", 4);
+    cerr << "*** apply not implemented yet ***" << endl;
+  }
   
-  //! Returns the global one-norm of the matrix
-  ScalarType normOne() const;
-  
+  //! Returns the global one norm of the matrix
+  ScalarType normOne() const {
+    if(rowOriented())
+      if(!data().haveCol_)
+        throw reportError("Cannot compute one-norm until column distribution is specified.", 3);
+      else
+        return(secondaryNorm());
+    else
+      return(primaryNorm());
+  }
+
   //! Returns the global infinity norm of the matrix
-  ScalarType normInf() const;
+  ScalarType normInf() const {
+    if(rowOriented())
+      return(primaryNorm());
+    else
+      if(!data().haveRow_)
+        throw reportError("Cannot compute infinity-norm until row distribution is specified.", 3);
+      else
+        return(secondaryNorm());
+  }
   
   //@}
   
-  //@{ \name Attribute Access Methods
+  //@{ \name Attribute Access Methods (Most of these can only be called after fillComplete has been called.)
   
 	//! Returns the number of nonzero entries in the global matrix.
-	OrdinalType getNumGlobalNonzeros() const;
+	OrdinalType getNumGlobalNonzeros() const {
+    return(globalSum(getNumMyNonzeros()));
+  }
   
   //! Returns the number of nonzero entries in the calling image's portion of the matrix.
-	OrdinalType getNumMyNonzeros() const;
+	OrdinalType getNumMyNonzeros() const {
+    return(data().numMyNonzeros_);
+  }
 	
 	//! Returns the number of global matrix rows.
-	OrdinalType getNumGlobalRows() const;
+	OrdinalType getNumGlobalRows() const {
+    if(!data().haveRow_)
+      throw reportError("Row distribution not specified.", 3);
+    return(getRowDist().getNumGlobalEntries());
+  }
 	
 	//! Returns the number of global matrix columns.
-	OrdinalType getNumGlobalCols();
+	OrdinalType getNumGlobalCols() const {
+    if(!data().haveCol_)
+      throw reportError("Column distribution not specified.", 3);
+    return(getColDist().getNumGlobalEntries());
+  }
   
   //! Returns the number of matrix rows owned by the calling image.
-	OrdinalType getNumMyRows() const;
+	OrdinalType getNumMyRows() const {
+    if(!data().haveRow_)
+      throw reportError("Row distribution not specified.", 3);
+    return(getRowDist().getNumMyEntries());
+  }
 	
 	//! Returns the number of matrix columns owned by the calling image.
-	OrdinalType getNumMyCols() const;
+	OrdinalType getNumMyCols() const {
+    if(!data().haveCol_)
+      throw reportError("Column distribution not specified.", 3);
+    return(getColDist().getNumMyEntries());
+  }
 	
 	//! Returns the number of global nonzero diagonal entries, based on global row/column index comparisons.
-	OrdinalType getNumGlobalDiagonals() const;
+	OrdinalType getNumGlobalDiagonals() const {
+    return(globalSum(getNumMyDiagonals()));
+  }
 	
 	//! Returns the number of local nonzero diagonal entries, based on global row/column index comparisons.
-	OrdinalType getNumMyDiagonals() const;
-	
-	//! Returns the current number of nonzero entries in specified global index on this image.
-	OrdinalType getNumGlobalEntries(OrdinalType index) const;
+	OrdinalType getNumMyDiagonals() const {
+    OrdinalType numDiagonals = Teuchos::OrdinalTraits<OrdinalType>::zero();
+    typedef std::map<OrdinalType, ScalarType> OrdScalMap;
+    typedef std::map<OrdinalType, OrdScalMap> MapOfMaps;
+    MapOfMaps& outermap = CisMatrixData_->indicesAndValues_;
+    for(typename MapOfMaps::iterator i = outermap.begin(); i != outermap.end(); i++) {
+      OrdScalMap& innermap = (*i).second;
+      for(typename OrdScalMap::iterator j = innermap.begin(); j != innermap.end(); j++)
+        if((*i).first == (*j).first)
+          numDiagonals++;
+    }
+    return(numDiagonals);
+  }
   
-  //! Returns the current number of nonzero entries in specified local index on this image.
-	OrdinalType getNumMyEntries(OrdinalType index) const;
+  //! Returns the current number of nonzero entries in specified global index on this image.
+	OrdinalType getNumEntries(OrdinalType index) const {
+    std::map<OrdinalType, ScalarType>& innermap = data().indicesAndValues_[index];
+    return(innermap.size());
+  }
 	
-	//! Returns the allocated number of nonzero entries in specified global index on this image.
-	OrdinalType getNumAllocatedGlobalEntries(OrdinalType index);
+	//! Returns the maximum number of nonzero entries across all rows/columns on all images.
+	OrdinalType getGlobalMaxNumEntries() const {
+    OrdinalType localMax = getMyMaxNumEntries();
+    OrdinalType globalMax = Teuchos::OrdinalTraits<OrdinalType>::zero();
+    ordinalComm().maxAll(&localMax, &globalMax, Teuchos::OrdinalTraits<OrdinalType>::one());
+    return(globalMax);
+  }
   
-  //! Returns the allocated number of nonzero entries in specified local index on this image.
-	OrdinalType getNumAllocatedMyEntries(OrdinalType index) const;
-	
-	//! Returns the maximum number of nonzero entries across all rows on all images.
-	OrdinalType getGlobalMaxNumEntries() const;
-  
-	//! Returns the maximum number of nonzero entries across all rows on this image.
-	OrdinalType getMyMaxNumEntries() const;
+	//! Returns the maximum number of nonzero entries across all rows/columns on this image.
+	OrdinalType getMyMaxNumEntries() const {
+    OrdinalType currentMax = Teuchos::OrdinalTraits<OrdinalType>::zero();
+    typedef std::map<OrdinalType, ScalarType> OrdScalMap;
+    typedef std::map<OrdinalType, OrdScalMap> MapOfMaps;
+    MapOfMaps& outermap = CisMatrixData_->indicesAndValues_;
+    for(typename MapOfMaps::iterator i = outermap.begin(); i != outermap.end(); i++) {
+      OrdinalType newMax = (*i).second.size();
+      if(newMax > currentMax)
+        currentMax = newMax;
+    }
+    return(currentMax);
+  }
 	
 	//! Returns the index base for global indices for this matrix.
-	OrdinalType getIndexBase() const;
+	OrdinalType getIndexBase() const {
+    return(getPrimaryDist().getIndexBase());
+  }
   
-  //! Returns false if this matrix shares data with another SparseMatrix instance (or instances).
-  bool isSoleOwner() const;
+  //! Returns false if this matrix shares data with another CisMatrix instance (or instances).
+  //bool isSoleOwner() const;
+
+  //! Returns true if this matrix is row-oriented, and false if this matrix is column-oriented.
+  bool isRowOriented() const {
+    return(CisMatrixData_->rowOriented_);
+  }
   
+  //! Returns the VectorSpace that describes the primary distribution in this matrix.
+  /*! In a row-oriented matrix, this will be the row VectorSpace. In a column-oriented matrix, this will be the column VectorSpace. */
+  VectorSpace<OrdinalType, ScalarType> const& getPrimaryDist() const {
+    return(CisMatrixData_->primary_);
+	}
+  
+  //! Returns the VectorSpace that describes the secondary distribution in this matrix.
+  /* In a row-oriented matrix, this will be the column VectorSpace. In a column-oriented matrix, this will be the row VectorSpace. */
+  VectorSpace<OrdinalType, ScalarType> const& getSecondaryDist() const {
+    if(!CisMatrixData_->haveSecondary_)
+      throw reportError("Secondary distribution is not currently defined.", 3);
+    return(CisMatrixData_->secondary_);
+  }
+
   //! Returns the VectorSpace that describes the row distribution in this matrix.
-  VectorSpace<OrdinalType, ScalarType> const& getRowMap() const;
-  
+  VectorSpace<OrdinalType, ScalarType> const& getRowDist() const {
+    if(!CisMatrixData_->haveRow_)
+      throw reportError("Row distribution is not currently defined.", 3);
+    if(isRowOriented())
+      return(CisMatrixData_->primary_);
+    else
+      return(CisMatrixData_->secondary_);
+  }
+
   //! Returns the VectorSpace that describes the column distribution in this matrix.
-  VectorSpace<OrdinalType, ScalarType> const& getColMap() const;
+  VectorSpace<OrdinalType, ScalarType> const& getColumnDist() const {
+    if(!CisMatrixData_->haveCol_)
+      throw reportError("Column distribution is not currently defined.", 3);
+    if(isRowOriented())
+      return(CisMatrixData_->secondary_);
+    else
+      return(CisMatrixData_->primary_);
+  }
   
   //! Returns the VectorSpace associated with the domain of this matrix.
-  VectorSpace<OrdinalType, ScalarType> const& getDomainMap() const;
+  VectorSpace<OrdinalType, ScalarType> const& getDomainDist() const {
+    if(!CisMatrixData_->haveDomain_)
+      throw reportError("Domain distribution is not currently defined.", 3);
+    return(CisMatrixData_->domain_);
+  }
   
   //! Returns the VectorSpace associated with the range of this matrix.
-  VectorSpace<OrdinalType, ScalarType> const& getRangeMap() const;
+  VectorSpace<OrdinalType, ScalarType> const& getRangeDist() const {
+    if(!CisMatrixData_->haveRange_)
+      throw reportError("Range distribution is not currently defined.", 3);
+    return(CisMatrixData_->range_);
+  }
   
   //! Returns the Platform object used by this matrix
-  Platform<OrdinalType, ScalarType> const& platform() const;
+  Platform<OrdinalType, ScalarType> const& platform() const {
+		return(data().platform_);
+	}
   
   //@}
   
@@ -205,39 +450,122 @@ public:
   
   // Print method, used by the overloaded << operator
   void print(ostream& os) const {
-    os << "SparseMatrix print function not implemented yet.";
-  }
+    os << "Orientation: " << (data().rowOriented_ ? "Row" : "Column") << "-oriented" << endl;
+    os << "Secondary distribution defined? " << (data().haveSecondary_ ? "yes" : "no") << endl;
+    os << "Domain distribution defined? " << (data().haveDomain_ ? "yes" : "no") << endl;
+    os << "Range distribution defined? " << (data().haveRange_ ? "yes" : "no") << endl;
+    os << "Fill-completed? " << (data().fillCompleted_ ? "yes" : "no") << endl;
+
+    os << "Contents:" << endl;
+    typedef std::map<OrdinalType, ScalarType> OrdScalMap;
+    typedef std::map<OrdinalType, OrdScalMap> MapOfMaps;
+    MapOfMaps& outermap = CisMatrixData_->indicesAndValues_;
+    cout << setw(20) << "Primary Index" << setw(20) << "Secondary Index" << setw(10) << "Value" << endl;
+    for(typename MapOfMaps::iterator i = outermap.begin(); i != outermap.end(); i++) {
+      OrdScalMap& innermap = (*i).second;
+      for(typename OrdScalMap::iterator j = innermap.begin(); j != innermap.end(); j++)
+        cout << setw(15) << (*i).first << setw(18) << (*j).first << setw(15) << (*j).second << endl;
+    }
+	}
   
   //@}
   
   //@{ \name Miscellaneous Methods
   
-  //! Returns true if this is a row-oriented matrix, false if it this is a column-oriented matrix.
-  bool isRowOriented() const;
-  
-  //! Set to true to specify that this is a row-oriented matrix, set to false if this is a column-oriented matrix.
-  void setRowOriented(bool rowOrColumn);
-  
   //! Inlined bracket operator, non-const version.
-  ScalarType* operator[] (OrdinalType index);
+  //ScalarType* operator[] (OrdinalType index);
   
   //! Inlined bracket operator, const version.
-  ScalarType const* operator[] (OrdinalType index) const;
+  //ScalarType const* operator[] (OrdinalType index) const;
   
-	//! Assignment operator (declared but not defined, do not use)
-	SparseMatrix<OrdinalType, ScalarType>& operator = (SparseMatrix<OrdinalType, ScalarType> const& rhs);
+	//! Assignment operator
+	CisMatrix<OrdinalType, ScalarType>& operator = (CisMatrix<OrdinalType, ScalarType> const& Source) {
+    CisMatrixData_ = Source.CisMatrixData_;
+    return(*this);
+  }
   
   //@}
-
 	
 private:
 
-	Teuchos::RefCountPtr< SparseMatrixData<OrdinalType, ScalarType> > SparseMatrixData_;
+	Teuchos::RefCountPtr< CisMatrixData<OrdinalType, ScalarType> > CisMatrixData_;
+  
+  // convenience functions for returning inner data class, both const and nonconst versions.
+  CisMatrixData<OrdinalType, ScalarType>& data() {return(*CisMatrixData_);}
+  CisMatrixData<OrdinalType, ScalarType> const& data() const {return(*CisMatrixData_);}
 
-}; // SparseMatrix class
+  // convenience functions for comm instances
+  Comm<ScalarType, OrdinalType> const& comm() const {return(*data().comm_);}
+  Comm<OrdinalType, OrdinalType> const& ordinalComm() const {return(*data().ordinalComm_);}
+
+  // convenience function for doing Comm::sumAll on one OT variable
+  OrdinalType globalSum(OrdinalType localNum) const {
+    OrdinalType globalNum = Teuchos::OrdinalTraits<OrdinalType>::zero();
+    ordinalComm().sumAll(&localNum, &globalNum, Teuchos::OrdinalTraits<OrdinalType>::one());
+    return(globalNum);
+  }
+
+  // internal functions for doing norms
+  // primaryNorm computes the infinity-norm in a row-oriented matrix, and the one-norm in a column-oriented matrix.
+  // secondaryNorm computes the one-norm in a row-oriented matrixm and the infinity-norm in a column-oriented matrix.
+  // otherwise, both of these functions would be duplicated inside both normOne() and normInf()
+  ScalarType primaryNorm() const {
+    typedef std::map<OrdinalType, ScalarType> OrdScalMap;
+    typedef std::map<OrdinalType, OrdScalMap> MapOfMaps;
+    MapOfMaps& outermap = CisMatrixData_->indicesAndValues_;
+    ScalarType maxSum = Teuchos::ScalarTraits<ScalarType>::zero();
+
+    // iterate through all rows/columns indices
+    for(typename MapOfMaps::iterator i = outermap.begin(); i != outermap.end(); i++) {
+      OrdScalMap& innermap = (*i).second;
+      ScalarType currentSum = Teuchos::ScalarTraits<ScalarType>::zero();
+      // for each row/column, sum up all the values
+      for(typename OrdScalMap::iterator j = innermap.begin(); j != innermap.end(); j++)
+        currentSum += (*j).second;
+      // if we have a new maxsum, set it
+      if(currentSum > maxSum)
+        maxSum = currentSum;
+    }
+    // now do Comm call to get global maxSum
+    ScalarType globalMax = Teuchos::ScalarTraits<ScalarType>::zero();
+    comm().maxAll(&maxSum, &globalMax, Teuchos::OrdinalTraits<OrdinalType>::one());
+    
+    // update flops counter: length-1 for each row/column
+    updateFlops(getNumMyNonzeros() - getPrimaryDist().getNumMyEntries());
+
+    return(globalMax);
+  }
+
+  ScalarType secondaryNorm() const {
+    // create temporary vector to store partial sums in
+    Vector<OrdinalType, ScalarType> sums(getSecondaryDist());
+    typedef std::map<OrdinalType, ScalarType> OrdScalMap;
+    typedef std::map<OrdinalType, OrdScalMap> MapOfMaps;
+    MapOfMaps& outermap = CisMatrixData_->indicesAndValues_;
+    // iterate through all rows/columns indices
+    for(typename MapOfMaps::iterator i = outermap.begin(); i != outermap.end(); i++) {
+      OrdScalMap& innermap = (*i).second;
+      // for each element, add value to its column/row's partial sum
+      for(typename OrdScalMap::iterator j = innermap.begin(); j != innermap.end(); j++)
+        sums[(*j).first] += (*j).second;
+    }
+    // get local max
+    ScalarType localMax = sums.maxValue();
+
+    // now do Comm call to get global max
+    ScalarType globalMax = Teuchos::ScalarTraits<ScalarType>::zero();
+    comm().maxAll(&localMax, &globalMax, Teuchos::OrdinalTraits<OrdinalType>::one());
+    
+    // update flops counter: length-1 for each column/row
+    updateFlops(getNumMyNonzeros() - getSecondaryDist().getNumMyEntries());
+
+    return(globalMax);
+  }
+
+}; // CisMatrix class
 
 } // Tpetra namespace
 
 #include "Tpetra_SparseMatrixData.hpp"
 
-#endif // _TPETRA_SPARSEMATRIX_HPP_
+#endif // _TPETRA_CISMATRIX_HPP_

@@ -175,9 +175,15 @@ OrdinalType* getMyGlobalElements() const;
 /*! An << operator is inherited from Tpetra::Object, which uses the print method.*/
 void print(ostream& os) const;
 
-//! Access function for the Tpetra::Comm and Tpetra::Platform communicators.
+//! Access functions for the Tpetra::Comm and Tpetra::Platform communicators.
 Comm<OrdinalType, OrdinalType> const& comm() const {return(*ElementSpaceData_->Comm_);};
 Platform<OrdinalType, OrdinalType> const& platform() const {return(*ElementSpaceData_->Platform_);};
+
+//! Assignment operator
+  ElementSpace<OrdinalType>& operator = (ElementSpace<OrdinalType> const& Source) {
+    ElementSpaceData_ = Source.ElementSpaceData_;
+    return(*this);
+  }
 
 //@}
 
@@ -188,8 +194,7 @@ Teuchos::RefCountPtr< ElementSpaceData<OrdinalType> > ElementSpaceData_; // Teuc
 // private functions
 void directorySetup();
 	
-	//! Assignment operator (declared but not defined, do not use)
-	ElementSpace<OrdinalType>& operator = (ElementSpace<OrdinalType> const& Source);
+
 
 }; // ElementSpace class
 

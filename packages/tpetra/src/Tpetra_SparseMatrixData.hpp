@@ -26,33 +26,100 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef _TPETRA_SPARSEMATRIXDATA_HPP_
-#define _TPETRA_SPARSEMATRIXDATA_HPP_
+#ifndef _TPETRA_CISMATRIXDATA_HPP_
+#define _TPETRA_CISMATRIXDATA_HPP_
 
 namespace Tpetra {
 
 template<typename OrdinalType, typename ScalarType>
-class SparseMatrixData : public Object {
-	friend class SparseMatrix<OrdinalType, ScalarType>;
+class CisMatrixData : public Object {
+	friend class CisMatrix<OrdinalType, ScalarType>;
  public:
     // default constructor
-	SparseMatrixData() 
-    : Object("Tpetra::SparseMatrixData")
-	{}
+	CisMatrixData(VectorSpace<OrdinalType, ScalarType> primaryDist, bool rowOriented)
+	  : Object("Tpetra::CisMatrixData")
+    , primary_(primaryDist)
+    , secondary_(primaryDist)
+    , domain_(primaryDist)
+    , range_(primaryDist)
+    , haveSecondary_(false) // initially assume we don't have any of these
+    , haveDomain_(false)    // then set to true as we assign them
+    , haveRange_(false)
+    , haveRow_(rowOriented)  // if rowOriented is true, haveRow is true and haveCol is false
+    , haveCol_(!rowOriented) // if rowOriented is false, haveRow is false and haveCol is true
+	  , rowOriented_(rowOriented)
+    , fillCompleted_(false)
+    , numMyNonzeros_(Teuchos::OrdinalTraits<OrdinalType>::zero())
+  {
+	  platform_ = Teuchos::rcp(primaryDist.platform().clone());
+	  comm_ = Teuchos::rcp(primaryDist.platform().createScalarComm());
+    ordinalComm_ = Teuchos::rcp(primaryDist.platform().createOrdinalComm());
+	}
+
+	CisMatrixData(VectorSpace<OrdinalType, ScalarType> primaryDist, VectorSpace<OrdinalType, ScalarType> secondaryDist, bool rowOriented)
+	  : Object("Tpetra::CisMatrixData")
+    , primary_(primaryDist)
+    , secondary_(secondaryDist)
+    , domain_(primaryDist)
+    , range_(primaryDist)
+    , haveSecondary_(true)
+    , haveDomain_(false) // initially assume we don't have any of these
+    , haveRange_(false)  // then set to true as we assign them
+    , haveRow_(true)
+    , haveCol_(true)
+	  , rowOriented_(rowOriented)
+    , fillCompleted_(false)
+    , numMyNonzeros_(Teuchos::OrdinalTraits<OrdinalType>::zero())
+  {
+	  platform_ = Teuchos::rcp(primaryDist.platform().clone());
+	  comm_ = Teuchos::rcp(primaryDist.platform().createScalarComm());
+    ordinalComm_ = Teuchos::rcp(primaryDist.platform().createOrdinalComm());
+	}
 
     // destructor. no heap-data, so no need to override
-	~SparseMatrixData() {}
+	~CisMatrixData() {}
 
  protected:
+  // map of maps that stores indices and values
+	map< OrdinalType, map<OrdinalType, ScalarType> > indicesAndValues_;
+  // vectors used by fillComplete to create HbMatrix
+  std::vector<OrdinalType> pntr_;
+  std::vector<OrdinalType> indx_;
+  std::vector<ScalarType> values_;
+  //Kokkos::HbMatrix<OrdinalType, ScalarType> HbMatrix_;
+  
+
+	// VectorSpaces
+	VectorSpace<OrdinalType, ScalarType> const primary_;
+	VectorSpace<OrdinalType, ScalarType> const secondary_;
+	VectorSpace<OrdinalType, ScalarType> domain_;
+	VectorSpace<OrdinalType, ScalarType> range_;
+
+  // booleans
+  bool haveSecondary_;
+  bool haveDomain_;
+  bool haveRange_;
+  bool haveRow_;
+  bool haveCol_;
+	bool rowOriented_;
+  bool fillCompleted_;
+
+  // other variables used prior to fillComplete
+  OrdinalType numMyNonzeros_;
+
+  // Platform & Comm
+	Teuchos::RefCountPtr<Platform<OrdinalType, ScalarType> const> platform_;
+	Teuchos::RefCountPtr<Comm<ScalarType, OrdinalType> const> comm_;
+  Teuchos::RefCountPtr<Comm<OrdinalType, OrdinalType> const> ordinalComm_;
 
  private:
 	//! Copy constructor (declared but not defined, do not use)
-	SparseMatrixData(SparseMatrixData<OrdinalType, ScalarType> const& rhs);
+	CisMatrixData(CisMatrixData<OrdinalType, ScalarType> const& rhs);
 	//! Assignment operator (declared but not defined, do not use)
-	SparseMatrixData<OrdinalType, ScalarType>& operator = (SparseMatrixData<OrdinalType, ScalarType> const& rhs);
+	CisMatrixData<OrdinalType, ScalarType>& operator = (CisMatrixData<OrdinalType, ScalarType> const& rhs);
 
-}; // class SparseMatrixData
+}; // class CisMatrixData
 
 } // namespace Tpetra
 
-#endif // _TPETRA_SPARSEMATRIXDATA_HPP_
+#endif // _TPETRA_CISMATRIXDATA_HPP_

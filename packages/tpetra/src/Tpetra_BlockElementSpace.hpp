@@ -437,8 +437,11 @@ namespace Tpetra {
 			return(compatibleES);
 		};
 
-		//! Assignment operator (declared but not defined, do not use)
-		BlockElementSpace<OrdinalType>& operator = (BlockElementSpace<OrdinalType> const& Source);
+		//! Assignment operator
+		BlockElementSpace<OrdinalType>& operator = (BlockElementSpace<OrdinalType> const& Source) {
+      BlockElementSpaceData_ = Source.BlockElementSpaceData_;
+      return(*this);
+    }
 		
 		//@}
 		

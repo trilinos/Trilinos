@@ -515,6 +515,12 @@ public:
 		return(VectorData_->VectorSpace_);
 	}
 
+  //! Assignment Operator
+  Vector<OrdinalType, ScalarType>& operator = (Vector<OrdinalType, ScalarType> const& Source) {
+    VectorData_ = Source.VectorData_;
+    return(*this);
+  }
+
 	//@}
 
 private:

@@ -113,6 +113,12 @@ void esTester(bool verbose, bool debug) {
 	assert(es4.isSameAs(es3b) == false);
 	if(verbose) cout << "Successful." << endl;
 
+  if(verbose) cout << "Testing assignment operator...";
+  assert(es3.isSameAs(es3b) == false);
+  es3b = es3;
+  assert(es3.isSameAs(es3b) == true);
+  if(verbose) cout << "Successful." << endl;
+
 	if(verbose) cout << "Testing getRemoteIDList...";
 	const int len = 5;
 	ORDINALTYPE gList[len] = {1,4,22,55,58};

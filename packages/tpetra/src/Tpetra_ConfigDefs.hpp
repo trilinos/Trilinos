@@ -143,7 +143,8 @@ using namespace std;
 
 #define TPETRA_MAX(x,y) (( (x) > (y) ) ? x : y)     /* max function  */
 #define TPETRA_MIN(x,y) (( (x) < (y) ) ? x : y)     /* min function  */
-#define TPETRA_SGN(x) (((x) < 0.0) ? -1.0 : 1.0)    /* sign function */
+// The TPETRA_SGN macro is a Bad Thing, since it uses floating-point literals.
+//#define TPETRA_SGN(x) (((x) < 0.0) ? -1.0 : 1.0)    /* sign function */
 
 const int Tpetra_DefaultTracebackMode = 1; // Default value for traceback behavior
 
