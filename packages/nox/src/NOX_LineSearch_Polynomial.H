@@ -203,6 +203,17 @@ parameters are:
   - "Total Number of Line Search Inner Iterations" - total number of
     inner iterations \f$ k \f$ performed by this object.
 
+  <B> Flexible step acceptance capability </B> <br>
+
+Line searches typically allow steps to be accepted only if they meet sufficient decrease and curvature criteria, eg Armijo-Goldstein conditions.  It can sometimes happen that such a requirement leads to very many nonlinear iterations being taken before the solution falls into a much steeper basin of attraction.  The following two parameters allow the user to relax the curvature and decrease conditions.  !! WARNING !! Convergence proofs and other guarantees associated with this Line Search no longer pertain when using these options.  
+
+  - "Allowed Relative Increase" - (default 100) - the allowed value \f$ k > 0 \f$ for which 
+  \f$
+  \frac{||F (x_{\rm old} + \lambda s)||_2}{||F (x_{\rm old})||_2} \le k
+  \f$
+
+  - "Maximum Increase Steps" - (defaults to "Max Iters") - maximum number of outer iterations for which the preceding acceptability criterion is allowed.  After this number of outer iterations, the original curvature and decrease conditions must be met for a step to be accepted.
+
   \author Russ Hooper, Org. 9233, Sandia National Labs
 */
 
@@ -243,6 +254,9 @@ protected:
   */
   bool isSufficientDecrease(double newf, double oldf, double step, double slope, double eta) const;
 
+  //! Provides a check to see if a step leading to an increase in the residual is allowed
+  bool isIncreaseAllowed(double newf, double oldf, int nOuterIters) const;
+
   //! sets the output parameters for the linesearch in an "Output" sublist of the "Line Search" sublist. 
   bool setOutputParameters();  
   
@@ -274,6 +288,15 @@ protected:
 
   //! True is we should do at least one interpolation step
   bool doForceInterpolation;
+
+  //! True is we should allow residual increases constrained by relIncrease
+  bool allowIncrease;
+
+  //! Allowable relative increase for residual norm
+  double relIncrease;
+
+  //! Maximum number relative increase steps allowed
+  int numAllowed;
 
    //! Minimum step length (i.e., when we give up)
   double minStep;

@@ -90,10 +90,10 @@ bool NOX::LineSearch::Polynomial::reset(Parameter::List& params)
   totalNumFailedLineSearches = 0;
   totalNumIterations = 0;
 
-  allowIncrease = params.isParameter("Allowed Relative Increase");
+  allowIncrease = p.isParameter("Allowed Relative Increase");
   if(allowIncrease) {
-    relIncrease = params.getParameter("Allowed Relative Increase", 1.e2);
-    numAllowed = params.getParameter("Maximum Increase Steps", maxIters);
+    relIncrease = p.getParameter("Allowed Relative Increase", 1.e2);
+    numAllowed = p.getParameter("Maximum Increase Steps", maxIters);
     if(relIncrease<=0) {
       cerr << "NOX::LineSearch::NM_Polynomial::reset - Invalid \"Allowed Relative Increase\"" << endl;
       throw "NOX Error";
@@ -288,6 +288,13 @@ bool NOX::LineSearch::Polynomial::isSufficientDecrease(double newf, double oldf,
   }
 
   return (newf <= rhs);
+}
+
+bool NOX::LineSearch::Polynomial::isIncreaseAllowed(double newf, double oldf, int nOuterIters) const
+{
+  double increase = sqrt(newf / oldf);
+
+  return ( (increase <= relIncrease) && (nOuterIters <= numAllowed) );
 }
 
 bool NOX::LineSearch::Polynomial::setOutputParameters() {
