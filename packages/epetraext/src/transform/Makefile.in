@@ -1,0 +1,683 @@
+# Makefile.in generated automatically by automake 1.5 from Makefile.am.
+
+# Copyright 1994, 1995, 1996, 1997, 1998, 1999, 2000, 2001
+# Free Software Foundation, Inc.
+# This Makefile.in is free software; the Free Software Foundation
+# gives unlimited permission to copy and/or distribute it,
+# with or without modifications, as long as this notice is preserved.
+
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY, to the extent permitted by law; without
+# even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+# PARTICULAR PURPOSE.
+
+@SET_MAKE@
+
+# @HEADER
+# @HEADER
+
+# ------------------------------------------------------------------------
+# For each category, create two variables - NAME and NAME_H. The
+# second is the list of headers to be installed, i.e., any header that
+# might someday be needed by some other code outside EpetraExt. The first is
+# the list of all source and any other header files.
+# ------------------------------------------------------------------------
+
+SHELL = @SHELL@
+
+srcdir = @srcdir@
+top_srcdir = @top_srcdir@
+VPATH = @srcdir@
+prefix = @prefix@
+exec_prefix = @exec_prefix@
+
+bindir = @bindir@
+sbindir = @sbindir@
+libexecdir = @libexecdir@
+datadir = @datadir@
+sysconfdir = @sysconfdir@
+sharedstatedir = @sharedstatedir@
+localstatedir = @localstatedir@
+libdir = @libdir@
+infodir = @infodir@
+mandir = @mandir@
+includedir = @includedir@
+oldincludedir = /usr/include
+pkgdatadir = $(datadir)/@PACKAGE@
+pkglibdir = $(libdir)/@PACKAGE@
+pkgincludedir = $(includedir)/@PACKAGE@
+top_builddir = ../..
+
+ACLOCAL = @ACLOCAL@
+AUTOCONF = @AUTOCONF@
+AUTOMAKE = @AUTOMAKE@
+AUTOHEADER = @AUTOHEADER@
+
+INSTALL = @INSTALL@
+INSTALL_PROGRAM = @INSTALL_PROGRAM@
+INSTALL_DATA = @INSTALL_DATA@
+INSTALL_SCRIPT = @INSTALL_SCRIPT@
+INSTALL_HEADER = $(INSTALL_DATA)
+transform = @program_transform_name@
+NORMAL_INSTALL = :
+PRE_INSTALL = :
+POST_INSTALL = :
+NORMAL_UNINSTALL = :
+PRE_UNINSTALL = :
+POST_UNINSTALL = :
+ALTERNATE_AR = @ALTERNATE_AR@
+AMTAR = @AMTAR@
+AWK = @AWK@
+BLAS_LIBS = @BLAS_LIBS@
+CC = @CC@
+CXX = @CXX@
+DEPDIR = @DEPDIR@
+EXEEXT = @EXEEXT@
+F77 = @F77@
+FLIBS = @FLIBS@
+INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
+LAPACK_LIBS = @LAPACK_LIBS@
+MAINT = @MAINT@
+MPI_CC_EXISTS = @MPI_CC_EXISTS@
+MPI_CXX_EXISTS = @MPI_CXX_EXISTS@
+MPI_F77_EXISTS = @MPI_F77_EXISTS@
+OBJEXT = @OBJEXT@
+PACKAGE = @PACKAGE@
+RANLIB = @RANLIB@
+VERSION = @VERSION@
+XTRALDADD = @XTRALDADD@
+ac_aux_dir = @ac_aux_dir@
+am__include = @am__include@
+am__quote = @am__quote@
+install_sh = @install_sh@
+
+TRANSFORM_H = \
+	$(srcdir)/Epetra_Transform.h \
+	$(srcdir)/EDT_CrsGraph_View.h \
+	$(srcdir)/EDT_CrsMatrix_View.h \
+	$(srcdir)/EDT_MultiVector_View.h \
+	$(srcdir)/EDT_CrsGraph_Overlap.h \
+	$(srcdir)/EDT_CrsGraph_Transpose.h \
+        $(srcdir)/EDT_CrsGraph_MapColoring.h \
+        $(srcdir)/EDT_CrsGraph_MapColoringIndex.h \
+	$(srcdir)/EDT_LinearProblem_StaticCondensation.h
+
+
+TRANSFORM = \
+	$(srcdir)/EDT_CrsGraph_View.cpp \
+	$(srcdir)/EDT_CrsMatrix_View.cpp \
+	$(srcdir)/EDT_MultiVector_View.cpp \
+	$(srcdir)/EDT_CrsGraph_Overlap.cpp \
+	$(srcdir)/EDT_CrsGraph_Transpose.cpp \
+        $(srcdir)/EDT_CrsGraph_MapColoring.cpp \
+        $(srcdir)/EDT_CrsGraph_MapColoringIndex.cpp \
+	$(srcdir)/EDT_LinearProblem_StaticCondensation.cpp
+
+
+BTF_H = \
+        $(srddir)/ET_CrsGraph_BTF.h
+
+
+BTF = \
+        $(srddir)/ET_CrsGraph_BTF.cpp \
+        $(srddir)/btf/concmp.f \
+        $(srddir)/btf/genbtf.f \
+        $(srddir)/btf/corsum.f \
+        $(srddir)/btf/finsum.f \
+        $(srddir)/btf/fnrsum.f \
+        $(srddir)/btf/izero.f \
+        $(srddir)/btf/maxmatch.f \
+        $(srddir)/btf/rectblk.f \
+        $(srddir)/btf/mmc13e.f \
+        $(srddir)/btf/prtivs.f \
+        $(srddir)/btf/strchk.f \
+        $(srddir)/btf/mattrans.f
+
+
+EXTRA_MPI_H = \
+	$(srcdir)/EDT_CrsGraph_Zoltan.h \
+	$(srcdir)/EDT_CrsGraph_ZoltanOrder.h \
+	$(srcdir)/EDT_CrsGraph_ZoltanQuery.h
+
+
+EXTRA_MPI = \
+	$(srcdir)/EDT_CrsGraph_Zoltan.cpp \
+	$(srcdir)/EDT_CrsGraph_ZoltanOrder.cpp \
+	$(srcdir)/EDT_CrsGraph_ZoltanQuery.cpp
+
+
+@HAVE_MPI_TRUE@MPI_H = \
+@HAVE_MPI_TRUE@        $(EXTRA_MPI_H)
+
+@HAVE_MPI_FALSE@MPI_H = 
+@HAVE_MPI_TRUE@MPI = \
+@HAVE_MPI_TRUE@        $(EXTRA_MPI)
+
+@HAVE_MPI_FALSE@MPI = 
+
+
+# ------------------------------------------------------------------------
+# EpetraExt library specifications
+# ------------------------------------------------------------------------
+EPETRAEXT_LIB = libepetraext.a
+
+EPETRAEXT_H = \
+	$(TRANSFORM_H) \
+	$(MPI_H)
+
+
+libepetraext_a_SOURCES = \
+	$(TRANSFORM) \
+	$(MPI)
+
+
+#We need the following to support separate build directories
+AM_CPPFLAGS = -I$(top_builddir)/../epetra/src -I$(top_srcdir)/../epetra/src
+
+# ------------------------------------------------------------------------
+# For using a special archiver
+# ------------------------------------------------------------------------
+
+# SPECIAL NOTE: Why is the "else" there?  For some reason, automake
+# fails to define <lib>_AR of USE_ALTERNATE_AR is false, so we have to
+# define it manually.
+@USE_ALTERNATE_AR_TRUE@libepetraext_a_AR = $(ALTERNATE_AR)
+@USE_ALTERNATE_AR_FALSE@libepetraext_a_AR = $(AR) cru
+
+
+# ------------------------------------------------------------------------
+# Some C++ compilers create extra .o-files for templates. We need to
+# be sure to include these, and this is the hack to do it.
+# On alpha-dec machines, the extra .o's are needed for Epetra only.
+# ------------------------------------------------------------------------
+libepetraext_a_LIBADD = $(EPETRAEXT_TEMPLATE_OBJS) $(XTRALDADD)
+
+
+# ------------------------------------------------------------------------
+# List of all libraries to install in $(libexecdir)
+# ------------------------------------------------------------------------
+lib_LIBRARIES = $(EPETRAEXT_LIB)
+
+
+# ------------------------------------------------------------------------
+# List of all headers to install in $(pkgincludedir)
+# ------------------------------------------------------------------------
+pkginclude_HEADERS = $(EPETRAEXT_H) 
+
+
+# ------------------------------------------------------------------------
+# Special stuff to install in our special $(pkgexecincludedir)
+# ------------------------------------------------------------------------
+
+# SPECIAL NOTE: Epetra_config.h is a machine-dependent file, so we need
+# to install it in the machine-dependent directory. However, that is
+# not a default installation directory, so we had to create it
+# special.
+pkgexecincludedir = $(exec_prefix)/include/epetraext
+nodist_pkgexecinclude_HEADERS = ../EpetraExt_config.h
+
+
+# ------------------------------------------------------------------------
+# Files to be deleted by 'make maintainer-clean'
+# ------------------------------------------------------------------------
+MAINTAINERCLEANFILES = Makefile.in 
+subdir = src/transform
+mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
+CONFIG_HEADER = $(top_builddir)/src/EpetraExt_config.h
+CONFIG_CLEAN_FILES =
+LIBRARIES = $(lib_LIBRARIES)
+
+libepetraext_a_DEPENDENCIES =
+@HAVE_MPI_TRUE@am_libepetraext_a_OBJECTS = EDT_CrsGraph_View.$(OBJEXT) \
+@HAVE_MPI_TRUE@	EDT_CrsMatrix_View.$(OBJEXT) \
+@HAVE_MPI_TRUE@	EDT_MultiVector_View.$(OBJEXT) \
+@HAVE_MPI_TRUE@	EDT_CrsGraph_Overlap.$(OBJEXT) \
+@HAVE_MPI_TRUE@	EDT_CrsGraph_Transpose.$(OBJEXT) \
+@HAVE_MPI_TRUE@	EDT_CrsGraph_MapColoring.$(OBJEXT) \
+@HAVE_MPI_TRUE@	EDT_CrsGraph_MapColoringIndex.$(OBJEXT) \
+@HAVE_MPI_TRUE@	EDT_LinearProblem_StaticCondensation.$(OBJEXT) \
+@HAVE_MPI_TRUE@	EDT_CrsGraph_Zoltan.$(OBJEXT) \
+@HAVE_MPI_TRUE@	EDT_CrsGraph_ZoltanOrder.$(OBJEXT) \
+@HAVE_MPI_TRUE@	EDT_CrsGraph_ZoltanQuery.$(OBJEXT)
+@HAVE_MPI_FALSE@am_libepetraext_a_OBJECTS = EDT_CrsGraph_View.$(OBJEXT) \
+@HAVE_MPI_FALSE@	EDT_CrsMatrix_View.$(OBJEXT) \
+@HAVE_MPI_FALSE@	EDT_MultiVector_View.$(OBJEXT) \
+@HAVE_MPI_FALSE@	EDT_CrsGraph_Overlap.$(OBJEXT) \
+@HAVE_MPI_FALSE@	EDT_CrsGraph_Transpose.$(OBJEXT) \
+@HAVE_MPI_FALSE@	EDT_CrsGraph_MapColoring.$(OBJEXT) \
+@HAVE_MPI_FALSE@	EDT_CrsGraph_MapColoringIndex.$(OBJEXT) \
+@HAVE_MPI_FALSE@	EDT_LinearProblem_StaticCondensation.$(OBJEXT)
+libepetraext_a_OBJECTS = $(am_libepetraext_a_OBJECTS)
+
+DEFS = @DEFS@
+DEFAULT_INCLUDES =  -I. -I$(srcdir) -I$(top_builddir)/src
+CPPFLAGS = @CPPFLAGS@
+LDFLAGS = @LDFLAGS@
+LIBS = @LIBS@
+depcomp = $(SHELL) $(top_srcdir)/config/depcomp
+@AMDEP_TRUE@DEP_FILES = $(DEPDIR)/EDT_CrsGraph_MapColoring.Po \
+@AMDEP_TRUE@	$(DEPDIR)/EDT_CrsGraph_MapColoringIndex.Po \
+@AMDEP_TRUE@	$(DEPDIR)/EDT_CrsGraph_Overlap.Po \
+@AMDEP_TRUE@	$(DEPDIR)/EDT_CrsGraph_Transpose.Po \
+@AMDEP_TRUE@	$(DEPDIR)/EDT_CrsGraph_View.Po \
+@AMDEP_TRUE@	$(DEPDIR)/EDT_CrsGraph_Zoltan.Po \
+@AMDEP_TRUE@	$(DEPDIR)/EDT_CrsGraph_ZoltanOrder.Po \
+@AMDEP_TRUE@	$(DEPDIR)/EDT_CrsGraph_ZoltanQuery.Po \
+@AMDEP_TRUE@	$(DEPDIR)/EDT_CrsMatrix_View.Po \
+@AMDEP_TRUE@	$(DEPDIR)/EDT_LinearProblem_StaticCondensation.Po \
+@AMDEP_TRUE@	$(DEPDIR)/EDT_MultiVector_View.Po
+CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
+	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
+CXXLD = $(CXX)
+CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
+	-o $@
+CXXFLAGS = @CXXFLAGS@
+DIST_SOURCES = $(libepetraext_a_SOURCES)
+HEADERS = $(nodist_pkgexecinclude_HEADERS) $(pkginclude_HEADERS)
+
+DIST_COMMON = $(pkginclude_HEADERS) Makefile.am Makefile.in
+SOURCES = $(libepetraext_a_SOURCES)
+
+all: all-am
+
+.SUFFIXES:
+.SUFFIXES: .cpp .o .obj
+$(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ Makefile.am  $(top_srcdir)/configure.ac $(ACLOCAL_M4)
+	cd $(top_srcdir) && \
+	  $(AUTOMAKE) --foreign  src/transform/Makefile
+Makefile: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.in  $(top_builddir)/config.status
+	cd $(top_builddir) && \
+	  CONFIG_HEADERS= CONFIG_LINKS= \
+	  CONFIG_FILES=$(subdir)/$@ $(SHELL) ./config.status
+
+AR = ar
+install-libLIBRARIES: $(lib_LIBRARIES)
+	@$(NORMAL_INSTALL)
+	$(mkinstalldirs) $(DESTDIR)$(libdir)
+	@list='$(lib_LIBRARIES)'; for p in $$list; do \
+	  if test -f $$p; then \
+	    echo " $(INSTALL_DATA) $$p $(DESTDIR)$(libdir)/$$p"; \
+	    $(INSTALL_DATA) $$p $(DESTDIR)$(libdir)/$$p; \
+	  else :; fi; \
+	done
+	@$(POST_INSTALL)
+	@list='$(lib_LIBRARIES)'; for p in $$list; do \
+	  if test -f $$p; then \
+	    echo " $(RANLIB) $(DESTDIR)$(libdir)/$$p"; \
+	    $(RANLIB) $(DESTDIR)$(libdir)/$$p; \
+	  else :; fi; \
+	done
+
+uninstall-libLIBRARIES:
+	@$(NORMAL_UNINSTALL)
+	@list='$(lib_LIBRARIES)'; for p in $$list; do \
+	  echo " rm -f $(DESTDIR)$(libdir)/$$p"; \
+	  rm -f $(DESTDIR)$(libdir)/$$p; \
+	done
+
+clean-libLIBRARIES:
+	-test -z "$(lib_LIBRARIES)" || rm -f $(lib_LIBRARIES)
+EDT_CrsGraph_View.$(OBJEXT): $(srcdir)/EDT_CrsGraph_View.cpp
+EDT_CrsMatrix_View.$(OBJEXT): $(srcdir)/EDT_CrsMatrix_View.cpp
+EDT_MultiVector_View.$(OBJEXT): $(srcdir)/EDT_MultiVector_View.cpp
+EDT_CrsGraph_Overlap.$(OBJEXT): $(srcdir)/EDT_CrsGraph_Overlap.cpp
+EDT_CrsGraph_Transpose.$(OBJEXT): $(srcdir)/EDT_CrsGraph_Transpose.cpp
+EDT_CrsGraph_MapColoring.$(OBJEXT): \
+	$(srcdir)/EDT_CrsGraph_MapColoring.cpp
+EDT_CrsGraph_MapColoringIndex.$(OBJEXT): \
+	$(srcdir)/EDT_CrsGraph_MapColoringIndex.cpp
+EDT_LinearProblem_StaticCondensation.$(OBJEXT): \
+	$(srcdir)/EDT_LinearProblem_StaticCondensation.cpp
+EDT_CrsGraph_Zoltan.$(OBJEXT): $(srcdir)/EDT_CrsGraph_Zoltan.cpp
+EDT_CrsGraph_ZoltanOrder.$(OBJEXT): \
+	$(srcdir)/EDT_CrsGraph_ZoltanOrder.cpp
+EDT_CrsGraph_ZoltanQuery.$(OBJEXT): \
+	$(srcdir)/EDT_CrsGraph_ZoltanQuery.cpp
+libepetraext.a: $(libepetraext_a_OBJECTS) $(libepetraext_a_DEPENDENCIES) 
+	-rm -f libepetraext.a
+	$(libepetraext_a_AR) libepetraext.a $(libepetraext_a_OBJECTS) $(libepetraext_a_LIBADD)
+	$(RANLIB) libepetraext.a
+
+mostlyclean-compile:
+	-rm -f *.$(OBJEXT) core *.core
+
+distclean-compile:
+	-rm -f *.tab.c
+
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/EDT_CrsGraph_MapColoring.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/EDT_CrsGraph_MapColoringIndex.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/EDT_CrsGraph_Overlap.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/EDT_CrsGraph_Transpose.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/EDT_CrsGraph_View.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/EDT_CrsGraph_Zoltan.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/EDT_CrsGraph_ZoltanOrder.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/EDT_CrsGraph_ZoltanQuery.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/EDT_CrsMatrix_View.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/EDT_LinearProblem_StaticCondensation.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/EDT_MultiVector_View.Po@am__quote@
+
+distclean-depend:
+	-rm -rf $(DEPDIR)
+
+.cpp.o:
+@AMDEP_TRUE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/$*.Po' tmpdepfile='$(DEPDIR)/$*.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXXCOMPILE) -c -o $@ `test -f $< || echo '$(srcdir)/'`$<
+
+.cpp.obj:
+@AMDEP_TRUE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/$*.Po' tmpdepfile='$(DEPDIR)/$*.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXXCOMPILE) -c -o $@ `cygpath -w $<`
+
+EDT_CrsGraph_View.o: $(srcdir)/EDT_CrsGraph_View.cpp
+@AMDEP_TRUE@	source='$(srcdir)/EDT_CrsGraph_View.cpp' object='EDT_CrsGraph_View.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/EDT_CrsGraph_View.Po' tmpdepfile='$(DEPDIR)/EDT_CrsGraph_View.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o EDT_CrsGraph_View.o `test -f $(srcdir)/EDT_CrsGraph_View.cpp || echo '$(srcdir)/'`$(srcdir)/EDT_CrsGraph_View.cpp
+
+EDT_CrsGraph_View.obj: $(srcdir)/EDT_CrsGraph_View.cpp
+@AMDEP_TRUE@	source='$(srcdir)/EDT_CrsGraph_View.cpp' object='EDT_CrsGraph_View.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/EDT_CrsGraph_View.Po' tmpdepfile='$(DEPDIR)/EDT_CrsGraph_View.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o EDT_CrsGraph_View.obj `cygpath -w $(srcdir)/EDT_CrsGraph_View.cpp`
+
+EDT_CrsMatrix_View.o: $(srcdir)/EDT_CrsMatrix_View.cpp
+@AMDEP_TRUE@	source='$(srcdir)/EDT_CrsMatrix_View.cpp' object='EDT_CrsMatrix_View.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/EDT_CrsMatrix_View.Po' tmpdepfile='$(DEPDIR)/EDT_CrsMatrix_View.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o EDT_CrsMatrix_View.o `test -f $(srcdir)/EDT_CrsMatrix_View.cpp || echo '$(srcdir)/'`$(srcdir)/EDT_CrsMatrix_View.cpp
+
+EDT_CrsMatrix_View.obj: $(srcdir)/EDT_CrsMatrix_View.cpp
+@AMDEP_TRUE@	source='$(srcdir)/EDT_CrsMatrix_View.cpp' object='EDT_CrsMatrix_View.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/EDT_CrsMatrix_View.Po' tmpdepfile='$(DEPDIR)/EDT_CrsMatrix_View.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o EDT_CrsMatrix_View.obj `cygpath -w $(srcdir)/EDT_CrsMatrix_View.cpp`
+
+EDT_MultiVector_View.o: $(srcdir)/EDT_MultiVector_View.cpp
+@AMDEP_TRUE@	source='$(srcdir)/EDT_MultiVector_View.cpp' object='EDT_MultiVector_View.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/EDT_MultiVector_View.Po' tmpdepfile='$(DEPDIR)/EDT_MultiVector_View.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o EDT_MultiVector_View.o `test -f $(srcdir)/EDT_MultiVector_View.cpp || echo '$(srcdir)/'`$(srcdir)/EDT_MultiVector_View.cpp
+
+EDT_MultiVector_View.obj: $(srcdir)/EDT_MultiVector_View.cpp
+@AMDEP_TRUE@	source='$(srcdir)/EDT_MultiVector_View.cpp' object='EDT_MultiVector_View.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/EDT_MultiVector_View.Po' tmpdepfile='$(DEPDIR)/EDT_MultiVector_View.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o EDT_MultiVector_View.obj `cygpath -w $(srcdir)/EDT_MultiVector_View.cpp`
+
+EDT_CrsGraph_Overlap.o: $(srcdir)/EDT_CrsGraph_Overlap.cpp
+@AMDEP_TRUE@	source='$(srcdir)/EDT_CrsGraph_Overlap.cpp' object='EDT_CrsGraph_Overlap.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/EDT_CrsGraph_Overlap.Po' tmpdepfile='$(DEPDIR)/EDT_CrsGraph_Overlap.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o EDT_CrsGraph_Overlap.o `test -f $(srcdir)/EDT_CrsGraph_Overlap.cpp || echo '$(srcdir)/'`$(srcdir)/EDT_CrsGraph_Overlap.cpp
+
+EDT_CrsGraph_Overlap.obj: $(srcdir)/EDT_CrsGraph_Overlap.cpp
+@AMDEP_TRUE@	source='$(srcdir)/EDT_CrsGraph_Overlap.cpp' object='EDT_CrsGraph_Overlap.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/EDT_CrsGraph_Overlap.Po' tmpdepfile='$(DEPDIR)/EDT_CrsGraph_Overlap.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o EDT_CrsGraph_Overlap.obj `cygpath -w $(srcdir)/EDT_CrsGraph_Overlap.cpp`
+
+EDT_CrsGraph_Transpose.o: $(srcdir)/EDT_CrsGraph_Transpose.cpp
+@AMDEP_TRUE@	source='$(srcdir)/EDT_CrsGraph_Transpose.cpp' object='EDT_CrsGraph_Transpose.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/EDT_CrsGraph_Transpose.Po' tmpdepfile='$(DEPDIR)/EDT_CrsGraph_Transpose.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o EDT_CrsGraph_Transpose.o `test -f $(srcdir)/EDT_CrsGraph_Transpose.cpp || echo '$(srcdir)/'`$(srcdir)/EDT_CrsGraph_Transpose.cpp
+
+EDT_CrsGraph_Transpose.obj: $(srcdir)/EDT_CrsGraph_Transpose.cpp
+@AMDEP_TRUE@	source='$(srcdir)/EDT_CrsGraph_Transpose.cpp' object='EDT_CrsGraph_Transpose.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/EDT_CrsGraph_Transpose.Po' tmpdepfile='$(DEPDIR)/EDT_CrsGraph_Transpose.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o EDT_CrsGraph_Transpose.obj `cygpath -w $(srcdir)/EDT_CrsGraph_Transpose.cpp`
+
+EDT_CrsGraph_MapColoring.o: $(srcdir)/EDT_CrsGraph_MapColoring.cpp
+@AMDEP_TRUE@	source='$(srcdir)/EDT_CrsGraph_MapColoring.cpp' object='EDT_CrsGraph_MapColoring.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/EDT_CrsGraph_MapColoring.Po' tmpdepfile='$(DEPDIR)/EDT_CrsGraph_MapColoring.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o EDT_CrsGraph_MapColoring.o `test -f $(srcdir)/EDT_CrsGraph_MapColoring.cpp || echo '$(srcdir)/'`$(srcdir)/EDT_CrsGraph_MapColoring.cpp
+
+EDT_CrsGraph_MapColoring.obj: $(srcdir)/EDT_CrsGraph_MapColoring.cpp
+@AMDEP_TRUE@	source='$(srcdir)/EDT_CrsGraph_MapColoring.cpp' object='EDT_CrsGraph_MapColoring.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/EDT_CrsGraph_MapColoring.Po' tmpdepfile='$(DEPDIR)/EDT_CrsGraph_MapColoring.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o EDT_CrsGraph_MapColoring.obj `cygpath -w $(srcdir)/EDT_CrsGraph_MapColoring.cpp`
+
+EDT_CrsGraph_MapColoringIndex.o: $(srcdir)/EDT_CrsGraph_MapColoringIndex.cpp
+@AMDEP_TRUE@	source='$(srcdir)/EDT_CrsGraph_MapColoringIndex.cpp' object='EDT_CrsGraph_MapColoringIndex.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/EDT_CrsGraph_MapColoringIndex.Po' tmpdepfile='$(DEPDIR)/EDT_CrsGraph_MapColoringIndex.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o EDT_CrsGraph_MapColoringIndex.o `test -f $(srcdir)/EDT_CrsGraph_MapColoringIndex.cpp || echo '$(srcdir)/'`$(srcdir)/EDT_CrsGraph_MapColoringIndex.cpp
+
+EDT_CrsGraph_MapColoringIndex.obj: $(srcdir)/EDT_CrsGraph_MapColoringIndex.cpp
+@AMDEP_TRUE@	source='$(srcdir)/EDT_CrsGraph_MapColoringIndex.cpp' object='EDT_CrsGraph_MapColoringIndex.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/EDT_CrsGraph_MapColoringIndex.Po' tmpdepfile='$(DEPDIR)/EDT_CrsGraph_MapColoringIndex.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o EDT_CrsGraph_MapColoringIndex.obj `cygpath -w $(srcdir)/EDT_CrsGraph_MapColoringIndex.cpp`
+
+EDT_LinearProblem_StaticCondensation.o: $(srcdir)/EDT_LinearProblem_StaticCondensation.cpp
+@AMDEP_TRUE@	source='$(srcdir)/EDT_LinearProblem_StaticCondensation.cpp' object='EDT_LinearProblem_StaticCondensation.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/EDT_LinearProblem_StaticCondensation.Po' tmpdepfile='$(DEPDIR)/EDT_LinearProblem_StaticCondensation.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o EDT_LinearProblem_StaticCondensation.o `test -f $(srcdir)/EDT_LinearProblem_StaticCondensation.cpp || echo '$(srcdir)/'`$(srcdir)/EDT_LinearProblem_StaticCondensation.cpp
+
+EDT_LinearProblem_StaticCondensation.obj: $(srcdir)/EDT_LinearProblem_StaticCondensation.cpp
+@AMDEP_TRUE@	source='$(srcdir)/EDT_LinearProblem_StaticCondensation.cpp' object='EDT_LinearProblem_StaticCondensation.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/EDT_LinearProblem_StaticCondensation.Po' tmpdepfile='$(DEPDIR)/EDT_LinearProblem_StaticCondensation.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o EDT_LinearProblem_StaticCondensation.obj `cygpath -w $(srcdir)/EDT_LinearProblem_StaticCondensation.cpp`
+
+EDT_CrsGraph_Zoltan.o: $(srcdir)/EDT_CrsGraph_Zoltan.cpp
+@AMDEP_TRUE@	source='$(srcdir)/EDT_CrsGraph_Zoltan.cpp' object='EDT_CrsGraph_Zoltan.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/EDT_CrsGraph_Zoltan.Po' tmpdepfile='$(DEPDIR)/EDT_CrsGraph_Zoltan.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o EDT_CrsGraph_Zoltan.o `test -f $(srcdir)/EDT_CrsGraph_Zoltan.cpp || echo '$(srcdir)/'`$(srcdir)/EDT_CrsGraph_Zoltan.cpp
+
+EDT_CrsGraph_Zoltan.obj: $(srcdir)/EDT_CrsGraph_Zoltan.cpp
+@AMDEP_TRUE@	source='$(srcdir)/EDT_CrsGraph_Zoltan.cpp' object='EDT_CrsGraph_Zoltan.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/EDT_CrsGraph_Zoltan.Po' tmpdepfile='$(DEPDIR)/EDT_CrsGraph_Zoltan.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o EDT_CrsGraph_Zoltan.obj `cygpath -w $(srcdir)/EDT_CrsGraph_Zoltan.cpp`
+
+EDT_CrsGraph_ZoltanOrder.o: $(srcdir)/EDT_CrsGraph_ZoltanOrder.cpp
+@AMDEP_TRUE@	source='$(srcdir)/EDT_CrsGraph_ZoltanOrder.cpp' object='EDT_CrsGraph_ZoltanOrder.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/EDT_CrsGraph_ZoltanOrder.Po' tmpdepfile='$(DEPDIR)/EDT_CrsGraph_ZoltanOrder.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o EDT_CrsGraph_ZoltanOrder.o `test -f $(srcdir)/EDT_CrsGraph_ZoltanOrder.cpp || echo '$(srcdir)/'`$(srcdir)/EDT_CrsGraph_ZoltanOrder.cpp
+
+EDT_CrsGraph_ZoltanOrder.obj: $(srcdir)/EDT_CrsGraph_ZoltanOrder.cpp
+@AMDEP_TRUE@	source='$(srcdir)/EDT_CrsGraph_ZoltanOrder.cpp' object='EDT_CrsGraph_ZoltanOrder.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/EDT_CrsGraph_ZoltanOrder.Po' tmpdepfile='$(DEPDIR)/EDT_CrsGraph_ZoltanOrder.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o EDT_CrsGraph_ZoltanOrder.obj `cygpath -w $(srcdir)/EDT_CrsGraph_ZoltanOrder.cpp`
+
+EDT_CrsGraph_ZoltanQuery.o: $(srcdir)/EDT_CrsGraph_ZoltanQuery.cpp
+@AMDEP_TRUE@	source='$(srcdir)/EDT_CrsGraph_ZoltanQuery.cpp' object='EDT_CrsGraph_ZoltanQuery.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/EDT_CrsGraph_ZoltanQuery.Po' tmpdepfile='$(DEPDIR)/EDT_CrsGraph_ZoltanQuery.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o EDT_CrsGraph_ZoltanQuery.o `test -f $(srcdir)/EDT_CrsGraph_ZoltanQuery.cpp || echo '$(srcdir)/'`$(srcdir)/EDT_CrsGraph_ZoltanQuery.cpp
+
+EDT_CrsGraph_ZoltanQuery.obj: $(srcdir)/EDT_CrsGraph_ZoltanQuery.cpp
+@AMDEP_TRUE@	source='$(srcdir)/EDT_CrsGraph_ZoltanQuery.cpp' object='EDT_CrsGraph_ZoltanQuery.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/EDT_CrsGraph_ZoltanQuery.Po' tmpdepfile='$(DEPDIR)/EDT_CrsGraph_ZoltanQuery.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o EDT_CrsGraph_ZoltanQuery.obj `cygpath -w $(srcdir)/EDT_CrsGraph_ZoltanQuery.cpp`
+CXXDEPMODE = @CXXDEPMODE@
+uninstall-info-am:
+install-nodist_pkgexecincludeHEADERS: $(nodist_pkgexecinclude_HEADERS)
+	@$(NORMAL_INSTALL)
+	$(mkinstalldirs) $(DESTDIR)$(pkgexecincludedir)
+	@list='$(nodist_pkgexecinclude_HEADERS)'; for p in $$list; do \
+	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
+	  f="`echo $$p | sed -e 's|^.*/||'`"; \
+	  echo " $(INSTALL_HEADER) $$d$$p $(DESTDIR)$(pkgexecincludedir)/$$f"; \
+	  $(INSTALL_HEADER) $$d$$p $(DESTDIR)$(pkgexecincludedir)/$$f; \
+	done
+
+uninstall-nodist_pkgexecincludeHEADERS:
+	@$(NORMAL_UNINSTALL)
+	@list='$(nodist_pkgexecinclude_HEADERS)'; for p in $$list; do \
+	  f="`echo $$p | sed -e 's|^.*/||'`"; \
+	  echo " rm -f $(DESTDIR)$(pkgexecincludedir)/$$f"; \
+	  rm -f $(DESTDIR)$(pkgexecincludedir)/$$f; \
+	done
+install-pkgincludeHEADERS: $(pkginclude_HEADERS)
+	@$(NORMAL_INSTALL)
+	$(mkinstalldirs) $(DESTDIR)$(pkgincludedir)
+	@list='$(pkginclude_HEADERS)'; for p in $$list; do \
+	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
+	  f="`echo $$p | sed -e 's|^.*/||'`"; \
+	  echo " $(INSTALL_HEADER) $$d$$p $(DESTDIR)$(pkgincludedir)/$$f"; \
+	  $(INSTALL_HEADER) $$d$$p $(DESTDIR)$(pkgincludedir)/$$f; \
+	done
+
+uninstall-pkgincludeHEADERS:
+	@$(NORMAL_UNINSTALL)
+	@list='$(pkginclude_HEADERS)'; for p in $$list; do \
+	  f="`echo $$p | sed -e 's|^.*/||'`"; \
+	  echo " rm -f $(DESTDIR)$(pkgincludedir)/$$f"; \
+	  rm -f $(DESTDIR)$(pkgincludedir)/$$f; \
+	done
+
+tags: TAGS
+
+ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)
+	list='$(SOURCES) $(HEADERS) $(TAGS_FILES)'; \
+	unique=`for i in $$list; do \
+	    if test -f "$$i"; then echo $$i; else echo $(srcdir)/$$i; fi; \
+	  done | \
+	  $(AWK) '    { files[$$0] = 1; } \
+	       END { for (i in files) print i; }'`; \
+	mkid -fID $$unique $(LISP)
+
+TAGS:  $(HEADERS) $(SOURCES)  $(TAGS_DEPENDENCIES) \
+		$(TAGS_FILES) $(LISP)
+	tags=; \
+	here=`pwd`; \
+	list='$(SOURCES) $(HEADERS) $(TAGS_FILES)'; \
+	unique=`for i in $$list; do \
+	    if test -f "$$i"; then echo $$i; else echo $(srcdir)/$$i; fi; \
+	  done | \
+	  $(AWK) '    { files[$$0] = 1; } \
+	       END { for (i in files) print i; }'`; \
+	test -z "$(ETAGS_ARGS)$$unique$(LISP)$$tags" \
+	  || etags $(ETAGS_ARGS) $$tags  $$unique $(LISP)
+
+GTAGS:
+	here=`CDPATH=: && cd $(top_builddir) && pwd` \
+	  && cd $(top_srcdir) \
+	  && gtags -i $(GTAGS_ARGS) $$here
+
+distclean-tags:
+	-rm -f TAGS ID GTAGS GRTAGS GSYMS GPATH
+
+DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
+
+top_distdir = ../..
+distdir = $(top_distdir)/$(PACKAGE)-$(VERSION)
+
+distdir: $(DISTFILES)
+	$(mkinstalldirs) $(distdir)/$(srcdir)
+	@for file in $(DISTFILES); do \
+	  if test -f $$file; then d=.; else d=$(srcdir); fi; \
+	  dir=`echo "$$file" | sed -e 's,/[^/]*$$,,'`; \
+	  if test "$$dir" != "$$file" && test "$$dir" != "."; then \
+	    $(mkinstalldirs) "$(distdir)/$$dir"; \
+	  fi; \
+	  if test -d $$d/$$file; then \
+	    cp -pR $$d/$$file $(distdir) \
+	    || exit 1; \
+	  else \
+	    test -f $(distdir)/$$file \
+	    || cp -p $$d/$$file $(distdir)/$$file \
+	    || exit 1; \
+	  fi; \
+	done
+check-am: all-am
+check: check-am
+all-am: Makefile $(LIBRARIES) $(HEADERS)
+
+installdirs:
+	$(mkinstalldirs) $(DESTDIR)$(libdir) $(DESTDIR)$(pkgexecincludedir) $(DESTDIR)$(pkgincludedir)
+
+install: install-am
+install-exec: install-exec-am
+install-data: install-data-am
+uninstall: uninstall-am
+
+install-am: all-am
+	@$(MAKE) $(AM_MAKEFLAGS) install-exec-am install-data-am
+
+installcheck: installcheck-am
+install-strip:
+	$(MAKE) $(AM_MAKEFLAGS) INSTALL_PROGRAM="$(INSTALL_STRIP_PROGRAM)" \
+	  `test -z '$(STRIP)' || \
+	    echo "INSTALL_PROGRAM_ENV=STRIPPROG='$(STRIP)'"` install
+mostlyclean-generic:
+
+clean-generic:
+
+distclean-generic:
+	-rm -f Makefile $(CONFIG_CLEAN_FILES) stamp-h stamp-h[0-9]*
+
+maintainer-clean-generic:
+	@echo "This command is intended for maintainers to use"
+	@echo "it deletes files that may require special tools to rebuild."
+	-test -z "$(MAINTAINERCLEANFILES)" || rm -f $(MAINTAINERCLEANFILES)
+clean: clean-am
+
+clean-am: clean-generic clean-libLIBRARIES mostlyclean-am
+
+distclean: distclean-am
+
+distclean-am: clean-am distclean-compile distclean-depend \
+	distclean-generic distclean-tags
+
+dvi: dvi-am
+
+dvi-am:
+
+info: info-am
+
+info-am:
+
+install-data-am: install-pkgincludeHEADERS
+
+install-exec-am: install-libLIBRARIES \
+	install-nodist_pkgexecincludeHEADERS
+
+install-info: install-info-am
+
+install-man:
+
+installcheck-am:
+
+maintainer-clean: maintainer-clean-am
+
+maintainer-clean-am: distclean-am maintainer-clean-generic
+
+mostlyclean: mostlyclean-am
+
+mostlyclean-am: mostlyclean-compile mostlyclean-generic
+
+uninstall-am: uninstall-info-am uninstall-libLIBRARIES \
+	uninstall-nodist_pkgexecincludeHEADERS \
+	uninstall-pkgincludeHEADERS
+
+.PHONY: GTAGS all all-am check check-am clean clean-generic \
+	clean-libLIBRARIES distclean distclean-compile distclean-depend \
+	distclean-generic distclean-tags distdir dvi dvi-am info \
+	info-am install install-am install-data install-data-am \
+	install-exec install-exec-am install-info install-info-am \
+	install-libLIBRARIES install-man \
+	install-nodist_pkgexecincludeHEADERS install-pkgincludeHEADERS \
+	install-strip installcheck installcheck-am installdirs \
+	maintainer-clean maintainer-clean-generic mostlyclean \
+	mostlyclean-compile mostlyclean-generic tags uninstall \
+	uninstall-am uninstall-info-am uninstall-libLIBRARIES \
+	uninstall-nodist_pkgexecincludeHEADERS \
+	uninstall-pkgincludeHEADERS
+
+# Tell versions [3.59,3.63) of GNU make to not export all variables.
+# Otherwise a system limit (for SysV at least) may be exceeded.
+.NOEXPORT:
