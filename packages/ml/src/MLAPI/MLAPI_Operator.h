@@ -90,6 +90,8 @@ public:
                ML_Operator* Op, bool Ownership = true,
                Teuchos::RefCountPtr<ML_Operator_Box> AuxOp = Teuchos::null)
   {
+    StackPush();
+
     RangeSpace_        = RangeSpace;
     DomainSpace_       = DomainSpace;
 
@@ -98,6 +100,7 @@ public:
     RCPRowMatrix_      = Teuchos::rcp(new ML_Epetra::RowMatrix(Op,&(GetEpetra_Comm())));
     RCPAuxOperatorBox_ = AuxOp;
 
+    StackPop();
   }
 
   //! Reshape with given already FillComplete()'d object.
@@ -105,9 +108,10 @@ public:
                Epetra_RowMatrix* Matrix, bool Ownership = true,
                Teuchos::RefCountPtr<ML_Operator_Box> AuxOp = Teuchos::null)
   {
+    StackPush();
+
     RangeSpace_ = RangeSpace;
     DomainSpace_ = DomainSpace;
-
 
     ML_Operator* Op = ML_Operator_Create(MLAPI::GetML_Comm());
     RCPOperatorBox_ = Teuchos::rcp(new ML_Operator_Box(Op,true));
@@ -116,6 +120,7 @@ public:
     RCPRowMatrix_ = Teuchos::rcp(Matrix,Ownership);
     Epetra2MLMatrix(RCPRowMatrix_.get(), GetML_Operator());
 
+    StackPop();
   }
 
   // @}
@@ -124,6 +129,8 @@ public:
   //! Makes \c this object equivalent to \c RHS.
   Operator& operator=(const Operator& RHS) 
   {
+    StackPush();
+
     Destroy();
 
     DomainSpace_    = RHS.GetDomainSpace();
@@ -133,6 +140,9 @@ public:
     RCPRowMatrix_   = RHS.GetRCPRowMatrix();
     
     SetLabel(RHS.GetLabel());
+
+    StackPop();
+
     return(*this);
   }
 
@@ -264,6 +274,7 @@ public:
   int Apply(const MultiVector& X, MultiVector& Y) const
   {
     ResetTimer();
+    StackPush();
 
     if (GetDomainSpace() != X.GetVectorSpace())
       ML_THROW("Domain spaces differ", -1);
@@ -284,8 +295,7 @@ public:
               Y.GetMyLength(), y_ptr);
     }
 
-    // FIXME-RST: is there a way to get the flop count from
-    // ML for this operator? The following is not always correct...
+    StackPop();
 
     UpdateFlops(2.0 * GetNumGlobalNonzeros());
     UpdateTime();
@@ -309,6 +319,8 @@ public:
       }
       return(os);
     }
+
+    StackPush();
 
     int    *bindx;
     double *val;
@@ -384,12 +396,16 @@ public:
 
     ML_free(val);
     ML_free(bindx);
+
+    StackPop();
+
     return (os);
   }
 
   //! Build the column space, by computing the GID of all local columns.
   void BuildColumnSpace()
   {
+    StackPush();
 
     if (GetNumProcs() == 1) {
       ColumnSpace_ = DomainSpace_;
@@ -425,6 +441,8 @@ public:
       GlobalElements[i] = (int)dtemp[i];
 
     ColumnSpace_.Reshape(-1, Nrows + Nghosts, &GlobalElements[0]);
+
+    StackPop();
 
     return;
   }
