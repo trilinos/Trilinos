@@ -213,6 +213,7 @@ void AZ_pgmres (double b[], double x[],double weight[], int options[],
   */
   r_2norm = DDOT_F77(&N, v[0], &one, v[0], &one);
   AZ_gdot_vec(1, &r_2norm, &rec_residual, proc_config);  
+  r_2norm = sqrt(r_2norm);
   rec_residual = r_2norm;
 
   AZ_compute_global_scalars(Amat, x, b, v[0],

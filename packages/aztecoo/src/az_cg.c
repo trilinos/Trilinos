@@ -86,10 +86,10 @@ void AZ_pcg_f(double b[], double x[], double weight[], int options[],
   register int i;
   int          N, NN, one = 1, iter = 1, r_avail = AZ_TRUE, j;
   int          precond_flag, print_freq, proc, brkdown_will_occur = AZ_FALSE;
-  double       alpha, beta = 0.0, nalpha, true_scaled_r=0.0;
+  double       alpha, beta = 0.0, nalpha, true_scaled_r=-1.0;
   double      *r, *z, *p, *ap, actual_residual = -1.0;
-  double       r_z_dot, r_z_dot_old, p_ap_dot, rec_residual;
-  double       scaled_r_norm, brkdown_tol = DBL_EPSILON;
+  double       r_z_dot, r_z_dot_old, p_ap_dot, rec_residual=-1.0;
+  double       scaled_r_norm=-1.0, brkdown_tol = DBL_EPSILON;
   int          *data_org, str_leng, first_time = AZ_TRUE;
   char         label[64],suffix[32], prefix[64];
 
