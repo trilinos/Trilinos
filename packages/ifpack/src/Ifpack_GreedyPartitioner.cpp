@@ -88,6 +88,8 @@ int Ifpack_GreedyPartitioner::ComputePartitions()
       for (int j = 0 ; j < NumEntries ; ++j) {
 
         int NextNode = Indices[j];
+        if (NextNode >= NumMyRows()) continue;
+
         if (Partition_[NextNode] == -1) {
           // this is a free node
           NumLocalParts_ = CurrentPartition + 1;
@@ -110,7 +112,7 @@ int Ifpack_GreedyPartitioner::ComputePartitions()
 
     if (ThisLevel.size() == 0 && (TotalCount != NumMyRows())) {
       // need to look for new RootNode, do this in a simple way
-      for (int i = 0 ; i < NumMyRows() ; ++i) {
+      for (int i = 0 ; i < NumMyRows() ; i++) {
         if (Partition_[i] == -1)
           ThisLevel.push_back(i);
         break;
@@ -119,7 +121,6 @@ int Ifpack_GreedyPartitioner::ComputePartitions()
 
   } // while (ok)
 
-  cout << NumLocalParts_ << endl;
   return(0);
 }
 

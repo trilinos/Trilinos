@@ -394,12 +394,18 @@ Ifpack_ICT::Print(std::ostream& os) const
        << "               0.0            0.0" << endl;
     os << "Compute()       "   << std::setw(5) << NumCompute() 
        << "  " << std::setw(15) << ComputeTime()
-       << "  " << std::setw(15) << 1.0e-6 * ComputeFlops() 
-       << "  " << std::setw(15) << 1.0e-6 * ComputeFlops() / ComputeTime() << endl;
+       << "  " << std::setw(15) << 1.0e-6 * ComputeFlops();
+    if (ComputeTime() != 0.0) 
+      os << "  " << std::setw(15) << 1.0e-6 * ComputeFlops() / ComputeTime() << endl;
+    else
+      os << "  " << std::setw(15) << 0.0 << endl;
     os << "ApplyInverse()  "   << std::setw(5) << NumApplyInverse() 
        << "  " << std::setw(15) << ApplyInverseTime()
-       << "  " << std::setw(15) << 1.0e-6 * ApplyInverseFlops() 
-       << "  " << std::setw(15) << 1.0e-6 * ApplyInverseFlops() / ApplyInverseTime() << endl;
+       << "  " << std::setw(15) << 1.0e-6 * ApplyInverseFlops();
+    if (ApplyInverseTime() != 0.0)
+      os << "  " << std::setw(15) << 1.0e-6 * ApplyInverseFlops() / ApplyInverseTime() << endl;
+    else
+      os << "  " << std::setw(15) << 0.0 << endl;
     os << "================================================================================" << endl;
     os << endl;
   }

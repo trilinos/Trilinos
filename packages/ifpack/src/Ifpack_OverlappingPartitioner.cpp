@@ -177,6 +177,9 @@ int Ifpack_OverlappingPartitioner::ComputeOverlappingPartitions()
 
 	  // use *local* indices
 	  int col = Indices[j];
+          if (col >= NumMyRows())
+            continue;
+
 	  // has this column already been inserted?
 	  vector<int>::iterator
 	    where = find(tmp[part].begin(), tmp[part].end(), col);

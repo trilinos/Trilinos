@@ -76,72 +76,72 @@ int main(int argc, char *argv[])
 
   Prec = Factory.Create("point relaxation", A);
   assert (Prec != 0);
-  Prec->Initialize();
-  Prec->Compute();
+  IFPACK_CHK_ERR(Prec->Initialize());
+  IFPACK_CHK_ERR(Prec->Compute());
   cout << *Prec;
   delete Prec;
 
   Prec = Factory.Create("point relaxation stand-alone", A);
   assert (Prec != 0);
-  Prec->Initialize();
-  Prec->Compute();
+  IFPACK_CHK_ERR(Prec->Initialize());
+  IFPACK_CHK_ERR(Prec->Compute());
   cout << *Prec;
   delete Prec;
 
   Prec = Factory.Create("block relaxation", A);
   assert (Prec != 0);
-  Prec->Initialize();
-  Prec->Compute();
+  IFPACK_CHK_ERR(Prec->Initialize());
+  IFPACK_CHK_ERR(Prec->Compute());
   cout << *Prec;
   delete Prec;
 
   Prec = Factory.Create("block relaxation stand-alone", A);
   assert (Prec != 0);
-  Prec->Initialize();
-  Prec->Compute();
+  IFPACK_CHK_ERR(Prec->Initialize());
+  IFPACK_CHK_ERR(Prec->Compute());
   cout << *Prec;
   delete Prec;
 
   Prec = Factory.Create("IC", A);
   assert (Prec != 0);
-  Prec->Initialize();
-  Prec->Compute();
+  IFPACK_CHK_ERR(Prec->Initialize());
+  IFPACK_CHK_ERR(Prec->Compute());
   cout << *Prec;
   delete Prec;
 
   Prec = Factory.Create("ICT", A);
   assert (Prec != 0);
-  Prec->Initialize();
-  Prec->Compute();
+  IFPACK_CHK_ERR(Prec->Initialize());
+  IFPACK_CHK_ERR(Prec->Compute());
   cout << *Prec;
   delete Prec;
 
   Prec = Factory.Create("ILU", A);
   assert (Prec != 0);
-  Prec->Initialize();
-  Prec->Compute();
+  IFPACK_CHK_ERR(Prec->Initialize());
+  IFPACK_CHK_ERR(Prec->Compute());
   cout << *Prec;
   delete Prec;
 
   Prec = Factory.Create("ILUT", A);
   assert (Prec != 0);
-  Prec->Initialize();
-  Prec->Compute();
+  IFPACK_CHK_ERR(Prec->Initialize());
+  IFPACK_CHK_ERR(Prec->Compute());
   cout << *Prec;
   delete Prec;
 
 #ifdef HAVE_IFPACK_AMESOS
   Prec = Factory.Create("Amesos", A);
   assert (Prec != 0);
-  Prec->Initialize();
-  Prec->Compute();
+  IFPACK_CHK_ERR(Prec->Initialize());
+  IFPACK_CHK_ERR(Prec->Compute());
   cout << *Prec;
   delete Prec;
 
   Prec = Factory.Create("Amesos stand-alone", A);
   assert (Prec != 0);
-  Prec->Initialize();
-  Prec->Compute();
+  IFPACK_CHK_ERR(Prec->Initialize());
+  IFPACK_CHK_ERR(Prec->Compute());
   cout << *Prec;
   delete Prec;
 #endif

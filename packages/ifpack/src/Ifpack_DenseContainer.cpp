@@ -35,8 +35,10 @@ int Ifpack_DenseContainer::Initialize()
   for (int i = 0 ; i < NumRows_ ; ++i)
     ID_(i) = -1;  
 
-  IFPACK_CHK_ERR(Solver_.SetMatrix(Matrix_));
-  IFPACK_CHK_ERR(Solver_.SetVectors(LHS_,RHS_));
+  if (NumRows_ != 0) {
+    IFPACK_CHK_ERR(Solver_.SetMatrix(Matrix_));
+    IFPACK_CHK_ERR(Solver_.SetVectors(LHS_,RHS_));
+  }
 
   IsInitialized_ = true;
   return(0);
@@ -84,7 +86,8 @@ int Ifpack_DenseContainer::ApplyInverse()
     IFPACK_CHK_ERR(-1);
   }
   
-  IFPACK_CHK_ERR(Solver_.Solve());
+  if (NumRows_ != 0)
+    IFPACK_CHK_ERR(Solver_.Solve());
 
   ApplyInverseFlops_ += 2.0 * NumVectors_ * NumRows_ * NumRows_;
   return(0);
@@ -171,7 +174,8 @@ int Ifpack_DenseContainer::Compute(const Epetra_RowMatrix& Matrix)
     NonFactoredMatrix_ = Matrix_;
 
   // factorize the matrix using LAPACK
-  IFPACK_CHK_ERR(Solver_.Factor());
+  if (NumRows_ != 0)
+    IFPACK_CHK_ERR(Solver_.Factor());
 
   Label_ = "Ifpack_DenseContainer";
 

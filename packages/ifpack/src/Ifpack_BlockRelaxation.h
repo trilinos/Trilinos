@@ -1013,9 +1013,9 @@ ostream& Ifpack_BlockRelaxation<T>::Print(ostream & os) const
     os << "Sweeps = " << NumSweeps_ << endl;
     os << "Damping factor = " << DampingFactor_;
     if (ZeroStartingSolution_) 
-      cout << ", using zero starting solution" << endl;
+      os << ", using zero starting solution" << endl;
     else
-      cout << ", using input starting solution" << endl;
+      os << ", using input starting solution" << endl;
     os << "Number of local blocks = " << Partitioner_->NumLocalParts() << endl;
     //os << "Condition number estimate = " << Condest_ << endl;
     os << "Global number of rows            = " << Matrix_->NumGlobalRows() << endl;
@@ -1024,16 +1024,25 @@ ostream& Ifpack_BlockRelaxation<T>::Print(ostream & os) const
     os << "-----           -------   --------------       ------------     --------" << endl;
     os << "Initialize()    "   << std::setw(5) << NumInitialize() 
        << "  " << std::setw(15) << InitializeTime() 
-       << "  " << std::setw(15) << 1.0e-6 * InitializeFlops() 
-       << "  " << std::setw(15) << 1.0e-6 * InitializeFlops() / InitializeTime() << endl;
+       << "  " << std::setw(15) << 1.0e-6 * InitializeFlops();
+    if (InitializeTime() != 0.0)
+      os << "  " << std::setw(15) << 1.0e-6 * InitializeFlops() / InitializeTime() << endl;
+    else
+      os << "  " << std::setw(15) << 0.0 << endl;
     os << "Compute()       "   << std::setw(5) << NumCompute() 
        << "  " << std::setw(15) << ComputeTime()
-       << "  " << std::setw(15) << 1.0e-6 * ComputeFlops() 
-       << "  " << std::setw(15) << 1.0e-6 * ComputeFlops() / ComputeTime() << endl;
+       << "  " << std::setw(15) << 1.0e-6 * ComputeFlops();
+    if (ComputeTime() != 0.0) 
+      os << "  " << std::setw(15) << 1.0e-6 * ComputeFlops() / ComputeTime() << endl;
+    else
+      os << "  " << std::setw(15) << 0.0 << endl;
     os << "ApplyInverse()  "   << std::setw(5) << NumApplyInverse() 
        << "  " << std::setw(15) << ApplyInverseTime()
-       << "  " << std::setw(15) << 1.0e-6 * ApplyInverseFlops() 
-       << "  " << std::setw(15) << 1.0e-6 * ApplyInverseFlops() / ApplyInverseTime() << endl;
+       << "  " << std::setw(15) << 1.0e-6 * ApplyInverseFlops();
+    if (ApplyInverseTime() != 0.0) 
+      os << "  " << std::setw(15) << 1.0e-6 * ApplyInverseFlops() / ApplyInverseTime() << endl;
+    else
+      os << "  " << std::setw(15) << 0.0 << endl;
     os << "================================================================================" << endl;
     os << endl;
   }

@@ -125,7 +125,6 @@ foreach g(*.exe)
   end
  endif
 end #foreach f
-
 /bin/rm fakefile.exe
 cd ../test
 

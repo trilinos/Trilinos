@@ -257,12 +257,18 @@ ostream& Ifpack_PointRelaxation::Print(ostream & os) const
        << "              0.0              0.0" << endl;
     os << "Compute()       "   << std::setw(5) << NumCompute_ 
        << "  " << std::setw(15) << ComputeTime_
-       << "  " << std::setw(15) << 1.0e-6 * ComputeFlops_ 
-       << "  " << std::setw(15) << 1.0e-6 * ComputeFlops_ / ComputeTime_ << endl;
+       << "  " << std::setw(15) << 1.0e-6 * ComputeFlops_;
+    if (ComputeTime_ != 0.0)
+      os << "  " << std::setw(15) << 1.0e-6 * ComputeFlops_ / ComputeTime_ << endl;
+    else
+      os << "  " << std::setw(15) << 0.0 << endl;
     os << "ApplyInverse()  "   << std::setw(5) << NumApplyInverse_ 
        << "  " << std::setw(15) << ApplyInverseTime_
-       << "  " << std::setw(15) << 1.0e-6 * ApplyInverseFlops_ 
-       << "  " << std::setw(15) << 1.0e-6 * ApplyInverseFlops_ / ApplyInverseTime_ << endl;
+       << "  " << std::setw(15) << 1.0e-6 * ApplyInverseFlops_;
+    if (ApplyInverseTime_ != 0.0)
+      os << "  " << std::setw(15) << 1.0e-6 * ApplyInverseFlops_ / ApplyInverseTime_ << endl;
+    else
+      os << "  " << std::setw(15) << 0.0 << endl;
     os << "================================================================================" << endl;
     os << endl;
   }

@@ -832,6 +832,14 @@ Print(std::ostream& os) const
   double CF = ComputeFlops();
   double AF = ApplyInverseFlops();
 
+  double IFT = 0.0, CFT = 0.0, AFT = 0.0;
+  if (InitializeTime() != 0.0)
+    IFT = IF / InitializeTime();
+  if (ComputeTime() != 0.0)
+    CFT = CF / ComputeTime();
+  if (ApplyInverseTime() != 0.0)
+    AFT = AF / ApplyInverseTime();
+
   if (Matrix().Comm().MyPID())
     return(os);
 
@@ -858,15 +866,15 @@ Print(std::ostream& os) const
   os << "Initialize()    "   << std::setw(5) << NumInitialize()
      << "  " << std::setw(15) << InitializeTime() 
      << "  " << std::setw(15) << 1.0e-6 * IF 
-     << "  " << std::setw(15) << 1.0e-6 * IF / InitializeTime() << endl;
+     << "  " << std::setw(15) << 1.0e-6 * IFT << endl;
   os << "Compute()       "   << std::setw(5) << NumCompute() 
      << "  " << std::setw(15) << ComputeTime()
      << "  " << std::setw(15) << 1.0e-6 * CF
-     << "  " << std::setw(15) << 1.0e-6 * CF / ComputeTime() << endl;
+     << "  " << std::setw(15) << 1.0e-6 * CFT << endl;
   os << "ApplyInverse()  "   << std::setw(5) << NumApplyInverse() 
      << "  " << std::setw(15) << ApplyInverseTime()
      << "  " << std::setw(15) << 1.0e-6 * AF
-     << "  " << std::setw(15) << 1.0e-6 * AF / ApplyInverseTime() << endl;
+     << "  " << std::setw(15) << 1.0e-6 * AFT << endl;
   os << "================================================================================" << endl;
   os << endl;
 
