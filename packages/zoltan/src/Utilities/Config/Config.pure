@@ -27,7 +27,7 @@ RANLIB			= ranlib
 AR			= ar r
 
 # use CFLAGS = $(DBG_FLAGS) with purify.
-CC			= purify -follow-child-processes=yes \
+CC			= purify -best-effort -follow-child-processes=yes \
 			  -cache-dir=/Net/proj/zoltan/tmp/purify gcc
 
 INCLUDE_PATH		= -I/Net/local/lang/SC3.0.1/include \

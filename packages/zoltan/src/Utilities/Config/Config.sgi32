@@ -24,7 +24,7 @@ DEFS                    =
 RANLIB                  = ar r
 AR                      = ar r
 
-CC                      = cc -64
+CC                      = cc -n32
 INCLUDE_PATH            =
 DBG_FLAGS               = -g
 OPT_FLAGS               = -O4
@@ -38,15 +38,15 @@ SPPR_HEAD               = spprinc.sun
 F90_MODULE_PREFIX       = -M
 FARG                    = farg_typical
 
-MPI_LIB                 = -L/usr/lib64
+MPI_LIB                 = -L/usr/lib32
 MPI_LIBPATH             = -lmpi
 
-PARMETIS_LIBPATH        = -L/Net/pecos/proj/xyce/arch/sgi10k_MPI/lib
-PARMETIS_INCPATH 	= -I/Net/pecos/proj/xyce/arch/sgi10k_MPI/include/zoltan_new
+PARMETIS_LIBPATH        = -L/Net/pecos/proj/xyce/arch/sgin32_MPI/lib
+PARMETIS_INCPATH 	= -I/Net/pecos/proj/xyce/arch/sgin32_MPI/include/zoltan_new -I../../ParMETIS
 
 #JOSTLE_LIBPATH         = -L/Net/proj/zoltan/arch/solaris/lib
 #JOSTLE_INCPATH         = -I/Net/proj/zoltan/arch/all/src
 #JOSTLE_SRCPATH         = /Net/proj/zoltan/arch/all/src
 
-NEMESIS_LIBPATH         = -L/Net/pecos/rf_crew/arch/sgi10k/lib
-NEMESIS_INCPATH         = -I/Net/pecos/rf_crew/arch/sgi10k/include
+NEMESIS_LIBPATH         = -L/Net/pecos/rf_crew/arch/sgin32/lib
+NEMESIS_INCPATH         = -I/Net/pecos/rf_crew/arch/sgin32/include
