@@ -72,6 +72,9 @@ Newton::Newton(Abstract::Group& xgrp, Status::Test& t, const Parameter::List& p)
 // Protected
 void Newton::init()
 {
+  // Set up utilities (i.e., set print processor, etc)
+  Utils::setUtils(iparams);
+  
   // Compute RHS of initital guess
   solnptr->computeRHS();
 
