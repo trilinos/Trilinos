@@ -45,6 +45,8 @@
 #include "ml_smoother.h"
 #include "ml_aztec_utils.h"
 #include "ml_lapack.h"
+#include "Matrix.h"
+#include "ParaSails.h"
 
 #ifdef SUPERLU
 #include "dsp_defs.h"
@@ -1877,9 +1879,11 @@ int ML_Smoother_Create_Schwarz_Data(ML_Sm_Schwarz_Data **data)
    ml_data->blk_size     = NULL;
    ml_data->blk_info     = NULL;
    ml_data->blk_indices  = NULL;
+#ifdef SUPERLU
    ml_data->slu_Amat     = NULL;
    ml_data->slu_Lmat     = NULL;
    ml_data->slu_Umat     = NULL;
+#endif 
    ml_data->perm_c       = NULL;
    ml_data->perm_r       = NULL;
    return 0;
@@ -3944,5 +3948,136 @@ int ML_Smoother_Gen_Ordering(ML_Operator *Amat, int **data_ptr)
 void ML_Smoother_Clean_OrderedSGS(void *data)
 {
    free(data);
+}
+
+/* ************************************************************************* */
+/* Sparse approximate inverse smoother                                       */
+/* ------------------------------------------------------------------------- */
+
+extern int parasails_factorized;
+
+int ML_Smoother_ParaSails(void *sm,int inlen,double x[],int outlen,
+                        double rhs[])
+{
+   ML_Smoother    *smooth_ptr = (ML_Smoother *) sm;
+   ML_Operator    *Amat = smooth_ptr->my_level->Amat;
+   int            n = outlen, i;
+   double         *res, *temp;
+
+   ParaSails      *ps;
+	 
+   ps = (ParaSails *) smooth_ptr->smoother->data;
+
+   temp = (double *) ML_allocate(n*sizeof(double));
+   res  = (double *) ML_allocate(n*sizeof(double));
+   if (res == NULL) pr_error("ML_Smoother_ParaSails: out of space\n");
+
+   ML_Operator_Apply(Amat, n, x, n, res);
+   for (i = 0; i < n; i++) res[i] = rhs[i] - res[i];
+
+   if (!parasails_factorized)
+   {
+      MatrixMatvec(ps->M, res, temp);
+      for (i = 0; i < n; i++) x[i] += temp[i];
+   }
+   else
+   {
+      MatrixMatvec(ps->M, res, temp);
+      MatrixMatvecTrans(ps->M, temp, temp);
+      for (i = 0; i < n; i++) x[i] += temp[i];
+   }
+
+   ML_free(temp);
+   ML_free(res);
+
+   (void) inlen;
+   (void) outlen;
+   return 0;
+}
+
+int ML_Smoother_ParaSailsTrans(void *sm,int inlen,double x[],int outlen,
+                        double rhs[])
+{
+   ML_Smoother    *smooth_ptr = (ML_Smoother *) sm;
+   ML_Operator    *Amat = smooth_ptr->my_level->Amat;
+   int            n = outlen, i;
+   double         *res, *temp;
+
+   ParaSails      *ps;
+	 
+   ps = (ParaSails *) smooth_ptr->smoother->data;
+
+   temp = (double *) ML_allocate(n*sizeof(double));
+   res  = (double *) ML_allocate(n*sizeof(double));
+   if (res == NULL) pr_error("ML_Smoother_ParaSails: out of space\n");
+
+   ML_Operator_Apply(Amat, n, x, n, res);
+   for (i = 0; i < n; i++) res[i] = rhs[i] - res[i];
+
+   if (!parasails_factorized)
+   {
+      MatrixMatvecTrans(ps->M, res, temp);
+      for (i = 0; i < n; i++) x[i] += temp[i];
+   }
+   else
+   {
+      MatrixMatvec(ps->M, res, temp);
+      MatrixMatvecTrans(ps->M, temp, temp);
+      for (i = 0; i < n; i++) x[i] += temp[i];
+   }
+
+   ML_free(temp);
+   ML_free(res);
+
+   (void) inlen;
+   (void) outlen;
+   return 0;
+}
+
+int ML_Smoother_ParaSailsSym(void *sm,int inlen,double x[],int outlen,
+                        double rhs[])
+{
+   ML_Smoother    *smooth_ptr = (ML_Smoother *) sm;
+   ML_Operator    *Amat = smooth_ptr->my_level->Amat;
+   int            n = outlen, i;
+   double         *res, *temp, *temp2;
+
+   ParaSails      *ps;
+	 
+   ps = (ParaSails *) smooth_ptr->smoother->data;
+
+   temp = (double *) ML_allocate(n*sizeof(double));
+   temp2= (double *) ML_allocate(n*sizeof(double));
+   res  = (double *) ML_allocate(n*sizeof(double));
+   if (res == NULL) pr_error("ML_Smoother_ParaSails: out of space\n");
+
+   ML_Operator_Apply(Amat, n, x, n, res);
+   for (i = 0; i < n; i++) res[i] = rhs[i] - res[i];
+
+   if (!parasails_factorized)
+   {
+      MatrixMatvec(ps->M, res, temp);
+      MatrixMatvecTrans(ps->M, res, temp2);
+      for (i = 0; i < n; i++) x[i] += 0.5 * (temp[i] + temp2[i]);
+   }
+   else
+   {
+      MatrixMatvec(ps->M, res, temp);
+      MatrixMatvecTrans(ps->M, temp, temp);
+      for (i = 0; i < n; i++) x[i] += temp[i];
+   }
+
+   ML_free(temp2);
+   ML_free(temp);
+   ML_free(res);
+
+   (void) inlen;
+   (void) outlen;
+   return 0;
+}
+
+void ML_Smoother_Clean_ParaSails(void *data)
+{
+   ParaSailsDestroy((ParaSails *) data);
 }
 

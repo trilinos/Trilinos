@@ -17,6 +17,8 @@
 #ifdef ML_MPI
 #include "mpi.h"
 #endif
+#include "Matrix.h"
+#include "ParaSails.h"
 
 extern int SuperLU_Solve(void *,int,double *,int,double *);
 
@@ -1465,6 +1467,119 @@ int ML_Gen_Smoother_VBlockMultiplicativeSchwarz(ML *ml , int nl, int pre_or_post
       return(ML_Smoother_Set(&(ml->post_smoother[nl]), ML_INTERNAL, 
                              (void *) data, fun, NULL, ntimes, 0.0));
    else return(pr_error("Print unknown pre_or_post choice\n"));
+}
+
+/* ------------------------------------------------------------------------- */
+/* generate the sparse approximate inverse smoother */
+/* ------------------------------------------------------------------------- */
+
+extern  int ML_Smoother_ParaSails(void *, int, double *, int, double *);
+extern  int ML_Smoother_ParaSailsSym(void *, int, double *, int, double *);
+extern  int ML_Smoother_ParaSailsTrans(void *, int, double *, int, double *);
+
+extern int    parasails_factorized;
+extern double parasails_loadbal;
+
+int ML_Gen_Smoother_ParaSails(ML *ml, int nl, int pre_or_post, int ntimes,
+   int sym, double thresh, int num_levels, double filter)
+{
+   int            (*fun1)(void *, int, double *, int, double *);
+   int            (*fun2)(void *, int, double *, int, double *);
+   int            start_level, end_level, i, status;
+   int            row, start_row, end_row, row_length;
+
+   Matrix *mat;
+   ParaSails *ps;
+   int j;
+
+#ifdef ML_TIMING
+   double         t0;
+   t0 = GetClock();
+#endif
+
+
+   if (nl == ML_ALL_LEVELS) { start_level = 0; end_level = ml->ML_num_levels-1;}
+   else { start_level = nl; end_level = nl;}
+   if (start_level < 0) {
+      printf("ML_Gen_Smoother_ParaSails: cannot set smoother on level %d\n",start_level);
+      return 1;
+   }
+	
+   if (sym)
+      fun1 = fun2 = ML_Smoother_ParaSailsSym;
+   else {
+      fun1 = ML_Smoother_ParaSails;
+      fun2 = ML_Smoother_ParaSailsTrans;
+   }
+
+      for (i = start_level; i <= end_level; i++) {
+
+	 int nrows = ml->Amat[i].outvec_leng;
+	 int local_row, allocated_space, *ml_indices;
+         double *ml_values;
+	 start_row = ML_gpartialsum_int(nrows, ml->comm);
+	 end_row   = start_row + nrows - 1; 
+
+	 mat = MatrixCreate(ml->comm->USR_comm, start_row, end_row);
+
+	 ML_create_unique_id(ml->Amat[i].invec_leng,
+	                     &(ml->Amat[i].getrow->loc_glob_map),
+	                     ml->Amat[i].getrow->pre_comm, ml->comm);
+	 ml->Amat[i].getrow->use_loc_glob_map = ML_YES;
+	 allocated_space = 10; 
+	 ml_indices = (int    *) ML_allocate(sizeof(int)*allocated_space);
+	 ml_values  = (double *) ML_allocate(sizeof(double)*allocated_space);
+
+	 for (row=start_row; row<=end_row; row++) {
+	    /* global indices */
+
+            local_row = row - start_row;
+            ML_get_matrix_row(&(ml->Amat[i]), 1, &local_row,
+                                &allocated_space, &ml_indices, 
+				&ml_values, &row_length, 0);
+/*
+for (j = 0; j < row_length; j++)
+   printf("A(%d,%d) = %e;\n",row+1,ml_indices[j]+1,ml_values[j]);
+*/
+
+	    MatrixSetRow(mat, row, row_length, ml_indices, ml_values);
+	 }
+	 ML_free(ml->Amat[i].getrow->loc_glob_map); 
+         ml->Amat[i].getrow->loc_glob_map = NULL;
+	 ml->Amat[i].getrow->use_loc_glob_map = ML_NO;
+
+	 MatrixComplete(mat);
+
+	 /* nonsymmetric preconditioner */
+	 ps  = ParaSailsCreate(ml->comm->USR_comm, start_row, end_row, 
+	    parasails_factorized);
+         ps->loadbal_beta = parasails_loadbal;
+	 ParaSailsSetupPattern(ps, mat, thresh, num_levels);
+	 ParaSailsStatsPattern(ps, mat);
+	 ParaSailsSetupValues(ps, mat, filter);
+	 ParaSailsStatsValues(ps, mat);
+
+	 /* we can destroy the matrix now */
+	 MatrixDestroy(mat);
+
+	 /* ml->post_smoother[i].data_destroy = ML_Smoother_Clean_ParaSails; */
+
+/* Turn on temporarily */
+	 status = ML_Smoother_Set(&(ml->post_smoother[i]), ML_INTERNAL,
+			      (void *) ps, fun1, NULL, ntimes, 0.0);
+
+	 status = ML_Smoother_Set(&(ml->pre_smoother[i]), ML_INTERNAL,
+			      (void *) ps, fun2, NULL, ntimes, 0.0);
+
+#ifdef ML_TIMING
+         ml->post_smoother[i].build_time = GetClock() - t0;
+         ml->timing->total_build_time   += ml->post_smoother[i].build_time;
+#endif
+      }
+
+   /* note: in free, post and pre are the same */
+
+   return(status);
 }
 
 /* ************************************************************************* */

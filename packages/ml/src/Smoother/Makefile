@@ -25,6 +25,7 @@ include ../../etc/makefile.$(ARCH)
 DEFINES= -D$(ARCH) $(PACKAGES) 
 
 INCLUDES= -I.. $(SUPERLU_INC_PATH) $(AZTEC_INC_PATH) $(MPI_INC_PATH) \
+          $(PARASAILS_INC_PATH) \
           -I../Include -I../Main -I../Utils -I../Krylov -I../Operator \
           -I../Comm -I../FEGrid -I../Smoother -I../Coarsen
 LIB_PATHS=$(AZTEC_LIB_PATH) $(SUPERLU_LIB_PATH) $(MPI_LIB_PATH) 
