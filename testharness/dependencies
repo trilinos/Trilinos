@@ -10,6 +10,8 @@ aztecoo = \
 --enable-aztecoo \
 --enable-komplex \
 --enable-ml_aztecoo \
+--enable-nox-epetra \
+--enable-nox-epetra-examples \
 --enable-tsfcore-aztecoo
 
 belos = \
@@ -39,6 +41,8 @@ epetraext = \
 
 ifpack = \
 --enable-ifpack \
+--enable-nox-epetra \
+--enable-nox-epetra-examples \
 --with-ml_ifpack
 
 kokkos = \
