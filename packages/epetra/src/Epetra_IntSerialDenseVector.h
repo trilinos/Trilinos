@@ -154,6 +154,15 @@ class Epetra_IntSerialDenseVector : public Epetra_IntSerialDenseMatrix{
     \warning No bounds checking is done unless Epetra is compiled with EPETRA_ARRAY_BOUNDS_CHECK.
   */
     const int& operator [] (int Index) const;
+
+  //! Value copy from one vector to another.
+  /*!
+    The operator= allows one to copy the values from one existing IntSerialDenseVector to another, as
+    long as there is enough room in the target to hold the source.
+
+    \return Values of the left hand side vector are modified by the values of the right hand side vector.
+  */
+    Epetra_IntSerialDenseVector& operator = (const Epetra_IntSerialDenseVector& Source);
     
   //! Returns length of vector.
   int Length()  const {return(M_);};

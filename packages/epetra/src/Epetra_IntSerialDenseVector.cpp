@@ -67,3 +67,9 @@ int& Epetra_IntSerialDenseVector::operator [] (int Index)  {
 				   " Out of Range 0 - " + toString(M_-1),-1);
    return(A_[Index]);
 }
+//=========================================================================
+Epetra_IntSerialDenseVector& Epetra_IntSerialDenseVector::operator = (const Epetra_IntSerialDenseVector& Source) {
+	if(this != &Source)
+		Epetra_IntSerialDenseMatrix::operator=(Source); // call this->Epetra_IntSerialDenseMatrix::operator =
+	return(*this);
+}

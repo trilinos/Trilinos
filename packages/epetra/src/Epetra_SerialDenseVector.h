@@ -131,6 +131,15 @@ class Epetra_SerialDenseVector : public Epetra_SerialDenseMatrix{
   //! Epetra_SerialDenseVector destructor.  
   virtual ~Epetra_SerialDenseVector ();
 
+  //! Value copy from one vector to another.
+  /*!
+    The operator= allows one to copy the values from one existing SerialDenseVector to another, as
+    long as there is enough room in the target to hold the source.
+
+    \return Values of the left hand side vector are modified by the values of the right hand side vector.
+  */
+    Epetra_SerialDenseVector& operator = (const Epetra_SerialDenseVector& Source);
+
   //! Element access function.
   /*!
     Returns the specified element of the vector.  Bounds checking is enforced.

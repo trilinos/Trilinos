@@ -244,7 +244,7 @@ This function performs a variety of matrix-matrix multiply operations.
 
   //! Value copy from one matrix to another.
   /*!
-    The operator= allows one to copy the values from one existin SerialDenseMatrix to another, as
+    The operator= allows one to copy the values from one existing SerialDenseMatrix to another, as
     long as there is enough room in the target to hold the source.
 
     \return Values of the left hand side matrix are modified by the values of the right hand side matrix.
