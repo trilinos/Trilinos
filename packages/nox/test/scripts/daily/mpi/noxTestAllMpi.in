@@ -132,7 +132,7 @@ foreach h (epetra)
 		    echo "############" $h ":" $f ":" $g "##############" >>& ../../$file
 		    if( "$2" == "True" ) then
 			( mpirun -np 5 $g > ../../$file3 ) >>& ../../$file4
-			if(! -z ../$file4 ) then
+			if(! -z ../../$file4 ) then
 			# A test failed.
 			    set AnError = True
 			    echo "  ******** Test failed ********" >>& ../../$file
