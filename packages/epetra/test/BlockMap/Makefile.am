@@ -12,6 +12,7 @@ BlockMap_test_DEPENDENCIES = $(top_builddir)/src/libepetra.a
 
 BlockMap_test_CXXFLAGS = -I$(top_srcdir)/src
 
-BlockMap_test_LDADD = -L$(top_builddir)/src -lepetra $(FLIBS)
+BlockMap_test_LDADD = -L$(top_builddir)/src -lepetra $(BLAS_LIBS) \
+	$(LIBS) $(FLIBS)
 
 
