@@ -533,44 +533,49 @@ static int packing_aug2 (ZZ *zz, HGraph *hg, Packing pack, int *limit)
         *intersecting, intersecting_size;
   float intersecting_weight;
   char  *yo = "packing_aug2" ;
-  
+ 
   if (!(covered_by   = (int*) ZOLTAN_MALLOC (hg->nVtx*sizeof(int))) ||
       !(intersecting = (int*) ZOLTAN_CALLOC (hg->nEdge,sizeof(int)))  )
-  { ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
+  { ZOLTAN_FREE ((void **) &covered_by);
+    ZOLTAN_FREE ((void **) &intersecting);
+    ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
     return ZOLTAN_MEMERR;
   }
+
   for (i=0; i<hg->nVtx; i++)
     covered_by[i] = -1;
   for (edge=0; edge<hg->nEdge; edge++)
   { j = hg->hindex[edge];
     while (j<hg->hindex[edge+1]-1 && pack[hg->hvertex[j]]==hg->hvertex[j+1])
       j++;
-    if (j==hg->hindex[edge+1]-1 && pack[hg->hvertex[j]]==hg->hvertex[hg->hindex[edge]])
+    if (j==hg->hindex[edge+1]-1 &&
+        pack[hg->hvertex[j]]==hg->hvertex[hg->hindex[edge]])
       for (j=hg->hindex[edge]; j<hg->hindex[edge+1]; j++)
         covered_by[hg->hvertex[j]] = edge; 
   }
 
   for (edge=0; i<hg->nEdge; edge++)
     if (covered_by[hg->hvertex[hg->hindex[edge]]] != edge)
-    { intersecting_weight=0.0;
-      intersecting_size=0;
+    { intersecting_weight = 0.0;
+      intersecting_size = 0;
       for (i=hg->hindex[edge]; i<hg->hindex[edge+1]; i++)
-      { other_edge = covered_by[hg->hvertex[i]];
-        if (other_edge>=0 && intersecting[other_edge]==0)
+        if ((other_edge=covered_by[hg->hvertex[i]])>=0 &&
+            intersecting[other_edge]==0)
         { intersecting[other_edge] = 1;
           intersecting_size += (hg->hindex[other_edge+1]-hg->hindex[other_edge]);
           intersecting_weight += (hg->ewgt?hg->ewgt[other_edge]:1.0);
         }
-      }
+
       for (i=hg->hindex[edge]; i<hg->hindex[edge+1]; i++)
-        intersecting[covered_by[hg->hvertex[i]]] = 0;
+        if ((j=covered_by[hg->hvertex[i]]) >= 0)
+          intersecting[j] = 0;
 
       if ((hg->ewgt?hg->ewgt[edge]:1.0)>intersecting_weight ||
           ((hg->ewgt?hg->ewgt[edge]:1.0)==intersecting_weight&&
            hg->hindex[edge+1]-hg->hindex[edge]<intersecting_size))
       { for (i=hg->hindex[edge]; i<hg->hindex[edge+1]; i++)
-        { other_edge = covered_by[hg->hvertex[i]];
-          if (other_edge>=0 && covered_by[hg->hvertex[hg->hindex[other_edge]]] == other_edge)
+          if ((other_edge=covered_by[hg->hvertex[i]])>=0 &&
+              covered_by[hg->hvertex[hg->hindex[other_edge]]] == other_edge)
           { vertex = hg->hvertex[hg->hindex[other_edge]];
             while (pack[vertex] != vertex)
             { next_vertex = pack[vertex];
@@ -581,8 +586,6 @@ static int packing_aug2 (ZZ *zz, HGraph *hg, Packing pack, int *limit)
             }
             (*limit)--;
           }
-        }
-
         for (j=hg->hindex[edge] ; j<(hg->hindex[edge+1]-1) && (*limit)>0; j++)
         { pack[hg->hvertex[j]] = hg->hvertex[j+1];
           (*limit)--;

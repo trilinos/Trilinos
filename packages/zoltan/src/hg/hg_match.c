@@ -685,8 +685,7 @@ static int matching_pgm (ZZ *zz, HGraph *hg, Graph *g, Matching match, int *limi
 
 static int matching_pgm (ZZ *zz, HGraph *hg, Graph *g, Matching match, int *limit)
 { int	i, j, side=0, vertex, *Match[2], limits[2], neighbor, next_vertex;
-  float	w[2]={0.0,0.0}, weight;
-  float simweight ;
+  float	w[2]={0.0,0.0}, weight, simweight ;
   int k, edge ;
   char *yo = "matching_pgm" ;
 
@@ -701,49 +700,42 @@ static int matching_pgm (ZZ *zz, HGraph *hg, Graph *g, Matching match, int *limi
 
   for (i=0; i<hg->nVtx && limits[side]>0; i++)
     if (Match[0][i]==i && Match[1][i]==i)
-      {
-      vertex = i;
+    { vertex = i;
       while (vertex>0 && limits[side]>0)
-         {
-         weight = 0.0;
-         next_vertex = -1;
-         for (j=hg->vindex[vertex]; j<hg->vindex[vertex+1]; j++)
-            {
-            edge = hg->vedge[j] ;
-            for (k = hg->hindex[edge] ; k < hg->hindex[edge+1] ; k++)
-               {
-               neighbor = hg->hvertex[k] ;
-               if (neighbor == vertex)
-                  continue ;
-               simweight= sim(hg, vertex, neighbor) ;
-               if (Match[0][neighbor]==neighbor && Match[1][neighbor]==neighbor
+      { weight = 0.0;
+        next_vertex = -1;
+        for (j=hg->vindex[vertex]; j<hg->vindex[vertex+1]; j++)
+        { edge = hg->vedge[j] ;
+          for (k = hg->hindex[edge] ; k < hg->hindex[edge+1] ; k++)
+          { neighbor = hg->hvertex[k] ;
+            if (neighbor == vertex)
+              continue ;
+            simweight= sim(hg, vertex, neighbor) ;
+            if (Match[0][neighbor]==neighbor && Match[1][neighbor]==neighbor
                 && simweight>weight)
-                   {
-                   weight = simweight;
-                   next_vertex = neighbor;
-                   }
-               }
+            { weight = simweight;
+              next_vertex = neighbor;
             }
-         if (next_vertex >= 0)
-            {
-            Match[side][vertex] = next_vertex;
-            Match[side][next_vertex] = vertex;
-            limits[side]--;
-            w[side] += weight;
-            side = 1-side;
-            }
-         vertex = next_vertex;
-         }
+          }
+        }
+        if (next_vertex >= 0)
+        { Match[side][vertex] = next_vertex;
+          Match[side][next_vertex] = vertex;
+          limits[side]--;
+          w[side] += weight;
+          side = 1-side;
+        }
+        vertex = next_vertex;
       }
+    }
 
   if (w[0] < w[1])
-     {
-     for (i=0; i<hg->nVtx; i++)
-        match[i] = Match[1][i];
-     (*limit) = limits[1];
-     }
+  { for (i=0; i<hg->nVtx; i++)
+      match[i] = Match[1][i];
+    (*limit) = limits[1];
+  }
   else
-     (*limit) = limits[0];
+    (*limit) = limits[0];
 
   ZOLTAN_FREE ((void **) &Match[1]);
   return ZOLTAN_OK;
