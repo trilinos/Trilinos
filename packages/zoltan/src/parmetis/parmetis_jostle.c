@@ -870,6 +870,14 @@ static int Zoltan_ParMetis_Jostle(
   if (!part_sizes){
     ZOLTAN_PARMETIS_ERROR(ZOLTAN_FATAL, "Input parameter part_sizes is NULL.");
   }
+  if ((zz->Proc == 0) && (zz->Debug_Level >= ZOLTAN_DEBUG_ALL)) {
+    for (i=0; i<num_part; i++){
+      printf("Debug: Size(s) for partition %1d = ", i);
+      for (j=0; j<ncon; j++)
+        printf("%f ", part_sizes[i*ncon+j]);
+      printf("\n");
+    }
+  }
 #else /* PARMETIS_MAJOR_VERSION < 3 */
   if ((ncon >= 2) && strcmp(alg, "JOSTLE")) {
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, 
@@ -880,14 +888,6 @@ static int Zoltan_ParMetis_Jostle(
   }
   /* Warn if non-uniform partition sizes are input? */
 #endif 
-  if ((zz->Proc == 0) && (zz->Debug_Level >= ZOLTAN_DEBUG_ALL)){
-    for (i=0; i<num_part; i++){
-      printf("Debug: Size(s) for partition %1d = ", i);
-      for (j=0; j<ncon; j++)
-        printf("%f ", part_sizes[i*ncon+j]);
-      printf("\n");
-    }
-  }
 
   if (strcmp(alg, "JOSTLE") == 0){
 #ifdef ZOLTAN_JOSTLE
