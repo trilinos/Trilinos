@@ -40,7 +40,6 @@ short    *assignment;		/* values to be printed */
     int       flag;		/* logical conditional */
     int       end_flag;		/* return flag from read_int() */
     int       i, j;		/* loop counter */
-    int       read_int();
 
     DEBUG_TRACE_START(0, yo);
 
@@ -127,7 +126,6 @@ short    *assignment;		/* values to be printed */
     int       done;		/* have I hit end of file yet? */
     int       end_flag;		/* return flag from read_int() */
     int       i, j, k;		/* loop counter */
-    int       read_int();
 
     DEBUG_TRACE_START(0, yo);
 
