@@ -28,7 +28,6 @@
 class Epetra_MultiVector;
 #include "AztecOO_StatusType.h"
 #include "Epetra_ConfigDefs.h"
-//#include <iostream>
 #include <iomanip>
 
 //! AztecOO_StatusTest: A pure virtual class for extending the status testing capabilities of AztecOO.
