@@ -634,9 +634,29 @@ public:
  *
  * The client should only create a RefCountPtr object given a pointer
  * return by \c new by calling this function.
+ *
+ * KL 10/07/03: The original code sensibly made owns_mem an optional
+ * argument that defaulted to true, but that did not compile on Solaris.
+ * I've changed owns_mem to a mandatory argument and created a second
+ * method with no owns_mem argument to handle the default case.
  */
 template<class T>
-RefCountPtr<T> rcp( T* p, bool owns_mem = true );
+RefCountPtr<T> rcp( T* p, bool owns_mem);
+
+/** Return a \c RefCountPtr object properly typed.
+ *
+ * The client should only create a RefCountPtr object given a pointer
+ * return by \c new by calling this function.
+ *
+ * KL 10/07/03: The original code sensibly made owns_mem an optional
+ * argument that defaulted to true, but that did not compile on Solaris.
+ * I've changed owns_mem to a mandatory argument and created a second
+ * method with no owns_mem argument to handle the default case.
+ */
+template<class T>
+RefCountPtr<T> rcp( T* p );
+
+
 
 #ifdef REFCOUNTPTR_TEMPLATE_CLASS_TEMPLATE_FUNCTIONS
 ///

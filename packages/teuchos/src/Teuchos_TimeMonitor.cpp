@@ -8,7 +8,7 @@ Array<RefCountPtr<Time> > TimeMonitor::timers_;
 
 RefCountPtr<Time> TimeMonitor::getNewTimer(const string& name)
 {
-	RefCountPtr<Time> rtn = rcp(new Time(name));
+	RefCountPtr<Time> rtn = rcp(new Time(name), true);
 	timers_.append(rtn);
 	return rtn;
 }

@@ -271,6 +271,14 @@ Teuchos::rcp( T* p, bool owns_mem )
 	return RefCountPtr<T>(p,owns_mem);
 }
 
+template<class T>
+inline
+Teuchos::RefCountPtr<T>
+Teuchos::rcp( T* p )
+{
+	return RefCountPtr<T>(p,true);
+}
+
 #ifdef REFCOUNTPTR_TEMPLATE_CLASS_TEMPLATE_FUNCTIONS
 template<class T, class Dealloc_T>
 inline

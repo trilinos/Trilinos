@@ -3,13 +3,14 @@
 
 #include "Teuchos_ConfigDefs.hpp"
 #include "Teuchos_RaiseHandlerBase.hpp"
+#include "Teuchos_RefCountPtrDecl.hpp"
 #include <stdexcept>
 
 namespace Teuchos
 {
   using std::string;
 
-  /** \ingroup ErrorHandling
+  /** 
    * The default raise handler throws a std::runtime_error() exception.
    */
   class DefaultRaiseHandler : public RaiseHandlerBase
@@ -26,7 +27,7 @@ namespace Teuchos
       virtual void handleRaise(const char* msg);
 
       /** Return a RefCountPtr containing self. */
-      virtual RefCountPtr<RaiseHandlerBase> getRcp() {return rcp(this);}
+      virtual RefCountPtr<RaiseHandlerBase> getRcp() {return rcp(this, true);}
 
     private:
     };

@@ -11,13 +11,13 @@ using namespace Teuchos;
 
 RefCountPtr<RaiseHandlerBase>& Error::defaultHandler() 
 {
-  static RefCountPtr<RaiseHandlerBase> h = rcp(new DefaultRaiseHandler());
+  static RefCountPtr<RaiseHandlerBase> h = rcp(new DefaultRaiseHandler(), true);
   return h;
 }
 
 RefCountPtr<RaiseHandlerBase>& Error::handler() 
 {
-  static RefCountPtr<RaiseHandlerBase> h = rcp(new DefaultRaiseHandler());
+  static RefCountPtr<RaiseHandlerBase> h = rcp(new DefaultRaiseHandler(), true);
   return h;
 }
 

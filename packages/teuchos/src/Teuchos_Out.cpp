@@ -10,7 +10,7 @@ using namespace Teuchos;
 /* initialize the static raise handler object to the default handler. This
  * can be changed later with a call to setRaiseHandler() */
 
-RefCountPtr<WriterBase> Out::writer_ = rcp(new DefaultWriter());
+RefCountPtr<WriterBase> Out::writer_ = rcp(new DefaultWriter(), true);
 
 
 

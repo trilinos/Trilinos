@@ -37,7 +37,7 @@ namespace Teuchos
       virtual void println(const string& msg);
 
       /** Return a RefCountPtr containing self. */
-      virtual RefCountPtr<WriterBase> getRcp() {return rcp(this);}
+      virtual RefCountPtr<WriterBase> getRcp() {return rcp(this, true);}
     private:
       RefCountPtr<ostream>   os_ptr_;
       std::ostream           &os_;

@@ -10,6 +10,6 @@ StringInputSource::StringInputSource(const string& text)
 
 RefCountPtr<XMLInputStream> StringInputSource::stream() const 
 {
-	return rcp(new StringInputStream(text_));
+	return rcp(new StringInputStream(text_), true);
 }
 

@@ -10,6 +10,6 @@ FileInputSource::FileInputSource(const string& filename)
 
 RefCountPtr<XMLInputStream> FileInputSource::stream() const 
 {
-	return rcp(new FileInputStream(filename_));
+	return rcp(new FileInputStream(filename_), true);
 }
 
