@@ -386,7 +386,7 @@ fi
 TAC_ARG_ENABLE_FEATURE_SUB( teuchos, gmp, [Enable Teuchos interface support for the GNU MP Library], 
 		TEUCHOS_GNU_MP, no)  
 
-if test "X$ac_cv_use_teuchos_gnu_mp" != "Xno"; then
+if test "X$ac_cv_use_teuchos_gmp" != "Xno"; then
 
 #  TAC_ARG_WITH( trilinos3pldir, [Set Trilinos3PL directory], trilinos3pldir_is_not_specified )
 #  if test "X${tac_with_teuchos_trilinos3pldir}" != "Xtrilinos3pldir_is_not_specified"; then
