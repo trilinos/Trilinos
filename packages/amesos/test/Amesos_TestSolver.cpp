@@ -79,7 +79,7 @@ int Amesos_TestSolver( Epetra_Comm &Comm, char *matrix_file,
 
   //  int whatever;
   //  if ( iam == 0 )  cin >> whatever ; 
-  Comm.Barrier();
+  //  Comm.Barrier();
 
 
   Epetra_Map * readMap;

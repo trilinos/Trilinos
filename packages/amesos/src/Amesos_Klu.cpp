@@ -42,6 +42,8 @@ extern "C" {
     SerialMap_(0), 
     SerialMatrix_(0), 
     TransposeMatrix_(0),
+    Symbolic_(0),
+    Numeric_(0),
     Matrix_(0) {
 
 
@@ -55,8 +57,8 @@ Amesos_Klu::~Amesos_Klu(void) {
   if ( SerialMap_ ) delete SerialMap_ ; 
   if ( SerialCrsMatrixA_ ) delete SerialCrsMatrixA_ ; 
   if ( TransposeMatrix_ ) delete TransposeMatrix_ ; 
-  klu_btf_free_symbolic (&Symbolic_) ;
-  klu_btf_free_numeric (&Numeric_) ;
+  if ( Symbolic_ ) klu_btf_free_symbolic (&Symbolic_) ;
+  if ( Numeric_ ) klu_btf_free_numeric (&Numeric_) ;
 
 }
 
@@ -126,14 +128,14 @@ int Amesos_Klu::ConvertToKluCRS(){
   //  Convert matrix to the form that Klu expects (Ap, Ai, Aval) 
   //
 
-  assert( NumGlobalElements_ == Matrix_->NumGlobalRows());
-  assert( NumGlobalElements_ == Matrix_->NumGlobalCols());
-  assert( numentries_ == Matrix_->NumGlobalNonzeros());
-  Ap.resize( NumGlobalElements_+1 );
-  Ai.resize( EPETRA_MAX( NumGlobalElements_, numentries_) ) ; 
-  Aval.resize( EPETRA_MAX( NumGlobalElements_, numentries_) ) ; 
-
   if ( iam==0 ) {
+    assert( NumGlobalElements_ == Matrix_->NumGlobalRows());
+    assert( NumGlobalElements_ == Matrix_->NumGlobalCols());
+    assert( numentries_ == Matrix_->NumGlobalNonzeros());
+    Ap.resize( NumGlobalElements_+1 );
+    Ai.resize( EPETRA_MAX( NumGlobalElements_, numentries_) ) ; 
+    Aval.resize( EPETRA_MAX( NumGlobalElements_, numentries_) ) ; 
+
     int NumEntriesThisRow;
     double *RowValues;
     int *ColIndices;
@@ -237,7 +239,6 @@ int Amesos_Klu::Solve() {
   //
   double *SerialXvalues ;
 
-  double *SerialBvalues ;
   Epetra_RowMatrix *RowMatrixA = dynamic_cast<Epetra_RowMatrix *>(Problem_->GetOperator());
   Epetra_CrsMatrix *CastCrsMatrixA = dynamic_cast<Epetra_CrsMatrix*>(RowMatrixA) ; 
   Epetra_MultiVector *SerialXextract = 0;
@@ -268,108 +269,24 @@ int Amesos_Klu::Solve() {
   
   SerialX->Scale(1.0, *SerialB) ;
 
-  int SerialBlda, SerialXlda ; 
+  int SerialXlda ; 
   if ( iam == 0 ) {
-    assert( SerialB->ExtractView( &SerialBvalues, &SerialBlda ) == 0 ) ; 
     assert( SerialX->ExtractView( &SerialXvalues, &SerialXlda ) == 0 ) ; 
 
-    assert( SerialBlda == NumGlobalElements_ ) ; 
     assert( SerialXlda == NumGlobalElements_ ) ; 
     
     for ( int j =0 ; j < nrhs; j++ ) { 
       double *Control = (double *) NULL, *Info = (double *) NULL ;
 
       int status = 0 ; 
-#if 0
-      cout << " B = " << 
-	SerialBvalues[0] << " " <<
-	SerialBvalues[1] << " " <<
-	SerialBvalues[2] << " " <<
-	SerialBvalues[3] << " " <<
-	SerialBvalues[4] << " at the top" << endl ; 
-      cout << " P = " << P[0] << " " << 
-	P[1] << " " << 
-	P[2] << " " << 
-	P[3] << " " << 
-	P[4] << endl ; 
-#endif
-#if 0
-      defined in klu_dump
-      assert( klu_valid( NumGlobalElements_, Lp, Li, Lx ) ) ; 
-      assert( klu_valid( NumGlobalElements_, Up, Ui, Ux ) ) ; 
-#endif
-
-#if 0
-      klu_permute( NumGlobalElements_, P, 
-		   &SerialBvalues[j*SerialBlda],
-		   &SerialXvalues[j*SerialXlda] ) ;
-#endif
-
-      
-#if 0
-      cout << " X = " << 
-	SerialXvalues[0] << " " <<
-	SerialXvalues[1] << " " <<  " before the left solve" << endl ; 
-#endif
 	//  kludge debugxx knen fix this:  
       vector<double> workspace( 100* (10+NumGlobalElements_) ) ; 
       klu_btf_solve( Symbolic_, Numeric_,  
 		     &SerialXvalues[j*SerialXlda], &workspace[0] );
-#if 0
-      klu_lsolve(  NumGlobalElements_, 
-		   Lp, Li, Lx, &SerialXvalues[j*SerialXlda] );
-#endif
-#if 0
-      cout << " X = " << 
-	SerialXvalues[0] << " " <<
-	SerialXvalues[1] << " " << " after the right solve" << endl ; 
-#endif
-#if 0
-      klu_usolve(  NumGlobalElements_, 
-		   Up, Ui, Ux, &SerialXvalues[j*SerialXlda] );
-#endif
-	
-#if 0
-      for ( int k=0; k < nrhs ; k++ ) {
-	for ( int i =0; i < NumGlobalElements_ ; i++ ) {
-	  cout << "h" << j <<"X( " << i+1 << "," << k+1 << ") = " << SerialXvalues[i+SerialXlda*k] << ";" << endl ; 
-	}
-      }
-      for ( int k=0; k < nrhs ; k++ ) {
-	for ( int i =0; i < NumGlobalElements_ ; i++ ) {
-	  cout << "h" << j <<"B( " << i+1 << "," << k+1 << ") = " << SerialBvalues[i+SerialBlda*k] << ";" << endl ; 
-	}
-      }
-#endif
-      //      EPETRA_CHK_ERR( status ) ; 
     }
   }
     
 
-#if 0
-  Comm().Barrier();
-  if  (iam == 0 ) { 
-    cout << " SerialXlda = " << SerialXlda << endl ; 
-    cout << " SerialBlda = " << SerialBlda << endl ; 
-  //  Print for matlab 
-  //
-  for (int i = 0; i < NumGlobalElements_ ; i++ ) { 
-    for ( int j = Ap[i]; j < Ap[i+1] ; j++ ) { 
-      cout << "A(" << i +1  << "," << Ai[j]+1 << " ) = " << Aval[j] << "; % iam = " << iam <<endl ; 
-    } 
-  }
-  for ( int j=0; j < nrhs ; j++ ) {
-    for ( int i =0; i < NumGlobalElements_ ; i++ ) {
-      cout << "X( " << i+1 << "," << j+1 << ") = " << SerialXvalues[i+SerialXlda*j] << ";" << endl ; 
-    }
-  }
-  for ( int j=0; j < nrhs ; j++ ) {
-    for ( int i =0; i < NumGlobalElements_ ; i++ ) {
-      cout << "B( " << i+1 << "," << j+1 << ") = " << SerialBvalues[i+SerialBlda*j] << ";" << endl ; 
-    }
-  }
-  }
-#endif
    
   //
   //  Copy X back to the original vector
@@ -385,19 +302,5 @@ int Amesos_Klu::Solve() {
     assert( SerialBextract == 0 ) ;
     assert( SerialXextract == 0 ) ;
   }  
-#if 0
-  cout << " Here is SerialB " << endl ; 
-  SerialB->Print(cout ) ; 
-  cout << " There was SerialB " << endl ; 
-  
-  cout << " Here is SerialX " << endl ; 
-  SerialX->Print(cout ) ; 
-  cout << " There was SerialX " << endl ; 
-  
-  cout << " Here is VecX " << endl ; 
-  vecX->Print(cout ) ; 
-  cout << " There was VecX " << endl ; 
-#endif  
-
   return(0) ; 
 }
