@@ -214,8 +214,8 @@ int TestMrhsSolver( Epetra_Comm &Comm, char *matrix_file, int numsolves,
 #ifndef TEST_AZTEC
   } else if ( SparseSolver == Aztec ) { 
     SparseDirectTimingVars::log_file 
-      << "Aztec Solver was not working on TFLOP (no lapack)" << endl ;
-    string errormsg = "Aztec Solver not implemented on TFLOP yet" ;
+      << "Aztec Solver won't compile for me on this platform" << endl ;
+    string errormsg = "Aztec Solver won't compile for me on this platform" ;
     throw( errormsg ); 
 #else
   } else if ( SparseSolver == Aztec ) { 

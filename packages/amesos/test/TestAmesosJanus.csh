@@ -59,9 +59,9 @@ echo "COMMENT column 10 - Norm of the matrix " >> SST.summary
 echo "COMMENT column 11 - relative error - i.e. error/norm(X) " >> SST.summary 
 echo "COMMENT column 12 - residual error - i.e. residual/norm(B) " >> SST.summary 
 echo "COMMENT column 13 - total_time " >> SST.summary 
-echo "COMMENT column 14 - MRHS only - Factor time " >> SST.summary 
-echo "COMMENT column 15 - MRHS only - Time for one solve " >> SST.summary 
-echo "COMMENT column 16 - MRHS only - Time for nrhs-1 solves " >> SST.summary 
+echo "COMMENT column 14 - multiple solves only - Factor time " >> SST.summary 
+echo "COMMENT column 15 - multiple solves only - Time for one solve " >> SST.summary 
+echo "COMMENT column 16 - multiple solves only - Time for nrhs-1 solves " >> SST.summary 
 echo "COMMENT column 17+ - summary " >> SST.summary 
 
 
