@@ -36,7 +36,8 @@ noinst_PROGRAMS = mlguide mlguide_par ml_aztec_simple ml_example1d \
 		  ml_example_MultiLevelPreconditioner_vbr \
 		  ml_example_MultiLevelPreconditioner_viz \
 		  ml_example_MultiLevelPreconditioner_analyze \
-		  ml_example_MultiLevelPreconditioner_maxwell 
+		  ml_example_MultiLevelPreconditioner_maxwell  \
+		  ml_read_matrix_AIJ
 else
 noinst_PROGRAMS = mlguide mlguide_par ml_aztec_simple ml_example1d \
                   ml_example1dGS ml_example2d ml_example3d ml_simple_max \
@@ -54,6 +55,7 @@ noinst_PROGRAMS = mlguide mlguide_par ml_aztec_simple ml_example1d \
 		  ml_example_MultiLevelPreconditioner_viz \
 		  ml_example_MultiLevelPreconditioner_analyze \
 		  ml_example_MultiLevelPreconditioner_maxwell  \
+		  ml_read_matrix_AIJ \
           ml_multiple_rhs ml_aztecoo
 
 endif #ML_BENCHMARKING
@@ -74,6 +76,7 @@ noinst_PROGRAMS = mlguide ml_aztec_simple ml_example1d \
 		  ml_example_MultiLevelPreconditioner_viz \
 		  ml_example_MultiLevelPreconditioner_analyze \
 		  ml_example_MultiLevelPreconditioner_maxwell  \
+		  ml_read_matrix_AIJ \
           ml_multiple_rhs ml_aztecoo
 
 endif #HAVE_MPI
@@ -113,6 +116,7 @@ ml_example_MultiLevelPreconditioner_vbr_SOURCES= $(srcdir)/ml_example_MultiLevel
 ml_example_MultiLevelPreconditioner_viz_SOURCES= $(srcdir)/ml_example_MultiLevelPreconditioner_viz.cpp
 ml_example_MultiLevelPreconditioner_analyze_SOURCES= $(srcdir)/ml_example_MultiLevelPreconditioner_analyze.cpp
 ml_example_MultiLevelPreconditioner_maxwell_SOURCES = $(srcdir)/ml_example_MultiLevelPreconditioner_maxwell.cpp
+ml_read_matrix_AIJ_SOURCES= $(srcdir)/ml_read_matrix_AIJ.cpp
 ml_multiple_rhs_SOURCES = $(srcdir)/ml_multiple_rhs.cpp
 ml_aztecoo_SOURCES = $(srcdir)/ml_aztecoo.cpp
 
@@ -368,6 +372,11 @@ ml_example_MultiLevelPreconditioner_analyze_CPPFLAGS = ${ml_common_include_locat
 ml_example_MultiLevelPreconditioner_analyze_CXXFLAGS = ${ml_common_include_locations}
 ml_example_MultiLevelPreconditioner_analyze_LDADD = ${ml_libs}
 ml_example_MultiLevelPreconditioner_analyze_LINK = ${mllink}
+
+ml_read_matrix_AIJ_CPPFLAGS = ${ml_common_include_locations}
+ml_read_matrix_AIJ_CXXFLAGS = ${ml_common_include_locations}
+ml_read_matrix_AIJ_LDADD = ${ml_libs}
+ml_read_matrix_AIJ_LINK = ${mllink}
 
 ml_example_MultiLevelPreconditioner_maxwell_CPPFLAGS = ${ml_common_include_locations}
 ml_example_MultiLevelPreconditioner_maxwell_CXXFLAGS = ${ml_common_include_locations}
