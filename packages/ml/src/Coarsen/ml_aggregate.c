@@ -54,6 +54,8 @@ extern int **global_mapping = NULL, global_nrows, global_ncoarse;
 #define ML_AGGR_ZOLTAN       9
 /*ms*/
 
+#define ML_AGGR_VBMETIS      9  /*mgee*/
+
 /* ************************************************************************* */
 /* Constructor                                                               */
 /* ------------------------------------------------------------------------- */
@@ -102,7 +104,8 @@ int ML_Aggregate_Create( ML_Aggregate **ag )
 /*MS*/
    (*ag)->block_scaled_SA            =  0;
    (*ag)->phase3_agg_creation        = .5;
-
+/*mgee*/
+   (*ag)->vblock_data                = NULL;
 
 #if defined(AZTEC) && defined(ML_AGGR_READINFO)
    ML_Aggregate_AztecRead(*ag);
@@ -161,6 +164,16 @@ int ML_Aggregate_Destroy( ML_Aggregate **ag )
       if ((*ag)->nodal_coord != NULL)
 	ML_free( (*ag)->nodal_coord );
 /*MS*/
+/*mgee*/
+      if ((*ag)->vblock_data != NULL)
+      {
+         for ( i = 0; i < (*ag)->max_levels; i++ )
+            ML_Aggregate_Destroy_Vblocks_CoarsenScheme_VBMETIS((*ag),i);
+         ML_free((*ag)->vblock_data);
+         (*ag)->vblock_data = NULL;
+      }
+
+
       ML_memory_free( (void **) ag );
       (*ag) = NULL;
 
@@ -1037,6 +1050,9 @@ int ML_Aggregate_Coarsen( ML_Aggregate *ag, ML_Operator *Amatrix,
       else if (coarsen_scheme == ML_AGGR_ZOLTAN) 
 	coarsen_scheme = ML_AGGR_ZOLTAN;
 /*ms*/
+/*mgee*/
+      else if (coarsen_scheme == ML_AGGR_VBMETIS) 
+         coarsen_scheme = ML_AGGR_VBMETIS;
       else 
          coarsen_scheme = ML_AGGR_UNCOUPLED;
    }
@@ -1140,6 +1156,11 @@ int ML_Aggregate_Coarsen( ML_Aggregate *ag, ML_Operator *Amatrix,
            Ncoarse = ML_Aggregate_CoarsenZoltan(ag,Amatrix,Pmatrix,comm);
            break;
 /*ms*/
+/*mgee*/
+      case ML_AGGR_VBMETIS :
+           Ncoarse = ML_Aggregate_CoarsenVBMETIS(ag,Amatrix,Pmatrix,comm);
+           break;
+	   
    default :
            if (mypid == 0) printf("ML_Aggregate_Coarsen : invalid scheme.\n");
            exit(1);

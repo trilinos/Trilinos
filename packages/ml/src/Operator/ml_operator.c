@@ -889,6 +889,8 @@ int ML_amalg_drop_getrow(ML_Operator *data, int N_requested_rows, int requested_
    return(status);
 }
 
+
+
 /* ******************************************************************** */
 /* Restores a matrix that has been modified via                         */
 /* ML_Operator_AmalgamateAndDropWeak() back to its original form.       */
@@ -1117,6 +1119,7 @@ int ML_Operator_AmalgamateAndDropWeak(ML_Operator *Amat, int block_size,
   }
   return 0;
 }
+
 
 /* ******************************************************************** */
 /* ******************************************************************** */

@@ -118,6 +118,7 @@ struct ML_Operator_Struct {
                    Krylov method. */
 };
 
+
 /* -------------------------------------------------------------------- */
 /*  This structure is used to implement both drop tolerances and matrix  
     amalgamation (used in ML_aggregateCoarsenMIS()). The idea is to wrap 
@@ -133,6 +134,8 @@ struct amalg_drop {
    double               drop_tolerance;
    ML_Operator          *Amat;
    int                  *blk_inds;
+   /* used by ML_Operator_AmalgamateAndDropWeak_VBlocks */
+   void                 *vblock_data;  /**< holds data structure aggr_vblock */
 };
 
 /* ******************************************************************** */

@@ -81,6 +81,8 @@ typedef struct ML_Aggregate_Struct
 					  and aggregates */
   int N_dimensions;
 /*ms*/
+/*mgee*/
+  void  *vblock_data;                 /**< holds data structure aggr_vblock */
 } ML_Aggregate;
 
 /* ************************************************************************* */
@@ -92,6 +94,7 @@ typedef struct ML_Aggregate_Struct
 #include "ml_comm.h"
 #include "ml_memory.h"
 #include "ml_operator.h"
+
 
 /* ************************************************************************* */
 /* linked list structures for holding free node information             */
