@@ -12,46 +12,31 @@
 #include "NLS_ParameterList.H"
 #include "NLS_Group.H"
 
-//! Calculates the linear solver tolerance using an various adaptive
-//! strategies (Walker et al. SIAM J. Scientific Computing 1996).
+//! Functor to calculate the linear solver tolerance using an various
+//! adaptive strategies.
 /*!
- * This routine calculates the residual reduction convergence criterion eta_k
- * (the forcing term). The algorithm determines the criterion based on how
- * close the linear model approximates the nonlinear function.  The algorithm
- * is taken from:
  *
+ * This routine calculates the residual reduction convergence
+ * tolerance (the forcing term). The algorithm determines the
+ * criterion based on how close the linear model approximates the
+ * nonlinear function.  The algorithm is taken from:
  * S. C. Eisenstat and H. F. Walker, Choosing the forcing terms in an
- * inexact Newton methods, SIAM J. Scientific Computing, 17, (1996), pp 16-32
- * Authors: J. N. Shadid
- *          H. F. Walker
- */
+ * inexact Newton methods, SIAM J. Scientific Computing, 17, (1996),
+ * pp 16-32 
+ *
+ * Authors: J. N. Shadid, H. F. Walker */
 
 class NLS_ForcingTerm {
+
 public:
 
-  //! Constructor
-  NLS_ForcingTerm();
+  //! Calculate the forcing term.
+  /*! The normrhs is the norm of the current solution, the normoldrhs
+    is the norm of the previous solution, and the normpredrhs is the
+    norm of the predicted RHS. The last value does not need to be
+    passed unless the "Forcing Term Method" is "Type 1". */
+  double operator()(NLS_ParameterList& p, double normrhs, double normoldrhs, double normpredrhs = 0.0);
 
-  //! Destructor
-  ~NLS_ForcingTerm();
-
-  //! Set the parameters in the utilities class.
-  double getForcingTerm(NLS_ParameterList& p);
-
-protected:
-  double eta_k;
-  double eta_km1;
-  double eta_min;
-  double eta_max;
-  
-  double alpha;
-  double eta_k_alpha;
-  double gamma;
-  double residual_ratio;
-
-  double residual_norm_k;
-  double residual_norm_km1;
-  double residual_norm_linear_model;
 };
 
 #endif
