@@ -54,7 +54,7 @@ namespace Teuchos {
 template <class T> class RawMPITraits {
 public:
 	/** \brief Return the raw MPI data type of the template argument */
-	static MPI_Datatype type() { bool *junk1; T *junk2 = &junk1; return MPI_DATATYPE_NULL; }
+	static MPI_Datatype type() { bool *junk1; T *junk2 = &junk1; return MPI_DATATYPE_NULL; } // Should not compile!
 };
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
