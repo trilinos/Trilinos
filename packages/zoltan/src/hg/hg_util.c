@@ -115,8 +115,9 @@ int Zoltan_HG_Info (
   if (zz->Debug_Level < ZOLTAN_DEBUG_LIST)
     return ZOLTAN_OK;
 
-  puts("---------- HGraph Information (min/ave/max/tot) --------------------");
-  printf("info:%d |V|=%d |E|=%d |P|=%d \n",hg->info,hg->nVtx,hg->nEdge,hg->nPin);
+  printf("--------- HGraph Information (min/ave/max/tot) ------------------\n");
+  printf("info:%d |V|=%d |E|=%d |P|=%d \n",
+         hg->info,hg->nVtx,hg->nEdge,hg->nPin);
 
 /* print weights */
   if (hg->vwgt)
@@ -168,7 +169,7 @@ int Zoltan_HG_Info (
      (float)(hg->nPin)/hg->nEdge,size_max,hg->nPin);
   }
 
-  puts("--------------------------------------------------------------------");
+  printf("-----------------------------------------------------------------\n");
   return ZOLTAN_OK;
 }
 
@@ -271,16 +272,17 @@ int Zoltan_HG_Check (
   int k ;                   /* k is an index of hyperedge */
   int *check ;
   int ierr = ZOLTAN_OK ;
+  char str[256];
+  char *yo = "Zoltan_HG_Check";
 
   if (!(hg->hindex) || !(hg->hvertex) || !(hg->vindex) || !(hg->vedge) )
     return ZOLTAN_WARN ;
 
   check = (int *) ZOLTAN_MALLOC (sizeof (int)
-   * ((hg->nEdge > hg->nVtx) ? hg->nEdge : hg->nVtx)) ;
+        * ((hg->nEdge > hg->nVtx) ? hg->nEdge : hg->nVtx)) ;
   if (check == NULL)
      {
-     if (zz->Debug_Level > 0)
-        printf ("Zoltan_HG_Check unable to allocate memory\n") ;
+     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Unable to allocate memory.");
      return ZOLTAN_MEMERR ;
      }
   for (i = 0 ; i < hg->nEdge ; i++)
@@ -291,8 +293,8 @@ int Zoltan_HG_Check (
            check[hg->vedge[j]] = i ;
         else
            {
-           if (zz->Debug_Level > 0)
-              printf ("Zoltan_HG_Check found multiple hedge for same vertex\n") ;
+           ZOLTAN_PRINT_WARN(zz->Proc, yo, 
+                             "Found multiple hedge for same vertex.");
            ierr = ZOLTAN_WARN ;
            }
   for (i = 0 ; i < hg->nVtx ; i++)
@@ -303,8 +305,8 @@ int Zoltan_HG_Check (
            check[hg->hvertex[j]] = i ;
         else
            {
-           if (zz->Debug_Level > 0)
-              printf ("Zoltan_HG_Check found multiple vertex for same hedge\n") ;
+           ZOLTAN_PRINT_WARN(zz->Proc, yo, 
+                            "Found multiple vertex for same hedge.");
            ierr = ZOLTAN_WARN ;
            }
   ZOLTAN_FREE ((void **) &check) ;
@@ -312,25 +314,23 @@ int Zoltan_HG_Check (
   for (i = 0 ; i < hg->VertexWeightDim * hg->nVtx ; i += hg->VertexWeightDim)
      if (hg->vwgt[i] < 0.0)
         {
-        if (zz->Debug_Level > 0)
-          printf ("Zoltan_HG_Check found negative vertex weight\n") ;
+        ZOLTAN_PRINT_WARN(zz->Proc, yo, "Found negative vertex weight.");
         ierr = ZOLTAN_WARN ;
         }
 
   for (i = 0 ; i < hg->EdgeWeightDim * hg->nEdge ; i += hg->EdgeWeightDim)
      if (hg->ewgt[i] < 0.0)
         {
-        if (zz->Debug_Level > 0)
-          printf ("Zoltan_HG_Check found negative edge weight\n") ;
+        ZOLTAN_PRINT_WARN(zz->Proc, yo, "Found negative edge weight.");
         ierr = ZOLTAN_WARN ;
         }
 
   for (i = 0 ; i < hg->nEdge ; i++)
      if ((hg->hindex[i+1] - hg->hindex[i]) < 2)
         {
-        if (zz->Debug_Level > 0)
-          printf ("Zoltan_HG_Check found hedge with less than %d vertices\n",
-           (hg->hindex[i+1] - hg->hindex[i])) ;
+        sprintf (str, "Found hedge with less than %d vertices\n",
+                (hg->hindex[i+1] - hg->hindex[i])) ;
+        ZOLTAN_PRINT_WARN(zz->Proc, yo, str);
         ierr = ZOLTAN_WARN ;
         }
 
@@ -338,8 +338,8 @@ int Zoltan_HG_Check (
      for (j = hg->hindex[i] ; j < hg->hindex[i+1] ; j++)
         if (hg->hvertex[j] < 0  ||  hg->hvertex[j] >= hg->nVtx)
            {
-           if (zz->Debug_Level > 0)
-              printf ("Zoltan_HG_Check found vertex out of range in hvertex\n") ;
+           ZOLTAN_PRINT_WARN(zz->Proc, yo, 
+                             "Found vertex out of range in hvertex.");
            ierr = ZOLTAN_WARN ;
            }
 
@@ -348,8 +348,7 @@ int Zoltan_HG_Check (
      for (j = hg->vindex[i] ; j < hg->vindex[i+1] ; j++)
         if (hg->vedge[j] < 0  ||  hg->vedge[j] >= hg->nEdge)
            {
-           if (zz->Debug_Level > 0)
-              printf ("Zoltan_HG_Check found edge out of range in vedge\n") ;
+           ZOLTAN_PRINT_WARN(zz->Proc, yo, "Found edge out of range in vedge.");
            ierr = ZOLTAN_WARN ;
            }
 
@@ -625,6 +624,58 @@ End:
   return ierr;
 }
 
+/****************************************************************************/
+
+void Zoltan_HG_Print(
+  ZZ *zz,
+  HGraph *hg
+)
+{
+/* 
+ *  Routine to print hypergraph weights and edges. 
+ *  Assumes serial execution; put inside 
+ *  Zoltan_Print_Sync_Start/Zoltan_Print_Sync_End for parallel programs.
+ */
+int i, j;
+int num_vwgt;
+int num_ewgt;
+
+  if (hg == NULL) 
+    return;
+
+  num_vwgt = hg->VertexWeightDim;
+  num_ewgt = hg->EdgeWeightDim;
+  if (hg->vwgt != NULL) {
+    printf("Vertices: [weights])\n");
+    for (i = 0; i < hg->nVtx; i++) {
+      printf("%d:  [", i+1);   /* KDD +1 for Chaco 1-based #ing. */
+      for (j = 0; j < num_vwgt; j++)
+        printf("%f ", hg->vwgt[i*num_vwgt + j]);
+      printf("])\n");
+    }
+  }
+
+  /* Print Hyperedge Info */
+  printf("Hyperedges:  (vertices)\n");
+  for (i = 0; i < hg->nEdge; i++) {
+    printf("%d:  ", i);
+    printf("(");
+    for (j = hg->hindex[i]; j < hg->hindex[i+1]; j++)
+      printf("%d ", hg->hvertex[j]+1);   /* KDD +1 for Chaco 1-based #ing. */
+    printf(")\n");
+  }
+
+  if (hg->ewgt != NULL) {
+    printf("Hyperedge Weights:  [weights]\n");
+    for (i = 0; i < hg->nEdge; i++) {
+      printf("%d:  ", i);
+      printf("[");
+      for (j = 0; j < num_ewgt; j++)
+        printf("%f ", hg->ewgt[i*num_ewgt + j]);
+      printf("])\n");
+    }
+  }
+}
 
 #ifdef __cplusplus
 } /* closing bracket for extern "C" */

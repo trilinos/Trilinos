@@ -302,40 +302,19 @@ int num_ewgt = zz->Edge_Weight_Dim;
   Zoltan_Print_Sync_Start(zz->Communicator, 1);
 
   /* Print Vertex Info */
-  printf("HGraph_Print Proc %d\n", zz->Proc);
-  if (zoltan_hg != NULL)
-    printf("Vertices (GID, LID, index, [weights])\n");
-  else
-    printf("Vertices (index, [weights])\n");
+  printf("%s Proc %d\n", yo, zz->Proc);
+  printf("Vertices (GID, LID, index)\n");
 
   for (i = 0; i < hg->nVtx; i++) {
     printf("(");
-    if (zoltan_hg != NULL) {
-      ZOLTAN_PRINT_GID(zz,  &(zoltan_hg->Global_IDs[i*num_gid]));
-      printf(", ");
-      ZOLTAN_PRINT_LID(zz,  &(zoltan_hg->Local_IDs[i*num_lid]));
-      printf(", ");
-
-    }
-    printf("%d, [", i+1);   /* KDD +1 for Chaco 1-based #ing. */
-    if (hg->vwgt != NULL)
-      for (j = 0; j < num_vwgt; j++)
-        printf("%f ", hg->vwgt[i*num_vwgt + j]);
-    printf("])\n");
+    ZOLTAN_PRINT_GID(zz,  &(zoltan_hg->Global_IDs[i*num_gid]));
+    printf(", ");
+    ZOLTAN_PRINT_LID(zz,  &(zoltan_hg->Local_IDs[i*num_lid]));
+    printf(", %d)\n", i+1);  /* for Chaco 1-based #ing */
+    
   }
 
-  /* Print Hyperedge Info */
-  printf("Hyperedges (vertices, [weights])\n");
-  for (i = 0; i < hg->nEdge; i++) {
-    printf("(");
-    for (j = hg->hindex[i]; j < hg->hindex[i+1]; j++)
-      printf("%d ", hg->hvertex[j]+1);   /* KDD +1 for Chaco 1-based #ing. */
-    printf("[");
-    if (hg->ewgt != NULL)
-      for (j = 0; j < num_ewgt; j++)
-        printf("%f ", hg->ewgt[i*num_ewgt + j]);
-    printf("])\n");
-  }
+  Zoltan_HG_Print(zz, hg);
 
   Zoltan_Print_Sync_End(zz->Communicator, 1);
 }

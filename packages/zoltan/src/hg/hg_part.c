@@ -71,6 +71,7 @@ int Zoltan_HG_HPart_Lib (
 { int  i;
   int  ierr = ZOLTAN_OK;
   char *yo = "Zoltan_HG_HPart_Lib" ;
+  char msg[128];
 
   if (!part)
   { ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Output partition array is NULL.");
@@ -91,11 +92,9 @@ int Zoltan_HG_HPart_Lib (
     hgp->redl = p;
 
   if (p <= 0)
-  { if (zz->Debug_Level > ZOLTAN_DEBUG_LIST)
-    { char msg[128];
-      sprintf(msg, "PART ERROR...p=%d is not a positive number!\n", p);
-      ZOLTAN_PRINT_ERROR(zz->Proc, yo, msg);
-    }
+  { 
+    sprintf(msg, "PART ERROR...p=%d is not a positive number!\n", p);
+    ZOLTAN_PRINT_ERROR(zz->Proc, yo, msg);
     return ZOLTAN_FATAL;
   }
 
@@ -163,11 +162,15 @@ int Zoltan_HG_HPart_Lib (
 
     /* Check the consistency of the coarsening */
     if (limit != c_hg.nVtx-hgp->redl)
-    { printf("limit %d is not %d-%d!\n",limit,c_hg.nVtx,hgp->redl);
+    { 
+      sprintf(msg, "limit %d is not %d-%d!\n",limit,c_hg.nVtx,hgp->redl);
+      ZOLTAN_PRINT_ERROR(zz->Proc, yo, msg);
       return ZOLTAN_FATAL;
     } 
     else if (c_hg.nVtx < hgp->redl)
-    { printf("wanted coarsen to %d vertices, but reached %d vertices.\n",hgp->redl,c_hg.nVtx);
+    { sprintf(msg, "wanted coarsen to %d vertices, but reached %d vertices.\n",
+              hgp->redl,c_hg.nVtx);
+      ZOLTAN_PRINT_ERROR(zz->Proc, yo, msg);
       return ZOLTAN_FATAL;
     }
     if (c_hg.nVtx > .9*hg->nVtx)
@@ -311,7 +314,8 @@ static float hmin_max_float (ZZ *zz, int P, float *q)
 
 int Zoltan_HG_HPart_Info (ZZ *zz, HGraph *hg, int p, Partition part)
 { int	i, *size, max_size;
-  char *yo = "hpart_info" ;
+  char *yo = "Zoltan_HG_HPart_Info" ;
+  char msg[128];
 
   if (zz->Debug_Level < ZOLTAN_DEBUG_LIST)
     return ZOLTAN_OK;
@@ -325,8 +329,10 @@ int Zoltan_HG_HPart_Info (ZZ *zz, HGraph *hg, int p, Partition part)
   }
   for (i=0; i<hg->nVtx; i++)
   { if (part[i]<0 || part[i]>=p)
-    { fprintf(stderr, "PART ERROR...vertex %d has wrong part number %d\n",i,
+    {  
+      sprintf(msg, "PART ERROR...vertex %d has wrong part number %d\n",i,
        part[i]);
+      ZOLTAN_PRINT_WARN(zz->Proc, yo, msg);
       return ZOLTAN_WARN;
     }
     size[part[i]]++;
@@ -352,8 +358,9 @@ int Zoltan_HG_HPart_Info (ZZ *zz, HGraph *hg, int p, Partition part)
   }
 
   printf ("EDGE-based:\n");
-  printf (" Cuts(total/links)  : %.3f %.3f\n",hcut_size_total(hg,part),hcut_size_links(zz,hg,p,part));
-  puts("-------------------------------------------------------------------");
+  printf (" Cuts(total/links)  : %.3f %.3f\n",
+          hcut_size_total(hg,part),hcut_size_links(zz,hg,p,part));
+  printf ("----------------------------------------------------------------\n");
   return ZOLTAN_OK;
 }
 

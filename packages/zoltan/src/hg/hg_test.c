@@ -99,8 +99,9 @@ int main (int argc, char **argv)
   ADD_NEW_TIME(t_rest);
 
 /* load and info hypergraph */
-  if (HG_Readfile(&zz,&hg,hgraphfile))
+  if (hg_readfile(&zz,&hg,hgraphfile))
     return 1;
+  if (zz.Debug_Level >= ZOLTAN_DEBUG_ALL) Zoltan_HG_Print(&zz, &hg);
   memory_graph = Zoltan_Memory_Usage (ZOLTAN_MEM_STAT_TOTAL);
   printf("Initial Memory: %d %d\n", memory_graph,
          Zoltan_Memory_Usage (ZOLTAN_MEM_STAT_MAXIMUM) );
