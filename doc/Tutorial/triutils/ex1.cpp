@@ -29,11 +29,7 @@
 
 // Trilinos Tutorial
 // -----------------
-// Read a matrix in HB format
-//
-// (output reported at the end of the file)
-//
-// Marzio Sala, SNL, 9214, 19-Nov-2003
+// Read a matrix in HB format without usign MatrixGallery
 
 #include "Epetra_config.h"
 #ifdef HAVE_MPI

@@ -28,10 +28,11 @@ include $(TRILINOS_HOME)/build/makefile.$(TRILINOS_ARCH)
 
 MY_COMPILER_FLAGS = -DHAVE_CONFIG_H $(CXXFLAGS) -c -g\
 	            -I$(TRILINOS_LIB)/include/
-		    
+
 MY_LINKER_FLAGS = $(LDFLAGS) $(TEST_C_OBJ) \
 	-L$(TRILINOS_LIB)/lib/ \
-	-laztecoo -lml -lepetra $(LIB_PATHS) $(ARCH_LIBS) -llapack -lblas
+	-L$(HOME)/lib/LINUX_MPI \
+	-laztecoo -lml -ltriutils -lepetra $(LIB_PATHS) $(ARCH_LIBS) -llapack -lblas
 
 METIS_DIR = -L/home/msala/lib/Linux
 METIS_INC = -I/home/msala/include

@@ -29,9 +29,7 @@
 
 // Trilinos Tutorial
 // -----------------
-// Basic usage of ShellOptios
-//
-// Marzio Sala, SNL, 9214, 19-Nov-2003
+// Basic usage of CommandLineParser
 
 #include "Epetra_config.h"
 #ifdef HAVE_MPI

@@ -36,8 +36,6 @@
 //                       u = 0  on \partial \Omega
 //
 // using NOX 
-//
-// Marzio Sala, SNL, 9214, 19-Nov-2003
 
 #include "Epetra_config.h"
 #ifdef HAVE_MPI

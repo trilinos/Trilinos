@@ -30,13 +30,12 @@
 // Trilinos Tutorial
 // -----------------
 // 
-// Solve a 2D Laplacian problem with AztecOO and ML.
-// Adapted from example of AztecOO package
+// Use of ML as a black-box smoothed aggregation preconditioner
 //
-// Marzio Sala, SNL, 9214, 19-Nov-2003
-
-// Solve a 2D Laplacian problem with AztecOO and ML.
-// Adapted from example of AztecOO package
+// NOTE: The linker line in the Makefile can change considerably, depending on how
+// you configures ML and Amesos (if ML was configured with Amesos support). You may need to add
+// -lteuchos -lamesos -lifpack -lparmetis-3.1 -ly12m -lumfpack -lamd -lmetis-4.0
+// to the Makefile
 
 #include "Epetra_config.h"
 #ifdef HAVE_MPI
@@ -46,162 +45,65 @@
 #include "Epetra_SerialComm.h"
 #endif
 #include "Epetra_Map.h"
-#include "Epetra_IntVector.h"
-#include "Epetra_SerialDenseVector.h"
 #include "Epetra_Vector.h"
+#include "Epetra_RowMatrix.h"
 #include "Epetra_CrsMatrix.h"
+#include "Epetra_LinearProblem.h"
 #include "Epetra_Time.h"
 #include "AztecOO.h"
-// includes required by ML
-#include "ml_include.h"
-#include "Epetra_LinearProblem.h"
-#include "ml_epetra_operator.h"
-#include "ml_epetra_utils.h"
-#include "ml_aggregate.h"
-#include "ml_agg_METIS.h"
 
-void  get_neighbours( const int i, const int nx, const int ny,
-		      int & left, int & right, 
-		      int & lower, int & upper);
+// includes required by ML
+#include "ml_epetra_preconditioner.h"
+
+#include "Trilinos_Util_MatrixGallery.h"
+#include "Trilinos_Util_ShellOptions.h"
+
+using namespace Teuchos;
+
+#include <iostream>
 
 int main(int argc, char *argv[])
 {
-
-  int proc_config[AZ_PROC_SIZE];
   
 #ifdef EPETRA_MPI
   MPI_Init(&argc,&argv);
   Epetra_MpiComm Comm(MPI_COMM_WORLD);
-  AZ_set_proc_config(proc_config, MPI_COMM_WORLD);
 #else
   Epetra_SerialComm Comm;
-    AZ_set_proc_config(proc_config, AZ_NOT_MPI);
 #endif
-
-  int nx = 50;
-  int ny = 60;
-  int NumGlobalElements = nx * ny;
-
-  // ========================= MATRIX CREATION =============================
   
-  // create a map
-  Epetra_Map Map(NumGlobalElements,0,Comm);
-  // local number of rows
-  int NumMyElements = Map.NumMyElements();
-  // get update list
-  int * MyGlobalElements = new int [NumMyElements];
-  Map.MyGlobalElements( MyGlobalElements );
+  Epetra_Time Time(Comm);
 
-  // Create an integer vector NumNz that is used to build the Petra Matrix.
-  // NumNz[i] is the Number of OFF-DIAGONAL term for the ith global equation 
-  // on this processor
+  // initialize the command line parser
+  Trilinos_Util_CommandLineParser CLP(argc,argv);
 
-  double off_left  = -1.0;
-  double off_right = -1.0;
-  double off_lower = -1.0;
-  double off_upper = -1.0;
-  double diag      =  4.0;
-  int left, right, lower, upper;
+  // initialize an Gallery object
+  Trilinos_Util_CrsMatrixGallery Gallery("", Comm);
+
+  // add default values
+  if( CLP.Has("-problem_type") == false ) CLP.Add("-problem_type", "laplace_2d" ); 
+  if( CLP.Has("-problem_size") == false ) CLP.Add("-problem_size", "10000" ); 
+
+  // initialize the gallery as specified in the command line
+  Gallery.Set(CLP);
+
+  // retrive pointers to matrix and linear problem
+  Epetra_RowMatrix * A = Gallery.GetMatrix();
+  Epetra_LinearProblem * Problem = Gallery.GetLinearProblem();
   
-  Epetra_CrsMatrix A(Copy,Map,5);
-
-  // Add  rows one-at-a-time
-  // Need some vectors to help
-  // Off diagonal Values will always be -1
-
-  double *Values = new double[4];
-  int *Indices = new int[4];
-  int NumEntries;
-
-  for( int i=0 ; i<NumMyElements; ++i ) {
-    int NumEntries=0;
-    get_neighbours(  MyGlobalElements[i], nx, ny, 
-		     left, right, lower, upper);
-    if( left != -1 ) {
-	Indices[NumEntries] = left;
-	Values[NumEntries] = off_left;
-	++NumEntries;
-    }
-    if( right != -1 ) {
-      Indices[NumEntries] = right;
-      Values[NumEntries] = off_right;
-      ++NumEntries;
-    }
-    if( lower != -1 ) {
-      Indices[NumEntries] = lower;
-      Values[NumEntries] = off_lower;
-      ++NumEntries;
-    }
-    if( upper != -1 ) {
-      Indices[NumEntries] = upper;
-      Values[NumEntries] = off_upper;
-      ++NumEntries;
-    }
-    // put the off-diagonal entries
-    assert(A.InsertGlobalValues(MyGlobalElements[i], NumEntries, 
-				Values, Indices)==0);
-    // Put in the diagonal entry
-    assert(A.InsertGlobalValues(MyGlobalElements[i], 1, 
-				&diag, MyGlobalElements+i)==0);
-  }
-  
-  // Finish up
-  assert(A.TransformToLocal()==0);
-
-  // define vectors
-  Epetra_Vector x(Map);
-  Epetra_Vector b(Map);
-
-  b.PutScalar(1.0);
-
-  // ========================= ML-AZTECOO INTERFACE ========================
-  
-  // define a linear problem
-  Epetra_LinearProblem problem(&A, &x, &b);
-
   // Construct a solver object for this problem
-  AztecOO solver(problem);
-
-  // AZTEC settings
-  solver.SetAztecOption(AZ_solver, AZ_cg);
-
-  // Create and set an ML multilevel preconditioner
-  ML *ml_handle;
-  // Maximum number of levels
-  int N_levels = 2;
-  // output level
-  ML_Set_PrintLevel(10);
-
-  ML_Create(&ml_handle,N_levels);
-  EpetraMatrix2MLMatrix(ml_handle, 0, &A);
-
-  ML_Aggregate *agg_object;
-  ML_Aggregate_Create(&agg_object);
-  ML_Aggregate_Set_CoarsenScheme_METIS(agg_object);
-  ML_Aggregate_Set_MaxCoarseSize(agg_object,1);
+  AztecOO solver(*Problem);
   
-  N_levels = ML_Gen_MGHierarchy_UsingAggregation(ml_handle, 0,
-						 ML_INCREASING, agg_object);
+  // create the preconditioner object and compute hierarchy
+  ML_Epetra::MultiLevelPreconditioner * MLPrec = new ML_Epetra::MultiLevelPreconditioner(*A, CLP, true);
 
-  // use AZTEC as smoother
-
-  int smoother_options[AZ_OPTIONS_SIZE];
-  double smoother_params[AZ_PARAMS_SIZE];
-  double smoother_status[AZ_STATUS_SIZE];
-  
-  AZ_defaults(smoother_options,smoother_params);
-  
-  ML_Gen_Smoother_SymGaussSeidel(ml_handle, ML_ALL_LEVELS,
-                                  ML_BOTH, 1, ML_DEFAULT);
-
-  ML_Gen_Solver(ml_handle, ML_MGV, 0, N_levels-1);
-
-  Epetra_ML_Operator MLop(ml_handle,Comm,Map,Map);
-
-  solver.SetPrecOperator(&MLop);
+  // tell AztecOO to use this preconditioner, then solve
+  solver.SetPrecOperator(MLPrec);
  
   double rthresh = 1.4;
   solver.SetAztecParam(AZ_rthresh, rthresh);
+  solver.SetAztecOption(AZ_solver, AZ_gmres_condnum);
+  solver.SetAztecOption(AZ_output, 32);
   double athresh = 10.0;
   solver.SetAztecParam(AZ_athresh, athresh);
   solver.SetAztecParam(AZ_ill_cond_thresh, 1.0e200);
@@ -211,72 +113,27 @@ int main(int argc, char *argv[])
    
   solver.Iterate(Niters, 1e-12);
 
+  // print out some information about the preconditioner
+  if( Comm.MyPID() == 0 ) cout << MLPrec->GetOutputList();
+  
+  delete MLPrec;
+  
   // compute the real residual
+
+  double residual, diff;
+  Gallery.ComputeResidual(residual);
+  Gallery.ComputeDiffBetweenStartingAndExactSolutions(diff);
   
-  Epetra_Vector bcomp(Map);
-  assert(A.Multiply(false, x, bcomp)==0);
- 
-  Epetra_Vector resid(Map);
- 
-  assert(resid.Update(1.0, b, -1.0, bcomp, 0.0)==0);
-
-  double residual;
-  assert(resid.Norm2(&residual)==0);
-  if (Comm.MyPID()==0) cout << "Residual    = " << residual << endl;
-
-  assert(resid.Update(1.0, x, -1.0, x, 0.0)==0);
-
-  assert(resid.Norm2(&residual)==0);
-  if (Comm.MyPID()==0)
-    cout << "2-norm of difference between computed and exact solution  = " << residual << endl;
-
-  if (residual>1.0e-5) {
-    cout << "Difference between computed and exact solution is large..." << endl      << "Computing norm of A times this difference.  If this norm is small, then matrix is singular"
-      << endl;
-    assert(A.Multiply(false, resid, bcomp)==0);
-    assert(bcomp.Norm2(&residual)==0);
-  if (Comm.MyPID()==0)
-    cout << "2-norm of A times difference between computed and exact solution  = " << residual << endl;
-  
+  if( Comm.MyPID()==0 ) {
+    cout << "||b-Ax||_2 = " << residual << endl;
+    cout << "||x_exact - x||_2 = " << diff << endl;
+    cout << "Total Time = " << Time.ElapsedTime() << endl;
   }
 
 #ifdef EPETRA_MPI
   MPI_Finalize() ;
 #endif
 
-return 0 ;
-}
-
-/****************************************************************************/
-/****************************************************************************/
-/****************************************************************************/
-
-void  get_neighbours( const int i, const int nx, const int ny,
-		      int & left, int & right, 
-		      int & lower, int & upper) 
-{
-
-  int ix, iy;
-  ix = i%nx;
-  iy = (i - ix)/nx;
-
-  if( ix == 0 ) 
-    left = -1;
-  else 
-    left = i-1;
-  if( ix == nx-1 ) 
-    right = -1;
-  else
-    right = i+1;
-  if( iy == 0 ) 
-    lower = -1;
-  else
-    lower = i-nx;
-  if( iy == ny-1 ) 
-    upper = -1;
-  else
-    upper = i+nx;
-
-  return;
-
+  return 0 ;
+  
 }

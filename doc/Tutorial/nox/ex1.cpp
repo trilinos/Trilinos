@@ -36,15 +36,7 @@
 //      x(1) - x(0)^2 = 0
 //
 // using NOX. Due to the very small dimension of the problem,
-// it should be run with one process. However, the user is free
-// to use more processes.
-//
-// Marzio Sala, SNL, 9214, 19-Nov-2003
-
-/*
- *
- * Marzio Sala, SNL, 9214, 18-Nov-2003
- */
+// it should be run with one process.
  
 #include <iostream>
 #include "Epetra_config.h"
