@@ -83,7 +83,7 @@ int main(int argc, char *argv[])
   nlParams.setParameter("Output Level", 4);
   nlParams.setParameter("MyPID", MyPID); 
   //nlParams.setParameter("Nonlinear Solver", "Newton");
-  nlParams.setParameter("Nonlinear Solver", "Line Search");
+  nlParams.setParameter("Nonlinear Solver", "Line Search Based");
   //nlParams.setParameter("Nonlinear Solver", "Trust Region"); 
 
   // Sublist for line search
@@ -100,10 +100,10 @@ int main(int argc, char *argv[])
 
   // Sublist for direction
   NOX::Parameter::List& dirParams = nlParams.sublist("Direction");
-  //dirParams.setParameter("Method", "Newton");
+  dirParams.setParameter("Method", "Newton");
   //dirParams.setParameter("Method", "Steepest Descent");
   //dirParams.setParameter("Scaling Type", "None");
-  dirParams.setParameter("Method", "NonlinearCG");
+  //dirParams.setParameter("Method", "NonlinearCG");
     dirParams.setParameter("Restart Frequency", 10);
     dirParams.setParameter("Precondition", "On");
     //dirParams.setParameter("Orthogonalize", "Polak-Ribiere");
@@ -164,6 +164,14 @@ int main(int argc, char *argv[])
   const Epetra_Vector& finalSolution = (dynamic_cast<const NOX::Epetra::Vector&>(finalGroup.getX())).getEpetraVector();
 
   // End Nonlinear Solver **************************************
+
+  // Output the parameter list
+  if (NOX::Utils::doPrint(NOX::Utils::Parameters)) {
+    cout << endl << "Final Parameters" << endl
+	 << "****************" << endl;
+    solver.getParameterList().print(cout);
+    cout << endl;
+  }
 
   // Print solution
   char file_name[25];
