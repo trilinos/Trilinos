@@ -34,8 +34,8 @@ class Zoltan_DD {
 
 public:
 
-  Zoltan_DD(MPI_Comm comm, int num_gid, int num_lid, int user_length,  
-            int table_length, int debug_level) 
+  Zoltan_DD(const MPI_Comm &comm, const int &num_gid, const int &num_lid, 
+    const int &user_length,  const int &table_length, const int &debug_level) 
     {
     Zoltan_DD_Create (&this->DD, comm, num_gid, 
                   num_lid, user_length,  table_length, debug_level);
@@ -49,8 +49,8 @@ public:
     // initialization.
     }
 
-  int Create(MPI_Comm comm, int num_gid, int num_lid, int user_length,  
-            int table_length, int debug_level) 
+  int Create(const MPI_Comm &comm, const int &num_gid, const int &num_lid, 
+    const int &user_length,  const int &table_length, const int &debug_level) 
     {
     if (this->DD)
       {
@@ -70,18 +70,18 @@ public:
     }
  
   int Update (ZOLTAN_ID_PTR gid, ZOLTAN_ID_PTR lid, 
-                        ZOLTAN_ID_PTR user, int *partition, int count) 
+    ZOLTAN_ID_PTR user, int *partition, const int &count) 
     {
     return Zoltan_DD_Update (this->DD, gid, lid, user, partition, count) ;
     }
   
   int Find (ZOLTAN_ID_PTR gid, ZOLTAN_ID_PTR lid, ZOLTAN_ID_PTR data, 
-                   int *partition, int count, int *owner) 
+                   int *partition, const int &count, int *owner) const
     {
     return Zoltan_DD_Find (this->DD, gid, lid, data, partition, count, owner);
     }
   
-  int Remove (ZOLTAN_ID_PTR gid, int count)
+  int Remove (ZOLTAN_ID_PTR gid, const int &count)
     {
     return Zoltan_DD_Remove (this->DD, gid, count);
     }
@@ -91,12 +91,12 @@ public:
     return Zoltan_DD_Set_Hash_Fn (this->DD, hash);
     } 
   
-  void Stats ()
+  void Stats () const
     {
     return Zoltan_DD_Stats (this->DD) ;
     }
   
-  int Print ()
+  int Print () const
     {
     return Zoltan_DD_Print (this->DD) ;
     }
