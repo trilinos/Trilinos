@@ -1341,7 +1341,7 @@ int Epetra_CrsGraph::PackAndPrepareRowMatrix(const Epetra_RowMatrix& A,
   int MaxNumIndices = A.MaxNumEntries();
   if(MaxNumIndices > 0) {
     Values.Size(MaxNumIndices);
-    Indices = new int[MaxNumIndices];
+//    Indices = new int[MaxNumIndices];
   }
   const Epetra_Map& RowMap = A.RowMatrixRowMap();
   const Epetra_Map& ColMap = A.RowMatrixColMap();
@@ -1357,7 +1357,7 @@ int Epetra_CrsGraph::PackAndPrepareRowMatrix(const Epetra_RowMatrix& A,
     intptr += (NumIndices+2); // Point to next segment
   }
 
-  if( Indices ) delete [] Indices;
+//  if( Indices ) delete [] Indices;
  
   return(0);
 }
