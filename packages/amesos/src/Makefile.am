@@ -77,33 +77,33 @@ endif
 #
 if HAVE_AMESOS_KLU
 KLU_H = \
-	$(srcdir)/klu_btf.h \
+	$(srcdir)/klu/klu_btf.h \
 	$(srcdir)/ \
 	$(srcdir)/ \
 	$(srcdir)/Amesos_Klu.h \
-	$(srcdir)/cbtf.h \
-	$(srcdir)/klu.h \
-	$(srcdir)/klu_dump.h \
-	$(srcdir)/klu_kernel.h
+	$(srcdir)/klu/cbtf.h \
+	$(srcdir)/klu/klu.h \
+	$(srcdir)/klu/klu_dump.h \
+	$(srcdir)/klu/klu_kernel.h
 KLU = \
-	$(srcdir)/btf.f \
-	$(srcdir)/mc21a.f \
-	$(srcdir)/mc21b.f \
-	$(srcdir)/mc13e.f \
-	$(srcdir)/mc13d.f \
-	$(srcdir)/klu_btf_factor.c \
-	$(srcdir)/klu_btf_free_symbolic.c \
-	$(srcdir)/klu_btf_free_numeric.c \
-	$(srcdir)/klu_btf_refactor.c \
-	$(srcdir)/klu_btf_scale.c \
-	$(srcdir)/klu_btf_solve.c \
-	$(srcdir)/klu_btf_analyze.c \
-	$(srcdir)/klu_dump.c \
-	$(srcdir)/cbtf.c \
+	$(srcdir)/klu/btf.f \
+	$(srcdir)/klu/mc21a.f \
+	$(srcdir)/klu/mc21b.f \
+	$(srcdir)/klu/mc13e.f \
+	$(srcdir)/klu/mc13d.f \
+	$(srcdir)/klu/klu_btf_factor.c \
+	$(srcdir)/klu/klu_btf_free_symbolic.c \
+	$(srcdir)/klu/klu_btf_free_numeric.c \
+	$(srcdir)/klu/klu_btf_refactor.c \
+	$(srcdir)/klu/klu_btf_scale.c \
+	$(srcdir)/klu/klu_btf_solve.c \
+	$(srcdir)/klu/klu_btf_analyze.c \
+	$(srcdir)/klu/klu_dump.c \
+	$(srcdir)/klu/cbtf.c \
 	$(srcdir)/Amesos_Klu.cpp \
-	$(srcdir)/klu.c \
-	$(srcdir)/klu_kernel.c \
-	$(srcdir)/klu_noprune_kernel.c
+	$(srcdir)/klu/klu.c \
+	$(srcdir)/klu/klu_kernel.c \
+	$(srcdir)/klu/klu_noprune_kernel.c
 else
 KLU_H =
 KLU =

@@ -175,7 +175,7 @@ AM_CPPFLAGS = -I$(top_srcdir)/../epetra/src  -I$(top_srcdir)/../amd/src \
 amesos_test_DEPENDENCIES = \
 	$(top_builddir)/../epetra/src/libepetra.a \
 	$(top_builddir)/src/libamesos.a \
-	$(top_builddir)/../amd/src/libamd.a \
+	$(top_builddir)/amd/src/libamd.a \
 	$(top_builddir)/../triutils/src/libtriutils.a 
 
 amesos_test_CXXFLAGS = -I$(top_srcdir)/src
@@ -184,7 +184,6 @@ amesos_test_LDADD = $(top_builddir)/src/libamesos.a \
 	$(top_builddir)/../epetra/src/libepetra.a \
 	$(top_builddir)/../triutils/src/libtriutils.a \
 	$(AMESOS_LIBS) $(LAPACK_LIBS) \
-	$(top_builddir)/../amd/src/libamd.a \
 	$(BLAS_LIBS) $(FLIBS) 
 
 #np# Set "SUBDIRS= (list all subdirectories that are autotool'ed here)"

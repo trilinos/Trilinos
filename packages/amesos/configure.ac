@@ -315,6 +315,11 @@ case "$target" in
   ;;
 esac
 
+#
+#
+#
+      CXXFLAGS="  ${CXXFLAGS} -O2 -O2 -O2 -I\$(top_srcdir)/amd/src/ -I\$(top_srcdir)/src/klu"
+      CFLAGS="  ${CFLAGS} -O2 -O3 -O2 -I\$(top_srcdir)/amd/src/"
 
 
 #
@@ -586,13 +591,9 @@ fi
 #  --enable-amesos-klu
 #
 if test "X$ac_cv_use_amesos_klu" != "Xno"; then
-  if test "X$ac_cv_use_amd" != "Xno"; then
-    AM_CONDITIONAL(HAVE_AMESOS_KLU, true ) 
-    AM_CONDITIONAL(NEED_PARAMETER_LIST, true ) 
-#   amesos_libs="${amesos_libs} $(top_builddir)/../amd/src/libamd.a"
-  else 
-    AC_MSG_ERROR([Cannot enable klu without enabling amd.])
-  fi 
+  AM_CONDITIONAL(HAVE_AMESOS_KLU, true ) 
+  AM_CONDITIONAL(NEED_PARAMETER_LIST, true ) 
+  amesos_libs="${amesos_libs} \$(top_builddir)/amd/src/libamd.a"
 else
   AM_CONDITIONAL(HAVE_AMESOS_KLU, false ) 
 fi
@@ -872,6 +873,9 @@ AC_SUBST(ac_aux_dir)
 #
 AC_CONFIG_FILES([
 		Makefile 
+		amd/Makefile
+		amd/src/Makefile
+		amd/example/Makefile
 		src/Makefile
 		test/Makefile
 		example/Makefile
