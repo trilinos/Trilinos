@@ -32,8 +32,8 @@ int main(int argc, char *argv[]){
    ML_Create         (&ml_object, N_grids);
 
    ML_Init_Amatrix      (ml_object, 0,  129, 129, NULL);
-   ML_Set_Amatrix_Getrow(ml_object, 0,  Poisson_getrow, NULL, 129);
-   ML_Set_Amatrix_Matvec(ml_object, 0,  Poisson_matvec);
+   MLnew_Set_Amatrix_Getrow(ml_object, 0,  Poisson_getrow, NULL, 129);
+   MLnew_Set_Amatrix_Matvec(ml_object, 0,  Poisson_matvec);
    ML_Set_PrintLevel(10);
 
    ML_Aggregate_Create(&agg_object);
@@ -89,6 +89,7 @@ int Poisson_getrow(void *A_data, int N_requested_rows, int requested_rows[],
    int count = 0, i, start, row;
 
 
+
    for (i = 0; i < N_requested_rows; i++) {
       if (allocated_space < count+3) return(0);
       start = count;
@@ -121,8 +122,10 @@ int user_smoothing(void *data, int x_length, double x[], int rhs_length, double 
    double ap[129], omega = .5; /* temp vector and damping factor */
    double *diag;
    ML_Operator *Amat;
+   ML_Smoother *smoo;
 
-   Amat = (ML_Operator *) data;
+   smoo    = (ML_Smoother *) data;
+   Amat = (ML_Operator *) ML_Get_MySmootherData(smoo);
    ML_Operator_Apply(Amat, x_length, x, rhs_length, ap);
    ML_Operator_Get_Diag(Amat, x_length, &diag);
    
