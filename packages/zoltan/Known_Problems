@@ -14,6 +14,12 @@ ERROR CONDITIONS IN OCTREE, PARMETIS AND JOSTLE
 On failure, OCTREE, ParMETIS and Jostle methods abort rather than return 
 error codes.  
 -------------------------------------------------------------------------------
+ZOLTAN_INITIALIZE BUT NO ZOLTAN_FINALIZE
+If Zoltan_Initialize calls MPI_Init, then MPI_Finalize
+will never be called because there is no Zoltan_Finalize routine.
+If the application uses MPI and calls MPI_Init and MPI_Finalize,
+then there is no problem.
+-------------------------------------------------------------------------------
 HETEROGENEOUS ENVIRONMENTS
 Some parts of Zoltan currently assume that basic data types like 
 integers and real numbers (floats) have identical representation
@@ -57,7 +63,18 @@ Description:
    the desired number of partitions, nparts. This shows up
    in Zoltan's "partless" test cases. 
 Reported: Reported to George Karypis and metis@cs.umn.edu on 2002/12/02.
-Status: 
+Status: No reply.
+
+
+Name: ParMETIS dies on adaptive-partlocal3 on DEC alpha.
+Version: ParMETIS 3.0
+Symptom: run-time error "killed by signal 8"
+Description:
+   ParMETIS_V3_AdaptiveRepart crashes on the adaptive-partlocal3
+   test files. This problem has only been observed on DEC (Compaq) 
+   machines. There is no problem on Sun or Linux. 
+Reported: Not yet.
+Status:
 
 
 Name: load imbalance tolerance
