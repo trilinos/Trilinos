@@ -1471,6 +1471,7 @@ int ML_Gen_Hierarchy_ComplexMaxwell(ML *ml_edges, ML_Operator **Tmat_array,
    original = &(ml_edges->Amat[mesh_level]);
    blockmat = &(block_ml->Amat[mesh_level]);
    ML_Operator_Gen_blockmat(blockmat, original , originalM );
+   ML_Operator_blockmat_set_M_mat_destroy(blockmat,ML_NO);
 
    lastM = originalM;
    while( ml_edges->SingleLevel[mesh_level].Rmat->to != NULL) {
