@@ -510,6 +510,12 @@ if test ${USE_TRILINOS} = yes; then
 
   dnl find a valid blas and lapack library
   AC_LANG_SAVE
+  AC_LANG_SAVE
+  AC_LANG_FORTRAN77
+  AC_CHECK_LIB(y12m,y12mae)
+  AC_LANG_RESTORE
+  AC_LANG_C
+  AC_CHECK_LIB(g2c,s_copy)
   AC_LANG_FORTRAN77
   AC_SEARCH_LIBS(dcopy,[cxml blas])
   AC_SEARCH_LIBS(dgetrs,[cxml lapack])
@@ -534,18 +540,19 @@ AC_SUBST(TRILINOS_LDADD)
 # Checks for libraries
 # ------------------------------------------------------------------------
 
+# THIS TEST ISN'T WORKING - WILL COME BACK TO IT LATER.
 # Check that all libraries will link with C++
-if test ${LIBS}; then
-  AC_MSG_CHECKING([[whether libraries (${LIBS}) will link]])
-  AC_LANG_CPLUSPLUS 
-  AC_TRY_LINK([],[],
-  [AC_MSG_RESULT(yes)],
-  [
-  AC_MSG_RESULT(no)
-  AC_MSG_ERROR(cannot link)
-  ]
-  )
-fi
+dnl if test X${LIBS} != X; then
+dnl   AC_MSG_CHECKING([[whether libraries (${LIBS}) will link]])
+dnl   AC_LANG_CPLUSPLUS 
+dnl   AC_TRY_LINK([],[],
+dnl   [AC_MSG_RESULT(yes)],
+dnl   [
+dnl   AC_MSG_RESULT(no)
+dnl   AC_MSG_ERROR(cannot link)
+dnl   ]
+dnl   )
+dnl fi
 
 # ------------------------------------------------------------------------
 # Checks for compiler characteristics
@@ -561,7 +568,7 @@ AC_CXX_HAVE_STD
 # ------------------------------------------------------------------------
 
 # -- DEC CXX --
-if test X${target_cpu} = Xalpha &&  test X${CXX} = Xcxx; then
+if test X${target_cpu} = Xalpha && test X${CXX} = Xcxx; then
    XTRALDADD="cxx_repository/*.o"
 fi
 

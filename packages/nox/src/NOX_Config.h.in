@@ -15,6 +15,12 @@
 /* define if we can include <iostream.h> */
 #undef HAVE_IOSTREAM_H
 
+/* Define if you have the `g2c' library (-lg2c). */
+#undef HAVE_LIBG2C
+
+/* Define if you have the `y12m' library (-ly12m). */
+#undef HAVE_LIBY12M
+
 /* define if we can include <math.h> */
 #undef HAVE_MATH_H
 
