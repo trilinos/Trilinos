@@ -167,7 +167,7 @@ int Zoltan_BSFC(
 					 sent to other processors */
   int refinement_level_counter = 0;   /* counter to keep track of how many 
 					 levels of bin refinement have been performed */
-  int max_cuts_in_bin, bin_refinement_method, max_refinement_level,
+  int max_cuts_in_bin, max_refinement_level,
     subbins_per_bin, hashtable_divider, bins_per_proc; /* tuning parameters */
   double* coords; /* array for objects coordinates */
 
@@ -405,8 +405,7 @@ int Zoltan_BSFC(
 					  global_actual_work_allocated, 
 					  number_of_cuts, &max_cuts_in_bin,
 					  ll_bins_head, work_prev_allocated, 
-					  subbins_per_bin, local_balanced_flag_array,
-					  bin_refinement_method);
+					  subbins_per_bin, local_balanced_flag_array);
       if(ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
 	ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error in Zoltan_BSFC_refine_partition_level function.");
 	return(ierr);

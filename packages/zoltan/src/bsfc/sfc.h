@@ -116,8 +116,7 @@ int Zoltan_BSFC_refine_partition(ZZ *zz, int* local_balanced_flag,
 			 float* global_actual_work_allocated,
 			 int number_of_cuts, int* max_cuts_in_bin, 
 			 int* ll_bins_head, float* work_prev_allocated,
-			 int subbins_per_bin, int* local_balanced_flag_array,
-			 int bin_refinement_method);
+			 int subbins_per_bin, int* local_balanced_flag_array);
 
 int Zoltan_BSFC_create_compare_key(ZZ *zz, unsigned sfc_key[], unsigned compare_key[], 
 			   unsigned AND_operator_array[], int prev_used_bits);

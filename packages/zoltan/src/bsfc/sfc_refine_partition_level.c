@@ -38,8 +38,7 @@ int Zoltan_BSFC_refine_partition(ZZ *zz, int* local_balanced_flag,
 			 float* global_actual_work_allocated, 
 			 int number_of_cuts, int* max_cuts_in_bin,
 			 int* ll_bins_head, float* work_prev_allocated,
-			 int subbins_per_bin, int* local_balanced_flag_array,
-			 int bin_refinement_method) 
+			 int subbins_per_bin, int* local_balanced_flag_array) 
 {
   char yo[] = "Zoltan_BSFC_refine_partition";
   int i=0, j=0, k;
@@ -107,8 +106,7 @@ int Zoltan_BSFC_refine_partition(ZZ *zz, int* local_balanced_flag,
   /* loop over all bins that have a cut in them using linklist 
      to find objects in the cut bins */
   for(ll_counter=0;ll_counter<=number_of_cuts;ll_counter++) 
-    if((bin_refinement_method==1 ||
-	local_balanced_flag_array[ll_counter]==BSFC_NOT_BALANCED)
+    if(local_balanced_flag_array[ll_counter]==BSFC_NOT_BALANCED
        && ll_bins_head[ll_counter] != -1) {
 
       int temp_max_cuts_in_bin = 0;
