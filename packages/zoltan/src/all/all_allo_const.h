@@ -36,11 +36,13 @@ static char *cvs_all_allo_h =
 #endif
 
 #define LB_SMALLOC(a) LB_smalloc((a), __FILE__, __LINE__)
+#define LB_SREALLOC(a, b) LB_srealloc((a), (b), __FILE__, __LINE__)
 
 /* function declarations for dynamic array allocation */
 
 extern double *LB_array_alloc(char *file, int lineno, int numdim, ...);
 extern void LB_safe_free(void **ptr);
 extern double *LB_smalloc(int n, char *file, int lineno);
+extern double *LB_srealloc(void *ptr, int n, char *filename, int lineno);
 
 #endif
