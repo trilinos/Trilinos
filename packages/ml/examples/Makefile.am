@@ -6,7 +6,7 @@ EXEEXT = .exe
 #EXAMPLE = ml_read_maxwell
 
 # List the names of all exe's in this directory here
-noinst_PROGRAMS = ml_read_maxwell ml_simple_max
+noinst_PROGRAMS = ml_read_maxwell
 
 # One SOURCES primary is needed for EACH exe listed above.  (Notice for all 
 # of the  following primaries that the pattern is 

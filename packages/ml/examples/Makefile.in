@@ -94,7 +94,7 @@ install_sh = @install_sh@
 #EXAMPLE = ml_read_maxwell
 
 # List the names of all exe's in this directory here
-noinst_PROGRAMS = ml_read_maxwell ml_simple_max
+noinst_PROGRAMS = ml_read_maxwell
 
 # One SOURCES primary is needed for EACH exe listed above.  (Notice for all 
 # of the  following primaries that the pattern is 
@@ -140,17 +140,12 @@ subdir = examples
 mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/ml_config.h
 CONFIG_CLEAN_FILES =
-noinst_PROGRAMS = ml_read_maxwell$(EXEEXT) ml_simple_max$(EXEEXT)
+noinst_PROGRAMS = ml_read_maxwell$(EXEEXT)
 PROGRAMS = $(noinst_PROGRAMS)
 
 am_ml_read_maxwell_OBJECTS = ml_read_maxwell-ml_read_maxwell.$(OBJEXT)
 ml_read_maxwell_OBJECTS = $(am_ml_read_maxwell_OBJECTS)
 ml_read_maxwell_LDFLAGS =
-ml_simple_max_SOURCES = ml_simple_max.c
-ml_simple_max_OBJECTS = ml_simple_max.$(OBJEXT)
-ml_simple_max_LDADD = $(LDADD)
-ml_simple_max_DEPENDENCIES =
-ml_simple_max_LDFLAGS =
 
 DEFS = @DEFS@
 DEFAULT_INCLUDES =  -I. -I$(srcdir) -I$(top_builddir)/src
@@ -159,16 +154,15 @@ LDFLAGS = @LDFLAGS@
 LIBS = @LIBS@
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
-@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/ml_read_maxwell-ml_read_maxwell.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/ml_simple_max.Po
+@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/ml_read_maxwell-ml_read_maxwell.Po
 COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
 CCLD = $(CC)
 LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
 CFLAGS = @CFLAGS@
-DIST_SOURCES = $(ml_read_maxwell_SOURCES) ml_simple_max.c
+DIST_SOURCES = $(ml_read_maxwell_SOURCES)
 DIST_COMMON = Makefile.am Makefile.in
-SOURCES = $(ml_read_maxwell_SOURCES) ml_simple_max.c
+SOURCES = $(ml_read_maxwell_SOURCES)
 
 all: all-am
 
@@ -186,9 +180,6 @@ ml_read_maxwell-ml_read_maxwell.$(OBJEXT): $(srcdir)/ml_read_maxwell.c
 ml_read_maxwell$(EXEEXT): $(ml_read_maxwell_OBJECTS) $(ml_read_maxwell_DEPENDENCIES) 
 	@rm -f ml_read_maxwell$(EXEEXT)
 	$(LINK) $(ml_read_maxwell_LDFLAGS) $(ml_read_maxwell_OBJECTS) $(ml_read_maxwell_LDADD) $(LIBS)
-ml_simple_max$(EXEEXT): $(ml_simple_max_OBJECTS) $(ml_simple_max_DEPENDENCIES) 
-	@rm -f ml_simple_max$(EXEEXT)
-	$(LINK) $(ml_simple_max_LDFLAGS) $(ml_simple_max_OBJECTS) $(ml_simple_max_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT) core *.core
@@ -197,7 +188,6 @@ distclean-compile:
 	-rm -f *.tab.c
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_read_maxwell-ml_read_maxwell.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_simple_max.Po@am__quote@
 
 distclean-depend:
 	-rm -rf ./$(DEPDIR)
