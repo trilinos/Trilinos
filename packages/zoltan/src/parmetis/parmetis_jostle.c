@@ -385,7 +385,7 @@ static int LB_ParMetis_Jostle(
   get_times = (lb->Debug_Level >= LB_DEBUG_ATIME);
   if (get_times){
     MPI_Barrier(lb->Communicator);
-    times[0] = LB_Time();
+    times[0] = LB_Time(lb->Timer);
   }
 
   /* Get parameter options shared by ParMetis and Jostle */
@@ -957,7 +957,7 @@ static int LB_ParMetis_Jostle(
   }
   
   /* Get a time here */
-  if (get_times) times[1] = LB_Time();
+  if (get_times) times[1] = LB_Time(lb->Timer);
 
   /* Select the desired ParMetis or Jostle function */
 
@@ -1074,7 +1074,7 @@ static int LB_ParMetis_Jostle(
   }
 
   /* Get a time here */
-  if (get_times) times[2] = LB_Time();
+  if (get_times) times[2] = LB_Time(lb->Timer);
 
   if (lb->Debug_Level >= LB_DEBUG_ALL)
     printf("[%1d] Debug: Returned from partitioner with edgecut= %d\n", 
@@ -1157,7 +1157,7 @@ static int LB_ParMetis_Jostle(
   LB_FREE(&xyz);
 
   /* Get a time here */
-  if (get_times) times[3] = LB_Time();
+  if (get_times) times[3] = LB_Time(lb->Timer);
 
   /* Output timing results if desired */
   if (get_times){

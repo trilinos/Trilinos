@@ -249,7 +249,7 @@ static int rcb_fn(
   LB_TRACE_ENTER(lb, yo);
   if (stats || (lb->Debug_Level >= LB_DEBUG_ATIME)) {
     MPI_Barrier(lb->Communicator);
-    timestart = time1 = LB_Time();
+    timestart = time1 = LB_Time(lb->Timer);
   }
 
   /* setup for parallel */
@@ -262,7 +262,7 @@ static int rcb_fn(
    *  set pointers to information in it.
    */
 
-  start_time = LB_Time();
+  start_time = LB_Time(lb->Timer);
   ierr = LB_RCB_Build_Structure(lb, &pdotnum, &dotmax, wgtflag);
   if (ierr == LB_FATAL || ierr == LB_MEMERR) {
     fprintf(stderr, "[%d] RCB ERROR in %s:  Error returned from "
@@ -276,7 +276,7 @@ static int rcb_fn(
   dotpt  = rcb->Dots; 
   rcbbox = rcb->Box;
   treept = rcb->Tree_Ptr;
-  end_time = LB_Time();
+  end_time = LB_Time(lb->Timer);
   lb_time[0] = end_time - start_time;
   start_time = end_time;
 
@@ -381,7 +381,7 @@ static int rcb_fn(
   MPI_Comm_dup(lb->Communicator,&local_comm);
 
   if (stats || (lb->Debug_Level >= LB_DEBUG_ATIME)) {
-    time2 = LB_Time();
+    time2 = LB_Time(lb->Timer);
     timers[0] = time2 - time1;
   }
 
@@ -395,7 +395,7 @@ static int rcb_fn(
 
   while (num_procs > 1) {
 
-    if (stats || (lb->Debug_Level >= LB_DEBUG_ATIME)) time1 = LB_Time();
+    if (stats || (lb->Debug_Level >= LB_DEBUG_ATIME)) time1 = LB_Time(lb->Timer);
 
     ierr = LB_divide_machine(lb, proc, local_comm, &set, &proclower,
                              &procmid, &num_procs, &fractionlo);
@@ -461,7 +461,7 @@ static int rcb_fn(
     }
     else first_guess = 0;
 
-    if (stats || (lb->Debug_Level >= LB_DEBUG_ATIME)) time2 = LB_Time();
+    if (stats || (lb->Debug_Level >= LB_DEBUG_ATIME)) time2 = LB_Time(lb->Timer);
 
     if (!LB_find_median(coord, wgts, dotmark, dotnum, proc, fractionlo,
                         local_comm, &valuehalf, first_guess, &(counters[0]))) {
@@ -474,7 +474,7 @@ static int rcb_fn(
       return LB_FATAL;
     }
 
-    if (stats || (lb->Debug_Level >= LB_DEBUG_ATIME)) time3 = LB_Time();
+    if (stats || (lb->Debug_Level >= LB_DEBUG_ATIME)) time3 = LB_Time(lb->Timer);
 
     /* store cut info in tree only if I am procmid */
 
@@ -620,7 +620,7 @@ static int rcb_fn(
     local_comm = tmp_comm;
 
     if (stats || (lb->Debug_Level >= LB_DEBUG_ATIME)) {
-      time4 = LB_Time();
+      time4 = LB_Time(lb->Timer);
       timers[1] += time2 - time1;
       timers[2] += time3 - time2;
       timers[3] += time4 - time3;
@@ -640,12 +640,12 @@ static int rcb_fn(
   LB_FREE(&wgts);
   LB_FREE(&dotmark);
 
-  end_time = LB_Time();
+  end_time = LB_Time(lb->Timer);
   lb_time[1] = end_time - start_time;
 
   if (stats || (lb->Debug_Level >= LB_DEBUG_ATIME)) {
     MPI_Barrier(lb->Communicator);
-    timestop = time1 = LB_Time();
+    timestop = time1 = LB_Time(lb->Timer);
   }
 
   /* error checking and statistics */
@@ -657,7 +657,7 @@ static int rcb_fn(
 
   /* update calling routine parameters */
   
-  start_time = LB_Time();
+  start_time = LB_Time(lb->Timer);
 
   pdotnum = dotnum;
   pdottop = dottop;
@@ -708,7 +708,7 @@ static int rcb_fn(
     treept[0].dim = -1;
   }
 
-  end_time = LB_Time();
+  end_time = LB_Time(lb->Timer);
   lb_time[0] += (end_time - start_time);
 
   if (lb->Debug_Level >= LB_DEBUG_ATIME) {
