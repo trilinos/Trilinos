@@ -603,10 +603,6 @@ void migrate_unpack_elem(void *data, LB_GID elem_gid, int elem_data_size,
   int i, j, idx;
   int proc;
 
-  /* Comm package currently does not guarantee same order as       */
-  /* import_global_ids; thus, elem_gid is not necessarily correct. */
-  /* Don't use elem_gid argument.                                  */
-
   if (data == NULL) {
     *ierr = LB_FATAL;
     return;
@@ -641,8 +637,7 @@ void migrate_unpack_elem(void *data, LB_GID elem_gid, int elem_data_size,
       (*elem)[i].globalID = -1;
   }
 
-  if ((idx = in_list(elem_mig->globalID, New_Elem_Index_Size, New_Elem_Index))
-        == -1) {
+  if ((idx = in_list(elem_gid, New_Elem_Index_Size, New_Elem_Index)) == -1) {
     Gen_Error(0, "fatal: Unable to locate position for element");
     *ierr = LB_FATAL;
     return;
