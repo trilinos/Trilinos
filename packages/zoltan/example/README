@@ -19,6 +19,10 @@ Or just the C++ examples with:
 
 gmake ZOLTAN_ARCH={arch} CPP_Examples
 
+Note that C++ implementations vary widely.  If you have trouble
+building the CPP examples, try defining or not defining
+the MPI_CPP or NAMESPACES_OK values in the tests' source files.
+
 To run an example, launch it on any number of processes as you would 
 any MPI application:
 
