@@ -1,25 +1,99 @@
 #!/bin/sh
 #
 # This script is used for running a series of benchmark tests.
-# Users indicate a directory containing subdirectories which 
-# describe data corresponding to different problems (one directory
-# for each problem). The script automatically descends each 
-# subdirectory and runs the appropriate executable within the subdirectory. 
-# The name of the executable is given within the subdirectory in a file
-# named 'exe.name'. If this executable does not exist in the 
-# executable directory, it is compiled. All data necessary to run the 
-# executable must be within this subdirectory. The problem is run and the 
-# output is compared with an output file in this subdirectory. Some summary
-# statistics are reported.
-# Note: This script is often used with the executable ml_readfile
-#        which contains comments on setting up problems. 
+# It is normally used in conjugation with the benchmarks located
+# in mlbench. 
+# 
+# What to do:
+#   1) If you don't have mlbench, try cvs checkout mlbench
 #
-#echo "Usage: run_benchmarks [bench_directory executable_directory scratch_directory parallel={TRUE,FALSE}]
-
-BENCH_DIRECTORY=/home/tuminaro/mlbench
-EXECUTABLE_DIRECTORY=/home/tuminaro/codes/Aztec/ml/Obj
+#   2) Do a 'make clean' in the ml/Obj directory.
+#      This will ensure that any executables requiring
+#      compilation with a -DBENCHMARK will get automatically made by
+#      run_benchmarks.
+#
+#   3) If you are running in parallel and need something other than mpirun, 
+#      edit the 'PARALLEL_CMD' variable below.
+PARALLEL_CMD=`echo mpirun -machinefile ${HOME}/bin/machinefile -np `
+#
+#   4) Run run_benchmarks. If you run it without arguments, it will
+#      tell you what the defaults are. If these are not correct, add
+#      arguments to run_benchmarks.
+#
+#       Usage: run_benchmarks [bench_directory executable_directory 
+#                              scratch_directory parallel={TRUE,FALSE}]
+#       where
+#           bench_directory      Directory path to mlbench test problems.
+# 
+#           executable_directory Path to directory where ml should be 
+#                                compiled.
+#
+#           scratch_directory    Directory where output will be left.
+#
+#           parallel             Either TRUE or FALSE to indicate whether
+#                                parallel benchmarks should be run.
+#
+BENCH_DIRECTORY=${HOME}/mlbench
+EXECUTABLE_DIRECTORY=${PWD}/../Obj
 SCRATCH_DIRECTORY=/tmp/poop
 PARALLEL=FALSE
+#
+# To create new benchmark problems:
+# 
+#    1) Create a new subdirectory under mlbench for the new problem and
+#       cd into this directory. run_benchmarks automatically descends each 
+#       subdirectory (under mlbench) and runs the appropriate executable 
+#       within the subdirectory. 
+#    2) Create a file called 'exe.name' containing the name of the executable
+#       that is to be run within this subdirectory (e.g. ml_example2d, 
+#       ml_read_maxwell, ml_readfile, etc.). If this executable does not
+#       exist in EXECUTABLE_DIRECTORY, run_benchmarks will create it by
+#       invoking make.
+#    3) Put any data files that you need to run this example.
+#
+#    4) Create files 'ml_inputfile*' where '*' can not be empty. 
+#       run_benchmarks will run one benchmark for each of these input files
+#       (copying the data in ml_inputfile* to ml_inputfile). The input files 
+#       can contain data that is used by your program. ML contains utilities 
+#       for reading certain types of input files (see ML_Reader_ReadInput in 
+#       the file ml_read_utils.c) for more details or look at some of the 
+#       sample inputfiles in mlbench. 
+#       NOTE: If certain data needs to be read and is VERY specific to your 
+#       problem and NOT IN ml_read_utils.c, you can do the following:
+#          a) use ML_Reader_ReadInput() to read the standard input.
+#          b) reopen the inputfile with your application and read the 
+#             application specific stuff using utilities like 
+#             ML_Reader_LookFor(). See ml_example2d.c for a sample of this.
+#       THE ONLY DATA that the script 'run_benchmarks' will read in the 
+#       inputfile is a line of the form:
+#            Number of processors = x
+#       where 'x' is the number of processors to execute the job on.
+#       If this line is not present in the input file, run_benchmarks will
+#       assume that it is a serial job.
+#    5) Create files 'output*' where '*' takes on the same values as 
+#       the ml_inputfile* files created in step 4). Each output file
+#       should contain the proper output for each run. The easiest way
+#       to do this is to 'run_benchmark' on the directory without the
+#       output files and then copy the output files created by the script
+#       (in ${SCRATCH_DIRECTORY}) into the appropriate location in mlbench.
+#
+# OUTPUT:
+#    run_benchmarks will create one output file for each run in 
+#    ${SCRATCH_DIRECTORY}. This output will have all lines with 'ime'
+#    grepped out. This is to avoid timing data. A dif file will also
+#    be created by doing a 'diff -w' with the output file in the directory
+#    structure. It will also create summary information which is essentially
+#    a 'wc' on the dif file and grepping the dif file for the printed 
+#    components of the solution vector and the total number of iterations.
+#    This output is also printed on the screen.
+#
+#
+TEMP=`echo ${PWD} | sed "s,.*/ml/etc,tuvwxyz,"`
+if test `expr ${TEMP}` != 'tuvwxyz'
+then
+   echo "Must execute run_benchmarks from 'ml/etc' directory!!!"
+   exit
+fi
 
 #echo "Usage: run_benchmarks [bench_directory executable_directory scratch_directory paralel={TRUE,FALSE}]
 
@@ -27,7 +101,6 @@ PARALLEL=FALSE
 #
 # Take command line arguments and replace defaults
 #
-#if test `expr ${*}` -ge `expr 3`
 if test $# -ge 5
 then
   echo "Usage: run_benchmarks [bench_directory executable_directory scratch_directory parallel={TRUE,FALSE}]"
@@ -173,7 +246,7 @@ do
         EXE_MOD=$EXE
         if test `expr ${PARALLEL}` = 'TRUE' 
         then
-           EXE_MOD=`echo mpirun -machinefile /home/tuminaro/bin/machinefile -np $Nprocs $EXE`
+           EXE_MOD=`echo ${PARALLEL_CMD} $Nprocs $EXE`
         fi
         ${EXE_MOD} | grep -v ime > ${SCRATCH_DIRECTORY}/${i}/output${ttt}
         diff -w output${ttt} ${SCRATCH_DIRECTORY}/${i}/output${ttt} > \
