@@ -137,8 +137,8 @@ extern int Zoltan_Verify_Graph(MPI_Comm comm, idxtype *vtxdist, idxtype *xadj,
 extern int Zoltan_Scatter_Graph(idxtype **vtxdist, idxtype **xadj, 
        idxtype **adjncy, idxtype **vwgt, idxtype **vsize, idxtype **adjwgt, 
        float **xyz, int ndims, ZZ *zz, ZOLTAN_COMM_OBJ **plan);
-extern int Zoltan_Build_Graph( ZZ *zz, int graph_type,
-       int check_graph, ZOLTAN_ID_PTR global_ids, ZOLTAN_ID_PTR local_ids,
+extern int Zoltan_Build_Graph( ZZ *zz, int graph_type, int check_graph,
+       int num_obj, ZOLTAN_ID_PTR global_ids, ZOLTAN_ID_PTR local_ids,
        int obj_wgt_dim, int edge_wgt_dim,
        idxtype **vtxdist, idxtype **xadj, idxtype **adjncy, float **ewgts);
 

@@ -59,6 +59,8 @@ ZOLTAN_CHILD_LIST_FN get_child_elements;
 ZOLTAN_FIRST_COARSE_OBJ_FN get_first_coarse_element;
 ZOLTAN_NEXT_COARSE_OBJ_FN get_next_coarse_element;
 
+ZOLTAN_PARTITION_FN get_partition;
+
 /*****************************************************************************/
 /*****************************************************************************/
 /*****************************************************************************/
@@ -180,6 +182,13 @@ int setup_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
     return 0;
   }
 
+  /* Functions for partitions */
+  if (Zoltan_Set_Fn(zz, ZOLTAN_PARTITION_FN_TYPE, (void (*)()) get_partition,
+                (void *) mesh) == ZOLTAN_FATAL) {
+    Gen_Error(0, "fatal:  error returned from Zoltan_Set_Fn()\n");
+    return 0;
+  }
+
   DEBUG_TRACE_END(Proc, yo);
   return 1;
 }
@@ -195,16 +204,19 @@ int run_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
   char *yo = "run_zoltan";
 
   /* Variables returned by Zoltan */
-  ZOLTAN_ID_PTR import_gids = NULL;  /* Global node nums of nodes to be imported */
-  ZOLTAN_ID_PTR import_lids = NULL;  /* Pointers to nodes to be imported         */
-  int   *import_procs = NULL;    /* Proc IDs of procs owning nodes to be
-                                    imported.                                */
-  ZOLTAN_ID_PTR export_gids = NULL;  /* Global node nums of nodes to be exported */
-  ZOLTAN_ID_PTR export_lids = NULL;  /* Pointers to nodes to be exported         */
-  int   *export_procs = NULL;    /* Proc IDs of destination procs for nodes
-                                    to be exported.                          */
-  int num_imported;              /* Number of nodes to be imported.          */
-  int num_exported;              /* Number of nodes to be exported.          */
+  ZOLTAN_ID_PTR import_gids = NULL;  /* Global nums of objs to be imported   */
+  ZOLTAN_ID_PTR import_lids = NULL;  /* Local indices to objs to be imported */
+  int   *import_procs = NULL;        /* Proc IDs of procs owning objs to be
+                                        imported.                            */
+  int   *import_to_part = NULL;      /* Partition #s to which imported objs 
+                                        should be assigned.                  */
+  ZOLTAN_ID_PTR export_gids = NULL;  /* Global nums of objs to be exported   */
+  ZOLTAN_ID_PTR export_lids = NULL;  /* local indices to objs to be exported */
+  int   *export_procs = NULL;        /* Proc IDs of destination procs for objs
+                                        to be exported.                      */
+  int   *export_to_part = NULL;      /* Partition #s for objs to be exported.*/
+  int num_imported;              /* Number of objs to be imported.          */
+  int num_exported;              /* Number of objs to be exported.          */
   int new_decomp;                /* Flag indicating whether the decomposition
                                     has changed                              */
   int num_gid_entries;           /* Number of array entries in a global ID.  */
@@ -237,11 +249,12 @@ int run_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
      */
     MPI_Barrier(MPI_COMM_WORLD);   /* For timings only */
     stime = MPI_Wtime();
-    if (Zoltan_LB_Balance(zz, &new_decomp, &num_gid_entries, &num_lid_entries,
-                   &num_imported, &import_gids,
-                   &import_lids, &import_procs, &num_exported, &export_gids,
-                   &export_lids, &export_procs) == ZOLTAN_FATAL) {
-      Gen_Error(0, "fatal:  error returned from Zoltan_LB_Balance()\n");
+    if (Zoltan_LB_Partition(zz, &new_decomp, &num_gid_entries, &num_lid_entries,
+                 &num_imported, &import_gids,
+                 &import_lids, &import_procs, &import_to_part,
+                 &num_exported, &export_gids,
+                 &export_lids, &export_procs, &export_to_part) == ZOLTAN_FATAL){
+      Gen_Error(0, "fatal:  error returned from Zoltan_LB_Partition()\n");
       return 0;
     }
     mytime = MPI_Wtime() - stime;
@@ -277,8 +290,9 @@ int run_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
     stime = MPI_Wtime();
     if (new_decomp) {
       if (!migrate_elements(Proc, mesh, zz, num_gid_entries, num_lid_entries,
-                        num_imported, import_gids, import_lids, import_procs,
-                        num_exported, export_gids, export_lids, export_procs)) {
+          num_imported, import_gids, import_lids, import_procs, import_to_part,
+          num_exported, export_gids, export_lids, export_procs, export_to_part))
+      {
         Gen_Error(0, "fatal:  error returned from migrate_elements()\n");
         return 0;
       }
@@ -297,8 +311,10 @@ int run_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
     }
   
     /* Clean up */
-    (void) Zoltan_LB_Free_Data(&import_gids, &import_lids, &import_procs,
-                        &export_gids, &export_lids, &export_procs);
+    Zoltan_LB_Free_Part(&import_gids, &import_lids,
+                        &import_procs, &import_to_part);
+    Zoltan_LB_Free_Part(&export_gids, &export_lids,
+                        &export_procs, &export_to_part);
   }
 
   if (Driver_Action & 2){
@@ -718,6 +734,20 @@ void get_child_elements(void *data, int num_gid_entries, int num_lid_entries,
                    int *in_vertex, int *out_vertex, int *ierr)
 {
   *ierr = ZOLTAN_OK;
+}
+
+/*****************************************************************************/
+/*****************************************************************************/
+/*****************************************************************************/
+int get_partition(void *data, int num_gid_entries, int num_lid_entries,
+                  ZOLTAN_ID_PTR global_id, ZOLTAN_ID_PTR local_id, int *ierr)
+{
+int proc;
+
+/* For now, partition == processor ID. */
+
+  MPI_Comm_rank(MPI_COMM_WORLD, &proc);
+  return proc;
 }
 
 /*****************************************************************************/

@@ -103,10 +103,14 @@ int Zoltan_ParMetis(
   ZOLTAN_ID_PTR *imp_gids,  /* global ids of objects to be imported */
   ZOLTAN_ID_PTR *imp_lids,  /* local  ids of objects to be imported */
   int **imp_procs,      /* list of processors to import from */
+  int **imp_to_part,    /* list of partitions to which imported objects are 
+                           assigned.  KDDKDD Currently unused. */
   int *num_exp,         /* number of objects to be exported */
   ZOLTAN_ID_PTR *exp_gids,  /* global ids of objects to be exported */
   ZOLTAN_ID_PTR *exp_lids,  /* local  ids of objects to be exported */
-  int **exp_procs       /* list of processors to export to */
+  int **exp_procs,      /* list of processors to export to */
+  int **exp_to_part     /* list of partitions to which exported objects are
+                           assigned. KDDKDD Currently unused.  */
 )
 {
   return Zoltan_ParMetis_Shared(zz, num_imp, imp_gids, imp_lids,
@@ -300,10 +304,14 @@ int Zoltan_Jostle(
   ZOLTAN_ID_PTR *imp_gids,  /* global ids of objects to be imported */
   ZOLTAN_ID_PTR *imp_lids,  /* local  ids of objects to be imported */
   int **imp_procs,      /* list of processors to import from */
+  int **imp_to_part,    /* list of partitions to which imported objects are 
+                           assigned.  KDDKDD Currently unused. */
   int *num_exp,         /* number of objects to be exported */
   ZOLTAN_ID_PTR *exp_gids,  /* global ids of objects to be exported */
   ZOLTAN_ID_PTR *exp_lids,  /* local  ids of objects to be exported */
-  int **exp_procs       /* list of processors to export to */
+  int **exp_procs,      /* list of processors to export to */
+  int **exp_to_part     /* list of partitions to which exported objects are
+                           assigned. KDDKDD Currently unused.  */
 )
 {
 #ifndef ZOLTAN_JOSTLE
@@ -453,7 +461,7 @@ static int Zoltan_ParMetis_Jostle(
   static char *yo = "Zoltan_ParMetis_Jostle";
   int i, j, k, ierr, tmp, flag, ndims; 
   int obj_wgt_dim, edge_wgt_dim, check_graph, scatter;
-  int num_obj, num_edges, edgecut;
+  int num_obj=0, num_edges, edgecut;
   int nsend, wgtflag, numflag, graph_type; 
   int get_graph_data, get_geom_data, get_times; 
   idxtype *vtxdist, *xadj, *adjncy, *vwgt, *adjwgt, *part, *part2, *vsize;
@@ -465,6 +473,8 @@ static int Zoltan_ParMetis_Jostle(
   ZOLTAN_ID_PTR global_ids;    
   ZOLTAN_ID_PTR lid;            /* Temporary pointer to a local id; used to pass
                                NULL to query fns when NUM_LID_ENTRIES == 0. */
+  int *parts;               /* Currently UNUSED:  Initial partitions for 
+                               objects.  */
   ZOLTAN_COMM_OBJ *comm_plan;
   double times[5];
   char msg[256];
@@ -494,6 +504,7 @@ static int Zoltan_ParMetis_Jostle(
   float_vwgt = ewgts = xyz = imb_tols = tpwgt = NULL;
   local_ids = NULL;
   global_ids = NULL;
+  parts = NULL;
 
   /* Start timer */
   get_times = (zz->Debug_Level >= ZOLTAN_DEBUG_ATIME);
@@ -592,57 +603,41 @@ static int Zoltan_ParMetis_Jostle(
     get_geom_data = 1;
   }
 
-  num_obj = zz->Get_Num_Obj(zz->Get_Num_Obj_Data, &ierr);
-  if ((ierr!= ZOLTAN_OK) && (ierr!= ZOLTAN_WARN)){
-    /* Return error code */
-    ZOLTAN_PARMETIS_ERROR(ierr, "Get_Num_Obj returned error.");
+  /* For ordering, the ids are passed in through the *imp_ids
+     parameters. These id lists are only populated if
+     reorder=True, otherwise we need to initialize them. 
+  */
+  if (compute_order){
+    global_ids = *imp_gids;
+    local_ids =  *imp_lids;
   }
-  
-  if (zz->Debug_Level >= ZOLTAN_DEBUG_ALL)
-    printf("[%1d] Debug: num_obj =%d\n", zz->Proc, num_obj);
 
-  if (num_obj>0){
-    /* For ordering, the ids are passed in through the *imp_ids
-       parameters. These id lists are only populated if
-       reorder=True, otherwise we need to initialize them. 
-    */
+  /* If reorder is true, we already have the id lists. Ignore weights. */
+  if (!(order_opt && order_opt->reorder)){
+    ierr = Zoltan_Get_Obj_List(zz, &num_obj, &global_ids, &local_ids,
+                               obj_wgt_dim, &float_vwgt, &parts);
+    ZOLTAN_FREE((void **) &parts);  /* KDD parts is currently UNUSED; free it */
+                                    /* KDD Should we be using part here? */
+                                    /* KDD Are partitions input to ParMETIS? */
 
-    if (compute_order){
-      global_ids = *imp_gids;
-      local_ids =  *imp_lids;
-    }
-    else{
-      /* Allocate and free id lists in this routine */
-      global_ids = ZOLTAN_MALLOC_GID_ARRAY(zz, num_obj);
-      local_ids =  ZOLTAN_MALLOC_LID_ARRAY(zz, num_obj);
-    }
-    if (obj_wgt_dim)
-      float_vwgt = (float *) ZOLTAN_MALLOC(obj_wgt_dim*num_obj*sizeof(float));
-    if (!global_ids || (num_lid_entries && !local_ids)){
-      /* Not enough memory */
-      ZOLTAN_PARMETIS_ERROR(ZOLTAN_MEMERR, "Out of memory.");
-    }
-    /* If reorder is true, we already have the id lists. Ignore weights. */
-    if (!(order_opt && order_opt->reorder)){
-      Zoltan_Get_Obj_List(zz, global_ids, local_ids, obj_wgt_dim, float_vwgt, &ierr);
-    }
     if (ierr){
       /* Return error */
       ZOLTAN_PARMETIS_ERROR(ierr, "Get_Obj_List returned error.");
     }
+  }
   
-    if (zz->Debug_Level >= ZOLTAN_DEBUG_ALL) {
-      printf("[%1d] Debug: Global ids = ", zz->Proc);
-      for (i99=0; i99<num_obj; i99++) {
-        printf("    ");
-        ZOLTAN_PRINT_GID(zz, &(global_ids[i99*num_gid_entries]));
-        printf("\n");
-      }
+  if (zz->Debug_Level >= ZOLTAN_DEBUG_ALL) {
+    printf("[%1d] Debug: num_obj =%d\n", zz->Proc, num_obj);
+    printf("[%1d] Debug: Global ids = ", zz->Proc);
+    for (i99=0; i99<num_obj; i99++) {
+      printf("    ");
+      ZOLTAN_PRINT_GID(zz, &(global_ids[i99*num_gid_entries]));
+      printf("\n");
     }
   }
   
   /* Build ParMetis data structures, or just get vtxdist. */
-  ierr = Zoltan_Build_Graph(zz, graph_type, check_graph,
+  ierr = Zoltan_Build_Graph(zz, graph_type, check_graph, num_obj,
          global_ids, local_ids, obj_wgt_dim, edge_wgt_dim,
          &vtxdist, &xadj, &adjncy, &ewgts);
   if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN){
@@ -697,8 +692,6 @@ static int Zoltan_ParMetis_Jostle(
       if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN){
         /* Return error code */
         ZOLTAN_PARMETIS_ERROR(ierr, "Error in scaling of weights.");
-        ZOLTAN_TRACE_EXIT(zz, yo);
-        return ierr;
       }
 
       if (zz->Debug_Level >= ZOLTAN_DEBUG_ALL){

@@ -127,6 +127,13 @@ int Zoltan_LB_Set_LB_Method(ZZ *zz, char *method_name)
     zz->LB.Point_Assign = Zoltan_HSFC_Point_Assign;
     zz->LB.Box_Assign = Zoltan_HSFC_Box_Assign;
   }
+  else if (strcmp(method_upper, "HG") == 0) {
+    zz->LB.Method = HG;
+    zz->LB.LB_Fn = Zoltan_HG;
+    zz->LB.Free_Structure = Zoltan_HG_Free_Structure;
+    zz->LB.Point_Assign = NULL;
+    zz->LB.Box_Assign = NULL;
+  }
   else if (strcmp(method_upper, "NONE") == 0) {
     zz->LB.Method = NONE;
     zz->LB.LB_Fn = NULL;

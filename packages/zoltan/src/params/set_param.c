@@ -39,6 +39,7 @@ extern "C" {
 #include "all_allo_const.h"
 #include "hsfc_const.h"
 #include "order_const.h"
+#include "hg_const.h"
 
 static int add_param(ZZ *, char *, char *);
 static int remove_param(ZZ *, char *);
@@ -55,6 +56,7 @@ static ZOLTAN_SET_PARAM_FN * Param_func[] = {
        Zoltan_BSFC_Set_Param,
        Zoltan_HSFC_Set_Param,
        Zoltan_Order_Set_Param,
+       Zoltan_HG_Set_Param,
        /* Zoltan_Set_Machine_Param, */
        /*** Add your new parameter setting function here! ***/
        NULL /* Last entry _must_ be NULL! */

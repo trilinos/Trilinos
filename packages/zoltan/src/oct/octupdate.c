@@ -96,10 +96,14 @@ int Zoltan_Octpart(
   int **import_procs,           /* Returned value:  array of processor IDs for
                                    processors owning the non-local objects in
                                    this processor's new decomposition.       */
+  int **import_to_part,         /* Returned value:  array of partitions to
+                                   which imported objects should be assigned.
+                                   KDDKDD  Currently unused.  */
   int *num_export,              /* Not computed; return -1. */
   ZOLTAN_ID_PTR *export_global_ids, /* Not computed. */
   ZOLTAN_ID_PTR *export_local_ids,  /* Not computed. */
-  int **export_procs            /* Not computed. */
+  int **export_procs,           /* Not computed. */
+  int **export_to_part          /* Not computed. */
 ) 
 {
 int oct_dim = 3;              /* Dimension of method to be used (2D or 3D)   */

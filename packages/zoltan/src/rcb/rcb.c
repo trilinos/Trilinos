@@ -111,10 +111,14 @@ int Zoltan_RCB(
   int **import_procs,           /* Returned value:  array of processor IDs for
                                    processors owning the non-local objects in
                                    this processor's new decomposition.       */
+  int **import_to_part,         /* Returned value:  array of partitions to
+                                   which imported objects should be assigned. 
+                                   KDDKDD  Currently unused.  */
   int *num_export,              /* Not computed, set to -1 */
   ZOLTAN_ID_PTR *export_global_ids, /* Not computed. */
   ZOLTAN_ID_PTR *export_local_ids,  /* Not computed. */
-  int **export_procs            /* Not computed. */
+  int **export_procs,           /* Not computed. */
+  int **export_to_part          /* Not computed. */
 )
 {
     /* Wrapper routine to set parameter values and call the real rcb. */

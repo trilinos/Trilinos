@@ -103,11 +103,12 @@ public :: &
    Zoltan_Memory_Stats, &
    Zoltan_Set_Fn, &
    Zoltan_Set_Param, &
-   Zoltan_LB_Balance, &
+   Zoltan_LB_Partition, &
    Zoltan_LB_Eval, &
    Zoltan_LB_Free_Data, &
    Zoltan_LB_Point_Assign, &
    Zoltan_LB_Box_Assign, &
+   Zoltan_LB_Balance, &
    Zoltan_Compute_Destinations, &
    Zoltan_Help_Migrate
 
@@ -677,6 +678,29 @@ end function Zfw_Set_Param
 end interface
 
 interface
+!NAS$ ALIEN "F77 zfw_partition"
+function Zfw_LB_Partition(zz,nbytes,changes,num_gid_entries,num_lid_entries, &
+                num_import,import_global_ids, &
+                import_local_ids,import_procs,import_to_part,num_export, &
+                export_global_ids,export_local_ids,export_procs,export_to_part)
+use zoltan_types
+use zoltan_user_data
+implicit none
+integer(Zoltan_INT) :: Zfw_LB_Partition
+integer(Zoltan_INT), dimension(*) INTENT_IN zz
+integer(Zoltan_INT) INTENT_IN nbytes
+integer(Zoltan_INT), intent(out) :: changes
+integer(Zoltan_INT), intent(out) :: num_gid_entries, num_lid_entries
+integer(Zoltan_INT), intent(out) :: num_import, num_export
+integer(Zoltan_INT), pointer, dimension(:) :: import_global_ids
+integer(Zoltan_INT), pointer, dimension(:) :: export_global_ids
+integer(Zoltan_INT), pointer, dimension(:) :: import_local_ids, export_local_ids
+integer(Zoltan_INT), pointer, dimension(:) :: import_procs, export_procs
+integer(Zoltan_INT), pointer, dimension(:) :: import_to_part, export_to_part
+end function Zfw_LB_Partition
+end interface
+
+interface
 !NAS$ ALIEN "F77 zfw_balance"
 function Zfw_LB_Balance(zz,nbytes,changes,num_gid_entries,num_lid_entries, &
                        num_import,import_global_ids, &
@@ -892,6 +916,10 @@ end interface
 
 interface Zoltan_Set_Param
    module procedure Zf90_Set_Param
+end interface
+
+interface Zoltan_LB_Partition
+   module procedure Zf90_LB_Partition
 end interface
 
 interface Zoltan_LB_Balance
@@ -1420,6 +1448,34 @@ end do
 Zf90_Set_Param = Zfw_Set_Param(zz_addr,nbytes,int_param_name, &
                                     param_name_len,int_new_value,new_value_len)
 end function Zf90_Set_Param
+
+function Zf90_LB_Partition(zz,changes,num_gid_entries,num_lid_entries, &
+                 num_import,import_global_ids, &
+                 import_local_ids,import_procs,import_to_part,num_export, &
+                 export_global_ids,export_local_ids,export_procs,export_to_part)
+integer(Zoltan_INT) :: Zf90_LB_Partition
+type(Zoltan_Struct) INTENT_IN zz
+logical, intent(out) :: changes
+integer(Zoltan_INT), intent(out) :: num_gid_entries, num_lid_entries
+integer(Zoltan_INT), intent(out) :: num_import, num_export
+integer(Zoltan_INT), pointer, dimension(:) :: import_global_ids, export_global_ids
+integer(Zoltan_INT), pointer, dimension(:) :: import_local_ids, export_local_ids
+integer(Zoltan_INT), pointer, dimension(:) :: import_procs, export_procs
+integer(Zoltan_INT), pointer, dimension(:) :: import_to_part, export_to_part
+integer(Zoltan_INT), dimension(Zoltan_PTR_LENGTH) :: zz_addr
+integer(Zoltan_INT) :: nbytes, i, int_changes
+nbytes = Zoltan_PTR_LENGTH
+do i=1,nbytes
+   zz_addr(i) = ichar(zz%addr%addr(i:i))
+end do
+Zf90_LB_Partition = Zfw_LB_Partition(zz_addr,nbytes,int_changes, &
+                             num_gid_entries, num_lid_entries, &
+                             num_import,import_global_ids,import_local_ids, &
+                             import_procs,import_to_part, &
+                             num_export,export_global_ids, &
+                             export_local_ids,export_procs,export_to_part)
+changes = .not.(int_changes==0)
+end function Zf90_LB_Partition
 
 function Zf90_LB_Balance(zz,changes,num_gid_entries,num_lid_entries, &
                        num_import,import_global_ids, &

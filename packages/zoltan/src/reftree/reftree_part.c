@@ -76,15 +76,18 @@ int Zoltan_Reftree_Part(
   ZOLTAN_ID_PTR *import_global_ids, /* Not computed */
   ZOLTAN_ID_PTR *import_local_ids,  /* Not computed */
   int **import_procs,           /* Not computed */
+  int **import_to_part,         /* Not computed */
   int *num_export,              /* Number of objects to be exported */
   ZOLTAN_ID_PTR *export_global_ids, /* global ids of objects to be exported */
   ZOLTAN_ID_PTR *export_local_ids,  /* local  ids of objects to be exported */
+  int **export_procs,           /* list of processors to export to */
 /* TEMP k != p
         The interface currently supports export_procs, but I will be returning
         export_to_partition.  For the sake of everything else, I am just
         renaming it here, but eventually it should really be in the interface */
+/* TEMP k != p  KAREN KDD -- merged interface but didn't change functionality. 
+                Need export_procs to be built and filled. */
   int **export_to_partition
-/*  int **export_procs */           /* list of processors to export to */
 )
 {
 char *yo = "Zoltan_Reftree_Part";

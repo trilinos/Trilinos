@@ -58,13 +58,14 @@ int Zoltan_LB_Eval (ZZ *zz, int print_stats,
 
 {
   char *yo = "Zoltan_LB_Eval";
-  int i, j, k, num_obj, max_edges, nedges, cuts, flag;
+  int i, j, k, num_obj = 0, max_edges, nedges, cuts, flag;
   int num_adj, num_boundary, ierr;
   int stats[4*NUM_STATS];
   int *proc, *nbors_proc;
   float *tmp_vwgt, *vwgts, *ewgts, *tmp_cutwgt, nproc;
   ZOLTAN_ID_PTR local_ids; 
   ZOLTAN_ID_PTR global_ids, nbors_global;
+  int *parts;
   ZOLTAN_ID_PTR lid;   /* Temporary pointer to a local id; used to pass NULL
                       pointers to query functions when NUM_LID_ENTRIES = 0. */
   int num_gid_entries = zz->Num_GID;
@@ -80,6 +81,7 @@ int Zoltan_LB_Eval (ZZ *zz, int print_stats,
   /* Set all pointers to NULL */
   global_ids = NULL;
   local_ids = NULL;
+  parts = NULL;
   tmp_vwgt = NULL;
   tmp_cutwgt = NULL;
   vwgts = NULL;
@@ -88,42 +90,12 @@ int Zoltan_LB_Eval (ZZ *zz, int print_stats,
   nbors_proc = NULL;
   proc = NULL;
 
-  /* First compute number of objs and object weight on each proc */
-  num_obj = zz->Get_Num_Obj(zz->Get_Num_Obj_Data, &ierr);
 
-  if (num_obj>0){
+  ierr = Zoltan_Get_Obj_List(zz, &num_obj, &global_ids, &local_ids, 
+                             zz->Obj_Weight_Dim, &vwgts, &parts);
+  ZOLTAN_FREE((void **) &parts);  /* KDD parts is currently UNUSED; free it. */
 
-    /* Allocate space for object data */
-    global_ids = ZOLTAN_MALLOC_GID_ARRAY(zz, num_obj);
-    local_ids  = ZOLTAN_MALLOC_LID_ARRAY(zz, num_obj);
-      
-    if ((!global_ids) || (num_lid_entries && !local_ids)){
-      ZOLTAN_FREE(&global_ids);
-      ZOLTAN_FREE(&local_ids);
-      ZOLTAN_TRACE_EXIT(zz, yo);
-      return ZOLTAN_MEMERR;
-    }
-  }
-
-  /* Allocate space for weights if needed */
-  if (zz->Obj_Weight_Dim>0){
-    vwgts   = (float  *) ZOLTAN_MALLOC(zz->Obj_Weight_Dim*num_obj * sizeof(float));
-    tmp_vwgt = (float *) ZOLTAN_MALLOC(4*zz->Obj_Weight_Dim * sizeof(float));
-    if ((num_obj && !vwgts) || (!tmp_vwgt)){
-      ZOLTAN_FREE(&global_ids);
-      ZOLTAN_FREE(&local_ids);
-      ZOLTAN_FREE(&vwgts);
-      ZOLTAN_FREE(&tmp_vwgt);
-      ZOLTAN_TRACE_EXIT(zz, yo);
-      return ZOLTAN_MEMERR;
-    }
-  } 
-  
-  Zoltan_Get_Obj_List(zz, global_ids, local_ids, zz->Obj_Weight_Dim, vwgts, 
-    &ierr);
   if (ierr == ZOLTAN_FATAL){
-    ZOLTAN_FREE(&global_ids);
-    ZOLTAN_FREE(&local_ids);
     ZOLTAN_TRACE_EXIT(zz, yo);
     return ierr;
   }
@@ -131,6 +103,15 @@ int Zoltan_LB_Eval (ZZ *zz, int print_stats,
 
   /* Compute object weight sums */
   if (zz->Obj_Weight_Dim>0){
+    tmp_vwgt = (float *) ZOLTAN_MALLOC(4*zz->Obj_Weight_Dim * sizeof(float));
+    if (!tmp_vwgt){
+      ZOLTAN_FREE(&global_ids);
+      ZOLTAN_FREE(&local_ids);
+      ZOLTAN_FREE(&vwgts);
+      ZOLTAN_FREE(&tmp_vwgt);
+      ZOLTAN_TRACE_EXIT(zz, yo);
+      return ZOLTAN_MEMERR;
+    }
     for (j=0; j<zz->Obj_Weight_Dim; j++)
       tmp_vwgt[j] = 0;
     for (i=0; i<num_obj; i++){

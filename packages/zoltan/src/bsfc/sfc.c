@@ -111,6 +111,7 @@ int Zoltan_BSFC(
   ZOLTAN_ID_PTR *import_global_ids, /* Not computed. */
   ZOLTAN_ID_PTR *import_local_ids,  /* Not computed. */
   int **import_procs,           /* Not computed. */
+  int **import_to_part,         /* Not computed. */
   int *num_export,              /* Number of local objects assigned to another
                                    processor in the new decomposition. */
   ZOLTAN_ID_PTR *export_global_ids, /* Returned value:  array of global IDs of
@@ -119,9 +120,13 @@ int Zoltan_BSFC(
   ZOLTAN_ID_PTR *export_local_ids,  /* Returned value:  array of local IDs of
                                    local objects assigned to other processors
 				   for the new decomposition.                */ 
-  int **export_procs            /* Returned value:  array of processor IDs for
+  int **export_procs,           /* Returned value:  array of processor IDs for
                                    the local objects to be sent to in
                                    this processor's new decomposition.       */
+  int **export_to_part          /* Returned value:  array of partitions to
+                                   which exported objects should be assigned.
+                                   KDDKDD  Currently unused.  */
+
 )
 {
   char    yo[] = "Zoltan_BSFC";
@@ -137,6 +142,7 @@ int Zoltan_BSFC(
   ZOLTAN_ID_PTR global_ids = NULL;
   ZOLTAN_ID_PTR local_ids = NULL;
   float* objs_wgt = NULL;             /* array of objects weights */
+  int *parts = NULL;                  /* UNUSED -- partition #s for objects. */
   int size_of_unsigned;               /* minimum size of an unsigned integer,
 					 used only for heterogeneous systems */
   float *global_actual_work_allocated = NULL; /* cumulative actual work allocated */
@@ -229,44 +235,9 @@ int Zoltan_BSFC(
 		       MPI_MIN, zz->Communicator);
 
   /* get application data (number of objects, ids, weights, and coords */
-  num_local_objects = zz->Get_Num_Obj(zz->Get_Num_Obj_Data, &ierr);
-  
-  if (ierr) {
-    ZOLTAN_PRINT_ERROR(zz->Proc, yo, 
-                   "Error returned from user function Get_Num_Obj.");
-    return(ierr);
-  }
-
-  if (num_local_objects > 0) {
-    global_ids = ZOLTAN_MALLOC_GID_ARRAY(zz, num_local_objects);
-    local_ids  = ZOLTAN_MALLOC_LID_ARRAY(zz, num_local_objects);
-
-    if (!(global_ids) || (zz->Num_LID && !(local_ids))) {
-      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
-      return(ZOLTAN_MEMERR);
-    }
-  }
-  
-  /*
-   *  Get list of objects' IDs and weights.
-   */
-  if (num_local_objects > 0) {
-    if (wgt_dim) {
-      
-      /* 
-       *  Allocate space for object weights.
-       */
-      
-      objs_wgt    = 
-	(float *) ZOLTAN_MALLOC(wgt_dim*(num_local_objects)*sizeof(float));
-      if (!objs_wgt) {
-        ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
-        return(ZOLTAN_MEMERR);
-      }
-      for (i = 0; i < wgt_dim*num_local_objects; i++) objs_wgt[i] = 0.;
-    }  
-  }
-  Zoltan_Get_Obj_List(zz, global_ids, local_ids, wgt_dim, objs_wgt, &ierr);
+  ierr = Zoltan_Get_Obj_List(zz, &num_local_objects, &global_ids, &local_ids, 
+                             wgt_dim, &objs_wgt, &parts);
+  ZOLTAN_FREE((void **) &parts);  /* KDD parts is UNUSED; free it now. */
 
   if (ierr) {
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, 

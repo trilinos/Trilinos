@@ -106,8 +106,11 @@ ZZ *zz;
   zz->Obj_Weight_Dim = ZOLTAN_OBJ_WEIGHT_DEF;
   zz->Edge_Weight_Dim = ZOLTAN_EDGE_WEIGHT_DEF;
 
+  zz->Get_Partition = NULL;
   zz->Get_Num_Edges = NULL;
   zz->Get_Edge_List = NULL;
+  zz->Get_Num_HG_Edges = NULL;
+  zz->Get_HG_Edge_List = NULL;
   zz->Get_Num_Geom = NULL;
   zz->Get_Geom = NULL;
   zz->Get_Num_Obj = NULL;
@@ -126,6 +129,7 @@ ZZ *zz;
   zz->Get_Child_List = NULL;
   zz->Get_Child_Weight = NULL;
 
+  zz->Get_Partition_Fort = NULL;
   zz->Get_Num_Edges_Fort = NULL;
   zz->Get_Edge_List_Fort = NULL;
   zz->Get_Num_Geom_Fort = NULL;
@@ -146,6 +150,29 @@ ZZ *zz;
   zz->Get_Child_List_Fort = NULL;
   zz->Get_Child_Weight_Fort = NULL;
 
+  zz->Get_Partition_Data = NULL;
+  zz->Get_Num_Edges_Data = NULL;
+  zz->Get_Edge_List_Data = NULL;
+  zz->Get_Num_HG_Edges_Data = NULL;
+  zz->Get_HG_Edge_List_Data = NULL;
+  zz->Get_Num_Geom_Data = NULL;
+  zz->Get_Geom_Data = NULL;
+  zz->Get_Num_Obj_Data = NULL;
+  zz->Get_Obj_List_Data = NULL;
+  zz->Get_First_Obj_Data = NULL;
+  zz->Get_Next_Obj_Data = NULL;
+  zz->Get_Num_Border_Obj_Data = NULL;
+  zz->Get_Border_Obj_List_Data = NULL;
+  zz->Get_First_Border_Obj_Data = NULL;
+  zz->Get_Next_Border_Obj_Data = NULL;
+  zz->Get_Num_Coarse_Obj_Data = NULL;
+  zz->Get_Coarse_Obj_List_Data = NULL;
+  zz->Get_First_Coarse_Obj_Data = NULL;
+  zz->Get_Next_Coarse_Obj_Data = NULL;
+  zz->Get_Num_Child_Data = NULL;
+  zz->Get_Child_List_Data = NULL;
+  zz->Get_Child_Weight_Data = NULL;
+
   zz->Pack_Obj = NULL;
   zz->Unpack_Obj = NULL;
   zz->Get_Obj_Size = NULL;
@@ -157,7 +184,11 @@ ZZ *zz;
   zz->Unpack_Obj_Fort = NULL;
   zz->Get_Obj_Size_Fort = NULL;
 
-  Zoltan_LB_Init(&(zz->LB));
+  zz->Pack_Obj_Data = NULL;
+  zz->Unpack_Obj_Data = NULL;
+  zz->Get_Obj_Size_Data = NULL;
+
+  Zoltan_LB_Init(&(zz->LB), zz->Num_Proc);
   Zoltan_Migrate_Init(&(zz->Migrate));
 
   return(zz);
@@ -183,6 +214,8 @@ void Zoltan_Destroy(ZZ **zz)
     Zoltan_Free_Params(&((*zz)->Params));
 
     MPI_Comm_free(&((*zz)->Communicator));
+
+    Zoltan_LB_Free_Struct(&((*zz)->LB));
 
     ZOLTAN_FREE(zz);
   }

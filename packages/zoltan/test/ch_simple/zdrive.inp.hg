@@ -1,0 +1,6 @@
+Decomposition Method 	= hg
+Zoltan Parameters	= debug_level=10
+Zoltan Parameters	= num_global_partitions=3
+File Type		= Chaco
+File Name		= simple
+Parallel Disk Info	= number=0

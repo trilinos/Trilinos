@@ -104,10 +104,12 @@ int migrate_elements(
   ZOLTAN_ID_PTR imp_gids,
   ZOLTAN_ID_PTR imp_lids,
   int *imp_procs,
+  int *imp_to_part,
   int num_exp,
   ZOLTAN_ID_PTR exp_gids,
   ZOLTAN_ID_PTR exp_lids,
-  int *exp_procs)
+  int *exp_procs,
+  int *exp_to_part)
 {
 /* Local declarations. */
 char *yo = "migrate_elements";
@@ -184,10 +186,10 @@ char *yo = "migrate_elements";
 
 
   if (!Test_Null_Import_Lists) {
-    if (Zoltan_Help_Migrate(zz, 
-                      num_imp, imp_gids, imp_lids, imp_procs,
-                      num_exp, exp_gids, exp_lids, exp_procs) == ZOLTAN_FATAL) {
-      Gen_Error(0, "fatal:  error returned from Zoltan_Help_Migrate()\n");
+    if (Zoltan_Migrate(zz, num_imp, imp_gids, imp_lids, imp_procs, imp_to_part,
+                           num_exp, exp_gids, exp_lids, exp_procs, exp_to_part)
+      == ZOLTAN_FATAL) {
+      Gen_Error(0, "fatal:  error returned from Zoltan_Migrate()\n");
       return 0;
     }
   }
@@ -198,10 +200,10 @@ char *yo = "migrate_elements";
     migrate_pre_process((void *) mesh, 1, 1,
                         num_imp, imp_gids, imp_lids, imp_procs,
                         num_exp, exp_gids, exp_lids, exp_procs, &ierr);
-    if (Zoltan_Help_Migrate(zz, 
-                      -1, NULL, NULL, NULL,
-                      num_exp, exp_gids, exp_lids, exp_procs) == ZOLTAN_FATAL) {
-      Gen_Error(0, "fatal:  error returned from Zoltan_Help_Migrate()\n");
+    if (Zoltan_Migrate(zz, -1, NULL, NULL, NULL, NULL,
+                           num_exp, exp_gids, exp_lids, exp_procs, exp_to_part)
+        == ZOLTAN_FATAL) {
+      Gen_Error(0, "fatal:  error returned from Zoltan_Migrate()\n");
       return 0;
     }
     migrate_post_process((void *) mesh, 1, 1,  

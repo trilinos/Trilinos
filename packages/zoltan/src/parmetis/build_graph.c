@@ -23,7 +23,6 @@ extern "C" {
 #include "parmetis_jostle.h"
 #include "params_const.h"
 
-#if (defined(ZOLTAN_JOSTLE) || defined(ZOLTAN_PARMETIS))
 
 /* Prototypes */
 static int hash_lookup (ZZ *zz, struct Hash_Node **hashtab, ZOLTAN_ID_PTR key,
@@ -49,14 +48,14 @@ static int hash_lookup (ZZ *zz, struct Hash_Node **hashtab, ZOLTAN_ID_PTR key,
  */
 
 int Zoltan_Build_Graph(
-    ZZ *zz, int graph_type, int check_graph,
+    ZZ *zz, int graph_type, int check_graph, int num_obj,
     ZOLTAN_ID_PTR global_ids, ZOLTAN_ID_PTR local_ids,
     int obj_wgt_dim, int edge_wgt_dim,
     idxtype **vtxdist, idxtype **xadj, idxtype **adjncy, 
     float **ewgts)
 {
   /* Local variables */
-  int num_obj, nedges, num_edges, cross_edges, max_edges;
+  int nedges, num_edges, cross_edges, max_edges;
   int *nbors_proc, *plist;
   int nsend, nrecv, nself, num_border, max_proc_list_len;
   int i, i99, j, jj, k, ierr, packet_size, offset, tmp, flag;
@@ -83,18 +82,14 @@ int Zoltan_Build_Graph(
 
   char *yo = "Zoltan_Build_Graph";
 
+  ZOLTAN_TRACE_ENTER(zz, yo);
+
   /* Set pointers to NULL */
   *vtxdist = *xadj = *adjncy = NULL;
   *ewgts = tmp_ewgts = NULL;
   nbors_global = proc_list_nbor = lid = NULL;
   proc_list = NULL;
   nbors_proc = NULL;
-  
-  num_obj = zz->Get_Num_Obj(zz->Get_Num_Obj_Data, &ierr);
-  if (ierr){
-    /* Return error code */
-    ZOLTAN_PARMETIS_ERROR(ierr, "Error in Get_Num_Obj.");
-  }
   
   if (zz->Debug_Level >= ZOLTAN_DEBUG_ALL)
     printf("[%1d] Debug: num_obj =%d\n", zz->Proc, num_obj);
@@ -562,6 +557,7 @@ free:
   /* Free tmp_ewgts if they haven't been freed already (error occurred) */
   if (tmp_ewgts) ZOLTAN_FREE(ewgts); 
 
+  ZOLTAN_TRACE_EXIT(zz, yo);
   return (ierr);
 }
 
@@ -595,7 +591,6 @@ static int hash_lookup (ZZ *zz, struct Hash_Node **hashtab, ZOLTAN_ID_PTR key,
   return -1;
 }
 
-#endif /* (defined(ZOLTAN_JOSTLE) || defined(ZOLTAN_PARMETIS)) */
 
 #ifdef __cplusplus
 } /* closing bracket for extern "C" */

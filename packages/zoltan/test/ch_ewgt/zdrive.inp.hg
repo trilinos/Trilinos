@@ -1,0 +1,6 @@
+Decomposition Method 	= hg
+Zoltan Parameters	= num_global_partitions=5
+Zoltan Parameters	= comm_weight_dim=1
+File Type		= Chaco
+File Name		= ewgt
+Parallel Disk Info	= number=0

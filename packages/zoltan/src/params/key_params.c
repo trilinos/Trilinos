@@ -42,6 +42,8 @@ static PARAM_VARS Key_params[] = {
   { "TFLOPS_SPECIAL", NULL, "INT" },
   { "COMM_WEIGHT_DIM", NULL, "INT" }, /* For backward compatibility only. */
                                       /* Prefer use of EDGE_WEIGHT_DIM.   */
+  { "NUM_GLOBAL_PARTITIONS", NULL, "INT" },
+  { "NUM_LOCAL_PARTITIONS", NULL, "INT" },
   { NULL, NULL, NULL } };
 /*****************************************************************************/
 /*****************************************************************************/
@@ -232,6 +234,32 @@ char *val)			/* value of variable */
 	status = 3;		/* Don't add to Params field of ZZ */
         break;
 
+      case 14:          /* Num_Global_Partitions */
+        if (result.def)
+            result.ival = zz->Num_Proc;
+        if (result.ival < 1) {
+	    sprintf(msg, "Invalid Num_Global_Partitions value (%d); "
+		"being set to %d.", result.ival,zz->Num_Proc);
+            ZOLTAN_PRINT_WARN(zz->Proc, yo, msg);
+            result.ival = zz->Num_Proc;
+        }
+        zz->LB.Num_Global_Parts = result.ival;
+        status = 3;
+        break;
+
+      case 15:          /* Num_Local_Partitions */
+        if (result.def)
+            result.ival = 1;
+        if (result.ival < 1) {
+	    sprintf(msg, "Invalid Num_Local_Partitions value (%d); "
+		"being set to %d.", result.ival,1);
+            ZOLTAN_PRINT_WARN(zz->Proc, yo, msg);
+            result.ival = 1;
+        }
+        zz->LB.Num_Local_Parts = result.ival;
+        status = 3;
+        break;
+
       }  /* end switch (index) */
     }
 
@@ -286,6 +314,10 @@ void Zoltan_Print_Key_Params(ZZ *zz)
   }
   if (zz->Tflops_Special)   /* print only if set */
      printf("ZOLTAN Parameter %s = %s\n", Key_params[12].name, "TRUE");
+  printf("ZOLTAN Parameter %s = %d\n", Key_params[14].name, 
+         zz->LB.Num_Global_Parts);
+  printf("ZOLTAN Parameter %s = %d\n", Key_params[15].name, 
+         zz->LB.Num_Local_Parts);
 }
 
 #ifdef __cplusplus

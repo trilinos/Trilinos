@@ -31,8 +31,9 @@ extern "C" {
 struct Zoltan_Struct;
 
 typedef int ZOLTAN_LB_FN(struct Zoltan_Struct *, int *, 
-                         ZOLTAN_ID_PTR *, ZOLTAN_ID_PTR *, int **,
-                         int *, ZOLTAN_ID_PTR *, ZOLTAN_ID_PTR *, int **);
+                         ZOLTAN_ID_PTR *, ZOLTAN_ID_PTR *, int **, int **,
+                         int *, ZOLTAN_ID_PTR *, 
+                         ZOLTAN_ID_PTR *, int **, int **);
 
 typedef void ZOLTAN_LB_FREE_DATA_FN(struct Zoltan_Struct *);
 
@@ -56,6 +57,7 @@ typedef enum Zoltan_LB_Method {
   RIB,
   BSFC,
   HSFC,
+  HG,
   ZOLTAN_LB_MAX_METHODS          /*  This entry should always be last.      */
 } ZOLTAN_LB_METHOD;
 
@@ -81,9 +83,19 @@ typedef enum Zoltan_LB_Method {
 
 
 struct Zoltan_LB_Struct {
+  int Num_Global_Parts;           /*  The total number of partitions.
+                                      If parameter NUM_LOCAL_PARTITIONS or 
+                                      NUM_GLOBAL_PARTITIONS is not set,
+                                      Num_Global_Parts == zz->Num_Proc.      */
+  int Num_Local_Parts;            /*  The number of partitions for this proc.
+                                      If parameter NUM_LOCAL_PARTITIONS or 
+                                      NUM_GLOBAL_PARTITIONS is not set,
+                                      Num_Local_Parts == 1.                */
   int Return_Lists;               /*  Flag indicating which lists (if any)
                                       should be returned by Zoltan_LB_Balance.*/
-  ZOLTAN_LB_METHOD Method;        /*  Method to be used for load balancing.  */
+  int *PartDist;                  /*  Array describing distribution of 
+                                      partitions to processors.  */
+  ZOLTAN_LB_METHOD Method;        /*  Method to be used for load balancing.  */ 
   ZOLTAN_LB_FN *LB_Fn;            /*  Pointer to the function that performs
                                       the load balancing; this ptr is set
                                       based on the method used.              */
@@ -144,6 +156,8 @@ struct Zoltan_Migrate_Struct {
 /* PROTOTYPES */
 
 extern int Zoltan_LB_Set_LB_Method(struct Zoltan_Struct *, char *);
+extern void Zoltan_LB_Free_Struct(struct Zoltan_LB_Struct *);
+extern int Zoltan_LB_Part_To_Proc(struct Zoltan_Struct *, int );
 
 /* PARTITIONING FUNCTIONS */
 extern ZOLTAN_LB_FN Zoltan_RCB;
@@ -154,6 +168,7 @@ extern ZOLTAN_LB_FN Zoltan_Reftree_Part;
 extern ZOLTAN_LB_FN Zoltan_RIB;
 extern ZOLTAN_LB_FN Zoltan_BSFC;
 extern ZOLTAN_LB_FN Zoltan_HSFC;
+extern ZOLTAN_LB_FN Zoltan_HG;
 
 /* FREE DATA_STRUCTURE FUNCTIONS */
 extern ZOLTAN_LB_FREE_DATA_FN Zoltan_RCB_Free_Structure;
@@ -161,6 +176,7 @@ extern ZOLTAN_LB_FREE_DATA_FN Zoltan_RIB_Free_Structure;
 extern ZOLTAN_LB_FREE_DATA_FN Zoltan_Oct_Free_Structure;
 extern ZOLTAN_LB_FREE_DATA_FN Zoltan_Reftree_Free_Structure;
 extern ZOLTAN_LB_FREE_DATA_FN Zoltan_HSFC_Free_Structure;
+extern ZOLTAN_LB_FREE_DATA_FN Zoltan_HG_Free_Structure;
 
 /* POINT_ASSIGN FUNCTIONS */
 extern ZOLTAN_LB_POINT_ASSIGN_FN Zoltan_RB_Point_Assign;

@@ -36,7 +36,7 @@ extern "C" {
 /* returns list of processors with partitions falling within user's box */
 int Zoltan_HSFC_Box_Assign (
  ZZ *zz, double xlo, double ylo, double zlo,
-         double xhi, double yhi, double zhi, int *procs, int *count)
+         double xhi, double yhi, double zhi, int *parts, int *count)
    {
    double     x[3] ;
    double     xdelta, ydelta, zdelta ;
@@ -63,14 +63,14 @@ int Zoltan_HSFC_Box_Assign (
      Zoltan_HSFC_Point_Assign (zz, &xhi, &loop) ;
      *count = 0 ;
      for (i = n ; i <= loop ; i++)
-        procs[(*count)++] = i ;
+        parts[(*count)++] = i ;
      goto free ;
      }
 
-   array = (int *) ZOLTAN_MALLOC (zz->Num_Proc * sizeof (int)) ;
+   array = (int *) ZOLTAN_MALLOC (zz->LB.Num_Global_Parts * sizeof (int)) ;
    if (array == NULL)
       ZOLTAN_HSFC_ERROR (ZOLTAN_MEMERR, "Failed to malloc proc list") ;
-   memset (array, 0, zz->Num_Proc * sizeof (int)) ;   /* Clear processor array */
+   memset (array, 0, zz->LB.Num_Global_Parts * sizeof (int)) ;   /* Clear processor array */
 
    ydelta = (ylo == yhi) ? 1.0 : yhi - ylo ;
    for (loop = 0, n = NN ; loop < MAXLOOP ; loop++, n = 2*n)
@@ -94,11 +94,11 @@ int Zoltan_HSFC_Box_Assign (
 
       /* move results to user supplied array & hope it is big enough */
       *count = 0 ;
-      for (i = 0 ; i < zz->Num_Proc ; i++)
+      for (i = 0 ; i < zz->LB.Num_Global_Parts ; i++)
          if (array[i] > 0)
-            procs[(*count)++] = i ;
+            parts[(*count)++] = i ;
 
-      if (*count == oldcount || *count == zz->Num_Proc)
+      if (*count == oldcount || *count == zz->LB.Num_Global_Parts)
          break ;
       oldcount = *count ;
       }

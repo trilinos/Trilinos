@@ -65,6 +65,7 @@ enum Zoltan_Fn_Type {
   ZOLTAN_OBJ_SIZE_MULTI_FN_TYPE,
   ZOLTAN_PACK_OBJ_MULTI_FN_TYPE,
   ZOLTAN_UNPACK_OBJ_MULTI_FN_TYPE,
+  ZOLTAN_PARTITION_FN_TYPE,
   ZOLTAN_GET_PROCESSOR_NAME_FN_TYPE,
   ZOLTAN_MAX_FN_TYPES               /*  This entry should always be last. */
 };
@@ -96,8 +97,43 @@ struct Zoltan_Struct;
 /*****************************************************************************/
 /**********************  Functions to query application  *********************/
 /*****************************************************************************/
-/*****************************************************************************/
 
+/*****************************************************************************/
+/*
+ *  Function to return, for the object with a given ID,
+ *  the partition number the object is assigned to.
+ *  Input:  
+ *    data                --  pointer to user defined data structure
+ *    num_gid_entries     --  number of array entries of type ZOLTAN_ID_TYPE
+ *                            in a global ID
+ *    num_lid_entries     --  number of array entries of type ZOLTAN_ID_TYPE
+ *                            in a local ID
+ *    global_id           --  the Global ID for the object
+ *    local_id            --  the Local ID for the object
+ *  Output:
+ *    *ierr               --  error code
+ *  Returned value:       --  partition number the object is assigned to.
+ */
+
+typedef int ZOLTAN_PARTITION_FN(
+  void *data,              
+  int num_gid_entries, 
+  int num_lid_entries,
+  ZOLTAN_ID_PTR global_id, 
+  ZOLTAN_ID_PTR local_id,
+  int *ierr
+);
+
+typedef int ZOLTAN_PARTITION_FORT_FN(
+  void *data, 
+  int *num_gid_entries, 
+  int *num_lid_entries,
+  ZOLTAN_ID_PTR global_id, 
+  ZOLTAN_ID_PTR local_id, 
+  int *ierr
+);
+
+/*****************************************************************************/
 /*
  *  Function to return, for the object with a given ID,
  *  the object's number of edges (i.e., the number of objects with which
@@ -1531,6 +1567,12 @@ extern int Zoltan_Set_Fn(
  *  Returned value:       --  Error code
  */
 
+extern int Zoltan_Set_Partition_Fn(
+  struct Zoltan_Struct *zz, 
+  ZOLTAN_PARTITION_FN *fn_ptr, 
+  void *data_ptr
+);
+
 extern int Zoltan_Set_Num_Edges_Fn(
   struct Zoltan_Struct *zz, 
   ZOLTAN_NUM_EDGES_FN *fn_ptr, 
@@ -1723,7 +1765,77 @@ extern int Zoltan_Set_Param(
 
 /*****************************************************************************/
 /*
+ *  Function to invoke the partitioner.
+ *
+ *  Input:
+ *    zz                  --  The Zoltan structure returned by Zoltan_Create.
+ *  Output:
+ *    changes             --  This value tells whether the new 
+ *                            decomposition computed by Zoltan differs 
+ *                            from the one given as input to Zoltan.
+ *                            It can be either a one or a zero:
+ *                            zero - No changes to the decomposition
+ *                                   were made by the partitioning
+ *                                   algorithm; migration isn't needed.
+ *                            one  - A new decomposition is suggested
+ *                                   by the partitioner; migration
+ *                                   is needed to establish the new
+ *                                   decomposition.
+ *    num_gid_entries     --  number of entries of type ZOLTAN_ID_TYPE
+ *                            in a global ID
+ *    num_lid_entries     --  number of entries of type ZOLTAN_ID_TYPE
+ *                            in a local ID
+ *    num_import          --  The number of non-local objects in the 
+ *                            processor's new decomposition (i.e.,
+ *                            number of objects to be imported).
+ *    import_global_ids   --  Pointer to array of Global IDs for the
+ *                            objects to be imported.
+ *    import_local_ids    --  Pointer to array of Local IDs for the 
+ *                            objects to be imported (local to the
+ *                            exporting processor).
+ *    import_procs        --  Pointer to array of Processor IDs for the
+ *                            objects to be imported (processor IDs of
+ *                            source processor).
+ *    import_to_part      --  Pointer to array of partition numbers to 
+ *                            which the imported objects should be assigned.
+ *    num_export          --  The number of local objects that must be
+ *                            exported from the processor to establish
+ *                            the new decomposition.
+ *    export_global_ids   --  Pointer to array of Global IDs for the
+ *                            objects to be exported from the current
+ *                            processor.
+ *    export_local_ids    --  Pointer to array of Local IDs for the
+ *                            objects to be exported (local to the
+ *                            current processor).
+ *    export_procs        --  Pointer to array of Processor IDs for the
+ *                            objects to be exported (processor IDs of
+ *                            destination processors).
+ *    export_to_part      --  Pointer to array of partition numbers to 
+ *                            which the exported objects should be assigned.
+ *  Returned value:       --  Error code
+ */
+
+extern int Zoltan_LB_Partition(
+  struct Zoltan_Struct *zz,
+  int *changes,
+  int *num_gid_entries,
+  int *num_lid_entries,
+  int *num_import,
+  ZOLTAN_ID_PTR *import_global_ids,
+  ZOLTAN_ID_PTR *import_local_ids,
+  int **import_procs,
+  int **import_to_part,
+  int *num_export,
+  ZOLTAN_ID_PTR *export_global_ids,
+  ZOLTAN_ID_PTR *export_local_ids,
+  int **export_procs,
+  int **export_to_part 
+);
+/*****************************************************************************/
+/*
  *  Function to invoke the load-balancer.
+ *  Appropriate only when the number of requested partitions is equal to the
+ *  number of processors.
  *
  *  Input:
  *    zz                  --  The Zoltan structure containing 
@@ -1822,36 +1934,74 @@ extern int Zoltan_Order(
 /*****************************************************************************/
 /*
  *  Routine to compute the inverse map:  Given, for each processor, a list
- *  of non-local objects assigned to the processor, compute the list of objects
- *  that processor needs to export to other processors to establish the new
- *  decomposition.
+ *  of objects to be received by a processor, compute the list of objects
+ *  that processor needs to send to other processors to complete a 
+ *  remapping.  Conversely, given a list of objects to be sent to other 
+ *  processors, compute the list of objects to be received.
  *
  *  Input:
  *    zz                  --  Zoltan structure for current 
  *                            balance.
- *    num_import          --  Number of non-local objects assigned to 
- *                            the processor in the new decomposition.
- *    import_global_ids   --  Array of global IDs for non-local objects
- *                            assigned to this processor in the new
- *                            decomposition.
- *    import_local_ids    --  Array of local IDs for non-local objects
- *                            assigned to the processor in the new
- *                            decomposition.
- *    import_procs        --  Array of IDs of processors owning the
- *                            non-local objects that are assigned to
- *                            this processor in the new decomposition.
+ *    num_input           --  Number of objects known to be 
+ *                            sent/received.
+ *    input_global_ids    --  Array of global IDs for known objects.
+ *    input_local_ids     --  Array of local IDs for known objects.
+ *    input_procs         --  Array of IDs of processors to/from whom the
+ *                            known objects will be sent/received.
+ *    input_to_part       --  Array of partition numbers to 
+ *                            which the known objects should be assigned.
  *  Output:
- *    num_export          --  The number of local objects that must be
- *                            exported from the processor to establish
- *                            the new decomposition.
- *    export_global_ids   --  Pointer to array of Global IDs for the
- *                            objects to be exported from the current
- *                            processor.
- *    export_local_ids    --  Pointer to array of Local IDs for the
- *                            objects to be exported (local to the
- *                            current processor).
- *    export_procs        --  Pointer to array of Processor IDs for the
- *                            objects to be exported (processor IDs of
+ *    num_output          --  The number of objects will be received/sent.
+ *    output_global_ids   --  Pointer to array of Global IDs for the
+ *                            objects to be received/sent.
+ *    output_local_ids    --  Pointer to array of Local IDs for the
+ *                            objects to be received/sent.
+ *    output_procs        --  Pointer to array of Processor IDs 
+ *                            from/to which the output_global_ids will be
+ *                            received/sent.
+ *    output_to_part      --  Pointer to array of partition numbers to 
+ *                            which the output_global_ids should be assigned.
+ *  Returned value:       --  Error code
+ */
+
+
+extern int Zoltan_Invert_Lists(
+  struct Zoltan_Struct *zz,
+  int num_input, 
+  ZOLTAN_ID_PTR input_global_ids,
+  ZOLTAN_ID_PTR input_local_ids, 
+  int *input_procs, 
+  int *input_to_part, 
+  int *num_output, 
+  ZOLTAN_ID_PTR *output_global_ids,
+  ZOLTAN_ID_PTR *output_local_ids,
+  int **output_procs,
+  int **output_to_part
+);
+/*****************************************************************************/
+/*
+ *  Wrapper around Zoltan_Compute_Inverse_Lists, appropriate only when 
+ *  number of partitions == number of processors (or when partition information
+ *  is not desired).
+ *
+ *  Input:
+ *    zz                  --  Zoltan structure for current 
+ *                            balance.
+ *    num_input           --  Number of objects known to be 
+ *                            sent/received.
+ *    input_global_ids    --  Array of global IDs for known objects.
+ *    input_local_ids     --  Array of local IDs for known objects.
+ *    input_procs         --  Array of IDs of processors to/from whom the
+ *                            known objects will be sent/received.
+ *  Output:
+ *    num_output          --  The number of objects will be received/sent.
+ *    output_global_ids   --  Pointer to array of Global IDs for the
+ *                            objects to be received/sent.
+ *    output_local_ids    --  Pointer to array of Local IDs for the
+ *                            objects to be received/sent.
+ *    output_procs        --  Pointer to array of Processor IDs 
+ *                            from/to which the output_global_ids will be
+ *                            received/sent.
  *                            destination processors).
  *  Returned value:       --  Error code
  */
@@ -1859,24 +2009,24 @@ extern int Zoltan_Order(
 
 extern int Zoltan_Compute_Destinations(
   struct Zoltan_Struct *zz,
-  int num_import, 
-  ZOLTAN_ID_PTR import_global_ids,
-  ZOLTAN_ID_PTR import_local_ids, 
-  int *import_procs, 
-  int *num_export, 
-  ZOLTAN_ID_PTR *export_global_ids,
-  ZOLTAN_ID_PTR *export_local_ids,
-  int **export_procs
+  int num_input, 
+  ZOLTAN_ID_PTR input_global_ids,
+  ZOLTAN_ID_PTR input_local_ids, 
+  int *input_procs, 
+  int *num_output, 
+  ZOLTAN_ID_PTR *output_global_ids,
+  ZOLTAN_ID_PTR *output_local_ids,
+  int **output_procs
 );
 
 /*****************************************************************************/
 /*
  *  Routine to help perform migration.  If migration pre-processing routine
- *  (ZOLTAN_PRE_MIGRATE_FN) is specified, this routine first calls that function.
+ *  (ZOLTAN_PRE_MIGRATE_FN) is specified, this routine first calls the function.
  *  It then calls a function to obtain the size of the migrating objects
  *  (ZOLTAN_OBJ_SIZE_FN).  The routine next calls an application-specified
  *  object packing routine (ZOLTAN_PACK_OBJ_FN) for each object
- *  to be exported.  Zoltan_Help_Migrate then develops the needed communication 
+ *  to be exported.  Zoltan_Migrate then develops the needed communication 
  *  map to move the objects to other processors.  It performs the communication 
  *  according to the map. It then calls a mid-migration processing routine
  *  (ZOLTAN_MID_MIGRATE_FN) if specified, allowing the application to process 
@@ -1884,6 +2034,59 @@ extern int Zoltan_Compute_Destinations(
  *  It then calls an application-specified object unpacking 
  *  routine (ZOLTAN_UNPACK_OBJ_FN) for each object imported.  Finally, a 
  *  post-processing function (ZOLTAN_POST_MIGRATE_FN) is invoked if specified.
+ *
+ *  Input:
+ *    zz                  --  Zoltan structure for current 
+ *                            balance.
+ *    num_import          --  Number of non-local objects assigned to the
+ *                            processor in the new decomposition.
+ *    import_global_ids   --  Array of global IDs for non-local objects
+ *                            assigned to this processor in the new
+ *                            decomposition.
+ *    import_local_ids    --  Array of local IDs for non-local objects
+ *                            assigned to the processor in the new
+ *                            decomposition.
+ *    import_procs        --  Array of processor IDs of processors owning
+ *                            the non-local objects that are assigned to
+ *                            this processor in the new decomposition.
+ *    import_to_part      --  Pointer to array of partition numbers to 
+ *                            which the imported objects should be assigned.
+ *    num_export          --  The number of local objects that need to be
+ *                            exported from the processor to establish
+ *                            the new decomposition.
+ *    export_global_ids   --  Array of Global IDs for the objects to be
+ *                            exported from the current processor.
+ *    export_local_ids    --  Array of Local IDs for the objects to be 
+ *                            exported (local to the current processor).
+ *    export_procs        --  Array of Processor IDs for the objects to
+ *                            be exported (processor IDs of destination
+ *                            processor).
+ *    export_to_part      --  Pointer to array of partition numbers to 
+ *                            which the exported objects should be assigned.
+ *  Output:
+ *    none                --  The objects are migrated to their new
+ *                            processor locations.  The input arrays
+ *                            are unchanged.
+ *  Returned value:       --  Error code
+ */
+
+extern int Zoltan_Migrate(
+  struct Zoltan_Struct *zz, 
+  int num_import,
+  ZOLTAN_ID_PTR import_global_ids,
+  ZOLTAN_ID_PTR import_local_ids,
+  int *import_procs,
+  int *import_to_part,
+  int num_export,
+  ZOLTAN_ID_PTR export_global_ids,
+  ZOLTAN_ID_PTR export_local_ids,
+  int *export_procs, 
+  int *export_to_part);
+
+/*****************************************************************************/
+/*
+ *  Routine to help perform migration.  Can be used instead of Zoltan_Migrate
+ *  if the number of partitions is equal to the number of processors.
  *
  *  Input:
  *    zz                  --  Zoltan structure for current 
@@ -1926,6 +2129,27 @@ extern int Zoltan_Help_Migrate(
   ZOLTAN_ID_PTR export_global_ids,
   ZOLTAN_ID_PTR export_local_ids,
   int *export_procs);
+
+/*****************************************************************************/
+/*
+ *  Routine to free the data arrays returned by Zoltan_LB_Partition, 
+ *  Zoltan_LB_Balance, Zoltan_Invert_Lists, and 
+ *  Zoltan_Compute_Destinations.  The arrays
+ *  are freed and the pointers are set to NULL.
+ *
+ *  Input:
+ *    global_ids   --  Pointer to array of global IDs 
+ *    local_ids    --  Pointer to array of local IDs 
+ *    procs        --  Pointer to array of processor IDs 
+ *    to_proc      --  Pointer to array of partition assignments
+ *  Returned value:       --  Error code
+ */
+extern int Zoltan_LB_Free_Part(
+  ZOLTAN_ID_PTR *global_ids, 
+  ZOLTAN_ID_PTR *local_ids,
+  int **procs,
+  int **to_part
+);
 
 /*****************************************************************************/
 /*

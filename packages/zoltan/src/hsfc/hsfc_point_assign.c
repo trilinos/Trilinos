@@ -25,7 +25,7 @@ extern "C" {
 
 
 /* Point drop for refinement after above partitioning */
-int Zoltan_HSFC_Point_Assign (ZZ *zz, double *x, int *proc)
+int Zoltan_HSFC_Point_Assign (ZZ *zz, double *x, int *parts)
    {
    double     scaled[3] ;
    double     fsfc ;
@@ -52,13 +52,13 @@ int Zoltan_HSFC_Point_Assign (ZZ *zz, double *x, int *proc)
    fsfc = d->fhsfc (scaled) ;           /* Note, this is a function call */
 
    /* Find partition containing point and return its number */
-   p = (Partition *) bsearch (&fsfc, d->final_partition, zz->Num_Proc,
+   p = (Partition *) bsearch (&fsfc, d->final_partition, zz->LB.Num_Global_Parts,
     sizeof (Partition), Zoltan_HSFC_compare) ;
    if (p == NULL && fsfc <= 1.0 && fsfc >= 0.0)
        p = &(d->final_partition[zz->Num_Proc - 1]) ;
    if (p == NULL)
       ZOLTAN_HSFC_ERROR (ZOLTAN_FATAL, "programming error, shouldn't happen") ;
-   *proc = p->index ;
+   *parts = p->index ;
    err = ZOLTAN_OK ;
 
 free:

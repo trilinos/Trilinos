@@ -61,6 +61,7 @@ extern "C" {
 #define Zfw_Set_FnAs                   zfw_set_fnas
 #define Zfw_Set_FnBs                   zfw_set_fnbs
 #define Zfw_Set_Param                  zfw_set_param
+#define Zfw_LB_Partition               zfw_lb_partition
 #define Zfw_LB_Balance                 zfw_lb_balance
 #define Zfw_LB_Eval                    zfw_lb_eval
 #define Zfw_LB_Point_Assign            zfw_lb_point_assign
@@ -106,6 +107,7 @@ extern "C" {
 #define Zfw_Set_FnAs                   ZFW_SET_FNAS
 #define Zfw_Set_FnBs                   ZFW_SET_FNBS
 #define Zfw_Set_Param                  ZFW_SET_PARAM
+#define Zfw_LB_Partition               ZFW_LB_PARTITION
 #define Zfw_LB_Balance                 ZFW_LB_BALANCE
 #define Zfw_LB_Eval                    ZFW_LB_EVAL
 #define Zfw_LB_Point_Assign            ZFW_LB_POINT_ASSIGN
@@ -150,6 +152,7 @@ extern "C" {
 #define Zfw_Set_FnAs                   zfw_set_fnas_
 #define Zfw_Set_FnBs                   zfw_set_fnbs_
 #define Zfw_Set_Param                  zfw_set_param_
+#define Zfw_LB_Partition               zfw_lb_partition_
 #define Zfw_LB_Balance                 zfw_lb_balance_
 #define Zfw_LB_Eval                    zfw_lb_eval_
 #define Zfw_LB_Point_Assign            zfw_lb_point_assign_
@@ -195,6 +198,7 @@ extern "C" {
 #define Zfw_Set_FnAs                   zfw_set_fnas__
 #define Zfw_Set_FnBs                   zfw_set_fnbs__
 #define Zfw_Set_Param                  zfw_set_param__
+#define Zfw_LB_Partition               zfw_lb_partition__
 #define Zfw_LB_Balance                 zfw_lb_balance__
 #define Zfw_LB_Eval                    zfw_lb_eval__
 #define Zfw_LB_Point_Assign            zfw_lb_point_assign__
@@ -1078,6 +1082,87 @@ int Zfw_Set_Param(int *addr_lb, int *nbytes, int *int_param_name,
    ZOLTAN_FREE(&param_name);
    ZOLTAN_FREE(&new_value);
    return result;
+}
+
+int Zfw_LB_Partition(int *addr_lb, int *nbytes, int *changes, 
+                  int *num_gid_entries, int *num_lid_entries,
+                  int *num_import,
+                  ZOLTAN_ID_PTR *import_global_ids, ZOLTAN_ID_PTR *import_local_ids,
+                  int **import_procs, int **import_to_part, int *num_export,
+                  ZOLTAN_ID_PTR *export_global_ids, ZOLTAN_ID_PTR *export_local_ids,
+                  int **export_procs, int **export_to_part
+#ifdef PGI
+/* PGI uses hidden arguments when it passes pointers */
+                   ,int *imp_gid_hide, int *imp_lid_hide, int *imp_proc_hide,
+                    int *imp_to_part_hide,
+                    int *exp_gid_hide, int *exp_lid_hide, int *exp_proc_hide,
+                    int *exp_to_part_hide
+#endif
+#ifdef FUJITSU
+/* Fujitsu and Lahey use a hidden argument for every argument */
+/* TEMP need to verify this with Fujitsu or Lahey */
+                   ,int *addr_lb_hide, int *nbytes_hide, int *changes_hide,
+                    int *num_gid_entries_hide, int *num_lid_entries_hide,
+                    int *num_import_hide, int *imp_gid_hide, int *imp_lid_hide,
+                    int *imp_proc_hide, int *imp_to_part_hide,
+                    int *num_export_hide, int *exp_gid_hide,
+                    int *exp_lid_hide, int *exp_proc_hide, int *exp_to_part_hide
+#endif
+                    )
+{
+   struct Zoltan_Struct *lb;
+   unsigned char *p;
+   int i;
+#if defined (PGI) || defined (FUJITSU)
+#define F90LB_TEMP 3
+#else
+#define F90LB_TEMP 2
+#endif
+   ZOLTAN_ID_PTR temp_imp_gid[F90LB_TEMP], temp_exp_gid[F90LB_TEMP];
+   ZOLTAN_ID_PTR temp_imp_lid[F90LB_TEMP], temp_exp_lid[F90LB_TEMP];
+   int *temp_imp_proc[F90LB_TEMP], *temp_exp_proc[F90LB_TEMP];
+   int *temp_imp_to_part[F90LB_TEMP], *temp_exp_to_part[F90LB_TEMP];
+#undef F90LB_TEMP
+
+/* reconstruct the lb pointer from the nbyte 1-byte integers in addr_lb */
+
+   p = (unsigned char *) &lb;
+   for (i=0; i<(*nbytes); i++) {*p = (unsigned char)addr_lb[i]; p++;}
+   Zoltan_Current = lb;
+
+/* put the address of the Fortran pointer into temp_*[1] to be passed to
+   Fortran for allocation.  The address of the allocated space will be
+   in temp_*[0] so it can be used by C without messing up the Fortran pointer*/
+
+   temp_imp_gid[1] = (ZOLTAN_ID_PTR)import_global_ids;
+   temp_imp_lid[1] = (ZOLTAN_ID_PTR)import_local_ids;
+   temp_imp_proc[1] = (int *)import_procs;
+   temp_imp_to_part[1] = (int *)import_to_part;
+   temp_exp_gid[1] = (ZOLTAN_ID_PTR)export_global_ids;
+   temp_exp_lid[1] = (ZOLTAN_ID_PTR)export_local_ids;
+   temp_exp_proc[1] = (int *)export_procs;
+   temp_exp_to_part[1] = (int *)export_to_part;
+
+/* for PGI and FUJITSU, put the hidden argument in temp_*[2] */
+
+#if defined (PGI) || defined (FUJITSU)
+   temp_imp_gid[2] = (ZOLTAN_ID_PTR)imp_gid_hide;
+   temp_imp_lid[2] = (ZOLTAN_ID_PTR)imp_lid_hide;
+   temp_imp_proc[2] = (int *)imp_proc_hide;
+   temp_imp_to_part[2] = (int *)imp_to_part_hide;
+   temp_exp_gid[2] = (ZOLTAN_ID_PTR)exp_gid_hide;
+   temp_exp_lid[2] = (ZOLTAN_ID_PTR)exp_lid_hide;
+   temp_exp_proc[2] = (int *)exp_proc_hide;
+   temp_exp_to_part[2] = (int *)exp_to_part_hide;
+#endif
+
+/* call Zoltan_LB_Partition */
+
+   return Zoltan_LB_Partition(lb, changes, num_gid_entries, num_lid_entries, 
+                     num_import, temp_imp_gid, temp_imp_lid,
+                     temp_imp_proc, temp_imp_to_part,
+                     num_export, temp_exp_gid, temp_exp_lid,
+                     temp_exp_proc, temp_exp_to_part);
 }
 
 int Zfw_LB_Balance(int *addr_lb, int *nbytes, int *changes, 

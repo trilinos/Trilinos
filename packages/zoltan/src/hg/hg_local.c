@@ -1,7 +1,7 @@
 /*****************************************************************************
  * Zoltan Library for Parallel Applications                                  *
  * Copyright (c) 2000,2001,2002, Sandia National Laboratories.               *
- * For more info, see the README file in the top-level Zoltan directory.     *  
+ * For more info, see the README file in the top-level Zoltan directory.     *
  *****************************************************************************/
 /*****************************************************************************
  * CVS File Information :
@@ -11,27 +11,22 @@
  *    $Revision$
  ****************************************************************************/
 
-
-#ifndef _DR_LOADBAL_CONST_H_
-#define _DR_LOADBAL_CONST_H_
-
 #ifdef __cplusplus
 /* if C++, define the rest of this header file as extern C */
 extern "C" {
 #endif
 
 
-extern int setup_zoltan(struct Zoltan_Struct *, int, PROB_INFO_PTR, MESH_INFO_PTR); 
-extern int run_zoltan(struct Zoltan_Struct *, int, PROB_INFO_PTR, MESH_INFO_PTR); 
-extern int migrate_elements(int, MESH_INFO_PTR, struct Zoltan_Struct *, 
-                            int, int, 
-                            int, ZOLTAN_ID_PTR, ZOLTAN_ID_PTR, int *, int *,
-                            int, ZOLTAN_ID_PTR, ZOLTAN_ID_PTR, int *, int *);
+#include "hypergraph.h"
 
-extern ELEM_INFO *search_by_global_id(MESH_INFO *, int, int *);
+ZOLTAN_HG_LOCAL_REF_FN *Zoltan_HG_Set_Local_Ref_Fn(char *str)
+{
+  /* KDD Placeholder; will need to return function corresponding to str. */
+  /* KDD Follow example Zoltan_HG_Set_Packing_Fn.  */
+
+  return NULL;
+}
 
 #ifdef __cplusplus
 } /* closing bracket for extern "C" */
 #endif
-
-#endif /* _DR_LOADBAL_CONST_H_ */

@@ -214,6 +214,12 @@ struct Zoltan_Struct {
   int Edge_Weight_Dim;            /*  Dimension of the edge weights, 
                                       usually 0 (no weights) or 1            */
   int Timer;                      /*  Timer type that is currently active */
+  ZOLTAN_PARTITION_FN *Get_Partition;          /* Fn ptr to get an object's
+                                                  partition assignment.      */
+  ZOLTAN_PARTITION_FORT_FN *Get_Partition_Fort;/* Fortran version            */
+  void *Get_Partition_Data;                    /* Ptr to user defined data
+                                                  to be passed to
+                                                  Get_Partition()            */
   ZOLTAN_NUM_EDGES_FN *Get_Num_Edges;          /* Fn ptr to get an object's
                                                   number of edges.           */
   ZOLTAN_NUM_EDGES_FORT_FN *Get_Num_Edges_Fort;/* Fortran version            */
@@ -226,6 +232,18 @@ struct Zoltan_Struct {
   void *Get_Edge_List_Data;                    /* Ptr to user defined data
                                                   to be passed to
                                                   Get_Edge_List()            */
+  ZOLTAN_NUM_EDGES_FN *Get_Num_HG_Edges;       /* Fn ptr to get an object's
+                                                  number of hypergraph edges.*/
+  ZOLTAN_NUM_EDGES_FORT_FN *Get_Num_HG_Edges_Fort;/* Fortran version         */
+  void *Get_Num_HG_Edges_Data;                 /* Ptr to user defined data
+                                                  to be passed to
+                                                  Get_Num_HG_Edges()         */
+  ZOLTAN_EDGE_LIST_FN *Get_HG_Edge_List;       /* Fn ptr to get an object's
+                                                  hyper-edge list.           */
+  ZOLTAN_EDGE_LIST_FORT_FN *Get_HG_Edge_List_Fort;/* Fortran version         */
+  void *Get_HG_Edge_List_Data;                 /* Ptr to user defined data
+                                                  to be passed to
+                                                  Get_HG_Edge_List()         */
   ZOLTAN_NUM_GEOM_FN *Get_Num_Geom;            /* Fn ptr to get an object's
                                                   number of geometry values. */
   ZOLTAN_NUM_GEOM_FORT_FN *Get_Num_Geom_Fort;  /* Fortran version            */
@@ -463,8 +481,8 @@ typedef struct Zoltan_Struct ZZ;
 /*****************************************************************************/
 /*****************************************************************************/
 /* PROTOTYPES */
-extern void Zoltan_Get_Obj_List(ZZ *, ZOLTAN_ID_PTR, ZOLTAN_ID_PTR, 
-                                int, float*, int*);
+extern int Zoltan_Get_Obj_List(ZZ *, int *, ZOLTAN_ID_PTR *, ZOLTAN_ID_PTR *, 
+                               int, float**, int **);
 
 
 #ifdef __cplusplus

@@ -60,7 +60,7 @@ extern void Zoltan_Memory_Stats();
 extern int Zoltan_Memory_Num();
 
 #ifdef __STDC__
-extern void Zoltan_Multifree(int n, ...);
+extern void Zoltan_Multifree(char *, int, int n, ...);
 #else
 extern void Zoltan_Multifree();
 #endif

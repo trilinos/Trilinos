@@ -66,7 +66,9 @@ char *yo = "Zoltan_RB_Build_Structure";
 char msg[256];
 float *objs_wgt = NULL;               /* Array of object weights returned by 
                                          the application.                    */
-int i, ierr = 0;
+int *parts = NULL;                    /* Currently UNUSED -- initial partitions
+                                         for objects. */
+int ierr = 0;
 
   /*
    * Compute the number of geometry fields per object.  This
@@ -88,20 +90,24 @@ int i, ierr = 0;
   }
 
   /*
-   * Allocate space for objects.  Allow extra space
-   * for objects that are imported to the processor.
+   * Allocate space for objects.  Get object info.
    */
-
-  *num_obj = zz->Get_Num_Obj(zz->Get_Num_Obj_Data, &ierr);
+  *global_ids = NULL;
+  *local_ids = NULL;
+  ierr = Zoltan_Get_Obj_List(zz, num_obj, global_ids, local_ids, wgtflag, 
+                      &objs_wgt, &parts);
+  ZOLTAN_FREE((void **) &parts);  /* KDD parts is currently UNUSED; free it. */
   if (ierr) {
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, 
-                   "Error returned from user function Get_Num_Obj.");
+                   "Error returned from user function Zoltan_Get_Obj_List.");
     return(ierr);
   }
 
+
+  /* Allow extra space for objects that are imported to the processor. */
   *max_obj = (int)(1.5 * *num_obj) + 1;
-  *global_ids = ZOLTAN_MALLOC_GID_ARRAY(zz, (*max_obj));
-  *local_ids  = ZOLTAN_MALLOC_LID_ARRAY(zz, (*max_obj));
+  *global_ids = ZOLTAN_REALLOC_GID_ARRAY(zz, *global_ids, (*max_obj));
+  *local_ids  = ZOLTAN_REALLOC_LID_ARRAY(zz, *local_ids, (*max_obj));
   *dots = (struct Dot_Struct *)ZOLTAN_MALLOC((*max_obj)*sizeof(struct Dot_Struct));
 
   if (!(*global_ids) || (zz->Num_LID && !(*local_ids)) || !(*dots)) {
@@ -111,32 +117,6 @@ int i, ierr = 0;
 
   if (*num_obj > 0) {
 
-    if (wgtflag) {
-
-      /* 
-       *  Allocate space for object weights.
-       */
-
-      objs_wgt    = (float *) ZOLTAN_MALLOC((*num_obj)*sizeof(float));
-      if (!objs_wgt) {
-        ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
-        return(ZOLTAN_MEMERR);
-      }
-      for (i = 0; i < *num_obj; i++) objs_wgt[i] = 0.;
-    }
-
-    /*
-     *  Get list of objects' IDs and weights.
-     */
-
-    Zoltan_Get_Obj_List(zz, *global_ids, *local_ids, wgtflag, objs_wgt, &ierr);
-    if (ierr) {
-      ZOLTAN_PRINT_ERROR(zz->Proc, yo, 
-                     "Error returned from user function Zoltan_Get_Obj_List.");
-      ZOLTAN_FREE(&objs_wgt);
-      return(ierr);
-    }
-
     ierr = initialize_dot(zz, *global_ids, *local_ids, *dots,
                           *num_obj, wgtflag, objs_wgt);
     if (ierr == ZOLTAN_FATAL || ierr == ZOLTAN_MEMERR) {
@@ -145,9 +125,8 @@ int i, ierr = 0;
       ZOLTAN_FREE(&objs_wgt);
       return(ierr);
     }
-
-    ZOLTAN_FREE(&objs_wgt);
   }
+  ZOLTAN_FREE(&objs_wgt);
 
   if (!use_ids) {
     /* 
@@ -568,8 +547,9 @@ int num_lid_entries = zz->Num_LID;
     ii = i + dottop;
     ZOLTAN_SET_GID(zz, &((*import_global_ids)[i*num_gid_entries]),
                &(gidpt[ii*num_gid_entries]));
-    ZOLTAN_SET_LID(zz, &((*import_local_ids)[i*num_lid_entries]),
-               &(lidpt[ii*num_lid_entries]));
+    if (num_lid_entries)
+      ZOLTAN_SET_LID(zz, &((*import_local_ids)[i*num_lid_entries]),
+                 &(lidpt[ii*num_lid_entries]));
     (*import_procs)[i] = dotpt[ii].Proc;
   }
 

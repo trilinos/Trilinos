@@ -36,8 +36,11 @@ void Zoltan_Migrate_Init(struct Zoltan_Migrate_Struct *mig)
   mig->Post_Migrate_Fort = NULL;
 }
 
-void Zoltan_LB_Init(struct Zoltan_LB_Struct *lb)
+void Zoltan_LB_Init(struct Zoltan_LB_Struct *lb, int num_proc)
 {
+  lb->Num_Global_Parts = num_proc;
+  lb->Num_Local_Parts = 1;
+  lb->PartDist = NULL;
   lb->Method = RCB;
   lb->LB_Fn = Zoltan_RCB;
   lb->Return_Lists = ZOLTAN_LB_RETURN_LISTS_DEF;

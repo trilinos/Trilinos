@@ -134,19 +134,19 @@ ALL_OBJ_DIRS := $(wildcard Obj_*)
 #   Paths to submodules
 #
 SUB_VPATH	= ../include ../Utilities/shared \
-		  ../zz ../all ../lb ../par ../rcb ../oct ../bsfc ../hsfc \
+		  ../zz ../all ../lb ../par ../rcb ../oct ../bsfc ../hsfc ../hg \
 		  ../params ../driver$(ZOLTAN_OLD) ../ch ../parmetis ../timer \
                   ../order ../ha ../reftree \
 		  ../Utilities/Communication ../Utilities/Memory \
                   ../Utilities/DDirectory 
 SUBINCPATH	= -I../include -I../Utilities/shared \
 		  -I../zz -I../all -I../lb -I../par -I../rcb  -I../oct  \
-		  -I../order -I../bsfc -I../hsfc \
+		  -I../order -I../bsfc -I../hsfc -I../hg \
 		  -I../params -I../driver$(ZOLTAN_OLD) -I../ch -I../parmetis -I../timer \
                   -I../ha -I../reftree \
 		  -I../Utilities/Communication -I../Utilities/Memory \
                   -I../Utilities/DDirectory 
-SUBDIRS		= driver$(ZOLTAN_OLD) ch zz all lb order par rcb oct \
+SUBDIRS		= driver$(ZOLTAN_OLD) ch zz all lb order par rcb oct hg \
                   bsfc hsfc parmetis params \
 		  timer ha  reftree include
 UTIL_SUBDIRS	= Utilities/shared Utilities/Communication \
@@ -159,9 +159,10 @@ ZZ_INC		= zz_const.h zz_id_const.h zz_util_const.h
 ALL_CSRC	= all_allo.c 
 ALL_INC		= all_const.h all_allo_const.h
 
-LB_CSRC		= lb_balance.c lb_eval.c lb_init.c lb_migrate.c \
+LB_CSRC		= lb_balance.c lb_eval.c lb_free.c lb_init.c \
+		  lb_invert.c lb_migrate.c \
 		  lb_set_fn.c lb_set_method.c  \
-		  lb_point_assign.c lb_box_assign.c
+		  lb_point_assign.c lb_box_assign.c lb_part2proc.c
 LB_INC		= lb_const.h lb_init_const.h
 
 ORDER_CSRC	= order.c order_struct.c perm.c
@@ -186,6 +187,12 @@ SFC_INC		= hilbert_const.h sfc.h sfc_const.h
 
 HSFC_CSRC 	= hsfc_hilbert.c hsfc.c hsfc_box_assign.c hsfc_point_assign.c
 HSFC_INC 	= hsfc_hilbert_const.h hsfc_const.h hsfc.h
+
+HG_CSRC 	= hg.c hg_build.c hg_coarse.c hg_global.c \
+		  hg_group.c hg_local.c \
+		  hg_match.c hg_pack.c \
+		  hg_part.c hg_util.c
+HG_INC 		= hg.h hypergraph.h
 
 PARAMS_CSRC	= set_param.c assign_param_vals.c check_param.c print_params.c \
 		  key_params.c free_params.c bind_param.c
@@ -238,10 +245,10 @@ endif
 ZOLTAN_INC_PATH	= $(SUBINCPATH) $(INCLUDE_PATH) $(THIRD_PARTY_INCPATH)
 ZOLTAN_CSRC    += $(ZZ_CSRC) $(LB_CSRC) $(ALL_CSRC) $(RCB_CSRC) $(PAR_CSRC) \
 		  $(ORDER_CSRC) $(OCT_CSRC) $(SFC_CSRC) $(HSFC_CSRC) \
-		  $(PARAMS_CSRC) $(PARMETIS_CSRC) \
+		  $(PARAMS_CSRC) $(PARMETIS_CSRC) $(HG_CSRC) \
 		  $(TIMER_CSRC) $(HA_CSRC) $(REFTREE_CSRC) $(THIRD_PARTY_CSRC)
 ZOLTAN_VPATH	= $(SUB_VPATH) $(THIRD_PARTY_VPATH)
-ZOLTAN_OBJ	= $(ZOLTAN_CSRC:.c=.o) 
+ZOLTAN_OBJ	= $(ZOLTAN_CSRC:.c=.o)
 
 ZDRIVE_CSRC 	= $(DR_CSRC) $(CH_CSRC)
 ZDRIVE_OBJ	= $(ZDRIVE_CSRC:.c=.o)
@@ -251,7 +258,7 @@ ZDRIVE_LIBS	= -L. -l$(LIB_TARGET) \
 #		  -lzoltan_comm -lzoltan_mem -lzoltan_dd \
 ZDRIVE_DEPS	= libzoltan_comm.a libzoltan_mem.a libzoltan_dd.a
 
-CCOMP		= $(CC) $(ZOLTAN_INC_PATH) $(CFLAGS) $(F90CFLAGS) 
+CCOMP		= $(CC) $(ZOLTAN_INC_PATH) $(CFLAGS) $(F90CFLAGS)
 F90COMP		= $(F90) $(CFLAGS) $(FFLAGS)
 
 ############################################################################
@@ -265,7 +272,7 @@ F90COMP		= $(F90) $(CFLAGS) $(FFLAGS)
 LINT		= lint
 LINT_INC_PATH	= -Iinclude -Idriver$(ZOLTAN_OLD) -Ich -Izz -Iall -Ilb \
 		  -Iorder -Ipar -Ircb -Iparams \
-		  -Ioct -Ibsfc -Ihsfc -Iparmetis -Itimer -Iha -Ireftree \
+		  -Ioct -Ibsfc -Ihsfc -Iparmetis -Itimer -Iha -Ireftree -Ihg \
 		  -IUtilities/shared -IUtilities/Memory \
 		  -IUtilities/Communication -IUtilities/DDirectory \
 		  -I$(ZOLTAN_INC_PATH)
@@ -273,7 +280,7 @@ LINT_FLAGS	= $(LINT_INC_PATH) $(GDEFINES)
 VPATH		= $(SUBDIRS) $(UTIL_SUBDIRS) $(THIRD_PARTY_VPATH)
 
 ###########################################################################
-#      HELP HELP HELP HELP HELP  
+#      HELP HELP HELP HELP HELP
 ###########################################################################
 help:
 	@echo ' '
@@ -281,7 +288,7 @@ help:
 	@echo '   gmake ZOLTAN_ARCH=desired_arch zoltan'
 	@echo 'where desired_arch is the architecture on which Zoltan'
 	@echo 'will run.  The file Utilities/Config/Config.desired_arch'
-	@echo 'should exist and may need to be adapted to your system.'  
+	@echo 'should exist and may need to be adapted to your system.'
 	@echo 'See  Utilities/Config/Config.generic for '
 	@echo 'instructions on creating Config.desired_arch.'
 	@echo ' '
@@ -307,7 +314,7 @@ help:
 zoltan:
 	@if [ ! -d $(ZOLTAN_LIB_DIR) ];		\
 	then mkdir $(ZOLTAN_LIB_DIR);		\
-	fi;					 
+	fi;
 	@if [ ! -d $(ZOLTAN_OBJ_DIR) ]; 	\
 	then mkdir $(ZOLTAN_OBJ_DIR); 		\
 	fi
@@ -334,7 +341,7 @@ zoltan:
 	"AR=$(AR)" 				\
 	"RANLIB=$(RANLIB)" 			\
 	"ZOLTAN_CONFIG=../$(ZOLTAN_CONFIG)"     \
-	"ZOLTAN_OBJ_DIR=$(ZOLTAN_OBJ_DIR)" 
+	"ZOLTAN_OBJ_DIR=$(ZOLTAN_OBJ_DIR)"
 	@if [ $(ZOLTAN_OBJ_DIR) != $(ZOLTAN_LIB_DIR) ]; 		\
 	then cp -f $(ZOLTAN_OBJ_DIR)/$(LIB_NAME) $(ZOLTAN_LIB_DIR); 	\
 	fi
@@ -353,9 +360,9 @@ zdrive:
 	"LNK_LIBS=$(ZDRIVE_LIBS)" 		\
 	"DEP_LIBS=$(ZDRIVE_DEPS)"		\
 	"ZOLTAN_CONFIG=../$(ZOLTAN_CONFIG)"     \
-	"ZOLTAN_OBJ_DIR=$(ZOLTAN_OBJ_DIR)" 
+	"ZOLTAN_OBJ_DIR=$(ZOLTAN_OBJ_DIR)"
 
-zfdrive: 
+zfdrive:
 	$(MAKE) YES_FORTRAN=1 ZOLTAN_ARCH=$(ZOLTAN_ARCH) zoltan
 	@cd fdriver$(ZOLTAN_OLD); 				\
 	$(MAKE) zfdrive 			\
@@ -368,7 +375,7 @@ zfdrive:
 	"DEP_LIBS=$(ZDRIVE_DEPS)"		\
 	"ZOLTAN_ARCH=$(ZOLTAN_ARCH)"		\
 	"ZOLTAN_CONFIG=../$(ZOLTAN_CONFIG)"     \
-	"ZOLTAN_OBJ_DIR=$(ZOLTAN_OBJ_DIR)" 
+	"ZOLTAN_OBJ_DIR=$(ZOLTAN_OBJ_DIR)"
 
 zscript:
 	cd Utilities; \
@@ -433,6 +440,10 @@ zscript:
 	@echo "echo 'Zoltan:  Compiling Zoltan/hsfc'" >> zoltan_script
 	@for iii in $(HSFC_CSRC) ; do \
 	 echo '$$CCOMP' $(SUBINCPATH) -c '$$GDEFINES $$DEFS' ../hsfc/$$iii >> zoltan_script; \
+	 done;
+	@echo "echo 'Zoltan:  Compiling Zoltan/hg'" >> zoltan_script
+	@for iii in $(HG_CSRC) ; do \
+	 echo '$$CCOMP' $(SUBINCPATH) -c '$$GDEFINES $$DEFS' ../hg/$$iii >> zoltan_script; \
 	 done;
 	@echo "echo 'Zoltan:  Compiling Zoltan/params'" >> zoltan_script
 	@for iii in $(PARAMS_CSRC) ; do \

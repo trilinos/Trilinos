@@ -19,7 +19,6 @@ extern "C" {
 
 
 #include "zz_const.h"
-#include "all_allo_const.h"
 
 /*****************************************************************************/
 /*****************************************************************************/
@@ -32,213 +31,13 @@ extern "C" {
 /*****************************************************************************/
 /*****************************************************************************/
 
-static int Zoltan_check_id_lengths(ZZ *);
+static int check_id_lengths(ZZ *);
 
 /*****************************************************************************/
 /*****************************************************************************/
 /*****************************************************************************/
 
-int Zoltan_Compute_Destinations(
-  ZZ *zz,                      /* Zoltan structure.                  */
-  int num_import,              /* Number of non-local objects assigned to the 
-                                  processor in the new decomposition.        */
-  ZOLTAN_ID_PTR import_global_ids, /* Array of global IDs for non-local objects 
-                                  assigned to this processor in the new
-                                  decomposition.                             */
-  ZOLTAN_ID_PTR import_local_ids,  /* Array of local IDs for non-local objects
-                                  assigned to the processor in the new
-                                  decomposition.                             */
-  int *import_procs,           /* Array of processor IDs of processors owning
-                                  the non-local objects that are assigned to
-                                  this processor in the new decomposition.   */
-  int *num_export,             /* Returned value:  Number of objs to be exported
-                                  to other processors to establish the new
-                                  decomposition.                             */
-  ZOLTAN_ID_PTR *export_global_ids,/* Returned value:  Array of global IDs of
-                                  objects to be exported to other processors
-                                  to establish the new decomposition.        */
-  ZOLTAN_ID_PTR *export_local_ids, /* Returned value:  Array of local IDs of
-                                  objects to be exported to other processors
-                                  to establish the new decomposition.        */
-  int **export_procs           /* Returned value:  Array of processor IDs
-                                  to which objects will be exported 
-                                  to establish the new decomposition.        */
-)
-{
-/*
- *  Routine to compute the inverse map:  Given, for each processor, a list 
- *  of non-local objects assigned to the processor, compute the list of objects
- *  that processor needs to export to other processors to establish the new
- *  decomposition.
- */
-
-char *yo = "Zoltan_Compute_Destinations";
-char msg[256];
-ZOLTAN_COMM_OBJ *comm_plan;        /* Object returned communication routines  */
-int *import_proc_list = NULL;
-                            /* Array containing owning processor IDs of import
-                               objects; used to request objs from other procs.*/
-int msgtag, msgtag2;        /* Message tags for communication routines */
-int num_gid_entries, num_lid_entries;  /* Length of global and local ids */
-int i;
-int ierr = ZOLTAN_OK;
-
-  ZOLTAN_TRACE_ENTER(zz, yo);
-  /*
-   *  Return if this processor is not in the Zoltan structure's
-   *  communicator.
-   */
-
-  if (ZOLTAN_PROC_NOT_IN_COMMUNICATOR(zz)) {
-    ZOLTAN_TRACE_EXIT(zz, yo);
-    return (ZOLTAN_OK);
-  }
-
-  /*
-   *  Check that all procs use the same id types.
-   */
-
-  ierr = Zoltan_check_id_lengths(zz);
-  if (ierr != ZOLTAN_OK) {
-    ZOLTAN_TRACE_EXIT(zz, yo);
-    return ierr;
-  }
-  num_gid_entries = zz->Num_GID;
-  num_lid_entries = zz->Num_LID;
-
-  /*
-   *  Build processor's list of requests for non-local objs.
-   */
-
-  if (num_import > 0) {
-    import_proc_list = (int *) ZOLTAN_MALLOC(num_import * sizeof(int));
-    if (!import_proc_list) {
-      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
-      ZOLTAN_TRACE_EXIT(zz, yo);
-      return (ZOLTAN_MEMERR);
-    }
-
-    for (i = 0; i < num_import; i++) {
-      import_proc_list[i] = zz->Proc;
-    }
-  }
-
-  /*
-   *  Compute communication map and num_export, the number of objs this
-   *  processor has to export to establish the new decomposition.
-   */
-
-  msgtag = 32767;
-  ierr = Zoltan_Comm_Create(&comm_plan, num_import, import_procs, zz->Communicator, 
-                        msgtag, num_export);
-  if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
-    sprintf(msg, "Error %s returned from Zoltan_Comm_Create.",
-            (ierr == ZOLTAN_MEMERR ? "ZOLTAN_MEMERR" : "ZOLTAN_FATAL"));
-    ZOLTAN_PRINT_ERROR(zz->Proc, yo, msg);
-    ZOLTAN_TRACE_EXIT(zz, yo);
-    return (ierr);
-  }
-  
-
-  ZOLTAN_TRACE_DETAIL(zz, yo, "Done comm create");
-
-  /*
-   *  Allocate space for the object tags that need to be exported.  Communicate
-   *  to get the list of objects to be exported.
-   */
-
-  if (*num_export > 0) {
-    if (!Zoltan_Special_Malloc(zz,(void **)export_global_ids,*num_export,
-                           ZOLTAN_SPECIAL_MALLOC_GID)) {
-      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
-      ZOLTAN_TRACE_EXIT(zz, yo);
-      return (ZOLTAN_MEMERR);
-    }
-    if (!Zoltan_Special_Malloc(zz,(void **)export_local_ids,*num_export,
-                           ZOLTAN_SPECIAL_MALLOC_LID)) {
-      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
-      Zoltan_Special_Free(zz,(void **)export_global_ids,ZOLTAN_SPECIAL_MALLOC_GID);
-      ZOLTAN_TRACE_EXIT(zz, yo);
-      return (ZOLTAN_MEMERR);
-    }
-    if (!Zoltan_Special_Malloc(zz,(void **)export_procs,*num_export,
-                           ZOLTAN_SPECIAL_MALLOC_INT)) {
-      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
-      Zoltan_Special_Free(zz,(void **)export_global_ids,ZOLTAN_SPECIAL_MALLOC_GID);
-      Zoltan_Special_Free(zz,(void **)export_local_ids,ZOLTAN_SPECIAL_MALLOC_LID);
-      ZOLTAN_TRACE_EXIT(zz, yo);
-      return (ZOLTAN_MEMERR);
-    }
-  }
-  else {
-    *export_global_ids = NULL;
-    *export_local_ids = NULL;
-    *export_procs = NULL;
-  }
-
-  /*
-   *  Use the communication plan to send global IDs, local IDs, and processor
-   *  numbers.  Do in separate communications to avoid a memory copy and to
-   *  simplify implementation when a data type is added to the comm. package
-   *  (to support heterogeneous computing).
-   */
-
-  msgtag2 = 32766;
-  ierr = Zoltan_Comm_Do(comm_plan, msgtag2, (char *) import_global_ids, 
-                    (int) (sizeof(ZOLTAN_ID_TYPE)*(num_gid_entries)), 
-                    (char *) *export_global_ids);
-  if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
-    sprintf(msg, "Error %s returned from Zoltan_Comm_Do.", 
-            (ierr == ZOLTAN_MEMERR ? "ZOLTAN_MEMERR" : "ZOLTAN_FATAL"));
-    ZOLTAN_PRINT_ERROR(zz->Proc, yo, msg);
-    Zoltan_Comm_Destroy(&comm_plan);
-    ZOLTAN_TRACE_EXIT(zz, yo);
-    return (ierr);
-  }
-
-  if (num_lid_entries) {
-    msgtag2--;
-    ierr = Zoltan_Comm_Do(comm_plan, msgtag2, (char *) import_local_ids, 
-                      (int) (sizeof(ZOLTAN_ID_TYPE)*num_lid_entries), 
-                      (char *) *export_local_ids);
-    if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
-      sprintf(msg, "Error %s returned from Zoltan_Comm_Do.", 
-              (ierr == ZOLTAN_MEMERR ? "ZOLTAN_MEMERR" : "ZOLTAN_FATAL"));
-      ZOLTAN_PRINT_ERROR(zz->Proc, yo, msg);
-      Zoltan_Comm_Destroy(&comm_plan);
-      ZOLTAN_TRACE_EXIT(zz, yo);
-      return (ierr);
-    }
-  }
-
-  msgtag2--;
-  ierr = Zoltan_Comm_Do(comm_plan, msgtag2, (char *) import_proc_list, 
-                    (int) sizeof(int), (char *) *export_procs);
-  if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
-    sprintf(msg, "Error %s returned from Zoltan_Comm_Do.", 
-            (ierr == ZOLTAN_MEMERR ? "ZOLTAN_MEMERR" : "ZOLTAN_FATAL"));
-    ZOLTAN_PRINT_ERROR(zz->Proc, yo, msg);
-    Zoltan_Comm_Destroy(&comm_plan);
-    ZOLTAN_TRACE_EXIT(zz, yo);
-    return (ierr);
-  }
-  ZOLTAN_TRACE_DETAIL(zz, yo, "Done comm_do");
-
-  ZOLTAN_FREE(&import_proc_list);
-  
-  Zoltan_Comm_Destroy(&comm_plan);
-
-  ZOLTAN_TRACE_DETAIL(zz, yo, "Done comm destroy");
-
-  ZOLTAN_TRACE_EXIT(zz, yo);
-  return (ierr);
-}
-
-/****************************************************************************/
-/****************************************************************************/
-/****************************************************************************/
-
-int Zoltan_Help_Migrate(
+int Zoltan_Migrate(
   ZZ *zz,                      /* Zoltan structure.                  */
   int num_import,              /* Number of non-local objects assigned to the 
                                   processor in the new decomposition.        */
@@ -255,6 +54,8 @@ int Zoltan_Help_Migrate(
                                   this processor in the new decomposition; this
                                   field can be NULL if the application does
                                   not provide import IDs.                    */
+  int *import_to_part,         /* Array of partition numbers to which imported
+                                  objects should be assigned.                */
   int num_export,              /* Number of objs to be exported
                                   to other processors to establish the new
                                   decomposition.                             */
@@ -264,9 +65,11 @@ int Zoltan_Help_Migrate(
   ZOLTAN_ID_PTR export_local_ids,  /* Array of local IDs of
                                   objects to be exported to other processors
                                   to establish the new decomposition.        */
-  int *export_procs            /* Array of processor IDs
+  int *export_procs,           /* Array of processor IDs
                                   to which objects will be exported 
                                   to establish the new decomposition.        */
+  int *export_to_part          /* Array of partition numbers to which exported
+                                  objects should be assigned.                */
 )
 {
 /*
@@ -281,7 +84,7 @@ int Zoltan_Help_Migrate(
  *  routine (ZOLTAN_UNPACK_OBJ_FN) for each object imported.
  */
 
-char *yo = "Zoltan_Help_Migrate";
+char *yo = "Zoltan_Migrate";
 char msg[256];
 int num_gid_entries, num_lid_entries;  /* lengths of global & local ids */
 int *sizes = NULL;       /* sizes (in bytes) of the object data for export. */
@@ -306,6 +109,7 @@ int msgtag, msgtag2;     /* Tags for communication routines                 */
 int total_send_size;     /* Total size of outcoming message (in #items)     */
 int total_recv_size;     /* Total size of incoming message (in #items)      */
 int aligned_int;         /* size of an int padded for alignment             */
+int dest;                /* temporary destination partition.                */
 int ierr = 0;
 
   ZOLTAN_TRACE_ENTER(zz, yo);
@@ -336,7 +140,7 @@ int ierr = 0;
    *  Check that all procs use the same id types.
    */
 
-  ierr = Zoltan_check_id_lengths(zz);
+  ierr = check_id_lengths(zz);
   if (ierr != ZOLTAN_OK) {
     ZOLTAN_TRACE_EXIT(zz, yo);
     return ierr;
@@ -499,7 +303,8 @@ int ierr = 0;
       }
       zz->Pack_Obj_Multi(zz->Pack_Obj_Multi_Data,
                          num_gid_entries, num_lid_entries, num_export,
-                         export_global_ids, export_local_ids, export_procs,
+                         export_global_ids, export_local_ids, 
+                         (export_to_part!=NULL ? export_to_part : export_procs),
                          sizes, idx, export_buf, &ierr);
       if (ierr) {
         ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error returned from user defined "
@@ -522,10 +327,11 @@ int ierr = 0;
 
         /* Pack the object's data */
         lid = (num_lid_entries ? &(export_local_ids[i*num_lid_entries]) : NULL);
+        dest = (export_to_part != NULL ? export_to_part[i] : export_procs[i]);
         zz->Pack_Obj(zz->Pack_Obj_Data, 
-                             num_gid_entries, num_lid_entries,
-                             &(export_global_ids[i*num_gid_entries]),
-                             lid, export_procs[i], sizes[i], tmp, &ierr);
+                           num_gid_entries, num_lid_entries,
+                           &(export_global_ids[i*num_gid_entries]), lid, dest,
+                           sizes[i], tmp, &ierr);
         if (ierr) {
           ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error returned from user defined "
                           "Pack_Obj function.");
@@ -755,7 +561,7 @@ int ierr = 0;
 /****************************************************************************/
 /****************************************************************************/
 
-static int Zoltan_check_id_lengths(
+static int check_id_lengths(
   ZZ *zz 
 )
 {
@@ -764,7 +570,7 @@ static int Zoltan_check_id_lengths(
  * zz->Num_GID and zz->Num_LID.
  * All processors return the same error code.
  */
-char *yo = "Zoltan_check_id_lengths";
+char *yo = "check_id_lengths";
 char msg[256];
 int loc_tmp[2];
 int glob_min[2] = {0,0};
@@ -804,6 +610,55 @@ int ierr = ZOLTAN_OK;
 }
 
 /****************************************************************************/
+/****************************************************************************/
+/****************************************************************************/
+
+int Zoltan_Help_Migrate(
+  ZZ *zz,
+  int num_import,
+  ZOLTAN_ID_PTR import_global_ids,
+  ZOLTAN_ID_PTR import_local_ids,
+  int *import_procs,
+  int num_export,
+  ZOLTAN_ID_PTR export_global_ids,
+  ZOLTAN_ID_PTR export_local_ids,
+  int *export_procs
+)
+{
+/*
+ *  Wrapper around Zoltan_Migrate with NULL pointers for partition arrays.
+ *  Maintained for backward compatibility.
+ *  Arguments are same as for Zoltan_Migrate.
+ */
+
+char *yo = "Zoltan_Help_Migrate";
+int ierr;
+
+  ZOLTAN_TRACE_ENTER(zz, yo);
+
+  if (zz->LB.Num_Global_Parts != zz->Num_Proc) {
+    ZOLTAN_PRINT_ERROR(zz->Proc, yo,
+      "Number of partitions != Number of processors; use Zoltan_Migrate.");
+    ierr = ZOLTAN_FATAL;
+    goto End;
+  }
+
+  /*
+   * Wrapper (for backward compatilibity) around Zoltan_Migrate.
+   * Passes NULL for partition assignment arrays.
+   */
+  ierr = Zoltan_Migrate(zz, num_import, import_global_ids, import_local_ids,
+                        import_procs, NULL,
+                        num_export, export_global_ids, export_local_ids,
+                        export_procs, NULL);
+
+End:
+  ZOLTAN_TRACE_EXIT(zz, yo);
+  return ierr;
+}
+
+/****************************************************************************/
 #ifdef __cplusplus
 } /* closing bracket for extern "C" */
 #endif
+

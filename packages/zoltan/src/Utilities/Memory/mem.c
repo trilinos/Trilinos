@@ -424,8 +424,6 @@ void Zoltan_Free (void **ptr, char *filename, int lineno)
 }  /* Zoltan_Free */
 
 
-#if 0 /* Not sure we need this feature */
-
 /* Free n pointers. Variable number of arguments is allowed.  */
 
 #ifdef __STDC__
@@ -462,8 +460,6 @@ va_decl
 }
 
 #endif
-
-#endif /* if 0 */
 
 /* Print out status of malloc/free calls.  Flag any memory leaks. */
 
