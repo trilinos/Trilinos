@@ -39,9 +39,14 @@
 # ************************************************************************
 # @HEADER
 
-CORE_H = \
-	$(srcdir)/amd_internal.h  \
-	$(srcdir)/amd.h 
+# Amesos uses amd, but we don't make amd available outside Amesos_Klu 
+# at this time.  
+#
+# CORE_H = \
+# 	$(srcdir)/amd_internal.h  \
+#	$(srcdir)/amd.h 
+
+CORE_H =
 
 CORE = \
 	$(srcdir)/amd_aat.c \
@@ -118,16 +123,9 @@ include_HEADERS = $(AMD_H)
 # Special stuff to install in our special $(execincludedir)
 # ------------------------------------------------------------------------
 
-#np# replace amd with the name of the package being autotool'ed here
-# SPECIAL NOTE: Amd_config.h is a machine-dependent file, so we need
-# to install it in the machine-dependent directory. However, that is
-# not a default installation directory, so we had to create it
-# special.
 
 # All Trilinos headers are now installed in the same directory
 execincludedir = $(exec_prefix)/include
-#np# replace amd with the name of the package being autotool'ed here
-#nodist_execinclude_HEADERS = Amd_config.h
 nodist_execinclude_HEADERS = 
 
 # ------------------------------------------------------------------------

@@ -48,11 +48,15 @@ PARAM =
 endif
 
 
-
+#
+#       We no longer support DscpackOO and hence it is not copied to 
+#  the include directory anymore.
+#
+#	$(srcdir)/DscpackOO.h \
+#
 
 if HAVE_AMESOS_DSCPACK
 DSCPACK_H = \
-	$(srcdir)/DscpackOO.h \
 	$(srcdir)/Amesos_Dscpack.h
 DSCPACK = \
 	$(srcdir)/DscpackOO.cpp \
@@ -76,15 +80,19 @@ endif
 #  Here is where we will add Tim Davis' files 
 #
 if HAVE_AMESOS_KLU
+#
+#  These files do not need to be copied to the include directory on install,
+#  hence they are commented out from here.  
+#
+# KLU_H = \
+# 	$(srcdir)/klu/klu_btf.h \
+# 	$(srcdir)/Amesos_Klu.h \
+# 	$(srcdir)/klu/cbtf.h \
+# 	$(srcdir)/klu/klu.h \
+# 	$(srcdir)/klu/klu_dump.h \
+# 	$(srcdir)/klu/klu_kernel.h
 KLU_H = \
-	$(srcdir)/klu/klu_btf.h \
-	$(srcdir)/ \
-	$(srcdir)/ \
-	$(srcdir)/Amesos_Klu.h \
-	$(srcdir)/klu/cbtf.h \
-	$(srcdir)/klu/klu.h \
-	$(srcdir)/klu/klu_dump.h \
-	$(srcdir)/klu/klu_kernel.h
+	$(srcdir)/Amesos_Klu.h 
 KLU = \
 	$(srcdir)/klu/btf.f \
 	$(srcdir)/klu/mc21a.f \
@@ -161,12 +169,16 @@ KUNDERT = \
        $(srcdir)/ksparse/spsmp.c \
        $(srcdir)/ksparse/sputils.c
 else
-KUNDERT_H =
+KUNDERT_H = 
 KUNDERT =
 endif
 
+#
+#  This file does not need to be copied to the include directory
+#	$(srcdir)/CrsMatrixTranspose.h
 COMP_H = \
-	$(srcdir)/CrsMatrixTranspose.h
+	Amesos_BaseSolver.h \
+	Amesos_ConfigDefs.h 
 COMP = \
 	$(srcdir)/CrsMatrixTranspose.cpp
 
