@@ -24,17 +24,20 @@
 /* local defines                                                        */
 /* -------------------------------------------------------------------- */
 
-#define ML_ID_AMG         127
-#define ML_AMG_MIS         21
-#define ML_AMG_SM_JACOBI   11
-#define ML_AMG_SM_GS       12
-#define ML_AMG_SM_SGS      13
-#define ML_AMG_SM_VBJACOBI 14
-#define ML_AMG_SM_VBGS     15
-#define ML_AMG_SM_VBSGS    16
-#define ML_AMG_SM_ASCHWARZ 17
-#define ML_AMG_SM_MSCHWARZ 18
-#define ML_AMG_SM_SUPERLU  19
+#define ML_ID_AMG              127
+#define ML_AMG_MIS              21
+#define ML_AMG_SCALAR            0
+#define ML_AMG_SYSTEM_UNKNOWN    1
+#define ML_AMG_SYSTEM_NODAL      2
+#define ML_AMG_SM_JACOBI        11
+#define ML_AMG_SM_GS            12
+#define ML_AMG_SM_SGS           13
+#define ML_AMG_SM_VBJACOBI      14
+#define ML_AMG_SM_VBGS          15
+#define ML_AMG_SM_VBSGS         16
+#define ML_AMG_SM_ASCHWARZ      17
+#define ML_AMG_SM_MSCHWARZ      18
+#define ML_AMG_SM_SUPERLU       19
 
 /* ******************************************************************** */
 /* other ML include files                                               */
@@ -56,7 +59,8 @@ typedef struct ML_AMG_Struct
    int    max_coarse_size;             /* maximum size of coarsest grid */
    double threshold;                   /* for pruning matrix            */ 
    double curr_threshold;              /* adjusted for levels           */
-   int    coarsen_scheme;              /* Uncoupled, Coupled, MIS       */
+   int    coarsen_scheme;              /* MIS                           */
+   int    amg_scheme;                  /* scalar(0),unknown(1),system(2)*/
    int    num_PDE_eqns;                /* block size                    */
    int    blk_info;                    /* store dof information         */
    int    max_levels;                  /* maximum number of levels      */
@@ -121,6 +125,14 @@ extern int  ML_AMG_Set_StartLevel( ML_AMG *amg, int level );
 /* -------------------------------------------------------------------- */
 
 extern int  ML_AMG_Set_MaxCoarseSize( ML_AMG *amg, int size );
+
+/* -------------------------------------------------------------------- */
+/* different AMG scheme (scalar, unknown, system)                       */
+/* -------------------------------------------------------------------- */
+
+extern int  ML_AMG_Set_AMGScheme_Scalar( ML_AMG *amg  );
+extern int  ML_AMG_Set_AMGScheme_SystemUnknown( ML_AMG *amg  );
+extern int  ML_AMG_Set_AMGScheme_SystemNodal( ML_AMG *amg  );
 
 /* -------------------------------------------------------------------- */
 /* different parallel coarsening schemes                                */

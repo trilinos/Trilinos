@@ -47,6 +47,7 @@ int ML_AMG_Create( ML_AMG **amg )
    (*amg)->max_coarse_size            = 4;
    (*amg)->threshold                  = 0.2;
    (*amg)->curr_threshold             = 0.2;
+   (*amg)->amg_scheme                 = ML_AMG_SCALAR;
    (*amg)->coarsen_scheme             = ML_AMG_MIS;
    (*amg)->num_PDE_eqns               = 1;
    (*amg)->blk_info                   = NULL;
