@@ -714,54 +714,75 @@ line input arguments and set runtime options. Additionally, a CommandLineProcess
 object can provide the user with a list of acceptable command line arguments, and
 their default values.
 
-The basic idea is that users will specify the name of command line
-options, their default values, and a pointer to variables that will host
-those values, then parse the command line. This may be done as
-follows. Let \verb!main! be defined as \verb!int main(int argc, char* argv[])!. First, we create an \verb!CommandLineParser! object as
+To use the \verb!Teuchos::CommandLineProcessor! class, include the header:
+{\small 
 \begin{verbatim}
-CommandLineProcessor CLP;
-\end{verbatim}
-then, we set options name and default values, plus an help string:
+#include "Teuchos_CommandLineProcessor.hpp"
+\end{verbatim}}
+Creating an empty command line processor looks like:
+{\small 
+\begin{verbatim}
+Teuchos::CommandLineProcessor My_CLP;
+\end{verbatim}}
+To set and option, it must be given a name and default value.  Additionally,
+each option can be given a help string.  Although it is not necessary, a help
+string aids a users comprehension of the acceptable command line arguments.
+Some examples of setting command line options are:
+{\small
 \begin{verbatim}    
+// Set an integer command line option.
 int NumIters = 1550;
-CLP.setOption("iterations",&NumIters,"number of iterations");
-
+My_CLP.setOption("iterations", &NumIters, "Number of iterations");
+// Set a double-precision command line option.
 double Tolerance = 1e-10;    
-CLP.setOption("tolerance",&Tolerance,"tolerance");
-    
+My_CLP.setOption("tolerance", &Tolerance, "Tolerance");
+// Set a string command line option.
+string Solver = "GMRES";
+My_CLP.setOption("solver", &Solver, "Linear solver");
+// Set a boolean command line option.    
 bool Precondition;
-CLP.setOption("precondition","no-precondition",
-               &Precondition,"prec flag");
-\end{verbatim}
-Now, we allow some options not to be recognized, and we avoid Teuchos to
-throw an error when \verb!--help! is specified an command line
-option. Finally, we parse the command line, and print out results on
-standart output.
-\begin{verbatim}    
-CLP.recogniseAllOptions(false);
-CLP.throwExceptions(false);
-    
-CLP.parse(argc,argv);
-cout << NumIters << endl << Tolerance << endl;
-cout << Precondition << endl;
-\end{verbatim}
-An example of use may be as follows:
+My_CLP.setOption("precondition","no-precondition",
+               &Precondition,"Preconditioning flag");
+\end{verbatim}}
+There are also two methods that control the strictness of the command line processor.
+For a command line processor to be sensitive to any bad command line option that it does
+not recognize, use:
+{\small
 \begin{verbatim}
-[msala:teuchos]> ./ex3.exe  --iterations=123 --tolerance=1e-6  
-                            --no-precondition --help
-Usage: ./ex3.exe [options]
+My_CLP.recogniseAllOptions(false);
+\end{verbatim}}
+\noindent Then, if the parser finds a command line option it doesn't recognize, it will
+throw an exception.  To prevent a command line processor from throwing an exception when
+it encounters a unrecognized option or when the help string is printed, use:
+{\small
+\begin{verbatim}
+My_CLP.throwExceptions(false);
+\end{verbatim}}
+Finally, to parse the command line, {\tt argc} and {\tt argv} are passed to the {\tt parse} method:
+{\small
+\begin{verbatim}    
+My_CLP.parse( argc, argv );
+\end{verbatim}}
+The {\tt --help} output for this command line processor is:
+{\small
+\begin{verbatim}
+Usage: ./ex7.exe [options]
   options:
-  --help                     Prints this help message
-  --iterations       int     number of iterations
-                             (default: --iterations=123)
-  --tolerance        double  tolerance
-                             (default: --tolerance=1e-06)
-  --precondition     bool    prec flag
-  --no-precondition          (default: --no-precondition)
-123
-1e-06
-0
-\end{verbatim}
+  --help                         Prints this help message
+  --pause-for-debugging          Pauses for user input to allow 
+                                 attaching a debugger
+  --iterations           int     Number of iterations
+                                 (default: --iterations=1550)
+  --tolerance            double  Tolerance
+                                 (default: --tolerance=1e-10)
+  --solver               string  Linear solver
+                                 (default: --solver="GMRES")
+  --precondition         bool    Preconditioning flag
+  --no-precondition              (default: --precondition)
+\end{verbatim}}
+\noindent This section presents examples of all the methods in the 
+{\tt Teuchos::CommandLineProcessor} class and can be found in
+\TriExe{teuchos/ex7.cpp}.  
 
 %%%
 %%%
