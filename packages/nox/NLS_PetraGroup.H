@@ -14,6 +14,7 @@
 #include "Epetra_RowMatrix.h"
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_LinearProblem.h"
+
 //#include "AztecOO.h"
 #include "NLS_Parameter.H"
 #include "NLS_ParameterList.H"
@@ -35,66 +36,58 @@ class NLS_PetraGroup : public NLS_Group {
 
 public:
 
-  //! Constructor.  The supplied vector is the solution vector and all
-  //! other vectors in the group (RHS, gradient and Newton) 
-  //! are deep copies based on the Epetra Vector passed in.
-  NLS_PetraGroup(Epetra_Vector& x);
-
-  //! Constructor.  The supplied vector is the solution vector and all
-  //! other vectors in the group (RHS, gradient and Newton) 
-  //! are deep copies based on the Epetra Vector passed in.
+  //! Constructor for Jacobian-Enabled group.
+  /*! Makes internal xVector a deep copy of x and the internal Jacobian
+    a pointer to J. Does not delete J. */
   NLS_PetraGroup(Epetra_Vector& x, Epetra_RowMatrix& J);
 
-  //! Copy constructor.
-  //! If newJacobian is true a deep copy of the Jacobian is created, 
-  //! otherwise a shallow copy is created.
-  NLS_PetraGroup(NLS_Group& copyFrom, bool newJacobian=false);
+  //! Constructor for Jacobian-Diabled group.
+  /*! Makes internal xVector a deep copy of x. A group constructed in
+    this manner cannot compute its Jacobian. */
+  NLS_PetraGroup(Epetra_Vector& x);
 
-  //! Create a new group where the new solution vector is grp.x() + step * d.  
-  //! If newJacobian is true a deep copy of the Jacobian is created, 
-  //! otherwise a shallow copy is created.
-  NLS_PetraGroup(NLS_Group& grp, NLS_Vector& d, double step, 
-		 bool newJacobian=false);
- 
   //! Deconstructor
   virtual ~NLS_PetraGroup();
 
-  virtual NLS_Group& copy(const NLS_Group& source);
+  virtual NLS_Group& copy(const NLS_Group& copyFrom);
 
-  virtual NLS_Group& copy(const NLS_PetraGroup& source);
+  //! Copy everything except the Jacobian matrix.
+  virtual NLS_Group& copy(const NLS_PetraGroup& copyFrom);
 
-  virtual NLS_Group* newcopy(bool newJacobian=false);
+  //! Invalid for this class - just returns NULL.
+  virtual NLS_Group* newGroup() const;
 
   /** @name "Compute" functions */
   //@{
 
   //! Compute and return solution vector
-  virtual NLS_Vector& computeX(const NLS_Group& x, const NLS_Vector& d, double step);
+  virtual const NLS_Vector& computeX(const NLS_Group& grp, const NLS_Vector& d, double step);
 
   //! Compute and return solution vector
-  virtual NLS_Vector& computeX(const NLS_PetraGroup& x, 
-			       const NLS_PetraVector& d, 
-			       double step);
+  virtual const NLS_Vector& computeX(const NLS_PetraGroup& grp, const NLS_PetraVector& d, double step);
 
   //! Compute and return RHS
-  virtual NLS_Vector& computeRHS();
+  virtual const NLS_Vector& computeRHS();
 
   //! Compute RHS
   virtual void computeJacobian();
 
   //! Compute and return gradient 
   /*! Throws an error if RHS and Jacobian have not been computed */
-  virtual NLS_Vector& computeGrad();
+  virtual const NLS_Vector& computeGrad();
 
   //! Compute and return Newton direction 
   /*! Throws an error if RHS and Jacobian have not been computed */
-  virtual NLS_Vector& computeNewton();
+  virtual const NLS_Vector& computeNewton();
 
   //! Compute and return Newton direction, using desired accuracy for nonlinear solve
   /*! Throws an error if RHS and Jacobian have not been computed */
-  virtual NLS_Vector& computeNewton(NLS_ParameterList& params);
+  virtual const NLS_Vector& computeNewton(NLS_ParameterList& params);
 
   //@}
+
+  //! Returns true if this group can compute a Jacobian
+  bool isJacobianEnabled() const;
 
   /** @name Checks to see if various objects have been computed. 
    *
@@ -114,56 +107,52 @@ public:
   //@{
 
   //! Return solution vector
-  virtual NLS_Vector& getX() const;
+  virtual const NLS_Vector& getX() const;
 
   //! Return rhs (throws an error if RHS has not been computed)
-  virtual NLS_Vector& getRHS() const;
+  virtual const NLS_Vector& getRHS() const;
 
   //! Return gradient (throws an error if gradient has not been computed)
-  virtual NLS_Vector& getGrad() const;
+  virtual const NLS_Vector& getGrad() const;
 
   //! Return Newton direction (throws an error if newton direction has not been computed)
-  virtual NLS_Vector& getNewton() const;
+  virtual const NLS_Vector& getNewton() const;
 
   //@}
 
 protected:
 
   //! Disallow Copy operator for now.
-  virtual NLS_PetraGroup& operator=(NLS_PetraGroup& copyFrom) { };
+  virtual NLS_PetraGroup& operator=(NLS_PetraGroup& copyFrom) {};
 
-  //! resets the status flags to false
-  void resetVectorStatus();
+  //! resets the isValid flags to false
+  void reset();
 
 /** @name Vectors */
 //@{
 //! Solution vector.
-  NLS_PetraVector* xVector;
+  NLS_PetraVector xVector;
 //! Right-hand-side vector (function evaluation).
-  NLS_PetraVector* RHSVector;
+  NLS_PetraVector RHSVector;
 //! Gradient vector (steepest descent vector).
-  NLS_PetraVector* gradVector;
+  NLS_PetraVector gradVector;
 //! Newton direction vector.
-  NLS_PetraVector* NewtonVector;
+  NLS_PetraVector NewtonVector;
 //@}
 
   //! Pointer to Epetra Jacobian Matrix 
   Epetra_RowMatrix* Jac;
 
-  //! true if we should delete the Jacobian matrix when object 
-  //! is deconstructed.
-  bool doDeleteJacobian;
-
-/** @name Status flags 
+/** @name IsValid flags 
  *  Tells if the vector is out of date with respect to the current 
  *  solution vector.
  *  false = vector is now out of date.
  *  true = vector is up to date with current solution. */
 //@{
-bool statusRHS;
-bool statusJacobian;
-bool statusGrad;
-bool statusNewton;
+bool isValidRHS;
+bool isValidJacobian;
+bool isValidGrad;
+bool isValidNewton;
 //@}
 
 };
