@@ -2,7 +2,7 @@
 #C_pre          = purify -best-effort -cache-dir=/tmp
 
 #Compiler
-C_comp		= cc -DHTEST -DZOLTAN_NO_MPI
+C_comp		= cc -DHTEST -DZOLTAN_NO_MPI -DZOLTAN_HG
 
 # Assume that environment OSTYPE is set to 'solaris' or 'linux'!
 # OSTYPE        = solaris
@@ -22,13 +22,15 @@ L		= -L. -lhg -lm
 src.c		= hg_exec.c hg_readfile.c hg_util.c hg_plot.c \
 		  hg_part.c hg_match.c hg_pack.c hg_group.c hg_scale.c \
 		  hg_coarse.c hg_global.c hg_local.c hg_sort.c hg_heap.c \
-		  ../driver/zoltan_hg_readfile.c mem.c
+		  mem.c
 
 all:            	./hg_exec
 ./hg_exec:		./libhg.a hg_exec.o
 			$(C) hg_exec.o $(L) -o $@
-./libhg.a:		$(src.c:.c=.o)
+./libhg.a:		$(src.c:.c=.o) zoltan_hg_readfile.o
 			ar rv $@ $?
+zoltan_hg_readfile.o:   ../driver/zoltan_hg_readfile.c
+			$(C) -c ../driver/zoltan_hg_readfile.c
 .c.o:			$<
 	  		$(C) -c $<
 
