@@ -74,8 +74,8 @@ AZTEC_COMM_FNS_SUNMOS      = az_comm.c
 
 AZTEC_C = $(AZTEC_COMM_FNS_$(TRILINOS_COMM)) \
           $(TIME_$(TRILINOS_ARCH)) $(COMM_$(TRILINOS_COMM)) \
-az_bilu.c	          az_capt2read.c    az_cg.c	        az_cgs.c \
-az_cgstab.c	     az_check.c	   az_comm.c \
+az_bilu.c	          az_cg.c	        az_cgs.c \
+az_cgstab.c	     az_check.c	   \
 az_colperm.c        az_converge.c \
 az_dd_overlap.c     az_dgemv2.c       az_dgemv3.c \
 az_domain_decomp.c  az_fix_pt.c       az_flop_cnt.c \

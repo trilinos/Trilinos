@@ -906,8 +906,6 @@ int Epetra_Aztec_getrow(int columns[], double values[],
  *                  return 0.
  */
   Epetra_RowMatrix * A = (Epetra_RowMatrix *) AZ_get_matvec_data(Amat);
-  int nz_ptr = 0;
-  int NumRows = A->NumMyRows();
   int NumEntries;
 
   double *Values = values;

@@ -683,16 +683,7 @@ extern void AZ_fortransolve(double x[], double b[], int options[],
 #endif
 
 #ifndef FSUB_TYPE
-#  if defined(ncube)
-#     define  FSUB_TYPE void
-#  elif defined(paragon)
-#     define  FSUB_TYPE void
-#  elif defined(hp)
-#     define  FSUB_TYPE void
-#  else
-#     define  FSUB_TYPE void
-/*#     define  FSUB_TYPE int*/
-#  endif
+#define  FSUB_TYPE void
 #endif
 
 #ifdef __cplusplus
@@ -1559,6 +1550,7 @@ extern int  PAZ_sorted_search(int, int, int*);
 /*****************************************************************************/
 #ifdef IFPACK
 extern void az2ifp_blockmatrix (void **bmat, AZ_MATRIX *Amat);
+extern void ifp_freebiluk( void *precon);
 #endif
 
 /*****************************************************************************/
@@ -1711,7 +1703,7 @@ extern void   AZ_sym_rescale_vbr(double x[], int data_org[], int options[]);
 #include "az_aztec_defs.h"
 
 
-#if defined (hp)
+#ifdef AZ_PA_RISC
 extern void   dgemvnsqr_(int *, double *, double *, double *);
 extern void   vec_$dcopy(double *, double *, int *);
 extern void   blas_$dgemm(char *, char *, int *, int *, int *, double *,

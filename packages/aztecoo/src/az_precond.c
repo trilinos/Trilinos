@@ -13,10 +13,6 @@
  *
  * $Name$
  *====================================================================*/
-#ifndef lint
-static char rcsid[] = "$Id$";
-#endif
-
 
 /*******************************************************************************
  * Copyright 1995, Sandia Corporation.  The United States Government retains a *

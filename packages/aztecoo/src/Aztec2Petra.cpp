@@ -63,7 +63,6 @@ int Aztec2Petra(int * proc_config,
     NumMyElements = Amat->data_org[AZ_N_internal] + Amat->data_org[AZ_N_border];
   // int NumMyElements = Amat->N_update; // Note: This "official" way does not always work
   int * bpntr = Amat->bpntr;
-  int * bindx = Amat->bindx;
   int * rpntr = Amat->rpntr;
   int * indx = Amat->indx;
   double * val = Amat->val;
@@ -138,9 +137,6 @@ int Aztec2Petra(int * proc_config,
 
     int * numNz = new int[NumMyElements];
     for (int i=0; i<NumMyElements; i++) numNz[i] = global_bindx[i+1] - global_bindx[i] + 1;
-
-    /* Make ColInds - Exactly global_bindx, offset by diag (just copy pointer) */
-    int * ColInds = global_bindx+NumMyElements+1;
 
     Epetra_Map * map1 = new Epetra_Map(NumGlobalElements, NumMyElements,
 				     MyGlobalElements, 0, *comm);

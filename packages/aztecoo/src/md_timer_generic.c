@@ -13,10 +13,6 @@
  *
  * $Name$
  *====================================================================*/
-#ifndef lint
-static char *cvs_timergen_id =
-  "$Id$";
-#endif
 
 #include <time.h>
 

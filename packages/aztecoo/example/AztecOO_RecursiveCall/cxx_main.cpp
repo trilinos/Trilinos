@@ -44,8 +44,8 @@ int main(int argc, char *argv[])
 
   Poisson2dOperator A(nx, ny, comm);
 
-  //if (vb) cout << "Building Tridiagonal Approximation to Poisson" << endl;
-  //Epetra_CrsMatrix * precMatrix = A.GeneratePrecMatrix();
+  if (vb) cout << "Building Tridiagonal Approximation to Poisson" << endl;
+  Epetra_CrsMatrix * precMatrix = A.GeneratePrecMatrix();
 
   
   // Generate vectors (xx will be used to generate RHS b)
@@ -58,9 +58,10 @@ int main(int argc, char *argv[])
 
   if (vb) cout << "Building AztecOO solver that will be used as a preconditioner" << endl;
   Epetra_LinearProblem precProblem;
-  //precProblem.SetOperator(precMatrix);
-  precProblem.SetOperator(&A);
+  precProblem.SetOperator(precMatrix);
+  //precProblem.SetOperator(&A);
   AztecOO precSolver(precProblem);
+  //precSolver.SetPrecOperator(&A);
   precSolver.SetAztecOption(AZ_precond, AZ_ls);
   precSolver.SetAztecOption(AZ_output, AZ_none);
   precSolver.SetAztecOption(AZ_solver, AZ_cg);

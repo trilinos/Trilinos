@@ -13,10 +13,6 @@
  *
  * $Name$
  *====================================================================*/
-#ifndef lint
-static char rcsid[] = "$Id$";
-#endif
-
 
 /******************************************************************************
  * Copyright 1995, Sandia Corporation.  The United States Government retains a
@@ -235,7 +231,7 @@ void dvbr_sparax_basic(int m, double *val, int *bindx, int *rpntr,
            * this is a key optimization location.
            */
 
-#ifdef hp
+#ifdef AZ_PA_RISC
           dgemvnsqr_(&m1, val_pntr, x, c_pntr);
 #else
           if (m1 < 10)

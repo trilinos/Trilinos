@@ -41,8 +41,8 @@ Epetra_MsrMatrix::Epetra_MsrMatrix(int * proc_config, AZ_MATRIX * Amat)
     proc_config_(proc_config),
     Values_(0),
     Indices_(0),
-    ImportVector_(0),
     MaxNumEntries_(-1),
+    ImportVector_(0),
     NormInf_(-1.0),
     NormOne_(-1.0)
 {
@@ -55,7 +55,6 @@ Epetra_MsrMatrix::Epetra_MsrMatrix(int * proc_config, AZ_MATRIX * Amat)
   if (Amat->data_org[AZ_matrix_type]!=AZ_MSR_MATRIX)
     throw Comm_->ReportError("AZ_matrix_type must be AZ_MSR_MATRIX", -1);
   int * bindx = Amat->bindx;
-  double * val = Amat->val;
   NumMyRows_ = Amat->data_org[AZ_N_internal] + Amat->data_org[AZ_N_border];
   int NumExternal = Amat->data_org[AZ_N_external];
   NumMyCols_ = NumMyRows_ + NumExternal;
@@ -358,7 +357,6 @@ double Epetra_MsrMatrix::NormOne() const {
     x_tmp = new Epetra_Vector(BlockImportMap()); // Create temporary import vector if needed
     xp = x_tmp;
   }
-  int ierr = 0;
   int i, j;
 
   for (i=0; i < NumMyCols_; i++) (*xp)[i] = 0.0;

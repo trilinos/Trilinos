@@ -13,11 +13,6 @@
  *
  * $Name$
  *====================================================================*/
-#ifndef lint
-static char *cvs_wrapsun_id =
-  "$Id$";
-#endif
-
 
 /*******************************************************************************
  * Copyright 1995, Sandia Corporation.  The United States Government retains a *

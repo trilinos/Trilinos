@@ -40,6 +40,10 @@ void AZOO_iterate(double * xsolve, double * b,
   Epetra_Vector * pb;
 
   int ierr = Aztec2Petra(proc_config, Amat, xsolve, b, comm, map, A, px, pb);
+  if (ierr!=0) {
+    cerr << "Error detected in Aztec2Petra. Value = " << ierr << endl;
+    exit(1);
+  }
 
 
   Epetra_LinearProblem problem(A, px, pb);

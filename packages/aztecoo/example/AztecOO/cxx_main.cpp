@@ -162,13 +162,13 @@ int main(int argc, char *argv[])
   //solver.SetAztecOption(AZ_poly_ord, 9);
   solver.SetAztecParam(AZ_ilut_fill, 1.0);
   //solver.SetAztecParam(AZ_drop, 0.0);
-  double rthresh = 1.4;
+  //double rthresh = 1.4;
   //cout << "Rel threshold = " << rthresh << endl;
-  solver.SetAztecParam(AZ_rthresh, rthresh);
-  double athresh = 10.0;
+  //solver.SetAztecParam(AZ_rthresh, rthresh);
+  //double athresh = 10.0;
   //cout << "Abs threshold = " << athresh << endl;
-  solver.SetAztecParam(AZ_athresh, athresh);
-  solver.SetAztecParam(AZ_ill_cond_thresh, 1.0e200);
+  //solver.SetAztecParam(AZ_athresh, athresh);
+  //solver.SetAztecParam(AZ_ill_cond_thresh, 1.0e200);
 
 
   

@@ -204,8 +204,8 @@ int main(int argc, char *argv[]) {
                                                  " Rthresh = " + toString(Rthresh); 
   ILUK->SetLabel(label.c_str());
 
-  int Maxiter = 500;
-  double Tolerance = 1.0E-14;
+  //int Maxiter = 500;
+  //double Tolerance = 1.0E-14;
 
   Epetra_Vector xcomp(map);
   Epetra_Vector resid(map);
