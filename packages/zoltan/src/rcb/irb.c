@@ -43,8 +43,10 @@
 /* function prototypes */
 
 int LB_inertial1d(struct irb_dot *, int, int, double *, double *,double *);
-int LB_inertial2d(struct irb_dot *, int, int, double *, double *,double *);
-int LB_inertial3d(struct irb_dot *, int, int, double *, double *,double *);
+int LB_inertial2d(struct irb_dot *, int, int, double *, double *,double *,
+                  MPI_Comm);
+int LB_inertial3d(struct irb_dot *, int, int, double *, double *,double *,
+                  MPI_Comm);
 
 static void IRB_check(LB *, struct irb_dot *, int, int);
 static void IRB_stats(LB *, double, struct irb_dot *,int, double *, int *, int);
@@ -387,10 +389,12 @@ static int irb_fn(
         }
         switch (irb->Num_Geom) {
            case 3:
-              ierr = LB_inertial3d(dotpt, dotnum, wgtflag, cm, evec, value);
+              ierr = LB_inertial3d(dotpt, dotnum, wgtflag, cm, evec, value,
+                                   local_comm);
               break;
            case 2:
-              ierr = LB_inertial2d(dotpt, dotnum, wgtflag, cm, evec, value);
+              ierr = LB_inertial2d(dotpt, dotnum, wgtflag, cm, evec, value,
+                                   local_comm);
               break;
            case 1:
               ierr = LB_inertial1d(dotpt, dotnum, wgtflag, cm, evec, value);

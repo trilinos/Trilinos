@@ -39,7 +39,8 @@ int LB_inertial3d(
      int              wgtflag,  /* are vertex weights being used? */
      double           cm[3],    /* center of mass in each direction */
      double           evec[3],  /* eigenvector */
-     double           *value    /* array for value to sort on */
+     double           *value,   /* array for value to sort on */
+     MPI_Comm         comm      /* communicator for partition */
 )
 {
      double    tensor[3][3];    /* inertia tensor */
@@ -49,6 +50,9 @@ int LB_inertial3d(
      double    eval, res;       /* eigenvalue and error in eval calculation */
      double    wgt_sum;         /* sum of all the vertex weights */
      int       i;               /* loop counter */
+     double    cmt[3], wgtt;    /* temp for center of mass */
+     double    xxt, yyt, zzt;   /* temp for inertial tensor */
+     double    xyt, xzt, yzt;   /* temp for inertial tensor */
 
      /* Compute center of mass and total mass. */
      cm[0] = cm[1] = cm[2] = 0.0;
@@ -70,9 +74,14 @@ int LB_inertial3d(
         }
      }
 
-     cm[0] /= wgt_sum;
-     cm[1] /= wgt_sum;
-     cm[2] /= wgt_sum;
+     /* Sum weights across processors */
+
+     MPI_Allreduce(cm,cmt,3,MPI_DOUBLE,MPI_SUM,comm);
+     MPI_Allreduce(&wgt_sum,&wgtt,1,MPI_DOUBLE,MPI_SUM,comm);
+
+     cm[0] = cmt[0]/wgtt;
+     cm[1] = cmt[1]/wgtt;
+     cm[2] = cmt[2]/wgtt;
 
      /* Generate 6 elements of Inertial tensor. */
      xx = yy = zz = xy = xz = yz = 0.0;
@@ -101,14 +110,23 @@ int LB_inertial3d(
            yz += ydif*zdif;
         }
 
+     /* Sum tensor across processors */
+
+     MPI_Allreduce(&xx,&xxt,1,MPI_DOUBLE,MPI_SUM,comm);
+     MPI_Allreduce(&yy,&yyt,1,MPI_DOUBLE,MPI_SUM,comm);
+     MPI_Allreduce(&zz,&zzt,1,MPI_DOUBLE,MPI_SUM,comm);
+     MPI_Allreduce(&xy,&xyt,1,MPI_DOUBLE,MPI_SUM,comm);
+     MPI_Allreduce(&xz,&xzt,1,MPI_DOUBLE,MPI_SUM,comm);
+     MPI_Allreduce(&yz,&yzt,1,MPI_DOUBLE,MPI_SUM,comm);
+
      /* Compute eigenvector with maximum eigenvalue. */
 
-     tensor[0][0] = xx;
-     tensor[1][1] = yy;
-     tensor[2][2] = zz;
-     tensor[0][1] = tensor[1][0] = xy;
-     tensor[0][2] = tensor[2][0] = xz;
-     tensor[1][2] = tensor[2][1] = yz;
+     tensor[0][0] = xxt;
+     tensor[1][1] = yyt;
+     tensor[2][2] = zzt;
+     tensor[0][1] = tensor[1][0] = xyt;
+     tensor[0][2] = tensor[2][0] = xzt;
+     tensor[1][2] = tensor[2][1] = yzt;
      evals3(tensor, &res, &res, &eval);
      eigenvec3(tensor, eval, evec, &res);
 

@@ -36,7 +36,8 @@ int LB_inertial2d(
      int              wgtflag,  /* are vertex weights being used? */
      double           cm[3],    /* center of mass in each direction */
      double           evec[3],  /* eigenvector */
-     double           *value    /* array for value to sort on */
+     double           *value,   /* array for value to sort on */
+     MPI_Comm         comm      /* communicator for partition */
 )
 {
      double tensor[2][2];       /* inertial tensor */
@@ -46,6 +47,8 @@ int LB_inertial2d(
      double eval, res;          /* eigenvalue and error in eval calculation */
      double wgt_sum;            /* sum of all the vertex weights */
      int    i;                  /* loop counter */
+     double xcmt, ycmt, wgtt;   /* temp for center of mass */
+     double xxt, yyt, xyt;      /* temp for tensor */
 
      /* Compute center of mass and total mass. */
 
@@ -66,8 +69,14 @@ int LB_inertial2d(
         }
      }
 
-     xcm /= wgt_sum;
-     ycm /= wgt_sum;
+     /* Sum weights across processors */
+
+     MPI_Allreduce(&xcm,&xcmt,1,MPI_DOUBLE,MPI_SUM,comm);
+     MPI_Allreduce(&ycm,&ycmt,1,MPI_DOUBLE,MPI_SUM,comm);
+     MPI_Allreduce(&wgt_sum,&wgtt,1,MPI_DOUBLE,MPI_SUM,comm);
+
+     xcm = xcmt/wgtt;
+     ycm = ycmt/wgtt;
 
      /* Generate 3 elements of Inertial tensor. */
      xx = yy = xy = 0.0;
@@ -88,11 +97,17 @@ int LB_inertial2d(
            xy += xdif*ydif;
         }
 
+     /* Sum tensor across processors */
+
+     MPI_Allreduce(&xx,&xxt,1,MPI_DOUBLE,MPI_SUM,comm);
+     MPI_Allreduce(&yy,&yyt,1,MPI_DOUBLE,MPI_SUM,comm);
+     MPI_Allreduce(&xy,&xyt,1,MPI_DOUBLE,MPI_SUM,comm);
+
      /* Compute eigenvector with maximum eigenvalue. */
 
-     tensor[0][0] = xx;
-     tensor[1][1] = yy;
-     tensor[1][0] = tensor[0][1] = xy;
+     tensor[0][0] = xxt;
+     tensor[1][1] = yyt;
+     tensor[1][0] = tensor[0][1] = xyt;
      evals2(tensor, &res, &eval);
      eigenvec2(tensor, eval, evec, &res);
 
