@@ -69,13 +69,11 @@
  * you a lot of typing and space.  Later if you need to override these
  * operations you can just implement the member functions by hand.
  */
-#define STANDARD_MEMBER_COMPOSITION_MEMBERS( TYPE, NAME ) \
-	void NAME (const TYPE & NAME ) \
-	{	NAME ## _ = NAME ; } \
-	const TYPE& NAME() const \
-	{	return NAME ## _; } \
-private: \
-	TYPE NAME ## _; \
-public:
+#define STANDARD_MEMBER_COMPOSITION_MEMBERS( TYPE, NAME )\
+private:\
+  TYPE NAME ## _;\
+public:\
+  void NAME ( const TYPE & NAME ) { NAME ## _ = NAME ; }\
+  const TYPE& NAME() const { return NAME ## _; }
 
 #endif	// TEUCHOS_STANDARD_MEMBER_COMPOSITION_MACROS_H
