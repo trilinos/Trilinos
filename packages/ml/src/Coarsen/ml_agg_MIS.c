@@ -123,7 +123,9 @@ int ML_Aggregate_CoarsenMIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
 
 #if defined(OUTPUT_AGGREGATES) || defined(INPUT_AGGREGATES) || (ML_AGGR_INAGGR) || (ML_AGGR_OUTAGGR) || (ML_AGGR_MARKINAGGR)
 #ifndef MAXWELL
+#ifndef ALEGRA
 extern int *update_index, *update, *extern_index, *external;
+#endif
 #else
 extern int *reordered_glob_nodes, *global_node_inds,
            *reordered_node_externs, *global_node_externs;
@@ -974,7 +976,11 @@ for (i = 0; i < aggr_count ; i++) printf("counts %d %d\n",i,aggr_cnt_array[i]);
    vertex_offset = ML_gpartialsum_int(nvertices, comm);
    for (i = 0; i < nvertices ; i++) {
 #ifndef MAXWELL
+#ifdef ALEGRA
+      if (level_count == 0) { j = i; k = i;}
+#else
       if (level_count == 0) { j = update_index[i]; k = update[i];}
+#endif
 #else
       if (level_count == 0) { j = reordered_glob_nodes[i]; k = global_node_inds[i];}
 #endif /* ifndef MAXWELL */
@@ -990,7 +996,11 @@ for (i = 0; i < aggr_count ; i++) printf("counts %d %d\n",i,aggr_cnt_array[i]);
    for (i = 0; i < exp_Nrows-nvertices; i++)
    {
 #ifndef MAXWELL
+#ifdef ALEGRA
+      if (level_count == 0) { j = i+nvertices; k =  (int) dtemp[i+nvertices];}
+#else
       if (level_count == 0) { j = extern_index[i]; k = external[i];} 
+#endif
 #else
       if (level_count == 0) { j = reordered_node_externs[i]; k =
 	  global_node_externs[i];}
@@ -1731,7 +1741,11 @@ aggr_cnt_array[i],i);
                      (*Pmatrix)->outvec_leng, d2temp);
    for (i = 0; i < nvertices; i++) {
 #ifndef MAXWELL
+#ifdef ALEGRA
+      if (level_count == 1) { j = i; k = i;} 
+#else
       if (level_count == 1) { j = update_index[i]; k = update[i];} 
+#endif
 #else
       if (level_count == 1) { j = reordered_glob_nodes[i]; k = global_node_inds[i];}
 #endif /* ifndef MAXWELL */
