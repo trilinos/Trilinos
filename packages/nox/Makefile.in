@@ -268,7 +268,7 @@ GZIP_ENV = --best
 distdir: $(DISTFILES)
 	-chmod -R a+w $(distdir) >/dev/null 2>&1; rm -rf $(distdir)
 	mkdir $(distdir)
-	$(mkinstalldirs) $(distdir)/config $(distdir)/doc
+	$(mkinstalldirs) $(distdir)/config $(distdir)/doc $(distdir)/src-loca/doc
 	@for file in $(DISTFILES); do \
 	  if test -f $$file; then d=.; else d=$(srcdir); fi; \
 	  dir=`echo "$$file" | sed -e 's,/[^/]*$$,,'`; \
@@ -425,7 +425,7 @@ uninstall-info: uninstall-info-recursive
 
 
 dox:
-	cd doc;	$(MAKE) dox
+	cd doc;	$(MAKE) dox; cd ../src-loca/doc; $(MAKE) dox
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

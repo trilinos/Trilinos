@@ -1280,6 +1280,8 @@ AC_CONFIG_FILES([
                 example-petsc/Makefile
                 example-petsc/DS6.5.1/Makefile
 		src-loca/Makefile
+		src-loca/doc/Makefile
+		src-loca/doc/Doxyfile
 		src-loca/src/Makefile
                 src-loca/src-epetra/Makefile
 		src-loca/src-lapack/Makefile

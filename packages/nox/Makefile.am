@@ -70,4 +70,4 @@ SUBDIRS = doc src src-lapack src-epetra src-petsc \
 ## #######################################################################
 
 dox:
-	cd doc;	$(MAKE) dox
+	cd doc;	$(MAKE) dox; cd ../src-loca/doc; $(MAKE) dox
