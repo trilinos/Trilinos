@@ -101,7 +101,6 @@ struct ML_Struct {
    double         *dble_options; /**< optional double parameters      */
    void           *void_options; /**< optional other parameters       */
    int            (*func)(void); /**< optional function               */
-   ML_qr_fix      *xCDeadNodDof;  /**< for fixing QR                   */
 
 };
 struct ML_Timing {
