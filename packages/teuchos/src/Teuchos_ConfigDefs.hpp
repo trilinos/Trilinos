@@ -163,6 +163,8 @@
 
 #ifdef HAVE_ALGORITHM
 #include <algorithm>
+#elif defined(HAVE_ALGO_H)
+#include <algo.h>
 #elif defined(HAVE_ALGORITHM_H)
 #include <algorithm.h>
 #endif
