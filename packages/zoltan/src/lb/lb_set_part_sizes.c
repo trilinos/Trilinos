@@ -58,22 +58,25 @@ int Zoltan_LB_Set_Part_Sizes(ZZ *zz, int global_num,
   char *yo = "Zoltan_LB_Set_Part_Sizes";
   int i, j, maxlen;
   int error = ZOLTAN_OK;
+  const int INIT_NUM_PART = 16; /* Initial allocation for Part_Info array. */
+
+  ZOLTAN_TRACE_ENTER(zz, yo);
 
   /* len = -1 will nullify all partition sizes set on this proc */
   if (len == -1){
     zz->LB.Part_Info_Len = 0;
-    return error;
+    goto End;
   }
 
   /* Do we need more space? */
   if (zz->LB.Part_Info_Len==0)
-    maxlen = 10;              /* Start with space for 10 elements */
+    maxlen = INIT_NUM_PART;           /* Start with space for 16 elements */
   else if (zz->LB.Part_Info_Len + len > zz->LB.Part_Info_Max_Len)
-    maxlen = 3*(zz->LB.Part_Info_Len + len)/2;  /* Overallocate by 50% */
+    maxlen = 3*(zz->LB.Part_Info_Len + len)/2;  /* Increase by 50% */
   else
     maxlen = 0;
 
-  if (maxlen==10)
+  if (maxlen==INIT_NUM_PART)
     zz->LB.Part_Info = (struct Zoltan_part_info *) ZOLTAN_MALLOC(maxlen *
       sizeof(struct Zoltan_part_info));
   else if (maxlen>0)
@@ -98,6 +101,7 @@ int Zoltan_LB_Set_Part_Sizes(ZZ *zz, int global_num,
   zz->LB.Part_Info_Max_Len = maxlen;
 
 End:
+  ZOLTAN_TRACE_EXIT(zz, yo);
   return error;
 }
 
@@ -126,6 +130,13 @@ int Zoltan_LB_Get_Part_Sizes(ZZ *zz,
   int error = ZOLTAN_OK;
   char msg[128];
   static char *yo = "Zoltan_LB_Get_Part_Sizes";
+
+  ZOLTAN_TRACE_ENTER(zz, yo);
+  if (zz->Debug_Level >= ZOLTAN_DEBUG_ALL)
+    printf("[%1d] Debug: num_global_parts = %d\n", zz->Proc, num_global_parts);
+
+  /* Barrier to make sure all procs have finished Zoltan_LB_Set_Part_Sizes */
+  MPI_Barrier(zz->Communicator);
 
   /* For convenience, if no weights are used, set part_dim to 1 */
   if (part_dim==0) part_dim = 1;
@@ -189,9 +200,16 @@ int Zoltan_LB_Get_Part_Sizes(ZZ *zz,
       sum[j] = 0.0;
 
     for (i = 0; i < num_global_parts; i++){
+      if (zz->Debug_Level >= ZOLTAN_DEBUG_ALL){
+        printf("[%1d] In %s: Partition size %1d (before scaling) = ",  
+            zz->Proc, yo, i);
+        for (j = 0; j < part_dim; j++)
+          printf("%f, ",  part_sizes[i*part_dim+j]);
+        printf("\n");
+      }
       for (j = 0; j < part_dim; j++){
         if (part_sizes[i*part_dim+j]<0){
-          sprintf(msg, "Partition weight (%1d,%1d) has not been set.", i, j); 
+          sprintf(msg, "Partition size (%1d,%1d) has not been set.", i, j); 
 	  ZOLTAN_PRINT_ERROR(zz->Proc, yo, msg);
           error = ZOLTAN_FATAL;
           goto End;
@@ -221,6 +239,7 @@ End:
   if (temp_part_sizes) ZOLTAN_FREE(&temp_part_sizes);
   if (sum)             ZOLTAN_FREE(&sum);
 
+  ZOLTAN_TRACE_EXIT(zz, yo);
   return error;
 }
 
