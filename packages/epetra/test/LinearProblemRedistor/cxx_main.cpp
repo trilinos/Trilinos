@@ -1,4 +1,46 @@
-// Epetra_BlockMap Test routine
+//  Epetra_LinearProblemRedistor Test routine
+
+//
+//  Limitations
+//  -----------
+//
+//  We test only square matrices.  Indeed we perform this test only on 
+//  a single square (but non-symmetric) matrix.
+//
+//  We test only one type of redistor:  the one needed by 
+//  SuperLUdist.  i.e. ConstructTranspose = true -and- 
+//  MakeDataContiguous = true.  
+//
+//  We exercise only one constructor, again the constructor required by 
+//  SuperLUdist.  i.e. OrigProblem, NumProc, Replicate with 
+//  NumProc = comm.NumProc() and Replicate = true.  
+//
+//  Tests performed
+//  ---------------
+//
+//  We create three Epetra_LinearProblems and redistributions:
+//   1)  Create an Epetra_LinearProblem and redistribute it
+//   2)  Update the right hand side of an Epetra_LinearProblem and 
+//       update the redistributed version of the right hand side
+//   3)  Update the matrix of an Epetra_LinearProblem and 
+//       update the redistributed version of the matrix
+//  For each of these we compare the linear problem and its
+//  redistribution as follows:
+//
+//  Method
+//  ------
+//
+//  We compare a linear problem and the redistributed version of same
+//  by multiplying the matrix in the linear problem and the redistributed
+//  version of the linear problem by the right hand side to yield a 
+//  left hand side which we can then compare.
+//
+//  We perform a matrix vector multiply instead of a solve to avoid 
+//  dependence on any particular solver.  However, this results in 
+//  computing x = Ab instead of solving Ax =b.  This only makes sense 
+//  if A is square.
+//
+
 
 #ifdef EPETRA_MPI
 #include "Epetra_MpiComm.h"
@@ -14,12 +56,20 @@
 
 #include "Epetra_SerialComm.h"
 #include "Epetra_Time.h"
+#include "Epetra_LinearProblem.h"
+#include "Epetra_LinearProblemRedistor.h"
 #include "Epetra_RowMatrixTransposer.h"
 #include "Trilinos_Util.h"
+#ifdef HAVE_COMM_ASSERT_EQUAL
+#include "Comm_assert_equal.h"
+#endif
 
-int checkResults(Epetra_RowMatrix * A, Epetra_CrsMatrix * transA, 
-								 Epetra_Vector * xexact, bool verbose);
-
+int checkResults( bool trans, 
+		  Epetra_LinearProblemRedistor * redistor, 
+		  Epetra_LinearProblem * OrigProb,
+		  Epetra_LinearProblem * RedistProb,
+		  bool verbose) ;
+  
 int main(int argc, char *argv[]) {
 
   int i;
@@ -47,155 +97,111 @@ int main(int argc, char *argv[]) {
   bool verbose1 = verbose;
   if (verbose) verbose = (comm.MyPID()==0);
 
-	int nx = 128;
-	int ny = comm.NumProc()*nx; // Scale y grid with number of processors
+  int nx = 4;
+  int ny = comm.NumProc()*nx; // Scale y grid with number of processors
+  
+  // Create funky stencil to make sure the matrix is non-symmetric (transpose non-trivial):
 
-	// Create funky stencil to make sure the matrix is non-symmetric (transpose non-trivial):
+  // (i-1,j-1) (i-1,j  )
+  // (i  ,j-1) (i  ,j  ) (i  ,j+1)
+  // (i+1,j-1) (i+1,j  )
+  
+  int npoints = 2;
 
-	// (i-1,j-1) (i-1,j  )
-	// (i  ,j-1) (i  ,j  ) (i  ,j+1)
-	// (i+1,j-1) (i+1,j  )
+  int xoff[] = {-1,  0,  1, -1,  0,  1,  0};
+  int yoff[] = {-1, -1, -1,  0,  0,  0,  1};
 
-	int npoints = 7;
-
-	int xoff[] = {-1,  0,  1, -1,  0,  1,  0};
-	int yoff[] = {-1, -1, -1,  0,  0,  0,  1};
-
-	Epetra_Map * map;
-	Epetra_CrsMatrix * A;
-	Epetra_Vector * x, * b, * xexact;
+  Epetra_Map * map;
+  Epetra_CrsMatrix * A;
+  Epetra_Vector * x, * b, * xexact;
 	
-	Trilinos_Util_GenerateCrsProblem(nx, ny, npoints, xoff, yoff, comm, map, A, x, b, xexact);
+  Trilinos_Util_GenerateCrsProblem(nx, ny, npoints, xoff, yoff, comm, map, A, x, b, xexact);
 
-	if (nx<8) {
-		cout << *A << endl;
-		cout << "X exact = " << endl << *xexact << endl;
-		cout << "B       = " << endl << *b << endl;
-	}
-	// Construct linear problem object
+  if (verbose) 
+    cout << "npoints = " << npoints << " nx = " << nx << " ny = " << ny  << endl ; 
 
-	Epetra_LinearProblem origProblem(A, x, b);
-
+  if (verbose && nx<6 ) {
+    cout << *A << endl;
+    cout << "B       = " << endl << *b << endl;
+  }
+  // Construct linear problem object
+  
+  Epetra_LinearProblem origProblem(A, x, b);
+  Epetra_LinearProblem *redistProblem;
+  
   Epetra_Time timer(comm);
-
-	// Construct redistor object, use all processors and replicate full problem on each
+  
+  // Construct redistor object, use all processors and replicate full problem on each
 
   double start = timer.ElapsedTime();
-  	Epetra_LinearProblemRedistor redistor(origProblem, comm->NumProc(), true);
-		if (verbose) cout << "\nTime to construct redistor  = " 
-											<< timer.ElapsedTime() - start << endl;
+  Epetra_LinearProblemRedistor redistor(&origProblem, comm.NumProc(), true);
+  if (verbose) cout << "\nTime to construct redistor  = " 
+		    << timer.ElapsedTime() - start << endl;
+
+  bool ConstructTranspose = true; 
+  bool MakeDataContiguous = true;
   
-	bool MakeDataContiguous = true;
-	Epetra_CrsMatrix * transA;
-
   start = timer.ElapsedTime();
-	redistor.CreateRedistProblem(ConstructTranspose, MakeDataContiguous, redistProblem);
-	if (verbose) cout << "\nTime to create redistributed problem = " 
-											<< timer.ElapsedTime() - start << endl;
- 	
+  redistor.CreateRedistProblem(ConstructTranspose, MakeDataContiguous, redistProblem);
+  if (verbose) cout << "\nTime to create redistributed problem = " 
+		    << timer.ElapsedTime() - start << endl;
+  
+  
+  // Now test output of redistor by performing matvecs
 
-	// Now test output of transposer by performing matvecs
+  int ierr = 0;
+  ierr += checkResults( ConstructTranspose, &redistor, &origProblem, 
+			redistProblem, verbose);
+  
+  
+  // Now change values in original rhs and test update facility of redistor
+  // Multiply b by 2
+  
+  double Value = 2.0;
+  
+  b->Scale(Value); // b = 2*b
+  
+  redistor.UpdateRedistRHS(b);
+  if (verbose) cout << "\nTime to update redistributed RHS  = " 
+		    << timer.ElapsedTime() - start << endl;
+  
+  ierr += checkResults( ConstructTranspose, &redistor, 
+			&origProblem, redistProblem, verbose);
+ 
+  // Now change values in original matrix and test update facility of redistor
 
-	int ierr = 0;
-	ierr += checkResults(redistor, origProblem, redistProblem, xexact, verbose);
+#define  CREATE_CONST_MATRIX
+#ifdef CREATE_CONST_MATRIX
+  //  The easiest way that I could find to change the matrix without EPETRA_CHK_ERRs
+  A->PutScalar(13.0); 
+#else 
 
+  //  This has no effect on matrices, such as when nx = 4, that have no 
+  //  diagonal entries.  However, it does cause many EPETRA_CHK_ERR prints.
 
-	// Now change values in original rhs and test update facility of redistor
-	// Multiply b by 2 and do the same to xexact to be consistent
-
-	double Value = 2.0;
-	
-	b->Scale(Value); // b = 2*b
-	xexact->Scale(Value); // xexact = 2*xexact
-
-
+  // Add 2 to the diagonal of each row 
+  for (i=0; i< A->NumMyRows(); i++)  {
+  //  for (i=0; i < 1; i++)
+    cout << " i = " << i ; 
+    A->SumIntoMyValues(i, 1, &Value, &i);
+  }
+#endif  
+  
+  
   start = timer.ElapsedTime();
-	transposer.UpdateRedistRHS(b);
-	if (verbose) cout << "\nTime to update redistributed RHS  = " 
-										<< timer.ElapsedTime() - start << endl;
- 	
-	ierr += checkResults(redistor, origProblem, redistProblem, xexact, verbose);
-
-	// Now change values in original matrix and test update facility of redistor
-	// Add 2 to the diagonal of each row and add 2*xexact to RHS to match
-
-	double Value = 2.0;
-	for (i=0; i< A->NumMyRows(); i++)
-		A->SumIntoMyValues(i, 1, &Value, &i);
-
-	b->Update(Value, *xexact, 1.0); // b = b + 2*xexact
-
-
-  start = timer.ElapsedTime();
-	transposer.UpdateRedistProblemValues(OrigProblem);
-	if (verbose) cout << "\nTime to update redistributed problem  = " 
-										<< timer.ElapsedTime() - start << endl;
- 	
-	ierr += checkResults(redistor, origProblem, redistProblem, xexact, verbose);
-
-	delete A;
-	delete b;
-	delete x;
-	delete xexact;
-	delete map;
-
-
-	/*
-	if (verbose) cout << endl << "Checking transposer for VbrMatrix objects" << endl<< endl;
-		
-	int nsizes = 4;
-	int sizes[] = {4, 6, 5, 3};
-
-	Epetra_VbrMatrix * Avbr;
-	Epetra_BlockMap * bmap;
-
-	Trilinos_Util_GenerateVbrProblem(nx, ny, npoints, xoff, yoff, nsizes, sizes,
-																	 comm, bmap, Avbr, x, b, xexact);
-
-	if (nx<8) {
-		cout << *Avbr << endl;
-		cout << "X exact = " << endl << *xexact << endl;
-		cout << "B       = " << endl << *b << endl;
-	}
-
-  start = timer.ElapsedTime();
-	Epetra_RowMatrixTransposer transposer1(Avbr);
-		if (verbose) cout << "\nTime to construct transposer  = " 
-											<< timer.ElapsedTime() - start << endl;
-
-  start = timer.ElapsedTime();
-	transposer1.CreateTranspose(MakeDataContiguous, transA);
-	if (verbose) cout << "\nTime to create transpose matrix  = " 
-											<< timer.ElapsedTime() - start << endl;
- 	
-
-	// Now test output of transposer by performing matvecs
-;
-	ierr += checkResults(Avbr, transA, xexact, verbose);
-
-
-	// Now change values in original matrix and test update facility of transposer
-	// Scale matrix on the left by rowsums
-
-	Epetra_Vector invRowSums(Avbr->RowMap());
-
-	Avbr->InvRowSums(invRowSums);
-	Avbr->LeftScale(invRowSums);
-
-  start = timer.ElapsedTime();
-	transposer1.UpdateTransposeValues(Avbr);
-	if (verbose) cout << "\nTime to update transpose matrix  = " 
-										<< timer.ElapsedTime() - start << endl;
- 	
-	ierr += checkResults(Avbr, transA, xexact, verbose);
-
-	delete Avbr;
-	delete b;
-	delete x;
-	delete xexact;
-	delete bmap;
-
-	*/
+  redistor.UpdateRedistProblemValues(&origProblem);
+  if (verbose) cout << "\nTime to update redistributed problem  = " 
+		    << timer.ElapsedTime() - start << endl;
+  
+  ierr += checkResults(ConstructTranspose, &redistor, &origProblem, redistProblem, verbose);
+  
+  delete A;
+  delete b;
+  delete x;
+  delete xexact;
+  delete map;
+  
+  
 #ifdef EPETRA_MPI
   MPI_Finalize();
 #endif
@@ -203,50 +209,146 @@ int main(int argc, char *argv[]) {
   return ierr;
 }
 
-int checkResults(Epetra_LinearProblemRedistor * redistor, Epetra_LinearProblem * origProblem,
-								 Epetra_LinearProblem * redistProblem,
-								 Epetra_Vector * xexact, bool verbose) {
+//
+//  checkResults computes Ax = b1 and either Rx=b2 or R^T x=b2 (depending on trans) where
+//  A = origProblem and R = redistProblem.  
+//  checkResults returns 0 (OK) if norm(b1-b2)/norm(b1) < size(b1) * 1e-15; 
+//
+//  I guess that we need the redistor so that we can move x and b2 around.  
+//
+const double error_tolerance = 1e-15 ; 
 
-	int n = A->NumGlobalRows();
+int checkResults( bool trans, 
+		  Epetra_LinearProblemRedistor * redistor, 
+		  Epetra_LinearProblem * A,
+		  Epetra_LinearProblem * R,
+		  bool verbose) {
+  
+  int m = A->GetRHS()->MyLength();
+  int n = A->GetLHS()->MyLength();
+  assert( m == n ) ; 
 
-	if (n<100) cout << "A transpose = " << endl << *transA << endl;
+  Epetra_MultiVector *x = A->GetLHS() ; 
+  Epetra_MultiVector x1( *x ) ; 
+  //  Epetra_MultiVector Difference( x1 ) ; 
+  Epetra_MultiVector *b = A->GetRHS();
+  Epetra_RowMatrix *matrixA = A->GetMatrix();
+  assert( matrixA != 0 ) ; 
+  int iam = matrixA->Comm().MyPID();
+  
+  //  Epetra_Time timer(A->Comm());
+  //  double start = timer.ElapsedTime();
 
-	Epetra_Vector x1(View, A->OperatorRangeMap(), &((*xexact)[0]));
-	Epetra_Vector b1(A->OperatorDomainMap());
+  matrixA->Multiply(trans, *b, x1) ;   // x = Ab 
 
-	A->SetUseTranspose(true);
+  int M,N,nz;
+  int *ptr, *ind;
+  double *val, *rhs, *lhs;
+  int Nrhs, ldrhs, ldlhs;
 
-	Epetra_Time timer(A->Comm());
-  double start = timer.ElapsedTime();
-	A->Apply(x1, b1);
-	if (verbose) cout << "\nTime to compute b1: matvec with original matrix using transpose flag  = " 
-											<< timer.ElapsedTime() - start << endl;
+  redistor->ExtractHbData( M, N, nz, ptr, ind, 
+		    val, Nrhs, rhs, ldrhs, 
+		    lhs, ldlhs);
 
-	if (n<100) cout << "b1 = " << endl << b1 << endl;
-	Epetra_Vector x2(View, transA->OperatorDomainMap(), &((*xexact)[0]));
-	Epetra_Vector b2(transA->OperatorRangeMap());
-  start = timer.ElapsedTime();
-	transA->Multiply(false, x2, b2);
-	if (verbose) cout << "\nTime to compute b2: matvec with transpose matrix                      = " 
-											<< timer.ElapsedTime() - start << endl;
+  assert( M == N ) ; 
+  if ( verbose ) {
+    cout << " iam = " << iam 
+	 << " m = " << m  << " n = " << n  << " M = " << M << endl ;  
+    
+    cout << " iam = " << iam << " ptr = " << ptr[0] << " "   << ptr[1] << " "  << ptr[2] << " "  << ptr[3] << " "  << ptr[4] << " " << ptr[5] << endl ;
+    
+    cout << " iam = " << iam << " ind = " << ind[0] << " "   << ind[1] << " "  << ind[2] << " "  << ind[3] << " "  << ind[4] << " " << ind[5] << endl ;
+    
+    cout << " iam = " << iam << " val = " << val[0] << " "   << val[1] << " "  << val[2] << " "  << val[3] << " "  << val[4] << " " << val[5] << endl ;
+  }
+  //  Create a serial map in case we end up needing it 
+  //  If it is created inside the else block below it would have to
+  //  be with a call to new().
+  int NumMyElements_ = 0 ;
+  if (matrixA->Comm().MyPID()==0) NumMyElements_ = n;
+  Epetra_Map SerialMap( n, NumMyElements_, 0, matrixA->Comm() );
 
-	if (n<100) cout << "b1 = " << endl << b1 << endl;
+  //  These are unnecessary and useless
+  //  Epetra_Vector serial_A_rhs( SerialMap ) ; 
+  //  Epetra_Vector serial_A_lhs( SerialMap ) ;
 
-	
-  double residual;
-	Epetra_Vector resid(A->OperatorRangeMap());
+  //  Epetra_Export exporter( matrixA->BlockRowMap(), SerialMap) ;
 
-  resid.Update(1.0, b1, -1.0, b2, 0.0);
-  assert(resid.Norm2(&residual)==0);
-  if (verbose) cout << "Norm of b1 - b2 = " << residual << endl;
-
-	int ierr = 0;
-
-	if (residual > 1.0e-10) ierr++;
-
-	if (ierr!=0 && verbose) cerr << "Status: Test failed" << endl;
-	else if (verbose) cerr << "Status: Test passed" << endl;
+  //
+  //  In each process, we will compute Rb putting the answer into LHS
+  //
 
 
-return(ierr);
+  for ( int k = 0 ; k < Nrhs; k ++ ) { 
+    for ( int i = 0 ; i < M ; i ++ ) { 
+      lhs[ i + k * ldlhs ] = 0.0; 
+    }
+    for ( int i = 0 ; i < M ; i++ ) { 
+      for ( int l = ptr[i]; l < ptr[i+1]; l++ ) {
+	int j = ind[l] ; 
+	if ( verbose && N < 40 ) {
+	  cout << " i = " << i << " j = " << j ;
+	  cout << " l = " << l << " val[l] = " << val[l] ;
+	  cout << " rhs = " << rhs[ j + k * ldrhs ] << endl ;
+	}
+	lhs[ i + k * ldrhs ] += val[l] * rhs[ j + k * ldrhs ] ;
+      }
+    }
+
+    if ( verbose && N < 40 ) { 
+      cout << " lhs = " ; 
+      for ( int j = 0 ; j < N ; j++ ) cout << " " << lhs[j] ; 
+      cout << endl ; 
+      cout << " rhs = " ; 
+      for ( int j = 0 ; j < N ; j++ ) cout << " " << rhs[j] ; 
+      cout << endl ; 
+    }
+
+    const Epetra_Comm &comm = matrixA->Comm() ; 
+#ifdef HAVE_COMM_ASSERT_EQUAL
+    //
+    //  Here we double check to make sure that lhs and rhs are 
+    //  replicated.  
+    //
+    for ( int j = 0 ; j < N ; j++ ) { 
+      assert( Comm_assert_equal( &comm, lhs[ j + k * ldrhs ] ) ) ; 
+      assert( Comm_assert_equal( &comm, rhs[ j + k * ldrhs ] ) ) ; 
+    } 
+#endif
+  }
+
+  //
+  //  Now we have to redistribue them back 
+  //
+  redistor->UpdateOriginalLHS( A->GetLHS() ) ; 
+  //
+  //  Now we want to compare x and x1 which have been computed as follows:
+  //  x = Rb  
+  //  x1 = Ab 
+  //
+
+  double Norm_x1, Norm_diff ;
+  EPETRA_CHK_ERR( x1.Norm2( &Norm_x1 ) ) ; 
+
+  //  cout << " x1 = " << x1 << endl ; 
+  //  cout << " *x = " << *x << endl ; 
+
+  x1.Update( -1.0, *x, 1.0 ) ; 
+  EPETRA_CHK_ERR( x1.Norm2( &Norm_diff ) ) ; 
+
+  //  cout << " diff, i.e. updated x1 = " << x1 << endl ; 
+
+  int ierr = 0;
+
+  if ( verbose ) {
+    cout << " Norm_diff = "  << Norm_diff << endl ; 
+    cout << " Norm_x1 = "  << Norm_x1 << endl ; 
+  }
+
+  if ( Norm_diff / Norm_x1 > n * error_tolerance ) ierr++ ; 
+
+  if (ierr!=0 && verbose) cerr << "Status: Test failed" << endl;
+  else if (verbose) cerr << "Status: Test passed" << endl;
+
+  return(ierr);
 }
