@@ -387,6 +387,12 @@ bool Group::applyJacobianDiagonalInverse(const Abstract::Vector& input, Abstract
 
 bool Group::applyJacobianDiagonalInverse(const Vector& input, Vector& result) const
 {
+  // This is a temporary fix to allow more general preconditioning within
+  // Petsc. This makes inaccessible the code that follows the call to
+  // applyPreconditionerInverse.  
+  return(applyPreconditionerInverse(input, result));
+
+  //  ------------------  Dead code for now !! RHooper -----------------
   if (!isJacobian()) 
     return false;
 
@@ -454,8 +460,13 @@ bool Group::applyPreconditionerInverse(const Vector& input, Vector& result) cons
 
   int ierr = PCCreate(PETSC_COMM_WORLD,&pc);CHKERRQ(ierr);
 
-  // This sets the type from -pc_type in .petscrc
-  // An alternative is to set it explivitly using PCSetType(pc, PCType)
+  // Here a default to jacobi (jacobian-diagonal-inverse) is established
+  // but can be overridden via specification of pc_type in .petscrc
+
+  //ierr = PCSetType(pc, PCJACOBI);CHKERRQ(ierr);
+
+  // This allows more general preconditioning via specification of -pc_type 
+  // in .petscrc
 
   ierr = PCSetFromOptions(pc);CHKERRQ(ierr);
 
