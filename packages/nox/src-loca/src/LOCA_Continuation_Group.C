@@ -258,3 +258,10 @@ LOCA::Continuation::scaledDotProduct(const NOX::Abstract::Vector& x,
 
   return d;
 }
+
+void
+LOCA::Continuation::Group::printSolution() const
+{
+  grpPtr->printSolution(getContinuationParameter());
+}
+

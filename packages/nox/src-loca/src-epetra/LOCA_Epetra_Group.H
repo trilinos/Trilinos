@@ -177,7 +177,16 @@ namespace LOCA {
       //! Return the userInterface.
       virtual NOX::Epetra::Interface& getUserInterface();
 
-      virtual void print() const {}
+      //! Call the user interface print() routine, solution vector
+      virtual void printSolution(const double conParam) const;
+
+      //! Call the user interface print() routine, any vector
+      virtual void printSolution(const NOX::Epetra::Vector& x,
+                                 const double conParam) const;
+
+      //! Call the user interface print() routine, any vector
+      virtual void printSolution(const NOX::Abstract::Vector& x,
+                                 const double conParam) const;
 
       //! Set the scale vector
       virtual void setScaleVec(const NOX::Abstract::Vector& s);

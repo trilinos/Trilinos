@@ -69,6 +69,9 @@ namespace LOCA {
       //! Set the parameters in the user's app prior to calling one of the compute functions.
       virtual void setParameters(const ParameterVector& p) = 0;
 
+      //! Call user's own print routine for vector-parameter pair
+      virtual void printSolution(const Epetra_Vector& x_, const double conParam) {}
+
     };
   } // namespace Epetra
 } // namespace LOCA

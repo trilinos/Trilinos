@@ -159,8 +159,12 @@ namespace LOCA {
       virtual NOX::Abstract::Group::ReturnType
       computeDfDp(int paramID, NOX::Abstract::Vector& result);
 
-      //! For debugging purposes only
-      virtual void print() const = 0;
+      //! Function to print out solution and parameter after successful step
+      virtual void printSolution(const double conParam) const {};
+
+      //! Function to print out a vector and parameter after successful step
+      virtual void printSolution(const NOX::Abstract::Vector& x_,
+                                 const double conParam) const  {}
 
       //! Set scale vector
       virtual void setScaleVec(const NOX::Abstract::Vector& s) = 0;

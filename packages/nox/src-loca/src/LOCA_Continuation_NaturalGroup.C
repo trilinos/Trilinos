@@ -282,8 +282,6 @@ LOCA::Continuation::NaturalGroup::computeNewton(NOX::Parameter::List& params)
 
   isValidNewton = true;
 
-  //print();
-
   return res;
 }
 
@@ -482,39 +480,6 @@ LOCA::Continuation::NaturalGroup::getNormNewtonSolveResidual() const
 
   residual = residual.update(1.0, fVec, 1.0);
   return residual.norm();
-}
-
-void
-LOCA::Continuation::NaturalGroup::print() const
-{
-  cout << "Beginning NaturalGroup.print:" << endl;
-  cout << "Underlying Group = " << endl;
-  LOCA::Continuation::Group::grpPtr->print();
-
-  cout << endl;
-
-  cout << "xVec = " << endl;
-  xVec.print();
-
-  cout << endl;
-
-  if (isValidF) {
-    cout << "fVec = " << endl;
-    fVec.print();
-  }
-  else
-    cout << "fVec not computed" << endl;
-
-  cout << endl;
-
-  if (isValidNewton) {
-    cout << "newtonVec = " << endl;
-    newtonVec.print();
-  }
-  else
-    cout << "newtonVec not computed" << endl;
-
-  cout << endl;
 }
 
 void

@@ -32,7 +32,6 @@
 
 #include "LOCA.H"
 #include "LOCA_LAPACK.H"
-#include "LOCA_LAPACK_DataOutput.H"
 #include "ChanProblemInterface.H"
 
 int main()
@@ -64,12 +63,6 @@ int main()
     // specified problem.
     LOCA::LAPACK::Group grp(chan, s);
     grp.setParams(p);
-
-    // Create DataOutput object to save intermediate continuation points
-    fstream file("chan_eqcont.dat", ios::out); 
-    file.setf(ios::scientific, ios::floatfield);
-    file.precision(15);
-    LOCA::LAPACK::DataOutput dataOut(file);
 
     // Create parameter list
     NOX::Parameter::List paramList;
@@ -140,7 +133,7 @@ int main()
     NOX::StatusTest::Combo combo(NOX::StatusTest::Combo::OR, statusTestA, statusTestB);
 
     // Create the stepper  
-    LOCA::Stepper stepper(grp, combo, paramList, dataOut);
+    LOCA::Stepper stepper(grp, combo, paramList);
 
     // Solve the nonlinear system
     LOCA::Abstract::Iterator::IteratorStatus status = stepper.run();
@@ -159,9 +152,6 @@ int main()
       stepper.getParameterList().print(cout);
       cout << endl;
     }
-
-    file.close();
-
   }
 
   catch (string& s) {

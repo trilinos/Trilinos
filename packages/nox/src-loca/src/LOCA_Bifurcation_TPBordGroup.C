@@ -34,7 +34,7 @@
 #include "LOCA_Parameter_Vector.H"
 #include "NOX_Parameter_List.H"
 
-LOCA::Bifurcation::TPBordGroup::TPBordGroup(const Abstract::Group& g,
+LOCA::Bifurcation::TPBordGroup::TPBordGroup(const LOCA::Abstract::Group& g,
 					    const NOX::Abstract::Vector& lenVec,
 					    int paramId,
 					    const DerivUtils& d)
@@ -866,58 +866,15 @@ LOCA::Bifurcation::TPBordGroup::getNormNewtonSolveResidual() const
 }
 
 void
-LOCA::Bifurcation::TPBordGroup::print() const 
+LOCA::Bifurcation::TPBordGroup::printSolution(const double conParam) const 
 {
-  cout << "Beginning TPBordGroup.print:" << endl;
-  cout << "Group = " << endl;
-  grpPtr->print();
+  cout << "LOCA::Bifurcation::TPBordGroup::printSolution\n";
 
-  cout << endl;
+  cout << "\tPrinting Solution Vector for conParam = " << conParam << endl;
+  grpPtr->printSolution(conParam);
 
-  cout << "tpXVec = " << endl;
-  tpXVec.print();
-
-  cout << endl;
-
-  if (isValidF) {
-    cout << "tpFVec = " << endl;
-    tpFVec.print();
-  }
-  else
-    cout << "tpFVec not computed" << endl;
-
-  cout << endl;
-
-  if (isValidNewton) {
-    cout << "tpNewtonVec = " << endl;
-    tpNewtonVec.print();
-  }
-  else
-    cout << "tpNewtonVec not computed" << endl;
-
-  cout << endl;
-
-  cout << "lengthVec = " << endl;
-  lengthVecPtr->print();
-
-  cout << endl;
-
-  cout << "bifParmId = " << bifParamId << endl;
-
-  cout << endl;
-
-  if (isValidJacobian) {
-    cout << "derivResdiualParam = " << endl;
-    derivResidualParamPtr->print();
-    cout << endl;
-    cout << "derivNullResidualParam = " << endl;
-    derivNullResidualParamPtr->print();
-  }
-  else
-    cout << "deriv vectors not computed" << endl;
-
-  cout << "End TPBordGroup.print:" << endl;
-  cout << endl;
+  cout << "\tPrinting Null Vector for bif param = " << getBifParam() << endl;
+  grpPtr->printSolution(tpXVec.getNullVec(), tpXVec.getBifParam());
 }
 
 void

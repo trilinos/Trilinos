@@ -73,6 +73,7 @@ LOCA::StepSize::Adaptive::compute(LOCA::Continuation::Group& curGroup,
     LOCA::StepSize::Constant::minStepSize /= dpds;
     LOCA::StepSize::Constant::isFirstStep = false;
     stepSize = LOCA::StepSize::Constant::startStepSize;
+    prevStepSize = 0.0;
   }
   else {
     double ds_ratio = curGroup.getStepSizeScaleFactor();
@@ -92,29 +93,18 @@ LOCA::StepSize::Adaptive::compute(LOCA::Continuation::Group& curGroup,
   
     // A failed nonlinear solve cuts the step size in half
     if (stepStatus == LOCA::Abstract::Iterator::Unsuccessful) {
-      stepSize = prevStepSize * 0.5;    
+      stepSize *= 0.5;    
     }
     else {
 
+      // Save successful stepsize as previous
+      prevStepSize = stepSize;
+
       // adapive step size control
       double factor = (maxNonlinearSteps - numNonlinearSteps) 
-	/ (maxNonlinearSteps - 1.0);
-      if (agrValue != 0.0) {
-	stepSize = prevStepSize * (1.0 + agrValue * factor * factor);
-      }
-      // if constant step size (agrValue = 0.0), the step size may still be 
-      // reduced by a solver failure.  We should then slowly bring the step 
-      // size back towards its constant value using agrValue = 0.5.
-      else{
-	if (prevStepSize != startStepSize) {  
-	  stepSize = prevStepSize * (1.0 + 0.5 * factor * factor);
+               	      / (maxNonlinearSteps - 1.0);
 
-	  if (startStepSize > 0.0)
-	    stepSize = min(stepSize, startStepSize);
-	  else 
-	    stepSize = max(stepSize, startStepSize);
-	}
-      }
+      stepSize *= (1.0 + agrValue * factor * factor);
     } 
 
     stepSize *= ds_ratio;
@@ -122,9 +112,6 @@ LOCA::StepSize::Adaptive::compute(LOCA::Continuation::Group& curGroup,
 
   // Clip step size to be within prescribed bounds
   NOX::Abstract::Group::ReturnType res = clipStepSize(stepSize);
-
-  // Save stepsize
-  prevStepSize = stepSize;
 
   return res;
 }

@@ -64,6 +64,10 @@ namespace LOCA {
       //! Set the problem parameters
       virtual void setParams(const ParameterVector& p) = 0;
 
+      //! Call user's own print routine for vector-parameter pair
+      virtual void printSolution(const NOX::LAPACK::Vector& x_,
+                                 const double conParam) {}
+
     };
   } // namespace LAPACK
 } // namespace LOCA

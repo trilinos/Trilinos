@@ -119,5 +119,5 @@ int main()
 
   // Print the answer
   cout << "\n" << "-- Final Solution From Solver --" << "\n";
-  tpgrp.print();
+  tpgrp.printSolution(0.0);
 }

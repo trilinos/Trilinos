@@ -56,8 +56,7 @@
 
 LOCA::Stepper::Stepper(LOCA::Abstract::Group& initialGuess, 
 		       NOX::StatusTest::Generic& t,
-		       NOX::Parameter::List& p,
-		       LOCA::Abstract::DataOutput& dataOut) :
+		       NOX::Parameter::List& p) :
   LOCA::Abstract::Iterator(),
   conGroupManagerPtr(NULL),
   curGroupPtr(NULL),
@@ -68,12 +67,11 @@ LOCA::Stepper::Stepper(LOCA::Abstract::Group& initialGuess,
   curPredictorPtr(NULL),
   prevPredictorPtr(NULL),
   stepSizeManagerPtr(NULL),
-  dataOutputPtr(NULL),
   paramList()
 {
   // Initialize the utilities
   Utils::setUtils(p.sublist("LOCA").sublist("Utilities"));
-  reset(initialGuess, t, p, dataOut);
+  reset(initialGuess, t, p);
 }
 
 LOCA::Stepper::Stepper(const LOCA::Stepper& s) :
@@ -81,7 +79,6 @@ LOCA::Stepper::Stepper(const LOCA::Stepper& s) :
   conGroupManagerPtr(NULL),
   curGroupPtr(NULL),
   prevGroupPtr(NULL),
-  dataOutputPtr(s.dataOutputPtr),
   statusTestPtr(s.statusTestPtr),
   paramList(s.paramList),
   solverPtr(NULL),
@@ -118,6 +115,8 @@ LOCA::Stepper::Stepper(const LOCA::Stepper& s) :
 
 LOCA::Stepper::~Stepper() 
 { 
+  paramList.print(cout);
+
   delete conGroupManagerPtr;
   delete curGroupPtr;
   delete prevGroupPtr;
@@ -131,8 +130,7 @@ LOCA::Stepper::~Stepper()
 bool 
 LOCA::Stepper::reset(LOCA::Abstract::Group& initialGuess,
 		     NOX::StatusTest::Generic& t,
-		     NOX::Parameter::List& p,
-		     LOCA::Abstract::DataOutput& dataOut) 
+		     NOX::Parameter::List& p) 
 {
   delete curGroupPtr;
   delete prevGroupPtr;
@@ -141,7 +139,6 @@ LOCA::Stepper::reset(LOCA::Abstract::Group& initialGuess,
 
   statusTestPtr = &t;
   paramList = p;
-  dataOutputPtr = &dataOut;
 
   // Get LOCA sublist
   NOX::Parameter::List& locaList = paramList.sublist("LOCA");
@@ -232,7 +229,7 @@ LOCA::Stepper::start() {
   if (solverStatus != NOX::StatusTest::Converged)
     return LOCA::Abstract::Iterator::Failed;
 
-  dataOutputPtr->saveGroupData(getSolutionGroup());
+  curGroupPtr->printSolution();
 
   // Initialize predictor direction
   curPredictorPtr = 
@@ -314,7 +311,7 @@ LOCA::Stepper::compute(LOCA::Abstract::Iterator::StepStatus stepStatus)
 
   printEndStep(LOCA::Abstract::Iterator::Successful);
 
-  dataOutputPtr->saveGroupData(getSolutionGroup());
+  curGroupPtr->printSolution();
 
   return LOCA::Abstract::Iterator::Successful;
 }

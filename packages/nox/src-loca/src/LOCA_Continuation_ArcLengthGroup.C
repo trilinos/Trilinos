@@ -649,39 +649,6 @@ LOCA::Continuation::ArcLengthGroup::getNormNewtonSolveResidual() const
 }
 
 void
-LOCA::Continuation::ArcLengthGroup::print() const
-{
-  cout << "Beginning ArcLengthGroup.print:" << endl;
-  cout << "Underlying Group = " << endl;
-  LOCA::Continuation::Group::grpPtr->print();
-
-  cout << endl;
-
-  cout << "xVec = " << endl;
-  xVec.print();
-
-  cout << endl;
-
-  if (isValidF) {
-    cout << "fVec = " << endl;
-    fVec.print();
-  }
-  else
-    cout << "fVec not computed" << endl;
-
-  cout << endl;
-
-  if (isValidNewton) {
-    cout << "newtonVec = " << endl;
-    newtonVec.print();
-  }
-  else
-    cout << "newtonVec not computed" << endl;
-
-  cout << endl;
-}
-
-void
 LOCA::Continuation::ArcLengthGroup::setContinuationParameter(double val) 
 {
   LOCA::Continuation::Group::setContinuationParameter(val);

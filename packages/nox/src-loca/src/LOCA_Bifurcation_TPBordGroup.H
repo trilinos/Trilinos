@@ -261,8 +261,8 @@ namespace LOCA {
 
       //@}
 
-      //! Prints group for debugging purposes
-      virtual void print() const;
+      //! Calls groups print function for solution vector null vec, and params 
+      virtual void printSolution(const double conParam) const;
 
       //! Set scale vector
       virtual void setScaleVec(const NOX::Abstract::Vector& s);

@@ -152,7 +152,7 @@ namespace LOCA {
       virtual double getStepSizeScaleFactor()const;
 
       //! Prints the group
-      virtual void print() const = 0;
+      virtual void printSolution() const;
 
       //! Computes a scaled dot product between two continuation vectors
       virtual double scaledDotProduct(const LOCA::Continuation::Vector& x, 

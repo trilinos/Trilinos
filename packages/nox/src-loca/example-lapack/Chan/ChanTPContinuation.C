@@ -33,7 +33,6 @@
 #include "LOCA.H"
 #include "LOCA_LAPACK.H"
 #include "LOCA_Bifurcation_TPBordGroup.H"
-#include "LOCA_LAPACK_TPDataOutput.H"
 #include "ChanProblemInterface.H"
 
 int main()
@@ -67,12 +66,6 @@ int main()
     // Create a turning point group that uses the lapack group
     LOCA::DerivUtils du;
     LOCA::Bifurcation::TPBordGroup tpgrp(grp, nullVec, 0, du);
-
-    // Create DataOutput object to save intermediate continuation points
-    fstream file("chan_tpcont.dat", ios::out); 
-    file.setf(ios::scientific, ios::floatfield);
-    file.precision(15);
-    LOCA::LAPACK::TPDataOutput dataOut(file);
 
     // Create parameter list
     NOX::Parameter::List paramList;
@@ -149,7 +142,7 @@ int main()
     NOX::StatusTest::Combo combo(NOX::StatusTest::Combo::OR, statusTestA, statusTestB);
 
     // Create the stepper  
-    LOCA::Stepper stepper(tpgrp, combo, paramList, dataOut);
+    LOCA::Stepper stepper(tpgrp, combo, paramList);
 
     // Solve the nonlinear system
     LOCA::Abstract::Iterator::IteratorStatus status = stepper.run();
@@ -164,8 +157,6 @@ int main()
       stepper.getParameterList().print(cout);
       cout << endl;
     }
-
-    file.close();
   }
 
   catch (string& s) {

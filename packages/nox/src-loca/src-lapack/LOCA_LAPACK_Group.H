@@ -127,8 +127,14 @@ namespace LOCA {
       //! Return copy of parameter indexed by paramID
       virtual double getParam(string paramID) const;
 
-      //! Print out the group
-      void print() const;
+      //! Print out the solution vector and continuation parameter
+      void printSolution(const double conParam) const;
+
+      //! Print out a vector and a parameter
+      void printSolution(const NOX::LAPACK::Vector& x_, const double conParam) const;
+
+      //! Print out a vector and a parameter
+      void printSolution(const NOX::Abstract::Vector& x_, const double conParam) const;
 
       //! Set scale vector
       virtual void setScaleVec(const NOX::Abstract::Vector& s);

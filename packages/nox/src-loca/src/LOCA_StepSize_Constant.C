@@ -75,29 +75,41 @@ LOCA::StepSize::Constant::compute(LOCA::Continuation::Group& curGroup,
     minStepSize /= dpds;
     stepSize = startStepSize;
     isFirstStep = false;
+    prevStepSize = 0.0;
   }
   else {
     double ds_ratio = curGroup.getStepSizeScaleFactor();
-    startStepSize *= ds_ratio;
+  startStepSize *= ds_ratio;
     maxStepSize *= ds_ratio;
     minStepSize *= ds_ratio;
 
     // Step size remains constant, unless...
-    stepSize = prevStepSize;
-
     // A failed nonlinear solve cuts the step size in half
     if (stepStatus == LOCA::Abstract::Iterator::Unsuccessful) {
-      stepSize = prevStepSize * 0.5;
+      stepSize *= 0.5;
     }
+    else {
+      prevStepSize = stepSize;
+      stepSize *= ds_ratio;
 
-    stepSize *= ds_ratio;
+      // For constant step size, the step size may still have been
+      // reduced by a solver failure.  We then increase the step size
+      // by a factor of cube-root-2 until back to the original step size
+
+      if (stepSize != startStepSize) {
+
+        stepSize *= 1.26;
+
+        if (startStepSize > 0.0)
+          stepSize = min(stepSize, startStepSize);
+        else
+          stepSize = max(stepSize, startStepSize);
+      }
+    }
   }
 
   // Clip step size to be within prescribed bounds
   NOX::Abstract::Group::ReturnType res = clipStepSize(stepSize);
-
-  // Save stepsize
-  prevStepSize = stepSize;
 
   return res;
 }

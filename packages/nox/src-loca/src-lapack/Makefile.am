@@ -40,14 +40,10 @@
 LOCA_LAPACK_H = \
 	$(srcdir)/LOCA_LAPACK.H \
 	$(srcdir)/LOCA_LAPACK_Group.H \
-	$(srcdir)/LOCA_LAPACK_Interface.H \
-	$(srcdir)/LOCA_LAPACK_DataOutput.H \
-	$(srcdir)/LOCA_LAPACK_TPDataOutput.H 
+	$(srcdir)/LOCA_LAPACK_Interface.H
 
 LOCA_LAPACK = \
-	$(srcdir)/LOCA_LAPACK_Group.C \
-	$(srcdir)/LOCA_LAPACK_DataOutput.C \
-	$(srcdir)/LOCA_LAPACK_TPDataOutput.C 
+	$(srcdir)/LOCA_LAPACK_Group.C
 
 # ------------------------------------------------------------------------
 # localapack library specifications

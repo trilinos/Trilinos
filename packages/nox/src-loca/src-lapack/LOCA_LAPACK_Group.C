@@ -196,10 +196,23 @@ LOCA::LAPACK::Group::getParam(string paramID) const
 }
 
 void 
-LOCA::LAPACK::Group::print() const
+LOCA::LAPACK::Group::printSolution(const double conParam) const
 {
-  cout << "p = " << params << "\n";
-  NOX::LAPACK::Group::print();
+   printSolution(xVector, conParam);
+}
+
+void
+LOCA::LAPACK::Group::printSolution(const NOX::LAPACK::Vector& x_,
+                                   const double conParam) const
+{
+   locaProblemInterface.printSolution(x_, conParam);
+}
+
+void
+LOCA::LAPACK::Group::printSolution(const NOX::Abstract::Vector& x_,
+                                   const double conParam) const
+{
+   printSolution(dynamic_cast<const NOX::LAPACK::Vector&>(x_), conParam);
 }
 
 void

@@ -103,3 +103,22 @@ ChanProblemInterface::source_param(double a, double s) {
   //return as / (1.0 + 0.01*as*as);
   return as;
 }
+
+void
+ChanProblemInterface::printSolution(const NOX::LAPACK::Vector &x,
+                                    const double conParam)
+{
+
+   cout << "At parameter value: " << conParam << "   the solution vector is\n";
+
+   if (n < 8) {
+     for (int i=0; i<n; i++)  cout << " " << x(i);
+   }
+   else {
+     for (int i=0; i<6; i++)  cout << " " << x(i);
+     cout << " ...";
+     for (int i=n-2; i<n; i++)  cout << " " << x(i);
+   }
+   cout << endl;
+
+}

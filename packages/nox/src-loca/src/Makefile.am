@@ -39,7 +39,6 @@
 
 LOCA_ABSTRACT_H = \
         $(srcdir)/LOCA_Abstract_Group.H \
-	$(srcdir)/LOCA_Abstract_DataOutput.H \
 	$(srcdir)/LOCA_Abstract_Iterator.H
 
 LOCA_ABSTRACT = \

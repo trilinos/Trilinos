@@ -222,9 +222,6 @@ namespace LOCA {
       //! Sets the continuation parameter value
       virtual void setContinuationParameter(double val);
 
-      //! Prints the group
-      virtual void print() const;
-
     protected:
 
       //! Resets all isValid flags

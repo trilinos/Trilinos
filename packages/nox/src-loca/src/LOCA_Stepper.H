@@ -41,7 +41,6 @@
 #include "LOCA_StepSize_Manager.H" // class data element
 #include "NOX_StatusTest_Generic.H"  // for enum StatusType
 #include "NOX_Common.H"              // for <string> class
-#include "LOCA_Abstract_DataOutput.H"
 
 // Forward Declarations
 namespace LOCA {
@@ -69,8 +68,7 @@ namespace LOCA {
     //! Constructor 
     Stepper(LOCA::Abstract::Group& initialGuess,
 	    NOX::StatusTest::Generic& t,
-	    NOX::Parameter::List& p,
-	    LOCA::Abstract::DataOutput& dataOut);
+	    NOX::Parameter::List& p);
 
     //! Destructor
     virtual ~Stepper();
@@ -78,8 +76,7 @@ namespace LOCA {
     //! Reset the Stepper to start a new continuation run
     virtual bool reset(LOCA::Abstract::Group& initialGuess,
 		       NOX::StatusTest::Generic& t,
-		       NOX::Parameter::List& p,
-		       LOCA::Abstract::DataOutput& dataOut);
+		       NOX::Parameter::List& p);
 
     //! Return the current solution group.
     virtual const LOCA::Abstract::Group& getSolutionGroup() const;
@@ -141,9 +138,6 @@ namespace LOCA {
 
     //! Pointer to the a Group with the solution for the previous continuation step.  This is used for resetting the nonlinear solver in between failed steps.
     LOCA::Continuation::Group* prevGroupPtr;
-
-    //! Reference to data output object.  This is used to save intermediate data generated during continuation run.
-    LOCA::Abstract::DataOutput* dataOutputPtr;
 
     //! Pointer to the status test.  This is used for resetting the nonlinear solver in between steps.
     NOX::StatusTest::Generic* statusTestPtr;

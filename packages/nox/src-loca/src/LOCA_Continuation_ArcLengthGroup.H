@@ -235,9 +235,6 @@ namespace LOCA {
       //! Sets the continuation parameter value
       virtual void setContinuationParameter(double val);
 
-      //! Prints the group
-      virtual void print() const;
-
       //! Calculates scale factor as described in the loca v1.0 manual
       virtual void recalculateScaleFactor(double dpds);
 

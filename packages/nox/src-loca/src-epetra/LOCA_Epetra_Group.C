@@ -199,6 +199,26 @@ LOCA::Epetra::Group::getUserInterface()
 }
 
 void
+LOCA::Epetra::Group::printSolution(const double conParam) const
+{
+  printSolution(xVector, conParam);
+}
+
+void
+LOCA::Epetra::Group::printSolution(const NOX::Epetra::Vector& x_,
+                                   const double conParam) const
+{
+  userInterface.printSolution(x_.getEpetraVector(), conParam);
+}
+
+void
+LOCA::Epetra::Group::printSolution(const NOX::Abstract::Vector& x_,
+                                   const double conParam) const
+{
+  printSolution(dynamic_cast<const NOX::Epetra::Vector&>(x_), conParam);
+}
+
+void
 LOCA::Epetra::Group::setScaleVec(const NOX::Abstract::Vector& s) {
   setScaleVec( dynamic_cast<const NOX::Epetra::Vector&>(s) );
 }

@@ -73,6 +73,10 @@ public:
   //! Sets parameters
   void setParams(const LOCA::ParameterVector& p);
 
+  //! Prints solution after successful step
+  void printSolution(const NOX::LAPACK::Vector &x, const double conParam);
+
+
 private:
 
   //! Computes the source term
