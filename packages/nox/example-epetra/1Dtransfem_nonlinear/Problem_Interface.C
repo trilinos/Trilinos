@@ -18,9 +18,9 @@ bool Problem_Interface::reset(const Epetra_Vector& x)
   return problem.reset(x);
 }
 
-bool Problem_Interface::computeF(const Epetra_Vector& x, Epetra_Vector& F, FillType flag)
+bool Problem_Interface::computeF(const Epetra_Vector& x, Epetra_Vector& FVec, FillType flag)
 {
-  return problem.evaluate(F_ONLY, &x, &F, NULL);
+  return problem.evaluate(F_ONLY, &x, &FVec, NULL);
 }
 
 bool Problem_Interface::computeJacobian(const Epetra_Vector& x, Epetra_Operator& Jac)
