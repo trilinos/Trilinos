@@ -1,0 +1,237 @@
+Overall Code Description
+------------------------
+
+ This codes performs LU factorization and solves a dense matrix equation
+on parallel computers using MPI for message passing.  The code was originally
+ported to the INTEL Paragon which uses a mesh topology.  
+
+ The matrix is torus-wrap mapped onto the processors(transparent to the user)
+and uses partial pivoting during the factorization of the matrix.  Each 
+processor contains a portion of the matrix and the right hand sides 
+determined by a distribution function to optimally load balance the
+computation and communication during the factorization of the matrix.  
+The general prescription is that no processor can have no more(or less)
+than one row or column of the matrix than any other processor.  Since
+the input matrix is not torus-wrapped permutation of the results is 
+performed to "unwrap the results".
+
+Included in the code are fortran and c test routines that generate a
+random matrix and right-hand-sides to exercise the solver.
+
+
+Compiling the Code
+------------------
+
+A makefile is included.
+
+The files used when make is invoked include:
+
+Makefile    -- Basic makefile
+Make.inc    -- includes system dependent info
+               libraries and locations, compiler switches etc.
+Make.typed  -- includes dependencies and rules for executables
+
+Before trying to produce any executable either edit Make.inc to put in 
+the appropriate options for your machine or use the supplied defaults ie:
+
+copy Make.sol Make.inc    -- for a SOLARIS System 
+copy Make.tflops Make.inc -- for the Tflop system  
+
+
+ 1)To make a test code based on a c main code :
+	make dtest -- produces dmat (matrix double precision real)
+	make stest -- produces smat (matrix single precision real)
+	make ctest -- produces cmat (matrix single precision complex)
+	make ztest -- produces zmat (matrix double precision complex)
+
+ 2)To make a test code based on a fotran main code :
+	make dftest -- produces dfmat (matrix double precision real)
+
+ 3)To make a solver library :
+	make dlib -- produces dlu_lib.a (double precision real library)
+        make slib -- produces slu_lib.a (single precision real library)
+	make zlib -- produces zlu_lib.a (double precision complex library)
+	make clib -- produces clu_lib.a (single precision complex library)
+
+
+Some Code Options
+-----------------
+set in defines.h
+	interface to C versions of BLAS -- define CBLAS
+	timing info -- define TIMINGO  (timing in factorization)
+ 
+BLAS Routines
+-------------
+Different routines needed are in BLAS_prototypes.h
+		scopy,dcopy,ccopy,zcopy
+		sscal,dscal,cscal,zscal
+		saxpy,daxpy,caxpy,zaxpy
+		isamax,idamax,icamax,izamax
+		sasum,dasum,casum,zasum
+                sgemm,dgemm,cgemm,zgemm
+
+
+	Note for real,double,complex,double complex
+
+
+Enhancing Solver Performance
+----------------------------
+	The key to the solver's high computational rates is the use
+ of the matrix-matrix multiply for the matrix updates.  To enhance this
+ most vendors have fast dgemm(sgemm,cgemm,dgemm as well) availible. Use these 
+ together with an appropriate block size parameter used in the solver.
+
+  To set the block size
+	set the parameter --> DEFBLKSZ = # for system
+        in block.h
+
+		This # depends on the processor cache (L1,L2,L3) and bus configuration
+		For the INTEL Paragon DEFBLKSZ = 4
+		For the INTEL Tflop   DEFBLKSZ = 40
+
+Interfacing to the Solver
+-------------------------
+
+  There are two techniques to interface a user application to the solver that depend on the
+state of the user information.  In each case the a portion of the matrix will be built on 
+each processor.
+
+ Matrix Info on Each processor
+ -----------------------------
+
+   A)in Fortran
+     call distmat(nprocsr              ! Number of processors for a row     -- INPUT
+		   ,ncols              ! Number of columns in the matrix    -- INPUT
+		   ,nrhs               ! Number of right hand sides         -- INPUT
+		   ,my_rows            ! Number of rows that I own          -- OUTPUT
+		   ,my_cols            ! Number of columns that I own       -- OUTPUT
+		   ,my_first_row       ! My first row (global index)        -- OUTPUT
+		   ,my_first_col       ! My first column (global index)     -- OUTPUT
+		   ,my_rhs             ! Number of right hand sides I own   -- OUTPUT
+		   ,my_row             ! My row in the matrix               -- OUTPUT
+		   ,my_col)            ! Mt column in the matrix            -- OUTPUT
+
+
+  Relation to Processor Topology
+  ------------------------------
+  Example 6 processors
+        nprocsr =3  (Number of processors for a row)
+        Processor number in the box below.
+
+
+          0      1      2      < --- my_col
+       ------ ------ ------
+       |    | |    | |    |
+       |  0 | |  1 | |  2 |    < --- my_row = 0 for these processors
+       |    | |    | |    |
+       ------ ------ ------
+       |    | |    | |    |
+       |  3 | |  4 | |  5 |    < --- my_row = 1 for these processors
+       |    | |    | |    |
+       ------ ------ ------
+
+    For an 1000 x 1000 matrix
+      
+      Processor number     0        1       2      3     4     5
+      my_rows             334      333     333    334   333   333
+      my_cols             500      500     500    500   500   500
+      my_first_row         1       335     668     1    335   668
+      my_first_col         1        1       1     501   501   501
+
+      Note: The fortran convention is assumed ie matrix begins with index 1.
+
+     B)in C
+       distmat_(arguments above by reference)
+
+      Note: User needs to adjust for Fortran array convention
+            my_first_row = my_first_row - 1
+            my_first_col = my_first_col - 1
+
+Once the matrix distribution on each processor is computed the solver can be called in two
+ways based on the availibility of the right hand sides.  They are:
+
+	I)The matrix and the all of the right hand sides are calculated before the solver
+	is called.
+
+        Note : The number of right hand sides per processor are returned from the distribution or
+        mapping function.
+
+        The procedure is given in four steps:
+
+          i)The matrix is packed in a one dimensional array, z(1,1) = z1(1), z(2,1)=z1(2) etc.
+
+          ii)The right hand side is packed at the end of the one dimensional array
+
+              do i = 1,my_rows
+               z1(my_rows*my_cols+i) = rhs(my_first_row -1 +i) 
+              end do
+
+          iii)Call the solver (in Fortran)
+
+              call dlusolve(z1(1)                      ! Matrix to be factored            -- INPUT
+                             ,ncols                     ! Number of columns for the matrix -- INPUT
+                             ,nprocsr                   ! Number of processors for a row   -- INPUT
+                             ,z1(my_rows*my_cols+1)     ! Right hand side                  -- INPUT
+                             ,nrhs                      ! Number of right hand sides       -- INPUT
+                             ,secs (double precision)   ! Internal time in seconds         -- OUTPUT
+                            )
+
+               On return z1(my_rows*my_cols+1) contains the solution.
+
+           iv)Unpack the output for postprocessing
+
+         II)The matrix is to factored and later the right hand sides are generated and the equation
+          is solved.
+
+           
+           i)The matrix is packed in a one dimensional array, z(1,1) = z1(1), z(2,1)=z1(2) etc.
+
+           ii)Factor the matrix by calling (in Fortran)
+
+              call dfactor( z1(1),                      ! Matrix to be factored            -- INPUT
+                             ,ncols                     ! Number of columns for the matrix -- INPUT
+                             ,nprocsr                   ! Number of processors for a row   -- INPUT
+                             ,permute(1)                ! Vector for permutations          -- OUTPUT
+                             , secs (double precision)  ! Internal time in seconds         -- OUTPUT
+                           )
+           
+           iii)The pivoting information is porpagated throughout the processor mesh and the matrix is
+		permuted.
+
+	     call dpermute(z1(1), permute(1))
+
+
+           iv)Compute the right hand sides.  They are assumed to be calculated one at a time by
+               the processors in my_col = 0 .
+
+           v)Call the solver
+
+              call dsolve(z1(1),                        ! Factored matrix                 -- INPUT
+                           ,permute(1)                  ! Vector for permutations         -- INPUT
+                           , rhs(1)                     ! Right hand sides                -- INPUT
+                          , nrhs)                       ! Number of RHS                   -- INPUT
+
+
+               On return rhs(1) contains the solution.
+
+
+           vi)When a new matrix is to be used --
+
+		call cleancode( )   --- Fortran call
+
+ 	   vii)Restart with the process with i)
+----------------------------------------------------------------------------------------------------------
+
+
+Final Point -- Running on Tflop with the -p 2 option will use both processors in the 
+		matrix update( gemm operation).  Some stack space will be necessary i.e.
+
+			yod -sz 32 -stack 1M -p 2 executable 
+		
+
+Any questions can be directed to:
+
+							Joseph D. Kotulski
+							Sandia National Labs
+							(505)-845-7955
+							jdkotul@sandia.gov

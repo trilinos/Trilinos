@@ -1,0 +1,125 @@
+# ************************************************************************
+# 
+#                Pliris: Parallel Dense Solver Package
+#                 Copyright (2004) Sandia Corporation
+# 
+# Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
+# license for use of this work by or on behalf of the U.S. Government.
+# 
+# This library is free software; you can redistribute it and/or modify
+# it under the terms of the GNU Lesser General Public License as
+# published by the Free Software Foundation; either version 2.1 of the
+# License, or (at your option) any later version.
+#  
+# This library is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# Lesser General Public License for more details.
+#  
+# You should have received a copy of the GNU Lesser General Public
+# License along with this library; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+# USA
+# Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
+# 
+# ************************************************************************
+
+VPATH = ..
+
+SHELL = /bin/sh
+ECHO    = /bin/echo
+
+
+include Make.inc
+
+
+
+LU_BASE_FILES = solve.o \
+	 	time.o \
+		pcomm.o\
+		factor_new.o \
+		permute_rhs.o \
+		forward.o \
+		forwardall.o \
+		permute_mat.o \
+                permute.o \
+		exchange_pivots.o \
+		x_factor.o\
+		x_solve.o \
+  		xlu_solve_new.o \
+		distribute.o\
+                clean_code.o
+
+LU_TEST_FILES = my_srand48.o init.o
+
+LU_LIB_FILES = xlu_solve_new.o distribute.o x_factor.o x_solve.o
+#      x_factor.o x_solve.o
+ 
+#
+# $(pre)mat is a test routine to exercise the solver
+#             c test routines
+#
+
+test: $(LU_BASE_FILES)  $(LU_TEST_FILES)
+	$(CC) $(CCFLAGS)  $(MPI_INCLUDES) -D$(typ)  -o $(pre)mat mat.c \
+	$(LU_BASE_FILES)  $(LU_TEST_FILES) $(MPI_LIB_PATH) $(LIBS) $(BLASlib)
+
+hard_test: $(LU_BASE_FILES)  $(LU_TEST_FILES)
+	$(CC) $(CCFLAGS)  $(MPI_INCLUDES) -D$(typ)  -o $(pre)mat_hard mat_hard.c \
+	$(LU_BASE_FILES)  $(LU_TEST_FILES) $(MPI_LIB_PATH) $(LIBS) $(BLASlib)
+
+steve_test: $(LU_BASE_FILES)  $(LU_TEST_FILES)
+	$(CC) $(CCFLAGS)  $(MPI_INCLUDES) -D$(typ) -o  $(pre)steve_test steve.c \
+	$(LU_BASE_FILES)  $(LU_TEST_FILES) $(MPI_LIB_PATH) $(LIBS) $(BLASlib)
+
+#
+#   Fortran test routine for the double precision solver
+#
+
+dftest:  lib lind.o dgemmu.o
+	$(F77) $(FFLAGS) $(MPI_INCLUDES) -o dfmat lind.o dgemmu.o \
+	dlu_lib.a $(MPI_LIB_PATH) $(LIBS) $(BLASlib)
+
+lib: $(LU_BASE_FILES) $(LU_LIB_FILES)
+	$(AR) vr $(pre)lu_lib.a $(LU_BASE_FILES) $(LU_LIB_FILES)
+	$(RANLIB) $(pre)lu_lib.a 
+
+#
+# Base files and dependencies
+#
+
+
+.SUFFIXES  : .c  .f
+
+force_build:
+
+.c.o :
+	@$(ECHO)
+	@$(ECHO) "Compiling Source File -- " $<
+	$(CC) -c  $(MPI_INCLUDES) $(CCFLAGS) -D$(typ) $<
+
+.f.o :
+	@$(ECHO)
+	@$(ECHO) "Compiling Source File -- " $<
+	$(F77) -c  $(FFFLAGS)  $<
+	
+
+#dependencies
+mat.o:  defines.h factor.h solve.h pcomm.h forward.h forwardall.h permute_rhs.h permute_mat.h exchange_pivots.h force_build
+factor.o:  defines.h pcomm.h factor.h force_build
+factor_new.o: defines.h pcomm.h factor.h force_build
+init.o: init.h defines.h  force_build
+solve.o: defines.h solve.h force_build
+forwardall.o:  forwardall.h defines.h pcomm.h forward.h permute_mat.h permute_rhs.h exchange_pivots.h force_build
+forward.o:  defines.h pcomm.h forward.h force_build
+pcomm.o: defines.h pcomm.h force_build
+permute.o:defines.h force_build
+permute_rhs.o: defines.h pcomm.h permute_rhs.h force_build
+permute_mat.o:  defines.h pcomm.h  permute_mat.h force_build
+xlu_solve.o: xlu_solve.h force_build
+xlu_solve_new.o: xlu_solve.h force_build
+x_factor.o: force_build
+x_solve.o: force_build
+time.o: force_build
+exchange_pivots.o:exchange_pivots.h force_build
+distribute.o : force_build
