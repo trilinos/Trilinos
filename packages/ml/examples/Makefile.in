@@ -101,13 +101,15 @@ install_sh = @install_sh@
 @HAVE_MPI_FALSE@@ML_STANDALONE_MODE_TRUE@noinst_PROGRAMS = mlguide
 @HAVE_MPI_FALSE@@ML_STANDALONE_MODE_FALSE@noinst_PROGRAMS = mlguide ml_aztec_simple ml_example1d \
 @HAVE_MPI_FALSE@@ML_STANDALONE_MODE_FALSE@                  ml_example1dGS ml_example2d ml_example3d ml_simple_max \
-@HAVE_MPI_FALSE@@ML_STANDALONE_MODE_FALSE@                  ml_aztec_simple_METIS ml_readfile ml_read_elas ml_recirc \
+@HAVE_MPI_FALSE@@ML_STANDALONE_MODE_FALSE@                  ml_aztec_simple_METIS ml_aztec_simple_ParMETIS \
+@HAVE_MPI_FALSE@@ML_STANDALONE_MODE_FALSE@		  ml_readfile ml_read_elas ml_recirc \
 @HAVE_MPI_FALSE@@ML_STANDALONE_MODE_FALSE@                  ml_read_salsa
 
 @HAVE_MPI_TRUE@@ML_STANDALONE_MODE_TRUE@noinst_PROGRAMS = mlguide mlguide_par
 @HAVE_MPI_TRUE@@ML_STANDALONE_MODE_FALSE@noinst_PROGRAMS = mlguide mlguide_par ml_aztec_simple ml_example1d \
 @HAVE_MPI_TRUE@@ML_STANDALONE_MODE_FALSE@                  ml_example1dGS ml_example2d ml_example3d ml_simple_max \
-@HAVE_MPI_TRUE@@ML_STANDALONE_MODE_FALSE@                  ml_aztec_simple_METIS ml_readfile ml_read_elas ml_recirc \
+@HAVE_MPI_TRUE@@ML_STANDALONE_MODE_FALSE@                  ml_aztec_simple_METIS ml_aztec_simple_ParMETIS \
+@HAVE_MPI_TRUE@@ML_STANDALONE_MODE_FALSE@		  ml_readfile ml_read_elas ml_recirc \
 @HAVE_MPI_TRUE@@ML_STANDALONE_MODE_FALSE@                  ml_read_salsa
 
 
@@ -119,6 +121,7 @@ mlguide_SOURCES = $(srcdir)/mlguide.c
 mlguide_par_SOURCES = $(srcdir)/mlguide_par.c
 @ML_STANDALONE_MODE_FALSE@ml_aztec_simple_SOURCES = $(srcdir)/ml_aztec_simple.c
 @ML_STANDALONE_MODE_FALSE@ml_aztec_simple_METIS_SOURCES = $(srcdir)/ml_aztec_simple_METIS.c
+@ML_STANDALONE_MODE_FALSE@ml_aztec_simple_ParMETIS_SOURCES = $(srcdir)/ml_aztec_simple_ParMETIS.c
 @ML_STANDALONE_MODE_FALSE@ml_example1d_SOURCES = $(srcdir)/ml_example1d.c
 @ML_STANDALONE_MODE_FALSE@ml_example1dGS_SOURCES = $(srcdir)/ml_example1dGS.c
 @ML_STANDALONE_MODE_FALSE@ml_example2d_SOURCES = $(srcdir)/ml_example2d.c
@@ -215,6 +218,10 @@ mlguide_par_LINK = ${mllink}
 @ML_STANDALONE_MODE_FALSE@ml_aztec_simple_METIS_LDADD = ${ml_libs}
 @ML_STANDALONE_MODE_FALSE@ml_aztec_simple_METIS_LINK = ${mllink}
 
+@ML_STANDALONE_MODE_FALSE@ml_aztec_simple_ParMETIS_CFLAGS = ${ml_common_include_locations}
+@ML_STANDALONE_MODE_FALSE@ml_aztec_simple_ParMETIS_LDADD = ${ml_libs}
+@ML_STANDALONE_MODE_FALSE@ml_aztec_simple_ParMETIS_LINK = ${mllink}
+
 @ML_STANDALONE_MODE_FALSE@ml_readfile_CFLAGS = ${ml_common_include_locations}
 @ML_STANDALONE_MODE_FALSE@ml_readfile_LDADD = ${ml_libs}
 @ML_STANDALONE_MODE_FALSE@ml_readfile_LINK = ${mllink}
@@ -245,6 +252,7 @@ CONFIG_CLEAN_FILES =
 @HAVE_MPI_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_example3d$(EXEEXT) \
 @HAVE_MPI_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_simple_max$(EXEEXT) \
 @HAVE_MPI_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_aztec_simple_METIS$(EXEEXT) \
+@HAVE_MPI_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_aztec_simple_ParMETIS$(EXEEXT) \
 @HAVE_MPI_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_readfile$(EXEEXT) \
 @HAVE_MPI_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_read_elas$(EXEEXT) \
 @HAVE_MPI_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_recirc$(EXEEXT) \
@@ -262,6 +270,7 @@ CONFIG_CLEAN_FILES =
 @HAVE_MPI_TRUE@@ML_STANDALONE_MODE_FALSE@	ml_example3d$(EXEEXT) \
 @HAVE_MPI_TRUE@@ML_STANDALONE_MODE_FALSE@	ml_simple_max$(EXEEXT) \
 @HAVE_MPI_TRUE@@ML_STANDALONE_MODE_FALSE@	ml_aztec_simple_METIS$(EXEEXT) \
+@HAVE_MPI_TRUE@@ML_STANDALONE_MODE_FALSE@	ml_aztec_simple_ParMETIS$(EXEEXT) \
 @HAVE_MPI_TRUE@@ML_STANDALONE_MODE_FALSE@	ml_readfile$(EXEEXT) \
 @HAVE_MPI_TRUE@@ML_STANDALONE_MODE_FALSE@	ml_read_elas$(EXEEXT) \
 @HAVE_MPI_TRUE@@ML_STANDALONE_MODE_FALSE@	ml_recirc$(EXEEXT) \
@@ -286,6 +295,16 @@ ml_aztec_simple_METIS_OBJECTS = $(am_ml_aztec_simple_METIS_OBJECTS)
 @ML_STANDALONE_MODE_FALSE@	$(top_builddir)/../aztecoo/src/libaztecoo.a \
 @ML_STANDALONE_MODE_FALSE@	$(top_builddir)/../epetra/src/libepetra.a
 ml_aztec_simple_METIS_LDFLAGS =
+@ML_STANDALONE_MODE_FALSE@am_ml_aztec_simple_ParMETIS_OBJECTS = \
+@ML_STANDALONE_MODE_FALSE@	ml_aztec_simple_ParMETIS-ml_aztec_simple_ParMETIS.$(OBJEXT)
+ml_aztec_simple_ParMETIS_OBJECTS = \
+	$(am_ml_aztec_simple_ParMETIS_OBJECTS)
+@ML_STANDALONE_MODE_TRUE@ml_aztec_simple_ParMETIS_DEPENDENCIES =
+@ML_STANDALONE_MODE_FALSE@ml_aztec_simple_ParMETIS_DEPENDENCIES = \
+@ML_STANDALONE_MODE_FALSE@	$(top_builddir)/src/libml.a \
+@ML_STANDALONE_MODE_FALSE@	$(top_builddir)/../aztecoo/src/libaztecoo.a \
+@ML_STANDALONE_MODE_FALSE@	$(top_builddir)/../epetra/src/libepetra.a
+ml_aztec_simple_ParMETIS_LDFLAGS =
 @ML_STANDALONE_MODE_FALSE@am_ml_example1d_OBJECTS = \
 @ML_STANDALONE_MODE_FALSE@	ml_example1d-ml_example1d.$(OBJEXT)
 ml_example1d_OBJECTS = $(am_ml_example1d_OBJECTS)
@@ -389,6 +408,7 @@ depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
 @AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/ml_aztec_simple-ml_aztec_simple.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/ml_aztec_simple_METIS-ml_aztec_simple_METIS.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/ml_aztec_simple_ParMETIS-ml_aztec_simple_ParMETIS.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/ml_example1d-ml_example1d.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/ml_example1dGS-ml_example1dGS.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/ml_example2d-ml_example2d.Po \
@@ -406,14 +426,15 @@ CCLD = $(CC)
 LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
 CFLAGS = @CFLAGS@
 DIST_SOURCES = $(ml_aztec_simple_SOURCES) \
-	$(ml_aztec_simple_METIS_SOURCES) $(ml_example1d_SOURCES) \
+	$(ml_aztec_simple_METIS_SOURCES) \
+	$(ml_aztec_simple_ParMETIS_SOURCES) $(ml_example1d_SOURCES) \
 	$(ml_example1dGS_SOURCES) $(ml_example2d_SOURCES) \
 	$(ml_example3d_SOURCES) $(ml_read_elas_SOURCES) \
 	$(ml_read_salsa_SOURCES) $(ml_readfile_SOURCES) \
 	$(ml_recirc_SOURCES) $(ml_simple_max_SOURCES) \
 	$(mlguide_SOURCES) $(mlguide_par_SOURCES)
 DIST_COMMON = Makefile.am Makefile.in
-SOURCES = $(ml_aztec_simple_SOURCES) $(ml_aztec_simple_METIS_SOURCES) $(ml_example1d_SOURCES) $(ml_example1dGS_SOURCES) $(ml_example2d_SOURCES) $(ml_example3d_SOURCES) $(ml_read_elas_SOURCES) $(ml_read_salsa_SOURCES) $(ml_readfile_SOURCES) $(ml_recirc_SOURCES) $(ml_simple_max_SOURCES) $(mlguide_SOURCES) $(mlguide_par_SOURCES)
+SOURCES = $(ml_aztec_simple_SOURCES) $(ml_aztec_simple_METIS_SOURCES) $(ml_aztec_simple_ParMETIS_SOURCES) $(ml_example1d_SOURCES) $(ml_example1dGS_SOURCES) $(ml_example2d_SOURCES) $(ml_example3d_SOURCES) $(ml_read_elas_SOURCES) $(ml_read_salsa_SOURCES) $(ml_readfile_SOURCES) $(ml_recirc_SOURCES) $(ml_simple_max_SOURCES) $(mlguide_SOURCES) $(mlguide_par_SOURCES)
 
 all: all-am
 
@@ -436,6 +457,11 @@ ml_aztec_simple_METIS-ml_aztec_simple_METIS.$(OBJEXT): \
 ml_aztec_simple_METIS$(EXEEXT): $(ml_aztec_simple_METIS_OBJECTS) $(ml_aztec_simple_METIS_DEPENDENCIES) 
 	@rm -f ml_aztec_simple_METIS$(EXEEXT)
 	$(ml_aztec_simple_METIS_LINK) $(ml_aztec_simple_METIS_LDFLAGS) $(ml_aztec_simple_METIS_OBJECTS) $(ml_aztec_simple_METIS_LDADD) $(LIBS)
+ml_aztec_simple_ParMETIS-ml_aztec_simple_ParMETIS.$(OBJEXT): \
+	$(srcdir)/ml_aztec_simple_ParMETIS.c
+ml_aztec_simple_ParMETIS$(EXEEXT): $(ml_aztec_simple_ParMETIS_OBJECTS) $(ml_aztec_simple_ParMETIS_DEPENDENCIES) 
+	@rm -f ml_aztec_simple_ParMETIS$(EXEEXT)
+	$(ml_aztec_simple_ParMETIS_LINK) $(ml_aztec_simple_ParMETIS_LDFLAGS) $(ml_aztec_simple_ParMETIS_OBJECTS) $(ml_aztec_simple_ParMETIS_LDADD) $(LIBS)
 ml_example1d-ml_example1d.$(OBJEXT): $(srcdir)/ml_example1d.c
 ml_example1d$(EXEEXT): $(ml_example1d_OBJECTS) $(ml_example1d_DEPENDENCIES) 
 	@rm -f ml_example1d$(EXEEXT)
@@ -489,6 +515,7 @@ distclean-compile:
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_aztec_simple-ml_aztec_simple.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_aztec_simple_METIS-ml_aztec_simple_METIS.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_aztec_simple_ParMETIS-ml_aztec_simple_ParMETIS.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_example1d-ml_example1d.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_example1dGS-ml_example1dGS.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_example2d-ml_example2d.Po@am__quote@
@@ -539,6 +566,18 @@ ml_aztec_simple_METIS-ml_aztec_simple_METIS.obj: $(srcdir)/ml_aztec_simple_METIS
 @AMDEP_TRUE@	depfile='$(DEPDIR)/ml_aztec_simple_METIS-ml_aztec_simple_METIS.Po' tmpdepfile='$(DEPDIR)/ml_aztec_simple_METIS-ml_aztec_simple_METIS.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ml_aztec_simple_METIS_CFLAGS) $(CFLAGS) -c -o ml_aztec_simple_METIS-ml_aztec_simple_METIS.obj `cygpath -w $(srcdir)/ml_aztec_simple_METIS.c`
+
+ml_aztec_simple_ParMETIS-ml_aztec_simple_ParMETIS.o: $(srcdir)/ml_aztec_simple_ParMETIS.c
+@AMDEP_TRUE@	source='$(srcdir)/ml_aztec_simple_ParMETIS.c' object='ml_aztec_simple_ParMETIS-ml_aztec_simple_ParMETIS.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/ml_aztec_simple_ParMETIS-ml_aztec_simple_ParMETIS.Po' tmpdepfile='$(DEPDIR)/ml_aztec_simple_ParMETIS-ml_aztec_simple_ParMETIS.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ml_aztec_simple_ParMETIS_CFLAGS) $(CFLAGS) -c -o ml_aztec_simple_ParMETIS-ml_aztec_simple_ParMETIS.o `test -f '$(srcdir)/ml_aztec_simple_ParMETIS.c' || echo '$(srcdir)/'`$(srcdir)/ml_aztec_simple_ParMETIS.c
+
+ml_aztec_simple_ParMETIS-ml_aztec_simple_ParMETIS.obj: $(srcdir)/ml_aztec_simple_ParMETIS.c
+@AMDEP_TRUE@	source='$(srcdir)/ml_aztec_simple_ParMETIS.c' object='ml_aztec_simple_ParMETIS-ml_aztec_simple_ParMETIS.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/ml_aztec_simple_ParMETIS-ml_aztec_simple_ParMETIS.Po' tmpdepfile='$(DEPDIR)/ml_aztec_simple_ParMETIS-ml_aztec_simple_ParMETIS.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ml_aztec_simple_ParMETIS_CFLAGS) $(CFLAGS) -c -o ml_aztec_simple_ParMETIS-ml_aztec_simple_ParMETIS.obj `cygpath -w $(srcdir)/ml_aztec_simple_ParMETIS.c`
 
 ml_example1d-ml_example1d.o: $(srcdir)/ml_example1d.c
 @AMDEP_TRUE@	source='$(srcdir)/ml_example1d.c' object='ml_example1d-ml_example1d.o' libtool=no @AMDEPBACKSLASH@
