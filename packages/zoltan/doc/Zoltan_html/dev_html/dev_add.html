@@ -1,11 +1,11 @@
-<HTML>
-<HEAD>
-   <META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-1">
-   <META NAME="GENERATOR" CONTENT="Mozilla/4.04 [en] (X11; U; SunOS 5.6 sun4m) [Netscape]">
-   <META NAME="sandia.approved" CONTENT="SAND99-1376">
-   <META NAME="author" CONTENT="karen devine, kddevin@sandia.gov">
-
-   <TITLE> Zoltan Developer's Guide:  Adding Algorithms</TITLE>
+<!doctype html public "-//w3c//dtd html 4.0 transitional//en">
+<html>
+<head>
+   <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+   <meta name="GENERATOR" content="Mozilla/4.7 [en] (X11; U; SunOS 5.7 sun4u) [Netscape]">
+   <meta name="sandia.approved" content="SAND99-1376">
+   <meta name="author" content="karen devine, kddevin@sandia.gov">
+   <title> Zoltan Developer's Guide:  Adding Algorithms</title>
 <!
   ------------------------
   | CVS File Information |
@@ -15,30 +15,30 @@
   $Date$
   $Revision$
 >
-</HEAD>
-<BODY BGCOLOR="#FFFFFF">
+</head>
+<body bgcolor="#FFFFFF">
 
-<DIV ALIGN=right>
-<H3>
-<IMG SRC="figures/dev_header.gif" ALT="Zoltan Developer's Guide" ></H3></DIV>
+<div ALIGN=right>
+<h3>
+<img SRC="figures/dev_header.gif" ALT="Zoltan Developer's Guide" ></h3></div>
 
-<H2>
-<A NAME="new_methods"></A>Adding New Load-Balancing Algorithms to Zoltan</H2>
+<h2>
+<a NAME="new_methods"></a>Adding New Load-Balancing Algorithms to Zoltan</h2>
 The Zoltan library is designed so that adding new load-balancing algorithms
 to the library is simple. In many cases, existing code can be easily modified
 to use the interface query functions to build the data structures needed
 for the algorithm. The process for adding new algorithms to the library
 is described below; more detail is provided at each link.
-<BLOCKQUOTE>Add the algorithm to the <A HREF="dev_add_interface.html">Load-Balancing
-Interface Routines</A>;
-<BR>Implement a <A HREF="dev_add_lb.html">Load-Balancing Function</A> front-end
+<blockquote>Add the algorithm to the <a href="dev_add_interface.html">Load-Balancing
+Interface Routines</a>;
+<br>Implement a <a href="dev_add_lb.html">Load-Balancing Function</a> front-end
 to the algorithm;
-<BR>Use the load-balancing <A HREF="dev_add_struct.html">Data Structures</A>
+<br>Use the load-balancing <a href="dev_add_struct.html">Data Structures</a>
 provided by the library;
-<BR>Add the <A HREF="dev_add_param.html">Parameters</A> needed by the algorithm; and
-<BR>Modify the <A HREF="dev_fortran.html">Fortran interface</A> if the API is
-changed.
-<BR>&nbsp;</BLOCKQUOTE>
+<br>Add the <a href="dev_add_param.html">Parameters</a> needed by the algorithm;
+and
+<br>Modify the <a href="dev_fortran.html">Fortran interface</a> if the
+API is changed.</blockquote>
 <!--
   BAH: Modify this section to include the following.
     Write parameter routine & modify set_params
@@ -50,9 +50,9 @@ changed.
 
     Make this into a checklist.
 -->
-<HR WIDTH="100%">
-<BR>[<A HREF="dev.html">Table of Contents</A>&nbsp; |&nbsp; <A HREF="dev_add_interface.html">Next:&nbsp;
-Load-Balancing Interface Routines</A>&nbsp; |&nbsp; <A HREF="dev_util_time.html">Previous:&nbsp;
-Timing Utilities</A>]
-</BODY>
-</HTML>
+<hr WIDTH="100%">
+<br>[<a href="dev.html">Table of Contents</a>&nbsp; |&nbsp; <a href="dev_add_interface.html">Next:&nbsp;
+Load-Balancing Interface Routines</a>&nbsp; |&nbsp; <a href="dev_util_debug.html">Previous:&nbsp;
+Debugging Utilities</a>]
+</body>
+</html>
