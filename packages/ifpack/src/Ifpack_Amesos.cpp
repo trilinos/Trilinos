@@ -18,16 +18,14 @@ Ifpack_Amesos::Ifpack_Amesos(Epetra_RowMatrix* Matrix) :
   IsInitialized_(false),
   IsComputed_(false),
   Condest_(-1.0),
-  ComputeCondest_(false)
+  ComputeCondest_(false),
+  Label_("Amesos_Klu")
 {
 
   Problem_ = new Epetra_LinearProblem;
 
   Problem_->SetOperator(Matrix_);
 
-  // Set all default values.
-  Teuchos::ParameterList List;
-  SetParameters(List);
 }
 
 //==============================================================================

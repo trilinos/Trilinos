@@ -9,6 +9,9 @@
 #include "Ifpack_RCMReordering.h"
 #include "Ifpack_LocalFilter.h"
 #include "Ifpack_ReorderFilter.h"
+#include "Ifpack_DropFilter.h"
+#include "Ifpack_SparsityFilter.h"
+#include "Ifpack_SingletonFilter.h"
 #include "Ifpack_Utils.h"
 #include "Epetra_CombineMode.h"
 #include "Epetra_MultiVector.h"
@@ -278,6 +281,9 @@ protected:
   bool UseReordering_;
   Ifpack_Reordering* Reordering_;
   Ifpack_ReorderFilter* ReorderedLocalizedMatrix_;
+  bool UseFilter_;
+  Epetra_RowMatrix* FilteredMatrix_;
+  Ifpack_SingletonFilter* SingletonFilter_;
 
 };
 
@@ -302,7 +308,10 @@ Ifpack_AdditiveSchwarz(Epetra_RowMatrix* Matrix,
   CondestTol_(1e-12),
   UseReordering_(false),
   ReorderedLocalizedMatrix_(0),
-  Reordering_(0)
+  Reordering_(0),
+  UseFilter_(false),
+  FilteredMatrix_(0),
+  SingletonFilter_(0)
 {
   if (Matrix_->Comm().NumProc() == 1)
     OverlapLevel_ = 0;
@@ -349,6 +358,14 @@ void Ifpack_AdditiveSchwarz<T>::Destroy()
     delete ReorderedLocalizedMatrix_;
   ReorderedLocalizedMatrix_ = 0;
 
+  if (FilteredMatrix_)
+    delete FilteredMatrix_;
+  FilteredMatrix_ = 0;
+
+  if (SingletonFilter_)
+    delete SingletonFilter_;
+  SingletonFilter_ = 0;
+
   if (Reordering_)
     delete Reordering_;
   Reordering_ = 0;
@@ -359,31 +376,61 @@ template<typename T>
 int Ifpack_AdditiveSchwarz<T>::Setup()
 {
 
+  double AddToDiag = List_.get("filter: add to diagonal", 1e-6);
+
   if (OverlappingMatrix_)
-    LocalizedMatrix_ = new Ifpack_LocalFilter(OverlappingMatrix_);
+    LocalizedMatrix_ = new Ifpack_LocalFilter(OverlappingMatrix_,
+					      AddToDiag);
   else
-    LocalizedMatrix_ = new Ifpack_LocalFilter(Matrix_);
+    LocalizedMatrix_ = new Ifpack_LocalFilter(Matrix_,
+					      AddToDiag);
 
   if (LocalizedMatrix_ == 0)
     IFPACK_CHK_ERR(-1);
 
-  // may need to reorder local matrix
+  SingletonFilter_ = new Ifpack_SingletonFilter(LocalizedMatrix_);
+
+  Epetra_RowMatrix* Matrix = SingletonFilter_;
+
   if (UseReordering_) {
+
     // create reordeing and compute it
     Reordering_ = new Ifpack_RCMReordering();
     IFPACK_CHK_ERR(Reordering_->SetParameters(List_));
     IFPACK_CHK_ERR(Reordering_->Compute(*LocalizedMatrix_));
+
     // now create reordered localized matrix
     ReorderedLocalizedMatrix_ = 
       new Ifpack_ReorderFilter(LocalizedMatrix_,Reordering_);
     assert(ReorderedLocalizedMatrix_ != 0);
-    // create the inverse based on reordered matrix
-    Inverse_ = new T(ReorderedLocalizedMatrix_);
-
+    Matrix = ReorderedLocalizedMatrix_;
   }
-  else
-    // create the inverse based on original (non-reordered) matrix
-    Inverse_ = new T(LocalizedMatrix_);
+
+  if (UseFilter_) {
+    string DropScheme = List_.get("filter: type", "by-value");
+
+    if (DropScheme == "by-value") {
+      double DropValue = List_.get("filter: drop value", 1e-9);
+      FilteredMatrix_ = new Ifpack_DropFilter(Matrix,DropValue);
+    }
+    else if (DropScheme == "by-sparsity") {
+      int AllowedEntries = List_.get("filter: allowed entries", 1);
+      int AllowedBandwidth = List_.get("filter: allowed bandwidth", 
+				   Matrix->NumMyRows());
+      FilteredMatrix_ = new Ifpack_SparsityFilter(Matrix,AllowedEntries,
+						  AllowedBandwidth);
+    }
+    else {
+      cerr << "Option `filter: type' not recognized ("
+	   << DropScheme << ")." << endl;
+      exit(EXIT_FAILURE);
+    }
+      
+    assert (FilteredMatrix_ != 0);
+    Matrix = FilteredMatrix_;
+  }
+
+  Inverse_ = new T(Matrix);
 
   if (Inverse_ == 0)
     IFPACK_CHK_ERR(-1);
@@ -407,6 +454,7 @@ int Ifpack_AdditiveSchwarz<T>::SetParameters(Teuchos::ParameterList& List)
  
   CombineMode_ = List.get("schwarz: combine mode", CombineMode_);
   UseReordering_ = List.get("schwarz: use RCM reordering", UseReordering_);
+  UseFilter_ = List.get("schwarz: use filter", UseFilter_);
   CondestMaxIters_ = List.get("condest: max iters", CondestMaxIters_);
   CondestTol_ = List.get("condest: tolerance", CondestTol_);
 
@@ -554,13 +602,28 @@ int Ifpack_AdditiveSchwarz<T>::
 ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
 {
 
+  // FIXME: Only One between Import and Export
   if (X.NumVectors() != Y.NumVectors())
     IFPACK_CHK_ERR(-1); // wrong input
-  // check for maps??
+
+  // FIXME
+  if (!X.Map().SameAs(Matrix().RowMatrixRowMap()))
+    IFPACK_CHK_ERR(-99);
+  if (!Y.Map().SameAs(Matrix().RowMatrixRowMap()))
+    IFPACK_CHK_ERR(-99);
+
+  assert (UseReordering_ == false); // FIXME
 
   if (IsOverlapping() == false) {
-    if (!UseReordering_)
-      Inverse_->ApplyInverse(X,Y);
+    if (!UseReordering_) {
+      Epetra_Vector ReducedX(SingletonFilter_->Map());
+      Epetra_Vector ReducedY(SingletonFilter_->Map());
+      SingletonFilter_->SolveSingletons(X,Y);
+
+      SingletonFilter_->CreateReducedRHS(Y,X,ReducedX);
+      Inverse_->ApplyInverse(ReducedX,ReducedY);
+      SingletonFilter_->UpdateLHS(ReducedY,Y);
+    }
     else {
       Epetra_MultiVector Xtilde(X);
       Epetra_MultiVector Ytilde(Y);
@@ -582,8 +645,17 @@ ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
     Epetra_MultiVector LocalY(View,LocalizedMatrix_->RowMatrixRowMap(),
 			      OverlappingY.Pointers(),Y.NumVectors());
 
-    IFPACK_CHK_ERR(Inverse_->ApplyInverse(LocalX,LocalY));
-
+    // fix singletons first
+    Epetra_Vector ReducedX(SingletonFilter_->Map());
+    Epetra_Vector ReducedY(SingletonFilter_->Map());
+    SingletonFilter_->SolveSingletons(LocalX,LocalY);
+    // modify RHS
+    SingletonFilter_->CreateReducedRHS(LocalY,LocalX,ReducedX);
+    // solve non-singletons
+    Inverse_->ApplyInverse(ReducedX,ReducedY);
+    // update the local solution
+    SingletonFilter_->UpdateLHS(ReducedY,LocalY);
+    // export back
     IFPACK_CHK_ERR(Y.Export(OverlappingY,*Importer_,CombineMode_));
   }
 

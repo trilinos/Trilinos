@@ -260,6 +260,7 @@ virtual int SetLabel()
 {
   Label_ = "Ifpack_BlockSymGaussSeidel, # blocks = "
     + Ifpack_toString(NumLocalBlocks());
+  return(0);
 }
 
 };
