@@ -535,7 +535,6 @@ template<typename T>
 int Ifpack_AdditiveSchwarz<T>::SetUseTranspose(bool UseTranspose)
 {
   IFPACK_CHK_ERR(-99); // not implemented
-  return(-99);
 }
 
 //==============================================================================

@@ -103,6 +103,36 @@
 
 #endif
 
+/******************************************************************************
+ *   Choose header file flavor: either ANSI-style (no .h, e.g. <iostream>) or
+ * old-style (with .h, e.g., <iostream.h>). 
+ * KL 9/26/03
+ *****************************************************************************/
+
+#if HAVE_CSTDIO
+#include <cstdio>
+#elif HAVE_STDIO_H
+#include <stdio.h>
+#else
+#error "Found neither cstdio nor stdio.h"
+#endif
+
+#if HAVE_STRING
+#include <string>
+#elif HAVE_STRING_H
+#include <string.h>
+#else
+#error "Found neither string nor string.h"
+#endif
+
+#if HAVE_IOSTREAM
+#include <iostream>
+#elif HAVE_IOSTREAM_H
+#include <iostream.h>
+#else
+#error "Found neither iostream nor iostream.h"
+#endif
+
 #if defined(TFLOP)
 #ifdef HAVE_STRING
 using std::string;

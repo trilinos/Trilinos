@@ -87,7 +87,10 @@ public:
 
   //! Applies the inverse of \c this operator.
   virtual int ApplyInverse(const Epetra_MultiVector& X,
-			   Epetra_MultiVector& Y) const;
+			   Epetra_MultiVector& Y) const
+  {
+    return(-1);
+  }
 
   virtual int InvRowSums(Epetra_Vector& x) const
   {

@@ -136,6 +136,7 @@ int Ifpack_SparsityFilter::
 ExtractDiagonalCopy(Epetra_Vector & Diagonal) const
 {
   IFPACK_CHK_ERR(A_.ExtractDiagonalCopy(Diagonal));
+  return(0);
 }
 
 //==============================================================================

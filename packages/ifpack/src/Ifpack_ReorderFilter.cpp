@@ -55,6 +55,7 @@ Ifpack_ReorderFilter::operator=(const Ifpack_ReorderFilter& RHS)
   Indices_.resize(MaxNumEntries_);
   Values_.resize(MaxNumEntries_);
   strcpy(Label_,RHS.Label());
+  return(*this);
 }
 
 //==============================================================================
@@ -84,7 +85,8 @@ ExtractDiagonalCopy(Epetra_Vector & Diagonal) const
 {
   Epetra_Vector DiagonalTilde(Diagonal);
   IFPACK_CHK_ERR(Matrix().ExtractDiagonalCopy(DiagonalTilde));
-  Reordering().P(DiagonalTilde,Diagonal);
+  IFPACK_CHK_ERR((Reordering().P(DiagonalTilde,Diagonal)));
+  return(0);
 }
 
 //==============================================================================
@@ -119,11 +121,4 @@ Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
 {
   IFPACK_CHK_ERR(Multiply(false,X,Y));
   return(0);
-}
-
-//==============================================================================
-int Ifpack_ReorderFilter::
-ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
-{
-  return(-1); // NOT IMPLEMENTED AT THIS STAGE
 }

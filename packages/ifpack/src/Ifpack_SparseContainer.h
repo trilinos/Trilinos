@@ -229,7 +229,7 @@ int Ifpack_SparseContainer<T>::Reshape(const int NumRows, const int NumVector)
     Destroy();
 
   Shape(NumRows);
-  
+  return(0); 
 }
 
 //==============================================================================
@@ -249,7 +249,7 @@ double& Ifpack_SparseContainer<T>::RHS(const int i, const int Vector)
 //==============================================================================
 template<typename T>
 int Ifpack_SparseContainer<T>::
-SetMatrixElement(const int row, const int col, double value)
+SetMatrixElement(const int row, const int col, const double value)
 {
   if (IsShaped() == false)
     IFPACK_CHK_ERR(-5); // problem not shaped yet
@@ -378,7 +378,8 @@ template<typename T>
 int Ifpack_SparseContainer<T>::
 SetParameters(Teuchos::ParameterList& List)
 {
-  Inverse_->SetParameters(List);
+  IFPACK_CHK_ERR(Inverse_->SetParameters(List));
+  return(0);
 }
 
 //==============================================================================

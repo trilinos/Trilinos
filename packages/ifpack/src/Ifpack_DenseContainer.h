@@ -168,6 +168,7 @@ public:
     }
     else
       IFPACK_CHK_ERR(LHS_.Multiply('N','N', 1.0,Matrix_,RHS_,0.0));
+    return(0);
   }
 
   //! Apply the inverse of the matrix to RHS, results are stored in LHS.
