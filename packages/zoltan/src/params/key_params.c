@@ -27,7 +27,7 @@ extern "C" {
 /*****************************************************************************/
 /*****************************************************************************/
 static PARAM_VARS Key_params[] = {
-  { "IMBALANCE_TOL", NULL, "DOUBLE", 1 },
+  { "IMBALANCE_TOL", NULL, "FLOAT", 1 },
   { "AUTO_MIGRATE", NULL, "INT", 0 },
   { "OBJ_WEIGHT_DIM", NULL, "INT", 0 },
   { "EDGE_WEIGHT_DIM", NULL, "INT", 0 },
@@ -78,7 +78,7 @@ int  idx 			/* index of vector param, -1 if scalar */
             result.fval = ZOLTAN_LB_IMBALANCE_TOL_DEF;
 	if (result.fval < 1.0) {
 	    sprintf(msg, "Invalid Imbalance_Tol value (%g) "
-		"being set to %g.", result.dval, ZOLTAN_LB_IMBALANCE_TOL_DEF);
+		"being set to %g.", result.fval, ZOLTAN_LB_IMBALANCE_TOL_DEF);
             ZOLTAN_PRINT_WARN(zz->Proc, yo, msg);
 	    result.fval = ZOLTAN_LB_IMBALANCE_TOL_DEF;
 	}

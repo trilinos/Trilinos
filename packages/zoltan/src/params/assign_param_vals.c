@@ -26,20 +26,20 @@ extern "C" {
 #include "zoltan_util.h"
 
 /*****************************************************************************/
-/***   Function prototypes: 
+/***   Function prototypes:                                                ***/
 /*****************************************************************************/
 
 static void Zoltan_Print_Assigned_Param_Vals(PARAM_VARS * );
 
 /*****************************************************************************/
-/***   Local macros:
+/***   Local macros:                                                       ***/
 /*****************************************************************************/
 #define SET_PARAM_VAL(datatype,len,value) { \
   for (i=0; i<len; i++) \
     ((datatype *) param_ptr->ptr)[i] = value; \
   }
 /*****************************************************************************/
-/***   Function definitions:
+/***   Function definitions:                                               ***/
 /*****************************************************************************/
 
 int      Zoltan_Assign_Param_Vals(

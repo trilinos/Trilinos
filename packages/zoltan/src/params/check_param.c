@@ -79,7 +79,8 @@ int *matched_index)		/* where in struct the match occurs */
 	    }
 	}
 
-	else if (!strcmp(params->type, "DOUBLE")) {
+	else if ((!strcmp(params->type, "FLOAT")) ||
+                 (!strcmp(params->type, "DOUBLE"))) {
 	    /* Check that there's a digit here */
 	    for (i = strlen(val); i >= 0; i--)
 		if (isdigit((int)(val[i])))
@@ -87,6 +88,7 @@ int *matched_index)		/* where in struct the match occurs */
 	    if (i < 0)
 		status = 2;
 	    else {
+		(*result).fval = atof(val);
 		(*result).dval = atof(val);
 	    }
 	}
