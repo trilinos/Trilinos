@@ -1,8 +1,8 @@
 #ifndef IFPACK_ADDITIVESCHWARZ_H
 #define IFPACK_ADDITIVESCHWARZ_H
 
+#include "Ifpack_ConfigDefs.h"
 #if defined(HAVE_IFPACK_TEUCHOS)
-
 #include "Ifpack_Preconditioner.h"
 #include "Teuchos_ParameterList.hpp"
 #include "Ifpack_ConfigDefs.h"
