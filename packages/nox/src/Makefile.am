@@ -199,7 +199,8 @@ STATUSTEST_H = \
 	$(srcdir)/NOX_StatusTest_Combo.H \
 	$(srcdir)/NOX_StatusTest_MaxIters.H \
         $(srcdir)/NOX_StatusTest_NormWRMS.H \
-        $(srcdir)/NOX_StatusTest_Stagnation.H 
+        $(srcdir)/NOX_StatusTest_Stagnation.H \
+        $(srcdir)/NOX_StatusTest_Divergence.H 
 
 STATUSTEST = \
 	$(srcdir)/NOX_StatusTest_Generic.C \
@@ -209,7 +210,8 @@ STATUSTEST = \
 	$(srcdir)/NOX_StatusTest_Combo.C \
 	$(srcdir)/NOX_StatusTest_MaxIters.C \
         $(srcdir)/NOX_StatusTest_NormWRMS.C \
-        $(srcdir)/NOX_StatusTest_Stagnation.C 
+        $(srcdir)/NOX_StatusTest_Stagnation.C \
+        $(srcdir)/NOX_StatusTest_Divergence.C 
 
 UTILS_H = \
 	$(srcdir)/NOX_Utils.H \
