@@ -846,39 +846,36 @@ extern int LB_Initialize(int argc, char **argv, float *ver);
 
 /*****************************************************************************/
 /*
- *  Function to create a load balancing object.  May want more than one
- *  object if using different decompositions with different techniques.
- *  This function allocates and initializes the object.
+ *  Function to create a load balancing structure.  May want more than one
+ *  structure if using different decompositions with different techniques.
+ *  This function allocates and initializes the structure.
  *  Input:
  *    MPI_Comm communicator      --  MPI Communicator to be used for this
- *                                   load-balancing object.
- *    KDD_LB  --  The communicator is not yet used in the algorithms!
- *    KDD_LB  --  It will have to be incorporated appropriately.
- *    KDD_LB  --  But I wanted to get it into the interface now!
+ *                                   load-balancing structure.
  *  Returned value:
- *    struct LB_Struct *         --  Pointer to a LB object.
+ *    struct LB_Struct *         --  Pointer to a LB structure.
  *                                   If there is an error, NULL is returned.
  *                                   Any error in this function should be
  *                                   considered fatal.
  */
 
-extern struct LB_Struct *LB_Create_Object(MPI_Comm communicator);
+extern struct LB_Struct *LB_Create(MPI_Comm communicator);
 
 /*****************************************************************************/
 /*
- *  Function to free the space associated with a load balancing object.
+ *  Function to free the space associated with a load balancing structure.
  *  The input pointer is set to NULL when the routine returns.
  *  Input:
- *    struct LB_Struct **         --  Pointer to a LB object.
+ *    struct LB_Struct **         --  Pointer to a LB structure.
  */
 
-extern void LB_Destroy_Object(struct LB_Struct **lb);
+extern void LB_Destroy(struct LB_Struct **lb);
 
 /*****************************************************************************/
 /*
  *  Function to initialize a given LB interface function.
  *  Input:
- *    struct LB_Struct *lb       --  Pointer to a LB object.
+ *    struct LB_Struct *lb       --  Pointer to a LB structure.
  *    LB_FN_TYPE fn_type         --  Enum type indicating the function to be
  *                                   set.
  *    void *fn_ptr               --  Pointer to the function to be used in the 
@@ -897,7 +894,7 @@ extern int LB_Set_Fn(struct LB_Struct *lb, LB_FN_TYPE fn_type,
 /*
  *  Function to set the load balancing method to be used.
  *  Input:
- *    struct LB_Struct *lb       --  The load balancing object to which this
+ *    struct LB_Struct *lb       --  The load balancing structure to which this
  *                                   method applies.
  *    char *string               --  String specifying the desired method.
  *  Output:
@@ -916,7 +913,7 @@ extern int LB_Set_Method(struct LB_Struct *lb, char *string);
  *  by a call to this routine.
  *
  *  Input
- *    struct LB_Struct *lb       --  The load balancing object to which this 
+ *    struct LB_Struct *lb       --  The load balancing structure to which this
  *                                   parameter alteration applies.
  *    char *name                 --  The name of the parameter to have its
  *                                   value changed.
@@ -933,8 +930,8 @@ extern int LB_Set_Param(struct LB_Struct *lb, char *name, char *val);
  *  Function to invoke the load-balancer.
  *
  *  Input:
- *    struct LB_Struct *lb       --  The load balancing object containing info 
- *                                   about this load-balancing invocation.
+ *    struct LB_Struct *lb       --  The load balancing structure containing 
+ *                                   info about this load-balancing invocation.
  *  Output:
  *    int *changes               --  This value tells if the load balancer
  *                                   came up with a new decomposition or
@@ -987,7 +984,8 @@ extern int LB_Balance(struct LB_Struct *lb, int *changes,
  *  decomposition.
  *
  *  Input:
- *    struct LB_Struct *lb       --  Load balancing object for current balance.
+ *    struct LB_Struct *lb       --  Load balancing structure for current 
+ *                                   balance.
  *    int num_import             --  Number of non-local objects assigned to the
  *                                   processor in the new decomposition.
  *    LB_GID *import_global_ids  --  Array of global IDs for non-local objects
@@ -1037,7 +1035,8 @@ extern int LB_Compute_Destinations(struct LB_Struct *lb,
  *  routine (LB_UNPACK_OBJ_FN) for each object imported.
  *
  *  Input:
- *    struct LB_Struct *lb       --  Load balancing object for current balance.
+ *    struct LB_Struct *lb       --  Load balancing structure for current 
+ *                                   balance.
  *    int num_import             --  Number of non-local objects assigned to the
  *                                   processor in the new decomposition.
  *    LB_GID *import_global_ids  --  Array of global IDs for non-local objects
@@ -1106,7 +1105,7 @@ extern int LB_Free_Data(LB_GID **import_global_ids, LB_LID **import_local_ids,
  * geometric algorithm - currently only RCB.
  * 
  * Input:
- *   lb          -- pointer to lb object
+ *   lb          -- pointer to lb structure
  *   coords      -- vector of coordinates of new point
  *
  * Output:
@@ -1125,12 +1124,13 @@ extern int LB_Point_Assign(struct LB_Struct *lb, double *coords, int *proc);
  * geometric algorithm - currently only RCB.
  * 
  * Input:
- *   lb                -- pointer to lb object
+ *   lb                -- pointer to lb structure
  *   xmin, ymin, zmin  -- lower left corner of bounding box
  *   xmax, ymax, zmax  -- upper right corner of bounding box
  *
  * Output:
- *   procs             -- list of processors that box intersects.  Note: application
+ *   procs             -- list of processors that box intersects.  
+ *                        Note: application is
  *                            responsible for ensuring sufficient memory.
  *   numprocs          -- number of processors box intersects
  *
@@ -1147,7 +1147,7 @@ extern int LB_Box_Assign(struct LB_Struct *lb, double xmin, double ymin,
  * Routine to compute statistics about the current balance/partitioning.
  *
  * Input:
- *   lb          - pointer to lb object
+ *   lb          - pointer to lb structure
  *   print_stats - if >0, compute and print max and sum of the metrics
  *
  * Output:

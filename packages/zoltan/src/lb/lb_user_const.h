@@ -47,8 +47,8 @@
 
 #define LB_GID int
 #define LB_LID void *
-#define LB_GID_IS_INT 0
-#define LB_LID_IS_INT 1
+#define LB_GID_IS_INT 1
+#define LB_LID_IS_INT 0
 
 #else
 

@@ -70,7 +70,7 @@ int mpi_flag;
 /****************************************************************************/
 /****************************************************************************/
 
-LB *LB_Create_Object(MPI_Comm communicator)
+LB *LB_Create(MPI_Comm communicator)
 {
 /*
  *  Function to create a load balancing object.  May want more than one
@@ -191,7 +191,7 @@ LB *lb;
 /****************************************************************************/
 /****************************************************************************/
 
-void LB_Destroy_Object(LB **lb)
+void LB_Destroy(LB **lb)
 {
 /*
  *  Function to free a load balancing object.
