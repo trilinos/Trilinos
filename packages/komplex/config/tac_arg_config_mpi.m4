@@ -120,28 +120,55 @@ dnl
 dnl --------------------------------------------------------------------
 
 if test -n "${MPI_CXX}"; then
-  AC_CHECK_PROG(MPI_CXX_EXISTS, ${MPI_CXX}, yes, no)
+  if test -f ${MPI_CXX}; then
+    MPI_CXX_EXISTS=yes
+  else
+    AC_CHECK_PROG(MPI_CXX_EXISTS, ${MPI_CXX}, yes, no)
+  fi
+
   if test "X${MPI_CXX_EXISTS}" = "Xyes"; then
     CXX=${MPI_CXX}
   else
+    echo "-----"
+    echo "Cannot find MPI C++ compiler ${MPI_CXX}."
+    echo "Specify with --with-mpi-cxx."
+    echo "-----"
     AC_MSG_ERROR([MPI C++ compiler (${MPI_CXX}) not found.])
   fi
 fi
 
 if test -n "${MPI_CC}"; then
-  AC_CHECK_PROG(MPI_CC_EXISTS, ${MPI_CC}, yes, no)
+  if test -f ${MPI_CC}; then
+    MPI_CC_EXISTS=yes
+  else
+    AC_CHECK_PROG(MPI_CC_EXISTS, ${MPI_CC}, yes, no)
+  fi
+
   if test "X${MPI_CC_EXISTS}" = "Xyes"; then
     CC=${MPI_CC}
   else
+    echo "-----"
+    echo "Cannot find MPI C compiler ${MPI_CC}."
+    echo "Specify with --with-mpi-cc."
+    echo "-----"
     AC_MSG_ERROR([MPI C compiler (${MPI_CC}) not found.])
   fi
 fi
 
 if test -n "${MPI_F77}"; then
-  AC_CHECK_PROG(MPI_F77_EXISTS, ${MPI_F77}, yes, no)
+  if test -f ${MPI_F77}; then
+    MPI_F77_EXISTS=yes
+  else
+    AC_CHECK_PROG(MPI_F77_EXISTS, ${MPI_F77}, yes, no)
+  fi
+
   if test "X${MPI_F77_EXISTS}" = "Xyes"; then
     F77=${MPI_F77}
   else
+    echo "-----"
+    echo "Cannot find MPI Fortran compiler ${MPI_F77}."
+    echo "Specify with --with-mpi-f77."
+    echo "-----"
     AC_MSG_ERROR([MPI Fortran 77 compiler (${MPI_F77}) not found.])
   fi
 fi

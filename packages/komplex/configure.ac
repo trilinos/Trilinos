@@ -93,6 +93,15 @@ dnl committing.
 dnl AC_REVISION($Revision$)
 
 # ------------------------------------------------------------------------
+# Check to see if MPI enabled and if any special configuration done
+# ------------------------------------------------------------------------
+
+TAC_ARG_CONFIG_MPI
+if test "X${HAVE_PKG_MPI}" = "Xyes"; then
+   AC_DEFINE(AZTEC_MPI,,[define for use in Komplex if using MPI])
+fi
+
+# ------------------------------------------------------------------------
 # Checks for programs.
 # ------------------------------------------------------------------------
 
@@ -101,15 +110,6 @@ AC_PROG_CXX(CC g++ gcc c++ cxx)
 BASE_CXX=${CXX}
 AC_PROG_F77(f77 g77 f90 xlf90)
 AC_PROG_RANLIB
-
-# ------------------------------------------------------------------------
-# Check to see if MPI enabled and if any special configuration done
-# ------------------------------------------------------------------------
-
-TAC_ARG_CONFIG_MPI
-if test "X${HAVE_PKG_MPI}" = "Xyes"; then
-   AC_DEFINE(AZTEC_MPI,,[define for use in Komplex if using MPI])
-fi
 
 # ------------------------------------------------------------------------
 # Checks for --enable-debug, --enable-optimize, --enable-profile, --enable-purify
