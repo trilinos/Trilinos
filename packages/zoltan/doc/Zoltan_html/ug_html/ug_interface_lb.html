@@ -118,7 +118,11 @@ is used.</TD>
 <TR NOSAVE>
 <TD VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</TD>
 
-<TD></TD>
+<TD>FUNCTION <B>LB_Set_Param</B>(<I>lb, param_name, new_val</I>)&nbsp;
+<BR>INTEGER(LB_INT) :: LB_Set_Param
+<BR>TYPE(LB_Struct), INTENT(IN) :: lb&nbsp;
+<BR>CHARACTER(LEN=*), INTENT(IN) :: param_name, new_value&nbsp;
+</TD>
 </TR>
 </TABLE>
 
@@ -558,12 +562,15 @@ objects in the new decomposition (i.e., the destination processors).</TD>
 <TR NOSAVE>
 <TD VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</TD>
 
-<TD></TD>
+<TD>SUBROUTINE <B>LB_Destroy_Object</B>(<I>lb</I>)&nbsp;
+<BR>TYPE(LB_Struct), POINTER :: lb&nbsp;
+</TD>
 </TR>
 </TABLE>
 
 <HR WIDTH="100%"><B>LB_Destroy_Object</B> frees the memory associated with
-a load balancing object and sets the object to NULL. Note that <B>LB_Destroy_Object</B>
+a load balancing object and sets the object to NULL in C or nullifies the
+object in Fortran. Note that <B>LB_Destroy_Object</B>
 does not deallocate the import and export arrays returned from <B><A HREF="#LB_Balance">LB_Balance</A></B>.
 This requires a separate call to <B><A HREF="#LB_Free_Data">LB_Free_Data</A></B>.
 <BR>&nbsp;
