@@ -38,163 +38,147 @@
 #include "NOX_Solver_Generic.H"
 #include "NOX_Utils.H"
 
-using namespace NOX;
-using namespace NOX::Direction;
+//------------------------------------------------------------
+
+NOX::Direction::QuasiNewton::MemoryUnit::MemoryUnit() 
+{
+  sPtr = NULL;
+  yPtr = NULL;
+  sdotyValue = 0;
+  ydotyValue = 0;
+  rhoValue = 0;
+}
+
+NOX::Direction::QuasiNewton::MemoryUnit::~MemoryUnit() 
+{
+  delete sPtr;
+  delete yPtr;
+}
+
+void NOX::Direction::QuasiNewton::MemoryUnit::reset(const Abstract::Vector& newX, 
+							 const Abstract::Vector& oldX, 
+							 const Abstract::Vector& newG, 
+							 const Abstract::Vector& oldG)
+{
+  if (sPtr == NULL)
+  {
+    sPtr = newX.clone(ShapeCopy);
+    yPtr = newX.clone(ShapeCopy);
+  }
+
+  sPtr->update(1.0, newX, -1.0, oldX, 0.0);
+  yPtr->update(1.0, newG, -1.0, oldG, 0.0);
+  sdotyValue = sPtr->dot(*yPtr);
+  ydotyValue = yPtr->dot(*yPtr);
+  rhoValue = 1.0 / sdotyValue;
+}
+
+const NOX::Abstract::Vector& NOX::Direction::QuasiNewton::MemoryUnit::s() const
+{
+  return *sPtr;
+}
+
+const NOX::Abstract::Vector& NOX::Direction::QuasiNewton::MemoryUnit::y() const
+{
+  return *yPtr;
+}
+
+double NOX::Direction::QuasiNewton::MemoryUnit::sdoty() const
+{
+  return sdotyValue;
+}
+
+double NOX::Direction::QuasiNewton::MemoryUnit::ydoty() const
+{
+  return ydotyValue;
+}
+
+double NOX::Direction::QuasiNewton::MemoryUnit::rho() const
+{
+  return rhoValue;
+}
 
 //------------------------------------------------------------
 
-QuasiNewton::Update::Update(const Abstract::Vector& newX, const Abstract::Vector& oldX, 
-			    const Abstract::Vector& newG, const Abstract::Vector& oldG) :
-  sptr(newX.clone(ShapeCopy)), 
-  yptr(newX.clone(ShapeCopy))
+NOX::Direction::QuasiNewton::Memory::Memory(int m) 
 {
-  reset(newX, oldX, newG, oldG);
+  reset(m);
 }
 
-QuasiNewton::Update::~Update() 
+void NOX::Direction::QuasiNewton::Memory::reset(int m)
 {
-  delete sptr;
-  delete yptr;
+  memory.resize(m);
+  index.resize(0);
+  index.reserve(m);
 }
 
-void QuasiNewton::Update::reset(const Abstract::Vector& newX, const Abstract::Vector& oldX, 
-				const Abstract::Vector& newG, const Abstract::Vector& oldG)
-{
-  sptr->update(1.0, newX, -1.0, oldX, 0.0);
-  yptr->update(1.0, newG, -1.0, oldG, 0.0);
-  rho = sptr->dot(*yptr);
-}
-
-const Abstract::Vector& QuasiNewton::Update::s() const
-{
-  return *sptr;
-}
-
-const Abstract::Vector& QuasiNewton::Update::y() const
-{
-  return *yptr;
-}
-
-double QuasiNewton::Update::sdoty() const
-{
-  return rho;
-}
-
-//------------------------------------------------------------
-
-QuasiNewton::Updates::Updates(int m) :
-  maxUpdates(m)
+NOX::Direction::QuasiNewton::Memory::~Memory()
 {
 }
 
-QuasiNewton::Updates::~Updates()
+void NOX::Direction::QuasiNewton::Memory::add(const NOX::Abstract::Vector& newX, 
+						   const NOX::Abstract::Vector& oldX, 
+						   const NOX::Abstract::Vector& newG, 
+						   const NOX::Abstract::Vector& oldG)
 {
-  deque<Update*>::iterator i;
-
-  // Clean out update deque
-  for (i = updateDeque.begin(); i != updateDeque.end(); ++i) {
-    delete *i;
-    *i = NULL;
-  }
-
-  // Clean out update deque
-  for (i = recycleDeque.begin(); i != recycleDeque.end(); ++i) {
-    delete *i;
-    *i = NULL;
-  }
+  int m = index.size();
   
-}
-
-void QuasiNewton::Updates::reset(int m)
-{
-  // Copy update pointer elements onto unused update deque
-  copy(updateDeque.begin(), updateDeque.end(), recycleDeque.end());
-
-  // Erase updateDeque
-  updateDeque.clear();
-
-  // Reset the max size
-  maxUpdates = m;
-}
-
-void QuasiNewton::Updates::push_back(const Abstract::Vector& newX, const Abstract::Vector& oldX, 
-				     const Abstract::Vector& newG, const Abstract::Vector& oldG)
-{
-  Update* updatePtr;
-
-  // If the updateDeque is full, recycle and delete the first entry
-  if (updateDeque.size() == maxUpdates) {
-    recycleDeque.push_back(updateDeque.front());
-    updateDeque.pop_front();
-  }
-
-  // Recycle or create a new entry
-  if (!recycleDeque.empty()) {
-    updatePtr = recycleDeque.front();
-    recycleDeque.pop_front();
-    updatePtr->reset(newX, oldX, newG, oldG);
+  if (m < memory.size())
+  {
+    index.push_back(m);
   }
   else 
-    updatePtr = new Update(newX, oldX, newG, oldG);
+  {
+    // rotate(index, index + (m-1), index + m);
+    int k = index[0];
+    for (int i = 0; i < m - 1; i ++)
+      index[i] = index[i+1];
+    index[m-1] = k;
+  }
 
-  // Push the new (or recycled) update onto the end of the deque.
-  updateDeque.push_back(updatePtr);
+  memory[index.back()].reset(newX,oldX,newG,oldG);
 }
 
-const QuasiNewton::Update* QuasiNewton::Updates::back() const
+bool NOX::Direction::QuasiNewton::Memory::empty() const
 {
-  return updateDeque.back();
+  return index.empty();
 }
 
-QuasiNewton::UpdateConstIterator QuasiNewton::Updates::begin() const
+int NOX::Direction::QuasiNewton::Memory::size() const
 {
-  return updateDeque.begin();
+  return index.size();
 }
 
-QuasiNewton::UpdateConstIterator QuasiNewton::Updates::end() const
+const NOX::Direction::QuasiNewton::MemoryUnit& 
+NOX::Direction::QuasiNewton::Memory::operator[](int i) const
 {
-  return updateDeque.end();
-}
-
-QuasiNewton::UpdateConstReverseIterator QuasiNewton::Updates::rbegin() const
-{
-  return updateDeque.rbegin();
-}
-
-QuasiNewton::UpdateConstReverseIterator QuasiNewton::Updates::rend() const
-{
-  return updateDeque.rend();
-}
-
-bool QuasiNewton::Updates::empty() const
-{
-  return updateDeque.empty();
+  return memory[index[i]];
 }
 
 //------------------------------------------------------------
 
-QuasiNewton::QuasiNewton(const NOX::Utils& u, Parameter::List& p) :
+NOX::Direction::QuasiNewton::QuasiNewton(const NOX::Utils& u, Parameter::List& p) :
   utils(u),
   paramsPtr(NULL)
 {
   reset(p);
 }
 
-QuasiNewton::~QuasiNewton()
+NOX::Direction::QuasiNewton::~QuasiNewton()
 {
 }
 
-bool QuasiNewton::reset(Parameter::List& params)
+bool NOX::Direction::QuasiNewton::reset(Parameter::List& params)
 {
   paramsPtr = &params;
   NOX::Parameter::List& p = params.sublist("Quasi-Newton");
-  updates.reset(p.getParameter("Memory", 5));
+  memory.reset(p.getParameter("Memory", 5));
   return true;
 }
 
-bool QuasiNewton::compute(Abstract::Vector& dir, 
-			   Abstract::Group& soln, 
-			   const Solver::Generic& solver)
+bool NOX::Direction::QuasiNewton::compute(NOX::Abstract::Vector& dir, 
+					  NOX::Abstract::Group& soln, 
+					  const Solver::Generic& solver)
 {
   NOX::Abstract::Group::ReturnType status;
   
@@ -213,54 +197,41 @@ bool QuasiNewton::compute(Abstract::Vector& dir,
   if (status != NOX::Abstract::Group::Ok) 
     throwError("compute", "Unable to compute gradient");
 
-  // Push the old information onto the updates, but only after at least one previous iteration
+  // Push the old information onto the memory, but only after at least one previous iteration
   if (solver.getNumIterations() > 0) 
   {
-    const Abstract::Group& oldSoln = solver.getPreviousSolutionGroup();
+    const NOX::Abstract::Group& oldSoln = solver.getPreviousSolutionGroup();
     if (oldSoln.isGradient())
-      updates.push_back(soln.getX(), oldSoln.getX(), soln.getGradient(), oldSoln.getGradient());
+      memory.add(soln.getX(), oldSoln.getX(), soln.getGradient(), oldSoln.getGradient());
   }
 
-  // Calculate the QN direction
-  dir = soln.getGradient();
-
-  if (!updates.empty()) {
-
-    deque<double> alpha;
-    double a, b;
+  // *** Calculate the QN direction ***
   
-    for (UpdateConstReverseIterator i = updates.rbegin(); i != updates.rend(); i++) {
+  // d = -g
+  dir = soln.getGradient();
+  dir.scale(-1.0);
 
-      const Update& u = *(*i);
-      const double rho = 1.0 / u.sdoty();
-      const Abstract::Vector& s = u.s();
-      const Abstract::Vector& y = u.y();
-      a = rho * dir.dot(s);
-      dir.update(-1.0 * a, y, 1.0);
-      alpha.push_front(a);
-      
+  if (!memory.empty()) 
+  {
+
+    int m = memory.size();
+    vector<double> alpha(m);
+    double beta;
+  
+    for (int i = m-1; i >= 0; i --)
+    {
+      alpha[i] = memory[i].rho() * dir.dot( memory[i].s() );
+      dir.update(-1.0 * alpha[i], memory[i].y(), 1.0);
     }
 
-    const Update& u = *(updates.back());
-    const Abstract::Vector& y = u.y();
-    double gamma = u.sdoty() / y.dot(y);
-    dir.scale(gamma);
+    dir.scale( memory[m-1].sdoty() / memory[m-1].ydoty() );
 
-    for (UpdateConstIterator i = updates.begin(); i != updates.end(); i++) {
-      
-      const Update& u = *(*i);
-      const double rho = 1.0 / u.sdoty();
-      const Abstract::Vector& s = u.s();
-      const Abstract::Vector& y = u.y();
-      a = alpha.front();
-      b = rho * dir.dot(y);
-      dir.update(a - b, s, 1.0);
-      alpha.pop_front();
-      
+    for (int i = 0; i < m; i ++)
+    {
+      beta = memory[i].rho() * dir.dot( memory[i].y() );
+      dir.update(alpha[i] - beta, memory[i].s(), 1.0);
     }
   }
-
-  dir.scale(-1.0);
 
   return true;
 }
