@@ -1,3 +1,6 @@
+# @HEADER
+# @HEADER
+
 --#
 #  Refer to packages/new_package/README for suggestions on 
 #  adding a new package.  
@@ -21,11 +24,11 @@ AM_MAINTAINER_MODE
 
 # Specify required version of automake.
 
-AM_INIT_AUTOMAKE(1.6.3)
+AM_INIT_AUTOMAKE(1.8.2)
 
 # Specify required version of autoconf.
 
-AC_PREREQ(2.57)
+AC_PREREQ(2.59)
 
 # Must indicate for packages that can be configured from the package level that the 
 # configure/build process is happening within Trilinos.
@@ -135,6 +138,13 @@ AM_CONDITIONAL(BUILD_EPETRA, test "X$ac_cv_use_epetra" != "Xno" ||
 	test "X$ac_cv_use_new_package" != "Xno" || 
         test "X$ac_cv_use_epetraext" != "Xno"  ||
         test "X$ac_cv_use_meros" != "Xno")
+
+TAC_ARG_ENABLE_FEATURE(kokkos, [Build kokkos], KOKKOS, no)
+AM_CONDITIONAL(BUILD_KOKKOS, test "X$ac_cv_use_kokkos" != "Xno")
+
+if test "X$ac_cv_use_kokkos" != "Xno"; then
+  AC_CONFIG_SUBDIRS([packages/kokkos])
+fi
 
 if test "X$ac_cv_use_epetra" != "Xno" || test "X$ac_cv_use_ifpack" != "Xno" ||
 	test "X$ac_cv_use_triutils" != "Xno" || 

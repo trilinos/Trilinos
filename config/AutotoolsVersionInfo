@@ -1,7 +1,7 @@
 Autotools Version
 
-Currently, bootstrapping Trilinos requires Autoconf version 2.57 and Automake
- version 1.6.3.  Please do not use older or newer versions as this can cause 
+Currently, bootstrapping Trilinos requires Autoconf version 2.59 and Automake
+ version 1.8.2.  Please do not use older or newer versions as this can cause 
 problems for developers who are using officially supported version.
 
 To check the versions on your machine, type 'autoconf --version'

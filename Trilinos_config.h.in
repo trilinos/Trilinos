@@ -21,6 +21,9 @@
 /* Define if want to build ifpack */
 #undef HAVE_IFPACK
 
+/* Define if want to build kokkos */
+#undef HAVE_KOKKOS
+
 /* Define if want to build komplex */
 #undef HAVE_KOMPLEX
 
