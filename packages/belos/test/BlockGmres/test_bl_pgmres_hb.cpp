@@ -117,6 +117,7 @@ int main(int argc, char *argv[]) {
 	// Finish up
 	//
 	assert(A.TransformToLocal()==0);
+	assert(A.OptimizeStorage()==0);
 	//
 	// call the ctor that calls the petra ctor for a matrix
 	//
@@ -176,24 +177,9 @@ int main(int argc, char *argv[]) {
     	int maxits = NumGlobalElements/block-1; // maximum number of iterations to run
     	double tol = 5.0e-9;  // relative residual tolerance
 	//
-	//************************************************************
 	//*****Construct random right-hand-sides *****
 	//
-    	// array represents the users data
-	double * array = new double[numrhs*NumMyElements]; 
-	// set the rhs's to zero, then randomize them
-	for (j=0; j<numrhs; j++ ) {
-		for (i=0; i<NumMyElements; i++ ) {
-			array[i + j*NumMyElements]= 0.0;
-		}
-	}
-	//
-	// create a Belos::PetraVec. Note that the decision to make a view or
-	// or copy is determined by the Petra constructor called by Belos::PetraVec.
-	// This is possible because I pass in arguements needed by petra.
-	//
-    	int stride=NumMyElements;
-	Belos::PetraVec<double> rhs(Map, array, numrhs, stride);
+	Belos::PetraVec<double> rhs(Map, numrhs);
 	rhs.MvRandom();
 	//
 	//*******************************************************************
@@ -205,13 +191,8 @@ int main(int argc, char *argv[]) {
 	//
 	// Set initial guesses all to zero vectors.
 	//
-	for (j=0; j<numrhs; j++ ) {
-		for (i=0; i<NumMyElements; i++ ) {
-			array[i + j*NumMyElements]= 0.0;
-		}
-	}
-
-	Belos::PetraVec<double> iguess(Map, array, numrhs, stride);
+	Belos::PetraVec<double> iguess(Map, numrhs);
+	iguess.MvInit(0.0);
 	MyBlockGmres.SetInitGuess( iguess );
 
 	MyBlockGmres.SetRestart(numrestarts);
@@ -259,7 +240,8 @@ int main(int argc, char *argv[]) {
 // Release all objects  
 
   delete [] NumNz;
-  delete [] array;
+  delete [] bindx, update, col_inds;
+  delete [] val, row_vals;
 	
   return 0;
   //

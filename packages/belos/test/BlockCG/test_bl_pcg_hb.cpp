@@ -180,21 +180,7 @@ int main(int argc, char *argv[]) {
 	//
 	//*****Construct random right-hand-sides *****
 	//
-    	// array represents the users data
-	double * array = new double[numrhs*NumMyElements]; 
-	// set the rhs's to zero, then randomize them
-	for (j=0; j<numrhs; j++ ) {
-		for (i=0; i<NumMyElements; i++ ) {
-			array[i + j*NumMyElements]= 0.0;
-		}
-	}
-	//
-	// create a Belos::PetraVec. Note that the decision to make a view or
-	// or copy is determined by the Petra constructor called by AnasaziPetraVec.
-	// This is possible because I pass in arguements needed by petra.
-	//
-    	int stride=NumMyElements;
-	Belos::PetraVec<double> rhs(Map, array, numrhs, stride);
+	Belos::PetraVec<double> rhs(Map, numrhs);
 	rhs.MvRandom();
 	//
 	// **********Print out information about problem*******************
@@ -219,13 +205,8 @@ int main(int argc, char *argv[]) {
 	//
 	// Set initial guesses all to zero vectors.
 	//
-	for (j=0; j<numrhs; j++ ) {
-		for (i=0; i<NumMyElements; i++ ) {
-			array[i + j*NumMyElements]= 0.0;
-		}
-	}
-	
-	Belos::PetraVec<double> iguess(Map, array, numrhs, stride);
+	Belos::PetraVec<double> iguess(Map, numrhs);
+	iguess.MvInit(0.0);
 	MyBlockCG.SetInitGuess( iguess );
 
 	MyBlockCG.SetDebugLevel(0);
@@ -257,7 +238,8 @@ int main(int argc, char *argv[]) {
 // Release all objects  
 
   delete [] NumNz;
-  delete [] array;
+  delete [] bindx, update, col_inds;
+  delete [] val, row_vals;
 	
   return 0;
   //
