@@ -667,9 +667,12 @@ void get_elements(void *data, int num_gid_entries, int num_lid_entries,
   elem = mesh->elements;
   for (i = 0; i < mesh->num_elems; i++) {
     current_elem = &elem[i];
+    for (j = 0; j < gid; j++) global_id[i*num_gid_entries+j]=0;
     global_id[i*num_gid_entries+gid] = (ZOLTAN_ID_TYPE) current_elem->globalID;
-    if (num_lid_entries) 
+    if (num_lid_entries) {
+      for (j = 0; j < lid; j++) local_id[i*num_lid_entries+j]=0;
       local_id[i*num_lid_entries+lid] = i;
+    }
 
     if (wdim>0) {
       for (j=0; j<wdim; j++) {
@@ -691,7 +694,7 @@ int get_first_element(void *data, int num_gid_entries, int num_lid_entries,
   MESH_INFO_PTR mesh;
   ELEM_INFO *elem;
   ELEM_INFO *current_elem;
-  int i;
+  int i, j;
   int gid = num_gid_entries-1;
   int lid = num_lid_entries-1;
 
@@ -712,7 +715,11 @@ int get_first_element(void *data, int num_gid_entries, int num_lid_entries,
 
   elem = mesh->elements;
   current_elem = &elem[0];
-  if (num_lid_entries) local_id[lid] = 0;
+  if (num_lid_entries) {
+    for (j = 0; j < lid; j++) local_id[j]=0;
+    local_id[lid] = 0;
+  }
+  for (j = 0; j < gid; j++) global_id[j]=0;
   global_id[gid] = (ZOLTAN_ID_TYPE) current_elem->globalID;
 
   if (wdim>0){
@@ -740,7 +747,7 @@ int get_next_element(void *data, int num_gid_entries, int num_lid_entries,
   ELEM_INFO *elem;
   ELEM_INFO *next_elem;
   MESH_INFO_PTR mesh;
-  int i, idx;
+  int i, j, idx;
   int gid = num_gid_entries-1;
   int lid = num_lid_entries-1;
 
@@ -764,8 +771,12 @@ int get_next_element(void *data, int num_gid_entries, int num_lid_entries,
 
   if (idx+1 < mesh->num_elems) { 
     found = 1;
-    if (num_lid_entries) next_local_id[lid] = idx + 1;
+    if (num_lid_entries) {
+      for (j = 0; j < lid; j++) next_local_id[j]=0;
+      next_local_id[lid] = idx + 1;
+    }
     next_elem = &elem[idx+1];
+    for (j = 0; j < gid; j++) next_global_id[j]=0;
     next_global_id[gid] = next_elem->globalID;
 
     if (wdim>0){
@@ -974,7 +985,7 @@ void get_edge_list_multi (void *data, int num_gid_entries, int num_lid_entries,
   MESH_INFO_PTR mesh;
   ELEM_INFO *elem;
   ELEM_INFO *current_elem;
-  int i, j, cnt, proc, local_elem, idx;
+  int i, j, k, cnt, proc, local_elem, idx;
   int gid = num_gid_entries-1;
   int lid = num_lid_entries-1;
 
@@ -1009,6 +1020,7 @@ void get_edge_list_multi (void *data, int num_gid_entries, int num_lid_entries,
       /* Skip NULL adjacencies (sides that are not adjacent to another elem). */
       if (current_elem->adj[i] == -1) continue;
 
+      for (k = 0; k < gid; k++) nbor_global_id[k+j*num_gid_entries] = 0;
       if (current_elem->adj_proc[i] == proc) {
         local_elem = current_elem->adj[i];
         nbor_global_id[gid+j*num_gid_entries] = elem[local_elem].globalID;
@@ -1042,7 +1054,7 @@ void get_edge_list (void *data, int num_gid_entries, int num_lid_entries,
   MESH_INFO_PTR mesh;
   ELEM_INFO *elem;
   ELEM_INFO *current_elem;
-  int i, j, proc, local_elem, idx;
+  int i, j, k, proc, local_elem, idx;
   int gid = num_gid_entries-1;
   int lid = num_lid_entries-1;
 
@@ -1068,6 +1080,7 @@ void get_edge_list (void *data, int num_gid_entries, int num_lid_entries,
     /* Skip NULL adjacencies (sides that are not adjacent to another elem). */
     if (current_elem->adj[i] == -1) continue;
 
+    for (k = 0; k < gid; k++) nbor_global_id[k+j*num_gid_entries] = 0;
     if (current_elem->adj_proc[i] == proc) {
       local_elem = current_elem->adj[i];
       nbor_global_id[gid+j*num_gid_entries] = elem[local_elem].globalID;
@@ -1106,7 +1119,7 @@ ELEM_INFO *elem;
 ELEM_INFO *current_elem;
 int gid = num_gid_entries-1;
 int lid = num_lid_entries-1;
-int idx, i;
+int idx, i, j;
 int ok;
 
   START_CALLBACK_TIMER;
@@ -1136,8 +1149,10 @@ int ok;
     *assigned = 1;
     *in_order = 0;
     *num_vert = mesh->eb_nnodes[current_elem->elem_blk];
-    for (i = 0; i < *num_vert; i++)
+    for (i = 0; i < *num_vert; i++) {
+      for (j = 0; j < gid; j++) vertices[i*num_gid_entries + j] = 0;
       vertices[i*num_gid_entries + gid] = current_elem->connect[i];
+    }
   }
 
   STOP_CALLBACK_TIMER;
@@ -1163,7 +1178,7 @@ ELEM_INFO *elem;
 ELEM_INFO *current_elem;
 int gid = num_gid_entries-1;
 int lid = num_lid_entries-1;
-int idx, i;
+int idx, i, j;
 int ok;
 
   START_CALLBACK_TIMER;
@@ -1194,8 +1209,10 @@ int ok;
 
     *assigned = 1;
     *num_vert = mesh->eb_nnodes[current_elem->elem_blk];
-    for (i = 0; i < *num_vert; i++)
+    for (i = 0; i < *num_vert; i++) {
+      for (j = 0; j < gid; j++) vertices[i*num_gid_entries + j] = 0;
       vertices[i*num_gid_entries + gid] = current_elem->connect[i];
+    }
   }
 
   STOP_CALLBACK_TIMER;
@@ -1368,7 +1385,7 @@ int get_hg_edge_list(
 )
 {
   MESH_INFO_PTR mesh;
-  int i, j;
+  int i, j, k;
   int ecnt, pcnt;
   int tmp;
   int gid = num_gid_entries-1;
@@ -1398,6 +1415,7 @@ int get_hg_edge_list(
     edge_sizes[ecnt] = tmp;
     for (j = hindex[i]; j < hindex[i+1]; j++) {
       edge_procs[pcnt] = mesh->hvertex_proc[j];  
+      for (k = 0; k < gid; k++) edge_verts[k+pcnt*num_gid_entries] = 0;
       edge_verts[gid+pcnt*num_gid_entries] = mesh->hvertex[j];
       pcnt++;
     }
