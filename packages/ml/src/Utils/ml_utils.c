@@ -23,7 +23,16 @@
 
 /* Generic timer ... I hope it works on lots of different machines */
 #ifdef AZTEC
+
+#ifdef __cplusplus
+extern "C" 
+{
+#endif
 extern double second(void);
+#ifdef __cplusplus
+}
+#endif
+
 #endif
 double GetClock(void)
 {

@@ -349,7 +349,13 @@ int ML_Epetra_CRSinsert(ML_Operator *A, int row, int *cols, double *vals, int le
   return 0;
 }
 
-extern "C" {
+
+#ifndef ML_CPP
+#ifdef __cplusplus
+extern "C" 
+{
+#endif
+#endif
 
 Epetra_CrsMatrix * Q  = NULL;
 Epetra_FECrsMatrix *  Qt = NULL; 
@@ -552,7 +558,12 @@ void ML_DestroyQt( void )
   
 } /* ML_DestroyQt */
 
+#ifndef ML_CPP
+#ifdef __cplusplus
 } /* extern "C" */
+#endif
+#endif
+
 
 // ======================================================================
 int ML_Operator2EpetraCrsMatrix(ML_Operator *Amat, Epetra_CrsMatrix * &
@@ -859,7 +870,13 @@ int Epetra_ML_matvec_WKC (ML_Operator *data, int in, double *p, int out, double 
 // FIXME: change my name?
 Epetra_FECrsMatrix* FakeMatrix = 0;
 
-extern "C" {
+
+#ifndef ML_CPP
+#ifdef __cplusplus
+extern "C" 
+{
+#endif
+#endif
 
 int ML_Operator_DiscreteLaplacian(ML_Operator* Op, int SymmetricPattern,
 				  double* x_coord, double* y_coord,
@@ -1159,7 +1176,12 @@ int ML_Operator_Destroy_DiscreteLaplacian()
 
 }
 
+#ifndef ML_CPP
+#ifdef __cplusplus
 } // extern "C"
+#endif
+#endif
+
 
 #else
 
