@@ -1,0 +1,5 @@
+Decomposition Method 	= parmetis
+Zoltan Parameters	= parmetis_method=partkway, debug_level=6, obj_weight_dim = 2
+File Type		= Chaco
+File Name		= film2
+Parallel Disk Info	= number=0
