@@ -241,7 +241,7 @@ int main(int argc, char *argv[])
   Epetra_Time fillTime(Comm);
 
   EpetraExt::CrsGraph_MapColoring::ColoringAlgorithm algType = 
-    EpetraExt::CrsGraph_MapColoring::GREEDY;
+    EpetraExt::CrsGraph_MapColoring::JONES_PLASSMAN;
   bool verbose = false; 
   bool colorParallel = true; 
   int reordering = 0; 
