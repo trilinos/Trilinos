@@ -383,7 +383,7 @@ int Epetra_FEVbrMatrix::BeginInsertGlobalValues(int BlockRow,
   }
 
   return( SetupForNonlocalSubmits(BlockRow, NumBlockEntries,
-				  BlockIndices, false, Insert) );
+				  BlockIndices, false, Add) );
 }
 
 //--------------------------------------------------------------------------
