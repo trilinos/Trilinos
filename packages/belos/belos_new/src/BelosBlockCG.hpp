@@ -101,7 +101,7 @@ public:
   /*! 
       \note The memory for the residual MultiVec must be handled by the calling routine.
    */
-  RefCountPtr<const MultiVec<TYPE> > GetNativeResiduals( TYPE *normvec ) const;
+  RefCountPtr<const MV> GetNativeResiduals( TYPE *normvec ) const;
   
   //! Get the actual residual vectors for the current block of linear systems.
   /*! This may force the solver to compute a current residual for its linear
@@ -109,7 +109,7 @@ public:
 	manager always has the current solution (even when the blocksize is larger
 	than the current number of linear systems being solved for).  
   */
-  RefCountPtr<MultiVec<TYPE> > GetCurrentSoln() { return MVT::CloneCopy( *_cur_block_sol ); };
+  RefCountPtr<MV> GetCurrentSoln() { return MVT::CloneCopy( *_cur_block_sol ); };
   
   //! Get a constant reference to the current linear problem.  
   /*! This may include a current solution, if the solver has recently restarted or completed.
@@ -130,9 +130,9 @@ public:
 private:
 
   void SetCGBlkTols();
-  bool QRFactorDef(MultiVec<TYPE>&, Teuchos::SerialDenseMatrix<int,TYPE>&,
+  bool QRFactorDef(MV&, Teuchos::SerialDenseMatrix<int,TYPE>&,
 		   int[], int&);
-  void CheckCGOrth(MultiVec<TYPE>&, MultiVec<TYPE>&);
+  void CheckCGOrth(MV&, MV&);
   void PrintCGIterInfo(int[], const int);
 
   //! Linear problem manager [ must be passed in by the user ]
@@ -145,13 +145,13 @@ private:
   RefCountPtr<OutputManager<TYPE> > _om;
 
   //! Pointer to current linear systems block of solution vectors [obtained from linear problem manager]
-  RefCountPtr<MultiVec<TYPE> > _cur_block_sol;
+  RefCountPtr<MV> _cur_block_sol;
 
   //! Pointer to current linear systems block of right-hand sides [obtained from linear problem manager]
-  RefCountPtr<MultiVec<TYPE> > _cur_block_rhs; 
+  RefCountPtr<MV> _cur_block_rhs; 
 
   //! Pointer to block of the current residual vectors.
-  RefCountPtr<MultiVec<TYPE> > _residvecs;
+  RefCountPtr<MV> _residvecs;
 
   //! Output stream.
   ostream* _os;
@@ -162,7 +162,7 @@ private:
   //! Numerical breakdown tolerances.
   TYPE _prec, _dep_tol;
 
-  typedef MultiVecTraits<TYPE,MultiVec<TYPE> >  MVT;
+  typedef MultiVecTraits<TYPE,MV>  MVT;
 };
 
 //
@@ -206,7 +206,7 @@ void BlockCG<TYPE,OP,MV>::SetCGBlkTols()
 }
 
 template <class TYPE, class OP, class MV>
-RefCountPtr<const MultiVec<TYPE> > BlockCG<TYPE,OP,MV>::GetNativeResiduals( TYPE *normvec ) const 
+RefCountPtr<const MV> BlockCG<TYPE,OP,MV>::GetNativeResiduals( TYPE *normvec ) const 
 {
   int i;
   int* index = new int[ _blocksize ];
@@ -214,7 +214,7 @@ RefCountPtr<const MultiVec<TYPE> > BlockCG<TYPE,OP,MV>::GetNativeResiduals( TYPE
     for (i=0; i<_blocksize; i++) { index[i] = i; }
   else
     for (i=0; i<_blocksize; i++) { index[i] = _blocksize + i; }
-  RefCountPtr<MultiVec<TYPE> > ResidMV = MVT::CloneView( *_residvecs, index, _blocksize );
+  RefCountPtr<MV> ResidMV = MVT::CloneView( *_residvecs, index, _blocksize );
   delete [] index;
   return ResidMV;
 }
@@ -230,9 +230,9 @@ void BlockCG<TYPE,OP,MV>::Solve ()
   const TYPE one = Teuchos::ScalarTraits<TYPE>::one();
   const TYPE zero = Teuchos::ScalarTraits<TYPE>::zero();
   Teuchos::LAPACK<int,TYPE> lapack;
-  RefCountPtr<MultiVec<TYPE> > R_prev, R_new, P_prev, P_new;
-  RefCountPtr<MultiVec<TYPE> > AP_prev, temp_blk;
-  RefCountPtr<MultiVec<TYPE> > _basisvecs;
+  RefCountPtr<MV> R_prev, R_new, P_prev, P_new;
+  RefCountPtr<MV> AP_prev, temp_blk;
+  RefCountPtr<MV> _basisvecs;
   TYPE *_cur_resid_norms=0, *_init_resid_norms=0;
   //
   // Retrieve the first linear system to be solved.
@@ -650,16 +650,16 @@ void BlockCG<TYPE,OP,MV>::Solve ()
 //
 
 template <class TYPE, class OP, class MV>
-bool BlockCG<TYPE,OP,MV>::QRFactorDef (MultiVec<TYPE>& VecIn, 
+bool BlockCG<TYPE,OP,MV>::QRFactorDef (MV& VecIn, 
 				 Teuchos::SerialDenseMatrix<int,TYPE>& FouierR, 
 				 int cols[], int &num) 
 {
   int i, j, k;
   int num_orth, num_dep = 0;
-  int nb = VecIn.GetNumberVecs();
+  int nb = MVT::GetNumberVecs( VecIn );
   int *index = new int[ nb ]; assert(index!=NULL);
   int *dep_idx = new int[ nb ]; assert(dep_idx!=NULL);
-  RefCountPtr<MultiVec<TYPE> > qj, Qj;
+  RefCountPtr<MV> qj, Qj;
   Teuchos::SerialDenseVector<int,TYPE> rj;
   const int IntOne = Teuchos::OrdinalTraits<int>::one();
   const TYPE zero = Teuchos::ScalarTraits<TYPE>::zero();
@@ -677,7 +677,7 @@ bool BlockCG<TYPE,OP,MV>::QRFactorDef (MultiVec<TYPE>& VecIn,
   // Compute the Frobenius norm of VecIn -- this will be used to
   // determine rank deficiency of VecIn
   //
-  VecIn.MvNorm(NormVecIn);
+  MVT::MvNorm( VecIn, NormVecIn );
   TYPE FroNorm = zero;
   for (j=0; j<nb; j++) {
     FroNorm += NormVecIn[j] * NormVecIn[j];
@@ -769,7 +769,7 @@ bool BlockCG<TYPE,OP,MV>::QRFactorDef (MultiVec<TYPE>& VecIn,
 
 
 template <class TYPE, class OP, class MV>
-void BlockCG<TYPE,OP,MV>::CheckCGOrth(MultiVec<TYPE>& P1, MultiVec<TYPE>& P2) 
+void BlockCG<TYPE,OP,MV>::CheckCGOrth(MV& P1, MV& P2) 
 {
   //
   // This routine computes P2^T * A * P1
@@ -779,10 +779,10 @@ void BlockCG<TYPE,OP,MV>::CheckCGOrth(MultiVec<TYPE>& P1, MultiVec<TYPE>& P2)
   const TYPE zero = Teuchos::ScalarTraits<TYPE>::zero();
   int i, k;
   //
-  int numvecs1 = P1.GetNumberVecs();
-  int numvecs2 = P2.GetNumberVecs();
+  int numvecs1 = MVT::GetNumberVecs( P1 );
+  int numvecs2 = MVT::GetNumberVecs( P2 );
   //
-  RefCountPtr<MultiVec<TYPE> > AP = MVT::CloneCopy( P1 );
+  RefCountPtr<MV> AP = MVT::CloneCopy( P1 );
   _lp->ApplyOp(P1, *AP);
   //
   Teuchos::SerialDenseMatrix<int,TYPE> PAP(numvecs2, numvecs1);

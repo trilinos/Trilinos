@@ -7,10 +7,16 @@ EXEEXT = .exe
 if BUILD_IFPACK
 BELOS_BCG_IFPACK_EX = bl_pcg_hb
 endif
+if BUILD_TSFCORE_EPETRA
+BELOS_BCG_TSFCORE_EX = bl_cg_tsfcore
+if BUILD_IFPACK
+BELOS_BCG_TSFCORE_IFPACK_EX = bl_pcg_tsfcore
+endif
+endif
 BELOS_BCG_HB_EX = bl_cg_hb
 #endif
 
-noinst_PROGRAMS = $(BELOS_BCG_HB_EX) $(BELOS_BCG_IFPACK_EX) Dummy
+noinst_PROGRAMS = $(BELOS_BCG_HB_EX) $(BELOS_BCG_IFPACK_EX) $(BELOS_BCG_TSFCORE_EX) $(BELOS_BCG_TSFCORE_IFPACK_EX) Dummy
 
 Dummy$(EXEEXT): $(srcdir)/Dummy
 	cp  $(srcdir)/bcsstk14.hb  bcsstk14.hb
@@ -18,17 +24,35 @@ Dummy$(EXEEXT): $(srcdir)/Dummy
 
 Dummy_SOURCES = Dummy
 
-bl_pcg_hb_SOURCES = $(srcdir)/test_bl_pcg_hb.cpp 
+bl_pcg_hb_SOURCES = $(srcdir)/test_bl_pcg_hb.cpp $(srcdir)/createEpetraProblem.cpp
 
-bl_cg_hb_SOURCES = $(srcdir)/test_bl_cg_hb.cpp 
+bl_cg_hb_SOURCES = $(srcdir)/test_bl_cg_hb.cpp $(srcdir)/createEpetraProblem.cpp
+
+bl_pcg_tsfcore_SOURCES = $(srcdir)/test_bl_pcg_tsfcore.cpp $(srcdir)/createEpetraProblem.cpp
+
+bl_cg_tsfcore_SOURCES = $(srcdir)/test_bl_cg_tsfcore.cpp $(srcdir)/createEpetraProblem.cpp
 
 bl_pcg_hb_DEPENDENCIES = $(top_builddir)/../triutils/src/libtriutils.a \
+			$(top_builddir)/../ifpack/src/libifpack.a \
 			$(top_builddir)/../epetra/src/libepetra.a \
 			$(top_builddir)/../teuchos/src/libteuchos.a
 
 bl_cg_hb_DEPENDENCIES = $(top_builddir)/../triutils/src/libtriutils.a \
 			$(top_builddir)/../epetra/src/libepetra.a \
 			$(top_builddir)/../teuchos/src/libteuchos.a
+
+bl_pcg_tsfcore_DEPENDENCIES = $(top_builddir)/../triutils/src/libtriutils.a \
+                        $(top_builddir)/../TSFCoreUtils/src/libTSFCoreUtils.a \
+                        $(top_builddir)/../TSFCore/src/libTSFCore.a \
+                        $(top_builddir)/../ifpack/src/libifpack.a \
+                        $(top_builddir)/../epetra/src/libepetra.a \
+                        $(top_builddir)/../teuchos/src/libteuchos.a
+
+bl_cg_tsfcore_DEPENDENCIES = $(top_builddir)/../triutils/src/libtriutils.a \
+                        $(top_builddir)/../TSFCoreUtils/src/libTSFCoreUtils.a \
+                        $(top_builddir)/../TSFCore/src/libTSFCore.a \
+                        $(top_builddir)/../epetra/src/libepetra.a \
+                        $(top_builddir)/../teuchos/src/libteuchos.a
 
 # Include paths
 
@@ -60,17 +84,34 @@ bl_pcg_hb_CXXFLAGS = $(common_include_paths)
 
 bl_cg_hb_CXXFLAGS = $(common_include_paths)
 
+bl_pcg_tsfcore_CXXFLAGS = $(common_include_paths)
+
+bl_cg_tsfcore_CXXFLAGS = $(common_include_paths)
+
 # Libraries
 
-bl_pcg_hb_LDADD = $(top_builddir)/../epetra/src/libepetra.a \
-		$(top_builddir)/../triutils/src/libtriutils.a \
-		$(top_builddir)/../ifpack/src/libifpack.a  \
-		$(top_builddir)/../teuchos/src/libteuchos.a \
-		$(LAPACK_LIBS) $(BLAS_LIBS) $(LIBS) $(FLIBS)
+common_libraries = $(top_builddir)/../triutils/src/libtriutils.a
 
-bl_cg_hb_LDADD = $(top_builddir)/../epetra/src/libepetra.a \
-		$(top_builddir)/../triutils/src/libtriutils.a \
-		$(top_builddir)/../teuchos/src/libteuchos.a \
-		$(LAPACK_LIBS) $(BLAS_LIBS) $(LIBS) $(FLIBS)
+if BUILD_TSFCORE_EPETRA
+common_libraries +=  $(top_builddir)/../TSFCore/src/libTSFCore.a \
+                     $(top_builddir)/../TSFCoreUtils/src/libTSFCoreUtils.a
+endif
 
+if BUILD_IFPACK
+common_libraries += $(top_builddir)/../ifpack/src/libifpack.a
+endif
+
+common_libraries += $(top_builddir)/../epetra/src/libepetra.a \
+                $(top_builddir)/../teuchos/src/libteuchos.a \
+                $(LAPACK_LIBS) $(BLAS_LIBS) $(LIBS) $(FLIBS)
+
+bl_pcg_hb_LDADD = $(common_libraries)
+
+bl_cg_hb_LDADD = $(common_libraries)
+
+bl_cg_tsfcore_LDADD = $(common_libraries)
+
+bl_pcg_tsfcore_LDADD = $(common_libraries)
+
+#
 

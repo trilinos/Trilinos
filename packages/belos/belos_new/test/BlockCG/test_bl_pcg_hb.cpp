@@ -48,252 +48,172 @@
 #include "BelosStatusTestCombo.hpp"
 #include "BelosPetraInterface.hpp"
 #include "BelosBlockCG.hpp"
+#include "createEpetraProblem.hpp"
 #include "Trilinos_Util.h"
 #include "Ifpack_CrsIct.h"
 #include "Epetra_CrsMatrix.h"
-//
-//
-#ifdef EPETRA_MPI
-#include "Epetra_MpiComm.h"
-#include <mpi.h>
-#else
-#include "Epetra_SerialComm.h"
-#endif
 #include "Epetra_Map.h"
-
+#include "Teuchos_Time.hpp"
+//
 int main(int argc, char *argv[]) {
-  //
-  using Teuchos::RefCountPtr;
-  using Teuchos::rcp;
-  //
-  int i, j;
-  int n_nonzeros, N_update;
-  int *bindx=0, *update=0, *col_inds=0;
-  double *val=0, *row_vals=0;
-  
 #ifdef EPETRA_MPI	
   // Initialize MPI	
   MPI_Init(&argc,&argv); 	
-  Epetra_MpiComm Comm( MPI_COMM_WORLD );	
-#else	
-  Epetra_SerialComm Comm;	
+  Belos::MPIFinalize mpiFinalize // Will call finalize with *any* return
 #endif
-  
-  int MyPID = Comm.MyPID();
-  int NumProc = Comm.NumProc();	
-  bool verbose = 0;
   //
-  if((argc < 2 || argc > 4)&& MyPID==0) {
-    cerr << "Usage: " << argv[0]
-         << " [ -v ] [ HB_filename ]" << endl
-         << "where:" << endl
-         << "-v                 - run test in verbose mode" << endl
-         << "HB_filename        - filename and path of a Harwell-Boeing data set" << endl
-         << endl;
-    return(1);
+  using Teuchos::RefCountPtr;
+  using Teuchos::rcp;
+  Teuchos::Time timer("Belos Preconditioned CG");
+  //
+  // Get the problem
+  //
+  RefCountPtr<Epetra_CrsMatrix> A;
+  int MyPID;
+  bool verbose;
+  int return_val =Belos::createEpetraProblem(argc,argv,NULL,&A,NULL,NULL,&MyPID,&verbose);
+  if(return_val != 0) return return_val;
+  //
+  // *****Select the Preconditioner*****
+  //
+  if (verbose) cout << endl << endl;
+  if (verbose) cout << "Constructing ICT preconditioner" << endl;
+  int Lfill = 0;
+  // if (argc > 2) Lfill = atoi(argv[2]);
+  if (verbose) cout << "Using Lfill = " << Lfill << endl;
+  int Overlap = 0;
+  // if (argc > 3) Overlap = atoi(argv[3]);
+  if (verbose) cout << "Using Level Overlap = " << Overlap << endl;
+  double Athresh = 0.0;
+  // if (argc > 4) Athresh = atof(argv[4]);
+  if (verbose) cout << "Using Absolute Threshold Value of " << Athresh << endl;
+  double Rthresh = 1.0;
+  // if (argc >5) Rthresh = atof(argv[5]);
+  if (verbose) cout << "Using Relative Threshold Value of " << Rthresh << endl;
+  double dropTol = 1.0e-6;
+  //
+  Ifpack_CrsIct* ICT = 0;
+  //
+  if (Lfill > -1) {
+    ICT = new Ifpack_CrsIct(*A, dropTol, Lfill);
+    ICT->SetAbsoluteThreshold(Athresh);
+    ICT->SetRelativeThreshold(Rthresh);
+    int initerr = ICT->InitValues(*A);
+    if (initerr != 0) cout << "InitValues error = " << initerr;
+    assert(ICT->Factor() == 0);
   }
   //
-  // Find verbosity flag
+  bool transA = false;
+  double Cond_Est;
+  ICT->Condest(transA, Cond_Est);
+  if (verbose) {
+    cout << "Condition number estimate for this preconditoner = " << Cond_Est << endl;
+    cout << endl;
+  }
+  Epetra_Operator& prec = *ICT;
   //
-  int file_arg = 1;
-  for(i = 1; i < argc; i++)
-    {
-      if(argv[i][0] == '-' && argv[i][1] == 'v') {
-	verbose = (MyPID == 0);
-	if(i==1) file_arg = 2;
-      }
+  // Solve using Belos
+  //
+  typedef Belos::Operator<double> OP;
+  typedef Belos::MultiVec<double> MV;
+  typedef Belos::OperatorTraits<double, MV, OP> OPT;
+  typedef Belos::MultiVecTraits<double, MV> MVT;
+  //
+  // Construct a Belos::Operator instance through the Epetra interface.
+  //
+  Belos::PetraMat<double> Amat( &*A );
+  //
+  // call the ctor for the preconditioning object
+  //
+  Belos::PetraPrec<double> EpetraOpPrec( &prec );
+  //
+  // ********Other information used by block solver***********
+  // *****************(can be user specified)******************
+  //
+  const Epetra_Map &Map = A->RowMap();
+  const int NumGlobalElements = Map.NumGlobalElements();
+  int numrhs = 15;  // total number of right-hand sides to solve for
+  int block = 10;  // blocksize used by solver
+  int maxits = NumGlobalElements/block - 1; // maximum number of iterations to run
+  double tol = 1.0e-6;  // relative residual tolerance
+  //
+  // *****Construct initial guess and random right-hand-sides *****
+  //
+  Belos::PetraVec<double> soln(Map, numrhs);
+  Belos::PetraVec<double> rhs(Map, numrhs);
+  rhs.MvRandom();
+  //
+  // *****Create Linear Problem for Belos Solver
+  //
+  Belos::LinearProblemManager<double,OP,MV> My_LP( rcp(&Amat, false), rcp(&soln, false), rcp(&rhs,false) );
+  My_LP.SetLeftPrec( rcp(&EpetraOpPrec, false) );
+  My_LP.SetBlockSize( block );
+  //
+  // *****Create Status Test Class for the Belos Solver
+  //
+  Belos::StatusTestMaxIters<double,OP,MV> test1( maxits );
+  Belos::StatusTestResNorm<double,OP,MV> test2( tol );
+  Belos::StatusTestCombo<double,OP,MV> My_Test( Belos::StatusTestCombo<double,OP,MV>::OR, test1, test2 );
+  
+  Belos::OutputManager<double> My_OM( MyPID );
+  if (verbose)
+    My_OM.SetVerbosity( 2 );
+  //
+  // *******************************************************************
+  // *************Start the block CG iteration*************************
+  // *******************************************************************
+  //
+  Belos::BlockCG<double,Belos::Operator<double>,Belos::MultiVec<double> >
+    MyBlockCG( rcp(&My_LP, false), rcp(&My_Test,false), rcp(&My_OM,false));
+  //
+  // **********Print out information about problem*******************
+  //
+  if (verbose) {
+    cout << endl << endl;
+    cout << "Dimension of matrix: " << NumGlobalElements << endl;
+    cout << "Number of right-hand sides: " << numrhs << endl;
+    cout << "Block size used by solver: " << block << endl;
+    cout << "Max number of CG iterations: " << maxits << endl; 
+    cout << "Relative residual tolerance: " << tol << endl;
+    cout << endl;
+  }
+  
+  if (verbose) {
+    cout << endl << endl;
+    cout << "Running Block CG -- please wait" << endl;
+    cout << (numrhs+block-1)/block 
+	 << " pass(es) through the solver required to solve for " << endl; 
+    cout << numrhs << " right-hand side(s) -- using a block size of " << block
+	 << endl << endl;
+  }
+  timer.start();
+  MyBlockCG.Solve();	
+  timer.stop();
+  //
+  // Compute actual residuals.
+  //
+  double* actual_resids = new double[numrhs];
+  double* rhs_norm = new double[numrhs];
+  Belos::PetraVec<double> resid( Map, numrhs );
+  OPT::Apply( Amat, soln, resid );
+  MVT::MvAddMv( -1.0, resid, 1.0, rhs, resid ); 
+  MVT::MvNorm( resid, actual_resids );
+  MVT::MvNorm( rhs, rhs_norm );
+  if (verbose) {
+    cout<< "---------- Actual Residuals (normalized) ----------"<<endl<<endl;
+    for (int i=0; i<numrhs; i++) {
+      cout<<"Problem "<<i<<" : \t"<< actual_resids[i]/rhs_norm[i] <<endl;
     }
-  //
-  //**********************************************************************
-  //******************Set up the problem to be solved*********************
-  //**********************************************************************
-  //
-      int NumGlobalElements;  // total # of rows in matrix
-      //
-      // *****Read in matrix from HB file******
-      //
-      Trilinos_Util_read_hb(argv[file_arg], MyPID, &NumGlobalElements, &n_nonzeros, &val, 
-			    &bindx);
-      //
-      // *****Distribute data among processors*****
-	//
-      Trilinos_Util_distrib_msr_matrix(Comm, &NumGlobalElements, &n_nonzeros, &N_update,
-				       &update, &val, &bindx);
-      //
-      //
-      // ********Other information used by block solver***********
-      //*****************(can be user specified)******************
-	//
-	int numrhs = 15;  // total number of right-hand sides to solve for
-    	int block = 10;  // blocksize used by solver
-    	int maxits = NumGlobalElements/block - 1; // maximum number of iterations to run
-    	double tol = 1.0e-6;  // relative residual tolerance
-	//
-	//*************************************************************
-	//
-	// *****Construct the matrix*****
-	//
-	int NumMyElements = N_update; // # local rows of matrix on processor
-	//
-    	// Create an integer vector NumNz that is used to build the Petra Matrix.
-	// NumNz[i] is the Number of OFF-DIAGONAL term for the ith global equation 
-	// on this processor
-	//
-	int * NumNz = new int[NumMyElements];
-	for (i=0; i<NumMyElements; i++) {
-		NumNz[i] = bindx[i+1] - bindx[i] + 1;
-	}
-	//
-	Epetra_Map Map(NumGlobalElements, NumMyElements, update, 0, Comm);
-	//
-	// Create a Epetra_Matrix
-	//
-	Epetra_CrsMatrix A(Copy, Map, NumNz);
-	//
-	// Add rows one-at-a-time
-	//
-	int NumEntries;
-	for (i=0; i<NumMyElements; i++) {
-		row_vals = val + bindx[i];
-		col_inds = bindx + bindx[i];
-		NumEntries = bindx[i+1] - bindx[i];
-		assert(A.InsertGlobalValues(update[i], NumEntries, row_vals, col_inds)==0);
-		assert(A.InsertGlobalValues(update[i], 1, val+i, update+i)==0);
-	}
-	//
-	// Finish up
-	//
-	assert(A.TransformToLocal()==0);
-	//
-	// call the ctor that calls the petra ctor for a matrix
-	//
-	Belos::PetraMat<double> Amat( &A );
-	//
-	A.SetTracebackMode(1); // Shutdown Epetra Warning tracebacks
-	//
-	//
-	//*****Select the Preconditioner*****
-	//
-	if (verbose) cout << endl << endl;
-	if (verbose) cout << "Constructing ICT preconditioner" << endl;
-	int Lfill = 0;
-	if (argc > 2) Lfill = atoi(argv[2]);
-	if (verbose) cout << "Using Lfill = " << Lfill << endl;
-	int Overlap = 0;
-	if (argc > 3) Overlap = atoi(argv[3]);
-	if (verbose) cout << "Using Level Overlap = " << Overlap << endl;
-	double Athresh = 0.0;
-	if (argc > 4) Athresh = atof(argv[4]);
-	if (verbose) cout << "Using Absolute Threshold Value of " << Athresh << endl;
-	double Rthresh = 1.0;
-	if (argc >5) Rthresh = atof(argv[5]);
-	if (verbose) cout << "Using Relative Threshold Value of " << Rthresh << endl;
-	double dropTol = 1.0e-6;
-	//
-	Ifpack_CrsIct* ICT = 0;
-	//
-	if (Lfill > -1) {
-		ICT = new Ifpack_CrsIct(A, dropTol, Lfill);
-		ICT->SetAbsoluteThreshold(Athresh);
-		ICT->SetRelativeThreshold(Rthresh);
-		int initerr = ICT->InitValues(A);
-		if (initerr != 0) cout << "InitValues error = " << initerr;
-		assert(ICT->Factor() == 0);
-	}
-	//
-	bool transA = false;
-	double Cond_Est;
-	ICT->Condest(transA, Cond_Est);
-	if (verbose) {
-		cout << "Condition number estimate for this preconditoner = " << Cond_Est << endl;
-		cout << endl;
-	}
-	Epetra_Operator& prec = dynamic_cast<Epetra_Operator&>(*ICT);
-	//
-	// Solve using Belos
-	//
-	typedef Belos::Operator<double> OP;
-	typedef Belos::MultiVec<double> MV;
-	//
-	// call the ctor for the preconditioning object
-	//
-	Belos::PetraPrec<double> EpetraOpPrec( &prec );
-	//
-	//*****Construct initial guess and random right-hand-sides *****
-	//
-	Belos::PetraVec<double> soln(Map, numrhs);
-	Belos::PetraVec<double> rhs(Map, numrhs);
-	rhs.MvRandom();
-	//
-	//*****Create Linear Problem for Belos Solver
-	//
-	Belos::LinearProblemManager<double,OP,MV> My_LP( rcp(&Amat, false), rcp(&soln, false), rcp(&rhs,false) );
-	My_LP.SetLeftPrec( rcp(&EpetraOpPrec, false) );
-	My_LP.SetBlockSize( block );
-	//
-	//*****Create Status Test Class for the Belos Solver
-	//
-        Belos::StatusTestMaxIters<double,OP,MV> test1( maxits );
-        Belos::StatusTestResNorm<double,OP,MV> test2( tol );
-        Belos::StatusTestCombo<double,OP,MV> My_Test( Belos::StatusTestCombo<double,OP,MV>::OR, test1, test2 );
-
-	Belos::OutputManager<double> My_OM( MyPID );
-	if (verbose)
-	  My_OM.SetVerbosity( 2 );
-	//
-	//*******************************************************************
-	// *************Start the block CG iteration*************************
-	//*******************************************************************
-	//
-	Belos::BlockCG<double,Belos::Operator<double>,Belos::MultiVec<double> >
-	  MyBlockCG( rcp(&My_LP, false), rcp(&My_Test,false), rcp(&My_OM,false));
-	//
-	// **********Print out information about problem*******************
-	//
-	if (verbose) {
-	   cout << endl << endl;
-	   cout << "Dimension of matrix: " << NumGlobalElements << endl;
-	   cout << "Number of right-hand sides: " << numrhs << endl;
-	   cout << "Block size used by solver: " << block << endl;
-	   cout << "Max number of CG iterations: " << maxits << endl; 
-	   cout << "Relative residual tolerance: " << tol << endl;
-       	   cout << endl;
-	}
-
-	if (verbose) {
-	   cout << endl << endl;
-	   cout << "Running Block CG -- please wait" << endl;
-	   cout << (numrhs+block-1)/block 
-		    << " pass(es) through the solver required to solve for " << endl; 
-	   cout << numrhs << " right-hand side(s) -- using a block size of " << block
-			<< endl << endl;
-	}
-	MyBlockCG.Solve();	
-        //
-        // Compute actual residuals.
-        //
-        double* actual_resids = new double[numrhs];
-        double* rhs_norm = new double[numrhs];
-        Belos::PetraVec<double> resid( Map, numrhs );
-        Amat.Apply( soln, resid );
-        resid.MvAddMv( -1.0, resid, 1.0, rhs );
-        resid.MvNorm( actual_resids );
-        rhs.MvNorm( rhs_norm );
-        if (verbose) {
-          cout<< "---------- Actual Residuals (normalized) ----------"<<endl<<endl;
-          for (i=0; i<numrhs; i++) {
-                cout<<"Problem "<<i<<" : \t"<< actual_resids[i]/rhs_norm[i] <<endl;
-          }
-        }
+  }
   // Release all objects  
   if (ICT) { delete ICT; ICT = 0; }
-  delete [] NumNz;
-  delete [] bindx;
-  delete [] update;
-  delete [] val; 
   delete [] actual_resids;
   delete [] rhs_norm;
-	
+  
+  if (verbose) {
+    cout << "Solution time: "<<timer.totalElapsedTime()<<endl;
+  }
+
   if (My_Test.GetStatus() == Belos::Converged) {
     cout<< "***************** The test PASSED !!!********************"<<endl;
     return 0;
