@@ -147,8 +147,8 @@ Brusselator::Brusselator(int numGlobalNodes, Epetra_Comm& comm) :
 // Destructor
 Brusselator::~Brusselator()
 {
-  delete AA;
   delete A;
+  delete AA;
   delete xptr;
   delete initialSolution;
   delete oldSolution;
