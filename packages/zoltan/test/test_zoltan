@@ -23,8 +23,8 @@
 #
 
 # Chaco problems to run
-set ch_name = (simple nograph vwgt vwgt2 ewgt bug grid20x19 film hammond brack2_3)
-set ch_nproc = (4 4 3 2 4 3 5 6 8 5) # no. of procs
+set ch_name = (simple nograph vwgt vwgt2 ewgt bug onedbug grid20x19 film hammond brack2_3)
+set ch_nproc = (4 4 3 2 4 3 3 5 6 8 5) # no. of procs
 
 # Nemesis problems to run  
 set nem_name = (box_064 ti_300 ti_4k)
