@@ -555,6 +555,7 @@ if test X${BUILD_LIBNOXEPETRA} = Xyes; then
 
   TRILINOS_INCLUDE_CHECK(epetra,Epetra_Vector.h)
   TRILINOS_INCLUDE_CHECK(aztecoo,AztecOO.h)
+  TRILINOS_INCLUDE_CHECK(ifpack,Ifpack_CrsRiluk.h)
 
   if test "X${HAVE_PKG_MPI}" = "Xyes"; then
     TRILINOS_COMM="MPI"
@@ -562,7 +563,7 @@ if test X${BUILD_LIBNOXEPETRA} = Xyes; then
     TRILINOS_COMM="SERIAL"
   fi
 
-  TRILINOS_CXXFLAGS="-DEPETRA_${TRILINOS_COMM} -I${epetra_INC} -I${aztecoo_INC}"
+  TRILINOS_CXXFLAGS="-DEPETRA_${TRILINOS_COMM} -I${epetra_INC} -I${aztecoo_INC} -I${ifpack_INC}"
 
 fi
 
