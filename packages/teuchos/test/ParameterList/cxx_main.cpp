@@ -26,7 +26,6 @@
 // ***********************************************************************
 // @HEADER
 
-#include "Teuchos_ConfigDefs.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
 

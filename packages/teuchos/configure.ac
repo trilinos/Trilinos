@@ -484,7 +484,12 @@ AC_CONFIG_FILES([
 		test/scripts/daily/Makefile
 		test/scripts/daily/serial/Makefile
 		example/Makefile
+		example/BLAS/Makefile
+		example/CommandLineProcessor/Makefile
+		example/DenseMatrix/Makefile
 		example/hilbert/Makefile
+		example/LAPACK/Makefile
+		example/ParameterList/Makefile
 		])
 
 AC_OUTPUT()

@@ -28,10 +28,10 @@
 
 if HAVE_TEUCHOS_EXTENDED
 
-SUBDIRS = hilbert
+SUBDIRS = BLAS CommandLineProcessor DenseMatrix hilbert LAPACK ParameterList
 
 else
 
-SUBDIRS = hilbert
+SUBDIRS = BLAS CommandLineProcessor DenseMatrix hilbert LAPACK ParameterList
 
 endif

@@ -36,6 +36,7 @@
 	\brief Basic command line parser for input from <tt>(argc,argv[])</tt> 
 */
 #include "Teuchos_map.hpp"
+#include "Teuchos_ConfigDefs.hpp"
 
 namespace Teuchos {
 

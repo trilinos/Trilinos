@@ -39,7 +39,6 @@ The test routine for TRSM is still being developed; all of the others are more o
 
 */
 
-#include "Teuchos_ConfigDefs.hpp"
 #include "Teuchos_BLAS.hpp"
 
 #ifdef HAVE_TEUCHOS_ARPREC
