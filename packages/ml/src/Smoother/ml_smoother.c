@@ -1934,29 +1934,83 @@ int ML_BlockDinv(ML_Sm_BGS_Data *BGS_Data, int inlen, double out[]) {
   unsigned int   itmp=0;
   int info, one = 1;
   int nblocks, **perms, blocksize, i, *blocklengths, index;
-  double **blockdata;
+  double **blockdata, *dtemp;
   char N[2];
   int k,kk,length;
+  int maxBlocksize, *aggr_offset, *aggr_group, Nrows;
+  int *block_indices;
 
   nblocks    = BGS_Data->Nblocks;
   blockdata  = BGS_Data->blockfacts;
   perms      = BGS_Data->perms;
   blocklengths =  BGS_Data->blocklengths;
+  blocksize = BGS_Data->blocksize;
+  block_indices = BGS_Data->blockmap;
 
   strcpy(N,"N");
 
   index = 0;
-  for (i = 0; i < nblocks; i++) {
-    blocksize = blocklengths[i];
-    length = blocksize;
-    MLFORTRAN(dgetrs)(N,&blocksize,&one,blockdata[i],&blocksize,
-		      perms[i], &(out[index]), 
-		      &blocksize, &info, itmp);
-    index += blocksize;
-    if ( info != 0 ) {
-      printf("dgetrs returns with %d at block %d\n",info,i); 
-      exit(1);
+  if (blocksize > 0) { 
+    /* constant blocksize with consecutive indices in blocks */
+
+    for (i = 0; i < nblocks; i++) {
+      length = blocksize;
+      MLFORTRAN(dgetrs)(N,&blocksize,&one,blockdata[i],&blocksize,
+			perms[i], &(out[index]), 
+			&blocksize, &info, itmp);
+      index += blocksize;
+      if ( info != 0 ) {
+	printf("dgetrs returns with %d at block %d\n",info,i); 
+	exit(1);
+      }
     }
+  }
+  else {
+   maxBlocksize = 0;
+   for ( i = 0; i < nblocks; i++ )
+      if ( blocklengths[i] > maxBlocksize ) 
+         maxBlocksize = blocklengths[i];
+   aggr_offset = (int *) ML_allocate( (nblocks+1) * sizeof(int) );
+   aggr_offset[0] = 0;
+   for (i = 1; i <= nblocks; i++) 
+      aggr_offset[i] = aggr_offset[i-1] + blocklengths[i-1]; 
+   Nrows = aggr_offset[nblocks];
+
+   aggr_group  = (int *) ML_allocate( Nrows   * sizeof(int) );
+   for (i = 0; i < Nrows; i++) 
+      aggr_group[aggr_offset[block_indices[i]]++] = i; 
+   aggr_offset[0] = 0;
+   for (i = 1; i < nblocks; i++) 
+      aggr_offset[i] = aggr_offset[i-1] + blocklengths[i-1]; 
+
+   if ( maxBlocksize > 0 )    {
+      dtemp   = (double *) ML_allocate( maxBlocksize * sizeof(double) );
+   }
+
+
+    for (i = 0; i < nblocks; i++) {
+      blocksize = blocklengths[i];
+      length = blocksize;
+
+      for (k = 0; k < blocksize; k++) {
+	dtemp[k] = out[aggr_group[aggr_offset[i]+k]];
+      }
+      MLFORTRAN(dgetrs)(N,&blocksize,&one,blockdata[i],&blocksize,
+			perms[i], dtemp,
+			&blocksize, &info, itmp);
+      if ( info != 0 ) {
+	printf("dgetrs returns with %d at block %d\n",info,i); 
+	exit(1);
+      }
+
+      for (k = 0; k < blocksize; k++) {
+	out[aggr_group[aggr_offset[i]+k]] = dtemp[k];
+      }
+
+    }
+   ML_free(aggr_group);
+   ML_free(aggr_offset);
+
   }
   return 0;
 }
@@ -2029,6 +2083,7 @@ int ML_Smoother_VBlockJacobi(void *sm, int inlen, double x[], int outlen,
    allocated_space = Amat->max_nz_per_row+1000;
    cols = (int    *) ML_allocate(allocated_space*sizeof(int   ));
    vals = (double *) ML_allocate(allocated_space*sizeof(double));
+
    maxBlocksize = 0;
    for ( i = 0; i < Nblocks; i++ )
       if ( blocklengths[i] > maxBlocksize ) 
@@ -2084,6 +2139,7 @@ int ML_Smoother_VBlockJacobi(void *sm, int inlen, double x[], int outlen,
    strcpy(N,"N");
    for (iter = 0; iter < smooth_ptr->ntimes; iter++) 
    {
+     /* do we need this communication (as it is in the matvec ?) */
       if (getrow_comm != NULL)
          ML_exchange_bdry(x_ext,getrow_comm, inlen,comm,ML_OVERWRITE,NULL);
 
@@ -3260,7 +3316,7 @@ int ML_Smoother_Create_BGS_Data(ML_Sm_BGS_Data **data)
    ml_data = (*data);
    ml_data->blockfacts = NULL;
    ml_data->perms = NULL;
-   ml_data->blocksize = 1;
+   ml_data->blocksize = -1;
    ml_data->blocklengths = NULL;
    ml_data->blockmap = NULL;
    return 0;
@@ -4077,7 +4133,7 @@ int ML_Smoother_Gen_BGSFacts(ML_Sm_BGS_Data **data, ML_Operator *Amat,
    for (j=0; j<Nblocks; j++) 
    {
       blockfacts[j]=(double *) ML_allocate(blocksize*blocksize*sizeof(double));
-      for (kkk = 0; kkk < blocksize*blocksize; kkk++) blockfacts[kkk][j] = 0.;
+      for (kkk = 0; kkk < blocksize*blocksize; kkk++) blockfacts[j][kkk] = 0.;
       perms[j]=(int *)ML_allocate(blocksize*blocksize*sizeof(int));
    }
    cols = (int    *) ML_allocate(allocated_space*sizeof(int    ));
