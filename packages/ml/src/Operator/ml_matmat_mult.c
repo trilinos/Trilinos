@@ -295,6 +295,7 @@ if ((lots_of_space < 4) && (B_allocated > 500)) Bvals = NULL; else
    end = N;
    start = 0;
 
+   hash_used = 0;
    while (start < N) {
 
    itemp = 0;
@@ -876,6 +877,8 @@ void ML_oldmatmat_mult(ML_Operator *Amatrix, ML_Operator *Bmatrix,
 /* multiplying two matrices together                                    */
 /* -------------------------------------------------------------------- */
 
+int count = 0;
+
 void ML_2matmult(ML_Operator *Mat1, ML_Operator *Mat2,
                  ML_Operator *Result)
 {
@@ -896,7 +899,9 @@ void ML_2matmult(ML_Operator *Mat1, ML_Operator *Mat2,
       ML_exchange_rows( Mat2, &Mat2comm, Mat1->getrow->pre_comm);
    else Mat2comm = Mat2;
 
+   /*printf("%d: before ML_matmat_mult\n",comm->ML_mypid); fflush(stdout);*/
    ML_matmat_mult(Mat1, Mat2comm , &Mat1Mat2);
+   /*printf("%d: after ML_matmat_mult\n",comm->ML_mypid); fflush(stdout);*/
 
    ML_free(Mat2->getrow->loc_glob_map); Mat2->getrow->loc_glob_map = NULL;
 
