@@ -82,6 +82,7 @@ class Epetra_CrsGraphData : public Epetra_Data {
 	//! returns the IndicesSidekick array used by Indices() and the [] operators.
 	int** Sidekick() const;
 	void UpdateSidekick() const; // used internally by Graph to keep the Sidekick array updated when Indices_ changes.
+	void UpdateSidekick(int i) const; // used internally by Graph to keep the Sidekick array updated when Indices_ changes.
 
 	//@}
 

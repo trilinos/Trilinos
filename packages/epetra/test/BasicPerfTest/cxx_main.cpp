@@ -1,7 +1,13 @@
 #include "Epetra_Map.h"
+#include "Epetra_LocalMap.h"
+#include "Epetra_BlockMap.h"
 #include "Epetra_Time.h"
 #include "Epetra_CrsMatrix.h"
+#include "Epetra_VbrMatrix.h"
 #include "Epetra_Vector.h"
+#include "Epetra_IntVector.h"
+#include "Epetra_MultiVector.h"
+#include "Epetra_IntSerialDenseVector.h"
 #include "Epetra_Flops.h"
 #ifdef EPETRA_MPI
 #include "Epetra_MpiComm.h"
@@ -13,39 +19,56 @@
 
 // prototypes
 
-int check(Epetra_CrsMatrix& A, int NumMyRows1, int NumGlobalRows1, int NumMyNonzeros1,
-	  int NumGlobalNonzeros1, int * MyGlobalElements, bool verbose);
+void GenerateCrsProblem(int nx, int ny, int npoints, int * xoff, int * yoff,
+			const Epetra_Comm  &comm, 
+			Epetra_Map *& map, 
+			Epetra_CrsMatrix *& A, 
+			Epetra_Vector *& b, 
+			Epetra_Vector *& bt,
+			Epetra_Vector *&xexact);
 
-int power_method(bool TransA, Epetra_CrsMatrix& A, 
-		 Epetra_Vector& q,
-		 Epetra_Vector& z, 
-		 Epetra_Vector& resid, 
-		 double * lambda, int niters, double tolerance,
-		 bool verbose);
-
+void GenerateCrsProblem(int nx, int ny, int npoints, int * xoff, int * yoff, int nrhs,
+			const Epetra_Comm  &comm, 
+			Epetra_Map *& map, 
+			Epetra_CrsMatrix *& A, 
+			Epetra_MultiVector *& b, 
+			Epetra_MultiVector *& bt,
+			Epetra_MultiVector *&xexact);
  
+void GenerateVbrProblem(int nx, int ny, int npoints, int * xoff, int * yoff,
+			int nsizes, int * sizes,
+			const Epetra_Comm  &comm, 
+			Epetra_BlockMap *& map, 
+			Epetra_VbrMatrix *& A, 
+			Epetra_Vector *& b, 
+			Epetra_Vector *& bt,
+			Epetra_Vector *&xexact);
+
+void GenerateVbrProblem(int nx, int ny, int npoints, int * xoff, int * yoff, 
+			int nsizes, int * sizes, int nrhs,
+			const Epetra_Comm  &comm, 
+			Epetra_BlockMap *& map, 
+			Epetra_VbrMatrix *& A, 
+			Epetra_MultiVector *& b, 
+			Epetra_MultiVector *& bt,
+			Epetra_MultiVector *&xexact);
+
 int main(int argc, char *argv[])
 {
   int ierr = 0, i, j, forierr = 0;
   bool debug = false;
+  double elapsed_time;
+  double total_flops;
+  double MFLOPs;
+    
 
 #ifdef EPETRA_MPI
 
   // Initialize MPI
-
   MPI_Init(&argc,&argv);
-  int size, rank; // Number of MPI processes, My process ID
-
-  MPI_Comm_size(MPI_COMM_WORLD, &size);
-  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-  Epetra_MpiComm Comm( MPI_COMM_WORLD );
-
+  Epetra_MpiComm comm( MPI_COMM_WORLD );
 #else
-
-  int size = 1; // Serial case (not using MPI)
-  int rank = 0;
-  Epetra_SerialComm Comm;
-
+  Epetra_SerialComm comm;
 #endif
 
   bool verbose = false;
@@ -57,591 +80,406 @@ int main(int argc, char *argv[])
   //  char tmp;
   //  if (rank==0) cout << "Press any key to continue..."<< endl;
   //  if (rank==0) cin >> tmp;
-  //  Comm.Barrier();
+  //  comm.Barrier();
 
-  Comm.SetTracebackMode(0); // This should shut down any error traceback reporting
-  int MyPID = Comm.MyPID();
-  int NumProc = Comm.NumProc();
-  if (verbose) cout << "Processor "<<MyPID<<" of "<< NumProc
-              << " is alive."<<endl;
+  comm.SetTracebackMode(0); // This should shut down any error traceback reporting
+  if (verbose) cout << comm <<endl;
 
   bool verbose1 = verbose;
 
   // Redefine verbose to only print on PE 0
-  if (verbose && rank!=0) verbose = false;
+  if (verbose && comm.MyPID()!=0) verbose = false;
 
-  int NumMyEquations = 1000000;
-  int NumGlobalEquations = NumMyEquations*NumProc+EPETRA_MIN(NumProc,3);
-  if (MyPID < 3) NumMyEquations++;
-  int IndexBase = 0;
-  int ElementSize = 7;
-  bool DistributedGlobal = (NumGlobalEquations>NumMyEquations);
+  // Generate a 5-point 2D Finite Difference matrix
+  int npoints = 5;
+  Epetra_IntSerialDenseVector Xoff(5);
+  Epetra_IntSerialDenseVector Yoff(5);
+  Xoff[0] = -1; Xoff[1] = 1; Xoff[2] = 0; Xoff[3] = 0;  Xoff[4] = 0; 
+  Yoff[0] = 0;  Yoff[1] = 0; Yoff[2] = 0; Yoff[3] = -1; Yoff[4] = 1; 
 
-  // Construct a Map that puts approximately the same Number of equations on each processor
-
-  Epetra_Map Map(NumGlobalEquations, NumMyEquations, 0, Comm);
-  
-  // Get update list and number of local equations from newly created Map
-  int * MyGlobalElements = new int[Map.NumMyElements()];
-  Map.MyGlobalElements(MyGlobalElements);
-
-  // Create an integer vector NumNz that is used to build the Petra Matrix.
-  // NumNz[i] is the Number of OFF-DIAGONAL term for the ith global equation on this processor
-
-  int * NumNz = new int[NumMyEquations];
-
-  // We are building a tridiagonal matrix where each row has (-1 2 -1)
-  // So we need 2 off-diagonal terms (except for the first and last equation)
-
-  for (i=0; i<NumMyEquations; i++)
-    if (MyGlobalElements[i]==0 || MyGlobalElements[i] == NumGlobalEquations-1)
-      NumNz[i] = 1;
-    else
-      NumNz[i] = 2;
-
-  // Create a Epetra_Matrix
-
-  Epetra_CrsMatrix A(Copy, Map, NumNz);
-  EPETRA_TEST_ERR(A.IndicesAreGlobal(),ierr);
-  EPETRA_TEST_ERR(A.IndicesAreLocal(),ierr);
-  
-  // Add  rows one-at-a-time
-  // Need some vectors to help
-  // Off diagonal Values will always be -1
-
-
-  double *Values = new double[2];
-  Values[0] = -1.0; Values[1] = -1.0;
-  int *Indices = new int[2];
-  double two = 2.0;
-  int NumEntries;
-
-  forierr = 0;
-  for (i=0; i<NumMyEquations; i++) {
-    if (MyGlobalElements[i]==0)
-      {
-	Indices[0] = 1;
-	NumEntries = 1;
-      }
-    else if (MyGlobalElements[i] == NumGlobalEquations-1)
-      {
-	Indices[0] = NumGlobalEquations-2;
-	NumEntries = 1;
-      }
-    else
-      {
-	Indices[0] = MyGlobalElements[i]-1;
-	Indices[1] = MyGlobalElements[i]+1;
-	NumEntries = 2;
-      }
-     forierr += !(A.InsertGlobalValues(MyGlobalElements[i], NumEntries, Values, Indices)==0);
-     forierr += !(A.InsertGlobalValues(MyGlobalElements[i], 1, &two, MyGlobalElements+i)>0); // Put in the diagonal entry
-  }
-  EPETRA_TEST_ERR(forierr,ierr);
-  
-  // Finish up
-  EPETRA_TEST_ERR(!(A.IndicesAreGlobal()),ierr);
-  EPETRA_TEST_ERR(!(A.TransformToLocal()==0),ierr);
-  EPETRA_TEST_ERR(!(A.IndicesAreLocal()),ierr);
-  EPETRA_TEST_ERR(A.StorageOptimized(),ierr);
-  A.OptimizeStorage();
-  EPETRA_TEST_ERR(!(A.StorageOptimized()),ierr);
-  EPETRA_TEST_ERR(A.UpperTriangular(),ierr);
-  EPETRA_TEST_ERR(A.LowerTriangular(),ierr);
-
-  int NumMyNonzeros = 3*NumMyEquations;
-  if (A.LRID(0)>=0) NumMyNonzeros--; // If I own first global row, then there is one less nonzero
-  if (A.LRID(NumGlobalEquations-1)>=0) NumMyNonzeros--; // If I own last global row, then there is one less nonzero
-
-  EPETRA_TEST_ERR(check(A, NumMyEquations, NumGlobalEquations, NumMyNonzeros, 3*NumGlobalEquations-2, 
-	       MyGlobalElements, verbose),ierr);
-
-  forierr = 0;
-  for (i=0; i<NumMyEquations; i++) forierr += !(A.NumGlobalEntries(MyGlobalElements[i])==NumNz[i]+1);
-  EPETRA_TEST_ERR(forierr,ierr);
-  forierr = 0;
-  for (i=0; i<NumMyEquations; i++) forierr += !(A.NumMyEntries(i)==NumNz[i]+1);
-  EPETRA_TEST_ERR(forierr,ierr);
-
-  if (verbose) cout << "\n\nNumEntries function check OK" << endl<< endl;
-
-
-  // Create vectors for Power method
-
-  Epetra_Vector q(Map);
-  Epetra_Vector z(Map);
-  Epetra_Vector resid(Map);
-
-  // variable needed for iteration
-  double lambda = 0.0;
-  // int niters = 10000;
-  int niters = 200;
-  double tolerance = 1.0e-1;
-
-  ////////////////////////////////////////////////////////////////////////////////////////////////
-  //Timings
-  Epetra_Flops flopcounter;
-  A.SetFlopCounter(flopcounter);
-  q.SetFlopCounter(A);
-  z.SetFlopCounter(A);
-  resid.SetFlopCounter(A);
-
-  Epetra_Time timer(Comm);
-
-  //10 norms
-  double n_out;
-  for( int i = 0; i < 10; ++i )
-    q.Norm2( &n_out );
-
-  double elapsed_time = timer.ElapsedTime();
-  double total_flops = A.Flops() + q.Flops() + z.Flops() + resid.Flops();
-  double MFLOPs = total_flops/elapsed_time/1000000.0;
-  if (verbose) cout << "\n\nTotal MFLOPs for 10 Norm2's= " << MFLOPs << endl<< endl;
-
-  flopcounter.ResetFlops();
-  timer.ResetStartTime();
-
-  //10 matvecs
-  for( int i = 0; i < 10; ++i )
-    A.Multiply(false, q, z); // Compute z = A*q
-
-  elapsed_time = timer.ElapsedTime();
-  total_flops = A.Flops() + q.Flops() + z.Flops() + resid.Flops();
-  MFLOPs = total_flops/elapsed_time/1000000.0;
-  if (verbose) cout << "\n\nTotal MFLOPs for 10 MatVec's= " << MFLOPs << endl<< endl;
-
-  flopcounter.ResetFlops();
-  timer.ResetStartTime();
-  
-  //10 dot's
-  for( int i = 0; i < 10; ++i )
-    q.Dot(z, &n_out);
-
-  elapsed_time = timer.ElapsedTime();
-  total_flops = A.Flops() + q.Flops() + z.Flops() + resid.Flops();
-  MFLOPs = total_flops/elapsed_time/1000000.0;
-  if (verbose) cout << "\n\nTotal MFLOPs for 10 Dot's= " << MFLOPs << endl<< endl;
-
-  flopcounter.ResetFlops();
-  timer.ResetStartTime();
-  /////////////////////////////////////////////////////////////////////////////////////////////////
-
-  // Iterate
-  flopcounter.ResetFlops();
-  timer.ResetStartTime();
-
-  EPETRA_TEST_ERR(power_method(false, A, q, z, resid, &lambda, niters, tolerance, verbose),ierr);
-
-  elapsed_time = timer.ElapsedTime();
-  total_flops = A.Flops() + q.Flops() + z.Flops() + resid.Flops();
-  MFLOPs = total_flops/elapsed_time/1000000.0;
-
-  if (verbose) cout << "\n\nTotal MFLOPs for first solve = " << MFLOPs << endl<< endl;
-
-  /////////////////////////////////////////////////////////////////////////////////////////////////
-
-  // Solve transpose problem
-
-  if (verbose) cout << "\n\nUsing transpose of matrix and solving again (should give same result).\n\n"
-		    << endl;
-  // Iterate
-  lambda = 0.0;
-  flopcounter.ResetFlops();
-  timer.ResetStartTime();
-
-  EPETRA_TEST_ERR(power_method(true, A, q, z, resid, &lambda, niters, tolerance, verbose),ierr);
-
-  elapsed_time = timer.ElapsedTime();
-  total_flops = A.Flops() + q.Flops() + z.Flops() + resid.Flops();
-  MFLOPs = total_flops/elapsed_time/1000000.0;
-
-  if (verbose) cout << "\n\nTotal MFLOPs for transpose solve = " << MFLOPs << endl<< endl;
-
-  /////////////////////////////////////////////////////////////////////////////////////////////////
-
-/*
-  // Increase diagonal dominance
-
-  if (verbose) cout << "\n\nIncreasing the magnitude of first diagonal term and solving again\n\n"
-		    << endl;
+  Epetra_Map * map;
+  Epetra_CrsMatrix * A;
+  Epetra_Vector * b;
+  Epetra_Vector * bt;
+  Epetra_Vector * xexact;
 
   
-  if (A.MyGlobalRow(0)) {
-    int numvals = A.NumGlobalEntries(0);
-    double * Rowvals = new double [numvals];
-    int    * Rowinds = new int    [numvals];
-    A.ExtractGlobalRowCopy(0, numvals, numvals, Rowvals, Rowinds); // Get A[0,0]
+  int nx = 10;
+  for (int k=0; k<3; k++) { // 3 different sized matrices
+			       
+    int ny = nx;
+    GenerateCrsProblem(nx, ny, npoints, Xoff.Values(), Yoff.Values(), comm, 
+		       map, A, b, bt, xexact);
 
-    for (i=0; i<numvals; i++) if (Rowinds[i] == 0) Rowvals[i] *= 10.0;
+    if (verbose) cout << npoints << "-point 2D finite difference matrix with nx=ny="
+		      << nx << endl;
+    Epetra_Vector q(b->Map());
+    Epetra_Vector z(b->Map());
+    Epetra_Vector r(b->Map());
+
+    //Timings
+    Epetra_Flops flopcounter;
+    A->SetFlopCounter(flopcounter);
+    Epetra_Time timer(comm);
     
-    A.ReplaceGlobalValues(0, numvals, Rowvals, Rowinds);
-    delete [] Rowvals;
-    delete [] Rowinds;
-  }
-  // Iterate (again)
-  lambda = 0.0;
-  flopcounter.ResetFlops();
-  timer.ResetStartTime();
-  EPETRA_TEST_ERR(power_method(false, A, q, z, resid, &lambda, niters, tolerance, verbose),ierr);
-  elapsed_time = timer.ElapsedTime();
-  total_flops = A.Flops() + q.Flops() + z.Flops() + resid.Flops();
-  MFLOPs = total_flops/elapsed_time/1000000.0;
+    for (j=0; j<2; j++) { // j = 0 is notrans, j = 1 is trans
+      
+      flopcounter.ResetFlops();
+      timer.ResetStartTime();
 
-  if (verbose) cout << "\n\nTotal MFLOPs for second solve = " << MFLOPs << endl<< endl;
+      bool TransA = (j==1);
+      //10 matvecs
+      for( int i = 0; i < 10; ++i )
+	A->Multiply(TransA, *xexact, z); // Compute z = A*xexact or z = A'*xexact
+      
+      elapsed_time = timer.ElapsedTime();
+      total_flops = A->Flops();
+      MFLOPs = total_flops/elapsed_time/1000000.0;
+      if (verbose) cout << "\n\nTotal MFLOPs for 10 MatVec's (Trans = " << TransA
+			<< ")     = " << MFLOPs << endl<< endl;
+      
 
-  /////////////////////////////////////////////////////////////////////////////////////////////////
-
-  // Solve transpose problem
-
-  if (verbose) cout << "\n\nUsing transpose of matrix and solving again (should give same result).\n\n"
-		    << endl;
-
-  // Iterate (again)
-  lambda = 0.0;
-  flopcounter.ResetFlops();
-  timer.ResetStartTime();
-  EPETRA_TEST_ERR(power_method(true, A, q, z, resid, &lambda, niters, tolerance, verbose),ierr);
-  elapsed_time = timer.ElapsedTime();
-  total_flops = A.Flops() + q.Flops() + z.Flops() + resid.Flops();
-  MFLOPs = total_flops/elapsed_time/1000000.0;
-
-
-  if (verbose) cout << "\n\nTotal MFLOPs for tranpose of second solve = " << MFLOPs << endl<< endl;
-
-  if (verbose) cout << "\n\n*****Testing constant entry constructor" << endl<< endl;
-
-  Epetra_CrsMatrix AA(Copy, Map, 5);
-  
-  if (debug) Comm.Barrier();
-
-  double dble_one = 1.0;
-  for (i=0; i< NumMyEquations; i++) AA.InsertGlobalValues(MyGlobalElements[i], 1, &dble_one, MyGlobalElements+i);
-
-  // Note:  All processors will call the following Insert routines, but only the processor
-  //        that owns it will actually do anything
-
-  int One = 1;
-  if (AA.MyGlobalRow(0)) {
-    EPETRA_TEST_ERR(!(AA.InsertGlobalValues(0, 0, &dble_one, &One)==0),ierr);
-  }
-  else EPETRA_TEST_ERR(!(AA.InsertGlobalValues(0, 1, &dble_one, &One)==-1),ierr);
-  EPETRA_TEST_ERR(!(AA.TransformToLocal()==0),ierr);
-  EPETRA_TEST_ERR(AA.StorageOptimized(),ierr);
-  EPETRA_TEST_ERR(!(AA.UpperTriangular()),ierr);
-  EPETRA_TEST_ERR(!(AA.LowerTriangular()),ierr);
-  
-  if (debug) Comm.Barrier();
-  EPETRA_TEST_ERR(check(AA, NumMyEquations, NumGlobalEquations, NumMyEquations, NumGlobalEquations, 
-	       MyGlobalElements, verbose),ierr);
-
-  if (debug) Comm.Barrier();
-
-  forierr = 0;
-  for (i=0; i<NumMyEquations; i++) forierr += !(AA.NumGlobalEntries(MyGlobalElements[i])==1);
-  EPETRA_TEST_ERR(forierr,ierr);
-
-  if (verbose) cout << "\n\nNumEntries function check OK" << endl<< endl;
-
-  if (debug) Comm.Barrier();
-
-  if (verbose) cout << "\n\n*****Testing copy constructor" << endl<< endl;
-
-  Epetra_CrsMatrix B(AA);
-
-  EPETRA_TEST_ERR(check(B, NumMyEquations, NumGlobalEquations, NumMyEquations, NumGlobalEquations, 
-	       MyGlobalElements, verbose),ierr);
-
-  forierr = 0;
-  for (i=0; i<NumMyEquations; i++) forierr += !(B.NumGlobalEntries(MyGlobalElements[i])==1);
-  EPETRA_TEST_ERR(forierr,ierr);
-
-  if (verbose) cout << "\n\nNumEntries function check OK" << endl<< endl;
-
-  if (debug) Comm.Barrier();
-
-  if (verbose) cout << "\n\n*****Testing local view constructor" << endl<< endl;
-
-  Epetra_CrsMatrix BV(View, AA.RowMap(), AA.ColMap(), 0);
-
-  forierr = 0;
-  int * Inds;
-  double * Vals;
-  for (i=0; i<NumMyEquations; i++) {
-    forierr += !(AA.ExtractMyRowView(i, NumEntries, Vals, Inds)==0);
-    forierr += !(BV.InsertMyValues(i, NumEntries, Vals, Inds)==0);
-  }
-  BV.TransformToLocal();
-
-  EPETRA_TEST_ERR(check(BV, NumMyEquations, NumGlobalEquations, NumMyEquations, NumGlobalEquations, 
-	       MyGlobalElements, verbose),ierr);
-
-  forierr = 0;
-  for (i=0; i<NumMyEquations; i++) forierr += !(BV.NumGlobalEntries(MyGlobalElements[i])==1);
-  EPETRA_TEST_ERR(forierr,ierr);
-
-  if (verbose) cout << "\n\nNumEntries function check OK" << endl<< endl;
-
-  if (debug) Comm.Barrier();
-  if (verbose) cout << "\n\n*****Testing post construction modifications" << endl<< endl;
-
-  EPETRA_TEST_ERR(!(B.InsertGlobalValues(0, 1, &dble_one, &One)==-2),ierr);
-
-
-  // Release all objects
-  delete [] NumNz;
-  delete [] Values;
-  delete [] Indices;
-  delete [] MyGlobalElements;
-			
-
-  if (verbose1) {
-    // Test ostream << operator (if verbose1)
-    // Construct a Map that puts 2 equations on each PE
-    
-    int NumMyElements1 = 2;
-    int NumMyEquations1 = NumMyElements1;
-    int NumGlobalEquations1 = NumMyEquations1*NumProc;
-
-    Epetra_Map Map1(-1, NumMyElements1, 0, Comm);
-    
-    // Get update list and number of local equations from newly created Map
-    int * MyGlobalElements1 = new int[Map1.NumMyElements()];
-    Map1.MyGlobalElements(MyGlobalElements1);
-    
-    // Create an integer vector NumNz that is used to build the Petra Matrix.
-    // NumNz[i] is the Number of OFF-DIAGONAL term for the ith global equation on this processor
-    
-    int * NumNz1 = new int[NumMyEquations1];
-    
-    // We are building a tridiagonal matrix where each row has (-1 2 -1)
-    // So we need 2 off-diagonal terms (except for the first and last equation)
-    
-    for (i=0; i<NumMyEquations1; i++)
-      if (MyGlobalElements1[i]==0 || MyGlobalElements1[i] == NumGlobalEquations1-1)
-	NumNz1[i] = 1;
+      // Compute residual
+      if (TransA)
+	r.Update(-1.0, z, 1.0, *bt, 0.0); // r = bt - z
       else
-	NumNz1[i] = 2;
+	r.Update(-1.0, z, 1.0, *b, 0.0); // r = b - z
+
+      double rnorm;
+      r.Norm2(&rnorm);
+      if (verbose) cout << "Norm of difference between computed and exact RHS = " << rnorm << endl;
+    }
+
+    q.SetFlopCounter(*A);
+    z.SetFlopCounter(*A);
     
-    // Create a Epetra_Matrix
+    flopcounter.ResetFlops();
+    timer.ResetStartTime();
+    //10 norms
+    double n_out;
+    for( int i = 0; i < 10; ++i )
+      q.Norm2( &n_out );
+
+    elapsed_time = timer.ElapsedTime();
+    total_flops = q.Flops();
+    MFLOPs = total_flops/elapsed_time/1000000.0;
+    if (verbose) cout << "\n\nTotal MFLOPs for 10 Norm2's= " << MFLOPs << endl<< endl;
+    r.SetFlopCounter(*A);
     
-    Epetra_CrsMatrix A1(Copy, Map1, NumNz1);
+    flopcounter.ResetFlops();
+    timer.ResetStartTime();
+
+    //10 dot's
+    for( int i = 0; i < 10; ++i )
+      q.Dot(z, &n_out);
     
-    // Add  rows one-at-a-time
-    // Need some vectors to help
-    // Off diagonal Values will always be -1
+    elapsed_time = timer.ElapsedTime();
+    total_flops = q.Flops();
+    MFLOPs = total_flops/elapsed_time/1000000.0;
+    if (verbose) cout << "\n\nTotal MFLOPs for 10 Dot's= " << MFLOPs << endl<< endl;
     
-    
-    double *Values1 = new double[2];
-    Values1[0] = -1.0; Values1[1] = -1.0;
-    int *Indices1 = new int[2];
-    double two1 = 2.0;
-    int NumEntries1;
-
-    forierr = 0;
-    for (i=0; i<NumMyEquations1; i++)
-      {
-	if (MyGlobalElements1[i]==0)
-	  {
-	    Indices1[0] = 1;
-	    NumEntries1 = 1;
-	  }
-	else if (MyGlobalElements1[i] == NumGlobalEquations1-1)
-	  {
-	    Indices1[0] = NumGlobalEquations1-2;
-	    NumEntries1 = 1;
-	  }
-	else
-	  {
-	    Indices1[0] = MyGlobalElements1[i]-1;
-	    Indices1[1] = MyGlobalElements1[i]+1;
-	    NumEntries1 = 2;
-	  }
-	forierr += !(A1.InsertGlobalValues(MyGlobalElements1[i], NumEntries1, Values1, Indices1)==0);
-	forierr += !(A1.InsertGlobalValues(MyGlobalElements1[i], 1, &two1, MyGlobalElements1+i)>0); // Put in the diagonal entry
-      }
-    EPETRA_TEST_ERR(forierr,ierr);
-    
-    // Finish up
-    EPETRA_TEST_ERR(!(A1.TransformToLocal()==0),ierr);
-    
-    // Test diagonal extraction function
-
-    Epetra_Vector checkDiag(Map1);
-    EPETRA_TEST_ERR(!(A1.ExtractDiagonalCopy(checkDiag)==0),ierr);
-
-    forierr = 0;
-    for (i=0; i<NumMyEquations1; i++) forierr += !(checkDiag[i]==two1);
-    EPETRA_TEST_ERR(forierr,ierr);
-
-    // Test diagonal replacement method
-
-    forierr = 0;
-    for (i=0; i<NumMyEquations1; i++) checkDiag[i]=two1*two1;
-    EPETRA_TEST_ERR(forierr,ierr);
-
-    EPETRA_TEST_ERR(!(A1.ReplaceDiagonalValues(checkDiag)==0),ierr);
-
-    Epetra_Vector checkDiag1(Map1);
-    EPETRA_TEST_ERR(!(A1.ExtractDiagonalCopy(checkDiag1)==0),ierr);
-
-    forierr = 0;
-    for (i=0; i<NumMyEquations1; i++) forierr += !(checkDiag[i]==checkDiag1[i]);
-    EPETRA_TEST_ERR(forierr,ierr);
-
-    if (verbose) cout << "\n\nDiagonal extraction and replacement OK.\n\n" << endl;
-
-    double orignorm = A1.NormOne();
-    EPETRA_TEST_ERR(!(A1.Scale(4.0)==0),ierr);
-    EPETRA_TEST_ERR((A1.NormOne()!=orignorm),ierr);
-    
-    if (verbose) cout << "\n\nMatrix scale OK.\n\n" << endl;
-
-    if (verbose) cout << "\n\nPrint out tridiagonal matrix, each part on each processor.\n\n" << endl;
-    cout << A1 << endl;
-    
-  // Release all objects
-  delete [] NumNz1;
-  delete [] Values1;
-  delete [] Indices1;
-  delete [] MyGlobalElements1;
-
+    nx *= 10; // Increase problem size by factor 10
+    delete map;
+    delete A;
+    delete b;
+    delete bt; 
+    delete xexact;
   }
-*/
-			
+		
 #ifdef EPETRA_MPI
   MPI_Finalize() ;
 #endif
 
-/* end main
-*/
 return ierr ;
 }
 
-int power_method(bool TransA, Epetra_CrsMatrix& A, 
-		 Epetra_Vector& q,
-		 Epetra_Vector& z, 
-		 Epetra_Vector& resid, 
-		 double * lambda, int niters, double tolerance,
-		 bool verbose) {  
+// Constructs a 2D PDE finite difference matrix using the list of x and y offsets.
+// 
+// nx      (In) - number of grid points in x direction
+// ny      (In) - number of grid points in y direction
+//   The total number of equations will be nx*ny ordered such that the x direction changes
+//   most rapidly: 
+//      First equation is at point (0,0)
+//      Second at                  (1,0)
+//       ...
+//      nx equation at             (nx-1,0)
+//      nx+1st equation at         (0,1)
 
-  // Fill z with random Numbers
-  z.Random();
+// npoints (In) - number of points in finite difference stencil
+// xoff    (In) - stencil offsets in x direction (of length npoints)
+// yoff    (In) - stencil offsets in y direction (of length npoints)
+//   A standard 5-point finite difference stencil would be described as:
+//     npoints = 5
+//     xoff = [-1, 1, 0,  0, 0]
+//     yoff = [ 0, 0, 0, -1, 1]
 
-  // variable needed for iteration
-  double normz, residual;
+// nrhs - Number of rhs to generate. (First interface produces vectors, so nrhs is not needed
 
-  int ierr = 1;
+// comm    (In) - an Epetra_Comm object describing the parallel machine (numProcs and my proc ID)
+// map    (Out) - Epetra_Map describing distribution of matrix and vectors/multivectors
+// A      (Out) - Epetra_CrsMatrix constructed for nx by ny grid using prescribed stencil
+//                Off-diagonal values are random between 0 and 1.  If diagonal is part of stencil,
+//                diagonal will be slightly diag dominant.
+// b      (Out) - Generated RHS.  Values satisfy b = A*xexact
+// bt     (Out) - Generated RHS.  Values satisfy b = A'*xexact
+// xexact (Out) - Generated exact solution to Ax = b and b' = A'xexact
 
-  for (int iter = 0; iter < niters; iter++)
-    {
-      z.Norm2(&normz); // Compute 2-norm of z
-      q.Scale(1.0/normz, z);
-      A.Multiply(TransA, q, z); // Compute z = A*q
-      q.Dot(z, lambda); // Approximate maximum eigenvaluE
-      if (iter%100==0 || iter+1==niters)
-	{
-	  resid.Update(1.0, z, -(*lambda), q, 0.0); // Compute A*q - lambda*q
-	  resid.Norm2(&residual);
-	  if (verbose) cout << "Iter = " << iter << "  Lambda = " << *lambda 
-			     << "  Residual of A*q - lambda*q = " << residual << endl;
-	} 
-      if (residual < tolerance) {
-	ierr = 0;
-	break;
+// Note: Caller of this function is responsible for deleting all output objects.
+
+void GenerateCrsProblem(int nx, int ny, int npoints, int * xoff, int * yoff,
+			const Epetra_Comm  &comm, 
+			Epetra_Map *& map, 
+			Epetra_CrsMatrix *& A, 
+			Epetra_Vector *& b, 
+			Epetra_Vector *& bt,
+			Epetra_Vector *&xexact) {
+
+  Epetra_MultiVector * b1, * bt1, * xexact1;
+	
+  GenerateCrsProblem(nx, ny, npoints, xoff, yoff, 1, comm, 
+				   map, A, b1, bt1, xexact1);
+
+  b = dynamic_cast<Epetra_Vector *>(b1);
+  bt = dynamic_cast<Epetra_Vector *>(bt1);
+  xexact = dynamic_cast<Epetra_Vector *>(xexact1);
+
+  return;
+}
+
+void GenerateCrsProblem(int nx, int ny, int npoints, int * xoff, int * yoff, int nrhs,
+			const Epetra_Comm  &comm, 
+			Epetra_Map *& map, 
+			Epetra_CrsMatrix *& A, 
+			Epetra_MultiVector *& b, 
+			Epetra_MultiVector *& bt,
+			Epetra_MultiVector *&xexact) {
+  
+  Epetra_Time timer(comm);
+  // Number of global equations is nx*ny.  These will be distributed in a linear fashion
+  int numGlobalEquations = nx*ny;
+  map = new Epetra_Map(numGlobalEquations, 0, comm); // Create map with equal distribution of equations.
+
+  int numMyEquations = map->NumMyElements();
+  
+  A = new Epetra_CrsMatrix(Copy, *map, 0); // Construct matrix
+
+  int * indices = new int[npoints];
+  double * values = new double[npoints];
+
+  double dnpoints = (double) npoints;
+
+  for (int i=0; i<numMyEquations; i++) {
+
+    int rowID = map->GID(i);
+    int numIndices = 0;
+
+    for (int j=0; j<npoints; j++) {
+      int colID = rowID + xoff[j] + nx*yoff[j]; // Compute column ID based on stencil offsets
+      if (colID>-1 && colID<numGlobalEquations) {
+	indices[numIndices] = colID;
+	double value = - ((double) rand())/ ((double) RAND_MAX);
+	if (colID==rowID)
+	  values[numIndices++] = dnpoints - value; // Make diagonal dominant
+	else
+	  values[numIndices++] = -value;
       }
     }
-  return(ierr);
+    //cout << "Building row " << rowID << endl;
+    A->InsertGlobalValues(rowID, numIndices, values, indices);
+  }
+
+  delete [] indices;
+  delete [] values;
+  double insertTime = timer.ElapsedTime();
+  timer.ResetStartTime();
+  A->TransformToLocal();
+  double fillCompleteTime = timer.ElapsedTime();
+
+  if (comm.MyPID()==0)
+    cout << "Time to insert matrix values = " << insertTime << endl
+	 << "Time to complete fill        = " << fillCompleteTime << endl;
+
+  if (nrhs<=1) {  
+    b = new Epetra_Vector(*map);
+    bt = new Epetra_Vector(*map);
+    xexact = new Epetra_Vector(*map);
+  }
+  else {
+    b = new Epetra_MultiVector(*map, nrhs);
+    bt = new Epetra_MultiVector(*map, nrhs);
+    xexact = new Epetra_MultiVector(*map, nrhs);
+  }
+
+  xexact->Random(); // Fill xexact with random values
+
+  A->Multiply(false, *xexact, *b);
+  A->Multiply(true, *xexact, *bt);
+
+  return;
 }
-int check(Epetra_CrsMatrix& A, int NumMyRows1, int NumGlobalRows1, int NumMyNonzeros1,
-	  int NumGlobalNonzeros1, int * MyGlobalElements, bool verbose) {  
 
-  int ierr = 0, i, j, forierr = 0;
-  int NumGlobalIndices;
-  int NumMyIndices, * MyViewIndices, *GlobalViewIndices;
-  double * MyViewValues, * GlobalViewValues;
-  int MaxNumIndices = A.Graph().MaxNumIndices();
-  int * MyCopyIndices = new int[MaxNumIndices];
-  int * GlobalCopyIndices = new int[MaxNumIndices];
-  double * MyCopyValues = new double[MaxNumIndices];
-  double * GlobalCopyValues = new double[MaxNumIndices];
 
-  // Test query functions
+// Constructs a 2D PDE finite difference matrix using the list of x and y offsets.
+// 
+// nx      (In) - number of grid points in x direction
+// ny      (In) - number of grid points in y direction
+//   The total number of equations will be nx*ny ordered such that the x direction changes
+//   most rapidly: 
+//      First equation is at point (0,0)
+//      Second at                  (1,0)
+//       ...
+//      nx equation at             (nx-1,0)
+//      nx+1st equation at         (0,1)
 
-  int NumMyRows = A.NumMyRows();
-  if (verbose) cout << "\n\nNumber of local Rows = " << NumMyRows << endl<< endl;
+// npoints (In) - number of points in finite difference stencil
+// xoff    (In) - stencil offsets in x direction (of length npoints)
+// yoff    (In) - stencil offsets in y direction (of length npoints)
+//   A standard 5-point finite difference stencil would be described as:
+//     npoints = 5
+//     xoff = [-1, 1, 0,  0, 0]
+//     yoff = [ 0, 0, 0, -1, 1]
 
-  EPETRA_TEST_ERR(!(NumMyRows==NumMyRows1),ierr);
+// nsizes  (In) - Length of element size list used to create variable block map and matrix
+// sizes   (In) - integer list of element sizes of length nsizes
+//    The map associated with this VbrMatrix will be created by cycling through the sizes list.
+//    For example, if nsize = 3 and sizes = [ 2, 4, 3], the block map will have elementsizes
+//    of 2, 4, 3, 2, 4, 3, ...
 
-  int NumMyNonzeros = A.NumMyNonzeros();
-  if (verbose) cout << "\n\nNumber of local Nonzero entries = " << NumMyNonzeros << endl<< endl;
+// nrhs - Number of rhs to generate. (First interface produces vectors, so nrhs is not needed
 
-  EPETRA_TEST_ERR(!(NumMyNonzeros==NumMyNonzeros1),ierr);
+// comm    (In) - an Epetra_Comm object describing the parallel machine (numProcs and my proc ID)
+// map    (Out) - Epetra_Map describing distribution of matrix and vectors/multivectors
+// A      (Out) - Epetra_VbrMatrix constructed for nx by ny grid using prescribed stencil
+//                Off-diagonal values are random between 0 and 1.  If diagonal is part of stencil,
+//                diagonal will be slightly diag dominant.
+// b      (Out) - Generated RHS.  Values satisfy b = A*xexact
+// bt     (Out) - Generated RHS.  Values satisfy b = A'*xexact
+// xexact (Out) - Generated exact solution to Ax = b and b' = A'xexact
 
-  int NumGlobalRows = A.NumGlobalRows();
-  if (verbose) cout << "\n\nNumber of global Rows = " << NumGlobalRows << endl<< endl;
+// Note: Caller of this function is responsible for deleting all output objects.
 
-  EPETRA_TEST_ERR(!(NumGlobalRows==NumGlobalRows1),ierr);
+void GenerateVbrProblem(int nx, int ny, int npoints, int * xoff, int * yoff,
+			int nsizes, int * sizes,
+			const Epetra_Comm  &comm, 
+			Epetra_BlockMap *& map, 
+			Epetra_VbrMatrix *& A, 
+			Epetra_Vector *& b, 
+			Epetra_Vector *& bt,
+			Epetra_Vector *&xexact) {
+	
+  Epetra_MultiVector * b1, * bt1, * xexact1;
+	
+  GenerateVbrProblem(nx, ny, npoints, xoff, yoff, nsizes, sizes,
+				   1, comm, map, A, b1, bt1, xexact1);
 
-  int NumGlobalNonzeros = A.NumGlobalNonzeros();
-  if (verbose) cout << "\n\nNumber of global Nonzero entries = " << NumGlobalNonzeros << endl<< endl;
+  b = dynamic_cast<Epetra_Vector *>(b1);
+  bt = dynamic_cast<Epetra_Vector *>(bt1);
+  xexact = dynamic_cast<Epetra_Vector *>(xexact1);
 
-  EPETRA_TEST_ERR(!(NumGlobalNonzeros==NumGlobalNonzeros1),ierr);
+  return;
+}
 
-  // GlobalRowView should be illegal (since we have local indices)
+void GenerateVbrProblem(int nx, int ny, int npoints, int * xoff, int * yoff, 
+			int nsizes, int * sizes, int nrhs,
+			const Epetra_Comm  &comm, 
+			Epetra_BlockMap *& map, 
+			Epetra_VbrMatrix *& A, 
+			Epetra_MultiVector *& b, 
+			Epetra_MultiVector *& bt,
+			Epetra_MultiVector *&xexact) {
 
-  EPETRA_TEST_ERR(!(A.ExtractGlobalRowView(A.RowMap().MaxMyGID(), NumGlobalIndices, GlobalViewValues, GlobalViewIndices)==-2),ierr);
+  int i, j;
 
-  // Other binary tests
+  // Number of global equations is nx*ny.  These will be distributed in a linear fashion
+  int numGlobalEquations = nx*ny;
+  Epetra_Map ptMap(numGlobalEquations, 0, comm); // Create map with equal distribution of equations.
 
-  EPETRA_TEST_ERR(A.NoDiagonal(),ierr);
-  EPETRA_TEST_ERR(!(A.Filled()),ierr);
-  EPETRA_TEST_ERR(!(A.Sorted()),ierr);
-  EPETRA_TEST_ERR(!(A.MyGRID(A.RowMap().MaxMyGID())),ierr);
-  EPETRA_TEST_ERR(!(A.MyGRID(A.RowMap().MinMyGID())),ierr);
-  EPETRA_TEST_ERR(A.MyGRID(1+A.RowMap().MaxMyGID()),ierr);
-  EPETRA_TEST_ERR(A.MyGRID(-1+A.RowMap().MinMyGID()),ierr);
-  EPETRA_TEST_ERR(!(A.MyLRID(0)),ierr);
-  EPETRA_TEST_ERR(!(A.MyLRID(NumMyRows-1)),ierr);
-  EPETRA_TEST_ERR(A.MyLRID(-1),ierr);
-  EPETRA_TEST_ERR(A.MyLRID(NumMyRows),ierr);
-    
-  forierr = 0;
-  for (i=0; i<NumMyRows; i++) {
-    int Row = A.GRID(i);
-    A.ExtractGlobalRowCopy(Row, MaxNumIndices, NumGlobalIndices, GlobalCopyValues, GlobalCopyIndices);
-    A.ExtractMyRowView(i, NumMyIndices, MyViewValues, MyViewIndices);
-    forierr += !(NumGlobalIndices==NumMyIndices);
-    for (j=1; j<NumMyIndices; j++) forierr += !(MyViewIndices[j-1]<MyViewIndices[j]);
-    for (j=0; j<NumGlobalIndices; j++) {
-	forierr += !(GlobalCopyIndices[j]==A.GCID(MyViewIndices[j]));
-	forierr += !(A.LCID(GlobalCopyIndices[j])==MyViewIndices[j]);
-	forierr += !(GlobalCopyValues[j]==MyViewValues[j]);
+  int numMyElements = ptMap.NumMyElements();
+
+  Epetra_IntVector elementSizes(ptMap); // This vector will have the list of element sizes
+  for (i=0; i<numMyElements; i++) 
+    elementSizes[i] = sizes[ptMap.GID(i)%nsizes]; // cycle through sizes array
+
+  map = new Epetra_BlockMap(-1, numMyElements, ptMap.MyGlobalElements(), elementSizes.Values(),
+			    ptMap.IndexBase(), ptMap.Comm());
+
+  
+  A = new Epetra_VbrMatrix(Copy, *map, 0); // Construct matrix
+
+  int * indices = new int[npoints];
+  double * values = new double[npoints];
+
+  double dnpoints = (double) npoints;
+
+  // This section of code creates a vector of random values that will be used to create
+  // light-weight dense matrices to pass into the VbrMatrix construction process.
+
+  int maxElementSize = 0;
+  for (i=0; i< nsizes; i++) maxElementSize = EPETRA_MAX(maxElementSize, sizes[i]);
+
+  Epetra_LocalMap lmap(maxElementSize*maxElementSize, ptMap.IndexBase(), ptMap.Comm());
+  Epetra_Vector randvec(lmap);
+  randvec.Random();
+  randvec.Scale(-1.0); // Make value negative
+
+
+  for (i=0; i<numMyElements; i++) {
+    int rowID = map->GID(i);
+    int numIndices = 0;
+    int rowDim = sizes[rowID%nsizes];
+    for (j=0; j<npoints; j++) {
+      int colID = rowID + xoff[j] + nx*yoff[j]; // Compute column ID based on stencil offsets
+      if (colID>-1 && colID<numGlobalEquations)
+	indices[numIndices++] = colID;
     }
-  }
-  EPETRA_TEST_ERR(forierr,ierr);
-
-  forierr = 0;
-  for (i=0; i<NumMyRows; i++) {
-    int Row = A.GRID(i);
-    A.ExtractGlobalRowCopy(Row, MaxNumIndices, NumGlobalIndices, GlobalCopyValues, GlobalCopyIndices);
-    A.ExtractMyRowCopy(i, MaxNumIndices, NumMyIndices, MyCopyValues, MyCopyIndices);
-    forierr += !(NumGlobalIndices==NumMyIndices);
-    for (j=1; j<NumMyIndices; j++) forierr += !(MyCopyIndices[j-1]<MyCopyIndices[j]);
-    for (j=0; j<NumGlobalIndices; j++) {
-	forierr += !(GlobalCopyIndices[j]==A.GCID(MyCopyIndices[j]));
-	forierr += !(A.LCID(GlobalCopyIndices[j])==MyCopyIndices[j]);
-	forierr += !(GlobalCopyValues[j]==MyCopyValues[j]);
+			
+    A->BeginInsertGlobalValues(rowID, numIndices, indices);
+		
+    for (j=0; j < numIndices; j++) {
+      int colDim = sizes[indices[j]%nsizes];
+      A->SubmitBlockEntry(&(randvec[0]), rowDim, rowDim, colDim);
     }
-
+    A->EndSubmitEntries();
   }
-  EPETRA_TEST_ERR(forierr,ierr);
 
-  delete [] MyCopyIndices;
-  delete [] GlobalCopyIndices;
-  delete [] MyCopyValues;
-  delete [] GlobalCopyValues;
+  delete [] indices;
 
-  if (verbose) cout << "\n\nRows sorted check OK" << endl<< endl;
+  A->TransformToLocal();
 
-  return (ierr);
+  // Compute the InvRowSums of the matrix rows
+  Epetra_Vector invRowSums(A->RowMap());
+  Epetra_Vector rowSums(A->RowMap());
+  A->InvRowSums(invRowSums);
+  rowSums.Reciprocal(invRowSums);
+
+  // Jam the row sum values into the diagonal of the Vbr matrix (to make it diag dominant)
+  int numBlockDiagonalEntries;
+  int * rowColDims;
+  int * diagoffsets = map->FirstPointInElementList();
+  A->BeginExtractBlockDiagonalView(numBlockDiagonalEntries, rowColDims);
+  for (i=0; i< numBlockDiagonalEntries; i++) {
+    double * diagVals;
+    int diagLDA;
+    A->ExtractBlockDiagonalEntryView(diagVals, diagLDA);
+    int rowDim = map->ElementSize(i);
+    for (j=0; j<rowDim; j++) diagVals[j+j*diagLDA] = rowSums[diagoffsets[i]+j];
+  }
+
+  if (nrhs<=1) {  
+    b = new Epetra_Vector(*map);
+    bt = new Epetra_Vector(*map);
+    xexact = new Epetra_Vector(*map);
+  }
+  else {
+    b = new Epetra_MultiVector(*map, nrhs);
+    bt = new Epetra_MultiVector(*map, nrhs);
+    xexact = new Epetra_MultiVector(*map, nrhs);
+  }
+
+  xexact->Random(); // Fill xexact with random values
+
+  A->Multiply(false, *xexact, *b);
+  A->Multiply(true, *xexact, *bt);
+
+  return;
 }
