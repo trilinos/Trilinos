@@ -2754,7 +2754,6 @@ int ML_Solve_MGV( ML *ml , double *din, double *dout)
      ML_Cycle_MG(&(ml_ggb->SingleLevel[ml_ggb->ML_finest_level]), dout, 
 		 din_temp, ML_NONZERO, ml_ggb->comm, ML_NO_RES_NORM, ml_ggb);
     
-     
      ML_Cycle_MG(&(ml->SingleLevel[ml->ML_finest_level]), dout, din_temp, 
 		 ML_NONZERO, ml->comm, ML_NO_RES_NORM, ml);
      
@@ -5341,7 +5340,7 @@ edge_smoother, edge_args, nodal_smoother, nodal_args );
    return(status);
 }
 
-void ML_build_ggb(ML *ml, void *data)
+int ML_build_ggb(ML *ml, void *data)
 {
   ML *ml_ggb;
   int Nrows, Ncols, Nnz, Nnz_per_row, i;
@@ -5416,11 +5415,13 @@ void ML_build_ggb(ML *ml, void *data)
  
 
   ML_Operator_Set_Getrow(Pmat, ML_EXTERNAL, Nrows, CSR_getrows);
-  ML_Operator_Set_ApplyFunc (Pmat, ML_INTERNAL, CSR_matvec);
+  ML_Operator_Set_ApplyFunc (Pmat, ML_INTERNAL, CSR_denseserialmatvec);
 
   /* ML_Operator_Print(Pmat, "Pmat"); */
  
   ML_Gen_Restrictor_TransP(ml_ggb, 1, 0);
+  /*  ML_Operator_Set_ApplyFunc (&(ml_ggb->Rmat[1]), ML_INTERNAL, 
+      CSR_denseserialmatvec); */
  
   ML_Gen_AmatrixRAP(ml_ggb, 1, 0);
   ML_Gen_CoarseSolverSuperLU( ml_ggb, 0);
