@@ -1,2 +1,14 @@
-../configure --enable-mpi CC=mpicc CXX=mpiCC F77=mpif77
-
+../configure --enable-mpi --with-mpi-compilers --enable-nox \
+--enable-tsf \
+--enable-belos --enable-anasazi \
+--enable-amesos --enable-amesos-slud \
+--enable-amesos-dscpack \
+--with-amesos-dscpacklib=/home/jmwille/Trilinos3PL/DSCPACK1.0/DSC_LIB/dsclibdbl.a \
+--with-amesos-dscpackdir=/home/jmwille/Trilinos3PL/DSCPACK1.0 \
+--with-amesos-sluddir=/home/jmwille/Trilinos3PL/SuperLU_DIST_2.0 \
+--with-amesos-sludlib=/home/jmwille/Trilinos3PL/SuperLU_DIST_2.0/libsuperlu.a \
+--with-cxxflags=-DLAM_BUILDING \
+--enable-nox-epetra --enable-epetraext \
+--enable-nox-epetra-examples --enable-nox-lapack --enable-loca \
+--enable-nox-lapack-examples \
+--enable-komplex
