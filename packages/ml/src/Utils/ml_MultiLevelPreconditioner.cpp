@@ -1292,7 +1292,7 @@ int MultiLevelPreconditioner::ComputePreconditioner()
 	for( int j=0 ; j<NnzRow ; j+=NumPDEEqns_ ) {
 
 	  // insert diagonal later
-	  if( colInd[j] != i ) {
+	  if( colInd[j]/NumPDEEqns_ != i/NumPDEEqns_ ) {
 	    if( j%NumPDEEqns_ == 0 ) { // do it only once
 	      switch( NumDimensions ) {
 	      case 3:
@@ -1305,7 +1305,18 @@ int MultiLevelPreconditioner::ComputePreconditioner()
 	    }
 
 	    double d2 = pow(coord_i[0]-coord_j[0],2) + pow(coord_i[1]-coord_j[1],2) + pow(coord_i[2]-coord_j[2],2);
-	    assert( d2 != 0.0 );
+	    if( d2 == 0.0 ) {
+	      cerr << endl;
+	      cerr << ErrorMsg_ << "distance between node " << i/NumPDEEqns_ << " and node " 
+		   << colInd[j]/NumPDEEqns_ << endl
+		   << ErrorMsg_ << "is zero. Coordinates of these nodes are" << endl
+		   << ErrorMsg_ << "x_i = " << coord_i[0] << ", x_j = " << coord_j[0] << endl  
+		   << ErrorMsg_ << "y_i = " << coord_i[1] << ", y_j = " << coord_j[1] << endl  
+		   << ErrorMsg_ << "z_i = " << coord_i[2] << ", z_j = " << coord_j[2] << endl  
+		   << ErrorMsg_ << "Now proceeding with distance = 1.0" << endl;
+	      cerr << endl;
+	      d2 = 1.0;
+	    }
 
 	    double val = -(1.0-theta)*(1.0/d2) + theta*(colVal[j]);
 	    
