@@ -47,6 +47,10 @@ extern int **global_mapping = NULL, global_nrows, global_ncoarse;
 #define ML_AGGR_DD           4
 #define ML_AGGR_HYBRIDUC     5
 #define ML_AGGR_HYBRIDUM     6
+/*MS*/
+#define ML_AGGR_METIS        7
+#define ML_AGGR_PARMETIS     8
+/*ms*/
 
 /* ************************************************************************* */
 /* Constructor                                                               */
@@ -86,7 +90,10 @@ int ML_Aggregate_Create( ML_Aggregate **ag )
    (*ag)->P_tentative                = NULL;
    (*ag)->use_transpose              = ML_FALSE;
    (*ag)->Restriction_smoothagg_transpose = ML_FALSE;
-
+/*MS*/
+   (*ag)->aggr_options               = NULL;
+   (*ag)->aggr_viz_and_stats         = NULL;
+/*MS*/
 #if defined(AZTEC) && defined(ML_AGGR_READINFO)
    ML_Aggregate_AztecRead(*ag);
 #endif
@@ -127,8 +134,17 @@ int ML_Aggregate_Destroy( ML_Aggregate **ag )
       if ( (*ag)->P_tentative != NULL) 
 	ML_Operator_ArrayDestroy( (*ag)->P_tentative, (*ag)->max_levels);
 
+/*MS*/
+      if( (*ag)->aggr_options != NULL ) {
+	ML_memory_free( (void **) &((*ag)->aggr_options) );
+	(*ag)->aggr_options = NULL;
+      }
+      /* aggr_viz_and_stats is cleaned by calling the function
+	 `ML_Aggregate_Viz_Stats_Clean', in file "Utils/ml_agg_info.c" */
+/*MS*/
       ML_memory_free( (void **) ag );
       (*ag) = NULL;
+
    }
    return 0;
 }
@@ -338,6 +354,35 @@ int ML_Aggregate_Set_CoarsenScheme_DD( ML_Aggregate *ag  )
    ag->coarsen_scheme = ML_AGGR_DD;
    return 0;
 }
+
+/*MS*/
+/* ------------------------------------------------------------------------- */
+
+int ML_Aggregate_Set_CoarsenScheme_METIS( ML_Aggregate *ag  )
+{
+   if ( ag->ML_id != ML_ID_AGGRE ) 
+   {
+      printf("ML_Aggregate_Set_CoarsenScheme_METIS : wrong object. \n");
+      exit(-1);
+   }
+   ag->coarsen_scheme = ML_AGGR_METIS;
+   return 0;
+}
+
+/* ------------------------------------------------------------------------- */
+
+int ML_Aggregate_Set_CoarsenScheme_ParMETIS( ML_Aggregate *ag  )
+{
+   if ( ag->ML_id != ML_ID_AGGRE ) 
+   {
+      printf("ML_Aggregate_Set_CoarsenScheme_ParMETIS : wrong object. \n");
+      exit(-1);
+   }
+   ag->coarsen_scheme = ML_AGGR_PARMETIS;
+   return 0;
+}
+
+/*ms*/
 
 /* ************************************************************************* */
 /* set/reset aggregation threshold                                           */
@@ -737,6 +782,12 @@ int ML_Aggregate_Coarsen( ML_Aggregate *ag, ML_Operator *Amatrix,
          coarsen_scheme = ML_AGGR_UNCOUPLED;
       else if (coarsen_scheme == ML_AGGR_HYBRIDUM) 
          coarsen_scheme = ML_AGGR_UNCOUPLED;
+/*MS*/
+      else if (coarsen_scheme == ML_AGGR_METIS) 
+         coarsen_scheme = ML_AGGR_METIS;
+      else if (coarsen_scheme == ML_AGGR_PARMETIS) 
+	coarsen_scheme = ML_AGGR_PARMETIS;
+/*ms*/
       else 
          coarsen_scheme = ML_AGGR_UNCOUPLED;
    }
@@ -750,6 +801,12 @@ int ML_Aggregate_Coarsen( ML_Aggregate *ag, ML_Operator *Amatrix,
          coarsen_scheme = ML_AGGR_COUPLED;
       else if (coarsen_scheme == ML_AGGR_HYBRIDUM) 
          coarsen_scheme = ML_AGGR_MIS;
+/*MS*/
+      else if (coarsen_scheme == ML_AGGR_METIS) 
+         coarsen_scheme = ML_AGGR_METIS;
+      else if (coarsen_scheme == ML_AGGR_PARMETIS) 
+	coarsen_scheme = ML_AGGR_PARMETIS;
+/*ms*/
       else
       {
          (*Pmatrix) = NULL;
@@ -812,8 +869,18 @@ int ML_Aggregate_Coarsen( ML_Aggregate *ag, ML_Operator *Amatrix,
       case ML_AGGR_DD :
            Ncoarse = ML_Aggregate_CoarsenDomainDecomp(ag,Amatrix,Pmatrix,comm);
            break;
- 
-      default :
+/*MS*/
+      case ML_AGGR_METIS :
+           Ncoarse = ML_Aggregate_CoarsenMETIS(ag,Amatrix,Pmatrix,comm);
+           break;
+      case ML_AGGR_PARMETIS :
+/*
+           Ncoarse = ML_Aggregate_CoarsenParMETIS(ag,Amatrix,Pmatrix,comm);
+           break;
+*/
+           exit( EXIT_FAILURE );
+/*ms*/
+   default :
            if (mypid == 0) printf("ML_Aggregate_Coarsen : invalid scheme.\n");
            exit(1);
            break;
