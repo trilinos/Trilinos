@@ -112,20 +112,15 @@ public:
     \brief A \soft reset of the nonlinear solver for a new problem.
   
     This is a light-weight version of reset that takes no
-    arguments. 
+    parameter list.  Therefore, this reset only resets counters,
+    the initial guess (contained in the grp argument) and new status 
+    tests (contained in the tests argument).
 
-    The primary difference between this and a full reset,
-    i.e., reset(NOX::Abstract::Group&, NOX::StatusTest::Generic&,
-    NOX::Parameter::List&), is that it does not call reset on the
-    sub-objects such as NOX::LineSearch::Generic,
-    NOX::Direction::Generic, NOX::Utits.
-
-    The starting point for the nonlinear solve is the
-    current contents of the group that was last passed by reference to
-    either reset(NOX::Abstract::Group&, NOX::StatusTest::Generic&,
-    NOX::Parameter::List&) or this object's constructor.
+    This reset allows problems to bypass the potentially time consuming
+    parsing of the parameter lists.
   */
-  virtual bool reset() = 0;
+  virtual bool reset(NOX::Abstract::Group& grp, 
+		     NOX::StatusTest::Generic& tests) = 0;
 
   //! Check current convergence and failure status. 
   virtual NOX::StatusTest::StatusType getStatus() = 0;

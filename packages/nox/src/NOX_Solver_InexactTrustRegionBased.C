@@ -190,7 +190,9 @@ void NOX::Solver::InexactTrustRegionBased::invalid(const string& name, double va
   throw "NOX Error";
 }
 
-bool InexactTrustRegionBased::reset(Abstract::Group& grp, StatusTest::Generic& t, Parameter::List& p) 
+bool InexactTrustRegionBased::reset(Abstract::Group& grp, 
+				    StatusTest::Generic& t, 
+				    Parameter::List& p) 
 {
   solnPtr = &grp;
   testPtr = &t;
@@ -200,8 +202,12 @@ bool InexactTrustRegionBased::reset(Abstract::Group& grp, StatusTest::Generic& t
   return true;
 }
 
-bool InexactTrustRegionBased::reset()
+bool InexactTrustRegionBased::reset(Abstract::Group& grp, 
+				    StatusTest::Generic& t)
 {
+  solnPtr = &grp;
+  testPtr = &t;
+
   // Initialize 
   nIter = 0;
   dx = 0;

@@ -65,9 +65,10 @@ LOCA::Solver::Wrapper::reset(NOX::Abstract::Group& grp,
 }
 
 bool 
-LOCA::Solver::Wrapper::reset() 
+LOCA::Solver::Wrapper::reset(NOX::Abstract::Group& grp, 
+			     NOX::StatusTest::Generic& tests) 
 {
-  bool res =  solverPtr->reset();
+  bool res =  solverPtr->reset(grp, tests);
   resetWrapper();
   return res;
 }

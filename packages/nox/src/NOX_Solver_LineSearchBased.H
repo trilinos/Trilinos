@@ -101,8 +101,11 @@ public:
   //! Destructor
   virtual ~LineSearchBased();
 
-  virtual bool reset(NOX::Abstract::Group& grp, NOX::StatusTest::Generic& tests, NOX::Parameter::List& params);
-  virtual bool reset();
+  virtual bool reset(NOX::Abstract::Group& grp, 
+		     NOX::StatusTest::Generic& tests, 
+		     NOX::Parameter::List& params);
+  virtual bool reset(NOX::Abstract::Group& grp, 
+		     NOX::StatusTest::Generic& tests);
   virtual NOX::StatusTest::StatusType getStatus();
   virtual NOX::StatusTest::StatusType iterate();
   virtual NOX::StatusTest::StatusType solve();

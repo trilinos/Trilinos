@@ -53,7 +53,8 @@ namespace LOCA {
 		 NOX::StatusTest::Generic& tests, 
 		 NOX::Parameter::List& params);
   
-      bool reset();
+      bool reset(NOX::Abstract::Group& grp, 
+		 NOX::StatusTest::Generic& tests);
       
       NOX::StatusTest::StatusType getStatus();
       

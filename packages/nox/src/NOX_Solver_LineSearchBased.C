@@ -130,8 +130,11 @@ bool NOX::Solver::LineSearchBased::reset(NOX::Abstract::Group& xGrp,
   return true;
 }
 
-bool NOX::Solver::LineSearchBased::reset()
+bool NOX::Solver::LineSearchBased::reset(NOX::Abstract::Group& xGrp, 
+					 NOX::StatusTest::Generic& t)
 {
+  solnPtr = &xGrp;
+  testPtr = &t;
   init();
   return true;
 }

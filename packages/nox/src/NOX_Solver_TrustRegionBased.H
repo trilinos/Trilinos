@@ -218,13 +218,18 @@ public:
 
     See reset() for description. 
   */
-  TrustRegionBased(NOX::Abstract::Group& xgrp, NOX::StatusTest::Generic& t, NOX::Parameter::List& p);
+  TrustRegionBased(NOX::Abstract::Group& xgrp, 
+		   NOX::StatusTest::Generic& t, 
+		   NOX::Parameter::List& p);
 
   //! Destructor
   virtual ~TrustRegionBased();
 
-  virtual bool reset(NOX::Abstract::Group& xgrp, NOX::StatusTest::Generic& t, NOX::Parameter::List& p);
-  virtual bool reset();
+  virtual bool reset(NOX::Abstract::Group& xgrp, 
+		     NOX::StatusTest::Generic& t, 
+		     NOX::Parameter::List& p);
+  virtual bool reset(NOX::Abstract::Group& xgrp, 
+		     NOX::StatusTest::Generic& t);
   virtual NOX::StatusTest::StatusType getStatus();
   virtual NOX::StatusTest::StatusType iterate();
   virtual NOX::StatusTest::StatusType solve();

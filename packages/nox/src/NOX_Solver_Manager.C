@@ -98,9 +98,10 @@ bool NOX::Solver::Manager::reset(Abstract::Group& grp,
   }
 }
 
-bool NOX::Solver::Manager::reset()
+bool NOX::Solver::Manager::reset(Abstract::Group& grp, 
+				 StatusTest::Generic& tests)
 {
-  return ptr->reset();
+  return ptr->reset(grp, tests);
 }
 
 // PRIVATE

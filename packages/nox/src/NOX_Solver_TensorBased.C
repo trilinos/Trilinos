@@ -146,8 +146,11 @@ bool NOX::Solver::TensorBased::reset(NOX::Abstract::Group& xgrp,
   return true;
 }
 
-bool NOX::Solver::TensorBased::reset()
+bool NOX::Solver::TensorBased::reset(NOX::Abstract::Group& xgrp,
+				     NOX::StatusTest::Generic& t)
 {
+  solnptr = &xgrp;
+  testptr = &t;
   init();
   return true;
 }

@@ -75,14 +75,16 @@ public:
 
     See reset() for a full description.
   */
-  Manager(NOX::Abstract::Group& grp, NOX::StatusTest::Generic &t, NOX::Parameter::List& p);
+  Manager(NOX::Abstract::Group& grp, NOX::StatusTest::Generic &t, 
+	  NOX::Parameter::List& p);
 
   //! Destructor.
   ~Manager();
 
-  bool reset(NOX::Abstract::Group& grp, NOX::StatusTest::Generic &tests, NOX::Parameter::List& params);
+  bool reset(NOX::Abstract::Group& grp, NOX::StatusTest::Generic &tests, 
+	     NOX::Parameter::List& params);
   
-  bool reset();
+  bool reset(NOX::Abstract::Group& grp, NOX::StatusTest::Generic &tests);
 
   NOX::StatusTest::StatusType getStatus();
 

@@ -191,7 +191,8 @@ void NOX::Solver::TrustRegionBased::invalid(const string& name, double value) co
   throw "NOX Error";
 }
 
-bool TrustRegionBased::reset(Abstract::Group& grp, StatusTest::Generic& t, Parameter::List& p) 
+bool TrustRegionBased::reset(Abstract::Group& grp, StatusTest::Generic& t, 
+			     Parameter::List& p) 
 {
   solnPtr = &grp;
   testPtr = &t;
@@ -201,8 +202,12 @@ bool TrustRegionBased::reset(Abstract::Group& grp, StatusTest::Generic& t, Param
   return true;
 }
 
-bool TrustRegionBased::reset()
+bool TrustRegionBased::reset(Abstract::Group& grp, StatusTest::Generic& t)
 {
+  // New initial guess and status test
+  solnPtr = &grp;
+  testPtr = &t;
+
   // Initialize 
   nIter = 0;
   dx = 0;
