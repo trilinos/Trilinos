@@ -47,6 +47,7 @@ namespace Teuchos
     const ScalarType& operator () (int rowIndex, int colIndex) const;
     ScalarType* operator [] (int colIndex);
     const ScalarType* operator [] (int colIndex) const;
+    int scale ( const ScalarType alpha );
     int multiply (ETransp transa, ETransp transb, ScalarType alpha, const SerialDenseMatrix<OrdinalType, ScalarType> &A, const SerialDenseMatrix<OrdinalType, ScalarType> &B, ScalarType beta);
     bool operator== (const SerialDenseMatrix<OrdinalType, ScalarType> &Operand);
     bool operator!= (const SerialDenseMatrix<OrdinalType, ScalarType> &Operand);
@@ -412,6 +413,21 @@ namespace Teuchos
   //----------------------------------------------------------------------------------------------------
   //   Multiplication method 
   //----------------------------------------------------------------------------------------------------  
+
+  template<typename OrdinalType, typename ScalarType>
+  int SerialDenseMatrix<OrdinalType, ScalarType>::scale( const ScalarType alpha )
+  {
+    int i, j;
+    ScalarType* ptr;
+    
+    for (j=0; j<numCols_; j++) {
+      ptr = values_ + j*stride_;
+      for (i=0; i<numRows_; i++) { *ptr = alpha * (*ptr); ptr++; }
+    }
+    updateFlops( numRows_*numCols_ );
+    return(0);
+  }
+
 
   template<typename OrdinalType, typename ScalarType>
   int  SerialDenseMatrix<OrdinalType, ScalarType>::multiply(ETransp transa, ETransp transb, ScalarType alpha, const SerialDenseMatrix<OrdinalType, ScalarType> &A, const SerialDenseMatrix<OrdinalType, ScalarType> &B, ScalarType beta)
