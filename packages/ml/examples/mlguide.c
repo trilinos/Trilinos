@@ -21,6 +21,9 @@ int main(int argc, char *argv[]){
    ML_Aggregate *agg_object;
    ML_Operator *data;
 
+#ifdef ML_MPI
+   MPI_Init(&argc,&argv);
+#endif
    for (i = 0; i < 5; i++) sol[i] = 0.;
    for (i = 0; i < 5; i++) rhs[i] = 2.;
 
@@ -54,6 +57,10 @@ int main(int argc, char *argv[]){
    /******** End code to set a user-defined smoother ******/
 
    printf("answer is %e %e %e %e %e\n",sol[0],sol[1],sol[2],sol[3],sol[4]);
+
+#ifdef ML_MPI
+  MPI_Finalize();
+#endif
    return(1);
 }
 
