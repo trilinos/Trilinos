@@ -408,9 +408,6 @@ AC_F77_LIBRARY_LDFLAGS
 #         DEC/CPLANT and see if template-related errors occur)
 
 # -- DEC CXX --
-#The cxx_repository is currently necessary only for experimental code.
-#
-if test "X$ac_cv_use_teuchos_experimental" != "Xno"; then
 case $target in
   alpha*)
     if test $CXX = cxx; then
@@ -418,7 +415,6 @@ case $target in
     fi
   ;;
 esac
-fi
 
 AC_MSG_CHECKING([for template-specific object files to be linked])
 if test "X$TRILINOS_TEMPLATE_OBJS" = "X"; then
