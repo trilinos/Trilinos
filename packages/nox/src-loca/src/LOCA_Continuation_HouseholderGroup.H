@@ -140,9 +140,20 @@ namespace LOCA {
 
     protected:
       
+      
       /*! 
        * \brief Computes the Householder vector from the predictor vector
        */
+      /*! This method computes a vector \f$u\in\Re^{n+1}\f$ and scalar 
+       * \f$\beta\f$ such that \f$P=I-\beta u u^T\f$ is orthogonal,
+       * \f$u_{n+1} = 1\f$, and \f$Pv = \|v\|_2 e_{n+1}\f$ where \f$v\f$ 
+       * is the predictor vector and \f$e_{n+1}\f$ is the \f$n+1\f$
+       * column of the identity. 
+       * 
+       * The algorithm employed here is taken from Algorithm 5.1.1 from 
+       * Gene Golub and Charles Van Loan, "Matrix Computations", 3rd Edition,
+       * 1996, John Hopkins University Press, Baltimore. 
+       */ 
       void computeHouseholderVector();
 
     protected:
