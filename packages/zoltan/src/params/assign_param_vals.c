@@ -1,3 +1,21 @@
+/*====================================================================
+ * ------------------------
+ * | CVS File Information |
+ * ------------------------
+ *
+ * $RCSfile$
+ *
+ * $Author$
+ *
+ * $Date$
+ *
+ * $Revision$
+ *
+ *====================================================================*/
+#ifndef lint
+static char *cvs_assignparamvalsc_id = "$Id$";
+#endif
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

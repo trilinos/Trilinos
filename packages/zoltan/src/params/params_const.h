@@ -1,3 +1,24 @@
+/*====================================================================
+ * ------------------------
+ * | CVS File Information |
+ * ------------------------
+ *
+ * $RCSfile$
+ *
+ * $Author$
+ *
+ * $Date$
+ *
+ * $Revision$
+ *
+ *====================================================================*/
+#ifndef lint
+static char *cvs_paramsconsth_id = "$Id$";
+#endif
+
+#ifndef PARAMS_CONST_H
+#define PARAMS_CONST_H
+
 #include "lb_const.h"
 
 #ifndef HAVE_PROTOTYPES
@@ -47,3 +68,4 @@ extern int LB_Check_Param(char *, char *, PARAM_VARS *,
     PARAM_UTYPE *, int *);
 extern void LB_Free_Params(LB *);
 
+#endif

@@ -1,3 +1,21 @@
+/*====================================================================
+ * ------------------------
+ * | CVS File Information |
+ * ------------------------
+ *
+ * $RCSfile$
+ *
+ * $Author$
+ *
+ * $Date$
+ *
+ * $Revision$
+ *
+ *====================================================================*/
+#ifndef lint
+static char *cvs_printparamsc_id = "$Id$";
+#endif
+
 #include <stdio.h>
 #include "lb_const.h"
 

@@ -1,3 +1,21 @@
+/*====================================================================
+ * ------------------------
+ * | CVS File Information |
+ * ------------------------
+ *
+ * $RCSfile$
+ *
+ * $Author$
+ *
+ * $Date$
+ *
+ * $Revision$
+ *
+ *====================================================================*/
+#ifndef lint
+static char *cvs_freeparamsc_id = "$Id$";
+#endif
+
 #include <stdio.h>
 #include <ctype.h>
 #include <string.h>
