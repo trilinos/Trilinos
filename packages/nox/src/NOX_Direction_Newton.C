@@ -124,7 +124,8 @@ bool NOX::Direction::Newton::resetForcingTerm(const NOX::Abstract::Group& soln,
 
   // Get forcing term parameters.
   const string method = paramsPtr->sublist("Newton").getParameter("Forcing Term Method", "Constant");
-  const double eta_min = paramsPtr->sublist("Newton").getParameter("Forcing Term Minimum Tolerance", 1.0e-4);  const double eta_max = paramsPtr->sublist("Newton").getParameter("Forcing Term Maximum Tolerance", 0.9);
+  const double eta_min = paramsPtr->sublist("Newton").getParameter("Forcing Term Minimum Tolerance", 1.0e-4);  
+  const double eta_max = paramsPtr->sublist("Newton").getParameter("Forcing Term Maximum Tolerance", 0.9);
 
   // Get linear solver current tolerance.
 
@@ -132,7 +133,7 @@ bool NOX::Direction::Newton::resetForcingTerm(const NOX::Abstract::Group& soln,
   if (((method == "Type 1") || (method == "Type 2")) 
 	&& (solverParams.sublist("Line Search").isParameterDouble("Adjusted Tolerance"))) {
     
-    // Tolerance may have been adjusted in a line search algorithm   
+    // Tolerance may have been adjusted in a line search algorithm  
     eta_km1 = solverParams.sublist("Line Search").getParameter("Adjusted Tolerance", 0.0);
     
   }
@@ -189,8 +190,15 @@ bool NOX::Direction::Newton::resetForcingTerm(const NOX::Abstract::Group& soln,
       stepDir->update(1.0, soln.getX(), -1.0, oldsoln.getX(), 0);
       
       // Compute predRhs = Jacobian * step * dir
+      if (!(oldsoln.isJacobian())) {
+	if (utils.isPrintProcessAndType(Utils::Details)) {
+	  cout << "WARNING: NOX::Direction::Newton::resetForcingTerm() - "
+	       << "Jacobian is out of date! Recomputing Jacobian." << endl;
+	}
+	  const_cast<NOX::Abstract::Group&>(oldsoln).computeJacobian();
+      }
       oldsoln.applyJacobian(*stepDir, *predRhs);
-      
+
       // Compute predRhs = RHSVector + predRhs (this is the predicted RHS)
       predRhs->update(1.0, oldsoln.getF(), 1.0);
       
