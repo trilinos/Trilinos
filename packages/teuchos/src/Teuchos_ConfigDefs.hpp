@@ -231,7 +231,7 @@ typedef ostrstream TeuchosOStringStream;
 #error "Found neither sstream, sstream.h, strstream.h, nor strstream"
 #endif
 
-#if defined(TFLOP) || defined(JANUS_STLPORT)
+#if defined(TFLOP)
 #ifdef HAVE_STRING
 using std::string;
 #endif
@@ -245,7 +245,8 @@ using std::endl;
 #ifdef HAVE_COMPLEX
 using std::complex;
 #endif
-# else /* NOT ON JANUS */ 
+#else /* NOT TFLOP */ 
+#ifndef JANUS_STLPORT
 #if HAVE_CMATH
 #include <cmath>
 #elif HAVE_MATH_H
@@ -253,8 +254,11 @@ using std::complex;
 #else
 #error "Found neither cmath nor math.h"
 #endif
+#else /* JANUS_STLPORT */
+#include <math.h>
+#endif /* JANUS_STLPORT */
 using namespace std;
-#endif /* defined(TFLOP) || defined(JANUS_STLPORT) */
+#endif /* defined(TFLOP) */
 
 // RAB: 20031002: Added this for all platforms in addition to TFLOPS?
 #ifdef HAVE_IOMANIP
