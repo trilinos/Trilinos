@@ -1,11 +1,9 @@
-\documentclass[12pt,relax]{TrilinosDevGuide}
+\documentclass[12pt,relax]{SANDreport}
 
 %
 % Set the title, author, and date
 %
     \title{Trilinos Developer's Guide}
-\SANDsubtitle{}
-
 
     \author{James Willenbring\\
        Computational Mathematics \& Algorithms \\
@@ -14,6 +12,10 @@
 	  Albuquerque, NM 87185-1110 \\
 	  jmwille@sandia.gov \\
 	 }
+
+    % There is a "Printed" date on the title page of a SAND report, so
+    % the generic \date should generally be empty.
+    \date{}
 
     % While this document is under active development, the date
     % field will reflect the current date, eventually a final date
@@ -34,15 +36,45 @@
 %
 % Start the document
 %
-    \begin{document}
-	\maketitle
+\begin{document}
+    \maketitle
+
+    % ------------------------------------------------------------------------ %
+    % An Abstract is required for SAND reports
+    %
+    \begin{abstract}
+
+Research efforts in advanced solution algorithms and parallel solver
+libraries have historically had a large impact on engineering and
+scientific computing.  Algorithmic advances increase the range
+of tractable problems and reduce the cost of solving existing
+problems.  Well-designed solver libraries provide a mechanism for
+leveraging solver development across a broad set of applications and
+minimize the cost of solver integration.  Emphasis is
+required in both new algorithms and new software in order
+to achieve the maximum impact of efforts.
+
+The Trilinos project encompasses a variety of efforts that are to some
+extent self-contained but at the same time inter-related.  The
+Trilinos design allows individual packages to grow and mature
+autonomously to the extent the algorithms and package developers
+dictate. 
+
+The Trilinos Developer's Guide is meant to assist existing, as well as new and
+potential Trilinos developers.  Topics covered include how to configure and 
+build Trilinos, what is required to integrate an existing package into Trilinos
+and examples of how those requirements can be met, as well as what tools are 
+available to Trilinos packages.  Also discussed are some common practices that 
+are followed by many Trilinos package developers.  Finally, a graphical depiction of 
+Trilinos package iteroperability is supplied along with a list of platforms 
+that Trilinos has been ported to.
+
+\end{abstract}
 
 %
 % Page style chosen that prints chapter heading and page number in the 
 % header on each page.
 %
-
-    \pagestyle{headings}
 
     % -------------------------------------------------- %
     % Acknowledgement section
@@ -67,13 +99,46 @@ Tuminaro, Jim Willenbring, and Alan Williams.
     \listoffigures
     \listoftables
 
+    % ---------------------------------------------------------------------- %
+    % An optional glossary. We don't want it to be numbered
+    \clearpage
+    \section*{Nomenclature}
+    \addcontentsline{toc}{section}{Nomenclature}
+    \begin{itemize}
+	\item[Package]
+	    A collection of software focused on one primary class of numerical methods
+	\item[Trilinos]
+	    A Greek term that loosely translated means ``a string of pearls,'' meant
+         to evoke an image that each Trilinos package is a pearl in its own right,
+         but is even more valuable when combined with other packages.
+	\item[Petra]
+	    A Greek term meaning ``foundation.''  Trilinos has three Petra libraries: Epetra, 
+	    Tpetra and Jpetra (discussed in Section~\ref{subsect:PetraObjectModel}) that
+	    provide basic classes for constructing and manipulating matrix, graph and vector 
+	    objects.
+        \item[AztecOO] Linear solver package based on preconditioned Krylov methods.  A
+	  follow-on to the Aztec solver package.  Supports all Aztec interfaces and
+	  functionality, but also provides significant new functionality.
+	\item[TSF]
+	\item[NOX]
+	\item[ML]
+	\item[Komplex] Complex linear equation solver using equivalent real formulations,
+	  built on top of Aztec.
+	\item[Ifpack] Object-oriented algebraic preconditioner, compatible with Epetra and
+	  AztecOO.
+    \end{itemize}
 
+
+    % ---------------------------------------------------------------------- %
+    % This is where the body of the report begins; usually with an Introduction
+    %
+    \SANDmain		% Start the main part of the report
 
 % ------------------------------------------- %
 % Introduction to Developer's Guide
 %
-    \chapter{Introduction}
-	\section{Briew Overview}
+    \section{Introduction}
+	\subsection{Briew Overview}
 	\begin{quote}
 The Trilinos Project is an effort to develop parallel solver algorithms and 
 libraries within 
@@ -89,7 +154,7 @@ the outside community via the Gnu Lesser General Public License
 (LGPL)~\cite{gnu-license-site}.
 	\end{quote}
 % Figure out how to cite Mike's overview doc
-	\section{Motivation}
+	\subsection{Motivation}
 	\begin{quote}
 Research efforts in advanced solution algorithms and parallel solver
 libraries have historically had a large impact on engineering and
@@ -108,7 +173,7 @@ autonomously to the extent the algorithms and package developers
 dictate. 
 	\end{quote}
 
-	\section{What is Covered in this Guide}
+	\subsection{What is Covered in this Guide}
 **(see lines 230-243)
 
 The Trilinos Developer's Guide is meant to assist existing, as well as new and
@@ -126,19 +191,18 @@ of the Trilinos Project by Mike Heroux).
 
 % start reading Mike's stuff at 243
 
-	\chapter{Requirements \& Guildlines}
-	**(Req's and how to satisfy them - break into sections)**
+	\section{Requirements \& Guildlines}
+	**(Req's and how to satisfy them - break into subsections)**
 
 
-
-	\chapter{Suggested Practices}
+	\section{Suggested Practices}
 	**(suggested coding guidelines, and other non-manditory practices that are encouraged - break up.  See Overview Doc pg 11,14-15.)**
 	
 
 
-	\chapter{Services Available to Trilinos Packages}
+	\section{Services Available to Trilinos Packages}
 	A number of services exist for Trilinos packages.
-	\section{Configuration Management}
+	\subsection{Configuration Management}
 	**(See Overview Doc pg 12)**
 Autoconf~\cite{Autoconf},  Automake~\cite{Automake} and
 Libtool~\cite{Libtool} provide a robust, full-featured set of tools for
@@ -166,7 +230,7 @@ defined MPI C compiler.  The macros can be found in the Trilinos CVS
 repository in Trilinos/config.  These macros minimize the amount of redudant
  effort in using Autotools, and make it easier to apply a general change to 
 the configure process for all packages.
-	\section{Regression Testing}
+	\subsection{Regression Testing}
 Trilinos provides a variety of regression
 testing capabilities.  Within a number of Trilinos packages, we employ
 ``white box'' testing where detailed information about the software is
@@ -176,7 +240,7 @@ interfaces.  Any package that implements the TSF interfaces (see
 Section~\ref{subsect:InteropTSF} below **(MAKE SURE BELOW, NOTE ABOVE)), can be tested via this black box
 test environment.  ({\bf NOTE: Black box testing via TSF is not in
 place at this time}
-	\section{Periodic Testing}
+	\subsection{Periodic Testing}
 Trilinos Packages that configure and build using Autotools can easily 
 utilize the the Trilinos testharness.  The testharness performs a CVS update
 (gets the most recent source code) every night and then builds the libraries
@@ -189,10 +253,6 @@ testharness can still benefit by ensuring that libraries build without
 errors.  Integrating existing tests into the testharness is not difficult.  
 The process is discussed in Trilinos/testharness/HowToAddToTestHarness.  
 Please note that this document is a work in progress.
-
-	\section{Source Code Repository and Build Tools}
-	**(See Overview Doc pg 12)**
-Source code repository and build tools: 
 
 \subsection CVS Repository
 Trilinos source code is maintained in a CVS~\cite{CVS} repository.  It is 
@@ -211,7 +271,7 @@ For those not familiar with CVS, below is a brief discussion covering some
 of the most common CVS commands.  For more information, see the Gnu CVS Home
 Page~\cite{CVS}.
 
-\triangleright Checking Out a Working Copy
+\bullet Checking Out a Working Copy
 
 To get started, checkout a copy of the development branch of the repository.
 (Releases branches can be obtained by by checking out the appropriate 
@@ -221,7 +281,7 @@ tagged version of the repository.)
 cvs checkout Trilinos
 \end{verbatim}
 
-\triangleright Updating a Woring Copy
+\bullet Updating a Woring Copy
 To update after a version has been obtained use the ``update'' command.  
 First, cd to the directory that is to be updated (usually the Trilinos root 
 directory).  Then type:
@@ -241,7 +301,7 @@ downloaded, and from that time on, all CVS updates will update the
 directories that were downloaded.  It is good practice to include this 
 option for every CVS update.
 
-... Decide if this section is worth it, or if people should read the doc.  If eexpanded, add info about when to check in, and which branch...
+... Decide if this subsection is worth it, or if people should read the doc.  If eexpanded, add info about when to check in, and which branch...
 
 \subsection Bonsai
 A lot of useful information related to CVS history is accessible via a
@@ -303,18 +363,18 @@ form a subset of those who subscribe to the Trilinos-Users mailing list.  This
 is also true of all other list types.  Keep this in mind when subscribing and 
 posting to lists.
 
-\triangleright Trilinos-Announce 
+\bullet Trilinos-Announce 
 \begin{verbatim}trilinos-announce@software.sandia.gov\end{verbatim}
 
 All Trilinos release announcements and other major news.
 
-\triangleright Trilinos-Checkins 
+\bullet Trilinos-Checkins 
 \begin{verbatim}trilinos-checkins@software.sandia.gov\end{verbatim}
 
 CVS commit log messages that are releated to Trilinos in general or packages 
 that have not had separate lists established.
 
-\triangleright Trilinos-Developers 
+\bullet Trilinos-Developers 
 \begin{verbatim}trilinos-developers@software.sandia.gov\end{verbatim}
 
 All discussions releated to Trilinos-specific development (not specific to a 
@@ -324,12 +384,12 @@ should also be posted to this list (or to the appropriate package list).
 By doing this, the list archive can provide a record explaining why various 
 changes were made over time.
 
-\triangleright Trilinos-regression 
+\bullet Trilinos-regression 
 \begin{verbatim}trilinos-regression@software.sandia.gov\end{verbatim}
 
 All regression test output that is not specific to a package. 
 
-\triangleright Trilinos-Users 
+\bullet Trilinos-Users 
 \begin{verbatim}trilinos-users@software.sandia.gov\end{verbatim}
 
 List for Trilinos Users.  General discussions about the use of Trilinos.
@@ -347,9 +407,9 @@ tools are accessible from the main Trilinos website~\cite{Trilinos-home-page}.
 **Consider an example showing how tools can work together to fix bugs.**
 **(Break this down and talk about how to use the various tools)**
 
-	\chapter{Tools Available to Trilinos Packages}
+	\section{Tools Available to Trilinos Packages}
 	**(Maybe break up by category and then by tool - reword title, this section for software that doesn't need to be duplicated)**
-	\section{Portable Interface to BLAS and LAPACK}
+	\subsection{Portable Interface to BLAS and LAPACK}
 	**(See Overview Doc pg 12)**
 
 Portable interface to BLAS and LAPACK: The Basic Linear Algebra
@@ -366,16 +426,16 @@ other packages.
 **(Expand on this)**
 
 
-	\chapter{Integrating a Package into Trilinos}
+	\section{Integrating a Package into Trilinos}
 	**(list formal? process, meet above requirements Overview Doc pg 11,14-15)**
 
 
 
 
-	\chapter{Getting Started}
+	\section{Getting Started}
 	**(How to configure and build Trilinos)**
 	**(Need intro! - also include examples!)**
-\section Trilinos Configuration Options
+\subsection Trilinos Configuration Options
 
 The following options apply to all Trilinos packages unless 
 the option doesn't make sense for a particular package (for example, a 
@@ -386,7 +446,7 @@ are not included.  For options specific to individual package, 'cd' to the
 home directory of the source code of the individual package and type 
 ``configure --help'' (without quotes).
 
-\triangleright Basic Options
+\bullet Basic Options
 
 \bullet --enable-debug 
 
@@ -414,7 +474,7 @@ Specify additional linker flags (e.g., "-Ldir")
 \bullet --with-ar 
 Specify a special archiver command, the default is "ar cru". 
 
-\triangleright Influential Environmental Variables
+\bullet Influential Environmental Variables
 
 \bullet CC 
 
@@ -452,7 +512,7 @@ Fortran 77 compiler command.
 
 Fortran 77 compiler flags.
 
-\triangleright MPI-Related Options
+\bullet MPI-Related Options
 
 \bullet --enable-mpi 
 
@@ -493,14 +553,14 @@ is specified. If multiple directories must be specified, try
 Enable make rules and dependencies not useful (and sometimes confusing) to 
 the casual installer.
 
-\triangleright Other important notes about the configure/build process.
+\bullet Other important notes about the configure/build process.
 
-\circ Any code that links to Trilinos should define 'HAVE_CONFIG_H' (without
+\bullet Any code that links to Trilinos should define 'HAVE_CONFIG_H' (without
 quotes).
 
-	\chapter{Interoperability Status for Existing Trilinos Packages}
+	\section{Interoperability Status for Existing Trilinos Packages}
 
-	\chapter{Platform Portablility}
+	\section{Platform Portablility}
 	**(List platforms - encourage script submission)**
     % ---------------------------------------------------------------------- %
     % References
