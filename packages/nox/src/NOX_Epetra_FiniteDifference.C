@@ -54,11 +54,12 @@ FiniteDifference::~FiniteDifference()
   delete jacobian;
   delete graph;
 }
-/* NOTE FROM ROGER: The next five functions are used by the new
- * Trilinos Epetra_Operator class.  They are not defined in Trilinos 2.0
- * and must be ifdefed out for the old library
- */ 
-#ifdef TRILINOS_OPERATOR
+
+char* FiniteDifference::Label () const
+{
+  return jacobian->Label();
+}
+
 int FiniteDifference::SetUseTranspose(bool UseTranspose) 
 {
   return jacobian->SetUseTranspose(UseTranspose);
@@ -84,11 +85,6 @@ bool FiniteDifference::HasNormInf() const
   return jacobian->HasNormInf();
 }
 
-#endif // of TRILINOS_OPERATOR
-
-/* NOTE FROM TAMMY: The next two functions are not supported by
-   slightly older versions of trilinos either. */
-#ifdef TRILINOS_OPERATOR
 const Epetra_BlockMap& FiniteDifference::DomainMap() const
 {
   return jacobian->DomainMap();
@@ -98,7 +94,6 @@ const Epetra_BlockMap& FiniteDifference::RangeMap() const
 {
   return jacobian->RangeMap();
 }
-#endif
 
 bool FiniteDifference::Filled() const
 {

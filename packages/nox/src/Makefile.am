@@ -116,7 +116,6 @@ EPETRA_H = \
 	$(srcdir)/NOX_Epetra_Vector.H \
 	$(srcdir)/NOX_Epetra_Group.H \
 	$(srcdir)/NOX_Epetra_SharedJacobian.H \
-        $(srcdir)/NOX_Epetra_LinearOperator.H \
         $(srcdir)/NOX_Epetra_MatrixFree.H \
         $(srcdir)/NOX_Epetra_FiniteDifference.H \
 	$(srcdir)/NOX_Epetra_Interface.H 
@@ -125,7 +124,6 @@ EPETRA = \
 	$(srcdir)/NOX_Epetra_Vector.C \
 	$(srcdir)/NOX_Epetra_Group.C \
 	$(srcdir)/NOX_Epetra_SharedJacobian.C \
-	$(srcdir)/NOX_Epetra_LinearOperator.C \
         $(srcdir)/NOX_Epetra_MatrixFree.C \
         $(srcdir)/NOX_Epetra_FiniteDifference.C
 

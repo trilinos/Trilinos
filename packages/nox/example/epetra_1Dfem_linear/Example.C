@@ -122,11 +122,8 @@ int main(int argc, char *argv[])
   // 3. Finite Difference
   //NOX::Epetra::FiniteDifference A(interface, soln);
 
-  // Create the linear operator
-  NOX::Epetra::LinearOperator linearOperator(lsParams, interface, A);
-
   // Create the Group
-  NOX::Epetra::Group grp(soln, linearOperator); 
+  NOX::Epetra::Group grp(lsParams, interface, soln, A); 
   grp.computeRHS();
 
   // Create the convergence tests

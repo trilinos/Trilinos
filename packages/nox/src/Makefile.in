@@ -203,7 +203,6 @@ EPETRA_H = \
 	$(srcdir)/NOX_Epetra_Vector.H \
 	$(srcdir)/NOX_Epetra_Group.H \
 	$(srcdir)/NOX_Epetra_SharedJacobian.H \
-        $(srcdir)/NOX_Epetra_LinearOperator.H \
         $(srcdir)/NOX_Epetra_MatrixFree.H \
         $(srcdir)/NOX_Epetra_FiniteDifference.H \
 	$(srcdir)/NOX_Epetra_Interface.H 
@@ -213,7 +212,6 @@ EPETRA = \
 	$(srcdir)/NOX_Epetra_Vector.C \
 	$(srcdir)/NOX_Epetra_Group.C \
 	$(srcdir)/NOX_Epetra_SharedJacobian.C \
-	$(srcdir)/NOX_Epetra_LinearOperator.C \
         $(srcdir)/NOX_Epetra_MatrixFree.C \
         $(srcdir)/NOX_Epetra_FiniteDifference.C
 
@@ -333,7 +331,6 @@ libnoxepetra_a_DEPENDENCIES =
 @BUILD_NOXEPETRA_TRUE@	libnoxepetra_a-NOX_Epetra_Vector.$(OBJEXT) \
 @BUILD_NOXEPETRA_TRUE@	libnoxepetra_a-NOX_Epetra_Group.$(OBJEXT) \
 @BUILD_NOXEPETRA_TRUE@	libnoxepetra_a-NOX_Epetra_SharedJacobian.$(OBJEXT) \
-@BUILD_NOXEPETRA_TRUE@	libnoxepetra_a-NOX_Epetra_LinearOperator.$(OBJEXT) \
 @BUILD_NOXEPETRA_TRUE@	libnoxepetra_a-NOX_Epetra_MatrixFree.$(OBJEXT) \
 @BUILD_NOXEPETRA_TRUE@	libnoxepetra_a-NOX_Epetra_FiniteDifference.$(OBJEXT)
 @BUILD_NOXEPETRA_FALSE@am_libnoxepetra_a_OBJECTS =
@@ -368,7 +365,6 @@ depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 @AMDEP_TRUE@	$(DEPDIR)/NOX_Status_Test.Po $(DEPDIR)/NOX_Utils.Po \
 @AMDEP_TRUE@	$(DEPDIR)/libnoxepetra_a-NOX_Epetra_FiniteDifference.Po \
 @AMDEP_TRUE@	$(DEPDIR)/libnoxepetra_a-NOX_Epetra_Group.Po \
-@AMDEP_TRUE@	$(DEPDIR)/libnoxepetra_a-NOX_Epetra_LinearOperator.Po \
 @AMDEP_TRUE@	$(DEPDIR)/libnoxepetra_a-NOX_Epetra_MatrixFree.Po \
 @AMDEP_TRUE@	$(DEPDIR)/libnoxepetra_a-NOX_Epetra_SharedJacobian.Po \
 @AMDEP_TRUE@	$(DEPDIR)/libnoxepetra_a-NOX_Epetra_Vector.Po
@@ -484,8 +480,6 @@ libnoxepetra_a-NOX_Epetra_Vector.$(OBJEXT): \
 libnoxepetra_a-NOX_Epetra_Group.$(OBJEXT): $(srcdir)/NOX_Epetra_Group.C
 libnoxepetra_a-NOX_Epetra_SharedJacobian.$(OBJEXT): \
 	$(srcdir)/NOX_Epetra_SharedJacobian.C
-libnoxepetra_a-NOX_Epetra_LinearOperator.$(OBJEXT): \
-	$(srcdir)/NOX_Epetra_LinearOperator.C
 libnoxepetra_a-NOX_Epetra_MatrixFree.$(OBJEXT): \
 	$(srcdir)/NOX_Epetra_MatrixFree.C
 libnoxepetra_a-NOX_Epetra_FiniteDifference.$(OBJEXT): \
@@ -525,7 +519,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/NOX_Utils.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/libnoxepetra_a-NOX_Epetra_FiniteDifference.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/libnoxepetra_a-NOX_Epetra_Group.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/libnoxepetra_a-NOX_Epetra_LinearOperator.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/libnoxepetra_a-NOX_Epetra_MatrixFree.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/libnoxepetra_a-NOX_Epetra_SharedJacobian.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/libnoxepetra_a-NOX_Epetra_Vector.Po@am__quote@
@@ -844,18 +837,6 @@ libnoxepetra_a-NOX_Epetra_SharedJacobian.obj: $(srcdir)/NOX_Epetra_SharedJacobia
 @AMDEP_TRUE@	depfile='$(DEPDIR)/libnoxepetra_a-NOX_Epetra_SharedJacobian.Po' tmpdepfile='$(DEPDIR)/libnoxepetra_a-NOX_Epetra_SharedJacobian.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnoxepetra_a_CXXFLAGS) $(CXXFLAGS) -c -o libnoxepetra_a-NOX_Epetra_SharedJacobian.obj `cygpath -w $(srcdir)/NOX_Epetra_SharedJacobian.C`
-
-libnoxepetra_a-NOX_Epetra_LinearOperator.o: $(srcdir)/NOX_Epetra_LinearOperator.C
-@AMDEP_TRUE@	source='$(srcdir)/NOX_Epetra_LinearOperator.C' object='libnoxepetra_a-NOX_Epetra_LinearOperator.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/libnoxepetra_a-NOX_Epetra_LinearOperator.Po' tmpdepfile='$(DEPDIR)/libnoxepetra_a-NOX_Epetra_LinearOperator.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnoxepetra_a_CXXFLAGS) $(CXXFLAGS) -c -o libnoxepetra_a-NOX_Epetra_LinearOperator.o `test -f $(srcdir)/NOX_Epetra_LinearOperator.C || echo '$(srcdir)/'`$(srcdir)/NOX_Epetra_LinearOperator.C
-
-libnoxepetra_a-NOX_Epetra_LinearOperator.obj: $(srcdir)/NOX_Epetra_LinearOperator.C
-@AMDEP_TRUE@	source='$(srcdir)/NOX_Epetra_LinearOperator.C' object='libnoxepetra_a-NOX_Epetra_LinearOperator.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/libnoxepetra_a-NOX_Epetra_LinearOperator.Po' tmpdepfile='$(DEPDIR)/libnoxepetra_a-NOX_Epetra_LinearOperator.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnoxepetra_a_CXXFLAGS) $(CXXFLAGS) -c -o libnoxepetra_a-NOX_Epetra_LinearOperator.obj `cygpath -w $(srcdir)/NOX_Epetra_LinearOperator.C`
 
 libnoxepetra_a-NOX_Epetra_MatrixFree.o: $(srcdir)/NOX_Epetra_MatrixFree.C
 @AMDEP_TRUE@	source='$(srcdir)/NOX_Epetra_MatrixFree.C' object='libnoxepetra_a-NOX_Epetra_MatrixFree.o' libtool=no @AMDEPBACKSLASH@

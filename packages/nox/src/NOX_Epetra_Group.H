@@ -35,6 +35,7 @@
 
 #include "NOX_Abstract_Group.H"	// base class
 #include "NOX_Epetra_Vector.H"	// class data element
+#include "NOX_Common.H" // class data element (string)
 
 // Forward declares
 namespace NOX {
@@ -47,6 +48,9 @@ namespace Parameter {
 class List;
 }
 }
+class Epetra_Vector;
+class Epetra_RowMatrix;
+class AztecOO;
 
 namespace NOX {
 namespace Epetra {
@@ -55,9 +59,17 @@ namespace Epetra {
 class Group : public Abstract::Group {
 
 public:
+  //! Constructor with Jacobian Matrix only.  
+  /*! Either there is no preconditioning or the Jacobian will be used
+   * for preconditioning.  An Epetra_Operator must be supplied for 
+   * the Jacobian even if in Matrix-Free mode. */
+  Group(const Parameter::List& params, Interface& i, 
+ 	Epetra_Vector& x, Epetra_RowMatrix& J);
 
-  //! Constructor.
-  Group(Epetra_Vector& x, LinearOperator& lo);
+  //! Constructor with  Jacobian (J) and Preconditioner (M)
+  Group(const Parameter::List& params, Interface& i, 
+ 	Epetra_Vector& x, Epetra_RowMatrix& J, Epetra_RowMatrix& M);
+
 
   /*! \brief Copy constructor. If type is DeepCopy, takes ownership of
     valid shared Jacobian. */
@@ -147,12 +159,23 @@ public:
 
   virtual Abstract::Group* clone(CopyType type = DeepCopy) const;
 
-  friend class LinearOperator;
+  //! Return the SharedJacobian created by LinearOperator.
+  SharedJacobian& getSharedJacobian();
+
+  //! Return the userInterface owned by LinearOperator.
+  Interface& getUserInterface();
 
 protected:
 
   //! resets the isValid flags to false
   virtual void resetIsValid();
+
+  //! Set any required Aztec options.  Not all options are present, will be filled in as needed.
+  void setAztecOptions(const Parameter::List& params, AztecOO& aztec);
+
+  //! Returns the type of Jacobian matrix that is passed into the 
+  //! LinearOperator constructors.
+  string getJacobianType();
 
 protected:
 
@@ -185,11 +208,52 @@ protected:
   //! Norm of RHS
   double normRHS;
 
-  //! Reference to the LinearOperator
-  LinearOperator& linearOperator;
+  //! Pointer to shared Jacobian matrix 
+  SharedJacobian* sharedJacobianPtr;
 
   //! Reference to shared Jacobian matrix 
   SharedJacobian& sharedJacobian;
+
+  //! Reference to the user supplied interface functions
+  Interface& userInterface;
+
+  //! Determines the Jacobian matrix implementation 
+  /*!
+    <li> Key: "Jacobian Matrix Type"
+    <li> Options:
+    <ul> 
+    <li> "User Supplied" - user supplied
+    <li> "NOX" - created by NOX using Finite Differencing
+    <li> "Matrix-Free"  - approximated in NOX using directional derivative
+    </ul>
+  */ 
+  string jacType;
+  
+  //! Determines the preconditioning matrix implementation 
+  /*! 
+   <li> Key: "Preconditioning Matrix Type"
+   <li> Options:
+   <ul>
+   <li> "None" - no precondtioning matrix is explicitly defined
+   <li> "Use Jacobian" - linear solver library computes preconditioner based on the Jacobian
+   <li> "User Supplied Matrix" - linear solver library computes preconditionerbased on supplied matrix
+   <li> "User Supplied Action on Vector" - user computes preconditioner and applies it to vector 
+   </ul>
+  */ 
+  string precType;
+  
+  //! Choice of Aztec preconditioner
+  /*! 
+    <li> Key: "Preconditioner"
+    <li> Options:
+    <ul>
+    <li> "None"
+    <li> "ilut"
+    <li> "Polynomial"
+    <li> "User" 
+    </ul>
+  */ 
+  string preconditioner;
 
 };
 
