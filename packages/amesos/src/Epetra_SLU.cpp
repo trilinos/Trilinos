@@ -87,17 +87,30 @@ Epetra_SLU::Epetra_SLU( Epetra_LinearProblem * Problem,
   int n = A_->NumGlobalCols();
 
   /* Create matrix A in the format expected by SuperLU. */
+#ifndef ppc
   dCreate_CompCol_Matrix( &(data_->A), m, n, TotNumNZ_, RowValues_,
 	RowIndices_, ColPointers_, NC, _D, GE );
+#else
+  dCreate_CompCol_Matrix( &(data_->A), m, n, TotNumNZ_, RowValues_,
+	RowIndices_, ColPointers_, NC, SLU_D, GE );
+#endif
   
   /* Create right-hand side matrix B. */
   double * rhs_x;
   double * rhs_b;
   int LDA_x, LDA_b;
   X_->ExtractView( &rhs_x, &LDA_x );
+#ifndef ppc
   dCreate_Dense_Matrix( &(data_->X), m, 1, rhs_x, m, DN, _D, GE);
+#else
+  dCreate_Dense_Matrix( &(data_->X), m, 1, rhs_x, m, DN, SLU_D, GE);
+#endif
   B_->ExtractView( &rhs_b, &LDA_b );
+#ifndef ppc
   dCreate_Dense_Matrix( &(data_->B), m, 1, rhs_b, m, DN, _D, GE);
+#else
+  dCreate_Dense_Matrix( &(data_->B), m, 1, rhs_b, m, DN, SLU_D, GE);
+#endif
   
   perm_r_ = new int[m];
   perm_c_ = new int[n];
