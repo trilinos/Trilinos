@@ -1,8 +1,8 @@
 # @HEADER
 #  ************************************************************************
 #  
-#           Kokkos: A Fast Kernel Package
-#               Copyright (2003) Sandia Corporation
+#                Kokkos: Fast Core Kernels Package
+#               Copyright (2004) Sandia Corporation
 #  
 #  Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 #  license for use of this work by or on behalf of the U.S. Government.
@@ -34,20 +34,27 @@
 # ------------------------------------------------------------------------
 
 CORE_H = \
-	$(srcdir)/Newp_Hello.h 
+	$(srcdir)/Kokkos_BaseSparseMultiply.hpp \
+     $(srcdir)/Kokkos_BaseSparseSolve.hpp \
+	$(srcdir)/Kokkos_CisMatrix.hpp \
+	$(srcdir)/Kokkos_DenseMultiVector.hpp \
+	$(srcdir)/Kokkos_DenseVector.hpp \
+	$(srcdir)/Kokkos_HbMatrix.hpp \
+	$(srcdir)/Kokkos_MultiVector.hpp \
+	$(srcdir)/Kokkos_PackedSparseMultiply.hpp \
+	$(srcdir)/Kokkos_SparseOperation.hpp \
+	$(srcdir)/Kokkos_Vector.hpp
 
-CORE = \
-	$(srcdir)/Newp_Hello.cpp
+CORE = 
 
-UTIL_H = 
+UTIL_H = \
+	$(srcdir)/Kokkos_Flops.hpp \
+	$(srcdir)/Kokkos_Time.hpp
 
-UTIL = 
+UTIL = \
+	$(srcdir)/Kokkos_Version.cpp
 
 ENUM_H = 
-
-UNIPROC_H = 
-
-UNIPROC = 
 
 SERIAL_H = 
 
@@ -76,32 +83,6 @@ MPI_H =
 MPI =
 
 endif
-#np# This section should come out, or be modified to reflect options in the 
-#np# package being autotool'ed
-EXTRA_NEWP_SWAHILI_H = \
-	$(srcdir)/Newp_Jambo.h 
-
-EXTRA_NEWP_SWAHILI = \
-	$(srcdir)/Newp_Jambo.cpp
-
-if HAVE_NEWP_SWAHILI
-
-NEWP_SWAHILI_H = \
-	$(EXTRA_NEWP_SWAHILI_H)
-NEWP_SWAHILI = \
-	$(EXTRA_NEWP_SWAHILI)
-
-else
-
-NEWP_SWAHILI_H =
-NEWP_SWAHILI =
-
-endif
-
-
-
-USERBASE_H = 
-
 
 LANG_WRAPS_H = 
 
@@ -111,57 +92,40 @@ DIST_H =
 
 DIST = 
 
-COMP_H =
+COMP_H = \
+	$(srcdir)/Kokkos_CompObject.hpp
 
 COMP = 
 
 
-#np# List locations of include files within Trilinos but outside of this 
-#np# package
-#np# - Add packages that this package is dependent on
-#np#   Remove epetra if this package does not need it
-#  
-AM_CPPFLAGS = -I$(top_srcdir)/../epetra/src -I$(top_builddir)/../epetra/src
+AM_CPPFLAGS =
 
-#np# The following section can be duplicated for building multiple libraries -
-#np# make sure to list the correct categories with each library.
-#np# replace new_package with the name of the package being autotool'ed here
 # ------------------------------------------------------------------------
-# New_Package library specifications
+# Kokkos library specifications
 # ------------------------------------------------------------------------
-#np# replace new_package with the name of the package being autotool'ed here
-NEW_PACKAGE_LIB = libnew_package.a
 
-#np# replace new_package with the name of the package being autotool'ed here
-NEW_PACKAGE_H = \
+KOKKOS_LIB = libkokkos.a
+
+KOKKOS_H = \
 	$(CORE_H) \
 	$(UTIL_H) \
 	$(ENUM_H) \
-	$(UNIPROC_H) \
 	$(SERIAL_H) \
-	$(USERBASE_H) \
 	$(DIST_H) \
 	$(COMP_H) \
-	$(MPI_H) \
-	$(NEWP_SWAHILI_H)
+	$(MPI_H)
 
-#np# replace new_package with the name of the package being autotool'ed here
-libnew_package_a_SOURCES = \
+libkokkos_a_SOURCES = \
 	$(CORE) \
 	$(UTIL) \
-	$(UNIPROC) \
 	$(SERIAL) \
 	$(DIST) \
 	$(COMP) \
-	$(MPI) \
-	$(NEWP_SWAHILI)
+	$(MPI)
 
-#np# replace new_package with the name of the package being autotool'ed here
-EXTRA_libnew_package_a_SOURCES = \
+EXTRA_libkokkos_a_SOURCES = \
 	$(EXTRA_MPI) \
-	$(EXTRA_MPI_H) \
-	$(EXTRA_NEWP_SWAHILI) \
-	$(EXTRA_NEWP_SWAHILI_H)
+	$(EXTRA_MPI_H)
 
 #We need the following to support separate build directories
 #AM_CPPFLAGS=-I$(builddir)/src
@@ -176,11 +140,11 @@ EXTRA_libnew_package_a_SOURCES = \
 if USE_ALTERNATE_AR
 
 #np# replace new_package with the name of the package being autotool'ed here
-libnew_package_a_AR = $(ALTERNATE_AR)
+libkokkos_a_AR = $(ALTERNATE_AR)
 else
 
 #np# replace new_package with the name of the package being autotool'ed here
-libnew_package_a_AR = $(AR) cru
+libkokkos_a_AR = $(AR) cru
 
 endif
 
@@ -190,21 +154,21 @@ endif
 # ------------------------------------------------------------------------
 
 #np# replace new_package with the name of the package being autotool'ed here
-libnew_package_a_LIBADD = $(XTRALDADD)
+libkokkos_a_LIBADD = $(XTRALDADD)
 
 # ------------------------------------------------------------------------
 # List of all libraries to install in $(libexecdir)
 # ------------------------------------------------------------------------
 
 #np# replace new_package with the name of the package being autotool'ed here
-lib_LIBRARIES = $(NEW_PACKAGE_LIB)
+lib_LIBRARIES = $(KOKKOS_LIB)
 
 # ------------------------------------------------------------------------
 # List of all headers to install in $(includedir)
 # ------------------------------------------------------------------------
 
 #np# replace new_package with the name of the package being autotool'ed here
-include_HEADERS = $(NEW_PACKAGE_H) 
+include_HEADERS = $(KOKKOS_H) 
 
 # ------------------------------------------------------------------------
 # Special stuff to install in our special $(execincludedir)
