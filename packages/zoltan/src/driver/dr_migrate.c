@@ -748,6 +748,11 @@ void migrate_unpack_elem(void *data, LB_GID elem_gid, int elem_data_size,
 
   /* copy coordinate data */
   if (num_nodes > 0) {
+
+    /* Pad the buffer so the following casts will work.  */
+    size += pad_for_alignment(size);
+    buf_float = (float *) (buf + size);
+
     current_elem->coord = (float **) malloc(num_nodes * sizeof(float *));
     if (current_elem->coord == NULL) {
       Gen_Error(0, "fatal: insufficient memory");
