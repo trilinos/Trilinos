@@ -868,17 +868,16 @@ fi
   AM_CONDITIONAL(BUILD_LOCA_PETSC_TESTS, test X${ADDON_loca_petsc_TESTS} = Xyes)
 
 # ------------------------------------------------------------------------
-# LOCA-Epetra-Anasazi support
+# LOCA-Anasazi support
 # ------------------------------------------------------------------------
 
 AC_ARG_WITH(loca-anasazi,
-dnl [AC_HELP_STRING([--with-loca-anasazi],[compile anasazi support into liblocaepetra])],
-[],
+[AC_HELP_STRING([--with-loca-anasazi],[compile anasazi support into libloca])],
 [BUILD_LOCA_ANASAZI_SUPPORT=${withval}],
 [BUILD_LOCA_ANASAZI_SUPPORT=no]
 )
-#AC_MSG_CHECKING(whether we should build anasazi support into locaepetra library)
-#AC_MSG_RESULT([${BUILD_LOCA_ANASAZI_SUPPORT}])
+AC_MSG_CHECKING(whether we should build anasazi support into loca library)
+AC_MSG_RESULT([${BUILD_LOCA_ANASAZI_SUPPORT}])
 
 # ------------------------------------------------------------------------
 # Check for MPI library
@@ -1003,24 +1002,14 @@ AC_ARG_WITH(teuchos-libdir,
 [teuchos_LIBDIR=$withval])
 
 AC_ARG_WITH(anasazi-incdir,
-dnl [AC_HELP_STRING([--with-anasazi-incdir],[specify location of all anasazi header files])],
+[AC_HELP_STRING([--with-anasazi-incdir],[specify location of all anasazi header files])],
 [],
 [anasazi_INCDIR=$withval])
 
 AC_ARG_WITH(anasazi-libdir,
-dnl [AC_HELP_STRING([--with-anasazi-libdir],[specify location of anasazi library])],
+[AC_HELP_STRING([--with-anasazi-libdir],[specify location of anasazi library])],
 [],
 [anasazi_LIBDIR=$withval])
-
-AC_ARG_WITH(anasaziutils-incdir,
-dnl [AC_HELP_STRING([--with-anasaziutils-incdir],[specify location of all anasaziutils header files])],
-[],
-[anasaziutils_INCDIR=$withval])
-
-AC_ARG_WITH(anasaziutils-libdir,
-dnl [AC_HELP_STRING([--with-anasaziutils-libdir],[specify location of anasaziutils library])],
-[],
-[anasaziutils_LIBDIR=$withval])
 
 # Relative path to Trilinos include files, to be used in Makefiles
 REL_TRILINOS_CPPFLAGS=
@@ -1051,9 +1040,6 @@ AC_DEFUN(TRILINOS_HEADER,
 #undef PACKAGE_TARNAME
 #undef PACKAGE_VERSION
 #undef VERSION
-#ifndef HAVE_CONFIG_H
-#define HAVE_CONFIG_H
-#endif
 #include "$2"
   ]])],[done=yes],[])
   CPPFLAGS=$save_CPPFLAGS
@@ -1070,9 +1056,6 @@ AC_DEFUN(TRILINOS_HEADER,
 #undef PACKAGE_TARNAME
 #undef PACKAGE_VERSION
 #undef VERSION
-#ifndef HAVE_CONFIG_H
-#define HAVE_CONFIG_H
-#endif
 #include "$2"
   ]])],[ done=yes
       REL_TRILINOS_CPPFLAGS="-I${$1_INCDIR} ${REL_TRILINOS_CPPFLAGS}"
@@ -1093,9 +1076,6 @@ AC_DEFUN(TRILINOS_HEADER,
 #undef PACKAGE_TARNAME
 #undef PACKAGE_VERSION
 #undef VERSION
-#ifndef HAVE_CONFIG_H
-#define HAVE_CONFIG_H
-#endif
 #include "$2"
   ]])],[ done=yes
       REL_TRILINOS_CPPFLAGS="-I\$(top_builddir)/../$1/$3 ${REL_TRILINOS_CPPFLAGS}"
@@ -1116,9 +1096,6 @@ AC_DEFUN(TRILINOS_HEADER,
 #undef PACKAGE_TARNAME
 #undef PACKAGE_VERSION
 #undef VERSION
-#ifndef HAVE_CONFIG_H
-#define HAVE_CONFIG_H
-#endif
 #include "$2"
   ]])],[ done=yes
       REL_TRILINOS_CPPFLAGS="-I\$(top_srcdir)/../$1/$3 ${REL_TRILINOS_CPPFLAGS}"
@@ -1148,12 +1125,6 @@ if test X${ADDON_epetra} = Xyes; then
   TRILINOS_HEADER(ifpack,Ifpack_config.h,src)
   TRILINOS_HEADER(ifpack,Ifpack_ScalingType.h,src)
 
-  if test X${BUILD_LOCA_ANASAZI_SUPPORT} = Xyes; then
-    TRILINOS_HEADER(anasazi,Anasazi_config.h,src)
-    TRILINOS_HEADER(anasazi,AnasaziCommon.hpp,src)
-    TRILINOS_HEADER(anasazi,AnasaziBLAS.hpp,utils)
-  fi
-
   if test X${BUILD_NOX_EPETRAEXT_SUPPORT} = Xyes; then
     TRILINOS_HEADER(epetraext,EpetraExt_config.h,src)
     TRILINOS_HEADER(epetraext,EpetraExt_ConfigDefs.h,src)
@@ -1170,9 +1141,15 @@ if test X${ADDON_epetra} = Xyes; then
 
 fi
 
+if test X${BUILD_LOCA_ANASAZI_SUPPORT} = Xyes; then
+  TRILINOS_HEADER(anasazi,Anasazi_config.h,src)
+  TRILINOS_HEADER(anasazi,AnasaziReturnType.hpp,src)
+  TRILINOS_CXXFLAGS="${REL_TRILINOS_CPPFLAGS}"	
+fi
+
 if test X${REQUIRE_TEUCHOS} = Xyes; then
   TRILINOS_HEADER(teuchos,Teuchos_config.h,src)
-  TRILINOS_HEADER(teuchos,Teuchos_SerialDenseMatrix.hpp,src)
+  TRILINOS_HEADER(teuchos,Teuchos_Flops.hpp,src)
   TRILINOS_CXXFLAGS="${REL_TRILINOS_CPPFLAGS}"
 fi
 
@@ -1245,17 +1222,16 @@ if test X${ADDON_epetra_EXAMPLES} = Xyes ||
   TRILINOS_LIB_CHECK(ifpack,ifpack,src)
   TRILINOS_LIB_CHECK(aztecoo,aztecoo,src)
 
-  if test X${BUILD_LOCA_ANASAZI_SUPPORT} = Xyes; then
-    TRILINOS_LIB_CHECK(anasazi,anasazi,src)
-    TRILINOS_LIB_CHECK(anasaziutils,anasazi,utils)
-    AC_DEFINE(HAVE_LOCA_ANASAZI,1,[define that anasazi is activated in loca])
-  fi
-
   if test X${BUILD_NOX_EPETRAEXT_SUPPORT} = Xyes; then
     TRILINOS_LIB_CHECK(epetraext,epetraext,src)
     AC_DEFINE(HAVE_NOX_EPETRAEXT,1,[define that epetraext is activated in nox])
   fi
 
+fi
+
+if test X${BUILD_LOCA_ANASAZI_SUPPORT} = Xyes; then
+  TRILINOS_LIB_CHECK(anasazi,anasazi,src)
+  AC_DEFINE(HAVE_LOCA_ANASAZI,1,[define that anasazi is activated in loca])
 fi
 
 if test X${REQUIRE_TEUCHOS} = Xyes; then

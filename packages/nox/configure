@@ -915,7 +915,7 @@ Optional Packages:
   --with-mpi-libs="LIBS"  MPI libraries ["-lmpi"]
   --with-mpi-incdir=DIR   MPI include directory [MPIROOT/include]
   --with-mpi-libdir=DIR   MPI library directory [MPIROOT/lib]
-
+  --with-loca-anasazi     compile anasazi support into libloca
   --with-blas=<lib>       use BLAS library <lib>
   --with-lapack=<lib>     use LAPACK library <lib>
   --with-trilinos         building inside Trilinos directory structure
@@ -930,6 +930,8 @@ Optional Packages:
   --with-ifpack-libdir    specify location of ifpack library
   --with-teuchos-incdir   specify location of all teuchos header files
   --with-teuchos-libdir   specify location of teuchos library
+  --with-anasazi-incdir   specify location of all anasazi header files
+  --with-anasazi-libdir   specify location of anasazi library
   --with-petsc-incdir     specify location of PETSc header files
   --with-petsc-libdir     specify location of petsc library
 
@@ -1038,7 +1040,7 @@ esac
     else
       echo "$as_me: WARNING: no configuration information is in $ac_dir" >&2
     fi
-    cd "$ac_popdir"
+    cd $ac_popdir
   done
 fi
 
@@ -2733,7 +2735,8 @@ if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
   cat conftest.err >&5
   echo "$as_me:$LINENO: \$? = $ac_status" >&5
   (exit $ac_status); } &&
-	 { ac_try='test -z "$ac_c_werror_flag"			 || test ! -s conftest.err'
+	 { ac_try='test -z "$ac_c_werror_flag"
+			 || test ! -s conftest.err'
   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
   (eval $ac_try) 2>&5
   ac_status=$?
@@ -2791,7 +2794,8 @@ if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
   cat conftest.err >&5
   echo "$as_me:$LINENO: \$? = $ac_status" >&5
   (exit $ac_status); } &&
-	 { ac_try='test -z "$ac_c_werror_flag"			 || test ! -s conftest.err'
+	 { ac_try='test -z "$ac_c_werror_flag"
+			 || test ! -s conftest.err'
   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
   (eval $ac_try) 2>&5
   ac_status=$?
@@ -2907,7 +2911,8 @@ if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
   cat conftest.err >&5
   echo "$as_me:$LINENO: \$? = $ac_status" >&5
   (exit $ac_status); } &&
-	 { ac_try='test -z "$ac_c_werror_flag"			 || test ! -s conftest.err'
+	 { ac_try='test -z "$ac_c_werror_flag"
+			 || test ! -s conftest.err'
   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
   (eval $ac_try) 2>&5
   ac_status=$?
@@ -2961,7 +2966,8 @@ if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
   cat conftest.err >&5
   echo "$as_me:$LINENO: \$? = $ac_status" >&5
   (exit $ac_status); } &&
-	 { ac_try='test -z "$ac_c_werror_flag"			 || test ! -s conftest.err'
+	 { ac_try='test -z "$ac_c_werror_flag"
+			 || test ! -s conftest.err'
   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
   (eval $ac_try) 2>&5
   ac_status=$?
@@ -3006,7 +3012,8 @@ if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
   cat conftest.err >&5
   echo "$as_me:$LINENO: \$? = $ac_status" >&5
   (exit $ac_status); } &&
-	 { ac_try='test -z "$ac_c_werror_flag"			 || test ! -s conftest.err'
+	 { ac_try='test -z "$ac_c_werror_flag"
+			 || test ! -s conftest.err'
   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
   (eval $ac_try) 2>&5
   ac_status=$?
@@ -3050,7 +3057,8 @@ if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
   cat conftest.err >&5
   echo "$as_me:$LINENO: \$? = $ac_status" >&5
   (exit $ac_status); } &&
-	 { ac_try='test -z "$ac_c_werror_flag"			 || test ! -s conftest.err'
+	 { ac_try='test -z "$ac_c_werror_flag"
+			 || test ! -s conftest.err'
   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
   (eval $ac_try) 2>&5
   ac_status=$?
@@ -3401,7 +3409,8 @@ if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
   cat conftest.err >&5
   echo "$as_me:$LINENO: \$? = $ac_status" >&5
   (exit $ac_status); } &&
-	 { ac_try='test -z "$ac_cxx_werror_flag"			 || test ! -s conftest.err'
+	 { ac_try='test -z "$ac_cxx_werror_flag"
+			 || test ! -s conftest.err'
   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
   (eval $ac_try) 2>&5
   ac_status=$?
@@ -3459,7 +3468,8 @@ if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
   cat conftest.err >&5
   echo "$as_me:$LINENO: \$? = $ac_status" >&5
   (exit $ac_status); } &&
-	 { ac_try='test -z "$ac_cxx_werror_flag"			 || test ! -s conftest.err'
+	 { ac_try='test -z "$ac_cxx_werror_flag"
+			 || test ! -s conftest.err'
   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
   (eval $ac_try) 2>&5
   ac_status=$?
@@ -3530,7 +3540,8 @@ if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
   cat conftest.err >&5
   echo "$as_me:$LINENO: \$? = $ac_status" >&5
   (exit $ac_status); } &&
-	 { ac_try='test -z "$ac_cxx_werror_flag"			 || test ! -s conftest.err'
+	 { ac_try='test -z "$ac_cxx_werror_flag"
+			 || test ! -s conftest.err'
   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
   (eval $ac_try) 2>&5
   ac_status=$?
@@ -3574,7 +3585,8 @@ if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
   cat conftest.err >&5
   echo "$as_me:$LINENO: \$? = $ac_status" >&5
   (exit $ac_status); } &&
-	 { ac_try='test -z "$ac_cxx_werror_flag"			 || test ! -s conftest.err'
+	 { ac_try='test -z "$ac_cxx_werror_flag"
+			 || test ! -s conftest.err'
   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
   (eval $ac_try) 2>&5
   ac_status=$?
@@ -4031,7 +4043,7 @@ fi
 
 
 # Provide some information about the compiler.
-echo "$as_me:4034:" \
+echo "$as_me:4046:" \
      "checking for Fortran 77 compiler version" >&5
 ac_compiler=`set X $ac_compile; echo $2`
 { (eval echo "$as_me:$LINENO: \"$ac_compiler --version </dev/null >&5\"") >&5
@@ -4077,7 +4089,8 @@ if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
   cat conftest.err >&5
   echo "$as_me:$LINENO: \$? = $ac_status" >&5
   (exit $ac_status); } &&
-	 { ac_try='test -z "$ac_f77_werror_flag"			 || test ! -s conftest.err'
+	 { ac_try='test -z "$ac_f77_werror_flag"
+			 || test ! -s conftest.err'
   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
   (eval $ac_try) 2>&5
   ac_status=$?
@@ -4126,7 +4139,8 @@ if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
   cat conftest.err >&5
   echo "$as_me:$LINENO: \$? = $ac_status" >&5
   (exit $ac_status); } &&
-	 { ac_try='test -z "$ac_f77_werror_flag"			 || test ! -s conftest.err'
+	 { ac_try='test -z "$ac_f77_werror_flag"
+			 || test ! -s conftest.err'
   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
   (eval $ac_try) 2>&5
   ac_status=$?
@@ -4562,7 +4576,8 @@ if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
   cat conftest.err >&5
   echo "$as_me:$LINENO: \$? = $ac_status" >&5
   (exit $ac_status); } &&
-	 { ac_try='test -z "$ac_cxx_werror_flag"			 || test ! -s conftest.err'
+	 { ac_try='test -z "$ac_cxx_werror_flag"
+			 || test ! -s conftest.err'
   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
   (eval $ac_try) 2>&5
   ac_status=$?
@@ -4645,7 +4660,8 @@ if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
   cat conftest.err >&5
   echo "$as_me:$LINENO: \$? = $ac_status" >&5
   (exit $ac_status); } &&
-	 { ac_try='test -z "$ac_cxx_werror_flag"			 || test ! -s conftest.err'
+	 { ac_try='test -z "$ac_cxx_werror_flag"
+			 || test ! -s conftest.err'
   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
   (eval $ac_try) 2>&5
   ac_status=$?
@@ -4887,7 +4903,8 @@ if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
   cat conftest.err >&5
   echo "$as_me:$LINENO: \$? = $ac_status" >&5
   (exit $ac_status); } &&
-	 { ac_try='test -z "$ac_cxx_werror_flag"			 || test ! -s conftest.err'
+	 { ac_try='test -z "$ac_cxx_werror_flag"
+			 || test ! -s conftest.err'
   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
   (eval $ac_try) 2>&5
   ac_status=$?
@@ -5057,7 +5074,8 @@ if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
   cat conftest.err >&5
   echo "$as_me:$LINENO: \$? = $ac_status" >&5
   (exit $ac_status); } &&
-	 { ac_try='test -z "$ac_cxx_werror_flag"			 || test ! -s conftest.err'
+	 { ac_try='test -z "$ac_cxx_werror_flag"
+			 || test ! -s conftest.err'
   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
   (eval $ac_try) 2>&5
   ac_status=$?
@@ -5125,7 +5143,8 @@ if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
   cat conftest.err >&5
   echo "$as_me:$LINENO: \$? = $ac_status" >&5
   (exit $ac_status); } &&
-	 { ac_try='test -z "$ac_cxx_werror_flag"			 || test ! -s conftest.err'
+	 { ac_try='test -z "$ac_cxx_werror_flag"
+			 || test ! -s conftest.err'
   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
   (eval $ac_try) 2>&5
   ac_status=$?
@@ -5286,7 +5305,8 @@ if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
   cat conftest.err >&5
   echo "$as_me:$LINENO: \$? = $ac_status" >&5
   (exit $ac_status); } &&
-	 { ac_try='test -z "$ac_cxx_werror_flag"			 || test ! -s conftest.err'
+	 { ac_try='test -z "$ac_cxx_werror_flag"
+			 || test ! -s conftest.err'
   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
   (eval $ac_try) 2>&5
   ac_status=$?
@@ -5447,7 +5467,8 @@ if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
   cat conftest.err >&5
   echo "$as_me:$LINENO: \$? = $ac_status" >&5
   (exit $ac_status); } &&
-	 { ac_try='test -z "$ac_cxx_werror_flag"			 || test ! -s conftest.err'
+	 { ac_try='test -z "$ac_cxx_werror_flag"
+			 || test ! -s conftest.err'
   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
   (eval $ac_try) 2>&5
   ac_status=$?
@@ -5608,7 +5629,8 @@ if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
   cat conftest.err >&5
   echo "$as_me:$LINENO: \$? = $ac_status" >&5
   (exit $ac_status); } &&
-	 { ac_try='test -z "$ac_cxx_werror_flag"			 || test ! -s conftest.err'
+	 { ac_try='test -z "$ac_cxx_werror_flag"
+			 || test ! -s conftest.err'
   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
   (eval $ac_try) 2>&5
   ac_status=$?
@@ -5768,7 +5790,8 @@ if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
   cat conftest.err >&5
   echo "$as_me:$LINENO: \$? = $ac_status" >&5
   (exit $ac_status); } &&
-	 { ac_try='test -z "$ac_cxx_werror_flag"			 || test ! -s conftest.err'
+	 { ac_try='test -z "$ac_cxx_werror_flag"
+			 || test ! -s conftest.err'
   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
   (eval $ac_try) 2>&5
   ac_status=$?
@@ -6446,7 +6469,7 @@ fi
 
 
 # ------------------------------------------------------------------------
-# LOCA-Epetra-Anasazi support
+# LOCA-Anasazi support
 # ------------------------------------------------------------------------
 
 
@@ -6458,8 +6481,10 @@ else
   BUILD_LOCA_ANASAZI_SUPPORT=no
 
 fi;
-#AC_MSG_CHECKING(whether we should build anasazi support into locaepetra library)
-#AC_MSG_RESULT([${BUILD_LOCA_ANASAZI_SUPPORT}])
+echo "$as_me:$LINENO: checking whether we should build anasazi support into loca library" >&5
+echo $ECHO_N "checking whether we should build anasazi support into loca library... $ECHO_C" >&6
+echo "$as_me:$LINENO: result: ${BUILD_LOCA_ANASAZI_SUPPORT}" >&5
+echo "${ECHO_T}${BUILD_LOCA_ANASAZI_SUPPORT}" >&6
 
 # ------------------------------------------------------------------------
 # Check for MPI library
@@ -6515,7 +6540,8 @@ if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
   cat conftest.err >&5
   echo "$as_me:$LINENO: \$? = $ac_status" >&5
   (exit $ac_status); } &&
-	 { ac_try='test -z "$ac_cxx_werror_flag"			 || test ! -s conftest.err'
+	 { ac_try='test -z "$ac_cxx_werror_flag"
+			 || test ! -s conftest.err'
   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
   (eval $ac_try) 2>&5
   ac_status=$?
@@ -6595,7 +6621,8 @@ if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
   cat conftest.err >&5
   echo "$as_me:$LINENO: \$? = $ac_status" >&5
   (exit $ac_status); } &&
-	 { ac_try='test -z "$ac_cxx_werror_flag"			 || test ! -s conftest.err'
+	 { ac_try='test -z "$ac_cxx_werror_flag"
+			 || test ! -s conftest.err'
   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
   (eval $ac_try) 2>&5
   ac_status=$?
@@ -6649,7 +6676,8 @@ if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
   cat conftest.err >&5
   echo "$as_me:$LINENO: \$? = $ac_status" >&5
   (exit $ac_status); } &&
-	 { ac_try='test -z "$ac_cxx_werror_flag"			 || test ! -s conftest.err'
+	 { ac_try='test -z "$ac_cxx_werror_flag"
+			 || test ! -s conftest.err'
   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
   (eval $ac_try) 2>&5
   ac_status=$?
@@ -6754,7 +6782,8 @@ if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
   cat conftest.err >&5
   echo "$as_me:$LINENO: \$? = $ac_status" >&5
   (exit $ac_status); } &&
-	 { ac_try='test -z "$ac_cxx_werror_flag"			 || test ! -s conftest.err'
+	 { ac_try='test -z "$ac_cxx_werror_flag"
+			 || test ! -s conftest.err'
   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
   (eval $ac_try) 2>&5
   ac_status=$?
@@ -6811,7 +6840,8 @@ if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
   cat conftest.err >&5
   echo "$as_me:$LINENO: \$? = $ac_status" >&5
   (exit $ac_status); } &&
-	 { ac_try='test -z "$ac_f77_werror_flag"			 || test ! -s conftest.err'
+	 { ac_try='test -z "$ac_f77_werror_flag"
+			 || test ! -s conftest.err'
   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
   (eval $ac_try) 2>&5
   ac_status=$?
@@ -6838,7 +6868,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:6841: \"$ac_link\") >&5
+(eval echo $as_me:6871: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -6916,7 +6946,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:6919: \"$ac_link\") >&5
+(eval echo $as_me:6949: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -7144,7 +7174,8 @@ if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
   cat conftest.err >&5
   echo "$as_me:$LINENO: \$? = $ac_status" >&5
   (exit $ac_status); } &&
-	 { ac_try='test -z "$ac_c_werror_flag"			 || test ! -s conftest.err'
+	 { ac_try='test -z "$ac_c_werror_flag"
+			 || test ! -s conftest.err'
   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
   (eval $ac_try) 2>&5
   ac_status=$?
@@ -7200,7 +7231,8 @@ if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
   cat conftest.err >&5
   echo "$as_me:$LINENO: \$? = $ac_status" >&5
   (exit $ac_status); } &&
-	 { ac_try='test -z "$ac_c_werror_flag"			 || test ! -s conftest.err'
+	 { ac_try='test -z "$ac_c_werror_flag"
+			 || test ! -s conftest.err'
   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
   (eval $ac_try) 2>&5
   ac_status=$?
@@ -7290,7 +7322,8 @@ if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
   cat conftest.err >&5
   echo "$as_me:$LINENO: \$? = $ac_status" >&5
   (exit $ac_status); } &&
-	 { ac_try='test -z "$ac_f77_werror_flag"			 || test ! -s conftest.err'
+	 { ac_try='test -z "$ac_f77_werror_flag"
+			 || test ! -s conftest.err'
   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
   (eval $ac_try) 2>&5
   ac_status=$?
@@ -7355,7 +7388,8 @@ if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
   cat conftest.err >&5
   echo "$as_me:$LINENO: \$? = $ac_status" >&5
   (exit $ac_status); } &&
-	 { ac_try='test -z "$ac_c_werror_flag"			 || test ! -s conftest.err'
+	 { ac_try='test -z "$ac_c_werror_flag"
+			 || test ! -s conftest.err'
   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
   (eval $ac_try) 2>&5
   ac_status=$?
@@ -7441,7 +7475,8 @@ if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
   cat conftest.err >&5
   echo "$as_me:$LINENO: \$? = $ac_status" >&5
   (exit $ac_status); } &&
-	 { ac_try='test -z "$ac_c_werror_flag"			 || test ! -s conftest.err'
+	 { ac_try='test -z "$ac_c_werror_flag"
+			 || test ! -s conftest.err'
   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
   (eval $ac_try) 2>&5
   ac_status=$?
@@ -7709,7 +7744,8 @@ if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
   cat conftest.err >&5
   echo "$as_me:$LINENO: \$? = $ac_status" >&5
   (exit $ac_status); } &&
-	 { ac_try='test -z "$ac_cxx_werror_flag"			 || test ! -s conftest.err'
+	 { ac_try='test -z "$ac_cxx_werror_flag"
+			 || test ! -s conftest.err'
   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
   (eval $ac_try) 2>&5
   ac_status=$?
@@ -7813,7 +7849,8 @@ if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
   cat conftest.err >&5
   echo "$as_me:$LINENO: \$? = $ac_status" >&5
   (exit $ac_status); } &&
-	 { ac_try='test -z "$ac_cxx_werror_flag"			 || test ! -s conftest.err'
+	 { ac_try='test -z "$ac_cxx_werror_flag"
+			 || test ! -s conftest.err'
   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
   (eval $ac_try) 2>&5
   ac_status=$?
@@ -7892,7 +7929,8 @@ if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
   cat conftest.err >&5
   echo "$as_me:$LINENO: \$? = $ac_status" >&5
   (exit $ac_status); } &&
-	 { ac_try='test -z "$ac_cxx_werror_flag"			 || test ! -s conftest.err'
+	 { ac_try='test -z "$ac_cxx_werror_flag"
+			 || test ! -s conftest.err'
   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
   (eval $ac_try) 2>&5
   ac_status=$?
@@ -7965,7 +8003,8 @@ if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
   cat conftest.err >&5
   echo "$as_me:$LINENO: \$? = $ac_status" >&5
   (exit $ac_status); } &&
-	 { ac_try='test -z "$ac_cxx_werror_flag"			 || test ! -s conftest.err'
+	 { ac_try='test -z "$ac_cxx_werror_flag"
+			 || test ! -s conftest.err'
   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
   (eval $ac_try) 2>&5
   ac_status=$?
@@ -8037,7 +8076,8 @@ if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
   cat conftest.err >&5
   echo "$as_me:$LINENO: \$? = $ac_status" >&5
   (exit $ac_status); } &&
-	 { ac_try='test -z "$ac_cxx_werror_flag"			 || test ! -s conftest.err'
+	 { ac_try='test -z "$ac_cxx_werror_flag"
+			 || test ! -s conftest.err'
   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
   (eval $ac_try) 2>&5
   ac_status=$?
@@ -8122,7 +8162,8 @@ if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
   cat conftest.err >&5
   echo "$as_me:$LINENO: \$? = $ac_status" >&5
   (exit $ac_status); } &&
-	 { ac_try='test -z "$ac_cxx_werror_flag"			 || test ! -s conftest.err'
+	 { ac_try='test -z "$ac_cxx_werror_flag"
+			 || test ! -s conftest.err'
   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
   (eval $ac_try) 2>&5
   ac_status=$?
@@ -8195,7 +8236,8 @@ if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
   cat conftest.err >&5
   echo "$as_me:$LINENO: \$? = $ac_status" >&5
   (exit $ac_status); } &&
-	 { ac_try='test -z "$ac_cxx_werror_flag"			 || test ! -s conftest.err'
+	 { ac_try='test -z "$ac_cxx_werror_flag"
+			 || test ! -s conftest.err'
   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
   (eval $ac_try) 2>&5
   ac_status=$?
@@ -8268,7 +8310,8 @@ if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
   cat conftest.err >&5
   echo "$as_me:$LINENO: \$? = $ac_status" >&5
   (exit $ac_status); } &&
-	 { ac_try='test -z "$ac_cxx_werror_flag"			 || test ! -s conftest.err'
+	 { ac_try='test -z "$ac_cxx_werror_flag"
+			 || test ! -s conftest.err'
   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
   (eval $ac_try) 2>&5
   ac_status=$?
@@ -8352,7 +8395,8 @@ if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
   cat conftest.err >&5
   echo "$as_me:$LINENO: \$? = $ac_status" >&5
   (exit $ac_status); } &&
-	 { ac_try='test -z "$ac_cxx_werror_flag"			 || test ! -s conftest.err'
+	 { ac_try='test -z "$ac_cxx_werror_flag"
+			 || test ! -s conftest.err'
   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
   (eval $ac_try) 2>&5
   ac_status=$?
@@ -8432,7 +8476,8 @@ if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
   cat conftest.err >&5
   echo "$as_me:$LINENO: \$? = $ac_status" >&5
   (exit $ac_status); } &&
-	 { ac_try='test -z "$ac_cxx_werror_flag"			 || test ! -s conftest.err'
+	 { ac_try='test -z "$ac_cxx_werror_flag"
+			 || test ! -s conftest.err'
   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
   (eval $ac_try) 2>&5
   ac_status=$?
@@ -8512,7 +8557,8 @@ if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
   cat conftest.err >&5
   echo "$as_me:$LINENO: \$? = $ac_status" >&5
   (exit $ac_status); } &&
-	 { ac_try='test -z "$ac_cxx_werror_flag"			 || test ! -s conftest.err'
+	 { ac_try='test -z "$ac_cxx_werror_flag"
+			 || test ! -s conftest.err'
   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
   (eval $ac_try) 2>&5
   ac_status=$?
@@ -8585,7 +8631,8 @@ if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
   cat conftest.err >&5
   echo "$as_me:$LINENO: \$? = $ac_status" >&5
   (exit $ac_status); } &&
-	 { ac_try='test -z "$ac_cxx_werror_flag"			 || test ! -s conftest.err'
+	 { ac_try='test -z "$ac_cxx_werror_flag"
+			 || test ! -s conftest.err'
   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
   (eval $ac_try) 2>&5
   ac_status=$?
@@ -8669,7 +8716,8 @@ if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
   cat conftest.err >&5
   echo "$as_me:$LINENO: \$? = $ac_status" >&5
   (exit $ac_status); } &&
-	 { ac_try='test -z "$ac_cxx_werror_flag"			 || test ! -s conftest.err'
+	 { ac_try='test -z "$ac_cxx_werror_flag"
+			 || test ! -s conftest.err'
   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
   (eval $ac_try) 2>&5
   ac_status=$?
@@ -8749,7 +8797,8 @@ if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
   cat conftest.err >&5
   echo "$as_me:$LINENO: \$? = $ac_status" >&5
   (exit $ac_status); } &&
-	 { ac_try='test -z "$ac_cxx_werror_flag"			 || test ! -s conftest.err'
+	 { ac_try='test -z "$ac_cxx_werror_flag"
+			 || test ! -s conftest.err'
   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
   (eval $ac_try) 2>&5
   ac_status=$?
@@ -8829,7 +8878,8 @@ if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
   cat conftest.err >&5
   echo "$as_me:$LINENO: \$? = $ac_status" >&5
   (exit $ac_status); } &&
-	 { ac_try='test -z "$ac_cxx_werror_flag"			 || test ! -s conftest.err'
+	 { ac_try='test -z "$ac_cxx_werror_flag"
+			 || test ! -s conftest.err'
   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
   (eval $ac_try) 2>&5
   ac_status=$?
@@ -8902,7 +8952,8 @@ if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
   cat conftest.err >&5
   echo "$as_me:$LINENO: \$? = $ac_status" >&5
   (exit $ac_status); } &&
-	 { ac_try='test -z "$ac_cxx_werror_flag"			 || test ! -s conftest.err'
+	 { ac_try='test -z "$ac_cxx_werror_flag"
+			 || test ! -s conftest.err'
   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
   (eval $ac_try) 2>&5
   ac_status=$?
@@ -8984,7 +9035,8 @@ if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
   cat conftest.err >&5
   echo "$as_me:$LINENO: \$? = $ac_status" >&5
   (exit $ac_status); } &&
-	 { ac_try='test -z "$ac_cxx_werror_flag"			 || test ! -s conftest.err'
+	 { ac_try='test -z "$ac_cxx_werror_flag"
+			 || test ! -s conftest.err'
   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
   (eval $ac_try) 2>&5
   ac_status=$?
@@ -9119,7 +9171,8 @@ if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
   cat conftest.err >&5
   echo "$as_me:$LINENO: \$? = $ac_status" >&5
   (exit $ac_status); } &&
-	 { ac_try='test -z "$ac_cxx_werror_flag"			 || test ! -s conftest.err'
+	 { ac_try='test -z "$ac_cxx_werror_flag"
+			 || test ! -s conftest.err'
   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
   (eval $ac_try) 2>&5
   ac_status=$?
@@ -9225,7 +9278,8 @@ if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
   cat conftest.err >&5
   echo "$as_me:$LINENO: \$? = $ac_status" >&5
   (exit $ac_status); } &&
-	 { ac_try='test -z "$ac_cxx_werror_flag"			 || test ! -s conftest.err'
+	 { ac_try='test -z "$ac_cxx_werror_flag"
+			 || test ! -s conftest.err'
   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
   (eval $ac_try) 2>&5
   ac_status=$?
@@ -9307,7 +9361,8 @@ if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
   cat conftest.err >&5
   echo "$as_me:$LINENO: \$? = $ac_status" >&5
   (exit $ac_status); } &&
-	 { ac_try='test -z "$ac_cxx_werror_flag"			 || test ! -s conftest.err'
+	 { ac_try='test -z "$ac_cxx_werror_flag"
+			 || test ! -s conftest.err'
   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
   (eval $ac_try) 2>&5
   ac_status=$?
@@ -9422,7 +9477,8 @@ if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
   cat conftest.err >&5
   echo "$as_me:$LINENO: \$? = $ac_status" >&5
   (exit $ac_status); } &&
-	 { ac_try='test -z "$ac_cxx_werror_flag"			 || test ! -s conftest.err'
+	 { ac_try='test -z "$ac_cxx_werror_flag"
+			 || test ! -s conftest.err'
   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
   (eval $ac_try) 2>&5
   ac_status=$?
@@ -9517,7 +9573,8 @@ if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
   cat conftest.err >&5
   echo "$as_me:$LINENO: \$? = $ac_status" >&5
   (exit $ac_status); } &&
-	 { ac_try='test -z "$ac_cxx_werror_flag"			 || test ! -s conftest.err'
+	 { ac_try='test -z "$ac_cxx_werror_flag"
+			 || test ! -s conftest.err'
   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
   (eval $ac_try) 2>&5
   ac_status=$?
@@ -9658,6 +9715,8 @@ fi;
 # Check whether --with-anasazi-incdir or --without-anasazi-incdir was given.
 if test "${with_anasazi_incdir+set}" = set; then
   withval="$with_anasazi_incdir"
+
+else
   anasazi_INCDIR=$withval
 fi;
 
@@ -9665,21 +9724,9 @@ fi;
 # Check whether --with-anasazi-libdir or --without-anasazi-libdir was given.
 if test "${with_anasazi_libdir+set}" = set; then
   withval="$with_anasazi_libdir"
+
+else
   anasazi_LIBDIR=$withval
-fi;
-
-
-# Check whether --with-anasaziutils-incdir or --without-anasaziutils-incdir was given.
-if test "${with_anasaziutils_incdir+set}" = set; then
-  withval="$with_anasaziutils_incdir"
-  anasaziutils_INCDIR=$withval
-fi;
-
-
-# Check whether --with-anasaziutils-libdir or --without-anasaziutils-libdir was given.
-if test "${with_anasaziutils_libdir+set}" = set; then
-  withval="$with_anasaziutils_libdir"
-  anasaziutils_LIBDIR=$withval
 fi;
 
 # Relative path to Trilinos include files, to be used in Makefiles
@@ -9721,9 +9768,6 @@ cat >>conftest.$ac_ext <<_ACEOF
 #undef PACKAGE_TARNAME
 #undef PACKAGE_VERSION
 #undef VERSION
-#ifndef HAVE_CONFIG_H
-#define HAVE_CONFIG_H
-#endif
 #include "Epetra_config.h"
 
 _ACEOF
@@ -9772,9 +9816,6 @@ cat >>conftest.$ac_ext <<_ACEOF
 #undef PACKAGE_TARNAME
 #undef PACKAGE_VERSION
 #undef VERSION
-#ifndef HAVE_CONFIG_H
-#define HAVE_CONFIG_H
-#endif
 #include "Epetra_config.h"
 
 _ACEOF
@@ -9827,9 +9868,6 @@ cat >>conftest.$ac_ext <<_ACEOF
 #undef PACKAGE_TARNAME
 #undef PACKAGE_VERSION
 #undef VERSION
-#ifndef HAVE_CONFIG_H
-#define HAVE_CONFIG_H
-#endif
 #include "Epetra_config.h"
 
 _ACEOF
@@ -9882,9 +9920,6 @@ cat >>conftest.$ac_ext <<_ACEOF
 #undef PACKAGE_TARNAME
 #undef PACKAGE_VERSION
 #undef VERSION
-#ifndef HAVE_CONFIG_H
-#define HAVE_CONFIG_H
-#endif
 #include "Epetra_config.h"
 
 _ACEOF
@@ -9951,9 +9986,6 @@ cat >>conftest.$ac_ext <<_ACEOF
 #undef PACKAGE_TARNAME
 #undef PACKAGE_VERSION
 #undef VERSION
-#ifndef HAVE_CONFIG_H
-#define HAVE_CONFIG_H
-#endif
 #include "Epetra_DataAccess.h"
 
 _ACEOF
@@ -10002,9 +10034,6 @@ cat >>conftest.$ac_ext <<_ACEOF
 #undef PACKAGE_TARNAME
 #undef PACKAGE_VERSION
 #undef VERSION
-#ifndef HAVE_CONFIG_H
-#define HAVE_CONFIG_H
-#endif
 #include "Epetra_DataAccess.h"
 
 _ACEOF
@@ -10057,9 +10086,6 @@ cat >>conftest.$ac_ext <<_ACEOF
 #undef PACKAGE_TARNAME
 #undef PACKAGE_VERSION
 #undef VERSION
-#ifndef HAVE_CONFIG_H
-#define HAVE_CONFIG_H
-#endif
 #include "Epetra_DataAccess.h"
 
 _ACEOF
@@ -10112,9 +10138,6 @@ cat >>conftest.$ac_ext <<_ACEOF
 #undef PACKAGE_TARNAME
 #undef PACKAGE_VERSION
 #undef VERSION
-#ifndef HAVE_CONFIG_H
-#define HAVE_CONFIG_H
-#endif
 #include "Epetra_DataAccess.h"
 
 _ACEOF
@@ -10181,9 +10204,6 @@ cat >>conftest.$ac_ext <<_ACEOF
 #undef PACKAGE_TARNAME
 #undef PACKAGE_VERSION
 #undef VERSION
-#ifndef HAVE_CONFIG_H
-#define HAVE_CONFIG_H
-#endif
 #include "AztecOO_config.h"
 
 _ACEOF
@@ -10232,9 +10252,6 @@ cat >>conftest.$ac_ext <<_ACEOF
 #undef PACKAGE_TARNAME
 #undef PACKAGE_VERSION
 #undef VERSION
-#ifndef HAVE_CONFIG_H
-#define HAVE_CONFIG_H
-#endif
 #include "AztecOO_config.h"
 
 _ACEOF
@@ -10287,9 +10304,6 @@ cat >>conftest.$ac_ext <<_ACEOF
 #undef PACKAGE_TARNAME
 #undef PACKAGE_VERSION
 #undef VERSION
-#ifndef HAVE_CONFIG_H
-#define HAVE_CONFIG_H
-#endif
 #include "AztecOO_config.h"
 
 _ACEOF
@@ -10342,9 +10356,6 @@ cat >>conftest.$ac_ext <<_ACEOF
 #undef PACKAGE_TARNAME
 #undef PACKAGE_VERSION
 #undef VERSION
-#ifndef HAVE_CONFIG_H
-#define HAVE_CONFIG_H
-#endif
 #include "AztecOO_config.h"
 
 _ACEOF
@@ -10411,9 +10422,6 @@ cat >>conftest.$ac_ext <<_ACEOF
 #undef PACKAGE_TARNAME
 #undef PACKAGE_VERSION
 #undef VERSION
-#ifndef HAVE_CONFIG_H
-#define HAVE_CONFIG_H
-#endif
 #include "AztecOO_StatusType.h"
 
 _ACEOF
@@ -10462,9 +10470,6 @@ cat >>conftest.$ac_ext <<_ACEOF
 #undef PACKAGE_TARNAME
 #undef PACKAGE_VERSION
 #undef VERSION
-#ifndef HAVE_CONFIG_H
-#define HAVE_CONFIG_H
-#endif
 #include "AztecOO_StatusType.h"
 
 _ACEOF
@@ -10517,9 +10522,6 @@ cat >>conftest.$ac_ext <<_ACEOF
 #undef PACKAGE_TARNAME
 #undef PACKAGE_VERSION
 #undef VERSION
-#ifndef HAVE_CONFIG_H
-#define HAVE_CONFIG_H
-#endif
 #include "AztecOO_StatusType.h"
 
 _ACEOF
@@ -10572,9 +10574,6 @@ cat >>conftest.$ac_ext <<_ACEOF
 #undef PACKAGE_TARNAME
 #undef PACKAGE_VERSION
 #undef VERSION
-#ifndef HAVE_CONFIG_H
-#define HAVE_CONFIG_H
-#endif
 #include "AztecOO_StatusType.h"
 
 _ACEOF
@@ -10641,9 +10640,6 @@ cat >>conftest.$ac_ext <<_ACEOF
 #undef PACKAGE_TARNAME
 #undef PACKAGE_VERSION
 #undef VERSION
-#ifndef HAVE_CONFIG_H
-#define HAVE_CONFIG_H
-#endif
 #include "Ifpack_config.h"
 
 _ACEOF
@@ -10692,9 +10688,6 @@ cat >>conftest.$ac_ext <<_ACEOF
 #undef PACKAGE_TARNAME
 #undef PACKAGE_VERSION
 #undef VERSION
-#ifndef HAVE_CONFIG_H
-#define HAVE_CONFIG_H
-#endif
 #include "Ifpack_config.h"
 
 _ACEOF
@@ -10747,9 +10740,6 @@ cat >>conftest.$ac_ext <<_ACEOF
 #undef PACKAGE_TARNAME
 #undef PACKAGE_VERSION
 #undef VERSION
-#ifndef HAVE_CONFIG_H
-#define HAVE_CONFIG_H
-#endif
 #include "Ifpack_config.h"
 
 _ACEOF
@@ -10802,9 +10792,6 @@ cat >>conftest.$ac_ext <<_ACEOF
 #undef PACKAGE_TARNAME
 #undef PACKAGE_VERSION
 #undef VERSION
-#ifndef HAVE_CONFIG_H
-#define HAVE_CONFIG_H
-#endif
 #include "Ifpack_config.h"
 
 _ACEOF
@@ -10871,9 +10858,6 @@ cat >>conftest.$ac_ext <<_ACEOF
 #undef PACKAGE_TARNAME
 #undef PACKAGE_VERSION
 #undef VERSION
-#ifndef HAVE_CONFIG_H
-#define HAVE_CONFIG_H
-#endif
 #include "Ifpack_ScalingType.h"
 
 _ACEOF
@@ -10922,9 +10906,6 @@ cat >>conftest.$ac_ext <<_ACEOF
 #undef PACKAGE_TARNAME
 #undef PACKAGE_VERSION
 #undef VERSION
-#ifndef HAVE_CONFIG_H
-#define HAVE_CONFIG_H
-#endif
 #include "Ifpack_ScalingType.h"
 
 _ACEOF
@@ -10977,9 +10958,6 @@ cat >>conftest.$ac_ext <<_ACEOF
 #undef PACKAGE_TARNAME
 #undef PACKAGE_VERSION
 #undef VERSION
-#ifndef HAVE_CONFIG_H
-#define HAVE_CONFIG_H
-#endif
 #include "Ifpack_ScalingType.h"
 
 _ACEOF
@@ -11032,9 +11010,6 @@ cat >>conftest.$ac_ext <<_ACEOF
 #undef PACKAGE_TARNAME
 #undef PACKAGE_VERSION
 #undef VERSION
-#ifndef HAVE_CONFIG_H
-#define HAVE_CONFIG_H
-#endif
 #include "Ifpack_ScalingType.h"
 
 _ACEOF
@@ -11082,699 +11057,6 @@ echo "$as_me: error: Cannot find ifpack include directory containing Ifpack_Scal
   fi
 
 
-  if test X${BUILD_LOCA_ANASAZI_SUPPORT} = Xyes; then
-
-  save_CPPFLAGS=$CPPFLAGS
-  done=no
-
-  # First try the directories we already have
-  CPPFLAGS="$save_CPPFLAGS $ABS_TRILINOS_CPPFLAGS"
-  cat >conftest.$ac_ext <<_ACEOF
-/* confdefs.h.  */
-_ACEOF
-cat confdefs.h >>conftest.$ac_ext
-cat >>conftest.$ac_ext <<_ACEOF
-/* end confdefs.h.  */
-
-#undef PACKAGE
-#undef PACKAGE_NAME
-#undef PACKAGE_BUGREPORT
-#undef PACKAGE_STRING
-#undef PACKAGE_TARNAME
-#undef PACKAGE_VERSION
-#undef VERSION
-#ifndef HAVE_CONFIG_H
-#define HAVE_CONFIG_H
-#endif
-#include "Anasazi_config.h"
-
-_ACEOF
-if { (eval echo "$as_me:$LINENO: \"$ac_cpp conftest.$ac_ext\"") >&5
-  (eval $ac_cpp conftest.$ac_ext) 2>conftest.er1
-  ac_status=$?
-  grep -v '^ *+' conftest.er1 >conftest.err
-  rm -f conftest.er1
-  cat conftest.err >&5
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); } >/dev/null; then
-  if test -s conftest.err; then
-    ac_cpp_err=$ac_cxx_preproc_warn_flag
-    ac_cpp_err=$ac_cpp_err$ac_cxx_werror_flag
-  else
-    ac_cpp_err=
-  fi
-else
-  ac_cpp_err=yes
-fi
-if test -z "$ac_cpp_err"; then
-  done=yes
-else
-  echo "$as_me: failed program was:" >&5
-sed 's/^/| /' conftest.$ac_ext >&5
-
-
-fi
-rm -f conftest.err conftest.$ac_ext
-  CPPFLAGS=$save_CPPFLAGS
-
-  # Next  try the specified incdir (if any)
-  if test $done = no && test -n "${anasazi_INCDIR}"; then
-    CPPFLAGS="-I${anasazi_INCDIR} $save_CPPFLAGS $ABS_TRILINOS_CPPFLAGS"
-    cat >conftest.$ac_ext <<_ACEOF
-/* confdefs.h.  */
-_ACEOF
-cat confdefs.h >>conftest.$ac_ext
-cat >>conftest.$ac_ext <<_ACEOF
-/* end confdefs.h.  */
-
-#undef PACKAGE
-#undef PACKAGE_NAME
-#undef PACKAGE_BUGREPORT
-#undef PACKAGE_STRING
-#undef PACKAGE_TARNAME
-#undef PACKAGE_VERSION
-#undef VERSION
-#ifndef HAVE_CONFIG_H
-#define HAVE_CONFIG_H
-#endif
-#include "Anasazi_config.h"
-
-_ACEOF
-if { (eval echo "$as_me:$LINENO: \"$ac_cpp conftest.$ac_ext\"") >&5
-  (eval $ac_cpp conftest.$ac_ext) 2>conftest.er1
-  ac_status=$?
-  grep -v '^ *+' conftest.er1 >conftest.err
-  rm -f conftest.er1
-  cat conftest.err >&5
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); } >/dev/null; then
-  if test -s conftest.err; then
-    ac_cpp_err=$ac_cxx_preproc_warn_flag
-    ac_cpp_err=$ac_cpp_err$ac_cxx_werror_flag
-  else
-    ac_cpp_err=
-  fi
-else
-  ac_cpp_err=yes
-fi
-if test -z "$ac_cpp_err"; then
-   done=yes
-      REL_TRILINOS_CPPFLAGS="-I${anasazi_INCDIR} ${REL_TRILINOS_CPPFLAGS}"
-      ABS_TRILINOS_CPPFLAGS="-I${anasazi_INCDIR} ${ABS_TRILINOS_CPPFLAGS}"
-
-else
-  echo "$as_me: failed program was:" >&5
-sed 's/^/| /' conftest.$ac_ext >&5
-
-
-fi
-rm -f conftest.err conftest.$ac_ext
-    CPPFLAGS=$save_CPPFLAGS
-  fi
-
-  # Next try the Trilinos build dir
-  if test $done = no; then
-    CPPFLAGS="-I../anasazi/src $save_CPPFLAGS $ABS_TRILINOS_CPPFLAGS"
-    cat >conftest.$ac_ext <<_ACEOF
-/* confdefs.h.  */
-_ACEOF
-cat confdefs.h >>conftest.$ac_ext
-cat >>conftest.$ac_ext <<_ACEOF
-/* end confdefs.h.  */
-
-#undef PACKAGE
-#undef PACKAGE_NAME
-#undef PACKAGE_BUGREPORT
-#undef PACKAGE_STRING
-#undef PACKAGE_TARNAME
-#undef PACKAGE_VERSION
-#undef VERSION
-#ifndef HAVE_CONFIG_H
-#define HAVE_CONFIG_H
-#endif
-#include "Anasazi_config.h"
-
-_ACEOF
-if { (eval echo "$as_me:$LINENO: \"$ac_cpp conftest.$ac_ext\"") >&5
-  (eval $ac_cpp conftest.$ac_ext) 2>conftest.er1
-  ac_status=$?
-  grep -v '^ *+' conftest.er1 >conftest.err
-  rm -f conftest.er1
-  cat conftest.err >&5
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); } >/dev/null; then
-  if test -s conftest.err; then
-    ac_cpp_err=$ac_cxx_preproc_warn_flag
-    ac_cpp_err=$ac_cpp_err$ac_cxx_werror_flag
-  else
-    ac_cpp_err=
-  fi
-else
-  ac_cpp_err=yes
-fi
-if test -z "$ac_cpp_err"; then
-   done=yes
-      REL_TRILINOS_CPPFLAGS="-I\$(top_builddir)/../anasazi/src ${REL_TRILINOS_CPPFLAGS}"
-      ABS_TRILINOS_CPPFLAGS="-I../anasazi/src ${ABS_TRILINOS_CPPFLAGS}"
-
-else
-  echo "$as_me: failed program was:" >&5
-sed 's/^/| /' conftest.$ac_ext >&5
-
-
-fi
-rm -f conftest.err conftest.$ac_ext
-    CPPFLAGS=$save_CPPFLAGS
-  fi
-
-  # Next try the Trilinos source dir
-  if test $done = no && test -n "$srcdir"; then
-    CPPFLAGS="-I$srcdir/../anasazi/src $save_CPPFLAGS $ABS_TRILINOS_CPPFLAGS"
-    cat >conftest.$ac_ext <<_ACEOF
-/* confdefs.h.  */
-_ACEOF
-cat confdefs.h >>conftest.$ac_ext
-cat >>conftest.$ac_ext <<_ACEOF
-/* end confdefs.h.  */
-
-#undef PACKAGE
-#undef PACKAGE_NAME
-#undef PACKAGE_BUGREPORT
-#undef PACKAGE_STRING
-#undef PACKAGE_TARNAME
-#undef PACKAGE_VERSION
-#undef VERSION
-#ifndef HAVE_CONFIG_H
-#define HAVE_CONFIG_H
-#endif
-#include "Anasazi_config.h"
-
-_ACEOF
-if { (eval echo "$as_me:$LINENO: \"$ac_cpp conftest.$ac_ext\"") >&5
-  (eval $ac_cpp conftest.$ac_ext) 2>conftest.er1
-  ac_status=$?
-  grep -v '^ *+' conftest.er1 >conftest.err
-  rm -f conftest.er1
-  cat conftest.err >&5
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); } >/dev/null; then
-  if test -s conftest.err; then
-    ac_cpp_err=$ac_cxx_preproc_warn_flag
-    ac_cpp_err=$ac_cpp_err$ac_cxx_werror_flag
-  else
-    ac_cpp_err=
-  fi
-else
-  ac_cpp_err=yes
-fi
-if test -z "$ac_cpp_err"; then
-   done=yes
-      REL_TRILINOS_CPPFLAGS="-I\$(top_srcdir)/../anasazi/src ${REL_TRILINOS_CPPFLAGS}"
-      ABS_TRILINOS_CPPFLAGS="-I$srcdir/../anasazi/src ${ABS_TRILINOS_CPPFLAGS}"
-
-else
-  echo "$as_me: failed program was:" >&5
-sed 's/^/| /' conftest.$ac_ext >&5
-
-
-fi
-rm -f conftest.err conftest.$ac_ext
-    CPPFLAGS=$save_CPPFLAGS
-  fi
-
-  if test $done = no; then
-    echo "------"
-    echo "Cannot preprocess the include file Anasazi_config.h, part of the anasazi package."
-    echo "Try --with-anasazi-incdir=<dir> to specify a single directory or"
-    echo "--with-cppflags=\"-I<dir1> -I<dir2>\" for multiple directories."
-    echo "------"
-    { { echo "$as_me:$LINENO: error: Cannot find anasazi include directory containing Anasazi_config.h" >&5
-echo "$as_me: error: Cannot find anasazi include directory containing Anasazi_config.h" >&2;}
-   { (exit 1); exit 1; }; }
-  fi
-
-
-  save_CPPFLAGS=$CPPFLAGS
-  done=no
-
-  # First try the directories we already have
-  CPPFLAGS="$save_CPPFLAGS $ABS_TRILINOS_CPPFLAGS"
-  cat >conftest.$ac_ext <<_ACEOF
-/* confdefs.h.  */
-_ACEOF
-cat confdefs.h >>conftest.$ac_ext
-cat >>conftest.$ac_ext <<_ACEOF
-/* end confdefs.h.  */
-
-#undef PACKAGE
-#undef PACKAGE_NAME
-#undef PACKAGE_BUGREPORT
-#undef PACKAGE_STRING
-#undef PACKAGE_TARNAME
-#undef PACKAGE_VERSION
-#undef VERSION
-#ifndef HAVE_CONFIG_H
-#define HAVE_CONFIG_H
-#endif
-#include "AnasaziCommon.hpp"
-
-_ACEOF
-if { (eval echo "$as_me:$LINENO: \"$ac_cpp conftest.$ac_ext\"") >&5
-  (eval $ac_cpp conftest.$ac_ext) 2>conftest.er1
-  ac_status=$?
-  grep -v '^ *+' conftest.er1 >conftest.err
-  rm -f conftest.er1
-  cat conftest.err >&5
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); } >/dev/null; then
-  if test -s conftest.err; then
-    ac_cpp_err=$ac_cxx_preproc_warn_flag
-    ac_cpp_err=$ac_cpp_err$ac_cxx_werror_flag
-  else
-    ac_cpp_err=
-  fi
-else
-  ac_cpp_err=yes
-fi
-if test -z "$ac_cpp_err"; then
-  done=yes
-else
-  echo "$as_me: failed program was:" >&5
-sed 's/^/| /' conftest.$ac_ext >&5
-
-
-fi
-rm -f conftest.err conftest.$ac_ext
-  CPPFLAGS=$save_CPPFLAGS
-
-  # Next  try the specified incdir (if any)
-  if test $done = no && test -n "${anasazi_INCDIR}"; then
-    CPPFLAGS="-I${anasazi_INCDIR} $save_CPPFLAGS $ABS_TRILINOS_CPPFLAGS"
-    cat >conftest.$ac_ext <<_ACEOF
-/* confdefs.h.  */
-_ACEOF
-cat confdefs.h >>conftest.$ac_ext
-cat >>conftest.$ac_ext <<_ACEOF
-/* end confdefs.h.  */
-
-#undef PACKAGE
-#undef PACKAGE_NAME
-#undef PACKAGE_BUGREPORT
-#undef PACKAGE_STRING
-#undef PACKAGE_TARNAME
-#undef PACKAGE_VERSION
-#undef VERSION
-#ifndef HAVE_CONFIG_H
-#define HAVE_CONFIG_H
-#endif
-#include "AnasaziCommon.hpp"
-
-_ACEOF
-if { (eval echo "$as_me:$LINENO: \"$ac_cpp conftest.$ac_ext\"") >&5
-  (eval $ac_cpp conftest.$ac_ext) 2>conftest.er1
-  ac_status=$?
-  grep -v '^ *+' conftest.er1 >conftest.err
-  rm -f conftest.er1
-  cat conftest.err >&5
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); } >/dev/null; then
-  if test -s conftest.err; then
-    ac_cpp_err=$ac_cxx_preproc_warn_flag
-    ac_cpp_err=$ac_cpp_err$ac_cxx_werror_flag
-  else
-    ac_cpp_err=
-  fi
-else
-  ac_cpp_err=yes
-fi
-if test -z "$ac_cpp_err"; then
-   done=yes
-      REL_TRILINOS_CPPFLAGS="-I${anasazi_INCDIR} ${REL_TRILINOS_CPPFLAGS}"
-      ABS_TRILINOS_CPPFLAGS="-I${anasazi_INCDIR} ${ABS_TRILINOS_CPPFLAGS}"
-
-else
-  echo "$as_me: failed program was:" >&5
-sed 's/^/| /' conftest.$ac_ext >&5
-
-
-fi
-rm -f conftest.err conftest.$ac_ext
-    CPPFLAGS=$save_CPPFLAGS
-  fi
-
-  # Next try the Trilinos build dir
-  if test $done = no; then
-    CPPFLAGS="-I../anasazi/src $save_CPPFLAGS $ABS_TRILINOS_CPPFLAGS"
-    cat >conftest.$ac_ext <<_ACEOF
-/* confdefs.h.  */
-_ACEOF
-cat confdefs.h >>conftest.$ac_ext
-cat >>conftest.$ac_ext <<_ACEOF
-/* end confdefs.h.  */
-
-#undef PACKAGE
-#undef PACKAGE_NAME
-#undef PACKAGE_BUGREPORT
-#undef PACKAGE_STRING
-#undef PACKAGE_TARNAME
-#undef PACKAGE_VERSION
-#undef VERSION
-#ifndef HAVE_CONFIG_H
-#define HAVE_CONFIG_H
-#endif
-#include "AnasaziCommon.hpp"
-
-_ACEOF
-if { (eval echo "$as_me:$LINENO: \"$ac_cpp conftest.$ac_ext\"") >&5
-  (eval $ac_cpp conftest.$ac_ext) 2>conftest.er1
-  ac_status=$?
-  grep -v '^ *+' conftest.er1 >conftest.err
-  rm -f conftest.er1
-  cat conftest.err >&5
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); } >/dev/null; then
-  if test -s conftest.err; then
-    ac_cpp_err=$ac_cxx_preproc_warn_flag
-    ac_cpp_err=$ac_cpp_err$ac_cxx_werror_flag
-  else
-    ac_cpp_err=
-  fi
-else
-  ac_cpp_err=yes
-fi
-if test -z "$ac_cpp_err"; then
-   done=yes
-      REL_TRILINOS_CPPFLAGS="-I\$(top_builddir)/../anasazi/src ${REL_TRILINOS_CPPFLAGS}"
-      ABS_TRILINOS_CPPFLAGS="-I../anasazi/src ${ABS_TRILINOS_CPPFLAGS}"
-
-else
-  echo "$as_me: failed program was:" >&5
-sed 's/^/| /' conftest.$ac_ext >&5
-
-
-fi
-rm -f conftest.err conftest.$ac_ext
-    CPPFLAGS=$save_CPPFLAGS
-  fi
-
-  # Next try the Trilinos source dir
-  if test $done = no && test -n "$srcdir"; then
-    CPPFLAGS="-I$srcdir/../anasazi/src $save_CPPFLAGS $ABS_TRILINOS_CPPFLAGS"
-    cat >conftest.$ac_ext <<_ACEOF
-/* confdefs.h.  */
-_ACEOF
-cat confdefs.h >>conftest.$ac_ext
-cat >>conftest.$ac_ext <<_ACEOF
-/* end confdefs.h.  */
-
-#undef PACKAGE
-#undef PACKAGE_NAME
-#undef PACKAGE_BUGREPORT
-#undef PACKAGE_STRING
-#undef PACKAGE_TARNAME
-#undef PACKAGE_VERSION
-#undef VERSION
-#ifndef HAVE_CONFIG_H
-#define HAVE_CONFIG_H
-#endif
-#include "AnasaziCommon.hpp"
-
-_ACEOF
-if { (eval echo "$as_me:$LINENO: \"$ac_cpp conftest.$ac_ext\"") >&5
-  (eval $ac_cpp conftest.$ac_ext) 2>conftest.er1
-  ac_status=$?
-  grep -v '^ *+' conftest.er1 >conftest.err
-  rm -f conftest.er1
-  cat conftest.err >&5
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); } >/dev/null; then
-  if test -s conftest.err; then
-    ac_cpp_err=$ac_cxx_preproc_warn_flag
-    ac_cpp_err=$ac_cpp_err$ac_cxx_werror_flag
-  else
-    ac_cpp_err=
-  fi
-else
-  ac_cpp_err=yes
-fi
-if test -z "$ac_cpp_err"; then
-   done=yes
-      REL_TRILINOS_CPPFLAGS="-I\$(top_srcdir)/../anasazi/src ${REL_TRILINOS_CPPFLAGS}"
-      ABS_TRILINOS_CPPFLAGS="-I$srcdir/../anasazi/src ${ABS_TRILINOS_CPPFLAGS}"
-
-else
-  echo "$as_me: failed program was:" >&5
-sed 's/^/| /' conftest.$ac_ext >&5
-
-
-fi
-rm -f conftest.err conftest.$ac_ext
-    CPPFLAGS=$save_CPPFLAGS
-  fi
-
-  if test $done = no; then
-    echo "------"
-    echo "Cannot preprocess the include file AnasaziCommon.hpp, part of the anasazi package."
-    echo "Try --with-anasazi-incdir=<dir> to specify a single directory or"
-    echo "--with-cppflags=\"-I<dir1> -I<dir2>\" for multiple directories."
-    echo "------"
-    { { echo "$as_me:$LINENO: error: Cannot find anasazi include directory containing AnasaziCommon.hpp" >&5
-echo "$as_me: error: Cannot find anasazi include directory containing AnasaziCommon.hpp" >&2;}
-   { (exit 1); exit 1; }; }
-  fi
-
-
-  save_CPPFLAGS=$CPPFLAGS
-  done=no
-
-  # First try the directories we already have
-  CPPFLAGS="$save_CPPFLAGS $ABS_TRILINOS_CPPFLAGS"
-  cat >conftest.$ac_ext <<_ACEOF
-/* confdefs.h.  */
-_ACEOF
-cat confdefs.h >>conftest.$ac_ext
-cat >>conftest.$ac_ext <<_ACEOF
-/* end confdefs.h.  */
-
-#undef PACKAGE
-#undef PACKAGE_NAME
-#undef PACKAGE_BUGREPORT
-#undef PACKAGE_STRING
-#undef PACKAGE_TARNAME
-#undef PACKAGE_VERSION
-#undef VERSION
-#ifndef HAVE_CONFIG_H
-#define HAVE_CONFIG_H
-#endif
-#include "AnasaziBLAS.hpp"
-
-_ACEOF
-if { (eval echo "$as_me:$LINENO: \"$ac_cpp conftest.$ac_ext\"") >&5
-  (eval $ac_cpp conftest.$ac_ext) 2>conftest.er1
-  ac_status=$?
-  grep -v '^ *+' conftest.er1 >conftest.err
-  rm -f conftest.er1
-  cat conftest.err >&5
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); } >/dev/null; then
-  if test -s conftest.err; then
-    ac_cpp_err=$ac_cxx_preproc_warn_flag
-    ac_cpp_err=$ac_cpp_err$ac_cxx_werror_flag
-  else
-    ac_cpp_err=
-  fi
-else
-  ac_cpp_err=yes
-fi
-if test -z "$ac_cpp_err"; then
-  done=yes
-else
-  echo "$as_me: failed program was:" >&5
-sed 's/^/| /' conftest.$ac_ext >&5
-
-
-fi
-rm -f conftest.err conftest.$ac_ext
-  CPPFLAGS=$save_CPPFLAGS
-
-  # Next  try the specified incdir (if any)
-  if test $done = no && test -n "${anasazi_INCDIR}"; then
-    CPPFLAGS="-I${anasazi_INCDIR} $save_CPPFLAGS $ABS_TRILINOS_CPPFLAGS"
-    cat >conftest.$ac_ext <<_ACEOF
-/* confdefs.h.  */
-_ACEOF
-cat confdefs.h >>conftest.$ac_ext
-cat >>conftest.$ac_ext <<_ACEOF
-/* end confdefs.h.  */
-
-#undef PACKAGE
-#undef PACKAGE_NAME
-#undef PACKAGE_BUGREPORT
-#undef PACKAGE_STRING
-#undef PACKAGE_TARNAME
-#undef PACKAGE_VERSION
-#undef VERSION
-#ifndef HAVE_CONFIG_H
-#define HAVE_CONFIG_H
-#endif
-#include "AnasaziBLAS.hpp"
-
-_ACEOF
-if { (eval echo "$as_me:$LINENO: \"$ac_cpp conftest.$ac_ext\"") >&5
-  (eval $ac_cpp conftest.$ac_ext) 2>conftest.er1
-  ac_status=$?
-  grep -v '^ *+' conftest.er1 >conftest.err
-  rm -f conftest.er1
-  cat conftest.err >&5
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); } >/dev/null; then
-  if test -s conftest.err; then
-    ac_cpp_err=$ac_cxx_preproc_warn_flag
-    ac_cpp_err=$ac_cpp_err$ac_cxx_werror_flag
-  else
-    ac_cpp_err=
-  fi
-else
-  ac_cpp_err=yes
-fi
-if test -z "$ac_cpp_err"; then
-   done=yes
-      REL_TRILINOS_CPPFLAGS="-I${anasazi_INCDIR} ${REL_TRILINOS_CPPFLAGS}"
-      ABS_TRILINOS_CPPFLAGS="-I${anasazi_INCDIR} ${ABS_TRILINOS_CPPFLAGS}"
-
-else
-  echo "$as_me: failed program was:" >&5
-sed 's/^/| /' conftest.$ac_ext >&5
-
-
-fi
-rm -f conftest.err conftest.$ac_ext
-    CPPFLAGS=$save_CPPFLAGS
-  fi
-
-  # Next try the Trilinos build dir
-  if test $done = no; then
-    CPPFLAGS="-I../anasazi/utils $save_CPPFLAGS $ABS_TRILINOS_CPPFLAGS"
-    cat >conftest.$ac_ext <<_ACEOF
-/* confdefs.h.  */
-_ACEOF
-cat confdefs.h >>conftest.$ac_ext
-cat >>conftest.$ac_ext <<_ACEOF
-/* end confdefs.h.  */
-
-#undef PACKAGE
-#undef PACKAGE_NAME
-#undef PACKAGE_BUGREPORT
-#undef PACKAGE_STRING
-#undef PACKAGE_TARNAME
-#undef PACKAGE_VERSION
-#undef VERSION
-#ifndef HAVE_CONFIG_H
-#define HAVE_CONFIG_H
-#endif
-#include "AnasaziBLAS.hpp"
-
-_ACEOF
-if { (eval echo "$as_me:$LINENO: \"$ac_cpp conftest.$ac_ext\"") >&5
-  (eval $ac_cpp conftest.$ac_ext) 2>conftest.er1
-  ac_status=$?
-  grep -v '^ *+' conftest.er1 >conftest.err
-  rm -f conftest.er1
-  cat conftest.err >&5
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); } >/dev/null; then
-  if test -s conftest.err; then
-    ac_cpp_err=$ac_cxx_preproc_warn_flag
-    ac_cpp_err=$ac_cpp_err$ac_cxx_werror_flag
-  else
-    ac_cpp_err=
-  fi
-else
-  ac_cpp_err=yes
-fi
-if test -z "$ac_cpp_err"; then
-   done=yes
-      REL_TRILINOS_CPPFLAGS="-I\$(top_builddir)/../anasazi/utils ${REL_TRILINOS_CPPFLAGS}"
-      ABS_TRILINOS_CPPFLAGS="-I../anasazi/utils ${ABS_TRILINOS_CPPFLAGS}"
-
-else
-  echo "$as_me: failed program was:" >&5
-sed 's/^/| /' conftest.$ac_ext >&5
-
-
-fi
-rm -f conftest.err conftest.$ac_ext
-    CPPFLAGS=$save_CPPFLAGS
-  fi
-
-  # Next try the Trilinos source dir
-  if test $done = no && test -n "$srcdir"; then
-    CPPFLAGS="-I$srcdir/../anasazi/utils $save_CPPFLAGS $ABS_TRILINOS_CPPFLAGS"
-    cat >conftest.$ac_ext <<_ACEOF
-/* confdefs.h.  */
-_ACEOF
-cat confdefs.h >>conftest.$ac_ext
-cat >>conftest.$ac_ext <<_ACEOF
-/* end confdefs.h.  */
-
-#undef PACKAGE
-#undef PACKAGE_NAME
-#undef PACKAGE_BUGREPORT
-#undef PACKAGE_STRING
-#undef PACKAGE_TARNAME
-#undef PACKAGE_VERSION
-#undef VERSION
-#ifndef HAVE_CONFIG_H
-#define HAVE_CONFIG_H
-#endif
-#include "AnasaziBLAS.hpp"
-
-_ACEOF
-if { (eval echo "$as_me:$LINENO: \"$ac_cpp conftest.$ac_ext\"") >&5
-  (eval $ac_cpp conftest.$ac_ext) 2>conftest.er1
-  ac_status=$?
-  grep -v '^ *+' conftest.er1 >conftest.err
-  rm -f conftest.er1
-  cat conftest.err >&5
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); } >/dev/null; then
-  if test -s conftest.err; then
-    ac_cpp_err=$ac_cxx_preproc_warn_flag
-    ac_cpp_err=$ac_cpp_err$ac_cxx_werror_flag
-  else
-    ac_cpp_err=
-  fi
-else
-  ac_cpp_err=yes
-fi
-if test -z "$ac_cpp_err"; then
-   done=yes
-      REL_TRILINOS_CPPFLAGS="-I\$(top_srcdir)/../anasazi/utils ${REL_TRILINOS_CPPFLAGS}"
-      ABS_TRILINOS_CPPFLAGS="-I$srcdir/../anasazi/utils ${ABS_TRILINOS_CPPFLAGS}"
-
-else
-  echo "$as_me: failed program was:" >&5
-sed 's/^/| /' conftest.$ac_ext >&5
-
-
-fi
-rm -f conftest.err conftest.$ac_ext
-    CPPFLAGS=$save_CPPFLAGS
-  fi
-
-  if test $done = no; then
-    echo "------"
-    echo "Cannot preprocess the include file AnasaziBLAS.hpp, part of the anasazi package."
-    echo "Try --with-anasazi-incdir=<dir> to specify a single directory or"
-    echo "--with-cppflags=\"-I<dir1> -I<dir2>\" for multiple directories."
-    echo "------"
-    { { echo "$as_me:$LINENO: error: Cannot find anasazi include directory containing AnasaziBLAS.hpp" >&5
-echo "$as_me: error: Cannot find anasazi include directory containing AnasaziBLAS.hpp" >&2;}
-   { (exit 1); exit 1; }; }
-  fi
-
-  fi
-
   if test X${BUILD_NOX_EPETRAEXT_SUPPORT} = Xyes; then
 
   save_CPPFLAGS=$CPPFLAGS
@@ -11796,9 +11078,6 @@ cat >>conftest.$ac_ext <<_ACEOF
 #undef PACKAGE_TARNAME
 #undef PACKAGE_VERSION
 #undef VERSION
-#ifndef HAVE_CONFIG_H
-#define HAVE_CONFIG_H
-#endif
 #include "EpetraExt_config.h"
 
 _ACEOF
@@ -11847,9 +11126,6 @@ cat >>conftest.$ac_ext <<_ACEOF
 #undef PACKAGE_TARNAME
 #undef PACKAGE_VERSION
 #undef VERSION
-#ifndef HAVE_CONFIG_H
-#define HAVE_CONFIG_H
-#endif
 #include "EpetraExt_config.h"
 
 _ACEOF
@@ -11902,9 +11178,6 @@ cat >>conftest.$ac_ext <<_ACEOF
 #undef PACKAGE_TARNAME
 #undef PACKAGE_VERSION
 #undef VERSION
-#ifndef HAVE_CONFIG_H
-#define HAVE_CONFIG_H
-#endif
 #include "EpetraExt_config.h"
 
 _ACEOF
@@ -11957,9 +11230,6 @@ cat >>conftest.$ac_ext <<_ACEOF
 #undef PACKAGE_TARNAME
 #undef PACKAGE_VERSION
 #undef VERSION
-#ifndef HAVE_CONFIG_H
-#define HAVE_CONFIG_H
-#endif
 #include "EpetraExt_config.h"
 
 _ACEOF
@@ -12026,9 +11296,6 @@ cat >>conftest.$ac_ext <<_ACEOF
 #undef PACKAGE_TARNAME
 #undef PACKAGE_VERSION
 #undef VERSION
-#ifndef HAVE_CONFIG_H
-#define HAVE_CONFIG_H
-#endif
 #include "EpetraExt_ConfigDefs.h"
 
 _ACEOF
@@ -12077,9 +11344,6 @@ cat >>conftest.$ac_ext <<_ACEOF
 #undef PACKAGE_TARNAME
 #undef PACKAGE_VERSION
 #undef VERSION
-#ifndef HAVE_CONFIG_H
-#define HAVE_CONFIG_H
-#endif
 #include "EpetraExt_ConfigDefs.h"
 
 _ACEOF
@@ -12132,9 +11396,6 @@ cat >>conftest.$ac_ext <<_ACEOF
 #undef PACKAGE_TARNAME
 #undef PACKAGE_VERSION
 #undef VERSION
-#ifndef HAVE_CONFIG_H
-#define HAVE_CONFIG_H
-#endif
 #include "EpetraExt_ConfigDefs.h"
 
 _ACEOF
@@ -12187,9 +11448,6 @@ cat >>conftest.$ac_ext <<_ACEOF
 #undef PACKAGE_TARNAME
 #undef PACKAGE_VERSION
 #undef VERSION
-#ifndef HAVE_CONFIG_H
-#define HAVE_CONFIG_H
-#endif
 #include "EpetraExt_ConfigDefs.h"
 
 _ACEOF
@@ -12256,9 +11514,6 @@ cat >>conftest.$ac_ext <<_ACEOF
 #undef PACKAGE_TARNAME
 #undef PACKAGE_VERSION
 #undef VERSION
-#ifndef HAVE_CONFIG_H
-#define HAVE_CONFIG_H
-#endif
 #include "EpetraExt_Transform.h"
 
 _ACEOF
@@ -12307,9 +11562,6 @@ cat >>conftest.$ac_ext <<_ACEOF
 #undef PACKAGE_TARNAME
 #undef PACKAGE_VERSION
 #undef VERSION
-#ifndef HAVE_CONFIG_H
-#define HAVE_CONFIG_H
-#endif
 #include "EpetraExt_Transform.h"
 
 _ACEOF
@@ -12362,9 +11614,6 @@ cat >>conftest.$ac_ext <<_ACEOF
 #undef PACKAGE_TARNAME
 #undef PACKAGE_VERSION
 #undef VERSION
-#ifndef HAVE_CONFIG_H
-#define HAVE_CONFIG_H
-#endif
 #include "EpetraExt_Transform.h"
 
 _ACEOF
@@ -12417,9 +11666,6 @@ cat >>conftest.$ac_ext <<_ACEOF
 #undef PACKAGE_TARNAME
 #undef PACKAGE_VERSION
 #undef VERSION
-#ifndef HAVE_CONFIG_H
-#define HAVE_CONFIG_H
-#endif
 #include "EpetraExt_Transform.h"
 
 _ACEOF
@@ -12491,9 +11737,6 @@ cat >>conftest.$ac_ext <<_ACEOF
 #undef PACKAGE_TARNAME
 #undef PACKAGE_VERSION
 #undef VERSION
-#ifndef HAVE_CONFIG_H
-#define HAVE_CONFIG_H
-#endif
 #include "EpetraExt_MapColoring.h"
 
 _ACEOF
@@ -12542,9 +11785,6 @@ cat >>conftest.$ac_ext <<_ACEOF
 #undef PACKAGE_TARNAME
 #undef PACKAGE_VERSION
 #undef VERSION
-#ifndef HAVE_CONFIG_H
-#define HAVE_CONFIG_H
-#endif
 #include "EpetraExt_MapColoring.h"
 
 _ACEOF
@@ -12597,9 +11837,6 @@ cat >>conftest.$ac_ext <<_ACEOF
 #undef PACKAGE_TARNAME
 #undef PACKAGE_VERSION
 #undef VERSION
-#ifndef HAVE_CONFIG_H
-#define HAVE_CONFIG_H
-#endif
 #include "EpetraExt_MapColoring.h"
 
 _ACEOF
@@ -12652,9 +11889,6 @@ cat >>conftest.$ac_ext <<_ACEOF
 #undef PACKAGE_TARNAME
 #undef PACKAGE_VERSION
 #undef VERSION
-#ifndef HAVE_CONFIG_H
-#define HAVE_CONFIG_H
-#endif
 #include "EpetraExt_MapColoring.h"
 
 _ACEOF
@@ -12707,6 +11941,446 @@ echo "$as_me: error: Cannot find epetraext include directory containing EpetraEx
 
 fi
 
+if test X${BUILD_LOCA_ANASAZI_SUPPORT} = Xyes; then
+
+  save_CPPFLAGS=$CPPFLAGS
+  done=no
+
+  # First try the directories we already have
+  CPPFLAGS="$save_CPPFLAGS $ABS_TRILINOS_CPPFLAGS"
+  cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+#undef PACKAGE
+#undef PACKAGE_NAME
+#undef PACKAGE_BUGREPORT
+#undef PACKAGE_STRING
+#undef PACKAGE_TARNAME
+#undef PACKAGE_VERSION
+#undef VERSION
+#include "Anasazi_config.h"
+
+_ACEOF
+if { (eval echo "$as_me:$LINENO: \"$ac_cpp conftest.$ac_ext\"") >&5
+  (eval $ac_cpp conftest.$ac_ext) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } >/dev/null; then
+  if test -s conftest.err; then
+    ac_cpp_err=$ac_cxx_preproc_warn_flag
+    ac_cpp_err=$ac_cpp_err$ac_cxx_werror_flag
+  else
+    ac_cpp_err=
+  fi
+else
+  ac_cpp_err=yes
+fi
+if test -z "$ac_cpp_err"; then
+  done=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+
+fi
+rm -f conftest.err conftest.$ac_ext
+  CPPFLAGS=$save_CPPFLAGS
+
+  # Next  try the specified incdir (if any)
+  if test $done = no && test -n "${anasazi_INCDIR}"; then
+    CPPFLAGS="-I${anasazi_INCDIR} $save_CPPFLAGS $ABS_TRILINOS_CPPFLAGS"
+    cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+#undef PACKAGE
+#undef PACKAGE_NAME
+#undef PACKAGE_BUGREPORT
+#undef PACKAGE_STRING
+#undef PACKAGE_TARNAME
+#undef PACKAGE_VERSION
+#undef VERSION
+#include "Anasazi_config.h"
+
+_ACEOF
+if { (eval echo "$as_me:$LINENO: \"$ac_cpp conftest.$ac_ext\"") >&5
+  (eval $ac_cpp conftest.$ac_ext) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } >/dev/null; then
+  if test -s conftest.err; then
+    ac_cpp_err=$ac_cxx_preproc_warn_flag
+    ac_cpp_err=$ac_cpp_err$ac_cxx_werror_flag
+  else
+    ac_cpp_err=
+  fi
+else
+  ac_cpp_err=yes
+fi
+if test -z "$ac_cpp_err"; then
+   done=yes
+      REL_TRILINOS_CPPFLAGS="-I${anasazi_INCDIR} ${REL_TRILINOS_CPPFLAGS}"
+      ABS_TRILINOS_CPPFLAGS="-I${anasazi_INCDIR} ${ABS_TRILINOS_CPPFLAGS}"
+
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+
+fi
+rm -f conftest.err conftest.$ac_ext
+    CPPFLAGS=$save_CPPFLAGS
+  fi
+
+  # Next try the Trilinos build dir
+  if test $done = no; then
+    CPPFLAGS="-I../anasazi/src $save_CPPFLAGS $ABS_TRILINOS_CPPFLAGS"
+    cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+#undef PACKAGE
+#undef PACKAGE_NAME
+#undef PACKAGE_BUGREPORT
+#undef PACKAGE_STRING
+#undef PACKAGE_TARNAME
+#undef PACKAGE_VERSION
+#undef VERSION
+#include "Anasazi_config.h"
+
+_ACEOF
+if { (eval echo "$as_me:$LINENO: \"$ac_cpp conftest.$ac_ext\"") >&5
+  (eval $ac_cpp conftest.$ac_ext) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } >/dev/null; then
+  if test -s conftest.err; then
+    ac_cpp_err=$ac_cxx_preproc_warn_flag
+    ac_cpp_err=$ac_cpp_err$ac_cxx_werror_flag
+  else
+    ac_cpp_err=
+  fi
+else
+  ac_cpp_err=yes
+fi
+if test -z "$ac_cpp_err"; then
+   done=yes
+      REL_TRILINOS_CPPFLAGS="-I\$(top_builddir)/../anasazi/src ${REL_TRILINOS_CPPFLAGS}"
+      ABS_TRILINOS_CPPFLAGS="-I../anasazi/src ${ABS_TRILINOS_CPPFLAGS}"
+
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+
+fi
+rm -f conftest.err conftest.$ac_ext
+    CPPFLAGS=$save_CPPFLAGS
+  fi
+
+  # Next try the Trilinos source dir
+  if test $done = no && test -n "$srcdir"; then
+    CPPFLAGS="-I$srcdir/../anasazi/src $save_CPPFLAGS $ABS_TRILINOS_CPPFLAGS"
+    cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+#undef PACKAGE
+#undef PACKAGE_NAME
+#undef PACKAGE_BUGREPORT
+#undef PACKAGE_STRING
+#undef PACKAGE_TARNAME
+#undef PACKAGE_VERSION
+#undef VERSION
+#include "Anasazi_config.h"
+
+_ACEOF
+if { (eval echo "$as_me:$LINENO: \"$ac_cpp conftest.$ac_ext\"") >&5
+  (eval $ac_cpp conftest.$ac_ext) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } >/dev/null; then
+  if test -s conftest.err; then
+    ac_cpp_err=$ac_cxx_preproc_warn_flag
+    ac_cpp_err=$ac_cpp_err$ac_cxx_werror_flag
+  else
+    ac_cpp_err=
+  fi
+else
+  ac_cpp_err=yes
+fi
+if test -z "$ac_cpp_err"; then
+   done=yes
+      REL_TRILINOS_CPPFLAGS="-I\$(top_srcdir)/../anasazi/src ${REL_TRILINOS_CPPFLAGS}"
+      ABS_TRILINOS_CPPFLAGS="-I$srcdir/../anasazi/src ${ABS_TRILINOS_CPPFLAGS}"
+
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+
+fi
+rm -f conftest.err conftest.$ac_ext
+    CPPFLAGS=$save_CPPFLAGS
+  fi
+
+  if test $done = no; then
+    echo "------"
+    echo "Cannot preprocess the include file Anasazi_config.h, part of the anasazi package."
+    echo "Try --with-anasazi-incdir=<dir> to specify a single directory or"
+    echo "--with-cppflags=\"-I<dir1> -I<dir2>\" for multiple directories."
+    echo "------"
+    { { echo "$as_me:$LINENO: error: Cannot find anasazi include directory containing Anasazi_config.h" >&5
+echo "$as_me: error: Cannot find anasazi include directory containing Anasazi_config.h" >&2;}
+   { (exit 1); exit 1; }; }
+  fi
+
+
+  save_CPPFLAGS=$CPPFLAGS
+  done=no
+
+  # First try the directories we already have
+  CPPFLAGS="$save_CPPFLAGS $ABS_TRILINOS_CPPFLAGS"
+  cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+#undef PACKAGE
+#undef PACKAGE_NAME
+#undef PACKAGE_BUGREPORT
+#undef PACKAGE_STRING
+#undef PACKAGE_TARNAME
+#undef PACKAGE_VERSION
+#undef VERSION
+#include "AnasaziReturnType.hpp"
+
+_ACEOF
+if { (eval echo "$as_me:$LINENO: \"$ac_cpp conftest.$ac_ext\"") >&5
+  (eval $ac_cpp conftest.$ac_ext) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } >/dev/null; then
+  if test -s conftest.err; then
+    ac_cpp_err=$ac_cxx_preproc_warn_flag
+    ac_cpp_err=$ac_cpp_err$ac_cxx_werror_flag
+  else
+    ac_cpp_err=
+  fi
+else
+  ac_cpp_err=yes
+fi
+if test -z "$ac_cpp_err"; then
+  done=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+
+fi
+rm -f conftest.err conftest.$ac_ext
+  CPPFLAGS=$save_CPPFLAGS
+
+  # Next  try the specified incdir (if any)
+  if test $done = no && test -n "${anasazi_INCDIR}"; then
+    CPPFLAGS="-I${anasazi_INCDIR} $save_CPPFLAGS $ABS_TRILINOS_CPPFLAGS"
+    cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+#undef PACKAGE
+#undef PACKAGE_NAME
+#undef PACKAGE_BUGREPORT
+#undef PACKAGE_STRING
+#undef PACKAGE_TARNAME
+#undef PACKAGE_VERSION
+#undef VERSION
+#include "AnasaziReturnType.hpp"
+
+_ACEOF
+if { (eval echo "$as_me:$LINENO: \"$ac_cpp conftest.$ac_ext\"") >&5
+  (eval $ac_cpp conftest.$ac_ext) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } >/dev/null; then
+  if test -s conftest.err; then
+    ac_cpp_err=$ac_cxx_preproc_warn_flag
+    ac_cpp_err=$ac_cpp_err$ac_cxx_werror_flag
+  else
+    ac_cpp_err=
+  fi
+else
+  ac_cpp_err=yes
+fi
+if test -z "$ac_cpp_err"; then
+   done=yes
+      REL_TRILINOS_CPPFLAGS="-I${anasazi_INCDIR} ${REL_TRILINOS_CPPFLAGS}"
+      ABS_TRILINOS_CPPFLAGS="-I${anasazi_INCDIR} ${ABS_TRILINOS_CPPFLAGS}"
+
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+
+fi
+rm -f conftest.err conftest.$ac_ext
+    CPPFLAGS=$save_CPPFLAGS
+  fi
+
+  # Next try the Trilinos build dir
+  if test $done = no; then
+    CPPFLAGS="-I../anasazi/src $save_CPPFLAGS $ABS_TRILINOS_CPPFLAGS"
+    cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+#undef PACKAGE
+#undef PACKAGE_NAME
+#undef PACKAGE_BUGREPORT
+#undef PACKAGE_STRING
+#undef PACKAGE_TARNAME
+#undef PACKAGE_VERSION
+#undef VERSION
+#include "AnasaziReturnType.hpp"
+
+_ACEOF
+if { (eval echo "$as_me:$LINENO: \"$ac_cpp conftest.$ac_ext\"") >&5
+  (eval $ac_cpp conftest.$ac_ext) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } >/dev/null; then
+  if test -s conftest.err; then
+    ac_cpp_err=$ac_cxx_preproc_warn_flag
+    ac_cpp_err=$ac_cpp_err$ac_cxx_werror_flag
+  else
+    ac_cpp_err=
+  fi
+else
+  ac_cpp_err=yes
+fi
+if test -z "$ac_cpp_err"; then
+   done=yes
+      REL_TRILINOS_CPPFLAGS="-I\$(top_builddir)/../anasazi/src ${REL_TRILINOS_CPPFLAGS}"
+      ABS_TRILINOS_CPPFLAGS="-I../anasazi/src ${ABS_TRILINOS_CPPFLAGS}"
+
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+
+fi
+rm -f conftest.err conftest.$ac_ext
+    CPPFLAGS=$save_CPPFLAGS
+  fi
+
+  # Next try the Trilinos source dir
+  if test $done = no && test -n "$srcdir"; then
+    CPPFLAGS="-I$srcdir/../anasazi/src $save_CPPFLAGS $ABS_TRILINOS_CPPFLAGS"
+    cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+#undef PACKAGE
+#undef PACKAGE_NAME
+#undef PACKAGE_BUGREPORT
+#undef PACKAGE_STRING
+#undef PACKAGE_TARNAME
+#undef PACKAGE_VERSION
+#undef VERSION
+#include "AnasaziReturnType.hpp"
+
+_ACEOF
+if { (eval echo "$as_me:$LINENO: \"$ac_cpp conftest.$ac_ext\"") >&5
+  (eval $ac_cpp conftest.$ac_ext) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } >/dev/null; then
+  if test -s conftest.err; then
+    ac_cpp_err=$ac_cxx_preproc_warn_flag
+    ac_cpp_err=$ac_cpp_err$ac_cxx_werror_flag
+  else
+    ac_cpp_err=
+  fi
+else
+  ac_cpp_err=yes
+fi
+if test -z "$ac_cpp_err"; then
+   done=yes
+      REL_TRILINOS_CPPFLAGS="-I\$(top_srcdir)/../anasazi/src ${REL_TRILINOS_CPPFLAGS}"
+      ABS_TRILINOS_CPPFLAGS="-I$srcdir/../anasazi/src ${ABS_TRILINOS_CPPFLAGS}"
+
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+
+fi
+rm -f conftest.err conftest.$ac_ext
+    CPPFLAGS=$save_CPPFLAGS
+  fi
+
+  if test $done = no; then
+    echo "------"
+    echo "Cannot preprocess the include file AnasaziReturnType.hpp, part of the anasazi package."
+    echo "Try --with-anasazi-incdir=<dir> to specify a single directory or"
+    echo "--with-cppflags=\"-I<dir1> -I<dir2>\" for multiple directories."
+    echo "------"
+    { { echo "$as_me:$LINENO: error: Cannot find anasazi include directory containing AnasaziReturnType.hpp" >&5
+echo "$as_me: error: Cannot find anasazi include directory containing AnasaziReturnType.hpp" >&2;}
+   { (exit 1); exit 1; }; }
+  fi
+
+  TRILINOS_CXXFLAGS="${REL_TRILINOS_CPPFLAGS}"
+fi
+
 if test X${REQUIRE_TEUCHOS} = Xyes; then
 
   save_CPPFLAGS=$CPPFLAGS
@@ -12728,9 +12402,6 @@ cat >>conftest.$ac_ext <<_ACEOF
 #undef PACKAGE_TARNAME
 #undef PACKAGE_VERSION
 #undef VERSION
-#ifndef HAVE_CONFIG_H
-#define HAVE_CONFIG_H
-#endif
 #include "Teuchos_config.h"
 
 _ACEOF
@@ -12779,9 +12450,6 @@ cat >>conftest.$ac_ext <<_ACEOF
 #undef PACKAGE_TARNAME
 #undef PACKAGE_VERSION
 #undef VERSION
-#ifndef HAVE_CONFIG_H
-#define HAVE_CONFIG_H
-#endif
 #include "Teuchos_config.h"
 
 _ACEOF
@@ -12834,9 +12502,6 @@ cat >>conftest.$ac_ext <<_ACEOF
 #undef PACKAGE_TARNAME
 #undef PACKAGE_VERSION
 #undef VERSION
-#ifndef HAVE_CONFIG_H
-#define HAVE_CONFIG_H
-#endif
 #include "Teuchos_config.h"
 
 _ACEOF
@@ -12889,9 +12554,6 @@ cat >>conftest.$ac_ext <<_ACEOF
 #undef PACKAGE_TARNAME
 #undef PACKAGE_VERSION
 #undef VERSION
-#ifndef HAVE_CONFIG_H
-#define HAVE_CONFIG_H
-#endif
 #include "Teuchos_config.h"
 
 _ACEOF
@@ -12958,10 +12620,7 @@ cat >>conftest.$ac_ext <<_ACEOF
 #undef PACKAGE_TARNAME
 #undef PACKAGE_VERSION
 #undef VERSION
-#ifndef HAVE_CONFIG_H
-#define HAVE_CONFIG_H
-#endif
-#include "Teuchos_SerialDenseMatrix.hpp"
+#include "Teuchos_Flops.hpp"
 
 _ACEOF
 if { (eval echo "$as_me:$LINENO: \"$ac_cpp conftest.$ac_ext\"") >&5
@@ -13009,10 +12668,7 @@ cat >>conftest.$ac_ext <<_ACEOF
 #undef PACKAGE_TARNAME
 #undef PACKAGE_VERSION
 #undef VERSION
-#ifndef HAVE_CONFIG_H
-#define HAVE_CONFIG_H
-#endif
-#include "Teuchos_SerialDenseMatrix.hpp"
+#include "Teuchos_Flops.hpp"
 
 _ACEOF
 if { (eval echo "$as_me:$LINENO: \"$ac_cpp conftest.$ac_ext\"") >&5
@@ -13064,10 +12720,7 @@ cat >>conftest.$ac_ext <<_ACEOF
 #undef PACKAGE_TARNAME
 #undef PACKAGE_VERSION
 #undef VERSION
-#ifndef HAVE_CONFIG_H
-#define HAVE_CONFIG_H
-#endif
-#include "Teuchos_SerialDenseMatrix.hpp"
+#include "Teuchos_Flops.hpp"
 
 _ACEOF
 if { (eval echo "$as_me:$LINENO: \"$ac_cpp conftest.$ac_ext\"") >&5
@@ -13119,10 +12772,7 @@ cat >>conftest.$ac_ext <<_ACEOF
 #undef PACKAGE_TARNAME
 #undef PACKAGE_VERSION
 #undef VERSION
-#ifndef HAVE_CONFIG_H
-#define HAVE_CONFIG_H
-#endif
-#include "Teuchos_SerialDenseMatrix.hpp"
+#include "Teuchos_Flops.hpp"
 
 _ACEOF
 if { (eval echo "$as_me:$LINENO: \"$ac_cpp conftest.$ac_ext\"") >&5
@@ -13159,12 +12809,12 @@ rm -f conftest.err conftest.$ac_ext
 
   if test $done = no; then
     echo "------"
-    echo "Cannot preprocess the include file Teuchos_SerialDenseMatrix.hpp, part of the teuchos package."
+    echo "Cannot preprocess the include file Teuchos_Flops.hpp, part of the teuchos package."
     echo "Try --with-teuchos-incdir=<dir> to specify a single directory or"
     echo "--with-cppflags=\"-I<dir1> -I<dir2>\" for multiple directories."
     echo "------"
-    { { echo "$as_me:$LINENO: error: Cannot find teuchos include directory containing Teuchos_SerialDenseMatrix.hpp" >&5
-echo "$as_me: error: Cannot find teuchos include directory containing Teuchos_SerialDenseMatrix.hpp" >&2;}
+    { { echo "$as_me:$LINENO: error: Cannot find teuchos include directory containing Teuchos_Flops.hpp" >&5
+echo "$as_me: error: Cannot find teuchos include directory containing Teuchos_Flops.hpp" >&2;}
    { (exit 1); exit 1; }; }
   fi
 
@@ -13239,7 +12889,8 @@ if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
   cat conftest.err >&5
   echo "$as_me:$LINENO: \$? = $ac_status" >&5
   (exit $ac_status); } &&
-	 { ac_try='test -z "$ac_cxx_werror_flag"			 || test ! -s conftest.err'
+	 { ac_try='test -z "$ac_cxx_werror_flag"
+			 || test ! -s conftest.err'
   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
   (eval $ac_try) 2>&5
   ac_status=$?
@@ -13297,7 +12948,8 @@ if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
   cat conftest.err >&5
   echo "$as_me:$LINENO: \$? = $ac_status" >&5
   (exit $ac_status); } &&
-	 { ac_try='test -z "$ac_cxx_werror_flag"			 || test ! -s conftest.err'
+	 { ac_try='test -z "$ac_cxx_werror_flag"
+			 || test ! -s conftest.err'
   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
   (eval $ac_try) 2>&5
   ac_status=$?
@@ -13356,7 +13008,8 @@ if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
   cat conftest.err >&5
   echo "$as_me:$LINENO: \$? = $ac_status" >&5
   (exit $ac_status); } &&
-	 { ac_try='test -z "$ac_cxx_werror_flag"			 || test ! -s conftest.err'
+	 { ac_try='test -z "$ac_cxx_werror_flag"
+			 || test ! -s conftest.err'
   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
   (eval $ac_try) 2>&5
   ac_status=$?
@@ -13455,7 +13108,8 @@ if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
   cat conftest.err >&5
   echo "$as_me:$LINENO: \$? = $ac_status" >&5
   (exit $ac_status); } &&
-	 { ac_try='test -z "$ac_cxx_werror_flag"			 || test ! -s conftest.err'
+	 { ac_try='test -z "$ac_cxx_werror_flag"
+			 || test ! -s conftest.err'
   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
   (eval $ac_try) 2>&5
   ac_status=$?
@@ -13513,7 +13167,8 @@ if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
   cat conftest.err >&5
   echo "$as_me:$LINENO: \$? = $ac_status" >&5
   (exit $ac_status); } &&
-	 { ac_try='test -z "$ac_cxx_werror_flag"			 || test ! -s conftest.err'
+	 { ac_try='test -z "$ac_cxx_werror_flag"
+			 || test ! -s conftest.err'
   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
   (eval $ac_try) 2>&5
   ac_status=$?
@@ -13572,7 +13227,8 @@ if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
   cat conftest.err >&5
   echo "$as_me:$LINENO: \$? = $ac_status" >&5
   (exit $ac_status); } &&
-	 { ac_try='test -z "$ac_cxx_werror_flag"			 || test ! -s conftest.err'
+	 { ac_try='test -z "$ac_cxx_werror_flag"
+			 || test ! -s conftest.err'
   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
   (eval $ac_try) 2>&5
   ac_status=$?
@@ -13671,7 +13327,8 @@ if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
   cat conftest.err >&5
   echo "$as_me:$LINENO: \$? = $ac_status" >&5
   (exit $ac_status); } &&
-	 { ac_try='test -z "$ac_cxx_werror_flag"			 || test ! -s conftest.err'
+	 { ac_try='test -z "$ac_cxx_werror_flag"
+			 || test ! -s conftest.err'
   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
   (eval $ac_try) 2>&5
   ac_status=$?
@@ -13729,7 +13386,8 @@ if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
   cat conftest.err >&5
   echo "$as_me:$LINENO: \$? = $ac_status" >&5
   (exit $ac_status); } &&
-	 { ac_try='test -z "$ac_cxx_werror_flag"			 || test ! -s conftest.err'
+	 { ac_try='test -z "$ac_cxx_werror_flag"
+			 || test ! -s conftest.err'
   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
   (eval $ac_try) 2>&5
   ac_status=$?
@@ -13788,7 +13446,8 @@ if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
   cat conftest.err >&5
   echo "$as_me:$LINENO: \$? = $ac_status" >&5
   (exit $ac_status); } &&
-	 { ac_try='test -z "$ac_cxx_werror_flag"			 || test ! -s conftest.err'
+	 { ac_try='test -z "$ac_cxx_werror_flag"
+			 || test ! -s conftest.err'
   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
   (eval $ac_try) 2>&5
   ac_status=$?
@@ -13834,446 +13493,6 @@ echo "$as_me: error: Cannot find aztecoo library." >&2;}
   fi
 
 
-
-  if test X${BUILD_LOCA_ANASAZI_SUPPORT} = Xyes; then
-
-  LIBS="-lanasazi ${LIBS}"
-  save_LDFLAGS=$LDFLAGS
-  done=no
-
-  # First, see if we're inside Trilinos.
-  # If so, just assume the libraries will be built later.
-  if test X$INSIDE_TRILINOS = Xyes; then
-    PWD=`pwd`
-    LDFLAGS="-L$PWD/../anasazi/src $save_LDFLAGS"
-    done=auto
-  fi
-
-  # Next, see if we can link without doing anything
-  if test $done = no; then
-    ac_ext=cc
-ac_cpp='$CXXCPP $CPPFLAGS'
-ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
-
-    cat >conftest.$ac_ext <<_ACEOF
-/* confdefs.h.  */
-_ACEOF
-cat confdefs.h >>conftest.$ac_ext
-cat >>conftest.$ac_ext <<_ACEOF
-/* end confdefs.h.  */
-
-#ifdef F77_DUMMY_MAIN
-
-#  ifdef __cplusplus
-     extern "C"
-#  endif
-   int F77_DUMMY_MAIN() { return 1; }
-
-#endif
-int
-main ()
-{
-
-  ;
-  return 0;
-}
-_ACEOF
-rm -f conftest.$ac_objext conftest$ac_exeext
-if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
-  (eval $ac_link) 2>conftest.er1
-  ac_status=$?
-  grep -v '^ *+' conftest.er1 >conftest.err
-  rm -f conftest.er1
-  cat conftest.err >&5
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); } &&
-	 { ac_try='test -z "$ac_cxx_werror_flag"			 || test ! -s conftest.err'
-  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
-  (eval $ac_try) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }; } &&
-	 { ac_try='test -s conftest$ac_exeext'
-  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
-  (eval $ac_try) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }; }; then
-  done=yes
-else
-  echo "$as_me: failed program was:" >&5
-sed 's/^/| /' conftest.$ac_ext >&5
-
-fi
-rm -f conftest.err conftest.$ac_objext \
-      conftest$ac_exeext conftest.$ac_ext
-    LDFLAGS=$save_LDFLAGS
-  fi
-
-  # Next try the specified libdir (if any)
-   if test $done = no && test -n "${anasazi_LIBDIR}"; then
-     LDFLAGS="-L${anasazi_LIBDIR} $save_LDFLAGS"
-     cat >conftest.$ac_ext <<_ACEOF
-/* confdefs.h.  */
-_ACEOF
-cat confdefs.h >>conftest.$ac_ext
-cat >>conftest.$ac_ext <<_ACEOF
-/* end confdefs.h.  */
-
-#ifdef F77_DUMMY_MAIN
-
-#  ifdef __cplusplus
-     extern "C"
-#  endif
-   int F77_DUMMY_MAIN() { return 1; }
-
-#endif
-int
-main ()
-{
-
-  ;
-  return 0;
-}
-_ACEOF
-rm -f conftest.$ac_objext conftest$ac_exeext
-if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
-  (eval $ac_link) 2>conftest.er1
-  ac_status=$?
-  grep -v '^ *+' conftest.er1 >conftest.err
-  rm -f conftest.er1
-  cat conftest.err >&5
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); } &&
-	 { ac_try='test -z "$ac_cxx_werror_flag"			 || test ! -s conftest.err'
-  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
-  (eval $ac_try) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }; } &&
-	 { ac_try='test -s conftest$ac_exeext'
-  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
-  (eval $ac_try) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }; }; then
-  done=yes
-else
-  echo "$as_me: failed program was:" >&5
-sed 's/^/| /' conftest.$ac_ext >&5
-
-LDFLAGS=$save_LDFLAGS
-fi
-rm -f conftest.err conftest.$ac_objext \
-      conftest$ac_exeext conftest.$ac_ext
-   fi
-
-  # Next try the Trilinos build dir
-   if test $done = no; then
-    PWD=`pwd`
-    LDFLAGS="-L$PWD/../anasazi/src $save_LDFLAGS"
-    cat >conftest.$ac_ext <<_ACEOF
-/* confdefs.h.  */
-_ACEOF
-cat confdefs.h >>conftest.$ac_ext
-cat >>conftest.$ac_ext <<_ACEOF
-/* end confdefs.h.  */
-
-#ifdef F77_DUMMY_MAIN
-
-#  ifdef __cplusplus
-     extern "C"
-#  endif
-   int F77_DUMMY_MAIN() { return 1; }
-
-#endif
-int
-main ()
-{
-
-  ;
-  return 0;
-}
-_ACEOF
-rm -f conftest.$ac_objext conftest$ac_exeext
-if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
-  (eval $ac_link) 2>conftest.er1
-  ac_status=$?
-  grep -v '^ *+' conftest.er1 >conftest.err
-  rm -f conftest.er1
-  cat conftest.err >&5
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); } &&
-	 { ac_try='test -z "$ac_cxx_werror_flag"			 || test ! -s conftest.err'
-  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
-  (eval $ac_try) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }; } &&
-	 { ac_try='test -s conftest$ac_exeext'
-  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
-  (eval $ac_try) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }; }; then
-  done=yes
-else
-  echo "$as_me: failed program was:" >&5
-sed 's/^/| /' conftest.$ac_ext >&5
-
-LDFLAGS=$save_LDFLAGS
-fi
-rm -f conftest.err conftest.$ac_objext \
-      conftest$ac_exeext conftest.$ac_ext
-   fi
-
-  echo "$as_me:$LINENO: checking for anasazi library" >&5
-echo $ECHO_N "checking for anasazi library... $ECHO_C" >&6
-
-  if test $done = auto; then
-    echo "$as_me:$LINENO: result: no check - assuming library will be built by Trilinos" >&5
-echo "${ECHO_T}no check - assuming library will be built by Trilinos" >&6
-  elif test $done = yes; then
-    echo "$as_me:$LINENO: result: yes" >&5
-echo "${ECHO_T}yes" >&6
-  else
-    echo "$as_me:$LINENO: result: no" >&5
-echo "${ECHO_T}no" >&6
-    echo "------"
-    echo "Cannot find the library anasazi."
-    echo "Try --with-anasazi-libdir=<dir> to specify a single directory or"
-    echo "--with-ldflags=\"-L<dir1> -L<dir2>\" for multiple directories."
-    echo "------"
-    { { echo "$as_me:$LINENO: error: Cannot find anasazi library." >&5
-echo "$as_me: error: Cannot find anasazi library." >&2;}
-   { (exit 1); exit 1; }; }
-  fi
-
-
-
-  LIBS="-lanasaziutils ${LIBS}"
-  save_LDFLAGS=$LDFLAGS
-  done=no
-
-  # First, see if we're inside Trilinos.
-  # If so, just assume the libraries will be built later.
-  if test X$INSIDE_TRILINOS = Xyes; then
-    PWD=`pwd`
-    LDFLAGS="-L$PWD/../anasazi/utils $save_LDFLAGS"
-    done=auto
-  fi
-
-  # Next, see if we can link without doing anything
-  if test $done = no; then
-    ac_ext=cc
-ac_cpp='$CXXCPP $CPPFLAGS'
-ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
-
-    cat >conftest.$ac_ext <<_ACEOF
-/* confdefs.h.  */
-_ACEOF
-cat confdefs.h >>conftest.$ac_ext
-cat >>conftest.$ac_ext <<_ACEOF
-/* end confdefs.h.  */
-
-#ifdef F77_DUMMY_MAIN
-
-#  ifdef __cplusplus
-     extern "C"
-#  endif
-   int F77_DUMMY_MAIN() { return 1; }
-
-#endif
-int
-main ()
-{
-
-  ;
-  return 0;
-}
-_ACEOF
-rm -f conftest.$ac_objext conftest$ac_exeext
-if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
-  (eval $ac_link) 2>conftest.er1
-  ac_status=$?
-  grep -v '^ *+' conftest.er1 >conftest.err
-  rm -f conftest.er1
-  cat conftest.err >&5
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); } &&
-	 { ac_try='test -z "$ac_cxx_werror_flag"			 || test ! -s conftest.err'
-  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
-  (eval $ac_try) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }; } &&
-	 { ac_try='test -s conftest$ac_exeext'
-  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
-  (eval $ac_try) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }; }; then
-  done=yes
-else
-  echo "$as_me: failed program was:" >&5
-sed 's/^/| /' conftest.$ac_ext >&5
-
-fi
-rm -f conftest.err conftest.$ac_objext \
-      conftest$ac_exeext conftest.$ac_ext
-    LDFLAGS=$save_LDFLAGS
-  fi
-
-  # Next try the specified libdir (if any)
-   if test $done = no && test -n "${anasaziutils_LIBDIR}"; then
-     LDFLAGS="-L${anasaziutils_LIBDIR} $save_LDFLAGS"
-     cat >conftest.$ac_ext <<_ACEOF
-/* confdefs.h.  */
-_ACEOF
-cat confdefs.h >>conftest.$ac_ext
-cat >>conftest.$ac_ext <<_ACEOF
-/* end confdefs.h.  */
-
-#ifdef F77_DUMMY_MAIN
-
-#  ifdef __cplusplus
-     extern "C"
-#  endif
-   int F77_DUMMY_MAIN() { return 1; }
-
-#endif
-int
-main ()
-{
-
-  ;
-  return 0;
-}
-_ACEOF
-rm -f conftest.$ac_objext conftest$ac_exeext
-if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
-  (eval $ac_link) 2>conftest.er1
-  ac_status=$?
-  grep -v '^ *+' conftest.er1 >conftest.err
-  rm -f conftest.er1
-  cat conftest.err >&5
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); } &&
-	 { ac_try='test -z "$ac_cxx_werror_flag"			 || test ! -s conftest.err'
-  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
-  (eval $ac_try) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }; } &&
-	 { ac_try='test -s conftest$ac_exeext'
-  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
-  (eval $ac_try) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }; }; then
-  done=yes
-else
-  echo "$as_me: failed program was:" >&5
-sed 's/^/| /' conftest.$ac_ext >&5
-
-LDFLAGS=$save_LDFLAGS
-fi
-rm -f conftest.err conftest.$ac_objext \
-      conftest$ac_exeext conftest.$ac_ext
-   fi
-
-  # Next try the Trilinos build dir
-   if test $done = no; then
-    PWD=`pwd`
-    LDFLAGS="-L$PWD/../anasazi/utils $save_LDFLAGS"
-    cat >conftest.$ac_ext <<_ACEOF
-/* confdefs.h.  */
-_ACEOF
-cat confdefs.h >>conftest.$ac_ext
-cat >>conftest.$ac_ext <<_ACEOF
-/* end confdefs.h.  */
-
-#ifdef F77_DUMMY_MAIN
-
-#  ifdef __cplusplus
-     extern "C"
-#  endif
-   int F77_DUMMY_MAIN() { return 1; }
-
-#endif
-int
-main ()
-{
-
-  ;
-  return 0;
-}
-_ACEOF
-rm -f conftest.$ac_objext conftest$ac_exeext
-if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
-  (eval $ac_link) 2>conftest.er1
-  ac_status=$?
-  grep -v '^ *+' conftest.er1 >conftest.err
-  rm -f conftest.er1
-  cat conftest.err >&5
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); } &&
-	 { ac_try='test -z "$ac_cxx_werror_flag"			 || test ! -s conftest.err'
-  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
-  (eval $ac_try) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }; } &&
-	 { ac_try='test -s conftest$ac_exeext'
-  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
-  (eval $ac_try) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }; }; then
-  done=yes
-else
-  echo "$as_me: failed program was:" >&5
-sed 's/^/| /' conftest.$ac_ext >&5
-
-LDFLAGS=$save_LDFLAGS
-fi
-rm -f conftest.err conftest.$ac_objext \
-      conftest$ac_exeext conftest.$ac_ext
-   fi
-
-  echo "$as_me:$LINENO: checking for anasaziutils library" >&5
-echo $ECHO_N "checking for anasaziutils library... $ECHO_C" >&6
-
-  if test $done = auto; then
-    echo "$as_me:$LINENO: result: no check - assuming library will be built by Trilinos" >&5
-echo "${ECHO_T}no check - assuming library will be built by Trilinos" >&6
-  elif test $done = yes; then
-    echo "$as_me:$LINENO: result: yes" >&5
-echo "${ECHO_T}yes" >&6
-  else
-    echo "$as_me:$LINENO: result: no" >&5
-echo "${ECHO_T}no" >&6
-    echo "------"
-    echo "Cannot find the library anasaziutils."
-    echo "Try --with-anasaziutils-libdir=<dir> to specify a single directory or"
-    echo "--with-ldflags=\"-L<dir1> -L<dir2>\" for multiple directories."
-    echo "------"
-    { { echo "$as_me:$LINENO: error: Cannot find anasaziutils library." >&5
-echo "$as_me: error: Cannot find anasaziutils library." >&2;}
-   { (exit 1); exit 1; }; }
-  fi
-
-
-
-cat >>confdefs.h <<\_ACEOF
-#define HAVE_LOCA_ANASAZI 1
-_ACEOF
-
-  fi
 
   if test X${BUILD_NOX_EPETRAEXT_SUPPORT} = Xyes; then
 
@@ -14329,7 +13548,8 @@ if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
   cat conftest.err >&5
   echo "$as_me:$LINENO: \$? = $ac_status" >&5
   (exit $ac_status); } &&
-	 { ac_try='test -z "$ac_cxx_werror_flag"			 || test ! -s conftest.err'
+	 { ac_try='test -z "$ac_cxx_werror_flag"
+			 || test ! -s conftest.err'
   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
   (eval $ac_try) 2>&5
   ac_status=$?
@@ -14387,7 +13607,8 @@ if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
   cat conftest.err >&5
   echo "$as_me:$LINENO: \$? = $ac_status" >&5
   (exit $ac_status); } &&
-	 { ac_try='test -z "$ac_cxx_werror_flag"			 || test ! -s conftest.err'
+	 { ac_try='test -z "$ac_cxx_werror_flag"
+			 || test ! -s conftest.err'
   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
   (eval $ac_try) 2>&5
   ac_status=$?
@@ -14446,7 +13667,8 @@ if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
   cat conftest.err >&5
   echo "$as_me:$LINENO: \$? = $ac_status" >&5
   (exit $ac_status); } &&
-	 { ac_try='test -z "$ac_cxx_werror_flag"			 || test ! -s conftest.err'
+	 { ac_try='test -z "$ac_cxx_werror_flag"
+			 || test ! -s conftest.err'
   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
   (eval $ac_try) 2>&5
   ac_status=$?
@@ -14498,6 +13720,233 @@ cat >>confdefs.h <<\_ACEOF
 _ACEOF
 
   fi
+
+fi
+
+if test X${BUILD_LOCA_ANASAZI_SUPPORT} = Xyes; then
+
+  LIBS="-lanasazi ${LIBS}"
+  save_LDFLAGS=$LDFLAGS
+  done=no
+
+  # First, see if we're inside Trilinos.
+  # If so, just assume the libraries will be built later.
+  if test X$INSIDE_TRILINOS = Xyes; then
+    PWD=`pwd`
+    LDFLAGS="-L$PWD/../anasazi/src $save_LDFLAGS"
+    done=auto
+  fi
+
+  # Next, see if we can link without doing anything
+  if test $done = no; then
+    ac_ext=cc
+ac_cpp='$CXXCPP $CPPFLAGS'
+ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
+
+    cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+#ifdef F77_DUMMY_MAIN
+
+#  ifdef __cplusplus
+     extern "C"
+#  endif
+   int F77_DUMMY_MAIN() { return 1; }
+
+#endif
+int
+main ()
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
+  (eval $ac_link) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+	 { ac_try='test -z "$ac_cxx_werror_flag"
+			 || test ! -s conftest.err'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; } &&
+	 { ac_try='test -s conftest$ac_exeext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  done=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+fi
+rm -f conftest.err conftest.$ac_objext \
+      conftest$ac_exeext conftest.$ac_ext
+    LDFLAGS=$save_LDFLAGS
+  fi
+
+  # Next try the specified libdir (if any)
+   if test $done = no && test -n "${anasazi_LIBDIR}"; then
+     LDFLAGS="-L${anasazi_LIBDIR} $save_LDFLAGS"
+     cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+#ifdef F77_DUMMY_MAIN
+
+#  ifdef __cplusplus
+     extern "C"
+#  endif
+   int F77_DUMMY_MAIN() { return 1; }
+
+#endif
+int
+main ()
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
+  (eval $ac_link) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+	 { ac_try='test -z "$ac_cxx_werror_flag"
+			 || test ! -s conftest.err'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; } &&
+	 { ac_try='test -s conftest$ac_exeext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  done=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+LDFLAGS=$save_LDFLAGS
+fi
+rm -f conftest.err conftest.$ac_objext \
+      conftest$ac_exeext conftest.$ac_ext
+   fi
+
+  # Next try the Trilinos build dir
+   if test $done = no; then
+    PWD=`pwd`
+    LDFLAGS="-L$PWD/../anasazi/src $save_LDFLAGS"
+    cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+#ifdef F77_DUMMY_MAIN
+
+#  ifdef __cplusplus
+     extern "C"
+#  endif
+   int F77_DUMMY_MAIN() { return 1; }
+
+#endif
+int
+main ()
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
+  (eval $ac_link) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+	 { ac_try='test -z "$ac_cxx_werror_flag"
+			 || test ! -s conftest.err'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; } &&
+	 { ac_try='test -s conftest$ac_exeext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  done=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+LDFLAGS=$save_LDFLAGS
+fi
+rm -f conftest.err conftest.$ac_objext \
+      conftest$ac_exeext conftest.$ac_ext
+   fi
+
+  echo "$as_me:$LINENO: checking for anasazi library" >&5
+echo $ECHO_N "checking for anasazi library... $ECHO_C" >&6
+
+  if test $done = auto; then
+    echo "$as_me:$LINENO: result: no check - assuming library will be built by Trilinos" >&5
+echo "${ECHO_T}no check - assuming library will be built by Trilinos" >&6
+  elif test $done = yes; then
+    echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6
+  else
+    echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+    echo "------"
+    echo "Cannot find the library anasazi."
+    echo "Try --with-anasazi-libdir=<dir> to specify a single directory or"
+    echo "--with-ldflags=\"-L<dir1> -L<dir2>\" for multiple directories."
+    echo "------"
+    { { echo "$as_me:$LINENO: error: Cannot find anasazi library." >&5
+echo "$as_me: error: Cannot find anasazi library." >&2;}
+   { (exit 1); exit 1; }; }
+  fi
+
+
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_LOCA_ANASAZI 1
+_ACEOF
 
 fi
 
@@ -14555,7 +14004,8 @@ if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
   cat conftest.err >&5
   echo "$as_me:$LINENO: \$? = $ac_status" >&5
   (exit $ac_status); } &&
-	 { ac_try='test -z "$ac_cxx_werror_flag"			 || test ! -s conftest.err'
+	 { ac_try='test -z "$ac_cxx_werror_flag"
+			 || test ! -s conftest.err'
   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
   (eval $ac_try) 2>&5
   ac_status=$?
@@ -14613,7 +14063,8 @@ if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
   cat conftest.err >&5
   echo "$as_me:$LINENO: \$? = $ac_status" >&5
   (exit $ac_status); } &&
-	 { ac_try='test -z "$ac_cxx_werror_flag"			 || test ! -s conftest.err'
+	 { ac_try='test -z "$ac_cxx_werror_flag"
+			 || test ! -s conftest.err'
   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
   (eval $ac_try) 2>&5
   ac_status=$?
@@ -14672,7 +14123,8 @@ if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
   cat conftest.err >&5
   echo "$as_me:$LINENO: \$? = $ac_status" >&5
   (exit $ac_status); } &&
-	 { ac_try='test -z "$ac_cxx_werror_flag"			 || test ! -s conftest.err'
+	 { ac_try='test -z "$ac_cxx_werror_flag"
+			 || test ! -s conftest.err'
   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
   (eval $ac_try) 2>&5
   ac_status=$?
@@ -16201,6 +15653,11 @@ esac
   *) ac_INSTALL=$ac_top_builddir$INSTALL ;;
   esac
 
+  if test x"$ac_file" != x-; then
+    { echo "$as_me:$LINENO: creating $ac_file" >&5
+echo "$as_me: creating $ac_file" >&6;}
+    rm -f "$ac_file"
+  fi
   # Let's still pretend it is `configure' which instantiates (i.e., don't
   # use $as_me), people would be surprised to read:
   #    /* config.h.  Generated by config.status.  */
@@ -16239,12 +15696,6 @@ echo "$as_me: error: cannot find input file: $f" >&2;}
 	 fi;;
       esac
     done` || { (exit 1); exit 1; }
-
-  if test x"$ac_file" != x-; then
-    { echo "$as_me:$LINENO: creating $ac_file" >&5
-echo "$as_me: creating $ac_file" >&6;}
-    rm -f "$ac_file"
-  fi
 _ACEOF
 cat >>$CONFIG_STATUS <<_ACEOF
   sed "$ac_vpsub
