@@ -148,6 +148,7 @@ int ML_CG_ComputeEigenvalues(ML_Krylov *data, int length, int scale_by_diag)
    int         i, j, k, its, maxiter, ncnt, *colInd, allocated, print_freq;
    int         *offset_array, myoffset, *itmp_array, nprocs, mypid, totallength;
    int         ext_leng, *index_array, total_length, original_maxiter, Nbc;
+   int         level;
    double      alpha, beta, rho, rhom1, sigma, offdiag_norm;
    double      *r = NULL, *p = NULL, *ap = NULL, res_norm, *alpha_array, *colVal, *diag=NULL;
    double      *rhs=NULL, *rnorm_array, **Tmat, init_offdiag_norm;
@@ -166,6 +167,9 @@ int ML_CG_ComputeEigenvalues(ML_Krylov *data, int length, int scale_by_diag)
    /* ----------------------------------------------------------------*/
 
    matrix      = ML_Krylov_Get_Amatrix(data);
+   level = -1;
+   if (matrix->to != NULL) level = matrix->to->levelnum;
+
    comm        = ML_Krylov_Get_Comm(data);
    totallength = ML_Comm_GsumInt(comm, length);
    print_freq  = ML_Krylov_Get_PrintFreq(data);
@@ -282,16 +286,20 @@ int ML_CG_ComputeEigenvalues(ML_Krylov *data, int length, int scale_by_diag)
       }
       /* kludging this in to handle Dirichlet BC's */
       if ( sum == 0.0) { rhs[i] = 0.; Nbc++; diag[i] = 1.;}
-
       else {
          if ( diag[i] == 0.0 ) 
          {
-            printf("%d : diagonal[%d] == 0.0.\n", comm->ML_mypid, i);
-	    /*            exit(1); */
-	    diag[i] = 1.;
+	   if (level != -1) 
+            printf("%d : diagonal[%d] == 0.0 for matrix stored on level %d within MG hierarchy\n", comm->ML_mypid, i, level);
+	   else
+	     printf("%d : diagonal[%d] == 0.0\n", comm->ML_mypid, i);
+	   diag[i] = 1.;
          }
          else if ( diag[i] < 0.0 )
          {
+	   if (level != -1) 
+            printf("%d : diagonal[%d] = %e < 0 for matrix stored on level %d within MG hierarchy\n", comm->ML_mypid, i, diag[i], level);
+	   else
             printf("%d : diagonal[%d] = %e < 0.0.\n", comm->ML_mypid, i, diag[i]);
          }
 	 else {
@@ -541,7 +549,7 @@ if (maxiter == 0) {
 int ML_Power_ComputeEigenvalues(ML_Krylov *data, int length, int scale_by_diag)
 {
    int         totallength, print_freq, nprocs, mypid, maxiter;
-   int         i, j, ncnt, Nbc, *colInd = NULL, allocated;
+   int         i, j, ncnt, Nbc, *colInd = NULL, allocated, level;
    double      *p = NULL, *ap = NULL, *colVal = NULL, norm, *diag = NULL, sum;
    ML_Operator *matrix;
    ML_Comm     *comm;
@@ -550,6 +558,9 @@ int ML_Power_ComputeEigenvalues(ML_Krylov *data, int length, int scale_by_diag)
    /* ----------------------------------------------------------------*/
 
    matrix      = ML_Krylov_Get_Amatrix(data);
+   level = -1;
+   if (matrix->to != NULL) level = matrix->to->levelnum;
+
    comm        = ML_Krylov_Get_Comm(data);
    totallength = ML_Comm_GsumInt(comm, length);
    print_freq  = ML_Krylov_Get_PrintFreq(data);
@@ -607,12 +618,17 @@ int ML_Power_ComputeEigenvalues(ML_Krylov *data, int length, int scale_by_diag)
       else {
          if ( diag[i] == 0.0 ) 
          {
-            printf("%d : diagonal[%d] == 0.0.\n", comm->ML_mypid, i);
-	    /*            exit(1); */
-	    diag[i] = 1.;
+	   if (level != -1) 
+            printf("%d : diagonal[%d] == 0.0 for matrix stored on level %d within MG hierarchy\n", comm->ML_mypid, i, level);
+	   else
+	     printf("%d : diagonal[%d] == 0.0\n", comm->ML_mypid, i);
+	   diag[i] = 1.;
          }
          else if ( diag[i] < 0.0 )
          {
+	   if (level != -1) 
+            printf("%d : diagonal[%d] = %e < 0 for matrix stored on level %d within MG hierarchy\n", comm->ML_mypid, i, diag[i], level);
+	   else
             printf("%d : diagonal[%d] = %e < 0.0.\n", comm->ML_mypid, i, diag[i]);
          }
 	 else {
