@@ -3,7 +3,6 @@
 #define ANASAZI_OPERATOR_HPP
 
 #include "AnasaziMultiVec.hpp"
-#include "AnasaziMatrix.hpp"
 #include "AnasaziReturnType.hpp"
 #include <iostream>
 
@@ -38,8 +37,8 @@ public:
 	/*! \brief This routine takes the %AnasaziMultiVec \c x and applies the matrix/operator
 	to it resulting in the %AnasaziMultiVec \c y, which is returned.
 	*/
-	virtual Anasazi_ReturnType ApplyOp (const AnasaziMultiVec<TYPE>& X, 
-						      AnasaziMultiVec<TYPE>& Y ) = 0;
+	virtual Anasazi_ReturnType ApplyOp (const AnasaziMultiVec<TYPE>& x, 
+						      AnasaziMultiVec<TYPE>& y ) const = 0;
 	//@}
 };
 
