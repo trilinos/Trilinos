@@ -782,6 +782,9 @@ char  *yo = "matching_pgm";
 /* for each vertex, we match with the unmatched vertex which has the most    */
 /* hyperedges in common with it (ie, the pair with greatest inner product).  */
 /* by Aaron Becker, UIUC, Summer 2004                                        */
+/* 8/5/04  Erik says matching_ipm is nearly equivalent to matching_rhm;
+   matching_ipm differs in that it selects matches in order of vertices,
+   rather than in random order.  There also may be a scale-factor difference.*/
 static int matching_ipm(ZZ *zz, HGraph *hg, Matching match, int *limit)
 {
     int   i, j, n, v1, v2, edge, maxip, maxindex;
