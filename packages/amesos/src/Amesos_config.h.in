@@ -152,6 +152,9 @@
 /* Define to 1 if you have the <vector> header file. */
 #undef HAVE_VECTOR
 
+/* Define if we are using the old Superludist */
+#undef OLD_SUPERLUDIST
+
 /* Name of package */
 #undef PACKAGE
 

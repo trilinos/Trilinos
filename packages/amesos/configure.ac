@@ -401,6 +401,7 @@ if test "X$ac_cv_use_amesos_superludist" != "Xno"; then
 
     SAVE_LIBS="${LIBS}"
     LIBS="${tac_with_amesos_superludistlib} ${BLAS_LIBS} ${MPI_LIBS} ${FLIBS} ${LIBS}"
+     AC_TRY_LINK_FUNC(set_default_options,AC_DEFINE(OLD_SUPERLUDIST,,[Define if we are using the old Superludist]) ) 
      AC_TRY_LINK_FUNC(pdgssvx,,
       AC_MSG_ERROR([[Cannot find SuperLU Dist library, specify a location using --with-amesos-superludistlib, (ex. --with-amesos-superludistlib=/home/kstanley/Trilinos3PL/SuperLU_DIST/libsuperludist.a)]]))  
     LIBS="${SAVE_LIBS}"
