@@ -1,3 +1,5 @@
+#include <stdio.h>
+#include <stdlib.h>
 // Simple Power method algorithm
 double power_method(const Epetra_CrsMatrix& A) {  
   // variable needed for iteration
