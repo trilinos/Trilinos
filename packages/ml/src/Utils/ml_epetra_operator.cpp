@@ -46,10 +46,14 @@ Epetra_ML_Operator::Epetra_ML_Operator(ML *ml_handle, const Epetra_Comm &myComm,
     Comm_(myComm),
     DomainMap_(dm),
     RangeMap_(rm) {
+  ownership_ = false;
   Label_ = "Epetra ML_Operator";
 }
 //==============================================================================
 Epetra_ML_Operator::~Epetra_ML_Operator() {
+  if (ownership_ == true) {
+    ML_Destroy(&solver_);
+  }
 }
 //==============================================================================
 int Epetra_ML_Operator::ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const {

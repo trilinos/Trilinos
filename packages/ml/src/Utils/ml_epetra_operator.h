@@ -60,6 +60,23 @@ class Epetra_ML_Operator: public virtual Epetra_Operator {
     //! Destructor
   ~Epetra_ML_Operator();
   //@}
+
+  
+  //@{ \name Atribute set methods.
+
+    //! If set true, the multigrid hierarchy is destroyed when the Epetra_ML_Operator is destroyed.
+    /*! This flag determines the ownership of the multigrid hierarchy. When set to true, this
+        object owns the multigrid hierarchy and so it destroys it when freed. Otherwise, it is
+        assumed that the multigrid hierarchy is owned by another object and so it is not freed.
+        By default, the multigrid hierarchy is not owned by this object.
+      
+    \param In
+	   ownership - If true, this object owns the corresponding multigrid hierarchy. 
+
+  */
+  int SetOwnership(bool ownership){ ownership_ = ownership; return(-1);};
+  //@}
+
   
   //@{ \name Atribute set methods.
 
@@ -139,6 +156,7 @@ class Epetra_ML_Operator: public virtual Epetra_Operator {
   const Epetra_Map & DomainMap_;
   const Epetra_Map & RangeMap_;
   const Epetra_Comm & Comm_;
+  bool  ownership_;
 };
 
 #endif /* _EPETRA_ML_OPERATOR_H_ */
