@@ -140,7 +140,10 @@ namespace Direction {
 
   <B>Output Parameters</B>
 
-<li>"Linear Solver" - a sublist that contains the linear solver parameters will be created if it doesn't exist under the "Newton" sublist.  The parameter "Tolerance" will be created in the "Linear Solver" sublist and set to the computed value of the forcing term.
+<li>"Linear Solver" - a sublist that contains the linear solver
+parameters will be created if it doesn't exist under the "Newton"
+sublist.  The parameter "Tolerance" will be created in the "Linear
+Solver" sublist and set to the computed value of the forcing term.
 
 </ul>
 
