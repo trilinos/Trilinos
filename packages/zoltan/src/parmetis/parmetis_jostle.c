@@ -1079,9 +1079,9 @@ static int LB_ParMetis_Jostle(
     /* We don't know about Jostle */
     LB_PRINT_ERROR(lb->Proc, yo, 
       "Sorry, Jostle is not available on this system.\n"
-      "If you have Jostle, please set the JOSTLE_PATH appropriately "
-      "in the makefile and recompile Zoltan. Otherwise, use a "
-      "different method.");
+      "If you have Jostle, please set the JOSTLE_XXXPATHs appropriately "
+      "in the Zoltan configuration files and recompile Zoltan. Otherwise, "
+      "use a different method, for example ParMETIS.");
     FREE_MY_MEMORY;
     LB_TRACE_EXIT(lb, yo);
     return LB_FATAL;
