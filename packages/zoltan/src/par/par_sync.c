@@ -13,6 +13,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include "lb_const.h"
 #include "par_const.h"
 
 
@@ -51,6 +52,7 @@ int        flag = 1, from, type;
 static int offset = 0;
 MPI_Status st;
 char *yo = "LB_Print_Sync_Start";
+char msg[256];
 int proc;
 
   MPI_Comm_rank(communicator, &proc);
@@ -62,8 +64,8 @@ int proc;
     from = proc -1;
     if (MPI_Recv((void *) &flag, 1, MPI_INT, from, type, communicator, &st)
         != 0) {
-      fprintf(stderr, "%s: ERROR on processor %d\n", yo, proc);
-      fprintf(stderr, "MPI_Recv failed, message type %d\n", type);
+      sprintf(msg, "MPI_Recv failed, message type %d.", type);
+      LB_PRINT_ERROR(proc, yo, msg);
       exit (-1);
     }
   }
@@ -103,6 +105,7 @@ static int  offset = 0;
 MPI_Status  st;
 int proc, num_proc;
 char *yo = "LB_Print_Sync_End";
+char msg[256];
 
   MPI_Comm_rank(communicator, &proc);
   MPI_Comm_size(communicator, &num_proc);
@@ -126,16 +129,16 @@ char *yo = "LB_Print_Sync_End";
   }
 
   if (MPI_Send((void *) &flag, 1, MPI_INT, to, type, communicator) != 0 ) {
-    fprintf(stderr, "%s: ERROR on node %d\n", yo, proc);
-    fprintf(stderr, "MPI_Send failed, message type %d\n", type);
+    sprintf(msg, "MPI_Send failed, message type %d.", type);
+    LB_PRINT_ERROR(proc, yo, msg);
     exit (-1);
   }
   if (proc == 0) {
     from = num_proc -1;
     if (MPI_Recv((void *) &flag, 1, MPI_INT, from, type, communicator, &st)
         != 0) {
-      fprintf(stderr, "%s: ERROR on node %d\n", yo, proc);
-      fprintf(stderr, "MPI_Recv failed, message type %d/n", type);
+      sprintf(msg, "MPI_Recv failed, message type %d.", type);
+      LB_PRINT_ERROR(proc, yo, msg);
       exit (-1);
     }
   }

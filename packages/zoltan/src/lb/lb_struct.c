@@ -38,7 +38,7 @@ LB *LB_Create(MPI_Comm communicator)
  *
  */
 
-char *yo = "LB_Create_Object";
+char *yo = "LB_Create";
 LB *lb;
 
   /*
@@ -47,7 +47,9 @@ LB *lb;
 
   lb = (LB *) LB_MALLOC(sizeof(LB));
   if (!lb) {
-    fprintf(stderr, "Error from %s: Insufficient memory\n", yo);
+    int proc;
+    MPI_Comm_rank(communicator, &proc);
+    LB_PRINT_ERROR(proc, yo, "Insufficient memory to create structure.");
     return NULL;
   }
 

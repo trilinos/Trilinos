@@ -34,6 +34,7 @@ int LB_RCB_Build_Structure(LB *lb, int *num_obj, int *max_obj,
  *  Steve Plimpton's RCB implementation.
  */
 char *yo = "LB_RCB_Build_Structure";
+char msg[256];
 RCB_STRUCT *rcb;                      /* Data structure for RCB.             */
 LB_GID *objs_global;                  /* Array of global IDs returned by the
                                          application.                        */
@@ -58,8 +59,7 @@ int i, ierr = 0;
   if (lb->Data_Structure == NULL) {
     rcb = (RCB_STRUCT *) LB_MALLOC(sizeof(RCB_STRUCT));
     if (rcb == NULL) {
-      fprintf(stderr, "[%d] Error from %s: Insufficient memory\n",
-              lb->Proc, yo);
+      LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
       return(LB_MEMERR);
     }
     lb->Data_Structure = (void *) rcb;
@@ -71,8 +71,7 @@ int i, ierr = 0;
       LB_MALLOC(lb->Num_Proc* sizeof(struct rcb_tree));
     rcb->Box = (struct rcb_box *) LB_MALLOC(sizeof(struct rcb_box));
     if (rcb->Tree_Ptr == NULL || rcb->Box == NULL) {
-      fprintf(stderr, "[%d] Error from %s: Insufficient memory\n",
-              lb->Proc, yo);
+      LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
       LB_RCB_Free_Structure(lb);
       return(LB_MEMERR);
     }
@@ -92,16 +91,15 @@ int i, ierr = 0;
 
   *num_obj = lb->Get_Num_Obj(lb->Get_Num_Obj_Data, &ierr);
   if (ierr) {
-    fprintf(stderr, "[%d] Error in %s:  Error returned from user function"
-                    "Get_Num_Obj.\n", lb->Proc, yo);
+    LB_PRINT_ERROR(lb->Proc, yo, 
+                   "Error returned from user function Get_Num_Obj.");
     LB_RCB_Free_Structure(lb);
     return(ierr);
   }
   *max_obj = (int)(1.5 * *num_obj) + 1;
   rcb->Dots = (struct rcb_dot *) LB_MALLOC((*max_obj)*sizeof(struct rcb_dot));
   if (rcb->Dots == NULL) {
-    fprintf(stderr, "[%d] Error from %s: Insufficient memory\n",
-            lb->Proc, yo);
+    LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
     LB_RCB_Free_Structure(lb);
     return(LB_MEMERR);
   }
@@ -113,15 +111,16 @@ int i, ierr = 0;
 
   num_geom = lb->Get_Num_Geom(lb->Get_Num_Geom_Data, &ierr);
   if (num_geom > 3) {
-    fprintf(stderr, "[%d] Error in %s:  Number of geometry fields %d is "
-                    "too great for RCB; valid range is 1-3\n",
-                    lb->Proc, yo, num_geom);
+    sprintf(msg, "Number of geometry fields %d is "
+                  "too great for RCB; valid range is 1-3\n",
+                  num_geom);
+    LB_PRINT_ERROR(lb->Proc, yo, msg);
     LB_RCB_Free_Structure(lb);
     exit(LB_FATAL);
   }
   if (ierr) {
-    fprintf(stderr, "[%d] Error in %s:  Error returned from user function"
-                    "Get_Num_Geom.\n", lb->Proc, yo);
+    LB_PRINT_ERROR(lb->Proc, yo, 
+                   "Error returned from user function Get_Num_Geom.");
     LB_RCB_Free_Structure(lb);
     return(ierr);
   }
@@ -142,8 +141,7 @@ int i, ierr = 0;
       objs_local  = (LB_LID *) LB_MALLOC((*num_obj)*sizeof(LB_LID));
       objs_wgt    = (float  *) LB_MALLOC((*num_obj)*sizeof(float));
       if (objs_global == NULL || objs_local == NULL || objs_wgt == NULL) {
-        fprintf(stderr, "[%d] Error from %s: Insufficient memory\n",
-                lb->Proc, yo);
+        LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
         LB_FREE(&objs_global);
         LB_FREE(&objs_local);
         LB_FREE(&objs_wgt);
@@ -157,8 +155,8 @@ int i, ierr = 0;
       lb->Get_Obj_List(lb->Get_Obj_List_Data, objs_global, objs_local, 
                        wgtflag, objs_wgt, &ierr);
       if (ierr == LB_FATAL || ierr == LB_MEMERR) {
-        fprintf(stderr, "[%d] Error in %s:  Error returned from user function"
-                        "Get_Obj_List.\n", lb->Proc, yo);
+        LB_PRINT_ERROR(lb->Proc, yo, 
+                       "Error returned from user function Get_Obj_List.");
         LB_FREE(&objs_global);
         LB_FREE(&objs_local);
         LB_FREE(&objs_wgt);
@@ -176,8 +174,8 @@ int i, ierr = 0;
       LB_FREE(&objs_local);
       LB_FREE(&objs_wgt);
       if (ierr == LB_FATAL || ierr == LB_MEMERR) {
-        fprintf(stderr, "[%d] Error in %s: Error returned from "
-                        "initialize_dot.\n", lb->Proc, yo);
+        LB_PRINT_ERROR(lb->Proc, yo, 
+                       "Error returned from initialize_dot.");
         LB_RCB_Free_Structure(lb);
         return(ierr);
       }
@@ -194,8 +192,8 @@ int i, ierr = 0;
     found = lb->Get_First_Obj(lb->Get_First_Obj_Data, &obj_global_id,
                               &obj_local_id, wgtflag, &wgt, &ierr);
     if (ierr == LB_FATAL || ierr == LB_MEMERR) {
-      fprintf(stderr, "[%d] Error in %s:  Error returned from user function"
-                      "Get_First_Obj.\n", lb->Proc, yo);
+      LB_PRINT_ERROR(lb->Proc, yo, 
+                     "Error returned from user function Get_First_Obj.");
       LB_RCB_Free_Structure(lb);
       return(ierr);
     }
@@ -204,8 +202,8 @@ int i, ierr = 0;
       ierr = initialize_dot(lb, &(rcb->Dots[i]), obj_global_id, obj_local_id,
                            wgtflag, wgt);
       if (ierr == LB_FATAL || ierr == LB_MEMERR) {
-        fprintf(stderr, "[%d] Error in %s: Error returned from "
-                        "initialize_dot.\n", lb->Proc, yo);
+        LB_PRINT_ERROR(lb->Proc, yo, 
+                       "Error returned from initialize_dot.");
         LB_RCB_Free_Structure(lb);
         return(ierr);
       }
@@ -214,26 +212,25 @@ int i, ierr = 0;
                                obj_local_id, &obj_global_id, &obj_local_id,
                                wgtflag, &wgt, &ierr);
       if (ierr == LB_FATAL || ierr == LB_MEMERR) {
-        fprintf(stderr, "[%d] Error in %s:  Error returned from user function"
-                        "Get_Next_Obj.\n", lb->Proc, yo);
+        LB_PRINT_ERROR(lb->Proc, yo, 
+                       "Error returned from user function Get_Next_Obj.");
         LB_RCB_Free_Structure(lb);
         return(ierr);
       }
     }
     if (i != *num_obj) {
-      fprintf(stderr, "Error in %s:  Number of objects returned %d != "
-                      "Number of objects declared %d\n", yo, i, *num_obj);
-      fprintf(stderr, "Check implementation of LB_FIRST_OBJ_FN and "
-                      "LB_NEXT_OBJ_FN \n");
+      sprintf(msg, "Number of objects returned %d != "
+                   "Number of objects declared %d;"
+                   "Check implementation of LB_FIRST_OBJ_FN and LB_NEXT_OBJ_FN",
+                   i, *num_obj);
+      LB_PRINT_ERROR(lb->Proc, yo, msg);
       LB_RCB_Free_Structure(lb);
       return(LB_FATAL);
     }
   }
   else {
-    fprintf(stderr, "Error in %s:  Must define and register either "
-                    "LB_OBJ_LIST_FN or LB_FIRST_OBJ_FN/LB_NEXT_OBJ_FN pair\n",
-                     yo);
-    fprintf(stderr, "Cannot perform RCB without one of these functions.\n");
+    LB_PRINT_ERROR(lb->Proc, yo, "Must define and register either "
+                    "LB_OBJ_LIST_FN or LB_FIRST_OBJ_FN/LB_NEXT_OBJ_FN pair.");
     LB_RCB_Free_Structure(lb);
     return(LB_FATAL);
   }
@@ -283,8 +280,8 @@ char *yo = "initialize_dot";
   dot->X[0] = dot->X[1] = dot->X[2] = 0.0;
   lb->Get_Geom(lb->Get_Geom_Data, global_id, local_id, dot->X, &ierr);
   if (ierr == LB_FATAL || ierr == LB_MEMERR) {
-    fprintf(stderr, "[%d] %s: Error: Error returned from user defined "
-                    "Get_Geom function.\n", lb->Proc, yo);
+    LB_PRINT_ERROR(lb->Proc, yo, 
+                   "Error returned from user defined Get_Geom function.");
     return(ierr);
   }
   if (wgtflag)

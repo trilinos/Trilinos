@@ -61,6 +61,8 @@ char *val1)			/* value to set this parameter to */
  *    LB_FATAL signals something more serious.
  */
 
+    char     *yo = "LB_Set_Param";
+    char      msg[256];
     char     *name, *val;	/* clean versions of name1, val1 */
     int       flag;		/* return value from function */
     int       status;		/* has character string been matched? */
@@ -93,9 +95,11 @@ char *val1)			/* value to set this parameter to */
 
     /* All parameter setting routines have been called, now finish up. */
 
-    if (status == 1)		/* Parameter name never found */
-	fprintf(stderr, "Warning: parameter `%s' not found;"
-                        " not reset to `%s'.\n", name, val);
+    if (status == 1) {		/* Parameter name never found */
+	sprintf(msg, "Parameter `%s' not found; not reset to `%s'.\n", 
+                name, val);
+        LB_PRINT_WARN(lb->Proc, yo, msg);
+    }
     else {
         if (!strcmp(val, "DEFAULT")){
 	    remove_param(lb, name);	/* Remove parameter from list */

@@ -66,8 +66,8 @@ int final_ierr; /* error code returned by this routine */
   if (lb->Data_Structure == NULL) {
     ierr = LB_Reftree_Init(lb);
     if (ierr==LB_FATAL || ierr==LB_MEMERR) {
-      fprintf(stderr, "[%d] Error from %s: Error returned by "
-              "LB_Reftree_Init\n",lb->Proc,yo);
+      LB_PRINT_ERROR(lb->Proc, yo, 
+                     "Error returned by LB_Reftree_Init.");
       return(ierr);
     }
     if (ierr==LB_WARN) final_ierr = LB_WARN;
@@ -79,8 +79,8 @@ int final_ierr; /* error code returned by this routine */
 
   ierr = LB_Reftree_Build(lb);
   if (ierr==LB_FATAL || ierr==LB_MEMERR) {
-    fprintf(stderr, "[%d] Error from %s: Error returned by "
-            "LB_Reftree_Build\n",lb->Proc,yo);
+    LB_PRINT_ERROR(lb->Proc, yo, 
+                   "Error returned by LB_Reftree_Build.");
     return(ierr);
   }
   if (ierr==LB_WARN) final_ierr = LB_WARN;
@@ -91,8 +91,8 @@ int final_ierr; /* error code returned by this routine */
 
   ierr = LB_Reftree_Sum_Weights(lb);
   if (ierr==LB_FATAL || ierr==LB_MEMERR) {
-    fprintf(stderr, "[%d] Error from %s: Error returned by "
-            "LB_Reftree_Sum_Weights\n",lb->Proc,yo);
+    LB_PRINT_ERROR(lb->Proc, yo, 
+                   "Error returned by LB_Reftree_Sum_Weights.");
     return(ierr);
   }
   if (ierr==LB_WARN) final_ierr = LB_WARN;
@@ -104,8 +104,8 @@ int final_ierr; /* error code returned by this routine */
   ierr = LB_Reftree_Partition(lb, num_export, export_global_ids,
                               export_local_ids, export_procs);
   if (ierr==LB_FATAL || ierr==LB_MEMERR) {
-    fprintf(stderr, "[%d] Error from %s: Error returned by "
-            "LB_Reftree_Partition\n",lb->Proc,yo);
+    LB_PRINT_ERROR(lb->Proc, yo, 
+                   "Error returned by LB_Reftree_Partition.");
     return(ierr);
   }
   if (ierr==LB_WARN) final_ierr = LB_WARN;
@@ -207,8 +207,7 @@ float *req_weights;       /* the requested weights */
 
   root = ((struct LB_reftree_data_struct *)lb->Data_Structure)->reftree_root;
   if (root == NULL) {
-    fprintf(stderr, "[%d] Error from %s: Refinement tree not defined.\n",
-            lb->Proc, yo);
+    LB_PRINT_ERROR(lb->Proc, yo, "Refinement tree not defined.");
     return(LB_FATAL);
   }
   hashtab  = ((struct LB_reftree_data_struct *)lb->Data_Structure)->hash_table;
@@ -244,8 +243,7 @@ float *req_weights;       /* the requested weights */
   else
     leaf_list = (LB_GID *) LB_MALLOC(count*sizeof(LB_GID));
   if (leaf_list == NULL) {
-    fprintf(stderr, "[%d] Error from %s: Insufficient memory\n",
-            lb->Proc,yo);
+    LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
     return(LB_MEMERR);
   }
 
@@ -271,7 +269,7 @@ float *req_weights;       /* the requested weights */
   reqsize_all = (int *)LB_MALLOC(nproc*sizeof(int));
   displs = (int *)LB_MALLOC(nproc*sizeof(int));
   if (reqsize_all == NULL || displs == NULL) {
-    fprintf(stderr, "[%d] Error from %s: Insufficient memory\n", lb->Proc, yo);
+    LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
     LB_FREE(&displs);
     LB_FREE(&reqsize_all);
     LB_FREE(&leaf_list);
@@ -302,7 +300,7 @@ float *req_weights;       /* the requested weights */
 
     all_leaflist = (LB_GID *) LB_MALLOC(sum_reqsize*sizeof(LB_GID));
     if (all_leaflist == NULL) {
-      fprintf(stderr, "[%d] Error from %s: Insufficient memory\n", lb->Proc, yo);
+      LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
       LB_FREE(&all_leaflist);
       LB_FREE(&displs);
       LB_FREE(&reqsize_all);
@@ -334,8 +332,7 @@ float *req_weights;       /* the requested weights */
 
     send_float = (float *) LB_MALLOC(sizeof(float)*wdim*sum_reqsize);
     if (send_float == NULL) {
-      fprintf(stderr, "[%d] Error from %s: Insufficient memory\n",
-              lb->Proc,yo);
+      LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
       LB_FREE(&send_float);
       LB_FREE(&all_leaflist);
       LB_FREE(&reqsize_all);
@@ -359,8 +356,7 @@ float *req_weights;       /* the requested weights */
     else
       req_weights = (float *) LB_MALLOC(sizeof(float)*wdim*reqsize);
     if (req_weights == NULL) {
-      fprintf(stderr, "[%d] Error from %s: Insufficient memory\n",
-              lb->Proc,yo);
+      LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
       LB_FREE(&req_weights);
       LB_FREE(&send_float);
       LB_FREE(&all_leaflist);
@@ -444,8 +440,7 @@ float *req_weights;       /* the requested weights */
 
   root = ((struct LB_reftree_data_struct *)lb->Data_Structure)->reftree_root;
   if (root == NULL) {
-    fprintf(stderr, "[%d] Error from %s: Refinement tree not defined.\n",
-            lb->Proc, yo);
+    LB_PRINT_ERROR(lb->Proc, yo, "Refinement tree not defined.");
     return(LB_FATAL);
   }
   hashtab  = ((struct LB_reftree_data_struct *)lb->Data_Structure)->hash_table;
@@ -481,8 +476,7 @@ float *req_weights;       /* the requested weights */
   else
     leaf_list = (LB_GID *) LB_MALLOC(count*sizeof(LB_GID));
   if (leaf_list == NULL) {
-    fprintf(stderr, "[%d] Error from %s: Insufficient memory\n",
-            lb->Proc,yo);
+    LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
     return(LB_MEMERR);
   }
 
@@ -534,8 +528,7 @@ float *req_weights;       /* the requested weights */
     else
       newlist = (LB_GID *) LB_MALLOC((reqsize+newsize)*sizeof(LB_GID));
     if (newlist == NULL) {
-      fprintf(stderr, "[%d] Error from %s: Insufficient memory\n",
-              lb->Proc,yo);
+      LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
       LB_FREE(&leaf_list);
       return(LB_MEMERR);
     }
@@ -579,8 +572,7 @@ float *req_weights;       /* the requested weights */
 
   send_float = (float *) LB_MALLOC(sizeof(float)*wdim*reqsize);
   if (send_float == NULL) {
-    fprintf(stderr, "[%d] Error from %s: Insufficient memory\n",
-            lb->Proc,yo);
+    LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
     LB_FREE(&leaf_list);
     return(LB_MEMERR);
   }
@@ -599,8 +591,7 @@ float *req_weights;       /* the requested weights */
 
   req_weights = (float *) LB_MALLOC(sizeof(float)*wdim*reqsize);
   if (req_weights == NULL) {
-    fprintf(stderr, "[%d] Error from %s: Insufficient memory\n",
-            lb->Proc,yo);
+    LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
     LB_FREE(&leaf_list);
     LB_FREE(&send_float);
     return(LB_MEMERR);
@@ -676,8 +667,7 @@ float *recv_float;        /* received message of floats */
 
   root = ((struct LB_reftree_data_struct *)lb->Data_Structure)->reftree_root;
   if (root == NULL) {
-    fprintf(stderr, "[%d] Error from %s: Refinement tree not defined.\n",
-            lb->Proc, yo);
+    LB_PRINT_ERROR(lb->Proc, yo, "Refinement tree not defined.");
     return(LB_FATAL);
   }
   hashtab  = ((struct LB_reftree_data_struct *)lb->Data_Structure)->hash_table;
@@ -713,8 +703,7 @@ float *recv_float;        /* received message of floats */
   else
     leaf_list = (LB_GID *) LB_MALLOC(count*sizeof(LB_GID));
   if (leaf_list == NULL) {
-    fprintf(stderr, "[%d] Error from %s: Insufficient memory\n",
-            lb->Proc,yo);
+    LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
     return(LB_MEMERR);
   }
 
@@ -754,8 +743,7 @@ float *recv_float;        /* received message of floats */
       if (myproc != comm_loop) {
         recv_gid = (LB_GID *)LB_MALLOC(reqsize*sizeof(LB_GID));
         if (recv_gid == NULL) {
-          fprintf(stderr, "[%d] Error from %s: Insufficient memory\n",
-                  lb->Proc,yo);
+          LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
           LB_FREE(&leaf_list);
           return(LB_MEMERR);
         }
@@ -784,8 +772,7 @@ float *recv_float;        /* received message of floats */
 
         send_float = (float *) LB_MALLOC(sizeof(float)*wdim*reqsize);
         if (send_float == NULL) {
-          fprintf(stderr, "[%d] Error from %s: Insufficient memory\n",
-                  lb->Proc,yo);
+          LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
           LB_FREE(&recv_gid);
           LB_FREE(&leaf_list);
           return(LB_MEMERR);
@@ -812,8 +799,7 @@ float *recv_float;        /* received message of floats */
       if (myproc == comm_loop) {
         recv_float = (float *)LB_MALLOC(sizeof(float)*wdim*reqsize);
         if (recv_float == NULL) {
-          fprintf(stderr, "[%d] Error from %s: Insufficient memory\n",
-                  lb->Proc,yo);
+          LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
           LB_FREE(&leaf_list);
           return(LB_MEMERR);
         }
@@ -996,6 +982,7 @@ int LB_Reftree_Partition(LB *lb, int *num_export, LB_GID **export_global_ids,
  */
 
 char *yo = "LB_Reftree_Partition";
+char msg[256];
 int num_exp;          /* count the number of export objects */
 LB_REFTREE *root;     /* root of the tree */
 float partition_size; /* amount of weight for each partition */
@@ -1068,8 +1055,9 @@ float eps;            /* allowed deviation from average partition size */
                           export_local_ids,export_procs);
 
   if (num_exp != *num_export) {
-    fprintf(stderr, "[%d] Warning from %s: num_exp = %d not equal to "
-            "num_export = %d\n",lb->Proc,yo,num_exp,*num_export);
+    sprintf(msg, "num_exp = %d not equal to num_export = %d.",
+            num_exp,*num_export);
+    LB_PRINT_WARN(lb->Proc, yo, msg);
     return(LB_WARN);
   }
 

@@ -38,6 +38,7 @@ void *var)			/* pointer to variable to be associated with the parameter name */
  */
 
     char     *yo = "LB_Bind_Param";
+    char      msg[256];
     char     *name2;		/* clean version of name */
     int       flag;		/* return value from function */
     PARAM_VARS *ptr;		/* pointer to a parameter */
@@ -58,8 +59,9 @@ void *var)			/* pointer to variable to be associated with the parameter name */
     }
 
     /* If we reach this point, the parameter name must be invalid */
-    fprintf(stderr, "%s Warning:  Parameter name %s not found; it will"
-                    "not be bound to any variable\n", yo, name2);
+    sprintf(msg, "Parameter name %s not found; it will"
+                 "not be bound to any variable.", name2);
+    LB_PRINT_WARN(-1, yo, msg);
     LB_FREE(&name2);
     return (LB_WARN);
 }

@@ -91,6 +91,7 @@ int gmax;    /* Maximum number of imported/exported objects
 int error;    /* Error code */
 double start_time, end_time;
 double lb_time[2] = {0.0,0.0};
+char msg[256];
 
   LB_TRACE_ENTER(lb, yo);
 
@@ -151,14 +152,14 @@ double lb_time[2] = {0.0,0.0};
           export_local_ids, export_procs);
 
   if (error == LB_FATAL){
-    fprintf(stderr, "[%1d] FATAL ERROR: Zoltan returned error code %d\n", 
-      lb->Proc, error);
+    sprintf(msg, "Balancing routine returned error code %d.", error);
+    LB_PRINT_ERROR(lb->Proc, yo, msg);
     LB_TRACE_EXIT(lb, yo);
     return (error);
   }
   else if (error){
-    fprintf(stderr, "[%1d] WARNING: Zoltan returned error code %d\n", 
-      lb->Proc, error);
+    sprintf(msg, "Balancing routine returned error code %d.", error);
+    LB_PRINT_WARN(lb->Proc, yo, msg);
   }
 
   LB_TRACE_DETAIL(lb, yo, "Done load balancing");
@@ -214,9 +215,9 @@ double lb_time[2] = {0.0,0.0};
                                       num_export_objs, export_global_ids,
                                       export_local_ids, export_procs);
       if (error != LB_OK && error != LB_WARN) {
-        fprintf(stderr, "%s Error building return arguments; "
-                        "%d returned by LB_Compute_Destinations\n",
-                yo, error);
+        sprintf(msg, "Error building return arguments; "
+                     "%d returned by LB_Compute_Destinations\n", error);
+        LB_PRINT_ERROR(lb->Proc, yo, msg);
         LB_TRACE_EXIT(lb, yo);
         return error;
       }
@@ -231,17 +232,17 @@ double lb_time[2] = {0.0,0.0};
                                       import_local_ids, import_procs);
 
       if (error != LB_OK && error != LB_WARN) {
-        fprintf(stderr, "%s Error building return arguments; "
-                        "%d returned by LB_Compute_Destinations\n",
-                yo, error);
+        sprintf(msg, "Error building return arguments; "
+                     "%d returned by LB_Compute_Destinations\n", error);
+        LB_PRINT_ERROR(lb->Proc, yo, msg);
         LB_TRACE_EXIT(lb, yo);
         return error;
       }
     }
     else{
       /* No map at all available */
-      fprintf(stderr, "%s Error: Load-balancing function returned neither "
-             "import nor export data.\n", yo);
+      LB_PRINT_ERROR(lb->Proc, yo, "Load-balancing function returned neither "
+             "import nor export data.");
       LB_TRACE_EXIT(lb, yo);
       return LB_WARN;
     }
@@ -282,8 +283,9 @@ double lb_time[2] = {0.0,0.0};
                             *num_export_objs, *export_global_ids,
                             *export_local_ids, *export_procs);
     if (error != LB_OK && error != LB_WARN) {
-      fprintf(stderr, "%s Error in auto-migration; %d returned from "
-                      "LB_Help_Migrate\n", yo, error);
+      sprintf(msg, "Error in auto-migration; %d returned from "
+                    "LB_Help_Migrate\n", error);
+      LB_PRINT_ERROR(lb->Proc, yo, msg);
       LB_TRACE_EXIT(lb, yo);
       return error;
     }

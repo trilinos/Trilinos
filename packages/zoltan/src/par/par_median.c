@@ -14,6 +14,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <mpi.h>
+#include "lb_const.h"
 #include "par_median_const.h"
 #include "mem_const.h"
 
@@ -94,8 +95,7 @@ int LB_find_median(
     /* allocate memory */
     dotlist = (int *) LB_MALLOC(dotnum*sizeof(int));
     if (!dotlist) {
-      fprintf(stderr, "[%d] %s: Error, Insufficient memory\n",
-              proc, yo);
+      LB_PRINT_ERROR(proc, yo, "Insufficient memory.");
       return 0;
     }
 
@@ -109,8 +109,7 @@ int LB_find_median(
       wtflag = 1;
       wgts = (double *) LB_MALLOC(dotnum*sizeof(double));
       if (!wgts) {
-        fprintf(stderr, "[%d] %s: Error, Insufficient memory\n",
-                proc, yo);
+        LB_PRINT_ERROR(proc, yo, "Insufficient memory.");
         LB_FREE(&dotlist);
         return 0;
       }

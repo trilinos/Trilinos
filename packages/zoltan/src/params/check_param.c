@@ -29,6 +29,8 @@ PARAM_VARS * params,		/* structure describing parameters */
 PARAM_UTYPE *result,		/* pointer to return value */
 int *matched_index)		/* where in struct the match occurs */
 {		
+    char     *yo = "LB_Check_Param";
+    char      msg[256];
     int       i;		/* loop counter */
     int       status;		/* return code: */
     /* 0 => name found and value OK */
@@ -113,8 +115,9 @@ int *matched_index)		/* where in struct the match occurs */
 	}
 
 	else {
-	    fprintf(stderr, "WARNING: Bad type for parameter `%s'\n", 
+	    sprintf(msg, "Bad type for parameter `%s'", 
                     params->name);
+            LB_PRINT_WARN(-1, yo, msg);
 	    status = 2;
 	}
       }

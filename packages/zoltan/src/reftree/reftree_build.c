@@ -70,6 +70,7 @@ int LB_Reftree_Init(LB *lb)
  *  the first level of the tree, which corresponds to the initial coarse grid
  */
 char *yo = "LB_Reftree_Init";
+char msg[256];
 struct LB_reftree_data_struct *reftree_data; /* data pointed to by lb */
 LB_REFTREE *root;          /* Root of the refinement tree */
 struct LB_reftree_hash_node **hashtab; /* hash table */
@@ -120,8 +121,7 @@ unsigned char *p;          /* for setting IDs to NULL */
 
   root = (LB_REFTREE *) LB_MALLOC(sizeof(LB_REFTREE));
   if (root == NULL) {
-    fprintf(stderr, "[%d] Error from %s: Insufficient memory\n",
-            lb->Proc, yo);
+    LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
     LB_TRACE_EXIT(lb, yo);
     return(LB_MEMERR);
   }
@@ -148,8 +148,7 @@ unsigned char *p;          /* for setting IDs to NULL */
   root->my_sum_weight = (float *) LB_MALLOC(wdim*sizeof(float));
   if (root->weight == NULL || root->summed_weight == NULL ||
       root->my_sum_weight == NULL) {
-    fprintf(stderr, "[%d] Error from %s: Insufficient memory\n",
-            lb->Proc, yo);
+    LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
     LB_Reftree_Free_Structure(lb);
     LB_TRACE_EXIT(lb, yo);
     return(LB_MEMERR);
@@ -172,8 +171,7 @@ unsigned char *p;          /* for setting IDs to NULL */
   hashtab = (struct LB_reftree_hash_node **)
             LB_MALLOC(sizeof(struct LB_reftree_hash_node *)*hashsize);
   if (hashtab == NULL) {
-    fprintf(stderr, "[%d] Error from %s: Insufficient memory\n",
-            lb->Proc, yo);
+    LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
     LB_Reftree_Free_Structure(lb);
     LB_TRACE_EXIT(lb, yo);
     return(LB_MEMERR);
@@ -202,8 +200,7 @@ unsigned char *p;          /* for setting IDs to NULL */
    */
 
   if (lb->Get_Num_Coarse_Obj == NULL) {
-    fprintf(stderr, "[%d] Error in %s: Must register LB_NUM_COARSE_OBJ_FN.\n",
-            lb->Proc, yo);
+    LB_PRINT_ERROR(lb->Proc, yo, "Must register LB_NUM_COARSE_OBJ_FN.");
     LB_Reftree_Free_Structure(lb);
     LB_TRACE_EXIT(lb, yo);
     return(LB_FATAL);
@@ -211,8 +208,8 @@ unsigned char *p;          /* for setting IDs to NULL */
 
   num_obj = lb->Get_Num_Coarse_Obj(lb->Get_Num_Coarse_Obj_Data, &ierr);
   if (ierr) {
-    fprintf(stderr, "[%d] Error in %s:  Error returned from user function"
-                    "Get_Num_Coarse_Obj.\n", lb->Proc, yo);
+    LB_PRINT_ERROR(lb->Proc, yo, 
+                   "Error returned from user function Get_Num_Coarse_Obj.");
     LB_Reftree_Free_Structure(lb);
     LB_TRACE_EXIT(lb, yo);
     return(ierr);
@@ -237,8 +234,7 @@ unsigned char *p;          /* for setting IDs to NULL */
     if (local_gids == NULL || local_lids == NULL || assigned  == NULL ||
         num_vert   == NULL || vertices   == NULL || in_vertex == NULL ||
         out_vertex == NULL) {
-      fprintf(stderr, "[%d] Error from %s: Insufficient memory\n",
-              lb->Proc, yo);
+      LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
       LB_FREE(&local_gids);
       LB_FREE(&local_lids);
       LB_FREE(&assigned);
@@ -261,8 +257,8 @@ unsigned char *p;          /* for setting IDs to NULL */
                               local_lids, assigned, num_vert, vertices,
                               &in_order, in_vertex, out_vertex, &ierr);
       if (ierr) {
-        fprintf(stderr, "[%d] Error in %s:  Error returned from user function"
-                        "Get_Coarse_Obj_List.\n", lb->Proc, yo);
+        LB_PRINT_ERROR(lb->Proc, yo, 
+                      "Error returned from user function Get_Coarse_Obj_List.");
         LB_FREE(&local_gids);
         LB_FREE(&local_lids);
         LB_FREE(&assigned);
@@ -294,8 +290,8 @@ unsigned char *p;          /* for setting IDs to NULL */
                                        &in_vertex[count], &out_vertex[count],
                                        &ierr);
       if (ierr) {
-        fprintf(stderr, "[%d] Error in %s:  Error returned from user function"
-                        "Get_First_Coarse_Obj.\n", lb->Proc, yo);
+        LB_PRINT_ERROR(lb->Proc, yo, 
+                     "Error returned from user function Get_First_Coarse_Obj.");
         LB_FREE(&local_gids);
         LB_FREE(&local_lids);
         LB_FREE(&assigned);
@@ -318,8 +314,8 @@ unsigned char *p;          /* for setting IDs to NULL */
                                         &in_vertex[count], &out_vertex[count],
                                         &ierr);
         if (ierr) {
-          fprintf(stderr, "[%d] Error in %s:  Error returned from user function"
-                          "Get_Next_Coarse_Obj.\n", lb->Proc, yo);
+          LB_PRINT_ERROR(lb->Proc, yo, 
+                      "Error returned from user function Get_Next_Coarse_Obj.");
           LB_FREE(&local_gids);
           LB_FREE(&local_lids);
           LB_FREE(&assigned);
@@ -333,19 +329,19 @@ unsigned char *p;          /* for setting IDs to NULL */
         }
       }
       if (count != num_obj) {
-        fprintf(stderr, "[%d] Warning in %s: Number of objects returned by "
-                        "First/Next_Coarse_Obj = %d is not equal to the "
-                        "number returned by Num_Coarse_Obj = %d\n",
-                        lb->Proc, yo, count, num_obj);
+        sprintf(msg, "Number of objects returned by "
+                     "First/Next_Coarse_Obj = %d is not equal to the "
+                     "number returned by Num_Coarse_Obj = %d\n",
+                     count, num_obj);
+        LB_PRINT_WARN(lb->Proc, yo, msg);
         final_ierr = LB_WARN;
       }
     }
 
     else {
-      fprintf(stderr, "Error in %s:  Must define and register either "
+      LB_PRINT_ERROR(lb->Proc, yo, "Must define and register either "
                       "LB_COARSE_OBJ_LIST_FN or "
-                      "LB_FIRST_COARSE_OBJ_FN/LB_NEXT_COARSE_OBJ_FN pair\n",
-                       yo);
+                      "LB_FIRST_COARSE_OBJ_FN/LB_NEXT_COARSE_OBJ_FN pair.");
       LB_FREE(&local_gids);
       LB_FREE(&local_lids);
       LB_FREE(&assigned);
@@ -370,7 +366,7 @@ unsigned char *p;          /* for setting IDs to NULL */
   num_obj_all = (int *)LB_MALLOC(nproc*sizeof(int));
   displs = (int *)LB_MALLOC(nproc*sizeof(int));
   if (num_obj_all == NULL || displs == NULL) {
-    fprintf(stderr, "[%d] Error from %s: Insufficient memory\n", lb->Proc, yo);
+    LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
     LB_FREE(&local_gids);
     LB_FREE(&local_lids);
     LB_FREE(&assigned);
@@ -397,7 +393,7 @@ unsigned char *p;          /* for setting IDs to NULL */
 
   all_gids = (LB_GID *) LB_MALLOC(sum_num_obj*sizeof(LB_GID));
   if (all_gids == NULL) {
-    fprintf(stderr, "[%d] Error from %s: Insufficient memory\n", lb->Proc, yo);
+    LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
     LB_FREE(&local_gids);
     LB_FREE(&local_lids);
     LB_FREE(&assigned);
@@ -438,7 +434,7 @@ unsigned char *p;          /* for setting IDs to NULL */
   local_gids = (LB_GID *) LB_REALLOC(local_gids,sum_num_obj*sizeof(LB_GID));
   order = (int *) LB_MALLOC(sum_num_obj*sizeof(int));
   if (local_gids == NULL || order == NULL) {
-    fprintf(stderr, "[%d] Error from %s: Insufficient memory\n", lb->Proc, yo);
+    LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
     LB_FREE(&local_gids);
     LB_FREE(&local_lids);
     LB_FREE(&assigned);
@@ -481,10 +477,11 @@ unsigned char *p;          /* for setting IDs to NULL */
   }
 
   if (count != total_num_obj) {
-    fprintf(stderr, "[%d] Warning in %s: Number of objects counted while "
-                    "setting default order = %d is not equal to the "
-                    "number counted while getting objects from other procs "
-                    "= %d\n",lb->Proc, yo, count, total_num_obj);
+    sprintf(msg, "Number of objects counted while "
+                 "setting default order = %d is not equal to the "
+                 "number counted while getting objects from other procs "
+                 "= %d.", count, total_num_obj);
+    LB_PRINT_WARN(lb->Proc, yo, msg);
     final_ierr = LB_WARN;
   }
 
@@ -492,7 +489,7 @@ unsigned char *p;          /* for setting IDs to NULL */
 
   num_vert = (int *) LB_REALLOC(num_vert,total_num_obj*sizeof(int));
   if (num_vert == NULL) {
-    fprintf(stderr, "[%d] Error from %s: Insufficient memory\n", lb->Proc, yo);
+    LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
     LB_FREE(&local_gids);
     LB_FREE(&local_lids);
     LB_FREE(&assigned);
@@ -518,10 +515,9 @@ unsigned char *p;          /* for setting IDs to NULL */
    * TEMP For now, require that the user provide the order.
    */
 
-    fprintf(stderr, "[%d] Warning in %s: Currently not supporting automatic "
+    LB_PRINT_WARN(lb->Proc, yo, "Currently not supporting automatic "
                     "determination of the order of the coarse grid objects.  "
-                    "Using the order in which they were provided.\n",
-                    lb->Proc, yo);
+                    "Using the order in which they were provided.");
     final_ierr = LB_WARN;
 
   }
@@ -536,8 +532,7 @@ unsigned char *p;          /* for setting IDs to NULL */
 
   root->children = (LB_REFTREE *) LB_MALLOC(total_num_obj*sizeof(LB_REFTREE));
   if (root->children == NULL) {
-    fprintf(stderr, "[%d] Error from %s: Insufficient memory\n",
-            lb->Proc, yo);
+    LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
     LB_FREE(&local_gids);
     LB_FREE(&local_lids);
     LB_FREE(&assigned);
@@ -557,8 +552,7 @@ unsigned char *p;          /* for setting IDs to NULL */
    */
 
   if (lb->Obj_Weight_Dim != 0 && lb->Get_Child_Weight == NULL) {
-    fprintf(stderr, "[%d] Error in %s: Must register LB_CHILD_WEIGHT_FN.\n",
-            lb->Proc, yo);
+    LB_PRINT_ERROR(lb->Proc, yo, "Must register LB_CHILD_WEIGHT_FN.");
     LB_FREE(&local_gids);
     LB_FREE(&local_lids);
     LB_FREE(&assigned);
@@ -594,8 +588,7 @@ unsigned char *p;          /* for setting IDs to NULL */
         root->children[order[i]].summed_weight == NULL ||
         root->children[order[i]].my_sum_weight == NULL ||
         root->children[order[i]].vertices      == NULL) {
-      fprintf(stderr, "[%d] Error from %s: Insufficient memory\n",
-              lb->Proc, yo);
+      LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
       LB_FREE(&local_gids);
       LB_FREE(&local_lids);
       LB_FREE(&assigned);
@@ -716,8 +709,7 @@ int i;                     /* loop counter */
   if (lb->Data_Structure == NULL) {
     ierr = LB_Reftree_Init(lb);
     if (ierr==LB_FATAL || ierr==LB_MEMERR) {
-      fprintf(stderr,"[%d] Error in %s:  Error returned from LB_Reftree_Init\n",
-                      lb->Proc, yo);
+      LB_PRINT_ERROR(lb->Proc, yo, "Error returned from LB_Reftree_Init.");
       return(ierr);
     }
   }
@@ -731,8 +723,8 @@ int i;                     /* loop counter */
    */
 
   if (lb->Get_Num_Child == NULL || lb->Get_Child_List == NULL) {
-    fprintf(stderr, "[%d] Error in %s: Must register LB_NUM_CHILD_FN"
-            " and LB_CHILD_LIST_FN\n",lb->Proc, yo);
+    LB_PRINT_ERROR(lb->Proc, yo, "Must register LB_NUM_CHILD_FN"
+            " and LB_CHILD_LIST_FN.");
     LB_Reftree_Free_Structure(lb);
     return(LB_FATAL);
   }
@@ -747,8 +739,8 @@ int i;                     /* loop counter */
     if ( (root->children[i]).num_vertex != -1 ) {
       ierr = LB_Reftree_Build_Recursive(lb,&(root->children[i]));
       if (ierr==LB_FATAL || ierr==LB_MEMERR) {
-        fprintf(stderr, "[%d] Error in %s:  Error returned from LB_Reftree"
-                        "_Build_Recursive\n",lb->Proc, yo);
+        LB_PRINT_ERROR(lb->Proc, yo, 
+                       "Error returned from LB_Reftree_Build_Recursive.");
         return(ierr);
       }
     }
@@ -765,6 +757,7 @@ static int LB_Reftree_Build_Recursive(LB *lb,LB_REFTREE *subroot)
  */
 static int TEMP_first_warning = 1; /* TEMP until ref_type is fully supported */
 char *yo = "LB_Reftree_Build_Recursive";
+char msg[256];
 int ierr;                  /* error code called routines */
 int final_ierr;            /* error code returned by this routine */
 int num_obj;               /* number of children returned by user */
@@ -796,8 +789,7 @@ int hashsize;              /* size of the hash table */
    */
 
   if (subroot == NULL) {
-    fprintf(stderr, "[%d] Warning in %s:  Called with nonexistent subroot",
-                    lb->Proc, yo);
+    LB_PRINT_WARN(lb->Proc, yo, "Called with nonexistent subroot.");
     return(LB_WARN);
   }
 
@@ -808,8 +800,8 @@ int hashsize;              /* size of the hash table */
   num_obj = lb->Get_Num_Child(lb->Get_Num_Child_Data, subroot->global_id,
                               subroot->local_id, &ierr);
   if (ierr) {
-    fprintf(stderr, "[%d] Error in %s:  Error returned from user function"
-                    "Get_Num_Child.\n", lb->Proc, yo);
+    LB_PRINT_ERROR(lb->Proc, yo, 
+                   "Error returned from user function Get_Num_Child.");
     LB_Reftree_Free_Structure(lb);
     return(ierr);
   }
@@ -839,8 +831,7 @@ int hashsize;              /* size of the hash table */
   if (local_gids == NULL || local_lids == NULL || assigned  == NULL ||
       num_vert   == NULL || vertices   == NULL || in_vertex == NULL ||
       out_vertex == NULL || vert1      == NULL) {
-    fprintf(stderr, "[%d] Error from %s: Insufficient memory\n",
-            lb->Proc, yo);
+    LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
     LB_FREE(&local_gids);
     LB_FREE(&local_lids);
     LB_FREE(&assigned);
@@ -857,8 +848,8 @@ int hashsize;              /* size of the hash table */
                      num_vert, vertices, &ref_type, in_vertex, out_vertex,
                      &ierr);
   if (ierr) {
-    fprintf(stderr, "[%d] Error in %s:  Error returned from user function"
-                    "Get_Child_List.\n", lb->Proc, yo);
+    LB_PRINT_ERROR(lb->Proc, yo, 
+                   "Error returned from user function Get_Child_List.");
     LB_FREE(&local_gids);
     LB_FREE(&local_lids);
     LB_FREE(&assigned);
@@ -884,8 +875,7 @@ int hashsize;              /* size of the hash table */
 
   order = (int *) LB_MALLOC(num_obj*sizeof(int));
   if (order == NULL) {
-    fprintf(stderr, "[%d] Error from %s: Insufficient memory\n",
-            lb->Proc, yo);
+    LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
     LB_FREE(&local_gids);
     LB_FREE(&local_lids);
     LB_FREE(&assigned);
@@ -905,9 +895,9 @@ int hashsize;              /* size of the hash table */
   switch (ref_type) {
   case LB_QUAD_QUAD:
     if (TEMP_first_warning) {
-      fprintf(stderr, "[%d] Warning in %s:  Currently not supporting "
+      LB_PRINT_WARN(lb->Proc, yo, "Currently not supporting "
                       "automatic ordering of elements for refinement type "
-                      "LB_QUAD_QUAD.  Using LB_OTHER_REF.\n",lb->Proc,yo);
+                      "LB_QUAD_QUAD.  Using LB_OTHER_REF.");
       TEMP_first_warning = 0;
       final_ierr = LB_WARN;
     }
@@ -915,9 +905,9 @@ int hashsize;              /* size of the hash table */
     break;
   case LB_HEX3D_OCT:
     if (TEMP_first_warning) {
-      fprintf(stderr, "[%d] Warning in %s:  Currently not supporting "
+      LB_PRINT_WARN(lb->Proc, yo, "Currently not supporting "
                       "automatic ordering of elements for refinement type "
-                      "LB_HEX3D_OCT.  Using LB_OTHER_REF.\n",lb->Proc,yo);
+                      "LB_HEX3D_OCT.  Using LB_OTHER_REF.");
       TEMP_first_warning = 0;
       final_ierr = LB_WARN;
     }
@@ -945,12 +935,12 @@ int hashsize;              /* size of the hash table */
     break;
   case LB_QUAD_QUAD:
     /* TEMP */
-    fprintf(stderr, "%s Oops, still got into case for QUAD_QUAD\n", yo);
+    LB_PRINT_WARN(lb->Proc, yo, "Oops, still got into case for QUAD_QUAD.");
     for (i=0; i<num_obj; i++) order[i] = i;
     break;
   case LB_HEX3D_OCT:
     /* TEMP */
-    fprintf(stderr, "%s Oops, still got into case for HEX3D_OCT\n", yo);
+    LB_PRINT_WARN(lb->Proc, yo, "Oops, still got into case for HEX3D_OCT.");
     for (i=0; i<num_obj; i++) order[i] = i;
     break;
   case LB_OTHER_REF:
@@ -962,8 +952,9 @@ int hashsize;              /* size of the hash table */
    * Default case if a bad value gets returned; use them in order.
    */
   default:
-    fprintf(stderr, "[%d] Warning in %s:  Unknown value returned for ref_type"
-            " = %d.  Using children in order provided.\n",lb->Proc,yo,ref_type);
+    sprintf(msg, "Unknown value returned for ref_type"
+            " = %d.  Using children in order provided.",ref_type);
+    LB_PRINT_WARN(lb->Proc, yo, msg);
     for (i=0; i<num_obj; i++) order[i] = i;
     final_ierr = LB_WARN;
   }
@@ -977,15 +968,14 @@ int hashsize;              /* size of the hash table */
    */
 
   if (subroot->children != NULL) {
-    fprintf(stderr, "[%d] Warning from %s: children already existed; memory"
-                    " leak potential.\n",lb->Proc, yo);
+    LB_PRINT_WARN(lb->Proc, yo, "children already existed; memory"
+                    " leak potential.");
     final_ierr = LB_WARN;
   }
 
   subroot->children = (LB_REFTREE *) LB_MALLOC(num_obj*sizeof(LB_REFTREE));
   if (subroot->children == NULL) {
-    fprintf(stderr, "[%d] Error from %s: Insufficient memory\n",
-            lb->Proc, yo);
+    LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
     LB_FREE(&local_gids);
     LB_FREE(&local_lids);
     LB_FREE(&assigned);
@@ -1025,8 +1015,7 @@ int hashsize;              /* size of the hash table */
         subroot->children[order[i]].summed_weight == NULL ||
         subroot->children[order[i]].my_sum_weight == NULL ||
         subroot->children[order[i]].vertices      == NULL) {
-      fprintf(stderr, "[%d] Error from %s: Insufficient memory\n",
-              lb->Proc, yo);
+      LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
       LB_FREE(&local_gids);
       LB_FREE(&local_lids);
       LB_FREE(&assigned);
@@ -1139,8 +1128,8 @@ int bad_case;              /* flag for failing to identify order */
 
   /* verify that 3 vertices were given for each triangle; if not, punt */
   if (vert1[1] != 3 || vert1[2] != 6) {
-    fprintf(stderr, "[%d] Warning in %s:  Incorrect number of vertices "
-                    "given for bisected triangles.\n",lb->Proc,yo);
+    LB_PRINT_WARN(lb->Proc, yo, "Incorrect number of vertices "
+                                "given for bisected triangles.");
     order[0] = 0;
     order[1] = 1;
     in_vertex[0] = vertices[vert1[0]];
@@ -1174,8 +1163,8 @@ int bad_case;              /* flag for failing to identify order */
   }
   if (parent_in == -1 || parent_out == -1 || parent_third == -1) {
     /* failed to locate one of them */
-    fprintf(stderr, "[%d] Warning in %s:  Could not locate in and out "
-                    "vertices in the parent.\n",lb->Proc,yo);
+    LB_PRINT_WARN(lb->Proc, yo, "Could not locate in and out "
+                                "vertices in the parent.");
     order[0] = 0;
     order[1] = 1;
     in_vertex[0] = vertices[vert1[0]];
@@ -1286,8 +1275,8 @@ int bad_case;              /* flag for failing to identify order */
     out_vertex[1] = vertices[4];
   }
   if (bad_case) {
-    fprintf(stderr, "[%d] Warning in %s:  Vertices of children did not "
-                    "match the in and out vertices of parent.\n",lb->Proc,yo);
+    LB_PRINT_WARN(lb->Proc, yo, "Vertices of children did not "
+                    "match the in and out vertices of parent.");
     return(LB_WARN);
   }
   else {
@@ -1330,7 +1319,7 @@ int *on_path;       /* flag for already placed element on path */
   has_in = (int *) LB_MALLOC(num_child*sizeof(int));
   has_out = (int *) LB_MALLOC(num_child*sizeof(int));
   if (has_in == NULL || has_out == NULL) {
-    fprintf(stderr, "[%d] Error from %s: Insufficient memory\n", lb->Proc, yo);
+    LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
     LB_FREE(&has_in);
     LB_FREE(&has_out);
     return(LB_MEMERR);
@@ -1351,7 +1340,7 @@ int *on_path;       /* flag for already placed element on path */
 
   share_vert = (int **) LB_MALLOC(num_child*sizeof(int *));
   if (share_vert == NULL) {
-    fprintf(stderr, "[%d] Error from %s: Insufficient memory\n", lb->Proc, yo);
+    LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
     LB_FREE(&share_vert);
     LB_FREE(&has_in);
     LB_FREE(&has_out);
@@ -1360,7 +1349,7 @@ int *on_path;       /* flag for already placed element on path */
   for (i=0; i<num_child; i++) {
     share_vert[i] = (int *) LB_MALLOC(num_child*sizeof(int));
     if (share_vert[i] == NULL) {
-      fprintf(stderr, "[%d] Error from %s: Insufficient memory\n", lb->Proc, yo);
+      LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
       for (j=0; j<=i; j++) LB_FREE(&(share_vert[j]));
       LB_FREE(&share_vert);
       LB_FREE(&has_in);
@@ -1395,7 +1384,7 @@ int *on_path;       /* flag for already placed element on path */
   solved = 0;
   on_path = (int *) LB_MALLOC(num_child*sizeof(int));
   if (on_path == NULL) {
-    fprintf(stderr, "[%d] Error from %s: Insufficient memory\n", lb->Proc, yo);
+    LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
     for (j=0; j<=i; j++) LB_FREE(&(share_vert[j]));
     LB_FREE(&on_path);
     LB_FREE(&share_vert);
@@ -1421,8 +1410,8 @@ int *on_path;       /* flag for already placed element on path */
    */
 
   if (!solved) {
-    fprintf(stderr, "[%d] Warning from %s: Couldn't find path through children."
-                    "  Using given order.\n", lb->Proc, yo);
+    LB_PRINT_WARN(lb->Proc, yo, "Couldn't find path through children."
+                                "  Using given order.");
     for (i=0; i<num_child; i++) order[i] = i;
     final_ierr = LB_WARN;
   }
@@ -1441,8 +1430,8 @@ int *on_path;       /* flag for already placed element on path */
   solved = find_inout(0, num_child, num_vert, vert1, vertices, in_vertex,
                       out_vertex, order);
   if (!solved) {
-    fprintf(stderr, "[%d] Warning from %s: Couldn't find good set of in/out"
-                    " vertices.  Using first and second.\n", lb->Proc, yo);
+    LB_PRINT_WARN(lb->Proc, yo, "Couldn't find good set of in/out"
+                    " vertices.  Using first and second.\n");
     for (i=0; i<num_child; i++) {
       in_vertex[i]  = vertices[vert1[i]];
       out_vertex[i] = vertices[vert1[i]+1];
@@ -1774,8 +1763,8 @@ int found;            /* flag for another coarse grid element */
 
     num_obj = lb->Get_Num_Coarse_Obj(lb->Get_Num_Coarse_Obj_Data, &ierr);
     if (ierr) {
-      fprintf(stderr, "[%d] Error in %s:  Error returned from user function"
-                      "Get_Num_Coarse_Obj.\n", lb->Proc, yo);
+      LB_PRINT_ERROR(lb->Proc, yo, 
+                     "Error returned from user function Get_Num_Coarse_Obj.");
       return(ierr);
     }
 
@@ -1791,8 +1780,7 @@ int found;            /* flag for another coarse grid element */
       if (local_gids == NULL || local_lids == NULL || assigned  == NULL ||
           num_vert   == NULL || vertices   == NULL || in_vertex == NULL ||
           out_vertex == NULL) {
-        fprintf(stderr, "[%d] Error from %s: Insufficient memory\n",
-                lb->Proc, yo);
+        LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
         LB_FREE(&local_gids);
         LB_FREE(&local_lids);
         LB_FREE(&assigned);
@@ -1807,8 +1795,8 @@ int found;            /* flag for another coarse grid element */
                               local_lids, assigned, num_vert, vertices,
                               &in_order, in_vertex, out_vertex, &ierr);
       if (ierr) {
-        fprintf(stderr, "[%d] Error in %s:  Error returned from user function"
-                        "Get_Coarse_Obj_List.\n", lb->Proc, yo);
+        LB_PRINT_ERROR(lb->Proc, yo, 
+                      "Error returned from user function Get_Coarse_Obj_List.");
         LB_FREE(&local_gids);
         LB_FREE(&local_lids);
         LB_FREE(&assigned);
@@ -1824,8 +1812,8 @@ int found;            /* flag for another coarse grid element */
 
         tree_node = LB_Reftree_hash_lookup(hashtab,local_gids[i],hashsize);
         if (tree_node == NULL) {
-          fprintf(stderr, "[%d] Warning in %s: coarse grid element not"
-                          " previously seen.\n", lb->Proc, yo);
+          LB_PRINT_WARN(lb->Proc, yo, "coarse grid element not"
+                                      " previously seen.");
           final_ierr = LB_WARN;
         }
         else {
@@ -1836,8 +1824,7 @@ int found;            /* flag for another coarse grid element */
           else
             tree_node->vertices = (int *) LB_MALLOC(num_vert[i]*sizeof(int));
           if (tree_node->vertices == NULL) {
-            fprintf(stderr, "[%d] Error from %s: Insufficient memory\n",
-                    lb->Proc, yo);
+            LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
             LB_FREE(&local_gids);
             LB_FREE(&local_lids);
             LB_FREE(&assigned);
@@ -1880,8 +1867,7 @@ int found;            /* flag for another coarse grid element */
 
     vertices = (int *) LB_MALLOC(MAXVERT*sizeof(int));
     if (tree_node->vertices == NULL) {
-      fprintf(stderr, "[%d] Error from %s: Insufficient memory\n",
-              lb->Proc, yo);
+      LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
       return(LB_MEMERR);
     }
 
@@ -1890,16 +1876,16 @@ int found;            /* flag for another coarse grid element */
                                      &snum_vert, vertices, &in_order,
                                      &sin_vertex, &sout_vertex, &ierr);
     if (ierr) {
-      fprintf(stderr, "[%d] Error in %s:  Error returned from user function"
-                      "Get_First_Coarse_Obj.\n", lb->Proc, yo);
+      LB_PRINT_ERROR(lb->Proc, yo, 
+                     "Error returned from user function Get_First_Coarse_Obj.");
       LB_FREE(&vertices);
       return(ierr);
     }
     while (found) {
       tree_node = LB_Reftree_hash_lookup(hashtab,slocal_gids,hashsize);
       if (tree_node == NULL) {
-        fprintf(stderr, "[%d] Warning in %s: coarse grid element not"
-                        " previously seen.\n", lb->Proc, yo);
+        LB_PRINT_WARN(lb->Proc, yo, "coarse grid element not"
+                                    " previously seen.");
         final_ierr = LB_WARN;
       }
       else {
@@ -1910,8 +1896,7 @@ int found;            /* flag for another coarse grid element */
         else
           tree_node->vertices = (int *) LB_MALLOC(snum_vert*sizeof(int));
         if (tree_node->vertices == NULL) {
-          fprintf(stderr, "[%d] Error from %s: Insufficient memory\n",
-                  lb->Proc, yo);
+          LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
           return(LB_MEMERR);
         }
   

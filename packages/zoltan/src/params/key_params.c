@@ -40,6 +40,8 @@ LB *lb,                         /* load balance structure */
 char *name,			/* name of variable */
 char *val)			/* value of variable */
 {
+    char *yo = "LB_Set_Key_Param";
+    char msg[256];
     int status;			/* return code */
     PARAM_UTYPE result;		/* value returned from Check_Param */
     int index;			/* index returned from Check_Param */
@@ -55,8 +57,9 @@ char *val)			/* value of variable */
         if (result.def) 
             result.dval = LB_IMBALANCE_TOL_DEF;
 	if (result.dval < 1.0) {
-	    fprintf(stderr, "WARNING: Invalid Imbalance_Tol value (%g) "
-		"being set to %g\n", result.dval, LB_IMBALANCE_TOL_DEF);
+	    sprintf(msg, "Invalid Imbalance_Tol value (%g) "
+		"being set to %g.", result.dval, LB_IMBALANCE_TOL_DEF);
+            LB_PRINT_WARN(lb->Proc, yo, msg);
 	    result.dval = LB_IMBALANCE_TOL_DEF;
 	}
 	lb->Imbalance_Tol = result.dval;
@@ -74,8 +77,9 @@ char *val)			/* value of variable */
         if (result.def)
             result.ival = LB_OBJ_WEIGHT_DEF;
 	if (result.ival < 0) {
-	    fprintf(stderr, "WARNING: Invalid Obj_Weight_Dim value (%d) "
-		"being set to 0\n", result.ival);
+	    sprintf(msg, "Invalid Obj_Weight_Dim value (%d) "
+		"being set to 0.", result.ival);
+            LB_PRINT_WARN(lb->Proc, yo, msg);
 	    result.ival = 0;
 	}
 	lb->Obj_Weight_Dim = result.ival;
@@ -86,8 +90,9 @@ char *val)			/* value of variable */
         if (result.def)
             result.ival = LB_COMM_WEIGHT_DEF;
 	if (result.ival < 0) {
-	    fprintf(stderr, "WARNING: Invalid Comm_Weight_Dim value (%d) "
-		"being set to 0\n", result.ival);
+	    sprintf(msg, "Invalid Comm_Weight_Dim value (%d) "
+		"being set to 0.", result.ival);
+            LB_PRINT_WARN(lb->Proc, yo, msg);
 	    result.ival = 0;
 	}
 	lb->Comm_Weight_Dim = result.ival;
@@ -98,8 +103,9 @@ char *val)			/* value of variable */
         if (result.def)
             result.ival = LB_DEBUG_LEVEL_DEF;
 	if (result.ival < 0) {
-	    fprintf(stderr, "WARNING: Invalid Debug_Level value (%d) "
-		"being set to 0\n", result.ival);
+	    sprintf(msg, "Invalid Debug_Level value (%d) "
+		"being set to 0.", result.ival);
+            LB_PRINT_WARN(lb->Proc, yo, msg);
 	    result.ival = 0;
 	}
 	lb->Debug_Level = result.ival;
@@ -110,8 +116,9 @@ char *val)			/* value of variable */
         if (result.def)
             result.ival = LB_DEBUG_PROC_DEF;
 	if (result.ival < 0 || result.ival > lb->Num_Proc) {
-	    fprintf(stderr, "WARNING: Invalid Debug_Processor value (%d) "
-		"being set to 0\n", result.ival);
+	    sprintf(msg, "Invalid Debug_Processor value (%d) "
+		"being set to 0.", result.ival);
+            LB_PRINT_WARN(lb->Proc, yo, msg);
 	    result.ival = 0;
 	}
 	lb->Debug_Proc = result.ival;
@@ -122,8 +129,9 @@ char *val)			/* value of variable */
         if (result.def)
             result.ival = LB_DETERMINISTIC_DEF;
 	if (result.ival < 0) {
-	    fprintf(stderr, "WARNING: Invalid Deterministic value (%d) "
-		"being set to TRUE\n", result.ival);
+	    sprintf(msg, "Invalid Deterministic value (%d) "
+		"being set to TRUE.", result.ival);
+            LB_PRINT_WARN(lb->Proc, yo, msg);
 	    result.ival = TRUE;
 	}
 	lb->Deterministic = result.ival;

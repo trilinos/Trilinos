@@ -27,6 +27,15 @@
 
 <H2>
 <A NAME="coding"></A>Coding Principles in Zoltan</H2>
+<blockquote>
+<ol TYPE=A><a href="#include">Include files</a>
+<br><a href="#global">Global Variables</a>
+<br><a href="#functions">Function Names</a>
+<br><a href="#par_comm">Parallel Communication</a>
+<br><a href="#memory1">Memory Management</a>
+<br><a href="#return">Errors, Warnings and Return Codes</a>
+</ol>
+</blockquote>
 
 <H3>
 <A NAME="include"></A>Include files</H3>
@@ -61,6 +70,14 @@ NOT to use global variables in their algorithms. See <A HREF="dev_add_struct.htm
 Structures</A> for ideas on avoiding the use of global variables.
 <BR>&nbsp;
 <H3>
+<A NAME="functions"></A>Function Names</H3>
+In order to avoid name conflicts with applications and other libraries,
+all functions should be prepended with <B>LB_</B><I>.</I>&nbsp; As a general
+rule, each new word in a function name should be capitalized (for example,
+<b>LB_Help_Migrate</b>). 
+Internal Zoltan functions do not have to follow these rules.
+
+<H3>
 <A NAME="par_comm"></A>Parallel Communication</H3>
 All communication in the Zoltan library should be performed through MPI
 communication routines. The MPI interface was chosen to enable portability
@@ -88,14 +105,48 @@ information.
 
 <BR>&nbsp;
 <H3>
-<A NAME="return"></A>Errors &amp; Return Codes</H3>
-If an error occurs in the Zoltan library, a message should be printed to
-stderr, all memory allocated in the current function should be freed, and
-an error code should be returned. The Zoltan library should never exit.
+<A NAME="return"></A>Errors, Warnings, and Return Codes</H3>
+If an error or warning occurs in the Zoltan library, 
+a message should be printed to
+<i>stderr</i> (using one of the <a href="#LB_PRINT">printing macros</a> below),
+all memory allocated in the current function should be freed, and
+an <a href="#error codes table">error code</a> should be returned. 
+The Zoltan library should never exit.
 Control should always be returned to the application with an error code.
 The error codes are defined in the <A HREF="#error codes table">table</A>
 below.
+<p>
+Currently, this philosophy is not being strictly followed in all portions
+of Zoltan.
+Efforts are underway to bring existing code up-to-date, and to follow this
+rule in all future development.
 <BR>&nbsp;
+<hr><a NAME="LB_PRINT"></a>
+<b>LB_PRINT_ERROR</b>(int <i>processor_number</i>, char *<i>function_name</i>, char *<i>message</i>)<br>
+<b>LB_PRINT_WARN</b>(int <i>processor_number</i>, char *<i>function_name</i>, char *<i>message</i>)<br>
+<hr>
+Macros for printing error and warning messages in Zoltan.  The macros are
+defined in <i>lb/lb_const.h</i>.
+<TABLE WIDTH="100%" NOSAVE>
+<TR>
+<TD VALIGN=TOP WIDTH="20%"><b>Parameters:</b></TD>
+<TD ALIGN=LEFT></TD>
+</TR>
+<TR>
+<TD VALIGN=TOP>&nbsp;&nbsp;&nbsp;&nbsp;<i>processor_number</i></TD>
+<TD ALIGN=LEFT> The processor's rank in the load-balancing communicator. The value -1 can be used if the rank is not available.</td>
+</TR>
+<TR>
+<TD VALIGN=TOP>&nbsp;&nbsp;&nbsp;&nbsp;<i>function_name</i></TD>
+<TD ALIGN=LEFT> A string containing the name of the function in which the error or warning occurred. </td>
+</TR>
+<TR>
+<TD VALIGN=TOP>&nbsp;&nbsp;&nbsp;&nbsp;<i>message</i></TD>
+<TD ALIGN=LEFT> A string containing the error or warning message.</td>
+</TR>
+</table>
+<hr>
+<p>
 <CENTER><TABLE BORDER WIDTH="90%" >
 <TR>
 <TD VALIGN=TOP><I>LB_OK</I></TD>
@@ -128,16 +179,6 @@ algorithm, it can do so.</TD>
 <CAPTION ALIGN=BOTTOM><A NAME="error codes table"></A><I>Return codes defined
 in lb/lbi_const.h.</I></CAPTION>
 </TABLE></CENTER>
-Currently, this philosophy is not being strictly followed in the code.
-Efforts will be made to bring existing code up-to-date, and to follow this
-rule in all future development.
-<BR>&nbsp;
-<H3>
-<A NAME="functions"></A>Function Names</H3>
-In order to avoid name conflicts with applications and other libraries,
-all functions should be prepended with <B>LB_</B><I>.</I>&nbsp; As a general
-rule, each new word in a function name should be capitalized (for example,
-LB_Help_Migrate). Internal Zoltan functions do not have to follow these rules.
 
 <P>
 <HR WIDTH="100%">

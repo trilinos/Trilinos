@@ -451,6 +451,18 @@ struct LB_Struct {
 
 #define LB_PROC_NOT_IN_COMMUNICATOR(lb) ((lb)->Proc == -1) 
 
+/*
+ *  Macros for consistently printing error and warning messages.
+ */
+
+#define LB_PRINT_ERROR(proc,yo,str) \
+  fprintf(stderr, "[%d] Zoltan ERROR in %s (line %d of %s):  %s\n", \
+          proc, yo, __LINE__, __FILE__, str);
+
+#define LB_PRINT_WARN(proc,yo,str) \
+  fprintf(stderr, "[%d] Zoltan WARNING in %s (line %d of %s):  %s\n", \
+          proc, yo, __LINE__, __FILE__, str);
+
 /*  
  *  Print trace information.
  */

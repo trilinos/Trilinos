@@ -62,8 +62,8 @@ extern int getrusage(); /* Should be in sys/resource.h, but isn't always */
 #define LB_TIME_USERSYS 4
 
 /* Function prototypes */
-double LB_Time(int);
-double LB_Time_Resolution(int);
-int LB_Set_Timer_Param(char *, char *, int *);
+extern double LB_Time(int);
+extern double LB_Time_Resolution(int);
+extern int LB_Set_Timer_Param(char *, char *, int *);
 
 #endif

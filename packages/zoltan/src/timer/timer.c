@@ -56,29 +56,30 @@ int *timer)                     /* output: timer type */
 #if (defined(_CLOCK_T) && ! defined(SMOS))
           (*timer) = LB_TIME_CPU;
 #else  /* SMOS or !_CLOCK_T */
-          fprintf(stderr, "%s warning: CPU time not available;"
-                          " Wall clock time will be used.\n", yo);
+          LB_PRINT_WARN(-1, yo, "CPU time not available;"
+                        " Wall clock time will be used.");
 #endif /* SMOS or !_CLOCK_T */
         }
         else if (strcmp(result.sval, "USER")==0){
 #if (defined(HAVE_TIMES) || defined(HAVE_RUSAGE))
           (*timer) = LB_TIME_USER;
 #else
-          fprintf(stderr, "%s warning: user time not available;"
-                          " Wall clock time will be used.\n", yo);
+          LB_PRINT_WARN(-1, yo, "User time not available;"
+                          " Wall clock time will be used.");
 #endif
         }
         else if (strcmp(result.sval, "USERSYS")==0){
 #if (defined(HAVE_TIMES) || defined(HAVE_RUSAGE))
           (*timer) = LB_TIME_USERSYS;
 #else
-          fprintf(stderr, "%s warning: usersys time not "
-                          "available; Wall clock time will be used.\n", yo);
+          LB_PRINT_WARN(-1, yo, "Usersys time not "
+                        "available; Wall clock time will be used.");
 #endif
         }
         else{
-          fprintf(stderr, "ZOLTAN warning in %s: Unknown timer option "
-                          "%s\n", yo, result.sval);
+          char msg[256];
+          sprintf(msg, "Unknown timer option %s.", result.sval);
+          LB_PRINT_WARN(-1, yo, msg);
           status = 2; /* Illegal parameter */
         }
     }

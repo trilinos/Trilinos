@@ -46,6 +46,7 @@ int LB_Set_Fn(LB *lb, LB_FN_TYPE fn_type, void (*fn)(), void *data)
  */
 
 char *yo = "LB_Set_Fn";
+char msg[256];
 int ierr;
 
   switch (fn_type) {
@@ -125,8 +126,9 @@ int ierr;
     ierr = LB_Set_Child_Weight_Fn(lb, (LB_CHILD_WEIGHT_FN *) fn, data);
     break;
   default:
-    fprintf(stderr, "Error from %s:  LB_FN_TYPE %d is invalid.\n", yo, fn_type);
-    fprintf(stderr, "Value must be in range 0 to %d\n", LB_MAX_FN_TYPES);
+    sprintf(msg, "LB_FN_TYPE %d is invalid.\n"
+                 "Value must be in range 0 to %d.", fn_type, LB_MAX_FN_TYPES);
+    LB_PRINT_ERROR(lb->Proc, yo, msg);
     ierr = LB_WARN;
   }
 

@@ -40,6 +40,8 @@ int proc,                       /* processor # (controls debug printing)  */
 int print_proc                  /* processor that should perform printing */
 )
 {	
+    char     *yo = "LB_Assign_Param_Vals";
+    char      msg[256];
     char     *name;		/* name of parameter being reset */
     char     *val;		/* new value for parameter       */
     int       found;		/* is name found?                */
@@ -68,9 +70,10 @@ int print_proc                  /* processor that should perform printing */
           if (param_ptr->ptr == NULL) {
              ierr = LB_WARN;
              if (debug_level > 0 && proc == print_proc) {
-                fprintf(stderr, "Zoltan Warning: Parameter %s is not bound "
+                sprintf(msg, "Parameter %s is not bound "
                        "to any variable.  Parameter ignored.\n", 
                         param_ptr->name);
+                LB_PRINT_WARN(proc, yo, msg);
              }
           }
           else {
