@@ -14,7 +14,7 @@
  *====================================================================*/
 
 #include "lb_const.h"
-#include "parmetis_const.h"
+#include "parmetis_jostle_const.h"
 
 /* LB_hashf is a hash function for global ids. 
  *
