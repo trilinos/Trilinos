@@ -70,8 +70,8 @@ namespace LOCA {
 
       //! Calls checkStatus of underlying status test
       virtual NOX::StatusTest::StatusType
-      checkStatus(const NOX::Solver::Generic& problem, 
-		 NOX::StatusTest::CheckType checkType);
+      checkStatusEfficiently(const NOX::Solver::Generic& problem, 
+			     NOX::StatusTest::CheckType checkType);
 
       //! Calls getStatus of underlying status test
       virtual NOX::StatusTest::StatusType getStatus() const;

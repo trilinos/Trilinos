@@ -51,12 +51,13 @@ LOCA::StatusTest::Wrapper::checkStatus(const NOX::Solver::Generic& problem)
 }
 
 NOX::StatusTest::StatusType 
-LOCA::StatusTest::Wrapper::checkStatus(const NOX::Solver::Generic& problem, 
-				       NOX::StatusTest::CheckType checkType)
+LOCA::StatusTest::Wrapper::checkStatusEfficiently(
+					 const NOX::Solver::Generic& problem, 
+					 NOX::StatusTest::CheckType checkType)
 {
   LOCA::Solver::Wrapper problemWrapper(problem);
 
-  return statusTestPtr->checkStatus(problemWrapper, checkType);
+  return statusTestPtr->checkStatusEfficiently(problemWrapper, checkType);
 }
 
 NOX::StatusTest::StatusType 
