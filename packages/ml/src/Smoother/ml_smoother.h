@@ -149,6 +149,7 @@ extern  int ML_Smoother_VBlockSGSSequential(void*,int,double*,int,double*);
 extern  int ML_Smoother_OverlappedILUT(void *,int,double *x,int,double *);
 extern  int ML_Smoother_VBlockAdditiveSchwarz(void *,int,double*,int,double*);
 extern  int ML_Smoother_VBlockMultiplicativeSchwarz(void *,int,double*,int,double*);
+extern  int ML_Smoother_Hiptmair(void *, int, double *, int, double *);
 
 /* ******************************************************************** */
 /* ******************************************************************** */
