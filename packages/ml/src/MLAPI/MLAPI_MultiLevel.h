@@ -5,11 +5,12 @@
 #include "Teuchos_ParameterList.hpp"
 #include "MLAPI_Operator.h"
 #include "MLAPI_DoubleVector.h"
-#include "MLAPI_Smoother.h"
+#include "MLAPI_InverseOperator.h"
 #include "MLAPI_Expressions.h"
 #include "MLAPI_Preconditioner.h"
 #include "MLAPI_Container.h"
 #include "MLAPI_Workspace.h"
+#include <vector>
 
 #include "ml_agg_genP.h"
 
@@ -31,7 +32,12 @@ public:
     string EigenAnalysis = MLList.get("eigen-analysis: type", "Anorm");
 
     MaxLevels_ = MLList.get("max levels",2);
-    H_ = new Container[10];
+    if (MaxLevels_ <= 0) {
+      cerr << "Value of `max levels' not valid (" << MaxLevels_ << ")" << endl;
+      throw("invalid parameter");
+    }
+
+    H_ = new Container[MaxLevels_];
 
     H_[0].SetA(FineMatrix);
 
@@ -42,7 +48,7 @@ public:
     Operator P;
     Operator Ptent;
     Operator IminusA;
-    Smoother S;
+    InverseOperator S;
 
     int level;
     for (level = 0 ; level < MaxLevels_ - 1 ; ++level) 
@@ -55,7 +61,7 @@ public:
 
       A = H_[level].A();
       Ptent = BuildP(A,MLList);
-      LambdaMax = A.LambdaMax(EigenAnalysis,true);
+      LambdaMax = MaxEigenvalue(A,EigenAnalysis,true);
 
       if (PrintLevel()) {
         cout << endl;
@@ -169,7 +175,7 @@ public:
     return(H_[i].P());
   }
 
-  const Smoother& S(const int i) const
+  const InverseOperator& S(const int i) const
   {
     return(H_[i].S());
   }

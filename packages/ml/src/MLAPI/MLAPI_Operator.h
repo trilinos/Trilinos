@@ -57,31 +57,42 @@ private:
 
 };
 
+/*!
+ * \class Operator
+ *
+ * \brief Operator: basic class to define operators within MLAPI.
+ *
+ * \author Marzio Sala, SNL 9214
+ *
+ * \date Last updated on 07-Jan-05
+ */
+
 class Operator : public BaseObject {
 
 public:
 
+  //! Default constructor.
   Operator() 
   {
     OperatorBox_ = Teuchos::null;
   }
 
+  //! Constructor with given already computed ML_Operator pointer.
   Operator(const Space& DomainSpace, const Space& RangeSpace,
            ML_Operator* Op, bool Ownership = true)
   {
     OperatorBox_ = Teuchos::rcp(new ML_Operator_Box(Op,Ownership));
     RangeSpace_ = RangeSpace;
     DomainSpace_ = DomainSpace;
-    ApplyTemp_.Reshape(RangeSpace_);
     BuildColumnSpace();
   }
 
+  //! Constructor with given already FillComplete()'d object.
   Operator(const Space& DomainSpace, const Space& RangeSpace,
            Epetra_RowMatrix& Matrix)
   {
     RangeSpace_ = RangeSpace;
     DomainSpace_ = DomainSpace;
-    ApplyTemp_.Reshape(RangeSpace_);
 
     ML_Operator* Op = ML_Operator_Create(MLAPI::GetMLComm());
     OperatorBox_ = Teuchos::rcp(new ML_Operator_Box(Op,true));
@@ -89,6 +100,7 @@ public:
     BuildColumnSpace();
   }
 
+  //! Copy constructor.
   Operator(const Operator& RHS) 
   {
     DomainSpace_ = RHS.DomainSpace();
@@ -96,10 +108,10 @@ public:
     ColumnSpace_ = RHS.ColumnSpace();
     OperatorBox_ = RHS.OperatorBox();
     
-    ApplyTemp_.Reshape(RHS.RangeSpace());
     SetName(RHS.Name());
   }
 
+  //! operator =
   Operator& operator=(const Operator& RHS) 
   {
     Destroy();
@@ -109,23 +121,15 @@ public:
     ColumnSpace_ = RHS.ColumnSpace();
     OperatorBox_ = RHS.OperatorBox();
     
-    ApplyTemp_.Reshape(RHS.RangeSpace());
     SetName(RHS.Name());
     return(*this);
   }
 
-  const Teuchos::RefCountPtr<ML_Operator_Box>& OperatorBox() const
-  {
-    return(OperatorBox_);
-  }
-  
+  // Destructor.
   ~Operator()
   {
     Destroy();
   }
-
-  void Destroy()
-  { }
 
   Operator& operator=(const string& Name)
   {
@@ -148,12 +152,6 @@ public:
     return(0);
   }
 
-  DoubleVector& Apply(const DoubleVector& lhs) const
-  {
-    Apply(lhs,ApplyTemp_);
-    return(ApplyTemp_);
-  }
-
   const Space& RangeSpace() const {
     return(RangeSpace_);
   }
@@ -170,70 +168,6 @@ public:
   ML_Operator* GetOperator() const
   {
     return(OperatorBox_->GetOperator());
-  }
-
-  double LambdaMax(const string Type = "Anorm", 
-                   const bool DiagonalScaling = false) const
-  {
-
-    ML_Krylov *kdata;
-    int Nfine = GetOperator()->outvec_leng;
-    double MaxEigen = 0.0;
-
-    if (Type == "cg") {
-
-      kdata = ML_Krylov_Create(GetMLComm());
-      if (DiagonalScaling == false)
-        kdata->ML_dont_scale_by_diag = ML_TRUE;
-      else
-        kdata->ML_dont_scale_by_diag = ML_FALSE;
-      ML_Krylov_Set_PrintFreq(kdata, 0);
-      ML_Krylov_Set_ComputeEigenvalues( kdata );
-      ML_Krylov_Set_Amatrix(kdata, GetOperator());
-      ML_Krylov_Solve(kdata, Nfine, NULL, NULL);
-      MaxEigen = ML_Krylov_Get_MaxEigenvalue(kdata);
-      ML_Krylov_Destroy(&kdata);
-
-    }
-    else if (Type == "anasazi") {
-
-      bool DiagScal;
-      if (DiagonalScaling)
-        DiagScal = ML_TRUE;
-      else
-        DiagScal = ML_FALSE;
-#if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_ANASAZI) && defined(HAVE_ML_TEUCHOS)
-      ML_Anasazi_Get_SpectralNorm_Anasazi(GetOperator(), 0, 10, 1e-5,
-                                          ML_FALSE, DiagScal, &MaxEigen);
-#else
-      fprintf(stderr,
-              "--enable-epetra --enable-anasazi --enable-teuchos required\n"
-              "(file %s, line %d)\n",
-              __FILE__,
-              __LINE__);
-      exit(EXIT_FAILURE);
-#endif
-    }
-    else if (Type == "power-method") {
-
-      kdata = ML_Krylov_Create(GetMLComm());
-      if (DiagonalScaling == false)
-        kdata->ML_dont_scale_by_diag = ML_TRUE;
-      else
-        kdata->ML_dont_scale_by_diag = ML_FALSE;
-      ML_Krylov_Set_PrintFreq(kdata, 0);
-      ML_Krylov_Set_ComputeNonSymEigenvalues(kdata);
-      ML_Krylov_Set_Amatrix(kdata, GetOperator());
-      ML_Krylov_Solve(kdata, Nfine, NULL, NULL);
-      MaxEigen = ML_Krylov_Get_MaxEigenvalue(kdata);
-    }
-    else if ("Anorm") {
-      MaxEigen = ML_Operator_MaxNorm(GetOperator(), DiagonalScaling);
-    }
-    else
-      ML_THROW("spectral scheme not correct");
-
-    return(MaxEigen);
   }
 
   void ComputeEigenValues(const string Type, double* Er, double* Ei, 
@@ -286,13 +220,25 @@ public:
     return;
   }
 
+  const Teuchos::RefCountPtr<ML_Operator_Box>& OperatorBox() const
+  {
+    return(OperatorBox_);
+  }
+
 private:
+  //! Destroys all internal data.
+  void Destroy() { }
+
+  //! Domain space.
   Space DomainSpace_;
+  //! Range space.
   Space RangeSpace_;
+  //! Column space.
   Space ColumnSpace_;
+  //! Container for the underlying ML_Operator pointer.
   Teuchos::RefCountPtr<ML_Operator_Box> OperatorBox_;
+  // FIXME: delete me ??
   mutable DoubleVector ApplyTemp_;
-  string Name_;
 
 }; // Operator
 
@@ -321,10 +267,12 @@ Operator BuildP(const Operator& A, Teuchos::ParameterList& List)
   ML_Aggregate_Create(&agg_object);
   ML_Aggregate_Set_MaxLevels(agg_object,2);
   ML_Aggregate_Set_StartLevel(agg_object,0);
+  ML_Aggregate_Set_Threshold(agg_object,0.0);
+  agg_object->curr_threshold = 0.0;
   
   ML_Operator* ML_Ptent = 0;
   ML_Ptent = ML_Operator_Create(GetMLComm());
-  string CoarsenType = List.get("aggregation: type","Uncoupled");
+  string CoarsenType = List.get("aggregation: type","MIS");
 
   // FIXME: as in MLP
   int NullSpaceDim = List.get("nullspace dimension", 1);
@@ -722,6 +670,116 @@ int ML_Operator_Add2(ML_Operator *A, ML_Operator *B, ML_Operator *C,
 
   return 1;
 
+}
+
+
+
+double MaxEigenvalue(const Operator& Op, const string Type = "Anorm", 
+                 const bool DiagonalScaling = false) 
+{
+
+  ML_Krylov *kdata;
+  int Nfine = Op.GetOperator()->outvec_leng;
+  double MaxEigen = 0.0;
+
+  if (Type == "cg") {
+
+    kdata = ML_Krylov_Create(GetMLComm());
+    if (DiagonalScaling == false)
+      kdata->ML_dont_scale_by_diag = ML_TRUE;
+    else
+      kdata->ML_dont_scale_by_diag = ML_FALSE;
+    ML_Krylov_Set_PrintFreq(kdata, 0);
+    ML_Krylov_Set_ComputeEigenvalues( kdata );
+    ML_Krylov_Set_Amatrix(kdata, Op.GetOperator());
+    ML_Krylov_Solve(kdata, Nfine, NULL, NULL);
+    MaxEigen = ML_Krylov_Get_MaxEigenvalue(kdata);
+    ML_Krylov_Destroy(&kdata);
+
+  }
+  else if (Type == "anasazi") {
+
+    bool DiagScal;
+    if (DiagonalScaling)
+      DiagScal = ML_TRUE;
+    else
+      DiagScal = ML_FALSE;
+#if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_ANASAZI) && defined(HAVE_ML_TEUCHOS)
+    ML_Anasazi_Get_SpectralNorm_Anasazi(Op.GetOperator(), 0, 10, 1e-5,
+                                        ML_FALSE, DiagScal, &MaxEigen);
+#else
+    fprintf(stderr,
+            "--enable-epetra --enable-anasazi --enable-teuchos required\n"
+            "(file %s, line %d)\n",
+            __FILE__,
+            __LINE__);
+    exit(EXIT_FAILURE);
+#endif
+  }
+  else if (Type == "power-method") {
+
+    kdata = ML_Krylov_Create(GetMLComm());
+    if (DiagonalScaling == false)
+      kdata->ML_dont_scale_by_diag = ML_TRUE;
+    else
+      kdata->ML_dont_scale_by_diag = ML_FALSE;
+    ML_Krylov_Set_PrintFreq(kdata, 0);
+    ML_Krylov_Set_ComputeNonSymEigenvalues(kdata);
+    ML_Krylov_Set_Amatrix(kdata, Op.GetOperator());
+    ML_Krylov_Solve(kdata, Nfine, NULL, NULL);
+    MaxEigen = ML_Krylov_Get_MaxEigenvalue(kdata);
+  }
+  else if ("Anorm") {
+    MaxEigen = ML_Operator_MaxNorm(Op.GetOperator(), DiagonalScaling);
+  }
+  else
+    ML_THROW("spectral scheme not correct");
+
+  return(MaxEigen);
+}
+
+std::ostream& operator<< (std::ostream& os, const Operator& Op) 
+{
+  int    *bindx;
+  double *val;
+  int    allocated, row_length;
+  ML_Operator* matrix = Op.GetOperator();
+
+  if (matrix->getrow == NULL) 
+    throw("getrow not set");
+
+  allocated = 100;
+  bindx = (int    *)  ML_allocate(allocated*sizeof(int   ));
+  val   = (double *)  ML_allocate(allocated*sizeof(double));
+
+  for (int iproc = 0 ; iproc < NumProc() ; ++iproc) {
+
+    if (iproc == 0) {
+      os << "Operator `" << Op.Name() << "'" << endl;
+      os << "ProcID\tGlobal Row\tGlobal Col\tValue" << endl;
+      os << endl;
+    }
+
+    if (MyPID() == iproc) {
+
+      for (int i = 0 ; i < matrix->getrow->Nrows; i++) {
+        ML_get_matrix_row(matrix, 1, &i, &allocated, &bindx, &val,
+                          &row_length, 0);
+        for  (int j = 0; j < row_length; j++) {
+          int GlobalRow = Op.DomainSpace()(i);
+          int GlobalCol = Op.ColumnSpace()(bindx[j]);
+          os << iproc << "\t" << GlobalRow << "\t" << GlobalCol << "\t" << val[j] << endl;
+        }
+      }
+    }
+#ifdef HAVE_MPI
+    MPI_Barrier(MPI_COMM_WORLD);
+#endif
+  }
+
+  ML_free(val);
+  ML_free(bindx);
+  return (os);
 }
 } // namespace MLAPI
 #endif // ML_OPERATOR_H

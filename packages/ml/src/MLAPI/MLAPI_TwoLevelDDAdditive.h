@@ -9,14 +9,14 @@ namespace MLAPI {
 
 class DoubleVector;
 class Operator;
-class Smoother;
+class InverseOperator;
 
 class TwoLevelDDAdditive : public Preconditioner {
 
 public:
 
   TwoLevelDDAdditive(const Operator* A_f,
-                     const Smoother* S_f, const Smoother* S_c,
+                     const InverseOperator* S_f, const InverseOperator* S_c,
                      const Operator* R, const Operator *P,
                      int MaxIters = 1) :
     A_f_(*A_f),
@@ -58,8 +58,8 @@ private:
   const Operator& A_f_;
   const Operator& R_;
   const Operator& P_;
-  const Smoother& S_f_;
-  const Smoother& S_c_;
+  const InverseOperator& S_f_;
+  const InverseOperator& S_c_;
   int MaxIters_;
 
 };

@@ -5,7 +5,7 @@
 namespace MLAPI {
 
 class Operator;
-class Smoother;
+class InverseOperator;
 
 class Container
 {
@@ -16,7 +16,7 @@ public:
   }
 
   Container(int LevelID, const Operator& A, const Operator& P, 
-            const Operator& R, const Smoother& S)
+            const Operator& R, const InverseOperator& S)
   {
     A_ = A;
     P_ = P;
@@ -40,7 +40,7 @@ public:
     R_ = R;
   }
 
-  void SetS(const Smoother& S)
+  void SetS(const InverseOperator& S)
   {
     S_ = S;
   }
@@ -60,7 +60,7 @@ public:
     return(R_);
   }
 
-  const Smoother& S() const
+  const InverseOperator& S() const
   {
     return(S_);
   }
@@ -74,7 +74,7 @@ private:
   Operator A_;
   Operator P_;
   Operator R_;
-  Smoother S_;
+  InverseOperator S_;
   int LevelID_;
 
 };

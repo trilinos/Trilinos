@@ -9,15 +9,15 @@ namespace MLAPI {
 
 class DoubleVector;
 class Operator;
-class Smoother;
+class InverseOperator;
 
 class TwoLevelDDHybrid : public Preconditioner {
 
 public:
 
   TwoLevelDDHybrid(const Operator* A_f, 
-                   const Smoother* Spre_f, const Smoother* Spost_f,
-                   const Smoother* S_c,
+                   const InverseOperator* Spre_f, const InverseOperator* Spost_f,
+                   const InverseOperator* S_c,
                    const Operator* R, const Operator *P) :
     A_f_(*A_f),
     R_(*R),
@@ -61,9 +61,9 @@ public:
 
 private:
   const Operator& A_f_;
-  const Smoother* Spre_f_;
-  const Smoother* Spost_f_;
-  const Smoother& S_c_;
+  const InverseOperator* Spre_f_;
+  const InverseOperator* Spost_f_;
+  const InverseOperator& S_c_;
   const Operator& R_;
   const Operator& P_;
 
