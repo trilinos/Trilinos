@@ -46,14 +46,14 @@ ID_INC		= id_const.h id_util.h id_util_const.h
 VX_CSRC		= vx.c
 VX_INC		= vx_const.h
 
-ALL_CSRC	= all_allo.c
-ALL_INC		= all_const.h all_allo_const.h
+ALL_CSRC	= all_allo.c all_util.c
+ALL_INC		= all_const.h all_allo_const.h all_util_const.h
 
 LB_CSRC		= lb.c lb_util.c 
 LB_INC		= lb_const.h lb.h lbi_const.h lb_util_const.h
 
-RCB_CSRC	= rcb.c rcb_util.c 
-RCB_INC		= rcb.h
+RCB_CSRC	= rcb.c rcb_util.c
+RCB_INC		= rcb_const.h
 
 OCT_CSRC	= msg.c octant.c util.c octupdate.c dfs.c costs.c migoct.c \
 		  output.c migreg.c hilbert.c
