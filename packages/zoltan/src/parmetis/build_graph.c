@@ -174,7 +174,7 @@ int Zoltan_Build_Graph(
       if (graph_type == GLOBAL_GRAPH)
         /* Make this a global number */
         hash_nodes[i].gno = (*vtxdist)[zz->Proc]+i;
-      else
+      else /* graph_type == LOCAL_GRAPH */
         /* Make this a local number */
         hash_nodes[i].gno = i;
     }
@@ -269,7 +269,7 @@ int Zoltan_Build_Graph(
     offset = 0;     /* Index of next available node in proc_list */
     ptr = proc_list;
     (*xadj)[0] = 0;
-    jj = 0;
+    jj = 0;          /* Index into (*xadj) */
     nself = 0;       /* Number of self-edges in the graph */
     cross_edges = 0; /* Number of edges that cross over to a different proc. */
   
@@ -379,10 +379,14 @@ int Zoltan_Build_Graph(
   
             offset++;
           }
-        }
-      }
+        } /* end inter-proc edge */
+      } /* end edge loop */
+
       (*xadj)[i+1] = jj; /* NB: We do not count self-edges. */
-    }
+      if (zz->Debug_Level >= ZOLTAN_DEBUG_ALL)
+        printf("[%3d] In %s: xadj[%3d] = %3d\n", zz->Proc, yo, i+1, jj);
+
+    } /* end object loop */
     /* Remark: cross_edges == offset when graph_type==GLOBAL_GRAPH */
 
     ZOLTAN_FREE(&plist);
@@ -404,10 +408,9 @@ int Zoltan_Build_Graph(
     /* Sanity check for edges. */
     k = (graph_type == GLOBAL_GRAPH ? num_edges : num_edges - cross_edges);
     if ((check_graph >= 1) && ((*xadj)[num_obj] + nself != k)){
-      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Invalid input graph. "
-              "Something may be wrong with your graph query functions, "
-              "or perhaps you found a bug in Zoltan.\n"); 
-      ZOLTAN_PARMETIS_ERROR(ZOLTAN_FATAL, "Invalid input graph.");
+      if (zz->Debug_Level >= ZOLTAN_DEBUG_ALL)
+         printf("[%3d] xadj[num_obj=%1d] = %d, nself = %d, num_edges = %d, cross_edges = %d, k =%d\n", zz->Proc, num_obj, (*xadj)[num_obj],  nself, num_edges, cross_edges, k);
+      ZOLTAN_PARMETIS_ERROR(ZOLTAN_FATAL, "Incorrect edge count. Please check your graph query functions.");
     }
 
     /* Set cross_edges to zero if we threw them out. */

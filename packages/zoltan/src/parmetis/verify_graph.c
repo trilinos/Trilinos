@@ -24,6 +24,10 @@ extern "C" {
 /*********************************************************************/
 /* Verify ParMetis graph structure.                                  */
 /*                                                                   */
+/* Input parameter graph_type specifies the type of graph:           */
+/*   LOCAL_GRAPH  - each proc owns a local METIS style graph         */
+/*   GLOBAL_GRAPH - the procs share a global ParMETIS graph          */
+/*                                                                   */
 /* Input parameter check_graph specifies the level of verification:  */
 /*   0 - perform no checks at all                                    */
 /*   1 - verify on-processor part of graph                           */
@@ -37,7 +41,7 @@ extern "C" {
 /* Output: an error code (the same on all procs)                     */
 /*                                                                   */
 /* Fatal error :                                                     */
-/*   - non-symmetric graph (or edge weights)                         */
+/*   - non-symmetric graph                                           */
 /*   - incorrect vertex number                                       */
 /*   - negative vertex or edge weight                                */
 /*                                                                   */
@@ -47,12 +51,14 @@ extern "C" {
 /*   - self-edge                                                     */
 /*   - multiple edges between a pair of vertices                     */
 /*   - singletons (vertices with no edges)                           */
+/*   - non-symmetric edge weights                                    */
 /*                                                                   */
 /*********************************************************************/
 
 int Zoltan_Verify_Graph(MPI_Comm comm, idxtype *vtxdist, idxtype *xadj, 
        idxtype *adjncy, idxtype *vwgt, idxtype *adjwgt, 
-       int vwgt_dim, int ewgt_dim, int check_graph, int output_level)
+       int vwgt_dim, int ewgt_dim, 
+       int graph_type, int check_graph, int output_level)
 {
   int i, j, ii, jj, k, kk, num_obj, nedges, ierr;
   int flag, cross_edges, mesg_size, sum, global_sum;
@@ -169,7 +175,10 @@ int Zoltan_Verify_Graph(MPI_Comm comm, idxtype *vtxdist, idxtype *xadj,
   num_duplicates = 0;
   num_singletons = 0;
   for (i=0; i<num_obj; i++){
-    global_i = vtxdist[proc]+i;
+    if (graph_type == GLOBAL_GRAPH)
+      global_i = vtxdist[proc]+i;
+    else /* graph_type == LOCAL_GRAPH */
+      global_i = i; /* A bit confusingly, global_i = i for local graphs */
     /* Singleton? */
     if (xadj[i] == xadj[i+1]){
       num_singletons++;
@@ -181,7 +190,10 @@ int Zoltan_Verify_Graph(MPI_Comm comm, idxtype *vtxdist, idxtype *xadj,
     for (ii=xadj[i]; ii<xadj[i+1]; ii++){
       global_j = adjncy[ii];
       /* Valid vertex number? */
-      if ((global_j < vtxdist[0]) || (global_j >= vtxdist[nprocs])){
+      if (((graph_type == GLOBAL_GRAPH) && 
+           ((global_j < vtxdist[0]) || (global_j >= vtxdist[nprocs])))
+          || ((graph_type == LOCAL_GRAPH) && 
+           ((global_j < 0) || (global_j >= num_obj)))){
         sprintf(msg, "Edge to invalid vertex %d detected.", global_j);
         ZOLTAN_PRINT_ERROR(proc, yo, msg);
         ierr = ZOLTAN_FATAL;
@@ -206,24 +218,36 @@ int Zoltan_Verify_Graph(MPI_Comm comm, idxtype *vtxdist, idxtype *xadj,
         }
       }
       /* Is global_j a local vertex? */
-      if ((global_j >= vtxdist[proc]) && (global_j < vtxdist[proc+1])){
+      if ((graph_type == LOCAL_GRAPH) || ((graph_type == GLOBAL_GRAPH) &&
+          (global_j >= vtxdist[proc]) && (global_j < vtxdist[proc+1]))){
         /* Check if (global_j, global_i) is an edge */
-        j = global_j - vtxdist[proc];
+        if (graph_type == GLOBAL_GRAPH)
+          j = global_j - vtxdist[proc];
+        else /* graph_type == LOCAL_GRAPH */
+          j = global_j;
         flag = 0;
         for (jj=xadj[j]; jj<xadj[j+1]; jj++){
           if (adjncy[jj] == global_i) {
-            flag = 1;
+            flag = 1;      /* Found edge (global_j, global_i) */
             if (ewgt_dim){
               /* Compare weights */
               for (k=0; k<ewgt_dim; k++){
-                if (adjwgt[jj*ewgt_dim+k] != adjwgt[ii*ewgt_dim+k])
-                   ierr = ZOLTAN_FATAL;
+                if (adjwgt[jj*ewgt_dim+k] != adjwgt[ii*ewgt_dim+k]){
+                   /* Numerically nonsymmetric */
+                   flag = -1;
+                   ierr = ZOLTAN_WARN;
+                }
+              }
+              if (flag<0 && output_level>0){
+                sprintf(msg, "Graph is numerically nonsymmetric "
+                  "in edge (%d,%d)", global_i, global_j);
+                ZOLTAN_PRINT_WARN(proc, yo, msg);
               }
             }
             break;
           }
         }
-        if (!flag) {
+        if (flag == 0) {
           sprintf(msg, "Graph is not symmetric. "
                   "Edge (%d,%d) exists, but no edge (%d,%d).", 
                   global_i, global_j, global_j, global_i);
@@ -282,7 +306,9 @@ barrier1:
     return ZOLTAN_FATAL;
   }
 
-  if (check_graph >= 2) {
+  if ((graph_type == GLOBAL_GRAPH) && (check_graph >= 2)) {
+    /* Test for consistency across processors. */
+
     /* Allocate space for off-proc data */
     mesg_size = (2+ewgt_dim)*sizeof(idxtype);
     sendbuf = (char *) ZOLTAN_MALLOC(cross_edges*mesg_size);
@@ -341,8 +367,6 @@ barrier1:
       }
       else {
 
-
-
         /* Third pass: Compare on-proc data to the off-proc data we received */
         /* sendbuf and recvbuf should contain the same data except (i,j) is  */
         /* (j,i)                                                             */
@@ -357,11 +381,14 @@ barrier1:
               /* Check weights */
               for (k=0; k<ewgt_dim; k++){
                 if (ptr1[2+k] != ptr2[2+k]){
-                  sprintf(msg, "Edge weight (%d,%d) is not symmetric: %d != %d",
-                           ptr1[0], ptr1[1], ptr1[2+k], ptr2[2+k]);
-                  ZOLTAN_PRINT_ERROR(proc, yo, msg);
-                  ierr = ZOLTAN_FATAL;
+                  flag = -1;
+                  ierr = ZOLTAN_WARN;
                 }
+              }
+              if (flag<0 && output_level>0){
+                  sprintf(msg, "Edge weight (%d,%d) is not symmetric",
+                          ptr1[0], ptr1[1]);
+                  ZOLTAN_PRINT_WARN(proc, yo, msg);
               }
             }
           }

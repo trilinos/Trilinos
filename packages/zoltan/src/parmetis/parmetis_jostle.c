@@ -815,7 +815,7 @@ static int Zoltan_ParMetis_Jostle(
     else
       flag = 1; /* Medium output level */
     ierr = Zoltan_Verify_Graph(zz->Communicator, vtxdist, xadj, adjncy, vwgt, 
-              adjwgt, obj_wgt_dim, edge_wgt_dim, check_graph, flag);
+              adjwgt, obj_wgt_dim, edge_wgt_dim, graph_type, check_graph, flag);
   
     /* Special error checks to avoid certain death in ParMETIS 2.0 */
     if (xadj[tmp_num_obj] == 0){

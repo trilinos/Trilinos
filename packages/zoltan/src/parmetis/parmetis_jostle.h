@@ -133,7 +133,8 @@ struct Hash_Node {
 /* Extern function prototypes. Should be in a separate header file? */
 extern int Zoltan_Verify_Graph(MPI_Comm comm, idxtype *vtxdist, idxtype *xadj,
        idxtype *adjncy, idxtype *vwgt, idxtype *adjwgt, 
-       int vwgt_dim, int ewgt_dim, int check_graph, int debug_level);
+       int vwgt_dim, int ewgt_dim, int graph_type, int check_graph, 
+       int debug_level);
 extern int Zoltan_Scatter_Graph(idxtype **vtxdist, idxtype **xadj, 
        idxtype **adjncy, idxtype **vwgt, idxtype **vsize, idxtype **adjwgt, 
        float **xyz, int ndims, ZZ *zz, ZOLTAN_COMM_OBJ **plan);
