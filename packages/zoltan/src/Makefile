@@ -32,6 +32,40 @@
 ##############################################################################
 
 TARGET=zdrive
+LIB_NAME=libzoltan.a     # if change LIB_NA##############################################################################
+# Zoltan Library for Parallel Applications                                   #
+# Copyright (c) 2000,2001,2002, Sandia National Laboratories.                #
+# For more info, see the README file in the top-level Zoltan directory.      # 
+##############################################################################
+##############################################################################
+# CVS File Information
+#    $RCSfile$
+#    $Author$
+#    $Date$
+#    Revision: 1.107 $
+##############################################################################
+
+##############################################################################
+# Top-level Makefile for Zoltan library and Zoltan driver zdrive.
+#
+# To compile the library, type
+#    gmake ZOLTAN_ARCH=<targetmachine> zoltan
+# where
+#    targetmachine = the suffix of one of the configuration files Config.*
+#                    in Zoltan/Utilities/Config.
+#
+# To compile zdrive, type
+#    gmake <optional flags> zdrive
+#
+# The optional flags are:
+#    YES_FORTRAN=1   Use to compile and link a version of Zoltan that can
+#                    be called from Fortran.
+# Example:
+# To compile a version of Zoltan for tflop including the F90 interface, type
+#    gmake YES_FORTRAN=1 ZOLTAN_ARCH=tflop zoltan
+##############################################################################
+
+TARGET=zdrive
 LIB_NAME=libzoltan.a     # if change LIB_NAME, must change ZOLTAN_LIB 
                          # in Utilities/Makefile
 LIB_TARGET=zoltan
@@ -79,7 +113,8 @@ endif
 ZOLTAN_HG=1
 ZOLTAN_OCT=1
 
-GDEFINES	= 
+GDEFINES	=
+#define ZOLTAN_HG
 
 # If YES_FORTRAN, compile the Fortran interface into the library.
 ifdef YES_FORTRAN
@@ -198,7 +233,7 @@ HSFC_INC 	= hsfc_hilbert_const.h hsfc_const.h hsfc.h
 ifdef ZOLTAN_HG
 HG_CSRC 	= hg.c hg_build.c hg_coarse.c hg_global.c \
 		  hg_group.c hg_heap.c hg_local.c hg_sort.c hg_scale.c \
-		  hg_match.c hg_pack.c \
+		  hg_match.c hg_pack.c hg_rdivide.c \
 		  hg_part.c hg_plot.c hg_util.c 
 HG_INC 		= hg.h hypergraph.h hg_util.h
 GDEFINES       += -DZOLTAN_HG
