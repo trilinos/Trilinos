@@ -238,7 +238,7 @@ bool NOX::LineSearch::Polynomial::compute(Abstract::Group& newGrp, double& step,
     newGrp.computeF();    
     newf = 0.5 * newGrp.getNormF() * newGrp.getNormF(); 
     
-    eta = 1.0 - step * (1.0 - eta);
+    eta = 1.0 - step * (1.0 - eta_original);
     isConverged = isSufficientDecrease(newf, oldf, step, slope, eta);
     if(allowIncrease)
       isConverged = (isConverged || 
