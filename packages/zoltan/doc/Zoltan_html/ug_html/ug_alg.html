@@ -125,6 +125,20 @@ information) and "NONE" (to return neither import nor export information).
 </tr>
 
 <tr VALIGN=TOP NOSAVE>
+<td NOSAVE><a NAME="REMAP"></a>&nbsp;&nbsp;&nbsp; <i>REMAP</i></td>
+
+<td>Within
+<a href="ug_interface_lb.html#Zoltan_LB_Partition"><b>Zoltan_LB_Partition</b></a> or
+<a href="ug_interface_lb.html#Zoltan_LB_Balance"><b>Zoltan_LB_Balance</b></a>,
+renumber partitions to maximize overlap between the old decomposition
+and the new decomposition  (to reduce data movement from old to new
+decompositions).  Valid values are "0" (no remapping) or "1" (remapping).
+Requests for remapping are ignored when, in the new decomposition, 
+a partition is spread across multiple processors or partition sizes
+are specified using <b>Zoltan_Set_Part_Sizes</b>.
+</td>
+</tr>
+<tr VALIGN=TOP NOSAVE>
 <td NOSAVE>&nbsp;&nbsp;&nbsp; <a name="IMBALANCE_TOL"></a><i>IMBALANCE_TOL</i></td>
 
 <td>The amount of load imbalance the partitioning algorithm should deem
@@ -177,6 +191,12 @@ of the <a href="ug_interface_mig.html">migration interface functions</a>.&nbsp;<
 <td></td>
 
 <td><i>RETURN_LISTS</i> = ALL</td>
+</tr>
+
+<tr VALIGN=TOP>
+<td></td>
+
+<td><i>REMAP</i> = 1</td>
 </tr>
 
 <tr VALIGN=TOP>
