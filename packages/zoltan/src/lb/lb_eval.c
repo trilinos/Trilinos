@@ -37,7 +37,8 @@ extern "C" {
 /*****************************************************************************/
 /*****************************************************************************/
 
-#define NUM_STATS 4 /* Number of graph statistics other than vertex/edge weights */
+#define NUM_STATS 4 /* Number of graph stats other than vertex/edge weights */
+#define NUM_STATS_PART 3 /* Number of graph stats for partitions. */
 
 int Zoltan_LB_Eval (ZZ *zz, int print_stats, 
      int *nobj, float *obj_wgt, 
@@ -86,7 +87,7 @@ int Zoltan_LB_Eval (ZZ *zz, int print_stats,
   int gid_off, lid_off;
   char msg[256];
   /* Arrays for partition data. */
-  int *nobj_arr, *cut_arr, *bndry_arr, *nadj_arr, *all_arr, *all_arr_glob;
+  int *nobj_arr, *cut_arr, *bndry_arr, *all_arr, *all_arr_glob;
   float *vwgt_arr, *vwgt_arr_glob, *cutwgt_arr, *cutwgt_arr_glob;
   
   ZOLTAN_TRACE_ENTER(zz, yo);
@@ -103,7 +104,7 @@ int Zoltan_LB_Eval (ZZ *zz, int print_stats,
   nbors_global = NULL;
   nbors_proc = proc_count = NULL;
   vwgt_arr = vwgt_arr_glob = cutwgt_arr = cutwgt_arr_glob = NULL;
-  nobj_arr = cut_arr = bndry_arr = nadj_arr = all_arr = all_arr_glob = NULL;
+  nobj_arr = cut_arr = bndry_arr = all_arr = all_arr_glob = NULL;
 
   ierr = Zoltan_Get_Obj_List(zz, &num_obj, &global_ids, &local_ids, 
                              zz->Obj_Weight_Dim, &vwgts, &part);
@@ -155,7 +156,6 @@ int Zoltan_LB_Eval (ZZ *zz, int print_stats,
     nobj_arr = all_arr;
     cut_arr  = nobj_arr + nparts;
     bndry_arr  = cut_arr + nparts;
-    nadj_arr = bndry_arr + nparts;
     all_arr_glob = all_arr + NUM_STATS*nparts;
     vwgt_arr_glob = vwgt_arr + nparts*(zz->Obj_Weight_Dim);
     cutwgt_arr = vwgt_arr_glob + nparts*(zz->Obj_Weight_Dim);
@@ -563,7 +563,7 @@ int Zoltan_LB_Eval (ZZ *zz, int print_stats,
         }
       }
 
-      for (i=1; i<3 /* NUM_STATS */; i++){
+      for (i=1; i<NUM_STATS_PART; i++){
         switch(i){
         case 1:  sprintf(msg, "%s", "No. of cuts      : ");
                  break;

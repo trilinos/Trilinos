@@ -236,7 +236,6 @@ static int rcb_fn(
   struct Dot_Struct *dotpt;         /* temporary pointer to rcb->Dots. */
   struct rcb_box boxtmp;            /* tmp rcb box */
   int     pdotnum;                  /* # of dots - decomposition changes it */
-  int     pdottop;                  /* dots >= this index are new */
   int    *dotmark = NULL;           /* which side of median for each dot */
   int     dotnum;                   /* number of dots */
   int     dotmax = 0;               /* max # of dots arrays can hold */
@@ -813,7 +812,6 @@ static int rcb_fn(
   start_time = Zoltan_Time(zz->Timer);
 
   pdotnum = dotnum;
-  pdottop = dottop;
 
   /* Perform remapping (if requested) */
 

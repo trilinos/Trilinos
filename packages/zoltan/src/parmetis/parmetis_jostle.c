@@ -493,8 +493,10 @@ static int Zoltan_ParMetis_Jostle(
   double *geom_vec;
   ZOLTAN_ID_PTR local_ids;
   ZOLTAN_ID_PTR global_ids;    
+#if (PARMETIS_MAJOR_VERSION >= 3) 
   ZOLTAN_ID_PTR lid;        /* Temporary pointer to a local id; used to pass
                                NULL to query fns when NUM_LID_ENTRIES == 0. */
+#endif
   int *input_parts;         /* Initial partitions for objects. */
   int *newproc;             /* New processor for each object. */
   ZOLTAN_COMM_OBJ *comm_plan;

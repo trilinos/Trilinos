@@ -50,7 +50,7 @@ extern "C" {
  * has.
  */
 #define UTIL_NAME "zoltan"
-#define ZOLTAN_VER   1.5
+#define ZOLTAN_VER   1.51
 
 /*
  * Type used to store linked list of new values for parameters.

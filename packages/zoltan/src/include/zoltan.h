@@ -2759,11 +2759,14 @@ extern int Zoltan_LB_Set_Part_Sizes(struct Zoltan_Struct *zz, int global_num,
  *    zz            --  The current Zoltan structure 
  *    fname         --  Basename for files to be generated
  *    base_index    --  Start numbering of nodes and edges at 0 or 1?
+ *    gen_geom      --  Write geometry file?
+ *    gen_graph     --  Write graph file?
+ *    gen_hg        --  Write hypergraph file?
  *
  *  Output:
  *    Return value  --  Error code.
  */
-extern int Zoltan_Generate_Files(struct Zoltan_Struct *zz, char *fname, int base_index);
+extern int Zoltan_Generate_Files(struct Zoltan_Struct *zz, char *fname, int base_index, int gen_geom, int gen_graph, int gen_hg);
 
 #ifdef __cplusplus
 } /* closing bracket for extern "C" */

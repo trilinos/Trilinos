@@ -646,12 +646,12 @@ int nlid_ent = zz->Num_LID;  /* number of array entries in a local ID */
   displs[0] = 0;
   total_num_obj = num_ass_all[0];
   total_sum_vert = sum_ass_vert_all[0];
-  recv_size_all[0] = num_ass_all[0]*ngid_ent;
+  recv_size_all[0] = num_ass_all[0];
   for (i=1; i<nproc; i++) {
     displs[i] = displs[i-1]+num_ass_all[i-1];
     total_num_obj += num_ass_all[i];
     total_sum_vert += sum_ass_vert_all[i];
-    recv_size_all[i] = num_ass_all[i]*ngid_ent;
+    recv_size_all[i] = num_ass_all[i];
   }
 
   ZOLTAN_FREE(&num_ass_all);
@@ -724,7 +724,7 @@ int nlid_ent = zz->Num_LID;  /* number of array entries in a local ID */
 /* go through all the coarse grid elements to see if it is known to this
    processor, and if so set assigned and local id */
 
-  full_lid = ZOLTAN_MALLOC_GID_ARRAY(zz, total_num_obj);
+  full_lid = ZOLTAN_MALLOC_LID_ARRAY(zz, total_num_obj);
   full_assigned = (int *) ZOLTAN_MALLOC(total_num_obj*sizeof(int));
   full_known = (int *) ZOLTAN_MALLOC(total_num_obj*sizeof(int));
   if (full_lid == NULL || full_assigned == NULL || full_known == NULL) {
@@ -2311,7 +2311,6 @@ static int hex_nshared(int elem1, int elem2, int *lvertices, int *vert1)
  * at position vert1[X]
  */
 
-char *yo = "hex_nshared";
 int i,j,count,found;
 
   count = 0;
@@ -2747,6 +2746,8 @@ ZOLTAN_REFTREE *root;                            /* Root of the refinement tree 
 struct Zoltan_Reftree_hash_node **hashtab;       /* hash table */
 int hashsize;                                /* dimension of hash table */
 int i;                                       /* loop counter */
+
+  if (zz->LB.Data_Structure == NULL)  return;  /* Nothing to do */
 
   reftree_data = (struct Zoltan_Reftree_data_struct *)zz->LB.Data_Structure;
 

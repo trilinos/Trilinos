@@ -10,7 +10,7 @@ interface
   integer(Zoltan_INT), intent(in) :: num_gid_entries, num_ids
   integer(Zoltan_INT), intent(in) :: global_id(*)
   integer(Zoltan_INT), intent(in) :: size(*), idx(*)
-  integer(Zoltan_INT), intent(out) :: buf(*)
+  integer(Zoltan_INT), intent(in) :: buf(*)
   integer(Zoltan_INT), intent(out) :: ierr
   end subroutine fn_ptr
 end interface
@@ -39,7 +39,7 @@ interface
   integer(Zoltan_INT), intent(in) :: num_gid_entries, num_ids
   integer(Zoltan_INT), intent(in) :: global_id(*)
   integer(Zoltan_INT), intent(in) :: size(*), idx(*)
-  integer(Zoltan_INT), intent(out) :: buf(*)
+  integer(Zoltan_INT), intent(in) :: buf(*)
   integer(Zoltan_INT), intent(out) :: ierr
   end subroutine fn_ptr
 end interface
@@ -69,7 +69,7 @@ interface
   integer(Zoltan_INT), intent(in) :: num_gid_entries, num_ids
   integer(Zoltan_INT), intent(in) :: global_id(*)
   integer(Zoltan_INT), intent(in) :: size(*), idx(*)
-  integer(Zoltan_INT), intent(out) :: buf(*)
+  integer(Zoltan_INT), intent(in) :: buf(*)
   integer(Zoltan_INT), intent(out) :: ierr
   end subroutine fn_ptr
 end interface
@@ -99,7 +99,7 @@ interface
   integer(Zoltan_INT), intent(in) :: num_gid_entries, num_ids
   integer(Zoltan_INT), intent(in) :: global_id(*)
   integer(Zoltan_INT), intent(in) :: size(*), idx(*)
-  integer(Zoltan_INT), intent(out) :: buf(*)
+  integer(Zoltan_INT), intent(in) :: buf(*)
   integer(Zoltan_INT), intent(out) :: ierr
   end subroutine fn_ptr
 end interface
@@ -130,7 +130,7 @@ interface
   integer(Zoltan_INT), intent(in) :: num_gid_entries, num_ids
   integer(Zoltan_INT), intent(in) :: global_id(*)
   integer(Zoltan_INT), intent(in) :: size(*), idx(*)
-  integer(Zoltan_INT), intent(out) :: buf(*)
+  integer(Zoltan_INT), intent(in) :: buf(*)
   integer(Zoltan_INT), intent(out) :: ierr
   end subroutine fn_ptr
 end interface
@@ -161,7 +161,7 @@ interface
   integer(Zoltan_INT), intent(in) :: num_gid_entries, num_ids
   integer(Zoltan_INT), intent(in) :: global_id(*)
   integer(Zoltan_INT), intent(in) :: size(*), idx(*)
-  integer(Zoltan_INT), intent(out) :: buf(*)
+  integer(Zoltan_INT), intent(in) :: buf(*)
   integer(Zoltan_INT), intent(out) :: ierr
   end subroutine fn_ptr
 end interface
@@ -192,7 +192,7 @@ interface
   integer(Zoltan_INT), intent(in) :: num_gid_entries, num_ids
   integer(Zoltan_INT), intent(in) :: global_id(*)
   integer(Zoltan_INT), intent(in) :: size(*), idx(*)
-  integer(Zoltan_INT), intent(out) :: buf(*)
+  integer(Zoltan_INT), intent(in) :: buf(*)
   integer(Zoltan_INT), intent(out) :: ierr
   end subroutine fn_ptr
 end interface
@@ -223,7 +223,7 @@ interface
   integer(Zoltan_INT), intent(in) :: num_gid_entries, num_ids
   integer(Zoltan_INT), intent(in) :: global_id(*)
   integer(Zoltan_INT), intent(in) :: size(*), idx(*)
-  integer(Zoltan_INT), intent(out) :: buf(*)
+  integer(Zoltan_INT), intent(in) :: buf(*)
   integer(Zoltan_INT), intent(out) :: ierr
   end subroutine fn_ptr
 end interface

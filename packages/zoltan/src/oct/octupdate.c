@@ -219,7 +219,7 @@ static int lb_oct_init(
   int nsentags;                    /* number of tags being sent */
   pRegion import_regs;             /* */
   int nrectags;                    /* number of tags received */               
-  int count, kk;
+  int kk;
   double time1,time2;              /* timers */
   double timestart,timestop;       /* timers */
   double timers[4];                /* diagnostic timers 
@@ -257,7 +257,7 @@ static int lb_oct_init(
   timers[2] = 0.0;
   timers[3] = 0.0;
 
-  count = nsentags = nrectags = 0;
+  nsentags = nrectags = 0;
 
   if(zz->LB.Data_Structure == NULL) {
     OCT_info = Zoltan_Oct_POct_init(zz, zz->Proc, oct_dim);
@@ -298,7 +298,7 @@ static int lb_oct_init(
   {
   pRList  RootList;               /* list of all local roots */
   pOctant RootOct;                /* root octree octant */
-  count = 0; 
+  int count = 0; 
   RootList = Zoltan_Oct_POct_localroots(OCT_info);
   while((RootOct = RL_nextRootOctant(&RootList))) {
     while(RootOct) {
@@ -333,7 +333,7 @@ static int lb_oct_init(
   /* count the number of objects on this processor */
   pRList  RootList;               /* list of all local roots */
   pOctant RootOct;                /* root octree octant */
-  count = 0; 
+  int count = 0; 
   RootList = Zoltan_Oct_POct_localroots(OCT_info);
   while((RootOct = RL_nextRootOctant(&RootList))) {
     while(RootOct) {

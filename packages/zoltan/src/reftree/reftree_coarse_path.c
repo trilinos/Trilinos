@@ -1695,7 +1695,7 @@ static int broken_link(int *ierr, ZZ *zz)
 
 int success;
 int elementB, elementC, elementD;
-int vertb, vertc, verte, vertf, vert1;
+int vertb, verte, vertf, vert1;
 int j, k;
 int success1, j1, k1, l1;
 
@@ -1722,7 +1722,8 @@ int success1, j1, k1, l1;
 /* the path currently contains bBcC */
 
       vertb = in [elementB];
-      vertc = out[elementB];
+      /* vertc = out[elementB];  KDD Commented out to remove set-but-never-used
+                                     compiler warning */
       elementC = next[elementB];
 
 /* find a vertex, e, in D and B that is not b */
@@ -1789,7 +1790,7 @@ int Zoltan_Reftree_Coarse_Grid_Path(int nobj, int *num_vert,
  */
 
 char *yo = "Zoltan_Reftree_Coarse_Grid_Path";
-int all_triangles, i, element, success, ierr;
+int all_triangles = 0, i, element, success, ierr;
 
    ZOLTAN_TRACE_ENTER(zz, yo);
    num_obj = nobj;

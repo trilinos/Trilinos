@@ -1692,6 +1692,7 @@ nbytes = Zoltan_PTR_LENGTH
 do i=1,nbytes
    zz_addr(i) = ichar(zz%addr%addr(i:i))
 end do
+nullify(import_to_part, export_to_part)
 Zf90_LB_Balance = Zfw_LB_Partition(zz_addr,nbytes,int_changes, &
                              num_gid_entries, num_lid_entries, &
                              num_import,import_global_ids,import_local_ids, &

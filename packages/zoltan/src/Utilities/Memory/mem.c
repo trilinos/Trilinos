@@ -464,7 +464,7 @@ void Zoltan_Multifree(char *filename, int lineno, int n, ...)
 #else
 
 void Zoltan_Multifree(va_alist)
-va_decl
+va_dcl
 {
   int i, n, lineno;
   char *filename;

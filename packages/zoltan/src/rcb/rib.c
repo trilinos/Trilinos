@@ -187,7 +187,6 @@ static int rib_fn(
   int     proc,nprocs;        /* my proc id, total # of procs */
   struct Dot_Struct *dotpt;   /* temporary pointer to local dot arrays */
   int     pdotnum;            /* # of dots - decomposition changes it */
-  int     pdottop;            /* dots >= this index are new */
   int    *dotmark = NULL;     /* which side of median for each dot */
   int     dotnum;             /* number of dots */
   int     dotmax = 0;         /* max # of dots arrays can hold */
@@ -632,7 +631,6 @@ static int rib_fn(
   start_time = Zoltan_Time(zz->Timer);
 
   pdotnum = dotnum;
-  pdottop = dottop;
 
   /* Perform remapping (if requested) */
 

@@ -2,7 +2,6 @@
 #
 # This script works for SunOS
 #
-ZOLTAN_ARCH=
 TIME="`date +%H%M`"
 DATE="`date +%d%h%y`"
 #
@@ -29,7 +28,7 @@ cd Zoltan/test; /bin/rm -r hg_test; cd ../..
 cd Zoltan; /bin/rm -rf docs/internal; cd ..
 #
 # Build zoltan script.
-cd Zoltan; /bin/rm -f docs/Zoltan_html/lgpl.pl; gmake zscript; cd ..
+cd Zoltan; /bin/rm -f docs/Zoltan_html/lgpl.pl; gmake ZOLTAN_ARCH=zscript zscript; cd ..
 #
 # Move include files to correct locations.
 cd Zoltan; /bin/mv Utilities/Memory/zoltan_mem.h include; cd ..

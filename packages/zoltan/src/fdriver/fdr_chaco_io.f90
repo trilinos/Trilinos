@@ -308,37 +308,37 @@ end function fill_elements
 !/**********************************************************/
 
 logical function chaco_input_graph(fin, inname, start, adjacency, nvtxs, vweights, eweights)
-integer(Zoltan_INT) :: fin		         !/* input file */
-character(len=*) :: inname	         !/* name of input file */
+integer(Zoltan_INT) :: fin                         !/* input file */
+character(len=*) :: inname                 !/* name of input file */
 integer(Zoltan_INT), pointer :: start(:)     !/* start of edge list for each vertex
 integer(Zoltan_INT), pointer :: adjacency(:) !/* edge list data */
-integer(Zoltan_INT) :: nvtxs	         !/* number of vertices in graph */
-real(Zoltan_FLOAT), pointer :: vweights(:)	 !/* vertex weight list data */
+integer(Zoltan_INT) :: nvtxs                 !/* number of vertices in graph */
+real(Zoltan_FLOAT), pointer :: vweights(:)         !/* vertex weight list data */
 real(Zoltan_FLOAT), pointer :: eweights(:)   !/* edge weight list data */
  
 integer(Zoltan_INT) :: adjptr                !/* loops through adjacency data */
 integer(Zoltan_INT) :: ewptr                 !/* loops through edge weight data */
-integer(Zoltan_INT) :: narcs		!/* number of edges expected in graph */
-integer(Zoltan_INT) :: nedges	!/* twice number of edges really in graph */
-integer(Zoltan_INT) :: nedge	!/* loops through edges for each vertex */
-logical :: found_flag	!/* is vertex found in adjacency list? */
-logical :: skip_flag	!/* should this edge be ignored? */
-integer(Zoltan_INT) :: vtx		!/* vertex in graph */
-integer(Zoltan_INT) :: sum_edges	!/* total number of edges read so far */
-integer(Zoltan_INT) :: option		!/* input option */
-logical :: using_ewgts	!/* are edge weights in input file? */
-logical :: using_vwgts	!/* are vertex weights in input file? */
-logical :: vtxnums		!/* are vertex numbers in input file? */
-integer(Zoltan_INT) :: vertex		!/* current vertex being read */
-logical :: new_vertex	!/* new vertex being read */
-real(Zoltan_FLOAT) :: weight	!/* weight being read */
-real(Zoltan_FLOAT) :: eweight	!/* edge weight being read */
-integer(Zoltan_INT) :: neighbor		!/* neighbor of current vertex */
-integer(Zoltan_INT) :: self_edge	!/* is a self edge encountered? */
-logical :: ignore_me	!/* is this edge being ignored? */
-integer(Zoltan_INT) :: ignored		!/* how many edges are ignored? */
-logical :: error_flag	!/* error reading input? */
-integer(Zoltan_INT) :: j		!/* loop counters */
+integer(Zoltan_INT) :: narcs                !/* number of edges expected in graph */
+integer(Zoltan_INT) :: nedges        !/* twice number of edges really in graph */
+integer(Zoltan_INT) :: nedge        !/* loops through edges for each vertex */
+logical :: found_flag        !/* is vertex found in adjacency list? */
+logical :: skip_flag        !/* should this edge be ignored? */
+integer(Zoltan_INT) :: vtx                !/* vertex in graph */
+integer(Zoltan_INT) :: sum_edges        !/* total number of edges read so far */
+integer(Zoltan_INT) :: option                !/* input option */
+logical :: using_ewgts        !/* are edge weights in input file? */
+logical :: using_vwgts        !/* are vertex weights in input file? */
+logical :: vtxnums                !/* are vertex numbers in input file? */
+integer(Zoltan_INT) :: vertex                !/* current vertex being read */
+logical :: new_vertex        !/* new vertex being read */
+real(Zoltan_FLOAT) :: weight        !/* weight being read */
+real(Zoltan_FLOAT) :: eweight        !/* edge weight being read */
+integer(Zoltan_INT) :: neighbor                !/* neighbor of current vertex */
+integer(Zoltan_INT) :: self_edge        !/* is a self edge encountered? */
+logical :: ignore_me        !/* is this edge being ignored? */
+integer(Zoltan_INT) :: ignored                !/* how many edges are ignored? */
+logical :: error_flag        !/* error reading input? */
+integer(Zoltan_INT) :: j                !/* loop counters */
 integer(Zoltan_INT) :: i ! current data index on input line
 integer(Zoltan_INT) :: ints_read(32) ! array of integers from one input line
 integer(Zoltan_INT) :: nints_read    ! number of integers on last input line read
@@ -372,19 +372,19 @@ integer(Zoltan_INT) :: nvals_read    ! number of values on last input line read
     endif
 
     if (nvtxs <= 0) then
-	print *,"ERROR in graph file ", inname, &
-	        ": Invalid number of vertices ", nvtxs
-	close(fin)
+        print *,"ERROR in graph file ", inname, &
+                ": Invalid number of vertices ", nvtxs
+        close(fin)
         chaco_input_graph = .false.
-	return
+        return
     endif
 
     if (narcs < 0) then
-	print *,"ERROR in graph file ", inname, &
-	        ": Invalid number of expected edges ", narcs
-	close(fin)
+        print *,"ERROR in graph file ", inname, &
+                ": Invalid number of expected edges ", narcs
+        close(fin)
         chaco_input_graph = .false.
-	return
+        return
     endif
 
     using_ewgts = (option - 10 * (option / 10)) /= 0
@@ -435,207 +435,207 @@ integer(Zoltan_INT) :: nvals_read    ! number of values on last input line read
         endif
 
 !/* If multiple input lines per vertex, read vertex number. */
-	if (vtxnums) then
-	    j = NINT(vals_read(i))
+        if (vtxnums) then
+            j = NINT(vals_read(i))
             i = i+1
-	    if (j /= vertex .and. j /= vertex + 1) then
-		print *,"ERROR in graph file ", inname, &
-		        ": out-of-order vertex number ",j
-		close(fin)
+            if (j /= vertex .and. j /= vertex + 1) then
+                print *,"ERROR in graph file ", inname, &
+                        ": out-of-order vertex number ",j
+                close(fin)
                 chaco_input_graph = .false.
-		return
-	    endif
-	    if (j /= vertex) then
-		new_vertex = .true.
-		vertex = j
-	    else
-		new_vertex = .false.
+                return
             endif
-	else
+            if (j /= vertex) then
+                new_vertex = .true.
+                vertex = j
+            else
+                new_vertex = .false.
+            endif
+        else
             vtx = vtx + 1
-	    vertex = vtx
+            vertex = vtx
         endif
 
-	if (vertex > nvtxs) exit
+        if (vertex > nvtxs) exit
 
 !/* If vertices are weighted, read vertex weight. */
-	if (using_vwgts .and. new_vertex) then
-	    if (nvals_read < i) then
-		print *,"ERROR in graph file ", inname, &
-		        ": no weight for vertex ", vertex
-		close(fin)
+        if (using_vwgts .and. new_vertex) then
+            if (nvals_read < i) then
+                print *,"ERROR in graph file ", inname, &
+                        ": no weight for vertex ", vertex
+                close(fin)
                 chaco_input_graph = .false.
-		return
-	    endif
-	    weight = vals_read(i)
+                return
+            endif
+            weight = vals_read(i)
             i = i+1
-	    if (weight < 0) then
-		print *,"ERROR in graph file ", inname, &
-		        ": zero or negative weight entered for vertex ", vertex
-		close(fin)
+            if (weight < 0) then
+                print *,"ERROR in graph file ", inname, &
+                        ": zero or negative weight entered for vertex ", vertex
+                close(fin)
                 chaco_input_graph = .false.
-		return
-	    endif
-	    vweights(vertex-1) = weight
-	endif
+                return
+            endif
+            vweights(vertex-1) = weight
+        endif
 
-	nedge = 0;
+        nedge = 0;
 
-	do
+        do
             if (i > nvals_read) exit
 
 !/* Read number of adjacent vertex. */
-	    neighbor = NINT(vals_read(i))
+            neighbor = NINT(vals_read(i))
             i = i+1
 
-	    skip_flag = .false.
-	    ignore_me = .false.
+            skip_flag = .false.
+            ignore_me = .false.
 
-	    if (neighbor > nvtxs) then
-		print *,"ERROR in graph file ", inname, &
-		        ": nvtxs=",nvtxs,", but edge (",vertex,",",neighbor, &
+            if (neighbor > nvtxs) then
+                print *,"ERROR in graph file ", inname, &
+                        ": nvtxs=",nvtxs,", but edge (",vertex,",",neighbor, &
                         ") was input."
-		close(fin)
+                close(fin)
                 chaco_input_graph = .false.
-		return
-	    endif
-	    if (neighbor < 0) then
-		print *,"ERROR in graph file ", inname, &
-		        ": zero or negative vertex in edge (", &
-		        vertex,",",neighbor,")"
-		close(fin)
+                return
+            endif
+            if (neighbor < 0) then
+                print *,"ERROR in graph file ", inname, &
+                        ": zero or negative vertex in edge (", &
+                        vertex,",",neighbor,")"
+                close(fin)
                 chaco_input_graph = .false.
-		return
-	    endif
+                return
+            endif
 
-	    if (neighbor == vertex) then
-		if ((self_edge==0) .and. CHECK_INPUT) then
-		    print *,"WARNING: Self edge (",vertex,",",vertex, &
+            if (neighbor == vertex) then
+                if ((self_edge==0) .and. CHECK_INPUT) then
+                    print *,"WARNING: Self edge (",vertex,",",vertex, &
                             ") being ignored."
-		endif
-		skip_flag = .true.
-		self_edge = self_edge + 1
-	    endif
+                endif
+                skip_flag = .true.
+                self_edge = self_edge + 1
+            endif
 
 ! /* Check if adjacency is repeated. */
-	    if (.not. skip_flag) then
-		found_flag = .false.
+            if (.not. skip_flag) then
+                found_flag = .false.
                 do j = start(vertex-1), sum_edges+nedge-1
-		    if (adjacency(j) == neighbor) then
-			found_flag = .true.
+                    if (adjacency(j) == neighbor) then
+                        found_flag = .true.
                         exit
                     endif
-		end do
-		if (found_flag) then
-		    print *,"WARNING: Multiple occurences of edge (",vertex, &
+                end do
+                if (found_flag) then
+                    print *,"WARNING: Multiple occurences of edge (",vertex, &
                             ",",neighbor,") ignored"
-		    skip_flag = .true.
-		    if (.not.ignore_me) then
-			ignore_me = .true.
-			ignored = ignored + 1
-		    endif
-		endif
-	    endif
+                    skip_flag = .true.
+                    if (.not.ignore_me) then
+                        ignore_me = .true.
+                        ignored = ignored + 1
+                    endif
+                endif
+            endif
 
 !/* Read edge weight if it's being input. */
-	    if (using_ewgts) then
-		if (nvals_read < i) then
-		    print *,"ERROR in graph file ", inname, &
-		            ": no weight for edge ",vertex,",",neighbor,")."
-		    close(fin)
+            if (using_ewgts) then
+                if (nvals_read < i) then
+                    print *,"ERROR in graph file ", inname, &
+                            ": no weight for edge ",vertex,",",neighbor,")."
+                    close(fin)
                     chaco_input_graph = .false.
-		    return
-		endif
+                    return
+                endif
 
-		eweight = vals_read(i)
+                eweight = vals_read(i)
                 i = i+1
 
-		if (eweight <= 0 .and. CHECK_INPUT) then
-		    print *,"WARNING: Bad weight entered for edge ",vertex, &
+                if (eweight <= 0 .and. CHECK_INPUT) then
+                    print *,"WARNING: Bad weight entered for edge ",vertex, &
                             ",",neighbor,").  Edge ignored."
-		    skip_flag = .true.
-		    if (.not. ignore_me) then
-			ignore_me = .true.
-			ignored = ignored + 1
-		    endif
-		else
+                    skip_flag = .true.
+                    if (.not. ignore_me) then
+                        ignore_me = .true.
+                        ignored = ignored + 1
+                    endif
+                else
                     eweights(ewptr) = eweight
-		    ewptr = ewptr + 1
-		endif
-	    endif
+                    ewptr = ewptr + 1
+                endif
+            endif
 
 !/* Check for edge only entered once. */
-	    if (neighbor < vertex .and. .not.skip_flag) then
-		found_flag = .false.
+            if (neighbor < vertex .and. .not.skip_flag) then
+                found_flag = .false.
                 do j = start(neighbor-1), start(neighbor)-1
-		    if (adjacency(j) == vertex) then
-			found_flag = .true.
+                    if (adjacency(j) == vertex) then
+                        found_flag = .true.
                         exit
                     endif
-		end do
-		if (.not. found_flag) then
-		    print *,"ERROR in graph file ", inname, &
+                end do
+                if (.not. found_flag) then
+                    print *,"ERROR in graph file ", inname, &
                         ": Edge (",vertex,",",neighbor,") entered but not (", &
                             neighbor,",",vertex,")."
-		    error_flag = .true.
-		endif
-	    endif
+                    error_flag = .true.
+                endif
+            endif
 
 !/* Add edge to data structure. */
-	    if (.not. skip_flag) then
+            if (.not. skip_flag) then
                 nedges = nedges + 1
-		if (nedges > 2*narcs) then
-		    print *,"ERROR in graph file ", inname, &
-		            ": at least ",nedges," adjacencies entered,", &
+                if (nedges > 2*narcs) then
+                    print *,"ERROR in graph file ", inname, &
+                            ": at least ",nedges," adjacencies entered,", &
                             " but nedges = ",narcs
-		    close(fin)
+                    close(fin)
                     chaco_input_graph = .false.
-		    return
-		endif
+                    return
+                endif
                 adjacency(adjptr) = neighbor
                 adjptr = adjptr + 1
-		nedge = nedge + 1
-	    endif
+                nedge = nedge + 1
+            endif
 
-	end do
+        end do
 
-	sum_edges = sum_edges + nedge
-	start(vertex) = sum_edges
+        sum_edges = sum_edges + nedge
+        start(vertex) = sum_edges
     end do
   endif ! narcs > 0
 
 !/* Make sure there's nothing else in file. */
     call read_real_line(fin,vals_read,nvals_read)
     if (nvals_read /= 0 .and. CHECK_INPUT) then
-	print *,"WARNING: Possible error in graph file ", inname
-	print *,"         Data found after expected end of file"
+        print *,"WARNING: Possible error in graph file ", inname
+        print *,"         Data found after expected end of file"
     endif
 
     start(nvtxs) = sum_edges
 
     if (self_edge > 1 .and. CHECK_INPUT) then
-	print *,"WARNING: ",self_edge," self edges were read and ignored."
+        print *,"WARNING: ",self_edge," self edges were read and ignored."
     endif
 
     if (vertex /= 0) then !/* Normal file was read. */
-!	/* Make sure narcs was reasonable. */
-	if (nedges + 2 * self_edge /= 2 * narcs .and. &
-	    nedges + 2 * self_edge + ignored /= 2 * narcs .and. &
-		nedges + self_edge /= 2 * narcs .and. & 
-		nedges + self_edge + ignored /= 2 * narcs .and. & 
-		nedges /= 2 * narcs .and. &
-		nedges + ignored /= 2 * narcs .and. &
-		CHECK_INPUT) then
-	    print *,"WARNING: I expected ",narcs, &
+!        /* Make sure narcs was reasonable. */
+        if (nedges + 2 * self_edge /= 2 * narcs .and. &
+            nedges + 2 * self_edge + ignored /= 2 * narcs .and. &
+                nedges + self_edge /= 2 * narcs .and. & 
+                nedges + self_edge + ignored /= 2 * narcs .and. & 
+                nedges /= 2 * narcs .and. &
+                nedges + ignored /= 2 * narcs .and. &
+                CHECK_INPUT) then
+            print *,"WARNING: I expected ",narcs, &
                     " edges entered twice, but I only count ",nedges
-	endif
+        endif
 
     else
 !/* Graph was empty => must be using inertial method. */
         deallocate(start)
-	if (associated(adjacency)) deallocate(adjacency)
-	if (associated(vweights)) deallocate(vweights)
-	if (associated(eweights)) deallocate(eweights)
+        if (associated(adjacency)) deallocate(adjacency)
+        if (associated(vweights)) deallocate(vweights)
+        if (associated(eweights)) deallocate(eweights)
     endif
 
     close(fin)
@@ -648,7 +648,7 @@ end function chaco_input_graph
 ! * contract DE-AC04-76DP00789 and is copyrighted by Sandia Corporation. */
 
 logical function chaco_input_geom(fingeom, geomname, nvtxs, igeom, x, y, z)
-integer(Zoltan_INT) ::     fingeom	!/* geometry input file */
+integer(Zoltan_INT) ::     fingeom        !/* geometry input file */
 character(len=FILENAME_MAX) :: geomname !/* name of geometry file */
 integer(Zoltan_INT) :: nvtxs        !/* number of coordinates to read */
 integer(Zoltan_INT) :: igeom        !/* dimensionality of geometry */
@@ -666,30 +666,30 @@ real(Zoltan_FLOAT), pointer :: x(:), y(:), z(:) !/* coordiates of vertices */
     call read_real_line(fingeom,floats_read,num_read)
 
     if (num_read == 0) then
-	print *,"No values found in geometry file ", geomname
-	close(fingeom)
+        print *,"No values found in geometry file ", geomname
+        close(fingeom)
         chaco_input_geom = .false.
-	return
+        return
     endif
 
     xc = floats_read(1)
     ndims = 1
     if (num_read > 1) then
-	ndims = 2
+        ndims = 2
         yc = floats_read(2)
-	if (num_read > 2) then
-	    ndims = 3
+        if (num_read > 2) then
+            ndims = 3
             zc = floats_read(3)
-	    if (num_read > 3) then
-		print *,"Too many values on input line of geometry file ", &
-		       geomname
+            if (num_read > 3) then
+                print *,"Too many values on input line of geometry file ", &
+                       geomname
 
-		print *," Maximum dimensionality is 3"
-		close(fingeom)
+                print *," Maximum dimensionality is 3"
+                close(fingeom)
                 chaco_input_geom = .false.
-	        return
-	    endif
-	endif
+                return
+            endif
+        endif
     endif
 
     igeom = ndims
@@ -706,13 +706,13 @@ real(Zoltan_FLOAT), pointer :: x(:), y(:), z(:) !/* coordiates of vertices */
     endif
 
     do nread = 1, nvtxs-1
-	if (ndims == 1) then
+        if (ndims == 1) then
             read(fingeom,*,iostat=iostat) x(nread)
-	else if (ndims == 2) then
+        else if (ndims == 2) then
             read(fingeom,*,iostat=iostat) x(nread),y(nread)
-	else if (ndims == 3) then
+        else if (ndims == 3) then
             read(fingeom,*,iostat=iostat) x(nread),y(nread),z(nread)
-	endif
+        endif
 
         if (iostat /= 0) then
             print *,"Too few lines or wrong number of values in geometry file ",geomname
@@ -726,8 +726,8 @@ real(Zoltan_FLOAT), pointer :: x(:), y(:), z(:) !/* coordiates of vertices */
 !    /* Check for spurious extra stuff in file. */
     call read_real_line(fingeom,floats_read,num_read)
     if (num_read > 0 .and. CHECK_INPUT) then
-	print *,"Warning: possible error in geometry file ", geomname
-	print *," Numerical data found after expected end of file"
+        print *,"Warning: possible error in geometry file ", geomname
+        print *," Numerical data found after expected end of file"
     endif
 
     close(fingeom)
@@ -739,7 +739,7 @@ logical function chaco_dist_graph(comm, host_proc, nvtxs, vtxdist, xadj, &
                                   adjncy, vwgts, ewgts, ndim, x, y, z)
 
   integer :: comm                        !/* MPI Communicator */
-  integer(Zoltan_INT) :: host_proc	!/* processor where all the data is initially */
+  integer(Zoltan_INT) :: host_proc        !/* processor where all the data is initially */
   integer(Zoltan_INT) :: nvtxs               !/* number of vertices in graph */
   integer(Zoltan_INT), pointer :: vtxdist(:) !/* vertex distribution data */
   integer(Zoltan_INT), pointer :: xadj(:)    !/* start of edge list for each vertex

@@ -416,7 +416,7 @@ int run_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
       /* Write output files. */
       strcpy(fname, pio_info->pexo_fname);
       strcat(fname, ".before");
-      Zoltan_Generate_Files(zz, fname, 1);
+      Zoltan_Generate_Files(zz, fname, 1, 1, 1, 0);
     }
   
     /*
@@ -487,7 +487,7 @@ int run_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
       /* Write output files. */
       strcpy(fname, pio_info->pexo_fname);
       strcat(fname, ".after");
-      Zoltan_Generate_Files(zz, fname, 1);
+      Zoltan_Generate_Files(zz, fname, 1, 1, 1, 0);
     }
   
     if (Test.Drops) 

@@ -22,8 +22,8 @@ extern "C" {
 #define ZOLTAN_PRINT_VTX_NUM  0  /* print vertex number at beginning of line? */
 
 
-/* Temporary prototypes. These functions should perhaps
-   move to the hg module?? */
+/* Temporary prototypes. These functions are HG routines
+   currently not compiled into Zoltan, but duplicated in this file. */
 static int Zoltan_HG_Get_Hedges(ZZ *zz, int **p_hindex, 
            ZOLTAN_ID_PTR *p_edge_verts, int **p_edge_procs, 
            float **p_edge_wgts, int *glob_hedges, int *glob_pins);
@@ -41,12 +41,13 @@ static int Zoltan_HG_Print_Hedges(ZZ *zz, FILE *fp,
 /*****************************************************************************/
 /*****************************************************************************/
 
-int Zoltan_Generate_Files(ZZ *zz, char *fname, int base_index)
+int Zoltan_Generate_Files(ZZ *zz, char *fname, int base_index,
+int gen_geom, int gen_graph, int gen_hg)
 {
 /*
  *  Generate up to four output files:
  *   a) Current assignment of objects to partitions (and procs?)
- *   b) Geometry of the objects.
+ *   b) Geometry of the objects, if geometry query functions are registered.
  *   c) Graph if graph query functions are available.
  *   d) Hypergraph if hypergraph query functions are available.
  *
@@ -54,6 +55,9 @@ int Zoltan_Generate_Files(ZZ *zz, char *fname, int base_index)
  *   zz,         pointer to Zoltan struct
  *   fname,      the basename for the output files
  *   base_index, first vertex (object) is labelled 0 or 1?
+ *   gen_geom,   generate geometry file? 
+ *   gen_graph,  generate graph file? 
+ *   gen_hg,     generate hypergraph file? 
  *
  *  The output is serialized, such that each processor
  *  will open and close each output file in turn.
@@ -65,13 +69,12 @@ int Zoltan_Generate_Files(ZZ *zz, char *fname, int base_index)
   FILE *fp;
   char full_fname[256];
   int *vtxdist, *xadj, *adjncy, *part;
-  int *vwgt, *adjwgt;
   int *heprocs, *hindex;
   ZOLTAN_ID_PTR hevtxs;
   float *float_vwgt, *ewgts, *hewgts;
   double *xyz;
   int i, j, k, num_obj, num_geom, num_edges;
-  int glob_edges, glob_hedges, glob_pins;
+  int glob_nvtxs, glob_edges, glob_hedges, glob_pins;
   int print_vtx_num = ZOLTAN_PRINT_VTX_NUM;
   char *yo = "Zoltan_Generate_Files";
 
@@ -80,7 +83,7 @@ int Zoltan_Generate_Files(ZZ *zz, char *fname, int base_index)
   /* Initialize all local pointers to NULL. This is necessary
    * because we free all non-NULL pointers upon errors.
    */
-  vtxdist = xadj = adjncy = vwgt = adjwgt = part = NULL;
+  vtxdist = xadj = adjncy = part = NULL;
   float_vwgt = ewgts = hewgts = NULL;
   xyz = NULL;
   heprocs = hindex = NULL;
@@ -92,22 +95,30 @@ int Zoltan_Generate_Files(ZZ *zz, char *fname, int base_index)
   /* Zoltan_Get_Obj_List allocates memory for all return lists. */
   error = Zoltan_Get_Obj_List(zz, &num_obj, &global_ids, &local_ids,
                               zz->Obj_Weight_Dim, &float_vwgt, &part);
-  if (error){
+  if (error != ZOLTAN_OK){
     /* Return error */
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Get_Obj_List returned error.");
     error = ZOLTAN_FATAL;
     goto End;
   }
 
-  /* Build (ParMetis) graph data structures, or just get vtxdist. */
-  error = Zoltan_Build_Graph(zz, 1, 1, num_obj,
-         global_ids, local_ids, zz->Obj_Weight_Dim, zz->Edge_Weight_Dim,
-         &vtxdist, &xadj, &adjncy, &ewgts);
-  if (error != ZOLTAN_OK && error != ZOLTAN_WARN){
-    ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Zoltan_Build_Graph returned error.");
-    error = ZOLTAN_FATAL;
-    goto End;
+  if (gen_graph){
+    /* Build (ParMetis) graph data structures. */
+    error = Zoltan_Build_Graph(zz, 1, 1, num_obj,
+           global_ids, local_ids, zz->Obj_Weight_Dim, zz->Edge_Weight_Dim,
+           &vtxdist, &xadj, &adjncy, &ewgts);
+    if (error != ZOLTAN_OK && error != ZOLTAN_WARN){
+      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Zoltan_Build_Graph returned error.");
+      goto End;
+    }
+    glob_nvtxs = vtxdist[zz->Num_Proc];
   }
+  else{
+    /* Compute global number of vertices. */
+    MPI_Reduce(&num_obj, &glob_nvtxs, 1, MPI_INT, MPI_SUM, 0, 
+        zz->Communicator);  
+  }
+
   /* Local number of edges. */
   if (xadj==NULL || xadj[num_obj]==0)
     num_edges = 0;
@@ -116,10 +127,16 @@ int Zoltan_Generate_Files(ZZ *zz, char *fname, int base_index)
   /* Compute global number of edges. */
   MPI_Reduce(&num_edges, &glob_edges, 1, MPI_INT, MPI_SUM, 0, 
       zz->Communicator);  
+  /* Assume no self-edges! */
   glob_edges /= 2;
 
   /* Build hypergraph, or get hypergraph data. */
-  if (zz->Get_Num_HG_Edges != NULL && zz->Get_HG_Edge_List != NULL) {
+  if (gen_hg){
+    if (zz->Get_Num_HG_Edges == NULL || zz->Get_HG_Edge_List == NULL) {
+      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Hypergraph output requested, but no corresponding query function was found.\n");
+      error = ZOLTAN_FATAL;
+      goto End;
+    }
     /* error = Zoltan_HG_Build_Hypergraph(zz, &zhg, NULL); */
     /* Get data in parallel. Zoltan_HG_Build_Hypergraph
        currently only works in serial. */
@@ -142,8 +159,8 @@ int Zoltan_Generate_Files(ZZ *zz, char *fname, int base_index)
     else
       fp = fopen(full_fname, "a");
     if (fp==NULL){
-      ZOLTAN_PRINT_WARN(zz->Proc, yo, "Could not open file for writing.\n");
-      error = ZOLTAN_WARN;
+      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Could not open file for writing.\n");
+      error = ZOLTAN_FATAL;
       goto End;
     }
     for (i=0; i<num_obj; i++)
@@ -152,10 +169,14 @@ int Zoltan_Generate_Files(ZZ *zz, char *fname, int base_index)
     fclose(fp);
   }
 
-#if 1 /* EBEB - Temporarily take out geometry part for Xyce runs */
   /* Write geometry to file, if applicable. */
-  if (zz->Get_Num_Geom != NULL && 
-     (zz->Get_Geom != NULL || zz->Get_Geom_Multi != NULL)) {
+  if (gen_geom){
+    if (zz->Get_Num_Geom == NULL ||
+     (zz->Get_Geom == NULL && zz->Get_Geom_Multi == NULL)) {
+      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Geometry output requested, but no corresponding query function was found.\n");
+      error = ZOLTAN_FATAL;
+      goto End;
+    }
     error = Zoltan_Get_Coordinates(zz, num_obj, global_ids, local_ids,
                                    &num_geom, &xyz);
 
@@ -165,8 +186,8 @@ int Zoltan_Generate_Files(ZZ *zz, char *fname, int base_index)
     else
       fp = fopen(full_fname, "a");
     if (fp==NULL){
-      ZOLTAN_PRINT_WARN(zz->Proc, yo, "Could not open file for writing.\n");
-      error = ZOLTAN_WARN;
+      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Could not open file for writing.\n");
+      error = ZOLTAN_FATAL;
       goto End;
     }
     for (i=0; i<num_obj; i++){
@@ -176,30 +197,31 @@ int Zoltan_Generate_Files(ZZ *zz, char *fname, int base_index)
     }
     fclose(fp);
   }
-#endif
 
   /* Write graph to file, if applicable. */
-  if (zz->Get_Num_Edges != NULL && zz->Get_Edge_List != NULL) {
+  /* Also create a minimal .graph file with no edges for geometric methods. */
+  if (gen_geom || gen_graph){
     sprintf(full_fname, "%s.graph", fname);
     if (zz->Proc == 0)
       fp = fopen(full_fname, "w");
     else
       fp = fopen(full_fname, "a");
     if (fp==NULL){
-      ZOLTAN_PRINT_WARN(zz->Proc, yo, "Could not open file for writing.\n");
-      error = ZOLTAN_WARN;
+      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Could not open file for writing.\n");
+      error = ZOLTAN_FATAL;
       goto End;
     }
 
     /* If proc 0, write first line. */
     if (zz->Proc == 0){
       fprintf(fp, "%% First line: #vertices #edges weight_flag\n");
-      fprintf(fp, "%d %d %1d%1d%1d", vtxdist[zz->Num_Proc], glob_edges, 
+      fprintf(fp, "%d %d %1d%1d%1d", glob_nvtxs, glob_edges, 
         print_vtx_num, (zz->Obj_Weight_Dim>0), (zz->Edge_Weight_Dim>0));
       if (zz->Obj_Weight_Dim>1 || zz->Edge_Weight_Dim>1)
         fprintf(fp, " %d %d", zz->Obj_Weight_Dim, zz->Edge_Weight_Dim);
       fprintf(fp, "\n");
     }
+
 
     /* Print edge list for each node (object). */
     for (i=0; i<num_obj; i++){
@@ -210,12 +232,14 @@ int Zoltan_Generate_Files(ZZ *zz, char *fname, int base_index)
       /* First print object (vertex) weight, if any. */
       for (k=0; k<zz->Obj_Weight_Dim; k++)
         fprintf(fp, "%f ", float_vwgt[i*(zz->Obj_Weight_Dim)+k]);
-      /* Then print neighbor list */
-      for (j=xadj[i]; j<xadj[i+1]; j++){
-        fprintf(fp, "%d ", adjncy[j]+base_index);
-        /* Also print edge weight, if any. */
-        for (k=0; k<zz->Edge_Weight_Dim; k++)
-          fprintf(fp, "%f ", ewgts[j*(zz->Edge_Weight_Dim)+k]);
+      if (gen_graph){
+        /* If graph, then print neighbor list */
+        for (j=xadj[i]; j<xadj[i+1]; j++){
+          fprintf(fp, "%d ", adjncy[j]+base_index);
+          /* Also print edge weight, if any. */
+          for (k=0; k<zz->Edge_Weight_Dim; k++)
+            fprintf(fp, "%f ", ewgts[j*(zz->Edge_Weight_Dim)+k]);
+        }
       }
       fprintf(fp, "\n");
     }
@@ -224,28 +248,33 @@ int Zoltan_Generate_Files(ZZ *zz, char *fname, int base_index)
 
   Zoltan_Print_Sync_End(zz->Communicator, 0); 
 
-  /* Separate synchronization for hypergraphs, this could be merged
+  /* Separate synchronization for hypergraphs; this could be merged
      into the previous synchronization. */
 
   Zoltan_Print_Sync_Start(zz->Communicator, 0); 
 
   /* Write hypergraph to file, if applicable. */
-  if ( zz->Get_Num_HG_Edges != NULL && zz->Get_HG_Edge_List != NULL) {
+  if (gen_hg){
+    if (zz->Get_Num_HG_Edges == NULL || zz->Get_HG_Edge_List == NULL) {
+      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Hypergraph output requested, but no corresponding query function was found.\n");
+      error = ZOLTAN_FATAL;
+      goto End;
+    }
     sprintf(full_fname, "%s.hg", fname);
     if (zz->Proc == 0)
       fp = fopen(full_fname, "w");
     else
       fp = fopen(full_fname, "a");
     if (fp==NULL){
-      ZOLTAN_PRINT_WARN(zz->Proc, yo, "Could not open file for writing.\n");
-      error = ZOLTAN_WARN;
+      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Could not open file for writing.\n");
+      error = ZOLTAN_FATAL;
       goto End;
     }
 
     /* If proc 0, write first line. */
     if (zz->Proc == 0){
       fprintf(fp, "%% First line: #vertices #hyperedges #pins weight_flag\n");
-      fprintf(fp, "%d %d %d %1d%1d%1d", vtxdist[zz->Num_Proc], glob_hedges, 
+      fprintf(fp, "%d %d %d %1d%1d%1d", glob_nvtxs, glob_hedges, 
         glob_pins, ZOLTAN_PRINT_VTX_NUM, 
         (zz->Obj_Weight_Dim>0), (zz->Edge_Weight_Dim>0));
       if (zz->Obj_Weight_Dim>1 || zz->Edge_Weight_Dim>1)
@@ -269,7 +298,6 @@ End:
   ZOLTAN_FREE(&global_ids);
   ZOLTAN_FREE(&local_ids);
   ZOLTAN_FREE(&float_vwgt);
-  ZOLTAN_FREE(&vwgt);
   ZOLTAN_FREE(&ewgts);
   ZOLTAN_FREE(&part);
   if ( zz->Get_Num_HG_Edges != NULL && zz->Get_HG_Edge_List != NULL) {
@@ -283,6 +311,11 @@ End:
   return error;
 }
 
+/************************************************************************ 
+ * EBEB: The routines below were copied from the hg directory because   *
+ * Zoltan is distributed without hg. Duplicate functions should be      *
+ * removed later.                                                       *
+ ************************************************************************/
 
 /* Each proc gets hypergraph data from query functions.
  * Compute some global values. 
@@ -292,7 +325,7 @@ static int Zoltan_HG_Get_Hedges(ZZ *zz, int **p_hindex,
            ZOLTAN_ID_PTR *p_edge_verts, int **p_edge_procs, 
            float **p_edge_wgts, int *glob_hedges, int *glob_pins)
 {
-  int i, ierr, cnt, j, nEdge, nInput, npins, numwgts, minproc;
+  int i, ierr, cnt, j, nEdge, npins, numwgts, minproc;
   int loc_hedges, loc_pins;
   int *hindex , *edge_procs;
   ZOLTAN_ID_PTR edge_verts;
@@ -309,7 +342,7 @@ static int Zoltan_HG_Get_Hedges(ZZ *zz, int **p_hindex,
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error returned from Get_Num_HG_Edges");
     goto End;
   }
-  nInput = npins = zz->Get_Num_HG_Pins(zz->Get_Num_HG_Pins_Data, &ierr);
+  npins = zz->Get_Num_HG_Pins(zz->Get_Num_HG_Pins_Data, &ierr);
   if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
     ZOLTAN_PRINT_ERROR(zz->Proc, yo,"Error returned from Get_Max_HG_Edge_Size");    goto End;
   }
