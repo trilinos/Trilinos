@@ -67,7 +67,6 @@ int main(int argc, char *argv[]) {
 	//
 	using Teuchos::RefCountPtr;
 	using Teuchos::rcp;
-	//Teuchos::ENull null = Teuchos::null;
 	//
 	int i;
 	int n_nonzeros, N_update;
@@ -224,7 +223,7 @@ int main(int argc, char *argv[]) {
 	rhs.MvRandom();
 	Belos::LinearProblemManager<double> My_LP( rcp(&Amat,false), rcp(&soln,false), rcp(&rhs,false) );
 	My_LP.SetRightPrec( rcp(&EpetraOpPrec,false) );
-	//My_LP.SetLeftPrec( &EpetraOpPrec );
+	//My_LP.SetLeftPrec( rcp(&EpetraOpPrec,false) );
 	My_LP.SetBlockSize( block );
 
 	Belos::StatusTestMaxIters<double> test1( maxits );

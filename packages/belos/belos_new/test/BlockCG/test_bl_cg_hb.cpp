@@ -55,6 +55,9 @@
 
 int main(int argc, char *argv[]) {
 	//
+        using Teuchos::RefCountPtr;
+	using Teuchos::rcp;
+	//
 	int i, j;
 	int n_nonzeros, N_update;
 	int *bindx=0, *update=0, *col_inds=0;
@@ -167,7 +170,7 @@ int main(int argc, char *argv[]) {
 	//
 	//  Construct an unpreconditioned linear problem instance.
 	//
-	Belos::LinearProblemManager<double> My_LP( &Amat, &soln, &rhs );
+	Belos::LinearProblemManager<double> My_LP( rcp(&Amat,false), rcp(&soln,false), rcp(&rhs,false) );
 	My_LP.SetBlockSize( block );
 	//
 	//*******************************************************************
@@ -182,7 +185,7 @@ int main(int argc, char *argv[]) {
 	if (verbose)
 	  My_OM.SetVerbosity( 2 );	
 	//
-	Belos::BlockCG<double> MyBlockCG(My_LP, My_Test, My_OM);
+	Belos::BlockCG<double> MyBlockCG(rcp(&My_LP,false), rcp(&My_Test,false), rcp(&My_OM,false) );
 	//
 	// **********Print out information about problem*******************
 	//
@@ -223,9 +226,12 @@ int main(int argc, char *argv[]) {
   delete [] update; 
   delete [] bindx;
 
-  if (My_Test.GetStatus()==Belos::Converged)
+  if (My_Test.GetStatus() == Belos::Converged) {
+    cout<< "***************** The test PASSED !!!********************"<<endl;
     return 0;
-  return 1;
+  }
+  cout<< "********************The test FAILED!!! ********************"<<endl;
+  return 1; 
   //
 } // end test_bl_cg_hb.cpp
 

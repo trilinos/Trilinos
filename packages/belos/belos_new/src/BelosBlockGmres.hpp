@@ -235,7 +235,6 @@ namespace Belos {
     //
     if (_totaliter == 0) {
       RefCountPtr<MultiVec<TYPE> > temp_res = MVT::Clone(*_cur_block_rhs,_blocksize);
-      //RefCountPtr<MultiVec<TYPE> > temp_res = rcp( _cur_block_rhs->Clone(_blocksize) );
       _lp->ComputeResVec( &*temp_res, &*_cur_block_sol, &*_cur_block_rhs );
       MVT::MvNorm( *temp_res, normvec, TwoNorm );
     } else {

@@ -62,64 +62,67 @@
 #include "Epetra_Map.h"
 
 int main(int argc, char *argv[]) {
-	//
-	int i, j;
-	int n_nonzeros, N_update;
-	int *bindx=0, *update=0, *col_inds=0;
-	double *val=0, *row_vals=0;
-	
+  //
+  using Teuchos::RefCountPtr;
+  using Teuchos::rcp;
+  //
+  int i, j;
+  int n_nonzeros, N_update;
+  int *bindx=0, *update=0, *col_inds=0;
+  double *val=0, *row_vals=0;
+  
 #ifdef EPETRA_MPI	
-	// Initialize MPI	
-	MPI_Init(&argc,&argv); 	
-	Epetra_MpiComm Comm( MPI_COMM_WORLD );	
+  // Initialize MPI	
+  MPI_Init(&argc,&argv); 	
+  Epetra_MpiComm Comm( MPI_COMM_WORLD );	
 #else	
-	Epetra_SerialComm Comm;	
+  Epetra_SerialComm Comm;	
 #endif
-	
-	int MyPID = Comm.MyPID();
-	int NumProc = Comm.NumProc();	
-	bool verbose = 0;
-	//
-        if((argc < 2 || argc > 4)&& MyPID==0) {
-        cerr << "Usage: " << argv[0]
+  
+  int MyPID = Comm.MyPID();
+  int NumProc = Comm.NumProc();	
+  bool verbose = 0;
+  //
+  if((argc < 2 || argc > 4)&& MyPID==0) {
+    cerr << "Usage: " << argv[0]
          << " [ -v ] [ HB_filename ]" << endl
          << "where:" << endl
          << "-v                 - run test in verbose mode" << endl
          << "HB_filename        - filename and path of a Harwell-Boeing data set" << endl
          << endl;
-        return(1);
-        }
-        //
-        // Find verbosity flag
-        //
-        int file_arg = 1;
-        for(i = 1; i < argc; i++)
-        {
-          if(argv[i][0] == '-' && argv[i][1] == 'v') {
-            verbose = (MyPID == 0);
-            if(i==1) file_arg = 2;
-          }
-	}
+    return(1);
+  }
+  //
+  // Find verbosity flag
+  //
+  int file_arg = 1;
+  for(i = 1; i < argc; i++)
+    {
+      if(argv[i][0] == '-' && argv[i][1] == 'v') {
+	verbose = (MyPID == 0);
+	if(i==1) file_arg = 2;
+      }
+    }
+  //
+  //**********************************************************************
+  //******************Set up the problem to be solved*********************
+  //**********************************************************************
+  //
+      int NumGlobalElements;  // total # of rows in matrix
+      //
+      // *****Read in matrix from HB file******
+      //
+      Trilinos_Util_read_hb(argv[file_arg], MyPID, &NumGlobalElements, &n_nonzeros, &val, 
+			    &bindx);
+      //
+      // *****Distribute data among processors*****
 	//
-	//**********************************************************************
-	//******************Set up the problem to be solved*********************
-	//**********************************************************************
-    	//
-    	int NumGlobalElements;  // total # of rows in matrix
-	//
-	// *****Read in matrix from HB file******
-	//
-	Trilinos_Util_read_hb(argv[file_arg], MyPID, &NumGlobalElements, &n_nonzeros, &val, 
-		                    &bindx);
-	//
-	// *****Distribute data among processors*****
-	//
-	Trilinos_Util_distrib_msr_matrix(Comm, &NumGlobalElements, &n_nonzeros, &N_update,
-		                             &update, &val, &bindx);
-	//
-	//
-    	// ********Other information used by block solver***********
-	//*****************(can be user specified)******************
+      Trilinos_Util_distrib_msr_matrix(Comm, &NumGlobalElements, &n_nonzeros, &N_update,
+				       &update, &val, &bindx);
+      //
+      //
+      // ********Other information used by block solver***********
+      //*****************(can be user specified)******************
 	//
 	int numrhs = 15;  // total number of right-hand sides to solve for
     	int block = 10;  // blocksize used by solver
@@ -219,14 +222,11 @@ int main(int argc, char *argv[]) {
 	//
 	//*****Create Linear Problem for Belos Solver
 	//
-	Belos::LinearProblemManager<double> My_LP(&Amat, &soln, &rhs);
-	My_LP.SetLeftPrec( &EpetraOpPrec );
+	Belos::LinearProblemManager<double> My_LP( rcp(&Amat, false), rcp(&soln, false), rcp(&rhs,false) );
+	My_LP.SetLeftPrec( rcp(&EpetraOpPrec, false) );
 	My_LP.SetBlockSize( block );
 	//
-	//
-	//*******************************************************************
-	// *************Start the block CG iteration*************************
-	//*******************************************************************
+	//*****Create Status Test Class for the Belos Solver
 	//
         Belos::StatusTestMaxIters<double> test1( maxits );
         Belos::StatusTestResNorm<double> test2( tol );
@@ -235,8 +235,12 @@ int main(int argc, char *argv[]) {
 	Belos::OutputManager<double> My_OM( MyPID );
 	if (verbose)
 	  My_OM.SetVerbosity( 2 );
-
-	Belos::BlockCG<double> MyBlockCG(My_LP, My_Test, My_OM);
+	//
+	//*******************************************************************
+	// *************Start the block CG iteration*************************
+	//*******************************************************************
+	//
+	Belos::BlockCG<double> MyBlockCG( rcp(&My_LP, false), rcp(&My_Test,false), rcp(&My_OM,false));
 	//
 	// **********Print out information about problem*******************
 	//
@@ -284,9 +288,12 @@ int main(int argc, char *argv[]) {
   delete [] actual_resids;
   delete [] rhs_norm;
 	
-  if (My_Test.GetStatus()==Belos::Converged)
+  if (My_Test.GetStatus() == Belos::Converged) {
+    cout<< "***************** The test PASSED !!!********************"<<endl;
     return 0;
-  return 1;
+  }
+  cout<< "********************The test FAILED!!! ********************"<<endl;
+  return 1; 
   //
 } // end test_bl_pcg_hb.cpp
 
