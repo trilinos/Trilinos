@@ -1,6 +1,6 @@
 ************************************************************************
 
-           APPS: Asynchronous Parallel Pattern Search
+           NOX: An Object-Oriented Nonlinear Solver Package
                 Copyright (2002) Sandia Corporation
 
 Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
@@ -20,6 +20,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 
-Questions? Contact Tammy Kolda (tgkolda@sandia.gov) 
+Questions? Contact Tammy Kolda (tgkolda@sandia.gov) or Roger Pawlowski
+(rppawlo@sandia.gov).
 
 ************************************************************************
