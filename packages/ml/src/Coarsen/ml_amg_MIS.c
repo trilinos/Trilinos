@@ -54,7 +54,7 @@ int ML_AMG_CoarsenMIS( ML_AMG *ml_amg, ML_Operator *Amatrix,
    int     A_ntotal, A_Nneigh, *A_rcvleng=NULL, *A_sndleng=NULL, *sys_info;
    int     *A_neigh=NULL, Nghost, **A_sndbuf=NULL, **A_rcvbuf=NULL;
    int     **A_sendlist=NULL, **A_recvlist=NULL, **proclist, *templist;
-   int     new_Nsend, new_Nrecv, *new_send_leng, *new_recv_leng;
+   int     new_Nsend, new_Nrecv, *new_send_leng, *new_recv_leng, A_nnz;
    int     *new_send_list, *new_send_neigh, *new_recv_neigh, tmpcnt;
    double  *new_val=NULL, epsilon, *rowi_val=NULL, *darray, rowmax, diag;
    double  *values, *offdbuffer, *dsumCij, dsumCi, rowsum;
@@ -245,6 +245,7 @@ int ML_AMG_CoarsenMIS( ML_AMG *ml_amg, ML_Operator *Amatrix,
       }
       total_nnz += rowi_N;
    }
+   A_nnz = total_nnz;
    rowptr = (int *)    malloc( (Nrows + 1)* sizeof(int) );
    if ( total_nnz > 0 ) 
    {
@@ -269,12 +270,15 @@ int ML_AMG_CoarsenMIS( ML_AMG *ml_amg, ML_Operator *Amatrix,
       } 
       rowmax = 0.0;
       for (j = 0; j < rowi_N; j++) 
-         if ( rowi_col[j] != i && dabs(rowi_val[j]) > rowmax ) 
-            rowmax = dabs( rowi_val[j] );
+         /*if ( rowi_col[j] != i && dabs(rowi_val[j]) > rowmax ) 
+            rowmax = dabs( rowi_val[j] );*/
+         if ( rowi_col[j] != i && (-rowi_val[j]) > rowmax ) 
+            rowmax = - rowi_val[j];
       rowmax *= epsilon;
       for (j = 0; j < rowi_N; j++) 
       {
-         if ( rowi_val[j] != 0 && dabs(rowi_val[j]) > rowmax ) 
+         /*if ( rowi_val[j] != 0 && dabs(rowi_val[j]) > rowmax ) */
+         if ( rowi_val[j] != 0 && (-rowi_val[j]) > rowmax ) 
          {
             values[total_nnz]   = rowi_val[j];
             column[total_nnz++] = rowi_col[j];
@@ -337,6 +341,13 @@ int ML_AMG_CoarsenMIS( ML_AMG *ml_amg, ML_Operator *Amatrix,
    /* then label the vertices as selected(S) or deleted (D)         */
    /* ============================================================= */
 
+   m = ML_Comm_GsumInt( comm, Nrows );
+   k = ML_Comm_GsumInt( comm, A_nnz );
+   if ( mypid == 0 && printflag )
+   {
+      printf("AMG Phase 1 begins, total_nrows, total_nnz   = %d %d\n", m, k); 
+      fflush(stdout);
+   }
    for (i = 0; i < Nrows ; i++) if (bdry[i] == 'T') state[i] = 'D'; 
 
    k = ML_AMG_LabelVertices(Nrows, vlist, 'x', state, vtype, 
@@ -385,14 +396,17 @@ int ML_AMG_CoarsenMIS( ML_AMG *ml_amg, ML_Operator *Amatrix,
             if ( count >= 0 ) offibuffer[j] = offmap2[count] + Nrows;
             else              offibuffer[j] = -1;
          }
-         if ( offibuffer[j] != (i+Nrows) && dabs(offdbuffer[j]) > rowmax )
-            rowmax = dabs( offdbuffer[j] );
+         /*if ( offibuffer[j] != (i+Nrows) && dabs(offdbuffer[j]) > rowmax )
+            rowmax = dabs( offdbuffer[j] );*/
+         if ( offibuffer[j] != (i+Nrows) && (-offdbuffer[j]) > rowmax )
+            rowmax = - offdbuffer[j];
       }
       rowmax *= epsilon;
       for ( j = offset; j < offset+offlengths[i]; j++ )
       {
          index = offibuffer[j];
          if ( index >= 0 && dabs(offdbuffer[j]) < rowmax )
+         /*if ( index >= 0 && (-offdbuffer[j]) < rowmax )*/
             offibuffer[j] = - index - 2;
       }
       offset += offlengths[i];
@@ -454,8 +468,8 @@ for ( i = 0; i < Nrows; i++ )
 
    for ( i = 0; i < Nrows; i++ )
    {
-      if (CF_array[i] < 0 && border_flag[i] == 'T') /* -- border F -- */
-      {
+      if (state[i] != 'D' && CF_array[i] < 0 && border_flag[i] == 'T')
+      { /* -- border F -- */
          /* ----- register my C neighbors ----- */
 
          for ( j = rowptr[i]; j < rowptr[i+1] ; j++) 
@@ -592,8 +606,8 @@ for ( i = 0; i < Nrows; i++ )
 
    for ( i = 0; i < Nrows; i++ )
    {
-      if (CF_array[i] < 0 && border_flag[i] == 'F') /* -- interior F -- */
-      {
+      if (state[i] != 'D' && CF_array[i] < 0 && border_flag[i] == 'F') 
+      {  /* -- interior F -- */
          /* ----- register my C neighbors ----- */
 
          for ( j = rowptr[i]; j < rowptr[i+1] ; j++) 
@@ -627,6 +641,7 @@ for ( i = 0; i < Nrows; i++ )
                if ( k == rowptr[col+1] ) /* --- shared C not found --- */
                {
                   CF_array[i] = Ncoarse++;
+                  break;
                }
             }
          }
@@ -717,6 +732,7 @@ for ( i = 0; i < Nrows; i++ )
    /* recover unamalgamated matrix and fetch communication info     */
    /* ============================================================= */
 
+   /*
    Nrows     *= num_PDE_eqns;
    exp_Nrows = A_ntotal * num_PDE_eqns;
    if ( num_PDE_eqns > 1 ) 
@@ -730,6 +746,8 @@ for ( i = 0; i < Nrows; i++ )
       if ( CF_array != NULL ) free( CF_array );
       CF_array = int_array;
    }
+   */
+   exp_Nrows = A_ntotal;
    getrow_obj  = Amatrix->getrow;
    getrow_comm = getrow_obj->pre_comm;
    N_neighbors = getrow_obj->pre_comm->N_neighbors;
@@ -884,8 +902,10 @@ for ( i = 0; i < Nrows; i++ )
          for (j = 0; j < rowi_N; j++) 
          {
             col = rowi_col[j];
-            if (col != i && dabs(rowi_val[j]) > rowmax) 
-               rowmax = dabs( rowi_val[j] );
+            /*if (col != i && dabs(rowi_val[j]) > rowmax) 
+               rowmax = dabs( rowi_val[j] );*/
+            if (col != i && (-rowi_val[j]) > rowmax) 
+               rowmax = - rowi_val[j];
             if ( CF_array[col] >= 0 ) numCi++;
          }
          rowmax  *= epsilon;
@@ -898,7 +918,8 @@ for ( i = 0; i < Nrows; i++ )
          for (j = 0; j < rowi_N; j++) 
          {
             col = rowi_col[j];
-            if (CF_array[col] >= 0 && dabs(rowi_val[j]) > rowmax)  
+            /*if (CF_array[col] >= 0 && dabs(rowi_val[j]) > rowmax)  */
+            if (CF_array[col] >= 0 && (-rowi_val[j]) > rowmax)  
             {
                Ci_array[numCi++] = col;
                intindex = col >> logsizeint;
@@ -923,7 +944,8 @@ for ( i = 0; i < Nrows; i++ )
             else
             {
                /* ----- weak couplings, add to diagonal ----- */
-               if ( dabs(rowi_val[j]) < rowmax )  
+               /*if ( dabs(rowi_val[j]) < rowmax )  */
+               if ( (-rowi_val[j]) < rowmax )  
                   diag += rowi_val[j];
 
                /* ----- strong coupling to 'C', put into array ----- */ 
