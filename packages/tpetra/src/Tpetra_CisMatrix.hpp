@@ -381,7 +381,7 @@ public:
   
   //! Returns the global one norm of the matrix
   ScalarType normOne() const {
-    if(rowOriented())
+    if(isRowOriented())
       if(!data().haveCol_)
         throw reportError("Cannot compute one-norm until column distribution is specified.", 3);
       else
@@ -392,7 +392,7 @@ public:
 
   //! Returns the global infinity norm of the matrix
   ScalarType normInf() const {
-    if(rowOriented())
+    if(isRowOriented())
       return(primaryNorm());
     else
       if(!data().haveRow_)
