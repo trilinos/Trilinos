@@ -26,9 +26,11 @@ extern "C" {
 int hg_readfile (ZZ *zz, HGraph *hg, char *hgraphfile, int *base)
 {
 FILE *f;
-int err;
+int err = ZOLTAN_OK;
 char errstr[200];
 char *yo = "hg_readfile";
+
+   ZOLTAN_TRACE_ENTER(zz, yo) ;
 
    Zoltan_HG_HGraph_Init(hg);
 
@@ -36,15 +38,16 @@ char *yo = "hg_readfile";
    if (!f) {
       sprintf(errstr, "ERROR...not able to open file %s!\n", hgraphfile);
       ZOLTAN_PRINT_ERROR (zz->Proc, yo, errstr);
-      return ZOLTAN_FATAL;
+      err = ZOLTAN_FATAL;
+      goto End;
       }
 
-   err = Zoltan_HG_Readfile (0, f, &hg->nVtx, &hg->nEdge, &hg->nInput,
+   err = Zoltan_HG_Readfile (zz, 0, f, &hg->nVtx, &hg->nEdge, &hg->nInput,
     &hg->hindex, &hg->hvertex, &hg->VertexWeightDim, &hg->vwgt,
     &hg->EdgeWeightDim, &hg->ewgt, base);
    if (err != ZOLTAN_OK && err != ZOLTAN_WARN) {
       fclose(f);
-      return err;
+      goto End;
       }
 
    if (*base > 0) {
@@ -57,12 +60,15 @@ char *yo = "hg_readfile";
    err = Zoltan_HG_Create_Mirror (zz, hg);
    if (err != ZOLTAN_OK && err != ZOLTAN_WARN) {
       fclose(f);
-      return err;
+      goto End;
       }
 
    if (fclose(f))
-      return ZOLTAN_WARN;
-   return ZOLTAN_OK;
+      err = ZOLTAN_WARN;
+
+End:
+   ZOLTAN_TRACE_EXIT(zz, yo);
+   return err;
    }
 
 

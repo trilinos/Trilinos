@@ -40,7 +40,7 @@ int i;
 
   h->space = space;
   h->n = 0;
-  if ((space>0)
+  if ((space > 0)
    && (!(h->ele   = (int*)   ZOLTAN_CALLOC(space, sizeof(int)))
    ||  !(h->pos   = (int*)   ZOLTAN_CALLOC(space, sizeof(int)))
    ||  !(h->value = (float*) ZOLTAN_CALLOC(space, sizeof(float))) )) {
@@ -75,8 +75,8 @@ static char *yo = "Zoltan_HG_heap_check";
   for (i = 0; i < h->n; i++) {
      left  = 2*i + 1;
      right = 2*i + 2;
-     if ((left <h->n && h->value[h->ele[left ]] > h->value[h->ele[i]])
-      || (right<h->n && h->value[h->ele[right]] > h->value[h->ele[i]])) {
+     if ((left < h->n && h->value[h->ele[left ]] > h->value[h->ele[i]])
+      || (right< h->n && h->value[h->ele[right]] > h->value[h->ele[i]])) {
          ZOLTAN_PRINT_ERROR(0, yo, "No heap property!\n");
          return ZOLTAN_FATAL;
          }
@@ -114,7 +114,7 @@ static char *yo = "Zoltan_HG_heap_input";
 int Zoltan_HG_heap_make (HEAP *h)
 { int i;
 
-  for (i = h->n/2; i >= 0;  i--)
+  for (i = h->n / 2; i >= 0;  i--)
      heapify(h, i);
   return ZOLTAN_OK;
 }

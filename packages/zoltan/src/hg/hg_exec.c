@@ -119,7 +119,7 @@ int    base;   /* minimum vertex number in input file; usually 0 or 1. */
        return 1;
        }
     }
-  zz.Debug_Level = ((hgp.output_level>zz.Debug_Level) ? hgp.output_level 
+  zz.Debug_Level = ((hgp.output_level>zz.Debug_Level) ? hgp.output_level
                                                       : zz.Debug_Level);
   if (Zoltan_HG_Set_Part_Options(&zz, &hgp))
      return 1;
@@ -152,7 +152,7 @@ int    base;   /* minimum vertex number in input file; usually 0 or 1. */
 
   /* partition info */
   if (hgp.output_level >= HG_DEBUG_LIST)
-     if (Zoltan_HG_HPart_Info (&zz,&hg,p,part,&hgp))
+     if (Zoltan_HG_HPart_Info (&zz, &hg, p, part, &hgp))
         return 1;
   free(part);
 

@@ -28,15 +28,17 @@ extern "C" {
 
 #ifdef HTEST
 #include "zoltan_mem.h"
+
 typedef struct
   {
   int Proc;
   int Num_Proc;
   int Debug_Level;
   } ZZ;
+
 #define ZOLTAN_DEBUG_LIST            8
 #define ZOLTAN_DEBUG_ALL             10
-#define ZOLTAN_TRACE_ENTER(a,b)      {}
+#define ZOLTAN_TRACE_ENTER(a,b)      {strlen(b);}   /* NOP using variable to avoid compiler warning */
 #define ZOLTAN_TRACE_EXIT(a,b)       {}
 #define ZOLTAN_TRACE_DETAIL(a,b,c)   {}
 #define ZOLTAN_OK                    0
@@ -51,23 +53,20 @@ typedef struct
 #include "params_const.h"
 #endif
 
-#define MIN(A,B)                (((A)<(B))?(A):(B))
-#define MAX(A,B)                (((A)>(B))?(A):(B))
+#define MIN(A,B)                (((A) < (B)) ? (A) : (B))
+#define MAX(A,B)                (((A) > (B)) ? (A) : (B))
 
 #define RANDOM_SEED             123456789   /* (time ((time_t*)NULL)) */
 #define EPS                     1e-6
 
 
-/* Matching, Packing, and Grouping arrays.
- * Technically, they are all the same; the different typedefs are not needed.
- * In the description below, Matching is used; the same description applies
- * to Packing and Grouping.
- * If a vertex i is not being contracted with other vertices,
- * Matching[i] == i.
- * If vertices i, j, and k are being contracted together to form one new vertex,
- * Matching[i] == j; Matching[j] == k; and Matching[k] == i;
- * The cycle describes the contraction.
- */
+/* Matching, Packing, and Grouping arrays.  Technically, they are all the same;
+ * the different typedefs are not needed.  In the description below, Matching is
+ * used; the same description applies to Packing and Grouping.  If a vertex i is
+ * not being contracted with other vertices,  Matching[i] == i.  If vertices i,
+ * j, and k are being contracted together to form one new vertex,
+ * Matching[i] == j; Matching[j] == k; and Matching[k] == i;  The cycle describes
+ * the contraction. */
 typedef int *Matching;  /* length |V|, matching information of vertices */
 typedef int *Packing;   /* length |V|, packing information of vertices */
 typedef int *Grouping;  /* length |V|, grouping information of vertices */
@@ -156,7 +155,7 @@ void          Zoltan_HG_Srand (unsigned long);
 void          Zoltan_HG_Rand_Perm_Int (int*, int);
 
 /* Hypergraph read from file */
-int Zoltan_HG_Readfile (int, FILE*, int*, int*, int*, int**, int**, int*,
+int Zoltan_HG_Readfile (ZZ*, int, FILE*, int*, int*, int*, int**, int**, int*,
  float**, int*, float**, int*);
 
 /* Hypergraph Partitioning */
@@ -165,9 +164,9 @@ struct HGPartParamsStruct;  /* Forward declaration */
 typedef int ZOLTAN_HG_MATCHING_FN   (ZZ*, HGraph*, Matching, int*);
 typedef int ZOLTAN_HG_PACKING_FN    (ZZ*, HGraph*, Packing,  int*);
 typedef int ZOLTAN_HG_GROUPING_FN   (ZZ*, HGraph*, Grouping, int*);
-typedef int ZOLTAN_HG_GLOBAL_PART_FN(ZZ*, HGraph*, int, Partition, 
+typedef int ZOLTAN_HG_GLOBAL_PART_FN(ZZ*, HGraph*, int, Partition,
                                      struct HGPartParamsStruct *);
-typedef int ZOLTAN_HG_LOCAL_REF_FN  (ZZ*, HGraph*, int, Partition, 
+typedef int ZOLTAN_HG_LOCAL_REF_FN  (ZZ*, HGraph*, int, Partition,
                                      struct HGPartParamsStruct *, float);
 
 /* Function types for edge-weight scaling functions. */
@@ -203,7 +202,7 @@ struct HGPartParamsStruct {
   ZOLTAN_HG_LOCAL_REF_FN *local_ref;    /* pointer to Local refinement fn */
 
   int check_graph;                      /* Flag indicating whether the input
-                                           hypergraph should be checked for 
+                                           hypergraph should be checked for
                                            errors. */
   int output_level;                     /* Flag indicating amount of output
                                            from HG algorithms.  See levels
@@ -232,15 +231,15 @@ int Zoltan_HG_Scale_Graph_Weight  (ZZ*, Graph*,  float*, int);
 
 /* Matching functions */
 int Zoltan_HG_Matching (ZZ*, HGraph*, Matching, HGPartParams*, int*);
-int Zoltan_HG_Set_Matching_Fn(HGPartParams *);
+int Zoltan_HG_Set_Matching_Fn(HGPartParams*);
 
 /* Packing */
 int Zoltan_HG_Packing (ZZ*, HGraph*, Packing, HGPartParams*, int*);
-int Zoltan_HG_Set_Packing_Fn(HGPartParams *);
+int Zoltan_HG_Set_Packing_Fn(HGPartParams*);
 
 /* Grouping */
 int Zoltan_HG_Grouping (ZZ*, HGraph*, Packing, HGPartParams*, int*);
-int Zoltan_HG_Set_Grouping_Fn(HGPartParams *);
+int Zoltan_HG_Set_Grouping_Fn(HGPartParams*);
 
 /* Coarsening */
 int Zoltan_HG_Coarsening   (ZZ*, HGraph*, Packing, HGraph*, int*);
@@ -262,10 +261,10 @@ void Zoltan_quicksort_pointer_inc_int_mult  (int*, int,    int,  int*, int*);
 
 /* Heap datastructure */
 typedef struct {
-   int space;
-   int n;
-   int *ele;
-   int *pos;
+   int    space;
+   int    n;
+   int   *ele;
+   int   *pos;
    float *value;
    } HEAP;
 
@@ -273,6 +272,7 @@ typedef struct {
 #define Zoltan_HG_heap_not_empty(H)     (((H)->n)!=0)
 #define Zoltan_HG_heap_max_value(H)     ((H)->value[(H)->ele[0]])
 #define Zoltan_HG_heap_peek_max(H)      ((H)->ele[0])
+
 int  Zoltan_HG_heap_init         (ZZ*, HEAP*, int);
 void Zoltan_HG_heap_free         (HEAP*);
 int  Zoltan_HG_heap_check        (HEAP*);
@@ -280,8 +280,8 @@ int  Zoltan_HG_heap_input        (HEAP*, int, float);
 int  Zoltan_HG_heap_make         (HEAP*);
 int  Zoltan_HG_heap_change_value (HEAP*, int, float);
 int  Zoltan_HG_heap_extract_max  (HEAP*);
-int  Zoltan_HG_move_vertex (HGraph*, int, int, int, int*, int**, float*, HEAP*);
 
+int  Zoltan_HG_move_vertex (HGraph*, int, int, int, int*, int**, float*, HEAP*);
 void Zoltan_HG_Plot(int, int, int, int*, int*, int*, char*);
 
 

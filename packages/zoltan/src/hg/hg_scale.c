@@ -37,9 +37,9 @@ int    i, j;
         for (i = 0; i < hg->nEdge; i++) {
            sum = factor = 0.0;
            for (j = hg->hindex[i]; j < hg->hindex[i+1]; j++)
-              sum += (double)(hg->vwgt[hg->hvertex[j]]);
+              sum += (double) hg->vwgt[hg->hvertex[j]];
            for (j = hg->hindex[i]; j < hg->hindex[i+1]; j++) {
-              weight = (double)(hg->vwgt[hg->hvertex[j]]);
+              weight = (double) hg->vwgt[hg->hvertex[j]];
               factor += (weight * (sum-weight));
               }
            factor /= 2.0;
@@ -73,8 +73,9 @@ int    i, j;
      }
   else if (scale == 3) {
      if (hg->vwgt) {
-        double sum;
+        double sum ;
         for (i = 0; i < hg->nEdge; i++) {
+           sum = 0.0;
            for (j = hg->hindex[i]; j < hg->hindex[i+1]; j++)
               sum += (double)(hg->vwgt[hg->hvertex[j]]);
            if (sum <= 0.0)
@@ -94,13 +95,13 @@ int    i, j;
         for (i = 0; i < hg->nEdge; i++) {
            max_weight = 0.0;
            for (j = hg->hindex[i]; j < hg->hindex[i+1]; j++)
-              max_weight = MAX (max_weight, (hg->vwgt[hg->hvertex[j]]));
+              max_weight = MAX (max_weight, hg->vwgt[hg->hvertex[j]]);
            new_ewgt[i] = (hg->ewgt ? hg->ewgt[i] : 1.0) / max_weight;
            }
         }
      else
        for (i = 0; i < hg->nEdge; i++)
-          new_ewgt[i] = (hg->ewgt ? hg->ewgt[i] : 1.0);
+          new_ewgt[i] = hg->ewgt ? hg->ewgt[i] : 1.0;
      }
   else if (scale == 5) {
      if (hg->vwgt) {
@@ -108,13 +109,13 @@ int    i, j;
         for (i = 0; i < hg->nEdge; i++) {
            min_weight = 0.0;
            for (j = hg->hindex[i]; j < hg->hindex[i+1]; j++)
-              min_weight = MIN(min_weight,(hg->vwgt[hg->hvertex[j]]));
+              min_weight = MIN(min_weight, hg->vwgt[hg->hvertex[j]]);
            new_ewgt[i] = (hg->ewgt ? hg->ewgt[i] : 1.0) / min_weight;
            }
         }
      else
         for (i = 0; i < hg->nEdge; i++)
-           new_ewgt[i] = (hg->ewgt ? hg->ewgt[i] : 1.0);
+           new_ewgt[i] = hg->ewgt ? hg->ewgt[i] : 1.0;
      }
   return ZOLTAN_OK;
 }

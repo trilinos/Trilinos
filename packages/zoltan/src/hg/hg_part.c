@@ -76,6 +76,8 @@ int  i, err = ZOLTAN_OK;
 char msg[128];
 char *yo = "Zoltan_HG_HPart_Lib";
 
+  ZOLTAN_TRACE_ENTER(zz, yo);
+
   /* The partition array has to be allocated prior to this procedure */
   if (!part) {
      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Output partition array is NULL.");
@@ -158,7 +160,7 @@ char *yo = "Zoltan_HG_HPart_Lib";
      err = Zoltan_HG_Coarsening(zz, hg, pack, &c_hg, LevelMap);
      if (err != ZOLTAN_OK && err != ZOLTAN_WARN) {
         Zoltan_Multifree (__FILE__, __LINE__, 2, &pack, &LevelMap);
-        return err;
+        goto End;
         }
 
      /* Check the consistency of the coarsening */
@@ -166,18 +168,20 @@ char *yo = "Zoltan_HG_HPart_Lib";
         sprintf(msg, "limit %d is not %d-%d!\n", limit, c_hg.nVtx, hgp->redl);
         ZOLTAN_PRINT_ERROR(zz->Proc, yo, msg);
         Zoltan_Multifree (__FILE__, __LINE__, 2, &pack, &LevelMap);
-        return ZOLTAN_FATAL;
+        err = ZOLTAN_FATAL;
+        goto End;
         }
      else if (c_hg.nVtx < hgp->redl) {
         sprintf(msg, "wanted coarsen to %d vertices, but reached %d vertices\n",
          hgp->redl, c_hg.nVtx);
         ZOLTAN_PRINT_ERROR(zz->Proc, yo, msg);
         Zoltan_Multifree (__FILE__, __LINE__, 2, &pack, &LevelMap);
-        return ZOLTAN_FATAL;
+        err = ZOLTAN_FATAL;
+        goto End;
         }
 
      /* heuristic: stop on diminishing returns */
-     if (c_hg.nVtx > (0.9 * hg->nVtx))
+     if (c_hg.nVtx > 0.9 * hg->nVtx)
         hgp->redl = c_hg.nVtx;
 
      ZOLTAN_FREE ((void**) &pack);
@@ -186,14 +190,15 @@ char *yo = "Zoltan_HG_HPart_Lib";
      if (!(c_part = (int*) ZOLTAN_CALLOC (c_hg.nVtx, sizeof(int)))) {
         ZOLTAN_FREE ((void**) &LevelMap);
         ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
-        return ZOLTAN_MEMERR;
+        err = ZOLTAN_MEMERR;
+        goto End;
         }
 
      /* Recursively partition coarse hypergraph */
      err = Zoltan_HG_HPart_Lib (zz, &c_hg, p, c_part, hgp);
      if (err != ZOLTAN_OK && err != ZOLTAN_WARN) {
         Zoltan_Multifree (__FILE__, __LINE__, 2, &c_part, &LevelMap);
-        return err;
+        goto End;
         }
 
      /* Project coarse partition to fine partition */
@@ -208,13 +213,13 @@ char *yo = "Zoltan_HG_HPart_Lib";
   /* Locally refine partition */
   err = Zoltan_HG_Local (zz, hg, p, part, hgp);
   if (err != ZOLTAN_OK && err != ZOLTAN_WARN)
-     return err;
+     goto End;
 
   /* print useful information (conditionally) */
   if (hgp->output_level > HG_DEBUG_LIST) {
      err = Zoltan_HG_HPart_Info (zz, hg, p, part, hgp);
      if (err != ZOLTAN_OK && err != ZOLTAN_WARN)
-        return err;
+        goto End;
      }
   if (hgp->output_level >= HG_DEBUG_LIST)
     printf("FINAL %3d |V|=%6d |E|=%6d |I|=%6d %d/%s/%s-%s p=%d cutl=%.2f\n",
@@ -224,6 +229,9 @@ char *yo = "Zoltan_HG_HPart_Lib";
   if (hgp->output_level >= HG_DEBUG_PLOT)
      Zoltan_HG_Plot(zz->Proc, hg->nVtx, p, hg->vindex, hg->vedge, part,
       "partitioned plot");
+
+End:
+  ZOLTAN_TRACE_EXIT(zz, yo) ;
   return err;
 }
 
@@ -262,7 +270,7 @@ int i, j, *parts, nparts;
 float cut = 0.0;
 char *yo = "hcut_size_links";
 
-  if (!(parts = (int*) ZOLTAN_CALLOC (p,sizeof(int)))) {
+  if (!(parts = (int*) ZOLTAN_CALLOC (p, sizeof(int)))) {
      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
      return ZOLTAN_MEMERR;
      }
@@ -338,10 +346,10 @@ static float hmin_max_float (ZZ *zz, int P, float *q, HGPartParams *hgp)
 
 /* Prints important values of the partition on screen */
 int Zoltan_HG_HPart_Info (
-  ZZ *zz, 
-  HGraph *hg, 
-  int p, 
-  Partition part, 
+  ZZ *zz,
+  HGraph *hg,
+  int p,
+  Partition part,
   HGPartParams *hgp
 )
 {
@@ -364,7 +372,7 @@ char *yo = "Zoltan_HG_HPart_Info";
         }
      size[part[i]]++;
      }
-  printf (" Size               :"); 
+  printf (" Size               :");
   max_size = hmin_max (zz, p, size, hgp);
   printf (" Balance            : %.3f\n", (float) max_size * p / hg->nVtx);
   ZOLTAN_FREE ((void **) &size);

@@ -23,16 +23,16 @@ extern "C" {
 
 
 
-static int old_readfile  (int, FILE*, int*, int*, int*, int**, int**, int*, 
- float**, int*, float**, int *);
-static int patoh_readfile (int, FILE*, int*, int*, int*, int**, int**, int*,
- float**, int*, float**, int *);
+static int old_readfile  (ZZ*, int, FILE*, int*, int*, int*, int**, int**, int*,
+ float**, int*, float**, int*);
+static int patoh_readfile (ZZ*, int, FILE*, int*, int*, int*, int**, int**, int*,
+ float**, int*, float**, int*);
 
 
 
 /*****************************************************************************/
 
-int Zoltan_HG_Readfile (
+int Zoltan_HG_Readfile (ZZ *zz,
  int Proc,
  FILE *f,
  int *nVtx, int *nEdge, int *nInput,
@@ -41,9 +41,11 @@ int Zoltan_HG_Readfile (
  int *ewgt_dim, float **ewgt,
  int *base)
 {
-int err = ZOLTAN_OK;
 char string[81], *s;
+int err = ZOLTAN_OK;
 char *yo = "Zoltan_HG_Readfile";
+
+    ZOLTAN_TRACE_ENTER (zz, yo);
 
     /* Initialize return values in case of error. */
     *nVtx   = *nEdge   = *nInput = *vwgt_dim = *ewgt_dim = 0;
@@ -61,13 +63,14 @@ char *yo = "Zoltan_HG_Readfile";
        } while (*s == '%');         /* Skip leading comment lines. */
 
     if (atoi(s) < 2) /* Note -- Not correct for files with only one vertex. */
-       err = patoh_readfile (Proc, f, nVtx, nEdge, nInput, hindex, hvertex,
+       err = patoh_readfile (zz, Proc, f, nVtx, nEdge, nInput, hindex, hvertex,
         vwgt_dim, vwgt, ewgt_dim, ewgt,base);
     else if (atoi(s) > 1)
-       err = old_readfile (Proc, f, nVtx, nEdge, nInput, hindex, hvertex,
+       err = old_readfile (zz, Proc, f, nVtx, nEdge, nInput, hindex, hvertex,
         vwgt_dim, vwgt, ewgt_dim, ewgt, base);
 
 End:
+    ZOLTAN_TRACE_EXIT (zz, yo);
     return  err;
     }
 
@@ -75,7 +78,8 @@ End:
 
 
 
-static int old_readfile (int Proc,
+static int old_readfile (ZZ *zz,
+ int Proc,
  FILE *f,
  int *nVtx, int *nEdge, int *nInput,
  int **index,   int **vertex,
@@ -89,6 +93,7 @@ static int old_readfile (int Proc,
     char string[BUF_LEN], *s;
     char *yo = "old_readfile";
 
+    ZOLTAN_TRACE_ENTER (zz, yo);
     /* TODO: edge weights, multiple edge/vertex weights */
 
     /* IBM-format files are assumed to be 1-based. */
@@ -114,8 +119,8 @@ static int old_readfile (int Proc,
 
     /* nEdge HYPEREDGE LINES */
     /* KDD -- This logic is wrong if no pins are specified. */
-    if (!((*index)  = (int*) ZOLTAN_MALLOC ((*nEdge+1) * sizeof(int)))
-     || !((*vertex) = (int*) ZOLTAN_MALLOC  (*nInput   * sizeof(int)))) {
+    if (!(*index  = (int*) ZOLTAN_MALLOC ((*nEdge+1) * sizeof(int)))
+     || !(*vertex = (int*) ZOLTAN_MALLOC  (*nInput   * sizeof(int)))) {
          ZOLTAN_PRINT_ERROR(Proc, yo, "Insufficient memory.");
          err = ZOLTAN_MEMERR;
          goto End;
@@ -162,7 +167,7 @@ static int old_readfile (int Proc,
              goto End;
              }
           s = strtok (string, " \n");
-          (*vwgt)[i] = (float)(atoi(s));
+          (*vwgt)[i] = (float) atoi(s);
           }
        }
 
@@ -176,6 +181,7 @@ End:
        *nVtx  = *nEdge  = *nInput = *vwgt_dim = *ewgt_dim = 0;
        Zoltan_Multifree(__FILE__, __LINE__, 4, index, vertex, ewgt, vwgt);
        }
+    ZOLTAN_TRACE_EXIT (zz, yo);
     return err;
     }
 
@@ -183,7 +189,9 @@ End:
 
 
 
-static int patoh_readfile (int Proc,
+/* Read PaToH formatted hypergraph file. */
+static int patoh_readfile (ZZ *zz,
+ int Proc,
  FILE *f,
  int *nVtx, int *nEdge, int *nInput,
  int **index,   int **vertex,
@@ -199,10 +207,9 @@ int Hedge=0, code=0, dims=1, pin;
 char string[BUF_LEN], *s;
 char *yo = "patoh_readfile";
 
-
+    ZOLTAN_TRACE_ENTER (zz, yo);
     /* TODO: edge weights, multiple edge/vertex weights */
 
-    /* Read PaToH file. */
     rewind(f);
     do {
        if (!fgets (string, 80, f)) {
@@ -223,8 +230,8 @@ char *yo = "patoh_readfile";
 
     /* nEdge HYPEREDGE LINES */
     /* KDD -- This logic is wrong if no pins are specified. */
-    if (!((*index)  = (int*) ZOLTAN_MALLOC ((*nEdge+1) * sizeof(int)))
-     || !((*vertex) = (int*) ZOLTAN_MALLOC  (*nInput   * sizeof(int)))) {
+    if (!(*index  = (int*) ZOLTAN_MALLOC ((*nEdge+1) * sizeof(int)))
+     || !(*vertex = (int*) ZOLTAN_MALLOC  (*nInput   * sizeof(int)))) {
            ZOLTAN_PRINT_ERROR(Proc, yo, "Insufficient memory.");
            err = ZOLTAN_MEMERR;
            goto End;
@@ -283,7 +290,7 @@ char *yo = "patoh_readfile";
     /* nVtx vertex weights */
     /* KDD -- shouldn't this code use dims in some way? */
     *vwgt_dim = 1;
-    if (!((*vwgt) = (float *) ZOLTAN_MALLOC (*nVtx*sizeof(float)))) {
+    if (!((*vwgt) = (float *) ZOLTAN_MALLOC (*nVtx * sizeof(float)))) {
         ZOLTAN_PRINT_ERROR (Proc, yo, "Insufficient memory for vwgt.");
         err = ZOLTAN_MEMERR;
         goto End;
@@ -295,7 +302,7 @@ char *yo = "patoh_readfile";
             continue;
         while (s != NULL && i < *nVtx)
            {
-           (*vwgt)[i++] = (float)(atoi(s));
+           (*vwgt)[i++] = (float) atoi(s);
            s = strtok (NULL, " \t\n");
            }
         }
@@ -304,6 +311,7 @@ End:
        *nVtx  = *nEdge  = *nInput = *vwgt_dim = *ewgt_dim = 0;
        Zoltan_Multifree(__FILE__, __LINE__, 4, index, vertex, ewgt, vwgt);
        }
+    ZOLTAN_TRACE_EXIT (zz, yo);
     return err;
     }
 
