@@ -10,6 +10,7 @@
 #        gcovmerge [--with-files=min-max]           \
 #                  [--with-directories]             \
 #                  [--without-files]                \
+#                  [--with-total]                   \
 #                  [--exclude=word]                 \
 #                  path
 #
@@ -116,18 +117,20 @@ foreach (`find $sdir -name "*.bbg"`){
 	if($skip){next;}
 	chomp;
 	foreach $line (`gcov -n $_ 2> /dev/null`){
-	    if($line =~ /\s*(\d+\.\d+)% of (\d+) source lines executed in file ([^\/][\w\.]+)/ && !defined($filelist{$3})){
+	    if($line =~ /\s*(\d+\.\d+)% of (\d+)( source)? lines executed in file ([^\/][\w\.\/]+)/ && !defined($filelist{$4})){
 		$fcomp += $2;
 		$tcomp += $2;
 		$fexec += &round($1 * $2 / 100);
 		$texec += &round($1 * $2 / 100);
-		$filelist{$3} = $1;
+		$filelist{$4} = $1;
 	    }
 	}
     }
     foreach(sort(keys(%filelist))){
-	$s = " " x (55 - length);
-	print "\t$_$s$filelist{$_}%\n";
+	if($filelist{$_} >= $covmin && $filelist{$_} <= $covmax){
+	    $s = " " x (55 - length);
+	    print "\t$_$s$filelist{$_}%\n";
+	}
     }   
     if($fc){
 	if($fcomp > 0){
