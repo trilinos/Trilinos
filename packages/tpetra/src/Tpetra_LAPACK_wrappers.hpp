@@ -190,8 +190,8 @@ void STREVC_F77(Tpetra_fcd, Tpetra_fcd, int* select, int* n, float* t, int* ldt,
 void STREXC_F77(Tpetra_fcd, int* n, float* t, int* ldt, float* q, int* ldq, int* ifst, int* ilst, float* work, int* info);
 float SLAMCH_F77(Tpetra_fcd);
 
-void SGEES_F77(Tpetra_fcd, Tpetra_fcd, int*, int*, float*, int*, int*, float*, float*, float*, float*, int*, float*, int*, int*, int*, int*);
-void DGEES_F77(Tpetra_fcd, Tpetra_fcd, int*, int*, double*, int*, int*, double*, double*, double*, double*, int*, double*, int*, int*, int*, int*);
+void SGEES_F77(Tpetra_fcd, Tpetra_fcd, int*, int*, float*, int*, int*, float*, float*, float*, int*, float*, int*, int*, int*);
+void DGEES_F77(Tpetra_fcd, Tpetra_fcd, int*, int*, double*, int*, int*, double*, double*, double*, int*, double*, int*, int*, int*);
 float SLAPY2_F77(float*, float*);
 double DLAPY2_F77(double*, double*);
 

@@ -438,7 +438,7 @@ namespace Tpetra
   template<typename OrdinalType>
   float LAPACK<OrdinalType, float>::LAMCH(char CMACH) const
   {
-    return(slamch_F77(CHAR_MACRO(CMACH)));
+    return(SLAMCH_F77(CHAR_MACRO(CMACH)));
   }
 
   template<typename OrdinalType>
