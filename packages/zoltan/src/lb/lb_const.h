@@ -261,6 +261,25 @@ struct LB_Struct {
 
 #define LB_PROC_NOT_IN_COMMUNICATOR(lb) ((lb)->Proc == -1) 
 
+/*
+ *  Debugging macro for Tflop architecture.
+ *  LB_HEAP_INFO(proc_number, string) prints information about the heap,
+ *  such as number of fragments, total free memory, largest free chunk 
+ *  of memory, and total used memory.  The processor number and provided
+ *  string are printed to help instrument the code.
+ *  On architectures other than Tflop, LB_HEAP_INFO compiles but has no effect.
+ */
+#ifdef TFLOP
+#define LB_HEAP_INFO(Proc,a) \
+ {int frag, tfree, lfree, tused; \
+  heap_info(&frag,&tfree,&lfree,&tused); \
+  printf("HI%d %s frags = %d  tot free = %d  lar free = %d  tot used = %d\n", \
+         Proc, a, frag, tfree, lfree, tused); \
+ }
+#else
+#define LB_HEAP_INFO(Proc,a) ;
+#endif
+
 /*****************************************************************************/
 /*****************************************************************************/
 /*****************************************************************************/
