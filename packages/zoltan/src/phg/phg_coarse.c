@@ -229,7 +229,8 @@ int Zoltan_PHG_Coarsening
   uprintf(hgc, "In Coarsening....\n");
 #endif
 
-  
+  ZOLTAN_TRACE_ENTER(zz, yo);
+
   Zoltan_HG_HGraph_Init (c_hg);   /* inits working copy of hypergraph info */
   c_hg->comm    = hg->comm;         /* set communicators */
   c_hg->info    = hg->info + 1;     /* for debugging */
@@ -456,7 +457,8 @@ int Zoltan_PHG_Coarsening
 
   /* UVC TODO to compute global hash; right now we'll use SUM (UVC TODO: try:bitwise xor);
      we need to check if this is good, if not we need to find a better way */
-  MPI_Allreduce(lhash, hash, c_hg->nEdge, MPI_INT, MPI_SUM, hgc->row_comm);
+  if (c_hg->nEdge)
+      MPI_Allreduce(lhash, hash, c_hg->nEdge, MPI_INT, MPI_SUM, hgc->row_comm);
 
   for (i=0; i < c_hg->nEdge; ++i)  /* decide where to send */
       listproc[i] = (int) (hash[i] % hgc->nProc_y);
@@ -497,7 +499,8 @@ int Zoltan_PHG_Coarsening
   Zoltan_Comm_Destroy (&plan);
 
   ZOLTAN_FREE(&hlsize);    hlsize=ip;
-  MPI_Allreduce(hlsize, hsize, size, MPI_INT, MPI_SUM, hgc->row_comm);
+  if (size) 
+      MPI_Allreduce(hlsize, hsize, size, MPI_INT, MPI_SUM, hgc->row_comm);
 #ifdef _DEBUG  
   uprintf(hgc, "Nets has been reshuffled....H(%d, %d, %d)  ElapT= %.3lf\n", c_hg->nVtx, size, idx, MPI_Wtime()-starttime);
 #endif
@@ -590,12 +593,14 @@ int Zoltan_PHG_Coarsening
   
 
   ip = (int *) lhash; 
-  MPI_Op_create(identicalOperator, 1, &idenOp);
-  if (size && !(idenOperandBuf = (int *) ZOLTAN_MALLOC(size * sizeof(int))))
-      MEMORY_ERROR;
-  MPI_Allreduce(iden, ip, size, MPI_INT, idenOp, hgc->row_comm);
-  MPI_Op_free(&idenOp);
-  ZOLTAN_FREE(&idenOperandBuf);
+  if (size) {
+      MPI_Op_create(identicalOperator, 1, &idenOp);
+      if (!(idenOperandBuf = (int *) ZOLTAN_MALLOC(size * sizeof(int))))
+          MEMORY_ERROR;
+      MPI_Allreduce(iden, ip, size, MPI_INT, idenOp, hgc->row_comm);
+      MPI_Op_free(&idenOp);
+      ZOLTAN_FREE(&idenOperandBuf);
+  }
 
 
 #ifdef _DEBUG2  
@@ -696,6 +701,7 @@ int Zoltan_PHG_Coarsening
 #ifdef _DEBUG  
   uprintf(hgc, "Terminating Coarsening ... ElapT=%.3lf\n", MPI_Wtime()-starttime);
 #endif
+  ZOLTAN_TRACE_EXIT(zz, yo);
   return ierr;
 }
 

@@ -491,15 +491,22 @@ static int pmatching_ipm(
   int i, j, k, n, m, round, pvisit, kstart, *r, *s;   /* loop counters */
   int lno, gno, count, old_kstart;                    /* temp variables */
   int nsend, sendsize, nrec, recsize, msgsize;        /* temp variables */
-  int nRounds, nCandidates, nTotal;                   /* almost constants */
-  int *send, *dest, *size, *rec, *index, *aux;        /* working buffers */
-  int nSend, nDest, nSize, nRec, nIndex, nAux;        /* buffer sizes in ints */
+  int nRounds;                   /* # of matching rounds to be performed; 
+                                    identical on all procs in 
+                                    hgc->Communicator.*/
+  int nCandidates;               /* # of candidates on this proc; identical
+                                    on all procs in hgc->col_comm. */
+  int nTotal;                    /* Total # of candidates; sum of nCandidates
+                                    across proc rows. */
+  int *send, *dest, *size, *rec, *index, *aux; /* working buffers */
+  int nSend, nDest, nSize, nRec, nIndex, nAux; /* currently allocated size of
+                                                  the above working buffers */
   float *sums, *f, bestsum;                           /* working buffer, float*/
   int *visit, *cmatch, *select, *permute, *edgebuf;   /* fixed usage arrays */
   int nEdgebuf, nPermute;                             /* array size in ints */
   PHGComm *hgc = hg->comm;
-  int err = ZOLTAN_OK, old_row, row, col, nPins, nVtx;
-  int mdata_size;
+  int err = ZOLTAN_OK, old_row, row, col;
+  int gmax_nPins, gmax_nVtx;     /* Global max # pins/proc and vtx/proc */
   int **rows = NULL; 
   int bestlno, vertex, nselect;
   char *yo = "pmatching_ipm";
@@ -517,24 +524,24 @@ static int pmatching_ipm(
   nRounds     = hgc->nProc_x * ROUNDS_CONSTANT;
   nCandidates = calc_nCandidates (hg->nVtx, hgc->nProc_x) ;
   
-  /* determine maximum global number of nVtx and nPins */
+  /* determine maximum global number of Vtx and Pins */
   /* determine sum of all candidates, nTotal*/
-  MPI_Allreduce (&hg->nPins, &nPins, 1, MPI_INT, MPI_MAX, hgc->row_comm);
-  nVtx = nTotal = 0;
+  MPI_Allreduce (&hg->nPins, &gmax_nPins, 1, MPI_INT, MPI_MAX,
+                 hgc->Communicator);
+  gmax_nVtx = nTotal = 0;
   for (i = 0; i < hgc->nProc_x; i++)  {
     count = hg->dist_x[i+1]-hg->dist_x[i];    /* number of vertices on proc i */
-    if (count > nVtx)
-       nVtx = count;
+    if (count > gmax_nVtx)
+       gmax_nVtx = count;
     nTotal += calc_nCandidates (count, hgc->nProc_x);
   }
-mdata_size = 3 * nTotal;
                  
   /* allocate working and fixed sized array storage */
   sums = NULL;
   send = dest = size = rec = index = aux = visit = cmatch = select = NULL;
   permute = edgebuf = NULL;
-  nPermute = nDest = nSize = nIndex = nAux = 1 + MAX(nTotal, nVtx);
-  nSend = nRec = nEdgebuf                  = HEADER_COUNT + MAX(nPins, nVtx+2);
+  nPermute = nDest = nSize = nIndex = nAux = 1 + MAX(nTotal, gmax_nVtx);
+  nSend = nRec = nEdgebuf = HEADER_COUNT + MAX(gmax_nPins, gmax_nVtx+2);
   
   if (hg->nVtx)  
     if (!(cmatch = (int*)   ZOLTAN_MALLOC (hg->nVtx * sizeof (int)))
@@ -599,7 +606,7 @@ mdata_size = 3 * nTotal;
                         
     /* fill send buff as list of <gno, gno's edge count, list of edge lno's> */
     /* NOTE: can't overfill send buffer by definition of initial sizing */
-    s = send ;
+    s = send;
     for (i = 0; i < nsend; i++)   {
       lno = select[i];
       *s++ = VTX_LNO_TO_GNO (hg, lno);                                 /* gno */
@@ -650,6 +657,7 @@ mdata_size = 3 * nTotal;
     }
 
     /* randomly permute vertices */
+    Zoltan_Srand_Sync(Zoltan_Rand(NULL), &(hgc->RNGState_col), hgc->col_comm);
     Zoltan_Rand_Perm_Int (permute, nTotal, &(hgc->RNGState_col));   
             
     /* for each candidate vertex, compute all local partial inner products */
@@ -731,19 +739,35 @@ mdata_size = 3 * nTotal;
           }          
         }
         else  {           /* psum message doesn't fit into buffer */
+          /* KDDKDD  THIS IS A TEMPORARY TEST -- BUT IT REMOVES ALL DOUBT
+           * KDDKDD  WHEN AND WHERE AN INFINITE LOOP IS HAPPENING.
+           * KDDKDD  REMOVE THIS TEST AND ERROR CONDITION ONCE BOB ADDS A
+           * KDDKDD  BUFFER REALLOC TO ACCOMMODATE AT LEAST ONE MSG. 
+           */
+          if (k == kstart) {
+            char msg[256];
+            sprintf(msg, "Send buffer is too small to hold even one message. "
+                         "An infinite loop will result, so we may as well quit."
+                         " k == kstart == %d;  nTotal == %d\n", k, nTotal);
+            ZOLTAN_PRINT_ERROR(zz->Proc, yo, msg);
+            err = ZOLTAN_FATAL;
+            goto fini;
+          }
           for (i = 0; i < count; i++)              
             sums[aux[i]] = 0.0;        
           break;
         }  
       }                  /* DONE: loop over k */          
            
+
       /* synchronize all rows in this column to next kstart value */
       old_kstart = kstart;      
       MPI_Allreduce (&k, &kstart, 1, MPI_INT, MPI_MIN, hgc->col_comm);
             
       /* Send inner product data in send buffer to appropriate rows */
       MPI_Allreduce (&nsend, &nrec, 1, MPI_INT, MPI_SUM, hgc->col_comm);
-recsize = 0;
+
+      recsize = 0;
       if (nrec)  {
         err = communication_by_plan (zz, nsend, dest, size, 1, send, &nrec, 
          &recsize, &nRec, &rec, hgc->col_comm, IPM_TAG);
@@ -937,7 +961,7 @@ recsize = 0;
         
     /* send match results only to impacted parties */
     MPI_Allreduce (&nsend, &nrec, 1, MPI_INT, MPI_SUM, hgc->row_comm);
-recsize = 0;
+    recsize = 0;
     if (nrec)  {    
       err = communication_by_plan (zz, nsend, dest, NULL, 2, send, &nrec,
        &recsize, &nRec, &rec, hgc->row_comm, IPM_TAG+10);
