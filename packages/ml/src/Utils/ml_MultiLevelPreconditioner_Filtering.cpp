@@ -201,7 +201,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetFiltering()
       for( int i=0 ; i<NumEigenvalues ; ++i ) {
 	cout << PrintMsg_ << "\t  z = " << std::setw(10) << RealEigenvalues[i]
 	     << " + i(" << std::setw(10) << ImagEigenvalues[i] << " ),  |z| = "
-	     << sqrt(pow(RealEigenvalues[i],2.0) + pow(ImagEigenvalues[i],2)) << endl;
+	     << sqrt(RealEigenvalues[i]*RealEigenvalues[i] + ImagEigenvalues[i]*ImagEigenvalues[i]) << endl;
       }
       cout << PrintMsg_ << "\t- Using " << NumRealEigenvectors << " real and "
 	   << NumImagEigenvectors << " imaginary eigenvector(s)" << endl;
