@@ -83,7 +83,8 @@ install_sh = @install_sh@
 noinst_PROGRAMS = $(EXAMPLE)
 
 example_SOURCES = $(srcdir)/Example.C \
-	$(srcdir)/DennisSchnabel.C $(srcdir)/DennisSchnabel.H \
+	$(srcdir)/FiniteElementProblem.C $(srcdir)/FiniteElementProblem.H \
+	$(srcdir)/Basis.C $(srcdir)/Basis.H \
 	$(srcdir)/Problem_Interface.C $(srcdir)/Problem_Interface.H
 
 
@@ -98,7 +99,7 @@ example_CXXFLAGS = $(TRILINOS_CXXFLAGS) \
 example_LDADD = -L$(top_builddir)/src -L$(top_builddir)/src-epetra \
                 -lnox -lnoxepetra 
 
-subdir = example/epetra_DS6.5.1
+subdir = example-epetra/1Dfem_nonlinear
 mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/NOX_Config.h
 CONFIG_CLEAN_FILES =
@@ -107,7 +108,7 @@ CONFIG_CLEAN_FILES =
 PROGRAMS = $(noinst_PROGRAMS)
 
 am_example_OBJECTS = example-Example.$(OBJEXT) \
-	example-DennisSchnabel.$(OBJEXT) \
+	example-FiniteElementProblem.$(OBJEXT) example-Basis.$(OBJEXT) \
 	example-Problem_Interface.$(OBJEXT)
 example_OBJECTS = $(am_example_OBJECTS)
 example_LDFLAGS =
@@ -118,8 +119,9 @@ CPPFLAGS = @CPPFLAGS@
 LDFLAGS = @LDFLAGS@
 LIBS = @LIBS@
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
-@AMDEP_TRUE@DEP_FILES = $(DEPDIR)/example-DennisSchnabel.Po \
+@AMDEP_TRUE@DEP_FILES = $(DEPDIR)/example-Basis.Po \
 @AMDEP_TRUE@	$(DEPDIR)/example-Example.Po \
+@AMDEP_TRUE@	$(DEPDIR)/example-FiniteElementProblem.Po \
 @AMDEP_TRUE@	$(DEPDIR)/example-Problem_Interface.Po
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
@@ -142,7 +144,7 @@ all: all-am
 .SUFFIXES: .C .o .obj
 $(srcdir)/Makefile.in:  Makefile.am  $(top_srcdir)/configure.ac $(ACLOCAL_M4)
 	cd $(top_srcdir) && \
-	  $(AUTOMAKE) --foreign  example/epetra_DS6.5.1/Makefile
+	  $(AUTOMAKE) --foreign  example-epetra/1Dfem_nonlinear/Makefile
 Makefile:  $(srcdir)/Makefile.in  $(top_builddir)/config.status
 	cd $(top_builddir) && \
 	  CONFIG_HEADERS= CONFIG_LINKS= \
@@ -151,7 +153,8 @@ Makefile:  $(srcdir)/Makefile.in  $(top_builddir)/config.status
 clean-noinstPROGRAMS:
 	-test -z "$(noinst_PROGRAMS)" || rm -f $(noinst_PROGRAMS)
 example-Example.$(OBJEXT): $(srcdir)/Example.C
-example-DennisSchnabel.$(OBJEXT): $(srcdir)/DennisSchnabel.C
+example-FiniteElementProblem.$(OBJEXT): $(srcdir)/FiniteElementProblem.C
+example-Basis.$(OBJEXT): $(srcdir)/Basis.C
 example-Problem_Interface.$(OBJEXT): $(srcdir)/Problem_Interface.C
 example$(EXEEXT): $(example_OBJECTS) $(example_DEPENDENCIES) 
 	@rm -f example$(EXEEXT)
@@ -163,8 +166,9 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/example-DennisSchnabel.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/example-Basis.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/example-Example.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/example-FiniteElementProblem.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/example-Problem_Interface.Po@am__quote@
 
 distclean-depend:
@@ -194,17 +198,29 @@ example-Example.obj: $(srcdir)/Example.C
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(example_CXXFLAGS) $(CXXFLAGS) -c -o example-Example.obj `cygpath -w $(srcdir)/Example.C`
 
-example-DennisSchnabel.o: $(srcdir)/DennisSchnabel.C
-@AMDEP_TRUE@	source='$(srcdir)/DennisSchnabel.C' object='example-DennisSchnabel.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/example-DennisSchnabel.Po' tmpdepfile='$(DEPDIR)/example-DennisSchnabel.TPo' @AMDEPBACKSLASH@
+example-FiniteElementProblem.o: $(srcdir)/FiniteElementProblem.C
+@AMDEP_TRUE@	source='$(srcdir)/FiniteElementProblem.C' object='example-FiniteElementProblem.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/example-FiniteElementProblem.Po' tmpdepfile='$(DEPDIR)/example-FiniteElementProblem.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(example_CXXFLAGS) $(CXXFLAGS) -c -o example-DennisSchnabel.o `test -f $(srcdir)/DennisSchnabel.C || echo '$(srcdir)/'`$(srcdir)/DennisSchnabel.C
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(example_CXXFLAGS) $(CXXFLAGS) -c -o example-FiniteElementProblem.o `test -f $(srcdir)/FiniteElementProblem.C || echo '$(srcdir)/'`$(srcdir)/FiniteElementProblem.C
 
-example-DennisSchnabel.obj: $(srcdir)/DennisSchnabel.C
-@AMDEP_TRUE@	source='$(srcdir)/DennisSchnabel.C' object='example-DennisSchnabel.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/example-DennisSchnabel.Po' tmpdepfile='$(DEPDIR)/example-DennisSchnabel.TPo' @AMDEPBACKSLASH@
+example-FiniteElementProblem.obj: $(srcdir)/FiniteElementProblem.C
+@AMDEP_TRUE@	source='$(srcdir)/FiniteElementProblem.C' object='example-FiniteElementProblem.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/example-FiniteElementProblem.Po' tmpdepfile='$(DEPDIR)/example-FiniteElementProblem.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(example_CXXFLAGS) $(CXXFLAGS) -c -o example-DennisSchnabel.obj `cygpath -w $(srcdir)/DennisSchnabel.C`
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(example_CXXFLAGS) $(CXXFLAGS) -c -o example-FiniteElementProblem.obj `cygpath -w $(srcdir)/FiniteElementProblem.C`
+
+example-Basis.o: $(srcdir)/Basis.C
+@AMDEP_TRUE@	source='$(srcdir)/Basis.C' object='example-Basis.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/example-Basis.Po' tmpdepfile='$(DEPDIR)/example-Basis.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(example_CXXFLAGS) $(CXXFLAGS) -c -o example-Basis.o `test -f $(srcdir)/Basis.C || echo '$(srcdir)/'`$(srcdir)/Basis.C
+
+example-Basis.obj: $(srcdir)/Basis.C
+@AMDEP_TRUE@	source='$(srcdir)/Basis.C' object='example-Basis.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/example-Basis.Po' tmpdepfile='$(DEPDIR)/example-Basis.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(example_CXXFLAGS) $(CXXFLAGS) -c -o example-Basis.obj `cygpath -w $(srcdir)/Basis.C`
 
 example-Problem_Interface.o: $(srcdir)/Problem_Interface.C
 @AMDEP_TRUE@	source='$(srcdir)/Problem_Interface.C' object='example-Problem_Interface.o' libtool=no @AMDEPBACKSLASH@

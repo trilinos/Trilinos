@@ -99,7 +99,7 @@ example_CXXFLAGS = $(TRILINOS_CXXFLAGS) \
 example_LDADD = -L$(top_builddir)/src -L$(top_builddir)/src-epetra \
                 -lnox -lnoxepetra 
 
-subdir = example/epetra_1Dfem_nonlinear
+subdir = example-epetra/1Dfem_LOCA
 mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/NOX_Config.h
 CONFIG_CLEAN_FILES =
@@ -144,7 +144,7 @@ all: all-am
 .SUFFIXES: .C .o .obj
 $(srcdir)/Makefile.in:  Makefile.am  $(top_srcdir)/configure.ac $(ACLOCAL_M4)
 	cd $(top_srcdir) && \
-	  $(AUTOMAKE) --foreign  example/epetra_1Dfem_nonlinear/Makefile
+	  $(AUTOMAKE) --foreign  example-epetra/1Dfem_LOCA/Makefile
 Makefile:  $(srcdir)/Makefile.in  $(top_builddir)/config.status
 	cd $(top_builddir) && \
 	  CONFIG_HEADERS= CONFIG_LINKS= \

@@ -4459,7 +4459,7 @@ fi
 # Output files
 # ------------------------------------------------------------------------
 
-ac_config_files="$ac_config_files Makefile src/Makefile src-epetra/Makefile example/Makefile example/epetra_DS6.5.1/Makefile example/epetra_1Dfem_linear/Makefile example/epetra_1Dfem_nonlinear/Makefile example/epetra_1Dfem_LOCA/Makefile"
+ac_config_files="$ac_config_files Makefile src/Makefile src-epetra/Makefile example-epetra/Makefile example-epetra/DS6.5.1/Makefile example-epetra/1Dfem_linear/Makefile example-epetra/1Dfem_nonlinear/Makefile example-epetra/1Dfem_LOCA/Makefile"
 
 
 cat >confcache <<\_ACEOF
@@ -4947,11 +4947,11 @@ do
   "Makefile" ) CONFIG_FILES="$CONFIG_FILES Makefile" ;;
   "src/Makefile" ) CONFIG_FILES="$CONFIG_FILES src/Makefile" ;;
   "src-epetra/Makefile" ) CONFIG_FILES="$CONFIG_FILES src-epetra/Makefile" ;;
-  "example/Makefile" ) CONFIG_FILES="$CONFIG_FILES example/Makefile" ;;
-  "example/epetra_DS6.5.1/Makefile" ) CONFIG_FILES="$CONFIG_FILES example/epetra_DS6.5.1/Makefile" ;;
-  "example/epetra_1Dfem_linear/Makefile" ) CONFIG_FILES="$CONFIG_FILES example/epetra_1Dfem_linear/Makefile" ;;
-  "example/epetra_1Dfem_nonlinear/Makefile" ) CONFIG_FILES="$CONFIG_FILES example/epetra_1Dfem_nonlinear/Makefile" ;;
-  "example/epetra_1Dfem_LOCA/Makefile" ) CONFIG_FILES="$CONFIG_FILES example/epetra_1Dfem_LOCA/Makefile" ;;
+  "example-epetra/Makefile" ) CONFIG_FILES="$CONFIG_FILES example-epetra/Makefile" ;;
+  "example-epetra/DS6.5.1/Makefile" ) CONFIG_FILES="$CONFIG_FILES example-epetra/DS6.5.1/Makefile" ;;
+  "example-epetra/1Dfem_linear/Makefile" ) CONFIG_FILES="$CONFIG_FILES example-epetra/1Dfem_linear/Makefile" ;;
+  "example-epetra/1Dfem_nonlinear/Makefile" ) CONFIG_FILES="$CONFIG_FILES example-epetra/1Dfem_nonlinear/Makefile" ;;
+  "example-epetra/1Dfem_LOCA/Makefile" ) CONFIG_FILES="$CONFIG_FILES example-epetra/1Dfem_LOCA/Makefile" ;;
   "default-1" ) CONFIG_COMMANDS="$CONFIG_COMMANDS default-1" ;;
   "src/NOX_Config.h" ) CONFIG_HEADERS="$CONFIG_HEADERS src/NOX_Config.h:src/NOX_Config.h.in" ;;
   *) { { echo "$as_me:$LINENO: error: invalid argument: $ac_config_target" >&5

@@ -78,10 +78,8 @@ am__include = @am__include@
 am__quote = @am__quote@
 install_sh = @install_sh@
 
-SUBDIRS = epetra_DS6.5.1 epetra_1Dfem_linear epetra_1Dfem_nonlinear \
-          epetra_1Dfem_LOCA
-
-subdir = example
+SUBDIRS = DS6.5.1 1Dfem_linear 1Dfem_nonlinear 1Dfem_LOCA
+subdir = example-epetra
 mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/NOX_Config.h
 CONFIG_CLEAN_FILES =
@@ -98,7 +96,7 @@ all: all-recursive
 .SUFFIXES:
 $(srcdir)/Makefile.in:  Makefile.am  $(top_srcdir)/configure.ac $(ACLOCAL_M4)
 	cd $(top_srcdir) && \
-	  $(AUTOMAKE) --foreign  example/Makefile
+	  $(AUTOMAKE) --foreign  example-epetra/Makefile
 Makefile:  $(srcdir)/Makefile.in  $(top_builddir)/config.status
 	cd $(top_builddir) && \
 	  CONFIG_HEADERS= CONFIG_LINKS= \

@@ -681,11 +681,11 @@ AC_CONFIG_FILES([
 		Makefile 
 		src/Makefile
 		src-epetra/Makefile 
-		example/Makefile 
-		example/epetra_DS6.5.1/Makefile
-		example/epetra_1Dfem_linear/Makefile
-		example/epetra_1Dfem_nonlinear/Makefile
-		example/epetra_1Dfem_LOCA/Makefile
+		example-epetra/Makefile 
+		example-epetra/DS6.5.1/Makefile
+		example-epetra/1Dfem_linear/Makefile
+		example-epetra/1Dfem_nonlinear/Makefile
+		example-epetra/1Dfem_LOCA/Makefile
 		])
 
 AC_OUTPUT()
