@@ -11645,7 +11645,7 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 # ------------------------------------------------------------------------
 ##
 #
-                                                                                                                                            ac_config_files="$ac_config_files Makefile amd/Makefile amd/src/Makefile amd/example/Makefile src/Makefile test/Makefile example/Makefile example/AmesosDscpack/Makefile example/AmesosFactory/Makefile example/AmesosSuperludist/Makefile test/scripts/Makefile test/scripts/daily/Makefile test/scripts/daily/mpi/Makefile test/scripts/daily/serial/Makefile"
+                                                                                                                                                      ac_config_files="$ac_config_files Makefile amd/Makefile amd/src/Makefile amd/example/Makefile src/Makefile test/Makefile test/TestOptions/Makefile example/Makefile example/AmesosDscpack/Makefile example/AmesosFactory/Makefile example/AmesosSuperludist/Makefile test/scripts/Makefile test/scripts/daily/Makefile test/scripts/daily/mpi/Makefile test/scripts/daily/serial/Makefile"
 
 
 cat >confcache <<\_ACEOF
@@ -12406,6 +12406,7 @@ do
   "amd/example/Makefile" ) CONFIG_FILES="$CONFIG_FILES amd/example/Makefile" ;;
   "src/Makefile" ) CONFIG_FILES="$CONFIG_FILES src/Makefile" ;;
   "test/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/Makefile" ;;
+  "test/TestOptions/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/TestOptions/Makefile" ;;
   "example/Makefile" ) CONFIG_FILES="$CONFIG_FILES example/Makefile" ;;
   "example/AmesosDscpack/Makefile" ) CONFIG_FILES="$CONFIG_FILES example/AmesosDscpack/Makefile" ;;
   "example/AmesosFactory/Makefile" ) CONFIG_FILES="$CONFIG_FILES example/AmesosFactory/Makefile" ;;

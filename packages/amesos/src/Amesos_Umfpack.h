@@ -35,15 +35,6 @@
 #endif
 #include "Epetra_CrsGraph.h"
 
-#if 0
-
-   This clearly does not belong here 
-
-extern "C" {
-#include "umfpack.h"
-}
-#endif
-
 //! Amesos_Umfpack:  An object-oriented wrapper for Umfpack.
 /*!  Amesos_Umfpack will solve a linear systems of equations: <TT>A X = B</TT>
    using Epetra objects and the Umfpack solver library, where
@@ -183,6 +174,14 @@ public:
   //! Returns a pointer to the Epetra_Comm communicator associated with this matrix.
   const Epetra_Comm & Comm() const {return(GetProblem()->GetOperator()->Comm());};
 
+  //! Returns an estimate of the reciprocal of the condition number 
+  /*  Rcond is an estimate of the reciprocal of the condition number of the 
+      matrix at the time of the most recent call to NumericFactorization()
+      Rcond = min(abs(diag))/max(abs(diag)) see Umfpack documentatoin
+      for details.  
+   */
+  double GetRcond() const {return(Rcond_);}; 
+
   //! Reads the parameter list and updates internal variables. 
   /*!
     ReadParameterList is called by SymbolicFactorization.  Hence, few codes 
@@ -263,7 +262,7 @@ public:
   vector <int> Ai;
   vector <double> Aval;
 
-  int iam;                 //  Process number (i.e. Comm().MyPID() 
+  int iam;                 //  Process number (i.e. Comm().MyPID() )
   
   int IsLocal_;            //  1 if Problem_->GetOperator() is stored entirely on process 0
                            //  Note:  Local Problems do not require redistribution of
@@ -278,9 +277,10 @@ public:
                                          //  IsLocal==0 - Points to SerialCrsMatrixA
                                      
 
-  bool UseTranspose_;      //  Set by 
+  bool UseTranspose_;      //  Set by SetUseTranspose
   const Epetra_LinearProblem * Problem_;
   const AMESOS::Parameter::List * ParameterList_ ; 
 
+  double Rcond_;  // Reciprocal condition number estimate 
 };  // End of  class Amesos_Umfpack  
 #endif /* _EPETRA_UMFPACK_H_ */

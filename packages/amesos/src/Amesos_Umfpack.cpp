@@ -49,6 +49,7 @@ extern "C" {
   //=============================================================================
   Amesos_Umfpack::Amesos_Umfpack(const Epetra_LinearProblem &prob, 
 				 const AMESOS::Parameter::List &ParameterList ) :  
+    Rcond_(0.0), 
     Symbolic(0),
     Numeric(0),
     SerialCrsMatrixA_(0), 
@@ -179,11 +180,18 @@ int Amesos_Umfpack::PerformSymbolicFactorization() {
 int Amesos_Umfpack::PerformNumericFactorization( ) {
 
   if ( iam == 0 ) {
-    double *Control = (double *) NULL, *Info = (double *) NULL ;
+    vector<double> Control(UMFPACK_CONTROL);
+    vector<double> Info(UMFPACK_INFO);
+    umfpack_di_defaults( &Control[0] ) ; 
     if (Numeric) umfpack_di_free_numeric (&Numeric) ;
-    int status = umfpack_di_numeric (&Ap[0], &Ai[0], 
-				 &Aval[0], Symbolic, 
-				 &Numeric, Control, Info) ;
+    int status = umfpack_di_numeric (&Ap[0], 
+				     &Ai[0], 
+				     &Aval[0], 
+				     Symbolic, 
+				     &Numeric, 
+				     &Control[0], 
+				     &Info[0]) ;
+    Rcond_ = Info[UMFPACK_RCOND]; 
     assert( status == 0 ) ; 
   }
   

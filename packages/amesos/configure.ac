@@ -889,6 +889,7 @@ AC_CONFIG_FILES([
 		amd/example/Makefile
 		src/Makefile
 		test/Makefile
+		test/TestOptions/Makefile
 		example/Makefile
 		example/AmesosDscpack/Makefile
 		example/AmesosFactory/Makefile

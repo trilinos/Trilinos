@@ -49,8 +49,6 @@ public:
   
   Amesos_Klu_Pimpl::~Amesos_Klu_Pimpl(void){
 
-    cout << "Here we are cleaning up Klu_Pimpl" << endl ; 
-
     if ( Symbolic_ ) klu_btf_free_symbolic (&Symbolic_) ;
     if ( Numeric_ ) klu_btf_free_numeric (&Numeric_) ;
   }
@@ -81,8 +79,6 @@ Amesos_Klu::~Amesos_Klu(void) {
   if ( SerialCrsMatrixA_ ) delete SerialCrsMatrixA_ ; 
   if ( TransposeMatrix_ ) delete TransposeMatrix_ ; 
   delete PrivateKluData_; 
-
-    cout << "Here we are cleaning up in the Amesos_Klu destructor" << endl ; 
 
 }
 //  See  pre and post conditions in Amesos_Klu.h
