@@ -233,6 +233,7 @@ double ML_DD_Hybrid_2(ML_1Level *curr, double *sol, double *rhs,
 #include "Epetra_SerialComm.h"
 #endif
 #include "Teuchos_ParameterList.hpp"
+
 #include "ml_amesos_wrap.h"
 #include "ml_ifpack_wrap.h"
 #include "ml_agg_METIS.h"
@@ -240,8 +241,24 @@ double ML_DD_Hybrid_2(ML_1Level *curr, double *sol, double *rhs,
 #include "ml_epetra_preconditioner.h"
 #include "ml_agg_ParMETIS.h"
 
+#include "ml_anasazi.h"
+
+// ================================================ ====== ==== ==== == =
+
+void Epetra_ML_Preconditioner::PrintLine() 
+{
+  cout << "--------------------------------------------------------------------------------" << endl;
+}
+
+// ================================================ ====== ==== ==== == =
+
 void Epetra_ML_Preconditioner::Destroy_ML_Preconditioner()
 {
+  
+  {
+    int NumDestroy = OutputList_.getParameter("number of destruction phases", 0);
+    OutputList_.setParameter("number of destruction phases", ++NumDestroy);
+  }
   
   if( agg_ != 0 ) {
     ML_Aggregate_Destroy(&agg_); agg_ = 0;
@@ -251,38 +268,173 @@ void Epetra_ML_Preconditioner::Destroy_ML_Preconditioner()
     ml_ = 0;
   }
 
+  if( LevelID_ != 0 ) delete [] LevelID_;
+  
   if( ML_Get_PrintLevel() > 5 && Comm().MyPID() == 0 && ML_Time_->NumApplications() ) {
-    cout << "--------------------------------------------------------------------------------" << endl;
-    cout << "Epetra_ML_Preconditioner : Total application time = " << ML_Time_->Application()
-	 << " (s)" << endl;
+
     double AvgTime = (ML_Time_->Application()-ML_Time_->FirstApplication())/ML_Time_->NumApplications();
-    cout << "Epetra_ML_Preconditioner : estimated startup time = " << ML_Time_->FirstApplication() - AvgTime << " (s)" << endl;
-    cout << "Epetra_ML_Preconditioner : each of " << ML_Time_->NumApplications()
+    
+    // stick data in OutputList
+
+    int i;
+    double t;
+    
+    t = OutputList_.getParameter("time for applications", 0.0) + ML_Time_->Application();
+    OutputList_.setParameter("application time", t);
+    
+    t = OutputList_.getParameter("time for startup", 0.0) + ML_Time_->FirstApplication()-AvgTime;
+    OutputList_.setParameter("startup time", t);
+
+    i = OutputList_.getParameter("number of applications", 0);
+    OutputList_.setParameter("number of applications", (i+ML_Time_->NumApplications()));
+
+    // print on screen
+    
+    PrintLine();
+    cout << PrintMsg_ << "Total application time = " << ML_Time_->Application()
+	 << " (s)" << endl;
+    cout << PrintMsg_ << "Estimated startup time = " << ML_Time_->FirstApplication() - AvgTime << " (s)" << endl;
+    cout << PrintMsg_ << "Each of " << ML_Time_->NumApplications()
 	 << " applications took  " << AvgTime << " (s)" << endl;
-    cout << "--------------------------------------------------------------------------------" << endl;
+    PrintLine();
   }
 
+  if( NullSpaceToFree_ != 0 ) delete NullSpaceToFree_;
+  
+  delete ML_Time_;
+  
   IsComputePreconditionerOK_ = false;
 
 }
+
+// ================================================ ====== ==== ==== == =
+
+Epetra_ML_Preconditioner::Epetra_ML_Preconditioner(const Epetra_RowMatrix & RowMatrix,
+						   char ProblemType[],
+						   bool ComputePrec ) :
+  RowMatrix_(&RowMatrix),
+  Comm_(RowMatrix.Comm()),
+  DomainMap_(RowMatrix.OperatorDomainMap()),
+  RangeMap_(RowMatrix.OperatorRangeMap())
+{
+
+  sprintf(Prefix_,"");
+  
+  ParameterList NewList;
+  List_ = NewList;
+  SetDefaults(List_,ProblemType);
+  
+  Initialize(ComputePrec);
+}
+
+// ================================================ ====== ==== ==== == =
+
+Epetra_ML_Preconditioner::Epetra_ML_Preconditioner(const Epetra_RowMatrix & RowMatrix,
+						   char ProblemType[],
+						   bool ComputePrec, char Prefix[] ) :
+  RowMatrix_(&RowMatrix),
+  Comm_(RowMatrix.Comm()),
+  DomainMap_(RowMatrix.OperatorDomainMap()),
+  RangeMap_(RowMatrix.OperatorRangeMap())
+{
+
+  sprintf(Prefix_,"%s",Prefix);
+  
+  ParameterList NewList;
+  List_ = NewList;
+  SetDefaults(List_,ProblemType);
+  
+  Initialize(ComputePrec);
+}
+
+// ================================================ ====== ==== ==== == =
+
+Epetra_ML_Preconditioner::Epetra_ML_Preconditioner(const Epetra_RowMatrix & RowMatrix,
+						   bool ComputePrec ) :
+  RowMatrix_(&RowMatrix),
+  Comm_(RowMatrix.Comm()),
+  DomainMap_(RowMatrix.OperatorDomainMap()),
+  RangeMap_(RowMatrix.OperatorRangeMap())
+{
+
+  sprintf(Prefix_,"");
+  
+  ParameterList NewList;
+  List_ = NewList;
+  SetDefaults(List_,"DD");
+    
+  Initialize(ComputePrec);
+}
+
+// ================================================ ====== ==== ==== == =
 
 Epetra_ML_Preconditioner::Epetra_ML_Preconditioner( const Epetra_RowMatrix & RowMatrix,
 						    ParameterList & List, bool ComputePrec ) :
   RowMatrix_(&RowMatrix),
   Comm_(RowMatrix.Comm()),
   DomainMap_(RowMatrix.OperatorDomainMap()),
-  RangeMap_(RowMatrix.OperatorRangeMap()),
-  List_(List),
-  MaxLevels_(20),
-  IsComputePreconditionerOK_(false),
-  ML_Time_(0)
+  RangeMap_(RowMatrix.OperatorRangeMap())
 {
-  if( ComputePrec == true ) ComputePreconditioner();
+  sprintf(Prefix_,"");
+
+  List_ = List;
+  
+  Initialize(ComputePrec);
 }
+
+// ================================================ ====== ==== ==== == =
+
+Epetra_ML_Preconditioner::Epetra_ML_Preconditioner( const Epetra_RowMatrix & RowMatrix,
+						    ParameterList & List, bool ComputePrec,
+						    char Prefix[] ) :
+  RowMatrix_(&RowMatrix),
+  Comm_(RowMatrix.Comm()),
+  DomainMap_(RowMatrix.OperatorDomainMap()),
+  RangeMap_(RowMatrix.OperatorRangeMap())
+{
+  sprintf(Prefix_,"%s",Prefix);
+
+  List_ = List;
+
+  Initialize(ComputePrec);
+}
+
+// ================================================ ====== ==== ==== == =
+
+void Epetra_ML_Preconditioner::Initialize(bool ComputePrec)
+{
+  MaxLevels_ = 20;
+  IsComputePreconditionerOK_ = false;
+  ML_Time_ = 0;
+
+  NullSpaceToFree_ = 0;
+  
+  LevelID_ = new int[MaxLevels_];
+  
+  sprintf(ErrorMsg_,"ERROR (ML_Prec) : ");
+  PrintMsg_ = "ML_Prec : ";
+  if( ComputePrec == true ) ComputePreconditioner();
+
+  AZ_defaults(SmootherOptions_,SmootherParams_);
+  SmootherOptions_[AZ_precond] = AZ_dom_decomp;
+  SmootherOptions_[AZ_subdomain_solve] = AZ_ilut;
+
+  int NumInitializations = OutputList_.getParameter("number of initialization phases", 0);
+  OutputList_.setParameter("number of initialization phases", ++NumInitializations);
+}
+
+// ================================================ ====== ==== ==== == =
 
 int Epetra_ML_Preconditioner::ComputePreconditioner()
 {
-
+  
+  {
+    int NumCompute = OutputList_.getParameter("number of construction phases", 0);
+    OutputList_.setParameter("number of construction phases", ++NumCompute);
+  }
+  
+  char parameter[80];
+  
   // get rid of what done before 
   
   if( IsComputePreconditionerOK_ == true ) {
@@ -294,30 +446,66 @@ int Epetra_ML_Preconditioner::ComputePreconditioner()
   if( ML_Time_ ) delete ML_Time_;
   ML_Time_ = new Epetra_ML_Time();
 
-  
   Label_ = new char[80];
   
-  AZ_defaults(SmootherOptions_,SmootherParams_);
-  SmootherOptions_[AZ_precond] = AZ_dom_decomp;
-  SmootherOptions_[AZ_subdomain_solve] = AZ_ilut;
-
 #ifdef HAVE_MPI
   const Epetra_MpiComm * MpiComm = dynamic_cast<const Epetra_MpiComm*>(&Comm_);
   AZ_set_proc_config(ProcConfig_,MpiComm->Comm());
 #else
   AZ_set_proc_config(ProcConfig_,AZ_NOT_MPI);
 #endif
-  
-  NumLevels_ = List_.getParameter("max levels",10);  
 
-  int OutputLevel = List_.getParameter("output", 10);  
+  sprintf(parameter,"%smax levels", Prefix_);
+  NumLevels_ = List_.getParameter(parameter,10);  
+
+  sprintf(parameter,"%soutput", Prefix_);
+  int OutputLevel = List_.getParameter(parameter, 10);  
   ML_Set_PrintLevel(OutputLevel);
 
   bool verbose = ( 5 < ML_Get_PrintLevel() && ProcConfig_[AZ_node] == 0);
 
-  if( verbose )  cout << "--------------------------------------------------------------------------------" << endl;
+  if( verbose ) PrintLine();
+
+  // user's defined output message
+  sprintf(parameter,"%soutput prefix", Prefix_);
+  PrintMsg_ = List_.getParameter(parameter,PrintMsg_);
+
+  // compute how to traverse levels (increasing of descreasing)
+  // By default, use ML_INCREASING.
   
-  ML_Create(&ml_,NumLevels_);
+  sprintf(parameter,"%sincreasing or decreasing", Prefix_);
+  string IsIncreasing = List_.getParameter(parameter,"increasing");
+
+  int FinestLevel;
+  
+  if( IsIncreasing == "increasing" ) {
+    FinestLevel = 0;
+    for( int i=0 ; i<NumLevels_ ; ++i ) LevelID_[i] = FinestLevel+i;
+  } else {
+    FinestLevel = NumLevels_-1;
+    for( int i=0 ; i<NumLevels_ ; ++i ) LevelID_[i] = FinestLevel-i;
+  }
+  
+  // check no levels are negative
+  for( int i=0 ; i<NumLevels_ ; ++i )
+    if( LevelID_[i] <0 ) {
+      cerr << ErrorMsg_ << "Level " << i << " has a negative ID" << endl;
+      exit( EXIT_FAILURE );
+    }  
+
+  if( verbose ) {
+    cout << PrintMsg_ << "Maximum number of levels = " << NumLevels_ << endl;
+    if( IsIncreasing == "increasing" ) cout << PrintMsg_ << "Using increasing levels. ";
+    else                               cout << PrintMsg_ << "Using decreasing levels. ";
+    cout << "Finest level  = " << LevelID_[0];
+    cout << ", coarsest level = " << LevelID_[NumLevels_-1] << endl;
+  }
+
+
+  int MaxCreationLevels = NumLevels_;
+  if( IsIncreasing == "decreasing" )  MaxCreationLevels = FinestLevel+1;
+
+  ML_Create(&ml_,MaxCreationLevels);
 
   int NumMyRows, osize;
 
@@ -326,11 +514,11 @@ int Epetra_ML_Preconditioner::ComputePreconditioner()
 
   if (N_ghost < 0) N_ghost = 0;  // A->NumMyCols() = 0 for an empty matrix
 
-  ML_Init_Amatrix(ml_,0,NumMyRows, NumMyRows, (void *) RowMatrix_);
-  ML_Set_Amatrix_Getrow(ml_, 0, Epetra_ML_getrow,
+  ML_Init_Amatrix(ml_,LevelID_[0],NumMyRows, NumMyRows, (void *) RowMatrix_);
+  ML_Set_Amatrix_Getrow(ml_, LevelID_[0], Epetra_ML_getrow,
 			Epetra_ML_comm_wrapper, NumMyRows+N_ghost);
 
-  ML_Set_Amatrix_Matvec(ml_, 0, Epetra_ML_matvec);
+  ML_Set_Amatrix_Matvec(ml_, LevelID_[0], Epetra_ML_matvec);
 
   ML_Aggregate_Create(&agg_);
   
@@ -341,8 +529,10 @@ int Epetra_ML_Preconditioner::ComputePreconditioner()
   int NumPDEEqns;
   
   const Epetra_VbrMatrix * VbrMatrix = dynamic_cast<const Epetra_VbrMatrix *>(RowMatrix_);
-  if( VbrMatrix == 0 ) 
-    NumPDEEqns = List_.getParameter("PDE equations", 1);
+  if( VbrMatrix == 0 ) {
+    sprintf(parameter,"%sPDE equations", Prefix_);
+    NumPDEEqns = List_.getParameter(parameter, 1);
+  }
   else {
     int NumBlockRows = VbrMatrix->RowMap().NumGlobalElements();
     int NumRows = VbrMatrix->RowMap().NumGlobalPoints();
@@ -353,21 +543,48 @@ int Epetra_ML_Preconditioner::ComputePreconditioner()
     }
     NumPDEEqns = NumRows/NumBlockRows;
   }
+
+  int NullSpaceDim = NumPDEEqns;
+  double * NullSpacePtr = NULL;
   
-  ML_Aggregate_Set_NullSpace(agg_,NumPDEEqns,NumPDEEqns,NULL,NumMyRows);
+  sprintf(parameter,"%snull space dimension", Prefix_);
+  NullSpaceDim = List_.getParameter(parameter, NumPDEEqns);
+  sprintf(parameter,"%snull space vectors", Prefix_);
+  NullSpacePtr = List_.getParameter(parameter, NullSpacePtr);
+
+  sprintf(parameter,"%scompute null space", Prefix_);
+  bool ComputeNullSpace = List_.getParameter(parameter, false);
+  
+  if( ComputeNullSpace == true ) {
+    
+    if( NullSpacePtr != NULL && Comm_.MyPID() == 0 ) {
+      cerr << ErrorMsg_ << "Null space vectors is not NULL!" << endl
+	   << ErrorMsg_ << "Now reallocating memory and computing null space " << endl
+	   << ErrorMsg_ << "using eigenvectors estimates, for " << NullSpaceDim << " vectors..." << endl;
+    }
+
+    sprintf(parameter,"%sanasazi", Prefix_);
+    ParameterList & AnasaziList = List_.sublist(parameter);
+    ML_Anasazi_Interface(RowMatrix_,NullSpaceDim,NullSpacePtr,AnasaziList);
+    NullSpaceToFree_ = NullSpacePtr; // this null space will be freed later
+    
+  }
+  
+  ML_Aggregate_Set_NullSpace(agg_,NumPDEEqns,NullSpaceDim,NullSpacePtr,NumMyRows);
 
   /* ********************************************************************** */
   /* pick up coarsening strategy. METIS and ParMETIS requires additional    */
   /* lines, as we have to set the number of aggregates                      */
   /* ********************************************************************** */
 
-  char parameter[80];
   int value = -777;
+  sprintf(parameter,"%saggregation: type",Prefix_);
+  string CoarsenScheme = List_.getParameter(parameter,"METIS");
   
   for( int level=0 ; level<NumLevels_-1 ; ++level ) {  
 
-    sprintf(parameter,"aggregation: type (level %d)",level);
-    string CoarsenScheme = List_.getParameter(parameter,"METIS");
+    sprintf(parameter,"%saggregation: type (level %d)",Prefix_,LevelID_[level]);
+    CoarsenScheme = List_.getParameter(parameter,CoarsenScheme);
 
     if( CoarsenScheme == "METIS" )
       ML_Aggregate_Set_CoarsenSchemeLevel_METIS(level,NumLevels_,agg_);
@@ -381,50 +598,90 @@ int Epetra_ML_Preconditioner::ComputePreconditioner()
       ML_Aggregate_Set_CoarsenSchemeLevel_Coupled(level,NumLevels_,agg_);
     else {
       if( Comm_.MyPID() == 0 ) {
-	cout << "ML_Preconditioner:ERROR: specified options ("
-	     << CoarsenScheme << ") not valid." << endl;
-	cout <<"ML_Preconditioner:ERROR: Using METIS instead" << endl;
+	cout << ErrorMsg_ << "specified options ("
+	     << CoarsenScheme << ") not valid. Should be:" << endl;
+	cout << ErrorMsg_ << "<METIS> <ParMETIS> <MIS> <Uncoupled> <Coupled>" << endl;
       }
-      ML_Aggregate_Set_CoarsenSchemeLevel_METIS(level,NumLevels_,agg_);
+      ML_Aggregate_Set_CoarsenSchemeLevel_METIS(LevelID_[level],NumLevels_,agg_);
     } 
 
-    bool isSet = false;
+    if( CoarsenScheme == "METIS" || CoarsenScheme == "ParMETIS" ) {
+      
+      bool isSet = false;
+
+      // first look for parameters without any level specification
+      
+      sprintf(parameter,"%saggregation: global aggregates", Prefix_);
+      if( List_.isParameter(parameter) ){
+	value = -777; // simply means not set
+	value = List_.getParameter(parameter,value);
+	if( value != -777 ) {
+	  ML_Aggregate_Set_GlobalNumber(ml_,agg_,LevelID_[level],value );
+	  isSet = true;
+	}
+      }
+      
+      sprintf(parameter,"%saggregation: local aggregates", Prefix_);
+      if( List_.isParameter(parameter) ){
+	value = -777;
+	value = List_.getParameter(parameter,value);
+	if( value != -777 ) {
+	  ML_Aggregate_Set_LocalNumber(ml_,agg_,LevelID_[level],value );
+	  isSet = true;
+	}
+      }
+      
+      sprintf(parameter,"%saggregation: nodes per aggregate", Prefix_);
+      if( List_.isParameter(parameter) ){
+	value = -777;
+	value = List_.getParameter(parameter,value);
+	if( value != -777 ) {
+	  ML_Aggregate_Set_NodesPerAggr(ml_,agg_,LevelID_[level],value );
+	  isSet = true;
+	}
+      }
+
+      // now for level-specific data
+
+      sprintf(parameter,"%saggregation: global aggregates (level %d)", Prefix_, LevelID_[level]);
+      if( List_.isParameter(parameter) ){
+	value = -777; // simply means not set
+	value = List_.getParameter(parameter,value);
+	if( value != -777 ) {
+	  ML_Aggregate_Set_GlobalNumber(ml_,agg_,LevelID_[level],value );
+	  isSet = true;
+	}
+      }
+      
+      sprintf(parameter,"%saggregation: local aggregates (level %d)", Prefix_, LevelID_[level]);
+      if( List_.isParameter(parameter) ){
+	value = -777;
+	value = List_.getParameter(parameter,value);
+	if( value != -777 ) {
+	  ML_Aggregate_Set_LocalNumber(ml_,agg_,LevelID_[level],value );
+	  isSet = true;
+	}
+      }
+      
+      sprintf(parameter,"%saggregation: nodes per aggregate (level %d)", Prefix_, LevelID_[level]);
+      if( List_.isParameter(parameter) ){
+	value = -777;
+	value = List_.getParameter(parameter,value);
+	if( value != -777 ) {
+	  ML_Aggregate_Set_NodesPerAggr(ml_,agg_,LevelID_[level],value );
+	  isSet = true;
+	}
+      }
+      
+      if( isSet == false ) {
+	// put default values
+	sprintf(parameter,"%saggregation: local aggregates (level %d)", Prefix_, LevelID_[level]);
+	value = List_.getParameter(parameter,1);
+	ML_Aggregate_Set_LocalNumber(ml_,agg_,LevelID_[level],value);
+      }
+      
+    } // if( CoarsenScheme == "METIS" || CoarsenScheme == "ParMETIS" )
     
-    sprintf(parameter,"aggregation: global aggregates (level %d)", level);
-    if( List_.isParameter(parameter) == true ) {
-      value = -777;
-      value = List_.getParameter(parameter,value);
-      if( value != -777 ) {
-	ML_Aggregate_Set_GlobalNumber(ml_,agg_,level,value );
-	isSet = true;
-      }
-    }
-
-    sprintf(parameter,"aggregation: local aggregates (level %d)", level);
-    if( List_.isParameter(parameter) == true ) {
-      value = -777;
-      value = List_.getParameter(parameter,value);
-      if( value != -777 ) {
-	ML_Aggregate_Set_LocalNumber(ml_,agg_,level,value );
-	isSet = true;
-      }
-    }
-
-    sprintf(parameter,"aggregation: nodes per aggregate (level %d)", level);
-    if( List_.isParameter(parameter) == true ) {
-      value = -777;
-      value = List_.getParameter(parameter,value);
-      if( value != -777 ) {
-	ML_Aggregate_Set_NodesPerAggr(ml_,agg_,level,value );
-	isSet = true;
-      }
-    }
-
-    if( isSet == false ) {
-      // put some default value
-      ML_Aggregate_Set_LocalNumber(ml_,agg_,level,1);
-    }
-
   } /* for */
 
   /* ********************************************************************** */
@@ -432,116 +689,147 @@ int Epetra_ML_Preconditioner::ComputePreconditioner()
   /* ********************************************************************** */
 
   double DampingFactor = 0.01;
-  if( List_.isParameter("aggregation: damping factor") == true ) 
-    DampingFactor = List_.getParameter("aggregation: damping factor", DampingFactor);
+  sprintf(parameter,"%saggregation: damping factor", Prefix_);
+  DampingFactor = List_.getParameter(parameter, DampingFactor);
   ML_Aggregate_Set_DampingFactor( agg_, DampingFactor ); 
   
   int MaxCoarseSize = 512;
-  if( List_.isParameter("coarse: max size") == true ) 
-    MaxCoarseSize = List_.getParameter("coarse: max size", MaxCoarseSize);
+  sprintf(parameter,"%scoarse: max size", Prefix_);
+  MaxCoarseSize = List_.getParameter(parameter, MaxCoarseSize);
   ML_Aggregate_Set_MaxCoarseSize(agg_, MaxCoarseSize );
 
   double Threshold = 0.0;
-  if( List_.isParameter("aggregation: threshold") == true ) 
-    Threshold = List_.getParameter("aggregation: threshold", Threshold);
+  sprintf(parameter,"%saggregation: threshold", Prefix_);
+  Threshold = List_.getParameter(parameter, Threshold);
   ML_Aggregate_Set_Threshold(agg_,Threshold);
   
   int ReqAggrePerProc = 128;
-  if( List_.isParameter("aggregation: req aggregates per process") == true)
-    ReqAggrePerProc = List_.getParameter("aggregation: req aggregates per process", ReqAggrePerProc);
+  // compatibility with an older version
+  sprintf(parameter,"%saggregation: req aggregates per process", Prefix_);
+  if( List_.isParameter(parameter) ) 
+    ReqAggrePerProc = List_.getParameter(parameter, ReqAggrePerProc);
+  else {
+    sprintf(parameter,"%saggregation: next-level aggregates per process", Prefix_);
+    ReqAggrePerProc = List_.getParameter(parameter, ReqAggrePerProc);
+  }
   ML_Aggregate_Set_ReqLocalCoarseSize( ml_, agg_, -1, ReqAggrePerProc);
 
   if( verbose ) {
-    cout << "aggregation damping factor = " << DampingFactor << endl;
-    cout << "aggregation threshold =" << Threshold << endl;
-    cout << "max coarse size = " << MaxCoarseSize << endl;
-    cout << "req aggregates per process ParMETIS) " << ReqAggrePerProc << endl;
+    cout << PrintMsg_ << "Aggregation damping factor = " << DampingFactor << endl;
+    cout << PrintMsg_ << "Aggregation threshold =" << Threshold << endl;
+    cout << PrintMsg_ << "Max coarse size = " << MaxCoarseSize << endl;
+    cout << PrintMsg_ << "Requested next-level aggregates per process (ParMETIS) = " << ReqAggrePerProc << endl << endl;
   }
 
   /************************************************************************/
   /* Build hierarchy using smoothed aggregation.                          */
-  /* NOTE: the first level is 0. This means that I have Nevels, the last  */
-  /* one begin Nlevels-1. This also means that I have Nlevels-2 smoothers */
-  /* plus the "smoother" on the coarse grid (handled independentely).     */
+  /* Then, retrive parameters for each level. Default values are given by */
+  /* entries in parameter list without (level %d)                         */
   /*----------------------------------------------------------------------*/
 
-  NumLevels_ = ML_Gen_MGHierarchy_UsingAggregation(ml_, 0, ML_INCREASING, agg_);
+  if( IsIncreasing == "increasing" ) 
+    NumLevels_ = ML_Gen_MGHierarchy_UsingAggregation(ml_, LevelID_[0], ML_INCREASING, agg_);
+  else
+    NumLevels_ = ML_Gen_MGHierarchy_UsingAggregation(ml_, LevelID_[0], ML_DECREASING, agg_);
+  
+  if( verbose ) cout << PrintMsg_ << "Number of actual levels : " << NumLevels_ << endl;
 
-  if( verbose ) cout << "number of actual level: " << NumLevels_ << endl;
+  sprintf(parameter,"%ssmoother: sweeps", Prefix_);
+  int num_smoother_steps = List_.getParameter(parameter, 1);
 
-  int num_smoother_steps = 1;
-  double omega = 1.0;
+  sprintf(parameter,"%ssmoother: damping factor", Prefix_);
+  double omega = List_.getParameter(parameter,1.0);
+
+  sprintf(parameter,"%ssmoother: pre or post", Prefix_);
   int pre_or_post;
-  int * SmootherOptionsPtr =  NULL;
-  double * SmootherParamsPtr  = NULL;
-  string PreOrPostSmoother = "post";
-  string Smoother = "Jacobi";
-  bool AztecSmootherAsASolver = false;
+  string PreOrPostSmoother = List_.getParameter(parameter,"post");
+
+  sprintf(parameter,"%ssmoother: type", Prefix_);
+  string Smoother = List_.getParameter(parameter,"Jacobi");
+
+  sprintf(parameter,"%ssmoother: aztec options", Prefix_);
+  int * SmootherOptionsPtr = NULL;
+  SmootherOptionsPtr = List_.getParameter(parameter,SmootherOptionsPtr);
+
+  sprintf(parameter,"%ssmoother: aztec params", Prefix_);
+  double * SmootherParamsPtr = NULL;
+  SmootherParamsPtr = List_.getParameter(parameter,SmootherParamsPtr);
+
+  sprintf(parameter,"%ssmoother: aztec as solver", Prefix_);
+  bool AztecSmootherAsASolver = List_.getParameter(parameter,false);
   int aztec_its;
-  int MLSPolynomialOrder = 3;
-  double MLSalpha = 30.0;
+
+  sprintf(parameter,"%ssmoother: MLS polynomial order", Prefix_);
+  int MLSPolynomialOrder = List_.getParameter(parameter,3);
+
+  sprintf(parameter,"%ssmoother: MLS alpha",Prefix_);
+  double MLSalpha = List_.getParameter(parameter,30.0);;
+
+  /* ********************************************************************** */
+  /* Now cycling over all levels                                            */
+  /* ********************************************************************** */
 
   int SmootherLevels = (NumLevels_>1)?(NumLevels_-1):1;
   
   for( int level=0 ; level<SmootherLevels ; ++level ) {
 
-    sprintf(parameter,"smoother: sweeps (level %d)",level );
-    if( List_.isParameter(parameter) ) num_smoother_steps = List_.getParameter(parameter,num_smoother_steps);
+    sprintf(parameter,"%ssmoother: sweeps (level %d)", Prefix_, LevelID_[level] );
+    num_smoother_steps = List_.getParameter(parameter,num_smoother_steps);
 
-    sprintf(parameter,"smoother: damping factor (level %d)",level );
-    if( List_.isParameter(parameter) ) omega = List_.getParameter(parameter,omega);
+    sprintf(parameter,"%ssmoother: damping factor (level %d)", Prefix_, LevelID_[level] );
+    omega = List_.getParameter(parameter,omega);
 
-    sprintf(parameter,"smoother: pre or post (level %d)",level );
-    if( List_.isParameter(parameter) ) PreOrPostSmoother = List_.getParameter(parameter, PreOrPostSmoother);
+    sprintf(parameter,"%ssmoother: pre or post (level %d)", Prefix_, LevelID_[level] );
+    PreOrPostSmoother = List_.getParameter(parameter, PreOrPostSmoother);
     
     if( PreOrPostSmoother == "post" ) pre_or_post = ML_POSTSMOOTHER;
     else if( PreOrPostSmoother == "pre" ) pre_or_post = ML_PRESMOOTHER;
     else if( PreOrPostSmoother == "both" ) pre_or_post = ML_BOTH;
     else 
-      cerr << "ML_Preconditioner:ERROR: smoother not recognized (" << PreOrPostSmoother << ")\n";
+      cerr << ErrorMsg_ << "smoother not recognized (" << PreOrPostSmoother << ")\n";
     
-    sprintf(parameter,"smoother: type (level %d)", level);
-    if( List_.isParameter(parameter) ) Smoother = List_.getParameter(parameter,Smoother);
+    sprintf(parameter,"%ssmoother: type (level %d)", Prefix_, LevelID_[level]);
+    Smoother = List_.getParameter(parameter,Smoother);
     
     if( Smoother == "Jacobi" ) {
-      if( verbose ) cout << "Smoother (level " << level << ") : Jacobi (sweeps="
+      if( verbose ) cout << PrintMsg_ << "Smoother (level " << LevelID_[level] << ") : Jacobi (sweeps="
 			 << num_smoother_steps << ",omega=" << omega << ","
 			 << PreOrPostSmoother << ")" << endl;
-      ML_Gen_Smoother_Jacobi(ml_, level, pre_or_post,
+      ML_Gen_Smoother_Jacobi(ml_, LevelID_[level], pre_or_post,
 			     num_smoother_steps, omega);
     } else if( Smoother == "Gauss-Seidel" ) {
-      if( verbose ) cout << "Smoother (level " << level << ") : Gauss-Seidel (sweeps="
+      if( verbose ) cout << PrintMsg_ << "Smoother (level " << LevelID_[level] << ") : Gauss-Seidel (sweeps="
 			 << num_smoother_steps << ",omega=" << omega << ","
 			 << PreOrPostSmoother << ")" << endl;
-      ML_Gen_Smoother_GaussSeidel(ml_, level, pre_or_post,
+      ML_Gen_Smoother_GaussSeidel(ml_, LevelID_[level], pre_or_post,
 				  num_smoother_steps, omega);
     } else if( Smoother == "symmetric Gauss-Seidel" ) {
-      if( verbose ) cout << "Smoother (level " << level << ") : symmetric Gauss-Seidel (sweeps="
+      if( verbose ) cout << PrintMsg_ << "Smoother (level " << LevelID_[level] << ") : symmetric Gauss-Seidel (sweeps="
 			 << num_smoother_steps << ",omega=" << omega << ","
 			 << PreOrPostSmoother << ")" << endl;
-      ML_Gen_Smoother_SymGaussSeidel(ml_, level, pre_or_post,
+      ML_Gen_Smoother_SymGaussSeidel(ml_, LevelID_[level], pre_or_post,
 				     num_smoother_steps, omega);
     } else if( Smoother == "block Gauss-Seidel" ) {
-      if( verbose ) cout << "Smoother (level " << level << ") : block Gauss-Seidel (sweeps="
+      if( verbose ) cout << PrintMsg_ << "Smoother (level " << LevelID_[level] << ") : block Gauss-Seidel (sweeps="
 			 << num_smoother_steps << ",omega=" << omega << ","
 			 << PreOrPostSmoother << ")" << endl;
-      ML_Gen_Smoother_BlockGaussSeidel(ml_, level, pre_or_post,
+      ML_Gen_Smoother_BlockGaussSeidel(ml_, LevelID_[level], pre_or_post,
 				       num_smoother_steps, omega, NumPDEEqns);
     } else if( Smoother == "MLS" ) {
-      sprintf(parameter,"smoother: MLS polynomial order (level %d)", level);
-      if( verbose ) cout << "Smoother (level " << level << ") : MLS,"
+      sprintf(parameter,"smoother: MLS polynomial order (level %d)", LevelID_[level]);
+      if( verbose ) cout << PrintMsg_ << "Smoother (level " << LevelID_[level] << ") : MLS,"
 			 << PreOrPostSmoother << endl;
       
-      ML_Gen_Smoother_MLS(ml_, level, pre_or_post, 30.,
+      ML_Gen_Smoother_MLS(ml_, LevelID_[level], pre_or_post, 30.,
 			  num_smoother_steps);
     } else if( Smoother == "aztec" ) {
       
-      sprintf(parameter,"smoother: aztec options (level %d)", level);
-      if( List_.isParameter(parameter) ) SmootherOptionsPtr = List_.getParameter(parameter, SmootherOptionsPtr);
-      sprintf(parameter,"smoother: aztec params (level %d)", level);
-      if( List_.isParameter(parameter) ) SmootherParamsPtr = List_.getParameter(parameter, SmootherParamsPtr);
-      sprintf(parameter,"smoother: aztec as solver (level %d)", level);
-      if( List_.isParameter(parameter) ) AztecSmootherAsASolver = List_.getParameter(parameter,AztecSmootherAsASolver);
+      sprintf(parameter,"%ssmoother: aztec options (level %d)", Prefix_, LevelID_[level]);
+      SmootherOptionsPtr = List_.getParameter(parameter, SmootherOptionsPtr);
+      sprintf(parameter,"%ssmoother: aztec params (level %d)", Prefix_, LevelID_[level]);
+      SmootherParamsPtr = List_.getParameter(parameter, SmootherParamsPtr);
+      sprintf(parameter,"%ssmoother: aztec as solver (level %d)", Prefix_, LevelID_[level]);
+      AztecSmootherAsASolver = List_.getParameter(parameter,AztecSmootherAsASolver);
      
       if( AztecSmootherAsASolver == false ) aztec_its = AZ_ONLY_PRECONDITIONER;
       else                                  aztec_its = num_smoother_steps;
@@ -552,7 +840,7 @@ int Epetra_ML_Preconditioner::ComputePreconditioner()
       }
 
       if( verbose ) {
-	cout << "Smoother (level " << level << ") : aztec";
+	cout << PrintMsg_ << "Smoother (level " << LevelID_[level] << ") : aztec";
 	if( SmootherOptionsPtr[AZ_precond] == AZ_dom_decomp ) {
 	  cout << " DD, overlap=" << SmootherOptionsPtr[AZ_overlap] << ", ";
 	  if( SmootherOptionsPtr[AZ_reorder] == 1 ) cout << "reord, ";
@@ -578,31 +866,35 @@ int Epetra_ML_Preconditioner::ComputePreconditioner()
 	    break;
 	  }
 	} else if( SmootherOptionsPtr[AZ_precond] == AZ_Jacobi ) {
-	  cout << " Jacobi preconditioner";
+	  cout << PrintMsg_ << " Jacobi preconditioner";
 	} else if( SmootherOptionsPtr[AZ_precond] == AZ_Neumann ) {
-	  cout << " Neumann preconditioner, order = " << SmootherOptionsPtr[AZ_poly_ord];
+	  cout << PrintMsg_ << " Neumann preconditioner, order = " << SmootherOptionsPtr[AZ_poly_ord];
 	} else if( SmootherOptionsPtr[AZ_precond] == AZ_ls ) {
-	  cout << " LS preconditioner, order = " << SmootherOptionsPtr[AZ_poly_ord];
+	  cout << PrintMsg_ << " LS preconditioner, order = " << SmootherOptionsPtr[AZ_poly_ord];
 	} else if( SmootherOptionsPtr[AZ_precond] == AZ_sym_GS ) {
-	  cout << " symmetric Gauss-Seidel preconditioner, sweeps = " << SmootherOptionsPtr[AZ_poly_ord];
+	  cout << PrintMsg_ << " symmetric Gauss-Seidel preconditioner, sweeps = " << SmootherOptionsPtr[AZ_poly_ord];
 	} else if( SmootherOptionsPtr[AZ_precond] == AZ_none ) {
-	  cout << " with no preconditioning";
+	  cout << PrintMsg_ << " with no preconditioning";
 	}
 	cout << ", "  << PreOrPostSmoother << endl;
       }
       
-      ML_Gen_SmootherAztec(ml_, level, SmootherOptionsPtr, SmootherParamsPtr,
+      ML_Gen_SmootherAztec(ml_, LevelID_[level], SmootherOptionsPtr, SmootherParamsPtr,
 			   ProcConfig_, SmootherStatus_,
 			   aztec_its, pre_or_post, NULL);
+      
     } else if( Smoother == "ifpack" ) {
-      if( verbose ) cout << "Smoother (level " << level << ") : Ifpack" << ","
+      if( verbose ) cout << PrintMsg_ << "Smoother (level " << LevelID_[level] << ") : Ifpack" << ","
 			 << PreOrPostSmoother << endl;
       // get ifpack options from list ??? pass list ???
-      ML_Gen_Smoother_Ifpack(ml_, level, pre_or_post, NULL, NULL);
+      ML_Gen_Smoother_Ifpack(ml_, LevelID_[level], pre_or_post, NULL, NULL);
     } else {
       if( ProcConfig_[AZ_node] == 0 )
-	cerr << "ML:ERROR: Smoother not recognized!" << endl
-	     << "ML:ERROR: (file " << __FILE__ << ",line " << __LINE__ << ")" << endl;
+	cerr << ErrorMsg_ << "Smoother not recognized!" << endl
+	     << ErrorMsg_ << "(file " << __FILE__ << ",line " << __LINE__ << ")" << endl
+	     << ErrorMsg_ << "Should be: " << endl
+	     << ErrorMsg_ << "<Jacobi>/<Gauss-Seidel>/<Block Gauss-Seidel> / <MLS>" << endl
+	     << ErrorMsg_ << "<aztec> " << endl;
       exit( EXIT_FAILURE );
     }
     
@@ -613,34 +905,38 @@ int Epetra_ML_Preconditioner::ComputePreconditioner()
   /* ********************************************************************** */
 
   if( NumLevels_ > 1 ) {  
+
+    sprintf(parameter,"%scoarse: type", Prefix_);
+    string CoarseSolution = List_.getParameter(parameter, "Amesos_KLU");
+    sprintf(parameter,"%scoarse: sweeps", Prefix_);
+    int NumSmootherSteps = List_.getParameter(parameter, 1);
+    sprintf(parameter,"%scoarse: damping factor", Prefix_);
+    double Omega = List_.getParameter(parameter, 0.67);
     
-    string CoarseSolution = List_.getParameter("coarse: type", "Amesos_KLU");
-    int NumSmootherSteps = List_.getParameter("coarse: sweeps", 1);
-    double Omega = List_.getParameter("coarse: damping factor", 0.67);
-    
-    int MaxProcs = List_.getParameter("coarse: max processes", -1);
+    sprintf(parameter,"%scoarse: max processes", Prefix_);
+    int MaxProcs = List_.getParameter(parameter, -1);
   
     if( CoarseSolution == "Jacobi" ) 
-      ML_Gen_Smoother_Jacobi(ml_, NumLevels_-1, ML_POSTSMOOTHER,
+      ML_Gen_Smoother_Jacobi(ml_, LevelID_[NumLevels_-1], ML_POSTSMOOTHER,
 			     NumSmootherSteps, Omega);
     else if( CoarseSolution == "Gauss-Seidel" ) 
-      ML_Gen_Smoother_GaussSeidel(ml_, NumLevels_-1, ML_POSTSMOOTHER,
+      ML_Gen_Smoother_GaussSeidel(ml_, LevelID_[NumLevels_-1], ML_POSTSMOOTHER,
 				  NumSmootherSteps, Omega);
     else if( CoarseSolution == "SuperLU" ) 
-      ML_Gen_CoarseSolverSuperLU( ml_, NumLevels_-1);
+      ML_Gen_CoarseSolverSuperLU( ml_, LevelID_[NumLevels_-1]);
     else if( CoarseSolution == "Amesos_KLU" )
-      ML_Gen_Smoother_Amesos(ml_, NumLevels_-1, ML_AMESOS_KLU, MaxProcs);
+      ML_Gen_Smoother_Amesos(ml_, LevelID_[NumLevels_-1], ML_AMESOS_KLU, MaxProcs);
     else if( CoarseSolution == "Amesos_UMFPACK" )
-      ML_Gen_Smoother_Amesos(ml_, NumLevels_-1, ML_AMESOS_UMFPACK, MaxProcs);
+      ML_Gen_Smoother_Amesos(ml_, LevelID_[NumLevels_-1], ML_AMESOS_UMFPACK, MaxProcs);
     else if(  CoarseSolution == "Amesos_Superludist" )
-      ML_Gen_Smoother_Amesos(ml_, NumLevels_-1, ML_AMESOS_SUPERLUDIST, MaxProcs);
+      ML_Gen_Smoother_Amesos(ml_, LevelID_[NumLevels_-1], ML_AMESOS_SUPERLUDIST, MaxProcs);
     else if( CoarseSolution == "Amesos_MUMPS" )
-      ML_Gen_Smoother_Amesos(ml_, NumLevels_-1, ML_AMESOS_MUMPS, MaxProcs);
+      ML_Gen_Smoother_Amesos(ml_, LevelID_[NumLevels_-1], ML_AMESOS_MUMPS, MaxProcs);
     else
-      ML_Gen_Smoother_Amesos(ml_, NumLevels_-1, ML_AMESOS_KLU, MaxProcs);
+      ML_Gen_Smoother_Amesos(ml_, LevelID_[NumLevels_-1], ML_AMESOS_KLU, MaxProcs);
   }
   
-  ML_Gen_Solver(ml_, ML_MGV, 0, NumLevels_-1);
+  ML_Gen_Solver(ml_, ML_MGV, LevelID_[0], LevelID_[NumLevels_-1]);
 
   ownership_ = false;
 
@@ -654,7 +950,9 @@ int Epetra_ML_Preconditioner::ComputePreconditioner()
   /* be implemented as a post smoother (FIXME)                              */
   /* ********************************************************************** */
 
-  string str = List_.getParameter("prec type","MGV");
+  sprintf(parameter,"%sprec type", Prefix_);
+  string str = List_.getParameter(parameter,"MGV");
+
   if( str == "1-level postsmoothing only" ) {
     
     sprintf(Label_, "1-level postsmoothing only");
@@ -666,8 +964,8 @@ int Epetra_ML_Preconditioner::ComputePreconditioner()
     ml_->ML_scheme = ML_TWO_LEVEL_DD_ADD;
     if( NumLevels_ != 2 ) {
       if( Comm_.MyPID() == 0 ) {
-	cerr << "Error : You asked for `two-level additive DD' but you don't have" << endl
-	     << "Error : exacty two levels. Now continue, but check you input..." << endl;
+	cerr << ErrorMsg_ << "You asked for `two-level additive DD' but you don't have" << endl
+	     << ErrorMsg_ << "exacty two levels. Now continue, but check you input..." << endl;
       }
     }
 
@@ -677,8 +975,8 @@ int Epetra_ML_Preconditioner::ComputePreconditioner()
     ml_->ML_scheme = ML_TWO_LEVEL_DD_HYBRID;
     if( NumLevels_ != 2 ) {
       if( Comm_.MyPID() == 0 ) {
-	cerr << "Error : You asked for `two-level hybrid DD' but you don't have" << endl
-	     << "Error : exacty two levels. Now continue, but check you input..." << endl;
+	cerr << ErrorMsg_ << "You asked for `two-level hybrid DD' but you don't have" << endl
+	     << ErrorMsg_ << "exacty two levels. Now continue, but check you input..." << endl;
       }
     }
 
@@ -688,26 +986,36 @@ int Epetra_ML_Preconditioner::ComputePreconditioner()
     ml_->ML_scheme = ML_TWO_LEVEL_DD_HYBRID_2;
     if( NumLevels_ != 2 ) {
       if( Comm_.MyPID() == 0 ) {
-	cerr << "Error : You asked for `two-level hybrid DD (2)' but you don't have" << endl
-	     << "Error : exacty two levels. Now continue, but check you input..." << endl;
+	cerr << ErrorMsg_ << "You asked for `two-level hybrid DD (2)' but you don't have" << endl
+	     << ErrorMsg_ << "exacty two levels. Now continue, but check you input..." << endl;
       }
     }
 
+  } else if( str == "full MGV" ) {
+    ml_->ML_scheme = ML_MGFULLV;
+
   } else if( str == "MGV" ) {
-    // do nothing now
+    // it is the default
+    ml_->ML_scheme = ML_MGV;
   } else {
 
     if( Comm_.MyPID() == 0 ) {
-      cerr << "Error : `prec type' has an incorrect value. It should be" << endl
-	   << "Error : <1-level postsmoothing only> / <two-level additive DD>" << endl
-	   << "Error : <two-level hybrid DD> / <two-level hybrid DD (2)>" << endl;
+      cerr << ErrorMsg_ << "`prec type' has an incorrect value. It should be" << endl
+	   << ErrorMsg_ << "<1-level postsmoothing only> / <two-level additive DD>" << endl
+	   << ErrorMsg_ << "<two-level hybrid DD> / <two-level hybrid DD (2)>" << endl;
     }
     exit( EXIT_FAILURE );
     
   }
 
-  if( verbose )  cout << "--------------------------------------------------------------------------------" << endl;
-  
+  if( verbose ) PrintLine();
+
+  sprintf(parameter,"%sprint unused", Prefix_);
+  if( List_.isParameter(parameter) ) {
+    int ProcID = List_.getParameter(parameter,-2);
+    if( Comm_.MyPID() == ProcID || ProcID == -1 ) PrintUnused();
+  }
+
   /* ------------------- that's all folks --------------------------------- */
 
   IsComputePreconditionerOK_ = true;
@@ -715,6 +1023,289 @@ int Epetra_ML_Preconditioner::ComputePreconditioner()
   return 0;
   
 }
+
+// ============================================================================
+
+void Epetra_ML_Preconditioner::PrintUnused(int MyPID) 
+{
+  if( Comm_.MyPID() == MyPID ) {
+    PrintLine();
+    cout << PrintMsg_ << "Unused parameters:" << endl;
+    PrintUnused();
+    PrintLine();
+  }
+}
+
+// ============================================================================
+
+void Epetra_ML_Preconditioner::PrintList(int MyPID) 
+{
+  if( Comm_.MyPID() == MyPID ) {
+    PrintLine();
+    cout << List_;
+    PrintLine();
+  }
+}
+
+// ============================================================================
+
+int Epetra_ML_Preconditioner::SetParameterList(const ParameterList & List) 
+{
+  if( IsComputePreconditionerOK_ == true ) DestroyPreconditioner();
+  List_ = List;
+  return 0;
+  
+}
+
+// ============================================================================
+
+int Epetra_ML_Preconditioner::SetDefaults(ParameterList & List, const string ProblemType)
+{
+
+  int rv = 0;
+  
+  if( ProblemType == "SA" )              return( SetDefaultsSA(List) );
+  else if( ProblemType == "maxwell" )     return( SetDefaultsMaxwell(List) );
+  else if( ProblemType == "DD 3-levels" ) return( SetDefaultsDD_3Levels(List) );
+  else if( ProblemType == "DD" )          return( SetDefaultsDD_3Levels(List) );
+  else if( ProblemType == "empty" ) {
+    // empty list
+    ParameterList NewList;
+    List_ = List;
+  } else {
+    cerr << ErrorMsg_ << "Wrong input parameter in `SetDefaults'. Should be: " << endl
+	 << ErrorMsg_ << "<SA> / <DD> / <DD 3-levels> / <maxwell> / <emtpy>" << endl;
+    rv = 1;
+  }
+
+  EPETRA_CHK_ERR(rv);
+
+  return rv;
+  
+  
+}
+
+// ============================================================================
+
+int Epetra_ML_Preconditioner::SetDefaultsDD(ParameterList & List) 
+{
+
+  char parameter[80];
+
+  sprintf(parameter,"%smax levels", Prefix_);
+  List.setParameter(parameter,2);
+
+  sprintf(parameter,"%soutput", Prefix_);
+  List.setParameter(parameter,10);
+  
+  sprintf(parameter,"%sPDE equations", Prefix_);
+  List.setParameter(parameter,1);
+
+  sprintf(parameter,"%saggregation: type (level 0)",Prefix_);
+  List.setParameter(parameter,"METIS");
+
+  sprintf(parameter,"%saggregation: local aggregates (level 0)",Prefix_);
+  List.setParameter(parameter,1);
+  
+  sprintf(parameter,"%saggregation: damping factor",Prefix_);
+  List.setParameter(parameter,0.01);
+
+  sprintf(parameter,"%scoarse: max size",Prefix_);
+  List.setParameter(parameter,128);
+
+  sprintf(parameter,"%saggregation: threshold",Prefix_);
+  List.setParameter(parameter,0.0);
+  
+  sprintf(parameter,"%ssmoother: sweeps (level 0)",Prefix_);
+  List.setParameter(parameter,2);
+
+  sprintf(parameter,"%ssmoother: damping factor (level 0)",Prefix_);
+  List.setParameter(parameter,0.67);
+
+  sprintf(parameter,"%ssmoother: pre or post (level 0)",Prefix_);
+  List.setParameter(parameter,"both");
+  
+  sprintf(parameter,"%ssmoother: type (level 0)",Prefix_);
+  List.setParameter(parameter,"aztec");
+
+  AZ_defaults(SmootherOptions_,SmootherParams_);
+  SmootherOptions_[AZ_precond] = AZ_dom_decomp;
+  SmootherOptions_[AZ_scaling] = AZ_none;
+  SmootherOptions_[AZ_subdomain_solve] = AZ_ilut;
+  
+  sprintf(parameter,"%ssmoother: aztec options (level 0)",Prefix_);
+  List.setParameter(parameter,SmootherOptions_);
+
+  sprintf(parameter,"%ssmoother: aztec params (level 0)",Prefix_);
+  List.setParameter(parameter,SmootherParams_);
+
+  sprintf(parameter,"%ssmoother: aztec as solver (level 0)",Prefix_);
+  List.setParameter(parameter,false);
+  
+  sprintf(parameter,"%scoarse: type",Prefix_);
+  List.setParameter(parameter,"Amesos_KLU");
+
+  sprintf(parameter,"%sprec type",Prefix_);
+  List.setParameter(parameter,"MGV");
+
+  sprintf(parameter,"%sprint unused",Prefix_);
+  List.setParameter(parameter,0);
+
+  return 0;
+
+}
+
+// ============================================================================
+
+int Epetra_ML_Preconditioner::SetDefaultsDD_3Levels(ParameterList & List) 
+{
+
+  char parameter[80];
+
+  sprintf(parameter,"%smax levels", Prefix_);
+  List.setParameter(parameter,3);
+
+  sprintf(parameter,"%soutput", Prefix_);
+  List.setParameter(parameter,10);
+  
+  sprintf(parameter,"%sPDE equations", Prefix_);
+  List.setParameter(parameter,1);
+
+  sprintf(parameter,"%saggregation: type (level 0)",Prefix_);
+  List.setParameter(parameter,"METIS");
+
+  sprintf(parameter,"%saggregation: type (level 1)",Prefix_);
+  List.setParameter(parameter,"ParMETIS");
+
+  sprintf(parameter,"%saggregation: nodes per aggregate (level 0)",Prefix_);
+  List.setParameter(parameter,512);
+
+  sprintf(parameter,"%saggregation: nodes per aggregate (level 1)",Prefix_);
+  List.setParameter(parameter,32);
+  
+  sprintf(parameter,"%saggregation: damping factor",Prefix_);
+  List.setParameter(parameter,0.01);
+
+  sprintf(parameter,"%scoarse: max size",Prefix_);
+  List.setParameter(parameter,128);
+
+  sprintf(parameter,"%saggregation: threshold",Prefix_);
+  List.setParameter(parameter,0.0);
+  
+  sprintf(parameter,"%ssmoother: sweeps (level 0)",Prefix_);
+  List.setParameter(parameter,2);
+
+  sprintf(parameter,"%ssmoother: damping factor (level 0)",Prefix_);
+  List.setParameter(parameter,0.67);
+
+  sprintf(parameter,"%ssmoother: pre or post (level 0)",Prefix_);
+  List.setParameter(parameter,"both");
+  
+  sprintf(parameter,"%ssmoother: type (level 0)",Prefix_);
+  List.setParameter(parameter,"aztec");
+
+  AZ_defaults(SmootherOptions_,SmootherParams_);
+  SmootherOptions_[AZ_precond] = AZ_dom_decomp;
+  SmootherOptions_[AZ_subdomain_solve] = AZ_ilut;
+  
+  sprintf(parameter,"%ssmoother: aztec options (level 0)",Prefix_);
+  List.setParameter(parameter,SmootherOptions_);
+
+  sprintf(parameter,"%ssmoother: aztec params (level 0)",Prefix_);
+  List.setParameter(parameter,SmootherParams_);
+
+  sprintf(parameter,"%ssmoother: aztec as solver (level 0)",Prefix_);
+  List.setParameter(parameter,false);
+  
+  sprintf(parameter,"%scoarse: type",Prefix_);
+  List.setParameter(parameter,"Amesos_KLU");
+
+  sprintf(parameter,"%sprec type",Prefix_);
+  List.setParameter(parameter,"MGV");
+
+  sprintf(parameter,"%sprint unused",Prefix_);
+  List.setParameter(parameter,0);
+  
+  return 0;
+
+}
+
+// ============================================================================
+
+int Epetra_ML_Preconditioner::SetDefaultsMaxwell(ParameterList & List) 
+{}
+
+// ============================================================================
+
+int Epetra_ML_Preconditioner::SetDefaultsSA(ParameterList & List) 
+{
+
+  char parameter[80];
+  int MaxLevels = 10;
+  
+  sprintf(parameter,"%smax levels", Prefix_);
+  List.setParameter(parameter,MaxLevels);
+
+  sprintf(parameter,"%soutput", Prefix_);
+  List.setParameter(parameter,10);
+  
+  sprintf(parameter,"%sPDE equations", Prefix_);
+  List.setParameter(parameter,1);
+
+  sprintf(parameter,"%sincreasing or decreasing", Prefix_);
+  List.setParameter(parameter,"decreasing");
+
+  // aggregation: Uncoupled for first levels, then MIS
+  sprintf(parameter,"%saggregation: type (level %d)",Prefix_,MaxLevels-1);
+  List.setParameter(parameter,"Uncoupled");
+
+  sprintf(parameter,"%saggregation: type (level %d)",Prefix_,MaxLevels-2);
+  List.setParameter(parameter,"Uncoupled");
+
+  sprintf(parameter,"%saggregation: type (level %d)",Prefix_,MaxLevels-3);
+  List.setParameter(parameter,"MIS");
+  
+  // optimal value for smoothed aggregation
+  sprintf(parameter,"%saggregation: damping factor",Prefix_);
+  List.setParameter(parameter,1.3333);
+
+  // relative small coarse size
+  sprintf(parameter,"%scoarse: max size",Prefix_);
+  List.setParameter(parameter,16);
+
+  // don't forget any element
+  sprintf(parameter,"%saggregation: threshold",Prefix_);
+  List.setParameter(parameter,0.0);
+
+  // guass-seidel for all levels
+  sprintf(parameter,"%ssmoother: sweeps (level %d)",Prefix_,MaxLevels-1);
+  List.setParameter(parameter,2);
+
+  sprintf(parameter,"%ssmoother: damping factor (level %d)",Prefix_,MaxLevels-1);
+  List.setParameter(parameter,0.67);
+
+  sprintf(parameter,"%ssmoother: type (level %d)",Prefix_,MaxLevels-1);
+  List.setParameter(parameter,"Gauss-Seidel");
+  
+  sprintf(parameter,"%ssmoother: pre or post (level %d)",Prefix_,MaxLevels-1);
+  List.setParameter(parameter,"both");
+  
+  // simplest solver on coarse problem
+  sprintf(parameter,"%scoarse: type",Prefix_);
+  List.setParameter(parameter,"Amesos_KLU");
+
+  sprintf(parameter,"%sprec type",Prefix_);
+  List.setParameter(parameter,"MGV");
+
+  // print unused parameters on proc 0
+  sprintf(parameter,"%sprint unused",Prefix_);
+  List.setParameter(parameter,0);
+  
+  return 0;
+
+}
+
+// ============================================================================
 
 int Epetra_ML_Preconditioner::CreateLabel()
 {
@@ -744,11 +1335,13 @@ int Epetra_ML_Preconditioner::CreateLabel()
 	sprintf(coarsest, "%s/%s", coarsest,ml_->post_smoother[i].label);
     }
   }
-  sprintf(Label_,"%d level AMG (%s, %s)", ml_->ML_num_actual_levels, finest, coarsest);
+  sprintf(Label_,"%d level SA (%s, %s)", ml_->ML_num_actual_levels, finest, coarsest);
   
   return 0;
     
 }
+
+// ============================================================================
 
 int Epetra_ML_Preconditioner::ApplyInverse(const Epetra_MultiVector& X,
 					   Epetra_MultiVector& Y) const
