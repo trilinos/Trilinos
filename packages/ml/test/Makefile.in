@@ -234,7 +234,10 @@ target_alias = @target_alias@
 target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
-SUBDIRS = scripts
+SUBDIRS = MultiLevelPreconditioner_NonSym \
+	  MultiLevelPreconditioner_Sym \
+	  scripts
+
 all: all-recursive
 
 .SUFFIXES:

@@ -42,7 +42,7 @@
 # ************************************************************************
 #@HEADER
 
-SOURCES = $(MultiLevelPreconditioner_NonSym_SOURCES) $(TestMultiLevelPreconditioner_NonSym_SOURCES)
+SOURCES = $(TestMultiLevelPreconditioner_SOURCES)
 
 srcdir = @srcdir@
 top_srcdir = @top_srcdir@
@@ -65,9 +65,8 @@ NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
 host_triplet = @host@
-@HAVE_MPI_FALSE@noinst_PROGRAMS =  \
-@HAVE_MPI_FALSE@	MultiLevelPreconditioner_NonSym$(EXEEXT) \
-@HAVE_MPI_FALSE@	TestMultiLevelPreconditioner_NonSym$(EXEEXT)
+@HAVE_MPI_TRUE@noinst_PROGRAMS =  \
+@HAVE_MPI_TRUE@	TestMultiLevelPreconditioner$(EXEEXT)
 subdir = test/scripts/daily/serial
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -99,52 +98,19 @@ mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/ml_config.h
 CONFIG_CLEAN_FILES =
 PROGRAMS = $(noinst_PROGRAMS)
-am__MultiLevelPreconditioner_NonSym_SOURCES_DIST =  \
-	$(srcdir)/MultiLevelPreconditioner_NonSym.cpp
-@HAVE_MPI_FALSE@am_MultiLevelPreconditioner_NonSym_OBJECTS = MultiLevelPreconditioner_NonSym-MultiLevelPreconditioner_NonSym.$(OBJEXT)
-MultiLevelPreconditioner_NonSym_OBJECTS =  \
-	$(am_MultiLevelPreconditioner_NonSym_OBJECTS)
-@HAVE_MPI_FALSE@@ML_USING_IFPACK_TRUE@am__DEPENDENCIES_1 = $(top_builddir)/../ifpack/src/libifpack.a
-@HAVE_MPI_FALSE@@ML_USING_AMESOS_TRUE@am__DEPENDENCIES_2 = $(top_builddir)/../amesos/src/libamesos.a \
-@HAVE_MPI_FALSE@@ML_USING_AMESOS_TRUE@	$(top_builddir)/../teuchos/src/libteuchos.a
-@HAVE_MPI_FALSE@@ML_USING_ANASAZI_TRUE@am__DEPENDENCIES_3 = $(top_builddir)/../anasazi/src/libanasazi.a \
-@HAVE_MPI_FALSE@@ML_USING_ANASAZI_TRUE@	$(top_builddir)/../teuchos/src/libteuchos.a
-@HAVE_MPI_FALSE@@ML_USING_TEUCHOS_TRUE@am__DEPENDENCIES_4 = $(top_builddir)/../teuchos/src/libteuchos.a
-@HAVE_MPI_FALSE@@ML_USING_TRIUTILS_TRUE@am__DEPENDENCIES_5 = $(top_builddir)/../triutils/src/libtriutils.a
-am__DEPENDENCIES_6 =
-@HAVE_MPI_FALSE@am__DEPENDENCIES_7 = $(top_builddir)/src/libml.a \
-@HAVE_MPI_FALSE@	$(top_builddir)/../aztecoo/src/libaztecoo.a \
-@HAVE_MPI_FALSE@	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_2) \
-@HAVE_MPI_FALSE@	$(am__DEPENDENCIES_3) $(am__DEPENDENCIES_4) \
-@HAVE_MPI_FALSE@	$(am__DEPENDENCIES_5) \
-@HAVE_MPI_FALSE@	$(top_builddir)/../epetra/src/libepetra.a \
-@HAVE_MPI_FALSE@	$(am__DEPENDENCIES_6) $(am__DEPENDENCIES_6) \
-@HAVE_MPI_FALSE@	$(am__DEPENDENCIES_6) $(am__DEPENDENCIES_6)
-am__TestMultiLevelPreconditioner_NonSym_SOURCES_DIST =  \
-	$(srcdir)/TestMultiLevelPreconditioner_NonSym
-am_TestMultiLevelPreconditioner_NonSym_OBJECTS =
-TestMultiLevelPreconditioner_NonSym_OBJECTS =  \
-	$(am_TestMultiLevelPreconditioner_NonSym_OBJECTS)
-TestMultiLevelPreconditioner_NonSym_LDADD = $(LDADD)
+am__TestMultiLevelPreconditioner_SOURCES_DIST =  \
+	$(srcdir)/TestMultiLevelPreconditioner
+am_TestMultiLevelPreconditioner_OBJECTS =
+TestMultiLevelPreconditioner_OBJECTS =  \
+	$(am_TestMultiLevelPreconditioner_OBJECTS)
+TestMultiLevelPreconditioner_LDADD = $(LDADD)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/src
-depcomp = $(SHELL) $(top_srcdir)/config/depcomp
-am__depfiles_maybe = depfiles
-@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/MultiLevelPreconditioner_NonSym-MultiLevelPreconditioner_NonSym.Po
-CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
-	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
-CXXLD = $(CXX)
-CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
-	-o $@
 COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
 CCLD = $(CC)
 LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
-SOURCES = $(MultiLevelPreconditioner_NonSym_SOURCES) \
-	$(TestMultiLevelPreconditioner_NonSym_SOURCES)
-DIST_SOURCES = $(am__MultiLevelPreconditioner_NonSym_SOURCES_DIST) \
-	$(am__TestMultiLevelPreconditioner_NonSym_SOURCES_DIST)
-ETAGS = etags
-CTAGS = ctags
+SOURCES = $(TestMultiLevelPreconditioner_SOURCES)
+DIST_SOURCES = $(am__TestMultiLevelPreconditioner_SOURCES_DIST)
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 ACLOCAL = @ACLOCAL@
 ALTERNATE_AR = @ALTERNATE_AR@
@@ -276,75 +242,11 @@ target_alias = @target_alias@
 target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
-@HAVE_MPI_FALSE@TestMultiLevelPreconditioner_NonSym_SOURCES = $(srcdir)/TestMultiLevelPreconditioner_NonSym
-
-# compile file
-@HAVE_MPI_FALSE@MultiLevelPreconditioner_NonSym_SOURCES = $(srcdir)/MultiLevelPreconditioner_NonSym.cpp
-@HAVE_MPI_FALSE@MultiLevelPreconditioner_NonSym_DEPENDENCIES = \
-@HAVE_MPI_FALSE@	$(top_builddir)/src/libml.a \
-@HAVE_MPI_FALSE@	$(top_builddir)/../epetra/src/libepetra.a \
-@HAVE_MPI_FALSE@	$(top_builddir)/../triutils/src/libtriutils.a \
-@HAVE_MPI_FALSE@	$(top_builddir)/../teuchos/src/libteuchos.a 
-
-@HAVE_MPI_FALSE@ml_common_include_locations = -I$(top_srcdir)/src/Include          \
-@HAVE_MPI_FALSE@                   -I$(top_srcdir)/src/Coarsen                  \
-@HAVE_MPI_FALSE@                   -I$(top_srcdir)/src/Comm                  \
-@HAVE_MPI_FALSE@                   -I$(top_srcdir)/src/FEGrid                  \
-@HAVE_MPI_FALSE@                   -I$(top_srcdir)/src/Include                  \
-@HAVE_MPI_FALSE@                   -I$(top_srcdir)/src/Krylov                  \
-@HAVE_MPI_FALSE@                   -I$(top_srcdir)/src/Main                  \
-@HAVE_MPI_FALSE@                   -I$(top_srcdir)/src/Operator                  \
-@HAVE_MPI_FALSE@                   -I$(top_srcdir)/src/Smoother                  \
-@HAVE_MPI_FALSE@                   -I$(top_srcdir)/src/Utils                  \
-@HAVE_MPI_FALSE@                   -I$(top_srcdir)/../aztecoo/src            \
-@HAVE_MPI_FALSE@                   -I$(top_builddir)/../aztecoo/src \
-@HAVE_MPI_FALSE@                   -I$(top_srcdir)/../epetra/src            \
-@HAVE_MPI_FALSE@                   -I$(top_builddir)/../epetra/src \
-@HAVE_MPI_FALSE@                   -I$(top_srcdir)/../teuchos/src            \
-@HAVE_MPI_FALSE@                   -I$(top_builddir)/../teuchos/src \
-@HAVE_MPI_FALSE@                   -I$(top_srcdir)/../triutils/src            \
-@HAVE_MPI_FALSE@                   -I$(top_builddir)/../triutils/src
-
-@HAVE_MPI_FALSE@@ML_USING_AMESOS_FALSE@amesos_lib = 
-
-# Amesos require Teuchos
-@HAVE_MPI_FALSE@@ML_USING_AMESOS_TRUE@amesos_lib = $(top_builddir)/../amesos/src/libamesos.a \
-@HAVE_MPI_FALSE@@ML_USING_AMESOS_TRUE@             $(top_builddir)/../teuchos/src/libteuchos.a
-
-@HAVE_MPI_FALSE@@ML_USING_ANASAZI_FALSE@anasazi_lib = 
-# Anasazi require Teuchos
-@HAVE_MPI_FALSE@@ML_USING_ANASAZI_TRUE@anasazi_lib = $(top_builddir)/../anasazi/src/libanasazi.a  \
-@HAVE_MPI_FALSE@@ML_USING_ANASAZI_TRUE@             $(top_builddir)/../teuchos/src/libteuchos.a
-
-@HAVE_MPI_FALSE@@ML_USING_TEUCHOS_FALSE@teuchos_lib = 
-@HAVE_MPI_FALSE@@ML_USING_TEUCHOS_TRUE@teuchos_lib = $(top_builddir)/../teuchos/src/libteuchos.a
-@HAVE_MPI_FALSE@@ML_USING_TRIUTILS_FALSE@triutils_lib = 
-@HAVE_MPI_FALSE@@ML_USING_TRIUTILS_TRUE@triutils_lib = $(top_builddir)/../triutils/src/libtriutils.a
-@HAVE_MPI_FALSE@@ML_USING_IFPACK_FALSE@ifpack_lib = 
-@HAVE_MPI_FALSE@@ML_USING_IFPACK_TRUE@ifpack_lib = $(top_builddir)/../ifpack/src/libifpack.a
-#
-@HAVE_MPI_FALSE@ml_libs = $(top_builddir)/src/libml.a        \
-@HAVE_MPI_FALSE@                $(top_builddir)/../aztecoo/src/libaztecoo.a        \
-@HAVE_MPI_FALSE@                ${ifpack_lib} \
-@HAVE_MPI_FALSE@                ${amesos_lib} \
-@HAVE_MPI_FALSE@                ${anasazi_lib} \
-@HAVE_MPI_FALSE@                ${teuchos_lib} \
-@HAVE_MPI_FALSE@                ${triutils_lib} \
-@HAVE_MPI_FALSE@                $(top_builddir)/../epetra/src/libepetra.a \
-@HAVE_MPI_FALSE@                $(LIBS) \
-@HAVE_MPI_FALSE@                $(LAPACK_LIBS)                            \
-@HAVE_MPI_FALSE@                $(BLAS_LIBS)                            \
-@HAVE_MPI_FALSE@                $(FLIBS)
-
-@HAVE_MPI_FALSE@mllink = $(CXX) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
-@HAVE_MPI_FALSE@MultiLevelPreconditioner_NonSym_CPPFLAGS = ${ml_common_include_locations}
-@HAVE_MPI_FALSE@MultiLevelPreconditioner_NonSym_CXXFLAGS = ${ml_common_include_locations}
-@HAVE_MPI_FALSE@MultiLevelPreconditioner_NonSym_LDADD = ${ml_libs}
-@HAVE_MPI_FALSE@MultiLevelPreconditioner_NonSym_LINK = ${mllink}
+@HAVE_MPI_TRUE@TestMultiLevelPreconditioner_SOURCES = $(srcdir)/TestMultiLevelPreconditioner
+@HAVE_MPI_FALSE@EXTRA_DIST = TestMultiLevelPreconditioner
 all: all-am
 
 .SUFFIXES:
-.SUFFIXES: .cpp .o .obj
 $(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am  $(am__configure_deps)
 	@for dep in $?; do \
 	  case '$(am__configure_deps)' in \
@@ -377,99 +279,22 @@ $(ACLOCAL_M4): @MAINTAINER_MODE_TRUE@ $(am__aclocal_m4_deps)
 
 clean-noinstPROGRAMS:
 	-test -z "$(noinst_PROGRAMS)" || rm -f $(noinst_PROGRAMS)
-MultiLevelPreconditioner_NonSym$(EXEEXT): $(MultiLevelPreconditioner_NonSym_OBJECTS) $(MultiLevelPreconditioner_NonSym_DEPENDENCIES) 
-	@rm -f MultiLevelPreconditioner_NonSym$(EXEEXT)
-	$(MultiLevelPreconditioner_NonSym_LINK) $(MultiLevelPreconditioner_NonSym_LDFLAGS) $(MultiLevelPreconditioner_NonSym_OBJECTS) $(MultiLevelPreconditioner_NonSym_LDADD) $(LIBS)
-@HAVE_MPI_TRUE@TestMultiLevelPreconditioner_NonSym$(EXEEXT): $(TestMultiLevelPreconditioner_NonSym_OBJECTS) $(TestMultiLevelPreconditioner_NonSym_DEPENDENCIES) 
-@HAVE_MPI_TRUE@	@rm -f TestMultiLevelPreconditioner_NonSym$(EXEEXT)
-@HAVE_MPI_TRUE@	$(LINK) $(TestMultiLevelPreconditioner_NonSym_LDFLAGS) $(TestMultiLevelPreconditioner_NonSym_OBJECTS) $(TestMultiLevelPreconditioner_NonSym_LDADD) $(LIBS)
+@HAVE_MPI_FALSE@TestMultiLevelPreconditioner$(EXEEXT): $(TestMultiLevelPreconditioner_OBJECTS) $(TestMultiLevelPreconditioner_DEPENDENCIES) 
+@HAVE_MPI_FALSE@	@rm -f TestMultiLevelPreconditioner$(EXEEXT)
+@HAVE_MPI_FALSE@	$(LINK) $(TestMultiLevelPreconditioner_LDFLAGS) $(TestMultiLevelPreconditioner_OBJECTS) $(TestMultiLevelPreconditioner_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
 
 distclean-compile:
 	-rm -f *.tab.c
-
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/MultiLevelPreconditioner_NonSym-MultiLevelPreconditioner_NonSym.Po@am__quote@
-
-.cpp.o:
-@am__fastdepCXX_TRUE@	if $(CXXCOMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/$*.Tpo" "$(DEPDIR)/$*.Po"; else rm -f "$(DEPDIR)/$*.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/$*.Po' tmpdepfile='$(DEPDIR)/$*.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXXCOMPILE) -c -o $@ $<
-
-.cpp.obj:
-@am__fastdepCXX_TRUE@	if $(CXXCOMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ `$(CYGPATH_W) '$<'`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/$*.Tpo" "$(DEPDIR)/$*.Po"; else rm -f "$(DEPDIR)/$*.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/$*.Po' tmpdepfile='$(DEPDIR)/$*.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXXCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
-
-MultiLevelPreconditioner_NonSym-MultiLevelPreconditioner_NonSym.o: $(srcdir)/MultiLevelPreconditioner_NonSym.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(MultiLevelPreconditioner_NonSym_CPPFLAGS) $(CPPFLAGS) $(MultiLevelPreconditioner_NonSym_CXXFLAGS) $(CXXFLAGS) -MT MultiLevelPreconditioner_NonSym-MultiLevelPreconditioner_NonSym.o -MD -MP -MF "$(DEPDIR)/MultiLevelPreconditioner_NonSym-MultiLevelPreconditioner_NonSym.Tpo" -c -o MultiLevelPreconditioner_NonSym-MultiLevelPreconditioner_NonSym.o `test -f '$(srcdir)/MultiLevelPreconditioner_NonSym.cpp' || echo '$(srcdir)/'`$(srcdir)/MultiLevelPreconditioner_NonSym.cpp; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/MultiLevelPreconditioner_NonSym-MultiLevelPreconditioner_NonSym.Tpo" "$(DEPDIR)/MultiLevelPreconditioner_NonSym-MultiLevelPreconditioner_NonSym.Po"; else rm -f "$(DEPDIR)/MultiLevelPreconditioner_NonSym-MultiLevelPreconditioner_NonSym.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/MultiLevelPreconditioner_NonSym.cpp' object='MultiLevelPreconditioner_NonSym-MultiLevelPreconditioner_NonSym.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/MultiLevelPreconditioner_NonSym-MultiLevelPreconditioner_NonSym.Po' tmpdepfile='$(DEPDIR)/MultiLevelPreconditioner_NonSym-MultiLevelPreconditioner_NonSym.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(MultiLevelPreconditioner_NonSym_CPPFLAGS) $(CPPFLAGS) $(MultiLevelPreconditioner_NonSym_CXXFLAGS) $(CXXFLAGS) -c -o MultiLevelPreconditioner_NonSym-MultiLevelPreconditioner_NonSym.o `test -f '$(srcdir)/MultiLevelPreconditioner_NonSym.cpp' || echo '$(srcdir)/'`$(srcdir)/MultiLevelPreconditioner_NonSym.cpp
-
-MultiLevelPreconditioner_NonSym-MultiLevelPreconditioner_NonSym.obj: $(srcdir)/MultiLevelPreconditioner_NonSym.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(MultiLevelPreconditioner_NonSym_CPPFLAGS) $(CPPFLAGS) $(MultiLevelPreconditioner_NonSym_CXXFLAGS) $(CXXFLAGS) -MT MultiLevelPreconditioner_NonSym-MultiLevelPreconditioner_NonSym.obj -MD -MP -MF "$(DEPDIR)/MultiLevelPreconditioner_NonSym-MultiLevelPreconditioner_NonSym.Tpo" -c -o MultiLevelPreconditioner_NonSym-MultiLevelPreconditioner_NonSym.obj `if test -f '$(srcdir)/MultiLevelPreconditioner_NonSym.cpp'; then $(CYGPATH_W) '$(srcdir)/MultiLevelPreconditioner_NonSym.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/MultiLevelPreconditioner_NonSym.cpp'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/MultiLevelPreconditioner_NonSym-MultiLevelPreconditioner_NonSym.Tpo" "$(DEPDIR)/MultiLevelPreconditioner_NonSym-MultiLevelPreconditioner_NonSym.Po"; else rm -f "$(DEPDIR)/MultiLevelPreconditioner_NonSym-MultiLevelPreconditioner_NonSym.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/MultiLevelPreconditioner_NonSym.cpp' object='MultiLevelPreconditioner_NonSym-MultiLevelPreconditioner_NonSym.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/MultiLevelPreconditioner_NonSym-MultiLevelPreconditioner_NonSym.Po' tmpdepfile='$(DEPDIR)/MultiLevelPreconditioner_NonSym-MultiLevelPreconditioner_NonSym.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(MultiLevelPreconditioner_NonSym_CPPFLAGS) $(CPPFLAGS) $(MultiLevelPreconditioner_NonSym_CXXFLAGS) $(CXXFLAGS) -c -o MultiLevelPreconditioner_NonSym-MultiLevelPreconditioner_NonSym.obj `if test -f '$(srcdir)/MultiLevelPreconditioner_NonSym.cpp'; then $(CYGPATH_W) '$(srcdir)/MultiLevelPreconditioner_NonSym.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/MultiLevelPreconditioner_NonSym.cpp'; fi`
 uninstall-info-am:
-
-ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)
-	list='$(SOURCES) $(HEADERS) $(LISP) $(TAGS_FILES)'; \
-	unique=`for i in $$list; do \
-	    if test -f "$$i"; then echo $$i; else echo $(srcdir)/$$i; fi; \
-	  done | \
-	  $(AWK) '    { files[$$0] = 1; } \
-	       END { for (i in files) print i; }'`; \
-	mkid -fID $$unique
 tags: TAGS
+TAGS:
 
-TAGS:  $(HEADERS) $(SOURCES)  $(TAGS_DEPENDENCIES) \
-		$(TAGS_FILES) $(LISP)
-	tags=; \
-	here=`pwd`; \
-	list='$(SOURCES) $(HEADERS)  $(LISP) $(TAGS_FILES)'; \
-	unique=`for i in $$list; do \
-	    if test -f "$$i"; then echo $$i; else echo $(srcdir)/$$i; fi; \
-	  done | \
-	  $(AWK) '    { files[$$0] = 1; } \
-	       END { for (i in files) print i; }'`; \
-	test -z "$(ETAGS_ARGS)$$tags$$unique" \
-	  || $(ETAGS) $(ETAGSFLAGS) $(AM_ETAGSFLAGS) $(ETAGS_ARGS) \
-	     $$tags $$unique
 ctags: CTAGS
-CTAGS:  $(HEADERS) $(SOURCES)  $(TAGS_DEPENDENCIES) \
-		$(TAGS_FILES) $(LISP)
-	tags=; \
-	here=`pwd`; \
-	list='$(SOURCES) $(HEADERS)  $(LISP) $(TAGS_FILES)'; \
-	unique=`for i in $$list; do \
-	    if test -f "$$i"; then echo $$i; else echo $(srcdir)/$$i; fi; \
-	  done | \
-	  $(AWK) '    { files[$$0] = 1; } \
-	       END { for (i in files) print i; }'`; \
-	test -z "$(CTAGS_ARGS)$$tags$$unique" \
-	  || $(CTAGS) $(CTAGSFLAGS) $(AM_CTAGSFLAGS) $(CTAGS_ARGS) \
-	     $$tags $$unique
+CTAGS:
 
-GTAGS:
-	here=`$(am__cd) $(top_builddir) && pwd` \
-	  && cd $(top_srcdir) \
-	  && gtags -i $(GTAGS_ARGS) $$here
-
-distclean-tags:
-	-rm -f TAGS ID GTAGS GRTAGS GSYMS GPATH tags
 
 distdir: $(DISTFILES)
 	@srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`; \
@@ -531,10 +356,8 @@ clean: clean-am
 clean-am: clean-generic clean-noinstPROGRAMS mostlyclean-am
 
 distclean: distclean-am
-	-rm -rf ./$(DEPDIR)
 	-rm -f Makefile
-distclean-am: clean-am distclean-compile distclean-generic \
-	distclean-tags
+distclean-am: clean-am distclean-compile distclean-generic
 
 dvi: dvi-am
 
@@ -557,7 +380,6 @@ install-man:
 installcheck-am:
 
 maintainer-clean: maintainer-clean-am
-	-rm -rf ./$(DEPDIR)
 	-rm -f Makefile
 maintainer-clean-am: distclean-am maintainer-clean-generic
 
@@ -575,20 +397,19 @@ ps-am:
 
 uninstall-am: uninstall-info-am
 
-.PHONY: CTAGS GTAGS all all-am check check-am clean clean-generic \
-	clean-noinstPROGRAMS ctags distclean distclean-compile \
-	distclean-generic distclean-tags distdir dvi dvi-am html \
-	html-am info info-am install install-am install-data \
-	install-data-am install-exec install-exec-am install-info \
-	install-info-am install-man install-strip installcheck \
-	installcheck-am installdirs maintainer-clean \
-	maintainer-clean-generic mostlyclean mostlyclean-compile \
-	mostlyclean-generic pdf pdf-am ps ps-am tags uninstall \
-	uninstall-am uninstall-info-am
+.PHONY: all all-am check check-am clean clean-generic \
+	clean-noinstPROGRAMS distclean distclean-compile \
+	distclean-generic distdir dvi dvi-am html html-am info info-am \
+	install install-am install-data install-data-am install-exec \
+	install-exec-am install-info install-info-am install-man \
+	install-strip installcheck installcheck-am installdirs \
+	maintainer-clean maintainer-clean-generic mostlyclean \
+	mostlyclean-compile mostlyclean-generic pdf pdf-am ps ps-am \
+	uninstall uninstall-am uninstall-info-am
 
 
-@HAVE_MPI_FALSE@TestMultiLevelPreconditioner_NonSym$(EXEEXT): $(srcdir)/TestMultiLevelPreconditioner_NonSym
-@HAVE_MPI_FALSE@	cp $(srcdir)/TestMultiLevelPreconditioner_NonSym TestMultiLevelPreconditioner_NonSym$(EXEEXT) 
+@HAVE_MPI_TRUE@TestMultiLevelPreconditioner$(EXEEXT): $(srcdir)/TestMultiLevelPreconditioner
+@HAVE_MPI_TRUE@	cp $(srcdir)/TestMultiLevelPreconditioner TestMultiLevelPreconditioner$(EXEEXT) 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

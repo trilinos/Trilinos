@@ -26,4 +26,6 @@
 # ************************************************************************
 #@HEADER
 
-SUBDIRS = scripts
+SUBDIRS = MultiLevelPreconditioner_NonSym \
+	  MultiLevelPreconditioner_Sym \
+	  scripts
