@@ -907,7 +907,6 @@ int ML_MaxAllocatableSize()
   size_t right_size = 1024*1024*1024;
   size_t max_size;
   void * ptr;
-  int ok = 0;
   
   do {
 
@@ -933,14 +932,10 @@ int ML_MaxAllocatableSize()
 int ML_MaxMemorySize()
 { 
   long int fragments, total_free, largest_free, total_used; 
-  static double start_time = -1.; 
-  double elapsed_time;
   int percent;
   
 #ifndef  ML_TFLOP 
   struct mallinfo M; 
-  int *junk; 
-  static long unsigned int ml_total_mem = 0; 
 #endif 
   
 #ifdef ML_TFLOP 
