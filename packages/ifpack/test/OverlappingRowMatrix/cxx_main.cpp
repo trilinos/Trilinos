@@ -36,6 +36,7 @@
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_Vector.h"
 #include "Epetra_LinearProblem.h"
+#include "Epetra_Map.h"
 #include "Epetra_Import.h"
 #include "Epetra_Time.h"
 #include "Trilinos_Util_CrsMatrixGallery.h"

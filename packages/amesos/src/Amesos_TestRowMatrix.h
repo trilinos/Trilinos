@@ -319,7 +319,7 @@ public:
     return(Matrix().Map());
   }
 
-  char* Label() const
+  const char* Label() const
   {
     return(Matrix().Label());
   }
