@@ -142,6 +142,7 @@ int ML_Operator_Clean( ML_Operator *mat)
      mflops = mflops / (1024 * 1024);
      avgfl = mflops / ((double) mat->comm->ML_nprocs);
      mflops = (double) mat->nflop / mat->apply_time;
+     mflops = mflops / (1024 * 1024);
      maxfl = ML_gmax_double(mflops, mat->comm);
      mflops = - mflops;
      mflops = ML_gmax_double(mflops, mat->comm);
