@@ -140,7 +140,10 @@ struct Mesh_Description
 				   allocated for. Need to know this when array
 				   is not completely filled during migration */
   ELEM_INFO_PTR elements;       /* array of elements that are in the mesh.   */
-  int     nhedges;              /* for hypergraphs, the number of hyperedges.*/
+  int     gnhedges;             /* for hypergraphs, the number of global
+                                   hyperedges.*/
+  int     nhedges;              /* for hypergraphs, the number of local 
+                                   hyperedges.*/
   int     hewgt_dim;            /* for hypergraphs, the number of weights per
                                    hyperedge.                                */
   int    *hindex;               /* for hypergraphs, an entry for each 

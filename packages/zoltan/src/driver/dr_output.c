@@ -129,16 +129,19 @@ ELEM_INFO_PTR current_elem;
   }
 
   printf("\nHyperedges\n");
-  printf("Number of hyperedges:  %d\n", mesh->nhedges);
+  printf("Number of global hyperedges:  %d\n", mesh->gnhedges);
+  printf("Number of local hyperedges:   %d\n", mesh->nhedges);
   for (i = 0; i < mesh->nhedges; i++) {
     printf("Local Hyperedge %d:  (", i);
     for (j = mesh->hindex[i]; j < mesh->hindex[i+1]; j++)
       printf("%d ", mesh->hvertex[j]);
     printf(")\n");
-    printf("Edge Weights:  ");
-    for (j = 0; j < mesh->hewgt_dim; j++) 
-      printf("%f ", mesh->hewgts[i*mesh->hewgt_dim + j]);
-    printf("\n");
+    if (mesh->hewgt_dim) {
+      printf("Edge Weights:  ");
+      for (j = 0; j < mesh->hewgt_dim; j++) 
+        printf("%f ", mesh->hewgts[i*mesh->hewgt_dim + j]);
+      printf("\n");
+    }
   }
   print_sync_end(Proc, Num_Proc, 1);
 }

@@ -24,6 +24,7 @@ extern "C" {
 #endif
 
 #include "dr_hg_readfile.h"
+#include "dr_util_const.h"
 
 #define BUF_LEN 1000000
 
@@ -121,8 +122,8 @@ char *yo = "old_readfile";
 
   /* nEdge HYPEREDGE LINES */
   /* KDD -- This logic is wrong if no pins are specified. */
-  if (!(*index  = (int*) ZOLTAN_MALLOC ((*nEdge+1) * sizeof(int)))
-   || !(*vertex = (int*) ZOLTAN_MALLOC  (*nInput   * sizeof(int)))) {
+  if (!(*index  = (int*) malloc ((*nEdge+1) * sizeof(int)))
+   || !(*vertex = (int*) malloc  (*nInput   * sizeof(int)))) {
     fprintf(stderr, "%s Insufficient memory.", yo);
     err = ZOLTAN_MEMERR;
     goto End;
@@ -177,7 +178,7 @@ char *yo = "old_readfile";
   /* nVtx vertex weights */
   if ((code / 10) % 10 == 1) {
     *vwgt_dim = 1;
-    if (!((*vwgt) = (float*) ZOLTAN_MALLOC (*nVtx * sizeof(float)))) {
+    if (!((*vwgt) = (float*) malloc (*nVtx * sizeof(float)))) {
       fprintf(stderr, "%s Insufficient memory for vwgt.", yo);
       err = ZOLTAN_MEMERR;
       goto End;
@@ -202,7 +203,10 @@ char *yo = "old_readfile";
 End:
   if (err != ZOLTAN_OK && err != ZOLTAN_WARN) {
     *nVtx  = *nEdge  = *nInput = *vwgt_dim = *ewgt_dim = 0;
-    Zoltan_Multifree(__FILE__, __LINE__, 4, index, vertex, ewgt, vwgt);
+    safe_free((void **) index);
+    safe_free((void **) vertex);
+    safe_free((void **) ewgt);
+    safe_free((void **) vwgt);
   }
   return err;
 }
@@ -251,15 +255,15 @@ char *yo = "patoh_readfile";
 
   /* nEdge HYPEREDGE LINES */
   /* KDD -- This logic is wrong if no pins are specified. */
-  if (!(*index  = (int*) ZOLTAN_MALLOC ((*nEdge+1) * sizeof(int)))
-   || !(*vertex = (int*) ZOLTAN_MALLOC  (*nInput   * sizeof(int)))) {
+  if (!(*index  = (int*) malloc ((*nEdge+1) * sizeof(int)))
+   || !(*vertex = (int*) malloc  (*nInput   * sizeof(int)))) {
     fprintf(stderr, "%s Insufficient memory.", yo);
     err = ZOLTAN_MEMERR;
     goto End;
   }
   if (code == 2 || code == 3) {
     /* KDD -- This logic is wrong if no edges are specified. */
-    *ewgt = (float*) ZOLTAN_MALLOC (*nEdge * sizeof(float));
+    *ewgt = (float*) malloc (*nEdge * sizeof(float));
     if (*ewgt == NULL) {
       fprintf(stderr, "%s Insufficient memory.", yo);
        err = ZOLTAN_MEMERR;
@@ -311,7 +315,7 @@ char *yo = "patoh_readfile";
   /* nVtx vertex weights */
   /* KDD -- shouldn't this code use dims in some way? */
   *vwgt_dim = 1;
-  if (!((*vwgt) = (float *) ZOLTAN_MALLOC (*nVtx * sizeof(float)))) {
+  if (!((*vwgt) = (float *) malloc (*nVtx * sizeof(float)))) {
     fprintf(stderr, "%s Insufficient memory for vwgt.", yo);
     err = ZOLTAN_MEMERR;
     goto End;
@@ -329,7 +333,10 @@ char *yo = "patoh_readfile";
 End:
   if (err != ZOLTAN_OK && err != ZOLTAN_WARN) {
     *nVtx  = *nEdge  = *nInput = *vwgt_dim = *ewgt_dim = 0;
-    Zoltan_Multifree(__FILE__, __LINE__, 4, index, vertex, ewgt, vwgt);
+    safe_free((void **) index);
+    safe_free((void **) vertex);
+    safe_free((void **) ewgt);
+    safe_free((void **) vwgt);
   }
   return err;
 }
