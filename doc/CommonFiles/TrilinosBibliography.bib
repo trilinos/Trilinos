@@ -18,6 +18,7 @@
 @string{siopt = "{SIAM} J. Opt."}
 @string{toms = "ACM Transactions on Mathematical Software"}
 @string{snl = "Sandia National Laboratories"}
+@string{ijnmf="Internat. J. Numer. Meth. Fluids"}
 
 @article{BLAS1,
      title = "Basic Linear Algebra Subprograms for Fortran Usage",
@@ -296,69 +297,83 @@ eigenvectors.",
      note = "http://www.mathworks.com/access/helpdesk/help/techdoc/ref/eigs.shtml"}
 
 @misc{Trilinos-home-page,
+     author = {Michael A. Heroux},
      title = "Trilinos Home Page.",
      note = "http://software.sandia.gov/trilinos"}
 
 @misc{ML-home-page,
+     author = {Ray S. Tuminaro and Jonathan Hu},
      title = "ML Home Page.",
      note = "http://www.cs.sandia.gov/~tuminaro/ML\_Description.html"}
 
 @misc{NOX-home-page,
+     author = {Tamara G. Kolda and Roger P. Pawlowski},
      title = "NOX Home Page.",
      note = "http://software.sandia.gov/nox"}
 
 @misc{Automake,
-     key = "automake",
-     title = "Automake Home Page.",
+     author = {Free Software Foundation},
+     key = "Automake",
+     title = "{Automake Home Page.}",
      note = "http://www.gnu.org/software/automake"}
 
 @misc{Libtool,
-     key = "libtool",
-     title = "Libtool Home Page.",
+     author = {Free Software Foundation},
+     key = "Libtool",
+     title = "{Libtool Home Page.}",
      note = "http://www.gnu.org/software/libtool"}
 
 @misc{Autoconf,
-     key = "autoconf",
-     title = "Autoconf Home Page.",
+     author = {Free Software Foundation},
+     key = "Autoconf",
+     title = "{Autoconf Home Page.}",
      note = "http://www.gnu.org/software/autoconf"}
 
 @misc{M4,
+     author = {Free Software Foundation},
      key = "m4",
      title = "Gnu M4 Home Page.",
      note = "http://www.gnu.org/software/m4"}
 
 @misc{CVS,
-     key = "cvs",
-     title = "Gnu CVS Home Page.",
+     author = {Free Software Foundation},
+     key = "{CVS}",
+     title = "{Gnu CVS Home Page.}",
      note = "http://www.gnu.org/software/cvs"}
 
 @misc{Bonsai,
-     key = "bonsai",
-     title = "Mozilla Bonsai Home Page.",
+     author = {The Mozilla Organization},
+     key = "Bonsai",
+     title = "{Mozilla Bonsai Home Page.}",
      note = "http://www.mozilla.org/bonsai.html"}
 
 @misc{Bugzilla,
-     key = "bugzilla",
-     title = "Mozilla Bugzilla Home Page.",
+     author = {The Mozilla Organization},
+     key = "Bugzilla",
+     title = "{Mozilla Bugzilla Home Page.}",
      note = "http://www.mozilla.org/projects/bugzilla"}
 
 @book{Goatbook,
      author = "G.~Vaughan and B.~Elliston and T.~Tromey and I.~Taylor",
-     title = "Gnu Autoconf, Automake, and Libtool",
+     title = "{Gnu Autoconf, Automake, and Libtool}",
      publisher = "New Riders",
      year = 2000}
 
 @misc{gnu-license-site,
+     author = {Free Software Foundation},
      key = "lgpl",
      title = "Gnu License Home Page",
      note = "http://www.gnu.org/licenses/licenses.html"}
 
 @misc{BCSLIB-site,
-     key = "bcslib",
+     author = {The Boeing Company},
+     key = "{BCSLib}",
      title = "{BCSLIB-EXT} Home Page",
-     note = "http://www.boeing.com/assocproducts/bcslib-ext/"}
+     note = "http://www.boeing.com/phantom/bcslib-ext/"}
 
 @misc{rdmag-site,
+     author = {Reed Business Information},
+     key = {RDMAG},
      title = "{R\&D} Magazine Home Page",
      note = "http://www.rdmag.com"}
 
@@ -367,8 +382,8 @@ eigenvectors.",
      note = "http://www.nag.co.uk"}
 
 @misc{TNT-site,
-     author = "R.~Pozo",
-     title = "Template Numerical Toolkit (TNT) for Linear Algebra.", 
+     author = "{R. Pozo}",
+     title = "{Template Numerical Toolkit (TNT) for Linear Algebra.}", 
      note = "http://math.nist.gov/tnt"}
 
 @misc{ESI-site,
@@ -377,7 +392,7 @@ eigenvectors.",
      note = "http://z.ca.sandia.gov/esi"}
 
 @misc{NIMROD-site,
-     author = "C.~Sovinec and et. al.",
+     author = "{C. Sovinec et. al.}",
      title = "NIMROD Web page", 
      note = "http://nimrodteam.org"}
 
@@ -466,7 +481,7 @@ eigenvectors.",
      year = 1998}
 
 @misc{JNI-site,
-     author = "Sun Microsystems",
+     author = "{Sun Microsystems}",
      title = "Java Native Interface",
      note = "http://java.sun.com/products/jdk/1.2/docs/guide/jni"}
 
@@ -1816,6 +1831,7 @@ California 94550},
    year      = {2002},
 }
 @misc{Doxygen,
+     author = {Dimitri van Heesch},
      title = "Doxygen Home Page.",
      note = "http://www.doxygen.org"}
 
@@ -1911,3 +1927,53 @@ California 94550},
      institution = "Sandia National Laboratories",
      number = "SAND2003-2952",
      year = 2003}
+
+@TechReport{LOCA-manual,
+  author =   "A. G. Salinger and L. A. Romero and R. P. Pawlowski and E. D. Wilkes",
+  title = {{LOCA}: {A} Library of Continuation Algorithms - {T}heroy and Implementation Manual},
+  institution =  {Sandia National Laboratories},
+  year =     {2001},
+  note =     {{S}AND 2002-0396},
+  address =      {Albuquerque, New Mexico 87185}
+}
+
+@article{LOCA-MPSalsa-paper,
+   author    = {A. G. Salinger and R.B. Lehoucq and R.P. Pawlowski and J.N. Shadid},
+   title     = {Computational Bifurcation and Stability Studies of the 8:1 Thermal Cavity Problem},
+   journal   = ijnmf,
+   volume    = {40},
+   number    = {8},
+   pages     = {1059-1073},
+   year      = {2002},
+}
+@inproceedings{762768,
+ author = {David H. Bailey and David Broadhurst and Yozo Hida and Xiaoye S. Li and Brandon Thompson},
+ title = {High performance computing meets experimental mathematics},
+ booktitle = {Proceedings of the 2002 ACM/IEEE conference on Supercomputing},
+ year = {2002},
+ pages = {1--12},
+ location = {Baltimore, Maryland},
+ publisher = {IEEE Computer Society Press},
+ }
+@TechReport{ARPREC,
+  author = 	 {David H. Bailey and Yozo Hida and Xiaoye S. Li and Brandon Thompson},
+  title = 	 {ARPREC: An Arbitrary Precision Computation Package},
+  institution =  {Lawrence Berkeley National Laboratory},
+  year = 	 {2002},
+  OPTkey = 	 {},
+  OPTtype = 	 {},
+  OPTnumber = 	 {LBNL-53651},
+  OPTaddress = 	 {},
+  OPTmonth = 	 {September},
+  OPTnote = 	 {},
+  OPTannote = 	 {}
+}
+
+@book{scalapack,
+     title = "{ScaLAPACK} Users' Guide",
+     author = "L. S. Blackford and J. Choi and A. Cleary and E. {D'Azevedo}
+               and J. Jemmel and I. Dhillon and J. Dongarra and
+               S. Hammarling and G. Henry and A. Petitet and K. Stanley and D. Walker and
+               R. C. Whaley",
+     publisher = "{SIAM} Pub.",
+     year = 1997}
