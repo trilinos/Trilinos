@@ -41,6 +41,9 @@
 #include "LOCA_ErrorCheck.H"
 #include "LOCA_Epetra_BorderedOp.H"
 #include "LOCA_Epetra_HouseholderJacOp.H"
+#include "LOCA_Epetra_ShiftInvertOperator.H"
+#include "AztecOO.h"
+#include "NOX_EpetraNew_LinearSystemAztecOO.H"
 
 LOCA::EpetraNew::Group::Group(NOX::Parameter::List& printingParams, 
 			      LOCA::EpetraNew::Interface::Required& i, 
@@ -49,8 +52,8 @@ LOCA::EpetraNew::Group::Group(NOX::Parameter::List& printingParams,
   NOX::EpetraNew::Group(printingParams, i, initialGuess),
   LOCA::Abstract::Group(),
   params(p),
-  userInterfaceReq(i),
-  userInterfaceTime(NULL),
+  userInterface(i),
+  interfaceTime(false),
   tmpVectorPtr2(0),
   scaleVecPtr(NULL)
 {
@@ -64,8 +67,8 @@ LOCA::EpetraNew::Group::Group(NOX::Parameter::List& printingParams,
   NOX::EpetraNew::Group(printingParams, i, initialGuess, linSys),
   LOCA::Abstract::Group(),
   params(p),
-  userInterfaceReq(i),
-  userInterfaceTime(NULL),
+  userInterface(i),
+  interfaceTime(false),
   tmpVectorPtr2(0),
   scaleVecPtr(NULL)
 {
@@ -79,8 +82,8 @@ LOCA::EpetraNew::Group::Group(NOX::Parameter::List& printingParams,
   NOX::EpetraNew::Group(printingParams, i, initialGuess, linSys),
   LOCA::Abstract::Group(),
   params(p),
-  userInterfaceReq(i), 
-  userInterfaceTime(&i),
+  userInterface(i), 
+  interfaceTime(true),
   tmpVectorPtr2(0),
   scaleVecPtr(NULL)
 {
@@ -91,8 +94,8 @@ LOCA::EpetraNew::Group::Group(const LOCA::EpetraNew::Group& source,
   NOX::EpetraNew::Group(source, type),
   LOCA::Abstract::Group(source, type),
   params(source.params),
-  userInterfaceReq(source.userInterfaceReq),
-  userInterfaceTime(source.userInterfaceTime),
+  userInterface(source.userInterface),
+  interfaceTime(true),
   tmpVectorPtr2(0),
   scaleVecPtr(NULL)
 {
@@ -102,7 +105,7 @@ LOCA::EpetraNew::Group::Group(const LOCA::EpetraNew::Group& source,
 
 LOCA::EpetraNew::Group::~Group() 
 {
-  delete tmpVectorPtr2;
+    delete tmpVectorPtr2;
   if (scaleVecPtr != NULL)
     delete scaleVecPtr;
 }
@@ -183,7 +186,7 @@ LOCA::EpetraNew::Group::computeF()
     return Abstract::Group::Ok;
   
   // Set the parameters prior to computing F
-  userInterfaceReq.setParameters(params);
+  userInterface.setParameters(params);
   
   return NOX::EpetraNew::Group::computeF();
 }
@@ -196,7 +199,7 @@ LOCA::EpetraNew::Group::computeJacobian()
     return Abstract::Group::Ok;
   
   // Set the parameters prior to computing F
-  userInterfaceReq.setParameters(params);
+  userInterface.setParameters(params);
 
   return NOX::EpetraNew::Group::computeJacobian();
 }
@@ -210,7 +213,7 @@ LOCA::EpetraNew::Group::getParams() const
 NOX::EpetraNew::Interface::Required& 
 LOCA::EpetraNew::Group::getUserInterface()
 {
-  return userInterfaceReq;
+  return userInterface;
 }
 
 void
@@ -223,7 +226,7 @@ void
 LOCA::EpetraNew::Group::printSolution(const NOX::Epetra::Vector& x_,
 				      const double conParam) const
 {
-  userInterfaceReq.printSolution(x_.getEpetraVector(), conParam);
+  userInterface.printSolution(x_.getEpetraVector(), conParam);
 }
 
 void
@@ -270,7 +273,7 @@ LOCA::EpetraNew::Group::setScaleVector(const NOX::Abstract::Vector& s)
 NOX::Abstract::Group::ReturnType
 LOCA::EpetraNew::Group::computeMassMatrix()
 {
-  if(userInterfaceTime != NULL)
+  if(interfaceTime)
     return NOX::Abstract::Group::Ok;
   else
     return NOX::Abstract::Group::BadDependency;
@@ -282,12 +285,12 @@ LOCA::EpetraNew::Group::applyMassMatrix(const NOX::Abstract::Vector& input,
 {
 
 
-  if(userInterfaceTime != NULL){
+  if(interfaceTime){
      const NOX::Epetra::Vector& epetraInput = 
        dynamic_cast<const NOX::Epetra::Vector&>(input);
      NOX::Epetra::Vector& epetraResult =
        dynamic_cast<NOX::Epetra::Vector&>(result);
-     dynamic_cast<LOCA::EpetraNew::Interface::TimeDependent&>(userInterfaceReq).applyMassMatrix(epetraInput,epetraResult);
+     dynamic_cast<LOCA::EpetraNew::Interface::TimeDependent&>(userInterface).applyMassMatrix(epetraInput,epetraResult);
   }
   else
     return NOX::Abstract::Group::BadDependency;
@@ -297,6 +300,87 @@ bool
 LOCA::EpetraNew::Group::isMassMatrix()
 {
   return true;
+}
+
+NOX::Abstract::Group::ReturnType
+LOCA::EpetraNew::Group::computeShiftedMatrix(const double& shift)
+{
+  return NOX::Abstract::Group::Ok;
+}
+
+
+NOX::Abstract::Group::ReturnType
+LOCA::EpetraNew::Group::applyShiftedMatrix(const NOX::Abstract::Vector& input,
+                                           NOX::Abstract::Vector& result,
+                                           const double& shift, bool massMatrix) const
+{
+  applyShiftedMatrix(dynamic_cast<const NOX::Epetra::Vector&>(input), dynamic_cast<NOX::Epetra::Vector&>(result), shift, massMatrix);
+}
+
+NOX::Abstract::Group::ReturnType
+LOCA::EpetraNew::Group::applyShiftedMatrix(const NOX::Epetra::Vector& epetraInput,
+                                           NOX::Epetra::Vector& epetraResult,
+                                           const double& shift, bool massMatrix) const
+{
+  applyJacobian(epetraInput,epetraResult);
+
+  if(massMatrix) {
+
+   // If there is a mass matrix, shifted matrix is J + shift*M
+
+    NOX::Epetra::Vector massResult(epetraResult,NOX::ShapeCopy);
+    dynamic_cast<LOCA::EpetraNew::Interface::TimeDependent&>(userInterface).applyMassMatrix(epetraInput,massResult);
+
+     epetraResult.update(shift,massResult,1.00);
+  }
+
+  else {
+
+    // If no mass matrix, shifted matrix is J + shift*I
+
+     epetraResult.update(shift,epetraInput,1.00);
+  }
+
+  return NOX::Abstract::Group::Ok;
+}
+
+
+NOX::Abstract::Group::ReturnType
+LOCA::EpetraNew::Group::applyShiftedMatrixInverse(const NOX::Abstract::Vector& input,
+                                           NOX::Abstract::Vector& result,
+                                           const double& shift, bool massMatrix,
+					   NOX::Parameter::List& params) const
+                                           
+{
+  const NOX::Epetra::Vector& epetraInput = dynamic_cast<const NOX::Epetra::Vector&>(input);
+  NOX::Epetra::Vector& epetraResult = dynamic_cast<NOX::Epetra::Vector&>(result);
+
+  // If shift is zero, just apply Jacobian inverse
+
+  if(shift == 0.0) {
+    applyJacobianInverse(params,epetraInput,epetraResult);
+  }
+  else {
+
+    // Otherwise, construct a shift and invert operator, and use AztecOO to solve linear system
+
+    LOCA::Epetra::ShiftInvertOperator A(*this,sharedLinearSystem.getObject(this).getJacobianOperator(),shift,massMatrix);
+
+    NOX::Epetra::Vector dummy(epetraResult,NOX::ShapeCopy);
+    Epetra_Vector& epetra_dummy = dummy.getEpetraVector();    
+    LOCA::Epetra::ShiftInvertInterface interface; 
+    NOX::Parameter::List& solveList = params.sublist("NOX").sublist("Direction").sublist("Newton").sublist("Linear Solver");
+
+   NOX::EpetraNew::LinearSystemAztecOO shiftsys(params,solveList,userInterface,dynamic_cast<NOX::EpetraNew::Interface::Jacobian&>(interface),dynamic_cast<Epetra_Operator&>(A),epetra_dummy); 
+
+    shiftsys.setJacobianOperatorForSolve(dynamic_cast<Epetra_Operator&>(A));
+
+    shiftsys.applyJacobianInverse(solveList,epetraInput,epetraResult);
+
+    return NOX::Abstract::Group::Ok;
+
+  }
+
 }
 
 NOX::Abstract::Group::ReturnType 
@@ -389,13 +473,13 @@ LOCA::EpetraNew::Group::projectToDraw(const NOX::Abstract::Vector& x,
 {
   const NOX::Epetra::Vector& ex = 
     dynamic_cast<const NOX::Epetra::Vector&>(x);
-  userInterfaceReq.projectToDraw(ex, px);
+  userInterface.projectToDraw(ex, px);
 }
 
 int
 LOCA::EpetraNew::Group::projectToDrawDimension() const
 {
-  return userInterfaceReq.projectToDrawDimension();
+  return userInterface.projectToDrawDimension();
 }
 
 NOX::Abstract::Group::ReturnType 
