@@ -9,6 +9,7 @@
 #include <math.h>
 
 static double hcut_size_links (ZZ *zz, HGraph *hg, int p, Partition part);
+static double hcut_size_total (HGraph *hg, Partition part);
 int hg_readfile (ZZ*, HGraph*, char*, int*);
 
 
@@ -181,7 +182,7 @@ if (zz.Proc == 0)
 {
 double subtotal[30];
 double total, top;
-int cuts, temp;
+int cuts, tcuts, temp;
 
 for (i = 0; i < p; i++)
    subtotal[i] = 0.0;
@@ -198,7 +199,9 @@ for (i = 0; i < p; i++)
       top = subtotal[i];
    }
 cuts = (int) hcut_size_links (&zz, &hg, p, part);
-printf ("RTHRTHp=%d, cuts %4d%c tol %.3f (%.3f):  ", p, cuts, hgp.orphan_flag ? '*' : ' ', hgp.bal_tol, top*p);
+tcuts = (int) hcut_size_total (&hg, part);
+
+printf ("RTHRTHp=%d, cuts %5d%c %5d tol %.3f:  ", p, cuts, hgp.orphan_flag ? '*' : ' ', tcuts, top*p);
 temp = ((p > 8) ? 8 : p);
 for (i = 0; i < temp; i++)
    printf ("%4.2f  ", subtotal[i]);
@@ -257,5 +260,20 @@ char *yo = "hcut_size_links";
      cut += (nparts-1) * (hg->ewgt ? hg->ewgt[i] : 1.0);
      }
   ZOLTAN_FREE ((void**) &parts);
+  return cut;
+}
+
+static double hcut_size_total (HGraph *hg, Partition part)
+{
+int i, j, hpart;
+double cut = 0.0;
+
+  for (i = 0; i < hg->nEdge; i++) {
+     hpart = part[hg->hvertex[hg->hindex[i]]];
+     for (j = hg->hindex[i] + 1; j < hg->hindex[i+1]
+      && part[hg->hvertex[j]] == hpart; j++);
+         if (j != hg->hindex[i+1])
+            cut += (hg->ewgt ? hg->ewgt[i] : 1.0);
+     }
   return cut;
 }

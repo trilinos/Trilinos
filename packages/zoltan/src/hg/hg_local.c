@@ -300,6 +300,12 @@ if ((hg->vwgt[vertex] + part_weight[dest] > max_weight[dest]) &&
         imbalance 
           = (part_weight[0] > max_weight[0]) || (part_weight[1] > max_weight[1]);
 
+#ifdef RTHRTH
+if (step == 1)
+  best_error = error;
+#endif
+
+
         if ( ( imbalance && (error < best_error))
           || (!imbalance && (akt_cutsize < best_cutsize)))  {
             best_error   = error;

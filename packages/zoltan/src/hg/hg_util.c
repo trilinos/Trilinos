@@ -278,7 +278,6 @@ char *yo = "Zoltan_HG_Create_Mirror";
    else if (hg && hg->vindex && (hg->nInput == 0 || hg->vedge)
     && !hg->hindex && !hg->hvertex) {
       ZOLTAN_TRACE_DETAIL(zz, yo, "Have vindex; building hindex.");
-printf ("Have vindex\n");
 
       inlength  = hg->nVtx;
       outlength = hg->nEdge;
