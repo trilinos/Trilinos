@@ -41,6 +41,7 @@ extern "C" {
 #endif
 
 #define ZOLTAN_MALLOC(a) Zoltan_Malloc((a), __FILE__, __LINE__)
+#define ZOLTAN_CALLOC(a, b) Zoltan_Calloc((a), (b), __FILE__, __LINE__)
 #define ZOLTAN_REALLOC(a, b) Zoltan_Realloc((a), (b), __FILE__, __LINE__)
 #define ZOLTAN_FREE(a) Zoltan_Free((void **) (a), __FILE__, __LINE__)
 

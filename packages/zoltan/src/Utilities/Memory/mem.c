@@ -21,6 +21,7 @@ extern "C" {
 #include <stdio.h>
 #include <stdlib.h>
 #include <malloc.h>
+#include <string.h>
 #include "mpi.h"
 #include "zoltan_mem.h"
 
@@ -47,6 +48,11 @@ static struct malloc_debug_data {
   struct malloc_debug_data *next;	/* pointer to next element */
 } *top = NULL;
 
+static struct
+   {
+   int total ;
+   int maximum ;
+   } memory_usage ;
 
 /******************************************************************************/
 void Zoltan_Memory_Debug(int new_level) {
@@ -197,7 +203,7 @@ va_dcl
   if (dim[0].index <= 0) {
     if (DEBUG_MEMORY > 0) {
       fprintf(stderr, "WARNING, %s (%s: %d) called with first "
-            "dimension <= 0, %ld; will return NULL\n", 
+            "dimension <= 0, %ld; will return NULL\n",
             yo, file, lineno, dim[0].index);
     }
     return((double *) NULL);
@@ -229,7 +235,7 @@ va_dcl
 
   total = dim[numdim-1].off + dim[numdim-1].total * dim[numdim-1].size;
 
-  dfield = (double *) Zoltan_Malloc((int) total, file, lineno); 
+  dfield = (double *) Zoltan_Malloc((int) total, file, lineno);
 
   if (dfield != NULL) {
     field  = (char *) dfield;
@@ -249,6 +255,14 @@ va_dcl
 /*****************************************************************************/
 /*****************************************************************************/
 /*****************************************************************************/
+
+double *Zoltan_Calloc (int num, int size, char *filename, int lineno)
+   {
+   double *p ;
+   p = Zoltan_Malloc (num*size, filename, lineno) ;
+   memset ((void *) p, '\0', num*size) ;
+   return p ;
+   }
 
 
 /* Safe version of malloc.  Does not initialize memory .*/
@@ -312,7 +326,9 @@ double *Zoltan_Malloc(int n, char *filename, int lineno)
       "file=%s, line=%d\n",
       proc, nmalloc, n, (long) pntr, filename, lineno);
   }
-
+  memory_usage.total += n ;
+  if (memory_usage.maximum < memory_usage.total)
+    memory_usage.maximum = memory_usage.total ;
 
   return pntr;
 
@@ -410,6 +426,8 @@ void Zoltan_Free (void **ptr, char *filename, int lineno)
         (long) *ptr, filename, lineno);
    }
    else {
+       memory_usage.total -= dbptr->size ;
+
        *prev = dbptr->next;
        bytes_used = -dbptr->size;
        free((char *) dbptr);
@@ -471,9 +489,9 @@ void      Zoltan_Memory_Stats()
 
     if (DEBUG_MEMORY == 1) {
         MPI_Comm_rank(MPI_COMM_WORLD, &proc);
-	fprintf(stderr, "Proc %d: Calls to malloc = %d,  Calls to free = %d\n",
-		proc, nmalloc, nfree);
-        if (nmalloc > nfree) 
+	fprintf(stderr, "Proc %d: Calls to malloc = %d,  Calls to free = %d, "
+    "Max memory allocated %d\n", proc, nmalloc, nfree, memory_usage.maximum);
+        if (nmalloc > nfree)
           fprintf(stderr, "Proc %d: Possible memory error: "
                           "# malloc > # free.\n", proc);
         else if (nfree > nmalloc)
@@ -511,6 +529,11 @@ int       Zoltan_Malloc_Num()
 } /* Zoltan_Malloc_Num */
 
 
+int Zoltan_Memory_Usage (int type)
+   {
+   if (type == 0)      return memory_usage.total ;
+   else if (type == 1) return memory_usage.maximum ;
+   }
 
 /*****************************************************************************/
 /*                      END of mem.c                                         */
