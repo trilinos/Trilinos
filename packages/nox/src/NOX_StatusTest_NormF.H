@@ -150,6 +150,16 @@ public:
 
 private:
 
+  /*! \brief Calculate the norm of F for the given group according to
+    the scaling type, norm type, and tolerance type. */
+  double computeNorm(const NOX::Abstract::Group& grp);
+
+  /*! In the case of a relative norm calculation, initializes 
+    \c trueTolerance based on the F-value at the initial guess.*/
+  void relativeSetup(NOX::Abstract::Group& initialGuess);
+
+private:
+
   //! %Status
   NOX::StatusTest::StatusType status;
 

@@ -70,9 +70,7 @@ NOX::StatusTest::NormF::NormF(NOX::Abstract::Group& initialGuess, double toleran
   initialTolerance(0.0),
   trueTolerance(0.0)
 {
-  initialGuess.computeF();
-  initialTolerance = initialGuess.getNormF();
-  trueTolerance = specifiedTolerance / initialTolerance;
+  relativeSetup(initialGuess);
 }
 
 
@@ -85,39 +83,62 @@ NOX::StatusTest::NormF::NormF(NOX::Abstract::Group& initialGuess, double toleran
   initialTolerance(0.0),
   trueTolerance(0.0)
 {
-  initialGuess.computeF();
-  initialTolerance = initialGuess.getNormF();
-  trueTolerance = specifiedTolerance / initialTolerance;
+  relativeSetup(initialGuess);
 }
 
 NOX::StatusTest::NormF::~NormF()
 {
 }
 
-NOX::StatusTest::StatusType NOX::StatusTest::NormF::checkStatus(const NOX::Solver::Generic& problem)
+double NOX::StatusTest::NormF::computeNorm(const NOX::Abstract::Group& grp)
 {
-  status = Unconverged;
-  const NOX::Abstract::Group& grp = problem.getSolutionGroup();
+  double norm;
   int n = grp.getX().length();
 
-  switch (normType) {
+  switch (normType) 
+  {
     
   case NOX::Abstract::Vector::TwoNorm:
-    normF = grp.getNormF();
+    norm = grp.getNormF();
     if (scaleType == Scaled)
-      normF /= sqrt(1.0 * n);
+      norm /= sqrt(1.0 * n);
     break;
 
   default:
-    normF = grp.getF().norm(normType);
+    norm = grp.getF().norm(normType);
     if (scaleType == Scaled)
-      normF /= n;
+      norm /= n;
     break;
 
   }
 
+  return norm;
+}
+
+
+void NOX::StatusTest::NormF::relativeSetup(NOX::Abstract::Group& initialGuess)
+{
+  NOX::Abstract::Group::ReturnType rtype;
+  rtype = initialGuess.computeF();
+  if (rtype != NOX::Abstract::Group::Ok) 
+  {
+    cerr << "NOX::StatusTest::NormF::NormF - Unable to compute F" << endl;
+    throw "NOX Error";
+  }
+    
+  initialTolerance = computeNorm(initialGuess); 
+  trueTolerance = specifiedTolerance / initialTolerance;
+}
+
+
+NOX::StatusTest::StatusType NOX::StatusTest::NormF::checkStatus(const NOX::Solver::Generic& problem)
+{
+  normF = computeNorm( problem.getSolutionGroup() );
+
   if (normF < trueTolerance)
     status = Converged;
+  else
+    status = Unconverged;
 
   return status;
 }
