@@ -39,11 +39,13 @@
   \f]
   Here \f$F:\Re^n \rightarrow \Re^n\f$.
 
-  \section started Getting Started
+  \section started Getting Started for Users
 
-  See \ref configuration.
+  See \ref userinfo.
 
-  Developers, also see \ref devinfo
+  \section dev_started Getting Started for Developers
+
+  See \ref devinfo.
 
   \section classes Class Overview
 
@@ -126,7 +128,7 @@ Please contact Tammy Kolda (tgkolda@sandia.gov) or Roger Pawlowski (rppawlo@sand
 
 /*! \page confoptions NOX Configuration Options 
 
-Here is a detailed list and explanation of the NOX configuration options.
+Here is a detailed list and explanation of the %NOX configuration options.
 
 \section basic_config Basic Options
 
@@ -161,9 +163,42 @@ Here is a detailed list and explanation of the NOX configuration options.
 
 </ul>
 
+\section influential_env Influential Environmental Variables
+
+<ul>
+   <li> \c CXX         
+      <ul>
+         <li> C++ compiler command
+      </ul>
+   <li> \c CXXFLAGS    
+      <ul> 
+         <li> C++ compiler flags 
+      </ul>
+   <li> \c LDFLAGS
+      <ul>
+         <li> Specify linker flags
+      </ul>
+   <li> \c CPPFLAGS
+      <ul>
+         <li> C/C++ preprocessor flags
+      </ul>
+   <li> \c CXXCPP  
+      <ul>
+         <li> C++ preprocessor
+      </ul>
+   <li> \c F77     
+      <ul>
+         <li> Fortran 77 compiler command <em>(used only in configure tests)</em>
+      </ul>
+   <li> \c FFLAGS  
+      <ul>
+         <li> Fortran 77 compiler flags <em>(used only in configure tests)</em>
+      </ul>
+</ul>
+
 \section mpi_config MPI-Related Options
 
-The NOX library itself has no MPI dependencies. However, the NOX-Epetra
+The %NOX library itself has no MPI dependencies. However, the %NOX-Epetra
 library and related examples do depend on MPI. 
 
 <ul>
@@ -264,7 +299,8 @@ library and related examples do depend on MPI.
   </ul>
 <li>  \c --enable-prerelease
   <ul>
-    <li> Compile code that is not included in the nightly release but is part of the CVS repository. 
+    <li> Cannot be used with the distribution version of the code - only works withe CVS version.
+         Compiles code that is not included in the releases but is part of the CVS repository. 
          See \ref prerelease.
   </ul>
 </ul>
@@ -276,55 +312,37 @@ library and related examples do depend on MPI.
 /* ************************************************************************ */
 /* ************************************************************************ */
 
-/*! \page configuration NOX Configuration and Compliation Instructions
-
-See \ref confoptions
+/*! \page userinfo NOX User Information
 
 \section section1 Basic Setup
 
-To just compile the basic NOX library, type
+To get started, you first need to configure and compile %NOX.
 
+<ol>
+   <li> Run configure.
+      <ul>
+         <li> See \ref confoptions for explanations of the options
+	 <li> An example configure line might be
 \verbatim
-configure
-make
+configure --enable-nox-lapack-examples
 \endverbatim
+      </ul>
 
-This only compiles the library \c libnox.a - it does not build any of the
-examples. See below for more information on compiling the examples.
+   <li> Type \c make to compile.
+</ol>
 
 \section section2  Generating Documentation
 
 The documentation is available online at 
 <a href="http://software.sandia.gov/nox/">http://software.sandia.gov/nox/</a>.
 
-To generate a local copy of the documentation, you'll need to have Doxygen installed. 
-After running configure, type 
+To generate a local copy of the documentation, you'll need to have doxygen installed. 
+Then follow the instructions in \c nox/doc/README.
+If you've already successfully run configure, type 
 \verbatim
 make dox
 \endverbatim
 to generate the documentation. The main page is \c nox/doc/html/index.html.
-
-\section section3 Compiling the Examples
-
-NOX is distributed with a simple set of examples that have no other
-external dependencies besides LAPACK and BLAS. These are primarily useful to
-allow some basic testing of NOX without requiring an interface to a
-more complicated linear algebra system. To enable these examples, type
-
-\verbatim
-configure --enable-lapack --enable-lapack-examples
-make
-\endverbatim
-
-The compiled examples are located in the \c example-lapack
-subdirectory.  To run each example, follow the instructions given below.
-
-<ol>
-<li>To run a simple 2 equation example based on the Rosenbrock function, type
-\verbatim
-rosenbrock
-\endverbatim
-</ol>
 
 */
 
@@ -533,7 +551,7 @@ The following pages are relevant to developers.
 /*! \page prerelease NOX Developer's Guide to Prerelease Code
 
 
-We define \b prerelease \b code to be code that should not be
+We define <em>prerelease code</em> to be code that should not be
 distributed, documented, or tested as part of the automatic nightly
 scripts. 
 
@@ -711,6 +729,9 @@ The header information is automatically filled in between the two
 <H5>Include File Structure</H5>
 <ul>
 <li>No include file should define more than one class.
+<ul>
+<li> The exception is for utility classes that are <em>only</em> used by the main class defined in the header file.
+</ul>
 <br>&nbsp;
 <li>Every include file must contain a mechanism that prevents multiple
 inclusions of the file. For example, the following should follow the
@@ -739,6 +760,8 @@ on. Currently, we have the following system headers:
 <li><code>cmath</code>
 <li><code>vector</code>
 <li><code>map</code>
+<li><code>deque</code>
+<li><code>algorithm</code>
 <br>&nbsp;
 </ul>
 <li>Definitions of classes that are only accessed via pointers
@@ -769,7 +792,8 @@ sub-namespace. The choices are:
 <li><code>Abstract</code>
 <li><code>Parameter</code>
 <li><code>Solver</code>
-<li><code>Status</code>
+<li><code>StatusTest</code>
+<li><code>LineSearch</code>
 <li><code>Direction</code>
 <li><code>Epetra</code>
 <br>&nbsp;
@@ -858,11 +882,13 @@ say that <CODE>i</CODE> is an <CODE>int*</CODE>.
 
 <li>User parens to make code readable.
 <pre>
-  if (a == b && c < d || e == f) { // No!
+  if (a == b && c < d || e == f)  // No!
+  {
     /* Stuff */
   }
 
-  if (((a == b) && (c < d)) || (e == f)) { // Yes
+  if (((a == b) && (c < d)) || (e == f))  // Yes
+  {
     /* Stuff */
   } 
 </pre>
@@ -874,21 +900,31 @@ a separate line.
    if ( /*Something*/ )      // Yes!
      i++; 
 </PRE>
-<li>Braces ("{}") which enclose a block should be aligned in the
-K&amp;R format. 
+<li>Braces ("{}") which enclose a block should be aligned as follows:
 <PRE>
-   if ( /*Something*/ ) // No!
+   if ( /*Something*/ ) // Yes!
    {
      i++; 
      j++;
    }
 
-   if ( /*Something*/ ) { // Yes!
+   if ( /*Something*/ ) { // Okay
      i++; 
      j++;
    }
+
+   if ( /*Something*/ ) // No!
+     {
+       i++; 
+       j++;
+     }
 </PRE>
 
+Adding the following line to your \c .emacs file will help:
+
+<PRE>
+(c-set-offset 'substatement-open 0)
+</PRE>
 
 </ul>
 
@@ -943,12 +979,6 @@ MsgType flag. The flags are:
 <li><code>NOX::Utils::Details</code>
 </ul>
 
-<br>&nbsp;
-
-<li><em>We need to add a mechanism for controlling the
-output streams. Currently, all output goes to cout and cerr.</em>
-<br>&nbsp;
-
 </ul>
 
 
@@ -962,7 +992,8 @@ the function name to <code>cerr</code> and then throw an exception with the stri
 <code>"NOX Error"</code>. For example,
 
 <pre>
-  if (/* Error Condition */) {
+  if (/* Error Condition */) 
+  {
     cerr << "ERROR: NOX::Epetra::Group::getNewton() - invalid Newton vector" << endl;
     throw "NOX Error";
   }
@@ -1075,12 +1106,12 @@ Here's a more complicated example to produce a two-tiered list.
  
    &lt;ul&gt;
    &lt;li&gt; "Method" - Name of the line search. Valid choices are
-   &lt;ul&gt; 
-   &lt;li&gt; "Full Step" (NOX::Linesearch::FullStep)
-   &lt;li&gt; "Interval %Halving" (NOX::Linesearch::Halving)
-   &lt;li&gt; "%Polynomial" (NOX::Linesearch::Polynomial)
-   &lt;li&gt; "More'-Thuente" (NOX::Linesearch::MoreThuente)
-   &lt;/ul&gt;
+     &lt;ul&gt; 
+     &lt;li&gt; "Full Step" (NOX::Linesearch::FullStep)
+     &lt;li&gt; "Interval %Halving" (NOX::Linesearch::Halving)
+     &lt;li&gt; "%Polynomial" (NOX::Linesearch::Polynomial)
+     &lt;li&gt; "More'-Thuente" (NOX::Linesearch::MoreThuente)
+     &lt;/ul&gt;
    &lt;/ul&gt;
  */
 </pre>
