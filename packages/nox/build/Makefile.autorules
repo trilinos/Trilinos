@@ -5,19 +5,7 @@
 ### NLSPACK Object File Rules
 ########################################################################
 
-NLS_Parameter.o : ../src/utils/NLS_Parameter.H ../src/utils/NLS_ParameterList.H \
-	../src/utils/NLS_Parameter.C 
-	$(CXX) -c $(CXXFLAGS) ../src/utils/NLS_Parameter.C -o $@
-
-NLS_ParameterList.o : ../src/utils/NLS_Parameter.H ../src/utils/NLS_ParameterList.H \
-	../src/utils/NLS_ParameterList.C 
-	$(CXX) -c $(CXXFLAGS) ../src/utils/NLS_ParameterList.C -o $@
-
-NLS_Utilities.o : ../src/utils/NLS_Parameter.H ../src/utils/NLS_ParameterList.H \
-	../src/utils/NLS_Utilities.H ../src/utils/NLS_Utilities.C 
-	$(CXX) -c $(CXXFLAGS) ../src/utils/NLS_Utilities.C -o $@
-
-NLS_PetraGroup.o : ../src/NLS_Group.H ../src/NLS_Vector.H \
+NLS_PetraGroup.o : ../src/abstract/NLS_Group.H ../src/abstract/NLS_Vector.H \
 	../src/epetra/NLS_PetraGroup.H ../src/epetra/NLS_PetraGroupInterface.H \
 	../src/epetra/NLS_PetraSharedJacobian.H \
 	../src/epetra/NLS_PetraVector.H ../src/utils/NLS_Parameter.H \
@@ -29,56 +17,66 @@ NLS_PetraSharedJacobian.o : ../src/epetra/NLS_PetraSharedJacobian.H \
 	../src/epetra/NLS_PetraSharedJacobian.C 
 	$(CXX) -c $(CXXFLAGS) ../src/epetra/NLS_PetraSharedJacobian.C -o $@
 
-NLS_PetraVector.o : ../src/NLS_Vector.H ../src/epetra/NLS_PetraVector.H \
+NLS_PetraVector.o : ../src/abstract/NLS_Vector.H ../src/epetra/NLS_PetraVector.H \
 	../src/epetra/NLS_PetraVector.C 
 	$(CXX) -c $(CXXFLAGS) ../src/epetra/NLS_PetraVector.C -o $@
 
-NLS_FullStep.o : ../src/NLS_Group.H ../src/NLS_LineSearch.H \
-	../src/NLS_Vector.H ../src/linesearches/NLS_FullStep.H \
+NLS_FullStep.o : ../src/abstract/NLS_Group.H ../src/abstract/NLS_Vector.H \
+	../src/linesearches/NLS_FullStep.H ../src/linesearches/NLS_LineSearch.H \
 	../src/utils/NLS_Parameter.H ../src/utils/NLS_ParameterList.H \
 	../src/linesearches/NLS_FullStep.C 
 	$(CXX) -c $(CXXFLAGS) ../src/linesearches/NLS_FullStep.C -o $@
 
-NLS_IntervalHalving.o : ../src/NLS_Group.H ../src/NLS_LineSearch.H \
-	../src/NLS_Vector.H ../src/linesearches/NLS_IntervalHalving.H \
-	../src/utils/NLS_Parameter.H ../src/utils/NLS_ParameterList.H \
-	../src/utils/NLS_Utilities.H ../src/linesearches/NLS_IntervalHalving.C 
+NLS_IntervalHalving.o : ../src/abstract/NLS_Group.H ../src/abstract/NLS_Vector.H \
+	../src/linesearches/NLS_IntervalHalving.H \
+	../src/linesearches/NLS_LineSearch.H ../src/utils/NLS_Parameter.H \
+	../src/utils/NLS_ParameterList.H ../src/utils/NLS_Utilities.H \
+	../src/linesearches/NLS_IntervalHalving.C 
 	$(CXX) -c $(CXXFLAGS) ../src/linesearches/NLS_IntervalHalving.C -o $@
 
-NLS_LineSearchManager.o : ../src/NLS_Group.H ../src/NLS_LineSearch.H \
-	../src/NLS_Vector.H ../src/linesearches/NLS_FullStep.H \
-	../src/linesearches/NLS_IntervalHalving.H \
-	../src/linesearches/NLS_LineSearchManager.H \
+NLS_LineSearchManager.o : ../src/abstract/NLS_Group.H ../src/abstract/NLS_Vector.H \
+	../src/linesearches/NLS_FullStep.H ../src/linesearches/NLS_IntervalHalving.H \
+	../src/linesearches/NLS_LineSearch.H ../src/linesearches/NLS_LineSearchManager.H \
 	../src/utils/NLS_Parameter.H ../src/utils/NLS_ParameterList.H \
 	../src/linesearches/NLS_LineSearchManager.C 
 	$(CXX) -c $(CXXFLAGS) ../src/linesearches/NLS_LineSearchManager.C -o $@
-
-NLS_MethodManager.o : ../src/NLS_Group.H ../src/NLS_LineSearch.H \
-	../src/NLS_Method.H ../src/NLS_Vector.H \
-	../src/linesearches/NLS_LineSearchManager.H \
-	../src/methods/NLS_MethodManager.H ../src/methods/NLS_Newton.H \
-	../src/methods/NLS_StatusTest.H ../src/utils/NLS_Parameter.H \
-	../src/utils/NLS_ParameterList.H ../src/utils/NLS_Utilities.H \
-	../src/methods/NLS_MethodManager.C 
-	$(CXX) -c $(CXXFLAGS) ../src/methods/NLS_MethodManager.C -o $@
-
-NLS_Newton.o : ../src/NLS_Group.H ../src/NLS_LineSearch.H \
-	../src/NLS_Method.H ../src/NLS_Vector.H \
-	../src/linesearches/NLS_LineSearchManager.H \
-	../src/methods/NLS_AdaptiveTolerance.H ../src/methods/NLS_Newton.H \
-	../src/methods/NLS_StatusTest.H ../src/utils/NLS_Parameter.H \
-	../src/utils/NLS_ParameterList.H ../src/utils/NLS_Utilities.H \
-	../src/methods/NLS_Newton.C 
-	$(CXX) -c $(CXXFLAGS) ../src/methods/NLS_Newton.C -o $@
 
 NLS_AdaptiveTolerance.o : ../src/methods/NLS_AdaptiveTolerance.H \
 	../src/utils/NLS_Parameter.H ../src/utils/NLS_ParameterList.H \
 	../src/utils/NLS_Utilities.H ../src/methods/NLS_AdaptiveTolerance.C 
 	$(CXX) -c $(CXXFLAGS) ../src/methods/NLS_AdaptiveTolerance.C -o $@
 
-NLS_StatusTest.o : ../src/NLS_Group.H ../src/NLS_Method.H \
-	../src/NLS_Vector.H ../src/methods/NLS_StatusTest.H \
+NLS_MethodManager.o : ../src/abstract/NLS_Group.H ../src/abstract/NLS_Vector.H \
+	../src/linesearches/NLS_LineSearch.H ../src/linesearches/NLS_LineSearchManager.H \
+	../src/methods/NLS_Method.H ../src/methods/NLS_MethodManager.H \
+	../src/methods/NLS_Newton.H ../src/methods/NLS_StatusTest.H \
 	../src/utils/NLS_Parameter.H ../src/utils/NLS_ParameterList.H \
-	../src/methods/NLS_StatusTest.C 
+	../src/utils/NLS_Utilities.H ../src/methods/NLS_MethodManager.C 
+	$(CXX) -c $(CXXFLAGS) ../src/methods/NLS_MethodManager.C -o $@
+
+NLS_Newton.o : ../src/abstract/NLS_Group.H ../src/abstract/NLS_Vector.H \
+	../src/linesearches/NLS_LineSearch.H ../src/linesearches/NLS_LineSearchManager.H \
+	../src/methods/NLS_AdaptiveTolerance.H ../src/methods/NLS_Method.H \
+	../src/methods/NLS_Newton.H ../src/methods/NLS_StatusTest.H \
+	../src/utils/NLS_Parameter.H ../src/utils/NLS_ParameterList.H \
+	../src/utils/NLS_Utilities.H ../src/methods/NLS_Newton.C 
+	$(CXX) -c $(CXXFLAGS) ../src/methods/NLS_Newton.C -o $@
+
+NLS_StatusTest.o : ../src/abstract/NLS_Group.H ../src/abstract/NLS_Vector.H \
+	../src/methods/NLS_Method.H ../src/methods/NLS_StatusTest.H \
+	../src/utils/NLS_Parameter.H ../src/utils/NLS_ParameterList.H \
+	../src/utils/NLS_Utilities.H ../src/methods/NLS_StatusTest.C 
 	$(CXX) -c $(CXXFLAGS) ../src/methods/NLS_StatusTest.C -o $@
+
+NLS_Parameter.o : ../src/utils/NLS_Parameter.H ../src/utils/NLS_ParameterList.H \
+	../src/utils/NLS_Parameter.C 
+	$(CXX) -c $(CXXFLAGS) ../src/utils/NLS_Parameter.C -o $@
+
+NLS_ParameterList.o : ../src/utils/NLS_Parameter.H ../src/utils/NLS_ParameterList.H \
+	../src/utils/NLS_ParameterList.C 
+	$(CXX) -c $(CXXFLAGS) ../src/utils/NLS_ParameterList.C -o $@
+
+NLS_Utilities.o : ../src/utils/NLS_Parameter.H ../src/utils/NLS_ParameterList.H \
+	../src/utils/NLS_Utilities.H ../src/utils/NLS_Utilities.C 
+	$(CXX) -c $(CXXFLAGS) ../src/utils/NLS_Utilities.C -o $@
 

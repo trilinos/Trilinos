@@ -5,22 +5,22 @@
 ### NLSPACK Object File-Related Definitions
 ########################################################################
 
-NLSPACK_UTILS_OBJS = NLS_Parameter.o NLS_ParameterList.o \
-	NLS_Utilities.o
-
 NLSPACK_EPETRA_OBJS = NLS_PetraGroup.o NLS_PetraSharedJacobian.o \
 	NLS_PetraVector.o
 
 NLSPACK_LINESEARCHES_OBJS = NLS_FullStep.o NLS_IntervalHalving.o \
 	NLS_LineSearchManager.o
 
-NLSPACK_METHODS_OBJS = NLS_MethodManager.o NLS_Newton.o \
-	NLS_AdaptiveTolerance.o NLS_StatusTest.o
+NLSPACK_METHODS_OBJS = NLS_AdaptiveTolerance.o NLS_MethodManager.o \
+	NLS_Newton.o NLS_StatusTest.o
 
-NLSPACK_ALL_OBJS = $(NLSPACK_UTILS_OBJS) $(NLSPACK_EPETRA_OBJS) \
-	$(NLSPACK_LINESEARCHES_OBJS) $(NLSPACK_METHODS_OBJS) 
+NLSPACK_UTILS_OBJS = NLS_Parameter.o NLS_ParameterList.o \
+	NLS_Utilities.o
 
-NLSPACK_INCLUDES = -I$(NLSPACK_HOME)/src -I$(NLSPACK_HOME)/src/utils \
-	-I$(NLSPACK_HOME)/src/epetra -I$(NLSPACK_HOME)/src/linesearches \
-	-I$(NLSPACK_HOME)/src/methods 
+NLSPACK_ALL_OBJS = $(NLSPACK_EPETRA_OBJS) $(NLSPACK_LINESEARCHES_OBJS) \
+	$(NLSPACK_METHODS_OBJS) $(NLSPACK_UTILS_OBJS) 
+
+NLSPACK_INCLUDES = -I$(NLSPACK_HOME)/src/epetra -I$(NLSPACK_HOME)/src/linesearches \
+	-I$(NLSPACK_HOME)/src/methods -I$(NLSPACK_HOME)/src/utils \
+	-I$(NLSPACK_HOME)/src/abstract 
 
