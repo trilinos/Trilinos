@@ -6622,8 +6622,10 @@ double ML_Cycle_MG(ML_1Level *curr, Epetra_MultiVector &ep_sol,
 
 /* ADDED COMMUNICATION HERE!!! */
       int tot_size_WKC;
+#ifdef ML_MPI
       MPI_Allreduce ( (void *)&lengc , (void *)&tot_size_WKC , 1 , MPI_INT ,
                       MPI_SUM , comm->USR_comm );
+#endif
 
 /*if ( comm->ML_mypid == 0 ) cout << "Recursing down" << endl; */
 
