@@ -33,14 +33,12 @@
 Existing implementations</H3>
 To include the Fortran interface in the Zoltan library, use the
 <B>YES_FORTRAN</B> parameter in the make statement, for example
-<BLOCKQUOTE>gmake YES_FORTRAN=1 tflop</BLOCKQUOTE>
+<BLOCKQUOTE>gmake YES_FORTRAN=1 zoltan</BLOCKQUOTE>
 Before compiling the library, make sure that the application's
 <A HREF="ug_fortran_api.html#fortran ug api IDs"><I>lb_user_const.h</I> and
 <I>lb_user_const.f90</I></A> have been placed in <I>lb/</I> and <I>fort/</I>
 repectively.
 <P>
-Currently, only the NIST targets support the Fortran option.  The Sandia
-targets should be added soon.
 <H3>
 Porting to a new system</H3>
 There are some issues here that should be explained.
