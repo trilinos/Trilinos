@@ -205,7 +205,7 @@ int ML_CG_ComputeEigenvalues(ML_Krylov *data, int length, int scale_by_diag)
    for (i = 0; i < length; i++) u[i] = myoffset + i;
    for (i = length; i <= ext_leng; i++) u[i] = 0.0;
    if (getrow_comm != NULL) {
-      ML_exchange_bdry(u,getrow_comm, length,comm,ML_OVERWRITE);
+      ML_exchange_bdry(u,getrow_comm, length,comm,ML_OVERWRITE,NULL);
    }
    index_array = (int *) malloc((ext_leng+1)*sizeof(int));
    for (i = 0; i <= ext_leng; i++) index_array[i] = (int) u[i];
