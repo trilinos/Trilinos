@@ -54,6 +54,8 @@ SRC_CXX =  $(srcdir)/TestTriutilReads.cpp
 
 read_test_SOURCES = 	 $(SRC_CXX)
 
+Dummy_SOURCES = Dummy
+
 #Specify locations of include files within Trilinos, but outside amesos
 AM_CPPFLAGS = -I$(top_srcdir)/../epetra/src  -I$(top_srcdir)/../amd/src \
 	-I$(top_builddir)/../epetra/src \
@@ -69,6 +71,9 @@ read_test_LDADD = $(top_builddir)/../epetra/src/libepetra.a \
 	$(top_builddir)/src/libtriutils.a \
 	$(LIBS) $(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS) 
 
-# SUBDIRS = example1
-SUBDIRS = 
-
+EXTRA_DIST = \
+	$(srcdir)/In_bcsstk01.rsa $(srcdir)/In_bcsstk01.mtx \
+	$(srcdir)/In_bcsstk01.triS $(srcdir)/In_fs_183_4.rua \
+	$(srcdir)/In_fs_183_4.mtx $(srcdir)/In_fs_183_4.triU \
+	$(srcdir)/In_impcol_a.rua $(srcdir)/In_impcol_a.mtx \
+	$(srcdir)/In_impcol_a.triU

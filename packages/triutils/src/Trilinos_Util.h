@@ -112,6 +112,10 @@ class Epetra_MultiVector;
 #include <math.h>
 #endif
 
+#ifdef HAVE_MATH_H
+#include <math.h>
+#endif
+
 #ifdef HAVE_MAP
 #include <map>
 #else
