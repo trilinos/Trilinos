@@ -126,14 +126,29 @@ operator()( OriginalTypeRef orig  )
   {
     assert( Adj1.ExtractMyRowView( i, NumAdj1Indices, Adj1Indices ) == 0 );
 
+    set<int> Cols;
+
     for( int j = 0; j < NumAdj1Indices; ++j )
     {
       assert( base->ExtractMyRowView( Adj1Indices[j], NumIndices, Indices ) == 0 );
+#ifdef EPETRAEXT_COLORING_EXPERIMENTAL
+      for( int k = 0; k < NumIndices; ++k )
+        if( Indices[k] < nCols ) Cols.insert( Indices[k] );
+#else
       int NumLocalIndices = 0;
       for( int k = 0; k < NumIndices; ++k )
         if( Indices[k] < nCols ) NumLocalIndices++; 
       assert( Adj2.InsertMyIndices( i, NumLocalIndices, Indices ) >= 0 );
+#endif
     }
+#ifdef EPETRAEXT_COLORING_EXPERIMENTAL
+    int nCols2 = Cols.size();
+    vector<int> ColVec( nCols2 );
+    set<int>::iterator iterIS = Cols.begin();
+    set<int>::iterator iendIS = Cols.end();
+    for( int j = 0 ; iterIS != iendIS; ++iterIS, ++j ) ColVec[j] = *iterIS;
+    assert( Adj2.InsertMyIndices( i, nCols2, &ColVec[0] ) >= 0 );
+#endif
   }
   assert( Adj2.TransformToLocal() == 0 );
   if( verbose_ ) cout << "Adjacency 2 Graph!\n" << Adj2;
