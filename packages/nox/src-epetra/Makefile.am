@@ -70,6 +70,7 @@ EPETRANEW_H = \
 	$(srcdir)/NOX_EpetraNew_FiniteDifference.H \
 	$(srcdir)/NOX_EpetraNew_FiniteDifferenceColoring.H \
 	$(srcdir)/NOX_EpetraNew_MatrixFree.H \
+	$(srcdir)/NOX_EpetraNew_BroydenOperator.H \
 	$(srcdir)/NOX_EpetraNew_Scaling.H
 
 EPETRANEW = \
@@ -78,6 +79,7 @@ EPETRANEW = \
 	$(srcdir)/NOX_EpetraNew_FiniteDifference.C \
 	$(srcdir)/NOX_EpetraNew_FiniteDifferenceColoring.C \
 	$(srcdir)/NOX_EpetraNew_MatrixFree.C \
+	$(srcdir)/NOX_EpetraNew_BroydenOperator.C \
 	$(srcdir)/NOX_EpetraNew_Scaling.C
 
 if BUILD_NOX_MULTIVECS
