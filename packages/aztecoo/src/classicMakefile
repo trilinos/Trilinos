@@ -48,9 +48,10 @@ TIME_TFLOP      = md_timer_intel.c
 TIME_CPLANT_SERIAL = md_timer_generic.c
 TIME_CPLANT_MPI    = md_timer_mpi.c
 TIME_CPLANT        = $(TIME_CPLANT_$(TRILINOS_COMM))
-TIME_WIN2000       = md_timer_win2000.c
+TIME_WIN2000       = md_timer_generic.c
 TIME_CYGWINCL       = $(TIME_WIN2000)
 TIME_CYGWINICL       = $(TIME_WIN2000)
+TIME_CYGWINGCC       = $(TIME_WIN2000)
 
 #
 # Communication package
