@@ -31,7 +31,7 @@ class Ifpack_OverlapSolveObject: public virtual Epetra_Operator {
  public:
   //@{ \name Constructors/Destructor
   //! Constructor.
-  Ifpack_OverlapSolveObject(char * Label, bool IsOverlapped, const Epetra_Comm & Comm);
+  Ifpack_OverlapSolveObject(char * Label, const Epetra_Comm & Comm);
 
   //! Copy constructor.
   Ifpack_OverlapSolveObject(const Ifpack_OverlapSolveObject & Source);
@@ -205,7 +205,6 @@ class Ifpack_OverlapSolveObject: public virtual Epetra_Operator {
   const Epetra_Comm & Comm_;
   mutable double Condest_;
   Epetra_Flops * Counter_;
-  bool IsOverlapped_;
   Epetra_CombineMode OverlapMode_;
 
 };

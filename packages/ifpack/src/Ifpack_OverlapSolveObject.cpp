@@ -8,8 +8,7 @@
 #include "Epetra_Flops.h"
 
 //==============================================================================
-Ifpack_OverlapSolveObject::Ifpack_OverlapSolveObject(char * Label, bool IsOverlapped,
-						     const Epetra_Comm & Comm) 
+Ifpack_OverlapSolveObject::Ifpack_OverlapSolveObject(char * Label, const Epetra_Comm & Comm) 
   : Label_(Label),
     L_(0),
     UseLTrans_(false),
@@ -19,7 +18,6 @@ Ifpack_OverlapSolveObject::Ifpack_OverlapSolveObject(char * Label, bool IsOverla
     UseTranspose_(false),
     Comm_(Comm),
     Condest_(-1.0),
-    IsOverlapped_(IsOverlapped),
     OverlapMode_(Zero)
 {
 }
@@ -35,7 +33,6 @@ Ifpack_OverlapSolveObject::Ifpack_OverlapSolveObject(const Ifpack_OverlapSolveOb
     UseTranspose_(Source.UseTranspose_),
     Comm_(Source.Comm_),
     Condest_(Source.Condest_),
-    IsOverlapped_(Source.IsOverlapped_),
     OverlapMode_(Source.OverlapMode_)
 {
 }
@@ -64,13 +61,13 @@ int Ifpack_OverlapSolveObject::Solve(bool Trans, const Epetra_MultiVector& X,
     EPETRA_CHK_ERR(L_->Solve(Lower, Trans, UnitDiagonal, *X1, *Y1));
     EPETRA_CHK_ERR(Y1->Multiply(1.0, *D_, *Y1, 0.0)); // y = D*y (D_ has inverse of diagonal)
     EPETRA_CHK_ERR(U_->Solve(Upper, Trans, UnitDiagonal, *Y1, *Y1)); // Solve Uy = y
-    if (IsOverlapped_) {EPETRA_CHK_ERR(Y.Export(*Y1,*L_->Exporter(), OverlapMode_));} // Export computed Y values if needed
+    if (L_->Exporter()!=0) {EPETRA_CHK_ERR(Y.Export(*Y1,*L_->Exporter(), OverlapMode_));} // Export computed Y values if needed
   }
   else {
     EPETRA_CHK_ERR(U_->Solve(Upper, Trans, UnitDiagonal, *X1, *Y1)); // Solve Uy = y
     EPETRA_CHK_ERR(Y1->Multiply(1.0, *D_, *Y1, 0.0)); // y = D*y (D_ has inverse of diagonal)
     EPETRA_CHK_ERR(L_->Solve(Lower, Trans, UnitDiagonal, *Y1, *Y1));
-    if (IsOverlapped_) {EPETRA_CHK_ERR(Y.Export(*Y1,*U_->Importer(), OverlapMode_));} // Export computed Y values if needed
+    if (U_->Importer()!=0) {EPETRA_CHK_ERR(Y.Export(*Y1,*U_->Importer(), OverlapMode_));} // Export computed Y values if needed
   } 
 
   return(0);
@@ -94,7 +91,7 @@ int Ifpack_OverlapSolveObject::Multiply(bool Trans, const Epetra_MultiVector& X,
     Epetra_MultiVector Y1temp(*Y1); // Need a temp copy of Y1
     EPETRA_CHK_ERR(L_->Multiply(Trans, Y1temp, *Y1));
     EPETRA_CHK_ERR(Y1->Update(1.0, Y1temp, 1.0)); // (account for implicit unit diagonal)
-    if (IsOverlapped_) {EPETRA_CHK_ERR(Y.Export(*Y1,*L_->Exporter(), OverlapMode_));} // Export computed Y values if needed
+    if (L_->Exporter()!=0) {EPETRA_CHK_ERR(Y.Export(*Y1,*L_->Exporter(), OverlapMode_));} // Export computed Y values if needed
   }
   else {
 
@@ -104,7 +101,7 @@ int Ifpack_OverlapSolveObject::Multiply(bool Trans, const Epetra_MultiVector& X,
     Epetra_MultiVector Y1temp(*Y1); // Need a temp copy of Y1
     EPETRA_CHK_ERR(U_->Multiply(Trans, Y1temp, *Y1));
     EPETRA_CHK_ERR(Y1->Update(1.0, Y1temp, 1.0)); // (account for implicit unit diagonal)
-    if (IsOverlapped_) {EPETRA_CHK_ERR(Y.Export(*Y1,*L_->Exporter(), OverlapMode_));}
+    if (L_->Exporter()!=0) {EPETRA_CHK_ERR(Y.Export(*Y1,*L_->Exporter(), OverlapMode_));}
   } 
   return(0);
 } 

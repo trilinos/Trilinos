@@ -19,11 +19,11 @@
 #define IFPACK_OVERLAPGRAPH_H
 
 #include "Epetra_Object.h"
-#include "Epetra_CombineMode.h"
+#include "Epetra_CrsGraph.h"
 class Epetra_Comm;
-class Epetra_Map;
-class Epetra_CrsGraph;
+class Epetra_BlockMap;
 class Epetra_RowMatrix;
+class Epetra_Import;
 
 //! Ifpack_OverlapGraph: Constructs a graph for use with Ifpack preconditioners.
 
@@ -47,16 +47,22 @@ class Ifpack_OverlapGraph: public Epetra_Object {
   Ifpack_OverlapGraph(const Epetra_RowMatrix * UserMatrix, int OverlapLevel);
   
   //! Copy constructor.
-  Ifpack_CrsIlut(const Ifpack_CrsIlut & Source);
+  Ifpack_OverlapGraph(const Ifpack_OverlapGraph & Source);
 
   //! Ifpack_CrsIlut Destructor
-  virtual ~Ifpack_CrsIlut();
+  virtual ~Ifpack_OverlapGraph();
   //@}
 
   //@{ \name Atribute access methods.
     
   //! Returns the overlap graph object.
   const Epetra_CrsGraph & OverlapGraph() const {return(*OverlapGraph_);}
+    
+  //! Returns the RowMap associated with the overlap graph.
+  const Epetra_BlockMap & OverlapRowMap() const {return(*OverlapRowMap_);}
+    
+  //! Returns the overlap graph object.
+  const Epetra_Import & OverlapImporter() const {return(*OverlapImporter_);}
     
   //! Returns the level of overlap used to create this graph.
   /*! The graph created by this class uses a recursive definition 0f overlap.
@@ -78,7 +84,6 @@ class Ifpack_OverlapGraph: public Epetra_Object {
         os << "Overlap Graph created using the user's Epetra_CrsGraph object" << endl;
 
   os << " Level of Overlap = " << OverlapLevel_ << endl;
-  os << " Overlap Mode     = " << OverlapMode_ << endl;
   OverlapGraph_->Print(os);
   return;
 }
@@ -86,9 +91,13 @@ class Ifpack_OverlapGraph: public Epetra_Object {
 
  protected:
 
+  int ConstructOverlapGraph(const Epetra_CrsGraph * UserMatrixGraph);
   Epetra_CrsGraph * OverlapGraph_;
-  Epetra_CrsGraph * UserMatrixGraph_;
-  Epetra_CrsGraph * UserMatrix_;
+  const Epetra_CrsGraph * UserMatrixGraph_;
+  const Epetra_RowMatrix * UserMatrix_;
+  Epetra_BlockMap * OverlapRowMap_;
+  Epetra_Import * OverlapImporter_;
   int OverlapLevel_;
-
+  bool IsOverlapped_;
+};
 #endif // IFPACK_OVERLAPGRAPH_H

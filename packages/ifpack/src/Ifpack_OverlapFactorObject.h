@@ -24,10 +24,10 @@ class Ifpack_OverlapFactorObject {
 
  public:
   //@{ \name Constructors/Destructor
-  //! Constructor using Epetra_CrsGraph.
-  /*! Creates an Ifpack_Graph object from the user graph. 
+  //! Constructor using Ifpack_OverlapGraph.
+  /*! Creates an object from the overlap graph. 
     \param In
-           UserMatrixGraph - Graph from user matrix.
+           OverlapGraph - Graph describing the graph that should be used for the factors.
   */
   Ifpack_OverlapFactorObject(const Ifpack_OverlapGraph * OverlapGraph);
 
@@ -53,9 +53,9 @@ class Ifpack_OverlapFactorObject {
       then calls ProcessOverlapMatrix(), a virtual method that must be implemented by any class
       that derives from this class.
     \param In 
-           A - User matrix to be processed.
+           UserMatrix - User matrix to be processed.
    */
-  virtual int InitValues(const Epetra_RowMatrix &A);
+  virtual int InitValues(const Epetra_RowMatrix * UserMatrix);
 
   //! Compute factors.
   /*! This function computes factors using the method DerivedFactor() that 
@@ -67,6 +67,9 @@ class Ifpack_OverlapFactorObject {
 
   //@{ \name Attribue accessor methods.
 
+
+  //! If storage has been allocated, this query returns true, otherwise it returns false.
+  bool Allocated() const {return(Allocated_);};
 
   //! If values have been initialized, this query returns true, otherwise it returns false.
   bool ValuesInitialized() const {return(ValuesInitialized_);};
@@ -103,5 +106,5 @@ class Ifpack_OverlapFactorObject {
   bool ValuesInitialized_;
   Ifpack_OverlapGraph * OverlapGraph_;
   Epetra_RowMatrix * UserMatrix_;
-  
+};
 #endif // IFPACK_OVERLAPFACTOROBJECT_H
