@@ -157,7 +157,7 @@ int run_zoltan(int Proc, PROB_INFO_PTR prob, MESH_INFO_PTR mesh)
   if (Debug_Driver > 0) {
     if (Proc == 0) printf("\nBEFORE load balancing\n");
     driver_eval(mesh);
-    LB_Eval(lb, 1, NULL, NULL, NULL, NULL, NULL, &i);
+    LB_Eval(lb, 1, NULL, NULL, NULL, NULL, NULL, NULL, &i);
     if (i) printf("Warning: LB_Eval returned error code %d\n", i);
   }
 
@@ -187,7 +187,7 @@ int run_zoltan(int Proc, PROB_INFO_PTR prob, MESH_INFO_PTR mesh)
   if (Debug_Driver > 0) {
     if (Proc == 0) printf("\nAFTER load balancing\n");
     driver_eval(mesh);
-    LB_Eval(lb, 1, NULL, NULL, NULL, NULL, NULL, &i);
+    LB_Eval(lb, 1, NULL, NULL, NULL, NULL, NULL, NULL, &i);
     if (i) printf("Warning: LB_Eval returned error code %d\n", i);
   }
 
@@ -382,7 +382,7 @@ int get_num_edges(void *data, LB_GID global_id, LB_LID local_id, int *ierr)
 /*****************************************************************************/
 void get_edge_list (void *data, LB_GID global_id, LB_LID local_id,
                    LB_GID *nbor_global_id, int *nbor_procs,
-                   int get_ewgts, int *nbor_ewgts, int *ierr)
+                   int get_ewgts, float *nbor_ewgts, int *ierr)
 {
   MESH_INFO_PTR mesh;
   ELEM_INFO *elem;
@@ -416,9 +416,9 @@ void get_edge_list (void *data, LB_GID global_id, LB_LID local_id,
 
     if (get_ewgts) {
       if (elem[local_id].edge_wgt == NULL)
-        nbor_ewgts[j] = 1; /* uniform weights is default */
+        nbor_ewgts[j] = 1.0; /* uniform weights is default */
       else
-        nbor_ewgts[j] = (int) elem[local_id].edge_wgt[i];
+        nbor_ewgts[j] = elem[local_id].edge_wgt[i];
     }
     j++;
   }
