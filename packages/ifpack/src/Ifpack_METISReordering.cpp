@@ -125,7 +125,7 @@ int Ifpack_METISReordering::Compute(const Ifpack_Graph& Graph)
 #ifdef HAVE_IFPACK_METIS
   METIS_NodeND(&NumMyRows_, &xadj[0], &adjncy[0],
 	       &numflag, &options[0],
-	       &Reorder_[0], &InvReorder_[0]);
+	       &InvReorder_[0], &Reorder_[0]);
 #else
   cerr << "Please configure with --enable-ifpack-metis" << endl;
   cerr << "to use METIS Reordering." << endl;

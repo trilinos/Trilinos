@@ -81,7 +81,7 @@ int main(int argc, char *argv[])
   // ================================= //
  
   cout << "Sparsity, non-dropped matrix" << endl;
-  Ifpack_PrintSparsity(Matrix);
+  Ifpack_PrintSparsity_Simple(Matrix);
 
   // ====================================== //
   // create a new matrix, dropping by value //
@@ -94,7 +94,7 @@ int main(int argc, char *argv[])
   assert (DropA.MaxNumEntries() == 2);
 
   cout << "Sparsity, dropping by value" << endl;
-  Ifpack_PrintSparsity(DropA);
+  Ifpack_PrintSparsity_Simple(DropA);
 
   // ========================================= //
   // create a new matrix, dropping by sparsity //
@@ -104,7 +104,7 @@ int main(int argc, char *argv[])
   Ifpack_SparsityFilter SparsityA(&Matrix,2);
 
   cout << "Sparsity, dropping by sparsity" << endl;
-  Ifpack_PrintSparsity(SparsityA);
+  Ifpack_PrintSparsity_Simple(SparsityA);
   assert (SparsityA.MaxNumEntries() == 3);
 
   // ======================================== //
@@ -119,7 +119,7 @@ int main(int argc, char *argv[])
   Ifpack_SingletonFilter Filter4(&Filter3);
 
   cout << "Sparsity, dropping singletons 4 times" << endl;
-  Ifpack_PrintSparsity(Filter4);
+  Ifpack_PrintSparsity_Simple(Filter4);
   assert (Filter4.NumMyRows() == 1);
 
 #ifdef HAVE_MPI

@@ -42,6 +42,7 @@
 #include "AztecOO.h"
 #include "Ifpack.h"
 
+#include "Ifpack_Utils.h"
 // This example reads a matrix in MatrixMarket format on process 0,
 // then it redistributed this matrix, using all the available
 // processes, build an IFPACK preconditioner, and uses AztecOO to
@@ -100,6 +101,9 @@ int main(int argc, char *argv[])
   // matrix name
   string FileName = "not-set";
   CLP.setOption("matrix", &FileName, "Name of file containing the MTX matrix");
+  // is true, the matrix contains only half of the matrix
+  int SymFormat = false;
+  CLP.setOption("sym-matrix", &SymFormat, "Set to non-zero value if the matrix is stored in symmetric format (that is, only the nonzeros of the lower or upper part are stored)");
 
   CLP.throwExceptions(false);
   CLP.parse(argc,argv);
@@ -162,9 +166,9 @@ int main(int argc, char *argv[])
       data_file >> val;
       row -= Offset;
       col -= Offset;
-      int ierr = SerialMatrix->InsertGlobalValues(row,1,&val,&col);
-      if (ierr < 0)
-	IFPACK_CHK_ERR(-1);
+      IFPACK_CHK_ERR(SerialMatrix->InsertGlobalValues(row,1,&val,&col));
+      if (col != row && SymFormat)
+        IFPACK_CHK_ERR(SerialMatrix->InsertGlobalValues(col,1,&val,&row));
     }
 
     // want to be sure that the diagonal element is set,

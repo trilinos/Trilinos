@@ -79,7 +79,7 @@ int TestPreconditioner(string PrecType, Epetra_LinearProblem* Problem,
 
   List.set("fact: level-of-fill", OverlapLevel);
   List.set("partitioner: local parts", 74);
-  List.set("partitioner: type", "METIS");
+  List.set("partitioner: type", "metis");
   List.set("partitioner: overlap", 0);
   List.set("schwarz: use RCM reordering", true);
   IFPACK_CHK_ERR(Prec->SetParameters(List));
@@ -151,7 +151,7 @@ int main(int argc, char *argv[])
   // test the preconditioner
   int TestPassed = true;
   for (int overlap = 0 ; overlap < 5 ; overlap++) {
-    if (TestPreconditioner("block Jacobi",Problem,overlap))
+    if (TestPreconditioner("block relaxation",Problem,overlap))
       TestPassed = false;
   }
 

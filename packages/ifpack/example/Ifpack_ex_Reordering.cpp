@@ -91,8 +91,8 @@ int main(int argc, char *argv[])
 
   A.FillComplete();
 
-  // print the sparsity on screen
-  Ifpack_PrintSparsity(A);
+  // print the sparsity to file, postscript format
+  Ifpack_PrintSparsity(A,"OrigA","orig.ps");
 
   // create the reordering...
   Ifpack_RCMReordering Reorder;
@@ -105,8 +105,8 @@ int main(int argc, char *argv[])
   // create a reordered matrix
   Ifpack_ReorderFilter ReordA(&A,&Reorder);
 
-  // print the sparsity
-  Ifpack_PrintSparsity(ReordA);
+  // print the sparsity to file, postscript format
+  Ifpack_PrintSparsity(ReordA,"ReordA", "reord.ps");
 
 #ifdef HAVE_MPI
   MPI_Finalize(); 

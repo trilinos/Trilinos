@@ -38,13 +38,7 @@
 #include "Epetra_LinearProblem.h"
 #include "Trilinos_Util_CrsMatrixGallery.h"
 #include "Teuchos_ParameterList.hpp"
-#include "Ifpack_Jacobi.h"
-#include "Ifpack_AdditiveSchwarz.h"
-#include "Ifpack_BlockGaussSeidel.h"
-#include "Ifpack_Jacobi.h"
-#include "Ifpack_GaussSeidel.h"
-#include "Ifpack_SOR.h"
-#include "Ifpack_SSOR.h"
+#include "Ifpack_PointRelaxation.h"
 
 using namespace Trilinos_Util;
 
@@ -65,26 +59,14 @@ bool TestPreconditioner(string PrecType,
   List.set("point: damping factor", 1.0);
   List.set("point: sweeps",1550);
   List.set("point: print frequency", 1000);
+  List.set("point: type", PrecType);
 
-  Ifpack_Preconditioner* PointPrec = 0;
+  Ifpack_PointRelaxation Point(A);
 
-  if (PrecType == "Jacobi")
-    PointPrec = new Ifpack_Jacobi(A);
-  else if (PrecType == "Gauss-Seidel")
-    PointPrec = new Ifpack_GaussSeidel(A);
-  else if (PrecType == "SOR")
-    PointPrec = new Ifpack_SOR(A);
-  else if (PrecType == "SSOR")
-    PointPrec = new Ifpack_SSOR(A);
-
-  assert (PointPrec != 0);
-
-  PointPrec->SetParameters(List);
-  PointPrec->Compute();
+  Point.SetParameters(List);
+  Point.Compute();
   // use the preconditioner as solver, with 1550 iterations
-  PointPrec->ApplyInverse(RHS,LHS);
-
-  delete PointPrec;
+  Point.ApplyInverse(RHS,LHS);
 
   // compute the real residual
 
