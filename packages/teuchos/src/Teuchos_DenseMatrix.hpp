@@ -113,9 +113,10 @@ int DenseMatrix<OrdinalType, ScalarType>::reshape(int numRows, int numCols)
 {
   // Allocate space for new matrix
   ScalarType* values_tmp = new ScalarType[numRows * numCols];
+  ScalarType zero = ScalarTraits<ScalarType>::zero();
   for(int k = 0; k < numRows * numCols; k++)
     {
-      values_tmp[k] = 0.0; // Zero out values
+      values_tmp[k] = zero;
     }
   int numRows_tmp = TEUCHOS_MIN(numRows_, numRows);
   int numCols_tmp = TEUCHOS_MIN(numCols_, numCols);
@@ -139,7 +140,7 @@ int DenseMatrix<OrdinalType, ScalarType>::shape(int numRows, int numCols)
   numRows_ = numRows;
   numCols_ = numCols;
   stride_ = numRows_;
-  ScalarType zero = 0; // NOTE:  This should be handled by the Traits mechanism
+  ScalarType zero = ScalarTraits<ScalarType>::zero();
   values_ = new ScalarType[stride_*numCols_];
   for(int k = 0; k < stride_ * numCols_; k++)
     {

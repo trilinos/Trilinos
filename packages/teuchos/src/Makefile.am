@@ -45,9 +45,10 @@ CORE = \
 	$(srcdir)/Teuchos_Object.cpp \
 	$(srcdir)/Teuchos_Time.cpp
 
-UTIL_H = 
 
-UTIL = 
+UTIL_H =
+
+UTIL =
 
 ENUM_H = 
 
@@ -82,6 +83,7 @@ MPI_H =
 MPI =
 
 endif
+
 
 USERBASE_H = 
 
@@ -140,7 +142,9 @@ libteuchos_a_SOURCES = \
 #np# replace new_package with the name of the package being autotool'ed here
 EXTRA_libteuchos_a_SOURCES = \
 	$(EXTRA_MPI) \
-	$(EXTRA_MPI_H) 
+	$(EXTRA_MPI_H) \
+	$(EXTRA_ARPREC) \
+	$(EXTRA_ARPREC_H) 
 
 #We need the following to support separate build directories
 #AM_CPPFLAGS=-I$(builddir)/src
@@ -169,7 +173,7 @@ endif
 # ------------------------------------------------------------------------
 
 #np# replace new_package with the name of the package being autotool'ed here
-libteuchos_a_LIBADD = $(XTRALDADD)
+libteuchos_a_LIBADD = $(XTRALDADD) 
 
 # ------------------------------------------------------------------------
 # List of all libraries to install in $(libexecdir)

@@ -228,7 +228,9 @@ libteuchos_a_SOURCES = \
 #np# replace new_package with the name of the package being autotool'ed here
 EXTRA_libteuchos_a_SOURCES = \
 	$(EXTRA_MPI) \
-	$(EXTRA_MPI_H) 
+	$(EXTRA_MPI_H) \
+	$(EXTRA_ARPREC) \
+	$(EXTRA_ARPREC_H) 
 
 
 #We need the following to support separate build directories
@@ -253,7 +255,7 @@ EXTRA_libteuchos_a_SOURCES = \
 # ------------------------------------------------------------------------
 
 #np# replace new_package with the name of the package being autotool'ed here
-libteuchos_a_LIBADD = $(XTRALDADD)
+libteuchos_a_LIBADD = $(XTRALDADD) 
 
 # ------------------------------------------------------------------------
 # List of all libraries to install in $(libexecdir)

@@ -11,6 +11,9 @@
 // 06.18.03 -- Minor formatting changes
 //          -- Changed calls to LAPACK objects to use new <OType, SType> templates
 // 07.08.03 -- Move into Teuchos package/namespace
+// 07.11.03 -- Added ScalarTraits for ARPREC::mp_real
+// 07.14.03 -- Fixed int rand() function (was set up to return a floating-point style random number)
+// 07.17.03 -- Added squareroot() function
 
 #ifndef _TEUCHOS_SCALARTRAITS_HPP_
 #define _TEUCHOS_SCALARTRAITS_HPP_
@@ -23,13 +26,14 @@
 #define ComplexFloat std::complex<float>
 #define ComplexDouble std::complex<double>
 #endif
+#include "mp/mpreal.h"
 
 namespace Teuchos {
   /** The Teuchos ScalarTraits file.
       
-      For the most general type 'class T', we define aborting functions, 
-      which should restrict implementations from using traits other than the
-      specializations defined below.
+  For the most general type 'class T', we define aborting functions, 
+  which should restrict implementations from using traits other than the
+  specializations defined below.
   */
   
   template<class T>
@@ -44,7 +48,7 @@ namespace Teuchos {
 #endif
       return(-1);
     }
-
+    
     static inline int unsupportedType()
     {
 #ifndef TEUCHOS_NO_ERROR_REPORTS
@@ -69,6 +73,7 @@ namespace Teuchos {
     static inline T one()                      { throw(unsupportedType()); };
     static inline T random()                   { throw(unsupportedType()); };
     static inline const char* name()           { throw(unsupportedType()); };
+    static inline magnitudeType squareroot(T x) { throw(unsupportedType()); };
   };
   
   template<>
@@ -98,8 +103,9 @@ namespace Teuchos {
     static inline magnitudeType magnitude(int a) { return abs(a); };
     static inline int zero()  { return 0; };
     static inline int one()   { return 1; };
-    static inline int random() { return(rand() / RAND_MAX); };
+    static inline int random() { return rand(); };
     static inline const char * name() { return "int"; };
+    static inline int squareroot(int x) { return (int)sqrt(x); };
   };
   
   
@@ -123,6 +129,7 @@ namespace Teuchos {
     static inline float one()   { return(1.0); };    
     static inline float random() { float rnd = (float)std::rand() / RAND_MAX; return (float)(-1.0 + 2.0 * rnd); };
     static inline const char* name() { return "float"; };
+    static inline float squareroot(float x) { return sqrt(x); };
   };
   
   
@@ -146,6 +153,7 @@ namespace Teuchos {
     static inline double rmax()  { LAPACK<int, double> lp; return lp.LAMCH('O'); };
     static inline double random() { double rnd = (double)std::rand() / RAND_MAX; return (double)(-1.0 + 2.0 * rnd); };
     static inline const char* name() { return "double"; };
+    static inline double squareroot(double x) { return sqrt(x); };
   };
   
 #ifndef NO_COMPLEX
@@ -175,6 +183,18 @@ namespace Teuchos {
       return ComplexFloat(rnd1, rnd2);
     };
     static inline const char* name() { return "std::complex<float>"; };
+
+    // This will only return one of the square roots of x, the other can be obtained by taking its conjugate
+    static inline ComplexFloat squareroot(ComplexFloat x)
+    {
+      float r = x.real(), i = x.imag();
+      float a = sqrt((r * r) + (i * i));
+      float nr = sqrt((a + r) / 2);
+      float ni = sqrt((a - r) / 2);
+      ComplexFloat result = ComplexFloat(nr, ni);
+      return result;
+    };
+
   };
   
   template<>
@@ -202,9 +222,53 @@ namespace Teuchos {
       return ComplexDouble(rnd1, rnd2);
     };
     static inline const char* name() { return "std::complex<double>"; };
+
+    // This will only return one of the square roots of x, the other can be obtained by taking its conjugate
+    static inline ComplexDouble squareroot(ComplexDouble x)
+    {
+      double r = x.real(), i = x.imag();
+      double a = sqrt((r * r) + (i * i));
+      double nr = sqrt((a + r) / 2);
+      double ni = sqrt((a - r) / 2);
+      ComplexDouble result = ComplexDouble(nr, ni);
+      return result;
+    };
   };
-  
+
 #endif  // NO_COMPLEX
+
+  template<>
+  struct ScalarTraits<mp_real>
+  {
+
+    static inline int undefinedParameters()
+    {
+#ifndef TEUCHOS_NO_ERROR_REPORTS
+      cerr << endl << "Teuchos::ScalarTraits: Machine parameters are undefined for this scalar type." << endl;
+#endif
+      return(-1);
+    }
+
+    typedef mp_real magnitudeType;
+    static inline bool haveMachineParameters() { return false; };
+    static inline mp_real eps()   { throw(undefinedParameters()); };
+    static inline mp_real sfmin() { throw(undefinedParameters()); };
+    static inline mp_real base()  { throw(undefinedParameters()); };
+    static inline mp_real prec()  { throw(undefinedParameters()); };
+    static inline mp_real t()     { throw(undefinedParameters()); };
+    static inline mp_real rnd()   { throw(undefinedParameters()); };
+    static inline mp_real emin()  { throw(undefinedParameters()); };
+    static inline mp_real rmin()  { throw(undefinedParameters()); };
+    static inline mp_real emax()  { throw(undefinedParameters()); };
+    static inline mp_real rmax()  { throw(undefinedParameters()); };
+
+    static magnitudeType magnitude(mp_real a) { return abs(a); };
+    static inline mp_real zero() { mp_real zero = 0.0; return zero; };
+    static inline mp_real one() { mp_real one = 1.0; return one; };    
+    static inline mp_real random() { return mp_rand(); };
+    static inline const char* name() { return "mp_real"; };
+    static inline mp_real squareroot(mp_real x) { return sqrt(x); };
+  };
   
 } // Teuchos namespace
 
