@@ -176,3 +176,21 @@ void Trilinos_Util_GenerateCrsProblem(int nx, int ny, int npoints, int * xoff, i
 																			Epetra_MultiVector *& b,
 																			Epetra_MultiVector *&xexact);
 
+void Trilinos_Util_GenerateVbrProblem(int nx, int ny, int npoints, int * xoff, int * yoff,
+																			int nsizes, int * sizes,
+																			const Epetra_Comm  &comm, 
+																			Epetra_BlockMap *& map, 
+																			Epetra_VbrMatrix *& A, 
+																			Epetra_Vector *& x, 
+																			Epetra_Vector *& b,
+																			Epetra_Vector *&xexact);
+
+void Trilinos_Util_GenerateVbrProblem(int nx, int ny, int npoints, int * xoff, int * yoff,
+																			int nsizes, int * sizes, int nrhs,
+																			const Epetra_Comm  &comm, 
+																			Epetra_BlockMap *& map, 
+																			Epetra_VbrMatrix *& A, 
+																			Epetra_MultiVector *& x, 
+																			Epetra_MultiVector *& b,
+																			Epetra_MultiVector *&xexact);
+

@@ -72,7 +72,7 @@ void Trilinos_Util_GenerateCrsProblem(int nx, int ny, int npoints, int * xoff, i
 
 	int numMyEquations = map->NumMyElements();
   
-  A = new Epetra_CrsMatrix(Copy, *map, 0); // Construct matrix on PE 0
+  A = new Epetra_CrsMatrix(Copy, *map, 0); // Construct matrix
 
 	int * indices = new int[npoints];
 	double * values = new double[npoints];
@@ -88,11 +88,11 @@ void Trilinos_Util_GenerateCrsProblem(int nx, int ny, int npoints, int * xoff, i
 			int colID = rowID + xoff[j] + nx*yoff[j]; // Compute column ID based on stencil offsets
 			if (colID>-1 && colID<numGlobalEquations) {
 				indices[numIndices] = colID;
-				double value = ((double) rand())/ ((double) RAND_MAX);
+				double value = - ((double) rand())/ ((double) RAND_MAX);
 				if (colID==rowID)
-					values[numIndices++] = dnpoints + value; // Make diagonal dominant
+					values[numIndices++] = dnpoints - value; // Make diagonal dominant
 				else
-					values[numIndices++] = value;
+					values[numIndices++] = -value;
 			}
 		}
 		
