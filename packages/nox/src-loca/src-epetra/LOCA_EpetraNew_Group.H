@@ -212,7 +212,7 @@ namespace LOCA {
        *      J & \frac{df}{dp}
        *   \end{bmatrix} Q \Delta x = f 
        * \f]
-       * where \f$Q\in\Re^{n+1\times n}$\f$ is an orthogonal matrix such that
+       * where \f$Q\in\Re^{n+1\times n}\f$ is an orthogonal matrix such that
        * for any \f$z\in\Re^n\f$,
        * \f[
        *    Q z = P \begin{bmatrix} z \\ 0 \end{bmatrix}.
