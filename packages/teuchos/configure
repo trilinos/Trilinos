@@ -1569,7 +1569,7 @@ test -n "$target_alias" &&
 
 # Use automake
 
-#  #np# - Package name and version below
+# Specify required version of automake
 am__api_version="1.8"
 # Find a good install program.  We prefer a C program (faster),
 # so one script is as good as another.  But avoid the broken or
@@ -1843,8 +1843,8 @@ fi
 
 
 # Define the identity of the package.
- PACKAGE=teuchos
- VERSION=0.1
+ PACKAGE='teuchos'
+ VERSION='0.1'
 
 
 cat >>confdefs.h <<_ACEOF
