@@ -86,7 +86,7 @@ int LB_find_median(
   double  weightlo, weighthi;        /* wt in lower/upper half of non-active */
   double  tmp_half;
 
-  int     i, j, k, wtflag, numlist;
+  int     i, j, k, wtflag = 0, numlist;
   int     first_iteration;
   int    *dotlist = NULL;            /* list of active dots */
   int     indexlo, indexhi;          /* indices of dot closest to median */
@@ -118,7 +118,6 @@ int LB_find_median(
      * NOTE: it will be much more efficient if weights are allocated
      * and set before calling this routine.
      */
-    wtflag = 0;
     if (!wgts) {
       wtflag = 1;
       wgts = (double *) LB_Array_Alloc (__FILE__, __LINE__, 1, dotnum,
