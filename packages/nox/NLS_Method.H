@@ -32,7 +32,8 @@ public:
   //! Status of solver
   enum STATUS {
     NotConverged = 0,
-    Converged = 1,
+    ConvergedAbsTol = 1,
+    ConvergedRelTol = 2,
     MaxItersExceeded = -1,
     OtherError = -2
   };
@@ -44,7 +45,7 @@ public:
   virtual void resetParameters(NLS_ParameterList& p) = 0;
 
   //! Check for convergence of the nonlinear problem
-  virtual STATUS isConverged() = 0;
+  virtual STATUS getStatus() = 0;
 
   //! Do one nonlinear method iteration
   virtual STATUS iterate() = 0;

@@ -39,7 +39,7 @@ public:
 
 
   void resetParameters(NLS_ParameterList& p);
-  STATUS isConverged();
+  STATUS getStatus();
   STATUS iterate();
   STATUS solve();
   NLS_Group& getSolutionGroup() const;

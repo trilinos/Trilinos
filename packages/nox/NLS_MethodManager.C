@@ -63,9 +63,9 @@ void NLS_MethodManager::resetParameters(NLS_ParameterList& p)
   ptr->resetParameters(p);
 }
 
-NLS_Method::STATUS NLS_MethodManager::isConverged()
+NLS_Method::STATUS NLS_MethodManager::getStatus()
 {
-  return ptr->isConverged();
+  return ptr->getStatus();
 }
 
 NLS_Method::STATUS NLS_MethodManager::iterate()
