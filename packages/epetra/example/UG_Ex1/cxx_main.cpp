@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
-#ifdef UG_EX1_MPI
+#include "Epetra_config.h"
+#ifdef HAVE_MPI
 #include "mpi.h"
 #include "Epetra_MpiComm.h"
 #else
@@ -12,7 +13,7 @@
 // prototype
 double power_method(const Epetra_CrsMatrix& A);
 int main(int argc, char *argv[]) {
-#ifdef UG_EX1_MPI
+#ifdef HAVE_MPI
   MPI_Init(&argc,&argv);
   Epetra_MpiComm Comm(MPI_COMM_WORLD);
 #else

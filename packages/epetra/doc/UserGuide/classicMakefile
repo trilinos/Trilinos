@@ -1,6 +1,6 @@
 TARGET=EpetraUserGuide
 
-$(TARGET).pdf: $(TARGET).tex
+$(TARGET).pdf: $(TARGET).tex Ex1.tex Ex1a.tex
 	pdflatex $(TARGET)
 	bibtex $(TARGET)
 	pdflatex $(TARGET)
@@ -12,3 +12,10 @@ view: $(TARGET).pdf
 clean:
 	rm -f *.ps $(TARGET).pdf *.dvi *.aux *.toc *.idx *.ind *.ilg *.log *.out \
            *.bbl *.blg *.lof *.lot *.tex~
+
+
+Ex1.tex: ../../example/UG_Ex1/cxx_main.cpp ex_header.txt ex_footer.txt
+	cat ex_header.txt ../../example/UG_Ex1/cxx_main.cpp ex_footer.txt > Ex1.tex
+
+Ex1a.tex: ../../example/UG_Ex1/power_method.cpp ex_header.txt ex_footer.txt
+	cat ex_header.txt ../../example/UG_Ex1/power_method.cpp ex_footer.txt > Ex1a.tex

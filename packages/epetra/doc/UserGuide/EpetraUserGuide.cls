@@ -762,6 +762,8 @@
 \def\Epetra{\textsf{\bf Epetra}}
 \def\EpetraTM{{\color{EpetraBlue} \bf
       \textsf{Epetra}}\textsuperscript{\tiny{\texttrademark}}}
+\def\TrilinosTM{{\color{EpetraBlue} \bf
+      \textsf{Trilinos}}\textsuperscript{\tiny{\texttrademark}}}
 \def\EpetraTitle{\bf
 %  {\color{EpetraBlue}{\Huge\scalefont{1.45}\bf
 %  {\color{EpetraBlue}{\Huge\scalefont{1.00}\bf
