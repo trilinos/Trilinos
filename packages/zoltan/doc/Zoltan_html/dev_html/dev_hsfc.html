@@ -42,15 +42,18 @@ for information about how to use this module and its parameters.
 <p>
 First, the weights and inverse Hilbert coordinates for each object
 are determined. If the objects do not have weights, unit weights are assigned.
-If the objects have multiple weights, only the first weight is currenlty used.  The smallest
+If the objects have multiple weights, only the first weight is currently used.  The smallest
 axis-aligned box is found that contains
 all of the objects using their two or three dimensional spatial coordinates.
-This bounding box is slightly expanded to insure that all objects are strictly
+This bounding box is slightly expanded to ensure that all objects are strictly
 interior to the boundary surface. The bounding box is necessary in order to calculate
-the inverse Hilbert Space Filling curve coordinate. The inverse Hilbert
+the inverse Hilbert Space Filling curve coordinate. The bounding box is used to
+scale the problem coordinates into the [0,1]^d unit volume (d represents the number of dimensions
+in the problem space.) The inverse Hilbert
 coordinate is calculated and stored as a double precision floating point value for
 each object. This code works on problems with one, two or three dimensions (the
-1-D Inverse Hilbert coordinate is simply the problem coordinate itself.)
+1-D Inverse Hilbert coordinate is simply the problem coordinate itself, after the
+bounding box scaling.)
 <p>
 The algorithm seeks to cut the unit interval into P segments containing equal
 weights of objects associated to the segments by their inverse Hilbert coordinates.
@@ -70,7 +73,7 @@ minimum (inverse Hilbert) coordinate found in each bin.  A greedy algorithm sums
 weights of the bins from left to right until the next bin would cause an overflow for
 the current partition. This results in new partition of P intervals. The location of
 each cut (just before an "overflowing" bin) and the size of its "overflowing" bin are
-saved. The "overflowing" bin's maximum and minimum are compared to determine of the bin
+saved. The "overflowing" bin's maximum and minimum are compared to determine if the bin
 can be practically subdivided. (If the bin's maximum and minimum coordinates are too
 close relative to double precision resolution, the bin can not be practically
 subdivided.)  If at least one bin can be further refined, then looping will continue.
@@ -106,6 +109,36 @@ proportional to the P, the number of partitions.
 <p>
 Note, when a bin is encountered that satisfies more than two partitions, that bin is refined
 into a multiple of k-1 intervals which maintains a total of N bins.
+<BR>&nbsp;
+<h3>Hilbert Transformations</h3>
+The HSFC now uses table driven logic to convert from spatial coordinates (2 or 3 dimensions)
+(the Inverse Hilbert functions) and from the unit interval into spatial coordinates
+(Hilbert functions).  In each case there are two associated tables: the data table and the
+state table. In all cases, the table logic can be extended to any required precision.  Currently,
+the precision is determined for compatibility with the the double precision used in
+the partitioning algorithm.
+<p>The inverse transformation is computed by taking the highest order bit from each spatial
+coordinate and packing them together as 2 or 3 bits (as appropriate to the dimensionality)
+in the order xyz (or xy) where x is the highest bit in the word.
+The initial state is 0.  The data table lookup finds the value
+at the column indexed by the xyz word and the row 0 (corresponding to the initial state value.)
+This data are the 3 (or 2) starting bits of the Hilbert coordinate.  The next state value
+is found by looking up the corresponding element of the state table (xyz column and row 0.)
+<p>
+The table procedure continues to loop (using loop counter i, for example) until the required
+precision is reached. At loop i, the ith bits from each spatial dimension are packed together
+as the xyz column index.  The data table lookup finds the element at column xyz and the row
+determined by the last state table value.  This is appended to the Hilbert coordinate. The
+state table is used to find the next state value at the element corresponding to the xyz
+column and row equal to the last state value.
+<p>
+The inverse transformation is analogous.  Here the 3 (or 2 in the 2-d case) bits of the
+Hilbert coordinate are extracted into a word.  This word is the column index into the
+data table and the state value is the row.  This word found in the data table is
+interpreted as the packed xyz bits for the spatial coordinates.  These bits are
+extracted for each dimension and appended to that dimension's coordinate. The corresponding
+state table is used to find the next row (state) used in the next loop.
+
 
 <BR>&nbsp;
 <h3>Point Assign</h3>
@@ -119,8 +152,15 @@ The extended bounded box is
 used to compute the new point's inverse Hilbert coordinate.  Then the
 routine performs a binary search on the final partition to determine the partition (interval) which
 includes the point. The routine returns the partition number assigned to that
-interval.   The Point Assign function now works for any point in space, even if the point is
-outside the original bounding box.
+interval.
+<p>
+The Point Assign function now works for any point in space, even if the point is
+outside the original bounding box. If the point is outside the bounding box, it is first
+scaled using the same equations that scale the interior points into the unit volume.
+The point is projected onto the unit volume. For each spatial dimension, if the scaled
+coordinate is less than zero, it is replace by zero. If it is greater than one, it is
+replaced by one.  Otherwise the scaled coordinate is directly used.
+
 
 <BR>&nbsp;
 <h3>Box Assign</h3>
@@ -130,7 +170,7 @@ to determine the partitions whose
 corresponding subdomains intersect the user's query box.
 Although very different in implementation, the papers by Lawder and King ("Querying Multi-
 dimensional Data Index Using the Hilbert Space-Filling Curve", 2000, etc.) were the original
-inspiration for this algorithm. The Zoltan_HSFC_box_assign routine primarily scales the
+inspiration for this algorithm. The Zoltan_HSFC_Box_Assign routine primarily scales the
 user query region and determines its intersection with the Hilbert's bounding box.  Points
 exterior to the bounding box get projected along the coordinate axis onto the bounding box.
 A fuzzy region is built around query points and lines to create the boxes required for the search.
@@ -145,7 +185,7 @@ Each level divides the remaining region into quadrants (or octets in 3d).  At ea
 quadrant with the smallest inverse Hilbert coordinate (that is, occurring first along the Hilbert curve)
 whose inverse Hilbert coordinate is equal or larger than the starting inverse Hilbert coordinate and which
 intersects with query region is selected. Thus, each level calculates the next 2 bits
-(3 bits in 3d) of the inverst Hilbert coordinate of the next point to enter the query region.  No more
+(3 bits in 3d) of the inverse Hilbert coordinate of the next point to enter the query region.  No more
 than once per call to the query function, the function may backtrack to a nearest previous
 level that has another quadrant that intersects the query region and has a higher Hilbert coordinate.
 <p>
@@ -155,9 +195,16 @@ are also computed (by table lookup) at each level for the quadrant being tested.
 compared to the the bits resulting from the intersection of the query region with the region
 determined by the spatial coordinates computed to the precision of the previous levels.
 <p>
+If the user query box has any side (edge) that is "too small" (effectively degenerate in
+some dimension), it is replaced by a minimum value and the corresponding vertex coordinates
+are symmetrically expanded.  This is refered to as a "fuzzy" region.
+<p>
 This function requires the KEEP_CUTS parameter to be set by the user.
 The Box Assign function now works for any box in space, even if it has regions outside the
-original bounding box.
+original bounding box.  The box vertices are scaled and projected exactly like the points
+in the Point Assign function described above.  However, to allow the search to use a proper
+volumn, projected points, lines, and planes are converted to a usable volume by the
+fuzzy region process described above.
 
 <p>
 

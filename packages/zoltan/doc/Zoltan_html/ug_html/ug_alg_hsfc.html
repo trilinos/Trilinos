@@ -34,7 +34,7 @@ of Engineering, State University of New York at Buffalo, as his summer project a
 in 2001.
 <p>
 The Inverse Hilbert Space-Filling Curve functions map a point in one, two or three dimensions
-into the interval [0,infinity).  The Hilbert functions that map [0, infinity) to normal spatial
+into the interval [0,1].  The Hilbert functions that map [0, 1] to normal spatial
 coordinates are also provided. (The one-dimensional inverse Hilbert curve is defined here
 as the identity function, f(x)=x for all x.)
 <p>
@@ -48,7 +48,7 @@ This process is repeated as needed to improve partitioning tolerance by
 a technique that maintains the same total number of bins but refines the bins previously
 containing a cut.
 <p>
-This code returns an error if the final imbalance exceeds the user specified tolerance.
+This code returns an warning if the final imbalance exceeds the user specified tolerance.
 <p>
 This code implements both the point assign and box assign functionality.  The point
 assign determines an appropriate partition (associated with a specific group of processors)
