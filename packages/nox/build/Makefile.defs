@@ -1,0 +1,55 @@
+############################
+### TRILINOS DEFINITIONS ###
+############################
+
+include $(TRILINOS_HOME)/build/TARGET
+
+TRILINOS_TARGET = $(TRILINOS_ARCH).$(TRILINOS_COMM)$(TRILINOS_ID)
+
+LIBEPETRA= $(TRILINOS_HOME)/lib/$(TRILINOS_TARGET)/libepetra.a
+LIBAZTEC= $(TRILINOS_HOME)/lib/$(TRILINOS_TARGET)/libaztecoo.a
+LIBIFPACK= $(TRILINOS_HOME)/lib/$(TRILINOS_TARGET)/libifpack.a
+LIBNLSPACK = $(TRILINOS_HOME)/lib/$(TRILINOS_TARGET)/libnlspack.a
+
+# Defines CC, CXX, AR, ARCH_CFLAGS, ARCH_CXXFLAGS, ARCH_LIB etc
+include $(TRILINOS_HOME)/build/makefile.$(TRILINOS_TARGET)
+
+# Petra communication defines
+PETRA_COMM_SERIAL          = SERIAL
+PETRA_COMM_MPI             = PETRA_MPI
+PETRA_COMM                 = $(PETRA_COMM_$(TRILINOS_COMM))
+
+# NLSPACK communication defines
+NLSPACK_COMM_SERIAL          = SERIAL
+NLSPACK_COMM_MPI             = AZTEC_MPI
+NLSPACK_COMM                 = $(NLSPACK_COMM_$(TRILINOS_COMM))
+
+TRILINOS_DEFINES = -D$(TRILINOS_ARCH) $(PETRA_ARCH_DEFINES) -D$(PETRA_COMM) \
+	-DIFPACK -DWITHSPBLAS -DSPARSEBLAS -DAZ_COL_REORDER
+
+TRILINOS_INCLUDES = $(ARCH_INCLUDES) -I$(TRILINOS_HOME)/packages/epetra/src \
+	-I$(TRILINOS_HOME)/packages/aztecoo/src
+
+
+###########################
+### NLSPACK DEFINITIONS ###
+###########################
+
+NLSPACK_HOME = $(TRILINOS_HOME)/packages/nlspack
+
+include $(NLSPACK_HOME)/build/Makefile.rules.defs
+
+DEFINES = $(TRILINOS_DEFINES)
+
+INCLUDES = -I. $(NLSPACK_INCLUDES) $(TRILINOS_INCLUDES)
+
+LIBS = $(ARCH_LIBS)
+
+LIB_PATHS=
+
+CFLAGS=$(ARCH_CFLAGS) $(DEFINES) $(INCLUDES)
+
+CXXFLAGS= $(ARCH_CXXFLAGS) $(DEFINES) $(INCLUDES)
+
+
+
