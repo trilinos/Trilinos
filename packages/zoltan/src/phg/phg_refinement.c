@@ -175,15 +175,15 @@ static void fm2_move_vertex_oneway_nonroot(int v, PHGraph *hg, Partition part, i
 
 #if 0
 
-typedef int  (*SelectFunc)(HEAP heap[2], double *weights, double *max_weight, double zeropw);
+typedef int  (*SelectFunc)(HEAP heap[2], double *weights, double *max_weight, double targetw0);
 
-static int fm2_select(HEAP heap[2], double *weights, double *max_weight, double zeropw)
+static int fm2_select(HEAP heap[2], double *weights, double *max_weight, double targetw0)
 {
     int from;
     /* select a vertex with max gain; if possible */
     if (Zoltan_heap_not_empty(&heap[0]) && Zoltan_heap_not_empty(&heap[1])) {
         if (Zoltan_heap_max_value(&heap[0])==Zoltan_heap_max_value(&heap[1]))
-            from = (weights[0] < zeropw) ? 1 : 0;
+            from = (weights[0] < targetw0) ? 1 : 0;
         else
             from = (Zoltan_heap_max_value(&heap[0])>Zoltan_heap_max_value(&heap[1])) ? 0 : 1;
     } else if (Zoltan_heap_empty(&heap[0])) {

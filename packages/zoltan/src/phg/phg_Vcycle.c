@@ -124,7 +124,7 @@ int Zoltan_PHG_HPart_Lib (
             return err;
     }
     else {        /* normal multilevel situation */
-        int *match = NULL, *LevelMap = NULL, *c_part = NULL, limit;
+        int *match = NULL, *LevelMap = NULL, *c_part = NULL;
         PHGraph c_hg;
 
         /* Allocate and initialize Matching Array */
@@ -136,7 +136,6 @@ int Zoltan_PHG_HPart_Lib (
             match[i] = i;
           
         /* Calculate matching (packing or grouping) */
-        limit = hg->nVtx - hg->redl;
         if (hgp->matching)  {
             err = Zoltan_PHG_Matching (zz, hg, match, hgp);
             if (err != ZOLTAN_OK && err != ZOLTAN_WARN) {
@@ -159,23 +158,6 @@ int Zoltan_PHG_HPart_Lib (
             goto End;
         }
 
-        /* Check the consistency of the coarsening */
-        /* RTHRTH - needs to be parallel */
-        if (limit != c_hg.nVtx - hg->redl) {
-            sprintf(msg, "limit %d is not %d-%d!\n", limit, c_hg.nVtx, hg->redl);
-            ZOLTAN_PRINT_ERROR(zz->Proc, yo, msg);
-            Zoltan_Multifree (__FILE__, __LINE__, 2, &match, &LevelMap);
-            err = ZOLTAN_FATAL;
-            goto End;
-        }
-        else if (c_hg.nVtx < hg->redl) {
-            sprintf(msg, "wanted coarsen to %d vertices, but reached %d vertices\n",
-                    hg->redl, c_hg.nVtx);
-            ZOLTAN_PRINT_ERROR(zz->Proc, yo, msg);
-            Zoltan_Multifree (__FILE__, __LINE__, 2, &match, &LevelMap);
-            err = ZOLTAN_FATAL;
-            goto End;
-        }
 
         /* heuristic: stop on diminishing returns */
         /* RTHRTH - modify this for parallel version (need global view) */
