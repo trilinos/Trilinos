@@ -108,6 +108,7 @@
 /* ------------------------------------------------------------------------ */
 
 #include "Trilinos_Util.h"
+#include "Trilinos_Util_ShellOptions.h"
 
 /* ======================================================================== */
 /*!
@@ -116,7 +117,7 @@
 */
 /* ------------------------------------------------------------------------ */
 
-ShellOptions::ShellOptions(int argc, char *argv[])
+Trilinos_Util_ShellOptions::Trilinos_Util_ShellOptions(int argc, char *argv[])
 {
 
   OptionDatabase["_PROGRAM_NAME_"] = argv[0];
@@ -173,7 +174,7 @@ ShellOptions::ShellOptions(int argc, char *argv[])
 */
 /* ------------------------------------------------------------------------ */
 
-int ShellOptions::GetIntOption( const string input )
+int Trilinos_Util_ShellOptions::GetIntOption( const string input )
 {
 
   for( map<string,string>::const_iterator ci = OptionDatabase.begin();
@@ -196,7 +197,7 @@ int ShellOptions::GetIntOption( const string input )
 */
 /* ------------------------------------------------------------------------ */
 
-int ShellOptions::GetIntOption( const string input, const int def_value)
+int Trilinos_Util_ShellOptions::GetIntOption( const string input, const int def_value)
 {
 
   for( map<string,string>::const_iterator ci = OptionDatabase.begin();
@@ -220,7 +221,7 @@ int ShellOptions::GetIntOption( const string input, const int def_value)
 */
 /* ------------------------------------------------------------------------ */
 
-double ShellOptions::GetDoubleOption( const string input)
+double Trilinos_Util_ShellOptions::GetDoubleOption( const string input)
 {
 
   for( map<string,string>::const_iterator ci = OptionDatabase.begin();
@@ -244,7 +245,7 @@ double ShellOptions::GetDoubleOption( const string input)
 */
 /* ------------------------------------------------------------------------ */
 
-double ShellOptions::GetDoubleOption( const string input, const double def_value)
+double Trilinos_Util_ShellOptions::GetDoubleOption( const string input, const double def_value)
 {
 
   for( map<string,string>::const_iterator ci = OptionDatabase.begin();
@@ -268,7 +269,7 @@ double ShellOptions::GetDoubleOption( const string input, const double def_value
 */
 /* ------------------------------------------------------------------------ */
 
-string ShellOptions::GetStringOption( const string input)
+string Trilinos_Util_ShellOptions::GetStringOption( const string input)
 {
 
   for( map<string,string>::const_iterator ci = OptionDatabase.begin();
@@ -292,7 +293,7 @@ string ShellOptions::GetStringOption( const string input)
 */
 /* ------------------------------------------------------------------------ */
 
-string ShellOptions::GetStringOption( const string input, const string def_value)
+string Trilinos_Util_ShellOptions::GetStringOption( const string input, const string def_value)
 {
 
   for( map<string,string>::const_iterator ci = OptionDatabase.begin();
@@ -315,7 +316,7 @@ string ShellOptions::GetStringOption( const string input, const string def_value
 */
 /* ------------------------------------------------------------------------ */
 
-bool ShellOptions::HaveOption( const string input)
+bool Trilinos_Util_ShellOptions::HaveOption( const string input)
 {
 
   for( map<string,string>::const_iterator ci = OptionDatabase.begin();
@@ -334,10 +335,10 @@ bool ShellOptions::HaveOption( const string input)
 */
 /* ------------------------------------------------------------------------ */
 
-void ShellOptions::ShowAll() const 
+void Trilinos_Util_ShellOptions::ShowAll() const 
 {
 
-  cout << "\nShellOptions :: \n";
+  cout << "\nTrilinos_Util_ShellOptions :: \n";
   for( map<string,string>::const_iterator ci = OptionDatabase.begin();
        ci != OptionDatabase.end() ; ++ci ) {
     if( (*ci).first.at(0) != '_' ) 
@@ -353,10 +354,10 @@ void ShellOptions::ShowAll() const
 */
 /* ------------------------------------------------------------------------ */
 
-void ShellOptions::ShowReallyAll() const 
+void Trilinos_Util_ShellOptions::ShowReallyAll() const 
 {
 
-  cout << "\nShellOptions :: \n";
+  cout << "\nTrilinos_Util_ShellOptions :: \n";
   for( map<string,string>::const_iterator ci = OptionDatabase.begin();
        ci != OptionDatabase.end() ; ++ci ) {
     cout << (*ci).first << " = " << (*ci).second << endl;
@@ -375,7 +376,7 @@ void ShellOptions::ShowReallyAll() const
 */
 /* ------------------------------------------------------------------------ */
 
-bool ShellOptions::AddOption( const string input, const string value )
+bool Trilinos_Util_ShellOptions::AddOption( const string input, const string value )
 {
 
   // check that "input" has not been already inserted
@@ -397,7 +398,7 @@ bool ShellOptions::AddOption( const string input, const string value )
 */
 /* ------------------------------------------------------------------------ */
 
-bool ShellOptions::SetOption( const string input, const string value )
+bool Trilinos_Util_ShellOptions::SetOption( const string input, const string value )
 {
 
   // check that "input" has not been already inserted
@@ -416,7 +417,7 @@ bool ShellOptions::SetOption( const string input, const string value )
 */
 /* ------------------------------------------------------------------------ */
 
-string  ShellOptions::GetProgramName( void )
+string  Trilinos_Util_ShellOptions::GetProgramName( void )
 {
   return OptionDatabase["_PROGRAM_NAME_"];
 }
@@ -432,7 +433,7 @@ string  ShellOptions::GetProgramName( void )
 */
 /* ------------------------------------------------------------------------ */
 
-int ShellOptions::GetIntShellVariable( const char *str )
+int Trilinos_Util_ShellOptions::GetIntShellVariable( const char *str )
 {
 
   char * buffer;
@@ -456,7 +457,7 @@ int ShellOptions::GetIntShellVariable( const char *str )
 */
 /* ------------------------------------------------------------------------ */
 
-double ShellOptions::GetDoubleShellVariable( const char *str )
+double Trilinos_Util_ShellOptions::GetDoubleShellVariable( const char *str )
 {
 
   char * buffer;
@@ -480,7 +481,7 @@ double ShellOptions::GetDoubleShellVariable( const char *str )
 */
 /* ------------------------------------------------------------------------ */
 
-string ShellOptions::GetCharShellVariable( const char *str ) 
+string Trilinos_Util_ShellOptions::GetCharShellVariable( const char *str ) 
 {
 
   char * buffer;

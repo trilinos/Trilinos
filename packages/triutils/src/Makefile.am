@@ -38,7 +38,9 @@
 # placed at the bottom of the appropriate section
 
 CORE_H = \
-	$(srcdir)/Trilinos_Util.h
+	$(srcdir)/Trilinos_Util.h \
+	$(srcdir)/Trilinos_Util_MatrixGallery.h \
+	$(srcdir)/Trilinos_Util_ShellOptions.h
 
 CORE = \
 	$(srcdir)/Trilinos_Util_duscr_vbr.cpp \
@@ -64,7 +66,8 @@ CORE = \
 	$(srcdir)/Trilinos_Util_ReadHb2EpetraVbr.cpp \
 	$(srcdir)/Trilinos_Util_GenerateCrsProblem.cpp \
 	$(srcdir)/Trilinos_Util_GenerateVbrProblem.cpp \
-	$(srcdir)/Trilinos_Util_ShellOptions.cpp
+	$(srcdir)/Trilinos_Util_ShellOptions.cpp \
+	$(srcdir)/Trilinos_Util_MatrixGallery.cpp
 
 
 AM_CPPFLAGS = -I$(top_srcdir)/../epetra/src -I$(top_builddir)/../epetra/src

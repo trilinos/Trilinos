@@ -127,7 +127,9 @@ am__quote = @am__quote@
 install_sh = @install_sh@
 
 CORE_H = \
-	$(srcdir)/Trilinos_Util.h
+	$(srcdir)/Trilinos_Util.h \
+	$(srcdir)/Trilinos_Util_MatrixGallery.h \
+	$(srcdir)/Trilinos_Util_ShellOptions.h
 
 
 CORE = \
@@ -154,7 +156,8 @@ CORE = \
 	$(srcdir)/Trilinos_Util_ReadHb2EpetraVbr.cpp \
 	$(srcdir)/Trilinos_Util_GenerateCrsProblem.cpp \
 	$(srcdir)/Trilinos_Util_GenerateVbrProblem.cpp \
-	$(srcdir)/Trilinos_Util_ShellOptions.cpp
+	$(srcdir)/Trilinos_Util_ShellOptions.cpp \
+	$(srcdir)/Trilinos_Util_MatrixGallery.cpp
 
 
 AM_CPPFLAGS = -I$(top_srcdir)/../epetra/src -I$(top_builddir)/../epetra/src
@@ -322,7 +325,8 @@ am__objects_1 = Trilinos_Util_duscr_vbr.$(OBJEXT) \
 	Trilinos_Util_ReadHb2EpetraVbr.$(OBJEXT) \
 	Trilinos_Util_GenerateCrsProblem.$(OBJEXT) \
 	Trilinos_Util_GenerateVbrProblem.$(OBJEXT) \
-	Trilinos_Util_ShellOptions.$(OBJEXT)
+	Trilinos_Util_ShellOptions.$(OBJEXT) \
+	Trilinos_Util_MatrixGallery.$(OBJEXT)
 am__objects_2 =
 am__objects_3 = iohb.$(OBJEXT)
 am_libtriutils_a_OBJECTS = $(am__objects_1) $(am__objects_2) \
@@ -340,6 +344,7 @@ depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
 @AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/Trilinos_Util_GenerateCrsProblem.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/Trilinos_Util_GenerateVbrProblem.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/Trilinos_Util_MatrixGallery.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/Trilinos_Util_ReadHb2Epetra.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/Trilinos_Util_ReadHb2EpetraVbr.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/Trilinos_Util_ReadHpc2Epetra.Po \
@@ -468,6 +473,8 @@ Trilinos_Util_GenerateVbrProblem.$(OBJEXT): \
 	$(srcdir)/Trilinos_Util_GenerateVbrProblem.cpp
 Trilinos_Util_ShellOptions.$(OBJEXT): \
 	$(srcdir)/Trilinos_Util_ShellOptions.cpp
+Trilinos_Util_MatrixGallery.$(OBJEXT): \
+	$(srcdir)/Trilinos_Util_MatrixGallery.cpp
 iohb.$(OBJEXT): $(srcdir)/iohb.cpp
 libtriutils.a: $(libtriutils_a_OBJECTS) $(libtriutils_a_DEPENDENCIES) 
 	-rm -f libtriutils.a
@@ -482,6 +489,7 @@ distclean-compile:
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Trilinos_Util_GenerateCrsProblem.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Trilinos_Util_GenerateVbrProblem.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Trilinos_Util_MatrixGallery.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Trilinos_Util_ReadHb2Epetra.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Trilinos_Util_ReadHb2EpetraVbr.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Trilinos_Util_ReadHpc2Epetra.Po@am__quote@
@@ -808,6 +816,18 @@ Trilinos_Util_ShellOptions.obj: $(srcdir)/Trilinos_Util_ShellOptions.cpp
 @AMDEP_TRUE@	depfile='$(DEPDIR)/Trilinos_Util_ShellOptions.Po' tmpdepfile='$(DEPDIR)/Trilinos_Util_ShellOptions.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Trilinos_Util_ShellOptions.obj `cygpath -w $(srcdir)/Trilinos_Util_ShellOptions.cpp`
+
+Trilinos_Util_MatrixGallery.o: $(srcdir)/Trilinos_Util_MatrixGallery.cpp
+@AMDEP_TRUE@	source='$(srcdir)/Trilinos_Util_MatrixGallery.cpp' object='Trilinos_Util_MatrixGallery.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/Trilinos_Util_MatrixGallery.Po' tmpdepfile='$(DEPDIR)/Trilinos_Util_MatrixGallery.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Trilinos_Util_MatrixGallery.o `test -f '$(srcdir)/Trilinos_Util_MatrixGallery.cpp' || echo '$(srcdir)/'`$(srcdir)/Trilinos_Util_MatrixGallery.cpp
+
+Trilinos_Util_MatrixGallery.obj: $(srcdir)/Trilinos_Util_MatrixGallery.cpp
+@AMDEP_TRUE@	source='$(srcdir)/Trilinos_Util_MatrixGallery.cpp' object='Trilinos_Util_MatrixGallery.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/Trilinos_Util_MatrixGallery.Po' tmpdepfile='$(DEPDIR)/Trilinos_Util_MatrixGallery.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Trilinos_Util_MatrixGallery.obj `cygpath -w $(srcdir)/Trilinos_Util_MatrixGallery.cpp`
 
 iohb.o: $(srcdir)/iohb.cpp
 @AMDEP_TRUE@	source='$(srcdir)/iohb.cpp' object='iohb.o' libtool=no @AMDEPBACKSLASH@
