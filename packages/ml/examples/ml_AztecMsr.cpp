@@ -292,13 +292,23 @@ AZ_MATRIX *BuildMatrix(struct partition_data *Partition)
 
 #include <stdlib.h>
 #include <stdio.h>
+#ifdef HAVE_MPI
+#include "mpi.h"
+#endif
 
 int main(int argc, char *argv[])
 {
-  puts("Please configure ML with --enable-epetra --enable-teuchos");
-  puts("--enable-aztecoo to run this example");
+#ifdef HAVE_MPI
+  MPI_Init(&argc,&argv);
+#endif
 
+  puts("Please configure ML with --enable-epetra --enable-teuchos");
+  puts("--enable-aztecoo");
+
+#ifdef HAVE_MPI
+  MPI_Finalize();
+#endif
+  
   return 0;
 }
-
 #endif
