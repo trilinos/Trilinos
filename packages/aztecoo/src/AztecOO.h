@@ -31,6 +31,11 @@
 #ifndef _AZTECOO_H_
 #define _AZTECOO_H_
 
+//forward declaration for Teuchos::ParameterList
+namespace Teuchos {
+  class ParameterList;
+}
+
 class Epetra_Comm;
 class Epetra_BlockMap;
 class Epetra_MultiVector;
@@ -289,6 +294,18 @@ class AztecOO {
   //@}
 
   //@{ \name Standard AztecOO option and parameter setting methods.
+
+  //! Method to set options/parameters using a ParameterList object.
+  /*! This method extracts any mixture of options and parameters from a
+    ParameterList object and uses them to set values in AztecOO's internal
+    options and params arrays.
+    This method may be called repeatedly. This method does not reset default
+    values or previously-set values unless those values are contained in the
+    current ParameterList argument. Note that if the method SetAztecDefaults()
+    is called after this method has been called, any parameters set by this
+    method will be replaced by default values.
+  */
+  int SetParameters(Teuchos::ParameterList& parameterlist);
 
   //! AztecOO function to restore default options/parameter settings.
   /*! This function is called automatically within AztecOO's constructor,

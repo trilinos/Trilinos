@@ -40,6 +40,8 @@
 #include "Epetra_Operator.h"
 #include "Epetra_Import.h"
 
+#include <Teuchos_ParameterList.hpp>
+
 
 //=============================================================================
 AztecOO::AztecOO(Epetra_Operator * A, 
@@ -147,6 +149,14 @@ void AztecOO::DeleteMemory() {
   if (PrecMatrixData_!=0) {delete PrecMatrixData_; PrecMatrixData_ = 0;}
   if (ResidualVector_!=0) {delete ResidualVector_; ResidualVector_ = 0;}
   if (conv_info_!=0) {AZ_converge_destroy(&conv_info_); conv_info_ = 0;}
+}
+
+//=============================================================================
+int AztecOO::SetParameters(Teuchos::ParameterList& parameterlist)
+{
+  int solver = parameterlist.get("AZ_solver", AZ_gmres);
+  SetAztecOption(AZ_solver, solver);
+  return(0);
 }
 
 //=============================================================================
