@@ -715,11 +715,13 @@ typedef void ZOLTAN_OBJ_SIZE_MULTI_FORT_FN(
  *    import_global_ids   --  Global IDs of objects to be imported.
  *    import_local_ids    --  Local IDs of objects to be imported.
  *    import_procs        --  Processor IDs of importing processors.
+ *    import_to_part      --  Partition numbers to which objs are imported.
  *    num_export          --  Number of objects to be exported.
  *    export_global_ids   --  Global IDs of objects to be exported.
  *    export_local_ids    --  Local IDs of objects to be exported.
  *    export_procs        --  Processor IDs of processors to receive
  *                            the objects.
+ *    export_to_part      --  Partition numbers to which objs are exported.
  *  Output:
  *    ierr                --  error code
  */
@@ -732,10 +734,12 @@ typedef void ZOLTAN_PRE_MIGRATE_FN(
   ZOLTAN_ID_PTR import_global_ids,
   ZOLTAN_ID_PTR import_local_ids,
   int *import_procs,
+  int *import_to_part,
   int num_export,
   ZOLTAN_ID_PTR export_global_ids,
   ZOLTAN_ID_PTR export_local_ids,
   int *export_procs,
+  int *export_to_part,
   int *ierr
 );
 
@@ -747,10 +751,12 @@ typedef void ZOLTAN_PRE_MIGRATE_FORT_FN(
   ZOLTAN_ID_PTR import_global_ids,
   ZOLTAN_ID_PTR import_local_ids, 
   int *import_procs,
+  int *import_to_part,
   int *num_export, 
   ZOLTAN_ID_PTR export_global_ids,
   ZOLTAN_ID_PTR export_local_ids, 
   int *export_procs,
+  int *export_to_part,
   int *ierr
 );
 
@@ -772,11 +778,13 @@ typedef void ZOLTAN_PRE_MIGRATE_FORT_FN(
  *    import_global_ids   --  Global IDs of objects to be imported.
  *    import_local_ids    --  Local IDs of objects to be imported.
  *    import_procs        --  Processor IDs of importing processors.
+ *    import_to_part      --  Partition numbers to which objs are imported.
  *    num_export          --  Number of objects to be exported.
  *    export_global_ids   --  Global IDs of objects to be exported.
  *    export_local_ids    --  Local IDs of objects to be exported.
  *    export_procs        --  Processor IDs of processors to receive
  *                            the objects.
+ *    export_to_part      --  Partition numbers to which objs are exported.
  *  Output:
  *    ierr                --  error code
  */
@@ -789,10 +797,12 @@ typedef void ZOLTAN_MID_MIGRATE_FN(
   ZOLTAN_ID_PTR import_global_ids,
   ZOLTAN_ID_PTR import_local_ids,
   int *import_procs,
+  int *import_to_part,
   int num_export,
   ZOLTAN_ID_PTR export_global_ids,
   ZOLTAN_ID_PTR export_local_ids,
   int *export_procs,
+  int *export_to_part,
   int *ierr
 );
 
@@ -804,10 +814,12 @@ typedef void ZOLTAN_MID_MIGRATE_FORT_FN(
   ZOLTAN_ID_PTR import_global_ids,
   ZOLTAN_ID_PTR import_local_ids, 
   int *import_procs,
+  int *import_to_part,
   int *num_export, 
   ZOLTAN_ID_PTR export_global_ids,
   ZOLTAN_ID_PTR export_local_ids, 
   int *export_procs,
+  int *export_to_part,
   int *ierr
 );
 
@@ -827,11 +839,13 @@ typedef void ZOLTAN_MID_MIGRATE_FORT_FN(
  *    import_global_ids   --  Global IDs of objects to be imported.
  *    import_local_ids    --  Local IDs of objects to be imported.
  *    import_procs        --  Processor IDs of importing processors.
+ *    import_to_part      --  Partition numbers to which objs are imported.
  *    num_export          --  Number of objects to be exported.
  *    export_global_ids   --  Global IDs of objects to be exported.
  *    export_local_ids    --  Local IDs of objects to be exported.
  *    export_procs        --  Processor IDs of processors to receive
  *                            the objects.
+ *    export_to_part      --  Partition numbers to which objs are exported.
  *  Output:
  *    ierr                --  error code
  */
@@ -844,10 +858,12 @@ typedef void ZOLTAN_POST_MIGRATE_FN(
   ZOLTAN_ID_PTR import_global_ids,
   ZOLTAN_ID_PTR import_local_ids,
   int *import_procs,
+  int *import_to_part,
   int num_export,
   ZOLTAN_ID_PTR export_global_ids,
   ZOLTAN_ID_PTR export_local_ids,
   int *export_procs,
+  int *export_to_part,
   int *ierr
 );
 
@@ -859,10 +875,12 @@ typedef void ZOLTAN_POST_MIGRATE_FORT_FN(
   ZOLTAN_ID_PTR import_global_ids,
   ZOLTAN_ID_PTR import_local_ids, 
   int *import_procs,
+  int *import_to_part,
   int *num_export, 
   ZOLTAN_ID_PTR export_global_ids,
   ZOLTAN_ID_PTR export_local_ids, 
   int *export_procs,
+  int *export_to_part,
   int *ierr
 );
 
