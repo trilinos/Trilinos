@@ -2077,7 +2077,8 @@ first-order edge elements, it is possible to use this preconditioner for
 higher-order discretizations, as long as the user provides the sub-matrix
 that corresponds to just the first-order discretization.
 %% FIXME add paper references
-For more theoretical background and algorithm descriptions, please see \cite{}.
+For more theoretical background and algorithm descriptions, please see
+\cite{HTBGR_2004}.
 
 \subsection{Notational conventions}\label{maxwell notation}
 For the remainder of the discussion, \Ke\ denotes the matrix corresponding to
@@ -2153,7 +2154,7 @@ a $1$ and a $-1$ in columns $i$ and $j$.
 %%%%%%%%%%%%%%
 %
 The default smoother for Maxwell's equations is a two-stage smoother that we
-call Hiptmair smoothing \cite{}.
+call Hiptmair smoothing \cite{Hiptmair_1998a}.
 This smoother consists of three steps: one step of a smoother $\mathcal S$ on
 the entire system $Kx=f$; one step of a smoother $\mathcal S$ on the
 projected system $T^{\mathrm{T}}MTe=T^{\mathrm{T}}r$, where $r = f - Kx$;
