@@ -539,6 +539,33 @@ int CSR_matvec(void *Amat_in, int ilen, double p[], int olen, double ap[])
   return(1);
 }
 
+int localCSR_matvec(void *Amat_in, int ilen, double p[], int olen, double ap[])
+{
+
+   int i, jj, k, /* Nrows,*/ *bindx;
+   double            *p2, *val, sum, *ap2;
+   struct ML_CSR_MSRdata *temp;
+   ML_CommInfoOP     *getrow_comm;
+   int               *row_ptr, Nstored;
+
+   Nstored = olen;
+   temp    = (struct ML_CSR_MSRdata *) Amat_in;
+   val     = temp->values;
+   bindx   = temp->columns;
+   row_ptr = temp->rowptr;
+
+   p2 = p;
+   ap2 = ap;
+
+   for (i = 0; i < Nstored; i++) {
+     sum = 0;
+     for (k = row_ptr[i]; k < row_ptr[i+1]; k++)
+        sum  += val[k] * p2[bindx[k]];
+
+     ap2[i] = sum;
+   }
+  return(1);
+}
 /* ******************************************************************** */
 /* constructor for DCSR matrix                                          */
 /* -------------------------------------------------------------------- */
