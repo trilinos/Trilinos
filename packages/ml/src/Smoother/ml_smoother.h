@@ -22,6 +22,7 @@ typedef struct ML_Smoother_Struct ML_Smoother;
 typedef struct ML_Sm_BGS_Data_Struct ML_Sm_BGS_Data;
 typedef struct ML_Sm_ILUT_Data_Struct ML_Sm_ILUT_Data;
 typedef struct ML_Sm_Schwarz_Data_Struct ML_Sm_Schwarz_Data;
+typedef struct ML_Sm_Hiptmair_Data_Struct ML_Sm_Hiptmair_Data;
 
 /* ******************************************************************** */
 /* local include files                                                  */
@@ -114,6 +115,14 @@ struct ML_Sm_Schwarz_Data_Struct
 #endif
 };
 
+struct ML_Sm_Hiptmair_Data_Struct
+{
+   ML_Operator *Tmat;
+   ML_Operator *Tmat_trans;
+   ML_Operator *ATmat_trans;
+   double      *TtAT_diag;
+};
+
 /* ******************************************************************** */
 /* ******************************************************************** */
 /*      User Interface Proto-types                                      */
@@ -136,7 +145,6 @@ extern  int ML_Smoother_Set(ML_Smoother *, int, void *,
 extern  int ML_Smoother_Jacobi(void *, int, double *x, int, double *);
 extern  int ML_Smoother_GaussSeidel(void *, int, double *, int, double *);
 extern  int ML_Smoother_SGSSequential(void *, int,double *, int, double *);
-extern  int ML_Smoother_Hiptmair(void *, int, double *, int, double *);
 extern  int ML_Smoother_SGS(void *, int, double *, int, double *);
 extern  int ML_Smoother_BlockGS(void *, int, double *, int, double *);
 extern  int ML_Smoother_ParaSails(void *, int, double *, int, double *);
@@ -153,10 +161,14 @@ extern  int ML_Smoother_Hiptmair(void *, int, double *, int, double *);
 
 /* ******************************************************************** */
 /* ******************************************************************** */
-/* priviate functions                                                   */
+/* private functions                                                   */
 /* ******************************************************************** */
 /* ******************************************************************** */
 
+extern  int ML_Smoother_Create_Hiptmair_Data(ML_Sm_Hiptmair_Data **data);
+extern  int ML_Smoother_Gen_Hiptmair_Data(ML_Sm_Hiptmair_Data**,
+                         ML_Operator*, ML_Operator*, ML_Operator*);
+extern void ML_Smoother_Destroy_Hiptmair_Data(void *data);
 extern  int ML_Smoother_Create_BGS_Data(ML_Sm_BGS_Data **data);
 extern void ML_Smoother_Destroy_BGS_Data(void *data);
 extern void ML_Smoother_Clean_BGS_Data(void *data);
