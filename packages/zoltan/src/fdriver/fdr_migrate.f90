@@ -373,6 +373,9 @@ integer(Zoltan_INT) :: lid
     do i = 0, maxlen-1
       send_vec(i) = proc_ids(Mesh%ecmap_elemids(i))
     end do
+  else
+!   Allocate something to make boundary_exchange prototype happy on tflop.
+    allocate(send_vec(0:0), stat=allocstat);
   endif
 
   deallocate(proc_ids)
@@ -383,6 +386,9 @@ integer(Zoltan_INT) :: lid
       ierr = ZOLTAN_MEMERR
       return
     endif
+  else
+!   Allocate something to make boundary_exchange prototype happy on tflop.
+    allocate(recv_vec(0:0), stat=allocstat)
   endif
 
 !  /*  Perform boundary exchange */
