@@ -19,7 +19,7 @@
    Guide.
 
    This is a temporary algorithm which suffers from two limitations that will
-   be removed in the future.  First, it will not except points outside the
+   be removed in the future.  First, it will not accept points outside the
    bounding box determined during the load balance phase. Second, it is
    approximate in the sense that every processor reported is actually in a
    partition that falls (in part) within the user's input box, but some

@@ -88,6 +88,7 @@ int Zoltan_HSFC( /* Zoltan_HSFC - Load Balance: Hilbert Space Filling Curve */
    double     actual, desired, corrected ;
    double     temp, in[9], out[9] ;
    int        err ;
+   int        param ;
    char      *yo = "Zoltan_HSFC" ;
 
    /* begin program with trace, timing, and initializations */
@@ -465,11 +466,11 @@ int Zoltan_HSFC( /* Zoltan_HSFC - Load Balance: Hilbert Space Filling Curve */
 #endif
 
    /* done, do we keep data structure for box drop and point drop? */
-   Zoltan_Bind_Param (HSFC_params, "KEEP_CUTS", (void *) &i) ;
-   i = 0 ;
+   Zoltan_Bind_Param (HSFC_params, "KEEP_CUTS", (void *) &param) ;
+   param = 0 ;
    Zoltan_Assign_Param_Vals (zz->Params, HSFC_params, zz->Debug_Level, zz->Proc,
     zz->Debug_Proc) ;
-   if (i == 0)
+   if (param == 0)
       Zoltan_HSFC_Free_Structure (zz) ;
 
    /* DEBUG: print useful information */
