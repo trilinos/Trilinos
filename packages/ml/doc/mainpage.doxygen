@@ -52,7 +52,8 @@ cumbersome aspects of generating an entirely new parallel algebraic multigrid
 code. We have used these flexibility to produce special multilevel methods using
 coarse grid finite element functions to serve as inter-grid transfers.
 
-A user-friendly, MATLAB-like interface to ML, called MLAPI, is under development.
+A user-friendly, MATLAB-like interface to ML, called MLAPI, is under development; see
+\ref ml_mlapi.
 
 ML has been used within a number of applications at Sandia and a few applications
 outside of Sandia. ML is released for external distribution and can be obtained as
@@ -720,6 +721,11 @@ Trilinos 4.0 tutorial.
 */
 
 /*!
+\page ml_epetrainterface EpetraInterface.cpp
+\include EpetraInterface.cpp
+*/
+
+/*!
 \page ml_multilevel MultiLevel.cpp
 \include MultiLevel.cpp
 */
@@ -732,5 +738,120 @@ Trilinos 4.0 tutorial.
 /*!
 \page ml_adaptivesa AdaptiveSA.cpp
 \include AdaptiveSA.cpp
+*/
+
+/*!
+\page ml_twolevel TwoLevelDDAdditive.cpp
+\include TwoLevelDDAdditive.cpp
+*/
+
+/*!
+\page ml_mlapi Overview of MLAPI
+
+Table of contents:
+- \ref mlapi_intro
+- \ref mlapi_memory
+- \ref mlapi_multivector
+- \ref mlapi_prec
+- \ref mlapi_epetrainterface
+
+
+
+\section mlapi_intro Introduction to MLAPI
+
+The MLAPI are the Application Program Interface of ML. MLAPI defines a
+MATLAB-like environment for rapid prototyping of new multilevel
+preconditioners, usually of algebraic type. 
+
+All MLAPI objects are defined in the MLAPI namespace. The most important
+objects are:
+- MLAPI::Space, which defines the data layout;
+- MLAPI::Operator, the basic wrapper of ML_Operator and Epetra_RowMatrix objects;
+- MLAPI::InverseOperator, which defined smoothers and coarse grid solvers;
+- MLAPI::MultiVector, which contains one vector, or a collection of vectors, all 
+  sharing the same space.
+
+MLAPI can be used for both serial and parallel computations.
+
+
+
+\section mlapi_multivector Use of MultiVector
+
+Class MLAPI::MultiVector contains one or more vectors. The general usage is as
+follows:
+\code
+Space MySpace(128);
+MultiVector V;
+int NumVectors = 1;
+V.Reshape(V, NumVectors);
+\endcode
+A new vector can be added to the already allocated ones as follows:
+\code
+V.Add();
+\endcode
+Equivalently, one vector can be deleted. For example, to delete the second
+multivector, one can write
+\code
+V.Delete(2);
+\endcode
+meaning that now \c V contains just one vector.
+
+
+\section mlapi_memory Memory Management
+
+One of the most powerful feature of C and C++
+if the capability of allocating memory. Unfortunately, this is also the
+area where most bugs are found -- not to mention memory leaks. We have adopted
+smart pointers to manage memory.
+MLAPI objects should never be allocated using \c new, and therefore never
+free them using \c delete. The code will automatically delete memory
+when it is no longer referenced by any object. Besides, functions or methods
+that need to return MLAPI objects, should always return an instance of the
+required object, and not a pointer or a reference.
+
+Let us consider three generic MLAPI objects.
+The assignment A = B means the following: all smart pointers contained
+by B are copied in A, both A and B point to the
+same memory location. However, A and B are not aliases: we can
+still write 
+\code
+B = C
+\endcode
+meaning that A contains what was contained in
+B, and both B and C point to the same memory location. 
+Should we need to create a copy of C in B, we will use the
+instruction 
+\code
+B = Duplicate(C)
+\endcode
+which is instead an expensive operation, as new memory
+needs to be allocated, then all elements in C need to be copied in B.
+
+
+
+\section mlapi_prec Available Preconditioners
+
+Although MLAPI is design to be a framework for development of new
+preconditioners, two classes already defines ready-to-use preconditioners:
+- MLAPI::MultiLevelSA is a classical smoothed aggregation preconditioner,
+  which roughly behaves like class ML_Epetra::MultiLevel. However, the list
+  of supported parameters is remarkably shorter. This class is meant as 
+  an example of usage of MLAPI for the definition of smoothed aggregation
+  preconditioners;
+- MLAPI::MultiLevelAdaptiveSA implements adaptive smoothed aggregation. 
+- example \ref ml_twolevel shows how to define a two-level domain
+  decomposition preconditioner. This class shows how to define adaptive
+  smoothed aggregation preconditioners.
+
+\section mlapi_epetrainterface Interface with Epetra Objects
+
+Any Epetra_RowMatrix derived class can be wrapped as an MLAPI::Operator.
+(However, some restrictions apply, please check you Epetra_Map's for more
+details.)
+
+An MLAPI::InverseOperator (and therefore preconditioners MLAPI::MultiLevelSA
+and MLAPI::MultiLevelAdaptiveSA) can be easily wrapped as an Epetra_Operator
+derived class, then used within, for instance, AztecOO. An example is reported
+in \ref ml_epetrainterface.
 */
 
