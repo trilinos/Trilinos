@@ -42,6 +42,16 @@ To use this example, create a file, called for instance ml-input,
 which will contain the values used to built the hierarchy. An example
 of this file is as follows:
 -----(begin)--
+i additional candidates = 1
+s krylov: type = cg_condnum
+i krylov: max iterations = 350
+f krylov: tolerance = 1.e-10
+f aggregation: damping = 0.0
+s aggregation: type = Uncoupled
+s coarse: type = Amesos-KLU
+s smoother: type = symmetric Gauss-Seidel
+s smoother: pre or post = both
+b use default null space = true
 ----(end)--
 
 then execute the file as:
