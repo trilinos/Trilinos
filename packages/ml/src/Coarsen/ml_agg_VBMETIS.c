@@ -185,7 +185,7 @@ int ML_Aggregate_Set_Vblocks_CoarsenScheme_VBMETIS( ML_Aggregate *ag,
                                                     const int block_dim)
 {
    struct aggr_vblock* temp = NULL;
-   int i,nbyte,nlevel=0;
+   int i,nbyte;
 
    if ( ag->ML_id != ML_ID_AGGRE ) 
    {
@@ -240,9 +240,8 @@ int ML_Aggregate_Set_Vblocks_CoarsenScheme_VBMETIS( ML_Aggregate *ag,
 
    if (level < 0 || level >= N_levels)
    {
-      fprintf(stderr,"*ML*ERR** given level %d is out of range in \n",level,
-                     "*ML*ERR** ML_Aggregate_Set_Vblocks_CoarsenScheme_VBMETIS\n"
-                     "%s:%d\n",__FILE__,__LINE__);
+     fprintf(stderr,"*ML*ERR** given level %d is out of range in \n*ML*ERR** ML_Aggregate_Set_Vblocks_CoarsenScheme_VBMETIS\n%s:%d\n",
+	     level, __FILE__, __LINE__);
       fflush(stderr); exit(EXIT_FAILURE);
    }
    
@@ -262,9 +261,8 @@ int ML_Aggregate_Set_Vblocks_CoarsenScheme_VBMETIS( ML_Aggregate *ag,
    }
    if (temp[level].blocks==NULL)
    {
-      fprintf(stderr,"*ML*ERR** not enough memory to allocate blocks in \n"
-                     "*ML*ERR** ML_Aggregate_Set_Vblocks_CoarsenScheme_VBMETIS\n"
-                     "%s:%d\n",__FILE__,__LINE__);
+      fprintf(stderr,"*ML*ERR** not enough memory to allocate blocks in \n*ML*ERR** ML_Aggregate_Set_Vblocks_CoarsenScheme_VBMETIS\n%s:%d\n",
+	      __FILE__,__LINE__);
       fflush(stderr); exit(EXIT_FAILURE);
    }
    
@@ -279,9 +277,8 @@ int ML_Aggregate_Set_Vblocks_CoarsenScheme_VBMETIS( ML_Aggregate *ag,
    }
    if (temp[level].block_pde==NULL)
    {
-      fprintf(stderr,"*ML*ERR** not enough memory to allocate block_pde in \n"
-                     "*ML*ERR** ML_Aggregate_Set_Vblocks_CoarsenScheme_VBMETIS\n"
-                     "%s:%d\n",__FILE__,__LINE__);
+      fprintf(stderr,"*ML*ERR** not enough memory to allocate block_pde in \n*ML*ERR** ML_Aggregate_Set_Vblocks_CoarsenScheme_VBMETIS\n%s:%d\n",
+	      __FILE__,__LINE__);
       fflush(stderr); exit(EXIT_FAILURE);
    }
    
@@ -842,9 +839,8 @@ int ML_Aggregate_Get_Vblocks_CoarsenScheme_VBMETIS( const ML_Aggregate *ag,
    /* check range of input data */
    if (level<0 || level >= N_levels)
    {
-      fprintf(stderr,"*ML*ERR** ML_Aggregate_Get_Vblocks_CoarsenScheme_VBMETIS:\n"
-                     "*ML*ERR** level %d out of range ( 0 - %d )\n",level,N_levels,
-                     "%s:%d\n",__FILE__,__LINE__);
+      fprintf(stderr,"*ML*ERR** ML_Aggregate_Get_Vblocks_CoarsenScheme_VBMETIS:\n*ML*ERR** level %d out of range ( 0 - %d )\n%s:%d\n",
+	      level,N_levels,__FILE__,__LINE__);
       fflush(stderr); exit(EXIT_FAILURE);
    }
    if (level >= ag->max_levels)
@@ -909,7 +905,6 @@ int ML_Aggregate_Destroy_Vblocks_CoarsenScheme_VBMETIS( const ML_Aggregate *ag,
                                                         const int level)
 {
    struct aggr_vblock* temp = NULL;
-   int i;
 
    if ( ag->ML_id != ML_ID_AGGRE ) 
    {
@@ -980,7 +975,7 @@ int ML_Aggregate_CoarsenVBMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
   unsigned int nbytes, length;
    int     i, j,  k, Nrows, exp_Nrows;
    int     diff_level;
-   int     aggr_count, index, mypid, num_PDE_eqns;
+   int     aggr_count, index = 0, mypid, num_PDE_eqns;
    int     *aggr_index = NULL, nullspace_dim;
    int     Ncoarse, count;
    int     *new_ia = NULL, *new_ja = NULL, new_Nrows;
@@ -1385,8 +1380,7 @@ int ML_Aggregate_CoarsenVBMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
 
    if( ml_ag->aggr_viz_and_stats != NULL ) {
      fprintf( stderr,
-              "%s *ML*WRN* visualization of variable-block-aggregates not tested!\n",str,
-              "%s *ML*WRN* (file %s, line %d)\n",str,__FILE__,__LINE__ );
+              "%s *ML*WRN* visualization of variable-block-aggregates not tested!\n%s *ML*WRN* (file %s, line %d)\n",str,str,__FILE__,__LINE__ );
      fflush(stderr);
      graph_decomposition = (int *)ML_allocate(sizeof(int)*(Nrows+1));
      if( graph_decomposition == NULL ) {
@@ -1444,8 +1438,8 @@ int ML_Aggregate_CoarsenVBMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
          if (j==i && i != 0)
          {
             fprintf( stderr,
-		     "*ML*ERR* check the code for blockrow %d\n",i,
-		     "*ML*ERR* (file %s, line %d)\n",__FILE__,__LINE__ ); 
+		     "*ML*ERR* check the code for blockrow %d\n*ML*ERR* (file %s, line %d)\n",
+		     i,__FILE__,__LINE__ ); 
                       fflush(stderr); exit( EXIT_FAILURE );
          }
          aggr_index[j] = aggr_index[i];
@@ -1475,8 +1469,8 @@ int ML_Aggregate_CoarsenVBMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
    if (aggr_cnt_array==NULL)
    {
       fprintf( stderr,
-               "*ML*ERR* not enough space\n",
-               "*ML*ERR* (file %s, line %d)\n",__FILE__,__LINE__ ); 
+               "*ML*ERR* not enough space\n*ML*ERR* (file %s, line %d)\n",
+	       __FILE__,__LINE__ ); 
                 fflush(stderr); exit( EXIT_FAILURE );
    }
    for (i = 0; i < aggr_count ; i++) aggr_cnt_array[i] = 0;
@@ -1484,9 +1478,7 @@ int ML_Aggregate_CoarsenVBMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
      if (aggr_index[i] >= 0) {
        if( aggr_index[i] >= aggr_count ) {
 	 fprintf( stderr,
-		  "*ML*WRN* on process %d, something weird happened...\n"
-		  "*ML*WRN* node %d belong to aggregate %d (#aggr = %d)\n"
-		  "*ML*WRN* (file %s, line %d)\n",
+		  "*ML*WRN* on process %d, something weird happened...\n*ML*WRN* node %d belong to aggregate %d (#aggr = %d)\n*ML*WRN* (file %s, line %d)\n",
 		  comm->ML_mypid,i,aggr_index[i],aggr_count,__FILE__,__LINE__ );
        } else {
 	 aggr_cnt_array[aggr_index[i]]++;
@@ -1519,17 +1511,16 @@ int ML_Aggregate_CoarsenVBMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
             ml_ag->aggr_info[level][i] = aggr_index[i];
          if (aggr_index[i] >= count) 
          {
-            fprintf(stderr,"**WRNG** %d : aggr_index[%d]=%d >= count=%d\n",
-                            mypid,i,aggr_index[i],count,
-                           "**WRNG** (file %s, line %d)\n",__FILE__,__LINE__ );
+            fprintf(stderr,
+		    "**WRNG** %d : aggr_index[%d]=%d >= count=%d\n**WRNG** (file %s, line %d)\n",
+		    mypid,i,aggr_index[i],count,__FILE__,__LINE__ );
             count = aggr_index[i] + 1;
          }
       }
       else
       {
-          fprintf(stderr,"%d : CoarsenVBMETIS error : aggr_index[%d] < 0\n",
-                          mypid,i,
-                         "something wrong with exlusion of Dirichlet rows\n");
+          fprintf(stderr,"%d : CoarsenVBMETIS error : aggr_index[%d] < 0\nsomething wrong with exlusion of Dirichlet rows\n",
+                          mypid,i);
           fflush(stderr); exit(EXIT_FAILURE);
       }
    }
@@ -1602,8 +1593,9 @@ int ML_Aggregate_CoarsenVBMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
      nbytes = aggr_cnt_array[i]+1;
      rows_in_aggs[i] = (int *) ML_allocate(nbytes*sizeof(int));
      if (rows_in_aggs[i] == NULL)  {
-       fprintf(stderr,"*ML*ERR* couldn't allocate memory in CoarsenMETIS\n",
-                      "*ML*ERR* (file %s, line %d)\n",__FILE__,__LINE__);
+       fprintf(stderr,
+	       "*ML*ERR* couldn't allocate memory in CoarsenMETIS\n*ML*ERR* (file %s, line %d)\n",
+	       __FILE__,__LINE__);
        fflush(stderr); exit(EXIT_FAILURE);
      }
      aggr_cnt_array[i] = 0;
@@ -1682,8 +1674,7 @@ int ML_Aggregate_CoarsenVBMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
                   }
                   else {
 		    fprintf( stderr,
-			     "*ML*ERR* in QR, index out of range\n"
-			     "*ML*ERR* (file %s, line %d)\n",
+			     "*ML*ERR* in QR, index out of range\n*ML*ERR* (file %s, line %d)\n",
 			     __FILE__,__LINE__ );
 		    fflush(stderr);exit( EXIT_FAILURE );
                   }
@@ -1713,11 +1704,8 @@ int ML_Aggregate_CoarsenVBMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
          if (index1==-1)
          {
 	     fprintf( stderr,
-	              "*ML*WRN* detected zero column in QR block,\n"
-                      "*ML*WRN* that might crash the QR-fact.\n"
-                      "*ML*WRN* column %d of nullspace\n",k,
-	              "*ML*WRN* (file %s, line %d)\n",
-	              __FILE__,__LINE__ );
+	              "*ML*WRN* detected zero column in QR block,\n*ML*WRN* that might crash the QR-fact.\n*ML*WRN* column %d of nullspace\n*ML*WRN* (file %s, line %d)\n",
+	              k,__FILE__,__LINE__ );
 	     fflush(stderr);
              printflag++;
              
@@ -1793,16 +1781,16 @@ int ML_Aggregate_CoarsenVBMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
 	/* ---------------------------------------------------------- */
 
 	if ( aggr_cnt_array[i] < nullspace_dim ){
-	  printf("Error in dorgqr on %d row (dims are %d, %d)\n",i,aggr_cnt_array[i],
-                 nullspace_dim,"(file %s, line %d)\n",__FILE__,__LINE__ );
+	  printf("Error in dorgqr on %d row (dims are %d, %d)\n(file %s, line %d)\n",
+		 nullspace_dim, i,aggr_cnt_array[i],__FILE__,__LINE__ );
 	  printf("ERROR : performing QR on a MxN matrix where M<N.\n");
 	  fflush(stdout);
         }
 	DORGQR_F77(&(aggr_cnt_array[i]), &nullspace_dim, &nullspace_dim, 
 			  qr_tmp, &(aggr_cnt_array[i]), tmp_vect, work, &lwork, &info);
 	if (info != 0) {
-	  printf("Error in dorgqr on %d row (dims are %d, %d)\n",i,aggr_cnt_array[i],
-                 nullspace_dim,"(file %s, line %d)\n",__FILE__,__LINE__ );
+	  printf("Error in dorgqr on %d row (dims are %d, %d)\n(file %s, line %d)\n",
+		 i,aggr_cnt_array[i],nullspace_dim,__FILE__,__LINE__ );
           fflush(stdout);       
 	  pr_error("Error in CoarsenMIS: dorgqr returned a non-zero\n");
 	}
@@ -1841,8 +1829,8 @@ int ML_Aggregate_CoarsenVBMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
 	    else 
 	      {
 	     fprintf( stderr,
-	              "*ML*ERR* in QR: index out of bounds (%d)\n",index,
-	              "*ML*ERR* (file %s, line %d)\n",__FILE__,__LINE__ );
+	              "*ML*ERR* in QR: index out of bounds (%d)\n*ML*ERR* (file %s, line %d)\n",
+		      index,__FILE__,__LINE__ );
 	     fflush(stderr);exit( EXIT_FAILURE );
 	      }
 	  }
@@ -1868,9 +1856,9 @@ int ML_Aggregate_CoarsenVBMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
 	/* be performed. Instead let us copy the null space from the fine   */
         /* into the coarse grid nullspace and put the identity for the      */
 	/* prolongator????                                                  */
-	fprintf( stdout,
-	         "*ML*WRN* in QR: aggregate smaller then nullspace\n",index,
-	         "*ML*WRN* (file %s, line %d)\n",__FILE__,__LINE__ );
+	fprintf(stdout,
+		"*ML*WRN* in QR: aggregate (%d) smaller then nullspace\n*ML*WRN* (file %s, line %d)\n",
+		 index,__FILE__,__LINE__ );
 	fflush(stdout);
 	
         for (j = 0; j < nullspace_dim; j++)
@@ -1913,8 +1901,8 @@ int ML_Aggregate_CoarsenVBMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
       if (new_block_pde==NULL)
       {
       	 fprintf( stderr,
-	          "*ML*ERR* ML_Aggregate_CoarsenVBMETIS: out of space\n"
-	          "*ML*ERR* (file %s, line %d)\n",__FILE__,__LINE__ );
+	          "*ML*ERR* ML_Aggregate_CoarsenVBMETIS: out of space\n*ML*ERR* (file %s, line %d)\n",
+		  __FILE__,__LINE__ );
 	 fflush(stderr);exit( EXIT_FAILURE );
       }
       index1=0;
@@ -2077,7 +2065,7 @@ static int ML_DecomposeGraph_with_VBMETIS( ML_Operator *Amatrix,
 					   int *total_nz)
 {
 
-  int i, j,jj,  count, count2, col;
+  int i, j,jj,  count, count2;
   int Nrows, Nrows_global,NrowsMETIS, N_nonzeros, N_bdry_nodes;
   int *wgtflag=NULL, numflag, *options=NULL, edgecut;
   idxtype *xadj=NULL, *adjncy=NULL;
@@ -2094,8 +2082,6 @@ static int ML_DecomposeGraph_with_VBMETIS( ML_Operator *Amatrix,
   int ok = 0;
   int * nodes_per_aggre = NULL;
   double t0;
-  int * dep = NULL;
-  int NcenterNodes;
   int * perm = NULL;
   char str[80];
   
@@ -2174,8 +2160,7 @@ static int ML_DecomposeGraph_with_VBMETIS( ML_Operator *Amatrix,
    
   if(  xadj==NULL || adjncy==NULL ) {
     fprintf( stderr,
-	     "**ERR** on proc %d, not enought space for %d bytes.\n"
-	     "file %s, line %d\n",
+	     "**ERR** on proc %d, not enought space for %d bytes.\nfile %s, line %d\n",
 	     comm->ML_mypid, N_nonzeros,
 	     __FILE__,
 	     __LINE__);fflush(stderr);exit(EXIT_FAILURE);
