@@ -62,7 +62,7 @@ AC_CONFIG_SRCDIR(/src/Main/ml_struct.c)
 # config.sub, config.guess) and M4 files.
 
 #
-# This a a subdirectory of Trilinos/packages/new_package that contains
+# This a a subdirectory of Trilinos/packages/ml that contains
 # a number of useful m4 files.  Any package that uses these m4 files
 # will have to add them to the repository.  The m4 files perform various
 # common checks and set common variable values to minimize redundant work.
@@ -137,7 +137,7 @@ TAC_ARG_WITH_AR
 TAC_ARG_CHECK_MPI
 
 # Customize the checks for headers needed in package being added.
-# NOTE: This section still needs to be updated for new_package, it is still 
+# NOTE: This section still needs to be updated for ml, it is still 
 # code from Epetra
 # ------------------------------------------------------------------------
 # Checks for header files - used in Epetra_ConfigDefs.h 
@@ -255,6 +255,7 @@ AC_CXX_STD_SPRINTF
 # invoke with "with-xxxxxx", where xxxxxx is the first argument, e.g., ml_aztec
 
 # these are ON by default
+ TAC_ARG_WITH_PACKAGE(ml_epetra, [Enable Epetra support], ML_AZTEC, yes)
  TAC_ARG_WITH_PACKAGE(ml_aztec, [Enable Aztec support], ML_AZTEC, yes)
 # TAC_ARG_WITH_PACKAGE(ml_mpi, [Enable mpi support], ML_MPI, yes)
  TAC_ARG_WITH_PACKAGE(ml_external_mpi_functions, [Use mpi-provided global communication functions (not ml's internal implementation)], ML_EXTERNAL_MPI_FUNCTIONS, yes)

@@ -55,9 +55,17 @@
 #ifdef HAVE_CONFIG_H 
 #include "ml_config.h"
 
-#ifdef HAVE_ML_AZTEC
+/* aztecoo depends on epetra ...*/
+#if defined(HAVE_ML_AZTEC) || defined(HAVE_ML_EPETRA)
 #define AZTEC
 #define ML_WITH_EPETRA
+#endif
+
+/* ... but not vice versa */
+#ifdef HAVE_ML_EPETRA
+#ifndef ML_WITH_EPETRA
+#define ML_WITH_EPETRA
+#endif
 #endif
 
 #ifdef HAVE_ML_SUPERLU
