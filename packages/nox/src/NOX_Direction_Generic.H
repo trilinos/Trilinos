@@ -69,7 +69,7 @@ public:
   //! Destructor
   virtual ~Generic() {};
 
-  //! Reset parameters
+  //! Reset direction based on possibly new parameters.
   virtual bool reset(NOX::Parameter::List& params) = 0;
   
   /*!
