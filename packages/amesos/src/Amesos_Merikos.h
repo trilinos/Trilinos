@@ -81,7 +81,7 @@ Observations:
 
 
 //! Amesos_Merikos:  A parallel  divide and conquer solver.
-
+/*!
 <br /><br /><p>Merikos partitions the rows of a matrix into two or more 
 disjoint submatrices.  i.e. if rows i and j are in different submatrices, 
 A[i,j] == 0 == A[j,i].  Rows/columns not in any of the submatrices, i.e. the 
