@@ -407,10 +407,12 @@ int Zoltan_LB_Eval (ZZ *zz, int print_stats,
     /* Allreduce data w.r.t. partitions onto all procs. */
     MPI_Allreduce(all_arr, all_arr_glob, NUM_STATS*nparts, 
                   MPI_INT, MPI_SUM, zz->Communicator);
-    MPI_Allreduce(vwgt_arr, vwgt_arr_glob, nparts*(zz->Obj_Weight_Dim), 
-                  MPI_FLOAT, MPI_SUM, zz->Communicator);
-    MPI_Allreduce(cutwgt_arr, cutwgt_arr_glob, nparts*(zz->Edge_Weight_Dim), 
-                  MPI_FLOAT, MPI_SUM, zz->Communicator);
+    if (zz->Obj_Weight_Dim > 0)
+      MPI_Allreduce(vwgt_arr, vwgt_arr_glob, nparts*(zz->Obj_Weight_Dim), 
+                    MPI_FLOAT, MPI_SUM, zz->Communicator);
+    if (zz->Edge_Weight_Dim > 0)
+      MPI_Allreduce(cutwgt_arr, cutwgt_arr_glob, nparts*(zz->Edge_Weight_Dim), 
+                    MPI_FLOAT, MPI_SUM, zz->Communicator);
 
     /* Find min, max, sum. */
     for (i=0; i<NUM_STATS; i++)
