@@ -44,51 +44,41 @@ class NLS_PetraVector : public NLS_Vector {
   //! Deep copy operator. Copies both the vector and its map.
   NLS_PetraVector& operator=(const NLS_PetraVector& copyFrom);
 
-  // Derived
-  NLS_PetraVector& scale(double alpha);
+ 
+  NLS_Vector& init(double value);
 
-  // Derived
-  double norm() const;
-  void random();
-  
-  void putScalar (double scalar);
+  virtual NLS_Vector& abs(const NLS_Vector& y) = 0;
 
-  void update(double scalarA, const NLS_Vector& y, double scalar);
+  virtual NLS_Vector& abs(const NLS_PetraVector& y) = 0;
+
+  virtual NLS_Vector& copy(const NLS_Vector& y, double scale = 1.0) = 0;
+
+  virtual NLS_Vector& copy(const NLS_PetraVector& y, double scale = 1.0) = 0;
+
+  NLS_Vector& update(double alpha, const NLS_Vector& y, double beta);
 
   //! See above for definition.
-  void update(double scalarA, const NLS_PetraVector& y, double scalar);
+  NLS_Vector& update(double alpha, const NLS_PetraVector& y, double beta);
 
-  void scale(double alpha);
+  NLS_Vector&  scale(double alpha);
+
+  virtual NLS_Vector* newcopy() = 0;
+
+  double infnorm() const;
+
+  double onenorm() const;
+  
+  double norm() const;
+
+  double norm(const NLS_Vector& weights) const;
+
+  //! Weighted 2-norm.  See above for definition.
+  double norm(const NLS_PetraVector& weights) const;
 
   double dot(const NLS_Vector& y) const;
 
   //! See above for definition.
   double dot(const NLS_PetraVector& y) const;
-
-  double normInf() const;
-
-  double norm1() const;
-  
-  double norm2() const;
-
-  double norm2(const NLS_Vector& weights) const;
-
-  //! Weighted 2-norm.  See above for definition.
-  double norm2(const NLS_PetraVector& weights) const;
-
-  void Abs(const NLS_Vector& y);
-
-  //! See above for definition.
-  void Abs(const NLS_PetraVector& y);
-
-  //! Returns the minimum value of vector.
-  double minValue() const;
-
-  //! Returns the maximum value of vector.
-  double maxValue() const;
-
-  //! Returns the average value of vector.
-  double meanValue() const;
 
  private:
   

@@ -50,12 +50,12 @@ NLS_Vector& NLS_PetraGroup::computeX(NLS_Group& x, NLS_Vector& d, double step) {
 
 //! Compute and return RHS
 NLS_Vector& NLS_PetraGroup::computeRHS() {
-  interface.loadFunction(xVector);
+  //interface.loadFunction(xVector);
 }
 
 //! Compute RHS
 void NLS_PetraGroup::computeJacobian() {
-  interface.loadJacobian(xVector);
+  //interface.loadJacobian(xVector);
 }
 
 //! Compute and return gradient 
@@ -80,7 +80,7 @@ NLS_Vector& NLS_PetraGroup::computeGrad() {
 /*! Throws an error if RHS and Jacobian have not been computed */
 NLS_Vector& NLS_PetraGroup::computeNewton() {
   cout << "ERROR: No direct methods are avialable for matrix inversion yet!\n"
-    "Use the iterative solver!" << endl;
+    "Use the iterative solver call!" << endl;
   throw;
 }
 

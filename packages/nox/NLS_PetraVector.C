@@ -55,33 +55,93 @@ NLS_PetraVector& NLS_PetraVector::operator=(const NLS_PetraVector& copyFrom)
   return *this;
 }
 
-void NLS_PetraVector::random()
+NLS_Vector& NLS_PetraVector::init(double value)
 {
-  petraVec->Random();
+  petraVec->PutScalar(value);
+  return *this;
 }
 
-void NLS_PetraVector::putScalar(double alpha)
+NLS_Vector& NLS_PetraVector::abs(const NLS_Vector& base)
 {
-  petraVec->PutScalar(alpha);
+  throw; 
 }
 
-void NLS_PetraVector::update(double scalarA, 
-			     const NLS_Vector& y, 
-			     double scalar)
+NLS_Vector& NLS_PetraVector::abs(const NLS_PetraVector& base)
+{
+  petraVec->Abs(*(base.petraVec));
+  return *this;
+}
+
+NLS_Vector& NLS_PetraVector::copy(const NLS_Vector& y, double scale = 1.0) 
 {
   throw;
 }
 
-void NLS_PetraVector::update(double scalarA, 
-			     const NLS_PetraVector& y, 
-			     double scalar)
+NLS_Vector& NLS_PetraVector::copy(const NLS_PetraVector& y, double scale = 1.0)
 {
-  petraVec->Update(scalarA, *(y.petraVec), scalar);
+  petraVec->Update(scale, *(y.petraVec), 0.0);
+  return *this;
 }
 
-void NLS_PetraVector::scale(double alpha)
+NLS_Vector& NLS_PetraVector::update(double alpha, 
+			       const NLS_Vector& y, 
+			       double beta)
+{
+  throw;
+}
+
+NLS_Vector& NLS_PetraVector::update(double alpha, 
+				    const NLS_PetraVector& y, 
+				    double beta)
+{
+  petraVec->Update(beta, *(y.petraVec), alpha);
+  return *this;
+}
+
+NLS_Vector& NLS_PetraVector::scale(double alpha)
 {
   petraVec->Scale(alpha);
+  return *this;
+}
+
+NLS_Vector* NLS_PetraVector::newcopy() 
+{
+  // Not finished yet!
+  NLS_PetraVector *newVec;
+  return newVec;
+}
+
+double NLS_PetraVector::infnorm() const
+{
+  double norm;
+  petraVec->NormInf(&norm);
+  return norm;
+}
+
+double NLS_PetraVector::onenorm() const
+{
+  double norm;
+  petraVec->Norm1(&norm);
+  return norm;
+}
+
+double NLS_PetraVector::norm() const
+{
+  double norm;
+  petraVec->Norm2(&norm);
+  return norm;
+}
+
+double NLS_PetraVector::norm(const NLS_Vector& weights) const
+{
+  throw;
+}
+
+double NLS_PetraVector::norm(const NLS_PetraVector& weights) const
+{
+  double norm;
+  petraVec->NormWeighted(*(weights.petraVec), &norm);
+  return norm;
 }
 
 double NLS_PetraVector::dot(const NLS_Vector& y) const
@@ -94,70 +154,6 @@ double NLS_PetraVector::dot(const NLS_PetraVector& y) const
   double dot;
   petraVec->Dot(*(y.petraVec), &dot);
   return dot;
-}
-
-double NLS_PetraVector::normInf() const
-{
-  double norm;
-  petraVec->NormInf(&norm);
-  return norm;
-}
-
-double NLS_PetraVector::norm1() const
-{
-  double norm;
-  petraVec->Norm1(&norm);
-  return norm;
-}
-
-double NLS_PetraVector::norm2() const
-{
-  double norm;
-  petraVec->Norm2(&norm);
-  return norm;
-}
-
-double NLS_PetraVector::norm2(const NLS_Vector& weights) const
-{
-  throw;
-}
-
-double NLS_PetraVector::norm2(const NLS_PetraVector& weights) const
-{
-  double norm;
-  petraVec->NormWeighted(*(weights.petraVec), &norm);
-  return norm;
-}
-
-void NLS_PetraVector::Abs(const NLS_Vector& base)
-{
-  throw; 
-}
-
-void NLS_PetraVector::Abs(const NLS_PetraVector& base)
-{
-  petraVec->Abs(*(base.petraVec)); 
-}
-
-double NLS_PetraVector::minValue() const
-{
-  double minVal;
-  petraVec->MinValue(&minVal);
-  return minVal;
-}
-
-double NLS_PetraVector::maxValue() const
-{
-  double maxVal;
-  petraVec->MaxValue(&maxVal);
-  return maxVal;
-}
-
-double NLS_PetraVector::meanValue() const
-{
-  double avgVal;
-  petraVec->MeanValue(&avgVal);
-  return avgVal;
 }
 
 

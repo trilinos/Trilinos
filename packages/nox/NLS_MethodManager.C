@@ -8,13 +8,14 @@
 // LICENSE & WARRANTY INFORMATION in README.txt and LICENSE.txt.
 // CONTACT T. Kolda (tgkolda@sandia.gov) or R. Pawlowski (rppawlo@sandia.gov)
 
+#include "NLS_Newton.H"
 #include "NLS_MethodManager.H"
 
 NLS_MethodManager::NLS_MethodManager(NLS_Group& i, NLS_ParameterList& p) :
-  method(NULL)
+  ptr(NULL)
 {
 
-  string method = ParameterList.getParameter("Nonlinear Solver", "Newton");
+  string method = p.getParameter("Nonlinear Solver", "Newton");
 
   cout << "Nonlinear Solver: " << method << endl; 
   
