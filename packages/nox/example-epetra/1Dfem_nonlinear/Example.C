@@ -96,10 +96,12 @@ int main(int argc, char *argv[])
 
   // Sublist for line search
   NOX::Parameter::List& searchParams = nlParams.sublist("Line Search");
-  searchParams.setParameter("Method", "Full Step");
+  //searchParams.setParameter("Method", "Full Step");
   //searchParams.setParameter("Full Step", 0.01);
   //searchParams.setParameter("Method", "Interval Halving");
-  //searchParams.setParameter("Method", "Polynomial");
+  searchParams.setParameter("Method", "Polynomial");
+  //searchParams.setParameter("Method", "Secant");
+  searchParams.setParameter("Max Iters", 15);
   //searchParams.setParameter("Method", "More'-Thuente");
   searchParams.setParameter("Default Step", 1.0000);
   //searchParams.setParameter("Recovery Step", 0.0001);
@@ -108,16 +110,15 @@ int main(int argc, char *argv[])
   // Sublist for direction
   NOX::Parameter::List& dirParams = nlParams.sublist("Direction");
   dirParams.setParameter("Method", "Newton");
-  //dirParams.setParameter("Method", "Steepest Descent"); 
-  //dirParams.setParameter("Method", "NonlinearCG"); 
-  //dirParams.setParameter("Diagonal Precondition", "On");  // default = "Off"
-  //dirParams.setParameter("Direction", "Steepest Descent");  // default
-  //dirParams.setParameter("Direction", "Richardson"); 
-  //dirParams.setParameter("Max Iterations", 100); 
-  //dirParams.setParameter("Orthogonalize", "Fletcher-Reeves");  // default
-  //dirParams.setParameter("Orthogonalize", "Polak-Ribiere"); 
-  //dirParams.setParameter("Restart Frequency", 5);  // default = 10
-  //dirParams.setParameter("Output Frequency", 10);  // default = 1 
+  //dirParams.setParameter("Method", "Steepest Descent");
+    //dirParams.setParameter("Scaling Type", "None");
+    //dirParams.setParameter("Scaling Type", "2-Norm");
+    dirParams.setParameter("Scaling Type", "Quadratic Model Min");
+  //dirParams.setParameter("Method", "NonlinearCG");
+    //dirParams.setParameter("Restart Frequency", 2000);
+    //dirParams.setParameter("Precondition", "On");
+    //dirParams.setParameter("Orthogonalize", "Polak-Ribiere");
+    //dirParams.setParameter("Orthogonalize", "Fletcher-Reeves");
 
   // Create the interface between the test problem and the nonlinear solver
   // This is created by the user using inheritance of the abstract base class:
