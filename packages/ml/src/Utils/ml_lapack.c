@@ -10488,7 +10488,7 @@ doublereal MLFORTRAN(dlange)(char *norm, integer *m, integer *n, doublereal *a, 
 
 
     /* System generated locals */
-    integer i__1, i__2, i__3;
+
 
     /* Local variables */
     static integer info;
@@ -10684,9 +10684,7 @@ doublereal MLFORTRAN(dlange)(char *norm, integer *m, integer *n, doublereal *a, 
     if (*alpha == 0.) {
 	if (upper) {
 	    if (*beta == 0.) {
-		i__1 = *n;
 		for (j = 1; j <= *n; ++j) {
-		    i__2 = j;
 		    for (i = 1; i <= j; ++i) {
 			C(i,j) = 0.;
 /* L10: */
@@ -10694,9 +10692,7 @@ doublereal MLFORTRAN(dlange)(char *norm, integer *m, integer *n, doublereal *a, 
 /* L20: */
 		}
 	    } else {
-		i__1 = *n;
 		for (j = 1; j <= *n; ++j) {
-		    i__2 = j;
 		    for (i = 1; i <= j; ++i) {
 			C(i,j) = *beta * C(i,j);
 /* L30: */
@@ -10706,9 +10702,7 @@ doublereal MLFORTRAN(dlange)(char *norm, integer *m, integer *n, doublereal *a, 
 	    }
 	} else {
 	    if (*beta == 0.) {
-		i__1 = *n;
 		for (j = 1; j <= *n; ++j) {
-		    i__2 = *n;
 		    for (i = j; i <= *n; ++i) {
 			C(i,j) = 0.;
 /* L50: */
@@ -10716,9 +10710,7 @@ doublereal MLFORTRAN(dlange)(char *norm, integer *m, integer *n, doublereal *a, 
 /* L60: */
 		}
 	    } else {
-		i__1 = *n;
 		for (j = 1; j <= *n; ++j) {
-		    i__2 = *n;
 		    for (i = j; i <= *n; ++i) {
 			C(i,j) = *beta * C(i,j);
 /* L70: */
@@ -10737,26 +10729,21 @@ doublereal MLFORTRAN(dlange)(char *norm, integer *m, integer *n, doublereal *a, 
 /*        Form  C := alpha*A*A' + beta*C. */
 
 	if (upper) {
-	    i__1 = *n;
 	    for (j = 1; j <= *n; ++j) {
 		if (*beta == 0.) {
-		    i__2 = j;
 		    for (i = 1; i <= j; ++i) {
 			C(i,j) = 0.;
 /* L90: */
 		    }
 		} else if (*beta != 1.) {
-		    i__2 = j;
 		    for (i = 1; i <= j; ++i) {
 			C(i,j) = *beta * C(i,j);
 /* L100: */
 		    }
 		}
-		i__2 = *k;
 		for (l = 1; l <= *k; ++l) {
 		    if (A(j,l) != 0.) {
 			temp = *alpha * A(j,l);
-			i__3 = j;
 			for (i = 1; i <= j; ++i) {
 			    C(i,j) += temp * A(i,l);
 /* L110: */
@@ -10767,26 +10754,21 @@ doublereal MLFORTRAN(dlange)(char *norm, integer *m, integer *n, doublereal *a, 
 /* L130: */
 	    }
 	} else {
-	    i__1 = *n;
 	    for (j = 1; j <= *n; ++j) {
 		if (*beta == 0.) {
-		    i__2 = *n;
 		    for (i = j; i <= *n; ++i) {
 			C(i,j) = 0.;
 /* L140: */
 		    }
 		} else if (*beta != 1.) {
-		    i__2 = *n;
 		    for (i = j; i <= *n; ++i) {
 			C(i,j) = *beta * C(i,j);
 /* L150: */
 		    }
 		}
-		i__2 = *k;
 		for (l = 1; l <= *k; ++l) {
 		    if (A(j,l) != 0.) {
 			temp = *alpha * A(j,l);
-			i__3 = *n;
 			for (i = j; i <= *n; ++i) {
 			    C(i,j) += temp * A(i,l);
 /* L160: */
@@ -10802,12 +10784,9 @@ doublereal MLFORTRAN(dlange)(char *norm, integer *m, integer *n, doublereal *a, 
 /*        Form  C := alpha*A'*A + beta*C. */
 
 	if (upper) {
-	    i__1 = *n;
 	    for (j = 1; j <= *n; ++j) {
-		i__2 = j;
 		for (i = 1; i <= j; ++i) {
 		    temp = 0.;
-		    i__3 = *k;
 		    for (l = 1; l <= *k; ++l) {
 			temp += A(l,i) * A(l,j);
 /* L190: */
@@ -10822,12 +10801,9 @@ doublereal MLFORTRAN(dlange)(char *norm, integer *m, integer *n, doublereal *a, 
 /* L210: */
 	    }
 	} else {
-	    i__1 = *n;
 	    for (j = 1; j <= *n; ++j) {
-		i__2 = *n;
 		for (i = j; i <= *n; ++i) {
 		    temp = 0.;
-		    i__3 = *k;
 		    for (l = 1; l <= *k; ++l) {
 			temp += A(l,i) * A(l,j);
 /* L220: */
@@ -11449,7 +11425,7 @@ th
     static doublereal c_b14 = 1.;
     
     /* System generated locals */
-    integer i__1, i__2, i__3, i__4;
+    integer i__1, i__3, i__4;
     /* Local variables */
     static integer j;
     static logical upper;
@@ -11498,7 +11474,6 @@ th
 /*           Compute the Cholesky factorization A = U'*U. */
 
 	    i__1 = *n;
-	    i__2 = nb;
 	    for (j = 1; nb < 0 ? j >= *n : j <= *n; j += nb) {
 
 /*              Update and factorize the current diagonal bloc
@@ -11537,7 +11512,6 @@ k and test
 
 /*           Compute the Cholesky factorization A = L*L'. */
 
-	    i__2 = *n;
 	    i__1 = nb;
 	    for (j = 1; nb < 0 ? j >= *n : j <= *n; j += nb) {
 
@@ -11664,7 +11638,7 @@ L40:
     
     /* System generated locals */
     address a__1[2];
-    integer i__1, i__2[2], i__3, i__4, i__5;
+    integer i__1, i__2[2], i__4, i__5;
     char ch__1[2];
 
     /* Local variables */
@@ -11736,7 +11710,6 @@ L40:
 /*           Compute inverse of upper triangular matrix */
 
 	    i__1 = *n;
-	    i__3 = nb;
 	    for (j = 1; nb < 0 ? j >= *n : j <= *n; j += nb) {
 /* Computing MIN */
 		i__4 = nb, i__5 = *n - j + 1;
@@ -11766,7 +11739,6 @@ L40:
 /*           Compute inverse of lower triangular matrix */
 
 	    nn = (*n - 1) / nb * nb + 1;
-	    i__3 = -nb;
 	    for (j = nn; -nb < 0 ? j >= 1 : j <= 1; j += -nb) {
 /* Computing MIN */
 		i__1 = nb, i__4 = *n - j + 1;
