@@ -347,8 +347,7 @@ TAC_ARG_ENABLE_FEATURE_SUB( teuchos, extended, [Enable Teuchos extended code], T
 AM_CONDITIONAL(HAVE_TEUCHOS_EXTENDED, [test "X$ac_cv_use_teuchos_extended" != "Xno"])
 
 #
-#  --enable-teuchos-arprec --with-teuchos-arprecdir 
-#  --with-teuchos-arpreclib --with-teuchos-arprecincdir
+#  --enable-teuchos-arprec 
 # 
  
 TAC_ARG_ENABLE_FEATURE_SUB( teuchos, arprec, [Enable Teuchos interface support for the ARbitrary PRECision Library], 
@@ -366,8 +365,9 @@ if test "X$ac_cv_use_teuchos_arprec" != "Xno"; then
 	 AC_MSG_RESULT(no)
 	 echo "-----"
      	 echo "Cannot find ARPREC library."
-     	 echo "Try --with-arprecdir to specify ARPREC directory."
-	 echo "Or try --with-arpreclib, --with-arprecincdir to specify exact paths."
+     	 echo "Use --with-ldflags to specify ARPREC library directory."
+     	 echo "Use --with-incdirs to specify ARPREC include directory."
+     	 echo "Use --with-libs to specify ARPREC library (-lmp)."
      	 echo "-----"
      	 AC_MSG_ERROR(ARPREC cannot link)
      	])

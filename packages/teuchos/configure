@@ -7038,8 +7038,7 @@ fi
 
 
 #
-#  --enable-teuchos-arprec --with-teuchos-arprecdir
-#  --with-teuchos-arpreclib --with-teuchos-arprecincdir
+#  --enable-teuchos-arprec
 #
 
 
@@ -7112,8 +7111,9 @@ sed 's/^/| /' conftest.$ac_ext >&5
 echo "${ECHO_T}no" >&6
 	 echo "-----"
      	 echo "Cannot find ARPREC library."
-     	 echo "Try --with-arprecdir to specify ARPREC directory."
-	 echo "Or try --with-arpreclib, --with-arprecincdir to specify exact paths."
+     	 echo "Use --with-ldflags to specify ARPREC library directory."
+     	 echo "Use --with-incdirs to specify ARPREC include directory."
+     	 echo "Use --with-libs to specify ARPREC library (-lmp)."
      	 echo "-----"
      	 { { echo "$as_me:$LINENO: error: ARPREC cannot link" >&5
 echo "$as_me: error: ARPREC cannot link" >&2;}
