@@ -222,8 +222,8 @@ PARAMS_CSRC	= set_param.c assign_param_vals.c check_param.c print_params.c \
 		  key_params.c free_params.c bind_param.c
 PARAMS_INC	= params_const.h
 
-PAR_CSRC	= par_median.c par_sync.c par_stats.c
-PAR_INC		= par_const.h par_median_const.h
+PAR_CSRC	= par_median.c par_sync.c par_stats.c par_bisect.c
+PAR_INC		= par_const.h par_median_const.h par_bisect_const.h
 
 PARMETIS_CSRC	= parmetis_jostle.c build_graph.c verify_graph.c \
                   scatter_graph.c
