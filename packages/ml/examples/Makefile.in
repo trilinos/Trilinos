@@ -17,10 +17,10 @@
 #@HEADER
 #@HEADER
 
-#ML_STANDALONE_MODE is set to true if ml is being built by itself, false
-#otherwise.   It controls which linker is used.  In the case that ml is built
-#with aztecoo and epetra support enabled, then a c++ linker must be used for
-#ML's c++ interfaces to those two packages.
+#ML_STANDALONE_MODE is set only if ml is being built by itself.
+#It controls which linker is used:  in the case that ml is built
+#with aztecoo and epetra support enabled, then a c++ linker is invoked
+#for ML's interfaces to those two packages.
 SHELL = @SHELL@
 
 srcdir = @srcdir@
@@ -97,7 +97,8 @@ am__quote = @am__quote@
 install_sh = @install_sh@
 
 # List the names of all exe's in this directory here
-@ML_STANDALONE_MODE_TRUE@noinst_PROGRAMS = mlguide mlguide_par
+@HAVE_MPI_FALSE@@ML_STANDALONE_MODE_TRUE@noinst_PROGRAMS = mlguide
+@HAVE_MPI_TRUE@@ML_STANDALONE_MODE_TRUE@noinst_PROGRAMS = mlguide mlguide_par
 @ML_STANDALONE_MODE_FALSE@noinst_PROGRAMS = mlguide mlguide_par ml_aztec_simple ml_example1d \
 @ML_STANDALONE_MODE_FALSE@                  ml_example1dGS ml_example2d ml_example3d ml_simple_max
 
@@ -200,16 +201,29 @@ subdir = examples
 mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/ml_config.h
 CONFIG_CLEAN_FILES =
-@ML_STANDALONE_MODE_TRUE@noinst_PROGRAMS = mlguide$(EXEEXT) \
-@ML_STANDALONE_MODE_TRUE@	mlguide_par$(EXEEXT)
-@ML_STANDALONE_MODE_FALSE@noinst_PROGRAMS = mlguide$(EXEEXT) \
-@ML_STANDALONE_MODE_FALSE@	mlguide_par$(EXEEXT) \
-@ML_STANDALONE_MODE_FALSE@	ml_aztec_simple$(EXEEXT) \
-@ML_STANDALONE_MODE_FALSE@	ml_example1d$(EXEEXT) \
-@ML_STANDALONE_MODE_FALSE@	ml_example1dGS$(EXEEXT) \
-@ML_STANDALONE_MODE_FALSE@	ml_example2d$(EXEEXT) \
-@ML_STANDALONE_MODE_FALSE@	ml_example3d$(EXEEXT) \
-@ML_STANDALONE_MODE_FALSE@	ml_simple_max$(EXEEXT)
+@HAVE_MPI_FALSE@@ML_STANDALONE_MODE_TRUE@noinst_PROGRAMS = \
+@HAVE_MPI_FALSE@@ML_STANDALONE_MODE_TRUE@	mlguide$(EXEEXT)
+@HAVE_MPI_FALSE@@ML_STANDALONE_MODE_FALSE@noinst_PROGRAMS = \
+@HAVE_MPI_FALSE@@ML_STANDALONE_MODE_FALSE@	mlguide$(EXEEXT) \
+@HAVE_MPI_FALSE@@ML_STANDALONE_MODE_FALSE@	mlguide_par$(EXEEXT) \
+@HAVE_MPI_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_aztec_simple$(EXEEXT) \
+@HAVE_MPI_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_example1d$(EXEEXT) \
+@HAVE_MPI_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_example1dGS$(EXEEXT) \
+@HAVE_MPI_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_example2d$(EXEEXT) \
+@HAVE_MPI_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_example3d$(EXEEXT) \
+@HAVE_MPI_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_simple_max$(EXEEXT)
+@HAVE_MPI_TRUE@@ML_STANDALONE_MODE_TRUE@noinst_PROGRAMS = \
+@HAVE_MPI_TRUE@@ML_STANDALONE_MODE_TRUE@	mlguide$(EXEEXT) \
+@HAVE_MPI_TRUE@@ML_STANDALONE_MODE_TRUE@	mlguide_par$(EXEEXT)
+@HAVE_MPI_TRUE@@ML_STANDALONE_MODE_FALSE@noinst_PROGRAMS = \
+@HAVE_MPI_TRUE@@ML_STANDALONE_MODE_FALSE@	mlguide$(EXEEXT) \
+@HAVE_MPI_TRUE@@ML_STANDALONE_MODE_FALSE@	mlguide_par$(EXEEXT) \
+@HAVE_MPI_TRUE@@ML_STANDALONE_MODE_FALSE@	ml_aztec_simple$(EXEEXT) \
+@HAVE_MPI_TRUE@@ML_STANDALONE_MODE_FALSE@	ml_example1d$(EXEEXT) \
+@HAVE_MPI_TRUE@@ML_STANDALONE_MODE_FALSE@	ml_example1dGS$(EXEEXT) \
+@HAVE_MPI_TRUE@@ML_STANDALONE_MODE_FALSE@	ml_example2d$(EXEEXT) \
+@HAVE_MPI_TRUE@@ML_STANDALONE_MODE_FALSE@	ml_example3d$(EXEEXT) \
+@HAVE_MPI_TRUE@@ML_STANDALONE_MODE_FALSE@	ml_simple_max$(EXEEXT)
 PROGRAMS = $(noinst_PROGRAMS)
 
 @ML_STANDALONE_MODE_FALSE@am_ml_aztec_simple_OBJECTS = \

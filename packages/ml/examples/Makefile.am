@@ -1,16 +1,20 @@
 #@HEADER
 #@HEADER
 
-#ML_STANDALONE_MODE is set to true if ml is being built by itself, false
-#otherwise.   It controls which linker is used.  In the case that ml is built
-#with aztecoo and epetra support enabled, then a c++ linker must be used for
-#ML's c++ interfaces to those two packages.
+#ML_STANDALONE_MODE is set only if ml is being built by itself.
+#It controls which linker is used:  in the case that ml is built
+#with aztecoo and epetra support enabled, then a c++ linker is invoked
+#for ML's interfaces to those two packages.
 
 EXEEXT = .exe
 
 # List the names of all exe's in this directory here
 if ML_STANDALONE_MODE
+if HAVE_MPI
 noinst_PROGRAMS = mlguide mlguide_par
+else
+noinst_PROGRAMS = mlguide
+endif
 else
 noinst_PROGRAMS = mlguide mlguide_par ml_aztec_simple ml_example1d \
                   ml_example1dGS ml_example2d ml_example3d ml_simple_max
