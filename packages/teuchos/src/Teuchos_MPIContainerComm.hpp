@@ -76,7 +76,7 @@ namespace Teuchos
                          const MPIComm& comm);
 
     //! Sum local values from all processors with rank < myRank
-    static void accumulate(const T& localValue, Array<T>& sums,
+    static void accumulate(const T& localValue, Array<T>& sums, T& total,
                            const MPIComm& comm);
 
   private:
@@ -347,15 +347,18 @@ namespace Teuchos
 
   template <class T> inline
   void MPIContainerComm<T>::accumulate(const T& localValue, Array<T>& sums,
-                                    const MPIComm& comm)
+                                       T& total,
+                                       const MPIComm& comm)
   {
     Array<T> contributions;
     allGather(localValue, contributions, comm);
     sums.resize(comm.getNProc());
     sums[0] = 0;
+    total = contributions[0];
 
     for (int i=0; i<comm.getNProc()-1; i++)
       {
+        total += contributions[i+1];
         sums[i+1] = sums[i] + contributions[i];
       }
   }
