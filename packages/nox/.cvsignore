@@ -5,3 +5,7 @@ builds
 config.log
 config.status
 configure.scan
+rosenbrock
+broyden
+Broyden.C_0725
+NOX_Direction_Tensor.C_0725

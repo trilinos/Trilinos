@@ -150,6 +150,7 @@ DIRECTION_H = \
 	$(srcdir)/NOX_Direction_Manager.H \
 	$(srcdir)/NOX_Direction_Newton.H \
 	$(srcdir)/NOX_Direction_NonlinearCG.H \
+	$(srcdir)/NOX_Direction_Tensor.H \
 	$(srcdir)/NOX_Direction_SteepestDescent.H
 
 
@@ -157,6 +158,7 @@ DIRECTION = \
 	$(srcdir)/NOX_Direction_Manager.C \
 	$(srcdir)/NOX_Direction_Newton.C \
 	$(srcdir)/NOX_Direction_NonlinearCG.C \
+	$(srcdir)/NOX_Direction_Tensor.C \
 	$(srcdir)/NOX_Direction_SteepestDescent.C
 
 
@@ -174,13 +176,15 @@ SOLVER_H = \
 	$(srcdir)/NOX_Solver_Generic.H \
 	$(srcdir)/NOX_Solver_Manager.H \
 	$(srcdir)/NOX_Solver_LineSearchBased.H \
-	$(srcdir)/NOX_Solver_TrustRegionBased.H
+	$(srcdir)/NOX_Solver_TrustRegionBased.H \
+	$(srcdir)/NOX_Solver_TensorBased.H
 
 
 SOLVER = \
 	$(srcdir)/NOX_Solver_Manager.C \
 	$(srcdir)/NOX_Solver_LineSearchBased.C \
-	$(srcdir)/NOX_Solver_TrustRegionBased.C
+	$(srcdir)/NOX_Solver_TrustRegionBased.C \
+	$(srcdir)/NOX_Solver_TensorBased.C
 
 
 STATUSTEST_H = \
@@ -308,11 +312,13 @@ am_libnox_a_OBJECTS = NOX_Abstract_Vector.$(OBJEXT) \
 	NOX_LineSearch_Secant.$(OBJEXT) NOX_Direction_Manager.$(OBJEXT) \
 	NOX_Direction_Newton.$(OBJEXT) \
 	NOX_Direction_NonlinearCG.$(OBJEXT) \
+	NOX_Direction_Tensor.$(OBJEXT) \
 	NOX_Direction_SteepestDescent.$(OBJEXT) \
 	NOX_Parameter_Entry.$(OBJEXT) NOX_Parameter_List.$(OBJEXT) \
 	NOX_Solver_Manager.$(OBJEXT) \
 	NOX_Solver_LineSearchBased.$(OBJEXT) \
 	NOX_Solver_TrustRegionBased.$(OBJEXT) \
+	NOX_Solver_TensorBased.$(OBJEXT) \
 	NOX_StatusTest_Generic.$(OBJEXT) NOX_StatusTest_NormF.$(OBJEXT) \
 	NOX_StatusTest_NormUpdate.$(OBJEXT) \
 	NOX_StatusTest_Combo.$(OBJEXT) \
@@ -332,6 +338,7 @@ depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 @AMDEP_TRUE@	$(DEPDIR)/NOX_Direction_Newton.Po \
 @AMDEP_TRUE@	$(DEPDIR)/NOX_Direction_NonlinearCG.Po \
 @AMDEP_TRUE@	$(DEPDIR)/NOX_Direction_SteepestDescent.Po \
+@AMDEP_TRUE@	$(DEPDIR)/NOX_Direction_Tensor.Po \
 @AMDEP_TRUE@	$(DEPDIR)/NOX_LineSearch_Backtrack.Po \
 @AMDEP_TRUE@	$(DEPDIR)/NOX_LineSearch_FullStep.Po \
 @AMDEP_TRUE@	$(DEPDIR)/NOX_LineSearch_Manager.Po \
@@ -343,6 +350,7 @@ depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 @AMDEP_TRUE@	$(DEPDIR)/NOX_Parameter_List.Po \
 @AMDEP_TRUE@	$(DEPDIR)/NOX_Solver_LineSearchBased.Po \
 @AMDEP_TRUE@	$(DEPDIR)/NOX_Solver_Manager.Po \
+@AMDEP_TRUE@	$(DEPDIR)/NOX_Solver_TensorBased.Po \
 @AMDEP_TRUE@	$(DEPDIR)/NOX_Solver_TrustRegionBased.Po \
 @AMDEP_TRUE@	$(DEPDIR)/NOX_StatusTest_Combo.Po \
 @AMDEP_TRUE@	$(DEPDIR)/NOX_StatusTest_Generic.Po \
@@ -444,6 +452,7 @@ NOX_Direction_Manager.$(OBJEXT): $(srcdir)/NOX_Direction_Manager.C
 NOX_Direction_Newton.$(OBJEXT): $(srcdir)/NOX_Direction_Newton.C
 NOX_Direction_NonlinearCG.$(OBJEXT): \
 	$(srcdir)/NOX_Direction_NonlinearCG.C
+NOX_Direction_Tensor.$(OBJEXT): $(srcdir)/NOX_Direction_Tensor.C
 NOX_Direction_SteepestDescent.$(OBJEXT): \
 	$(srcdir)/NOX_Direction_SteepestDescent.C
 NOX_Parameter_Entry.$(OBJEXT): $(srcdir)/NOX_Parameter_Entry.C
@@ -453,6 +462,7 @@ NOX_Solver_LineSearchBased.$(OBJEXT): \
 	$(srcdir)/NOX_Solver_LineSearchBased.C
 NOX_Solver_TrustRegionBased.$(OBJEXT): \
 	$(srcdir)/NOX_Solver_TrustRegionBased.C
+NOX_Solver_TensorBased.$(OBJEXT): $(srcdir)/NOX_Solver_TensorBased.C
 NOX_StatusTest_Generic.$(OBJEXT): $(srcdir)/NOX_StatusTest_Generic.C
 NOX_StatusTest_NormF.$(OBJEXT): $(srcdir)/NOX_StatusTest_NormF.C
 NOX_StatusTest_NormUpdate.$(OBJEXT): \
@@ -478,6 +488,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/NOX_Direction_Newton.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/NOX_Direction_NonlinearCG.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/NOX_Direction_SteepestDescent.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/NOX_Direction_Tensor.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/NOX_LineSearch_Backtrack.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/NOX_LineSearch_FullStep.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/NOX_LineSearch_Manager.Po@am__quote@
@@ -489,6 +500,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/NOX_Parameter_List.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/NOX_Solver_LineSearchBased.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/NOX_Solver_Manager.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/NOX_Solver_TensorBased.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/NOX_Solver_TrustRegionBased.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/NOX_StatusTest_Combo.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/NOX_StatusTest_Generic.Po@am__quote@
@@ -657,6 +669,18 @@ NOX_Direction_NonlinearCG.obj: $(srcdir)/NOX_Direction_NonlinearCG.C
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_Direction_NonlinearCG.obj `cygpath -w $(srcdir)/NOX_Direction_NonlinearCG.C`
 
+NOX_Direction_Tensor.o: $(srcdir)/NOX_Direction_Tensor.C
+@AMDEP_TRUE@	source='$(srcdir)/NOX_Direction_Tensor.C' object='NOX_Direction_Tensor.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/NOX_Direction_Tensor.Po' tmpdepfile='$(DEPDIR)/NOX_Direction_Tensor.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_Direction_Tensor.o `test -f $(srcdir)/NOX_Direction_Tensor.C || echo '$(srcdir)/'`$(srcdir)/NOX_Direction_Tensor.C
+
+NOX_Direction_Tensor.obj: $(srcdir)/NOX_Direction_Tensor.C
+@AMDEP_TRUE@	source='$(srcdir)/NOX_Direction_Tensor.C' object='NOX_Direction_Tensor.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/NOX_Direction_Tensor.Po' tmpdepfile='$(DEPDIR)/NOX_Direction_Tensor.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_Direction_Tensor.obj `cygpath -w $(srcdir)/NOX_Direction_Tensor.C`
+
 NOX_Direction_SteepestDescent.o: $(srcdir)/NOX_Direction_SteepestDescent.C
 @AMDEP_TRUE@	source='$(srcdir)/NOX_Direction_SteepestDescent.C' object='NOX_Direction_SteepestDescent.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@	depfile='$(DEPDIR)/NOX_Direction_SteepestDescent.Po' tmpdepfile='$(DEPDIR)/NOX_Direction_SteepestDescent.TPo' @AMDEPBACKSLASH@
@@ -728,6 +752,18 @@ NOX_Solver_TrustRegionBased.obj: $(srcdir)/NOX_Solver_TrustRegionBased.C
 @AMDEP_TRUE@	depfile='$(DEPDIR)/NOX_Solver_TrustRegionBased.Po' tmpdepfile='$(DEPDIR)/NOX_Solver_TrustRegionBased.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_Solver_TrustRegionBased.obj `cygpath -w $(srcdir)/NOX_Solver_TrustRegionBased.C`
+
+NOX_Solver_TensorBased.o: $(srcdir)/NOX_Solver_TensorBased.C
+@AMDEP_TRUE@	source='$(srcdir)/NOX_Solver_TensorBased.C' object='NOX_Solver_TensorBased.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/NOX_Solver_TensorBased.Po' tmpdepfile='$(DEPDIR)/NOX_Solver_TensorBased.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_Solver_TensorBased.o `test -f $(srcdir)/NOX_Solver_TensorBased.C || echo '$(srcdir)/'`$(srcdir)/NOX_Solver_TensorBased.C
+
+NOX_Solver_TensorBased.obj: $(srcdir)/NOX_Solver_TensorBased.C
+@AMDEP_TRUE@	source='$(srcdir)/NOX_Solver_TensorBased.C' object='NOX_Solver_TensorBased.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/NOX_Solver_TensorBased.Po' tmpdepfile='$(DEPDIR)/NOX_Solver_TensorBased.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_Solver_TensorBased.obj `cygpath -w $(srcdir)/NOX_Solver_TensorBased.C`
 
 NOX_StatusTest_Generic.o: $(srcdir)/NOX_StatusTest_Generic.C
 @AMDEP_TRUE@	source='$(srcdir)/NOX_StatusTest_Generic.C' object='NOX_StatusTest_Generic.o' libtool=no @AMDEPBACKSLASH@

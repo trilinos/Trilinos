@@ -108,7 +108,7 @@ am__quote = @am__quote@
 install_sh = @install_sh@
 
 @BUILD_EXAMPLES_TRUE@EXAMPLES_LIBRARY = libnoxexample.a
-@BUILD_EXAMPLES_TRUE@EXAMPLES = rosenbrock
+@BUILD_EXAMPLES_TRUE@EXAMPLES = rosenbrock broyden
 
 noinst_LIBRARIES = $(EXAMPLES_LIBRARY)
 noinst_PROGRAMS = $(EXAMPLES)
@@ -138,6 +138,15 @@ rosenbrock_CXXFLAGS = -I$(top_srcdir)/src
 # Be sure to specify the **exact** library you want since others may be elsewhere in the path
 rosenbrock_LDADD = $(top_builddir)/example/libnoxexample.a $(top_builddir)/src/libnox.a 
 
+broyden_SOURCES = $(srcdir)/Broyden.C
+
+broyden_DEPENDENCIES = $(top_builddir)/example/libnoxexample.a $(top_builddir)/src/libnox.a 
+
+broyden_CXXFLAGS = -I$(top_srcdir)/src
+
+# Order matters here!
+broyden_LDADD = $(CXXREPOS) -L$(top_builddir)/src -L$(top_builddir)/example -lnoxexample -lnox 
+
 
 # ------------------------------------------------------------------------
 # For using a special archiver
@@ -164,10 +173,14 @@ am_libnoxexample_a_OBJECTS = \
 	libnoxexample_a-NOX_Example_Matrix.$(OBJEXT) \
 	libnoxexample_a-NOX_Example_Group.$(OBJEXT)
 libnoxexample_a_OBJECTS = $(am_libnoxexample_a_OBJECTS)
-@BUILD_EXAMPLES_TRUE@noinst_PROGRAMS = rosenbrock$(EXEEXT)
+@BUILD_EXAMPLES_TRUE@noinst_PROGRAMS = rosenbrock$(EXEEXT) \
+@BUILD_EXAMPLES_TRUE@	broyden$(EXEEXT)
 @BUILD_EXAMPLES_FALSE@noinst_PROGRAMS =
 PROGRAMS = $(noinst_PROGRAMS)
 
+am_broyden_OBJECTS = broyden-Broyden.$(OBJEXT)
+broyden_OBJECTS = $(am_broyden_OBJECTS)
+broyden_LDFLAGS =
 am_rosenbrock_OBJECTS = rosenbrock-Rosenbrock.$(OBJEXT)
 rosenbrock_OBJECTS = $(am_rosenbrock_OBJECTS)
 rosenbrock_LDFLAGS =
@@ -178,7 +191,8 @@ CPPFLAGS = @CPPFLAGS@
 LDFLAGS = @LDFLAGS@
 LIBS = @LIBS@
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
-@AMDEP_TRUE@DEP_FILES = $(DEPDIR)/libnoxexample_a-NOX_Example_Group.Po \
+@AMDEP_TRUE@DEP_FILES = $(DEPDIR)/broyden-Broyden.Po \
+@AMDEP_TRUE@	$(DEPDIR)/libnoxexample_a-NOX_Example_Group.Po \
 @AMDEP_TRUE@	$(DEPDIR)/libnoxexample_a-NOX_Example_Matrix.Po \
 @AMDEP_TRUE@	$(DEPDIR)/libnoxexample_a-NOX_Example_Vector.Po \
 @AMDEP_TRUE@	$(DEPDIR)/rosenbrock-Rosenbrock.Po
@@ -193,9 +207,10 @@ COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
 CCLD = $(CC)
 LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
-DIST_SOURCES = $(libnoxexample_a_SOURCES) $(rosenbrock_SOURCES)
+DIST_SOURCES = $(libnoxexample_a_SOURCES) $(broyden_SOURCES) \
+	$(rosenbrock_SOURCES)
 DIST_COMMON = Makefile.am Makefile.in
-SOURCES = $(libnoxexample_a_SOURCES) $(rosenbrock_SOURCES)
+SOURCES = $(libnoxexample_a_SOURCES) $(broyden_SOURCES) $(rosenbrock_SOURCES)
 
 all: all-am
 
@@ -226,6 +241,10 @@ libnoxexample.a: $(libnoxexample_a_OBJECTS) $(libnoxexample_a_DEPENDENCIES)
 
 clean-noinstPROGRAMS:
 	-test -z "$(noinst_PROGRAMS)" || rm -f $(noinst_PROGRAMS)
+broyden-Broyden.$(OBJEXT): $(srcdir)/Broyden.C
+broyden$(EXEEXT): $(broyden_OBJECTS) $(broyden_DEPENDENCIES) 
+	@rm -f broyden$(EXEEXT)
+	$(CXXLINK) $(broyden_LDFLAGS) $(broyden_OBJECTS) $(broyden_LDADD) $(LIBS)
 rosenbrock-Rosenbrock.$(OBJEXT): $(srcdir)/Rosenbrock.C
 rosenbrock$(EXEEXT): $(rosenbrock_OBJECTS) $(rosenbrock_DEPENDENCIES) 
 	@rm -f rosenbrock$(EXEEXT)
@@ -237,6 +256,7 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/broyden-Broyden.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/libnoxexample_a-NOX_Example_Group.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/libnoxexample_a-NOX_Example_Matrix.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/libnoxexample_a-NOX_Example_Vector.Po@am__quote@
@@ -292,6 +312,18 @@ libnoxexample_a-NOX_Example_Group.obj: $(srcdir)/NOX_Example_Group.C
 @AMDEP_TRUE@	depfile='$(DEPDIR)/libnoxexample_a-NOX_Example_Group.Po' tmpdepfile='$(DEPDIR)/libnoxexample_a-NOX_Example_Group.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnoxexample_a_CXXFLAGS) $(CXXFLAGS) -c -o libnoxexample_a-NOX_Example_Group.obj `cygpath -w $(srcdir)/NOX_Example_Group.C`
+
+broyden-Broyden.o: $(srcdir)/Broyden.C
+@AMDEP_TRUE@	source='$(srcdir)/Broyden.C' object='broyden-Broyden.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/broyden-Broyden.Po' tmpdepfile='$(DEPDIR)/broyden-Broyden.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(broyden_CXXFLAGS) $(CXXFLAGS) -c -o broyden-Broyden.o `test -f $(srcdir)/Broyden.C || echo '$(srcdir)/'`$(srcdir)/Broyden.C
+
+broyden-Broyden.obj: $(srcdir)/Broyden.C
+@AMDEP_TRUE@	source='$(srcdir)/Broyden.C' object='broyden-Broyden.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/broyden-Broyden.Po' tmpdepfile='$(DEPDIR)/broyden-Broyden.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(broyden_CXXFLAGS) $(CXXFLAGS) -c -o broyden-Broyden.obj `cygpath -w $(srcdir)/Broyden.C`
 
 rosenbrock-Rosenbrock.o: $(srcdir)/Rosenbrock.C
 @AMDEP_TRUE@	source='$(srcdir)/Rosenbrock.C' object='rosenbrock-Rosenbrock.o' libtool=no @AMDEPBACKSLASH@

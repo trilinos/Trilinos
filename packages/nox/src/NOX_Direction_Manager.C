@@ -36,6 +36,7 @@
 #include "NOX_Direction_Newton.H"
 #include "NOX_Direction_NonlinearCG.H"
 #include "NOX_Direction_SteepestDescent.H"
+#include "NOX_Direction_Tensor.H"
 
 #include "NOX_Utils.H"
 #include "NOX_Parameter_List.H"
@@ -77,6 +78,8 @@ bool Manager::reset(Parameter::List& params)
       ptr = new NonlinearCG(params);
     else if (method == "Steepest Descent")
       ptr = new SteepestDescent(params);
+    else if (method == "Tensor")
+      ptr = new Tensor(params);
     else {
       ptr = NULL;
       if (Utils::doPrint(NOX::Utils::Warning)) {
