@@ -6,6 +6,7 @@
 #include "Epetra_CompObject.h"
 #include "Epetra_Operator.h"
 #include "Epetra_CrsMatrix.h"
+#include "Epetra_Object.h"
 class Epetra_Comm;
 class Epetra_Map;
 class Epetra_CrsMatrix;
@@ -155,7 +156,7 @@ numbers.  The ResetFlops() function resets the floating point counter.
 */    
 
 
-class Ifpack_CrsRiluk: public Epetra_CompObject, public virtual Epetra_Operator {
+class Ifpack_CrsRiluk: public Epetra_Object, public Epetra_CompObject, public virtual Epetra_Operator {
       
   // Give ostream << function some access to private and protected data/functions.
 
@@ -309,6 +310,9 @@ class Ifpack_CrsRiluk: public Epetra_CompObject, public virtual Epetra_Operator 
 
   //@{ \name Additional methods required to support the Epetra_Operator interface.
 
+    //! Returns a character string describing the operator
+    char * Label() const {return(Epetra_Object::Label());};
+    
     //! If set true, transpose of this operator will be applied.
     /*! This flag allows the transpose of the given operator to be used implicitly.  Setting this flag
         affects only the Apply() and ApplyInverse() methods.  If the implementation of this interface 
@@ -363,10 +367,10 @@ class Ifpack_CrsRiluk: public Epetra_CompObject, public virtual Epetra_Operator 
     virtual bool UseTranspose() const {return(UseTranspose_);};
 
     //! Returns the Epetra_BlockMap object associated with the domain of this matrix operator.
-    virtual const Epetra_BlockMap & DomainMap() const {return(U().DomainMap());};
+    virtual const Epetra_BlockMap & DomainMap() const {return(A_.DomainMap());};
 
     //! Returns the Epetra_BlockMap object associated with the range of this matrix operator.
-    virtual const Epetra_BlockMap & RangeMap() const{return(L().RangeMap());};
+    virtual const Epetra_BlockMap & RangeMap() const{return(A_.RangeMap());};
   //@}
 
  protected:

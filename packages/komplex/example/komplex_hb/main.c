@@ -87,6 +87,8 @@ int main(int argc, char *argv[])
   int matrix_type;
   int *ptmp0, *ptmp1;
 
+  double * A0x0, * A0x1, * A1x0, * A1x1;
+
   int i, j;
   int ione = 1;
 #ifdef AZTEC_MPI
@@ -375,8 +377,13 @@ int main(int argc, char *argv[])
   AZ_defaults(options, params);
   options[AZ_solver]  = AZ_gmres;
   options[AZ_precond] = AZ_dom_decomp ;
-  options[AZ_subdomain_solve] = AZ_bilu;
-  options[AZ_graph_fill] = 0;
+  options[AZ_subdomain_solve] = AZ_ilut;
+  params[AZ_ilut_fill] = 8.0;
+  options[AZ_graph_fill] = 1;
+  options[AZ_overlap] = 1;
+  params[AZ_drop] = 0.001;
+  params[AZ_athresh] = 0.00003;
+  params[AZ_rthresh] = 1.0;
   /*
   options[AZ_overlap] = 1;
   options[AZ_precond] = AZ_none ;
@@ -405,8 +412,8 @@ int main(int argc, char *argv[])
 
   options[AZ_kspace] = 800 ;
 
-  options[AZ_max_iter] = 800 ;
-  params[AZ_tol] = 1.e-15 ;
+  options[AZ_max_iter] = 800;
+  params[AZ_tol] = 1.e-16 ;
 
 
   /* xsolve is a little longer vector needed to account for external 
@@ -737,26 +744,60 @@ int main(int argc, char *argv[])
   if (xexact_mat0 != NULL)
     {
       double sum = 0.0;
-   if (!strcmp(argv[1],c2k)) /* Complex matrix */  
-      for (i=0; i<N_local_mat0+N_local_mat1; i++) sum += fabs(xsolve_complex[i]-xexact_complex[i]);
-   else
-     {
-       for (i=0; i<N_local_mat0; i++) sum += fabs(x_mat0[i]-xexact_mat0[i]);
-       for (i=0; i<N_local_mat1; i++) sum += fabs(x_mat1[i]-xexact_mat1[i]);
-     }
- printf("Processor %d:  Difference between exact and computed solution = %12.4g\n",
+      if (!strcmp(argv[1],c2k)) /* Complex matrix */  
+	for (i=0; i<N_local_mat0+N_local_mat1; i++) sum += fabs(xsolve_complex[i]-xexact_complex[i]);
+      else
+	{
+	  for (i=0; i<N_local_mat0; i++) sum += fabs(x_mat0[i]-xexact_mat0[i]);
+	  for (i=0; i<N_local_mat1; i++) sum += fabs(x_mat1[i]-xexact_mat1[i]);
+	}
+      printf("Processor %d:  Difference between exact and computed solution = %12.4g\n",
 	     proc_config[AZ_node],sum);
+
+      /* Test for null space if difference between computed and exact is large */
+      /* Multiply the K matrix by the difference of the two solutions. */
+      /* If the previous sum value is large and this one is small, the the matrix */
+      /* is singular */
+      if (strcmp(argv[1],c2k) && !strcmp(argv[2],local) && sum > 0.0e-5) {
+   
+	/* Compute difference between exact and computed solution */
+	for (i=0; i<N_local_mat0; i++) x_mat0[i] = x_mat0[i]-xexact_mat0[i];
+	for (i=0; i<N_local_mat1; i++) x_mat1[i] = x_mat1[i]-xexact_mat1[i];
+
+	A0x0  = (double *) calloc(N_local_mat0, sizeof(double)) ;
+	A0x1  = (double *) calloc(N_local_mat0, sizeof(double)) ;
+	A1x0  = (double *) calloc(N_local_mat0, sizeof(double)) ;
+	A1x1  = (double *) calloc(N_local_mat0, sizeof(double)) ;
+
+	Amat_mat0->matvec(x_mat0, A0x0, Amat_mat0, proc_config);
+	Amat_mat0->matvec(x_mat1, A0x1, Amat_mat0, proc_config);
+	Amat_mat1->matvec(x_mat0, A1x0, Amat_mat1, proc_config);
+	Amat_mat1->matvec(x_mat1, A1x1, Amat_mat1, proc_config);
+
+	sum = 0.0;
+	for (i=0; i<N_local_mat0; i++) sum += fabs(A0x0[i]-A1x1[i]);
+	for (i=0; i<N_local_mat1; i++) sum += fabs(A1x0[i]+A0x1[i]);
+	printf("Processor %d:  Difference between A* exact-computed solution = %12.4g\n",
+	       proc_config[AZ_node],sum);
+
+	
+
+	free((void *) A0x0);
+	free((void *) A0x1);
+	free((void *) A1x0);
+	free((void *) A1x1);
+      }
     }
 
   /*  NOTE:  We have not free'd any memory.  Need to use AZ_free to
    *  free memory allocated by Aztec routines.
   */
-
   free ((void *) x_mat0);
   free ((void *) b_mat0);
   free ((void *) xexact_mat0);
   free ((void *) val_mat0);
   free ((void *) bindx_mat0);
+
   if(!strcmp(argv[2],local)) {
     AZ_free ((void *) external_mat0);
     AZ_free ((void *) update_index_mat0);
@@ -786,7 +827,7 @@ int main(int argc, char *argv[])
     free ((void *) val_complex);
     free ((void *) xsolve_complex);
     free ((void *) b_complex);
-    if (xexact_mat0 != NULL) free ((void *) xexact_complex);
+    if (xexact_complex != NULL) free ((void *) xexact_complex);
   }
 
 

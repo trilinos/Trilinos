@@ -64,7 +64,9 @@ int main(int argc, char *argv[])
   printf("proc %d of %d is alive\n",
       comm.MyPID(),comm.NumProc());
 
-  
+  //int temp;
+  //if (comm.MyPID()==0) cin >> temp;
+  //comm.Barrier();
 
   if(argc != 2) perror("error: enter name of data file on command line") ; 
   /* Set exact solution to NULL */
@@ -96,6 +98,8 @@ int main(int argc, char *argv[])
   Epetra_Map map(numGlobalEquations, numLocalEquations, 
 			update, 0, comm);
  
+  cout << "Building Epetra_CrsMatrix" << endl;
+
   Epetra_CrsMatrix A(Copy, map, numNz);
   
   /* Add  rows one-at-a-time */
@@ -129,8 +133,14 @@ int main(int argc, char *argv[])
   // Construct a Petra Linear Problem
 
   Epetra_Vector x(map);
+
+  cout << "Building Epetra_LinearProblem" << endl;
+
   Epetra_LinearProblem problem(&A, &x, &bb);
   // Construct a solver object for this problem
+
+  cout << "Building AztecOO solver" << endl;
+
   AztecOO solver(problem);
 
 

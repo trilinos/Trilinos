@@ -694,7 +694,13 @@ int Epetra_CrsMatrix::Multiply(bool TransA, const Epetra_MultiVector& X, Epetra_
 //
 // This function forms the product Y = A * Y or Y = A' * X
 //
-
+  if (X.NumVectors()==1 && Y.NumVectors()==1) {
+    double * xp = (double *) X[0];
+    double * yp = (double *) Y[0];
+    Epetra_Vector x(View, X.Map(), xp);
+    Epetra_Vector y(View, Y.Map(), yp);
+    return(Multiply(TransA, x, y));
+  }
   if (!Filled()) EPETRA_CHK_ERR(-1); // Matrix must be filled.
 
   int i, j, k;
@@ -902,7 +908,13 @@ int Epetra_CrsMatrix::Solve(bool Upper, bool Trans, bool UnitDiagonal, const Epe
 //
 // This function find Y such that LY = X or UY = X or the transpose cases.
 //
-
+  if (X.NumVectors()==1 && Y.NumVectors()==1) {
+    double * xp = (double *) X[0];
+    double * yp = (double *) Y[0];
+    Epetra_Vector x(View, X.Map(), xp);
+    Epetra_Vector y(View, Y.Map(), yp);
+    return(Solve(Upper, Trans, UnitDiagonal, x, y));
+  }
   if (!Filled()) EPETRA_CHK_ERR(-1); // Matrix must be filled.
 
   if ((Upper) && (!UpperTriangular())) EPETRA_CHK_ERR(-2);
@@ -1001,9 +1013,9 @@ int Epetra_CrsMatrix::Solve(bool Upper, bool Trans, bool UnitDiagonal, const Epe
 	int *    RowIndices = *Indices--;
 	double * RowValues  = *Values--;
 	for (k=0; k<NumVectors; k++) {
-	if (!UnitDiagonal)  Yp[k][i] = Yp[k][i]/Xp[k][i];
-	for (j=0; j < NumEntries; j++) Yp[k][RowIndices[j]] -= RowValues[j] * Yp[k][i];
-      }
+	   if (!UnitDiagonal)  Yp[k][i] = Yp[k][i]/Xp[k][i];
+	   for (j=0; j < NumEntries; j++) Yp[k][RowIndices[j]] -= RowValues[j] * Yp[k][i];
+        }
       }
     }
   }

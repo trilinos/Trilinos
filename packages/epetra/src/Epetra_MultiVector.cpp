@@ -1465,6 +1465,14 @@ double*& Epetra_MultiVector::operator [] (int index)  {
   return(Pointers_[index]);
 }
 
+//=======================================================================
+const double*& Epetra_MultiVector::operator [] (int index) const {
+  
+  //  Epetra_MultiVector::operator [] --- return non-const reference 
+  const double * & temp = (const double * &) (Pointers_[index]);
+  return(temp);
+}
+
 //========================================================================
 Epetra_MultiVector& Epetra_MultiVector::operator = (const Epetra_MultiVector& Source) {
   

@@ -294,7 +294,13 @@ int AztecOO::SetPrecOperator(Epetra_Operator * PrecOperator) {
   if (Amat_==0) EPETRA_CHK_ERR(-2); // UserOperator must be defined first
 
    Prec_ = AZ_precond_create(Amat_, Epetra_Aztec_precond, (void *) PrecOperator_);
-   AZ_set_precond_print_string(Prec_,"User-defined preconditioner");
+
+   options_[AZ_precond] = AZ_user_precond;
+   char * label = PrecOperator_->Label();
+   if (label==0)
+     AZ_set_precond_print_string(Prec_,"User-defined preconditioner");
+   else
+     AZ_set_precond_print_string(Prec_,label);
    return(0);
 }
 //=============================================================================
