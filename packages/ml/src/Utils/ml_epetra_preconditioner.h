@@ -375,8 +375,8 @@ public:
   int BreakForDebugger();
 
   int PrintStencil2D(const int nx, const int ny, 
-		     int NodeID,
-		     const int EquationID);
+		     int NodeID = -1,
+		     const int EquationID = 1);
   //@}
 
 private:
