@@ -692,17 +692,8 @@ class Epetra_CrsGraph: public Epetra_DistObject {
     \return reference to pointer to locally indexed Loc row in matrix.
   */
 
-	//inline int* & operator[]( int Loc ) { return(CrsGraphData_->Indices_[Loc]); }
-	//inline int* const & operator[]( int Loc ) const { return(CrsGraphData_->Indices_[Loc]); }
-	/* NOTE: the commented out code above is the previous versions of operator[]. 
-		 They returned a reference to int*, or reference to int* const (pointer is const,
-		 data is not). This was deemed unnecessary, dangerous, (and now with ISDVs, 
-		 sometimes not possible). All Epetra code compiles and works with the new versions 
-		 (listed below). It is possible that some user code depends on the old functionality; 
-		 those users should contact an Epetra developer.
-	*/
-	inline int* operator [] (int Loc) {return(CrsGraphData_->Sidekick()[Loc]);}
-	inline int* operator [] (int Loc) const {return(CrsGraphData_->Sidekick()[Loc]);}
+	inline int* & operator[]( int Loc ) { return(CrsGraphData_->Indices_[Loc]); }
+	inline int* const & operator[]( int Loc ) const { return(CrsGraphData_->Indices_[Loc]); }
 
   //@}
 
@@ -759,8 +750,8 @@ class Epetra_CrsGraph: public Epetra_DistObject {
  protected:
 	int* NumIndicesPerRow() const {return(CrsGraphData_->NumIndicesPerRow_.Values());}
 	int* NumAllocatedIndicesPerRow() const {return(CrsGraphData_->NumAllocatedIndicesPerRow_.Values());}
-	int** Indices() const {return(CrsGraphData_->Sidekick());}
-	int* Indices(int LocalRow) {return(CrsGraphData_->Indices_[LocalRow].Values());}
+	int** Indices() const {return(CrsGraphData_->Indices_);}
+	int* Indices(int LocalRow) {return(CrsGraphData_->Indices_[LocalRow]);}
 	// If column indices are stored in one long array (via a call to OptimizeStorage), 
 	// IndicesAreContiguous returns true, otherwise it returns false.
 	bool IndicesAreContiguous() const {return(CrsGraphData_->IndicesAreContiguous_);}

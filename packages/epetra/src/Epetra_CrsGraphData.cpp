@@ -82,9 +82,7 @@ Epetra_CrsGraphData::Epetra_CrsGraphData(Epetra_DataAccess CV, const Epetra_Bloc
     NumMyDiagonals_(0),	
     MaxNumIndices_(0),
     GlobalMaxNumIndices_(0),
-    // misc
-    Indices_(new Epetra_IntSerialDenseVector[NumMyBlockRows_]),
-    IndicesSidekick_(0),
+    Indices_(new int *[NumMyBlockRows_]),
     CV_(CV)
 {
   //cout << "--CRSGD created(rowmap ctr), addr: " << this << endl; //DATA_DEBUG
@@ -142,100 +140,27 @@ Epetra_CrsGraphData::Epetra_CrsGraphData(Epetra_DataAccess CV,
     NumMyDiagonals_(0),	
     MaxNumIndices_(0),
     GlobalMaxNumIndices_(0),
-    // misc
-    Indices_(new Epetra_IntSerialDenseVector[NumMyBlockRows_]),
-    IndicesSidekick_(0),
+    Indices_(new int *[NumMyBlockRows_]),
     CV_(CV)
 {
   //cout << "--CRSGD created(rowmap&colmap ctr), addr: " << this << endl; //DATA_DEBUG
 }
 
-// //=============================================================================
-// Epetra_CrsGraphData::Epetra_CrsGraphData(const Epetra_CrsGraphData& CrsGraphData)
-// // maps
-// : RowMap_(CrsGraphData.RowMap_),
-// ColMap_(CrsGraphData.ColMap_),
-// DomainMap_(CrsGraphData.DomainMap_),
-// RangeMap_(CrsGraphData.RangeMap_),
-// // importer & exporter
-// Importer_(CrsGraphData.Importer_),
-// Exporter_(CrsGraphData.Exporter_),
-// // booleans
-// HaveColMap_(CrsGraphData.HaveColMap_),
-// Filled_(CrsGraphData.Filled_),
-// Allocated_(false), //*** not copied from Source
-// Sorted_(CrsGraphData.Sorted_),
-// StorageOptimized_(false), //*** not copied from Source
-// NoRedundancies_(CrsGraphData.NoRedundancies_),
-// IndicesAreGlobal_(CrsGraphData.IndicesAreGlobal_),
-// IndicesAreLocal_(CrsGraphData.IndicesAreLocal_),
-// IndicesAreContiguous_(CrsGraphData.IndicesAreContiguous_), //*** not copied from Source
-// LowerTriangular_(CrsGraphData.LowerTriangular_),
-// UpperTriangular_(CrsGraphData.UpperTriangular_),
-// NoDiagonal_(CrsGraphData.NoDiagonal_),
-// GlobalConstantsComputed_(false), //*** not copied from Source
-// // ints
-// IndexBase_(CrsGraphData.IndexBase_),
-// NumGlobalEntries_(CrsGraphData.NumGlobalEntries_),
-// NumGlobalBlockRows_(CrsGraphData.NumGlobalBlockRows_),
-// NumGlobalBlockCols_(CrsGraphData.NumGlobalBlockCols_),
-// NumGlobalBlockDiagonals_(CrsGraphData.NumGlobalBlockDiagonals_),
-// NumMyEntries_(CrsGraphData.NumMyEntries_),
-// NumMyBlockRows_(CrsGraphData.NumMyBlockRows_),
-// NumMyBlockCols_(CrsGraphData.NumMyBlockCols_),
-// NumMyBlockDiagonals_(CrsGraphData.NumMyBlockDiagonals_),
-// MaxRowDim_(CrsGraphData.MaxRowDim_),
-// MaxColDim_(CrsGraphData.MaxColDim_),
-// GlobalMaxRowDim_(CrsGraphData.GlobalMaxRowDim_),
-// GlobalMaxColDim_(CrsGraphData.GlobalMaxColDim_),
-// MaxNumNonzeros_(CrsGraphData.MaxNumNonzeros_),
-// GlobalMaxNumNonzeros_(CrsGraphData.GlobalMaxNumNonzeros_),
-// NumGlobalNonzeros_(CrsGraphData.NumGlobalNonzeros_),
-// NumGlobalRows_(CrsGraphData.NumGlobalRows_),
-// NumGlobalCols_(CrsGraphData.NumGlobalCols_),
-// NumGlobalDiagonals_(CrsGraphData.NumGlobalDiagonals_),
-// NumMyNonzeros_(CrsGraphData.NumMyNonzeros_),
-// NumMyRows_(CrsGraphData.NumMyRows_),
-// NumMyCols_(CrsGraphData.NumMyCols_),
-// NumMyDiagonals_(CrsGraphData.NumMyDiagonals_),
-// MaxNumIndices_(CrsGraphData.MaxNumIndices_),
-// GlobalMaxNumIndices_(CrsGraphData.GlobalMaxNumIndices_),
-// // misc
-// Indices_(CrsGraphData.Indices_), //*** new behavior
-// IndicesSidekick_(0), //*** not copied from Source
-// NumAllocatedIndicesPerRow_(0), //*** not copied from Source
-// NumIndicesPerRow_(0), //*** not copied from Source
-// All_Indices_(0), //*** not copied from Source
-// CV_(Copy) //*** not copied from Source
-// {
-// // if Importer or Exporter are non-zero, that means the source Graph had created them,
-// // and so we need to do that too.
-// if(Importer_ != 0) 
-// Importer_ = new Epetra_Import(*CrsGraphData.Importer_); // Dereference pointer, and
-// if(Exporter_ != 0)                                        // pass that to Import/Export
-// Exporter_ = new Epetra_Export(*CrsGraphData.Exporter_); // copy constructor
-
-// if(Indices_ != 0) {
-// Indices_ = new Epetra_IntSerialDenseVector[NumMyBlockRows_];
-// for(int i = 0; i < NumMyBlockRows_; i++)
-// Indices_[i] = CrsGraphData.Indices_[i];
-// }
-
-// // Sidekick is created on demand, so we don't need to create it, even if RHS had it.
-
-// //cout << "--CRSGD created(cc), addr: " << this << endl; //DATA_DEBUG
-// }
-
 //=============================================================================
 Epetra_CrsGraphData::~Epetra_CrsGraphData() {
-  if(IndicesSidekick_ != 0) {
-    delete[] IndicesSidekick_;
-    IndicesSidekick_ = 0;
-  }
+
   if(Indices_ != 0) {
+    if (!StorageOptimized_) {
+      for (int i=0; i<NumMyBlockRows_; i++) {
+	if (Indices_[i]!=0 && CV_==Copy) 
+	  delete [] Indices_[i]; 
+	Indices_[i] = 0;
+      }
+    }
     delete[] Indices_;
     Indices_ = 0;
   }
+
   if(Importer_ != 0) {
     delete Importer_;
     Importer_ = 0;
@@ -275,27 +200,6 @@ int Epetra_CrsGraphData::ReAllocateAndCast(char*& UserPtr, int& Length, const in
     UserPtr = reinterpret_cast<char*> (newPtr);
   }
   return(0);
-}
-
-//==========================================================================
-int** Epetra_CrsGraphData::Sidekick() const {
-  if(IndicesSidekick_ == 0)
-    IndicesSidekick_ = new int*[NumMyBlockRows_];
-  UpdateSidekick();
-  return(IndicesSidekick_);
-}
-
-//==========================================================================
-void Epetra_CrsGraphData::UpdateSidekick() const {
-  if(IndicesSidekick_ != 0)
-    for(int i = 0; i < NumMyBlockRows_; i++)
-      IndicesSidekick_[i] = Indices_[i].Values();
-}
-
-//==========================================================================
-void Epetra_CrsGraphData::UpdateSidekick(int i) const {
-  if(IndicesSidekick_ != 0)
-      IndicesSidekick_[i] = Indices_[i].Values();
 }
 
 //==========================================================================
@@ -365,22 +269,13 @@ void Epetra_CrsGraphData::Print(ostream& os, int level) const {
     os << "Indices_: " << Indices_ << endl;
     if(Indices_ != 0) {
       for(int i = 0; i < NumMyBlockRows_; i++) {
-	os << "Indices_[" << i << "]: (" << Indices_[i].Values() << ") ";
-	if(Indices_[i].Values() != 0) {
+	os << "Indices_[" << i << "]: (" << Indices_[i] << ") ";
+	if(Indices_[i] != 0) {
 	  for(int j = 0; j < NumAllocatedIndicesPerRow_[i]; j++)
 	    os << Indices_[i][j] << " ";
 	}
 	os << endl;
       }
-    }
-		
-    // print out location of indices' data, and sidekick values
-    //Sidekick();
-    os << "IndicesSidekick_: " << IndicesSidekick_ << endl;
-    if(IndicesSidekick_ != 0) {
-      os << "i  Indices_[i].Values()  Sidekick_[i]" << endl;
-      for(int i = 0; i < NumMyBlockRows_; i++)
-	cout << i << "  " << Indices_[i].Values() << "  " << IndicesSidekick_[i] << endl;
     }
   }
 	

@@ -122,17 +122,16 @@ int Epetra_CrsGraph::Allocate(int* NumIndicesPerRow, int Inc) {
       const int NumIndices = NumIndicesPerRow==NULL ? 0 :NumIndicesPerRow[i*Inc];
 
       if(NumIndices > 0) {
-	Epetra_IntSerialDenseVector temp(NumIndices);
+	int * temp = new int[NumIndices];
 	CrsGraphData_->Indices_[i] = temp;
       }
       else {
-	Epetra_IntSerialDenseVector temp(0);
-	CrsGraphData_->Indices_[i] = temp;
+	CrsGraphData_->Indices_[i] = 0;
       }
 
       CrsGraphData_->NumAllocatedIndicesPerRow_[i] = NumIndices;
       const int indexBaseMinusOne = IndexBase() - 1;
-      int* ColIndices = CrsGraphData_->Indices_[i].Values();
+      int* ColIndices = CrsGraphData_->Indices_[i];
       for(int j = 0; j < NumIndices; j++) {
 	ColIndices[j] = indexBaseMinusOne; // Fill column indices with out-of-range values
       }
@@ -140,13 +139,11 @@ int Epetra_CrsGraph::Allocate(int* NumIndicesPerRow, int Inc) {
   }	 
   else { // CV_ == View
     for(i = 0; i < numMyBlockRows; i++) {
-      Epetra_IntSerialDenseVector temp(0);
-      CrsGraphData_->Indices_[i] = temp;
+      CrsGraphData_->Indices_[i] = 0;
     }
   }
 
   SetAllocated(true);
-  CrsGraphData_->UpdateSidekick();
 
   return(0);
 }
@@ -228,10 +225,9 @@ int Epetra_CrsGraph::InsertIndices(int Row,
     EPETRA_CHK_ERR(-1); // Not in Row range
     
   if(CrsGraphData_->CV_ == View) {
-    if(CrsGraphData_->Indices_[Row].Values() != 0) 
+    if(CrsGraphData_->Indices_[Row] != 0) 
       ierr = 2; // This row has be defined already.  Issue warning.
-    Epetra_IntSerialDenseVector temp(View, UserIndices, NumIndices);
-    CrsGraphData_->Indices_[Row] = temp;
+    CrsGraphData_->Indices_[Row] = UserIndices;
     CrsGraphData_->NumAllocatedIndicesPerRow_[Row] = NumIndices;
     CrsGraphData_->NumIndicesPerRow_[Row] = NumIndices;
   }
@@ -266,24 +262,27 @@ int Epetra_CrsGraph::InsertIndices(int Row,
     int NumAllocatedIndices = CrsGraphData_->NumAllocatedIndicesPerRow_[Row];
     if(stop > NumAllocatedIndices) {
       if(NumAllocatedIndices == 0) {
-	Epetra_IntSerialDenseVector temp(NumIndices);
+	int * temp = new int[NumIndices];
 	CrsGraphData_->Indices_[Row] = temp;
       }
       else {
-	ierr = 1; // Out of room.  Must delete and allocate more space...
-	CrsGraphData_->Indices_[Row].Resize(stop);
+	ierr = 1; // Out of room.  Must allocate more space, copy and delete... 
+	int * temp = new int[stop];
+	int* RowIndices = CrsGraphData_->Indices_[Row];
+	for (j=0; j<start; ++j) temp[j] = RowIndices[j];
+	delete [] CrsGraphData_->Indices_[Row];
+	CrsGraphData_->Indices_[Row] = temp;
       }
       CrsGraphData_->NumAllocatedIndicesPerRow_[Row] = stop;
     }
     
     CrsGraphData_->NumIndicesPerRow_[Row] = stop;
-    int* RowIndices = CrsGraphData_->Indices_[Row].Values();
+    int* RowIndices = CrsGraphData_->Indices_[Row];
     for(j = start; j < stop; j++) {
       RowIndices[j] = UserIndices[j-start];
     }
   }
   CrsGraphData_->MaxNumIndices_ = EPETRA_MAX(CrsGraphData_->MaxNumIndices_, CrsGraphData_->NumIndicesPerRow_[Row]);
-  CrsGraphData_->UpdateSidekick(Row);
   EPETRA_CHK_ERR(ierr);
 
 
@@ -435,7 +434,7 @@ bool Epetra_CrsGraph::FindGlobalIndexLoc(int LocalRow,
 					 int& Loc) const
 {
   int NumIndices = CrsGraphData_->NumIndicesPerRow_[LocalRow];
-  int* Indices = CrsGraphData_->Indices_[LocalRow].Values();
+  int* Indices = CrsGraphData_->Indices_[LocalRow];
 
   // If we have transformed the column indices, we must map this global Index to local
   if(CrsGraphData_->IndicesAreLocal_) {
@@ -501,7 +500,7 @@ bool Epetra_CrsGraph::FindMyIndexLoc(int LocalRow,
 				     int& Loc) const
 {
   int NumIndices = CrsGraphData_->NumIndicesPerRow_[LocalRow];
-  int* Indices = CrsGraphData_->Indices_[LocalRow].Values();
+  int* Indices = CrsGraphData_->Indices_[LocalRow];
 
   if(!CrsGraphData_->IndicesAreLocal_) {
     throw ReportError("Epetra_CrsGraph::FindMyIndexLoc", -1);// Indices must be local
@@ -641,7 +640,7 @@ int Epetra_CrsGraph::ComputeGlobalConstants() {
       ColElementSizeList = ColMap().ElementSizeList();
     for(i = 0; i < numMyBlockRows; i++){
       int NumEntries = CrsGraphData_->NumIndicesPerRow_[i];
-      int* Indices = CrsGraphData_->Indices_[i].Values();
+      int* Indices = CrsGraphData_->Indices_[i];
       if(NumEntries > 0) {
 	int CurNumNonzeros = 0;
 	int RowDim = RowElementSizeList[i];
@@ -699,7 +698,7 @@ int Epetra_CrsGraph::SortIndices() {
   const int numMyBlockRows = NumMyBlockRows();
   for(int i = 0; i < numMyBlockRows; i++){
     int n = CrsGraphData_->NumIndicesPerRow_[i];
-    int* const list = CrsGraphData_->Indices_[i].Values();
+    int* const list = CrsGraphData_->Indices_[i];
     int m = n/2;
     
     while(m > 0) {
@@ -750,7 +749,7 @@ int Epetra_CrsGraph::RemoveRedundantIndices() {
     bool diagfound = false;
     int NumIndices = CrsGraphData_->NumIndicesPerRow_[i];
     if(NumIndices > 0) {
-      int* const Indices = CrsGraphData_->Indices_[i].Values();
+      int* const Indices = CrsGraphData_->Indices_[i];
       int j0 = 0;
       ig = GRID(i);
       jl = Indices[0];
@@ -819,7 +818,7 @@ int Epetra_CrsGraph::MakeColMap(const Epetra_BlockMap& DomainMap, const Epetra_B
   const int numMyBlockRows = NumMyBlockRows();
   for(i = 0; i < numMyBlockRows; i++) {
     const int NumIndices = CrsGraphData_->NumIndicesPerRow_[i];
-    int* ColIndices = CrsGraphData_->Indices_[i].Values();
+    int* ColIndices = CrsGraphData_->Indices_[i];
     for(j = 0; j < NumIndices; j++) {
       int GID = ColIndices[j];
       // Check if GID matches a row GID
@@ -941,7 +940,7 @@ int Epetra_CrsGraph::MakeIndicesLocal(const Epetra_BlockMap& DomainMap, const Ep
   if(IndicesAreGlobal()) {
     for(int i = 0; i < numMyBlockRows; i++) {
       const int NumIndices = CrsGraphData_->NumIndicesPerRow_[i];
-      int* ColIndices = CrsGraphData_->Indices_[i].Values();
+      int* ColIndices = CrsGraphData_->Indices_[i];
       for(int j = 0; j < NumIndices; j++) {
 	int GID = ColIndices[j];
 	int LID = colmap.LID(GID);
@@ -980,7 +979,7 @@ int Epetra_CrsGraph::OptimizeStorage() {
     // Check if NumIndices is same as NumAllocatedIndices and 
     // check if end of beginning of current row starts immediately after end of previous row.
     if((NumIndices != NumAllocateIndices) || 
-       (CrsGraphData_->Indices_[i].Values() != CrsGraphData_->Indices_[i-1].Values() + NumIndices)) {
+       (CrsGraphData_->Indices_[i] != CrsGraphData_->Indices_[i-1] + NumIndices)) {
       Contiguous = false;
       break;
     }
@@ -1018,16 +1017,14 @@ int Epetra_CrsGraph::OptimizeStorage() {
   int* tmp = CrsGraphData_->All_Indices_.Values();
   for(i = 0; i < numMyBlockRows; i++) {
     int NumIndices = CrsGraphData_->NumIndicesPerRow_[i];
-    int* ColIndices = CrsGraphData_->Indices_[i].Values();
+    int* ColIndices = CrsGraphData_->Indices_[i];
     for(j = 0; j < NumIndices; j++) 
       tmp[j] = ColIndices[j];
-    Epetra_IntSerialDenseVector tempVector(View, tmp, NumIndices);
-    CrsGraphData_->Indices_[i] = tempVector;
+    CrsGraphData_->Indices_[i] = tmp;
     tmp += NumIndices; 	// tmp points to the offset in All_Indices_ where Indices_[i] starts.
   }
 
   SetIndicesAreContiguous(true); // Can no longer dynamically add indices
-  CrsGraphData_->UpdateSidekick();
 
   if(CrsGraphData_->ReferenceCount() > 1)
     return(1);
@@ -1093,7 +1090,7 @@ int Epetra_CrsGraph::ExtractGlobalRowView(int Row, int& NumIndices, int*& Indice
 
   NumIndices = CrsGraphData_->NumIndicesPerRow_[Row];
 
-  Indices = CrsGraphData_->Indices_[Row].Values();
+  Indices = CrsGraphData_->Indices_[Row];
   
   return(0);
 }
@@ -1109,7 +1106,7 @@ int Epetra_CrsGraph::ExtractMyRowView(int Row, int& NumIndices, int*& Indices) c
 
   NumIndices = CrsGraphData_->NumIndicesPerRow_[Row];
 
-  Indices = CrsGraphData_->Indices_[Row].Values();
+  Indices = CrsGraphData_->Indices_[Row];
 	
   return(0);
 }

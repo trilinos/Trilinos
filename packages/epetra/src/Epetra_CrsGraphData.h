@@ -86,11 +86,6 @@ class Epetra_CrsGraphData : public Epetra_Data {
 	//! called by PackAndPrepare
 	int ReAllocateAndCast(char*& UserPtr, int& Length, const int IntPacketSizeTimesNumTrans);
 
-	//! returns the IndicesSidekick array used by Indices() and the [] operators.
-	int** Sidekick() const;
-	void UpdateSidekick() const; // used internally by Graph to keep the Sidekick array updated when Indices_ changes.
-	void UpdateSidekick(int i) const; // used internally by Graph to keep the Sidekick array updated when Indices_ changes.
-
 	//@}
 
   // Defined by CrsGraph::FillComplete and related
@@ -146,8 +141,7 @@ class Epetra_CrsGraphData : public Epetra_Data {
 	int MaxNumIndices_;
 	int GlobalMaxNumIndices_;
 
-	Epetra_IntSerialDenseVector* Indices_;
-	mutable int** IndicesSidekick_;
+	int** Indices_;
 	Epetra_IntSerialDenseVector NumAllocatedIndicesPerRow_;
 	Epetra_IntSerialDenseVector NumIndicesPerRow_;
 	Epetra_IntSerialDenseVector All_Indices_;
