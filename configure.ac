@@ -4,7 +4,7 @@
 #
 
 # Process this file with autoconf to produce a configure script.
-AC_INIT(Trilinos, 2.1, mheroux@cs.sandia.gov)
+AC_INIT(Trilinos, 3.1d, mheroux@cs.sandia.gov)
 AC_CONFIG_SRCDIR([packages/epetra/src/Epetra_Object.h])
 AM_CONFIG_HEADER([Trilinos_config.h:Trilinos_config.h.in])
 
@@ -19,19 +19,24 @@ AM_CONFIG_HEADER([Trilinos_config.h:Trilinos_config.h.in])
 
 AM_MAINTAINER_MODE
 
-# Use automake, getting name and version from variables defined by
-# AC_INIT command.
+# Specify required version of automake.
 
-AM_INIT_AUTOMAKE(Trilinos, 3.0.1)
+AM_INIT_AUTOMAKE(1.6.3)
 
 # Specify required version of autoconf.
 
-AC_PREREQ(2.52)
+AC_PREREQ(2.57)
 
 # Must indicate for packages that can be configured from the package level that the 
 # configure/build process is happening within Trilinos.
 
 ac_configure_args="$ac_configure_args --with-trilinos"
+
+echo "NOTE: If a package is not enabled based on the"
+echo "configure options, but is required by another"
+echo "package that has been enabled, it will"
+echo "automatically be configured and built, even if"
+echo "the list below does not indicate so."
 
 TAC_ARG_ENABLE_FEATURE(referencey12m, [Build y12m lib included in the distribution], Y12M, no)
 AM_CONDITIONAL(BUILD_Y12M, test "X$ac_cv_use_referencey12m" != "Xno")
