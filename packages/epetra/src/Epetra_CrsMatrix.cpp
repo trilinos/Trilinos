@@ -1650,14 +1650,36 @@ int Epetra_CrsMatrix::LeftScale(const Epetra_Vector& x) {
 
   if(!Filled()) 
     EPETRA_CHK_ERR(-1); // Matrix must be filled.
-  if(!Graph().RangeMap().SameAs(x.Map())) 
-    EPETRA_CHK_ERR(-2); // x must have the same distribution as the range of A
-
+  double* xp = 0;
+  int ierr = 0; //If we have to perform an import, we will return a positive
+		// error code to indicate the performance hit.
+  if(Graph().RangeMap().SameAs(x.Map()))  
+    // If we have a non-trivial exporter, we must import elements that are 
+    // permuted or are on other processors.  (We will use the exporter to
+    // perform the import.)
+    if(Exporter() != 0) {
+      if(ExportVector_ != 0) {
+        if(ExportVector_->NumVectors() != 1) {
+          delete ExportVector_;
+	  ExportVector_=0;
+        }
+      }
+      if(ExportVector_ == 0)
+        ExportVector_ = new Epetra_Vector(RowMap()); // Create Export vector if needed
+      EPETRA_CHK_ERR(ExportVector_->Import(x,*Exporter(), Insert));
+      ierr = 3; // The export causes a performance hit.
+      xp = (double*) ExportVector_->Values();
+    }
+    else
+      xp = (double*)x.Values();
+  else if (Graph().RowMap().SameAs(x.Map()))
+    xp = (double*)x.Values();
+  else {
+    EPETRA_CHK_ERR(-2); // The Map of x must be the RowMap or RangeMap of A.
+  }
   int i, j;
   int* NumEntriesPerRow = NumEntriesPerRow_;
   double** Values = Values_;
-  double* xp = (double*)x.Values();
-
 
   for(i = 0; i < NumMyRows_; i++) {
     int      NumEntries = *NumEntriesPerRow++;
@@ -1669,30 +1691,45 @@ int Epetra_CrsMatrix::LeftScale(const Epetra_Vector& x) {
   NormOne_ = -1.0; // Reset Norm so it will be recomputed.
   NormInf_ = -1.0; // Reset Norm so it will be recomputed.
   UpdateFlops(NumGlobalNonzeros());
+
+  EPETRA_CHK_ERR(ierr);
+  
   return(0);
 }
 
 //=============================================================================
 int Epetra_CrsMatrix::RightScale(const Epetra_Vector& x) {
   //
-  // This function scales the jth row of A by x[j].
+  // This function scales the jth column of A by x[j].
   //
 
   if(!Filled()) 
     EPETRA_CHK_ERR(-1); // Matrix must be filled.
-  if(!Graph().DomainMap().SameAs(x.Map())) 
-    EPETRA_CHK_ERR(-2); // x must have the same distribution as the domain of A
-
-  double* xp = (double*)x.Values();
-  Epetra_MultiVector* x_tmp = 0;
-
-  // If we have a non-trivial importer, we must import elements that are permuted or are on other processors
-  if(Importer() != 0) {
-    x_tmp = new Epetra_Vector(ColMap()); // Create import vector if needed
-    EPETRA_CHK_ERR(x_tmp->Import(x,*Importer(), Insert)); // x_tmp will have all the values we need
-    xp = (double*)x_tmp->Values();
-  }
-
+  double* xp = 0;
+  int ierr = 0;  // If we have to perform an Import, we will 
+		// return a positive error code to indicate a performance hit.
+  if(Graph().DomainMap().SameAs(x.Map())) 
+    // If we have a non-trivial exporter, we must import elements that are 
+    // permuted or are on other processors.
+    if(Importer() != 0) {
+      if(ImportVector_ != 0) {
+        if(ImportVector_->NumVectors() != 1) {
+          delete ImportVector_;
+          ImportVector_= 0;
+        }
+      }
+      if(ImportVector_ == 0)
+        ImportVector_ = new Epetra_MultiVector(ColMap(),1); // Create import vector if needed
+      EPETRA_CHK_ERR(ImportVector_->Import(x, *Importer(), Insert));
+      ierr = 3;// The import causes a performance hit.
+      xp = (double*) ImportVector_->Values();
+    }
+    else
+      xp = (double*)x.Values();
+  else if(Graph().ColMap().SameAs(x.Map()))
+    xp = (double*)x.Values(); 
+  else
+    EPETRA_CHK_ERR(-2); // The Map of x must be the RowMap or RangeMap of A.
   int i, j;
   int* NumEntriesPerRow = NumEntriesPerRow_;
   int** Indices = Indices_;
@@ -1705,11 +1742,10 @@ int Epetra_CrsMatrix::RightScale(const Epetra_Vector& x) {
     for(j = 0; j < NumEntries; j++)  
       RowValues[j] *=  xp[ColIndices[j]];
   }
-  if(x_tmp != 0) 
-    delete x_tmp;
   NormOne_ = -1.0; // Reset Norm so it will be recomputed.
   NormInf_ = -1.0; // Reset Norm so it will be recomputed.
   UpdateFlops(NumGlobalNonzeros());
+  EPETRA_CHK_ERR(ierr);
   return(0);
 }
 
