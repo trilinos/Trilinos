@@ -80,6 +80,7 @@ nodist_include_HEADERS = \
 	$(srcdir)/NOX_Direction_Tensor.H \
 	$(srcdir)/NOX_Solver_InexactTrustRegionBased.H \
 	$(srcdir)/NOX_Solver_TensorBased.H \
+	$(srcdir)/NOX_Solver_TensorBasedTest.H \
 	$(srcdir)/NOX_LineSearch_NonlinearCG.H \
 	$(srcdir)/NOX_Direction_NonlinearCG.H \
 	$(srcdir)/NOX_Direction_QuasiNewton.H \
@@ -92,6 +93,7 @@ nodist_libnox_a_SOURCES = \
 	$(srcdir)/NOX_Direction_Tensor.C \
 	$(srcdir)/NOX_Solver_InexactTrustRegionBased.C \
 	$(srcdir)/NOX_Solver_TensorBased.C \
+	$(srcdir)/NOX_Solver_TensorBasedTest.C \
 	$(srcdir)/NOX_LineSearch_NonlinearCG.C \
 	$(srcdir)/NOX_Direction_NonlinearCG.C \
 	$(srcdir)/NOX_Direction_QuasiNewton.C \
