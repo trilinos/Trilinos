@@ -264,24 +264,23 @@ TAC_ARG_ENABLE_FEATURE(libcheck, [Check for some third-party libraries including
 # ------------------------------------------------------------------------
 # Check if python interface should be created
 # ------------------------------------------------------------------------
-AC_ARG_ENABLE(python,
- [AC_HELP_STRING([--enable-python],[enable Python support])],
- [ADDON_python=$enableval],
- [ADDON_python=no]
-)
+AZ_PYTHON_DEFAULT( )  # Default to no python support
+AZ_PYTHON_ENABLE( )   # Check for --enable-python, --disable-python
+AZ_PYTHON_WITH( )     # Check for --with-python, --without-python
+# if $PYTHON is not defined, then the following do nothing.
+AZ_PYTHON_VERSION_ENSURE( [2.2] )
+AZ_PYTHON_CSPEC
+AZ_PYTHON_LSPEC
 
 AC_MSG_CHECKING(whether we should build the python support)
-if test X${ADDON_python} = Xyes; then
+if test -n "$PYTHON"; then
   BUILD_PYTHON=yes
   AC_MSG_RESULT(yes)
   AM_CONDITIONAL(BUILD_PYTHON, true)
 
-  # Get python include/lib paths
-  AC_PYTHON_DEVEL
-
   # Check that Python.h is available
   save_CPPFLAGS=$CPPFLAGS
-  CPPFLAGS="$save_CPPFLAGS $PYTHON_CPPFLAGS"
+  CPPFLAGS="$save_CPPFLAGS $PYTHON_CSPEC"
   AC_LANG([C++])
   AC_CHECK_HEADER(
   [Python.h],
@@ -313,7 +312,7 @@ AC_MSG_RESULT([${WITH_SWIG}])
 AM_CONDITIONAL(HAVE_SWIG,test X${WITH_SWIG} = Xyes)
 AC_SUBST(GNU_HAVE_SWIG, ${WITH_SWIG})
 
-if test X${BUILD_PYTHON} = Xyes && test X${WITH_SWIG} = Xyes; then
+if test -n "$PYTHON" && test X${WITH_SWIG} = Xyes; then
   AC_PROG_SWIG(1.3.23)
   SWIG_ENABLE_CXX
   SWIG_MULTI_MODULE_SUPPORT

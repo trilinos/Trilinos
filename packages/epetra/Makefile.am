@@ -72,7 +72,7 @@ if BUILD_EXAMPLES
 EXAMPLE_SUBDIR=example
 endif
 
-if BUILD_PYTHON
+if PYTHON_USE
 PYTHON_SUBDIR=python
 endif
 
