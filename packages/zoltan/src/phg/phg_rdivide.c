@@ -467,7 +467,7 @@ static int split_hypergraph (int *pins[2], HGraph *ohg, HGraph *nhg, Partition p
   MPI_Allgather(nhg->dist_y, 1, MPI_INT, &(nhg->dist_y[1]), 1, MPI_INT, hgc->col_comm);
   nhg->dist_y[0] = 0;
     
-  Zoltan_HG_Create_Mirror (zz, nhg);
+  ierr = Zoltan_HG_Create_Mirror (zz, nhg);
  End:
   ZOLTAN_FREE (&tmap);
   return ierr;

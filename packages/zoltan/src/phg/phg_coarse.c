@@ -21,18 +21,331 @@ extern "C" {
 #include "phg.h"
 #include "zoltan_comm.h"
 
+#define USE_NEW_COARSENING  0
+
 #define PIN_OVER_ALLOC 1.2  /* Overallocate pins by 20% */
 #define PLAN_TAG 32010      /* tag for comm plan */
 
 
+
+#if USE_NEW_COARSENING
+
+static long hashValue(int n, int *ar)
+{
+    unsigned long l=0;
+    int i;
+
+    /* Chris Torek's hash function */
+    for (i=0; i<n; ++i) {
+        l *= 33;
+        l += ar[i];
+    }
+    return l;
+}
+
 /* Procedure to coarsen a hypergraph based on a matching. All vertices of one
-   match are clustered to a single vertex. Currently, we allow more than two
-   vertices to be merged/grouped locally on a proc, but allow only pairs of two
-   to be merged between processors.  All hyperedges are kept; identical
-   hyperedges are not collapsed. The array LevelMap is the mapping of the old
-   vertices to the new vertices. LevelMap will be used to pass a partition of the
-   coarse graph back to the original graph.                         */
-   
+   match are clustered to a single vertex. Currently, we allow more
+   than two vertices to be merged/grouped locally on a proc, but
+   allow only pairs of two to be merged between processors.
+   All hyperedges are kept; identical hyperedges are not collapsed. 
+   The array LevelMap is the mapping of
+   the old vertices to the new vertices. It will be used to pass a partition
+   of the coarse graph back to the original graph.                         */
+int Zoltan_PHG_Coarsening
+( ZZ     *zz,         /* the Zoltan data structure */
+  HGraph *hg,         /* information about hypergraph, weights, etc. */
+  int    *match,      /* Matching, Packing or Grouping array */
+  HGraph *c_hg,       /* output: the coarse hypergraph */
+  int    *LevelMap,
+  int    *LevelCnt,
+  int    *LevelSndCnt,
+  int   **LevelData,  /* information to reverse coarsenings later */
+  struct Zoltan_Comm_Obj  **comm_plan
+    )   
+{
+  char *yo = "Zoltan_PHG_Coarsening";
+  int  ierr=ZOLTAN_OK, i, j, count, size, me, idx;
+  int  *vmark=NULL, *listgno=NULL, *listlno=NULL, *listproc=NULL, *msg_size=NULL, *ip;
+  int  *ahindex=NULL, *ahvertex=NULL, *hsize=NULL, *hlsize=NULL;
+  int  *c_hindex=NULL, *c_hvertex=NULL;
+  float *c_ewgt=NULL;
+  unsigned long *hash=NULL, *lhash=NULL;
+  char *buffer=NULL, *rbuffer=NULL;
+  PHGComm          *hgc = hg->comm;
+  
+  Zoltan_HG_HGraph_Init (c_hg);   /* inits working copy of hypergraph info */
+  c_hg->comm    = hg->comm;         /* set communicators */
+  c_hg->info    = hg->info + 1;     /* for debugging */
+  c_hg->coor    = NULL;             /* currently we don't use coordinates */
+  c_hg->nDim    = hg->nDim;    
+  c_hg->vmap    = NULL;             /* only needed by rec-bisec */
+  c_hg->ratio   = hg->ratio;        /* for "global" recursive bisectioning */
+  c_hg->redl    = hg->redl;         /* to stop coarsening near desired count */
+  c_hg->VtxWeightDim  = hg->VtxWeightDim;
+  
+  /* (over) estimate number of external matches that we need to send data to */
+  count = 0; 
+  for (i = 0; i < hg->nVtx; i++)
+    if (match[i] < 0)
+      ++count;
+ 
+  if (hg->nVtx > 0 && !(vmark = (int*) ZOLTAN_CALLOC(hg->nVtx,  sizeof(int))))
+      MEMORY_ERROR;
+
+  if (count > 0 && (
+      !(listgno   = (int*) ZOLTAN_MALLOC (count * sizeof(int)))
+   || !(listlno   = (int*) ZOLTAN_MALLOC (count * sizeof(int)))
+   || !(listproc  = (int*) ZOLTAN_MALLOC (count * sizeof(int)))
+   || !(msg_size  = (int*) ZOLTAN_MALLOC (count * sizeof(int)))
+   || !(*LevelData= (int*) ZOLTAN_MALLOC (count * sizeof(int) * 2))))
+      MEMORY_ERROR;
+
+  /* Assume all rows in a column have the entire (column's) matching info */
+  /* Calculate the number of resulting coarse vertices. */
+  *LevelCnt   = 0;
+  c_hg->nVtx = 0;                 /* counts number of new (coarsened) vertices */
+  me = hgc->myProc_x;             /* short name, convenience variable */
+  size  = 0;                      /* size (in ints) to communicate */
+  count = 0;                      /* number of vertices to communicate */
+  for (i = 0; i < hg->nVtx; i++)  {    /* loop over every local vertice */
+    if (match[i] < 0)  {               /* external processor match */
+      int gx = -match[i]-1, proc = VTX_TO_PROC_X(hg,gx);
+      
+      /* rule to determine "ownership" of coarsened vertices between procs */
+      proc = ((gx + VTX_LNO_TO_GNO (hg,i)) & 1) ? MIN(proc, me) : MAX(proc, me);
+      
+      /* prepare to send data to owner */
+      if (proc != me)   {             /* another processor owns this vertex */
+        LevelMap[i] = -gx - 1;
+        size += hg->vindex[i+1] - hg->vindex[i];  /* send buffer sizing */ 
+        listgno[count]   = gx;                    /* listgno of vtx's to send */
+        listproc[count]  = proc;                  /* proc to send to */
+        listlno[count++] = i;                     /* lno of my match to gno */
+      } else   { /* myProc owns the matching across processors */ 
+        LevelMap[i] = c_hg->nVtx++;        /* next available coarse vertex */
+      }
+    } else if (!vmark[i]) {     /* local matching, packing and groupings */
+      int v = i;
+      while (!vmark[v])  {
+        LevelMap[v] = c_hg->nVtx;         /* next available coarse vertex */      
+        vmark[v] = 1;  /* flag this as done already */
+        v = match[v];  
+      }
+      ++c_hg->nVtx;
+    }
+  }
+  *LevelSndCnt = count;
+  
+  /* size and allocate the send buffer */
+  size += ((3 + hg->VtxWeightDim) * count);
+  if (size > 0 && !(buffer = (char*) ZOLTAN_MALLOC (size * sizeof(int))))
+      MEMORY_ERROR;
+  
+  /* Use communication plan for unstructured communication. */
+  
+  /* Message is list of <gno, vweights, gno's edge count, list of edge lno's> */
+  /* We pack ints and floats into same buffer */
+  ip = (int*) buffer;
+  for (i = 0; i < count; i++)  {
+      int lno=listlno[i], sz=hg->vindex[lno+1] - hg->vindex[lno];
+      int *ip_old = ip;
+      
+    *ip++ = listlno[i];             /* source lno */
+    *ip++ = listgno[i];             /* destination vertex gno */
+    /* UVC Assumes a float is no larger than an int which true in almost all
+       platforms except prehistoric 16-bit platforms. */
+    memcpy(ip, &hg->vwgt[lno*hg->VtxWeightDim], sizeof(float)*hg->VtxWeightDim);
+    ip += hg->VtxWeightDim;
+    *ip++ = sz;                    /* count */
+    memcpy(ip, &hg->vedge[hg->vindex[lno]], sizeof(int)*sz);
+    ip +=  sz;
+    msg_size[i] = ip - ip_old;     /* save mesg size in #ints */
+  }    
+
+  /* Create comm plan. */
+  Zoltan_Comm_Create(comm_plan, count, listproc, hgc->row_comm, PLAN_TAG, 
+                      &size); /* we'll ignore the size because of resize*/
+  
+  /* call Comm_Resize since we have variable-size messages */
+  Zoltan_Comm_Resize(*comm_plan, msg_size, PLAN_TAG+1, &size); 
+
+  /* Allocate receive buffer. */
+  /* size is the size of the received data, measured in #ints */
+  if (size > 0 && (
+          !(rbuffer = (char*) ZOLTAN_MALLOC (size * sizeof(int)))
+          || !(ahvertex = (int*) ZOLTAN_MALLOC (size * sizeof(int)))))
+      MEMORY_ERROR;
+  if (hg->nEdge && (
+      !(ahindex = (int *) ZOLTAN_CALLOC(hg->nEdge+1, sizeof(int)))
+      || !(hlsize = (int *) ZOLTAN_MALLOC(hg->nEdge*sizeof(int)))
+      || !(hsize = (int *) ZOLTAN_MALLOC(hg->nEdge*sizeof(int)))
+      || !(lhash = (unsigned long *) ZOLTAN_MALLOC(hg->nEdge*sizeof(unsigned long)))
+      || !(hash = (unsigned long *) ZOLTAN_MALLOC(hg->nEdge*sizeof(unsigned long)))
+          ))
+      MEMORY_ERROR;
+
+  /* Comm_Do sends personalized messages of variable sizes */
+  Zoltan_Comm_Do(*comm_plan, PLAN_TAG+2, buffer, sizeof(int), rbuffer);
+
+  /* Allocate vertex weight array for coarse hgraph */
+  if (hg->nVtx > 0 && hg->VtxWeightDim > 0 &&
+      !(c_hg->vwgt = (float*) ZOLTAN_MALLOC (c_hg->nVtx * hg->VtxWeightDim *
+                                             sizeof(float))))
+      MEMORY_ERROR;
+  for (i=0; i < hg->nVtx; ++i) {
+      int ni=LevelMap[i];
+      if (ni>=0)
+          memcpy(&c_hg->vwgt[ni*hg->VtxWeightDim], &hg->vwgt[i*hg->VtxWeightDim],
+                 hg->VtxWeightDim*sizeof(float));
+  }
+      
+  /* index all received data for rapid lookup */
+  for (ip = (int*) rbuffer, i = 0; i < size; )  {
+    int j, sz, source_lno=ip[i++];
+    int lno=LevelMap[VTX_GNO_TO_LNO (hg, ip[i++])];
+    float *pw=(float*) &ip[i];
+
+    (*LevelData)[(*LevelCnt)++] = source_lno;
+    (*LevelData)[(*LevelCnt)++] = lno;              /* to lookup in part[] */
+
+    if (lno<0 || lno>=c_hg->nVtx)
+        errexit("lno=%d c_hg->nVtx=%d\n", lno, c_hg->nVtx);
+    
+    for (j=0; j<hg->VtxWeightDim; ++j)
+        c_hg->vwgt[lno*hg->VtxWeightDim+j] += pw[j];
+    i += hg->VtxWeightDim;    /* skip vertex weights */
+    sz = ip[i++];             /* get sz to a diff var, skip size*/
+    for (j=0; j<sz; ++j)      /* count extra vertices per edge */
+        ++ahindex[ip[i+j]];
+    i += sz;
+  }
+  for (i=0; i<hg->nEdge; ++i) /* prefix sum over ahindex */
+      ahindex[i+1] += ahindex[i];
+  /* now prepare ahvertex */
+  for (ip = (int*) rbuffer, i = 0; i < size; )  {
+    int j, sz, lno=VTX_GNO_TO_LNO (hg, ip[i+1]);
+
+    i += 2+hg->VtxWeightDim;  /* skip slno+gno+vertex weights */
+    sz = ip[i++];             /* get sz to a diff var, skip size*/
+    for (j=0; j<sz; ++j)      /* count extra vertices per edge */
+        ahvertex[--ahindex[ip[i+j]]] = lno;
+    i += sz;
+  }
+  Zoltan_Multifree (__FILE__, __LINE__, 2, &buffer, &rbuffer);
+  
+  c_hg->nPins = hg->nPins + ahindex[hg->nEdge]; /* safe over estimate of nPins */
+  c_hg->nEdge = hg->nEdge;
+
+      
+  /* Allocate edge weight and index array for coarse hgraph */
+  c_hg->EdgeWeightDim = (hg->EdgeWeightDim > 0) ? hg->EdgeWeightDim : 1;
+  if (c_hg->nEdge) {
+      if (!(c_hg->ewgt =(float*)ZOLTAN_MALLOC(c_hg->nEdge*c_hg->EdgeWeightDim*sizeof(float)))
+          || !(c_hg->hindex = (int*)ZOLTAN_MALLOC((c_hg->nEdge+1)*sizeof(int))))
+          MEMORY_ERROR;
+      if (hg->EdgeWeightDim)
+          for (i = 0; i < hg->nEdge * hg->EdgeWeightDim; ++i)
+              c_hg->ewgt[i] = hg->ewgt[i];
+      else
+          for (i = 0; i < c_hg->nEdge; ++i)
+              c_hg->ewgt[i] = 1.0;
+  }
+  if (c_hg->nPins>0 && !(c_hg->hvertex = (int*)ZOLTAN_MALLOC (c_hg->nPins*sizeof(int))))
+      MEMORY_ERROR;
+
+  memset(vmark, 0xff, sizeof(int)*c_hg->nVtx);
+  idx = 0;
+  for (i=0; i < hg->nEdge; ++i) { /* loop over edges */
+      c_hg->hindex[i] = idx;
+      /* first go over local vertices */
+      for (j=hg->hindex[i]; j<hg->hindex[i+1]; ++j) {
+          int nvno=LevelMap[hg->hvertex[j]];
+          if (nvno>=0 && vmark[nvno]!=i) {
+              c_hg->hvertex[idx++] = nvno;
+              vmark[nvno] = i;
+          }
+      }
+      /* now go over the received vertices */
+      for (j=ahindex[i]; j<ahindex[i+1]; ++j) {
+          int nvno=LevelMap[ahvertex[j]];
+          if (nvno>=0 && vmark[nvno]!=i) {
+              c_hg->hvertex[idx++] = nvno;
+              vmark[nvno] = i;
+          }
+      }          
+  }
+  c_hg->hindex[hg->nEdge] = c_hg->nPins = idx;
+  ZOLTAN_FREE(&vmark);
+
+  for (i=0; i < c_hg->nEdge; ++i) { /* compute size and hashvalue */
+      hlsize[i] = c_hg->hindex[i+1]-c_hg->hindex[i];
+      lhash[i] = hashValue(hlsize[i], &c_hg->hvertex[c_hg->hindex[i]]);
+  }
+  MPI_Allreduce(hlsize, hsize, c_hg->nEdge, MPI_INT, MPI_SUM, hgc->row_comm);
+  /* UVC TODO to compute global hash; right now we'll use bitwise xor;
+     we need to check if this is good, if not we need to find a better way */
+  MPI_Allreduce(lhash, hash, c_hg->nEdge, MPI_LONG, MPI_BXOR, hgc->row_comm);
+
+
+  for (i=0; i<hg->nEdge; ++i) /* discard size-1 or 0 nets */
+      if (hsize[i]<2) {
+          c_hg->nPins -= hlsize[i];
+          hsize[i]=0;        /* hsize=-1 will be used as marker */
+          --c_hg->nEdge;      /*      by IdenticalNets as well */
+      }
+  
+  if (c_hg->nEdge < hg->nEdge) { /* we need to reduce the hypergraph */
+      int ni, idx=0;
+      
+      c_hindex = (int*)ZOLTAN_MALLOC((c_hg->nEdge+1)*sizeof(int));
+      if (c_hg->nPins &&
+          !(c_hvertex=(int*)ZOLTAN_MALLOC(c_hg->nPins*sizeof(int))))
+          MEMORY_ERROR;
+      if (c_hg->nEdge &&
+          !(c_ewgt=(float*)ZOLTAN_MALLOC(c_hg->nEdge*c_hg->EdgeWeightDim*sizeof(float))))
+          MEMORY_ERROR;
+      
+      for (ni=i=0; i<hg->nEdge; ++i)
+          if (hsize[i]) {
+              c_hindex[ni] = idx;
+              memcpy(&c_ewgt[ni], &c_hg->ewgt[i], c_hg->EdgeWeightDim*sizeof(float));
+              memcpy(&c_hvertex[idx], &c_hg->hvertex[c_hg->hindex[i]], hlsize[i]*sizeof(int));
+              ++ni;
+              idx += hlsize[i];
+          }
+      c_hindex[c_hg->nEdge] = idx;
+      Zoltan_Multifree (__FILE__, __LINE__, 3, &c_hg->hindex, &c_hg->hvertex, &c_hg->ewgt);
+      c_hg->hindex = c_hindex;     c_hindex = NULL;
+      c_hg->hvertex = c_hvertex;   c_hvertex = NULL;
+      c_hg->ewgt = c_ewgt;         c_ewgt = NULL;
+  }
+
+
+  /* We need to compute dist_x, dist_y */
+  if (!(c_hg->dist_x = (int *) ZOLTAN_CALLOC((hgc->nProc_x+1), sizeof(int)))
+	 || !(c_hg->dist_y = (int *) ZOLTAN_CALLOC((hgc->nProc_y+1), sizeof(int))))
+      MEMORY_ERROR;
+
+  MPI_Scan(&c_hg->nVtx, c_hg->dist_x, 1, MPI_INT, MPI_SUM, hgc->row_comm);
+  MPI_Allgather(c_hg->dist_x, 1, MPI_INT, &(c_hg->dist_x[1]), 1, MPI_INT, hgc->row_comm);
+  c_hg->dist_x[0] = 0;
+  
+  MPI_Scan(&c_hg->nEdge, c_hg->dist_y, 1, MPI_INT, MPI_SUM, hgc->col_comm);
+  MPI_Allgather(c_hg->dist_y, 1, MPI_INT, &(c_hg->dist_y[1]), 1, MPI_INT, hgc->col_comm);
+  c_hg->dist_y[0] = 0;  
+
+  ierr = Zoltan_HG_Create_Mirror(zz, c_hg);
+ End:
+  Zoltan_Multifree (__FILE__, __LINE__, 14,
+                    &listgno, &listlno, &listproc, &msg_size,
+                    &buffer, &rbuffer, &ahindex, &ahvertex, &vmark,
+                    &hlsize, &hsize, &lhash, &hash,
+                    &c_hindex, &c_hvertex, &c_ewgt 
+                    );
+  return ierr;
+}
+
+#else
 int Zoltan_PHG_Coarsening
 ( ZZ     *zz,         /* the Zoltan data structure */
   HGraph *hg,         /* information about hypergraph, weights, etc. */
@@ -64,7 +377,7 @@ int Zoltan_PHG_Coarsening
     if (match[i] < 0)
       ++count;
  
-  if (hg->nVtx > 0 && hgc->nProc_x > 0 && (
+  if (hg->nVtx > 0 && (
       !(cmatch    = (int*) ZOLTAN_MALLOC (hg->nVtx     * sizeof(int))))){
      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
      ZOLTAN_TRACE_EXIT (zz, yo);
@@ -351,7 +664,7 @@ int Zoltan_PHG_Coarsening
   return Zoltan_HG_Create_Mirror(zz, c_hg);
 }
 
-
+#endif
 
 #ifdef __cplusplus
 } /* closing bracket for extern "C" */
