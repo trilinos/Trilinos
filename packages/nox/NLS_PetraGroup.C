@@ -205,8 +205,8 @@ const NLS_Vector& NLS_PetraGroup::computeNewton(NLS_ParameterList& p)
   // Create aztec problem
   AztecOO aztec(Problem);
 
-  int maxit = p.getParameter("Max Linear Iterations", 400);
-  double tol = p.getParameter("Linear Solver Tolerance", 1.0e-6);
+  int maxit = p.getParameter("Max Iterations", 400);
+  double tol = p.getParameter("Tolerance", 1.0e-6);
 
   if (NLS_Utilities::doPrint(3)) {
     cout << "      *********************************************" << "\n";
