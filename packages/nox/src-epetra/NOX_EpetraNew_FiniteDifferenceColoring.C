@@ -167,7 +167,7 @@ bool FiniteDifferenceColoring::computeJacobian(const Epetra_Vector& x, Epetra_Op
     // ----- First create color map and assoc perturbation vectors
     int color = -1;
     if( !skipIt ) color = colorList[k];
-    cMap = colorMap->GenerateMap(colorList[k]);
+    cMap = colorMap->GenerateMap(color);
     colorVect = new Epetra_Vector(*cMap);
     betaColorVect = new Epetra_Vector(*cMap);
     betaColorVect->PutScalar(beta);
