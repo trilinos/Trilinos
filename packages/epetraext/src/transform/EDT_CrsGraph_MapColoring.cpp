@@ -93,7 +93,7 @@ operator()( OriginalTypeRef orig  )
   if( verbose_ ) cout << "Adjacency 1 Graph!\n" << Adj1;
 
   int Delta = Adj1.MaxNumIndices();
-  cout << endl << "Delta: " << Delta << endl;
+  if( verbose_ ) cout << endl << "Delta: " << Delta << endl;
 
   //Generation of Local Distance-2 Adjacency Graph
   Epetra_CrsGraph Adj2( Copy, ColMap, ColMap, 0 );
