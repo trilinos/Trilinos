@@ -594,6 +594,8 @@ int ML_Operator_Print(ML_Operator *matrix, char label[])
 */
          fprintf(fid,"%d   %d     %20.13e\n",i+1,bindx[j]+1, val[j]);
       }
+      if (row_length == 0) 
+         fprintf(fid,"%d   1      0.\n",i+1);
    }
    fclose(fid);
    fflush(stdout);
