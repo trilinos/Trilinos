@@ -41,6 +41,7 @@ typedef struct ML_Struct ML;
 #include "ml_mat_formats.h"
 #include "ml_solver.h"
 #include "ml_krylov.h"
+#include "ml_mat_formats.h"
 #include <string.h>
 
 /* ******************************************************************** */
@@ -224,6 +225,8 @@ extern int ML_Set_CoarseSolver(ML *ml, int level, int leng,
                                void *sol_obj, void (*solve)());
 
 extern int ML_Gen_AmatrixRAP(ML *ml, int to_level, int from_level);
+extern int ML_Gen_Amatrix_Global(ML_Matrix_DCSR *inmat, 
+     ML_Matrix_DCSR *outmat, ML_Comm *comm, int *offset);
 
 extern int ML_Set_EqnToGridMapFunc(ML *, int,int fleng,int tleng, void *data,
                                    int (*func)(void*,double*,double*));
@@ -234,10 +237,13 @@ extern int ML_Set_BoundaryTypes(ML*,int level,int type,int n,int *data);
 extern int ML_Gen_Solver(ML *ml, int method, int finest_level, int);
 extern int ML_Iterate(ML *ml, double *sol, double *rhs);
 extern int ML_Solve_MGV( ML *ml , double *din, double *dout);
+extern int ML_Solve_MGFull( ML *ml , double *din, double *dout);
 extern int ML_Solve_Smoother(void *data, int isize, double *x, int osize, 
 			     double *rhs);
 
 extern double ML_Cycle_MGV(ML_1Level *curr, double *sol, double *rhs,
+                     int approx_all_zeros, ML_Comm *comm, int);
+extern double ML_Cycle_MGFull(ML_1Level *curr, double *sol, double *rhs,
                      int approx_all_zeros, ML_Comm *comm, int);
 extern int ML_Solve_AMGV( ML *ml , double *din, double *dout);
 extern double ML_Cycle_AMGV(ML_1Level *curr, double *sol, double *rhs,

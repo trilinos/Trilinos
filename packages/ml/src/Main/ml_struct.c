@@ -2196,6 +2196,72 @@ scales = NULL;
    free(din_temp);
    return 0;
 }
+/*****************************************************************************/
+/* solve using Full MGV-cycle multigrid                                             */
+/*-------------------------------------------------------------------------- */
+
+int ML_Solve_MGFull( ML *ml , double *din, double *dout)
+{
+   int    i, leng, dir_leng, *dir_list, k, level;
+   double *diag, *scales, *din_temp;
+
+   /* ------------------------------------------------------------ */
+   /* initially set the solution to be all 0           	           */
+   /* ------------------------------------------------------------ */
+
+   level = ml->ML_finest_level;
+   leng = ml->Amat[level].outvec_leng;
+   for ( i = 0; i < leng; i++ ) dout[i] = 0.0;
+   din_temp = (double*) malloc( leng * sizeof(double) );
+
+   /* ------------------------------------------------------------ */
+   /* on the fixed boundaries, set them to be each to the solution */
+   /* ------------------------------------------------------------ */
+
+   ML_BdryPts_Get_Dirichlet_Eqn_Info(&(ml->BCs[level]),&dir_leng,&dir_list);
+   if ( dir_leng != 0 )
+   {
+      if (ml->Amat[level].diagonal != NULL) { 
+         ML_DVector_GetDataPtr(ml->Amat[level].diagonal,&diag);
+         for ( i = 0; i < dir_leng; i++ ) {
+            k = dir_list[i]; 
+            dout[k] = din[k] / diag[k];
+         } 
+      } else {
+         diag = NULL;
+         for ( i = 0; i < dir_leng; i++ ) {
+            k = dir_list[i]; 
+            dout[k] = din[k];
+         }
+      }
+   }
+
+   /* ------------------------------------------------------------ */
+   /* normalization                                                */
+   /* ------------------------------------------------------------ */
+
+   ML_DVector_GetDataPtr(&(ml->Amat_Normalization[level]), &scales) ;
+
+/* watch out for this !!!!! */
+scales = NULL;
+
+   if ( scales != NULL ) {
+      for ( i = 0; i < leng; i++ ) din_temp[i] = din[i] / scales[i];
+   } else {
+      scales = NULL;
+      for ( i = 0; i < leng; i++ ) din_temp[i] = din[i];
+   }
+
+   /* ------------------------------------------------------------ */
+   /* call MG v-cycle                                              */
+   /* ------------------------------------------------------------ */
+
+   ML_Cycle_MGFull(&(ml->SingleLevel[ml->ML_finest_level]), dout, din_temp, 
+                ML_ZERO, ml->comm, ML_NO_RES_NORM);
+
+   free(din_temp);
+   return 0;
+}
 
 void ML_Solve_SmootherDestroy(void *data) 
 {
@@ -2696,6 +2762,118 @@ double ML_Cycle_MGV(ML_1Level *curr, double *sol, double *rhs,
    }
 
    free(rhss);
+   return(res_norm);
+}
+/*****************************************************************************/
+/* solve using V-cycle multigrid                                             */
+/*-------------------------------------------------------------------------- */
+
+double ML_Cycle_MGFull(ML_1Level *curr, double *sol, double *rhs,
+	int approx_all_zeros, ML_Comm *comm, int res_norm_or_not)
+{
+   int         i, lengc, lengf;
+   double      *res,  *sol2, *rhs2, res_norm = 0., *normalscales;
+   double      *rhss, *dtmp;
+   ML_Operator *Amat, *Rmat;
+   ML_Smoother *pre,  *post;
+   ML_CSolve   *csolve;
+
+   Amat     = curr->Amat;
+   Rmat     = curr->Rmat;
+   pre      = curr->pre_smoother;
+   post     = curr->post_smoother;
+   csolve   = curr->csolve;
+   lengf    = Amat->outvec_leng;
+
+   /* ------------------------------------------------------------ */
+   /* first do the normalization                                   */
+   /* ------------------------------------------------------------ */
+
+   rhss = (double *) malloc( lengf * sizeof(double) );
+   ML_DVector_GetDataPtr(curr->Amat_Normalization, &normalscales) ;
+   for ( i = 0; i < lengf; i++ ) rhss[i] = rhs[i];
+
+   /* ------------------------------------------------------------ */
+   /* smoothing or coarse solve                                    */
+   /* ------------------------------------------------------------ */
+   if (Rmat->to != NULL) {    /* not coarsest grid */
+      res = (double *) malloc(lengf*sizeof(double));
+      if ( approx_all_zeros != ML_ZERO ) {
+         ML_Operator_Apply(Amat, lengf, sol, lengf, res);
+         for ( i = 0; i < lengf; i++ ) res[i] = rhss[i] - res[i];
+      }
+      else for ( i = 0; i < lengf; i++ ) res[i] = rhss[i];
+
+      /* project down and do a full cycle */
+
+      lengc = Rmat->outvec_leng;
+      rhs2 = (double *) malloc(lengc*sizeof(double));
+      sol2 = (double *) malloc(lengc*sizeof(double));
+      for ( i = 0; i < lengc; i++ ) sol2[i] = 0.0;
+
+      /* --------------------------------------------------------- */
+      /* normalization                                             */
+      /* --------------------------------------------------------- */
+      ML_DVector_GetDataPtr(curr->Amat_Normalization, &normalscales) ;
+      if ( normalscales != NULL )
+         for ( i = 0; i < lengf; i++ ) res[i] /= normalscales[i];
+
+      /* ------------------------------------------------------------ */
+      /* transform the data from equation to grid space, do grid      */
+      /* transfer and then transfer back to equation space            */
+      /* ------------------------------------------------------------ */
+      if ( ML_Mapper_Check(curr->eqn2grid) == 1 )
+      {
+         dtmp = (double *) malloc( lengf * sizeof( double ) );
+         ML_Mapper_Apply(curr->eqn2grid, res, dtmp );
+         for ( i = 0; i < lengf; i++ ) res[i] = dtmp[i];
+         free( dtmp );
+      }
+      ML_Operator_ApplyAndResetBdryPts(Rmat, lengf, res, lengc, rhs2);
+      if ( ML_Mapper_Check(Rmat->to->grid2eqn) == 1 )
+      {
+         dtmp = (double *) malloc( lengc * sizeof( double ) );
+         ML_Mapper_Apply(Rmat->to->grid2eqn, rhs2, dtmp );
+         for ( i = 0; i < lengc; i++ ) rhs2[i] = dtmp[i];
+         free( dtmp );
+      }
+      ML_DVector_GetDataPtr(Rmat->to->Amat_Normalization,&normalscales);
+      if ( normalscales != NULL )
+         for ( i = 0; i < lengc; i++ ) rhs2[i] = rhs2[i] * normalscales[i];
+
+      ML_Cycle_MGFull( Rmat->to, sol2, rhs2, ML_ZERO,comm, ML_NO_RES_NORM);
+
+      /* bring it back up */
+
+      /* ------------------------------------------------------------ */
+      /* transform the data from equation to grid space, do grid      */
+      /* transfer and then transfer back to equation space            */
+      /* ------------------------------------------------------------ */
+      if ( ML_Mapper_Check(Rmat->to->eqn2grid) == 1 )
+      {
+         dtmp = (double *) malloc( lengc * sizeof( double ) );
+         ML_Mapper_Apply(Rmat->to->eqn2grid, sol2, dtmp);
+         for ( i = 0; i < lengc; i++ ) sol2[i] = dtmp[i];
+         free( dtmp );
+      }
+      ML_Operator_ApplyAndResetBdryPts(Rmat->to->Pmat,lengc,sol2,lengf,res);
+      if ( ML_Mapper_Check(curr->grid2eqn) == 1 )
+      {
+         dtmp = (double *) malloc( lengf * sizeof( double ) );
+         ML_Mapper_Apply(curr->grid2eqn, res, dtmp);
+         for ( i = 0; i < lengf; i++ ) res[i] = dtmp[i];
+         free( dtmp );
+      }
+
+      for ( i = 0; i < lengf; i++ ) sol[i] += res[i];
+      free(sol2);
+      free(rhs2);
+      free(res);
+      approx_all_zeros = ML_NONZERO;
+   }
+   free(rhss);
+   res_norm = ML_Cycle_MGV(curr,sol,rhs,approx_all_zeros,comm,res_norm_or_not);
+
    return(res_norm);
 }
 
