@@ -213,6 +213,59 @@ int ML_Destroy(ML **ml_ptr)
    return 0;
 }
 
+#ifdef GREG
+int ML_Destroy2(ML **ml_ptr)
+{
+   int i;
+   ML  *ml;
+
+   ml = (*ml_ptr);
+
+#ifdef ML_TIMING
+   if ( ml->output_level != 0 ) ML_Print_Timing(ml);
+#endif
+
+   if (ml != NULL)
+   {
+      for (i = 0; i < ml->ML_num_levels; i++)
+      {
+         ML_Operator_Clean(&(ml->Amat[i]));
+         ML_Operator_Clean(&(ml->Rmat[i]));
+         ML_Operator_Clean(&(ml->Pmat[i]));
+         ML_Grid_Clean(&(ml->Grid[i]));
+         ML_BdryPts_Clean(&(ml->BCs[i]));
+         ML_DVector_Clean( &(ml->Amat_Normalization[i]) );
+         ML_Smoother_Clean(&(ml->pre_smoother[i]));
+         ML_Smoother_Clean(&(ml->post_smoother[i]));
+         ML_CSolve_Clean(&(ml->csolve[i]));
+      }
+
+      ML_memory_free( (void**) &(ml->csolve[0].func ) );
+      ML_memory_free( (void**) &(ml->pre_smoother) );
+      ML_memory_free( (void**) &(ml->post_smoother) );
+      ML_memory_free( (void**) &(ml->csolve) );
+      ML_memory_free( (void**) &(ml->Amat) );
+      ML_memory_free( (void**) &(ml->Rmat) );
+      ML_memory_free( (void**) &(ml->Pmat) );
+      ML_memory_free( (void**) &(ml->Amat_Normalization) );
+      ML_memory_free( (void**) &(ml->Grid) );
+      ML_memory_free( (void**) &(ml->BCs) );
+      ML_memory_free( (void**) &(ml->eqn2grid) );
+      ML_memory_free( (void**) &(ml->grid2eqn) );
+      ML_memory_free( (void**) &(ml->SingleLevel) );
+      ML_memory_free( (void**) &(ml->spectral_radius) );
+      if (ml->timing != NULL) ML_memory_free( (void**) &(ml->timing) );
+      ML_Comm_Destroy( &(ml->comm) );
+      ML_memory_free( (void**) &(ml) );
+      (*ml_ptr) = NULL;
+#ifdef ML_DEBUG
+      ML_memory_inquire();
+#endif
+   }
+   return 0;
+}
+#endif
+
 /* ************************************************************************* */
 /* set symmetrize option                                                     */
 /* ------------------------------------------------------------------------- */

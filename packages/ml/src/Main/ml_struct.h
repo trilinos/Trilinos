@@ -138,6 +138,9 @@ extern int ML_Set_MaxIterations(ML *ml, int iterations);
 extern int ML_Print_Timing(ML *ml);
 
 extern int ML_Destroy(ML **ml);
+#ifdef GREG
+extern int ML_Destroy2(ML **ml);
+#endif
 extern void ML_Solve_SmootherDestroy(void *data);
 
 extern int ML_Init_Comm(ML *ml);
