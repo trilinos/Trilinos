@@ -91,18 +91,38 @@ class MeritFunction : public virtual NOX::Parameter::Arbitrary {
   //! Computes the merit function \f$ f \f$ to be used in a line search.
   virtual double computef(const NOX::Abstract::Group& grp) const = 0;
 
-  //! Compute the inner product of the given direction and the gradient associated with the given group.
+  //! Computes the gradient of the merit function, \f$ \nabla f \f$.  
+  virtual bool computeGradient(const NOX::Abstract::Group& group,
+			       NOX::Abstract::Vector& result) const = 0;
+
+  //! Compute the inner product of the given direction and the gradient associated with the merit function.
   /*!
-    Calculates and returns 
+    Calculates and returns \f$ zeta \f$:
     \f[
-    \zeta = d^T \nabla f(x).
+    \zeta = \nabla f(x)^T d
     \f]
 
     Here \f$d\f$ represents the input parameter \c dir and \f$\nabla
-    f(x)\f$ is the gradient.
+    f(x)\f$ is the gradient of the merit function.
   */
   virtual double computeSlope(const NOX::Abstract::Vector& dir,
 			      const NOX::Abstract::Group& grp) const = 0;
+
+  //!Compute the quadratic model for the given merit function.
+  /*! Computes and returns \f$ m(d) \f$:
+    \f[
+    m(d) = f(x) + \nabla f(x)^T d + d^T \nabla^2 f(x) d 
+    \f]
+
+    Here \f$d\f$ represents the input parameter \c dir and \f$\nabla^2
+    f(x)\f$ is the Hessian of the merit function.
+  */
+  virtual double computeQuadraticModel(const NOX::Abstract::Vector& dir,
+				  const NOX::Abstract::Group& grp) const = 0;
+
+  //! Computes the steepest descent direction of the merit function.
+  virtual bool computeSteepestDescentDir(const NOX::Abstract::Group& group,
+				  NOX::Abstract::Vector& result) const = 0;
 
 };
 } // namespace Parameter

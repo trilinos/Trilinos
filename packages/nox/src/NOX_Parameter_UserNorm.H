@@ -93,8 +93,18 @@ class UserNorm : public virtual NOX::Parameter::Arbitrary {
   //! Destructor.
   ~UserNorm(){};
 
-  //! Computes a user defined norm based on the input vector.
+  //! Computes a user defined norm based on the input vector.  We assume the norm is of the type <a,b>^1/2.
   virtual double norm(const NOX::Abstract::Vector& input) const = 0;
+
+  //@{ \name Auxiliary Methods.
+
+  /*! In certain algorithms, the algorithm itself may depend on the type of norm calculted.  For example, in the TrustRegionBased solver, the dogleg computation is based on the l-2 norm.  If the user wishes to define their own norm, the trust region algorithm will fail to compute the correct direction because it calls dot() due to the l-2 norm assumption.  Therefore, we allow the user to supply auxiliary functions that may be required if the norm definition is changed.  
+   */  
+  //! Computes the dot product \f$ a^Tb \f$ consistent with the the norm calculation above.
+  virtual double dot (const NOX::Abstract::Vector& a,
+		      const NOX::Abstract::Vector& b) const = 0;
+  
+  //@}
 
 };
 } // namespace Parameter
