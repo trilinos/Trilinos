@@ -108,7 +108,9 @@ void Trilinos_Util_ReadHb2Epetra(char *data_file,
 	  printf("Setting  random exact solution  vector\n");
 	  hbxexact = (double *) calloc(N_columns,sizeof(double));
 	  
-	  for (int i=0;i<numGlobalEquations;i++)	 hbxexact[i] = drand48();
+	  for (int i=0;i<numGlobalEquations;i++)	 hbxexact[i] = 
+                                              ((double)
+                                               rand())/((double) RAND_MAX);
 	  
 	  /* Compute b to match xexact */
 	  

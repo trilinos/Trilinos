@@ -112,7 +112,8 @@ void Trilinos_Util_read_hb(char *data_file, int MyPID,
 	  printf("Setting  random exact solution  vector\n");
 	  *xexact = (double *) calloc(N_columns,sizeof(double));
 	  
-	  for (i=0;i<*N_global;i++)	 (*xexact)[i] = drand48();
+	  for (i=0;i<*N_global;i++)	 (*xexact)[i] =
+                                       ((double)rand())/((double) RAND_MAX);
 	  
 	  /* Compute b to match xexact */
 	  

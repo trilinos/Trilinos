@@ -96,7 +96,7 @@ void Trilinos_Util_read_coo(char *data_file, int MyPID,
       /* Set RHS to a random vector, initial guess to zero */
       for (i=0;i<*N_global;i++)
 	{
-	  (*b)[i] = drand48();
+	  (*b)[i] = ((double) rand())/ ((double) RAND_MAX);
 	  (*x)[i] = 0.0;
 	}
   }
