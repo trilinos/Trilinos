@@ -1,4 +1,5 @@
 
+
 # Fortran underscore flag:  Used to indicate that the Fortran name mangling
 # on the target platform puts a trailing underscore after original name of the routine.
 # Default is TRILINOS_HAVE_FORTRAN_UNDERSCORE for most platforms
@@ -104,6 +105,7 @@ LIBEPETRA_ESI = $(TRILINOS_LIB_PATH)/libepetra_esi.a
 # 2) LAPACK
 # 3) Y12M
 # 4) SuperLU
+# 5) SuperLUdist
 
 # NOTE: WE ASSUME THAT THESE LIBRARIES ARE ALREADY BUILT.
 #       TO USE THE VERSIONS OF THESE LIBRARIES IN THE Trilinos/external 
@@ -194,3 +196,8 @@ endif
 # Define object and library extensions
 OBJ_EXT = o
 LIB_EXT = a
+
+
+LIBSUPERLUDIST = $(TRILINOS3PL_HOME)/SuperLU_DIST_1.0/libsuperludist.a
+LIBDSSLV_HOME = $(TRILINOS_HOME)/external/DSSLV/
+LIBDSSLV = $(LIBDSSLV_HOME)/libdsslv.a 
