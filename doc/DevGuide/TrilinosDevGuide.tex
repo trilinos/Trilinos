@@ -539,6 +539,7 @@ executable files within the source tree should be removed.
 \end{itemize}
 
 \subsection{Adding and Removing Source Files}
+\label{Subsection:AddSource}
 %add how to add directories
 Commonly a developer needs to add files to or remove files from a Trilinos 
 package.  We outline the steps for adding or removing source files from a 
@@ -741,8 +742,8 @@ to, can get a jump start by using a Trilinos package called
 ``new\_package''.  This trivial package exists for one primary purpose.  
 It walks a developer through the process of setting up a package to 
 configure and build using autotools.  General instructions for how to get 
-started can be found in Trilinos/packages/new\_package/README.  Please note 
-that new\_package is a work in progess, suggestions and contributions are 
+started can be found in Section~\ref{Section:IntegratingPackages}.  Please 
+note that new\_package is a work in progess, suggestions and contributions are 
 welcome, especially for FAQ's.
 
 Trilinos provides a set of M4~\cite{M4} macros that can be used by any other
@@ -765,7 +766,9 @@ test environment.  ({\bf NOTE: Black box testing via TSF is not in
 place at this time})
 
 \subsection{Test Harness}
-Trilinos Packages that configure and build using Autotools can easily 
+\label{subsect:TestHarness}
+
+Trilinos packages that configure and build using Autotools can easily 
 utilize the the Trilinos test harness.  The Trilinos test harness is composed 
 of two components.  
 
@@ -910,7 +913,6 @@ leaders lists for individual packages.
 
 %**Consider an example showing how tools can work together to fix bugs.**
 
-%	**(Add a section comp to Epetra and TSF: Two special packages - minimixe redundant work.)**
 	\subsection{Portable Interface to BLAS and LAPACK}
 %	**(See Overview Doc pg 12)**
 
@@ -925,8 +927,6 @@ provide a set of simple, portable interfaces to the BLAS and LAPACK
 that provide uniform access to the BLAS and LAPACK across a broad
 set of platforms.  These interfaces are accessible to
 other packages.
-%**(Expand on this)**
-
 
 \section{Trilinos Package Requirements}
 \label{Section:PackageRequirements}
@@ -1183,9 +1183,12 @@ has changed.
 The other package lists mentioned above also facilitate ongoing
 communication between developers, users and clients.
 
-\paragraph{Automated Test Harness}
-% Jim: In addition to the detailed description of the test harness,
-% please briefly mention it here.
+The Trilinos test harness simplifies code maintenace in two ways.  First, code 
+is tested on a nightly basis on various platforms to help maintain portability.
+Second, developers can execute a check-in version of the test harness before 
+committing changes.  Developers can easily contribute to the coverage of the 
+test harness.  For more information about the test harness see 
+Section~\ref{subsect:TestHarness}.
 
 \subsection{Retirement/Replacement}
 To the extent possible checkins to a release branch should not force interface 
@@ -1242,8 +1245,122 @@ solvers and can bring multiple solvers to bear on a single problem.
 
 \section{Integrating a Package into Trilinos}
 \label{Section:IntegratingPackages}
-%	**(list formal? process, meet above requirements Overview Doc pg 11,14-15)**
-	
+In sections~\ref{Subsection:AddSource},~\ref{Section:PackageRequirements}, 
+and~\ref{Section:SuggestPractices} different aspects of adding a package to 
+Trilinos are discussed.  These sections cover how to add files to a package,
+what is required of a package, and how these requirements could be met, 
+respectively.  This section will address the steps that can be taken to 
+integrate a new package into the Trilinos configure and build system.  It is 
+assumed throughout that a process like the one in 
+Section~\ref{Subsection:AddSource} has already been used to add all of the 
+source files for the new package to the CVS repository.  This section also 
+assumes that the recommended directory structure for Trilinos packages 
+(src, test, example, doc subdirectories) is being used.
+
+Some useful terminology for this section is listed in 
+Table~\ref{Table:NewPackageTerms}.
+\begin{table}[ht]
+\scriptsize
+\begin{center}
+\begin{tabular}{|p{1.3in}|p{3.7in}|} \hline
+Term: & Definition: \\ \hline
+autotool'ed package & A package that can be configured and built 
+using Autotools.\\\hline
+new package & A package to be added to the Trilinos Autotools configure 
+and build process.\\\hline
+new\_package & A Trilinos package found in 
+\InlineDirectory{Trilinos/packages/new\_package}.  Serves as a guide for 
+adding new packages to the Trilinos Autotools configure and build 
+processes. \\\hline
+np &  The generic name for a new package that is used throughout this 
+section.  The source code for np is assumed to be located in 
+\InlineDirectory{Trilinos/packages/np}. \\\hline
+\end{tabular}
+\end{center}
+\caption{\label{Table:NewPackageTerms} Useful Terminology for 
+Section~\ref{Section:IntegratingPackages}.}
+
+\end{table}
+
+There are five general steps that need to be followed to add a new package to
+the Trilinos Autotools configure and build system.  Note that these steps do 
+not have to be completed in the exact order listed below, nor does a step 
+necessarily have to be completed in its entirety before moving onto the next
+step.  (For example, a portion of a library can be autotool'ed and tested
+before work begins on the rest of the library.)  The five steps are listed
+below.  Note that new\_package is a work in progress; comments are most welcome.
+
+\begin{enumerate}
+
+\item Write the non-generated files necessary for Autoconf and Automake.
+
+Examples of all of the new, non-generated Autoconf and Automake files
+required to add a packages to the Trilinos Autotools configure and build 
+processesare located within the new\_package directory structure.  Most of 
+these fileswill need to be customized for each new package.  See the 
+individual example files for more details.  Instructions for customizing are 
+listed behind 
+\begin{verbatim}
+#np# 
+\end{verbatim}
+in the following files:
+\begin{verbatim}
+     Trilinos/configure.ac
+     Trilinos/packages/Makefile.am
+     Trilinos/packages/new_package/Makefile.am
+     Trilinos/packages/new_package/configure.ac  
+     Trilinos/packages/new_package/src/Makefile.am
+     Trilinos/packages/new_package/example/Makefile.am
+     Trilinos/packages/new_package/example/example1/Makefile.am
+     Trilinos/packages/new_package/test/Makfile.am
+     Trilinos/packages/new_package/test/test1/Makefile.am
+     Trilinos/packages/new_package/test/scripts/Makfile.am
+     Trilinos/packages/new_package/test/scripts/daily/Makfile.am
+     Trilinos/packages/new_package/test/scripts/daily/mpi/Makfile.am
+     Trilinos/packages/new_package/test/scripts/daily/serial/Makfile.am
+     Trilinos/packages/new_package/test/scripts/weekly/Makfile.am
+\end{verbatim}
+
+Note that not all of these files are used in building new\_package, as it is 
+a very simple package.
+
+\item Create generated Autoconf and Automake files.
+
+IMPORTANT: Before starting this phase, please see 
+\InlineDirectory{Trilinos/config/AutotoolsVersionInfo}, and obtain the correct 
+version of both Autoconf and Automake.
+
+If \InlineDirectory{Trilinos/configure.ac} or 
+\InlineDirectory{Trilinos/packages/Makefile.am} have been changed (these files 
+will have changed if np is being added to the \InlineDirectory{Trilinos} level 
+configure and build system), run 
+
+\DisplayCommand{./bootstrap}
+
+in the \InlineDirectory{Trilinos} directory.  If any Autotools files at the 
+\InlineDirectory{Trilinos/packages/np} level or lower have been changed, run 
+
+\DisplayCommand{./bootstrap}
+
+in the \DisplayCommand{Trilinos/packages/np} directory.
+
+The bootstrap commands should complete without any errors, however, at this
+time it is not uncommon to have warnings similar to the following:
+\begin{verbatim}
+configure.ac:63: warning: do not use m4_patsubst: use patsubst or m4_bpatsubst
+configure.ac:341: warning: do not use m4_regexp: use regexp or m4_bregexp
+\end{verbatim}
+These warnings will be fixed in the future.
+
+\item Test and debug Autoconf and Automake files.
+
+\item Add all Autoconf and Automake files to the Trilinos CVS repository.
+
+\item Perform tests and request new Mailman lists.
+
+\end{enumerate}
+%summary
+
 \section{Interoperability Status for Existing Trilinos Packages}
 Figure~\ref{Figure:TrilinosPackageDependencies} shows how the present
 \begin{figure}
