@@ -97,7 +97,7 @@ Epetra_CrsGraphData::Epetra_CrsGraphData(Epetra_DataAccess CV,
   // maps
   : RowMap_(RowMap),
     ColMap_(ColMap),
-    DomainMap_(RowMap),
+    DomainMap_(ColMap),
     RangeMap_(RowMap),
     // importer & exporter
     Importer_(0),

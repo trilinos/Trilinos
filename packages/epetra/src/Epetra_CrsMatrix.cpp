@@ -1832,7 +1832,6 @@ int Epetra_CrsMatrix::CopyAndPermuteCrsMatrix(const Epetra_CrsMatrix & A,
   int MaxNumEntries = A.MaxNumEntries();
   int * Indices = 0;
   double * Values = 0;
-  int * Offsets = 0;
 
   if (MaxNumEntries>0 && A.IndicesAreLocal() ) { //Need Temp Space
     Indices = new int[MaxNumEntries];
@@ -2031,7 +2030,6 @@ int Epetra_CrsMatrix::CopyAndPermuteRowMatrix(const Epetra_RowMatrix & A,
   int MaxNumEntries = A.MaxNumEntries();
   int * Indices = 0;
   double * Values = 0;
-  int * Offsets = 0;
 
   if (MaxNumEntries>0) {
     Indices = new int[MaxNumEntries];

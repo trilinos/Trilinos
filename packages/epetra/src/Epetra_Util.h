@@ -159,8 +159,8 @@ int Epetra_Util_binary_search(int item,
                               int& insertPoint);
 
 /** Function to insert an item in a list, at a specified offset.
-    @return error-code 0 if successful, -1 if an allocation failed or if
-    input parameters seem unreasonable (offset > usedLength, offset<0, etc).
+    @return error-code 0 if successful, -1 if input parameters seem
+     unreasonable (offset > usedLength, offset<0, etc).
 
     @param item to be inserted
     @param offset location at which to insert item
@@ -171,16 +171,15 @@ int Epetra_Util_binary_search(int item,
     @param allocatedLength current allocated length of list. Will be updated
           to reflect the new allocated-length, if applicable. Re-allocation
           occurs only if usedLength==allocatedLength on entry.
-    @param allocChunkSize Optional argument, defaults to 1000. Increment by
+    @param allocChunkSize Optional argument, defaults to 32. Increment by
           which the array should be expanded, if re-allocation is necessary.
-    @return error-code 0 if successful. -1 if allocation fails or if input
-         parameters don't make sense.
+    @return error-code 0 if successful. -1 if input parameters don't make sense.
  */
 template<class T>
 int Epetra_Util_insert(T item, int offset, T*& list,
                         int& usedLength,
                         int& allocatedLength,
-                        int allocChunkSize=1000)
+                        int allocChunkSize=32)
 {
   if (offset < 0 || offset > usedLength) {
     return(-1);
