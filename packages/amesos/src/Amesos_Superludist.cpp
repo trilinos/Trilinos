@@ -380,7 +380,7 @@ int Amesos_Superludist::Factor( ) {
     //
     //  Set up Superlu's data structures
     //
-    set_default_options(&options_);
+    set_default_options_dist(&options_);
     int numcols = RowMatrixA_->NumGlobalCols() ; 
     if( NumRows_ != numcols ) EPETRA_CHK_ERR(-3) ; 
 
@@ -496,7 +496,7 @@ int Amesos_Superludist::ReFactor( ) {
 
     if ( iam_ < nprow_ * npcol_ ) {
 	
-      set_default_options(&options_);
+      set_default_options_dist(&options_);
       
       options_.Fact = FactOption_;
       SuperLUStat_t stat;
