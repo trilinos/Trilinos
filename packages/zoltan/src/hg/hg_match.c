@@ -81,6 +81,12 @@ static float sim (HGraph *hg, int a, int b)
       sim += weight;
     }
   }
+  if (hg->vwgt)
+  { if (hg->vwgt[a]<=0.0 || hg->vwgt[b]<=0.0)
+      sim = FLT_MAX;
+    else
+      sim = sim/hg->vwgt[a]/hg->vwgt[b];
+  }
   return sim;
 }
 
@@ -99,15 +105,6 @@ int Zoltan_HG_Matching (
 
   ZOLTAN_TRACE_ENTER(zz, yo);
 
-/*
-{ int i, j;
-  for (i=0; i<g->nVtx; i++)
-    for (j=g->nindex[i]; j<g->nindex[i+1]; j++)
-      if (g->ewgt[j] != sim(hg,i,g->neigh[j]))
-        printf("%d %d %f %f\n",i,g->neigh[j],g->ewgt[j],sim(hg,i,g->neigh[j]));
-}
-*/
- 
   if (g->vwgt && hgp->ews)
   { if (!(new_ewgt = (float *) ZOLTAN_MALLOC (sizeof (float) * g->nEdge)))
     { ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
@@ -118,7 +115,7 @@ int Zoltan_HG_Matching (
     old_ewgt = g->ewgt;
     g->ewgt = new_ewgt;
   }
-  
+
   /* Call matching routine specified by parameters. */
   ierr = hgp->matching(zz,hg,g,match,limit);
   if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
@@ -126,7 +123,6 @@ int Zoltan_HG_Matching (
   }
 
   /* Optimization */
-
   if (hgp->matching_rli)
     ierr = hgp->matching_rli (zz,hg,g,match,limit);
 
@@ -146,7 +142,7 @@ static int matching_mxm (ZZ *zz, HGraph *hg, Graph *g, Matching match, int *limi
 
   for (i=0; i<g->nVtx; i++)
     match[i] = i;
-
+  
   for (i=0; i<g->nVtx && (*limit)>0; i++)
     for (j=g->nindex[i]; j<g->nindex[i+1] && match[i]==i; j++)
       if (match[g->neigh[j]] == g->neigh[j])
@@ -463,7 +459,7 @@ static int matching_aug2 (ZZ *zz, HGraph *hg, Graph *g, Matching match, int *lim
 static int matching_aug3 (ZZ *zz, HGraph *hg, Graph *g, Matching match, int *limit)
 { int		i, j, k, *stack, free_p=0, best_2=-1, best_near=-1,
 		best_middle=-1, best_distant=-1, neigh1, neigh2, neigh3;
-  float		w_1, w_2, w_3, gain_2, gain_3;
+  double	w_1, w_2, w_3, gain_2, gain_3;
   char *yo = "matching_aug3" ;
 
   if (!(stack = (int*) ZOLTAN_MALLOC (sizeof (int) * g->nVtx)))
@@ -478,11 +474,12 @@ static int matching_aug3 (ZZ *zz, HGraph *hg, Graph *g, Matching match, int *lim
   while (free_p && (*limit)>0)
   { i = stack[--free_p];
     if (match[i]==i)
-    { gain_2 = gain_3 = -1;
+    { gain_2 = (double)(-1.0);
+      gain_3 = (double)(-1.0);
       for (j=g->nindex[i]; match[i]==i && j<g->nindex[i+1]; j++)
       { neigh1 = g->neigh[j];
         if (neigh1!=i)
-        { w_1 = (g->ewgt?g->ewgt[j]:1.0);
+        { w_1 = (double)(g->ewgt?g->ewgt[j]:1.0);
           if (match[neigh1]==neigh1)
           { match[i] = neigh1;
   	    match[neigh1] = i;
@@ -490,17 +487,18 @@ static int matching_aug3 (ZZ *zz, HGraph *hg, Graph *g, Matching match, int *lim
           }
           else
           { neigh2 = match[neigh1];
-	    for (k=g->nindex[neigh1]; neigh2!=g->neigh[k]; k++) ; /* ; is O.K.!!*/
-	    w_2 = (g->ewgt?g->ewgt[k]:1.0);
-	    if (w_1-w_2 > gain_2)
+            k=g->nindex[neigh1];
+            while (neigh2 != g->neigh[k])
+              k++;
+	    w_2 = (double)(g->ewgt?g->ewgt[k]:1.0);
+            if (w_1-w_2 > gain_2)
             { gain_2 = w_1-w_2;
               best_2 = neigh1;
             }
-
             for (k=g->nindex[neigh2]; k<g->nindex[neigh2+1]; k++)
             { neigh3 = g->neigh[k];
 	      if (neigh3!=neigh2 && match[neigh3]==neigh3 && neigh3!=i)
-	      { w_3 = (g->ewgt?g->ewgt[k]:1.0);
+	      { w_3 = (double)(g->ewgt?g->ewgt[k]:1.0);
                 if (w_1-w_2+w_3>gain_3)
 	        { best_near = neigh1;
 	          best_middle = neigh2;
@@ -522,6 +520,7 @@ static int matching_aug3 (ZZ *zz, HGraph *hg, Graph *g, Matching match, int *lim
           match[match[best_2]] = match[best_2];
           match[best_2] = i;
   } } } }
+
   ZOLTAN_FREE ((void **) &stack);
   return ZOLTAN_OK;
 }

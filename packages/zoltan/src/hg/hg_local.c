@@ -58,8 +58,8 @@ static int local_hc (
   Partition part,
   float bal_tol
 )
-{ int    i, j, k, side, vertex, edge, count, *cut[2],
-         *boundary[2], boundary_n[2], in_part, best_vertex;
+{ int    i, j, side, vertex, edge, *cut[2], *boundary[2], boundary_n[2],
+         best_vertex;
   float  total_weight, max_weight, improvement, best_improvement,
          part_weight[2];
   char   *yo="local_hc";

@@ -77,7 +77,7 @@ int Zoltan_HG_Coarsening (
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
     return ZOLTAN_MEMERR;
   }
-  c_hindex[0] = c_hg->nEdge = c_hg->nPin = 0;
+  c_hindex[0] = c_hindex[1] = c_hg->nEdge = c_hg->nPin = 0;
   for (i=0; i<hg->nEdge; i++)
   { for (j=hg->hindex[i]; j<hg->hindex[i+1]; j++)
     { new_vertex = LevelMap[hg->hvertex[j]];
