@@ -30,7 +30,7 @@ DEFINES= -D$(TRILINOS_ARCH) $(NLSPACK_ARCH_DEFINES) -D$(NLSPACK_COMM) \
          -DAZ_COL_REORDER
 
 INCLUDES = -I. $(ARCH_INCLUDES) -I$(TRILINOS_HOME)/packages/epetra/src \
-           -I$(TRILINOS_HOME)/packages/aztecoo/src
+           -I$(TRILINOS_HOME)/packages/aztecoo/src $(NLSPACK_INCLUDES)
 
 LIB_PATHS=
 
@@ -38,26 +38,15 @@ CFLAGS=$(ARCH_CFLAGS) $(DEFINES) $(INCLUDES)
 FFLAGS=$(ARCH_FFLAGS) 
 CXXFLAGS= $(ARCH_CXXFLAGS) $(DEFINES) $(INCLUDES)
 CCFLAGS = $(CXXFLAGS) 
+
+all: $(LIBNLSPACK)
+	$(DO_NOTHING)
+
 #=======================================================================
 # NLSPACK source files
 #=======================================================================
 
-NLSPACK_CC = NLS_Parameter.C NLS_ParameterList.C \
-             NLS_PetraVector.C NLS_PetraGroup.C \
-             NLS_MethodManager.C NLS_Newton.C \
-             NLS_Utilities.C NLS_PetraSharedJacobian.C \
-	     NLS_AdaptiveTolerance.C \
-	     NLS_LineSearchManager.C NLS_FullStep.C NLS_IntervalHalving.C
-
-NLSPACK_C  = 
-
-#=======================================================================
-# NLSPACK include files
-#=======================================================================
-
-NLSPACK_INC =
-
-NLSPACK_OBJ          = $(NLSPACK_CC:.C=.o)  $(NLSPACK_C:.c=.o)
+include Makefile.ofiles
 
 $(LIBNLSPACK): $(NLSPACK_OBJ)
 	mkdir -p $(TRILINOS_HOME)/lib/$(TRILINOS_TARGET)
@@ -68,6 +57,8 @@ $(LIBNLSPACK): $(NLSPACK_OBJ)
 # dependencies for 'f' files (none at this time)
 #
 #include ../../build/depends.ifpack
+
+
 
 clean:
 	@echo "junk" > dummy.o
