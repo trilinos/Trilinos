@@ -2689,6 +2689,7 @@ int ML_Solve_MGV( ML *ml , double *din, double *dout)
 {
    int    i, leng, dir_leng, *dir_list, k, level;
    double *diag, *scales, *din_temp;
+   ML     *ml_ggb;
 
    /* ------------------------------------------------------------ */
    /* initially set the solution to be all 0           	           */
@@ -2728,7 +2729,7 @@ int ML_Solve_MGV( ML *ml , double *din, double *dout)
    ML_DVector_GetDataPtr(&(ml->Amat_Normalization[level]), &scales) ;
 
 /* watch out for this !!!!! */
-scales = NULL;
+   scales = NULL;
 
    if ( scales != NULL ) {
       for ( i = 0; i < leng; i++ ) din_temp[i] = din[i] / scales[i];
@@ -2743,6 +2744,23 @@ scales = NULL;
 
    ML_Cycle_MG(&(ml->SingleLevel[ml->ML_finest_level]), dout, din_temp, 
                 ML_ZERO, ml->comm, ML_NO_RES_NORM, ml);
+
+   /* Input and output vectors are switched */
+   
+   if (ml->void_options != NULL) { 
+     ml_ggb = (ML *) ml->void_options;
+     
+     
+     ML_Cycle_MG(&(ml_ggb->SingleLevel[ml_ggb->ML_finest_level]), dout, 
+		 din_temp, ML_NONZERO, ml_ggb->comm, ML_NO_RES_NORM, ml_ggb);
+    
+     
+     ML_Cycle_MG(&(ml->SingleLevel[ml->ML_finest_level]), dout, din_temp, 
+		 ML_NONZERO, ml->comm, ML_NO_RES_NORM, ml);
+     
+
+   }
+   
 
    ML_free(din_temp);
    return 0;
@@ -5322,6 +5340,101 @@ edge_smoother, edge_args, nodal_smoother, nodal_args );
    else return(pr_error("ML_Gen_Smoother_Hiptmair: unknown pre_or_post choice\n"));
    return(status);
 }
+
+void ML_build_ggb(ML *ml, void *data)
+{
+  ML *ml_ggb;
+  int Nrows, Ncols, Nnz, Nnz_per_row, i;
+  ML_Operator *Pmat;
+  struct ML_CSR_MSRdata *csr_data, *mydata;
+
+  mydata   = (struct ML_CSR_MSRdata *) data;
+  csr_data = (struct ML_CSR_MSRdata *) ML_allocate(sizeof(struct ML_CSR_MSRdata)); 
+  
+
+  Ncols = mydata->Ncols;
+  Nrows = mydata->Nrows;
+  Nnz   = mydata->Nnz;
+
+  csr_data->rowptr  = (int    *) ML_allocate(sizeof(int)*(Nrows+1));
+  csr_data->columns = (int    *) ML_allocate(sizeof(int)*(Nnz+1));
+  csr_data->values  = (double *) ML_allocate(sizeof(double)*(Nnz+1));
+
+  
+  /* Imported information about Prolongator */
+  csr_data->rowptr  =  mydata->rowptr;
+  csr_data->columns =  mydata->columns;
+  csr_data->values  =  mydata->values;
+
+
+  ML_Create( &ml_ggb, 2);
+
+  Pmat = &(ml_ggb->Pmat[0]);
+
+  ML_Operator_halfClone_Init( &(ml_ggb->Amat[1]), 
+			      &(ml->Amat[ml->ML_finest_level]));
+  
+  
+  
+  /* Put in the code that builds the interpolation operator */
+  /* Here is a simple example that put in a single random   */
+  /* vector */
+
+  /*  
+      Nnz = Ncols*(ml->Amat[ml->ML_finest_level].invec_leng);
+      Nnz_per_row = Ncols;
+      Nrows = ml->Amat[ml->ML_finest_level].invec_leng;
+
+      csr_data->rowptr  = (int    *) ML_allocate(sizeof(int)*(Nrows+1));
+      csr_data->columns = (int    *) ML_allocate(sizeof(int)*(Nnz+1));
+      csr_data->values  = (double *) ML_allocate(sizeof(double)*(Nnz+1));
+  */
+
+  /* Set up the row pointers.  */
+  /*
+    csr_data->rowptr[0] = 0;
+    for (i = 0; i < Nrows; i++) 
+    csr_data->rowptr[i+1] = csr_data->rowptr[i]+ Nnz_per_row;
+  */
+  /* Set up the column indices. In this example there is just */
+  /* one column                                               */
+  /* for (i = 0; i < Nrows; i++) 
+     csr_data->columns[i] = 0;
+  */
+  /* Put random data as values */
+
+  /* ML_random_vec(csr_data->values, Nrows, ml->comm); */
+
+
+
+  /* Put sizes and function pointers into ml_ggb */
+
+  ML_Operator_Set_1Levels(Pmat, &(ml_ggb->SingleLevel[0]), 
+			  &(ml_ggb->SingleLevel[1]));
+  ML_Operator_Set_ApplyFuncData(Pmat, Ncols, Nrows, ML_EMPTY, csr_data,
+				Nrows, NULL, 0);
+ 
+
+  ML_Operator_Set_Getrow(Pmat, ML_EXTERNAL, Nrows, CSR_getrows);
+  ML_Operator_Set_ApplyFunc (Pmat, ML_INTERNAL, CSR_matvec);
+
+  /* ML_Operator_Print(Pmat, "Pmat"); */
+ 
+  ML_Gen_Restrictor_TransP(ml_ggb, 1, 0);
+ 
+  ML_Gen_AmatrixRAP(ml_ggb, 1, 0);
+  ML_Gen_CoarseSolverSuperLU( ml_ggb, 0);
+  ML_Gen_Solver(ml_ggb, ML_MGV, 1, 0);
+  
+ 
+  ml->void_options = (void *) ml_ggb;
+
+  return 1;
+}
+
+
+
+
 
 
 
