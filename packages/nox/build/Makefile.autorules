@@ -5,18 +5,28 @@
 ### NLSPACK Object File Rules
 ########################################################################
 
-NOX_Utils.o : ../src/parameter/NOX_Parameter_Entry.H \
+NOX_Epetra_Group.o : ../src/abstract/NOX_Abstract_Group.H \
+	../src/abstract/NOX_Abstract_Vector.H ../src/epetra/NOX_Epetra_Group.H \
+	../src/epetra/NOX_Epetra_Interface.H ../src/epetra/NOX_Epetra_SharedJacobian.H \
+	../src/epetra/NOX_Epetra_Vector.H ../src/parameter/NOX_Parameter_Entry.H \
 	../src/parameter/NOX_Parameter_List.H ../src/utils/NOX_Utils.H \
-	../src/utils/NOX_Utils.C 
-	$(CXX) -c $(CXXFLAGS) ../src/utils/NOX_Utils.C -o $@
+	../src/epetra/NOX_Epetra_Group.C 
+	$(CXX) -c $(CXXFLAGS) ../src/epetra/NOX_Epetra_Group.C -o $@
 
-NOX_Parameter_List.o : ../src/parameter/NOX_Parameter_Entry.H \
-	../src/parameter/NOX_Parameter_List.H ../src/parameter/NOX_Parameter_List.C 
-	$(CXX) -c $(CXXFLAGS) ../src/parameter/NOX_Parameter_List.C -o $@
+NOX_Epetra_SharedJacobian.o : ../src/epetra/NOX_Epetra_SharedJacobian.H \
+	../src/epetra/NOX_Epetra_SharedJacobian.C 
+	$(CXX) -c $(CXXFLAGS) ../src/epetra/NOX_Epetra_SharedJacobian.C -o $@
 
-NOX_Parameter_Entry.o : ../src/parameter/NOX_Parameter_Entry.H \
-	../src/parameter/NOX_Parameter_List.H ../src/parameter/NOX_Parameter_Entry.C 
-	$(CXX) -c $(CXXFLAGS) ../src/parameter/NOX_Parameter_Entry.C -o $@
+NOX_Epetra_Vector.o : ../src/abstract/NOX_Abstract_Vector.H \
+	../src/epetra/NOX_Epetra_Vector.H ../src/epetra/NOX_Epetra_Vector.C 
+	$(CXX) -c $(CXXFLAGS) ../src/epetra/NOX_Epetra_Vector.C -o $@
+
+NOX_Linesearch_Fullstep.o : ../src/abstract/NOX_Abstract_Group.H \
+	../src/abstract/NOX_Abstract_Vector.H ../src/linesearch/NOX_Linesearch_Fullstep.H \
+	../src/linesearch/NOX_Linesearch_Generic.H \
+	../src/parameter/NOX_Parameter_Entry.H ../src/parameter/NOX_Parameter_List.H \
+	../src/linesearch/NOX_Linesearch_Fullstep.C 
+	$(CXX) -c $(CXXFLAGS) ../src/linesearch/NOX_Linesearch_Fullstep.C -o $@
 
 NOX_Linesearch_Halving.o : ../src/abstract/NOX_Abstract_Group.H \
 	../src/abstract/NOX_Abstract_Vector.H ../src/linesearch/NOX_Linesearch_Generic.H \
@@ -30,16 +40,33 @@ NOX_Linesearch_Manager.o : ../src/abstract/NOX_Abstract_Group.H \
 	../src/linesearch/NOX_Linesearch_Generic.H \
 	../src/linesearch/NOX_Linesearch_Halving.H \
 	../src/linesearch/NOX_Linesearch_Manager.H \
+	../src/linesearch/NOX_Linesearch_MoreThunte.H \
+	../src/linesearch/NOX_Linesearch_Polynomial.H \
 	../src/parameter/NOX_Parameter_Entry.H ../src/parameter/NOX_Parameter_List.H \
 	../src/linesearch/NOX_Linesearch_Manager.C 
 	$(CXX) -c $(CXXFLAGS) ../src/linesearch/NOX_Linesearch_Manager.C -o $@
 
-NOX_Linesearch_Fullstep.o : ../src/abstract/NOX_Abstract_Group.H \
-	../src/abstract/NOX_Abstract_Vector.H ../src/linesearch/NOX_Linesearch_Fullstep.H \
-	../src/linesearch/NOX_Linesearch_Generic.H \
+NOX_Linesearch_MoreThunte.o : ../src/abstract/NOX_Abstract_Group.H \
+	../src/abstract/NOX_Abstract_Vector.H ../src/linesearch/NOX_Linesearch_Generic.H \
+	../src/linesearch/NOX_Linesearch_MoreThunte.H \
 	../src/parameter/NOX_Parameter_Entry.H ../src/parameter/NOX_Parameter_List.H \
-	../src/linesearch/NOX_Linesearch_Fullstep.C 
-	$(CXX) -c $(CXXFLAGS) ../src/linesearch/NOX_Linesearch_Fullstep.C -o $@
+	../src/utils/NOX_Utils.H ../src/linesearch/NOX_Linesearch_MoreThunte.C 
+	$(CXX) -c $(CXXFLAGS) ../src/linesearch/NOX_Linesearch_MoreThunte.C -o $@
+
+NOX_Linesearch_Polynomial.o : ../src/abstract/NOX_Abstract_Group.H \
+	../src/abstract/NOX_Abstract_Vector.H ../src/linesearch/NOX_Linesearch_Generic.H \
+	../src/linesearch/NOX_Linesearch_Polynomial.H \
+	../src/parameter/NOX_Parameter_Entry.H ../src/parameter/NOX_Parameter_List.H \
+	../src/utils/NOX_Utils.H ../src/linesearch/NOX_Linesearch_Polynomial.C 
+	$(CXX) -c $(CXXFLAGS) ../src/linesearch/NOX_Linesearch_Polynomial.C -o $@
+
+NOX_Parameter_Entry.o : ../src/parameter/NOX_Parameter_Entry.H \
+	../src/parameter/NOX_Parameter_List.H ../src/parameter/NOX_Parameter_Entry.C 
+	$(CXX) -c $(CXXFLAGS) ../src/parameter/NOX_Parameter_Entry.C -o $@
+
+NOX_Parameter_List.o : ../src/parameter/NOX_Parameter_Entry.H \
+	../src/parameter/NOX_Parameter_List.H ../src/parameter/NOX_Parameter_List.C 
+	$(CXX) -c $(CXXFLAGS) ../src/parameter/NOX_Parameter_List.C -o $@
 
 NOX_Solver_Newton.o : ../src/abstract/NOX_Abstract_Group.H \
 	../src/abstract/NOX_Abstract_Vector.H ../src/linesearch/NOX_Linesearch_Generic.H \
@@ -57,6 +84,13 @@ NOX_Status_AbsResid.o : ../src/abstract/NOX_Abstract_Group.H \
 	../src/status/NOX_Status_AbsResid.C 
 	$(CXX) -c $(CXXFLAGS) ../src/status/NOX_Status_AbsResid.C -o $@
 
+NOX_Status_Combo.o : ../src/abstract/NOX_Abstract_Group.H \
+	../src/abstract/NOX_Abstract_Vector.H ../src/parameter/NOX_Parameter_Entry.H \
+	../src/parameter/NOX_Parameter_List.H ../src/solver/NOX_Solver_Generic.H \
+	../src/status/NOX_Status_Combo.H ../src/status/NOX_Status_Test.H \
+	../src/utils/NOX_Utils.H ../src/status/NOX_Status_Combo.C 
+	$(CXX) -c $(CXXFLAGS) ../src/status/NOX_Status_Combo.C -o $@
+
 NOX_Status_MaxResid.o : ../src/abstract/NOX_Abstract_Group.H \
 	../src/abstract/NOX_Abstract_Vector.H ../src/parameter/NOX_Parameter_Entry.H \
 	../src/parameter/NOX_Parameter_List.H ../src/solver/NOX_Solver_Generic.H \
@@ -71,26 +105,8 @@ NOX_Status_RelResid.o : ../src/abstract/NOX_Abstract_Group.H \
 	../src/status/NOX_Status_RelResid.C 
 	$(CXX) -c $(CXXFLAGS) ../src/status/NOX_Status_RelResid.C -o $@
 
-NOX_Status_Combo.o : ../src/abstract/NOX_Abstract_Group.H \
-	../src/abstract/NOX_Abstract_Vector.H ../src/parameter/NOX_Parameter_Entry.H \
-	../src/parameter/NOX_Parameter_List.H ../src/solver/NOX_Solver_Generic.H \
-	../src/status/NOX_Status_Combo.H ../src/status/NOX_Status_Test.H \
-	../src/status/NOX_Status_Combo.C 
-	$(CXX) -c $(CXXFLAGS) ../src/status/NOX_Status_Combo.C -o $@
-
-NOX_Epetra_SharedJacobian.o : ../src/epetra/NOX_Epetra_SharedJacobian.H \
-	../src/epetra/NOX_Epetra_SharedJacobian.C 
-	$(CXX) -c $(CXXFLAGS) ../src/epetra/NOX_Epetra_SharedJacobian.C -o $@
-
-NOX_Epetra_Vector.o : ../src/abstract/NOX_Abstract_Vector.H \
-	../src/epetra/NOX_Epetra_Vector.H ../src/epetra/NOX_Epetra_Vector.C 
-	$(CXX) -c $(CXXFLAGS) ../src/epetra/NOX_Epetra_Vector.C -o $@
-
-NOX_Epetra_Group.o : ../src/abstract/NOX_Abstract_Group.H \
-	../src/abstract/NOX_Abstract_Vector.H ../src/epetra/NOX_Epetra_Group.H \
-	../src/epetra/NOX_Epetra_Interface.H ../src/epetra/NOX_Epetra_SharedJacobian.H \
-	../src/epetra/NOX_Epetra_Vector.H ../src/parameter/NOX_Parameter_Entry.H \
+NOX_Utils.o : ../src/parameter/NOX_Parameter_Entry.H \
 	../src/parameter/NOX_Parameter_List.H ../src/utils/NOX_Utils.H \
-	../src/epetra/NOX_Epetra_Group.C 
-	$(CXX) -c $(CXXFLAGS) ../src/epetra/NOX_Epetra_Group.C -o $@
+	../src/utils/NOX_Utils.C 
+	$(CXX) -c $(CXXFLAGS) ../src/utils/NOX_Utils.C -o $@
 

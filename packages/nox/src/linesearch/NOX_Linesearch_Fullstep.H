@@ -33,7 +33,7 @@ public:
   // derived
   bool operator()(Abstract::Group& newgrp, double& step, 
 		  const Abstract::Group& oldgrp, 
-		  const Abstract::Vector& dir) const;
+		  const Abstract::Vector& dir) ;
 private:
 
   //! Full step length

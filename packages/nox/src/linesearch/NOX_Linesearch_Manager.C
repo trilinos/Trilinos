@@ -15,6 +15,8 @@
 // Different line searches
 #include "NOX_Linesearch_Fullstep.H"
 #include "NOX_Linesearch_Halving.H"
+#include "NOX_Linesearch_Polynomial.H"
+#include "NOX_Linesearch_MoreThunte.H"
 
 using namespace NOX;
 using namespace NOX::Linesearch;
@@ -43,7 +45,7 @@ void Manager::reset(const Parameter::List& params)
 }
 
 bool Manager::operator()(Abstract::Group& newgrp, double& step, 
-			 const Abstract::Group& oldgrp, const Abstract::Vector& dir) const
+			 const Abstract::Group& oldgrp, const Abstract::Vector& dir) 
 {
   return ptr->operator()(newgrp, step, oldgrp, dir);
 }
@@ -74,6 +76,10 @@ void Manager::newPtr(const Parameter::List& params)
     ptr = new FullStep(params);
   else if (method == "Interval Halving")
     ptr = new Halving(params);
+  else if (method == "Polynomial")
+    ptr = new Polynomial(params);
+  else if (method == "More Thunte")
+    ptr = new MoreThunte(params);
   else {
     ptr = NULL;
     cout << "ERROR: invalid choice \"" << method << "\" for line search method "

@@ -34,7 +34,7 @@ void Halving::reset(const Parameter::List& params)
 }
 
 bool Halving::operator()(Abstract::Group& newgrp, double& step, 
-			 const Abstract::Group& oldgrp, const Abstract::Vector& dir) const
+			 const Abstract::Group& oldgrp, const Abstract::Vector& dir) 
 {
   double oldf = oldgrp.getNormRHS();
   double newf;

@@ -5,27 +5,28 @@
 ### NLSPACK Object File-Related Definitions
 ########################################################################
 
-NLSPACK_UTILS_OBJS = NOX_Utils.o
+NLSPACK_EPETRA_OBJS = NOX_Epetra_Group.o NOX_Epetra_SharedJacobian.o \
+	NOX_Epetra_Vector.o
 
-NLSPACK_PARAMETER_OBJS = NOX_Parameter_List.o NOX_Parameter_Entry.o
+NLSPACK_LINESEARCH_OBJS = NOX_Linesearch_Fullstep.o NOX_Linesearch_Halving.o \
+	NOX_Linesearch_Manager.o NOX_Linesearch_MoreThunte.o \
+	NOX_Linesearch_Polynomial.o
 
-NLSPACK_LINESEARCH_OBJS = NOX_Linesearch_Halving.o NOX_Linesearch_Manager.o \
-	NOX_Linesearch_Fullstep.o
+NLSPACK_PARAMETER_OBJS = NOX_Parameter_Entry.o NOX_Parameter_List.o
 
 NLSPACK_SOLVER_OBJS = NOX_Solver_Newton.o
 
-NLSPACK_STATUS_OBJS = NOX_Status_AbsResid.o NOX_Status_MaxResid.o \
-	NOX_Status_RelResid.o NOX_Status_Combo.o
+NLSPACK_STATUS_OBJS = NOX_Status_AbsResid.o NOX_Status_Combo.o \
+	NOX_Status_MaxResid.o NOX_Status_RelResid.o
 
-NLSPACK_EPETRA_OBJS = NOX_Epetra_SharedJacobian.o NOX_Epetra_Vector.o \
-	NOX_Epetra_Group.o
+NLSPACK_UTILS_OBJS = NOX_Utils.o
 
-NLSPACK_ALL_OBJS = $(NLSPACK_UTILS_OBJS) $(NLSPACK_PARAMETER_OBJS) \
-	$(NLSPACK_LINESEARCH_OBJS) $(NLSPACK_SOLVER_OBJS) \
-	$(NLSPACK_STATUS_OBJS) $(NLSPACK_EPETRA_OBJS) 
+NLSPACK_ALL_OBJS = $(NLSPACK_EPETRA_OBJS) $(NLSPACK_LINESEARCH_OBJS) \
+	$(NLSPACK_PARAMETER_OBJS) $(NLSPACK_SOLVER_OBJS) \
+	$(NLSPACK_STATUS_OBJS) $(NLSPACK_UTILS_OBJS) 
 
-NLSPACK_INCLUDES = -I$(NLSPACK_HOME)/src/utils -I$(NLSPACK_HOME)/src/abstract \
-	-I$(NLSPACK_HOME)/src/parameter -I$(NLSPACK_HOME)/src/linesearch \
-	-I$(NLSPACK_HOME)/src/solver -I$(NLSPACK_HOME)/src/status \
-	-I$(NLSPACK_HOME)/src/epetra 
+NLSPACK_INCLUDES = -I$(NLSPACK_HOME)/src/abstract \
+	-I$(NLSPACK_HOME)/src/epetra -I$(NLSPACK_HOME)/src/linesearch \
+	-I$(NLSPACK_HOME)/src/parameter -I$(NLSPACK_HOME)/src/solver \
+	-I$(NLSPACK_HOME)/src/status -I$(NLSPACK_HOME)/src/utils 
 

@@ -139,12 +139,14 @@ int main(int argc, char *argv[])
 
   // Sublist for linear solver
   NOX::Parameter::List& lsParams = nlParams.sublist("Linear Solver");
-  lsParams.setParameter("Max Iterations", 800);  
+  lsParams.setParameter("Max Iterations", 30);  
   lsParams.setParameter("Tolerance", 1e-4); 
 
   // Sublist for line search
   NOX::Parameter::List& searchParams = nlParams.sublist("Line Search");
-  searchParams.setParameter("Method", "Interval Halving");
+//  searchParams.setParameter("Method", "Full Step");
+//  searchParams.setParameter("Method", "Interval Halving");
+  searchParams.setParameter("Method", "Polynomial");
   searchParams.setParameter("Default Step", 1.0);
 
   // Create the interface between the test problem and the nonlinear solver

@@ -8,25 +8,25 @@
 // LICENSE & WARRANTY INFORMATION in README.txt and LICENSE.txt.
 // CONTACT T. Kolda (tgkolda@sandia.gov) or R. Pawlowski (rppawlo@sandia.gov)
 
-#ifndef _NOX_LINESEARCH_HALVING_H
-#define _NOX_LINESEARCH_HALVING_H
+#ifndef _NOX_MORETHUNTE_H
+#define _NOX_MORETHUNTE_H
 
 #include "NOX_Linesearch_Generic.H"
 
 namespace NOX {
 namespace Linesearch {
 
-//! Halve step until reduction in the RHS
+//! Use quad/cubic polynomial fit from Dennis & Schnabel
 
-class Halving : public Generic {
+class MoreThunte : public Generic {
 
 public:
 
   //! Constructor
-  Halving(const Parameter::List& params);
+  MoreThunte(const Parameter::List& params);
 
   //! Destructor
-  ~Halving();
+  ~MoreThunte();
   
   // derived
   void reset(const Parameter::List& params);
@@ -35,7 +35,16 @@ public:
   bool operator()(Abstract::Group& newgrp, double& step, 
 		  const Abstract::Group& oldgrp, 
 		  const Abstract::Vector& dir) ;
+
+  int MTStep(double*, double*, double*, double*, double*, double*, double*,
+           double*, double*, double*, double*, int*);
+//   int MTStep();
   
+  double mymin(double, double);
+
+  double mymax(double, double);
+
+
 private:
 
    //! Minimum step length (i.e., when we give up)

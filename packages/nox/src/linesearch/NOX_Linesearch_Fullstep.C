@@ -29,7 +29,7 @@ void FullStep::reset(const Parameter::List& params)
 }
 
 bool FullStep::operator()(Abstract::Group& newgrp, double& step, 
-			  const Abstract::Group& oldgrp, const Abstract::Vector& dir) const
+			  const Abstract::Group& oldgrp, const Abstract::Vector& dir)
 {
   step = defaultstep;
   newgrp.computeX(oldgrp, dir, step);
