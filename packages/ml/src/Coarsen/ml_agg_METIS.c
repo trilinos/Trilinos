@@ -72,6 +72,7 @@ int ML_Get_Compute_GraphRadiusFlag()
 int ML_Set_Compute_GraphRadiusFlag(int i) 
 {
   COMPUTE_GRAPH_RADIUS = i;
+  return 0;
 }
 
 /* ======================================================================== */
@@ -106,12 +107,9 @@ int ML_Aggregate_Set_NodesPerAggr( ML *ml, ML_Aggregate *ag,
 
   if( Nnodes_per_aggre <= 0 ) {
     fprintf( stderr,
-	     "*ML*ERR* Nlocal has an invalid value (%d)\n"
-	     "*ML*ERR* (file %s, line %d)\n",
-	     Nnodes_per_aggre,
-	     __FILE__,
-	     __LINE__ );
-    exit( EXIT_FAILURE );
+	     "*ML*WRN* Nlocal has an invalid value (%d). Set to default.\n ",
+	     Nnodes_per_aggre);
+    Nnodes_per_aggre = ML_Aggregate_Get_OptimalNumberOfNodesPerAggregate();
   }
   
   /* ********************************************************************** */
@@ -204,12 +202,9 @@ int ML_Aggregate_Set_LocalNumber( ML *ml, ML_Aggregate *ag,
 
   if( Nlocal <= 0 ) {
     fprintf( stderr,
-	     "*ML*ERR* Nlocal has an invalid value (%d)\n"
-	     "*ML*ERR* (file %s, line %d)\n",
-	     Nlocal,
-	     __FILE__,
-	     __LINE__ );
-    exit( EXIT_FAILURE );
+	     "*ML*WRN* Nlocal has an invalid value (%d). Set to 1.\n",
+	     Nlocal );
+    Nlocal = 1;
   }
   
   /* ********************************************************************** */
@@ -250,7 +245,7 @@ int ML_Aggregate_Set_LocalNumber( ML *ml, ML_Aggregate *ag,
 
   if( level >= 0 ) {
     pointer[level].Naggregates = Nlocal;
-    pointer[i].Nnodes_per_aggregate = -1;
+    pointer[level].Nnodes_per_aggregate = -1;
     pointer[level].local_or_global = ML_LOCAL_INDICES;
   } else {
     for( i=0 ; i<Nlevels ; i++ ) {
