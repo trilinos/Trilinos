@@ -30,4 +30,5 @@
 --enable-epetraext-coloring
 --enable-triutils
 --enable-tpetra
+--enable-pytrilinos
 --disable-default-packages

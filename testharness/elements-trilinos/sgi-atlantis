@@ -34,4 +34,5 @@
 --enable-kokkos
 --enable-new_package
 --enable-new_swahili
+--enable-pytrilinos
 --disable-default-packages

@@ -31,4 +31,5 @@
 --enable-triutils
 --enable-shared
 --disable-static
+--enable-pytrilinos
 --disable-default-packages

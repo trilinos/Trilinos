@@ -32,4 +32,5 @@
 --enable-ifpack
 --enable-aztecoo
 --enable-triutils
+--enable-pytrilinos
 --disable-default-packages
