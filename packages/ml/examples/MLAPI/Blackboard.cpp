@@ -64,20 +64,24 @@ int main(int argc, char *argv[])
     // may want to call MLAPI::Finalize() before quitting their applications.
     Init();
 
+#if 0
     // Declaration of some empty variables
     Operator A, B, C;
-    InverseOperator iA;
-    DoubleVector x, y, z;
-
+    InverseOperator invA;
+#endif
     // define the space in which operators and vectors will live
-    int NumMyElements = 16;
-    Space MySpace(NumMyElements);
+    int NumGlobalElements = 16;
+    Space MySpace(NumGlobalElements);
 
-    // shape vectors and assign values
-    x.Reshape(MySpace);
-    y.Reshape(MySpace);
-    z.Reshape(MySpace);
+    DoubleVector x(MySpace), y(MySpace), z(MySpace);
 
+    x = 1.0;
+    y = 2.0;
+    z = 3.0;
+    cout << x + x;
+    cout << x;
+
+#if 0
     x = 1.0;
     for (int i = 0 ; i < y.MyLength() ; ++i)
       y(i) = 1.0 * i;
@@ -115,13 +119,15 @@ int main(int argc, char *argv[])
 
     // use Amesos to apply the inverse of A using LU factorization
     ParameterList MLAPIList;
-    iA.Reshape(A,"Amesos", MLAPIList);
+    invA.Reshape(A,"Amesos", MLAPIList);
 
     // verify that x == inv(A) * A * x
-    x = iA / (A * x) - x;
+    x = invA * (A * x) - x;
     double NormX = sqrt(x * x);
     if (MyPID() == 0)
       cout << "Norm of inv(A) * A * x - x = " << NormX << endl;
+
+#endif
 
     // Finalize the MLAPI work space before leaving the application
     Finalize();

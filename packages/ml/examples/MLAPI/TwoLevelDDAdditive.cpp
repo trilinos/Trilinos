@@ -72,11 +72,11 @@ public:
     DoubleVector r_c(FineSolver_.DomainSpace());
 
     // apply fine level preconditioner
-    x_f = FineSolver_ / r_f;
+    x_f = FineSolver_ * r_f;
     // restrict to coarse
     r_c = R_ * r_f;
     // solve coarse problem
-    r_c = CoarseSolver_ / r_c;
+    r_c = CoarseSolver_ * r_c;
     // prolongate back and add to solution
     x_f = x_f + P_ * r_c;
 

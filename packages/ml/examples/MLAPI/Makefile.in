@@ -42,9 +42,8 @@ POST_UNINSTALL = :
 host_triplet = @host@
 noinst_PROGRAMS = Blackboard$(EXEEXT) PowerMethod$(EXEEXT) \
 	TwoLevelDDAdditive$(EXEEXT) MultiLevel$(EXEEXT)
-DIST_COMMON = README $(srcdir)/../Makefile-common.include \
-	$(srcdir)/Makefile.am $(srcdir)/Makefile.in
 subdir = examples/MLAPI
+DIST_COMMON = README $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/config/ac_cxx_bool.m4 \
 	$(top_srcdir)/config/ac_cxx_have_stl.m4 \
@@ -245,6 +244,9 @@ target_alias = @target_alias@
 target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
+ml_common_include_locations = $(ML_EXPORT_INCLUDES)
+ml_libs = $(ML_EXPORT_LIBS) $(LIBS) $(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS)
+mllink = $(CXX) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
 Blackboard_SOURCES = $(srcdir)/Blackboard.cpp
 Blackboard_CPPFLAGS = ${ml_common_include_locations}
 Blackboard_CXXFLAGS = ${ml_common_include_locations}
@@ -265,119 +267,11 @@ MultiLevel_CPPFLAGS = ${ml_common_include_locations}
 MultiLevel_CXXFLAGS = ${ml_common_include_locations}
 MultiLevel_LDADD = ${ml_libs} 
 MultiLevel_LINK = ${mllink}
-
-####################
-# include locations
-####################
-ml_common_include_locations = $(ML_EXPORT_INCLUDES)
-
-####################
-# libraries
-####################
-ml_libs = $(ML_EXPORT_LIBS)     \
-                $(LIBS)               \
-                $(LAPACK_LIBS)        \
-                $(BLAS_LIBS)          \
-                $(FLIBS)
-
-
-###############
-# sources
-###############
-mlguide_SOURCES = $(srcdir)/mlguide.c
-mlguide_par_SOURCES = $(srcdir)/mlguide_par.c
-ml_aztec_simple_SOURCES = $(srcdir)/ml_aztec_simple.c
-ml_example1d_SOURCES = $(srcdir)/ml_example1d.c
-ml_example1dGS_SOURCES = $(srcdir)/ml_example1dGS.c
-ml_example2d_SOURCES = $(srcdir)/ml_example2d.c
-ml_example3d_SOURCES = $(srcdir)/ml_example3d.c
-ml_simple_max_SOURCES = $(srcdir)/ml_simple_max.c
-ml_readfile_SOURCES = $(srcdir)/ml_readfile.c
-ml_read_elas_SOURCES = $(srcdir)/ml_read_elas.c
-ml_recirc_SOURCES = $(srcdir)/ml_recirc.c
-ml_read_salsa_SOURCES = $(srcdir)/ml_read_salsa.c
-ml_preconditioner_SOURCES = $(srcdir)/ml_preconditioner.cpp
-ml_operator_SOURCES = $(srcdir)/ml_operator.cpp
-ml_AztecMsr_SOURCES = $(srcdir)/ml_AztecMsr.cpp
-ml_filtering_SOURCES = $(srcdir)/ml_filtering.cpp
-ml_user_aggr_SOURCES = $(srcdir)/ml_user_aggr.cpp
-ml_EpetraVbr_SOURCES = $(srcdir)/ml_EpetraVbr.cpp
-ml_analyze_SOURCES = $(srcdir)/ml_analyze.cpp
-ml_maxwell_SOURCES = $(srcdir)/ml_maxwell.cpp
-ml_example_elasticity_SOURCES = $(srcdir)/ml_example_elasticity.c
-ml_read_matrix_AIJ_SOURCES = $(srcdir)/ml_read_matrix_AIJ.cpp
-ml_multiple_rhs_SOURCES = $(srcdir)/ml_multiple_rhs.cpp
-ml_read_maxwell_SOURCES = $(srcdir)/ml_read_maxwell.c
-
-##################
-# common link line
-##################
-mllink = $(CXX) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
-
-############################################
-# specific include, library, and link lines
-############################################
-mlguide_CFLAGS = ${ml_common_include_locations}
-mlguide_LDADD = ${ml_libs}
-mlguide_LINK = ${mllink}
-mlguide_par_CFLAGS = ${ml_common_include_locations}
-mlguide_par_LDADD = ${ml_libs}
-mlguide_par_LINK = ${mllink}
-ml_example1d_CFLAGS = ${ml_common_include_locations}
-ml_example1d_LDADD = ${ml_libs}
-ml_example1d_LINK = ${mllink}
-ml_example1dGS_CFLAGS = ${ml_common_include_locations}
-ml_example1dGS_LDADD = ${ml_libs}
-ml_example1dGS_LINK = ${mllink}
-ml_example2d_CFLAGS = ${ml_common_include_locations}
-ml_example2d_LDADD = ${ml_libs}
-ml_example2d_LINK = ${mllink}
-ml_example3d_CFLAGS = ${ml_common_include_locations}
-ml_example3d_LDADD = ${ml_libs}
-ml_example3d_LINK = ${mllink}
-ml_simple_max_CFLAGS = ${ml_common_include_locations}
-ml_simple_max_LDADD = ${ml_libs}
-ml_simple_max_LINK = ${mllink}
-ml_readfile_CFLAGS = ${ml_common_include_locations}
-ml_readfile_LDADD = ${ml_libs}
-ml_readfile_LINK = ${mllink}
-ml_read_elas_CFLAGS = ${ml_common_include_locations}
-ml_read_elas_LDADD = ${ml_libs}
-ml_read_elas_LINK = ${mllink}
-ml_recirc_CFLAGS = ${ml_common_include_locations}
-ml_recirc_LDADD = ${ml_libs}
-ml_recirc_LINK = ${mllink}
-ml_read_salsa_CFLAGS = ${ml_common_include_locations}
-ml_read_salsa_LDADD = ${ml_libs}
-ml_read_salsa_LINK = ${mllink}
-ml_AztecMsr_CPPFLAGS = ${ml_common_include_locations}
-ml_AztecMsr_CXXFLAGS = ${ml_common_include_locations}
-ml_AztecMsr_LDADD = ${ml_libs} 
-ml_AztecMsr_LINK = ${mllink}
-ml_EpetraVbr_CPPFLAGS = ${ml_common_include_locations}
-ml_EpetraVbr_CXXFLAGS = ${ml_common_include_locations}
-ml_EpetraVbr_LDADD = ${ml_libs}
-ml_EpetraVbr_LINK = ${mllink}
-ml_read_matrix_AIJ_CPPFLAGS = ${ml_common_include_locations}
-ml_read_matrix_AIJ_CXXFLAGS = ${ml_common_include_locations}
-ml_read_matrix_AIJ_LDADD = ${ml_libs}
-ml_read_matrix_AIJ_LINK = ${mllink}
-ml_maxwell_CPPFLAGS = ${ml_common_include_locations}
-ml_maxwell_CXXFLAGS = ${ml_common_include_locations}
-ml_maxwell_LDADD = ${ml_libs}
-ml_maxwell_LINK = ${mllink}
-ml_multiple_rhs_CPPFLAGS = ${ml_common_include_locations}
-ml_multiple_rhs_CXXFLAGS = ${ml_common_include_locations}
-ml_multiple_rhs_LDADD = ${ml_libs}
-ml_multiple_rhs_LINK = ${mllink}
-ml_example_elasticity_CFLAGS = ${ml_common_include_locations}
-ml_example_elasticity_LDADD = ${ml_libs}
-ml_example_elasticity_LINK = ${mllink}
 all: all-am
 
 .SUFFIXES:
 .SUFFIXES: .cpp .o .obj
-$(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am $(srcdir)/../Makefile-common.include $(am__configure_deps)
+$(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am  $(am__configure_deps)
 	@for dep in $?; do \
 	  case '$(am__configure_deps)' in \
 	    *$$dep*) \
@@ -561,7 +455,6 @@ distclean-tags:
 	-rm -f TAGS ID GTAGS GRTAGS GSYMS GPATH tags
 
 distdir: $(DISTFILES)
-	$(mkdir_p) $(distdir)/..
 	@srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`; \
 	topsrcdirstrip=`echo "$(top_srcdir)" | sed 's|.|.|g'`; \
 	list='$(DISTFILES)'; for file in $$list; do \
@@ -679,8 +572,6 @@ uninstall-am: uninstall-info-am
 
 # include definitions of ML_EXPORT_INCLUDES and ML_EXPORT_LIBS
 include $(top_builddir)/Makefile.export
-
-# source file definitions, link lines
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:
