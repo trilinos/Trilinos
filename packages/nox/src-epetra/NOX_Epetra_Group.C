@@ -794,7 +794,7 @@ bool Group::computePreconditioner(AztecOO& aztec) const
 	.computePreconditioner(xVector.getEpetraVector(), precMatrix);
     }
     else 
-      userInterface.computePreconditioner(xVector.getEpetraVector(), precMatrix);
+      userInterface.computePrecMatrix(xVector.getEpetraVector(), precMatrix);
     
     aztec.SetPrecMatrix(&precMatrix);
   }
@@ -815,6 +815,7 @@ bool Group::computePreconditioner(AztecOO& aztec) const
     else {
       // (2) Supply an Epetra_Operator derived class and implement 
       // the NOX::Epetra::Interface::computePreconditioner() method
+      // to evaluate it at the current solution.
       userInterface.computePreconditioner(xVector.getEpetraVector(),
 					  precOperator);
     }

@@ -29,7 +29,7 @@ bool Problem_Interface::computeJacobian(const Epetra_Vector& x, Epetra_Operator&
   return problem.evaluate(MATRIX_ONLY, &x, NULL, Jacobian);
 }
 
-bool Problem_Interface::computePreconditioner(const Epetra_Vector& x, Epetra_RowMatrix& M)
+bool Problem_Interface::computePrecMatrix(const Epetra_Vector& x, Epetra_RowMatrix& M)
 {
   Epetra_RowMatrix* precMatrix = dynamic_cast<Epetra_RowMatrix*>(&M);
   if (precMatrix == NULL) {

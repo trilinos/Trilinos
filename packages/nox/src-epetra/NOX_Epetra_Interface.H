@@ -69,7 +69,7 @@ public:
   virtual bool computeJacobian(const Epetra_Vector& x, Epetra_Operator& Jac) = 0;
 
   //! Compute the Epetra_RowMatrix M, that will be used by the Aztec preconditioner instead of the Jacobian.  This is used when there is no explicit Jacobian present (i.e. Matrix-Free Newton-Krylov).  This MUST BE an Epetra_RowMatrix since the Aztec preconditioners need to know the sparsity pattern of the matrix.  Returns true if computation was successful.
-  virtual bool computePreconditioner(const Epetra_Vector& x, Epetra_RowMatrix& M) = 0;
+  virtual bool computePrecMatrix(const Epetra_Vector& x, Epetra_RowMatrix& M) = 0;
 
   //! Computes a user supplied preconditioner based on input vector x.  Returns true if computation was successful.
   virtual bool computePreconditioner(const Epetra_Vector& x, Epetra_Operator& M) = 0;
