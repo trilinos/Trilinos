@@ -39,16 +39,17 @@ Trilinos website: http://software.sandia.gov/trilinos
 
 ================================================================================
 
-Amesos
+Amesos (version 2.0)
 
 - Improved handling of Epetra_RowMatrix operators 
 - Memory leaks have been reduced 
 - Simplified configuration using
-    --with-libs=-L/home/kstanley/Trilinos3PL/lib
+    --with-ldflags=-L/home/kstanley/Trilinos3PL/lib
+    --with-libs=-lsuperludist
     --with-incdirs=-I/home/kstanley/Trilinos3PL/include
 - Known bugs: 
   - Amesos_Dscpack has memory leaks, prints to standard out and may crash if 
-    SymbolicFacgtorization() is called multiple times on the same Amesos 
+    SymbolicFactorization() is called multiple times on the same Amesos 
     object. 
   - Amesos packages do not accept non-contiguous maps (e.g. one with indices 
     {1,2,5,8,9, ... } ) 
@@ -176,9 +177,26 @@ LOCA
 
 --------------------------------------------------------------------------------
 
-ML
+ML (version 3.1)
 
-- No notable new features. 
+- ML now supports Zoltan as a coarsening scheme (RCB only). Zoltan
+  can be used to create the aggregates and to redistribute
+  the next-level operator among the specified number of
+  processors (which can be less than the available number of processes,
+  for Maxwell solver only).
+- a variable-block partitioning scheme (based on METIS) is now available. 
+- ML now supports IFPACK smoothers, like variable block Jacobi, 
+  Gauss-Seidel and symmetric Gauss-Seidel preconditioners, and 
+  generic additive Schwarz preconditioner.
+- Updated ML user's guide and Doxygen documentation.
+- Improved MultiLevelPreconditioner class (now derived from
+  Epetra_Operator and no longer from Epetra_RowMatrix). Updated
+  filtering/GGB algorithm, based on the Anasazi package.
+- Solving Maxwell equations via MultiLevelPreconditioner is now supported.
+- Improved organization of the examples, more detailed comments and 
+  additional README files. 
+- Wrapping an ML_Operator struct as Epetra_RowMatrix is now supported.
+- Improved test coverage.
 
 --------------------------------------------------------------------------------
 
