@@ -1,6 +1,20 @@
+/*****************************************************************************
+ * Zoltan Dynamic Load-Balancing Library for Parallel Applications           *
+ * Copyright (c) 2000, Sandia National Laboratories.                         *
+ * This software is distributed under the GNU Lesser General Public License. *
+ * For more info, see the README file in the top-level Zoltan directory.     *
+ *****************************************************************************/
+/*****************************************************************************
+ * CVS File Information :
+ *    $RCSfile$
+ *    $Author$
+ *    $Date$
+ *    $Revision$
+ ****************************************************************************/
+
 #include <stdio.h>
 #include "mpi.h"
-#include "comm_const.h"
+#include "comm.h"
 #include "mem_const.h"
 
 /* Knowing who I send to, determine how many messages I'll receive, */
@@ -17,7 +31,7 @@
 /*****************************************************************************/
 /*****************************************************************************/
 
-int       LB_Comm_Invert_Map(
+int       Zoltan_Comm_Invert_Map(
 int      *lengths_to,		/* number of items I'm sending */
 int      *procs_to,		/* procs I send to */
 int       nsends,		/* number of messages I'll send */
@@ -48,7 +62,7 @@ MPI_Comm  comm)			/* communicator */
     if (i) {
 	ZOLTAN_FREE((void **) &counts);
 	ZOLTAN_FREE((void **) &msg_count);
-	return(COMM_MEMERR);
+	return(ZOLTAN_MEMERR);
     }
 
     for (i = 0; i < nprocs; i++) {
@@ -96,11 +110,11 @@ MPI_Comm  comm)			/* communicator */
     
     /* Sort recv lists to keep execution deterministic (e.g. for debugging) */
 
-    LB_Comm_Sort_Ints(procs_from, lengths_from, nrecvs);
+    Zoltan_Comm_Sort_Ints(procs_from, lengths_from, nrecvs);
 
     *plengths_from = lengths_from;
     *pprocs_from = procs_from;
     *pnrecvs = nrecvs - self_msg;    /* Only return number of true messages */
 
-    return(COMM_OK);
+    return(ZOLTAN_OK);
 }

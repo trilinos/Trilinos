@@ -1,7 +1,21 @@
+/*****************************************************************************
+ * Zoltan Dynamic Load-Balancing Library for Parallel Applications           *
+ * Copyright (c) 2000, Sandia National Laboratories.                         *
+ * This software is distributed under the GNU Lesser General Public License. *
+ * For more info, see the README file in the top-level Zoltan directory.     *
+ *****************************************************************************/
+/*****************************************************************************
+ * CVS File Information :
+ *    $RCSfile$
+ *    $Author$
+ *    $Date$
+ *    $Revision$
+ ****************************************************************************/
+
 #include <stdio.h>
 #include <stdlib.h>
 #include "mpi.h"
-#include "comm_const.h"
+#include "comm.h"
 #include "mem_const.h"
 
 void gen_comm_data(), extract_comm_answer(), free_comm_data();
@@ -42,7 +56,7 @@ struct Answer {
 int main(int argc, char *argv[])
 {
     FILE     *in_file;		/* file with data for problems */
-    struct Comm_Obj *plan;	/* communication data structure pointer */
+    ZOLTAN_COMM_OBJ *plan;	/* communication data structure pointer */
     struct Params params;	/* parameters describing a problem */
     struct Data data;		/* data describing a problem instance */
     struct Data my_send_data;	/* data I initially own */
@@ -94,7 +108,7 @@ if (out_level > 2) print_data("MY_DATA", &my_send_data);
 
 if (out_level > 1) printf("%d: About to call comm_create\n", my_proc);
 	/* Call comm routines */
-	LB_Comm_Create(&plan, my_send_data.nvals, my_send_data.proc_dest,
+	Zoltan_Comm_Create(&plan, my_send_data.nvals, my_send_data.proc_dest,
 	    MPI_COMM_WORLD, 1, &nvals_recv);
 
 
@@ -105,9 +119,9 @@ if (out_level > 2) print_plan("BEFORE RESIZE", plan, my_proc);
 
 	if (my_send_data.sizes != NULL) {
 if (out_level > 1) printf("%d: About to call comm_resize\n", my_proc);
-	    LB_Comm_Resize(plan, my_send_data.sizes, 43, NULL);
-	    LB_Comm_Resize(plan, NULL, 43, NULL);
-	    LB_Comm_Resize(plan, my_send_data.sizes, 43, NULL);
+	    Zoltan_Comm_Resize(plan, my_send_data.sizes, 43, NULL);
+	    Zoltan_Comm_Resize(plan, NULL, 43, NULL);
+	    Zoltan_Comm_Resize(plan, my_send_data.sizes, 43, NULL);
 if (out_level > 2) print_plan("AFTER RESIZE", plan, my_proc);
 	}
 
@@ -115,10 +129,10 @@ if (out_level > 2) print_plan("AFTER RESIZE", plan, my_proc);
 	else nbytes = sizeof(float);
 
 if (out_level > 1) printf("%d: About to call comm_do\n", my_proc);
-	flag = LB_Comm_Do(plan, 2, (char *) my_send_data.vals, nbytes,
+	flag = Zoltan_Comm_Do(plan, 2, (char *) my_send_data.vals, nbytes,
 	    (char *) recv_data);
 
-	if (flag == COMM_OK) {
+	if (flag == ZOLTAN_OK) {
 if (out_level > 1) printf("%d: About to call check_answer\n", my_proc);
 	    /* Check answers */
 	    check_comm_answer(&true_answer, recv_data, my_proc);
@@ -130,15 +144,15 @@ if (out_level > 1) printf("%d: About to call check_answer\n", my_proc);
 if (out_level > 1) printf("%d: About to call comm_do_reverse\n", my_proc);
 	i = (true_answer.sizes != NULL && plan->indices_to != NULL);
 	MPI_Allreduce(&i, &j, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
-	if (j == 0) flag = LB_Comm_Do_Reverse(plan, 2, (char *) recv_data,
+	if (j == 0) flag = Zoltan_Comm_Do_Reverse(plan, 2, (char *) recv_data,
 	    nbytes, true_answer.sizes, (char *) reverse_data);
 	else {
 	    if (my_proc == 0)
 		printf(">> Non-blocked, variable-sized recvs not supported\n");
-	    flag = COMM_FATAL;
+	    flag = ZOLTAN_FATAL;
 	}
 
-	if (flag == COMM_OK) {
+	if (flag == ZOLTAN_OK) {
 if (out_level > 1) printf("%d: About to call check_answer_reverse\n", my_proc);
 	    /* Check answers */
 	    check_comm_answer_reverse(&my_send_data, reverse_data, my_proc);
@@ -154,7 +168,7 @@ if (out_level > 1) printf("%d: Comm_Do_Reverse returned error code %d\n", my_pro
 
 	free_comm_data(&data, &my_send_data, &true_answer);
 
-	LB_Comm_Destroy(&plan);
+	Zoltan_Comm_Destroy(&plan);
 
 	/* Read some problem descriptors from a file */
 	more_problems = read_comm_problem(in_file, &params, &out_level, my_proc);
@@ -591,7 +605,7 @@ struct Data *data)
 
 void print_plan(
 char *s,
-struct Comm_Obj *plan,	/* communication data structure pointer */
+ZOLTAN_COMM_OBJ *plan,	/* communication data structure pointer */
 int my_proc)
 {
     int i;

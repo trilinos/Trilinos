@@ -1,11 +1,19 @@
 /*****************************************************************************
  * Zoltan Dynamic Load-Balancing Library for Parallel Applications           *
  * Copyright (c) 2000, Sandia National Laboratories.                         *
+ * This software is distributed under the GNU Lesser General Public License. *
  * For more info, see the README file in the top-level Zoltan directory.     *
  *****************************************************************************/
+/*****************************************************************************
+ * CVS File Information :
+ *    $RCSfile$
+ *    $Author$
+ *    $Date$
+ *    $Revision$
+ ****************************************************************************/
 
 #include <stdio.h>
-#include "comm_const.h"
+#include "comm.h"
 #include "mem_const.h"
 
 
@@ -15,15 +23,15 @@
 /* same size.  If this isn't the case, a subsequent call to Comm_Resize  */
 /* is needed. */
 
-int LB_Comm_Create(
-COMM_OBJ **cobj,		/* returned communicator object */
+int Zoltan_Comm_Create(
+ZOLTAN_COMM_OBJ **cobj,		/* returned communicator object */
 int       nvals,		/* number of values I currently own */
 int      *assign,		/* processor assignment for all my values */
 MPI_Comm  comm,			/* communicator for xfer operation */
 int       tag,			/* message tag I can use */
 int      *pnvals_recv)		/* returned # vals I own after communication */
 {
-    COMM_OBJ *plan;		/* returned communication data structure */
+    ZOLTAN_COMM_OBJ *plan;		/* returned communication data structure */
     int      *starts=NULL;	/* pointers into list of vals for procs */
     int      *lengths_to=NULL;	/* lengths of messages I'll send */
     int      *procs_to=NULL;	/* processors I'll send to */
@@ -47,14 +55,14 @@ int      *pnvals_recv)		/* returned # vals I own after communication */
     int       out_of_mem;	/* am I out of memory? */
     int       comm_flag;	/* status flag */
     int       i, j;		/* loop counters */
-    static char *yo = "LB_Comm_Create";
+    static char *yo = "Zoltan_Comm_Create";
 
     if (comm == MPI_COMM_NULL){
-      COMM_ERROR("Invalid communicator: MPI_COMM_NULL.", yo, -1);
-      return COMM_FATAL;
+      ZOLTAN_COMM_ERROR("Invalid communicator: MPI_COMM_NULL.", yo, -1);
+      return ZOLTAN_FATAL;
     }
 
-    comm_flag = COMM_OK;
+    comm_flag = ZOLTAN_OK;
     MPI_Comm_rank(comm, &my_proc);
     MPI_Comm_size(comm, &nprocs);
 
@@ -127,7 +135,7 @@ int      *pnvals_recv)		/* returned # vals I own after communication */
 	/* Now sort the outgoing procs. */
 	/* This keeps recvs deterministic if I ever invert communication */
 	/* It also allows for better balance of traffic in comm_do */
-	LB_Comm_Sort_Ints(procs_to, starts_to, nsends);
+	Zoltan_Comm_Sort_Ints(procs_to, starts_to, nsends);
 
 	max_send_size = 0;
 	for (i = 0; i < nsends; i++) {
@@ -211,13 +219,13 @@ int      *pnvals_recv)		/* returned # vals I own after communication */
 Mem_Err:
 
     /* Determine how many messages & what length I'll receive. */
-    comm_flag = LB_Comm_Invert_Map(lengths_to, procs_to, nsends, self_msg,
+    comm_flag = Zoltan_Comm_Invert_Map(lengths_to, procs_to, nsends, self_msg,
 	       &lengths_from, &procs_from, &nrecvs, my_proc, nprocs,
 	       out_of_mem,tag, comm);
 
     starts_from = (int *) ZOLTAN_MALLOC((nrecvs + self_msg) * sizeof(int));
     if (starts_from == NULL && nrecvs + self_msg != 0) {
-	comm_flag = COMM_MEMERR;
+	comm_flag = ZOLTAN_MEMERR;
     }
     else {
         j = 0;
@@ -227,9 +235,9 @@ Mem_Err:
         }
     }
     
-    if (comm_flag != COMM_OK && comm_flag != COMM_WARN) {
-        if (comm_flag == COMM_MEMERR) {
-	    COMM_ERROR("Out of memory", yo, my_proc);
+    if (comm_flag != ZOLTAN_OK && comm_flag != ZOLTAN_WARN) {
+        if (comm_flag == ZOLTAN_MEMERR) {
+	    ZOLTAN_COMM_ERROR("Out of memory", yo, my_proc);
 	}
 	ZOLTAN_FREE((void **) &starts_from);
 	ZOLTAN_FREE((void **) &indices_to);
@@ -244,7 +252,7 @@ Mem_Err:
     for (i = 0; i < nrecvs + self_msg; i++)
 	total_recv_size += lengths_from[i];
 
-    plan = (COMM_OBJ *) ZOLTAN_MALLOC(sizeof(COMM_OBJ));
+    plan = (ZOLTAN_COMM_OBJ *) ZOLTAN_MALLOC(sizeof(ZOLTAN_COMM_OBJ));
     plan->lengths_to = lengths_to;
     plan->starts_to = starts_to;
     plan->procs_to = procs_to;
@@ -277,7 +285,7 @@ Mem_Err:
     plan->status = (MPI_Status *) ZOLTAN_MALLOC(plan->nrecvs * sizeof(MPI_Status));
 
     if (plan->nrecvs && ((plan->request == NULL) || (plan->status == NULL))) 
-        comm_flag = COMM_MEMERR;
+        comm_flag = ZOLTAN_MEMERR;
 
     *pnvals_recv = total_recv_size;
     *cobj = plan;

@@ -1,5 +1,19 @@
+/*****************************************************************************
+ * Zoltan Dynamic Load-Balancing Library for Parallel Applications           *
+ * Copyright (c) 2000, Sandia National Laboratories.                         *
+ * This software is distributed under the GNU Lesser General Public License. *
+ * For more info, see the README file in the top-level Zoltan directory.     *
+ *****************************************************************************/
+/*****************************************************************************
+ * CVS File Information :
+ *    $RCSfile$
+ *    $Author$
+ *    $Date$
+ *    $Revision$
+ ****************************************************************************/
+
 #include <stdio.h>
-#include "comm_const.h"
+#include "comm.h"
 
 /* Given a list of processors & message data, sort them by proc ID */
 
@@ -7,7 +21,7 @@
 /*****************************************************************************/
 /*****************************************************************************/
 
-int       LB_Comm_Sort_Ints(
+int       Zoltan_Comm_Sort_Ints(
 int      *vals_sort,		/* values to be sorted */
 int      *vals_other,		/* other array to be reordered w/ sort */
 int       nvals)		/* length of these two arrays */
@@ -21,7 +35,7 @@ int       nvals)		/* length of these two arrays */
     int       lo, hi;		/* counters from bottom and top of array */
     int       pivot;		/* value to partition with */
 
-    if (nvals <= 1) return(COMM_OK);
+    if (nvals <= 1) return(ZOLTAN_OK);
 
     /* Partition */
     lo = nvals/2;
@@ -52,10 +66,10 @@ int       nvals)		/* length of these two arrays */
     } 
 
     /* Recurse */
-    if (hi + 1 > 1) LB_Comm_Sort_Ints(vals_sort, vals_other, hi + 1);
+    if (hi + 1 > 1) Zoltan_Comm_Sort_Ints(vals_sort, vals_other, hi + 1);
     if (nvals - hi - 1 > 1)
-	LB_Comm_Sort_Ints(&vals_sort[hi + 1], &vals_other[hi + 1], nvals - hi - 1);
+	Zoltan_Comm_Sort_Ints(&vals_sort[hi + 1], &vals_other[hi + 1], nvals - hi - 1);
 
 
-    return(COMM_OK);
+    return(ZOLTAN_OK);
 }

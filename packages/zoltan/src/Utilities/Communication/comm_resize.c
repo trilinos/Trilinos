@@ -1,14 +1,28 @@
+/*****************************************************************************
+ * Zoltan Dynamic Load-Balancing Library for Parallel Applications           *
+ * Copyright (c) 2000, Sandia National Laboratories.                         *
+ * This software is distributed under the GNU Lesser General Public License. *
+ * For more info, see the README file in the top-level Zoltan directory.     *
+ *****************************************************************************/
+/*****************************************************************************
+ * CVS File Information :
+ *    $RCSfile$
+ *    $Author$
+ *    $Date$
+ *    $Revision$
+ ****************************************************************************/
+
 #include <stdio.h>
 #include "mpi.h"
-#include "comm_const.h"
+#include "comm.h"
 #include "mem_const.h"
 
 /*****************************************************************************/
 /*****************************************************************************/
 /*****************************************************************************/
 
-int       LB_Comm_Resize(
-COMM_OBJ *plan,			/* communication plan object */
+int       Zoltan_Comm_Resize(
+ZOLTAN_COMM_OBJ *plan,			/* communication plan object */
 int      *sizes,		/* size of each item I'm sending */
 int       tag,			/* message tag I can use */
 int      *sum_recv_sizes)       /* sum of the sizes of the items I'll receive */
@@ -31,7 +45,7 @@ int      *sum_recv_sizes)       /* sum of the sizes of the items I'll receive */
 					/* ordered like procs_from */
     int       var_sizes;        /* items have variable sizes? */
     int       i, j, k;		/* loop counters */
-    static char *yo = "LB_Comm_Resize";
+    static char *yo = "Zoltan_Comm_Resize";
 
 
     /* If sizes vary, then I need to compute and communicate message lengths */
@@ -44,8 +58,8 @@ int      *sum_recv_sizes)       /* sum of the sizes of the items I'll receive */
 
     if (var_sizes && plan->indices_from != NULL) {
         /* Can't do w/o individual item sizes */
-	COMM_ERROR("Non-blocked, variable-sized recvs not supported", yo, my_proc);
-	return(COMM_FATAL);
+	ZOLTAN_COMM_ERROR("Non-blocked, variable-sized recvs not supported", yo, my_proc);
+	return(ZOLTAN_FATAL);
     }
 
     ZOLTAN_FREE((void *) &plan->sizes);
@@ -73,27 +87,27 @@ int      *sum_recv_sizes)       /* sum of the sizes of the items I'll receive */
 	        plan->max_send_size = plan->lengths_to[i];
 	    }
 	}
-	return_flag = COMM_OK;
+	return_flag = ZOLTAN_OK;
     }
 
     else {		/* Need to actually compute message sizes */
 	plan->sizes = (int *) ZOLTAN_MALLOC((plan->nvals + 1) * sizeof(int));
 	if (plan->sizes == NULL) {
-	    return_flag = COMM_MEMERR;
+	    return_flag = ZOLTAN_MEMERR;
 	    goto Mem_Err;
 	}
 	for (i = 0; i < plan->nvals; i++) plan->sizes[i] = sizes[i];
 
-	return_flag = COMM_OK;
+	return_flag = ZOLTAN_OK;
 	sizes_to = (int *) ZOLTAN_MALLOC((nsends + self_msg) * sizeof(int));
 	if (sizes_to == NULL && (nsends + self_msg) != 0) {
-	    return_flag = COMM_MEMERR;
+	    return_flag = ZOLTAN_MEMERR;
 	    goto Mem_Err;
 	}
 
 	sizes_from = (int *) ZOLTAN_MALLOC((nrecvs + self_msg) * sizeof(int));
 	if (sizes_from == NULL && (nrecvs + self_msg) != 0) {
-	    return_flag = COMM_MEMERR;
+	    return_flag = ZOLTAN_MEMERR;
 	    goto Mem_Err;
 	}
 
@@ -110,7 +124,7 @@ int      *sum_recv_sizes)       /* sum of the sizes of the items I'll receive */
 	*/
 	starts_to_ptr = (int *) ZOLTAN_MALLOC((nsends + self_msg) * sizeof(int));
 	if (starts_to_ptr == NULL && (nsends + self_msg) != 0) {
-	    return_flag = COMM_MEMERR;
+	    return_flag = ZOLTAN_MEMERR;
 	    goto Mem_Err;
 	}
 
@@ -120,7 +134,7 @@ int      *sum_recv_sizes)       /* sum of the sizes of the items I'll receive */
 	    index = (int *) ZOLTAN_MALLOC((nsends + self_msg) * sizeof(int));
 	    sort_val = (int *) ZOLTAN_MALLOC((nsends + self_msg) * sizeof(int));
 	    if ((index == NULL || sort_val == NULL) && nsends + self_msg > 0) {
-	        return_flag = COMM_MEMERR;
+	        return_flag = ZOLTAN_MEMERR;
 	        goto Mem_Err;
 	    }
 
@@ -138,7 +152,7 @@ int      *sum_recv_sizes)       /* sum of the sizes of the items I'll receive */
 		sort_val[i] = plan->starts_to[i];
 		index[i] = i;
 	    }
-	    LB_Comm_Sort_Ints(sort_val, index, nsends + self_msg);
+	    Zoltan_Comm_Sort_Ints(sort_val, index, nsends + self_msg);
 
 
 	    sum = 0;
@@ -155,7 +169,7 @@ int      *sum_recv_sizes)       /* sum of the sizes of the items I'll receive */
 	    offset = (int *) ZOLTAN_MALLOC(plan->nvals * sizeof(int));
 	    indices_to_ptr = (int *) ZOLTAN_MALLOC(plan->nvals * sizeof(int));
 	    if ((offset == NULL || indices_to_ptr == NULL) && plan->nvals != 0) {
-	        return_flag = COMM_MEMERR;
+	        return_flag = ZOLTAN_MEMERR;
 	        goto Mem_Err;
 	    }
 
@@ -188,13 +202,13 @@ int      *sum_recv_sizes)       /* sum of the sizes of the items I'll receive */
 	/*	Anything requiring item sizes requires more code */
 	/*      Should such functionality reside here? */
 
-	LB_Comm_Exchange_Sizes(sizes_to, plan->procs_to, nsends, self_msg,
+	Zoltan_Comm_Exchange_Sizes(sizes_to, plan->procs_to, nsends, self_msg,
 	    sizes_from, plan->procs_from, nrecvs, 
 	    &plan->total_recv_size, my_proc, tag, plan->comm);
 
 	starts_from_ptr = (int *) ZOLTAN_MALLOC((nrecvs + self_msg) * sizeof(int));
 	if (starts_from_ptr == NULL && (nrecvs + self_msg) != 0) {
-	    return_flag = COMM_MEMERR;
+	    return_flag = ZOLTAN_MEMERR;
 	    goto Mem_Err;
 	}
 
@@ -205,7 +219,7 @@ int      *sum_recv_sizes)       /* sum of the sizes of the items I'll receive */
 	    index = (int *) ZOLTAN_MALLOC((nrecvs + self_msg) * sizeof(int));
 	    sort_val = (int *) ZOLTAN_MALLOC((nrecvs + self_msg) * sizeof(int));
 	    if ((index == NULL || sort_val == NULL) && nrecvs + self_msg > 0) {
-	        return_flag = COMM_MEMERR;
+	        return_flag = ZOLTAN_MEMERR;
 	        goto Mem_Err;
 	    }
 
@@ -213,7 +227,7 @@ int      *sum_recv_sizes)       /* sum of the sizes of the items I'll receive */
 		sort_val[i] = plan->starts_from[i];
 		index[i] = i;
 	    }
-	    LB_Comm_Sort_Ints(sort_val, index, nrecvs + self_msg);
+	    Zoltan_Comm_Sort_Ints(sort_val, index, nrecvs + self_msg);
 
 	    sum = 0;
 	    for (i = 0; i < nrecvs + self_msg; i++) {
@@ -233,7 +247,7 @@ int      *sum_recv_sizes)       /* sum of the sizes of the items I'll receive */
     }
 
 Mem_Err:
-    if (return_flag == COMM_MEMERR) {
+    if (return_flag == ZOLTAN_MEMERR) {
 	ZOLTAN_FREE((void *) &index);
 	ZOLTAN_FREE((void *) &sort_val);
 	ZOLTAN_FREE((void *) &offset);

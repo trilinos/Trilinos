@@ -14,7 +14,7 @@
 #include <stdio.h>
 #include <memory.h>
 #include "mpi.h"
-#include "comm_const.h"
+#include "comm.h"
 #include "mem_const.h"
 
 
@@ -39,8 +39,8 @@
 	Otherwise need to receive in buffer and copy.
 */
 
-int       LB_Comm_Do(
-struct Comm_Obj * plan,		/* communication data structure */
+int       Zoltan_Comm_Do(
+ZOLTAN_COMM_OBJ * plan,		/* communication data structure */
 int tag,			/* message tag for communicating */
 char *send_data,		/* array of data I currently own */
 int nbytes,			/* multiplier for sizes */
@@ -59,29 +59,29 @@ char *recv_data)		/* array of data I'll own after comm */
     int       proc_index;	/* loop counter over procs to send to */
     int       i, j, k, jj;	/* loop counters */
 
-    static char *yo = "LB_Comm_Do";
+    static char *yo = "Zoltan_Comm_Do";
 
 
     /* Check input parameters */
     if (!plan) {
         MPI_Comm_rank(MPI_COMM_WORLD, &my_proc);
-	COMM_ERROR("Communication plan = NULL", yo, my_proc);
-	return COMM_FATAL;
+	ZOLTAN_COMM_ERROR("Communication plan = NULL", yo, my_proc);
+	return ZOLTAN_FATAL;
     }
 
     MPI_Comm_rank(plan->comm, &my_proc);
 
     if ((plan->nsends + plan->self_msg) && !send_data) {
-	COMM_ERROR("nsends not zero, but send_data = NULL", yo, my_proc);
-	return COMM_FATAL;
+	ZOLTAN_COMM_ERROR("nsends not zero, but send_data = NULL", yo, my_proc);
+	return ZOLTAN_FATAL;
     }
     if ((plan->nrecvs + plan->self_msg) && !recv_data) {
-	COMM_ERROR("nrecvs not zero, but recv_data = NULL", yo, my_proc);
-	return COMM_FATAL;
+	ZOLTAN_COMM_ERROR("nrecvs not zero, but recv_data = NULL", yo, my_proc);
+	return ZOLTAN_FATAL;
     }
     if (nbytes < 0) {
-	COMM_ERROR("Scale factor nbytes is negative", yo, my_proc);
-	return COMM_FATAL;
+	ZOLTAN_COMM_ERROR("Scale factor nbytes is negative", yo, my_proc);
+	return ZOLTAN_FATAL;
     }
 
 
@@ -152,7 +152,7 @@ char *recv_data)		/* array of data I'll own after comm */
 	ZOLTAN_FREE((void **) &send_buff);
 	if (plan->indices_from != NULL)
 	    ZOLTAN_FREE((void **) &recv_buff);
-	return (COMM_MEMERR);
+	return (ZOLTAN_MEMERR);
     }
 
     /* Send out data */
@@ -323,5 +323,5 @@ char *recv_data)		/* array of data I'll own after comm */
 	ZOLTAN_FREE((void **) &recv_buff);
     }
 
-    return (COMM_OK);
+    return (ZOLTAN_OK);
 }

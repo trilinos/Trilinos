@@ -12,12 +12,12 @@
  ****************************************************************************/
 
 #include <stdio.h>
-#include "comm_const.h"
+#include "comm.h"
 #include "mem_const.h"
 
 
-int       LB_Comm_Destroy(
-struct Comm_Obj **plan)		/* communication data structure pointer */
+int       Zoltan_Comm_Destroy(
+ZOLTAN_COMM_OBJ **plan)		/* communication data structure pointer */
 {
 
     /* Free fields of the communication object. */
@@ -42,5 +42,5 @@ struct Comm_Obj **plan)		/* communication data structure pointer */
     /* Free the communication object itself */
     ZOLTAN_FREE((void **) plan);
 
-    return(COMM_OK);
+    return(ZOLTAN_OK);
 }

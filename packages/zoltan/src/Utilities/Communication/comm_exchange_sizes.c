@@ -1,13 +1,27 @@
+/*****************************************************************************
+ * Zoltan Dynamic Load-Balancing Library for Parallel Applications           *
+ * Copyright (c) 2000, Sandia National Laboratories.                         *
+ * This software is distributed under the GNU Lesser General Public License. *
+ * For more info, see the README file in the top-level Zoltan directory.     *
+ *****************************************************************************/
+/*****************************************************************************
+ * CVS File Information :
+ *    $RCSfile$
+ *    $Author$
+ *    $Date$
+ *    $Revision$
+ ****************************************************************************/
+
 #include <stdio.h>
 #include "mpi.h"
-#include "comm_const.h"
+#include "comm.h"
 #include "mem_const.h"
 
 /*****************************************************************************/
 /*****************************************************************************/
 /*****************************************************************************/
 
-int       LB_Comm_Exchange_Sizes(
+int       Zoltan_Comm_Exchange_Sizes(
 int      *sizes_to,		/* value I need to exchange (size of true msg) */
 int      *procs_to,		/* procs I send to */
 int       nsends,		/* number of messages I'll send */
@@ -46,5 +60,5 @@ MPI_Comm  comm) {		/* communicator */
 	*total_recv_size += sizes_from[i];
     }
 
-    return (COMM_OK);
+    return (ZOLTAN_OK);
 }

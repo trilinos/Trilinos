@@ -15,40 +15,40 @@
 #include <stdlib.h>
 #include "mpi.h"
 #include "mem_const.h"
-#include "comm_const.h"
+#include "comm.h"
 
 
 /* Perform a reverse communication operation.  Communication object describes */
 /* an action, and this routine does the opposite.  Can be used to return */
 /* updated data to originating processor. */
 
-int       LB_Comm_Do_Reverse(
-struct Comm_Obj *plan,		/* communication data structure */
+int       Zoltan_Comm_Do_Reverse(
+ZOLTAN_COMM_OBJ *plan,		/* communication data structure */
 int       tag,			/* message tag for communicating */
 char     *send_data,		/* array of data I currently own */
 int       nbytes,		/* # bytes per data item */
 int      *sizes,		/* variable size of objects (if not NULL) */
 char     *recv_data)		/* array of data I'll own after reverse comm */
 {
-    struct Comm_Obj *plan_reverse;	/* communication data structure */
+    ZOLTAN_COMM_OBJ *plan_reverse;	/* communication data structure */
     int       my_proc;		/* current processor ID */
     int       total_send_length;/* total message length I send in plan */
     int       max_recv_length;	/* biggest message I recv in plan */
     int       sum_recv_sizes;	/* sum of the item sizes I receive */
     int       comm_flag;		/* status flag */
     int       i;		/* loop counter */
-    static char *yo = "LB_Comm_Do_Reverse";
+    static char *yo = "Zoltan_Comm_Do_Reverse";
 
     /* Check input parameters */
     if (!plan){
       fprintf(stderr, "Zoltan error in %s: Communication plan = NULL\n", 
         yo);
-      return COMM_FATAL;
+      return ZOLTAN_FATAL;
     }
 
     MPI_Comm_rank(plan->comm, &my_proc);
 
-    /* Let LB_Comm_Do check the remaining parameters. */
+    /* Let Zoltan_Comm_Do check the remaining parameters. */
 
     total_send_length = 0;
     for (i = 0; i < plan->nsends + plan->self_msg; i++) {
@@ -61,7 +61,7 @@ char     *recv_data)		/* array of data I'll own after reverse comm */
 	    max_recv_length = plan->lengths_from[i];
     }
 
-    plan_reverse = (struct Comm_Obj *) ZOLTAN_MALLOC(sizeof(struct Comm_Obj));
+    plan_reverse = (ZOLTAN_COMM_OBJ *) ZOLTAN_MALLOC(sizeof(ZOLTAN_COMM_OBJ));
 
     plan_reverse->nvals = plan->nvals_recv;
     plan_reverse->nvals_recv = plan->nvals;
@@ -92,7 +92,7 @@ char     *recv_data)		/* array of data I'll own after reverse comm */
 	ZOLTAN_MALLOC(plan_reverse->nrecvs * sizeof(MPI_Request));
     if (plan_reverse->request == NULL && plan_reverse->nrecvs != 0) {
         ZOLTAN_FREE((void **) &plan_reverse);
-	return(COMM_MEMERR);
+	return(ZOLTAN_MEMERR);
     }
 
     plan_reverse->status = (MPI_Status *)
@@ -100,12 +100,12 @@ char     *recv_data)		/* array of data I'll own after reverse comm */
     if (plan_reverse->status == NULL && plan_reverse->nrecvs != 0) {
         ZOLTAN_FREE((void **) &(plan_reverse->request));
         ZOLTAN_FREE((void **) &plan_reverse);
-	return(COMM_MEMERR);
+	return(ZOLTAN_MEMERR);
     }
 
-    comm_flag = LB_Comm_Resize(plan_reverse, sizes, tag, &sum_recv_sizes);
+    comm_flag = Zoltan_Comm_Resize(plan_reverse, sizes, tag, &sum_recv_sizes);
 
-    if (comm_flag != COMM_OK && comm_flag != COMM_WARN) {
+    if (comm_flag != ZOLTAN_OK && comm_flag != ZOLTAN_WARN) {
         ZOLTAN_FREE((void **) &(plan_reverse->status));
         ZOLTAN_FREE((void **) &(plan_reverse->request));
         ZOLTAN_FREE((void **) &plan_reverse);
@@ -117,10 +117,10 @@ char     *recv_data)		/* array of data I'll own after reverse comm */
        ZOLTAN_FREE((void **) &(plan_reverse->status));
        ZOLTAN_FREE((void **) &(plan_reverse->request));
        ZOLTAN_FREE((void **) &plan_reverse);
-       return(COMM_FATAL);
+       return(ZOLTAN_FATAL);
     }
 
-    comm_flag = LB_Comm_Do(plan_reverse, tag, send_data, nbytes, recv_data);
+    comm_flag = Zoltan_Comm_Do(plan_reverse, tag, send_data, nbytes, recv_data);
 
     if (sizes != NULL) {
         ZOLTAN_FREE((void *) &plan_reverse->sizes);
