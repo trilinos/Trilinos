@@ -344,10 +344,8 @@ extern int ML_repartition_matrix(ML_Operator *mat, ML_Operator **new_mat,
                                  ML_Operator **permutation, 
 				 ML_Operator **permt, int num_PDE_eqns,int,
 				 double *, double *, double *);
-extern int ML_repartition_Acoarse(ML *ml, int fine, int coarse, ML_Aggregate *ag,
-				  int R_is_Ptranspose);
-extern int ML_repartition_Acoarse_edge(ML *ml, ML_Operator *Told,
-               ML_Operator *Toldt, int fine, int coarse, int R_is_Ptranspose);
+extern ML_Operator** ML_repartition_Acoarse(ML *ml, int fine, int coarse,
+                 ML_Aggregate *ag, int R_is_Ptranspose, int ReturnPerm);
 
 
 
@@ -398,6 +396,7 @@ int ML_Aggregate_Set_SmoothRestrictionWithAT( ML_Aggregate *ag );
   
 extern int ML_Aggregate_Set_NodalCoordinates(ML* ml, ML_Aggregate *ag, double *ptr);
 extern int ML_Aggregate_Set_Dimensions(ML_Aggregate *ag, int N_dimensions);
+extern int ML_Aggregate_Get_CoarsenScheme( ML_Aggregate *ag  );
 
 /* ------------------------------------------------------------------------- */
 /* functions for visualization                                               */
