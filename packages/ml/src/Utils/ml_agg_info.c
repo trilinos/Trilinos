@@ -689,8 +689,6 @@ int ML_Aggregate_VizAndStats_SetUpLevel( ML_Aggregate_Viz_Stats finer_level,
   return 0;  
 }
 
-  
-
 /* ======================================================================== */
 /*!
  \brief visualize aggregates and compute some statistics on the aggregates,
@@ -1419,4 +1417,591 @@ int ML_Compute_AggregateGraphRadius( int Nrows, int ia[], int ja[],
 
   return 0;
   
+}
+
+int ML_Aggregate_Stats_ComputeCoordinates( ML *ml, ML_Aggregate *ag,
+					  double *x, double *y, double *z)
+{
+
+  int i, ilevel;
+  int Naggregates;
+  ML_Aggregate_Viz_Stats * info;
+  int dim, diff;
+  ML_Comm *comm;
+  int finest_level = ml->ML_finest_level;
+  int coarsest_level = ml->ML_coarsest_level;
+  int incr_or_decr;
+  int num_PDE_eqns  = ag->num_PDE_eqns;
+  int begin, end;
+  
+  /* ------------------- execution begins --------------------------------- */
+  
+  info = (ML_Aggregate_Viz_Stats *) (ag->aggr_viz_and_stats);
+  comm = ml->comm;
+  
+  if( finest_level > coarsest_level ) incr_or_decr = ML_DECREASING;
+  else                                incr_or_decr = ML_INCREASING;
+
+  /* ********************************************************************** */
+  /* check out the number of dimensions                                     */
+  /* ********************************************************************** */
+
+  if( x == NULL )      dim = 0;           /* this means only stats on graph */
+  else if( y == NULL ) dim = 1;
+  else if( z == NULL ) dim = 2;
+  else dim = 3;
+
+  ML_Aggregate_Viz_Amalgamate(ml, ag);
+
+  /* ********************************************************************** */
+  /* find out how many levels have been used                                */
+  /* is_filled == ML_YES means that we have the graph_decomposition for     */
+  /* level. However, we still miss the nodal coordinates for level>0, which */
+  /* must be defined.  As AMG is without grid, I consider as "node" of      */
+  /* levels>0 the coordinates of the center of gravity.                     */
+  /* NOTE: I suppose that the first level is 0 (fine grid), then increasing */
+  /* NOTE2: level 0 is set separately from the others                       */
+  /* ********************************************************************** */
+
+  info[finest_level].x = x;
+  info[finest_level].y = y;
+  info[finest_level].z = z;
+
+  if( incr_or_decr == ML_INCREASING ) {
+
+    begin = finest_level;
+    end   = coarsest_level;
+    diff  = +1;
+
+  } else {
+
+    begin = coarsest_level+1;
+    end   = finest_level+1;
+    diff  = -1;
+
+  }
+
+  if( dim > 0 )
+  {
+    switch( incr_or_decr )
+    {
+      case ML_INCREASING:
+        for( ilevel=finest_level ; ilevel<coarsest_level ; ilevel++ )
+        {
+          Naggregates = info[ilevel].Naggregates;
+          switch( dim ) {
+            case 3:
+              info[ilevel+1].z = (double *)ML_allocate(sizeof(double)*Naggregates);
+	      for( i=0 ; i<Naggregates ; ++i ) info[ilevel+1].z[i] = 0.0;
+            case 2:
+              info[ilevel+1].y = (double *)ML_allocate(sizeof(double)*Naggregates);
+	      for( i=0 ; i<Naggregates ; ++i ) info[ilevel+1].y[i] = 0.0;
+            case 1:
+              info[ilevel+1].x = (double *)ML_allocate(sizeof(double)*Naggregates);
+	      for( i=0 ; i<Naggregates ; ++i ) info[ilevel+1].x[i] = 0.0;
+          }
+          ML_Aggregate_ComputeCenterOfGravity( info[ilevel],
+                         info[ilevel+1], comm);
+        }
+        break;
+      case ML_DECREASING:
+        for( ilevel=finest_level ; ilevel>coarsest_level ; ilevel-- )
+        {
+          Naggregates = info[ilevel].Naggregates;
+
+          switch( dim ) {
+            case 3:
+              info[ilevel-1].z = (double *)ML_allocate(sizeof(double)*Naggregates);
+	      for( i=0 ; i<Naggregates ; ++i ) info[ilevel-1].z[i] = 0.0;
+            case 2:
+              info[ilevel-1].y = (double *)ML_allocate(sizeof(double)*Naggregates);
+	      for( i=0 ; i<Naggregates ; ++i ) info[ilevel-1].y[i] = 0.0;
+            case 1:
+              info[ilevel-1].x = (double *)ML_allocate(sizeof(double)*Naggregates);
+	      for( i=0 ; i<Naggregates ; ++i ) info[ilevel-1].x[i] = 0.0;
+          }
+          ML_Aggregate_ComputeCenterOfGravity( info[ilevel],
+                         info[ilevel-1], comm);
+        }
+        break;
+    }
+  }
+
+  ML_Aggregate_Viz_UnAmalgamate(ml, ag);
+
+  return 0;
+
+}
+
+int ML_Aggregate_Stats_Analyze( ML *ml, ML_Aggregate *ag)
+{
+
+  int i, ilevel, iaggre;
+  int Nlocal, Naggregates;
+  ML_Aggregate_Viz_Stats * info;
+  int dim, diff;
+  double dmin, davg, dmax, dstd;
+  int  imin, iavg, imax;
+  ML_Comm *comm;
+  int finest_level = ml->ML_finest_level;
+  int coarsest_level = ml->ML_coarsest_level;
+  int incr_or_decr;
+  int num_PDE_eqns  = ag->num_PDE_eqns;
+  double h, H;
+  int begin, end;
+  int radius;
+  int * itemp = NULL, * itemp2 = NULL;
+  double * dtemp = NULL, dsum;
+  int Nrows, Naggregates_global, Nrows_global, offset;
+  int mypid = ml->comm->ML_mypid;
+  
+  /* ------------------- execution begins --------------------------------- */
+  
+  ML_Aggregate_Viz_Amalgamate(ml, ag);
+
+  info = (ML_Aggregate_Viz_Stats *) (ag->aggr_viz_and_stats);
+  comm = ml->comm;
+  
+  if( finest_level > coarsest_level ) incr_or_decr = ML_DECREASING;
+  else                                incr_or_decr = ML_INCREASING;
+
+  if( incr_or_decr == ML_INCREASING ) {
+
+    begin = finest_level;
+    end   = coarsest_level;
+    diff  = +1;
+
+  } else {
+
+    begin = coarsest_level+1;
+    end   = finest_level+1;
+    diff  = -1;
+
+  }
+
+  /* ********************************************************************** */
+  /* statistics about the decomposition into subdomains                     */
+  /* ********************************************************************** */
+
+  Nrows = ml->Amat[finest_level].outvec_leng/num_PDE_eqns;
+
+  imin = ML_gmin_int(Nrows,comm);
+  iavg = ML_gsum_int(Nrows,comm)/(comm->ML_nprocs);
+  imax = ML_gmax_int(Nrows,comm);
+  
+  if(  comm->ML_mypid == 0 ) {
+    printf( "(level %d) rows per process (min) = %d\n", finest_level, imin);
+    printf( "(level %d) rows per process (avg) = %d\n", finest_level, iavg);
+    printf( "(level %d) rows per process (max) = %d\n", finest_level, imax);
+  }
+  
+  ML_Info_DomainDecomp( info[finest_level], comm, &H, &h );
+    
+  ML_Aggregate_AnalyzeVector( 1, &H,
+			     &dmin, &dmax, &davg, &dstd, comm );
+
+  if(  comm->ML_mypid == 0 ) {
+    printf( "(level %d) Stats : subdomain linear dimension (min) = %f\n",
+	   finest_level,
+	   dmin );
+    printf( "(level %d) Stats : subdomain linear dimension (avg) = %f\n",
+	   finest_level,
+	   davg );
+    printf( "(level %d) Stats : subdomain linear dimension (max) = %f\n",
+	   finest_level,
+	   dmax );
+    puts("");
+  }
+
+  ML_Aggregate_AnalyzeVector( 1, &h,
+			     &dmin, &dmax, &davg, &dstd, comm );
+
+  if(  comm->ML_mypid == 0 ) {
+    printf( "(level %d) Stats : element linear dimension (min) = %f\n",
+	   finest_level,
+	   dmin );
+    printf( "(level %d) Stats : element linear dimension (avg) = %f\n",
+	   finest_level,
+	   davg );
+    printf( "(level %d) Stats : element linear dimension (max) = %f\n",
+	   finest_level,
+	   dmax );
+    puts("");
+  }
+
+  /* ********************************************************************** */
+  /* Statistics about the ratio aggregates/nodes for each level (globally)  */
+  /* ********************************************************************** */
+
+  for( ilevel=begin ; ilevel<end ; ilevel+=diff ) {
+
+    if( info[ilevel].is_filled == ML_YES ) {
+
+
+      	Nlocal = info[ilevel].Nlocal;
+	Naggregates = info[ilevel].Naggregates;
+	radius = info[ilevel].graph_radius;
+
+	Nrows_global = ML_gsum_int(Nlocal,comm);
+	radius = ML_gsum_int(radius,comm);
+
+	switch( info[ilevel].local_or_global ) {
+	case ML_LOCAL_INDICES:
+	  Naggregates_global = ML_gsum_int(Naggregates,comm);
+#ifdef ML_MPI
+	  MPI_Scan(&Naggregates, &offset, 1, MPI_INT, MPI_SUM, comm->USR_comm);
+	  offset -= Naggregates;
+#else
+	  offset = 0;
+#endif
+	  break;
+	case ML_GLOBAL_INDICES:
+	  Naggregates_global = Naggregates;
+	  offset = 0;
+	  break;
+	}
+
+	/* computes how many nodes are in each aggregate for this level,
+	   globally */
+	itemp = (int *) ML_allocate( sizeof(int) * Naggregates_global );
+	for( i=0 ; i<Naggregates_global ; i++ ) itemp[i] = 0;
+	
+	for( i=0 ; i<Nlocal ; i++ ) {
+
+	  iaggre = info[ilevel].graph_decomposition[i];
+	  if( iaggre != -1 ) {
+	    iaggre +=offset;
+
+	    if( iaggre >= Naggregates_global ) {
+	      pr_error("(%d) %s, line %d: %d >= %d, %d   %d\n",
+		       mypid, __FILE__, __LINE__, iaggre, Naggregates_global,
+		       info[ilevel].graph_decomposition[i],offset);
+	    }
+	    itemp[iaggre]++;
+	  }
+	}
+	
+#ifdef ML_MPI
+	itemp2 = (int *)ML_allocate( sizeof(int)*Naggregates_global);
+	MPI_Reduce(itemp,itemp2,Naggregates_global,MPI_INT,MPI_SUM,0,
+		   comm->USR_comm);
+#else
+	itemp2 = itemp;
+#endif
+
+	if( comm->ML_mypid == 0 ) {
+
+	  imin = INT_MAX;
+	  imax = INT_MIN;
+	  
+	  for( i=0 ; i<Naggregates_global ; i++ ) {
+	    if( itemp2[i] > imax ) imax =  itemp2[i];
+	    if( itemp2[i] < imin ) imin =  itemp2[i];
+	  }
+		 
+	  printf( "(level %d) : NumAggr = %5d, NumNodes = %d\n",
+		  ilevel,
+		  Naggregates_global,Nrows_global);
+	  printf( "(level %d) : NumAggr/NumNodes  (avg)   = %7.5f %%\n",
+		  ilevel,
+		  100.0*Naggregates_global/Nrows_global );
+	  printf( "(level %d) : NumNodes per aggr (min)   = %d\n",
+		  ilevel,
+		  imin);
+	  printf( "(level %d) : NumNodes per aggr (avg)   = %d\n",
+		  ilevel,
+		  Nrows_global/Naggregates_global);
+	  printf( "(level %d) : NumNodes per aggr (max)   = %d\n",
+		  ilevel,
+		  imax);
+	}
+    }
+	
+    ML_free(itemp);
+#ifdef ML_MPI
+    ML_free(itemp2);
+#endif
+	     
+
+  }
+
+  /* ********************************************************************** */
+  /* some statistics on the aggregates. Note that I need some nodal         */
+  /* coordinates to perform this task. The nodal coordinates of the         */
+  /* current level aggregates are stored in level+1. This means that the    */
+  /* last level will hold only coordinates, and no graph_decomposition.     */
+  /* I allocate/deallocate R and H so that their shape is right for the     */
+  /* level we are considering (and not waste space)                         */
+  /* RorH is a double vector which will contain the radius of each          */
+  /* aggregate, and then its linear size.                                   */
+  /* ********************************************************************** */
+
+  for( ilevel=begin ; ilevel<end ; ilevel+=diff ) {
+
+    if( info[ilevel].is_filled == ML_YES ) {
+
+      Naggregates = info[ilevel].Naggregates;
+      radius = info[ilevel].graph_radius;
+
+      switch( info[ilevel].local_or_global ) {
+      case ML_LOCAL_INDICES:
+	Naggregates_global = ML_gsum_int(Naggregates,comm);
+#ifdef ML_MPI
+	MPI_Scan(&Naggregates,&offset, 1, MPI_INT, MPI_SUM, comm->USR_comm);
+	offset -= Naggregates;
+#else
+	offset = 0;
+#endif
+	break;
+      case ML_GLOBAL_INDICES:
+	Naggregates_global = Naggregates;
+	offset = 0;
+	break;
+      }
+
+      dtemp = (double *) ML_allocate( sizeof(double)*Naggregates_global);
+      ML_Aggregate_ComputeBox( info[ilevel], Naggregates_global,
+			      dtemp, offset,comm);
+
+      if( comm->ML_mypid == 0 ) {
+
+	dmin =  DBL_MAX;
+	dmax = -DBL_MAX;
+	dsum = 0;
+
+	for( i=0 ; i<Naggregates_global ; i++ ) {
+	  if( dtemp[i] > dmax ) dmax =  dtemp[i];
+	  if( dtemp[i] < dmin ) dmin =  dtemp[i];
+	  dsum += dtemp[i];
+	}
+
+	printf( "(level %d) : aggregate linear dimension (min) = %f\n",
+	       ilevel, dmin );
+	printf( "(level %d) : aggregate linear dimension (avg) = %f\n",
+	       ilevel,
+	       dsum/Naggregates_global );
+	printf( "(level %d) : aggregate linear dimension (max) = %f\n",
+	       ilevel,
+	       dmax );
+      }
+      ML_free(dtemp);
+    }
+  }
+  
+  ML_Aggregate_Viz_UnAmalgamate(ml, ag);
+
+  return 0;
+
+}
+
+int ML_Aggregate_Viz( ML *ml, ML_Aggregate *ag, int choice,
+		     double * values,
+		     char * base_filename, int level)
+{
+
+  ML_Aggregate_Viz_Stats * info;
+  int diff;
+  ML_Comm *comm;
+  int finest_level = ml->ML_finest_level;
+  int coarsest_level = ml->ML_coarsest_level;
+  int incr_or_decr;
+  int begin, end;
+  char graphfile[132];
+  
+  /* ------------------- execution begins --------------------------------- */
+  
+  ML_Aggregate_Viz_Amalgamate(ml, ag);
+
+  info = (ML_Aggregate_Viz_Stats *) (ag->aggr_viz_and_stats);
+  comm = ml->comm;
+
+  if( finest_level > coarsest_level ) incr_or_decr = ML_DECREASING;
+  else                                incr_or_decr = ML_INCREASING;
+
+  if( incr_or_decr == ML_INCREASING ) {
+
+    begin = finest_level;
+    end   = coarsest_level;
+    diff  = +1;
+
+  } else {
+
+    begin = coarsest_level+1;
+    end   = finest_level+1;
+    diff  = -1;
+
+  }
+
+  /* OpenDX, does not support everything (like plotting vector values),
+   * but it works for 1D, 2D, and 3D */
+  if( choice == 0 ) {
+
+    if( info[level].is_filled == ML_YES ) {
+      if( base_filename != NULL ) 
+	sprintf( graphfile,
+		"%s_level%d_proc",
+		base_filename,
+		level );
+
+      else  
+	sprintf( graphfile,
+		".graph_level%d_proc",
+		level );
+
+      if( comm->ML_mypid == 0 ) {
+	printf("(level %d) : Writing OpenDX file `%s'\n",
+	       level, graphfile );
+      }
+      ML_Aggregate_VisualizeWithOpenDX( info[level], graphfile,
+				       comm );
+    }
+      
+  } else if( choice == 1 ) {
+
+    if( info[level].is_filled == ML_YES ) {
+      if( base_filename != NULL ) 
+	sprintf( graphfile,
+		"%s_level%d.xyz",
+		base_filename,
+		level );
+
+      else  
+	sprintf( graphfile,
+		".graph_level%d.xyz",
+		level );
+
+      if( comm->ML_mypid == 0 ) 
+	printf("(level %d) : Writing XYZ file `%s'\n",
+	       level, graphfile );
+
+      ML_Aggregate_VisualizeXYZ(info[level], graphfile, comm, values);
+    }
+  }
+
+  ML_Aggregate_Viz_UnAmalgamate(ml, ag);
+
+  return 0;
+}
+
+int ML_Aggregate_Stats_CleanUp_Info( ML *ml, ML_Aggregate *ag)
+{
+
+  int i;
+  ML_Aggregate_Viz_Stats * info;
+  int finest_level = ml->ML_finest_level;
+  int coarsest_level = ml->ML_coarsest_level;
+  int incr_or_decr;
+  int num_PDE_eqns  = ag->num_PDE_eqns;
+  
+  /* ------------------- execution begins --------------------------------- */
+  
+  info = (ML_Aggregate_Viz_Stats *) (ag->aggr_viz_and_stats);
+  
+  /* ********************************************************************** */
+  /* Clear memory allocated while creating the center of gravity (but not   */
+  /* for the finest level, as those arrays are provided by the user). So I  */
+  /* put to NULL those pointers in the info array.                          */
+  /* ********************************************************************** */
+
+  info[finest_level].x = NULL;
+  info[finest_level].y = NULL;
+  info[finest_level].z = NULL;
+
+  if( finest_level > coarsest_level ) incr_or_decr = ML_DECREASING;
+  else                                incr_or_decr = ML_INCREASING;
+
+  if (incr_or_decr == ML_DECREASING) {
+    for( i=finest_level; i>=coarsest_level; i--) {
+      info[i].Amatrix = &(ml->Amat[i]); 
+      
+      if( i!= finest_level ) {
+	if( info[i].x != NULL ) ML_free( info[i].x );
+	if( info[i].y != NULL ) ML_free( info[i].y );
+	if( info[i].z != NULL ) ML_free( info[i].z );
+      }
+
+    }
+  }
+  else {
+    for( i=finest_level; i<coarsest_level; i++) {
+      info[i].Amatrix = &(ml->Amat[i]); 
+
+      if( i!=finest_level ) {
+	if( info[i].x != NULL ) ML_free( info[i].x );
+	if( info[i].y != NULL ) ML_free( info[i].y );
+	if( info[i].z != NULL ) ML_free( info[i].z );
+      }
+      
+    }
+  }
+
+  return 0;
+  
+}
+
+int ML_Aggregate_Viz_UnAmalgamate( ML *ml, ML_Aggregate *ag)
+{
+
+  int i;
+  ML_Aggregate_Viz_Stats * info;
+  int finest_level = ml->ML_finest_level;
+  int coarsest_level = ml->ML_coarsest_level;
+  int incr_or_decr;
+  int num_PDE_eqns  = ag->num_PDE_eqns;
+  
+  /* ------------------- execution begins --------------------------------- */
+  
+  info = (ML_Aggregate_Viz_Stats *) (ag->aggr_viz_and_stats);
+  
+  if( finest_level > coarsest_level ) incr_or_decr = ML_DECREASING;
+  else                                incr_or_decr = ML_INCREASING;
+
+  if (incr_or_decr == ML_DECREASING) {
+    for( i=finest_level; i>=coarsest_level; i--) {
+      ML_Operator_UnAmalgamateAndDropWeak(info[i].Amatrix, num_PDE_eqns, 0.0);
+      
+    }
+  }
+  else {
+    for( i=finest_level; i<coarsest_level; i++) {
+      ML_Operator_UnAmalgamateAndDropWeak(info[i].Amatrix, num_PDE_eqns, 0.0);
+
+    }
+  }
+
+  return 0;
+  
+}
+
+int ML_Aggregate_Viz_Amalgamate( ML *ml, ML_Aggregate *ag)
+{
+
+  int i;
+  ML_Aggregate_Viz_Stats * info;
+  int finest_level = ml->ML_finest_level;
+  int coarsest_level = ml->ML_coarsest_level;
+  int incr_or_decr;
+  int num_PDE_eqns  = ag->num_PDE_eqns;
+  
+  /* ------------------- execution begins --------------------------------- */
+  
+  info = (ML_Aggregate_Viz_Stats *) (ag->aggr_viz_and_stats);
+  
+  if( finest_level > coarsest_level ) incr_or_decr = ML_DECREASING;
+  else                                incr_or_decr = ML_INCREASING;
+
+  if (incr_or_decr == ML_DECREASING) {
+    for( i=finest_level; i>=coarsest_level; i--) {
+      info[i].Amatrix = &(ml->Amat[i]); 
+      ML_Operator_AmalgamateAndDropWeak(info[i].Amatrix, num_PDE_eqns, 0.0);
+    }
+  }
+  else {
+    for( i=finest_level; i<coarsest_level; i++) {
+      info[i].Amatrix = &(ml->Amat[i]); 
+      ML_Operator_AmalgamateAndDropWeak(info[i].Amatrix, num_PDE_eqns, 0.0);
+    }
+  }
+
+  return 0;
 }

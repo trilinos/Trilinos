@@ -366,3 +366,87 @@ int ML_Aggregate_VisualizeWithOpenDX( ML_Aggregate_Viz_Stats info,
   return 0;
   
 } /* ML_VisualizeWithOpenDX */
+
+/* ======================================================================== */
+/*!
+ \brief write graph decomposition of the current level in a graphical
+ format readable by OpenDX
+
+*/
+/* ------------------------------------------------------------------------ */
+
+int ML_Aggregate_VisualizeXYZ( ML_Aggregate_Viz_Stats info,
+			      char base_filename[],
+			      ML_Comm *comm,
+			      double * vector)
+{
+
+  int i,j, irow, ipid;
+  ML_Operator *Amatrix = (ML_Operator *)(info.Amatrix);
+  double *x = info.x;
+  double *y = info.y;
+  int local_or_global = info.local_or_global;
+  int *graph_decomposition = info.graph_decomposition;
+  int Naggregates = info.Naggregates;
+  int mypid = comm->ML_mypid;
+  int nprocs = comm->ML_nprocs;
+  int Nrows = Amatrix->getrow->Nrows;
+  FILE *fp;
+  double val;
+  int AggrToVisualize = -1;
+  char * str;
+  char filemode[2];
+  int Nlocal = info.Nlocal;
+
+  /* ------------------- execution begins --------------------------------- */
+
+  if( Nlocal != Nrows ) {
+    fprintf( stderr,
+	     "*ML*ERR* number of rows and lenght of graph_decomposition\n"
+	     "*ML*ERR* differs (%d - %d)\n"
+	     "*ML*ERR* (file %s, line %d)\n",
+	     Nrows,
+	     Nlocal,
+	     __FILE__,
+	     __LINE__ );
+    exit( EXIT_FAILURE );
+  }
+  
+  if( mypid == 0 ) filemode[0] = 'w';
+  else             filemode[0] = 'a';
+  filemode[1] = '\0';
+
+  str = getenv("ML_VIZ_AGGR");
+  if( str != NULL ) AggrToVisualize = atoi(str);
+
+  for( ipid=0 ; ipid<nprocs ; ++ipid ) {
+    if( ipid == mypid ) {
+      if( (fp = fopen( base_filename, filemode )) == NULL ) {
+	fprintf( stderr,
+		"*VIZ*ERR* cannot open file `%s'\n",
+		base_filename );
+	exit( EXIT_FAILURE );
+      }
+
+      for( irow=0 ; irow<Nrows ; irow++ ) {
+	if( vector != NULL ) val = vector[irow];
+	else if( AggrToVisualize != -1 ) { 
+	  if( graph_decomposition[irow] == AggrToVisualize ) val = 1.0;
+	  else                                               val = 0.0;
+	} else 
+	  val = 1.0*graph_decomposition[irow];
+	fprintf( fp,
+		"%f %f %f\n",
+		x[irow], y[irow], val );
+      }
+      fclose(fp);
+    }
+#ifdef ML_MPI
+    /* FIXME: I can get the communicator from ML_Comm... */
+    MPI_Barrier(MPI_COMM_WORLD);
+#endif
+  }
+  
+  return 0;
+  
+} /* ML_VisualizeWithXYZ */
