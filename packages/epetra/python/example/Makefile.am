@@ -57,7 +57,7 @@ EXAMPLE_SUITE = exSimple
 
 check-am: $(EXAMPLE_SUITE)
 
-# Run the test
+# Run the example script
 ex%: $(srcdir)/ex%.py $(srcdir)/setpath.py
 	cp $^ .
 	./$@.py
