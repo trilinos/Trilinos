@@ -167,28 +167,21 @@ public:
     // update flops counter: nnz
     updateFlops(data().numMyNonzeros_);
   }
+  
+    //! Submit a single entry, using global IDs.
+  /*! All index values must be in the global space. Behavoir is defined by the CombineMode passed in. */
+  void submitEntry(CombineMode CM, OrdinalType const myRowOrColumn, ScalarType const value, OrdinalType const index) {
+    submitEntries(CM, myRowOrColumn, Teuchos::OrdinalTraits<OrdinalType>::one(), &value, &index); 
+  }
 
   //! Submit multiple entries, using global IDs.
   /*! All index values must be in the global space. Behavoir is defined by the CombineMode passed in. */
-  void submitEntries(CombineMode CM, OrdinalType myRowOrColumn, OrdinalType numEntries, ScalarType const* values, OrdinalType const* indices) {
-		if(isFillCompleted())
-      throw reportError("Cannot change matrix values after fillComplete has been called.", 5);
-    OrdinalType const zero = Teuchos::OrdinalTraits<OrdinalType>::zero();
-    for(OrdinalType i = zero; i < numEntries; i++)
-      submitEntry(CM, myRowOrColumn, *values++, *indices++);
-  }
-
-  //! Submit a single entry, using global IDs.
-  /*! All index values must be in the global space. Behavoir is defined by the CombineMode passed in. */
-  void submitEntry(CombineMode CM, OrdinalType myRowOrColumn, ScalarType value, OrdinalType index) {
+  void submitEntries(CombineMode CM, OrdinalType const myRowOrColumn, OrdinalType const numEntries, ScalarType const* values, OrdinalType const* indices) {
     if(isFillCompleted())
       throw reportError("Cannot change matrix values after fillComplete has been called.", 5);
     // first check for proper index values
     if(!getPrimaryDist().isMyGlobalIndex(myRowOrColumn))
       throw reportError("Global primary index " + toString(myRowOrColumn) + " is not owned by this image.", 1);
-    if(CisMatrixData_->haveSecondary_)
-      if(!getSecondaryDist().isMyGlobalIndex(index))
-        throw reportError("Global secondary index " + toString(myRowOrColumn) + "is not owned by this image.", 1);
 
     // create a map for that row/column if it doesn't exist
     if(CisMatrixData_->indicesAndValues_.find(myRowOrColumn) == CisMatrixData_->indicesAndValues_.end()) {
@@ -196,28 +189,24 @@ public:
       CisMatrixData_->indicesAndValues_[myRowOrColumn] = temp;
     }
     
-    // then submit the actual value
+    // then submit the actual values
     std::map<OrdinalType, ScalarType>& innerMap = CisMatrixData_->indicesAndValues_[myRowOrColumn];
-    if(CM == Add) {
-      // innerMap[index] += value; // will this work??
-      if(innerMap.find(index) != innerMap.end())
-        innerMap[index] = innerMap[index] + value;
-      else
-        innerMap[index] = value;
-
-      // update flops counter: 1
-      updateFlops(Teuchos::OrdinalTraits<OrdinalType>::one());
-    }
-    else if(CM == Replace) {
-      innerMap[index] = value;
-    }
-    else if(CM == Insert) {
-      innerMap[index] = value; // change this to a call to insert
+    
+    if(CM == Insert) {
+      for(OrdinalType i = Teuchos::OrdinalTraits<OrdinalType>::zero(); i < numEntries; i++) {
+        if(CisMatrixData_->haveSecondary_)
+          if(!getSecondaryDist().isMyGlobalIndex(*indices))
+            throw reportError("Global secondary index " + toString(*indices) + "is not owned by this image.", 1);
+        innerMap[*indices++] = *values++; // change this to a call to insert
+      }
     }
     else
       throw reportError("Unknown Combine Mode.", 2);
       
-    data().numMyNonzeros_++;
+    // update flops counter: numEntries
+    updateFlops(numEntries);
+    
+    data().numMyNonzeros_+= numEntries;
   }
   
   //! Signals that data entry is complete. Matrix data is converted into a more optimized form.
@@ -299,6 +288,14 @@ public:
     errorcode = data().HbMatrix_.initializeValues(&data().values_.front());
 		if(errorcode) 
 			throw reportError("HbMatrix_.initializeValues returned non-zero. code = " + toString(errorcode) + ".", -99);
+    
+    // setup kokkos sparsemultiply object
+    errorcode = data().axy_.initializeStructure(data().HbMatrix_);
+		if(errorcode) 
+			throw reportError("axy.initializeStructure returned non-zero. code = " + toString(errorcode) + ".", -99);
+    errorcode = data().axy_.initializeValues(data().HbMatrix_);
+		if(errorcode) 
+			throw reportError("axy.initializeValues returned non-zero. code = " + toString(errorcode) + ".", -99);
 
     data().fillCompleted_ = true;
   }
@@ -308,31 +305,20 @@ public:
   //@{ \name Computational Methods
   
   //! Computes the matrix-vector multiplication y = Ax
-  void apply(Vector<OrdinalType, ScalarType> const& x, Vector<OrdinalType, ScalarType>& y) const {
+  void apply(Vector<OrdinalType, ScalarType> const& x, Vector<OrdinalType, ScalarType>& y) {
     if(!isFillCompleted())
       throw reportError("Cannot apply until after fillComplete.", 4);
     
     // setup kokkos x vector
-    Kokkos::DenseVector<OrdinalType, ScalarType> kx;
     ScalarType* scalarArray = const_cast<ScalarType*>(x.scalarPointer()); // x is logically const but not bitwise const
-    int errorcode = kx.initializeValues(x.getNumMyEntries(), scalarArray);// we will not be modifying it, 
+    int errorcode = data().kx_.initializeValues(x.getNumMyEntries(), scalarArray);// we will not be modifying it, 
 		                                                                      // but initializeValues is not a const function.
 		if(errorcode) 
 			throw reportError("kx.initializeValues returned non-zero. code = " + toString(errorcode) + ".", -99);
 		
 
     // setup kokkos y vector
-    Kokkos::DenseVector<OrdinalType, ScalarType> ky;
-    errorcode = ky.initializeValues(y.getNumMyEntries(), y.scalarPointer());
-		if(errorcode) 
-			throw reportError("ky.initializeValues returned non-zero. code = " + toString(errorcode) + ".", -99);
-
-    // setup kokkos sparsemultiply object
-    Kokkos::BaseSparseMultiply<OrdinalType, ScalarType> axy;
-    errorcode = axy.initializeStructure(data().HbMatrix_);
-		if(errorcode) 
-			throw reportError("axy.initializeStructure returned non-zero. code = " + toString(errorcode) + ".", -99);
-    errorcode = axy.initializeValues(data().HbMatrix_);
+    errorcode = data().ky_.initializeValues(y.getNumMyEntries(), y.scalarPointer());
 		if(errorcode) 
 			throw reportError("ky.initializeValues returned non-zero. code = " + toString(errorcode) + ".", -99);
 
@@ -342,7 +328,7 @@ public:
 		cout << "=============================================================" << endl;*/
 
     // do Kokkos apply operation
-    errorcode = axy.apply(kx, ky);
+    errorcode = data().axy_.apply(data().kx_, data().ky_);
 		if(errorcode) 
 			throw reportError("axy.apply returned non-zero. code = " + toString(errorcode) + ".", -99);
 

@@ -87,6 +87,9 @@ class CisMatrixData : public Object {
   std::vector<OrdinalType> indx_;
   std::vector<ScalarType> values_;
   Kokkos::HbMatrix<OrdinalType, ScalarType> HbMatrix_;
+  Kokkos::BaseSparseMultiply<OrdinalType, ScalarType> axy_;
+  Kokkos::DenseVector<OrdinalType, ScalarType> kx_;
+  Kokkos::DenseVector<OrdinalType, ScalarType> ky_;
   
 
 	// VectorSpaces
