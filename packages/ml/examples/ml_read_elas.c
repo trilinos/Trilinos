@@ -43,7 +43,7 @@ double parasails_loadbal    = 0.;
 
 int main(int argc, char *argv[])
 {
-	int num_PDE_eqns=3, N_levels=3, nsmooth=1;
+	int num_PDE_eqns=3, N_levels=4, nsmooth=1;
 
 	int    leng, level, N_grid_pts, coarsest_level;
 
@@ -317,24 +317,9 @@ int max_nz_row, big_ind = -1, ii;
 	
    for (level = N_levels-1; level > coarsest_level; level--) {
 		
-      /* Here is a 1-step CG/Jacobi smoother */
-      /*
-      old_prec = options[AZ_precond];
-      old_sol  = options[AZ_solver];
-      options[AZ_precond] = AZ_Jacobi;
-      options[AZ_solver]  = AZ_cg;
-      options[AZ_poly_ord] = 1;
-      ML_Gen_SmootherAztec(ml, level, options, params,
-                           proc_config, status, 1, ML_PRESMOOTHER, NULL);
-      ML_Gen_SmootherAztec(ml, level, options, params,
-                           proc_config, status, 1, ML_POSTSMOOTHER, NULL);
-      options[AZ_precond] = old_prec;
-      options[AZ_solver] = old_sol;
-      */
-
-     /*
+/*
       ML_Gen_Smoother_BlockGaussSeidel(ml, level,ML_BOTH, 1, 1., num_PDE_eqns);
-      */
+*/
 
     /*  Sparse approximate inverse smoother that acutally does both */
     /*  pre and post smoothing.                                     */
@@ -357,6 +342,7 @@ int max_nz_row, big_ind = -1, ii;
       /* This is a true Gauss Seidel in parallel. This seems to work for  */
       /* elasticity problems.  However, I don't believe that this is very */
       /* efficient in parallel.                                           */       
+     /*
       nblocks = ml->Amat[level].invec_leng/num_PDE_eqns;
       blocks = (int *) ML_allocate(sizeof(int)*N_update);
       for (i =0; i < ml->Amat[level].invec_leng; i++) 
@@ -367,29 +353,43 @@ int max_nz_row, big_ind = -1, ii;
       ML_Gen_Smoother_VBlockSymGaussSeidelSequential(ml, level, ML_POSTSMOOTHER,
                                                   nsmooth, 1., nblocks, blocks);
       free(blocks);
+*/
 
-      /* Jacobi Smoothing                                                 */
-      /*              
-      ML_Gen_Smoother_Jacobi(ml , level, ML_PRESMOOTHER, nsmooth,.4);
-      ML_Gen_Smoother_Jacobi(ml , level, ML_POSTSMOOTHER, nsmooth,.4);
+      /* Block Jacobi Smoothing */
+      /*
+      nblocks = ml->Amat[level].invec_leng/num_PDE_eqns;
+      blocks = (int *) ML_allocate(sizeof(int)*N_update);
+      for (i =0; i < ml->Amat[level].invec_leng; i++) 
+         blocks[i] = i/num_PDE_eqns;
+
+      ML_Gen_Smoother_VBlockJacobi(ml , level, ML_BOTH, nsmooth, 
+                                   ML_ONE_STEP_CG, nblocks, blocks);
+      free(blocks);
       */
+   
+      /* Jacobi Smoothing                                                 */
+     
+      ML_Gen_Smoother_Jacobi(ml , level, ML_PRESMOOTHER, nsmooth, ML_ONE_STEP_CG);
+      ML_Gen_Smoother_Jacobi(ml , level, ML_POSTSMOOTHER, nsmooth,ML_ONE_STEP_CG);
+     
+
 
       /*  This does a block Gauss-Seidel (not true GS in parallel)        */
       /*  where each processor has 'nblocks' blocks.                      */
       /*
       nblocks = 250;
       ML_Gen_Blocks_Metis(ml, level, &nblocks, &blocks);
-      ML_Gen_Smoother_VBlockSymGaussSeidel(ml , level, ML_BOTH, nsmooth,1.,
+      ML_Gen_Smoother_VBlockJacobi(ml , level, ML_BOTH, nsmooth,ML_ONE_STEP_CG,
                                         nblocks, blocks);
       free(blocks);
       */
       num_PDE_eqns = 6;
    }
 	
-/*
    ML_Gen_CoarseSolverSuperLU( ml, coarsest_level);
-*/
+
    /* Aztec smoother on the coarsest grid */
+   /*
    old_prec = options[AZ_precond];
    old_sol  = options[AZ_solver];
    old_tol  = params[AZ_tol];
@@ -402,8 +402,9 @@ int max_nz_row, big_ind = -1, ii;
    options[AZ_precond] = old_prec;
    options[AZ_solver] = old_sol;
    params[AZ_tol] = old_tol;
+   */
 		
-   ML_Gen_Solver(ml, ML_MGV, N_levels-1, coarsest_level); 
+   ML_Gen_Solver(ml, ML_MGFULLV, N_levels-1, coarsest_level); 
 	
    options[AZ_solver]   = AZ_cg;
    options[AZ_scaling]  = AZ_none;
