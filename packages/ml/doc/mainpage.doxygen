@@ -1,0 +1,394 @@
+/*! \mainpage ML: Multi Level Preconditioning Package File List
+
+\htmlonly
+<CENTER>
+<IMG SRC="../ml-logo.jpg">
+</CENTER>
+\endhtmlonly
+
+
+
+\section table Table of Contents
+
+- \ref intro
+- \ref desc
+- \ref dev
+- \ref doc
+- \ref minitutorial
+- \ref debug 
+- \ref changes
+- \ref copyright
+
+\section intro Introduction
+
+ML, developed at the Sandia National Laboratories,
+is a multigrid preconditioning package intended to solve linear
+systems of equations A x = b where A is a user supplied n x n
+sparse matrix, b is a user supplied vector of length n and x is a
+vector of length n to be computed. ML should be used on large sparse
+linear systems arising from partial differential equation (PDE)
+discretizations.  While technically any linear system can be considered,
+ML should be used on linear systems that correspond to things that work
+well with multigrid methods (e.g. elliptic PDEs). ML can be used as a
+stand-alone package or to generate preconditioners for a traditional
+iterative solver package (e.g. Krylov methods). We have supplied support
+for working with the Aztec 2.1 and AztecOO iterative package
+Aztec.  However, other solvers can be used by supplying a few
+functions.
+
+ML is a multigrid preconditioning package intended to solve large sparse linear
+systems of equations arising from primarily elliptic PDE discretizations. Several
+different parallel multigrid schemes are contained within ML including smoothed
+aggregation, a version of classical AMG, and a special algebraic multigrid for the
+eddy current approximation to Maxwell's equations. This eddy current solver is a
+unique capability of ML and utilizes the discrete nullspace of the operator in
+building the smoothers and grid hierarchy. Within each of these methods there are
+several different algorithms to guide the type of coarsening and the inter-grid
+transfers (including the ability to drop weak coupling within the operator during
+inter-transfer construction). There are also a number of smoothers including a
+local Gauss-Seidel method, a symmetric local Gauss-Seidel method, a polynomial
+smoother based on the Chebyshev semi-iterative method, block Gauss-Seidel
+smoothers, as well as two-stage distributed relaxation smoothers for Maxwell's
+equations. It is also possible to use ML with other packages to supply smoothers.
+We have built-in interfaces for using methods from Aztec as smoothers and using
+SuperLU as a coarse grid direct solver. Using the Amesos it is possible to access
+other direct solvers such as MUMPS for use as a coarse grid solver.
+
+ML can also be used as a framework to generate new multigrid methods. Using ML's
+built in aggregation routines and Galerkin products, it is possible to focus on
+new types of inter-grid transfer operators without having to address the
+cumbersome aspects of generating an entirely new parallel algebraic multigrid
+code. We have used these flexibility to produce special multilevel methods using
+coarse grid finite element functions to serve as inter-grid transfers.
+
+ML has been used within a number of applications at Sandia and a few applications
+outside of Sandia. ML is released for external distribution and can be obtained as
+part of the Trilinos development environment. 
+
+
+
+\section desc Project Description
+
+Many important scientific and engineering applications require the use of linear
+solvers. The ML iterative solver package grew out of a need for scalable solvers.
+Several algebraic multigrid methods are contained within ML. In addition to
+standard algebraic multigrid, there is a special eddy current Maxwell solver. This
+special solver takes into account the discrete null space associated with these
+equations. The eddy current Maxwell solver is a unique capability provided for by
+the  ML  library.
+
+Our primary goal has been to provide state-of-the-art iterative methods that
+perform well on parallel computers (applications running on over 1000 processors
+have been run) and at the same time are easy to use for application engineers. In
+addition to providing algebraic multilevel methods to engineers, the ML library is
+also used in our research on preconditioners. At present, we are working closely
+with a couple of specific applications in further extending our capabilities. We
+have used ML in the following ways:
+- Parallel: MPI, several different linux clusters, Intel ASCI red machine, IBM
+  SP2, ...
+- Data-Neutral Interface: Matrices are accessed via getrow() and matvec()
+  functions.
+
+As mentioned above, a unique feature of ML is its ability to solve the eddy
+current Maxwell Equations. This is done by having the user supply the discrete
+null space. This null space is used to develop a special smoother (hybrid
+distributed relaxation method) and to develop special intergrid transfers. The
+inter-grid transfer satisfy a commuting property such that the coarse grid
+discretizations satisfy an exact discrete null space relationship. This solver has
+been used in both the time and frequency domain. In the frequency domain,
+equivalent real forms are used to address complex arithmetic. In this case, a
+special block form the eddy current Maxwell method is used to develop the grid
+transfers. In addition, a complex form of the Chebyshev smoother is used as a
+relaxation method.
+
+ML is designed to be cooperate with other Trilinos project, and in particular with 
+the Aztec-2.1/AztecOO linear solver package developed at
+Sandia National Laboratories. However, ML can also be run stand-alone or the user
+can write their own functions such as an application specific smoother. The ML
+package has been integrated with several other libraries including: lapack, blas,
+SuperLU/SuperLU_DIST, UMFPACK, Mumps, parasails, Trilinos/Epetra, Metis, ParMETIS, ...
+
+
+\section dev Developers
+The ML deverlopers are:
+- Jonathan Hu;
+- Marzio Sala;
+- Ray S. Tuminaro;
+
+\section doc Documentation about ML
+
+ML is a large package. The following documents are suggested to ML users:
+- Sandia report SAND-2004-22195 (ML 3.0 Smoothed Aggregation User's Guide, by M.
+  Sala, J. Hu and R. Tuminaro) introduces to the use of ML. The guide is focused
+  on smoothed aggregation multilevel methods. However, ML can also be used for
+  geometric multilevel methods.
+- The doxygen documentation is suggested for an up-to-date overview of the C++
+  functionalities of ML. ML has an Epetra interface, and can be used to define
+  black-box preconditioners for Epetra_RowMatrix's. The doxygen documentation
+  covers the ML/Epetra interface, and does NOT cover the C source files.
+- A developers' guide is in preparation.
+
+Probably, the best way to understand ML is to use it. Several examples are
+provided in the Trilinos/packages/ml/examples subdirectories. Users are suggested
+to compile and run these examples. Often, a copy-and-paste approach is good enough
+to start with ML. This is particularly true for the ML/Epetra interface.
+
+
+
+\section minitutorial Quick introduction to the ML/Epetra interface
+
+To take advantage of the ML/Epetra interface, ML must be configured with the
+following options:
+- \c --enable-epetra
+- \c --enable-teuchos
+
+It is suggested to enable the Amesos interface (\c --enable-amesos). Amesos is a
+Trilinos package that interfaces with various serial and parallel sparse direct
+solvers. Besides, it contains a simple serial sparse direct solver (KLU), that is
+quite good for small matrices.
+
+
+New users interested in the ML/Epetra interface should take a look to the
+following classes (both in the ML_Epetra namespace):
+- ML_Epetra::MultiLevelPreconditioner (defined in file ml_epetra_preconditioner.h)
+- ML_Epetra::MultiLevelOperator  (defined in file ml_epetra_operator.h)
+- Function ML_Epetra::SetDefaults() can be used to set the default values.
+
+We now report and comment and example of usage of
+ML_Epetra::MultiLevelPreconditioner. The source code can be found in
+ml_example_epetra_preconditioner.cpp. 
+
+First, we need to include several header files. Note that the example works for
+MPI and non-MPI configurations. However, some coarse solver requires MPI (like for
+instance \c AMESOS-Superludist and \c AMESOS-Mumps). \c
+Trilinos_Util_CrsMatrixGallery.h is required by this example, and not by ML.
+
+\code
+#ifdef HAVE_MPI
+#include "mpi.h"
+#include "Epetra_MpiComm.h"
+#else
+#include "Epetra_SerialComm.h"
+#endif
+#include "Epetra_Map.h"
+#include "Epetra_SerialDenseVector.h"
+#include "Epetra_Vector.h"
+#include "Epetra_CrsMatrix.h"
+#include "Epetra_LinearProblem.h"
+#include "AztecOO.h"
+#include "Trilinos_Util_CrsMatrixGallery.h"
+#include "ml_include.h"
+#include "ml_epetra_preconditioner.h"
+\endcode
+
+The following namespace will be used quite often:
+\code
+using namespace Teuchos;
+using namespace Trilinos_Util;
+\endcode
+
+We can now start with the \c main() function.  We create the linear problem using the class
+\c Trilinos_Util::CrsMatrixGallery.  Several matrix examples are supported; please refer to the
+Trilinos tutorial for more details.  Most of the examples using the \c ML_Epetra::MultiLevelPreconditioner
+class are based on Epetra_CrsMatrix. Example
+\c ml_example_epetra_preconditioner_vbr.cpp shows how to define a Epetra_VbrMatrix.
+
+\c laplace_2d is a symmetric matrix; an example of non-symmetric
+matrices is \c recirc_2d' (advection-diffusion in a box, with
+recirculating flow). The number of nodes must be a square number
+
+\code
+int main(int argc, char *argv[])
+{
+
+#ifdef EPETRA_MPI
+  MPI_Init(&argc,&argv);
+  Epetra_MpiComm Comm(MPI_COMM_WORLD);
+#else
+  Epetra_SerialComm Comm;
+#endif
+
+  CrsMatrixGallery Gallery("laplace_2d", Comm);
+  int nx = 128;;
+  Gallery.Set("problem_size", nx*nx);
+\endcode
+
+The following methods of CrsMatrixGallery are used to get
+ pointers to internally stored Epetra_RowMatrix and Epetra_LinearProblem. Then, as
+ we wish to use AztecOO, we need to construc a solver object for this problem.
+
+\code
+  Epetra_RowMatrix * A = Gallery.GetMatrix();
+  Epetra_LinearProblem * Problem = Gallery.GetLinearProblem();
+  AztecOO solver(*Problem);
+\endcode
+
+This is the beginning of the ML part. We proceed as follows:
+1- we create a parameter list for ML options;
+2- set default values for classical smoothed aggregation;
+3- overwrite some parameters.  Please refer to the user's guide for more
+  information some of the parameters do not differ from their default value,
+  Here the smoother is symmetric Gauss-Seidel.  Example file ml_example_epetra_preconditioner_2level.cpp
+  shows how to use AZTEC's preconditioners as smoothers
+  and they are here reported for the sake of clarity maximum number of levels. 
+  We solve the coarse problem with serial direct solver KLU.
+
+\code
+  ParameterList MLList;
+  ML_Epetra::SetDefaults("SA",MLList);
+  MLList.set("max levels",6);
+  MLList.set("increasing or decreasing","decreasing");
+  MLList.set("aggregation: type", "Uncoupled");
+  MLList.set("aggregation: threshold", 0.0);
+
+  MLList.set("smoother: type","Gauss-Seidel");
+  MLList.set("smoother: pre or post", "both");
+
+  MLList.set("coarse: type","Amesos_KLU");
+  MLList.set("coarse: maximum size",30);
+\endcode
+
+Now, we create the preconditioning object.  We suggest to use `new' and
+`delete' because the destructor contains some calls to MPI (as required by
+ML and possibly Amesos).  This is an issue only if the destructor is
+called **after** MPI_Finalize().
+Then, we instruct AztecOO to use this preconditioer and solve
+with 500 iterations and 1e-12 tolerance.
+
+\code
+  ML_Epetra::MultiLevelPreconditioner * MLPrec = new
+     ML_Epetra::MultiLevelPreconditioner(A, MLList, true);
+
+  solver.SetPrecOperator(MLPrec);
+
+  Problem->GetLHS()->PutScalar(0.0);
+  Problem->GetRHS()->PutScalar(1.0);
+
+  solver.SetAztecOption(AZ_solver, AZ_cg);
+  solver.SetAztecOption(AZ_conv, AZ_noscaled);
+  solver.SetAztecOption(AZ_output, 1);
+
+  solver.Iterate(500, 1e-8);
+
+  delete MLPrec;
+\endcode
+
+At this point, we can compute the true residual, and quit.
+\code
+  double residual, diff;
+  Gallery.ComputeResidual(residual);
+  Gallery.ComputeDiffBetweenStartingAndExactSolutions(diff);
+
+  if( Comm.MyPID()==0) {
+    cout << "||b-Ax||_2 = " << residual << endl;
+    cout << "||x_exact - x||_2 = " << diff << endl;
+  }
+
+#ifdef
+  EPETRA_MPI MPI_Finalize() ;
+#endif
+
+  return 0 ;
+}
+\endcode
+																									     
+\section debug Debugging Utilities
+
+It is possible to instruct ML_Epetra::MultiLevelPreconditioner to print out the
+process ID, so that one can attach to the desired process. One can proceed as
+follows:
+- define the enviromental variable ML_BREAK_FOR_DEBUGGER (example, in BASH, export
+ ML_BREAK_FOR_DEBUGGER=1 )
+- run the parallel code on a terminal (example, mpirun -np 4 ml_example.exe )
+- the code will stop in the first call to ComputePreconditioner(). This may occur
+ in the construction phase. Few information about the ID number of each process
+ will be showed.
+- in another terminal, attach to the desired process.
+- insert one character to let the code continue, and debug as required. 
+
+(see also the documentation of method
+ML_Epetra::MultiLevelPreconditioner::BreakForDebugger()).
+
+If ML is compiled with -DML_MEM_CHECK, the destruction of
+ML_Epetra::MultiLevelPreconditioner() will verify that memory has not been
+corrupted, and that no memory leak occurs. Note that this option may be
+computationally expensive, and it is not recommended for performance evaluations.
+
+
+
+\section changes Overview of main ML changes from ml-2.0 to ml-3.0
+
+The ML version contained in Trilinos 4.0 has been enhanced with respect
+to the one included in the Trilinos 3.1 distribution as follows:
+- ML now has extended capabilities to define preconditioners for
+Epetra_LinearProblem objects. Two new classes have been
+introduced (both in the ML_Epetra namespace): MultiLevelOperator (derived from
+Epetra_Operator) and MultiLevelPreconditioner (derived from Epetra_RowMatrix).
+The latter is particularly easy to use, and requires, as input parameters, the
+linear system matrix, and a list of parameters only. Using this class,
+ML can be used as a black-box solver to define multilevel (possibly domain
+decomposition based) preconditioners.
+- ML users can take advantage of several other Trilinos packages: Epetra,
+Teuchos, Amesos, Anasazi, Triutils, IFPACK.
+- ML uses Teuchos to specify the input parameters for
+ML_Epetra::MultiLevelPreconditioner objects, and in
+some other internal classes (mainly, the interface with Amesos and Anasazi).
+- ML now supports the Trilinos package Amesos as primary direct
+sequential and parallel direct solvers. Through Amesos, KLU, UMFPACK
+4.1, SuperLU_DIST 2.0, MUMPS 4.3.1, and ScaLAPACK can be used. The user can
+specify the maximum number of processes to be used in the coarse
+solution, or let Amesos decide.
+- ML interface to SuperLU and SuperLU_DIST is now deprecated in favor of
+the Amesos interface (but still available).
+- ML can use the Trilinos package Anasazi to estimate the maximum eigenvalue for
+both symmetric and non-symmetric problems.
+- A basic interface to the Trilinos package IFPACK is available.
+- Two new aggregation schemes, based on graph partitioning algorithms,
+have been added. Interfaces to the third-party libraries METIS and ParMETIS
+are available. Users can now specify the number of nodes to be included in each
+aggregate (or the number of local or global aggregates); this allows aggressive
+coarsening. ML must be configured with options --with-ml_metis and
+--with-ml_parmetis_3x to use graph partitioning algorithms. ParMETIS support
+requires Epetra.
+- ML can use a simple power method to estimate the maximum eigenvalue for
+non-symmetric problems, in addition to the A-norm scheme.
+- The set of examples has been extended. Now about 30 examples are available,
+mainly in C. A couple of C++ examples, that use
+Trilinos_Utils::CrsMatrixGallery to define the linear system matrix, is included
+in the distribution.
+- Improved the MLS preconditioner for block systems.
+- In the configuration phase, ML automatically recognizes which Trilinos
+package has been enabled, and compiles all functions using this package (if any).
+- (Limited) visualization and statistics capabilities are available for METIS
+and Uncoupled aggregation schemes. The user can visualize the shape of the
+aggregates for all levels using OpenDX.
+- (Limited) doxygen documentation is available. Type doxygen in the doc
+subdirectory to create the documentation. Almost all the C++ code, and a small
+part of the C code, has been modified with doxygen-compatible comments.
+- A new user's guide is available in the doc subdirectory (Sandia report
+SAND-2004-22195).
+ 
+
+\section copyright Copyright
+
+\verbatim
+Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
+license for use of this work by or on behalf of the U.S. Government.
+
+This library is free software; you can redistribute it and/or modify
+it under the terms of the GNU Lesser General Public License as
+published by the Free Software Foundation; either version 2.1 of the
+License, or (at your option) any later version.
+
+This library is distributed in the hope that it will be useful, but
+WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public
+License along with this library; if not, write to the Free Software
+Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+USA
+\endverbatim
+
+*/
