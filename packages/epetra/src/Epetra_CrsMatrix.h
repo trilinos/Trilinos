@@ -479,7 +479,7 @@ class Epetra_CrsMatrix: public Epetra_DistObject, public Epetra_CompObject, publ
     \return Integer error code, set to 0 if successful.
   */
 	int Multiply(bool TransA, const Epetra_MultiVector& X, Epetra_MultiVector& Y) const;
-	
+
 	//! Returns the result of a local solve using the Epetra_CrsMatrix on a Epetra_Vector x in y.
 	/*! This method solves a triangular system of equations asynchronously on each processor.
     \param In

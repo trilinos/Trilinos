@@ -51,7 +51,6 @@ int power_method(bool TransA, Epetra_CrsMatrix& A,
 		 double * lambda, int niters, double tolerance,
 		 bool verbose);
 
- 
 int main(int argc, char *argv[])
 {
   int ierr = 0, i, forierr = 0;
@@ -81,6 +80,10 @@ int main(int argc, char *argv[])
   // Check if we should print results to standard out
   if (argc>1) if (argv[1][0]=='-' && argv[1][1]=='v') verbose = true;
 
+  int verbose_int = verbose ? 1 : 0;
+  Comm.Broadcast(&verbose_int, 1, 0);
+  verbose = verbose_int==1 ? true : false;
+
 
   //  char tmp;
   //  if (rank==0) cout << "Press any key to continue..."<< endl;
@@ -91,7 +94,7 @@ int main(int argc, char *argv[])
   int MyPID = Comm.MyPID();
   int NumProc = Comm.NumProc();
   if (verbose) cout << "Processor "<<MyPID<<" of "<< NumProc
-										<< " is alive."<<endl;
+		    << " is alive."<<endl;
 
   bool verbose1 = verbose;
 

@@ -613,59 +613,59 @@ int Epetra_BlockMap::ElementSize(int LID) const {
 }
 
 //==============================================================================
-void Epetra_BlockMap::GlobalToLocalSetup() {
-
+void Epetra_BlockMap::GlobalToLocalSetup()
+{
   int i;
   int numMyElements = BlockMapData_->NumMyElements_;
 
-  if (BlockMapData_->NumGlobalElements_ == 0) 
+  if (BlockMapData_->NumGlobalElements_ == 0) {
     return; // Nothing to do
+  }
 
-  else if (LinearMap() || numMyElements == 0) {
+  if (LinearMap() || numMyElements == 0) {
     return; // Nothing else to do
   }
-  else {
-    // Build LID_ vector to make look up of local index values fast
+
+  // Build LID_ vector to make look up of local index values fast
 
 #ifdef EPETRA_BLOCKMAP_NEW_LID
 
-    //check for initial contiguous block
-    int val = BlockMapData_->MyGlobalElements_[0];
-    for( i = 0 ; i < numMyElements; ++i ) {
-      if (val != BlockMapData_->MyGlobalElements_[i]) break;
-      ++val;
-    }
-    BlockMapData_->LastContiguousGIDLoc_ = i - 1;
+  //check for initial contiguous block
+  int val = BlockMapData_->MyGlobalElements_[0];
+  for( i = 0 ; i < numMyElements; ++i ) {
+    if (val != BlockMapData_->MyGlobalElements_[i]) break;
+    ++val;
+  }
+  BlockMapData_->LastContiguousGIDLoc_ = i - 1;
     
-    //Hash everything else
-    if(i < numMyElements) {
-      if (BlockMapData_->LIDHash_ != NULL) {
-	delete BlockMapData_->LIDHash_;
-      }
-
-      BlockMapData_->LIDHash_ = new Epetra_HashTable(numMyElements - i + 1 );
-      for(; i < numMyElements; ++i )
-	BlockMapData_->LIDHash_->Add( BlockMapData_->MyGlobalElements_[i], i );
+  //Hash everything else
+  if(i < numMyElements) {
+    if (BlockMapData_->LIDHash_ != NULL) {
+      delete BlockMapData_->LIDHash_;
     }
+
+    BlockMapData_->LIDHash_ = new Epetra_HashTable(numMyElements - i + 1 );
+    for(; i < numMyElements; ++i )
+      BlockMapData_->LIDHash_->Add( BlockMapData_->MyGlobalElements_[i], i );
+  }
     
 #else
     
-    int SpanGID = BlockMapData_->MaxMyGID_ - BlockMapData_->MinMyGID_ + 1;
-    BlockMapData_->LID_.Size(SpanGID);
+  int SpanGID = BlockMapData_->MaxMyGID_ - BlockMapData_->MinMyGID_ + 1;
+  BlockMapData_->LID_.Size(SpanGID);
     
-    for (i = 0; i < SpanGID; i++) 
-      BlockMapData_->LID_[i] = -1; // Fill all locations with -1
+  for (i = 0; i < SpanGID; i++) 
+    BlockMapData_->LID_[i] = -1; // Fill all locations with -1
     
-    for (i = 0; i < numMyElements; i++) {
-      int tmp = BlockMapData_->MyGlobalElements_[i] - BlockMapData_->MinMyGID_;
-      assert(tmp >= 0); 
-      assert(tmp < SpanGID);
-      BlockMapData_->LID_[BlockMapData_->MyGlobalElements_[i] - BlockMapData_->MinMyGID_] = i; // Spread local indices
-    }
+  for (i = 0; i < numMyElements; i++) {
+    int tmp = BlockMapData_->MyGlobalElements_[i] - BlockMapData_->MinMyGID_;
+    assert(tmp >= 0); 
+    assert(tmp < SpanGID);
+    BlockMapData_->LID_[BlockMapData_->MyGlobalElements_[i] - BlockMapData_->MinMyGID_] = i; // Spread local indices
+  }
 
 #endif
-    
-  }
+
 }
 
 //==============================================================================
@@ -729,15 +729,17 @@ int Epetra_BlockMap::RemoteIDList(int NumIDs, const int * GIDList,
 				  int * PIDList, int * LIDList,
 				  int * SizeList) const
 {
-  Epetra_Directory* directory = Comm().CreateDirectory(*this);
+  if (BlockMapData_->Directory_ == NULL) {
+    BlockMapData_->Directory_ = Comm().CreateDirectory(*this);
+  }
+
+  Epetra_Directory* directory = BlockMapData_->Directory_;
   if (directory == NULL) {
     return(-1);
   }
 
-  EPETRA_CHK_ERR( directory->GetDirectoryEntries(NumIDs, GIDList,
+  EPETRA_CHK_ERR( directory->GetDirectoryEntries(*this, NumIDs, GIDList,
 						 PIDList, LIDList, SizeList) );
-
-  delete directory;
 
   return(0);
 }
@@ -857,8 +859,10 @@ Epetra_BlockMap::~Epetra_BlockMap()  {
 }
 
 //==============================================================================
-void Epetra_BlockMap::CleanupData()  {
+void Epetra_BlockMap::CleanupData()
+{
   if(BlockMapData_ != 0) {
+
     BlockMapData_->DecrementReferenceCount();
     if(BlockMapData_->ReferenceCount() == 0) {
       delete BlockMapData_;
@@ -868,7 +872,8 @@ void Epetra_BlockMap::CleanupData()  {
 }
 
 //=============================================================================
-Epetra_BlockMap & Epetra_BlockMap::operator= (const Epetra_BlockMap & map) {
+Epetra_BlockMap & Epetra_BlockMap::operator= (const Epetra_BlockMap & map)
+{
   if((this != &map) && (BlockMapData_ != map.BlockMapData_)) {
     CleanupData();
     BlockMapData_ = map.BlockMapData_;

@@ -72,10 +72,12 @@ class Epetra_Directory {
 	   
     \return Integer error code, set to 0 if successful.
   */
-  virtual int GetDirectoryEntries( const int NumEntries,
-			   const int * GlobalEntries,
-			   int * Procs,
-			   int * LocalEntries, int * EntrySizes) const = 0;
+  virtual int GetDirectoryEntries( const Epetra_BlockMap& Map,
+				   const int NumEntries,
+				   const int * GlobalEntries,
+				   int * Procs,
+				   int * LocalEntries,
+				   int * EntrySizes) const = 0;
 
   //@}
 };

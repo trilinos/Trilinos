@@ -247,8 +247,10 @@ int Epetra_CrsMatrix::Scale(double ScalarConstant)
   return(0);
 }
 //==========================================================================
-int Epetra_CrsMatrix::InsertGlobalValues(int Row, int NumEntries, double* Values, int* Indices) {
-
+int Epetra_CrsMatrix::InsertGlobalValues(int Row, int NumEntries,
+					 double* Values,
+					 int* Indices)
+{
   if(IndicesAreLocal()) 
     EPETRA_CHK_ERR(-2); // Cannot insert global values into local graph
   if(IndicesAreContiguous()) 
@@ -262,8 +264,10 @@ int Epetra_CrsMatrix::InsertGlobalValues(int Row, int NumEntries, double* Values
 }
 
 //==========================================================================
-int Epetra_CrsMatrix::InsertMyValues(int Row, int NumEntries, double* Values, int* Indices) {
-
+int Epetra_CrsMatrix::InsertMyValues(int Row, int NumEntries,
+				     double* Values,
+				     int* Indices)
+{
   if(IndicesAreGlobal()) 
     EPETRA_CHK_ERR(-2); // Cannot insert global values into filled graph
   if(IndicesAreContiguous()) 
@@ -277,8 +281,10 @@ int Epetra_CrsMatrix::InsertMyValues(int Row, int NumEntries, double* Values, in
 }
 
 //==========================================================================
-int Epetra_CrsMatrix::InsertValues(int Row, int NumEntries, double* Values, int* Indices) {
-
+int Epetra_CrsMatrix::InsertValues(int Row, int NumEntries,
+				   double* Values,
+				   int* Indices)
+{
   int j;
   double* tmp_Values = 0;
   int ierr = 0;
@@ -307,7 +313,7 @@ int Epetra_CrsMatrix::InsertValues(int Row, int NumEntries, double* Values, int*
     }
 
     if(Values_[Row] != 0) 
-      ierr = 2; // This row has be defined already.  Issue warning.
+      ierr = 2; // This row has been defined already.  Issue warning.
     Values_[Row] = Values;
   }
   else {    
@@ -446,9 +452,11 @@ int Epetra_CrsMatrix::SumIntoGlobalValues(int Row, int NumEntries, double * Valu
       ierr = 2; // Value Excluded
   }
 
-  EPETRA_CHK_ERR(ierr);
   NormOne_ = -1.0; // Reset Norm so it will be recomputed.
   NormInf_ = -1.0; // Reset Norm so it will be recomputed.
+
+  EPETRA_CHK_ERR(ierr);
+
   return(0);
 }
 
@@ -1047,9 +1055,11 @@ int Epetra_CrsMatrix::Multiply(bool TransA, const Epetra_MultiVector& X, Epetra_
 }
 
 //=============================================================================
-int Epetra_CrsMatrix::Solve(bool Upper, bool Trans, bool UnitDiagonal, const Epetra_Vector& x, Epetra_Vector& y) const {
+int Epetra_CrsMatrix::Solve(bool Upper, bool Trans, bool UnitDiagonal,
+			    const Epetra_Vector& x, Epetra_Vector& y) const
+{
   //
-  // This function find y such that Ly = x or Uy = x or the transpose cases.
+  // This function finds y such that Ly = x or Uy = x or the transpose cases.
   //
 
   if (!Filled()) {

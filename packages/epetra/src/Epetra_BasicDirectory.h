@@ -32,9 +32,7 @@
 
 #include "Epetra_Object.h"
 #include "Epetra_Directory.h"
-
-class Epetra_BlockMap;  // Compiler needs forward reference
-class Epetra_Map;
+#include "Epetra_Map.h"
 
 //! Epetra_BasicDirectory: This class allows Epetra_Map objects to reference non-local elements.
 
@@ -87,7 +85,8 @@ class Epetra_BasicDirectory: public virtual Epetra_Directory {
 	   
     \return Integer error code, set to 0 if successful.
   */
-  int GetDirectoryEntries( const int NumEntries,
+  int GetDirectoryEntries( const Epetra_BlockMap& Map,
+			   const int NumEntries,
 			   const int * GlobalEntries,
 			   int * Procs,
 			   int * LocalEntries, int * EntrySizes) const;
@@ -100,17 +99,17 @@ class Epetra_BasicDirectory: public virtual Epetra_Directory {
 
  private: // These need to be accessible to derived map classes.
   //! Generate: Sets up Directory tables.
-  int Generate();
+  int Generate(const Epetra_BlockMap& Map);
 
   //! Returns the Epetra_Map containing the directory
   const Epetra_Map & DirectoryMap() const {return(*DirectoryMap_);};
 
-  const Epetra_BlockMap* Map_;
   Epetra_Map* DirectoryMap_;
 
   int * ProcList_;
   int * LocalIndexList_;
   int * SizeList_;
+  bool SizeIsConst_;
 
   int * AllMinGIDs_;
   
