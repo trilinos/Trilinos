@@ -60,7 +60,7 @@ void setup_henry(ML *my_ml, int grid0, int **imapper, int **separator,
    for (i = 0; i < Nrows; i++) dmapper[i] = (double) (i+start+1);
 
 
-   ML_exchange_bdry(dmapper, getrow_comm, Nrows,my_ml->comm,ML_OVERWRITE);
+   ML_exchange_bdry(dmapper, getrow_comm, Nrows,my_ml->comm,ML_OVERWRITE,NULL);
 
    mapper  = (int    *) malloc((Nrows+Nrecv)*sizeof(int));
    for (i = 0; i < Nrows+Nrecv; i++) mapper[i] = (int) dmapper[i];
