@@ -6361,52 +6361,6 @@ fi
 echo "$as_me:$LINENO: result: `eval echo '${'$as_ac_File'}'`" >&5
 echo "${ECHO_T}`eval echo '${'$as_ac_File'}'`" >&6
 
-  echo "$as_me:$LINENO: checking for /home/kstanley/Trilinos3PL/SuperLU_DIST/SRC/supermatrix.h" >&5
-echo $ECHO_N "checking for /home/kstanley/Trilinos3PL/SuperLU_DIST/SRC/supermatrix.h... $ECHO_C" >&6
-if test "${ac_cv_file__home_kstanley_Trilinos3PL_SuperLU_DIST_SRC_supermatrix_h+set}" = set; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
-else
-  test "$cross_compiling" = yes &&
-  { { echo "$as_me:$LINENO: error: cannot check for file existence when cross compiling" >&5
-echo "$as_me: error: cannot check for file existence when cross compiling" >&2;}
-   { (exit 1); exit 1; }; }
-if test -r "/home/kstanley/Trilinos3PL/SuperLU_DIST/SRC/supermatrix.h"; then
-  ac_cv_file__home_kstanley_Trilinos3PL_SuperLU_DIST_SRC_supermatrix_h=yes
-else
-  ac_cv_file__home_kstanley_Trilinos3PL_SuperLU_DIST_SRC_supermatrix_h=no
-fi
-fi
-echo "$as_me:$LINENO: result: $ac_cv_file__home_kstanley_Trilinos3PL_SuperLU_DIST_SRC_supermatrix_h" >&5
-echo "${ECHO_T}$ac_cv_file__home_kstanley_Trilinos3PL_SuperLU_DIST_SRC_supermatrix_h" >&6
-
-
-  echo "$as_me:$LINENO: checking for /home/kstanley/Trilinos3PL/SuperLU_DIST/SRC/supermatrix.h" >&5
-echo $ECHO_N "checking for /home/kstanley/Trilinos3PL/SuperLU_DIST/SRC/supermatrix.h... $ECHO_C" >&6
-if test "${ac_cv_file__home_kstanley_Trilinos3PL_SuperLU_DIST_SRC_supermatrix_h+set}" = set; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
-else
-  test "$cross_compiling" = yes &&
-  { { echo "$as_me:$LINENO: error: cannot check for file existence when cross compiling" >&5
-echo "$as_me: error: cannot check for file existence when cross compiling" >&2;}
-   { (exit 1); exit 1; }; }
-if test -r "/home/kstanley/Trilinos3PL/SuperLU_DIST/SRC/supermatrix.h"; then
-  ac_cv_file__home_kstanley_Trilinos3PL_SuperLU_DIST_SRC_supermatrix_h=yes
-else
-  ac_cv_file__home_kstanley_Trilinos3PL_SuperLU_DIST_SRC_supermatrix_h=no
-fi
-fi
-echo "$as_me:$LINENO: result: $ac_cv_file__home_kstanley_Trilinos3PL_SuperLU_DIST_SRC_supermatrix_h" >&5
-echo "${ECHO_T}$ac_cv_file__home_kstanley_Trilinos3PL_SuperLU_DIST_SRC_supermatrix_h" >&6
-if test $ac_cv_file__home_kstanley_Trilinos3PL_SuperLU_DIST_SRC_supermatrix_h = yes; then
-  :
-else
-  { { echo "$as_me:$LINENO: error: Cannot find supermatrix.h, specify a location using --with-amesos_sluincdir, --with-ameos_sluddir or --with-trilinos3pldir " >&5
-echo "$as_me: error: Cannot find supermatrix.h, specify a location using --with-amesos_sluincdir, --with-ameos_sluddir or --with-trilinos3pldir " >&2;}
-   { (exit 1); exit 1; }; }
-fi
-
-
-
 
   as_ac_File=`echo "ac_cv_file_${tac_with_amesos_sludincdir}/supermatrix.h" | $as_tr_sh`
 echo "$as_me:$LINENO: checking for ${tac_with_amesos_sludincdir}/supermatrix.h" >&5
@@ -6429,8 +6383,8 @@ echo "${ECHO_T}`eval echo '${'$as_ac_File'}'`" >&6
 if test `eval echo '${'$as_ac_File'}'` = yes; then
   :
 else
-  { { echo "$as_me:$LINENO: error: Cannot find supermatrix.h in ${tac_with_amesos_sludincdir} , specify a location using --with-amesos_sluincdir, --with-ameos_sluddir or --with-trilinos3pldir " >&5
-echo "$as_me: error: Cannot find supermatrix.h in ${tac_with_amesos_sludincdir} , specify a location using --with-amesos_sluincdir, --with-ameos_sluddir or --with-trilinos3pldir " >&2;}
+  { { echo "$as_me:$LINENO: error: Cannot find supermatrix.h in ${tac_with_amesos_sludincdir} , specify a location using --with-amesos-sluincdir, --with-amesos-sluddir or --with-trilinos3pldir " >&5
+echo "$as_me: error: Cannot find supermatrix.h in ${tac_with_amesos_sludincdir} , specify a location using --with-amesos-sluincdir, --with-amesos-sluddir or --with-trilinos3pldir " >&2;}
    { (exit 1); exit 1; }; }
 fi
 
@@ -8057,7 +8011,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:8060: \"$ac_link\") >&5
+(eval echo $as_me:8014: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -8136,7 +8090,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:8139: \"$ac_link\") >&5
+(eval echo $as_me:8093: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS

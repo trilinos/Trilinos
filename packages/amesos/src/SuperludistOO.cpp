@@ -13,8 +13,6 @@
 #include "Epetra_Import.h"
 #include "Epetra_Export.h"
 #include "Epetra_CrsMatrix.h"
-#include "supermatrix.h"      
-#include "superlu_ddefs.h"
 #include "CrsMatrixTranspose.h"
 #include <vector>
 
@@ -31,24 +29,24 @@
 
   i.e. max i such that there exists j > i such that i*j = NumProcs
 */
-int SLU_NumRows( int NumProcs ) {
+int SLU_NumProcRows( int NumProcs ) {
 #ifdef TFLOP
   //  Else, parameter 6 of DTRSV CTNLU is incorrect 
   return 1;
 #else
   int i;
-  int numrows ;
+  int NumProcRows ;
   for ( i = 1; i*i <= NumProcs; i++ ) 
     ;
   bool done = false ;
-  for ( numrows = i-1 ; done == false ; ) {
-    int NumCols = NumProcs / numrows ; 
-    if ( numrows * NumCols == NumProcs ) 
+  for ( NumProcRows = i-1 ; done == false ; ) {
+    int NumCols = NumProcs / NumProcRows ; 
+    if ( NumProcRows * NumCols == NumProcs ) 
       done = true; 
     else 
-      numrows-- ; 
+      NumProcRows-- ; 
   }
-  return numrows;
+  return NumProcRows;
 #endif
 }
 
@@ -76,7 +74,7 @@ SuperludistOO::~SuperludistOO(void) {
   //  DeleteMemory();
   //  DeleteAzArrays();
 
-  if ( A_and_LU_built ) { 
+  if ( false & A_and_LU_built ) { 
     // Destroy_CompCol_Matrix_dist(&A);
     SUPERLU_FREE(A.Store);
     Destroy_LU(numrows, &grid, &LUstruct);
@@ -139,12 +137,20 @@ SuperludistOO::~SuperludistOO(void) {
 //  If we need SerialCrsMAttrixA, then ExtractCrsMatrixA will not be a
 //  serial matrix, hence three extra serial copies is the maximum.
 //
+
+#undef EPETRA_CHK_ERR
+#define EPETRA_CHK_ERR(xxx) assert( (xxx) == 0 ) 
+
 int SuperludistOO::Solve(bool factor) { 
   //
   //  I am going to put these here until I determine that I need them in 
   //  SuperludistOO.h 
   //
 
+
+  SOLVEstruct_t SOLVEstruct;    // This - and many other variables will 
+                                // need to move to SuperludistOO.h before we can 
+                                // make multiple solves work.
   bool CheckExtraction = false;    //  Set to true to force extraction for unit test
 
   Epetra_RowMatrix *RowMatrixA = 
@@ -169,6 +175,8 @@ int SuperludistOO::Solve(bool factor) {
   Comm.Barrier();
 #endif
 
+  //  return 0; // WORK GXX BOGUS KEN 
+
   //
   //  Step 1)  Convert the matrix to an Epetra_CrsMatrix
   //
@@ -190,97 +198,150 @@ int SuperludistOO::Solve(bool factor) {
     assert( false ) ;
 #endif
   }
-
   assert( Phase2Mat != NULL ) ; 
   const Epetra_Map &Phase2Matmap = Phase2Mat->RowMap() ; 
 
-  //
-  //  Step 2)  Coalesce the matrix onto process 0
-  //
-  const Epetra_MpiComm & comm1 = dynamic_cast<const Epetra_MpiComm &> (Comm);
-  MPI_Comm MPIC = comm1.Comm() ;
+  //  return 0; // WORK GXX BOGUS KEN -  OK, if we put the return we get a big error, but at least we don't 
+            // do that bizarre double return thing.
 
-  int IsLocal = ( Phase2Matmap.NumMyElements() == 
-		  Phase2Matmap.NumGlobalElements() )?1:0;
-  Comm.Broadcast( &IsLocal, 1, 0 ) ; 
-#ifdef DEBUG
-  assert( Comm_assert_equal( &Comm, IsLocal ) );
+  //
+  //  Glossary:
+  //    numrows, numcols = m,n, i.e. the size of the full, global, matrix
+  //    m_loc            = the number of rows owned by this process
+  //    nnz_loc          = the number of non zeros in the rows owned by this process
+  //    Ap, Aval, Ai,    = rowptr, nzval, colind, = sparse row storage 
+  //    MyRowPtr         = a redundant computation of Ap  (rowptr) 
+
+  //
+  //  Compute nnz_loc, m_loc, and MyRowPtr from the map
+  //  
+
+#if 0
+  cout << " A  Comm.NumProc() = " <<  Comm.NumProc() << endl ; 
+
+  cout << " true = " << true << " LInMap = " <<  Phase2Matmap.LinearMap() << endl  ; // Map must be contiguously divided
+  cout << " SuperludistOO.cpp::   traceback mode = " << Epetra_Object::GetTracebackMode() << endl ; 
+  cerr << " Send this to cerr cerr cerr   traceback mode = " << Epetra_Object::GetTracebackMode() << endl ; 
 #endif
+  EPETRA_CHK_ERR( ! ( Phase2Matmap.LinearMap())  ) ; // Map must be contiguously divided
 
-  Epetra_CrsMatrix *Phase3Mat = 0 ;
+  int numrows = Phase2Matmap.NumGlobalElements() ; 
+  assert( numrows == Phase2Mat->NumGlobalRows() ) ; 
+  int numcols = Phase2Mat->NumGlobalCols() ; 
+  assert( numrows == numcols ) ; 
 
-  int NumGlobalElements_ = Phase2Matmap.NumGlobalElements() ;
-  //  Create a serial map in case we end up needing it 
-  //  If it is created inside the else block below it would have to
-  //  be with a call to new().
-  int NumMyElements_ = 0 ;
-  if (iam==0) NumMyElements_ = NumGlobalElements_;
-  Epetra_Map SerialMap( NumGlobalElements_, NumMyElements_, 0, Comm );
-  Epetra_CrsMatrix SerialCrsMatrixA(Copy, SerialMap, 0);
+  int m_loc = Phase2Matmap.NumMyElements() ; 
+  int nnz_loc = Phase2Mat->NumMyNonzeros() ;
+  vector <int> MyRowPtr( m_loc+1 ) ;  
+
+  //  Here is another attempted hack
+  int MyFirstElement ;
+  //  assert( Comm.NumProc() <= 2 ) ; 
+  //  if ( iam == 0 ) MyFirstElement = 0 ;
+  //  if ( iam == 1 ) MyFirstElement = numrows - m_loc ; // Proc 0 has the rest
+  
+
+#if 1
+  //
+  //  Here I compute what a uniform distribution should look like
+  //  so that I can compare what I think MyFirstElement should be 
+  //  against what it really is.
+  //
+  int m_per_p = numrows / Comm.NumProc() ;
+  cout << " m_per_p = " << m_per_p << endl ; 
+  int remainder = numrows - ( m_per_p * Comm.NumProc() );
+  MyFirstElement = iam * m_per_p + EPETRA_MIN( iam, remainder );
+#endif
+  cout << " iam = " << iam << " MyFirstElement = " << MyFirstElement << endl ; 
+  if ( ( numrows == 5 ) && ( Comm.NumProc() == 2)  ) {
+    assert( iam ==0 || MyFirstElement == 3 ) ; 
+    assert( iam ==1 || MyFirstElement == 0 ) ; 
+  }
+
+  //
+  //  Check to make sure that we have exactly the rows (elements) that an uniform
+  //  distribution would give us.
+  //
+  vector <int> MyRows( m_loc ) ; 
+  Phase2Matmap.MyGlobalElements( &MyRows[0] ) ; 
+  cout << " iam = " << iam << "MyRows = " ;
+  for ( int i = 0; i < m_loc ; i++) cout << MyRows[i] << " " ;
+  cout << endl ; 
+
+  cout << "NumMyElements = " <<  Phase2Matmap.NumMyElements() << endl ; 
+  cout << "iam = " << iam << " My GIDs = " <<  Phase2Matmap.MinMyGID() << " ..  " 
+       << Phase2Matmap.MaxMyGID() << endl ; 
+  assert( MyFirstElement ==  Phase2Matmap.MinMyGID() ) ; 
+  assert( MyFirstElement+m_loc-1 ==  Phase2Matmap.MaxMyGID() ) ; 
 
 
-  if ( IsLocal==1 ) {
-     Phase3Mat = Phase2Mat ;
-  } else {
+  //
+  //  This is actually redundant with the Ap below
+  //
+  MyRowPtr[0] = 0 ; 
+  int CurrentRowPtr = 0 ;
+  for ( int i = 0; i < m_loc ; i++ ) { 
+    CurrentRowPtr += Phase2Mat->NumMyEntries( i ) ; 
+    MyRowPtr[i+1] = CurrentRowPtr ; 
+  }
 
-    Epetra_Export export_to_serial( Phase2Matmap, SerialMap);
+  //  return 0; // WORK GXX BOGUS KEN - Fails before here 
 
-    SerialCrsMatrixA.Export( *Phase2Mat, export_to_serial, Add ); 
+  //
+  //  Extract nzval(Aval) and colind(Ai) from the CrsMatrix (Phase2Mat) 
+  //
+
+  if ( factor ) { 
+  //
+  //  Step 6) Convert the matrix to Ap, Ai, Aval
+  //
+    Ap.resize( m_loc+1 );
+    Ai.resize( EPETRA_MAX( m_loc, nnz_loc) ) ; 
+    Aval.resize( EPETRA_MAX( m_loc, nnz_loc) ) ; 
     
-    SerialCrsMatrixA.TransformToLocal() ; 
-    Phase3Mat = &SerialCrsMatrixA ;
+    int NzThisRow ;
+    double *RowValues;
+    int *ColIndices;
+    int Ai_index = 0 ; 
+    int MyRow;
+    int num_my_cols = Phase2Mat->NumMyCols() ; 
+    vector <int>Global_Columns( num_my_cols ) ; 
+    for ( int i = 0 ; i < num_my_cols ; i ++ ) { 
+      Global_Columns[i] = Phase2Mat->GCID( i ) ; 
+    }
 
+    for ( MyRow = 0; MyRow <m_loc; MyRow++ ) {
+      int status = Phase2Mat->ExtractMyRowView( MyRow, NzThisRow, RowValues, ColIndices ) ;
+      assert( status == 0 ) ; 
+      Ap[MyRow] = Ai_index ; 
+      assert( Ap[MyRow] == MyRowPtr[MyRow] ) ; 
+      for ( int j = 0; j < NzThisRow; j++ ) { 
+	Ai[Ai_index] = Global_Columns[ColIndices[j]] ; 
+	Aval[Ai_index] = RowValues[j] ; 
+	Ai_index++;
+      }
+    }
+    assert( m_loc == MyRow );
+    Ap[ m_loc ] = Ai_index ; 
   }
-  Comm.Barrier() ; 
-
-
+  
 
   //
-  //  Step 3)  Transpose the matrix 
+  //  WORK GXX - DONE - trivial actually 
+  //  Pull B out of the Epetra_vector 
   //
-  const Epetra_Map &Phase3Matmap = Phase3Mat->RowMap() ; 
 
-  numrows = Phase3Mat->NumGlobalRows();
-  int numcols = Phase3Mat->NumGlobalCols();
-  int numentries = Phase3Mat->NumGlobalNonzeros();
-
-  Epetra_CrsMatrix Phase3MatTrans(Copy, Phase3Matmap, 0);
-  Epetra_CrsMatrix *Phase4Mat;
-
-  if ( GetTrans() ) { 
-    Phase4Mat = Phase3Mat ; 
-  } else {
-    assert( CrsMatrixTranspose( Phase3Mat, &Phase3MatTrans ) == 0 ) ; 
-    Phase4Mat = &Phase3MatTrans ;
-  }
-
-
-  //
-  //  Step 4)  Replicate the matrix
-  //
-  int * AllIDs = new int[numrows];
-  for ( int i = 0; i < numrows ; i++ ) AllIDs[i] = i ; 
-
-  // Create a replicated map and matrix
-  Epetra_Map ReplicatedMap( -1, numrows, AllIDs, 0, Comm);
-  //  Epetra_LocalMap ReplicatedMap( numrows, 0, Comm);   // Compiles,runs, fails to replicate
-
-  delete [] AllIDs;
-
-  Epetra_Import importer( ReplicatedMap, Phase3Matmap );
-
-  Epetra_CrsMatrix Phase5Mat(Copy, ReplicatedMap, 0);
-  int Phase5ImportRes = Phase5Mat.Import( *Phase4Mat, importer, Insert);
-  assert( Phase5ImportRes == 0);
-  assert( Phase5Mat.TransformToLocal() == 0 ) ; 
-
-  assert( Phase5Mat.NumMyRows() == Phase4Mat->NumGlobalRows() ) ;
-
-  //
-  //  Step 5)  Convert vector b to a replicated vector
-  //
   Epetra_MultiVector   *vecX = Problem_->GetLHS() ; 
   Epetra_MultiVector   *vecB = Problem_->GetRHS() ; 
+
+  double *bValues ;
+  double *xValues ;
+  int ldb, ldx ; 
+
+  EPETRA_CHK_ERR( vecB->ExtractView( &bValues, &ldb ) )  ; 
+  EPETRA_CHK_ERR( vecX->ExtractView( &xValues, &ldx ) ) ; 
+  EPETRA_CHK_ERR( ! ( ldx == ldb ) ) ; 
+  EPETRA_CHK_ERR( ! ( ldx == m_loc ) ) ; 
 
   int nrhs; 
   if ( vecX == 0 ) { 
@@ -291,70 +352,8 @@ int SuperludistOO::Solve(bool factor) {
     EPETRA_CHK_ERR( vecB->NumVectors() != nrhs ) ; 
   }
 
-  int nArows = Phase3Mat->NumGlobalRows() ; 
-  int nAcols = Phase3Mat->NumGlobalCols() ; 
 
-#ifdef ONE_VECTOR_ONLY
-  assert( vecX->NumVectors() == 1 ) ; 
-  assert( vecB->NumVectors() == 1 ) ; 
-
-  Epetra_Vector *vecXvector = dynamic_cast<Epetra_Vector*>(vecX) ; 
-  Epetra_Vector *vecBvector = dynamic_cast<Epetra_Vector*>(vecB) ; 
-
-  assert( vecXvector != 0 ) ; 
-  assert( vecBvector != 0 ) ; 
-
-  Epetra_Vector vecXreplicated( ReplicatedMap ) ; 
-  Epetra_Vector vecBreplicated( ReplicatedMap ) ; 
-#else
-  Epetra_MultiVector *vecXvector = (vecX) ; 
-  Epetra_MultiVector *vecBvector = (vecB) ; 
-
-  Epetra_MultiVector vecXreplicated( ReplicatedMap, nrhs ) ; 
-  Epetra_MultiVector vecBreplicated( ReplicatedMap, nrhs ) ; 
-#endif
-
-  Epetra_Import ImportToReplicated( ReplicatedMap, Phase2Matmap);
-
-  vecXreplicated.Import( *vecXvector, ImportToReplicated, Insert ) ;
-  vecBreplicated.Import( *vecBvector, ImportToReplicated, Insert ) ;
-
-  assert( nArows == vecXreplicated.MyLength() ) ; 
-  assert( nAcols == vecBreplicated.MyLength() ) ;
-
-  double *bValues ;
-  double *xValues ;
-  int bLda, xLda ; 
-
-  assert( vecBreplicated.ExtractView( &bValues, &bLda ) == 0 )  ; 
-  assert( vecXreplicated.ExtractView( &xValues, &xLda ) == 0 ) ; 
-
-  if ( factor ) { 
-  //
-  //  Step 6) Convert the matrix to Ap, Ai, Aval
-  //
-  Ap.resize( numrows+1 );
-  Ai.resize( EPETRA_MAX( numrows, numentries) ) ; 
-  Aval.resize( EPETRA_MAX( numrows, numentries) ) ; 
-
-  int NumEntries ;
-  double *RowValues;
-  int *ColIndices;
-  int Ai_index = 0 ; 
-  int MyRow;
-  for ( MyRow = 0; MyRow <numrows; MyRow++ ) {
-    int status = Phase5Mat.ExtractMyRowView( MyRow, NumEntries, RowValues, ColIndices ) ;
-    assert( status == 0 ) ; 
-    Ap[MyRow] = Ai_index ; 
-    for ( int j = 0; j < NumEntries; j++ ) { 
-      Ai[Ai_index] = ColIndices[j] ; 
-      Aval[Ai_index] = RowValues[j] ; 
-      Ai_index++;
-    }
-  }
-  assert( numrows == MyRow );
-  Ap[ numrows ] = Ai_index ; 
-  }
+  //  return 0; // WORK GXX BOGUS KEN 
 
   //
   //  Step 7)  Call SuperLUdist
@@ -363,15 +362,17 @@ int SuperludistOO::Solve(bool factor) {
   //
   //  This really belongs somewhere else - perhaps in the constructor
   //
+  const Epetra_MpiComm & comm1 = dynamic_cast<const Epetra_MpiComm &> (Comm);
+  MPI_Comm MPIC = comm1.Comm() ;
+
   if ( factor ) { 
     numprocs = Comm.NumProc() ;                 
-    nprow = SLU_NumRows( numprocs ) ; 
+    nprow = SLU_NumProcRows( numprocs ) ; 
     npcol = numprocs / nprow ;
     assert ( nprow * npcol == numprocs ) ; 
     superlu_gridinit( MPIC, nprow, npcol, &grid);
   
 #ifdef DEBUG
-    assert( Comm_assert_equal( &Comm, numentries ) );
     assert( Comm_assert_equal( &Comm, numrows ) );
     assert( Comm_assert_equal( &Comm, numcols ) );
 #endif
@@ -379,27 +380,9 @@ int SuperludistOO::Solve(bool factor) {
   } else {
     assert( numprocs == Comm.NumProc() ) ; 
   }
-  int ldb = numrows ; 
+
   /* Bail out if I do not belong in the grid. */
   if ( iam < nprow * npcol ) {
-    //
-    //  All processes need to have identical values of:
-    //    numrows(m), numcols(n), nnz(NumEntries), 
-    //    Aval(a), Ap(xa), Ai(asub)
-    //    double(numentries), int(n+1), int(numentries) 
-
-#ifdef DEBUG
-    for ( int ii = 0; ii < min( numentries, 10 ) ; ii++ ) { 
-      assert( Comm_assert_equal( &Comm, Aval[ii] ) ) ; 
-    }
-    for ( int ii = 0; ii < min( numcols+1, 10 ) ; ii++ ) { 
-      assert( Comm_assert_equal( &Comm, Ai[ii] ) ); 
-      assert( Comm_assert_equal( &Comm, Ap[ii] ) ); 
-    }
-    for ( int ii = 0; ii < min( numrows, 10 ) ; ii++ ) { 
-      assert( Comm_assert_equal( &Comm, bValues[ii] ) ); 
-    }
-#endif
 	
     if ( factor ) { 
       set_default_options(&options);
@@ -407,12 +390,80 @@ int SuperludistOO::Solve(bool factor) {
       if ( !(berr = doubleMalloc_dist(nrhs)) )
 	EPETRA_CHK_ERR( -1 ) ; 
       
-      /* Create compressed column matrix for A. */
-      dCreate_CompCol_Matrix_dist(&A, numrows, numcols, 
-				  numentries, &Aval[0], &Ai[0], 
-				  &Ap[0], SLU_NC, SLU_D, SLU_GE);
+#if 0
+    /* Set up the local A in NR_loc format */
+    cout << " iam = " << iam << " nnz_loc = " << nnz_loc 
+	   << " m_loc = " << m_loc 
+	   << " MyFirstElement = " << MyFirstElement 
+	   << " numrows = " << numrows 
+	   << " numcols = " << numcols  << endl ; 
+    cout << " Ap = " ; 
+    for (int i = 0; i < m_loc+1 ; i++ ) { 
+      cout << Ap[i] << " " ; 
+    } ; 
+    cout << endl ; 
+
+    cout << " Ai = " ;
+    for (int i = 0; i < nnz_loc ; i++ ) { 
+      cout << Ai[i] << " "  ; 
+    } ; 
+    cout << endl ; 
+
+    cout << " Aval = "; 
+    for (int i = 0; i < nnz_loc ; i++ ) { 
+      cout << Aval[i]  << " " ; 
+    } ; 
+    cout << endl ; 
+    cout << " END OF MIDDLE PRINTOUT of A " << endl ; 
+#endif
+    dCreate_CompRowLoc_Matrix_dist( &A, numrows, numcols, 
+				    nnz_loc, m_loc, MyFirstElement,
+				    &Aval[0], &Ai[0], &Ap[0], 
+				    SLU_NR_loc, SLU_D, SLU_GE );
+    
+#if 0
+  Comm.Barrier();
+    cout << " iam = " << iam << " nnz_loc = " << nnz_loc 
+	   << " m_loc = " << m_loc 
+	   << " MyFirstElement = " << MyFirstElement 
+	   << " numrows = " << numrows 
+	   << " numcols = " << numcols  << endl ; 
+    cout << " iam = " << iam << " Ap = " ; 
+    for (int i = 0; i < m_loc+1 ; i++ ) { 
+      cout << Ap[i] << " " ; 
+    } ; 
+    cout << endl ; 
+
+    cout << " iam = " << iam << " Ai = " ;
+    for (int i = 0; i < nnz_loc ; i++ ) { 
+      cout << Ai[i] << " "  ; 
+    } ; 
+    cout << endl ; 
+
+    cout << " iam = " << iam << " Aval = " ;
+    for (int i = 0; i < nnz_loc ; i++ ) { 
+      cout << Aval[i]  << " " ; 
+    } ; 
+    cout << endl ; 
+    cout << " END OF BOTTOM PRINTOUT of A " << endl ; 
+#endif
+#if 1
+  Comm.Barrier();
+  //  Print for matlab 
+  //
+  for (int i = 0; i < m_loc ; i++ ) { 
+    for ( int j = Ap[i]; j < Ap[i+1] ; j++ ) { 
+      cout << "A(" << i + MyFirstElement +1  << "," << Ai[j]+1 << " ) = " << Aval[j] << "; % iam = " << iam <<endl ; 
+    } 
+  }
+#endif
+
+
+    //      /* Create compressed column matrix for A. */
+    //      dCreate_CompCol_Matrix_dist(&A, numrows, numcols, 
+    //				  nnz_loc, &Aval[0], &Ai[0], 
+    //				  &Ap[0], SLU_NC, SLU_D, SLU_GE);
       A_and_LU_built = true; 
-      
 #if 0
       cout << " Here is A " << endl ; 
       dPrint_CompCol_Matrix_dist( &A ); 
@@ -433,40 +484,56 @@ int SuperludistOO::Solve(bool factor) {
       EPETRA_CHK_ERR( Factored_ == false ) ; 
       options.Fact = FACTORED ; 
     }
+
     //
+    //  WORK GXX - We may not need to do anything over than copy the 
+    //  data from b into x  - This looks good to me. 
     //  pdgssvx_ABglobal returns x in b, so we copy b into x and pass x as b.
     //
     for ( int j = 0 ; j < nrhs; j++ )
-      for ( int i = 0 ; i < numrows; i++ ) xValues[i+j*xLda] = bValues[i+j*xLda]; 
+      for ( int i = 0 ; i < m_loc; i++ ) xValues[i+j*ldx] = bValues[i+j*ldx]; 
+
+#if 0
+    cout << " B = [ " ;
+    for ( int i = 0 ; i < m_loc; i++ ) cout << xValues[i+0*ldx] << " " ; 
+    cout << "];"  << endl ; 
+#endif
     
     /* Initialize the statistics variables. */
     PStatInit(&stat);
 
     /* Call the linear equation solver. */
     int info ;
-    pdgssvx_ABglobal(&options, &A, &ScalePermstruct, &xValues[0], 
-		     ldb, nrhs, &grid, &LUstruct, berr, &stat, &info);
+    //    dPrint_CompCol_Matrix_dist(&A);
+    pdgssvx(&options, &A, &ScalePermstruct, &xValues[0], ldx, nrhs, &grid,
+	    &LUstruct, &SOLVEstruct, berr, &stat, &info);
+
+    //    pdgssvx_ABglobal(&options, &A, &ScalePermstruct, &xValues[0], 
+    //		     ldb, nrhs, &grid, &LUstruct, berr, &stat, &info);
     EPETRA_CHK_ERR( info ) ; 
 
+#if 0
+    cout << " X = [ " ;
+    for ( int i = 0 ; i < m_loc; i++ ) cout << xValues[i+0*ldx] << " " ; 
+    cout << "];"  << endl ; 
+#endif
+    
     PStatFree(&stat);
 
+#if 0
+    cout << " Here is X: " ;
+    vecX->Print(cout ) ; 
+
+    cout << endl << " Here is B: " ;
+    vecB->Print(cout) ; 
+    cout << endl ; 
+#endif
+
   }
 
-
   //
-  //  Step 8)  Convert vector x back to a distributed vector
+  //  NO WORK GXX - I don't think that we need to do anything to convert X 
   //
-  //  This is an ugly hack - it should be cleaned up someday
-  //
-  for (int i = 0 ; i < numrows; i++ ) { 
-    int lid[1] ; 
-    lid[0] = Phase2Matmap.LID( i ) ; 
-    if ( lid[0] >= 0 ) { 
-      for (int j = 0 ; j < nrhs; j++ ) { 
-	vecXvector->ReplaceMyValue(  lid[0], j, xValues[i + ldb * j]  ) ; 
-      }
-    }
-  }
 
   return(0) ; 
 }

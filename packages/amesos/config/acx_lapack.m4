@@ -37,6 +37,7 @@ AC_DEFUN([ACX_LAPACK], [
 AC_REQUIRE([ACX_BLAS])
 acx_lapack_ok=no
 
+# --------------  ABCDEFG
 AC_ARG_WITH(lapack,
         [AC_HELP_STRING([--with-lapack=<lib>], [use LAPACK library <lib>])])
 case $with_lapack in

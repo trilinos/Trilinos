@@ -1389,8 +1389,13 @@ dnl @author Steven G. Johnson <stevenj@alum.mit.edu>
 dnl
 AC_DEFUN([ACX_BLAS], [
 AC_PREREQ(2.50)
+
+# ------------------------------  A7
+
 AC_REQUIRE([AC_F77_LIBRARY_LDFLAGS])
 acx_blas_ok=no
+
+# ------------------------------  A8
 
 AC_ARG_WITH(blas,
 	[AC_HELP_STRING([--with-blas=<lib>], [use BLAS library <lib>])])
@@ -1405,6 +1410,7 @@ esac
 AC_F77_FUNC(sgemm)
 AC_F77_FUNC(dgemm)
 
+# ------------------------------  A9
 acx_blas_save_LIBS="$LIBS"
 LIBS="$LIBS $FLIBS"
 
@@ -1419,6 +1425,7 @@ if test "x$BLAS_LIBS" != x; then
 fi
 fi
 
+# ------------------------------  ABCDEF
 # BLAS linked to by default?  (happens on some supercomputers)
 if test $acx_blas_ok = no; then
 	save_LIBS="$LIBS"; LIBS="$LIBS"
@@ -1544,6 +1551,7 @@ AC_DEFUN([ACX_LAPACK], [
 AC_REQUIRE([ACX_BLAS])
 acx_lapack_ok=no
 
+# --------------  ABCDEFG
 AC_ARG_WITH(lapack,
         [AC_HELP_STRING([--with-lapack=<lib>], [use LAPACK library <lib>])])
 case $with_lapack in

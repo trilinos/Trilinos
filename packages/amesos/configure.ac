@@ -276,15 +276,9 @@ if test "X$ac_cv_use_amesos_slud" != "Xno"; then
 
 
   AC_CHECK_FILE(${tac_with_amesos_sludincdir}/supermatrix.h)
-  AC_CHECK_FILE(/home/kstanley/Trilinos3PL/SuperLU_DIST/SRC/supermatrix.h)
-
-  AC_CHECK_FILE(/home/kstanley/Trilinos3PL/SuperLU_DIST/SRC/supermatrix.h,,
-    AC_MSG_ERROR([[Cannot find supermatrix.h, specify a location using --with-amesos_sluincdir, --with-ameos_sluddir or --with-trilinos3pldir]] ))
-
-
 
   AC_CHECK_FILE(${tac_with_amesos_sludincdir}/supermatrix.h,,
-    AC_MSG_ERROR([[Cannot find supermatrix.h in ${tac_with_amesos_sludincdir} , specify a location using --with-amesos_sluincdir, --with-ameos_sluddir or --with-trilinos3pldir]] ))
+    AC_MSG_ERROR([[Cannot find supermatrix.h in ${tac_with_amesos_sludincdir} , specify a location using --with-amesos-sluincdir, --with-amesos-sluddir or --with-trilinos3pldir]] ))
 
 
 ##  LDFLAGS="${tac_with_amesos_sludlib} ${LDFLAGS}"

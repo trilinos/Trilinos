@@ -26,8 +26,8 @@
 #include <string>
 #include <vector>
 using namespace std;
-#include "supermatrix.h"
 #include "superlu_ddefs.h"
+#include "supermatrix.h"
 #undef Reduce
 // typedef map< string, int >  OptionsMap ;
 // typedef map< string, double >  ParametersMap ;
