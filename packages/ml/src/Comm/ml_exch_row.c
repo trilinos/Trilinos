@@ -477,7 +477,7 @@ void ML_add_appended_rows(ML_CommInfoOP *comm_info, ML_Operator *matrix,
    int *accum_col, accum_size, max_nz_per_row, next_nz, total_nz = 0;
    int max_nz_row_new, N_changed = 0, t_changed = 0, sub_i = 0, total;
    int *Ccol, *C_ptr, *row_ids, N_append_rows, *row_map, *itemp;
-   double *accum_val, *Cval;
+   double *accum_val, *Cval, dtemp;
    ML_Operator *current, *previous_matrix, *parent;
    struct ML_CSR_MSRdata *temp = NULL;
    int row_request, row_length;
@@ -635,9 +635,9 @@ void ML_add_appended_rows(ML_CommInfoOP *comm_info, ML_Operator *matrix,
                /* allocate space for new matrix */
 
                if (row_count != orig_rows) {
-                  total = ((int) (1.1 * ((double) ((total_rcvd-N_changed)* 
-                                                     total_nz))/
-                                     ((double) N_changed))) + Ncols;
+		 dtemp =   1.1 * ((double) (total_rcvd-N_changed))/
+		   ((double) N_changed);
+		 total = ((int) ( ((double) total_nz) * dtemp)) + Ncols;
                }
                else total = total*total_rcvd + Ncols;
 
