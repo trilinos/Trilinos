@@ -522,23 +522,6 @@ class EpetraSerialDenseTestCase(unittest.TestCase):
                 if i==j: self.assertAlmostEqual(idty[i,j],1.0,10)
                 else:    self.assertAlmostEqual(idty[i,j],0.0,10)
 
-##     def test(self):
-##         "Test the SerialDenseMatrix "
-
-##     def test(self):
-##         "Test the SerialDenseMatrix "
-
-##     def test(self):
-##         "Test the SerialDenseMatrix "
-
-##     def test(self):
-##         "Test the SerialDenseMatrix "
-
-##     def test(self):
-##         "Test the SerialDenseMatrix "
-
-##     def test(self):
-##         "Test the SerialDenseMatrix "
 
 if __name__ == "__main__":
 

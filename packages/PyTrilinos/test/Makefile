@@ -30,7 +30,7 @@ ifeq ($(TEST_NO_DIFF),)
 	fi
 endif
 
-test: testEpetra testParameter testStatusTest testExample
+test: testEpetra testNOX testExample
 
 testEpetra:
 	rm -fr $@.out
@@ -43,22 +43,11 @@ testEpetra:
 	@mv TEMP $@.out
 	$(MAKE) TEST_OUT=$@.out test_diff
 
-testParameter:
+testNOX:
 	rm -fr $@.out
 	touch $@.out
 	@echo "----" $(TEE) $@.out
-	@echo "Test Parameter.List interface" $(TEE) $@.out
-	@echo "----" $(TEE) $@.out
-	@./$@.py 2>&1 $(TEE) $@.out
-	@grep -v "Ran [0-9]* tests in" $@.out > TEMP
-	@mv TEMP $@.out
-	$(MAKE) TEST_OUT=$@.out test_diff
-
-testStatusTest:
-	rm -fr $@.out
-	touch $@.out
-	@echo "----" $(TEE) $@.out
-	@echo "Test the StatusTest interface" $(TEE) $@.out
+	@echo "Test NOX interface" $(TEE) $@.out
 	@echo "----" $(TEE) $@.out
 	@./$@.py 2>&1 $(TEE) $@.out
 	@grep -v "Ran [0-9]* tests in" $@.out > TEMP
@@ -69,7 +58,7 @@ testExample:
 	rm -fr $@.out
 	touch $@.out
 	@echo "----" $(TEE) $@.out
-	@echo "Test an example NOX_Epetra nonlinear problem" $(TEE) $@.out
+	@echo "Test an example NOX.Epetra nonlinear problem" $(TEE) $@.out
 	@echo "----" $(TEE) $@.out
 	@./$@.py 2>&1 $(TEE) $@.out
 	@grep -v time $@.out > TEMP

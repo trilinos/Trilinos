@@ -1,5 +1,5 @@
 ----
-Test an example NOX_Epetra nonlinear problem
+Test an example NOX.Epetra nonlinear problem
 ----
 probSize = 11
 colorMap = { 

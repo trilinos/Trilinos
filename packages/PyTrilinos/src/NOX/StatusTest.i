@@ -25,6 +25,7 @@ using namespace NOX::StatusTest;
 // Ignore directives
 %ignore operator<<(ostream &, NOX::StatusTest::StatusType );
 %ignore *::print(ostream &, int) const;
+%ignore NOX::Abstract::Group::operator=(const NOX::Abstract::Group&);
 
 // Rename directives
 %rename(StatusTest_None) NOX::StatusTest::None;
