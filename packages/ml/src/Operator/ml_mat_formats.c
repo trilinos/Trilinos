@@ -1541,7 +1541,7 @@ int MSR_matvec_WKC(ML_Operator *Amat_in, int ilen, double *ep_p, int olen, doubl
 {
    int i, j, Nrows, *bindx;
    double            **big_p;
-   double            *p2, *val, *sum;
+   double            *p2, *val, sum;
    struct ML_CSR_MSRdata *temp;
    ML_CommInfoOP     *getrow_comm;
    ML_Operator       *Amat;
@@ -1586,9 +1586,9 @@ int MSR_matvec_WKC(ML_Operator *Amat_in, int ilen, double *ep_p, int olen, doubl
   j = bindx[0];
   bindx_ptr = &bindx[j];
   for (i = 0; i < Nrows; i++) {
-    *sum =  val[i]*p2[i];
+    sum =  val[i]*p2[i];
     while (j+10 < bindx[i+1]) {
-      *sum += val[j+9]*p2[bindx_ptr[9]] +
+      sum += val[j+9]*p2[bindx_ptr[9]] +
         val[j+8]*p2[bindx_ptr[8]] +
         val[j+7]*p2[bindx_ptr[7]] +
         val[j+6]*p2[bindx_ptr[6]] +
@@ -1602,9 +1602,9 @@ int MSR_matvec_WKC(ML_Operator *Amat_in, int ilen, double *ep_p, int olen, doubl
       j += 10;
     }
     while (j < bindx[i+1]) {
-      *sum += val[j++] * p2[*bindx_ptr++];
+      sum += val[j++] * p2[*bindx_ptr++];
     }
-    ap[i] = *sum;
+    ap[i] = sum;
   }
   }
 
