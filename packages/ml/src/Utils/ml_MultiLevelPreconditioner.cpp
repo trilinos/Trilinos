@@ -73,10 +73,11 @@
 using namespace Teuchos;
 
 // ================================================ ====== ==== ==== == =
-void ML_Epetra::MultiLevelPreconditioner::PrintMem(char *fmt, int min, int avg, int max)
+void ML_Epetra::MultiLevelPreconditioner::PrintMem(char *fmt, int min, int sum, int max)
 {
 
-  if( Comm().MyPID() == 0 ) printf(fmt,min, avg, max);
+  if (Comm().MyPID() == 0) 
+    printf(fmt,min,sum / Comm().NumProc(),max,sum);
   puts(" (Mb)");
 
   return;
@@ -163,8 +164,8 @@ int ML_Epetra::MultiLevelPreconditioner::DestroyPreconditioner()
   OutputList_.set(Prefix_ + "number of applications",
 		  NumApplications_);
 
-  int min[ML_MEM_SIZE], max[ML_MEM_SIZE], avg[ML_MEM_SIZE];
-  for( int i=0 ; i<ML_MEM_SIZE ; ++i ) avg[i] = 0;
+  int min[ML_MEM_SIZE], max[ML_MEM_SIZE], sum[ML_MEM_SIZE];
+  for( int i=0 ; i<ML_MEM_SIZE ; ++i ) sum[i] = 0;
 
   if (AnalyzeMemory_) {
     memory_[ML_MEM_TOT2] = memory_[ML_MEM_TOT1] + memory_[ML_MEM_PREC_FIRST];
@@ -173,18 +174,16 @@ int ML_Epetra::MultiLevelPreconditioner::DestroyPreconditioner()
 #endif
     Comm().MinAll(memory_,min,ML_MEM_SIZE);
     Comm().MaxAll(memory_,max,ML_MEM_SIZE);
-    Comm().SumAll(memory_,avg,ML_MEM_SIZE);
+    Comm().SumAll(memory_,sum,ML_MEM_SIZE);
   }
   
-  for (int i = 0 ; i < ML_MEM_SIZE ; ++i) avg[i] /= Comm().NumProc();
-
   if (verbose_ && NumApplications_) {
 
     // print on screen
     
     ML_print_line("-",78);
     double TotalTime = FirstApplicationTime_ + ApplicationTime_;
-    cout << PrintMsg_ << "   ML time information                    total          avg" << endl << endl
+    cout << PrintMsg_ << "   ML time information                    total          iter avg" << endl << endl
 	 << PrintMsg_ << "   1- Construction time             = " 
          << std::setw(10) << ConstructionTime_ << "  "
          << std::setw(10) << ConstructionTime_ / NumConstructions_ << " (s)" << endl;
@@ -205,38 +204,38 @@ int ML_Epetra::MultiLevelPreconditioner::DestroyPreconditioner()
     // print memory usage
 
     cout << endl;
-    cout << "   ML memory information:                 min     avg     max" 
+    cout << "   ML memory information:                 min     avg     max       tot" 
          << endl << endl;
 #ifdef ML_MALLINFO    
     cout << "   1- estimated ML memory usage, using mallinfo()" << endl;
-    PrintMem("      for the hierarchy              = %5d   %5d   %5d",
-	     min[ML_MEM_HIERARCHY],avg[ML_MEM_HIERARCHY],max[ML_MEM_HIERARCHY]);
-    PrintMem("      for the smoother(s)            = %5d   %5d   %5d",
-	     min[ML_MEM_SMOOTHER],avg[ML_MEM_SMOOTHER],max[ML_MEM_SMOOTHER]);
-    PrintMem("      for the coarse solver          = %5d   %5d   %5d",
-	     min[ML_MEM_COARSE],avg[ML_MEM_COARSE],max[ML_MEM_COARSE]);
-    PrintMem("      preconditioning                = %5d   %5d   %5d",
-	     min[ML_MEM_PREC_FIRST],avg[ML_MEM_PREC_FIRST],max[ML_MEM_PREC_FIRST]);
-    PrintMem("      total (w/o other prec data)    = %5d   %5d   %5d",
-	     min[ML_MEM_TOT1],avg[ML_MEM_TOT1],max[ML_MEM_TOT1]);
-    PrintMem("      total (w/  other prec data)    = %5d   %5d   %5d",
-	     min[ML_MEM_TOT2],avg[ML_MEM_TOT2],max[ML_MEM_TOT2]);
+    PrintMem("      for the hierarchy              = %5d   %5d   %5d   %7d",
+	     min[ML_MEM_HIERARCHY],sum[ML_MEM_HIERARCHY],max[ML_MEM_HIERARCHY]);
+    PrintMem("      for the smoother(s)            = %5d   %5d   %5d   %7d",
+	     min[ML_MEM_SMOOTHER],sum[ML_MEM_SMOOTHER],max[ML_MEM_SMOOTHER]);
+    PrintMem("      for the coarse solver          = %5d   %5d   %5d   %7d",
+	     min[ML_MEM_COARSE],sum[ML_MEM_COARSE],max[ML_MEM_COARSE]);
+    PrintMem("      preconditioning                = %5d   %5d   %5d   %7d",
+	     min[ML_MEM_PREC_FIRST],sum[ML_MEM_PREC_FIRST],max[ML_MEM_PREC_FIRST]);
+    PrintMem("      total (w/o other prec data)    = %5d   %5d   %5d   %7d",
+	     min[ML_MEM_TOT1],sum[ML_MEM_TOT1],max[ML_MEM_TOT1]);
+    PrintMem("      total (w/  other prec data)    = %5d   %5d   %5d   %7d",
+	     min[ML_MEM_TOT2],sum[ML_MEM_TOT2],max[ML_MEM_TOT2]);
     cout << endl;
 #endif
 #ifdef ML_MALLOC
     cout << "   3- estimated ML memory usage, using malloc()" << endl;
-    PrintMem("      for the hierarchy              = %5d   %5d   %5d",
-	     min[ML_MEM_HIERARCHY_MALLOC],avg[ML_MEM_HIERARCHY_MALLOC],max[ML_MEM_HIERARCHY_MALLOC]);
-    PrintMem("      for the smoother(s)            = %5d   %5d   %5d",
-	     min[ML_MEM_SMOOTHER_MALLOC],avg[ML_MEM_SMOOTHER_MALLOC],max[ML_MEM_SMOOTHER_MALLOC]);
-    PrintMem("      for the coarse solver          = %5d   %5d   %5d",
-	     min[ML_MEM_COARSE_MALLOC],avg[ML_MEM_COARSE_MALLOC],max[ML_MEM_COARSE_MALLOC]);
-    PrintMem("      preconditioning                = %5d   %5d   %5d",
-	     min[ML_MEM_PREC_FIRST_MALLOC],avg[ML_MEM_PREC_FIRST_MALLOC],max[ML_MEM_PREC_FIRST_MALLOC]);
-    PrintMem("      total (w/o other prec data)    = %5d   %5d   %5d",
-	     min[ML_MEM_TOT1_MALLOC],avg[ML_MEM_TOT1_MALLOC],max[ML_MEM_TOT1_MALLOC]);
-    PrintMem("      total (w/  other prec data)    = %5d   %5d   %5d",
-	     min[ML_MEM_TOT2_MALLOC],avg[ML_MEM_TOT2_MALLOC],max[ML_MEM_TOT2_MALLOC]);
+    PrintMem("      for the hierarchy              = %5d   %5d   %5d   %7d",
+	     min[ML_MEM_HIERARCHY_MALLOC],sum[ML_MEM_HIERARCHY_MALLOC],max[ML_MEM_HIERARCHY_MALLOC]);
+    PrintMem("      for the smoother(s)            = %5d   %5d   %5d   %7d",
+	     min[ML_MEM_SMOOTHER_MALLOC],sum[ML_MEM_SMOOTHER_MALLOC],max[ML_MEM_SMOOTHER_MALLOC]);
+    PrintMem("      for the coarse solver          = %5d   %5d   %5d   %7d",
+	     min[ML_MEM_COARSE_MALLOC],sum[ML_MEM_COARSE_MALLOC],max[ML_MEM_COARSE_MALLOC]);
+    PrintMem("      preconditioning                = %5d   %5d   %5d   %7d",
+	     min[ML_MEM_PREC_FIRST_MALLOC],sum[ML_MEM_PREC_FIRST_MALLOC],max[ML_MEM_PREC_FIRST_MALLOC]);
+    PrintMem("      total (w/o other prec data)    = %5d   %5d   %5d   %7d",
+	     min[ML_MEM_TOT1_MALLOC],sum[ML_MEM_TOT1_MALLOC],max[ML_MEM_TOT1_MALLOC]);
+    PrintMem("      total (w/  other prec data)    = %5d   %5d   %5d   %7d",
+	     min[ML_MEM_TOT2_MALLOC],sum[ML_MEM_TOT2_MALLOC],max[ML_MEM_TOT2_MALLOC]);
     cout << endl;
 #endif
     cout << "      (memory for Aztec smoothers reported in `preconditioning')" << endl;
