@@ -66,23 +66,35 @@ bool Newton::operator()(Abstract::Vector& dir,
   bool ok = soln.computeRHS();
 
   if (!ok) {
-    cerr << "NOX::Direction::Newton::operator() - Unable to compute RHS." << endl;
-    throw "NOX Error";
+    if (Utils::doPrint(Utils::Warning))
+      cout << "NOX::Direction::Newton::operator() - Unable to compute RHS." << endl;
+    return false;
   }
 
   // Reset the linear solver tolerance
-  resetForcingTerm(soln, solver.getPreviousSolutionGroup(), solver.getNumIterations());
+  ok = resetForcingTerm(soln, solver.getPreviousSolutionGroup(), solver.getNumIterations());
+  if (!ok) {
+    if (Utils::doPrint(Utils::Warning))
+      cout << "NOX::Direction::Newton::operator() - Unable to set Forcing term." << endl;
+    return false;
+  }
 
   // Compute Jacobian at current solution.
   ok = soln.computeJacobian();
 
   if (!ok) {
-    cerr << "NOX::Direction::Newton::operator() - Unable to compute Jacobian." << endl;
-    throw "NOX Error";
+    if (Utils::doPrint(Utils::Warning))
+      cout << "NOX::Direction::Newton::operator() - Unable to compute Jacobian." << endl;
+    return false;
   }
   
   // Compute the Newton direction
   ok = soln.computeNewton(paramsptr->sublist("Linear Solver"));
+  if (!ok) {
+    if (Utils::doPrint(Utils::Warning))
+      cout << "NOX::Direction::Newton::operator() - Unable to compute Newton direction." << endl;
+    return false;
+  }
 
   // Set search direction.
   dir = soln.getNewton();
@@ -92,14 +104,14 @@ bool Newton::operator()(Abstract::Vector& dir,
 
 
 // protected
-void Newton::resetForcingTerm(const Abstract::Group& soln, const Abstract::Group& oldsoln, int niter)
+bool Newton::resetForcingTerm(const Abstract::Group& soln, const Abstract::Group& oldsoln, int niter)
 {
   // Reset the forcing term at the beginning on a nonlinear iteration,
   // based on the last iteration.
 
   if ((!paramsptr->isParameter("Forcing Term Method")) ||
       (paramsptr->isParameterEqual("Forcing Term Method", "None")))
-    return;
+    return true;
 
   // Get forcing term parameters.
   const string method = paramsptr->getParameter("Forcing Term Method", "");
@@ -212,17 +224,18 @@ void Newton::resetForcingTerm(const Abstract::Group& soln, const Abstract::Group
 
   else {
 
-    cerr << "*** Warning: Invalid Forcing Term Method ***" << endl;
-    return;
+    if (Utils::doPrint(Utils::Warning))
+      cout << "*** Warning: Invalid Forcing Term Method ***" << endl;
+    return false;
   }
 
   // Reset linear solver tolerance
   paramsptr->sublist("Linear Solver").setParameter("Tolerance", eta_k);
 
-  if (Utils::doPrint(Utils::Details)) {
+  if (Utils::doPrint(Utils::Details)) 
     cout << indent << "Forcing Term: " << eta_k << endl;
-  }
 
+  return true;
 }
 
 

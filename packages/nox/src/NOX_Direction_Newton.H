@@ -81,7 +81,7 @@ protected:
 
   //! Called each iteration to reset the forcing term (ie, the
   //! convergence tolerance for the linear solver).
-  virtual void resetForcingTerm(const Abstract::Group& soln, const Abstract::Group& oldsoln, int niter);
+  virtual bool resetForcingTerm(const Abstract::Group& soln, const Abstract::Group& oldsoln, int niter);
 
 
 private:
