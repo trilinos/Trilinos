@@ -56,6 +56,8 @@ void ML_Epetra::MultiLevelPreconditioner::RandomAndZero(double * tmp_rhs, double
 void ML_Epetra::MultiLevelPreconditioner::VizMePleaze()
 {
 
+  char filename[80];
+
   // does not work with Maxwell
   if( ml_ == 0 ) {
     cerr << ErrorMsg_ << "Visualization does not work (yet) with Maxwell..." << endl;
@@ -127,7 +129,7 @@ void ML_Epetra::MultiLevelPreconditioner::VizMePleaze()
   bool VizCycle        = List_.get(Prefix+"viz: cycle", false);
   int NumApplSmoother  = List_.get(Prefix+"viz: smoother application", 10);
   int NumCycleSmoother = List_.get(Prefix+"viz: cycle application", 10);
-  int ieqn             = List_.get(Prefix+"viz: equation to plot", 0);
+  int ieqn             = List_.get(Prefix+"viz: equation to plot", -1);
   if( ieqn >= NumPDEEqns_ ) ieqn = 0;
   bool PrintStarting   = List_.get(Prefix+"viz: print starting solution", false);
 
@@ -186,10 +188,21 @@ void ML_Epetra::MultiLevelPreconditioner::VizMePleaze()
       ptr->ntimes = old_ntimes;
 
       // visualize
-      for( int i=0 ; i<NumMyRows() ; i+=NumPDEEqns_ ) 
-	plot_me[i/NumPDEEqns_] = tmp_sol[i+ieqn];
-      ML_Aggregate_Viz(ml_,agg_,Format,plot_me,"presmoother",LevelID_[ilevel]);
-    }
+      // user may ha ve required one spefic equation only
+      if( ieqn != -1 ) {
+	for( int i=0 ; i<NumMyRows() ; i+=NumPDEEqns_ ) 
+	  plot_me[i/NumPDEEqns_] = tmp_sol[i+ieqn];
+	sprintf(filename,"presmoother-eq%d", ieqn);
+	ML_Aggregate_Viz(ml_,agg_,Format,plot_me,filename,LevelID_[ilevel]);
+      } else { // by default, print out all equations
+	for( int eq=0 ; eq<NumPDEEqns_ ; eq++ ) {
+	  for( int i=0 ; i<NumMyRows() ; i+=NumPDEEqns_ ) 
+	    plot_me[i/NumPDEEqns_] = tmp_sol[i+eq];
+	  sprintf(filename,"presmoother-eq%d", eq);
+	  ML_Aggregate_Viz(ml_,agg_,Format,plot_me,filename,LevelID_[ilevel]);
+	}
+      }
+    } // VizPreSmoother
 
     // ============= //
     // post-smoother //
@@ -204,7 +217,7 @@ void ML_Epetra::MultiLevelPreconditioner::VizMePleaze()
 
       // increase the number of applications of the smoother
       int old_ntimes = ptr->ntimes;
-      ptr->ntimes = NumAggrSmoother;
+      ptr->ntimes = NumApplSmoother;
       ML_Smoother_Apply(ptr, 
 			ml_->Amat[ilevel].outvec_leng,
 			tmp_sol,
@@ -213,11 +226,21 @@ void ML_Epetra::MultiLevelPreconditioner::VizMePleaze()
       ptr->ntimes = old_ntimes;
 
       // visualize
-      for( int i=0 ; i<NumMyRows() ; i+=NumPDEEqns_ ) 
-	plot_me[i/NumPDEEqns_] = tmp_sol[i+ieqn];
-      ML_Aggregate_Viz(ml_,agg_,Format,plot_me,"postsmoother",LevelID_[ilevel]);
-    }
-
+      // user may ha ve required one spefic equation only
+      if( ieqn != -1 ) {
+	for( int i=0 ; i<NumMyRows() ; i+=NumPDEEqns_ ) 
+	  plot_me[i/NumPDEEqns_] = tmp_sol[i+ieqn];
+	printf(filename,"postsmoother-eq%d", ieqn);
+	ML_Aggregate_Viz(ml_,agg_,Format,plot_me,filename,LevelID_[ilevel]);
+      } else { // by default, print out all equations
+	for( int eq=0 ; eq<NumPDEEqns_ ; eq++ ) {
+	  for( int i=0 ; i<NumMyRows() ; i+=NumPDEEqns_ ) 
+	    plot_me[i/NumPDEEqns_] = tmp_sol[i+eq];
+	  sprintf(filename,"postsmoother-eq%d", eq);
+	  ML_Aggregate_Viz(ml_,agg_,Format,plot_me,filename,LevelID_[ilevel]);
+	}
+      }
+    } // VizPostSmoother 
   } // for( ilevel )
 
   // =============================== //
@@ -235,12 +258,22 @@ void ML_Epetra::MultiLevelPreconditioner::VizMePleaze()
 		  tmp_sol, tmp_rhs,
 		  ML_NONZERO, ml_->comm, ML_NO_RES_NORM, ml_);
 
-    // visualize the result, this only for level 0
-    for( int i=0 ; i<NumMyRows() ; i+=NumPDEEqns_ ) 
-      plot_me[i/NumPDEEqns_] = tmp_sol[i+ieqn];
-    ML_Aggregate_Viz(ml_,agg_,Format,plot_me,"cycle",LevelID_[0]);
-
-  }
+    // visualize
+    // user may ha ve required one spefic equation only
+    if( ieqn != -1 ) {
+      for( int i=0 ; i<NumMyRows() ; i+=NumPDEEqns_ ) 
+	plot_me[i/NumPDEEqns_] = tmp_sol[i+ieqn];
+      sprintf(filename,"cycle-eq%d", ieqn);
+      ML_Aggregate_Viz(ml_,agg_,Format,plot_me,filename,LevelID_[0]);
+    } else { // by default, print out all equations
+      for( int eq=0 ; eq<NumPDEEqns_ ; eq++ ) {
+	for( int i=0 ; i<NumMyRows() ; i+=NumPDEEqns_ ) 
+	  plot_me[i/NumPDEEqns_] = tmp_sol[i+eq];
+	sprintf(filename,"cycle-eq%d", eq);
+	ML_Aggregate_Viz(ml_,agg_,Format,plot_me,filename,LevelID_[0]);
+      }
+    }
+  } // VizCycle
 
   // =================== //
   // clean up and return //
