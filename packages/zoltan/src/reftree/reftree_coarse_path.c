@@ -1841,8 +1841,9 @@ int sfc_coarse_grid_path(int nobj, int *num_vert, ZOLTAN_ID_PTR vertices,
 
 /* verify the geometry function has be registered */
 
-  if (zz->Get_Geom == NULL) {
-    ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Must register ZOLTAN_GEOM_FN.");
+  if (zz->Get_Geom == NULL && zz->Get_Geom_Multi == NULL) {
+    ZOLTAN_PRINT_ERROR(zz->Proc, yo, 
+                      "Must register ZOLTAN_GEOM_FN or ZOLTAN_GEOM_MULTI_FN.");
     ZOLTAN_TRACE_EXIT(zz, yo);
     return(ZOLTAN_FATAL);
   }
@@ -1865,18 +1866,35 @@ int sfc_coarse_grid_path(int nobj, int *num_vert, ZOLTAN_ID_PTR vertices,
   ymax = -1.0e50;
   zmin =  1.0e50;
   zmax = -1.0e50;
-  for (i=0; i<nobj; i++) {
+  if (zz->Get_Geom) {
+    for (i=0; i<nobj; i++) {
 
-    zz->Get_Geom(zz->Get_Geom_Data, zz->Num_GID, zz->Num_LID, 
-                 &(gids[zz->Num_GID*i]), &(lids[zz->Num_GID*i]),
-                 &(coords[num_geom*i]),&ierr);
+      zz->Get_Geom(zz->Get_Geom_Data, zz->Num_GID, zz->Num_LID, 
+                   &(gids[zz->Num_GID*i]), &(lids[zz->Num_GID*i]),
+                   &(coords[num_geom*i]),&ierr);
+      if (ierr) {
+        ZOLTAN_PRINT_ERROR(zz->Proc, yo,
+                           "Error returned from user function Get_Geom.");
+        Zoltan_Multifree(__FILE__,__LINE__, 2, &coords, &sfccoord);
+        ZOLTAN_TRACE_EXIT(zz, yo);
+        return(ierr);
+      }
+    }
+  }
+  else {
+    /* Use MULTI Function */
+    zz->Get_Geom_Multi(zz->Get_Geom_Multi_Data, zz->Num_GID, zz->Num_LID, nobj,
+                       gids, lids, num_geom, coords, &ierr);
     if (ierr) {
       ZOLTAN_PRINT_ERROR(zz->Proc, yo,
-                         "Error returned from user function Get_Geom.");
+                         "Error returned from user function Get_Geom_Multi.");
       Zoltan_Multifree(__FILE__,__LINE__, 2, &coords, &sfccoord);
       ZOLTAN_TRACE_EXIT(zz, yo);
       return(ierr);
     }
+  }
+
+  for (i = 0; i < nobj; i++) {
     if (coords[num_geom*i  ] < xmin) xmin = coords[num_geom*i  ];
     if (coords[num_geom*i  ] > xmax) xmax = coords[num_geom*i  ];
     if (coords[num_geom*i+1] < ymin) ymin = coords[num_geom*i+1];
