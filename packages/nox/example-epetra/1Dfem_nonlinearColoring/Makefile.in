@@ -1,0 +1,455 @@
+# Makefile.in generated automatically by automake 1.5 from Makefile.am.
+
+# Copyright 1994, 1995, 1996, 1997, 1998, 1999, 2000, 2001
+# Free Software Foundation, Inc.
+# This Makefile.in is free software; the Free Software Foundation
+# gives unlimited permission to copy and/or distribute it,
+# with or without modifications, as long as this notice is preserved.
+
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY, to the extent permitted by law; without
+# even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+# PARTICULAR PURPOSE.
+
+@SET_MAKE@
+
+#@HEADER
+# ************************************************************************
+# 
+#            NOX: An Object-Oriented Nonlinear Solver Package
+#                 Copyright (2002) Sandia Corporation
+# 
+# Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
+# license for use of this work by or on behalf of the U.S. Government.
+# 
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2, or (at your option)
+# any later version.
+#   
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+#   
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+# 
+# Questions? Contact Tammy Kolda (tgkolda@sandia.gov) or Roger Pawlowski
+# (rppawlo@sandia.gov).
+# 
+# ************************************************************************
+#@HEADER
+
+SHELL = @SHELL@
+
+srcdir = @srcdir@
+top_srcdir = @top_srcdir@
+VPATH = @srcdir@
+prefix = @prefix@
+exec_prefix = @exec_prefix@
+
+bindir = @bindir@
+sbindir = @sbindir@
+libexecdir = @libexecdir@
+datadir = @datadir@
+sysconfdir = @sysconfdir@
+sharedstatedir = @sharedstatedir@
+localstatedir = @localstatedir@
+libdir = @libdir@
+infodir = @infodir@
+mandir = @mandir@
+includedir = @includedir@
+oldincludedir = /usr/include
+pkgdatadir = $(datadir)/@PACKAGE@
+pkglibdir = $(libdir)/@PACKAGE@
+pkgincludedir = $(includedir)/@PACKAGE@
+top_builddir = ../..
+
+ACLOCAL = @ACLOCAL@
+AUTOCONF = @AUTOCONF@
+AUTOMAKE = @AUTOMAKE@
+AUTOHEADER = @AUTOHEADER@
+
+INSTALL = @INSTALL@
+INSTALL_PROGRAM = @INSTALL_PROGRAM@
+INSTALL_DATA = @INSTALL_DATA@
+INSTALL_SCRIPT = @INSTALL_SCRIPT@
+INSTALL_HEADER = $(INSTALL_DATA)
+transform = @program_transform_name@
+NORMAL_INSTALL = :
+PRE_INSTALL = :
+POST_INSTALL = :
+NORMAL_UNINSTALL = :
+PRE_UNINSTALL = :
+POST_UNINSTALL = :
+ALTERNATE_AR = @ALTERNATE_AR@
+AMTAR = @AMTAR@
+AWK = @AWK@
+BLAS_LIBS = @BLAS_LIBS@
+CXX = @CXX@
+CXXCPP = @CXXCPP@
+CXXREPOS = @CXXREPOS@
+DEPDIR = @DEPDIR@
+EXEEXT = @EXEEXT@
+FLIBS = @FLIBS@
+INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
+LAPACK_LIBS = @LAPACK_LIBS@
+MAINT = @MAINT@
+MPI_CXX_EXISTS = @MPI_CXX_EXISTS@
+OBJEXT = @OBJEXT@
+PACKAGE = @PACKAGE@
+PETSC_CXXFLAGS = @PETSC_CXXFLAGS@
+RANLIB = @RANLIB@
+TRILINOS_CXXFLAGS = @TRILINOS_CXXFLAGS@
+VERSION = @VERSION@
+ac_aux_dir = @ac_aux_dir@
+am__include = @am__include@
+am__quote = @am__quote@
+install_sh = @install_sh@
+
+EXAMPLE = example
+
+noinst_PROGRAMS = $(EXAMPLE)
+
+example_SOURCES = $(srcdir)/Example.C \
+	$(srcdir)/FiniteElementProblem.C $(srcdir)/FiniteElementProblem.H \
+	$(srcdir)/Basis.C $(srcdir)/Basis.H \
+	$(srcdir)/Problem_Interface.C $(srcdir)/Problem_Interface.H \
+	$(srcdir)/EDT_CrsGraph_MapColoring.C $(srcdir)/EDT_CrsGraph_MapColoring.H \
+	$(srcdir)/EDT_CrsGraph_MapColoringIndex.C $(srcdir)/EDT_CrsGraph_MapColoringIndex.H \
+	$(srcdir)/EDT_CrsGraph_Transpose.C $(srcdir)/EDT_CrsGraph_Transpose.H
+
+
+example_DEPENDENCIES = $(top_builddir)/src/libnox.a \
+        $(top_builddir)/src-epetra/libnoxepetra.a
+
+
+example_CXXFLAGS = $(TRILINOS_CXXFLAGS) \
+	-I$(top_srcdir)/src -I$(top_srcdir)/src-epetra
+
+
+example_LDADD = $(top_builddir)/src/libnox.a \
+        $(top_builddir)/src-epetra/libnoxepetra.a
+
+subdir = example-epetra/1Dfem_nonlinearColoring
+mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
+CONFIG_HEADER = $(top_builddir)/src/NOX_Config.h
+CONFIG_CLEAN_FILES =
+noinst_PROGRAMS = example$(EXEEXT)
+PROGRAMS = $(noinst_PROGRAMS)
+
+am_example_OBJECTS = example-Example.$(OBJEXT) \
+	example-FiniteElementProblem.$(OBJEXT) example-Basis.$(OBJEXT) \
+	example-Problem_Interface.$(OBJEXT) \
+	example-EDT_CrsGraph_MapColoring.$(OBJEXT) \
+	example-EDT_CrsGraph_MapColoringIndex.$(OBJEXT) \
+	example-EDT_CrsGraph_Transpose.$(OBJEXT)
+example_OBJECTS = $(am_example_OBJECTS)
+example_LDFLAGS =
+
+DEFS = @DEFS@
+DEFAULT_INCLUDES =  -I. -I$(srcdir) -I$(top_builddir)/src
+CPPFLAGS = @CPPFLAGS@
+LDFLAGS = @LDFLAGS@
+LIBS = @LIBS@
+depcomp = $(SHELL) $(top_srcdir)/config/depcomp
+@AMDEP_TRUE@DEP_FILES = $(DEPDIR)/example-Basis.Po \
+@AMDEP_TRUE@	$(DEPDIR)/example-EDT_CrsGraph_MapColoring.Po \
+@AMDEP_TRUE@	$(DEPDIR)/example-EDT_CrsGraph_MapColoringIndex.Po \
+@AMDEP_TRUE@	$(DEPDIR)/example-EDT_CrsGraph_Transpose.Po \
+@AMDEP_TRUE@	$(DEPDIR)/example-Example.Po \
+@AMDEP_TRUE@	$(DEPDIR)/example-FiniteElementProblem.Po \
+@AMDEP_TRUE@	$(DEPDIR)/example-Problem_Interface.Po
+CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
+	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
+CXXLD = $(CXX)
+CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
+	-o $@
+CXXFLAGS = @CXXFLAGS@
+CFLAGS = @CFLAGS@
+COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
+	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
+CCLD = $(CC)
+LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
+DIST_SOURCES = $(example_SOURCES)
+DIST_COMMON = Makefile.am Makefile.in
+SOURCES = $(example_SOURCES)
+
+all: all-am
+
+.SUFFIXES:
+.SUFFIXES: .C .o .obj
+$(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ Makefile.am  $(top_srcdir)/configure.ac $(ACLOCAL_M4)
+	cd $(top_srcdir) && \
+	  $(AUTOMAKE) --foreign  example-epetra/1Dfem_nonlinearColoring/Makefile
+Makefile: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.in  $(top_builddir)/config.status
+	cd $(top_builddir) && \
+	  CONFIG_HEADERS= CONFIG_LINKS= \
+	  CONFIG_FILES=$(subdir)/$@ $(SHELL) ./config.status
+
+clean-noinstPROGRAMS:
+	-test -z "$(noinst_PROGRAMS)" || rm -f $(noinst_PROGRAMS)
+example-Example.$(OBJEXT): $(srcdir)/Example.C
+example-FiniteElementProblem.$(OBJEXT): $(srcdir)/FiniteElementProblem.C
+example-Basis.$(OBJEXT): $(srcdir)/Basis.C
+example-Problem_Interface.$(OBJEXT): $(srcdir)/Problem_Interface.C
+example-EDT_CrsGraph_MapColoring.$(OBJEXT): \
+	$(srcdir)/EDT_CrsGraph_MapColoring.C
+example-EDT_CrsGraph_MapColoringIndex.$(OBJEXT): \
+	$(srcdir)/EDT_CrsGraph_MapColoringIndex.C
+example-EDT_CrsGraph_Transpose.$(OBJEXT): \
+	$(srcdir)/EDT_CrsGraph_Transpose.C
+example$(EXEEXT): $(example_OBJECTS) $(example_DEPENDENCIES) 
+	@rm -f example$(EXEEXT)
+	$(CXXLINK) $(example_LDFLAGS) $(example_OBJECTS) $(example_LDADD) $(LIBS)
+
+mostlyclean-compile:
+	-rm -f *.$(OBJEXT) core *.core
+
+distclean-compile:
+	-rm -f *.tab.c
+
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/example-Basis.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/example-EDT_CrsGraph_MapColoring.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/example-EDT_CrsGraph_MapColoringIndex.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/example-EDT_CrsGraph_Transpose.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/example-Example.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/example-FiniteElementProblem.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/example-Problem_Interface.Po@am__quote@
+
+distclean-depend:
+	-rm -rf $(DEPDIR)
+
+.C.o:
+@AMDEP_TRUE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/$*.Po' tmpdepfile='$(DEPDIR)/$*.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXXCOMPILE) -c -o $@ `test -f $< || echo '$(srcdir)/'`$<
+
+.C.obj:
+@AMDEP_TRUE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/$*.Po' tmpdepfile='$(DEPDIR)/$*.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXXCOMPILE) -c -o $@ `cygpath -w $<`
+
+example-Example.o: $(srcdir)/Example.C
+@AMDEP_TRUE@	source='$(srcdir)/Example.C' object='example-Example.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/example-Example.Po' tmpdepfile='$(DEPDIR)/example-Example.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(example_CXXFLAGS) $(CXXFLAGS) -c -o example-Example.o `test -f $(srcdir)/Example.C || echo '$(srcdir)/'`$(srcdir)/Example.C
+
+example-Example.obj: $(srcdir)/Example.C
+@AMDEP_TRUE@	source='$(srcdir)/Example.C' object='example-Example.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/example-Example.Po' tmpdepfile='$(DEPDIR)/example-Example.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(example_CXXFLAGS) $(CXXFLAGS) -c -o example-Example.obj `cygpath -w $(srcdir)/Example.C`
+
+example-FiniteElementProblem.o: $(srcdir)/FiniteElementProblem.C
+@AMDEP_TRUE@	source='$(srcdir)/FiniteElementProblem.C' object='example-FiniteElementProblem.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/example-FiniteElementProblem.Po' tmpdepfile='$(DEPDIR)/example-FiniteElementProblem.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(example_CXXFLAGS) $(CXXFLAGS) -c -o example-FiniteElementProblem.o `test -f $(srcdir)/FiniteElementProblem.C || echo '$(srcdir)/'`$(srcdir)/FiniteElementProblem.C
+
+example-FiniteElementProblem.obj: $(srcdir)/FiniteElementProblem.C
+@AMDEP_TRUE@	source='$(srcdir)/FiniteElementProblem.C' object='example-FiniteElementProblem.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/example-FiniteElementProblem.Po' tmpdepfile='$(DEPDIR)/example-FiniteElementProblem.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(example_CXXFLAGS) $(CXXFLAGS) -c -o example-FiniteElementProblem.obj `cygpath -w $(srcdir)/FiniteElementProblem.C`
+
+example-Basis.o: $(srcdir)/Basis.C
+@AMDEP_TRUE@	source='$(srcdir)/Basis.C' object='example-Basis.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/example-Basis.Po' tmpdepfile='$(DEPDIR)/example-Basis.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(example_CXXFLAGS) $(CXXFLAGS) -c -o example-Basis.o `test -f $(srcdir)/Basis.C || echo '$(srcdir)/'`$(srcdir)/Basis.C
+
+example-Basis.obj: $(srcdir)/Basis.C
+@AMDEP_TRUE@	source='$(srcdir)/Basis.C' object='example-Basis.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/example-Basis.Po' tmpdepfile='$(DEPDIR)/example-Basis.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(example_CXXFLAGS) $(CXXFLAGS) -c -o example-Basis.obj `cygpath -w $(srcdir)/Basis.C`
+
+example-Problem_Interface.o: $(srcdir)/Problem_Interface.C
+@AMDEP_TRUE@	source='$(srcdir)/Problem_Interface.C' object='example-Problem_Interface.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/example-Problem_Interface.Po' tmpdepfile='$(DEPDIR)/example-Problem_Interface.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(example_CXXFLAGS) $(CXXFLAGS) -c -o example-Problem_Interface.o `test -f $(srcdir)/Problem_Interface.C || echo '$(srcdir)/'`$(srcdir)/Problem_Interface.C
+
+example-Problem_Interface.obj: $(srcdir)/Problem_Interface.C
+@AMDEP_TRUE@	source='$(srcdir)/Problem_Interface.C' object='example-Problem_Interface.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/example-Problem_Interface.Po' tmpdepfile='$(DEPDIR)/example-Problem_Interface.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(example_CXXFLAGS) $(CXXFLAGS) -c -o example-Problem_Interface.obj `cygpath -w $(srcdir)/Problem_Interface.C`
+
+example-EDT_CrsGraph_MapColoring.o: $(srcdir)/EDT_CrsGraph_MapColoring.C
+@AMDEP_TRUE@	source='$(srcdir)/EDT_CrsGraph_MapColoring.C' object='example-EDT_CrsGraph_MapColoring.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/example-EDT_CrsGraph_MapColoring.Po' tmpdepfile='$(DEPDIR)/example-EDT_CrsGraph_MapColoring.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(example_CXXFLAGS) $(CXXFLAGS) -c -o example-EDT_CrsGraph_MapColoring.o `test -f $(srcdir)/EDT_CrsGraph_MapColoring.C || echo '$(srcdir)/'`$(srcdir)/EDT_CrsGraph_MapColoring.C
+
+example-EDT_CrsGraph_MapColoring.obj: $(srcdir)/EDT_CrsGraph_MapColoring.C
+@AMDEP_TRUE@	source='$(srcdir)/EDT_CrsGraph_MapColoring.C' object='example-EDT_CrsGraph_MapColoring.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/example-EDT_CrsGraph_MapColoring.Po' tmpdepfile='$(DEPDIR)/example-EDT_CrsGraph_MapColoring.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(example_CXXFLAGS) $(CXXFLAGS) -c -o example-EDT_CrsGraph_MapColoring.obj `cygpath -w $(srcdir)/EDT_CrsGraph_MapColoring.C`
+
+example-EDT_CrsGraph_MapColoringIndex.o: $(srcdir)/EDT_CrsGraph_MapColoringIndex.C
+@AMDEP_TRUE@	source='$(srcdir)/EDT_CrsGraph_MapColoringIndex.C' object='example-EDT_CrsGraph_MapColoringIndex.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/example-EDT_CrsGraph_MapColoringIndex.Po' tmpdepfile='$(DEPDIR)/example-EDT_CrsGraph_MapColoringIndex.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(example_CXXFLAGS) $(CXXFLAGS) -c -o example-EDT_CrsGraph_MapColoringIndex.o `test -f $(srcdir)/EDT_CrsGraph_MapColoringIndex.C || echo '$(srcdir)/'`$(srcdir)/EDT_CrsGraph_MapColoringIndex.C
+
+example-EDT_CrsGraph_MapColoringIndex.obj: $(srcdir)/EDT_CrsGraph_MapColoringIndex.C
+@AMDEP_TRUE@	source='$(srcdir)/EDT_CrsGraph_MapColoringIndex.C' object='example-EDT_CrsGraph_MapColoringIndex.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/example-EDT_CrsGraph_MapColoringIndex.Po' tmpdepfile='$(DEPDIR)/example-EDT_CrsGraph_MapColoringIndex.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(example_CXXFLAGS) $(CXXFLAGS) -c -o example-EDT_CrsGraph_MapColoringIndex.obj `cygpath -w $(srcdir)/EDT_CrsGraph_MapColoringIndex.C`
+
+example-EDT_CrsGraph_Transpose.o: $(srcdir)/EDT_CrsGraph_Transpose.C
+@AMDEP_TRUE@	source='$(srcdir)/EDT_CrsGraph_Transpose.C' object='example-EDT_CrsGraph_Transpose.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/example-EDT_CrsGraph_Transpose.Po' tmpdepfile='$(DEPDIR)/example-EDT_CrsGraph_Transpose.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(example_CXXFLAGS) $(CXXFLAGS) -c -o example-EDT_CrsGraph_Transpose.o `test -f $(srcdir)/EDT_CrsGraph_Transpose.C || echo '$(srcdir)/'`$(srcdir)/EDT_CrsGraph_Transpose.C
+
+example-EDT_CrsGraph_Transpose.obj: $(srcdir)/EDT_CrsGraph_Transpose.C
+@AMDEP_TRUE@	source='$(srcdir)/EDT_CrsGraph_Transpose.C' object='example-EDT_CrsGraph_Transpose.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/example-EDT_CrsGraph_Transpose.Po' tmpdepfile='$(DEPDIR)/example-EDT_CrsGraph_Transpose.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(example_CXXFLAGS) $(CXXFLAGS) -c -o example-EDT_CrsGraph_Transpose.obj `cygpath -w $(srcdir)/EDT_CrsGraph_Transpose.C`
+CXXDEPMODE = @CXXDEPMODE@
+uninstall-info-am:
+
+tags: TAGS
+
+ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)
+	list='$(SOURCES) $(HEADERS) $(TAGS_FILES)'; \
+	unique=`for i in $$list; do \
+	    if test -f "$$i"; then echo $$i; else echo $(srcdir)/$$i; fi; \
+	  done | \
+	  $(AWK) '    { files[$$0] = 1; } \
+	       END { for (i in files) print i; }'`; \
+	mkid -fID $$unique $(LISP)
+
+TAGS:  $(HEADERS) $(SOURCES)  $(TAGS_DEPENDENCIES) \
+		$(TAGS_FILES) $(LISP)
+	tags=; \
+	here=`pwd`; \
+	list='$(SOURCES) $(HEADERS) $(TAGS_FILES)'; \
+	unique=`for i in $$list; do \
+	    if test -f "$$i"; then echo $$i; else echo $(srcdir)/$$i; fi; \
+	  done | \
+	  $(AWK) '    { files[$$0] = 1; } \
+	       END { for (i in files) print i; }'`; \
+	test -z "$(ETAGS_ARGS)$$unique$(LISP)$$tags" \
+	  || etags $(ETAGS_ARGS) $$tags  $$unique $(LISP)
+
+GTAGS:
+	here=`CDPATH=: && cd $(top_builddir) && pwd` \
+	  && cd $(top_srcdir) \
+	  && gtags -i $(GTAGS_ARGS) $$here
+
+distclean-tags:
+	-rm -f TAGS ID GTAGS GRTAGS GSYMS GPATH
+
+DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
+
+top_distdir = ../..
+distdir = $(top_distdir)/$(PACKAGE)-$(VERSION)
+
+distdir: $(DISTFILES)
+	@for file in $(DISTFILES); do \
+	  if test -f $$file; then d=.; else d=$(srcdir); fi; \
+	  dir=`echo "$$file" | sed -e 's,/[^/]*$$,,'`; \
+	  if test "$$dir" != "$$file" && test "$$dir" != "."; then \
+	    $(mkinstalldirs) "$(distdir)/$$dir"; \
+	  fi; \
+	  if test -d $$d/$$file; then \
+	    cp -pR $$d/$$file $(distdir) \
+	    || exit 1; \
+	  else \
+	    test -f $(distdir)/$$file \
+	    || cp -p $$d/$$file $(distdir)/$$file \
+	    || exit 1; \
+	  fi; \
+	done
+check-am: all-am
+check: check-am
+all-am: Makefile $(PROGRAMS)
+
+installdirs:
+
+install: install-am
+install-exec: install-exec-am
+install-data: install-data-am
+uninstall: uninstall-am
+
+install-am: all-am
+	@$(MAKE) $(AM_MAKEFLAGS) install-exec-am install-data-am
+
+installcheck: installcheck-am
+install-strip:
+	$(MAKE) $(AM_MAKEFLAGS) INSTALL_PROGRAM="$(INSTALL_STRIP_PROGRAM)" \
+	  `test -z '$(STRIP)' || \
+	    echo "INSTALL_PROGRAM_ENV=STRIPPROG='$(STRIP)'"` install
+mostlyclean-generic:
+
+clean-generic:
+
+distclean-generic:
+	-rm -f Makefile $(CONFIG_CLEAN_FILES) stamp-h stamp-h[0-9]*
+
+maintainer-clean-generic:
+	@echo "This command is intended for maintainers to use"
+	@echo "it deletes files that may require special tools to rebuild."
+clean: clean-am
+
+clean-am: clean-generic clean-noinstPROGRAMS mostlyclean-am
+
+distclean: distclean-am
+
+distclean-am: clean-am distclean-compile distclean-depend \
+	distclean-generic distclean-tags
+
+dvi: dvi-am
+
+dvi-am:
+
+info: info-am
+
+info-am:
+
+install-data-am:
+
+install-exec-am:
+
+install-info: install-info-am
+
+install-man:
+
+installcheck-am:
+
+maintainer-clean: maintainer-clean-am
+
+maintainer-clean-am: distclean-am maintainer-clean-generic
+
+mostlyclean: mostlyclean-am
+
+mostlyclean-am: mostlyclean-compile mostlyclean-generic
+
+uninstall-am: uninstall-info-am
+
+.PHONY: GTAGS all all-am check check-am clean clean-generic \
+	clean-noinstPROGRAMS distclean distclean-compile \
+	distclean-depend distclean-generic distclean-tags distdir dvi \
+	dvi-am info info-am install install-am install-data \
+	install-data-am install-exec install-exec-am install-info \
+	install-info-am install-man install-strip installcheck \
+	installcheck-am installdirs maintainer-clean \
+	maintainer-clean-generic mostlyclean mostlyclean-compile \
+	mostlyclean-generic tags uninstall uninstall-am \
+	uninstall-info-am
+
+# Tell versions [3.59,3.63) of GNU make to not export all variables.
+# Otherwise a system limit (for SysV at least) may be exceeded.
+.NOEXPORT:
