@@ -158,8 +158,8 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
       local[1] = ml_->Amat[LevelID_[level]].N_nonzeros;
       Comm().SumAll(local,global,2);
       if (verbose_)
-        cout << msg << "# global rows = " << local[0] 
-             << ", # global nonzeros = " << local[1] << endl;
+        cout << msg << "# global rows = " << global[0] 
+             << ", # global nonzeros = " << global[1] << endl;
     }
 
     if( Smoother == "Jacobi" ) {
