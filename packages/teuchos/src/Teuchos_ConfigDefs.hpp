@@ -51,14 +51,6 @@
  * KL 9/26/03
  *****************************************************************************/
 
-#if HAVE_CMATH
-#include <cmath>
-#elif HAVE_MATH_H
-#include <math.h>
-#else
-#error "Found neither cmath nor math.h"
-#endif
-
 #if HAVE_CSTDIO
 #include <cstdio>
 #elif HAVE_STDIO_H
@@ -187,9 +179,16 @@ typedef ostrstream TeuchosOStringStream;
 #error "Found neither sstream, sstream.h, strstream.h, nor strstream"
 #endif
 
+#ifndef TFLOP
+#if HAVE_CMATH
+#include <cmath>
+#elif HAVE_MATH_H
+#include <math.h>
+#else
+#error "Found neither cmath nor math.h"
+#endif
 using namespace std;
-
-#ifdef TFLOP
+#else /*TFLOP defined */
 #ifdef HAVE_IOMANIP
 #include <iomanip>
 #else
@@ -212,39 +211,62 @@ using std::complex;
 #endif /* TFLOP */
 
 // RAB: 20031002: Added this for all platforms in addition to TFLOPS?
-#ifdef HAVE_IOMANIP
-#include <iomanip>
-#else
-#include <iomanip.h>  
-#endif
+//#ifdef HAVE_IOMANIP
+//#include <iomanip>
+//#else
+//#include <iomanip.h>  
+//#endif
 
 #else /* fallback for the amazingly unlikely event we have no HAVE_CONFIG_H! */
+
+#ifndef __cplusplus
+#define __cplusplus
+#endif
 
 #include <iostream>
 #include <fstream>
 #include <string>
 
-#if defined(SGI) || defined(SGI64) || defined(SGI32) || defined(CPLANT) || defined (TFLOP)
+#if defined(SGI) || defined(SGI64) || defined(SGI32) || defined(CPLANT)
 
 #include <stdlib.h>
 #include <stdio.h>
 #include <assert.h>
+#include <iostream>
 #include <math.h>
+#include <string>
+using namespace std;
+
+#elif defined(TFLOP)
+
+#include <stdlib.h>
+#include <stdio.h>
+#include <assert.h>
+#include <string>
+using std::string;
+#include <iostream>
+#include <iomanip>
+using std::istream;
+using std::ostream;
+using std::cerr;
+using std::cout;
+using std::endl;
 
 #else
 
 #include <cstdlib>
 #include <cstdio>
 #include <cassert>
+#include <iostream>
 #include <cmath>
+#include <string>
+using namespace std;
 
 #endif
 
 #include <vector>
 #include <map>
 #include <algorithm>
-
-using namespace std;
 
 #endif /* end HAVE_CONFIG_H */
 

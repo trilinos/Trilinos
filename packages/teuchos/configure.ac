@@ -228,6 +228,7 @@ AC_CXX_MUTABLE
 # These are pretty obscure
 # ---------------------------------------------------------------------
 AC_CXX_NEW_FOR_SCOPING
+AC_CXX_STD_IOS_BASE_FMTFLAGS
 AC_CXX_STD_SPRINTF
 
 # ------------------------------------------------------------------------
