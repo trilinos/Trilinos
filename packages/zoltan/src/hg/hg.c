@@ -310,7 +310,7 @@ int num_ewgt = zz->Edge_Weight_Dim;
     ZOLTAN_PRINT_GID(zz,  &(zoltan_hg->Global_IDs[i*num_gid]));
     printf(", ");
     ZOLTAN_PRINT_LID(zz,  &(zoltan_hg->Local_IDs[i*num_lid]));
-    printf(", %d)\n", i+1);  /* for Chaco 1-based #ing */
+    printf(", %d)\n", i); 
     
   }
 

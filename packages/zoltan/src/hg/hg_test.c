@@ -42,6 +42,7 @@ int main (int argc, char **argv)
   HGraph hg;
   HGPartParams hgp;
   ZZ     zz;
+  int    base;   /* minimum vertex number in input file; usually 0 or 1. */
 
   hgp.bal_tol = 10.0;
   hgp.redl = 0;
@@ -99,7 +100,7 @@ int main (int argc, char **argv)
   ADD_NEW_TIME(t_rest);
 
 /* load and info hypergraph */
-  if (hg_readfile(&zz,&hg,hgraphfile))
+  if (hg_readfile(&zz,&hg,hgraphfile,&base))
     return 1;
   if (zz.Debug_Level >= ZOLTAN_DEBUG_ALL) Zoltan_HG_Print(&zz, &hg);
   memory_graph = Zoltan_Memory_Usage (ZOLTAN_MEM_STAT_TOTAL);
