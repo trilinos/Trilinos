@@ -31,21 +31,22 @@
 
 IFPACK provides a suite of object-oriented algebraic preconditioners for
 the solution of preconditioned iterative solvers. IFPACK offers a
-variety of overlapping (one-level) Schwarz preconditioners, The packages
+variety of overlapping (one-level) Schwarz preconditioners. The package
 uses Epetra for basic matrix-vector calculations, and accepts user
-matrices via abstract matrix interface. A concrete implementation for
+matrices via an abstract matrix interface. A concrete implementation for
 Epetra matrices is provided. The package separates graph construction
-for factorization, improving performances in a substantial manner with
+from factorization, improving performance in a substantial manner with
 respect to other factorization packages.
 
-In this Chapter we present how to use IFPACK objects as a preconditioner
-for an AztecOO solver, and 
+In this Chapter we discuss the use of IFPACK objects as preconditioners for
+AztecOO solvers.  Specifically we present:
 \begin{itemize}
-\item Present few notes on incomplete factorizations and set the
-  notation (in Section~\ref{sec:ifpack_theoretical});
-\item Show how to compute incomplete Cholesky factorizations (in
-  Section~\ref{sec:ifpack_chol});
-\item Present IFPACK's RILU-type factorizations (in
+\item Parallel distributed memory issues (in Section~\ref{sec:ifpack_parallel}).
+\item Incomplete factorizations and set the
+  notation (in Section~\ref{sec:ifpack_theoretical}).
+\item How to compute incomplete Cholesky factorizations (in
+  Section~\ref{sec:ifpack_chol}).
+\item IFPACK's RILU-type factorizations (in
   Section~\ref{sec:ifpack_rilu}).
 \end{itemize}
 
@@ -56,73 +57,36 @@ for an AztecOO solver, and
 \subsection{Theoretical Background}
 \label{sec:ifpack_theoretical}
 
-Aim of this Section is to briefly present some aspects on incomplete
-factorization methods, to establish a notation. The Section is not
+The aim of this section is to define concepts associated with incomplete
+factorization methods and establish our notation. This section is not
 supposed to be exhaustive, nor complete on this subject. The reader is
-referred to the existing literature for a rigorous presentation.
+referred to the existing literature for a comprehensive presentation.
 
 \medskip
 
 A broad class of effective preconditioners is based on incomplete
-factorization of the linear system matrix, and it is usually indicated
-as ILU.  The ILU-type preconditioning techniques lie between direct and
+factorization of the linear system matrix.  Such preconditioners are often
+referred to as incomplete lower/upper (ILU) preconditioners.  
+ILU preconditioning techniques lie between direct and
 iterative methods and provide a balance between reliability and
-numerical efficiency.
-
-The preconditioner is given in the factored form
+numerical efficiency.  ILU preconditioners are constructed in the factored form
 $P=\tilde{L} \tilde{U}$, with $\tilde{L}$ and $\tilde{U}$ being lower
 and upper triangular matrices. Solving with $P$ involves two triangular
 solutions.
 
-The incomplete LU factorization of a matrix $A$ can be described as
-follows. Let $A_0=A$. Then, for $k=2,\ldots,n$, we have
-\[
-A_{k-1} = 
-\left(
-\begin{array}{c c}
-B_k & F_k \\
-E_k & C_k \\
-\end{array}
-\right) .
-\]
-Thus, we can write the $k-$step of the Gaussian elimination in a block
-form as
-\[
-A_{k-1} = 
-\left(
-\begin{array}{c c}
-I & 0 \\
-E_k B_k^{-1} & I \\
-\end{array}
-\right)
-\;
-\left(
-\begin{array}{c c}
-B_k & F_k \\
-0 & A_k \\
-\end{array}
-\right) ,
-\]
-where $A_k = C_k - E_k B_k^{-1} F_k$. If $B_k$ is a scalar, then we have
-the typical point-wise factorization, otherwise we have a block
-factorization. Pivoting, if it is necessary, can be accomplished by
-reordering $A_k$ at every step.
-
-To make the factorization incomplete, entries as dropped in $A_k$, i.e.
-the factorization proceeds with
-\[
-\tilde{A}_k = A_k - R_k
-\]
-where $R_k$ is the matrix of dropped entries. 
-
-Dropping can be performed
-by position, for example, dropping those entries in the update matrix
-$E_k B_k^{-1} F_k$ that are not in the pattern of $C_k$. 
-This simple ILU factorization is known as ILU(0). Although effective, in
+ILU preconditioners are based on the observation
+that, although most matrices $A$ admit an LU factorization $A=LU$, where $L$ is
+(unit) lower triangular and $U$ is upper triangular, the factors $L$ and $U$ often
+contain too many nonzero terms, making the cost of factorization too expensive in
+time or memory use, or both.  One type of ILU preconditioner is ILU(0), which 
+is defined as proceeding through the standard LU decomposition computations, but keeping 
+only those terms in $\tilde{L}$ that correspond to nonzero terms in the lower
+triangle of $A$ and similarly keeping only those terms in $\tilde{U}$ that 
+correspond to nonzero terms in the upper triangle of $A$.  Although effective, in
 some cases the accuracy of the ILU(0) may be insufficient to yield an
 adequate rate of convergence. More accurate factorizations will differ
 from ILU(0) by allowing some {\em fill-in}. The resulting class of
-methods is called ILU($f$), where $f$ is the level-of-fill. A
+methods is called ILU($k$), where $k$ is the level-of-fill. A
 level-of-fill is attributed to each element that is processed by
 Gaussian elimination, and dropping will be based on the level-of-fill.
 The level-of-fill should be indicative of the size of the element: the
@@ -132,13 +96,55 @@ Other strategies consider dropping by value -- for example, dropping
 entries smaller than a prescribed threshold. Alternative dropping
 techniques can be based on the numerical size of the element to be
 discarded. Numerical dropping strategies generally yield more accurate
-factorizations with the same amount of fill-in than level-of-fill
+factorizations with the same amount of fill-in as level-of-fill
 methods. The general strategy is to compute an entire row of the
-$\tilde{L}$ and $\tilde{U}$ matrices, and then keep only the biggest
-entries in a certain number. In this way, the amount of fill-in is
+$\tilde{L}$ and $\tilde{U}$ matrices, and then keep only a certain
+number of the largest
+entries. In this way, the amount of fill-in is
 controlled; however, the structure of the resulting matrices is
 undefined. These factorizations are usually referred to as ILUT, and a
-variant which performs pivoting is called ILUTP.
+variant which performs pivoting is called ILUTP.  
+
+When solving a single linear system, ILUT methods can be more effective
+than ILU($k$).  However, in many situations a sequence of linear systems
+must be solved where the pattern of the matrix $A$ in each system is
+identical but the values of changed.  In these situations, ILU($k$) is 
+typically much more effective because the pattern of ILU($k$) will also
+be the same for each linear system and the overhead of computing the
+pattern is amortized.
+
+\subsection{Parallel Incomplete Factorizations}
+\label{sec:ifpack_parallel}
+
+Parallel direct sparse solvers that compute the complete factorization $A=LU$
+are effective on parallel computers.  However, the effective scalability
+of these solvers is typically limited to a speedup of order ten, regardless
+of the number of processors used.  Also, it is typically the factorization
+(constructing $L$ and $U$) that exhibits the best parallel speedup.  The 
+forward and back triangular solves typically exhibit very poor parallel speedup.
+
+The situation for ILU preconditioners is even worse.  Complete factorizations
+can scale well because of very important graph properties that can be determined
+at low cost.  ILU factorizations do not have the same properties, so predicting
+fill-in across the parallel machine is not practically possible.  Also, because ILU
+preconditioners require repeated forward and back solves, they are more affected
+by the poor scalability of these operations.
+
+Because ILU preconditioners do not scale well on parallel computers, a common
+practice is to perform {\em local} ILU factorizations.  In this situation, each
+processor computes a factorization of a subset of matrix rows and columns independently
+from all other processors.  This additional layer of approximation leads to a block
+Jacobi type of preconditioner across processors, where each block is solved using an
+ILU preconditioner.  The difficulty with this type of preconditioner is that it 
+tends to become less robust and require more iterations as the number of processors used
+increases.  This effect can be offset to some extent by allowing {\em overlap}.  Overlap
+refers to having processors redundantly own certain rows of the matrix for the ILU
+factorization.  Level-1 overlap is defined so that a processor will include rows that
+are part of its original set.  In addition, if row $i$ is part of its original set and 
+row $i$ of $A$ has a nonzero entry in column $j$, then row $j$ will also
+be included in the factorization on that processor.  Other levels of overlap are
+computed recursively.  IFPACK supports an arbitrary level of overlap.  However,
+level-1 is often most effective.  Seldom more than 3 levels are needed. 
 
 %%%
 %%%
@@ -147,9 +153,12 @@ variant which performs pivoting is called ILUTP.
 \subsection{Incomplete Cholesky Factorizations}
 \label{sec:ifpack_chol}
 
-Ifpack\_CrsIct is a class for constructing and using incomplete Cholecky
-factorizations of an Epetra\_CrsMatrix. The factorization is produced
-based on several parameters:
+Recall that if a matrix is symmetric positive definite, it admits a Cholesky
+factorization of the form $A=LL^T$, where $L$ is lower triangular.
+Ifpack\_CrsIct is a class for constructing and using incomplete Cholesky
+factorizations of an Epetra\_CrsMatrix. It is built in part on top of the ICT
+preconditioner developed by Edmond Chow at Lawrence Livermore National
+Laboratory~\cite{ChowICT}.  Specific factorizations depend on several parameters:
 \begin{itemize}
 \item Maximum number of entries per row/column. The factorization
   will contain at most this number of nonzero elements in each
@@ -161,7 +170,7 @@ based on several parameters:
   to the IFPACK's documentation for more details.
 \end{itemize}
 
-It is very easy to compute the incomplete factorization. First, define
+It is easy to have IFPACK compute the incomplete factorization. First, define
 an Ifpack\_CrsIct object,
 \begin{verbatim}
 Ifpack_CrsIct * ICT = NULL;
@@ -180,7 +189,7 @@ IFPACK can compute the estimation of the condition number
 \[
 cond(L_i U_i) \approx \|(LU)^{-1} e \|_\infty ,
 \]
-where $e = (1,1,\dots,1)^T$. (More details can be found in the IFPACK's
+where $e = (1,1,\dots,1)^T$. (More details can be found in the IFPACK
 documentation.) This estimation can be computed as follows:
 \begin{verbatim}
 double Condest;
@@ -193,7 +202,7 @@ incomplete Cholesky factorization.
 %%%
 %%%
 
-\subsection{RILU  Factorizations}
+\subsection{RILUK  Factorizations}
 \label{sec:ifpack_rilu}
 
 IFPACK implements various incomplete factorization for non-symmetric
@@ -209,7 +218,7 @@ This approach can significantly improve the performances of code, when
 an ILU preconditioner has to be computed for several matrices, with
 different entries but with the same sparsity pattern. An
 Ifpack\_IlukGraph object of an Epetra matrix \verb!A! can be constructed
-as
+as follows:
 \begin{verbatim}
 Ifpack_IlukGraph Graph = 
   Ifpack_IlukGraph(A.Graph(),LevelFill,LevelOverlap);
@@ -223,27 +232,27 @@ A call to \verb!ConstructFilledGraph()! completes the process.
   containing the $L_i$ and $U_i$ graphs. Thus, it is possible to
   manually insert and delete graph entries in $L_i$ and $U_i$ via the
   Epetra\_CrsGraphInsertIndices and RemoveIndices functions. However, in
-  this cas FillComplete must be called before the graph is used for
+  this case FillComplete must be called before the graph is used for
   subsequent operations.
 \end{remark}
 
 At this point, we can create an Ifpack\_CrsRiluk object,
 \begin{verbatim}
-ILUT = Ifpack_CrsRiluk(Graph);
+ILUK = Ifpack_CrsRiluk(Graph);
 \end{verbatim}
 This phase defined the graph for the incomplete factorization, without
 computing the actual values of the $L_i$ and $U_i$ factors. Instead,
 this operation is accomplished with
 \begin{verbatim}
-int initerr = ILUT->InitValues(A);
+int initerr = ILUK->InitValues(A);
 \end{verbatim}
-The ILUT object can be used with AztecOO simply setting
+The ILUK object can be used with AztecOO simply setting
 \begin{verbatim}
 solver.SetPrecOperator(ILUK);
 \end{verbatim}
-where \verb!solver! is an AztecOO pbject.
+where \verb!solver! is an AztecOO object.
 \smallskip
-Example \TriExe{ifpack/ex2.cpp} shows the use of Ifpack\_CrsRiluk class.
+The example in \\ \TriExe{ifpack/ex2.cpp} shows the use of the Ifpack\_CrsRiluk class.
 
 \medskip
 
