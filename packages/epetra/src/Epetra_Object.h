@@ -129,7 +129,7 @@ const bool Epetra_FormatStdout = true; // Set true if the ostream << operator sh
 
 // Great little macro obtained from Alan Williams (modified for dynamic switching on/off)
 
-const int ConstDefaultTracebackMode = 1; // Default value for traceback behavior
+const int DefaultTracebackMode = 1; // Default value for traceback behavior
 
 #define EPETRA_CHK_ERR(a) { { int epetra_err = a; \
                               if ((epetra_err < 0 && Epetra_Object::GetTracebackMode() > 0) || \
@@ -174,12 +174,12 @@ class Epetra_Object {
       are derived from it, directly or indirectly.  This class is seldom
       used explictly.
   */
-  Epetra_Object(int DefaultTracebackMode = ConstDefaultTracebackMode);
+  Epetra_Object(int TracebackModeIn = -1);
 
   //! Epetra_Object Constructor.
   /*! Creates a Epetra_Object with the given label.
   */
-  Epetra_Object(const char * const Label, int DefaultTracebackMode = ConstDefaultTracebackMode);
+  Epetra_Object(const char * const Label, int TracebackModeIn = -1);
 
   //! Epetra_Object Copy Constructor.
   /*! Makes an exact copy of an existing Epetra_Object instance.

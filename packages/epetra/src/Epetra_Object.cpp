@@ -27,19 +27,19 @@
 
 
 //=============================================================================
-Epetra_Object::Epetra_Object(int DefaultTracebackMode) 
+Epetra_Object::Epetra_Object(int TracebackModeIn) 
   : Label_(0)
 {
   SetLabel("Epetra::Object");
-  TracebackMode = (DefaultTracebackMode != ConstDefaultTracebackMode) ? DefaultTracebackMode : TracebackMode;
+  TracebackMode = (TracebackModeIn != -1) ? TracebackModeIn : TracebackMode;
 }
 //=============================================================================
 Epetra_Object::Epetra_Object(const char * const Label, 
-			     int DefaultTracebackMode) 
+			     int TracebackModeIn) 
   : Label_(0)
 {
   SetLabel(Label);
-  TracebackMode = (DefaultTracebackMode != ConstDefaultTracebackMode) ? DefaultTracebackMode : TracebackMode;
+  TracebackMode = (TracebackModeIn != -1) ? TracebackModeIn : TracebackMode;
 }
 //=============================================================================
 Epetra_Object::Epetra_Object(const Epetra_Object& Object)
@@ -47,16 +47,18 @@ Epetra_Object::Epetra_Object(const Epetra_Object& Object)
 {
   SetLabel(Object.Label_);
 }
-// Set TracebackMode value to default of 2 (report traceback for all non-zero int return codes)
-int Epetra_Object::TracebackMode(ConstDefaultTracebackMode);
+// Set TracebackMode value to default
+int Epetra_Object::TracebackMode(-1);
 
 void Epetra_Object::SetTracebackMode(int TracebackModeValue) {
-  
+  if (TracebackModeValue < 0) TracebackModeValue = 0;
   Epetra_Object TempObject(TracebackModeValue);
 }
 
 int Epetra_Object::GetTracebackMode() {
-  return(Epetra_Object::TracebackMode);
+  int temp = Epetra_Object::TracebackMode;
+  if (temp==-1) temp = DefaultTracebackMode;
+  return(temp);
 }
 //=============================================================================
 void Epetra_Object::Print(ostream & os) const {

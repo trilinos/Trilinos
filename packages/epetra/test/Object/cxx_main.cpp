@@ -54,18 +54,19 @@ int main(int argc, char *argv[]) {
   // Test Epetra_Object SetLabel attribute set method
   char* NewObjLabel = "New name for Epetra_Object";
   obj.SetLabel(NewObjLabel);
-  char* NewObjLabel1 = obj.Label();
+  char* NewObjLabel1 = obj.Label(); 
   if (verbose) cout << endl << "This should say " << NewObjLabel << ": " << NewObjLabel1 << endl << endl << endl;
   ierr = strcmp(NewObjLabel1,NewObjLabel);
   assert (ierr==0);
 
   // Test GetRacebackMode and SetTracebackMode methods
-  assert(obj.GetTracebackMode()==ConstDefaultTracebackMode);
+  assert(obj.GetTracebackMode()==DefaultTracebackMode);
   if (verbose) cout << endl <<"Default Traceback Mode value = " << obj.GetTracebackMode() << endl;
 
-  obj.SetTracebackMode(ConstDefaultTracebackMode-1);
+  obj.SetTracebackMode(DefaultTracebackMode-1);
   if (verbose) cout << "Set Traceback Mode value to one less than default = " << obj.GetTracebackMode() << endl << endl;
-  assert(obj.GetTracebackMode()==ConstDefaultTracebackMode-1);
+  Epetra_Object obj0;
+  assert(obj0.GetTracebackMode()==DefaultTracebackMode-1);
 
   // Test constructors other than the default
   Epetra_Object obj1(1); // pass only TracebackMode
