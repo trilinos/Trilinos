@@ -54,6 +54,7 @@ class Epetra_MultiVector;
 class Epetra_Comm;
 class Epetra_CrsMatrix;
 class Epetra_FECrsMatrix;
+class Epetra_VbrMatrix;
 
 #include "Epetra_SerialDenseMatrix.h"
 #include "Epetra_SerialDenseVector.h"
@@ -645,7 +646,9 @@ private:
   //! Creates label for this object (printed out by AztecOO)
   int CreateLabel();
 
-  int CreateAuxiliaryMatrix(Epetra_FECrsMatrix * & FakeMatrix);
+  int CreateAuxiliaryMatrixCrs(Epetra_FECrsMatrix * & FakeMatrix);
+
+  int CreateAuxiliaryMatrixVbr(Epetra_VbrMatrix * & FakeMatrix);
 
   void PrintMem(char *fmt, int size, int, int);
 
