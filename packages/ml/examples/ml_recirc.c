@@ -24,6 +24,8 @@
 #include <math.h>
 #include "az_aztec.h"
 #include "ml_include.h"
+#include "ml_read_utils.h"
+
 int    parasails_factorized = 0;
 int    parasails_sym        = 0;
 double parasails_thresh     = 0.0;
@@ -58,11 +60,14 @@ int global_nrows, global_ncoarse;
 /* init_matrix_vector_structures().                                          */
 /*****************************************************************************/
 int coarse_iterations = 0, use_cg = 0, num_levels = 2; 
+struct reader_context *context;
 
 int main(int argc, char *argv[])
 {
-  int    i, input_option, precon_flag, N_elements_coarse;
+  int    i, j, input_option, precon_flag, N_elements_coarse;
   double *b, *x;
+  FILE *ifp;
+  char input[MAX_INPUT_STR_LN];
 
   /* See Aztec User's Guide for more information on the */
   /* variables that follow.                             */
@@ -121,36 +126,41 @@ int main(int argc, char *argv[])
 
   /* Read and broadcast: problem choice, problem size, etc.  */
 
+  AZ_defaults(options, params);
+  refine_factor = 1;
+  choice = 1;
+  precon_flag = 1;
+  coarse_iterations = 0;
+  use_cg = 1;
+  num_levels = 8;
+  nsmooth = 1;
   if (proc_config[AZ_node] == 0) 
   {
-     printf("Preconditioning (0 for none, 1 for ML, 2 for ilu) : \n");
-     scanf("%d", &precon_flag);
-/*
-     precon_flag = 1;
-*/
-     printf("n x n grid in each processor, n = ");
-     scanf("%d", &proc_factor);
-     refine_factor = 1;
-     choice = 1;
-     printf("Coarse solver (0 for SuperLU, 1 for GS, > 1 for ILU) : \n");
-     scanf("%d", &coarse_iterations);
-     printf("Use CG (0 for no , 1 for yes) : \n");
-     scanf("%d", &use_cg);
-     printf("Number of levels : \n");
-     scanf("%d", &num_levels);
-     printf("number of smoothing steps : \n");
-     scanf("%d", &nsmooth);
+      ML_Reader_ReadInput("ml_inputfile", &context);
+      ifp = fopen("ml_inputfile", "r");
+      if (!ML_Reader_LookFor(ifp, "number of x nodes per proc", input, '='))
+        proc_factor = 20;   /* Default */
+      else {
+        ML_Reader_ReadString(ifp, input, '\n');
+        if (sscanf(input, "%d", &(proc_factor)) != 1) {
+          fprintf(stderr, "ERROR: can\'t interp int while looking for \"%s\"\n",
+                  "number of x nodes per proc");
+          exit(-1);
+        }
+      }
   }
-  AZ_broadcast((char *) &coarse_iterations,  sizeof(int), proc_config, AZ_PACK);
-  AZ_broadcast((char *) &use_cg,  sizeof(int), proc_config, AZ_PACK);
-  AZ_broadcast((char *) &num_levels,  sizeof(int), proc_config, AZ_PACK);
-  AZ_broadcast((char *) &num_PDE_eqns,  sizeof(int), proc_config, AZ_PACK);
-  AZ_broadcast((char *) &precon_flag,   sizeof(int), proc_config, AZ_PACK);
+  else context = (struct reader_context *) malloc(sizeof(struct reader_context));
+
+   AZ_broadcast((char *) context,  sizeof(struct reader_context), proc_config,
+                AZ_PACK);
   AZ_broadcast((char *) &proc_factor,   sizeof(int), proc_config, AZ_PACK);
-  AZ_broadcast((char *) &refine_factor, sizeof(int), proc_config, AZ_PACK);
-  AZ_broadcast((char *) &choice       , sizeof(int), proc_config, AZ_PACK);
-  AZ_broadcast((char *) &nsmooth      , sizeof(int), proc_config, AZ_PACK);
   AZ_broadcast((char *) NULL        ,   0          , proc_config, AZ_SEND);
+  input_option = 1;
+  num_levels = context->N_levels;
+  num_PDE_eqns = context->N_dofPerNode;
+  nsmooth   = context->nsmooth;
+  coarse_iterations = context->coarse_its;
+
   i = proc_config[AZ_N_procs];
   i = (int) pow( (double) i, 0.50001 );
   i = i * proc_factor;
@@ -159,7 +169,7 @@ int main(int argc, char *argv[])
      i = i * refine_factor;
      printf("Fine grid = %d x %d \n", i+1 , i+1 ); 
   }
-  input_option = 1;
+
 
 #ifdef PARTEST
 	global_nrows=(i+1)*(i+1)*num_PDE_eqns;
@@ -244,6 +254,31 @@ int main(int argc, char *argv[])
                x[update_index[i]], (double) update[i]);
   }
   */
+   if (proc_config[AZ_node] == 0)
+     printf("Printing out a few entries of the solution ...\n");
+
+   for (j=0;j<Amat->data_org[AZ_N_internal]+ Amat->data_org[AZ_N_border];j++)
+     if (update[j] == 7) {printf("solution(gid = %d) = %10.4e\n",
+                              update[j],x[update_index[j]]); fflush(stdout);}
+   j = AZ_gsum_int(7, proc_config); /* sync processors */
+   for (j=0;j<Amat->data_org[AZ_N_internal]+ Amat->data_org[AZ_N_border];j++)
+     if (update[j] == 23) {printf("solution(gid = %d) = %10.4e\n",
+                              update[j],x[update_index[j]]); fflush(stdout);}
+   j = AZ_gsum_int(7, proc_config); /* sync processors */
+   for (j=0;j<Amat->data_org[AZ_N_internal]+ Amat->data_org[AZ_N_border];j++)
+     if (update[j] == 47) {printf("solution(gid = %d) = %10.4e\n",
+                              update[j],x[update_index[j]]); fflush(stdout);}
+   j = AZ_gsum_int(7, proc_config); /* sync processors */
+   for (j=0;j<Amat->data_org[AZ_N_internal]+ Amat->data_org[AZ_N_border];j++)
+     if (update[j] == 101) {printf("solution(gid = %d) = %10.4e\n",
+                              update[j],x[update_index[j]]); fflush(stdout);}
+   j = AZ_gsum_int(7, proc_config); /* sync processors */
+   for (j=0;j<Amat->data_org[AZ_N_internal]+ Amat->data_org[AZ_N_border];j++)
+     if (update[j] == 171) {printf("solution(gid = %d) = %10.4e\n",
+                              update[j],x[update_index[j]]); fflush(stdout);}
+
+
+
 ML_Aggregate_Destroy(&ml_ag);
    ML_Destroy(&ml);
    AZ_free((void *) Amat->data_org);
@@ -285,12 +320,28 @@ void init_options(int options[], double params[])
   AZ_defaults(options, params);
 
   options[AZ_solver]   = AZ_tfqmr;
+  if (ML_strcmp(context->krylov,"Cg") == 0) {
+    options[AZ_solver]   = AZ_cg;
+  }
+  else if (ML_strcmp(context->krylov,"Bicgstab") == 0) {
+    options[AZ_solver]   = AZ_bicgstab;
+  }
+  else if (ML_strcmp(context->krylov,"Tfqmr") == 0) {
+    options[AZ_solver]   = AZ_tfqmr;
+  }
+  else if (ML_strcmp(context->krylov,"Gmres") == 0) {
+    options[AZ_solver]   = AZ_gmres;
+  }
+  else {
+    printf("unknown krylov method %s\n",context->krylov);
+  }
+
   options[AZ_scaling]  = AZ_none;
   options[AZ_precond]  = AZ_user_precond;
   options[AZ_conv]     = AZ_r0;
   options[AZ_output]   = 1;
   options[AZ_pre_calc] = AZ_calc;
-  options[AZ_max_iter] = 1550;
+  options[AZ_max_iter] = 100;
   options[AZ_poly_ord] = 5;
 /*
   options[AZ_overlap]  = AZ_none;
@@ -408,6 +459,7 @@ int construct_ml_grids(int N_elements, int *proc_config, AZ_MATRIX **Amat_f,
   int         i, j, N2, *bindx, *data_org, leng;
   double      *val;
   double *null_vect = NULL;
+  int save1, save2, save3;
 
   ML           *ml;
   ML_GridAGX   *f_mesh;
@@ -494,6 +546,8 @@ int *block_list, nblocks = 3;
       /* initialization and set up scheme */
 
       ML_Create(&ml, N_levels);
+      ML_Set_PrintLevel(3);
+      ML_Set_Symmetrize(ml, ML_TRUE);
       (*ml_ptr) = ml;
 
       /* set up processor information */
@@ -516,6 +570,7 @@ int *block_list, nblocks = 3;
       AZ_ML_Set_Amat(ml, N_levels-1, leng, leng, *Amat_f, proc_config);
 
       ML_Aggregate_Create(ml_ag);
+      ML_Aggregate_Set_DampingFactor( *ml_ag, context->agg_damping);
       ndim = num_PDE_eqns;
 
       ML_Aggregate_Set_NullSpace(*ml_ag, num_PDE_eqns, ndim, null_vect, leng); 
@@ -544,39 +599,104 @@ int *block_list, nblocks = 3;
 
          /*  Sparse approximate inverse smoother that acutally does both */
          /*  pre and post smoothing.                                     */
-         /*
+         if (ML_strcmp(context->smoother,"Parasails") == 0) {
+
          ML_Gen_Smoother_ParaSails(ml , level, ML_PRESMOOTHER, nsmooth,
                                 parasails_sym, parasails_thresh,
                                 parasails_nlevels, parasails_filter,
                                 parasails_loadbal, parasails_factorized);
-
-         */
+	 }
 
          /* This is the symmetric Gauss-Seidel smoothing. In parallel,    */
          /* it is not a true Gauss-Seidel in that each processor          */
          /* does a Gauss-Seidel on its local submatrix independent of the */
          /* other processors.                                             */
+         else if (ML_strcmp(context->smoother,"poly") == 0) {
+            ML_Gen_Smoother_MLS(ml, level, ML_BOTH, 10.,nsmooth);
+         }
+         else if (ML_strcmp(context->smoother,"GaussSeidel") == 0) {
+           ML_Gen_Smoother_GaussSeidel(ml , level, ML_BOTH, nsmooth,1.);
+         }
+         else if (ML_strcmp(context->smoother,"SymGaussSeidel") == 0) {
+           ML_Gen_Smoother_SymGaussSeidel(ml , level, ML_BOTH, nsmooth,1.);
+         }
+         else if (ML_strcmp(context->smoother,"BlockGaussSeidel") == 0) {
+           ML_Gen_Smoother_BlockGaussSeidel(ml , level, ML_BOTH, nsmooth,1.,
+                                            num_PDE_eqns);
+         }
+         else if (ML_strcmp(context->smoother,"Aggregate") == 0) {
+           ML_Gen_Blocks_Aggregates(*ml_ag, level, &nblocks, &block_list);
+           ML_Gen_Smoother_VBlockSymGaussSeidel(ml , level, ML_BOTH, nsmooth,1.,
+                                                nblocks, block_list);
+         }
+         else if (ML_strcmp(context->smoother,"ilu") == 0) {
+          /* This is the Aztec domain decomp/ilu smoother that we */
+          /* usually use for this problem.                        */
 
-         ML_Gen_Smoother_SymGaussSeidel(ml, level, ML_BOTH, nsmooth,1.);
+	   save1 = options[AZ_precond];
+	   save2 = options[AZ_subdomain_solve];
+	   save3 = options[AZ_reorder];
+	   options[AZ_precond] = AZ_dom_decomp;
+	   options[AZ_subdomain_solve] = AZ_ilu;
+	   options[AZ_reorder] = 1;
+	   ML_Gen_SmootherAztec(ml, level, options, params, 
+                        proc_config, status, AZ_ONLY_PRECONDITIONER, 
+                        ML_BOTH,NULL);
+	   options[AZ_precond] = save1;
+	   options[AZ_subdomain_solve] = save2;
+	   options[AZ_reorder] = save3;
+         }
+	 else {
+	   printf("unknown smoother %s\n",context->smoother);
+	   exit(1);
+	 }
+
       }
 
-      if (coarse_iterations == 0) 
-      {
-         /*
-         options[AZ_precond]=AZ_dom_decomp; options[AZ_subdomain_solve]=AZ_ilu;
-         ML_Gen_SmootherAztec(ml, coarsest_level, options, params, proc_config, 
-                   status, AZ_ONLY_PRECONDITIONER, ML_PRESMOOTHER,NULL);
-         */
-         ML_Gen_CoarseSolverSuperLU( ml, coarsest_level);
+      nsmooth   = context->coarse_its;
+      /*  Sparse approximate inverse smoother that acutally does both */
+      /*  pre and post smoothing.                                     */
+
+      if (ML_strcmp(context->coarse_solve,"Parasails") == 0) {
+        ML_Gen_Smoother_ParaSails(ml , coarsest_level, ML_PRESMOOTHER, nsmooth,
+                                  parasails_sym, parasails_thresh,
+                                  parasails_nlevels, parasails_filter,
+                                  parasails_loadbal, parasails_factorized);
       }
-      else if ( coarse_iterations == 1 )
-         ML_Gen_Smoother_SymGaussSeidel(ml, coarsest_level, ML_PRESMOOTHER, 
-                                        coarse_iterations,1.);
-      else
-      {
-         options[AZ_precond]=AZ_dom_decomp; options[AZ_subdomain_solve]=AZ_ilut;
-         ML_Gen_SmootherAztec(ml, coarsest_level, options, params, proc_config, 
-                status, AZ_ONLY_PRECONDITIONER, ML_PRESMOOTHER,NULL);
+
+      else if (ML_strcmp(context->coarse_solve,"MLS") == 0) {
+        ML_Gen_Smoother_MLS(ml, coarsest_level, ML_BOTH, 20.,nsmooth);
+      }
+      else if (ML_strcmp(context->coarse_solve,"GaussSeidel") == 0) {
+        ML_Gen_Smoother_GaussSeidel(ml , coarsest_level, ML_BOTH, nsmooth,1.);
+      }
+      else if (ML_strcmp(context->coarse_solve,"SymGaussSeidel") == 0) {
+        ML_Gen_Smoother_SymGaussSeidel(ml , coarsest_level, ML_BOTH, nsmooth,1.);
+      }
+      else if (ML_strcmp(context->coarse_solve,"BlockGaussSeidel") == 0) {
+        ML_Gen_Smoother_BlockGaussSeidel(ml, coarsest_level, ML_BOTH, nsmooth,1.,
+                                         num_PDE_eqns);
+      }
+      else if (ML_strcmp(context->coarse_solve,"Aggregate") == 0) {
+        ML_Gen_Blocks_Aggregates(*ml_ag, coarsest_level, &nblocks, &block_list);
+        ML_Gen_Smoother_VBlockSymGaussSeidel(ml , coarsest_level, ML_BOTH,
+                                             nsmooth,1., nblocks, block_list);
+      }
+      else if (ML_strcmp(context->coarse_solve,"Jacobi") == 0) {
+        ML_Gen_Smoother_Jacobi(ml , coarsest_level, ML_BOTH, nsmooth,.5);
+      }
+      else if (ML_strcmp(context->coarse_solve,"Metis") == 0) {
+        nblocks = 250;
+        ML_Gen_Blocks_Metis(ml, coarsest_level, &nblocks, &block_list);
+        ML_Gen_Smoother_VBlockSymGaussSeidel(ml , coarsest_level, ML_BOTH,
+                                             nsmooth,1., nblocks, block_list);
+      }
+      else if (ML_strcmp(context->coarse_solve,"SuperLU") == 0) {
+        ML_Gen_CoarseSolverSuperLU( ml, coarsest_level);
+      }
+      else {
+        printf("unknown coarse grid solver %s\n",context->coarse_solve);
+        exit(1);
       }
 
       ML_Gen_Solver(ml, ML_MGV, N_levels-1, coarsest_level); 
