@@ -135,7 +135,6 @@ void print_tree_graph(TREE *p_root);
 
   avl_insert((TREE **) (&(graph->Graph_Data)), p_parent, vertex, 
              BL_ID_Util.Compare, &h);
-  print_tree_graph(graph->Graph_Data);
 }
 
 /*****************************************************************************/
@@ -193,15 +192,15 @@ static VERTEX *first_vertex_tree_graph(GRAPH *graph,
  *  Initializes the loop control variable;
  *  returns the first entry in the AVL tree for the graph.
  */
-struct Loop_Struct *loop;
+TREE_LOOP *loop;
 
   /*
    * Allocate space for loop control structure at pointer loop_control.
    * Assign loop to same address.
    */
 
-  *loop_control = (LOOP_CONTROL) smalloc(sizeof(struct Loop_Struct));
-  loop = (struct Loop_Struct *) (*loop_control);
+  *loop_control = (LOOP_CONTROL) smalloc(sizeof(TREE_LOOP));
+  loop = (TREE_LOOP *) (*loop_control);
 
   /* Initialize LOOP_CONTROL */
 
@@ -226,7 +225,7 @@ static VERTEX *next_vertex_tree_graph(GRAPH *graph, LOOP_CONTROL *loop_control)
  *  Returns the next loop entry in the dynamic data structure.
  */
 
-struct Loop_Struct *loop = (struct Loop_Struct *) (*loop_control);
+TREE_LOOP *loop = (TREE_LOOP *) (*loop_control);
 TREE *node = loop->Current_Node;
 
   /*

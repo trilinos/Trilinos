@@ -40,7 +40,7 @@ int i;
 static int size_vertex = sizeof(VERTEX);
 int size_nbor_list = num_nbors * sizeof(ID);
 int size_edge_weights = num_nbors * sizeof(float);
-int size_coords = 3 * sizeof(double);
+int size_coords = MAX_DIM * sizeof(double);
 int size;
 char *tmp;
 
@@ -105,8 +105,9 @@ char *tmp;
       vertex->Edge_Weights[i] = edge_weights[i];
   }
 
-  for (i = 0; i < num_dim; i++)
-    vertex->Coor[i] = coor[i];
+  if (num_dim > 0)
+    for (i = 0; i < MAX_DIM; i++)
+      vertex->Coor[i] = coor[i];
 
   return(vertex);
 }

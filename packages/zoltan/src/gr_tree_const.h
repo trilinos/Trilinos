@@ -51,12 +51,12 @@ typedef struct Tree_Struct {
  *  different traversal (e.g., a doubly-linked list).
  */
 
-struct Loop_Struct { 
+typedef struct Tree_Loop_Struct { 
   TREE *Current_Node;
   unsigned int Go_Left  :1;
   unsigned int Go_Mid   :1;
   unsigned int Go_Right :1;
   unsigned int Go_Up    :1;
-};
+} TREE_LOOP;
 
 #endif

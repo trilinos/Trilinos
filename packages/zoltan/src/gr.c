@@ -60,13 +60,15 @@ GRAPH *build_graph_ala_chaco(
 
 int i; 
 int start_i;
-double coor[3] = {0., 0., 0.};
+double coor[MAX_DIM];
 VERTEX *vertex;
 GRAPH *graph;
 ID vertex_ID;
 
   graph = new_graph();
 
+  for (i = 0; i < MAX_DIM; i++) 
+    coor[i] = 0.0;
 
   for (i = 0; i < num_vertices; i++) {
 

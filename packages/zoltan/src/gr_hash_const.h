@@ -20,6 +20,9 @@
 static char *cvs_gr_hash_const_h = "$Id$";
 #endif
 
+
+#define NUM_HASH_BUCKETS 128
+
 /*
  * PROTOTYPES 
  */
@@ -28,11 +31,26 @@ extern void initialize_hash_graph(GRAPH *);
 
 /*
  *  Hash table data structures.
+ *  This implementation uses a LIST for each bucket.
  */
 
-typedef struct Hash_Table_Struct {
+typedef int HASH_FN(ID *);
+
+typedef struct List_Entry_Struct {
+  struct List_Entry_Struct *Next;
+  struct List_Entry_Struct *Prev;
+  VERTEX *Vertex;
+} LIST_ENTRY;
+
+typedef struct Hash_Table_Struct { 
   int Num_Buckets;
-  VERTEX **Buckets;
+  LIST_ENTRY *Bucket[NUM_HASH_BUCKETS];
+  HASH_FN *Hash_Fn;
 } HASH_TABLE;
+
+typedef struct Hash_Table_Loop_Struct {
+  int Bucket;
+  LIST_ENTRY *Entry;
+} HASH_TABLE_LOOP;
 
 #endif

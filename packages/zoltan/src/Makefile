@@ -28,8 +28,9 @@ SUBDIRS= Obj_sgi10k Obj_smos Obj_sun Obj_tflop
 
 #source code from SCCS projects
 
-GR_CSRC=gr.c gr_hash.c gr_tree.c gr_type.c gr_util.c
-GR_INC= gr_type.h gr_const.h gr_hash_const.h gr_tree_const.h gr_type_const.h \
+GR_CSRC=gr.c gr_hash.c gr_list.c gr_tree.c gr_type.c gr_util.c
+GR_INC= gr_type.h gr_const.h gr_hash_const.h gr_list_const.h \
+	gr_tree_const.h gr_type_const.h \
         gr_util_const.h
 
 ID_CSRC=id.c id_util.c
