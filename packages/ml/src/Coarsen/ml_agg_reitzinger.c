@@ -5,7 +5,8 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
                     ML_Aggregate *ag, ML_Operator *Tmat,
                     ML_Operator *Tmat_trans,
                     ML_Operator ***Tmat_array,
-                    ML_Operator ***Tmat_trans_array)
+                    ML_Operator ***Tmat_trans_array,
+                    int smooth_flag, double smooth_factor)
 {
   int coarsest_level, counter, Nghost, i, *Tcoarse_bindx = NULL;
   int *Tcoarse_rowptr, nz_ptr, row_length, j, *bindx = NULL;
@@ -21,8 +22,6 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
   struct aztec_context *temp;
   */
   int nzctr;
-  /*int totalcnt;*/
-  /*int tflag;*/
 
   if (incr_or_decrease != ML_DECREASING)
     pr_error("Hiptmair: Only ML_DECREASING is supported\n");
@@ -113,14 +112,12 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
      Tcoarse_rowptr[0] = 0;
      counter = 0; nz_ptr = 0;
      nzctr = 0;
-     /*totalcnt = 0;*/
      for (i = 0; i < Kn_coarse->outvec_leng; i++)
      {
         ML_get_matrix_row(Kn_coarse,1, &i,&allocated,
                           &bindx,&val,&row_length, 0);
         ML_az_sort(bindx, row_length, NULL, NULL);
         nzctr += row_length;
-        /*tflag = 0;*/
    
         /* Step through unknowns bindx[j] connected to unknown i. */
         for (j = 0; j < row_length; j++)
@@ -137,7 +134,6 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
                    Tcoarse_val[nz_ptr++]  = -1.;
                    Tcoarse_rowptr[counter+1] = nz_ptr;
                    counter++;
-                   /*tflag += 2;*/
                 }
              }
              /* If node i is owned by a smaller processor than
@@ -150,19 +146,10 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
                 Tcoarse_val[nz_ptr++]  = -1.;
                 Tcoarse_rowptr[counter+1] = nz_ptr;
                 counter++;
-                /*tflag += 2;*/
              }
           }
             
         }
-/*
-        if (Kn_coarse->comm->ML_mypid == 0 && grid_level == 7)
-        {
-           printf("row_length = %d, nnz(T) owned by proc = %d\n",
-                  row_length,tflag);
-           fflush(stdout);
-        }
-*/
      }
 
      if (nzctr > Kn_coarse->N_nonzeros && Kn_coarse->comm->ML_mypid == 0)
@@ -326,74 +313,6 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
      /* MG grid hierarchy.                                               */
      /*------------------------------------------------------------------*/
    
-#ifdef prepostcheck
-      printf("Checking product Pe * e_i before post-processing\n");
-      yyy = (double *) malloc( Pe->outvec_leng*sizeof(double));
-      fido = (double *) malloc( Pe->invec_leng*sizeof(double));
-      /*
-      printf("%d: Pe->invec_leng = %d\n",Pe->comm->ML_mypid,Pe->invec_leng);
-      printf("%d: Tcoarse->outvec_leng = %d\n",Tcoarse->comm->ML_mypid,
-             Tcoarse->outvec_leng);
-      exit(1);
-      */
-   
-      printf("Pe->invec_leng = %d\n",Pe->invec_leng);
-      for (i=0; i< 137; i++)
-      {
-         for (j=0; j< Pe->invec_leng; j++) fido[j] = 0.;
-         if (Pe->comm->ML_nprocs == 1)
-            fido[i] = 1;
-         else
-         {
-            if ((Pe->comm->ML_mypid == 0) && (i < 120))
-               fido[i] = 1;
-            else if (Pe->comm->ML_mypid == 1 && i >= 120)
-               fido[i-120] = 1;
-         }
-         /*
-         if (i==119)
-         {
-            printf("e_119\n");
-            for (j=0; j<Pe->invec_leng; j++)
-               printf("%d: e_119(%d) = %e\n", Pe->comm->ML_mypid,j,fido[j]);
-         }
-         if (i==120)
-         {
-            printf("e_120\n");
-            for (j=0; j<Pe->invec_leng; j++)
-               printf("%d: e_120(%d) = %e\n", Pe->comm->ML_mypid,j,fido[j]);
-         }
-         */
-   
-         ML_Operator_Apply(Pe, Pe->outvec_leng, fido,
-                           Pe->outvec_leng,yyy);
-         dtemp = ML_gdot(Pe->outvec_leng, yyy, yyy, Pe->comm);
-         printf("norm(P(:,%d)) = %e\n",i,dtemp); 
-         /*printf("%d: ||P_e * e_%d||^2 = %e\n",Pe->comm->ML_mypid,i,dtemp);*/
-         /*
-         if (i==50)
-         {
-            for (j=0; j<Pe->invec_leng; j++)
-               printf("%d: yyy(%d) = %e\n", Pe->comm->ML_mypid,j,yyy[j]);
-         }
-         */
-   
-         /*
-         printf("%d: (%d) %e\n",ml_edges->comm->ML_mypid,i,dtemp);
-         */
-   
-         /*
-         dtemp = sqrt(ML_gdot(Tcoarse->invec_leng, fido,
-         fido, ml_edges->comm));
-         printf("(%d): %e\n",i,dtemp); 
-         */
-   
-      }
-   
-      exit(1);
-   
-#endif /* prepostcheck */
-   
      for (j = 0; j < csr_data->rowptr[Pe->outvec_leng] ; j++)
      {
         if (csr_data->values[j] == 2) csr_data->values[j] = 1;
@@ -471,54 +390,31 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
                            Pe->outvec_leng,yyy);
          dtemp = ML_gdot(Pe->outvec_leng, yyy, yyy, Pe->comm);
          printf("norm(P(:,%d)) = %e\n",i,dtemp); 
-         /*printf("%d: norm(P(:,%d)) = %e\n",Pe->comm->ML_mypid,i,dtemp); */
-         /*
-         if (i==50)
-         {
-            for (j=0; j<Pe->invec_leng; j++)
-               printf("%d: yyy(%d) = %e\n", Pe->comm->ML_mypid,j,yyy[j]);
-         }
-         */
-   
-         /*
-         printf("%d: (%d) %e\n",ml_edges->comm->ML_mypid,i,dtemp);
-         */
-   
-         /*
-         dtemp = sqrt(ML_gdot(Tcoarse->invec_leng, fido,
-                      fido, ml_edges->comm));
-         printf("(%d): %e\n",i,dtemp); 
-         */
-   
       }
    
      fflush(stdout);
      exit(1);
 #endif /*postprocesscheck*/
+
+     /* Smooth prolongator. */
+     if (smooth_flag == ML_YES)
+     {
+        if (Tmat->comm->ML_mypid == 0)
+           printf("Smoothing edge prolongator...\n");
+        ML_Aggregate_Set_Flag_SmoothExistingTentativeP(ag, ML_YES);
+        if (smooth_factor == ML_DDEFAULT) smooth_factor = 4.0/3.0;
+        ML_Aggregate_Set_DampingFactor(ag, smooth_factor);
+        ML_AGG_Gen_Prolongator(ml_edges,grid_level+1,grid_level,
+                               (void *) &(ml_edges->Amat[grid_level+1]), ag);
+     }
    
      ML_Operator_Set_1Levels(&(ml_edges->Pmat[grid_level]),
                  &(ml_edges->SingleLevel[grid_level]), 
                  &(ml_edges->SingleLevel[grid_level+1]));
      ML_Gen_Restrictor_TransP(ml_edges, grid_level+1, grid_level);
      ML_Gen_AmatrixRAP(ml_edges, grid_level+1, grid_level);
-#ifdef FREENODALMATRICES
-     if (grid_level == fine_level-1)
-     {
-         temp = (struct aztec_context *) ml_nodes->Amat[grid_level+1].data;
-         free(temp->Amat->bindx);
-         free(temp->Amat->val);
-         free(temp->Amat);
-     }
-     /* Free Pn and Rn. */
-     if (ml_nodes->Amat[grid_level+1].comm->ML_mypid == 0)
-        printf("\n\nFreeing nodal operators\n\n");
-     ML_Operator_Clean(&(ml_nodes->Pmat[grid_level]));
-     ML_Operator_Clean(&(ml_nodes->Rmat[grid_level+1]));
-     ML_Operator_Clean(&(ml_nodes->Amat[grid_level+1]));
-#endif /* ifdef FREENODALMATRICES */
 
      Tfine = Tcoarse;
-   
   } /* Main FOR loop: for grid_level = fine_level-1 ... */
 
   ML_free(bindx);
