@@ -3013,7 +3013,8 @@ void *edge_smoother, void **edge_args, void *nodal_smoother, void **nodal_args)
        (edge_smoother == (void *) ML_Gen_Smoother_GaussSeidel) ||
        (edge_smoother == (void *) ML_Gen_Smoother_SymGaussSeidel) ||
        (edge_smoother == (void *) ML_Gen_Smoother_VBlockJacobi) ||
-       (edge_smoother == (void *) ML_Gen_Smoother_VBlockSymGaussSeidel) ) {
+       (edge_smoother == (void *) ML_Gen_Smoother_VBlockSymGaussSeidel) )
+  {
     dbl_arg1 = (double *) ML_Smoother_Arglist_Get(edge_args, 1);
     if ((( (int) dbl_arg1[0]) == ML_DEFAULT) && (Amat->comm->ML_nprocs != 1)) {
       dataptr->max_eig = ML_Operator_GetMaxEig(Amat);
@@ -3029,7 +3030,6 @@ void *edge_smoother, void **edge_args, void *nodal_smoother, void **nodal_args)
 	}  
     }
   }
-
 
    /* Check matrix dimensions. */
 
@@ -4830,7 +4830,8 @@ int ML_Smoother_MSR_SGSnodamping(void *sm,int inlen,double x[],int outlen,
 	  
 	     for (j = bindx[i]; j < bindx[i+1]; j++)
             sum -= *ptr_val++ * x2[*bindx_ptr++];
-         x2[i] = sum/val[i];
+         if (val[i] != 0.0)
+            x2[i] = sum/val[i];
       }
 
       bindx_ptr--;
@@ -4843,7 +4844,8 @@ int ML_Smoother_MSR_SGSnodamping(void *sm,int inlen,double x[],int outlen,
 
          for (j = bindx[i]; j < bindx[i+1]; j++)
             sum -= *ptr_val-- * x2[*bindx_ptr--];
-         x2[i] = sum/val[i];
+         if (val[i] != 0.0)
+            x2[i] = sum/val[i];
       }
 
    }
@@ -6139,6 +6141,8 @@ int ML_Smoother_HiptmairSubsmoother_Create(ML **ml_subproblem,
        exit(1);
      }
      int_arg1 = (int *) ML_Smoother_Arglist_Get(args, 0);
+     if (Amat->comm->ML_mypid == 0 && 2 < ML_Get_PrintLevel() )
+        printf("Generating subsmoother MLS\n");
      ML_Gen_Smoother_MLS(*ml_subproblem, 0, ML_PRESMOOTHER,*int_arg1);
    }
    else if (smoother == (void *) ML_Gen_Smoother_Jacobi) {
@@ -6152,10 +6156,13 @@ int ML_Smoother_HiptmairSubsmoother_Create(ML **ml_subproblem,
      if (default_omega == 1.0) default_omega = .5;
      if ( ((int) omega) == ML_DEFAULT) omega= default_omega;
 
+     if (Amat->comm->ML_mypid == 0 && 2 < ML_Get_PrintLevel() )
+        printf("Generating subsmoother Jacobi\n");
      ML_Gen_Smoother_Jacobi(*ml_subproblem, 0, ML_PRESMOOTHER,*int_arg1,
 			    omega);
    }
    else if (smoother == (void *) ML_Gen_Smoother_GaussSeidel) {
+     printf("Entering ML_Smoother_Gen_Hiptmair_Data (GS)\n");
      if (ML_Smoother_Arglist_Nargs(args) != 2) {
        printf("ML_Smoother_Gen_Hiptmair_Data: Need two nodal arguments for ML_Gen_Smoother_GaussSeidel() got %d arguments\n", ML_Smoother_Arglist_Nargs(args));
        exit(1);
@@ -6165,6 +6172,8 @@ int ML_Smoother_HiptmairSubsmoother_Create(ML **ml_subproblem,
      omega = dbl_arg1[0];
      if ( ((int) omega) == ML_DEFAULT) omega= default_omega;
 
+     if (Amat->comm->ML_mypid == 0 && 2 < ML_Get_PrintLevel() )
+        printf("Generating subsmoother Gauss Seidel\n");
      ML_Gen_Smoother_GaussSeidel(*ml_subproblem, 0, ML_PRESMOOTHER,*int_arg1,
 			    omega);
    }
@@ -6178,6 +6187,8 @@ int ML_Smoother_HiptmairSubsmoother_Create(ML **ml_subproblem,
      omega = dbl_arg1[0];
      if ( ((int) omega) == ML_DEFAULT) omega= default_omega;
 
+     if (Amat->comm->ML_mypid == 0 && 2 < ML_Get_PrintLevel() )
+        printf("Generating subsmoother symmetric Gauss Seidel\n");
      ML_Gen_Smoother_SymGaussSeidel(*ml_subproblem, 0, ML_PRESMOOTHER,*int_arg1,
 			    omega);
    }
@@ -6194,6 +6205,8 @@ int ML_Smoother_HiptmairSubsmoother_Create(ML **ml_subproblem,
      int_arg2 = (int *) ML_Smoother_Arglist_Get(args, 2);
      int_arg3 = (int *) ML_Smoother_Arglist_Get(args, 3);
      
+     if (Amat->comm->ML_mypid == 0 && 2 < ML_Get_PrintLevel() )
+        printf("Generating subsmoother variable block Jacobi\n");
      ML_Gen_Smoother_VBlockJacobi(*ml_subproblem, 0, ML_PRESMOOTHER,
 				  *int_arg1, omega, *int_arg2,int_arg3);
    }
@@ -6209,6 +6222,8 @@ int ML_Smoother_HiptmairSubsmoother_Create(ML **ml_subproblem,
      int_arg2 = (int *) ML_Smoother_Arglist_Get(args, 2);
      int_arg3 = (int *) ML_Smoother_Arglist_Get(args, 3);
      
+     if (Amat->comm->ML_mypid == 0 && 2 < ML_Get_PrintLevel() )
+       printf("Generating subsmoother variable block symmetric Gauss Seidel\n");
      ML_Gen_Smoother_VBlockSymGaussSeidel(*ml_subproblem, 0, ML_PRESMOOTHER,
 				  *int_arg1, omega, *int_arg2,int_arg3);
    }

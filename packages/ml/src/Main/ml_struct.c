@@ -1866,9 +1866,10 @@ int ML_MLS_Setup_Coef(void *sm, int deg)
 
 int ML_Gen_Smoother_MLS(ML *ml, int nl, int pre_or_post, int ntimes)
 {
-   int              start_level, end_level, i, errCode=0;   
+   int              start_level, end_level, i, j, errCode=0;   
    struct MLSthing *widget;
    ML_Operator     *Amat;
+   double          *tdiag;
    char             str[80];
 #ifdef ML_TIMING
    double         t0;
@@ -1889,6 +1890,14 @@ int ML_Gen_Smoother_MLS(ML *ml, int nl, int pre_or_post, int ntimes)
      t0 = GetClock();
 #endif
      Amat = &(ml->Amat[i]);
+
+     /* To avoid division by zero problem. */
+     if (Amat->diagonal != NULL)
+     {
+        ML_Operator_Get_Diag(Amat, Amat->outvec_leng, &tdiag);
+        for (j=0; j<Amat->outvec_leng; j++)
+           if (tdiag[j] == 0) tdiag[j] = 1.0;
+     }
 
      if (Amat->matvec->ML_id != ML_EMPTY) {
 
