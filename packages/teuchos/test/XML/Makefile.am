@@ -22,6 +22,6 @@ XML_test_CXXFLAGS = -I$(top_srcdir)/src
 
 #np# One LDADD primary can be defined for each exe.  Include any LDFLAGS necessary for 
 #np# building the exe.
-XML_test_LDADD = $(top_builddir)/src/libteuchos.a $(XML_LIBS) -lexpat $(LIBS) $(FLIBS)
+XML_test_LDADD = $(top_builddir)/src/libteuchos.a $(XML_LIBS) $(EXPAT_LIBS) $(LIBS) $(FLIBS)
 
 

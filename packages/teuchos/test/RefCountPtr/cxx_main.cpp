@@ -156,14 +156,14 @@ int main() {
 	// Create some smart pointers
 
 	RefCountPtr<A>       a_ptr1  = rcp_implicit_cast<A>(Teuchos::rcp(new C));
-	assert( a_ptr1.get() );
+	assert( a_ptr1.get() != NULL );
 	assert( a_ptr1.count()  == 1 );
 #ifdef REF_COUNT_PTR_TEMPLATE_CLASS_TEMPLATE_FUNCTIONS
 	RefCountPtr<D>       d_ptr1  = Teuchos::rcp(new E);
 #else
 	RefCountPtr<D>       d_ptr1  = rcp_implicit_cast<D>(Teuchos::rcp(new E));
 #endif
-	assert( d_ptr1.get() );
+	assert( d_ptr1.get() != NULL);
 	assert( d_ptr1.count()  == 1 );
 
 	{
@@ -172,11 +172,11 @@ int main() {
 
 		const RefCountPtr<const A> ca_ptr1 = Teuchos::rcp_const_cast<const A>(a_ptr1); 
 		assert( a_ptr1.count()  == 2 );
-		assert( ca_ptr1.get() );
+		assert( ca_ptr1.get() != NULL );
 		assert( ca_ptr1.count() == 2 );
 		const RefCountPtr<const D> cd_ptr1 = Teuchos::rcp_const_cast<const D>(d_ptr1);
 		assert( d_ptr1.count()  == 2 );
-		assert( cd_ptr1.get() );
+		assert( cd_ptr1.get() != NULL );
 		assert( cd_ptr1.count() == 2 );
 
 #ifdef SHOW_RUN_TIME_ERROR_1
@@ -216,7 +216,7 @@ int main() {
 
 		// Cast down the inheritance hiearchy (const A -> const B1)
 		const RefCountPtr<const B1> cb1_ptr1 = Teuchos::rcp_dynamic_cast<const B1>(ca_ptr1);
-		assert( cb1_ptr1.get() );
+		assert( cb1_ptr1.get() != NULL );
 		assert( cb1_ptr1.count() == 3 );
 		assert( ca_ptr1.count()  == 3 );
 		assert( a_ptr1.count()   == 3 );
@@ -241,7 +241,7 @@ int main() {
 		// Cast away constantness (const C -> C)
 		const RefCountPtr<C>
 			c_ptr1 = Teuchos::rcp_const_cast<C>(Teuchos::rcp_dynamic_cast<const C>(ca_ptr1));
-		assert( c_ptr1.get() );
+		assert( c_ptr1.get() != NULL );
 		assert( c_ptr1.count()   == 4 );
 		assert( ca_ptr1.count()  == 4 );
 		assert( a_ptr1.count()   == 4 );
@@ -249,7 +249,7 @@ int main() {
 		// Cast down the inheritance hiearchy using static_cast<...> (const D -> const E)
 		const RefCountPtr<const E>
 			ce_ptr1 = Teuchos::rcp_static_cast<const E>(cd_ptr1); // This is not checked at runtime!
-		assert( ce_ptr1.get() );
+		assert( ce_ptr1.get() != NULL);
 		assert( ce_ptr1.count()  == 3 );
 		assert( cd_ptr1.count()  == 3 );
 		assert( d_ptr1.count()   == 3 );
