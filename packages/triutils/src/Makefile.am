@@ -54,6 +54,7 @@ CORE = \
 	$(srcdir)/Trilinos_Util_svbrres.cpp \
 	$(srcdir)/Trilinos_Util_dusmm.cpp \
 	$(srcdir)/Trilinos_Util_scscmv.cpp \
+	$(srcdir)/Trilinos_Util_read_vec.cpp \
 	$(srcdir)/Trilinos_Util_write_vec.cpp \
 	$(srcdir)/Trilinos_Util_create_vbr.cpp \
 	$(srcdir)/Trilinos_Util_msr2vbr.cpp \

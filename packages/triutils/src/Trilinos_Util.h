@@ -333,4 +333,8 @@ int Trilinos_Util_ReadMatrixMarket2Epetra( char *data_file,
 				      Epetra_Vector *& b,
 				      Epetra_Vector *&xexact );
 
+void Trilinos_Util_write_vec(const char *filename, int n_equations, double *x);
+
+void Trilinos_Util_read_vec(const char *filename, int n_equations, double *x);
+
 #endif /* _TRILINOS_UTIL_H_ */
