@@ -202,7 +202,8 @@ PHG_CSRC 	= phg.c phg_build.c phg_coarse.c phg_distrib.c phg_heap.c \
 		  phg_match.c phg_plot.c \
 		  phg_refinement.c phg_serialpartition.c phg_sort.c \
 		  phg_scale.c \
-		  phg_Vcycle.c phg_util.c 
+		  phg_Vcycle.c phg_util.c \
+		  phg_comm.c
 PHG_INC 	= phg.h phg_hypergraph.h phg_util.h
 
 GDEFINES       += -DZOLTAN_HG
