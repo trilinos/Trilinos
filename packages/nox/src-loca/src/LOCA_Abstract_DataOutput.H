@@ -53,7 +53,7 @@ namespace LOCA {
       //! Destructor.
       virtual ~DataOutput() {};
   
-      virtual bool saveGroupData(const Group& grp) = 0;
+      virtual void saveGroupData(const Group& grp) {}
 
     };
   } // namespace Abstract
