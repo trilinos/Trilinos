@@ -223,13 +223,13 @@ barrier1:
     }
 
     /* Do the irregular communication */
-    ierr = LB_Comm_Create(&comm_plan, cross_edges, proclist, comm, TAG1, 
-                          TRUE, &k);
-    if (ierr != LB_COMM_OK && ierr != LB_COMM_WARN) {
+    ierr = LB_Comm_Create(&comm_plan, cross_edges, proclist, comm, 
+                          TAG1, &k);
+    if (ierr != COMM_OK && ierr != COMM_WARN) {
       sprintf(msg, "Error %s returned from LB_Comm_Create.", 
-              (ierr == LB_COMM_MEMERR ? "LB_COMM_MEMERR" : "LB_COMM_FATAL"));
+              (ierr == COMM_MEMERR ? "COMM_MEMERR" : "COMM_FATAL"));
       LB_PRINT_ERROR(proc, yo, msg);
-      ierr = (ierr == LB_COMM_MEMERR ? LB_MEMERR : LB_FATAL);
+      ierr = (ierr == COMM_MEMERR ? LB_MEMERR : LB_FATAL);
     }
     else {
       if (k != cross_edges){
@@ -240,11 +240,11 @@ barrier1:
 
       ierr = LB_Comm_Do(comm_plan, TAG2, sendbuf, mesg_size, recvbuf);
       LB_Comm_Destroy(&comm_plan);
-      if (ierr != LB_COMM_OK && ierr != LB_COMM_WARN) {
+      if (ierr != COMM_OK && ierr != COMM_WARN) {
         sprintf(msg, "Error %s returned from LB_Comm_Do.",
-                (ierr == LB_COMM_MEMERR ? "LB_COMM_MEMERR" : "LB_COMM_FATAL"));
+                (ierr == COMM_MEMERR ? "COMM_MEMERR" : "COMM_FATAL"));
         LB_PRINT_ERROR(proc, yo, msg);
-        ierr = (ierr == LB_COMM_MEMERR ? LB_MEMERR : LB_FATAL);
+        ierr = (ierr == COMM_MEMERR ? LB_MEMERR : LB_FATAL);
       }
       else {
 

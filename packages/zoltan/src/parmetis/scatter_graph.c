@@ -106,7 +106,7 @@ int LB_Scatter_Graph(
     proclist[i] = j;
   }
 
-  LB_Comm_Create( plan, old_num_obj, proclist, lb->Communicator, TAG1, lb->Deterministic, &nrecv);
+  LB_Comm_Create(plan, old_num_obj, proclist, lb->Communicator, TAG1, &nrecv);
 
   if (nrecv != num_obj){
     sprintf(msg,"Proc %d received %d object but expected %d.",
@@ -161,8 +161,8 @@ int LB_Scatter_Graph(
       for (j=0; j<old_xadj[i]; j++)
         *ptr++ = proclist[i];
   
-    LB_Comm_Create( &plan2, old_xadj[old_num_obj], proclist2, lb->Communicator, TAG1, 
-      lb->Deterministic, &nrecv);
+    LB_Comm_Create(&plan2, old_xadj[old_num_obj], proclist2, lb->Communicator, 
+                   TAG1, &nrecv);
   
     if (nrecv != num_edges){
       sprintf(msg,"Proc %d received %d edges but expected %d.",
