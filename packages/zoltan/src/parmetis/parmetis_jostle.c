@@ -1048,11 +1048,11 @@ static int LB_ParMetis_Jostle(
        * when the bugs in ParMETIS and Jostle have been fixed.
        */
       if (strcmp(alg, "JOSTLE") == 0){
-        LB_PRINT_ERROR(lb->Proc, yo, "No edges on this proc; "
+        LB_PRINT_ERROR(lb->Proc, yo, "No edges on this processor; "
                       "Jostle will likely crash. "
                       "Please use a different load balancing method.");
       } else { /* ParMETIS */
-        LB_PRINT_ERROR(lb->Proc, yo, "No edges on this proc; "
+        LB_PRINT_ERROR(lb->Proc, yo, "No edges on this processor; "
                       "ParMETIS will likely crash. "
                       "Please use a different load balancing method.");
       }
