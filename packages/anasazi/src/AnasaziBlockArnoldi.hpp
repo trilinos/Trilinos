@@ -6,6 +6,8 @@
 #include "AnasaziBLAS.hpp"
 #include "AnasaziMatrix.hpp"
 #include "AnasaziCommon.hpp"
+
+namespace Anasazi {
 // 
 // BlockArnoldi base class
 //
@@ -1571,6 +1573,7 @@ void BlockArnoldi<TYPE>::Sort( const bool apply ) {
 	}
 }
 
+}
 #endif
 // End of file BlockArnoldi.hpp
 

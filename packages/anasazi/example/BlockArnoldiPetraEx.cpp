@@ -129,8 +129,8 @@ int main(int argc, char *argv[]) {
 	int nev = 3;
 	double tol = 1.0e-8;
 	string which="LM";
-	int step = 1;
-	int restarts = 20;
+	int step = 5;
+	int restarts = 3;
 
 	// create a PetraAnasaziVec. Note that the decision to make a view or
 	// or copy is determined by the petra constructor called by AnasaziPetraVec.
@@ -141,12 +141,12 @@ int main(int argc, char *argv[]) {
 	AnasaziPetraMat<double> Amat(A);
 
 	// initialize the Block Arnoldi solver
-	BlockArnoldi<double> MyBlockArnoldi(Amat, ivec, tol, nev, length, block, 
+	Anasazi::BlockArnoldi<double> MyBlockArnoldi(Amat, ivec, tol, nev, length, block, 
 						which, step, restarts);
 	
 	// inform the solver that the problem is symmetric
 	MyBlockArnoldi.setSymmetric(true);
-	MyBlockArnoldi.setDebugLevel(3);
+	MyBlockArnoldi.setDebugLevel(1);
 
 #ifdef UNIX
 	Epetra_Time & timer = *new Epetra_Time(Comm);
