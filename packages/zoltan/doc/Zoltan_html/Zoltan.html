@@ -9,11 +9,11 @@
    <meta name="sandia.approved" content="SAND99-1375">
    <meta name="sandia.create_date" content="05/28/99">
    <meta name="keywords" content="Zoltan, Zoltan Home Page, Zoltan dynamic load balancing library, Zoltan parallel computing">
-   <meta name="description" content="Zoltan:  Home Page for the Zoltan Dynamic Load-Balancing project at Sandia National Laboratories">
+   <meta name="description" content="Zoltan:  Home Page for the Zoltan Library project at Sandia National Laboratories">
    <meta name="GENERATOR" content="Mozilla/4.7 [en] (X11; U; SunOS 5.7 sun4u) [Netscape]">
    <title>Zoltan</title>
 <!-----------------------------------------------------------------------------
- ! Zoltan Dynamic Load-Balancing Library for Parallel Applications            !
+ ! Zoltan Library for Parallel Applications            !
  ! Copyright (c) 2000, Sandia National Laboratories.                          !
  ! For more info, see the README file in the top-level Zoltan directory.      !
  !----------------------------------------------------------------------------!
@@ -234,9 +234,13 @@ Zoltan</a></font></b></td>
 </td>
 
 <td VALIGN=TOP><!--MAIN CONTENT AREA STARTS HERE--><!----------------THIS IS A CHANGE AREA----------------><!------HEADER TEXT SHOULD BE REPLACE THIS TEXT------><b><font face="Verdana, Arial, Helvetica"><font size=+2>Zoltan:&nbsp;</font></font></b>
-<br><b><font face="Verdana, Arial, Helvetica"><font size=+2>A Dynamic Load-Balancing
-Library for Parallel Applications</font></font></b>
+<br><b><font face="Verdana, Arial, Helvetica"><font size=+2>Data-Management Services 
+for Parallel Applications</font></font></b>
 <p><!---------------END OF THIS CHANGE AREA---------------><!----------------THIS IS A CHANGE AREA----------------><!--MAIN CONTENT SHOULD BE PLACED IN THE AREA BELOW-->
+<!------------------------------------------------------------------------->
+<!------------------------------------------------------------------------->
+<!------------------------------------------------------------------------->
+
 <hr WIDTH="100%">
 <p>
 <b><a href="http://www-sccm.stanford.edu/~boman/">Erik Boman</a></b>&nbsp; (SNL) <br>
@@ -257,31 +261,49 @@ Library for Parallel Applications</font></font></b>
 <br>
 <p>
 <hr WIDTH="100%">
+<!------------------------------------------------------------------------->
 
-The <b>Zoltan Dynamic Load-Balancing Library</b> provides critical capability
-to a number of parallel applications.&nbsp; Zoltan includes a suite of
-algorithms for dynamically computing&nbsp; partitions of problems over
-sets of processors; geometric, tree-based and graph-based algorithms are
-included.&nbsp; Zoltan's object-oriented interface is easy-to-use and enables
+The <b>Zoltan Library</b> provides critical data-management services
+to a wide range of parallel applications.&nbsp; Zoltan includes many utilities
+needed by unstructured and/or adaptive parallel applications.  These utilities
+include
+<ul>
+<li>
+a suite of <a href="ug_html/ug_alg.html"><b>dynamic load-balancing and 
+parallel partitioning tools</b></a> that
+distribute DATa over sets of processors,
+</li>
+<li>
+<a href="ug_html/ug_interface_mig.html"><b>data migration tools</b></a> that simplify movement of data to new partitions,
+</li>
+<li>
+<a href="dev_html/dev_util_dd.html"><b>distributed data directories</b></a> 
+that efficiently locate off-processor data,
+</li>
+<li>
+an <a href="dev_html/dev_util_comm.html"><b>unstructured communication 
+package</b></a> that greatly simplifies interprocessor 
+communication, and
+</li>
+<li>
+a <a href="dev_html/dev_util_mem.html"><b>dynamic memory management 
+package</b></a> for memory-debugging 
+on state-of-the-art parallel computers.
+</li>
+</ul>
+
+
+Zoltan's object-oriented interface is easy-to-use and enables
 Zoltan to be used by a number of different applications.&nbsp; Zoltan is
 designed to be flexible and extensible, so different algorithms can be
 used, compared and added easily.
-<p><b>Why dynamic load balancing is needed:</b>
+<!------------------------------------------------------------------------->
+<p><b>Why Zoltan is needed:</b>
 <ul>
-<li>
-For best parallel performance, problems should be divided so that</li>
-
-<ul>
-<li>
-work is assigned evenly to processors, and</li>
-
-<li>
-inter-processor communication costs are kept low.&nbsp;</li>
-</ul>
-
 <li>
 In some applications, work loads and/or geometric locality change as computations
-proceed.&nbsp;</li>
+proceed;<br> Zoltan provides <b>dynamic redistribution of data</b> to maintain high
+performance.&nbsp;</li>
 
 <ul>
 <li>
@@ -301,9 +323,26 @@ Adaptive physics models</li>
 </ul>
 
 <li>
-For such applications, dynamic redistribution of data is needed to maintain
-high performance.&nbsp;</li>
+Processors need to <b>track off-processor data's locations</b> in dynamic
+environments; Zoltan's distributed data directories allow applications to
+efficiently query and update off-processor data locations.
+</li>
+
+<li>
+Unstructured and adaptive applications require <b>complicated interprocessor 
+communication</b>; Zoltan's unstructured communication package 
+manages sends and receives for application developers.
+</li>
+
+<li>
+State-of-the-art parallel computers often do not have sophisticated 
+<b>debugging</b>
+tools available; Zoltan's dynamic memory management package simplifies
+location of memory leaks and other memory errors.
+</li>
+
 </ul>
+<!------------------------------------------------------------------------->
 <b>Advantages of using Zoltan in applications:</b>
 <ul>
 <li>
@@ -312,7 +351,8 @@ is clean and easy to use in applications.</li>
 
 <li>
 A <a href="ug_html/ug_alg.html">suite of load-balancing algorithms</a>
-is included in Zoltan; try them all to see what works best in your application.</li>
+is included in Zoltan; 
+<br>try them all to see what works best in your application.</li>
 
 <li>
 <a href="ug_html/ug_alg_parmetis.html">Interfaces</a> to the popular
@@ -320,18 +360,25 @@ is included in Zoltan; try them all to see what works best in your application.<
 and <a href="http://www.gre.ac.uk/~jjg01/">Jostle</a> packages are included.</li>
 
 <li>
-<a href="ug_html/ug_intro.html#Migration-Help Tools">Data migration tools</a>
-are provided to simplify data movement during re-balancing.</li>
+Application development time can be reduced by using Zoltan's 
+parallel utilities for 
+<a href="dev_html/dev_util_comm.html">unstructured communication</a>, 
+<a href="dev_html/dev_util_mem.html">dynamic memory management</a>, 
+<a href="ug_html/ug_interface_mig.html">data migration</a>,
+and <a href="dev_html/dev_util_dd.html">distributed data directories</a>.
+</li>
+
 </ul>
-<b>Advantages of using Zoltan for developing new load-balancing algorithms:</b>
+<!------------------------------------------------------------------------->
+<b>Advantages of using Zoltan for developing new algorithms:</b>
 <ul>
 <li>
 <a href="dev_html/dev_add.html">New algorithms can be added</a> to Zoltan
 in a straightforward manner.</li>
 
 <li>
-Zoltan's <a href="ug_html/ug_query.html">object-oriented interface</a>
-provides a simple, general way to get needed application data for balancing.</li>
+Zoltan's <a href="ug_html/ug_query.html">object-based interface</a>
+provides a simple, general way to get needed application data to the algorithms.</li>
 
 <li>
 New algorithms can be compared to high-quality
@@ -342,6 +389,7 @@ Zoltan's <a href="Zoltan_phil.html#ZDesign">data-structure neutral design</a>
 allows new algorithms to be used easily in many different applications.</li>
 
 </ul>
+<!------------------------------------------------------------------------->
 <b>Zoltan <a href="Zoltan_phil.html">philosophy</a> and project description:</b>
 <ul>
 <li>
