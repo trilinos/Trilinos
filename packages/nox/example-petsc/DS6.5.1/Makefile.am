@@ -46,5 +46,5 @@ example_CXXFLAGS = $(PETSC_CXXFLAGS) \
 	-I$(top_srcdir)/src -I$(top_srcdir)/src-petsc
 
 example_LDADD = -L$(top_builddir)/src -L$(top_builddir)/src-petsc \
-                -lnox -lnoxpetsc ${PETSC_LIB}
+                -lnoxpetsc ${PETSC_LIB} -lnox
 
