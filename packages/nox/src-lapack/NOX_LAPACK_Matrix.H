@@ -60,6 +60,7 @@ namespace NOX {
       //! Access the (i,j) entry of A
       const double& operator()(int i, int j) const;
 
+      //! Print this object to the given stream
       ostream& leftshift(ostream& stream) const;
 
       //! Prints out the matrix to the cout stream. 
