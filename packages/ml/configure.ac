@@ -318,7 +318,10 @@ TAC_ARG_WITH_PACKAGE(ml_parmetis3x, [Enable ParMETIS support, version 3.x.  Note
 1: ParMETIS is a third party library.  As such, configure assumes that it has
 already been built.  Note 2: You must also specify the location of the ParMETIS headers and libraries like so:  configure --with-libs="<other libraries> -lparmetis" --with-ldflags="-L<METIS-library-path>" --with-incdirs="-I<ParMETIS-include-directory>". Note 3: You also need to specify --with-ml_metis, and the location of the METIS library (after that of the ParMETIS one).], ML_PARMETIS_3x, no) 
 #
-TAC_ARG_WITH_PACKAGE(ml_amesos, [Enable AMESOS support.  Note 1: Amesos is a third party library.  As such, configure assumes that it has already been built.  Note 2: You must also specify the location of the Amesos headers and libraries like so: configure --with-libs="<other libraries> -lamesos" --with-ldflags="-L<Amesos-library-path>" and --with-incdirs="<Amesos-include-path>". Note 3: Amesos requires --with-ml_epetra], ML_AMESOS, no)
+TAC_ARG_WITH_PACKAGE(ml_amesos, [Enable AMESOS support.  Note 1: Amesos is a third party library (part of the Trilinos framework).  As such, configure assumes that it has already been built.  Note 2: You may need to specify the location of the Amesos headers and libraries like so: configure --with-libs="<other libraries> -lamesos" --with-ldflags="-L<Amesos-library-path>" and --with-incdirs="<Amesos-include-path>". Note 3: Amesos requires --with-ml_epetra], ML_AMESOS, no)
+#
+TAC_ARG_WITH_PACKAGE(ml_ifpack, [Enable IFPACK support.  Note 1: Ifpack is a third party library (part of the Trilinos framework).  As such, configure assumes that it has already been built.  Note 2: You may need to specify the location of the Ifpack headers and libraries like so: configure --with-libs="<other libraries> -lifpack" --with-ldflags="-L<Ifpack-library-path>" and --with-incdirs="<Ifpack-include-path>". Note 3: Ifpack requires --with-ml_epetra], ML_IFPACK, no)
+#
 
 AC_ARG_WITH(ml-64bit-integer,
 [AC_HELP_STRING([--with-ml-64bit-integer],[Support for 64-bit integers; required if ML used
