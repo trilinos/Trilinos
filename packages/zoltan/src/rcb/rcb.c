@@ -70,6 +70,19 @@ static int RCB_CHECK = 1;
 /*  RCB_STATS = 2  Log times and counts, print for each proc */
 static int RCB_STATS = 1;
 
+
+/*  Parameters structure for RCB method.  Used in  */
+/*  LB_Set_RCB_Param and LB_rcb.                   */
+static PARAM_VARS RCB_params[] = {
+                  { "RCB_OVERALLOC", NULL, "DOUBLE" },
+                  { "RCB_REUSE", NULL, "INT" },
+                  { "RCB_CHECK", NULL, "INT" },
+                  { "RCB_STATS", NULL, "INT" },
+                  { "KEEP_CUTS", NULL, "INT" },
+                  { NULL, NULL, NULL } };
+
+/*---------------------------------------------------------------------------*/
+/*---------------------------------------------------------------------------*/
 /*---------------------------------------------------------------------------*/
 
 int LB_Set_RCB_Param(
@@ -79,19 +92,14 @@ char *val)			/* value of variable */
     int status;
     PARAM_UTYPE result;		/* value returned from Check_Param */
     int index;			/* index returned from Check_Param */
-    PARAM_VARS RCB_params[] = {
-	{ "RCB_OVERALLOC", NULL, "DOUBLE" },
-	{ "RCB_REUSE", NULL, "INT" },
-	{ "RCB_CHECK", NULL, "INT" },
-	{ "RCB_STATS", NULL, "INT" },
-        { "KEEP_CUTS", NULL, "INT" },
-	{ NULL, NULL, NULL } };
 
     status = LB_Check_Param(name, val, RCB_params, &result, &index);
 
     return(status);
 }
 
+/*---------------------------------------------------------------------------*/
+/*---------------------------------------------------------------------------*/
 /*---------------------------------------------------------------------------*/
 
 int LB_rcb(
@@ -127,14 +135,7 @@ int LB_rcb(
     int gen_tree;             /* (0) don't (1) generate whole treept to use
                                  later for point and box drop. */
 
-    PARAM_VARS RCB_params[] = {
-	{ "RCB_OVERALLOC", NULL, "DOUBLE" },
-	{ "RCB_REUSE", NULL, "INT" },
-	{ "RCB_CHECK", NULL, "INT" },
-	{ "RCB_STATS", NULL, "INT" },
-        { "KEEP_CUTS", NULL, "INT" },
-	{ NULL, NULL, NULL } };
-    
+
     RCB_params[0].ptr = (void *) &overalloc;
     RCB_params[1].ptr = (void *) &reuse;
     RCB_params[2].ptr = (void *) &check;
@@ -689,7 +690,7 @@ static int rcb(
   LB_Print_Stats(lb, lb_time[0], "LBLIB     Build:       ");
   LB_Print_Stats(lb, lb_time[1], "LBLIB     RCB:         ");
 
-  if (lb->Debug > 6) {
+  if (lb->Debug_Level > 6) {
     int i;
     LB_Print_Sync_Start(lb, TRUE);
     printf("LBLIB RCB Proc %d  Num_Obj=%d  Num_Keep=%d  Num_Non_Local=%d\n", 

@@ -43,6 +43,19 @@ static int IDcount = 0;                            /* renumbering of octants */
 static int MAXOCTREGIONS = 1;
 
 /*****************************************************************************/
+/* parameters for the octpart method.  Used in  */
+/* LB_Set_Octpart_Param and LB_octpart          */
+static PARAM_VARS OCT_params[] = {
+  { "OCT_DIM",          NULL, "INT" },
+  { "OCT_METHOD",       NULL, "INT" },
+  { "OCT_GRANULARITY",  NULL, "INT" },
+  { "OCT_OUTPUT_LEVEL", NULL, "INT" },
+  {  NULL,              NULL,  NULL }};
+
+/*****************************************************************************/
+/*****************************************************************************/
+/*****************************************************************************/
+
 int LB_Set_Octpart_Param(
   char *name,                 /* name of variable */
   char *val                   /* value of variable */
@@ -51,14 +64,8 @@ int LB_Set_Octpart_Param(
 int status;
 PARAM_UTYPE result;           /* value returned from LB_Check_Param */
 int index;                    /* index returned from LB_Check_Param */
-PARAM_VARS oct_params[] = {
-  { "OCT_DIM",          NULL, "INT" },
-  { "OCT_METHOD",       NULL, "INT" },
-  { "OCT_GRANULARITY",  NULL, "INT" },
-  { "OCT_OUTPUT_LEVEL", NULL, "INT" },
-  {  NULL,              NULL,  NULL }};
 
-  status = LB_Check_Param(name, val, oct_params, &result, &index);
+  status = LB_Check_Param(name, val, OCT_params, &result, &index);
   return(status);
 }
 
@@ -90,19 +97,12 @@ int oct_output_level = 1;     /* Flag specifying amount of output.           */
 int oct_wgtflag = 0;          /* Flag specifying use of object weights.      */
 int error = FALSE;            /* error flag                                  */
 
-PARAM_VARS oct_params[] = {
-    { "OCT_DIM",          NULL, "INT" },
-    { "OCT_METHOD",       NULL, "INT" },
-    { "OCT_GRANULARITY ", NULL, "INT" },
-    { "OCT_OUTPUT_LEVEL", NULL, "INT" },
-    {  NULL,              NULL,  NULL }};
+  OCT_params[0].ptr = (void *) &oct_dim;
+  OCT_params[1].ptr = (void *) &oct_method;
+  OCT_params[2].ptr = (void *) &oct_granularity;
+  OCT_params[3].ptr = (void *) &oct_output_level;
 
-  oct_params[0].ptr = (void *) &oct_dim;
-  oct_params[1].ptr = (void *) &oct_method;
-  oct_params[2].ptr = (void *) &oct_granularity;
-  oct_params[3].ptr = (void *) &oct_output_level;
-
-  LB_Assign_Param_Vals(lb->Params, oct_params);
+  LB_Assign_Param_Vals(lb->Params, OCT_params);
 
   /* Set oct_wgtflag based on the "key" parameter Obj_Weight_Dim */
   oct_wgtflag = (lb->Obj_Weight_Dim > 0);
