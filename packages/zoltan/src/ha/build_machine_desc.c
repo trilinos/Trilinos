@@ -100,6 +100,70 @@ int Zoltan_Build_Machine_Desc(
   return ierr;
 }
 
+/*******************************************************************/
+/*******************************************************************/
+/*******************************************************************/
+
+int Zoltan_Free_Machine_Desc(MachineType **desc)
+{
+  if (desc && *desc){
+    ZOLTAN_FREE(&((*desc)->type)); 
+    ZOLTAN_FREE(&((*desc)->xadj)); 
+    ZOLTAN_FREE(&((*desc)->adjncy)); 
+    ZOLTAN_FREE(&((*desc)->adj_band)); 
+    ZOLTAN_FREE(&((*desc)->adj_lat)); 
+
+    ZOLTAN_FREE(desc);
+  }
+
+  return ZOLTAN_OK;
+}
+
+/*******************************************************************/
+/*******************************************************************/
+/*******************************************************************/
+
+#define COPY_FIELD(f) (*to)->f = from->f;
+#define COPY_FIELD3(f) (*to)->f[0]=from->f[0];(*to)->f[1]=from->f[1];(*to)->f[2]=from->f[2];
+#define FUTURE_COPY(f)
+
+int Zoltan_Copy_Machine_Desc(MachineType **to, MachineType *from)
+{
+  if (*to != NULL) {
+    Zoltan_Free_Machine_Desc(to);
+  }
+
+  if (!from){
+    return ZOLTAN_OK;
+  }
+
+  *to = (MachineType *)ZOLTAN_MALLOC(sizeof(MachineType));
+
+  if (!(*to)){
+    return ZOLTAN_MEMERR;
+  }
+  memset(*to, 0, sizeof(MachineType));
+
+  COPY_FIELD(nnodes);
+  COPY_FIELD(ntypes);
+  COPY_FIELD(top_id);
+  COPY_FIELD(power);
+  COPY_FIELD(memory);
+  COPY_FIELD(bandwidth);
+  COPY_FIELD(latency);
+  COPY_FIELD(ndims);
+  COPY_FIELD3(cart_dim)
+  COPY_FIELD3(wrap_around);
+  /*
+  ** The following fields are not being used, so we don't know how to copy them
+  */
+  FUTURE_COPY(xadj);
+  FUTURE_COPY(adjncy);
+  FUTURE_COPY(adj_band);
+  FUTURE_COPY(adj_lat);
+
+  return ZOLTAN_OK;
+}
 
 #ifdef __cplusplus
 } /* closing bracket for extern "C" */
