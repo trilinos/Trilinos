@@ -167,7 +167,7 @@ Another very powerful feature of this interface (If the macro
 operators over a sub-set of rows and columns in a set of multi-vector
 objects.  The behavior is identical as if the client extracted the
 rows or columns in a set of multi-vectors and called
-<tt>apply_reduction()</tt> or </tt>apply_transformation()<tt> individually.
+<tt>apply_reduction()</tt> or <tt>apply_transformation()</tt> individually.
 However, the advantage of using the multi-vector methods is that there may be
 greater opportunity to exploit parallelism.
 
