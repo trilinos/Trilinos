@@ -52,8 +52,10 @@ NOX::LineSearch::Polynomial::~Polynomial()
 
 bool NOX::LineSearch::Polynomial::reset(Parameter::List& params)
 { 
+  NOX::Parameter::List& p = params.sublist("Polynomial");
+  
 
-  string choice = params.getParameter("Convergence Criteria", "Armijo-Goldstein");
+  string choice = p.getParameter("Convergence Criteria", "Armijo-Goldstein");
 
   if (choice == "Ared/Pred") 
     convCriteria = AredPred;
@@ -61,25 +63,27 @@ bool NOX::LineSearch::Polynomial::reset(Parameter::List& params)
     convCriteria = None;
   else {
     convCriteria = ArmijoGoldstein;
-    params.setParameter("Convergence Criteria", "Armijo-Goldstein");
+    p.setParameter("Convergence Criteria", "Armijo-Goldstein");
   }
 
-  choice = params.getParameter("Interpolation Type", "Cubic");
+  choice = p.getParameter("Interpolation Type", "Cubic");
   if (choice == "Quadratic")
     interpolationType = Quadratic;
-  else {
+  else if (choice == "Cubic") 
     interpolationType = Cubic;
-    params.setParameter("Interpolation Type", "Cubic");
+  else {
+    cerr << "NOX::LineSearch::Polynomial::reset - Invalid \"Interpolation Type\"" << endl;
+    throw "NOX Error";
   }
 
-  minStep = params.getParameter("Minimum Step", 1.0e-12);
-  defaultStep = params.getParameter("Default Step", 1.0);
-  recoveryStep = params.getParameter("Recovery Step", defaultStep);
-  maxIters = params.getParameter("Max Iters", 100);
-  alpha = params.getParameter("Alpha Factor", 1.0e-4);
-  minBoundFactor = params.getParameter("Min Bounds Factor", 0.1);
-  maxBoundFactor = params.getParameter("Max Bounds Factor", 0.9);
-  doForceInterpolation = params.getParameter("Force Interpolation", false);
+  minStep = p.getParameter("Minimum Step", 1.0e-12);
+  defaultStep = p.getParameter("Default Step", 1.0);
+  recoveryStep = p.getParameter("Recovery Step", defaultStep);
+  maxIters = p.getParameter("Max Iters", 100);
+  alpha = p.getParameter("Alpha Factor", 1.0e-4);
+  minBoundFactor = p.getParameter("Min Bounds Factor", 0.1);
+  maxBoundFactor = p.getParameter("Max Bounds Factor", 0.9);
+  doForceInterpolation = p.getParameter("Force Interpolation", false);
   paramsPtr = &params;
   totalNumLineSearchCalls = 0;
   totalNumNonTrivialLineSearches = 0;
@@ -115,7 +119,7 @@ bool NOX::LineSearch::Polynomial::compute(Abstract::Group& newGrp, double& step,
   double eta = 0.0;
   if (convCriteria == AredPred) {
     const NOX::Parameter::List& p = s.getParameterList();
-    eta_original = p.sublist("Direction").sublist("Linear Solver").getParameter("Tolerance", -1.0);
+    eta_original = p.sublist("Direction").sublist("Newton").sublist("Linear Solver").getParameter("Tolerance", -1.0);
     eta = eta_original;
   }
 

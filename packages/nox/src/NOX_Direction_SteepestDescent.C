@@ -50,7 +50,9 @@ NOX::Direction::SteepestDescent::~SteepestDescent()
 
 bool NOX::Direction::SteepestDescent::reset(NOX::Parameter::List& params)
 {
-  const string tmp = params.getParameter("Scaling Type", "2-Norm");
+  NOX::Parameter::List& p = params.sublist("Steepest Descent");
+
+  const string tmp = p.getParameter("Scaling Type", "2-Norm");
   if (tmp == "2-Norm")
     scaleType = NOX::Direction::SteepestDescent::TwoNorm;
   else if (tmp == "F 2-Norm")

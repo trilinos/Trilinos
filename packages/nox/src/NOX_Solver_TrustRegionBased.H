@@ -74,7 +74,8 @@ The "improvement ratio" for a given step \f$ s \f$ is defined as
 \f]
 
 
-  The following parameters are valid for this solver:
+The following parameters should be specified in the "Trust Region"
+sublist based to the solver.
 
   - "%Direction" - Sublist of the direction parameters for the
     %Newton point, passed to the NOX::Direction::Manager

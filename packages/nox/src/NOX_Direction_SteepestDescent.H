@@ -51,8 +51,8 @@ s = - \gamma \nabla f(x) = -\gamma J(x)^T F(x)
   (see NOX::Direction::Manager for more information on choosing the
   search direction).
 
-  The following options may be specified in the "Direction" sublist of
-  the solver parameters.
+  The following options may be specified in the "Steepest Descent"
+  sublist of the "Direction" sublist of the solver parameters.
 
 <ul>
 <li>"Scaling Type" can be either of:

@@ -139,7 +139,9 @@ namespace LineSearch {
   the step length calculation (\f$ k \f$).
 
   <B> Input Parameters </B> 
-  The following parameters can be specified for this line search:
+
+  The following parameters can be specified in the "Polynomial"
+  sublist of the "Line Search" sublist.
  
   - "Default Step" - starting step length (defaults to 1.0)
 

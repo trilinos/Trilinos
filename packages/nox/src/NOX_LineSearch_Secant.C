@@ -54,10 +54,11 @@ Secant::~Secant()
 
 bool Secant::reset(Parameter::List& params)
 { 
-  minstep = params.getParameter("Minimum Step", 1.0e-12);
-  defaultstep = params.getParameter("Default Step", 1.0);
-  recoverystep = params.getParameter("Recovery Step", defaultstep);
-  maxiters = params.getParameter("Max Iters", 20);
+  NOX::Parameter::List& p = params.sublist("Secant");
+  minstep = p.getParameter("Minimum Step", 1.0e-12);
+  defaultstep = p.getParameter("Default Step", 1.0);
+  recoverystep = p.getParameter("Recovery Step", defaultstep);
+  maxiters = p.getParameter("Max Iters", 20);
   return true;
 }
 

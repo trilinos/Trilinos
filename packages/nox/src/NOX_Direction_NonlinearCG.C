@@ -72,7 +72,7 @@ NonlinearCG::NonlinearCG(Parameter::List& params) :
 bool NonlinearCG::reset(Parameter::List& params) 
 {
   paramsPtr = &params;
-  restartFrequency = paramsPtr->getParameter("Restart Frequency", 10);
+  restartFrequency = paramsPtr->sublist("Nonlinear CG").getParameter("Restart Frequency", 10);
   return true;
 }
 
@@ -123,7 +123,7 @@ bool NonlinearCG::compute(Abstract::Vector& dir, Abstract::Group& soln,
     return false;
   }
   dir = soln.getF();  
-  if(paramsPtr->isParameterEqual("Precondition", "On")) {
+  if(paramsPtr->sublist("Nonlinear CG").isParameterEqual("Precondition", "On")) {
     if(!soln.isJacobian())
       ok = soln.computeJacobian();
       if (ok != Abstract::Group::Ok) {
@@ -133,7 +133,7 @@ bool NonlinearCG::compute(Abstract::Vector& dir, Abstract::Group& soln,
         return false;
       }
     tmpVec = dir;
-    ok = soln.applyRightPreconditioning(paramsPtr->sublist("Linear Solver"),
+    ok = soln.applyRightPreconditioning(paramsPtr->sublist("Nonlinear CG").sublist("Linear Solver"),
                                         tmpVec, dir);
     if (ok != Abstract::Group::Ok) {
       if (Utils::doPrint(Utils::Warning))
@@ -154,7 +154,7 @@ bool NonlinearCG::compute(Abstract::Vector& dir, Abstract::Group& soln,
 
 // Two choices (for now) for orthogonalizing descent direction with previous:
 
-    if(paramsPtr->isParameterEqual("Orthogonalize", "Polak-Ribiere"))
+    if(paramsPtr->sublist("Nonlinear CG").isParameterEqual("Orthogonalize", "Polak-Ribiere"))
     {
 //                     Polak-Ribiere beta
 

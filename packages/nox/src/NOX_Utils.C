@@ -74,8 +74,9 @@ ostream& operator<<(ostream& os, const NOX::Utils::Sci& s)
   return os;
 }
 
-void NOX::Utils::setUtils(NOX::Parameter::List& p)
+void NOX::Utils::setUtils(NOX::Parameter::List& params)
 {
+  NOX::Parameter::List& p = params.sublist("Printing");
   printTest = p.getParameter("Output Information", printTest);
   myPID = p.getParameter("MyPID", myPID);
   printProc = p.getParameter("Output Processor", printProc);

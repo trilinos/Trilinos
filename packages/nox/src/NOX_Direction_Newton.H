@@ -82,8 +82,8 @@ namespace Direction {
   \max\{\gamma \eta_{k-1}^{\alpha}, \eta_{\min} \} \leq \eta_k \leq \eta_{\max}
   \f]
 
-  The following options may be specified in the "Direction" sublist of
-  the solver parameters.
+  The following options may be specified in the "Newton" sublist of
+  the "Direction" sublist of the solver parameters.
 
   - "Resuce Bad Newton Solve" (Boolean) - Says whether or not we should
     try to use the solution from a bad linear solve. If set to true, 

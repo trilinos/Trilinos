@@ -39,28 +39,26 @@
 #include "NOX_Parameter_List.H"
 #include "NOX_Utils.H"
 
-using namespace NOX;
-using namespace NOX::LineSearch;
-
-MoreThuente::MoreThuente(Parameter::List& params) 
+NOX::LineSearch::MoreThuente::MoreThuente(Parameter::List& params) 
 {
   reset(params);
 }
 
-MoreThuente::~MoreThuente()
+NOX::LineSearch::MoreThuente::~MoreThuente()
 {
 }
 
-bool MoreThuente::reset(Parameter::List& params)
+bool NOX::LineSearch::MoreThuente::reset(Parameter::List& params)
 { 
-  ftol = params.getParameter("Sufficient Decrease", 1.0e-4);
-  gtol = params.getParameter("Curvature Condition", 0.9999);
-  xtol = params.getParameter("Interval Width", 1.0e-15);
-  stpmin = params.getParameter("Minimum Step", 1.0e-12);
-  stpmax = params.getParameter("Maximum Step", 1.0e+6);
-  maxfev = params.getParameter("Max Iters", 20);
-  defaultstep = params.getParameter("Default Step", 1.0);
-  recoverystep = params.getParameter("Recovery Step", defaultstep);
+  NOX::Parameter::List& p = params.sublist("More'-Thuente");
+  ftol = p.getParameter("Sufficient Decrease", 1.0e-4);
+  gtol = p.getParameter("Curvature Condition", 0.9999);
+  xtol = p.getParameter("Interval Width", 1.0e-15);
+  stpmin = p.getParameter("Minimum Step", 1.0e-12);
+  stpmax = p.getParameter("Maximum Step", 1.0e+6);
+  maxfev = p.getParameter("Max Iters", 20);
+  defaultstep = p.getParameter("Default Step", 1.0);
+  recoverystep = p.getParameter("Recovery Step", defaultstep);
 
   // Check the input parameters for errors.
   if ((ftol < 0.0) || (gtol < 0.0) || 
@@ -74,7 +72,7 @@ bool MoreThuente::reset(Parameter::List& params)
 }
 
 
-bool MoreThuente::compute(Abstract::Group& grp, double& step, 
+bool NOX::LineSearch::MoreThuente::compute(Abstract::Group& grp, double& step, 
 			  const Abstract::Vector& dir,
 			  const Solver::Generic& s) 
 {
@@ -83,7 +81,7 @@ bool MoreThuente::compute(Abstract::Group& grp, double& step,
   return (info == 1);
 }
 
-int MoreThuente::cvsrch(Abstract::Group& newgrp, double& stp, 
+int NOX::LineSearch::MoreThuente::cvsrch(Abstract::Group& newgrp, double& stp, 
 			const Abstract::Group& oldgrp, const Abstract::Vector& dir)
 {
   if (Utils::doPrint(Utils::InnerIteration)) {
@@ -170,9 +168,31 @@ int MoreThuente::cvsrch(Abstract::Group& newgrp, double& stp,
     // and compute the directional derivative.
 
     newgrp.computeX(oldgrp, dir, stp);
-    newgrp.computeF();
+
+    NOX::Abstract::Group::ReturnType rtype;
+    rtype = newgrp.computeF();
+    if (rtype != NOX::Abstract::Group::Ok) 
+    {
+      cerr << "NOX::LineSearch::MoreThuente::cvrch - Unable to compute F" << endl;
+      throw "NOX Error";
+    }
+
     double f = 0.5 * newgrp.getNormF() * newgrp.getNormF();
-    newgrp.computeJacobian();
+
+    rtype = newgrp.computeJacobian();
+    if (rtype != NOX::Abstract::Group::Ok) 
+    {
+      cerr << "NOX::LineSearch::MoreThuente::cvrch - Unable to compute Jacobian" << endl;
+      throw "NOX Error";
+    }
+
+    rtype = newgrp.computeGradient();
+    if (rtype != NOX::Abstract::Group::Ok) 
+    {
+      cerr << "NOX::LineSearch::MoreThuente::cvrch - Unable to compute Gradient" << endl;
+      throw "NOX Error";
+    }
+
     nfev ++;
     string message = "";
 
@@ -297,7 +317,7 @@ int MoreThuente::cvsrch(Abstract::Group& newgrp, double& stp,
 }
 
 
-int MoreThuente::cstep(double& stx, double& fx, double& dx,
+int NOX::LineSearch::MoreThuente::cstep(double& stx, double& fx, double& dx,
 		       double& sty, double& fy, double& dy,
 		       double& stp, double& fp, double& dp,
 		       bool& brackt, double stmin, double stmax)
@@ -481,18 +501,18 @@ int MoreThuente::cstep(double& stx, double& fx, double& dx,
 
 }
 
-double MoreThuente::min(double a, double b)
+double NOX::LineSearch::MoreThuente::min(double a, double b)
 {
   return (a < b ? a : b);
 }
 
-double MoreThuente::max(double a, double b)
+double NOX::LineSearch::MoreThuente::max(double a, double b)
 {
   return (a > b ? a : b);
 }
 
 
-double MoreThuente::absmax(double a, double b, double c)
+double NOX::LineSearch::MoreThuente::absmax(double a, double b, double c)
 {
   a = fabs(a);
   b = fabs(b);

@@ -85,7 +85,7 @@ void TrustRegionBased::init()
   status = StatusTest::Unconverged;
 
   // Set up utilities (i.e., set print processor, etc)
-  Utils::setUtils(params);
+ Utils::setUtils(params);
   
   // Print out initialization information
   if (Utils::doPrint(Utils::Parameters)) {
@@ -111,7 +111,7 @@ void TrustRegionBased::init()
   newton.reset(params.sublist("Direction"));
   cauchy.reset(params.sublist("Cauchy Direction"));
 
-  minRadius = params.getParameter("Minimum Trust Region Radius", 1.0e-6);
+  minRadius = params.sublist("Trust Region").getParameter("Minimum Trust Region Radius", 1.0e-6);
 
   if (minRadius <= 0) {
     cerr << "NOX::Solver::TrustRegionBased::init - Invalid \"Minimum Trust Region Radius\" (" 
@@ -119,7 +119,7 @@ void TrustRegionBased::init()
     throw "NOX Error";
   }
 
-  maxRadius = params.getParameter("Maximum Trust Region Radius", 1.0e+10);
+  maxRadius = params.sublist("Trust Region").getParameter("Maximum Trust Region Radius", 1.0e+10);
 
   if (maxRadius <= minRadius) {
     cerr << "NOX::Solver::TrustRegionBased::init - Invalid \"Maximum Trust Region Radius\" (" 
@@ -127,7 +127,7 @@ void TrustRegionBased::init()
     throw "NOX Error";
   }
 
-  minRatio = params.getParameter("Minimum Improvement Ratio", 1.0e-4);
+  minRatio = params.sublist("Trust Region").getParameter("Minimum Improvement Ratio", 1.0e-4);
 
   if (minRatio <= 0) {
     cerr << "NOX::Solver::TrustRegionBased::init - Invalid \"Minimum Improvement Ratio\" (" 
@@ -135,7 +135,7 @@ void TrustRegionBased::init()
     throw "NOX Error";
   }
 
-  contractTriggerRatio = params.getParameter("Contraction Trigger Ratio", 0.1);
+  contractTriggerRatio = params.sublist("Trust Region").getParameter("Contraction Trigger Ratio", 0.1);
 
   if (contractTriggerRatio < minRatio) {
     cerr << "NOX::Solver::TrustRegionBased::init - Invalid \"Contraction Trigger Ratio\" (" 
@@ -144,7 +144,7 @@ void TrustRegionBased::init()
   }
 
 
-  expandTriggerRatio = params.getParameter("Expansion Trigger Ratio", 0.75);
+  expandTriggerRatio = params.sublist("Trust Region").getParameter("Expansion Trigger Ratio", 0.75);
 
   if (expandTriggerRatio <= contractTriggerRatio) {
     cerr << "NOX::Solver::TrustRegionBased::init - Invalid \"Expansion Trigger Ratio\" (" 
@@ -152,7 +152,7 @@ void TrustRegionBased::init()
     throw "NOX Error";
   }
 
-  contractFactor = params.getParameter("Contraction Factor", 0.25);
+  contractFactor = params.sublist("Trust Region").getParameter("Contraction Factor", 0.25);
 
   if ((contractFactor <= 0) || (contractFactor >= 1)) {
     cerr << "NOX::Solver::TrustRegionBased::init - Invalid \"Contraction Factor\" (" 
@@ -160,7 +160,7 @@ void TrustRegionBased::init()
     throw "NOX Error";
   }
 
-  expandFactor = params.getParameter("Expansion Factor", 4.0);
+  expandFactor = params.sublist("Trust Region").getParameter("Expansion Factor", 4.0);
 
   if (expandFactor <= 1) {
     cerr << "NOX::Solver::TrustRegionBased::init - Invalid \"Expansion Factor\" (" 
@@ -168,7 +168,7 @@ void TrustRegionBased::init()
     throw "NOX Error";
   }
 
-  recoveryStep = params.getParameter("Recovery Step", 1.0);
+  recoveryStep = params.sublist("Trust Region").getParameter("Recovery Step", 1.0);
 
   if (recoveryStep < 0) {
     cerr << "NOX::Solver::TrustRegionBased::init - Invalid \"Recovery Step\" (" 
@@ -319,8 +319,8 @@ NOX::StatusTest::StatusType TrustRegionBased::iterate()
     soln.computeX(oldSoln, dir, step);
 
     // Compute F for new current solution.
-    ok = soln.computeF();
-    if (!ok) {
+    NOX::Abstract::Group::ReturnType rtype = soln.computeF();
+    if (rtype != NOX::Abstract::Group::Ok) {
       cerr << "NOX::Solver::TrustRegionBased::iterate - unable to compute F" << endl;
       throw "NOX Error";
     }
@@ -332,8 +332,8 @@ NOX::StatusTest::StatusType TrustRegionBased::iterate()
     }
     else {
 
-      ok = oldSoln.applyJacobian(*dirPtr, bVec);
-      if (!ok) {
+      rtype = oldSoln.applyJacobian(*dirPtr, bVec);
+      if (rtype != NOX::Abstract::Group::Ok) {
 	cerr << "NOX::Solver::TrustRegionBased::iterate - unable to compute F" << endl;
 	throw "NOX Error";
       }

@@ -51,12 +51,15 @@ NOX::Direction::Newton::~Newton()
   delete stepDir;
 }
 
-bool NOX::Direction::Newton::reset(NOX::Parameter::List& p)
+bool NOX::Direction::Newton::reset(NOX::Parameter::List& params)
 {
-  paramsPtr = &p;
-  doRescue = paramsPtr->getParameter("Resuce Bad Newton Solve", true);
-  if (!paramsPtr->sublist("Linear Solver").isParameter("Tolerance"))
-    paramsPtr->sublist("Linear Solver").setParameter("Tolerance", 1.0e-10);
+  paramsPtr = &params;
+
+  NOX::Parameter::List& p = params.sublist("Newton");
+
+  doRescue = p.getParameter("Resuce Bad Newton Solve", true);
+  if (!p.sublist("Linear Solver").isParameter("Tolerance"))
+    p.sublist("Linear Solver").getParameter("Tolerance", 1.0e-10);
   return true;
 }
 
@@ -81,7 +84,7 @@ bool NOX::Direction::Newton::compute(NOX::Abstract::Vector& dir,
     NOX::Direction::Newton::throwError("compute", "Unable to compute Jacobian");
   
   // Compute the Newton direction
-  status = soln.computeNewton(paramsPtr->sublist("Linear Solver"));
+  status = soln.computeNewton(paramsPtr->sublist("Newton").sublist("Linear Solver"));
   
   // It didn't converge, but maybe we can recover. Otherwise, we throw an error.
   if (status == NOX::Abstract::Group::NotConverged)
@@ -108,14 +111,13 @@ bool NOX::Direction::Newton::resetForcingTerm(const NOX::Abstract::Group& soln,
   // Reset the forcing term at the beginning on a nonlinear iteration,
   // based on the last iteration.
 
-  if ((!paramsPtr->isParameter("Forcing Term Method")) ||
-      (paramsPtr->isParameterEqual("Forcing Term Method", "None")))
+  if ((!paramsPtr->sublist("Newton").isParameter("Forcing Term Method")) ||
+      (paramsPtr->sublist("Newton").isParameterEqual("Forcing Term Method", "None")))
     return true;
 
   // Get forcing term parameters.
-  const string method = paramsPtr->getParameter("Forcing Term Method", "Constant");
-  const double eta_min = paramsPtr->getParameter("Forcing Term Minimum Tolerance", 1.0e-4);
-  const double eta_max = paramsPtr->getParameter("Forcing Term Maximum Tolerance", 0.9);
+  const string method = paramsPtr->sublist("Newton").getParameter("Forcing Term Method", "Constant");
+  const double eta_min = paramsPtr->sublist("Newton").getParameter("Forcing Term Minimum Tolerance", 1.0e-4);  const double eta_max = paramsPtr->sublist("Newton").getParameter("Forcing Term Maximum Tolerance", 0.9);
 
   // Get linear solver current tolerance.
 
@@ -129,8 +131,7 @@ bool NOX::Direction::Newton::resetForcingTerm(const NOX::Abstract::Group& soln,
   }
   else {
     // Default to the old tolerance
-    eta_km1 = paramsPtr->sublist("Linear Solver")
-      .getParameter("Tolerance", 0.0);
+    eta_km1 = paramsPtr->sublist("Newton").sublist("Linear Solver").getParameter("Tolerance", 0.0);
     
   }
 
@@ -157,7 +158,7 @@ bool NOX::Direction::Newton::resetForcingTerm(const NOX::Abstract::Group& soln,
     
     if (niter == 0) {
 
-      eta_k = paramsPtr->getParameter("Forcing Term Initial Tolerance", 0.01);
+      eta_k = paramsPtr->sublist("Newton").getParameter("Forcing Term Initial Tolerance", 0.01);
 
     }
     else {
@@ -221,15 +222,15 @@ bool NOX::Direction::Newton::resetForcingTerm(const NOX::Abstract::Group& soln,
     
     if (niter == 0) {
 
-      eta_k = paramsPtr->getParameter("Forcing Term Initial Tolerance", 0.01);
+      eta_k = paramsPtr->sublist("Newton").getParameter("Forcing Term Initial Tolerance", 0.01);
 
     }
     else {
 
       const double normf = soln.getNormF();
       const double normoldf = oldsoln.getNormF();
-      const double alpha = paramsPtr->getParameter("Forcing Term Alpha", 1.5);
-      const double gamma = paramsPtr->getParameter("Forcing Term Gamma", 0.9);
+      const double alpha = paramsPtr->sublist("Newton").getParameter("Forcing Term Alpha", 1.5);
+      const double gamma = paramsPtr->sublist("Newton").getParameter("Forcing Term Gamma", 0.9);
       const double residual_ratio = normf / normoldf;
       
       eta_k = gamma * pow(residual_ratio, alpha);
@@ -260,7 +261,7 @@ bool NOX::Direction::Newton::resetForcingTerm(const NOX::Abstract::Group& soln,
   }
 
   // Reset linear solver tolerance
-  paramsPtr->sublist("Linear Solver").setParameter("Tolerance", eta_k);
+  paramsPtr->sublist("Newton").sublist("Linear Solver").setParameter("Tolerance", eta_k);
 
   if (Utils::doPrint(Utils::Details)) 
     cout << indent << "Forcing Term: " << eta_k << endl;

@@ -88,8 +88,12 @@ namespace LineSearch {
   decrease condition.
 
   This line search can be called via NOX::LineSearch::Manager.
+
+  This line search is used if "More'-Thuente" is the "Method" in the
+  "Line Search" sublist. (See NOX::LineSearch::Manager for details.)
  
-  The following parameters can be specified for this line search:
+  The following parameters can be specified for this line search in
+  the "More'-Thuente" sublist of the "Line Search" sublist:
  
   - "Sufficient Decrease" - The ftol in the sufficient decrease
     condition (defaults to 1.0e-4)
@@ -111,7 +115,6 @@ namespace LineSearch {
 
   - "Recovery Step" - step to take when the line search fails
     (defaults to value for "Default Step")
-
 
 */
 

@@ -42,7 +42,8 @@ namespace LineSearch {
 /*! 
   This line search can be called via NOX::LineSearch::Manager.
  
-  The following parameters can be specified for this line search: 
+  The following parameters can be specified in the "Full Step" sublist
+  of the "Line Search" sublist:
  
   - "Full Step" - length of a full step (defaults to 1.0)
 */  

@@ -54,8 +54,8 @@ s = - M^{-1}(x) F(x) + \beta s_{prev}
   (see NOX::Direction::Manager for more information on choosing the
   search direction).
 
-  The following options may be specified in the "Direction" sublist of
-  the solver parameters.
+  The following options may be specified in the "Nonlinear CG" sublist
+  of the "Direction" sublist of the solver parameters.
 
 <ul>
 <li> "Orthogonalize" can be either of:

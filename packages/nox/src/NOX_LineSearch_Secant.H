@@ -56,7 +56,8 @@ namespace LineSearch {
 
   This line search can be called via NOX::LineSearch::Manager.
  
-  The following parameters can be specified for this line search:
+  The following parameters can be specified in the "Secant" sublist of
+  the "Line Search" sublist.
  
   - "Minimum Step" - minimum step length allowed (when we give up)
 

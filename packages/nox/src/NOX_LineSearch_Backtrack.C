@@ -51,12 +51,14 @@ NOX::LineSearch::Backtrack::~Backtrack()
 
 bool NOX::LineSearch::Backtrack::reset(NOX::Parameter::List& params)
 { 
-  minStep = params.getParameter("Minimum Step", 1.0e-12);
-  defaultStep = params.getParameter("Default Step", 1.0);
-  recoveryStep = params.getParameter("Recovery Step", defaultStep);
-  maxIters = params.getParameter("Max Iters", 100);
+  NOX::Parameter::List& p = params.sublist("Backtrack");
 
-  const string tmp = params.getParameter("Decrease Condition", "Max Norm");
+  minStep = p.getParameter("Minimum Step", 1.0e-12);
+  defaultStep = p.getParameter("Default Step", 1.0);
+  recoveryStep = p.getParameter("Recovery Step", defaultStep);
+  maxIters = p.getParameter("Max Iters", 100);
+
+  const string tmp = p.getParameter("Decrease Condition", "Max Norm");
   
   if (tmp == "Max Norm")
     normType = NOX::Abstract::Vector::MaxNorm;
@@ -88,7 +90,16 @@ bool NOX::LineSearch::Backtrack::compute(NOX::Abstract::Group& grp, double& step
 
   step = defaultStep;
   grp.computeX(oldGrp, dir, step);
-  grp.computeF();    
+
+  NOX::Abstract::Group::ReturnType rtype;
+
+  rtype = grp.computeF();    
+  if (rtype != NOX::Abstract::Group::Ok)
+  {
+    cerr << "NOX::LineSearch::BackTrack::compute - Unable to compute F" << endl;
+    throw "NOX Error";
+  }
+
   newF = getNormF(grp);
   int nIters = 1;
 
@@ -114,7 +125,14 @@ bool NOX::LineSearch::Backtrack::compute(NOX::Abstract::Group& grp, double& step
     }
 
     grp.computeX(oldGrp, dir, step);
-    grp.computeF();    
+
+    rtype = grp.computeF();    
+    if (rtype != NOX::Abstract::Group::Ok)
+    {
+      cerr << "NOX::LineSearch::BackTrack::compute - Unable to compute F" << endl;
+      throw "NOX Error";
+    }
+
     newF = getNormF(grp);
   } 
 

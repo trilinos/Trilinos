@@ -51,7 +51,8 @@ namespace LineSearch {
 
   This line search can be called via NOX::LineSearch::Manager.
  
-  The following parameters can be specified for this line search:
+  The following parameters can be specified for this line search in
+  the "Backtrack" sublist of the "Line Search" sublist.
  
 <ul>
 <li> "Default Step" - starting step length (defaults to 1.0)

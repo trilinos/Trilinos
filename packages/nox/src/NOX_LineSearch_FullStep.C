@@ -55,7 +55,8 @@ FullStep::~FullStep()
 
 bool FullStep::reset(Parameter::List& params)
 {
-  fullstep = params.getParameter("Full Step", 1.0);
+  NOX::Parameter::List& p = params.sublist("Full Step");
+  fullstep = p.getParameter("Full Step", 1.0);
   return true;
 }
 

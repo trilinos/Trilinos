@@ -69,8 +69,9 @@ namespace Direction {
   (see NOX::Direction::Manager for more information on choosing the
   search direction).
 
-  The following options are valid in the "Direction" sublist of the
-  parameters that are passed to the nonlinear solver:
+  The following options are valid in the "Quasi-Newton" sublist of the
+  "Direction" sublist of the parameters that are passed to the
+  nonlinear solver:
 
   - "Memory" - Number of saved updates, defaults to 5.
 

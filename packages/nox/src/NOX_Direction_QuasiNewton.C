@@ -183,9 +183,10 @@ QuasiNewton::~QuasiNewton()
 {
 }
 
-bool QuasiNewton::reset(Parameter::List& p)
+bool QuasiNewton::reset(Parameter::List& params)
 {
-  paramsPtr = &p;
+  paramsPtr = &params;
+  NOX::Parameter::List& p = params.sublist("Quasi-Newton");
   updates.reset(p.getParameter("Memory", 5));
   return true;
 }

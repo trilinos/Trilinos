@@ -49,7 +49,7 @@ namespace NOX {
   \brief Provides static parallel communication and printing utilities.
 
   The following parameters are used by this class and should be
-  defined in the main solver parameter list.
+  defined in the "Printing" sublist of the solver parameter list.
 
   - "Output Information" - An integer which is a sum of MsgType's to
     specify how much information to show. Defaults to
