@@ -71,7 +71,7 @@ static char *cvs_all_allo_c =
 *       The following section is a commented section containing
 *       an example main code:
 *******************************************************************************
-*double *array_alloc();
+*double *LB_array_alloc();
 *main()
 *{
 *  int ***temp;
@@ -83,7 +83,7 @@ static char *cvs_all_allo_c =
 *   il = 2;
 *   jl = 3;
 *   kl = 3;
-*   temp = (int ***) array_alloc(3,il,jl,kl,sizeof(int));
+*   temp = (int ***) array_alloc(__FILE__,__LINE__,3,il,jl,kl,sizeof(int));
 *   for (i=0; i<il; i++) {
 *      for (j=0; j<jl; j++) {
 *         for (k=0; k<kl; k++) temp[i][j][k] = 1;
@@ -156,12 +156,12 @@ va_dcl
   if (numdim <= 0) {
     fprintf(stderr, "%s (%s: %d) ERROR: number of dimensions, %d, is <=0\n",
             yo, file, lineno, numdim);
-    exit(-1);
+    return((double *) NULL);
   }
   else if (numdim > 4) {
     fprintf(stderr, "%s (%s: %d) ERROR: number of dimensions, %d, is > 4\n",
             yo, file, lineno, numdim);
-    exit(-1);
+    return((double *) NULL);
   }
 
   dim[0].index = va_arg(va, int);
@@ -201,14 +201,16 @@ va_dcl
 
   total = dim[numdim-1].off + dim[numdim-1].total * dim[numdim-1].size;
 
-  dfield = (double *) LB_smalloc((int) total, file, lineno);
-  field  = (char *) dfield;
+  dfield = (double *) LB_smalloc((int) total, file, lineno); 
 
-  for (i = 0; i < numdim - 1; i++) {
-    ptr  = (char **) (field + dim[i].off);
-    data = (char *) (field + dim[i+1].off);
-    for (j = 0; j < dim[i].total; j++) {
-      ptr[j] = data + j * dim[i+1].size * dim[i+1].index;
+  if (dfield != NULL) {
+    field  = (char *) dfield;
+    for (i = 0; i < numdim - 1; i++) {
+      ptr  = (char **) (field + dim[i].off);
+      data = (char *) (field + dim[i+1].off);
+      for (j = 0; j < dim[i].total; j++) {
+        ptr[j] = data + j * dim[i+1].size * dim[i+1].index;
+      }
     }
   }
 
@@ -233,7 +235,7 @@ double *LB_smalloc(int n, char *filename, int lineno)
   if (n < 0) {
     fprintf(stderr, "%s (from %s,%d) ERROR: Non-positive argument. (%d)\n", 
             yo, filename, lineno, n);
-    exit(-1);
+    return ((double *) NULL);
   }
   else if (n == 0)
     pntr = NULL;
@@ -243,12 +245,48 @@ double *LB_smalloc(int n, char *filename, int lineno)
   if (pntr == NULL && n != 0) {
     fprintf(stderr, "%s (from %s,%d) Out of space - number of bytes "
             "requested = %d\n", yo, filename, lineno, n);
-    exit(0);
+    return ((double *) NULL);
   }
 
   return pntr;
 
 } /* LB_smalloc */
+
+/* Safe version of realloc. Does not initialize memory. */
+
+double *LB_srealloc(void *ptr, int n, char *filename, int lineno)
+{
+  char *yo = "LB_srealloc";
+  double   *p;                /* returned pointer */
+
+  if (ptr == NULL) {
+
+    if (n == 0) {
+      return ((double *) NULL);
+    }
+    else {
+      p = LB_smalloc(n, filename, lineno);
+    }
+  }
+  else {
+    if (n == 0) {
+      LB_safe_free((void *) ptr);
+      return ((double *) NULL);
+    }
+    else {
+      p = (double *) realloc((char *) ptr, n);
+    }
+  }
+
+  if (p == NULL) {
+    fprintf(stderr, "%s (from %s,%d) Out of space - number of bytes "
+            "requested = %d\n", yo, filename, lineno, n);
+    return ((double *) NULL);
+  }
+
+  return (p);
+}
+
 
 /*****************************************************************************/
 /*****************************************************************************/
