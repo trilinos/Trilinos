@@ -38,7 +38,7 @@
 # This must be the first line in configure.ac.
 # Optional 3rd argument is email address for bugs.
 
-AC_INIT(nox, 1.0a-dev, nox-developers@software.sandia.gov)
+AC_INIT([nox],[1.0a-dev],[nox-developers@software.sandia.gov])
 
 # Hello World!
 echo "----------------------------------------"
@@ -81,7 +81,7 @@ AM_INIT_AUTOMAKE(${PACKAGE_NAME}, ${PACKAGE_VERSION})
 
 # Specify required version of autoconf.
 
-AC_PREREQ(2.52)
+AC_PREREQ(2.57)
 
 # ------------------------------------------------------------------------
 # Check for user overrides (some to be used later)
@@ -142,9 +142,9 @@ AC_ARG_WITH(ldflags,
 AC_ARG_WITH(ar,
 [AC_HELP_STRING([--with-ar],[specify archiver command @<:@"ar cru"@:>@])],
 [
-AC_MSG_CHECKING(user-defined archiver)
-AC_MSG_RESULT([${withval}])
-ALTERNATE_AR="${withval}"
+  AC_MSG_CHECKING(user-defined archiver)
+  AC_MSG_RESULT([${withval}])
+  ALTERNATE_AR="${withval}"
 ]
 )
 
@@ -487,26 +487,29 @@ if test "X${HAVE_PKG_MPI}" = "Xyes"; then
     CPPFLAGS="${CPPFLAGS} -I${MPI_INC}"
   fi
 
-  AC_LANG_CPLUSPLUS 
+  AC_LANG([C++]) 
   AC_MSG_CHECKING(for mpi.h)
-  AC_TRY_CPP([#include "mpi.h"],
-    [
-     AC_MSG_RESULT(yes)
-     AC_DEFINE(HAVE_MPI,,[define that mpi is being used])
-    ], 
-    [
-     AC_MSG_RESULT(no)  
-     echo "---"
-     echo "Cannot find header file mpi.h."
-     echo "Either compile without mpi (no --with-mpi directives)"
-     echo "or specify --with-mpi-incdir=<dir>."
-     echo "---"
-     AC_MSG_ERROR(cannot find mpi.h)
-    ]
-  )
+  AC_PREPROC_IFELSE(
+  [AC_LANG_SOURCE([[#include "mpi.h"]])],
+  [ 
+    AC_MSG_RESULT(yes)
+    AC_DEFINE(HAVE_MPI,,[define that mpi is being used])
+  ],[
+    AC_MSG_RESULT(no)  
+    echo "---"
+    echo "Cannot find header file mpi.h."
+    echo "Either compile without mpi (no --with-mpi directives)"
+    echo "or specify --with-mpi-incdir=<dir>."
+    echo "---"
+    AC_MSG_ERROR(cannot find mpi.h)
+  ])
 
   #Define Automake conditional for mpi builds: HAVE_MPI
   AM_CONDITIONAL(HAVE_MPI, true)
+
+else
+
+  AM_CONDITIONAL(HAVE_MPI, false)
 
 fi
 
@@ -515,131 +518,53 @@ fi
 # ------------------------------------------------------------------------
 
 #iostream
-AC_LANG_CPLUSPLUS 
-AC_MSG_CHECKING([for iostream])
-AC_TRY_CPP([#include <iostream>],
-[
-  AC_MSG_RESULT(yes)
-  AC_DEFINE(HAVE_IOSTREAM,,[define if we can include <iostream>])
-], 
-[
-  AC_MSG_RESULT(no)
-  AC_MSG_CHECKING([for iostream.h])
-  AC_TRY_CPP([#include "iostream.h"],
-  [
-    AC_MSG_RESULT(yes)
-    AC_DEFINE(HAVE_IOSTREAM_H,,[define if we can include <iostream.h>])
-  ], 
-  [
-    AC_MSG_RESULT(no)
-    AC_MSG_NOTICE([You do not appear to have iostream nor iostream.h!!])
-  ]
-  )
-]
-)
+AC_LANG([C++]) 
+AC_CHECK_HEADERS(
+[iostream iostream.h], 
+break, 
+AC_MSG_NOTICE([You do not appear to have iostream nor iostream.h!!]))
 
 #iomanip
-AC_LANG_CPLUSPLUS 
-AC_MSG_CHECKING([for iomanip])
-AC_TRY_CPP([#include "iomanip"],
-[
-  AC_MSG_RESULT(yes)
-  AC_DEFINE(HAVE_IOMANIP,,[define if we can include <iomanip>])
-], 
-[
-  AC_MSG_RESULT(no)
-  AC_MSG_CHECKING([for iomanip.h])
-  AC_TRY_CPP([#include "iomanip.h"],
-  [
-    AC_MSG_RESULT(yes)
-    AC_DEFINE(HAVE_IOMANIP_H,,[define if we can include <iomanip.h>])
-  ], 
-  [
-    AC_MSG_RESULT(no)
-    AC_MSG_NOTICE([You do not appear to have iomanip nor iomanip.h!!])
-  ]
-  )
-]
-)
+AC_LANG([C++]) 
+AC_CHECK_HEADERS(
+[iomanip iomanip.h],
+break,
+AC_MSG_NOTICE([You do not appear to have iomanip nor iomanip.h!!]))
 
 #cmath
-
-# Note that the check for cmath had to be changed from AC_TRY_CPP to
-# AC_TRY_COMPILE to accomodate the TFLOPS cross-compilation.
-
-AC_LANG_CPLUSPLUS 
-AC_MSG_CHECKING(for cmath)
-AC_TRY_COMPILE(
-[#include <cmath>],
-[],
-[
-  AC_MSG_RESULT(yes)
-  AC_DEFINE(HAVE_CMATH,,[define if we can include <cmath>])
-], 
-[
-  AC_MSG_RESULT(no)
-  AC_MSG_CHECKING([for math.h])
-  AC_TRY_CPP([#include "math.h"],
-  [
-    AC_MSG_RESULT(yes)
-    AC_DEFINE(HAVE_MATH_H,,[define if we can include <math.h>])
-  ], 
-  [
-    AC_MSG_RESULT(no)
-    AC_MSG_NOTICE([You do not appear to have cmath nor math.h!!])
-  ]
-  )
-]
-)
+AC_LANG([C++]) 
+AC_CHECK_HEADERS(
+[cmath math.h],
+break,
+AC_MSG_NOTICE([You do not appear to have cmath nor math.h!!]))
 
 #cstdlib
-
-# Note that the check for cmath had to be changed from AC_TRY_CPP to
-# AC_TRY_COMPILE to accomodate the TFLOPS cross-compilation.
-
-AC_LANG_CPLUSPLUS 
-AC_MSG_CHECKING(for cstdlib)
-AC_TRY_COMPILE(
-[#include <cstdlib>],
-[],
-[
-  AC_MSG_RESULT(yes)
-  AC_DEFINE(HAVE_CSTDLIB,,[define if we can include <cstdlib>])
-], 
-[
-  AC_MSG_RESULT(no)
-  AC_MSG_CHECKING([for stdlib.h])
-  AC_TRY_CPP([#include "stdlib.h"],
-  [
-    AC_MSG_RESULT(yes)
-    AC_DEFINE(HAVE_STDLIB_H,,[define if we can include <stdlib.h>])
-  ], 
-  [
-    AC_MSG_RESULT(no)
-    AC_MSG_NOTICE([You do not appear to have cstdlib nor stdlib.h!!])
-  ]
-  )
-]
-)
+AC_LANG([C++]) 
+AC_CHECK_HEADERS(
+[cstdlib stdlib.h],
+break,
+AC_MSG_NOTICE([You do not appear to have cstdlib nor stdlib.h!!]))
 
 # can we say using std::ostream?
-AC_LANG_CPLUSPLUS 
+AC_LANG([C++]) 
 AC_MSG_CHECKING(whether "using std::ostream" is okay)
-AC_TRY_COMPILE(
+AC_COMPILE_IFELSE(
 [
+  AC_LANG_PROGRAM(
+  [[
 #ifdef HAVE_IOSTREAM
 #include <iostream>
 #elif defined(HAVE_IOSTREAM_H)
 #include <iostream.h>
 #endif
+  ]], 
+  [[using std::ostream;]])
 ],
-[using std::ostream;],
-[AC_MSG_RESULT(yes)], 
+[AC_MSG_RESULT(yes)],
 [
   AC_MSG_RESULT(no)  
-  AC_DEFINE(NO_USING_STD_OSTREAM,,[define if "using std::ostream" is okay])
-]
-)
+  AC_DEFINE(NO_USING_STD_OSTREAM,1,[define if "using std::ostream" is not okay])
+])
 
 # ------------------------------------------------------------------------
 # Which Add-Ons To Build
@@ -788,11 +713,11 @@ if test "X${HAVE_PKG_MPI}" = "Xyes" && test X${ADDON_epetra_EXAMPLES} = Xyes; th
     LIBS="${MPI_LIBS} ${LIBS}"
   fi
 
-  AC_LANG_CPLUSPLUS 
+  AC_LANG([C++]) 
   AC_MSG_CHECKING(whether MPI will link using C++ compiler)
-  AC_TRY_LINK([#include <mpi.h>],
-  [int c; char** v; MPI_Init(&c,&v);],
-  [AC_MSG_RESULT(yes)], 
+  AC_LINK_IFELSE(
+  [AC_LANG_PROGRAM([[#include <mpi.h>]], [[int c; char** v; MPI_Init(&c,&v);]])],
+  [AC_MSG_RESULT(yes)],
   [AC_MSG_RESULT(no)  
    echo "-----"
    echo "Cannot link simple MPI program."
@@ -800,8 +725,8 @@ if test "X${HAVE_PKG_MPI}" = "Xyes" && test X${ADDON_epetra_EXAMPLES} = Xyes; th
    echo "Or try --with-mpi-libs, --with-mpi-incdir, --with-mpi-libdir"
    echo "to specify all the specific MPI compile options."
    echo "-----"
-   AC_MSG_ERROR(MPI cannot link)]
-  )
+   AC_MSG_ERROR(MPI cannot link)
+  ])
 
 fi
 
@@ -882,14 +807,33 @@ AC_DEFUN(TRILINOS_HEADER,
 
   # First try the directories we already have
   CPPFLAGS="$save_CPPFLAGS $ABS_TRILINOS_CPPFLAGS"
-  AC_TRY_CPP([#include "$2"],[done=yes],)
+  AC_PREPROC_IFELSE([AC_LANG_SOURCE(
+  [[
+#undef PACKAGE
+#undef PACKAGE_NAME
+#undef PACKAGE_BUGREPORT
+#undef PACKAGE_STRING
+#undef PACKAGE_TARNAME
+#undef PACKAGE_VERSION
+#undef VERSION
+#include "$2"
+  ]])],[done=yes],[])
   CPPFLAGS=$save_CPPFLAGS
 
   # Next  try the specified incdir (if any)
   if test $done = no && test -n "${$1_INCDIR}"; then
     CPPFLAGS="-I${$1_INCDIR} $save_CPPFLAGS $ABS_TRILINOS_CPPFLAGS"
-    AC_TRY_CPP([#include "$2"],
-    [ done=yes
+    AC_PREPROC_IFELSE([AC_LANG_SOURCE(
+  [[
+#undef PACKAGE
+#undef PACKAGE_NAME
+#undef PACKAGE_BUGREPORT
+#undef PACKAGE_STRING
+#undef PACKAGE_TARNAME
+#undef PACKAGE_VERSION
+#undef VERSION
+#include "$2"
+  ]])],[ done=yes
       REL_TRILINOS_CPPFLAGS="-I${$1_INCDIR} ${REL_TRILINOS_CPPFLAGS}"
       ABS_TRILINOS_CPPFLAGS="-I${$1_INCDIR} ${ABS_TRILINOS_CPPFLAGS}"
     ],[])
@@ -899,8 +843,17 @@ AC_DEFUN(TRILINOS_HEADER,
   # Next try the Trilinos build dir
   if test $done = no; then
     CPPFLAGS="-I../$1/src $save_CPPFLAGS $ABS_TRILINOS_CPPFLAGS"
-    AC_TRY_CPP([#include "$2"],
-    [ done=yes
+    AC_PREPROC_IFELSE([AC_LANG_SOURCE(
+  [[
+#undef PACKAGE
+#undef PACKAGE_NAME
+#undef PACKAGE_BUGREPORT
+#undef PACKAGE_STRING
+#undef PACKAGE_TARNAME
+#undef PACKAGE_VERSION
+#undef VERSION
+#include "$2"
+  ]])],[ done=yes
       REL_TRILINOS_CPPFLAGS="-I\$(top_builddir)/../$1/src ${REL_TRILINOS_CPPFLAGS}"
       ABS_TRILINOS_CPPFLAGS="-I../$1/src ${ABS_TRILINOS_CPPFLAGS}"
     ],[])
@@ -910,8 +863,17 @@ AC_DEFUN(TRILINOS_HEADER,
   # Next try the Trilinos source dir
   if test $done = no && test -n "$srcdir"; then
     CPPFLAGS="-I$srcdir/../$1/src $save_CPPFLAGS $ABS_TRILINOS_CPPFLAGS"
-    AC_TRY_CPP([#include "$2"],
-    [ done=yes
+    AC_PREPROC_IFELSE([AC_LANG_SOURCE(
+  [[
+#undef PACKAGE
+#undef PACKAGE_NAME
+#undef PACKAGE_BUGREPORT
+#undef PACKAGE_STRING
+#undef PACKAGE_TARNAME
+#undef PACKAGE_VERSION
+#undef VERSION
+#include "$2"
+  ]])],[ done=yes
       REL_TRILINOS_CPPFLAGS="-I\$(top_srcdir)/../$1/src ${REL_TRILINOS_CPPFLAGS}"
       ABS_TRILINOS_CPPFLAGS="-I$srcdir/../$1/src ${ABS_TRILINOS_CPPFLAGS}"
     ],[])					       
@@ -965,22 +927,22 @@ AC_DEFUN(TRILINOS_LIB_CHECK,
 
   # Next, see if we can link without doing anything
   if test $done = no; then
-    AC_LANG_CPLUSPLUS
-    AC_TRY_LINK(,,[done=yes],)
+    AC_LANG([C++])
+    AC_LINK_IFELSE([AC_LANG_PROGRAM([[]], [[]])],[done=yes],[])
     LDFLAGS=$save_LDFLAGS
   fi
 
   # Next try the specified libdir (if any)
    if test $done = no && test -n "${$1_LIBDIR}"; then
      LDFLAGS="-L${$1_LIBDIR} $save_LDFLAGS"
-     AC_TRY_LINK(,,[done=yes],[LDFLAGS=$save_LDFLAGS])
+     AC_LINK_IFELSE([AC_LANG_PROGRAM([[]], [[]])],[done=yes],[LDFLAGS=$save_LDFLAGS])
    fi   
 
   # Next try the Trilinos build dir
    if test $done = no; then
     PWD=`pwd`
     LDFLAGS="-L$PWD/../$1/src $save_LDFLAGS"
-    AC_TRY_LINK(,,[done=yes],[LDFLAGS=$save_LDFLAGS])
+    AC_LINK_IFELSE([AC_LANG_PROGRAM([[]], [[]])],[done=yes],[LDFLAGS=$save_LDFLAGS])
    fi   
 
   AC_MSG_CHECKING([for $1 library])
@@ -1002,7 +964,6 @@ AC_DEFUN(TRILINOS_LIB_CHECK,
 ])
 
 if test X${ADDON_epetra_EXAMPLES} = Xyes || test X${BUILD_LOCA_EPETRA_EXAMPLES} = Xyes; then
-
 
   # Find the dreaded y12 library if required
   # NOTE: The y12m library is only needed if aztecoo is built 
@@ -1037,14 +998,14 @@ if test X${ADDON_epetra_EXAMPLES} = Xyes || test X${BUILD_LOCA_EPETRA_EXAMPLES} 
     done=no
 
     # First, see if we can link without doing anything
-    AC_LANG_CPLUSPLUS
-    AC_TRY_LINK(,,[done=yes],)
+    AC_LANG([C++])
+    AC_LINK_IFELSE([AC_LANG_PROGRAM([[]], [[]])],[done=yes],[])
     LDFLAGS=$save_LDFLAGS
 
     # Next try the specified libdir (if any)
      if test $done = no && test -n "${y12m_LIBDIR}"; then
        LDFLAGS="-L${y12m_LIBDIR} $save_LDFLAGS"
-       AC_TRY_LINK(,,[done=yes],[LDFLAGS=$save_LDFLAGS])
+       AC_LINK_IFELSE([AC_LANG_PROGRAM([[]], [[]])],[done=yes],[LDFLAGS=$save_LDFLAGS])
      fi   
 
     # Next try the Trilinos build dir for reference y12m
@@ -1052,7 +1013,7 @@ if test X${ADDON_epetra_EXAMPLES} = Xyes || test X${BUILD_LOCA_EPETRA_EXAMPLES} 
     if test $done = no; then	
      PWD=`pwd`
      LDFLAGS="-L$PWD/../../external/y12m $save_LDFLAGS"
-     AC_TRY_LINK(,,[done=yes],[LDFLAGS=$save_LDFLAGS])
+     AC_LINK_IFELSE([AC_LANG_PROGRAM([[]], [[]])],[done=yes],[LDFLAGS=$save_LDFLAGS])
     fi   
 
     # See if Trilinos will build y12m at the same time it builds nox. 
@@ -1074,10 +1035,8 @@ if test X${ADDON_epetra_EXAMPLES} = Xyes || test X${BUILD_LOCA_EPETRA_EXAMPLES} 
   
     if test $done = auto; then
       AC_MSG_RESULT(no check - assuming library will be built by Trilinos)
-      AM_CONDITIONAL(HAVE_Y12M, true)
     elif test $done = yes; then
       AC_MSG_RESULT(yes)
-      AM_CONDITIONAL(HAVE_Y12M, true)
     else
       AC_MSG_RESULT(no)
       echo "---"
@@ -1093,6 +1052,9 @@ if test X${ADDON_epetra_EXAMPLES} = Xyes || test X${BUILD_LOCA_EPETRA_EXAMPLES} 
   TRILINOS_LIB_CHECK(aztecoo)
 
 fi
+
+AM_CONDITIONAL(HAVE_Y12M, test X${REQUIRE_Y12M} = Xyes)
+
 
 # ------------------------------------------------------------------------
 # Petsc include file check for building noxpetsc library
@@ -1315,7 +1277,7 @@ AC_CONFIG_FILES([
 		src-loca/example-lapack/ThermoSyphon/therm/oldfile
 		])
 
-AC_OUTPUT()
+AC_OUTPUT
 
 
 # ------------------------------------------------------------------------
