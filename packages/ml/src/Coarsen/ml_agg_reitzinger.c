@@ -24,9 +24,10 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
   int    *pid_fine_edge;
   ML_Operator *Kn_coarse, *Rn_coarse, *Tcoarse, *Pn_coarse;
   ML_Operator *Pe, *Tcoarse_trans, *Tfine;
+  char filename[80];
+  FILE *fid1, *fid2;
 #ifdef LEASTSQ_SERIAL
   ML_Operator *SPn_mat;
-  /*char filename[80];*/
 #endif
 #ifdef ENRICH
   ML_Operator *TTtransPe;
@@ -700,6 +701,15 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
 					   sizeof(double)*nz_ptr); 
      csr_data->columns = (int *) realloc(csr_data->columns,
 					   sizeof(int)*nz_ptr); 
+
+     fid1 = fopen("AZ_write_matrix_now","r");
+     fid2 = fopen("ML_write_matrix_now","r");
+     if (fid1 != NULL || fid2 != NULL) {
+        if (fid1 != NULL) fclose(fid1);
+        if (fid2 != NULL) fclose(fid2);
+        sprintf(filename,"Tmat_%d",fine_level-grid_level);
+        ML_Operator_Print(Tcoarse,filename);
+     }
    
      /********************************************************************/
      /* Fix P and R so that they are not normalized. This is so that we  */
