@@ -327,7 +327,8 @@ double *LB_Malloc(int n, char *filename, int lineno)
   if (DEBUG_MEMORY > 2) {
     /* Print out details of allocation. */
     MPI_Comm_rank(MPI_COMM_WORLD, &proc);
-    fprintf(stderr, "Proc %d: order=%d, size=%d, location=0x%lx, file=%s, line=%d\n",
+    fprintf(stderr, "Proc %d: order=%d, size=%d, location=0x%lx, "
+      "file=%s, line=%d\n",
       proc, nmalloc, n, (long) pntr, filename, lineno);
   }
 
@@ -496,14 +497,16 @@ void      LB_Memory_Stats()
 	fprintf(stderr, "Proc %d: Calls to malloc = %d,  Calls to free = %d\n",
 		proc, nmalloc, nfree);
     }
-    if (DEBUG_MEMORY > 1) {
+    else if (DEBUG_MEMORY > 1) {
         MPI_Comm_rank(MPI_COMM_WORLD, &proc);
-	fprintf(stderr, "Proc %d: Calls to malloc = %d,  Calls to free = %d, maximum bytes = %d\n",
+	fprintf(stderr, "Proc %d: Calls to malloc = %d,  Calls to free = %d, "
+                "maximum bytes = %d\n",
 		proc, nmalloc, nfree, bytes_max);
 	if (top != NULL) {
 	    fprintf(stderr, "Proc %d: Remaining allocations:\n", proc);
 	    for (dbptr = top; dbptr != NULL; dbptr = dbptr->next) {
-		fprintf(stderr, " order=%d, size=%d, location=0x%lx, file=%s, line=%d\n", 
+		fprintf(stderr, " order=%d, size=%d, location=0x%lx, "
+                  "file=%s, line=%d\n", 
                   dbptr->order, dbptr->size, (long) dbptr->ptr,
                   dbptr->file, dbptr->line);
 	    }
