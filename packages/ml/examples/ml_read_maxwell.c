@@ -1470,23 +1470,37 @@ int main(int argc, char *argv[])
   /* Here is the stuff to set the subsmoothers within the Hiptmair */
   /* smoother.                                                     */
 
-  edge_smoother  = (void *) ML_Gen_Smoother_MLS;
-  nodal_smoother = (void *) ML_Gen_Smoother_MLS;
-  nodal_smoother = (void *) ML_Gen_Smoother_SymGaussSeidel;
-  edge_smoother  = (void *) ML_Gen_Smoother_SymGaussSeidel;
-
-  nodal_its      = 1;
-  edge_its       = 1;
-  nodal_omega    = 1.0;
-  edge_omega     = 1.0;
-  nodal_omega    = (double) ML_DEFAULT;
-  edge_omega     = (double) ML_DEFAULT;
-  nodal_args = ML_Smoother_Arglist_Create(2);
-  ML_Smoother_Arglist_Set(nodal_args, 0, &nodal_its);
-  ML_Smoother_Arglist_Set(nodal_args, 1, &nodal_omega);
-  edge_args = ML_Smoother_Arglist_Create(2);
-  ML_Smoother_Arglist_Set(edge_args, 0, &edge_its);
-  ML_Smoother_Arglist_Set(edge_args, 1, &edge_omega);
+  if (ML_strcmp(context->smoother,"Hiptmair") == 0)
+  {
+     nodal_its      = 1;
+     edge_its       = 1;
+     if (ML_strcmp(context->subsmoother,"GaussSeidel") == 0
+         || ML_strcmp(context->subsmoother,"default") == 0)
+     {
+        nodal_smoother = (void *) ML_Gen_Smoother_SymGaussSeidel;
+        edge_smoother  = (void *) ML_Gen_Smoother_SymGaussSeidel;
+        nodal_omega    = ML_DDEFAULT;
+        edge_omega     = ML_DDEFAULT;
+        nodal_args = ML_Smoother_Arglist_Create(2);
+        ML_Smoother_Arglist_Set(nodal_args, 0, &nodal_its);
+        ML_Smoother_Arglist_Set(nodal_args, 1, &nodal_omega);
+   
+        edge_args = ML_Smoother_Arglist_Create(2);
+        ML_Smoother_Arglist_Set(edge_args, 0, &edge_its);
+        ML_Smoother_Arglist_Set(edge_args, 1, &edge_omega);
+     }
+     else if (ML_strcmp(context->subsmoother,"MLS") == 0)
+     {
+        edge_smoother  = (void *) ML_Gen_Smoother_MLS;
+        nodal_smoother = (void *) ML_Gen_Smoother_MLS;
+        nodal_omega    = 1.0;
+        edge_omega     = 1.0;
+        nodal_args = ML_Smoother_Arglist_Create(1);
+        ML_Smoother_Arglist_Set(nodal_args, 0, &nodal_its);
+        edge_args = ML_Smoother_Arglist_Create(1);
+        ML_Smoother_Arglist_Set(edge_args, 0, &edge_its);
+     }
+  }
 
   /****************************************************
   * Set up smoothers for all levels but the coarsest. *
