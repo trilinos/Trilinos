@@ -453,7 +453,7 @@ report($SUMMARY);
                         # fix invoke configure
                         my $log = "$options{'TRILINOS_DIR'}[0]/testharness/temp/trilinos_configure_log_$hostOS.txt";
                         my $invokeConfigure ="$options{'TRILINOS_DIR'}[0]/$buildDir[$j]/invoke-configure";                    
-                        my $brokenPackage = fixInvokeConfigure($log, $invokeConfigure);      
+                        my $brokenPackage = fixInvokeConfigure($log, $invokeConfigure, $comm);      
                             
                         # quit if error fixing invoke-configure
                         if ($brokenPackage eq "error") {
@@ -510,7 +510,7 @@ report($SUMMARY);
                             # fix invoke configure         
                             my $log = "$options{'TRILINOS_DIR'}[0]/testharness/temp/trilinos_build_log_$hostOS.txt";
                             my $invokeConfigure ="$options{'TRILINOS_DIR'}[0]/$buildDir[$j]/invoke-configure";                    
-                            my $brokenPackage = fixInvokeConfigure($log, $invokeConfigure);
+                            my $brokenPackage = fixInvokeConfigure($log, $invokeConfigure, $comm);
                             
                             # quit if error fixing invoke-configure
                             if ($brokenPackage eq "error") {
@@ -781,6 +781,7 @@ report($SUMMARY);
     sub fixInvokeConfigure {   
         my $log = $_[0];    
         my $invokeConfigure = $_[1];
+        my $comm = $_[2];
             
         # open configure/build log for reading
         open (LOG, "<$log")
@@ -797,8 +798,14 @@ report($SUMMARY);
         if ($log =~ m/configure/) {
             $file =~ m/.*^Running(.*?)Configure Script/ms;
             if (defined $1) { $brokenPackage = $1; }
-        } elsif ($log =~ m/build/) {    
-            $file =~ m/.*\/packages\/(\w*)\W/ms;
+        } elsif ($log =~ m/build/) {
+            my $prefix = "";            
+            if ($comm == "serial") { 
+                $prefix = "$options{'TRILINOS_DIR'}[0]/$options{'SERIAL_DIR'}[0]";
+            } elsif ($comm == "mpi") {
+                $prefix = "$options{'TRILINOS_DIR'}[0]/$options{'MPI_DIR'}[0]"
+            }                
+            $file =~ m/.*$prefix\/packages\/(\w*)\W/ms;
             if (defined $1) { $brokenPackage = $1; }
         }
         
