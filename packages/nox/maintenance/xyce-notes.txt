@@ -1,0 +1,141 @@
+************************************************
+Notes on configuring and installing NOX for Xyce
+************************************************
+
+In every case, --enable-examples is on **only** for the purpose of
+testing. It may be left off the configure line.
+
+-------------------------------------
+Configuring for alpha-osf1 (electron)
+-------------------------------------
+cd /Net/Proj/Xyce/people/tgkolda/alpha-osf1/nox
+
+../../nox/configure \
+--prefix=/Net/Proj/Xyce/arch/alpha-osf1 \
+--enable-examples 
+
+make
+make install
+
+cd /Net/Proj/Xyce/arch/alpha-osf1_MPI
+cd lib
+ln -s /Net/Proj/Xyce/arch/alpha-osf1/lib/libnox.a
+cd ../include
+ln -s /Net/Proj/Xyce/arch/alpha-osf1/include/nox
+
+-----------------------------------
+Configuring for freebsd (goldstein)
+-----------------------------------
+# LIBS for location of blas and lapack, respectively.
+
+cd /Net/Proj/Xyce/people/tgkolda/freebsd/nox
+
+../../nox/configure \
+LIBS="-L/usr/local/lib -L/Net/Proj/Xyce/arch/freebsd/lib/epetra" \
+--prefix=/Net/Proj/Xyce/arch/freebsd \
+--enable-examples 
+
+make
+make install
+
+cd /Net/Proj/Xyce/arch/freebsd_MPI
+cd lib
+ln -s /Net/Proj/Xyce/arch/freebsd/lib/libnox.a
+cd ../include
+ln -s /Net/Proj/Xyce/arch/freebsd/include/nox
+
+cd /Net/Proj/Xyce/arch/freebsd_MPICH
+cd lib
+ln -s /Net/Proj/Xyce/arch/freebsd/lib/libnox.a
+cd ../include
+ln -s /Net/Proj/Xyce/arch/freebsd/include/nox
+
+cd /Net/Proj/Xyce/arch/freebsd_MPILAM
+cd lib
+ln -s /Net/Proj/Xyce/arch/freebsd/lib/libnox.a
+cd ../include
+ln -s /Net/Proj/Xyce/arch/freebsd/include/nox
+
+---------------------
+Configuring for linux
+---------------------
+
+cd /Net/Proj/Xyce/people/tgkolda/linux/nox
+
+../../nox/configure \
+--prefix=/Net/Proj/Xyce/arch/linux \
+--enable-examples 
+
+make
+make install
+
+cd /Net/Proj/Xyce/arch/linux_MPI
+cd lib
+ln -s /Net/Proj/Xyce/arch/linux/lib/libnox.a
+cd ../include
+ln -s /Net/Proj/Xyce/arch/linux/include/nox
+
+cd /Net/Proj/Xyce/arch/linux_MPICH
+cd lib
+ln -s /Net/Proj/Xyce/arch/linux/lib/libnox.a
+cd ../include
+ln -s /Net/Proj/Xyce/arch/linux/include/nox
+
+cd /Net/Proj/Xyce/arch/linux_MPILAM
+cd lib
+ln -s /Net/Proj/Xyce/arch/linux/lib/libnox.a
+cd ../include
+ln -s /Net/Proj/Xyce/arch/linux/include/nox
+
+-----------------------------------
+Configuring on mingw (bardeen/wine)
+-----------------------------------
+
+--------------------------------
+Configuring for sgi10k (bardeen)
+--------------------------------
+
+cd /Net/Proj/Xyce/people/tgkolda/sgi10k/nox
+
+../../nox/configure \
+CXX=CC F77=f77 FFLAGS=-64 LDFLAGS=-lcomplib.sgimath \
+--prefix=/Net/Proj/Xyce/arch/sgi10k \
+--enable-examples 
+
+make
+make install
+
+cd /Net/Proj/Xyce/arch/sgi10k_MPI
+cd lib
+ln -s /Net/Proj/Xyce/arch/sgi10k/lib/libnox.a
+cd ../include
+ln -s /Net/Proj/Xyce/arch/sgi10k/include/nox
+
+--------------------------------
+Configuring for sgin32 (bardeen)
+--------------------------------
+
+cd /Net/Proj/Xyce/people/tgkolda/sgin32/nox
+
+../../nox/configure \
+CXX=CC CXXFLAGS="-LANG:std -LANG:ansi-for-init-scope=ON -n32" F77=f77 FFLAGS=-n32 LDFLAGS=-lcomplib.sgimath \
+--prefix=/Net/Proj/Xyce/arch/sgin32 \
+--enable-examples 
+
+make
+make install
+
+cd /Net/Proj/Xyce/arch/sgin32_MPI
+cd lib
+ln -s /Net/Proj/Xyce/arch/sgin32/lib/libnox.a
+cd ../include
+ln -s /Net/Proj/Xyce/arch/sgin32/include/nox
+
+----------------------------
+Configuring for solaris (??)
+----------------------------
+
+
+
+
+
