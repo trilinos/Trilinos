@@ -464,6 +464,26 @@ static int ML_DecomposeGraph_with_ParMETIS( ML_Operator *Amatrix,
     }
   }
 
+  /* verify that N_nonzero is valid, otherwise compute it via
+     a matrix getro */
+
+  if( N_nonzeros == -1 ) {
+
+    N_nonzeros = 0;
+    
+    for (i = 0; i < Nrows; i++ ) {
+
+      if( bdry_nodes[i] != 1.0 ) {
+	
+	ML_get_matrix_row(Amatrix, 1, &i, &allocated, &rowi_col, &rowi_val,
+			  &rowi_N, 0);
+
+	N_nonzeros += rowi_N;
+	
+      }
+    }
+  }
+    
   if( Nrows > 0 ) {
     
     /* construct the CSR graph information of the LOCAL matrix
