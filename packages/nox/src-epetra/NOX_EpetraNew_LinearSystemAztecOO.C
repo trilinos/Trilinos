@@ -609,9 +609,12 @@ applyJacobianInverse(Parameter::List &p,
   double tol = p.getParameter("Tolerance", 1.0e-6);
   bool reusePrec = p.getParameter("Reuse Preconditioner", false);
   
-  if ( precAlgorithm == AztecOO_ )
-    if ( !checkPreconditionerReuse() )
+  if ( precAlgorithm == AztecOO_ ) {
+    if ( checkPreconditionerReuse() )
       aztecSolverPtr->SetAztecOption(AZ_pre_calc, AZ_reuse);
+    else
+      aztecSolverPtr->SetAztecOption(AZ_pre_calc, AZ_calc);
+  }
 
   int aztecStatus = -1;
 
