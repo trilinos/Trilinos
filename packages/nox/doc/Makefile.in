@@ -104,6 +104,7 @@ PETSC_CXXFLAGS = @PETSC_CXXFLAGS@
 RANLIB = @RANLIB@
 TRILINOS_CXXFLAGS = @TRILINOS_CXXFLAGS@
 VERSION = @VERSION@
+WITH_PRERELEASE_SUBST = @WITH_PRERELEASE_SUBST@
 ac_aux_dir = @ac_aux_dir@
 am__include = @am__include@
 am__quote = @am__quote@
@@ -119,9 +120,9 @@ MAINTAINERCLEANFILES = Makefile.in
 subdir = doc
 mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/NOX_Config.h
-CONFIG_CLEAN_FILES =
+CONFIG_CLEAN_FILES = Doxyfile
 DIST_SOURCES =
-DIST_COMMON = Makefile.am Makefile.in
+DIST_COMMON = Doxyfile.in Makefile.am Makefile.in
 all: all-am
 
 .SUFFIXES:
@@ -132,6 +133,8 @@ Makefile: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.in  $(top_builddir)/config.s
 	cd $(top_builddir) && \
 	  CONFIG_HEADERS= CONFIG_LINKS= \
 	  CONFIG_FILES=$(subdir)/$@ $(SHELL) ./config.status
+Doxyfile: $(top_builddir)/config.status Doxyfile.in
+	cd $(top_builddir) && CONFIG_FILES=$(subdir)/$@ CONFIG_HEADERS= CONFIG_LINKS= $(SHELL) ./config.status
 uninstall-info-am:
 tags: TAGS
 TAGS:
