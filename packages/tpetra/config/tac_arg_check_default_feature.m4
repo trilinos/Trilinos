@@ -27,6 +27,9 @@ dnl @author Heidi Thornquist <hkthorn@sandia.gov>
 dnl
 AC_DEFUN([TAC_ARG_CHECK_DEFAULT_FEATURE],
 [
+AC_ARG_ENABLE([default-packages],, ac_cv_use_default_packages=$enableval, 
+ac_cv_use_default_packages=no)
+
 AC_ARG_ENABLE([$1],, ac_cv_use_$1=$enableval, ac_cv_use_$1=$ac_cv_use_default_packages)
 
 if test "X$ac_cv_use_$1" != "Xno"; then

@@ -73,6 +73,7 @@ am__aclocal_m4_deps = $(top_srcdir)/config/ac_cxx_bool.m4 \
 	$(top_srcdir)/config/ac_cxx_std_sprintf.m4 \
 	$(top_srcdir)/config/acx_blas.m4 \
 	$(top_srcdir)/config/acx_lapack.m4 \
+	$(top_srcdir)/config/tac_arg_check_default_feature.m4 \
 	$(top_srcdir)/config/tac_arg_check_mpi.m4 \
 	$(top_srcdir)/config/tac_arg_config_mpi.m4 \
 	$(top_srcdir)/config/tac_arg_enable_feature.m4 \
@@ -111,6 +112,8 @@ AWK = @AWK@
 BLAS_LIBS = @BLAS_LIBS@
 BUILD_EXAMPLES_FALSE = @BUILD_EXAMPLES_FALSE@
 BUILD_EXAMPLES_TRUE = @BUILD_EXAMPLES_TRUE@
+BUILD_PROFILE_EXAMPLE_FALSE = @BUILD_PROFILE_EXAMPLE_FALSE@
+BUILD_PROFILE_EXAMPLE_TRUE = @BUILD_PROFILE_EXAMPLE_TRUE@
 BUILD_TESTS_FALSE = @BUILD_TESTS_FALSE@
 BUILD_TESTS_TRUE = @BUILD_TESTS_TRUE@
 CC = @CC@

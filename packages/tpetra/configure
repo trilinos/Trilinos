@@ -311,7 +311,7 @@ ac_includes_default="\
 # include <unistd.h>
 #endif"
 
-ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS MAINTAINER_MODE_TRUE MAINTAINER_MODE_FALSE MAINT build build_cpu build_vendor build_os host host_cpu host_vendor host_os target target_cpu target_vendor target_os INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA CYGPATH_W PACKAGE VERSION ACLOCAL AUTOCONF AUTOMAKE AUTOHEADER MAKEINFO AMTAR install_sh STRIP ac_ct_STRIP INSTALL_STRIP_PROGRAM mkdir_p AWK SET_MAKE am__leading_dot CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT DEPDIR am__include am__quote AMDEP_TRUE AMDEP_FALSE AMDEPBACKSLASH CCDEPMODE am__fastdepCC_TRUE am__fastdepCC_FALSE CXX CXXFLAGS ac_ct_CXX CXXDEPMODE am__fastdepCXX_TRUE am__fastdepCXX_FALSE F77 FFLAGS ac_ct_F77 RANLIB ac_ct_RANLIB MPI_CXX HAVE_MPI_TRUE HAVE_MPI_FALSE MPI_CXX_EXISTS MPI_CC_EXISTS MPI_F77_EXISTS USE_ALTERNATE_AR_TRUE USE_ALTERNATE_AR_FALSE ALTERNATE_AR CXXCPP EGREP BUILD_TESTS_TRUE BUILD_TESTS_FALSE BUILD_EXAMPLES_TRUE BUILD_EXAMPLES_FALSE FLIBS BLAS_LIBS LAPACK_LIBS ac_aux_dir LIBOBJS LTLIBOBJS'
+ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS MAINTAINER_MODE_TRUE MAINTAINER_MODE_FALSE MAINT build build_cpu build_vendor build_os host host_cpu host_vendor host_os target target_cpu target_vendor target_os INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA CYGPATH_W PACKAGE VERSION ACLOCAL AUTOCONF AUTOMAKE AUTOHEADER MAKEINFO AMTAR install_sh STRIP ac_ct_STRIP INSTALL_STRIP_PROGRAM mkdir_p AWK SET_MAKE am__leading_dot CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT DEPDIR am__include am__quote AMDEP_TRUE AMDEP_FALSE AMDEPBACKSLASH CCDEPMODE am__fastdepCC_TRUE am__fastdepCC_FALSE CXX CXXFLAGS ac_ct_CXX CXXDEPMODE am__fastdepCXX_TRUE am__fastdepCXX_FALSE F77 FFLAGS ac_ct_F77 RANLIB ac_ct_RANLIB MPI_CXX HAVE_MPI_TRUE HAVE_MPI_FALSE MPI_CXX_EXISTS MPI_CC_EXISTS MPI_F77_EXISTS USE_ALTERNATE_AR_TRUE USE_ALTERNATE_AR_FALSE ALTERNATE_AR CXXCPP EGREP BUILD_TESTS_TRUE BUILD_TESTS_FALSE BUILD_EXAMPLES_TRUE BUILD_EXAMPLES_FALSE BUILD_PROFILE_EXAMPLE_TRUE BUILD_PROFILE_EXAMPLE_FALSE FLIBS BLAS_LIBS LAPACK_LIBS ac_aux_dir LIBOBJS LTLIBOBJS'
 ac_subst_files=''
 
 # Initialize some variables set by options.
@@ -881,6 +881,7 @@ Optional Features:
   --enable-examples       Build examples for all Trilinos packages (not all
                           packages are sensitive to this option) (default is
                           yes)
+
 
 Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
@@ -3404,7 +3405,7 @@ fi
 
 
 # Provide some information about the compiler.
-echo "$as_me:3407:" \
+echo "$as_me:3408:" \
      "checking for Fortran 77 compiler version" >&5
 ac_compiler=`set X $ac_compile; echo $2`
 { (eval echo "$as_me:$LINENO: \"$ac_compiler --version </dev/null >&5\"") >&5
@@ -6226,6 +6227,70 @@ else
 fi
 
 
+# Check to see if we should build the EpetraTpetraProfile example. This should only be done if
+# both Epetra and TriUtils are enabled.
+
+# Check whether --enable-default-packages or --disable-default-packages was given.
+if test "${enable_default_packages+set}" = set; then
+  enableval="$enable_default_packages"
+  ac_cv_use_default_packages=$enableval
+else
+  ac_cv_use_default_packages=no
+fi;
+
+# Check whether --enable-epetra or --disable-epetra was given.
+if test "${enable_epetra+set}" = set; then
+  enableval="$enable_epetra"
+  ac_cv_use_epetra=$enableval
+else
+  ac_cv_use_epetra=$ac_cv_use_default_packages
+fi;
+
+if test "X$ac_cv_use_epetra" != "Xno"; then
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_EPETRA
+_ACEOF
+
+fi
+
+
+# Check whether --enable-default-packages or --disable-default-packages was given.
+if test "${enable_default_packages+set}" = set; then
+  enableval="$enable_default_packages"
+  ac_cv_use_default_packages=$enableval
+else
+  ac_cv_use_default_packages=no
+fi;
+
+# Check whether --enable-triutils or --disable-triutils was given.
+if test "${enable_triutils+set}" = set; then
+  enableval="$enable_triutils"
+  ac_cv_use_triutils=$enableval
+else
+  ac_cv_use_triutils=$ac_cv_use_default_packages
+fi;
+
+if test "X$ac_cv_use_triutils" != "Xno"; then
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_TRIUTILS
+_ACEOF
+
+fi
+
+
+
+if test "X$ac_cv_use_epetra" != "Xno" && test "X$ac_cv_use_triutils" != "Xno"; then
+  BUILD_PROFILE_EXAMPLE_TRUE=
+  BUILD_PROFILE_EXAMPLE_FALSE='#'
+else
+  BUILD_PROFILE_EXAMPLE_TRUE='#'
+  BUILD_PROFILE_EXAMPLE_FALSE=
+fi
+
+
+
 # ------------------------------------------------------------------------
 # Specify other directories
 # ------------------------------------------------------------------------
@@ -6591,7 +6656,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:6594: \"$ac_link\") >&5
+(eval echo $as_me:6659: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -6669,7 +6734,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:6672: \"$ac_link\") >&5
+(eval echo $as_me:6737: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -9199,7 +9264,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:9202: \"$ac_link\") >&5
+(eval echo $as_me:9267: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -9277,7 +9342,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:9280: \"$ac_link\") >&5
+(eval echo $as_me:9345: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -9624,6 +9689,13 @@ if test -z "${BUILD_EXAMPLES_TRUE}" && test -z "${BUILD_EXAMPLES_FALSE}"; then
   { { echo "$as_me:$LINENO: error: conditional \"BUILD_EXAMPLES\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
 echo "$as_me: error: conditional \"BUILD_EXAMPLES\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+if test -z "${BUILD_PROFILE_EXAMPLE_TRUE}" && test -z "${BUILD_PROFILE_EXAMPLE_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"BUILD_PROFILE_EXAMPLE\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"BUILD_PROFILE_EXAMPLE\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
@@ -10250,6 +10322,8 @@ s,@BUILD_TESTS_TRUE@,$BUILD_TESTS_TRUE,;t t
 s,@BUILD_TESTS_FALSE@,$BUILD_TESTS_FALSE,;t t
 s,@BUILD_EXAMPLES_TRUE@,$BUILD_EXAMPLES_TRUE,;t t
 s,@BUILD_EXAMPLES_FALSE@,$BUILD_EXAMPLES_FALSE,;t t
+s,@BUILD_PROFILE_EXAMPLE_TRUE@,$BUILD_PROFILE_EXAMPLE_TRUE,;t t
+s,@BUILD_PROFILE_EXAMPLE_FALSE@,$BUILD_PROFILE_EXAMPLE_FALSE,;t t
 s,@FLIBS@,$FLIBS,;t t
 s,@BLAS_LIBS@,$BLAS_LIBS,;t t
 s,@LAPACK_LIBS@,$LAPACK_LIBS,;t t
