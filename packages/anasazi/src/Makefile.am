@@ -19,11 +19,14 @@
 #np# Make sure to list all source files in one of the following categories.
 CORE_H = \
 	$(srcdir)/AnasaziBlockArnoldi.hpp \
+	$(srcdir)/AnasaziEigenproblem.hpp \
 	$(srcdir)/AnasaziMatrix.hpp \
 	$(srcdir)/AnasaziMultiVec.hpp \
+	$(srcdir)/AnasaziOperator.hpp \
 	$(srcdir)/AnasaziDenseMatrix.hpp \
 	$(srcdir)/AnasaziPetraInterface.hpp \
 	$(srcdir)/AnasaziLOCAInterface.hpp \
+	$(srcdir)/AnasaziReturnType.hpp \
 	$(srcdir)/AnasaziCommon.hpp 
 
 CORE = 
