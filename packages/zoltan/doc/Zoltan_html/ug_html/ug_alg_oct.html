@@ -12,14 +12,12 @@
   $Date$
   $Revision$
 >
-
 </HEAD>
 <BODY BGCOLOR="#FFFFFF">
 
 <DIV ALIGN=right>
 <H3>
-<IMG SRC="figures/ug_header.gif" ALT="Zoltan Developer's Guide">
-</H3></DIV>
+<IMG SRC="figures/ug_header.gif" ALT="Zoltan Developer's Guide" ></H3></DIV>
 
 <H2>
 <A NAME="Octree"></A>Octree/Space-Filling Curve (SFC) Partitioning</H2>
@@ -51,7 +49,7 @@ fastest) of the SFC algorithms, but they produce lower-quality partitions
 than the Hilbert SFC. Further work will be performed to improve the performance
 of the Hilbert SFC algorithm implemented in the library.
 <BR>&nbsp;
-<TABLE WIDTH="100%" >
+<TABLE WIDTH="100%" NOSAVE >
 <TR>
 <TD VALIGN=TOP WIDTH="20%"><B>Method String:</B></TD>
 
@@ -65,7 +63,7 @@ of the Hilbert SFC algorithm implemented in the library.
 </TR>
 
 <TR>
-<TD VALIGN=TOP>&nbsp;&nbsp;&nbsp; <I>parameters</I>[0]</TD>
+<TD VALIGN=TOP>&nbsp;&nbsp;&nbsp; <I>OCT_DIM</I></TD>
 
 <TD>Specifies whether the 2D or 3D Octree algorithms should be used. The
 3D algorithms can be used for 2D problems, but much memory will be wasted
@@ -76,14 +74,14 @@ to the <I>xy</I>-plane without overlapping points.&nbsp;
 </TR>
 
 <TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; parameters</I>[1]</TD>
+<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; OCT_METHOD</I></TD>
 
 <TD>The SFC to be used.&nbsp;
 <BR>0 = Morton Indexing; 1 = Grey Code; 2 = Hilbert.</TD>
 </TR>
 
 <TR>
-<TD VALIGN=TOP>&nbsp;&nbsp;&nbsp; <I>parameters</I>[2]</TD>
+<TD VALIGN=TOP>&nbsp;&nbsp;&nbsp; <I>OCT_GRANULARITY</I></TD>
 
 <TD>The maximum number of objects to allow in a leaf octant of the octree.
 These objects will be assigned as a group to a processor, so this parameter
@@ -92,10 +90,17 @@ or equal to one are allowable.</TD>
 </TR>
 
 <TR>
-<TD VALIGN=TOP>&nbsp;&nbsp;&nbsp; <I>parameters</I>[3]</TD>
+<TD VALIGN=TOP>&nbsp;&nbsp;&nbsp; <I>OCT_OUTPUT_LEVEL</I></TD>
 
 <TD>Amount of output the load-balancing algorithm should produce.&nbsp;
 <BR>0 = no statistics; 1 = statistics summary; 2 = debugging information.</TD>
+</TR>
+
+<TR NOSAVE>
+<TD VALIGN=TOP NOSAVE>&nbsp;&nbsp; <I>OCT_WGTFLAG</I></TD>
+
+<TD>Flag to indicate whether to use object weights in the OCTPART computation.&nbsp;
+<BR>0 = don't use object weights; 1 = use object weights.</TD>
 </TR>
 
 <TR>
@@ -107,25 +112,31 @@ or equal to one are allowable.</TD>
 <TR>
 <TD></TD>
 
-<TD><I>parameters</I>[0] = 3</TD>
+<TD><I>OCT_DIM</I> = 3</TD>
 </TR>
 
 <TR>
 <TD></TD>
 
-<TD><I>parameters</I>[1] = 0</TD>
+<TD><I>OCT_METHOD</I> = 0</TD>
 </TR>
 
 <TR>
 <TD></TD>
 
-<TD><I>parameters</I>[2] = 1</TD>
+<TD><I>OCT_GRANULARITY</I> = 1</TD>
 </TR>
 
 <TR>
 <TD></TD>
 
-<TD><I>parameters</I>[3] = 1</TD>
+<TD><I>OCT_OUTPUT_LEVEL</I> = 1</TD>
+</TR>
+
+<TR NOSAVE>
+<TD VALIGN=TOP NOSAVE></TD>
+
+<TD><I>OCT_WGTFLAG</I> = 0</TD>
 </TR>
 
 <TR>
@@ -160,9 +171,7 @@ pair</TD>
 <TD><B><A HREF="ug_query_lb.html#LB_GEOM_FN">LB_GEOM_FN</A></B></TD>
 </TR>
 </TABLE>
-
-
-<P>&nbsp;
+&nbsp;
 
 <P>
 <HR WIDTH="100%">[<A HREF="ug.html">Table of Contents</A>&nbsp; |&nbsp;

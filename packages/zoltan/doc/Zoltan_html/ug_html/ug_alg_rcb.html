@@ -3,7 +3,6 @@
    <META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-1">
    <META NAME="GENERATOR" CONTENT="Mozilla/4.04 [en] (X11; U; SunOS 4.1.3_U1 sun4m) [Netscape]">
    <TITLE>Zoltan User's Guide:  RCB</TITLE>
-</HEAD>
 <!
   ------------------------
   | CVS File Information |
@@ -13,13 +12,12 @@
   $Date$
   $Revision$
 >
-
+</HEAD>
 <BODY BGCOLOR="#FFFFFF">
 
 <DIV ALIGN=right>
 <H3>
-<IMG SRC="figures/ug_header.gif" ALT="Zoltan Developer's Guide">
-</H3></DIV>
+<IMG SRC="figures/ug_header.gif" ALT="Zoltan Developer's Guide" ></H3></DIV>
 
 <H2>
 <A NAME="RCB"></A>Recursive Coordinate Bisection (RCB)</H2>
@@ -41,7 +39,7 @@ be equal. By adjusting the partition sizes appropriately, any number of
 equally-sized sets can be created.
 <BR>&nbsp;
 <BR>&nbsp;
-<TABLE WIDTH="100%" >
+<TABLE WIDTH="100%" NOSAVE >
 <TR>
 <TD VALIGN=TOP WIDTH="20%"><B>Method String:</B></TD>
 
@@ -55,7 +53,7 @@ equally-sized sets can be created.
 </TR>
 
 <TR>
-<TD VALIGN=TOP>&nbsp;&nbsp;&nbsp; <I>parameters</I>[0]</TD>
+<TD VALIGN=TOP>&nbsp;&nbsp;&nbsp; <I>RCB_OVERALLOC</I></TD>
 
 <TD>The amount by which to over-allocate temporary storage arrays for objects
 within the RCB algorithm when additional storage is due to changes in processor
@@ -64,11 +62,18 @@ assignments.&nbsp;
 </TR>
 
 <TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; parameters</I>[1]</TD>
+<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; RCB_REUSE</I></TD>
 
 <TD>Flag to indicate whether to use previous cuts as initial guesses for
 the current RCB invocation.&nbsp;
 <BR>0 = don't use previous cuts; 1 = use previous cuts.</TD>
+</TR>
+
+<TR NOSAVE>
+<TD VALIGN=TOP NOSAVE>&nbsp;&nbsp;<I> RCB_WGTFLAG</I></TD>
+
+<TD>Flag to indicate whether to use object weights in the RCB&nbsp;computation.
+<BR>0 = don't use object weights; 1 = use object weights.</TD>
 </TR>
 
 <TR>
@@ -80,13 +85,19 @@ the current RCB invocation.&nbsp;
 <TR>
 <TD></TD>
 
-<TD><I>parameters</I>[0] = 1.0</TD>
+<TD><I>RCB_OVERALLOC</I> = 1.0</TD>
 </TR>
 
 <TR>
 <TD></TD>
 
-<TD><I>parameters</I>[1] = 0</TD>
+<TD><I>RCB_REUSE</I> = 0</TD>
+</TR>
+
+<TR NOSAVE>
+<TD VALIGN=TOP NOSAVE></TD>
+
+<TD><I>RCB_WGTFLAG</I> = 0</TD>
 </TR>
 
 <TR>
@@ -121,9 +132,7 @@ pair</TD>
 <TD><B><A HREF="ug_query_lb.html#LB_GEOM_FN">LB_GEOM_FN</A></B></TD>
 </TR>
 </TABLE>
-
-
-<P>&nbsp;
+&nbsp;
 
 <P>
 <HR WIDTH="100%">[<A HREF="ug.html">Table of Contents</A>&nbsp; |&nbsp;
