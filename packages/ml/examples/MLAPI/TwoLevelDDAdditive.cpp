@@ -31,6 +31,7 @@
 #include "ml_common.h"
 #if defined(HAVE_ML_MLAPI)
 
+#include "Trilinos_Util_CrsMatrixGallery.h"
 #include "Teuchos_ParameterList.hpp"
 #include "ml_include.h"
 #include "MLAPI.h"
@@ -156,7 +157,6 @@ private:
 
 }; // TwoLevelDDAdditive
 
-#include "Trilinos_Util_CrsMatrixGallery.h"
 // ============== //
 // example driver //
 // ============== //

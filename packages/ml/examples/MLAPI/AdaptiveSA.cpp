@@ -33,7 +33,6 @@
 #include "MLAPI.h"
 
 using namespace Teuchos;
-using namespace Trilinos_Util;
 using namespace MLAPI;
 
 MultiVector GetTentativeNullSpace(Operator FineMatrix, 
