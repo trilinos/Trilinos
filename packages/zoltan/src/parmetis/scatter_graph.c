@@ -46,6 +46,7 @@ int LB_Scatter_Graph(
 )
 {
   static char *yo = "LB_Scatter_Graph";
+  char     msg[256];
   idxtype *old_vtxdist, *old_xadj, *old_adjncy, *old_vwgt, *old_adjwgt;
   float   *old_xyz;
   int *ptr, *proclist, *proclist2;
@@ -108,8 +109,9 @@ int LB_Scatter_Graph(
   LB_Comm_Create( plan, old_num_obj, proclist, lb->Communicator, TAG1, lb->Deterministic, &nrecv);
 
   if (nrecv != num_obj){
-    fprintf(stderr,"Zoltan internal error in %s: Proc %d received %d object but expected %d.\n",
-      yo, lb->Proc, nrecv, num_obj);
+    sprintf(msg,"Proc %d received %d object but expected %d.",
+      lb->Proc, nrecv, num_obj);
+    LB_PRINT_ERROR(lb->Proc, yo, msg);
     /* Free data */
     LB_FREE(&proclist);
     LB_TRACE_EXIT(lb, yo);
@@ -163,8 +165,9 @@ int LB_Scatter_Graph(
       lb->Deterministic, &nrecv);
   
     if (nrecv != num_edges){
-      fprintf(stderr,"Zoltan internal error in %s: Proc %d received %d edges but expected %d.\n",
-        yo, lb->Proc, nrecv, num_edges);
+      sprintf(msg,"Proc %d received %d edges but expected %d.",
+        lb->Proc, nrecv, num_edges);
+      LB_PRINT_ERROR(lb->Proc, yo, msg);
       /* Free data */
       LB_FREE(&proclist);
       LB_FREE(&proclist2);

@@ -40,6 +40,7 @@ int LB_Set_Method(LB *lb, char *method_name)
  */
 
   char *yo = "LB_Set_Method";
+  char msg[256];
   char *method_upper;
   int error;
 
@@ -58,8 +59,8 @@ int LB_Set_Method(LB *lb, char *method_name)
 
   error = LB_clean_string(method_name, &method_upper);
   if (error) {
-    fprintf(stderr, "%s Error %d returned from LB_clean_string; "
-                    "No method set.\n", yo, error);
+    LB_PRINT_ERROR(lb->Proc, yo, 
+      "Error returned from LB_clean_string; No method set.");
     LB_FREE(&method_upper);
     return error;
   }
@@ -98,8 +99,8 @@ int LB_Set_Method(LB *lb, char *method_name)
    */
 
   else {  
-    fprintf(stderr, "Error from %s:  Invalid LB method specified:  %s\n", 
-            yo, method_name);
+    sprintf(msg, "Invalid LB method specified:  %s\n", method_name);
+    LB_PRINT_ERROR(lb->Proc, yo, msg);
     return (LB_FATAL);
   }
 

@@ -62,6 +62,7 @@ int LB_Compute_Destinations(
  */
 
 char *yo = "LB_Compute_Destinations";
+char msg[256];
 int *proc_list = NULL;      /* List of processors from which objs are to be 
                                imported.                                    */
 COMM_OBJ *comm_plan;        /* Object returned communication routines  */
@@ -92,15 +93,13 @@ int ierr = LB_OK;
   if (num_import > 0) {
     proc_list = (int *) LB_MALLOC(num_import*sizeof(int));
     if (!proc_list) {
-      fprintf(stderr, "[%d] Error from %s: Insufficient memory\n",
-              lb->Proc, yo);
+      LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
       LB_TRACE_EXIT(lb, yo);
       return (LB_MEMERR);
     }
     import_objs = (LB_TAG *) LB_MALLOC(num_import*sizeof(LB_TAG));
     if (!import_objs) {
-      fprintf(stderr, "[%d] Error from %s: Insufficient memory\n",
-              lb->Proc, yo);
+      LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
       LB_FREE(&proc_list);
       LB_TRACE_EXIT(lb, yo);
       return (LB_MEMERR);
@@ -124,8 +123,9 @@ int ierr = LB_OK;
   ierr = LB_Comm_Create(&comm_plan, num_import, proc_list, lb->Communicator, 
                         msgtag, lb->Deterministic, num_export);
   if (ierr != LB_COMM_OK && ierr != LB_COMM_WARN) {
-    fprintf(stderr, "%s Error %s returned from LB_Comm_Create\n", yo,
+    sprintf(msg, "Error %s returned from LB_Comm_Create.",
             (ierr == LB_COMM_MEMERR ? "LB_COMM_MEMERR" : "LB_COMM_FATAL"));
+    LB_PRINT_ERROR(lb->Proc, yo, msg);
     LB_FREE(&proc_list);
     LB_FREE(&import_objs);
     LB_TRACE_EXIT(lb, yo);
@@ -143,8 +143,7 @@ int ierr = LB_OK;
   if (*num_export > 0) {
     export_objs = (LB_TAG *) LB_MALLOC((*num_export)*sizeof(LB_TAG));
     if (!export_objs) {
-      fprintf(stderr, "[%d] Error from %s: Insufficient memory\n",
-              lb->Proc, yo);
+      LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
       LB_FREE(&proc_list);
       LB_FREE(&import_objs);
       LB_TRACE_EXIT(lb, yo);
@@ -152,8 +151,7 @@ int ierr = LB_OK;
     }
     if (!LB_Special_Malloc(lb,(void **)export_global_ids,*num_export,
                            LB_SPECIAL_MALLOC_GID)) {
-      fprintf(stderr, "[%d] Error from %s: Insufficient memory\n",
-              lb->Proc, yo);
+      LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
       LB_FREE(&proc_list);
       LB_FREE(&import_objs);
       LB_FREE(&export_objs);
@@ -162,8 +160,7 @@ int ierr = LB_OK;
     }
     if (!LB_Special_Malloc(lb,(void **)export_local_ids,*num_export,
                            LB_SPECIAL_MALLOC_LID)) {
-      fprintf(stderr, "[%d] Error from %s: Insufficient memory\n",
-              lb->Proc, yo);
+      LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
       LB_FREE(&proc_list);
       LB_FREE(&import_objs);
       LB_FREE(&export_objs);
@@ -173,8 +170,7 @@ int ierr = LB_OK;
     }
     if (!LB_Special_Malloc(lb,(void **)export_procs,*num_export,
                            LB_SPECIAL_MALLOC_INT)) {
-      fprintf(stderr, "[%d] Error from %s: Insufficient memory\n",
-              lb->Proc, yo);
+      LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
       LB_FREE(&proc_list);
       LB_FREE(&import_objs);
       LB_FREE(&export_objs);
@@ -196,8 +192,9 @@ int ierr = LB_OK;
   ierr = LB_Comm_Do(comm_plan, msgtag2, (char *) import_objs, 
                     (int) sizeof(LB_TAG), (char *) export_objs);
   if (ierr != LB_COMM_OK && ierr != LB_COMM_WARN) {
-    fprintf(stderr, "%s Error %s returned from LB_Comm_Do\n", yo,
+    sprintf(msg, "Error %s returned from LB_Comm_Do.", 
             (ierr == LB_COMM_MEMERR ? "LB_COMM_MEMERR" : "LB_COMM_FATAL"));
+    LB_PRINT_ERROR(lb->Proc, yo, msg);
     LB_FREE(&proc_list);
     LB_FREE(&import_objs);
     LB_FREE(&export_objs);
@@ -278,6 +275,7 @@ int LB_Help_Migrate(
  */
 
 char *yo = "LB_Help_Migrate";
+char msg[256];
 int size;                /* size (in bytes) of the object data for export.  */
 int id_size;             /* size (in bytes) of LB_GID + padding for 
                             alignment                                       */
@@ -307,25 +305,22 @@ int ierr = 0;
 
 
   if (lb->Migrate.Get_Obj_Size == NULL) {
-    fprintf(stderr, "ZOLTAN %d %s Error:  Must register an "
-           "LB_OBJ_SIZE_FN_TYPE function to use the migration-help tools.\n",
-           lb->Proc, yo);
+    LB_PRINT_ERROR(lb->Proc, yo, "Must register an "
+           "LB_OBJ_SIZE_FN_TYPE function to use the migration-help tools.");
     LB_TRACE_EXIT(lb, yo);
     return (LB_FATAL);
   }
 
   if (lb->Migrate.Pack_Obj == NULL) {
-    fprintf(stderr, "ZOLTAN %d %s Error:  Must register an "
-           "LB_PACK_OBJ_FN_TYPE function to use the migration-help tools.\n",
-           lb->Proc, yo);
+    LB_PRINT_ERROR(lb->Proc, yo, "Must register an "
+           "LB_PACK_OBJ_FN_TYPE function to use the migration-help tools.");
     LB_TRACE_EXIT(lb, yo);
     return (LB_FATAL);
   }
 
   if (lb->Migrate.Unpack_Obj == NULL) {
-    fprintf(stderr, "ZOLTAN %d %s Error:  Must register an "
-         "LB_UNPACK_OBJ_FN_TYPE function to use the migration-help tools.\n",
-         lb->Proc, yo);
+    LB_PRINT_ERROR(lb->Proc, yo, "Must register an "
+         "LB_UNPACK_OBJ_FN_TYPE function to use the migration-help tools.");
     LB_TRACE_EXIT(lb, yo);
     return (LB_FATAL);
   }
@@ -337,8 +332,8 @@ int ierr = 0;
                             num_export, export_global_ids,
                             export_local_ids, export_procs, &ierr);
     if (ierr) {
-      fprintf(stderr, "[%d] %s: Error returned from user defined "
-                      "Migrate.Pre_Migrate function.\n", lb->Proc, yo);
+      LB_PRINT_ERROR(lb->Proc, yo, "Error returned from user defined "
+                      "Migrate.Pre_Migrate function.");
       LB_TRACE_EXIT(lb, yo);
       return (LB_FATAL);
     }
@@ -357,8 +352,8 @@ int ierr = 0;
   size = lb->Migrate.Get_Obj_Size(lb->Migrate.Get_Obj_Size_Data, &ierr)
        + id_size;
   if (ierr) {
-    fprintf(stderr, "[%d] %s: Error returned from user defined "
-                    "Migrate.Get_Obj_Size function.\n", lb->Proc, yo);
+    LB_PRINT_ERROR(lb->Proc, yo, "Error returned from user defined "
+                    "Migrate.Get_Obj_Size function.");
     LB_TRACE_EXIT(lb, yo);
     return (LB_FATAL);
   }
@@ -367,16 +362,14 @@ int ierr = 0;
   if (num_export > 0) {
     export_buf = (char *) LB_MALLOC(num_export*size);
     if (!export_buf) {
-      fprintf(stderr, "[%d] Error from %s: Insufficient memory\n",
-              lb->Proc, yo);
+      LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
       LB_TRACE_EXIT(lb, yo);
       return (LB_FATAL);
     }
 
     proc_list = (int *) LB_MALLOC(num_export*sizeof(int));
     if (!proc_list) {
-      fprintf(stderr, "[%d] Error from %s: Insufficient memory\n",
-              lb->Proc, yo);
+      LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
       LB_FREE(&export_buf);
       LB_TRACE_EXIT(lb, yo);
       return (LB_FATAL);
@@ -400,8 +393,8 @@ int ierr = 0;
                            export_local_ids[i], export_procs[i], size,
                            tmp+id_size, &ierr);
       if (ierr) {
-        fprintf(stderr, "[%d] %s: Error returned from user defined "
-                        "Migrate.Pack_Obj function.\n", lb->Proc, yo);
+        LB_PRINT_ERROR(lb->Proc, yo, "Error returned from user defined "
+                        "Migrate.Pack_Obj function.");
         LB_FREE(&export_buf);
         LB_FREE(&proc_list);
         LB_TRACE_EXIT(lb, yo);
@@ -422,23 +415,23 @@ int ierr = 0;
   ierr = LB_Comm_Create(&comm_plan, num_export, proc_list, lb->Communicator, 
                         msgtag, lb->Deterministic, &tmp_import);
   if (ierr != LB_COMM_OK && ierr != LB_COMM_WARN) {
-    fprintf(stderr, "%s Error %s returned from LB_Comm_Create\n", yo, 
+    sprintf(msg, "Error %s returned from LB_Comm_Create.", 
             (ierr == LB_COMM_MEMERR ? "LB_COMM_MEMERR" : "LB_COMM_FATAL"));
+    LB_PRINT_ERROR(lb->Proc, yo, msg);
     LB_FREE(&export_buf);
     LB_FREE(&proc_list);
     LB_TRACE_EXIT(lb, yo);
     return (ierr == LB_COMM_MEMERR ? LB_MEMERR : LB_FATAL);
   }
   if (tmp_import != num_import) {
-    fprintf(stderr, "%d  Error in %s:  tmp_import %d != num_import %d\n", 
-            lb->Proc, yo, tmp_import, num_import);
+    sprintf(msg, "tmp_import %d != num_import %d.", tmp_import, num_import);
+    LB_PRINT_ERROR(lb->Proc, yo, msg);
   }
 
   if (num_import > 0) {
     import_buf = (char *) LB_MALLOC(num_import*size);
     if (!import_buf) {
-      fprintf(stderr, "[%d] Error from %s: Insufficient memory\n",
-              lb->Proc, yo);
+      LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
       LB_FREE(&export_buf);
       LB_FREE(&proc_list);
       LB_TRACE_EXIT(lb, yo);
@@ -454,8 +447,9 @@ int ierr = 0;
   msgtag2 = 32766;
   ierr = LB_Comm_Do(comm_plan, msgtag2, export_buf, size, import_buf);
   if (ierr != LB_COMM_OK && ierr != LB_COMM_WARN) {
-    fprintf(stderr, "%s Error %s returned from LB_Comm_Do\n", yo,
+    sprintf(msg, "Error %s returned from LB_Comm_Do.", 
             (ierr == LB_COMM_MEMERR ? "LB_COMM_MEMERR" : "LB_COMM_FATAL"));
+    LB_PRINT_ERROR(lb->Proc, yo, msg);
     LB_FREE(&proc_list);
     LB_FREE(&export_buf);
     LB_FREE(&import_buf);
@@ -484,8 +478,8 @@ int ierr = 0;
                             num_export, export_global_ids,
                             export_local_ids, export_procs, &ierr);
     if (ierr) {
-      fprintf(stderr, "[%d] %s: Error returned from user defined "
-                      "Migrate.Mid_Migrate function.\n", lb->Proc, yo);
+      LB_PRINT_ERROR(lb->Proc, yo, "Error returned from user defined "
+                      "Migrate.Mid_Migrate function.");
       LB_TRACE_EXIT(lb, yo);
       return (LB_FATAL);
     }
@@ -508,8 +502,8 @@ int ierr = 0;
     lb->Migrate.Unpack_Obj(lb->Migrate.Unpack_Obj_Data, global_id, size,
                            tmp+id_size, &ierr);
     if (ierr) {
-      fprintf(stderr, "[%d] %s: Error returned from user defined "
-                      "Migrate.Unpack_Obj function.\n", lb->Proc, yo);
+      LB_PRINT_ERROR(lb->Proc, yo, "Error returned from user defined "
+                      "Migrate.Unpack_Obj function.");
       LB_FREE(&import_buf);
       LB_TRACE_EXIT(lb, yo);
       return (LB_FATAL);
@@ -528,8 +522,8 @@ int ierr = 0;
                             num_export, export_global_ids,
                             export_local_ids, export_procs, &ierr);
     if (ierr) {
-      fprintf(stderr, "[%d] %s: Error returned from user defined "
-                      "Migrate.Post_Migrate function.\n", lb->Proc, yo);
+      LB_PRINT_ERROR(lb->Proc, yo, "Error returned from user defined "
+                      "Migrate.Post_Migrate function.");
       LB_TRACE_EXIT(lb, yo);
       return (LB_FATAL);
     }

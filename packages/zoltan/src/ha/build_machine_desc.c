@@ -56,6 +56,7 @@ int LB_Build_Machine_Desc(
    LB *lb              /* The load-balancing structure.                */
 )
 {
+  char *yo = "LB_Build_Machine_Desc";
   int ierr = LB_OK;
   int use_mach_desc;
   char filename[256];
@@ -80,7 +81,8 @@ int LB_Build_Machine_Desc(
        * on which this LB structure is running. 
        * Broadcast the machine structure to all procs.
        */
-      printf("Sorry, heterogeneous load-balancing is still under development!\n");
+      LB_PRINT_WARN(lb->Proc, yo, "Sorry, heterogeneous load-balancing "
+                                  "is still under development!");
       ierr = LB_WARN;
     }
   }

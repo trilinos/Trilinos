@@ -59,6 +59,7 @@ void LB_Eval (LB *lb, int print_stats,
   float *tmp_wgt, *vwgts, nproc;
   LB_LID * local_ids;
   LB_GID *global_ids, *nbors_global;
+  char msg[256];
   
   LB_TRACE_ENTER(lb, yo);
   /* Set default error code */
@@ -146,8 +147,8 @@ void LB_Eval (LB *lb, int print_stats,
       nedges = lb->Get_Num_Edges(lb->Get_Edge_List_Data, global_ids[i], 
                local_ids[i], ierr);
       if (*ierr){
-        fprintf(stderr, "Error in %s: Get_Num_Edges returned error code %d\n", 
-          yo, *ierr);
+        sprintf(msg, "Get_Num_Edges returned error code %d.", *ierr);
+        LB_PRINT_ERROR(lb->Proc, yo, msg);
         LB_FREE(&global_ids);
         LB_FREE(&local_ids);
         LB_FREE(&vwgts);
@@ -221,8 +222,9 @@ void LB_Eval (LB *lb, int print_stats,
           else if (lb->Comm_Weight_Dim == 1)
             cut_weight += ewgts[j];
           else{
-            fprintf(stderr, "Error in %s: Comm_Weight_Dim=%d not supported\n", 
-                    yo, lb->Comm_Weight_Dim);
+            sprintf(msg, "Comm_Weight_Dim=%d not supported.", 
+                    lb->Comm_Weight_Dim);
+            LB_PRINT_WARN(lb->Proc, yo, msg);
             *ierr = LB_WARN;
           }
           if (flag==0){

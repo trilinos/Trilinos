@@ -37,6 +37,7 @@ int            *numprocs)       /* number of processors in proc list */
    Currently assumes that partitioning has used RCB or IRB, but should be
    modified to return an error message if other method was used */
 
+     static char       *yo = "LB_Box_Assign";
      RCB_STRUCT        *rcb;    /* Pointer to data structures for RCB. */
      struct rcb_tree   *treept; /* tree of RCB cuts */
      IRB_STRUCT        *irb;    /* Pointer to data structures for IRB. */
@@ -44,8 +45,7 @@ int            *numprocs)       /* number of processors in proc list */
      struct rcb_box    box;     /* box data structure */
 
      if (lb->Data_Structure == NULL) {
-        fprintf(stderr, "ERROR: No LB_Data_Structure available for "
-                        "Box_Assign\n");
+        LB_PRINT_ERROR(-1, yo, "No LB_Data_Structure available.");
         *procs = -1;
         *numprocs = 0;
         return(LB_FATAL);
@@ -55,8 +55,8 @@ int            *numprocs)       /* number of processors in proc list */
         rcb = (RCB_STRUCT *) (lb->Data_Structure);
         treept = rcb->Tree_Ptr;
         if (treept[0].dim < 0) {     /* RCB tree was never created. */
-           fprintf(stderr, "ERROR: No RCB tree saved for Box_Assign.\n");
-           fprintf(stderr, "       Must set parameter KEEP_CUTS to 1.\n");
+           LB_PRINT_ERROR(lb->Proc, yo, "No RCB tree saved; "
+             " Must set parameter KEEP_CUTS to 1.");
            *procs = -1;
            *numprocs = 0;
            return(LB_FATAL);
@@ -76,8 +76,8 @@ int            *numprocs)       /* number of processors in proc list */
         irb = (IRB_STRUCT *) (lb->Data_Structure);
         itree = irb->Tree_Ptr;
         if (itree[0].right_leaf < 0) { /* IRB tree was never created. */
-           fprintf(stderr, "ERROR: No IRB tree saved for Point_Assign.\n");
-           fprintf(stderr, "       Must set parameter IRB_KEEP_CUTS to 1.\n");
+           LB_PRINT_ERROR(lb->Proc, yo, "No IRB tree saved;"
+             " Must set parameter IRB_KEEP_CUTS to 1.");
            *procs = -1;
            return(LB_FATAL);
         }
@@ -115,8 +115,8 @@ int            *numprocs)       /* number of processors in proc list */
         }
      }
      else {
-        fprintf(stderr, "ERROR: Box_Assign valid only when method is RCB "
-                        "or IRB\n");
+        LB_PRINT_ERROR(lb->Proc, yo, 
+                       "Box_Assign valid only when method is RCB or IRB.");
         *procs = -1;
         *numprocs = 0;
         return(LB_FATAL);

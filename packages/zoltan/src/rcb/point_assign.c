@@ -25,6 +25,7 @@ int      *proc)                 /* processor that point lands in */
 /* Locate which processor a point is inside within the tree defined
    by the recursive bisection algorithm chosen. */
 
+     char             *yo = "LB_Point_Assign";
      int               procmid; /* 1st processor in upper half */
      RCB_STRUCT        *rcb;    /* Pointer to data structures for RCB.  */
      struct rcb_tree   *treept; /* tree of RCB cuts */
@@ -32,8 +33,8 @@ int      *proc)                 /* processor that point lands in */
      struct irb_tree   *itree;  /* tree of IRB cuts */
 
      if (lb->Data_Structure == NULL) {
-        fprintf(stderr, "ERROR: No LB_Data_Structure available for "
-                        "Point_Assign\n");
+        LB_PRINT_ERROR(-1, yo, 
+                       "No LB_Data_Structure available for LB_Point_Assign");
         *proc = -1;
         return(LB_FATAL);
      }
@@ -42,8 +43,8 @@ int      *proc)                 /* processor that point lands in */
         rcb = (RCB_STRUCT *) (lb->Data_Structure);
         treept = rcb->Tree_Ptr;
         if (treept[0].dim < 0) { /* RCB tree was never created. */
-           fprintf(stderr, "ERROR: No RCB tree saved for Point_Assign.\n");
-           fprintf(stderr, "       Must set parameter KEEP_CUTS to 1.\n");
+           LB_PRINT_ERROR(lb->Proc, yo, "No RCB tree saved for Point_Assign; "
+                                        "Must set parameter KEEP_CUTS to 1.");
            *proc = -1;
            return(LB_FATAL);
         }
@@ -64,8 +65,8 @@ int      *proc)                 /* processor that point lands in */
         irb = (IRB_STRUCT *) (lb->Data_Structure);
         itree = irb->Tree_Ptr;
         if ((procmid = itree[0].right_leaf) < 0) { /* IRB tree never created */
-           fprintf(stderr, "ERROR: No IRB tree saved for Point_Assign.\n");
-           fprintf(stderr, "       Must set parameter IRB_KEEP_CUTS to 1.\n");
+           LB_PRINT_ERROR(lb->Proc, yo, "No IRB tree saved for Point_Assign; "
+                                     "Must set parameter IRB_KEEP_CUTS to 1.");
            *proc = -1;
            return(LB_FATAL);
         }
@@ -104,8 +105,8 @@ int      *proc)                 /* processor that point lands in */
         return(LB_OK);
      }
      else {
-        fprintf(stderr, "ERROR: Point_Assign only valid when method is RCB "
-                        "or IRB\n");
+        LB_PRINT_ERROR(lb->Proc, yo, "LB_Point_Assign valid only when method "
+                                     "is RCB or IRB.");
         *proc = -1;
         return(LB_FATAL);
      }

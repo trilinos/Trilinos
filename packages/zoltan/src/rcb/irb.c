@@ -159,6 +159,7 @@ static int irb_fn(
 )
 {
      char    yo[] = "irb_fn";
+     char    msg[256];
      int     proc,nprocs;        /* my proc id, total # of procs */
      struct irb_dot *dotbuf;     /* local dot arrays */
      struct irb_dot *dotpt;      /* local dot arrays */
@@ -236,8 +237,7 @@ static int irb_fn(
      start_time = LB_Time(lb->Timer);
      ierr = LB_IRB_Build_Structure(lb, &pdotnum, &dotmax, wgtflag);
      if (ierr == LB_FATAL || ierr == LB_MEMERR) {
-        fprintf(stderr, "[%d] IRB Error in %s:  Error returned from "
-                        "LB_IRB_Build_Structure\n", proc, yo);
+        LB_PRINT_ERROR(proc, yo, "Error returned from LB_IRB_Build_Structure.");
         LB_TRACE_EXIT(lb, yo);
         return(ierr);
      }
@@ -308,14 +308,18 @@ static int irb_fn(
      if (check) {
         for (j = i = 0; i < dotnum; i++) if (dotpt[i].Weight == 0.0) j++;
         MPI_Allreduce(&j, &k, 1, MPI_INT, MPI_SUM, lb->Communicator);
-        if (k > 0 && proc == 0)
-           fprintf(stderr, "IRB WARNING: %d dot weights are equal to 0\n", k);
+        if (k > 0 && proc == 0) {
+           sprintf(msg, "%d dot weights are equal to 0.", k);
+           LB_PRINT_WARN(proc, yo, msg);
+        }
 
         for (j = i = 0; i < dotnum; i++) if (dotpt[i].Weight < 0.0) j++;
         MPI_Allreduce(&j, &k, 1, MPI_INT, MPI_SUM, lb->Communicator);
         if (k > 0) {
-           if (proc == 0)
-              fprintf(stderr, "IRB ERROR: %d dot weights are < 0\n", k);
+           if (proc == 0) {
+              sprintf(msg, "%d dot weights are < 0.", k);
+              LB_PRINT_ERROR(proc, yo, msg);
+           }
            LB_TRACE_EXIT(lb, yo);
            return LB_FATAL;
         }
@@ -396,13 +400,13 @@ static int irb_fn(
               break;
         }
 
-        if (stats || (lb->Debug_Level >= LB_DEBUG_ATIME)) time2 = LB_Time(lb->Timer);
+        if (stats || (lb->Debug_Level >= LB_DEBUG_ATIME)) 
+           time2 = LB_Time(lb->Timer);
 
         if (!LB_find_median(value, wgts, dotmark, dotnum, proc, fractionlo,
                             local_comm, &valuehalf, first_guess,
                             &(counters[0]))) {
-           fprintf(stderr, "[%d] %s:IRB Error returned from find_median\n",
-                   proc, yo);
+           LB_PRINT_ERROR(proc, yo, "Error returned from find_median.");
            LB_FREE(&dotmark);
            LB_FREE(&value);
            LB_FREE(&wgts);
@@ -410,7 +414,8 @@ static int irb_fn(
            return LB_FATAL;
         }
 
-        if (stats || (lb->Debug_Level >= LB_DEBUG_ATIME)) time3 = LB_Time(lb->Timer);
+        if (stats || (lb->Debug_Level >= LB_DEBUG_ATIME)) 
+           time3 = LB_Time(lb->Timer);
 
         /* store cut info in tree only if I am procmid, the lowest numbered
            processor in right set.  The left set will have proclower which
@@ -684,6 +689,8 @@ static int irb_fn(
 
 static void IRB_check(LB *lb, struct irb_dot *dotpt, int dotnum, int dotorig)
 {
+     char *yo = "IRB_check";
+     char msg[256];
      int i, proc, nprocs, total1, total2;
      double weight, wtmax, wtmin, wtone, tolerance;
 
@@ -695,9 +702,11 @@ static void IRB_check(LB *lb, struct irb_dot *dotpt, int dotnum, int dotorig)
      MPI_Allreduce(&dotorig,&total1,1,MPI_INT,MPI_SUM,lb->Communicator);
      MPI_Allreduce(&dotnum,&total2,1,MPI_INT,MPI_SUM,lb->Communicator);
      if (total1 != total2) {
-        if (proc == 0)
-           fprintf(stderr, "IRB ERROR: Points before IRB = %d, "
-                           "Points after IRB = %d\n", total1,total2);
+        if (proc == 0) {
+           sprintf(msg, "Points before IRB = %d, "
+                        "Points after IRB = %d\n", total1,total2);
+           LB_PRINT_WARN(proc, yo, msg);
+        }
      }
 
      /* check that result is load-balanced within log2(P)*max-wt */
@@ -719,14 +728,19 @@ static void IRB_check(LB *lb, struct irb_dot *dotpt, int dotnum, int dotorig)
      tolerance = tolerance * i * (1.0 + TINY);
 
      if (wtmax - wtmin > tolerance) {
-        if (proc == 0)
-           fprintf(stderr,"IRB ERROR: Load-imbalance > tolerance of %g\n",
-                          tolerance);
+        if (proc == 0) {
+           sprintf(msg,"Load-imbalance > tolerance of %g.", tolerance);
+           LB_PRINT_WARN(proc, yo, msg);
+        }
         MPI_Barrier(lb->Communicator);
-        if (weight == wtmin)
-           fprintf(stderr, "  Proc %d has weight = %g\n",proc,weight);
-        if (weight == wtmax)
-           fprintf(stderr, "  Proc %d has weight = %g\n",proc,weight);
+        if (weight == wtmin) {
+           sprintf(msg, "  Proc %d has weight = %g.",proc,weight);
+           LB_PRINT_WARN(proc, yo, msg);
+        }
+        if (weight == wtmax) {
+           sprintf(msg, "  Proc %d has weight = %g.",proc,weight);
+           LB_PRINT_WARN(proc, yo, msg);
+        }
      }
 
      MPI_Barrier(lb->Communicator);

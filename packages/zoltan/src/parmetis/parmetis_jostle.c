@@ -78,7 +78,9 @@ int LB_ParMetis(
 )
 {
 #ifndef LB_PARMETIS
-  fprintf(stderr, "Zoltan error: ParMetis requested but not compiled into library.\n");
+  char *yo="LB_ParMetis";
+  LB_PRINT_ERROR(lb->Proc, yo, 
+     "ParMetis requested but not compiled into library.");
   return LB_FATAL;
 
 #else /* LB_PARMETIS */
@@ -150,7 +152,9 @@ int LB_Jostle(
 )
 {
 #ifndef LB_JOSTLE
-  fprintf(stderr, "Zoltan error: Jostle requested but not compiled into library.\n");
+  char *yo = "LB_Jostle";
+  LB_PRINT_ERROR(lb->Proc, yo, 
+     "Jostle requested but not compiled into library.");
   return LB_FATAL;
 
 #else /* LB_JOSTLE */
@@ -275,8 +279,7 @@ int LB_Jostle(
 /* Macro to free all allocated memory */
 #define FREE_MY_MEMORY \
   { \
-  fprintf(stderr, "[%1d] Error on line %d in %s\n", \
-          lb->Proc, __LINE__, __FILE__); \
+  LB_PRINT_ERROR(lb->Proc, yo, "ParMETIS/Jostle error."); \
   LB_FREE(&vtxdist); LB_FREE(&xadj); LB_FREE(&adjncy); \
   LB_FREE(&vwgt); LB_FREE(&adjwgt); LB_FREE(&part); \
   LB_FREE(&float_vwgt); LB_FREE(&xyz); \
@@ -319,6 +322,7 @@ static int LB_ParMetis_Jostle(
   char *sendbuf, *recvbuf;
   struct Comm_Obj *comm_plan;
   double times[5];
+  char msg[256];
   int num_proc = lb->Num_Proc;     /* Temporary variables whose addresses are */
                                    /* passed to Jostle and ParMETIS.  Don't   */
   MPI_Comm comm = lb->Communicator;/* want to risk letting external packages  */
@@ -351,23 +355,25 @@ static int LB_ParMetis_Jostle(
 
   /* Check weight dimensions */
   if (lb->Obj_Weight_Dim<0){
-    fprintf(stderr, "ZOLTAN warning: Object weight dimension is %d, "
-            "but should be >= 0. Using Obj_Weight_Dim = 0.\n",
+    sprintf(msg, "Object weight dimension is %d, "
+            "but should be >= 0. Using Obj_Weight_Dim = 0.",
             lb->Obj_Weight_Dim);
+    LB_PRINT_WARN(lb->Proc, yo, msg);
     obj_wgt_dim = 0;
   }
   else {
     obj_wgt_dim = lb->Obj_Weight_Dim;
   }
   if (lb->Comm_Weight_Dim<0){
-    fprintf(stderr, "ZOLTAN warning: Communication weight dimension is %d, "
-            "but should be >= 0. Using Comm_Weight_Dim = 0.\n",
+    sprintf(msg, "Communication weight dimension is %d, "
+            "but should be >= 0. Using Comm_Weight_Dim = 0.",
             lb->Comm_Weight_Dim);
+    LB_PRINT_WARN(lb->Proc, yo, msg);
     comm_wgt_dim = 0;
   }
   else if (lb->Comm_Weight_Dim>1){
-    fprintf(stderr, "ZOLTAN warning: This method does not support "
-        "multidimensional communication weights. Using Comm_Weight_Dim = 1.\n");
+    LB_PRINT_WARN(lb->Proc, yo, "This method does not support "
+        "multidimensional communication weights. Using Comm_Weight_Dim = 1.");
     comm_wgt_dim = 1;
   }
   else {
@@ -472,7 +478,7 @@ static int LB_ParMetis_Jostle(
   
   if (check_graph >= 1){
      if ((lb->Proc ==0) && (vtxdist[lb->Num_Proc]==0))
-        fprintf(stderr, "Zoltan warning: No objects to balance in %s\n", yo);
+        LB_PRINT_WARN(lb->Proc, yo, "No objects to balance.");
   }
 
   if (get_graph_data){
@@ -497,7 +503,7 @@ static int LB_ParMetis_Jostle(
     if (check_graph >= 1){
        ierr = MPI_Reduce(&nedges, &tmp, 1, MPI_INT, MPI_SUM, 0, lb->Communicator);
        if ((lb->Proc ==0) && (tmp==0))
-          fprintf(stderr, "Zoltan warning: No edges in graph.\n");
+          LB_PRINT_WARN(lb->Proc, yo, "No edges in graph.");
     }
 
   
@@ -706,9 +712,8 @@ static int LB_ParMetis_Jostle(
 
     /* Sanity check */
     if ((check_graph >= 1) && (jj != xadj[num_obj])){
-      fprintf(stderr, "[%1d] ZOLTAN ERROR: Internal error in %s. "
-              "Something may be wrong with the edges in the graph\n", 
-               lb->Proc, yo);
+      LB_PRINT_ERROR(lb->Proc, yo, "Internal error; "
+              "Something may be wrong with the edges in the graph."); 
       FREE_MY_MEMORY;
       LB_TRACE_EXIT(lb, yo);
       return LB_FATAL;
@@ -829,9 +834,10 @@ static int LB_ParMetis_Jostle(
       /* Look up unresolved global_ids */
       if ((tmp=hash_lookup(hashtab, proc_list[i].nbor_gid, nrecv)) <0){
         /* Error. This should never happen! */
-        fprintf(stderr, "[%1d] ZOLTAN ERROR: Internal error in %s. "
-               "Off-proc global ID %d is not in hash table.\n", 
-               lb->Proc, yo, proc_list[i].nbor_gid);
+        sprintf(msg, "Internal error; "
+               "Off-proc global ID %d is not in hash table.", 
+               proc_list[i].nbor_gid);
+        LB_PRINT_ERROR(lb->Proc, yo, msg);
         FREE_MY_MEMORY;
         LB_TRACE_EXIT(lb, yo);
         return LB_FATAL;
@@ -961,6 +967,17 @@ static int LB_ParMetis_Jostle(
 
   /* Select the desired ParMetis or Jostle function */
 
+#ifndef BETA_PARMETIS
+  if (obj_wgt_dim >= 2) {
+    LB_PRINT_ERROR(lb->Proc, yo, 
+      "You need the newest beta version of ParMETIS to use multi-weights.\n"
+      "If you have this installed, please define BETA_PARMETIS and "
+      "recompile Zoltan.");
+    FREE_MY_MEMORY;
+    LB_TRACE_EXIT(lb, yo);
+    return LB_FATAL;
+  }
+#endif /* !BETA_PARMETIS */
   if (strcmp(alg, "JOSTLE") == 0){
 #ifdef LB_JOSTLE
     offset = 0;            /* Index of the first object/node. */
@@ -987,9 +1004,11 @@ static int LB_ParMetis_Jostle(
     LB_TRACE_DETAIL(lb, yo, "Returned from the Jostle library");
 #else
     /* We don't know about Jostle */
-    fprintf(stderr, "ZOLTAN ERROR: Sorry, Jostle is not available on this system.\n"
-            " If you have Jostle, please set the JOSTLE_PATH appropriately in the makefile and "
-            "recompile Zoltan. Otherwise, use a different method.\n");
+    LB_PRINT_ERROR(lb->Proc, yo, 
+      "Sorry, Jostle is not available on this system.\n"
+      "If you have Jostle, please set the JOSTLE_PATH appropriately "
+      "in the makefile and recompile Zoltan. Otherwise, use a "
+      "different method.");
     FREE_MY_MEMORY;
     LB_TRACE_EXIT(lb, yo);
     return LB_FATAL;
@@ -1000,16 +1019,14 @@ static int LB_ParMetis_Jostle(
     if (obj_wgt_dim <= 1)
       ParMETIS_PartKway (vtxdist, xadj, adjncy, vwgt, adjwgt, &wgtflag, 
         &numflag, &num_proc, options, &edgecut, part, &comm);
-    else { /* obj_wgt_dim >= 2 */
 #ifdef BETA_PARMETIS
+    else { /* obj_wgt_dim >= 2 */
       /* Beta version of multiconstraint ParMetis. Interface may change! */
-      Moc_ParMETIS_PartKway (&obj_wgt_dim, vtxdist, xadj, adjncy, vwgt, adjwgt, &wgtflag, 
-        &numflag, &num_proc, imb_tols, options, &edgecut, part, &comm, (lb->Proc +1));
-#else
-      fprintf(stderr, "Zoltan error: You need the newest beta version of ParMETIS to use multi-weights."
-        "If you have this installed, please define BETA_PARMETIS and recompile Zoltan.\n");
-#endif /* BETA_PARMETIS */
+      Moc_ParMETIS_PartKway (&obj_wgt_dim, vtxdist, xadj, adjncy, vwgt, adjwgt, 
+        &wgtflag, &numflag, &num_proc, imb_tols, options, &edgecut, part,
+        &comm, (lb->Proc +1));
     }
+#endif /* BETA_PARMETIS */
     LB_TRACE_DETAIL(lb, yo, "Returned from the ParMETIS library");
   }
   else if (strcmp(alg, "PARTGEOMKWAY") == 0){
@@ -1041,16 +1058,14 @@ static int LB_ParMetis_Jostle(
     if (obj_wgt_dim <= 1)
       ParMETIS_RepartRemap (vtxdist, xadj, adjncy, vwgt, adjwgt, &wgtflag, 
         &numflag, options, &edgecut, part, &comm);
-    else { /* obj_wgt_dim >= 2 */
 #ifdef BETA_PARMETIS
+    else { /* obj_wgt_dim >= 2 */
       /* Beta version of multiconstraint ParMetis. Interface may change! */
       Moc_ParMETIS_SR (&obj_wgt_dim, vtxdist, xadj, adjncy, vwgt, adjwgt, NULL,
-        &wgtflag, &numflag, &num_proc, imb_tols, options, &edgecut, part, &comm, (lb->Proc+1));
-#else
-      fprintf(stderr, "Zoltan error: You need the newest beta version of ParMETIS to use multi-weights."
-        "If you have this installed, please define BETA_PARMETIS and recompile Zoltan.\n");
-#endif /* BETA_PARMETIS */
+        &wgtflag, &numflag, &num_proc, imb_tols, options, &edgecut, part, &comm,
+        (lb->Proc+1));
     }
+#endif /* BETA_PARMETIS */
     LB_TRACE_DETAIL(lb, yo, "Returned from the ParMETIS library");
   }
   else if (strcmp(alg, "REPARTMLREMAP") == 0){
@@ -1067,7 +1082,8 @@ static int LB_ParMetis_Jostle(
   }
   else {
     /* This should never happen! */
-    fprintf(stderr, "ZOLTAN Error: Unknown ParMetis or Jostle algorithm %s\n", alg);
+    sprintf(msg, "Unknown ParMetis or Jostle algorithm %s.", alg);
+    LB_PRINT_ERROR(lb->Proc, yo, msg);
     FREE_MY_MEMORY;
     LB_TRACE_EXIT(lb, yo);
     return LB_FATAL;
@@ -1197,6 +1213,7 @@ static int scale_round_weights(float *fwgts, idxtype *iwgts, int n, int dim,
   static char *yo = "scale_round_weights";
 
   ierr = LB_OK;
+  MPI_Comm_rank(comm, &proc);
 
   if (mode == 0) {
     /* No scaling; just convert to int */
@@ -1212,7 +1229,7 @@ static int scale_round_weights(float *fwgts, idxtype *iwgts, int n, int dim,
       sum_wgt = (float *)LB_MALLOC(dim*sizeof(float));
       sum_wgt_local = (float *)LB_MALLOC(dim*sizeof(float));
       if (!(nonint && nonint_local && scale && sum_wgt && sum_wgt_local)){
-        fprintf(stderr, "ZOLTAN ERROR: Out of memory in %s\n", yo);
+        LB_PRINT_ERROR(proc, yo, "Out of memory.");
         LB_FREE(&nonint);
         LB_FREE(&nonint_local);
         LB_FREE(&scale);
@@ -1265,7 +1282,6 @@ static int scale_round_weights(float *fwgts, idxtype *iwgts, int n, int dim,
         }
       }
 
-      MPI_Comm_rank(comm, &proc);
       if ((debug_level >= LB_DEBUG_ALL) && (proc==0)){
         printf("Zoltan debug: scaling weights with scale factors = ");
         for (j=0; j<dim; j++)
