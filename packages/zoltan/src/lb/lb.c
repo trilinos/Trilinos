@@ -460,9 +460,11 @@ double LB_time[2] = {0.0,0.0}, LB_max_time[2] = {0.0,0.0};
   LB_start_time = MPI_Wtime();
 
   *num_import_objs = *num_export_objs = 0;
-  *import_global_ids = *import_local_ids = NULL;
+  *import_global_ids = NULL;
+  *import_local_ids = NULL;
   *import_procs = NULL;
-  *export_global_ids = *export_local_ids = NULL;
+  *export_global_ids = NULL;
+  *export_local_ids = NULL;
   *export_procs = NULL;
 
   if (lb->Method == NONE) {
@@ -611,8 +613,8 @@ int i;
     for (i = 0; i < num_import; i++) {
       proc_list[i] = import_procs[i];
 
-      import_objs[i].Global_ID = import_global_ids[i];
-      import_objs[i].Local_ID  = import_local_ids[i];
+      LB_SET_GID(import_objs[i].Global_ID, import_global_ids[i]);
+      LB_SET_LID(import_objs[i].Local_ID, import_local_ids[i]);
       import_objs[i].Proc      = LB_Proc;
     }
   }
@@ -641,7 +643,8 @@ int i;
   }
   else {
     export_objs = NULL;
-    *export_global_ids = *export_local_ids = NULL;
+    *export_global_ids = NULL;
+    *export_local_ids = NULL;
     *export_procs = NULL;
   }
 
@@ -653,8 +656,8 @@ int i;
    */
 
   for (i = 0; i < *num_export; i++) {
-    (*export_global_ids)[i] = export_objs[i].Global_ID;
-    (*export_local_ids)[i]  = export_objs[i].Local_ID;
+    LB_SET_GID((*export_global_ids)[i], export_objs[i].Global_ID);
+    LB_SET_LID((*export_local_ids)[i], export_objs[i].Local_ID);
     (*export_procs)[i]      = export_objs[i].Proc;
   }
 
@@ -814,10 +817,9 @@ COMM_OBJ *comm_plan;     /* Communication object returned
    */
 
   tmp = import_buf;
-  global_id = NULL;
   for (i = 0; i < num_import; i++) {
     if (import_global_ids != NULL) 
-      global_id = import_global_ids[i];
+      LB_SET_GID(global_id, import_global_ids[i]);
     lb->Migrate.Unpack_Obj(global_id, size, tmp);
     tmp += size;
   }

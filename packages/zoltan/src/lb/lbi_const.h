@@ -23,6 +23,11 @@ static char *cvs_lbiconsth_id = "$Id$";
 #include <mpi.h>
 
 /*
+ *  Include user-defined data types and comparison macros for LB_GID and LB_LID.
+ */
+#include "lb_user_const.h"
+
+/*
  *  Data types and functions describing the interface between the
  *  application and the load balancing tool.
  */
@@ -54,14 +59,6 @@ enum LB_Fn_Type {
 };
 
 typedef enum LB_Fn_Type LB_FN_TYPE;
-
-/*
- *  Definition of global and local ID data types.  
- *  KDD_DLB  Eventually, these data types will be defined by the application.
- */
-
-typedef int LB_GID;
-typedef int LB_LID;
 
 /*
  *  Other common definitions:
