@@ -28,7 +28,6 @@
 #define ZOLTANCPP_H_
 
 #include "zoltan.h"
-
 #include <string>
 
 namespace Zoltan {
@@ -172,7 +171,7 @@ public:
 
   /////////////////////////////////////////////////////////////////////////
   //! Replaces Zoltan_LB_Eval
-  void LB_Eval( int print_stats,
+  int LB_Eval( int print_stats,
                 int * num_objects,
                 float * object_weights,
                 int * num_cuts,
@@ -180,7 +179,7 @@ public:
                 int * num_boundary_objects,
                 int * num_adj_procs )
   {
-    Zoltan_LB_Eval( ZZ_Ptr, print_stats,
+    return Zoltan_LB_Eval( ZZ_Ptr, print_stats,
                     num_objects, object_weights,
                     num_cuts, cut_weights,
                     num_boundary_objects, num_adj_procs );
@@ -189,7 +188,7 @@ public:
 
   /////////////////////////////////////////////////////////////////////////
   //! Replaces Zoltan_RCB_Box
-  void RCB_Box( int part,
+  int RCB_Box( int part,
                 int * ndim, 
                 double * xmin, 
                 double * ymin, 
@@ -198,7 +197,7 @@ public:
                 double * ymax, 
                 double * zmax )
   {
-    Zoltan_RCB_Box( ZZ_Ptr, part, ndim, xmin, ymin, zmin, xmax, ymax, zmax);
+    return Zoltan_RCB_Box( ZZ_Ptr, part, ndim, xmin, ymin, zmin, xmax, ymax, zmax);
   }
 
   /////////////////////////////////////////////////////////////////////////
@@ -670,51 +669,55 @@ public:
   //@}
 
   /////////////////////////////////////////////////////////////////////////
+  // Static methods
+  /////////////////////////////////////////////////////////////////////////
+
+  /////////////////////////////////////////////////////////////////////////
   //@{ \name Distributed Directory Functionality
 
-  int DD_Create(Zoltan_DD_Directory **dd, MPI_Comm comm, int num_gid,
+  static int DD_Create(Zoltan_DD_Directory **dd, MPI_Comm comm, int num_gid,
    int num_lid, int user_length,  int table_length, int debug_level) 
     {
       return Zoltan_DD_Create (dd, comm, num_gid, num_lid, user_length,  
                                table_length, debug_level) ;
     }
   
-  void DD_Destroy (Zoltan_DD_Directory **dd) 
+  static void DD_Destroy (Zoltan_DD_Directory **dd) 
     {
       return Zoltan_DD_Destroy (dd) ;
     }
  
-  int DD_Update (Zoltan_DD_Directory *dd, ZOLTAN_ID_PTR gid,
+  static int DD_Update (Zoltan_DD_Directory *dd, ZOLTAN_ID_PTR gid,
     ZOLTAN_ID_PTR lid, ZOLTAN_ID_PTR user, int *partition, int count) 
     {
       return Zoltan_DD_Update (dd, gid, lid, user, partition, count) ;
     }
   
-  int DD_Find (Zoltan_DD_Directory *dd, ZOLTAN_ID_PTR gid,
+  static int DD_Find (Zoltan_DD_Directory *dd, ZOLTAN_ID_PTR gid,
     ZOLTAN_ID_PTR lid, ZOLTAN_ID_PTR data, int *partition, int count,
     int *owner) 
     {
       return Zoltan_DD_Find (dd, gid, lid, data, partition, count, owner);
     }
   
-  int DD_Remove (Zoltan_DD_Directory *dd, ZOLTAN_ID_PTR gid,
+  static int DD_Remove (Zoltan_DD_Directory *dd, ZOLTAN_ID_PTR gid,
     int count)
     {
       return Zoltan_DD_Remove (dd, gid, count);
     }
   
-  int DD_Set_Hash_Fn (Zoltan_DD_Directory *dd,
+  static int DD_Set_Hash_Fn (Zoltan_DD_Directory *dd,
     unsigned int (*hash) (ZOLTAN_ID_PTR, int, unsigned int))
     {
       return Zoltan_DD_Set_Hash_Fn (dd, hash);
     } 
   
-  void DD_Stats (Zoltan_DD_Directory *dd)
+  static void DD_Stats (Zoltan_DD_Directory *dd)
     {
     return Zoltan_DD_Stats (dd) ;
     }
   
-  int DD_Print (Zoltan_DD_Directory *dd)
+  static int DD_Print (Zoltan_DD_Directory *dd)
     {
       return Zoltan_DD_Print (dd) ;
     }
@@ -723,19 +726,22 @@ public:
 
   /////////////////////////////////////////////////////////////////////////
   //@{ \name Unstructured Communication Functionality
+
+  // Comment above regarding DD methods applies to Comm methods as well.
+  // (C++ wishlist)
  
-  int Comm_Create(ZOLTAN_COMM_OBJ** cobj, int nvals, int *assign, MPI_Comm comm,
+  static int Comm_Create(ZOLTAN_COMM_OBJ** cobj, int nvals, int *assign, MPI_Comm comm,
     int tag, int *pnvals_recv)
     {
       return Zoltan_Comm_Create(cobj, nvals, assign, comm, tag, pnvals_recv);
     }
 
-  int Comm_Destroy(ZOLTAN_COMM_OBJ **plan)
+  static int Comm_Destroy(ZOLTAN_COMM_OBJ **plan)
     {
       return Zoltan_Comm_Destroy(plan);
     }
       
-  int Comm_Invert_Map( int *lengths_to, int *procs_to, int nsends, int self_msg,
+  static int Comm_Invert_Map( int *lengths_to, int *procs_to, int nsends, int self_msg,
     int **plengths_from, int **pprocs_from, int *pnrecvs, int my_proc,
     int nprocs, int out_of_mem, int tag, MPI_Comm  comm)
     {
@@ -744,7 +750,7 @@ public:
         tag, comm);
     }
       
-  int Comm_Exchange_Sizes( int *sizes_to, int *procs_to, int  nsends, int  self_msg,
+  static int Comm_Exchange_Sizes( int *sizes_to, int *procs_to, int  nsends, int  self_msg,
     int *sizes_from, int *procs_from, int  nrecvs, int *total_recv_size,
     int  my_proc, int  tag, MPI_Comm  comm)
     {
@@ -753,51 +759,51 @@ public:
         comm);
     }
   
-  int Comm_Resize( ZOLTAN_COMM_OBJ *plan, int *sizes, int tag, int *sum_recv_sizes)
+  static int Comm_Resize( ZOLTAN_COMM_OBJ *plan, int *sizes, int tag, int *sum_recv_sizes)
     {
       return Zoltan_Comm_Resize( plan, sizes, tag, sum_recv_sizes);
     }
   
-  int Comm_Do(ZOLTAN_COMM_OBJ *plan, int tag, char *send_data, int nbytes,
+  static int Comm_Do(ZOLTAN_COMM_OBJ *plan, int tag, char *send_data, int nbytes,
     char *recv_data)
     {
       return Comm_Do(plan, tag, send_data, nbytes, recv_data);
     }
 
-  int Comm_Do_Post( ZOLTAN_COMM_OBJ * plan, int tag, char *send_data, int nbytes,
+  static int Comm_Do_Post( ZOLTAN_COMM_OBJ * plan, int tag, char *send_data, int nbytes,
     char *recv_data)
     {
       return Zoltan_Comm_Do_Post(plan, tag, send_data, nbytes, recv_data);
     }
 
-  int Comm_Do_Wait(ZOLTAN_COMM_OBJ *plan, int tag, char *send_data,
+  static int Comm_Do_Wait(ZOLTAN_COMM_OBJ *plan, int tag, char *send_data,
     int nbytes, char *recv_data)
     {
       return Zoltan_Comm_Do_Wait(plan, tag, send_data, nbytes, recv_data);
     }
   
-  int Comm_Do_Reverse(ZOLTAN_COMM_OBJ *plan, int tag, char *send_data,
+  static int Comm_Do_Reverse(ZOLTAN_COMM_OBJ *plan, int tag, char *send_data,
     int nbytes, int *sizes, char *recv_data)
     {
       return Zoltan_Comm_Do_Reverse(plan, tag, send_data, nbytes, sizes, 
         recv_data);
     }
 
-  int Comm_Do_Reverse_Post(ZOLTAN_COMM_OBJ *plan, int tag, char *send_data,
+  static int Comm_Do_Reverse_Post(ZOLTAN_COMM_OBJ *plan, int tag, char *send_data,
     int nbytes, int *sizes, char *recv_data)
     {
       return Zoltan_Comm_Do_Reverse_Post(plan, tag, send_data, nbytes, sizes, 
         recv_data);
     }
 
-  int Comm_Do_Reverse_Wait(ZOLTAN_COMM_OBJ *plan, int tag, char *send_data,
+  static int Comm_Do_Reverse_Wait(ZOLTAN_COMM_OBJ *plan, int tag, char *send_data,
     int nbytes, int *sizes, char *recv_data)
     {
       return Zoltan_Comm_Do_Reverse_Wait(plan, tag, send_data, nbytes, sizes, 
         recv_data);
     }
   
-  int Comm_Info( ZOLTAN_COMM_OBJ *plan, int *nsends, int *send_procs,
+  static int Comm_Info( ZOLTAN_COMM_OBJ *plan, int *nsends, int *send_procs,
     int *send_lengths, int *send_nvals, int *send_max_size, int *send_list,
     int *nrecvs, int *recv_procs, int *recv_lengths, int *recv_nvals,
     int *recv_total_size, int *recv_list, int *self_msg)
@@ -807,7 +813,7 @@ public:
         recv_nvals, recv_total_size, recv_list, self_msg);
     }
   
-  int Comm_Invert_Plan(ZOLTAN_COMM_OBJ** plan)
+  static int Comm_Invert_Plan(ZOLTAN_COMM_OBJ** plan)
     {
     return Zoltan_Comm_Invert_Plan(plan);
     }
@@ -820,6 +826,25 @@ public:
   //! Direct access to underlying Zoltan_Struct Object
   //  Zoltan_Struct * Return_Zoltan_Struct()
   //  { return ZZ_Ptr; }
+
+  //@}
+
+  /////////////////////////////////////////////////////////////////////////
+  //@{ \name Print out status of malloc/free calls.  Flag any memory leaks.
+
+  static void Memory_Stats()
+     {
+     Zoltan_Memory_Stats();
+     }
+  //@}
+
+  /////////////////////////////////////////////////////////////////////////
+  //@{ \name Plauger alignment algorithm
+
+   static int Align(int a)
+     {
+     return Zoltan_Align(a);
+     }
 
   //@}
 
