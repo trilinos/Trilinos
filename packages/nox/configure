@@ -5876,7 +5876,7 @@ fi
 # Checks for basic libraries for examples and/or lapack support
 # ------------------------------------------------------------------------
 
-if test ${BUILD_ANY_EXAMPLES} = yes; then
+if test X${ADDON_lapack} = Xyes || test X${BUILD_ANY_EXAMPLES} = Xyes || test X${BUILD_LIBLOCA} = Xyes; then
 
   echo "$as_me:$LINENO: checking for library containing pow" >&5
 echo $ECHO_N "checking for library containing pow... $ECHO_C" >&6
