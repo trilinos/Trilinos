@@ -38,11 +38,17 @@
 /* Define if you have LAPACK library. */
 #undef HAVE_LAPACK
 
+/* Define if you have LAPACK DGEGV. */
+#undef HAVE_LAPACK_DGEGV
+
+/* Define if you have LAPACK DGGEV. */
+#undef HAVE_LAPACK_DGGEV
+
+/* Define if you have LAPACK DGGEV/DGEGV. */
+#undef HAVE_LAPACK_GENEV
+
 /* define that anasazi is activated in loca */
 #undef HAVE_LOCA_ANASAZI
-
-/* define that epetraext is activated */
-#undef HAVE_NOX_EPETRAEXT
 
 /* Define to 1 if you have the <math.h> header file. */
 #undef HAVE_MATH_H
@@ -52,6 +58,9 @@
 
 /* define that mpi is being used */
 #undef HAVE_MPI
+
+/* define that epetraext is activated in nox */
+#undef HAVE_NOX_EPETRAEXT
 
 /* Define to 1 if you have the <stdint.h> header file. */
 #undef HAVE_STDINT_H

@@ -44,7 +44,14 @@ extern "C" {
 #define DGETRF_F77 F77_FUNC(dgetrf,DGETRF)
 #define DGETRS_F77 F77_FUNC(dgetrs,DGETRS)
 #define DGEEV_F77 F77_FUNC(dgeev,DGEEV)
+
+#ifdef HAVE_LAPACK_DGGEV
 #define DGGEV_F77 F77_FUNC(dggev,DGGEV)
+#endif
+#ifdef HAVE_LAPACK_DGEGV
+#define DGGEV_F77 F77_FUNC(dgegv,DGEGV)
+#endif
+
 
 /* B <- A \ B, A <- [L,U], piv <- P where P*A = L*U */
 void DGESV_F77(const int *n, const int *nrhs, double *A, const int *lda, 
@@ -69,12 +76,14 @@ void DGEEV_F77(const char *jobvl, const char *jobvr, const int *n,
 	       double *vl, const int *ldvl, double *vr, const int *ldvr,
 	       double *work, const int *lwork, int *info);
 
+#ifdef HAVE_LAPACK_GENEV
 /* Compute left/right generalized eigenvectors, eigenvalues */
 void DGGEV_F77(const char *jobvl, const char *jobvr, const int *n,
 	       const double *A, const int *lda, const double *B, 
 	       const int *ldb, double *alphar, double *alphai,
 	       double *beta, double *vl, const int *ldvl, double *vr, 
 	       const int *ldvr, double *work, const int *lwork, int *info);
+#endif
 
 #ifdef __cplusplus
 }

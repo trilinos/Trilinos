@@ -8186,6 +8186,167 @@ echo "$as_me: error: Cannot find LAPACK library" >&2;}
 fi
 
 
+  # Find valid LAPACK DGGEV function
+
+acx_dggev_ok=no
+acx_dgegv_ok=no
+
+save_LIBS="$LIBS"; LIBS="$LAPACK_LIBS $BLAS_LIBS $LIBS $FLIBS"
+
+# First, try dggev
+case $ac_cv_f77_mangling in
+  upper*) ac_val="DGGEV" ;;
+  lower*) ac_val="dggev" ;;
+  *)      ac_val="unknown" ;;
+esac
+case $ac_cv_f77_mangling in *," underscore"*) ac_val="$ac_val"_ ;; esac
+
+dggev="$ac_val"
+
+echo "$as_me:$LINENO: checking for $dggev in $LAPACK_LIBS" >&5
+echo $ECHO_N "checking for $dggev in $LAPACK_LIBS... $ECHO_C" >&6
+cat >conftest.$ac_ext <<_ACEOF
+#line $LINENO "configure"
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+/* Override any gcc2 internal prototype to avoid an error.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+/* We use char because int might match the return type of a gcc2
+   builtin and then its argument prototype would still apply.  */
+char $dggev ();
+#ifdef F77_DUMMY_MAIN
+#  ifdef __cplusplus
+     extern "C"
+#  endif
+   int F77_DUMMY_MAIN() { return 1; }
+#endif
+int
+main ()
+{
+$dggev ();
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
+  (eval $ac_link) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+         { ac_try='test -s conftest$ac_exeext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  acx_dggev_ok=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+fi
+rm -f conftest.$ac_objext conftest$ac_exeext conftest.$ac_ext
+echo "$as_me:$LINENO: result: $acx_dggev_ok" >&5
+echo "${ECHO_T}$acx_dggev_ok" >&6
+if test $acx_dggev_ok = yes; then
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_LAPACK_GENEV 1
+_ACEOF
+
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_LAPACK_DGGEV 1
+_ACEOF
+
+else
+	# Next try dgegv
+	case $ac_cv_f77_mangling in
+  upper*) ac_val="DGEGV" ;;
+  lower*) ac_val="dgegv" ;;
+  *)      ac_val="unknown" ;;
+esac
+case $ac_cv_f77_mangling in *," underscore"*) ac_val="$ac_val"_ ;; esac
+
+dgegv="$ac_val"
+
+	echo "$as_me:$LINENO: checking for $dgegv in $LAPACK_LIBS" >&5
+echo $ECHO_N "checking for $dgegv in $LAPACK_LIBS... $ECHO_C" >&6
+	cat >conftest.$ac_ext <<_ACEOF
+#line $LINENO "configure"
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+/* Override any gcc2 internal prototype to avoid an error.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+/* We use char because int might match the return type of a gcc2
+   builtin and then its argument prototype would still apply.  */
+char $dgegv ();
+#ifdef F77_DUMMY_MAIN
+#  ifdef __cplusplus
+     extern "C"
+#  endif
+   int F77_DUMMY_MAIN() { return 1; }
+#endif
+int
+main ()
+{
+$dgegv ();
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
+  (eval $ac_link) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+         { ac_try='test -s conftest$ac_exeext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  acx_dgegv_ok=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+fi
+rm -f conftest.$ac_objext conftest$ac_exeext conftest.$ac_ext
+	echo "$as_me:$LINENO: result: $acx_dgegv_ok" >&5
+echo "${ECHO_T}$acx_dgegv_ok" >&6
+	if test $acx_dgegv_ok = yes; then
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_LAPACK_GENEV 1
+_ACEOF
+
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_LAPACK_DGEGV 1
+_ACEOF
+
+	fi
+fi
+
+LIBS="$save_LIBS"
+
+
+
 fi
 
 # ------------------------------------------------------------------------

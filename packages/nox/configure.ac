@@ -778,6 +778,9 @@ if test ${BUILD_ANY_EXAMPLES} = yes; then
   # Find valid LAPACK
   ACX_LAPACK([LIBS=" ${LAPACK_LIBS} ${LIBS}"],[AC_MSG_ERROR([Cannot find LAPACK library])])
 
+  # Find valid LAPACK DGGEV function
+  ACX_DGGEV
+
 fi
 
 # ------------------------------------------------------------------------

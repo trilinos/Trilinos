@@ -33,6 +33,8 @@
 #include "LOCA_LAPACK_Group.H"	// class definition
 #include "NOX_BLAS_Wrappers.H"
 #include "NOX_LAPACK_Wrappers.H"
+#include "LOCA_Utils.H"
+#include "LOCA_ErrorCheck.H"
 
 LOCA::LAPACK::Group::Group(LOCA::LAPACK::Interface& interface,
 			   bool hasMassMat) : 
@@ -269,6 +271,20 @@ LOCA::LAPACK::Group::printSolution(const NOX::Abstract::Vector& x_,
 NOX::Abstract::Group::ReturnType 
 LOCA::LAPACK::Group::computeEigenvalues(NOX::Parameter::List& params)
 {
+
+  // Check to make sure we have dggev available if we need generalized 
+  // eigenvalues.
+#ifndef HAVE_LAPACK_GENEV
+  if (hasMassMatrix) {
+    if (Utils::doPrint(Utils::StepperIteration)) {
+      LOCA::ErrorCheck::printWarning("LOCA::LAPACK::Group::computeEigenvalues",
+				     "LAPACK Generalized eigensolver (dggev) requested but not available!");
+    }
+    return LOCA::Abstract::Group::Ok;
+  }
+
+#endif
+  
   // Size of matrix
   int n = jacobianMatrix.numRows();
   int lda = jacobianMatrix.numRowsAllocated();
@@ -311,9 +327,10 @@ LOCA::LAPACK::Group::computeEigenvalues(NOX::Parameter::List& params)
     // Copy mass matrix since lapack routines overwrite it
     M = massMatrix;
 
+#ifdef HAVE_LAPACK_GENEV
     DGGEV_F77("N", "V", &n, &J(0,0), &lda, &M(0,0), &ldb, alphar, alphai, beta,
 	      vr, &n, vr, &n, &work0, &lwork, &info);
-
+#endif
   }
   else {
     DGEEV_F77("N", "V", &n, &J(0,0), &lda, alphar, alphai, 
@@ -326,8 +343,10 @@ LOCA::LAPACK::Group::computeEigenvalues(NOX::Parameter::List& params)
 
   // Calculate eigenvalues, eigenvectors
   if (hasMassMatrix) {
+#ifdef HAVE_LAPACK_GENEV
     DGGEV_F77("N", "V", &n, &J(0,0), &lda, &M(0,0), &ldb, alphar, alphai, beta,
 	      vr, &n, vr, &n, work, &lwork, &info);
+#endif
   }
   else {
     DGEEV_F77("N", "V", &n, &J(0,0), &lda, alphar, alphai, 
@@ -357,7 +376,6 @@ LOCA::LAPACK::Group::computeEigenvalues(NOX::Parameter::List& params)
   delete [] work;
 
   return NOX::Abstract::Group::Ok;
-  
 }
 
 NOX::Abstract::Group::ReturnType 
