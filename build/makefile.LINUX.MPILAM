@@ -4,7 +4,7 @@ include $(TRILINOS_HOME)/build/makefile.defaults
 
 # Define architecture specific flags for C++, C and Fortran
 
-ARCH_CXXFLAGS= -O3
+ARCH_CXXFLAGS= -O3 -DLAM_BUILDING
 ARCH_CFLAGS= -O3
 ARCH_FFLAGS= -O3
 
