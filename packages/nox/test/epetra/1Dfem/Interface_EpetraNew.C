@@ -43,11 +43,15 @@
 #include "Epetra_CrsMatrix.h"
 
 // Constructor - creates the Epetra objects (maps and vectors) 
-Interface::Interface(int numGlobalElements, Epetra_Comm& comm) :
+Interface::Interface(int numGlobalElements, Epetra_Comm& comm, double xmin_,
+                     double xmax_) :
   NumGlobalElements(numGlobalElements),
   NumMyElements(0),  // gets set after map creation
   MyPID(comm.MyPID()),
   NumProc(comm.NumProc()),
+  xmin(xmin_),
+  xmax(xmax_),
+  factor(1.0),
   Comm(&comm),
   StandardMap(0),
   OverlapMap(0),
@@ -55,7 +59,8 @@ Interface::Interface(int numGlobalElements, Epetra_Comm& comm) :
   initialSolution(0),
   rhs(0),
   Graph(0),
-  Jacobian(0)
+  Jacobian(0),
+  xptr(0)
 {
 
   // Construct a Source Map that puts approximately the same 
@@ -106,6 +111,17 @@ Interface::Interface(int numGlobalElements, Epetra_Comm& comm) :
 
   // Clean-up 
   Jacobian->TransformToLocal();
+
+  // Create the nodal coordinates
+  xptr = new Epetra_Vector(*StandardMap);
+  double Length = xmax - xmin;
+  double dx = Length/((double) NumGlobalElements-1);
+  for (int i=0; i < NumMyElements; i++) {
+    (*xptr)[i] = xmin + dx*((double) StandardMap->MinMyGID()+i);
+  }
+  
+  initializeSoln();
+  
 }
 
 // Destructor
@@ -115,6 +131,7 @@ Interface::~Interface()
   delete Graph;
   delete Importer;
   delete initialSolution;
+  delete xptr;
   delete OverlapMap;
   delete StandardMap;
 }
@@ -183,6 +200,7 @@ bool Interface::evaluate(NOX::EpetraNew::Interface::Required::FillType flag,
 
   // Export Solution to Overlap vector
   u.Import(*soln, *Importer, Insert);
+  x.Import(*xptr, *Importer, Insert);
 
   // Declare required variables
   int ierr;
@@ -193,19 +211,11 @@ bool Interface::evaluate(NOX::EpetraNew::Interface::Required::FillType flag,
   else OverlapMinMyGID = StandardMap->MinMyGID()-1;
 
   int row, column;
-  double factor = 1000.0;
   double jac;
   double xx[2];
   double uu[2];
   Basis basis;
 
-  // Create the nodal coordinates
-  double Length = 1.0;
-  double dx = Length / ((double) NumGlobalElements-1);
-  for (int i=0; i < OverlapNumMyElements; i++)
-    x[i] = dx*((double) OverlapMinMyGID+i);
-  
-  
   // Zero out the objects that will be filled
   if (fillF) 
     rhs->PutScalar(0.0);
@@ -283,6 +293,11 @@ Epetra_Vector& Interface::getSolution()
   return *initialSolution;
 }
   
+Epetra_Vector& Interface::getMesh()
+{
+  return *xptr;
+}
+  
 Epetra_CrsMatrix& Interface::getJacobian()
 {
   return *Jacobian;
@@ -329,6 +344,13 @@ bool Interface::createGraph()
   return true;
 }
 
+// Set initialSolution to desired initial condition
+bool Interface::initializeSoln()
+{
+  initialSolution->PutScalar(1.0); // Default initialization
+  return true;
+}
+
 //====================================================================
 // Basis vector
 
@@ -345,7 +367,7 @@ Basis::~Basis() {
 }
 
 // Calculates a linear 1D basis
-void Basis::computeBasis(int gp, double *x, double *u) {
+void Basis::computeBasis(int gp, double *x, double *u, double *uold) {
   int N = 2;
   if (gp==0) {eta=-1.0/sqrt(3.0); wt=1.0;}
   if (gp==1) {eta=1.0/sqrt(3.0); wt=1.0;}
@@ -361,10 +383,16 @@ void Basis::computeBasis(int gp, double *x, double *u) {
   xx=0.0;
   uu=0.0;
   duu=0.0;
+  uuold=0.0;
+  duuold=0.0;
   for (int i=0; i < N; i++) {
     xx += x[i] * phi[i];
     uu += u[i] * phi[i];
     duu += u[i] * dphide[i];
+    if (uold) {
+      uuold += uold[i] * phi[i];
+      duuold += uold[i] * dphide[i];
+    }
   }
 
   return;

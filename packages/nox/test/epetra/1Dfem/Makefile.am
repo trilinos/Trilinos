@@ -31,7 +31,8 @@ EXEEXT = .exe
 
 INTERFACE = $(srcdir)/Interface.C
 
-noinst_PROGRAMS = testNonlinear testNonlinear_EpetraNew
+noinst_PROGRAMS = testNonlinear testNonlinear_EpetraNew \
+			testNonlinear_trans
 
 testNonlinear_SOURCES = \
                         $(INTERFACE) \
@@ -69,6 +70,25 @@ testNonlinear_EpetraNew_CXXFLAGS = \
                          $(TRILINOS_CXXFLAGS)
 
 testNonlinear_EpetraNew_LDADD = \
+                      -L$(top_builddir)/src-epetra -lnoxepetra \
+                      -L$(top_builddir)/src -lnox $(BLAS_LIBS) \
+	              $(LIBS) $(FLIBS)
+
+testNonlinear_trans_SOURCES = \
+                        $(INTERFACE_EPETRANEW) \
+                        $(srcdir)/testNonlinear_trans.C
+
+testNonlinear_trans_DEPENDENCIES = \
+                             $(top_builddir)/src/libnox.a \
+                             $(top_builddir)/src-epetra/libnoxepetra.a
+
+testNonlinear_trans_CXXFLAGS = \
+                         -I$(top_srcdir)/src \
+                         -I$(top_srcdir)/src-epetra \
+                         -I$(top_srcdir)/test/utils \
+                         $(TRILINOS_CXXFLAGS)
+
+testNonlinear_trans_LDADD = \
                       -L$(top_builddir)/src-epetra -lnoxepetra \
                       -L$(top_builddir)/src -lnox $(BLAS_LIBS) \
 	              $(LIBS) $(FLIBS)

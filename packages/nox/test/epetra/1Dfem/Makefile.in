@@ -125,7 +125,9 @@ install_sh = @install_sh@
 
 INTERFACE = $(srcdir)/Interface.C
 
-noinst_PROGRAMS = testNonlinear testNonlinear_EpetraNew
+noinst_PROGRAMS = testNonlinear testNonlinear_EpetraNew \
+			testNonlinear_trans
+
 
 testNonlinear_SOURCES = \
                         $(INTERFACE) \
@@ -174,12 +176,35 @@ testNonlinear_EpetraNew_LDADD = \
                       -L$(top_builddir)/src -lnox $(BLAS_LIBS) \
 	              $(LIBS) $(FLIBS)
 
+
+testNonlinear_trans_SOURCES = \
+                        $(INTERFACE_EPETRANEW) \
+                        $(srcdir)/testNonlinear_trans.C
+
+
+testNonlinear_trans_DEPENDENCIES = \
+                             $(top_builddir)/src/libnox.a \
+                             $(top_builddir)/src-epetra/libnoxepetra.a
+
+
+testNonlinear_trans_CXXFLAGS = \
+                         -I$(top_srcdir)/src \
+                         -I$(top_srcdir)/src-epetra \
+                         -I$(top_srcdir)/test/utils \
+                         $(TRILINOS_CXXFLAGS)
+
+
+testNonlinear_trans_LDADD = \
+                      -L$(top_builddir)/src-epetra -lnoxepetra \
+                      -L$(top_builddir)/src -lnox $(BLAS_LIBS) \
+	              $(LIBS) $(FLIBS)
+
 subdir = test/epetra/1Dfem
 mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/NOX_Config.h
 CONFIG_CLEAN_FILES =
 noinst_PROGRAMS = testNonlinear$(EXEEXT) \
-	testNonlinear_EpetraNew$(EXEEXT)
+	testNonlinear_EpetraNew$(EXEEXT) testNonlinear_trans$(EXEEXT)
 PROGRAMS = $(noinst_PROGRAMS)
 
 am__objects_1 = testNonlinear-Interface.$(OBJEXT)
@@ -192,6 +217,11 @@ am_testNonlinear_EpetraNew_OBJECTS = $(am__objects_2) \
 	testNonlinear_EpetraNew-testNonlinear_EpetraNew.$(OBJEXT)
 testNonlinear_EpetraNew_OBJECTS = $(am_testNonlinear_EpetraNew_OBJECTS)
 testNonlinear_EpetraNew_LDFLAGS =
+am__objects_3 = testNonlinear_trans-Interface_EpetraNew.$(OBJEXT)
+am_testNonlinear_trans_OBJECTS = $(am__objects_3) \
+	testNonlinear_trans-testNonlinear_trans.$(OBJEXT)
+testNonlinear_trans_OBJECTS = $(am_testNonlinear_trans_OBJECTS)
+testNonlinear_trans_LDFLAGS =
 
 DEFS = @DEFS@
 DEFAULT_INCLUDES =  -I. -I$(srcdir) -I$(top_builddir)/src
@@ -203,7 +233,9 @@ am__depfiles_maybe = depfiles
 @AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/testNonlinear-Interface.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/testNonlinear-testNonlinear.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/testNonlinear_EpetraNew-Interface_EpetraNew.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/testNonlinear_EpetraNew-testNonlinear_EpetraNew.Po
+@AMDEP_TRUE@	./$(DEPDIR)/testNonlinear_EpetraNew-testNonlinear_EpetraNew.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/testNonlinear_trans-Interface_EpetraNew.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/testNonlinear_trans-testNonlinear_trans.Po
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
 CXXLD = $(CXX)
@@ -211,9 +243,10 @@ CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
 	-o $@
 CXXFLAGS = @CXXFLAGS@
 DIST_SOURCES = $(testNonlinear_SOURCES) \
-	$(testNonlinear_EpetraNew_SOURCES)
+	$(testNonlinear_EpetraNew_SOURCES) \
+	$(testNonlinear_trans_SOURCES)
 DIST_COMMON = Makefile.am Makefile.in
-SOURCES = $(testNonlinear_SOURCES) $(testNonlinear_EpetraNew_SOURCES)
+SOURCES = $(testNonlinear_SOURCES) $(testNonlinear_EpetraNew_SOURCES) $(testNonlinear_trans_SOURCES)
 
 all: all-am
 
@@ -239,6 +272,13 @@ testNonlinear_EpetraNew-testNonlinear_EpetraNew.$(OBJEXT): \
 testNonlinear_EpetraNew$(EXEEXT): $(testNonlinear_EpetraNew_OBJECTS) $(testNonlinear_EpetraNew_DEPENDENCIES) 
 	@rm -f testNonlinear_EpetraNew$(EXEEXT)
 	$(CXXLINK) $(testNonlinear_EpetraNew_LDFLAGS) $(testNonlinear_EpetraNew_OBJECTS) $(testNonlinear_EpetraNew_LDADD) $(LIBS)
+testNonlinear_trans-Interface_EpetraNew.$(OBJEXT): \
+	$(srcdir)/Interface_EpetraNew.C
+testNonlinear_trans-testNonlinear_trans.$(OBJEXT): \
+	$(srcdir)/testNonlinear_trans.C
+testNonlinear_trans$(EXEEXT): $(testNonlinear_trans_OBJECTS) $(testNonlinear_trans_DEPENDENCIES) 
+	@rm -f testNonlinear_trans$(EXEEXT)
+	$(CXXLINK) $(testNonlinear_trans_LDFLAGS) $(testNonlinear_trans_OBJECTS) $(testNonlinear_trans_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT) core *.core
@@ -250,6 +290,8 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/testNonlinear-testNonlinear.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/testNonlinear_EpetraNew-Interface_EpetraNew.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/testNonlinear_EpetraNew-testNonlinear_EpetraNew.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/testNonlinear_trans-Interface_EpetraNew.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/testNonlinear_trans-testNonlinear_trans.Po@am__quote@
 
 distclean-depend:
 	-rm -rf ./$(DEPDIR)
@@ -313,6 +355,30 @@ testNonlinear_EpetraNew-testNonlinear_EpetraNew.obj: $(srcdir)/testNonlinear_Epe
 @AMDEP_TRUE@	depfile='$(DEPDIR)/testNonlinear_EpetraNew-testNonlinear_EpetraNew.Po' tmpdepfile='$(DEPDIR)/testNonlinear_EpetraNew-testNonlinear_EpetraNew.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(testNonlinear_EpetraNew_CXXFLAGS) $(CXXFLAGS) -c -o testNonlinear_EpetraNew-testNonlinear_EpetraNew.obj `cygpath -w $(srcdir)/testNonlinear_EpetraNew.C`
+
+testNonlinear_trans-Interface_EpetraNew.o: $(srcdir)/Interface_EpetraNew.C
+@AMDEP_TRUE@	source='$(srcdir)/Interface_EpetraNew.C' object='testNonlinear_trans-Interface_EpetraNew.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/testNonlinear_trans-Interface_EpetraNew.Po' tmpdepfile='$(DEPDIR)/testNonlinear_trans-Interface_EpetraNew.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(testNonlinear_trans_CXXFLAGS) $(CXXFLAGS) -c -o testNonlinear_trans-Interface_EpetraNew.o `test -f '$(srcdir)/Interface_EpetraNew.C' || echo '$(srcdir)/'`$(srcdir)/Interface_EpetraNew.C
+
+testNonlinear_trans-Interface_EpetraNew.obj: $(srcdir)/Interface_EpetraNew.C
+@AMDEP_TRUE@	source='$(srcdir)/Interface_EpetraNew.C' object='testNonlinear_trans-Interface_EpetraNew.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/testNonlinear_trans-Interface_EpetraNew.Po' tmpdepfile='$(DEPDIR)/testNonlinear_trans-Interface_EpetraNew.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(testNonlinear_trans_CXXFLAGS) $(CXXFLAGS) -c -o testNonlinear_trans-Interface_EpetraNew.obj `cygpath -w $(srcdir)/Interface_EpetraNew.C`
+
+testNonlinear_trans-testNonlinear_trans.o: $(srcdir)/testNonlinear_trans.C
+@AMDEP_TRUE@	source='$(srcdir)/testNonlinear_trans.C' object='testNonlinear_trans-testNonlinear_trans.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/testNonlinear_trans-testNonlinear_trans.Po' tmpdepfile='$(DEPDIR)/testNonlinear_trans-testNonlinear_trans.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(testNonlinear_trans_CXXFLAGS) $(CXXFLAGS) -c -o testNonlinear_trans-testNonlinear_trans.o `test -f '$(srcdir)/testNonlinear_trans.C' || echo '$(srcdir)/'`$(srcdir)/testNonlinear_trans.C
+
+testNonlinear_trans-testNonlinear_trans.obj: $(srcdir)/testNonlinear_trans.C
+@AMDEP_TRUE@	source='$(srcdir)/testNonlinear_trans.C' object='testNonlinear_trans-testNonlinear_trans.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/testNonlinear_trans-testNonlinear_trans.Po' tmpdepfile='$(DEPDIR)/testNonlinear_trans-testNonlinear_trans.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(testNonlinear_trans_CXXFLAGS) $(CXXFLAGS) -c -o testNonlinear_trans-testNonlinear_trans.obj `cygpath -w $(srcdir)/testNonlinear_trans.C`
 CXXDEPMODE = @CXXDEPMODE@
 uninstall-info-am:
 

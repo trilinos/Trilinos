@@ -109,9 +109,10 @@ int main(int argc, char *argv[])
   // Get the vector from the Problem
   Epetra_Vector& soln = interface.getSolution();
 
-  // Initialize Solution
-  soln.PutScalar(1.0);
-  
+  // Set the PDE factor (for nonlinear forcing term).  This could be specified
+  // via user input.
+  interface.setPDEfactor(1000.0);
+
   // Begin Nonlinear Solver ************************************
 
   // Create the top level parameter list
@@ -241,11 +242,11 @@ int main(int argc, char *argv[])
 	cout << "Nonlinear solver failed to converge!" << endl;
   }
 
-  /*
+  //
   // Get the Epetra_Vector with the final solution from the solver
   const NOX::EpetraNew::Group& finalGroup = dynamic_cast<const NOX::EpetraNew::Group&>(solver.getSolutionGroup());
   const Epetra_Vector& finalSolution = (dynamic_cast<const NOX::Epetra::Vector&>(finalGroup.getX())).getEpetraVector();
-  */
+  //
 
   // End Nonlinear Solver **************************************
 
@@ -257,17 +258,17 @@ int main(int argc, char *argv[])
     cout << endl;
   }
 
-  /*
+  //
   // Print solution
   char file_name[25];
   FILE *ifp;
   int NumMyElements = soln.Map().NumMyElements();
   (void) sprintf(file_name, "output.%d",MyPID);
   ifp = fopen(file_name, "w");
-  for (i=0; i<NumMyElements; i++)
+  for (int i=0; i<NumMyElements; i++)
     fprintf(ifp, "%d  %E\n", soln.Map().MinMyGID()+i, finalSolution[i]);
   fclose(ifp);
-  */
+  //
 
 #ifdef HAVE_MPI
   MPI_Finalize();
