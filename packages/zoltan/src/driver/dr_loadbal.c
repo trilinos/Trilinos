@@ -37,6 +37,7 @@ static char *cvs_loadbal = "$Id$";
 #include "dr_const.h"
 #include "dr_err_const.h"
 #include "dr_loadbal_const.h"
+#include "dr_eval_const.h"
 #include "all_allo_const.h"
 
 /*
@@ -63,6 +64,7 @@ LB_EDGE_LIST_FN get_edge_list;
 int run_zoltan(int Proc, PROB_INFO_PTR prob, ELEM_INFO *elements[])
 {
 /* Local declarations. */
+  char *yo = "run_zoltan";
   struct LB_Struct *lb_obj;
 
   /* Variables returned by the load balancer */
@@ -81,6 +83,8 @@ int run_zoltan(int Proc, PROB_INFO_PTR prob, ELEM_INFO *elements[])
   int i;                         /* Loop index                               */
 
 /***************************** BEGIN EXECUTION ******************************/
+
+  DEBUG_TRACE_START(Proc, yo);
 
   LB_Set_Param(NULL, "DEBUG_MEMORY", "1");
 
@@ -152,9 +156,11 @@ int run_zoltan(int Proc, PROB_INFO_PTR prob, ELEM_INFO *elements[])
   }
 
   /* Evaluate the old balance */
-  if (lb_obj->Proc == 0) printf("\nBEFORE load balancing\n");
-  LB_Eval(lb_obj, 2, 0, 0, NULL, NULL, &i);
-
+  if (Debug_Driver > 0) {
+    if (lb_obj->Proc == 0) printf("\nBEFORE load balancing\n");
+    driver_eval();
+    LB_Eval(lb_obj, 2, 0, 0, NULL, NULL, &i);
+  }
 
   /*
    * call the load balancer
@@ -179,8 +185,11 @@ int run_zoltan(int Proc, PROB_INFO_PTR prob, ELEM_INFO *elements[])
   }
 
   /* Evaluate the new balance */
-  if (lb_obj->Proc == 0) printf("\nAFTER load balancing\n");
-  LB_Eval(lb_obj, 2, 0, 0, NULL, NULL, &i);
+  if (Debug_Driver > 0) {
+    if (lb_obj->Proc == 0) printf("\nAFTER load balancing\n");
+    driver_eval();
+    LB_Eval(lb_obj, 2, 0, 0, NULL, NULL, &i);
+  }
 
   /* Clean up */
   (void) LB_Free_Data(&import_gids, &import_lids, &import_procs,
@@ -190,6 +199,7 @@ int run_zoltan(int Proc, PROB_INFO_PTR prob, ELEM_INFO *elements[])
 
   LB_Memory_Stats();
 
+  DEBUG_TRACE_END(Proc, yo);
   return 1;
 
 }
@@ -343,7 +353,7 @@ void get_edge_list (void *data, LB_GID global_id, LB_LID local_id,
                    int get_ewgts, int *nbor_ewgts, int *ierr)
 {
   ELEM_INFO *elem;
-  int i, proc, local_elem;
+  int i, j, proc, local_elem;
 
   if (data == NULL) {
     *ierr = LB_FATAL;
@@ -355,22 +365,28 @@ void get_edge_list (void *data, LB_GID global_id, LB_LID local_id,
   /* get the processor number */
   MPI_Comm_rank(MPI_COMM_WORLD, &proc);
 
-  for (i = 0; i < elem[local_id].nadj; i++) {
+  j = 0;
+  for (i = 0; i < elem[local_id].adj_len; i++) {
+
+    /* Skip NULL adjacencies (sides that are not adjacent to another elem). */
+    if (elem[local_id].adj[i] == -1) continue;
+
     if (elem[local_id].adj_proc[i] == proc) {
       local_elem = elem[local_id].adj[i];
-      nbor_global_id[i] = elem[local_elem].globalID;
+      nbor_global_id[j] = elem[local_elem].globalID;
     }
     else { /* adjacent element on another processor */
-      nbor_global_id[i] = elem[local_id].adj[i];
+      nbor_global_id[j] = elem[local_id].adj[i];
     }
-    nbor_procs[i] = elem[local_id].adj_proc[i];
+    nbor_procs[j] = elem[local_id].adj_proc[i];
 
     if (get_ewgts) {
       if (elem[local_id].edge_wgt == NULL)
-        nbor_ewgts[i] = 1; /* uniform weights is default */
+        nbor_ewgts[j] = 1; /* uniform weights is default */
       else
-        nbor_ewgts[i] = (int) elem[local_id].edge_wgt[i];
+        nbor_ewgts[j] = (int) elem[local_id].edge_wgt[i];
     }
+    j++;
   }
 
   *ierr = LB_OK;

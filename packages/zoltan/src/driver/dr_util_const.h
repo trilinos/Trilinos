@@ -79,4 +79,7 @@ void sort_int (
   int ra[]
 );
 
+extern void sort2_index(int n, int ra[], int sa[], int indx[]);
+extern void safe_free(void **ptr);
+
 #endif /* _DR_UTIL_CONST_H_ */

@@ -35,6 +35,7 @@ static char *cvs_dr_util = "$Id$";
  *      find_max()
  *      find_inter()
  *      sort_int()
+ *      sort2_index()
  *+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
 
 /*****************************************************************************/
@@ -432,5 +433,78 @@ void sort_int(int n, int ra[])
       else j=ir+1;
     }
     ra[i]=rra;
+  }
+}
+/*****************************************************************************/
+/*****************************************************************************/
+/*****************************************************************************/
+void safe_free(void **ptr) {
+  if (*ptr != NULL) {
+    free(*ptr);
+    *ptr = NULL;
+  }
+}
+/*****************************************************************************/
+/*****************************************************************************/
+/*****************************************************************************/
+
+void sort2_index(int n, int ra[], int sa[], int indx[])
+
+/*
+*       Numerical Recipies in C source code
+*       modified to have first argument an integer array
+*
+*       Sorts the array ra[0,..,(n-1)] in ascending numerical order using
+*       heapsort algorithm.  Use array sa as secondary sort key; that is,
+*       if (ra[i] == ra[j]), then compare sa[i], sa[j] to determine order.
+*       Array ra is not reorganized.  An index array indx is built that
+*       gives the new order.
+*
+*/
+
+{
+  int   l, j, ir, i;
+  int   rra, irra;
+  int   ssa;
+
+  /*
+   *  No need to sort if one or fewer items.
+   */
+  if (n <= 1) return;
+
+  l=n >> 1;
+  ir=n-1;
+  for (;;) {
+    if (l > 0) {
+      rra=ra[indx[--l]];
+      ssa=sa[indx[l]];
+      irra = indx[l];
+    }
+    else {
+      rra=ra[indx[ir]];
+      ssa=sa[indx[ir]];
+      irra=indx[ir];
+     
+      indx[ir]=indx[0];
+      if (--ir == 0) {
+        indx[0]=irra;
+        return;
+      }
+    }
+    i=l;
+    j=(l << 1)+1;
+    while (j <= ir) {
+      if (j < ir && 
+          ((ra[indx[j]] <  ra[indx[j+1]]) || 
+           (ra[indx[j]] == ra[indx[j+1]] && sa[indx[j]] < sa[indx[j+1]])))
+        ++j;
+      if ((rra <  ra[indx[j]]) ||
+          (rra == ra[indx[j]] && ssa < sa[indx[j]])) {
+        indx[i] = indx[j];
+        j += (i=j)+1;
+      }
+      else j=ir+1;
+    }
+    indx[i]=irra;
   }
 }

@@ -78,11 +78,15 @@ int offset;
 
   /* now print the adjacencies */
   printf("\nElement adjacencies:\n");
-  printf("elem\tnadj\tadj,proc\n");
+  printf("elem\tnadj(adj_len)\tadj,proc\n");
   for (i = 0; i < Mesh.num_elems; i++) {
     printf("%d\t", elements[i].globalID);
-    printf("%d\t", elements[i].nadj);
-    for (j = 0; j < elements[i].nadj; j++) {
+    printf("%d(%d)\t", elements[i].nadj, elements[i].adj_len);
+    for (j = 0; j < elements[i].adj_len; j++) {
+
+      /* Skip NULL adjacencies (sides that are not adjacent to another elem). */
+      if (elements[i].adj[j] == -1) continue;
+
       if (elements[i].adj_proc[j] == Proc)
         elem = elements[elements[i].adj[j]].globalID;
       else
@@ -101,11 +105,12 @@ int offset;
   offset = 0;
   for (i = 0; i < Mesh.necmap; i++) {
     printf("Map %d:\n", Mesh.ecmap_id[i]);
-    printf("    elem   side   globalID\n");
+    printf("    elem   side   globalID  neighID\n");
     for (j = 0; j < Mesh.ecmap_cnt[i]; j++) {
       k = j + offset;
-      printf("    %d     %d     %d\n", Mesh.ecmap_elemids[k],
-           Mesh.ecmap_sideids[k], elements[Mesh.ecmap_elemids[k]].globalID);
+      printf("    %d     %d     %d    %d\n", Mesh.ecmap_elemids[k],
+           Mesh.ecmap_sideids[k], elements[Mesh.ecmap_elemids[k]].globalID,
+           Mesh.ecmap_neighids[k]);
     }
     offset += Mesh.ecmap_cnt[i];
   }
@@ -130,6 +135,7 @@ int output_results(int Proc,
  */
 {
   /* Local declarations. */
+  char  *yo = "output_results";
   char   par_out_fname[FILENAME_MAX+1], ctemp[FILENAME_MAX+1];
 
   int   *global_ids;
@@ -137,6 +143,8 @@ int output_results(int Proc,
 
   FILE  *fp;
 /***************************** BEGIN EXECUTION ******************************/
+
+  DEBUG_TRACE_START(Proc, yo);
 
   global_ids = (int *) malloc(Mesh.num_elems * sizeof(int));
   if (!global_ids) {
@@ -169,5 +177,6 @@ int output_results(int Proc,
   fclose(fp);
   free(global_ids);
 
+  DEBUG_TRACE_END(Proc, yo);
   return 1;
 }

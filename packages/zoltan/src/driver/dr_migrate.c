@@ -53,6 +53,7 @@ static char *cvs_migrate = "$Id$";
 #include "dr_util_const.h"
 #include "dr_output_const.h"
 #include "dr_elem_util_const.h"
+#include "dr_maps_const.h"
 
 /*
  *  PROTOTYPES for load-balancer interface functions.
@@ -104,8 +105,10 @@ int migrate_elements(
   int *exp_procs)
 {
 /* Local declarations. */
+char *yo = "migrate_elements";
 
 /***************************** BEGIN EXECUTION ******************************/
+  DEBUG_TRACE_START(Proc, yo);
 
   /*
    * register migration functions
@@ -146,6 +149,7 @@ int migrate_elements(
     return 0;
   }
 
+  DEBUG_TRACE_END(Proc, yo);
   return 1;
 
 }
@@ -241,7 +245,11 @@ ELEM_INFO_PTR elements = (ELEM_INFO_PTR) data;
 
   for (i = 0; i < num_export; i++) {
     exp_elem = export_local_ids[i];
-    for (j = 0; j < elements[exp_elem].nadj; j++) {
+    for (j = 0; j < elements[exp_elem].adj_len; j++) {
+
+      /* Skip NULL adjacencies (sides that are not adjacent to another elem). */
+      if (elements[exp_elem].adj[j] == -1) continue;
+
       /* Set change flag for adjacent local elements. */
       if (elements[exp_elem].adj_proc[j] == proc) {
         change[elements[exp_elem].adj[j]] = 1;
@@ -254,7 +262,11 @@ ELEM_INFO_PTR elements = (ELEM_INFO_PTR) data;
     if (change[i] == 0) continue;
 
     /* loop over marked element's adjacencies; look for ones that are moving */
-    for (j = 0; j < elements[i].nadj; j++) {
+    for (j = 0; j < elements[i].adj_len; j++) {
+
+      /* Skip NULL adjacencies (sides that are not adjacent to another elem). */
+      if (elements[i].adj[j] == -1) continue;
+
       if (elements[i].adj_proc[j] == proc) {
         /* adjacent element is local; check whether it is moving. */
         if ((new_proc = proc_ids[elements[i].adj[j]]) != proc) {
@@ -310,7 +322,11 @@ ELEM_INFO_PTR elements = (ELEM_INFO_PTR) data;
       }
       /* Change processor assignment in local element's adjacency list */
       bor_elem = Mesh.ecmap_elemids[offset];
-      for (k = 0; k < elements[bor_elem].nadj; k++) {
+      for (k = 0; k < elements[bor_elem].adj_len; k++) {
+
+        /* Skip NULL adjacencies (sides that are not adj to another elem). */
+        if (elements[bor_elem].adj[k] == -1) continue;
+
         if (elements[bor_elem].adj[k] == Mesh.ecmap_neighids[offset] &&
             elements[bor_elem].adj_proc[k] == Mesh.ecmap_id[i]) {
           elements[bor_elem].adj_proc[k] = recv_vec[offset];
@@ -346,11 +362,12 @@ void migrate_post_process(void *data, int num_import,
                                int *ierr)
 {
 ELEM_INFO *element = (ELEM_INFO *) data;
-int proc;
+int proc, num_proc;
 int i, j, k, last;
 int adj_elem;
 
   MPI_Comm_rank(MPI_COMM_WORLD, &proc);
+  MPI_Comm_size(MPI_COMM_WORLD, &num_proc);
 
   /* compact elements array, as the application expects the array to be dense */
   for (i = 0; i < New_Elem_Index_Size; i++) {
@@ -373,13 +390,17 @@ int adj_elem;
     /* Adjust adjacencies for local elements.  Off-processor adjacencies */
     /* don't matter here.                                                */
 
-    for (j = 0; j < element[i].nadj; j++) {
+    for (j = 0; j < element[i].adj_len; j++) {
+
+      /* Skip NULL adjacencies (sides that are not adjacent to another elem). */
+      if (element[i].adj[j] == -1) continue;
+
       adj_elem = element[i].adj[j];
 
       /* See whether adjacent element is local; if so, adjust its entry */
       /* for local element i.                                           */
       if (element[i].adj_proc[j] == proc) {
-        for (k = 0; k < element[adj_elem].nadj; k++) {
+        for (k = 0; k < element[adj_elem].adj_len; k++) {
           if (element[adj_elem].adj[k] == last &&
               element[adj_elem].adj_proc[k] == proc) {
             /* found adjacency entry for element last; change it to i */
@@ -392,6 +413,7 @@ int adj_elem;
     element[last].globalID = -1;
     element[last].border = 0;
     element[last].nadj = 0;
+    element[last].adj_len = 0;
     element[last].elem_blk = -1;
     element[last].cpu_wgt = 0;
     element[last].mem_wgt = 0;
@@ -404,6 +426,13 @@ int adj_elem;
 
   if (New_Elem_Index != NULL) free(New_Elem_Index);
   New_Elem_Index_Size = 0;
+
+  if (!build_elem_comm_maps(proc, element)) {
+    Gen_Error(0, "Fatal: error rebuilding elem comm maps");
+  }
+
+  if (Debug_Driver > 3)
+    print_distributed_mesh(proc, num_proc, element);
 }
 
 /*****************************************************************************/
@@ -414,8 +443,8 @@ int migrate_elem_size(void *data, int *ierr)
  * Function to return size of element information for a single element.
  */
 {
-int max_nadj = 0;            /* Max. number of adj. over all local elements.*/
-static int gmax_nadj = 0;    /* Max. number of adj. over all elements.      */
+int max_adj_len = 0;         /* Max. adj_len. over all local elements.      */
+static int gmax_adj_len = 0; /* Max. adj_len. over all elements.            */
 int max_nnodes = 0;          /* Max. num of nodes/elem over all local elems.*/
 static int gmax_nnodes = 0;  /* Max. num of nodes/elem over all elems.      */
 int i, size;
@@ -424,15 +453,16 @@ ELEM_INFO *elements = (ELEM_INFO *) data;
   *ierr = LB_OK;
 
   /* 
-   * Compute global max of nadj and nnodes.  Communication package requires
+   * Compute global max of adj_len and nnodes.  Communication package requires
    * all elements' data to have the same size.
    */
 
-  if (gmax_nadj == 0) {
+  if (gmax_adj_len == 0) {
     for (i = 0; i < Mesh.num_elems; i++) {
-      if (elements[i].nadj > max_nadj) max_nadj = elements[i].nadj;
+      if (elements[i].adj_len > max_adj_len) max_adj_len = elements[i].adj_len;
     }
-    MPI_Allreduce(&max_nadj, &gmax_nadj, 1, MPI_INT, MPI_MAX, MPI_COMM_WORLD);
+    MPI_Allreduce(&max_adj_len, &gmax_adj_len, 1, MPI_INT, MPI_MAX,
+                  MPI_COMM_WORLD);
   }
 
   if (gmax_nnodes == 0) {
@@ -456,14 +486,14 @@ ELEM_INFO *elements = (ELEM_INFO *) data;
     size += gmax_nnodes * sizeof(int);
 
   /* Add space for adjacency info (elements[].adj and elements[].adj_proc). */
-  size += gmax_nadj * 2 * sizeof(int);
+  size += gmax_adj_len * 2 * sizeof(int);
 
   /* Add space to correct alignment so casts work in (un)packing. */
   size += pad_for_alignment(size);
 
   /* Assume if one element has edge wgts, all elements have edge wgts. */
   if (Use_Edge_Wgts)
-    size += gmax_nadj * sizeof(float);
+    size += gmax_adj_len * sizeof(float);
 
   /* Add space for coordinate info */
   size += gmax_nnodes * Mesh.num_dims * sizeof(float);
@@ -526,8 +556,8 @@ void migrate_pack_elem(void *data, LB_GID elem_gid, LB_LID elem_lid,
 
   /* copy the adjacency info */
   /* send globalID for all adjacencies */
-  for (i =  0; i < current_elem->nadj; i++) {
-    if (current_elem->adj_proc[i] == proc) 
+  for (i =  0; i < current_elem->adj_len; i++) {
+    if (current_elem->adj[i] != -1 && current_elem->adj_proc[i] == proc) 
       *buf_int = New_Elem_Index[current_elem->adj[i]];
     else
       *buf_int = current_elem->adj[i];
@@ -535,7 +565,7 @@ void migrate_pack_elem(void *data, LB_GID elem_gid, LB_LID elem_lid,
     *buf_int = current_elem->adj_proc[i];
     buf_int++;
   }
-  size += current_elem->nadj * 2 * sizeof(int);
+  size += current_elem->adj_len * 2 * sizeof(int);
 
   /*
    * copy the allocated float fields for this element.
@@ -548,11 +578,11 @@ void migrate_pack_elem(void *data, LB_GID elem_gid, LB_LID elem_lid,
 
   /* copy the edge_wgt data */
   if (Use_Edge_Wgts) {
-    for (i = 0; i < current_elem->nadj; i++) {
+    for (i = 0; i < current_elem->adj_len; i++) {
       *buf_float = current_elem->edge_wgt[i];
       buf_float++;
     }
-    size += current_elem->nadj * sizeof(float);
+    size += current_elem->adj_len * sizeof(float);
   }
 
   /* copy coordinate data */
@@ -675,23 +705,23 @@ void migrate_unpack_elem(void *data, LB_GID elem_gid, int elem_data_size,
 
   /* copy the adjacency info */
   /* globalIDs are received; convert to local IDs when adj elem is local */
-  current_elem->adj      = (int *) malloc(current_elem->nadj * sizeof(int));
-  current_elem->adj_proc = (int *) malloc(current_elem->nadj * sizeof(int));
+  current_elem->adj      = (int *) malloc(current_elem->adj_len * sizeof(int));
+  current_elem->adj_proc = (int *) malloc(current_elem->adj_len * sizeof(int));
   if (current_elem->adj == NULL || current_elem->adj_proc == NULL) {
     Gen_Error(0, "fatal: insufficient memory");
     *ierr = LB_MEMERR;
     return;
   }
-  for (i =  0; i < current_elem->nadj; i++) {
+  for (i =  0; i < current_elem->adj_len; i++) {
     current_elem->adj[i] = *buf_int;
     buf_int++;
     current_elem->adj_proc[i] = *buf_int;
     buf_int++;
-    if (current_elem->adj_proc[i] == proc) 
+    if (current_elem->adj[i] != -1 && current_elem->adj_proc[i] == proc) 
       current_elem->adj[i] = in_list(current_elem->adj[i], 
                                      New_Elem_Index_Size, New_Elem_Index);
   }
-  size += current_elem->nadj * 2 * sizeof(int);
+  size += current_elem->adj_len * 2 * sizeof(int);
 
   /*
    * copy the allocated float fields for this element.
@@ -703,17 +733,18 @@ void migrate_unpack_elem(void *data, LB_GID elem_gid, int elem_data_size,
 
   /* copy the edge_wgt data */
   if (Use_Edge_Wgts) {
-    current_elem->edge_wgt = (float *) malloc(current_elem->nadj*sizeof(float));
+    current_elem->edge_wgt = (float *) malloc(current_elem->adj_len 
+                                            * sizeof(float));
     if (current_elem->edge_wgt == NULL) {
       Gen_Error(0, "fatal: insufficient memory");
       *ierr = LB_MEMERR;
       return;
     }
-    for (i = 0; i < current_elem->nadj; i++) {
+    for (i = 0; i < current_elem->adj_len; i++) {
       current_elem->edge_wgt[i] = *buf_float;
       buf_float++;
     }
-    size += current_elem->nadj * sizeof(float);
+    size += current_elem->adj_len * sizeof(float);
   }
 
   /* copy coordinate data */

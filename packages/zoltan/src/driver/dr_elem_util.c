@@ -23,21 +23,12 @@ static char *cvs_dr_elem_util = "$Id$";
 #include <limits.h>
 #include "dr_const.h"
 #include "dr_elem_util_const.h"
+#include "dr_util_const.h"
 
 /*++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
  * Utility functions for element initialization, etc.
  *+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
 
-static void safe_free(void **ptr) {
-  if (*ptr != NULL) {
-    free(*ptr);
-    *ptr = NULL;
-  }
-}
-
-/*****************************************************************************/
-/*****************************************************************************/
-/*****************************************************************************/
 void initialize_element(ELEM_INFO *elem)
 {
 /*
@@ -80,6 +71,7 @@ int j;
   elem->globalID = -1;
   elem->border = 0;
   elem->nadj = 0;
+  elem->adj_len = 0;
   elem->elem_blk = -1;
   elem->cpu_wgt = 0;
   elem->mem_wgt = 0;

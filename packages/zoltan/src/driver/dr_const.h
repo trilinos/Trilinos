@@ -21,6 +21,8 @@ static char *cvs_dr_const_id = "$Id$";
 #endif
 
 
+#include <stdio.h>
+#include <stdlib.h>
 #include "lbi_const.h"
 
 /*****************************************************************************
@@ -57,7 +59,13 @@ struct Element_Description
                                  is stored. */
   int     *connect;	/* list of nodes that make up this element, the node
 			   numbers in this list are global and not local    */
-  int     *adj;		/* list of adjacent elements */
+  int     *adj;		/* list of adjacent elements .
+                           For Nemesis input, the list is ordered by
+                           side number, to encode side-number info needed to
+                           rebuild communication maps.  Value -1 represents 
+                           sides with no neighboring element (e.g., along mesh
+                           boundaries).  Chaco doesn't have "sides," so the 
+                           ordering is irrelevent for Chaco input. */
   int     *adj_proc;	/* list of processors for adjacent elements */
   float   *edge_wgt;	/* edge weights for adjacent elements */
   int      nadj;	/* number of entries in adj */
@@ -137,5 +145,13 @@ typedef struct Problem_Description  PROB_INFO;
 typedef struct Problem_Description *PROB_INFO_PTR;
 
 extern void print_input_info(FILE *, int, PROB_INFO_PTR);
+
+extern int Debug_Driver;
+#define DEBUG_TRACE_START(proc,yo) \
+  if ((proc) == 0 && Debug_Driver > 1) \
+    printf("DRIVER ENTERING %s\n", yo);
+#define DEBUG_TRACE_END(proc,yo) \
+  if ((proc) == 0 && Debug_Driver > 1) \
+    printf("DRIVER LEAVING %s\n", yo);
 
 #endif /* _DR_CONST_H */
