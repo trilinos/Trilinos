@@ -157,7 +157,8 @@ int main(int argc, char *argv[]) {
 
   // initialize the random number generator
 
-  srandom1((unsigned int)1);
+  int ml_one = 1;
+  ML_srandom1(&ml_one);
 
   // ===================== //
   // create linear problem //
@@ -178,7 +179,9 @@ int main(int argc, char *argv[]) {
 
   PrintLine();
 
-  TestMultiLevelPreconditioner("no defaults", MLList, *Problem, 
+  char mystring[80];
+  strcpy(mystring,"no defaults");
+  TestMultiLevelPreconditioner(mystring, MLList, *Problem, 
                                TotalErrorResidual, TotalErrorExactSol );
 
   // ====================== //
@@ -188,7 +191,8 @@ int main(int argc, char *argv[]) {
   PrintLine();
 
   ML_Epetra::SetDefaults("DD",MLList);
-  TestMultiLevelPreconditioner("DD", MLList, *Problem, 
+  strcpy(mystring,"DD");
+  TestMultiLevelPreconditioner(mystring, MLList, *Problem, 
                                TotalErrorResidual, TotalErrorExactSol );
 
   // ========================================== //
@@ -199,7 +203,7 @@ int main(int argc, char *argv[]) {
 
   ML_Epetra::SetDefaults("DD",MLList);
   MLList.set("aggregation: local aggregates", 16);
-  TestMultiLevelPreconditioner("DD", MLList, *Problem, 
+  TestMultiLevelPreconditioner(mystring, MLList, *Problem, 
                                TotalErrorResidual, TotalErrorExactSol );
 
   // ========================= //
@@ -209,7 +213,8 @@ int main(int argc, char *argv[]) {
   PrintLine();
 
   ML_Epetra::SetDefaults("DD-ML",MLList);
-  TestMultiLevelPreconditioner("DD-ML", MLList, *Problem, 
+  strcpy(mystring,"DD-ML");
+  TestMultiLevelPreconditioner(mystring, MLList, *Problem, 
                                TotalErrorResidual, TotalErrorExactSol );
 
   // ========================= //
@@ -221,7 +226,7 @@ int main(int argc, char *argv[]) {
   ML_Epetra::SetDefaults("DD-ML",MLList);
   MLList.set("aggregation: nodes per aggregate (level 0)", 64);
   MLList.set("aggregation: nodes per aggregate (level 1)", 27);
-  TestMultiLevelPreconditioner("DD-ML", MLList, *Problem, 
+  TestMultiLevelPreconditioner(mystring, MLList, *Problem, 
                                TotalErrorResidual, TotalErrorExactSol );
 
   // ===================== //
