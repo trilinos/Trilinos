@@ -34,7 +34,6 @@ int main(int argc, char *argv[])
   int  my_col;
   int matrix_size;
   int nprocs_row;
-  bool zeroset=false;
 
   double mflops;
 
@@ -44,13 +43,11 @@ int main(int argc, char *argv[])
   static int buf[4];
   int nrhs;
 
-  int has_global_indices, option;
-  int i, j, m, mp;
+  int i, m;
   int k;
   int l;
   
   int mlen;   // Message length for input data
-  int ione = 1;
 
   int ierror;
 
@@ -59,8 +56,6 @@ int main(int argc, char *argv[])
   unsigned int seed= 10;
 
   int num_my_length;
-
-  double time;
 
   double secs;
 
@@ -253,7 +248,7 @@ int main(int argc, char *argv[])
 
       for (k= 0; k < matrix_size; k++) {
 
-        temp4[k];
+        temp4[k]=0.;
         rhs[k]=0. ;
       }
 
@@ -288,10 +283,6 @@ int main(int argc, char *argv[])
     if( comm.MyPID() == 0 )
              cout << " ****   Beginning Matrix Solve   ****" << endl;
 
-    //  Set up Timer
-
-    Epetra_Time timer(comm);
-
      solver.FactorSolve(&A,
 		        my_rows,
 		        my_cols,
@@ -300,7 +291,6 @@ int main(int argc, char *argv[])
                         &nrhs,
 		        &secs);
 
-     double elapsed_time = timer.ElapsedTime();
 
 
       if( comm.MyPID() == 0)   {
