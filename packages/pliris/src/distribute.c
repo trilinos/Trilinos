@@ -116,7 +116,7 @@ void distmat_(
     /* Distribute the RHS per processor */
 
     *my_rhs = *nrhs / *nprocsr;
-    if (*my_first_col < *nrhs % (*nprocsr)) ++(*my_rhs);
+    if (*my_col < *nrhs % (*nprocsr)) ++(*my_rhs);
 
 
 
