@@ -31,6 +31,8 @@ int power_method(bool TransA, Epetra_VbrMatrix& A,
 
 int checkMergeRedundantEntries(Epetra_Comm& comm, bool verbose);
 
+int checkExtractMyRowCopy(Epetra_Comm& comm, bool verbose);
+
 int main(int argc, char *argv[])
 {
   int ierr = 0, i, j, forierr = 0;
@@ -476,6 +478,8 @@ int main(int argc, char *argv[])
 
   EPETRA_TEST_ERR( checkMergeRedundantEntries(Comm, verbose1), ierr);
 
+  EPETRA_TEST_ERR( checkExtractMyRowCopy(Comm, verbose1), ierr);
+
 #ifdef EPETRA_MPI
   MPI_Finalize() ;
 #endif
@@ -874,8 +878,6 @@ int checkMergeRedundantEntries(Epetra_Comm& comm, bool verbose)
   int RowDim;
   int** BlockIndices = new int*[numMyRows];
   Epetra_SerialDenseMatrix** Values;
-  double* valCopy;
-  int* indicesCopy;
   Epetra_VbrMatrix Aview(View, map, numMyRows);
 
   for(i=myFirstRow; i<=myLastRow; ++i) {
@@ -917,15 +919,6 @@ int checkMergeRedundantEntries(Epetra_Comm& comm, bool verbose)
 							 BlockIndices[i-myFirstRow],
 							 Values), ierr);
 
-    valCopy = new double[numBlockEntries*elemSize*elemSize];
-    indicesCopy = new int[numBlockEntries*elemSize*elemSize];
-    int checkLen;
-    int myPointRow = (i-myFirstRow)*elemSize + 1;
-    EPETRA_TEST_ERR( Aview.ExtractMyRowCopy(myPointRow,
-					    numBlockEntries*elemSize*elemSize,
-					    checkLen,
-					    valCopy, indicesCopy), ierr);
-
     if (numMyRows != numBlockEntries) return(-1);
     if (RowDim != elemSize) return(-2);
     for(j=0; j<numBlockEntries; ++j) {
@@ -937,8 +930,6 @@ int checkMergeRedundantEntries(Epetra_Comm& comm, bool verbose)
     }
     
     delete [] BlockIndices[i-myFirstRow];
-    delete [] valCopy;
-    delete [] indicesCopy;
   }
 
   if (verbose&&localProc==0) {
@@ -951,6 +942,97 @@ int checkMergeRedundantEntries(Epetra_Comm& comm, bool verbose)
 
   delete [] BlockIndices;
   delete [] myCols;
+
+  return(0);
+}
+
+int checkExtractMyRowCopy(Epetra_Comm& comm, bool verbose)
+{
+  int numProcs = comm.NumProc();
+  int localProc = comm.MyPID();
+
+  int myFirstRow = localProc*3;
+  int myLastRow = myFirstRow+2;
+  int numMyRows = myLastRow - myFirstRow + 1;
+  int numGlobalRows = numProcs*numMyRows;
+  int i,j, ierr;
+
+  int numCols = numMyRows;
+  int* myCols = new int[numCols];
+
+  int col = myFirstRow;
+  for(i=0; i<numCols; ++i) {
+    myCols[i] = col++;
+    if (col > myLastRow) col = myFirstRow;
+  }
+
+  int elemSize = 2;
+  int indexBase = 0;
+
+  Epetra_BlockMap map(numGlobalRows, numMyRows,
+		      elemSize, indexBase, comm);
+
+  Epetra_VbrMatrix A(Copy, map, numCols);
+
+  double* coef = new double[elemSize*elemSize];
+
+  for(i=myFirstRow; i<=myLastRow; ++i) {
+    int myPointRow = i*elemSize;
+
+    //The coefficients need to be laid out in column-major order. i.e., the
+    //coefficients in a column occur contiguously.
+    for(int ii=0; ii<elemSize; ++ii) {
+      for(int jj=0; jj<elemSize; ++jj) {
+	double val = (myPointRow+ii)*1.0;
+	coef[ii+elemSize*jj] = val;
+      }
+    }
+
+    EPETRA_TEST_ERR( A.BeginInsertGlobalValues(i, numCols, myCols), ierr);
+
+    for(j=0; j<numCols; ++j) {
+      EPETRA_TEST_ERR( A.SubmitBlockEntry(coef, elemSize,
+					  elemSize, elemSize), ierr);
+    }
+
+    EPETRA_TEST_ERR( A.EndSubmitEntries(), ierr);
+  }
+
+  EPETRA_TEST_ERR( A.TransformToLocal(), ierr);
+
+  delete [] coef;
+  delete [] myCols;
+
+  Epetra_SerialDenseMatrix** blockEntries;
+  int len = elemSize*numCols, checkLen;
+  double* values = new double[len];
+  int* indices = new int[len];
+  int RowDim, numBlockEntries, numIndices;
+
+  for(i=myFirstRow; i<=myLastRow; ++i) {
+    EPETRA_TEST_ERR( A.ExtractGlobalBlockRowPointers(i, numMyRows,
+						     RowDim, numBlockEntries,
+						     indices,
+						     blockEntries), ierr);
+    if (numMyRows != numBlockEntries) return(-1);
+    if (RowDim != elemSize) return(-2);
+
+    int myPointRow = i*elemSize - myFirstRow*elemSize;
+    int ii,jj;
+    for(ii=0; ii<elemSize; ++ii) {
+      EPETRA_TEST_ERR( A.ExtractMyRowCopy(myPointRow+ii, len,
+					  checkLen, values, indices), ierr);
+      if (len != checkLen) return(-3);
+
+      double val = (i*elemSize+ii)*1.0;
+      double blockvalue = blockEntries[0]->A()[ii];
+
+      for(jj=0; jj<len; ++jj) {
+	if (values[jj] != val) return(-4);
+	if (values[jj] != blockvalue) return(-5);
+      }
+    }
+  }
 
   return(0);
 }

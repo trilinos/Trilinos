@@ -1190,8 +1190,8 @@ int Epetra_VbrMatrix::ExtractMyRowCopy(int MyRow,
     int ColDim = ValBlocks[i]->N();
     NumEntries += ColDim;
     if (NumEntries>Length) EPETRA_CHK_ERR(-3); // Not enough space
-    double * A = ValBlocks[i]->A(); // Point to first element in row
     int LDA = ValBlocks[i]->LDA();
+    double * A = ValBlocks[i]->A()+BlockOffset; // Point to first element in row
     int Index = ColFirstPointInElementList[BlockIndices[i]];
     for (int j=0; j < ColDim; j++) {
       *Values++ = *A;
