@@ -472,21 +472,16 @@ int VECTOR_getrows(ML_Operator *mat_in, int N_requested_rows, int requested_rows
 /* allocated_space  On input, indicates the space available in       */
 /*********************************************************************/
 
-int VBR_cnst_blk_getrows(ML_Operator *data, int N_requested_rows, int requested_rows[],
+int VBR_cnst_blk_getrows(ML_Operator *Amat_in, int N_requested_rows, int requested_rows[],
    int allocated_space, int columns[], double values[], int row_lengths[])
 {
    struct ML_vbrdata *input_matrix;
    int blk_row, count, N_rows, N_cols, row_offset, i, j, ii, start, k;
    int *cpntr, *bindx, *rpntr, *indx, *bpntr, step, row;
    double *val;
-   /* Want to get rid of all references to external functions, but we 
-      are not finished with this one yet. 
-   ML_Operator *Amat_in;
 
-   Amat_in = (ML_Operator *) data;
+
    input_matrix = (struct ML_vbrdata *) ML_Get_MyGetrowData(Amat_in);
-   */
-   input_matrix = (struct ML_vbrdata *) data;
    bindx  = input_matrix->bindx;
    val    = input_matrix->val;
    rpntr  = input_matrix->rpntr;

@@ -6120,10 +6120,10 @@ int ML_build_ggb(ML *ml, void *data)
   csr_data->values  =  rap;
 
   if (ml_ggb->comm->ML_mypid == 0)
-    ML_Operator_Set_ApplyFuncData( &(ml_ggb->Amat[0]), Ncols, Ncols, ML_EMPTY, csr_data,
+    ML_Operator_Set_ApplyFuncData( &(ml_ggb->Amat[0]), Ncols, Ncols, csr_data,
 				   Ncols, NULL, 0);
   else 
-    ML_Operator_Set_ApplyFuncData( &(ml_ggb->Amat[0]), 0, 0, ML_EMPTY, csr_data,
+    ML_Operator_Set_ApplyFuncData( &(ml_ggb->Amat[0]), 0, 0, csr_data,
 				   0, NULL, 0);
   
   
