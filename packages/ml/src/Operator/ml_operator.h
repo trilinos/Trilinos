@@ -139,6 +139,18 @@ struct amalg_drop {
    void                 *vblock_data;  /**< holds data structure aggr_vblock */
 };
 
+/* -------------------------------------------------------------------- */
+/*  This structure is used to implicitly scale a matrix. The idea is to wrap 
+    the getrow() of the original matrix such that it handles the blocking
+    and the dropping.                                                   */ 
+/* -------------------------------------------------------------------- */
+
+struct ml_matscale {
+  ML_Operator *Amat;
+  double      scalar;
+  int         destroy_child;
+};
+
 /* ******************************************************************** */
 /* ******************************************************************** */
 /*      User Interface Proto-types                                      */
@@ -219,6 +231,17 @@ extern int ML_Operator_Check_Getrow(ML_Operator *, int, char*);
 extern double ML_Operator_MaxNorm(ML_Operator *matrix, int divide_diag);
 extern int ML_Operator_Print(ML_Operator *matrix, const char label[]);
 extern int ML_Operator_ComputeNumNzs(ML_Operator *matrix);
+extern int ML_implicitscale_Getrow(ML_Operator *data, int N_requested_rows, 
+				   int requested_rows[], int allocated_space, 
+				   int columns[], double values[], 
+				   int row_lengths[]);
+extern int ML_implicitscale_Matvec(ML_Operator *Amat_in, int ilen, double p[], 
+				   int olen, double ap[]);
+extern ML_Operator *ML_Operator_ImplicitlyScale(ML_Operator *Amat, 
+						double scalar,
+						int OnDestroy_FreeChild);
+extern void ML_implicitscale_Destroy(void *data);
+
 
 extern int ML_Operator_AmalgamateAndDropWeak(ML_Operator *Amat, int block_size, 
                double drop_tolerance);

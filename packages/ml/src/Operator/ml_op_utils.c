@@ -1251,6 +1251,76 @@ int ML_Operator_Getrow_Diag(ML_Operator *Amat, double **diagonal)
    ML_DVector_GetDataPtr( Amat->diagonal, diagonal);
    return 0;
 }
+
+/*******************************************************************
+ *  Take an ML_Operator and make a new copy of its data corresponding
+ *  to a scaled ML_Operator. 
+ *******************************************************************/
+ML_Operator *ML_Operator_ExplicitlyScale(ML_Operator *matrix,
+					 double scalar)
+{
+  int i, k, Nrows, Nnz, allocated = 0, *columns = NULL, row_length;
+  int *row_ptr, *col_ptr;
+  double *values = NULL;
+  double  *val_ptr;
+  struct ML_CSR_MSRdata *temp;
+  ML_Operator *new_matrix;
+
+  /* first count how many nonzeros are in the old matrix */
+
+  Nnz = 0;
+  if (matrix->getrow == NULL) return(NULL);
+  Nrows = matrix->getrow->Nrows;
+
+  for (i = 0 ; i < Nrows; i++) {
+    ML_get_matrix_row(matrix, 1, &i, &allocated, &columns, &values,
+                        &row_length, 0);
+    Nnz += row_length;
+  }
+
+  /* allocate space */
+
+  row_ptr = (int   *) ML_allocate(sizeof(int  )*(Nrows + 1));
+  col_ptr = (int   *) ML_allocate(sizeof(int  )*(Nnz + 1));
+  val_ptr = (double *) ML_allocate(sizeof(double)*(Nnz + 1));
+  temp    = (struct ML_CSR_MSRdata *) ML_allocate(sizeof(struct ML_CSR_MSRdata));
+  
+  /* getrow everything and scale it */
+
+   row_ptr[0] = 0;
+   Nnz = 0;
+   for (i = 0 ; i < Nrows; i++) {
+     ML_get_matrix_row(matrix, 1, &i, &allocated, &columns, &values,
+		       &row_length, 0);
+     for (k = 0; k < row_length; k++) {
+         val_ptr[Nnz  ] = scalar*values[k];
+         col_ptr[Nnz++] = columns[k];
+     }
+     row_ptr[i+1] = Nnz;
+   }
+   temp->rowptr  = row_ptr;
+   temp->columns = col_ptr;
+   temp->values  = val_ptr;
+
+
+   /* Get rid of the old data pointer */
+
+   new_matrix = ML_Operator_Create(matrix->comm);
+   //   ML_Operator_Init(new_matrix, matrix->comm);
+
+   ML_Operator_Set_ApplyFuncData(new_matrix,matrix->invec_leng, 
+				 matrix->outvec_leng,temp,
+				 matrix->matvec->Nrows, CSR_matvec,
+				 matrix->from_an_ml_operator);
+   ML_Operator_Set_Getrow(new_matrix,matrix->getrow->Nrows,CSR_getrow);
+   ML_CommInfoOP_Clone(&(new_matrix->getrow->pre_comm),matrix->getrow->pre_comm);
+   new_matrix->data_destroy   = ML_CSR_MSRdata_Destroy;
+   if (values  != NULL) ML_free(values);
+   if (columns != NULL) ML_free(columns);
+
+   return new_matrix;
+}
+
 /*******************************************************************
  *  Take an ML_Operator and using getrow() make a new copy of the
  *  matrix in CSR format using single precision numbers. Then,
@@ -1331,6 +1401,7 @@ int ML_Operator_ChangeToSinglePrecision(ML_Operator *matrix)
 
    return 0;
 }
+
 int ML_Operator_ChangeToChar(ML_Operator *matrix)
 {
   int i, k, Nrows, Nnz, allocated = 0, *columns = NULL, row_length;

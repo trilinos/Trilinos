@@ -28,6 +28,9 @@ extern int ML_Compute_Coarse_Bdry(ML *ml_handle, int level, int size,
 extern int ML_Mdfy_Prolongator_DirBdry(ML *ml_handle, int level2, int size,
      int fine_size );
 
+extern ML_Operator *ML_Operator_ExplicitlyScale(ML_Operator *matrix,
+					 double scalar);
+
 extern int ML_Operator_ChangeToSinglePrecision(ML_Operator *matrix);
 extern int ML_Operator_ChangeToChar(ML_Operator *matrix);
 extern int ML_Operator_ImplicitTranspose(ML_Operator *Rmat, 

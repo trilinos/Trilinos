@@ -925,6 +925,54 @@ int ML_amalg_drop_getrow(ML_Operator *data, int N_requested_rows, int requested_
 }
 
 
+/* ******************************************************************** */
+/* Getrow function that is used to scale matrix elements by a scalar.   */
+/* ML_Operator_ImplicitlyScaleMatrix() was previously called to         */
+/* properly set up the data structure (data).                           */
+/* ******************************************************************** */
+
+
+int ML_implicitscale_Getrow(ML_Operator *data, int N_requested_rows, 
+			       int requested_rows[], int allocated_space, 
+			       int columns[], double values[], 
+			       int row_lengths[])
+{
+   struct ml_matscale *temp;
+   double scalar;
+   int    i, status = 1, size = 0;
+ 
+   if (N_requested_rows > 1) {
+      printf("ML_implicitmatscale_getrow: Not implemented for > 1 row at a time\n");
+      exit(1);
+   }
+   temp = (struct ml_matscale *) ML_Get_MyGetrowData(data);
+   scalar = temp->scalar;
+   status = ML_Operator_Getrow(temp->Amat, N_requested_rows, requested_rows,
+			       allocated_space, columns,
+			       values, &size );
+   if (status) {
+     for (i = 0; i < size; i++) values[i]*= scalar;
+     row_lengths[0] = size;
+   }
+   return(status);
+}
+
+int ML_implicitscale_Matvec(ML_Operator *Amat_in, int ilen, double p[], 
+			    int olen, double ap[])
+{
+  struct ml_matscale *temp;
+  double scalar;
+  int    status = 1, i;
+
+  temp = (struct ml_matscale *) ML_Get_MyGetrowData(Amat_in);
+  scalar = temp->scalar;
+  status = ML_Operator_Apply(temp->Amat, ilen, p, olen, ap);
+  for (i = 0; i < olen; i++) ap[i] *= scalar;
+
+  return(status);
+}
+
+
 
 /* ******************************************************************** */
 /* Restores a matrix that has been modified via                         */
@@ -1153,6 +1201,52 @@ int ML_Operator_AmalgamateAndDropWeak(ML_Operator *Amat, int block_size,
      }
   }
   return 0;
+}
+   
+/* ******************************************************************** */
+/* Modify matrix so that it uses a getrow wrapper that will effectively */
+/* scale the matrix.                                                    */
+/* ******************************************************************** */
+
+ML_Operator *ML_Operator_ImplicitlyScale(ML_Operator *Amat, double scalar,
+				int OnDestroy_FreeChild)
+{
+  ML_Operator *matrix;
+  struct ml_matscale *new_data;
+
+
+  matrix = ML_Operator_Create(Amat->comm);
+
+  new_data = (struct ml_matscale *) ML_allocate( sizeof(struct ml_matscale));
+  if (new_data == NULL) {
+    printf("ML_Operator_ImplicitlyScale: out of space\n");
+    return NULL;
+    exit(1);
+  }
+  new_data->Amat          = Amat;
+  new_data->scalar        = scalar;
+  new_data->destroy_child = 0;
+  ML_Operator_Set_ApplyFuncData(matrix,Amat->invec_leng, 
+				Amat->outvec_leng,new_data,
+				Amat->matvec->Nrows, ML_implicitscale_Matvec,
+				Amat->from_an_ml_operator);
+
+
+  ML_Operator_Set_Getrow(matrix,Amat->getrow->Nrows,ML_implicitscale_Getrow);
+  matrix->data_destroy   = ML_implicitscale_Destroy;
+  if (OnDestroy_FreeChild) new_data->destroy_child = 1;
+
+  return matrix;
+}
+void ML_implicitscale_Destroy(void *data)
+{
+   struct ml_matscale *temp;
+
+   temp = (struct ml_matscale *) data;
+   if (temp != NULL) {
+     if (temp->destroy_child) ML_Operator_Destroy( &(temp->Amat));
+      ML_free(temp);
+   }
 }
 
 
@@ -1633,21 +1727,27 @@ int ML_Operator_MoveFromHierarchyAndClean(ML_Operator *newmat,
 {
   /* ML_1Level *ptr1, *ptr2; */
 
+  ML_Operator_Clean(newmat);
   memcpy(newmat,hier, sizeof(struct ML_Operator_Struct));
   hier->label = NULL;
   hier->to    = NULL;
   hier->from  = NULL;
   hier->bc    = NULL;
+  hier->data  = NULL;
+  hier->data_destroy = NULL;
+  hier->matvec = NULL;
+  hier->getrow = NULL;
+  hier->diagonal = NULL;
+  hier->sub_matrix = NULL;
+  hier->subspace = NULL;
   ML_Operator_Clean(hier);
   ML_Operator_Init(hier,newmat->comm);
   hier->from = newmat->from;
   hier->to   = newmat->to;
   hier->label= newmat->label;
-  hier->bc   = newmat->bc;
   newmat->label = NULL;
   newmat->to    = NULL;
   newmat->from  = NULL;
-  newmat->bc    = NULL;
   return 0;
 }
 
