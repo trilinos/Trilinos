@@ -99,9 +99,11 @@
 #include "Problem_Interface.H" // Interface file to NOX
 #include "Brusselator.H"              
 
+#ifdef HAVE_MPI
 #ifdef HAVE_NOX_EPETRAEXT
 // Comment out following line for usual implicit time stepping on all procs
 #define DO_XYZT 1
+#endif
 #endif
 
 #ifdef DO_XYZT
