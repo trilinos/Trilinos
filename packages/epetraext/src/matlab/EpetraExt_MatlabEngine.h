@@ -41,6 +41,7 @@
 // MatlabEngine declarations:
 #include "engine.h"
 #include "mex.h"
+#undef printf
 //! MatlabEngine: 
 
 class Epetra_MultiVector;

@@ -63,6 +63,14 @@ int main(int argc, char *argv[]) {
   char s [BUFSIZE] ;
   char matlabBuffer [MATLABBUF];
   EpetraExt::MatlabEngine engine (comm);
+  
+  Epetra_Map map (50, 0, comm);
+  Epetra_MultiVector multiVector (map, 25, false);
+  
+  multiVector.Random();
+  
+  engine.PutMultiVector(multiVector, "MULT");
+  
   int err;
   while(1) {
       // Prompt the user and get a string

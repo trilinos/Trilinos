@@ -91,10 +91,11 @@ int MatlabEngine::EvalString (char* command, char* outputBuffer, int outputBuffe
 
 //==========================================================================
 int MatlabEngine::PutMultiVector(const Epetra_MultiVector & multiVector, const char * variableName) {
-	mxArray * mxCreateDoubleMatrix(multiVector.MyLength(), multiVector.NumVectors(), mxREAL);
-	multiVector.ExtractCopy((double *)mxGetPr(mxArray), multiVector.MyLength());
+	mxArray * matlabMatrix = NULL;
+	matlabMatrix = mxCreateDoubleMatrix(multiVector.MyLength(), multiVector.NumVectors(), mxREAL);
+	multiVector.ExtractCopy((double *)mxGetPr(matlabMatrix), multiVector.MyLength());
 	//memcpy((void *)mxGetPr(mxArray), (void *), multiVector.MyLength() * multiVector.NumVectors());
-	engPutVariable(Engine_, variableName, mxArray);
+	engPutVariable(Engine_, variableName, matlabMatrix);
 	
 	return 0;
 }
