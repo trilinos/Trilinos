@@ -218,6 +218,9 @@ int ML_Operator_halfClone_Init(ML_Operator *mat,
    mat->data_destroy        = NULL;
    mat->build_time          = original->build_time;
    mat->apply_time          = original->apply_time;
+   /* If operator *mat has built as part of ML_Create, a label has already been
+      allocated. */
+   if (mat->label != NULL) ML_free(mat->label);
    mat->label               = original->label;
    mat->comm                = original->comm;
    mat->num_PDEs            = original->num_PDEs;
