@@ -120,10 +120,12 @@ int main(int argc, char *argv[])
 
   // Sublist for linear solver
   NOX::Parameter::List& lsParams = dirParams.sublist("Linear Solver");
+  lsParams.setParameter("Aztec Solver", "CG");  
   lsParams.setParameter("Max Iterations", 800);  
   lsParams.setParameter("Tolerance", 1e-4);
   lsParams.setParameter("Output Frequency", 50);    
-  lsParams.setParameter("Preconditioning", "None");           
+  lsParams.setParameter("Preconditioning", "None");   
+  lsParams.setParameter("Scaling", "None");          
   //lsParams.setParameter("Preconditioning", "AztecOO: Jacobian Matrix");   
   //lsParams.setParameter("Preconditioning", "AztecOO: User RowMatrix"); 
   //lsParams.setParameter("Preconditioning", "User Supplied Preconditioner");

@@ -72,7 +72,27 @@ namespace Epetra {
   <li> NOX::Epetra::FiniteDifference - This object uses finite differencing of the RHS to compute and store the entire Jacobian as an Epetra_CrsMatirx.  This is not optimied and can be very time consuming since an Interface::computeRHS() call is made for each unknown. This was meant primarily as a validation tool to ensure Jacobian fills are correct. The user need only supply the computeRHS() function for the NOX::Epetra::Interface class. 
   </ul>
  
-Preconditioning also has multiple options that may depend on the Jacobian. A flag in the Linear Solver sublist called "Preconditioning" must be set to turn on any preconditioning of the linear solver.  A preconditioner object is an Epetra_Operator derived class just like th Jacobian.  If the AztecOO preconditioners are to be used, they require some knowledge of the matrix and thus at a minimum the preconditioner object must also be an Epetra_RowMatrix. The valid options are listed below:
+The solver type is set in the "Linear %Solver" sublist using the parameter tag "Aztec %Solver".  The following labels are valid:
+  <ul>
+  <li> "GMRES" - Restarted generalized minimal residual (default setting).
+  <li> "CG" - Conjugate gradient.
+  <li> "CGS" - Conjugate gradient squared.
+  <li> "TFQMR" - Transpose-free quasi-minimal reasidual.
+  <li> "BiCGStab" - Bi-conjugate gradient with stabilization.
+  <li> "LU" - Sparse direct solve (single processor only).
+  </ul>
+
+The scaling of the linear system can be handled in Aztec.  Scaling is set in the "Linear %Solver" sublist with the parameter tag "Scaling".  The following optioins are valid:
+  <ul>
+  <li> "None" - No scaling is used (default).
+  <li> "Point Jacobi" 
+  <li> "Block Jacobi" 
+  <li> "Row Sum"
+  <li> "Symmetric Diagonal"
+  <li> "Symmetric Row Sum"
+  </ul>
+
+Preconditioning also has multiple options that may depend on the Jacobian. A flag in the "Linear %Solver" sublist labelled "Preconditioning" must be set to turn on any preconditioning of the linear solver.  A preconditioner object is an Epetra_Operator derived class just like th Jacobian.  If the AztecOO preconditioners are to be used, they require some knowledge of the matrix and thus at a minimum the preconditioner object must also be an Epetra_RowMatrix. The valid options are listed below:
   <ul>
   <li> "None" - no preconditioning.  This is the default setting.
 
@@ -83,10 +103,9 @@ Preconditioning also has multiple options that may depend on the Jacobian. A fla
   <li> "User Supplied Preconditioner" - The user supplies an Epetra_Operator that will compute and apply the preconditioner to a vector that is passed in. This option requires the user to implement the function computePreconditioner() in the NOX::Epetra::Interface derived class.   
   </ul>
 
-If an AztecOO preconditioner is used, the type of preconditioner can be set with the flag "Aztec Preconditioner" in the "Linear Solver" sublist (defaults to ilu). Currently supported preconditioners and their corresponding parameters that can be set in the "Linear Solver" sublist are shown below (See the Aztec 2.0 manual for more information):
+If an AztecOO preconditioner is used, the type of preconditioner can be set with the flag "Aztec Preconditioner" in the "Linear %Solver" sublist (defaults to ilu). Currently supported preconditioners and their corresponding parameters that can be set in the "Linear %Solver" sublist are shown below (See the Aztec 2.0 manual for more information):
   <ul>
   <li> "ilu" 
-
   <ul>
   <li> "Overlap" - defaults to 0.
   <li> "Graph Fill" - defaults to 0.
@@ -99,13 +118,29 @@ If an AztecOO preconditioner is used, the type of preconditioner can be set with
   <li> "Drop Tolerance" - defaults to 1.0e-12
   </ul> </li>
 
+  <li> "Jacobi" - k step Jacobi where k is set by the "Steps" flag: 
+  <ul>
+  <li> "Steps" - defaults to 3.
+  </ul>
+
+  <li> "Symmetric Gauss-Siedel" - Non-overlapping domain decomposition k step symmetric Gauss-Siedel where k is set by the "Steps" flag: 
+  <ul>
+  <li> "Steps" - defaults to 3.
+  </ul>
+
   <li> "Polynomial" - Neumann polynomial
   <ul>
   <li> "Polynomial Order" - defaults to 3.
   </ul>
+
+  <li> "Least-squares Polynomial" - Least-squares polynomial
+  <ul>
+  <li> "Polynomial Order" - defaults to 3.
   </ul>
 
-Addtional Parameters that are set in the "Linear Solver" sublist:
+  </ul>
+
+Addtional Parameters that are set in the "Linear %Solver" sublist:
   <ul> 
   <li> "Tolerance" - tolerance used by AztecOO to determine if a linear solve has converged.
 

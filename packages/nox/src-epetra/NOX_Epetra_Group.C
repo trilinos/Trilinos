@@ -140,7 +140,49 @@ void Group::resetIsValid() //private
 
 void Group::setAztecOptions(const Parameter::List& p, AztecOO& aztec)
 {
+  // Set the Aztec Solver
+  string linearSolver = p.getParameter("Aztec Solver", "GMRES");
+  if (linearSolver == "CG")
+    aztec.SetAztecOption(AZ_solver, AZ_cg);
+  else if (linearSolver == "GMRES")
+    aztec.SetAztecOption(AZ_solver, AZ_gmres);
+  else if (linearSolver == "CGS")
+    aztec.SetAztecOption(AZ_solver, AZ_cgs);
+  else if (linearSolver == "TFQMR")
+    aztec.SetAztecOption(AZ_solver, AZ_tfqmr);
+  else if (linearSolver == "BiCGStab")
+    aztec.SetAztecOption(AZ_solver, AZ_bicgstab);
+  else if (linearSolver == "LU")
+    aztec.SetAztecOption(AZ_solver, AZ_lu);
+  else {
+    cout << "ERROR: NOX::Epetra::Group::setAztecOptions" << endl
+	 << "\"Aztec Solver\" parameter \"" << linearSolver 
+	 <<  "\" is invalid!" << endl;
+    throw "NOX Error";
+  }
 
+  // Scaling in the linear solver 
+  string scaling =  p.getParameter("Scaling", "None");
+
+  if (scaling == "None")
+    aztec.SetAztecOption(AZ_scaling, AZ_none);
+  else if (scaling == "Point Jacobi")
+    aztec.SetAztecOption(AZ_scaling, AZ_Jacobi);
+  else if (scaling == "Block Jacobi")
+    aztec.SetAztecOption(AZ_scaling, AZ_BJacobi);
+  else if (scaling == "Row Sum")
+    aztec.SetAztecOption(AZ_scaling, AZ_row_sum);
+  else if (scaling == "Symmetric Diagonal") 
+    aztec.SetAztecOption(AZ_scaling, AZ_sym_diag);
+  else if (scaling == "Symmetric Row Sum") 
+    aztec.SetAztecOption(AZ_scaling, AZ_sym_row_sum);
+  else {
+      cout << "ERROR: NOX::Epetra::Group::setAztecOptions" << endl
+	   << "\"Scaling\" parameter \"" << scaling << "\" is invalid!" 
+	   << endl;
+      throw "NOX Error";
+  }
+ 
   // Preconditioning Matrix Type 
   if (precOption == "None")
     aztec.SetAztecOption(AZ_precond, AZ_none);
@@ -165,14 +207,27 @@ void Group::setAztecOptions(const Parameter::List& p, AztecOO& aztec)
       aztec.SetAztecParam(AZ_drop, p.getParameter("Drop Tolerance", 1.0e-12));
       aztec.SetAztecParam(AZ_ilut_fill, p.getParameter("Fill Factor", 1.0));
     }
+    else if (aztecPrec == "Jacobi") {
+      aztec.SetAztecOption(AZ_precond, AZ_Jacobi);
+      aztec.SetAztecOption(AZ_poly_ord, p.getParameter("Steps", 3));
+    }
+    else if (aztecPrec == "Symmetric Gauss-Siedel") {
+      aztec.SetAztecOption(AZ_precond, AZ_sym_GS);
+      aztec.SetAztecOption(AZ_poly_ord, p.getParameter("Steps", 3));
+    }
     else if (aztecPrec == "Polynomial") {
-      aztec.SetAztecOption(AZ_precond,AZ_Neumann);
+      aztec.SetAztecOption(AZ_precond, AZ_Neumann);
+      aztec.SetAztecOption(AZ_poly_ord, p.getParameter("Polynomial Order", 3));
+    }
+    else if (aztecPrec == "Least-squares Polynomial") {
+      aztec.SetAztecOption(AZ_precond, AZ_ls);
       aztec.SetAztecOption(AZ_poly_ord, p.getParameter("Polynomial Order", 3));
     }
     else {
-      cout << "ERROR: NOX::Epetra::LinearOperator::setAztecOptions" << endl
-	   << "\"Aztec Preconditioner\" choice is invalid!" << endl;
-      throw;
+      cout << "ERROR: NOX::Epetra::Group::setAztecOptions" << endl
+	   << "\"Aztec Preconditioner\" parameter \"" << aztecPrec
+	   << "\" is invalid!" << endl;
+      throw "NOX Error";
     }
 
   }
