@@ -43,20 +43,43 @@ namespace LOCA {
   //! %LOCA BLAS/LAPACK support
   namespace LAPACK {
 
-    //! Extension of the NOX::LAPACK::Group to LOCA.  
+    //! Extension of the NOX::LAPACK::Group to %LOCA.  
     /*!
       This class is derived both from the NOX::LAPACK::Group and
       LOCA::Abstract::Group classes and therefore inherits the implementation
       of the NOX::Abstract::Group interface provided by NOX::LAPACK::Group.
 
-      This class additionally stores a ParameterVector params and a scaling
-      vector (NOX::LAPACK::Vector) scaleVec and implements the pure virtual
-      methods of the LOCA::Abstract::Group class.  
+      This class provides implementations of %LOCA AbstractGroup virtual 
+      methods specific to the %LAPACK group.  It stores a parameter vector
+      for setting/retrieving parameter values 
+      (LOCA::Continuation::AbstractGroup), provides a facility for computing
+      eigenvalues (LOCA::Continuation::AbstractGroup) using the %LAPACK
+      routines DGEEV and DGGEV, augements the Jacobian matrix for homotopy
+      (LOCA::Homotopy::AbstractGroup), and stores and manipulates a mass
+      matrix (LOCA::Bifurcation::HopfBord::AbstractGroup).  Since it is
+      derived from the LOCA::Abstract::Group (which is in-turn derived
+      from all FiniteDifference groups), this group implicitly uses the
+      finite-difference implementations of parameter and second derivatives
+      provided by the FiniteDifference groups.  This group
+      can therefore be used as an underlying group for all of LOCA's 
+      continuation and bifurcation algorithms.
 
       The computeF() and computeJacobian() methods of the NOX::LAPACK::Group
       parent class are overloaded here.  They both set the entire contents
       of the parameter vector in the problem interface before calling the
       NOX::LAPACK::Group computeF() and computeJacobian().
+
+      This group has several constructors supplying different information.
+      All require a LOCA::LAPACK::Interface object to link to the 
+      application code.  Set hasMassMat to true if the system has a mass matrix
+      (only relevant for eigenvalue and Hopf calculations).  Pass a 
+      parameter list to change the algorithm used for singular Jacobian
+      matrix solves (see LOCA::Bifurcation::TPBord::SingularSolveGroup,
+      only relevant for turning point and pitchfork calculations).  Finally,
+      separate used and allocated row/column dimensions can be specified.  
+      This functionality exists primarily to link with Fortran codes which
+      preallocate all arrays to a fixed size but only use a portion of that
+      array.
     */
     
     class Group : public NOX::LAPACK::Group, public LOCA::Abstract::Group {
@@ -64,9 +87,17 @@ namespace LOCA {
     public:
 
       //! Constructor 
+      /*!
+       * Set hasMassMat to true if the system has a mass matrix
+       * (Only relevant for eigenvalue and Hopf calculations).
+       */
       Group(LOCA::LAPACK::Interface& i, bool hasMassMat = false);
 
-      //! Constructor with parameter list
+      //! Constructor with parameter list 
+      /*!
+       * Pass a parameter for singular matrix solves. (see 
+       * LOCA::Bifurcation::TPBord::SingularSolveGroup)
+       */
       Group(NOX::Parameter::List& params,
 	    LOCA::LAPACK::Interface& i, bool hasMassMat = false);
 
@@ -87,16 +118,18 @@ namespace LOCA {
       ~Group();
 
       //! Assignment operator
-      NOX::Abstract::Group& operator=(const NOX::Abstract::Group& source);
+      LOCA::LAPACK::Group& operator=(const LOCA::LAPACK::Group& source);
+
+      /*! 
+       * @name Overloaded NOX::LAPACK::Group  methods.
+       */
+      //@{
 
       //! Assignment operator
-      LOCA::Abstract::Group& operator=(const LOCA::Abstract::Group& source);
-
+      NOX::Abstract::Group& operator=(const NOX::Abstract::Group& source);
+      
       //! Assignment operator
       NOX::LAPACK::Group& operator=(const NOX::LAPACK::Group& source);
-
-      //! Assignment operator
-      LOCA::LAPACK::Group& operator=(const LOCA::LAPACK::Group& source);
 
       //! Cloning function
       NOX::Abstract::Group* clone(NOX::CopyType type = NOX::DeepCopy) const;
@@ -113,57 +146,78 @@ namespace LOCA {
       */
       NOX::Abstract::Group::ReturnType computeJacobian();
 
+      //@}
+
+      /*! 
+       * @name Implementation of LOCA::Abstract::Group virtual methods.
+       */
+      //@{
+
+      //! Assignment operator
+      LOCA::Abstract::Group& operator=(const LOCA::Abstract::Group& source);
+
+      //@}
+
+      /*! 
+       * @name Implementation of LOCA::Continuation::AbstractGroup virtual methods.
+       */
+      //@{
+
+      //! Set the parameter vector
+      void setParams(const LOCA::ParameterVector& p);
+
+      //! Set parameter indexed by paramID
+      virtual void setParam(int paramID, double val);
+
+      //! Set parameter indexed by paramID
+      virtual void setParam(string paramID, double val);
+
+      //! Return a const reference to the parameter vector owned by the group. 
+      const LOCA::ParameterVector& getParams() const;
+
+      //! Return copy of parameter indexed by paramID
+      virtual double getParam(int paramID) const;
+
+      //! Return copy of parameter indexed by paramID
+      virtual double getParam(string paramID) const;
+
       //! applyJacobianInverse for multiple right-hand sides
       virtual NOX::Abstract::Group::ReturnType
       applyJacobianInverseMulti(NOX::Parameter::List& params,
 			   const NOX::Abstract::Vector* const* inputs,
 			   NOX::Abstract::Vector** outputs, int nVecs) const;
 
-      //! Set the parameter vector
-      void setParams(const LOCA::ParameterVector& p);
-
-      //! Return a const reference to the parameter vector owned by the group. 
-      const LOCA::ParameterVector& getParams() const;
-
-      //! Set parameter indexed by paramID
-      virtual void setParam(int paramID, double val);
-
-      //! Return copy of parameter indexed by paramID
-      virtual double getParam(int paramID) const;
-
-      //! Set parameter indexed by paramID
-      virtual void setParam(string paramID, double val);
-
-      //! Return copy of parameter indexed by paramID
-      virtual double getParam(string paramID) const;
-
-      //! Print out the solution vector and continuation parameter
-      void printSolution(const double conParam) const;
-
-      //! Print out a vector and a parameter
-      void printSolution(const NOX::LAPACK::Vector& x_, const double conParam) const;
-
-      //! Print out a vector and a parameter
-      void printSolution(const NOX::Abstract::Vector& x_, const double conParam) const;
-
       //! Compute eigenvalues/eigenvectors
       virtual NOX::Abstract::Group::ReturnType
       computeEigenvalues(NOX::Parameter::List& params);
 
-      virtual NOX::Abstract::Group::ReturnType 
-      augmentJacobianForHomotopy(double conParamValue);
+      //! Print out the solution vector and continuation parameter
+      void printSolution(const double conParam) const;
 
+      //@}
+
+      /*! 
+       * @name Implementation of LOCA::TimeDependent::AbstractGroup virtual methods.
+       */
+      //@{
+
+      //! Compute the mass matrix of the system
       virtual NOX::Abstract::Group::ReturnType
       computeMassMatrix();
 
+      //! Multiply the mass matrix by a vector
       virtual NOX::Abstract::Group::ReturnType
       applyMassMatrix(const NOX::Abstract::Vector& input,
 		      NOX::Abstract::Vector& result) const;
 
-      virtual NOX::Abstract::Group::ReturnType
-      applyMassMatrix(const NOX::LAPACK::Vector& input,
-		      NOX::LAPACK::Vector& result) const;
+      //@}
 
+      /*! 
+       * @name Implementation of LOCA::Bifurcation::HopfBord::AbstractGroup virtual methods.
+       */
+      //@{
+
+      //! Solve \f$(J+i\omega B)(y+iz) = a+ib\f$
       virtual NOX::Abstract::Group::ReturnType
       applyComplexInverse(NOX::Parameter::List& params,
 			  const NOX::Abstract::Vector& input_real,
@@ -172,6 +226,7 @@ namespace LOCA {
 			  NOX::Abstract::Vector& result_real,
 			  NOX::Abstract::Vector& result_imag) const;
 
+      //! applyComplexInverse for multiple right-hand-sides
       virtual NOX::Abstract::Group::ReturnType
       applyComplexInverseMulti(NOX::Parameter::List& params,
 			       const NOX::Abstract::Vector* const* inputs_real,
@@ -181,11 +236,44 @@ namespace LOCA {
 			       NOX::Abstract::Vector** results_imag,
 			       int nVecs) const;
 
+      //@}
+
+      /*! 
+       * @name Implementation of LOCA::Homotopy::AbstractGroup virtual methods.
+       */
+      //@{
+
+      /*! 
+       * \brief Replace Jacobian \f$J\f$ by \f$J+pI\f$ where \f$I\f$ is the 
+       * identity matrix and \f$p\f$ is a scalar (\b conParamValue).
+       */
+      virtual NOX::Abstract::Group::ReturnType 
+      augmentJacobianForHomotopy(double conParamValue);
+
+      //@}
+
+      //! Print out a vector and a parameter
+      void printSolution(const NOX::LAPACK::Vector& x_, 
+			 const double conParam) const;
+
+      //! Print out a vector and a parameter
+      void printSolution(const NOX::Abstract::Vector& x_, 
+			 const double conParam) const;
+
+      //! %LAPACK interface to applyMassMatrix
+      virtual NOX::Abstract::Group::ReturnType
+      applyMassMatrix(const NOX::LAPACK::Vector& input,
+		      NOX::LAPACK::Vector& result) const;
+      
+      //! Returns true if system has a mass matrix
       bool hasMass() const;
+
+      //! Returns true if mass matrix is valid
       bool isMass() const;
 
     protected:
 
+      //! resets isValid flags
       void resetIsValid();
 
     protected:
