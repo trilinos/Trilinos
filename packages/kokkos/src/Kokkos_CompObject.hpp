@@ -46,15 +46,18 @@ class CompObject {
 
   //@{ \name Constructors/Destructor.
   //! Basic CompObject constuctor.
-  CompObject();
+  CompObject() {
+    flopCounter_ = 0;
+  };
 
   //! CompObject copy constructor.
   
-  CompObject(const CompObject& Source);
+  CompObject(const CompObject& Source) 
+    : flopCounter_(source.flopCounter_){};
   
   
   //! CompObject destructor.  
-  virtual ~CompObject();
+  virtual ~CompObject(){flopCounter_=0;};
   //@}
 
   //@{ \name Set/Get counter method.

@@ -56,7 +56,7 @@ namespace Kokkos {
     /*! Makes a copy of an existing Flops instance.
       \warning The counter of the Flops copy is reset to zero.
     */
-    Flops(const Flops& Flops)
+    Flops(const Flops& flops)
       : flops_(0.0){};
 
     //! Flops Destructor.
