@@ -38,6 +38,15 @@ int order_other_ref_recur(int new_entry, int level, int *order, int *on_path,
 int find_inout(int level, int num_child, int *num_vert, int *vert1,
                int *vertices, int *in_vertex, int *out_vertex, int *order);
 int LB_Reftree_Reinit_Coarse(LB *lb);
+static int LB_Reftree_Build_Recursive(LB *lb,LB_REFTREE *subroot);
+
+/*****************************************************************************/
+/*****************************************************************************/
+/*****************************************************************************/
+/*  Parameters structure for reftree methods */
+static PARAM_VARS REFTREE_params[] = {
+        { "REFTREE_HASH_SIZE", NULL, "INT" },
+        { NULL, NULL, NULL } };
 
 /*****************************************************************************/
 /*****************************************************************************/
@@ -50,9 +59,6 @@ char *val)                      /* value of variable */
     int status;
     PARAM_UTYPE result;         /* value returned from Check_Param */
     int index;                  /* index returned from Check_Param */
-    PARAM_VARS REFTREE_params[] = {
-        { "REFTREE_HASH_SIZE", NULL, "INT" },
-        { NULL, NULL, NULL } };
 
     status = LB_Check_Param(name, val, REFTREE_params, &result, &index);
 
@@ -99,9 +105,6 @@ int found;                 /* flag for terminating first/next query loop */
 int hashsize;              /* size of the hash table */
 int i, j;                  /* loop counters */
 unsigned char *p;          /* for setting IDs to NULL */
-PARAM_VARS params[] = {    /* parameter values */
-  { "REFTREE_HASH_SIZE", NULL, "INT" },
-  { NULL, NULL, NULL } };
 
   final_ierr = LB_OK;
 
@@ -164,9 +167,9 @@ PARAM_VARS params[] = {    /* parameter values */
    * Allocate and initialize the hash table.
    */
 
-  params[0].ptr = (void *) &hashsize;
+  REFTREE_params[0].ptr = (void *) &hashsize;
   hashsize = DEFAULT_HASH_TABLE_SIZE;
-  LB_Assign_Param_Vals(lb->Params, params);
+  LB_Assign_Param_Vals(lb->Params, REFTREE_params);
 
   hashtab = (struct LB_reftree_hash_node **)
             LB_MALLOC(sizeof(struct LB_reftree_hash_node *)*hashsize);
@@ -740,7 +743,7 @@ int i;                     /* loop counter */
   return(LB_OK);
 }
 
-int LB_Reftree_Build_Recursive(LB *lb,LB_REFTREE *subroot)
+static int LB_Reftree_Build_Recursive(LB *lb,LB_REFTREE *subroot)
 
 {
 /*
