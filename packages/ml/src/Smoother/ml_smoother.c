@@ -1929,29 +1929,34 @@ int ML_Smoother_BlockGS(void *sm,int inlen,double x[],int outlen,
 	 
    return 0;
 }
-int ML_BlockDinv(ML_Sm_BGS_Data *BGS_Data, int inlen, double in[],
-		 int outlen, double out[]) {
 
+int ML_BlockDinv(ML_Sm_BGS_Data *BGS_Data, int inlen, double out[]) {
   unsigned int   itmp=0;
   int info, one = 1;
-  int nblocks, **perms, blocksize, i;
+  int nblocks, **perms, blocksize, i, *blocklengths, index;
   double **blockdata;
   char N[2];
+  int k,kk,length;
 
   nblocks    = BGS_Data->Nblocks;
   blockdata  = BGS_Data->blockfacts;
   perms      = BGS_Data->perms;
-  blocksize = inlen/nblocks;
+  blocklengths =  BGS_Data->blocklengths;
+
   strcpy(N,"N");
 
+  index = 0;
   for (i = 0; i < nblocks; i++) {
-	MLFORTRAN(dgetrs)(N,&blocksize,&one,blockdata[i],&blocksize,
-			  perms[i], &(out[i*blocksize]), 
-			  &blocksize, &info, itmp);
-	if ( info != 0 ) {
-	  printf("dgetrs returns with %d at block %d\n",info,i); 
-	  exit(1);
-	}
+    blocksize = blocklengths[i];
+    length = blocksize;
+    MLFORTRAN(dgetrs)(N,&blocksize,&one,blockdata[i],&blocksize,
+		      perms[i], &(out[index]), 
+		      &blocksize, &info, itmp);
+    index += blocksize;
+    if ( info != 0 ) {
+      printf("dgetrs returns with %d at block %d\n",info,i); 
+      exit(1);
+    }
   }
   return 0;
 }
@@ -1964,8 +1969,9 @@ int ML_BlockScaledApply(ML_Operator *Amat, int inlen, double in[],
 
 
   widget     = (struct MLSthing *) Amat->data;
+
   ML_Operator_Apply(widget->unscaled_matrix, inlen, in, outlen, out);
-  ML_BlockDinv(widget->block_scaling, inlen, in, outlen, out);
+  ML_BlockDinv(widget->block_scaling, outlen, out);
 
   return 0;
 }
@@ -7103,20 +7109,24 @@ int ML_Cheby(void *sm, int inlen, double x[], int outlen, double rhs[])
 #ifdef GREG
    /* double tmp; */
 #endif
+   double lambda_min, lambda_max;
 
    n = outlen;
    widget = (struct MLSthing *) smooth_ptr->smoother->data;
-
    deg    = widget->mlsDeg;
    if (deg == 0) return 0;
    if (widget->block_scaling != NULL) {
-     Amat = widget->scaled_matrix;
+     lambda_min = widget->scaled_matrix->lambda_min;
+     lambda_max = widget->scaled_matrix->lambda_max;
+   }
+   else {
+     lambda_min = Amat->lambda_min;
+     lambda_max = Amat->lambda_max;
    }
 
-
    /* This is meant for the case when the matrix is the identity.*/
-   if ((Amat->lambda_min == 1.0) && (Amat->lambda_min == Amat->lambda_max)) {
-     for (i = 0; i < Amat->outvec_leng; i++) x[i] = rhs[i];
+   if ((lambda_min == 1.0) && (lambda_min == lambda_max)) {
+     for (i = 0; i < n; i++) x[i] = rhs[i];
      return 0;
    }
 
@@ -7129,16 +7139,10 @@ int ML_Cheby(void *sm, int inlen, double x[], int outlen, double rhs[])
      ML_avoid_unused_param((void *) &inlen);
    }
 
-   beta = 1.1*Amat->lambda_max;   /* try and bracket high */
-   alpha = Amat->lambda_max/(widget->eig_ratio);
+   beta = 1.1*lambda_max;   /* try and bracket high */
+   alpha = lambda_max/(widget->eig_ratio);
 #ifdef GREG
 #undef GREG
-#endif
-#ifdef GREG
-if (Amat->comm->ML_mypid == 0) {
-printf("Deg %d beta %20.13e ratio %20.13e\n",deg,beta,widget->eig_ratio);
-fflush(stdout);
-}
 #endif
    delta = (beta - alpha)/2.;
    theta = (beta + alpha)/2.;
@@ -7150,7 +7154,8 @@ fflush(stdout);
    /* extract diagonal using getrow function if not found               */
    /* ----------------------------------------------------------------- */
 
-   if (Amat->diagonal == NULL) 
+   if ((Amat->diagonal == NULL) && (widget->block_scaling == NULL))
+
    {
       if (Amat->getrow->ML_id == ML_EMPTY) 
          pr_error("Error(MLS_Apply): Need diagonal\n");
@@ -7186,39 +7191,69 @@ fflush(stdout);
          ML_free(tdiag);
       } 
    }
-   ML_DVector_GetDataPtr( Amat->diagonal, &diagonal);
+   if (widget->block_scaling == NULL)
+     ML_DVector_GetDataPtr( Amat->diagonal, &diagonal);
 
-   if (smooth_ptr->init_guess == ML_NONZERO) {
-     ML_Operator_Apply(Amat, n, x, n, pAux);
-     for (i = 0; i < n; i++) {
-       dk[i] = (rhs[i] - pAux[i])/(theta*diagonal[i]);
-       x[i] += dk[i];
-     }
-   }
-   else { 
-     for (i = 0; i < n; i++) {
-       x[i] = dk[i] = rhs[i]/(theta*diagonal[i]);
-     }
-   }
+   if (widget->block_scaling == NULL) { /* normal point scaling */
 
-   for (k = 0; k < deg-1; k++) {
-     ML_Operator_Apply(Amat, n, x, n, pAux);
-     rhokp1 = 1./(2.*s1 - rhok);
-     dtemp1 = rhokp1*rhok;
-     dtemp2 = 2.*rhokp1/delta;
-     rhok = rhokp1;
-     for (i = 0; i < n; i++) {
-       dk[i] = dtemp1 * dk[i] + dtemp2*(rhs[i]-pAux[i])/diagonal[i];
-       x[i] += dk[i];
+     if (smooth_ptr->init_guess == ML_NONZERO) {
+       ML_Operator_Apply(Amat, n, x, n, pAux);
+       for (i = 0; i < n; i++) {
+	 dk[i] = (rhs[i] - pAux[i])/(theta*diagonal[i]);
+	 x[i] += dk[i];
+       }
+     }
+     else { 
+       for (i = 0; i < n; i++) {
+	 x[i] = dk[i] = rhs[i]/(theta*diagonal[i]);
+       }
+     }
+
+     for (k = 0; k < deg-1; k++) {
+       ML_Operator_Apply(Amat, n, x, n, pAux);
+       rhokp1 = 1./(2.*s1 - rhok);
+       dtemp1 = rhokp1*rhok;
+       dtemp2 = 2.*rhokp1/delta;
+       rhok = rhokp1;
+       for (i = 0; i < n; i++) {
+	 dk[i] = dtemp1 * dk[i] + dtemp2*(rhs[i]-pAux[i])/diagonal[i];
+	 x[i] += dk[i];
+       }
+     }
+
+   }
+   else { /* block scaling */
+
+     if (smooth_ptr->init_guess == ML_NONZERO) {
+       ML_Operator_Apply(Amat, n, x, n, pAux);
+       for (i = 0; i < n; i++) 	 dk[i] = (rhs[i] - pAux[i])/theta;
+       ML_BlockDinv(widget->block_scaling, n, dk);
+       for (i = 0; i < n; i++) 	 x[i] += dk[i];
+
+
+     }
+     else { 
+       for (i = 0; i < n; i++) 	dk[i] = rhs[i]/theta;
+       ML_BlockDinv(widget->block_scaling, n, dk);
+       for (i = 0; i < n; i++) 	 x[i] = dk[i];
+     }
+
+     for (k = 0; k < deg-1; k++) {
+       ML_Operator_Apply(Amat, n, x, n, pAux);
+       rhokp1 = 1./(2.*s1 - rhok);
+       dtemp1 = rhokp1*rhok;
+       dtemp2 = 2.*rhokp1/delta;
+       rhok = rhokp1;
+       for (i = 0; i < n; i++) pAux[i] = rhs[i]-pAux[i];
+       ML_BlockDinv(widget->block_scaling, n, pAux);
+       for (i = 0; i < n; i++) {
+	 dk[i] = dtemp1 * dk[i] + dtemp2*pAux[i];
+	 x[i] += dk[i];
+       }
      }
    }
    ML_free(dk);
    ML_free(pAux);
-#ifdef GREG
-tmp = sqrt(ML_gdot(n, x, x, Amat->comm));
-if (Amat->comm->ML_mypid == 0) 
-printf("X is %20.13e\n", tmp);
-#endif
 
    return 0;	
 }
