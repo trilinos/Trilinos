@@ -443,7 +443,7 @@ setAztecOptions(const Parameter::List& p, AztecOO& aztec) const
 
   // Print a summary of the aztec options if "Details" is enabled
   if (utils.isPrintType(Utils::Debug)) {
-    aztec.CheckInput();
+    //aztec.CheckInput();
   }
 
   // Some Debugging utilities 
