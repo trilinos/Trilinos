@@ -182,7 +182,7 @@ LOCA::Utils::getSublist(const string& name) {
   // If it does exist return the sublist.
   // Otherwise, throw an error.
   if (i != sublistMap.end()) 
-    return *(i->second);
+    return *((*i).second);
   else {
     cerr << "ERROR: Sublist " << name << " is not a valid sublist." << endl;
     throw "NOX Error";
