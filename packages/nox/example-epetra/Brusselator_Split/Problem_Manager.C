@@ -18,7 +18,7 @@
 #include "GenericEpetraProblem.H"
 
 Problem_Manager::Problem_Manager(Epetra_Comm& comm, 
-                                 int numGlobalElements = 0) :
+                                 int numGlobalElements) :
   GenericEpetraProblem(comm, numGlobalElements),
   nlParams(0),
   statusTest(0)
