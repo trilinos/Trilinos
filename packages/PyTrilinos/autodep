@@ -61,10 +61,10 @@ def main():
                     "__TIME__"         : "1", \
                     "__STDC__"         : "1", \
                     "__STDC_VERSION__" : "1"}
-    undefines    = []
+    undefines    = [ ]
     inc_dirs     = [os.curdir]
     nopath       = False
-    includes     = []
+    includes     = [ ]
     allHeaders   = False
     debug        = False
     prefix       = ""

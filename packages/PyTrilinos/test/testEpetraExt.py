@@ -46,10 +46,14 @@ class EpetraExtTestCase(unittest.TestCase):
         self.comm = Epetra.SerialComm()
         self.map  = Epetra.Map(self.size,0,self.comm)
         self.crsg = Epetra.CrsGraph(Epetra.Copy, self.map, 3)
+        print "About to insert global indices..."
         self.crsg.InsertGlobalIndices(0,2,array([0,1]))
+        print "Global indices inserted."
         for i in range(1,self.size-1):
             self.crsg.InsertGlobalIndices(i,3,array([i-1,i,i+1]))
+        print "f"
         self.crsg.InsertGlobalIndices(self.size-1,2,array([self.size-2,self.size-1]))
+        print "g"
         self.crsg.FillComplete()
         colors = array([3,2,1])
         self.colors = resize(colors,(self.size,))
@@ -58,7 +62,7 @@ class EpetraExtTestCase(unittest.TestCase):
             self.numEl[i] += 1
 
     def testMapColoring(self):
-        "Test the EpetraExt CrsGraph-to-MapColoring transform"
+        "Test EpetraExt CrsGraph-to-MapColoring transform"
         mapColoring  = EpetraExt.CrsGraph_MapColoring(False)
         colorMap     = mapColoring(self.crsg)
         numColors    = colorMap.NumColors()
@@ -69,7 +73,7 @@ class EpetraExtTestCase(unittest.TestCase):
             self.assertEqual(colorMap.NumElementsWithColor(c+1), self.numEl[c+1])
 
     def testColorMapIndex(self):
-        "Test the EpetraExt MapColoring-to-ColorMapIndex transform"
+        "Test EpetraExt MapColoring-to-ColorMapIndex transform"
         mapColoring   = EpetraExt.CrsGraph_MapColoring(False)
         colorMap      = mapColoring(self.crsg)
         colorMapIndex = EpetraExt.CrsGraph_MapColoringIndex(colorMap)
@@ -81,7 +85,7 @@ if __name__ == "__main__":
     # Create the test suite object
     suite = unittest.TestSuite()
 
-    # Add the tets cases to the test suite
+    # Add the test cases to the test suite
     suite.addTest(unittest.makeSuite(EpetraExtTestCase))
 
     # Run the test suite

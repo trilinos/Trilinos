@@ -97,3 +97,9 @@
     ------ Save *_wrap.cxx files in repository
     ------ Compile SWIG runtime library locally and omit requirement
            of system-installed library
+
+****** Move individual package modules to corresponding directories
+    ------ Prototype with new_package
+    ------ Epetra
+    ------ EpetraExt
+    ------ NOX

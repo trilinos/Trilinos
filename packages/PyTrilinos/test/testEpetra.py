@@ -41,21 +41,21 @@ class EpetraObjectTestCase(unittest.TestCase):
         self.object = Epetra.Object()
 
     def testLabel(self):
-        "Test the Object Label method"
+        "Test Epetra.Object Label method"
         self.assertEqual(self.object.Label(), 'Epetra::Object')
 
     def testSetLabel(self):
-        "Test the Object SetLabel method"
+        "Test Epetra.Object SetLabel method"
         label = 'New Label'
         self.object.SetLabel(label)
         self.assertEqual(self.object.Label(), label)
 
     def testGetTracebackMode(self):
-        "Test the Object GetTracebackMode method"
+        "Test Epetra.Object GetTracebackMode method"
         self.assertEqual(self.object.GetTracebackMode(), 1)
 
     def testSetTracebackMode(self):
-        "Test the Object SetTracebackMode method"
+        "Test Epetra.Object SetTracebackMode method"
         tracebackMode = 2
         self.object.SetTracebackMode(tracebackMode)
         self.assertEqual(self.object.GetTracebackMode(), tracebackMode)
@@ -67,11 +67,11 @@ class EpetraSerialCommTestCase(unittest.TestCase):
         self.comm = Epetra.SerialComm()
 
     def testMyPID(self):
-        "Test the SerialComm MyPID method"
+        "Test Epetra.SerialComm MyPID method"
         self.assertEqual(self.comm.MyPID()  , 0)
 
     def testNumProc(self):
-        "Test the SerialComm NumProc method"
+        "Test Epetra.SerialComm NumProc method"
         self.assertEqual(self.comm.NumProc(), 1)
 
 class EpetraBlockMapTestCase(unittest.TestCase):
@@ -82,79 +82,79 @@ class EpetraBlockMapTestCase(unittest.TestCase):
         self.map  = Epetra.BlockMap(2,2,0,self.comm)
 
     def testNumGlobalElements(self):
-        "Test the BlockMap NumGlobalElements method"
+        "Test Epetra.BlockMap NumGlobalElements method"
         self.assertEqual(self.map.NumGlobalElements(), 2)
 
     def testNumMyElements(self):
-        "Test the BlockMap NumMyElements method"
+        "Test Epetra.BlockMap NumMyElements method"
         self.assertEqual(self.map.NumMyElements(), 2)
 
     def testElementSize(self):
-        "Test the BlockMap ElementSize method"
+        "Test Epetra.BlockMap ElementSize method"
         self.assertEqual(self.map.ElementSize(), 2)
 
     def testIndexBase(self):
-        "Test the BlockMap IndexBase method"
+        "Test Epetra.BlockMap IndexBase method"
         self.assertEqual(self.map.IndexBase(), 0)
 
     def testNumGlobalPoints(self):
-        "Test the BlockMap NumGlobalPoints method"
+        "Test Epetra.BlockMap NumGlobalPoints method"
         self.assertEqual(self.map.NumGlobalPoints(), 4)
 
     def testNumMyPoints(self):
-        "Test the BlockMap NumMyPoints method"
+        "Test Epetra.BlockMap NumMyPoints method"
         self.assertEqual(self.map.NumMyPoints(), 4)
 
     def testMinMyElementSize(self):
-        "Test the BlockMap MinMyElementSize method"
+        "Test Epetra.BlockMap MinMyElementSize method"
         self.assertEqual(self.map.MinMyElementSize(), self.map.ElementSize())
 
     def testMaxMyElementSize(self):
-        "Test the BlockMap MaxMyElementSize method"
+        "Test Epetra.BlockMap MaxMyElementSize method"
         self.assertEqual(self.map.MaxMyElementSize(), self.map.ElementSize())
 
     def testMinElementSize(self):
-        "Test the BlockMap MinElementSize method"
+        "Test Epetra.BlockMap MinElementSize method"
         self.assertEqual(self.map.MinElementSize(), self.map.ElementSize())
 
     def testMaxElementSize(self):
-        "Test the BlockMap MaxElementSize method"
+        "Test Epetra.BlockMap MaxElementSize method"
         self.assertEqual(self.map.MaxElementSize(), self.map.ElementSize())
 
     def testConstantElementSize(self):
-        "Test the BlockMap ConstantElementSize method"
+        "Test Epetra.BlockMap ConstantElementSize method"
         self.assertEqual(self.map.ConstantElementSize(), True)
 
     def testDistributedGlobal(self):
-        "Test the BlockMap DistributedGlobal method"
+        "Test Epetra.BlockMap DistributedGlobal method"
         self.assertEqual(self.map.DistributedGlobal(), False)
 
     def testMinAllGID(self):
-        "Test the BlockMap MinAllGID method"
+        "Test Epetra.BlockMap MinAllGID method"
         self.assertEqual(self.map.MinAllGID(), 0)
 
     def testMaxAllGID(self):
-        "Test the BlockMap MaxAllGID method"
+        "Test Epetra.BlockMap MaxAllGID method"
         self.assertEqual(self.map.MaxAllGID(), 1)
 
     def testMinMyGID(self):
-        "Test the BlockMap MinMyGID method"
+        "Test Epetra.BlockMap MinMyGID method"
         self.assertEqual(self.map.MinMyGID(), 0)
 
     def testMaxMyGID(self):
-        "Test the BlockMap MaxMyGID method"
+        "Test Epetra.BlockMap MaxMyGID method"
         self.assertEqual(self.map.MaxMyGID(), 1)
 
     def testMinLID(self):
-        "Test the BlockMap MinLID method"
+        "Test Epetra.BlockMap MinLID method"
         self.assertEqual(self.map.MinLID(), 0)
 
     def testMaxLID(self):
-        "Test the BlockMap MaxLID method"
+        "Test Epetra.BlockMap MaxLID method"
         self.assertEqual(self.map.MaxLID(), 1)
 
     def testIDs(self):
-        "Test the BlockMap local and global IDs"
+        "Test Epetra.BlockMap local and global IDs"
         for i in range(self.map.NumMyElements()):
             self.assertEqual(self.map.LID(i)  , self.map.GID(i))
             self.assertEqual(self.map.MyGID(i), True           )
@@ -168,83 +168,83 @@ class EpetraMapTestCase(unittest.TestCase):
         self.map  = Epetra.Map(4,0,self.comm)
 
     def testNumGlobalElements(self):
-        "Test the Map NumGlobalElements method"
+        "Test Epetra.Map NumGlobalElements method"
         self.assertEqual(self.map.NumGlobalElements(), 4)
 
     def testNumMyElements(self):
-        "Test the Map NumMyElements method"
+        "Test Epetra.Map NumMyElements method"
         self.assertEqual(self.map.NumMyElements(), 4)
 
     def testElementSize(self):
-        "Test the Map ElementSize method"
+        "Test Epetra.Map ElementSize method"
         self.assertEqual(self.map.ElementSize(), 1)
 
     def testIndexBase(self):
-        "Test the Map IndexBase method"
+        "Test Epetra.Map IndexBase method"
         self.assertEqual(self.map.IndexBase(), 0)
 
     def testNumGlobalPoints(self):
-        "Test the Map NumGlobalPoints method"
+        "Test Epetra.Map NumGlobalPoints method"
         self.assertEqual(self.map.NumGlobalPoints(), 4)
 
     def testNumMyPoints(self):
-        "Test the Map NumMyPoints method"
+        "Test Epetra.Map NumMyPoints method"
         self.assertEqual(self.map.NumMyPoints(), 4)
 
     def testMinMyElementSize(self):
-        "Test the Map MinMyElementSize method"
+        "Test Epetra.Map MinMyElementSize method"
         self.assertEqual(self.map.MinMyElementSize(), self.map.ElementSize())
 
     def testMaxMyElementSize(self):
-        "Test the Map MaxMyElementSize method"
+        "Test Epetra.Map MaxMyElementSize method"
         self.assertEqual(self.map.MaxMyElementSize(), self.map.ElementSize())
 
     def testMinElementSize(self):
-        "Test the Map MinElementSize method"
+        "Test Epetra.Map MinElementSize method"
         self.assertEqual(self.map.MinElementSize(), self.map.ElementSize())
 
     def testMaxElementSize(self):
-        "Test the Map MaxElementSize method"
+        "Test Epetra.Map MaxElementSize method"
         self.assertEqual(self.map.MaxElementSize(), self.map.ElementSize())
 
     def testConstantElementSize(self):
-        "Test the Map ConstantElementSize method"
+        "Test Epetra.Map ConstantElementSize method"
         self.assertEqual(self.map.ConstantElementSize(), True)
 
     def testSameAs(self):
-        "Test the Map SameAs method"
+        "Test Epetra.Map SameAs method"
         self.assertEqual(self.map.SameAs(self.map), True)
 
     def testDistributedGlobal(self):
-        "Test the Map DistributedGlobal method"
+        "Test Epetra.Map DistributedGlobal method"
         self.assertEqual(self.map.DistributedGlobal(), False)
 
     def testMinAllGID(self):
-        "Test the Map MinAllGID method"
+        "Test Epetra.Map MinAllGID method"
         self.assertEqual(self.map.MinAllGID(), 0)
 
     def testMaxAllGID(self):
-        "Test the Map MaxAllGID method"
+        "Test Epetra.Map MaxAllGID method"
         self.assertEqual(self.map.MaxAllGID(), 3)
 
     def testMinMyGID(self):
-        "Test the Map MinMyGID method"
+        "Test Epetra.Map MinMyGID method"
         self.assertEqual(self.map.MinMyGID(), 0)
 
     def testMaxMyGID(self):
-        "Test the Map MaxMyGID method"
+        "Test Epetra.Map MaxMyGID method"
         self.assertEqual(self.map.MaxMyGID(), 3)
 
     def testMinLID(self):
-        "Test the Map MinLID method"
+        "Test Epetra.Map MinLID method"
         self.assertEqual(self.map.MinLID(), 0)
 
     def testMaxLID(self):
-        "Test the Map MaxLID method"
+        "Test Epetra.Map MaxLID method"
         self.assertEqual(self.map.MaxLID(), 3)
 
     def testIDs(self):
-        "Test the Map global and local IDs"
+        "Test Epetra.Map global and local IDs"
         for i in range(self.map.NumMyElements()):
             self.assertEqual(self.map.LID(i)  , self.map.GID(i))
             self.assertEqual(self.map.MyGID(i), True           )
@@ -262,7 +262,7 @@ class EpetraVector1DTestCase(unittest.TestCase):
         self.numPyArray = arange(self.length) * self.scale
         
     def testBlockMap(self):
-        "Test the 1D Vector BlockMap constructor"
+        "Test Epetra.Vector 1D BlockMap constructor"
         epetraVector = Epetra.Vector(self.map)
         self.assertEqual(len(epetraVector), self.length)
         for i in range(self.length):
@@ -272,7 +272,7 @@ class EpetraVector1DTestCase(unittest.TestCase):
             self.assertEqual(epetraVector[i], self.numPyArray[i])
 
     def testBlockMap_Numeric(self):
-        "Test the 1D Vector BlockMap, Numeric array constructor"
+        "Test Epetra.Vector 1D BlockMap, Numeric array constructor"
         epetraVector = Epetra.Vector(self.map, self.numPyArray)
         self.assertEqual(epetraVector.MyLength(), self.length)
         (ni,) = epetraVector.shape
@@ -280,7 +280,7 @@ class EpetraVector1DTestCase(unittest.TestCase):
             self.assertEqual(epetraVector[i], self.numPyArray[i])
 
     def testNumeric(self):
-        "Test the 1D Vector Numeric array constructor"
+        "Test Epetra.Vector 1D Numeric array constructor"
         epetraVector = Epetra.Vector(self.numPyArray)
         self.assertEqual(epetraVector.MyLength(), self.length)
         (ni,) = epetraVector.shape
@@ -288,7 +288,7 @@ class EpetraVector1DTestCase(unittest.TestCase):
             self.assertEqual(epetraVector[i], self.numPyArray[i])
 
     def testPyObject(self):
-        "Test the 1D Vector PyObject constructor"
+        "Test Epetra.Vector 1D PyObject constructor"
         epetraVector = Epetra.Vector([0,1,2,3])
         self.assertEqual(epetraVector.MyLength(), 4)
         (ni,) = epetraVector.shape
@@ -307,7 +307,7 @@ class EpetraVector2DTestCase(unittest.TestCase):
         self.numPyArray.shape = (3,self.length/3)
         
     def testBlockMap(self):
-        "Test the 2D Vector BlockMap constructor"
+        "Test Epetra.Vector 2D BlockMap constructor"
         epetraVector = Epetra.Vector(self.map)
         self.assertEqual(len(epetraVector), self.length)
         for i in range(self.length):
@@ -317,7 +317,7 @@ class EpetraVector2DTestCase(unittest.TestCase):
             self.assertEqual(epetraVector[i], i*self.scale)
 
     def testBlockMap_Numeric(self):
-        "Test the 2D Vector BlockMap, Numeric array constructor"
+        "Test Epetra.Vector 2D BlockMap, Numeric array constructor"
         epetraVector = Epetra.Vector(self.map, self.numPyArray)
         self.assertEqual(epetraVector.MyLength(), self.length)
         (ni,nj) = epetraVector.shape
@@ -326,7 +326,7 @@ class EpetraVector2DTestCase(unittest.TestCase):
                 self.assertEqual(epetraVector[i,j], self.numPyArray[i,j])
 
     def testNumeric(self):
-        "Test the 2D Vector Numeric array constructor"
+        "Test Epetra.Vector 2D Numeric array constructor"
         epetraVector = Epetra.Vector(self.numPyArray)
         self.assertEqual(epetraVector.MyLength(), self.length)
         (ni,nj) = epetraVector.shape
@@ -335,7 +335,7 @@ class EpetraVector2DTestCase(unittest.TestCase):
                 self.assertEqual(epetraVector[i,j], self.numPyArray[i,j])
 
     def testPyObject(self):
-        "Test the 2D Vector PyObject constructor"
+        "Test Epetra.Vector 2D PyObject constructor"
         epetraVector = Epetra.Vector([[0,1],[2,3]])
         self.assertEqual(epetraVector.MyLength(), 4)
         (ni,nj) = epetraVector.shape
@@ -345,7 +345,7 @@ class EpetraVector2DTestCase(unittest.TestCase):
                 self.assertEqual(epetraVector[i,j], float(k))
 
     def testNonContiguous(self):
-        "Test the 2D Vector noncontiguous Numeric array constructor"
+        "Test Epetra.Vector 2D noncontiguous Numeric array constructor"
         nonContigArray = swapaxes(self.numPyArray,0,1)
         self.assertEqual(nonContigArray.iscontiguous(), False)
         epetraVector = Epetra.Vector(nonContigArray)
@@ -368,7 +368,7 @@ class EpetraVector3DTestCase(unittest.TestCase):
         self.numPyArray.shape = (ni,nj,nk)
 
     def testBlockMap(self):
-        "Test the 3D Vector BlockMap constructor"
+        "Test Epetra.Vector 3D BlockMap constructor"
         epetraVector = Epetra.Vector(self.map)
         self.assertEqual(len(epetraVector), self.length)
         for i in range(self.length):
@@ -378,7 +378,7 @@ class EpetraVector3DTestCase(unittest.TestCase):
             self.assertEqual(epetraVector[i], i*self.scale)
 
     def testBlockMap_Numeric(self):
-        "Test the 3D Vector BlockMap, Numeric array constructor"
+        "Test Epetra.Vector 3D BlockMap, Numeric array constructor"
         epetraVector = Epetra.Vector(self.map, self.numPyArray)
         self.assertEqual(epetraVector.MyLength(), self.length)
         (ni,nj,nk) = epetraVector.shape
@@ -388,7 +388,7 @@ class EpetraVector3DTestCase(unittest.TestCase):
                     self.assertEqual(epetraVector[i,j,k], self.numPyArray[i,j,k])
 
     def testNumeric(self):
-        "Test the 3D Vector Numeric array constructor"
+        "Test Epetra.Vector 3D Numeric array constructor"
         epetraVector = Epetra.Vector(self.numPyArray)
         self.assertEqual(epetraVector.MyLength(), self.length)
         (ni,nj,nk) = epetraVector.shape
@@ -398,7 +398,7 @@ class EpetraVector3DTestCase(unittest.TestCase):
                     self.assertEqual(epetraVector[i,j,k], self.numPyArray[i,j,k])
 
     def testPyObject(self):
-        "Test the 3D Vector PyObject constructor"
+        "Test Epetra.Vector 3D PyObject constructor"
         epetraVector = Epetra.Vector([[[0,1],[2,3]],[[4,5],[6,7]]])
         self.assertEqual(epetraVector.MyLength(), 8)
         (ni,nj,nk) = epetraVector.shape
@@ -409,7 +409,7 @@ class EpetraVector3DTestCase(unittest.TestCase):
                     self.assertEqual(epetraVector[i,j,k], float(l))
 
     def testNonContiguous01(self):
-        "Test the 3D Vector noncontig(0,1) Numeric array constructor"
+        "Test Epetra.Vector 3D noncontig(0,1) Numeric array constructor"
         nonContigArray = swapaxes(self.numPyArray,0,1)
         self.assertEqual(nonContigArray.iscontiguous(), False)
         epetraVector = Epetra.Vector(nonContigArray)
@@ -421,7 +421,7 @@ class EpetraVector3DTestCase(unittest.TestCase):
                     self.assertEqual(epetraVector[i,j,k], self.numPyArray[j,i,k])
 
     def testNonContiguous02(self):
-        "Test the 3D Vector noncontig(0,2) Numeric array constructor"
+        "Test Epetra.Vector 3D noncontig(0,2) Numeric array constructor"
         nonContigArray = swapaxes(self.numPyArray,0,2)
         self.assertEqual(nonContigArray.iscontiguous(), False)
         epetraVector = Epetra.Vector(nonContigArray)
@@ -433,7 +433,7 @@ class EpetraVector3DTestCase(unittest.TestCase):
                     self.assertEqual(epetraVector[i,j,k], self.numPyArray[k,j,i])
 
     def testNonContiguous12(self):
-        "Test the 3D Vector noncontig(1,2) Numeric array constructor"
+        "Test Epetra.Vector 3D noncontig(1,2) Numeric array constructor"
         nonContigArray = swapaxes(self.numPyArray,1,2)
         self.assertEqual(nonContigArray.iscontiguous(), False)
         epetraVector = Epetra.Vector(nonContigArray)
@@ -453,13 +453,13 @@ class EpetraSerialDenseTestCase(unittest.TestCase):
         self.cols = 4
 
     def testDefaultVectorConstructor(self):
-        "Test the SerialDenseVector default constructor"
+        "Test Epetra.SerialDenseVector default constructor"
         sdv = Epetra.SerialDenseVector()
         self.assertEqual(sdv.CV(), Epetra.Copy)
         self.assertEqual(sdv.Length(), 0)
 
     def testVectorSizeResize(self):
-        "Test the SerialDenseVector Size and Resize methods"
+        "Test Epetra.SerialDenseVector Size and Resize methods"
         sdv = Epetra.SerialDenseVector()
         sdv.Size(3*self.size)
         self.assertEqual(sdv.Length(), 3*self.size)
@@ -467,32 +467,32 @@ class EpetraSerialDenseTestCase(unittest.TestCase):
         self.assertEqual(sdv.Length(), self.size)
 
     def testVectorSizedConstructor(self):
-        "Test the SerialDenseVector sized constructor"
+        "Test Epetra.SerialDenseVector sized constructor"
         sdv = Epetra.SerialDenseVector(self.size)
         self.assertEqual(sdv.CV(), Epetra.Copy)
         self.assertEqual(sdv.Length(), self.size)
 
     def testVectorCopyConstructor(self):
-        "Test the SerialDenseVector copy constructor"
+        "Test Epetra.SerialDenseVector copy constructor"
         sdv1 = Epetra.SerialDenseVector(self.size)
         sdv2 = Epetra.SerialDenseVector(sdv1)
         self.assertEqual(sdv1.Length(), sdv2.Length())
 
     def testVectorIndexErrors(self):
-        "Test the SerialDenseVector index errors "
+        "Test Epetra.SerialDenseVector index errors "
         sdv = Epetra.SerialDenseVector(self.size)
         self.assertRaises(TypeError, sdv.__getitem__, 0,1)
         self.assertRaises(TypeError, sdv.__setitem__, 0,1,3.14)
 
     def testMatrixDefaultConstructor(self):
-        "Test the SerialDenseMatrix default constructor"
+        "Test Epetra.SerialDenseMatrix default constructor"
         sdm = Epetra.SerialDenseMatrix()
         self.assertEqual(sdm.CV(), Epetra.Copy)
         self.assertEqual(sdm.M(), 0)
         self.assertEqual(sdm.N(), 0)
 
     def testMatrixShapeReshape(self):
-        "Test the SerialDenseMatrix Shape and Reshape methods"
+        "Test Epetra.SerialDenseMatrix Shape and Reshape methods"
         sdm = Epetra.SerialDenseMatrix()
         sdm.Shape(self.rows,self.cols)
         self.assertEqual(sdm.M(), self.rows)
@@ -502,20 +502,20 @@ class EpetraSerialDenseTestCase(unittest.TestCase):
         self.assertEqual(sdm.N(), 2*self.cols)
 
     def testMatrixSizedConstructor(self):
-        "Test the SerialDenseMatrix sized constructor"
+        "Test Epetra.SerialDenseMatrix sized constructor"
         sdm = Epetra.SerialDenseMatrix(self.rows,self.cols)
         self.assertEqual(sdm.M(), self.rows)
         self.assertEqual(sdm.N(), self.cols)
 
     def testMatrixCopyConstructor(self):
-        "Test the SerialDenseMatrix copy constructor"
+        "Test Epetra.SerialDenseMatrix copy constructor"
         sdm1 = Epetra.SerialDenseMatrix(self.rows,self.cols)
         sdm2 = Epetra.SerialDenseMatrix(sdm1)
         self.assertEqual(sdm1.M(), sdm2.M())
         self.assertEqual(sdm1.N(), sdm2.N())
 
     def testMatrixNormOneNormInf(self):
-        "Test the SerialDenseMatrix NormOne and NormInf methods"
+        "Test Epetra.SerialDenseMatrix NormOne and NormInf methods"
         scalar = 2.0
         size   = self.size
         sdm    = Epetra.SerialDenseMatrix(size,size)
@@ -526,13 +526,13 @@ class EpetraSerialDenseTestCase(unittest.TestCase):
         self.assertEqual(sdm.NormInf(), scalar*size)
 
     def testMatrixIndexErrors(self):
-        "Test the SerialDenseMatrix index errors "
+        "Test Epetra.SerialDenseMatrix index errors "
         sdm = Epetra.SerialDenseMatrix(self.size,self.size)
         self.assertRaises(TypeError, sdm.__getitem__, 0,1,2)
         self.assertRaises(TypeError, sdm.__setitem__, 0,1,2,3.14)
 
     def testSolver(self):
-        "Test the SerialDenseSolver"
+        "Test Epetra.SerialDenseSolver"
         size = self.size
         sdm  = Epetra.SerialDenseMatrix(size,size)
         for i in range(size):

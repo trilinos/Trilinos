@@ -1,4 +1,4 @@
-i// @HEADER
+// @HEADER
 // ***********************************************************************
 //
 //                 PyTrilinos: Rapid Prototyping Package
