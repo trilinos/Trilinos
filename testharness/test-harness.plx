@@ -445,6 +445,7 @@ report($SUMMARY);
                 while (!$configurePassed && !$quitTrying) {
                 
                     # attempt to configure
+                    printEvent("$comm - configuring Trilinos...\n");
                     my $configureOutput = configure($buildDir[$j]);
                     
                     # configure failed
@@ -452,11 +453,11 @@ report($SUMMARY);
                         
                         # fix invoke configure
                         my $log = "$options{'TRILINOS_DIR'}[0]/testharness/temp/trilinos_configure_log_$hostOS.txt";
-                        my $invokeConfigure ="$options{'TRILINOS_DIR'}[0]/$buildDir[$j]/invoke-configure";                    
-                        my $brokenPackage = fixInvokeConfigure($log, $invokeConfigure, $comm);      
+                        my $invokeConfigure ="$options{'TRILINOS_DIR'}[0]/$buildDir[$j]/invoke-configure";
+                        (my $fixFailed, my $brokenPackage) = fixInvokeConfigure($log, $invokeConfigure, $comm);
                             
                         # quit if error fixing invoke-configure
-                        if ($brokenPackage eq "error") {
+                        if ($fixFailed == true) {
                             $quitTrying = 1; 
                             report($TRILINOS_CONFIGURE_ERROR, $brokenPackage, $comm); 
                             last; # equivalent to break                          
@@ -502,6 +503,7 @@ report($SUMMARY);
                     while ($configurePassed && !$buildPassed && !$quitTrying) {
                     
                         # attempt to build
+                        printEvent("$comm - building Trilinos...\n");
                         my $buildOutput = build($buildDir[$j]);
                         
                         # build failed
@@ -509,11 +511,11 @@ report($SUMMARY);
                                        
                             # fix invoke configure         
                             my $log = "$options{'TRILINOS_DIR'}[0]/testharness/temp/trilinos_build_log_$hostOS.txt";
-                            my $invokeConfigure ="$options{'TRILINOS_DIR'}[0]/$buildDir[$j]/invoke-configure";                    
-                            my $brokenPackage = fixInvokeConfigure($log, $invokeConfigure, $comm);
+                            my $invokeConfigure ="$options{'TRILINOS_DIR'}[0]/$buildDir[$j]/invoke-configure";
+                            (my $fixFailed, my $brokenPackage) = fixInvokeConfigure($log, $invokeConfigure, $comm);
                             
                             # quit if error fixing invoke-configure
-                            if ($brokenPackage eq "error") {
+                            if ($fixFailed == true) {
                                 $quitTrying = 1; 
                                 report($TRILINOS_BUILD_ERROR, $brokenPackage, $comm); 
                                 last; # equivalent to break                               
@@ -776,7 +778,7 @@ report($SUMMARY);
     #   - global variables used: yes
     #   - sends mail: no
     #   - args: $log $invokeConfigure
-    #   - returns: 
+    #   - returns: ((pass: 0; noChange: 1; unknown: 2), (brokenPackage))
 
     sub fixInvokeConfigure {   
         my $log = $_[0];    
@@ -805,17 +807,17 @@ report($SUMMARY);
             } elsif ($comm == "mpi") {
                 $prefix = "$options{'TRILINOS_DIR'}[0]/$options{'MPI_DIR'}[0]"
             }                
-            $file =~ m/.*$prefix\/packages\/(\w*)\W/ms;
+            $file =~ m/.*$prefix\/packages\/(\w*)\W/ms;            
             if (defined $1) { $brokenPackage = $1; }
         }
         
         if (defined $brokenPackage) {
-            $brokenPackage =~ s/~\s*//;             # trim leading spaces
+            $brokenPackage =~ s/^\s*//;             # trim leading spaces
             $brokenPackage =~ s/\s*$//;             # trim trailing spaces
             $brokenPackage = lc($brokenPackage);    # convert to lower-case
         } else {
             printEvent("error fixing invoke-configure--can't detect package\n");
-            return ("error", "error");
+            return (2, "unknown");
         }
         
         system "cp $invokeConfigure $invokeConfigure-broken";
@@ -860,7 +862,7 @@ report($SUMMARY);
         
         if (!$changeMade) {
             printEvent("error fixing invoke-configure--no changes made ($brokenPackage broke)\n");
-            return ("error", "error");
+            return (1, $brokenPackage);
         }
         
         # prepare new invoke-configure
@@ -876,7 +878,7 @@ report($SUMMARY);
         close INVOKE_CONFIGURE; 
         
         # return broken package name
-        return ($brokenPackage);
+        return (0, $brokenPackage);
         
     } # fixInvokeConfigure()
 
@@ -998,15 +1000,21 @@ report($SUMMARY);
         $hostHardware =~ s/\s*$//; 
         $hostName =~ s/\s*$//; 
         
-        # grab the repository tag        
-        chdir "$options{'TRILINOS_DIR'}[0]/CVS";
+        # grab the repository branch tag        
+        chdir "$options{'TRILINOS_DIR'}[0]";
         my $tag = "";
-        my $cvsDirContents = `ls`;
-        if ($cvsDirContents =~ m/Tag/) {
-            $tag = `cat Tag`;
+        my $homeDirContents = `ls`;
+        if ($homeDirContents =~ m/CVS/) {
+            chdir "$options{'TRILINOS_DIR'}[0]/CVS";
+            my $cvsDirContents = `ls`;
+            if ($cvsDirContents =~ m/Tag/) {
+                $tag = `cat Tag`;
+            } else {
+                $tag = "development";
+            }      
         } else {
-            $tag = "development";
-        }          
+            $tag = "unknown";
+        }    
         chdir "$options{'TRILINOS_DIR'}[0]/testharness/temp";
         
         # remove path from test name
