@@ -232,8 +232,8 @@ then
             LA_SRC="blas1.f blas2.f blas3.f"
             make "CC=${CC}" "FC=${FC}" "AR=${AR}" "TIMER=md_timer_generic.c" \
                  "COMMUNICATION=${AZCOMM}" "RNLIB=${RANLIB}" \
-                 "CFLAGS=${tFLAGS} ${ARCH_FLAGS} -Dbinary" "BLAS=${BLAS}" \
-                 -f Makefile.template
+                 "CFLAGS=${tFLAGS} -Dlint ${ARCH_FLAGS} -Dbinary" "FFLAGS=${tFLAGS} ${ARCH_FLAGS}" \
+		 "BLAS=${BLAS}" -f Makefile.template
          else
             make "CC=${CC}" "FC=${FC}" "AR=${AR}" "TIMER=md_timer_generic.c" \
                  "COMMUNICATION=${AZCOMM}" "RNLIB=${RANLIB}" \
