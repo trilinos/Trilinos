@@ -39,7 +39,7 @@ Epetra contains a number of classes.  They can be categorized as follows:
      on a parallel machine.  A multi-vector is a collection vectors.
      It is a generalizaion of a 2D array.
 
-<li> Sparse row graph class: Epetra_CRS_Graph - Allows construction
+<li> Sparse row graph class: Epetra_CrsGraph - Allows construction
      of a serial or parallel graph.  The graph determines the communication pattern
      for subsequent matrix objects.
 

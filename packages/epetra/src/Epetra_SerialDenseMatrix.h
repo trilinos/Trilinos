@@ -28,6 +28,7 @@
 #include "Epetra_Object.h" 
 #include "Epetra_CompObject.h"
 #include "Epetra_BLAS.h"
+class Epetra_SerialSymDenseMatrix;
 
 //! Epetra_SerialDenseMatrix: A class for constructing and using real double precision general dense matrices.
 
@@ -71,12 +72,10 @@ the object.  Specifically:
   <li> Norms.
 </ul>
 
-The final useful function is Flops().  Each Epetra_SerialDenseMatrix object keep track of the number
-of \e serial floating point operations performed using the specified object as the \e this argument
-to the function.  The Flops() function returns this number as a double precision number.  Using this 
-information, in conjunction with the Epetra_Time class, one can get accurate parallel performance
-numbers.
-
+<b>Counting floating point operations </b>
+The Epetra_SerialDenseMatrix class has Epetra_CompObject as a base class.  Thus, floating point operations 
+are counted and accumulated in the Epetra_Flop object (if any) that was set using the SetFlopCounter()
+method in the Epetra_CompObject base class.
 
 */
 
@@ -180,6 +179,33 @@ class Epetra_SerialDenseMatrix : public Epetra_CompObject, public Epetra_Object,
                  const Epetra_SerialDenseMatrix& A, 
                  const Epetra_SerialDenseMatrix& B,
                  double ScalarThis );
+
+  //! Matrix-Matrix multiplication with a symmetric matrix A.
+  /*! If SideA = 'L', compute \e this = ScalarThis*\e this + ScalarAB*A*B.
+      If SideA = 'R', compute \e this = ScalarThis*\e this + ScalarAB*B*A.
+
+This function performs a variety of matrix-matrix multiply operations.
+
+  \param In
+         SideA - Specifies order of A relative to B.
+
+  \param In
+         ScalarAB - Scalar to multiply with A*B.
+  \param In
+         A - Symmetric Dense Matrix, either upper or lower triangle will be used depending on
+	 value of A.Upper().
+  \param In
+         B - Dense Matrix.
+  \param In
+         ScalarThis - Scalar to multiply with \e this.
+
+    \return Integer error code, set to 0 if successful.
+	 
+  */
+  int  Multiply (char SideA, double ScalarAB, 
+                 const Epetra_SerialSymDenseMatrix& A, 
+                 const Epetra_SerialDenseMatrix& B,
+                 double ScalarThis );
   //@}
 
   //@{ \name Data Accessor methods
@@ -188,13 +214,11 @@ class Epetra_SerialDenseMatrix : public Epetra_CompObject, public Epetra_Object,
   /*!
     \return Integer error code, set to 0 if successful.
   */
-  double OneNorm();
+  virtual double OneNorm();
 
   //! Computes the Infinity-Norm of the \e this matrix.
-  /*!
-    \return Integer error code, set to 0 if successful.
-  */
-  double InfNorm();
+  virtual double InfNorm();
+
   //! Element access function.
   /*!
     The parentheses operator returns the element in the ith row and jth column if A(i,j) is

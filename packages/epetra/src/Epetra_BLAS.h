@@ -121,6 +121,15 @@ class Epetra_BLAS {
 	    double ALPHA, double * A, int LDA, double * B,
 	    int LDB, double BETA, double * C, int LDC) const;
 
+  //! Epetra_BLAS symmetric matrix-matrix multiply function (SSYMM)
+  void SYMM(char SIDE, int M, int N,
+	    float ALPHA, float * A, int LDA, float * B,
+	    int LDB, float BETA, float * C, int LDC) const;
+  //! Epetra_BLAS matrix-matrix multiply function (DSYMM)
+  void SYMM(char SYMM, int M, int N,
+	    double ALPHA, double * A, int LDA, double * B,
+	    int LDB, double BETA, double * C, int LDC) const;
+
   //! Epetra_BLAS triangular matrix-matrix multiply function (STRMM)
   void TRMM(char SIDE, char UPLO, char TRANSA, char DIAG, int M, int N,
 	    float ALPHA, float * A, int LDA, float * B,

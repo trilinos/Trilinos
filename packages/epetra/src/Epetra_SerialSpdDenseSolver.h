@@ -22,35 +22,35 @@
  * INFORMATION, APPARATUS, PRODUCT, OR PROCESS DISCLOSED, OR REPRESENTS
  * THAT ITS USE WOULD NOT INFRINGE PRIVATELY OWNED RIGHTS. */
 
-#ifndef _EPETRA_SPD_DENSEMATRIX_H_
-#define _EPETRA_SPD_DENSEMATRIX_H_
+#ifndef _EPETRA_SERIALSPDDENSESOLVER_H_
+#define _EPETRA_SERIALSPDDENSESOLVER_H_
 
-//! Epetra_HardSerialSpdDenseProblem: A class for constructing and using symmetric positive definite dense matrices.
+//! Epetra_SerialSpdDenseSolver: A class for constructing and using symmetric positive definite dense matrices.
 
-/*! The Epetra_HardSerialSpdDenseProblem class enables the construction and use of real-valued, symmetric positive definite, 
+/*! The Epetra_SerialSpdDenseSolver class enables the construction and use of real-valued, symmetric positive definite, 
     double-precision dense matrices.  It is built on the Epetra_DenseMatrix class which in turn is built on the 
     BLAS and LAPACK via the Epetra_BLAS and 
     Epetra_LAPACK classes. 
 
-The Epetra_HardSerialSpdDenseProblem class is intended to provide full-featured support for solving linear and eigen system
+The Epetra_SerialSpdDenseSolver class is intended to provide full-featured support for solving linear and eigen system
 problems for symmetric positive definite matrices.  It is written on top of BLAS and LAPACK and thus has excellent
 performance and numerical capabilities.  Using this class, one can either perform simple factorizations and solves or
 apply all the tricks available in LAPACK to get the best possible solution for very ill-conditioned problems.
 
-<b>Epetra_HardSerialSpdDenseProblem vs. Epetra_LAPACK</b>
+<b>Epetra_SerialSpdDenseSolver vs. Epetra_LAPACK</b>
 
-The Epetra_LAPACK class provides access to most of the same functionality as Epetra_HardSerialSpdDenseProblem.
-The primary difference is that Epetra_LAPACK is a "thin" layer on top of LAPACK and Epetra_HardSerialSpdDenseProblem
+The Epetra_LAPACK class provides access to most of the same functionality as Epetra_SerialSpdDenseSolver.
+The primary difference is that Epetra_LAPACK is a "thin" layer on top of LAPACK and Epetra_SerialSpdDenseSolver
 attempts to provide easy access to the more sophisticated aspects of solving dense linear and eigensystems.
 <ul>
 <li> When you should use Epetra_LAPACK:  If you are simply looking for a convenient wrapper around the Fortran LAPACK
      routines and you have a well-conditioned problem, you should probably use Epetra_LAPACK directly.
-<li> When you should use Epetra_HardSerialSpdDenseProblem: If you want to (or potentially want to) solve ill-conditioned 
-     problems or want to work with a more object-oriented interface, you should probably use Epetra_HardSerialSpdDenseProblem.
+<li> When you should use Epetra_SerialSpdDenseSolver: If you want to (or potentially want to) solve ill-conditioned 
+     problems or want to work with a more object-oriented interface, you should probably use Epetra_SerialSpdDenseSolver.
      
 </ul>
 
-<b>Constructing Epetra_HardSerialSpdDenseProblem Objects</b>
+<b>Constructing Epetra_SerialSpdDenseSolver Objects</b>
 
 There are three Epetra_DenseMatrix constructors.  The first constructs a zero-sized object which should be made
 to appropriate length using the Shape() or Reshape() functions and then filled with the [] or () operators. 
@@ -75,16 +75,16 @@ is done separately from the constructor.  This allows
 a single matrix factor to be used for multiple solves.  Similar to the constructor, the vectors X and B can
 be copied or viewed using the Epetra_DataAccess argument.
 
-<b>Extracting Data from Epetra_HardSerialSpdDenseProblem Objects</b>
+<b>Extracting Data from Epetra_SerialSpdDenseSolver Objects</b>
 
-Once a Epetra_HardSerialSpdDenseProblem is constructed, it is possible to view the data via access functions.
+Once a Epetra_SerialSpdDenseSolver is constructed, it is possible to view the data via access functions.
 
 \warning Use of these access functions cam be \e extremely dangerous from a data hiding perspective.
 
 
 <b>Vector and Utility Functions</b>
 
-Once a Epetra_HardSerialSpdDenseProblem is constructed, several mathematical functions can be applied to
+Once a Epetra_SerialSpdDenseSolver is constructed, several mathematical functions can be applied to
 the object.  Specifically:
 <ul>
   <li> Factorizations.
@@ -94,7 +94,7 @@ the object.  Specifically:
   <li> Norms.
 </ul>
 
-The final useful function is Flops().  Each Epetra_HardSerialSpdDenseProblem object keep track of the number
+The final useful function is Flops().  Each Epetra_SerialSpdDenseSolver object keep track of the number
 of \e serial floating point operations performed using the specified object as the \e this argument
 to the function.  The Flops() function returns this number as a double precision number.  Using this 
 information, in conjunction with the Epetra_Time class, one can get accurate parallel performance
@@ -107,88 +107,44 @@ in some instances, the factorization may be very poorly conditioned and the simp
 these situations, equilibration and iterative refinement may improve the accuracy, or prevent a breakdown in
 the factorization. 
 
-Epetra_HardSerialSpdDenseProblem will use equilibration with the factorization if, once the object
+Epetra_SerialSpdDenseSolver will use equilibration with the factorization if, once the object
 is constructed and \e before it is factored, you call the function FactorWithEquilibration(true) to force 
 equilibration to be used.  If you are uncertain if equilibration should be used, you may call the function
 ShouldEquilibrate() which will return true if equilibration could possibly help.  ShouldEquilibrate() uses
 guidelines specified in the LAPACK User Guide, namely if SCOND < 0.1 and AMAX < Underflow or AMAX > Overflow, to 
 determine if equilibration \e might be useful. 
  
-Epetra_HardSerialSpdDenseProblem will use iterative refinement after a forward/back solve if you call
+Epetra_SerialSpdDenseSolver will use iterative refinement after a forward/back solve if you call
 SolveToRefinedSolution(true).  It will also compute forward and backward error estimates if you call
 EstimateSolutionErrors(true).  Access to the forward (back) error estimates is available via FERR() (BERR()).
 
-Examples using Epetra_HardSerialSpdDenseProblem can be found in the Epetra test directories.
+Examples using Epetra_SerialSpdDenseSolver can be found in the Epetra test directories.
 
 */
-#include "Epetra_Epetra.h" 
-#include "Epetra_DenseMatrix.h"
-
+#include "Epetra_Object.h" 
+#include "Epetra_SerialDenseSolver.h"
+class Epetra_SerialSymDenseMatrix;
 
 //=========================================================================
-class Epetra_HardSerialSpdDenseProblem : public Epetra_DenseMatrix {
+class Epetra_SerialSpdDenseSolver : public Epetra_SerialDenseSolver {
 
  public:
-  //! Default constructor; defines a zero size object.
-  /*!
-    Epetra_HardSerialSpdDenseProblem objects defined by the default constructor should be sized with the Shape() 
-    or Reshape() functions.  
-    Values should be defined by using the [] or ()operators.
-   */
-  Epetra_HardSerialSpdDenseProblem(void);
-  //! Set object values from two-dimensional array.
-  /*!
-    \param In 
-           Epetra_DataAccess - Enumerated type set to Copy or View.
-    \param In
-           A - Pointer to an array of double precision numbers.  The first vector starts at A.
-	   The second vector starts at A+LDA, the third at A+2*LDA, and so on.
-    \param In
-           LDA - The "Leading Dimension", or stride between vectors in memory.
-    \param In 
-           NumRowsCols - Number of rows and columns in object.
-
-	   See Detailed Description section for further discussion.
-  */
-  Epetra_HardSerialSpdDenseProblem(Epetra_DataAccess CV, double *A, int LDA, int NumRowsCols);
+  //@{ \name Constructor/Destructor Methods
+  //! Default constructor; matrix should be set using SetMatrix(), LHS and RHS set with SetVectors().
+  Epetra_SerialSpdDenseSolver();
   
-  //! Epetra_HardSerialSpdDenseProblem copy constructor.
-  
-  Epetra_HardSerialSpdDenseProblem(const Epetra_HardSerialSpdDenseProblem& Source);
-  
-  //! Set dimensions of a Epetra_HardSerialSpdDenseProblem object; init values to zero.
-  /*!
-    \param In 
-           NumRowsCols - Number of rows and columns in object.
 
-	   Allows user to define the dimensions of a Epetra_DenseMatrix at any point. This function can
-	   be called at any point after construction.  Any values that were previously in this object are
-	   destroyed and the resized matrix starts off with all zero values.
+  //! Epetra_SerialDenseSolver destructor.  
+  virtual ~Epetra_SerialSpdDenseSolver();
+  //@}
 
-    \return Integer error code, set to 0 if successful.
-  */
-  int Shape(int NumRowsCols) {return(Epetra_DenseMatrix::Shape(NumRowsCols,NumRowsCols));};
+  //@{ \name Set Methods
+
+  //! Sets the pointers for coefficient matrix; special version for symmetric matrices
+  int SetMatrix(Epetra_SerialSymDenseMatrix & A);
+  //@}
   
-  //! Reshape a Epetra_HardSerialSpdDenseProblem object.
-  /*!
-    \param In 
-           NumRowsCols - Number of rows and columns in object.
-
-	   Allows user to define the dimensions of a Epetra_DenseMatrix at any point. This function can
-	   be called at any point after construction.  Any values that were previously in this object are
-	   copied into the new shape.  If the new shape is smaller than the original, the upper left portion
-	   of the original matrix (the principal submatrix) is copied to the new matrix.
-
-    \return Integer error code, set to 0 if successful.
-  */
-  int Reshape(int NumRowsCols) {return(Epetra_DenseMatrix::Reshape(NumRowsCols,NumRowsCols));};
-
-  
-  //! Epetra_HardSerialSpdDenseProblem destructor.  
-  virtual ~Epetra_HardSerialSpdDenseProblem ();
-  
-  //! If Flag is true, causes all subsequent function calls to work with upper triangle \e this matrix, otherwise work with lower.
-  void FactorUpperTriangle(bool Flag) {Upper_ = Flag; if (Flag) UPLO_ = 'U'; else UPLO_ = 'L'; return;};
+  //@{ \name Factor/Solve/Invert Methods
 
   //! Computes the in-place Cholesky factorization of the matrix using the LAPACK routine \e DPOTRF.
   /*!
@@ -220,13 +176,13 @@ class Epetra_HardSerialSpdDenseProblem : public Epetra_DenseMatrix {
   /*! 
     \return Integer error code, set to 0 if successful. Otherwise returns the LAPACK error code INFO.
   */
-  int Equilibrate_A(void);
+  int EquilibrateMatrix(void);
 
   //! Equilibrates the current RHS.
   /*! 
     \return Integer error code, set to 0 if successful. Otherwise returns the LAPACK error code INFO.
   */
-  int Equilibrate_B(void);
+  int EquilibrateRHS(void);
 
 
   //! Apply Iterative Refinement.
@@ -239,7 +195,7 @@ class Epetra_HardSerialSpdDenseProblem : public Epetra_DenseMatrix {
   /*! 
     \return Integer error code, set to 0 if successful. Otherwise returns the LAPACK error code INFO.
   */
-  int Unequilibrate_X(void);
+  int UnequilibrateLHS(void);
 
   //! Returns the reciprocal of the 1-norm condition number of the \e this matrix.
   /*! 
@@ -249,13 +205,16 @@ class Epetra_HardSerialSpdDenseProblem : public Epetra_DenseMatrix {
     \return Integer error code, set to 0 if successful. Otherwise returns the LAPACK error code INFO.
   */
   int ReciprocalConditionEstimate(double & Value);
+  //@}
 
-  //! Returns true if upper triangle of \e this matrix has and will be used.
-  bool Upper() {return(Upper_);};
+  //@{ \name Query methods
+
 
   //! Returns true if the LAPACK general rules for equilibration suggest you should equilibrate the system.
   bool ShouldEquilibrate() {ComputeEquilibrateScaling(); return(ShouldEquilibrate_);};
+  //@}
 
+  //@{ \name Data Accessor methods
   //! Ratio of smallest to largest equilibration scale factors for the \e this matrix (returns -1 if not yet computed).
   /*! If SCOND() is >= 0.1 and AMAX() is not close to overflow or underflow, then equilibration is not needed.
    */
@@ -263,17 +222,17 @@ class Epetra_HardSerialSpdDenseProblem : public Epetra_DenseMatrix {
 
   //! Returns the absolute value of the largest entry of the \e this matrix (returns -1 if not yet computed).
   double AMAX() {return(AMAX_);};  
+  //@}
 
  private:
 
-  void CopyUPLOMat(bool Upper, double * A, int LDA, int NumRows);
-
-  bool Upper_;
-
-  char UPLO_;
-
   double SCOND_;
+  Epetra_SerialSymDenseMatrix * SymMatrix_; // Need pointer to symmetric matrix for Spd-specific methods
+  Epetra_SerialSymDenseMatrix * SymFactor_; // Need pointer to symmetric matrix for Spd-specific methods
 
+  // Epetra_SerialSpdDenseSolver copy constructor (put here because we don't want user access)
+  
+  Epetra_SerialSpdDenseSolver(const Epetra_SerialSpdDenseSolver& Source){};
 };
 
-#endif /* _EPETRA_SPD_DENSEMATRIX_H_ */
+#endif /* _EPETRA_SERIALSPDDENSESOLVER_H_ */

@@ -14,11 +14,11 @@
 #include "Epetra_Time.h"
 #include "Epetra_SerialDenseMatrix.h" 
 #include "Epetra_SerialDenseVector.h"
-#include "Epetra_HardSerialDenseSolver.h"
+#include "Epetra_SerialDenseSolver.h"
 
 // prototypes
 
-int check(Epetra_HardSerialDenseSolver & solver, double * A1, int LDA,
+int check(Epetra_SerialDenseSolver & solver, double * A1, int LDA,
 	  int N1, int NRHS1, double OneNorm1, 
 	  double * B1, int LDB1, 
 	  double * X1, int LDX1,
@@ -98,7 +98,7 @@ int main(int argc, char *argv[])
   double OneNorm1;
   bool Transpose = false;
   
-  Epetra_HardSerialDenseSolver solver;
+  Epetra_SerialDenseSolver solver;
   Epetra_SerialDenseMatrix * Matrix;
   for (int kk=0; kk<2; kk++) {
     for (i=1; i<=N; i++) {
@@ -179,16 +179,20 @@ int main(int argc, char *argv[])
 
   // Define Epetra_SerialDenseMatrix object
 
-  Matrix = new Epetra_SerialDenseMatrix(Copy, A, LDA, N, N);
-  solver.SetMatrix(*Matrix);
+  Epetra_SerialDenseMatrix BigMatrix(Copy, A, LDA, N, N);
+  Epetra_SerialDenseMatrix OrigBigMatrix(View, A, LDA, N, N);
+
+  Epetra_SerialDenseSolver BigSolver;
+  BigSolver.FactorWithEquilibration(true);
+  BigSolver.SetMatrix(BigMatrix);
 
   // Time factorization
 
   Epetra_Flops counter;
-  solver.SetFlopCounter(counter);
+  BigSolver.SetFlopCounter(counter);
   Epetra_Time Timer(Comm);
   double tstart = Timer.ElapsedTime();
-  ierr = solver.Factor();
+  ierr = BigSolver.Factor();
   if (ierr!=0 && verbose) cout << "Error in factorization = "<<ierr<< endl;
   assert(ierr==0);
   double time = Timer.ElapsedTime() - tstart;
@@ -198,36 +202,41 @@ int main(int argc, char *argv[])
   if (verbose) cout << "MFLOPS for Factorization = " << MFLOPS << endl;
 
   // Define Left hand side and right hand side 
-  Epetra_SerialDenseMatrix &LHS = *new Epetra_SerialDenseMatrix(View, X, LDX, N, NRHS);
+  Epetra_SerialDenseMatrix LHS(View, X, LDX, N, NRHS);
   Epetra_SerialDenseMatrix RHS;
   RHS.Shape(N,NRHS); // Allocate RHS
 
   // Compute RHS from A and X
 
+  Epetra_Flops RHS_counter;
+  RHS.SetFlopCounter(RHS_counter);
   tstart = Timer.ElapsedTime();
-  RHS.Multiply('N', 'N', 1.0, *Matrix, LHS, 0.0);
+  RHS.Multiply('N', 'N', 1.0, OrigBigMatrix, LHS, 0.0);
   time = Timer.ElapsedTime() - tstart;
 
-  FLOPS = RHS.Flops();
+  Epetra_SerialDenseMatrix OrigRHS = RHS;
+
+  FLOPS = RHS_counter.Flops();
   MFLOPS = FLOPS/time/1000000.0;
   if (verbose) cout << "MFLOPS to build RHS (NRHS = " << NRHS <<") = " << MFLOPS << endl;
 
   // Set LHS and RHS and solve
-  solver.SetVectors(LHS, RHS);
+  BigSolver.SetVectors(LHS, RHS);
 
   tstart = Timer.ElapsedTime();
-  ierr = solver.Solve();
+  ierr = BigSolver.Solve();
   if (ierr==1 && verbose) cout << "LAPACK guidelines suggest this matrix might benefit from equilibration." << endl;
   else if (ierr!=0 && verbose) cout << "Error in solve = "<<ierr<< endl;
   assert(ierr>=0);
   time = Timer.ElapsedTime() - tstart;
 
-  FLOPS = solver.Flops();
+  FLOPS = BigSolver.Flops();
   MFLOPS = FLOPS/time/1000000.0;
   if (verbose) cout << "MFLOPS for Solve (NRHS = " << NRHS <<") = " << MFLOPS << endl;
 
   double * resid = new double[NRHS];
-  bool OK = Residual(N, NRHS, A, LDA, solver.Transpose(), solver.X(), solver.LDX(), solver.B(), solver.LDB(), resid);
+  bool OK = Residual(N, NRHS, A, LDA, BigSolver.Transpose(), BigSolver.X(), BigSolver.LDX(), 
+		     OrigRHS.A(), OrigRHS.LDA(), resid);
 
   if (verbose) {
     if (!OK) cout << "************* Residual do not meet tolerance *************" << endl;
@@ -240,33 +249,39 @@ int main(int argc, char *argv[])
 
   Epetra_SerialDenseVector X2;
   Epetra_SerialDenseVector B2;
-  X2.Size(Matrix->N());
-  B2.Size(Matrix->M());
-  for (int kk=0; kk<Matrix->N(); kk++) X2[kk] = kk; // Define entries of X2
+  X2.Size(BigMatrix.N());
+  B2.Size(BigMatrix.M());
+  int length = BigMatrix.N();
+  for (int kk=0; kk<length; kk++) X2[kk] = ((double ) kk)/ ((double) length); // Define entries of X2
 
+  RHS_counter.ResetFlops();
+  B2.SetFlopCounter(RHS_counter);
   tstart = Timer.ElapsedTime();
-  B2.Multiply('N', 'N', 1.0, *Matrix, X2, 0.0); // Define B2 = A*X2
+  B2.Multiply('N', 'N', 1.0, OrigBigMatrix, X2, 0.0); // Define B2 = A*X2
   time = Timer.ElapsedTime() - tstart;
 
-  FLOPS = B2.Flops();
+  Epetra_SerialDenseVector OrigB2 = B2;
+
+  FLOPS = RHS_counter.Flops();
   MFLOPS = FLOPS/time/1000000.0;
   if (verbose) cout << "MFLOPS to build single RHS = " << MFLOPS << endl;
 
   // Set LHS and RHS and solve
-  solver.SetVectors(X2, B2);
+  BigSolver.SetVectors(X2, B2);
 
   tstart = Timer.ElapsedTime();
-  ierr = solver.Solve();
+  ierr = BigSolver.Solve();
+  time = Timer.ElapsedTime() - tstart;
   if (ierr==1 && verbose) cout << "LAPACK guidelines suggest this matrix might benefit from equilibration." << endl;
   else if (ierr!=0 && verbose) cout << "Error in solve = "<<ierr<< endl;
   assert(ierr>=0);
-  time = Timer.ElapsedTime() - tstart;
 
-  FLOPS = solver.Flops();
+  FLOPS = counter.Flops();
   MFLOPS = FLOPS/time/1000000.0;
   if (verbose) cout << "MFLOPS to solve single RHS = " << MFLOPS << endl;
 
-  OK = Residual(N, 1, A, LDA, solver.Transpose(), solver.X(), solver.LDX(), solver.B(), solver.LDB(), resid);
+  OK = Residual(N, 1, A, LDA, BigSolver.Transpose(), BigSolver.X(), BigSolver.LDX(), OrigB2.A(), 
+		OrigB2.LDA(), resid);
 
   if (verbose) {
     if (!OK) cout << "************* Residual do not meet tolerance *************" << endl;
@@ -275,8 +290,6 @@ int main(int argc, char *argv[])
   delete [] resid;
   delete [] A;
   delete [] X;
-  delete Matrix;
-  delete &LHS;
 
   ///////////////////////////////////////////////////
   // Now test default constructor and index operators
@@ -305,8 +318,7 @@ int main(int argc, char *argv[])
   if (verbose)
     cout << "Default constructor and index operator check OK.  Values of Hilbert matrix = " 
 	 << endl << C << endl
-	 << "Values should be 1/(i+j+1), except value (1,2) should be 1000" << endl;
-
+	 << "Values should be 1/(i+j+1), except value (1,2) should be 1000" << endl; 
   
   delete [] C1;
 
@@ -320,7 +332,7 @@ int main(int argc, char *argv[])
 return ierr ;
 }
 
-int check(Epetra_HardSerialDenseSolver &solver, double * A1, int LDA1, 
+int check(Epetra_SerialDenseSolver &solver, double * A1, int LDA1, 
 	  int N1, int NRHS1, double OneNorm1, 
 	  double * B1, int LDB1, 
 	  double * X1, int LDX1,
@@ -404,7 +416,6 @@ int check(Epetra_HardSerialDenseSolver &solver, double * A1, int LDA1,
     }
   }
   
-  solver.UnequilibrateLHS();
   double * resid = new double[NRHS];
   OK = Residual(N, NRHS, A1, LDA1, solver.Transpose(), solver.X(), solver.LDX(), B1, LDB1, resid);
   if (verbose) {
@@ -434,15 +445,14 @@ int check(Epetra_HardSerialDenseSolver &solver, double * A1, int LDA1,
   assert(solver.Transpose()==Transpose);
 
   
-  Epetra_SerialDenseMatrix &RHS1 = *new Epetra_SerialDenseMatrix(Copy, B1, LDB1, N, NRHS);
-  Epetra_SerialDenseMatrix &LHS1 = *new Epetra_SerialDenseMatrix(Copy, X1, LDX1, N, NRHS);
+  Epetra_SerialDenseMatrix RHS1(Copy, B1, LDB1, N, NRHS);
+  Epetra_SerialDenseMatrix LHS1(Copy, X1, LDX1, N, NRHS);
   assert(solver.SetVectors(LHS1, RHS1)==0);
   assert(!solver.Solved());
 
   assert(solver.Solve()>-1);
 	 
   
-  solver.UnequilibrateLHS();
 
   OK = Residual(N, NRHS, A1, LDA1, solver.Transpose(), solver.X(), solver.LDX(), B1, LDB1, resid);
 
@@ -454,8 +464,6 @@ int check(Epetra_HardSerialDenseSolver &solver, double * A1, int LDA1,
     cout  << endl;
   }
   delete [] resid;
-  delete &RHS1;
-  delete &LHS1;
   
 
   return(0);

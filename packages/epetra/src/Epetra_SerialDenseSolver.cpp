@@ -23,11 +23,11 @@
  * THAT ITS USE WOULD NOT INFRINGE PRIVATELY OWNED RIGHTS. */
 
 
-#include "Epetra_HardSerialDenseSolver.h"
+#include "Epetra_SerialDenseSolver.h"
 #include "Epetra_SerialDenseMatrix.h"
 
 //=============================================================================
-Epetra_HardSerialDenseSolver::Epetra_HardSerialDenseSolver()
+Epetra_SerialDenseSolver::Epetra_SerialDenseSolver()
   : Epetra_CompObject(),
     Epetra_BLAS(),
     Epetra_LAPACK(),
@@ -43,12 +43,12 @@ Epetra_HardSerialDenseSolver::Epetra_HardSerialDenseSolver()
   ResetVectors();
 }
 //=============================================================================
-Epetra_HardSerialDenseSolver::~Epetra_HardSerialDenseSolver()
+Epetra_SerialDenseSolver::~Epetra_SerialDenseSolver()
 {
   DeleteArrays();
 }
 //=============================================================================
-void Epetra_HardSerialDenseSolver::InitPointers()
+void Epetra_SerialDenseSolver::InitPointers()
 {
   IWORK_ = 0;
   FERR_ = 0;
@@ -63,7 +63,7 @@ void Epetra_HardSerialDenseSolver::InitPointers()
   LWORK_ = 0;    
 }
 //=============================================================================
-void Epetra_HardSerialDenseSolver::DeleteArrays()
+void Epetra_SerialDenseSolver::DeleteArrays()
 {
   if (IWORK_ != 0) {delete [] IWORK_; IWORK_ = 0;}
   if (FERR_ != 0)  {delete [] FERR_; FERR_ = 0;}
@@ -80,7 +80,7 @@ void Epetra_HardSerialDenseSolver::DeleteArrays()
   LWORK_ = 0;    
 }
 //=============================================================================
-void Epetra_HardSerialDenseSolver::ResetMatrix()
+void Epetra_SerialDenseSolver::ResetMatrix()
 {
   DeleteArrays();
   ResetVectors();
@@ -103,7 +103,7 @@ void Epetra_HardSerialDenseSolver::ResetMatrix()
 
 }
 //=============================================================================
-int Epetra_HardSerialDenseSolver::SetMatrix(Epetra_SerialDenseMatrix & A) {
+int Epetra_SerialDenseSolver::SetMatrix(Epetra_SerialDenseMatrix & A) {
   ResetMatrix();
   Matrix_ = &A;
   Factor_ = &A;
@@ -117,7 +117,7 @@ int Epetra_HardSerialDenseSolver::SetMatrix(Epetra_SerialDenseMatrix & A) {
   return(0);
 }
 //=============================================================================
-void Epetra_HardSerialDenseSolver::ResetVectors()
+void Epetra_SerialDenseSolver::ResetVectors()
 {
   LHS_ = 0;
   RHS_ = 0;
@@ -133,7 +133,7 @@ void Epetra_HardSerialDenseSolver::ResetVectors()
   LDX_ = 0;
 }
 //=============================================================================
-int Epetra_HardSerialDenseSolver::SetVectors(Epetra_SerialDenseMatrix & X, Epetra_SerialDenseMatrix & B)
+int Epetra_SerialDenseSolver::SetVectors(Epetra_SerialDenseMatrix & X, Epetra_SerialDenseMatrix & B)
 {
   int ierr = 0;
   if (B.M()!=X.M() || B.N() != X.N()) EPETRA_CHK_ERR(-1);
@@ -161,7 +161,7 @@ int Epetra_HardSerialDenseSolver::SetVectors(Epetra_SerialDenseMatrix & X, Epetr
   return(0);
 }
 //=============================================================================
-int Epetra_HardSerialDenseSolver::Factor(void) {
+int Epetra_SerialDenseSolver::Factor(void) {
   if (Factored()) return(0); // Already factored
   if (Inverted()) EPETRA_CHK_ERR(-100); // Cannot factor inverted matrix
   int ierr = 0;
@@ -197,7 +197,7 @@ int Epetra_HardSerialDenseSolver::Factor(void) {
 }
 
 //=============================================================================
-int Epetra_HardSerialDenseSolver::Solve(void) {
+int Epetra_SerialDenseSolver::Solve(void) {
   int ierr = 0;
 
   // We will call one of four routines depending on what services the user wants and 
@@ -243,11 +243,14 @@ int Epetra_HardSerialDenseSolver::Solve(void) {
   if (RefineSolution_ && !Inverted()) ierr1 = ApplyRefinement();
   if (ierr1!=0) EPETRA_CHK_ERR(ierr1)
   else
-    EPETRA_CHK_ERR(ierr)
+    EPETRA_CHK_ERR(ierr);
+  
+  if (Equilibrate_) ierr1 = UnequilibrateLHS();
+  EPETRA_CHK_ERR(ierr1);
   return(0);
 }
 //=============================================================================
-int Epetra_HardSerialDenseSolver::ApplyRefinement(void)
+int Epetra_SerialDenseSolver::ApplyRefinement(void)
 {
   double DN = N_;
   double DNRHS = NRHS_;
@@ -278,7 +281,7 @@ int Epetra_HardSerialDenseSolver::ApplyRefinement(void)
 }
 
 //=============================================================================
-int Epetra_HardSerialDenseSolver::ComputeEquilibrateScaling(void) {
+int Epetra_SerialDenseSolver::ComputeEquilibrateScaling(void) {
   if (R_!=0) return(0); // Already computed
  
   double DM = M_;
@@ -297,7 +300,7 @@ int Epetra_HardSerialDenseSolver::ComputeEquilibrateScaling(void) {
 }
 
 //=============================================================================
-int Epetra_HardSerialDenseSolver::EquilibrateMatrix(void)
+int Epetra_SerialDenseSolver::EquilibrateMatrix(void)
 {
   int i, j;
   int ierr = 0;
@@ -343,7 +346,7 @@ int Epetra_HardSerialDenseSolver::EquilibrateMatrix(void)
 }
 
 //=============================================================================
-int Epetra_HardSerialDenseSolver::EquilibrateRHS(void)
+int Epetra_SerialDenseSolver::EquilibrateRHS(void)
 {
   int i, j;
   int ierr = 0;
@@ -372,7 +375,7 @@ int Epetra_HardSerialDenseSolver::EquilibrateRHS(void)
 }
 
 //=============================================================================
-int Epetra_HardSerialDenseSolver::UnequilibrateLHS(void)
+int Epetra_SerialDenseSolver::UnequilibrateLHS(void)
 {
   int i, j;
 
@@ -397,7 +400,7 @@ int Epetra_HardSerialDenseSolver::UnequilibrateLHS(void)
 }
 
 //=============================================================================
-int Epetra_HardSerialDenseSolver::Invert(void)
+int Epetra_SerialDenseSolver::Invert(void)
 {
   if (!Factored()) Factor(); // Need matrix factored.
 
@@ -428,7 +431,7 @@ int Epetra_HardSerialDenseSolver::Invert(void)
 }
 
 //=============================================================================
-int Epetra_HardSerialDenseSolver::ReciprocalConditionEstimate(double & Value)
+int Epetra_SerialDenseSolver::ReciprocalConditionEstimate(double & Value)
 {
   int ierr = 0;
   if (ReciprocalConditionEstimated()) {
@@ -451,7 +454,7 @@ int Epetra_HardSerialDenseSolver::ReciprocalConditionEstimate(double & Value)
   return(0);
 }
 //=============================================================================
-void Epetra_HardSerialDenseSolver::Print(ostream& os) const {
+void Epetra_SerialDenseSolver::Print(ostream& os) const {
 
   if (Matrix_!=0) os << *Matrix_;
   if (Factor_!=0) os << *Factor_;

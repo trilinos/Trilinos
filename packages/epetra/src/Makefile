@@ -71,7 +71,9 @@ EPETRA_CC = Epetra_SerialComm.cpp \
             Epetra_CompObject.cpp \
             Epetra_SerialDenseMatrix.cpp \
             Epetra_SerialDenseVector.cpp \
-            Epetra_HardSerialDenseSolver.cpp\
+            Epetra_SerialDenseSolver.cpp\
+            Epetra_SerialSymDenseMatrix.cpp \
+            Epetra_SerialSpdDenseSolver.cpp\
             Epetra_LAPACK.cpp \
             Epetra_LinearProblem.cpp \
             Epetra_Time.cpp Epetra_Object.cpp Epetra_Util.cpp Epetra_Flops.cpp \

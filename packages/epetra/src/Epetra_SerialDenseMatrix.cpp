@@ -24,6 +24,8 @@
 
 
 #include "Epetra_SerialDenseMatrix.h"
+#include "Epetra_SerialSymDenseMatrix.h"
+#include "Epetra_SerialSymDenseMatrix.h"
 //=============================================================================
 Epetra_SerialDenseMatrix::Epetra_SerialDenseMatrix(void)
   : Epetra_CompObject(),
@@ -216,6 +218,9 @@ int  Epetra_SerialDenseMatrix::Multiply (char TransA, char TransB, double Scalar
 				      const Epetra_SerialDenseMatrix& B,
 				      double ScalarThis ) {
   // Check for compatible dimensions
+
+  if (TransA!='T' && TransA!='N') EPETRA_CHK_ERR(-2); // Return error
+  if (TransB!='T' && TransB!='N') EPETRA_CHK_ERR(-3);
   
   int A_nrows = (TransA=='T') ? A.N() : A.M();
   int A_ncols = (TransA=='T') ? A.M() : A.N();
@@ -233,12 +238,48 @@ int  Epetra_SerialDenseMatrix::Multiply (char TransA, char TransB, double Scalar
   long int nflops = 2*M_;
   nflops *= N_;
   nflops *= A_ncols;
+  if (ScalarAB != 1.0) nflops += M_*N_;
+  if (ScalarThis != 0.0) nflops += M_*N_;
+  UpdateFlops(nflops);
+
+  return(0);
+}
+//=========================================================================
+int  Epetra_SerialDenseMatrix::Multiply (char SideA, double ScalarAB, 
+				      const Epetra_SerialSymDenseMatrix& A, 
+				      const Epetra_SerialDenseMatrix& B,
+				      double ScalarThis ) {
+  // Check for compatible dimensions
+  
+  if (SideA=='R') {
+    if (M_ != B.M() || 
+	N_ != A.N() ||
+	B.N() != A.M() ) EPETRA_CHK_ERR(-1); // Return error
+  }
+  else if (SideA=='L') {
+    if (M_ != A.M() || 
+	N_ != B.N() ||
+	A.N() != B.M() ) EPETRA_CHK_ERR(-1); // Return error
+  }
+  else {
+    EPETRA_CHK_ERR(-2); // Return error, incorrect value for SideA
+  }
+    
+  // Call GEMM function
+  SYMM(SideA, M_, N_, ScalarAB, A.A(), A.LDA(), 
+       B.A(), B.LDA(), ScalarThis, A_, LDA_);
+  long int nflops = 2*M_;
+  nflops *= N_;
+  nflops *= A.N();
+  if (ScalarAB != 1.0) nflops += M_*N_;
+  if (ScalarThis != 0.0) nflops += M_*N_;
   UpdateFlops(nflops);
 
   return(0);
 }
 void Epetra_SerialDenseMatrix::Print(ostream& os) const {
 
+  os << endl;
   for (int i=0; i<M_; i++) {
     for (int j=0; j<N_; j++){
       os << (*this)(i,j) << " ";

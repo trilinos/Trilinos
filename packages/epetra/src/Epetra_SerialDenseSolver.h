@@ -22,8 +22,8 @@
  * INFORMATION, APPARATUS, PRODUCT, OR PROCESS DISCLOSED, OR REPRESENTS
  * THAT ITS USE WOULD NOT INFRINGE PRIVATELY OWNED RIGHTS. */
 
-#ifndef _EPETRA_HARDSERIALDENSESOLVER_H_
-#define _EPETRA_HARDSERIALDENSESOLVER_H_
+#ifndef _EPETRA_SERIALDENSESOLVER_H_
+#define _EPETRA_SERIALDENSESOLVER_H_
 class Epetra_SerialDenseMatrix;
 #include "Epetra_Object.h" 
 #include "Epetra_CompObject.h"
@@ -31,34 +31,33 @@ class Epetra_SerialDenseMatrix;
 #include "Epetra_LAPACK.h"
 
 
-//! Epetra_HardSerialDenseSolver: A class for solving dense linear problems.
+//! Epetra_SerialDenseSolver: A class for solving dense linear problems.
 
-/*! The Epetra_HardSerialDenseSolver class enables the definition, in terms of Epetra_SerialDenseMatrix 
+/*! The Epetra_SerialDenseSolver class enables the definition, in terms of Epetra_SerialDenseMatrix 
     and Epetra_SerialDenseVector objects, of a dense linear problem, followed by the solution of that problem via the
     most sophisticated techniques available in LAPACK.
 
-The Epetra_HardSerialDenseSolver class is intended to provide full-featured support for solving linear 
+The Epetra_SerialDenseSolver class is intended to provide full-featured support for solving linear 
 problems for general dense rectangular (or square) matrices.  It is written on top of BLAS and LAPACK and thus has excellent
 performance and numerical capabilities.  Using this class, one can either perform simple factorizations and solves or
 apply all the tricks available in LAPACK to get the best possible solution for very ill-conditioned problems.
 
-<b>Epetra_HardSerialDenseSolver vs. Epetra_LAPACK</b>
+<b>Epetra_SerialDenseSolver vs. Epetra_LAPACK</b>
 
-The Epetra_LAPACK class provides access to most of the same functionality as Epetra_HardSerialDenseSolver.
-The primary difference is that Epetra_LAPACK is a "thin" layer on top of LAPACK and Epetra_HardSerialDenseSolver
+The Epetra_LAPACK class provides access to most of the same functionality as Epetra_SerialDenseSolver.
+The primary difference is that Epetra_LAPACK is a "thin" layer on top of LAPACK and Epetra_SerialDenseSolver
 attempts to provide easy access to the more sophisticated aspects of solving dense linear and eigensystems.
 <ul>
 <li> When you should use Epetra_LAPACK:  If you are simply looking for a convenient wrapper around the Fortran LAPACK
-     routines and you have a well-conditioned problem, you should probably use Epetra_LAPACK directly.  You should
-     also consider Epetra_SimpleSerialDenseSolver in this case.
-<li> When you should use Epetra_HardSerialDenseSolver: If you want to (or potentially want to) solve ill-conditioned 
-     problems or want to work with a more object-oriented interface, you should probably use Epetra_HardSerialDenseSolver.
+     routines and you have a well-conditioned problem, you should probably use Epetra_LAPACK directly.
+<li> When you should use Epetra_SerialDenseSolver: If you want to (or potentially want to) solve ill-conditioned 
+     problems or want to work with a more object-oriented interface, you should probably use Epetra_SerialDenseSolver.
      
 </ul>
 
-<b>Constructing Epetra_HardSerialDenseSolver Objects</b>
+<b>Constructing Epetra_SerialDenseSolver Objects</b>
 
-There is a single Epetra_HardSerialDenseSolver constructor.   However, the matrix, right hand side and solution 
+There is a single Epetra_SerialDenseSolver constructor.   However, the matrix, right hand side and solution 
 vectors must be set prior to executing most methods in this class.
 
 <b>Setting vectors used for linear solves</b>
@@ -73,7 +72,7 @@ set methods are as follows:
 
 <b>Vector and Utility Functions</b>
 
-Once a Epetra_HardSerialDenseSolver is constructed, several mathematical functions can be applied to
+Once a Epetra_SerialDenseSolver is constructed, several mathematical functions can be applied to
 the object.  Specifically:
 <ul>
   <li> Factorizations.
@@ -83,11 +82,10 @@ the object.  Specifically:
   <li> Norms.
 </ul>
 
-The final useful function is Flops().  Each Epetra_HardSerialDenseSolver object keep track of the number
-of \e serial floating point operations performed using the specified object as the \e this argument
-to the function.  The Flops() function returns this number as a double precision number.  Using this 
-information, in conjunction with the Epetra_Time class, one can get accurate parallel performance
-numbers.
+<b>Counting floating point operations </b>
+The Epetra_SerialDenseSolver class has Epetra_CompObject as a base class.  Thus, floating point operations 
+are counted and accumulated in the Epetra_Flop object (if any) that was set using the SetFlopCounter()
+method in the Epetra_CompObject base class.
 
 <b>Strategies for Solving Linear Systems</b>
 In many cases, linear systems can be accurately solved by simply computing the LU factorization
@@ -96,32 +94,32 @@ in some instances, the factorization may be very poorly conditioned and this sim
 these situations, equilibration and iterative refinement may improve the accuracy, or prevent a breakdown in
 the factorization. 
 
-Epetra_HardSerialDenseSolver will use equilibration with the factorization if, once the object
+Epetra_SerialDenseSolver will use equilibration with the factorization if, once the object
 is constructed and \e before it is factored, you call the function FactorWithEquilibration(true) to force 
 equilibration to be used.  If you are uncertain if equilibration should be used, you may call the function
 ShouldEquilibrate() which will return true if equilibration could possibly help.  ShouldEquilibrate() uses
 guidelines specified in the LAPACK User Guide, namely if SCOND < 0.1 and AMAX < Underflow or AMAX > Overflow, to 
 determine if equilibration \e might be useful. 
  
-Epetra_HardSerialDenseSolver will use iterative refinement after a forward/back solve if you call
+Epetra_SerialDenseSolver will use iterative refinement after a forward/back solve if you call
 SolveToRefinedSolution(true).  It will also compute forward and backward error estimates if you call
 EstimateSolutionErrors(true).  Access to the forward (back) error estimates is available via FERR() (BERR()).
 
-Examples using Epetra_HardSerialDenseSolver can be found in the Epetra test directories.
+Examples using Epetra_SerialDenseSolver can be found in the Epetra test directories.
 
 */
 
 //=========================================================================
-class Epetra_HardSerialDenseSolver : public Epetra_CompObject, public Epetra_BLAS, public Epetra_LAPACK{
+class Epetra_SerialDenseSolver : public Epetra_CompObject, public Epetra_BLAS, public Epetra_LAPACK{
   public:
   
   //@{ \name Constructor/Destructor Methods
-  //! Default constructor; defines a zero size object.
-  Epetra_HardSerialDenseSolver();
+  //! Default constructor; matrix should be set using SetMatrix(), LHS and RHS set with SetVectors().
+  Epetra_SerialDenseSolver();
   
 
-  //! Epetra_HardSerialDenseSolver destructor.  
-  virtual ~Epetra_HardSerialDenseSolver ();
+  //! Epetra_SerialDenseSolver destructor.  
+  virtual ~Epetra_SerialDenseSolver();
   //@}
 
   //@{ \name Set Methods
@@ -171,9 +169,7 @@ class Epetra_HardSerialDenseSolver : public Epetra_CompObject, public Epetra_BLA
   virtual int Solve(void);
 
   //! Inverts the \e this matrix.
-  /*! Note: This function works a little differently that DPOTRI in that it fills the entire
-      matrix with the inverse, independent of the UPLO specification.
-
+  /*!
     \return Integer error code, set to 0 if successful. Otherwise returns the LAPACK error code INFO.
   */
   virtual int Invert(void);
@@ -194,7 +190,7 @@ class Epetra_HardSerialDenseSolver : public Epetra_CompObject, public Epetra_BLA
   /*! 
     \return Integer error code, set to 0 if successful. Otherwise returns the LAPACK error code INFO.
   */
-  virtual int EquilibrateRHS(void);
+  int EquilibrateRHS(void);
 
 
   //! Apply Iterative Refinement.
@@ -207,7 +203,7 @@ class Epetra_HardSerialDenseSolver : public Epetra_CompObject, public Epetra_BLA
   /*! 
     \return Integer error code, set to 0 if successful. Otherwise returns the LAPACK error code INFO.
   */
-  virtual int UnequilibrateLHS(void);
+  int UnequilibrateLHS(void);
 
   //! Returns the reciprocal of the 1-norm condition number of the \e this matrix.
   /*! 
@@ -256,7 +252,10 @@ class Epetra_HardSerialDenseSolver : public Epetra_CompObject, public Epetra_BLA
     
   //! Returns pointer to current matrix.
   Epetra_SerialDenseMatrix * Matrix()  const {return(Matrix_);};
-    
+       
+  //! Returns pointer to factored matrix (assuming factorization has been performed).
+  Epetra_SerialDenseMatrix * FactoredMatrix()  const {return(Factor_);};
+
   //! Returns pointer to current LHS.
   Epetra_SerialDenseMatrix * LHS()  const {return(LHS_);};
     
@@ -344,10 +343,6 @@ class Epetra_HardSerialDenseSolver : public Epetra_CompObject, public Epetra_BLA
   void ResetMatrix();
   void ResetVectors();
 
- private:
-  // Epetra_HardSerialDenseSolver copy constructor (put here because we don't want user access)
-  
-  Epetra_HardSerialDenseSolver(const Epetra_HardSerialDenseSolver& Source){};
 
   bool Equilibrate_;
   bool ShouldEquilibrate_;
@@ -402,6 +397,10 @@ class Epetra_HardSerialDenseSolver : public Epetra_CompObject, public Epetra_BLA
   double * X_;
 
 
+ private:
+  // Epetra_SerialDenseSolver copy constructor (put here because we don't want user access)
+  
+  Epetra_SerialDenseSolver(const Epetra_SerialDenseSolver& Source){};
 };
 
-#endif /* _EPETRA_HARDSERIALDENSESOLVER_H_ */
+#endif /* _EPETRA_SERIALDENSESOLVER_H_ */

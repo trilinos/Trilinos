@@ -43,6 +43,7 @@
 #define dger_ SGER
 #define dtrmv_ STRMV
 #define dgemm_ SGEMM
+#define dsymm_ SSYMM
 #define dtrmm_ STRMM
 #define dtrsm_ STRSM
 
@@ -62,6 +63,7 @@
 #define sger_ SGER
 #define strmv_ STRMV
 #define sgemm_ SGEMM
+#define ssymm_ SSYMM
 #define strmm_ STRMM
 #define strsm_ STRSM
 
@@ -76,6 +78,7 @@
 #define dger_ DGER
 #define dtrmv_ DTRMV
 #define dgemm_ DGEMM
+#define dsymm_ DSYMM
 #define dtrmm_ DTRMM
 #define dtrsm_ DTRSM
 
@@ -96,6 +99,7 @@
 #define sger_  SGER
 #define strmv_  STRMV
 #define sgemm_  SGEMM
+#define ssymm_  SSYMM
 #define strmm_  STRMM
 #define strsm_  STRSM
 
@@ -110,6 +114,7 @@
 #define dger_  DGER
 #define dtrmv_  DTRMV
 #define dgemm_  DGEMM
+#define dsymm_  DSYMM
 #define dtrmm_  DTRMM
 #define dtrsm_  DTRSM
 
@@ -131,6 +136,7 @@
 #define dger_ dger
 #define dtrmv_ dtrmv
 #define dgemm_ dgemm
+#define dsymm_ dsymm
 #define dtrmm_ dtrmm
 #define dtrsm_ dtrsm
 #endif
@@ -176,6 +182,9 @@ extern "C" void PREFIX sger_(int *m, int *n, float *alpha, float *x, int *incx, 
 extern "C" void PREFIX dgemm_(Epetra_fcd, Epetra_fcd, int *m, int *
 		      n, int *k, double *alpha, double *a, int *lda, 
 		      double *b, int *ldb, double *beta, double *c, int *ldc);
+extern "C" void PREFIX dsymm_(Epetra_fcd, int *m, int * n,
+		      double *alpha, double *a, int *lda, 
+		      double *b, int *ldb, double *beta, double *c, int *ldc);
 extern "C" void PREFIX dtrmm_(Epetra_fcd, Epetra_fcd, Epetra_fcd, Epetra_fcd, 
 		      int *m, int *n, double *alpha, double *a, int * lda, double *b, int *ldb);
 extern "C" void PREFIX dtrsm_(Epetra_fcd, Epetra_fcd, Epetra_fcd, Epetra_fcd, 
@@ -185,6 +194,9 @@ extern "C" void PREFIX dtrsm_(Epetra_fcd, Epetra_fcd, Epetra_fcd, Epetra_fcd,
 // Single precision BLAS 3
 extern "C" void PREFIX sgemm_(Epetra_fcd, Epetra_fcd, int *m, int *
 		      n, int *k, float *alpha, float *a, int *lda, 
+		      float *b, int *ldb, float *beta, float *c, int *ldc);
+extern "C" void PREFIX ssymm_(Epetra_fcd, int *m, int * n,
+		      float *alpha, float *a, int *lda, 
 		      float *b, int *ldb, float *beta, float *c, int *ldc);
 extern "C" void PREFIX strmm_(Epetra_fcd, Epetra_fcd, Epetra_fcd, Epetra_fcd, 
 		      int *m, int *n, float *alpha, float *a, int * lda, float *b, int *ldb);
