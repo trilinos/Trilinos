@@ -52,10 +52,11 @@ main(int argc, char **argv)
 
 
   /* Read Chaco file */
-  if (myproc==0){
+  if (myproc==0) {
     if (DEBUG_TRACE) 
       printf("Debug: Reading Chaco file...\n");
-    LB_chaco_input_graph(stdin, "STDIN", &start, &adjncy, &nvtxs, &vwgts, &ewgts);
+	    chaco_input_graph(stdin, "STDIN", &start, &adjncy, &nvtxs,
+                              &vwgts, &ewgts);
   }
 
   if (DEBUG_TRACE) 
@@ -63,8 +64,8 @@ main(int argc, char **argv)
 
   /* Distribute graph */
   vtxdist = NULL;
-  LB_chaco_dist_graph(MPI_COMM_WORLD, 0, &nvtxs, &vtxdist, &start, &adjncy, 
-    &vwgts, &ewgts);
+  chaco_dist_graph(MPI_COMM_WORLD, 0, &nvtxs, &vtxdist, &start, &adjncy, 
+                   &vwgts, &ewgts);
 
   if (DEBUG_INPUT){
     printf("[%1d] Debug: nvtxs=%d, nedges=%d\n", myproc, nvtxs, start[nvtxs]);
