@@ -77,10 +77,10 @@
 #include "NOX_LAPACK_Group.H"
 */
                                                                                 
+#include "NOX_Common.H"
 #include "NOX.H"  // NOX headers
 #include "NOX_LAPACK.H" // NOX LAPACK Interface headers
 #include "NOX_TestUtils.H"
-#include "NOX_TestCommon.H"
 
 #ifdef HAVE_MPI
 #include <mpi.h>

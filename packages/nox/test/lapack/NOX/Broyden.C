@@ -62,7 +62,6 @@
 #include "NOX_Utils.H"
 #include "NOX_LAPACK_Group.H"
 #include "NOX_TestUtils.H"
-#include "NOX_TestCommon.H"
 
 //! Interface to modified Broyden problem defined in Broyden.C
 class Broyden : public NOX::LAPACK::Interface {
