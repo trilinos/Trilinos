@@ -42,7 +42,7 @@
 # ************************************************************************
 #@HEADER
 
-SOURCES = $(A_Superludist_SOURCES) $(AmesosDistScript_SOURCES) $(AmesosDscpack_SOURCES) $(AmesosDscpackShort_SOURCES) $(AmesosJanusScript_SOURCES) $(AmesosKlu_SOURCES) $(AmesosKluSerial_SOURCES) $(AmesosKluShort_SOURCES) $(AmesosMumps_SOURCES) $(AmesosShellScript_SOURCES) $(AmesosShortKundert_SOURCES) $(AmesosShortScript_SOURCES) $(AmesosShortSuperLU_SOURCES) $(AmesosSuperLUserial_SOURCES) $(AmesosSuperludist_SOURCES) $(AmesosSuperludistShort_SOURCES) $(AmesosUmfpack_SOURCES) $(AmesosUmfpackSerial_SOURCES) $(AmesosUmfpackShort_SOURCES) $(B_Superludist_SOURCES) $(C_Superludist_SOURCES) DscpackTiming.c $(SpoolesJanusScript_SOURCES) $(SpoolesScript_SOURCES) $(Timings_SOURCES) $(amesos_test_SOURCES)
+SOURCES = $(A_Superludist_SOURCES) $(AmesosDistScript_SOURCES) $(AmesosDscpack_SOURCES) $(AmesosDscpackShort_SOURCES) $(AmesosJanusScript_SOURCES) $(AmesosKlu_SOURCES) AmesosKluJanus.c $(AmesosKluSerial_SOURCES) $(AmesosKluShort_SOURCES) $(AmesosMumps_SOURCES) $(AmesosShellScript_SOURCES) $(AmesosShortKundert_SOURCES) $(AmesosShortScript_SOURCES) $(AmesosShortSuperLU_SOURCES) $(AmesosSuperLUserial_SOURCES) $(AmesosSuperludist_SOURCES) AmesosSuperludistJanus.c $(AmesosSuperludistShort_SOURCES) $(AmesosUmfpack_SOURCES) AmesosUmfpackJanus.c $(AmesosUmfpackSerial_SOURCES) $(AmesosUmfpackShort_SOURCES) $(B_Superludist_SOURCES) $(C_Superludist_SOURCES) DscpackTiming.c $(SpoolesJanusScript_SOURCES) $(SpoolesScript_SOURCES) $(Timings_SOURCES) $(amesos_test_SOURCES)
 
 srcdir = @srcdir@
 top_srcdir = @top_srcdir@
@@ -75,7 +75,9 @@ noinst_PROGRAMS = amesos_test$(EXEEXT) AmesosShellScript$(EXEEXT) \
 	AmesosUmfpackSerial$(EXEEXT) AmesosMumps$(EXEEXT) \
 	AmesosKlu$(EXEEXT) AmesosKluShort$(EXEEXT) \
 	AmesosKluSerial$(EXEEXT) AmesosSuperludist$(EXEEXT) \
-	AmesosSuperludistShort$(EXEEXT) A_Superludist$(EXEEXT) \
+	AmesosSuperludistShort$(EXEEXT) \
+	AmesosSuperludistJanus$(EXEEXT) AmesosUmfpackJanus$(EXEEXT) \
+	AmesosKluJanus$(EXEEXT) A_Superludist$(EXEEXT) \
 	B_Superludist$(EXEEXT) C_Superludist$(EXEEXT) Timings$(EXEEXT) \
 	DscpackTiming$(EXEEXT)
 subdir = test
@@ -128,6 +130,9 @@ AmesosJanusScript_LDADD = $(LDADD)
 am_AmesosKlu_OBJECTS =
 AmesosKlu_OBJECTS = $(am_AmesosKlu_OBJECTS)
 AmesosKlu_LDADD = $(LDADD)
+AmesosKluJanus_SOURCES = AmesosKluJanus.c
+AmesosKluJanus_OBJECTS = AmesosKluJanus.$(OBJEXT)
+AmesosKluJanus_LDADD = $(LDADD)
 am_AmesosKluSerial_OBJECTS =
 AmesosKluSerial_OBJECTS = $(am_AmesosKluSerial_OBJECTS)
 AmesosKluSerial_LDADD = $(LDADD)
@@ -155,12 +160,18 @@ AmesosSuperLUserial_LDADD = $(LDADD)
 am_AmesosSuperludist_OBJECTS =
 AmesosSuperludist_OBJECTS = $(am_AmesosSuperludist_OBJECTS)
 AmesosSuperludist_LDADD = $(LDADD)
+AmesosSuperludistJanus_SOURCES = AmesosSuperludistJanus.c
+AmesosSuperludistJanus_OBJECTS = AmesosSuperludistJanus.$(OBJEXT)
+AmesosSuperludistJanus_LDADD = $(LDADD)
 am_AmesosSuperludistShort_OBJECTS =
 AmesosSuperludistShort_OBJECTS = $(am_AmesosSuperludistShort_OBJECTS)
 AmesosSuperludistShort_LDADD = $(LDADD)
 am_AmesosUmfpack_OBJECTS =
 AmesosUmfpack_OBJECTS = $(am_AmesosUmfpack_OBJECTS)
 AmesosUmfpack_LDADD = $(LDADD)
+AmesosUmfpackJanus_SOURCES = AmesosUmfpackJanus.c
+AmesosUmfpackJanus_OBJECTS = AmesosUmfpackJanus.$(OBJEXT)
+AmesosUmfpackJanus_LDADD = $(LDADD)
 am_AmesosUmfpackSerial_OBJECTS =
 AmesosUmfpackSerial_OBJECTS = $(am_AmesosUmfpackSerial_OBJECTS)
 AmesosUmfpackSerial_LDADD = $(LDADD)
@@ -201,7 +212,10 @@ am__DEPENDENCIES_1 =
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/src
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
-@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/DscpackTiming.Po \
+@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/AmesosKluJanus.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/AmesosSuperludistJanus.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/AmesosUmfpackJanus.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/DscpackTiming.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/amesos_test-Amesos_TestDriver.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/amesos_test-Amesos_TestMrhsSolver.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/amesos_test-Amesos_TestMultiSolver.Po \
@@ -225,29 +239,33 @@ CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
 SOURCES = $(A_Superludist_SOURCES) $(AmesosDistScript_SOURCES) \
 	$(AmesosDscpack_SOURCES) $(AmesosDscpackShort_SOURCES) \
 	$(AmesosJanusScript_SOURCES) $(AmesosKlu_SOURCES) \
-	$(AmesosKluSerial_SOURCES) $(AmesosKluShort_SOURCES) \
-	$(AmesosMumps_SOURCES) $(AmesosShellScript_SOURCES) \
-	$(AmesosShortKundert_SOURCES) $(AmesosShortScript_SOURCES) \
-	$(AmesosShortSuperLU_SOURCES) $(AmesosSuperLUserial_SOURCES) \
-	$(AmesosSuperludist_SOURCES) $(AmesosSuperludistShort_SOURCES) \
-	$(AmesosUmfpack_SOURCES) $(AmesosUmfpackSerial_SOURCES) \
-	$(AmesosUmfpackShort_SOURCES) $(B_Superludist_SOURCES) \
-	$(C_Superludist_SOURCES) DscpackTiming.c \
-	$(SpoolesJanusScript_SOURCES) $(SpoolesScript_SOURCES) \
-	$(Timings_SOURCES) $(amesos_test_SOURCES)
+	AmesosKluJanus.c $(AmesosKluSerial_SOURCES) \
+	$(AmesosKluShort_SOURCES) $(AmesosMumps_SOURCES) \
+	$(AmesosShellScript_SOURCES) $(AmesosShortKundert_SOURCES) \
+	$(AmesosShortScript_SOURCES) $(AmesosShortSuperLU_SOURCES) \
+	$(AmesosSuperLUserial_SOURCES) $(AmesosSuperludist_SOURCES) \
+	AmesosSuperludistJanus.c $(AmesosSuperludistShort_SOURCES) \
+	$(AmesosUmfpack_SOURCES) AmesosUmfpackJanus.c \
+	$(AmesosUmfpackSerial_SOURCES) $(AmesosUmfpackShort_SOURCES) \
+	$(B_Superludist_SOURCES) $(C_Superludist_SOURCES) \
+	DscpackTiming.c $(SpoolesJanusScript_SOURCES) \
+	$(SpoolesScript_SOURCES) $(Timings_SOURCES) \
+	$(amesos_test_SOURCES)
 DIST_SOURCES = $(A_Superludist_SOURCES) $(AmesosDistScript_SOURCES) \
 	$(AmesosDscpack_SOURCES) $(AmesosDscpackShort_SOURCES) \
 	$(AmesosJanusScript_SOURCES) $(AmesosKlu_SOURCES) \
-	$(AmesosKluSerial_SOURCES) $(AmesosKluShort_SOURCES) \
-	$(AmesosMumps_SOURCES) $(AmesosShellScript_SOURCES) \
-	$(AmesosShortKundert_SOURCES) $(AmesosShortScript_SOURCES) \
-	$(AmesosShortSuperLU_SOURCES) $(AmesosSuperLUserial_SOURCES) \
-	$(AmesosSuperludist_SOURCES) $(AmesosSuperludistShort_SOURCES) \
-	$(AmesosUmfpack_SOURCES) $(AmesosUmfpackSerial_SOURCES) \
-	$(AmesosUmfpackShort_SOURCES) $(B_Superludist_SOURCES) \
-	$(C_Superludist_SOURCES) DscpackTiming.c \
-	$(SpoolesJanusScript_SOURCES) $(SpoolesScript_SOURCES) \
-	$(Timings_SOURCES) $(amesos_test_SOURCES)
+	AmesosKluJanus.c $(AmesosKluSerial_SOURCES) \
+	$(AmesosKluShort_SOURCES) $(AmesosMumps_SOURCES) \
+	$(AmesosShellScript_SOURCES) $(AmesosShortKundert_SOURCES) \
+	$(AmesosShortScript_SOURCES) $(AmesosShortSuperLU_SOURCES) \
+	$(AmesosSuperLUserial_SOURCES) $(AmesosSuperludist_SOURCES) \
+	AmesosSuperludistJanus.c $(AmesosSuperludistShort_SOURCES) \
+	$(AmesosUmfpack_SOURCES) AmesosUmfpackJanus.c \
+	$(AmesosUmfpackSerial_SOURCES) $(AmesosUmfpackShort_SOURCES) \
+	$(B_Superludist_SOURCES) $(C_Superludist_SOURCES) \
+	DscpackTiming.c $(SpoolesJanusScript_SOURCES) \
+	$(SpoolesScript_SOURCES) $(Timings_SOURCES) \
+	$(amesos_test_SOURCES)
 RECURSIVE_TARGETS = all-recursive check-recursive dvi-recursive \
 	html-recursive info-recursive install-data-recursive \
 	install-exec-recursive install-info-recursive \
@@ -500,6 +518,9 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/AmesosKluJanus.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/AmesosSuperludistJanus.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/AmesosUmfpackJanus.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/DscpackTiming.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/amesos_test-Amesos_TestDriver.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/amesos_test-Amesos_TestMrhsSolver.Po@am__quote@
@@ -1043,6 +1064,15 @@ AmesosJanusScript$(EXEEXT): $(srcdir)/AmesosJanusScript
 
 SpoolesJanusScript$(EXEEXT): $(srcdir)/SpoolesJanusScript
 	cp  $(srcdir)/SpoolesJanusScript  SpoolesJanusScript$(EXEEXT)
+
+AmesosSuperludistJanus$(EXEEXT): $(srcdir)/AmesosSuperludistJanus
+	cp  $(srcdir)/AmesosSuperludistJanus  AmesosSuperludistJanus$(EXEEXT)
+
+AmesosKluJanus$(EXEEXT): $(srcdir)/AmesosKluJanus
+	cp  $(srcdir)/AmesosKluJanus  AmesosKluJanus$(EXEEXT)
+
+AmesosUmfpackJanus$(EXEEXT): $(srcdir)/AmesosUmfpackJanus
+	cp  $(srcdir)/AmesosUmfpackJanus  AmesosUmfpackJanus$(EXEEXT)
 
 SpoolesScript$(EXEEXT): $(srcdir)/SpoolesScript
 	cp  $(srcdir)/SpoolesScript  SpoolesScript$(EXEEXT)
