@@ -21,7 +21,7 @@
 #include <stdlib.h>
 #include <iostream>
 #include "AnasaziPetra.hpp"
-#include "BlockBlockCG.hpp"
+#include "BelosBlockCG.hpp"
 #include "Trilinos_Util.h"
 #include "Util.h"
 #include "Ifpack_CrsIct.h"
