@@ -962,7 +962,7 @@ int ML_Aggregate_Coarsen( ML_Aggregate *ag, ML_Operator *Amatrix,
    ML_Operator *newA = NULL, *permt = NULL, *perm = NULL, *oldA = NULL;
    ML_Operator *newP = NULL, *oldP = NULL;
 #endif
-   int mypid, nprocs;
+   int mypid, nprocs, relative_level;
    char *label;
 
 #ifdef ML_TIMING
@@ -1081,7 +1081,7 @@ int ML_Aggregate_Coarsen( ML_Aggregate *ag, ML_Operator *Amatrix,
    /* original A.                                                            */
 
 #ifdef oldML_repartition
-   status = ML_repartition_matrix(Amatrix, &newA, &perm, &permt, Amatrix->num_PDEs,Amatrix->comm->ML_nprocs);
+   status = ML_repartition_matrix(Amatrix, &newA, &perm, &permt, Amatrix->num_PDEs,Amatrix->comm->ML_nprocs, NULL, NULL, NULL);
    
    if (status == 0) {
      if (ag->nullspace_vect != NULL) {
@@ -1177,6 +1177,19 @@ int ML_Aggregate_Coarsen( ML_Aggregate *ag, ML_Operator *Amatrix,
    if (comm->ML_mypid == 0)
       printf("Aggregation time \t= %e\n",t0);
 #endif
+
+   /* If we have coordinate information on the current fine grid, */
+   /* project it down to the next level by taking averages of     */
+   /* each nodal coordinate within an aggregate.                  */
+   /* Note: the current fine grid is located in                   */
+   /*       ag->begin_level - ag->cur_level                       */
+
+   relative_level = fabs(ag->begin_level - ag->cur_level);
+   if ((ag->nodal_coord != NULL) && ((ag->nodal_coord)[relative_level] != NULL) ){
+
+     ML_Aggregate_ProjectCoordinates(*Pmatrix, ag, Amatrix->num_PDEs,
+				     relative_level);
+   }
    i = -1;
    label = ML_memory_check(NULL);
    if (label != NULL) 
@@ -1619,11 +1632,11 @@ int ML_random_global_subset(ML_Operator *Amat, double reduction,
 
 int ML_repartition_matrix(ML_Operator *mat, ML_Operator **new_mat,
 			  ML_Operator **permutation, ML_Operator **permt,
-			  int num_PDE_eqns, int Nprocs_ToUse)
-			  
+			  int num_PDE_eqns, int Nprocs_ToUse,
+			  double *xcoord, double *ycoord, double *zcoord)
 {
  int mypid, nprocs, Nglobal, i, j, the_length;
-#if !defined(HAVE_ML_PARMETIS_2x) && !defined(HAVE_ML_PARMETIS_3x)
+#if !defined(HAVE_ML_PARMETIS_2x) && !defined(HAVE_ML_PARMETIS_3x) && !defined(HAVE_ML_ZOLTAN) && !defined(HAVE_ML_JOSTLE)
  int oldj, *the_list = NULL, offset, Nnonzero, oldNnonzero, *itemp = NULL;
   double * d2vec;
 #endif
@@ -1651,7 +1664,7 @@ int ML_repartition_matrix(ML_Operator *mat, ML_Operator **new_mat,
   Nglobal = mat->invec_leng;
   ML_gsum_scalar_int(&Nglobal, &i, comm);
 
-#if defined(HAVE_ML_PARMETIS_2x) || defined(HAVE_ML_PARMETIS_3x)
+#if defined(HAVE_ML_PARMETIS_2x) || defined(HAVE_ML_PARMETIS_3x) || defined(HAVE_ML_ZOLTAN) || defined(HAVE_ML_JOSTLE)
    block_list = (int *) ML_allocate(1 + mat->outvec_leng*sizeof(int));
    if (block_list == NULL)
       pr_error("ML_repartition_matrix: out of space\n");
@@ -1661,9 +1674,9 @@ int ML_repartition_matrix(ML_Operator *mat, ML_Operator **new_mat,
 
    if (num_PDE_eqns != 1)
      ML_Operator_AmalgamateAndDropWeak(mat, num_PDE_eqns, 0.);
-   ML_Operator_BlockPartition(mat, mat->outvec_leng,
-                             &the_length, block_list, NULL, NULL, 0,
-			      ML_USEPARMETIS);
+
+   ML_Operator_BlockPartition(mat, mat->outvec_leng, &the_length,
+			      block_list,ML_USEPARMETIS,xcoord,ycoord,zcoord);
    if (num_PDE_eqns != 1)
      ML_Operator_UnAmalgamateAndDropWeak(mat, num_PDE_eqns, 0.);
 
@@ -2065,6 +2078,7 @@ int ML_repartition_Acoarse(ML *ml, int fine, int coarse, ML_Aggregate *ag,
   int status, offset1, offset2, j, flag = 0;
   double *new_null;
   int ml_gmin, ml_gmax, ml_gsum, Nprocs_ToUse;
+  double *xcoord = NULL, *ycoord = NULL, *zcoord = NULL;
 
 #ifndef ML_repartition
   return 0;
@@ -2104,9 +2118,18 @@ int ML_repartition_Acoarse(ML *ml, int fine, int coarse, ML_Aggregate *ag,
 
   if (flag == 0) return 0;
 
+  j = fabs(ag->begin_level - ag->cur_level) + 1;
+  if ((ag->nodal_coord != NULL) && ((ag->nodal_coord)[j] != NULL) ) {
+    if (ag->N_dimensions > 0) xcoord = &((ag->nodal_coord)[j][0]);
+    if (ag->N_dimensions > 1) 
+      ycoord = &((ag->nodal_coord)[j][Pmat->invec_leng/ag->nullspace_dim]);
+    if (ag->N_dimensions > 2) 
+      zcoord = &((ag->nodal_coord)[j][2*Pmat->invec_leng/ag->nullspace_dim]);
+  }
+   status = ML_repartition_matrix(Amatrix, &newA, &perm, &permt, 
+				  Amatrix->num_PDEs, Nprocs_ToUse, 
+				  xcoord, ycoord, zcoord);
 
-
-  status = ML_repartition_matrix(Amatrix, &newA, &perm, &permt, Amatrix->num_PDEs, Nprocs_ToUse);
    if (status == 0) {
      if (ag->nullspace_vect != NULL) {
        new_null = (double *) ML_allocate(sizeof(double)*ag->nullspace_dim*
@@ -2270,4 +2293,87 @@ int ML_repartition_Acoarse_edge(ML *ml, ML_Operator *Told,
    }
 
   return 0;
+}
+
+/* ************************************************************************* */
+/* Project the nodal coordinates contained in ag->nodal_coord[relative_level]*/
+/* using P_tentative. Store the result in ag->nodal_coord[relative_level+1]. */
+/* Coarse coordinates are obtained by taking averages of all the fine        */
+/* grid points within an aggregate.                                          */
+/* ------------------------------------------------------------------------- */
+int ML_Aggregate_ProjectCoordinates(ML_Operator *P_tentative,
+				    ML_Aggregate *ag,
+				    int num_PDEs,
+				    int relative_level)
+{
+     /* figure out what the new level should be */
+     /* allocate the new coordinate arrays */
+     /* allocate something to keep the size of all the aggregates */
+     /* what about aggregates that span processors ? */
+     /* The best thing would be to compute R */
+       
+     /* fill a fine grid vector with all ones and project to get agg sizes */
+     /* take each coordinate and project */
+     /* divide each coordinate by agg sizes */
+     /* num_PDEs */
+
+     
+
+
+   ML_Operator *temp;
+   double *fine_vec, *coarse_vec, *agg_sizes, *new_coords;
+   int i, j,k;
+
+   /* Create a restriction operator by transposing prolongator and */
+   /* replacing all nonzeros entries by +1.                        */				    
+   temp = ML_Operator_Create((P_tentative)->comm);
+   ML_Operator_Transpose( P_tentative, temp);
+   temp->matvec->func_ptr = CSR_ones_matvec;
+
+   /* allocate space */
+
+   fine_vec = (double *) ML_allocate(sizeof(double)*
+				     (temp->invec_leng+1));
+   agg_sizes = (double *) ML_allocate(sizeof(double)*
+				      (temp->outvec_leng+1));
+   coarse_vec= (double *) ML_allocate(sizeof(double)*
+				      (temp->outvec_leng+1));
+
+   if ((ag->nodal_coord)[relative_level+1] != NULL)
+     ML_free( (ag->nodal_coord)[relative_level+1]);
+
+   new_coords= (double *) ML_allocate(sizeof(double)*ag->N_dimensions*
+				      (temp->outvec_leng/ag->nullspace_dim+1));
+   (ag->nodal_coord)[relative_level+1] = new_coords;
+
+   /* Compute the aggregate sizes by projecting a vector of all ones */
+
+   for (i = 0; i < temp->invec_leng; i++) fine_vec[i] = 1.;
+   ML_Operator_Apply(temp, temp->invec_leng, fine_vec,
+		     temp->outvec_leng, agg_sizes);
+
+   /* Take nodal coordinates and stuff them into a fine grid vector. */
+   /* Then, project the fine grid vector and stuff it into a coarse  */
+   /* nodal coordinate vector after dividing by the aggregate sizes. */
+
+   for (k = 0; k < ag->N_dimensions; k++) {
+     for (i = 0; i < temp->invec_leng/num_PDEs; i++) {
+       for (j = 0; j < num_PDEs; j++) {
+	 fine_vec[i*(num_PDEs)+j] = (ag->nodal_coord)[relative_level][
+					      k*temp->invec_leng/num_PDEs + i];
+       }
+     }
+     ML_Operator_Apply(temp, temp->invec_leng, fine_vec,
+		       temp->outvec_leng, coarse_vec);
+
+     for (i = 0; i < temp->outvec_leng/ag->nullspace_dim; i++) {
+       new_coords[k*temp->outvec_leng/ag->nullspace_dim + i] =
+	 coarse_vec[i*ag->nullspace_dim]/agg_sizes[i*ag->nullspace_dim];
+     }
+   }
+   ML_free(coarse_vec);
+   ML_free(agg_sizes);
+   ML_free(fine_vec);
+   ML_Operator_Destroy(&temp);
+   return 1;
 }
