@@ -402,10 +402,6 @@ LinearProblemManager<TYPE>::~LinearProblemManager(void)
 template<class TYPE>
 void LinearProblemManager<TYPE>::SetUpBlocks()
 {
-  int i;
-  int* index = new int[blocksize_];
-  for ( i=0; i<blocksize_; i++ ) { index[i] = rhs_index_ + i; }
-  //
   // Compute the new block linear system.
   // ( first clean up old linear system )
   if (CurB_) delete CurB_; CurB_ = 0;
@@ -421,6 +417,10 @@ void LinearProblemManager<TYPE>::SetUpBlocks()
   //
   // Return the NULL pointer if we don't have any more systems to solve for.
   if ( num_to_solve_ <= 0 ) { return; }  
+  //
+  int i;
+  int* index = new int[blocksize_];
+  for ( i=0; i<blocksize_; i++ ) { index[i] = rhs_index_ + i; }
   //
   if ( num_to_solve_ < blocksize_ ) 
   {
@@ -701,4 +701,5 @@ ReturnType LinearProblemManager<TYPE>::ComputeResVec( MultiVec<TYPE>* R,
 } // end Belos namespace
 
 #endif /* BELOS_LINEAR_PROBLEM_MANAGER_HPP */
+
 

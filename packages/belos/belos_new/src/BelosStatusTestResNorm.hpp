@@ -104,7 +104,7 @@ class StatusTestResNorm: public StatusTest<TYPE> {
   StatusTestResNorm( TYPE Tolerance );
 
   //! Destructor
-  virtual ~StatusTestResNorm() {};
+  virtual ~StatusTestResNorm();
   //@}
 
   //@{ \name Form and parameter definition methods.
@@ -284,6 +284,14 @@ class StatusTestResNorm: public StatusTest<TYPE> {
   {
     // This constructor will compute the residual ||r_i||/||r0_i|| <= tolerance using the 2-norm of
     // the implicit residual vector.
+  }
+
+  template <class TYPE>
+  StatusTestResNorm<TYPE>::~StatusTestResNorm() 
+  {
+    if (scalevector_) { delete [] scalevector_; }
+    if (resvector_) { delete [] resvector_; }
+    if (testvector_) { delete [] testvector_; }
   }
 
   template <class TYPE>

@@ -14,32 +14,33 @@
 #include "BelosConfigDefs.hpp"
 
 // TSFCore files
-#include "TSFCoreVectorSpaceDecl.hpp"
-#include "TSFCoreMultiVectorDecl.hpp"
-#include "TSFCoreMultiVectorStdOpsDecl.hpp"
-#include "TSFCoreLinearOpDecl.hpp"
+//#include "TSFCoreVectorSpaceDecl.hpp"
+#include "TSFCoreMultiVector.hpp"
+#include "TSFCoreMultiVectorStdOps.hpp"
+#include "TSFCoreLinearOp.hpp"
 
 // Teuchos files
-#include "Teuchos_RefCountPtrDecl.hpp"
+#include "Teuchos_RefCountPtr.hpp"
 
 namespace Belos {
 //
-//--------template class AnasaziTSFCoreMat-----------------------
+//--------template class Belos::TSFCoreMat-----------------------
 //
 template <class TYPE> 
 class TSFCoreMat : public Operator<TYPE> {
 public:
-	TSFCoreMat( TSFCore::LinearOp<TYPE>& Op_in );
-	~TSFCoreMat();
-	ReturnType Apply ( const MultiVec<TYPE>& x, 
-			   MultiVec<TYPE>& y ) const;
+  TSFCoreMat( Teuchos::RefCountPtr< TSFCore::LinearOp<TYPE> > Op_in ) { Op = Op_in; }
+  ReturnType Apply ( const MultiVec<TYPE>& x, 
+		     MultiVec<TYPE>& y ) const;
 private:
-        TSFCore::LinearOp<TYPE>& Op;
+  Teuchos::RefCountPtr< TSFCore::LinearOp<TYPE> > Op;
 };
+
 //------------------------------------------------------------
 //
-//--------template class AnasaziTSFCoreVec-------------------------------------
+//--------template class Belos::TSFCoreVec-------------------------------------
 //
+
 template <class TYPE>
 class TSFCoreVec : public MultiVec<TYPE> {
 public:
@@ -50,13 +51,10 @@ public:
 
   friend class TSFCoreMat<TYPE>;
   // constructors
-  TSFCoreVec(const TSFCore::VectorSpace<TYPE>& source_space, int NumVecs );
-  TSFCoreVec(const TSFCore::MultiVector<TYPE>& source, DataAccess type = Copy );
-  TSFCoreVec(const TSFCoreVec<TYPE>& source, DataAccess type = Copy );
-  TSFCoreVec(DataAccess type, const TSFCoreVec<TYPE>& source, 
-	     int index[], int NumVecs); 
-  
-  ~TSFCoreVec();
+  TSFCoreVec( Teuchos::RefCountPtr<const TSFCore::VectorSpace<TYPE> >& source_space, const int NumVecs );
+  TSFCoreVec( TSFCore::MultiVector<TYPE>& source ) { TSFCoreMV = Teuchos::rcp( &source, false); }
+  TSFCoreVec( const TSFCoreVec<TYPE>& source );
+  TSFCoreVec( DataAccess type, TSFCoreVec<TYPE>& source, int index[], int NumVecs); 
   //
   //  member functions inherited from MultiVec
   //
@@ -110,7 +108,7 @@ public:
   //
   // alpha[i] = norm of i-th column of (*this)
   //
-  virtual void MvNorm ( TYPE* normvec );
+  virtual ReturnType MvNorm ( TYPE* normvec, NormType norm_type = TwoNorm );
   //
   // random vectors in i-th column of (*this)
   //
@@ -118,11 +116,11 @@ public:
   //
   // initializes each element of (*this) with alpha
   //
-  virtual void MvInit ( TYPE alpha );
+  virtual void MvInit ( TYPE alpha = Teuchos::ScalarTraits<TYPE>::zero() );
   //
 private:
   // Data container
-  TSFCore::MultiVector<TYPE>& TSFCoreMV;
+  Teuchos::RefCountPtr< TSFCore::MultiVector<TYPE> > TSFCoreMV;
 };
 
 //////////////////////////////////////////////////////////////////////
@@ -130,41 +128,31 @@ private:
 //////////////////////////////////////////////////////////////////////
 
 template<class TYPE>
-TSFCoreVec<TYPE>::TSFCoreVec( const TSFCore::VectorSpace<TYPE>& source_space,
-			      int NumVecs )
+TSFCoreVec<TYPE>::TSFCoreVec( Teuchos::RefCountPtr<const TSFCore::VectorSpace<TYPE> >& source_space,
+			      const int NumVecs )
 {
-    TSFCoreMV = source_space.createMembers( NumVecs );
+    TSFCoreMV = source_space->createMembers( NumVecs );
 }
 
 template<class TYPE>
-TSFCoreVec<TYPE>::TSFCoreVec(const TSFCoreVec<TYPE>& source, DataAccess type )
+TSFCoreVec<TYPE>::TSFCoreVec( const TSFCoreVec<TYPE>& source )
 {
-    TSFCoreMV = source.TSFCoreMV.clone_mv();
+    TSFCoreMV = (source.TSFCoreMV)->clone_mv();
 }
 
 template<class TYPE>
-TSFCoreVec<TYPE>::TSFCoreVec(const TSFCore::MultiVector<TYPE>& source, DataAccess type )
-{
-   //AAAAAAAAAHHHHHHH!!!!!!
-}
-
-template<class TYPE>
-TSFCoreVec<TYPE>::TSFCoreVec( DataAccess type, const TSFCoreVec<TYPE>& source, 
+TSFCoreVec<TYPE>::TSFCoreVec( DataAccess type, TSFCoreVec<TYPE>& source, 
 			       	int index[], int NumVecs )
 {
   if (type == Copy) {
-    TSFCore::MultiVector<TYPE> tempMV = source.subView( NumVecs, index );
-    TSFCoreMV = tempMV.clone_mv();
+    Teuchos::RefCountPtr< TSFCore::MultiVector<TYPE> > tempMV = (source.TSFCoreMV)->subView( NumVecs, index );
+    TSFCoreMV = tempMV->clone_mv();
   } 
   else {
-    TSFCoreMV = source.subView( NumVecs, index );
+    TSFCoreMV = (source.TSFCoreMV)->subView( NumVecs, index );
   }
 }
 
-template<class TYPE>
-TSFCoreVec<TYPE>::~TSFCoreVec()
-{
-}
 //
 //  member functions inherited from MultiVec
 //
@@ -175,7 +163,7 @@ TSFCoreVec<TYPE>::~TSFCoreVec()
 //
 template<class TYPE>
 MultiVec<TYPE>* TSFCoreVec<TYPE>::Clone ( const int NumVecs ) {
-	TSFCoreVec *ptr_alv = new TSFCoreVec(TSFCoreMV.domain(),NumVecs);
+	TSFCoreVec *ptr_alv = new TSFCoreVec( TSFCoreMV->domain(), NumVecs);
 	return ptr_alv; // safe upcast.
 }
 	//
@@ -192,34 +180,34 @@ MultiVec<TYPE>* TSFCoreVec<TYPE>::CloneCopy() {
 template<class TYPE>
 MultiVec<TYPE>* TSFCoreVec<TYPE>::CloneCopy ( int index[], int NumVecs ) {
 	
-	TSFCoreVec *ptr_alv = new TSFCoreVec( Belos::Copy, *this, index, NumVecs );
+	TSFCoreVec *ptr_alv = new TSFCoreVec( Copy, *this, index, NumVecs );
 	return ptr_alv; // safe upcast.
 }
 
 template<class TYPE>
 MultiVec<TYPE>* TSFCoreVec<TYPE>::CloneView ( int index[], int NumVecs ) {
 	
-	TSFCoreVec *ptr_alv = new TSFCoreVec( Belos::View, *this, index, NumVecs );
+	TSFCoreVec *ptr_alv = new TSFCoreVec( View, *this, index, NumVecs );
 	return ptr_alv; // safe upcast.
 }
 
 template<class TYPE>
 int TSFCoreVec<TYPE>::GetNumberVecs () const {
-        return TSFCoreMV.range().dim();
+        return (TSFCoreMV->range())->dim();
 }
 
 template<class TYPE>
 int TSFCoreVec<TYPE>::GetVecLength () const {
-	return TSFCoreMV.domain().dim();
+	return (TSFCoreMV->domain())->dim();
 }
 
 template<class TYPE>
 void TSFCoreVec<TYPE>::SetBlock( MultiVec<TYPE>& A, int index[], int NumVecs ) {
 
 	TSFCoreVec *A_vec = dynamic_cast<TSFCoreVec *>(&A); assert(A_vec!=NULL);
-	TSFCore::MultiVector<TYPE> tempMV = TSFCoreMV.subView( NumVecs, index );
-	TSFCore::assign( tempMV, A_vec->TSFCoreMV.subView( Range1D( 1, NumVecs ) ) );
-	delete tempMV;
+	Teuchos::RefCountPtr<TSFCore::MultiVector<TYPE> > tempMV = TSFCoreMV->subView( NumVecs, index );
+	TSFCore::assign( tempMV.get(), *(A_vec->TSFCoreMV->subView( TSFCore::Range1D( 1, NumVecs ) )) );
+	delete &tempMV;
 }
 //
 // *this <- alpha * A * B + beta * (*this)
@@ -247,18 +235,18 @@ void TSFCoreVec<TYPE>::MvTransMv ( TYPE alpha, MultiVec<TYPE>& A,
 						   Teuchos::SerialDenseMatrix<int,TYPE>& B) {
 
 	TSFCoreVec *A_vec = dynamic_cast<TSFCoreVec *>(&A); assert(A_vec!=NULL);
-	TSFCore::dot( A_vec->TSFCoreMV, TSFCoreMV, B.values() );
+	TSFCore::dot( *(A_vec->TSFCoreMV), *TSFCoreMV, B.values() );
 	B.scale( alpha );
 }
 //
 // array[i] = norm of i-th column of (*this)
 //
 template<class TYPE>
-void TSFCoreVec<TYPE>::MvNorm ( TYPE * normvec ) 
+ReturnType TSFCoreVec<TYPE>::MvNorm ( TYPE * normvec, NormType norm_type ) 
 {
 	if (normvec) {
-		for (int i=0; i<TSFCoreMV.range().dim(); i++) {
-			normvec[i] = TSFCore::norm_2( TSFCoreMV.col(i).get() );
+		for (int i=0; i<(TSFCoreMV->range())->dim(); i++) {
+			normvec[i] = TSFCore::norm_2( *(TSFCoreMV->col(i)) );
 		}
 	}
 }
@@ -268,7 +256,7 @@ void TSFCoreVec<TYPE>::MvNorm ( TYPE * normvec )
 template<class TYPE>
 void TSFCoreVec<TYPE>::MvRandom () 
 {
-  TSFCore::randomize( 0, 1, TSFCoreMV );
+  TSFCore::randomize( 0.0, 1.0, TSFCoreMV.get() );
 }
 //
 // initializes each element of (*this) with alpha
@@ -276,29 +264,12 @@ void TSFCoreVec<TYPE>::MvRandom ()
 template<class TYPE>
 void TSFCoreVec<TYPE>::MvInit ( TYPE alpha ) 
 {
-        TSFCore::assign( TSFCoreMV, alpha );
+        TSFCore::assign( TSFCoreMV.get(), alpha );
 }
 
-
-///////////////////////////////////////////////////////////////
+//--------------------------------------------------------------
 //
-// implementation of the AnasaziTSFCoreMat class.
-//
-////////////////////////////////////////////////////////////////////
-//
-// Matrix constructors
-//
-template <class TYPE>
-TSFCoreMat<TYPE>::TSFCoreMat( TSFCore::LinearOp<TYPE>& Op_in ) : Op(Op_in)
-{
-}
-
-template <class TYPE>
-TSFCoreMat<TYPE>::~TSFCoreMat() 
-{
-}
-//
-// Matrix matrix multiply
+// implementation of the Belos::TSFCoreMat class.
 //
 template <class TYPE>
 ReturnType TSFCoreMat<TYPE>::Apply ( const MultiVec<TYPE>& x, 
@@ -307,7 +278,7 @@ ReturnType TSFCoreMat<TYPE>::Apply ( const MultiVec<TYPE>& x,
 	MultiVec<TYPE> &temp_x = const_cast<MultiVec<TYPE> &>(x);
 	TSFCoreVec<TYPE> *x_vec = dynamic_cast<TSFCoreVec<TYPE> *>(&temp_x); assert(x_vec!=NULL);
 	TSFCoreVec<TYPE> *y_vec = dynamic_cast<TSFCoreVec<TYPE> *>(&y); assert(y_vec!=NULL);
-	Op.apply( TSFCore::NOTRANS, x_vec->TSFCoreMV, &y_vec->TSFCoreMV );
+	(*Op)->apply( TSFCore::NOTRANS, x_vec->TSFCoreMV, *y_vec );
         return Ok;
 }
 
@@ -354,6 +325,7 @@ void TSFCorePrec<TYPE>::Apply ( const MultiVec<TYPE>& x,
 	TSFCoreVec<TYPE>* vec_y = dynamic_cast<TSFCoreVec<TYPE>* >(&y); assert(vec_y != NULL);
 	Op.apply( TSFCore::NOTRANS, vec_x->TSFCoreMV, &vec_y->TSFCoreMV );
 }
+
 
 } // end Belos namespace
 #endif 
