@@ -29,14 +29,39 @@
 
 EXEEXT = .exe
 
+EXTRA_DIST= 2d_Poisson.csh baseline1 baseline2 baseline3 baseline5 baseline6 baseline7 ml_inputfile1 ml_inputfile2 ml_inputfile3 ml_inputfile5 ml_inputfile6 ml_inputfile7
+
 noinst_PROGRAMS = 2D_poisson
 
 2D_poisson_SOURCES = $(top_srcdir)/examples/ml_example2d.c
 
+2D_poisson$(EXT): $(2D_poisson_SOURCES)
+
+#copy these files over to the build area
+GetNecessaryFiles:
+	cp -f $(srcdir)/2d_Poisson.csh .
+	cp -f $(srcdir)/baseline1 .
+	cp -f $(srcdir)/baseline2 .
+	cp -f $(srcdir)/baseline3 .
+	cp -f $(srcdir)/baseline5 .
+	cp -f $(srcdir)/baseline6 .
+	cp -f $(srcdir)/baseline7 .
+	cp -f $(srcdir)/ml_inputfile1 .
+	cp -f $(srcdir)/ml_inputfile2 .
+	cp -f $(srcdir)/ml_inputfile3 .
+	cp -f $(srcdir)/ml_inputfile5 .
+	cp -f $(srcdir)/ml_inputfile6 .
+	cp -f $(srcdir)/ml_inputfile7 .
+
+#2D_poisson$(REALEXT): $(2D_poisson_SOURCES)
+
+
 2D_poisson_DEPENDENCIES = \
 	$(top_builddir)/src/libml.a \
-	$(top_builddir)/../epetra/src/libaztecoo.a \ 
-	$(top_builddir)/../epetra/src/libepetra.a 
+	$(top_builddir)/../aztecoo/src/libaztecoo.a \
+	$(top_builddir)/../epetra/src/libepetra.a \
+	$(top_builddir)/../teuchos/src/libteuchos.a  \
+	GetNecessaryFiles
 
 ml_common_include_locations = -I$(top_srcdir)/src/Include          \
                    -I$(top_srcdir)/src/Coarsen                  \
@@ -51,11 +76,13 @@ ml_common_include_locations = -I$(top_srcdir)/src/Include          \
                    -I$(top_srcdir)/../aztecoo/src            \
                    -I$(top_builddir)/../aztecoo/src \
                    -I$(top_srcdir)/../epetra/src            \
-                   -I$(top_builddir)/../epetra/src \
+                   -I$(top_builddir)/../epetra/src          \
+                   -I$(top_builddir)/../teuchos/src
 
 ml_libs = $(top_builddir)/src/libml.a        \
                 $(top_builddir)/../aztecoo/src/libaztecoo.a        \
                 $(top_builddir)/../epetra/src/libepetra.a \
+	            $(top_builddir)/../teuchos/src/libteuchos.a  \
                 $(LIBS) \
                 $(LAPACK_LIBS)                            \
                 $(BLAS_LIBS)                            \

@@ -86,6 +86,7 @@ int num_PDE_eqns=1;
 int nsmooth=1;
 /* for rotated nullspace test: */
 double c, s, theta=0.39710678;
+double agg_thresh;
 
 #ifdef PARTEST
 int **global_mapping;
@@ -163,9 +164,8 @@ int main(int argc, char *argv[])
       else {
 	ML_Reader_ReadString(ifp, input, '\n');
 	if (sscanf(input, "%d", &(proc_factor)) != 1) {
-	  fprintf(stderr, "ERROR: can\'t interp int while looking for \"%s\"\n",
+	  pr_error("ERROR: can\'t interp int while looking for \"%s\"\n",
 		  "number of x nodes per proc");
-	  exit(-1);
 	}
       }
    }
@@ -183,6 +183,7 @@ int main(int argc, char *argv[])
    coarse_iterations = context->coarse_its;
    refine_factor = 1;
    choice = 1;
+   agg_thresh = context->agg_thresh;
 
 
 #else
@@ -477,8 +478,7 @@ void init_guess_and_rhs(int update_index[], int update[], double *x[],double
   *x      = (double *) calloc(i, sizeof(double));
   *b      = (double *) calloc(i, sizeof(double));
   if ((*b == NULL) && (i != 0)) {
-    (void) fprintf(stderr,"Not enough space in init_guess_and_rhs() for ax\n");
-    exit(1);
+    pr_error("Not enough space in init_guess_and_rhs() for ax\n");
   }
 
   /*initialize 'x' to a function which will be used in matrix-vector product */
@@ -623,6 +623,7 @@ int construct_ml_grids(int N_elements, int *proc_config, AZ_MATRIX **Amat_f,
       AZ_ML_Set_Amat(ml, N_levels-1, leng, leng, *Amat_f, proc_config);
 
 ML_Aggregate_Create(ml_ag);
+ML_Aggregate_Set_Threshold( *ml_ag, agg_thresh );
 ndim = num_PDE_eqns;
 /*
 
@@ -754,8 +755,7 @@ null_vect[ i*ndim+ leng + 1 ]=-1.;
 						nblocks, blocks);
 	 }
 	 else {
-	   printf("unknown smoother %s\n",context->smoother);
-	   exit(1);
+	   pr_error("unknown smoother %s\n",context->smoother);
 	 }
 #endif
       }
@@ -806,8 +806,7 @@ null_vect[ i*ndim+ leng + 1 ]=-1.;
 	ML_Gen_CoarseSolverSuperLU( ml, coarsest_level);
       }
       else {
-	printf("unknown coarse grid solver %s\n",context->coarse_solve);
-	exit(1);
+	pr_error("unknown coarse grid solver %s\n",context->coarse_solve);
       }
 #endif
 
@@ -843,8 +842,7 @@ void Generate_mesh(int N_elements, ML_GridAGX **meshp, int *N_update,
    
    nprocs_1d = (int) pow( (double) nprocs, 0.50001 );
    if ( nprocs_1d * nprocs_1d != nprocs ) {
-      printf("Error: nprocs should be a square (%d).\n",nprocs_1d);
-      exit(1);
+      pr_error("Error: nprocs should be a square (%d).\n",nprocs_1d);
    }
    mypid_x = mypid % nprocs_1d;
    mypid_y = mypid / nprocs_1d;
@@ -859,8 +857,7 @@ void Generate_mesh(int N_elements, ML_GridAGX **meshp, int *N_update,
 
    nelmnt_part_xy = nelmnt_1d / nprocs_1d;
    if (nelmnt_part_xy * nprocs_1d != nelmnt_1d) {
-      printf("Error: nelmnt_part not good. %d %d\n",nelmnt_part_xy,nelmnt_1d);
-      exit(-1);
+      pr_error("Error: nelmnt_part not good. %d %d\n",nelmnt_part_xy,nelmnt_1d);
    }
    nelmnt_local = nelmnt_part_xy * nelmnt_part_xy;
   
@@ -1269,7 +1266,7 @@ double new_theta = 0.170796;
   NP = num_PDE_eqns;
 
 	if (NP != 2)
-		printf("error in setting A matrix - the rotated version is only implemented for 2 PDEs\n");
+		pr_error("error in setting A matrix - the rotated version is only implemented for 2 PDEs\n");
 	
 	oddeven=row%2;
 
@@ -1536,8 +1533,7 @@ void AZ_print_out2(int update_index[], int extern_index[], int update[],
               new_jblk = AZ_find_simple(bindx[ii], update_index, N_update, 
 			 extern_index, N_external,update,external);
               if (new_jblk == -1) {
-                 printf("local column %d not found\n",new_jblk);
-                 exit(-1);
+                 pr_error("local column %d not found\n",new_jblk);
               }
               jblk = bindx[ii];
               ival =  indx[ii];
@@ -1694,5 +1690,3 @@ int ml_find_global_row(int i, int proc, int global_nrows, int **whole_glob_map)
 	
 	return(row);
 }
-		
-				 

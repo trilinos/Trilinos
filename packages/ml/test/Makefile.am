@@ -31,4 +31,5 @@ SUBDIRS = MultiLevelPreconditioner_NonSym \
 	  MultiLevelPreconditioner_Maxwell \
 	  VerySimple \
 	  AztecSimple \
+      2d_Poisson \
 	  scripts

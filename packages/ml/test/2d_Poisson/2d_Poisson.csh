@@ -1,7 +1,6 @@
 #!/bin/csh
-#EXE="../../examples/ml_example2d.exe"
-set TESTNAME="2Dpoisson"
-set EXE="./ml_example2d.exe"
+set TESTNAME="2D_poisson"
+set EXE="./2D_poisson.exe"
 set SUMMARY_FILE="SUMMARY"
 set CP="/bin/cp"
 set RM="/bin/rm"
@@ -9,7 +8,7 @@ set VERBOSE="${1}tt"
 set EXITCODE=0
 
 if ( ${VERBOSE} == '-vtt' ) then
-  cat output${testnum}
+  cat ${SUMMARY_FILE}
 else
   # execute any file that starts with ml_inputfile ...
   foreach j ( ml_inputfile* )
@@ -55,12 +54,12 @@ else
   
   
       # If any diffs occured, then the test fails.
-      #if (("${check1}" == "0")||("${check2}" =="0")||("${check3}" == "0")) then
-      if ( "${check3}" == "0" ) then
-        echo "********           ${TESTNAME}:    test #${testnum} FAILED"
+      #if ( "${check3}" == "0" ) then
+      if (("${check1}" == "0")||("${check2}" =="0")||("${check3}" == "0")) then
+        echo "********           ${TESTNAME}:    test #${testnum} FAILED"  >> ${SUMMARY_FILE}
         set EXITCODE=1
       else
-        echo "********           ${TESTNAME}:    test #${testnum} passed"
+        echo "********           ${TESTNAME}:    test #${testnum} passed" >> ${SUMMARY_FILE}
         ${RM} -f output${testnum}
       endif
   

@@ -543,6 +543,7 @@ AC_CONFIG_FILES([
                 test/MultiLevelPreconditioner_NonSym/Makefile
 		test/MultiLevelPreconditioner_Sym/Makefile
 		test/VerySimple/Makefile
+		test/2d_Poisson/Makefile
 		test/AztecSimple/Makefile
 		test/MultiLevelPreconditioner_Maxwell/Makefile
                 test/scripts/Makefile
