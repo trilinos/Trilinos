@@ -265,9 +265,7 @@ AC_CXX_STD_SPRINTF
  TAC_ARG_WITH_PACKAGE(ml_newtpe, [Enable latest Maxwell prolongator fixes], ML_NEW_T_PE, yes)
 
 # these are OFF by default
- TAC_ARG_WITH_PACKAGE(ml_superlu, [Enable SuperLU support.  Note: You must also
- specify where the SuperLU headers and libraries are located by the configure
- options --with-libdirs=SuperLU-library-directory and --with-incdirs=SuperLU-include-directory], ML_SUPERLU, no)
+ TAC_ARG_WITH_PACKAGE(ml_superlu, [Enable SuperLU support.  Note 1: SuperLU is a third party library.  As such, configure assumes that it has already been built.  Note 2: You must also specify the location of the SuperLU headers and libraries via the configure options --with-ldflags=<SuperLU-library-path/library-name> and --with-incdirs=SuperLU-include-directory.], ML_SUPERLU, no)
  TAC_ARG_WITH_PACKAGE(ml_complex_maxwell, [Enable complex maxwell solver capability], ML_COMPLEX_MAXWELL, no)
  TAC_ARG_WITH_PACKAGE(ml_timing, [Enable timing routines], ML_TIMING, no)
 
@@ -284,7 +282,7 @@ AC_CXX_STD_SPRINTF
 #TAC_ARG_ENABLE_FEATURE(tests, [Build tests for all Trilinos packages (not all packages are sensitive to this option)], TESTS, yes)
 #AM_CONDITIONAL(BUILD_TESTS, test "X$ac_cv_use_tests" != "Xno")
 
-TAC_ARG_ENABLE_FEATURE(examples, [Build examples for all Trilinos packages (not all packages are sensitive to this option)], EXAMPLES, yes)
+TAC_ARG_ENABLE_FEATURE(examples, [Build examples for ML package], EXAMPLES, yes)
 AM_CONDITIONAL(BUILD_EXAMPLES, test "X$ac_cv_use_examples" != "Xno")
 
 # ------------------------------------------------------------------------

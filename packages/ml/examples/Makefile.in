@@ -100,7 +100,7 @@ noinst_PROGRAMS = ml_read_maxwell
 # of the  following primaries that the pattern is 
 # "(Exe_name)_(PRIMARY_NAME) = ").
 # List all source files needed to compile the exe.
-ml_read_maxwell_SOURCES = $(srcdir)/ml_read_maxwell.c
+ml_read_maxwell_SOURCES = $(srcdir)/ml_read_maxwell.cpp
 
 # One DEPENDENCIES primary is needed for each exe listed above.  List any
 # libraries that the exe depends on.  (This primary is not absolutely
@@ -125,7 +125,7 @@ ml_common_include_locations = -I$(top_srcdir)/src/Include          \
 
 # One CXXFLAGS primary can be defined for each exe listed above.  Include 
 # any -I's necessary for building the exe.
-ml_read_maxwell_CFLAGS = ${ml_common_include_locations}
+ml_read_maxwell_CXXFLAGS = ${ml_common_include_locations}
 
 # One LDADD primary can be defined for each exe listed above.  Include any
 # LDFLAGS  necessary for building the exe.
@@ -155,11 +155,12 @@ LIBS = @LIBS@
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
 @AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/ml_read_maxwell-ml_read_maxwell.Po
-COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
-	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
-CCLD = $(CC)
-LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
-CFLAGS = @CFLAGS@
+CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
+	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
+CXXLD = $(CXX)
+CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
+	-o $@
+CXXFLAGS = @CXXFLAGS@
 DIST_SOURCES = $(ml_read_maxwell_SOURCES)
 DIST_COMMON = Makefile.am Makefile.in
 SOURCES = $(ml_read_maxwell_SOURCES)
@@ -167,7 +168,7 @@ SOURCES = $(ml_read_maxwell_SOURCES)
 all: all-am
 
 .SUFFIXES:
-.SUFFIXES: .c .o .obj
+.SUFFIXES: .cpp .o .obj
 $(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ Makefile.am  $(top_srcdir)/configure.ac $(ACLOCAL_M4)
 	cd $(top_srcdir) && \
 	  $(AUTOMAKE) --foreign  examples/Makefile
@@ -176,10 +177,10 @@ Makefile: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.in  $(top_builddir)/config.s
 
 clean-noinstPROGRAMS:
 	-test -z "$(noinst_PROGRAMS)" || rm -f $(noinst_PROGRAMS)
-ml_read_maxwell-ml_read_maxwell.$(OBJEXT): $(srcdir)/ml_read_maxwell.c
+ml_read_maxwell-ml_read_maxwell.$(OBJEXT): $(srcdir)/ml_read_maxwell.cpp
 ml_read_maxwell$(EXEEXT): $(ml_read_maxwell_OBJECTS) $(ml_read_maxwell_DEPENDENCIES) 
 	@rm -f ml_read_maxwell$(EXEEXT)
-	$(LINK) $(ml_read_maxwell_LDFLAGS) $(ml_read_maxwell_OBJECTS) $(ml_read_maxwell_LDADD) $(LIBS)
+	$(CXXLINK) $(ml_read_maxwell_LDFLAGS) $(ml_read_maxwell_OBJECTS) $(ml_read_maxwell_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT) core *.core
@@ -192,30 +193,30 @@ distclean-compile:
 distclean-depend:
 	-rm -rf ./$(DEPDIR)
 
-.c.o:
+.cpp.o:
 @AMDEP_TRUE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@	depfile='$(DEPDIR)/$*.Po' tmpdepfile='$(DEPDIR)/$*.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(COMPILE) -c `test -f '$<' || echo '$(srcdir)/'`$<
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXXCOMPILE) -c -o $@ `test -f '$<' || echo '$(srcdir)/'`$<
 
-.c.obj:
+.cpp.obj:
 @AMDEP_TRUE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@	depfile='$(DEPDIR)/$*.Po' tmpdepfile='$(DEPDIR)/$*.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(COMPILE) -c `cygpath -w $<`
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXXCOMPILE) -c -o $@ `cygpath -w $<`
 
-ml_read_maxwell-ml_read_maxwell.o: $(srcdir)/ml_read_maxwell.c
-@AMDEP_TRUE@	source='$(srcdir)/ml_read_maxwell.c' object='ml_read_maxwell-ml_read_maxwell.o' libtool=no @AMDEPBACKSLASH@
+ml_read_maxwell-ml_read_maxwell.o: $(srcdir)/ml_read_maxwell.cpp
+@AMDEP_TRUE@	source='$(srcdir)/ml_read_maxwell.cpp' object='ml_read_maxwell-ml_read_maxwell.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@	depfile='$(DEPDIR)/ml_read_maxwell-ml_read_maxwell.Po' tmpdepfile='$(DEPDIR)/ml_read_maxwell-ml_read_maxwell.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ml_read_maxwell_CFLAGS) $(CFLAGS) -c -o ml_read_maxwell-ml_read_maxwell.o `test -f '$(srcdir)/ml_read_maxwell.c' || echo '$(srcdir)/'`$(srcdir)/ml_read_maxwell.c
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ml_read_maxwell_CXXFLAGS) $(CXXFLAGS) -c -o ml_read_maxwell-ml_read_maxwell.o `test -f '$(srcdir)/ml_read_maxwell.cpp' || echo '$(srcdir)/'`$(srcdir)/ml_read_maxwell.cpp
 
-ml_read_maxwell-ml_read_maxwell.obj: $(srcdir)/ml_read_maxwell.c
-@AMDEP_TRUE@	source='$(srcdir)/ml_read_maxwell.c' object='ml_read_maxwell-ml_read_maxwell.obj' libtool=no @AMDEPBACKSLASH@
+ml_read_maxwell-ml_read_maxwell.obj: $(srcdir)/ml_read_maxwell.cpp
+@AMDEP_TRUE@	source='$(srcdir)/ml_read_maxwell.cpp' object='ml_read_maxwell-ml_read_maxwell.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@	depfile='$(DEPDIR)/ml_read_maxwell-ml_read_maxwell.Po' tmpdepfile='$(DEPDIR)/ml_read_maxwell-ml_read_maxwell.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ml_read_maxwell_CFLAGS) $(CFLAGS) -c -o ml_read_maxwell-ml_read_maxwell.obj `cygpath -w $(srcdir)/ml_read_maxwell.c`
-CCDEPMODE = @CCDEPMODE@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ml_read_maxwell_CXXFLAGS) $(CXXFLAGS) -c -o ml_read_maxwell-ml_read_maxwell.obj `cygpath -w $(srcdir)/ml_read_maxwell.cpp`
+CXXDEPMODE = @CXXDEPMODE@
 uninstall-info-am:
 
 ETAGS = etags

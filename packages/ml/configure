@@ -874,9 +874,7 @@ Optional Features:
   --disable-dependency-tracking Speeds up one-time builds
   --enable-dependency-tracking  Do not reject slow dependency extractors
   --enable-mpi            MPI support
-  --enable-examples       Build examples for all Trilinos packages (not all
-                          packages are sensitive to this option) (default is
-                          yes)
+  --enable-examples       Build examples for ML package (default is yes)
 
 Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
@@ -911,12 +909,14 @@ Optional Packages:
                           is yes)
   --with-ml_newtpe        Enable latest Maxwell prolongator fixes (default is
                           yes)
-  --with-ml_superlu       Enable SuperLU support. Note: You must also specify
-                          where the SuperLU headers and libraries are located
-                          by the configure options
-                          --with-libdirs=SuperLU-library-directory and
-                          --with-incdirs=SuperLU-include-directory (default is
-                          no)
+  --with-ml_superlu       Enable SuperLU support. Note 1: SuperLU is a third
+                          party library. As such, configure assumes that it
+                          has already been built. Note 2: You must also
+                          specify the location of the SuperLU headers and
+                          libraries via the configure options
+                          --with-ldflags=<SuperLU-library-path/library-name>
+                          and --with-incdirs=SuperLU-include-directory.
+                          (default is no)
   --with-ml_complex_maxwell
                           Enable complex maxwell solver capability (default is
                           no)

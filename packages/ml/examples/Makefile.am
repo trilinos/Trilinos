@@ -12,7 +12,7 @@ noinst_PROGRAMS = ml_read_maxwell
 # of the  following primaries that the pattern is 
 # "(Exe_name)_(PRIMARY_NAME) = ").
 # List all source files needed to compile the exe.
-ml_read_maxwell_SOURCES = $(srcdir)/ml_read_maxwell.c
+ml_read_maxwell_SOURCES = $(srcdir)/ml_read_maxwell.cpp
 
 # One DEPENDENCIES primary is needed for each exe listed above.  List any
 # libraries that the exe depends on.  (This primary is not absolutely
@@ -35,7 +35,7 @@ ml_common_include_locations = -I$(top_srcdir)/src/Include          \
 
 # One CXXFLAGS primary can be defined for each exe listed above.  Include 
 # any -I's necessary for building the exe.
-ml_read_maxwell_CFLAGS = ${ml_common_include_locations}
+ml_read_maxwell_CXXFLAGS = ${ml_common_include_locations}
 
 # One LDADD primary can be defined for each exe listed above.  Include any
 # LDFLAGS  necessary for building the exe.
