@@ -48,7 +48,9 @@ Epetra_FEVbrMatrix::Epetra_FEVbrMatrix(Epetra_DataAccess CV,
     nonlocalCoefs_(NULL),
     curRowOffset_(-1),
     curColOffset_(-1),
-    curNumCols_(0)
+    curNumCols_(0),
+    curCols_(NULL),
+    curMode_(Add)
 {
 }
 
@@ -67,7 +69,9 @@ Epetra_FEVbrMatrix::Epetra_FEVbrMatrix(Epetra_DataAccess CV,
     nonlocalCoefs_(NULL),
     curRowOffset_(-1),
     curColOffset_(0),
-    curNumCols_(0)
+    curNumCols_(0),
+    curCols_(NULL),
+    curMode_(Add)
 {
 }
 
@@ -238,6 +242,9 @@ int Epetra_FEVbrMatrix::GlobalAssemble(bool callTransformToLocal)
   //and ColMap that we constructed the matrix with.
   EPETRA_CHK_ERR( tempMat.TransformToLocal(&(RowMap()), &sourceMap ) );
 
+  //Finally, we're ready to create the exporter and export non-local data to
+  //the appropriate owning processors.
+
   Epetra_Export exporter(sourceMap, RowMap());
 
   EPETRA_CHK_ERR( Export(tempMat, exporter, Add) );
@@ -259,30 +266,52 @@ int Epetra_FEVbrMatrix::InputNonlocalBlockEntry(double *Values, int LDA,
     return(-1);
   }
 
-  if (curColOffset_ >= nonlocalBlockRowAllocLengths_[curRowOffset_]) {
-    return(-1);
+  int insertPoint;
+  int col = curCols_[curColOffset_++];
+  int coloffset =
+    Epetra_Util_binary_search(col, nonlocalBlockCols_[curRowOffset_],
+			      nonlocalBlockRowLengths_[curRowOffset_],
+			      insertPoint);
+  if (coloffset < 0) return(-1);
+
+  Epetra_SerialDenseMatrix*& subblock = nonlocalCoefs_[curRowOffset_][coloffset];
+
+  if (subblock == NULL) {
+    //For the construction of the serial dense matrix here, we choose Copy mode
+    //in case the user deletes or reuses the Values array after this method is
+    //called.
+    subblock = new Epetra_SerialDenseMatrix(Copy, Values, LDA, NumRows, NumCols);
+
+    if (subblock == NULL) {
+      return(-1);
+    }
   }
+  else {
+    int nrows = subblock->M();
+    int ncols = subblock->N();
+    int lda   = subblock->LDA();
+    if (nrows != NumRows || ncols != NumCols || lda != LDA) {
+      return(-1);
+    }
 
-  int col = curColOffset_++;
-
-  //For the construction of the serial dense matrix here, we choose Copy mode
-  //in case the user deletes or reuses the Values array after this method is
-  //called.
-  nonlocalCoefs_[curRowOffset_][col] = 
-    new Epetra_SerialDenseMatrix(Copy, Values, LDA, NumRows, NumCols);
-
-  if (nonlocalCoefs_[curRowOffset_][col] == NULL) {
-    return(-1);
+    double* subblockvals = subblock->A();
+    if (curMode_ == Add) {
+      for(int i=0; i<lda*ncols; ++i) subblockvals[i] += Values[i];
+    }
+    else {
+      for(int i=0; i<lda*ncols; ++i) subblockvals[i] = Values[i];
+    }
   }
-
-  nonlocalBlockRowLengths_[curRowOffset_] = curColOffset_;
 
   return(0);
 }
 
 //----------------------------------------------------------------------------
-int Epetra_FEVbrMatrix::InsertNonlocalRow(int row, int offset)
+int Epetra_FEVbrMatrix::InsertNonlocalRow(int row, int offset, int numCols)
 {
+  //insert a new row in our list of nonlocal rows.
+  //also insert new arrays to hold block-column-index information
+
   int alloc_len = numNonlocalBlockRows_;
   EPETRA_CHK_ERR( Epetra_Util_insert(row, offset, nonlocalBlockRows_,
 				     numNonlocalBlockRows_, alloc_len, 1) );
@@ -295,7 +324,7 @@ int Epetra_FEVbrMatrix::InsertNonlocalRow(int row, int offset)
 
   --tmp1;
   --tmp2;
-  int initialAllocLen = 16;
+  int initialAllocLen = numCols*2;
   EPETRA_CHK_ERR( Epetra_Util_insert(initialAllocLen, offset,
 				     nonlocalBlockRowAllocLengths_,
 				     tmp1, tmp2, 1) );
@@ -310,6 +339,11 @@ int Epetra_FEVbrMatrix::InsertNonlocalRow(int row, int offset)
 
   newCols[offset] = new int[initialAllocLen];
   newCoefs[offset] = new Epetra_SerialDenseMatrix*[initialAllocLen];
+
+  for(int j=0; j<initialAllocLen; ++j) {
+    newCols[offset][j] = 0;
+    newCoefs[offset][j] = (Epetra_SerialDenseMatrix*)NULL;
+  }
 
   int index = 0;
   for(int i=0; i<numNonlocalBlockRows_-1; ++i) {
@@ -344,7 +378,7 @@ int Epetra_FEVbrMatrix::BeginInsertGlobalValues(int BlockRow,
   }
 
   return( SetupForNonlocalSubmits(BlockRow, NumBlockEntries,
-				  BlockIndices, false, Add) );
+				  BlockIndices, false, Insert) );
 }
 
 //--------------------------------------------------------------------------
@@ -352,7 +386,16 @@ int Epetra_FEVbrMatrix::BeginReplaceGlobalValues(int BlockRow,
 						 int NumBlockEntries,
 						 int *BlockIndices)
 {
-  return(-1);
+  int myRow = LRID(BlockRow);
+
+  if (myRow > -1) {
+    return( Epetra_VbrMatrix::BeginReplaceGlobalValues(BlockRow,
+						       NumBlockEntries,
+						       BlockIndices) );
+  }
+
+  return( SetupForNonlocalSubmits(BlockRow, NumBlockEntries,
+				  BlockIndices, false, Insert) );
 }
 
 //--------------------------------------------------------------------------
@@ -360,7 +403,16 @@ int Epetra_FEVbrMatrix::BeginSumIntoGlobalValues(int BlockRow,
 						 int NumBlockEntries,
 						 int *BlockIndices)
 {
-  return(-1);
+  int myRow = LRID(BlockRow);
+
+  if (myRow > -1) {
+    return( Epetra_VbrMatrix::BeginSumIntoGlobalValues(BlockRow,
+						       NumBlockEntries,
+						       BlockIndices) );
+  }
+
+  return( SetupForNonlocalSubmits(BlockRow, NumBlockEntries,
+				  BlockIndices, false, Add) );
 }
 
 //--------------------------------------------------------------------------
@@ -381,18 +433,44 @@ int Epetra_FEVbrMatrix::SetupForNonlocalSubmits(int BlockRow,
   int rowoffset = Epetra_Util_binary_search(BlockRow, nonlocalBlockRows_,
 					    numNonlocalBlockRows_, insertPoint);
 
+  //if this row is not already present, insert it
   if (rowoffset < 0) {
-    EPETRA_CHK_ERR( InsertNonlocalRow(BlockRow, insertPoint) );
+    EPETRA_CHK_ERR( InsertNonlocalRow(BlockRow, insertPoint, NumBlockEntries) );
     rowoffset = insertPoint;
   }
 
+  //now insert each incoming block-column-index in this list of column-indices,
+  //maintaining sortedness.
   for(int i=0; i<NumBlockEntries; ++i) {
-    nonlocalBlockCols_[rowoffset][i] = BlockIndices[i];
+    int col = BlockIndices[i];
+    int coloffset = Epetra_Util_binary_search(col, nonlocalBlockCols_[rowoffset],
+					     nonlocalBlockRowLengths_[rowoffset],
+					      insertPoint);
+    if (coloffset < 0) {
+      int tmp1 = nonlocalBlockRowLengths_[rowoffset];
+      int tmp2 = nonlocalBlockRowAllocLengths_[rowoffset];
+
+      EPETRA_CHK_ERR( Epetra_Util_insert(col, insertPoint,
+					 nonlocalBlockCols_[rowoffset],
+				  nonlocalBlockRowLengths_[rowoffset],
+	       			 nonlocalBlockRowAllocLengths_[rowoffset]));
+
+      EPETRA_CHK_ERR( Epetra_Util_insert((Epetra_SerialDenseMatrix*)NULL,
+					 insertPoint,
+					 nonlocalCoefs_[rowoffset],
+					 tmp1, tmp2) );
+    }
   }
 
   curRowOffset_ = rowoffset;
-  curColOffset_ = nonlocalBlockRowLengths_[rowoffset];
+  curColOffset_ = 0;
   curNumCols_ = NumBlockEntries;
+  curCols_ = new int[NumBlockEntries];
+  for(int j=0; j<NumBlockEntries; ++j) {
+    curCols_[j] = BlockIndices[j];
+  }
+
+  curMode_ = SubmitMode;
 
   return(0);
 }
@@ -428,6 +506,7 @@ int Epetra_FEVbrMatrix::EndSubmitEntries()
     curRowOffset_ = -1;
     curColOffset_ = -1;
     curNumCols_ = 0;
+    delete [] curCols_;
   }
 
   return(0);

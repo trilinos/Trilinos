@@ -177,7 +177,7 @@ class Epetra_FEVbrMatrix: public Epetra_VbrMatrix {
     int InputNonlocalBlockEntry(double *Values, int LDA,
 				int NumRows, int NumCols);
 
-    int InsertNonlocalRow(int row, int offset);
+    int InsertNonlocalRow(int row, int offset, int numCols);
 
     void destroyNonlocalData();
 
@@ -195,11 +195,13 @@ class Epetra_FEVbrMatrix: public Epetra_VbrMatrix {
 
     Epetra_SerialDenseMatrix*** nonlocalCoefs_;
 
-    //Following Mike's approach, we need some state variables to keep track
-    //of block-entry submits.
+    //Following the approach Mike uses in Epetra_VbrMatrix, we need some state
+    //variables to keep track of block-entry submits.
     int curRowOffset_;
     int curColOffset_;
     int curNumCols_;
+    int* curCols_;
+    int curMode_;
 };
 
 #endif /* _EPETRA_FEVBRMATRIX_H_ */
