@@ -206,18 +206,29 @@ This function performs a variety of matrix-matrix multiply operations.
                  const Epetra_SerialSymDenseMatrix& A, 
                  const Epetra_SerialDenseMatrix& B,
                  double ScalarThis );
-  //@}
+  //! Inplace scalar-matrix product A = \e a A.
+  /*! Scale a matrix, entry-by-entry using the value ScalarA.
 
-  //@{ \name Data Accessor methods
+
+  \param ScalarA (In) Scalar to multiply with A.
+
+   \return Integer error code, set to 0 if successful.
+	 
+  */
+  int  Scale ( double ScalarA );
 
   //! Computes the 1-Norm of the \e this matrix.
   /*!
     \return Integer error code, set to 0 if successful.
   */
-  virtual double OneNorm();
+  double NormOne() const;
 
   //! Computes the Infinity-Norm of the \e this matrix.
-  virtual double InfNorm();
+  double NormInf() const;
+
+  //@}
+
+  //@{ \name Data Accessor methods
 
   //! Element access function.
   /*!
@@ -302,6 +313,19 @@ This function performs a variety of matrix-matrix multiply operations.
   //! Print service methods; defines behavior of ostream << operator.
   virtual void Print(ostream& os) const;
   //@}
+
+  //@{ \name Deprecated methods (will be removed in later versions of this class).
+
+  //! Computes the 1-Norm of the \e this matrix (identical to NormOne() method).
+  /*!
+    \return Integer error code, set to 0 if successful.
+  */
+  double OneNorm() const {return(NormOne());};
+
+  //! Computes the Infinity-Norm of the \e this matrix (identical to NormInf() method).
+  double InfNorm() const {return(NormInf());};
+  //@}
+
  protected:
 
   void CopyMat(double * A, int LDA, int NumRows, int NumCols,

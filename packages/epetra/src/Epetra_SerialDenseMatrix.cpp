@@ -164,7 +164,7 @@ void Epetra_SerialDenseMatrix::CopyMat(double * A,
   return;
 }
 //=============================================================================
-double Epetra_SerialDenseMatrix::OneNorm(void) {
+double Epetra_SerialDenseMatrix::NormOne(void) const {
 
   int i, j;
 
@@ -180,7 +180,7 @@ double Epetra_SerialDenseMatrix::OneNorm(void) {
     return(anorm);
 }
 //=============================================================================
-double Epetra_SerialDenseMatrix::InfNorm(void) {
+double Epetra_SerialDenseMatrix::NormInf(void) const {
 
   int i, j;
 
@@ -200,6 +200,20 @@ double Epetra_SerialDenseMatrix::InfNorm(void) {
     }
     UpdateFlops(N_*N_);
     return(anorm);
+}
+//=============================================================================
+int Epetra_SerialDenseMatrix::Scale(double ScalarA) {
+
+  int i, j;
+  
+  double * ptr;
+  for (j=0; j<N_; j++) {
+    ptr = A_ + j*LDA_;
+    for (i=0; i<M_; i++) { *ptr = ScalarA * (*ptr); ptr++; }
+  }
+  UpdateFlops(N_*N_);
+  return(0);
+  
 }
 //=========================================================================
 double& Epetra_SerialDenseMatrix::operator () (int RowIndex, int ColIndex)  {
