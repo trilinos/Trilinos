@@ -13,7 +13,7 @@
 #ifndef _MLSOLVER_
 #define _MLSOLVER_
 
-#include <stdlib.h>
+/* #include <stdlib.h> */
 #include "ml_defs.h"
 
 #ifdef DSUPERLU
