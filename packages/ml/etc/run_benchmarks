@@ -18,35 +18,41 @@
 #
 #   3) If you are running in parallel and need something other than mpirun, 
 #      edit the 'PARALLEL_CMD' variable below.
-PARALLEL_CMD=`echo mpirun -machinefile ${HOME}/bin/machinefile -np `
+#
+PARALLEL_CMD=`echo /usr/local/mpich/bin/mpirun -machinefile ./machines -np `
+#
+#      You may also need to edit the script etc/mpibench.pbs, which assumes
+#      that mpirun is being used.
 #
 #   4) Run run_benchmarks. If you run it without arguments, it will
 #      tell you what the defaults are. If these are not correct, add
 #      arguments to run_benchmarks.
 #
-#       Usage: run_benchmarks [script_directory bench_directory
-#                              executable_directory 
-#                              scratch_directory parallel={TRUE,FALSE}]
+#       Usage: run_benchmarks [bench_root_directory executable_directory 
+#                              scratch_root_directory parallel={TRUE,FALSE}
+#                              batch={TRUE,FALSE}]
 #       where
 #
-#           script_directory     ml/etc/ directory where run_bench lives
-#
-#           bench_directory      Directory path to mlbench test problems.
+#           bench_root_directory      Directory path to mlbench test problems.
 # 
 #           executable_directory Path to directory where ml should be 
 #                                compiled.
 #
-#           scratch_directory    Directory where output will be left.
+#           scratch_root_directory    Directory where output will be left.
 #
 #           parallel             Either TRUE or FALSE to indicate whether
 #                                parallel benchmarks should be run.
 #
+#           batch                Either TRUE or FALSE to indicate whether
+#                                batch system should be used.
+#
 SCRIPT_DIRECTORY=${PWD}
-BENCH_DIRECTORY=${HOME}/mlbench
-#BENCH_DIRECTORY=${HOME}/tmp/mlbench
+BENCH_ROOT_DIRECTORY=${HOME}/mlbench
 EXECUTABLE_DIRECTORY=${PWD}/../Obj
-SCRATCH_DIRECTORY=/tmp/mlbench_results
-PARALLEL=FALSE
+SCRATCH_ROOT_DIRECTORY=/tmp/mlbench_results
+PARALLEL=TRUE
+# set to true if your system uses the pbs batch queue system
+BATCH=FALSE
 #
 # To create new benchmark problems:
 # 
@@ -60,7 +66,7 @@ PARALLEL=FALSE
 #       of the subdirectories.  For example, I did the following for the
 #       maxwell benchmark:
 #
-#               cd ${BENCH_DIRECTORY}
+#               cd ${BENCH_ROOT_DIRECTORY}
 #               mkdir maxwell
 #               cd maxwell
 #               mkdir 2dcube; mkdir 3dcube; mkdir aslot
@@ -107,12 +113,19 @@ PARALLEL=FALSE
 # OUTPUT:
 #    run_benchmarks will create one output file for each run in 
 #    ${SCRATCH_DIRECTORY}. This output will have all lines with 'ime'
-#    grepped out. This is to avoid timing data. A dif file will also
+#    grepped out. This is to avoid timing data.  All lines with
+#    "[Rr]eading" will also be grepped out.  A dif file will also
 #    be created by doing a 'diff -w' with the output file in the directory
 #    structure. It will also create summary information which is essentially
 #    a 'wc' on the dif file and grepping the dif file for the printed 
 #    components of the solution vector and the total number of iterations.
 #    This output is also printed on the screen.
+#
+# DEPENDENCIES:
+#   run_benchmarks depends on the following scripts:
+#       run_one             script for running one benchmark
+#       qbench              script for submitting a job to pbs batch scheduler
+#       mpibench.pbs        script that is submitted to pbs batch scheduler
 #
 #
 TEMP=`echo ${PWD} | sed "s,.*/ml/etc,tuvwxyz,"`
@@ -122,7 +135,7 @@ then
    exit
 fi
 
-#echo "Usage: run_benchmarks [script_directory bench_directory executable_directory scratch_directory paralel={TRUE,FALSE}]
+#echo "Usage: run_benchmarks [bench_root_directory executable_directory scratch_root_directory parallel={TRUE,FALSE}batch={TRUE,FALSE}]
 
 #echo $* $#
 #
@@ -130,60 +143,64 @@ fi
 #
 if test $# -ge 6
 then
-  echo "Usage: run_benchmarks [script_directory bench_directory executable_directory scratch_directory parallel={TRUE,FALSE}]"
+  echo "Usage: run_benchmarks [bench_root_directory executable_directory scratch_root_directory parallel={TRUE,FALSE} batch={TRUE,FALSE}]"
   exit
 fi
 if test $# -eq 0
 then
   echo "Taking defaults for everything:"
-  echo "      BENCH DIRECTORY      = " $BENCH_DIRECTORY
+  echo "      BENCHMARK DIRECTORY  = " $BENCH_ROOT_DIRECTORY
   echo "      EXECUTABLE DIRECTORY = " $EXECUTABLE_DIRECTORY
-  echo "      SCRATCH DIRECTORY    = " $SCRATCH_DIRECTORY
+  echo "      SCRATCH DIRECTORY    = " $SCRATCH_ROOT_DIRECTORY
   echo "      PARALLEL             = " $PARALLEL
+  echo "      BATCH                = " $BATCH
   echo 
   echo "If defaults not wanted, overwrite using ..."
-  echo "    Usage: run_benchmarks [script_directory bench_directory executable_directory scratch_directory parallel={TRUE,FALSE} ]"
+  echo "    Usage: run_benchmarks [bench_root_directory executable_directory
+  scratch_root_directory parallel={TRUE,FALSE} batch={TRUE,FALSE}]"
   echo
 fi
 if test $# -ge 1
 then
-  SCRIPT_DIRECTORY=$1
+  BENCH_ROOT_DIRECTORY=$1
 fi
 if test $# -ge 2
 then
-  BENCH_DIRECTORY=$2
+  EXECUTABLE_DIRECTORY=$2
 fi
 if test $# -ge 3
 then
-  EXECUTABLE_DIRECTORY=$3
+  SCRATCH_ROOT_DIRECTORY=$3
 fi
 if test $# -ge 4
 then
-  SCRATCH_DIRECTORY=$4
+  PARALLEL=$4
 fi
 if test $# -ge 5
 then
-  PARALLEL=$5
+  BATCH=$5
 fi
 
-
 export SCRIPT_DIRECTORY
-export BENCH_DIRECTORY
+export BENCH_ROOT_DIRECTORY
 export EXECUTABLE_DIRECTORY
-export SCRATCH_DIRECTORY
+export SCRATCH_ROOT_DIRECTORY
 export PARALLEL
+export BATCH
 export PARALLEL_CMD
+export BENCH_SUBDIR
+export SCRATCH_SUBDIR
 
 #
 #  Check for the benchmark directory containing the 
 #  valid input/output data.
 #
 
-if test -d ${BENCH_DIRECTORY}
+if test -d ${BENCH_ROOT_DIRECTORY}
 then
-  touch ${BENCH_DIRECTORY}
+  touch ${BENCH_ROOT_DIRECTORY}
 else
-  echo "The directory ${BENCH_DIRECTORY} does not exist?"
+  echo "The directory ${BENCH_ROOT_DIRECTORY} does not exist?"
   exit
 fi
 
@@ -205,28 +222,28 @@ fi
 #  will be stored.
 #
 
-if test -d ${SCRATCH_DIRECTORY}
+if test -d ${SCRATCH_ROOT_DIRECTORY}
 then
-  touch ${SCRATCH_DIRECTORY}
+  touch ${SCRATCH_ROOT_DIRECTORY}
 else
-  echo "Creating the directory ${SCRATCH_DIRECTORY}"
-  mkdir ${SCRATCH_DIRECTORY}
+  echo "Creating the directory ${SCRATCH_ROOT_DIRECTORY}"
+  mkdir ${SCRATCH_ROOT_DIRECTORY}
 fi
 
 
 #
 # Run program within each subdirectory and compare output
-# with that contained in the corresponding ${BENCH_DIRECTORY}.
+# with that contained in the corresponding ${BENCH_ROOT_DIRECTORY}.
 #
-rm -f ${SCRATCH_DIRECTORY}/summary
-echo " *********** Summary ***************" >> ${SCRATCH_DIRECTORY}/summary
-echo >> ${SCRATCH_DIRECTORY}/summary
-echo >> ${SCRATCH_DIRECTORY}/summary
+rm -f ${SCRATCH_ROOT_DIRECTORY}/summary
+echo " *********** Summary ***************" >> ${SCRATCH_ROOT_DIRECTORY}/summary
+echo >> ${SCRATCH_ROOT_DIRECTORY}/summary
+echo >> ${SCRATCH_ROOT_DIRECTORY}/summary
 echo
-tail -3 ${SCRATCH_DIRECTORY}/summary
+tail -3 ${SCRATCH_ROOT_DIRECTORY}/summary
 
 
-cd ${BENCH_DIRECTORY}
+cd ${BENCH_ROOT_DIRECTORY}
 for i in *
 do 
    if test `expr ${i}` != 'CVS' -a \
@@ -235,11 +252,11 @@ do
    then
       cd ${i}
 #      echo -n $i "  "
-      if test -d ${SCRATCH_DIRECTORY}/${i}
+      if test -d ${SCRATCH_ROOT_DIRECTORY}/${i}
       then
-         touch ${SCRATCH_DIRECTORY}/${i}
+         touch ${SCRATCH_ROOT_DIRECTORY}/${i}
       else
-         mkdir ${SCRATCH_DIRECTORY}/${i}
+         mkdir ${SCRATCH_ROOT_DIRECTORY}/${i}
       fi
 
       for j in *
@@ -248,19 +265,23 @@ do
             `expr ${j}`  != 'CVS'
          then
             cd ${j}
-            if test -d ${SCRATCH_DIRECTORY}/${i}/${j}
+            SCRATCH_SUBDIR=`echo ${SCRATCH_ROOT_DIRECTORY}/${i}/${j}`
+            BENCH_SUBDIR=`echo ${BENCH_ROOT_DIRECTORY}/${i}/${j}`
+            if test -d ${SCRATCH_SUBDIR}
             then
-               touch ${SCRATCH_DIRECTORY}/${i}/${j}
+               touch ${SCRATCH_SUBDIR}
             else
-               mkdir ${SCRATCH_DIRECTORY}/${i}/${j}
+               mkdir ${SCRATCH_SUBDIR}
             fi
-            echo "in subdir " ${j}
-            ${SCRIPT_DIRECTORY}/run_one ${i} ${j}
+            ${SCRIPT_DIRECTORY}/run_one
             cd ..
          fi
       done
 
-      ${SCRIPT_DIRECTORY}/run_one ${i}
+      SCRATCH_SUBDIR=`echo ${SCRATCH_ROOT_DIRECTORY}/${i}`
+      BENCH_SUBDIR=`echo ${BENCH_ROOT_DIRECTORY}/${i}`
+
+      ${SCRIPT_DIRECTORY}/run_one
       cd ..
 
    fi
