@@ -1231,7 +1231,7 @@ int ML_Aggregate_CoarsenParMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
    /* compute operator complexity                                            */
    /* ********************************************************************** */
    
-   Nnonzeros2 = ML_Comm_GsumInt( comm, Nnonzeros2);
+   Nnonzeros2 = ML_Comm_GsumInt(comm, Nnonzeros2 + N_bdry_nodes);
 
    if ( mypid == 0 && 7 < ML_Get_PrintLevel())
      printf("%s Total (block) nnz = %d ( = %5.2f/(block)row)\n",
@@ -1240,9 +1240,9 @@ int ML_Aggregate_CoarsenParMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
    
    if ( ml_ag->operator_complexity == 0.0 ) {
       ml_ag->fine_complexity = Nnonzeros2;
-      ml_ag->operator_complexity = Nnonzeros2;
+      ml_ag->operator_complexity = (double)Nnonzeros2;
    }
-   else ml_ag->operator_complexity += Nnonzeros2;
+   else ml_ag->operator_complexity += (double)Nnonzeros2;
 
    /* FIXME: erase meeeeeeeee
       fix aggr_index for num_PDE_eqns > 1 

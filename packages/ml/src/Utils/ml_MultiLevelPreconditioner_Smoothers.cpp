@@ -158,9 +158,16 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
       local[0] = ml->Amat[LevelID_[level]].invec_leng;
       local[1] = ml->Amat[LevelID_[level]].N_nonzeros;
       Comm().SumAll(local,global,2);
+      // kludge because it appears that the nonzeros for ML
+      // defined operators are only local, while for Epetra
+      // are global.
+      if (level == 0)
+        global[1] = local[1];
       if (verbose_)
         cout << msg << "# global rows = " << global[0] 
-             << ", # global nonzeros = " << global[1] << endl;
+             << ", # estim. global nnz = " << global[1] << endl;
+      // FIXME? above `est' is estimated, because there is something
+      // wrong with the way nonzeros are stored in operators.
     }
 
     if( Smoother == "Jacobi" ) {

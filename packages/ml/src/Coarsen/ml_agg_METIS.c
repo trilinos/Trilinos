@@ -851,6 +851,7 @@ static int ML_DecomposeGraph_with_METIS( ML_Operator *Amatrix,
     
       ML_get_matrix_row(Amatrix, 1, &i, &allocated, &rowi_col, &rowi_val,
 		        &rowi_N, 0);
+      (*total_nz) += rowi_N;
 
       /* need to avoid boundary nodes in METIS vectors. Skip them */
       /* (I am not pretty sure that rows with zero elements are   */
@@ -895,8 +896,6 @@ static int ML_DecomposeGraph_with_METIS( ML_Operator *Amatrix,
 #endif
     }      
   }
-
-  *total_nz = count + Nrows; /* graph information for METIS exclude diag */
 
   if (count > N_nonzeros || count2 != NrowsMETIS) {
     fprintf( stderr,
@@ -1576,9 +1575,9 @@ int agg_offset, vertex_offset;
    
    if ( ml_ag->operator_complexity == 0.0 ) {
       ml_ag->fine_complexity = total_nz;
-      ml_ag->operator_complexity = total_nz;
+      ml_ag->operator_complexity = (double)total_nz;
    }
-   else ml_ag->operator_complexity += total_nz;
+   else ml_ag->operator_complexity += (double)total_nz;
 
    /* fix aggr_index for num_PDE_eqns > 1 */
    
