@@ -208,6 +208,7 @@ int ML_AMG_Gen_Prolongator(ML *ml,int level, int clevel, void *data,
    ML_AMG_Set_CurrentLevel( amg, level );
    if ( ml->comm->ML_mypid == 0 && amg->print_flag >= 1) 
       printf("+++++++++++++++++++++++++++++++++++++++++++++++\n");
+   Pmatrix = ML_Operator_Create(ml->comm);
    Ncoarse  = ML_AMG_Coarsen(amg, Amat, &Pmatrix, ml->comm);
    gNcoarse = ML_Comm_GsumInt( ml->comm, Ncoarse);
    if ( ml->comm->ML_mypid == 0 && amg->print_flag > 1) 
