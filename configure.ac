@@ -4,7 +4,7 @@
 #
 
 # Process this file with autoconf to produce a configure script.
-AC_INIT(Trilinos, 3.1d, mheroux@cs.sandia.gov)
+AC_INIT(Trilinos, 3.2d, maherou@sandia.gov)
 AC_CONFIG_SRCDIR([packages/epetra/src/Epetra_Object.h])
 AM_CONFIG_HEADER([Trilinos_config.h:Trilinos_config.h.in])
 
@@ -202,7 +202,12 @@ fi
 
 AC_ARG_ENABLE(,[
 
+CAN'T FIND THE OPTION YOU NEED?
+
 The options listed above are specific to the Trilinos level.
+These options are limited to deciding which packages should
+be built.  All other options such as compilers and compiler
+flags are set at the package level.
 For a list of all options for all packages, type 
 "configure --help=recursive".  The output for this command
 is bulky.  Consider using the "more" or "grep" command to 
@@ -214,11 +219,17 @@ with the name of the package) and type "configure --help".
 
 A list of configuration options that are common to all
 Trilinos packages can be found on the web at
-"http://software.sandia.gov/Trilinos/config_options.html".
+"http://software.sandia.gov/trilinos/configuration_manual.html".
 Many of the descriptions of the options found at this
 webpage are more detailed than those found using
-"configure --help".])
+"configure --help".
 
+THE TRILINOS USER GUIDE contains a lot of additional information
+about configuring and build Trilinos, as well as other
+topics that will be helpful for Trilinos Users.  The Trilinos
+User Guide can be found at:
+"http://software.sandia.gov/trilinos/publications.html". 
+])
 AC_CONFIG_FILES([
 		Makefile
 		packages/Makefile])

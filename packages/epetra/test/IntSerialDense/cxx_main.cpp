@@ -1,3 +1,31 @@
+//@HEADER
+// ************************************************************************
+// 
+//          Trilinos: An Object-Oriented Solver Framework
+//              Copyright (2001) Sandia Corporation
+// 
+// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
+// license for use of this work by or on behalf of the U.S. Government.
+// 
+// This program is free software; you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation; either version 2, or (at your option)
+// any later version.
+//   
+// This program is distributed in the hope that it will be useful, but
+// WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// General Public License for more details.
+//   
+// You should have received a copy of the GNU General Public License
+// along with this program; if not, write to the Free Software
+// Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+// 
+// ************************************************************************
+//@HEADER
+
 // Epetra_IntSerialDense Test routine
 
 #include "Epetra_IntSerialDenseMatrix.h"
@@ -523,7 +551,7 @@ int matrixExceptions(bool verbose, bool debug) {
 	if(ierr == -1)
 		if(verbose) cout << "Checked OK." << endl;
 
-#ifdef EPETRA_ARRAY_BOUNDS_CHECK // only test op() and op[] exceptions if EPETRA_ARRAY_BOUNDS_CHECK is defined.
+#ifdef HAVE_EPETRA_ARRAY_BOUNDS_CHECK // only test op() and op[] exceptions if macro is defined.
 	// out of range index to op() & op[] (6 cases)
 	int* rand16 = getRandArray(16);
 	Epetra_IntSerialDenseMatrix m2(View, rand16, 4, 4, 4);
@@ -606,7 +634,7 @@ int matrixExceptions(bool verbose, bool debug) {
 			if(verbose) cout << "Checked OK." << endl;
 	}
 	EPETRA_TEST_ERR(!caught, returnierr);
-#endif // end of EPETRA_ARRAY_BOUNDS_CHECK conditional
+#endif // end of HAVE_EPETRA_ARRAY_BOUNDS_CHECK conditional
 	
 	// ISDM = ISDV
 	Epetra_IntSerialDenseMatrix m3;
@@ -1341,7 +1369,7 @@ int vectorExceptions(bool verbose, bool debug) {
 	if(ierr == -1)
 		if(verbose) cout << "Checked OK." << endl;
 
-#ifdef EPETRA_ARRAY_BOUNDS_CHECK // only test op() and op[] exceptions if EPETRA_ARRAY_BOUNDS_CHECK is defined.
+#ifdef HAVE_EPETRA_ARRAY_BOUNDS_CHECK // only test op() and op[] exceptions if macro is defined.
 	// out of range index to op() & op[]
 	int* rand17 = getRandArray(17);
 	Epetra_IntSerialDenseVector v2(View, rand17, 17);
@@ -1396,7 +1424,7 @@ int vectorExceptions(bool verbose, bool debug) {
 			if(verbose) cout << "Checked OK." << endl;
 	}
 	EPETRA_TEST_ERR(!caught, returnierr);
-#endif // end of EPETRA_ARRAY_BOUNDS_CHECK conditional
+#endif // end of HAVE_EPETRA_ARRAY_BOUNDS_CHECK conditional
 
 	// we don't need to check for ISDV = ISDM, as that is a compile-time error
 	

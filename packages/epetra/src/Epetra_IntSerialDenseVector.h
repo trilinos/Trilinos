@@ -1,26 +1,31 @@
 
-/* Copyright (2001) Sandia Corportation. Under the terms of Contract 
- * DE-AC04-94AL85000, there is a non-exclusive license for use of this 
- * work by or on behalf of the U.S. Government.  Export of this program
- * may require a license from the United States Government. */
-
-
-/* NOTICE:  The United States Government is granted for itself and others
- * acting on its behalf a paid-up, nonexclusive, irrevocable worldwide
- * license in ths data to reproduce, prepare derivative works, and
- * perform publicly and display publicly.  Beginning five (5) years from
- * July 25, 2001, the United States Government is granted for itself and
- * others acting on its behalf a paid-up, nonexclusive, irrevocable
- * worldwide license in this data to reproduce, prepare derivative works,
- * distribute copies to the public, perform publicly and display
- * publicly, and to permit others to do so.
- * 
- * NEITHER THE UNITED STATES GOVERNMENT, NOR THE UNITED STATES DEPARTMENT
- * OF ENERGY, NOR SANDIA CORPORATION, NOR ANY OF THEIR EMPLOYEES, MAKES
- * ANY WARRANTY, EXPRESS OR IMPLIED, OR ASSUMES ANY LEGAL LIABILITY OR
- * RESPONSIBILITY FOR THE ACCURACY, COMPLETENESS, OR USEFULNESS OF ANY
- * INFORMATION, APPARATUS, PRODUCT, OR PROCESS DISCLOSED, OR REPRESENTS
- * THAT ITS USE WOULD NOT INFRINGE PRIVATELY OWNED RIGHTS. */
+//@HEADER
+// ************************************************************************
+// 
+//          Trilinos: An Object-Oriented Solver Framework
+//              Copyright (2001) Sandia Corporation
+// 
+// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
+// license for use of this work by or on behalf of the U.S. Government.
+// 
+// This program is free software; you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation; either version 2, or (at your option)
+// any later version.
+//   
+// This program is distributed in the hope that it will be useful, but
+// WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// General Public License for more details.
+//   
+// You should have received a copy of the GNU General Public License
+// along with this program; if not, write to the Free Software
+// Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+// 
+// ************************************************************************
+//@HEADER
 
 #ifndef EPETRA_INTSERIALDENSEVECTOR_H
 #define EPETRA_INTSERIALDENSEVECTOR_H
@@ -141,7 +146,7 @@ class Epetra_IntSerialDenseVector : public Epetra_IntSerialDenseMatrix{
     Returns the specified element of the vector.
     \return Specified element in vector.
 
-    \warning No bounds checking is done unless Epetra is compiled with EPETRA_ARRAY_BOUNDS_CHECK.
+    \warning No bounds checking is done unless Epetra is compiled with HAVE_EPETRA_ARRAY_BOUNDS_CHECK.
   */
     int& operator () (int Index);
 
@@ -150,7 +155,7 @@ class Epetra_IntSerialDenseVector : public Epetra_IntSerialDenseMatrix{
     Returns the specified element of the vector.
     \return Specified element in vector.
 
-    \warning No bounds checking is done unless Epetra is compiled with EPETRA_ARRAY_BOUNDS_CHECK.
+    \warning No bounds checking is done unless Epetra is compiled with HAVE_EPETRA_ARRAY_BOUNDS_CHECK.
   */
     const int& operator () (int Index) const;
 
@@ -159,7 +164,7 @@ class Epetra_IntSerialDenseVector : public Epetra_IntSerialDenseMatrix{
     Returns the specified element of the vector.
     \return Specified element in vector.
 
-    \warning No bounds checking is done unless Epetra is compiled with EPETRA_ARRAY_BOUNDS_CHECK.
+    \warning No bounds checking is done unless Epetra is compiled with HAVE_EPETRA_ARRAY_BOUNDS_CHECK.
   */
     int& operator [] (int Index);
 
@@ -168,7 +173,7 @@ class Epetra_IntSerialDenseVector : public Epetra_IntSerialDenseMatrix{
     Returns the specified element of the vector.
     \return Specified element in vector.
 
-    \warning No bounds checking is done unless Epetra is compiled with EPETRA_ARRAY_BOUNDS_CHECK.
+    \warning No bounds checking is done unless Epetra is compiled with HAVE_EPETRA_ARRAY_BOUNDS_CHECK.
   */
     const int& operator [] (int Index) const;
     
@@ -233,7 +238,7 @@ class Epetra_IntSerialDenseVector : public Epetra_IntSerialDenseMatrix{
 // inlined definitions of op() and op[]
 //=========================================================================
 inline int& Epetra_IntSerialDenseVector::operator() (int Index) {
-#ifdef EPETRA_ARRAY_BOUNDS_CHECK
+#ifdef HAVE_EPETRA_ARRAY_BOUNDS_CHECK
   if(Index >= M_ || Index < 0) 
 		throw ReportError("Index = " + toString(Index) + 
 											" Out of Range 0 - " + toString(M_-1),-1);
@@ -242,7 +247,7 @@ inline int& Epetra_IntSerialDenseVector::operator() (int Index) {
 }
 //=========================================================================
 inline const int& Epetra_IntSerialDenseVector::operator() (int Index) const {
-#ifdef EPETRA_ARRAY_BOUNDS_CHECK
+#ifdef HAVE_EPETRA_ARRAY_BOUNDS_CHECK
   if(Index >= M_ || Index < 0) 
 		throw ReportError("Index = " + toString(Index) + 
 											" Out of Range 0 - " + toString(M_-1),-1);
@@ -251,7 +256,7 @@ inline const int& Epetra_IntSerialDenseVector::operator() (int Index) const {
 }
 //=========================================================================
 inline int& Epetra_IntSerialDenseVector::operator [] (int Index) {
-#ifdef EPETRA_ARRAY_BOUNDS_CHECK
+#ifdef HAVE_EPETRA_ARRAY_BOUNDS_CHECK
   if(Index >= M_ || Index < 0) 
 		throw ReportError("Index = " + toString(Index) + 
 											" Out of Range 0 - " + toString(M_-1),-1);
@@ -260,7 +265,7 @@ inline int& Epetra_IntSerialDenseVector::operator [] (int Index) {
 }
 //=========================================================================
 inline const int& Epetra_IntSerialDenseVector::operator [] (int Index) const {
-#ifdef EPETRA_ARRAY_BOUNDS_CHECK
+#ifdef HAVE_EPETRA_ARRAY_BOUNDS_CHECK
 	if(Index >= M_ || Index < 0) 
 		throw ReportError("Index = " + toString(Index) + 
 											" Out of Range 0 - " + toString(M_-1),-1);

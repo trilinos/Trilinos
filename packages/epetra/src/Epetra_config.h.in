@@ -32,6 +32,9 @@
 /* Define to 1 if you have the <cstdlib> header file. */
 #undef HAVE_CSTDLIB
 
+/* Define if want to build epetra-abc */
+#undef HAVE_EPETRA_ARRAY_BOUNDS_CHECK
+
 /* Define if want to build examples */
 #undef HAVE_EXAMPLES
 

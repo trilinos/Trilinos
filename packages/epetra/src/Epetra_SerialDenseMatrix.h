@@ -1,26 +1,31 @@
 
-/* Copyright (2001) Sandia Corportation. Under the terms of Contract 
- * DE-AC04-94AL85000, there is a non-exclusive license for use of this 
- * work by or on behalf of the U.S. Government.  Export of this program
- * may require a license from the United States Government. */
-
-
-/* NOTICE:  The United States Government is granted for itself and others
- * acting on its behalf a paid-up, nonexclusive, irrevocable worldwide
- * license in ths data to reproduce, prepare derivative works, and
- * perform publicly and display publicly.  Beginning five (5) years from
- * July 25, 2001, the United States Government is granted for itself and
- * others acting on its behalf a paid-up, nonexclusive, irrevocable
- * worldwide license in this data to reproduce, prepare derivative works,
- * distribute copies to the public, perform publicly and display
- * publicly, and to permit others to do so.
- * 
- * NEITHER THE UNITED STATES GOVERNMENT, NOR THE UNITED STATES DEPARTMENT
- * OF ENERGY, NOR SANDIA CORPORATION, NOR ANY OF THEIR EMPLOYEES, MAKES
- * ANY WARRANTY, EXPRESS OR IMPLIED, OR ASSUMES ANY LEGAL LIABILITY OR
- * RESPONSIBILITY FOR THE ACCURACY, COMPLETENESS, OR USEFULNESS OF ANY
- * INFORMATION, APPARATUS, PRODUCT, OR PROCESS DISCLOSED, OR REPRESENTS
- * THAT ITS USE WOULD NOT INFRINGE PRIVATELY OWNED RIGHTS. */
+//@HEADER
+// ************************************************************************
+// 
+//          Trilinos: An Object-Oriented Solver Framework
+//              Copyright (2001) Sandia Corporation
+// 
+// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
+// license for use of this work by or on behalf of the U.S. Government.
+// 
+// This program is free software; you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation; either version 2, or (at your option)
+// any later version.
+//   
+// This program is distributed in the hope that it will be useful, but
+// WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// General Public License for more details.
+//   
+// You should have received a copy of the GNU General Public License
+// along with this program; if not, write to the Free Software
+// Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+// 
+// ************************************************************************
+//@HEADER
 
 #ifndef EPETRA_SERIALDENSEMATRIX_H
 #define EPETRA_SERIALDENSEMATRIX_H
@@ -274,7 +279,7 @@ This function performs a variety of matrix-matrix multiply operations.
 
     \return Element from the specified row and column.
 
-		\warning No bounds checking is done unless Epetra is compiled with EPETRA_ARRAY_BOUNDS_CHECK.
+		\warning No bounds checking is done unless Epetra is compiled with HAVE_EPETRA_ARRAY_BOUNDS_CHECK.
   */
 	    double& operator () (int RowIndex, int ColIndex);
 
@@ -286,7 +291,7 @@ This function performs a variety of matrix-matrix multiply operations.
 
     \return Element from the specified row and column.
 
-		\warning No bounds checking is done unless Epetra is compiled with EPETRA_ARRAY_BOUNDS_CHECK.
+		\warning No bounds checking is done unless Epetra is compiled with HAVE_EPETRA_ARRAY_BOUNDS_CHECK.
   */
     const double& operator () (int RowIndex, int ColIndex) const;
 
@@ -299,7 +304,7 @@ This function performs a variety of matrix-matrix multiply operations.
     \return Pointer to address of specified column.
 
     \warning No bounds checking can be done for the index i in the expression A[j][i].
-		\warning No bounds checking is done unless Epetra is compiled with EPETRA_ARRAY_BOUNDS_CHECK.
+		\warning No bounds checking is done unless Epetra is compiled with HAVE_EPETRA_ARRAY_BOUNDS_CHECK.
   */
     double* operator [] (int ColIndex);
 
@@ -312,7 +317,7 @@ This function performs a variety of matrix-matrix multiply operations.
     \return Pointer to address of specified column.
 
     \warning No bounds checking can be done for the index i in the expression A[j][i].
-		\warning No bounds checking is done unless Epetra is compiled with EPETRA_ARRAY_BOUNDS_CHECK.
+		\warning No bounds checking is done unless Epetra is compiled with HAVE_EPETRA_ARRAY_BOUNDS_CHECK.
   */
     const double* operator [] (int ColIndex) const;
     
@@ -386,7 +391,7 @@ This function performs a variety of matrix-matrix multiply operations.
 // inlined definitions of op() and op[]
 //=========================================================================
 inline double& Epetra_SerialDenseMatrix::operator () (int RowIndex, int ColIndex) {
-#ifdef EPETRA_ARRAY_BOUNDS_CHECK
+#ifdef HAVE_EPETRA_ARRAY_BOUNDS_CHECK
   if (RowIndex >= M_ || RowIndex < 0)
 		throw ReportError("Row index = " +toString(RowIndex) + 
 											" Out of Range 0 - " + toString(M_-1),-1);
@@ -398,7 +403,7 @@ inline double& Epetra_SerialDenseMatrix::operator () (int RowIndex, int ColIndex
 }
 //=========================================================================
 inline const double& Epetra_SerialDenseMatrix::operator () (int RowIndex, int ColIndex) const {
-#ifdef EPETRA_ARRAY_BOUNDS_CHECK
+#ifdef HAVE_EPETRA_ARRAY_BOUNDS_CHECK
   if (RowIndex >= M_ || RowIndex < 0) 
 		throw ReportError("Row index = " +toString(RowIndex) + 
 											" Out of Range 0 - " + toString(M_-1),-1);
@@ -410,7 +415,7 @@ inline const double& Epetra_SerialDenseMatrix::operator () (int RowIndex, int Co
 }
 //=========================================================================
 inline double* Epetra_SerialDenseMatrix::operator [] (int ColIndex) {
-#ifdef EPETRA_ARRAY_BOUNDS_CHECK
+#ifdef HAVE_EPETRA_ARRAY_BOUNDS_CHECK
   if (ColIndex >= N_ || ColIndex < 0) 
 		throw ReportError("Column index = " +toString(ColIndex) + 
 											" Out of Range 0 - " + toString(N_-1),-2);
@@ -419,7 +424,7 @@ inline double* Epetra_SerialDenseMatrix::operator [] (int ColIndex) {
 }
 //=========================================================================
 inline const double* Epetra_SerialDenseMatrix::operator [] (int ColIndex) const {
-#ifdef EPETRA_ARRAY_BOUNDS_CHECK
+#ifdef HAVE_EPETRA_ARRAY_BOUNDS_CHECK
   if (ColIndex >= N_ || ColIndex < 0) 
 		throw ReportError("Column index = " +toString(ColIndex) + 
 											" Out of Range 0 - " + toString(N_-1),-2);
