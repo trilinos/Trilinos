@@ -58,9 +58,11 @@ s = - \gamma \nabla f(x) = -\gamma J(x)^T F(x)
 <li>"Scaling Type" can be either of:
 
     <ul>
-    <li>"2-Norm" - \f$ \gamma = \displaystyle\frac{1}{\|d\|_2} \f$ [default]
+    <li>"2-Norm" - \f$ \gamma = \displaystyle\frac{1}{\|s\|_2} \f$ [default]
 
-    <li>"Quadratic Model Min" - \f$ \gamma = \displaystyle\frac{\|d\|_2}{d^T J^T J d} \f$
+    <li>"Quadratic Model Min" - \f$ \gamma = \displaystyle\frac{\|s\|_2}{s^T J^T J s} \f$
+
+    <li>"F 2-Norm" - \f$ \gamma = \displaystyle\frac{1}{\|F(x)\|_2} \f$ [default]
 
     <li>"None" - No scaling
 
@@ -73,7 +75,7 @@ class SteepestDescent : public Generic {
 public:
 
   //! Scaling types
-  enum ScalingType {TwoNorm, QuadMin, None};
+  enum ScalingType {TwoNorm, QuadMin, FunctionTwoNorm, None};
 
   //! Constructor
   SteepestDescent(Parameter::List& params);
