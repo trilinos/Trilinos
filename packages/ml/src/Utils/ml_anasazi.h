@@ -26,7 +26,7 @@ extern int GetFieldOfValuesBox(const Epetra_RowMatrix * RowMatrix,
 
 extern "C" {
   
-  extern int ML_Anasazi_Get_FiledOfValuesBox_Interface(ML_Operator * Amat,
+  extern int ML_Anasazi_Get_FieldOfValuesBox_Interface(ML_Operator * Amat,
 						       struct ML_Field_Of_Values * fov );
   extern int ML_Anasazi_Get_SpectralNorm_Anasazi(ML_Operator * Amat,
 						 int MaxIters, double Tolerance,

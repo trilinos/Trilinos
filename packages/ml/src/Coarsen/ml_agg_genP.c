@@ -25,7 +25,7 @@ extern int mls_or_gs, mls_order;
 #include "ml_agg_genP.h"
 #include "ml_memory.h"
 
-extern int ML_Anasazi_Get_FiledOfValuesBox_Interface(ML_Operator * Amat,
+extern int ML_Anasazi_Get_FieldOfValuesBox_Interface(ML_Operator * Amat,
 						     struct ML_Field_Of_Values * fov );
 extern int ML_Anasazi_Get_SpectralNorm_Anasazi(ML_Operator * Amat,
 					       int MaxIters, double Tolerance,
@@ -2300,7 +2300,7 @@ int ML_MultiLevel_Gen_Prolongator(ML *ml,int level, int clevel, void *data)
 
      if( fov->compute_field_of_values == ML_YES ) {
 
-              ML_Anasazi_Get_FiledOfValuesBox_Interface(Amat,fov);
+              ML_Anasazi_Get_FieldOfValuesBox_Interface(Amat,fov);
        if( ml->comm->ML_mypid == 0 && 5 < ML_Get_PrintLevel() ) {
 	 printf("\nField of Values Box (level %d) : Max Real = %e\n",
 		level,
@@ -2339,7 +2339,7 @@ int ML_MultiLevel_Gen_Prolongator(ML *ml,int level, int clevel, void *data)
 
      if( fov->compute_field_of_values == ML_YES && fov->choice != 1 ) {
        
-       ML_Anasazi_Get_FiledOfValuesBox_Interface(Amat,fov);
+       ML_Anasazi_Get_FieldOfValuesBox_Interface(Amat,fov);
        if( ml->comm->ML_mypid == 0 && 5 < ML_Get_PrintLevel() ) {
 	 printf("\nField of Values Box (level %d) : Max Real = %e\n",
 		level,
@@ -2364,7 +2364,7 @@ int ML_MultiLevel_Gen_Prolongator(ML *ml,int level, int clevel, void *data)
        
      } else if( fov->choice == 1 ) {
        
-       ML_Anasazi_Get_FiledOfValuesBox_Interface(Amat,fov);
+       ML_Anasazi_Get_FieldOfValuesBox_Interface(Amat,fov);
        if( ml->comm->ML_mypid == 0 && 5 < ML_Get_PrintLevel() ) {
 	 printf("\nField of Values Box (level %d) : Max Real = %e\n",
 		level,
@@ -2379,7 +2379,7 @@ int ML_MultiLevel_Gen_Prolongator(ML *ml,int level, int clevel, void *data)
        
      } else if( fov->choice == 2 ) {
 
-       ML_Anasazi_Get_FiledOfValuesBox_Interface(Amat,fov);
+       ML_Anasazi_Get_FieldOfValuesBox_Interface(Amat,fov);
        fov->eta = sqrt(pow(fov->real_max,2) + pow(fov->imag_max,2));
 
        if( ml->comm->ML_mypid == 0 && 5 < ML_Get_PrintLevel() ) {

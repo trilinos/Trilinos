@@ -419,7 +419,7 @@ int GetFieldOfValuesBox(const Epetra_RowMatrix * RowMatrix,
 
 extern "C" {
   
-int ML_Anasazi_Get_FiledOfValuesBox_Interface(ML_Operator * Amat,
+int ML_Anasazi_Get_FieldOfValuesBox_Interface(ML_Operator * Amat,
 					      struct ML_Field_Of_Values * fov )
 {
 
@@ -557,6 +557,17 @@ extern "C" {
     return( -1 );
   
   }
+  
+int ML_Anasazi_Get_FieldOfValuesBox_Interface(ML_Operator * Amat,
+					      struct ML_Field_Of_Values * fov )
+{
+    puts("You must configure with options --with-ml_epetra and ");
+    puts("--with-ml_anasazi to estimate lambda max with Anasazi.");
+
+    exit( EXIT_FAILURE );
+
+    return( -1 );
+}
   
 }
 
