@@ -175,6 +175,7 @@ $(srcdir)/MLAPI/MLAPI_SerialMatrix.h         \
 $(srcdir)/MLAPI/MLAPI_DistributedMatrix.h    \
 $(srcdir)/MLAPI/MLAPI_MultiLevelSA.h         \
 $(srcdir)/MLAPI/MLAPI_MultiLevelAdaptiveSA.h \
+$(srcdir)/MLAPI/MLAPI_MultiLevelNonSymmetricSA.h \
 $(srcdir)/MLAPI/MLAPI_MultiVector.h          \
 $(srcdir)/MLAPI/MLAPI_MultiVector_Utils.h    \
 $(srcdir)/MLAPI/MLAPI_Operator_Box.h         \

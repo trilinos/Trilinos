@@ -14,7 +14,8 @@ noinst_PROGRAMS = Blackboard           \
                   TwoLevelDDAdditive   \
                   MultiLevel           \
                   Richardson           \
-                  AdaptiveSA
+                  AdaptiveSA           \
+                  NonSymmetricSA
 
 Blackboard_SOURCES  = $(srcdir)/Blackboard.cpp
 Blackboard_CPPFLAGS = ${ml_common_include_locations}
@@ -51,3 +52,9 @@ Richardson_CPPFLAGS = ${ml_common_include_locations}
 Richardson_CXXFLAGS = ${ml_common_include_locations}
 Richardson_LDADD    = ${ml_libs} 
 Richardson_LINK     = ${mllink}
+
+NonSymmetricSA_SOURCES  = $(srcdir)/NonSymmetricSA.cpp
+NonSymmetricSA_CPPFLAGS = ${ml_common_include_locations}
+NonSymmetricSA_CXXFLAGS = ${ml_common_include_locations}
+NonSymmetricSA_LDADD    = ${ml_libs} 
+NonSymmetricSA_LINK     = ${mllink}

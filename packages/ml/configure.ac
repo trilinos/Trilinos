@@ -669,6 +669,7 @@ AC_CONFIG_FILES([
                 test/Zoltan/Makefile
                 test/IFPACKSmoothers/Makefile
                 test/MLAPICompare/Makefile
+                test/Communicator/Makefile
                 test/scripts/Makefile
                 test/scripts/daily/Makefile
                 test/scripts/daily/mpi/Makefile

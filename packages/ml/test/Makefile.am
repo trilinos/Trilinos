@@ -26,16 +26,17 @@
 # ************************************************************************
 #@HEADER
 
-SUBDIRS = MultiLevelPreconditioner_NonSym \
-	  MultiLevelPreconditioner_Sym \
-	  MultiLevelPreconditioner_Maxwell \
-	  ML_Operator2Epetra_RowMatrix \
-          Scalability \
-	  VerySimple \
-	  AztecSimple \
-          Zoltan \
-          IFPACKSmoothers \
-          MLAPICompare \
-          2d_Poisson \
-          3d_Poisson \
+SUBDIRS = MultiLevelPreconditioner_NonSym    \
+	  MultiLevelPreconditioner_Sym       \
+	  MultiLevelPreconditioner_Maxwell   \
+	  ML_Operator2Epetra_RowMatrix       \
+          Scalability                        \
+	  VerySimple                         \
+	  AztecSimple                        \
+          Zoltan                             \
+          IFPACKSmoothers                    \
+          MLAPICompare                       \
+          2d_Poisson                         \
+          3d_Poisson                         \
+          Communicator                       \
 	  scripts
