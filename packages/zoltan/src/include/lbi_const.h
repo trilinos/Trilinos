@@ -230,6 +230,19 @@ typedef enum Zoltan_Ref_Type LB_REF_TYPE;
 #define LB_Point_Assign             Zoltan_LB_Point_Assign
 #define LB_Box_Assign               Zoltan_LB_Box_Assign
 
+/*******  Memory management package ********/
+
+#define LB_Memory_Stats             Zoltan_Memory_Stats
+#define LB_Malloc                   Zoltan_Malloc
+#define LB_Realloc                  Zoltan_Realloc
+#define LB_Array_Alloc              Zoltan_Array_Alloc
+#define LB_Free                     Zoltan_Free
+#define LB_Multifree                Zoltan_Multifree
+#define LB_Set_Memory_Debug         Zoltan_Memory_Debug
+#define LB_Memory_Num               Zoltan_Memory_Num
+#define LB_MALLOC                   ZOLTAN_MALLOC
+#define LB_REALLOC                  ZOLTAN_REALLOC
+#define LB_FREE                     ZOLTAN_FREE
 
 #ifdef __cplusplus
 } /* closing bracket for extern "C" */
