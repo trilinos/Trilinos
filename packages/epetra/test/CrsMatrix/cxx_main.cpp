@@ -675,16 +675,13 @@ cout << A2;
   // Test with a matrix that has partial sums for a subset of the rows 
   // on multiple processors. (Except for the serial case, of course.)
   int NumMyRows3 = 2; // Changing this requires further changes below
-  int myGlobalElements[NumMyRows3];
+  int * myGlobalElements = new int[NumMyRows3];
   for (int i=0; i<NumMyRows3; i++) myGlobalElements[i] = MyPID+i;
-  int *MGEp = myGlobalElements;
-  Epetra_Map RowMap3(NumProc*2, NumMyRows3, MGEp, 0, Comm);
+  Epetra_Map RowMap3(NumProc*2, NumMyRows3, myGlobalElements, 0, Comm);
   int NumMyElements3 = 5;
   Epetra_CrsMatrix A3(Copy, RowMap3, NumMyElements3);
-  double Val3[NumMyElements3];
-  double * Values3 = Val3;
-  int Ind3[NumMyElements3];
-  int * Indices3 = Ind3;
+  double * Values3 = new double[NumMyElements3];
+  int * Indices3 = new int[NumMyElements3];
   for (int i=0; i < NumMyElements3; i++) {
     Values3[i] = (int) (MyPID + (i+1));
     Indices3[i]=i;
@@ -710,6 +707,47 @@ cout << A2;
     EPETRA_TEST_ERR(-61,ierr);
     InvSumsBroke = true;
   }
+  // we want to take the transpose of our matrix and fill in different values.
+  int NumMyColumns3 = NumMyRows3;
+  Epetra_Map ColMap3cm(RowMap3); 
+  Epetra_Map RowMap3cm(A3.ColMap());
+
+  Epetra_CrsMatrix A3cm(Copy,RowMap3cm,ColMap3cm,NumProc+1);
+  double *Values3cm = new double[NumMyColumns3];
+  int * Indices3cm = new int[NumMyColumns3];
+  for (int i=0; i<NumMyColumns3; i++) {
+    Values3cm[i] = MyPID + i + 1;
+    Indices3cm[i]= i + MyPID;
+  }
+  for (int i=0; i<NumMyElements3; i++)
+    A3cm.InsertGlobalValues(i, NumMyColumns3, Values3cm, Indices3cm);
+
+  // The DomainMap and the RangeMap from the last test will work fine for 
+  // the RangeMap and DomainMap, respectively, but I will make copies to
+  // avaoid confusion when passing what looks like a DomainMap where we
+  // need a RangeMap and vice vera.
+  Epetra_Map RangeMap3cm(DomainMap3);
+  Epetra_Map DomainMap3cm(RangeMap3);
+  EPETRA_TEST_ERR(A3cm.FillComplete(DomainMap3cm,RangeMap3cm),ierr);
+  if (verbose1) cout << A3cm << endl;
+
+  // Again, we can copy objects from the last example.
+  //Epetra_Vector xRange3cm(xDomain3); //Don't use at this time
+  Epetra_Vector xDomain3cm(DomainMap3cm,false);
+
+  EPETRA_TEST_ERR(A3cm.InvColSums(xDomain3cm),ierr);
+
+  if (verbose1) cout << xDomain3cm << endl;
+
+  EPETRA_TEST_ERR(A3cm.RightScale(xDomain3cm),ierr);
+  float A3cmOneNormFloat  = A3cm.NormOne();
+  if (verbose1) cout << A3cm << endl;
+  if (1.0!=A3cmOneNormFloat) {
+    cout << "OneNorm should be = 1, but OneNorm = " << A3cmOneNormFloat << endl;
+    EPETRA_TEST_ERR(-62,ierr);
+    InvSumsBroke = true;
+  }
+  
   if (verbose) cout << "End partial sum testing" << endl;
   if (verbose) cout << "Begin replicated testing" << endl;
 
@@ -726,17 +764,48 @@ cout << A2;
   }
   EPETRA_TEST_ERR(A4.FillComplete(DomainMap3, RangeMap3),ierr);
   if (verbose1) cout << A4 << endl;
-  EPETRA_TEST_ERR(A4.InvRowSums(xRow3),ierr);
-                                                                                                                             
-  if (verbose1) cout << xRange3;
+  // The next two lines should be expanded into a verifiable test.
+  EPETRA_TEST_ERR(A4.InvRowMaxs(xRow3),ierr);
+  EPETRA_TEST_ERR(A4.InvRowMaxs(xRange3),ierr);
+  if (verbose1) cout << xRow3 << xRange3;
+
+  EPETRA_TEST_ERR(A4.InvRowSums(xRow3),ierr);                      
+  if (verbose1) cout << xRow3;
   EPETRA_TEST_ERR(A4.LeftScale(xRow3),ierr);
   float A4infNormFloat = A4.NormInf();
   if (verbose1) cout << A4;
-  if (1.0!=A4infNormFloat) {
-    cout << "InfNorm should be = 1, but InfNorm = " << A4infNormFloat <<endl;
+  if (2.0!=A4infNormFloat) {
+    if (verbose1) cout << "InfNorm should be = 2 (because one column is replicated on two processors and NormOne() does not handle replication), but InfNorm = " << A4infNormFloat <<endl;
     EPETRA_TEST_ERR(-63,ierr);
     InvSumsBroke = true;
   }
+  
+  
+  Epetra_Vector xCol3cm(ColMap3cm,false);
+  Epetra_CrsMatrix A4cm(Copy, RowMap3cm, ColMap3cm, NumProc+1);
+  //Use values from A3cm
+  for (int i=0; i<NumMyElements3; i++) {
+    A4cm.InsertGlobalValues(i,NumMyColumns3,Values3cm,Indices3cm);
+  }
+  EPETRA_TEST_ERR(A4cm.FillComplete(DomainMap3cm, RangeMap3cm),ierr);
+  if (verbose1) cout << A4cm << endl;
+  // The next two lines should be expanded into a verifiable test.
+  EPETRA_TEST_ERR(A4cm.InvColMaxs(xCol3cm),ierr);
+  EPETRA_TEST_ERR(A4cm.InvColMaxs(xDomain3cm),ierr);
+  if (verbose1) cout << xCol3cm << xDomain3cm;
+
+  EPETRA_TEST_ERR(A4cm.InvColSums(xCol3cm),ierr);
+ 
+  if (verbose1) cout << xCol3cm << endl;
+  EPETRA_TEST_ERR(A4cm.RightScale(xCol3cm),ierr);
+  float A4cmOneNormFloat = A4cm.NormOne();
+  if (verbose1) cout << A4cm << endl;
+  if (2.0!=A4cmOneNormFloat) {
+    if (verbose1) cout << "OneNorm should be = 2 (because one column is replicated on two processors and NormOne() does not handle replication), but OneNorm = " << A4cmOneNormFloat << endl;
+    EPETRA_TEST_ERR(-64,ierr);
+    InvSumsBroke = true;
+  }
+
   if (verbose) cout << "End replicated testing" << endl;
 
   if (InvSumsBroke) {
@@ -747,6 +816,11 @@ cout << A2;
 
 delete [] Values2;
 delete [] Indices2;
+delete [] myGlobalElements;
+delete [] Values3;
+delete [] Indices3;
+delete [] Values3cm;
+delete [] Indices3cm;
 
 #ifdef EPETRA_MPI
   MPI_Finalize() ;
