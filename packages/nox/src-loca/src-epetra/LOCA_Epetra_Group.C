@@ -42,8 +42,10 @@ LOCA::Epetra::Group::Group(const NOX::Parameter::List& par,
 			   Epetra_Operator& J) :
   NOX::Epetra::Group(par, i, x, J),
   params(p),
-  userInterface(i)
+  userInterface(i),
+  scaleVec(x)
 {
+  computeScaleVec();  // use default method for computing scale vector
 }
 
 LOCA::Epetra::Group::Group(const NOX::Parameter::List& par, 
@@ -54,7 +56,36 @@ LOCA::Epetra::Group::Group(const NOX::Parameter::List& par,
 			   Epetra_Operator& M) :
   NOX::Epetra::Group(par, i, x, J, M),
   params(p),
-  userInterface(i)
+  userInterface(i),
+  scaleVec(x)
+{
+  computeScaleVec();  // use default method for computing scale vector
+}
+
+LOCA::Epetra::Group::Group(const NOX::Parameter::List& par, 
+			   LOCA::Epetra::Interface& i, 
+			   const LOCA::ParameterVector& p, 
+			   NOX::Epetra::Vector& x, 
+			   Epetra_Operator& J,
+			   const NOX::Epetra::Vector& s) :
+  NOX::Epetra::Group(par, i, x, J),
+  params(p),
+  userInterface(i),
+  scaleVec(s)
+{
+}
+
+LOCA::Epetra::Group::Group(const NOX::Parameter::List& par, 
+			   LOCA::Epetra::Interface& i, 
+			   const LOCA::ParameterVector& p, 
+			   NOX::Epetra::Vector& x, 
+			   Epetra_Operator& J, 
+			   Epetra_Operator& M,
+			   const NOX::Epetra::Vector& s) :
+  NOX::Epetra::Group(par, i, x, J, M),
+  params(p),
+  userInterface(i),
+  scaleVec(s)
 {
 }
 
@@ -62,7 +93,8 @@ LOCA::Epetra::Group::Group(const LOCA::Epetra::Group& source,
 			   NOX::CopyType type) :
   NOX::Epetra::Group(source, type),
   params(source.params),
-  userInterface(source.userInterface)
+  userInterface(source.userInterface),
+  scaleVec(source.scaleVec)
 {
 }
 
@@ -92,6 +124,7 @@ LOCA::Epetra::Group&
 LOCA::Epetra::Group::operator=(const LOCA::Epetra::Group& source)
 {
   params = source.params;
+  scaleVec = source.scaleVec;
   NOX::Epetra::Group::operator=(source);
   return *this;
 }
@@ -159,4 +192,24 @@ NOX::Epetra::Interface&
 LOCA::Epetra::Group::getUserInterface()
 {
   return userInterface;
+}
+
+void
+LOCA::Epetra::Group::setScaleVec(const NOX::Abstract::Vector& s) {
+  setScaleVec( dynamic_cast<const NOX::Epetra::Vector&>(s) );
+}
+
+void
+LOCA::Epetra::Group::setScaleVec(const NOX::Epetra::Vector& s) {
+  scaleVec = s;
+}
+
+const NOX::Abstract::Vector&
+LOCA::Epetra::Group::getScaleVec() const {
+  return scaleVec;
+}
+
+void
+LOCA::Epetra::Group::computeScaleVec() {
+  scaleVec.init(1.0);
 }

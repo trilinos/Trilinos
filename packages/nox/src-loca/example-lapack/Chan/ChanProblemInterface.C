@@ -32,14 +32,16 @@
 
 #include "ChanProblemInterface.H"
 
-ChanProblemInterface::ChanProblemInterface(int N, double a, double b)  : 
+ChanProblemInterface::ChanProblemInterface(int N, double a, double b, 
+					   double s)  : 
   n(N),
   initialGuess(N),
   alpha(a),
-  beta(b)
+  beta(b),
+  scale(s)
 {
   for (int i=0; i<n; i++) 
-    initialGuess(i) = i*(n-1-i)*alpha/((n-1)*(n-1)) + 0.001;
+    initialGuess(i) = i*(n-1-i)*scale*alpha/((n-1)*(n-1)) + 0.001;
 }
 
 const NOX::LAPACK::Vector&
@@ -55,7 +57,8 @@ ChanProblemInterface::computeF(NOX::LAPACK::Vector& f,
   f(0) = x(0) - beta;
   f(n-1) = x(n-1) - beta;
   for (int i=1; i<n-1; i++)
-    f(i) = (x(i-1) - 2*x(i) + x(i+1))*(n-1)*(n-1) + alpha*source_term(x(i));
+    f(i) = (x(i-1) - 2*x(i) + x(i+1))*(n-1)*(n-1) 
+      + scale*alpha*source_term(x(i));
   
   return true;
 }
@@ -69,15 +72,16 @@ ChanProblemInterface::computeJacobian(NOX::LAPACK::Matrix& J,
   for (int i=1; i<n-1; i++) {
     J(i,i-1) = (n-1)*(n-1);
     J(i,i+1) = J(i,i-1);
-    J(i,i) = -2.*J(i,i-1) + alpha*source_deriv(x(i));
+    J(i,i) = -2.*J(i,i-1) + scale*alpha*source_deriv(x(i));
   }
   return true;
 }
 
 void
 ChanProblemInterface::setParams(const LOCA::ParameterVector& p) {
-  alpha = p[0];
-  beta = p[1];
+  alpha = p.getValue("alpha");
+  beta = p.getValue("beta");
+  scale = p.getValue("scale");
 }
 
 double

@@ -204,8 +204,11 @@ protected:
   //! Starting value of continuation parameter, \f$\lambda_b \f$.
   double startValue;
 
-  //! Final value of continuation parameter, \f$\lambda_e \f$.
-  double finalValue;
+  //! Largest allowable value of continuation parameter
+  double maxValue;
+
+  //! Smallest allowable value of continuation parameter
+  double minValue;
 
   //! Current step size (change in the continuation parameter), \f$\Delta \lambda_i \f$.
   double stepSize;

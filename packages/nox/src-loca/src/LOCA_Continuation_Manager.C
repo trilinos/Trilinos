@@ -37,11 +37,11 @@
 #include "LOCA_Continuation_NaturalGroup.H"
 #include "LOCA_Continuation_ArcLengthGroup.H"
 
-LOCA::Continuation::Manager::Manager(NOX::Parameter::List& params) :
+LOCA::Continuation::Manager::Manager(NOX::Parameter::List& p) :
   method(),
   conParamID()
 {
-  reset(params);
+  reset(p);
 }
 
 LOCA::Continuation::Manager::~Manager()
@@ -49,11 +49,11 @@ LOCA::Continuation::Manager::~Manager()
 }
 
 NOX::Abstract::Group::ReturnType 
-LOCA::Continuation::Manager::reset(NOX::Parameter::List& params) 
+LOCA::Continuation::Manager::reset(NOX::Parameter::List& p) 
 {
-  method = params.getParameter("Continuation Method", "Natural");
-  conParamID = params.getParameter("Continuation Parameter", "???");
-  
+  method = p.getParameter("Continuation Method", "Natural");
+  conParamID = p.getParameter("Continuation Parameter", "???");
+  params = p;
   return NOX::Abstract::Group::Ok;
 }
 
@@ -61,9 +61,9 @@ LOCA::Continuation::Group*
 LOCA::Continuation::Manager::createContinuationGroup(const LOCA::Abstract::Group& grp, const NOX::Parameter::List& linSolverParams) 
 {
   if (method == "Natural") 
-    return new LOCA::Continuation::NaturalGroup(grp, conParamID, linSolverParams);
-  else if (method == "ArcLength")
-    return new LOCA::Continuation::ArcLengthGroup(grp, conParamID, linSolverParams);
+    return new LOCA::Continuation::NaturalGroup(grp, conParamID, linSolverParams, params);
+  else if (method == "Arc Length")
+    return new LOCA::Continuation::ArcLengthGroup(grp, conParamID, linSolverParams, params);
   else {
     cerr << "LOCA::Continuation::Manager::createContinuationGroup() - invalid choice (" << method << ") for continuation method " << endl;
       return NULL;

@@ -48,6 +48,9 @@ namespace LOCA {
       //! Constructor
       Group(Interface& i);
 
+      //! Constructor
+      Group(Interface& i, const NOX::LAPACK::Vector& s);
+
       //! Copy constructor
       Group(const LOCA::LAPACK::Group& source, 
 	    NOX::CopyType type = NOX::DeepCopy);
@@ -87,9 +90,20 @@ namespace LOCA {
       //! Print out the group
       void print() const;
 
+      //! Set and get scale vector
+      virtual void setScaleVec(const NOX::Abstract::Vector& s);
+      void setScaleVec(const NOX::LAPACK::Vector& s);
+      virtual const NOX::Abstract::Vector& getScaleVec() const;
+
+    protected:
+
+      //! Compute a default scale vector
+      void computeScaleVec();
+
     protected:
       Interface& locaProblemInterface; 
       ParameterVector params;
+      NOX::LAPACK::Vector scaleVec;
     };
 
   } // namespace LAPACK

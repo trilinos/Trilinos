@@ -47,9 +47,11 @@ public:
   
   //! Constructor to set the base group, and derivative objects.
   ArcLengthGroup(const Abstract::Group& g, int paramID,
-		 const NOX::Parameter::List& linSolverParams);
+		 const NOX::Parameter::List& linSolverParams,
+		 NOX::Parameter::List& params);
   ArcLengthGroup(const Abstract::Group& g, string paramID,
-		 const NOX::Parameter::List& linSolverParams);
+		 const NOX::Parameter::List& linSolverParams,
+		 NOX::Parameter::List& params);
 
   //! Copy constructor.
   ArcLengthGroup(const ArcLengthGroup& source, NOX::CopyType type = NOX::DeepCopy);
@@ -224,6 +226,8 @@ public:
 
   virtual void print() const;
 
+  virtual void recalculateScaleFactor(double dpds);
+
 protected:
 
   void resetIsValid();
@@ -259,6 +263,15 @@ protected:
 
   //! Is previous solution vector valid
   bool isValidPrevXVec;
+
+  //! Goal value of dp/ds squared
+  double gGoal;
+
+  //! Minimum value for dp/ds for which rescaling is applied
+  double gMax;
+
+  //! Maximum value of scale factor
+  double thetaMin;
 
 };
 } // namespace Bifurcation

@@ -53,14 +53,14 @@ namespace LOCA {
     public:
 
       //! Constructor. 
-      Manager(NOX::Parameter::List& params);
+      Manager(NOX::Parameter::List& p);
 
       //! Destructor
       virtual ~Manager();
 
       //! Reset parameters
       virtual NOX::Abstract::Group::ReturnType 
-      reset(NOX::Parameter::List& params);
+      reset(NOX::Parameter::List& p);
   
       virtual LOCA::Continuation::Group* 
       createContinuationGroup(const LOCA::Abstract::Group& grp, 
@@ -73,6 +73,7 @@ namespace LOCA {
     protected:
       string method;
       string conParamID;
+      NOX::Parameter::List params;
     };
   } // namespace Predictor
 } // namespace LOCA

@@ -48,9 +48,11 @@ namespace LOCA {
   
       //! Constructor.
       Group(const LOCA::Abstract::Group& grp, int paramID,
-	    const NOX::Parameter::List& linSolverParams);
+	    const NOX::Parameter::List& linSolverParams,
+	    NOX::Parameter::List& params);
       Group(const LOCA::Abstract::Group& grp, string paramID,
-	    const NOX::Parameter::List& linSolverParams);
+	    const NOX::Parameter::List& linSolverParams,
+	    NOX::Parameter::List& params);
 
       Group(const Group& source, NOX::CopyType type = NOX::DeepCopy);
 
@@ -86,7 +88,16 @@ namespace LOCA {
 
       virtual const LOCA::Abstract::Group& getGroup() const;
 
+      virtual void setScaleFactor(double theta);
+      
+      virtual double getScaleFactor() const;
+
+      virtual void recalculateScaleFactor(double dpds) {}
+
       virtual void print() const = 0;
+
+      virtual double scaledDotProduct(const LOCA::Continuation::Vector& x, 
+				      const LOCA::Continuation::Vector& y) const;
 
     protected:
 
@@ -99,9 +110,15 @@ namespace LOCA {
       LOCA::Continuation::Vector tangentVec;
       bool isValidTangent;
       NOX::Parameter::List linearSolverParams;
+      LOCA::Continuation::Vector scaleVec;
   
     };
-  } // namespace Abstract
+
+    double scaledDotProduct(const NOX::Abstract::Vector& x, 
+			    const NOX::Abstract::Vector& y,
+			    const NOX::Abstract::Vector& s);
+
+  } // namespace Continuation
 } // namespace LOCA
 
 #endif

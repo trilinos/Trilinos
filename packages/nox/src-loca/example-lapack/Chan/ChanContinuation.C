@@ -40,15 +40,19 @@ int main()
   int n = 100;
   double alpha = 0.0;
   double beta = 0.0;
+  double scale = 1.0;
   int maxNewtonIters = 20;
+
+  alpha = alpha / scale;
 
   try {
 
     // Set up the problem interface
-    ChanProblemInterface chan(n, alpha, beta);
+    ChanProblemInterface chan(n, alpha, beta, scale);
     LOCA::ParameterVector p;
     p.addParameter("alpha",alpha);
     p.addParameter("beta",beta);
+    p.addParameter("scale",scale);
   
     // Create a group which uses that problem interface. The group will
     // be initialized to contain the default initial guess for the
@@ -68,12 +72,18 @@ int main()
     // Create the stepper sublist and set the stepper parameters
     NOX::Parameter::List& stepperList = locaParamsList.sublist("Stepper");
     //stepperList.setParameter("Continuation Method", "Natural");
-    stepperList.setParameter("Continuation Method", "ArcLength");
+    stepperList.setParameter("Continuation Method", "Arc Length");
     stepperList.setParameter("Continuation Parameter", "alpha");
     stepperList.setParameter("Initial Value", alpha);
-    stepperList.setParameter("Final Value", 5.0);
+    stepperList.setParameter("Max Value", 5.0/scale);
+    stepperList.setParameter("Min Value", 0.0/scale);
     stepperList.setParameter("Max Continuation Steps", 100);
     stepperList.setParameter("Max Nonlinear Iterations", maxNewtonIters);
+    stepperList.setParameter("Goal g", 0.5);
+    //stepperList.setParameter("Max dp/ds", 1.0e8);
+    stepperList.setParameter("Max g", 0.8);
+    stepperList.setParameter("Initial Scale Factor", 1.0);
+    stepperList.setParameter("Min Scale Factor", 1.0e-3);
 
     // Create predictor sublist
     NOX::Parameter::List& predictorList = locaParamsList.sublist("Predictor");
@@ -84,9 +94,10 @@ int main()
     NOX::Parameter::List& stepSizeList = locaParamsList.sublist("Step Size");
     //stepSizeList.setParameter("Method", "Constant");
     stepSizeList.setParameter("Method", "Adaptive");
-    stepSizeList.setParameter("Initial Step Size", 0.1);
-    stepSizeList.setParameter("Min Step Size", 1.0e-3);
-    stepSizeList.setParameter("Max Step Size", 5.0);
+    stepSizeList.setParameter("Initial Step Size", 0.1/scale);
+    stepSizeList.setParameter("Min Step Size", 1.0e-3/scale);
+    stepSizeList.setParameter("Max Step Size", 10.0/scale);
+    //stepSizeList.setParameter("Max Step Size", 1.0);
     stepSizeList.setParameter("Aggressiveness", 0.5);
 
     // Set the LOCA Utilities

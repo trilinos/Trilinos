@@ -33,8 +33,9 @@
 
 LOCA::Continuation::NaturalGroup::NaturalGroup(const LOCA::Abstract::Group& g,
 					       int paramID,
-					       const NOX::Parameter::List& linSolverParams)
-  : LOCA::Continuation::Group(g, paramID, linSolverParams),
+					       const NOX::Parameter::List& linSolverParams,
+					       NOX::Parameter::List& params)
+  : LOCA::Continuation::Group(g, paramID, linSolverParams, params),
     xVec(g.getX(), g.getParam(paramID)),
     fVec(g.getX(), 0.0),
     newtonVec(g.getX(), 0.0),
@@ -48,8 +49,9 @@ LOCA::Continuation::NaturalGroup::NaturalGroup(const LOCA::Abstract::Group& g,
 
 LOCA::Continuation::NaturalGroup::NaturalGroup(const LOCA::Abstract::Group& g,
 					       string paramID,
-					       const NOX::Parameter::List& linSolverParams)
-  : LOCA::Continuation::Group(g, paramID, linSolverParams),
+					       const NOX::Parameter::List& linSolverParams,
+					       NOX::Parameter::List& params)
+  : LOCA::Continuation::Group(g, paramID, linSolverParams, params),
     xVec(g.getX(), g.getParam(paramID)),
     fVec(g.getX(), 0.0),
     newtonVec(g.getX(), 0.0),

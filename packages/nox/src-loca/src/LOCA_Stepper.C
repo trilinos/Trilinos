@@ -168,6 +168,9 @@ StatusType Stepper::step()
     stepSize = computeStepSize(Failed);
     curGroupPtr->setStepSize(stepSize);
 
+    // Set previous solution vector in current solution group
+    curGroupPtr->setPrevX(prevGroupPtr->getX());
+
     // Take (reduced) step in predictor direction, which must be still valid
     curGroupPtr->computeX(*prevGroupPtr, *predictorDirection, stepSize);
 
@@ -183,6 +186,10 @@ StatusType Stepper::step()
 
     // Compute step size
     stepSize = computeStepSize(solverStatus);
+
+    //if (stepSize > 1.5e6)
+    //  stepSize /= 2.0;
+
     curGroupPtr->setStepSize(stepSize);
 
     // Save previous successful step information
@@ -221,10 +228,14 @@ StatusType Stepper::nonlinearSolve()
     printEndStep(solverStatus);
 
     stepNumber += 1;
+
+    // Recalculate scale factor
+    //curGroupPtr->recalculateScaleFactor();
   }
   
-  // See if we went past final value for parameter
-  if (curGroupPtr->getContinuationParameter() >= finalValue)
+  // See if we went past bounds for parameter
+  if ( curGroupPtr->getContinuationParameter() >= maxValue*(1.0 - 1.0e-15) || 
+       curGroupPtr->getContinuationParameter() <= minValue*(1.0 + 1.0e-15) )
     isLastStep = true;
   
   numTotalSteps += 1;
@@ -237,22 +248,23 @@ StatusType Stepper::nonlinearSolve()
 double Stepper::computeStepSize(StatusType solverStatus)
 {
   NOX::Abstract::Group::ReturnType res = 
-    stepSizeManager.compute(*curGroupPtr, *solverPtr, solverStatus, *this, 
-			    stepSize);
+    stepSizeManager.compute(*curGroupPtr, *predictorDirection, *solverPtr, 
+			    solverStatus, *this, stepSize);
 
   if (res == NOX::Abstract::Group::Failed)
     stepperStatus = Failed;
   
-  // Cap the con parameter so we don't go past the final value
+  // Cap the con parameter so we don't go past bounds
   double prevValue = curGroupPtr->getContinuationParameter();
   double dpds = predictorDirection->getParam();
-  if ( (prevValue+stepSize*dpds-finalValue)*(prevValue-finalValue) < 0.0) {
-    stepSize = (finalValue - prevValue)/dpds;
+  if ( (prevValue+stepSize*dpds > maxValue*(1.0 - 1.0e-15)) ) {
+    stepSize = (maxValue - prevValue)/dpds;
     isLastStep = true;
   }
-
-  if (fabs(prevValue+stepSize*dpds-finalValue) < 1.0e-15*fabs(finalValue))
+  if ( (prevValue+stepSize*dpds < minValue*(1.0 + 1.0e-15)) ) {
+    stepSize = (minValue - prevValue)/dpds;
     isLastStep = true;
+  }
 
   return stepSize;
 }
@@ -281,14 +293,22 @@ bool Stepper::init(LOCA::Abstract::Group& initialGuess)
     throw "LOCA Error";
   }
   
-  // Get the final value of the continuation parameter
-  if (p.isParameter("Final Value"))
-    finalValue = p.getParameter("Final Value", 0.0);
+  // Get the max and min values of the continuation parameter
+  if (p.isParameter("Max Value"))
+    maxValue = p.getParameter("Max Value", 0.0);
   else {
     cout << "ERROR: LOCA::Stepper::Stepper::resetStepperMembers() - "
-	 << "\"Final Value\" of continuation param is not set!" << endl;
+	 << "\"Maximum Value\" of continuation param is not set!" << endl;
     throw "LOCA Error";
   }
+  if (p.isParameter("Min Value"))
+    minValue = p.getParameter("Min Value", 0.0);
+  else {
+    cout << "ERROR: LOCA::Stepper::Stepper::resetStepperMembers() - "
+	 << "\"Minimum Value\" of continuation param is not set!" << endl;
+    throw "LOCA Error";
+  }
+  
 
   // Get the initial values or use their defaults
   stepSize = 0.0;
@@ -336,7 +356,8 @@ void Stepper::printInitializationInfo()
     cout << "Beginning Continuation Run \n" 
 	 << "Stepper Method:             " << conGroupManager.getMethod() << "\n"
 	 << "Initial Parameter Value = " << startValue << "\n"
-	 << "Final Parameter Value = " << finalValue << "\n"
+	 << "Maximum Parameter Value = " << maxValue << "\n"
+	 << "Minimum Parameter Value = " << minValue << "\n"
 	 << "Maximum Number of Continuation Steps = " << maxConSteps 
 	 << endl;
     cout << Utils::fill(72, '~') << endl << endl;

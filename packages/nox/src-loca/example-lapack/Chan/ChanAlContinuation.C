@@ -40,14 +40,16 @@ int main()
   int n = 100;
   double alpha = 0.1;
   double beta = 1.0;
+  double scale = 1.0;
 
   try {
 
     // Set up the problem interface
-    ChanProblemInterface chan(n, alpha, beta);
+    ChanProblemInterface chan(n, alpha, beta, scale);
     LOCA::ParameterVector p;
     p.addParameter("alpha",alpha);
     p.addParameter("beta",beta);
+    p.addParameter("scale",scale);
   
     // Create a group which uses that problem interface. The group will
     // be initialized to contain the default initial guess for the

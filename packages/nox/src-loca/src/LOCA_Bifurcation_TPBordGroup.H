@@ -331,6 +331,11 @@ public:
 
   virtual void print() const;
 
+  //! Set, get, and compute scale vector
+  virtual void setScaleVec(const NOX::Abstract::Vector& s);
+  void setScaleVec(const LOCA::Bifurcation::TPBordVector& s);
+  virtual const NOX::Abstract::Vector& getScaleVec() const;
+
 protected:
 
   //! Get bifurcation parameter
@@ -356,6 +361,9 @@ protected:
 
   //! Stores the constant length vector
   NOX::Abstract::Vector* lengthVecPtr;
+
+  //! Stores the scale vector
+  TPBordVector tpScaleVec;
 
   //! Stores the bifurcation parameter index
   int bifParamId;

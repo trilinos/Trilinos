@@ -156,8 +156,14 @@ public:
   computeDfDp(int paramID, NOX::Abstract::Vector& result);
 
   virtual void print() const = 0;
+
+  //! Set, get, and compute scale vector
+  virtual void setScaleVec(const NOX::Abstract::Vector& s) = 0;
+  virtual const NOX::Abstract::Vector& getScaleVec() const = 0;
+  
 protected:
   DerivUtils* derivPtr;
+  NOX::Abstract::Group* scaleVecPtr;
 };
 } // namespace Abstract
 } // namespace LOCA

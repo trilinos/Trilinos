@@ -47,6 +47,7 @@ LOCA::Bifurcation::TPBordGroup::TPBordGroup(const Abstract::Group& g,
     tpFVec(lenVec, lenVec, 0.0),
     tpNewtonVec(lenVec, lenVec, 0.0),
     lengthVecPtr(lenVec.clone(NOX::ShapeCopy)), 
+    tpScaleVec(g.getScaleVec(), g.getScaleVec(), 1.0),
     bifParamId(paramId), 
     derivResidualParamPtr(lenVec.clone(NOX::ShapeCopy)), 
     derivNullResidualParamPtr(lenVec.clone(NOX::ShapeCopy)), 
@@ -65,6 +66,7 @@ LOCA::Bifurcation::TPBordGroup::TPBordGroup(const TPBordGroup& source,
     tpFVec(source.tpFVec, type),
     tpNewtonVec(source.tpNewtonVec, type),
     lengthVecPtr(source.lengthVecPtr->clone(type)), 
+    tpScaleVec(source.tpScaleVec, type),
     bifParamId(source.bifParamId),
     derivResidualParamPtr(source.derivResidualParamPtr->clone(type)),
     derivNullResidualParamPtr(source.derivNullResidualParamPtr->clone(type)),
@@ -117,6 +119,7 @@ LOCA::Bifurcation::TPBordGroup::operator=(const TPBordGroup& source)
     tpFVec = source.tpFVec;
     tpNewtonVec = source.tpNewtonVec;
     lengthVecPtr = source.lengthVecPtr->clone(type);
+    tpScaleVec = source.tpScaleVec;
     derivResidualParamPtr = source.derivResidualParamPtr->clone(type);
     derivNullResidualParamPtr = source.derivNullResidualParamPtr->clone(type);
     derivPtr = source.derivPtr->clone(type);
@@ -763,3 +766,17 @@ LOCA::Bifurcation::TPBordGroup::print() const
   cout << endl;
 }
 
+void
+LOCA::Bifurcation::TPBordGroup::setScaleVec(const NOX::Abstract::Vector& s) {
+  setScaleVec( dynamic_cast<const LOCA::Bifurcation::TPBordVector&>(s) );
+}
+
+void
+LOCA::Bifurcation::TPBordGroup::setScaleVec(const LOCA::Bifurcation::TPBordVector& s) {
+  tpScaleVec = s;
+}
+
+const NOX::Abstract::Vector&
+LOCA::Bifurcation::TPBordGroup::getScaleVec() const {
+  return tpScaleVec;
+}

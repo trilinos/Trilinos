@@ -39,7 +39,7 @@ class ChanProblemInterface : public LOCA::LAPACK::Interface {
 
 public:
  
-  ChanProblemInterface(int N, double a, double b);
+  ChanProblemInterface(int N, double a, double b, double s);
 
   ~ChanProblemInterface() {};
 
@@ -64,6 +64,7 @@ private:
   NOX::LAPACK::Vector initialGuess;
   double alpha;
   double beta;
+  double scale;
   int n;
 
 };

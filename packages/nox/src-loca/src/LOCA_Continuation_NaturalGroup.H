@@ -45,9 +45,11 @@ public:
   
   //! Constructor to set the base group, and derivative objects.
   NaturalGroup(const Abstract::Group& g, int paramID,
-	       const NOX::Parameter::List& linSolverParams);
+	       const NOX::Parameter::List& linSolverParams,
+	       NOX::Parameter::List& params);
   NaturalGroup(const Abstract::Group& g, string paramID,
-	       const NOX::Parameter::List& linSolverParams);
+	       const NOX::Parameter::List& linSolverParams,
+	       NOX::Parameter::List& params);
 
   //! Copy constructor.
   NaturalGroup(const NaturalGroup& source, NOX::CopyType type = NOX::DeepCopy);

@@ -34,8 +34,9 @@
 
 LOCA::Continuation::ArcLengthGroup::ArcLengthGroup(const Abstract::Group& g,
 						   int paramID,
-						   const NOX::Parameter::List& linSolverParams)
-  : LOCA::Continuation::Group(g, paramID, linSolverParams), 
+						   const NOX::Parameter::List& linSolverParams,
+						   NOX::Parameter::List& params)
+  : LOCA::Continuation::Group(g, paramID, linSolverParams, params), 
     xVec(g.getX(), g.getParam(paramID)),
     fVec(g.getX(), 0.0),
     newtonVec(g.getX(), 0.0),
@@ -45,12 +46,16 @@ LOCA::Continuation::ArcLengthGroup::ArcLengthGroup(const Abstract::Group& g,
     isValidPrevXVec(false)
 {
   resetIsValid();
+  gGoal = params.getParameter("Goal g", 0.5);
+  gMax = params.getParameter("Max g", 0.0);
+  thetaMin = params.getParameter("Min Scale Factor", 1.0e8);
 }
 
 LOCA::Continuation::ArcLengthGroup::ArcLengthGroup(const Abstract::Group& g,
 						   string paramID,
-						   const NOX::Parameter::List& linSolverParams)
-  : LOCA::Continuation::Group(g, paramID, linSolverParams), 
+						   const NOX::Parameter::List& linSolverParams,
+						   NOX::Parameter::List& params)
+  : LOCA::Continuation::Group(g, paramID, linSolverParams, params), 
     xVec(g.getX(), g.getParam(paramID)),
     fVec(g.getX(), 0.0),
     newtonVec(g.getX(), 0.0),
@@ -60,6 +65,9 @@ LOCA::Continuation::ArcLengthGroup::ArcLengthGroup(const Abstract::Group& g,
     isValidPrevXVec(false)
 {
   resetIsValid();
+  gGoal = params.getParameter("Goal g", 0.5);
+  gMax = params.getParameter("Max g", 0.0);
+  thetaMin = params.getParameter("Min Scale Factor", 1.0e8);
 }
 
 LOCA::Continuation::ArcLengthGroup::ArcLengthGroup(const LOCA::Continuation::ArcLengthGroup& source, NOX::CopyType type)
@@ -73,7 +81,10 @@ LOCA::Continuation::ArcLengthGroup::ArcLengthGroup(const LOCA::Continuation::Arc
     isValidF(source.isValidF),
     isValidJacobian(source.isValidJacobian),
     isValidNewton(source.isValidNewton),
-    isValidPrevXVec(source.isValidPrevXVec)
+    isValidPrevXVec(source.isValidPrevXVec),
+    gGoal(source.gGoal),
+    gMax(source.gMax),
+    thetaMin(source.thetaMin)
 {
 }
 
@@ -117,6 +128,9 @@ LOCA::Continuation::ArcLengthGroup::operator=(const LOCA::Continuation::ArcLengt
     isValidJacobian = source.isValidJacobian;
     isValidNewton = source.isValidNewton;
     isValidPrevXVec = source.isValidPrevXVec;
+    gGoal = source.gGoal;
+    gMax = source.gMax;
+    thetaMin = source.thetaMin;
   }
 
   return *this;
@@ -224,11 +238,13 @@ LOCA::Continuation::ArcLengthGroup::computeF()
   tmpVec->update(-1.0, prevXVec, 1.0);
   
   if (!isTangent()) {
-    computeTangent(LOCA::Continuation::Group::linearSolverParams);
+    res = computeTangent(LOCA::Continuation::Group::linearSolverParams);
+    if (res != NOX::Abstract::Group::Ok)
+      return res;
   }
   
   fVec.getParam() =  
-    LOCA::Continuation::Group::tangentVec.dot(*tmpVec) - arclengthStep;
+    scaledDotProduct(tangentVec, *tmpVec) - arclengthStep;
 
   delete tmpVec;
   
@@ -299,12 +315,17 @@ LOCA::Continuation::ArcLengthGroup::computeTangent(NOX::Parameter::List& params)
   if (res != NOX::Abstract::Group::Ok)
     return res;
 
-  // Get references to x, parameter components of tangent vector
-  NOX::Abstract::Vector& tanX = tangentVec.getXVec();
-  double& tanP = tangentVec.getParam();
+  // Estimate dpds
+  double dpds = 1.0/sqrt(scaledDotProduct(tangentVec, tangentVec));
+
+  // Recompute scale factor
+  recalculateScaleFactor(dpds);
+
+  // Calculate new dpds using new scale factor
+  dpds = 1.0/sqrt(scaledDotProduct(tangentVec, tangentVec));
 
   // Compute dp/ds and rescale
-  tangentVec.scale(1.0/sqrt(1.0 + tanX.dot(tanX)));
+  tangentVec.scale(dpds);
 
   return res;
 }
@@ -336,16 +357,16 @@ LOCA::Continuation::ArcLengthGroup::applyJacobian(const NOX::Abstract::Vector& i
   // compute J*x + p*dR/dp
   result_x.update(input_param, *derivResidualParamPtr, 1.0);
 
-  // We assume the tangent vector has been computed.  We have no way to
-  // compute it here because we don't have solver params.
+  // if tangent vector hasn't been computed, we are stuck since this is
+  // a const method
   if (!isTangent()) {
-    cerr << "LOCA::Continuation::ArcLengthGroup::applyJacobian() called" << endl
-	 << "with invalid Tangent vector!" << endl;
+    cerr << "LOCA::Continuation::ArcLengthGroup::applyJacobian() called " 
+	 << "with invalid tangent vector." << endl;
     return NOX::Abstract::Group::Failed;
   }
 
   // compute dx/ds x + dp/ds p
-  result_param = LOCA::Continuation::Group::tangentVec.dot(c_input);
+  result_param = scaledDotProduct(tangentVec, c_input);
 
   return res;
 }
@@ -398,8 +419,14 @@ LOCA::Continuation::ArcLengthGroup::applyJacobianInverse(NOX::Parameter::List& p
   double tanP = 
     LOCA::Continuation::Group::tangentVec.getParam();
 
-  // Compute result_param = 
-  result_param =  (tanX.dot(*a) - input_param) / (tanX.dot(*b) - tanP);
+  // Compute result_param
+  const NOX::Abstract::Vector& s 
+    = LOCA::Continuation::Group::scaleVec.getXVec();
+  double t 
+    = LOCA::Continuation::Group::scaleVec.getParam();
+  result_param =
+    (LOCA::Continuation::scaledDotProduct(tanX, *a, s) - input_param) / 
+    (LOCA::Continuation::scaledDotProduct(tanX, *b, s) - t*t*tanP);
 
   // Compute result_x = a + result_param*b 
   result_x.update(1.0, *a, -result_param, *b, 0.0);
@@ -453,8 +480,14 @@ LOCA::Continuation::ArcLengthGroup::applyRightPreconditioning(NOX::Parameter::Li
   double tanP = 
     LOCA::Continuation::Group::tangentVec.getParam();
 
-  // Compute result_param = 
-  result_param =  (tanX.dot(*a) - input_param) / (tanX.dot(*b) - tanP);
+  // Compute result_param
+  const NOX::Abstract::Vector&s 
+    = LOCA::Continuation::Group::scaleVec.getXVec();
+  double t 
+    = LOCA::Continuation::Group::scaleVec.getParam();
+  result_param = 
+    (LOCA::Continuation::scaledDotProduct(tanX, *a, s) - input_param) / 
+    (LOCA::Continuation::scaledDotProduct(tanX, *b, s) - t*t*tanP);
 
   // Compute result_x = a + result_param*b 
   result_x = result_x.update(1.0, *a, -result_param, *b, 0.0);
@@ -584,4 +617,20 @@ LOCA::Continuation::ArcLengthGroup::resetIsValid() {
   isValidF = false;
   isValidJacobian = false;
   isValidNewton = false;
+}
+
+void
+LOCA::Continuation::ArcLengthGroup::recalculateScaleFactor(double dpds) {
+  
+  double thetaOld = getScaleFactor();
+  double g = dpds*thetaOld;
+
+  if (g > gMax) {
+    double thetaNew;
+    
+    thetaNew = gGoal/dpds * sqrt( (1.0 - g*g) / (1.0 - gGoal*gGoal) ); 
+
+    setScaleFactor(thetaNew);
+  }
+
 }

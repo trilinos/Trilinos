@@ -78,6 +78,14 @@ public:
  	const ParameterVector& p, NOX::Epetra::Vector& x, Epetra_Operator& J, 
 	Epetra_Operator& M);
 
+  Group(const NOX::Parameter::List& linearSolverParams, Interface& i, 
+ 	const ParameterVector& p, NOX::Epetra::Vector& x, Epetra_Operator& J,
+	const NOX::Epetra::Vector& s);
+
+  Group(const NOX::Parameter::List& linearSolverParams, Interface& i, 
+ 	const ParameterVector& p, NOX::Epetra::Vector& x, Epetra_Operator& J, 
+	Epetra_Operator& M, const NOX::Epetra::Vector& s);
+
   /*! \brief Copy constructor. If type is DeepCopy, takes ownership of
     valid shared Jacobian and shared preconditioning matrix. */
   Group(const Group& source, NOX::CopyType type = NOX::DeepCopy);
@@ -135,6 +143,16 @@ public:
 
   virtual void print() const {}
 
+  //! Set and get scale vector
+  virtual void setScaleVec(const NOX::Abstract::Vector& s);
+  void setScaleVec(const NOX::Epetra::Vector& s);
+  virtual const NOX::Abstract::Vector& getScaleVec() const;
+
+protected:
+  
+  //! Compute a default scale vector
+  void computeScaleVec();
+
 protected:
 
   //! Parameter vector
@@ -149,6 +167,9 @@ protected:
 
   //! Reference to the user supplied interface functions
   Interface& userInterface;
+
+  //! Scale vector
+  NOX::Epetra::Vector scaleVec;
 
 };
 

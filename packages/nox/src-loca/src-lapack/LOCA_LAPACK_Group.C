@@ -35,14 +35,26 @@
 LOCA::LAPACK::Group::Group(Interface& interface) : 
   NOX::LAPACK::Group(interface), 
   locaProblemInterface(interface), 
-  params()
+  params(),
+  scaleVec(dynamic_cast<const NOX::LAPACK::Vector&>(getX()))
+{
+  computeScaleVec();  // use default method for computing scale vector
+}
+
+LOCA::LAPACK::Group::Group(Interface& interface, 
+			   const NOX::LAPACK::Vector& s) : 
+  NOX::LAPACK::Group(interface), 
+  locaProblemInterface(interface), 
+  params(),
+  scaleVec(s)
 {
 }
 
 LOCA::LAPACK::Group::Group::Group(const Group& source, NOX::CopyType type) : 
   NOX::LAPACK::Group(source,type), 
   locaProblemInterface(source.locaProblemInterface), 
-  params(source.params)
+  params(source.params),
+  scaleVec(source.scaleVec)
 {
 }
 
@@ -68,6 +80,7 @@ LOCA::LAPACK::Group&
 LOCA::LAPACK::Group::operator=(const LOCA::LAPACK::Group& source) {
   NOX::LAPACK::Group::operator=(source);
   params = source.params;
+  scaleVec = source.scaleVec;
   return *this;
 }
 
@@ -132,4 +145,24 @@ LOCA::LAPACK::Group::print() const
 {
   cout << "p = " << params << "\n";
   NOX::LAPACK::Group::print();
+}
+
+void
+LOCA::LAPACK::Group::setScaleVec(const NOX::Abstract::Vector& s) {
+  setScaleVec( dynamic_cast<const NOX::LAPACK::Vector&>(s) );
+}
+
+void
+LOCA::LAPACK::Group::setScaleVec(const NOX::LAPACK::Vector& s) {
+  scaleVec = s;
+}
+
+const NOX::Abstract::Vector&
+LOCA::LAPACK::Group::getScaleVec() const {
+  return scaleVec;
+}
+
+void
+LOCA::LAPACK::Group::computeScaleVec() {
+  scaleVec.init(1.0);
 }
