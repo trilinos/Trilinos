@@ -58,6 +58,3 @@
 
 /* Version number of package */
 #undef VERSION
-
-/* define if we should include prerelease pieces of NOX */
-#undef WITH_PRERELEASE

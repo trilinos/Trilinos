@@ -8895,11 +8895,7 @@ fi;
 
 
 if test X${WITH_PRERELEASE} = Xyes; then
-
-cat >>confdefs.h <<\_ACEOF
-#define WITH_PRERELEASE
-_ACEOF
-
+   CPPFLAGS="${CPPFLAGS} -DWITH_PRERELEASE"
 fi
 
 if test X${WITH_PRERELEASE} = Xyes; then

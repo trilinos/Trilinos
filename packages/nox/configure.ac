@@ -1111,7 +1111,7 @@ AC_ARG_ENABLE(prerelease,
 
 
 if test X${WITH_PRERELEASE} = Xyes; then
-  AC_DEFINE(WITH_PRERELEASE,,[define if we should include prerelease pieces of NOX])
+   CPPFLAGS="${CPPFLAGS} -DWITH_PRERELEASE"
 fi
 
 if test X${WITH_PRERELEASE} = Xyes; then
