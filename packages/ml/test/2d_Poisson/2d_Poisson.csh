@@ -1,4 +1,43 @@
 #!/bin/csh
+# ############################################################################ #
+#
+# This script runs the ML executable 2d_Poisson.exe with a variety of ML input
+# decks.  The result of each run is compared against a known, good result.
+# A run fails if the number of iterations, operator complexity, or solution
+# entries differ.  If any run fails, then the whole test is said to have
+# failed.
+#
+# Run summaries (and detailed results of any failed runs) are saved in the
+# file "SUMMARY".
+#
+# To add a new run that uses 2d_Poisson.exe:
+#
+#       Create two new files:
+#           - an input deck called ml_inputfileX
+#           - an expected results file called baselineX,
+#       where X is some positive integer.
+#
+# To run this script:
+#
+#       from this directory type
+#         "./2d_Poisson.csh True True"
+#       If all runs pass, nothing prints out.
+#       If any runs fail, an error message will print to screen.
+#
+#       OR
+#
+#       from the ml/tests directory type
+#         "scripts/daily/mpi/Test_MLExamples.exe True True"
+#       Look in ../../../../logLinux.txt and ../../../../logMpiErrors.txt
+#       for any errors.
+#       Note: this way may run more scripts than just this one.
+#
+# input:
+#
+#       "-v" produces output to screen    [default is no output]
+#
+# ############################################################################ #
+
 set TESTNAME="2d_Poisson"
 set EXE="./${TESTNAME}.exe"
 set SUMMARY_FILE="SUMMARY"
