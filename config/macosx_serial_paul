@@ -3,9 +3,11 @@
 # the g77 package) for this script to work properly.
 
 ../configure \
+    --disable-nox --disable-epetraext --disable-aztecoo --disable-ml \
+    --disable-new_package --disable-ifpack --disable-epetra --enable-tpetra \
     CC=gcc CXX=g++ F77=g77 \
     FLIBS="-L/sw/lib/ -lg2c" \
-    LDFLAGS="-framework vecLib"
+    LDFLAGS="-framework vecLib" 
 
-# The LDFLAGS line tells it to use Apple's 
-# Altivec-optimized versions of BLAS and LAPACK.
+# The LDFLAGS line tells it to use Apple's Altivec-optimized versions of BLAS and LAPACK.
+# This is customized for my work on Tpetra, so I have most packages turned off.
