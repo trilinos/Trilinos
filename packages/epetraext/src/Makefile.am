@@ -282,6 +282,28 @@ COLORING =
 
 endif
 
+EXTRA_MATLAB_H = \
+    $(srcdir)/matlab/ExpetraExt_MatlabEngine.h
+
+EXTRA_MATLAB = \
+    $(srcdir)/matlab/ExpetraExt_MatlabEngine.cpp
+
+if BUILD_MATLAB
+
+MATLAB_H = \
+   $(EXTRA_MATLAB_H)
+
+MATLAB = \
+   $(EXTRA_MATLAB)
+
+else
+
+MATLAB_H =
+
+MATLAB =
+
+endif
+
 # ------------------------------------------------------------------------
 # EpetraExt inout library specifications
 # ------------------------------------------------------------------------
@@ -292,7 +314,8 @@ libepetraext_a_SOURCES = \
      $(BTF) \
      $(INOUT) \
      $(ZOLTAN) \
-     $(COLORING)
+     $(COLORING) \
+     $(MATLAB)
 
 #If these are not listed, the files will not be included in
 #the distribution tarball.
@@ -307,7 +330,8 @@ EPETRAEXT_H = \
      $(BTF_H) \
      $(INOUT_H) \
      $(ZOLTAN_H) \
-     $(COLORING_H)
+     $(COLORING_H) \
+     $(MATLAB_H)
 
 #We need the following to support separate build directories
 AM_CPPFLAGS = \
@@ -324,8 +348,9 @@ AM_CPPFLAGS = \
      -I$(top_builddir)/../epetraext/src/zoltan \
      -I$(top_srcdir)/../epetraext/src/zoltan \
      -I$(top_builddir)/../epetraext/src/coloring \
-     -I$(top_srcdir)/../epetraext/src/coloring
-
+     -I$(top_srcdir)/../epetraext/src/coloring \
+     -I$(top_builddir)/../epetraext/src/matlab \
+     -I$(top_srcdir)/../epetraext/src/matlab
 # ------------------------------------------------------------------------
 # For using a special archiver
 # ------------------------------------------------------------------------

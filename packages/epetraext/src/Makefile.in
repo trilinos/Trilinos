@@ -162,7 +162,8 @@ am__libepetraext_a_SOURCES_DIST =  \
 	$(srcdir)/zoltan/Zoltan_QueryFunctions.cpp \
 	$(srcdir)/zoltan/Zoltan_QueryObject.cpp \
 	$(srcdir)/coloring/EpetraExt_MapColoring.cpp \
-	$(srcdir)/coloring/EpetraExt_MapColoringIndex.cpp
+	$(srcdir)/coloring/EpetraExt_MapColoringIndex.cpp \
+	$(srcdir)/matlab/ExpetraExt_MatlabEngine.cpp
 am__objects_1 = EpetraExt_MatrixMatrix.$(OBJEXT)
 am__objects_2 = EpetraExt_Permutation.$(OBJEXT) \
 	EpetraExt_LPTrans_From_GraphTrans.$(OBJEXT) \
@@ -219,9 +220,11 @@ am__objects_10 =
 am__objects_12 = EpetraExt_MapColoring.$(OBJEXT) \
 	EpetraExt_MapColoringIndex.$(OBJEXT)
 @BUILD_COLORING_TRUE@am__objects_13 = $(am__objects_12)
+am__objects_14 = ExpetraExt_MatlabEngine.$(OBJEXT)
+@BUILD_MATLAB_TRUE@am__objects_15 = $(am__objects_14)
 am_libepetraext_a_OBJECTS = $(am__objects_1) $(am__objects_4) \
 	$(am__objects_6) $(am__objects_8) $(am__objects_11) \
-	$(am__objects_13)
+	$(am__objects_13) $(am__objects_15)
 libepetraext_a_OBJECTS = $(am_libepetraext_a_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I.
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
@@ -264,6 +267,7 @@ am__depfiles_maybe = depfiles
 @AMDEP_TRUE@	./$(DEPDIR)/EpetraExt_ZoltanQuery.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/EpetraExt_Zoltan_CrsGraph.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/EpetraExt_mmio.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/ExpetraExt_MatlabEngine.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/Zoltan_LoadBalance.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/Zoltan_MigrationContainer.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/Zoltan_MigrationFunctions.Po \
@@ -328,7 +332,8 @@ am__include_HEADERS_DIST = $(srcdir)/EpetraExt_ConfigDefs.h \
 	$(srcdir)/zoltan/Zoltan_QueryFunctions.h \
 	$(srcdir)/zoltan/Zoltan_QueryObject.h \
 	$(srcdir)/coloring/EpetraExt_MapColoring.h \
-	$(srcdir)/coloring/EpetraExt_MapColoringIndex.h
+	$(srcdir)/coloring/EpetraExt_MapColoringIndex.h \
+	$(srcdir)/matlab/ExpetraExt_MatlabEngine.h
 includeHEADERS_INSTALL = $(INSTALL_HEADER)
 nodist_execincludeHEADERS_INSTALL = $(INSTALL_HEADER)
 HEADERS = $(include_HEADERS) $(nodist_execinclude_HEADERS)
@@ -662,6 +667,20 @@ EXTRA_COLORING = \
 @BUILD_COLORING_TRUE@COLORING = \
 @BUILD_COLORING_TRUE@     $(EXTRA_COLORING)
 
+EXTRA_MATLAB_H = \
+    $(srcdir)/matlab/ExpetraExt_MatlabEngine.h
+
+EXTRA_MATLAB = \
+    $(srcdir)/matlab/ExpetraExt_MatlabEngine.cpp
+
+@BUILD_MATLAB_FALSE@MATLAB_H = 
+@BUILD_MATLAB_TRUE@MATLAB_H = \
+@BUILD_MATLAB_TRUE@   $(EXTRA_MATLAB_H)
+
+@BUILD_MATLAB_FALSE@MATLAB = 
+@BUILD_MATLAB_TRUE@MATLAB = \
+@BUILD_MATLAB_TRUE@   $(EXTRA_MATLAB)
+
 
 # ------------------------------------------------------------------------
 # EpetraExt inout library specifications
@@ -672,7 +691,8 @@ libepetraext_a_SOURCES = \
      $(BTF) \
      $(INOUT) \
      $(ZOLTAN) \
-     $(COLORING)
+     $(COLORING) \
+     $(MATLAB)
 
 
 #If these are not listed, the files will not be included in
@@ -687,7 +707,8 @@ EPETRAEXT_H = \
      $(BTF_H) \
      $(INOUT_H) \
      $(ZOLTAN_H) \
-     $(COLORING_H)
+     $(COLORING_H) \
+     $(MATLAB_H)
 
 
 #We need the following to support separate build directories
@@ -705,10 +726,11 @@ AM_CPPFLAGS = \
      -I$(top_builddir)/../epetraext/src/zoltan \
      -I$(top_srcdir)/../epetraext/src/zoltan \
      -I$(top_builddir)/../epetraext/src/coloring \
-     -I$(top_srcdir)/../epetraext/src/coloring
+     -I$(top_srcdir)/../epetraext/src/coloring \
+     -I$(top_builddir)/../epetraext/src/matlab \
+     -I$(top_srcdir)/../epetraext/src/matlab
 
 @USE_ALTERNATE_AR_FALSE@libepetraext_a_AR = $(AR) cru
-
 # ------------------------------------------------------------------------
 # For using a special archiver
 # ------------------------------------------------------------------------
@@ -884,6 +906,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/EpetraExt_ZoltanQuery.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/EpetraExt_Zoltan_CrsGraph.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/EpetraExt_mmio.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ExpetraExt_MatlabEngine.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Zoltan_LoadBalance.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Zoltan_MigrationContainer.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Zoltan_MigrationFunctions.Po@am__quote@
@@ -1628,6 +1651,22 @@ EpetraExt_MapColoringIndex.obj: $(srcdir)/coloring/EpetraExt_MapColoringIndex.cp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o EpetraExt_MapColoringIndex.obj `if test -f '$(srcdir)/coloring/EpetraExt_MapColoringIndex.cpp'; then $(CYGPATH_W) '$(srcdir)/coloring/EpetraExt_MapColoringIndex.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/coloring/EpetraExt_MapColoringIndex.cpp'; fi`
 
+ExpetraExt_MatlabEngine.o: $(srcdir)/matlab/ExpetraExt_MatlabEngine.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ExpetraExt_MatlabEngine.o -MD -MP -MF "$(DEPDIR)/ExpetraExt_MatlabEngine.Tpo" -c -o ExpetraExt_MatlabEngine.o `test -f '$(srcdir)/matlab/ExpetraExt_MatlabEngine.cpp' || echo '$(srcdir)/'`$(srcdir)/matlab/ExpetraExt_MatlabEngine.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ExpetraExt_MatlabEngine.Tpo" "$(DEPDIR)/ExpetraExt_MatlabEngine.Po"; else rm -f "$(DEPDIR)/ExpetraExt_MatlabEngine.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/matlab/ExpetraExt_MatlabEngine.cpp' object='ExpetraExt_MatlabEngine.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ExpetraExt_MatlabEngine.Po' tmpdepfile='$(DEPDIR)/ExpetraExt_MatlabEngine.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ExpetraExt_MatlabEngine.o `test -f '$(srcdir)/matlab/ExpetraExt_MatlabEngine.cpp' || echo '$(srcdir)/'`$(srcdir)/matlab/ExpetraExt_MatlabEngine.cpp
+
+ExpetraExt_MatlabEngine.obj: $(srcdir)/matlab/ExpetraExt_MatlabEngine.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ExpetraExt_MatlabEngine.obj -MD -MP -MF "$(DEPDIR)/ExpetraExt_MatlabEngine.Tpo" -c -o ExpetraExt_MatlabEngine.obj `if test -f '$(srcdir)/matlab/ExpetraExt_MatlabEngine.cpp'; then $(CYGPATH_W) '$(srcdir)/matlab/ExpetraExt_MatlabEngine.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/matlab/ExpetraExt_MatlabEngine.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ExpetraExt_MatlabEngine.Tpo" "$(DEPDIR)/ExpetraExt_MatlabEngine.Po"; else rm -f "$(DEPDIR)/ExpetraExt_MatlabEngine.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/matlab/ExpetraExt_MatlabEngine.cpp' object='ExpetraExt_MatlabEngine.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ExpetraExt_MatlabEngine.Po' tmpdepfile='$(DEPDIR)/ExpetraExt_MatlabEngine.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ExpetraExt_MatlabEngine.obj `if test -f '$(srcdir)/matlab/ExpetraExt_MatlabEngine.cpp'; then $(CYGPATH_W) '$(srcdir)/matlab/ExpetraExt_MatlabEngine.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/matlab/ExpetraExt_MatlabEngine.cpp'; fi`
+
 .f.o:
 	$(F77COMPILE) -c -o $@ $<
 
@@ -1788,7 +1827,7 @@ distclean-tags:
 	-rm -f TAGS ID GTAGS GRTAGS GSYMS GPATH tags
 
 distdir: $(DISTFILES)
-	$(mkdir_p) $(distdir)/btf $(distdir)/coloring $(distdir)/inout $(distdir)/transform $(distdir)/zoltan
+	$(mkdir_p) $(distdir)/btf $(distdir)/coloring $(distdir)/inout $(distdir)/matlab $(distdir)/transform $(distdir)/zoltan
 	@srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`; \
 	topsrcdirstrip=`echo "$(top_srcdir)" | sed 's|.|.|g'`; \
 	list='$(DISTFILES)'; for file in $$list; do \
