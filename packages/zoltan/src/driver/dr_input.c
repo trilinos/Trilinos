@@ -138,21 +138,21 @@ int read_cmd_file (
         pio_info->init_vwgt_dim = 1;     /* default */
 
         strcpy(pio_info->pexo_fname, "random");
-        while (pline+n < pmax && sscanf(pline += n, NEXTARG LASTARG "%n", string,
-         value, &n) == 2)  {
-            if (!strcmp(string, "dimension")
-             && sscanf(value, "%d%n", &pio_info->init_dim, &n) == 1)
-               continue;
-            else if (!strcmp(string, "obj_weight_dim")
-             && sscanf(value, "%d%n", &pio_info->init_vwgt_dim, &n) == 1)
-               continue;
-            else if (!strcmp(string, "size")
-             && sscanf(value, "%d%n", &pio_info->init_size, &n) == 1)
-               continue;
-            else  {
-               Gen_Error(0, "fatal: bad file type = random file parameters");
-               return 0;
-            }
+        while (pline+n < pmax && 
+               sscanf(pline += n, NEXTARG LASTARG "%n", string, value, &n)==2) {
+          if (!strcmp(string, "dimension")
+              && sscanf(value, "%d%n", &pio_info->init_dim, &n) == 1)
+            continue;
+          else if (!strcmp(string, "obj_weight_dim")
+                   && sscanf(value, "%d%n", &pio_info->init_vwgt_dim, &n) == 1)
+            continue;
+          else if (!strcmp(string, "size")
+                   && sscanf(value, "%d%n", &pio_info->init_size, &n) == 1)
+            continue;
+          else  {
+            Gen_Error(0, "fatal: bad file type = random file parameters");
+            return 0;
+          }
         }
       }
       else  {
@@ -300,10 +300,11 @@ int read_cmd_file (
         Test.Null_Lists = IMPORT_LISTS;
     }
 
-    else if (sscanf(line, " zdrive action" SKIPEQ "%d%n", &Driver_Action,&n) == 1)
+    else if (sscanf(line," zdrive action" SKIPEQ "%d%n",&Driver_Action,&n) == 1)
       continue;            /* zdrive action: Do load-balancing or ordering? */
 
-    else if (sscanf(line, " zdrive debug level" SKIPEQ "%d%n", &Debug_Driver,&n)==1)
+    else if (sscanf(line," zdrive debug level" SKIPEQ "%d%n",
+                    &Debug_Driver,&n)==1)
       continue;                                /* The Debug reporting level */
 
     else if (sscanf(line, " zoltan parameter %*[s\t ]%[=]%n", dummy, &n)==1) {
@@ -321,26 +322,26 @@ int read_cmd_file (
       }
     }
 
-    else if (sscanf(line, " zoltan vector parameters" LASTARG "%n",string,&n)==1
-       ||    sscanf(line, " zoltan vector parameter"  LASTARG "%n",string,&n)==1
-       ||    sscanf(line, " zoltan parameter vectors" LASTARG "%n",string,&n)==1 
-       ||    sscanf(line, " zoltan parameter vector"  LASTARG "%n",string,&n)==1)
-         {
-         pline = line;
-         i = 0;
-         while (pline+n < pmax && sscanf(pline += n, BIGSKIP "%[^,\t\n) ]%n",
-          prob->params[prob->num_params].Val, &n)==1) {
-             prob->params[prob->num_params].Index = i++;
-             strcpy(prob->params[prob->num_params++].Name, string);
-             
-             prob->params = (Parameter_Pair*) realloc(prob->params,
-              (prob->num_params+1) * sizeof(Parameter_Pair));
-             if (prob->params == NULL)  {
-                Gen_Error(0, "fatal, realloc failed for Zoltan Parameters");
-                return 0;
-                }
-            }             
-         }
+    else if (sscanf(line," zoltan vector parameters" LASTARG "%n",string,&n)==1
+       ||    sscanf(line," zoltan vector parameter"  LASTARG "%n",string,&n)==1
+       ||    sscanf(line," zoltan parameter vectors" LASTARG "%n",string,&n)==1
+       ||    sscanf(line," zoltan parameter vector"  LASTARG "%n",string,&n)==1)
+    {
+      pline = line;
+      i = 0;
+      while (pline+n < pmax && sscanf(pline += n, BIGSKIP "%[^,\t\n) ]%n",
+                               prob->params[prob->num_params].Val, &n)==1) {
+        prob->params[prob->num_params].Index = i++;
+        strcpy(prob->params[prob->num_params++].Name, string);
+          
+        prob->params = (Parameter_Pair*) realloc(prob->params,
+                       (prob->num_params+1) * sizeof(Parameter_Pair));
+        if (prob->params == NULL)  {
+          Gen_Error(0, "fatal, realloc failed for Zoltan Parameters");
+          return 0;
+        }
+      }             
+    }
 
     else {
       char buffer[200];
@@ -361,7 +362,10 @@ int read_cmd_file (
 
 
 
-int check_inp (PROB_INFO_PTR prob, PARIO_INFO_PTR pio_info)
+int check_inp (
+  PROB_INFO_PTR prob, 
+  PARIO_INFO_PTR pio_info
+)
 {
   /* check for the parallel Nemesis file for proc 0 */
   if (strlen(pio_info->pexo_fname) <= 0) {
@@ -421,8 +425,12 @@ int check_inp (PROB_INFO_PTR prob, PARIO_INFO_PTR pio_info)
 
 
 
-void brdcst_cmd_info (int Proc, PROB_INFO_PTR prob, PARIO_INFO_PTR pio_info,
- MESH_INFO_PTR mesh)
+void brdcst_cmd_info (
+  int Proc, 
+  PROB_INFO_PTR prob, 
+  PARIO_INFO_PTR pio_info,
+  MESH_INFO_PTR mesh
+)
 {
   int ctrl_id;
   int size;
@@ -533,8 +541,13 @@ void brdcst_cmd_info (int Proc, PROB_INFO_PTR prob, PARIO_INFO_PTR pio_info,
  *  numbers like 01-99, i.e., prepending zeros to the name to preserve proper
  *  alphabetic sorting of the files. Comments by Gary Hennigan (1421) */
 
-void gen_par_filename (char *scalar_fname, char *par_fname,
- PARIO_INFO_PTR pio_info, int myproc, int nprocs)
+void gen_par_filename (
+  char *scalar_fname, 
+  char *par_fname,
+  PARIO_INFO_PTR pio_info, 
+  int myproc, 
+  int nprocs
+)
 {
   if (pio_info->num_dsk_ctrlrs <= 0)
     sprintf(par_fname, "%s/%s.%d.%0*d", pio_info->pdsk_root, scalar_fname,
