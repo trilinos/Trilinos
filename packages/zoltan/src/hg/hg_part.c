@@ -145,13 +145,11 @@ int Zoltan_HG_HPart_Lib (
     }
 
     /* Allocate and initialize LevelMap */
-    if (!(LevelMap = (int *) ZOLTAN_MALLOC (sizeof (int) * hg->nVtx)))
+    if (!(LevelMap = (int *) ZOLTAN_CALLOC (hg->nVtx,sizeof(int))))
     { ZOLTAN_FREE ((void **) &pack);
       ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
       return ZOLTAN_MEMERR;
     }
-    for (i=0; i<hg->nVtx; i++)
-      LevelMap[i]=0 ;
 
     /* Construct coarse hypergraph and LevelMap */
     ierr = Zoltan_HG_Coarsening(zz, hg,pack,&c_hg,LevelMap);
@@ -165,13 +163,11 @@ int Zoltan_HG_HPart_Lib (
     ZOLTAN_FREE ((void **) &pack);
 
     /* Allocate Partition of coarse graph */
-    if (!(c_part = (int *) ZOLTAN_MALLOC (sizeof (int) * c_hg.nVtx)))
+    if (!(c_part = (int *) ZOLTAN_CALLOC (c_hg.nVtx,sizeof(int))))
     { ZOLTAN_FREE ((void **) &LevelMap);
       ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
       return ZOLTAN_MEMERR;
     }
-    for (i=0; i<c_hg.nVtx; i++)
-      c_part[i]=0 ;
   
     /* Recursively partition coarse hypergraph */
     ierr = Zoltan_HG_HPart_Lib (zz,&c_hg,p,c_part,hgp);
@@ -232,12 +228,10 @@ static float hcut_size_links (ZZ *zz, HGraph *hg, int p, Partition part)
   float cut=0.0;
   char *yo = "hcut_size_links" ;
 
-  if (!(parts = (int *) ZOLTAN_MALLOC (sizeof (int) * p)))
+  if (!(parts = (int *) ZOLTAN_CALLOC (p,sizeof(int))))
   { ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
     return ZOLTAN_MEMERR;
   }
-  for (i=0; i<p; i++)
-    parts[i] = 0;
   for (i=0; i<hg->nEdge; i++)
   { nparts = 0;
     for (j=hg->hindex[i]; j<hg->hindex[i+1]; j++)
@@ -311,12 +305,10 @@ int Zoltan_HG_HPart_Info (ZZ *zz, HGraph *hg, int p, Partition part)
   puts("---------- Partition Information (min/ave/max/tot) ----------------");
 
   printf ("VERTEX-based:\n");
-  if (!(size = (int *) ZOLTAN_MALLOC (sizeof (int) * p)))
+  if (!(size = (int *) ZOLTAN_CALLOC (p,sizeof(int))))
   { ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
     return ZOLTAN_MEMERR;
   }
-  for (i=0; i < p; i++)
-     size[i] = 0 ;
   for (i=0; i<hg->nVtx; i++)
   { if (part[i]<0 || part[i]>=p)
     { fprintf(stderr, "PART ERROR...vertex %d has wrong part number %d\n",i,
@@ -331,12 +323,10 @@ int Zoltan_HG_HPart_Info (ZZ *zz, HGraph *hg, int p, Partition part)
 
   if (hg->vwgt)
   { float *size_w, max_size_w, tot_w=0.0;
-    if (!(size_w = (float *) ZOLTAN_MALLOC (sizeof (float) * p)))
+    if (!(size_w = (float *) ZOLTAN_CALLOC (p,sizeof(float))))
     { ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
       return ZOLTAN_MEMERR;
     }
-    for (i=0; i < p; i++)
-      size_w[i] = 0.0 ;
     for (i=0; i<hg->nVtx; i++)
     { size_w[part[i]] += (hg->vwgt[i]);
       tot_w += hg->vwgt[i];

@@ -1,12 +1,17 @@
 #include "hypergraph.h"
 
 /* =========== TIME */
+#ifdef WITHTIME
 static long     t=0, t_init=0, t_load=0, t_part=0, t_rest=0;
-#if defined(NOTIME)
-#define INIT_TIME()     {}
-#define ADD_NEW_TIME(T) {}
-#define END_TIME()      {}
-#elif defined(CLOCK)
+static void times_output ()
+{ long t_all=t_load+t_part+t_rest;
+  printf("TIME                : %d:%d:%.2f\n", (int)(t_all/3600000),
+   (int)((t_all%3600000)/60000),(float)((float)(t_all%60000)/1000));
+  printf("  Load/Check        : %.2f\n",(float)t_load/1000);
+  printf("  Part              : %.2f\n",(float)t_part/1000);
+  printf("  Rest              : %.2f\n",(float)t_rest/1000);
+}
+#ifdef CLOCK
 #define INIT_TIME()     {if(!t_init)t=clock()/1000;t_init++;}
 #define ADD_NEW_TIME(T) {T-=t; T+=(t=clock()/1000);}
 #define END_TIME()      {t_init--;}
@@ -24,16 +29,12 @@ struct rusage    Rusage;
                                Rusage.ru_utime.tv_usec/1000);}
 #define END_TIME()      {t_init--;}
 #endif
-
-static void times_output ()
-{ long t_all=t_load+t_part+t_rest;
-  printf("TIME                : %d:%d:%.2f\n", (int)(t_all/3600000),
-   (int)((t_all%3600000)/60000),(float)((float)(t_all%60000)/1000));
-  printf("  Load/Check        : %.2f\n",(float)t_load/1000);
-  printf("  Part              : %.2f\n",(float)t_part/1000);
-  printf("  Rest              : %.2f\n",(float)t_rest/1000);
-}
-
+#else
+static void times_output () {}
+#define INIT_TIME()     {}
+#define ADD_NEW_TIME(T) {}
+#define END_TIME()      {}
+#endif
 
 int main (int argc, char **argv)
 { int    i, p=2, *part;
@@ -52,6 +53,8 @@ int main (int argc, char **argv)
   hgp.check_graph = 1;
 
   zz.Debug_Level = 1;
+
+  Zoltan_Memory_Debug(1);
 
 /* Start of the time*/
   INIT_TIME();
@@ -97,6 +100,9 @@ int main (int argc, char **argv)
 /* load and info hypergraph */
   if (Zoltan_HG_Readfile(&zz,&hg,hgraphfile))
     return 1;
+  printf("Memory: %d %d\n",
+         Zoltan_Memory_Usage (ZOLTAN_MEM_STAT_TOTAL),
+         Zoltan_Memory_Usage (ZOLTAN_MEM_STAT_MAXIMUM) );
   if (Zoltan_HG_Info (&zz,&hg))
     return 1;
   if (Zoltan_HG_Check (&zz,&hg))
@@ -121,6 +127,10 @@ int main (int argc, char **argv)
   ADD_NEW_TIME(t_rest);
   END_TIME();
   times_output();
+
+  printf("Memory: %d %d\n",
+         Zoltan_Memory_Usage (ZOLTAN_MEM_STAT_TOTAL),
+         Zoltan_Memory_Usage (ZOLTAN_MEM_STAT_MAXIMUM) );
 
   return 0;
 }

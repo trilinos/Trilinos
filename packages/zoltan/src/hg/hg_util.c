@@ -409,13 +409,11 @@ int Zoltan_HG_HGraph_to_Graph(
 
 /* calculate the roughly |E| and each degree */
   roughly_e = 0;
-  if (!(degrees = (int *) ZOLTAN_MALLOC (sizeof (int) * hg->nVtx)))
+  if (!(degrees = (int *) ZOLTAN_CALLOC (hg->nVtx,sizeof(int))))
     { ZOLTAN_FREE ((void **) &degrees) ;
       ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
       return ZOLTAN_MEMERR;
     }
-  for (i = 0 ; i < hg->nVtx ; i++)
-     degrees[i] = 0 ;
   for (i=0; i<hg->nEdge; i++)
   /* if (hg->hindex[i+1]-hg->hindex[i] <= 10) */
   { pins = hg->hindex[i+1]-hg->hindex[i];
@@ -467,13 +465,11 @@ int Zoltan_HG_HGraph_to_Graph(
   ZOLTAN_FREE ((void **) &degrees);
 
 /* Compact identical incident edges and their weight */
-  if (!(w = (float *) ZOLTAN_MALLOC (sizeof (float) * hg->nVtx)))
+  if (!(w = (float *) ZOLTAN_CALLOC (hg->nVtx,sizeof(float))))
     { ZOLTAN_FREE ((void **) &w);
       ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
       return ZOLTAN_MEMERR;
     }
-  for (i=0; i<hg->nVtx; i++)
-    w[i] = 0.0;
   empty = 0;
   for (i=0; i<hg->nVtx; i++)
   { start = g->nindex[i];

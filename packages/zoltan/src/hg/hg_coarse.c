@@ -47,12 +47,10 @@ int Zoltan_HG_Coarsening (
         vertex = pack[old];
         pack[old] = -pack[old]-1;
     } }
-  if (!(c_hg->vwgt = (float*) ZOLTAN_MALLOC (sizeof (float) * c_hg->nVtx)))
+  if (!(c_hg->vwgt = (float*) ZOLTAN_CALLOC (c_hg->nVtx,sizeof(float))))
   { ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
     return ZOLTAN_MEMERR;
   }
-  for (i = 0 ; i < c_hg->nVtx ; i++)
-    c_hg->vwgt[i] = 0.0 ;
 
 /* Construct the LevelMap */
   new_vertex = 0;
@@ -69,18 +67,16 @@ int Zoltan_HG_Coarsening (
     }
 
 /* Coarsen the hyperedges */
-  if (!(used_vertices = (int *)  ZOLTAN_MALLOC(sizeof(int)  * c_hg->nVtx))   ||
+  if (!(used_vertices = (int *)  ZOLTAN_CALLOC(c_hg->nVtx,sizeof(int)))      ||
       !(c_ewgt        = (float *)ZOLTAN_MALLOC(sizeof(float)* hg->nEdge))    ||
       !(c_hindex      = (int *)  ZOLTAN_MALLOC(sizeof(int)  * (hg->nEdge+1)))||
-      !(c_hvertex     = (int *)  ZOLTAN_MALLOC(sizeof(int)  *  hg->nPin)) )
+      !(c_hvertex     = (int *)  ZOLTAN_MALLOC(sizeof(int)  * hg->nPin)) )
   { ZOLTAN_FREE ((void **) &used_vertices) ;
     ZOLTAN_FREE ((void **) &c_hindex) ;
     ZOLTAN_FREE ((void **) &c_hvertex) ;
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
     return ZOLTAN_MEMERR;
   }
-  for (i = 0 ; i < c_hg->nVtx ; i++)
-    used_vertices[i] = 0 ;
 
   c_hindex[0] = c_hg->nEdge = c_hg->nPin = 0;
   for (i=0; i<hg->nEdge; i++)
@@ -102,7 +98,7 @@ int Zoltan_HG_Coarsening (
 /* Move weight of identical hyperedges to one of them */
   if (!(sorted = (int *) ZOLTAN_MALLOC (sizeof (int) * c_hg->nEdge)) ||
       !(hsize  = (int *) ZOLTAN_MALLOC (sizeof (int) * c_hg->nEdge)) ||
-      !(sum    = (int *) ZOLTAN_MALLOC (sizeof (int) * c_hg->nEdge))  )
+      !(sum    = (int *) ZOLTAN_CALLOC (c_hg->nEdge,sizeof (int)))  )
   { ZOLTAN_FREE ((void **) &c_hindex) ;
     ZOLTAN_FREE ((void **) &c_hvertex) ;
     ZOLTAN_FREE ((void **) &sorted) ;
@@ -114,7 +110,6 @@ int Zoltan_HG_Coarsening (
   for (i = 0; i < c_hg->nEdge; i++)
   { sorted[i] = i;
     hsize[i] = c_hindex[i+1]-c_hindex[i];
-    sum[i] = 0 ;
     for (j=c_hindex[i]; j<c_hindex[i+1]; j++)
       sum[i] += c_hvertex[j];
   }

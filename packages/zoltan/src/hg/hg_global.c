@@ -57,8 +57,8 @@ static int global_ran (
     srand ((unsigned long) RANDOM_SEED) ;
   }
 
-  if (!(order = (int *) ZOLTAN_MALLOC (sizeof (int) * hg->nVtx)) ||
-      !(weight = (float *) ZOLTAN_MALLOC (sizeof (float) * p))    )
+  if (!(order  = (int *)   ZOLTAN_MALLOC (sizeof (int) * hg->nVtx)) ||
+      !(weight = (float *) ZOLTAN_CALLOC (p,sizeof(float)))    )
   { ZOLTAN_FREE ((void **) &order) ;
     ZOLTAN_FREE ((void **) &weight) ;
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
@@ -66,8 +66,6 @@ static int global_ran (
   }
   for (i=0; i<hg->nVtx; i++)
     order[i] = i;
-  for (i=0; i<p; i++)
-    weight[i] = 0.0 ;
 
   for (i=hg->nVtx; i>0; i--)
   { vertex = order[number=rand()%i];

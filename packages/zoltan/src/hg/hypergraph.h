@@ -24,6 +24,7 @@ extern "C" {
 #include <limits.h>
 #include <float.h>
 #include <string.h>
+#include "zoltan_mem.h"
 
 #ifdef HTEST
 typedef struct
@@ -35,9 +36,6 @@ typedef struct
 #define ZOLTAN_TRACE_ENTER(a,b)      {}
 #define ZOLTAN_TRACE_EXIT(a,b)       {}
 #define ZOLTAN_TRACE_DETAIL(a,b,c)   {}
-#define ZOLTAN_MALLOC                malloc
-#define ZOLTAN_CALLOC                calloc
-#define ZOLTAN_FREE(a)               {free(*(a)); *a = NULL;}
 #define ZOLTAN_OK                    0
 #define ZOLTAN_WARN                  1
 #define ZOLTAN_FATAL                 -1

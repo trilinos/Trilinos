@@ -217,7 +217,7 @@ static int grouping_rhg (ZZ *zz, HGraph *hg, Packing pack, int limit)
    char  *yo = "grouping_heg" ;
 
    if (!(vertices  = (int *) ZOLTAN_MALLOC (sizeof (int) * hg->nVtx)) ||
-       !(del_edges = (int *) ZOLTAN_MALLOC (sizeof (int) * hg->nEdge)) )
+       !(del_edges = (int *) ZOLTAN_CALLOC (hg->nEdge,sizeof (int))) )
       {
       ZOLTAN_FREE ((void **) &vertices) ;
       ZOLTAN_FREE ((void **) &del_edges) ;
@@ -226,8 +226,6 @@ static int grouping_rhg (ZZ *zz, HGraph *hg, Packing pack, int limit)
       }
    for (i = 0 ; i < hg->nVtx ; i++)
       pack[i] = vertices[i] = i ;
-   for (i = 0 ; i < hg->nEdge ; i++)
-      del_edges[i] = 0;
 
    for (i = hg->nVtx ; i > 0 ; i--)
       {
