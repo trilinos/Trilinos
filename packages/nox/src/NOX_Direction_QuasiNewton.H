@@ -38,8 +38,12 @@
 #include "NOX_Direction_Generic.H" // base class
 #include "NOX_Parameter_List.H"	   // class data element 
 
+// Forward declaration
 namespace NOX {
+class Utils;
+}
 
+namespace NOX {
 namespace Direction {
 
 //! %Quasi-Newton direction computation
@@ -82,7 +86,7 @@ class QuasiNewton : public Generic {
 public:
 
   //! Constructor
-  QuasiNewton(NOX::Parameter::List& params);
+  QuasiNewton(const NOX::Utils& u, NOX::Parameter::List& params);
 
   //! Destructor
   virtual ~QuasiNewton();
@@ -214,6 +218,9 @@ public:
   };
 
 private:
+
+  //! Printing Utils
+  const NOX::Utils& utils;
 
   //! "Direction" sublist with parameters for the direction vector
   /*! 

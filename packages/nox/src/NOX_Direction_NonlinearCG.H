@@ -35,6 +35,11 @@
 
 #include "NOX_Direction_Generic.H"	    // base class
 
+// Forward declaration
+namespace NOX {
+class Utils;
+}
+
 namespace NOX {
 namespace Direction {
 
@@ -101,7 +106,7 @@ class NonlinearCG : public Generic {
 public:
 
   //! Constructor. 
-  NonlinearCG(Parameter::List& params);
+  NonlinearCG(const NOX::Utils& u, Parameter::List& params);
 
   //! Destructor.
   virtual ~NonlinearCG();
@@ -115,6 +120,9 @@ public:
 
 private:
   
+  //! Printing Utils
+  const NOX::Utils& utils;
+
   //! Previous solution pointer. 
   const Abstract::Group* oldSolnPtr;	
 

@@ -173,7 +173,8 @@ bool QuasiNewton::Updates::empty() const
 
 //------------------------------------------------------------
 
-QuasiNewton::QuasiNewton(Parameter::List& p) :
+QuasiNewton::QuasiNewton(const NOX::Utils& u, Parameter::List& p) :
+  utils(u),
   paramsPtr(NULL)
 {
   reset(p);
@@ -266,7 +267,7 @@ bool QuasiNewton::compute(Abstract::Vector& dir,
 
 void NOX::Direction::QuasiNewton::throwError(const string& functionName, const string& errorMsg)
 {
-    if (Utils::doPrint(Utils::Error))
+    if (utils.isPrintProcessAndType(Utils::Error))
       cerr << "NOX::Direction::QuasiNewton::" << functionName << " - " << errorMsg << endl;
     throw "NOX Error";
 }

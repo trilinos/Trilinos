@@ -57,7 +57,8 @@
 using namespace NOX;
 using namespace NOX::Direction;
 
-NonlinearCG::NonlinearCG(Parameter::List& params) :
+NonlinearCG::NonlinearCG(const NOX::Utils& u, Parameter::List& params) :
+  utils(u),
   oldSolnPtr(NULL),			// pointer to old Soln Grp
   tmpVecPtr(NULL),			// reference to xgrp
   oldDirPtr(NULL),			// reference to xgrp
@@ -117,7 +118,7 @@ bool NonlinearCG::compute(Abstract::Vector& dir, Abstract::Group& soln,
 
   ok = soln.computeF();
   if (ok != Abstract::Group::Ok) {
-    if (Utils::doPrint(Utils::Warning))
+    if (utils.isPrintProcessAndType(Utils::Warning))
       cout << "NOX::Direction::NonlinearCG::compute - Unable to compute F." 
            << endl;
     return false;
@@ -127,7 +128,7 @@ bool NonlinearCG::compute(Abstract::Vector& dir, Abstract::Group& soln,
     if(!soln.isJacobian())
       ok = soln.computeJacobian();
       if (ok != Abstract::Group::Ok) {
-        if (Utils::doPrint(Utils::Warning))
+        if (utils.isPrintProcessAndType(Utils::Warning))
           cout << "NOX::Direction::NonlinearCG::compute - "
                << "Unable to compute Jacobian." << endl;
         return false;
@@ -136,7 +137,7 @@ bool NonlinearCG::compute(Abstract::Vector& dir, Abstract::Group& soln,
     ok = soln.applyRightPreconditioning(paramsPtr->sublist("Nonlinear CG").sublist("Linear Solver"),
                                         tmpVec, dir);
     if (ok != Abstract::Group::Ok) {
-      if (Utils::doPrint(Utils::Warning))
+      if (utils.isPrintProcessAndType(Utils::Warning))
         cout << "NOX::Direction::NonlinearCG::compute - "
              << "Unable to apply Right Preconditioner." << endl;
       return false;
@@ -167,7 +168,7 @@ bool NonlinearCG::compute(Abstract::Vector& dir, Abstract::Group& soln,
 
     // Constrain beta >= 0
       if(beta < 0.0) {
-        if (Utils::doPrint(Utils::OuterIteration))
+        if (utils.isPrintProcessAndType(Utils::OuterIteration))
           cout << "BETA < 0, (" << beta << ") --> Resetting to zero" << endl;
         beta = 0.0;
       }
@@ -187,7 +188,7 @@ bool NonlinearCG::compute(Abstract::Vector& dir, Abstract::Group& soln,
 
     if( (niter % restartFrequency)==0)
     {
-       if (Utils::doPrint(Utils::OuterIteration))
+       if (utils.isPrintProcessAndType(Utils::OuterIteration))
          cout << "Resetting beta --> 0" << endl;
 
        beta = 0 ;  // Restart with Steepest Descent direction

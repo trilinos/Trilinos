@@ -36,6 +36,11 @@
 #include "NOX_Direction_Generic.H" // base class
 #include "NOX_Common.H"            // class data element (string)
 
+// Forward declaration
+namespace NOX {
+class Utils;
+}
+
 namespace NOX {
 namespace Direction {
 
@@ -59,10 +64,10 @@ class Manager : public Generic {
 public:
 
   //! Empty Constructor
-  Manager();
+  Manager(const NOX::Utils& u);
 
   //! Constructor
-  Manager(NOX::Parameter::List& params);
+  Manager(const NOX::Utils& u, NOX::Parameter::List& params);
 
   //! Destructor
   ~Manager();
@@ -75,6 +80,9 @@ public:
 	       const NOX::Solver::Generic& solver);
 
 private:
+
+  //! Printing Utils
+  const NOX::Utils& utils;
 
   //! Method name
   string method;

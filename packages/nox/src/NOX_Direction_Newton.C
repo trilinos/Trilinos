@@ -37,7 +37,8 @@
 #include "NOX_Solver_Generic.H"
 #include "NOX_Utils.H"
 
-NOX::Direction::Newton::Newton(NOX::Parameter::List& p) :
+NOX::Direction::Newton::Newton(const NOX::Utils& u, NOX::Parameter::List& p) :
+  utils(u),
   predRhs(NULL),
   stepDir(NULL)
   
@@ -140,7 +141,7 @@ bool NOX::Direction::Newton::resetForcingTerm(const NOX::Abstract::Group& soln,
 
   const string indent = "       ";
 
-  if (Utils::doPrint(Utils::Details)) {
+  if (utils.isPrintProcessAndType(Utils::Details)) {
     cout << indent << "CALCULATING FORCING TERM" << endl;
     cout << indent << "Method: " << method << endl;
   }
@@ -202,7 +203,7 @@ bool NOX::Direction::Newton::resetForcingTerm(const NOX::Abstract::Group& soln,
       eta_k = fabs(normf - normpredf) / normoldf;
       
       // Some output
-      if (Utils::doPrint(Utils::Details)) {
+      if (utils.isPrintProcessAndType(Utils::Details)) {
 	cout << indent << "Residual Norm k-1 =             " << normoldf << "\n";
 	cout << indent << "Residual Norm Linear Model k =  " << normpredf << "\n";
 	cout << indent << "Residual Norm k =               " << normf << "\n";
@@ -236,7 +237,7 @@ bool NOX::Direction::Newton::resetForcingTerm(const NOX::Abstract::Group& soln,
       eta_k = gamma * pow(residual_ratio, alpha);
       
       // Some output
-      if (Utils::doPrint(Utils::Details)) {
+      if (utils.isPrintProcessAndType(Utils::Details)) {
 	cout << indent << "Residual Norm k-1 =             " << normoldf << "\n";
 	cout << indent << "Residual Norm k =               " << normf << "\n";
 	cout << indent << "Calculated eta_k (pre-bounds) = " << eta_k << endl;
@@ -253,7 +254,7 @@ bool NOX::Direction::Newton::resetForcingTerm(const NOX::Abstract::Group& soln,
 
   else {
 
-    if (Utils::doPrint(Utils::Warning))
+    if (utils.isPrintProcessAndType(Utils::Warning))
       cout << "NOX::Direction::Newton::resetForcingTerm "
 	   << "- invalid forcing term method (" << method << ")" << endl;
 
@@ -263,7 +264,7 @@ bool NOX::Direction::Newton::resetForcingTerm(const NOX::Abstract::Group& soln,
   // Reset linear solver tolerance
   paramsPtr->sublist("Newton").sublist("Linear Solver").setParameter("Tolerance", eta_k);
 
-  if (Utils::doPrint(Utils::Details)) 
+  if (utils.isPrintProcessAndType(Utils::Details)) 
     cout << indent << "Forcing Term: " << eta_k << endl;
 
   // Tell the linear solver that an adjustable forcing term is being used.
@@ -301,7 +302,7 @@ bool  NOX::Direction::Newton::rescueBadNewtonSolve(const NOX::Abstract::Group& g
     return false;
 
   // Otherwise, we just print a warning and keep going
-  if (Utils::doPrint(Utils::Warning)) 
+  if (utils.isPrintProcessAndType(Utils::Warning)) 
     cout << "WARNING: NOX::Direction::Newton::compute - Unable to achieve desired linear solve accuracy." << endl;
 
   return true;
@@ -310,7 +311,7 @@ bool  NOX::Direction::Newton::rescueBadNewtonSolve(const NOX::Abstract::Group& g
 
 void NOX::Direction::Newton::throwError(const string& functionName, const string& errorMsg)
 {
-    if (Utils::doPrint(Utils::Error))
+    if (utils.isPrintProcessAndType(Utils::Error))
       cerr << "NOX::Direction::Newton::" << functionName << " - " << errorMsg << endl;
     throw "NOX Error";
 }

@@ -71,8 +71,8 @@ TrustRegionBased::TrustRegionBased(Abstract::Group& grp, StatusTest::Generic& t,
   testPtr(&t),			// pointer to t
   params(p),			// copy p
   utils(params.sublist("Printing")), // inititalize utils
-  newton(),			// initialize direction
-  cauchy()			// initialize direction
+  newton(utils),		// initialize direction
+  cauchy(utils)			// initialize direction
 {
   init();
 }

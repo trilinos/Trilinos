@@ -50,13 +50,15 @@
 using namespace NOX;
 using namespace NOX::Direction;
 
-Manager::Manager() :
+Manager::Manager(const NOX::Utils& u) :
+  utils(u),
   method(""),
   ptr(NULL)
 {
 }
 
-Manager::Manager(Parameter::List& params) :
+Manager::Manager(const NOX::Utils& u, Parameter::List& params) :
+  utils(u),
   method(""),
   ptr(NULL)
 {
@@ -79,11 +81,11 @@ bool Manager::reset(Parameter::List& params)
     delete ptr;
     
     if (method == "Newton")
-      ptr = new Newton(params);
+      ptr = new Newton(utils, params);
     else if (method == "NonlinearCG")
-      ptr = new NonlinearCG(params);
+      ptr = new NonlinearCG(utils, params);
     else if (method == "Steepest Descent")
-      ptr = new SteepestDescent(params);
+      ptr = new SteepestDescent(utils, params);
 #ifdef WITH_PRERELEASE
     else if (method == "Tensor")
       ptr = new Tensor(params);
@@ -91,7 +93,7 @@ bool Manager::reset(Parameter::List& params)
       ptr = new ModifiedNewton(params);
 #endif
     else if (method == "Quasi-Newton")
-      ptr = new QuasiNewton(params);
+      ptr = new QuasiNewton(utils, params);
     else {
       ptr = NULL;
       if (Utils::doPrint(NOX::Utils::Warning)) {

@@ -36,6 +36,11 @@
 #include "NOX_Direction_Generic.H" // base class
 #include "NOX_Parameter_List.H"	   // class data element 
 
+// Forward declaration
+namespace NOX {
+class Utils;
+}
+
 namespace NOX {
 namespace Direction {
 
@@ -151,7 +156,7 @@ class Newton : public Generic {
 public:
 
   //! Constructor
-  Newton(NOX::Parameter::List& params);
+  Newton(const NOX::Utils& u, NOX::Parameter::List& params);
 
   //! Destructor
   virtual ~Newton();
@@ -174,6 +179,9 @@ protected:
 
 
 private:
+
+  //! Printing Utils
+  const NOX::Utils& utils;
 
   //! Return true if we can recover from a bad Newton solve
   /*!

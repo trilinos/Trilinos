@@ -35,6 +35,11 @@
 
 #include "NOX_Direction_Generic.H" // base class
 
+// Forward declaration
+namespace NOX {
+class Utils;
+}
+
 namespace NOX {
 namespace Direction {
 
@@ -86,7 +91,7 @@ public:
     None};
 
   //! Constructor
-  SteepestDescent(NOX::Parameter::List& params);
+  SteepestDescent(const NOX::Utils& u, NOX::Parameter::List& params);
 
   //! Destructor
   ~SteepestDescent();
@@ -104,6 +109,9 @@ private:
   void throwError(const string& functionName, const string& errorMsg);
 
 private:
+
+  //! Printing Utils
+  const NOX::Utils& utils;
 
   //! Temporary vector used in Cauchy scaling factor calculation
   NOX::Abstract::Vector* tmpVecPtr;

@@ -37,7 +37,8 @@
 #include "NOX_Parameter_List.H"
 #include "NOX_Utils.H"
 
-NOX::Direction::SteepestDescent::SteepestDescent(NOX::Parameter::List& params) :
+NOX::Direction::SteepestDescent::SteepestDescent(const NOX::Utils& u, NOX::Parameter::List& params) :
+  utils(u),
   tmpVecPtr(NULL)
 {
   reset(params);
@@ -145,7 +146,7 @@ bool NOX::Direction::SteepestDescent::compute(Abstract::Vector& dir,
 
 void NOX::Direction::SteepestDescent::throwError(const string& functionName, const string& errorMsg)
 {
-    if (Utils::doPrint(Utils::Error))
+    if (utils.isPrintProcessAndType(Utils::Error))
       cerr << "NOX::Direction::SteepestDescent::" << functionName << " - " << errorMsg << endl;
     throw "NOX Error";
 }
