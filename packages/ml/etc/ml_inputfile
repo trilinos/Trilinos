@@ -31,6 +31,7 @@ Number of DOF per node       = 1
 Parallel Partitioning File   = myfile  
 Output Frequency             = 2       
 Tolerance                    = 1.0e-11
+Print Level                  = 1
 
 -----------------------------------------------
       Solution Specifications
