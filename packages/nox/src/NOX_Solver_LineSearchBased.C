@@ -157,6 +157,9 @@ NOX::StatusTest::StatusType LineSearchBased::iterate()
     return status;
   }
 
+  // Update iteration count.
+  niter ++;
+
   // Copy current soln to the old soln.
   oldsoln = soln;
 
@@ -179,9 +182,6 @@ NOX::StatusTest::StatusType LineSearchBased::iterate()
     status = StatusTest::Failed;
     return status;
   }
-
-  // Update iteration count.
-  niter ++;
 
   // Evaluate the current status.
   status = test.checkStatus(*this);

@@ -240,6 +240,9 @@ NOX::StatusTest::StatusType TrustRegionBased::iterate()
       radius = 2 * minRadius;
   }
 
+  // Update iteration count.
+  niter ++;
+
   // Copy current soln to the old soln.
   oldSoln = soln;
   fold = fnew;
@@ -377,9 +380,6 @@ NOX::StatusTest::StatusType TrustRegionBased::iterate()
     }
 
   }
-
-  // Update iteration count.
-  niter ++;
 
 
   // Evaluate the current status
