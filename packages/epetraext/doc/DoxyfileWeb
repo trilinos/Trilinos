@@ -53,6 +53,7 @@
 ############################################################################
 
 INPUT                  = ../../../../Trilinos/packages/epetraext/src
+INPUT                 += ../../../../Trilinos/packages/matlab/src
 INPUT                 += ../../../../Trilinos/packages/epetraext/doc/index.doc
 
 EXAMPLE_PATH           = ../../../../Trilinos/packages/epetraext/example
