@@ -429,30 +429,32 @@ if ((lots_of_space < 4) && (B_allocated > 500)) Bvals = NULL; else
 
       if (rowi_N != 0) {
          multiplier = A_i_vals[0];
-         if ( multiplier == 0.0 ) continue; 
-	 jj = Bptr[*A_i_cols];
-	 Bval_ptr = &(Bvals[jj]);
-	 Bcol_ptr = &(Bcols[jj]);
-	 while (jj++ < Bptr[*A_i_cols+1]) {
-	   *acc_col_ptr++ =  *Bcol_ptr;
-	   *acc_val_ptr++ = multiplier*(*Bval_ptr++);
-	   accum_index[*Bcol_ptr++] = Ncols++;
+         if ( multiplier != 0.0 ) {
+	   jj = Bptr[*A_i_cols];
+	   Bval_ptr = &(Bvals[jj]);
+	   Bcol_ptr = &(Bcols[jj]);
+	   while (jj++ < Bptr[*A_i_cols+1]) {
+	     *acc_col_ptr++ =  *Bcol_ptr;
+	     *acc_val_ptr++ = multiplier*(*Bval_ptr++);
+	     accum_index[*Bcol_ptr++] = Ncols++;
+	   }
 	 }
       }
       for (k = 1; k < rowi_N; k++) {
 	multiplier = A_i_vals[k];
-	if ( multiplier == 0.0 ) continue; 
-	jj = Bptr[A_i_cols[k]];
-	Bval_ptr = &(Bvals[jj]);
-	Bcol_ptr = &(Bcols[jj]);
-	while (jj++ < Bptr[A_i_cols[k]+1]) {
-	  if (accum_index[*Bcol_ptr] < 0) {
-	    *acc_col_ptr++ = *Bcol_ptr;
-	    *acc_val_ptr++ = multiplier*(*Bval_ptr++);
-	    accum_index[*Bcol_ptr++] = Ncols++;
+	if ( multiplier != 0.0 ) {
+	  jj = Bptr[A_i_cols[k]];
+	  Bval_ptr = &(Bvals[jj]);
+	  Bcol_ptr = &(Bcols[jj]);
+	  while (jj++ < Bptr[A_i_cols[k]+1]) {
+	    if (accum_index[*Bcol_ptr] < 0) {
+	      *acc_col_ptr++ = *Bcol_ptr;
+	      *acc_val_ptr++ = multiplier*(*Bval_ptr++);
+	      accum_index[*Bcol_ptr++] = Ncols++;
+	    }
+	    else accum_val[accum_index[*Bcol_ptr++]] += multiplier*(*Bval_ptr++);
 	  }
-	  else accum_val[accum_index[*Bcol_ptr++]] += multiplier*(*Bval_ptr++);
-         }
+	}
       }
 #ifdef takeout
       for (k = 0; k < rowi_N; k++) {
@@ -465,13 +467,14 @@ if ((lots_of_space < 4) && (B_allocated > 500)) Bvals = NULL; else
       }
       for (k = 0; k < rowi_N; k++) {
 	multiplier = A_i_vals[k];
-	if ( multiplier == 0.0 ) continue; 
-	jj = Bptr[A_i_cols[k]];
-	Bval_ptr = &(Bvals[jj]);
-	Bcol_ptr = &(Bcols[jj]);
-	while (jj++ < Bptr[A_i_cols[k]+1]) {
-	   accum_val[accum_index[*Bcol_ptr++]] += multiplier*(*Bval_ptr++);
-         }
+	if ( multiplier != 0.0 ) {
+	  jj = Bptr[A_i_cols[k]];
+	  Bval_ptr = &(Bvals[jj]);
+	  Bcol_ptr = &(Bcols[jj]);
+	  while (jj++ < Bptr[A_i_cols[k]+1]) {
+	    accum_val[accum_index[*Bcol_ptr++]] += multiplier*(*Bval_ptr++);
+	  }
+	}
       }
       k = 0;
       for (jj = 0; jj < Ncols; jj++ ) {
