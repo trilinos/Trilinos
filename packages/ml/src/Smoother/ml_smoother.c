@@ -3524,7 +3524,6 @@ void *edge_smoother, void **edge_args, void *nodal_smoother, void **nodal_args)
    double *dbl_arg1, *diagonal;
    struct ML_Operator_blockmat_data *mat_data;
 #ifdef GREG
-   static int stupid = 0;   /* Used for hardwired eigenvalues */
    struct MLSthing *widget;
 #endif
 #ifdef ML_TIMING_DETAILED
@@ -3679,19 +3678,6 @@ void *edge_smoother, void **edge_args, void *nodal_smoother, void **nodal_args)
    ML_Smoother_Create(&(dataptr->sm_nodal), mylevel);
    dataptr->sm_nodal->ntimes = 1;
    dataptr->sm_nodal->omega = 1.0;
-
-#ifdef GREG
-   /*
-printf("setting the nodal eigenvalues!!!!!!!!!!!!!!!!!!!!! %u %d\n",Amat->to,
-stupid);
-   */
-if (stupid == 0) {
-  tmpmat->lambda_max = 2.132849/1.1;
-  tmpmat->lambda_max = 2.127063/1.1;
-  stupid++;
-}
-else tmpmat->lambda_max = 1.881462/1.1;
-#endif
 
   if ( (nodal_smoother == (void *) ML_Gen_Smoother_Jacobi) ||
        (nodal_smoother == (void *) ML_Gen_Smoother_GaussSeidel) ||
@@ -7003,6 +6989,16 @@ int ML_Smoother_HiptmairSubsmoother_Create(ML **ml_subproblem,
      ML_Gen_Smoother_MLS(*ml_subproblem, 0, ML_PRESMOOTHER,*dbl_arg1,
 			 *int_arg2);
    }
+   else if (smoother == (void *) ML_Gen_Smoother_ERF_1StepKrylov) {
+     if (ML_Smoother_Arglist_Nargs(args) != 0) {
+       printf("ML_Smoother_Gen_Hiptmair_Data: Need 0 arguments for ML_Gen_Smoother_ERG1StepKrylov() got %d arguments\n", ML_Smoother_Arglist_Nargs(args));
+       exit(1);
+     }
+     if (Amat->comm->ML_mypid == 0 && 2 < ML_Get_PrintLevel() )
+       printf("Generating subsmoother ERF_1StepKrylov\n");
+     ML_Gen_Smoother_ERF_1StepKrylov(*ml_subproblem, 0, ML_PRESMOOTHER);
+   }
+
 
    else if (smoother == (void *) ML_Gen_Smoother_Jacobi) {
      if (ML_Smoother_Arglist_Nargs(args) != 2) {
@@ -7498,6 +7494,8 @@ int ML_Smoother_MSR_GSbackwardnodamping(void *sm,int inlen,double x[],
 
    return 0;
 }
+
+
 int ML_complex_Cheby(void *sm, int inlen, double x[], int outlen, double rhs[])
 {
 
@@ -7703,6 +7701,169 @@ if (Amat->comm->ML_mypid == 0)  fflush(stdout);
   return 0;
 }
 
+
+int ML_DiagScaled_1stepKrylov(void *sm, int inlen, double x[], int outlen, 
+                              double rhs[])
+{
+
+  ML_Smoother     *smooth_ptr = (ML_Smoother *) sm;
+  ML_Operator     *Amat = smooth_ptr->my_level->Amat;
+
+  int    n, allocated_space, *cols, i, j, k, status, nn, flag_x = 0;
+  double t1, t2, t3, aa = 0., bb = 0., ee = 0., alpha_real;
+  double alpha_img, dks_real = 0., dks_img = 0.;
+  double *vals, *tdiag, *Ke_diag, *M_diag, *pAux, *dk;
+  double denom_real, denom_img, *dks, *pq, *pqAux;
+  struct ML_Operator_blockmat_data *blockmat;
+
+
+  n = outlen/2;
+
+  blockmat = (struct ML_Operator_blockmat_data *) Amat->data;
+
+
+  /* ----------------------------------------------------------------- */
+  /* extract diagonal using getrow function if not found               */
+  /* ----------------------------------------------------------------- */
+
+  if (blockmat->Ke_diag == NULL) {
+    allocated_space = blockmat->N_Ke + blockmat->Nghost + 1;
+    cols = (int    *) ML_allocate(allocated_space*sizeof(int   ));
+    vals = (double *) ML_allocate(allocated_space*sizeof(double));
+    tdiag = (double *) ML_allocate(Amat->outvec_leng*sizeof(double));
+    for (i = 0; i < n; i++) {
+      status = blockmat->Ke_getrow(blockmat->Ke_getrow_data,1,&i,
+				   allocated_space, cols, vals, &nn);
+      if (status == 0) {
+	printf("ML_complex_Cheby: not enough space for getrow\n");
+	exit(1);
+      }
+      tdiag[i] = 0.;
+      for (j = 0; j < nn; j++) 
+	if (cols[j] == i) tdiag[i] = vals[j];
+      if (tdiag[i] == 0.) tdiag[i] = 1.;
+    }
+    ML_free(cols); ML_free(vals);
+    blockmat->Ke_diag = tdiag;  tdiag = NULL;
+  }
+  Ke_diag = blockmat->Ke_diag; /* stiffness diag */
+  if (blockmat->M_diag == NULL) {
+    allocated_space = blockmat->N_Ke + blockmat->Nghost + 1;
+    cols = (int    *) ML_allocate(allocated_space*sizeof(int   ));
+    vals = (double *) ML_allocate(allocated_space*sizeof(double));
+    tdiag = (double *) ML_allocate(Amat->outvec_leng*sizeof(double));
+    for (i = 0; i < n; i++) {
+      status = blockmat->M_getrow(blockmat->M_getrow_data,1,&i,
+				  allocated_space, cols, vals, &nn);
+      if (status == 0) {
+	printf("ML_complex_Cheby: not enough space for getrow\n");
+	exit(1);
+      }
+      tdiag[i] = 0.;
+      for (j = 0; j < nn; j++) 
+	if (cols[j] == i) tdiag[i] = vals[j];
+    }
+    ML_free(cols); ML_free(vals);
+    blockmat->M_diag = tdiag;  tdiag = NULL;
+  }
+  M_diag = blockmat->M_diag; /* mass diag */
+
+
+  pAux  = (double *) ML_allocate(2*(n+1)*sizeof(double));
+  dk     = (double *) ML_allocate(2*(n+1)*sizeof(double));
+
+  if (pAux == NULL) pr_error("ML_Smoother_MLS_Apply: allocation failed\n");
+  if (dk    == NULL) {
+    pr_error("ML_Smoother_MLS_Apply: allocation failed\n");
+    ML_avoid_unused_param((void *) &inlen);
+  }
+
+  /* define previous UNSCALED residual 
+   */
+  flag_x = 0;
+  if (smooth_ptr->init_guess == ML_NONZERO) {
+    flag_x = 1;
+    ML_Operator_Apply(Amat, 2*n, x, 2*n, pAux);
+    for (i = 0; i < 2*n; i++) {
+      dk[i] = rhs[i] - pAux[i];
+    }
+  }
+    else {
+      for (i = 0; i < 2*n; i++) {
+      dk[i] = rhs[i];
+      }
+    }
+
+    /* instantiate, initialize quantities 
+     */
+    dks = (double *) ML_allocate(2*(n+1)*sizeof(double));
+    pqAux = (double *) ML_allocate(2*(n+1)*sizeof(double));
+    pq = (double *) ML_allocate(2*(n+1)*sizeof(double));
+
+    for (k = 1; k < n+1; k++) {
+      denom_real = Ke_diag[k-1];
+      denom_img  = M_diag[k-1];
+      t3 = 1./(denom_real*denom_real + denom_img*denom_img);
+      t1 = dk[k-1];
+      t2 = dk[k+n-1];
+      /* calculate dks = Dinv*dk without calculating Dinv, the equivalent real
+         form of the inverse diagonal of the original complex matrix A (whose 
+         equivalent real form is Amat)
+      */
+      dks[k-1] = (denom_real*t1 + denom_img*t2)*t3;
+      dks[k+n-1] = (-denom_img*t1 + denom_real*t2)*t3;
+    }    
+
+    ML_Operator_Apply(Amat, 2*n, dks, 2*n, pqAux);
+    for (k = 1; k < n+1; k++) {  
+      /*      p     Dinv_r   Dinv_i   Ke_mat | -Me_mat
+         pq = - =  --------|------- * -------|-------- * dks
+              q    -Dinv_i   Dinv_r   Me_mat |  Ke_mat
+      */
+      denom_real = Ke_diag[k-1];
+      denom_img  = M_diag[k-1];
+      t3 = 1./(denom_real*denom_real + denom_img*denom_img);
+      t1 = pqAux[k-1];
+      t2 = pqAux[k+n-1];
+      pq[k-1] = (denom_real*t1 +denom_img*t2)*t3;
+      pq[k+n-1] = (-denom_img*t1 +denom_real*t2)*t3;
+    }
+
+    /* define step coefficient for scaled system based on 1-step GMRES 
+     */
+    for (k = 1; k < n+1; k++) {
+      aa = aa + dks[k-1]*pq[k-1] + dks[k+n-1]*pq[k+n-1];
+      bb = bb + dks[k+n-1]*pq[k-1] - dks[k-1]*pq[k+n-1];
+      ee = ee + pq[k-1]*pq[k-1] + pq[k+n-1]*pq[k+n-1];
+    }
+    aa = ML_gsum_double(aa, Amat->comm);
+    bb = ML_gsum_double(bb, Amat->comm);
+    ee = ML_gsum_double(ee, Amat->comm);
+
+    alpha_real = aa/ee; /*real part of step coefficient */
+    alpha_img = bb/ee; /* imag part of step coefficient */
+
+    for (k = 1; k < n+1; k++) {
+      dks_real = alpha_real*dks[k-1] - alpha_img*dks[k+n-1];
+      dks_img = alpha_img*dks[k-1] + alpha_real*dks[k+n-1];
+      if (flag_x > 0) {
+	x[k-1] = x[k-1] + dks_real;
+	x[k+n-1] = x[k+n-1] + dks_img;
+      }
+      else {
+	x[k-1] = dks_real;
+	x[k+n-1] = dks_img;
+      }
+    }
+
+  ML_free(dks);
+  ML_free(pqAux);
+  ML_free(pq);
+  ML_free(dk);
+  ML_free(pAux);
+  return 0;
+
+}
 
 
 
