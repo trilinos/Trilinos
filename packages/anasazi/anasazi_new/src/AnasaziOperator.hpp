@@ -46,7 +46,7 @@
 
 namespace Anasazi {
   
-  template <class TYPE>
+  template <class ScalarType>
   class Operator {
   public:
     //@{ \name Constructor/Destructor.
@@ -65,7 +65,7 @@ namespace Anasazi {
       \c x will be passed directly to \c y.  Thus the operator is the identity if this
       method is defined by the user.
     */
-    virtual ReturnType Apply ( const MultiVec<TYPE>& x, MultiVec<TYPE>& y ) const 
+    virtual ReturnType Apply ( const MultiVec<ScalarType>& x, MultiVec<ScalarType>& y ) const 
     { return Undefined; };
     
   };
@@ -77,15 +77,15 @@ namespace Anasazi {
   //
   ////////////////////////////////////////////////////////////////////  
   
-  template <class TYPE> 
-  class OperatorTraits < TYPE, MultiVec<TYPE>, Operator<TYPE> > 
+  template <class ScalarType> 
+  class OperatorTraits < ScalarType, MultiVec<ScalarType>, Operator<ScalarType> > 
   {
   public:
     
     ///
-    static ReturnType Apply ( const Operator<TYPE>& Op, 
-			      const MultiVec<TYPE>& x, 
-			      MultiVec<TYPE>& y )
+    static ReturnType Apply ( const Operator<ScalarType>& Op, 
+			      const MultiVec<ScalarType>& x, 
+			      MultiVec<ScalarType>& y )
     { return Op.Apply( x, y ); }
     
   };

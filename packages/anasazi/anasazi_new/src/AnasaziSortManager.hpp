@@ -48,7 +48,7 @@
 
 namespace Anasazi {
 
-  template<class STYPE, class MV, class OP>
+  template<class ScalarType, class MV, class OP>
   class SortManager {
     
   public:
@@ -71,7 +71,7 @@ namespace Anasazi {
 
        @return Returns the status of the sorting routine [ Undefined by default ] 
     */
-    virtual ReturnType sort(Eigensolver<STYPE,MV,OP>* solver, int n, STYPE *evals, std::vector<int> *perm = 0) const { return Undefined; };
+    virtual ReturnType sort(Eigensolver<ScalarType,MV,OP>* solver, int n, ScalarType *evals, std::vector<int> *perm = 0) const { return Undefined; };
     
     //! Sort the vectors of eigenpairs, optionally returning the permutation vector.
     /**
@@ -87,7 +87,7 @@ namespace Anasazi {
 
        @return Returns the status of the sorting routine [ Undefined by default ] 
     */
-    virtual ReturnType sort(Eigensolver<STYPE,MV,OP>* solver, int n, STYPE *r_evals, STYPE *i_evals, std::vector<int> *perm = 0) const { return Undefined; };
+    virtual ReturnType sort(Eigensolver<ScalarType,MV,OP>* solver, int n, ScalarType *r_evals, ScalarType *i_evals, std::vector<int> *perm = 0) const { return Undefined; };
     
   };
   

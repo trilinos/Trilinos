@@ -41,8 +41,8 @@
 
 namespace Anasazi {
 
-  template<class STYPE, class MV, class OP>
-  class BasicSort : public SortManager<STYPE,MV,OP> {
+  template<class ScalarType, class MV, class OP>
+  class BasicSort : public SortManager<ScalarType,MV,OP> {
     
   public:
     
@@ -76,7 +76,7 @@ namespace Anasazi {
 
        @return Returns the status of the sorting routine [ Undefined by default ] 
     */
-    ReturnType sort(Eigensolver<STYPE,MV,OP>* solver, int n, STYPE *evals, std::vector<int> *perm = 0) const;
+    ReturnType sort(Eigensolver<ScalarType,MV,OP>* solver, int n, ScalarType *evals, std::vector<int> *perm = 0) const;
     
     //! Sort the vectors of eigenpairs with respect to the chosen sorting type, optionally returning the permutation vector.
     /**
@@ -92,7 +92,7 @@ namespace Anasazi {
 
        @return Returns the status of the sorting routine [ Undefined by default ] 
     */
-    ReturnType sort(Eigensolver<STYPE,MV,OP>* solver, int n, STYPE *r_evals, STYPE *i_evals, std::vector<int> *perm = 0) const;
+    ReturnType sort(Eigensolver<ScalarType,MV,OP>* solver, int n, ScalarType *r_evals, ScalarType *i_evals, std::vector<int> *perm = 0) const;
     
   protected: 
     
@@ -100,12 +100,12 @@ namespace Anasazi {
 
   };
 
-  template<class STYPE, class MV, class OP>
-  ReturnType BasicSort<STYPE,MV,OP>::sort(Eigensolver<STYPE,MV,OP>* solver, int n, STYPE *evals, std::vector<int> *perm) const 
+  template<class ScalarType, class MV, class OP>
+  ReturnType BasicSort<ScalarType,MV,OP>::sort(Eigensolver<ScalarType,MV,OP>* solver, int n, ScalarType *evals, std::vector<int> *perm) const 
   {
     int i, j, tempord;
-    STYPE temp, temp2;
-    Teuchos::LAPACK<int,STYPE> lapack;
+    ScalarType temp, temp2;
+    Teuchos::LAPACK<int,ScalarType> lapack;
     //
     // Reset the permutation if it is required.
     //		
@@ -216,11 +216,11 @@ namespace Anasazi {
   }
   
 
-  template<class STYPE, class MV, class OP>
-  ReturnType BasicSort<STYPE,MV,OP>::sort(Eigensolver<STYPE,MV,OP>* solver, int n, STYPE *r_evals, STYPE *i_evals, std::vector<int> *perm) const {
+  template<class ScalarType, class MV, class OP>
+  ReturnType BasicSort<ScalarType,MV,OP>::sort(Eigensolver<ScalarType,MV,OP>* solver, int n, ScalarType *r_evals, ScalarType *i_evals, std::vector<int> *perm) const {
     int i, j, tempord;
-    STYPE temp, tempr, tempi;
-    Teuchos::LAPACK<int,STYPE> lapack;
+    ScalarType temp, tempr, tempi;
+    Teuchos::LAPACK<int,ScalarType> lapack;
     //
     // Reset the index
     //		

@@ -49,7 +49,7 @@
 
 namespace Anasazi {
 
-template <class TYPE>
+template <class ScalarType>
 class OutputManager {
 
 	public:
@@ -60,7 +60,7 @@ class OutputManager {
 	OutputManager();
 
 	//! Copy constructor.
-	OutputManager( const OutputManager<TYPE>& OM );
+	OutputManager( const OutputManager<ScalarType>& OM );
 
 	//! Basic constructor.
 	OutputManager( int myID, int vbLevel = 0, int printID = 0, ostream& os = cout );
@@ -101,8 +101,8 @@ class OutputManager {
 	ostream& myOS_;	
 };
 
-template<class TYPE>
-OutputManager<TYPE>::OutputManager() :
+template<class ScalarType>
+OutputManager<ScalarType>::OutputManager() :
 	myID_(0),
 	printID_(0),
 	vbLevel_(0),
@@ -111,8 +111,8 @@ OutputManager<TYPE>::OutputManager() :
 {
 }
 
-template<class TYPE>
-OutputManager<TYPE>::OutputManager( const OutputManager<TYPE>& OM ) :
+template<class ScalarType>
+OutputManager<ScalarType>::OutputManager( const OutputManager<ScalarType>& OM ) :
 	myID_(OM.myID_),
 	printID_(OM.printID_),
 	vbLevel_(OM.vbLevel_),
@@ -121,8 +121,8 @@ OutputManager<TYPE>::OutputManager( const OutputManager<TYPE>& OM ) :
 {
 }	 
 
-template<class TYPE>
-OutputManager<TYPE>::OutputManager( int myID, int vbLevel, int printID, ostream& os ) :
+template<class ScalarType>
+OutputManager<ScalarType>::OutputManager( int myID, int vbLevel, int printID, ostream& os ) :
 	myID_(myID),
 	printID_(printID),
 	vbLevel_(vbLevel),

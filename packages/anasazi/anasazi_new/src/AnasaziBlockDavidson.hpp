@@ -57,15 +57,15 @@
 
 namespace Anasazi {
   
-  template <class STYPE, class MV, class OP>
-  class BlockDavidson : public Eigensolver<STYPE,MV,OP> { 
+  template <class ScalarType, class MV, class OP>
+  class BlockDavidson : public Eigensolver<ScalarType,MV,OP> { 
   public:
     //@{ \name Constructor/Destructor.
     
     //! %Anasazi::BlockDavidson constructor.
-    BlockDavidson( const Teuchos::RefCountPtr<Eigenproblem<STYPE,MV,OP> > &problem, 
-		   const Teuchos::RefCountPtr<OutputManager<STYPE> > &om,
-		   const STYPE tol=1.0e-6,
+    BlockDavidson( const Teuchos::RefCountPtr<Eigenproblem<ScalarType,MV,OP> > &problem, 
+		   const Teuchos::RefCountPtr<OutputManager<ScalarType> > &om,
+		   const ScalarType tol=1.0e-6,
 		   const int blockSize = 1,
 		   const int length=25, 
 		   const int maxIter=300 
@@ -111,12 +111,12 @@ namespace Anasazi {
       by the calling routine.
       </ol>
     */
-    Teuchos::RefCountPtr<const MV> GetNativeResiduals( STYPE* normvec ) const { return Teuchos::null; };
+    Teuchos::RefCountPtr<const MV> GetNativeResiduals( ScalarType* normvec ) const { return Teuchos::null; };
     
     /*! \brief Get a constant reference to the current linear problem, 
       which may include a current solution.
     */
-    Eigenproblem<STYPE,MV,OP>& GetEigenproblem() const { return(*_problem); };
+    Eigenproblem<ScalarType,MV,OP>& GetEigenproblem() const { return(*_problem); };
     
     //@}
     
@@ -133,8 +133,8 @@ namespace Anasazi {
     //
     // Classes inputed through constructor that define the eigenproblem to be solved.
     //
-    const Teuchos::RefCountPtr<Eigenproblem<STYPE,MV,OP> > _problem; 
-    const Teuchos::RefCountPtr<OutputManager<STYPE> > _om; 
+    const Teuchos::RefCountPtr<Eigenproblem<ScalarType,MV,OP> > _problem; 
+    const Teuchos::RefCountPtr<OutputManager<ScalarType> > _om; 
     //
     // Information obtained from the eigenproblem
     //
@@ -142,19 +142,19 @@ namespace Anasazi {
     Teuchos::RefCountPtr<OP> _BOp;
     Teuchos::RefCountPtr<OP> _Prec;
     Teuchos::RefCountPtr<MV> _evecs;
-    Teuchos::RefCountPtr<std::vector<STYPE> > _evals;
+    Teuchos::RefCountPtr<std::vector<ScalarType> > _evals;
     const int _nev;  
     //
     // Internal data.
     //
     const int _numBlocks, _maxIter, _blockSize;
-    const STYPE _residual_tolerance;
+    const ScalarType _residual_tolerance;
     int _restartIter, _iter, _dimSearch, _knownEV;
     int _lwork;
     //
     // Internal utilities class required by eigensolver.
     //
-    ModalSolverUtils<STYPE,MV,OP> _MSUtils;
+    ModalSolverUtils<ScalarType,MV,OP> _MSUtils;
     //
     // Internal storage for eigensolver
     //
@@ -162,21 +162,21 @@ namespace Anasazi {
     Teuchos::RefCountPtr<MV> _MXvec;
     Teuchos::RefCountPtr<MV> _KXvec; 
     Teuchos::RefCountPtr<MV> _Rvec;
-    Teuchos::SerialDenseMatrix<int,STYPE> _KKsdm, _Ssdm;
-    std::vector<STYPE> _theta, _normR, _work;
+    Teuchos::SerialDenseMatrix<int,ScalarType> _KKsdm, _Ssdm;
+    std::vector<ScalarType> _theta, _normR, _work, _resids;
 
-    typedef MultiVecTraits<STYPE,MV> MVT;
-    typedef OperatorTraits<STYPE,MV,OP> OPT;
+    typedef MultiVecTraits<ScalarType,MV> MVT;
+    typedef OperatorTraits<ScalarType,MV,OP> OPT;
   };
   //
   // Implementation
   //
   // Note: I should define a copy constructor and overload = because of the use of new
   //
-  template <class STYPE, class MV, class OP>
-  BlockDavidson<STYPE,MV,OP>::BlockDavidson(const Teuchos::RefCountPtr<Eigenproblem<STYPE,MV,OP> > &problem, 
-					    const Teuchos::RefCountPtr<OutputManager<STYPE> > &om,
-					    const STYPE tol,
+  template <class ScalarType, class MV, class OP>
+  BlockDavidson<ScalarType,MV,OP>::BlockDavidson(const Teuchos::RefCountPtr<Eigenproblem<ScalarType,MV,OP> > &problem, 
+					    const Teuchos::RefCountPtr<OutputManager<ScalarType> > &om,
+					    const ScalarType tol,
 					    const int blockSize,
 					    const int numBlocks, 
 					    const int maxIter
@@ -246,14 +246,15 @@ namespace Anasazi {
     //
     _theta.resize( _dimSearch );
     _normR.resize( _blockSize );
+    _resids.resize( _nev );
     //    
     _KKsdm.shape( _dimSearch, _dimSearch );
     _Ssdm.shape( _dimSearch, _dimSearch );
         
   }
 
-  template <class STYPE, class MV, class OP>
-  void BlockDavidson<STYPE,MV,OP>::currentStatus() 
+  template <class ScalarType, class MV, class OP>
+  void BlockDavidson<ScalarType,MV,OP>::currentStatus() 
   {
     int i;
     if (_om->doOutput(-1)) {
@@ -270,17 +271,19 @@ namespace Anasazi {
       cout<<"------------------------------------------------------"<<endl;
       cout<<"Computed Eigenvalues: "<<endl;
       cout<<"------------------------------------------------------"<<endl;
+      cout<<"Eigenvalue\tResidual"<<endl;
+      cout<<"------------------------------------------------------"<<endl;
       if ( _knownEV > 0 ) {
 	for (i=0; i<_knownEV; i++)
-	  cout<<(*_evals)[i]<<endl;
+	  cout<<(*_evals)[i]<<"\t"<<_resids[i]<<endl;
       } else {
 	cout<<"[none computed]"<<endl;
       }
     }
   }
   
-  template <class STYPE, class MV, class OP>
-  void BlockDavidson<STYPE,MV,OP>::solve () 
+  template <class ScalarType, class MV, class OP>
+  void BlockDavidson<ScalarType,MV,OP>::solve () 
   {
     int i, j;
     int info, nb;
@@ -289,10 +292,10 @@ namespace Anasazi {
     bool reStart = false;
     bool criticalExit = false;
     Teuchos::RefCountPtr<MV> Xcurrent, Xprev, Xtotal, Xnext;
-    STYPE one = Teuchos::ScalarTraits<STYPE>::one();
-    STYPE zero = Teuchos::ScalarTraits<STYPE>::zero();
-    Teuchos::BLAS<int,STYPE> blas;
-    Teuchos::LAPACK<int,STYPE> lapack;
+    ScalarType one = Teuchos::ScalarTraits<ScalarType>::one();
+    ScalarType zero = Teuchos::ScalarTraits<ScalarType>::zero();
+    Teuchos::BLAS<int,ScalarType> blas;
+    Teuchos::LAPACK<int,ScalarType> lapack;
     //
     // Determine the maximum number of blocks for this factorization.
     // ( NOTE:  This will be the _numBlocks since we don't know about already converged vectors here )
@@ -381,7 +384,7 @@ namespace Anasazi {
 	for (i=0; i < localSize + _blockSize; i++)
 	  index[i] = _knownEV + i;
 	Xtotal = MVT::CloneView( *_Xvec, &index[0], localSize + _blockSize );
-	Teuchos::SerialDenseMatrix<int,STYPE> subKK( Teuchos::View, _KKsdm, localSize+_blockSize, _blockSize, 0, localSize );
+	Teuchos::SerialDenseMatrix<int,ScalarType> subKK( Teuchos::View, _KKsdm, localSize+_blockSize, _blockSize, 0, localSize );
 	MVT::MvTransMv( one, *Xtotal, *_KXvec, subKK );
 	//
 	// Perform spectral decomposition
@@ -417,7 +420,7 @@ namespace Anasazi {
 	// Update the search space :
 	// KX = Xtotal * S where S is the eigenvectors of the projected problem.
 	//
-	Teuchos::SerialDenseMatrix<int,STYPE> subS( Teuchos::View, _Ssdm, localSize+_blockSize, _blockSize );
+	Teuchos::SerialDenseMatrix<int,ScalarType> subS( Teuchos::View, _Ssdm, localSize+_blockSize, _blockSize );
 	MVT::MvTimesMatAddMv( one, *Xtotal, subS, zero, *_KXvec );
 	//
 	// Apply the mass matrix for the next block
@@ -432,7 +435,7 @@ namespace Anasazi {
 	// Compute the residual :
 	// R = KX - diag(theta)*MX
 	// 
-	Teuchos::SerialDenseMatrix<int,STYPE> D(_blockSize, _blockSize);
+	Teuchos::SerialDenseMatrix<int,ScalarType> D(_blockSize, _blockSize);
 	for (i=0; i<_blockSize; i++ )
 	  D(i,i) = -_theta[i];
 	//
@@ -547,6 +550,7 @@ namespace Anasazi {
 	      index[0] = _knownEV;
 	      MVT::SetBlock( *tmp_KXvec, &index[0], 1, *_evecs );
 	      (*_evals)[_knownEV] = _theta[j];
+	      _resids[_knownEV] = _normR[j];
 	      _knownEV++;
 	    }
 	    if (_knownEV == _nev)
@@ -574,6 +578,7 @@ namespace Anasazi {
 	      MVT::SetBlock( *tmp_KXvec, &index[0], 1, *_Xvec );	      
 	      MVT::SetBlock( *tmp_KXvec, &index[0], 1, *_evecs );	      
 	      (*_evals)[_knownEV] = _theta[j];
+	      _resids[_knownEV] = _normR[j];
 	      _knownEV++;
 	      nFound++;	      
 	    }
@@ -613,8 +618,8 @@ namespace Anasazi {
 	// to move the converged eigenvectors to the front of the spectral
 	// transformation.
 	//
-	STYPE tmp_swap;
-	std::vector<STYPE> tmp_swap_vec(nb*_blockSize);
+	ScalarType tmp_swap;
+	std::vector<ScalarType> tmp_swap_vec(nb*_blockSize);
 	while (firstIndex < nFound) {
 	  for (j=firstIndex; j<_blockSize; j++) {
 	    if (_normR[j] < _residual_tolerance) {
@@ -643,10 +648,10 @@ namespace Anasazi {
 	  }
 	} // while (firstIndex < nFound)
 	//
-	// Copy the converged eigenvalues from "theta" to "evals".
+	// Copy the converged eigenvalues and residuals.
 	//
-	blas.COPY( nFound, &_theta[0], 1, &(*_evals)[0] + _knownEV, 1 ); 
-
+	blas.COPY( nFound, &_theta[0], 1, &(*_evals)[_knownEV], 1 ); 
+	blas.COPY( nFound, &_normR[0], 1, &_resids[_knownEV], 1 );
       } // if (nFound > 0)
       //
       // Define the restarting size
@@ -675,7 +680,7 @@ namespace Anasazi {
 	index[i] = _knownEV + i; 
       Teuchos::RefCountPtr<MV> newX = MVT::CloneView( *_Xvec, &index[0], newCol );
       Teuchos::RefCountPtr<MV> temp_newX = MVT::Clone( *_Xvec, newCol );
-      Teuchos::SerialDenseMatrix<int,STYPE> _Sview( Teuchos::View, _Ssdm, oldCol, newCol );
+      Teuchos::SerialDenseMatrix<int,ScalarType> _Sview( Teuchos::View, _Ssdm, oldCol, newCol );
       MVT::MvTimesMatAddMv( one, *oldX, _Sview, zero, *temp_newX );
       MVT::MvAddMv( one, *temp_newX, zero, *temp_newX, *newX ); 
       
@@ -706,13 +711,13 @@ namespace Anasazi {
     // Sort the eigenvectors
     //
     if ((info==0) && (_knownEV > 0))
-      _MSUtils.sortScalars_Vectors(_knownEV, &(*_evals)[0], _evecs.get());
+      _MSUtils.sortScalars_Vectors(_knownEV, &(*_evals)[0], _evecs.get(), &_resids);
  
   } // end solve()
 
 
-  template <class STYPE, class MV, class OP>
-  void BlockDavidson<STYPE,MV,OP>::accuracyCheck(const MV *X, const MV *MX, const MV *Q) const 
+  template <class ScalarType, class MV, class OP>
+  void BlockDavidson<ScalarType,MV,OP>::accuracyCheck(const MV *X, const MV *MX, const MV *Q) const 
     {
       cout.precision(2);
       cout.setf(ios::scientific, ios::floatfield);

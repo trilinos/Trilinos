@@ -34,66 +34,66 @@
 
 namespace Anasazi {
 
-  template< class TYPE, class MV >
+  template< class ScalarType, class MV >
   struct UndefinedMultiVecTraits
   {
     //! This function should not compile if there is an attempt to instantiate!
-    static inline TYPE notDefined() { return MV::this_type_is_missing_a_specialization(); };
+    static inline ScalarType notDefined() { return MV::this_type_is_missing_a_specialization(); };
   };
   
-  template<class TYPE, class MV>
+  template<class ScalarType, class MV>
   class MultiVecTraits 
   {
   public:
     ///
     static Teuchos::RefCountPtr<MV> Clone( const MV& mv, const int numvecs )
-    { UndefinedMultiVecTraits<TYPE, MV>::notDefined(); return Teuchos::null; }     
+    { UndefinedMultiVecTraits<ScalarType, MV>::notDefined(); return Teuchos::null; }     
     ///
     static Teuchos::RefCountPtr<MV> CloneCopy( const MV& mv )
-    { UndefinedMultiVecTraits<TYPE, MV>::notDefined(); return Teuchos::null; }     
+    { UndefinedMultiVecTraits<ScalarType, MV>::notDefined(); return Teuchos::null; }     
     ///
     static Teuchos::RefCountPtr<MV> CloneCopy( const MV& mv, int index[], int numvecs )
-    { UndefinedMultiVecTraits<TYPE, MV>::notDefined(); return Teuchos::null; }     
+    { UndefinedMultiVecTraits<ScalarType, MV>::notDefined(); return Teuchos::null; }     
     ///
     static Teuchos::RefCountPtr<MV> CloneView( MV& mv, int index[], int numvecs )
-    { UndefinedMultiVecTraits<TYPE, MV>::notDefined(); return Teuchos::null; }     
+    { UndefinedMultiVecTraits<ScalarType, MV>::notDefined(); return Teuchos::null; }     
     ///
     static Teuchos::RefCountPtr<const MV> CloneView( const MV& mv, int index[], int numvecs )
-    { UndefinedMultiVecTraits<TYPE, MV>::notDefined(); return Teuchos::null; }     
+    { UndefinedMultiVecTraits<ScalarType, MV>::notDefined(); return Teuchos::null; }     
     ///
     static int GetVecLength( const MV& mv )
-    { UndefinedMultiVecTraits<TYPE, MV>::notDefined(); return 0; }     
+    { UndefinedMultiVecTraits<ScalarType, MV>::notDefined(); return 0; }     
     ///
     static int GetNumberVecs( const MV& mv )
-    { UndefinedMultiVecTraits<TYPE, MV>::notDefined(); return 0; }     
+    { UndefinedMultiVecTraits<ScalarType, MV>::notDefined(); return 0; }     
     ///
-    static void MvTimesMatAddMv( TYPE alpha, const MV& A, 
-				 const Teuchos::SerialDenseMatrix<int,TYPE>& B, TYPE beta, MV& mv )
-    { UndefinedMultiVecTraits<TYPE, MV>::notDefined(); }     
+    static void MvTimesMatAddMv( ScalarType alpha, const MV& A, 
+				 const Teuchos::SerialDenseMatrix<int,ScalarType>& B, ScalarType beta, MV& mv )
+    { UndefinedMultiVecTraits<ScalarType, MV>::notDefined(); }     
     ///
-    static void MvAddMv( TYPE alpha, const MV& A, TYPE beta, const MV& B, MV& mv )
-    { UndefinedMultiVecTraits<TYPE, MV>::notDefined(); }     
+    static void MvAddMv( ScalarType alpha, const MV& A, ScalarType beta, const MV& B, MV& mv )
+    { UndefinedMultiVecTraits<ScalarType, MV>::notDefined(); }     
     ///
-    static void MvTransMv( TYPE alpha, const MV& A, const MV& mv, Teuchos::SerialDenseMatrix<int,TYPE>& B )
-    { UndefinedMultiVecTraits<TYPE, MV>::notDefined(); }     
+    static void MvTransMv( ScalarType alpha, const MV& A, const MV& mv, Teuchos::SerialDenseMatrix<int,ScalarType>& B )
+    { UndefinedMultiVecTraits<ScalarType, MV>::notDefined(); }     
     ///
-    static void MvDot ( const MV& mv, const MV& A, TYPE b[] ) 
-    { UndefinedMultiVecTraits<TYPE, MV>::notDefined(); }     
+    static void MvDot ( const MV& mv, const MV& A, ScalarType b[] ) 
+    { UndefinedMultiVecTraits<ScalarType, MV>::notDefined(); }     
     ///
-    static void MvNorm( const MV& mv, TYPE *normvec )
-    { UndefinedMultiVecTraits<TYPE, MV>::notDefined(); }     
+    static void MvNorm( const MV& mv, ScalarType *normvec )
+    { UndefinedMultiVecTraits<ScalarType, MV>::notDefined(); }     
     ///
     static void SetBlock( const MV& A, int index[], int numvecs, MV& mv )
-    { UndefinedMultiVecTraits<TYPE, MV>::notDefined(); }     
+    { UndefinedMultiVecTraits<ScalarType, MV>::notDefined(); }     
     ///
     static void MvRandom( MV& mv )
-    { UndefinedMultiVecTraits<TYPE, MV>::notDefined(); }     
+    { UndefinedMultiVecTraits<ScalarType, MV>::notDefined(); }     
     ///
-    static void MvInit( MV& mv, TYPE alpha = Teuchos::ScalarTraits<TYPE>::zero() )
-    { UndefinedMultiVecTraits<TYPE, MV>::notDefined(); }     
+    static void MvInit( MV& mv, ScalarType alpha = Teuchos::ScalarTraits<ScalarType>::zero() )
+    { UndefinedMultiVecTraits<ScalarType, MV>::notDefined(); }     
     ///
     static void MvPrint( const MV& mv, ostream& os )
-    { UndefinedMultiVecTraits<TYPE, MV>::notDefined(); }     
+    { UndefinedMultiVecTraits<ScalarType, MV>::notDefined(); }     
   };
   
 } // namespace Anasazi

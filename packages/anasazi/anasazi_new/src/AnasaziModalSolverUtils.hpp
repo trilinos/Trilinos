@@ -52,14 +52,14 @@
 
 namespace Anasazi {
 
-  template<class STYPE, class MV, class OP>
+  template<class ScalarType, class MV, class OP>
   class ModalSolverUtils 
   {  
   public:
     
     //@{ \name Constructor/Destructor
 
-    ModalSolverUtils( const Teuchos::RefCountPtr<OutputManager<STYPE> > &om ); 
+    ModalSolverUtils( const Teuchos::RefCountPtr<OutputManager<ScalarType> > &om ); 
     
     virtual ~ModalSolverUtils() {};
     
@@ -67,44 +67,44 @@ namespace Anasazi {
     
     //@{ \name Sorting Methods
     
-    int sortScalars(int n, STYPE *y, int *perm = 0) const;
+    int sortScalars(int n, ScalarType *y, int *perm = 0) const;
     
-    int sortScalars_Vectors(int n, STYPE* lambda, MV* Q) const;
+    int sortScalars_Vectors(int n, ScalarType* lambda, MV* Q, std::vector<ScalarType>* resids = 0) const;
 
     //@} 
 
     //@{ \name Eigensolver Projection Methods
 
     int massOrthonormalize(MV &X, MV &MX, const OP *M, const MV &Q, int howMany,
-			   int orthoType = 0, STYPE kappa = 1.5625) const;
+			   int orthoType = 0, ScalarType kappa = 1.5625) const;
     
-    int directSolver(int size, const Teuchos::SerialDenseMatrix<int,STYPE> &KK, 
-		     const Teuchos::SerialDenseMatrix<int,STYPE> *MM,
-		     Teuchos::SerialDenseMatrix<int,STYPE> *EV,
-		     std::vector<STYPE>* theta,
+    int directSolver(int size, const Teuchos::SerialDenseMatrix<int,ScalarType> &KK, 
+		     const Teuchos::SerialDenseMatrix<int,ScalarType> *MM,
+		     Teuchos::SerialDenseMatrix<int,ScalarType> *EV,
+		     std::vector<ScalarType>* theta,
 		     int nev, int esType = 0) const;
 
     //@}
 
     //@{ \name Sanity Checking Methods
 
-    STYPE errorOrthogonality(const MV *X, const MV *R, const OP *M = 0) const;
+    ScalarType errorOrthogonality(const MV *X, const MV *R, const OP *M = 0) const;
     
-    STYPE errorOrthonormality(const MV *X, const OP *M = 0) const;
+    ScalarType errorOrthonormality(const MV *X, const OP *M = 0) const;
     
-    STYPE errorEquality(const MV *X, const MV *MX, const OP *M = 0) const;
+    ScalarType errorEquality(const MV *X, const MV *MX, const OP *M = 0) const;
     
     //@}
     
   private:
 
     // Reference counted pointer to output manager used by eigensolver.
-    Teuchos::RefCountPtr<OutputManager<STYPE> > _om;
+    Teuchos::RefCountPtr<OutputManager<ScalarType> > _om;
 
     //@{ \name Internal Typedefs
 
-    typedef MultiVecTraits<STYPE,MV> MVT;
-    typedef OperatorTraits<STYPE,MV,OP> OPT;
+    typedef MultiVecTraits<ScalarType,MV> MVT;
+    typedef OperatorTraits<ScalarType,MV,OP> OPT;
 
     //@}
   };
@@ -115,8 +115,8 @@ namespace Anasazi {
   //
   //-----------------------------------------------------------------------------  
 
-  template<class STYPE, class MV, class OP>
-  ModalSolverUtils<STYPE, MV, OP>::ModalSolverUtils( const Teuchos::RefCountPtr<OutputManager<STYPE> > &om ) 
+  template<class ScalarType, class MV, class OP>
+  ModalSolverUtils<ScalarType, MV, OP>::ModalSolverUtils( const Teuchos::RefCountPtr<OutputManager<ScalarType> > &om ) 
     : _om(om)
   {}
 
@@ -126,8 +126,8 @@ namespace Anasazi {
   //
   //-----------------------------------------------------------------------------
   
-  template<class STYPE, class MV, class OP>
-  int ModalSolverUtils<STYPE, MV, OP>::sortScalars( int n, STYPE *y, int *perm) const 
+  template<class ScalarType, class MV, class OP>
+  int ModalSolverUtils<ScalarType, MV, OP>::sortScalars( int n, ScalarType *y, int *perm) const 
   {
     // Sort a vector into increasing order of algebraic values
     //
@@ -177,8 +177,9 @@ namespace Anasazi {
     return 0;
   }
   
-  template<class STYPE, class MV, class OP>
-  int ModalSolverUtils<STYPE, MV, OP>::sortScalars_Vectors( int n, STYPE *lambda, MV *Q ) const
+  template<class ScalarType, class MV, class OP>
+  int ModalSolverUtils<ScalarType, MV, OP>::sortScalars_Vectors( int n, ScalarType *lambda, MV *Q, 
+								 std::vector<ScalarType> *resids ) const
   {
     // This routines sorts the scalars (stored in lambda) in ascending order.
     // The associated vectors (stored in Q) are accordingly ordered.
@@ -186,9 +187,9 @@ namespace Anasazi {
     int info = 0;
     int i, j;
     std::vector<int> index(1);
-    STYPE tmp;
-    STYPE one = Teuchos::ScalarTraits<STYPE>::one();
-    STYPE zero = Teuchos::ScalarTraits<STYPE>::zero();
+    ScalarType tmp;
+    ScalarType one = Teuchos::ScalarTraits<ScalarType>::one();
+    ScalarType zero = Teuchos::ScalarTraits<ScalarType>::zero();
     
     if ( n > MVT::GetNumberVecs( *Q ) ) { return -1; }
 
@@ -199,10 +200,19 @@ namespace Anasazi {
 	for (i=igap; i < n; ++i) {
 	  for (j=i-igap; j>=0; j-=igap) {
 	    if (lambda[j] > lambda[j+igap]) {
+
 	      // Swap two scalars
 	      tmp = lambda[j];
 	      lambda[j] = lambda[j+igap];
 	      lambda[j+igap] = tmp;
+
+	      // Swap residuals (if they exist)
+	      if (resids) {
+		tmp = (*resids)[j];
+		(*resids)[j] = (*resids)[j+igap];
+		(*resids)[j+igap] = tmp;
+	      }
+
 	      // Swap corresponding vectors
 	      index[0] = j;
 	      Teuchos::RefCountPtr<MV> tmpQ = MVT::CloneCopy( *Q, &index[0], 1 );
@@ -229,6 +239,13 @@ namespace Anasazi {
 	      tmp = lambda[j];
 	      lambda[j] = lambda[j+igap];
 	      lambda[j+igap] = tmp;
+	      
+	      // Swap residuals (if they exist)
+	      if (resids) {
+		tmp = (*resids)[j];
+		(*resids)[j] = (*resids)[j+igap];
+		(*resids)[j+igap] = tmp;
+	      }	      
 	    } 
 	    else {
 	      break;
@@ -248,9 +265,9 @@ namespace Anasazi {
   //
   //-----------------------------------------------------------------------------
   
-  template<class STYPE, class MV, class OP>
-  int ModalSolverUtils<STYPE, MV, OP>::massOrthonormalize(MV &X, MV &MX, const OP *M, const MV &Q, 
-							  int howMany, int orthoType, STYPE kappa) const
+  template<class ScalarType, class MV, class OP>
+  int ModalSolverUtils<ScalarType, MV, OP>::massOrthonormalize(MV &X, MV &MX, const OP *M, const MV &Q, 
+							       int howMany, int orthoType, ScalarType kappa) const
   {
     // For the inner product defined by the operator M or the identity (M = 0)
     //   -> Orthogonalize X against Q
@@ -292,9 +309,9 @@ namespace Anasazi {
     
     int i;
     int info = 0;
-    STYPE one = Teuchos::ScalarTraits<STYPE>::one();
-    STYPE zero = Teuchos::ScalarTraits<STYPE>::zero();
-    STYPE eps = Teuchos::ScalarTraits<STYPE>::eps();
+    ScalarType one = Teuchos::ScalarTraits<ScalarType>::one();
+    ScalarType zero = Teuchos::ScalarTraits<ScalarType>::zero();
+    ScalarType eps = Teuchos::ScalarTraits<ScalarType>::eps();
     
     // Orthogonalize X against Q
     //timeProj -= MyWatch.WallTime();
@@ -325,12 +342,12 @@ namespace Anasazi {
       // Perform the Gram-Schmidt transformation for a block of vectors
       
       // Compute the initial M-norms
-      std::vector<STYPE> oldDot( xc );
+      std::vector<ScalarType> oldDot( xc );
       MVT::MvDot( *XX, *MXX, &oldDot[0] );
       
       // Define the product Q^T * (M*X)
       // Multiply Q' with MX
-      Teuchos::SerialDenseMatrix<int,STYPE> qTmx( qc, xc );
+      Teuchos::SerialDenseMatrix<int,ScalarType> qTmx( qc, xc );
       MVT::MvTransMv( one, Q, MX, qTmx );
       
       // Multiply by Q and substract the result in X
@@ -355,7 +372,7 @@ namespace Anasazi {
       } // if (M)
       
       // Compute new M-norms
-      std::vector<STYPE> newDot(xc);
+      std::vector<ScalarType> newDot(xc);
       MVT::MvDot( *XX, *MXX, &newDot[0] );
       
       int j;
@@ -409,7 +426,7 @@ namespace Anasazi {
       int mxc = (M) ? MVT::GetNumberVecs( MX ) : xc;
 
       std::vector<int> index( 1 );      
-      std::vector<STYPE> oldDot( 1 ), newDot( 1 );
+      std::vector<ScalarType> oldDot( 1 ), newDot( 1 );
 
       for (j = 0; j < howMany; ++j) {
 	
@@ -450,7 +467,7 @@ namespace Anasazi {
 	} 
 
 	// Make storage for these Gram-Schmidt iterations.
-	Teuchos::SerialDenseMatrix<int,STYPE> product( numX, 1 );
+	Teuchos::SerialDenseMatrix<int,ScalarType> product( numX, 1 );
 
 	int numTrials;
 	bool rankDef = true;
@@ -523,9 +540,9 @@ namespace Anasazi {
 	  MVT::MvDot( *Xj, *oldMXj, &newDot[0] );
 	  
 	  if (newDot[0] > oldDot[0]*eps*eps) {
-	    MVT::MvAddMv( one/Teuchos::ScalarTraits<STYPE>::squareroot(newDot[0]), *Xj, zero, *Xj, *Xj );
+	    MVT::MvAddMv( one/Teuchos::ScalarTraits<ScalarType>::squareroot(newDot[0]), *Xj, zero, *Xj, *Xj );
 	    if (M)
-	      MVT::MvAddMv( one/Teuchos::ScalarTraits<STYPE>::squareroot(newDot[0]), *MXj, zero, *MXj, *MXj );
+	      MVT::MvAddMv( one/Teuchos::ScalarTraits<ScalarType>::squareroot(newDot[0]), *MXj, zero, *MXj, *MXj );
 	    rankDef = false;
 	    break;
 	  }
@@ -561,12 +578,12 @@ namespace Anasazi {
     
   }
   
-  template<class STYPE, class MV, class OP>
-  int ModalSolverUtils<STYPE, MV, OP>::directSolver(int size, const Teuchos::SerialDenseMatrix<int,STYPE> &KK, 
-						    const Teuchos::SerialDenseMatrix<int,STYPE> *MM,
-						    Teuchos::SerialDenseMatrix<int,STYPE>* EV,
-						    std::vector<STYPE>* theta,
-						    int nev, int esType) const
+  template<class ScalarType, class MV, class OP>
+  int ModalSolverUtils<ScalarType, MV, OP>::directSolver(int size, const Teuchos::SerialDenseMatrix<int,ScalarType> &KK, 
+							 const Teuchos::SerialDenseMatrix<int,ScalarType> *MM,
+							 Teuchos::SerialDenseMatrix<int,ScalarType>* EV,
+							 std::vector<ScalarType>* theta,
+							 int nev, int esType) const
   {
     // Routine for computing the first NEV generalized eigenpairs of the symmetric pencil (KK, MM)
     //
@@ -608,8 +625,8 @@ namespace Anasazi {
     // Define local arrays
 
     // Create blas/lapack objects.
-    Teuchos::LAPACK<int,STYPE> lapack;
-    Teuchos::BLAS<int,STYPE> blas;
+    Teuchos::LAPACK<int,ScalarType> lapack;
+    Teuchos::BLAS<int,ScalarType> blas;
     
     int i, j;
     int rank = 0;
@@ -619,16 +636,16 @@ namespace Anasazi {
     std::string lapack_opts = "u";
     int NB = 5 + lapack.ILAENV(1, lapack_name, lapack_opts, size, -1, -1, -1);
     int lwork = size*NB;
-    std::vector<STYPE> work(lwork);
-    std::vector<STYPE> tt( size );
+    std::vector<ScalarType> work(lwork);
+    std::vector<ScalarType> tt( size );
     
-    //  STYPE tol = sqrt(eps);
-    STYPE tol = 1e-12;
-    STYPE zero = Teuchos::ScalarTraits<STYPE>::zero();
-    STYPE one = Teuchos::ScalarTraits<STYPE>::one();
+    //  ScalarType tol = sqrt(eps);
+    ScalarType tol = 1e-12;
+    ScalarType zero = Teuchos::ScalarTraits<ScalarType>::zero();
+    ScalarType one = Teuchos::ScalarTraits<ScalarType>::one();
 
-    Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,STYPE> > KKcopy, MMcopy;
-    Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,STYPE> > U;
+    Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> > KKcopy, MMcopy;
+    Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> > U;
  
     switch (esType) {
       
@@ -639,12 +656,12 @@ namespace Anasazi {
       //
       for (rank = size; rank > 0; --rank) {
 
-	U = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,STYPE>(size,size) );      
+	U = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>(size,size) );      
 	//
 	// Copy KK & MM
 	//
-	KKcopy = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,STYPE>( Teuchos::Copy, KK, rank, rank ) );
-	MMcopy = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,STYPE>( Teuchos::Copy, *MM, rank, rank ) );
+	KKcopy = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>( Teuchos::Copy, KK, rank, rank ) );
+	MMcopy = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>( Teuchos::Copy, *MM, rank, rank ) );
 	//
 	// Solve the generalized eigenproblem with LAPACK
 	//
@@ -671,7 +688,7 @@ namespace Anasazi {
 	// Check the quality of eigenvectors
 	// ( using mass-orthonormality )
 	//
-	Teuchos::SerialDenseMatrix<int,STYPE> MMcopy2( Teuchos::Copy, *MM, size, size );	  
+	Teuchos::SerialDenseMatrix<int,ScalarType> MMcopy2( Teuchos::Copy, *MM, size, size );	  
 	for (i = 0; i < size; ++i) {
 	  for (j = 0; j < i; ++j)
 	    MMcopy2(i,j) = (*MM)(j,i);
@@ -680,16 +697,16 @@ namespace Anasazi {
 		  KKcopy->values(), KKcopy->stride(), zero, U->values(), U->stride());
 	blas.GEMM(Teuchos::TRANS, Teuchos::NO_TRANS, rank, rank, size, one, KKcopy->values(), KKcopy->stride(), 
 		  U->values(), U->stride(), zero, MMcopy2.values(), MMcopy2.stride());
-	STYPE maxNorm = zero;
-	STYPE maxOrth = zero;
+	ScalarType maxNorm = zero;
+	ScalarType maxOrth = zero;
 	for (i = 0; i < rank; ++i) {
 	  for (j = i; j < rank; ++j) {
 	    if (j == i)
-	      maxNorm = (Teuchos::ScalarTraits<STYPE>::magnitude(MMcopy2(i,j)-one) > maxNorm) 
-		? Teuchos::ScalarTraits<STYPE>::magnitude(MMcopy2(i,j)-one) : maxNorm;	    
+	      maxNorm = (Teuchos::ScalarTraits<ScalarType>::magnitude(MMcopy2(i,j)-one) > maxNorm) 
+		? Teuchos::ScalarTraits<ScalarType>::magnitude(MMcopy2(i,j)-one) : maxNorm;	    
 	    else 
-	      maxOrth = (Teuchos::ScalarTraits<STYPE>::magnitude(MMcopy2(i,j)) > maxOrth)
-		? Teuchos::ScalarTraits<STYPE>::magnitude(MMcopy2(i,j)) : maxOrth;
+	      maxOrth = (Teuchos::ScalarTraits<ScalarType>::magnitude(MMcopy2(i,j)) > maxOrth)
+		? Teuchos::ScalarTraits<ScalarType>::magnitude(MMcopy2(i,j)) : maxOrth;
 	  }
 	}
 	/*        if (verbose > 4) {
@@ -722,8 +739,8 @@ namespace Anasazi {
       //
       // Copy KK & MM
       //
-      KKcopy = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,STYPE>( Teuchos::Copy, KK, size, size ) );
-      MMcopy = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,STYPE>( Teuchos::Copy, *MM, size, size ) );
+      KKcopy = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>( Teuchos::Copy, KK, size, size ) );
+      MMcopy = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>( Teuchos::Copy, *MM, size, size ) );
       //
       // Solve the generalized eigenproblem with LAPACK
       //
@@ -769,7 +786,7 @@ namespace Anasazi {
       //
       // Copy KK
       //
-      KKcopy = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,STYPE>( Teuchos::Copy, KK, size, size ) );
+      KKcopy = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>( Teuchos::Copy, KK, size, size ) );
       //
       // Solve the generalized eigenproblem with LAPACK
       //
@@ -811,13 +828,13 @@ namespace Anasazi {
   //
   //-----------------------------------------------------------------------------
 
-  template<class STYPE, class MV, class OP>
-  STYPE ModalSolverUtils<STYPE, MV, OP>::errorOrthogonality(const MV *X, const MV *R, 
-							    const OP *M) const
+  template<class ScalarType, class MV, class OP>
+  ScalarType ModalSolverUtils<ScalarType, MV, OP>::errorOrthogonality(const MV *X, const MV *R, 
+								      const OP *M) const
   {
     // Return the maximum value of R_i^T * M * X_j / || MR_i || || X_j ||
     // When M is not specified, the identity is used.
-    STYPE maxDot = Teuchos::ScalarTraits<STYPE>::zero();
+    ScalarType maxDot = Teuchos::ScalarTraits<ScalarType>::zero();
     
     int xc = (X) ? MVT::GetNumberVecs( *X ) : 0;
     int rc = (R) ? MVT::GetNumberVecs( *R ) : 0;
@@ -827,8 +844,8 @@ namespace Anasazi {
     
     int i, j;
     Teuchos::RefCountPtr<MV> MR;
-    std::vector<STYPE> normMR( rc );
-    std::vector<STYPE> normX( xc );
+    std::vector<ScalarType> normMR( rc );
+    std::vector<ScalarType> normX( xc );
     if (M) {
       MR = MVT::Clone( *R, rc );
       OPT::Apply( *M, *R, *MR );
@@ -839,12 +856,12 @@ namespace Anasazi {
     MVT::MvNorm( *MR, &normMR[0] );
     MVT::MvNorm( *X, &normX[0] );
 
-    STYPE dot = Teuchos::ScalarTraits<STYPE>::zero();
-    Teuchos::SerialDenseMatrix<int, STYPE> xTMr( xc, rc );
+    ScalarType dot = Teuchos::ScalarTraits<ScalarType>::zero();
+    Teuchos::SerialDenseMatrix<int, ScalarType> xTMr( xc, rc );
     MVT::MvTransMv( 1.0, *X, *MR, xTMr );    
     for (i = 0; i < xc; ++i) {
       for (j = 0; j < rc; ++j) {
-	dot = Teuchos::ScalarTraits<STYPE>::magnitude(xTMr(i,j))/(normMR[j]*normX[i]);
+	dot = Teuchos::ScalarTraits<ScalarType>::magnitude(xTMr(i,j))/(normMR[j]*normX[i]);
 	maxDot = (dot > maxDot) ? dot : maxDot;
       }
     }
@@ -853,13 +870,13 @@ namespace Anasazi {
     
   }
   
-  template<class STYPE, class MV, class OP>
-  STYPE ModalSolverUtils<STYPE, MV, OP>::errorOrthonormality(const MV *X, const OP *M) const
+  template<class ScalarType, class MV, class OP>
+  ScalarType ModalSolverUtils<ScalarType, MV, OP>::errorOrthonormality(const MV *X, const OP *M) const
   {
     // Return the maximum coefficient of the matrix X^T * M * X - I
     // When M is not specified, the identity is used.
-    STYPE maxDot = Teuchos::ScalarTraits<STYPE>::zero();
-    STYPE one = Teuchos::ScalarTraits<STYPE>::one();
+    ScalarType maxDot = Teuchos::ScalarTraits<ScalarType>::zero();
+    ScalarType one = Teuchos::ScalarTraits<ScalarType>::one();
     
     int xc = (X) ? MVT::GetNumberVecs( *X ) : 0;
     if (xc == 0)
@@ -867,7 +884,7 @@ namespace Anasazi {
     
     int i, j;
     std::vector<int> index( 1 );
-    std::vector<STYPE> dot( 1 );
+    std::vector<ScalarType> dot( 1 );
     Teuchos::RefCountPtr<MV> MXi;
     Teuchos::RefCountPtr<const MV> Xi;
 
@@ -896,15 +913,15 @@ namespace Anasazi {
     return maxDot;    
   }
   
-  template<class STYPE, class MV, class OP>
-  STYPE ModalSolverUtils<STYPE, MV, OP>::errorEquality(const MV *X, const MV *MX, 
-						       const OP *M) const
+  template<class ScalarType, class MV, class OP>
+  ScalarType ModalSolverUtils<ScalarType, MV, OP>::errorEquality(const MV *X, const MV *MX, 
+								 const OP *M) const
   {
     // Return the maximum coefficient of the matrix M * X - MX
     // scaled by the maximum coefficient of MX.
     // When M is not specified, the identity is used.
     
-    STYPE maxDiff = Teuchos::ScalarTraits<STYPE>::zero();
+    ScalarType maxDiff = Teuchos::ScalarTraits<ScalarType>::zero();
     
     int xc = (X) ? MVT::GetNumberVecs( *X ) : 0;
     int mxc = (MX) ? MVT::GetNumberVecs( *MX ) : 0;
@@ -913,8 +930,8 @@ namespace Anasazi {
       return maxDiff;
     
     int i;
-    STYPE maxCoeffX = Teuchos::ScalarTraits<STYPE>::zero();
-    std::vector<STYPE> tmp( xc );
+    ScalarType maxCoeffX = Teuchos::ScalarTraits<ScalarType>::zero();
+    std::vector<ScalarType> tmp( xc );
     MVT::MvNorm( *MX, &tmp[0] );
 
     for (i = 0; i < xc; ++i) {

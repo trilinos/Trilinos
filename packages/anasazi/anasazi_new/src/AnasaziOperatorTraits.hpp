@@ -39,14 +39,14 @@
 
 namespace Anasazi {
 
-  template< class TYPE, class MV, class OP >
+  template< class ScalarType, class MV, class OP >
   struct UndefinedOperatorTraits
   {
     //! This function should not compile if there is an attempt to instantiate!
     static inline ReturnType notDefined() { return OP::this_type_is_missing_a_specialization(); };
   };
   
-  template <class TYPE, class MV, class OP>
+  template <class ScalarType, class MV, class OP>
   class OperatorTraits 
   {
   public:
@@ -55,7 +55,7 @@ namespace Anasazi {
     static ReturnType Apply ( const OP& Op, 
 			      const MV& x, 
 			      MV& y )
-    { return UndefinedOperatorTraits<TYPE, MV, OP>::notDefined(); };
+    { return UndefinedOperatorTraits<ScalarType, MV, OP>::notDefined(); };
     
   };
   
