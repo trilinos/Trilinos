@@ -3,6 +3,8 @@
 // capabilities of ML
 /////////////////////////////////////////////////////////////
 
+#if defined(HAVE_ML_EPETRA)
+
 #include "ml_include.h"
 #include "Epetra_ConfigDefs.h"
 
@@ -209,3 +211,27 @@ int main(int argc, char *argv[]) {
   return 0;
 
 }
+#else
+
+#include <stdlib.h>
+#include <stdio.h>
+#ifdef HAVE_MPI
+#include "mpi.h"
+#endif
+
+int main(int argc, char *argv[])
+{
+#ifdef HAVE_MPI
+  MPI_Init(&argc,&argv);
+#endif
+
+  puts("Please configure ML with --enable-epetra ");
+
+#ifdef HAVE_MPI
+  MPI_Finalize();
+#endif
+  
+  return 0;
+}
+
+#endif /* #if defined(HAVE_ML_EPETRA) */
