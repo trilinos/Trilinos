@@ -24,6 +24,14 @@ void Trilinos_Util_ReadHb2Epetra(char *data_file,
 				 Epetra_Vector *& b,
 				 Epetra_Vector *&xexact);
 
+void Trilinos_Util_ReadHpc2Epetra(char *data_file,
+				 const Epetra_Comm  &comm, 
+				 Epetra_Map *& map, 
+				 Epetra_CrsMatrix *& A, 
+				 Epetra_Vector *& x, 
+				 Epetra_Vector *& b,
+				 Epetra_Vector *&xexact);
+
 void Trilinos_Util_distrib_msr_matrix(Epetra_Comm & Comm,
 	      int *N_global, int *n_nonzeros, 
            int *N_update, int **update, 
