@@ -57,6 +57,8 @@ int gl_sbuf = 3;
 /******************************************************************************/
 /******************************************************************************/
 int the_proc_name = -1;
+MPI_Comm Comm = MPI_COMM_WORLD;
+
 
 void get_parallel_info(int *proc, int *nprocs, int *dim)
 
@@ -64,8 +66,8 @@ void get_parallel_info(int *proc, int *nprocs, int *dim)
 
   /* local variables */
 
-  MPI_Comm_size(MPI_COMM_WORLD, nprocs);
-  MPI_Comm_rank(MPI_COMM_WORLD, proc);
+  MPI_Comm_size(Comm, nprocs);
+  MPI_Comm_rank(Comm, proc);
   *dim = 0;
 the_proc_name = *proc;
 
@@ -90,11 +92,11 @@ int md_read(char *buf, int bytes, int *source, int *type, int *flag)
   if (*source == -1) *source = MPI_ANY_SOURCE;
 
   if (bytes == 0) {
-    err = MPI_Recv(&gl_rbuf, 1, MPI_BYTE, *source, *type, MPI_COMM_WORLD,
+    err = MPI_Recv(&gl_rbuf, 1, MPI_BYTE, *source, *type, Comm,
                    &status);
   }
   else {
-    err = MPI_Recv(buf, bytes, MPI_BYTE, *source, *type, MPI_COMM_WORLD,
+    err = MPI_Recv(buf, bytes, MPI_BYTE, *source, *type, Comm,
                    &status);
   }
 
@@ -120,10 +122,10 @@ int md_write(char *buf, int bytes, int dest, int type, int *flag)
   int err;
 
   if (bytes == 0) {
-    err = MPI_Send(&gl_sbuf, 1, MPI_BYTE, dest, type, MPI_COMM_WORLD);
+    err = MPI_Send(&gl_sbuf, 1, MPI_BYTE, dest, type, Comm);
   }
   else {
-    err = MPI_Send(buf, bytes, MPI_BYTE, dest, type, MPI_COMM_WORLD);
+    err = MPI_Send(buf, bytes, MPI_BYTE, dest, type, Comm);
   }
 
   if (err != 0) (void) fprintf(stderr, "MPI_Send error = %d\n", err);
@@ -173,11 +175,11 @@ int md_wrap_iread(void *buf, int bytes, int *source, int *type,
   if (*source == -1) *source = MPI_ANY_SOURCE;
 
   if (bytes == 0) {
-    err = MPI_Irecv(&gl_rbuf, 1, MPI_BYTE, *source, *type, MPI_COMM_WORLD,
+    err = MPI_Irecv(&gl_rbuf, 1, MPI_BYTE, *source, *type, Comm,
                     request);
   }
   else {
-    err = MPI_Irecv(buf, bytes, MPI_BYTE, *source, *type, MPI_COMM_WORLD,
+    err = MPI_Irecv(buf, bytes, MPI_BYTE, *source, *type, Comm,
                     request);
   }
 
@@ -222,10 +224,10 @@ int md_wrap_write(void *buf, int bytes, int dest, int type, int *flag)
   int err = 0;
 
   if (bytes == 0) {
-    err = MPI_Send(&gl_sbuf, 1, MPI_BYTE, dest, type, MPI_COMM_WORLD);
+    err = MPI_Send(&gl_sbuf, 1, MPI_BYTE, dest, type, Comm);
   }
   else {
-    err = MPI_Send(buf, bytes, MPI_BYTE, dest, type, MPI_COMM_WORLD);
+    err = MPI_Send(buf, bytes, MPI_BYTE, dest, type, Comm);
   }
 
   return err;
@@ -323,11 +325,11 @@ int md_wrap_iwrite(void *buf, int bytes, int dest, int type, int *flag,
   int err = 0;
 
   if (bytes == 0) {
-    err = MPI_Isend(&gl_sbuf, 1, MPI_BYTE, dest, type, MPI_COMM_WORLD,
+    err = MPI_Isend(&gl_sbuf, 1, MPI_BYTE, dest, type, Comm,
                   request);
   }
   else {
-    err = MPI_Isend(buf, bytes, MPI_BYTE, dest, type, MPI_COMM_WORLD,
+    err = MPI_Isend(buf, bytes, MPI_BYTE, dest, type, Comm,
                   request);
   }
 
@@ -349,6 +351,8 @@ void parallel_info(int *proc,int *nprocs,int *dim, MPI_Comm comm)
   MPI_Comm_rank(comm, proc);
   *dim = 0;
 the_proc_name = *proc;
+
+  Comm = comm;
 
 } /* get_parallel_info */
 /******************************************************************************/
