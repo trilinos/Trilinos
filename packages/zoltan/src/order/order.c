@@ -32,6 +32,9 @@
 /**********  parameters structure for ordering **********/
 static PARAM_VARS Order_params[] = {
         { "ORDER_METHOD", NULL, "STRING" },
+        { "ORDER_TYPE", NULL, "STRING" },
+        { "ORDER_START_INDEX", NULL, "INT" },
+        { "REORDER", NULL, "BOOLEAN" },
         { "USE_ORDER_INFO", NULL, "BOOLEAN" },
         { NULL, NULL, NULL } };
 
@@ -39,10 +42,12 @@ int Zoltan_Order(
   ZZ *zz,               /* Zoltan structure */
   int *num_gid_entries, /* # of entries for a global id */
   int *num_lid_entries, /* # of entries for a local id */
-  ZOLTAN_ID_PTR gids,   /* Ordered list of global ids (local to this proc) */
+  ZOLTAN_ID_PTR gids,   /* List of global ids (local to this proc) */
                         /* The application must allocate enough space */
-  ZOLTAN_ID_PTR lids,   /* Ordered list of local ids (local to this proc) */
+  ZOLTAN_ID_PTR lids,   /* List of local ids (local to this proc) */
                         /* The application must allocate enough space */
+  int *rank,            /* rank[i] is the rank of gids[i] */
+  int *iperm,           /* inverse permutation of rank */
   ZOS *order_info	/* Method-specific ordering info */
 )
 {
@@ -61,10 +66,12 @@ int Zoltan_Order(
  */
 
   char *yo = "Zoltan_Order";
-  int error, use_order_info; 
+  int ierr, return_args, use_order_info; 
+  int reorder, start_index;
+  int *vtxdist;
   double start_time, end_time;
   double order_time[2] = {0.0,0.0};
-  char msg[256], method[256];
+  char msg[256], method[80], order_type[80];
   int comm[2],gcomm[2]; 
   ZOLTAN_ORDER_FN *Order_fn;
 
@@ -98,14 +105,20 @@ int Zoltan_Order(
   }
 
   /*
-   *  Get ordering method from parameter list.
+   *  Get ordering options from parameter list.
    */
 
   /* Set default parameter values */
   use_order_info = 0;
   strcpy(method, "PARMETIS");
+  strcpy(order_type, "GLOBAL");
+  start_index = 0;
+  reorder = 0;
 
   Zoltan_Bind_Param(Order_params, "ORDER_METHOD", (void *) &method);
+  Zoltan_Bind_Param(Order_params, "ORDER_TYPE",   (void *) order_type);
+  Zoltan_Bind_Param(Order_params, "ORDER_START_INDEX", (void *) &start_index);
+  Zoltan_Bind_Param(Order_params, "REORDER",      (void *) &reorder);
   Zoltan_Bind_Param(Order_params, "USE_ORDER_INFO", (void *) &use_order_info);
 
   Zoltan_Assign_Param_Vals(zz->Params, Order_params, zz->Debug_Level, 
@@ -140,11 +153,11 @@ int Zoltan_Order(
    *  Construct the heterogenous machine description.
    */
 
-  error = Zoltan_Build_Machine_Desc(zz);
+  ierr = Zoltan_Build_Machine_Desc(zz);
 
-  if (error == ZOLTAN_FATAL){
+  if (ierr == ZOLTAN_FATAL){
     ZOLTAN_TRACE_EXIT(zz, yo);
-    return (error);
+    return (ierr);
   }
 
   ZOLTAN_TRACE_DETAIL(zz, yo, "Done machine description");
@@ -153,18 +166,36 @@ int Zoltan_Order(
    * Call the actual ordering function.
    */
 
-  error = (*Order_fn)(zz, gids, lids, order_info);
+  ierr = (*Order_fn)(zz, gids, lids, rank, iperm, &return_args, order_info);
 
-  if (error == ZOLTAN_FATAL){
-    sprintf(msg, "Ordering routine returned error code %d.", error);
-    ZOLTAN_PRINT_ERROR(zz->Proc, yo, msg);
-    ZOLTAN_TRACE_EXIT(zz, yo);
-    return (error);
+  if (ierr) {
+    sprintf(msg, "Ordering routine returned error code %d.", ierr);
+    if (ierr == ZOLTAN_FATAL){
+      ZOLTAN_PRINT_ERROR(zz->Proc, yo, msg);
+      ZOLTAN_TRACE_EXIT(zz, yo);
+      return (ierr);
+    }
+    else
+      ZOLTAN_PRINT_WARN(zz->Proc, yo, msg);
   }
-  else if (error){
-    sprintf(msg, "Ordering routine returned error code %d.", error);
-    ZOLTAN_PRINT_WARN(zz->Proc, yo, msg);
+
+  /* Compute inverse permutation if necessary */
+  ierr = Zoltan_Get_Distribution(zz, &vtxdist);
+  if (ierr){
+    /* Error */
+    ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error returned from Zoltan_Get_Distribution.\n");
+    return (ierr);
   }
+
+  if (!(return_args & RETURN_RANK)){
+    /* Compute rank from iperm */
+    Zoltan_Inverse_Perm(zz, iperm, rank, vtxdist, order_type, start_index);
+  }
+  else if (!(return_args & RETURN_IPERM)){
+    /* Compute iperm from rank */
+    Zoltan_Inverse_Perm(zz, rank, iperm, vtxdist, order_type, start_index);
+  }
+  ZOLTAN_FREE(&vtxdist);
 
   ZOLTAN_TRACE_DETAIL(zz, yo, "Done ordering");
 
@@ -175,9 +206,14 @@ int Zoltan_Order(
     int i, nobjs;
     nobjs = zz->Get_Num_Obj(zz->Get_Num_Obj_Data, &i);
     Zoltan_Print_Sync_Start(zz->Communicator, TRUE);
-    printf("ZOLTAN: GID ordering on Proc %d\n", zz->Proc);
+    printf("ZOLTAN: rank for ordering on Proc %d\n", zz->Proc);
     for (i = 0; i < nobjs; i++) {
-      ZOLTAN_PRINT_GID(zz, &gids[i*(zz->Num_GID)]);
+      printf("%3d ", rank[i]);
+    }
+    printf("\n");
+    printf("ZOLTAN: inverse permutation on Proc %d\n", zz->Proc);
+    for (i = 0; i < nobjs; i++) {
+      printf("%3d ", iperm[i]);
     }
     printf("\n");
     Zoltan_Print_Sync_End(zz->Communicator, TRUE);
@@ -194,8 +230,8 @@ int Zoltan_Order(
   }
 
   ZOLTAN_TRACE_EXIT(zz, yo);
-  if (error)
-    return (error);
+  if (ierr)
+    return (ierr);
   else
     return (ZOLTAN_OK);
 }

@@ -14,6 +14,10 @@
 #include "zz_const.h"
 #include "order_const.h"
 
+/* MPI tags */
+#define TAG1 32111
+#define TAG2 32112
+
 /*****************************************************************************/
 /*****************************************************************************/
 /*****************************************************************************/
@@ -34,7 +38,7 @@
  */
 int Zoltan_Get_Distribution(ZZ *zz, int **vtxdist)
 {
-  int i, num_obj;
+  int ierr, num_obj;
   char *yo = "Zoltan_Get_Distribution";
 
   num_obj = zz->Get_Num_Obj(zz->Get_Num_Obj_Data, &ierr);
@@ -70,15 +74,19 @@ int Zoltan_Inverse_Perm(
   int *perm, 		/* Input: Permutation to invert. */
   int *inv_perm, 	/* Output: Inverse permutation of perm. */
   int *vtxdist, 	/* Input: Distribution of the vectors. */
-  int order_type, 	/* Input: Local or global ordering? */
+  char *order_type, 	/* Input: Local or global ordering? */
   int start_index	/* Input: Do permutations start with 0 or 1? */
   )
 {
-  int i, num_obj, offset;
+  int i, ierr, num_obj, nrecv, offset;
   int *proclist, *sendlist, *recvlist;
   ZOLTAN_COMM_OBJ *comm_plan;
   char *yo = "Zoltan_Inverse_Perm";
   static int owner();
+
+  ierr = ZOLTAN_OK;
+  proclist = sendlist = recvlist = NULL;
+  comm_plan = NULL;
 
   /* num_obj = local number of objects (elements in the perm vectors) */
   num_obj = vtxdist[(zz->Proc)+1] - vtxdist[zz->Proc];
@@ -92,12 +100,12 @@ int Zoltan_Inverse_Perm(
       perm[i] -= start_index;
   }
 
-  if (order_type == ZOLTAN_LOCAL){
+  if (strcmp(order_type, "LOCAL")==0){
     /* Local inverse */
     for (i=0; i<num_obj; i++)
       inv_perm[perm[i]] = i;
   }
-  else if (order_type == ZOLTAN_GLOBAL){
+  else if (strcmp(order_type, "GLOBAL")==0){
     /* Global inverse; use Zoltan Comm package */
     proclist = (int *) ZOLTAN_MALLOC (5*num_obj*sizeof(int));
     sendlist = &proclist[num_obj];
@@ -106,29 +114,38 @@ int Zoltan_Inverse_Perm(
     /* Send pairs of (i, perm[i]) to other procs */
     offset = vtxdist[zz->Proc];
     for (i=0; i<num_obj; i++){
-      sendlist[i] = perm[i];
-      proclist[2*i] = offset+i;
-      proclist[2*i+1] = owner(vtxdist, zz->Num_Proc, perm[i]);
+      sendlist[2*i] = offset+i;
+      sendlist[2*i+1] = perm[i];
+      proclist[i] = owner(vtxdist, zz->Num_Proc, perm[i]);
     }
-    ierr = Zoltan_Comm_Create(&comm_plan, num_obj, proclist, comm, TAG1, &nrecv);
+    ierr = Zoltan_Comm_Create(&comm_plan, num_obj, proclist, 
+             zz->Communicator, TAG1, &nrecv);
+    if (ierr){
+      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error in Zoltan_Comm_Create");
+      goto error;
+    }
     if (nrecv != num_obj){
       /* This should never happen. */
       ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Internal error: nrecv != num_obj. Permutation may be invalid.");
+      ierr = ZOLTAN_FATAL;
+      goto error;
     }
     /* Do the communication. */
     ierr = Zoltan_Comm_Do(comm_plan, TAG2, (char *)sendlist, 2*sizeof(int), (char *) recvlist);
+    if (ierr){
+      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error in Zoltan_Comm_Do");
+      goto error;
+    }
 
     /* Permute data locally. */
     for (i=0; i<num_obj; i++){
       /* inv_perm[perm[i]] = i; */
       inv_perm[recvlist[2*i+1]-offset] = recvlist[2*i];
     }
-    /* Free the comm_plan, proclist, sendlist, recvlist. */
-    Zoltan_Comm_Destroy( &comm_plan);
-    ZOLTAN_FREE(proclist);
   }
   else {
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Unknown order_type.");
+    goto error;
   }
 
   /* Convert permutation vectors back to their right start_index */
@@ -139,7 +156,12 @@ int Zoltan_Inverse_Perm(
     }
   }
 
-  return ZOLTAN_OK;
+error:
+  /* Free the comm_plan, proclist, sendlist, recvlist. */
+  if (comm_plan) Zoltan_Comm_Destroy( &comm_plan);
+  if (proclist ) ZOLTAN_FREE(&proclist);
+
+  return (ierr);
 }
 
 

@@ -55,7 +55,7 @@ static PARAM_VARS Graph_params[] = {
 static int Zoltan_ParMetis_Jostle(ZZ *zz, int *num_imp, ZOLTAN_ID_PTR *imp_gids,
   ZOLTAN_ID_PTR *imp_lids, int **imp_procs, int *num_exp, ZOLTAN_ID_PTR *exp_gids,
   ZOLTAN_ID_PTR *exp_lids, int **exp_procs, char *alg, int  *options, 
-  float *itr, ZOS *order_info);
+  float *itr, int *rank, int *iperm, ZOS *order_info);
 static int Zoltan_ParMetis_Shared(
   ZZ *zz,
   int *num_imp,
@@ -66,6 +66,8 @@ static int Zoltan_ParMetis_Shared(
   ZOLTAN_ID_PTR *exp_gids,
   ZOLTAN_ID_PTR *exp_lids,
   int **exp_procs,
+  int *rank,
+  int *iperm,
   ZOS *order_info
 );
 static int scale_round_weights(float *fwgts, idxtype *iwgts, int n, int dim, 
@@ -95,7 +97,8 @@ int Zoltan_ParMetis(
 )
 {
   return Zoltan_ParMetis_Shared(zz, num_imp, imp_gids, imp_lids,
-         imp_procs, num_exp, exp_gids, exp_lids, exp_procs, NULL);
+         imp_procs, num_exp, exp_gids, exp_lids, exp_procs, 
+         NULL, NULL, NULL);
 }
 
 /* Zoltan_ParMetis_Shared is also called by Zoltan_ParMetis_Order */
@@ -110,6 +113,8 @@ static int Zoltan_ParMetis_Shared(
   ZOLTAN_ID_PTR *exp_gids,  /* global ids of objects to be exported */
   ZOLTAN_ID_PTR *exp_lids,  /* local  ids of objects to be exported */
   int **exp_procs,      /* list of processors to export to */
+  int *rank,            /* rank[i] is the rank of gids[i] */
+  int *iperm,           /* inverse permutation of rank */
   ZOS *order_info	/* ordering info */
 )
 {
@@ -195,7 +200,7 @@ static int Zoltan_ParMetis_Shared(
   /* Call the real ParMetis interface */
   return Zoltan_ParMetis_Jostle( zz, num_imp, imp_gids, imp_lids,
             imp_procs, num_exp, exp_gids, exp_lids, exp_procs,
-            alg, options, &itr, order_info);
+            alg, options, &itr, NULL, NULL, order_info);
 
 #endif /* ZOLTAN_PARMETIS */
 }
@@ -220,16 +225,22 @@ static int pmv3method( char *alg)
 
 int Zoltan_ParMetis_Order(
   ZZ *zz,               /* Zoltan structure */
-  ZOLTAN_ID_PTR gids,   /* Ordered list of global ids (local to this proc) */
+  ZOLTAN_ID_PTR gids,   /* List of global ids (local to this proc) */
                         /* The application must allocate enough space */
-  ZOLTAN_ID_PTR lids,   /* Ordered list of local ids (local to this proc) */
+  ZOLTAN_ID_PTR lids,   /* List of local ids (local to this proc) */
                         /* The application must allocate enough space */
+  int *rank,		/* rank[i] is the rank of gids[i] */
+  int *iperm,		/* inverse permutation of rank */
+  int *return_args,	/* return rank, iperm, or both? */
   ZOS *order_info       /* Method-specific ordering info */
 )
 {
+  /* ParMetis only computes the inverse permutation */
+  *return_args = RETURN_RANK;
+
   /* Call ParMetis_Shared */
   return Zoltan_ParMetis_Shared(zz, NULL, &gids, &lids, NULL,
-         NULL, NULL, NULL, NULL, order_info);
+         NULL, NULL, NULL, NULL, rank, iperm, order_info);
 }
 
 /**********************************************************/
@@ -361,7 +372,7 @@ int Zoltan_Jostle(
   /* Call the real Jostle/ParMetis interface */
   return Zoltan_ParMetis_Jostle( zz, num_imp, imp_gids, imp_lids,
             imp_procs, num_exp, exp_gids, exp_lids, exp_procs,
-            alg, &output_level, NULL, NULL);
+            alg, &output_level, NULL, NULL, NULL, NULL);
 
 #endif /* ZOLTAN_JOSTLE */
 }
@@ -388,6 +399,8 @@ static int Zoltan_ParMetis_Jostle(
   char *alg,            /* algorithm to use */
   int  *options,        /* option array */
   float *itr,    	/* ParMetis 3.0 parameter for adaptive repart. */
+  int *rank,            /* rank[i] is the rank of gids[i] */
+  int *iperm,           /* inverse permutation of rank */
   ZOS *order_info	/* Zoltan ordering struct, only for ordering */
 )
 {
@@ -400,6 +413,7 @@ static int Zoltan_ParMetis_Jostle(
   idxtype *vtxdist, *xadj, *adjncy, *vwgt, *adjwgt, *part, *part2, *vsize;
   idxtype *sep_sizes;
   int tmp_num_obj, ncon, compute_order;
+  int startindex = 0; /* EB: get value from parameter */
   float *float_vwgt, *ewgts, *xyz, *imb_tols, *tpwgt; 
   double geom_vec[6];
   ZOLTAN_ID_PTR local_ids;
@@ -409,8 +423,6 @@ static int Zoltan_ParMetis_Jostle(
                                point to global IDs in this array. */
   ZOLTAN_ID_PTR lid;            /* Temporary pointer to a local id; used to pass
                                NULL to query fns when NUM_LID_ENTRIES == 0. */
-  ZOLTAN_ID_PTR perm_gids;	/* Permuted global ids */ 
-  ZOLTAN_ID_PTR perm_lids;	/* Permuted local ids */ 
   ZOLTAN_COMM_OBJ *comm_plan;
   double times[5];
   char msg[256];
@@ -429,8 +441,8 @@ static int Zoltan_ParMetis_Jostle(
   ZOLTAN_TRACE_ENTER(zz, yo);
 
   /* Set default return values (in case of early exit) */
-  *num_exp = -1;
-  *num_imp = -1; /* No import data */
+  if (num_exp) *num_exp = -1;
+  if (num_imp) *num_imp = -1; /* No import data */
 
   /* Initialize all local pointers to NULL. This is necessary
    * because we free all non-NULL pointers upon errors.
@@ -475,13 +487,6 @@ static int Zoltan_ParMetis_Jostle(
     edge_wgt_dim = zz->Edge_Weight_Dim;
   }
 
-  if (zz->Debug_Level >= ZOLTAN_DEBUG_ALL) {
-    printf("[%1d] Debug: alg=%s, Obj_Weight_Dim=%d, Edge_Weight_Dim=%d\n", 
-      zz->Proc, alg, obj_wgt_dim, edge_wgt_dim);
-    printf("[%1d] Debug: ParMetis options = %d, %d, %d, %d\n", zz->Proc,
-      options[0], options[1], options[2], options[3]);
-  }
-
   /* Get parameter options shared by ParMetis and Jostle */
   check_graph = 1;          /* default */
   scatter = 1;              /* default */
@@ -497,13 +502,24 @@ static int Zoltan_ParMetis_Jostle(
   else 
     compute_order = 0;
 
-  /* Allocate space for separator sizes */
   if (compute_order){
+    /* Do not use weights for ordering */
+    obj_wgt_dim = 0;
+    edge_wgt_dim = 0;
+
+    /* Allocate space for separator sizes */
     sep_sizes = (idxtype *) ZOLTAN_MALLOC(2*num_proc*sizeof(idxtype));
     if (!sep_sizes){
       /* Not enough memory */
       ZOLTAN_PARMETIS_ERROR(ZOLTAN_MEMERR, "Out of memory.");
     }
+  }
+
+  if (zz->Debug_Level >= ZOLTAN_DEBUG_ALL) {
+    printf("[%1d] Debug: alg=%s, Obj_Weight_Dim=%d, Edge_Weight_Dim=%d\n", 
+      zz->Proc, alg, obj_wgt_dim, edge_wgt_dim);
+    printf("[%1d] Debug: ParMetis options = %d, %d, %d, %d\n", zz->Proc,
+      options[0], options[1], options[2], options[3]);
   }
   
   /* Most ParMetis methods use only graph data */
@@ -531,6 +547,8 @@ static int Zoltan_ParMetis_Jostle(
     printf("[%1d] Debug: num_obj =%d\n", zz->Proc, num_obj);
 
   if (num_obj>0){
+    /* EB: For ordering, the ids my be given as input */
+    /* EB: Do not use weights for ordering */
     global_ids = ZOLTAN_MALLOC_GID_ARRAY(zz, num_obj);
     local_ids =  ZOLTAN_MALLOC_LID_ARRAY(zz, num_obj);
     if (obj_wgt_dim)
@@ -953,18 +971,16 @@ static int Zoltan_ParMetis_Jostle(
  
   if (compute_order){
     /* Ordering */
-    /* Import lists are never used, so reuse this parameter for ordering. */
-    perm_gids = *imp_gids;
-    perm_lids = *imp_lids;
-
-    /* Create permuted lists */
-    /* The order vector is stored in the array _part_ */
-    for (i=0; i<num_obj; i++){
-      ZOLTAN_SET_GID(zz, &(perm_gids[i*num_gid_entries]),
-                         &(global_ids[part[i]*num_gid_entries]));
-      if (num_lid_entries)
-        ZOLTAN_SET_LID(zz, &(perm_lids[i*num_lid_entries]),
-                           &(local_ids[part[i]*num_lid_entries]));
+    /* ParMetis produces the inverse permutation in Zoltan terms */
+    /* Copy from 'part' array to iperm */
+    if (iperm != NULL){
+      for (i=0; i<num_obj; i++){
+        iperm[i] = part[i] + startindex;
+      }
+    }
+    else {
+      ZOLTAN_PRINT_WARN(zz->Proc, yo, "iperm is NULL, no data returned");
+      ierr = ZOLTAN_WARN;
     }
 
     /* Fill in the Zoltan Order Struct */

@@ -164,7 +164,7 @@ LB_CSRC		= lb_balance.c lb_eval.c lb_init.c lb_migrate.c \
 		  lb_point_assign.c lb_box_assign.c
 LB_INC		= lb_const.h lb_init_const.h
 
-ORDER_CSRC	= order.c order_struct.c 
+ORDER_CSRC	= order.c order_struct.c perm.c
 ORDER_INC	= order_const.h 
 
 RCB_CSRC	= rcb.c rcb_util.c box_assign.c point_assign.c \

@@ -26,3 +26,5 @@ order_const.h    -- Zoltan data structures for orderings;
                     Also includes macros and prototypes for Zoltan
                     ordering functions.
 
+perm.c           -- Routines to compute inverse permutations. 
+

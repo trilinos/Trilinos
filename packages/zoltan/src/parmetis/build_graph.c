@@ -155,6 +155,7 @@ int Zoltan_Build_Graph(
       ZOLTAN_PARMETIS_ERROR(ZOLTAN_MEMERR, "Out of memory.");
     }
     
+    /* Assign global numbers based on the order of the global ids */
     for (i=0; i< num_obj; i++){
       hashtab[i] = NULL;
       hash_nodes[i].gid = &(global_ids[i*num_gid_entries]);

@@ -1628,6 +1628,40 @@ extern int Zoltan_LB_Balance(
 
 /*****************************************************************************/
 /*
+ *  Routine to compute an ordering (permutation) of the objects.
+ *
+ *  Input:
+ *    zz                  --  The Zoltan structure containing 
+ *                            info for this load-balancing invocation.
+ *  Output:
+ *    num_gid_entries     --  number of entries of type ZOLTAN_ID_TYPE
+ *                            in a global ID
+ *    num_lid_entries     --  number of entries of type ZOLTAN_ID_TYPE
+ *                            in a local ID
+ *
+ *    gids                --  list of global ids in permuted order
+ *
+ *    lids                --  list of local ids in permuted order
+ *
+ *    order_info          --  pointer to an "order struct" that contains
+ *                            additional information about an ordering
+ *
+ *  Returned value:       --  Error code
+ */
+
+extern int Zoltan_Order(
+/** EBEBEB need to declare struct Zoltan_Order_Struct somewhere 
+  struct Zoltan_Struct *zz,
+  int *num_gid_entries,
+  int *num_lid_entries,
+  ZOLTAN_ID_PTR *global_ids,
+  ZOLTAN_ID_PTR *local_ids,
+  struct Zoltan_Order_Struct *order_info
+***/
+);
+
+/*****************************************************************************/
+/*
  *  Routine to compute the inverse map:  Given, for each processor, a list
  *  of non-local objects assigned to the processor, compute the list of objects
  *  that processor needs to export to other processors to establish the new
