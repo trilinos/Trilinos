@@ -143,7 +143,8 @@ mpirun -np 1 amesos_test.exe DSCPACK KheadK.mtx 0 1 1 0 1e-15 1e-8 >>SST.stdout
 
 
 
-echo "\nCOMMENT End AmesosDscpack.exe" >> SST.summary 
+echo "" >> SST.summary 
+echo "COMMENT End AmesosDscpack.exe" >> SST.summary 
 
 #
 #  Make sure that the tests ran 

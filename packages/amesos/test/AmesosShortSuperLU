@@ -101,7 +101,8 @@ mpirun -np 1 amesos_test.exe SuperLU SuperLU.triU 0 1 1 0 1e-14 1e-14 >>SST.stdo
 
 # COMMENT FAILS mpirun -np 1 amesos_test.exe SuperLU Khead.triS 0 1 1 0 1e-13 1e-9 >>SST.stdout
 
-echo "\nCOMMENT End AmesosShortSuperLU.exe" >> SST.summary 
+echo "" >> SST.summary 
+echo "COMMENT End AmesosShortSuperLU.exe" >> SST.summary 
 
 #
 #  Make sure that the tests ran 

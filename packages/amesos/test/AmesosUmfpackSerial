@@ -99,7 +99,8 @@ echo "COMMENT column 17+ - summary " >> SST.summary
 #
 ./amesos_test.exe UMFPACK   bcsstk18.rsa 0 0 1 0 1e-9 1e-4  >>SST.stdout
 
-echo "\nCOMMENT End AmesosUmfpackSerial.exe" >> SST.summary 
+echo "" >> SST.summary 
+echo "COMMENT End AmesosUmfpackSerial.exe" >> SST.summary 
 
 #
 #  Make sure that the tests ran 

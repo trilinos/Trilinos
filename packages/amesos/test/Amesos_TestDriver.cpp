@@ -337,6 +337,11 @@ main(int argc, char **argv)
       cerr << "Our use of KUNDERT does not support transpose yet" << endl ;
     exit_value = -1 ; 
   }
+  if ( transpose != 0 && SparseSolver == SUPERLUDIST ) { 
+    if ( ( MyPID == 0 )  ) 
+      cerr << "Our use of SUPERLUDIST does not support transpose yet" << endl ;
+    exit_value = -1 ; 
+  }
   if ( transpose != 0 && SparseSolver == Aztec ) { 
     if ( ( MyPID == 0 )  ) 
       cerr << "Our use of AZTEC does not support transpose yet" << endl ;

@@ -144,7 +144,8 @@ mpirun -np 1 amesos_test.exe KLU Khead.triS 0 1 1 0 1e-13 1e-9 >>SST.stdout
 mpirun -np 4 amesos_test.exe KLU Khead.triS 0 1 1 0 1e-13 1e-9 >>SST.stdout
 
 
-echo "\nCOMMENT End AmesosKluShort.exe" >> SST.summary 
+echo "" >> SST.summary 
+echo "COMMENT End AmesosKluShort.exe" >> SST.summary 
 
 #
 #  Make sure that the tests ran 

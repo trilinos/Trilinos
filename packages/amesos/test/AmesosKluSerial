@@ -106,7 +106,8 @@ echo "COMMENT column 17+ - summary " >> SST.summary
 #
 # COMMENT ./amesos_test.exe KLU   bcsstk18.rsa 0 0 1 0 1e-9 1e-4  >>SST.stdout
 
-echo "\nCOMMENT End AmesosKluSerial.exe" >> SST.summary 
+echo "" >> SST.summary 
+echo "COMMENT End AmesosKluSerial.exe" >> SST.summary 
 
 #
 #  Make sure that the tests ran 

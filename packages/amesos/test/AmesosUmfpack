@@ -161,7 +161,8 @@ mpirun -np 6 amesos_test.exe UMFPACK K5000.triS 1 1 1 1 1e-10 1e-8 >>SST.stdout
 
 mpirun -np 1 amesos_test.exe UMFPACK Khead.triS 0 1 1 0 1e-13 1e-9 >>SST.stdout
 
-echo "\nCOMMENT End AmesosUmfpack.exe" >> SST.summary 
+echo "" >> SST.summary 
+echo "COMMENT End AmesosUmfpack.exe" >> SST.summary 
 
 #
 #  Make sure that the tests ran 

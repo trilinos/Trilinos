@@ -169,7 +169,8 @@ mpirun -np 6 amesos_test.exe MUMPS K5000.triS 1 1 -2 1 1e-10 1e-8 >>SST.stdout
 
 mpirun -np 1 amesos_test.exe MUMPS Khead.triS 0 1 1 0 1e-13 1e-9 >>SST.stdout
 
-echo "\nCOMMENT End AmesosMumps.exe" >> SST.summary 
+echo "" >> SST.summary 
+echo "COMMENT End AmesosMumps.exe" >> SST.summary 
 
 #
 #  Make sure that the tests ran 
