@@ -13,6 +13,8 @@ INCLUDES=-I. $(INC_PATH)
 LIB_PATHS=$(LIBRARIES) 
 
 CFLAGS=$(ARCH_FLAGS) $(DEFINES) $(INCLUDES) $(TESTING) $(TESTING2)
+#c++ compiler flags
+CXXFLAGS=$(ARCH_FLAGS) $(DEFINES) $(INCLUDES) $(TESTING) $(TESTING2)
 #VPATH=../examples:../src
 #=======================================================================
 # ML source files
@@ -35,6 +37,8 @@ ML_C = ml_aztec_utils.c  ml_ggraph.c       ml_memory.c \
        ml_bicgstabl.c    ml_pde.c          ml_xyt.c ml_agg_MIS.c \
        ml_amg.c 		 ml_amg_MIS.c	   ml_amg_genP.c \
 	   ml_agg_reitzinger.c ml_twogrid_analysis.c
+
+ML_CPP = ml_epetra_utils.cpp
 #=======================================================================
 # ML include files
 #=======================================================================
@@ -50,7 +54,8 @@ ML_INC = ml_1level.h         ml_ggraph.h         ml_operatoragx.h       \
 	ml_csolve.h          ml_memory.h         ml_krylov.h            \
 	ml_defs.h            ml_op_utils.h       ml_gmres.h             \
 	ml_elementagx.h      ml_operator.h       ml_bicgstabl.h         \
-	mli_solver.h         ml_superlu.h        ml_twogrid_analysis.h
+	mli_solver.h         ml_superlu.h        ml_twogrid_analysis.h  \
+    ml_epetra_utils.h
 
 #=======================================================================
 # Sample application files
@@ -60,7 +65,9 @@ ML_INC = ml_1level.h         ml_ggraph.h         ml_operatoragx.h       \
 
 APPLICATION_C = mlguide.c
 
-ML_OBJ          = $(ML_C:.c=.o)
+# For information on how to contruct rules such as the next one,
+# see the Gnu make manual, under "Substition References".
+ML_OBJ          = $(ML_C:.c=.o) $(ML_CPP:.cpp=.o)
 APPLICATION_OBJ = $(APPLICATION_C:.c=.o)
 APPLICATION     = $(APPLICATION_C:.c= )
 
@@ -75,7 +82,6 @@ $(APPLICATION): $(APPLICATION_OBJ) libml.a
 libml.a: $(ML_OBJ)
 	$(AR) rc libml.a $(ML_OBJ); \
 	$(RANLIB) libml.a
-
 
 driver: libml.a driver.c
 	cc -c $(PACKAGES) $(MPI_INC_PATH) driver.c
