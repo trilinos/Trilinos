@@ -31,7 +31,8 @@ epetra = \
 --enable-nox-epetra-examples \
 --enable-triutils \
 --enable-tsfcore-aztecoo \
---enable-tsfcore-epetra 
+--enable-tsfcore-epetra \
+--enable-tsfextended 
 
 epetraext = \
 --enable-epetraext
