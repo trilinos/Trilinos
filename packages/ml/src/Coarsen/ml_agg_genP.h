@@ -26,6 +26,7 @@ struct ML_AGG_Matrix_Context
    double      omega;
    double      drop_tol;
    int         *aggr_info;
+   char        *near_bdry;
 };
 
 /* ******************************************************************** */
@@ -83,6 +84,7 @@ extern int  ML_AGG_Extract_Diag( ML_Operator *, double *diag);
 extern void ML_AGG_Matrix_Context_Clean(void *data);
 extern int  ML_AGG_DD_Solve(void *data, int, double *, int, double *);
 extern int  ML_AGG_Extract_Matrix(ML_Operator *mat, int *, int **, double ***);
+extern int ML_AGG_Compute_Near_Bdry(ML_Operator *Amatrix, char *near_bdry);
 
 #ifdef __cplusplus
 }
