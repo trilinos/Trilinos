@@ -128,3 +128,16 @@ A freely-downloadable software, called XD3D, can for example
 be used to visualize the aggregates. ML can also visualize the effect
 of smoothers and the entire ML cycle on random vectors; see the
 `visualization' section of this example.
+
+===============================================================================
+
+files in ml/examples/MatrixFormats
+
+*) ml_MatrixFree.cpp
+
+Goal of this example if to show how to take advantage of the getrow()
+to define matrix-free operator using the MultiLevelPreconditioner class.
+The example defines a 3D Laplacian on a structured Cartesian grid; the  
+problem is discretized using a classical 7-point formula, but the values
+of the matrix are not stored, and the rows are created "on-the-fly" at
+each call to getrow().
