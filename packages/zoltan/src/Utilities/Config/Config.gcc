@@ -32,7 +32,7 @@ INCLUDE_PATH		= -I/Net/local/lang/SC3.0.1/include \
 			  -I/Net/local/mpi/build/solaris/ch_p4/include
 DBG_FLAGS		= -g 
 OPT_FLAGS		= -O
-CFLAGS = $(DBG_FLAGS)
+CFLAGS 			= $(DBG_FLAGS)
 
 F90			= f90
 LOCAL_F90		= f90
