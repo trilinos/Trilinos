@@ -41,6 +41,9 @@ TIME_LINUX_MPI  = md_timer_mpi.c
 TIME_LINUX_SERIAL = md_timer_generic.c
 TIME_LINUX      = $(TIME_LINUX_$(TRILINOS_COMM))
 TIME_TFLOP      = md_timer_intel.c
+TIME_CPLANT_SERIAL = md_timer_generic.c
+TIME_CPLANT_MPI    = md_timer_mpi.c
+TIME_CPLANT        = $(TIME_CPLANT_$(TRILINOS_COMM))
 
 #
 # Communication package
@@ -80,7 +83,7 @@ az_pad_utils.c	     az_poly.c	        az_precond.c \
 az_qmrcgs.c	     az_rilu.c	        az_scaling.c \
 az_solve.c	     az_sort.c	        az_subdomain_solver.c \
 az_tools.c	     az_util.c 
-#az_gmresr.c \
+#az_gmresr.c
 
 
 AZTEC_F = az_reorder.f
