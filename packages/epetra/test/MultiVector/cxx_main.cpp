@@ -346,6 +346,12 @@ int main(int argc, char *argv[]) {
 	   << endl << endl;
       cout << D << endl;
 
+      Epetra_BlockMap Map5(-1, 25, 4, IndexBase, Comm);
+      Epetra_MultiVector D1(View, Map5,Dp, 100, 2);
+      if (verbose) cout << "\n\nTesting ostream operator:  Same Multivector as before except using BlockMap of 25x4" 
+	   << endl << endl;
+      cout << D1 << endl;
+
       if (verbose) cout << "Traceback Mode value = " << D.GetTracebackMode() << endl;
       delete [] Dp;
     }

@@ -1522,15 +1522,19 @@ void Epetra_MultiVector::Print(ostream& os) const {
   for (int iproc=0; iproc < NumProc; iproc++) {
     if (MyPID==iproc) {
       int NumVectors1 = NumVectors();
-      int MyLength1 = MyLength();
+      int NumMyElements1 =Map(). NumMyElements();
+      int MaxElementSize1 = Map().MaxElementSize();
       int * MyGlobalElements1 = Map().MyGlobalElements();
       double ** A_Pointers = Pointers();
 
       if (MyPID==0) {
-	os.width(14);
+	os.width(8);
 	os <<  "     MyPID"; os << "    ";
-	os.width(14);
-	os <<  "      Global Index "; os << " ";
+	os.width(12);
+	if (MaxElementSize1==1)
+	  os <<  "GID  ";
+	else
+	  os <<  "     GID/Point";
 	for (int j = 0; j < NumVectors1 ; j++)
 	  {   
 	    os.width(20);
@@ -1539,12 +1543,15 @@ void Epetra_MultiVector::Print(ostream& os) const {
 	os << endl;
       }
       
-      for (int i=0; i < MyLength1; i++)
-	{
-	  os.width(14);
+      for (int i=0; i < NumMyElements1; i++) {
+	for (int ii=0; ii< Map().ElementSize(ii); ii++) {
+	  os.width(10);
 	  os <<  MyPID; os << "    ";
-	  os.width(14);
-	  os <<  MyGlobalElements1[i]; os << "    ";
+	  os.width(10);
+	  if (MaxElementSize1==1)
+	    os << MyGlobalElements1[i] << "    ";
+	  else
+	    os <<  MyGlobalElements1[i]<< "/" << ii << "    ";
 	  for (int j = 0; j < NumVectors1 ; j++)
 	    {   
 	      os.width(20);
@@ -1552,8 +1559,8 @@ void Epetra_MultiVector::Print(ostream& os) const {
 	    }
 	  os << endl;
 	}
-      os << flush;
-
+      }
+      os << flush; 
     }
 
     // Do a few global ops to give I/O a chance to complete

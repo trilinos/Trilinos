@@ -271,7 +271,7 @@ inline ostream& operator<<(ostream& os, const Epetra_Object& obj)
     const Epetra_fmtflags  oldf = os.setf(ios::scientific,ios::floatfield);
     const int              oldp = os.precision(12);
 
-    os << obj.Label();
+    os << obj.Label() << endl;
     obj.Print(os);
 
     os.setf(olda,ios::adjustfield);
