@@ -85,12 +85,10 @@ int main(int argc, char *argv[])
   // set defaults for classic smoothed aggregation
   ML_Epetra::SetDefaults("SA",MLList);
 
-  // enable adaptation (also known as GGB)
-  MLList.set("filtering: enable", true);
+  // enable filtering (also known as GGB)
+  MLList.set("filtering: enable", false);
   MLList.set("filtering: use symmetric cycle", false);
-  MLList.set("filtering: eigensolver", "Anasazi");
   MLList.set("filtering: eigenvalues to compute", 10);
-  MLList.set("filtering: type", "enhanced");
   MLList.set("filtering: local aggregates", 1);
 
   // require to tune eigen-solution (here with Anasazi)
