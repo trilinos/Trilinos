@@ -79,7 +79,7 @@
 
   <ul>
   <li> 
-  <a href="http://software.sandia.gov/nox/downloads/nox-3.1a-dev.tar.gz">Latest Development Version</a>, updated nightly
+  <a href="http://software.sandia.gov/nox/downloads/nox-4.0-dev.tar.gz">Latest Development Version</a>, updated nightly
   </ul>
 
   Trilinos (includes %NOX as well as other packages such as Epetra, Ifpack, and more):
