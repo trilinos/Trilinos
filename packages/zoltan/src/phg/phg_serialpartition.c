@@ -131,7 +131,8 @@ int i, si;
                                     hgp->CoarsePartition);
   }
   else {
-    /* Gather distributed HG to each processor;
+    /* Normal case:
+     * Gather distributed HG to each processor;
      * compute different partitioning on each processor;
      * select the "best" result.
      */
@@ -151,23 +152,16 @@ int i, si;
       }
     }
 
+    static PHGComm scomm;          /* Serial communicator info */
+    static int first_time = 1;
+    HGraph *shg = NULL;            /* Serial hypergraph gathered from phg */
+    int *spart = NULL;             /* Partition vector for shg. */
+
     if (phg->comm->nProc == 1) {
-
-      /* Only one processor; no gather needed. */
-
-      ierr = CoarsePartition(zz, phg, numPart, part_sizes, part, hgp);
-      if (ierr < 0) {
-        ZOLTAN_PRINT_ERROR(zz->Proc, yo, 
-                           "Error returned from CoarsePartition.");
-        goto End;
-      }
+      /* Serial and parallel hgraph are the same. */
+      shg = phg;
     }
     else {
-      static PHGComm scomm;          /* Serial communicator info */
-      static int first_time = 1;
-      HGraph *shg = NULL;            /* Serial hypergraph gathered from phg */
-      int *spart = NULL;             /* Partition vector for shg. */
-
       /* Set up a serial communication struct for gathered HG */
 
       if (first_time) {
@@ -190,49 +184,56 @@ int i, si;
         ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error returned from gather.");
         goto End;
       }
-  
-      /* 
-       * Allocate partition array spart for the serial hypergraph shg
-       * and partition shg.
-       */
-      if (shg->nVtx) {
-        spart = (int *) ZOLTAN_MALLOC(shg->nVtx * hgp->num_coarse_tries *
-                                      sizeof(int));
-        if (!spart) {
-          ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Memory error.");
-          ierr = ZOLTAN_MEMERR;
-          goto End;
-        }
-      
-        /* Compute several coarse partitionings. */
-        /* KDDKDD Set RNG so different procs compute different parts. */
-        /* KDDKDD For now, use same seed everywhere for debugging. */
 
-        for (i=0; i<hgp->num_coarse_tries; i++){
-          ierr = CoarsePartition(zz, shg, numPart, part_sizes, 
-                   spart+i*(shg->nVtx), hgp);
-          if (ierr < 0) {
-            ZOLTAN_PRINT_ERROR(zz->Proc, yo, 
-                             "Error returned from CoarsePartition.");
-            goto End;
-          }
-        }
+    }
 
-        /* Evaluate and select the best */
-
-        pick_best(zz, phg->comm, shg, numPart, hgp->num_coarse_tries, spart);
+    /* 
+     * Allocate partition array spart for the serial hypergraph shg
+     * and partition shg.
+     */
+    spart = (int *) ZOLTAN_MALLOC(shg->nVtx * hgp->num_coarse_tries *
+                                    sizeof(int));
+    if (!spart) {
+      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Memory error.");
+      ierr = ZOLTAN_MEMERR;
+      goto End;
+    }
     
-        /* Map gathered partition back to 2D distribution */
-        for (i = 0; i < phg->nVtx; i++) {
-          /* KDDKDD  Assume vertices in serial HG are ordered by GNO of phg */
-          si = VTX_LNO_TO_GNO(phg, i);
-          part[i] = spart[si];
-        }
-      } 
+    /* Compute several coarse partitionings. */
+    /* KDDKDD Set RNG so different procs compute different parts. */
+    /* KDDKDD For now, use same seed everywhere for debugging. */
+
+    for (i=0; i<hgp->num_coarse_tries; i++){
+      ierr = CoarsePartition(zz, shg, numPart, part_sizes, 
+               spart+i*(shg->nVtx), hgp);
+      if (ierr < 0) {
+        ZOLTAN_PRINT_ERROR(zz->Proc, yo, 
+                         "Error returned from CoarsePartition.");
+        goto End;
+      }
+    }
+
+    /* Evaluate and select the best */
+    /* EBEB Should we do a refinement before picking best? */
+
+    pick_best(zz, phg->comm, shg, numPart, hgp->num_coarse_tries, spart);
+  
+    if (phg->comm->nProc > 1) {
+      /* Map gathered partition back to 2D distribution */
+      for (i = 0; i < phg->nVtx; i++) {
+        /* KDDKDD  Assume vertices in serial HG are ordered by GNO of phg */
+        si = VTX_LNO_TO_GNO(phg, i);
+        part[i] = spart[si];
+      }
+
       Zoltan_HG_HGraph_Free(shg);
       ZOLTAN_FREE(&shg);
-      ZOLTAN_FREE(&spart);
+    } 
+    else { /* single processor */
+      for (i = 0; i < phg->nVtx; i++)
+        part[i] = spart[i];
     }
+    ZOLTAN_FREE(&spart);
   }
   
 End:
