@@ -35,10 +35,15 @@ protected:
   
   /** @name Recommended constructors formats */
   //@{
-  //! Copy constructor
-  NLS_Group(NLS_Group& copyFrom);
+
+  //! Copy constructor (via deep copy)
+  NLS_Group(const NLS_Group& copyFrom);
+
   //! Create a new group where the new solution vector is grp.x() + step * d
-  NLS_Group(NLS_Group& grp, NLS_Vector& d, double step);
+  /*! Const-ness of the grp object may not always be possible, but it
+    is recommended. */
+  NLS_Group(const NLS_Group& grp, const NLS_Vector& d, double step);
+
   //@}
 
 public:
@@ -47,13 +52,13 @@ public:
   virtual ~NLS_Group() = 0;
 
   //! Copy
-  virtual NLS_Group& operator=(NLS_Group& copyFrom) = 0;
+  virtual NLS_Group& operator=(const NLS_Group& copyFrom) = 0;
 
   /** @name "Compute" functions */
   //@{
 
   //! Compute and return solution vector
-  virtual NLS_Vector& computeX(NLS_Group& x, NLS_Vector& d, double step) = 0;
+  virtual NLS_Vector& computeX(const NLS_Group& grp, const NLS_Vector& d, double step) = 0;
 
   //! Compute and return RHS
   virtual NLS_Vector& computeRHS() = 0;
@@ -71,7 +76,7 @@ public:
 
   //! Compute and return Newton direction, using desired accuracy for nonlinear solve
   /*! Throws an error if RHS and Jacobian have not been computed */
-  virtual NLS_Vector& computeNewton(string& name, NLS_Parameter& parameter) = 0;
+  virtual NLS_Vector& computeNewton(const string& name, NLS_Parameter& parameter) = 0;
 
   //@}
 
@@ -82,10 +87,10 @@ public:
    * instantiation or computeX). */
   //@{
 
-  virtual bool isRHS() = 0;
-  virtual bool isJacobian() = 0;
-  virtual bool isGrad() = 0;
-  virtual bool isNewton() = 0;
+  virtual bool isRHS() const = 0;
+  virtual bool isJacobian() const = 0;
+  virtual bool isGrad() const = 0;
+  virtual bool isNewton() const = 0;
 
   //@}
 
@@ -96,16 +101,16 @@ public:
   //! Getting a pointer to the solution vector could allow users to change
   //! its value without using computeX().  This breaks the isRHS(), 
   //! isJacobian(), isGrad(), and isNewton() functions. 
-  virtual NLS_Vector& getX() = 0;
+  virtual NLS_Vector& getX() const = 0;
 
   //! Return rhs (throws an error if RHS has not been computed)
-  virtual NLS_Vector& getRHS() = 0;
+  virtual NLS_Vector& getRHS() const = 0;
 
   //! Return gradient (throws an error if gradient has not been computed)
-  virtual NLS_Vector& getGrad() = 0;
+  virtual NLS_Vector& getGrad() const = 0;
 
   //! Return Newton direction (throws an error if newton direction has not been computed)
-  virtual NLS_Vector& getNewton() = 0;
+  virtual NLS_Vector& getNewton() const = 0;
 
   //@}
 
