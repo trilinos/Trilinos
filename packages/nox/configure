@@ -3367,12 +3367,12 @@ fi
 # Checks for building epetra examples
 # ------------------------------------------------------------------------
 
-# Check whether --enable-noxepetra-examples or --disable-noxepetra-examples was given.
-if test "${enable_noxepetra_examples+set}" = set; then
-  enableval="$enable_noxepetra_examples"
+# Check whether --enable-epetra-examples or --disable-epetra-examples was given.
+if test "${enable_epetra_examples+set}" = set; then
+  enableval="$enable_epetra_examples"
   BUILD_EPETRA_EXAMPLES=${enableval}
 else
-  BUILD_EPETRA_EXAMPLES=${BUILD_LIBNOXEPETRA}
+  BUILD_EPETRA_EXAMPLES=no
 
 fi;
 

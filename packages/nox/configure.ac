@@ -537,10 +537,10 @@ AM_CONDITIONAL(BUILD_EXAMPLES, test X${BUILD_EXAMPLES} = Xyes)
 # Checks for building epetra examples
 # ------------------------------------------------------------------------
 
-AC_ARG_ENABLE(noxepetra-examples,
+AC_ARG_ENABLE(epetra-examples,
 [  --enable-epetra-examples     compile epetra examples],
 [BUILD_EPETRA_EXAMPLES=${enableval}],
-[BUILD_EPETRA_EXAMPLES=${BUILD_LIBNOXEPETRA}]
+[BUILD_EPETRA_EXAMPLES=no]
 )
 
 # Cannot build the example if we don't build the library
