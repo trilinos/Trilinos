@@ -131,5 +131,16 @@ int ML_Epetra_CRSinsert(ML_Operator *, int, int *, double *, int);
 int ML_Operator2EpetraCrsMatrix(ML_Operator *Ke, Epetra_CrsMatrix * &
 				CrsMatrix, int & MaxNumNonzeros,
 				bool CheckNonzeroRow, double &);
+#ifdef __cplusplus
+extern "C" {
+#endif
+int ML_Operator_Destroy_DiscreteLaplacian();
+int ML_Operator_DiscreteLaplacian(ML_Operator* Op, int SymmetricPattern,
+				  double* x_coord, double* y_coord,
+				  double* z_coord, double theta,
+				  ML_Operator** NewOp);
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* _ML_EPETRA_UTILS_H_ */

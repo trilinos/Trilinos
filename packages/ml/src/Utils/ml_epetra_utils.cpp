@@ -854,6 +854,313 @@ int Epetra_ML_matvec_WKC (ML_Operator *data, int in, double *p, int out, double 
 }
 #endif
 
+// ============================================================================
+#include "Epetra_FECrsMatrix.h"
+// FIXME: change my name?
+Epetra_FECrsMatrix* FakeMatrix = 0;
+
+extern "C" {
+
+int ML_Operator_DiscreteLaplacian(ML_Operator* Op, int SymmetricPattern,
+				  double* x_coord, double* y_coord,
+				  double* z_coord, double theta,
+				  ML_Operator** NewOp)
+{
+
+  if (Op->invec_leng != Op->outvec_leng) 
+    return(-1); // works only with square matrices
+
+  int NumMyRows = Op->outvec_leng;
+  int NumPDEEqns = 1; // FIXME or DELETEME
+  int NumDimensions = 1;
+
+  if (x_coord == 0)
+    return(-2); // at least one dimension is required
+
+  if (y_coord == 0 && z_coord != 0)
+    return(-3); // cannot be this
+
+  if (y_coord != 0)
+    NumDimensions++;
+
+  if (z_coord != 0)
+    NumDimensions++;
+
+  // need an Epetra_Comm object. This in general exists, but I
+  // don't know an easy way to pass it up to here
+#ifdef ML_MPI
+  // FIXME: I work with MPI_COMM_WORLD only, not with the comm of ML!
+  Epetra_MpiComm Comm(MPI_COMM_WORLD);
+#else
+  Epetra_SerialComm Comm;
+#endif
+
+  // need to create a map. This may may already exist for the finest-level
+  // matrix, but in general it does not
+
+  Epetra_Map Map(-1,NumMyRows,0,Comm);
+  int NumGlobalRows = Map.NumGlobalElements();
+  
+  // create the auxiliary matrix as VBR matrix. This should help
+  // to save memory with respect to the creation of "pure" VBR
+  // matrices.
+
+  int MaxNnzRow = Op->max_nz_per_row;
+  assert(MaxNnzRow > 0);
+  // FIXME: I can compute it in this case
+
+  FakeMatrix = new Epetra_FECrsMatrix(Copy,Map, MaxNnzRow);
+  
+  if (FakeMatrix == 0)
+    return(-10); // problems occur
+
+  if (ML_Get_PrintLevel() > 8) {
+    cout << endl;
+    cout << "Creating discrete Laplacian..." << endl;
+    cout << "Number of dimensions = " << NumDimensions << endl;
+    cout << "theta = " << theta;
+    if (SymmetricPattern == 1)
+      cout << ", using symmetric pattern" << endl;
+    else
+      cout << ", using original pattern" << endl;
+    cout << endl;
+  }
+
+  // create the auxiliary matrix
+
+  int allocated = 1;
+  int * colInd = new int[allocated];
+  double * colVal = new double[allocated];
+  int NnzRow;
+
+  double coord_i[3], coord_j[3];
+  for( int i = 0; i<3 ; ++i ) {
+    coord_i[i] = 0.0; coord_j[i] = 0.0;
+  }
+
+  // get global column number
+ 
+  int Nghost;
+
+  if (Op->getrow->pre_comm == NULL) 
+    Nghost = 0;
+  else {
+    if (Op->getrow->pre_comm->total_rcv_length <= 0)
+      ML_CommInfoOP_Compute_TotalRcvLength(Op->getrow->pre_comm);
+    Nghost = Op->getrow->pre_comm->total_rcv_length;
+  }
+
+  vector<double> global;        
+  vector<int>    global_as_int; 
+  global.resize(NumMyRows+Nghost+1);
+  global_as_int.resize(NumMyRows+Nghost+1);
+
+  int offset;
+  Comm.ScanSum(&NumMyRows,&offset,1); 
+  offset -= NumMyRows;
+
+  for (int i = 0 ; i < NumMyRows; i++) {
+    global[i] = (double) (offset + i);
+    global_as_int[i] = offset + i;
+  }
+
+  for (int i = 0 ; i < Nghost; i++) 
+    global[i+NumMyRows] = -1;
+
+  ML_exchange_bdry(&global[0],Op->getrow->pre_comm,
+                  Op->invec_leng,Op->comm,ML_OVERWRITE,NULL);
+
+  for ( int j = 0; j < NumMyRows+Nghost; j++ ) {
+    global_as_int[j] = (int) global[j];
+  }
+  
+  // =================== //
+  // cycle over all rows //
+  // =================== //
+
+  for (int i = 0; i < NumMyRows ; i += NumPDEEqns ) {
+
+    int GlobalRow = global_as_int[i];
+
+    assert( GlobalRow != -1 );
+
+    if( i%NumPDEEqns == 0 ) { // do it just once for each block row
+      switch( NumDimensions ) {
+      case 3:
+	coord_i[2] = z_coord[i/NumPDEEqns];
+      case 2:
+	coord_i[1] = y_coord[i/NumPDEEqns];
+      case 1:
+	coord_i[0] = x_coord[i/NumPDEEqns];
+      }
+    }
+
+    int ierr = ML_Operator_Getrow(Op,1,&i,allocated,colInd,colVal,&NnzRow);
+
+    if( ierr == 0 ) {
+      do {
+	delete [] colInd;
+	delete [] colVal;
+	allocated *= 2;
+	colInd = new int[allocated];
+	colVal = new double[allocated];
+	ierr = ML_Operator_Getrow(Op,1,&i,allocated,colInd,colVal,&NnzRow);
+      } while( ierr == 0 );
+    }
+
+    // NOTE: for VBR matrices, the "real" value that will be used in
+    // the subsequent part of the code is only the one for the first
+    // equations. For each block, I replace values with the sum of
+    // the abs of each block entry.
+
+    for (int j = 0 ; j < NnzRow ; j += NumPDEEqns) {
+      colVal[j] = abs(colVal[j]);
+      for (int k = 1 ; k < NumPDEEqns ; ++k) {
+	colVal[j] += abs(colVal[j+k]);
+      }
+    }
+
+    // work only on the first equations. Theta will blend the
+    // coordinate part with the sub of abs of row elements.
+
+    int GlobalCol;
+    double total = 0.0;
+
+    for (int j = 0 ; j < NnzRow ; j += NumPDEEqns) {
+
+     if (colInd[j]%NumPDEEqns == 0) { 
+
+      // insert diagonal later
+      if (colInd[j] != i) {
+	if (colInd[j]%NumPDEEqns == 0) { // do it only once
+	  switch(NumDimensions) {
+	  case 3:
+	    coord_j[2] = z_coord[colInd[j]/NumPDEEqns];
+	  case 2:
+	    coord_j[1] = y_coord[colInd[j]/NumPDEEqns];
+	  case 1:
+	    coord_j[0] = x_coord[colInd[j]/NumPDEEqns];
+	  }
+	}
+
+	double d2 = pow(coord_i[0]-coord_j[0],2) + pow(coord_i[1]-coord_j[1],2) + pow(coord_i[2]-coord_j[2],2);
+	if( d2 == 0.0 ) {
+	  cerr << endl;
+	  cerr << "distance between node " << i/NumPDEEqns << " and node " 
+	    << colInd[j]/NumPDEEqns << endl
+	    << "is zero. Coordinates of these nodes are" << endl
+	    << "x_i = " << coord_i[0] << ", x_j = " << coord_j[0] << endl  
+	    << "y_i = " << coord_i[1] << ", y_j = " << coord_j[1] << endl  
+	    << "z_i = " << coord_i[2] << ", z_j = " << coord_j[2] << endl  
+	    << "Now proceeding with distance = 1.0" << endl;
+	  cerr << endl;
+	  d2 = 1.0;
+	}
+
+	double val = -(1.0-theta)*(1.0/d2) + theta*(colVal[j]);
+
+	GlobalCol = global_as_int[colInd[j]];
+	assert( GlobalCol != -1 );
+	
+	// insert this value on all rows
+	for( int k=0 ; k<NumPDEEqns ; ++k ) {
+	  int row = GlobalRow+k;
+	  int col = GlobalCol+k;
+	  if( row >= NumGlobalRows || col >= NumGlobalRows ) {
+	    cerr << "trying to insert element (" << row 
+	         << "," << col << "), " << endl
+		 << "while NumGlobalRows = " << NumGlobalRows << endl
+		 << "(GlobalRow = " << GlobalRow << ", GlobalCol = " << GlobalCol << ")" << endl
+		 << "(file " << __FILE__ << ", line " << __LINE__ << ")" << endl;
+	  }
+	    
+	  // FakeMatrix->InsertGlobalValues(row,1,&val,&col);
+	  if( FakeMatrix->SumIntoGlobalValues(1,&row,1,&col,&val) != 0 ) {
+	    int ierr = FakeMatrix->InsertGlobalValues(1,&row,1,&col,&val);
+	    if( ierr ) {
+	      cerr << "InsertGlobalValues return value = " << ierr << endl
+		<< "for element (" << row << "," << col << ")" << endl
+		<< "(file " << __FILE__ << ", line " << __LINE__
+		<< ")" << endl;
+	    }
+	  }
+	}
+
+	total -= val;
+
+	// put (j,i) element as well. this works also for
+	// off-process elements. 
+	if( SymmetricPattern == 1 ) {
+	  for( int k=0 ; k<NumPDEEqns ; ++k ) {
+	    int row = GlobalCol+k;
+	    int col = GlobalRow+k;
+	    if( row >= NumGlobalRows || col >= NumGlobalRows ) {
+	      cerr << "trying to insert element (" << row 
+		<< "," << col << "), " << endl
+		<< "while NumGlobalRows = " << NumGlobalRows << endl
+		<< "(GlobalRow = " << GlobalRow << ", GlobalCol = " << GlobalCol << ")" << endl
+		<< "(file " << __FILE__ << ", line " << __LINE__ << ")" << endl;
+	    }
+	    if( FakeMatrix->SumIntoGlobalValues(1,&row,1,&col,&val) != 0 ) { 
+	      int ierr = FakeMatrix->InsertGlobalValues(1,&row,1,&col,&val);
+	      if( ierr ) {
+		cerr << "InsertGlobalValues return value = " << ierr << endl
+		  << "for element (" << row << "," << col << ")" << endl
+		  << "(file " << __FILE__ << ", line " << __LINE__
+		  << ")" << endl;
+	      }
+	    }
+	  }
+	  total -= val;
+	}
+      } 
+    }
+
+    }
+
+    // create lines with zero-row sum
+    for( int k=0 ; k<NumPDEEqns ; ++k ) {
+      int row = GlobalRow+k;
+      assert( row < NumGlobalRows );
+      if( FakeMatrix->SumIntoGlobalValues(1,&row,1,&row,&total) != 0) {
+	int ierr = FakeMatrix->InsertGlobalValues(1,&row,1,&row,&total);
+	if( ierr ) {
+	  cerr << "InsertGlobalValues return value = " << ierr << endl
+	    << "for element (" << row << "," << row << ")" << endl
+	    << "(file " << __FILE__ << ", line " << __LINE__
+	    << ")" << endl;
+	}
+      }
+   }
+  }
+
+  FakeMatrix->GlobalAssemble();
+
+  delete [] colInd;
+  delete [] colVal;
+
+  // create a new ML_Operator from this Epetra Matrix.
+
+  *NewOp = ML_Operator_Create(Op->comm);
+  Epetra2MLMatrix(FakeMatrix,*NewOp);
+  
+  return(0);
+}
+
+int ML_Operator_Destroy_DiscreteLaplacian() 
+{
+
+  if (FakeMatrix != 0) {
+    delete FakeMatrix;
+    FakeMatrix = 0;
+  }
+
+  return 0;
+
+}
+
+} // extern "C"
+
 #else
 
   /*noop for certain compilers*/
