@@ -63,6 +63,8 @@
 #include "Teuchos_ParameterList.hpp"
 #endif
 
+#include <typeinfo>
+
 //***********************************************************************
 NOX::EpetraNew::LinearSystemAztecOO::
 LinearSystemAztecOO(NOX::Parameter::List& printParams, 
@@ -299,13 +301,13 @@ reset(NOX::Parameter::List& linearSolverParams)
 
   // Set the Jacobian in the solver. It must be set before
   // a preconditioner can be set.
-  if ((jacType == EpetraRowMatrix) ||
-      (jacType == EpetraVbrMatrix) ||
-      (jacType == EpetraCrsMatrix)) {
-    aztecSolverPtr->SetUserMatrix(dynamic_cast<Epetra_RowMatrix*>(jacPtr));
-  }
-  else
-    aztecSolverPtr->SetUserOperator(jacPtr);
+//   if ((jacType == EpetraRowMatrix) ||
+//       (jacType == EpetraVbrMatrix) ||
+//       (jacType == EpetraCrsMatrix)) {
+//     aztecSolverPtr->SetUserMatrix(dynamic_cast<Epetra_RowMatrix*>(jacPtr));
+//   }
+//   else
+//     aztecSolverPtr->SetUserOperator(jacPtr);
 
   // Set the major aztec options.  Must be called after the first 
   // SetProblem() call.
@@ -549,19 +551,9 @@ applyJacobianTranspose(const NOX::Epetra::Vector& input,
 bool NOX::EpetraNew::LinearSystemAztecOO::
 applyJacobianInverse(Parameter::List &p,
 		     const NOX::Epetra::Vector& input, 
-		     NOX::Epetra::Vector& result,
-		     Epetra_Operator* jacOperator,
-		     Epetra_Operator* precOperator)
+		     NOX::Epetra::Vector& result)
 {
   double startTime = timer.WallTime();
-
-  Epetra_Operator* prevPrecOperator = NULL;
-  if (jacOperator == NULL)
-    jacOperator = jacPtr;
-  if (precOperator != NULL) {
-    prevPrecOperator = aztecSolverPtr->GetPrecOperator();
-    aztecSolverPtr->SetPrecOperator(precOperator);
-  }
 
   // Need non-const version of the input vector
   // Epetra_LinearProblem requires non-const versions so we can perform
@@ -573,7 +565,7 @@ applyJacobianInverse(Parameter::List &p,
     result.init(0.0);
 
   // Create Epetra linear problem object for the linear solve
-  Epetra_LinearProblem Problem(jacOperator, 
+  Epetra_LinearProblem Problem(solveJacOpPtr, 
   			       &(result.getEpetraVector()), 
 			       &(nonConstInput.getEpetraVector()));
 
@@ -632,10 +624,6 @@ applyJacobianInverse(Parameter::List &p,
     outputList.setParameter("Total Number of Linear Iterations", 
 			    (prevLinIters + curLinIters));
     outputList.setParameter("Achieved Tolerance", achievedTol);
-  }
-
-  if (precOperator != NULL) {
-    aztecSolverPtr->SetPrecOperator(prevPrecOperator);
   }
 
   double endTime = timer.WallTime();
@@ -1193,4 +1181,17 @@ NOX::EpetraNew::LinearSystemAztecOO::getTimeApplyJacobianInverse() const
   return timeApplyJacbianInverse;
 }
 
-
+void
+NOX::EpetraNew::LinearSystemAztecOO::setJacobianOperatorForSolve(
+					 const Epetra_Operator& solveJacOp)
+{
+  solveJacOpPtr = const_cast<Epetra_Operator*>(&solveJacOp);
+  OperatorType solveOpType = getOperatorType(solveJacOp);
+  if ((solveOpType == EpetraRowMatrix) ||
+      (solveOpType == EpetraVbrMatrix) ||
+      (solveOpType == EpetraCrsMatrix)) {
+    aztecSolverPtr->SetUserMatrix(dynamic_cast<Epetra_RowMatrix*>(solveJacOpPtr));
+  }
+  else
+    aztecSolverPtr->SetUserOperator(solveJacOpPtr);
+}

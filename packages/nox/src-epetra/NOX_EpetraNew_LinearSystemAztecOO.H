@@ -355,9 +355,7 @@ public:
   
   virtual bool applyJacobianInverse(NOX::Parameter::List& linearSolverParams, 
 				    const NOX::Epetra::Vector& input, 
-				    NOX::Epetra::Vector& result,
-				    Epetra_Operator* jacOperator = NULL,
-				    Epetra_Operator* precOperator = NULL);
+				    NOX::Epetra::Vector& result);
 
   virtual bool applyRightPreconditioning(bool useTranspose,
 				   NOX::Parameter::List& linearSolverParams, 
@@ -409,6 +407,10 @@ public:
 
   //! Returns the total time (sec.) spent in applyJacobianInverse(). 
   double getTimeApplyJacobianInverse() const;
+
+  //! Set Jacobian operator for solve
+  virtual void 
+  setJacobianOperatorForSolve(const Epetra_Operator& solveJacOp);
 
 protected:
 
@@ -555,6 +557,9 @@ protected:
 
   //! Total time spent in applyJacobianInverse (sec.).
   mutable double timeApplyJacbianInverse;
+
+  //! Jacobian operator that will be used in solves
+  Epetra_Operator* solveJacOpPtr;
 
 };
 

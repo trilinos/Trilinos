@@ -115,6 +115,7 @@ Group::Group(const Group& source, CopyType type) :
     normRHS = source.normRHS;
     normNewtonSolveResidual = source.normNewtonSolveResidual;
     isValidPreconditioner = source.isValidPreconditioner;
+    isValidSolverJacOp = source.isValidSolverJacOp;
     
     // New copy takes ownership of the shared Jacobian
     if (isValidJacobian)
@@ -151,6 +152,7 @@ void Group::resetIsValid() //private
   isValidNewton = false;
   isValidNormNewtonSolveResidual = false;
   isValidPreconditioner = false;
+  isValidSolverJacOp = false;
   return;
 }
 
@@ -180,6 +182,7 @@ Abstract::Group& Group::operator=(const Group& source)
   isValidJacobian = source.isValidJacobian;
   isValidNormNewtonSolveResidual = source.isValidNormNewtonSolveResidual;
   isValidPreconditioner = source.isValidPreconditioner;
+  isValidSolverJacOp = source.isValidSolverJacOp;
 
   // Only copy vectors that are valid
   if (isValidRHS) {
@@ -384,6 +387,11 @@ Abstract::Group::ReturnType Group::applyJacobianInverse (Parameter::List &p, con
   if (!isJacobian()) 
     return Abstract::Group::BadDependency;
 
+  if (!isValidSolverJacOp) {
+    sharedLinearSystem.getObject(this).setJacobianOperatorForSolve(sharedLinearSystem.getObject(this).getJacobianOperator());
+    isValidSolverJacOp = true;
+  }
+  
   bool reusePrec = 
     sharedLinearSystem.getObject(this).checkPreconditionerReuse();
 

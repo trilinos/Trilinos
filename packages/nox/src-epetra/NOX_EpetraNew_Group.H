@@ -303,6 +303,7 @@ protected:
   bool isValidNewton;
   bool isValidNormNewtonSolveResidual;
   mutable bool isValidPreconditioner;
+  mutable bool isValidSolverJacOp;
   //@}
   
   //! 2-Norm of RHS

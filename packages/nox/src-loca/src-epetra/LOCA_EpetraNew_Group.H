@@ -271,15 +271,28 @@ namespace LOCA {
        *     \end{bmatrix}
        * \f]
        */
-      virtual NOX::Abstract::Group::ReturnType
-      applyBorderedJacobianInverse(bool trans,
-				   NOX::Parameter::List& params,
-				   const NOX::Abstract::Vector& a,
-				   const NOX::Abstract::Vector& b,
-				   const NOX::Abstract::Vector& vInput,
-				   double sInput,
-				   NOX::Abstract::Vector& vResult,
-				   double& sResult) const;
+//       virtual NOX::Abstract::Group::ReturnType
+//       applyBorderedJacobianInverse(bool trans,
+// 				   NOX::Parameter::List& params,
+// 				   const NOX::Abstract::Vector& a,
+// 				   const NOX::Abstract::Vector& b,
+// 				   const NOX::Abstract::Vector& vInput,
+// 				   double sInput,
+// 				   NOX::Abstract::Vector& vResult,
+// 				   double& sResult) const;
+
+      //! Scales a vector using scaling vector
+      /*! 
+       * The implementation here uses the scaling vector \f$s\f$ if one
+       * is supplied:
+       * \f[
+       *     x_i = a_i*s_i.
+       * \f]
+       * If the scaling vector is not provided, the vector is rescaled by
+       * the square root of its length.
+       */
+      virtual void
+      scaleVector(NOX::Abstract::Vector& x) const;
 
       //@}
 

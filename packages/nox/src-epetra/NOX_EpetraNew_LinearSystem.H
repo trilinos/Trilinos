@@ -97,9 +97,7 @@ public:
   */
   virtual bool applyJacobianInverse(NOX::Parameter::List &params, 
 				    const NOX::Epetra::Vector &input, 
-				    NOX::Epetra::Vector &result,
-				    Epetra_Operator* jacOperator = NULL,
-				    Epetra_Operator* precOperator = NULL) = 0;
+				    NOX::Epetra::Vector &result) = 0;
 
   /*!
     \brief Apply right preconditiong to the given input vector
@@ -167,6 +165,10 @@ public:
 
   //! Return preconditioner operator
   virtual const Epetra_Operator& getGeneratedPrecOperator() const = 0;
+
+  //! Set Jacobian operator for solve
+  virtual void 
+  setJacobianOperatorForSolve(const Epetra_Operator& solveJacOp) = 0;
 };
 
 } // namespace EpetraNew
