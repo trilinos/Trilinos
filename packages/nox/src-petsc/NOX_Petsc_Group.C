@@ -45,8 +45,7 @@
 using namespace NOX;
 using namespace NOX::Petsc;
 
-Group::Group(const Parameter::List& params, Interface& i,
-             Vec& x, Mat& J) :
+Group::Group(Interface& i, Vec& x, Mat& J) :
   xVector(x, "Solution"), // deep copy x     
   RHSVector(x, "RHS", ShapeCopy), // new vector of same size
   gradVector(x, "Grad", ShapeCopy), // new vector of same size
@@ -57,15 +56,6 @@ Group::Group(const Parameter::List& params, Interface& i,
   userInterface(i)
 {
   resetIsValid();
-
-  // This is material for FD jacobian and is not used for now --> RHooper
-  //if(jacType == "Finite Difference") {
-  //  int ierr = MatGetColoring(J, MATCOLORING_NATURAL, isColoring);
-  //  ierr = MatFDColoringCreate(J, *isColoring, matColoring);
-  //  ierr = MatFDColoringSetFunction(matColoring, 
-  //              (int (*)(void))ResidualPetscWrapper,
-  //              PETSC_NULL);
-  //}
 }
 
 Group::Group(const Group& source, CopyType type) :
@@ -449,15 +439,6 @@ Group::applyJacobianTranspose(const Vector& input, Vector& result) const
   return Abstract::Group::Ok;
 }
 
-
-// This is intended for FD Jacobian computation --> RHooper
-//int Group::ResidualPetscWrapper(SNES, Vec& xx, Vec& fx, void*)
-//{
-//  bool status = userInterface.computeF(xx, fx);
-//
-//  return(0);
-//}
-  
 
 bool Group::isF() const 
 {   

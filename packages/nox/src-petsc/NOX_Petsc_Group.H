@@ -60,8 +60,7 @@ class Group : virtual public Abstract::Group {
 public:
 
   //! Constructor.
-  Group(const Parameter::List& params, Interface& i,
-             Vec& x, Mat& J);
+  Group(Interface& i, Vec& x, Mat& J);
 
   /*! \brief Copy constructor. If type is DeepCopy, takes ownership of
     valid shared Jacobian. */
