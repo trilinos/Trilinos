@@ -159,7 +159,7 @@ OCT_INC		= msg_const.h octant_const.h oct_util_const.h \
 		  rootlist_const.h SFC.h
 
 SFC_CSRC	= hilbert.c sfc.c sfc_create_info.c sfc_create_bins.c \
-		  sfc_refine_partition_level.c
+		  sfc_refine_partition_level.c sfc_refine_overloaded_bins.c
 SFC_INC		= hilbert_const.h sfc.h sfc_const.h
 
 PARAMS_CSRC	= set_param.c assign_param_vals.c check_param.c print_params.c \
