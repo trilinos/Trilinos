@@ -313,8 +313,11 @@ AC_CONFIG_FILES([
 		test/CrsGraph/Makefile
 		test/CrsMatrix/Makefile
 		test/CrsRectMatrix/Makefile
+		test/FECrsMatrix/Makefile
+		test/FEVector/Makefile
 		test/ImportExport/Makefile
 		test/Map/Makefile
+		test/MapColoring/Makefile
 		test/MultiVector/Makefile
 		test/Object/Makefile
 		test/SerialDense/Makefile

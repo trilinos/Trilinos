@@ -8189,7 +8189,7 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 # Output files
 # ------------------------------------------------------------------------
 ##
-ac_config_files="$ac_config_files Makefile src/Makefile test/Makefile test/BlockMap/Makefile test/CrsGraph/Makefile test/CrsMatrix/Makefile test/CrsRectMatrix/Makefile test/ImportExport/Makefile test/Map/Makefile test/MultiVector/Makefile test/Object/Makefile test/SerialDense/Makefile test/SerialSpdDense/Makefile test/VbrMatrix/Makefile test/Vector/Makefile test/Comm/Makefile example/Makefile example/petra_power_method/Makefile example/verySimple/Makefile test/scripts/Makefile test/scripts/daily/Makefile test/scripts/daily/mpi/Makefile test/scripts/daily/serial/Makefile test/scripts/weekly/Makefile test/scripts/weekly/mpi/Makefile test/scripts/weekly/serial/Makefile"
+ac_config_files="$ac_config_files Makefile src/Makefile test/Makefile test/BlockMap/Makefile test/CrsGraph/Makefile test/CrsMatrix/Makefile test/CrsRectMatrix/Makefile test/FECrsMatrix/Makefile test/FEVector/Makefile test/ImportExport/Makefile test/Map/Makefile test/MapColoring/Makefile test/MultiVector/Makefile test/Object/Makefile test/SerialDense/Makefile test/SerialSpdDense/Makefile test/VbrMatrix/Makefile test/Vector/Makefile test/Comm/Makefile example/Makefile example/petra_power_method/Makefile example/verySimple/Makefile test/scripts/Makefile test/scripts/daily/Makefile test/scripts/daily/mpi/Makefile test/scripts/daily/serial/Makefile test/scripts/weekly/Makefile test/scripts/weekly/mpi/Makefile test/scripts/weekly/serial/Makefile"
 
 
 cat >confcache <<\_ACEOF
@@ -8681,8 +8681,11 @@ do
   "test/CrsGraph/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/CrsGraph/Makefile" ;;
   "test/CrsMatrix/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/CrsMatrix/Makefile" ;;
   "test/CrsRectMatrix/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/CrsRectMatrix/Makefile" ;;
+  "test/FECrsMatrix/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/FECrsMatrix/Makefile" ;;
+  "test/FEVector/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/FEVector/Makefile" ;;
   "test/ImportExport/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/ImportExport/Makefile" ;;
   "test/Map/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/Map/Makefile" ;;
+  "test/MapColoring/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/MapColoring/Makefile" ;;
   "test/MultiVector/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/MultiVector/Makefile" ;;
   "test/Object/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/Object/Makefile" ;;
   "test/SerialDense/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/SerialDense/Makefile" ;;

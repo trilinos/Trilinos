@@ -371,8 +371,8 @@ sub sendemail {
     # At least one problem occurred throughout the course of testing
     my $subject_line=join " - ", $ARCH,'At least one test failed';
     my $msg=MIME::Lite->new(
-			    From =>'jmwille@sandia.gov',
-#			    To =>'jmwille@sandia.gov, jmwille',
+			    From =>'trilinos-regression@software.sandia.gov',
+#			    To =>'jmwille@sandia.gov',
 			    To => $mail_to,
 			    Subject => $subject_line,
 			    Type =>'multipart/mixed'
@@ -472,7 +472,7 @@ system "rm -f logErrors.txt logMpiErrors.txt";
     # No problems occurred of any kind
     my $subject_line=join " - ", $ARCH,'All tests passed';
     my $msg=MIME::Lite->new(
-			    From =>'jmwille@sandia.gov',
+			    From =>'trilinos-regression@software.sandia.gov',
 			    To => $mail_to,
 			    Subject => $subject_line,
 			    Type =>'multipart/mixed'

@@ -1,6 +1,7 @@
 #@HEADER
 #@HEADER
 
-SUBDIRS = BlockMap CrsGraph CrsMatrix CrsRectMatrix ImportExport \
-Map MultiVector Object SerialDense SerialSpdDense \
+SUBDIRS = BlockMap CrsGraph CrsMatrix CrsRectMatrix \
+FECrsMatrix FEVector ImportExport Map MapColoring \
+MultiVector Object SerialDense SerialSpdDense \
 VbrMatrix Vector Comm scripts
