@@ -182,7 +182,7 @@ int read_hypergraph_file(
    * information from the Chaco file
    */
   if (!chaco_fill_elements(Proc, Num_Proc, prob, mesh, gnvtxs, nvtxs,
-                     NULL, NULL, vwgt_dim, vwgts, NULL, NULL, 
+                     NULL, NULL, vwgt_dim, vwgts, 0, NULL, 
                      ndim, NULL, NULL, NULL, NULL, base)) {
     Gen_Error(0, "fatal: Error returned from chaco_fill_elements");
     return 0;

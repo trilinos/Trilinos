@@ -20,9 +20,12 @@
 extern "C" {
 #endif
 
+#include "dr_input_const.h"
+
 
 extern int setup_zoltan(struct Zoltan_Struct *, int, PROB_INFO_PTR, MESH_INFO_PTR); 
-extern int run_zoltan(struct Zoltan_Struct *, int, PROB_INFO_PTR, MESH_INFO_PTR); 
+extern int run_zoltan(struct Zoltan_Struct *, int, PROB_INFO_PTR, MESH_INFO_PTR,
+                      PARIO_INFO_PTR); 
 extern int migrate_elements(int, MESH_INFO_PTR, struct Zoltan_Struct *, 
                             int, int, 
                             int, ZOLTAN_ID_PTR, ZOLTAN_ID_PTR, int *, int *,

@@ -728,6 +728,10 @@ void Zoltan_RB_stats(ZZ *zz, double timetotal, struct Dot_Struct *dotpt,
   MPI_Comm_size(zz->Communicator,&nprocs);
   print_proc = zz->Debug_Proc;
   
+  /* Make certain that timetotal is the same everywhere. */
+  MPI_Allreduce(&timetotal,&rmax,1,MPI_DOUBLE,MPI_MAX,zz->Communicator);
+  timetotal = rmax;
+
   if (proc == print_proc) 
     printf("Partitioning total time: %g (secs)\n", timetotal);
 

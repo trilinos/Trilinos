@@ -659,8 +659,8 @@ void Zoltan_Coarse_Obj_List_Fort_Wrapper(void *data,
                            int num_gid_entries, int num_lid_entries,
                            ZOLTAN_ID_PTR global_ids,
                            ZOLTAN_ID_PTR local_ids, int *assigned, int *num_vert,
-                           int *vertices, int *in_order, int *in_vertex,
-                           int *out_vertex, int *ierr)
+                           ZOLTAN_ID_PTR vertices, int *in_order, ZOLTAN_ID_PTR in_vertex,
+                           ZOLTAN_ID_PTR out_vertex, int *ierr)
 {
    Zoltan_Current->Get_Coarse_Obj_List_Fort(data, 
                                            &num_gid_entries, &num_lid_entries,
@@ -674,9 +674,9 @@ int Zoltan_First_Coarse_Obj_Fort_Wrapper(void *data,
                                      int num_gid_entries, int num_lid_entries, 
                                      ZOLTAN_ID_PTR global_id,
                                      ZOLTAN_ID_PTR local_id, int *assigned,
-                                     int *num_vert, int *vertices,
-                                     int *in_order, int *in_vertex,
-                                     int *out_vertex, int *ierr)
+                                     int *num_vert, ZOLTAN_ID_PTR vertices,
+                                     int *in_order, ZOLTAN_ID_PTR in_vertex,
+                                     ZOLTAN_ID_PTR out_vertex, int *ierr)
 {
    return Zoltan_Current->Get_First_Coarse_Obj_Fort(data, 
                                                    &num_gid_entries, 
@@ -693,8 +693,8 @@ int Zoltan_Next_Coarse_Obj_Fort_Wrapper(void *data, int num_gid_entries,
                                     ZOLTAN_ID_PTR next_global_id, 
                                     ZOLTAN_ID_PTR next_local_id,
                                     int *assigned,
-                                    int *num_vert, int *vertices,
-                                    int *in_vertex, int *out_vertex, int *ierr)
+                                    int *num_vert, ZOLTAN_ID_PTR vertices,
+                                    ZOLTAN_ID_PTR in_vertex, ZOLTAN_ID_PTR out_vertex, int *ierr)
 {
    return Zoltan_Current->Get_Next_Coarse_Obj_Fort(data, &num_gid_entries,
                                                   &num_lid_entries,
@@ -719,9 +719,9 @@ void Zoltan_Child_List_Fort_Wrapper(void *data,
                                 ZOLTAN_ID_PTR parent_gid,
                                 ZOLTAN_ID_PTR parent_lid, ZOLTAN_ID_PTR child_gids,
                                 ZOLTAN_ID_PTR child_lids, int *assigned,
-                                int *num_vert, int *vertices,
-                                ZOLTAN_REF_TYPE *ref_type, int *in_vertex,
-                                int *out_vertex, int *ierr)
+                                int *num_vert, ZOLTAN_ID_PTR vertices,
+                                ZOLTAN_REF_TYPE *ref_type, ZOLTAN_ID_PTR in_vertex,
+                                ZOLTAN_ID_PTR out_vertex, int *ierr)
 {
    Zoltan_Current->Get_Child_List_Fort(data, &num_gid_entries, &num_lid_entries,
                                       parent_gid, parent_lid,

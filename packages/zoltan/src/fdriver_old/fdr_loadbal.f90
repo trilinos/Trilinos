@@ -264,6 +264,12 @@ integer(LB_INT) function get_first_element(data, &
   mesh_data => data%ptr
   elem => mesh_data%elements
 
+  if (mesh_data%num_elems.eq.0) then  !no elements on this processor
+    ierr = LB_OK
+    get_first_element = 0
+    return
+  endif
+
   if (.not. associated(elem)) then
     ierr = LB_FATAL
     get_first_element = 0

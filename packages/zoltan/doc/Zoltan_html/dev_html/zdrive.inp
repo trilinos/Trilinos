@@ -259,11 +259,17 @@ Zdrive debug level = 1
 # as Chaco input is balanced with respect to graph nodes).  Data style
 # "linespoints" is used; this style can be changed using gnuplot's
 # "set data style ..." command.
+#
 # For Nemesis input files, all edges are drawn (as Nemesis input is balanced
 # with respect to elements).  Data style "lines" is used; this style can be 
 # changed using gnuplot's # "set data style ..." command.
+# In addition, processor assignments are written to the parallel Nemesis files
+# to be viewed by other graphics packages (avs, mustafa, blot, etc.).  Note
+# that the parallel Nemesis files must have space allocated for at least one
+# elemental variable; this allocation is done by nem_spread.
 #
-# This capability currently works only for 2D problems.
+# Gnuplot capability currently works only for 2D problems; for 3D Nemesis
+# files, processors assignments are written to the parallel Nemesis files.
 #
 # Default value is 0.
 #-----------------------------------------------------------------------------

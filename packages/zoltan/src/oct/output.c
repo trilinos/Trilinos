@@ -42,7 +42,11 @@ void Zoltan_Oct_print_stats(ZZ *zz, double timetotal, double *timers, int *count
   MPI_Comm_size(zz->Communicator, &nprocs);
   print_proc = zz->Debug_Proc;
   
-  /* print out some headders */
+  /* Make certain that timetotal is the same everywhere. */
+  MPI_Allreduce(&timetotal,&rmax,1,MPI_DOUBLE,MPI_MAX,zz->Communicator);
+  timetotal = rmax;
+
+  /* print out some headers */
   if (proc == print_proc) printf("Total time: %g (secs)\n",timetotal);
   if (proc == print_proc) printf("Statistics:\n");
 

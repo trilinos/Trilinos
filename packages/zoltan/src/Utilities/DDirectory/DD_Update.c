@@ -120,10 +120,12 @@ int Zoltan_DD_Update (
       ptr      = (DD_Update_Msg *) (sbuff + i * dd->update_msg_size) ;
 
       ptr->owner     = dd->my_proc ;
-      ptr->partition = (partition == NULL) ? 0 : *(partition + i) ;
+      ptr->partition = (partition == NULL) ? -1 : *(partition + i) ;
+      ptr->lid_flag       = (lid)  ? 1 : 0 ;
+      ptr->user_flag      = (user) ? 1 : 0 ;
+      ptr->partition_flag = (partition) ? 1 : 0 ;
 
       ZOLTAN_SET_ID (dd->gid_length, ptr->gid, gid + i * dd->gid_length) ;
-
       if (lid)
          ZOLTAN_SET_ID (dd->lid_length, ptr->gid + dd->gid_length, lid
           + i * dd->lid_length) ;
@@ -178,9 +180,9 @@ int Zoltan_DD_Update (
       ptr = (DD_Update_Msg *) (rbuff + i * dd->update_msg_size) ;
 
       err = DD_Update_Local (dd, ptr->gid,
-       (lid)   ? (ptr->gid + dd->gid_length)                    : NULL,
-       (user)  ? (ptr->gid + (dd->gid_length + dd->lid_length)) : NULL,
-       (partition) ? (ptr->partition) : 0,
+       (ptr->lid_flag)  ? (ptr->gid + dd->gid_length)                    : NULL,
+       (ptr->user_flag) ? (ptr->gid + (dd->gid_length + dd->lid_length)) : NULL,
+       (ptr->partition_flag) ? (ptr->partition) : -1,    /* illegal partition */
        ptr->owner) ;
 
       if (err != ZOLTAN_DD_NORMAL_RETURN && err != ZOLTAN_DD_GID_ADDED)
@@ -229,7 +231,7 @@ static int DD_Update_Local (Zoltan_DD_Directory *dd,
  ZOLTAN_ID_PTR gid,          /* GID to update (in)                        */
  ZOLTAN_ID_PTR lid,          /* gid's LID (in), NULL if not needed        */
  ZOLTAN_ID_PTR user,         /* gid's user data (in), NULL if not needed  */
- int partition,          /* gid's partition (in), 0 if not used       */
+ int partition,          /* gid's partition (in), -1 if not used       */
  int owner)              /* gid's current owner (proc number) (in)    */
    {
    DD_Node **ptr ;
@@ -268,7 +270,8 @@ static int DD_Update_Local (Zoltan_DD_Directory *dd,
               + dd->lid_length), user) ;
 
           (*ptr)->owner     = owner ;
-          (*ptr)->partition = partition ;
+          if (partition != -1)
+             (*ptr)->partition = partition ;
 
           /* Response to multiple updates to a gid in 1 update cycle */
           if (dd->debug_level == 0 || (*ptr)->errcheck == ZOLTAN_DD_NO_PROC)
@@ -313,10 +316,11 @@ static int DD_Update_Local (Zoltan_DD_Directory *dd,
    if (user)
       ZOLTAN_SET_ID (dd->user_data_length, (*ptr)->gid + (dd->gid_length
        + dd->lid_length), user) ;
+   if (partition != -1)
+      (*ptr)->partition = partition ;
 
    (*ptr)->next      = NULL ;
    (*ptr)->owner     = owner ;
-   (*ptr)->partition = partition ;
    (*ptr)->errcheck  = owner ;
 
    if (dd->debug_level > 2)

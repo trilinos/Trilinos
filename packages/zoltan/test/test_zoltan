@@ -146,6 +146,9 @@ if (! $?run ) then
     case cplant:
       set run = "yod -sz"
       breaksw
+    case stratus:
+      set run = "mpirun -np"
+      breaksw
     case dec:
       set run = "dmpirun -np"
       breaksw
@@ -448,6 +451,7 @@ if (! $no_nemesis ) then
 endif # Nemesis
 
 # Exit successfully
+echo "Test final = `date`" >> $logfile
 exit 0
 
 # Print usage and exit with error

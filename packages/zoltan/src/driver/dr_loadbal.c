@@ -198,7 +198,7 @@ int setup_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
 /*****************************************************************************/
 
 int run_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
-               MESH_INFO_PTR mesh)
+               MESH_INFO_PTR mesh, PARIO_INFO_PTR pio_info)
 {
 /* Local declarations. */
   char *yo = "run_zoltan";
@@ -261,6 +261,24 @@ int run_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
     MPI_Allreduce(&mytime, &maxtime, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
     if (Proc == 0)
       printf("DRIVER:  Zoltan_LB_Partition time = %g\n", maxtime);
+
+    {int mine[2], gmax[2], gmin[2];
+    mine[0] = num_imported;
+    mine[1] = num_exported;
+    MPI_Allreduce(mine, gmax, 2, MPI_INT, MPI_MAX, MPI_COMM_WORLD);
+    MPI_Allreduce(mine, gmin, 2, MPI_INT, MPI_MIN, MPI_COMM_WORLD);
+    if (Proc == 0) {
+      printf("DRIVER:  Min/Max Import: %d %d\n", gmin[0], gmax[0]);
+      printf("DRIVER:  Min/Max Export: %d %d\n", gmin[1], gmax[1]);
+    }
+    }
+
+#ifdef ZOLTAN_NEMESIS
+    if (pio_info->file_type == NEMESIS_FILE && Gnuplot_Output) {
+      i = write_elem_vars(Proc, mesh, pio_info, num_exported, export_gids,
+                          export_procs);
+    }
+#endif
   
     if (Proc == 0) {
       double x[] = {0.0L, 0.0L, 0.0L} ;

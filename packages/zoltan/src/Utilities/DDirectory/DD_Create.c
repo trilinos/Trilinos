@@ -45,6 +45,7 @@ int Zoltan_DD_Create (
    {
    int size ;
    int my_proc;
+   int array[3], max_array[3], min_array[3] ;
    char *yo = "Zoltan_DD_Create" ;
 
    if (MPI_Comm_rank(comm, &my_proc) != MPI_SUCCESS) 
@@ -64,6 +65,19 @@ int Zoltan_DD_Create (
          ZOLTAN_TRACE_OUT (my_proc, yo, NULL);
       return ZOLTAN_DD_INPUT_ERROR ;
       }
+
+   /* insure all processors are using the same GID, LID, USER lengths */
+   array[0] = num_gid ;
+   array[1] = num_lid ;
+   array[2] = user_length ;
+   MPI_Allreduce (array, max_array, 3, MPI_INT, MPI_MAX, comm) ;
+   MPI_Allreduce (array, min_array, 3, MPI_INT, MPI_MIN, comm) ;
+   if (max_array[0] != min_array[0] || max_array[1] != min_array[1]
+    || max_array[2] != min_array[2])
+       {
+       ZOLTAN_PRINT_ERROR (-1, yo, "LID, GID, USER data lengths differ globally");
+       return ZOLTAN_FATAL ;
+       }
 
    /* malloc memory for the directory structure + hash table */
    size = (table_length == 0) ? ZOLTAN_DD_HASH_TABLE_COUNT : table_length ;

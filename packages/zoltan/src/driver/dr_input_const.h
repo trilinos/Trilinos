@@ -100,6 +100,15 @@ extern int read_exoII_mesh(
   MESH_INFO_PTR mesh
 );
 
+extern int write_elem_vars(
+  int Proc,
+  MESH_INFO_PTR mesh,
+  PARIO_INFO_PTR pio_info,
+  int num_exp,
+  ZOLTAN_ID_PTR exp_gids,
+  int *exp_procs
+);
+
 extern int read_chaco_mesh(
   int Proc,
   int Num_Proc,

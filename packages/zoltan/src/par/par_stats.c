@@ -52,9 +52,14 @@ void Zoltan_Print_Stats (MPI_Comm communicator, int debug_proc, double x, char *
   MPI_Reduce((void *)&x, (void *)&max, 1, MPI_DOUBLE, MPI_MAX, debug_proc, 
              communicator);
 
-  if (proc == debug_proc && sum != 0.0)
-    printf("%s: Max: %g, Sum: %g, Imbal.: %g\n",
-            msg, max, sum, max*(num_proc)/sum);
+  if (proc == debug_proc) {
+    if (sum <= 0.0)
+      printf("%s: Max: %g, Sum: %g, Imbal.: N.A.\n",
+              msg, max, sum);
+    else /* sum > 0.0 */
+      printf("%s: Max: %g, Sum: %g, Imbal.: %g\n",
+              msg, max, sum, max*(num_proc)/sum);
+  }
 
 }
 

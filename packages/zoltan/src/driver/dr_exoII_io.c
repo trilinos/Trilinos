@@ -46,6 +46,7 @@ static int read_elem_info(int, int, PROB_INFO_PTR, MESH_INFO_PTR);
 static int find_surnd_elem(MESH_INFO_PTR, int **, int *, int *);
 static int find_adjacency(int, MESH_INFO_PTR, int **, int *, int);
 static int read_comm_map_info(int, int, PROB_INFO_PTR, MESH_INFO_PTR);
+static void fcopy(char *, char *);
 #endif /* ZOLTAN_NEMESIS */
 
 /****************************************************************************/
@@ -902,6 +903,114 @@ static int read_comm_map_info(int pexoid, int Proc, PROB_INFO_PTR prob,
   DEBUG_TRACE_END(Proc, yo);
   return 1;
 }
+
+/****************************************************************************/
+/****************************************************************************/
+/****************************************************************************/
+
+int write_elem_vars(
+  int Proc,
+  MESH_INFO_PTR mesh,
+  PARIO_INFO_PTR pio_info, 
+  int num_exp, 
+  ZOLTAN_ID_PTR exp_gids,
+  int *exp_procs
+)
+{
+/* Routine to write processor assignments per element to the nemesis files. */
+int iblk;
+int i, j;
+int tmp;
+float ver;
+int pexoid, cpu_ws = 0, io_ws = 0;
+int max_cnt = 0;
+float *vars;
+char par_nem_fname[FILENAME_MAX+1];
+char tmp_nem_fname[FILENAME_MAX+1];
+int Num_Proc;
+char cmesg[256];
+char *str = "Proc";
+
+  /* generate the parallel filename for this processor */
+  MPI_Comm_size(MPI_COMM_WORLD, &Num_Proc);
+  gen_par_filename(pio_info->pexo_fname, tmp_nem_fname, pio_info, Proc,
+                   Num_Proc);
+  /* 
+   * Copy the parallel file to a new file (so we don't write results in the
+   * cvs version).
+   */
+  sprintf(cmesg, "%s.blot", pio_info->pexo_fname);
+  gen_par_filename(cmesg, par_nem_fname, pio_info, Proc,
+                   Num_Proc);
+  fcopy(tmp_nem_fname, par_nem_fname);
+
+  if ((pexoid = ex_open(par_nem_fname, EX_WRITE, &cpu_ws, &io_ws,
+                        &ver)) < 0) {
+    sprintf(cmesg,"fatal: could not open parallel Exodus II file %s",
+            par_nem_fname);
+    Gen_Error(0, cmesg);
+    return 0;
+  }
+
+  if (ex_put_var_names(pexoid, "e", 1, &str) < 0) {
+    Gen_Error(0, "Error returned from ex_put_var_names.");
+    return 0;
+  }
+
+  /* Get max number of elements in an element block; alloc vars array to size */
+  for (iblk = 0; iblk < mesh->num_el_blks; iblk++)
+    max_cnt = (mesh->eb_cnts[iblk] > max_cnt ? mesh->eb_cnts[iblk] : max_cnt);
+
+  vars = (float *) malloc(max_cnt * sizeof(float));
+
+  /* Must write data by element block; gather the data */
+  for (iblk = 0; iblk < mesh->num_el_blks; iblk++) {
+    for (j = 0, i = 0; i < mesh->num_elems; i++) {
+      if (mesh->elements[i].elem_blk == iblk) {
+        /* Element is in block; see whether it is to be exported. */
+        if ((tmp=in_list(mesh->elements[i].globalID, num_exp, (int *) exp_gids)) != -1)
+          vars[j++] = (float) (exp_procs[tmp]);
+        else
+          vars[j++] = (float) (Proc);
+      }
+    }
+    if (ex_put_elem_var(pexoid, 1, 1, mesh->eb_ids[iblk], 
+                        mesh->eb_cnts[iblk], vars) < 0) {
+      Gen_Error(0, "fatal: Error returned from ex_put_elem_var");
+      return 0;
+    }
+  }
+
+  safe_free((void **) &vars);
+  /* Close the parallel file */
+  if(ex_close (pexoid) < 0) {
+    Gen_Error(0, "fatal: Error returned from ex_close");
+    return 0;
+  }
+  return 1;
+}
+
+/****************************************************************************/
+void fcopy(char *in, char *out)
+{
+/* Copies contents of an Exodus file to a new file.
+ * Used instead of system("cp in out") because ASCI Red doesn't have "system".
+ * Writing to a copy because don't want to write to CVS version of nemesis
+ * files; that would be asking for a CVS headache.
+ */
+FILE *fin, *fout;
+
+  fin = fopen(in, "r");
+  fout = fopen(out, "w");
+
+  while (!feof(fin))
+    putc(getc(fin), fout);
+
+  fclose(fin);
+  fclose(fout);
+}
+
+
 #endif /* ZOLTAN_NEMESIS */
 
 #ifdef __cplusplus

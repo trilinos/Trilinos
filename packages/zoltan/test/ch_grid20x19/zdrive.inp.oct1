@@ -1,6 +1,6 @@
 Decomposition Method 	= octpart
 Zoltan Parameters	= oct_method=1
-Zoltan Parameters	= 
+Zoltan Parameters	= debug_level=3, timer=cpu
 File Type		= Chaco
 File Name		= grid20x19
 Parallel Disk Info	= number=0

@@ -149,9 +149,8 @@ int Zoltan_DD_Find (
       {
       ptr = (DD_Find_Msg *) (rbuff + i*dd->find_msg_size) ;
 
-      err = DD_Find_Local (dd, ptr->id, ptr->id,
-       (lid)       ? (ptr->id + dd->max_id_length) : NULL,
-       (partition) ? (&ptr->partition)             : NULL, &ptr->proc) ;
+      err = DD_Find_Local (dd, ptr->id, ptr->id, ptr->id + dd->max_id_length,
+       (partition) ? (&ptr->partition) : NULL, &ptr->proc) ;
       if (err == ZOLTAN_DD_GID_NOT_FOUND_ERROR)
           errcount++ ;
       }

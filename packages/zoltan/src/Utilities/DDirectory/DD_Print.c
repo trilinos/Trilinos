@@ -60,6 +60,14 @@ int Zoltan_DD_Print (
          for (j = 0 ; j < dd->gid_length ; j++)
             printf("%u ", ptr->gid[j]);
          printf(") ");
+         if (dd->lid_length > 0) 
+            {
+            printf("\tLID (");
+            for (j = 0; j < dd->lid_length; j++)
+               printf("%u ", ptr->gid[j+dd->gid_length]);
+            printf(") ");
+            }
+         printf ("\tPart %d\n", ptr->partition) ;
          printf ("\tOwner %d\n", ptr->owner) ;
          }
 

@@ -18,17 +18,17 @@ extern "C" {
 #endif
 
 
+#include <stdlib.h>
 #include <stdio.h>
-#include <mpi.h>
-#ifdef __STDC__
 #include <string.h>
-#else
-#include <strings.h>
-#endif  /* __STDC__ */
+#include <mpi.h>
 
 #include "timer.h"
 #include "params_const.h"
 #include "zoltan_util.h"
+#ifdef __PUMAGON__
+#include <nx.h>
+#endif
 
 /*
  * Machine independent timing utilities.
@@ -59,19 +59,15 @@ int *timer)                     /* output: timer type */
         if (!strcmp(result.sval, "WALL"))
           (*timer) = ZOLTAN_TIME_WALL;
         else if (strcmp(result.sval, "CPU")==0) {
-#if (! defined(SMOS))
           (*timer) = ZOLTAN_TIME_CPU;
-#else  /* SMOS */
-          ZOLTAN_PRINT_WARN(-1, yo, "CPU time not available;"
-                        " Wall clock time will be used.");
-#endif /* SMOS */
         }
         else if (strcmp(result.sval, "USER")==0){
-#if (! defined(NO_TIMES))
+#ifndef NO_TIMES
           (*timer) = ZOLTAN_TIME_USER;
 #else
           ZOLTAN_PRINT_WARN(-1, yo, "User time not available;"
-                          " Wall clock time will be used.");
+                          " CPU clock time will be used instead.");
+          (*timer) = ZOLTAN_TIME_CPU;
 #endif
         }
         else{
@@ -87,42 +83,46 @@ int *timer)                     /* output: timer type */
 
 
 /* Timer routine that returns either CPU or wall-clock time.
-   The ANSI function clock() might roll over at approx 71.5 minutes,
-   so we try to determine the number of rollovers.
+   The ANSI function clock() may roll over at approx 71.5 minutes,
+   on some systems so we try to determine the number of rollovers.
 */
 
 double Zoltan_Time(int timer)
 {
   double t = -1.;
 
-#if (! defined(SMOS))
+#ifndef __PUMAGON__
   clock_t num_ticks;
   static clock_t last_num_ticks = 0;
   static int     clock_rollovers = 0;
-  static double  secs_per_clock = 1./((double) CLOCKS_PER_SEC);
+  static double  secs_per_clock = (double) 1./((double) CLOCKS_PER_SEC);
   static double  clock_width = 
     ((double)(1L<<((int)sizeof(clock_t)*8-2)))*4./((double) CLOCKS_PER_SEC);
-  static double  secs_per_tick  = 0.; /* Not necessarily the same as secs_per_clock; system-dependent; get value from sysconf(). */
-#endif /* !SMOS */
+  static double  secs_per_tick  = 0.; /* Not necessarily the same as 
+         secs_per_clock; system-dependent; get value from sysconf(). */
+#endif
 
   if (timer==ZOLTAN_TIME_WALL)
     /* Wall clock */
     t = MPI_Wtime();
   else if (timer==ZOLTAN_TIME_CPU) {
+#ifdef __PUMAGON__
+    /* CPU time on ASCI Red. */
+    t = dclock();
+#else
     /* CPU time */
-#if (! defined(SMOS))
     num_ticks = clock();
     if (num_ticks < last_num_ticks) clock_rollovers++;
     t = num_ticks * secs_per_clock;
     if (clock_rollovers) t += clock_rollovers * clock_width;
     last_num_ticks = num_ticks;
-#endif /* !SMOS */
+#endif
   }
-#if (! defined(NO_TIMES))
+#ifndef NO_TIMES
   else if (timer==ZOLTAN_TIME_USER) {
     struct tms tm;
     if (secs_per_tick == 0.)
-      secs_per_tick = 1. / ((double) sysconf(_SC_CLK_TCK));
+      secs_per_tick = (double) 1. / ((double) sysconf(_SC_CLK_TCK));
     times(&tm);
     t = tm.tms_utime * secs_per_tick;
   }
@@ -143,14 +143,11 @@ double Zoltan_Time_Resolution(int timer)
 
   if (timer==ZOLTAN_TIME_WALL)
     t = MPI_Wtick();
-#if (! defined(SMOS))
   else if (timer==ZOLTAN_TIME_CPU)
-    t = 1. / ((double) CLOCKS_PER_SEC);
-#endif /* !SMOS */
-#if (! defined(NO_TIMES))
-  else if (timer==ZOLTAN_TIME_USER){
-    t = 1. / ((double) sysconf(_SC_CLK_TCK));
-  }
+    t = (double) 1. / ((double) CLOCKS_PER_SEC);
+#ifndef NO_TIMES
+  else if (timer==ZOLTAN_TIME_USER)
+    t = (double) 1. / ((double) sysconf(_SC_CLK_TCK));
 #endif 
 
   return t;

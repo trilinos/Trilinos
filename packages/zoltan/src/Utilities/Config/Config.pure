@@ -15,9 +15,6 @@
 #  Environment variables for compiling the Zoltan and test drivers using purify 
 #  for solaris on Sandia's 980 LAN.  Purify detects memory problems such as 
 #  overwriting memory or leaking memory.
-#  The F90 compiler on this LAN is the PSR #  compiler, which is currently 
-#  not supported in Zoltan.  Thus, F90 compilation  in this environment has 
-#  not been tested.
 #  For explanations of these variables, please see Makefile.generic.
 ##############################################################################
 
@@ -35,19 +32,20 @@ PURE_CC			= purify -best-effort -follow-child-processes=yes \
 
 INCLUDE_PATH		= -I/Net/local/lang/SC3.0.1/include \
 			  -I/Net/local/lang/SC3.0.1/ansi_include \
+                          -I/Net/proj/zoltan/arch/solaris/include \
 			  -I/Net/local/mpi/include \
 			  -I/Net/local/mpi/build/solaris/ch_p4/include
 DBG_FLAGS		= -g
 OPT_FLAGS		= -O
 CFLAGS 			= $(DBG_FLAGS)
 
-F90			= mpif90
-LOCAL_F90		= f90
-F90CFLAGS 		= -DFMANGLE=UNDERSCORE -DNO_MPI2
-FFLAGS    		= 
-SPPR_HEAD 		= spprinc.sun
-F90_MODULE_PREFIX 	= -M
-FARG      		= farg_typical
+F90                     = f90
+LOCAL_F90               = f90
+F90CFLAGS               = -DFMANGLE=UNDERSCORE -DNO_MPI2
+FFLAGS                  =
+SPPR_HEAD               = spprinc.most
+F90_MODULE_PREFIX       = -M
+FARG                    = farg_typical
 
 MPI_LIB			= -lpmpich -lmpich -lsocket -lnsl -laio -lgcc
 MPI_LIBPATH		= -L/Net/local/mpi/build/solaris/ch_p4/lib \

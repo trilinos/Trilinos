@@ -36,7 +36,6 @@ extern "C" {
 #define ZOLTAN_DD_UPDATE_MSG_TAG   29140  /* needs 2 consecutive values */
 #define ZOLTAN_DD_REMOVE_MSG_TAG   29142  /* needs 2 consecutive values */
 
-
 #ifndef TRUE
 #define FALSE (0)
 #define TRUE  (1)
@@ -112,7 +111,10 @@ struct Zoltan_DD_Struct
 
 typedef struct           /* Only used by Zoltan_DD_Update()           */
    {
-   int owner ;           /* range [0, nproc-1]                        */
+   char  lid_flag ;          /* indicates if LID data are present  */
+   char  user_flag ;         /* indicates if USER data are present */
+   char  partition_flag ;    /* indicates if optional partition data present */
+   int owner ;               /* range [0, nproc-1]                        */
    int partition ;
    ZOLTAN_ID_TYPE gid[1] ;   /* struct malloc'd to include gid & lid & user */
                              /* LID found at gid[dd->gid_length]            */

@@ -20,30 +20,30 @@
 extern "C" {
 #endif
 
-
-#include <time.h> /* ANSI C; defines clock_t and clock() */
 #include "timer_const.h"
+#include <time.h> /* ANSI C; defines clock_t and clock() */
 
-#ifdef SMOS
-/* Tflops is special. Only use MPI's wall time. */
-#define NO_TIMES
-#else /* !SMOS */
-#include <unistd.h> /* Needed for sysconf() */
 #ifndef CLOCKS_PER_SEC /* Should have been defined in time.h */
 #define CLOCKS_PER_SEC 1000000 /* To prevent compile errors, not always the correct value. */
 #endif
-#endif /* !SMOS */
 
 /*
  * POSIX compliant systems should use times() for user timing. 
  * This is the default in Zoltan. Make Zoltan with -DNO_TIMES if
  * your system does not have sys/times.h and times().
- * Note: BSD-like systems may use getrusage() instead for user timing.
+ * Note: BSD-like systems may use getrusage() instead for user timing,
+ * but that has not been implemented here. 
  */
 
+#ifdef __PUMAGON__
+/* Tflops with Cougar does not have sysconf() or times() */
+#define NO_TIMES
+#endif /* __PUMAGON__ */
+
 #ifndef NO_TIMES
-/* #include <sys/types.h> -- Not required on most systems. */
+/* #include <sys/types.h> -- Included by sys/times.h on most systems. */
 #include <sys/times.h>
+#include <unistd.h> /* Needed for sysconf() and _SC_CLK_TCK */
 #endif
 
 #ifdef __cplusplus

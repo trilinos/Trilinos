@@ -1,6 +1,6 @@
 Decomposition Method 	= rcb
 Zoltan Parameters	= obj_weight_dim=1
-Zoltan Parameters = keep_cuts=1
+Zoltan Parameters = keep_cuts=1, debug_level=3, timer=user
 File Type		= Chaco, initial distribution = file
 File Name		= drake
 Parallel Disk Info	= number=0

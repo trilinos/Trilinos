@@ -221,7 +221,7 @@ int main(int argc, char *argv[])
      * now run Zoltan to get a new load balance and perform
      * the migration
      */
-    if (!run_zoltan(zz, Proc, &prob, &mesh)) {
+    if (!run_zoltan(zz, Proc, &prob, &mesh, &pio_info)) {
       Gen_Error(0, "fatal: Error returned from run_zoltan\n");
       error_report(Proc);
       exit(1);
