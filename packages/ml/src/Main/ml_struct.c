@@ -62,6 +62,12 @@ int ML_Create(ML **ml_ptr, int Nlevels)
    if (global_comm == NULL) 
      global_comm = (*ml_ptr)->comm;
 
+   if ((*ml_ptr)->comm->ML_mypid == 0 && 2 < ML_Get_PrintLevel() &&
+       (Nlevels <= 0)) {
+     printf("ML_Create: Warning No. of requested levels = %d\n",Nlevels);
+   }
+
+
    ML_memory_alloc((void**) &pre_smoother, sizeof(ML_Smoother)*Nlevels,"MS1");
    ML_memory_alloc((void**) &post_smoother,sizeof(ML_Smoother)*Nlevels,"MS2");
    ML_memory_alloc((void**) &csolve       ,sizeof(ML_CSolve  )*Nlevels,"MCS");
