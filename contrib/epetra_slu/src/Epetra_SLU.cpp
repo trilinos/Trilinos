@@ -5,6 +5,10 @@ namespace SLU
 {
 extern "C" {
 #include "dsp_defs.h"
+
+#ifdef Xyce_NEW_SLU
+extern int sp_ienv_fill_size(int);
+#endif
 }
 }
 
@@ -20,16 +24,19 @@ struct SLUData
   SLU::mem_usage_t mem_usage;
 };
 
-Epetra_SLU::Epetra_SLU( Epetra_LinearProblem * Problem )
+Epetra_SLU::Epetra_SLU( Epetra_LinearProblem * Problem,
+                        const int fill_fac,
+                        const int panel_size,
+                        const int relax )
 : count_(0)
 {
   using namespace SLU;
 
   data_ = new SLUData();
 
-  data_->iparam.panel_size = -1;
-  data_->iparam.relax      = -1;
-  data_->iparam.diag_pivot_thresh = 1.0;
+  data_->iparam.panel_size = panel_size;
+  data_->iparam.relax      = relax;
+  data_->iparam.diag_pivot_thresh = -1;
   data_->iparam.drop_tol = -1;
 
   A_ = dynamic_cast<Epetra_CrsMatrix *> (Problem->GetOperator());
@@ -102,6 +109,15 @@ Epetra_SLU::Epetra_SLU( Epetra_LinearProblem * Problem )
 
   R_ = new double[m];
   C_ = new double[n];
+
+#ifdef Xyce_NEW_SLU
+  cout << "Fill Fac: " << fill_fac << endl;
+  if( fill_fac != -1 )
+  {
+    cout << "Calling Reset of SLU's fill factor!\n";
+    sp_ienv_fill_size( fill_fac );
+  }
+#endif
 }
 
 Epetra_SLU::~Epetra_SLU()
@@ -166,7 +182,11 @@ void Epetra_SLU::Copy()
   }
 }
 
-int Epetra_SLU::Solve( bool Verbose )
+int Epetra_SLU::Solve( const bool Verbose,
+                       const bool Equil,
+                       const bool Factor,
+                       const int perm_type,
+                       const double pivot_thresh )
 {
   Copy();
 
@@ -174,27 +194,36 @@ int Epetra_SLU::Solve( bool Verbose )
 
   int m = A_->NumGlobalRows();
 
+  int permt = perm_type;
+  if( m < 3 ) permt = 0;
+
   /*
    * Get column permutation vector perm_c[], according to permc_spec:
    *   permc_spec = 0: use the natural ordering
    *   permc_spec = 1: use minimum degree ordering on structure of A'*A
    *   permc_spec = 2: use minimum degree ordering on structure of A'+A
    */
-  if( !count_ ) get_perm_c( 2, &(data_->A), perm_c_ );
+  if( !count_ ) get_perm_c( permt, &(data_->A), perm_c_ );
 
   if( Verbose ) cout << "MATRIX COPIED!" << endl;
 
   int info = 0;
 
-//  dgssv( &(data_->A), perm_c_, perm_r_,
-//	&(data_->L), &(data_->U), &(data_->B), &info );
-
   char fact, trans, refact, equed;
-  fact = 'E';
   trans = 'N';
+  if( Equil ) fact = 'E';
+  else        fact = 'N';
+
   if( !count_ ) refact = 'N';
-  else          refact = 'Y';
+  else
+  {
+    refact = 'Y';
+    if( !Factor ) fact = 'F';
+  }
   equed = 'N';
+
+  data_->iparam.diag_pivot_thresh = pivot_thresh;
+
   double rpg, rcond;
  
   if( Verbose ) cout << "REFACT: " << refact << endl;
@@ -203,6 +232,9 @@ int Epetra_SLU::Solve( bool Verbose )
 	perm_r_, etree_, &equed, R_, C_, &(data_->L), &(data_->U),
 	NULL, 0, &(data_->B), &(data_->X), &rpg, &rcond,
 	ferr_, berr_, &(data_->mem_usage), &info );
+
+  if( info )
+    cout << "WARNING: SuperLU returned with error code = " << info << endl;
 
   if( Verbose )
   {

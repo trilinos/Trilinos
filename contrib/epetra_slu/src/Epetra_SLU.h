@@ -13,11 +13,18 @@ class Epetra_SLU
 
  public:
 
-  Epetra_SLU( Epetra_LinearProblem * Problem );
+  Epetra_SLU( Epetra_LinearProblem * Problem,
+              const int fill_fac = -1,
+              const int panel_size = -1,
+              const int relax = -1 );
 
   ~Epetra_SLU();
 
-  int Solve( bool Verbose = false );
+  int Solve( const bool Verbose = false,
+             const bool Equil = true,
+             const bool Factor = true,
+             const int perm_type = 2,
+             const double pivot_thresh = -1 );
 
  private:
 
