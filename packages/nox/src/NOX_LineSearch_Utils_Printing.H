@@ -50,8 +50,8 @@ namespace Utils {
 
 //! %Common line search utilites for printing line search information to the screen.
 /*!  
-  All line searches should print output results in a similar format.  This utility provides common output routines.
-
+  All line searches should print output results in a similar format.
+  This utility provides common output routines.
 */
 
 class Printing : public NOX::Utils {
@@ -78,7 +78,10 @@ public:
 ************************************************************************
 \endverbatim
     
-NOTE: The values of oldf and newf that are printed are different than the values passed in to the printStep method call if unscaleF is true (default is true).  Most line searches define oldf and newf as \f$ f(x) = \frac{1}{2}\| F(x) \|^2 \f$.  We would rather print \f$ \| F(x) \| \f$ to coincide with the outer iteration f value.  Therefore we need to unscale the incoming oldf and newf values so we print the norm of \f$ F \f$ as opposed to the norm of \f$ f \f$. This scaling can be turned off by setting unscaleF to false.
+    \param unscaleF - If this is true (the default), than the values
+    printed are \f$ \sqrt{2 * {\rm oldf}} \f$ and \f$ \sqrt{2 * {\rm
+    newf}} \f$. This is to accomodate the standard merit function, \f$
+    \phi(x) = \frac{1}{2} \|F(x)\|^2 \f$.
 
   */
   void printStep(int n, double step, double oldf, double newf, const string s = "", bool unscaleF = true) const;
