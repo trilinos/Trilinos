@@ -136,6 +136,7 @@ if (! $?run ) then
     case gccP3:
     case g++:
     case linux:
+    case purecov:
     case solaris:
     case sun:
     case sgi32:
@@ -286,7 +287,8 @@ if ( $yes_fortran ) then
         partgeomkway-v$pmversion adaptive-v$pmversion \
         adaptive-partless-v$pmversion adaptive-partmore-v$pmversion \
         adaptive-partlocal1-v$pmversion adaptive-partlocal2-v$pmversion \
-        adaptive-partlocal3-v$pmversion adaptive-partlocal4-v$pmversion )
+        adaptive-partlocal3-v$pmversion adaptive-partlocal4-v$pmversion \
+        adaptive-partlocal5-v$pmversion )
     endif
   endif
 else
@@ -360,7 +362,8 @@ else
         partgeomkway-v$pmversion adaptive-v$pmversion \
         adaptive-partless-v$pmversion adaptive-partmore-v$pmversion \
         adaptive-partlocal1-v$pmversion adaptive-partlocal2-v$pmversion \
-        adaptive-partlocal3-v$pmversion adaptive-partlocal4-v$pmversion )
+        adaptive-partlocal3-v$pmversion adaptive-partlocal4-v$pmversion \
+        adaptive-partlocal5-v$pmversion )
     endif
   endif
 endif
