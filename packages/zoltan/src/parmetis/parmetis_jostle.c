@@ -23,6 +23,23 @@
 
 /* #define LB_DEBUG      Turn on debug print statements? */
 
+/**********  parameters structure for parmetis methods **********/
+static PARAM_VARS Parmetis_params[] = {
+        { "PARMETIS_METHOD", NULL, "STRING" },
+        { "PARMETIS_COARSE_ALG", NULL, "INT" },
+        { "PARMETIS_FOLD", NULL, "INT" },
+        { "PARMETIS_OUTPUT_LEVEL", NULL, "INT" },
+        { NULL, NULL, NULL } };
+
+/**********  parameters structure for jostle methods **********/
+static PARAM_VARS Jostle_params[] = {
+        { "JOSTLE_OUTPUT_LEVEL", NULL, "INT" },
+        { "JOSTLE_THRESHOLD", NULL, "INT" },
+        { "JOSTLE_GATHER_THRESHOLD", NULL, "INT" },
+        { "JOSTLE_MATCHING", NULL, "STRING" },
+        { "JOSTLE_REDUCTION", NULL, "STRING" },
+        { NULL, NULL, NULL } };
+
 /***************  prototypes for internal functions ********************/
 
 static int LB_ParMetis_Jostle(LB *lb, int *num_imp, LB_GID **imp_gids,
@@ -57,23 +74,16 @@ int LB_ParMetis(
   int  options[MAX_OPTIONS];
   char alg[MAX_PARAM_STRING_LEN+1];
 
-  PARAM_VARS parmetis_params[] = {
-        { "PARMETIS_METHOD", NULL, "STRING" },
-        { "PARMETIS_COARSE_ALG", NULL, "INT" },
-        { "PARMETIS_FOLD", NULL, "INT" },
-        { "PARMETIS_OUTPUT_LEVEL", NULL, "INT" },
-        { NULL, NULL, NULL } };
-  
   /* Set parameters */
   strcpy(alg, "PARTKWAY");
   for (i=0; i<MAX_OPTIONS; i++)
     options[i] = -1;
-  parmetis_params[0].ptr = (void *) alg;
-  parmetis_params[1].ptr = (void *) &(options[OPTION_IPART]);
-  parmetis_params[2].ptr = (void *) &(options[OPTION_FOLDF]);
-  parmetis_params[3].ptr = (void *) &(options[OPTION_DBGLVL]);
+  Parmetis_params[0].ptr = (void *) alg;
+  Parmetis_params[1].ptr = (void *) &(options[OPTION_IPART]);
+  Parmetis_params[2].ptr = (void *) &(options[OPTION_FOLDF]);
+  Parmetis_params[3].ptr = (void *) &(options[OPTION_DBGLVL]);
 
-  LB_Assign_Param_Vals(lb->Params, parmetis_params);
+  LB_Assign_Param_Vals(lb->Params, Parmetis_params);
 
   /* Set options[0] to 1 if any of the low level ParMetis options were set,
      or 0 otherwise. This is required by ParMetis. */
@@ -138,14 +148,6 @@ int LB_Jostle(
   MPI_Comm comm = lb->Communicator;/* want to risk letting external packages  */
                                    /* change our lb struct.                   */
 
-  PARAM_VARS jostle_params[] = {
-        { "JOSTLE_OUTPUT_LEVEL", NULL, "INT" },
-        { "JOSTLE_THRESHOLD", NULL, "INT" },
-        { "JOSTLE_GATHER_THRESHOLD", NULL, "INT" },
-        { "JOSTLE_MATCHING", NULL, "STRING" },
-        { "JOSTLE_REDUCTION", NULL, "STRING" },
-        { NULL, NULL, NULL } };
-  
   /* Initialize Jostle if this is the first call with 
    * this load balancing object.
    */
@@ -165,13 +167,13 @@ int LB_Jostle(
   gather_threshold = 0;
   matching[0] = '\0';
   reduction[0] = '\0';
-  jostle_params[0].ptr = (void *) &option;
-  jostle_params[1].ptr = (void *) threshold;
-  jostle_params[2].ptr = (void *) gather_threshold;
-  jostle_params[3].ptr = (void *) matching;
-  jostle_params[4].ptr = (void *) reduction;
+  Jostle_params[0].ptr = (void *) &option;
+  Jostle_params[1].ptr = (void *) threshold;
+  Jostle_params[2].ptr = (void *) gather_threshold;
+  Jostle_params[3].ptr = (void *) matching;
+  Jostle_params[4].ptr = (void *) reduction;
 
-  LB_Assign_Param_Vals(lb->Params, jostle_params); 
+  LB_Assign_Param_Vals(lb->Params, Jostle_params); 
 
   /* Set Jostle parameters using jostle_env() */
   if (threshold){
@@ -937,12 +939,6 @@ char *val)                      /* value of variable */
     int status, i;
     PARAM_UTYPE result;         /* value returned from Check_Param */
     int index;                  /* index returned from Check_Param */
-    PARAM_VARS parmetis_params[] = {
-        { "PARMETIS_METHOD", NULL, "STRING" },
-        { "PARMETIS_COARSE_ALG", NULL, "INT" },
-        { "PARMETIS_FOLD", NULL, "INT" },
-        { "PARMETIS_OUTPUT_LEVEL", NULL, "INT" },
-        { NULL, NULL, NULL } };
     char *valid_methods[] = {
         "PARTKWAY", "PARTGEOMKWAY", "PARTGEOM", 
         "REPARTLDIFFUSION", "REPARTGDIFFUSION",
@@ -950,7 +946,7 @@ char *val)                      /* value of variable */
         "REFINEKWAY",
          NULL };
 
-    status = LB_Check_Param(name, val, parmetis_params, &result, &index);
+    status = LB_Check_Param(name, val, Parmetis_params, &result, &index);
 
     if (status == 0){
       /* OK so far, do sanity check of parameter values */
@@ -984,15 +980,8 @@ char *val)                      /* value of variable */
     int status, i;
     PARAM_UTYPE result;         /* value returned from Check_Param */
     int index;                  /* index returned from Check_Param */
-    PARAM_VARS jostle_params[] = {
-        { "JOSTLE_OUTPUT_LEVEL", NULL, "INT" },
-        { "JOSTLE_THRESHOLD", NULL, "INT" },
-        { "JOSTLE_GATHER_THRESHOLD", NULL, "INT" },
-        { "JOSTLE_MATCHING", NULL, "STRING" },
-        { "JOSTLE_REDUCTION", NULL, "STRING" },
-        { NULL, NULL, NULL } };
 
-    status = LB_Check_Param(name, val, jostle_params, &result, &index);
+    status = LB_Check_Param(name, val, Jostle_params, &result, &index);
 
     if (status == 0){
       /* OK so far, do sanity check of parameter values */
