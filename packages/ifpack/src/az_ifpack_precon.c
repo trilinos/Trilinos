@@ -46,7 +46,7 @@ void AZ_ifpack_precon(double x[], int options[],
 
 
 {
-  int ione = 1, len;
+  int i, len;
   void *precon;
   AZ_IFPACK *Prec_pass_data;
   int nr, nc;
@@ -67,7 +67,9 @@ void AZ_ifpack_precon(double x[], int options[],
   /* input_vector = (double *) Prec_pass_data->input_vector; */
   input_vector = (double *) malloc (nr * sizeof(double));
   len = nr*nc;
-  dcopy_(&len, x, &ione, input_vector, &ione);
+  /* dcopy_(&len, x, &ione, input_vector, &ione); */
+
+  for (i=0; i<len; i++) input_vector[i] = x[i];
 
   ifp_apply(precon, nr, nc, input_vector, nr, x, nr);
   free((void *) input_vector);
