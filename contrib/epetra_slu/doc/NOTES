@@ -1,0 +1,3 @@
+
+PetraSuperLU.cpp:107: warning: implicit declaration of function `int PrintInt10(...)'
+This function has no prototype in util.h
