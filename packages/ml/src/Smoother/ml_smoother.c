@@ -5713,7 +5713,7 @@ int ML_Smoother_MLS_Apply(void *sm,int inlen,double x[],int outlen,
    ML_Operator     *Amat = smooth_ptr->my_level->Amat;
    ML_1Level       *from = Amat->from; 
    struct MLSthing *widget;
-   int              deg, lv, dg, n, i;
+   int              deg, lv, dg, n, nn, i;
    double          *res0, *res, *y, cf, over, *mlsCf;
 
 #ifdef RST_MODIF
