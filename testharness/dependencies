@@ -1,0 +1,111 @@
+amesos = \
+--enable-amesos \
+--with-ml_amesos 
+
+anasazi = \
+--enable-anasazi \
+--with-loca-anasazi
+
+aztecoo = \
+--enable-aztecoo \
+--enable-komplex \
+--enable-ml_aztecoo \
+--enable-tsfcore-aztecoo
+
+belos = \
+--enable-belos
+
+epetra = \
+--enable-epetra \
+--enable-amesos \
+--enable-anasazi \
+--enable-aztecoo \
+--enable-belos \
+--enable-epetraext \
+--enable-ifpack \
+--enable-komplex \
+--enable-ml_epetra \
+--enable-ml_aztecoo \
+--enable-new_package \
+--enable-nox-epetra \
+--enable-nox-epetra-examples \
+--enable-triutils \
+--enable-tsfcore-aztecoo \
+--enable-tsfcore-epetra 
+
+epetraext = \
+--enable-epetraext
+
+ifpack = \
+--enable-ifpack \
+--with-ml_ifpack
+
+kokkos = \
+--enable-kokkos
+
+komplex = \
+--enable-komplex
+
+meros = \
+--enable-meros
+
+ml = \
+--enable-ml
+
+new_package = \
+--enable-new_package
+
+nox = \
+--enable-nox \
+--enable-loca
+
+loca = \
+--enable-loca
+
+superludist = \
+--enable-superludist
+
+teuchos = \
+--enable-teuchos \
+--with-ml_teuchos \
+--enable-tpetra \
+--enable-tsfcoreutils \
+--enable-tsfcore \
+--enable-tsfextended \
+--enable-loca \
+--enable-belos \
+--enable-amesos \
+--with-ml_amesos \
+--enable-anasazi \
+--with-loca-anasazi
+
+tpetra = \
+--enable-tpetra
+
+triutils = \
+--enable-triutils \
+--enable-anasazi \
+--with-loca-anasazi \
+--enable-aztecoo \
+--enable-komplex \
+--enable-ml_aztecoo \
+--enable-tsfcore-aztecoo \
+--enable-belos \
+--enable-amesos \
+--with-ml_amesos \
+
+tsf = \
+--enable-tsf \
+--enable-meros
+
+tsfcore = \
+--enable-tsfcore \
+--enable-tsfextended
+
+tsfcoreutils = \
+--enable-tsfcoreutils \
+--enable-tsfcore \
+--enable-tsfextended
+
+tsfextended = \
+--enable-tsfextended

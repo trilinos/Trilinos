@@ -1,0 +1,57 @@
+################################################################################
+# The Trilinos Project - Test-Harness
+#
+# README
+#
+# Jim Willenbring, Mike Phenow, Ken Stanley
+#
+################################################################################
+
+--------------------------------------------------------------------------------
+ Usage
+--------------------------------------------------------------------------------
+
+ ./test-harness.plx -f FILENAME		run test-harness with FILENAME config file
+
+ ./test-harness.plx -p FILENAME		parse FILENAME config file and exit
+
+ ./test-harness.plx -g FILENAME		generate commented config file (with 
+									defaults) named FILENAME and exit
+
+ ./test-harness.plx -sg FILENAME	generate uncommented config file (with 
+									defaults) named FILENAME and exit
+
+ ./test-harness.plx -h				print test-harness help/usage information
+									and exit
+
+ Note: if "./test-harness.plx" doesn't work on your machine, try 
+       "perl test-harness.plx"
+
+--------------------------------------------------------------------------------
+ Requirements
+--------------------------------------------------------------------------------
+
+- Programs - 
+  - mv, rm, find, date, uname, configure, make
+
+- Perl Modules - 
+  - 
+
+- Files & Permissions - 
+  - 
+
+--------------------------------------------------------------------------------
+ Directory Structure
+--------------------------------------------------------------------------------
+
+test-harness(.plx)		- test-harness perl executable
+dependencies  			- list of all Trilinos package dependencies
+README					- this README file
+
+config/					- test-harness config files
+elements-machine/		- machine-dependent invoke-configure elements
+elements-trilinos/		- machine-independent invoke-configure elements
+
+--------------------------------------------------------------------------------
+ FAQ
+--------------------------------------------------------------------------------
