@@ -143,8 +143,9 @@ static int matching_local(ZZ *zz, HGraph *hg, Matching match)
 /* code adapted from serial matching_ipm method */
 static int matching_col_ipm(ZZ *zz, HGraph *hg, Matching match)
 {
-    int   i, j, v1, v2, edge, maxip, maxindex;
+    int   i, j, k, v1, v2, edge, maxip, maxindex;
     int   matchcount=0;
+    int   *order=NULL;
     float *lips, *gips; /* local and global inner products */
     char  *yo = "matching_col_ipm";
     PHGComm *hgc = hg->comm;  
@@ -152,17 +153,26 @@ static int matching_col_ipm(ZZ *zz, HGraph *hg, Matching match)
     lips = gips = NULL;
 
     if (!(lips = (float*) ZOLTAN_MALLOC(hg->nVtx * sizeof(float))) 
-     || !(gips = (float*) ZOLTAN_MALLOC(hg->nVtx * sizeof(float)))){
-        Zoltan_Multifree(__FILE__, __LINE__, 2, &lips, &gips);
+     || !(gips = (float*) ZOLTAN_MALLOC(hg->nVtx * sizeof(float)))
+     || !(order = (int*)  ZOLTAN_MALLOC(hg->nVtx * sizeof(int)))){
+        Zoltan_Multifree(__FILE__, __LINE__, 3, &lips, &gips, &order);
         ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
         return ZOLTAN_MEMERR;
     }
     
-    for (i = 0; i < hg->nVtx; i++)
+    for (i = 0; i < hg->nVtx; i++){
         lips[i] = 0;
+        order[i] = i;
+    }
+
+    /* random node visit order */
+    /* other options may be added later */
+    Zoltan_Rand_Perm_Int (order, hg->nVtx);
         
     /* for every vertex */
-    for (v1 = 0; v1 < hg->nVtx; v1++) {
+    for (k = 0; k < hg->nVtx; k++) {
+        v1 = order[k];
+
         if (match[v1] != v1)
             continue;
 
@@ -219,7 +229,7 @@ static int matching_col_ipm(ZZ *zz, HGraph *hg, Matching match)
     printf("\n");
     */
 
-    Zoltan_Multifree(__FILE__, __LINE__, 2, &lips, &gips);
+    Zoltan_Multifree(__FILE__, __LINE__, 3, &lips, &gips, &order);
     return ZOLTAN_OK;
 }
 
@@ -452,7 +462,7 @@ static int matching_ipm (ZZ *zz, HGraph *hg, Matching match)
        else
          for (i = m_vindex[vertex]; i < m_vindex[vertex+1]; i++)
            for (j = hg->hindex [m_vedge[i]]; j < hg->hindex [m_vedge[i]+1]; j++)
-             psums [hg->hvertex[j]] += hg->ewgt [hg->hvertex[j]];
+             psums [hg->hvertex[j]] += hg->ewgt [m_vedge[i]];
                            
        /* if local vtx, remove self inner product (false maximum) and matched */
        if (VTX_TO_PROC_X (hg, m_gno[vertex]) == hgc->myProc_x)

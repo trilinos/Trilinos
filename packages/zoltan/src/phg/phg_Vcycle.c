@@ -405,6 +405,8 @@ double Zoltan_PHG_hcut_size_links (PHGComm *hgc, HGraph *hg, Partition part, int
                     ++nparts;
             if (nparts>1)
                 cut +=  ((nparts-1) * (hg->ewgt ? hg->ewgt[i] : 1.0));
+            else if (nparts==0)
+                printf("%s Error: hyperedge %i has no vertices!\n", yo, i);
         }        
         ZOLTAN_FREE (&rescuts);
 

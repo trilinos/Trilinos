@@ -50,7 +50,9 @@ static char *yo = "Zoltan_PHG_Scale_Weights";
   switch (hgp->ews){
 
   case 0:
-    /* do nothing */
+    /* copy current weights; no scaling. */
+    for (i = 0; i < hg->nEdge; i++) 
+        new_ewgt[i] = (hg->ewgt ? hg->ewgt[i] : 1.0);
     break;
 
   case 1:
