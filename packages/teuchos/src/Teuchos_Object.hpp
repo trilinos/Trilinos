@@ -9,7 +9,6 @@
 */
 
 #include "Teuchos_ConfigDefs.hpp"
-#include "Teuchos_CombineMode.hpp"
 #include "Teuchos_DataAccess.hpp"
 
 /*! \class Teuchos::Object
