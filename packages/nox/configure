@@ -4086,8 +4086,10 @@ echo $ECHO_N "checking whether TRILINOS_ARCH_DIR is valid... $ECHO_C" >&6
       echo "$as_me:$LINENO: result: yes" >&5
 echo "${ECHO_T}yes" >&6
    else
-      echo "$as_me:$LINENO: result: no (disabling Trilinos)" >&5
-echo "${ECHO_T}no (disabling Trilinos)" >&6
+      { echo "$as_me:$LINENO: no" >&5
+echo "$as_me: no" >&6;}
+      { echo "$as_me:$LINENO: DISABLING TRILINOS!!" >&5
+echo "$as_me: DISABLING TRILINOS!!" >&6;}
       USE_TRILINOS=no
    fi
 
@@ -4111,8 +4113,8 @@ if test ${USE_TRILINOS} = yes; then
 
    LDFLAGS="-L${TRILINOS_LIB_DIR} $LDFLAGS"
    TRILINOS_CXXFLAGS="-DEPETRA_${TRILINOS_COMM} -I${TRILINOS_EPETRA_INC} -I${TRILINOS_AZTECOO_INC}"
-   TRILINOS_LDADD="-lepetra -laztecoo"
 
+  # Find a valid y12m
   ac_ext=f
 ac_compile='$F77 -c $FFLAGS conftest.$ac_ext >&5'
 ac_link='$F77 -o conftest$ac_exeext $FFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
@@ -4209,7 +4211,7 @@ done
 fi
 
 # Provide some information about the compiler.
-echo "$as_me:4212:" \
+echo "$as_me:4214:" \
      "checking for Fortran 77 compiler version" >&5
 ac_compiler=`set X $ac_compile; echo $2`
 { (eval echo "$as_me:$LINENO: \"$ac_compiler --version </dev/null >&5\"") >&5
@@ -4328,13 +4330,13 @@ ac_compile='$F77 -c $FFLAGS conftest.$ac_ext >&5'
 ac_link='$F77 -o conftest$ac_exeext $FFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_f77_compiler_gnu
 
-echo "$as_me:$LINENO: checking for y12mae in -ly12m" >&5
-echo $ECHO_N "checking for y12mae in -ly12m... $ECHO_C" >&6
-if test "${ac_cv_lib_y12m_y12mae+set}" = set; then
+echo "$as_me:$LINENO: checking for library containing y12mae" >&5
+echo $ECHO_N "checking for library containing y12mae... $ECHO_C" >&6
+if test "${ac_cv_search_y12mae+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
-  ac_check_lib_save_LIBS=$LIBS
-LIBS="-ly12m  $LIBS"
+  ac_func_search_save_LIBS=$LIBS
+ac_cv_search_y12mae=no
 cat >conftest.$ac_ext <<_ACEOF
       program main
       call y12mae
@@ -4352,31 +4354,49 @@ if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
   ac_status=$?
   echo "$as_me:$LINENO: \$? = $ac_status" >&5
   (exit $ac_status); }; }; then
-  ac_cv_lib_y12m_y12mae=yes
+  ac_cv_search_y12mae="none required"
 else
   echo "$as_me: failed program was:" >&5
 cat conftest.$ac_ext >&5
-ac_cv_lib_y12m_y12mae=no
 fi
 rm -f conftest.$ac_objext conftest$ac_exeext conftest.$ac_ext
-LIBS=$ac_check_lib_save_LIBS
-fi
-echo "$as_me:$LINENO: result: $ac_cv_lib_y12m_y12mae" >&5
-echo "${ECHO_T}$ac_cv_lib_y12m_y12mae" >&6
-if test $ac_cv_lib_y12m_y12mae = yes; then
-  cat >>confdefs.h <<_ACEOF
-#define HAVE_LIBY12M 1
+if test "$ac_cv_search_y12mae" = no; then
+  for ac_lib in y12m; do
+    LIBS="-l$ac_lib  $ac_func_search_save_LIBS"
+    cat >conftest.$ac_ext <<_ACEOF
+      program main
+      call y12mae
+      end
 _ACEOF
-
-  LIBS="-ly12m $LIBS"
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
+  (eval $ac_link) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+         { ac_try='test -s conftest$ac_exeext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ac_cv_search_y12mae="-l$ac_lib"
+break
+else
+  echo "$as_me: failed program was:" >&5
+cat conftest.$ac_ext >&5
+fi
+rm -f conftest.$ac_objext conftest$ac_exeext conftest.$ac_ext
+  done
+fi
+LIBS=$ac_func_search_save_LIBS
+fi
+echo "$as_me:$LINENO: result: $ac_cv_search_y12mae" >&5
+echo "${ECHO_T}$ac_cv_search_y12mae" >&6
+if test "$ac_cv_search_y12mae" != no; then
+  test "$ac_cv_search_y12mae" = "none required" || LIBS="$ac_cv_search_y12mae $LIBS"
 
 fi
-
-  ac_ext=cc
-ac_cpp='$CXXCPP $CPPFLAGS'
-ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 
   ac_ext=c
 ac_cpp='$CPP $CPPFLAGS'
@@ -4384,13 +4404,13 @@ ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
-echo "$as_me:$LINENO: checking for s_copy in -lg2c" >&5
-echo $ECHO_N "checking for s_copy in -lg2c... $ECHO_C" >&6
-if test "${ac_cv_lib_g2c_s_copy+set}" = set; then
+  echo "$as_me:$LINENO: checking for library containing s_copy" >&5
+echo $ECHO_N "checking for library containing s_copy... $ECHO_C" >&6
+if test "${ac_cv_search_s_copy+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
-  ac_check_lib_save_LIBS=$LIBS
-LIBS="-lg2c  $LIBS"
+  ac_func_search_save_LIBS=$LIBS
+ac_cv_search_s_copy=no
 cat >conftest.$ac_ext <<_ACEOF
 #line $LINENO "configure"
 #include "confdefs.h"
@@ -4428,26 +4448,71 @@ if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
   ac_status=$?
   echo "$as_me:$LINENO: \$? = $ac_status" >&5
   (exit $ac_status); }; }; then
-  ac_cv_lib_g2c_s_copy=yes
+  ac_cv_search_s_copy="none required"
 else
   echo "$as_me: failed program was:" >&5
 cat conftest.$ac_ext >&5
-ac_cv_lib_g2c_s_copy=no
 fi
 rm -f conftest.$ac_objext conftest$ac_exeext conftest.$ac_ext
-LIBS=$ac_check_lib_save_LIBS
-fi
-echo "$as_me:$LINENO: result: $ac_cv_lib_g2c_s_copy" >&5
-echo "${ECHO_T}$ac_cv_lib_g2c_s_copy" >&6
-if test $ac_cv_lib_g2c_s_copy = yes; then
-  cat >>confdefs.h <<_ACEOF
-#define HAVE_LIBG2C 1
+if test "$ac_cv_search_s_copy" = no; then
+  for ac_lib in g2c; do
+    LIBS="-l$ac_lib  $ac_func_search_save_LIBS"
+    cat >conftest.$ac_ext <<_ACEOF
+#line $LINENO "configure"
+#include "confdefs.h"
+
+/* Override any gcc2 internal prototype to avoid an error.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+/* We use char because int might match the return type of a gcc2
+   builtin and then its argument prototype would still apply.  */
+char s_copy ();
+#ifdef F77_DUMMY_MAIN
+#  ifdef __cplusplus
+     extern "C"
+#  endif
+   int F77_DUMMY_MAIN() { return 1; }
+#endif
+int
+main ()
+{
+s_copy ();
+  ;
+  return 0;
+}
 _ACEOF
-
-  LIBS="-lg2c $LIBS"
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
+  (eval $ac_link) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+         { ac_try='test -s conftest$ac_exeext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ac_cv_search_s_copy="-l$ac_lib"
+break
+else
+  echo "$as_me: failed program was:" >&5
+cat conftest.$ac_ext >&5
+fi
+rm -f conftest.$ac_objext conftest$ac_exeext conftest.$ac_ext
+  done
+fi
+LIBS=$ac_func_search_save_LIBS
+fi
+echo "$as_me:$LINENO: result: $ac_cv_search_s_copy" >&5
+echo "${ECHO_T}$ac_cv_search_s_copy" >&6
+if test "$ac_cv_search_s_copy" != no; then
+  test "$ac_cv_search_s_copy" = "none required" || LIBS="$ac_cv_search_s_copy $LIBS"
 
 fi
 
+  # Find a valid blas and lapack library
   ac_ext=f
 ac_compile='$F77 -c $FFLAGS conftest.$ac_ext >&5'
 ac_link='$F77 -o conftest$ac_exeext $FFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
@@ -4595,78 +4660,79 @@ ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 
-echo "$as_me:$LINENO: checking for az2ifp_blockmatrix in -lifpack" >&5
-echo $ECHO_N "checking for az2ifp_blockmatrix in -lifpack... $ECHO_C" >&6
-if test "${ac_cv_lib_ifpack_az2ifp_blockmatrix+set}" = set; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
-else
-  ac_check_lib_save_LIBS=$LIBS
-LIBS="-lifpack  $LIBS"
-cat >conftest.$ac_ext <<_ACEOF
-#line $LINENO "configure"
-#include "confdefs.h"
-
-/* Override any gcc2 internal prototype to avoid an error.  */
-#ifdef __cplusplus
-extern "C"
-#endif
-/* We use char because int might match the return type of a gcc2
-   builtin and then its argument prototype would still apply.  */
-char az2ifp_blockmatrix ();
-#ifdef F77_DUMMY_MAIN
-#  ifdef __cplusplus
-     extern "C"
-#  endif
-   int F77_DUMMY_MAIN() { return 1; }
-#endif
-int
-main ()
-{
-az2ifp_blockmatrix ();
-  ;
-  return 0;
-}
-_ACEOF
-rm -f conftest.$ac_objext conftest$ac_exeext
-if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
-  (eval $ac_link) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); } &&
-         { ac_try='test -s conftest$ac_exeext'
-  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
-  (eval $ac_try) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }; }; then
-  ac_cv_lib_ifpack_az2ifp_blockmatrix=yes
-else
-  echo "$as_me: failed program was:" >&5
-cat conftest.$ac_ext >&5
-ac_cv_lib_ifpack_az2ifp_blockmatrix=no
-fi
-rm -f conftest.$ac_objext conftest$ac_exeext conftest.$ac_ext
-LIBS=$ac_check_lib_save_LIBS
-fi
-echo "$as_me:$LINENO: result: $ac_cv_lib_ifpack_az2ifp_blockmatrix" >&5
-echo "${ECHO_T}$ac_cv_lib_ifpack_az2ifp_blockmatrix" >&6
-if test $ac_cv_lib_ifpack_az2ifp_blockmatrix = yes; then
-  cat >>confdefs.h <<_ACEOF
-#define HAVE_LIBIFPACK 1
-_ACEOF
-
-  LIBS="-lifpack $LIBS"
-
-fi
-
-#  AC_CHECK_LIB(aztecoo,[AztecOO::Iterate(int a, double b)])
-#  AC_CHECK_LIB(epetra,)
   ac_ext=cc
 ac_cpp='$CXXCPP $CPPFLAGS'
 ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 
+  # I don't know how to check for epetra and aztecoo using
+  # AC_CHECK_LIB, so instead I'll just check that they exist
+  LIBS="-lepetra -laztecoo -lifpack ${LIBS}"
+
+  echo "$as_me:$LINENO: checking for epetra" >&5
+echo $ECHO_N "checking for epetra... $ECHO_C" >&6
+  if test -f ${TRILINOS_LIB_DIR}/libepetra.a; then
+    echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6
+  else
+    echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+    { echo "$as_me:$LINENO: DISABLING TRILINOS!!" >&5
+echo "$as_me: DISABLING TRILINOS!!" >&6;}
+    USE_TRILINOS=no
+  fi
+
+  echo "$as_me:$LINENO: checking for aztecoo" >&5
+echo $ECHO_N "checking for aztecoo... $ECHO_C" >&6
+  if test -f ${TRILINOS_LIB_DIR}/libaztecoo.a; then
+    echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6
+  else
+    echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+    { echo "$as_me:$LINENO: DISABLING TRILINOS!!" >&5
+echo "$as_me: DISABLING TRILINOS!!" >&6;}
+    USE_TRILINOS=no
+  fi
+
+  echo "$as_me:$LINENO: checking for ifpack" >&5
+echo $ECHO_N "checking for ifpack... $ECHO_C" >&6
+  if test -f ${TRILINOS_LIB_DIR}/libifpack.a; then
+    echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6
+  else
+    echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+    { echo "$as_me:$LINENO: DISABLING TRILINOS!!" >&5
+echo "$as_me: DISABLING TRILINOS!!" >&6;}
+    USE_TRILINOS=no
+  fi
+
+fi
+
+# ------------------------------------------------------------------------
+# Checks for TRILINOS status
+# ------------------------------------------------------------------------
+
+if test X${USE_TRILINOS} = Xyes; then
+
+if true; then
+  BUILD_NOXEPETRA_TRUE=
+  BUILD_NOXEPETRA_FALSE='#'
+else
+  BUILD_NOXEPETRA_TRUE='#'
+  BUILD_NOXEPETRA_FALSE=
+fi
+else
+
+if false; then
+  BUILD_NOXEPETRA_TRUE=
+  BUILD_NOXEPETRA_FALSE='#'
+else
+  BUILD_NOXEPETRA_TRUE='#'
+  BUILD_NOXEPETRA_FALSE=
+fi
 fi
 
 # ------------------------------------------------------------------------
@@ -4994,30 +5060,6 @@ fi
 # ------------------------------------------------------------------------
 # Checks for system services
 # ------------------------------------------------------------------------
-
-# ------------------------------------------------------------------------
-# Checks for TRILINOS status
-# ------------------------------------------------------------------------
-
-if test X${USE_TRILINOS} = Xyes; then
-
-if true; then
-  BUILD_NOXEPETRA_TRUE=
-  BUILD_NOXEPETRA_FALSE='#'
-else
-  BUILD_NOXEPETRA_TRUE='#'
-  BUILD_NOXEPETRA_FALSE=
-fi
-else
-
-if false; then
-  BUILD_NOXEPETRA_TRUE=
-  BUILD_NOXEPETRA_FALSE='#'
-else
-  BUILD_NOXEPETRA_TRUE='#'
-  BUILD_NOXEPETRA_FALSE=
-fi
-fi
 
 # ------------------------------------------------------------------------
 # Alternate archiver
@@ -5677,10 +5719,9 @@ s,@F77@,$F77,;t t
 s,@FFLAGS@,$FFLAGS,;t t
 s,@ac_ct_F77@,$ac_ct_F77,;t t
 s,@TRILINOS_CXXFLAGS@,$TRILINOS_CXXFLAGS,;t t
-s,@TRILINOS_LDADD@,$TRILINOS_LDADD,;t t
-s,@XTRALDADD@,$XTRALDADD,;t t
 s,@BUILD_NOXEPETRA_TRUE@,$BUILD_NOXEPETRA_TRUE,;t t
 s,@BUILD_NOXEPETRA_FALSE@,$BUILD_NOXEPETRA_FALSE,;t t
+s,@XTRALDADD@,$XTRALDADD,;t t
 s,@USE_ALTERNATE_AR_TRUE@,$USE_ALTERNATE_AR_TRUE,;t t
 s,@USE_ALTERNATE_AR_FALSE@,$USE_ALTERNATE_AR_FALSE,;t t
 s,@ALTERNATE_AR@,$ALTERNATE_AR,;t t

@@ -20,9 +20,6 @@ example_DEPENDENCIES = $(top_builddir)/src/libnox.a \
 example_CXXFLAGS = $(TRILINOS_CXXFLAGS) \
 	-I$(top_srcdir)/src
 
-example_LDADD = \
-	-L$(top_builddir)/src \
-	-lnox -lnoxepetra \
-	$(TRILINOS_LDADD) 
+example_LDADD = -L$(top_builddir)/src -lnox -lnoxepetra 
 
 

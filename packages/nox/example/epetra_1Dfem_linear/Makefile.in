@@ -72,7 +72,6 @@ OBJEXT = @OBJEXT@
 PACKAGE = @PACKAGE@
 RANLIB = @RANLIB@
 TRILINOS_CXXFLAGS = @TRILINOS_CXXFLAGS@
-TRILINOS_LDADD = @TRILINOS_LDADD@
 VERSION = @VERSION@
 XTRALDADD = @XTRALDADD@
 ac_aux_dir = @ac_aux_dir@
@@ -98,11 +97,7 @@ example_CXXFLAGS = $(TRILINOS_CXXFLAGS) \
 	-I$(top_srcdir)/src
 
 
-example_LDADD = \
-	-L$(top_builddir)/src \
-	-lnox -lnoxepetra \
-	$(TRILINOS_LDADD) 
-
+example_LDADD = -L$(top_builddir)/src -lnox -lnoxepetra 
 subdir = example/epetra_1Dfem_linear
 mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/NOX_Config.h

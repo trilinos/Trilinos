@@ -482,7 +482,8 @@ if test ${USE_TRILINOS} = yes && test X${USE_TRILINOS_ARCH} = Xyes; then
    if test -d ${TRILINOS_ARCH_DIR}; then
       AC_MSG_RESULT(yes)
    else
-      AC_MSG_RESULT([no (disabling Trilinos)])
+      AC_MSG_NOTICE(no)
+      AC_MSG_NOTICE([DISABLING TRILINOS!!])
       USE_TRILINOS=no
    fi
 
@@ -506,29 +507,64 @@ if test ${USE_TRILINOS} = yes; then
 
    LDFLAGS="-L${TRILINOS_LIB_DIR} $LDFLAGS"
    TRILINOS_CXXFLAGS="-DEPETRA_${TRILINOS_COMM} -I${TRILINOS_EPETRA_INC} -I${TRILINOS_AZTECOO_INC}"
-   TRILINOS_LDADD="-lepetra -laztecoo"
 
-  dnl find a valid blas and lapack library
   AC_LANG_SAVE
-  AC_LANG_SAVE
+  # Find a valid y12m
   AC_LANG_FORTRAN77
-  AC_CHECK_LIB(y12m,y12mae)
-  AC_LANG_RESTORE
+  AC_SEARCH_LIBS(y12mae,[y12m])
   AC_LANG_C
-  AC_CHECK_LIB(g2c,s_copy)
+  AC_SEARCH_LIBS(s_copy,[g2c])
+  # Find a valid blas and lapack library
   AC_LANG_FORTRAN77
   AC_SEARCH_LIBS(dcopy,[cxml blas])
   AC_SEARCH_LIBS(dgetrs,[cxml lapack])
   AC_LANG_CPLUSPLUS
-  AC_CHECK_LIB(ifpack,az2ifp_blockmatrix)
-#  AC_CHECK_LIB(aztecoo,[AztecOO::Iterate(int a, double b)])
-#  AC_CHECK_LIB(epetra,)
   AC_LANG_RESTORE
+
+  # I don't know how to check for epetra and aztecoo using
+  # AC_CHECK_LIB, so instead I'll just check that they exist
+  LIBS="-lepetra -laztecoo -lifpack ${LIBS}"
+
+  AC_MSG_CHECKING(for epetra)
+  if test -f ${TRILINOS_LIB_DIR}/libepetra.a; then
+    AC_MSG_RESULT(yes)
+  else
+    AC_MSG_RESULT(no)
+    AC_MSG_NOTICE([DISABLING TRILINOS!!])
+    USE_TRILINOS=no
+  fi  
+
+  AC_MSG_CHECKING(for aztecoo)
+  if test -f ${TRILINOS_LIB_DIR}/libaztecoo.a; then
+    AC_MSG_RESULT(yes)
+  else
+    AC_MSG_RESULT(no)
+    AC_MSG_NOTICE([DISABLING TRILINOS!!])
+    USE_TRILINOS=no
+  fi  
+
+  AC_MSG_CHECKING(for ifpack)
+  if test -f ${TRILINOS_LIB_DIR}/libifpack.a; then
+    AC_MSG_RESULT(yes)
+  else
+    AC_MSG_RESULT(no)
+    AC_MSG_NOTICE([DISABLING TRILINOS!!])
+    USE_TRILINOS=no
+  fi  
 
 fi
 
 AC_SUBST(TRILINOS_CXXFLAGS)
-AC_SUBST(TRILINOS_LDADD)
+
+# ------------------------------------------------------------------------
+# Checks for TRILINOS status 
+# ------------------------------------------------------------------------
+
+if test X${USE_TRILINOS} = Xyes; then
+   AM_CONDITIONAL(BUILD_NOXEPETRA, true)
+else
+   AM_CONDITIONAL(BUILD_NOXEPETRA, false)
+fi
 
 
 
@@ -592,16 +628,6 @@ AC_SUBST(XTRALDADD)
 # ------------------------------------------------------------------------
 # Checks for system services
 # ------------------------------------------------------------------------
-
-# ------------------------------------------------------------------------
-# Checks for TRILINOS status 
-# ------------------------------------------------------------------------
-
-if test X${USE_TRILINOS} = Xyes; then
-   AM_CONDITIONAL(BUILD_NOXEPETRA, true)
-else
-   AM_CONDITIONAL(BUILD_NOXEPETRA, false)
-fi
 
 # ------------------------------------------------------------------------
 # Alternate archiver
