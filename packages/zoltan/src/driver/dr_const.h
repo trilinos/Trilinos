@@ -26,8 +26,9 @@ static char *cvs_dr_const_id = "$Id$";
  *  Definitions for the LB library driver program.
  *****************************************************************************/
 
-#define VER_STR         "1.0"
-#define UTIL_NAME       "zdrive"
+#define DRIVER_NAME "zdrive"
+#define VER_STR "1.0"
+
 
 /* If it doesn't get defined in stdio.h then use this as a default */
 #ifndef FILENAME_MAX

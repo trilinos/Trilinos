@@ -92,7 +92,7 @@ int main(int argc, char *argv[])
     if(Proc == 0)
     {
       fprintf(stderr, " usage:\n");
-      fprintf(stderr, "\t%s [command file]", UTIL_NAME);
+      fprintf(stderr, "\t%s [command file]", DRIVER_NAME);
     }
     exit(1);
     break;
@@ -226,7 +226,7 @@ void print_input_info(FILE *fp, int Num_Proc, PROB_INFO_PTR prob)
 int i;
 
   fprintf(fp, "Input values:\n");
-  fprintf(fp, "  %s version %s\n", UTIL_NAME, VER_STR);
+  fprintf(fp, "  %s version %s\n", DRIVER_NAME, VER_STR);
   fprintf(fp, "  Total number of Processors = %d\n\n", Num_Proc);
 
   fprintf(fp, "\n  Performing load balance using %s.\n", prob->method);
