@@ -44,7 +44,7 @@ int Ifpack_PrintResidual(const int iter, const Epetra_RowMatrix& A,
 void Ifpack_PrintSparsity_Simple(const Epetra_RowMatrix& A);
 
 //! Analyzes the basic properties of the input matrix A; see \ref ifp_analyze.
-int Ifpack_Analyze(const Epetra_RowMatrix& A);
+int Ifpack_Analyze(const Epetra_RowMatrix& A, const bool Cheap = false);
 
 //! Analyzes the distribution of values of the input matrix A.
 /*!

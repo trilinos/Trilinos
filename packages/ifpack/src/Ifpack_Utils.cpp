@@ -341,7 +341,7 @@ static void print(char* str, T one, T two, T three, bool equal = true)
 #include "float.h"
 #include "Epetra_FECrsMatrix.h"
 
-int Ifpack_Analyze(const Epetra_RowMatrix& A)
+int Ifpack_Analyze(const Epetra_RowMatrix& A, const bool Cheap)
 {
 
   int NumMyRows = A.NumMyRows();
@@ -472,68 +472,73 @@ int Ifpack_Analyze(const Epetra_RowMatrix& A)
     print<double>("A", NormOne, NormInf, NormF);
   }
 
-  // create A + A^T and A - A^T
+  if (Cheap == false) {
 
-  Epetra_FECrsMatrix AplusAT(Copy, A.RowMatrixRowMap(), 0);
-  Epetra_FECrsMatrix AminusAT(Copy, A.RowMatrixRowMap(), 0);
+    // create A + A^T and A - A^T
 
-  for (int i = 0 ; i < NumMyRows ; ++i) {
+    Epetra_FECrsMatrix AplusAT(Copy, A.RowMatrixRowMap(), 0);
+    Epetra_FECrsMatrix AminusAT(Copy, A.RowMatrixRowMap(), 0);
 
-    int GRID = A.RowMatrixRowMap().GID(i);
-    assert (GRID != -1);
+    for (int i = 0 ; i < NumMyRows ; ++i) {
 
-    int Nnz;
-    IFPACK_CHK_ERR(A.ExtractMyRowCopy(i,A.MaxNumEntries(),Nnz,
-                                      &colVal[0],&colInd[0]));
+      int GRID = A.RowMatrixRowMap().GID(i);
+      assert (GRID != -1);
 
-    for (int j = 0 ; j < Nnz ; ++j) {
+      int Nnz;
+      IFPACK_CHK_ERR(A.ExtractMyRowCopy(i,A.MaxNumEntries(),Nnz,
+                                        &colVal[0],&colInd[0]));
 
-      int GCID         = A.RowMatrixColMap().GID(colInd[j]);
-      assert (GCID != -1);
+      for (int j = 0 ; j < Nnz ; ++j) {
 
-      double plus_val  = colVal[j];
-      double minus_val = -colVal[j];
+        int GCID         = A.RowMatrixColMap().GID(colInd[j]);
+        assert (GCID != -1);
 
-      if (AplusAT.SumIntoGlobalValues(1,&GRID,1,&GCID,&plus_val) != 0) {
-        IFPACK_CHK_ERR(AplusAT.InsertGlobalValues(1,&GRID,1,&GCID,&plus_val));
+        double plus_val  = colVal[j];
+        double minus_val = -colVal[j];
+
+        if (AplusAT.SumIntoGlobalValues(1,&GRID,1,&GCID,&plus_val) != 0) {
+          IFPACK_CHK_ERR(AplusAT.InsertGlobalValues(1,&GRID,1,&GCID,&plus_val));
+        }
+
+        if (AplusAT.SumIntoGlobalValues(1,&GCID,1,&GRID,&plus_val) != 0) {
+          IFPACK_CHK_ERR(AplusAT.InsertGlobalValues(1,&GCID,1,&GRID,&plus_val));
+        }
+
+        if (AminusAT.SumIntoGlobalValues(1,&GRID,1,&GCID,&plus_val) != 0) {
+          IFPACK_CHK_ERR(AminusAT.InsertGlobalValues(1,&GRID,1,&GCID,&plus_val));
+        }
+
+        if (AminusAT.SumIntoGlobalValues(1,&GCID,1,&GRID,&minus_val) != 0) {
+          IFPACK_CHK_ERR(AminusAT.InsertGlobalValues(1,&GCID,1,&GRID,&minus_val));
+        }
+
       }
+    }
 
-      if (AplusAT.SumIntoGlobalValues(1,&GCID,1,&GRID,&plus_val) != 0) {
-        IFPACK_CHK_ERR(AplusAT.InsertGlobalValues(1,&GCID,1,&GRID,&plus_val));
-      }
+    AplusAT.FillComplete();
+    AminusAT.FillComplete();
 
-      if (AminusAT.SumIntoGlobalValues(1,&GRID,1,&GCID,&plus_val) != 0) {
-        IFPACK_CHK_ERR(AminusAT.InsertGlobalValues(1,&GRID,1,&GCID,&plus_val));
-      }
+    AplusAT.Scale(0.5);
+    AminusAT.Scale(0.5);
 
-      if (AminusAT.SumIntoGlobalValues(1,&GCID,1,&GRID,&minus_val) != 0) {
-        IFPACK_CHK_ERR(AminusAT.InsertGlobalValues(1,&GCID,1,&GRID,&minus_val));
-      }
+    NormOne = AplusAT.NormOne();
+    NormInf = AplusAT.NormInf();
+    NormF   = Ifpack_FrobeniusNorm(AplusAT);
 
+    if (verbose) {
+      print<double>("A + A^T", NormOne, NormInf, NormF);
+    }
+
+    NormOne = AminusAT.NormOne();
+    NormInf = AminusAT.NormInf();
+    NormF   = Ifpack_FrobeniusNorm(AminusAT);
+
+    if (verbose) {
+      print<double>("A - A^T", NormOne, NormInf, NormF);
     }
   }
 
-  AplusAT.FillComplete();
-  AminusAT.FillComplete();
-
-  AplusAT.Scale(0.5);
-  AminusAT.Scale(0.5);
-
-  NormOne = AplusAT.NormOne();
-  NormInf = AplusAT.NormInf();
-  NormF   = Ifpack_FrobeniusNorm(AplusAT);
-
   if (verbose) {
-    print<double>("A + A^T", NormOne, NormInf, NormF);
-  }
-
-  NormOne = AminusAT.NormOne();
-  NormInf = AminusAT.NormInf();
-  NormF   = Ifpack_FrobeniusNorm(AminusAT);
-
-  if (verbose) {
-    print<double>("A - A^T", NormOne, NormInf, NormF);
-
     print();
     print<char*>("", "min", "avg", "max", false);
     print<char*>("", "===", "===", "===", false);
