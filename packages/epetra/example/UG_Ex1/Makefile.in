@@ -105,15 +105,14 @@ UG_Ex1_CXXFLAGS = -I$(top_srcdir)/src
 UG_Ex1_LDADD = $(top_builddir)/src/libepetra.a $(BLAS_LIBS) \
 	$(LIBS) $(FLIBS)
 
-subdir = example/petra_UG_Ex1
+subdir = example/UG_Ex1
 mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/Epetra_config.h
 CONFIG_CLEAN_FILES =
 noinst_PROGRAMS = UG_Ex1$(EXEEXT)
 PROGRAMS = $(noinst_PROGRAMS)
 
-am_UG_Ex1_OBJECTS = \
-	UG_Ex1-cxx_main.$(OBJEXT)
+am_UG_Ex1_OBJECTS = UG_Ex1-cxx_main.$(OBJEXT)
 UG_Ex1_OBJECTS = $(am_UG_Ex1_OBJECTS)
 UG_Ex1_LDFLAGS =
 
@@ -132,7 +131,7 @@ CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
 	-o $@
 CXXFLAGS = @CXXFLAGS@
 DIST_SOURCES = $(UG_Ex1_SOURCES)
-DIST_COMMON = README Makefile.am Makefile.in
+DIST_COMMON = Makefile.am Makefile.in
 SOURCES = $(UG_Ex1_SOURCES)
 
 all: all-am
@@ -141,7 +140,7 @@ all: all-am
 .SUFFIXES: .cpp .o .obj
 $(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ Makefile.am  $(top_srcdir)/configure.ac $(ACLOCAL_M4)
 	cd $(top_srcdir) && \
-	  $(AUTOMAKE) --foreign  example/petra_UG_Ex1e
+	  $(AUTOMAKE) --foreign  example/UG_Ex1/Makefile
 Makefile: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.in  $(top_builddir)/config.status
 	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@ $(am__depfiles_maybe)
 
