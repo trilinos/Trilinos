@@ -990,7 +990,7 @@ or if the number of entries in this row exceed the Length parameter.
 	inline double* operator[] (int Loc) { 
 	  if (StorageOptimized()){ int * ind = Graph().IndexOffset(); return(All_Values_+ind[Loc]);}
 	  else return Values_[Loc];}
-	inline double* const  operator[] (int Loc) const {
+	inline double* operator[] (int Loc) const {
 	  if (StorageOptimized()){ int * ind = Graph().IndexOffset(); return(All_Values_+ind[Loc]);}
 	  else return Values_[Loc];}
   //@}

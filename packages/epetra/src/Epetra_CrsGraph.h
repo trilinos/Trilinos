@@ -758,7 +758,7 @@ class Epetra_CrsGraph: public Epetra_DistObject {
 	  if (StorageOptimized()){ return(CrsGraphData_->All_Indices_.Values() + CrsGraphData_->IndexOffset_[Loc]);}
 	  else return(CrsGraphData_->Indices_[Loc]); }
 
-	inline int* const  operator[]( int Loc ) const { 
+	inline int* operator[]( int Loc ) const { 
 	  if (StorageOptimized()) { return(CrsGraphData_->All_Indices_.Values() +CrsGraphData_->IndexOffset_[Loc]);}
 	  else return(CrsGraphData_->Indices_[Loc]); }
 
