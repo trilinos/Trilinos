@@ -497,3 +497,149 @@ int ML_Operator_BlockPartition(ML_Operator *matrix, int nLocalNd, int *nblk,
 
   return 0;
 }
+/* ******************************************************************** */
+/* Take the Transpose of an ML_Operator and stick it in a new matrix    */
+/* -------------------------------------------------------------------- */
+
+int ML_Operator_Transpose(ML_Operator *Amat, ML_Operator *Amat_trans )
+{
+
+   int  *row_ptr, *colbuf, *cols;
+   int isize, osize, i, j, N_nzs, flag, length, sum, new_sum;
+   int Nneighbors, *neigh_list, *send_list, *rcv_list, Nsend, Nrcv;
+   void *data = NULL;
+   double *valbuf, *vals;
+   int (*getrow)(void* , int , int *, int , int *, double *, int *) = NULL;
+   struct ML_CSR_MSRdata *temp;
+   int Nghost = 0, Nghost2 = 0;
+   int *remap, remap_leng;
+   ML_CommInfoOP *c_info, **c2_info;
+
+   /* pull out things from ml_handle */
+
+   isize = Amat->outvec_leng;
+   osize = Amat->invec_leng;
+   if (Amat->getrow->ML_id == ML_EXTERNAL) {
+       data   = Amat->data;
+       getrow = Amat->getrow->external;
+   }
+   else if (Amat->getrow->ML_id == ML_INTERNAL) {
+       data   = (void *) Amat;
+       getrow = Amat->getrow->internal;
+   }
+   else perror("ML_Operator_Transpose: Getrow not defined for P!\n");
+
+   /* transpose Amat's communication list. This means that PRE communication */
+   /* is replaced by POST, ML_OVERWRITE is replaced by ML_ADD, and the send  */
+   /* send and receive lists are swapped.                                    */
+
+   c_info     = Amat->getrow->pre_comm;
+   Nneighbors = ML_CommInfoOP_Get_Nneighbors(c_info);
+   neigh_list = ML_CommInfoOP_Get_neighbors(c_info);
+   remap_leng = osize;
+   Nrcv = 0;
+   Nsend = 0;
+   for (i = 0; i < Nneighbors; i++) {
+      Nrcv  += ML_CommInfoOP_Get_Nrcvlist (c_info, neigh_list[i]);
+      Nsend += ML_CommInfoOP_Get_Nsendlist(c_info, neigh_list[i]);
+   }
+   remap_leng = osize + Nrcv + Nsend;
+   remap = (int *) malloc( remap_leng*sizeof(int));
+   for (i = 0; i < osize; i++) remap[i] = i;
+   for (i = osize; i < osize+Nrcv+Nsend; i++) 
+      remap[i] = -1;
+ 
+   c2_info     = &(Amat_trans->getrow->post_comm);
+   ML_CommInfoOP_Set_neighbors(c2_info, Nneighbors,
+ 			      neigh_list,ML_ADD,remap,remap_leng);
+   ML_free(remap);
+   for (i = 0; i < Nneighbors; i++) {
+      Nsend      = ML_CommInfoOP_Get_Nsendlist(c_info, neigh_list[i]);
+      send_list  = ML_CommInfoOP_Get_sendlist (c_info, neigh_list[i]);
+      Nrcv       = ML_CommInfoOP_Get_Nrcvlist (c_info, neigh_list[i]);
+      Nghost    += Nrcv;
+      rcv_list   = ML_CommInfoOP_Get_rcvlist(c_info, neigh_list[i]);
+      /* handle empty rows ... i.e. ghost variables not used */
+      if (rcv_list != NULL) {
+         for (j = 0; j < Nrcv; j++) {
+            if (rcv_list[j] > Nghost2 + osize - 1)
+               Nghost2 = rcv_list[j] - osize + 1;
+         }
+      }
+ 
+      ML_CommInfoOP_Set_exch_info(*c2_info, neigh_list[i], Nsend, send_list,
+ 				 Nrcv,rcv_list);
+      if (send_list != NULL) ML_free(send_list);
+      if ( rcv_list != NULL) ML_free( rcv_list);
+   }
+   if (Nghost2 > Nghost) Nghost = Nghost2;
+   if (neigh_list != NULL) ML_free(neigh_list);
+
+   row_ptr = (int    *) malloc(sizeof(int)*(Nghost+osize+1));
+   colbuf  = (int    *) malloc(sizeof(int)*(Nghost+osize+1));
+   valbuf  = (double *) malloc(sizeof(double)*(Nghost+osize+1));
+
+   /* count the total number of nonzeros and compute */
+   /* the length of each row in the transpose.       */
+ 
+   for (i = 0; i < Nghost+osize; i++) row_ptr[i] = 0;
+
+   N_nzs = 0;
+   for (i = 0; i < isize; i++) {
+      flag = getrow(data, 1, &i, Nghost+osize+1, colbuf, valbuf, &length);
+      if (flag == 0) perror("ML_Transpose_Prolongator: sizes don't work\n");
+      N_nzs += length;
+      for (j = 0; j < length; j++)
+         row_ptr[  colbuf[j] ]++;
+   }
+
+   cols    = (int    *) malloc(sizeof(int   )*(N_nzs+1));
+   vals    = (double *) malloc(sizeof(double)*(N_nzs+1));
+   if (vals == NULL) 
+      pr_error("ML_Gen_Restrictor_TransP: Out of space\n");
+
+   /* set 'row_ptr' so it points to the beginning of each row */
+
+   sum = 0;
+   for (i = 0; i < Nghost+osize; i++) {
+      new_sum = sum + row_ptr[i];
+      row_ptr[i] = sum;
+      sum = new_sum;
+   }
+   row_ptr[osize+Nghost] = sum;
+
+   /* read in the prolongator matrix and store transpose in Amat_trans */
+
+   for (i = 0; i < isize; i++) {
+      getrow(data, 1, &i, Nghost+osize+1, colbuf, valbuf, &length);
+      for (j = 0; j < length; j++) {
+         cols[ row_ptr[ colbuf[j] ]   ] = i;
+         vals[ row_ptr[ colbuf[j] ]++ ] = valbuf[j];
+      }
+   }
+
+   /* row_ptr[i] now points to the i+1th row.    */
+   /* Reset it so that it points to the ith row. */
+
+   for (i = Nghost+osize; i > 0; i--)
+      row_ptr[i] = row_ptr[i-1];
+   row_ptr[0] = 0;
+
+   ML_free(valbuf);
+   ML_free(colbuf);
+
+   /* store the matrix into ML */
+
+   temp = (struct ML_CSR_MSRdata *) malloc(sizeof(struct ML_CSR_MSRdata));
+   temp->columns = cols;
+   temp->values  = vals;
+   temp->rowptr  = row_ptr;
+   Amat_trans->data_destroy = ML_CSR_MSRdata_Destroy;
+   
+   ML_Operator_Set_ApplyFuncData(Amat_trans, isize, osize, 
+                                  ML_EMPTY, temp, osize, NULL, 0);
+   ML_Operator_Set_ApplyFunc(Amat_trans,ML_INTERNAL, CSR_matvec);
+   ML_Operator_Set_Getrow(Amat_trans, ML_EXTERNAL,
+                                 Nghost+osize, CSR_getrows);
+  return(1);
+}
