@@ -121,6 +121,12 @@ struct ML_Sm_Hiptmair_Data_Struct
    ML_Operator *Tmat_trans;
    ML_Operator *ATmat_trans;
    double      *TtAT_diag;
+   ML_Operator *TtATmat;
+   ML_Smoother *sm;
+   double *res_edge;
+   double *rhs_nodal;
+   double *x_nodal;
+   double *edge_update;
 };
 
 /* ******************************************************************** */
