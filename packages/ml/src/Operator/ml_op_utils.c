@@ -841,11 +841,11 @@ int ML_Operator_Transpose_byrow(ML_Operator *A, ML_Operator *Atrans)
 #include "ml_utils.h"
 #include "ml_xyt.h"
 int ML_Operator_Dump(ML_Operator *Ke, double *x, double *rhs,
-		     char *istr)	
+		     char *istr, int print_matrix)	
 {
-  double *global_nodes, *global_rows, colVal[15];
+  double *global_nodes, *global_rows, *colVal = NULL;
   int    N_nodes, node_offset, row_offset;
-  int colInd[15], i, j, ncnt;
+  int *colInd = NULL, i, j, ncnt, allocated = 0;
   char str[80];
   FILE *fid;
   ML_Comm *comm;
@@ -886,18 +886,24 @@ int ML_Operator_Dump(ML_Operator *Ke, double *x, double *rhs,
 
   /* spit out Ke  */
 
-  sprintf(str,"%s_mat.%d",istr,comm->ML_mypid);
-  fid = fopen(str,"w");
-  for (i = 0; i < Nrows; i++) {
-    j = ML_Operator_Getrow(Ke,1,&i,15,colInd,colVal,&ncnt);
-    for (j = 0; j < ncnt; j++) {
-      if (colVal[j] != 0.0) {
-	fprintf(fid,"%5d %5d %20.13e\n",(int) global_rows[i]+1,
-		       (int) global_nodes[colInd[j]]+1, colVal[j]);
+  if (print_matrix) {
+    sprintf(str,"%s_mat.%d",istr,comm->ML_mypid);
+    fid = fopen(str,"w");
+    for (i = 0; i < Nrows; i++) {
+      ML_get_matrix_row(Ke, 1, &i, &allocated, &colInd, &colVal,
+                        &ncnt, 0);
+
+      for (j = 0; j < ncnt; j++) {
+	if (colVal[j] != 0.0) {
+	  fprintf(fid,"%5d %5d %20.13e\n",(int) global_rows[i]+1,
+		  (int) global_nodes[colInd[j]]+1, colVal[j]);
+	}
       }
     }
+    fclose(fid);
+    ML_free(colVal); ML_free(colInd);
   }
-  fclose(fid);
+
 
   /* spit out x */
 
