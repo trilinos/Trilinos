@@ -293,10 +293,24 @@ static int matching_col_ipm(ZZ *zz, HGraph *hg, Matching match, PHGPartParams *h
             printf("Debug: nadj= %d > MAX_NNZ= %d, inexact inner product!\n",
                 nadj, MAX_NNZ);
 #endif
-            /* Pick random selection of vertices if more than MAX_NNZ.
-               This is quick. We tried picking highest values but
-               this didn't seem to improve quality. */
+            /* Pick random selection of vertices if more than MAX_NNZ. */
             Zoltan_Rand_Perm_Int(adj, nadj);
+
+            /* Make sure highest value is among the selected vtx. */
+            maxip = 0.0; 
+            best_vertex = 0;
+            for (j=0; j<nadj; j++){
+              if (lips[adj[j]]>maxip){
+                best_vertex = j;
+                maxip = lips[adj[j]];
+              }
+            }
+            if (best_vertex >= MAX_NNZ){
+              /* put best in front */
+              adj[0] = adj[best_vertex];
+            }
+
+            /* Pack the MAX_NNZ first vertices into send buffer */
             for (i=0; i<MAX_NNZ; i++){
               *ptr++ = (float) adj[i];
               *ptr++ = lips[adj[i]];
