@@ -26,4 +26,4 @@
 # ************************************************************************
 #@HEADER
 
-SUBDIRS = Comm Platform Distributor ElementSpace BlockElementSpace VectorSpace Vector CisMatrix BasicPerfTest scripts
+SUBDIRS = daily

@@ -26,4 +26,12 @@
 # ************************************************************************
 #@HEADER
 
-SUBDIRS = Comm Platform Distributor ElementSpace BlockElementSpace VectorSpace Vector CisMatrix BasicPerfTest scripts
+EXEEXT = .exe
+
+noinst_PROGRAMS = tpetraTestAll
+
+tpetraTestAll_SOURCES = $(srcdir)/tpetraTestAll
+
+tpetraTestAll$(EXEEXT): $(srcdir)/tpetraTestAll
+	cp $(srcdir)/tpetraTestAll tpetraTestAll$(EXEEXT) 
+

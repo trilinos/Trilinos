@@ -303,6 +303,9 @@ AC_CONFIG_FILES([
 		test/Vector/Makefile
 		test/CisMatrix/Makefile
 		test/BasicPerfTest/Makefile
+		test/scripts/Makefile
+		test/scripts/daily/Makefile
+		test/scripts/daily/serial/Makefile
 		])
 
 AC_OUTPUT()
