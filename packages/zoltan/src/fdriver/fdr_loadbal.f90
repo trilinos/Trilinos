@@ -164,7 +164,7 @@ type(ELEM_INFO), pointer :: elements(:)
        print *,"BEFORE load balancing"
     endif
 !    driver_eval();
-    call LB_Eval(lb_obj, .true., ierr = ierr)
+    ierr = LB_Eval(lb_obj, .true.)
 !  }
 
 !  /*
@@ -197,7 +197,7 @@ type(ELEM_INFO), pointer :: elements(:)
       print *,"AFTER load balancing"
     endif
 !    driver_eval();
-    call LB_Eval(lb_obj, .true., ierr = ierr)
+    ierr = LB_Eval(lb_obj, .true.)
 !  }
 
 !  /* Clean up */
