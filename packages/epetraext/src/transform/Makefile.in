@@ -196,7 +196,7 @@ AM_CPPFLAGS = -I$(top_builddir)/../epetra/src -I$(top_srcdir)/../epetra/src \
 # be sure to include these, and this is the hack to do it.
 # On alpha-dec machines, the extra .o's are needed for Epetra only.
 # ------------------------------------------------------------------------
-libepetraext_a_LIBADD = $(EPETRA_TEMPLATE_OBJS) $(XTRALDADD)
+libepetraext_a_LIBADD = $(TRILINOS_TEMPLATE_OBJS) $(XTRALDADD)
 
 
 # ------------------------------------------------------------------------
@@ -232,7 +232,7 @@ MAINTAINERCLEANFILES = Makefile.in
 # ------------------------------------------------------------------------
 # Files to be deleted by 'make clean'
 # ------------------------------------------------------------------------
-MOSTLYERCLEANFILES = $(EPETRA_TEMPLATE_OBJS)
+MOSTLYERCLEANFILES = $(TRILINOS_TEMPLATE_OBJS)
 subdir = src/transform
 mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/EpetraExt_config.h

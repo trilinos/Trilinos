@@ -114,7 +114,7 @@ endif
 # On alpha-dec machines, the extra .o's are needed for Epetra only.
 # ------------------------------------------------------------------------
 
-libepetraext_a_LIBADD = $(EPETRA_TEMPLATE_OBJS) $(XTRALDADD)
+libepetraext_a_LIBADD = $(TRILINOS_TEMPLATE_OBJS) $(XTRALDADD)
 
 # ------------------------------------------------------------------------
 # List of all libraries to install in $(libexecdir)
@@ -150,6 +150,6 @@ MAINTAINERCLEANFILES = Makefile.in
 # Files to be deleted by 'make clean'
 # ------------------------------------------------------------------------
 
-MOSTLYERCLEANFILES = $(EPETRA_TEMPLATE_OBJS)
+MOSTLYERCLEANFILES = $(TRILINOS_TEMPLATE_OBJS)
 
 
