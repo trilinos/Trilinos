@@ -271,8 +271,7 @@ AC_CXX_STD_SPRINTF
  TAC_ARG_WITH_PACKAGE(ml_complex_maxwell, [Enable complex maxwell solver capability], ML_COMPLEX_MAXWELL, no)
  TAC_ARG_WITH_PACKAGE(ml_timing, [Enable timing routines], ML_TIMING, no)
 
-TAC_ARG_ENABLE_FEATURE_SUB( ml, slud, [Enable ML interface support for SuperLU],
-        ML_SLU, no)
+#TAC_ARG_ENABLE_FEATURE_SUB( ml, slud, [Enable ML interface support for SuperLU], ML_SLU, no)
 
 #if test "X$ac_cv_header_cstdlib" != "Xyes" && test "X$ac_cv_header_stdlib_h" != "Xyes"; then
 #  AC_MSG_ERROR([[Cannot find cstdlib or stdlib.h.  ml requires at least one or the other.]])
