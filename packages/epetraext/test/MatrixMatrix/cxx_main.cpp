@@ -63,13 +63,14 @@ int read_matrix(const char* filename,
                 Epetra_CrsMatrix*& mat);
 
 int run_test(Epetra_Comm& Comm, const char* filename,
-             bool result_mtx_to_file=false);
+             bool result_mtx_to_file=false,
+             bool verbose=false);
 
 int test_find_rows(Epetra_Comm& Comm);
 
 int main(int argc, char** argv) {
   if (argc < 2) {
-    std::cout << "Usage: " << argv[0] << " file_name" << std::endl;
+    std::cout << "Usage: " << argv[0] << "-i file_name" << std::endl;
     std::cout << "  (where file_name contains a list of input-files)"<<std::endl;
     return(-1);
   }
@@ -81,13 +82,20 @@ int main(int argc, char** argv) {
   Epetra_SerialComm Comm;
 #endif
 
-  return(0);
-
   bool write_result_mtx = false;
+  bool verbose = false;
   int write = 0;
+  char* input_file = NULL;
+  bool input_file_specified = false;
+
   if (Comm.MyPID()==0) {
     for(int ii=0; ii<argc; ++ii) {
       if (!strcmp("-write_result", argv[ii])) write_result_mtx = true;
+      if (!strcmp("-v", argv[ii])) verbose = true;
+      if (!strcmp("-i", argv[ii])) {
+        input_file = argv[ii+1];
+        input_file_specified = true;
+      }
     }
     write = write_result_mtx ? 1 : 0;
   }
@@ -96,11 +104,16 @@ int main(int argc, char** argv) {
   if (write) write_result_mtx = true;
 #endif
 
+  if (!input_file_specified) {
+    input_file = new char[16];
+    sprintf(input_file, "./infiles");
+  }
+
   const char** filenames = NULL;
   int numfiles = 0;
   int numfilenames_allocated = 0;
 
-  int err = read_input_file(Comm, argv[1],
+  int err = read_input_file(Comm, input_file,
                             filenames, numfiles, numfilenames_allocated);
   if (err != 0) {
     std::cout << "read_input_file returned err=="<<err<<std::endl;
@@ -114,7 +127,7 @@ int main(int argc, char** argv) {
   }
 
   for(int i=0; i<numfiles; ++i) {
-    err = run_test(Comm, filenames[i], write_result_mtx);
+    err = run_test(Comm, filenames[i], write_result_mtx, verbose);
     delete [] filenames[i];
     if (err != 0) break;
   }
@@ -124,6 +137,8 @@ int main(int argc, char** argv) {
   }
 
   delete [] filenames;
+
+  if (!input_file_specified) delete [] input_file;
 
 #ifdef EPETRA_MPI
   MPI_Finalize();
@@ -274,7 +289,8 @@ int read_input_file(Epetra_Comm& Comm,
 }
 
 int run_test(Epetra_Comm& Comm, const char* filename,
-             bool result_mtx_to_file)
+             bool result_mtx_to_file,
+             bool verbose)
 {
   char* A_file = NULL;
   char AT[3]; AT[0] = '^'; AT[1] = 'T'; AT[2] = '\0';
@@ -295,7 +311,7 @@ int run_test(Epetra_Comm& Comm, const char* filename,
 
   int localProc = Comm.MyPID();
 
-  if (localProc == 0) {
+  if (localProc == 0 && verbose) {
     std::cout << "Testing C=A"<<AT<<"*B"<<BT<< "; A:" << A_file
               << ", B:" << B_file << ", C:" << C_file << std::endl;
   }
@@ -382,7 +398,7 @@ int run_test(Epetra_Comm& Comm, const char* filename,
   int return_code = 0;
 
   if (inf_norm < 1.e-13) {
-    if (localProc == 0) {
+    if (localProc == 0 && verbose) {
       std::cout << "Test Passed" << std::endl;
     }
   }
