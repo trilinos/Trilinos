@@ -317,9 +317,58 @@ void Group::setAztecOptions(const Parameter::List& p, AztecOO& aztec) const
 
   }
 
+  // Turns on RCM reordering in conjunction with domain decomp preconditioning
+  // default is "Disabled" = no reordering
+  string RcmReordering = p.getParameter("RCM Reordering", "Disabled");
+  if (RcmReordering == "Enabled") 
+    aztec.SetAztecOption(AZ_reorder, 1);
+  else if (RcmReordering == "Disabled")
+    aztec.SetAztecOption(AZ_reorder, 0);
+  else {
+    cout << "ERROR: NOX::Epetra::Group::setAztecOptions" << endl
+	 << "\"RCM Reordering\" parameter \"" << RcmReordering
+	 << "\" is invalid!" << endl;
+    throw "NOX Error";
+  }
+    
+  // Gram-Schmidt orthogonalization procedure
+  string orthog = p.getParameter("Orthogonalization", "Classical");
+  if (orthog == "Classical") 
+    aztec.SetAztecOption(AZ_orthog, AZ_classic);
+  else if (RcmReordering == "Modified")
+    aztec.SetAztecOption(AZ_orthog, AZ_modified);
+  else {
+    cout << "ERROR: NOX::Epetra::Group::setAztecOptions" << endl
+	 << "\"Orthogonalization\" parameter \"" << orthog
+	 << "\" is invalid!" << endl;
+    throw "NOX Error";
+  }
+
+  // Size of the krylov space
+  aztec.SetAztecOption(AZ_kspace, p.getParameter("Size of Krylov Subspace", 300));
+
+  // Convergence criteria to use in the linear solver
+  string convCriteria = p.getParameter("Convergence Criteria", "r0");
+  if (convCriteria == "r0") 
+    aztec.SetAztecOption(AZ_conv, AZ_r0);
+  else if (convCriteria == "rhs")
+    aztec.SetAztecOption(AZ_conv, AZ_rhs);
+  else if (convCriteria == "Anorm")
+    aztec.SetAztecOption(AZ_conv, AZ_Anorm);
+  else if (convCriteria == "no scaling")
+    aztec.SetAztecOption(AZ_conv, AZ_noscaled);
+  else if (convCriteria == "sol")
+    aztec.SetAztecOption(AZ_conv, AZ_sol);
+  else {
+    cout << "ERROR: NOX::Epetra::Group::setAztecOptions" << endl
+	 << "\"Convergence Criteria\" parameter \"" << convCriteria
+	 << "\" is invalid!" << endl;
+    throw "NOX Error";
+  }
+
   // Frequency of linear solve residual output
-    aztec.SetAztecOption(AZ_output, 
-			 p.getParameter("Output Frequency", AZ_last));
+  aztec.SetAztecOption(AZ_output, 
+		       p.getParameter("Output Frequency", AZ_last));
 }
 
 Abstract::Group* Group::clone(CopyType type) const 

@@ -82,10 +82,27 @@ A NOX::ParameterList is supplied in the constructor and during calls to the NOX:
   <li> "LU" - Sparse direct solve (single processor only).
   </ul><br>
 
-<li> "Scaling" - The scaling of the linear system before it is solved.  The following options are valid:<br>
+<li> "Size of Krylov Subspace" - When using restarted GMRES this sets the size of the Krylov subspace (defaults to 300). <br>
+ 
+<li> "Orthogonalization" - The orthogonalization routine use for the Gram-Schmidt orthogonalization procedure in Aztec.The following options are valid:<br>
+  <ul> 
+  <li> "Classical" - (default).
+  <li> "Modified" 
+  </ul><br>
+
+<li> "Scaling" - The scaling of the linear system before it is solved.  We can NOT use the Aztec scaling methods since AztecOO uses the matrix-free interface to Aztec.  Therefore we implement our own scaling and apply it to the Epetra_LinearProblem object.  Output from the Aztec solve will always say no scaling since we scale things before Aztec gets the problem.  The following options are valid:<br>
   <ul>
   <li> "None" - No scaling is used (default).
   <li> "Row Sum"
+  </ul><br>
+
+<li> "Convergence Criteria" - Algorithm used to calculate the residual that is used for determining the convergence of the linear solver.  See the Aztec 2.1 manual for more information.  The following options are valid:
+  <ul>
+  <li> "r0" - (default)
+  <li> "rhs"
+  <li> "norm"
+  <li> "no scaling"
+  <li> "sol"
   </ul><br>
  
 <li> "Tolerance" - tolerance used by AztecOO to determine if a linear solve has converged.
@@ -141,6 +158,12 @@ A NOX::ParameterList is supplied in the constructor and during calls to the NOX:
   </ul><br>
 
   </ul>
+
+<li> "RCM Reordering" - Enables RCM reordering in conjunction with domain decomp incomplete factorization preconditioning.  The following options are valid:<br>
+  <ul> 
+  <li> "Disabled" - (default).
+  <li> "Enabled" 
+  </ul><br>
 
 </ul>
 <B>"Output" sublist</B><br>
