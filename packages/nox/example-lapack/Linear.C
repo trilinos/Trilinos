@@ -94,7 +94,10 @@
 
 
 #include "NOX.H"
+#include "NOX_LAPACK_Vector.H"
 #include "NOX_LAPACK_Group.H"
+#include "NOX_LAPACK_Matrix.H"
+#include "NOX_LAPACK_Wrappers.H"
 
 //! An interface to the linear example described in Linear.C
 class Linear : public NOX::LAPACK::Interface {
@@ -129,10 +132,14 @@ public:
     A(3,2) = 1;
     A(3,3) = 10;
 
-    solution(0) = 0.1022;
-    solution(1) = 0.0783;
-    solution(2) = 0.0653;
-    solution(3) = 0.0754;
+    int n = solution.length();
+    int info;
+    NOX::LAPACK::Matrix Acopy(A);
+    vector<int> ipiv(n,0);
+    
+    solution = b;
+    DGESV_F77(&n, &NOX::LAPACK::i_one, &Acopy(0,0), &n, &ipiv[0], &solution(0), &n, &info);
+    
   };
   
   //! Destructor
