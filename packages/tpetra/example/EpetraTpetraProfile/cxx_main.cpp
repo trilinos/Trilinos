@@ -196,6 +196,7 @@ void test(Epetra_Comm& comm, Epetra_Map*& map, Epetra_CrsMatrix*& A, Epetra_Vect
 	// ------------------------------------------------------------------
 
   Ae.FillComplete();
+  Ae.OptimizeStorage();
   double epetraFillCompleteTime = timer.ElapsedTime() - tpetraInsertTime;
 
 	At.fillComplete();
