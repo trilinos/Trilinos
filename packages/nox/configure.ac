@@ -75,11 +75,31 @@ dnl committing.
 dnl AC_REVISION($Revision$)
 
 # ------------------------------------------------------------------------
+# Check for user overrides
+# ------------------------------------------------------------------------
+
+if test -z "$CC"; then
+  USERDEF_CC=yes
+fi
+
+if test -z "$CFLAGS"; then
+  USERDEF_CFLAGS=yes
+fi
+
+if test -z "$CXX"; then
+  USERDEF_CXX=yes
+fi
+
+if test -z "$CXXFLAGS"; then
+  USERDEF_CXXFLAGS=yes
+fi
+
+# ------------------------------------------------------------------------
 # Extra flags and includes
 # ------------------------------------------------------------------------
 
 AC_ARG_WITH(flags,
-[  --with-flags            Specify preprocessor flags (\"-Dflag -Idir  ...\")],
+[  --with-flags            Specify add'l preprocessor flags ("-Dflag -Idir")],
 [
 XTRAFLAGS=$withval
 echo Using extra flags: $withval
@@ -115,7 +135,7 @@ AC_MSG_RESULT([${DEBUG}])
 # ------------------------------------------------------------------------
 
 AC_ARG_WITH(ar,
-[  --with-ar               Specify archiver to use to build NOX libraries],
+[  --with-ar               Specify archiver (default is "ar cru")],
 [
 AC_MSG_CHECKING(user-defined archiver)
 AC_MSG_RESULT([${withval}])
@@ -147,6 +167,9 @@ esac
 [USE_MPI=no]
 )
 
+AC_MSG_CHECKING(whether we are using MPI)
+AC_MSG_RESULT([${USE_MPI}])
+
 AC_ARG_WITH(mpiinc,
 [  --with-mpiinc           Specify MPI includes (enables MPI)],
 [
@@ -169,19 +192,16 @@ LIBS="${LIBS} ${withval}"
 ]
 )
 
-AC_MSG_CHECKING(whether we are using MPI)
-AC_MSG_RESULT([${USE_MPI}])
-
 # ------------------------------------------------------------------------
-# Trilinos configure command line option
+# Package-specific command line option
 # ------------------------------------------------------------------------
 
-AC_ARG_WITH(trilinos_arch,
-[  --with-trilinos-arch    Specify arch directory for TRILINOS],
+AC_ARG_WITH(pkgdir,
+[  --with-pkgdir           Specify location of add'l packages (i.e., epetra)],
 [
+USE_PKGDIR=yes
 USE_TRILINOS=yes
-USE_TRILINOS_ARCH=yes
-TRILINOS_ARCH_DIR=$withval
+PKGDIR=$withval
 ]
 )
 
@@ -236,17 +256,40 @@ AC_PROG_CXX
 AC_PROG_RANLIB
 
 # ------------------------------------------------------------------------
-# Checks for extra flags 
+# Checks for extra flags, etc
 # ------------------------------------------------------------------------
 
-# IBM test
+
 case $target in
+
+  # IBM test
   rs6000-ibm-aix3.2.* | rs6000-ibm-aix4.* | powerpc-ibm-aix4.*)
-    # -qnolm squashes warnings about compiler licences
-    COPTIONS="-qnolm"
-    # -qrtti allows for dynamic casts
-    CXXOPTIONS="-qnolm -qrtti"
+
+    case $CC in
+      xlc* | cc* ) COPTIONS="-qnolm";;
+    esac
+
+    case $CXX in
+      xlC* ) CXXOPTIONS="-qnolm -qrtti";;
+    esac
+
   ;;
+
+  # SGI/IRIX test
+  mips-sgi-irix* ) 
+
+    if $CXX = CC; then
+     COPTIONS="-LANG:std -LANG:ansi-for-init-scope=ON -64 -DSGI64"
+     
+     if X$USE_ALTERNATE_AR != Xyes; then
+       USE_ALTERNATE_AR=yes
+       ALTERNATE_AR="CC -ar -W,l -W,s -o"
+     fi
+
+    fi
+
+  ;;
+
 esac
 
 AC_MSG_CHECKING([for extra preprocessor flags])
@@ -307,20 +350,6 @@ fi
 # ------------------------------------------------------------------------
 # Checks for header files
 # ------------------------------------------------------------------------
-
-# string
-AC_LANG_CPLUSPLUS 
-AC_MSG_CHECKING([for string])
-AC_TRY_LINK([#include <string>],[],
-[
-  AC_MSG_RESULT(yes)
-  AC_DEFINE(HAVE_STRING,,[define if we can include <string>])
-], 
-[
-  AC_MSG_RESULT(no)
-  AC_MSG_NOTICE([You do not appear to have string!!])
-]
-)
 
 #iostream
 AC_LANG_CPLUSPLUS 
@@ -438,7 +467,7 @@ AC_CHECK_FUNCS([pow sqrt])
 
 # Case I: Using standard Trilinos directory structure
 # (a) Check if TRILINOS_HOME is valid
-if test ${USE_TRILINOS} = yes && test X${USE_TRILINOS_ARCH} != Xyes; then
+if test ${USE_TRILINOS} = yes && test X${USE_PKGDIR} != Xyes; then
 
    AC_MSG_CHECKING(whether TRILINOS_HOME is defined)
    if test $TRILINOS_HOME; then
@@ -459,7 +488,7 @@ fi
 
 # Case I: Using standard Trilinos directory structure
 # (b): Set Trilinos variables
-if test ${USE_TRILINOS} = yes && test X${USE_TRILINOS_ARCH} != Xyes; then
+if test ${USE_TRILINOS} = yes && test X${USE_PKGDIR} != Xyes; then
 
    AC_MSG_CHECKING(whether TRILINOS_ARCH is defined)
    if test ${TRILINOS_ARCH}; then
@@ -510,10 +539,10 @@ fi
 
 # Case II: Using Trilinos ARCH directory (ala Xyce)
 # (a) Check is trilinos-arch-dir is valid
-if test ${USE_TRILINOS} = yes && test X${USE_TRILINOS_ARCH} = Xyes; then
+if test ${USE_TRILINOS} = yes && test X${USE_PKGDIR} = Xyes; then
 
-   AC_MSG_CHECKING(whether TRILINOS_ARCH_DIR is valid)
-   if test -d ${TRILINOS_ARCH_DIR}; then
+   AC_MSG_CHECKING(whether PKGDIR is valid)
+   if test -d ${PKGDIR}; then
       AC_MSG_RESULT(yes)
    else
       AC_MSG_NOTICE(no)
@@ -525,7 +554,7 @@ fi
 
 # Case II: Using Trilinos ARCH directory (ala Xyce)
 # (b) Set Trilinos variables
-if test ${USE_TRILINOS} = yes && test X${USE_TRILINOS_ARCH} = Xyes; then
+if test ${USE_TRILINOS} = yes && test X${USE_PKGDIR} = Xyes; then
 
    if test ${USE_MPI} = yes; then
       TRILINOS_COMM="MPI"
@@ -533,9 +562,9 @@ if test ${USE_TRILINOS} = yes && test X${USE_TRILINOS_ARCH} = Xyes; then
       TRILINOS_COMM="SERIAL"
    fi
 
-   TRILINOS_EPETRA_INC=${TRILINOS_ARCH_DIR}/include/epetra/
-   TRILINOS_AZTECOO_INC=${TRILINOS_ARCH_DIR}/include/aztecoo/
-   TRILINOS_LIB_DIR=${TRILINOS_ARCH_DIR}/lib/
+   TRILINOS_EPETRA_INC=${PKGDIR}/include/epetra/
+   TRILINOS_AZTECOO_INC=${PKGDIR}/include/aztecoo/
+   TRILINOS_LIB_DIR=${PKGDIR}/lib/
 
 fi
 

@@ -64,13 +64,7 @@
 #include <math.h>
 #endif
 
-#ifdef HAVE_STRING
 #include <string>
-#else
-// Try to include it anyway
-#include <string>
-#endif
-
 #include <vector>
 #include <map>
 
