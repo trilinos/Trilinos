@@ -7,9 +7,6 @@
 /********************************************************************* */
 /*          Utilities for Aztec/ML users                               */
 /********************************************************************* */
-#include "ml_aztec_lapack.h"
-#include "ml_vendor_lapack.h"
-#include "ml_superlu_lapack.h"
 #include "ml_defs.h"
 #include "ml_utils.h"
 #include <stdio.h>
@@ -42,9 +39,10 @@ typedef long ftnlen;
 #ifdef __cplusplus
 extern "C" {
 #endif
-
+extern FSUB_TYPE MLFORTRAN(daxpy)(int *n, double *da, double *dx,
+				  int *incx, double *dy, int *incy);
 extern FSUB_TYPE MLFORTRAN(dgetrs)(char *, int *, int *, double *, int *, int *,
-                          double *, int *, int *, unsigned int);
+                          double *, int *, int *, int);
 extern double MLFORTRAN(ddot)(int *n1, double *v1, int *dum11, double *v2, int *dum21);
 extern FSUB_TYPE MLFORTRAN(xerbla)(char *, int *);
 extern FSUB_TYPE MLFORTRAN(dlaswp)(int *, double *, int *, 
@@ -129,6 +127,7 @@ extern double MLFORTRAN(dlange)(char *, int *, int *, double *, int *, double *)
 extern double MLFORTRAN(dnrm2)(int *, double *, int *);
 extern double MLFORTRAN(dlapy2)(double *, double *);
 extern double MLFORTRAN(dlamch)(char *);
+extern double MLFORTRAN(dasum)(int*n, double *dx, int *incx);
 
 #ifdef __cplusplus
 }

@@ -58,6 +58,7 @@
 extern int AZ_get_MSR_arrays(ML_Operator *, int **bindx, double **val);
 #endif
 
+#ifdef out
 /* ************************************************************************* */
 /* include files for SuperLU and MPI                                         */
 /* ------------------------------------------------------------------------- */
@@ -68,6 +69,7 @@ extern int AZ_get_MSR_arrays(ML_Operator *, int **bindx, double **val);
 #elif DSUPERLU
 #include "mpi.h"
 #include "superlu_ddefs.h"
+#endif
 #endif
 
 /* ************************************************************************* */
@@ -135,7 +137,9 @@ int ML_Smoother_Clean(ML_Smoother *ml_sm)
 #endif
    /* ML_Sm_BGS_Data     *ml_data; */
    ML_Sm_ILUT_Data    *ilut_data;
+#ifdef out
    ML_Sm_Schwarz_Data *schwarz_data;
+#endif
 
 #ifdef ML_TIMING_DETAILED
    mypid  = ml_sm->my_level->comm->ML_mypid;
@@ -231,8 +235,10 @@ int ML_Smoother_Clean(ML_Smoother *ml_sm)
    {
      printf("This should be switched to using the data_destroy field\n");
      printf("Charles ... can we talk about fixing this -RST\n");
+#ifdef out
       schwarz_data = ml_sm->smoother->data;
       ML_Smoother_Destroy_Schwarz_Data(&(schwarz_data));
+#endif
       ml_sm->smoother->data = NULL;
    }
 
@@ -2331,6 +2337,7 @@ int ML_Smoother_OverlappedILUT(void *sm,int inlen,double x[],int outlen,
    return 0;
 }
 
+#ifdef out
 /* ************************************************************************* */
 /* variable block additive Schwarz                                           */
 /* ------------------------------------------------------------------------- */
@@ -2678,6 +2685,7 @@ if ( indptr[j] < inlen ) x[indptr[j]] = solbuf[j];
 #endif
 }
 
+#endif
 /* ******************************************************************** */
 /* ******************************************************************** */
 /* setup routines for various smoothers                                 */
@@ -2855,6 +2863,7 @@ void ML_Smoother_Destroy_ILUT_Data(void *data)
    ML_memory_free( (void **) &ml_data);
 }
 
+#ifdef out
 /* ************************************************************************* */
 /* Constructor for ML_Sm_Schwarz_Data                                        */
 /* ************************************************************************* */
@@ -2996,6 +3005,7 @@ void ML_Smoother_Destroy_Schwarz_Data(void *data)
    ML_memory_free( (void **) &ml_data);
 }
 
+#endif
 /* ************************************************************************* */
 /* Function to generate the matrix products needed in the Hiptmair smoother  */
 /* on one level.                                                             */
@@ -4337,6 +4347,7 @@ int ML_Smoother_ILUTDecomposition(ML_Sm_ILUT_Data *data, ML_Operator *Amat,
    return 0;
 }
 
+#ifdef out
 /*****************************************************************************/
 /* function for setting up variable block overlapped Schwarz                 */
 /*****************************************************************************/
@@ -4665,7 +4676,7 @@ if ( info != 0 && info != (nrows+1) )
    return 1;
 #endif
 }
-
+#endif
 /*****************************************************************************/
 /*****************************************************************************/
 /* AZTEC related smoothers                                                   */

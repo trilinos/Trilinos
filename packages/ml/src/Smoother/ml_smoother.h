@@ -21,7 +21,6 @@ typedef struct ML_SmootherFunc_Struct ML_SmootherFunc;
 typedef struct ML_Smoother_Struct ML_Smoother;
 typedef struct ML_Sm_BGS_Data_Struct ML_Sm_BGS_Data;
 typedef struct ML_Sm_ILUT_Data_Struct ML_Sm_ILUT_Data;
-typedef struct ML_Sm_Schwarz_Data_Struct ML_Sm_Schwarz_Data;
 typedef struct ML_Sm_Hiptmair_Data_Struct ML_Sm_Hiptmair_Data;
 
 /* ******************************************************************** */
@@ -34,13 +33,6 @@ typedef struct ML_Sm_Hiptmair_Data_Struct ML_Sm_Hiptmair_Data;
 #include "ml_operator.h"
 #include "ml_comminfoop.h"
 #include <math.h>
-#ifdef SUPERLU
-#include "dsp_defs.h"
-#include "util.h"
-#elif DSUPERLU
-#include "mpi.h"
-#include "superlu_ddefs.h"
-#endif
 
 /* ******************************************************************** */
 /* data definition for the ML_Smoother Class                            */
@@ -100,6 +92,16 @@ struct ML_Sm_ILUT_Data_Struct
    int           fillin;
    double        threshold;
 };
+#ifdef out
+#ifdef SUPERLU
+#include "dsp_defs.h"
+#include "util.h"
+#elif DSUPERLU
+#include "mpi.h"
+#include <malloc.h>
+#include "superlu_ddefs.h"
+#endif
+typedef struct ML_Sm_Schwarz_Data_Struct ML_Sm_Schwarz_Data;
 
 struct ML_Sm_Schwarz_Data_Struct 
 {
@@ -123,6 +125,7 @@ struct ML_Sm_Schwarz_Data_Struct
    SuperMatrix   **slu_Umat;
 #endif
 };
+#endif
 
 /*******************************************************************************
 Hiptmair Smoother data structure
@@ -204,16 +207,18 @@ extern  int ML_Smoother_Create_ILUT_Data(ML_Sm_ILUT_Data **data);
 extern void ML_Smoother_Destroy_ILUT_Data(void *data);
 extern  int ML_Smoother_Gen_BGSFacts(ML_Sm_BGS_Data **, ML_Operator *,int); 
 extern  int ML_Smoother_Gen_VBGSFacts(ML_Sm_BGS_Data**,ML_Operator*,int,int*); 
-extern  int ML_Smoother_Create_Schwarz_Data(ML_Sm_Schwarz_Data **data);
 extern void ML_Smoother_Destroy_Schwarz_Data(void *data);
 extern void ML_Smoother_Clean_ParaSails(void *data);
 extern void ML_Smoother_Destroy_MLS(void *data);
 
 extern  int ML_Smoother_ILUTDecomposition(ML_Sm_ILUT_Data *, ML_Operator *, 
                     ML_Comm *, int, int *,int*,double *,int *, int *,int);
+#ifdef out
+extern  int ML_Smoother_Create_Schwarz_Data(ML_Sm_Schwarz_Data **data);
 extern  int ML_Smoother_VBlockSchwarzDecomposition(ML_Sm_Schwarz_Data *, 
                     ML_Operator *, ML_Comm *, int, int *,int*,double *,int *, 
                     int *,int);
+#endif
 
 extern  int ML_Smoother_GetOffProcRows(ML_CommInfoOP *, ML_Comm *, 
                   ML_Operator *,int,int *,int,int *,int *,int **,double **);

@@ -19,15 +19,6 @@
 #include "mpi.h"
 #endif
 
-#ifdef SUPERLU
-extern int ML_SuperLU_Solve(void *, int, double *, int, double *);
-extern int ML_SuperLU_SolveLocal(void *, double *, double *);
-#elif DSUPERLU
-extern int ML_SuperLU_Solve(void *, int, double *, int, double *);
-extern int ML_SuperLU_SolveLocal(void *, double *, double *);
-#endif
-
-
 /* ************************************************************************* */
 /* create and initialize a ML object                                         */
 /* ------------------------------------------------------------------------- */
@@ -1507,6 +1498,7 @@ int ML_Gen_Smoother_OverlappedDDILUT( ML *ml , int nl, int pre_or_post )
    else return(pr_error("Print unknown pre_or_post choice\n"));
 }
 
+#ifdef out
 /* ------------------------------------------------------------------------- */
 /* generate the variable block additive Schwarz smoother                     */
 /* ------------------------------------------------------------------------- */
@@ -1724,6 +1716,7 @@ int ML_Gen_Smoother_VBlockMultiplicativeSchwarz(ML *ml , int nl, int pre_or_post
    }
    else return(pr_error("Print unknown pre_or_post choice\n"));
 }
+#endif
 
 /* ------------------------------------------------------------------------- */
 /* generate the sparse approximate inverse smoother */
@@ -3598,20 +3591,6 @@ double ML_Cycle_AMGV(ML_1Level *curr, double *sol, double *rhs,
 }
 
 /*****************************************************************************/
-/*****************************************************************************/
-/* SuperLU stuff                                                             */
-/*****************************************************************************/
-/*****************************************************************************/
-
-#ifdef SUPERLU
-#include "dsp_defs.h"
-#include "util.h"
-#elif DSUPERLU
-#include "superlu_ddefs.h"
-#endif
-
-
-/*****************************************************************************/
 /* Form global matrix in CSR                                                 */
 /*****************************************************************************/
 
@@ -3729,6 +3708,7 @@ for ( i = 0; i < new_nrows; i++ )
    return 0;
 }
 
+#ifdef out
 /*****************************************************************************/
 /* clean up                                                                  */
 /* ------------------------------------------------------------------------- */
@@ -4329,6 +4309,7 @@ int nblocks = 1, *block_list, old_upper = 0, count, newptr, me, nnzs;
 
    return 0;
 }
+#endif
 
 /*****************************************************************************/
 /* print the total time in ML                                                */

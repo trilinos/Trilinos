@@ -689,7 +689,7 @@ xact
 
 		i__3 = *n - j - jb + 1;
 		MLFORTRAN(dtrsm)("Left", "Lower", "No transpose", "Unit", &jb, &i__3, &
-			c_b16, &A(j,j), lda, &A(j,j+jb), lda,
+			c_b16, &A(j,j), lda, &A(j,j+jb), lda
 #ifdef FORTRAN_STRLEN
 				 , strlen("Left"),strlen("Lower"),strlen("No transpose"),strlen("Unit")
 #endif
@@ -722,7 +722,7 @@ xact
 
 /* Subroutine */ int MLFORTRAN(dgetrs)(char *trans, integer *n, integer *nrhs, 
 	doublereal *a, integer *lda, integer *ipiv, doublereal *b, integer *
-	ldb, integer *info)
+	ldb, integer *info, int dummy1)
 {
 /*  -- LAPACK routine (version 2.0) --   
        Univ. of Tennessee, Univ. of California Berkeley, NAG Ltd.,   
@@ -1037,7 +1037,8 @@ e
 
 /* Subroutine */ int MLFORTRAN(dtrsm)(char *side, char *uplo, char *transa, char *diag, 
 	integer *m, integer *n, doublereal *alpha, doublereal *a, integer *
-	lda, doublereal *b, integer *ldb)
+	lda, doublereal *b, integer *ldb, int dummy1, int dummy2, int dummy3,
+				      int dummy4)
 {
 
 
@@ -2230,7 +2231,7 @@ L40:
 /* Subroutine */ int MLFORTRAN(dgemm)(char *transa, char *transb, integer *m, integer *
 	n, integer *k, doublereal *alpha, doublereal *a, integer *lda, 
 	doublereal *b, integer *ldb, doublereal *beta, doublereal *c, integer 
-	*ldc)
+	*ldc,int dummy1,int dummy2)
 {
 
 
@@ -4990,7 +4991,8 @@ L40:
 #ifndef ML_DTRMM_FUNC
 /* Subroutine */ int MLFORTRAN(dtrmm)(char *side, char *uplo, char *transa, char *diag, 
 	integer *m, integer *n, doublereal *alpha, doublereal *a, integer *
-	lda, doublereal *b, integer *ldb)
+	lda, doublereal *b, integer *ldb, int dummy1, int dummy2, 
+int dummy3, int dummy4)
 {
 
 
@@ -5442,7 +5444,7 @@ L40:
 #ifndef ML_DGEMV_FUNC
 /* Subroutine */ int MLFORTRAN(dgemv)(char *trans, integer *m, integer *n, doublereal *
 	alpha, doublereal *a, integer *lda, doublereal *x, integer *incx, 
-	doublereal *beta, doublereal *y, integer *incy)
+	doublereal *beta, doublereal *y, integer *incy, int dummy1)
 {
 
 
