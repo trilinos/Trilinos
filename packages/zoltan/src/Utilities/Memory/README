@@ -17,12 +17,13 @@ MEMORY UTILITIES   -- Routines for memory allocation and deallocation.
 
 Files compiled into Zoltan:
 
-mem_const.h        -- Prototypes for memory allocation and deallocation
-                      routines in mem.c.  Definition of LB_MALLOC.
+zoltan_mem.h       -- Prototypes for memory allocation and deallocation
+                      routines in mem.c.  Definition of Zoltan_MALLOC.
 
-mem.c              -- Memory allocation routines LB_array_alloc and LB_malloc.
-                      Memory deallocation routine LB_free.
-		      Parameter setting routing LB_Set_Malloc_Param.
+mem.c              -- Memory allocation routines Zoltan_Array_Alloc and 
+                      Zoltan_Malloc.
+                      Memory deallocation routine Zoltan_Free.
+		      Parameter setting routing Zoltan_Set_Malloc_Param.
 
 ----------------------------------------------------------------
 

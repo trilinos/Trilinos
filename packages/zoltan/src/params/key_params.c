@@ -12,26 +12,29 @@
  ****************************************************************************/
 
 #include <stdio.h>
-#include "lb_const.h"
+#include "zz_const.h"
+#include "key_params.h"
 #include "params_const.h"
 
 /*****************************************************************************/
 /*****************************************************************************/
 /*****************************************************************************/
 static PARAM_VARS Key_params[] = {
-	{ "IMBALANCE_TOL", NULL, "DOUBLE" },
-	{ "AUTO_MIGRATE", NULL, "INT" },
-	{ "OBJ_WEIGHT_DIM", NULL, "INT" },
-	{ "COMM_WEIGHT_DIM", NULL, "INT" },
-	{ "DEBUG_LEVEL", NULL, "INT" },
-	{ "DEBUG_PROCESSOR", NULL, "INT" },
-	{ "DETERMINISTIC", NULL, "INT" },
-	{ "TIMER", NULL, "STRING" },
-	{ "NUM_GID_ENTRIES", NULL, "INT" },
-	{ "NUM_LID_ENTRIES", NULL, "INT" },
-	{ "RETURN_LISTS", NULL, "STRING" },
-        { "TFLOPS_SPECIAL", NULL, "INT" },
-	{ NULL, NULL, NULL } };
+  { "IMBALANCE_TOL", NULL, "DOUBLE" },
+  { "AUTO_MIGRATE", NULL, "INT" },
+  { "OBJ_WEIGHT_DIM", NULL, "INT" },
+  { "EDGE_WEIGHT_DIM", NULL, "INT" },
+  { "DEBUG_LEVEL", NULL, "INT" },
+  { "DEBUG_PROCESSOR", NULL, "INT" },
+  { "DETERMINISTIC", NULL, "INT" },
+  { "TIMER", NULL, "STRING" },
+  { "NUM_GID_ENTRIES", NULL, "INT" },
+  { "NUM_LID_ENTRIES", NULL, "INT" },
+  { "RETURN_LISTS", NULL, "STRING" },
+  { "TFLOPS_SPECIAL", NULL, "INT" },
+  { "COMM_WEIGHT_DIM", NULL, "INT" }, /* For backward compatibility only. */
+                                      /* Prefer use of EDGE_WEIGHT_DIM.   */
+  { NULL, NULL, NULL } };
 /*****************************************************************************/
 /*****************************************************************************/
 /*****************************************************************************/
@@ -66,7 +69,7 @@ char *val)			/* value of variable */
             ZOLTAN_PRINT_WARN(zz->Proc, yo, msg);
 	    result.dval = ZOLTAN_LB_IMBALANCE_TOL_DEF;
 	}
-	zz->Imbalance_Tol = result.dval;
+	zz->LB.Imbalance_Tol = result.dval;
 	status = 3;		/* Don't add to Params field of ZZ */
         break;
 
@@ -90,16 +93,17 @@ char *val)			/* value of variable */
 	status = 3;		/* Don't add to Params field of ZZ */
         break;
 
-      case 3:		/* Communication weight dim.  */
+      case 3: 		/* Edge weight dim.  */
+      case 12:
         if (result.def)
-            result.ival = ZOLTAN_COMM_WEIGHT_DEF;
+            result.ival = ZOLTAN_EDGE_WEIGHT_DEF;
 	if (result.ival < 0) {
-	    sprintf(msg, "Invalid Comm_Weight_Dim value (%d) "
-		"being set to %d.", result.ival, ZOLTAN_COMM_WEIGHT_DEF);
+	    sprintf(msg, "Invalid Edge_Weight_Dim value (%d) "
+		"being set to %d.", result.ival, ZOLTAN_EDGE_WEIGHT_DEF);
             ZOLTAN_PRINT_WARN(zz->Proc, yo, msg);
-	    result.ival = ZOLTAN_COMM_WEIGHT_DEF;
+	    result.ival = ZOLTAN_EDGE_WEIGHT_DEF;
 	}
-	zz->Comm_Weight_Dim = result.ival;
+	zz->Edge_Weight_Dim = result.ival;
 	status = 3;		/* Don't add to Params field of ZZ */
         break;
 
@@ -175,7 +179,7 @@ char *val)			/* value of variable */
         status = 3;
         break;
 
-      case 10:          /* LB_Return_Lists */
+      case 10:          /* LB.Return_Lists */
         if (strcmp(result.sval, "ALL") == 0) {
           tmp = ZOLTAN_LB_ALL_LISTS;
           status = 3;
@@ -198,7 +202,7 @@ char *val)			/* value of variable */
           ZOLTAN_PRINT_WARN(zz->Proc, yo, msg);
           status = 2; /* Illegal parameter */
         }
-	zz->LB_Return_Lists = tmp;
+	zz->LB.Return_Lists = tmp;
         break;
 
       case 11: 		/* Tflops Special flag */
@@ -228,13 +232,13 @@ char *val)			/* value of variable */
 void Zoltan_Print_Key_Params(ZZ *zz)
 {
   printf("ZOLTAN Parameter %s = %f\n", Key_params[0].name, 
-         zz->Imbalance_Tol);
+         zz->LB.Imbalance_Tol);
   printf("ZOLTAN Parameter %s = %s\n", Key_params[1].name, 
          (zz->Migrate.Auto_Migrate ? "TRUE" : "FALSE"));
   printf("ZOLTAN Parameter %s = %d\n", Key_params[2].name, 
          zz->Obj_Weight_Dim);
   printf("ZOLTAN Parameter %s = %d\n", Key_params[3].name, 
-         zz->Comm_Weight_Dim);
+         zz->Edge_Weight_Dim);
   printf("ZOLTAN Parameter %s = %d\n", Key_params[4].name, 
          zz->Debug_Level);
   printf("ZOLTAN Parameter %s = %d\n", Key_params[5].name, 
@@ -252,7 +256,7 @@ void Zoltan_Print_Key_Params(ZZ *zz)
   printf("ZOLTAN Parameter %s = %d\n", Key_params[9].name, 
          zz->Num_LID);
   printf("ZOLTAN Parameter %s = ", Key_params[10].name);
-  switch (zz->LB_Return_Lists) {
+  switch (zz->LB.Return_Lists) {
   case ZOLTAN_LB_ALL_LISTS:
     printf("ALL\n");
     break;

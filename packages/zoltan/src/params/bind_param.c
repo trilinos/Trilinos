@@ -18,9 +18,10 @@
 #else
 #include <strings.h>
 #endif  /* __STDC__ */
-#include "lb_const.h"
-#include "lb_util_const.h"
+#include "zz_util_const.h"
 #include "params_const.h"
+#include "zoltan_mem.h"
+#include "zoltan_util.h"
 
 int       Zoltan_Bind_Param(
 PARAM_VARS *params,		/* parameter structure */

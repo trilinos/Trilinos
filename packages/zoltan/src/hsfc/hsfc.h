@@ -24,10 +24,8 @@
 #include <limits.h>
 #include <string.h>
 
-#include "lb_const.h"
+#include "zz_const.h"
 #include "timer_const.h"
-#include "comm_const.h"
-#include "lb_util_const.h"
 #include "lbi_const.h"
 #include "all_allo_const.h"
 #include "params_const.h"

@@ -11,45 +11,30 @@
  *    $Revision$
  ****************************************************************************/
 
-#include "lb_const.h"
+#include "zz_const.h"
+#include "lb_init_const.h"
 
 /*****************************************************************************/
 /*****************************************************************************/
 /*****************************************************************************/
-/*
- *  This file contains routines for initializing Zoltan.
- *  These functions are all callable by the application. 
- */
-/*****************************************************************************/
-/*****************************************************************************/
-/*****************************************************************************/
 
-int Zoltan_Initialize(int argc, char **argv, float *ver)
+void Zoltan_Migrate_Init(struct Zoltan_Migrate_Struct *mig)
 {
-/*
- *  Function to initialize values needed in load balancing tools.
- *  The function should be called after MPI_Init if the application
- *  uses MPI.
- */
+  mig->Auto_Migrate = ZOLTAN_AUTO_MIGRATE_DEF;
+  mig->Pre_Migrate = NULL;
+  mig->Mid_Migrate = NULL;
+  mig->Post_Migrate = NULL;
+  mig->Pre_Migrate_Fort = NULL;
+  mig->Mid_Migrate_Fort = NULL;
+  mig->Post_Migrate_Fort = NULL;
+}
 
-int mpi_flag;
-
-  /* 
-   *  Test whether MPI is already initialized.  If not, call MPI_Init.
-   */
-
-  MPI_Initialized(&mpi_flag);
-
-  if (!mpi_flag) {
-    MPI_Init(&argc, &argv);
-  }
-
-  /*
-   * Now return the version so that the user knows which version of
-   * the libarary is being used without having to get the source
-   * code.
-   */
-  *ver = ZOLTAN_VER;
-
-  return (ZOLTAN_OK);
+void Zoltan_LB_Init(struct Zoltan_LB_Struct *lb)
+{
+  lb->Method = RCB;
+  lb->LB_Fn = Zoltan_RCB;
+  lb->Return_Lists = ZOLTAN_LB_RETURN_LISTS_DEF;
+  lb->Imbalance_Tol = ZOLTAN_LB_IMBALANCE_TOL_DEF;
+  lb->Data_Structure = NULL;
+  lb->Free_Structure = Zoltan_RCB_Free_Structure;
 }

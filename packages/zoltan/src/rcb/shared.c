@@ -11,12 +11,10 @@
  *    $Revision$
  ****************************************************************************/
 
-#include "lb_const.h"
-#include "lb_util_const.h"
+#include "zz_const.h"
 #include "rcb.h"
 #include "rib.h"
 #include "all_allo_const.h"
-#include "comm_const.h"
 #include "create_proc_list_const.h"
 
 /*****************************************************************************/
@@ -298,7 +296,7 @@ int Zoltan_RB_Send_Dots(
                                        4 = most dot memory this proc ever allocs                                       5 = # of times a previous cut is re-used
                                        6 = # of reallocs of dot array */
   int use_ids,                      /* true if global and local IDs are to be
-                                       kept for RCB or RIB (for LB_Return_Lists 
+                                       kept for RCB or RIB (for LB.Return_Lists 
                                        or high Debug_Levels).  The IDs must be
                                        communicated if use_ids is true.  */
   MPI_Comm local_comm
@@ -575,12 +573,12 @@ int Zoltan_RB_Use_IDs(ZZ *zz)
  * local IDs should be stored, manipulated, and communicated within the
  * RCB and RIB algorithms.  
  * IDs are used for two purposes in RCB and RIB:
- * 1.  To build import lists.  When LB_Return_Lists == NONE, import lists are 
+ * 1.  To build import lists.  When LB.Return_Lists == NONE, import lists are 
  * not built, so there is no need to carry along the IDs,
  * 2.  To be printed as debugging information.  Only for high debug levels are
  * the IDs printed; for lower levels, the IDs need not be carried along.
  */
-  return (zz->LB_Return_Lists || (zz->Debug_Level >= ZOLTAN_DEBUG_ALL));
+  return (zz->LB.Return_Lists || (zz->Debug_Level >= ZOLTAN_DEBUG_ALL));
 }
 
 /*****************************************************************************/
@@ -697,7 +695,7 @@ int Zoltan_RB_check_geom_output(
   
   MPI_Barrier(zz->Communicator);
   
-  if (zz->Method == RCB) {
+  if (zz->LB.Method == RCB) {
 
     /* check that final set of points is inside RCB box of each proc */
   
@@ -917,7 +915,7 @@ void Zoltan_RB_stats(ZZ *zz, double timetotal, struct Dot_Struct *dotpt,
     printf("    Proc %d comm time = %g\n",proc,timers[3]);
   
   
-  if (zz->Method == RCB && stats > 1)  {
+  if (zz->LB.Method == RCB && stats > 1)  {
     /* RCB boxes for each proc */
     if (proc == print_proc) printf(" RCB sub-domain boxes:\n");
     for (i = 0; i < 3; i++) {

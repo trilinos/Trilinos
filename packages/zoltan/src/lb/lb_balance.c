@@ -11,9 +11,8 @@
  *    $Revision$
  ****************************************************************************/
 
-#include "lb_const.h"
-#include "lb_util_const.h"
-#include "params_const.h"
+#include "zz_const.h"
+#include "key_params.h"
 #include "timer_const.h"
 #include "ha_const.h"
 
@@ -117,11 +116,11 @@ int comm[3],gcomm[3];
    */
   comm[0] = zz->Num_GID;
   comm[1] = zz->Num_LID;
-  comm[2] = zz->LB_Return_Lists;
+  comm[2] = zz->LB.Return_Lists;
   MPI_Allreduce(comm, gcomm, 3, MPI_INT, MPI_MAX, zz->Communicator);
   zz->Num_GID = *num_gid_entries = gcomm[0];
   zz->Num_LID = *num_lid_entries = gcomm[1];
-  zz->LB_Return_Lists = gcomm[2];
+  zz->LB.Return_Lists = gcomm[2];
 
   /* assume no changes */
   *changes = 0;
@@ -144,7 +143,7 @@ int comm[3],gcomm[3];
     return (ZOLTAN_OK);
   }
 
-  if (zz->Method == NONE) {
+  if (zz->LB.Method == NONE) {
     if (zz->Proc == zz->Debug_Proc && zz->Debug_Level >= ZOLTAN_DEBUG_PARAMS)
       printf("%s Balancing method selected == NONE; no balancing performed\n",
               yo);
@@ -170,7 +169,7 @@ int comm[3],gcomm[3];
    * Call the actual load-balancing function.
    */
 
-  error = zz->LB_Fn(zz, num_import_objs, import_global_ids, import_local_ids,
+  error = zz->LB.LB_Fn(zz, num_import_objs, import_global_ids, import_local_ids,
           import_procs, num_export_objs, export_global_ids, 
           export_local_ids, export_procs);
 
@@ -232,7 +231,7 @@ int comm[3],gcomm[3];
     if (*num_export_objs >= 0) {
       /* Both maps already available; nothing to do. */;
 
-      if (zz->LB_Return_Lists == ZOLTAN_LB_NO_LISTS) {
+      if (zz->LB.Return_Lists == ZOLTAN_LB_NO_LISTS) {
         /* This condition should never happen!! */
         /* Methods should not return arrays if no lists are requested. */
         *num_import_objs = *num_export_objs = -1;
@@ -242,8 +241,8 @@ int comm[3],gcomm[3];
                       "Method returned lists, but no lists requested.");
       }
     }
-    else if (zz->LB_Return_Lists == ZOLTAN_LB_ALL_LISTS || 
-             zz->LB_Return_Lists == ZOLTAN_LB_EXPORT_LISTS) {
+    else if (zz->LB.Return_Lists == ZOLTAN_LB_ALL_LISTS || 
+             zz->LB.Return_Lists == ZOLTAN_LB_EXPORT_LISTS) {
       /* Export lists are requested; compute export map */
       error = Zoltan_Compute_Destinations(zz,
                                       *num_import_objs, *import_global_ids, 
@@ -257,7 +256,7 @@ int comm[3],gcomm[3];
         ZOLTAN_TRACE_EXIT(zz, yo);
         return error;
       }
-      if (zz->LB_Return_Lists == ZOLTAN_LB_EXPORT_LISTS) {
+      if (zz->LB.Return_Lists == ZOLTAN_LB_EXPORT_LISTS) {
         /* Method returned import lists, but only export lists were desired. */
         /* Import lists not needed; free them. */
         *num_import_objs = -1;
@@ -269,8 +268,8 @@ int comm[3],gcomm[3];
   else { /* (*num_import_objs < 0) */
     if (*num_export_objs >= 0) {
       /* Only export lists have been returned. */
-      if (zz->LB_Return_Lists == ZOLTAN_LB_ALL_LISTS || 
-          zz->LB_Return_Lists == ZOLTAN_LB_IMPORT_LISTS) {
+      if (zz->LB.Return_Lists == ZOLTAN_LB_ALL_LISTS || 
+          zz->LB.Return_Lists == ZOLTAN_LB_IMPORT_LISTS) {
         /* Compute import map */
         error = Zoltan_Compute_Destinations(zz, 
                                         *num_export_objs, *export_global_ids, 
@@ -285,7 +284,7 @@ int comm[3],gcomm[3];
           ZOLTAN_TRACE_EXIT(zz, yo);
           return error;
         }
-        if (zz->LB_Return_Lists == ZOLTAN_LB_IMPORT_LISTS) {
+        if (zz->LB.Return_Lists == ZOLTAN_LB_IMPORT_LISTS) {
           /* Method returned export lists, but only import lists are desired. */
           /* Export lists not needed; free them. */
           *num_export_objs = -1;
@@ -295,7 +294,7 @@ int comm[3],gcomm[3];
       }
     }
     else {  /* *num_export_objs < 0 && *num_import_objs < 0) */
-      if (zz->LB_Return_Lists) {
+      if (zz->LB.Return_Lists) {
         /* No map at all available */
         ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Load-balancing function returned "
                "neither import nor export data.");

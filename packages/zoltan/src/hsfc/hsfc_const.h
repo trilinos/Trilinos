@@ -18,7 +18,6 @@
 /* function prototypes */
 int  Zoltan_HSFC_Point_Drop (ZZ *zz, double *x) ;
 void Zoltan_HSFC_Box_Drop(ZZ *zz, int *array, double *lo, double *hi, int *n) ;
-void Zoltan_HSFC_Free_Structure (ZZ *zz) ;
 int  Zoltan_HSFC_Set_Param (char *name, char *val) ;
 
 #endif

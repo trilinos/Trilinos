@@ -14,7 +14,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <malloc.h>
-#include "lb_const.h"
 #include "all_allo_const.h"
 #include "params_const.h"
 

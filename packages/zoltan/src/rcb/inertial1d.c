@@ -18,7 +18,7 @@
 
 
 #include <stdio.h>
-#include "lb_const.h"
+#include "zz_const.h"
 #include "rib.h"
 
 int Zoltan_RIB_inertial1d(

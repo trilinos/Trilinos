@@ -136,7 +136,7 @@ octant.c:
 octant_const.h:
    Headder file that containts function declarations, structures, and global
    variables to be used by any routine.
-   struct Region -- Coordinate, weight, and LB_TAG information of objects 
+   struct Region -- Coordinate, weight, and ID information of objects 
 	being balanced.
    struct pRegion -- pointer to a Region structure
    struct Octant -- structure for each node in the octree

@@ -12,67 +12,27 @@
 ##############################################################################
 
 
-LB DIRECTORY -- Zoltan query interface and application-callable routines.
+LB DIRECTORY -- Zoltan load-balancing tools.
 ------------------------------------------------------------------------
-
-------------------------------------------------------------------------
-Zoltan Interface Files -- routines intended to be called by the 
-application should be put in these files.
-
-lbi_const.h      -- Application-visible file with typedefs for query functions
-                    and prototypes for application-callable library functions.
-                    Also #include lb_user_const.h.
-                    This file should be #included in application files that
-                    call the load-balancing library.
 
 lb_balance.c     -- Routines for computing new partitions and 
                     managing memory for allocated by Zoltan but returned
-                    to the application. (LB_Balance, LB_Free_Data)
+                    to the application. 
 
 lb_eval.c        -- Routines for evaluating the quality of partitions.
-                    (LB_Eval)
 
-lb_init.c        -- Routines to initialize Zoltan. (LB_Initialize)
+lb_init.c        -- Routines to initialize Zoltan's load-balancing tools.
 
 lb_migrate.c     -- Routines to provide help for data migration.
-                    (LB_Compute_Destinations, LB_Help_Migrate)
 
 lb_set_method.c  -- Routines to set the load-balancing method.
-                    (LB_Set_Method)
 
-lb_set_fn.c      -- Routines to register callback functions.
-                    (LB_Set_Fn and variants for each specific type of
-                    callback function.)
+lb_set_fn.c      -- Routines to register callback functions specific to 
+                    load-balancing tools.
 
-lb_struct.c      -- Routines that manage memory for load-balancing
-                    structures.  (LB_Create and LB_Destroy)
+lb_const.h       -- Zoltan data structures for load balancing;
+                    these data structures are private to the 
+                    library (i.e., not seen by the application). 
+                    Also includes macros and prototypes for Zoltan
+                    load-balancing functions.
 
-
-END of Zoltan Interface Files.
-------------------------------------------------------------------------
-
-Non-Interface routines may be put in the following files.
-
-lb_const.h       -- Load-balancing data structures that are private to the 
-                    library (i.e., not seen by the application).  Includes
-                    definitions of LB_Struct, LB_Tag_Struct, LB_Migrate_Struct,
-                    and LB_FN.
-                    Includes enumerated type LB_Method for methods included
-                    in the load-balancing library.
-                    Also includes macros and prototypes for load-balancing 
-                    functions.
-                    This file should be included in most load-balancing files
-                    since it includes the major data structure definitions.
-                    It #includes lbi_const.h.
-
-lb_util_const.h  -- Prototypes for external functions in lb_util.c.
-
-lb_util.c        -- Contains code for non-algorithmic routines that are 
-                    not application-callable but are called by the 
-                    load-balancing library.  These routines are "service"
-                    routines to the general library framework.
-                    Currently, the only routine here is perform_error_checking.
-
-lb_id_const.h    -- Prototypes for routines in lb_id.c.
-
-lb_id.c          -- Routines to malloc and manipulate Global and Local IDs.

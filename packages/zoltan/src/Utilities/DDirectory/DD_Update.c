@@ -15,7 +15,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "DD_Const.h"
+#include "DD.h"
 
 
 
@@ -247,7 +247,7 @@ static int DD_Update_Local (Zoltan_DD_Directory *dd,
       }
 
    /* compute offset into hash table to find head of linked list */
-   index = DD_Hash2 (gid, dd->gid_length, dd->table_length) ;
+   index = Zoltan_DD_Hash2 (gid, dd->gid_length, dd->table_length) ;
 
    /* walk linked list until end looking for matching gid */
    for (ptr = dd->table+index ; *ptr != NULL ; ptr = &((*ptr)->next))

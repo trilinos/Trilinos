@@ -18,11 +18,15 @@
 #include <mpi.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include "DD_Const.h"
+#include "zoltan_dd.h"
+#include "zoltan_mem.h"
+#include "zoltan_util.h"
+#include "zoltan_id.h"
 #include "zoltan_align.h"
 
 
 #define DD_TEST_NAME_NUMERIC 100  /* arbitrary starting value for defines */
+#define NO_PROC -1
 
 
 typedef struct
@@ -256,7 +260,7 @@ int main (int argc, char *argv[])
              ZOLTAN_SET_ID (param.glen, glist + count * param.glen, data->id)  ;
              count++ ;
              }
-          data->new_owner = ZOLTAN_DD_NO_PROC ;
+          data->new_owner = NO_PROC ;
           }
        err = Zoltan_DD_Remove (dd, glist, count) ;
        if (err != ZOLTAN_DD_NORMAL_RETURN)
@@ -265,7 +269,7 @@ int main (int argc, char *argv[])
 
        /* update directory (put directory entries back in) */
        for (p = store ; p < store + param.count * param.slen ; p += param.slen)
-          if (((Data *)p)->new_owner == ZOLTAN_DD_NO_PROC)
+          if (((Data *)p)->new_owner == NO_PROC)
               ((Data *)p)->new_owner = loop % nproc ; /* place in new location */
 
        count = 0 ;
@@ -378,11 +382,13 @@ static int initialize_data (Param *param, char *store, int nproc)
 static int get_params (Param *param)
     {
     /* establish default values */
-    param->count       = 250000 ; /* 1500000 ; */
+/*  param->count       = 250000 ;  KDD */ /* 1500000 ; */
+    param->count       = 2000 ; /* 1500000 ; */
     param->pmove       = 10 ;
     param->pdelete     = 3 ;
     param->pscatter    = 4 ;
-    param->nloops      = 200 ;
+/*  param->nloops      = 200 ; KDD */
+    param->nloops      = 20 ;
 
     param->glen        = 5 ;
     param->llen        = 5 ;

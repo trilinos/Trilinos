@@ -20,9 +20,6 @@ Files compiled into Zoltan:
 all_allo_const.h   -- Prototypes for Zoltan-specific memory allocation and 
                       deallocation routines in all_allo.c.  
 
-all_allo.c         -- Zoltan-specific Memory routines LB_Special_Malloc and
-                      LB_Special_Free.
-		      Parameter setting routing LB_Set_Malloc_Param.
-
-free_structure.c   -- Calls method-specific routines to free any persistent
-		      data structure when changing methods or freeing LB object.
+all_allo.c         -- Zoltan-specific Memory routines Zoltan_Special_Malloc and
+                      Zoltan_Special_Free.
+		      Parameter setting routing Zoltan_Set_Malloc_Param.

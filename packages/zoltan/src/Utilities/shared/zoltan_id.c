@@ -15,7 +15,7 @@
 #include "zoltan_types.h"
 #include "zoltan_id.h"
 #include "zoltan_util.h"
-#include "mem_const.h"
+#include "zoltan_mem.h"
 
 /*****************************************************************************/
 /*

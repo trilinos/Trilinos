@@ -15,7 +15,7 @@
 #include <memory.h>
 #include "mpi.h"
 #include "comm.h"
-#include "mem_const.h"
+#include "zoltan_mem.h"
 
 
 /* Given the communication object, perform a communication operation as

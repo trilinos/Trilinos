@@ -19,4 +19,6 @@ Files compiled into Zoltan:
 
 timer_const.h          -- Prototypes and definitions.
 
-timer.c                -- Routines implementing LB_Time.
+timer.h                -- Definitions and data structures.
+
+timer.c                -- Routines implementing Zoltan_Time.

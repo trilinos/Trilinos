@@ -7,7 +7,7 @@
  ****************************************************************************/
 
 #include <stdio.h>
-#include "lb_const.h"
+#include "zz_const.h"
 #include "reftree.h"
 #include "params_const.h"
 
@@ -139,7 +139,7 @@ int num_lid_entries = zz->Num_LID;  /* number of array entries in a local ID */
    * If a tree already exists, destroy it first.
    */
 
-  if (zz->Data_Structure != NULL) Zoltan_Reftree_Free_Structure(zz);
+  if (zz->LB.Data_Structure != NULL) Zoltan_Reftree_Free_Structure(zz);
 
   root_vert[0] = 1;
   ierr = alloc_reftree_nodes(zz, &root, 1, root_vert);
@@ -195,7 +195,7 @@ int num_lid_entries = zz->Num_LID;  /* number of array entries in a local ID */
   reftree_data->reftree_root = root;
   reftree_data->hash_table = hashtab;
   reftree_data->hash_table_size = hashsize;
-  zz->Data_Structure = (void *) reftree_data;
+  zz->LB.Data_Structure = (void *) reftree_data;
 
   /*
    * Get the list of initial elements known to this processor
@@ -729,7 +729,7 @@ int i;                     /* loop counter */
    * there, reinitialize coarse grid.
    */
 
-  if (zz->Data_Structure == NULL) {
+  if (zz->LB.Data_Structure == NULL) {
     ierr = Zoltan_Reftree_Init(zz);
     if (ierr==ZOLTAN_FATAL || ierr==ZOLTAN_MEMERR) {
       ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error returned from Zoltan_Reftree_Init.");
@@ -739,7 +739,7 @@ int i;                     /* loop counter */
   else {
     Zoltan_Reftree_Reinit_Coarse(zz);
   }
-  root = ((struct Zoltan_Reftree_data_struct *)zz->Data_Structure)->reftree_root;
+  root = ((struct Zoltan_Reftree_data_struct *)zz->LB.Data_Structure)->reftree_root;
 
   /*
    * Verify the required child query functions are registered
@@ -1090,8 +1090,8 @@ int existing;              /* existing child that agrees with GET_CHILD data */
 
     subroot->num_child = num_obj;
 
-    hashtab  = ((struct Zoltan_Reftree_data_struct *)zz->Data_Structure)->hash_table;
-    hashsize = ((struct Zoltan_Reftree_data_struct *)zz->Data_Structure)->hash_table_size;
+    hashtab  = ((struct Zoltan_Reftree_data_struct *)zz->LB.Data_Structure)->hash_table;
+    hashsize = ((struct Zoltan_Reftree_data_struct *)zz->LB.Data_Structure)->hash_table_size;
 
   /*
    * For each child ...
@@ -1909,7 +1909,7 @@ struct Zoltan_Reftree_hash_node **hashtab;       /* hash table */
 int hashsize;                                /* dimension of hash table */
 int i;                                       /* loop counter */
 
-  reftree_data = (struct Zoltan_Reftree_data_struct *)zz->Data_Structure;
+  reftree_data = (struct Zoltan_Reftree_data_struct *)zz->LB.Data_Structure;
 
   root = reftree_data->reftree_root;
 
@@ -1949,7 +1949,7 @@ int i;                                       /* loop counter */
     ZOLTAN_FREE(&hashtab);
   }
 
-  ZOLTAN_FREE(&(zz->Data_Structure));
+  ZOLTAN_FREE(&(zz->LB.Data_Structure));
 
 }
 
@@ -1964,7 +1964,7 @@ struct Zoltan_Reftree_data_struct *reftree_data; /* data structure from zz */
 
   if (subroot != NULL) {
 
-    reftree_data = (struct Zoltan_Reftree_data_struct *)zz->Data_Structure;
+    reftree_data = (struct Zoltan_Reftree_data_struct *)zz->LB.Data_Structure;
 
   /*
    * Turn all the children into leaves and remove them from the hash table
@@ -2035,9 +2035,9 @@ int found;            /* flag for another coarse grid element */
 int num_gid_entries = zz->Num_GID;  /* number of array entries in a global ID */
 int num_lid_entries = zz->Num_LID;  /* number of array entries in a local ID */
 
-  root = ((struct Zoltan_Reftree_data_struct *)zz->Data_Structure)->reftree_root;
-  hashtab  = ((struct Zoltan_Reftree_data_struct *)zz->Data_Structure)->hash_table;
-  hashsize = ((struct Zoltan_Reftree_data_struct *)zz->Data_Structure)->hash_table_size;
+  root = ((struct Zoltan_Reftree_data_struct *)zz->LB.Data_Structure)->reftree_root;
+  hashtab  = ((struct Zoltan_Reftree_data_struct *)zz->LB.Data_Structure)->hash_table;
+  hashsize = ((struct Zoltan_Reftree_data_struct *)zz->LB.Data_Structure)->hash_table_size;
   final_ierr = ZOLTAN_OK;
 
   /*
@@ -2320,7 +2320,7 @@ ZOLTAN_REFTREE *root;
    * initialize the tree, if not already done
    */
 
-  if (zz->Data_Structure == NULL) {
+  if (zz->LB.Data_Structure == NULL) {
     *ierr = Zoltan_Reftree_Init(zz);
     if (*ierr==ZOLTAN_FATAL || *ierr==ZOLTAN_MEMERR) {
       ZOLTAN_PRINT_ERROR(zz->Proc, yo,
@@ -2344,7 +2344,7 @@ ZOLTAN_REFTREE *root;
    * traverse the tree to find the child order
    */
 
-  root = ((struct Zoltan_Reftree_data_struct *)zz->Data_Structure)->reftree_root;
+  root = ((struct Zoltan_Reftree_data_struct *)zz->LB.Data_Structure)->reftree_root;
   isub = 0;
   get_child_order_recur(zz,root,&isub,order);
 

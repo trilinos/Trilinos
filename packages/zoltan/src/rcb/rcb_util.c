@@ -11,7 +11,7 @@
  *    $Revision$
  ****************************************************************************/
 
-#include "lb_const.h"
+#include "zz_const.h"
 #include "rcb.h"
 
 /*****************************************************************************/
@@ -37,13 +37,13 @@ int num_geom;
    * the other fields can be reused.
    */
 
-  if (zz->Data_Structure == NULL) {
+  if (zz->LB.Data_Structure == NULL) {
     rcb = (RCB_STRUCT *) ZOLTAN_MALLOC(sizeof(RCB_STRUCT));
     if (rcb == NULL) {
       ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
       return(ZOLTAN_MEMERR);
     }
-    zz->Data_Structure = (void *) rcb;
+    zz->LB.Data_Structure = (void *) rcb;
     rcb->Tree_Ptr = NULL;
     rcb->Box = NULL;
     rcb->Global_IDs = NULL;
@@ -68,7 +68,7 @@ int num_geom;
     }
   }
   else {
-    rcb = (RCB_STRUCT *) zz->Data_Structure;
+    rcb = (RCB_STRUCT *) zz->LB.Data_Structure;
     ZOLTAN_FREE(&(rcb->Global_IDs));
     ZOLTAN_FREE(&(rcb->Local_IDs));
     ZOLTAN_FREE(&(rcb->Dots));
@@ -97,7 +97,7 @@ void Zoltan_RCB_Free_Structure(ZZ *zz)
  */
 RCB_STRUCT *rcb;                      /* Data structure for RCB.             */
 
-  rcb = (RCB_STRUCT *) zz->Data_Structure;
+  rcb = (RCB_STRUCT *) (zz->LB.Data_Structure);
 
   if (rcb != NULL) {
     ZOLTAN_FREE(&(rcb->Tree_Ptr));
@@ -105,6 +105,6 @@ RCB_STRUCT *rcb;                      /* Data structure for RCB.             */
     ZOLTAN_FREE(&(rcb->Global_IDs));
     ZOLTAN_FREE(&(rcb->Local_IDs));
     ZOLTAN_FREE(&(rcb->Dots));
-    ZOLTAN_FREE(&(zz->Data_Structure));
+    ZOLTAN_FREE(&(zz->LB.Data_Structure));
   }
 }

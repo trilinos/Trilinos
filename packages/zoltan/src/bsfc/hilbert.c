@@ -21,7 +21,7 @@ Description:
 domain to the 1D domain.  Two different 2D and 3D domains are
 supported.
 
-For the routines 'Zoltan_SFC_hsfc2d' and 'Zoltan_SFC_hsfc3d' the 2D and 3D domains are
+For the routines 'Zoltan_BSFC_hsfc2d' and 'Zoltan_BSFC_hsfc3d' the 2D and 3D domains are
 defined as follows.
 Note that
   *     0   is the minimum value of an unsigned integer
@@ -31,7 +31,7 @@ thus the 2D and 3D domains are
   *   [0,~(0u)] x [0,~(0u)] x [0,~(0u)]
 respectively.
 
-For the routines 'Zoltan_SFC_fhsfc2d' and 'Zoltan_SFC_fhsfc3d' the 2D and 3D domains are
+For the routines 'Zoltan_BSFC_fhsfc2d' and 'Zoltan_BSFC_fhsfc3d' the 2D and 3D domains are
 defines as:
   *   [0.0,1.0] x [0.0,1.0]
   *   [0.0,1.0] x [0.0,1.0] x [0.0,1.0]
@@ -57,17 +57,17 @@ the SFC
 
 ----------------------------------------------------------------------*/
 
-#include "lb_const.h"
+#include <stdlib.h>
 #include <limits.h>
 #include "hilbert_const.h"
 
-static void Zoltan_SFC_hsfc2d(unsigned coord[], unsigned *nkey, unsigned key[]); 
-static void Zoltan_SFC_hsfc3d(unsigned coord[], unsigned *nkey, unsigned key[]);
+static void Zoltan_BSFC_hsfc2d(unsigned coord[], unsigned *nkey, unsigned key[]); 
+static void Zoltan_BSFC_hsfc3d(unsigned coord[], unsigned *nkey, unsigned key[]);
 
 /*--------------------------------------------------------------------*/
 /* 2D Hilbert Space-filling curve */
 
-static void Zoltan_SFC_hsfc2d(
+static void Zoltan_BSFC_hsfc2d(
   unsigned   coord[] , /* IN: Normalized integer coordinates */
   unsigned * nkey ,    /* IN: Word length of key */
   unsigned   key[] )   /* OUT: space-filling curve key */
@@ -142,7 +142,7 @@ static void Zoltan_SFC_hsfc2d(
 /*--------------------------------------------------------------------*/
 /* 3D Hilbert Space-filling curve */
 
-static void Zoltan_SFC_hsfc3d(
+static void Zoltan_BSFC_hsfc3d(
   unsigned   coord[] , /* IN: Normalized integer coordinates */
   unsigned * nkey ,    /* IN: Word length of 'key' */
   unsigned   key[] )   /* OUT: space-filling curve key */
@@ -258,7 +258,7 @@ static void Zoltan_SFC_hsfc3d(
 
 /*--------------------------------------------------------------------*/
 
-void Zoltan_SFC_fhsfc2d(
+void Zoltan_BSFC_fhsfc2d(
   double     coord[] , /* IN: Normalized floating point coordinates */
   unsigned * nkey ,    /* IN: Word length of key */
   unsigned   key[] )   /* OUT: space-filling curve key */
@@ -269,10 +269,10 @@ void Zoltan_SFC_fhsfc2d(
   unsigned c[2] ;
   c[0] = (unsigned) (( imax < c0 ) ? imax : c0 );
   c[1] = (unsigned) (( imax < c1 ) ? imax : c1 );
-  Zoltan_SFC_hsfc2d( c , nkey , key );
+  Zoltan_BSFC_hsfc2d( c , nkey , key );
 }
 
-void Zoltan_SFC_fhsfc3d(
+void Zoltan_BSFC_fhsfc3d(
   double     coord[] , /* IN: Normalized floating point coordinates */
   unsigned * nkey ,    /* IN: Word length of key */
   unsigned   key[] )   /* OUT: space-filling curve key */
@@ -285,5 +285,5 @@ void Zoltan_SFC_fhsfc3d(
   c[0] = (unsigned) (( imax < c0 ) ? imax : c0 );
   c[1] = (unsigned) (( imax < c1 ) ? imax : c1 );
   c[2] = (unsigned) (( imax < c2 ) ? imax : c2 );
-  Zoltan_SFC_hsfc3d( c , nkey , key );
+  Zoltan_BSFC_hsfc3d( c , nkey , key );
 }

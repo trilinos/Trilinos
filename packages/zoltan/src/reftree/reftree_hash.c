@@ -6,8 +6,8 @@
  *    $Revision$
  ****************************************************************************/
 
-#include "lb_const.h"
-#include "lb_util_const.h"
+#include "zz_const.h"
+#include "zz_util_const.h"
 #include "reftree.h"
 
 /* Zoltan_Reftree_hash_lookup uses Zoltan_Hash to lookup a key 

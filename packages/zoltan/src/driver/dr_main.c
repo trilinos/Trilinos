@@ -37,7 +37,6 @@
 #include "dr_output_const.h"
 #include "dr_err_const.h"
 #include "dr_elem_util_const.h"
-#include "mem_const.h"
 
 int Debug_Driver = 1;
 int DDirectory_Test = 1;  /* Flag indicating whether to exercise DDirectory */

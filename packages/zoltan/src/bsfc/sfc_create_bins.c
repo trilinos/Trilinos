@@ -14,20 +14,20 @@
 #include <stdio.h>
 #include <math.h>
 #include <memory.h>
-#include "lb_const.h"
-#include "lb_util_const.h"
-#include "params_const.h"
-#include "timer_const.h"
-#include "comm_const.h"
 #include <values.h>
 #include <limits.h>
+
+#include "zz_const.h"
+#include "zz_util_const.h"
+#include "params_const.h"
+#include "timer_const.h"
 #include "hilbert_const.h"
 #include "sfc.h"
 
-int sfc_refine_overloaded_bins(ZZ *zz, int max_cuts_in_bin, 
+int Zoltan_BSFC_refine_overloaded_bins(ZZ *zz, int max_cuts_in_bin, 
 			       int actual_bins_per_proc,
 			       int* number_of_cuts_in_bin, int wgt_dim,
-			       SFC_VERTEX_PTR sfc_vert_ptr,
+			       BSFC_VERTEX_PTR sfc_vert_ptr,
 			       float objs_wgt[], int num_local_objects,
 			       int prev_used_bits, int size_of_unsigned,
 			       float* work_percent_array,
@@ -39,18 +39,18 @@ int sfc_refine_overloaded_bins(ZZ *zz, int max_cuts_in_bin,
     extra work[proc] =
     global_actual_work_allocated[proc] - work_percent_array[proc]*total_work */
 
-int sfc_create_bins(ZZ *zz, int num_local_objects, int wgt_dim,
-		    SFC_VERTEX_PTR sfc_vert_ptr, float objs_wgt[],
+int Zoltan_BSFC_create_bins(ZZ *zz, int num_local_objects, int wgt_dim,
+		    BSFC_VERTEX_PTR sfc_vert_ptr, float objs_wgt[],
 		    int* amount_of_bits_used, int size_of_unsigned, 
 		    float* global_actual_work_allocated, 
 		    float *work_percent_array, float* total_weight_array, 
-		    int* balanced_flag, SFC_VERTEX_PTR *vert_in_cut_ptr,
+		    int* balanced_flag, BSFC_VERTEX_PTR *vert_in_cut_ptr,
 		    float** wgts_in_cut_ptr, int* num_vert_in_cut,
 		    int* number_of_cuts, int bins_per_proc, 
 		    int hashtable_divider, ZOLTAN_COMM_OBJ **plan,
 		    int* num_vert_sent, int max_cuts_in_bin)
 {
-  char    yo[] = "sfc_create_bins";
+  char    yo[] = "Zoltan_BSFC_create_bins";
   int i, j, number_of_bins, ierr = 0;
   int array_location = 0;
   int comm_tag = 4190; 
@@ -59,11 +59,11 @@ int sfc_create_bins(ZZ *zz, int num_local_objects, int wgt_dim,
   int off_proc_objects = 0;  /*counter to keep track of how 
 			       many objects will be off processor*/
   float * binned_weight_array;
-  SFC_HASH_OBJ_PTR * sfc_hash_ptr;
-  SFC_HASH_OBJ_PTR extra_hash_ptr;
+  BSFC_HASH_OBJ_PTR * sfc_hash_ptr;
+  BSFC_HASH_OBJ_PTR extra_hash_ptr;
   int hashtable_length;
   int counter = 0;
-  SFC_BIN_WEIGHT_PTR send_buffer, rcv_buffer;
+  BSFC_BIN_WEIGHT_PTR send_buffer, rcv_buffer;
   float *extra_float_array;
   float my_work_percent;
   int *bin_proc_array;
@@ -73,7 +73,7 @@ int sfc_create_bins(ZZ *zz, int num_local_objects, int wgt_dim,
   float *actual_work_allocated;
   int* global_bin_proc_array;
   int amount_of_bits;
-  SFC_VERTEX_PTR send_vert_buffer;
+  BSFC_VERTEX_PTR send_vert_buffer;
   float* send_wgt_buffer;
   int current_proc;
   float* extra_float_array2 = NULL;
@@ -98,8 +98,8 @@ int sfc_create_bins(ZZ *zz, int num_local_objects, int wgt_dim,
     i++;
   amount_of_bits = i;
   /* check to see that we have not used up all of the bits */
-  if(amount_of_bits > 8*size_of_unsigned * SFC_KEYLENGTH)
-    amount_of_bits = 8*size_of_unsigned * SFC_KEYLENGTH;
+  if(amount_of_bits > 8*size_of_unsigned * BSFC_KEYLENGTH)
+    amount_of_bits = 8*size_of_unsigned * BSFC_KEYLENGTH;
   number_of_bins = pow(2,i);
   *amount_of_bits_used = amount_of_bits;
 
@@ -109,8 +109,8 @@ int sfc_create_bins(ZZ *zz, int num_local_objects, int wgt_dim,
   hashtable_length = number_of_bins/hashtable_divider + 1;  /* hashtable length must be
 							       greater than 0 */
 
-  sfc_hash_ptr = (SFC_HASH_OBJ_PTR *)
-    ZOLTAN_MALLOC(sizeof(SFC_HASH_OBJ_PTR) * hashtable_length);
+  sfc_hash_ptr = (BSFC_HASH_OBJ_PTR *)
+    ZOLTAN_MALLOC(sizeof(BSFC_HASH_OBJ_PTR) * hashtable_length);
 
   if(sfc_hash_ptr == NULL) {
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
@@ -121,12 +121,12 @@ int sfc_create_bins(ZZ *zz, int num_local_objects, int wgt_dim,
 
   for(i=0;i<num_local_objects;i++) {
     sfc_vert_ptr[i].my_bin = 
-      sfc_get_array_location(number_of_bins, amount_of_bits, 0, (sfc_vert_ptr+i));
+      Zoltan_BSFC_get_array_location(number_of_bins, amount_of_bits, 0, (sfc_vert_ptr+i));
     sfc_vert_ptr[i].destination_proc = 
       (sfc_vert_ptr[i].my_bin)/(2*bins_per_proc);
     if(sfc_vert_ptr[i].destination_proc != zz->Proc) {
       array_location = Zoltan_Hash(&(sfc_vert_ptr[i].my_bin), 1, hashtable_length);
-      ierr = sfc_put_in_hashtable(zz, sfc_hash_ptr, array_location, 
+      ierr = Zoltan_BSFC_put_in_hashtable(zz, sfc_hash_ptr, array_location, 
 				  &(sfc_vert_ptr[i]), wgt_dim, (objs_wgt+i*wgt_dim));
       if(ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
 	ZOLTAN_PRINT_ERROR(zz->Proc, yo, 
@@ -156,8 +156,8 @@ int sfc_create_bins(ZZ *zz, int num_local_objects, int wgt_dim,
 
   /* create array of processors to send data to
      and create array of objects to send */
-  send_buffer = (SFC_BIN_WEIGHT_PTR) 
-    ZOLTAN_MALLOC(sizeof(SFC_BIN_WEIGHT) * off_proc_objects);
+  send_buffer = (BSFC_BIN_WEIGHT_PTR) 
+    ZOLTAN_MALLOC(sizeof(BSFC_BIN_WEIGHT) * off_proc_objects);
 
   if(send_buffer == NULL && off_proc_objects > 0) {
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
@@ -197,7 +197,7 @@ int sfc_create_bins(ZZ *zz, int num_local_objects, int wgt_dim,
     return(ierr);
   }
 
-  rcv_buffer = (SFC_BIN_WEIGHT_PTR) ZOLTAN_MALLOC(sizeof(SFC_BIN_WEIGHT) * nreturn);
+  rcv_buffer = (BSFC_BIN_WEIGHT_PTR) ZOLTAN_MALLOC(sizeof(BSFC_BIN_WEIGHT) * nreturn);
   if(rcv_buffer == NULL && nreturn > 0) {
       ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
       return(ZOLTAN_MEMERR);
@@ -221,7 +221,7 @@ int sfc_create_bins(ZZ *zz, int num_local_objects, int wgt_dim,
     }
 
     ierr = Zoltan_Comm_Do(*plan, comm_tag+1+i, (char *) send_buffer, 
-		      sizeof(SFC_BIN_WEIGHT), (char *) rcv_buffer);
+		      sizeof(BSFC_BIN_WEIGHT), (char *) rcv_buffer);
     if(ierr == ZOLTAN_WARN) {
       ZOLTAN_PRINT_WARN(zz->Proc, yo, "Warning from Zoltan_Comm_Do.");
     }
@@ -253,7 +253,7 @@ int sfc_create_bins(ZZ *zz, int num_local_objects, int wgt_dim,
     return(ierr);
   }
   *plan = NULL; 
-  sfc_clear_hashtable(sfc_hash_ptr, hashtable_length);
+  Zoltan_BSFC_clear_hashtable(sfc_hash_ptr, hashtable_length);
 
   ZOLTAN_FREE(&sfc_hash_ptr);
   ZOLTAN_FREE(&send_buffer);
@@ -359,12 +359,12 @@ int sfc_create_bins(ZZ *zz, int num_local_objects, int wgt_dim,
 	  work_percent_array[current_proc]*total_weight_array[0]) 
       current_proc--;
     
-    sfc_single_wgt_calc_partition(wgt_dim, scanned_work_prev_allocated[0],
+    Zoltan_BSFC_single_wgt_calc_partition(wgt_dim, scanned_work_prev_allocated[0],
 				  total_weight_array, bin_proc_array, zz, 
 				  binned_weight_array, work_percent_array,
 				  actual_work_allocated, 2*bins_per_proc, 
 				  number_of_cuts, current_proc, 
-				  SFC_COARSE_LEVEL_FLAG, number_of_cuts_in_bin);
+				  BSFC_COARSE_LEVEL_FLAG, number_of_cuts_in_bin);
   }
   else {
     /* multi_wgt_dim_calc_partition(); */  
@@ -374,12 +374,12 @@ int sfc_create_bins(ZZ *zz, int num_local_objects, int wgt_dim,
     while(current_proc != 0 && scanned_work_prev_allocated[0] > 
 	  work_percent_array[current_proc]*total_weight_array[0] ) 
       current_proc--;
-    sfc_single_wgt_calc_partition(wgt_dim, scanned_work_prev_allocated[0], 
+    Zoltan_BSFC_single_wgt_calc_partition(wgt_dim, scanned_work_prev_allocated[0], 
 			      total_weight_array, bin_proc_array, zz, 
 			      binned_weight_array, work_percent_array,
 			      actual_work_allocated, 2*bins_per_proc, 
 			      number_of_cuts, current_proc, 
-			      SFC_COARSE_LEVEL_FLAG, number_of_cuts_in_bin);
+			      BSFC_COARSE_LEVEL_FLAG, number_of_cuts_in_bin);
   }
 
   /* -1 is used to make sure that the last bin does not have a cut in it */
@@ -411,9 +411,9 @@ int sfc_create_bins(ZZ *zz, int num_local_objects, int wgt_dim,
       j--;
     sfc_vert_ptr[i].destination_proc = j;
     if((int) sfc_vert_ptr[i].my_bin != global_bin_proc_array[j])
-      sfc_vert_ptr[i].cut_bin_flag = SFC_NO_CUT;
+      sfc_vert_ptr[i].cut_bin_flag = BSFC_NO_CUT;
     else
-      sfc_vert_ptr[i].cut_bin_flag = SFC_CUT;
+      sfc_vert_ptr[i].cut_bin_flag = BSFC_CUT;
   }
 
   /* check to see if any cut-bin has too many objects in it and refine it. 
@@ -425,7 +425,7 @@ int sfc_create_bins(ZZ *zz, int num_local_objects, int wgt_dim,
      or equal to max_cuts_in_bin then there is no possibility that a
      coarse bin is overloaded */
   if(zz->Num_Proc - 1 > max_cuts_in_bin)
-    ierr = sfc_refine_overloaded_bins(zz, max_cuts_in_bin, 2*bins_per_proc, 
+    ierr = Zoltan_BSFC_refine_overloaded_bins(zz, max_cuts_in_bin, 2*bins_per_proc, 
 				      number_of_cuts_in_bin, wgt_dim,
 				      sfc_vert_ptr, objs_wgt,num_local_objects,
 				      amount_of_bits, size_of_unsigned,
@@ -436,14 +436,14 @@ int sfc_create_bins(ZZ *zz, int num_local_objects, int wgt_dim,
 
   if(wgt_dim == 1) {
     local_balanced_flag = 
-      sfc_single_wgt_find_imbalance(work_percent_array,
+      Zoltan_BSFC_single_wgt_find_imbalance(work_percent_array,
 				    global_actual_work_allocated[zz->Proc*wgt_dim],
 				    total_weight_array[0], zz->Proc, zz);
   }
   else {
     /* put in routine here to calculate imbalance for multiple weights */
     local_balanced_flag = 
-      sfc_single_wgt_find_imbalance(work_percent_array,
+      Zoltan_BSFC_single_wgt_find_imbalance(work_percent_array,
 				    global_actual_work_allocated[zz->Proc*wgt_dim],
 				    total_weight_array[0], zz->Proc, zz);
   }
@@ -455,7 +455,7 @@ int sfc_create_bins(ZZ *zz, int num_local_objects, int wgt_dim,
   ZOLTAN_FREE(&binned_weight_array);
   ZOLTAN_FREE(&scanned_work_prev_allocated);
   /* if the current partitioning is acceptable, the algorithm is finished */
-  if(*balanced_flag == SFC_BALANCED) {
+  if(*balanced_flag == BSFC_BALANCED) {
     return ZOLTAN_OK;
   }
 
@@ -467,11 +467,11 @@ int sfc_create_bins(ZZ *zz, int num_local_objects, int wgt_dim,
     int k;
     int my_size_of_unsigned = sizeof(unsigned);
     int difference = sizeof(unsigned) - size_of_unsigned;
-    unsigned copy_key[SFC_KEYLENGTH];
+    unsigned copy_key[BSFC_KEYLENGTH];
     for(i=0;i<num_local_objects;i++) 
-      if(sfc_vert_ptr[i].cut_bin_flag == SFC_CUT) {
+      if(sfc_vert_ptr[i].cut_bin_flag == BSFC_CUT) {
 	copy_key[0] = sfc_vert_ptr[i].sfc_key[0] >> (8*difference); 
-	for(j=1;j<SFC_KEYLENGTH;j++) {
+	for(j=1;j<BSFC_KEYLENGTH;j++) {
 	  k=0;
 	  while(size_of_unsigned*(j+1) > my_size_of_unsigned*(k+1))
 	    k++;
@@ -493,7 +493,7 @@ int sfc_create_bins(ZZ *zz, int num_local_objects, int wgt_dim,
 	      (8*2*(my_size_of_unsigned*k-size_of_unsigned*j));
 	  }
 	}
-	for(j=0;j<SFC_KEYLENGTH;j++)
+	for(j=0;j<BSFC_KEYLENGTH;j++)
 	  sfc_vert_ptr[i].sfc_key[j] = copy_key[j];
       }
   }
@@ -503,7 +503,7 @@ int sfc_create_bins(ZZ *zz, int num_local_objects, int wgt_dim,
   off_proc_objects = 0;
 
   for(i=0;i<num_local_objects;i++) 
-    if(sfc_vert_ptr[i].cut_bin_flag == SFC_CUT) 
+    if(sfc_vert_ptr[i].cut_bin_flag == BSFC_CUT) 
       off_proc_objects++;  /* actually, this includes objects on this
 			      processor as well, this is done to simplify 
 			      the code */
@@ -511,7 +511,7 @@ int sfc_create_bins(ZZ *zz, int num_local_objects, int wgt_dim,
   /*create array of processors to send data to and
     create array of objects to send */
   send_vert_buffer = 
-    (SFC_VERTEX_PTR) ZOLTAN_MALLOC(sizeof(SFC_VERTEX) * off_proc_objects);
+    (BSFC_VERTEX_PTR) ZOLTAN_MALLOC(sizeof(BSFC_VERTEX) * off_proc_objects);
   if(send_vert_buffer == NULL && off_proc_objects > 0) {
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
     return(ZOLTAN_MEMERR);
@@ -531,7 +531,7 @@ int sfc_create_bins(ZZ *zz, int num_local_objects, int wgt_dim,
 
   counter = 0;
   for(i=0;i<num_local_objects;i++) 
-    if(sfc_vert_ptr[i].cut_bin_flag == SFC_CUT)  {
+    if(sfc_vert_ptr[i].cut_bin_flag == BSFC_CUT)  {
       send_vert_buffer[counter] = sfc_vert_ptr[i];
       for(j=0;j<wgt_dim;j++)
 	send_wgt_buffer[counter*wgt_dim+j] = objs_wgt[i*wgt_dim+j];
@@ -555,13 +555,13 @@ int sfc_create_bins(ZZ *zz, int num_local_objects, int wgt_dim,
   }
   /* send out vertices */
   *vert_in_cut_ptr = 
-    (SFC_VERTEX_PTR) ZOLTAN_MALLOC(sizeof(SFC_VERTEX) * (*num_vert_in_cut));
+    (BSFC_VERTEX_PTR) ZOLTAN_MALLOC(sizeof(BSFC_VERTEX) * (*num_vert_in_cut));
   if(*vert_in_cut_ptr == NULL && *num_vert_in_cut > 0) {
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
     return(ZOLTAN_MEMERR);
   }
   ierr = Zoltan_Comm_Do(*plan, comm_tag, (char *) send_vert_buffer, 
-		    sizeof(SFC_VERTEX), (char *) *vert_in_cut_ptr);
+		    sizeof(BSFC_VERTEX), (char *) *vert_in_cut_ptr);
   if(ierr == ZOLTAN_WARN) {
     ZOLTAN_PRINT_WARN(zz->Proc, yo, "Warning from Zoltan_Comm_Do.");
   }
@@ -610,7 +610,7 @@ int sfc_create_bins(ZZ *zz, int num_local_objects, int wgt_dim,
    each bin and the actual work allocated up to that cut.  routine
    will work for wgt_dim > 1 but will only use the first weight 
    of an object */
-void sfc_single_wgt_calc_partition(int wgt_dim, float work_prev_allocated,
+void Zoltan_BSFC_single_wgt_calc_partition(int wgt_dim, float work_prev_allocated,
 				   float* total_weight_array, int* bin_proc_array,
 				   ZZ *zz, float* binned_weight_array, 
 				   float* work_percent_array, 
@@ -622,7 +622,7 @@ void sfc_single_wgt_calc_partition(int wgt_dim, float work_prev_allocated,
   int number_of_cuts2 = 0;
   *number_of_cuts = 0;
 
-  if(level_flag == SFC_COARSE_LEVEL_FLAG)
+  if(level_flag == BSFC_COARSE_LEVEL_FLAG)
     for(i=0;i<number_of_bins;i++)
       number_of_cuts_in_bin[i] = 0;
 
@@ -631,7 +631,7 @@ void sfc_single_wgt_calc_partition(int wgt_dim, float work_prev_allocated,
     if(work_prev_allocated >= 
        total_weight_array[0] * work_percent_array[current_loc]) {
       actual_work_allocated[current_loc*wgt_dim] = work_prev_allocated;
-      if(level_flag != SFC_COARSE_LEVEL_FLAG)
+      if(level_flag != BSFC_COARSE_LEVEL_FLAG)
 	bin_proc_array[current_loc] = i;
       else
 	bin_proc_array[current_loc] = number_of_bins*(zz->Proc) + i;
@@ -654,7 +654,7 @@ void sfc_single_wgt_calc_partition(int wgt_dim, float work_prev_allocated,
 
   /* make sure that the first bin gets the rest of the work */
   bin_proc_array[0] = -1;
-  if(level_flag != SFC_COARSE_LEVEL_FLAG)
+  if(level_flag != BSFC_COARSE_LEVEL_FLAG)
     bin_proc_array[current_loc] = -1;
 
   return;
@@ -662,11 +662,11 @@ void sfc_single_wgt_calc_partition(int wgt_dim, float work_prev_allocated,
 
 /* free all of the memory allocated in the hashtable (including
    the linklist used for collisions in the hashtable) */
-void sfc_clear_hashtable(SFC_HASH_OBJ_PTR * sfc_hash_ptr, 
+void Zoltan_BSFC_clear_hashtable(BSFC_HASH_OBJ_PTR * sfc_hash_ptr, 
 			 int hashtable_length)
 {
   int i;
-  SFC_HASH_OBJ_PTR extra_hash_ptr, another_hash_ptr;
+  BSFC_HASH_OBJ_PTR extra_hash_ptr, another_hash_ptr;
 
   for(i=0;i<hashtable_length;i++) {
     extra_hash_ptr = sfc_hash_ptr[i];
@@ -692,19 +692,19 @@ void sfc_clear_hashtable(SFC_HASH_OBJ_PTR * sfc_hash_ptr,
    in.  if the destination bin has already been allocated, the object
    weight(s) is added in. */
 
-int sfc_put_in_hashtable(ZZ *zz, SFC_HASH_OBJ_PTR * sfc_hash_ptr, 
-			 int array_location, SFC_VERTEX_PTR sfc_vert_ptr,
+int Zoltan_BSFC_put_in_hashtable(ZZ *zz, BSFC_HASH_OBJ_PTR * sfc_hash_ptr, 
+			 int array_location, BSFC_VERTEX_PTR sfc_vert_ptr,
 			 int wgt_dim, float* obj_wgt)
 {
   int i;
-  SFC_HASH_OBJ_PTR extra_hash_ptr;
-  char    yo[] = "sfc_put_in_hashtable";
+  BSFC_HASH_OBJ_PTR extra_hash_ptr;
+  char    yo[] = "Zoltan_BSFC_put_in_hashtable";
 
   extra_hash_ptr = sfc_hash_ptr[array_location];
   /* if this location has not been filled yet */
   if(sfc_hash_ptr[array_location] == NULL) { 
     sfc_hash_ptr[array_location] = 
-      (SFC_HASH_OBJ_PTR) ZOLTAN_MALLOC(sizeof(SFC_HASH_OBJ));
+      (BSFC_HASH_OBJ_PTR) ZOLTAN_MALLOC(sizeof(BSFC_HASH_OBJ));
     if(sfc_hash_ptr[array_location] == NULL) {
       ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
       return(ZOLTAN_MEMERR);
@@ -726,7 +726,7 @@ int sfc_put_in_hashtable(ZZ *zz, SFC_HASH_OBJ_PTR * sfc_hash_ptr,
   /* location is at the beginning of the linklist */
   else if(extra_hash_ptr->id > sfc_vert_ptr->my_bin) { 
     sfc_hash_ptr[array_location] = 
-      (SFC_HASH_OBJ_PTR) ZOLTAN_MALLOC(sizeof(SFC_HASH_OBJ));
+      (BSFC_HASH_OBJ_PTR) ZOLTAN_MALLOC(sizeof(BSFC_HASH_OBJ));
     if(sfc_hash_ptr[array_location] == NULL) {
       ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
       return(ZOLTAN_MEMERR);
@@ -756,9 +756,9 @@ int sfc_put_in_hashtable(ZZ *zz, SFC_HASH_OBJ_PTR * sfc_hash_ptr,
 	extra_hash_ptr->weight_ptr[i] += obj_wgt[i];
     }      
     else if(extra_hash_ptr->next == NULL) {
-      SFC_HASH_OBJ_PTR another_hash_ptr = extra_hash_ptr;
+      BSFC_HASH_OBJ_PTR another_hash_ptr = extra_hash_ptr;
       extra_hash_ptr->next =
-	(SFC_HASH_OBJ_PTR) ZOLTAN_MALLOC(sizeof(SFC_HASH_OBJ));
+	(BSFC_HASH_OBJ_PTR) ZOLTAN_MALLOC(sizeof(BSFC_HASH_OBJ));
       if(extra_hash_ptr->next == NULL) {
 	ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
 	return(ZOLTAN_MEMERR);
@@ -778,10 +778,10 @@ int sfc_put_in_hashtable(ZZ *zz, SFC_HASH_OBJ_PTR * sfc_hash_ptr,
 	extra_hash_ptr->weight_ptr[i] = obj_wgt[i];
     }
     else {
-      SFC_HASH_OBJ_PTR another_hash_ptr = extra_hash_ptr;
+      BSFC_HASH_OBJ_PTR another_hash_ptr = extra_hash_ptr;
       extra_hash_ptr = extra_hash_ptr->prev;
       extra_hash_ptr->next =
-	(SFC_HASH_OBJ_PTR) ZOLTAN_MALLOC(sizeof(SFC_HASH_OBJ));
+	(BSFC_HASH_OBJ_PTR) ZOLTAN_MALLOC(sizeof(BSFC_HASH_OBJ));
       if(extra_hash_ptr->next == NULL) {
 	ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
 	return(ZOLTAN_MEMERR);
@@ -814,8 +814,8 @@ int sfc_put_in_hashtable(ZZ *zz, SFC_HASH_OBJ_PTR * sfc_hash_ptr,
    between 0 and (2^number_of_bits - 1)
 */
 
-int sfc_get_array_location(int number_of_bins, int number_of_bits, 
-			   int prev_used_bits, SFC_VERTEX_PTR sfc_vert_ptr)
+int Zoltan_BSFC_get_array_location(int number_of_bins, int number_of_bits, 
+			   int prev_used_bits, BSFC_VERTEX_PTR sfc_vert_ptr)
 {
   int counter = 0;
   unsigned ilocation = 0;
@@ -857,7 +857,7 @@ int sfc_get_array_location(int number_of_bins, int number_of_bits,
    indicates whether this imbalance is beyond a specified 
    tolerance.  routine works for wgt_dim > 1 but only calculates
    imbalance from first weight */
-int sfc_single_wgt_find_imbalance(float* work_percent_array, 
+int Zoltan_BSFC_single_wgt_find_imbalance(float* work_percent_array, 
 				  float cumulative_work, 
 				  float total_work,
 				  int which_proc, ZZ *zz)
@@ -881,15 +881,15 @@ int sfc_single_wgt_find_imbalance(float* work_percent_array,
      than 0 */
   if(my_ideal_work == 0) {
     if(my_extra_work != 0) 
-      balanced_flag = SFC_NOT_BALANCED;
+      balanced_flag = BSFC_NOT_BALANCED;
     else
-      balanced_flag = SFC_BALANCED;
+      balanced_flag = BSFC_BALANCED;
   }
   else {
-    if(1 + my_extra_work/my_ideal_work > zz->Imbalance_Tol)
-      balanced_flag = SFC_NOT_BALANCED;
+    if(1 + my_extra_work/my_ideal_work > zz->LB.Imbalance_Tol)
+      balanced_flag = BSFC_NOT_BALANCED;
     else
-      balanced_flag = SFC_BALANCED;
+      balanced_flag = BSFC_BALANCED;
   }
 
   return(balanced_flag);

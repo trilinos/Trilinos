@@ -6,7 +6,7 @@
  *    $Revision$
  ****************************************************************************/
 
-#include "lb_const.h"
+#include "zz_const.h"
 #include "octree_const.h"
 #include "costs_const.h"
 #include "oct_util_const.h"
@@ -230,7 +230,7 @@ static int lb_oct_init(
 
   count = nsentags = nrectags = 0;
 
-  if(zz->Data_Structure == NULL) {
+  if(zz->LB.Data_Structure == NULL) {
     OCT_info = Zoltan_Oct_POct_init(zz, zz->Proc, oct_dim);
     Zoltan_Oct_set_method(OCT_info, oct_method);
     Zoltan_Oct_set_maxregions(oct_maxoctregions);
@@ -238,7 +238,7 @@ static int lb_oct_init(
     createpartree = 1;
   }
   else {
-    OCT_info = (OCT_Global_Info *) (zz->Data_Structure);
+    OCT_info = (OCT_Global_Info *) (zz->LB.Data_Structure);
   }
 
   /* create the octree structure */
@@ -278,7 +278,7 @@ static int lb_oct_init(
 
 
   ZOLTAN_TRACE_DETAIL(zz, yo, "Calling Zoltan_Oct_fix_tags");
-  if (zz->LB_Return_Lists) {
+  if (zz->LB.Return_Lists) {
     *num_import = nrectags;
     if (nrectags > 0)
       Zoltan_Oct_fix_tags(zz, import_global_ids, import_local_ids, import_procs,
@@ -376,7 +376,7 @@ static void Zoltan_Oct_gen_tree_from_input_data(ZZ *zz, int oct_wgtflag, int *c1
   /*test*/
   /* COORD gmin,gmax; */
 
-  OCT_Global_Info *OCT_info = (OCT_Global_Info *) (zz->Data_Structure);
+  OCT_Global_Info *OCT_info = (OCT_Global_Info *) (zz->LB.Data_Structure);
 
   ZOLTAN_TRACE_ENTER(zz, yo);
   /*
@@ -810,7 +810,7 @@ static void initialize_region(ZZ *zz, pRegion *ret, ZOLTAN_ID_PTR global_id,
 static int Zoltan_Oct_fix(ZZ *zz, pRegion Region_list, int num_objs) 
 {
   int nreg;                                /* number of regions not inserted */
-  OCT_Global_Info *OCT_info = (OCT_Global_Info *)(zz->Data_Structure);
+  OCT_Global_Info *OCT_info = (OCT_Global_Info *)(zz->LB.Data_Structure);
 
   /* initalize variables */
   nreg=0;
@@ -881,7 +881,7 @@ static int Zoltan_Oct_global_insert_object(ZZ *zz, pRegion Region_list, int num_
 static pOctant Zoltan_Oct_global_insert(ZZ *zz, pRegion region) 
 {
   pOctant oct;                            /* octree octant */
-  OCT_Global_Info *OCT_info = (OCT_Global_Info *)(zz->Data_Structure);
+  OCT_Global_Info *OCT_info = (OCT_Global_Info *)(zz->LB.Data_Structure);
 
   oct = NULL;
   /* find the octant which the object lies in */
@@ -905,7 +905,7 @@ static pOctant Zoltan_Oct_global_insert(ZZ *zz, pRegion region)
  */
 int Zoltan_Oct_subtree_insert(ZZ *zz, pOctant oct, pRegion region) 
 {
-OCT_Global_Info *OCT_info = (OCT_Global_Info *)(zz->Data_Structure); 
+OCT_Global_Info *OCT_info = (OCT_Global_Info *)(zz->LB.Data_Structure); 
   /* if oct is not terminal, find leaf node the centroid can be attahced to */
   if (!Zoltan_Oct_isTerminal(oct)) {
     oct=Zoltan_Oct_findOctant(OCT_info, oct,region->Coord);
@@ -1011,7 +1011,7 @@ static void Zoltan_Oct_terminal_refine(ZZ *zz, pOctant oct,int count)
   pRegion region;                 /* a region to be associated to an octant */
   pRegion entry;
   COORD cmin[8], cmax[8];
-  OCT_Global_Info *OCT_info = (OCT_Global_Info *) (zz->Data_Structure);
+  OCT_Global_Info *OCT_info = (OCT_Global_Info *) (zz->LB.Data_Structure);
 
   for(i=0;i<3;i++)
     min[i] = max[i] = 0;

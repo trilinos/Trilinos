@@ -15,7 +15,7 @@
 #include <stdio.h>
 #include "mpi.h"
 #include "comm.h"
-#include "mem_const.h"
+#include "zoltan_mem.h"
 
 /* Knowing who I send to, determine how many messages I'll receive, */
 /* and their lengths.  Upon entry, the arrays "lengths_to" and "procs_to" */

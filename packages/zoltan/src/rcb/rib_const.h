@@ -14,7 +14,6 @@
 #ifndef __RIB_CONST_H
 #define __RIB_CONST_H
 
-extern void Zoltan_RIB_Free_Structure(ZZ *);
 extern int Zoltan_RIB_Set_Param(char *, char *);
 
 #endif

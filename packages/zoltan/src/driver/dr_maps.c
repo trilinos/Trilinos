@@ -16,8 +16,6 @@
 #include "dr_err_const.h"
 #include "dr_par_util_const.h"
 
-#include "DD_Const.h"
-
 #define MAP_ALLOC 10
 
 /*

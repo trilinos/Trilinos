@@ -1,0 +1,25 @@
+Directory zz
+Zoltan Interface Routines
+Includes general Zoltan interface, callback registry, and utilities.
+
+zz_const.h       -- Definition of Zoltan_Struct data structure; widely used
+                    throughout Zoltan.  Also definitions of macros, etc.
+
+zz_struct.c      -- Routines for creating and destroying a Zoltan struct.
+
+zz_init.c        -- Routines for initializing Zoltan.
+
+zz_set_fn.c      -- Routines for registering callback functions.
+
+zz_obj_list.c    -- Contains general routine that obtains object lists through
+                    either ZOLTAN_OBJ_LIST_FN or
+                    ZOLTAN_FIRST_OBJ_FN/ZOLTAN_NEXT_OBJ_FN pair.  Zoltan
+                    developer can call this routine instead of invoking the
+                    callbacks directly.
+
+zz_util.c        -- Contains code for non-algorithmic routines that are
+                    not application-callable but are called by Zoltan.
+
+zz_id_const.h    -- Macros for ID manipulation.
+
+

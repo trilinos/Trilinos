@@ -11,8 +11,7 @@
  *    $Revision$
  ****************************************************************************/
 
-#include "lb_const.h"
-#include "comm_const.h"
+#include "zz_const.h"
 #include "create_proc_list_const.h"
 
 static void Zoltan_RB_Gather(int *, int *, int, int, int, MPI_Comm);

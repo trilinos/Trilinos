@@ -7,7 +7,7 @@
  ****************************************************************************/
 
 #include "SFC.h"
-#include "lb_const.h"
+#include "zz_const.h"
 #include "octant_const.h"
 #include "oct_util_const.h"
 #include "dfs_const.h"
@@ -280,7 +280,7 @@ void Zoltan_Oct_Free_Structure(ZZ *zz)
 /*
  * Deallocate the persistent OCT data structures in zz->Structure.
  */
-  OCT_Global_Info *OCT_info = (OCT_Global_Info *) (zz->Data_Structure);
+  OCT_Global_Info *OCT_info = (OCT_Global_Info *) (zz->LB.Data_Structure);
   pRList  RootList;                           /* list of all local roots */
   pOctant RootOct;
   int i;
@@ -319,6 +319,6 @@ void Zoltan_Oct_Free_Structure(ZZ *zz)
     RL_freeList(&(OCT_info->OCT_rootlist));
     /* KDDKDD End of previously commented-out section. 12/2000 */
 
-    ZOLTAN_FREE(&(zz->Data_Structure));
+    ZOLTAN_FREE(&(zz->LB.Data_Structure));
   }
 }

@@ -6,7 +6,7 @@
  *    $Revision$
  ****************************************************************************/
 
-#include "lb_const.h"
+#include "zz_const.h"
 #include "octant_const.h"
 #include "octupdate_const.h"
 

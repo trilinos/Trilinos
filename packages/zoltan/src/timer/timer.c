@@ -11,9 +11,17 @@
  *    $Revision$
  ****************************************************************************/
 
-#include "lb_const.h"
+#include <stdio.h>
+#include <mpi.h>
+#ifdef __STDC__
+#include <string.h>
+#else
+#include <strings.h>
+#endif  /* __STDC__ */
+
+#include "timer.h"
 #include "params_const.h"
-#include "timer_const.h"
+#include "zoltan_util.h"
 
 /*
  * Machine independent timing utilities.
@@ -42,7 +50,7 @@ int *timer)                     /* output: timer type */
     PARAM_VARS Timer_params[] = {
         { "TIMER", NULL, "STRING" },
         { NULL, NULL, NULL }
-};
+    };
     char *yo = "Zoltan_Set_Timer_Param";
 
     (*timer) = ZOLTAN_TIME_WALL;  /* default timer value */

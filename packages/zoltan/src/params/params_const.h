@@ -14,8 +14,6 @@
 #ifndef __PARAMS_CONST_H
 #define __PARAMS_CONST_H
 
-#include "lb_const.h"
-
 #ifndef HAVE_PROTOTYPES
 #   if defined(__STDC__) || defined(__GNUC__) || defined(__cplusplus) || defined(c_plusplus)
 #       define	HAVE_PROTOTYPES
@@ -53,18 +51,26 @@ typedef struct Param_Utype {
   char cval;
 } PARAM_UTYPE;
 
+/*
+ * Type used to store linked list of new values for parameters.
+ */
+
+typedef struct Param_List {
+  char *name;
+  char *new_val;
+  struct Param_List *next;
+} PARAM_LIST;
+
 /* API for general parameter setting functions */
 typedef int ZOLTAN_SET_PARAM_FN(char *, char *); 
 
 /* function declarations for parameter modification routines */
 
-extern int Zoltan_Assign_Param_Vals(ZOLTAN_PARAM *, PARAM_VARS *, int, int, int);
+extern int Zoltan_Assign_Param_Vals(PARAM_LIST *, PARAM_VARS *, int, int, int);
 extern int Zoltan_Bind_Param(PARAM_VARS *, char *, void *);
-extern int Zoltan_Set_Key_Param(ZZ *, char *, char *);
-extern void Zoltan_Print_Key_Params(ZZ *);
-extern void Zoltan_Print_Params(ZOLTAN_PARAM *ptr);
+extern void Zoltan_Print_Params(PARAM_LIST *ptr);
 extern int Zoltan_Check_Param(char *, char *, PARAM_VARS *,
     PARAM_UTYPE *, int *);
-extern void Zoltan_Free_Params(ZOLTAN_PARAM **);
+extern void Zoltan_Free_Params(PARAM_LIST **);
 
 #endif

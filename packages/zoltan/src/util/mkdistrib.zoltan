@@ -18,7 +18,11 @@ cvs checkout -P ParMETIS
 find . -name 'CVS' -exec rm -rf {} \;
 find . -name '*.sh' -exec rm -f {} \;
 find . -name '.cvsignore' -exec rm -f {} \;
+cd Zoltan; /bin/rm -rf docs/internal; cd ..
 cd Zoltan; /bin/rm -f docs/Zoltan_html/lgpl.pl; gmake zscript; cd ..
+cd Zoltan; /bin/mv Utilities/Memory/zoltam_mem.h include; cd ..
+cd Zoltan; /bin/mv Utilities/Communication/zoltam_comm.h include; cd ..
+cd Zoltan; /bin/mv Utilities/DDirectory/zoltam_dd.h include; cd ..
 rm -rf tmp
 FLIST="`find Zoltan -name '*.[ch]' -print`"
 for i in ${FLIST}  ; do \

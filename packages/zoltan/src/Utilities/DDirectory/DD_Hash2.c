@@ -14,7 +14,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <DD_Const.h>
+#include "DD.h"
 
 
 
@@ -53,7 +53,7 @@
 
 #define ZOLTAN_DD_HASH_CONSTANT 2654435761U   /* consider 516595003U */
 
-unsigned int DD_Hash2(ZOLTAN_ID_PTR key, int num_id_entries, unsigned int n)
+unsigned int Zoltan_DD_Hash2(ZOLTAN_ID_PTR key, int num_id_entries, unsigned int n)
 {
   unsigned int h, rest, *p;
   char *byteptr;

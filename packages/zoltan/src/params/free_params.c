@@ -13,16 +13,17 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include "lb_const.h"
+#include "params_const.h"
+#include "zoltan_mem.h"
 
 
 void Zoltan_Free_Params(
-ZOLTAN_PARAM **params)				/* parameters structure */
+PARAM_LIST **params)				/* parameters structure */
 {
 /*
  * Free the list of new parameter values.
  */
-    ZOLTAN_PARAM *ptr, *next;
+    PARAM_LIST *ptr, *next;
 
     if (params == NULL) return;
 

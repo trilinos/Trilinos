@@ -14,7 +14,7 @@
 
 #include <stdio.h>
 #include "comm.h"
-#include "mem_const.h"
+#include "zoltan_mem.h"
 
 
 /* From the mapping of where to send things, construct the communication */

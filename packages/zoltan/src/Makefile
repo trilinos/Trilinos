@@ -17,7 +17,8 @@
 # To compile the library, type
 #    gmake ZOLTAN_ARCH=<targetmachine> zoltan
 # where
-#    targetmachine = solaris, cplant, smos, or tflop.
+#    targetmachine = the suffix of one of the configuration files Config.*
+#                    in Zoltan/Utilities/Config.
 #
 # To compile zdrive, type
 #    gmake <optional flags> zdrive
@@ -125,30 +126,34 @@ ALL_OBJ_DIRS := $(wildcard Obj_*)
 #   Paths to submodules
 #
 SUB_VPATH	= ../include ../Utilities/shared \
-		  ../all ../lb ../par ../rcb ../oct ../bsfc ../hsfc \
+		  ../zz ../all ../lb ../par ../rcb ../oct ../bsfc ../hsfc \
 		  ../params ../driver ../ch ../parmetis ../timer \
                   ../ha ../reftree \
 		  ../Utilities/Communication ../Utilities/Memory \
                   ../Utilities/DDirectory 
 SUBINCPATH	= -I../include -I../Utilities/shared \
-		  -I../all -I../lb -I../par -I../rcb  -I../oct  \
+		  -I../zz -I../all -I../lb -I../par -I../rcb  -I../oct  \
 		  -I../bsfc -I../hsfc \
 		  -I../params -I../driver -I../ch -I../parmetis -I../timer \
                   -I../ha -I../reftree \
 		  -I../Utilities/Communication -I../Utilities/Memory \
                   -I../Utilities/DDirectory 
-SUBDIRS		= driver ch all lb par rcb oct bsfc hsfc parmetis params \
+SUBDIRS		= driver ch zz all lb par rcb oct bsfc hsfc parmetis params \
 		  timer ha \
 		  reftree include
 UTIL_SUBDIRS	= Utilities/shared Utilities/Communication \
 		  Utilities/Memory Utilities/DDirectory
 
-ALL_CSRC	= all_allo.c free_structure.c
+ZZ_CSRC		= zz_obj_list.c zz_struct.c \
+		  zz_init.c zz_set_fn.c zz_util.c
+ZZ_INC		= zz_const.h zz_id_const.h zz_util_const.h
+
+ALL_CSRC	= all_allo.c 
 ALL_INC		= all_const.h all_allo_const.h
 
 LB_CSRC		= lb_balance.c lb_eval.c lb_init.c lb_migrate.c \
-		  lb_set_fn.c lb_set_method.c lb_struct.c lb_util.c 
-LB_INC		= lb_const.h lb.h lbi_const.h lb_id_const.h lb_util_const.h
+		  lb_set_fn.c lb_set_method.c  
+LB_INC		= lb_const.h lb_set_fn_const.h lb_init_const.h
 
 RCB_CSRC	= rcb.c rcb_util.c box_assign.c point_assign.c \
                   create_proc_list.c rib.c rib_util.c \
@@ -208,7 +213,7 @@ CH_INC		= ch_input_const.h ch_init_dist_const.h
 # object files for the Fortran interface
 
 ifdef YES_FORTRAN
-FOBJ_FILES	= lb_user_const.o ztypes.o fwrap.o cwrap.o
+FOBJ_FILES	= zoltan_user_data.o lb_user_const.o ztypes.o fwrap.o cwrap.o
 endif
 
 
@@ -218,7 +223,7 @@ endif
 ##############################################################################
 
 ZOLTAN_INC_PATH	= $(SUBINCPATH) $(INCLUDE_PATH) $(THIRD_PARTY_INCPATH)
-ZOLTAN_CSRC    += $(LB_CSRC) $(ALL_CSRC) $(RCB_CSRC) $(PAR_CSRC) \
+ZOLTAN_CSRC    += $(ZZ_CSRC) $(LB_CSRC) $(ALL_CSRC) $(RCB_CSRC) $(PAR_CSRC) \
 		  $(OCT_CSRC) $(SFC_CSRC) $(HSFC_CSRC) \
 		  $(PARAMS_CSRC) $(PARMETIS_CSRC) \
 		  $(TIMER_CSRC) $(HA_CSRC) $(REFTREE_CSRC) $(THIRD_PARTY_CSRC)
@@ -245,7 +250,7 @@ F90COMP		= $(F90) $(CFLAGS) $(FFLAGS)
 # for an example.
 #
 LINT		= lint
-LINT_INC_PATH	= -Iinclude -Idriver -Ich -Iall -Ilb -Ipar -Ircb -Iparams \
+LINT_INC_PATH	= -Iinclude -Idriver -Ich -Izz -Iall -Ilb -Ipar -Ircb -Iparams \
 		  -Ioct -Ibsfc -Ihsfc -Iparmetis -Itimer -Iha -Ireftree \
 		  -IUtilities/shared -IUtilities/Memory \
 		  -IUtilities/Communication -IUtilities/DDirectory \
@@ -381,6 +386,10 @@ zscript:
 	@echo 'fi' >> zoltan_script
 	@echo 'rm -f $$ZOLTAN_OBJ_DIR/*' >> zoltan_script
 	@echo 'cd $$ZOLTAN_OBJ_DIR' >> zoltan_script
+	@echo "echo 'Zoltan:  Compiling Zoltan/zz'" >> zoltan_script
+	@for iii in $(ZZ_CSRC) ; do \
+	 echo '$$CCOMP' $(SUBINCPATH) -c '$$GDEFINES $$DEFS' ../zz/$$iii >> zoltan_script; \
+	 done;
 	@echo "echo 'Zoltan:  Compiling Zoltan/all'" >> zoltan_script
 	@for iii in $(ALL_CSRC)  ; do \
 	 echo '$$CCOMP' $(SUBINCPATH) -c '$$GDEFINES $$DEFS' ../all/$$iii >> zoltan_script; \

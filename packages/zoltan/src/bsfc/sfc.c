@@ -14,11 +14,9 @@
 #include <stdio.h>
 #include <math.h>
 #include <memory.h>
-#include "lb_const.h"
+#include "zz_const.h"
 #include "params_const.h"
 #include "timer_const.h"
-#include "comm_const.h"
-#include "lb_util_const.h"
 #include <values.h>
 #include <limits.h>
 #include "hilbert_const.h"
@@ -46,43 +44,43 @@
 				 1 is to refine all partitions with a cut,
 				 0 is to refine only the imbalanced partitions with a cut */
 
-#define SFC_BOUNDING_BOX_EPSILON 0.0000001 /* used to increase the bounding
+#define BSFC_BOUNDING_BOX_EPSILON 0.0000001 /* used to increase the bounding
 					      box slightly so that no objects
 					      are on the boundary of the box */
 
-int sfc_create_refinement_info(ZZ *zz, int* number_of_cuts, 
+int Zoltan_BSFC_create_refinement_info(ZZ *zz, int* number_of_cuts, 
 			       float* global_actual_work_allocated,
 			       int wgt_dim, float* total_weight_array, 
 			       float* work_percent_array, int num_vert_in_cut, 
-			       SFC_VERTEX_PTR vert_in_cut_ptr, 
+			       BSFC_VERTEX_PTR vert_in_cut_ptr, 
 			       float* wgts_in_cut_ptr,
 			       float** work_prev_allocated_ptr);
 
-int sfc_create_bins(ZZ *zz, int num_local_objects, int wgt_dim,
-		    SFC_VERTEX_PTR sfc_vert_ptr, float objs_wgt[],
+int Zoltan_BSFC_create_bins(ZZ *zz, int num_local_objects, int wgt_dim,
+		    BSFC_VERTEX_PTR sfc_vert_ptr, float objs_wgt[],
 		    int* amount_of_bits_used, int size_of_unsigned, 
 		    float* global_actual_work_allocated, 
 		    float *work_percent_array, float* total_weight_array,
-		    int* balanced_flag, SFC_VERTEX_PTR *vert_in_cut_ptr,
+		    int* balanced_flag, BSFC_VERTEX_PTR *vert_in_cut_ptr,
 		    float** wgts_in_cut_ptr, int* num_vert_in_cut,
 		    int* number_of_cuts, int bins_per_proc, 
 		    int hashtable_divider, ZOLTAN_COMM_OBJ **plan, 
 		    int* num_vert_sent, int max_cuts_in_bin);
 
-static PARAM_VARS SFC_params[] = {
-  { "SFC_BINS_PER_PROC", NULL, "INT" },
-  { "SFC_HASHTABLE_DIVIDER", NULL, "INT" }, 
-  { "SFC_MAX_CUTS_IN_BIN", NULL, "INT" },
-  { "SFC_SUBBINS_PER_BIN", NULL, "INT" },
-  { "SFC_MAX_REFINEMENT_LEVEL", NULL, "INT" },
-  { "SFC_BIN_REFINEMENT_METHOD", NULL, "INT" },
+static PARAM_VARS BSFC_params[] = {
+  { "BSFC_BINS_PER_PROC", NULL, "INT" },
+  { "BSFC_HASHTABLE_DIVIDER", NULL, "INT" }, 
+  { "BSFC_MAX_CUTS_IN_BIN", NULL, "INT" },
+  { "BSFC_SUBBINS_PER_BIN", NULL, "INT" },
+  { "BSFC_MAX_REFINEMENT_LEVEL", NULL, "INT" },
+  { "BSFC_BIN_REFINEMENT_METHOD", NULL, "INT" },
   { NULL, NULL, NULL } };
 
 /*---------------------------------------------------------------------------*/
 /*---------------------------------------------------------------------------*/
 /*---------------------------------------------------------------------------*/
 
-int Zoltan_SFC_Set_Param(
+int Zoltan_BSFC_Set_Param(
 char *name,			/* name of variable */
 char *val)			/* value of variable */
 {
@@ -90,7 +88,7 @@ char *val)			/* value of variable */
     PARAM_UTYPE result;		/* value returned from Check_Param */
     int index;			/* index returned from Check_Param */
 
-    status = Zoltan_Check_Param(name, val, SFC_params, &result, &index);
+    status = Zoltan_Check_Param(name, val, BSFC_params, &result, &index);
 
     return(status);
 }
@@ -99,13 +97,13 @@ char *val)			/* value of variable */
 /*---------------------------------------------------------------------------*/
 /*---------------------------------------------------------------------------*/
 
-/* Space filling curve (SFC) partioning routine */
+/* Space filling curve (BSFC) partioning routine */
 
 /*---------------------------------------------------------------------------*/
 /*---------------------------------------------------------------------------*/
 /*---------------------------------------------------------------------------*/
 
-int Zoltan_SFC(
+int Zoltan_BSFC(
   ZZ *zz,                       /* The Zoltan structure with info for
                                    the RCB balancer.                         */
   int *num_import,              /* Not computed.  Set to -1. */
@@ -125,14 +123,14 @@ int Zoltan_SFC(
                                    this processor's new decomposition.       */
 )
 {
-  char    yo[] = "Zoltan_SFC";
+  char    yo[] = "Zoltan_BSFC";
   int wgt_dim = zz->Obj_Weight_Dim;   /* dimension of weights of each object */
   int num_dims;                       /* geometric dimension */
   int ierr, i, j;                     /* local variables */
   double bounding_box[6], global_bounding_box[6]; /* local and global geometric
 						     bounding boxes for the objects */
   int num_local_objects;              /* the number of objects this processor owns */
-  SFC_VERTEX_PTR sfc_vert_ptr;        /* array that stores the sfc objects */
+  BSFC_VERTEX_PTR sfc_vert_ptr;        /* array that stores the sfc objects */
   int num_gid_entries = zz->Num_GID;  
   int num_lid_entries = zz->Num_LID;
   ZOLTAN_ID_PTR global_ids = NULL;
@@ -146,7 +144,7 @@ int Zoltan_SFC(
 					 processor should ideally get */
   int balanced_flag;                  /* flag to indicate if all partitions
 					 are balanced */
-  SFC_VERTEX_PTR vert_in_cut_ptr = NULL; /* array of sfc objects that are in a 
+  BSFC_VERTEX_PTR vert_in_cut_ptr = NULL; /* array of sfc objects that are in a 
 					    cut bin and get partitioned with 
 					    the multi-level scheme */
   float* wgts_in_cut_ptr = NULL;      /* array of weights for sfc objects in 
@@ -160,7 +158,7 @@ int Zoltan_SFC(
   int comm_tag = 8765;                /* randomly chosen communication tag */
   int num_vert_sent;                  /* the number of sfc objects that this processor 
 					 sent to other processors */
-  int local_balanced_flag = SFC_BALANCED; /* balanced_flag for this processor */
+  int local_balanced_flag = BSFC_BALANCED; /* balanced_flag for this processor */
   int refinement_level_counter = 0;   /* counter to keep track of how many 
 					 levels of bin refinement have been performed */
   int max_cuts_in_bin, bin_refinement_method, max_refinement_level,
@@ -170,12 +168,12 @@ int Zoltan_SFC(
   ZOLTAN_TRACE_ENTER(zz, yo);
 
   /* set the of parameters */
-  Zoltan_Bind_Param(SFC_params,"SFC_BINS_PER_PROC",(void*) &bins_per_proc);
-  Zoltan_Bind_Param(SFC_params,"SFC_HASHTABLE_DIVIDER",(void*) &hashtable_divider); 
-  Zoltan_Bind_Param(SFC_params,"SFC_MAX_CUTS_IN_BIN",(void*) &max_cuts_in_bin);
-  Zoltan_Bind_Param(SFC_params,"SFC_SUBBINS_PER_BIN",(void*) &subbins_per_bin); 
-  Zoltan_Bind_Param(SFC_params,"SFC_MAX_REFINEMENT_LEVEL",(void*) &max_refinement_level);
-  Zoltan_Bind_Param(SFC_params,"SFC_BIN_REFINEMENT_METHOD",(void*) &bin_refinement_method); 
+  Zoltan_Bind_Param(BSFC_params,"BSFC_BINS_PER_PROC",(void*) &bins_per_proc);
+  Zoltan_Bind_Param(BSFC_params,"BSFC_HASHTABLE_DIVIDER",(void*) &hashtable_divider); 
+  Zoltan_Bind_Param(BSFC_params,"BSFC_MAX_CUTS_IN_BIN",(void*) &max_cuts_in_bin);
+  Zoltan_Bind_Param(BSFC_params,"BSFC_SUBBINS_PER_BIN",(void*) &subbins_per_bin); 
+  Zoltan_Bind_Param(BSFC_params,"BSFC_MAX_REFINEMENT_LEVEL",(void*) &max_refinement_level);
+  Zoltan_Bind_Param(BSFC_params,"BSFC_BIN_REFINEMENT_METHOD",(void*) &bin_refinement_method); 
   bins_per_proc = BINS_PER_PROC;
   hashtable_divider = HASHTABLE_DIVIDER; 
   max_cuts_in_bin = MAX_CUTS_IN_BIN;
@@ -183,33 +181,33 @@ int Zoltan_SFC(
   max_refinement_level = MAX_REFINEMENT_LEVEL;
   bin_refinement_method = BIN_REFINEMENT_METHOD;
 
-  Zoltan_Assign_Param_Vals(zz->Params, SFC_params, zz->Debug_Level, zz->Proc,
+  Zoltan_Assign_Param_Vals(zz->Params, BSFC_params, zz->Debug_Level, zz->Proc,
 		       zz->Debug_Proc);
 
   /* make sure that all parameters have feasible values */
   if(bins_per_proc <= 0) {
     ZOLTAN_PRINT_WARN(zz->Proc, yo, 
-		  "SFC_BINS_PER_PROC parameter must be greater than 0.");
+		  "BSFC_BINS_PER_PROC parameter must be greater than 0.");
     bins_per_proc = BINS_PER_PROC;
   }
   if(hashtable_divider <= 0) {
     ZOLTAN_PRINT_WARN(zz->Proc, yo, 
-		  "SFC_HASH_TABLE_DIVIDER parameter must be greater than 0.");
+		  "BSFC_HASH_TABLE_DIVIDER parameter must be greater than 0.");
     hashtable_divider = HASHTABLE_DIVIDER;
   }
   if(max_cuts_in_bin <= 0) {
     ZOLTAN_PRINT_WARN(zz->Proc, yo, 
-		  "SFC_MAX_CUTS_IN_BIN parameter must be greater than 0.");
+		  "BSFC_MAX_CUTS_IN_BIN parameter must be greater than 0.");
     max_cuts_in_bin = MAX_CUTS_IN_BIN;
   }
   if(subbins_per_bin <= 1) {
     ZOLTAN_PRINT_WARN(zz->Proc, yo, 
-		  "SFC_SUBBINS_PER_BIN parameter must be greater than 1.");
+		  "BSFC_SUBBINS_PER_BIN parameter must be greater than 1.");
     subbins_per_bin = BINS_PER_PROC;
   }
   if(bin_refinement_method != 0 && bin_refinement_method != 1) {
     ZOLTAN_PRINT_WARN(zz->Proc, yo, 
-		  "SFC_BIN_REFINEMENT_METHOD parameter must be either 0 or 1.");
+		  "BSFC_BIN_REFINEMENT_METHOD parameter must be either 0 or 1.");
     bin_refinement_method = BIN_REFINEMENT_METHOD;
   }
 
@@ -227,7 +225,7 @@ int Zoltan_SFC(
 
   if(num_dims != 2 && num_dims != 3) {
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, 
-                   "Incompatible space dimension for SFC. Space dimension must be 2 or 3.");
+                   "Incompatible space dimension for BSFC. Space dimension must be 2 or 3.");
     return(ZOLTAN_FATAL);
   }
 
@@ -295,7 +293,7 @@ int Zoltan_SFC(
     wgt_dim = 1;  /* set object weight dimension to 1 */
   }  
   
-  sfc_vert_ptr = (SFC_VERTEX_PTR) ZOLTAN_MALLOC(num_local_objects * sizeof(SFC_VERTEX));
+  sfc_vert_ptr = (BSFC_VERTEX_PTR) ZOLTAN_MALLOC(num_local_objects * sizeof(BSFC_VERTEX));
   if(num_local_objects != 0 && sfc_vert_ptr == NULL) {
       ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
       return(ZOLTAN_MEMERR);
@@ -340,20 +338,20 @@ int Zoltan_SFC(
     double delta = global_bounding_box[i+num_dims] - global_bounding_box[i];
     if(delta > 0 ) {
       global_bounding_box[i] = 
-	global_bounding_box[i]*(1. - SFC_BOUNDING_BOX_EPSILON);
+	global_bounding_box[i]*(1. - BSFC_BOUNDING_BOX_EPSILON);
       global_bounding_box[i+num_dims] =
-	global_bounding_box[i+num_dims]*(1. + SFC_BOUNDING_BOX_EPSILON);
+	global_bounding_box[i+num_dims]*(1. + BSFC_BOUNDING_BOX_EPSILON);
     }
     else {
-      global_bounding_box[i] = global_bounding_box[i] - SFC_BOUNDING_BOX_EPSILON;
+      global_bounding_box[i] = global_bounding_box[i] - BSFC_BOUNDING_BOX_EPSILON;
       global_bounding_box[i+num_dims] =
-	global_bounding_box[i+num_dims] + SFC_BOUNDING_BOX_EPSILON;
+	global_bounding_box[i+num_dims] + BSFC_BOUNDING_BOX_EPSILON;
     }
   }
   /* done creating global bounding box */
 
   /* Normalize space coordinates and fill in sfc_vertex info */
-  sfc_create_info(zz, global_bounding_box, (global_bounding_box+num_dims), 
+  Zoltan_BSFC_create_info(zz, global_bounding_box, (global_bounding_box+num_dims), 
 		  num_dims, num_local_objects, wgt_dim, sfc_vert_ptr,
 		  coords);
 
@@ -375,7 +373,7 @@ int Zoltan_SFC(
     return(ZOLTAN_MEMERR);
   }
   /*create bins, fill global weight vector and perform initial partition of the bins*/
-  ierr = sfc_create_bins(zz, num_local_objects, wgt_dim, sfc_vert_ptr, objs_wgt,
+  ierr = Zoltan_BSFC_create_bins(zz, num_local_objects, wgt_dim, sfc_vert_ptr, objs_wgt,
 			 &amount_of_bits_used, size_of_unsigned, 
 			 global_actual_work_allocated, work_percent_array, 
 			 total_weight_array, &balanced_flag, &vert_in_cut_ptr,
@@ -383,11 +381,11 @@ int Zoltan_SFC(
 			 bins_per_proc, hashtable_divider, &plan,
 			 &num_vert_sent, max_cuts_in_bin); 
   if(ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
-      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error in sfc_create_bins function.");
+      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error in Zoltan_BSFC_create_bins function.");
       return(ierr);
   }
  
-  if(balanced_flag != SFC_BALANCED) { 
+  if(balanced_flag != BSFC_BALANCED) { 
     int* local_balanced_flag_array; /* used to indicate which partitions on this 
 				       processor are already balanced - useful
 				       for when more than one cut in a bin */
@@ -395,13 +393,13 @@ int Zoltan_SFC(
     int* ll_bins_head; /* used to indicate the beginning of the linklist */
     float* work_prev_allocated = NULL; /* stores the weights of all 
 					  objects before a cut */
-    local_balanced_flag = SFC_NOT_BALANCED; /* assume that if coarse bin 
+    local_balanced_flag = BSFC_NOT_BALANCED; /* assume that if coarse bin 
 					       partition is not balanced
 					       that all partitions need 
 					       to be rebalanced */
     if(num_vert_in_cut == 0 || zz->Proc == 0) 
-      local_balanced_flag = SFC_BALANCED;
-    ierr = sfc_create_refinement_info(zz, &number_of_cuts, 
+      local_balanced_flag = BSFC_BALANCED;
+    ierr = Zoltan_BSFC_create_refinement_info(zz, &number_of_cuts, 
 				      global_actual_work_allocated, wgt_dim,
 				      total_weight_array, work_percent_array,
 				      num_vert_in_cut, vert_in_cut_ptr, 
@@ -418,7 +416,7 @@ int Zoltan_SFC(
     }
     max_cuts_in_bin= number_of_cuts;
     if(number_of_cuts == 0)
-      local_balanced_flag = SFC_BALANCED;
+      local_balanced_flag = BSFC_BALANCED;
 
     if(ll_bins_head != NULL)
       ll_bins_head[number_of_cuts] = 0;  /* the first link list starts off
@@ -432,18 +430,18 @@ int Zoltan_SFC(
       return(ZOLTAN_MEMERR);
     }
     for(i=0;i<number_of_cuts;i++)
-      local_balanced_flag_array[i] = SFC_BALANCED;
+      local_balanced_flag_array[i] = BSFC_BALANCED;
     local_balanced_flag_array[number_of_cuts] = local_balanced_flag;
 
     /* refine bins until a satisfactory partition tolerance is attained */
-    while(balanced_flag != SFC_BALANCED &&
+    while(balanced_flag != BSFC_BALANCED &&
 	  refinement_level_counter < max_refinement_level) { 
       /* if this partition is balanced, we do not need to refine the
 	 partition unless we decide to refine all partitions */
-      if((local_balanced_flag == SFC_NOT_BALANCED ||
+      if((local_balanced_flag == BSFC_NOT_BALANCED ||
 	  bin_refinement_method == 1) &&
 	 vert_in_cut_ptr != NULL) {
-	ierr = sfc_refine_partition(zz, &local_balanced_flag, 
+	ierr = Zoltan_BSFC_refine_partition(zz, &local_balanced_flag, 
 				    &amount_of_bits_used, num_vert_in_cut,
 				    vert_in_cut_ptr, size_of_unsigned, 
 				    wgt_dim, wgts_in_cut_ptr, 
@@ -454,7 +452,7 @@ int Zoltan_SFC(
 				    subbins_per_bin, local_balanced_flag_array,
 				    bin_refinement_method);
 	if(ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
-	  ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error in sfc_refine_partition_level function.");
+	  ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error in Zoltan_BSFC_refine_partition_level function.");
 	  return(ierr);
 	}
       }
@@ -474,17 +472,17 @@ int Zoltan_SFC(
   /* if the objects were moved to different processors,
      we need to move them back now */
   if(plan != NULL) {
-    SFC_VERTEX_PTR recv_buf = NULL;
+    BSFC_VERTEX_PTR recv_buf = NULL;
     int counter = 0;
     if (num_vert_sent > 0) {
-      recv_buf = (SFC_VERTEX_PTR) ZOLTAN_MALLOC(sizeof(SFC_VERTEX)*num_vert_sent);
+      recv_buf = (BSFC_VERTEX_PTR) ZOLTAN_MALLOC(sizeof(BSFC_VERTEX)*num_vert_sent);
       if(recv_buf==NULL) {
         ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
         return(ZOLTAN_MEMERR);
       }
     }
     ierr = Zoltan_Comm_Do_Reverse(plan, comm_tag, (char*) vert_in_cut_ptr,
-			      sizeof(SFC_VERTEX), NULL, (char*) recv_buf);
+			      sizeof(BSFC_VERTEX), NULL, (char*) recv_buf);
     if(ierr == ZOLTAN_WARN) {
       ZOLTAN_PRINT_WARN(zz->Proc, yo, "Warning from Zoltan_Comm_Do_Reverse.");
     }
@@ -499,7 +497,7 @@ int Zoltan_SFC(
     /* put objects back in sfc_vert_ptr array the way they 
        were copied from this array */
     for(i=0;i<num_local_objects;i++)
-      if(sfc_vert_ptr[i].cut_bin_flag == SFC_CUT)  {
+      if(sfc_vert_ptr[i].cut_bin_flag == BSFC_CUT)  {
 	sfc_vert_ptr[i] = recv_buf[counter];
 	counter++;
       }      
@@ -574,12 +572,12 @@ int Zoltan_SFC(
    NOTE:  this routine only works for objects with one weight!
 */
 
-int sfc_create_refinement_info(ZZ *zz, int* number_of_cuts, 
+int Zoltan_BSFC_create_refinement_info(ZZ *zz, int* number_of_cuts, 
 			       float* global_actual_work_allocated,
 			       int wgt_dim, float* total_weight_array, 
 			       float* work_percent_array,
 			       int num_vert_in_cut, 
-			       SFC_VERTEX_PTR vert_in_cut_ptr,
+			       BSFC_VERTEX_PTR vert_in_cut_ptr,
 			       float* wgts_in_cut_ptr, 
 			       float** work_prev_allocated_ptr)
 {

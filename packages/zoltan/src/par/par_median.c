@@ -13,10 +13,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <mpi.h>
-#include "lb_const.h"
 #include "par_median_const.h"
-#include "mem_const.h"
 
 #define MYHUGE 1.0e30
 #define TINY   1.0e-6
@@ -53,7 +50,9 @@ static void Zoltan_RB_max_double(double *, int, int, int, MPI_Comm);
 /*****************************************************************************/
 
 int Zoltan_RB_find_median(
-  ZZ *zz,               /* The Zoltan structure                      */
+  int Tflops_Special,   /* Flag indicating whether Tflops_Special handling 
+                           of communicators should be done (to avoid memory
+                           leaks in tflops' Comm_Dup and Comm_Split).        */
   double *dots,         /* array of coordinates                              */
   double *wgts,         /* array of weights associated with dots             */
   int *dotmark,         /* returned list of which side of the median
@@ -110,7 +109,7 @@ int Zoltan_RB_find_median(
   MPI_Type_contiguous(sizeof(struct median),MPI_CHAR,&med_type);
   MPI_Type_commit(&med_type);
 
-  if (!zz->Tflops_Special)
+  if (!Tflops_Special)
      MPI_Op_create(&Zoltan_RB_median_merge,1,&med_op);
 
   /*
@@ -132,7 +131,7 @@ int Zoltan_RB_find_median(
       if (wgts[i] > wtmax) wtmax = wgts[i];
   }
 
-  if (zz->Tflops_Special) {
+  if (Tflops_Special) {
     rank = proc - proclower;
     if (wgtflag) {
 
@@ -248,7 +247,7 @@ int Zoltan_RB_find_median(
 
       /* combine median data struct across current subset of procs */
       if (counter != NULL) (*counter)++;
-      if (zz->Tflops_Special) {
+      if (Tflops_Special) {
          i = 1;
          Zoltan_RB_reduce(num_procs, rank, proc, &medme, &med, &i, med_type,
                    local_comm);
@@ -287,7 +286,7 @@ int Zoltan_RB_find_median(
                 wtok = 0.0;                      /* don't move if moving group
                                                     of dots has worse balance*/
             } else {
-              if (zz->Tflops_Special)
+              if (Tflops_Special)
                 Zoltan_RB_scan(&wtok, &wtupto, local_comm, proc, rank, 
                                num_procs);
               else
@@ -307,7 +306,7 @@ int Zoltan_RB_find_median(
             }
           }
           if (breakflag) {                        /* done if moved enough */
-            if (zz->Tflops_Special) {
+            if (Tflops_Special) {
               wtok = wtsum;
               Zoltan_RB_sum_double(&wtok, proclower, rank, num_procs, local_comm);
             }
@@ -357,7 +356,7 @@ int Zoltan_RB_find_median(
                 wtok = 0.0;                      /* don't move if moving group
                                                     of dots has worse balance*/
             } else {
-              if (zz->Tflops_Special)
+              if (Tflops_Special)
                 Zoltan_RB_scan(&wtok, &wtupto, local_comm, proc, rank, 
                                num_procs);
               else
@@ -377,7 +376,7 @@ int Zoltan_RB_find_median(
             }
           }
           if (breakflag) {                        /* done if moved enough */
-            if (zz->Tflops_Special) {
+            if (Tflops_Special) {
               wtok = wtsum;
               Zoltan_RB_sum_double(&wtok, proclower, rank, num_procs, local_comm);
             }
@@ -428,7 +427,7 @@ int Zoltan_RB_find_median(
   *wthi = weighthi;
 
   MPI_Type_free(&med_type);
-  if (!zz->Tflops_Special)
+  if (!Tflops_Special)
      MPI_Op_free(&med_op);
 
   return 1;

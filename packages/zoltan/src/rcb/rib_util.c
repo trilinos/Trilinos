@@ -11,7 +11,7 @@
  *    $Revision$
  ****************************************************************************/
 
-#include "lb_const.h"
+#include "zz_const.h"
 #include "rib.h"
 
 /*****************************************************************************/
@@ -31,13 +31,13 @@ int            i, ierr = 0;
      If the previous data structure is still there, free the Dots and IDs first;
      the other fields can be reused. */
 
-  if (zz->Data_Structure == NULL) {
+  if (zz->LB.Data_Structure == NULL) {
     rib = (RIB_STRUCT *) ZOLTAN_MALLOC(sizeof(RIB_STRUCT));
     if (rib == NULL) {
       ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
       return(ZOLTAN_MEMERR);
     }
-    zz->Data_Structure = (void *) rib;
+    zz->LB.Data_Structure = (void *) rib;
     rib->Tree_Ptr = NULL;
     rib->Global_IDs = NULL;
     rib->Local_IDs = NULL;
@@ -60,7 +60,7 @@ int            i, ierr = 0;
     }
   }
   else {
-    rib = (RIB_STRUCT *) zz->Data_Structure;
+    rib = (RIB_STRUCT *) zz->LB.Data_Structure;
     ZOLTAN_FREE(&(rib->Global_IDs));
     ZOLTAN_FREE(&(rib->Local_IDs));
     ZOLTAN_FREE(&(rib->Dots));
@@ -87,13 +87,13 @@ void Zoltan_RIB_Free_Structure(ZZ *zz)
 /* Deallocate the persistent RIB data structures in zz->Structure.  */
 RIB_STRUCT    *rib;                   /* Data structure for RIB. */
 
-  rib = (RIB_STRUCT *) zz->Data_Structure;
+  rib = (RIB_STRUCT *) (zz->LB.Data_Structure);
 
   if (rib != NULL) {
     ZOLTAN_FREE(&(rib->Tree_Ptr));
     ZOLTAN_FREE(&(rib->Global_IDs));
     ZOLTAN_FREE(&(rib->Local_IDs));
     ZOLTAN_FREE(&(rib->Dots));
-    ZOLTAN_FREE(&(zz->Data_Structure));
+    ZOLTAN_FREE(&(zz->LB.Data_Structure));
   }
 }

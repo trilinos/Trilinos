@@ -14,7 +14,7 @@
 #include <stdio.h>
 #include <math.h>
 #include <memory.h>
-#include "lb_const.h"
+#include "zz_const.h"
 #include "rib.h"
 #include "params_const.h"
 #include "timer_const.h"
@@ -252,7 +252,7 @@ static int rib_fn(
     return(ierr);
   }
 
-  rib = (RIB_STRUCT *) (zz->Data_Structure);
+  rib = (RIB_STRUCT *) (zz->LB.Data_Structure);
 
   gidpt = rib->Global_IDs;
   lidpt = rib->Local_IDs;
@@ -451,7 +451,8 @@ static int rib_fn(
     if (stats || (zz->Debug_Level >= ZOLTAN_DEBUG_ATIME)) 
       time2 = Zoltan_Time(zz->Timer);
 
-    if (!Zoltan_RB_find_median(zz, value, wgts, dotmark, dotnum, proc, 
+    if (!Zoltan_RB_find_median(
+                   zz->Tflops_Special, value, wgts, dotmark, dotnum, proc, 
                    fractionlo, local_comm, &valuehalf, first_guess,
                    &(counters[0]), nprocs, old_nprocs, proclower,
                    wgtflag, valuelo, valuehi, weight, &weightlo,
@@ -579,8 +580,8 @@ static int rib_fn(
 
   /*  build return arguments */
 
-  if (zz->LB_Return_Lists) {
-    /* zz->LB_Return_Lists is true ==> use_ids is true */
+  if (zz->LB.Return_Lists) {
+    /* zz->LB.Return_Lists is true ==> use_ids is true */
     *num_import = dotnum - dottop;
     if (*num_import > 0) {
       ierr = Zoltan_RB_Return_Arguments(zz, gidpt, lidpt, dotpt, *num_import,

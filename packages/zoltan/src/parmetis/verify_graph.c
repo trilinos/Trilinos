@@ -11,9 +11,7 @@
  *    $Revision$
  ****************************************************************************/
 
-#include "lb_const.h"
-#include "lb_util_const.h"
-#include "comm_const.h"
+#include "zz_const.h"
 #include "parmetis_jostle.h"
 
 /*********************************************************************/

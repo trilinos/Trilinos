@@ -11,9 +11,7 @@
  *    $Revision$
  ****************************************************************************/
 
-#include "lb_const.h"
-#include "lb_util_const.h"
-#include "comm_const.h"
+#include "zz_const.h"
 #include "all_allo_const.h"
 
 /*****************************************************************************/
@@ -378,21 +376,21 @@ int ierr = 0;
    *  Check that all necessary query functions are available.
    */
 
-  if (zz->Migrate.Get_Obj_Size == NULL) {
+  if (zz->Get_Obj_Size == NULL) {
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Must register an "
            "ZOLTAN_OBJ_SIZE_FN_TYPE function to use the migration-help tools.");
     ZOLTAN_TRACE_EXIT(zz, yo);
     return (ZOLTAN_FATAL);
   }
 
-  if (zz->Migrate.Pack_Obj == NULL) {
+  if (zz->Pack_Obj == NULL) {
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Must register an "
            "ZOLTAN_PACK_OBJ_FN_TYPE function to use the migration-help tools.");
     ZOLTAN_TRACE_EXIT(zz, yo);
     return (ZOLTAN_FATAL);
   }
 
-  if (zz->Migrate.Unpack_Obj == NULL) {
+  if (zz->Unpack_Obj == NULL) {
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Must register an "
          "ZOLTAN_UNPACK_OBJ_FN_TYPE function to use the migration-help tools.");
     ZOLTAN_TRACE_EXIT(zz, yo);
@@ -443,13 +441,13 @@ int ierr = 0;
 
   for (i=0; i<num_export; i++){
     lid = (num_lid_entries ? &(export_local_ids[i*num_lid_entries]) : NULL);
-    size = zz->Migrate.Get_Obj_Size(zz->Migrate.Get_Obj_Size_Data, 
+    size = zz->Get_Obj_Size(zz->Get_Obj_Size_Data, 
                  num_gid_entries, num_lid_entries,
                  &(export_global_ids[i*num_gid_entries]), 
                  lid, &ierr);
     if (ierr) {
       ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error returned from user defined "
-                      "Migrate.Get_Obj_Size function.");
+                      "Get_Obj_Size function.");
       ZOLTAN_TRACE_EXIT(zz, yo);
       return (ZOLTAN_FATAL);
     }
@@ -502,13 +500,13 @@ int ierr = 0;
 
       /* Pack the object's data */
       lid = (num_lid_entries ? &(export_local_ids[i*num_lid_entries]) : NULL);
-      zz->Migrate.Pack_Obj(zz->Migrate.Pack_Obj_Data, 
+      zz->Pack_Obj(zz->Pack_Obj_Data, 
                            num_gid_entries, num_lid_entries,
                            &(export_global_ids[i*num_gid_entries]),
                            lid, export_procs[i], sizes[i], tmp, &ierr);
       if (ierr) {
         ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error returned from user defined "
-                        "Migrate.Pack_Obj function.");
+                        "Pack_Obj function.");
         ZOLTAN_FREE(&sizes);
         ZOLTAN_FREE(&export_buf);
         ZOLTAN_FREE(&proc_list);
@@ -645,11 +643,11 @@ int ierr = 0;
     }
 
     /* Unpack the object's data */
-    zz->Migrate.Unpack_Obj(zz->Migrate.Unpack_Obj_Data, num_gid_entries,
+    zz->Unpack_Obj(zz->Unpack_Obj_Data, num_gid_entries,
                            tmp_id, size, tmp, &ierr);
     if (ierr) {
       ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error returned from user defined "
-                      "Migrate.Unpack_Obj function.");
+                      "Unpack_Obj function.");
       ZOLTAN_FREE(&import_buf);
       ZOLTAN_TRACE_EXIT(zz, yo);
       return (ZOLTAN_FATAL);

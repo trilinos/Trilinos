@@ -17,8 +17,8 @@
 #else
 #include <strings.h>
 #endif  /* __STDC__ */
-#include "lb_const.h"
-#include "lb_util_const.h"
+#include "key_params.h"
+#include "zz_util_const.h"
 #include "params_const.h"
 #include "rcb_const.h"
 #include "octupdate_const.h"
@@ -44,7 +44,7 @@ static ZOLTAN_SET_PARAM_FN * Param_func[] = {
        Zoltan_Oct_Set_Param,
        Zoltan_Reftree_Set_Param,
        Zoltan_RIB_Set_Param,
-       Zoltan_SFC_Set_Param,
+       Zoltan_BSFC_Set_Param,
        Zoltan_HSFC_Set_Param,
        /* Zoltan_Set_Machine_Param, */
        /*** Add your new parameter setting function here! ***/
@@ -143,8 +143,8 @@ char *val)			/* value to set this parameter to */
  * Search through existing list to replace value if its there.
  * Otherwise, add it to the end of the list.
  */
-    ZOLTAN_PARAM *ptr;             	/* loops through parameter list */
-    ZOLTAN_PARAM *param;		/* parameter entry in list */
+    PARAM_LIST *ptr;             	/* loops through parameter list */
+    PARAM_LIST *param;		/* parameter entry in list */
 
 
     ptr = zz->Params;
@@ -158,7 +158,7 @@ char *val)			/* value to set this parameter to */
     }
 
     /* This is a new parameter, add it to list. */
-    param = (ZOLTAN_PARAM *) ZOLTAN_MALLOC(sizeof(ZOLTAN_PARAM));
+    param = (PARAM_LIST *) ZOLTAN_MALLOC(sizeof(PARAM_LIST));
     if (param == NULL) {
 	ZOLTAN_FREE(&name);
 	ZOLTAN_FREE(&val);
@@ -182,7 +182,7 @@ char *name 			/* parameter name */
  * Parameter checked out OK.  Remove it from linked list of param values.
  * If it is not in the list, do nothing.
  */
-    ZOLTAN_PARAM *ptr, *oldptr;	/* loops through parameter list */
+    PARAM_LIST *ptr, *oldptr;	/* loops through parameter list */
 
     oldptr = NULL;
     ptr = zz->Params;

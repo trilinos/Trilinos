@@ -1,4 +1,12 @@
-#include "lb_const.h"
+/*****************************************************************************
+ * CVS File Information :
+ *    $RCSfile$
+ *    $Author$
+ *    $Date$
+ *    $Revision$
+ ****************************************************************************/
+
+#include "zz_const.h"
 #include "all_allo_const.h"
 #include "rootlist_const.h"
 #include "octree_const.h"

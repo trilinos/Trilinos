@@ -11,8 +11,7 @@
  *    $Revision$
  ****************************************************************************/
 
-#include "lb_const.h"
-#include "comm_const.h"
+#include "zz_const.h"
 #include "parmetis_jostle.h"
 
 /*
@@ -31,7 +30,7 @@
  * the export lists after partitioning. 
  *
  * Currently the number of weights are inferred from zz->Obj_Weight_Dim
- * and zz->Comm_Weight_Dim. Perhaps these values should be input parameters.
+ * and zz->Edge_Weight_Dim. Perhaps these values should be input parameters.
  */
 
 int Zoltan_Scatter_Graph(
@@ -56,7 +55,7 @@ int Zoltan_Scatter_Graph(
   int i, j, num_obj, old_num_obj, num_edges, nrecv;
   int use_graph;	/* do we use graph data, or only the geometry? */
   int use_vsize;	/* do we use the vsize array? */
-  int vwgt_dim= zz->Obj_Weight_Dim, ewgt_dim= zz->Comm_Weight_Dim;
+  int vwgt_dim= zz->Obj_Weight_Dim, ewgt_dim= zz->Edge_Weight_Dim;
   ZOLTAN_COMM_OBJ *plan2;
 
   ZOLTAN_TRACE_ENTER(zz, yo);

@@ -22,7 +22,8 @@
 # To compile a utility, type
 #    gmake ZOLTAN_ARCH=<targetmachine> <Utility name>
 # where
-#    <targetmachine> = solaris, gcc, sgi64, cplant, or tflop,
+#    <targetmachine> = suffix of one of the configuration files
+# Config.* in Zoltan/Utilities/Config
 # and 
 #    <Utility name> can be a library name 
 #        libzoltan_comm.a  
@@ -78,7 +79,7 @@ SUBDIRS		= Memory Communication DDirectory shared
 # MEMORY MANAGEMENT PACKAGE
 
 MEM_CSRC	= mem.c
-MEM_INC		= mem_const.h
+MEM_INC		= zoltan_mem.h
 MEM_LIB		= libzoltan_mem.a
 MEM_TARGET	= zoltan_mem
 
@@ -93,7 +94,7 @@ MEM_DRIVER_DEP  = $(MEM_LIB)
 COMM_CSRC	= comm_create.c comm_do.c comm_do_reverse.c comm_destroy.c \
 		  comm_invert_map.c comm_exchange_sizes.c comm_resize.c \
                   comm_sort_ints.c
-COMM_INC	= comm.h comm_const.h
+COMM_INC	= comm.h zoltan_comm.h
 COMM_LIB	= libzoltan_comm.a
 COMM_TARGET     = zoltan_comm
 
@@ -115,7 +116,7 @@ DD_CSRC		= DD_Create.c DD_Destroy.c DD_Find.c DD_Remove.c DD_Update.c \
                   DD_Set_Hash_Fn.c DD_Hash2.c DD_Stats.c DD_Print.c\
                   DD_Set_Neighbor_Hash_Fn1.c DD_Set_Neighbor_Hash_Fn2.c \
 		  $(UTIL_CSRC)
-DD_INC		= DD_Const.h
+DD_INC		= zoltan_dd.h
 DD_LIB		= libzoltan_dd.a
 DD_TARGET	= zoltan_dd
 
@@ -160,7 +161,8 @@ help:
 	@echo  'To compile a utility, type'
 	@echo  '   gmake ZOLTAN_ARCH=<targetmachine> <Utility name>'
 	@echo  'where'
-	@echo  '   <targetmachine> = solaris, gcc, sgi64, cplant, or tflop,'
+	@echo  '   <targetmachine> = the suffix of one of the configuration'
+	@echo  '                     files Config.* in Zoltan/Utilities/Config.'
 	@echo  'and '
 	@echo  '   <Utility name> can be a library name '
 	@echo  '        '$(COMM_LIB)

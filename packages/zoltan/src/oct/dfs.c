@@ -6,7 +6,7 @@
  *    $Revision$
  ****************************************************************************/
 
-#include "lb_const.h"
+#include "zz_const.h"
 #include "octree_const.h"
 #include "dfs.h"
 #include "costs_const.h"
@@ -48,7 +48,7 @@ void Zoltan_Oct_dfs_partition(ZZ *zz, int *counter, float *c1) {
   pRList RootList;                  /* list of the local roots */
   pOctant RootOct;
 /* #endif */
-  OCT_Global_Info *OCT_info = (OCT_Global_Info *)(zz->Data_Structure);
+  OCT_Global_Info *OCT_info = (OCT_Global_Info *)(zz->LB.Data_Structure);
 
   DFS_Part_Count = 0;
   *c1 = mycost = Zoltan_Oct_costs_global_compute(OCT_info);
@@ -129,7 +129,7 @@ static int Zoltan_Oct_dfs_SetIds(OCT_Global_Info *OCT_info, pOctant oct, int npr
 static void Zoltan_Oct_visit_all_subtrees(ZZ *zz) {
   pRList  RootList;                           /* list of all local roots */
   pOctant RootOct;
-  OCT_Global_Info *OCT_info = (OCT_Global_Info *)(zz->Data_Structure);
+  OCT_Global_Info *OCT_info = (OCT_Global_Info *)(zz->LB.Data_Structure);
 
   /* get the list of all the local roots */
   /* iterate through each root in localroot list */ 
@@ -162,7 +162,7 @@ static void Zoltan_Oct_visit(ZZ *zz, pOctant octant) {
   COORD origin;               /* center of the octant */
   double volume;              /* volume of the octant */
   double prod[3];             /* product of octant origin and its volume */
-  OCT_Global_Info *OCT_info = (OCT_Global_Info *)(zz->Data_Structure);
+  OCT_Global_Info *OCT_info = (OCT_Global_Info *)(zz->LB.Data_Structure);
 
   DFS_Part_Count++;
   cost = Zoltan_Oct_costs_value(octant);               /* get the cost of the octant */
@@ -275,7 +275,7 @@ void Zoltan_Oct_dfs_migrate(ZZ *zz, int *nsentags,
   int dcount;                                 /* count of octants being sent */
   int pid;                                    /* processor id */
   int nrecocts;
-  OCT_Global_Info *OCT_info = (OCT_Global_Info *)(zz->Data_Structure);
+  OCT_Global_Info *OCT_info = (OCT_Global_Info *)(zz->LB.Data_Structure);
   char *yo = "Zoltan_Oct_dfs_migrate";
 
   if(Zoltan_Oct_nOctants()) {        /* allocate space for octants being migrated */
@@ -347,7 +347,7 @@ static void Zoltan_Oct_visit_by_dist(ZZ *zz,pOctant octant, pOctant children[8])
   double dist;                  /* distance */
   double mindist;               /* lowest distance */
   int visited[8];               /* flag showing which child has been visited */
-  OCT_Global_Info *OCT_info = (OCT_Global_Info *)(zz->Data_Structure);
+  OCT_Global_Info *OCT_info = (OCT_Global_Info *)(zz->LB.Data_Structure);
 
   /* initializing data */
   mindist=0;

@@ -16,7 +16,7 @@
 #include <stdlib.h>
 #include "mpi.h"
 #include "comm.h"
-#include "mem_const.h"
+#include "zoltan_mem.h"
 
 void gen_comm_data(), extract_comm_answer(), free_comm_data();
 void set_up_comm_from_send(), check_comm_answer(), print_data();

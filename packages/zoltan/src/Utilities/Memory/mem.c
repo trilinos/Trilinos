@@ -15,7 +15,7 @@
 #include <stdlib.h>
 #include <malloc.h>
 #include "mpi.h"
-#include "mem_const.h"
+#include "zoltan_mem.h"
 
 #ifdef __STDC__
 #include <stdarg.h>

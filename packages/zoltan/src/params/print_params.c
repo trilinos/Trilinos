@@ -12,11 +12,11 @@
  ****************************************************************************/
 
 #include <stdio.h>
-#include "lb_const.h"
+#include "params_const.h"
 
 
 void Zoltan_Print_Params(
-  ZOLTAN_PARAM *ptr)			/* pointer to list of parameters */
+  PARAM_LIST *ptr)			/* pointer to list of parameters */
 {
 /*
  *  Function to print out list of set parameter values.

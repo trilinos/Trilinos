@@ -13,7 +13,7 @@
 
 #include <stdio.h>
 #include <math.h>
-#include "lb_const.h"
+#include "zz_const.h"
 #include "rcb.h"
 #include "rib.h"
 
@@ -44,7 +44,7 @@ int            *numprocs)       /* number of processors in proc list */
      struct rib_tree   *itree;  /* tree of RIB cuts */
      struct rcb_box    box;     /* box data structure */
 
-     if (zz->Data_Structure == NULL) {
+     if (zz->LB.Data_Structure == NULL) {
         ZOLTAN_PRINT_ERROR(-1, yo, 
           "No Decomposition Data available; use KEEP_CUTS parameter.");
         *procs = -1;
@@ -52,8 +52,8 @@ int            *numprocs)       /* number of processors in proc list */
         return(ZOLTAN_FATAL);
      }
 
-     if (zz->Method == RCB) {
-        rcb = (RCB_STRUCT *) (zz->Data_Structure);
+     if (zz->LB.Method == RCB) {
+        rcb = (RCB_STRUCT *) (zz->LB.Data_Structure);
         treept = rcb->Tree_Ptr;
         if (treept[0].dim < 0) {     /* RCB tree was never created. */
            ZOLTAN_PRINT_ERROR(zz->Proc, yo, "No RCB tree saved; "
@@ -73,8 +73,8 @@ int            *numprocs)       /* number of processors in proc list */
 
         Box_Assign(treept, &box, procs, numprocs, treept[0].right_leaf);
      }
-     else if (zz->Method == RIB) {
-        rib = (RIB_STRUCT *) (zz->Data_Structure);
+     else if (zz->LB.Method == RIB) {
+        rib = (RIB_STRUCT *) (zz->LB.Data_Structure);
         itree = rib->Tree_Ptr;
         if (itree[0].right_leaf < 0) { /* RIB tree was never created. */
            ZOLTAN_PRINT_ERROR(zz->Proc, yo, "No RIB tree saved;"

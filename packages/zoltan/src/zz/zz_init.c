@@ -11,19 +11,45 @@
  *    $Revision$
  ****************************************************************************/
 
-#ifndef __ZOLTAN_UTIL_CONST_H
-#define __ZOLTAN_UTIL_CONST_H
+#include "zz_const.h"
 
 /*****************************************************************************/
 /*****************************************************************************/
 /*****************************************************************************/
-
-extern void Zoltan_Get_Obj_List(ZZ *, ZOLTAN_ID_PTR, ZOLTAN_ID_PTR, int, float *, int *);
-extern unsigned int Zoltan_Hash(ZOLTAN_ID_PTR, int, unsigned int);
-extern int Zoltan_Clean_String(char *, char **);
-
+/*
+ *  This file contains routines for initializing Zoltan.
+ *  These functions are all callable by the application. 
+ */
 /*****************************************************************************/
 /*****************************************************************************/
 /*****************************************************************************/
 
-#endif
+int Zoltan_Initialize(int argc, char **argv, float *ver)
+{
+/*
+ *  Function to initialize values needed in load balancing tools.
+ *  The function should be called after MPI_Init if the application
+ *  uses MPI.
+ */
+
+int mpi_flag;
+
+  /* 
+   *  Test whether MPI is already initialized.  If not, call MPI_Init.
+   */
+
+  MPI_Initialized(&mpi_flag);
+
+  if (!mpi_flag) {
+    MPI_Init(&argc, &argv);
+  }
+
+  /*
+   * Now return the version so that the user knows which version of
+   * the libarary is being used without having to get the source
+   * code.
+   */
+  *ver = ZOLTAN_VER;
+
+  return (ZOLTAN_OK);
+}

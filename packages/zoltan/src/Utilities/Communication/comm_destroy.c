@@ -13,7 +13,7 @@
 
 #include <stdio.h>
 #include "comm.h"
-#include "mem_const.h"
+#include "zoltan_mem.h"
 
 
 int       Zoltan_Comm_Destroy(

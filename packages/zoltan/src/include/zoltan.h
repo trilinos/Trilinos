@@ -22,6 +22,9 @@ extern "C" {
 #include <mpi.h>
 #include "zoltan_types.h"
 #include "zoltan_align.h"
+#include "zoltan_comm.h"
+#include "zoltan_mem.h"
+#include "zoltan_dd.h"
 
 /*****************************************************************************
  *  Data types and functions describing the interface between the

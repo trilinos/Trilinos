@@ -12,7 +12,7 @@
  ****************************************************************************/
 
 #include <stdio.h>
-#include "mem_const.h"
+#include "zoltan_mem.h"
 
 int main(int argc, char *argv[])
 {

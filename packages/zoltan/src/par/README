@@ -15,11 +15,11 @@
 PAR DIRECTORY -- Parallel computing utilities
 ---------------------------------------------
 
-par_median.c        -- Code for LB_find_median.
+par_median.c        -- Code for Zoltan_RB_find_median.
 par_median_const.h  -- Prototypes for functions in par_median.c.
 
-par_sync.c          -- Code for LB_Print_Sync_Start, LB_Print_Sync_End
-par_stats.c         -- Code for LB_Print_Stats.
+par_sync.c          -- Code for Zoltan_Print_Sync_Start, Zoltan_Print_Sync_End
+par_stats.c         -- Code for Zoltan_Print_Stats.
 par_const.h         -- Prototypes for functions in par_sync.c and par_stats.c.
                         
 

@@ -11,8 +11,8 @@
  *    $Revision$
  ****************************************************************************/
 
-#include "lb_const.h"
-#include "all_allo_const.h"
+#include "zz_const.h"
+#include "lb_init_const.h"
 #include "params_const.h"
 
 /*****************************************************************************/
@@ -23,6 +23,12 @@
  *  structures (struct Zoltan_Struct).
  *  These functions are all callable by the application. 
  */
+/*****************************************************************************/
+/*****************************************************************************/
+/*****************************************************************************/
+
+static void Zoltan_Free_Structures(ZZ *);
+
 /*****************************************************************************/
 /*****************************************************************************/
 /*****************************************************************************/
@@ -82,21 +88,16 @@ ZZ *zz;
 
   zz->Num_GID = ZOLTAN_NUM_ID_ENTRIES_DEF;
   zz->Num_LID = ZOLTAN_NUM_ID_ENTRIES_DEF;
-  zz->Method = RCB;    
-  zz->LB_Fn = Zoltan_RCB;
   zz->Debug_Level = ZOLTAN_DEBUG_LEVEL_DEF;
   zz->Debug_Proc = ZOLTAN_DEBUG_PROC_DEF;
   zz->Fortran = 0;
-  zz->LB_Return_Lists = ZOLTAN_LB_RETURN_LISTS_DEF;
   zz->Tflops_Special = ZOLTAN_TFLOPS_SPECIAL_DEF;
   zz->Timer = ZOLTAN_TIMER_DEF;
   zz->Machine_Desc = NULL;
   zz->Params = NULL;
-  zz->Imbalance_Tol = ZOLTAN_LB_IMBALANCE_TOL_DEF;
   zz->Deterministic = ZOLTAN_DETERMINISTIC_DEF;
   zz->Obj_Weight_Dim = ZOLTAN_OBJ_WEIGHT_DEF;
-  zz->Comm_Weight_Dim = ZOLTAN_COMM_WEIGHT_DEF;
-  zz->Data_Structure = NULL;
+  zz->Edge_Weight_Dim = ZOLTAN_EDGE_WEIGHT_DEF;
 
   zz->Get_Num_Edges = NULL;
   zz->Get_Edge_List = NULL;
@@ -138,20 +139,16 @@ ZZ *zz;
   zz->Get_Child_List_Fort = NULL;
   zz->Get_Child_Weight_Fort = NULL;
 
-  zz->Migrate.Auto_Migrate = ZOLTAN_AUTO_MIGRATE_DEF;
-  zz->Migrate.Pre_Migrate = NULL;
-  zz->Migrate.Mid_Migrate = NULL;
-  zz->Migrate.Post_Migrate = NULL;
-  zz->Migrate.Pack_Obj = NULL;
-  zz->Migrate.Unpack_Obj = NULL;
-  zz->Migrate.Get_Obj_Size = NULL;
+  zz->Pack_Obj = NULL;
+  zz->Unpack_Obj = NULL;
+  zz->Get_Obj_Size = NULL;
   
-  zz->Migrate.Pre_Migrate_Fort = NULL;
-  zz->Migrate.Mid_Migrate_Fort = NULL;
-  zz->Migrate.Post_Migrate_Fort = NULL;
-  zz->Migrate.Pack_Obj_Fort = NULL;
-  zz->Migrate.Unpack_Obj_Fort = NULL;
-  zz->Migrate.Get_Obj_Size_Fort = NULL;
+  zz->Pack_Obj_Fort = NULL;
+  zz->Unpack_Obj_Fort = NULL;
+  zz->Get_Obj_Size_Fort = NULL;
+
+  Zoltan_LB_Init(&(zz->LB));
+  Zoltan_Migrate_Init(&(zz->Migrate));
 
   return(zz);
 }
@@ -171,7 +168,7 @@ void Zoltan_Destroy(ZZ **zz)
 
   if (*zz != NULL) {
 
-    Zoltan_Free_Structure(*zz);
+    Zoltan_Free_Structures(*zz);
 
     Zoltan_Free_Params(&((*zz)->Params));
 
@@ -179,4 +176,23 @@ void Zoltan_Destroy(ZZ **zz)
 
     ZOLTAN_FREE(zz);
   }
+}
+
+/****************************************************************************/
+/****************************************************************************/
+/****************************************************************************/
+
+
+static void Zoltan_Free_Structures(
+  ZZ *zz)				/* Zoltan structure */
+{
+/*
+ * Free any persistent memory associated with Zoltan modules.
+ */
+
+  /* Free load-balancing data */
+  if (zz->LB.Free_Structure != NULL) 
+    zz->LB.Free_Structure(zz);
+
+ /* Add calls to additional module-specific free routines here.  */
 }

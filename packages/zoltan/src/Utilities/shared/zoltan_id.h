@@ -14,6 +14,7 @@
 #ifndef __ZOLTAN_ID_H
 #define __ZOLTAN_ID_H
 
+#include "zoltan_types.h"
 /*
  *  This file contains the data types and comparison functions
  *  for IDs used by Zoltan and its Utilities.  The basic data type

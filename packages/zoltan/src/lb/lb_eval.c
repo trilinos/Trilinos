@@ -11,8 +11,7 @@
  *    $Revision$
  ****************************************************************************/
 
-#include "lb_const.h"
-#include "lb_util_const.h"
+#include "zz_const.h"
 
 /*****************************************************************************/
 /*****************************************************************************/
@@ -173,13 +172,13 @@ int Zoltan_LB_Eval (ZZ *zz, int print_stats,
     /* Allocate a proc list for computing nadjacent */
     proc = (int *)ZOLTAN_MALLOC((zz->Num_Proc)* sizeof(int));
     /* Allocate space for edge weights if needed */
-    if (zz->Comm_Weight_Dim){
-      ewgts = (float *)ZOLTAN_MALLOC((zz->Comm_Weight_Dim)*max_edges * sizeof(float));
-      tmp_cutwgt = (float *) ZOLTAN_MALLOC(4*(zz->Comm_Weight_Dim) * sizeof(float));
+    if (zz->Edge_Weight_Dim){
+      ewgts = (float *)ZOLTAN_MALLOC((zz->Edge_Weight_Dim)*max_edges * sizeof(float));
+      tmp_cutwgt = (float *) ZOLTAN_MALLOC(4*(zz->Edge_Weight_Dim) * sizeof(float));
     }
 
-    if ((max_edges && ((!nbors_global) || (!nbors_proc) || (zz->Comm_Weight_Dim && !ewgts))) || 
-        (zz->Comm_Weight_Dim && (!tmp_cutwgt)) || (!proc)){
+    if ((max_edges && ((!nbors_global) || (!nbors_proc) || (zz->Edge_Weight_Dim && !ewgts))) || 
+        (zz->Edge_Weight_Dim && (!tmp_cutwgt)) || (!proc)){
       ZOLTAN_FREE(&global_ids);
       ZOLTAN_FREE(&local_ids);
       ZOLTAN_FREE(&vwgts);
@@ -195,7 +194,7 @@ int Zoltan_LB_Eval (ZZ *zz, int print_stats,
 
     for (i=0; i<zz->Num_Proc; i++)
       proc[i] = 0;
-    for (i=0; i<zz->Comm_Weight_Dim; i++)
+    for (i=0; i<zz->Edge_Weight_Dim; i++)
       tmp_cutwgt[i] = 0;
 
     for (k=0; k<num_obj; k++){
@@ -224,7 +223,7 @@ int Zoltan_LB_Eval (ZZ *zz, int print_stats,
                         num_gid_entries, num_lid_entries,
                         &(global_ids[gid_off]), lid,
                         nbors_global, nbors_proc, 
-                        zz->Comm_Weight_Dim, ewgts, &ierr);
+                        zz->Edge_Weight_Dim, ewgts, &ierr);
       if (ierr == ZOLTAN_FATAL){
         ZOLTAN_FREE(&global_ids);
         ZOLTAN_FREE(&local_ids);
@@ -242,8 +241,8 @@ int Zoltan_LB_Eval (ZZ *zz, int print_stats,
       for (j=0; j<nedges; j++){
         if (nbors_proc[j] != zz->Proc){
           cuts++;
-          for (i=0; i<zz->Comm_Weight_Dim; i++)
-            tmp_cutwgt[i] += ewgts[j*(zz->Comm_Weight_Dim)+i];
+          for (i=0; i<zz->Edge_Weight_Dim; i++)
+            tmp_cutwgt[i] += ewgts[j*(zz->Edge_Weight_Dim)+i];
           if (flag==0){
             num_boundary++;
             flag = 1;
@@ -271,12 +270,12 @@ int Zoltan_LB_Eval (ZZ *zz, int print_stats,
                     MPI_FLOAT, MPI_MIN, zz->Communicator);
     }
     /* Global reduction for comm weights. */
-    if (zz->Comm_Weight_Dim>0 && zz->Get_Num_Edges && zz->Get_Edge_List){
-      MPI_Allreduce(tmp_cutwgt, &tmp_cutwgt[zz->Comm_Weight_Dim], zz->Comm_Weight_Dim, 
+    if (zz->Edge_Weight_Dim>0 && zz->Get_Num_Edges && zz->Get_Edge_List){
+      MPI_Allreduce(tmp_cutwgt, &tmp_cutwgt[zz->Edge_Weight_Dim], zz->Edge_Weight_Dim, 
                     MPI_FLOAT, MPI_MAX, zz->Communicator);
-      MPI_Allreduce(tmp_cutwgt, &tmp_cutwgt[2*(zz->Comm_Weight_Dim)], zz->Comm_Weight_Dim,
+      MPI_Allreduce(tmp_cutwgt, &tmp_cutwgt[2*(zz->Edge_Weight_Dim)], zz->Edge_Weight_Dim,
                     MPI_FLOAT, MPI_SUM, zz->Communicator);
-      MPI_Allreduce(tmp_cutwgt, &tmp_cutwgt[3*(zz->Comm_Weight_Dim)], zz->Comm_Weight_Dim,
+      MPI_Allreduce(tmp_cutwgt, &tmp_cutwgt[3*(zz->Edge_Weight_Dim)], zz->Edge_Weight_Dim,
                     MPI_FLOAT, MPI_MIN, zz->Communicator);
     }
     fflush(stdout);
@@ -319,14 +318,14 @@ int Zoltan_LB_Eval (ZZ *zz, int print_stats,
       }
 
       if (zz->Get_Num_Edges && zz->Get_Edge_List){
-        for (i=0; i<zz->Comm_Weight_Dim; i++){
+        for (i=0; i<zz->Edge_Weight_Dim; i++){
           printf("%s  Comm. weight  #%1d :  Max =%8.3g, Min =%8.3g, "
             "Sum =%8.3g, Imbal. = %5.3f\n",
-            yo, i+1, tmp_cutwgt[(zz->Comm_Weight_Dim)+i], 
-            tmp_cutwgt[3*(zz->Comm_Weight_Dim)+i], 
-            tmp_cutwgt[2*(zz->Comm_Weight_Dim)+i], 
-            (tmp_cutwgt[2*(zz->Comm_Weight_Dim)+i] > 0 
-             ? tmp_cutwgt[(zz->Comm_Weight_Dim)+i]*nproc/tmp_cutwgt[2*(zz->Comm_Weight_Dim)+i]
+            yo, i+1, tmp_cutwgt[(zz->Edge_Weight_Dim)+i], 
+            tmp_cutwgt[3*(zz->Edge_Weight_Dim)+i], 
+            tmp_cutwgt[2*(zz->Edge_Weight_Dim)+i], 
+            (tmp_cutwgt[2*(zz->Edge_Weight_Dim)+i] > 0 
+             ? tmp_cutwgt[(zz->Edge_Weight_Dim)+i]*nproc/tmp_cutwgt[2*(zz->Edge_Weight_Dim)+i]
              : 1.));
         }
 
@@ -365,7 +364,7 @@ int Zoltan_LB_Eval (ZZ *zz, int print_stats,
       obj_wgt[i] = tmp_vwgt[i];
   }
   if (cut_wgt){
-    for (i=0; i<zz->Comm_Weight_Dim; i++) 
+    for (i=0; i<zz->Edge_Weight_Dim; i++) 
       cut_wgt[i] = tmp_cutwgt[i];
   }
 

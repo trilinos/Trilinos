@@ -18,7 +18,7 @@
 
 #include <stdio.h>
 #include <math.h>
-#include "lb_const.h"
+#include "zz_const.h"
 #include "rib.h"
 
 /* macros for routines */

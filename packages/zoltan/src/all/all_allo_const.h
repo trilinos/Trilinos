@@ -14,11 +14,10 @@
 #ifndef __ALL_ALLO_H
 #define __ALL_ALLO_H
 
-#include "lb_const.h"
-#include "mem_const.h"
+#include "zz_const.h"
+#include "zoltan_mem.h"
 
 extern int Zoltan_Set_Malloc_Param(char *, char *);
-extern void Zoltan_Free_Structure(ZZ *);
 
 /* function prototypes for Fortran allocation functions */
 

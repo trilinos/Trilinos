@@ -13,7 +13,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include "lb_const.h"
+#include "zoltan_util.h"
 #include "par_const.h"
 
 

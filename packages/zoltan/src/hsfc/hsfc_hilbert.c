@@ -57,7 +57,7 @@ the SFC
 
 ----------------------------------------------------------------------*/
 
-#include "lb_const.h"
+#include <stdlib.h>
 #include <limits.h>
 #include "hsfc_hilbert_const.h"
 

@@ -14,7 +14,7 @@
 #include <stdio.h>
 #include <math.h>
 #include <memory.h>
-#include "lb_const.h"
+#include "zz_const.h"
 #include "params_const.h"
 #include "timer_const.h"
 #include <values.h>
@@ -23,9 +23,9 @@
 #include "sfc.h"
 
 
-int sfc_refine_partition(ZZ *zz, int* local_balanced_flag, 
+int Zoltan_BSFC_refine_partition(ZZ *zz, int* local_balanced_flag, 
 			 int *amount_of_used_bits, int num_vert_in_cut,
-			 SFC_VERTEX_PTR vert_in_cut_ptr, int size_of_unsigned,
+			 BSFC_VERTEX_PTR vert_in_cut_ptr, int size_of_unsigned,
 			 int wgt_dim, float* wgts_in_cut_ptr,
 			 float* work_percent_array, float* total_weight_array,
 			 float* global_actual_work_allocated, 
@@ -34,7 +34,7 @@ int sfc_refine_partition(ZZ *zz, int* local_balanced_flag,
 			 int subbins_per_bin, int* local_balanced_flag_array,
 			 int bin_refinement_method) 
 {
-  char yo[] = "sfc_refine_partition";
+  char yo[] = "Zoltan_BSFC_refine_partition";
   int i=0, j=0, k;
   int amount_of_bits;
   float* binned_weight_array, *work_prev_allocated_copy;
@@ -49,15 +49,15 @@ int sfc_refine_partition(ZZ *zz, int* local_balanced_flag,
 
   /* check to see that all of the bits of the sfc key 
      have not already been used */
-  if(*amount_of_used_bits >= size_of_unsigned * SFC_KEYLENGTH * 8) {
+  if(*amount_of_used_bits >= size_of_unsigned * BSFC_KEYLENGTH * 8) {
     ZOLTAN_PRINT_WARN(zz->Proc, yo, "No more refinement is possible.");
-    *local_balanced_flag = SFC_BALANCED;
+    *local_balanced_flag = BSFC_BALANCED;
     return(ZOLTAN_OK);
   }
   
   /*  assume initially that all the partitions on this processor are balanced.
       we will check later on whether any are not balanced */
-  *local_balanced_flag = SFC_BALANCED;
+  *local_balanced_flag = BSFC_BALANCED;
 
   /* if there are a lot of cuts in a bin, we want the amount of bins
      to be greater than the amount of cuts */
@@ -71,8 +71,8 @@ int sfc_refine_partition(ZZ *zz, int* local_balanced_flag,
   while(number_of_bins > pow(2,i))
     i++;
   amount_of_bits = i;
-  if(amount_of_bits + *amount_of_used_bits > 8*size_of_unsigned * SFC_KEYLENGTH)
-    amount_of_bits = 8*size_of_unsigned * SFC_KEYLENGTH - *amount_of_used_bits;
+  if(amount_of_bits + *amount_of_used_bits > 8*size_of_unsigned * BSFC_KEYLENGTH)
+    amount_of_bits = 8*size_of_unsigned * BSFC_KEYLENGTH - *amount_of_used_bits;
   number_of_bins = pow(2,i);
     
   ll_prev_bins = (int*) ZOLTAN_MALLOC(sizeof(int) * (number_of_cuts+1));
@@ -101,7 +101,7 @@ int sfc_refine_partition(ZZ *zz, int* local_balanced_flag,
      to find objects in the cut bins */
   for(ll_counter=0;ll_counter<=number_of_cuts;ll_counter++) 
     if((bin_refinement_method==1 ||
-	local_balanced_flag_array[ll_counter]==SFC_NOT_BALANCED)
+	local_balanced_flag_array[ll_counter]==BSFC_NOT_BALANCED)
        && ll_bins_head[ll_counter] != -1) {
 
       int temp_max_cuts_in_bin = 0;
@@ -110,7 +110,7 @@ int sfc_refine_partition(ZZ *zz, int* local_balanced_flag,
       ll_location = ll_bins_head[ll_counter];
       while(ll_location != -1) {
 	vert_in_cut_ptr[ll_location].my_bin = 
-	  sfc_get_array_location(number_of_bins, amount_of_bits, 
+	  Zoltan_BSFC_get_array_location(number_of_bins, amount_of_bits, 
 				 *amount_of_used_bits, (vert_in_cut_ptr+ll_location));
 	ll_location = vert_in_cut_ptr[ll_location].next_sfc_vert_index;
       }  
@@ -143,7 +143,7 @@ int sfc_refine_partition(ZZ *zz, int* local_balanced_flag,
       
       /* find new cut(s) in the sub-bins */
       if(wgt_dim==1) {
-	sfc_single_wgt_calc_partition(wgt_dim, work_prev_allocated[ll_counter],
+	Zoltan_BSFC_single_wgt_calc_partition(wgt_dim, work_prev_allocated[ll_counter],
 				      total_weight_array, bin_proc_array, zz,
 				      binned_weight_array, 
 				      (work_percent_array+zz->Proc+ll_counter-2*number_of_cuts),
@@ -157,7 +157,7 @@ int sfc_refine_partition(ZZ *zz, int* local_balanced_flag,
       else {
 	/* multi_wgt_dim_calc_partition(); */  
 	/*fill in with erik's multi-weight stuff when it is ready, use first weight for now */      
-	sfc_single_wgt_calc_partition(wgt_dim, work_prev_allocated[ll_counter*wgt_dim],
+	Zoltan_BSFC_single_wgt_calc_partition(wgt_dim, work_prev_allocated[ll_counter*wgt_dim],
 				      total_weight_array, bin_proc_array, zz, 
 				      binned_weight_array, 
 				      (work_percent_array+zz->Proc+ll_counter-2*number_of_cuts),
@@ -239,18 +239,18 @@ int sfc_refine_partition(ZZ *zz, int* local_balanced_flag,
   
   /* check which partitions that are not balanced */
   for(i=0;i<=number_of_cuts;i++) {
-    if(ll_bins_head[i] != -1 || local_balanced_flag_array[i] != SFC_BALANCED)
+    if(ll_bins_head[i] != -1 || local_balanced_flag_array[i] != BSFC_BALANCED)
       {
 	if(wgt_dim == 1) {
 	  local_balanced_flag_array[i] =
-	    sfc_single_wgt_find_imbalance(work_percent_array, 
+	    Zoltan_BSFC_single_wgt_find_imbalance(work_percent_array, 
 					  global_actual_work_allocated[(zz->Proc+i-number_of_cuts)*wgt_dim],
 					  total_weight_array[0], zz->Proc+i-number_of_cuts, zz);
 	}
 	else {
 	  /* put in multi-dimensional algorithm to calculate imbalance of the partitions */
 	  local_balanced_flag_array[i] =
-	    sfc_single_wgt_find_imbalance(work_percent_array, 
+	    Zoltan_BSFC_single_wgt_find_imbalance(work_percent_array, 
 					  global_actual_work_allocated[(zz->Proc+i-number_of_cuts)*wgt_dim],
 					  total_weight_array[0], zz->Proc+i-number_of_cuts, zz);
 	}
@@ -258,36 +258,36 @@ int sfc_refine_partition(ZZ *zz, int* local_balanced_flag,
   }
   
   /* check if any of the partitions are not balanced */
-  *local_balanced_flag = SFC_BALANCED;
+  *local_balanced_flag = BSFC_BALANCED;
   i=0;
-  while(*local_balanced_flag == SFC_BALANCED && i<=number_of_cuts) {
+  while(*local_balanced_flag == BSFC_BALANCED && i<=number_of_cuts) {
     *local_balanced_flag = local_balanced_flag_array[i];
     i++;
   }
   
   /* check the partitions to see if any more improvement can be made on them */
-  if(*local_balanced_flag == SFC_NOT_BALANCED) {
+  if(*local_balanced_flag == BSFC_NOT_BALANCED) {
     for(i=0;i<=number_of_cuts;i++)
       if(ll_bins_head[i] != -1) {
 	/* check if there is only 1 object in this bin. if there is, 
 	   no further bin refinement will improve load-balance */
 	if(vert_in_cut_ptr[ll_bins_head[i]].next_sfc_vert_index == -1) {
 	  ll_bins_head[i] = -1;
-	  local_balanced_flag_array[i] = SFC_BALANCED;
+	  local_balanced_flag_array[i] = BSFC_BALANCED;
 	  ZOLTAN_PRINT_WARN(zz->Proc, yo, 
-			"Bin refinement cannot improve load balance on this processor.");
+            "Bin refinement cannot improve load balance on this processor.");
 	}
 	/* check if the objects in the bin have all the same sfc_key */
 	else {
-	  unsigned sfc_key[SFC_KEYLENGTH];
+	  unsigned sfc_key[BSFC_KEYLENGTH];
 	  int same_flag = 0;  /* flag to indicate if all the sfc_keys are the same */
 	  int amount_of_objects_in_bin = 0;
 	  ll_counter = ll_bins_head[i];
-	  for(j=0;j<SFC_KEYLENGTH;j++)
+	  for(j=0;j<BSFC_KEYLENGTH;j++)
 	    sfc_key[j] = vert_in_cut_ptr[ll_counter].sfc_key[j];
 	  ll_counter = vert_in_cut_ptr[ll_counter].next_sfc_vert_index;
 	  while(ll_counter != -1 && same_flag == 0) {
-	    for(j=0;j<SFC_KEYLENGTH;j++)
+	    for(j=0;j<BSFC_KEYLENGTH;j++)
 	      if(vert_in_cut_ptr[ll_counter].sfc_key[j] != sfc_key[j])
 		same_flag = 1;
 	    
@@ -310,7 +310,7 @@ int sfc_refine_partition(ZZ *zz, int* local_balanced_flag,
 	    j=1;
 	    while(ll_counter != -1) {
 	      unsigned new_key = umax*((float) j/(float) 10*amount_of_objects_in_bin);
-	      for(k=0;k<SFC_KEYLENGTH;k++)
+	      for(k=0;k<BSFC_KEYLENGTH;k++)
 		vert_in_cut_ptr[ll_counter].sfc_key[k] = new_key;
 	      j++;
 	      ll_counter = vert_in_cut_ptr[ll_counter].next_sfc_vert_index; 
@@ -321,9 +321,9 @@ int sfc_refine_partition(ZZ *zz, int* local_balanced_flag,
 	}
       }
     /* check again if any of the partitions are not balanced */
-    *local_balanced_flag = SFC_BALANCED;
+    *local_balanced_flag = BSFC_BALANCED;
     j=0;
-    while(*local_balanced_flag == SFC_BALANCED && j<=number_of_cuts) {
+    while(*local_balanced_flag == BSFC_BALANCED && j<=number_of_cuts) {
       *local_balanced_flag = local_balanced_flag_array[j];
       j++;
     }

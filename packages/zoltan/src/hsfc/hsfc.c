@@ -70,10 +70,10 @@ int Zoltan_HSFC( /* Zoltan_HSFC - Load Balance: Hilbert Space Filling Curve */
 
    /* allocate persistant storage required by box drop and point drop */
    Zoltan_HSFC_Free_Structure (zz) ;
-   zz->Data_Structure = (void *) ZOLTAN_MALLOC (sizeof (HSFC_Data)) ;
-   if (zz->Data_Structure == NULL)
+   zz->LB.Data_Structure = (void *) ZOLTAN_MALLOC (sizeof (HSFC_Data)) ;
+   if (zz->LB.Data_Structure == NULL)
       ZOLTAN_HSFC_ERROR(LB_MEMERR,"Error returned by malloc") ;
-   d = (HSFC_Data *) zz->Data_Structure ;
+   d = (HSFC_Data *) zz->LB.Data_Structure ;
 
    /* Determine if dots have 2 or 3 dimensions */
    d->ndimension = zz->Get_Num_Geom(zz->Get_Num_Geom_Data, &err) ;
@@ -175,6 +175,7 @@ int Zoltan_HSFC( /* Zoltan_HSFC - Load Balance: Hilbert Space Filling Curve */
          scaled[j] = (dots[i].x[j] - d->bbox_lo[j]) / d->bbox_extent[j] ;
       d->fhsfc (scaled, (int*)&TWO, key) ;
       dots[i].fsfc = convert_key (key) ;
+printf("%d KDDKDD %d (%f,%f,%f) %g \n", zz->Proc, gids[i], scaled[0],scaled[1],scaled[2], dots[i].fsfc);
       }
 
    /* Initalize work fraction (should be user specified vector in future) */
@@ -439,7 +440,7 @@ int Zoltan_HSFC( /* Zoltan_HSFC - Load Balance: Hilbert Space Filling Curve */
       Zoltan_HSFC_Free_Structure (zz) ;
 
    /* really done now, now free dynamic storage and exit with return status */
-   err = (imbalance > zz->Imbalance_Tol) ? ZOLTAN_WARN : ZOLTAN_HSFC_OK ;
+   err = (imbalance > zz->LB.Imbalance_Tol) ? ZOLTAN_WARN : ZOLTAN_HSFC_OK ;
    if (zz->Proc == 0 && err == ZOLTAN_WARN && zz->Debug_Level > 0)
       ZOLTAN_PRINT_WARN (zz->Proc, yo, "HSFC: Imbalance exceeds user specificatation");
 
@@ -475,7 +476,7 @@ int Zoltan_HSFC_Point_Drop (ZZ *zz, double *x)
    unsigned int key[3] ;
    char *yo = "Zoltan_HSFC_Point_Drop" ;
 
-   d = (HSFC_Data *) zz->Data_Structure ;
+   d = (HSFC_Data *) zz->LB.Data_Structure ;
    if (d == NULL)
       return ZOLTAN_HSFC_FATAL_ERROR ;
 
@@ -513,7 +514,7 @@ void Zoltan_HSFC_Box_Drop (ZZ *zz, int *procs,double *hi,double *lo,int *count)
    const int  MAXLOOP  = 5 ;
    char *yo = "Zoltan_HSFC_Box_Drop" ;
 
-   d = (HSFC_Data *) zz->Data_Structure ;
+   d = (HSFC_Data *) zz->LB.Data_Structure ;
    if (d == NULL)
       return ;
 
@@ -583,10 +584,10 @@ static double convert_key (unsigned int *key)
 /* free state memory needed by point & box drop routines */
 void Zoltan_HSFC_Free_Structure (ZZ *zz)
    {
-   HSFC_Data *data = (HSFC_Data *)zz->Data_Structure ;
+   HSFC_Data *data = (HSFC_Data *)zz->LB.Data_Structure ;
    if (data != NULL)
       ZOLTAN_FREE (&(data->final_partition)) ;
-   ZOLTAN_FREE (&(zz->Data_Structure)) ;
+   ZOLTAN_FREE (&(zz->LB.Data_Structure)) ;
    }
 
 

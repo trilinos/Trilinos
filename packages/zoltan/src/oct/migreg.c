@@ -7,7 +7,7 @@
  ****************************************************************************/
 
 #include "migreg.h"
-#include "comm_const.h"
+#include "zoltan_comm.h"
 #include "dfs_const.h"
 #include "oct_util_const.h"
 #include "octree_const.h"
@@ -127,7 +127,7 @@ static int Zoltan_Oct_insert_orphan(ZZ *zz, Region reg) {
   int i, j;                        /* index counters */
   double upper,                    /* upper bounds of the octant */
          lower;                    /* lower bounds of the octant */
-  OCT_Global_Info *OCT_info = (OCT_Global_Info *)(zz->Data_Structure);
+  OCT_Global_Info *OCT_info = (OCT_Global_Info *)(zz->LB.Data_Structure);
   char *yo = "Zoltan_Oct_insert_orphan";
   int ierr = ZOLTAN_OK;
 
@@ -187,7 +187,7 @@ int Zoltan_Oct_migreg_migrate_orphans(ZZ *zz, pRegion RegionList, int nregions,
   int     dir = 0;
   pRList  RootList;              
   pOctant RootOct;
-  OCT_Global_Info *OCT_info = (OCT_Global_Info *)(zz->Data_Structure);
+  OCT_Global_Info *OCT_info = (OCT_Global_Info *)(zz->LB.Data_Structure);
   char *yo = "Zoltan_Oct_migreg_migrate_orphans_static";
   int ierr = ZOLTAN_OK;
   ZOLTAN_ID_PTR gids2, lids2;

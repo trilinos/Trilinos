@@ -1,4 +1,12 @@
-#include "lb_const.h"
+/*****************************************************************************
+ * CVS File Information :
+ *    $RCSfile$
+ *    $Author$
+ *    $Date$
+ *    $Revision$
+ ****************************************************************************/
+
+#include "zz_const.h"
 #include "all_allo_const.h"
 #include "octree_const.h"
 
@@ -16,7 +24,7 @@ OCT_Global_Info *Zoltan_Oct_POct_init(ZZ *zz, int pid, int dim) {
     ZOLTAN_TRACE_EXIT(zz, yo);
     return NULL;
   }
-  zz->Data_Structure = (void *) OCT_info;
+  zz->LB.Data_Structure = (void *) OCT_info;
   OCT_info->OCT_localpid=pid;
   OCT_info->OCT_rootlist=RL_initRootList();
   Zoltan_Oct_initCounters();

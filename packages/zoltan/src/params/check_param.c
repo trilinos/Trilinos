@@ -20,6 +20,7 @@
 #include <strings.h>
 #endif  /* __STDC__ */
 #include "params_const.h"
+#include "zoltan_util.h"
 
 
 int       Zoltan_Check_Param(

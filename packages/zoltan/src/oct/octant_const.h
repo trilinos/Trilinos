@@ -9,7 +9,7 @@
 #ifndef __OCTANT_CONST_H
 #define __OCTANT_CONST_H
 
-#include "lb_const.h"
+#include "zz_const.h"
 
 typedef double COORD[3];
 typedef enum {LOCALOCT, REMOTEOCT} OctType;

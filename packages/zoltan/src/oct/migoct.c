@@ -6,10 +6,9 @@
  *    $Revision$
  ****************************************************************************/
 
-#include "lb_const.h"
+#include "zz_const.h"
 #include "octree_const.h"
 #include "migoct_const.h"
-#include "comm_const.h"
 #include "all_allo_const.h"
 
 /* function prototypes */
@@ -173,7 +172,7 @@ int Zoltan_Oct_migrate_octants(ZZ *zz, int *newpids, pOctant *octs, int nocts, i
     /* Reply to malloc requests and Receive malloc replies */
     
   for (i=0; i< nreceives; i++) {  
-    rcv_reply[i].ptr = Zoltan_Oct_POct_new((OCT_Global_Info *) (zz->Data_Structure)); 
+    rcv_reply[i].ptr = Zoltan_Oct_POct_new((OCT_Global_Info *) (zz->LB.Data_Structure)); 
   }
 ;
   ierr = Zoltan_Comm_Do_Reverse(comm_plan, MigOctCommReverse, (char *) rcv_reply,
@@ -270,7 +269,7 @@ int nocts;          /* number of octants leaving this processor */
 
   ZOLTAN_COMM_OBJ *comm_plan;           /* Object returned by communication routines */
   char *yo = "Zoltan_Oct_Update_Connections";
-  OCT_Global_Info *OCT_info = (OCT_Global_Info *) zz->Data_Structure;
+  OCT_Global_Info *OCT_info = (OCT_Global_Info *) zz->LB.Data_Structure;
   localcount=0;
   remotecount=0;
 
@@ -440,7 +439,7 @@ int nrecocts;       /* number of octants received in this processor */
   int ierr = ZOLTAN_OK;
   ZOLTAN_COMM_OBJ *comm_plan;           /* Object returned by communication routines */
   char *yo = "Zoltan_Oct_Final_Migration";
-  OCT_Global_Info *OCT_info = (OCT_Global_Info *) zz->Data_Structure;
+  OCT_Global_Info *OCT_info = (OCT_Global_Info *) zz->LB.Data_Structure;
 
   /* count number of sends */
   nsends=0;
@@ -533,7 +532,7 @@ static int Zoltan_Oct_build_global_rootlist(ZZ *zz,Migrate_msg  **ret_rmsg, int 
   pOctant RootOct;
   Migrate_msg *snd_rmsg = NULL;
   Migrate_msg *rcv_rmsg = NULL;
-  OCT_Global_Info *OCT_info = (OCT_Global_Info *)(zz->Data_Structure);
+  OCT_Global_Info *OCT_info = (OCT_Global_Info *)(zz->LB.Data_Structure);
 /*Map *array = OCT_info->map;*/
   ZOLTAN_COMM_OBJ *comm_plan;                /* Object returned by communication routines */
 
@@ -616,7 +615,7 @@ static int Zoltan_Oct_Update_Map(ZZ *zz) {
   pOctant RootOct;
   pOctant remoteoctant;
   Migrate_msg *rootlists = NULL;
-  OCT_Global_Info *OCT_info = (OCT_Global_Info *)(zz->Data_Structure);
+  OCT_Global_Info *OCT_info = (OCT_Global_Info *)(zz->LB.Data_Structure);
   Map *array = OCT_info->map;
   int mapsize = OCT_info->mapsize;
   int rlsize = 0;

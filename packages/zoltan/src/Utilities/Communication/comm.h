@@ -16,12 +16,12 @@
 
 /* Data structures and macros for the Zoltan Communication Package.  */
 /* This file should be included only by communication package files. */
-/* Communication package users should include comm_const.h.          */
+/* Communication package users should include zoltan_comm.h.          */
 
 #include <mpi.h>
 #include "zoltan_types.h"
 #include "zoltan_util.h"
-#include "comm_const.h"
+#include "zoltan_comm.h"
 
 #ifndef TRUE
 #define FALSE (0)

@@ -18,8 +18,9 @@
 #else
 #include <strings.h>
 #endif  /* __STDC__ */
-#include "lb_const.h"
 #include "params_const.h"
+#include "zoltan_types.h"
+#include "zoltan_util.h"
 
 /*****************************************************************************/
 /*****************************************************************************/
@@ -32,7 +33,7 @@ static void Zoltan_Print_Assigned_Param_Vals(PARAM_VARS * );
 /*****************************************************************************/
 
 int      Zoltan_Assign_Param_Vals(
-ZOLTAN_PARAM * change_list,		/* list of parameter values being changed */
+PARAM_LIST * change_list,		/* list of parameter values being changed */
 PARAM_VARS * params,		/* structure describing parameters        */
 int debug_level,                /* level for output of debugging info     */
 int proc,                       /* processor # (controls debug printing)  */
