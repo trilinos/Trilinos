@@ -1634,9 +1634,16 @@ int ML_Operator_Analyze(ML_Operator * Op, char* name)
  *                      the processors. If ML_FALSE, do nothing.
  * NumPDEEqns : number of PDE equations. The function will plot
  *              the block structure of the matrix if NumPDEEqns > 1
+ *
+ * FIXME: This function does not work properly for Rmat,
+ *        when the restriction has been smoothed. The problem
+ *        is that I don't know how to get a unique row id for
+ *        all local rows (that are more than Amat->outvec_leng,
+ *        and defined by Amat->getrow->Nrows).
  ****************************************************************/
 
 int ML_Operator_PrintSparsity(ML_Operator* Op, char* title,
+			      char* FileName,
 			      int PrintDecomposition,
 			      int NumPDEEqns)
 {
@@ -1722,8 +1729,8 @@ int ML_Operator_PrintSparsity(ML_Operator* Op, char* title,
   maxdim /= NumPDEEqns;
 
   m = 1 + maxdim;
-  nr = NumGlobalCols / NumPDEEqns + 1;
-  nc = NumGlobalRows / NumPDEEqns + 1;
+  nr = NumGlobalRows / NumPDEEqns + 1;
+  nc = NumGlobalCols / NumPDEEqns + 1;
 
   if (munt == 'E') {
     u2dot = 72.0/conv;
@@ -1804,13 +1811,13 @@ int ML_Operator_PrintSparsity(ML_Operator* Op, char* title,
 
   if( MyPID == 0 ) {
 
-    fp = fopen("Amat.ps","w");
+    fp = fopen(FileName,"w");
 
-    fprintf(fp,"%%!\n");
-    fprintf(fp,"%%Creator: ML_Operator_PrintSparsity\n");
-    fprintf(fp,"%%BoundingBox: %f %f %f %f\n",
+    fprintf(fp,"%%%%!PS-Adobe-2.0\n");
+    fprintf(fp,"%%%%Creator: ML_Operator_PrintSparsity\n");
+    fprintf(fp,"%%%%BoundingBox: %f %f %f %f\n",
 	    xl,yb,xr,yt);
-    fprintf(fp,"%%EndComments\n");
+    fprintf(fp,"%%%%EndComments\n");
     fprintf(fp,"/cm {72 mul 2.54 div} def\n");
     fprintf(fp,"/mc {72 div 2.54 mul} def\n");
     fprintf(fp,"/pnum { 72 div 2.54 mul 20 string ");
@@ -1871,8 +1878,8 @@ int ML_Operator_PrintSparsity(ML_Operator* Op, char* title,
 
 	/*     horizontal lines  */
 
-	yy =  1.0 * (NumGlobalCols / NumPDEEqns - col_isep) + haf;
-	xx = 1.0 * (NumGlobalRows / NumPDEEqns + 1);
+	yy =  1.0 * (NumGlobalRows / NumPDEEqns - row_isep) + haf;
+	xx = 1.0 * (NumGlobalCols / NumPDEEqns + 1);
 	printf("%e %e\n", xx, yy);
 	fprintf(fp,"%f %f moveto \n",
 		zero, yy);
@@ -1881,8 +1888,8 @@ int ML_Operator_PrintSparsity(ML_Operator* Op, char* title,
 
 	/*vertical lines  */
 
-	xx = 1.0 * (row_isep) + haf;
-	yy = 1.0 * (NumGlobalCols+1);
+	xx = 1.0 * (col_isep) + haf;
+	yy = 1.0 * (NumGlobalRows+1);
 	fprintf(fp,"%f %f moveto \n",
 		xx, zero);
 	fprintf(fp,"%f %f lineto stroke\n",
@@ -1915,7 +1922,7 @@ int ML_Operator_PrintSparsity(ML_Operator* Op, char* title,
 
     if (pid == MyPID) {
 
-      fp = fopen("Amat.ps","a");
+      fp = fopen(FileName,"a");
       if( fp == NULL ) {
 	fprintf(stderr,"ERROR\n");
 	exit(EXIT_FAILURE);
@@ -1940,13 +1947,14 @@ int ML_Operator_PrintSparsity(ML_Operator* Op, char* title,
 	}
 
 	grow = i + row_offset;
+
 	for (j = 0 ; j < NumNonzeros ; ++j) {
 	  if (colInd[j] % NumPDEEqns == 0) {
 	    gcol = (int)(global_col_id[colInd[j]]);
 	    grow /= NumPDEEqns;
 	    gcol /= NumPDEEqns;
 	    fprintf(fp,"%d %d p\n",
-		    grow, NumGlobalCols - gcol - 1); 
+		    gcol, NumGlobalRows - grow - 1); 
 	  }
 	}
       }

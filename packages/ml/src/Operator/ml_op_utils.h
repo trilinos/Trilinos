@@ -49,6 +49,7 @@ extern int ML_Operator_Transpose_byrow(ML_Operator *A, ML_Operator *Atrans);
 extern int ML_Operator_Getrow_Diag(ML_Operator *Amat, double **diagonal);
 extern int ML_Operator_Analyze(ML_Operator *Op, char *name);
 extern int ML_Operator_PrintSparsity(ML_Operator* Op, char* title,
+				     char* FileName,
 				     int PrintDecomposition,
 				     int NumPDEEqns);
 int ML_Operator_Eigensolver_Dense(ML_Operator* Amat,
