@@ -406,13 +406,6 @@ int Zoltan_PHG_Redistribute(
         if (ncomm->myProc != ocomm->myProc-lo)
             errexit("Zoltan_PHG_Redistribute: ncomm->myProc(%d) != ocomm->myProc(%d)-lo(%d)", ncomm->myProc, ocomm->myProc, lo);
 #endif
-        
-        Zoltan_Srand_Sync(Zoltan_Rand(NULL), &(ncomm->RNGState_row),
-                          ncomm->row_comm);
-        Zoltan_Srand_Sync(Zoltan_Rand(NULL), &(ncomm->RNGState_col),
-                          ncomm->col_comm);
-        Zoltan_Srand_Sync(Zoltan_Rand(NULL), &(ncomm->RNGState), 
-                          ncomm->Communicator);
     } else {
         ncomm->myProc = ncomm->myProc_x = ncomm->myProc_y = -1;
     }

@@ -328,10 +328,11 @@ static int Zoltan_PHG_Initialize_Params(
                            zz->Debug_Proc);
 
   err = Zoltan_PHG_Set_2D_Proc_Distrib(zz, zz->Communicator, zz->Proc, 
-                                       zz->Num_Proc, hgp->nProc_x_req, hgp->nProc_y_req, 
+                                       zz->Num_Proc, hgp->nProc_x_req, 
+                                       hgp->nProc_y_req, 
                                        &hgp->globalcomm);
   if (err != ZOLTAN_OK) 
-      goto End;
+    goto End;
 
   /* Convert strings to function pointers. */
   err = Zoltan_PHG_Set_Part_Options (zz, hgp);
@@ -551,15 +552,24 @@ int ierr = ZOLTAN_OK;
 
   if (Communicator==MPI_COMM_NULL) {
       comm->col_comm = comm->row_comm = MPI_COMM_NULL;
-  } else if ((MPI_Comm_split(Communicator, comm->myProc_x, comm->myProc_y, 
-                             &comm->col_comm) != MPI_SUCCESS)
-             || (MPI_Comm_split(Communicator, comm->myProc_y, comm->myProc_x, 
-                                &comm->row_comm) != MPI_SUCCESS)) {
+  } else {
+    if ((MPI_Comm_split(Communicator, comm->myProc_x, comm->myProc_y, 
+                        &comm->col_comm) != MPI_SUCCESS)
+     || (MPI_Comm_split(Communicator, comm->myProc_y, comm->myProc_x, 
+                        &comm->row_comm) != MPI_SUCCESS)) {
       ZOLTAN_PRINT_ERROR(proc, yo, "MPI_Comm_Split failed");
       return ZOLTAN_FATAL;
+    }
+    Zoltan_Srand_Sync(Zoltan_Rand(NULL), &(comm->RNGState_row),
+                      comm->row_comm);
+    Zoltan_Srand_Sync(Zoltan_Rand(NULL), &(comm->RNGState_col),
+                      comm->col_comm);
+    Zoltan_Srand_Sync(Zoltan_Rand(NULL), &(comm->RNGState),
+                      comm->Communicator);
   } 
 /*  printf("(%d, %d) of [%d, %d] -> After Comm_split col_comm=%d  row_comm=%d\n", hgp->myProc_x, hgp->myProc_y, hgp->nProc_x, hgp->nProc_y, (int)hgp->col_comm, (int)hgp->row_comm);  */
   
+
     
 End:
 
