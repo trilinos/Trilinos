@@ -1,0 +1,3 @@
+--enable-mpi
+--with-mpi-compilers
+--enable-pliris
