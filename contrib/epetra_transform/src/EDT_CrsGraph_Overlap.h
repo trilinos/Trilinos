@@ -1,4 +1,7 @@
 
+#ifndef EDT_CRSGRAPH_OVERLAP_H
+#define EDT_CRSGRAPH_OVERLAP_H
+
 #include <Epetra_DistTransform.h>
 
 class Epetra_CrsGraph;
@@ -23,3 +26,4 @@ class CrsGraph_Overlap : public SameTypeDistTransform<Epetra_CrsGraph> {
 
 } //namespace Epetra_Transform
 
+#endif //EDT_CRSGRAPH_OVERLAP_H

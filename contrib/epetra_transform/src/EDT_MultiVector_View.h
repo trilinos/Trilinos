@@ -1,4 +1,7 @@
 
+#ifndef EDT_MULTIVECTOR_VIEW_H
+#define EDT_MULTIVECTOR_VIEW_H
+
 #include <Epetra_DistTransform.h>
 
 class Epetra_MultiVector;
@@ -31,3 +34,4 @@ class MultiVector_View : public SameTypeDistTransform<Epetra_MultiVector> {
 
 } //namespace Epetra_Transform
 
+#endif //EDT_MULTIVECTOR_VIEW_H

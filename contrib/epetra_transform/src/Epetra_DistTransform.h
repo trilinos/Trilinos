@@ -1,4 +1,7 @@
 
+#ifndef EPETRA_DISTTRANSFORM_H
+#define EPETRA_DISTTRANSFORM_H
+
 #include <Epetra_Transform.h>
 
 #include <Epetra_Import.h>
@@ -21,3 +24,4 @@ struct SameTypeDistTransform : public DistTransform<T,T> { virtual ~SameTypeDist
 
 } //namespace Epetra_Transform
   
+#endif //EPETRA_DISTTRANSFORM_H

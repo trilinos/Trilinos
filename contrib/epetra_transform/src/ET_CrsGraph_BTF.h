@@ -1,4 +1,7 @@
 
+#ifndef ET_CRSGRAPH_BTF_H
+#define ET_CRSGRAPH_BTF_H
+
 #include <Epetra_DistTransform.h>
 
 class Epetra_CrsGraph;
@@ -19,3 +22,4 @@ class CrsGraph_BTF : public SameTypeDistTransform<Epetra_CrsGraph> {
 
 } //namespace Epetra_Transform
 
+#endif //ET_CRSGRAPH_BTF_H

@@ -4,6 +4,12 @@
 
 #include <EDT_CrsGraph_Zoltan.h>
 
+#ifdef ZOLTAN_ORDER
+#include <EDT_CrsGraph_ZoltanOrder.h>
+#endif
+
+#include <EDT_CrsGraph_Transpose.h>
+
 #include <Epetra_ZoltanQuery.h>
 #include <Zoltan_LoadBalance.h>
 
@@ -18,39 +24,48 @@ std::auto_ptr<Epetra_CrsGraph> CrsGraph_Zoltan::operator()( const Epetra_CrsGrap
 {
   int err;
 
-  //Setup Load Balance Object
-  float version;
-  char * dummy = 0;
-  Zoltan_LoadBalance  LB( 0, &dummy, &version );
-  err = LB.Create( dynamic_cast<const Epetra_MpiComm&>(original.Comm()).Comm() );
-  if( err == LB_OK ) err = LB.Set_Method( "PARMETIS" );
-  char * pM = new char[partitionMethod_.size()];
-  memcpy( pM, partitionMethod_.c_str(), partitionMethod_.size() );
-  if( err == LB_OK ) err = LB.Set_Param( "PARMETIS_METHOD", pM );
+  Zoltan_LoadBalance * LB = lb_;
+  Epetra_ZoltanQuery * Query = 0;
+  Epetra_CrsGraph * TransGraph = 0;
 
-  //Setup Query Object
-  Epetra_ZoltanQuery Query( original );
-  if( err == LB_OK ) err = LB.Set_QueryObject( &Query );
+  if( !LB )
+  {
+    //Setup Load Balance Object
+    float version;
+    char * dummy = 0;
+    LB = new Zoltan_LoadBalance( 0, &dummy, &version );
+    err = LB->Create( dynamic_cast<const Epetra_MpiComm&>(original.Comm()).Comm() );
+    if( err == ZOLTAN_OK ) err = LB->Set_Param( "LB_METHOD", "PARMETIS" );
+    if( err == ZOLTAN_OK ) err = LB->Set_Param( "PARMETIS_METHOD", partitionMethod_ );
 
-  if( err != LB_OK )
-  { cout << "Setup of Zoltan Load Balancing Objects FAILED!\n"; exit(0); }
+    //Setup Query Object
+    std::auto_ptr<Epetra_CrsGraph> TGraph = CrsGraph_Transpose()( original );
+    TransGraph = TGraph.release();
+    Query = new Epetra_ZoltanQuery( original, TransGraph );
+    if( err == ZOLTAN_OK ) err = LB->Set_QueryObject( Query );
+
+    if( err != ZOLTAN_OK )
+    { cout << "Setup of Zoltan Load Balancing Objects FAILED!\n"; exit(0); }
+  }
 
   //Generate Load Balance
   int changes;
   int num_gid_entries, num_lid_entries;
   int num_import;
-  LB_ID_PTR import_global_ids, import_local_ids;
+  ZOLTAN_ID_PTR import_global_ids, import_local_ids;
   int * import_procs;
   int num_export;
-  LB_ID_PTR export_global_ids, export_local_ids;
+  ZOLTAN_ID_PTR export_global_ids, export_local_ids;
   int * export_procs;
 
   original.Comm().Barrier();
-  err = LB.Balance( &changes,
-                    &num_gid_entries, &num_lid_entries,
-                    &num_import, &import_global_ids, &import_local_ids, &import_procs,
-                    &num_export, &export_global_ids, &export_local_ids, &export_procs );
+  err = LB->Balance( &changes,
+                     &num_gid_entries, &num_lid_entries,
+                     &num_import, &import_global_ids, &import_local_ids, &import_procs,
+                     &num_export, &export_global_ids, &export_local_ids, &export_procs );
   original.Comm().Barrier();
+
+  if( TransGraph ) delete TransGraph;
 
   //Generate New Element List
   int numMyElements = original.RowMap().NumMyElements();
@@ -75,9 +90,11 @@ std::auto_ptr<Epetra_CrsGraph> CrsGraph_Zoltan::operator()( const Epetra_CrsGrap
     newElementList[loc+i] = import_global_ids[i];
 
   //Free Zoltan Data
-  if( err == LB_OK )
-    err = LB.Free_Data( &import_global_ids, &import_local_ids, &import_procs,
-                        &export_global_ids, &export_local_ids, &export_procs );
+  if( err == ZOLTAN_OK )
+    err = LB->Free_Data( &import_global_ids, &import_local_ids, &import_procs,
+                         &export_global_ids, &export_local_ids, &export_procs );
+
+  if( !lb_ ) { delete LB; delete Query; }
 
   //Create Import Map
   Epetra_Map * ImportMap = new Epetra_Map( original.RowMap().NumGlobalElements(),
@@ -93,6 +110,16 @@ std::auto_ptr<Epetra_CrsGraph> CrsGraph_Zoltan::operator()( const Epetra_CrsGrap
   std::auto_ptr<Epetra_CrsGraph> NewGraph( new Epetra_CrsGraph( Copy, *ImportMap, 0 ) );
   NewGraph->Import( original, Importer, Insert );
   NewGraph->TransformToLocal();
+
+#ifdef ZOLTAN_ORDER
+  if( reorder_ )
+  {
+    Epetra_CrsGraph * oldGraph = NewGraph.release();
+    NewGraph = CrsGraph_ZoltanOrder()( *oldGraph );
+    delete oldGraph;
+    delete ImportMap;
+  }
+#endif
   
   return NewGraph;
 }

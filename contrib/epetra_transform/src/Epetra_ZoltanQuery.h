@@ -1,4 +1,7 @@
 
+#ifndef EPETRA_ZOLTANQUERY_H
+#define EPETRA_ZOLTANQUERY_H
+
 #include <vector>
 
 #include <Zoltan_QueryObject.h>
@@ -9,12 +12,18 @@ class Epetra_ZoltanQuery : public Zoltan_QueryObject
 {
 
   const Epetra_CrsGraph & graph_;
+  const Epetra_CrsGraph * tgraph_;
 
   std::vector< std::vector<int> > LBProc_;
+  std::vector< std::vector<int> > LBProc_Trans_;
+
+  const bool localEdgesOnly_;
 
  public:
 
-  Epetra_ZoltanQuery( const Epetra_CrsGraph & graph );
+  Epetra_ZoltanQuery( const Epetra_CrsGraph & graph,
+                      const Epetra_CrsGraph * tgraph = 0,
+                      bool localEdgesOnly = false );
 
   //General Functions
   int Number_Objects  ( void * data,
@@ -23,8 +32,8 @@ class Epetra_ZoltanQuery : public Zoltan_QueryObject
   void Object_List    ( void * data,
                         int num_gid_entries,
                         int num_lid_entries,
-                        LB_ID_PTR global_ids,
-                        LB_ID_PTR local_ids,
+                        ZOLTAN_ID_PTR global_ids,
+                        ZOLTAN_ID_PTR local_ids,
                         int weight_dim,
                         float * object_weights,
                         int * ierr );
@@ -32,8 +41,8 @@ class Epetra_ZoltanQuery : public Zoltan_QueryObject
   int First_Object    ( void * data,
                         int num_gid_entries,
                         int num_lid_entries,
-                        LB_ID_PTR first_global_id,
-                        LB_ID_PTR first_local_id,
+                        ZOLTAN_ID_PTR first_global_id,
+                        ZOLTAN_ID_PTR first_local_id,
                         int weight_dim,
                         float * first_weight,
                         int * ierr );
@@ -41,10 +50,10 @@ class Epetra_ZoltanQuery : public Zoltan_QueryObject
   int Next_Object     ( void * data,
                         int num_gid_entries,
                         int num_lid_entries,
-                        LB_ID_PTR global_id,
-                        LB_ID_PTR local_id,
-                        LB_ID_PTR next_global_id,
-                        LB_ID_PTR next_local_id,
+                        ZOLTAN_ID_PTR global_id,
+                        ZOLTAN_ID_PTR local_id,
+                        ZOLTAN_ID_PTR next_global_id,
+                        ZOLTAN_ID_PTR next_local_id,
                         int weight_dim,
                         float * next_weight,
                         int * ierr );
@@ -57,8 +66,8 @@ class Epetra_ZoltanQuery : public Zoltan_QueryObject
                                 int num_gid_entries,
                                 int num_lid_entries,
                                 int number_neighbor_procs,
-                                LB_ID_PTR global_ids,
-                                LB_ID_PTR local_ids,
+                                ZOLTAN_ID_PTR global_ids,
+                                ZOLTAN_ID_PTR local_ids,
                                 int weight_dim,
                                 float * object_weights,
                                 int * ierr );
@@ -67,8 +76,8 @@ class Epetra_ZoltanQuery : public Zoltan_QueryObject
                                 int num_gid_entries,
                                 int num_lid_entries,
                                 int number_neighbor_procs,
-                                LB_ID_PTR first_global_id,
-                                LB_ID_PTR first_local_id,
+                                ZOLTAN_ID_PTR first_global_id,
+                                ZOLTAN_ID_PTR first_local_id,
                                 int weight_dim,
                                 float * first_weight,
                                 int * ierr );
@@ -76,11 +85,11 @@ class Epetra_ZoltanQuery : public Zoltan_QueryObject
   int Next_Border_Object      ( void * data,
                                 int num_gid_entries,
                                 int num_lid_entries,
-                                LB_ID_PTR global_id,
-                                LB_ID_PTR local_id,
+                                ZOLTAN_ID_PTR global_id,
+                                ZOLTAN_ID_PTR local_id,
                                 int number_neighbor_procs,
-                                LB_ID_PTR next_global_id,
-                                LB_ID_PTR next_local_id,
+                                ZOLTAN_ID_PTR next_global_id,
+                                ZOLTAN_ID_PTR next_local_id,
                                 int weight_dim,
                                 float * next_weight,
                                 int * ierr );
@@ -92,8 +101,8 @@ class Epetra_ZoltanQuery : public Zoltan_QueryObject
   void Geometry_Values        ( void * data,
                                 int num_gid_entries,
                                 int num_lid_entries,
-                                LB_ID_PTR global_id,
-                                LB_ID_PTR local_id,
+                                ZOLTAN_ID_PTR global_id,
+                                ZOLTAN_ID_PTR local_id,
                                 double * geometry_vector,
                                 int * ierr );
   
@@ -101,16 +110,16 @@ class Epetra_ZoltanQuery : public Zoltan_QueryObject
   int Number_Edges    ( void * data,
                         int num_gid_entries,
                         int num_lid_entries,
-                        LB_ID_PTR global_id,
-                        LB_ID_PTR local_id,
+                        ZOLTAN_ID_PTR global_id,
+                        ZOLTAN_ID_PTR local_id,
                         int * ierr );
   
   void Edge_List      ( void * data,
                         int num_gid_entries,
                         int num_lid_entries,
-                        LB_ID_PTR global_id,
-                        LB_ID_PTR local_id,
-                        LB_ID_PTR neighbor_global_ids,
+                        ZOLTAN_ID_PTR global_id,
+                        ZOLTAN_ID_PTR local_id,
+                        ZOLTAN_ID_PTR neighbor_global_ids,
                         int * neighbor_procs,
                         int weight_dim,
                         float * edge_weights,
@@ -123,8 +132,8 @@ class Epetra_ZoltanQuery : public Zoltan_QueryObject
   void Coarse_Object_List     ( void * data,
                                 int num_gid_entries,
                                 int num_lid_entries,
-                                LB_ID_PTR global_ids,
-                                LB_ID_PTR local_ids,
+                                ZOLTAN_ID_PTR global_ids,
+                                ZOLTAN_ID_PTR local_ids,
                                 int * assigned,
                                 int * number_vertices,
                                 int * vertices,
@@ -136,8 +145,8 @@ class Epetra_ZoltanQuery : public Zoltan_QueryObject
   int First_Coarse_Object     ( void * data,
                                 int num_gid_entries,
                                 int num_lid_entries,
-                                LB_ID_PTR first_global_id,
-                                LB_ID_PTR first_local_id,
+                                ZOLTAN_ID_PTR first_global_id,
+                                ZOLTAN_ID_PTR first_local_id,
                                 int * assigned,
                                 int * number_vertices,
                                 int * vertices,
@@ -149,10 +158,10 @@ class Epetra_ZoltanQuery : public Zoltan_QueryObject
   int Next_Coarse_Object      ( void * data,
                                 int num_gid_entries,
                                 int num_lid_entries,
-                                LB_ID_PTR global_id,
-                                LB_ID_PTR local_id,
-                                LB_ID_PTR next_global_id,
-                                LB_ID_PTR next_local_id,
+                                ZOLTAN_ID_PTR global_id,
+                                ZOLTAN_ID_PTR local_id,
+                                ZOLTAN_ID_PTR next_global_id,
+                                ZOLTAN_ID_PTR next_local_id,
                                 int * assigned,
                                 int * number_vertices,
                                 int * vertices,
@@ -163,21 +172,21 @@ class Epetra_ZoltanQuery : public Zoltan_QueryObject
   int Number_Children ( void * data,
                         int num_gid_entries,
                         int num_lid_entries,
-                        LB_ID_PTR global_id,
-                        LB_ID_PTR local_id,
+                        ZOLTAN_ID_PTR global_id,
+                        ZOLTAN_ID_PTR local_id,
                         int * ierr );
 
   void Child_List     ( void * data,
                         int num_gid_entries,
                         int num_lid_entries,
-                        LB_ID_PTR parent_global_id,
-                        LB_ID_PTR parent_local_id,
-                        LB_ID_PTR child_global_id,
-                        LB_ID_PTR child_local_id,
+                        ZOLTAN_ID_PTR parent_global_id,
+                        ZOLTAN_ID_PTR parent_local_id,
+                        ZOLTAN_ID_PTR child_global_id,
+                        ZOLTAN_ID_PTR child_local_id,
                         int * assigned,
                         int * number_vertices,
                         int * vertices,
-                        LB_REF_TYPE * reference_type,
+                        ZOLTAN_REF_TYPE * reference_type,
                         int * in_vertex,
                         int * out_vertex,
                         int * ierr  );
@@ -185,12 +194,13 @@ class Epetra_ZoltanQuery : public Zoltan_QueryObject
   void Child_Weight   ( void * data,
                         int num_gid_entries,
                         int num_lid_entries,
-                        LB_ID_PTR global_id,
-                        LB_ID_PTR local_id,
+                        ZOLTAN_ID_PTR global_id,
+                        ZOLTAN_ID_PTR local_id,
                         int weight_dim,
                         float * object_weight,
                         int * ierr ); 
 
 };
 
+#endif //EPETRA_ZOLTANQUERY_H
 

@@ -3,10 +3,11 @@ TRILINOS_TARGET = $(TRILINOS_ARCH).$(TRILINOS_COMM)$(TRILINOS_ID)
 include $(TRILINOS_HOME)/build/makefile.$(TRILINOS_TARGET)
 
 DEFINES= -D$(TRILINOS_ARCH) $(EPETRA_ARCH_DEFINES) -D$(EPETRA_COMM) \
-         -DBTF_VERBOSE
+         -DBTF_VERBOSE -DZOLTAN_ORDER
 
 EPETRA_TRANSFORM_INCLUDES = -I$(TRILINOS_HOME)/contrib/epetra_transform/src
-INCLUDES = $(ARCH_INCLUDES) $(EPETRA_INCLUDES) $(EPETRA_TRANSFORM_INCLUDES)
+ZOLTAN_CPP_INCLUDES = -I$(TRILINOS_HOME)/external/Zoltan_C++
+INCLUDES = $(ARCH_INCLUDES) $(EPETRA_INCLUDES) $(ZOLTAN_CPP_INCLUDES) $(EPETRA_TRANSFORM_INCLUDES)
 
 CFLAGS=$(ARCH_CFLAGS) $(DEFINES) $(INCLUDES)
 FFLAGS=$(ARCH_FFLAGS) $(DEFINES) $(INCLUDES)
@@ -22,7 +23,13 @@ LIBEPETRA_TRANSFORM = $(TRILINOS_HOME)/lib/$(TRILINOS_TARGET)/libepetra_trans.a
 EPETRA_TRANSFORM_CC = EDT_MultiVector_View.cpp \
                       EDT_CrsGraph_View.cpp \
                       EDT_CrsMatrix_View.cpp \
-                      ET_CrsGraph_BTF.cpp
+                      ET_CrsGraph_BTF.cpp \
+                      EDT_CrsGraph_Overlap.cpp \
+                      EDT_CrsGraph_Transpose.cpp \
+                      EDT_CrsGraph_Zoltan.cpp \
+                      EDT_CrsGraph_ZoltanOrder.cpp \
+                      Epetra_ZoltanQuery.cpp \
+                      EDT_CrsGraph_MapColoring.cpp 
 
 EPETRA_TRANSFORM_F =  btf/concmp.f \
                       btf/genbtf.f \

@@ -1,4 +1,7 @@
 
+#ifndef EDT_CRSMATRIX_VIEW_H
+#define EDT_CRSMATRIX_VIEW_H
+
 #include <Epetra_DistTransform.h>
 
 class Epetra_CrsGraph;
@@ -27,3 +30,4 @@ class CrsMatrix_View : public SameTypeDistTransform<Epetra_CrsMatrix> {
 
 } //namespace Epetra_Transform
 
+#endif //EDT_CRSMATRIX_VIEW_H

@@ -15,8 +15,7 @@ std::auto_ptr<Epetra_CrsMatrix> CrsMatrix_View::operator()( const Epetra_CrsMatr
   //test graph, new graph must be left subset of old
 
   //intial construction of matrix 
-  std::auto_ptr<Epetra_CrsMatrix> newMatrix( new Epetra_CrsMatrix( View,
-                                                               NewGraph_ ) );
+  std::auto_ptr<Epetra_CrsMatrix> newMatrix( new Epetra_CrsMatrix( View, NewGraph_ ) );
 
   //insert views of row values
   int * myIndices;
@@ -28,6 +27,8 @@ std::auto_ptr<Epetra_CrsMatrix> CrsMatrix_View::operator()( const Epetra_CrsMatr
     original.ExtractMyRowView( i, indicesCnt, myValues, myIndices );
     newMatrix->InsertMyValues( i, indicesCnt, myValues, myIndices );
   }
+
+  newMatrix->TransformToLocal();
 
   return newMatrix;
 }

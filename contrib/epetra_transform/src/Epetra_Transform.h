@@ -1,4 +1,7 @@
 
+#ifndef EPETRA_TRANSFORM_H
+#define EPETRA_TRANSFORM_H
+
 #include <memory>
 
 namespace Epetra_Transform {
@@ -27,3 +30,4 @@ struct SameTypeTransform : public Transform<T,T> { virtual ~SameTypeTransform() 
 
 } //namespace Epetra_Transform
   
+#endif //EPETRA_TRANSFORM_H

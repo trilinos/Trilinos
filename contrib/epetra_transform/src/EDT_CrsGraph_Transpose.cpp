@@ -12,53 +12,82 @@ std::auto_ptr<Epetra_CrsGraph> CrsGraph_Transpose::operator()( const Epetra_CrsG
 {
   int err;
 
-  int nCols = original.NumMyCols();
   int nRows = original.NumMyRows();
+  int nCols = original.NumMyCols();
+
+  const Epetra_BlockMap & RowMap = original.RowMap();
 
   int numIndices;
   int * Indices;
 
-  vector<int> TransNumNZ( nCols, 0 );
-  for( int i = 0; i < nRows; ++i )
+  Epetra_CrsGraph * TransposeGraph = 0;
+
+  if( !ignoreNonLocalCols_ && original.DistributedGlobal() )
   {
-    original.ExtractMyRowView( i, numIndices, Indices );
-    for( int j = 0; j < numIndices; ++j )
-      ++TransNumNZ[ Indices[j] ];
-  }
-
-  int ** TransIndices = new int*[nCols];
-  for( int i = 0; i < nCols; ++i )
-    if( TransNumNZ[i] )
+    vector<int> TransNumNZ( nCols, 0 );
+    for( int i = 0; i < nRows; ++i )
     {
-      TransIndices[i] = new int[ TransNumNZ[i] ];
-      TransNumNZ[i] = 0;
+      original.ExtractMyRowView( i, numIndices, Indices );
+      for( int j = 0; j < numIndices; ++j ) ++TransNumNZ[ Indices[j] ];
     }
-    else
-      TransIndices[i] = 0;
 
-  for( int i = 0; i < nRows; ++i )
+    vector< vector<int> > TransIndices( nCols );
+    for( int i = 0; i < nCols; ++i )
+      if( TransNumNZ[i] )
+      {
+        TransIndices[i].resize( TransNumNZ[i] );
+        TransNumNZ[i] = 0;
+      }
+
+    for( int i = 0; i < nRows; ++i )
+    {
+      original.ExtractMyRowView( i, numIndices, Indices );
+      for( int j = 0; j < numIndices; ++j )
+        TransIndices[ Indices[j] ][ TransNumNZ[ Indices[j] ]++ ] = i;
+    }
+
+    Epetra_CrsGraph SharedTransGraph( View, original.ImportMap(), &TransNumNZ[0] );
+    for( int i = 0; i < nCols; ++i )
+      if( TransNumNZ[i] ) SharedTransGraph.InsertMyIndices( i, TransNumNZ[i], &TransIndices[i][0] );
+    SharedTransGraph.TransformToLocal();
+
+    TransposeGraph = new Epetra_CrsGraph( Copy, RowMap, 0 );
+    Epetra_Export Exporter( original.ImportMap(), RowMap ); 
+    TransposeGraph->Export( SharedTransGraph, Exporter, Add );
+    TransposeGraph->TransformToLocal();
+  }
+  else
   {
-    original.ExtractMyRowView( i, numIndices, Indices );
-    for( int j = 0; j < numIndices; ++j )
+    vector<int> TransNumNZ( nRows, 0 );
+    for( int i = 0; i < nRows; ++i )
     {
-      int TransRow = Indices[j];
-      int TransLoc = TransNumNZ[TransRow]++;
-      TransIndices[TransRow][TransLoc] = i;
+      original.ExtractMyRowView( i, numIndices, Indices );
+      for( int j = 0; j < numIndices; ++j )
+        if( Indices[j] < nRows ) ++TransNumNZ[ Indices[j] ];
     }
+
+    vector< vector<int> > TransIndices( nRows );
+    for( int i = 0; i < nRows; ++i )
+      if( TransNumNZ[i] )
+      {
+        TransIndices[i].resize( TransNumNZ[i] );
+        TransNumNZ[i] = 0;
+      }
+
+    for( int i = 0; i < nRows; ++i )
+    {
+      original.ExtractMyRowView( i, numIndices, Indices );
+      for( int j = 0; j < numIndices; ++j )
+        if( Indices[j] < nRows ) TransIndices[ Indices[j] ][ TransNumNZ[ Indices[j] ]++ ] = i;
+    }
+
+    TransposeGraph = new Epetra_CrsGraph( Copy, RowMap, &TransNumNZ[0] );
+
+    for( int i = 0; i < nRows; ++i )
+      if( TransNumNZ[i] ) TransposeGraph->InsertMyIndices( i, TransNumNZ[i], &TransIndices[i][0] );
+
+    TransposeGraph->TransformToLocal();
   }
-
-  Epetra_CrsGraph SharedTransGraph( View, original.ImportMap(), 0 );
-  for( int i = 0; i < nCols; ++i )
-    SharedTransGraph.InsertMyIndices( i, TransNumNZ[i], TransIndices[i] );
-  SharedTransGraph.TransformToLocal();
-
-  Epetra_CrsGraph * TransposeGraph = new Epetra_CrsGraph( Copy, original.RowMap(), 0 );
-  Epetra_Export Exporter( original.ImportMap(), original.RowMap() ); 
-  TransposeGraph->Export( SharedTransGraph, Exporter, Add );
-  TransposeGraph->TransformToLocal();
-
-  for( int i = 0; i < nCols; ++i ) if( TransIndices[i] ) delete [] TransIndices[i];
-  if( TransIndices ) delete [] TransIndices;
 
   return std::auto_ptr<Epetra_CrsGraph>( TransposeGraph );
 }
