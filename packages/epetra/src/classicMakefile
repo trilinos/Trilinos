@@ -4,7 +4,7 @@ include $(TRILINOS_HOME)/build/makefile.$(TRILINOS_TARGET)
 
 # Epetra communication defines
 EPETRA_MPICOMM_CLASS = Epetra_MpiComm.cpp Epetra_MpiCommData.cpp \
-			Epetra_MpiDistributor.cpp Epetra_MpiCommData.cpp
+			Epetra_MpiDistributor.cpp
 EPETRA_SERIALCOMM_CLASS = 
 EPETRA_EXTRACOMM_CLASS = $(EPETRA_$(TRILINOS_COMM)COMM_CLASS)
 
@@ -57,7 +57,6 @@ EPETRA_CC = Epetra_SerialComm.cpp \
             Epetra_RowMatrixTransposer.cpp \
 	    Epetra_Data.cpp \
 	    Epetra_SerialCommData.cpp \
-	    Epetra_MpiCommData.cpp \
             $(EPETRA_EXTRACOMM_CLASS)
 #           Epetra_C_wrappers.cpp \
 #           Epetra_Fortran_wrappers.cpp \
