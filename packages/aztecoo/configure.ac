@@ -193,9 +193,6 @@ AC_CXX_STD_SPRINTF
 # Checks for special package flags
 # ------------------------------------------------------------------------
 
-TAC_ARG_ENABLE_FEATURE(oldifpack, [Enable old ifpack interface support], OLDIFPACK, no)
-AM_CONDITIONAL(BUILD_OLDIFPACK, test "X$ac_cv_use_oldifpack" != "Xno")
-
 # The following section is required to decide if the AZ_lu preconditioner
 # should be built.  If not, y12m is not necessary.
 AC_ARG_ENABLE(aztecoo-azlu,

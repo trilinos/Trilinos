@@ -64,14 +64,6 @@
 #include "AztecOO_config.h"
 /*This file doesn't exist in old make and configure system*/
 
-#ifdef HAVE_OLDIFPACK
-
-#ifndef IFPACK
-#define IFPACK
-#endif
-
-#endif
-
 #ifdef HAVE_MPI
 
 #ifndef AZTEC_MPI

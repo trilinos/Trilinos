@@ -16,11 +16,7 @@ if BUILD_Y12M
 REFERENCE_Y12M_LIBS=$(top_builddir)/../../external/y12m/liby12m.a
 endif
 
-if BUILD_OLDIFPACK
-OLDIFPACK_LIBS=$(top_builddir)/../ifpack/src/libifpack.a
-endif 
-
-epetra_crsmatrix_LDADD = $(top_builddir)/src/libaztecoo.a $(OLDIFPACK_LIBS) \
+epetra_crsmatrix_LDADD = $(top_builddir)/src/libaztecoo.a \
 	$(top_builddir)/../epetra/src/libepetra.a $(REFERENCE_Y12M_LIBS) \
 	$(LAPACK_LIBS) $(BLAS_LIBS) $(LIBS) $(FLIBS)
 

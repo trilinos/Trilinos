@@ -53,7 +53,8 @@
 /* Define if you have LAPACK library. */
 #undef HAVE_LAPACK
 
-/* Define to 1 if your system has a working `malloc' function. */
+/* Define to 1 if your system has a GNU libc compatible `malloc' function, and
+   to 0 otherwise. */
 #undef HAVE_MALLOC
 
 /* Define to 1 if you have the <malloc.h> header file. */
@@ -76,9 +77,6 @@
 
 /* define if the compiler accepts the new for scoping rules */
 #undef HAVE_NEW_FOR_SCOPING
-
-/* Define if want to build oldifpack */
-#undef HAVE_OLDIFPACK
 
 /* Define to 1 if you have the `pow' function. */
 #undef HAVE_POW
@@ -164,3 +162,6 @@
 /* Define as `__inline' if that's what the C compiler calls it, or to nothing
    if it is not supported. */
 #undef inline
+
+/* Define to rpl_malloc if the replacement function should be used. */
+#undef malloc
