@@ -2,7 +2,7 @@
 <html>
 <head>
    <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
-   <meta name="GENERATOR" content="Mozilla/4.7 [en] (X11; U; SunOS 5.7 sun4u) [Netscape]">
+   <meta name="GENERATOR" content="Mozilla/4.7 [en] (X11; U; SunOS 5.6 sun4m) [Netscape]">
    <meta name="sandia.approved" content="SAND99-1377">
    <meta name="author" content="karen devine, kddevin@sandia.gov">
    <title>Zoltan User's Guide:  Library Usage</title>
@@ -22,19 +22,44 @@
 </head>
 <body bgcolor="#FFFFFF">
 
-<div ALIGN=right><b><i><a href="ug.html">Zoltan User's Guide</a>&nbsp; |&nbsp; <a href="ug_interface.html">Next</a>&nbsp; |&nbsp; <a href="ug_intro.html">Previous</a></i></b></div>
-
+<div align=right><b><i><a href="ug.html">Zoltan User's Guide</a>&nbsp;
+|&nbsp; <a href="ug_interface.html">Next</a>&nbsp; |&nbsp; <a href="ug_intro.html">Previous</a></i></b></div>
 
 <h2>
 <a NAME="Using the Library"></a>Using the Zoltan library</h2>
 This section contains information needed to use the Zoltan library with
 applications:
-<blockquote><a href="#Application Data Types">Application data type</a>s
-for global and local IDs
+<blockquote><a href="#System Requirements">System requirements.</a>
+<br><a href="#Application Data Types">Application data type</a>s for global
+and local IDs.
 <br>Instructions for <a href="#Building the Library">building the Zoltan
-library</a>
+library.</a>
 <br>Instructions for <a href="#Building Applications">building applications</a>
 that use Zoltan.</blockquote>
+
+<h3>
+<a NAME="System Requirements"></a>System Requirements</h3>
+Zoltan was designed to run on parallel computers and clusters of workstations.
+In order to build and use Zoltan, you will need:
+<ul>
+<li>
+ANSI C compiler.</li>
+
+<li>
+Unix-like operating system, for example Linux or Solaris.</li>
+
+<li>
+<a href="http://www-unix.mcs.anl.gov/mpi/">MPI </a>library for message
+passing (version 1.1 or higher), for example MPICH or LAM.</li>
+
+<li>
+<i>gmake</i> is recommended to build the library. Other versions of <i>make</i>
+may also work.</li>
+
+<li>
+A Fortran90 compatible compiler is required if you wish to call Zoltan
+from Fortran applications.</li>
+</ul>
 
 <h3>
 <a NAME="Application Data Types"></a>Application Data Types</h3>
