@@ -2373,7 +2373,7 @@ int ML_Epetra::MultiLevelPreconditioner::BreakForDebugger()
     if (Comm().MyPID()  == 0) cout << "Host and Process Ids for tasks" << endl;
     for (i = 0; i <Comm().NumProc() ; i++) {
       if (i == Comm().MyPID() ) {
-#ifdef COUGAR
+#if defined(TFLOP) || defined(JANUS_STLPORT) || defined(COUGAR)
 	sprintf(buf, "Host: %s   PID: %d", "janus", getpid());
 #else
 	gethostname(hostname, sizeof(hostname));

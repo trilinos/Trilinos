@@ -18,9 +18,13 @@ void Ifpack_BreakForDebugger(Epetra_Comm& Comm)
   if (Comm.MyPID()  == 0) cout << "Host and Process Ids for tasks" << endl;
   for (int i = 0; i <Comm.NumProc() ; i++) {
     if (i == Comm.MyPID() ) {
+#if defined(TFLOP) || defined(JANUS_STLPORT)
+      sprintf(buf, "Host: %s   PID: %d", "janus", getpid());
+#else
       gethostname(hostname, sizeof(hostname));
       sprintf(buf, "Host: %s\tComm.MyPID(): %d\tPID: %d",
               hostname, Comm.MyPID(), getpid());
+#endif
       printf("%s\n",buf);
       fflush(stdout);
       sleep(1);
