@@ -125,3 +125,4 @@ void XferOp::transferField(Epetra_Vector& vecTo, Epetra_Vector& vecFrom)
       vecTo[i] += (*iterW).second * vecFrom[(*iterN).second];
   }
 }
+
