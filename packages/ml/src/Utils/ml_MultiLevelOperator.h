@@ -156,7 +156,8 @@ class MultiLevelOperator: public virtual Epetra_Operator {
 
   int ApplyInverse_WKC(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
 ;
-  int ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y, int iBlockSize = WKC) const;
+//  int ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y, int iBlockSize = WKC) const;
+  int ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const;
 #else
   int ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const;
 #endif

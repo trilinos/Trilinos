@@ -107,8 +107,10 @@ int MultiLevelOperator::ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVe
 }
 
 #else
+//int MultiLevelOperator::ApplyInverse(const Epetra_MultiVector& X,
+//                Epetra_MultiVector& Y , int iBlockSize) const {
 int MultiLevelOperator::ApplyInverse(const Epetra_MultiVector& X,
-                Epetra_MultiVector& Y , int iBlockSize) const {
+                Epetra_MultiVector& Y ) const {
 
 
   if (!X.Map().SameAs(OperatorDomainMap())) 
@@ -129,6 +131,7 @@ int MultiLevelOperator::ApplyInverse(const Epetra_MultiVector& X,
   // ML_iterate doesn't handle multivectors, so extract and iterate one at
   // a time on them.
 
+   int iBlockSize = WKC;
    for ( int i = 0 ; i != (X.NumVectors()/iBlockSize) ; i++ )
       {
       int  iOffset = i * iBlockSize;
