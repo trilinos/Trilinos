@@ -1,3 +1,4 @@
+/*
 // @HEADER
 // ***********************************************************************
 // 
@@ -25,16 +26,15 @@
 // 
 // ***********************************************************************
 // @HEADER
+*/
 
-// Kris
-// 07.08.03 -- Move into Teuchos package/namespace
+/*
+  Kris
+  07.08.03 -- Move into Teuchos package/namespace
+*/
 
 #ifndef _TEUCHOS_CONFIGDEFS_HPP_
 #define _TEUCHOS_CONFIGDEFS_HPP_
-
-#ifndef __cplusplus
-#define __cplusplus
-#endif
 
 #ifdef HAVE_CONFIG_H
 
@@ -42,7 +42,8 @@
  * The macros PACKAGE, PACKAGE_NAME, etc, get defined for each package and need to
  * be undef'd here to avoid warnings when this file is included from another package.
  * KL 11/25/02
- */   
+ */
+
 #ifdef PACKAGE
 #undef PACKAGE
 #endif
@@ -72,6 +73,8 @@
 #endif
 
 #include "Teuchos_config.h"
+
+#ifdef __cplusplus
 
 /******************************************************************************
  *   Choose header file flavor: either ANSI-style (no .h, e.g. <iostream>) or
@@ -246,11 +249,23 @@ using std::complex;
 #include <iomanip.h>  
 #endif
 
-#else /* fallback for the amazingly unlikely event we have no HAVE_CONFIG_H! */
+#else /* __cplusplus not defined */
 
-#ifndef __cplusplus
-#define __cplusplus
+#include <assert.h>   
+#include <limits.h>
+#ifdef HAVE_MALLOC_H
+#include <malloc.h>
 #endif
+#include <math.h>
+#include <stdarg.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <time.h>
+
+#endif /* __cplusplus */
+
+#else /* fallback for the amazingly unlikely event we have no HAVE_CONFIG_H! */
 
 #include <iostream>
 #include <fstream>
@@ -296,8 +311,6 @@ using namespace std;
 
 #endif /* end HAVE_CONFIG_H */
 
-
-
 /* Define bool in case we are running on an ancient, quirky, or merely
  * stupid compiler having no built-in bool.  WARNING: THIS IS EXTREMELY
  * DANGEROUS, BECAUSE OTHER CODES TO WHICH WE LINK MAY HACK THEIR BOOL
@@ -324,20 +337,16 @@ using namespace std;
 
 #endif
 
-/* 
- *
- */
-#define TEUCHOS_MAX(x,y) (( (x) > (y) ) ? x : y)     /* max function  */
-#define TEUCHOS_MIN(x,y) (( (x) < (y) ) ? x : y)     /* min function  */
-#define TEUCHOS_SGN(x) (((x) < 0.0) ? -1.0 : 1.0)  /* sign function */
-
+#ifdef __cplusplus
 
 const double Teuchos_MinDouble = 1.0E-100;
 const double Teuchos_MaxDouble = 1.0E+100;
 const double Teuchos_Overflow = 1.79E308; // Used to test if equilibration should be done.
 const double Teuchos_Underflow = 2.23E-308;
 
-// Delete any previous definition of TEUCHOS_NO_ERROR_REPORTS
+#endif /* __cplusplus */
+
+/* Delete any previous definition of TEUCHOS_NO_ERROR_REPORTS */
 
 #ifdef TEUCHOS_CHK_ERR
 #undef TEUCHOS_CHK_ERR
@@ -349,11 +358,18 @@ const double Teuchos_Underflow = 2.23E-308;
 #undef TEUCHOS_CHK_REF
 #endif
 
-// Make error report silent by defining TEUCHOS_NO_ERROR_REPORTS
+/* Make error report silent by defining TEUCHOS_NO_ERROR_REPORTS */
 
 #define TEUCHOS_CHK_ERR(a) { if (a != 0)  return(a);}
 #define TEUCHOS_CHK_PTR(a) { return(a);}
 #define TEUCHOS_CHK_REF(a) { return(a);}
-const int Teuchos_DefaultTracebackMode = 1; // Default value for traceback behavior
+#ifdef __cplusplus
+const int Teuchos_DefaultTracebackMode = 1; /* Default value for traceback behavior */
+#endif
 
-#endif // _TEUCHOS_CONFIGDEFS_HPP_
+/* Define some macros */
+#define TEUCHOS_MAX(x,y) (( (x) > (y) ) ? (x)  : (y) )     /* max function  */
+#define TEUCHOS_MIN(x,y) (( (x) < (y) ) ? (x)  : (y) )     /* min function  */
+#define TEUCHOS_SGN(x)   (( (x) < 0.0 ) ? -1.0 : 1.0 )     /* sign function */
+
+#endif /* _TEUCHOS_CONFIGDEFS_HPP_ */
