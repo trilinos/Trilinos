@@ -175,11 +175,31 @@ StatusType NormWRMS::checkStatus(const Solver::Generic& problem)
 
   // **** Begin check for convergence criteria #3 ****
   
-  achievedTol = problem.getParameterList().sublist("Direction").sublist("Newton").sublist("Linear Solver").
-    sublist("Output").getParameter("Achieved Tolerance", -1.0);
+  // First time through, make sure the output parameter list exists.
+  // Since the list is const, a sublist call to a non-existent sublist 
+  // throws an error.  Therefore we have to check the existence of each 
+  // sublist before we call it.
+  const NOX::Parameter::List& p = problem.getParameterList();
+  if (niters == 1) {
+    if (p.isParameterSublist("Direction")) {
+      if (p.sublist("Direction").isParameterSublist("Newton")) {
+	if (p.sublist("Direction").sublist("Newton").isParameterSublist("Linear Solver")) {
+	  if (p.sublist("Direction").sublist("Newton").sublist("Linear Solver").isParameterSublist("Output")) {
+	    if (p.sublist("Direction").sublist("Newton").sublist("Linear Solver").sublist("Output").isParameterDouble("Achieved Tolerance")) {
+	      printCriteria3Info = true;
+	    }
+	  }
+	}
+      }
+    }
+  }
   
-  printCriteria3Info = (achievedTol != -1.0);
-  StatusType status3 = (achievedTol <= beta) || (achievedTol == -1.0) ? Converged : Unconverged;
+  StatusType status3 = Converged;
+  if (printCriteria3Info) {
+    achievedTol = problem.getParameterList().sublist("Direction").sublist("Newton").sublist("Linear Solver").
+      sublist("Output").getParameter("Achieved Tolerance", -1.0);
+    status3 = (achievedTol <= beta) ? Converged : Unconverged;
+  }
 
 
   // Determine status of test
