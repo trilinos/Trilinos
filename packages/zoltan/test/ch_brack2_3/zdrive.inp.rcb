@@ -1,0 +1,6 @@
+Decomposition Method 	= rcb
+Zoltan Parameters	= obj_weight_dim=3
+Zoltan Parameters	= tflops_special=0
+File Type		= Chaco
+File Name		= brack2_3
+Parallel Disk Info	= number=0
