@@ -211,7 +211,7 @@ class Polynomial : public Common {
 public:
 
   //! Constructor
-  Polynomial(NOX::Parameter::List& params);
+  Polynomial(const NOX::Utils& u, NOX::Parameter::List& params);
 
   //! Destructor
   ~Polynomial();

@@ -36,6 +36,9 @@
 #include "NOX_LineSearch_Generic.H" // base class
 #include "NOX_Common.H"		    // class data element (string)
 
+namespace NOX {
+class Utils;
+}
 
 namespace NOX {
 namespace LineSearch {
@@ -61,7 +64,7 @@ class Manager : public Generic {
 public:
 
   //! Constructor
-  Manager(NOX::Parameter::List& params);
+  Manager(const NOX::Utils& u, NOX::Parameter::List& params);
 
   //! Destructor
   ~Manager();
@@ -75,6 +78,9 @@ public:
 	       const NOX::Solver::Generic& s) ;
 
 private:
+  //! Printing utilities
+  const NOX::Utils& utils;
+
   //! Method name
   string method;
 

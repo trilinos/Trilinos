@@ -39,7 +39,8 @@
 #include "NOX_Parameter_List.H"
 #include "NOX_Utils.H"
 
-NOX::LineSearch::Polynomial::Polynomial(Parameter::List& params) :
+NOX::LineSearch::Polynomial::Polynomial(const NOX::Utils& u, Parameter::List& params) :
+  Common(u),
   paramsPtr(NULL)
 {
   reset(params);
@@ -96,7 +97,8 @@ bool NOX::LineSearch::Polynomial::compute(Abstract::Group& newGrp, double& step,
 			 const Solver::Generic& s) 
 {
 
-  if (Utils::doPrint(Utils::InnerIteration)) {
+  if (utils.isPrintProcessAndType(Utils::InnerIteration)) 
+  {
    cout << "\n" << Utils::fill(72) << "\n" << "-- Polynomial Line Search -- \n";
   }
 
@@ -116,7 +118,8 @@ bool NOX::LineSearch::Polynomial::compute(Abstract::Group& newGrp, double& step,
   // Get the linear solve tolerance if doing ared/pred for conv criteria
   double eta_original = 0.0;
   double eta = 0.0;
-  if (convCriteria == AredPred) {
+  if (convCriteria == AredPred) 
+  {
     const NOX::Parameter::List& p = s.getParameterList();
     eta_original = p.sublist("Direction").sublist("Newton").sublist("Linear Solver").getParameter("Tolerance", -1.0);
     eta = eta_original;
@@ -153,7 +156,8 @@ bool NOX::LineSearch::Polynomial::compute(Abstract::Group& newGrp, double& step,
     totalNumIterations += 1;
     nIters ++;
     
-    if ((isFirstPass) || (interpolationType == Quadratic)) {
+    if ((isFirstPass) || (interpolationType == Quadratic)) 
+    {
       
       /* Quadratic Interpolation */
       
@@ -161,7 +165,8 @@ bool NOX::LineSearch::Polynomial::compute(Abstract::Group& newGrp, double& step,
       isFirstPass = false;
     }
 
-    else {
+    else 
+    {
     
       /*   Cubic Interpolation */
       
@@ -177,16 +182,18 @@ bool NOX::LineSearch::Polynomial::compute(Abstract::Group& newGrp, double& step,
       
       double disc = b * b - 3.0 * a * slope ;
       
-      if (disc < 0) {
+      if (disc < 0) 
+      {
 	isFailed = true;
 	break;
       }
       
-      if (fabs(a) < 1.e-12) {
-	cout << "Quadratic" << endl;
+      if (fabs(a) < 1.e-12) 
+      {
 	tempStep = -slope / (2.0 * b);
       }
-      else {
+      else 
+      {
 	tempStep = (-b + sqrt(disc))/ (3.0 * a);
       }
       
@@ -206,7 +213,8 @@ bool NOX::LineSearch::Polynomial::compute(Abstract::Group& newGrp, double& step,
       step = tempStep;
 
 
-    if (step < minStep) {
+    if (step < minStep) 
+    {
       isFailed = true;
       break;
     }
@@ -245,15 +253,18 @@ bool NOX::LineSearch::Polynomial::compute(Abstract::Group& newGrp, double& step,
 bool NOX::LineSearch::Polynomial::isSufficientDecrease(double newf, double oldf, double step, double slope, double eta) const
 {
   double rhs = 0.0;
-  if (convCriteria == ArmijoGoldstein) {
+  if (convCriteria == ArmijoGoldstein) 
+  {
     rhs = oldf + alpha * step * slope;
   }
-  else if (convCriteria == AredPred) {
+  else if (convCriteria == AredPred) 
+  {
     rhs = oldf * (1.0 - alpha * (1.0 - eta));
   }
   else if (convCriteria == None)
     return true;
-  else {
+  else 
+  {
     cerr << "NOX::LineSearch::Polynomial::isSufficientDecrease - Invalid convergence criteria" << endl;
     throw "NOX Error";
   }

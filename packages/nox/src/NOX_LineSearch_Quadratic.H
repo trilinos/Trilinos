@@ -117,7 +117,7 @@ class Quadratic : public Common {
 public:
 
   //! Constructor
-  Quadratic(NOX::Parameter::List& params);
+  Quadratic(const NOX::Utils& u, NOX::Parameter::List& params);
 
   //! Destructor
   ~Quadratic();

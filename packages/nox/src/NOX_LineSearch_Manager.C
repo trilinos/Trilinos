@@ -48,7 +48,8 @@
 using namespace NOX;
 using namespace NOX::LineSearch;
 
-Manager::Manager(Parameter::List& params) :
+Manager::Manager(const NOX::Utils& u, NOX::Parameter::List& params) :
+  utils(u),
   method(""),
   ptr(NULL)
 {
@@ -72,19 +73,18 @@ bool Manager::reset(Parameter::List& params)
     
     if (method == "Full Step")
       ptr = new FullStep(params);
-    else if ((method == "Interval Halving") // deprecated
-	     || (method == "Backtrack"))
-      ptr = new Backtrack(params);
+    else if (method == "Backtrack")
+      ptr = new Backtrack(utils, params);
     else if (method == "Polynomial")
-      ptr = new Polynomial(params);
+      ptr = new Polynomial(utils, params);
+    else if (method == "More'-Thuente")
+      ptr = new MoreThuente(utils, params);
+    else if (method == "Secant")
+      ptr = new Secant(utils, params);
 #ifdef WITH_PRERELEASE
     else if (method == "Quadratic")
-      ptr = new Quadratic(params);
+      ptr = new Quadratic(utils, params);
 #endif
-    else if (method == "More'-Thuente")
-      ptr = new MoreThuente(params);
-    else if (method == "Secant")
-      ptr = new Secant(params);
     else {
       ptr = NULL;
       cout << "ERROR: NOX::LineSearch::Manager - invalid choice \"" 

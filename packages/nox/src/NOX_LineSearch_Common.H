@@ -36,6 +36,11 @@
 #include "NOX_LineSearch_Generic.H"
 #include "NOX_Common.H"
 
+// Forward declaration
+namespace NOX {
+class Utils;
+}
+
 namespace NOX {
 
 namespace LineSearch {
@@ -50,7 +55,7 @@ class Common : public Generic {
 public:
 
   //! Default constructor
-  Common();
+  Common(const NOX::Utils& u);
 
   //! Destructor
   virtual ~Common();
@@ -73,12 +78,17 @@ protected:
     Here \f$d\f$ represents the input parameter \c dir and \f$\nabla
     f(x)\f$ is the gradient associated with the given group.
   */
-  double computeSlope(const Abstract::Vector& dir, const Abstract::Group& grp);
+  double computeSlope(const NOX::Abstract::Vector& dir, const NOX::Abstract::Group& grp);
+
+protected:
+
+  //! Printing utilities
+  const NOX::Utils& utils;
 
 private:
 
   //! A vector that *may* be used in computeSlope()
-  Abstract::Vector* vecPtr;
+  NOX::Abstract::Vector* vecPtr;
 
 };
 } // namespace LineSearch

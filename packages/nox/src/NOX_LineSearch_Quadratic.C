@@ -43,7 +43,8 @@
 using namespace NOX;
 using namespace NOX::LineSearch;
 
-Quadratic::Quadratic(Parameter::List& params) :
+Quadratic::Quadratic(const NOX::Utils& u, Parameter::List& params) :
+  Common(u),
   paramsPtr(NULL)
 {
   reset(params);
@@ -254,7 +255,8 @@ bool Quadratic::compute(Abstract::Group& newgrp, double& step,
   return (!isfailed);
 }
 
-bool Quadratic::setOutputParameters() {
+bool Quadratic::setOutputParameters() 
+{
   NOX::Parameter::List& outputList = paramsPtr->sublist("Output");
   outputList.setParameter("Total Number of Line Search Calls", totalNumLineSearchCalls);
   outputList.setParameter("Total Number of Non-trivial Line Searches", totalNumNonTrivialLineSearches);

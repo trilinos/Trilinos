@@ -42,7 +42,8 @@
 using namespace NOX;
 using namespace NOX::LineSearch;
 
-Secant::Secant(Parameter::List& params) 
+Secant::Secant(const NOX::Utils& u, Parameter::List& params) :
+  utils(u)
 {
   reset(params);
 }
@@ -80,12 +81,12 @@ bool Secant::compute(Abstract::Group& newgrp,
 
   int niters = 0;
 
-  if (Utils::doPrint(Utils::InnerIteration)) {
+  if (utils.isPrintProcessAndType(Utils::InnerIteration)) {
     cout << "\n" << Utils::fill(72) << "\n" << "-- Secant Line Search -- \n";
     cout << setw(3) << niters << ":";
-    cout << " step = " << Utils::sci(step);
-    cout << " oldf = " << Utils::sci(sqrt(2. * oldf));
-    cout << " newf = " << Utils::sci(sqrt(2. * newf));
+    cout << " step = " << utils.sciformat(step);
+    cout << " oldf = " << utils.sciformat(sqrt(2. * oldf));
+    cout << " newf = " << utils.sciformat(sqrt(2. * newf));
     //cout << endl;
   }
 
@@ -102,12 +103,12 @@ bool Secant::compute(Abstract::Group& newgrp,
     newgrp.computeF();
     newf = 0.5 * newgrp.getNormF() * newgrp.getNormF();  
 
-    if (Utils::doPrint(Utils::InnerIteration)) {
+    if (utils.isPrintProcessAndType(Utils::InnerIteration)) {
       cout << endl;
       cout << setw(3) << niters << ":";
-      cout << " step = " << Utils::sci(step);
-      cout << " oldf = " << Utils::sci(sqrt(2. * oldf));
-      cout << " newf = " << Utils::sci(sqrt(2. * newf));
+      cout << " step = " << utils.sciformat(step);
+      cout << " oldf = " << utils.sciformat(sqrt(2. * oldf));
+      cout << " newf = " << utils.sciformat(sqrt(2. * newf));
       //cout << endl;
     }
 
@@ -128,18 +129,18 @@ bool Secant::compute(Abstract::Group& newgrp,
     newgrp.computeF(); 
     newf = 0.5 * newgrp.getNormF() * newgrp.getNormF();  
     niters++;
-    if (Utils::doPrint(Utils::InnerIteration)) {
+    if (utils.isPrintProcessAndType(Utils::InnerIteration)) {
       cout << endl;
       cout << setw(3) << niters << ":";
-      cout << " step = " << Utils::sci(step);
-      cout << " oldf = " << Utils::sci(sqrt(2. * oldf));
-      cout << " newf = " << Utils::sci(sqrt(2. * newf));
+      cout << " step = " << utils.sciformat(step);
+      cout << " oldf = " << utils.sciformat(sqrt(2. * oldf));
+      cout << " newf = " << utils.sciformat(sqrt(2. * newf));
       cout << " (USING RECOVERY STEP!)" << endl;
       cout << endl;
     }
   }
   else 
-    if (Utils::doPrint(Utils::InnerIteration)) 
+    if (utils.isPrintProcessAndType(Utils::InnerIteration)) 
       cout << " (STEP ACCEPTED!)" << endl;
 
   return true;

@@ -39,7 +39,8 @@
 #include "NOX_Parameter_List.H"
 #include "NOX_Utils.H"
 
-NOX::LineSearch::Backtrack::Backtrack(NOX::Parameter::List& params) 
+NOX::LineSearch::Backtrack::Backtrack(const NOX::Utils& u, NOX::Parameter::List& params) :
+  utils(u)
 {
   reset(params);
 }
@@ -64,7 +65,8 @@ bool NOX::LineSearch::Backtrack::reset(NOX::Parameter::List& params)
     normType = NOX::Abstract::Vector::MaxNorm;
   else if (tmp == "Two Norm")
     normType = NOX::Abstract::Vector::TwoNorm;
-  else {
+  else 
+  {
     cout << "NOX::LineSearch::Backtrack::reset - Invalid choice \"" << tmp 
 	 << "\" for \"Decrease Condition\"" << endl;
     throw "NOX Error";
@@ -103,23 +105,28 @@ bool NOX::LineSearch::Backtrack::compute(NOX::Abstract::Group& grp, double& step
   newF = getNormF(grp);
   int nIters = 1;
 
-  if (Utils::doPrint(Utils::InnerIteration)) {
+  if (utils.isPrintProcessAndType(Utils::InnerIteration)) 
+  {
    cout << "\n" << Utils::fill(72) << "\n" << "-- Backtrack Line Search -- \n";
   }
-  while ((newF >= oldF) && (!isFailed)) {
 
-    if (Utils::doPrint(Utils::InnerIteration)) {
+  while ((newF >= oldF) && (!isFailed)) 
+  {
+
+    if (utils.isPrintProcessAndType(Utils::InnerIteration)) 
+    {
       cout << setw(3) << nIters << ":";
-      cout << " step = " << Utils::sci(step);
-      cout << " oldF = " << Utils::sci(oldF);
-      cout << " newF = " << Utils::sci(newF);
+      cout << " step = " << utils.sciformat(step);
+      cout << " oldF = " << utils.sciformat(oldF);
+      cout << " newF = " << utils.sciformat(newF);
       cout << endl;
     }
 
     nIters ++;
     step = step * 0.5;
 
-    if ((step < minStep) || (nIters > maxIters)) {
+    if ((step < minStep) || (nIters > maxIters)) 
+    {
       isFailed = true;
       step = recoveryStep;
     }
@@ -136,11 +143,12 @@ bool NOX::LineSearch::Backtrack::compute(NOX::Abstract::Group& grp, double& step
     newF = getNormF(grp);
   } 
 
-  if (Utils::doPrint(Utils::InnerIteration)) {
+  if (utils.isPrintProcessAndType(Utils::InnerIteration)) 
+  {
     cout << setw(3) << nIters << ":";
-    cout << " step = " << Utils::sci(step);
-    cout << " oldF = " << Utils::sci(oldF);
-    cout << " newF = " << Utils::sci(newF);
+    cout << " step = " << utils.sciformat(step);
+    cout << " oldF = " << utils.sciformat(oldF);
+    cout << " newF = " << utils.sciformat(newF);
     if (isFailed)
       cout << " (USING RECOVERY STEP!)" << endl;
     else

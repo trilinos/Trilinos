@@ -36,6 +36,11 @@
 #include "NOX_LineSearch_Generic.H" // base class
 #include "NOX_Abstract_Vector.H" // for NOX::Abstract::Vector::NormType
 
+// Forward declarations
+namespace NOX {
+class Utils;
+}
+
 namespace NOX {
 namespace LineSearch {
 
@@ -73,7 +78,7 @@ class Backtrack : public Generic {
 public:
 
   //! Constructor
-  Backtrack(NOX::Parameter::List& params);
+  Backtrack(const NOX::Utils& u, NOX::Parameter::List& params);
 
   //! Destructor
   ~Backtrack();
@@ -94,6 +99,9 @@ private:
   double getNormF(const NOX::Abstract::Group& grp) const;
 
 private:
+  
+  //! Printing Utilities
+  const NOX::Utils& utils;
 
    //! Minimum step length (i.e., when we give up)
   double minStep;

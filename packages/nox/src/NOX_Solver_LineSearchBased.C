@@ -64,7 +64,7 @@ NOX::Solver::LineSearchBased::LineSearchBased(NOX::Abstract::Group& xGrp,
   testPtr(&t),			// pointer to t
   params(p),			// copy p
   utils(params.sublist("Printing")), // intialize the utils
-  lineSearch(params.sublist("Line Search")), // initialize the line search
+  lineSearch(utils, params.sublist("Line Search")), // initialize the line search
   direction(params.sublist("Direction")) // initialize the direction
 {
   init();

@@ -38,7 +38,8 @@
 using namespace NOX;
 using namespace NOX::LineSearch;
 
-Common::Common() :
+Common::Common(const NOX::Utils& u) :
+  utils(u),
   vecPtr(NULL)
 {
 }
@@ -50,12 +51,14 @@ Common::~Common()
 
 void Common::printStep(int n, double step, double oldf, double newf, const string s) const
 {
-  if (Utils::doPrint(Utils::InnerIteration)) {
+  if (utils.isPrintProcessAndType(Utils::InnerIteration)) 
+  {
     cout << setw(3) << n << ":";
-    cout << Utils::fill(1,' ') << "step = " << Utils::sci(step);
-    cout << Utils::fill(1,' ') << "oldf = " << Utils::sci(sqrt(2. * oldf));
-    cout << Utils::fill(1,' ') << "newf = " << Utils::sci(sqrt(2. * newf));
-    if (!s.empty()) {
+    cout << Utils::fill(1,' ') << "step = " << utils.sciformat(step);
+    cout << Utils::fill(1,' ') << "oldf = " << utils.sciformat(sqrt(2. * oldf));
+    cout << Utils::fill(1,' ') << "newf = " << utils.sciformat(sqrt(2. * newf));
+    if (!s.empty()) 
+    {
       cout << " " << s << "\n";
       cout << Utils::fill(72);
     }
@@ -65,25 +68,25 @@ void Common::printStep(int n, double step, double oldf, double newf, const strin
 
 double Common::computeSlope(const Abstract::Vector& dir, const Abstract::Group& grp) 
 {
-   if (grp.isGradient()) {
+   if (grp.isGradient()) 
      return(dir.dot(grp.getGradient()));
-  }
 
   // Allocate space for vecPtr if necessary
-  if (vecPtr == NULL) {
+  if (vecPtr == NULL) 
     vecPtr = dir.clone(ShapeCopy);
-  }
 
   // v = J * dir
   NOX::Abstract::Group::ReturnType status = grp.applyJacobian(dir,*vecPtr);
   
-  if (status != NOX::Abstract::Group::Ok) {
+  if (status != NOX::Abstract::Group::Ok) 
+  {
     cout << "NOX::LineSearch::Common::computeSlope -  Unable to apply Jacobian!" << endl;
     throw "NOX Error";
   }
 
   // Check that F exists
-  if (!grp.isF()) {
+  if (!grp.isF()) 
+  {
     cout << "NOX::LineSearch::Common::computeSlope - Invalid F" << endl;
     throw "NOX Error";
   }

@@ -35,6 +35,11 @@
 
 #include "NOX_LineSearch_Generic.H" // base class
 
+// Forward declarations
+namespace NOX {
+class Utils;
+}
+
 namespace NOX {
 namespace LineSearch {
 
@@ -77,7 +82,7 @@ class Secant : public Generic {
 public:
 
   //! Constructor
-  Secant(NOX::Parameter::List& params);
+  Secant(const NOX::Utils& u, NOX::Parameter::List& params);
 
   //! Destructor
   ~Secant();
@@ -91,6 +96,9 @@ public:
 	       const NOX::Solver::Generic& s);
   
 private:
+
+  //! Printing utilities
+  const NOX::Utils& utils;
 
   //! Relative change in computed step length; secant iterations for 
   //! step length are assumed to be converged when abs(relStepChange) < 1.e-6

@@ -123,7 +123,7 @@ class MoreThuente : public Common {
 public:
 
   //! Constructor
-  MoreThuente(NOX::Parameter::List& params);
+  MoreThuente(const NOX::Utils& u, NOX::Parameter::List& params);
 
   //! Destructor
   ~MoreThuente();

@@ -39,7 +39,8 @@
 #include "NOX_Parameter_List.H"
 #include "NOX_Utils.H"
 
-NOX::LineSearch::MoreThuente::MoreThuente(Parameter::List& params) 
+NOX::LineSearch::MoreThuente::MoreThuente(const NOX::Utils& u, Parameter::List& params) :
+  Common(u)
 {
   reset(params);
 }
@@ -61,9 +62,14 @@ bool NOX::LineSearch::MoreThuente::reset(Parameter::List& params)
   recoverystep = p.getParameter("Recovery Step", defaultstep);
 
   // Check the input parameters for errors.
-  if ((ftol < 0.0) || (gtol < 0.0) || 
-      (xtol < 0.0) || (stpmin < 0.0) || (stpmax < stpmin) || 
-      (maxfev <= 0) || (defaultstep <= 0)) {
+  if ((ftol < 0.0) || 
+      (gtol < 0.0) || 
+      (xtol < 0.0) || 
+      (stpmin < 0.0) || 
+      (stpmax < stpmin) || 
+      (maxfev <= 0) || 
+      (defaultstep <= 0)) 
+  {
     cout << "NOX::LineSearch::MoreThuente::reset - Error in Input Parameter!" << endl;
     throw "NOX Error";
   }
@@ -84,7 +90,8 @@ bool NOX::LineSearch::MoreThuente::compute(Abstract::Group& grp, double& step,
 int NOX::LineSearch::MoreThuente::cvsrch(Abstract::Group& newgrp, double& stp, 
 			const Abstract::Group& oldgrp, const Abstract::Vector& dir)
 {
-  if (Utils::doPrint(Utils::InnerIteration)) {
+  if (utils.isPrintProcessAndType(Utils::InnerIteration)) 
+  {
    cout << "\n" << Utils::fill(72) << "\n" << "-- More'-Thuente Line Search -- \n";
   }
 
@@ -99,8 +106,10 @@ int NOX::LineSearch::MoreThuente::cvsrch(Abstract::Group& newgrp, double& stp,
 
   double dginit = computeSlope(dir, oldgrp);
 
-  if (dginit >= 0.0) {
-    if (Utils::doPrint(Utils::Warning)) {
+  if (dginit >= 0.0) 
+  {
+    if (utils.isPrintProcessAndType(Utils::Warning)) 
+    {
       cout << "NOX::LineSearch::MoreThuente::cvsrch - Non-descent direction (dginit = " << dginit << ")" << endl;
     }
     stp = recoverystep;
@@ -137,16 +146,19 @@ int NOX::LineSearch::MoreThuente::cvsrch(Abstract::Group& newgrp, double& stp,
   double stmin, stmax;
   double fm, fxm, fym, dgm, dgxm, dgym;
 
-  while (1) {
+  while (1) 
+  {
 
     // Set the minimum and maximum steps to correspond to the present
     // interval of uncertainty.
 
-    if (brackt) {
+    if (brackt) 
+    {
       stmin = min(stx, sty);
       stmax = max(stx, sty);
     }
-    else {
+    else 
+    {
       stmin = stx;
       stmax = stp + 4 * (stp - stx);
     }
@@ -160,7 +172,8 @@ int NOX::LineSearch::MoreThuente::cvsrch(Abstract::Group& newgrp, double& stp,
 
     if ((brackt && ((stp <= stmin) || (stp >= stmax))) ||
 	(nfev >= maxfev - 1) || (infoc == 0) ||
-	(brackt && (stmax - stmin <= xtol * stmax))) {
+	(brackt && (stmax - stmin <= xtol * stmax))) 
+    {
       stp = stx;
     }
 
@@ -224,25 +237,24 @@ int NOX::LineSearch::MoreThuente::cvsrch(Abstract::Group& newgrp, double& stp,
     if ((f <= ftest1) && (fabs(dg) <= gtol*(-dginit))) 
       info = 1;			// Success!!!!
 
-    if (info != 0) {		// Line search is done
-
-      if (info != 1) {		// Line search failed 
-	
+    if (info != 0) 		// Line search is done
+    {
+      if (info != 1) 		// Line search failed 
+      {
 	stp = recoverystep;
 	newgrp.computeX(oldgrp, dir, stp);
 	
 	message = "(USING RECOVERY STEP!)";
 	
 	/*
-	if (Utils::doPrint(Utils::Details))
+	if (utils.isPrintProcessAndType(Utils::Details))
 	  message += "[Failure info flag = " + info + "]";
 	*/
 	    
       }
-      else {			// Line search succeeded
-	
+      else 			// Line search succeeded
+      {
 	message = "(STEP ACCEPTED!)";
-	
       }
       
       printStep(nfev, stp, finit, f, message);
@@ -267,7 +279,8 @@ int NOX::LineSearch::MoreThuente::cvsrch(Abstract::Group& newgrp, double& stp,
     // lower function value has been obtained but the decrease is not
     // sufficient.
 
-    if (stage1 && (f <= fx) && (f > ftest1)) {
+    if (stage1 && (f <= fx) && (f > ftest1)) 
+    {
 
       // Define the modified function and derivative values.
 
@@ -293,7 +306,8 @@ int NOX::LineSearch::MoreThuente::cvsrch(Abstract::Group& newgrp, double& stp,
 
     }
 
-    else {
+    else 
+    {
 
       // Call cstep to update the interval of uncertainty 
       // and to compute the new step.
@@ -306,7 +320,8 @@ int NOX::LineSearch::MoreThuente::cvsrch(Abstract::Group& newgrp, double& stp,
     // Force a sufficient decrease in the size of the
     // interval of uncertainty.
 
-    if (brackt) {
+    if (brackt) 
+    {
       if (fabs(sty - stx) >= 0.66 * width1) 
 	stp = stx + 0.5 * (sty - stx);
       width1 = width;
@@ -346,7 +361,8 @@ int NOX::LineSearch::MoreThuente::cstep(double& stx, double& fx, double& dx,
   double p,q,r;
   double stpc, stpq, stpf;
 
-  if (fp > fx) {
+  if (fp > fx) 
+  {
     info = 1;
     bound = 1;
     theta = 3 * (fx - fp) / (stp - stx) + dx + dp;
@@ -373,7 +389,8 @@ int NOX::LineSearch::MoreThuente::cstep(double& stx, double& fx, double& dx,
   // stx than the quadratic (secant) step, the cubic step is taken,
   // else the quadratic step is taken.
 
-  else if (sgnd < 0.0) {
+  else if (sgnd < 0.0) 
+  {
     info = 2;
     bound = false;
     theta = 3 * (fx - fp) / (stp - stx) + dx + dp;
@@ -402,7 +419,8 @@ int NOX::LineSearch::MoreThuente::cstep(double& stx, double& fx, double& dx,
   // bracketed then the the step closest to stx is taken, else the
   // step farthest away is taken.
 
-  else if (fabs(dp) < fabs(dx)) {
+  else if (fabs(dp) < fabs(dx)) 
+  {
     info = 3;
     bound = true;
     theta = 3 * (fx - fp) / (stp - stx) + dx + dp;
@@ -426,13 +444,15 @@ int NOX::LineSearch::MoreThuente::cstep(double& stx, double& fx, double& dx,
       stpc = stmin;
       
     stpq = stp + (dp/ (dp - dx)) * (stx - stp);
-    if (brackt) {
+    if (brackt) 
+    {
       if (fabs(stp - stpc) < fabs(stp - stpq)) 
 	stpf = stpc;
       else
 	stpf = stpq;
     }
-    else {
+    else 
+    {
       if (fabs(stp - stpc) > fabs(stp - stpq)) 
 	stpf = stpc;
       else
@@ -448,7 +468,8 @@ int NOX::LineSearch::MoreThuente::cstep(double& stx, double& fx, double& dx,
   else {
     info = 4;
     bound = false;
-    if (brackt) {
+    if (brackt) 
+    {
       theta = 3 * (fp - fy) / (sty - stp) + dy + dp;
       s = absmax(theta, dy, dp);
       gamma = s * sqrt(((theta/s)*(theta/s)) - (dy / s) * (dp / s));
@@ -469,13 +490,16 @@ int NOX::LineSearch::MoreThuente::cstep(double& stx, double& fx, double& dx,
   // Update the interval of uncertainty. This update does not depend
   // on the new step or the case analysis above.
 
-  if (fp > fx) {
+  if (fp > fx) 
+  {
     sty = stp;
     fy = fp;
     dy = dp;
   }
-  else {
-    if (sgnd < 0.0) {
+  else 
+  {
+    if (sgnd < 0.0) 
+    {
       sty = stx;
       fy = fx;
       dy = dx;
@@ -490,7 +514,8 @@ int NOX::LineSearch::MoreThuente::cstep(double& stx, double& fx, double& dx,
   stpf = min(stmax, stpf);
   stpf = max(stmin, stpf);
   stp = stpf;
-  if (brackt && bound) {
+  if (brackt && bound) 
+  {
     if (sty > stx) 
       stp = min(stx + 0.66 * (sty - stx), stp);
     else 
