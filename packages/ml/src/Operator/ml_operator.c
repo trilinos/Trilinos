@@ -82,6 +82,7 @@ int ML_Operator_Init( ML_Operator *mat, ML_Comm *comm)
    mat->data_destroy        = NULL;
    mat->build_time          = 0.0;
    mat->apply_time          = 0.0;
+   mat->apply_without_comm_time = 0.0;
    mat->ntimes              = 0;
    mat->nflop               = 0;
    mat->label               = NULL;
@@ -316,6 +317,7 @@ int ML_Operator_halfClone_Init(ML_Operator *mat,
    mat->data_destroy        = NULL;
    mat->build_time          = 0.0;
    mat->apply_time          = 0.0;
+   mat->apply_without_comm_time          = 0.0;
    mat->ntimes              = 0;
    mat->nflop               = 0;
    /* If operator *mat has built as part of ML_Create, a label has already been

@@ -104,6 +104,7 @@ struct ML_Operator_Struct {
    ML_Operator   *sub_matrix;
    ML_BdryPts    *bc;
    double        build_time, apply_time;
+   double        apply_without_comm_time;
    int           ntimes, nflop;
    char          *label; 
    int           num_PDEs, num_rigid;

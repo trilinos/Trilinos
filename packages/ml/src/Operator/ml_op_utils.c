@@ -2784,7 +2784,7 @@ int ML_Operator_Eigensolver_Dense(ML_Operator* Amat,
   performance statistics for a particular operator.  It's meant to be used in
   conjunction with ML_Operator_Profile().
 *******************************************************************************/
-
+#define ML_FUNCTION_NAME "ML_Operator_ReportStatistics"
 void ML_Operator_ReportStatistics(ML_Operator *mat, char *appendlabel)
 {
   double t1;
@@ -2803,7 +2803,7 @@ void ML_Operator_ReportStatistics(ML_Operator *mat, char *appendlabel)
     if (mat->invec_leng > 0 || mat->outvec_leng > 0)
       proc_active = 1;
     else proc_active = 0;
-      NumActiveProc = ML_gsum_int(proc_active, comm);
+    NumActiveProc = ML_gsum_int(proc_active, comm);
 
     if (appendlabel != NULL) {
       origlabel = mat->label;
@@ -2950,30 +2950,57 @@ void ML_Operator_ReportStatistics(ML_Operator *mat, char *appendlabel)
     t1 = ML_gsum_double( (proc_active ? mat->apply_time : 0.0), mat->comm);
     t1 = t1/((double) NumActiveProc);
     if (mypid == 0)
-       printf("Operator %s: apply time (avg) \t= %e\n",mat->label,t1);
+       printf("Operator %s: apply+comm time (avg) \t= %e\n",mat->label,t1);
     t1 = ML_gmax_double( (proc_active ? mat->apply_time : 0.0 ), mat->comm);
     i =ML_gmax_int((t1 == mat->apply_time ? mypid:0),mat->comm);
     if (mypid == 0)
-       printf("Operator %s: apply time (max %d) \t= %e\n",mat->label,i,t1);
+       printf("Operator %s: apply+comm time (max %d) \t= %e\n",mat->label,i,t1);
     t1 = - mat->apply_time;
     t1 = ML_gmax_double( (proc_active ? t1: -1.0e20), mat->comm);
     t1 = - t1;
     i =ML_gmax_int((t1 == mat->apply_time ? mypid:0),mat->comm);
     if (mypid == 0)
-       printf("Operator %s: apply time (min %d) \t= %e\n",mat->label,i,t1);
+       printf("Operator %s: apply+comm time (min %d) \t= %e\n",mat->label,i,t1);
     t1 = ML_Global_Standard_Deviation(mat->apply_time, NumActiveProc,
                                           proc_active, mat->comm);
+    if (mypid == 0)
+       printf("Operator %s: apply+comm time (stdev) \t= %e\n",mat->label,t1);
+
+    t1 = ML_gsum_double( (proc_active ? mat->apply_no_comm_time:0.0),mat->comm);
+    t1 = t1/((double) NumActiveProc);
+    if (mypid == 0)
+       printf("Operator %s: apply only time (avg) \t= %e\n",mat->label,t1);
+    t1 = ML_gmax_double( (proc_active ?mat->apply_no_comm_time:0.0),mat->comm);
+    i =ML_gmax_int((t1 == mat->apply_no_comm_time ? mypid:0),mat->comm);
+    if (mypid == 0)
+       printf("Operator %s: apply only time (max %d) \t= %e\n",mat->label,i,t1);
+    t1 = - mat->apply_no_comm_time;
+    t1 = ML_gmax_double( (proc_active ? t1: -1.0e20), mat->comm);
+    t1 = - t1;
+    i =ML_gmax_int((t1 == mat->apply_no_comm_time ? mypid:0),mat->comm);
+    if (mypid == 0)
+       printf("Operator %s: apply only time (min %d) \t= %e\n",mat->label,i,t1);
+    t1 = ML_Global_Standard_Deviation(mat->apply_no_comm_time, NumActiveProc,
+                                          proc_active, mat->comm);
+    if (mypid == 0)
+       printf("Operator %s: apply only time (stdev) \t= %e\n",mat->label,t1);
+
     if (mypid == 0) {
-       printf("Operator %s: apply time (stdev) \t= %e\n",mat->label,t1);
        printf("===========================================\n");
        fflush(stdout);
     }
     if (appendlabel != NULL)
       mat->label = origlabel;
   }
+  if  (mat->label == NULL && ML_Get_PrintLevel() > 0)
+    printf("%s: Matrix label  is not set, not printing statistics\n",
+           ML_FUNCTION_NAME);
 
   ML_free(modlabel);
 }
+#ifdef ML_FUNCTION_NAME
+#undef ML_FUNCTION_NAME
+#endif
 
 /*******************************************************************************
   ML_Operator_Profile() profiles a particular ML_Operator.  The apply time,
@@ -2992,13 +3019,15 @@ void ML_Operator_Profile(ML_Operator *A, char *appendlabel, int numits)
 #if defined(ML_TIMING)
   int j, ntimes;
   double *xvec,*bvec;
-  double apply_time, pre_time, post_time;
+  double apply_time, apply_no_comm_time, pre_time, post_time;
+  double t0;
 
   xvec = (double *) ML_allocate((A->invec_leng) * sizeof(double));
   ML_random_vec(xvec, A->invec_leng, A->comm);
   bvec = (double *) ML_allocate((A->outvec_leng) * sizeof(double));
 
   apply_time = A->apply_time; A->apply_time = 0.0;
+  apply_no_comm_time = A->apply_no_comm_time; A->apply_no_comm_time = 0.0;
   ntimes = A->ntimes; A->ntimes = 0;
   if (A->getrow->pre_comm != NULL) {
     pre_time = A->getrow->pre_comm->time;
@@ -3012,6 +3041,7 @@ void ML_Operator_Profile(ML_Operator *A, char *appendlabel, int numits)
 #ifdef ML_MPI
   MPI_Barrier(MPI_COMM_WORLD);
 #endif
+  t0 = GetClock();
   for (j=0; j<numits; j++)
     ML_Operator_Apply(A,A->invec_leng,xvec,A->outvec_leng,bvec);
 #ifdef ML_MPI
@@ -3020,6 +3050,7 @@ void ML_Operator_Profile(ML_Operator *A, char *appendlabel, int numits)
   ML_Operator_ReportStatistics(A,appendlabel);
 
   A->apply_time = apply_time;
+  A->apply_no_comm_time = apply_no_comm_time;
   A->ntimes = ntimes;
   if (A->getrow->pre_comm != NULL)
     A->getrow->pre_comm->time = pre_time;
@@ -3029,7 +3060,7 @@ void ML_Operator_Profile(ML_Operator *A, char *appendlabel, int numits)
   ML_free(xvec);
   ML_free(bvec);
 #else
-  if (A->comm->ML_mypid == 0 && ML_Get_PrintLevel() > 0)
+  if (A->comm->ML_mypid == 0 && ML_Get_PrintLevel() > 5)
     printf("ML_Operator_Profile: not compiled with -DML_TIMING\n");
 #endif
 }
