@@ -1053,9 +1053,7 @@ static int rcb_fn(
     treept[0].dim = -1;
   }
 
-/* KDDKDD DO NOT COMMIT 
   if (zz->Debug_Level >= ZOLTAN_DEBUG_ALL)
-*/
     print_rcb_tree(zz, np, fp, &(treept[fp]));
 
   end_time = Zoltan_Time(zz->Timer);
