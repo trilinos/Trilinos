@@ -1,6 +1,10 @@
 #ifndef MLAPI_BASEOBJECT_H
 #define MLAPI_BASEOBJECT_H
 
+#include <iostream>
+using namespace std;
+#include "MLAPI_Workspace.h"
+
 namespace MLAPI {
 
 /*!
@@ -57,12 +61,7 @@ private:
   static int count_;
 };
 
-int BaseObject::count_ = 0;
-
-std::ostream& operator<< (std::ostream& os, const BaseObject& obj)
-{
-  return(obj.Print(os));
-}
+std::ostream& operator<< (std::ostream& os, const BaseObject& obj);
 
 } // namespace MLAPI
 

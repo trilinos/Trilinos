@@ -37,26 +37,32 @@ public:
   // @{ \name Constructors and destructors
 
   //! Constructs the hierarchy for given Operator and parameters.
-  MultiLevelSA(const Operator FineMatrix, Teuchos::ParameterList& List)
+  MultiLevelSA(const Operator FineMatrix, Teuchos::ParameterList& List,
+               const bool ConstructNow = true)
   {
+    FineMatrix_ = FineMatrix;
+    List_ = List;
+    if (ConstructNow) Compute();
+  }
+
+  void Compute() {
+
     ResetTimer();
 
-    FineMatrix_ = FineMatrix;
-
     // get parameter from the input list
-    int         MaxLevels     = List.get("max levels", 10);
-    double      Damping       = List.get("aggregation: damping factor", 1.3333);
-    string      EigenAnalysis = List.get("eigen-analysis: type", "Anorm");
-    int         MaxCoarseSize = List.get("coarse: max size", 32);
+    int         MaxLevels     = List_.get("max levels", 10);
+    double      Damping       = List_.get("aggregation: damping factor", 1.3333);
+    string      EigenAnalysis = List_.get("eigen-analysis: type", "Anorm");
+    int         MaxCoarseSize = List_.get("coarse: max size", 32);
     MultiVector EmptySpace;
-    MultiVector ThisNS        = List.get("aggregation: null space", EmptySpace);
-    int         NumPDEEqns    = List.get("PDE equations", 1);
-    string      SmootherType  = List.get("smoother: type", "symmetric Gauss-Seidel");
-    string      CoarseType    = List.get("coarse: type", "Amesos-KLU");
+    MultiVector ThisNS        = List_.get("aggregation: null space", EmptySpace);
+    int         NumPDEEqns    = List_.get("PDE equations", 1);
+    string      SmootherType  = List_.get("smoother: type", "symmetric Gauss-Seidel");
+    string      CoarseType    = List_.get("coarse: type", "Amesos-KLU");
     
     // build up the default null space
     if (ThisNS.GetNumVectors() == 0) {
-      ThisNS.Reshape(FineMatrix.GetDomainSpace(),1);
+      ThisNS.Reshape(FineMatrix_.GetDomainSpace(),NumPDEEqns);
       ThisNS = 1.0;
     }
 
@@ -68,7 +74,7 @@ public:
     S_.resize(MaxLevels);
 
     // work on increasing hierarchies only.
-    A_[0] = FineMatrix;
+    A_[0] = FineMatrix_;
 
     double LambdaMax;
     Operator A;
@@ -87,22 +93,22 @@ public:
       A = A_[level];
 
       if (level)
-        List.set("PDE equations", ThisNS.GetNumVectors());
+        List_.set("PDE equations", ThisNS.GetNumVectors());
 
       if (GetPrintLevel()) {
       ML_print_line("-", 80);
         cout << "current working level   = " << level << endl;
         cout << "number of global rows   = " << A.GetNumGlobalRows() << endl;
         cout << "number of global nnz    = " << A.GetNumGlobalNonzeros() << endl;
-        cout << "threshold               = " << List.get("aggregation: threshold", 0.0) << endl;
+        cout << "threshold               = " << List_.get("aggregation: threshold", 0.0) << endl;
         cout << "number of PDE equations = " << NumPDEEqns << endl;
         cout << "null space dimension    = " << ThisNS.GetNumVectors() << endl;
       }
 
       // load current level into database
-      List.set("workspace: current level", level);
+      List_.set("workspace: current level", level);
 
-      GetPtent(A, List, ThisNS, Ptent, NextNS);
+      GetPtent(A, List_, ThisNS, Ptent, NextNS);
       ThisNS = NextNS;
       
       if (Damping) {
@@ -141,14 +147,14 @@ public:
           cout << "damping factor          = " << Damping / LambdaMax << endl;
         }
         cout << "smoother type           = " << SmootherType << endl;
-        cout << "relaxation sweeps       = " << List.get("smoother: sweeps", 1) << endl;
-        cout << "smoother damping        = " << List.get("smoother: damping factor", 0.67) << endl;
+        cout << "relaxation sweeps       = " << List_.get("smoother: sweeps", 1) << endl;
+        cout << "smoother damping        = " << List_.get("smoother: damping factor", 0.67) << endl;
       }
 
       R = GetTranspose(P);
       C = GetRAP(R,A,P);
       // build smoothers
-      S.Reshape(A, SmootherType, List);
+      S.Reshape(A, SmootherType, List_);
 
       // put operators and inverse in hierarchy
       R_[level    ] = R;
@@ -164,7 +170,7 @@ public:
     }
 
     // set coarse solver
-    S.Reshape(A_[level], CoarseType, List);
+    S.Reshape(A_[level], CoarseType, List_);
     S_[level] = S;
     MaxLevels_ = level + 1;
 
@@ -340,7 +346,7 @@ private:
   vector<Operator> P_;
   //! Contains the hierarchy of inverse operators.
   vector<InverseOperator> S_;
-  //! Contains the hierarchy of inverse operators.
+  Teuchos::ParameterList List_;
 
 };
 

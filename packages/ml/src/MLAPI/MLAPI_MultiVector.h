@@ -1,13 +1,15 @@
 #ifndef ML_VECTOR_H
 #define ML_VECTOR_H
 
-#include "ml_lapack.h"
+//#include "ml_lapack.h"
 #include "MLAPI_Error.h"
 #include "MLAPI_BaseObject.h"
 #include "MLAPI_Space.h"
 #include "MLAPI_CompObject.h"
 #include "MLAPI_TimeObject.h"
 #include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_BLAS_wrappers.hpp"
+#include "Teuchos_LAPACK_wrappers.hpp"
 #include <iomanip>
 #include <vector>
 #include <algorithm>

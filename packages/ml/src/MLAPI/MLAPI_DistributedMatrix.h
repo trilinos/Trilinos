@@ -5,7 +5,7 @@
 #ifdef HAVE_ML_MLAPI
 
 #include "ml_include.h"
-#include "ml_lapack.h"
+//#include "ml_lapack.h"
 #include "ml_comm.h"
 #include "MLAPI_Error.h"
 #include "MLAPI_BaseObject.h"

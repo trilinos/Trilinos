@@ -8,10 +8,10 @@
 #include "MLAPI_Error.h"
 #include "MLAPI_BaseOperator.h"
 #include "MLAPI_Workspace.h"
-
-class Epetra_MultiVector;
-class Epetra_Map;
-class Epetra_Comm;
+#include "Epetra_MultiVector.h"
+#include "Epetra_Map.h"
+#include "Epetra_Comm.h"
+#include "ml_epetra.h"
 
 namespace MLAPI {
 
