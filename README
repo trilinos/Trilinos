@@ -21,8 +21,10 @@ export CVS_RSH=ssh
 These variables may also be defined in your .cshrc or .bashrc file.
 
 
+To build Trilinos using Autotools please see Trilinos/config/AUTOCONF_README
+(Autotools has not been stabilized on all platforms)
 
-To build Trilinos:
+To build Trilinos using the 'classic' make system:
 
 1) Define the following environment variable in your .cshrc (or
    equivalent) file:
