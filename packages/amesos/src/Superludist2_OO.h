@@ -271,6 +271,7 @@ class Superludist2_OO {
   //
   //  Here are the SuperLU data structures for A, L and U:
   //
+  SOLVEstruct_t SOLVEstruct; 
   int numprocs;
   int nprow;
   int npcol;

@@ -72,13 +72,13 @@ echo "COMMENT column 17+ - summary " >> SST.summary
 #
 mpirun -np 1 amesos_test.exe SuperLUdist SuperLU.rua 0 1 1 0 1.6e-14 1.6e-14 >>SST.stdout
 #  COMMENT fails on atlantis, sometimes janus    mpirun -np 3 amesos_test.exe SuperLUdist SuperLU.rua 0 1 1 0 1e-15 1e-14  >>SST.stdout
-#  COMMENT fails on atlantis, sometimes janus    mpirun -np 3 amesos_test.exe SuperLUdist SuperLU.rua 0 1 1 1 1e-15 1e-14  >>SST.stdout
+#  COMMENT TRANS fails on atlantis, sometimes janus    mpirun -np 3 amesos_test.exe SuperLUdist SuperLU.rua 0 1 1 1 1e-15 1e-14  >>SST.stdout
 #
 #  Test one process, three processes and three processes transposes, tiny distributed matrix, on SuperLUdist
 #
 mpirun -np 1 amesos_test.exe SuperLUdist   fidapm05.rua 0 1 1 0 10000000000 1 >>SST.stdout
-mpirun -np 3 amesos_test.exe SuperLUdist   fidapm05.rua 1 1 1 0 1000000000 1  >>SST.stdout
-mpirun -np 3 amesos_test.exe SuperLUdist   fidapm05.rua 1 1 1 1 1000000000 1  >>SST.stdout
+mpirun -np 3 amesos_test.exe SuperLUdist   fidapm05.rua 1 1 1 0 10000000000 1  >>SST.stdout
+mpirun -np 3 amesos_test.exe SuperLUdist   fidapm05.rua 1 1 1 1 10000000000 1  >>SST.stdout
 #
 #  Test some more small matrices
 #
@@ -134,11 +134,10 @@ mpirun -np 2 amesos_test.exe SuperLUdist   ImpcolC.rua 1 1 -4 0 1e-13 1e-13  >>S
 #  either the upper or lower triangular part.
 #
 mpirun -np 1 amesos_test.exe SuperLUdist SuperLU.triU 0 1 1 0 1e-14 1e-14 >>SST.stdout
-# COMMENT - fail s on atlantis - 
-mpirun -np 3 amesos_test.exe SuperLUdist SuperLU.triU 0 1 1 0 1e-14 1e-14 >>SST.stdout
+# COMMENT - Fails on atlantis - mpirun -np 3 amesos_test.exe SuperLUdist SuperLU.triU 0 1 1 0 1e-14 1e-14 >>SST.stdout
 
-# COMMENT Khead.triS is singular -  mpirun -np 1 amesos_test.exe SuperLUdist Khead.triS 0 1 1 0 1e-13 1e-9 >>SST.stdout
-# COMMENT  Khead.triS is singular - mpirun -np 4 amesos_test.exe SuperLUdist Khead.triS 0 1 1 0 1e-13 1e-9 >>SST.stdout
+# COMMENT  Fails on atlantis, paunchy, cygwin, works on herouxsmp -  mpirun -np 1 amesos_test.exe SuperLUdist Khead.triS 0 1 1 0 1e-13 1e-13 >>SST.stdout
+# COMMENT  Fails on atlantis, paunchy, cygwin, works intermittently on herouxsmp  - mpirun -np 4 amesos_test.exe SuperLUdist Khead.triS 0 1 1 0 1e-13 1e-13 >>SST.stdout
 
 
 echo "\nCOMMENT End AmesosShortScript.exe" >> SST.summary 

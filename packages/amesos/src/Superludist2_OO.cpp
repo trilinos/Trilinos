@@ -75,12 +75,19 @@ Superludist2_OO::~Superludist2_OO(void) {
   //  DeleteMemory();
   //  DeleteAzArrays();
 
-  if ( false & A_and_LU_built ) { 
-    // Destroy_CompCol_Matrix_dist(&A);
-    SUPERLU_FREE(A.Store);
-    Destroy_LU(numrows, &grid, &LUstruct);
+  if ( A_and_LU_built ) { 
+    //    Destroy_CompRowLoc_Matrix_dist(&A);
+    SUPERLU_FREE( A.Store );
     ScalePermstructFree(&ScalePermstruct);
+    cout << " Superludist2_OO.cpp:82  numrows = " << numrows << endl ; 
+    Destroy_LU(numrows, &grid, &LUstruct);
+#if 1
     LUstructFree(&LUstruct);
+    if ( options.SolveInitialized ) {
+      dSolveFinalize(&options, &SOLVEstruct ) ; 
+    }
+    superlu_gridexit(&grid);
+#endif
   }
 
 }
@@ -148,9 +155,6 @@ int Superludist2_OO::Solve(bool factor) {
   //
 
 
-  SOLVEstruct_t SOLVEstruct;    // This - and many other variables will 
-                                // need to move to Superludist2_OO.h before we can 
-                                // make multiple solves work.
   bool CheckExtraction = false;    //  Set to true to force extraction for unit test
 
   assert( GetTrans() == false ) ; 
@@ -203,7 +207,7 @@ int Superludist2_OO::Solve(bool factor) {
   const Epetra_Map &Phase2Matmap = Phase2Mat->RowMap() ; 
 
   //
-  //  Glossary:
+  //  Old Glossary:
   //    numrows, numcols = m,n, i.e. the size of the full, global, matrix
   //    m_loc            = the number of rows owned by this process
   //    nnz_loc          = the number of non zeros in the rows owned by this process
@@ -222,7 +226,7 @@ int Superludist2_OO::Solve(bool factor) {
   cerr << " Send this to cerr cerr cerr   traceback mode = " << Epetra_Object::GetTracebackMode() << endl ; 
 #endif
 
-  int numrows = Phase2Matmap.NumGlobalElements() ; 
+  numrows = Phase2Matmap.NumGlobalElements() ; 
   assert( numrows == Phase2Mat->NumGlobalRows() ) ; 
   int numcols = Phase2Mat->NumGlobalCols() ; 
   assert( numrows == numcols ) ; 
@@ -233,19 +237,10 @@ int Superludist2_OO::Solve(bool factor) {
   //  against what it really is.
   //
   int m_per_p = numrows / Comm.NumProc() ;
-  cout << " m_per_p = " << m_per_p << endl ; 
   int remainder = numrows - ( m_per_p * Comm.NumProc() );
   int MyFirstElement = iam * m_per_p + EPETRA_MIN( iam, remainder );
   int MyFirstNonElement = (iam+1) * m_per_p + EPETRA_MIN( iam+1, remainder );
   int NumExpectedElements = MyFirstNonElement - MyFirstElement ; 
-
-
-  cout << " iam = " << iam << " MyFirstElement = " << MyFirstElement << endl ; 
-  if ( ( numrows == 5 ) && ( Comm.NumProc() == 2)  ) {
-    assert( iam ==0 || MyFirstElement == 3 ) ; 
-    assert( iam ==1 || MyFirstElement == 0 ) ; 
-  }
-
 
 
   int IsLocal = ( Phase2Matmap.NumMyElements() == 
@@ -443,13 +438,11 @@ int Superludist2_OO::Solve(bool factor) {
     //
     for ( int j = 0 ; j < nrhs; j++ )
       for ( int i = 0 ; i < NumMyElements; i++ ) xValues[i+j*ldx] = bValues[i+j*ldb]; 
-    cout << " iam=" << iam << " Superludist2_OO.cpp::559 " << endl ; 
 
     PStatInit(&stat);    /* Initialize the statistics variables. */
 
     int info ;
     vector<double>berr(nrhs);
-    cout << " ldx = " << ldx << " nrhs = " << nrhs << " NumMyElements= " << NumMyElements << endl ; 
     pdgssvx(&options, &A, &ScalePermstruct, &xValues[0], ldx, nrhs, &grid,
 	    &LUstruct, &SOLVEstruct, &berr[0], &stat, &info);
     EPETRA_CHK_ERR( info ) ; 
