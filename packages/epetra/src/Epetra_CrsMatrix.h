@@ -531,27 +531,33 @@ or if the number of entries in this row exceed the Length parameter.
   */
 	int Solve(bool Upper, bool Trans, bool UnitDiagonal, const Epetra_MultiVector& X, Epetra_MultiVector& Y) const;
 	
-	//! Computes the sum of absolute values of the rows of the Epetra_CrsMatrix, results returned in x.
-	/*! The vector x will return such that x[i] will contain the inverse of sum of the absolute values of the 
-		\e this matrix will be scaled such that A(i,j) = x(i)*A(i,j) where i denotes the global row number of A
-		and j denotes the global column number of A.  Using the resulting vector from this function as input to LeftScale()
-		will make the one norm of the resulting matrix exactly 1.
+        //! Computes the inverse of the sum of absolute values of the rows of the Epetra_CrsMatrix, results returned in x.
+        /*! The vector x will return such that x[i] will contain the inverse of the sum of the absolute values of the entries in the 
+	        ith row of the \e this matrix.  Using the resulting vector from this function as input to LeftScale()
+                will make the infinity norm of the resulting matrix exactly 1.
+                \warning The NormInf() method will not properly calculate the infinity norm for a matrix that has entries that are
+                replicated on multiple processors.  In this case, if the rows are fully replicated, NormInf() will return a
+                value equal to the maximum number of processors that any individual row of the matrix is repliated on.
     \param Out
-		x -A Epetra_Vector containing the row sums of the \e this matrix. 
-		\warning It is assumed that the distribution of x is the same as the rows of \e this.
-		
+                x -A Epetra_Vector containing the row sums of the \e this matrix.
+                \warning When rows are fully replicated on multiple processors, it is assumed that the distribution of x is
+                the same as the rows (RowMap())of \e this.  When multiple processors contain partial sums for individual entries, the
+                distribution of x is assumed to be the same as the RangeMap() of \e this.  When each row of \e this is
+                uniquely owned, the distribution of x can be that of the RowMap() or the RangeMap().
+                                                                                                     
     \return Integer error code, set to 0 if successful.
   */
-	int InvRowSums(Epetra_Vector& x) const;
-	
+        int InvRowSums(Epetra_Vector& x) const;
+
 	//! Computes the max of absolute values of the rows of the Epetra_CrsMatrix, results returned in x.
-	/*! The vector x will return such that x[i] will contain the inverse of max of the absolute values of the 
-		\e this matrix will be scaled such that A(i,j) = x(i)*A(i,j) where i denotes the global row number of A
-		and j denotes the global column number of A.  Using the resulting vector from this function as input to LeftScale()
-		will make the infinity norm of the resulting matrix exactly 1.
+	/*! The vector x will return such that x[i] will contain the inverse of max of the absolute values of the entries in the ith
+	        row of the \e this matrix.
+                \warning This method will not work when multiple processors contain partial sums for individual entries.
     \param Out
-		x -A Epetra_Vector containing the row maxx of the \e this matrix. 
-		\warning It is assumed that the distribution of x is the same as the rows of \e this.
+		x -A Epetra_Vector containing the row maxs of the \e this matrix. 
+		\warning When rows are fully replicated on multiple processors, it is assumed that the distribution of x is
+                the same as the rows (RowMap())of \e this.  When each row of \e this is uniquely owned, the distribution of 
+		x can be that of the RowMap() or the RangeMap().
 		
     \return Integer error code, set to 0 if successful.
   */
@@ -567,27 +573,34 @@ or if the number of entries in this row exceed the Length parameter.
   */
 	int LeftScale(const Epetra_Vector& x);
 	
-	//! Computes the sum of absolute values of the columns of the Epetra_CrsMatrix, results returned in x.
-	/*! The vector x will return such that x[j] will contain the inverse of sum of the absolute values of the 
-		\e this matrix will be sca such that A(i,j) = x(j)*A(i,j) where i denotes the global row number of A
-		and j denotes the global column number of A.  Using the resulting vector from this function as input to 
-		RighttScale() will make the one norm of the resulting matrix exactly 1.
+	//! Computes the inverse of the sum of absolute values of the columns of the Epetra_CrsMatrix, results returned in x.
+	/*! The vector x will return such that x[j] will contain the inverse of the sum of the absolute values of the 
+		entries in the jth column of the \e this matrix.   Using the resulting vector from this function as input to 
+		RightScale() will make the one norm of the resulting matrix exactly 1.
+                \warning The NormOne() method will not properly calculate the one norm for a matrix that has entries that are
+                replicated on multiple processors.  In this case, if the columns are fully replicated, NormOne() will return a
+                value equal to the maximum number of processors that any individual column of the matrix is repliated on.
+
     \param Out
 		x -A Epetra_Vector containing the column sums of the \e this matrix. 
-		\warning It is assumed that the distribution of x is described by the DomainMap() of \e this.
+                \warning When columns are fully replicated on multiple processors, it is assumed that the distribution of x is
+                the same as the columns (ColMap()) of \e this.  When multiple processors contain partial sums for entries, the
+                distribution of x is assumed to be the same as the DomainMap() of \e this.  When each column of \e this is
+                uniquely owned, the distribution of x can be that of the ColMap() or the DomainMap().
 		
     \return Integer error code, set to 0 if successful.
   */
 	int InvColSums(Epetra_Vector& x) const;
 
 	//! Computes the max of absolute values of the columns of the Epetra_CrsMatrix, results returned in x.
-	/*! The vector x will return such that x[j] will contain the inverse of max of the absolute values of the 
-		\e this matrix will be such that A(i,j) = x(j)*A(i,j) where i denotes the global row number of A
-		and j denotes the global column number of A.  Using the resulting vector from this function as input to 
-		RighttScale() will make the one norm of the resulting matrix exactly 1.
+	/*! The vector x will return such that x[j] will contain the inverse of max of the absolute values of the entries
+		in the jth row of the \e this matrix.
+                \warning This method will not work when multiple processors contain partial sums for individual entries.
     \param Out
 		x -A Epetra_Vector containing the column maxs of the \e this matrix. 
-		\warning It is assumed that the distribution of x is described by the DomainMap() of \e this.
+                \warning When columns are fully replicated on multiple processors, it is assumed that the distribution of x is
+                the same as the columns (ColMap()) of \e this.  When each column of \e this is
+                uniquely owned, the distribution of x can be that of the ColMap() or the DomainMap().
 		
     \return Integer error code, set to 0 if successful.
   */
@@ -644,12 +657,15 @@ or if the number of entries in this row exceed the Length parameter.
 	//! Returns the infinity norm of the global matrix.
 	/* Returns the quantity \f$ \| A \|_\infty\f$ such that
 		 \f[\| A \|_\infty = \max_{1\lei\lem} \sum_{j=1}^n |a_{ij}| \f].
-	*/ 
+                 \warning The NormInf() method will not properly calculate the infinity norm for a matrix that has entries that are
+                 replicated on multiple processors.	*/ 
 	double NormInf() const;
 	
 	//! Returns the one norm of the global matrix.
 	/* Returns the quantity \f$ \| A \|_1\f$ such that
 		 \f[\| A \|_1= \max_{1\lej\len} \sum_{i=1}^m |a_{ij}| \f].
+                 \warning The NormOne() method will not properly calculate the one norm for a matrix that has entries that are
+                 replicated on multiple processors.
 	*/ 
 	double NormOne() const;
 	
