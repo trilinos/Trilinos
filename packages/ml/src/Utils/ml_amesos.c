@@ -11,6 +11,7 @@
 
 #include <stdlib.h>
 #include <assert.h>
+#include "ml_include.h"
 #include "ml_struct.h"
 #include "ml_amesos_wrap.h"
 

@@ -3,6 +3,8 @@
 /* person and disclaimer.                                               */        
 /* ******************************************************************** */
 
+#include "ml_config.h"
+
 #ifdef HAVE_ML_AMESOS
 
 #include "ml_utils.h"
@@ -19,6 +21,8 @@
 #include "Amesos_BaseSolver.h"
 #include "Amesos_Factory.h" 
 #include "AmesosClassType.h"
+
+#include "ml_amesos_wrap.h"
 
 //  Jonathan - I need to convert an ml to an ML_Operator 
 //  Did I pick off the right ML_Operator?

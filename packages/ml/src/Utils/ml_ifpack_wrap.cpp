@@ -3,6 +3,7 @@
 /* person and disclaimer.                                               */        
 /* ******************************************************************** */
 
+#include "ml_include.h"
 #ifdef HAVE_ML_IFPACK
 
 #include "ml_utils.h"
