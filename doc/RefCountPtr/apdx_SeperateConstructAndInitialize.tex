@@ -23,23 +23,8 @@ What many C++ experts fail to recognize, however, is that in many
 cases the entities that are best qualified to fully initialize and
 object are not in a position, nor should they be forced, to know the
 concrete subclass of an objects that they initialize.  To force some
-types of entities to both allocate and initialize objects is to complicate the
-design and limit the reusability of such entities.
-
-As an example for where it make sense to separate construction and
-initialization, consider an object-oriented design for filling spare
-matrix objects.  An example of such an interface is the abstract
-{}\texttt{Epetra\_\-Row\-Matrix} interface class in the Epetra [???]
-package.  {}\texttt{Epetra\_\-Row\-Matrix} defines operations to
-insert/replace/sum-into nonzero elements row by row.  It is possible to
-write generic code that takes a pre-allocated
-{}\texttt{Epetra\_\-Row\-Matrix} object and then initialize this object
-with nonzero values.  Such a piece of generic code would be
-complicated and perhaps made less reusable if it had to also know the
-concrete subclass(es) in order to create the object first and then
-initialize it.  This is perhaps not the best example but the reader
-should get the general idea behind the argument for the ``separate
-construction from initialization'' idiom.
+kinds of entities to both allocate and initialize objects is to
+complicate the design and limit the reusability of such entities.
 
 The basics of this ``separate construction and initialization'' idiom
 are demonstrated in the following example subclass.
@@ -49,8 +34,8 @@ class ConcreteClass1 : public AbstractClass {
 public:
   ...
 private:
-    RefCountPtr<A>  a_;
-    RefCountPtr<B>  b_;
+  RefCountPtr<A>  a_;
+  RefCountPtr<B>  b_;
 };
 \end{verbatim}}
 
@@ -114,17 +99,24 @@ cc1.uninitialize();
 
 {}\noindent{}In the last example, if {}\texttt{cc1} was the only
 client maintaining {}\texttt{RefCountPtr<>} objects to its aggregate
-{}\texttt{A} and {}\texttt{B} objects then these objects would be
+{}\texttt{A} and {}\texttt{B} objects, then these objects would be
 deallocated during this function call.  This idiom also allows clients
 to optionally take ownership of some but not all of the aggregate
 objects on uninitialization.  For example, a client could take
 ownership of the {}\texttt{B} but allow the {}\texttt{A} to be deleted
 as
-%
+
 {\scriptsize\begin{verbatim}
 ConcreteClass1 cc1;
 ...
 RefCountPtr<B> b;
 cc1.uninitialize(NULL,&b);
 \end{verbatim}}
-%
+
+In summary, classes designed to use the ``separate construction and
+initialization'' idiom advocated above undeniably makes such classes
+more reusable than those designed to use the ``initialization on
+construction'' idiom.  In addition, the above ``separate construction
+and initializaation'' is not any more inconvenient for client software
+to use since the ``initialization on construction'' use case is also
+supported.

@@ -18,19 +18,18 @@ reference-count node classes.  }
 \esinglespace}
 
 Here we describe the basics of the C++ design of
-{}\texttt{Ref\-Count\-Ptr<>} and describes what goes on under the
-hood.  It is not necessary that developers using
-{}\texttt{Ref\-Count\-Ptr<>} know these details in order to
-successfully use the class but C++ experts and the otherwise curious
-will want to know this information.  This information will also be
-very useful for those who need to debug through code that uses
-{}\texttt{Ref\-Count\-Ptr<>}.  We, however, only provide an outline of
-the implementation and the interested reader is encouraged to study
-the actual C++ implementation and its test program to fill in the gaps
-left in this discussion.  Note, the best way to browse the C++ code is
-through the doxygen generated HTML files that are part of the Teuchos
-package in the Trilinos documentation on the web (just do a web search
-for Teuchos).
+{}\texttt{Ref\-Count\-Ptr<>} and discuss what goes on under the hood.
+It is not necessary that developers using {}\texttt{Ref\-Count\-Ptr<>}
+know these details in order to successfully use the class but C++
+experts and the otherwise curious will want to know this information.
+This information will also be very useful for those who need to debug
+through code that uses {}\texttt{Ref\-Count\-Ptr<>}.  We, however,
+only provide an outline of the implementation and the interested
+reader is encouraged to study the actual C++ implementation and its
+test program to fill in the gaps left in this discussion.  Note, the
+best way to browse the C++ code is through the doxygen generated HTML
+files that are part of the Teuchos package in the Trilinos
+documentation on the web (just do a web search for Teuchos).
 
 Figure {}\ref{rcp:fig:rcp-class-diagram} shows a UML
 {}\cite{ref:uml_distilled_2nd_ed} class diagram for the basic design.
