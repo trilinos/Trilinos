@@ -129,23 +129,44 @@ to the load-balancing library by the application in lb/lb_user_const.h.</I></CAP
 <H3>
 <A NAME="Building the Library"></A>Building the Library</H3>
 The Zoltan library is implemented in ANSI C and can be compiled with any
-ANSI C compiler. Communication within the library is performed through
-MPI, so appropriate MPI libraries must be linked with the library. Example
-Makefiles are included with the source code. The top-level Makefile includes
-targets for several architectures, including Sandia's ASCI Red computer
-and Intel Paragon. Dependency and object files and the resulting load-balancing
-library file are placed in subdirectories for each architecture. Thus,
-to build the library for Sandia's ASCI Red computer, a user would type
-<BLOCKQUOTE>gmake tflop</BLOCKQUOTE>
-and the resulting library would be stored in Obj_tflop/libzoltan.a. Paths
-within the top-level Makefile and the Makefiles in the Obj_* subdirectories
-may have to be changed for the user's computing environment.
+ANSI C compiler.&nbsp; Example Makefiles are included with the source code.
+The top-level Makefile includes targets for several architectures, including
+Sandia's ASCI Red computer and Intel Paragon. Dependency and object files
+and the resulting load-balancing library file are placed in subdirectories
+for each architecture. Thus, to build the library for Sandia's ASCI Red
+computer, a user types
+<BLOCKQUOTE>gmake [options] tflop</BLOCKQUOTE>
+where the options that may be specified are listed below.
+<TABLE WIDTH="100%" >
+<TR>
+<TD WIDTH="20%"><B>Options to gmake:</B></TD>
+
+<TD>&nbsp;</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; NO_PARMETIS=1</I></TD>
+
+<TD>Do not compile and link with ParMETIS in the Zoltan library.&nbsp;
+If this option is specified, no ParMETIS libraries are needed when the
+application is linking.&nbsp; Otherwise, a ParMETIS library path must be
+specified to <A HREF="#Building Applications">build the application</A>.</TD>
+</TR>
+</TABLE>
+The resulting library is stored in Obj_tflop/libzoltan.a. Paths within
+the top-level Makefile and the Makefiles in the Obj_* subdirectories may
+have to be changed for the user's computing environment.
 <H3>
 <A NAME="Building Applications"></A>Building Applications</H3>
 The library interface is described in the C include file "lbi_const.h";
 this file should be included in all application source files that call
 Zoltan library routines. The application should then be linked with the
 Zoltan library by including -lzoltan in the linking command for the application.
+Communication within the library is performed through MPI, so appropriate
+MPI libraries must be linked with the application. If the <I>NO_PARMETIS=1
+</I>parameter was not specified when Zoltan was compiled, ParMETIS libraries
+-lparmetis and -lmetis must also be included in the application's linking
+command.
 <BR>&nbsp;
 
 <P>
