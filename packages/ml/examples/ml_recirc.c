@@ -531,39 +531,22 @@ int *block_list, nblocks = 3;
       for (level = N_levels-1; level > coarsest_level; level--) {
 /*
          ML_Gen_Blocks_Metis(ml, level, &nblocks, &block_list);
-*/
-ML_Gen_Blocks_Aggregates(*ml_ag, level, &nblocks, &block_list);
-
-/*
-         ML_Gen_Smoother_VBlockJacobi( ml , level, ML_PRESMOOTH, nsmooth, 1.,
-                                            nblocks, block_list);
-         ML_Gen_Smoother_VBlockJacobi( ml , level, ML_POSTSMOOTH, nsmooth, 1.,
-                                            nblocks, block_list);
-*/
-
          ML_Gen_Smoother_VBlockSymGaussSeidel( ml , level, ML_BOTH, nsmooth, 1.,
-                                            nblocks, block_list);
-/*
-         ML_Gen_Smoother_VBlockSymGaussSeidel( ml , level, ML_POSTSMOOTH, nsmooth, 1.,
                                             nblocks, block_list);
 */
 
 /*
          ML_Gen_Smoother_GaussSeidel(ml, level, ML_BOTH, nsmooth,1.);
-         ML_Gen_Smoother_GaussSeidel(ml, level, ML_POSTSMOOTHER, nsmooth, 1.);
 */
 /*
-         ML_Gen_Smoother_ParaSails(ml , level, ML_PRESMOOTHER, nsmooth, 0, 0.0, 1, 0.0,0,0);
-*/
-/*
-         ML_Gen_Smoother_BlockGaussSeidel(ml, level, ML_PRESMOOTHER, nsmooth,1., 2);
-         ML_Gen_Smoother_BlockGaussSeidel(ml, level, ML_POSTSMOOTHER, nsmooth,1., 1);
+         ML_Gen_Smoother_ParaSails(ml , level, ML_PRESMOOTHER, nsmooth,
+                                parasails_sym, parasails_thresh,
+                                parasails_nlevels, parasails_filter,
+                                parasails_loadbal, parasails_factorized);
+
 */
 
-/*
          ML_Gen_Smoother_SymGaussSeidel(ml, level, ML_BOTH, nsmooth,1.);
-         ML_Gen_Smoother_SymGaussSeidel(ml, level, ML_POSTSMOOTHER, nsmooth,1.);
-*/
       }
 
       if (coarse_iterations == 0) 
@@ -576,11 +559,8 @@ ML_Gen_Blocks_Aggregates(*ml_ag, level, &nblocks, &block_list);
          ML_Gen_CoarseSolverSuperLU( ml, coarsest_level);
       }
       else if ( coarse_iterations == 1 )
-         ML_Gen_Smoother_ParaSails(ml , coarsest_level, ML_PRESMOOTHER, nsmooth, 0, 0.0, 1, 0.0,0,0);
-/*
          ML_Gen_Smoother_SymGaussSeidel(ml, coarsest_level, ML_PRESMOOTHER, 
                                         coarse_iterations,1.);
-*/
       else
       {
          options[AZ_precond]=AZ_dom_decomp; options[AZ_subdomain_solve]=AZ_ilut;
