@@ -417,7 +417,11 @@ Users' Tools
   used to print out the sparsity pattern of an Epetra_RowMatrix (as PS, or on
   screen);
 - Function Ifpack_Analyze() can be used to analyze basic properties of a given
-  Epetra_RowMatrix.
+  Epetra_RowMatrix; see an example of output \ref ifp_analyze.
+- Function Ifpack_AnalyzeMatrixElements() can be used to evaluate the
+  distribution of matrix elements; see an example of output \ref ifp_matrix.
+- Function Ifpack_AnalyzeVectorElements() can be used to evaluate the
+  distribution of vector elements; see an example of output \ref ifp_vector.
 
 Developers' Tools 
 
@@ -540,6 +544,92 @@ USA
 
 */
 
+/*! \page ifp_analyze Usage of Ifpack_Analyze().
+
+The output of function Ifpack_Analyze() applied to matrix fidap019.rua is as
+reported below.
+\code
+================================================================================
+Label                          = Epetra::CrsMatrix
+Global rows                    = 12005
+Global columns                 = 12005
+Stored nonzeros                = 259863
+Nonzeros / row                 = 21
+Estimated storage (Mbytes)     = 3.16638
+
+Actual nonzeros                = 259561
+Nonzeros in strict lower part  = 123929
+Nonzeros in strict upper part  = 123929
+
+Empty rows                     = 0                    ( 0 %)
+Dirichlet rows                 = 302                  ( 2.51562 %)
+Diagonally dominant rows       = 402                  ( 3.3486 %)
+Weakly diag. dominant rows     = 704                  ( 5.86422 %)
+
+Maximum bandwidth              = 169
+
+                                 one-norm       inf-norm       Frobenius
+                                 ========       ========       =========
+
+A                              = 7.29106e+07    7.29106e+07    3.25455e+08
+A + A^T                        = 7.29106e+07    7.29106e+07    3.25455e+08
+A - A^T                        = 2.00455        2.00455        19.3218
+
+                                 min            avg            max
+                                 ===            ===            ===
+
+ A(i,j)                        = -1.36169e+07   3440.55        2.75322e+07
+|A(i,j)|                       = 1              130430         2.75322e+07
+
+
+ A(k,k)                        = 0.000198963    626967         2.75322e+07
+|A(k,k)|                       = 0.000198963    626967         2.75322e+07
+================================================================================
+\endcode
+*/
+
+/*! \page ifp_matrix Usage of Ifpack_AnalyzeMatrixElements()
+
+The output of function Ifpack_AnalyzeMatrixElements() applied to matrix fidap019.rua is as
+reported below.
+\code
+================================================================================
+Label of matrix = Epetra::CrsMatrix
+
+Elements in [-1.361693e+07, -9.502017e+06) =         48 ( =  0.02 %)
+Elements in [-9.502017e+06, -5.387105e+06) =        220 ( =  0.08 %)
+Elements in [-5.387105e+06, -1.272193e+06) =       2396 ( =  0.92 %)
+Elements in [-1.272193e+06, +2.842719e+06) =     255985 ( = 98.51 %)
+Elements in [+2.842719e+06, +6.957631e+06) =        939 ( =  0.36 %)
+Elements in [+6.957631e+06, +1.107254e+07) =        149 ( =  0.06 %)
+Elements in [+1.107254e+07, +1.518745e+07) =         69 ( =  0.03 %)
+Elements in [+1.518745e+07, +1.930237e+07) =         36 ( =  0.01 %)
+Elements in [+1.930237e+07, +2.341728e+07) =         15 ( =  0.01 %)
+Elements in [+2.341728e+07, +2.753219e+07) =          5 ( =  0.00 %)
+================================================================================\endcode
+*/
+
+/*! \page ifp_vector Usage of Ifpack_AnalyzeVectorElements()
+
+The output of function Ifpack_AnalyzeVectorElements() applied to the diagonal of matrix fidap019.rua is as
+reported below.
+\code
+================================================================================
+Vector label = Epetra::Vector
+
+Elements in [+1.989626e-04, +2.753219e+06) =      11246 ( = 93.68 %)
+Elements in [+2.753219e+06, +5.506438e+06) =        391 ( =  3.26 %)
+Elements in [+5.506438e+06, +8.259657e+06) =        154 ( =  1.28 %)
+Elements in [+8.259657e+06, +1.101288e+07) =         88 ( =  0.73 %)
+Elements in [+1.101288e+07, +1.376610e+07) =         52 ( =  0.43 %)
+Elements in [+1.376610e+07, +1.651931e+07) =         31 ( =  0.26 %)
+Elements in [+1.651931e+07, +1.927253e+07) =         21 ( =  0.17 %)
+Elements in [+1.927253e+07, +2.202575e+07) =         13 ( =  0.11 %)
+Elements in [+2.202575e+07, +2.477897e+07) =          5 ( =  0.04 %)
+Elements in [+2.477897e+07, +2.753219e+07) =          3 ( =  0.02 %)
+================================================================================
+\endcode
+*/
 
 /*! \page ifp_ilu General description of incomplete factorizations
 
