@@ -16,9 +16,29 @@
 #include "lb_util_const.h"
 #include "all_allo_const.h"
 #include "comm_const.h"
-#include "parmetis_jostle_const.h"
+#include "parmetis_jostle.h"
 #include "params_const.h"
 #include "timer_const.h"
+
+/* Data structures used in ParMetis interface routines */
+/* An array of this data structure works with a parallel array of
+ * ZOLTAN_ID_PTR called proc_list_nbor containing the global IDs of the
+ * neighboring object.
+ * This separate array is needed to prevent individual mallocs of
+ * neighboring global IDs.
+ */
+struct Edge_Info {
+  ZOLTAN_ID_PTR my_gid;  /* Pointer to the Global id of local vtx */
+  int my_gno;        /* Global number of local vtx */
+  int nbor_proc;     /* Proc id for the neighboring proc */
+  int *adj;          /* Pointer to adjcny array */
+};
+
+struct Hash_Node {
+  ZOLTAN_ID_PTR gid;     /* Pointer to a Global id */
+  int gno;           /* Global number */
+  struct Hash_Node * next;
+};
 
 
 /**********  parameters structure for parmetis methods **********/
@@ -48,24 +68,24 @@ static PARAM_VARS Graph_params[] = {
 
 /***************  prototypes for internal functions ********************/
 
-#if (defined(LB_JOSTLE) || defined(LB_PARMETIS))
+#if (defined(ZOLTAN_JOSTLE) || defined(ZOLTAN_PARMETIS))
 
-static int LB_ParMetis_Jostle(LB *lb, int *num_imp, ZOLTAN_ID_PTR *imp_gids,
+static int Zoltan_ParMetis_Jostle(LB *lb, int *num_imp, ZOLTAN_ID_PTR *imp_gids,
   ZOLTAN_ID_PTR *imp_lids, int **imp_procs, int *num_exp, ZOLTAN_ID_PTR *exp_gids,
   ZOLTAN_ID_PTR *exp_lids, int **exp_procs, char *alg, int  *options);
-static int hash_lookup (LB *, struct LB_hash_node **, ZOLTAN_ID_PTR, int);
+static int hash_lookup (LB *, struct Hash_Node **, ZOLTAN_ID_PTR, int);
 static int scale_round_weights(float *fwgts, idxtype *iwgts, int n, int dim, 
                  int mode, int max_wgt_sum, int debug_level, MPI_Comm comm);
 
-#endif  /* (defined(LB_JOSTLE) || defined(LB_PARMETIS)) */
+#endif  /* (defined(ZOLTAN_JOSTLE) || defined(ZOLTAN_PARMETIS)) */
 
 /**********************************************************/
 /* Interface routine for ParMetis. This is just a simple  */
 /* wrapper that sets the options etc and then calls       */
-/* LB_ParMetis_Jostle, where the real action is.          */
+/* Zoltan_ParMetis_Jostle, where the real action is.          */
 /**********************************************************/
 
-int LB_ParMetis(
+int Zoltan_ParMetis(
   LB *lb,               /* load balancing structure */
   int *num_imp,         /* number of objects to be imported */
   ZOLTAN_ID_PTR *imp_gids,  /* global ids of objects to be imported */
@@ -77,13 +97,13 @@ int LB_ParMetis(
   int **exp_procs       /* list of processors to export to */
 )
 {
-#ifndef LB_PARMETIS
-  char *yo="LB_ParMetis";
+#ifndef ZOLTAN_PARMETIS
+  char *yo="Zoltan_ParMetis";
   ZOLTAN_PRINT_ERROR(lb->Proc, yo, 
      "ParMetis requested but not compiled into library.");
   return ZOLTAN_FATAL;
 
-#else /* LB_PARMETIS */
+#else /* ZOLTAN_PARMETIS */
   int  i; 
   int  options[MAX_OPTIONS];
   char alg[MAX_PARAM_STRING_LEN+1];
@@ -93,16 +113,16 @@ int LB_ParMetis(
   for (i=0; i<MAX_OPTIONS; i++)
     options[i] = -1;
 
-  LB_Bind_Param(Parmetis_params, "PARMETIS_METHOD",     
+  Zoltan_Bind_Param(Parmetis_params, "PARMETIS_METHOD",     
                (void *) alg);
-  LB_Bind_Param(Parmetis_params, "PARMETIS_COARSE_ALG", 
+  Zoltan_Bind_Param(Parmetis_params, "PARMETIS_COARSE_ALG", 
                 (void *) &(options[OPTION_IPART]));
-  LB_Bind_Param(Parmetis_params, "PARMETIS_FOLD",       
+  Zoltan_Bind_Param(Parmetis_params, "PARMETIS_FOLD",       
                 (void *) &(options[OPTION_FOLDF]));
-  LB_Bind_Param(Parmetis_params, "PARMETIS_OUTPUT_LEVEL", 
+  Zoltan_Bind_Param(Parmetis_params, "PARMETIS_OUTPUT_LEVEL", 
                 (void *) &(options[OPTION_DBGLVL]));
 
-  LB_Assign_Param_Vals(lb->Params, Parmetis_params, lb->Debug_Level, lb->Proc,
+  Zoltan_Assign_Param_Vals(lb->Params, Parmetis_params, lb->Debug_Level, lb->Proc,
                        lb->Debug_Proc);
 
   /* Set options[0] to 1 if any of the low level ParMetis options were set,
@@ -125,21 +145,21 @@ int LB_ParMetis(
   }
 
   /* Call the real ParMetis interface */
-  return LB_ParMetis_Jostle( lb, num_imp, imp_gids, imp_lids,
+  return Zoltan_ParMetis_Jostle( lb, num_imp, imp_gids, imp_lids,
             imp_procs, num_exp, exp_gids, exp_lids, exp_procs,
             alg, options);
 
-#endif /* LB_PARMETIS */
+#endif /* ZOLTAN_PARMETIS */
 }
 
 
 /**********************************************************/
 /* Interface routine for Jostle. This is just a simple    */
 /* wrapper that sets the options etc and then calls       */
-/* LB_ParMetis_Jostle, where the real action is.          */
+/* Zoltan_ParMetis_Jostle, where the real action is.          */
 /**********************************************************/
 
-int LB_Jostle(
+int Zoltan_Jostle(
   LB *lb,               /* load balancing structure */
   int *num_imp,         /* number of objects to be imported */
   ZOLTAN_ID_PTR *imp_gids,  /* global ids of objects to be imported */
@@ -151,13 +171,13 @@ int LB_Jostle(
   int **exp_procs       /* list of processors to export to */
 )
 {
-#ifndef LB_JOSTLE
-  char *yo = "LB_Jostle";
+#ifndef ZOLTAN_JOSTLE
+  char *yo = "Zoltan_Jostle";
   ZOLTAN_PRINT_ERROR(lb->Proc, yo, 
      "Jostle requested but not compiled into library.");
   return ZOLTAN_FATAL;
 
-#else /* LB_JOSTLE */
+#else /* ZOLTAN_JOSTLE */
   static LB *lb_prev = NULL; /* Last lb structure used */
   static char *alg = "JOSTLE";
   char *cptr;
@@ -189,22 +209,22 @@ int LB_Jostle(
   reduction[0] = '\0';
   connect[0] = '\0';
   scatter[0] = '\0';
-  LB_Bind_Param(Jostle_params, "JOSTLE_OUTPUT_LEVEL", 
+  Zoltan_Bind_Param(Jostle_params, "JOSTLE_OUTPUT_LEVEL", 
                 (void *) &output_level);
-  LB_Bind_Param(Jostle_params, "JOSTLE_THRESHOLD",    
+  Zoltan_Bind_Param(Jostle_params, "JOSTLE_THRESHOLD",    
                 (void *) &threshold);
-  LB_Bind_Param(Jostle_params, "JOSTLE_GATHER_THRESHOLD", 
+  Zoltan_Bind_Param(Jostle_params, "JOSTLE_GATHER_THRESHOLD", 
                 (void *) &gather_threshold);
-  LB_Bind_Param(Jostle_params, "JOSTLE_MATCHING",     
+  Zoltan_Bind_Param(Jostle_params, "JOSTLE_MATCHING",     
                 (void *) matching);
-  LB_Bind_Param(Jostle_params, "JOSTLE_REDUCTION",    
+  Zoltan_Bind_Param(Jostle_params, "JOSTLE_REDUCTION",    
                 (void *) reduction);
-  LB_Bind_Param(Jostle_params, "JOSTLE_CONNECT",    
+  Zoltan_Bind_Param(Jostle_params, "JOSTLE_CONNECT",    
                 (void *) connect);
-  LB_Bind_Param(Jostle_params, "JOSTLE_SCATTER",    
+  Zoltan_Bind_Param(Jostle_params, "JOSTLE_SCATTER",    
                 (void *) scatter);
 
-  LB_Assign_Param_Vals(lb->Params, Jostle_params, lb->Debug_Level, lb->Proc,
+  Zoltan_Assign_Param_Vals(lb->Params, Jostle_params, lb->Debug_Level, lb->Proc,
                        lb->Debug_Proc); 
 
   /* Set Jostle parameters using jostle_env() */
@@ -260,11 +280,11 @@ int LB_Jostle(
   }
 
   /* Call the real Jostle/ParMetis interface */
-  return LB_ParMetis_Jostle( lb, num_imp, imp_gids, imp_lids,
+  return Zoltan_ParMetis_Jostle( lb, num_imp, imp_gids, imp_lids,
             imp_procs, num_exp, exp_gids, exp_lids, exp_procs,
             alg, &output_level);
 
-#endif /* LB_JOSTLE */
+#endif /* ZOLTAN_JOSTLE */
 }
 
 /****************************************************************/
@@ -274,7 +294,7 @@ int LB_Jostle(
 /* Author: Erik Boman, eboman@cs.sandia.gov (9226)              */
 /****************************************************************/
 
-#if (defined(LB_JOSTLE) || defined(LB_PARMETIS))
+#if (defined(ZOLTAN_JOSTLE) || defined(ZOLTAN_PARMETIS))
 
 /* Macro to free all allocated memory */
 #define FREE_MY_MEMORY \
@@ -291,7 +311,7 @@ int LB_Jostle(
   ZOLTAN_FREE(&tmp_ewgts); \
   }
 
-static int LB_ParMetis_Jostle(
+static int Zoltan_ParMetis_Jostle(
   LB *lb,               /* load balancing structure */
   int *num_imp,         /* number of objects to be imported */
   ZOLTAN_ID_PTR *imp_gids,  /* global ids of objects to be imported */
@@ -305,7 +325,7 @@ static int LB_ParMetis_Jostle(
   int  *options         /* option array */
 )
 {
-  static char *yo = "LB_ParMetis_Jostle";
+  static char *yo = "Zoltan_ParMetis_Jostle";
   int i, j, jj, k, ierr, packet_size, offset, tmp, flag, ndims; 
   int obj_wgt_dim, comm_wgt_dim, check_graph, scatter;
   int num_obj, nedges, num_edges, cross_edges, max_edges, edgecut;
@@ -316,18 +336,18 @@ static int LB_ParMetis_Jostle(
   int tmp_num_obj, nself;
   float *float_vwgt, *ewgts, *xyz, *imb_tols, *tmp_ewgts; 
   double geom_vec[6];
-  struct LB_edge_info *ptr;
-  struct LB_edge_info *proc_list;   /* Edge information; contains global IDs
+  struct Edge_Info *ptr;
+  struct Edge_Info *proc_list;   /* Edge information; contains global IDs
                                        of objects with off-processor nbors. */
   ZOLTAN_ID_PTR proc_list_nbor;         /* Global IDs of neighbors of proc_list 
                                        entries.  This array is separate from
                                        proc_list to prevent individual mallocs
                                        for nbor global IDs.   */
-  struct LB_hash_node **hashtab, *hash_nodes;
+  struct Hash_Node **hashtab, *hash_nodes;
   ZOLTAN_ID_PTR local_ids;
   ZOLTAN_ID_PTR global_ids;     /* Do not deallocate while still using the hash
-                               table with num_obj (LB_hash_node) or 
-                               proc_list (LB_edge_info); these data structures
+                               table with num_obj (hash_node) or 
+                               proc_list (Edge_Info); these data structures
                                point to global IDs in this array. */
   ZOLTAN_ID_PTR nbors_global;
   ZOLTAN_ID_PTR lid;            /* Temporary pointer to a local id; used to pass
@@ -348,12 +368,12 @@ static int LB_ParMetis_Jostle(
   MPI_Comm comm = lb->Communicator;/* want to risk letting external packages  */
                                    /* change our lb struct.                   */
   int i99;                         /* Variables used for debugging.           */
-#ifdef LB_JOSTLE
+#ifdef ZOLTAN_JOSTLE
   int nnodes;
   int network[4] = {0, 1, 1, 1};
 #endif
 
-  ZOLTAN_LB_TRACE_ENTER(lb, yo);
+  ZOLTAN_TRACE_ENTER(lb, yo);
 
   /* Set default return values (in case of early exit) */
   *num_exp = -1;
@@ -402,7 +422,7 @@ static int LB_ParMetis_Jostle(
     comm_wgt_dim = lb->Comm_Weight_Dim;
   }
 
-  if (lb->Debug_Level >= LB_DEBUG_ALL) {
+  if (lb->Debug_Level >= ZOLTAN_DEBUG_ALL) {
     printf("[%1d] Debug: alg=%s, Obj_Weight_Dim=%d, Comm_Weight_Dim=%d\n", 
       lb->Proc, alg, obj_wgt_dim, comm_wgt_dim);
     printf("[%1d] Debug: ParMetis options = %d, %d, %d, %d\n", lb->Proc,
@@ -410,18 +430,18 @@ static int LB_ParMetis_Jostle(
   }
 
   /* Start timer */
-  get_times = (lb->Debug_Level >= LB_DEBUG_ATIME);
+  get_times = (lb->Debug_Level >= ZOLTAN_DEBUG_ATIME);
   if (get_times){
     MPI_Barrier(lb->Communicator);
-    times[0] = LB_Time(lb->Timer);
+    times[0] = Zoltan_Time(lb->Timer);
   }
 
   /* Get parameter options shared by ParMetis and Jostle */
   check_graph = 1;          /* default */
   scatter = 1;              /* default */
-  LB_Bind_Param(Graph_params, "CHECK_GRAPH", (void *) &check_graph);
-  LB_Bind_Param(Graph_params, "SCATTER_GRAPH", (void *) &scatter);
-  LB_Assign_Param_Vals(lb->Params, Graph_params, lb->Debug_Level, lb->Proc,
+  Zoltan_Bind_Param(Graph_params, "CHECK_GRAPH", (void *) &check_graph);
+  Zoltan_Bind_Param(Graph_params, "SCATTER_GRAPH", (void *) &scatter);
+  Zoltan_Assign_Param_Vals(lb->Params, Graph_params, lb->Debug_Level, lb->Proc,
                        lb->Debug_Proc);
 
   /* Most ParMetis methods use only graph data */
@@ -444,40 +464,40 @@ static int LB_ParMetis_Jostle(
   if (ierr){
     /* Return error code */
     FREE_MY_MEMORY;
-    ZOLTAN_LB_TRACE_EXIT(lb, yo);
+    ZOLTAN_TRACE_EXIT(lb, yo);
     return (ierr);
   }
   
-  if (lb->Debug_Level >= LB_DEBUG_ALL)
+  if (lb->Debug_Level >= ZOLTAN_DEBUG_ALL)
     printf("[%1d] Debug: num_obj =%d\n", lb->Proc, num_obj);
 
   
   vtxdist = (idxtype *)ZOLTAN_MALLOC((lb->Num_Proc+1)* sizeof(idxtype));
   if (num_obj>0){
-    global_ids = ZOLTAN_ZOLTAN_MALLOC_GID_ARRAY(lb, num_obj);
-    local_ids =  ZOLTAN_ZOLTAN_MALLOC_LID_ARRAY(lb, num_obj);
+    global_ids = ZOLTAN_MALLOC_GID_ARRAY(lb, num_obj);
+    local_ids =  ZOLTAN_MALLOC_LID_ARRAY(lb, num_obj);
     if (obj_wgt_dim)
       float_vwgt = (float *)ZOLTAN_MALLOC(obj_wgt_dim*num_obj * sizeof(float));
     if (!vtxdist || !global_ids || (num_lid_entries && !local_ids) || 
         (obj_wgt_dim && !float_vwgt)){
       /* Not enough memory */
       FREE_MY_MEMORY;
-      ZOLTAN_LB_TRACE_EXIT(lb, yo);
+      ZOLTAN_TRACE_EXIT(lb, yo);
       return ZOLTAN_MEMERR;
     }
-    LB_Get_Obj_List(lb, global_ids, local_ids, obj_wgt_dim, float_vwgt, &ierr);
+    Zoltan_Get_Obj_List(lb, global_ids, local_ids, obj_wgt_dim, float_vwgt, &ierr);
     if (ierr){
       /* Return error */
       FREE_MY_MEMORY;
-      ZOLTAN_LB_TRACE_EXIT(lb, yo);
+      ZOLTAN_TRACE_EXIT(lb, yo);
       return ZOLTAN_FATAL;
     }
   
-    if (lb->Debug_Level >= LB_DEBUG_ALL) {
+    if (lb->Debug_Level >= ZOLTAN_DEBUG_ALL) {
       printf("[%1d] Debug: Global ids = ", lb->Proc);
       for (i99=0; i99<num_obj; i99++) {
         printf("    ");
-        ZOLTAN_LB_PRINT_GID(lb, &(global_ids[i99*num_gid_entries]));
+        ZOLTAN_PRINT_GID(lb, &(global_ids[i99*num_gid_entries]));
         printf("\n");
       }
     }
@@ -491,7 +511,7 @@ static int LB_ParMetis_Jostle(
                  &vtxdist[1], 1, IDX_DATATYPE, lb->Communicator);
   vtxdist[0] = 0;
   
-  if (lb->Debug_Level >= LB_DEBUG_ALL) {
+  if (lb->Debug_Level >= ZOLTAN_DEBUG_ALL) {
     printf("[%1d] Debug: vtxdist = ", lb->Proc);
     for (i99=0; i99<=lb->Num_Proc; i99++)
       printf("%d ", vtxdist[i99]);
@@ -516,13 +536,13 @@ static int LB_ParMetis_Jostle(
       if (ierr){
         /* Return error */
         FREE_MY_MEMORY;
-        ZOLTAN_LB_TRACE_EXIT(lb, yo);
+        ZOLTAN_TRACE_EXIT(lb, yo);
         return (ierr);
       }
       num_edges += nedges;
       if (nedges>max_edges) max_edges = nedges;
     }
-    if (lb->Debug_Level >= LB_DEBUG_ALL)
+    if (lb->Debug_Level >= ZOLTAN_DEBUG_ALL)
       printf("[%1d] Debug: num_edges = %d\n", lb->Proc, num_edges);
 
     /* Allocate space for ParMETIS data structs */
@@ -536,24 +556,24 @@ static int LB_ParMetis_Jostle(
         (num_edges && comm_wgt_dim && !adjwgt)){
       /* Not enough memory */
       FREE_MY_MEMORY;
-      ZOLTAN_LB_TRACE_EXIT(lb, yo);
+      ZOLTAN_TRACE_EXIT(lb, yo);
       return ZOLTAN_MEMERR;
     }
-    if (lb->Debug_Level >= LB_DEBUG_ALL)
+    if (lb->Debug_Level >= ZOLTAN_DEBUG_ALL)
       printf("[%1d] Debug: Successfully allocated ParMetis space\n", lb->Proc);
   
     /* Construct ParMETIS graph */
     /* First compute a global dense numbering of the objects/vertices */
   
     /* Construct local hash table */
-    hash_nodes = (struct LB_hash_node *)ZOLTAN_MALLOC(num_obj *
-      sizeof(struct LB_hash_node));
-    hashtab = (struct LB_hash_node **) ZOLTAN_MALLOC(num_obj *
-      sizeof(struct LB_hash_node *) );
+    hash_nodes = (struct Hash_Node *)ZOLTAN_MALLOC(num_obj *
+      sizeof(struct Hash_Node));
+    hashtab = (struct Hash_Node **) ZOLTAN_MALLOC(num_obj *
+      sizeof(struct Hash_Node *) );
     if (num_obj && ((!hash_nodes) || (!hashtab))){
       /* Not enough memory */
       FREE_MY_MEMORY;
-      ZOLTAN_LB_TRACE_EXIT(lb, yo);
+      ZOLTAN_TRACE_EXIT(lb, yo);
       return ZOLTAN_MEMERR;
     }
     
@@ -565,7 +585,7 @@ static int LB_ParMetis_Jostle(
 
     for (i=0; i< num_obj; i++){
       /* insert hashed elements into hash table */
-      j = LB_Hash(&(global_ids[i*num_gid_entries]), num_gid_entries, (unsigned int)num_obj);
+      j = Zoltan_Hash(&(global_ids[i*num_gid_entries]), num_gid_entries, (unsigned int)num_obj);
       hash_nodes[i].next = hashtab[j];
       hashtab[j] = &hash_nodes[i];
     }
@@ -589,7 +609,7 @@ static int LB_ParMetis_Jostle(
        max_proc_list_len = 0;
     
     /* Allocate edge list data */
-    nbors_global = ZOLTAN_ZOLTAN_MALLOC_GID_ARRAY(lb, max_edges);
+    nbors_global = ZOLTAN_MALLOC_GID_ARRAY(lb, max_edges);
     nbors_proc = (int *)ZOLTAN_MALLOC(max_edges * sizeof(int));
     plist = (int *)ZOLTAN_MALLOC(lb->Num_Proc * sizeof(int));
     if (comm_wgt_dim && max_edges){
@@ -602,7 +622,7 @@ static int LB_ParMetis_Jostle(
                        (comm_wgt_dim && !tmp_ewgts))) || (!plist)){
       /* Not enough memory */
       FREE_MY_MEMORY;
-      ZOLTAN_LB_TRACE_EXIT(lb, yo);
+      ZOLTAN_TRACE_EXIT(lb, yo);
       return ZOLTAN_MEMERR;
     }
     for (i=0; i<lb->Num_Proc; i++)
@@ -612,14 +632,14 @@ static int LB_ParMetis_Jostle(
       /* Allocate space for processor list */
       while ((proc_list==NULL || proc_list_nbor == NULL)
           && (max_proc_list_len>=CHUNKSIZE)){
-        proc_list = (struct LB_edge_info *) ZOLTAN_MALLOC(max_proc_list_len *
-          sizeof(struct LB_edge_info) );
-        proc_list_nbor = ZOLTAN_ZOLTAN_MALLOC_GID_ARRAY(lb, max_proc_list_len);
+        proc_list = (struct Edge_Info *) ZOLTAN_MALLOC(max_proc_list_len *
+          sizeof(struct Edge_Info) );
+        proc_list_nbor = ZOLTAN_MALLOC_GID_ARRAY(lb, max_proc_list_len);
         if (!proc_list || !proc_list_nbor){
           /* Not enough memory, try shorter list */
           ZOLTAN_FREE(&proc_list);
           ZOLTAN_FREE(&proc_list_nbor);
-          if (lb->Debug_Level >= LB_DEBUG_ALL) {
+          if (lb->Debug_Level >= ZOLTAN_DEBUG_ALL) {
             printf("[%1d] Debug: Could not allocate %d list nodes, "
                    "trying %d instead.\n", lb->Proc,
                    max_proc_list_len, max_proc_list_len/2);
@@ -630,7 +650,7 @@ static int LB_ParMetis_Jostle(
       if (!proc_list || !proc_list_nbor){
         /* Not enough memory */
         FREE_MY_MEMORY;
-        ZOLTAN_LB_TRACE_EXIT(lb, yo);
+        ZOLTAN_TRACE_EXIT(lb, yo);
         return ZOLTAN_MEMERR;
       }
     }
@@ -675,15 +695,15 @@ static int LB_ParMetis_Jostle(
       if (ierr){
         /* Return error */
         FREE_MY_MEMORY;
-        ZOLTAN_LB_TRACE_EXIT(lb, yo);
+        ZOLTAN_TRACE_EXIT(lb, yo);
         return (ierr);
       }
   
-      if (lb->Debug_Level >= LB_DEBUG_ALL) {
+      if (lb->Debug_Level >= ZOLTAN_DEBUG_ALL) {
         printf("[%1d] Debug: i=%d, gid=", lb->Proc, i);
-        ZOLTAN_LB_PRINT_GID(lb, &(global_ids[gid_off]));
+        ZOLTAN_PRINT_GID(lb, &(global_ids[gid_off]));
         printf("lid=");
-        ZOLTAN_LB_PRINT_LID(lb, lid);
+        ZOLTAN_PRINT_LID(lb, lid);
         printf("nedges=%d\n", nedges);
       }
 
@@ -719,20 +739,20 @@ static int LB_ParMetis_Jostle(
 
           /* Check if we need to allocate more space for proc_list.*/
           if (offset == max_proc_list_len){
-            if (lb->Debug_Level >= LB_DEBUG_ALL)
+            if (lb->Debug_Level >= ZOLTAN_DEBUG_ALL)
               printf("[%1d] Debug: Allocating more list space, "
                      "max_proc_list_len = %d, increasing by %d\n", 
                      lb->Proc, max_proc_list_len, CHUNKSIZE);
 
             max_proc_list_len += CHUNKSIZE;
-            proc_list = (struct LB_edge_info *) ZOLTAN_REALLOC(proc_list,
-                         max_proc_list_len*sizeof(struct LB_edge_info));
-            proc_list_nbor = ZOLTAN_LB_REALLOC_GID_ARRAY(lb, proc_list_nbor,
+            proc_list = (struct Edge_Info *) ZOLTAN_REALLOC(proc_list,
+                         max_proc_list_len*sizeof(struct Edge_Info));
+            proc_list_nbor = ZOLTAN_REALLOC_GID_ARRAY(lb, proc_list_nbor,
                               max_proc_list_len);
             if (!proc_list){
               /* Not enough memory */
               FREE_MY_MEMORY;
-              ZOLTAN_LB_TRACE_EXIT(lb, yo);
+              ZOLTAN_TRACE_EXIT(lb, yo);
               return ZOLTAN_MEMERR;
             }
           }
@@ -740,7 +760,7 @@ static int LB_ParMetis_Jostle(
           ptr->my_gid = &(global_ids[gid_off]);
           ptr->my_gno = hash_lookup(lb, hashtab, 
                                     &(global_ids[gid_off]), num_obj);
-          ZOLTAN_LB_SET_GID(lb, &(proc_list_nbor[offset*num_gid_entries]),
+          ZOLTAN_SET_GID(lb, &(proc_list_nbor[offset*num_gid_entries]),
                          &(nbors_global[j*num_gid_entries]));
           if (flag)
             ptr->nbor_proc = nbors_proc[j];
@@ -748,9 +768,9 @@ static int LB_ParMetis_Jostle(
             ptr->nbor_proc = -1;
           ptr->adj = &adjncy[jj];
 
-          if (lb->Debug_Level >= LB_DEBUG_ALL) {
+          if (lb->Debug_Level >= ZOLTAN_DEBUG_ALL) {
             printf("[%1d] Debug: proc_list[%1d] my_gid=", lb->Proc, offset);
-            ZOLTAN_LB_PRINT_GID(lb, ptr->my_gid);
+            ZOLTAN_PRINT_GID(lb, ptr->my_gid);
             printf(", my_gno=%d, nbor_proc=%d\n", ptr->my_gno, ptr->nbor_proc);
           }
 
@@ -790,7 +810,7 @@ static int LB_ParMetis_Jostle(
               "Something may be wrong with the edges in the graph, "
               "or perhaps you found a bug in Zoltan.\n"); 
       FREE_MY_MEMORY;
-      ZOLTAN_LB_TRACE_EXIT(lb, yo);
+      ZOLTAN_TRACE_EXIT(lb, yo);
       return ZOLTAN_FATAL;
     }
   
@@ -806,21 +826,21 @@ static int LB_ParMetis_Jostle(
     if (nsend && (!sendbuf || !plist) ){
       /* Not enough space */
       FREE_MY_MEMORY;
-      ZOLTAN_LB_TRACE_EXIT(lb, yo);
+      ZOLTAN_TRACE_EXIT(lb, yo);
       return ZOLTAN_MEMERR;
     }
 
     /* Pack the data to send */
-    if (lb->Debug_Level >= LB_DEBUG_ALL)
+    if (lb->Debug_Level >= ZOLTAN_DEBUG_ALL)
       printf("[%1d] Debug: %d messages to send.\n", lb->Proc, nsend);
 
     offset = 0;
     j = 0;
     for (i=0, ptr=proc_list; i<cross_edges; i++, ptr++){
       if (ptr->nbor_proc >= 0){
-        if (lb->Debug_Level >= LB_DEBUG_ALL) {
+        if (lb->Debug_Level >= ZOLTAN_DEBUG_ALL) {
           printf("[%1d] Debug: Sending gid = ", lb->Proc);
-          ZOLTAN_LB_PRINT_GID(lb, ptr->my_gid);
+          ZOLTAN_PRINT_GID(lb, ptr->my_gid);
           printf(", gno = %d to proc %d\n", ptr->my_gno, ptr->nbor_proc);
         }
         memcpy(&sendbuf[offset], (char *) (ptr->my_gid), gid_size); 
@@ -832,7 +852,7 @@ static int LB_ParMetis_Jostle(
     }
 
     /* Create the communication plan */
-    if (lb->Debug_Level >= LB_DEBUG_ALL)
+    if (lb->Debug_Level >= ZOLTAN_DEBUG_ALL)
       printf("[%1d] Debug: Calling Zoltan_Comm_Create with %d packets to send.\n",
              lb->Proc, nsend);
 
@@ -840,7 +860,7 @@ static int LB_ParMetis_Jostle(
     if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN){
       /* Return error code */
       FREE_MY_MEMORY;
-      ZOLTAN_LB_TRACE_EXIT(lb, yo);
+      ZOLTAN_TRACE_EXIT(lb, yo);
       return (ierr);
     }
 
@@ -849,10 +869,10 @@ static int LB_ParMetis_Jostle(
     if (nrecv && (!sendbuf || !plist) ){
       /* Not enough space */
       FREE_MY_MEMORY;
-      ZOLTAN_LB_TRACE_EXIT(lb, yo);
+      ZOLTAN_TRACE_EXIT(lb, yo);
       return ZOLTAN_MEMERR;
     }
-    if (lb->Debug_Level >= LB_DEBUG_ALL)
+    if (lb->Debug_Level >= ZOLTAN_DEBUG_ALL)
       printf("[%1d] Debug: Ready to receive %d packets.\n", 
         lb->Proc, nrecv);
 
@@ -861,7 +881,7 @@ static int LB_ParMetis_Jostle(
     if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN){
       /* Return error code */
       FREE_MY_MEMORY;
-      ZOLTAN_LB_TRACE_EXIT(lb, yo);
+      ZOLTAN_TRACE_EXIT(lb, yo);
       return (ierr);
     }
 
@@ -877,14 +897,14 @@ static int LB_ParMetis_Jostle(
 
     /* Change hash table to contain only border objects */
     /* that we received from other procs.               */
-    hash_nodes = (struct LB_hash_node *)ZOLTAN_REALLOC(hash_nodes,
-      nrecv * sizeof(struct LB_hash_node));
-    hashtab = (struct LB_hash_node **) ZOLTAN_REALLOC(hashtab,
-      nrecv * sizeof(struct LB_hash_node *) );
+    hash_nodes = (struct Hash_Node *)ZOLTAN_REALLOC(hash_nodes,
+      nrecv * sizeof(struct Hash_Node));
+    hashtab = (struct Hash_Node **) ZOLTAN_REALLOC(hashtab,
+      nrecv * sizeof(struct Hash_Node *) );
     if (nrecv && ((!hash_nodes) || (!hashtab))){
       /* Not enough memory */
       FREE_MY_MEMORY;
-      ZOLTAN_LB_TRACE_EXIT(lb, yo);
+      ZOLTAN_TRACE_EXIT(lb, yo);
       return ZOLTAN_MEMERR;
     }
     
@@ -898,12 +918,12 @@ static int LB_ParMetis_Jostle(
   
     /* Insert nodes into hash table */
     for (i=0; i< nrecv; i++){
-      j = LB_Hash(hash_nodes[i].gid, num_gid_entries, (unsigned int)nrecv);
+      j = Zoltan_Hash(hash_nodes[i].gid, num_gid_entries, (unsigned int)nrecv);
       hash_nodes[i].next = hashtab[j];
       hashtab[j] = &hash_nodes[i];
-      if (lb->Debug_Level >= LB_DEBUG_ALL) {
+      if (lb->Debug_Level >= ZOLTAN_DEBUG_ALL) {
         printf("[%1d] Debug: Hashed GID ", lb->Proc);
-        ZOLTAN_LB_PRINT_GID(lb, hash_nodes[i].gid);
+        ZOLTAN_PRINT_GID(lb, hash_nodes[i].gid);
         printf(" to %d, gno = %d\n", j, hash_nodes[i].gno);
       }
     }
@@ -917,15 +937,15 @@ static int LB_ParMetis_Jostle(
         ZOLTAN_PRINT_ERROR(lb->Proc, yo,"Invalid graph. Please check that "
            "your graph query functions are correct.\n");
         FREE_MY_MEMORY;
-        ZOLTAN_LB_TRACE_EXIT(lb, yo);
+        ZOLTAN_TRACE_EXIT(lb, yo);
         return ZOLTAN_FATAL;
       }
       else{
         /* Insert the global number into adjncy vector */
         *(proc_list[i].adj) = tmp;
-        if (lb->Debug_Level >= LB_DEBUG_ALL) {
+        if (lb->Debug_Level >= ZOLTAN_DEBUG_ALL) {
           printf("[%1d] Debug: GID ", lb->Proc);
-          ZOLTAN_LB_PRINT_GID(lb, &(proc_list_nbor[i*num_gid_entries]));
+          ZOLTAN_PRINT_GID(lb, &(proc_list_nbor[i*num_gid_entries]));
           printf(" has global number %d\n", tmp);
         }
       }
@@ -950,11 +970,11 @@ static int LB_ParMetis_Jostle(
       if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN){
         /* Return error code */
         FREE_MY_MEMORY;
-        ZOLTAN_LB_TRACE_EXIT(lb, yo);
+        ZOLTAN_TRACE_EXIT(lb, yo);
         return ierr;
       }
 
-      if (lb->Debug_Level >= LB_DEBUG_ALL)
+      if (lb->Debug_Level >= ZOLTAN_DEBUG_ALL)
         for (i99=0; i99 < (num_obj<3 ? num_obj : 3); i99++){
           for (k=0; k<obj_wgt_dim; k++)
             sprintf(msg+10*k, "%9d ", vwgt[i99*obj_wgt_dim+k]);
@@ -966,7 +986,7 @@ static int LB_ParMetis_Jostle(
 
     /* Get edge weights if needed */
     if (comm_wgt_dim){
-      if (lb->Debug_Level >= LB_DEBUG_ALL){
+      if (lb->Debug_Level >= ZOLTAN_DEBUG_ALL){
         printf("[%1d] Debug: Edge weights are (before scaling) = \n", lb->Proc);
         for (j=0; j<num_edges*comm_wgt_dim; j++)
           printf("%f ", ewgts[j]);
@@ -978,11 +998,11 @@ static int LB_ParMetis_Jostle(
       if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN){
         /* Return error code */
         FREE_MY_MEMORY;
-        ZOLTAN_LB_TRACE_EXIT(lb, yo);
+        ZOLTAN_TRACE_EXIT(lb, yo);
         return ierr;
       }
 
-      if (lb->Debug_Level >= LB_DEBUG_ALL){
+      if (lb->Debug_Level >= ZOLTAN_DEBUG_ALL){
         printf("[%1d] Debug: Edge weights are (after scaling) = \n", lb->Proc);
         for (j=0; j<num_edges; j++)
           printf("%d ", adjwgt[j]);
@@ -999,7 +1019,7 @@ static int LB_ParMetis_Jostle(
     if (ierr){
       /* Return error */
       FREE_MY_MEMORY;
-      ZOLTAN_LB_TRACE_EXIT(lb, yo);
+      ZOLTAN_TRACE_EXIT(lb, yo);
       return (ierr);
     }
     /* Allocate space for the geometry data */
@@ -1007,7 +1027,7 @@ static int LB_ParMetis_Jostle(
     if (ndims && num_obj && !xyz){
       /* Not enough space */
       FREE_MY_MEMORY;
-      ZOLTAN_LB_TRACE_EXIT(lb, yo);
+      ZOLTAN_TRACE_EXIT(lb, yo);
       return ZOLTAN_MEMERR;
     }
     /* Get the geometry data */
@@ -1020,7 +1040,7 @@ static int LB_ParMetis_Jostle(
       if (ierr) {
         /* Return error code */
         FREE_MY_MEMORY;
-        ZOLTAN_LB_TRACE_EXIT(lb, yo);
+        ZOLTAN_TRACE_EXIT(lb, yo);
         return (ierr);
       }
       for (j=0; j<ndims; j++)
@@ -1049,11 +1069,11 @@ static int LB_ParMetis_Jostle(
   }
 
   if (scatter){
-    ierr = LB_Scatter_Graph(get_graph_data, &vtxdist, &xadj, &adjncy, &vwgt, &adjwgt, &xyz, ndims, 
+    ierr = Zoltan_Scatter_Graph(get_graph_data, &vtxdist, &xadj, &adjncy, &vwgt, &adjwgt, &xyz, ndims, 
               lb, &comm_plan);
     if ((ierr == ZOLTAN_FATAL) || (ierr == ZOLTAN_MEMERR)){
       FREE_MY_MEMORY;
-      ZOLTAN_LB_TRACE_EXIT(lb, yo);
+      ZOLTAN_TRACE_EXIT(lb, yo);
       return ierr;
     }
     tmp_num_obj = vtxdist[lb->Proc+1]-vtxdist[lb->Proc];
@@ -1067,7 +1087,7 @@ static int LB_ParMetis_Jostle(
   if (!part){
     /* Not enough memory */
     FREE_MY_MEMORY;
-    ZOLTAN_LB_TRACE_EXIT(lb, yo);
+    ZOLTAN_TRACE_EXIT(lb, yo);
     return ZOLTAN_MEMERR;
   }
   if (obj_wgt_dim>0){
@@ -1079,11 +1099,11 @@ static int LB_ParMetis_Jostle(
 
   /* Verify that graph is correct */
   if (get_graph_data){
-    if (lb->Debug_Level >= LB_DEBUG_ALL) 
+    if (lb->Debug_Level >= ZOLTAN_DEBUG_ALL) 
       flag = 2; /* Maximum output level */
     else
       flag = 1; /* Medium output level */
-    ierr = LB_Verify_Graph(lb->Communicator, vtxdist, xadj, adjncy, vwgt, 
+    ierr = Zoltan_Verify_Graph(lb->Communicator, vtxdist, xadj, adjncy, vwgt, 
               adjwgt, obj_wgt_dim, comm_wgt_dim, check_graph, flag);
   
     /* Special error checks to avoid certain death in ParMETIS */
@@ -1103,13 +1123,13 @@ static int LB_ParMetis_Jostle(
       }
       ierr = ZOLTAN_FATAL;
       FREE_MY_MEMORY; 
-      ZOLTAN_LB_TRACE_EXIT(lb, yo);
+      ZOLTAN_TRACE_EXIT(lb, yo);
       return (ierr);
     }
   }
   
   /* Get a time here */
-  if (get_times) times[1] = LB_Time(lb->Timer);
+  if (get_times) times[1] = Zoltan_Time(lb->Timer);
 
   /* Select the desired ParMetis or Jostle function */
 
@@ -1120,12 +1140,12 @@ static int LB_ParMetis_Jostle(
       "If you have this installed, please define BETA_PARMETIS and "
       "recompile Zoltan.");
     FREE_MY_MEMORY;
-    ZOLTAN_LB_TRACE_EXIT(lb, yo);
+    ZOLTAN_TRACE_EXIT(lb, yo);
     return ZOLTAN_FATAL;
   }
 #endif /* !BETA_PARMETIS */
   if (strcmp(alg, "JOSTLE") == 0){
-#ifdef LB_JOSTLE
+#ifdef ZOLTAN_JOSTLE
     offset = 0;            /* Index of the first object/node. */
     j = 0;                 /* Dummy variable for Jostle */
     nnodes = vtxdist[lb->Num_Proc]; /* Global number of objects */ 
@@ -1139,7 +1159,7 @@ static int LB_ParMetis_Jostle(
     for (i=0; i<lb->Num_Proc; i++){
       vtxdist[i] = vtxdist[i+1] - vtxdist[i];
     }
-    ZOLTAN_LB_TRACE_DETAIL(lb, yo, "Calling the Jostle library");
+    ZOLTAN_TRACE_DETAIL(lb, yo, "Calling the Jostle library");
     jostle_env("format = contiguous");
     if (check_graph >= 2){
       jostle_env("check = on");
@@ -1147,7 +1167,7 @@ static int LB_ParMetis_Jostle(
     pjostle(&nnodes, &offset, &(vtxdist[lb->Proc]), &j, vtxdist, 
        xadj, vwgt, part, &num_edges, adjncy, adjwgt, network,
        NULL, options, &ndims, NULL); 
-    ZOLTAN_LB_TRACE_DETAIL(lb, yo, "Returned from the Jostle library");
+    ZOLTAN_TRACE_DETAIL(lb, yo, "Returned from the Jostle library");
 #else
     /* We don't know about Jostle */
     ZOLTAN_PRINT_ERROR(lb->Proc, yo, 
@@ -1156,12 +1176,12 @@ static int LB_ParMetis_Jostle(
       "in the Zoltan configuration files and recompile Zoltan. Otherwise, "
       "use a different method, for example ParMETIS.");
     FREE_MY_MEMORY;
-    ZOLTAN_LB_TRACE_EXIT(lb, yo);
+    ZOLTAN_TRACE_EXIT(lb, yo);
     return ZOLTAN_FATAL;
 #endif
   }
   else if (strcmp(alg, "PARTKWAY") == 0){
-    ZOLTAN_LB_TRACE_DETAIL(lb, yo, "Calling the ParMETIS library");
+    ZOLTAN_TRACE_DETAIL(lb, yo, "Calling the ParMETIS library");
     if (obj_wgt_dim <= 1)
       ParMETIS_PartKway (vtxdist, xadj, adjncy, vwgt, adjwgt, &wgtflag, 
         &numflag, &num_proc, options, &edgecut, part, &comm);
@@ -1173,34 +1193,34 @@ static int LB_ParMetis_Jostle(
         &comm, (lb->Proc +1));
     }
 #endif /* BETA_PARMETIS */
-    ZOLTAN_LB_TRACE_DETAIL(lb, yo, "Returned from the ParMETIS library");
+    ZOLTAN_TRACE_DETAIL(lb, yo, "Returned from the ParMETIS library");
   }
   else if (strcmp(alg, "PARTGEOMKWAY") == 0){
-    ZOLTAN_LB_TRACE_DETAIL(lb, yo, "Calling the ParMETIS library");
+    ZOLTAN_TRACE_DETAIL(lb, yo, "Calling the ParMETIS library");
     ParMETIS_PartGeomKway (vtxdist, xadj, adjncy, vwgt, adjwgt, &wgtflag,
       &numflag, &ndims, xyz, &num_proc, options, &edgecut, 
       part, &comm);
-    ZOLTAN_LB_TRACE_DETAIL(lb, yo, "Returned from the ParMETIS library");
+    ZOLTAN_TRACE_DETAIL(lb, yo, "Returned from the ParMETIS library");
   }
   else if (strcmp(alg, "PARTGEOM") == 0){
-    ZOLTAN_LB_TRACE_DETAIL(lb, yo, "Calling the ParMETIS library");
+    ZOLTAN_TRACE_DETAIL(lb, yo, "Calling the ParMETIS library");
     ParMETIS_PartGeom (vtxdist, &ndims, xyz, part, &comm);
-    ZOLTAN_LB_TRACE_DETAIL(lb, yo, "Returned from the ParMETIS library");
+    ZOLTAN_TRACE_DETAIL(lb, yo, "Returned from the ParMETIS library");
   }
   else if (strcmp(alg, "REPARTLDIFFUSION") == 0){
-    ZOLTAN_LB_TRACE_DETAIL(lb, yo, "Calling the ParMETIS library");
+    ZOLTAN_TRACE_DETAIL(lb, yo, "Calling the ParMETIS library");
     ParMETIS_RepartLDiffusion (vtxdist, xadj, adjncy, vwgt, adjwgt, &wgtflag, 
       &numflag, options, &edgecut, part, &comm);
-    ZOLTAN_LB_TRACE_DETAIL(lb, yo, "Returned from the ParMETIS library");
+    ZOLTAN_TRACE_DETAIL(lb, yo, "Returned from the ParMETIS library");
   }
   else if (strcmp(alg, "REPARTGDIFFUSION") == 0){
-    ZOLTAN_LB_TRACE_DETAIL(lb, yo, "Calling the ParMETIS library");
+    ZOLTAN_TRACE_DETAIL(lb, yo, "Calling the ParMETIS library");
     ParMETIS_RepartGDiffusion (vtxdist, xadj, adjncy, vwgt, adjwgt, &wgtflag, 
       &numflag, options, &edgecut, part, &comm);
-    ZOLTAN_LB_TRACE_DETAIL(lb, yo, "Returned from the ParMETIS library");
+    ZOLTAN_TRACE_DETAIL(lb, yo, "Returned from the ParMETIS library");
   }
   else if (strcmp(alg, "REPARTREMAP") == 0){
-    ZOLTAN_LB_TRACE_DETAIL(lb, yo, "Calling the ParMETIS library");
+    ZOLTAN_TRACE_DETAIL(lb, yo, "Calling the ParMETIS library");
     if (obj_wgt_dim <= 1)
       ParMETIS_RepartRemap (vtxdist, xadj, adjncy, vwgt, adjwgt, &wgtflag, 
         &numflag, options, &edgecut, part, &comm);
@@ -1212,33 +1232,33 @@ static int LB_ParMetis_Jostle(
         (lb->Proc+1));
     }
 #endif /* BETA_PARMETIS */
-    ZOLTAN_LB_TRACE_DETAIL(lb, yo, "Returned from the ParMETIS library");
+    ZOLTAN_TRACE_DETAIL(lb, yo, "Returned from the ParMETIS library");
   }
   else if (strcmp(alg, "REPARTMLREMAP") == 0){
-    ZOLTAN_LB_TRACE_DETAIL(lb, yo, "Calling the ParMETIS library");
+    ZOLTAN_TRACE_DETAIL(lb, yo, "Calling the ParMETIS library");
     ParMETIS_RepartMLRemap (vtxdist, xadj, adjncy, vwgt, adjwgt, &wgtflag, 
       &numflag, options, &edgecut, part, &comm);
-    ZOLTAN_LB_TRACE_DETAIL(lb, yo, "Returned from the ParMETIS library");
+    ZOLTAN_TRACE_DETAIL(lb, yo, "Returned from the ParMETIS library");
   }
   else if (strcmp(alg, "REFINEKWAY") == 0){
-    ZOLTAN_LB_TRACE_DETAIL(lb, yo, "Calling the ParMETIS library");
+    ZOLTAN_TRACE_DETAIL(lb, yo, "Calling the ParMETIS library");
     ParMETIS_RefineKway (vtxdist, xadj, adjncy, vwgt, adjwgt, &wgtflag, 
       &numflag, options, &edgecut, part, &comm);
-    ZOLTAN_LB_TRACE_DETAIL(lb, yo, "Returned from the ParMETIS library");
+    ZOLTAN_TRACE_DETAIL(lb, yo, "Returned from the ParMETIS library");
   }
   else {
     /* This should never happen! */
     sprintf(msg, "Unknown ParMetis or Jostle algorithm %s.", alg);
     ZOLTAN_PRINT_ERROR(lb->Proc, yo, msg);
     FREE_MY_MEMORY;
-    ZOLTAN_LB_TRACE_EXIT(lb, yo);
+    ZOLTAN_TRACE_EXIT(lb, yo);
     return ZOLTAN_FATAL;
   }
 
   /* Get a time here */
-  if (get_times) times[2] = LB_Time(lb->Timer);
+  if (get_times) times[2] = Zoltan_Time(lb->Timer);
 
-  if (lb->Debug_Level >= LB_DEBUG_ALL)
+  if (lb->Debug_Level >= ZOLTAN_DEBUG_ALL)
     printf("[%1d] Debug: Returned from partitioner with edgecut= %d\n", 
       lb->Proc, edgecut);
 
@@ -1260,7 +1280,7 @@ static int LB_ParMetis_Jostle(
     part2 = (idxtype *) ZOLTAN_MALLOC(num_obj*sizeof(idxtype)); 
     if (num_obj && !part2){
       FREE_MY_MEMORY;
-      ZOLTAN_LB_TRACE_EXIT(lb, yo);
+      ZOLTAN_TRACE_EXIT(lb, yo);
       return ZOLTAN_MEMERR;
     }
     /* Use reverse communication to compute the partition array under the 
@@ -1270,7 +1290,7 @@ static int LB_ParMetis_Jostle(
                               NULL, (char *) part2);
     if ((ierr == ZOLTAN_FATAL) || (ierr == ZOLTAN_MEMERR)){
       FREE_MY_MEMORY;
-      ZOLTAN_LB_TRACE_EXIT(lb, yo);
+      ZOLTAN_TRACE_EXIT(lb, yo);
       return (ierr);
     }
     Zoltan_Comm_Destroy(&comm_plan); /* Destroy the comm. plan */
@@ -1287,33 +1307,33 @@ static int LB_ParMetis_Jostle(
     if (part[i] != lb->Proc) nsend++;
 
   /* Create export lists */
-  if (lb->Return_Lists){
+  if (lb->LB_Return_Lists){
     (*num_exp) = nsend;
     if (nsend > 0) {
-      if (!LB_Special_Malloc(lb,(void **)exp_gids,nsend,LB_SPECIAL_MALLOC_GID)) {
+      if (!Zoltan_Special_Malloc(lb,(void **)exp_gids,nsend,ZOLTAN_SPECIAL_MALLOC_GID)) {
         FREE_MY_MEMORY;
-        ZOLTAN_LB_TRACE_EXIT(lb, yo);
+        ZOLTAN_TRACE_EXIT(lb, yo);
         return ZOLTAN_MEMERR;
       }
-      if (!LB_Special_Malloc(lb,(void **)exp_lids,nsend,LB_SPECIAL_MALLOC_LID)) {
-        LB_Special_Free(lb,(void **)exp_gids,LB_SPECIAL_MALLOC_GID);
+      if (!Zoltan_Special_Malloc(lb,(void **)exp_lids,nsend,ZOLTAN_SPECIAL_MALLOC_LID)) {
+        Zoltan_Special_Free(lb,(void **)exp_gids,ZOLTAN_SPECIAL_MALLOC_GID);
         FREE_MY_MEMORY;
-        ZOLTAN_LB_TRACE_EXIT(lb, yo);
+        ZOLTAN_TRACE_EXIT(lb, yo);
         return ZOLTAN_MEMERR;
       }
-      if (!LB_Special_Malloc(lb,(void **)exp_procs,nsend,LB_SPECIAL_MALLOC_INT)) {
-        LB_Special_Free(lb,(void **)exp_lids,LB_SPECIAL_MALLOC_LID);
-        LB_Special_Free(lb,(void **)exp_gids,LB_SPECIAL_MALLOC_GID);
+      if (!Zoltan_Special_Malloc(lb,(void **)exp_procs,nsend,ZOLTAN_SPECIAL_MALLOC_INT)) {
+        Zoltan_Special_Free(lb,(void **)exp_lids,ZOLTAN_SPECIAL_MALLOC_LID);
+        Zoltan_Special_Free(lb,(void **)exp_gids,ZOLTAN_SPECIAL_MALLOC_GID);
         FREE_MY_MEMORY;
-        ZOLTAN_LB_TRACE_EXIT(lb, yo);
+        ZOLTAN_TRACE_EXIT(lb, yo);
         return ZOLTAN_MEMERR;
       }
       j = 0;
       for (i=0; i<num_obj; i++){
         if (part[i] != lb->Proc){
-          ZOLTAN_LB_SET_GID(lb, &((*exp_gids)[j*num_gid_entries]),
+          ZOLTAN_SET_GID(lb, &((*exp_gids)[j*num_gid_entries]),
                          &(global_ids[i*num_gid_entries]));
-          ZOLTAN_LB_SET_LID(lb, &((*exp_lids)[j*num_lid_entries]),
+          ZOLTAN_SET_LID(lb, &((*exp_lids)[j*num_lid_entries]),
                          &(local_ids[i*num_lid_entries]));
           (*exp_procs)[j] = part[i];
           j++;
@@ -1332,23 +1352,23 @@ static int LB_ParMetis_Jostle(
   ZOLTAN_FREE(&xyz);
 
   /* Get a time here */
-  if (get_times) times[3] = LB_Time(lb->Timer);
+  if (get_times) times[3] = Zoltan_Time(lb->Timer);
 
   /* Output timing results if desired */
   if (get_times){
     if (lb->Proc==0) printf("\nZOLTAN timing statistics:\n");
-    LB_Print_Stats(lb->Communicator, lb->Debug_Proc, times[1]-times[0], 
+    Zoltan_Print_Stats(lb->Communicator, lb->Debug_Proc, times[1]-times[0], 
                    " Partitioner Pre-processing time  ");
-    LB_Print_Stats(lb->Communicator, lb->Debug_Proc, times[2]-times[1], 
+    Zoltan_Print_Stats(lb->Communicator, lb->Debug_Proc, times[2]-times[1], 
                    " Partitioner Library time         ");
-    LB_Print_Stats(lb->Communicator, lb->Debug_Proc, times[3]-times[2], 
+    Zoltan_Print_Stats(lb->Communicator, lb->Debug_Proc, times[3]-times[2], 
                    " Partitioner Post-processing time ");
-    LB_Print_Stats(lb->Communicator, lb->Debug_Proc, times[3]-times[0], 
+    Zoltan_Print_Stats(lb->Communicator, lb->Debug_Proc, times[3]-times[0], 
                    " Partitioner Total time           ");
     if (lb->Proc==0) printf("\n");
   }
 
-  ZOLTAN_LB_TRACE_EXIT(lb, yo);
+  ZOLTAN_TRACE_EXIT(lb, yo);
   return ZOLTAN_OK;
 }
 
@@ -1461,7 +1481,7 @@ static int scale_round_weights(float *fwgts, idxtype *iwgts, int n, int dim,
         }
       }
 
-      if ((debug_level >= LB_DEBUG_ALL) && (proc==0)){
+      if ((debug_level >= ZOLTAN_DEBUG_ALL) && (proc==0)){
         printf("ZOLTAN DEBUG in %s: scaling weights with scale factors = ", yo);
         for (j=0; j<dim; j++)
           printf("%f ", scale[j]);
@@ -1490,14 +1510,14 @@ static int scale_round_weights(float *fwgts, idxtype *iwgts, int n, int dim,
 }
 #undef EPSILON
 
-#endif /* defined (LB_JOSTLE) || defined (LB_PARMETIS) */
+#endif /* defined (ZOLTAN_JOSTLE) || defined (ZOLTAN_PARMETIS) */
 
 
 /*********************************************************************/
 /* ParMetis parameter routine                                        */
 /*********************************************************************/
 
-int LB_Set_ParMetis_Param(
+int Zoltan_ParMetis_Set_Param(
 char *name,                     /* name of variable */
 char *val)                      /* value of variable */
 {
@@ -1511,9 +1531,9 @@ char *val)                      /* value of variable */
         "REFINEKWAY",
          NULL };
 
-    status = LB_Check_Param(name, val, Parmetis_params, &result, &index);
+    status = Zoltan_Check_Param(name, val, Parmetis_params, &result, &index);
     if (status == 1)
-       status = LB_Check_Param(name, val, Graph_params, &result, &index);
+       status = Zoltan_Check_Param(name, val, Graph_params, &result, &index);
 
     if (status == 0){
       /* OK so far, do sanity check of parameter values */
@@ -1541,7 +1561,7 @@ char *val)                      /* value of variable */
 /* Jostle parameter routine                                          */
 /*********************************************************************/
 
-int LB_Set_Jostle_Param(
+int Zoltan_Jostle_Set_Param(
 char *name,                     /* name of variable */
 char *val)                      /* value of variable */
 {
@@ -1549,9 +1569,9 @@ char *val)                      /* value of variable */
     PARAM_UTYPE result;         /* value returned from Check_Param */
     int index;                  /* index returned from Check_Param */
 
-    status = LB_Check_Param(name, val, Jostle_params, &result, &index);
+    status = Zoltan_Check_Param(name, val, Jostle_params, &result, &index);
     if (status == 1)
-       status = LB_Check_Param(name, val, Graph_params, &result, &index);
+       status = Zoltan_Check_Param(name, val, Graph_params, &result, &index);
 
     if (status == 0){
       /* OK so far, do sanity check of parameter values */
@@ -1566,10 +1586,10 @@ char *val)                      /* value of variable */
     return(status);
 }
 
-#if (defined(LB_JOSTLE) || defined(LB_PARMETIS))
+#if (defined(ZOLTAN_JOSTLE) || defined(ZOLTAN_PARMETIS))
 
 /*******************************************************************
- * hash_lookup uses LB_Hash to lookup a key 
+ * hash_lookup uses Zoltan_Hash to lookup a key 
  *
  * Input:
  *   hashtab, pointer to the hash table
@@ -1582,20 +1602,20 @@ char *val)                      /* value of variable */
  *
  *******************************************************************/
 
-static int hash_lookup (LB *lb, struct LB_hash_node **hashtab, ZOLTAN_ID_PTR key,
+static int hash_lookup (LB *lb, struct Hash_Node **hashtab, ZOLTAN_ID_PTR key,
                         int n)
 {
   int i;
-  struct LB_hash_node *ptr;
+  struct Hash_Node *ptr;
 
-  i = LB_Hash(key, lb->Num_GID, (unsigned int)n);
+  i = Zoltan_Hash(key, lb->Num_GID, (unsigned int)n);
   for (ptr=hashtab[i]; ptr != NULL; ptr = ptr->next){
-    if (ZOLTAN_LB_EQ_GID(lb, ptr->gid, key))
+    if (ZOLTAN_EQ_GID(lb, ptr->gid, key))
       return (ptr->gno);
   }
   /* Key not in hash table */
   return -1;
 }
 
-#endif /* (defined(LB_JOSTLE) || defined(LB_PARMETIS)) */
+#endif /* (defined(ZOLTAN_JOSTLE) || defined(ZOLTAN_PARMETIS)) */
 

@@ -1,12 +1,21 @@
-#ifndef _LB_SFC_H
-#define _LB_SFC_H
+#ifndef _ZOLTAN_SFC_H
+#define _ZOLTAN_SFC_H
 #include <stdio.h>
 #include <math.h>
 #include <memory.h>
 #include "lb_const.h"
 #include "params_const.h"
 #include "timer_const.h"
+#include "sfc_const.h"
 #include <values.h>
+
+/* define some constants that are used in multiple files */
+#define SFC_KEYLENGTH 3
+#define SFC_NO_CUT 0
+#define SFC_CUT 1
+#define SFC_NOT_BALANCED 1
+#define SFC_BALANCED 0
+#define SFC_COARSE_LEVEL_FLAG 2
 
 struct sfc_vertex {         /* SFC vertex  */
   unsigned sfc_key[SFC_KEYLENGTH];   /* space-filling curve key */
@@ -96,4 +105,4 @@ int sfc_create_compare_key(LB* lb, unsigned sfc_key[], unsigned compare_key[],
 int sfc_check_refine(unsigned* sfc_key, unsigned* compare_key,
 		     unsigned* AND_operator_array);
 
-#endif /* _LB_SFC_H */
+#endif /* _ZOLTAN_SFC_H */

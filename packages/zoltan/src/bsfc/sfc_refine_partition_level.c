@@ -20,7 +20,6 @@
 #include <values.h>
 #include <limits.h>
 #include "hilbert_const.h"
-#include "sfc_const.h"
 #include "sfc.h"
 
 
@@ -46,7 +45,7 @@ int sfc_refine_partition(LB* lb, int* local_balanced_flag,
   /* amount of sub-bins in a bin, probably want this as a passed in parameter */
   int number_of_bins = subbins_per_bin;
 
-  ZOLTAN_LB_TRACE_ENTER(lb, yo);
+  ZOLTAN_TRACE_ENTER(lb, yo);
 
   /* check to see that all of the bits of the sfc key 
      have not already been used */
@@ -330,7 +329,7 @@ int sfc_refine_partition(LB* lb, int* local_balanced_flag,
     }
   }
   
-  ZOLTAN_LB_TRACE_EXIT(lb, yo);
+  ZOLTAN_TRACE_EXIT(lb, yo);
   return ZOLTAN_OK;
 }
 

@@ -8,7 +8,7 @@
 
 #include <stdio.h>
 #include "lb_const.h"
-#include "reftree_const.h"
+#include "reftree.h"
 #include "all_allo_const.h"
 #include "params_const.h"
 
@@ -17,26 +17,26 @@
 /*****************************************************************************/
 
 /* Prototypes for functions internal to this file */
-static int LB_Reftree_Sum_Weights(LB *lb);
+static int Zoltan_Reftree_Sum_Weights(LB *lb);
 
-int LB_Reftree_Sum_Weights_gather(LB *lb);
-int LB_Reftree_Sum_Weights_pairs(LB *lb);
-int LB_Reftree_Sum_Weights_bcast(LB *lb);
+int Zoltan_Reftree_Sum_Weights_gather(LB *lb);
+int Zoltan_Reftree_Sum_Weights_pairs(LB *lb);
+int Zoltan_Reftree_Sum_Weights_bcast(LB *lb);
 
-static void LB_Reftree_Sum_My_Weights(LB *lb, LB_REFTREE *subroot, 
+static void Zoltan_Reftree_Sum_My_Weights(LB *lb, ZOLTAN_REFTREE *subroot, 
        int *count, int wdim);
-static void LB_Reftree_Sum_All_Weights(LB *lb, LB_REFTREE *subroot, int wdim);
-static void LB_Reftree_List_Other_Leaves(LB *lb, LB_REFTREE *subroot, 
+static void Zoltan_Reftree_Sum_All_Weights(LB *lb, ZOLTAN_REFTREE *subroot, int wdim);
+static void Zoltan_Reftree_List_Other_Leaves(LB *lb, ZOLTAN_REFTREE *subroot, 
        ZOLTAN_ID_PTR list, int *count);
-static int LB_Reftree_Partition(LB *lb, int *num_export, 
+static int Zoltan_Reftree_Partition(LB *lb, int *num_export, 
        ZOLTAN_ID_PTR *export_global_ids, ZOLTAN_ID_PTR *export_local_ids, 
        int **export_procs);
-static void LB_Reftree_Part_Recursive(LB *lb, LB_REFTREE *subroot, int *part,
+static void Zoltan_Reftree_Part_Recursive(LB *lb, ZOLTAN_REFTREE *subroot, int *part,
        float *current_size, int *num_exp, float *cutoff,
        int num_part, float partition_size, float eps);
-static void LB_Reftree_Mark_and_Count(LB_REFTREE *subroot, int part, 
+static void Zoltan_Reftree_Mark_and_Count(ZOLTAN_REFTREE *subroot, int part, 
        int *num_exp);
-static void LB_Reftree_Export_Lists(LB *lb, LB_REFTREE *subroot, 
+static void Zoltan_Reftree_Export_Lists(LB *lb, ZOLTAN_REFTREE *subroot, 
        int *num_export, ZOLTAN_ID_PTR *export_global_ids,
        ZOLTAN_ID_PTR *export_local_ids, int **export_procs);
 
@@ -44,7 +44,7 @@ static void LB_Reftree_Export_Lists(LB *lb, LB_REFTREE *subroot,
 /*****************************************************************************/
 /*****************************************************************************/
 
-int LB_Reftree_Part(
+int Zoltan_Reftree_Part(
 
   LB *lb,                       /* The load-balancing structure */
   int *num_import,              /* Not computed, set to -1 */
@@ -57,7 +57,7 @@ int LB_Reftree_Part(
   int **export_procs            /* list of processors to export to */
 )
 {
-char *yo = "LB_Reftree_Part";
+char *yo = "Zoltan_Reftree_Part";
 int ierr;       /* error code returned by called routines */
 int final_ierr; /* error code returned by this routine */
 double time0, time1, time2, time3, time4;
@@ -72,18 +72,18 @@ double time0, time1, time2, time3, time4;
    */
 
   if (lb->Data_Structure == NULL) {
-    if (lb->Debug_Level >= LB_DEBUG_ATIME) time0 = LB_Time(lb->Timer);
-    ierr = LB_Reftree_Init(lb);
+    if (lb->Debug_Level >= ZOLTAN_DEBUG_ATIME) time0 = Zoltan_Time(lb->Timer);
+    ierr = Zoltan_Reftree_Init(lb);
     if (ierr==ZOLTAN_FATAL || ierr==ZOLTAN_MEMERR) {
       ZOLTAN_PRINT_ERROR(lb->Proc, yo, 
-                     "Error returned by LB_Reftree_Init.");
+                     "Error returned by Zoltan_Reftree_Init.");
       return(ierr);
     }
     if (ierr==ZOLTAN_WARN) final_ierr = ZOLTAN_WARN;
-    if (lb->Debug_Level >= LB_DEBUG_ATIME) time1 = LB_Time(lb->Timer);
+    if (lb->Debug_Level >= ZOLTAN_DEBUG_ATIME) time1 = Zoltan_Time(lb->Timer);
   } else {
-    if (lb->Debug_Level >= LB_DEBUG_ATIME) {
-      time1 = LB_Time(lb->Timer);
+    if (lb->Debug_Level >= ZOLTAN_DEBUG_ATIME) {
+      time1 = Zoltan_Time(lb->Timer);
       time0 = time1 + 1.0;
     }
   }
@@ -92,52 +92,52 @@ double time0, time1, time2, time3, time4;
    * build the refinement tree
    */
 
-  ierr = LB_Reftree_Build(lb);
+  ierr = Zoltan_Reftree_Build(lb);
   if (ierr==ZOLTAN_FATAL || ierr==ZOLTAN_MEMERR) {
     ZOLTAN_PRINT_ERROR(lb->Proc, yo, 
-                   "Error returned by LB_Reftree_Build.");
+                   "Error returned by Zoltan_Reftree_Build.");
     return(ierr);
   }
   if (ierr==ZOLTAN_WARN) final_ierr = ZOLTAN_WARN;
-  if (lb->Debug_Level >= LB_DEBUG_ATIME) time2 = LB_Time(lb->Timer);
+  if (lb->Debug_Level >= ZOLTAN_DEBUG_ATIME) time2 = Zoltan_Time(lb->Timer);
 
   /*
    * sum the weights in the tree
    */
 
-  ierr = LB_Reftree_Sum_Weights(lb);
+  ierr = Zoltan_Reftree_Sum_Weights(lb);
   if (ierr==ZOLTAN_FATAL || ierr==ZOLTAN_MEMERR) {
     ZOLTAN_PRINT_ERROR(lb->Proc, yo, 
-                   "Error returned by LB_Reftree_Sum_Weights.");
+                   "Error returned by Zoltan_Reftree_Sum_Weights.");
     return(ierr);
   }
   if (ierr==ZOLTAN_WARN) final_ierr = ZOLTAN_WARN;
-  if (lb->Debug_Level >= LB_DEBUG_ATIME) time3 = LB_Time(lb->Timer);
+  if (lb->Debug_Level >= ZOLTAN_DEBUG_ATIME) time3 = Zoltan_Time(lb->Timer);
 
   /*
    * determine the new partition
    */
 
-  ierr = LB_Reftree_Partition(lb, num_export, export_global_ids,
+  ierr = Zoltan_Reftree_Partition(lb, num_export, export_global_ids,
                               export_local_ids, export_procs);
   if (ierr==ZOLTAN_FATAL || ierr==ZOLTAN_MEMERR) {
     ZOLTAN_PRINT_ERROR(lb->Proc, yo, 
-                   "Error returned by LB_Reftree_Partition.");
+                   "Error returned by Zoltan_Reftree_Partition.");
     return(ierr);
   }
   if (ierr==ZOLTAN_WARN) final_ierr = ZOLTAN_WARN;
-  if (lb->Debug_Level >= LB_DEBUG_ATIME) time4 = LB_Time(lb->Timer);
+  if (lb->Debug_Level >= ZOLTAN_DEBUG_ATIME) time4 = Zoltan_Time(lb->Timer);
 
-  if (lb->Debug_Level >= LB_DEBUG_ATIME) {
+  if (lb->Debug_Level >= ZOLTAN_DEBUG_ATIME) {
     if (time0 <= time1) {
-      LB_Print_Stats(lb->Communicator, lb->Debug_Proc, time1-time0,
+      Zoltan_Print_Stats(lb->Communicator, lb->Debug_Proc, time1-time0,
                      "REFTREE Time to initialize :");
     }
-    LB_Print_Stats(lb->Communicator, lb->Debug_Proc, time2-time1, 
+    Zoltan_Print_Stats(lb->Communicator, lb->Debug_Proc, time2-time1, 
                    "REFTREE Time to build tree :");
-    LB_Print_Stats(lb->Communicator, lb->Debug_Proc, time3-time2,
+    Zoltan_Print_Stats(lb->Communicator, lb->Debug_Proc, time3-time2,
                    "REFTREE Time to sum weights:");
-    LB_Print_Stats(lb->Communicator, lb->Debug_Proc, time4-time3,
+    Zoltan_Print_Stats(lb->Communicator, lb->Debug_Proc, time4-time3,
                    "REFTREE Time to partition  :");
   }
 
@@ -148,7 +148,7 @@ double time0, time1, time2, time3, time4;
 /*****************************************************************************/
 /*****************************************************************************/
 
-static int LB_Reftree_Sum_Weights(LB *lb)
+static int Zoltan_Reftree_Sum_Weights(LB *lb)
 
 {
 /*
@@ -163,11 +163,11 @@ static int LB_Reftree_Sum_Weights(LB *lb)
  */
 
 /* currently using the collective communication version */
-  return(LB_Reftree_Sum_Weights_gather(lb));
+  return(Zoltan_Reftree_Sum_Weights_gather(lb));
 
 /* examples of calling the others
-   return(LB_Reftree_Sum_Weights_pairs(lb));
-   return(LB_Reftree_Sum_Weights_bcast(lb));
+   return(Zoltan_Reftree_Sum_Weights_pairs(lb));
+   return(Zoltan_Reftree_Sum_Weights_bcast(lb));
 */
 }
 
@@ -175,7 +175,7 @@ static int LB_Reftree_Sum_Weights(LB *lb)
 /*****************************************************************************/
 /*****************************************************************************/
 
-int LB_Reftree_Sum_Weights_gather(LB *lb)
+int Zoltan_Reftree_Sum_Weights_gather(LB *lb)
 
 {
 /*
@@ -190,8 +190,8 @@ int LB_Reftree_Sum_Weights_gather(LB *lb)
  *
  * This version uses MPI collective communication routines.
  */
-char *yo = "LB_Reftree_Sum_Weights_gather";
-LB_REFTREE *root;         /* Root of the refinement tree */
+char *yo = "Zoltan_Reftree_Sum_Weights_gather";
+ZOLTAN_REFTREE *root;         /* Root of the refinement tree */
 int wdim;                 /* Dimension of the weight array */
 int i,j;                  /* loop counters */
 int count;                /* counter */
@@ -205,8 +205,8 @@ int sum_reqsize;          /* sum of all reqsize */
 int *displs;              /* running sum of all reqsize */
 int my_start;             /* position in leaf_list of this proc's list */
 int nproc;                /* number of processors */
-LB_REFTREE *node;         /* a node in the refinement tree */
-struct LB_reftree_hash_node **hashtab; /* hash table */
+ZOLTAN_REFTREE *node;         /* a node in the refinement tree */
+struct Zoltan_Reftree_hash_node **hashtab; /* hash table */
 int hashsize;             /* dimension of hash table */
 float *send_float;        /* sending message of floats */
 float *req_weights;       /* the requested weights */
@@ -216,13 +216,13 @@ int num_gid_entries = lb->Num_GID; /* Number of array entries in a global ID */
    * set the root and hash table
    */
 
-  root = ((struct LB_reftree_data_struct *)lb->Data_Structure)->reftree_root;
+  root = ((struct Zoltan_Reftree_data_struct *)lb->Data_Structure)->reftree_root;
   if (root == NULL) {
     ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Refinement tree not defined.");
     return(ZOLTAN_FATAL);
   }
-  hashtab  = ((struct LB_reftree_data_struct *)lb->Data_Structure)->hash_table;
-  hashsize = ((struct LB_reftree_data_struct *)lb->Data_Structure)->hash_table_size;
+  hashtab  = ((struct Zoltan_Reftree_data_struct *)lb->Data_Structure)->hash_table;
+  hashsize = ((struct Zoltan_Reftree_data_struct *)lb->Data_Structure)->hash_table_size;
 
   /*
    * Determine the dimension of the weight array
@@ -241,7 +241,7 @@ int num_gid_entries = lb->Num_GID; /* Number of array entries in a global ID */
 
   count = 0;
   for (i=0; i<root->num_child; i++) {
-    LB_Reftree_Sum_My_Weights(lb,&(root->children[i]),&count,wdim);
+    Zoltan_Reftree_Sum_My_Weights(lb,&(root->children[i]),&count,wdim);
   }
   root->assigned_to_me = -1;
 
@@ -250,16 +250,16 @@ int num_gid_entries = lb->Num_GID; /* Number of array entries in a global ID */
    */
 
   if (count == 0)
-    leaf_list = ZOLTAN_ZOLTAN_MALLOC_GID(lb);
+    leaf_list = ZOLTAN_MALLOC_GID(lb);
   else
-    leaf_list = ZOLTAN_ZOLTAN_MALLOC_GID_ARRAY(lb, count);
+    leaf_list = ZOLTAN_MALLOC_GID_ARRAY(lb, count);
   if (leaf_list == NULL) {
     ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
     return(ZOLTAN_MEMERR);
   }
 
   count = 0;
-  LB_Reftree_List_Other_Leaves(lb, root,leaf_list,&count);
+  Zoltan_Reftree_List_Other_Leaves(lb, root,leaf_list,&count);
 
   /*
    * Get the unknown leaf weights from other processors.
@@ -309,7 +309,7 @@ int num_gid_entries = lb->Num_GID; /* Number of array entries in a global ID */
    * Gather the request list from all processors
    */
 
-    all_leaflist = ZOLTAN_ZOLTAN_MALLOC_GID_ARRAY(lb, sum_reqsize);
+    all_leaflist = ZOLTAN_MALLOC_GID_ARRAY(lb, sum_reqsize);
     if (all_leaflist == NULL) {
       ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
       ZOLTAN_FREE(&all_leaflist);
@@ -350,7 +350,7 @@ int num_gid_entries = lb->Num_GID; /* Number of array entries in a global ID */
     }
 
     for (i=0; i<sum_reqsize; i++) {
-      node = LB_Reftree_hash_lookup(lb, hashtab,
+      node = Zoltan_Reftree_hash_lookup(lb, hashtab,
                                     &(all_leaflist[i*num_gid_entries]),
                                     hashsize);
       if (node == NULL)
@@ -387,7 +387,7 @@ int num_gid_entries = lb->Num_GID; /* Number of array entries in a global ID */
    */
 
     for (i=0; i<count; i++) {
-      node = LB_Reftree_hash_lookup(lb, hashtab,
+      node = Zoltan_Reftree_hash_lookup(lb, hashtab,
                                   &(all_leaflist[(i+my_start)*num_gid_entries]),
                                   hashsize);
       for (j=0; j<wdim; j++) node->summed_weight[j] = req_weights[i*wdim+j];
@@ -402,7 +402,7 @@ int num_gid_entries = lb->Num_GID; /* Number of array entries in a global ID */
    * Sum the weights throughout the tree.
    */
 
-  LB_Reftree_Sum_All_Weights(lb,root,wdim);
+  Zoltan_Reftree_Sum_All_Weights(lb,root,wdim);
 
   return(ZOLTAN_OK);
 }
@@ -411,7 +411,7 @@ int num_gid_entries = lb->Num_GID; /* Number of array entries in a global ID */
 /*****************************************************************************/
 /*****************************************************************************/
 
-int LB_Reftree_Sum_Weights_pairs(LB *lb)
+int Zoltan_Reftree_Sum_Weights_pairs(LB *lb)
 
 {
 /*
@@ -427,8 +427,8 @@ int LB_Reftree_Sum_Weights_pairs(LB *lb)
  * This version uses O(log p) pairwise communication steps.
  * TEMP Restricted to power-of-2 number of processors.
  */
-char *yo = "LB_Reftree_Sum_Weights_pairs";
-LB_REFTREE *root;         /* Root of the refinement tree */
+char *yo = "Zoltan_Reftree_Sum_Weights_pairs";
+ZOLTAN_REFTREE *root;         /* Root of the refinement tree */
 int wdim;                 /* Dimension of the weight array */
 int i,j,comm_loop;        /* loop counters */
 int count;                /* counter */
@@ -443,8 +443,8 @@ int log_nproc;            /* base 2 log of number of processors */
 int myproc;               /* this processor's processor number */
 int other_proc;           /* processor being communicated with */
 MPI_Status mess_status;   /* status of an MPI message */
-LB_REFTREE *node;         /* a node in the refinement tree */
-struct LB_reftree_hash_node **hashtab; /* hash table */
+ZOLTAN_REFTREE *node;         /* a node in the refinement tree */
+struct Zoltan_Reftree_hash_node **hashtab; /* hash table */
 int hashsize;             /* dimension of hash table */
 float *send_float;        /* sending message of floats */
 float *req_weights;       /* the requested weights */
@@ -455,13 +455,13 @@ int num_gid_entries = lb->Num_GID;  /* Number of array entries in a global ID */
    * set the root and hash table
    */
 
-  root = ((struct LB_reftree_data_struct *)lb->Data_Structure)->reftree_root;
+  root = ((struct Zoltan_Reftree_data_struct *)lb->Data_Structure)->reftree_root;
   if (root == NULL) {
     ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Refinement tree not defined.");
     return(ZOLTAN_FATAL);
   }
-  hashtab  = ((struct LB_reftree_data_struct *)lb->Data_Structure)->hash_table;
-  hashsize = ((struct LB_reftree_data_struct *)lb->Data_Structure)->hash_table_size;
+  hashtab  = ((struct Zoltan_Reftree_data_struct *)lb->Data_Structure)->hash_table;
+  hashsize = ((struct Zoltan_Reftree_data_struct *)lb->Data_Structure)->hash_table_size;
 
   /*
    * Determine the dimension of the weight array
@@ -480,7 +480,7 @@ int num_gid_entries = lb->Num_GID;  /* Number of array entries in a global ID */
 
   count = 0;
   for (i=0; i<root->num_child; i++) {
-    LB_Reftree_Sum_My_Weights(lb,&(root->children[i]),&count,wdim);
+    Zoltan_Reftree_Sum_My_Weights(lb,&(root->children[i]),&count,wdim);
   }
   root->assigned_to_me = -1;
 
@@ -489,16 +489,16 @@ int num_gid_entries = lb->Num_GID;  /* Number of array entries in a global ID */
    */
 
   if (count == 0)
-    leaf_list = ZOLTAN_ZOLTAN_MALLOC_GID(lb);
+    leaf_list = ZOLTAN_MALLOC_GID(lb);
   else
-    leaf_list = ZOLTAN_ZOLTAN_MALLOC_GID_ARRAY(lb, count);
+    leaf_list = ZOLTAN_MALLOC_GID_ARRAY(lb, count);
   if (leaf_list == NULL) {
     ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
     return(ZOLTAN_MEMERR);
   }
 
   count = 0;
-  LB_Reftree_List_Other_Leaves(lb, root,leaf_list,&count);
+  Zoltan_Reftree_List_Other_Leaves(lb, root,leaf_list,&count);
 
   /*
    * Get the unknown leaf weights from other processors.
@@ -541,9 +541,9 @@ int num_gid_entries = lb->Num_GID;  /* Number of array entries in a global ID */
    */
 
     if (reqsize+newsize == 0)
-      newlist = ZOLTAN_ZOLTAN_MALLOC_GID(lb);
+      newlist = ZOLTAN_MALLOC_GID(lb);
     else
-      newlist = ZOLTAN_ZOLTAN_MALLOC_GID_ARRAY(lb, (reqsize+newsize));
+      newlist = ZOLTAN_MALLOC_GID_ARRAY(lb, (reqsize+newsize));
     if (newlist == NULL) {
       ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
       ZOLTAN_FREE(&leaf_list);
@@ -552,12 +552,12 @@ int num_gid_entries = lb->Num_GID;  /* Number of array entries in a global ID */
     if (myproc < other_proc) {
       for (i=0; i<reqsize; i++) {
         gid_off = i * num_gid_entries;
-        ZOLTAN_LB_SET_GID(lb, &(newlist[gid_off]),&(leaf_list[gid_off]));
+        ZOLTAN_SET_GID(lb, &(newlist[gid_off]),&(leaf_list[gid_off]));
       }
     }
     else {
       for (i=0; i<reqsize; i++) {
-        ZOLTAN_LB_SET_GID(lb, &(newlist[(i+newsize)*num_gid_entries]),
+        ZOLTAN_SET_GID(lb, &(newlist[(i+newsize)*num_gid_entries]),
                        &(leaf_list[i*num_gid_entries]));
       }
       my_start += newsize;
@@ -600,7 +600,7 @@ int num_gid_entries = lb->Num_GID;  /* Number of array entries in a global ID */
   }
 
   for (i=0; i<reqsize; i++) {
-    node = LB_Reftree_hash_lookup(lb, hashtab, &(leaf_list[i*num_gid_entries]),
+    node = Zoltan_Reftree_hash_lookup(lb, hashtab, &(leaf_list[i*num_gid_entries]),
                                   hashsize);
     if (node == NULL)
        for (j=0; j<wdim; j++) send_float[i*wdim+j] = 0.0;
@@ -631,7 +631,7 @@ int num_gid_entries = lb->Num_GID;  /* Number of array entries in a global ID */
    */
 
   for (i=0; i<count; i++) {
-    node = LB_Reftree_hash_lookup(lb, hashtab,
+    node = Zoltan_Reftree_hash_lookup(lb, hashtab,
               &(leaf_list[(i+my_start)*num_gid_entries]),hashsize);
     for (j=0; j<wdim; j++) node->summed_weight[j] = req_weights[(i+my_start)*wdim+j];
   }
@@ -644,7 +644,7 @@ int num_gid_entries = lb->Num_GID;  /* Number of array entries in a global ID */
    * Sum the weights throughout the tree.
    */
 
-  LB_Reftree_Sum_All_Weights(lb,root,wdim);
+  Zoltan_Reftree_Sum_All_Weights(lb,root,wdim);
 
   return(ZOLTAN_OK);
 }
@@ -653,7 +653,7 @@ int num_gid_entries = lb->Num_GID;  /* Number of array entries in a global ID */
 /*****************************************************************************/
 /*****************************************************************************/
 
-int LB_Reftree_Sum_Weights_bcast(LB *lb)
+int Zoltan_Reftree_Sum_Weights_bcast(LB *lb)
 
 {
 /*
@@ -668,8 +668,8 @@ int LB_Reftree_Sum_Weights_bcast(LB *lb)
  *
  * This version uses all-to-all communciation.
  */
-char *yo = "LB_Reftree_Sum_Weights_bcast";
-LB_REFTREE *root;         /* Root of the refinement tree */
+char *yo = "Zoltan_Reftree_Sum_Weights_bcast";
+ZOLTAN_REFTREE *root;         /* Root of the refinement tree */
 int wdim;                 /* Dimension of the weight array */
 int i,j,comm_loop,rproc;  /* loop counters */
 int count;                /* counter */
@@ -680,8 +680,8 @@ int myproc;               /* this processor's processor number */
 MPI_Status mess_status;   /* status of an MPI message */
 int reqsize;              /* number of leaves for which weights are requested */
 ZOLTAN_ID_PTR recv_gid = NULL;/* received message of global ids */
-LB_REFTREE *node;         /* a node in the refinement tree */
-struct LB_reftree_hash_node **hashtab; /* hash table */
+ZOLTAN_REFTREE *node;         /* a node in the refinement tree */
+struct Zoltan_Reftree_hash_node **hashtab; /* hash table */
 int hashsize;             /* dimension of hash table */
 float *send_float;        /* sending message of floats */
 float *recv_float;        /* received message of floats */
@@ -691,13 +691,13 @@ int num_gid_entries = lb->Num_GID; /* Number of array entries in a global ID. */
    * set the root and hash table
    */
 
-  root = ((struct LB_reftree_data_struct *)lb->Data_Structure)->reftree_root;
+  root = ((struct Zoltan_Reftree_data_struct *)lb->Data_Structure)->reftree_root;
   if (root == NULL) {
     ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Refinement tree not defined.");
     return(ZOLTAN_FATAL);
   }
-  hashtab  = ((struct LB_reftree_data_struct *)lb->Data_Structure)->hash_table;
-  hashsize = ((struct LB_reftree_data_struct *)lb->Data_Structure)->hash_table_size;
+  hashtab  = ((struct Zoltan_Reftree_data_struct *)lb->Data_Structure)->hash_table;
+  hashsize = ((struct Zoltan_Reftree_data_struct *)lb->Data_Structure)->hash_table_size;
 
   /*
    * Determine the dimension of the weight array
@@ -716,7 +716,7 @@ int num_gid_entries = lb->Num_GID; /* Number of array entries in a global ID. */
 
   count = 0;
   for (i=0; i<root->num_child; i++) {
-    LB_Reftree_Sum_My_Weights(lb,&(root->children[i]),&count,wdim);
+    Zoltan_Reftree_Sum_My_Weights(lb,&(root->children[i]),&count,wdim);
   }
   root->assigned_to_me = -1;
 
@@ -725,16 +725,16 @@ int num_gid_entries = lb->Num_GID; /* Number of array entries in a global ID. */
    */
 
   if (count == 0)
-    leaf_list = ZOLTAN_ZOLTAN_MALLOC_GID(lb);
+    leaf_list = ZOLTAN_MALLOC_GID(lb);
   else
-    leaf_list = ZOLTAN_ZOLTAN_MALLOC_GID_ARRAY(lb, count);
+    leaf_list = ZOLTAN_MALLOC_GID_ARRAY(lb, count);
   if (leaf_list == NULL) {
     ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
     return(ZOLTAN_MEMERR);
   }
 
   count = 0;
-  LB_Reftree_List_Other_Leaves(lb, root,leaf_list,&count);
+  Zoltan_Reftree_List_Other_Leaves(lb, root,leaf_list,&count);
 
   /*
    * Get the unknown leaf weights from other processors.
@@ -767,7 +767,7 @@ int num_gid_entries = lb->Num_GID; /* Number of array entries in a global ID. */
    */
 
       if (myproc != comm_loop) {
-        recv_gid = ZOLTAN_ZOLTAN_MALLOC_GID_ARRAY(lb, reqsize);
+        recv_gid = ZOLTAN_MALLOC_GID_ARRAY(lb, reqsize);
         if (recv_gid == NULL) {
           ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
           ZOLTAN_FREE(&leaf_list);
@@ -803,7 +803,7 @@ int num_gid_entries = lb->Num_GID; /* Number of array entries in a global ID. */
         }
 
         for (i=0; i<reqsize; i++) {
-          node = LB_Reftree_hash_lookup(lb, hashtab,
+          node = Zoltan_Reftree_hash_lookup(lb, hashtab,
                                         &(recv_gid[i*num_gid_entries]),
                                         hashsize);
           if (node == NULL)
@@ -835,7 +835,7 @@ int num_gid_entries = lb->Num_GID; /* Number of array entries in a global ID. */
                    100+comm_loop, lb->Communicator,&mess_status);
 
           for (i=0; i<reqsize; i++) {
-            node = LB_Reftree_hash_lookup(lb, hashtab,
+            node = Zoltan_Reftree_hash_lookup(lb, hashtab,
                                           &(leaf_list[i*num_gid_entries]),
                                           hashsize);
             for (j=0; j<wdim; j++) node->summed_weight[j] += recv_float[i];
@@ -854,7 +854,7 @@ int num_gid_entries = lb->Num_GID; /* Number of array entries in a global ID. */
    * Sum the weights throughout the tree.
    */
 
-  LB_Reftree_Sum_All_Weights(lb,root,wdim);
+  Zoltan_Reftree_Sum_All_Weights(lb,root,wdim);
 
   return(ZOLTAN_OK);
 }
@@ -863,7 +863,7 @@ int num_gid_entries = lb->Num_GID; /* Number of array entries in a global ID. */
 /*****************************************************************************/
 /*****************************************************************************/
 
-static void LB_Reftree_Sum_My_Weights(LB *lb, LB_REFTREE *subroot, 
+static void Zoltan_Reftree_Sum_My_Weights(LB *lb, ZOLTAN_REFTREE *subroot, 
        int *count, int wdim)
 
 {
@@ -910,7 +910,7 @@ int all_assigned;  /* flag for all children assigned to this proc */
     all_assigned = 1;
 
     for (j=0; j<subroot->num_child; j++) {
-      LB_Reftree_Sum_My_Weights(lb,&(subroot->children[j]),count,wdim);
+      Zoltan_Reftree_Sum_My_Weights(lb,&(subroot->children[j]),count,wdim);
       for (i=0; i<wdim; i++)
         subroot->my_sum_weight[i] += (subroot->children[j]).my_sum_weight[i];
       if ((subroot->children[j]).assigned_to_me == 1) none_assigned = 0;
@@ -933,7 +933,7 @@ int all_assigned;  /* flag for all children assigned to this proc */
 /*****************************************************************************/
 /*****************************************************************************/
 
-static void LB_Reftree_Sum_All_Weights(LB *lb, LB_REFTREE *subroot, int wdim)
+static void Zoltan_Reftree_Sum_All_Weights(LB *lb, ZOLTAN_REFTREE *subroot, int wdim)
 
 {
 /*
@@ -956,7 +956,7 @@ int i, j;   /* loop counter */
     for (i=0; i<wdim; i++) subroot->summed_weight[i] = subroot->weight[i];
 
     for (j=0; j<subroot->num_child; j++) {
-      LB_Reftree_Sum_All_Weights(lb,&(subroot->children[j]),wdim);
+      Zoltan_Reftree_Sum_All_Weights(lb,&(subroot->children[j]),wdim);
       for (i=0; i<wdim; i++)
         subroot->summed_weight[i] += (subroot->children[j]).summed_weight[i];
     }
@@ -966,7 +966,7 @@ int i, j;   /* loop counter */
 /*****************************************************************************/
 /*****************************************************************************/
 
-static void LB_Reftree_List_Other_Leaves(LB *lb, LB_REFTREE *subroot, 
+static void Zoltan_Reftree_List_Other_Leaves(LB *lb, ZOLTAN_REFTREE *subroot, 
        ZOLTAN_ID_PTR list, int *count)
 
 {
@@ -983,7 +983,7 @@ int j;   /* loop counter */
    */
 
     if (!subroot->assigned_to_me) {
-      ZOLTAN_LB_SET_GID(lb, &(list[(*count)*lb->Num_GID]),subroot->global_id);
+      ZOLTAN_SET_GID(lb, &(list[(*count)*lb->Num_GID]),subroot->global_id);
       *count += 1;
     }
 
@@ -995,7 +995,7 @@ int j;   /* loop counter */
    */
 
     for (j=0; j<subroot->num_child; j++) {
-      LB_Reftree_List_Other_Leaves(lb, &(subroot->children[j]),list,count);
+      Zoltan_Reftree_List_Other_Leaves(lb, &(subroot->children[j]),list,count);
     }
   }
 }
@@ -1003,7 +1003,7 @@ int j;   /* loop counter */
 /*****************************************************************************/
 /*****************************************************************************/
 
-static int LB_Reftree_Partition(LB *lb, int *num_export, 
+static int Zoltan_Reftree_Partition(LB *lb, int *num_export, 
        ZOLTAN_ID_PTR *export_global_ids, ZOLTAN_ID_PTR *export_local_ids, 
        int **export_procs)
 
@@ -1012,10 +1012,10 @@ static int LB_Reftree_Partition(LB *lb, int *num_export,
  * Function to partition the grid and fill the export arrays.
  */
 
-char *yo = "LB_Reftree_Partition";
+char *yo = "Zoltan_Reftree_Partition";
 char msg[256];
 int num_exp;          /* count the number of export objects */
-LB_REFTREE *root;     /* root of the tree */
+ZOLTAN_REFTREE *root;     /* root of the tree */
 float partition_size; /* amount of weight for each partition */
 float cutoff;         /* the value at which the current partition is full */
 int part;             /* partition under construction */
@@ -1023,7 +1023,7 @@ float current_size;   /* amount of weight consumed so far */
 float eps;            /* allowed deviation from average partition size */
 int num_part;         /* number of partitions */
 
-  root = ((struct LB_reftree_data_struct *)lb->Data_Structure)->reftree_root;
+  root = ((struct Zoltan_Reftree_data_struct *)lb->Data_Structure)->reftree_root;
 
   /*
    * determine the size of the partitions and tolerance interval
@@ -1050,14 +1050,14 @@ int num_part;         /* number of partitions */
   part = 0;
   current_size = 0.0;
   cutoff = partition_size;
-  LB_Reftree_Part_Recursive(lb,root,&part,&current_size,&num_exp,&cutoff,
+  Zoltan_Reftree_Part_Recursive(lb,root,&part,&current_size,&num_exp,&cutoff,
                             num_part,partition_size,eps);
 
   /*
    * if no exports, we're done
    */
 
-  if (lb->Return_Lists == LB_NO_LISTS) {
+  if (lb->LB_Return_Lists == ZOLTAN_LB_NO_LISTS) {
     return(ZOLTAN_OK);
   }
   else if (num_exp == 0) {
@@ -1069,18 +1069,18 @@ int num_part;         /* number of partitions */
    * allocate space for the export lists
    */
 
-  if (!LB_Special_Malloc(lb,(void **)export_global_ids,num_exp,
-                         LB_SPECIAL_MALLOC_GID))
+  if (!Zoltan_Special_Malloc(lb,(void **)export_global_ids,num_exp,
+                         ZOLTAN_SPECIAL_MALLOC_GID))
     return ZOLTAN_MEMERR;
-  if (!LB_Special_Malloc(lb,(void **)export_local_ids,num_exp,
-                         LB_SPECIAL_MALLOC_LID)) {
-    LB_Special_Free(lb,(void **)export_global_ids,LB_SPECIAL_MALLOC_GID);
+  if (!Zoltan_Special_Malloc(lb,(void **)export_local_ids,num_exp,
+                         ZOLTAN_SPECIAL_MALLOC_LID)) {
+    Zoltan_Special_Free(lb,(void **)export_global_ids,ZOLTAN_SPECIAL_MALLOC_GID);
     return ZOLTAN_MEMERR;
   }
-  if (!LB_Special_Malloc(lb,(void **)export_procs,num_exp,
-                         LB_SPECIAL_MALLOC_INT)) {
-    LB_Special_Free(lb,(void **)export_global_ids,LB_SPECIAL_MALLOC_GID);
-    LB_Special_Free(lb,(void **)export_local_ids,LB_SPECIAL_MALLOC_LID);
+  if (!Zoltan_Special_Malloc(lb,(void **)export_procs,num_exp,
+                         ZOLTAN_SPECIAL_MALLOC_INT)) {
+    Zoltan_Special_Free(lb,(void **)export_global_ids,ZOLTAN_SPECIAL_MALLOC_GID);
+    Zoltan_Special_Free(lb,(void **)export_local_ids,ZOLTAN_SPECIAL_MALLOC_LID);
     return ZOLTAN_MEMERR;
   }
 
@@ -1089,7 +1089,7 @@ int num_part;         /* number of partitions */
    */
 
   *num_export = 0;
-  LB_Reftree_Export_Lists(lb,root,num_export,export_global_ids,
+  Zoltan_Reftree_Export_Lists(lb,root,num_export,export_global_ids,
                           export_local_ids,export_procs);
 
   if (num_exp != *num_export) {
@@ -1106,7 +1106,7 @@ int num_part;         /* number of partitions */
 /*****************************************************************************/
 /*****************************************************************************/
 
-static void LB_Reftree_Part_Recursive(LB *lb, LB_REFTREE *subroot, int *part,
+static void Zoltan_Reftree_Part_Recursive(LB *lb, ZOLTAN_REFTREE *subroot, int *part,
                               float *current_size, int *num_exp, float *cutoff,
                               int num_part, float partition_size, float eps)
 
@@ -1143,7 +1143,7 @@ float newsize; /* size of partition if this subroot gets added to it */
         *num_exp += 1;
       else
         for (i=0; i<subroot->num_child; i++)
-          LB_Reftree_Mark_and_Count(&(subroot->children[i]), *part, num_exp);
+          Zoltan_Reftree_Mark_and_Count(&(subroot->children[i]), *part, num_exp);
     }
 
   /*
@@ -1168,7 +1168,7 @@ float newsize; /* size of partition if this subroot gets added to it */
     if (subroot->num_child != 0) {
       subroot->partition = -1;
       for (i=0; i<subroot->num_child; i++)
-        LB_Reftree_Part_Recursive(lb, &(subroot->children[i]),part,current_size,
+        Zoltan_Reftree_Part_Recursive(lb, &(subroot->children[i]),part,current_size,
                                num_exp, cutoff, num_part, partition_size, eps);
     }
     else {
@@ -1192,7 +1192,7 @@ float newsize; /* size of partition if this subroot gets added to it */
 /*****************************************************************************/
 /*****************************************************************************/
 
-static void LB_Reftree_Mark_and_Count(LB_REFTREE *subroot, int part, 
+static void Zoltan_Reftree_Mark_and_Count(ZOLTAN_REFTREE *subroot, int part, 
        int *num_exp)
 
 {
@@ -1206,7 +1206,7 @@ int i;
     if (subroot->assigned_to_me) *num_exp += 1;
   } else {
     for (i=0; i<subroot->num_child; i++)
-      LB_Reftree_Mark_and_Count(&(subroot->children[i]), part, num_exp);
+      Zoltan_Reftree_Mark_and_Count(&(subroot->children[i]), part, num_exp);
   }
 }
 
@@ -1214,7 +1214,7 @@ int i;
 /*****************************************************************************/
 /*****************************************************************************/
 
-static void LB_Reftree_Export_Lists(LB *lb, LB_REFTREE *subroot, 
+static void Zoltan_Reftree_Export_Lists(LB *lb, ZOLTAN_REFTREE *subroot, 
                             int *num_export, ZOLTAN_ID_PTR *export_global_ids,
                             ZOLTAN_ID_PTR *export_local_ids, int **export_procs)
 {
@@ -1237,9 +1237,9 @@ int i;
  * if this is a leaf, put it on the export lists
  */
 
-    ZOLTAN_LB_SET_GID(lb, &((*export_global_ids)[(*num_export)*lb->Num_GID]),
+    ZOLTAN_SET_GID(lb, &((*export_global_ids)[(*num_export)*lb->Num_GID]),
                subroot->global_id);
-    ZOLTAN_LB_SET_LID(lb, &((*export_local_ids)[(*num_export)*lb->Num_LID]),
+    ZOLTAN_SET_LID(lb, &((*export_local_ids)[(*num_export)*lb->Num_LID]),
                subroot->local_id);
     (*export_procs)[*num_export] = subroot->partition;
     *num_export += 1;
@@ -1252,7 +1252,7 @@ int i;
  */
 
     for (i=0; i<subroot->num_child; i++)
-      LB_Reftree_Export_Lists(lb, &(subroot->children[i]), num_export,
+      Zoltan_Reftree_Export_Lists(lb, &(subroot->children[i]), num_export,
                               export_global_ids,export_local_ids,export_procs);
   }
 }

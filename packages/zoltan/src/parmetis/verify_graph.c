@@ -14,7 +14,7 @@
 #include "lb_const.h"
 #include "lb_util_const.h"
 #include "comm_const.h"
-#include "parmetis_jostle_const.h"
+#include "parmetis_jostle.h"
 
 /*********************************************************************/
 /* Verify ParMetis graph structure.                                  */
@@ -45,7 +45,7 @@
 /*                                                                   */
 /*********************************************************************/
 
-int LB_Verify_Graph(MPI_Comm comm, idxtype *vtxdist, idxtype *xadj, 
+int Zoltan_Verify_Graph(MPI_Comm comm, idxtype *vtxdist, idxtype *xadj, 
        idxtype *adjncy, idxtype *vwgt, idxtype *adjwgt, 
        int vwgt_dim, int ewgt_dim, int check_graph, int output_level)
 {
@@ -57,7 +57,7 @@ int LB_Verify_Graph(MPI_Comm comm, idxtype *vtxdist, idxtype *xadj,
   idxtype *ptr1, *ptr2;
   char *sendbuf, *recvbuf;
   ZOLTAN_COMM_OBJ *comm_plan;
-  static char *yo = "LB_Verify_Graph";
+  static char *yo = "Zoltan_Verify_Graph";
   char msg[256];
 
   ierr = ZOLTAN_OK;

@@ -15,7 +15,7 @@
 #include <math.h>
 #include <memory.h>
 #include "lb_const.h"
-#include "rcb_const.h"
+#include "rcb.h"
 #include "params_const.h"
 #include "timer_const.h"
 #include "ha_const.h"
@@ -57,7 +57,7 @@ static void print_rcb_tree(LB *, struct rcb_tree *);
 
 
 /*  Parameters structure for RCB method.  Used in  */
-/*  LB_Set_RCB_Param and LB_rcb.                   */
+/*  Zoltan_RCB_Set_Param and Zoltan_RCB.                   */
 static PARAM_VARS RCB_params[] = {
                   { "RCB_OVERALLOC", NULL, "DOUBLE" },
                   { "RCB_REUSE", NULL, "INT" },
@@ -70,7 +70,7 @@ static PARAM_VARS RCB_params[] = {
 /*---------------------------------------------------------------------------*/
 /*---------------------------------------------------------------------------*/
 
-int LB_Set_RCB_Param(
+int Zoltan_RCB_Set_Param(
 char *name,			/* name of variable */
 char *val)			/* value of variable */
 {
@@ -78,7 +78,7 @@ char *val)			/* value of variable */
     PARAM_UTYPE result;		/* value returned from Check_Param */
     int index;			/* index returned from Check_Param */
 
-    status = LB_Check_Param(name, val, RCB_params, &result, &index);
+    status = Zoltan_Check_Param(name, val, RCB_params, &result, &index);
 
     return(status);
 }
@@ -87,7 +87,7 @@ char *val)			/* value of variable */
 /*---------------------------------------------------------------------------*/
 /*---------------------------------------------------------------------------*/
 
-int LB_rcb(
+int Zoltan_RCB(
   LB *lb,                       /* The load-balancing structure with info for
                                    the RCB balancer.                         */
   int *num_import,              /* Number of non-local objects assigned to this
@@ -121,11 +121,11 @@ int LB_rcb(
                                  later for point and box drop. */
 
 
-    LB_Bind_Param(RCB_params, "RCB_OVERALLOC", (void *) &overalloc);
-    LB_Bind_Param(RCB_params, "RCB_REUSE", (void *) &reuse);
-    LB_Bind_Param(RCB_params, "CHECK_GEOM", (void *) &check_geom);
-    LB_Bind_Param(RCB_params, "RCB_OUTPUT_LEVEL", (void *) &stats);
-    LB_Bind_Param(RCB_params, "KEEP_CUTS", (void *) &gen_tree);
+    Zoltan_Bind_Param(RCB_params, "RCB_OVERALLOC", (void *) &overalloc);
+    Zoltan_Bind_Param(RCB_params, "RCB_REUSE", (void *) &reuse);
+    Zoltan_Bind_Param(RCB_params, "CHECK_GEOM", (void *) &check_geom);
+    Zoltan_Bind_Param(RCB_params, "RCB_OUTPUT_LEVEL", (void *) &stats);
+    Zoltan_Bind_Param(RCB_params, "KEEP_CUTS", (void *) &gen_tree);
 
     overalloc = RCB_DEFAULT_OVERALLOC;
     reuse = RCB_DEFAULT_REUSE;
@@ -134,7 +134,7 @@ int LB_rcb(
     gen_tree = 0;
     wgtflag = (lb->Obj_Weight_Dim > 0); /* Multidim. weights not accepted */
 
-    LB_Assign_Param_Vals(lb->Params, RCB_params, lb->Debug_Level, lb->Proc,
+    Zoltan_Assign_Param_Vals(lb->Params, RCB_params, lb->Debug_Level, lb->Proc,
                          lb->Debug_Proc);
 
     /* Initializations in case of early exit. */
@@ -224,7 +224,7 @@ static int rcb_fn(
                                        stored along with dots in the RCB_STRUCT.
                                        When false, storage, manipulation, and
                                        communication of IDs is avoided.     
-                                       Set by call to LB_Use_IDs().         */
+                                       Set by call to Zoltan_RB_Use_IDs().         */
 
   RCB_STRUCT *rcb = NULL;           /* Pointer to data structures for RCB.  */
   struct rcb_box *rcbbox = NULL;    /* bounding box of final RCB sub-domain */
@@ -245,12 +245,12 @@ static int rcb_fn(
   MPI_Comm local_comm, tmp_comm;
   MPI_Op box_op;
   MPI_Datatype box_type;
-  MPI_User_function LB_rcb_box_merge;
+  MPI_User_function Zoltan_RCB_box_merge;
 
-  ZOLTAN_LB_TRACE_ENTER(lb, yo);
-  if (stats || (lb->Debug_Level >= LB_DEBUG_ATIME)) {
+  ZOLTAN_TRACE_ENTER(lb, yo);
+  if (stats || (lb->Debug_Level >= ZOLTAN_DEBUG_ATIME)) {
     MPI_Barrier(lb->Communicator);
-    timestart = time1 = LB_Time(lb->Timer);
+    timestart = time1 = Zoltan_Time(lb->Timer);
   }
 
   /* setup for parallel */
@@ -264,19 +264,19 @@ static int rcb_fn(
    * Determine whether to store, manipulate, and communicate global and 
    * local IDs.
    */
-  use_ids = LB_Use_IDs(lb);
+  use_ids = Zoltan_RB_Use_IDs(lb);
 
   /*
    *  Build the RCB Data structure and 
    *  set pointers to information in it.
    */
 
-  start_time = LB_Time(lb->Timer);
-  ierr = LB_RCB_Build_Structure(lb, &pdotnum, &dotmax, wgtflag, use_ids);
+  start_time = Zoltan_Time(lb->Timer);
+  ierr = Zoltan_RCB_Build_Structure(lb, &pdotnum, &dotmax, wgtflag, use_ids);
   if (ierr == ZOLTAN_FATAL || ierr == ZOLTAN_MEMERR) {
     ZOLTAN_PRINT_ERROR(proc, yo, 
-                   "Error returned from LB_RCB_Build_Structure.");
-    ZOLTAN_LB_TRACE_EXIT(lb, yo);
+                   "Error returned from Zoltan_RCB_Build_Structure.");
+    ZOLTAN_TRACE_EXIT(lb, yo);
     return(ierr);
   }
 
@@ -287,7 +287,7 @@ static int rcb_fn(
   dotpt  = rcb->Dots; 
   rcbbox = rcb->Box;
   treept = rcb->Tree_Ptr;
-  end_time = LB_Time(lb->Timer);
+  end_time = Zoltan_Time(lb->Timer);
   lb_time[0] = end_time - start_time;
   start_time = end_time;
 
@@ -313,20 +313,20 @@ static int rcb_fn(
   if (dotmax > 0) {
     dotmark = (int *) ZOLTAN_MALLOC(dotmax*sizeof(int));
     if (dotmark == NULL) {
-      ZOLTAN_LB_TRACE_EXIT(lb, yo);
+      ZOLTAN_TRACE_EXIT(lb, yo);
       return ZOLTAN_MEMERR;
     }
     coord = (double *) ZOLTAN_MALLOC(dotmax*sizeof(double));
     if (coord == NULL) {
       ZOLTAN_FREE(&dotmark);
-      ZOLTAN_LB_TRACE_EXIT(lb, yo);
+      ZOLTAN_TRACE_EXIT(lb, yo);
       return ZOLTAN_MEMERR;
     }
     wgts = (double *) ZOLTAN_MALLOC(dotmax*sizeof(double));
     if (wgts == NULL) {
       ZOLTAN_FREE(&dotmark);
       ZOLTAN_FREE(&coord);
-      ZOLTAN_LB_TRACE_EXIT(lb, yo);
+      ZOLTAN_TRACE_EXIT(lb, yo);
       return ZOLTAN_MEMERR;
     }
     dotlist = (int *) ZOLTAN_MALLOC(dotmax*sizeof(int));
@@ -334,7 +334,7 @@ static int rcb_fn(
       ZOLTAN_FREE(&wgts);
       ZOLTAN_FREE(&dotmark);
       ZOLTAN_FREE(&coord);
-      ZOLTAN_LB_TRACE_EXIT(lb, yo);
+      ZOLTAN_TRACE_EXIT(lb, yo);
       return ZOLTAN_MEMERR;
     }
   }
@@ -362,7 +362,7 @@ static int rcb_fn(
           ZOLTAN_FREE(&dotmark);
           ZOLTAN_FREE(&coord);
           ZOLTAN_FREE(&wgts);
-          ZOLTAN_LB_TRACE_EXIT(lb, yo);
+          ZOLTAN_TRACE_EXIT(lb, yo);
           return ZOLTAN_MEMERR;
         }
 
@@ -374,23 +374,23 @@ static int rcb_fn(
 
       /* move dots */
       allocflag = 0;
-      ierr = LB_RB_Send_Dots(lb, &gidpt, &lidpt, &dotpt, dotmark, proc_list,
+      ierr = Zoltan_RB_Send_Dots(lb, &gidpt, &lidpt, &dotpt, dotmark, proc_list,
                              outgoing, &dotnum, &dotmax, proc, &allocflag,
                              overalloc, stats, reuse_count, use_ids,
                              lb->Communicator);
       if (ierr) {
-        ZOLTAN_PRINT_ERROR(proc, yo, "Error returned from LB_RB_Send_Dots.");
+        ZOLTAN_PRINT_ERROR(proc, yo, "Error returned from Zoltan_RB_Send_Dots.");
         ZOLTAN_FREE(&proc_list);
         ZOLTAN_FREE(&dotmark);
         ZOLTAN_FREE(&coord);
         ZOLTAN_FREE(&wgts);
-        ZOLTAN_LB_TRACE_EXIT(lb, yo);
+        ZOLTAN_TRACE_EXIT(lb, yo);
         return (ierr);
       }
 
       if (allocflag) {
         /*
-         * gidpt, lidpt and dotpt were reallocated in LB_RB_Send_Dots;
+         * gidpt, lidpt and dotpt were reallocated in Zoltan_RB_Send_Dots;
          * store their values in rcb.
          */
         rcb->Global_IDs = gidpt;
@@ -412,7 +412,7 @@ static int rcb_fn(
   MPI_Type_contiguous(6,MPI_DOUBLE,&box_type);
   MPI_Type_commit(&box_type);
 
-  MPI_Op_create(&LB_rcb_box_merge,1,&box_op);
+  MPI_Op_create(&Zoltan_RCB_box_merge,1,&box_op);
 
   /* set dot weights = 1.0 if user didn't and determine total weight */
 
@@ -426,10 +426,10 @@ static int rcb_fn(
   MPI_Allreduce(&weightlo, &weight, 1, MPI_DOUBLE, MPI_SUM, lb->Communicator);
 
   if (check_geom) {
-    ierr = LB_RB_check_geom_input(lb, dotpt, dotnum);
+    ierr = Zoltan_RB_check_geom_input(lb, dotpt, dotnum);
     if (ierr == ZOLTAN_FATAL) {
-      ZOLTAN_PRINT_ERROR(proc, yo, "Error returned from LB_RB_check_geom_input");
-      ZOLTAN_LB_TRACE_EXIT(lb, yo);
+      ZOLTAN_PRINT_ERROR(proc, yo, "Error returned from Zoltan_RB_check_geom_input");
+      ZOLTAN_TRACE_EXIT(lb, yo);
       return(ierr);
     }
   }
@@ -457,8 +457,8 @@ static int rcb_fn(
   else
      MPI_Comm_dup(lb->Communicator,&local_comm);
 
-  if (stats || (lb->Debug_Level >= LB_DEBUG_ATIME)) {
-    time2 = LB_Time(lb->Timer);
+  if (stats || (lb->Debug_Level >= ZOLTAN_DEBUG_ATIME)) {
+    time2 = Zoltan_Time(lb->Timer);
     timers[0] = time2 - time1;
   }
 
@@ -479,15 +479,15 @@ static int rcb_fn(
        through all levels of rcb */
     if (lb->Tflops_Special) tmp_nprocs = (tmp_nprocs + 1)/2;
 
-    if (stats || (lb->Debug_Level >= LB_DEBUG_ATIME)) time1 = LB_Time(lb->Timer);
+    if (stats || (lb->Debug_Level >= ZOLTAN_DEBUG_ATIME)) time1 = Zoltan_Time(lb->Timer);
 
-    ierr = LB_divide_machine(lb, proc, local_comm, &set, &proclower,
+    ierr = Zoltan_Divide_Machine(lb, proc, local_comm, &set, &proclower,
                              &procmid, &num_procs, &fractionlo);
     if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
       ZOLTAN_FREE(&dotmark);
       ZOLTAN_FREE(&coord);
       ZOLTAN_FREE(&wgts);
-      ZOLTAN_LB_TRACE_EXIT(lb, yo);
+      ZOLTAN_TRACE_EXIT(lb, yo);
       return (ierr);
     }
     
@@ -514,20 +514,20 @@ static int rcb_fn(
       ZOLTAN_FREE(&dotlist);
       dotmark = (int *) ZOLTAN_MALLOC(dotmax*sizeof(int));
       if (dotmark == NULL) {
-        ZOLTAN_LB_TRACE_EXIT(lb, yo);
+        ZOLTAN_TRACE_EXIT(lb, yo);
         return ZOLTAN_MEMERR;
       }
       coord = (double *) ZOLTAN_MALLOC(dotmax*sizeof(double));
       if (coord == NULL) {
         ZOLTAN_FREE(&dotmark);
-        ZOLTAN_LB_TRACE_EXIT(lb, yo);
+        ZOLTAN_TRACE_EXIT(lb, yo);
         return ZOLTAN_MEMERR;
       }
       wgts = (double *) ZOLTAN_MALLOC(dotmax*sizeof(double));
       if (wgts == NULL) {
         ZOLTAN_FREE(&dotmark);
         ZOLTAN_FREE(&coord);
-        ZOLTAN_LB_TRACE_EXIT(lb, yo);
+        ZOLTAN_TRACE_EXIT(lb, yo);
         return ZOLTAN_MEMERR;
       }
       dotlist = (int *) ZOLTAN_MALLOC(dotmax*sizeof(int));
@@ -535,7 +535,7 @@ static int rcb_fn(
         ZOLTAN_FREE(&wgts);
         ZOLTAN_FREE(&dotmark);
         ZOLTAN_FREE(&coord);
-        ZOLTAN_LB_TRACE_EXIT(lb, yo);
+        ZOLTAN_TRACE_EXIT(lb, yo);
         return ZOLTAN_MEMERR;
       }
     }
@@ -555,18 +555,18 @@ static int rcb_fn(
     }
     else first_guess = 0;
 
-    if (stats || (lb->Debug_Level >= LB_DEBUG_ATIME)) time2 = LB_Time(lb->Timer);
+    if (stats || (lb->Debug_Level >= ZOLTAN_DEBUG_ATIME)) time2 = Zoltan_Time(lb->Timer);
 
-    if (!LB_find_median(lb, coord, wgts, dotmark, dotnum, proc, fractionlo,
+    if (!Zoltan_RB_find_median(lb, coord, wgts, dotmark, dotnum, proc, fractionlo,
                         local_comm, &valuehalf, first_guess, &(counters[0]),
                         nprocs, old_nprocs, proclower, wgtflag, rcbbox->lo[dim],
                         rcbbox->hi[dim], weight, &weightlo, &weighthi,
                         dotlist)) {
-      ZOLTAN_PRINT_ERROR(proc, yo, "Error returned from LB_find_median.");
+      ZOLTAN_PRINT_ERROR(proc, yo, "Error returned from Zoltan_RB_find_median.");
       ZOLTAN_FREE(&dotmark);
       ZOLTAN_FREE(&coord);
       ZOLTAN_FREE(&wgts);
-      ZOLTAN_LB_TRACE_EXIT(lb, yo);
+      ZOLTAN_TRACE_EXIT(lb, yo);
       return ZOLTAN_FATAL;
     }
 
@@ -575,7 +575,7 @@ static int rcb_fn(
     else
        weight = weightlo;
 
-    if (stats || (lb->Debug_Level >= LB_DEBUG_ATIME)) time3 = LB_Time(lb->Timer);
+    if (stats || (lb->Debug_Level >= ZOLTAN_DEBUG_ATIME)) time3 = Zoltan_Time(lb->Timer);
 
     /* store cut info in tree only if I am procmid */
 
@@ -601,22 +601,22 @@ static int rcb_fn(
     }
 
     allocflag = 0;
-    ierr = LB_RB_Send_Outgoing(lb, &gidpt, &lidpt, &dotpt, dotmark, &dottop,
+    ierr = Zoltan_RB_Send_Outgoing(lb, &gidpt, &lidpt, &dotpt, dotmark, &dottop,
                                &dotnum, &dotmax, set, &allocflag, overalloc,
                                stats, counters, use_ids, local_comm, proclower,
                                old_nprocs);
     if (ierr) {
-      ZOLTAN_PRINT_ERROR(proc, yo, "Error returned from LB_RB_Send_Outgoing.");
+      ZOLTAN_PRINT_ERROR(proc, yo, "Error returned from Zoltan_RB_Send_Outgoing.");
       ZOLTAN_FREE(&dotmark);
       ZOLTAN_FREE(&coord);
       ZOLTAN_FREE(&wgts);
-      ZOLTAN_LB_TRACE_EXIT(lb, yo);
+      ZOLTAN_TRACE_EXIT(lb, yo);
       return (ierr);
     }
 
     if (allocflag) {
       /* 
-       * gidpt, lidpt and dotpt were reallocated in LB_RB_Send_Outgoing;
+       * gidpt, lidpt and dotpt were reallocated in Zoltan_RB_Send_Outgoing;
        * store their values in rcb.
        */
       rcb->Global_IDs = gidpt;
@@ -636,8 +636,8 @@ static int rcb_fn(
        local_comm = tmp_comm;
     }
 
-    if (stats || (lb->Debug_Level >= LB_DEBUG_ATIME)) {
-      time4 = LB_Time(lb->Timer);
+    if (stats || (lb->Debug_Level >= ZOLTAN_DEBUG_ATIME)) {
+      time4 = Zoltan_Time(lb->Timer);
       timers[1] += time2 - time1;
       timers[2] += time3 - time2;
       timers[3] += time4 - time3;
@@ -657,54 +657,54 @@ static int rcb_fn(
   ZOLTAN_FREE(&dotmark);
   ZOLTAN_FREE(&dotlist);
 
-  end_time = LB_Time(lb->Timer);
+  end_time = Zoltan_Time(lb->Timer);
   lb_time[1] = end_time - start_time;
 
-  if (stats || (lb->Debug_Level >= LB_DEBUG_ATIME)) {
+  if (stats || (lb->Debug_Level >= ZOLTAN_DEBUG_ATIME)) {
     MPI_Barrier(lb->Communicator);
-    timestop = time1 = LB_Time(lb->Timer);
+    timestop = time1 = Zoltan_Time(lb->Timer);
   }
 
   /* error checking and statistics */
 
   if (check_geom) {
-    ierr = LB_RB_check_geom_output(lb, dotpt,dotnum,pdotnum,rcbbox);
+    ierr = Zoltan_RB_check_geom_output(lb, dotpt,dotnum,pdotnum,rcbbox);
     if (ierr == ZOLTAN_FATAL) {
-      ZOLTAN_PRINT_ERROR(proc, yo, "Error returned from LB_RB_check_geom_output");
-      ZOLTAN_LB_TRACE_EXIT(lb, yo);
+      ZOLTAN_PRINT_ERROR(proc, yo, "Error returned from Zoltan_RB_check_geom_output");
+      ZOLTAN_TRACE_EXIT(lb, yo);
       return(ierr);
     }
   }
 
-  if (stats || (lb->Debug_Level >= LB_DEBUG_ATIME)) 
-    LB_RB_stats(lb, timestop-timestart,dotpt,dotnum,
+  if (stats || (lb->Debug_Level >= ZOLTAN_DEBUG_ATIME)) 
+    Zoltan_RB_stats(lb, timestop-timestart,dotpt,dotnum,
                 timers,counters,stats,reuse_count,rcbbox,reuse);
 
   /* update calling routine parameters */
   
-  start_time = LB_Time(lb->Timer);
+  start_time = Zoltan_Time(lb->Timer);
 
   pdotnum = dotnum;
   pdottop = dottop;
 
   /*  build return arguments */
 
-  if (lb->Return_Lists) {
-    /* lb->Return_Lists is true ==> use_ids is true */
+  if (lb->LB_Return_Lists) {
+    /* lb->LB_Return_Lists is true ==> use_ids is true */
     *num_import = dotnum - dottop;
     if (*num_import > 0) {
-      ierr = LB_RB_Return_Arguments(lb, gidpt, lidpt, dotpt, *num_import,
+      ierr = Zoltan_RB_Return_Arguments(lb, gidpt, lidpt, dotpt, *num_import,
                                     import_global_ids, import_local_ids,
                                     import_procs, dottop);
       if (ierr) {
-         ZOLTAN_PRINT_ERROR(proc,yo,"Error returned from LB_RB_Return_Arguments.");
-         ZOLTAN_LB_TRACE_EXIT(lb, yo);
+         ZOLTAN_PRINT_ERROR(proc,yo,"Error returned from Zoltan_RB_Return_Arguments.");
+         ZOLTAN_TRACE_EXIT(lb, yo);
          return ierr;
       }
     }
   }
 
-  if (lb->Debug_Level >= LB_DEBUG_ALL)
+  if (lb->Debug_Level >= ZOLTAN_DEBUG_ALL)
     print_rcb_tree(lb, &(treept[proc]));
 
   if (gen_tree) {
@@ -721,22 +721,22 @@ static int rcb_fn(
     treept[0].dim = -1;
   }
 
-  end_time = LB_Time(lb->Timer);
+  end_time = Zoltan_Time(lb->Timer);
   lb_time[0] += (end_time - start_time);
 
-  if (lb->Debug_Level >= LB_DEBUG_ATIME) {
+  if (lb->Debug_Level >= ZOLTAN_DEBUG_ATIME) {
     if (lb->Proc == lb->Debug_Proc) {
       printf("ZOLTAN RCB Times:  \n");
     }
-    LB_Print_Stats(lb->Communicator, lb->Debug_Proc, lb_time[0], 
+    Zoltan_Print_Stats(lb->Communicator, lb->Debug_Proc, lb_time[0], 
                    "ZOLTAN     Build:       ");
-    LB_Print_Stats(lb->Communicator, lb->Debug_Proc, lb_time[1], 
+    Zoltan_Print_Stats(lb->Communicator, lb->Debug_Proc, lb_time[1], 
                    "ZOLTAN     RCB:         ");
   }
 
-  if (lb->Debug_Level >= LB_DEBUG_ALL) {
-    /* lb->Debug_Level >= LB_DEBUG_ALL ==> use_ids is true */
-    LB_RB_Print_All(lb, rcb->Global_IDs, rcb->Dots, 
+  if (lb->Debug_Level >= ZOLTAN_DEBUG_ALL) {
+    /* lb->Debug_Level >= ZOLTAN_DEBUG_ALL ==> use_ids is true */
+    Zoltan_RB_Print_All(lb, rcb->Global_IDs, rcb->Dots, 
                     pdotnum, pdottop, *num_import,
                     *import_global_ids, *import_procs);
   }
@@ -744,7 +744,7 @@ static int rcb_fn(
   /* Free memory allocated by the algorithm. */
   if (!reuse && !gen_tree) {
     /* Free all memory used. */
-    LB_RCB_Free_Structure(lb);
+    Zoltan_RCB_Free_Structure(lb);
   }
   else {
     /* Free only Dots and IDs; keep other structures. */
@@ -753,7 +753,7 @@ static int rcb_fn(
     ZOLTAN_FREE(&(rcb->Dots));
   }
 
-  ZOLTAN_LB_TRACE_EXIT(lb, yo);
+  ZOLTAN_TRACE_EXIT(lb, yo);
   /* Temporary return value until error codes are fully implemented */
   return(ZOLTAN_OK);  
 }
@@ -766,7 +766,7 @@ static int rcb_fn(
 
 /* min/max merge of each component of a rcb_box */
 
-void LB_rcb_box_merge(void *in, void *inout, int *len, MPI_Datatype *dptr)
+void Zoltan_RCB_box_merge(void *in, void *inout, int *len, MPI_Datatype *dptr)
 
 {
   int i;
@@ -785,12 +785,12 @@ void LB_rcb_box_merge(void *in, void *inout, int *len, MPI_Datatype *dptr)
 
 static void print_rcb_tree(LB *lb, struct rcb_tree *treept)
 {
-  LB_Print_Sync_Start(lb->Communicator, TRUE);
+  Zoltan_Print_Sync_Start(lb->Communicator, TRUE);
   printf("Proc %d:  Tree Struct:\n", lb->Proc);
   printf("          cut        = %e\n", treept->cut);
   printf("          dim        = %d\n", treept->dim);
   printf("          parent     = %d\n", treept->parent);
   printf("          left_leaf  = %d\n", treept->left_leaf);
   printf("          right_leaf = %d\n", treept->right_leaf);
-  LB_Print_Sync_End(lb->Communicator, TRUE);
+  Zoltan_Print_Sync_End(lb->Communicator, TRUE);
 }

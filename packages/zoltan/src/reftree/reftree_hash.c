@@ -8,41 +8,41 @@
 
 #include "lb_const.h"
 #include "lb_util_const.h"
-#include "reftree_const.h"
+#include "reftree.h"
 
-/* LB_Reftree_hash_lookup uses LB_Hash to lookup a key 
+/* Zoltan_Reftree_hash_lookup uses Zoltan_Hash to lookup a key 
  *
  * Input:
  *   lb, a load-balancing structure
  *   hashtab, pointer to the hash table
- *   key, a key to look up of type LB_GID (any data type)
+ *   key, a key to look up of type GID (any data type)
  *   n,   dimension of the hash table
  *
  * Return value:
- *   a pointer to the refinement tree node with LB_GID key
+ *   a pointer to the refinement tree node with GID key
  *   or NULL if the key is not in the hash table
  *
  * Author: Erik Boman, eboman@cs.sandia.gov (9226) (for parmetis/jostle)
  * Modified for refinement tree nodes by william.mitchell@nist.gov
  */
 
-LB_REFTREE* LB_Reftree_hash_lookup (LB *lb, 
-                                    struct LB_reftree_hash_node **hashtab,
+ZOLTAN_REFTREE* Zoltan_Reftree_hash_lookup (LB *lb, 
+                                    struct Zoltan_Reftree_hash_node **hashtab,
                                     ZOLTAN_ID_PTR key, int n)
 {
   int i;
-  struct LB_reftree_hash_node *ptr;
+  struct Zoltan_Reftree_hash_node *ptr;
 
-  i = LB_Hash(key, lb->Num_GID, (unsigned int)n);
+  i = Zoltan_Hash(key, lb->Num_GID, (unsigned int)n);
   for (ptr=hashtab[i]; ptr != NULL; ptr = ptr->next){
-    if (ZOLTAN_LB_EQ_GID(lb, ptr->gid, key))
+    if (ZOLTAN_EQ_GID(lb, ptr->gid, key))
       return (ptr->reftree_node);
   }
   /* Key not in hash table */
-  return (LB_REFTREE *)NULL;
+  return (ZOLTAN_REFTREE *)NULL;
 }
 
-/* LB_Reftree_Hash_Insert adds an entry to the hash table
+/* Zoltan_Reftree_Hash_Insert adds an entry to the hash table
  *
  * Input:
  *   lb, a load-balancing structure
@@ -53,45 +53,45 @@ LB_REFTREE* LB_Reftree_hash_lookup (LB *lb,
  * Author: William Mitchell, william.mitchell@nist.gov
  */
 
-void LB_Reftree_Hash_Insert(LB *lb, LB_REFTREE *reftree_node,
-                            struct LB_reftree_hash_node **hashtab, int size)
+void Zoltan_Reftree_Hash_Insert(LB *lb, ZOLTAN_REFTREE *reftree_node,
+                            struct Zoltan_Reftree_hash_node **hashtab, int size)
 {
 int i;
-struct LB_reftree_hash_node *new_entry;
+struct Zoltan_Reftree_hash_node *new_entry;
 
-  i = LB_Hash(reftree_node->global_id, lb->Num_GID, (unsigned int)size);
+  i = Zoltan_Hash(reftree_node->global_id, lb->Num_GID, (unsigned int)size);
 
-  new_entry = (struct LB_reftree_hash_node *)
-              ZOLTAN_MALLOC(sizeof(struct LB_reftree_hash_node));
-  new_entry->gid = ZOLTAN_ZOLTAN_MALLOC_GID(lb);
-  ZOLTAN_LB_SET_GID(lb, new_entry->gid,reftree_node->global_id);
+  new_entry = (struct Zoltan_Reftree_hash_node *)
+              ZOLTAN_MALLOC(sizeof(struct Zoltan_Reftree_hash_node));
+  new_entry->gid = ZOLTAN_MALLOC_GID(lb);
+  ZOLTAN_SET_GID(lb, new_entry->gid,reftree_node->global_id);
   new_entry->reftree_node = reftree_node;
   new_entry->next = hashtab[i];
   hashtab[i] = new_entry;
 }
 
-/* LB_Reftree_Hash_Remove removes a key from the hash table
+/* Zoltan_Reftree_Hash_Remove removes a key from the hash table
  *
  * Input:
  *   lb, a load-balancing structure
  *   hashtab, pointer to the hash table
- *   key, a key to look up of type LB_GID (any data type)
+ *   key, a key to look up of type GID (any data type)
  *   n,   dimension of the hash table
  *
  * Author: William Mitchell, william.mitchell@nist.gov
  */
 
-void LB_Reftree_Hash_Remove (LB *lb, LB_REFTREE *reftree_node,
-                             struct LB_reftree_hash_node **hashtab, int n)
+void Zoltan_Reftree_Hash_Remove (LB *lb, ZOLTAN_REFTREE *reftree_node,
+                             struct Zoltan_Reftree_hash_node **hashtab, int n)
 {
   int i;
-  struct LB_reftree_hash_node *ptr, *prev, *next;
+  struct Zoltan_Reftree_hash_node *ptr, *prev, *next;
 
-  i = LB_Hash(reftree_node->global_id, lb->Num_GID, (unsigned int)n);
+  i = Zoltan_Hash(reftree_node->global_id, lb->Num_GID, (unsigned int)n);
   ptr = hashtab[i];
   prev = NULL;
   while (ptr != NULL) {
-    if (ZOLTAN_LB_EQ_GID(lb, ptr->gid, reftree_node->global_id)) {
+    if (ZOLTAN_EQ_GID(lb, ptr->gid, reftree_node->global_id)) {
       next = ptr->next;
       ZOLTAN_FREE(&(ptr->gid));
       ZOLTAN_FREE(&ptr);
@@ -108,7 +108,7 @@ void LB_Reftree_Hash_Remove (LB *lb, LB_REFTREE *reftree_node,
   }
 }
 
-/* LB_Reftree_Clear_Hash_Table empties a hash table and frees the
+/* Zoltan_Reftree_Clear_Hash_Table empties a hash table and frees the
  * memory, except for the memory of the table itself
  *
  * Input:
@@ -118,11 +118,11 @@ void LB_Reftree_Hash_Remove (LB *lb, LB_REFTREE *reftree_node,
  * Author: William Mitchell, william.mitchell@nist.gov
  */
 
-void LB_Reftree_Clear_Hash_Table(struct LB_reftree_hash_node **hashtab,
+void Zoltan_Reftree_Clear_Hash_Table(struct Zoltan_Reftree_hash_node **hashtab,
                                  int size)
 {
   int i;
-  struct LB_reftree_hash_node *ptr, *next;
+  struct Zoltan_Reftree_hash_node *ptr, *next;
 
   for (i=0; i<size; i++) {
     ptr = hashtab[i];
@@ -132,7 +132,7 @@ void LB_Reftree_Clear_Hash_Table(struct LB_reftree_hash_node **hashtab,
       ZOLTAN_FREE(&ptr);
       ptr = next;
     }
-    hashtab[i] = (struct LB_reftree_hash_node *)NULL;
+    hashtab[i] = (struct Zoltan_Reftree_hash_node *)NULL;
   }
 
 }

@@ -16,6 +16,6 @@
 
 /* function prototype */
 
-extern int LB_Create_Proc_List(LB *, int, int, int, int *, MPI_Comm, int, int);
+extern int Zoltan_RB_Create_Proc_List(LB *, int, int, int, int *, MPI_Comm, int, int);
 
 #endif

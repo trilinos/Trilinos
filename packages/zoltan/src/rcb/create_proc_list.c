@@ -15,9 +15,9 @@
 #include "comm_const.h"
 #include "create_proc_list_const.h"
 
-static void LB_Gather(int *, int *, int, int, int, MPI_Comm);
+static void Zoltan_RB_Gather(int *, int *, int, int, int, MPI_Comm);
 
-int LB_Create_Proc_List(
+int Zoltan_RB_Create_Proc_List(
      LB       *lb,            /* Load-balancing structure. */
      int       set,           /* set that processor is in */
      int       dotnum,        /* number of dots that my processor has */
@@ -74,7 +74,7 @@ int LB_Create_Proc_List(
         send[rank] = outgoing;
         send[rank+nprocs] = dotnum - outgoing;
         send[rank+2*nprocs] = set;
-        LB_Gather(send, tmp_send, proclower, rank, nprocs, comm);
+        Zoltan_RB_Gather(send, tmp_send, proclower, rank, nprocs, comm);
      }
      else {
         for (i = 3*nprocs-1; i >= 0; i--)
@@ -183,7 +183,7 @@ int LB_Create_Proc_List(
      return ZOLTAN_OK;
 }
 
-static void LB_Gather(
+static void Zoltan_RB_Gather(
    int *send,                 /* input/output array */
    int *tmp_send,             /* temporary array */
    int proclower,             /* smallest numbered processor in partition */

@@ -22,7 +22,6 @@
 #include <values.h>
 #include <limits.h>
 #include "hilbert_const.h"
-#include "sfc_const.h"
 #include "sfc.h"
 
 int sfc_refine_overloaded_bins(LB* lb, int max_cuts_in_bin, 
@@ -81,7 +80,7 @@ int sfc_create_bins(LB* lb, int num_local_objects, int wgt_dim,
   int local_balanced_flag;
   int* number_of_cuts_in_bin;
   
-  ZOLTAN_LB_TRACE_ENTER(lb, yo);
+  ZOLTAN_TRACE_ENTER(lb, yo);
   binned_weight_array = 
     (float *) ZOLTAN_MALLOC(sizeof(float) * 2 * bins_per_proc * wgt_dim);
 
@@ -126,7 +125,7 @@ int sfc_create_bins(LB* lb, int num_local_objects, int wgt_dim,
     sfc_vert_ptr[i].destination_proc = 
       (sfc_vert_ptr[i].my_bin)/(2*bins_per_proc);
     if(sfc_vert_ptr[i].destination_proc != lb->Proc) {
-      array_location = LB_Hash(&(sfc_vert_ptr[i].my_bin), 1, hashtable_length);
+      array_location = Zoltan_Hash(&(sfc_vert_ptr[i].my_bin), 1, hashtable_length);
       ierr = sfc_put_in_hashtable(lb, sfc_hash_ptr, array_location, 
 				  &(sfc_vert_ptr[i]), wgt_dim, (objs_wgt+i*wgt_dim));
       if(ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
@@ -602,7 +601,7 @@ int sfc_create_bins(LB* lb, int num_local_objects, int wgt_dim,
 
   /* objects that are in a bin that has a cut in it have been sent to 
      their corresponding processors */
-  ZOLTAN_LB_TRACE_EXIT(lb, yo);
+  ZOLTAN_TRACE_EXIT(lb, yo);
   return ZOLTAN_OK;
 }
 /*  done sfc_create_bins routine */

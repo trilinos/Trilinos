@@ -22,7 +22,6 @@
 #include <values.h>
 #include <limits.h>
 #include "hilbert_const.h"
-#include "sfc_const.h"
 #include "sfc.h"
 #include "all_allo_const.h"
 
@@ -83,7 +82,7 @@ static PARAM_VARS SFC_params[] = {
 /*---------------------------------------------------------------------------*/
 /*---------------------------------------------------------------------------*/
 
-int LB_Set_SFC_Param(
+int Zoltan_SFC_Set_Param(
 char *name,			/* name of variable */
 char *val)			/* value of variable */
 {
@@ -91,7 +90,7 @@ char *val)			/* value of variable */
     PARAM_UTYPE result;		/* value returned from Check_Param */
     int index;			/* index returned from Check_Param */
 
-    status = LB_Check_Param(name, val, SFC_params, &result, &index);
+    status = Zoltan_Check_Param(name, val, SFC_params, &result, &index);
 
     return(status);
 }
@@ -106,7 +105,7 @@ char *val)			/* value of variable */
 /*---------------------------------------------------------------------------*/
 /*---------------------------------------------------------------------------*/
 
-int LB_sfc(
+int Zoltan_SFC(
   LB *lb,                       /* The load-balancing structure with info for
                                    the RCB balancer.                         */
   int *num_import,              /* Not computed.  Set to -1. */
@@ -126,7 +125,7 @@ int LB_sfc(
                                    this processor's new decomposition.       */
 )
 {
-  char    yo[] = "LB_sfc";
+  char    yo[] = "Zoltan_SFC";
   int wgt_dim = lb->Obj_Weight_Dim;   /* dimension of weights of each object */
   int num_dims;                       /* geometric dimension */
   int ierr, i, j;                     /* local variables */
@@ -168,15 +167,15 @@ int LB_sfc(
     subbins_per_bin, hashtable_divider, bins_per_proc; /* tuning parameters */
   double* coords; /* array for objects coordinates */
 
-  ZOLTAN_LB_TRACE_ENTER(lb, yo);
+  ZOLTAN_TRACE_ENTER(lb, yo);
 
   /* set the of parameters */
-  LB_Bind_Param(SFC_params,"SFC_BINS_PER_PROC",(void*) &bins_per_proc);
-  LB_Bind_Param(SFC_params,"SFC_HASHTABLE_DIVIDER",(void*) &hashtable_divider); 
-  LB_Bind_Param(SFC_params,"SFC_MAX_CUTS_IN_BIN",(void*) &max_cuts_in_bin);
-  LB_Bind_Param(SFC_params,"SFC_SUBBINS_PER_BIN",(void*) &subbins_per_bin); 
-  LB_Bind_Param(SFC_params,"SFC_MAX_REFINEMENT_LEVEL",(void*) &max_refinement_level);
-  LB_Bind_Param(SFC_params,"SFC_BIN_REFINEMENT_METHOD",(void*) &bin_refinement_method); 
+  Zoltan_Bind_Param(SFC_params,"SFC_BINS_PER_PROC",(void*) &bins_per_proc);
+  Zoltan_Bind_Param(SFC_params,"SFC_HASHTABLE_DIVIDER",(void*) &hashtable_divider); 
+  Zoltan_Bind_Param(SFC_params,"SFC_MAX_CUTS_IN_BIN",(void*) &max_cuts_in_bin);
+  Zoltan_Bind_Param(SFC_params,"SFC_SUBBINS_PER_BIN",(void*) &subbins_per_bin); 
+  Zoltan_Bind_Param(SFC_params,"SFC_MAX_REFINEMENT_LEVEL",(void*) &max_refinement_level);
+  Zoltan_Bind_Param(SFC_params,"SFC_BIN_REFINEMENT_METHOD",(void*) &bin_refinement_method); 
   bins_per_proc = BINS_PER_PROC;
   hashtable_divider = HASHTABLE_DIVIDER; 
   max_cuts_in_bin = MAX_CUTS_IN_BIN;
@@ -184,7 +183,7 @@ int LB_sfc(
   max_refinement_level = MAX_REFINEMENT_LEVEL;
   bin_refinement_method = BIN_REFINEMENT_METHOD;
 
-  LB_Assign_Param_Vals(lb->Params, SFC_params, lb->Debug_Level, lb->Proc,
+  Zoltan_Assign_Param_Vals(lb->Params, SFC_params, lb->Debug_Level, lb->Proc,
 		       lb->Debug_Proc);
 
   /* make sure that all parameters have feasible values */
@@ -248,8 +247,8 @@ int LB_sfc(
   }
 
   if (num_local_objects > 0) {
-    global_ids = ZOLTAN_ZOLTAN_MALLOC_GID_ARRAY(lb, num_local_objects);
-    local_ids  = ZOLTAN_ZOLTAN_MALLOC_LID_ARRAY(lb, num_local_objects);
+    global_ids = ZOLTAN_MALLOC_GID_ARRAY(lb, num_local_objects);
+    local_ids  = ZOLTAN_MALLOC_LID_ARRAY(lb, num_local_objects);
 
     if (!(global_ids) || (lb->Num_LID && !(local_ids))) {
       ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
@@ -276,11 +275,11 @@ int LB_sfc(
       for (i = 0; i < wgt_dim*num_local_objects; i++) objs_wgt[i] = 0.;
     }  
   }
-  LB_Get_Obj_List(lb, global_ids, local_ids, wgt_dim, objs_wgt, &ierr);
+  Zoltan_Get_Obj_List(lb, global_ids, local_ids, wgt_dim, objs_wgt, &ierr);
 
   if (ierr) {
     ZOLTAN_PRINT_ERROR(lb->Proc, yo, 
-		   "Error returned from user function LB_Get_Obj_List.");
+		   "Error returned from user function Zoltan_Get_Obj_List.");
     return(ierr);
   }
   /* if object weights are not defined, all object weights are 1.0 */
@@ -532,20 +531,20 @@ int LB_sfc(
     if(sfc_vert_ptr[i].destination_proc != lb->Proc)
       (*num_export)++;
 
-  ierr = LB_Special_Malloc(lb, (void**) export_global_ids,
-			   *num_export, LB_SPECIAL_MALLOC_GID);
+  ierr = Zoltan_Special_Malloc(lb, (void**) export_global_ids,
+			   *num_export, ZOLTAN_SPECIAL_MALLOC_GID);
   if(ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
     ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
     return(ZOLTAN_MEMERR);
   }
-  ierr = LB_Special_Malloc(lb, (void**) export_local_ids,
-			   *num_export, LB_SPECIAL_MALLOC_LID);
+  ierr = Zoltan_Special_Malloc(lb, (void**) export_local_ids,
+			   *num_export, ZOLTAN_SPECIAL_MALLOC_LID);
   if(ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
     ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
     return(ZOLTAN_MEMERR);
   }
-  ierr = LB_Special_Malloc(lb, (void**) export_procs,
-			   *num_export, LB_SPECIAL_MALLOC_INT);
+  ierr = Zoltan_Special_Malloc(lb, (void**) export_procs,
+			   *num_export, ZOLTAN_SPECIAL_MALLOC_INT);
   if(ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
     ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
     return(ZOLTAN_MEMERR);
@@ -556,8 +555,8 @@ int LB_sfc(
   for(i=0;i<num_local_objects;i++) 
     if(sfc_vert_ptr[i].destination_proc != lb->Proc) {
       *((*export_procs)+j) = sfc_vert_ptr[i].destination_proc;
-      ZOLTAN_LB_SET_GID(lb, (*export_global_ids+j), (global_ids+i));
-      ZOLTAN_LB_SET_LID(lb, (*export_local_ids+j), (local_ids+i));
+      ZOLTAN_SET_GID(lb, (*export_global_ids+j), (global_ids+i));
+      ZOLTAN_SET_LID(lb, (*export_local_ids+j), (local_ids+i));
       j++;
     }
 
@@ -567,7 +566,7 @@ int LB_sfc(
   ZOLTAN_FREE(&local_ids);
   ZOLTAN_FREE(&sfc_vert_ptr);
 
-  ZOLTAN_LB_TRACE_EXIT(lb, yo);
+  ZOLTAN_TRACE_EXIT(lb, yo);
   return ZOLTAN_OK;
 }
 

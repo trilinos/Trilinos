@@ -13,8 +13,8 @@
 
 #include <stdio.h>
 #include "lb_const.h"
-#include "rcb_const.h"
-#include "rib_const.h"
+#include "rcb.h"
+#include "rib.h"
 
 
 int Zoltan_LB_Point_Assign(
@@ -34,7 +34,7 @@ int      *proc)                 /* processor that point lands in */
 
      if (lb->Data_Structure == NULL) {
         ZOLTAN_PRINT_ERROR(-1, yo, 
-                       "No LB_Data_Structure available.");
+                   "No Decomposition Data available; use KEEP_CUTS parameter.");
         *proc = -1;
         return(ZOLTAN_FATAL);
      }

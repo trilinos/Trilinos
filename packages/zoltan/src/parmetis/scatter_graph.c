@@ -13,7 +13,7 @@
 
 #include "lb_const.h"
 #include "comm_const.h"
-#include "parmetis_jostle_const.h"
+#include "parmetis_jostle.h"
 
 /*
  * Scatter a ParMetis-style graph to all processors such that each proc
@@ -32,7 +32,7 @@
  * the export lists after partitioning. 
  */
 
-int LB_Scatter_Graph(
+int Zoltan_Scatter_Graph(
   int     have_graph,		/* do I have graph data, or only the geometry? */
   idxtype **vtxdist,
   idxtype **xadj,
@@ -45,7 +45,7 @@ int LB_Scatter_Graph(
   ZOLTAN_COMM_OBJ **plan
 )
 {
-  static char *yo = "LB_Scatter_Graph";
+  static char *yo = "Zoltan_Scatter_Graph";
   char     msg[256];
   idxtype *old_vtxdist, *old_xadj, *old_adjncy, *old_vwgt, *old_adjwgt;
   float   *old_xyz;
@@ -54,7 +54,7 @@ int LB_Scatter_Graph(
   int vwgt_dim= lb->Obj_Weight_Dim, ewgt_dim= lb->Comm_Weight_Dim;
   ZOLTAN_COMM_OBJ *plan2;
 
-  ZOLTAN_LB_TRACE_ENTER(lb, yo);
+  ZOLTAN_TRACE_ENTER(lb, yo);
 
   /* Save pointers to "old" data distribution */
   old_vtxdist = *vtxdist;
@@ -65,7 +65,7 @@ int LB_Scatter_Graph(
   old_xyz = *xyz;
 
   old_num_obj = old_vtxdist[lb->Proc+1] - old_vtxdist[lb->Proc]; 
-  if (lb->Debug_Level >= LB_DEBUG_ALL) 
+  if (lb->Debug_Level >= ZOLTAN_DEBUG_ALL) 
     printf("[%1d] Debug: Old number of objects = %d\n", lb->Proc, old_num_obj);
 
   /* Reset all data pointers to NULL for now */
@@ -87,7 +87,7 @@ int LB_Scatter_Graph(
 
   /* Allocate new space for vertex data */
   num_obj = (*vtxdist)[lb->Proc+1] - (*vtxdist)[lb->Proc];
-  if (lb->Debug_Level >= LB_DEBUG_ALL) 
+  if (lb->Debug_Level >= ZOLTAN_DEBUG_ALL) 
     printf("[%1d] Debug: New number of objects = %d\n", lb->Proc, num_obj);
   if (have_graph)
     *xadj = (idxtype *) ZOLTAN_MALLOC((num_obj+1)*sizeof(idxtype));
@@ -116,7 +116,7 @@ int LB_Scatter_Graph(
     ZOLTAN_PRINT_ERROR(lb->Proc, yo, msg);
     /* Free data */
     ZOLTAN_FREE(&proclist);
-    ZOLTAN_LB_TRACE_EXIT(lb, yo);
+    ZOLTAN_TRACE_EXIT(lb, yo);
     return ZOLTAN_FATAL;
   }
 
@@ -126,7 +126,7 @@ int LB_Scatter_Graph(
    * and the edge communication plan for all the edge-based arrays.
    */
 
-  if (lb->Debug_Level >= LB_DEBUG_ALL) 
+  if (lb->Debug_Level >= ZOLTAN_DEBUG_ALL) 
     printf("[%1d] Debug: Starting vertex-based communication.\n", lb->Proc);
 
   if (have_graph){
@@ -138,7 +138,7 @@ int LB_Scatter_Graph(
   if (ndims){
     Zoltan_Comm_Do( *plan, TAG4, (char *) old_xyz, ndims*sizeof(idxtype), (char *) *xyz);
   }
-  if (lb->Debug_Level >= LB_DEBUG_ALL) 
+  if (lb->Debug_Level >= ZOLTAN_DEBUG_ALL) 
     printf("[%1d] Debug: Finished vertex-based communication.\n", lb->Proc);
 
   if (have_graph){
@@ -173,11 +173,11 @@ int LB_Scatter_Graph(
       /* Free data */
       ZOLTAN_FREE(&proclist);
       ZOLTAN_FREE(&proclist2);
-      ZOLTAN_LB_TRACE_EXIT(lb, yo);
+      ZOLTAN_TRACE_EXIT(lb, yo);
       return ZOLTAN_FATAL;
     }
   
-    if (lb->Debug_Level >= LB_DEBUG_ALL) 
+    if (lb->Debug_Level >= ZOLTAN_DEBUG_ALL) 
       printf("[%1d] Debug: Starting edge-based communication.\n", lb->Proc);
   
     /* Do the communication. */
@@ -186,7 +186,7 @@ int LB_Scatter_Graph(
       Zoltan_Comm_Do( plan2, TAG3, (char *) old_adjwgt, ewgt_dim*sizeof(idxtype), (char *) *adjwgt);
     }
   
-    if (lb->Debug_Level >= LB_DEBUG_ALL) 
+    if (lb->Debug_Level >= ZOLTAN_DEBUG_ALL) 
       printf("[%1d] Debug: Finished edge-based communication.\n", lb->Proc);
   
     /* Free the comm. plan for edge data */
@@ -204,6 +204,6 @@ int LB_Scatter_Graph(
   ZOLTAN_FREE(&old_adjwgt);
   ZOLTAN_FREE(&old_xyz);
 
-  ZOLTAN_LB_TRACE_EXIT(lb, yo);
+  ZOLTAN_TRACE_EXIT(lb, yo);
   return ZOLTAN_OK;
 }

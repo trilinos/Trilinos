@@ -12,17 +12,17 @@
  ****************************************************************************/
 
 #include "lb_const.h"
-#include "rib_const.h"
+#include "rib.h"
 
 /*****************************************************************************/
 /*****************************************************************************/
 /*****************************************************************************/
 
-int LB_RIB_Build_Structure(LB *lb, int *num_obj, int *max_obj, int wgtflag,
+int Zoltan_RIB_Build_Structure(LB *lb, int *num_obj, int *max_obj, int wgtflag,
                            int use_ids)
 {
 /* Function to build the geometry-based data structures for RIB method. */
-char           *yo = "LB_RIB_Build_Structure";
+char           *yo = "Zoltan_RIB_Build_Structure";
 RIB_STRUCT     *rib;                  /* Data structure for RIB.             */
 struct rib_tree *treeptr;
 int            i, ierr = 0;
@@ -47,7 +47,7 @@ int            i, ierr = 0;
                     ZOLTAN_MALLOC(lb->Num_Proc* sizeof(struct rib_tree));
     if (rib->Tree_Ptr == NULL) {
       ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
-      LB_RIB_Free_Structure(lb);
+      Zoltan_RIB_Free_Structure(lb);
       return(ZOLTAN_MEMERR);
     }
     /* initialize Tree_Ptr */
@@ -66,12 +66,12 @@ int            i, ierr = 0;
     ZOLTAN_FREE(&(rib->Dots));
   }
 
-  ierr = LB_RB_Build_Structure(lb, &(rib->Global_IDs), &(rib->Local_IDs),
+  ierr = Zoltan_RB_Build_Structure(lb, &(rib->Global_IDs), &(rib->Local_IDs),
                                &(rib->Dots), num_obj, max_obj, &(rib->Num_Geom),
                                wgtflag, use_ids);
   if (ierr) {
-    ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Error returned from LB_RB_Build_Structure.");
-    LB_RIB_Free_Structure(lb);
+    ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Error returned from Zoltan_RB_Build_Structure.");
+    Zoltan_RIB_Free_Structure(lb);
     return(ierr);
   }
 
@@ -82,7 +82,7 @@ int            i, ierr = 0;
 /*****************************************************************************/
 /*****************************************************************************/
 
-void LB_RIB_Free_Structure(LB *lb)
+void Zoltan_RIB_Free_Structure(LB *lb)
 {
 /* Deallocate the persistent RIB data structures in lb->Structure.  */
 RIB_STRUCT    *rib;                   /* Data structure for RIB. */

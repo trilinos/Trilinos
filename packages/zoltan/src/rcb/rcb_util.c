@@ -12,20 +12,20 @@
  ****************************************************************************/
 
 #include "lb_const.h"
-#include "rcb_const.h"
+#include "rcb.h"
 
 /*****************************************************************************/
 /*****************************************************************************/
 /*****************************************************************************/
 
-int LB_RCB_Build_Structure(LB *lb, int *num_obj, int *max_obj, int wgtflag,
+int Zoltan_RCB_Build_Structure(LB *lb, int *num_obj, int *max_obj, int wgtflag,
                            int use_ids)
 {
 /*
  *  Function to build the geometry-based data structures for 
  *  Steve Plimpton's RCB implementation.
  */
-char *yo = "LB_RCB_Build_Structure";
+char *yo = "Zoltan_RCB_Build_Structure";
 RCB_STRUCT *rcb;                      /* Data structure for RCB.             */
 struct rcb_tree *treeptr;
 int i, ierr = 0;
@@ -55,7 +55,7 @@ int num_geom;
     rcb->Box = (struct rcb_box *) ZOLTAN_MALLOC(sizeof(struct rcb_box));
     if (rcb->Tree_Ptr == NULL || rcb->Box == NULL) {
       ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
-      LB_RCB_Free_Structure(lb);
+      Zoltan_RCB_Free_Structure(lb);
       return(ZOLTAN_MEMERR);
     }
     /* initialize Tree_Ptr */
@@ -74,12 +74,12 @@ int num_geom;
     ZOLTAN_FREE(&(rcb->Dots));
   }
 
-  ierr = LB_RB_Build_Structure(lb, &(rcb->Global_IDs), &(rcb->Local_IDs),
+  ierr = Zoltan_RB_Build_Structure(lb, &(rcb->Global_IDs), &(rcb->Local_IDs),
                                &(rcb->Dots), num_obj, max_obj, &num_geom,
                                wgtflag, use_ids);
   if (ierr) {
-    ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Error returned from LB_RB_Build_Structure.");
-    LB_RCB_Free_Structure(lb);
+    ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Error returned from Zoltan_RB_Build_Structure.");
+    Zoltan_RCB_Free_Structure(lb);
     return(ierr);
   }
 
@@ -90,7 +90,7 @@ int num_geom;
 /*****************************************************************************/
 /*****************************************************************************/
 
-void LB_RCB_Free_Structure(LB *lb)
+void Zoltan_RCB_Free_Structure(LB *lb)
 {
 /*
  * Deallocate the persistent RCB data structures in lb->Structure.

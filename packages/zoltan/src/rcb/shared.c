@@ -13,8 +13,8 @@
 
 #include "lb_const.h"
 #include "lb_util_const.h"
-#include "rcb_const.h"
-#include "rib_const.h"
+#include "rcb.h"
+#include "rib.h"
 #include "all_allo_const.h"
 #include "comm_const.h"
 #include "create_proc_list_const.h"
@@ -31,7 +31,7 @@ static int initialize_dot(LB *, ZOLTAN_ID_PTR, ZOLTAN_ID_PTR, struct Dot_Struct 
 /*****************************************************************************/
 /*****************************************************************************/
 
-int LB_RB_Build_Structure(
+int Zoltan_RB_Build_Structure(
   LB *lb,                       /* load-balancing structure */
   ZOLTAN_ID_PTR *global_ids,        /* pointer to array of global IDs; allocated
                                    in this function.  */
@@ -57,7 +57,7 @@ int LB_RB_Build_Structure(
  *  Function to build the geometry-based data structures for 
  *  RCB and RIB.
  */
-char *yo = "LB_RB_Build_Structure";
+char *yo = "Zoltan_RB_Build_Structure";
 char msg[256];
 float *objs_wgt = NULL;               /* Array of object weights returned by 
                                          the application.                    */
@@ -95,8 +95,8 @@ int i, ierr = 0;
   }
 
   *max_obj = (int)(1.5 * *num_obj) + 1;
-  *global_ids = ZOLTAN_ZOLTAN_MALLOC_GID_ARRAY(lb, (*max_obj));
-  *local_ids  = ZOLTAN_ZOLTAN_MALLOC_LID_ARRAY(lb, (*max_obj));
+  *global_ids = ZOLTAN_MALLOC_GID_ARRAY(lb, (*max_obj));
+  *local_ids  = ZOLTAN_MALLOC_LID_ARRAY(lb, (*max_obj));
   *dots = (struct Dot_Struct *)ZOLTAN_MALLOC((*max_obj)*sizeof(struct Dot_Struct));
 
   if (!(*global_ids) || (lb->Num_LID && !(*local_ids)) || !(*dots)) {
@@ -124,10 +124,10 @@ int i, ierr = 0;
      *  Get list of objects' IDs and weights.
      */
 
-    LB_Get_Obj_List(lb, *global_ids, *local_ids, wgtflag, objs_wgt, &ierr);
+    Zoltan_Get_Obj_List(lb, *global_ids, *local_ids, wgtflag, objs_wgt, &ierr);
     if (ierr) {
       ZOLTAN_PRINT_ERROR(lb->Proc, yo, 
-                     "Error returned from user function LB_Get_Obj_List.");
+                     "Error returned from user function Zoltan_Get_Obj_List.");
       ZOLTAN_FREE(&objs_wgt);
       return(ierr);
     }
@@ -197,7 +197,7 @@ char *yo = "initialize_dot";
 /*****************************************************************************/
 /*****************************************************************************/
 
-int LB_RB_Send_Outgoing(
+int Zoltan_RB_Send_Outgoing(
   LB *lb,                           /* Load-balancing structure. */
   ZOLTAN_ID_PTR *gidpt,                 /* pointer to Global_IDs array. */
   ZOLTAN_ID_PTR *lidpt,                 /* pointer to Local_IDs array.  */
@@ -230,7 +230,7 @@ int LB_RB_Send_Outgoing(
 {
 /* Routine to determine new processors for outgoing dots. */
 
-  char *yo = "LB_RB_Send_Outgoing";
+  char *yo = "Zoltan_RB_Send_Outgoing";
   int keep, outgoing;               /* message exchange counters */
   int *proc_list = NULL;            /* list of processors to send dots to */
   int i, ierr;
@@ -248,20 +248,20 @@ int LB_RB_Send_Outgoing(
 
   if (outgoing)
     if ((proc_list = (int *) ZOLTAN_MALLOC(outgoing*sizeof(int))) == NULL) {
-      ZOLTAN_LB_TRACE_EXIT(lb, yo);
+      ZOLTAN_TRACE_EXIT(lb, yo);
       return ZOLTAN_MEMERR;
     }
 
-  ierr = LB_Create_Proc_List(lb, set, *dotnum, outgoing, proc_list, local_comm,
+  ierr = Zoltan_RB_Create_Proc_List(lb, set, *dotnum, outgoing, proc_list, local_comm,
                              proclower, numprocs);
   if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
-    ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Error returned from LB_Create_Proc_List.");
+    ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Error returned from Zoltan_RB_Create_Proc_List.");
     ZOLTAN_FREE(&proc_list);
-    ZOLTAN_LB_TRACE_EXIT(lb, yo);
+    ZOLTAN_TRACE_EXIT(lb, yo);
     return (ierr);
   }
 
-  ierr = LB_RB_Send_Dots(lb, gidpt, lidpt, dotpt, dotmark, proc_list, outgoing,
+  ierr = Zoltan_RB_Send_Dots(lb, gidpt, lidpt, dotpt, dotmark, proc_list, outgoing,
                          dotnum, dotmax, set, allocflag, overalloc, stats,
                          counters, use_ids, local_comm);
 
@@ -274,7 +274,7 @@ int LB_RB_Send_Outgoing(
 /*****************************************************************************/
 /*****************************************************************************/
 
-int LB_RB_Send_Dots(
+int Zoltan_RB_Send_Dots(
   LB *lb,                           /* Load-balancing structure. */
   ZOLTAN_ID_PTR *gidpt,                 /* pointer to Global_IDs array. */
   ZOLTAN_ID_PTR *lidpt,                 /* pointer to Local_IDs array.  */
@@ -298,7 +298,7 @@ int LB_RB_Send_Dots(
                                        4 = most dot memory this proc ever allocs                                       5 = # of times a previous cut is re-used
                                        6 = # of reallocs of dot array */
   int use_ids,                      /* true if global and local IDs are to be
-                                       kept for RCB or RIB (for Return_Lists 
+                                       kept for RCB or RIB (for LB_Return_Lists 
                                        or high Debug_Levels).  The IDs must be
                                        communicated if use_ids is true.  */
   MPI_Comm local_comm
@@ -306,7 +306,7 @@ int LB_RB_Send_Dots(
 {
 /* Routine to send outgoing dots to their new processors. */
 
-  char *yo = "LB_RB_Send_Outgoing";
+  char *yo = "Zoltan_RB_Send_Outgoing";
   int dotnew;                       /* # of new dots after send/recv */
   int keep, incoming;               /* message exchange counters */
   ZOLTAN_ID_PTR gidbuf = NULL;          /* communication buffer for global IDs. */
@@ -324,7 +324,7 @@ int LB_RB_Send_Dots(
   if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
     ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Error returned from Zoltan_Comm_Create.");
     ZOLTAN_FREE(&proc_list);
-    ZOLTAN_LB_TRACE_EXIT(lb, yo);
+    ZOLTAN_TRACE_EXIT(lb, yo);
     return (ierr);
   }
 
@@ -337,17 +337,17 @@ int LB_RB_Send_Dots(
     *dotmax = (int) (overalloc * dotnew);
     if (*dotmax < dotnew) *dotmax = dotnew;
     if (use_ids) {
-      *gidpt = ZOLTAN_LB_REALLOC_GID_ARRAY(lb, *gidpt, *dotmax);
-      *lidpt = ZOLTAN_LB_REALLOC_LID_ARRAY(lb, *lidpt, *dotmax);
+      *gidpt = ZOLTAN_REALLOC_GID_ARRAY(lb, *gidpt, *dotmax);
+      *lidpt = ZOLTAN_REALLOC_LID_ARRAY(lb, *lidpt, *dotmax);
       if (!*gidpt || (num_lid_entries && !*lidpt)) {
-        ZOLTAN_LB_TRACE_EXIT(lb, yo);
+        ZOLTAN_TRACE_EXIT(lb, yo);
         return ZOLTAN_MEMERR;
       }
     }
     *dotpt = (struct Dot_Struct *) 
              ZOLTAN_REALLOC(*dotpt,(unsigned) *dotmax * sizeof(struct Dot_Struct));
     if (!*dotpt) {
-      ZOLTAN_LB_TRACE_EXIT(lb, yo);
+      ZOLTAN_TRACE_EXIT(lb, yo);
       return ZOLTAN_MEMERR;
     }
     if (stats) counters[6]++;
@@ -364,13 +364,13 @@ int LB_RB_Send_Dots(
 
   if (outgoing > 0) {
     if (use_ids) {
-      gidbuf = ZOLTAN_ZOLTAN_MALLOC_GID_ARRAY(lb, outgoing);
-      lidbuf = ZOLTAN_ZOLTAN_MALLOC_LID_ARRAY(lb, outgoing);
+      gidbuf = ZOLTAN_MALLOC_GID_ARRAY(lb, outgoing);
+      lidbuf = ZOLTAN_MALLOC_LID_ARRAY(lb, outgoing);
       if (!gidbuf || (num_lid_entries && !lidbuf)) {
         ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
         ZOLTAN_FREE(&gidbuf);
         ZOLTAN_FREE(&lidbuf);
-        ZOLTAN_LB_TRACE_EXIT(lb, yo);
+        ZOLTAN_TRACE_EXIT(lb, yo);
         return ZOLTAN_MEMERR;
       }
     }
@@ -381,7 +381,7 @@ int LB_RB_Send_Dots(
       ZOLTAN_FREE(&gidbuf);
       ZOLTAN_FREE(&lidbuf);
       ZOLTAN_FREE(&dotbuf);
-      ZOLTAN_LB_TRACE_EXIT(lb, yo);
+      ZOLTAN_TRACE_EXIT(lb, yo);
       return ZOLTAN_MEMERR;
     }
   }
@@ -393,9 +393,9 @@ int LB_RB_Send_Dots(
   for (i = 0; i < *dotnum; i++) {
     if (dotmark[i] != set) {
       if (use_ids) {
-        ZOLTAN_LB_SET_GID(lb, &(gidbuf[outgoing*num_gid_entries]), 
+        ZOLTAN_SET_GID(lb, &(gidbuf[outgoing*num_gid_entries]), 
                        &((*gidpt)[i*num_gid_entries]));
-        ZOLTAN_LB_SET_LID(lb, &(lidbuf[outgoing*num_lid_entries]), 
+        ZOLTAN_SET_LID(lb, &(lidbuf[outgoing*num_lid_entries]), 
                        &((*lidpt)[i*num_lid_entries]));
       }
       memcpy((char *) &dotbuf[outgoing], (char *) &((*dotpt)[i]), 
@@ -404,9 +404,9 @@ int LB_RB_Send_Dots(
     }
     else {
       if (use_ids) {
-        ZOLTAN_LB_SET_GID(lb, &((*gidpt)[keep*num_gid_entries]), 
+        ZOLTAN_SET_GID(lb, &((*gidpt)[keep*num_gid_entries]), 
                        &((*gidpt)[i*num_gid_entries]));
-        ZOLTAN_LB_SET_LID(lb, &((*lidpt)[keep*num_lid_entries]), 
+        ZOLTAN_SET_LID(lb, &((*lidpt)[keep*num_lid_entries]), 
                        &((*lidpt)[i*num_lid_entries]));
       }
       memcpy((char *) &((*dotpt)[keep]), (char *) &((*dotpt)[i]), 
@@ -425,7 +425,7 @@ int LB_RB_Send_Dots(
       ZOLTAN_FREE(&gidbuf);
       ZOLTAN_FREE(&lidbuf);
       ZOLTAN_FREE(&dotbuf);
-      ZOLTAN_LB_TRACE_EXIT(lb, yo);
+      ZOLTAN_TRACE_EXIT(lb, yo);
       return (ierr);
     }
 
@@ -440,7 +440,7 @@ int LB_RB_Send_Dots(
         ZOLTAN_FREE(&gidbuf);
         ZOLTAN_FREE(&lidbuf);
         ZOLTAN_FREE(&dotbuf);
-        ZOLTAN_LB_TRACE_EXIT(lb, yo);
+        ZOLTAN_TRACE_EXIT(lb, yo);
         return (ierr);
       }
     }
@@ -455,7 +455,7 @@ int LB_RB_Send_Dots(
     ZOLTAN_FREE(&gidbuf);
     ZOLTAN_FREE(&lidbuf);
     ZOLTAN_FREE(&dotbuf);
-    ZOLTAN_LB_TRACE_EXIT(lb, yo);
+    ZOLTAN_TRACE_EXIT(lb, yo);
     return (ierr);
   }
 
@@ -476,42 +476,42 @@ int LB_RB_Send_Dots(
 /*****************************************************************************/
 /*****************************************************************************/
 
-void LB_RB_Print_All(LB *lb, ZOLTAN_ID_PTR global_ids, struct Dot_Struct *dots,
+void Zoltan_RB_Print_All(LB *lb, ZOLTAN_ID_PTR global_ids, struct Dot_Struct *dots,
                      int pdotnum, int pdottop, 
                      int num_import, ZOLTAN_ID_PTR import_global_ids, 
                      int *import_procs)
 {
 /*
  * Routine to print debugging information.  This routine runs serially
- * over all processors (due to LB_Print_Sync_*) and thus should be used
+ * over all processors (due to Zoltan_Print_Sync_*) and thus should be used
  * only for debugging.
  */
 int kk;
 int num_gid_entries = lb->Num_GID;
 
-  LB_Print_Sync_Start(lb->Communicator, TRUE);
+  Zoltan_Print_Sync_Start(lb->Communicator, TRUE);
   printf("ZOLTAN Proc %d Num_Obj=%d Num_Keep=%d Num_Non_Local=%d\n",
          lb->Proc, pdotnum, pdottop, num_import);
   printf("  Assigned objects:\n");
   for (kk = 0; kk < pdotnum; kk++) {
      printf("    Obj:  ");
-     ZOLTAN_LB_PRINT_GID(lb, &(global_ids[kk*num_gid_entries]));
+     ZOLTAN_PRINT_GID(lb, &(global_ids[kk*num_gid_entries]));
      printf("  Orig: %4d\n", dots[kk].Proc);
   }
   printf("  Non_locals:\n");
   for (kk = 0; kk < num_import; kk++) {
      printf("    Obj:  ");
-     ZOLTAN_LB_PRINT_GID(lb, &(import_global_ids[kk*num_gid_entries]));
+     ZOLTAN_PRINT_GID(lb, &(import_global_ids[kk*num_gid_entries]));
      printf("     Orig: %4d\n", import_procs[kk]);
   }
-  LB_Print_Sync_End(lb->Communicator, TRUE);
+  Zoltan_Print_Sync_End(lb->Communicator, TRUE);
 }
 
 /*****************************************************************************/
 /*****************************************************************************/
 /*****************************************************************************/
 
-int LB_RB_Return_Arguments(
+int Zoltan_RB_Return_Arguments(
   LB *lb,                  /* Load-balancing structure */
   ZOLTAN_ID_PTR gidpt,         /* pointer to array of global IDs. */
   ZOLTAN_ID_PTR lidpt,         /* pointer to array of local IDs. */
@@ -529,35 +529,35 @@ int LB_RB_Return_Arguments(
  * Allocates, fills and returns import_global_ids, import_local_ids, and
  * import_procs.
  */
-char *yo = "LB_RB_Return_Arguments";
+char *yo = "Zoltan_RB_Return_Arguments";
 int i, ii;
 int num_gid_entries = lb->Num_GID;
 int num_lid_entries = lb->Num_LID;
 
-  if (!LB_Special_Malloc(lb,(void **)import_global_ids,num_import,
-                         LB_SPECIAL_MALLOC_GID)) {
-    ZOLTAN_LB_TRACE_EXIT(lb, yo);
+  if (!Zoltan_Special_Malloc(lb,(void **)import_global_ids,num_import,
+                         ZOLTAN_SPECIAL_MALLOC_GID)) {
+    ZOLTAN_TRACE_EXIT(lb, yo);
     return ZOLTAN_MEMERR;
   }
-  if (!LB_Special_Malloc(lb,(void **)import_local_ids,num_import,
-                         LB_SPECIAL_MALLOC_LID)) {
-    LB_Special_Free(lb,(void **)import_global_ids,LB_SPECIAL_MALLOC_GID);
-    ZOLTAN_LB_TRACE_EXIT(lb, yo);
+  if (!Zoltan_Special_Malloc(lb,(void **)import_local_ids,num_import,
+                         ZOLTAN_SPECIAL_MALLOC_LID)) {
+    Zoltan_Special_Free(lb,(void **)import_global_ids,ZOLTAN_SPECIAL_MALLOC_GID);
+    ZOLTAN_TRACE_EXIT(lb, yo);
     return ZOLTAN_MEMERR;
   }
-  if (!LB_Special_Malloc(lb,(void **)import_procs,num_import,
-                         LB_SPECIAL_MALLOC_INT)) {
-    LB_Special_Free(lb,(void **)import_global_ids,LB_SPECIAL_MALLOC_GID);
-    LB_Special_Free(lb,(void **)import_local_ids,LB_SPECIAL_MALLOC_LID);
-    ZOLTAN_LB_TRACE_EXIT(lb, yo);
+  if (!Zoltan_Special_Malloc(lb,(void **)import_procs,num_import,
+                         ZOLTAN_SPECIAL_MALLOC_INT)) {
+    Zoltan_Special_Free(lb,(void **)import_global_ids,ZOLTAN_SPECIAL_MALLOC_GID);
+    Zoltan_Special_Free(lb,(void **)import_local_ids,ZOLTAN_SPECIAL_MALLOC_LID);
+    ZOLTAN_TRACE_EXIT(lb, yo);
     return ZOLTAN_MEMERR;
   }
 
   for (i = 0; i < num_import; i++) {
     ii = i + dottop;
-    ZOLTAN_LB_SET_GID(lb, &((*import_global_ids)[i*num_gid_entries]),
+    ZOLTAN_SET_GID(lb, &((*import_global_ids)[i*num_gid_entries]),
                &(gidpt[ii*num_gid_entries]));
-    ZOLTAN_LB_SET_LID(lb, &((*import_local_ids)[i*num_lid_entries]),
+    ZOLTAN_SET_LID(lb, &((*import_local_ids)[i*num_lid_entries]),
                &(lidpt[ii*num_lid_entries]));
     (*import_procs)[i] = dotpt[ii].Proc;
   }
@@ -569,31 +569,31 @@ int num_lid_entries = lb->Num_LID;
 /*****************************************************************************/
 /*****************************************************************************/
 
-int LB_Use_IDs(LB *lb)
+int Zoltan_RB_Use_IDs(LB *lb)
 {
 /* Function that returns a flag indicating whether or not global and
  * local IDs should be stored, manipulated, and communicated within the
  * RCB and RIB algorithms.  
  * IDs are used for two purposes in RCB and RIB:
- * 1.  To build import lists.  When Return_Lists == NONE, import lists are not
- * built, so there is no need to carry along the IDs,
+ * 1.  To build import lists.  When LB_Return_Lists == NONE, import lists are 
+ * not built, so there is no need to carry along the IDs,
  * 2.  To be printed as debugging information.  Only for high debug levels are
  * the IDs printed; for lower levels, the IDs need not be carried along.
  */
-  return (lb->Return_Lists || (lb->Debug_Level >= LB_DEBUG_ALL));
+  return (lb->LB_Return_Lists || (lb->Debug_Level >= ZOLTAN_DEBUG_ALL));
 }
 
 /*****************************************************************************/
 /*****************************************************************************/
 /*****************************************************************************/
-int LB_RB_check_geom_input(
+int Zoltan_RB_check_geom_input(
   LB *lb,
   struct Dot_Struct *dotpt,
   int dotnum
 )
 {
 /* Routine to check input to geometric methods for consistency. */
-  char *yo = "LB_RB_check_geom_input";
+  char *yo = "Zoltan_RB_check_geom_input";
   int i, j, k;
   char msg[256];
   int proc = lb->Proc;
@@ -624,7 +624,7 @@ int LB_RB_check_geom_input(
 /*****************************************************************************/
 /*****************************************************************************/
 
-int LB_RB_check_geom_output(
+int Zoltan_RB_check_geom_output(
   LB *lb, 
   struct Dot_Struct *dotpt,
   int dotnum,
@@ -633,7 +633,7 @@ int LB_RB_check_geom_output(
 {
 /* Routine to check output of geometric methods for consistency. */
 
-  char *yo = "LB_RB_check_geom_output";
+  char *yo = "Zoltan_RB_check_geom_output";
   char msg[256];
   int i,iflag,proc,nprocs,total1,total2;
   double weight,wtmax,wtmin,wtone,tolerance;
@@ -723,7 +723,7 @@ int LB_RB_check_geom_output(
 /*****************************************************************************/
 /*****************************************************************************/
 
-void LB_RB_stats(LB *lb, double timetotal, struct Dot_Struct *dotpt,
+void Zoltan_RB_stats(LB *lb, double timetotal, struct Dot_Struct *dotpt,
                  int dotnum, double *timers, int *counters, int stats,
                  int *reuse_count, void *rcbbox_arg, int reuse)
 

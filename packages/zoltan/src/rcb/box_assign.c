@@ -14,8 +14,8 @@
 #include <stdio.h>
 #include <math.h>
 #include "lb_const.h"
-#include "rcb_const.h"
-#include "rib_const.h"
+#include "rcb.h"
+#include "rib.h"
 
 static void Box_Assign(struct rcb_tree *, struct rcb_box *, int *, int *, int);
 static void Box_Assign3(struct rib_tree *,struct rcb_box *, int *, int *, int);
@@ -45,7 +45,8 @@ int            *numprocs)       /* number of processors in proc list */
      struct rcb_box    box;     /* box data structure */
 
      if (lb->Data_Structure == NULL) {
-        ZOLTAN_PRINT_ERROR(-1, yo, "No LB_Data_Structure available.");
+        ZOLTAN_PRINT_ERROR(-1, yo, 
+          "No Decomposition Data available; use KEEP_CUTS parameter.");
         *procs = -1;
         *numprocs = 0;
         return(ZOLTAN_FATAL);

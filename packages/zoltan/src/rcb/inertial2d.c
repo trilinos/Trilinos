@@ -19,7 +19,7 @@
 #include <stdio.h>
 #include <math.h>
 #include "lb_const.h"
-#include "rib_const.h"
+#include "rib.h"
 
 /* macros for routines */
 #define max(a, b) ((a) < (b) ? (b) : (a))
@@ -29,7 +29,7 @@
 static void evals2(double[2][2], double *, double *);
 static void eigenvec2(double[2][2], double, double *, double *);
 
-int LB_inertial2d(
+int Zoltan_RIB_inertial2d(
      LB               *lb,      /* load balancing structure Tflops_Special */
      struct Dot_Struct *dotpt,  /* graph data structure for weights */
      int              dotnum,   /* number of vtxs in graph */
@@ -77,9 +77,9 @@ int LB_inertial2d(
 
      if (lb->Tflops_Special) {
         rank = proc - proclower;
-        LB_reduce_double(&xcm, &xcmt, 1, comm, nproc, rank, proc, 1);
-        LB_reduce_double(&ycm, &ycmt, 1, comm, nproc, rank, proc, 1);
-        LB_reduce_double(&wgt_sum, &wgtt, 1, comm, nproc, rank, proc, 1);
+        Zoltan_RIB_reduce_double(&xcm, &xcmt, 1, comm, nproc, rank, proc, 1);
+        Zoltan_RIB_reduce_double(&ycm, &ycmt, 1, comm, nproc, rank, proc, 1);
+        Zoltan_RIB_reduce_double(&wgt_sum, &wgtt, 1, comm, nproc, rank, proc, 1);
      }   
      else {
         MPI_Allreduce(&xcm,&xcmt,1,MPI_DOUBLE,MPI_SUM,comm);
@@ -112,9 +112,9 @@ int LB_inertial2d(
      /* Sum tensor across processors */
 
      if (lb->Tflops_Special) {
-        LB_reduce_double(&xx, &xxt, 1, comm, nproc, rank, proc, 1);
-        LB_reduce_double(&yy, &yyt, 1, comm, nproc, rank, proc, 1);
-        LB_reduce_double(&xy, &xyt, 1, comm, nproc, rank, proc, 1);
+        Zoltan_RIB_reduce_double(&xx, &xxt, 1, comm, nproc, rank, proc, 1);
+        Zoltan_RIB_reduce_double(&yy, &yyt, 1, comm, nproc, rank, proc, 1);
+        Zoltan_RIB_reduce_double(&xy, &xyt, 1, comm, nproc, rank, proc, 1);
      }
      else {
         MPI_Allreduce(&xx,&xxt,1,MPI_DOUBLE,MPI_SUM,comm);

@@ -19,9 +19,9 @@
 
 #include <stdio.h>
 #include "lb_const.h"
-#include "rib_const.h"
+#include "rib.h"
 
-int LB_inertial1d(
+int Zoltan_RIB_inertial1d(
      struct Dot_Struct *dotpt,  /* graph data structure for weights */
      int              dotnum,   /* number of vtxs in graph */
      int              wgtflag,  /* are vertex weights being used? */

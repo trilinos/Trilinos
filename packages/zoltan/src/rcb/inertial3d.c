@@ -19,7 +19,7 @@
 #include <stdio.h>
 #include <math.h>
 #include "lb_const.h"
-#include "rib_const.h"
+#include "rib.h"
 
 /* macros for routines */ 
 #define max(a, b) ((a) < (b) ? (b) : (a)) 
@@ -32,7 +32,7 @@ static void evals3(double[3][3], double *, double *, double *);
 static double determinant(double[3][3]);
 static void eigenvec3(double[3][3], double, double *, double *);
 
-int LB_inertial3d(
+int Zoltan_RIB_inertial3d(
      LB               *lb,      /* load balancing structure Tflops_Special */
      struct Dot_Struct *dotpt,  /* graph data structure */
      int              dotnum,   /* number of vtxs in graph */
@@ -82,8 +82,8 @@ int LB_inertial3d(
 
      if (lb->Tflops_Special) {
         rank = proc - proclower;
-        LB_reduce_double(cm, cmt, 3, comm, nproc, rank, proc, 1);
-        LB_reduce_double(&wgt_sum, &wgtt, 1, comm, nproc, rank, proc, 1);
+        Zoltan_RIB_reduce_double(cm, cmt, 3, comm, nproc, rank, proc, 1);
+        Zoltan_RIB_reduce_double(&wgt_sum, &wgtt, 1, comm, nproc, rank, proc, 1);
      }
      else {
         MPI_Allreduce(cm,cmt,3,MPI_DOUBLE,MPI_SUM,comm);
@@ -124,12 +124,12 @@ int LB_inertial3d(
      /* Sum tensor across processors */
 
      if (lb->Tflops_Special) {
-        LB_reduce_double(&xx, &xxt, 1, comm, nproc, rank, proc, 1);
-        LB_reduce_double(&yy, &yyt, 1, comm, nproc, rank, proc, 1);
-        LB_reduce_double(&zz, &zzt, 1, comm, nproc, rank, proc, 1);
-        LB_reduce_double(&xy, &xyt, 1, comm, nproc, rank, proc, 1);
-        LB_reduce_double(&xz, &xzt, 1, comm, nproc, rank, proc, 1);
-        LB_reduce_double(&yz, &yzt, 1, comm, nproc, rank, proc, 1);
+        Zoltan_RIB_reduce_double(&xx, &xxt, 1, comm, nproc, rank, proc, 1);
+        Zoltan_RIB_reduce_double(&yy, &yyt, 1, comm, nproc, rank, proc, 1);
+        Zoltan_RIB_reduce_double(&zz, &zzt, 1, comm, nproc, rank, proc, 1);
+        Zoltan_RIB_reduce_double(&xy, &xyt, 1, comm, nproc, rank, proc, 1);
+        Zoltan_RIB_reduce_double(&xz, &xzt, 1, comm, nproc, rank, proc, 1);
+        Zoltan_RIB_reduce_double(&yz, &yzt, 1, comm, nproc, rank, proc, 1);
      }
      else {
         MPI_Allreduce(&xx,&xxt,1,MPI_DOUBLE,MPI_SUM,comm);
@@ -406,7 +406,7 @@ static void eigenvec3(
      *res /= max(res1, res2);
 }
 
-void LB_reduce_double(double *in, double *out, int len, MPI_Comm comm,
+void Zoltan_RIB_reduce_double(double *in, double *out, int len, MPI_Comm comm,
                       int nproc, int rank, int proc, int n)
 {
    int i, m, to, tag = 32107;
@@ -431,12 +431,12 @@ void LB_reduce_double(double *in, double *out, int len, MPI_Comm comm,
          for (i = 0; i < len; i++)
             in[i] += out[i];
          if (m < nproc)
-            LB_reduce_double(in, out, len, comm, nproc, rank, proc, m);
+            Zoltan_RIB_reduce_double(in, out, len, comm, nproc, rank, proc, m);
          else
             for (i = 0; i < len; i++) 
                out[i] = in[i];
          MPI_Send(out, len, MPI_DOUBLE, to, tag, comm);
       }  
       else
-         LB_reduce_double(in, out, len, comm, nproc, rank, proc, m);
+         Zoltan_RIB_reduce_double(in, out, len, comm, nproc, rank, proc, m);
 }
