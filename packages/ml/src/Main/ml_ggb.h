@@ -14,6 +14,9 @@
 #include "ml_lapack.h"
 #include "ml_eigf2c.h"
 
+#define DNAUPD_F77  F77_FUNC(dnaupd,DNAUPD)
+#define PDNAUPD_F77  F77_FUNC(pdnaupd,PDNAUPD)
+
 
 struct ML_Eigenvalue_Struct  {
   int     Max_Iter;                  /* User input from input file */ 
@@ -76,11 +79,11 @@ void  ML_ARPACK_driver(char which[],
   
   extern int ML_OperatorGGB_Apply (double *densemat, int Nrows, int Ncols, double *din, double *dout, int Transpose);
 
-   void dnaupd_(int *, char *, int *, char *, int *, double *, double *,
+void PREFIX DNAUPD_F77(int *, char *, int *, char *, int *, double *, double *,
 		 int *, double *, int *, int *, int *, double *, double *,
 	       int *, int *);
   
-  void pdnaupd_(int *, int *, char *, int *, char *, int *, double *, double *,
+void PREFIX PDNAUPD_F77(int *, int *, char *, int *, char *, int *, double *, double *,
 		int *, double *, int *, int *, int *, double *, double *,
 		int *, int *);
 

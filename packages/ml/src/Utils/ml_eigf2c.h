@@ -1,9 +1,13 @@
 #ifndef __MLEIGF2C__
 #define __MLEIGF2C__
 
+#include "ml_common.h"
 #include "ml_lapack.h"
 #include "ml_memory.h"
 
+#define DMOUT_F77   F77_FUNC(dmout,DMOUT)
+#define PDMOUT_F77  F77_FUNC(pdmout,PDMOUT)
+#define DNEUPD_F77  F77_FUNC(dneupd,DNEUPD)
 
 #ifndef ML_CPP
 #ifdef __cplusplus
@@ -33,22 +37,22 @@ extern "C"
 			  int *lworkl, int *ierr, ftnlen howmny_len, ftnlen bmat_len, 
 			  ftnlen which_len);
   */
-  extern void *dmout_(int *, int *, int *, double *, int *lda, int *idigit,
+extern void PREFIX DMOUT_F77(int *, int *, int *, double *, int *lda, int *idigit,
 		      char *, ftnlen);
   
-  extern void *pdmout_(int *, 
+extern void PREFIX  PDMOUT_F77(int *, 
 		       int *, int *, int *, double *, int *lda, int *idigit,
 		       char *, ftnlen);
 
 
-  extern void dneupd_(int *, char *, int *, double *, double *, double *, 
+extern void PREFIX DNEUPD_F77(int *, char *, int *, double *, double *, double *, 
 		      int *, double *, double *, double *, char *bmat, 
 		      int *n, char *which, int *nev, double *tol, double *, 
 		      int *ncv, double *, int *, int *, int *, double *,
 		      double *, int *, int *, ftnlen, ftnlen, ftnlen);
   
   
-  extern void pdneupd_(int *, 
+extern void PREFIX PDNEUPD_F77(int *, 
 		       int *, char *, int *, double *, double *, double *, 
 		       int *, double *, double *, double *, char *bmat, 
 		       int *n, char *which, int *nev, double *tol, double *, 
