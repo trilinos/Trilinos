@@ -4467,7 +4467,7 @@ void AZ_transform(int proc_config[], int *external[], int bindx[], double val[],
   }
 
   AZ_order_ele(*update_index, *extern_index, &N_internal, &N_border, N_update,
-               bnptr, bindx, extern_proc, N_extern, AZ_EXTERNS, mat_type);
+               bnptr, bindx, extern_proc, N_extern, AZ_ALL, mat_type);
 
   /*
    * Permute the matrix using the new ordering.  IMPORTANT: This routine assumes
@@ -4803,14 +4803,13 @@ void AZ_find_global_ordering(int proc_config[], AZ_MATRIX *Amat,
   int N_rows, N_cols, N_blk_rows = 0, N_external, N_ext_blks = 0;
   int n_nonzeros = 0, n_blk_nonzeros = 0;
   int *data_org;
-  int *bindx, *indx, *rpntr, *externals = NULL;
+  int *bindx, *rpntr, *externals = NULL;
   double *rownums;
   int is_VBR = 0, max_per_proc, offset;
 
   data_org = Amat->data_org;
 
   bindx = Amat->bindx;
-  indx = Amat->indx;
   rpntr = Amat->rpntr;
   N_rows = data_org[AZ_N_internal] + data_org[AZ_N_border];
   N_external = data_org[AZ_N_external];

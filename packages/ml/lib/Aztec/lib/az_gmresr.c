@@ -104,7 +104,7 @@ void AZ_pgmresr(double b[], double x[],double weight[], int options[],
   double       rec_residual, scaled_r_norm, true_scaled_r=0.0;
   double       actual_residual = -1.0, minus_alpha, alpha;
   double       *dummy = (double *) 0;
-  double      *tempv, *UUblock, *CCblock;
+  double       *UUblock, *CCblock;
   int          kk, mm, ii;
   char         label[64],suffix[32], prefix[64];
   int          *data_org, str_leng, first_time = AZ_TRUE;
@@ -165,10 +165,6 @@ char *T2 = "N";
 
   sprintf(label,"res%s",suffix);
   res = AZ_manage_memory(NN*sizeof(double),AZ_ALLOC,AZ_SYS,label,&i);
-
-  sprintf(label,"tempv%s",suffix);
-  tempv = AZ_manage_memory((N+data_org[AZ_N_external]+1)*sizeof(double),
-                           AZ_ALLOC, AZ_SYS,label,&kk);
 
   AZ_compute_residual(b, x, res, proc_config, Amat);
 

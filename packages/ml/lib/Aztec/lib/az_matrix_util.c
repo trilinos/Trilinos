@@ -1041,7 +1041,7 @@ void AZ_capture_matrix(double val[], int indx[], int bindx[], int rpntr[],
   int  iblk_row, i, j, ib1, ib2, n1, jblk, m1, ipoint, jpoint;
   int  ival = 0;
   int  num_total_nonzeros;
-  int  num_total_nodes, N_external_nodes, num_total_equations = 0;
+  int  num_total_nodes, num_total_equations = 0;
   int  Proc, Num_Proc;
 
   /********** execution begins **********/
@@ -1062,7 +1062,6 @@ void AZ_capture_matrix(double val[], int indx[], int bindx[], int rpntr[],
 
 	if (data_org[AZ_matrix_type] == AZ_VBR_MATRIX) {
 	  num_total_nodes    = data_org[AZ_N_int_blk]+data_org[AZ_N_bord_blk];
-	  N_external_nodes = data_org[AZ_N_ext_blk];
 	  num_total_equations = rpntr[num_total_nodes];
 	  num_total_nonzeros = indx[bpntr[num_total_nodes]];
 
@@ -1131,7 +1130,6 @@ void AZ_capture_matrix(double val[], int indx[], int bindx[], int rpntr[],
 	if (data_org[AZ_matrix_type] == AZ_MSR_MATRIX) {
 	  num_total_equations = data_org[AZ_N_internal]+data_org[AZ_N_border];
 
-	  N_external_nodes = data_org[AZ_N_external];
 	  num_total_nonzeros = bindx[num_total_equations]-1;
 
      /***** Print out the MSR i,j,a(i,j) information for the matrix *****/
@@ -1300,7 +1298,7 @@ void AZ_subMSR_matvec_mult (double *b, double *c, struct AZ_MATRIX_STRUCT *Amat,
   double *val;
   int *data_org, *bindx, subrow, Nrows, Ncols, *rows, *cols;
   register int j, k, bindx_row;
-  int          N, nzeros, fullrow, subcol;
+  int          nzeros, fullrow, subcol;
 	struct submat_struct *dataptr;
 
 
@@ -1315,7 +1313,6 @@ void AZ_subMSR_matvec_mult (double *b, double *c, struct AZ_MATRIX_STRUCT *Amat,
   data_org = Amat->data_org;
 
 
-  N = data_org[AZ_N_internal] + data_org[AZ_N_border];
 
   /* exchange boundary info */
 
@@ -1483,7 +1480,7 @@ int  AZ_blockMSR_getrow(int cols[], double vals[], int row_lengths[],
 											int requested_rows[], int allocated_space)
 { 
 	int    i, j, k, ctr, count = 0, block_row, block_col, count_row;
-	int     *Nsub_rows, *Nsub_cols, **sub_rows, **sub_cols, full_req_row;
+	int     *Nsub_rows, **sub_rows, **sub_cols, full_req_row;
 	int    local_req_row, tmp_row_len, *tmpcols, Nsub_mats, **submat_locs;
 	int    tmp_alloc_space, max_nnz_per_row=500, tmp;
 	double *tmpvals;
@@ -1494,7 +1491,6 @@ int  AZ_blockMSR_getrow(int cols[], double vals[], int row_lengths[],
 	sub_rows=dataptr->sub_rows;
 	sub_cols=dataptr->sub_cols;
 	Nsub_rows=dataptr->Nsub_rows;
-	Nsub_cols=dataptr->Nsub_cols;
 	Nsub_mats=dataptr->Nsub_mats;
 	submat_locs=dataptr->submat_locs;
 
@@ -1578,14 +1574,13 @@ void AZ_blockMSR_matvec_mult (double *b, double *c, struct AZ_MATRIX_STRUCT *Ama
 	double *tmpb, *tmpc;
   int *data_org, Nrows;
   register int j;
-  int          i, N;
+  int          i;
 	int *submat_loc, block_row, block_col, Nsub_mats, Nsub_rows, Nsub_cols;
 	struct blockmat_struct *dataptr;
 	AZ_MATRIX *submat;
 
   data_org = Amat->data_org;
 
-  N = data_org[AZ_N_internal] + data_org[AZ_N_border];
 
   /* exchange boundary info */
 

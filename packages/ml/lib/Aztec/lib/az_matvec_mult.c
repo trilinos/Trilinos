@@ -313,10 +313,9 @@ void AZ_VBR_matvec_mult(double *b, double *c, AZ_MATRIX *Amat,int proc_config[])
   int          num_blks;
   int exchange_flag;
   double *val;
-  int *data_org, *bindx, *indx, *rpntr,*cpntr,*bpntr;
+  int *data_org, *bindx, *rpntr,*cpntr,*bpntr;
   val = Amat->val;
   bindx = Amat->bindx;
-  indx = Amat->indx;
   rpntr =Amat->rpntr;
   cpntr = Amat->cpntr;
   bpntr = Amat->bpntr;

@@ -394,9 +394,10 @@ void AZ_oldsolve(double x[], double b[], int options[], double params[],
   int   save_old_values[7], changed = 0;
   char  tstr[15];
   struct AZ_CONVERGE_STRUCT *conv_info;
-  int size1, largest_index;
-  double global_largest;
+  int size1;
 #ifdef ML
+  int largest_index;
+  double global_largest;
   int size2, *ibuf, allocated, row_length, *already_printed, *ibuf2, row2_length;
   double *tempv, *tempy, *tempz, *dbuf;
   char boundary;
@@ -521,16 +522,22 @@ void AZ_oldsolve(double x[], double b[], int options[], double params[],
 
        /*  find the largest point */ 
        size1 = Amat->data_org[AZ_N_internal]+Amat->data_org[AZ_N_border];
-       largest = -1.; largest_index = -1;
+       largest = -1.; 
+#ifdef ML
+       largest_index = -1;
+#endif
        for (i=0;i < size1; i++) {
           if ( fabs(x[i]) > largest ) { 
-            largest = fabs(x[i]); largest_index = i;
+            largest = fabs(x[i]); 
+#ifdef ML
+            largest_index = i;
+#endif
           }
        }
-       global_largest = AZ_gmax_double(largest, proc_config);
 
 
 #ifdef ML
+       global_largest = AZ_gmax_double(largest, proc_config);
 
        size2 = size1 + Amat->data_org[AZ_N_external];
        tempv = (double *) AZ_allocate(size2*sizeof(double));
@@ -1001,14 +1008,13 @@ void AZ_output_matrix(double val[], int indx[], int bindx[], int rpntr[],
   int  ival = 0;
   int  k,num_nonzeros;
   int  num_total_nodes, N_external_nodes;
-  int  Proc, Num_Proc;
+  int  Proc;
   char str[5];
   char nstr[40];
 
   /********** execution begins **********/
 
   Proc               = proc_config[AZ_node];
-  Num_Proc           = proc_config[AZ_N_procs];
   N_external_nodes = data_org[AZ_N_external];
 
   if (data_org[AZ_matrix_type] == AZ_VBR_MATRIX) {
