@@ -262,7 +262,6 @@ COMP =
 #  
 AM_CPPFLAGS = -I$(top_srcdir)/../epetra/src -I$(top_builddir)/../epetra/src \
               -I$(top_srcdir)/../aztecoo/src -I$(top_builddir)/../aztecoo/src \
-              -I$(top_srcdir)/../../external/slu \
               -I$(srcdir)/Comm \
               -I$(srcdir)/Operator \
               -I$(srcdir)/Smoother \
