@@ -151,19 +151,19 @@ private:
   //! All possible parameter types that this class can store
   enum EntryType { 
     //! No entry type set yet (will be set later by setValue()
-    NONE, 
+    NOX_NONE, 
     //! Boolean
-    BOOL, 
+    NOX_BOOL, 
     //! Integer
-    INT, 
+    NOX_INT, 
     //! Double
-    DOUBLE, 
+    NOX_DOUBLE, 
     //! String
-    STRING,
+    NOX_STRING,
     //! NOX::Parameter::Arbitrary
-    ARBITRARY,
+    NOX_ARBITRARY,
     //! Sublist (NOX::Parameter::List)
-    LIST 
+    NOX_LIST 
   };
 
   //! Type of parameter stored in this object.

@@ -36,7 +36,7 @@
 using namespace NOX::Parameter;
 
 Entry::Entry() : 
-  type(NONE),
+  type(NOX_NONE),
   bval(false),
   ival(0),
   dval(0),
@@ -49,7 +49,7 @@ Entry::Entry() :
 }
 
 Entry::Entry(const Entry& source) :
-  type(NONE),
+  type(NOX_NONE),
   bval(false),
   ival(0),
   dval(0),
@@ -75,11 +75,11 @@ Entry& Entry::operator=(const Entry& source)
   dval = source.dval;
   sval = source.sval;
   
-  if ((type == ARBITRARY) && (source.aval != NULL)) {
+  if ((type == NOX_ARBITRARY) && (source.aval != NULL)) {
     aval = source.aval->clone();
   }
   
-  if ((type == LIST) && (source.lval != NULL)) {
+  if ((type == NOX_LIST) && (source.lval != NULL)) {
     lval = new List(*source.lval);
   }
   
@@ -90,7 +90,7 @@ Entry& Entry::operator=(const Entry& source)
 }
 
 Entry::Entry(bool value, bool isCreatedByGet) : 
-  type(BOOL),
+  type(NOX_BOOL),
   bval(value),
   ival(0),
   dval(0),
@@ -103,7 +103,7 @@ Entry::Entry(bool value, bool isCreatedByGet) :
 }
 
 Entry::Entry(int value, bool isCreatedByGet) : 
-  type(INT),
+  type(NOX_INT),
   bval(false),
   ival(value),
   dval(0),
@@ -116,7 +116,7 @@ Entry::Entry(int value, bool isCreatedByGet) :
 }
 
 Entry::Entry(double value, bool isCreatedByGet) : 
-  type(DOUBLE),
+  type(NOX_DOUBLE),
   bval(false),
   ival(0),
   dval(value),
@@ -129,7 +129,7 @@ Entry::Entry(double value, bool isCreatedByGet) :
 }
 
 Entry::Entry(const string& value, bool isCreatedByGet) : 
-  type(STRING),
+  type(NOX_STRING),
   bval(false),
   ival(0),
   dval(0),
@@ -142,7 +142,7 @@ Entry::Entry(const string& value, bool isCreatedByGet) :
 }
 
 Entry::Entry(const Arbitrary& value, bool isCreatedByGet) : 
-  type(STRING),
+  type(NOX_STRING),
   bval(false),
   ival(0),
   dval(0),
@@ -161,7 +161,7 @@ Entry::~Entry()
 
 void Entry::reset()
 {
-  type = NONE;
+  type = NOX_NONE;
 
   delete aval;
   aval = NULL;
@@ -176,7 +176,7 @@ void Entry::reset()
 void Entry::setValue(bool value, bool isCreatedByGet)
 {
   reset();
-  type = BOOL;
+  type = NOX_BOOL;
   bval = value;
   isSetByGet = isCreatedByGet;
 }
@@ -184,7 +184,7 @@ void Entry::setValue(bool value, bool isCreatedByGet)
 void Entry::setValue(int value, bool isCreatedByGet)
 {
   reset();
-  type = INT;
+  type = NOX_INT;
   ival = value;
   isSetByGet = isCreatedByGet;
 }
@@ -192,7 +192,7 @@ void Entry::setValue(int value, bool isCreatedByGet)
 void Entry::setValue(double value, bool isCreatedByGet)
 {
   reset();
-  type = DOUBLE;
+  type = NOX_DOUBLE;
   dval = value;
   isSetByGet = isCreatedByGet;
 }
@@ -200,7 +200,7 @@ void Entry::setValue(double value, bool isCreatedByGet)
 void Entry::setValue(const char* value, bool isCreatedByGet)
 {
   reset();
-  type = STRING;
+  type = NOX_STRING;
   sval = value;
   isSetByGet = isCreatedByGet;
 }
@@ -208,7 +208,7 @@ void Entry::setValue(const char* value, bool isCreatedByGet)
 void Entry::setValue(const string& value, bool isCreatedByGet)
 {
   reset();
-  type = STRING;
+  type = NOX_STRING;
   sval = value;
   isSetByGet = isCreatedByGet;
 }
@@ -216,7 +216,7 @@ void Entry::setValue(const string& value, bool isCreatedByGet)
 void Entry::setValue(const Arbitrary& value, bool isCreatedByGet)
 {
   reset();
-  type = ARBITRARY;
+  type = NOX_ARBITRARY;
   aval = value.clone();
   isSetByGet = isCreatedByGet;
 }
@@ -224,7 +224,7 @@ void Entry::setValue(const Arbitrary& value, bool isCreatedByGet)
 List& Entry::setList(bool isCreatedByGet)
 {
   reset();
-  type = LIST;
+  type = NOX_LIST;
   lval = new List();
   isSetByGet = isCreatedByGet;
   isGotten = true;
@@ -234,32 +234,32 @@ List& Entry::setList(bool isCreatedByGet)
 
 bool Entry::isBool() const
 {
-  return (type == BOOL);
+  return (type == NOX_BOOL);
 }
 
 bool Entry::isInt() const
 {
-  return (type == INT);
+  return (type == NOX_INT);
 }
 
 bool Entry::isDouble() const
 {
-  return (type == DOUBLE);
+  return (type == NOX_DOUBLE);
 }
 
 bool Entry::isString() const
 {
-  return (type == STRING);
+  return (type == NOX_STRING);
 }
 
 bool Entry::isArbitrary() const
 {
-  return (type == ARBITRARY);
+  return (type == NOX_ARBITRARY);
 }
 
 bool Entry::isList() const
 {
-  return (type == LIST);
+  return (type == NOX_LIST);
 }
 
 bool Entry::getBoolValue() const
@@ -313,22 +313,22 @@ bool Entry::isUsed() const
 ostream& Entry::leftshift(ostream& stream) const
 {
   switch(type) {
-  case BOOL: 
+  case NOX_BOOL: 
     stream << (bval ? "true" : "false");
     break;
-  case INT:
+  case NOX_INT:
     stream << ival;
     break;
-  case DOUBLE:
+  case NOX_DOUBLE:
     stream << dval;
     break;
-  case STRING:
+  case NOX_STRING:
     stream << "\"" << sval << "\"";
     break;
-  case ARBITRARY:
+  case NOX_ARBITRARY:
     stream << aval->getType();
     break;
-  case LIST:
+  case NOX_LIST:
     break;
   default:
     stream << "(empty non-typed parameter)";
