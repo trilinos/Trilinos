@@ -331,10 +331,18 @@ bool Group::applyJacobianDiagonalInverse(const Vector& input, Vector& result) co
   return true;
 }
 
+bool Group::preconditionVector(const Abstract::Vector& input, Abstract::Vector& result) const
+{
+  const Vector& exampleinput = dynamic_cast<const Vector&> (input);
+  Vector& exampleresult = dynamic_cast<Vector&> (result);
+  return preconditionVector(exampleinput, exampleresult);
+}
 
-
-
-
+bool Group::preconditionVector(const Vector& input, Vector& result) const
+{
+  cerr << "Warning - NOX::Example::Group::preconditionVector - not supported" << endl;
+  return false;
+}
 
 bool Group::isF() const 
 {   
