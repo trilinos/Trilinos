@@ -111,17 +111,6 @@ void TrustRegion::init()
   newton.reset(iparams.sublist("Direction"));
   cauchy.reset(iparams.sublist("Cauchy Direction"));
 
-  initRadius = iparams.getParameter("Initial Radius", 0.0);
-  radius = initRadius;
-
-  /*
-  if (radius <= 0) {
-    cerr << "NOX::Solver::TrustRegion::init - Invalid \"Initial Radius\" (" 
-	 << radius << ")" << endl;
-    throw "NOX Error";
-  }
-  */
-
   minRadius = iparams.getParameter("Minimum Trust Region Radius", 1.0e-6);
 
   if (minRadius <= 0) {

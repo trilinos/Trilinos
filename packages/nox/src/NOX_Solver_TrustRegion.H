@@ -90,11 +90,8 @@ The "improvement ratio" for a given step \f$ s \f$ is defined as
     constructor. If "Method" is not specified, it defaults to
     "Steepest Descent".
 
-- "Initial Radius" - Initial radius of trust region. Defaults to \f$
-  \|F(x)\|_2 \f$.
-
 - "Minimum Trust Region Radius" - Minimum allowable trust region
-  radius. Defaults to 1.0e-12.
+  radius. Defaults to 1.0e-6.
 
 - "Maximum Trust Region Radius" - Minimum allowable trust region
   radius. Defaults to 1.0e+10.
@@ -105,7 +102,7 @@ The "improvement ratio" for a given step \f$ s \f$ is defined as
 - "Contraction Trigger Ratio" - If the improvement ratio is less than
   this value, then the trust region is contracted by the amount
   specified by the "Contraction Factor". Must be larger than "Minimum
-  Improvement Ratio". Defaults to 0.25
+  Improvement Ratio". Defaults to 0.1.
 
 - "Contraction Factor" - See above. Defaults to 0.25.
 
@@ -113,7 +110,9 @@ The "improvement ratio" for a given step \f$ s \f$ is defined as
   value, then the trust region is contracted by the amount specified
   by the "Expansion Factor". Defaults to 0.75.
 
-- "Expansion Factor" - See above. Defaults to 2.0.
+- "Expansion Factor" - See above. Defaults to 4.0.
+
+= "Recovery Step" - Defaults to 1.0.
 
   \author Tammy Kolda (SNL 8950), Roger Pawlowski (SNL 9233)
 */
@@ -202,9 +201,6 @@ protected:
 
   //! Radius of the trust region
   double radius;
-
-  //! Initial radius
-  double initRadius;
 
   //! Minimum improvement ratio to accept step
   double minRatio;
