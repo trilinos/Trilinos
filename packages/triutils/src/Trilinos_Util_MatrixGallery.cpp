@@ -1835,8 +1835,8 @@ int Trilinos_Util_CrsMatrixGallery::CreateMatrixCauchy(void)
 
   matrix_ = new Epetra_CrsMatrix(Copy,*map_,NumGlobalElements_);
 
-  int Indices[NumGlobalElements_];
-  double Values[NumGlobalElements_];
+  int * Indices = new int[NumGlobalElements_];
+  double * Values = new double[NumGlobalElements_];
   
   for( int i=0 ; i<NumMyElements_ ; ++i ) {
     int NumEntries = NumGlobalElements_;
@@ -1851,6 +1851,9 @@ int Trilinos_Util_CrsMatrixGallery::CreateMatrixCauchy(void)
 				       NumEntries, Values, Indices)==0);
       
   }
+    
+  delete [] Indices;
+  delete [] Values;
     
   assert(matrix_->FillComplete()==0);
   
@@ -1868,8 +1871,8 @@ int Trilinos_Util_CrsMatrixGallery::CreateMatrixFiedler(void)
 
   matrix_ = new Epetra_CrsMatrix(Copy,*map_,NumGlobalElements_);
 
-  int Indices[NumGlobalElements_];
-  double Values[NumGlobalElements_];
+  int * Indices = new int[NumGlobalElements_];
+  double * Values = new double[NumGlobalElements_];
   
   for( int i=0 ; i<NumMyElements_ ; ++i ) {
     int NumEntries = NumGlobalElements_;
@@ -1884,6 +1887,9 @@ int Trilinos_Util_CrsMatrixGallery::CreateMatrixFiedler(void)
       
   }
     
+  delete [] Indices;
+  delete [] Values;
+      
   assert(matrix_->FillComplete()==0);
   
   return 0;
@@ -1951,8 +1957,8 @@ int Trilinos_Util_CrsMatrixGallery::CreateMatrixKMS(void)
   if( a_ == UNDEF ) a_ = 0.5;
   matrix_ = new Epetra_CrsMatrix(Copy,*map_,NumGlobalElements_);
 
-  int Indices[NumGlobalElements_];
-  double Values[NumGlobalElements_];
+  int * Indices = new int[NumGlobalElements_];
+  double * Values = new double[NumGlobalElements_];
   
   for( int i=0 ; i<NumMyElements_ ; ++i ) {
 
@@ -1967,7 +1973,10 @@ int Trilinos_Util_CrsMatrixGallery::CreateMatrixKMS(void)
 				       NumEntries, Values, Indices)==0);
     
   }
-    
+
+  delete [] Indices;
+  delete [] Values;
+      
   assert(matrix_->FillComplete()==0);
   
   return 0;
@@ -1984,8 +1993,8 @@ int Trilinos_Util_CrsMatrixGallery::CreateMatrixParter(void)
 
   matrix_ = new Epetra_CrsMatrix(Copy,*map_,NumGlobalElements_);
 
-  int Indices[NumGlobalElements_];
-  double Values[NumGlobalElements_];
+  int * Indices = new int[NumGlobalElements_];
+  double * Values = new double[NumGlobalElements_];
   
   for( int i=0 ; i<NumMyElements_ ; ++i ) {
 
@@ -2000,7 +2009,11 @@ int Trilinos_Util_CrsMatrixGallery::CreateMatrixParter(void)
 				       NumEntries, Values, Indices)==0);
     
   }
-    
+
+
+  delete [] Indices;
+  delete [] Values;
+      
   assert(matrix_->FillComplete()==0);
   
   return 0;
@@ -2019,8 +2032,8 @@ int Trilinos_Util_CrsMatrixGallery::CreateMatrixPei(void)
 
   matrix_ = new Epetra_CrsMatrix(Copy,*map_,NumGlobalElements_);
 
-  int Indices[NumGlobalElements_];
-  double Values[NumGlobalElements_];
+  int * Indices = new int[NumGlobalElements_];
+  double * Values = new double[NumGlobalElements_];
   
   for( int i=0 ; i<NumMyElements_ ; ++i ) {
 
@@ -2036,7 +2049,10 @@ int Trilinos_Util_CrsMatrixGallery::CreateMatrixPei(void)
 				       NumEntries, Values, Indices)==0);
     
   }
-    
+
+  delete [] Indices;
+  delete [] Values;
+      
   assert(matrix_->FillComplete()==0);
   
   return 0;
@@ -2055,8 +2071,8 @@ int Trilinos_Util_CrsMatrixGallery::CreateMatrixOnes(void)
 
   matrix_ = new Epetra_CrsMatrix(Copy,*map_,NumGlobalElements_);
 
-  int Indices[NumGlobalElements_];
-  double Values[NumGlobalElements_];
+  int * Indices = new int[NumGlobalElements_];
+  double * Values = new double[NumGlobalElements_];
   
   for( int i=0 ; i<NumMyElements_ ; ++i ) {
 
@@ -2071,7 +2087,10 @@ int Trilinos_Util_CrsMatrixGallery::CreateMatrixOnes(void)
 				       NumEntries, Values, Indices)==0);
     
   }
-    
+
+  delete [] Indices;
+  delete [] Values;
+      
   assert(matrix_->FillComplete()==0);
   
   return 0;
@@ -2090,8 +2109,8 @@ int Trilinos_Util_CrsMatrixGallery::CreateMatrixVander(void)
   
   matrix_ = new Epetra_CrsMatrix(Copy,*map_,NumGlobalElements_);
 
-  int Indices[NumGlobalElements_];
-  double Values[NumGlobalElements_];
+  int * Indices = new int[NumGlobalElements_];
+  double * Values = new double[NumGlobalElements_];
   
   for( int i=0 ; i<NumMyElements_ ; ++i ) {
 
@@ -2106,7 +2125,10 @@ int Trilinos_Util_CrsMatrixGallery::CreateMatrixVander(void)
 				       NumEntries, Values, Indices)==0);
     
   }
-    
+
+  delete [] Indices;
+  delete [] Values;
+      
   assert(matrix_->FillComplete()==0);
   
   return 0;
