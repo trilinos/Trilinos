@@ -358,14 +358,16 @@ int Zoltan_HG_Check (
 
   ZOLTAN_TRACE_ENTER(zz, yo);
 
-  if (!hg->hindex || !hg->vindex || 
+  if ((hg->nEdge && !hg->hindex) ||
+      (hg->nVtx && !hg->vindex) || 
       (hg->nPins && (!hg->vedge || !hg->hvertex))) {
     ZOLTAN_PRINT_WARN(zz->Proc, yo, "NULL arrays found");
     err = ZOLTAN_WARN;
     goto End;
   }
 
-  check = (int*) ZOLTAN_MALLOC(((hg->nEdge > hg->nVtx) ? hg->nEdge : hg->nVtx)
+  if (hg->nPins) {
+      check = (int*) ZOLTAN_MALLOC(((hg->nEdge > hg->nVtx) ? hg->nEdge : hg->nVtx)
    * sizeof(int));
   if (check == NULL) {
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Unable to allocate memory.");
@@ -394,6 +396,7 @@ int Zoltan_HG_Check (
         err =  ZOLTAN_WARN;
       }
   ZOLTAN_FREE ((void**) &check);
+  }
 
   for (i = 0; i < hg->VtxWeightDim * hg->nVtx; i += hg->VtxWeightDim)
     if (hg->vwgt[i] < 0.0) {

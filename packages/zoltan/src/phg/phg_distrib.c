@@ -221,9 +221,10 @@ static int Zoltan_PHG_Redistribute_Hypergraph(
     Zoltan_Comm_Do(plan, msg_tag, (char *) sendbuf, sizeof(int),
                    (char *) *vmap);
 
+
     if (!ocomm->myProc_y) { /* only first row sends to the first row of ncomm */
-        for (nsend = v = 0; v < ohg->nVtx; ++v) 
-            sendbuf[nsend++] = ocomm->myProc;
+        for (v = 0; v < ohg->nVtx; ++v) 
+            sendbuf[v] = ocomm->myProc;
     }
     --msg_tag;
     Zoltan_Comm_Do(plan, msg_tag, (char *) sendbuf, sizeof(int),
@@ -303,9 +304,8 @@ static int Zoltan_PHG_Redistribute_Hypergraph(
     MPI_Barrier(ocomm->Communicator);
     if (ncomm->myProc==-1) {
 #ifdef _DEBUG1
-        uprintf(ocomm, "I should not have any data!\n");
         if (nPins || nVtx || nEdge)
-            errexit("hey nPins=%d  nVtx=%d  nEdge=%d\n", nPins, nVtx, nEdge);
+            errexit("I should not have any data: hey nPins=%d  nVtx=%d  nEdge=%d\n", nPins, nVtx, nEdge);
 #endif
         nhg->nEdge = nhg->nVtx = nhg->nPins = 0;
         MPI_Barrier(ocomm->Communicator);
@@ -408,6 +408,7 @@ int Zoltan_PHG_Redistribute(
         --tmp;
     ncomm->nProc_y = tmp;
     ncomm->nProc_x = ncomm->nProc / tmp;
+    ncomm->col_comm = ncomm->row_comm = MPI_COMM_NULL;
 
     /* if new communicator is not NULL; this process is in that group
        so compute the rest of the stuff that it will need */

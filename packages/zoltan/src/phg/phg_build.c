@@ -65,7 +65,7 @@ char *yo = "Zoltan_PHG_Build_Hypergraph";
   Zoltan_HG_HGraph_Init(phgraph);
 
   /* just set the pointer of phgraph's comm to hgp's comm */
-  phgraph->comm = &hgp->comm;
+  phgraph->comm = &hgp->globalcomm;
 
   /* Use callback functions to build the hypergraph. */
   if (zz->Get_Num_HG_Edges && zz->Get_HG_Edge_List && zz->Get_Num_HG_Pins){

@@ -15,9 +15,7 @@
 #include "phg_distrib.h"
 
 
-/*
-#define SPLIT_PROCESSORS
-*/
+
 
 #define _DEBUG1
 #define _DEBUG2
@@ -43,10 +41,7 @@ int Zoltan_PHG_rdivide(int lo, int hi, Partition final, ZZ *zz, HGraph *hg,
   int i, j, mid, ierr=ZOLTAN_OK, *pins[2] = {NULL,NULL}, *lpins[2] = {NULL,NULL};
   Partition part=NULL;
   HGraph *left=NULL, *right=NULL;
-  int    *proclist=NULL, *sendbuf=NULL, *recvbuf=NULL;
-#ifdef SPLIT_PROCESSORS
-  int  nsend, msg_tag=7777;
-#endif
+  int    *proclist=NULL, *sendbuf=NULL, *recvbuf=NULL, nsend, msg_tag=7777;
   PHGComm *hgc = hg->comm;
   float tgpartsize[2]={0.0,0.0};    /* Target partition sizes; dimension is 2 
                                      because we are doing bisection */
@@ -107,7 +102,6 @@ int Zoltan_PHG_rdivide(int lo, int hi, Partition final, ZZ *zz, HGraph *hg,
   if (mid>lo) { /* only split if we really need it */
       if (!(left = (HGraph*) ZOLTAN_MALLOC (sizeof (HGraph))))
           MEMORY_ERROR;
-      Zoltan_HG_HGraph_Init (left);
       
       ierr = split_hypergraph (pins, hg, left, part, 0, zz);
       if (ierr != ZOLTAN_OK) 
@@ -121,7 +115,6 @@ int Zoltan_PHG_rdivide(int lo, int hi, Partition final, ZZ *zz, HGraph *hg,
   if (hi>mid+1) { /* only split if we need it */
       if (!(right = (HGraph*) ZOLTAN_MALLOC (sizeof (HGraph))))
           MEMORY_ERROR;
-      Zoltan_HG_HGraph_Init (right);
       ierr = split_hypergraph (pins, hg, right, part, 1, zz);
   
       ZOLTAN_FREE (&pins[0]); /* we don't need pins */      
@@ -134,31 +127,35 @@ int Zoltan_PHG_rdivide(int lo, int hi, Partition final, ZZ *zz, HGraph *hg,
               final[hg->vmap[i]] = hi;
   }
 
-#ifdef SPLIT_PROCESSORS
-  if (hgc->nProc>1 && left && right) {
+
+  if (hgp->proc_split && hgc->nProc>1 && left && right) {
       PHGComm  leftcomm, rightcomm;
       HGraph  newleft, newright;
-      int     *leftvmap, *rightvmap, *leftdest, *rightdest, mid;
-      ZOLTAN_COMM_OBJ *plan;    
-
-      Zoltan_HG_HGraph_Init (&newleft);
-      Zoltan_HG_HGraph_Init (&newright);
+      int     *leftvmap=NULL, *rightvmap=NULL, *leftdest=NULL, *rightdest=NULL, procmid;
+      ZOLTAN_COMM_OBJ *plan=NULL;    
 
       /* redistribute left and right parts */
-      mid = (int)((float) hgc->nProc * (float) left->dist_x[hgc->nProc_x] / (float) hg->dist_x[hgc->nProc_x])-1;
-      uprintf(hgc, "before redistribute for left mid=%d ------------------\n", mid);
+      procmid = (int)((float) (hgc->nProc-1) * (float) left->dist_x[hgc->nProc_x] / (float) hg->dist_x[hgc->nProc_x]);
+#ifdef _DEBUG1
+      if (procmid<0 || (procmid+1>hgc->nProc-1))
+          errexit("hey hey Proc Number range is [0, %d] prcomid=%d for left #pins=%d nPins=%d", hgc->nProc-1, procmid, left->dist_x[hgc->nProc_x] , hg->dist_x[hgc->nProc_x]);
+#endif
+      uprintf(hgc, "before redistribute for left procmid=%d ------------------\n", procmid);
       Zoltan_PHG_Redistribute(zz, left,
-                              0, mid, 
+                              0, procmid, 
                               &leftcomm, 
                               &newleft,
                               &leftvmap, &leftdest);
+      Zoltan_HG_HGraph_Free (left);
+      
       uprintf(hgc, "before redistribute for right ++++++++++++++++++++++\n");
       Zoltan_PHG_Redistribute(zz, right,
-                              mid+1, hgc->nProc-1, 
+                              procmid+1, hgc->nProc-1, 
                               &rightcomm, 
                               &newright,
                               &rightvmap, &rightdest);
-
+      Zoltan_HG_HGraph_Free (right);
+      
       nsend = MAX(newleft.nVtx, newright.nVtx);
       proclist = (int *) ZOLTAN_MALLOC (nsend * sizeof (int));
       sendbuf =  (int *) ZOLTAN_MALLOC (nsend * 2 * sizeof (int));
@@ -167,51 +164,74 @@ int Zoltan_PHG_rdivide(int lo, int hi, Partition final, ZZ *zz, HGraph *hg,
           (hg->nVtx && !recvbuf))
           MEMORY_ERROR;
       nsend = 0;
-      if (hgc->myProc<=mid) {/* I'm on the left part so I should partition newleft */
+      if (hgc->myProc<=procmid) {/* I'm on the left part so I should partition newleft */
 
           uprintf(hgc, "-----------------I'm partitioning left---------------\n");
-          ierr = Zoltan_PHG_rdivide (lo, mid, part, zz, &newleft, hgp, level+1);
+          Zoltan_HG_Check(zz, &newleft);
+          // ierr = Zoltan_PHG_rdivide (lo, mid, part, zz, &newleft, hgp, level+1);
+#if 0          
           for (i=0; i<newleft.nVtx; ++i) {
               proclist[nsend] = leftdest[i];
               sendbuf[nsend*2] = leftvmap[i];
               sendbuf[nsend*2+1] = part[i];
               ++nsend;
           }
+
           Zoltan_HG_HGraph_Free (&newleft);
           ZOLTAN_FREE(&leftvmap);
           ZOLTAN_FREE(&leftdest);
+          if (leftcomm.col_comm==MPI_COMM_NULL || leftcomm.row_comm==MPI_COMM_NULL || leftcomm.Communicator==MPI_COMM_NULL)
+              errexit("hey comm is NULL com=%x col=%x row=%x", leftcomm.Communicator, leftcomm.col_comm, leftcomm.row_comm);
           MPI_Comm_free(&leftcomm.col_comm);
           MPI_Comm_free(&leftcomm.row_comm);
           MPI_Comm_free(&leftcomm.Communicator);
+#endif
       } else { /* I'm on the right part so I should partition newright */
-          uprintf(hgc, "*****************I'm partitioning right****************\n");
+          uprintf(hgc, "*****************I'm partitioning right****************\n");          
+          Zoltan_HG_Check(zz, &newright);
           ierr |= Zoltan_PHG_rdivide (mid+1, hi, part, zz, &newright, hgp, level+1);
+#if 0          
           for (i=0; i<newright.nVtx; ++i) {
               proclist[nsend] = rightdest[i];
               sendbuf[nsend*2]   = rightvmap[i];
               sendbuf[nsend*2+1] = part[i];
               ++nsend;
           }
+
           Zoltan_HG_HGraph_Free (&newright);
           ZOLTAN_FREE(&rightvmap);
           ZOLTAN_FREE(&rightdest);
+          if (rightcomm.col_comm==MPI_COMM_NULL || rightcomm.row_comm==MPI_COMM_NULL || rightcomm.Communicator==MPI_COMM_NULL)
+              errexit("hey comm is NULL com=%x col=%x row=%x", rightcomm.Communicator, rightcomm.col_comm, rightcomm.row_comm);
           MPI_Comm_free(&rightcomm.col_comm);
           MPI_Comm_free(&rightcomm.row_comm);
-          MPI_Comm_free(&rightcomm.Communicator);          
+          MPI_Comm_free(&rightcomm.Communicator);
+#endif
       }
 
+#if 1
+      for (i=0; i<hg->nVtx; ++i)
+          final[hg->vmap[i]] = lo + (i % (hi-lo+1));
+#else
       --msg_tag;
       ierr |= Zoltan_Comm_Create(&plan, nsend, proclist, hgc->row_comm,
                                  msg_tag, &i);
 
 #ifdef _DEBUG1
-      if (i!=hg->nVtx) 
-          errexit("I should be receiving nVtx(%d) part info but received %d", hg->nVtx, i);
+      if (!hgc->myProc_y) {
+          if (i!=hg->nVtx) 
+              errexit("I should be receiving nVtx(%d) part info but received %d", hg->nVtx, i);          
+      } else {
+          if (i)
+              errexit("I'm not in the first row; why I'm receiving %d vertices?", i);
+      }
 #endif
       
       --msg_tag;
       Zoltan_Comm_Do(plan, msg_tag, (char *) sendbuf, 2*sizeof(int),
                      (char *) recvbuf);
+
+      MPI_Bcast(recvbuf, hg->nVtx*2, MPI_INT, 0, hgc->col_comm);
 
       for (i=0; i<hg->nVtx; ++i) {
 #ifdef _DEBUG1
@@ -227,22 +247,20 @@ int Zoltan_PHG_rdivide(int lo, int hi, Partition final, ZZ *zz, HGraph *hg,
       }
       
 
-      Zoltan_Comm_Destroy(&plan);      
+      Zoltan_Comm_Destroy(&plan);
+#endif
   } else {
-#endif
-      if (left) 
+      if (left) {
           ierr = Zoltan_PHG_rdivide (lo, mid, final, zz, left, hgp, level+1);
-      if (right) 
+          Zoltan_HG_HGraph_Free (left);
+      }
+      if (right) {
           ierr |= Zoltan_PHG_rdivide (mid+1, hi, final, zz, right, hgp, level+1);
-#ifdef SPLIT_PROCESSORS      
+          Zoltan_HG_HGraph_Free (right);
+      }
   }
-#endif
   
  End:
-  if (left)
-      Zoltan_HG_HGraph_Free (left);
-  if (right)
-      Zoltan_HG_HGraph_Free (right);
   Zoltan_Multifree (__FILE__, __LINE__, 8, &pins[0], &lpins[0], &part, &left, &right,
                     &proclist, &sendbuf, &recvbuf);
 
@@ -319,8 +337,6 @@ int Zoltan_PHG_rdivide_NoProcSplit(int lo, int hi, Partition final, ZZ *zz, HGra
   if (mid>lo) { /* only split if we really need it */
       if (!(left = (HGraph*) ZOLTAN_MALLOC (sizeof (HGraph))))
           MEMORY_ERROR;
-
-      Zoltan_HG_HGraph_Init (left);
       
       ierr = split_hypergraph (pins, hg, left, part, 0, zz);
       if (ierr != ZOLTAN_OK) 
@@ -362,100 +378,95 @@ int Zoltan_PHG_rdivide_NoProcSplit(int lo, int hi, Partition final, ZZ *zz, HGra
 }
 
 
-static int split_hypergraph (int *pins[2], HGraph *old, HGraph *new, Partition part,
+static int split_hypergraph (int *pins[2], HGraph *ohg, HGraph *nhg, Partition part,
                              int partid, ZZ *zz)
 {
   int *tmap = NULL;  /* temporary array mapping from old HGraph info to new */
   int edge, i, ierr=ZOLTAN_OK;  
-  PHGComm *hgc = old->comm;
+  PHGComm *hgc = ohg->comm;
   char *yo = "split_hypergraph";
 
-  new->comm = old->comm;
-  new->info               = old->info;
-  new->VtxWeightDim       = old->VtxWeightDim;
-  new->EdgeWeightDim      = old->EdgeWeightDim;
+  Zoltan_HG_HGraph_Init (nhg);
+  nhg->comm = ohg->comm;
+  nhg->info               = ohg->info;
+  nhg->VtxWeightDim       = ohg->VtxWeightDim;
+  nhg->EdgeWeightDim      = ohg->EdgeWeightDim;
   
   /* allocate memory for dynamic arrays in new HGraph and for tmap array */
-  if (old->nVtx && (tmap = (int*) ZOLTAN_MALLOC (old->nVtx * sizeof (int)))==NULL)
+  if (ohg->nVtx && (tmap = (int*) ZOLTAN_MALLOC (ohg->nVtx * sizeof (int)))==NULL)
       MEMORY_ERROR;
   
   /* fill in tmap array, -1 for ignored vertices, otherwise nonnegative int */
-  new->nVtx = 0;
-  for (i = 0; i < old->nVtx; i++)
-      tmap[i] = (part[i] == partid) ? new->nVtx++ : -1; 
+  nhg->nVtx = 0;
+  for (i = 0; i < ohg->nVtx; i++)
+      tmap[i] = (part[i] == partid) ? nhg->nVtx++ : -1; 
 
   /* save vertex and edge weights if they exist */
-  if (old->vwgt && new->VtxWeightDim)
-    new->vwgt=(float*)ZOLTAN_MALLOC(new->nVtx*sizeof(float)*new->VtxWeightDim);
-  if (new->nVtx && (new->vmap = (int*) ZOLTAN_MALLOC (new->nVtx * sizeof (int)))==NULL)
+  if (ohg->vwgt && nhg->VtxWeightDim)
+    nhg->vwgt=(float*)ZOLTAN_MALLOC(nhg->nVtx*sizeof(float)*nhg->VtxWeightDim);
+  if (nhg->nVtx && (nhg->vmap = (int*) ZOLTAN_MALLOC (nhg->nVtx * sizeof (int)))==NULL)
       MEMORY_ERROR;
   
-  for (i = 0; i < old->nVtx; i++) {
+  for (i = 0; i < ohg->nVtx; i++) {
       int v=tmap[i];
       if (v!=-1) {
-          new->vmap[v] = old->vmap[i];
-          if (new->vwgt)
-              memcpy(&new->vwgt[v*new->VtxWeightDim], &old->vwgt[i*new->VtxWeightDim],
-                     new->VtxWeightDim * sizeof(float));
+          nhg->vmap[v] = ohg->vmap[i];
+          if (nhg->vwgt)
+              memcpy(&nhg->vwgt[v*nhg->VtxWeightDim], &ohg->vwgt[i*nhg->VtxWeightDim],
+                     nhg->VtxWeightDim * sizeof(float));
       }
   }
-  
     
   /* fill in hindex and hvertex arrays in new HGraph */
-  new->nEdge = 0;
-  new->nPins = 0;
-  for (edge = 0; edge < old->nEdge; ++edge)
+  nhg->nEdge = 0;
+  nhg->nPins = 0;
+  for (edge = 0; edge < ohg->nEdge; ++edge)
       if (pins[partid][edge] > 1) {
-          ++new->nEdge;
-          new->nPins += pins[partid][edge];
+          ++nhg->nEdge;
+          nhg->nPins += pins[partid][edge];
       }
 
-
   /* continue allocating memory for dynamic arrays in new HGraph */
-  if (new->nEdge && (new->hindex  = (int*) ZOLTAN_MALLOC ((new->nEdge+1) * sizeof (int)))==NULL)
+  if (nhg->nEdge && (nhg->hindex  = (int*) ZOLTAN_MALLOC ((nhg->nEdge+1) * sizeof (int)))==NULL)
       MEMORY_ERROR;
-  if (new->nPins && (new->hvertex = (int*) ZOLTAN_MALLOC (new->nPins * sizeof (int)))==NULL)
+  if (nhg->nPins && (nhg->hvertex = (int*) ZOLTAN_MALLOC (nhg->nPins * sizeof (int)))==NULL)
       MEMORY_ERROR;
-  if (old->ewgt && new->EdgeWeightDim && new->nEdge)
-      if ((new->ewgt=(float*)ZOLTAN_MALLOC(new->nEdge*sizeof(float)*new->EdgeWeightDim))==NULL)
+  if (ohg->ewgt && nhg->EdgeWeightDim && nhg->nEdge)
+      if ((nhg->ewgt=(float*)ZOLTAN_MALLOC(nhg->nEdge*sizeof(float)*nhg->EdgeWeightDim))==NULL)
           MEMORY_ERROR;
   
-  new->nEdge = 0;
-  new->nPins = 0;
-  for (edge = 0; edge < old->nEdge; ++edge)
+  nhg->nEdge = 0;
+  nhg->nPins = 0;
+  for (edge = 0; edge < ohg->nEdge; ++edge)
     if (pins[partid][edge] > 1) { /* edge has at least two vertices in partition:
                                         we are skipping size 1 nets */
-      new->hindex[new->nEdge] = new->nPins;
-      for (i = old->hindex[edge]; i < old->hindex[edge+1]; ++i)
-        if (tmap [old->hvertex[i]] >= 0)  {
-          new->hvertex[new->nPins] = tmap[old->hvertex[i]];
-          new->nPins++;  
+      nhg->hindex[nhg->nEdge] = nhg->nPins;
+      for (i = ohg->hindex[edge]; i < ohg->hindex[edge+1]; ++i)
+        if (tmap [ohg->hvertex[i]] >= 0)  {
+          nhg->hvertex[nhg->nPins] = tmap[ohg->hvertex[i]];
+          nhg->nPins++;  
         }
-        if (new->ewgt)
-            memcpy(&new->ewgt[new->nEdge*new->VtxWeightDim], &old->vwgt[edge*new->VtxWeightDim],
-                   new->EdgeWeightDim * sizeof(float));
-        ++new->nEdge;
+        if (nhg->ewgt)
+            memcpy(&nhg->ewgt[nhg->nEdge*nhg->VtxWeightDim], &ohg->vwgt[edge*nhg->VtxWeightDim],
+                   nhg->EdgeWeightDim * sizeof(float));
+        ++nhg->nEdge;
     }
-  new->hindex[new->nEdge] = new->nPins;
+  nhg->hindex[nhg->nEdge] = nhg->nPins;
 
   /* We need to compute dist_x, dist_y */
-  if (!(new->dist_x = (int *) ZOLTAN_CALLOC((hgc->nProc_x+1), sizeof(int)))
-	 || !(new->dist_y = (int *) ZOLTAN_CALLOC((hgc->nProc_y+1), sizeof(int))))
+  if (!(nhg->dist_x = (int *) ZOLTAN_CALLOC((hgc->nProc_x+1), sizeof(int)))
+	 || !(nhg->dist_y = (int *) ZOLTAN_CALLOC((hgc->nProc_y+1), sizeof(int))))
       MEMORY_ERROR;
 
-  MPI_Scan(&new->nVtx, new->dist_x, 1, MPI_INT, MPI_SUM, hgc->row_comm);
-  MPI_Allgather(new->dist_x, 1, MPI_INT, &(new->dist_x[1]), 1, MPI_INT, hgc->row_comm);
-  new->dist_x[0] = 0;
+  MPI_Scan(&nhg->nVtx, nhg->dist_x, 1, MPI_INT, MPI_SUM, hgc->row_comm);
+  MPI_Allgather(nhg->dist_x, 1, MPI_INT, &(nhg->dist_x[1]), 1, MPI_INT, hgc->row_comm);
+  nhg->dist_x[0] = 0;
   
-  MPI_Scan(&new->nEdge, new->dist_y, 1, MPI_INT, MPI_SUM, hgc->col_comm);
-  MPI_Allgather(new->dist_y, 1, MPI_INT, &(new->dist_y[1]), 1, MPI_INT, hgc->col_comm);
-  new->dist_y[0] = 0;
+  MPI_Scan(&nhg->nEdge, nhg->dist_y, 1, MPI_INT, MPI_SUM, hgc->col_comm);
+  MPI_Allgather(nhg->dist_y, 1, MPI_INT, &(nhg->dist_y[1]), 1, MPI_INT, hgc->col_comm);
+  nhg->dist_y[0] = 0;
     
-  /* shrink hindex, hvertex arrays to correct size & determine vindex, vedge */
-  new->hvertex = (int*)ZOLTAN_REALLOC(new->hvertex, sizeof(int) * new->nPins);
-  new->hindex  = (int*)ZOLTAN_REALLOC(new->hindex,  sizeof(int) *(new->nEdge+1));
-  
-  Zoltan_HG_Create_Mirror (zz, new);
+  Zoltan_HG_Create_Mirror (zz, nhg);
  End:
   ZOLTAN_FREE (&tmap);
   return ierr;

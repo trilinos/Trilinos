@@ -136,8 +136,19 @@ struct PHGPartParamsStruct {
                          * be checked for errors. */
   int output_level;     /* Flag indicating amount of output from HG algorithms.
                          * See levels PHG_DEBUG_* below.  */
-  PHGComm comm;   /* UVCUVC: although this is not a paramater; we'll keep it here
-                     for now; later we can move it out */
+
+    /* NOTE THAT this comm refers to "GLOBAL" comm structure
+       (hence the name change: just to make sure it has not been used
+        accidentally in an inccorrect way)
+       comm of hg should be used in coarsening/initpart/refimenet codes
+       because of possible processor splits in recursive bisection
+    */
+  PHGComm globalcomm;   
+  int proc_split;       /* 0: menas processors will not be split in RB,
+                           >0 means they will be split into two parts for each side
+                              of the recursion */
+                    
+
   int num_coarse_iter;  /* Number of coarse partitions to try on each proc. */
   int visit_order;      /* Vertex visit order. */
 };

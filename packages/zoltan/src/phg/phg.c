@@ -33,18 +33,19 @@ extern "C" {
 /*  Parameters structure for parallel HG method.  */
 static PARAM_VARS PHG_params[] = {
   /* Add parameters here. */
+  {"PHG_OUTPUT_LEVEL",                NULL,  "INT",    0},
+  {"PCHECK_GRAPH",                    NULL,  "INT",    0},
+  {"PHG_NPROC_X",                     NULL,  "INT",    0},
+  {"PHG_NPROC_Y",                     NULL,  "INT",    0},
+  {"PHG_PROC_SPLIT",                  NULL,  "INT",    0},  
   {"PHG_REDUCTION_LIMIT",             NULL,  "INT",    0},
+  {"PHG_REDUCTION_METHOD",            NULL,  "STRING", 0},
+  {"PHG_REDUCTION_LOCAL_IMPROVEMENT", NULL,  "STRING", 0},
   {"PHG_VERTEX_VISIT_ORDER",          NULL,  "INT",    0},
   {"PHG_EDGE_SCALING",                NULL,  "INT",    0},
   {"PHG_VERTEX_SCALING",              NULL,  "INT",    0},
-  {"PHG_REDUCTION_METHOD",            NULL,  "STRING", 0},
-  {"PHG_REDUCTION_LOCAL_IMPROVEMENT", NULL,  "STRING", 0},
   {"PHG_COARSE_PARTITIONING",         NULL,  "STRING", 0},
   {"PHG_REFINEMENT",                  NULL,  "STRING", 0},
-  {"PHG_NPROC_X",                     NULL,  "INT",    0},
-  {"PHG_NPROC_Y",                     NULL,  "INT",    0},
-  {"PCHECK_GRAPH",                    NULL,  "INT",    0},
-  {"PHG_OUTPUT_LEVEL",                NULL,  "INT",    0},
   {"PHG_DIRECT_KWAY",                 NULL,  "INT",    0},
   {"PHG_FM_LOOP_LIMIT",               NULL,  "INT",    0},
   {"PHG_FM_MAX_NEG_MOVE",             NULL,  "INT",    0},    
@@ -149,13 +150,18 @@ int **exp_to_part )         /* list of partitions to which exported objs
     for (i = 0; i < hg->nVtx; ++i)
       hg->vmap[i] = i;
 
-#if 0
+
     /* tighten balance tolerance for recursive bisection process */
     hgp.bal_tol = pow (hgp.bal_tol, 1.0 / ceil (log((double)p) / log(2.0)));
-#endif
 
+
+    for (i = 0; i < hg->nVtx; ++i)
+        output_parts[i] = -1;
     /* partition hypergraph */
     err = Zoltan_PHG_rdivide (0, p-1, output_parts, zz, hg, &hgp, 0);
+    for (i = 0; i < hg->nVtx; ++i)
+        if (output_parts[i]<0 || output_parts[i]>=p)
+            errexit("invalid partvec[%d]=%d", i, output_parts[i]);
 
     if (hgp.output_level >= PHG_DEBUG_LIST)     
       uprintf(hg->comm, "FINAL %3d |V|=%6d |E|=%6d |Z|=%6d %s/%s/%s p=%d "
@@ -218,15 +224,16 @@ static int Zoltan_PHG_Initialize_Params(
   
   
   Zoltan_Bind_Param(PHG_params, "PHG_OUTPUT_LEVEL",         &hgp->output_level);
+  Zoltan_Bind_Param(PHG_params, "PCHECK_GRAPH",              &hgp->check_graph);   
   Zoltan_Bind_Param(PHG_params, "PHG_NPROC_X",                        &nProc_x);
   Zoltan_Bind_Param(PHG_params, "PHG_NPROC_Y",                        &nProc_y);
+  Zoltan_Bind_Param(PHG_params, "PHG_PROC_SPLIT",             &hgp->proc_split);  
   Zoltan_Bind_Param(PHG_params, "PHG_REDUCTION_LIMIT",              &hgp->redl);
   Zoltan_Bind_Param(PHG_params, "PHG_REDUCTION_METHOD",          hgp->redm_str);
   Zoltan_Bind_Param(PHG_params, "PHG_REDUCTION_LOCAL_IMPROVEMENT", hgp->redmo_str);  
-  Zoltan_Bind_Param(PHG_params, "PHG_EDGE_SCALING",          &hgp->edge_scaling);
+  Zoltan_Bind_Param(PHG_params, "PHG_VERTEX_VISIT_ORDER",    &hgp->visit_order);
+  Zoltan_Bind_Param(PHG_params, "PHG_EDGE_SCALING",         &hgp->edge_scaling);
   Zoltan_Bind_Param(PHG_params, "PHG_VERTEX_SCALING",        &hgp->vtx_scaling);
-  Zoltan_Bind_Param(PHG_params, "PHG_VERTEX_VISIT_ORDER",           &hgp->visit_order);
-  Zoltan_Bind_Param(PHG_params, "PCHECK_GRAPH",              &hgp->check_graph);   
   Zoltan_Bind_Param(PHG_params, "PHG_REFINEMENT",          hgp->refinement_str);
   Zoltan_Bind_Param(PHG_params, "PHG_DIRECT_KWAY",                  &hgp->kway);
   Zoltan_Bind_Param(PHG_params, "PHG_FM_LOOP_LIMIT",       &hgp->fm_loop_limit);
@@ -241,7 +248,8 @@ static int Zoltan_PHG_Initialize_Params(
   strncpy(hgp->redmo_str,           "no",    MAX_PARAM_STRING_LEN);  
   strncpy(hgp->coarsepartition_str, "gr0",   MAX_PARAM_STRING_LEN);
   strncpy(hgp->refinement_str,      "fm2",   MAX_PARAM_STRING_LEN);
-  
+
+  hgp->proc_split = 0;
   hgp->LocalCoarsePartition = 0;
   hgp->locmatching = NULL;
   hgp->edge_scaling = 0;
@@ -266,7 +274,7 @@ static int Zoltan_PHG_Initialize_Params(
   Zoltan_Assign_Param_Vals(zz->Params, PHG_params, zz->Debug_Level, zz->Proc,
    zz->Debug_Proc);
 
-  err = Zoltan_PHG_Set_2D_Proc_Distrib (zz, zz->Communicator, zz->Proc, zz->Num_Proc, nProc_x, nProc_y, &hgp->comm);
+  err = Zoltan_PHG_Set_2D_Proc_Distrib (zz, zz->Communicator, zz->Proc, zz->Num_Proc, nProc_x, nProc_y, &hgp->globalcomm);
   if (err != ZOLTAN_OK) 
       goto End;
 
