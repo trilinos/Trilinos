@@ -17,11 +17,11 @@ public:
   ~PyInterface();
 
   bool computeF(             const Epetra_Vector & x,
-	                     Epetra_Vector       & RHS,
-	                     FillType = NOX::Epetra::Interface::F);
+			     Epetra_Vector       & RHS,
+			     FillType = NOX::Epetra::Interface::F);
 
   bool computeJacobian(      const Epetra_Vector & x,
-		             Epetra_Operator     & Jac);
+			     Epetra_Operator     & Jac);
 
   bool computePrecMatrix(    const Epetra_Vector & x,
 			     Epetra_RowMatrix    & M);

@@ -6,11 +6,11 @@ ROOT       := ../
 
 # Source Files
 SRC        := Callback.cxx            \
-	      Epetra_VectorHelper.cxx \
               NumPyArray.cxx          \
               NumPyWrapper.cxx        \
-	      PyInterface.cxx         \
-	      PyObjectHolder.cxx
+	      PyInterface.cxx
+	      #Epetra_VectorHelper.cxx \
+	      #PyObjectHolder.cxx
 
 # The interface files
 INTERFACES := RawEpetra.i EpetraExt.i NOX_Epetra.i

@@ -15,6 +15,7 @@
 #include "NOX_StatusTest_MaxIters.H"
 #include "NOX_StatusTest_Stagnation.H"
 #include "NOX_StatusTest_FiniteValue.H"
+#include "NOX_Abstract_Group.H"
 
 // Namespace flattening
 using namespace NOX            ;
@@ -30,6 +31,9 @@ using namespace NOX::StatusTest;
 
 // SWIG library includes
 %include "std_string.i"
+
+// NOX::Abstract import
+%import "NOX_Abstract_Group.H"
 
 // NOX::StatusTest interface includes
 %include "NOX_StatusTest_Generic.H"

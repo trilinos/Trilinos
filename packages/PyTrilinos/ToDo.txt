@@ -2,11 +2,20 @@
     [Done] Check local installation
     [Done] Update CVS repository
 
-****** Get working on Linux
+[Done] Get working on Linux
 
 [Done] Remove byteCompile script and usage
 
 [Done] Move pyLocate.py to pyLocate
+
+[Done] Use distutils to find include and build directories
+    [Done] Change in pyLocate
+    [Done] Change common.mk to use new pyLocate
+    [Done] Change setup.py to use new pyLocate
+    [Done] Change test/setpath.py to use pyLocate
+
+[Done] Change code to properly define PY_ARRAY_UNIQUE_SYMBOL and
+       NO_IMPORT_ARRAY, according to NumPy standards
 
 ****** Clean up interface between Numeric arrays, double *'s and Epetra
        objects.
@@ -28,14 +37,23 @@
            Numeric arrays
 
 ****** Get rid of extraneous C++ code
+    [Done] CallbackVectorLoadTest
+    [Done] PyObjectHolder
     ------ Epetra_VectorHelper
-    ------ PyObjectHolder
     ------ NumPyWrapper
     ------ NumPyArray
 
+****** Change -c swig option to -noruntime
+
+****** Re-wrap Epetra_Object.Print() method
+
+****** Get rid of NOX_Parameter_List warnings
+
 ****** Move NOX_Epetra into NOX directory
 
-****** Inside setup.py, change NOX Extensions to have NOX_ prefix
+[Done] Inside setup.py, change NOX Extensions to have NOX_ prefix
+
+****** Wrap Epetra_Flops class
 
 ****** Have PyInterface automatically set the associated attribute in the
        Problem class, or come up with a cleaner solution.

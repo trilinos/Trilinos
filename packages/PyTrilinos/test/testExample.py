@@ -148,7 +148,6 @@ def main():
                                               colorMap, columns)
 
     # Create the group
-    #print >>sys.stderr, "About to instantiate group"
     group = NOX_Epetra.Group(printParams, lsParams, interface, soln, fdc)
 
     # Create the convergence tests

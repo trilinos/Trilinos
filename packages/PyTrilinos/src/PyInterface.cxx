@@ -1,4 +1,5 @@
 #include "PyInterface.h"
+#include "Epetra_Vector.h"
 #include "Epetra_VectorHelper.h"
 
 // Constructor
@@ -49,8 +50,8 @@ PyInterface::~PyInterface() {
 
 // Compute F
 bool PyInterface::computeF(const Epetra_Vector & x,
-				  Epetra_Vector       & RHS,
-				  FillType              flag)
+			         Epetra_Vector & RHS,
+				 FillType        flag)
 {
   mp_x   = &x;
   mp_rhs = &RHS;
@@ -71,8 +72,8 @@ bool PyInterface::computeF(const Epetra_Vector & x,
 }
 
 // Compute Jacobian operator
-bool PyInterface::computeJacobian(const Epetra_Vector & x,
-					 Epetra_Operator     & Jac)
+bool PyInterface::computeJacobian(const Epetra_Vector   & x,
+					Epetra_Operator & Jac)
 {
   mp_x   = &x;
   mp_jac = &Jac;
@@ -93,8 +94,8 @@ bool PyInterface::computeJacobian(const Epetra_Vector & x,
 }
 
 // Compute the preconditioning matrix
-bool PyInterface::computePrecMatrix(const Epetra_Vector & x,
-					   Epetra_RowMatrix    & M)
+bool PyInterface::computePrecMatrix(const Epetra_Vector    & x,
+					  Epetra_RowMatrix & M)
 {
   mp_x      = &x;
   mp_precMx = &M;
@@ -115,8 +116,8 @@ bool PyInterface::computePrecMatrix(const Epetra_Vector & x,
 }
 
 // Compute the preconditioning operator
-bool PyInterface::computePreconditioner(const Epetra_Vector & x,
-					       Epetra_Operator     & M)
+bool PyInterface::computePreconditioner(const Epetra_Vector   & x,
+					      Epetra_Operator & M)
 {
   mp_x      = &x;
   mp_precOp = &M;

@@ -36,12 +36,11 @@
 #include "Epetra_SerialSymDenseMatrix.h"
 // Local includes
 #include "Callback.h"
-#include "CallbackVectorLoadTest.h"
 #include "Epetra_NumPyVector.h"
 #include "Epetra_VectorHelper.h"
 #include "NumPyArray.h"
 #include "NumPyWrapper.h"
-#include "PyObjectHolder.h"
+// #include "PyObjectHolder.h"
 %}
 
 // Ignore directives
@@ -84,7 +83,7 @@
 %ignore Epetra_SerialDenseVector::operator[](int) const;
 %ignore Epetra_SerialDenseVector::operator()(int);
 %ignore Epetra_SerialDenseVector::operator()(int) const;
-%ignore PyObjectHolder::operator PyObject * ();
+//%ignore PyObjectHolder::operator PyObject * ();
 %ignore NumPyArrayBase::print(std::ostream &) const;       // faciltated by __str__
 %ignore NumPyArray::print(std::ostream &) const;           // faciltated by __str__
 %ignore NumPyArrayContiguous::print(std::ostream &) const; // faciltated by __str__
@@ -183,7 +182,7 @@
 %include "Epetra_SerialSymDenseMatrix.h"
 
 // Local interface includes
-%include "PyObjectHolder.h"
+//%include "PyObjectHolder.h"
 %include "NumPyArray.h"
 %include "Epetra_NumPyVector.h"
 
@@ -204,15 +203,15 @@
   }
 }
 
-%extend Epetra_Vector {
-  void load(PyObject * p_pyObject) {
-    Epetra_VectorHelper::loadViaCopy(self, p_pyObject);
-  }
+// %extend Epetra_Vector {
+//   void load(PyObject * p_pyObject) {
+//     Epetra_VectorHelper::loadViaCopy(self, p_pyObject);
+//   }
 
-  void unload(PyObject * p_pyObject) {
-    Epetra_VectorHelper::unloadViaCopy(self, p_pyObject);
-  }
-}
+//   void unload(PyObject * p_pyObject) {
+//     Epetra_VectorHelper::unloadViaCopy(self, p_pyObject);
+//   }
+// }
 
 %extend Epetra_IntVector {
   int & __getitem__(int i) {
@@ -297,36 +296,36 @@
   }
 }
 
-%extend Epetra_Vector {
+// %extend Epetra_Vector {
 
-  // HACK: Constructor that takes a wrapped PyObject pointer to get around
-  //       a SWIG bug that has been fixed in SWIG 1.3.19.
-  // NOTE: This must come before the constructor that takes a PyObject
-  Epetra_Vector(Epetra_BlockMap & map, PyObjectHolder & holder)  {
-    return Epetra_VectorHelper::new_Epetra_Vector(map, holder);
-  }
+//   // HACK: Constructor that takes a wrapped PyObject pointer to get around
+//   //       a SWIG bug that has been fixed in SWIG 1.3.19.
+//   // NOTE: This must come before the constructor that takes a PyObject
+//   Epetra_Vector(Epetra_BlockMap & map, PyObjectHolder & holder)  {
+//     return Epetra_VectorHelper::new_Epetra_Vector(map, holder);
+//   }
 
-  Epetra_Vector(Epetra_BlockMap & map, PyObject * p_pyObject)  {
-    return Epetra_VectorHelper::new_Epetra_Vector(map, p_pyObject);
-  }
+//   Epetra_Vector(Epetra_BlockMap & map, PyObject * p_pyObject)  {
+//     return Epetra_VectorHelper::new_Epetra_Vector(map, p_pyObject);
+//   }
 
-  // HACK: See note for Epetra_Vector constructor.
-  // NOTE: This must come before the load method that takes a PyObject
-  void loadViaCopy (PyObjectHolder & holder) {
-    Epetra_VectorHelper::loadViaCopy(self, holder);
-  }
+//   // HACK: See note for Epetra_Vector constructor.
+//   // NOTE: This must come before the load method that takes a PyObject
+//   void loadViaCopy (PyObjectHolder & holder) {
+//     Epetra_VectorHelper::loadViaCopy(self, holder);
+//   }
 
-  void loadViaCopy (PyObject * p_pyObject) {
-    Epetra_VectorHelper::loadViaCopy(self, p_pyObject);
-  }
+//   void loadViaCopy (PyObject * p_pyObject) {
+//     Epetra_VectorHelper::loadViaCopy(self, p_pyObject);
+//   }
 
-  // HACK: See note for Epetra_Vector constructor.
-  // NOTE: This must come before the unload method that takes a PyObject
-  void unloadViaCopy (PyObjectHolder & holder) {
-    Epetra_VectorHelper::unloadViaCopy(self, holder);
-  }
+//   // HACK: See note for Epetra_Vector constructor.
+//   // NOTE: This must come before the unload method that takes a PyObject
+//   void unloadViaCopy (PyObjectHolder & holder) {
+//     Epetra_VectorHelper::unloadViaCopy(self, holder);
+//   }
 
-  void unloadViaCopy (PyObject * p_pyObject) {
-    Epetra_VectorHelper::unloadViaCopy(self, p_pyObject);
-  }
-}
+//   void unloadViaCopy (PyObject * p_pyObject) {
+//     Epetra_VectorHelper::unloadViaCopy(self, p_pyObject);
+//   }
+// }
