@@ -1206,6 +1206,37 @@ The code prints out the process ID of each ML's process. After
 attaching, the user proceed by inserting a char value.
 \end{enumerate}
 
+%%%
+%%%
+%%%
+
+\subsection{C++ Return and Exit Macros}
+\label{sec:return}
+
+Table~\ref{tab:macros} returns some macros that can be used in C++ codes.
+
+\begin{table}
+\centering
+\begin{tabular}{| p{4cm} | p{10cm} | }
+\hline
+\verb!ML_CHK_ERR(ierr)!& If \verb@ierr != 0@, this macro prints out an
+error message, and returns \verb!ierr!. \\
+\verb!ML_CHK_ERRV(ierr)!& If \verb@ierr != 0@, this macro prints out an
+error message, and returns void. \\
+\verb!ML_RETURN(ierr)! & If \verb@ierr != 0@, this macro prints out an
+error message. This macro always returns \verb!ierr!. \\
+\verb!ML_EXIT(ierr)! & If \verb@ierr != 0@, this macro prints out an
+error message. This macro always exits. \\
+\hline
+\end{tabular}
+\caption{C++ return and exit macros.}
+\label{tab:macros}
+\end{table}
+
+%%%
+%%%
+%%%
+
 \subsection{Redistribute the coarser-level Matrices}
 
 TO DO...
