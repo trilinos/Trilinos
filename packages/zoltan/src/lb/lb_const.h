@@ -38,6 +38,8 @@ typedef int ZOLTAN_LB_FN(struct Zoltan_Struct *, float *, int *,
 
 typedef void ZOLTAN_LB_FREE_DATA_FN(struct Zoltan_Struct *);
 
+typedef int ZOLTAN_LB_COPY_DATA_FN(struct Zoltan_Struct *to, struct Zoltan_Struct *from);
+
 typedef int ZOLTAN_LB_POINT_ASSIGN_FN(struct Zoltan_Struct *, double *, int *, 
                                       int *);
 
@@ -159,6 +161,9 @@ struct Zoltan_LB_Struct {
   ZOLTAN_LB_FREE_DATA_FN *Free_Structure;
                                   /*  Pointer to function that frees the
                                       Data_Structure memory.                 */
+  ZOLTAN_LB_COPY_DATA_FN *Copy_Structure;
+                                  /*  Pointer to function that copies the
+                                      Data_Structure                         */
   ZOLTAN_LB_POINT_ASSIGN_FN *Point_Assign;  
                                   /*  Pointer to the function that performs
                                       Point_Assign; this ptr is set based on 
@@ -248,6 +253,12 @@ extern int Zoltan_LB_Build_PartDist(struct Zoltan_Struct *);
 extern int Zoltan_LB_Remap(struct Zoltan_Struct *, int *, int, int *, int *,
   int *, int);
 
+extern int Zoltan_LB_Copy_Struct(struct Zoltan_Struct *to, 
+                                  struct Zoltan_Struct *from);
+
+extern void Zoltan_Migrate_Copy_Struct(struct Zoltan_Migrate_Struct *, 
+                                       struct Zoltan_Migrate_Struct *);
+
 /* PARTITIONING FUNCTIONS */
 extern ZOLTAN_LB_FN Zoltan_RCB;
 extern ZOLTAN_LB_FN Zoltan_Octpart;
@@ -262,11 +273,16 @@ extern ZOLTAN_LB_FN Zoltan_PHG;
 /* FREE DATA_STRUCTURE FUNCTIONS */
 extern ZOLTAN_LB_FREE_DATA_FN Zoltan_RCB_Free_Structure;
 extern ZOLTAN_LB_FREE_DATA_FN Zoltan_RIB_Free_Structure;
-extern ZOLTAN_LB_FREE_DATA_FN Zoltan_Oct_Free_Structure;
-extern ZOLTAN_LB_FREE_DATA_FN Zoltan_Reftree_Free_Structure;
 extern ZOLTAN_LB_FREE_DATA_FN Zoltan_HSFC_Free_Structure;
-extern ZOLTAN_LB_FREE_DATA_FN Zoltan_HG_Free_Structure;
-extern ZOLTAN_LB_FREE_DATA_FN Zoltan_PHG_Free_Structure;
+
+/* COPY DATA_STRUCTURE FUNCTIONS */
+extern ZOLTAN_LB_COPY_DATA_FN Zoltan_RCB_Copy_Structure;
+extern ZOLTAN_LB_COPY_DATA_FN Zoltan_RIB_Copy_Structure;
+extern ZOLTAN_LB_COPY_DATA_FN Zoltan_Oct_Copy_Structure;
+extern ZOLTAN_LB_COPY_DATA_FN Zoltan_Reftree_Copy_Structure;
+extern ZOLTAN_LB_COPY_DATA_FN Zoltan_HSFC_Copy_Structure;
+extern ZOLTAN_LB_COPY_DATA_FN Zoltan_HG_Copy_Structure;
+extern ZOLTAN_LB_COPY_DATA_FN Zoltan_PHG_Copy_Structure;
 
 /* POINT_ASSIGN FUNCTIONS */
 extern ZOLTAN_LB_POINT_ASSIGN_FN Zoltan_RB_Point_Assign;
