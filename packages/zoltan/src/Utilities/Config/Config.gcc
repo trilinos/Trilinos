@@ -24,7 +24,7 @@ RANLIB			= ranlib
 AR			= ar r
 
 CC			= gcc -Wall
-CCPP			= g++
+#CC			= gcc -Wall -fprofile-arcs -ftest-coverage
 INCLUDE_PATH		= -I/Net/local/lang/SC3.0.1/include \
 			  -I/Net/local/lang/SC3.0.1/ansi_include \
 			  -I/Net/proj/zoltan/arch/solaris/include \
