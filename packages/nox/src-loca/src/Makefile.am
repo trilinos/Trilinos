@@ -72,10 +72,12 @@ LOCA_SOLVER = \
         $(srcdir)/LOCA_Solver_NoxSolver.C
 
 LOCA_BIFURCATION_H = \
-        $(srcdir)/LOCA_Bifurcation_TPBordVector.H
+        $(srcdir)/LOCA_Bifurcation_TPBordVector.H \
+        $(srcdir)/LOCA_Bifurcation_TPBordGroup.H
 
 LOCA_BIFURCATION = \
-        $(srcdir)/LOCA_Bifurcation_TPBordVector.C
+        $(srcdir)/LOCA_Bifurcation_TPBordVector.C \
+        $(srcdir)/LOCA_Bifurcation_TPBordGroup.C
 
 LOCA_DERIVUTILS_H = \
         $(srcdir)/LOCA_DerivUtils.H

@@ -160,11 +160,13 @@ LOCA_SOLVER = \
 
 
 LOCA_BIFURCATION_H = \
-        $(srcdir)/LOCA_Bifurcation_TPBordVector.H
+        $(srcdir)/LOCA_Bifurcation_TPBordVector.H \
+        $(srcdir)/LOCA_Bifurcation_TPBordGroup.H
 
 
 LOCA_BIFURCATION = \
-        $(srcdir)/LOCA_Bifurcation_TPBordVector.C
+        $(srcdir)/LOCA_Bifurcation_TPBordVector.C \
+        $(srcdir)/LOCA_Bifurcation_TPBordGroup.C
 
 
 LOCA_DERIVUTILS_H = \
@@ -252,6 +254,7 @@ am_libloca_a_OBJECTS = libloca_a-LOCA_Utils.$(OBJEXT) \
 	libloca_a-LOCA_Solver_Generic.$(OBJEXT) \
 	libloca_a-LOCA_Solver_NoxSolver.$(OBJEXT) \
 	libloca_a-LOCA_Bifurcation_TPBordVector.$(OBJEXT) \
+	libloca_a-LOCA_Bifurcation_TPBordGroup.$(OBJEXT) \
 	libloca_a-LOCA_DerivUtils.$(OBJEXT)
 libloca_a_OBJECTS = $(am_libloca_a_OBJECTS)
 
@@ -262,6 +265,7 @@ LDFLAGS = @LDFLAGS@
 LIBS = @LIBS@
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 @AMDEP_TRUE@DEP_FILES = \
+@AMDEP_TRUE@	$(DEPDIR)/libloca_a-LOCA_Bifurcation_TPBordGroup.Po \
 @AMDEP_TRUE@	$(DEPDIR)/libloca_a-LOCA_Bifurcation_TPBordVector.Po \
 @AMDEP_TRUE@	$(DEPDIR)/libloca_a-LOCA_DerivUtils.Po \
 @AMDEP_TRUE@	$(DEPDIR)/libloca_a-LOCA_Parameter_Vector.Po \
@@ -341,6 +345,8 @@ libloca_a-LOCA_Solver_NoxSolver.$(OBJEXT): \
 	$(srcdir)/LOCA_Solver_NoxSolver.C
 libloca_a-LOCA_Bifurcation_TPBordVector.$(OBJEXT): \
 	$(srcdir)/LOCA_Bifurcation_TPBordVector.C
+libloca_a-LOCA_Bifurcation_TPBordGroup.$(OBJEXT): \
+	$(srcdir)/LOCA_Bifurcation_TPBordGroup.C
 libloca_a-LOCA_DerivUtils.$(OBJEXT): $(srcdir)/LOCA_DerivUtils.C
 libloca.a: $(libloca_a_OBJECTS) $(libloca_a_DEPENDENCIES) 
 	-rm -f libloca.a
@@ -353,6 +359,7 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/libloca_a-LOCA_Bifurcation_TPBordGroup.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/libloca_a-LOCA_Bifurcation_TPBordVector.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/libloca_a-LOCA_DerivUtils.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/libloca_a-LOCA_Parameter_Vector.Po@am__quote@
@@ -473,6 +480,18 @@ libloca_a-LOCA_Bifurcation_TPBordVector.obj: $(srcdir)/LOCA_Bifurcation_TPBordVe
 @AMDEP_TRUE@	depfile='$(DEPDIR)/libloca_a-LOCA_Bifurcation_TPBordVector.Po' tmpdepfile='$(DEPDIR)/libloca_a-LOCA_Bifurcation_TPBordVector.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_a_CXXFLAGS) $(CXXFLAGS) -c -o libloca_a-LOCA_Bifurcation_TPBordVector.obj `cygpath -w $(srcdir)/LOCA_Bifurcation_TPBordVector.C`
+
+libloca_a-LOCA_Bifurcation_TPBordGroup.o: $(srcdir)/LOCA_Bifurcation_TPBordGroup.C
+@AMDEP_TRUE@	source='$(srcdir)/LOCA_Bifurcation_TPBordGroup.C' object='libloca_a-LOCA_Bifurcation_TPBordGroup.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/libloca_a-LOCA_Bifurcation_TPBordGroup.Po' tmpdepfile='$(DEPDIR)/libloca_a-LOCA_Bifurcation_TPBordGroup.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_a_CXXFLAGS) $(CXXFLAGS) -c -o libloca_a-LOCA_Bifurcation_TPBordGroup.o `test -f $(srcdir)/LOCA_Bifurcation_TPBordGroup.C || echo '$(srcdir)/'`$(srcdir)/LOCA_Bifurcation_TPBordGroup.C
+
+libloca_a-LOCA_Bifurcation_TPBordGroup.obj: $(srcdir)/LOCA_Bifurcation_TPBordGroup.C
+@AMDEP_TRUE@	source='$(srcdir)/LOCA_Bifurcation_TPBordGroup.C' object='libloca_a-LOCA_Bifurcation_TPBordGroup.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/libloca_a-LOCA_Bifurcation_TPBordGroup.Po' tmpdepfile='$(DEPDIR)/libloca_a-LOCA_Bifurcation_TPBordGroup.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_a_CXXFLAGS) $(CXXFLAGS) -c -o libloca_a-LOCA_Bifurcation_TPBordGroup.obj `cygpath -w $(srcdir)/LOCA_Bifurcation_TPBordGroup.C`
 
 libloca_a-LOCA_DerivUtils.o: $(srcdir)/LOCA_DerivUtils.C
 @AMDEP_TRUE@	source='$(srcdir)/LOCA_DerivUtils.C' object='libloca_a-LOCA_DerivUtils.o' libtool=no @AMDEPBACKSLASH@
