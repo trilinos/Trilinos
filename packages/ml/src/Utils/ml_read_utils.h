@@ -36,7 +36,7 @@ extern void ML_Reader_GetGeneralSpecs(FILE *ifp,
                                       struct reader_context *context);
 extern int  ML_Reader_LookFor(FILE *ifp, char *string, char input[], 
                               int ch_term);
-extern int  ML_Reader_ReadString(FILE *ifp, char string[], char ch);
+extern int  ML_Reader_ReadString(FILE *ifp, char string[], int);
 extern void ML_Reader_Strip(char string[]);
 extern void ML_Reader_GetSolutionSpecs(FILE *ifp, 
                             struct reader_context *context);

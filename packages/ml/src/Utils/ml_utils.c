@@ -529,7 +529,7 @@ int ML_random_init()
 /* ******************************************************************** */
 /* randomize an integer array                                           */
 /* -------------------------------------------------------------------- */
-
+#include <stdlib.h>
 int ML_randomize(int nlist, int *list) 
 {
    int    i, nm1, iran1, iran2, itmp;
@@ -983,7 +983,6 @@ void ML_az_dsort2(double dlist[], int N, int list2[])
 void ML_gsum_scalar_int(int vals[], int vals2[], ML_Comm *comm)
 {
 #ifndef ML_USE_INTERNAL_COMM_FUNCTIONS
-  int i;
 #ifdef ML_MPI
   MPI_Allreduce((void *) vals,(void *) vals2, 1, MPI_INT, MPI_SUM,
                 MPI_COMM_WORLD);
@@ -2579,7 +2578,7 @@ void ML_serial_end(ML_Comm *comm)
 /* the developer to attach a debugger if desired.                       */
 /* (Based on code from ALEGRA).                                         */
 /* ******************************************************************** */
-
+#include <unistd.h>
 void ML_PauseForDebugger(ML_Comm *comm)
 {
   int i,j;

@@ -160,7 +160,7 @@ int ML_BdryPts_Load_Dirichlet_Grid(ML_BdryPts *ml_bc, int leng, int *list)
       ML_memory_free( (void**) &(ml_bc->Dirichlet_grid_list) );
 
    nbytes = (leng+1)*sizeof(int);
-   ML_memory_alloc((void**) &(ml_bc->Dirichlet_grid_list), nbytes, "BC2");
+   ML_memory_alloc((void**) &(ml_bc->Dirichlet_grid_list), (unsigned int) nbytes, "BC2");
    ml_bc->Dirichlet_grid_length = leng;
    ml_bc->Dirichlet_grid_CreateOrDup = 1;
    for ( i = 0; i < leng; i++ )
@@ -189,7 +189,7 @@ int ML_BdryPts_Load_Dirichlet_Eqn(ML_BdryPts *ml_bc, int leng, int *list)
       ML_memory_free( (void**) &(ml_bc->Dirichlet_eqn_list) );
 
    nbytes = leng * sizeof(int);
-   ML_memory_alloc((void**) &(ml_bc->Dirichlet_eqn_list), nbytes, "BC3");
+   ML_memory_alloc((void**) &(ml_bc->Dirichlet_eqn_list), (unsigned int) nbytes, "BC3");
    ml_bc->Dirichlet_eqn_length = leng;
    ml_bc->Dirichlet_eqn_CreateOrDup = 1;
    for ( i = 0; i < leng; i++ )

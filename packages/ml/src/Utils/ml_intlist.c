@@ -30,7 +30,7 @@ int ML_IntList_Create(ML_IntList **ilistp, int n, int ncnt)
    if ( n > 0 ) 
    {
       nbytes = ( n + 1 ) * sizeof(int);
-      ML_memory_alloc( (void**) &(ilist->start), nbytes, "IL2" );
+      ML_memory_alloc( (void**) &(ilist->start), (unsigned int) nbytes, "IL2" );
       ilist->start[0] = 0;
    } else 
       ilist->start = 0;
@@ -39,13 +39,13 @@ int ML_IntList_Create(ML_IntList **ilistp, int n, int ncnt)
    {
       ilist->cur_mem_leng = ncnt;
       nbytes = ncnt * sizeof(int);
-      ML_memory_alloc( (void**) &(ilist->members), nbytes, "IL3" );
+      ML_memory_alloc( (void**) &(ilist->members), (unsigned int) nbytes, "IL3" );
    } 
    else if (n > 0) 
    {
       ilist->cur_mem_leng = n;
       nbytes = n * sizeof(int);
-      ML_memory_alloc( (void**) &(ilist->members), nbytes, "IL4" );
+      ML_memory_alloc( (void**) &(ilist->members), (unsigned int) nbytes, "IL4" );
    } 
    else 
    {

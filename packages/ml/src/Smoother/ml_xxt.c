@@ -620,7 +620,7 @@ void ML_subexchange_bdry(double x[], ML_CommInfoOP *comm_info,
     neighbor = &(comm_info->neighbors[i]);
     rtype = type;   j = sizeof(double)* neighbor->N_rcv;
     if ((neighbor->ML_id & mask) == sub_proc ) {
-       comm->USR_irecvbytes((void *) ptr_recv_list, j, &(neighbor->ML_id), &rtype,
+      comm->USR_irecvbytes((void *) ptr_recv_list, (unsigned int) j, &(neighbor->ML_id), &rtype,
                          comm->USR_comm, request+i);
     }
     ptr_recv_list         += neighbor->N_rcv;
@@ -632,7 +632,7 @@ void ML_subexchange_bdry(double x[], ML_CommInfoOP *comm_info,
     neighbor = &(comm_info->neighbors[i]);
     j = sizeof(double)* neighbor->N_send;
     if ((neighbor->ML_id & mask) == sub_proc ) {
-       comm->USR_sendbytes((void *) ptr_send_list, j, neighbor->ML_id,
+      comm->USR_sendbytes((void *) ptr_send_list, (unsigned int) j, neighbor->ML_id,
                           rtype, comm->USR_comm);
     }
     ptr_send_list         += neighbor->N_send;
@@ -645,7 +645,7 @@ void ML_subexchange_bdry(double x[], ML_CommInfoOP *comm_info,
     neighbor = &(comm_info->neighbors[i]);
     rtype = type;   j = sizeof(double)* neighbor->N_rcv;
     if ((neighbor->ML_id & mask) == sub_proc ) {
-       comm->USR_cheapwaitbytes((void *) ptr_recv_list, j, &(neighbor->ML_id),
+      comm->USR_cheapwaitbytes((void *) ptr_recv_list, (unsigned int) j, &(neighbor->ML_id),
                         &rtype, comm->USR_comm, request+i);
     }
     ptr_recv_list         += neighbor->N_rcv;

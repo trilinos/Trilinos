@@ -113,8 +113,8 @@ double ML_GetSmoothingConst(ML_Operator *Amat, double *err_h, ML_Smoother *sm)
    int ntimes;
 
    /* Calculate ||e||^2_H1 and ||e||^2_H2. */
-   eH1norm = abs(ML_gdot_H1(Amat,err_h,err_h));
-   eH2norm = abs(ML_gdot_H2(Amat,err_h,err_h));
+   eH1norm = fabs(ML_gdot_H1(Amat,err_h,err_h));
+   eH2norm = fabs(ML_gdot_H2(Amat,err_h,err_h));
 
    /* Calculate ||Se||^2_H1 where S is the smoother. */
 
@@ -127,7 +127,7 @@ double ML_GetSmoothingConst(ML_Operator *Amat, double *err_h, ML_Smoother *sm)
    ML_Smoother_Apply(sm, Amat->invec_leng, sm_err,
                      Amat->outvec_leng, err_h, ML_ZERO);
    sm->ntimes = ntimes;;
-   smerrH1norm = abs(ML_gdot_H1(Amat, sm_err, sm_err));
+   smerrH1norm = fabs(ML_gdot_H1(Amat, sm_err, sm_err));
    ML_free(sm_err);
 
    alpha = (eH1norm - smerrH1norm) / eH2norm;
@@ -175,10 +175,10 @@ double ML_GetCoarseGridConst(ML_Operator *Amat, ML_Operator *Rmat,
    for (i = 0; i < Pmat->outvec_leng; i++)
       tempvec[i] = err_h[i] - tempvec[i];
 
-   dtemp = abs(ML_gdot_H0(Amat, tempvec, tempvec));
+   dtemp = fabs(ML_gdot_H0(Amat, tempvec, tempvec));
 
    /* Calculate ||e||^2_H1 and beta. */
-   dtemp2 = abs(ML_gdot_H1(Amat, err_h, err_h));
+   dtemp2 = fabs(ML_gdot_H1(Amat, err_h, err_h));
    beta = dtemp / dtemp2;
 
    ML_free(rhs);

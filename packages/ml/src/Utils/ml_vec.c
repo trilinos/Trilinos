@@ -119,7 +119,7 @@ int ML_DVector_LoadData( ML_DVector *vec, int n, double *data )
    /* ----------------------------------------------------- */
 
    nbytes = n * sizeof(double);
-   ML_memory_alloc( (void **) &(vec->VecData), nbytes, "dv2" );
+   ML_memory_alloc( (void **) &(vec->VecData), (unsigned int) nbytes, "dv2" );
    for ( i = 0; i < n; i ++ ) vec->VecData[i] = data[i];
    vec->VecLength = n;
    vec->SetOrLoad = 2;

@@ -275,7 +275,7 @@ int ML_Reader_LookFor(FILE *ifp, char *string, char input[], int ch_term)
 /*****************************************************************************/
 /*****************************************************************************/
 
-int ML_Reader_ReadString(FILE *ifp, char string[], char ch)
+int ML_Reader_ReadString(FILE *ifp, char string[], int ch)
 
 /* This routine reads the standard input until encountering the end-of-file, a
  * newline, the character 'ch' or until MAX_INPUT_STR_LN characters are read.
