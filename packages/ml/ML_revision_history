@@ -16,3 +16,10 @@ mystring = ml2_0_0_1
 
      MLS polynomial smoother
          matrix does not need to be scaled.
+     Added more print control.
+		 "ml_inputfile" now takes an additional argument in the general
+		 problem specs section:
+		 "Print Level = [an integer]"
+		 0 => minimal output
+		 1 => some output (default)
+		 2,3,... => increasing amounts of output
