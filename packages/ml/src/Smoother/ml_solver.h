@@ -20,7 +20,8 @@
 #include "superlu_ddefs.h"
 #endif
 
-typedef struct ML_Lugrid_Struct {
+typedef struct ML_Lugrid_Struct 
+{
 #ifdef DSUPERLU
   gridinfo_t grid;
 #endif

@@ -72,6 +72,8 @@ extern int ML_CSolve_Clean(ML_CSolve *);
 extern int ML_CSolve_Check(ML_CSolve *);
 extern int ML_CSolve_Set_1Level(ML_CSolve *, ML_1Level *);
 extern int ML_CSolve_Apply(ML_CSolve *, int, double *, int, double *);
+extern int ML_CSolve_Aggr(void *, int, double *, int, double *);
+extern int ML_CSolve_Clean_Aggr(void *, ML_CSolveFunc *);
 
 #ifdef __cplusplus
 }

@@ -18,7 +18,9 @@
 /* ----------------------------------------------------------------------- */
 
 extern int ML_Clean_CSolveSuperLU( void *, ML_CSolveFunc *); 
-extern int SuperLU_Solve(void *,int ,double *,int ,double *);
+extern int ML_SuperLU_Solve(void *,int ,double *,int ,double *);
+extern int ML_Destroy( ML ** );
+extern int ML_CSolve_Clean_Aggr( void *, ML_CSolveFunc *);
 
 /* *********************************************************************** */
 /* Constructor                                                             */
@@ -86,7 +88,7 @@ int ML_CSolve_Destroy(ML_CSolve **cs)
 
 int ML_CSolve_Clean(ML_CSolve *ml_cs)
 {
-#ifdef ML_DETAILED_TIMING
+#ifdef ML_TIMING_DETAILED
    double t1;
 #endif
 
@@ -95,7 +97,7 @@ int ML_CSolve_Clean(ML_CSolve *ml_cs)
       printf("ML_CSolve_Clean error : wrong object.\n");
       exit(-1);
    }
-#ifdef ML_DETAILED_TIMING
+#ifdef ML_TIMING_DETAILED
    if (ml_cs->label != NULL) {
       t1 = ML_gsum_double(ml_cs->build_time, global_comm);
       t1 = t1/((double) global_comm->ML_nprocs);
@@ -116,11 +118,14 @@ int ML_CSolve_Clean(ML_CSolve *ml_cs)
    ml_cs->ntimes = 0;
    ml_cs->tol = 0;
    if (ml_cs->data_destroy != NULL)
+   {
       ml_cs->data_destroy( ml_cs->data );
-
-   if ( ml_cs->func->internal == SuperLU_Solve ) {
-       ML_Clean_CSolveSuperLU( ml_cs->data, ml_cs->func );
+      ml_cs->data = NULL;
    }
+   if ( ml_cs->func->internal == ML_SuperLU_Solve && ml_cs->data != NULL )
+       ML_Clean_CSolveSuperLU( ml_cs->data, ml_cs->func );
+   if (ml_cs->func->internal == ML_CSolve_Aggr)
+       ML_CSolve_Clean_Aggr( ml_cs->data, ml_cs->func );
    ML_memory_free( (void**) &(ml_cs->func) );
    ml_cs->data = NULL;
    ml_cs->func = NULL;
@@ -166,7 +171,7 @@ int ML_CSolve_Set_1Level(ML_CSolve *ml_cs, ML_1Level *mylevel)
 int ML_CSolve_Apply(ML_CSolve *csolve, int inlen, double din[], 
                     int outlen, double dout[])
 {
-#if defined(ML_TIMING) || defined(ML_DETAILED_TIMING)
+#if defined(ML_TIMING) || defined(ML_TIMING_DETAILED)
    double t0;
    t0 = GetClock();
 #endif
@@ -176,7 +181,7 @@ int ML_CSolve_Apply(ML_CSolve *csolve, int inlen, double din[],
    if (csolve->func->ML_id == ML_EXTERNAL)
         csolve->func->external(csolve->data, inlen, din, outlen, dout);
    else csolve->func->internal(csolve->data, inlen, din, outlen, dout);
-#if defined(ML_TIMING) || defined(ML_DETAILED_TIMING)
+#if defined(ML_TIMING) || defined(ML_TIMING_DETAILED)
    csolve->apply_time += (GetClock() - t0);
 #endif
    return 0;
@@ -196,5 +201,97 @@ int ML_CSolve_Set_Label( ML_CSolve *csolve, char *label)
    if (csolve->label == NULL) pr_error("Not enough space in ML_CSolve_Set_Label\n");
    strncpy(csolve->label,label,size);
    return(1);
+}
+
+/* ************************************************************************* */
+/* This subroutine calls the SuperLU subroutine to perform LU                */
+/* factorization of a given matrix                                           */
+/* ------------------------------------------------------------------------- */
+
+int ML_CSolve_Aggr(void *vsolver,int ilen,double *x,int olen,double *rhs)
+{
+   int            i, n, flag, N_local, offset;
+   double         *local_x, *local_rhs;
+   ML_Comm        *comm;
+   ML_Solver      *solver;
+   ML             *ml_ptr;
+
+   /* ------------------------------------------------------------- */
+   /* fetch the sparse matrix and other parameters                  */
+   /* ------------------------------------------------------------- */
+
+   if ( ilen != olen )
+   {
+      printf("ML_CSolve_Aggr ERROR : lengths not matched.\n");
+      exit(1);
+   }
+   solver = (ML_Solver *) vsolver;
+
+   ml_ptr   = (ML *) solver->void_params1;
+   comm     = (ML_Comm *) solver->void_params2;
+   N_local  = (int) solver->dble_params1[0];
+   offset   = (int) solver->dble_params1[1];
+   n        = (int) solver->dble_params1[2];
+   flag     = solver->reuse_flag;
+
+   /* ------------------------------------------------------------- */
+   /* gather from all processors the complete right hand side       */
+   /* ------------------------------------------------------------- */
+
+   ML_memory_alloc((void**) &local_rhs, n*sizeof(double),"LU1" );
+   ML_memory_alloc((void**) &local_x,   n*sizeof(double),"LU2" );
+   for ( i = 0; i < N_local; i++ ) local_rhs[i] = rhs[i];
+   i = N_local;
+   ML_Comm_GappendDouble((ML_Comm *) comm, local_rhs, &i, n);
+   for ( i = 0; i < n; i++ ) local_x[i] = 0.0;
+
+   /* ------------------------------------------------------------- */
+   /* solve                                                         */
+   /* ------------------------------------------------------------- */
+
+   ML_Solve_AMGV( ml_ptr, local_rhs, local_x );
+
+   /* ------------------------------------------------------------- */
+   /* extract the local solution sub-vector and then clean up       */
+   /* ------------------------------------------------------------- */
+
+   for ( i = 0; i < N_local; i++ ) x[i] = local_x[i+offset];
+
+   /* ------------------------------------------------------------- */
+   /* clean up                                                      */
+   /* ------------------------------------------------------------- */
+
+   ML_memory_free( (void **) &local_x );
+   ML_memory_free( (void **) &local_rhs );
+   solver->reuse_flag = 1;
+   return 0;
+}
+
+/* ************************************************************************* */
+/* destructor for Aggregation based coarse solver                            */
+/* ------------------------------------------------------------------------- */
+
+int ML_CSolve_Clean_Aggr( void *vsolver, ML_CSolveFunc *func)
+{
+   ML_Solver *solver;
+
+   solver = (ML_Solver *) vsolver;
+   if ( solver != NULL )
+   {
+      if ( solver->dble_params1 != NULL )
+         ML_memory_free( (void**) &(solver->dble_params1) );
+      solver->dble_params1 = NULL;
+      if ( solver->Mat1 != NULL )
+      {
+         ML_Matrix_DCSR_Destroy( solver->Mat1 );
+         ML_memory_free( &(solver->Mat1) );
+      }
+      solver->Mat1 = NULL;
+      if ( solver->void_params1 != NULL )
+         ML_Destroy((ML**)&(solver->void_params1));
+      solver->void_params1 = NULL;
+      ML_memory_free( (void**) &solver );
+   }
+   return 0;
 }
 
