@@ -30,59 +30,80 @@
 <a NAME="Migration Functions"></a>Migration Functions</h2>
 If requested, Zoltan can automatically transfer an application's data between
 processors to realize a new decomposition. This functionality will be
-performed as part of the call to <b><a href="ug_interface_lb.html#Zoltan_LB_Balance">Zoltan_LB_Balance</a></b>
+performed as part of the call to 
+<b><a href="ug_interface_lb.html#Zoltan_LB_Partition">Zoltan_LB_Partition</a></b>
+(or 
+<b><a href="ug_interface_lb.html#Zoltan_LB_Balance">Zoltan_LB_Balance</a></b>)
 if the <b><a href="ug_alg.html#LB Parameters">AUTO_MIGRATE</a></b>
 parameter is set to TRUE (nonzero) via a call to <b><a href="ug_interface_init.html#Zoltan_Set_Param">Zoltan_Set_Param</a></b>.
 This approach is effective for when the data to be moved is relatively
 simple. For more complicated data movement, the application can leave <b><a href="ug_alg.html#LB Parameters">AUTO_MIGRATE</a></b>
-FALSE and call <b><a href="#Zoltan_Help_Migrate">Zoltan_Help_Migrate</a></b> itself.
+FALSE and call <b><a href="#Zoltan_Migrate">Zoltan_Migrate</a></b>
+(or <b><a href="#Zoltan_Help_Migrate">Zoltan_Help_Migrate</a></b>) itself.
 In either case, <a href="ug_query_mig.html#Migration Query Functions">routines
 to pack and unpack object data</a> must be provided by the application.
 See the <a href="ug_examples_mig.html#Migration Example">Migration Examples</a>
 for examples with and without auto-migration.
 <p>The following functions are the migration interface functions. Their
 detailed descriptions can be found below.
-<blockquote><b><a href="#Zoltan_Compute_Destinations">Zoltan_Compute_Destinations</a></b>
-<br><b><a href="#Zoltan_Help_Migrate">Zoltan_Help_Migrate</a></b></blockquote>
+<blockquote>
+<b><a href="#Zoltan_Invert_Lists">Zoltan_Invert_Lists</a></b>
+<br><b><a href="#Zoltan_Migrate">Zoltan_Migrate</a></b>
+</blockquote>
+
+The following functions are maintained for backward compatibility with previous
+versions of Zoltan.  These functions are applicable
+only when the number of partitions to be generated is equal to the number of
+processors on which the partitions are computed. That is,
+these functions assume "partitions" and "processors" are synonymous. 
+<blockquote>
+<b><a href="#Zoltan_Compute_Destinations">Zoltan_Compute_Destinations</a></b>
+<br><b><a href="#Zoltan_Help_Migrate">Zoltan_Help_Migrate</a></b>
+</blockquote>
 
 <!------------------------------------------------------------------------->
 <hr WIDTH="100%">
-<a NAME="Zoltan_Compute_Destinations"></a>
+<a NAME="Zoltan_Invert_Lists"></a>
 <hr WIDTH="100%">
 <table WIDTH="100%" NOSAVE >
 <tr NOSAVE>
 <td VALIGN=TOP NOSAVE>C:</td>
 
 <td WIDTH="85%">
-int <b>Zoltan_Compute_Destinations</b>
-(struct <b>Zoltan_Struct</b> *<i>zz</i>, int <i>num_known</i>,
-<a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a> <i>known_global_ids</i>,
-<a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a> <i>known_local_ids</i>, 
-int *<i>known_procs</i>, int *<i>num_export</i>,
-<a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a>
-*<i>export_global_ids</i>,
-<a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a>
-*<i>export_local_ids</i>, int **<i>export_procs</i>);&nbsp;</td>
+int <b>Zoltan_Invert_Lists</b>
+(
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;struct <b>Zoltan_Struct</b> *<i>zz</i>, 
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int <i>num_known</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a> <i>known_global_ids</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a> <i>known_local_ids</i>, 
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int *<i>known_procs</i>, 
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int *<i>known_to_part</i>, 
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int *<i>num_found</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a> *<i>found_global_ids</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a> *<i>found_local_ids</i>, 
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int **<i>found_procs</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int **<i>found_to_part</i>);&nbsp;</td>
 </tr>
 
 <tr NOSAVE>
 <td VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</td>
 
-<td>FUNCTION <b>Zoltan_Compute_Destinations</b>(<i>zz,&nbsp; num_known, known_global_ids,
-known_local_ids, known_procs, num_found, found_global_ids, found_local_ids,
-found_procs</i>)&nbsp;
-<br>INTEGER(Zoltan_INT) :: Zoltan_Compute_Destinations&nbsp;
+<td>FUNCTION <b>Zoltan_Invert_Lists</b>(<i>zz,&nbsp; num_known, known_global_ids,
+known_local_ids, known_procs, known_to_part, num_found, found_global_ids, found_local_ids,
+found_procs, found_to_part</i>)&nbsp;
+<br>INTEGER(Zoltan_INT) :: Zoltan_Invert_Lists
 <br>TYPE(Zoltan_Struct),INTENT(IN) :: zz
 <br>INTEGER(Zoltan_INT), INTENT(IN) :: num_known
 <br>INTEGER(Zoltan_INT), INTENT(OUT) :: num_found
 <br>INTEGER(Zoltan_INT), POINTER, DIMENSION(:) :: known_global_ids, found_global_ids
 <br>INTEGER(Zoltan_INT), POINTER, DIMENSION(:) :: known_local_ids, found_local_ids
 <br>INTEGER(Zoltan_INT), POINTER, DIMENSION(:) :: known_procs, found_procs
+<br>INTEGER(Zoltan_INT), POINTER, DIMENSION(:) :: known_to_part, found_to_part
 </td>
 </tr>
 </table>
 
-<hr WIDTH="100%"><b>Zoltan_Compute_Destinations</b> computes inverse communication
+<hr WIDTH="100%"><b>Zoltan_Invert_Lists</b> computes inverse communication
 maps useful for migrating data. It can be used in two ways:
 <ul>
 <li> Given a list of known off-processor objects to be received by a processor,<br>
@@ -95,15 +116,15 @@ compute a list of off-processor objects to be received by the processor.
 </ul>
 
 For example, if each processor knows which objects it will import from other
-processors, <b>Zoltan_Compute_Destinations</b> computes the list of objects
+processors, <b>Zoltan_Invert_Lists</b> computes the list of objects
 each processor needs to export to other processors.  If, instead, each processor
 knows which objects it will export to other processors,  
-<b>Zoltan_Compute_Destinations</b> computes the list of objects each processor
+<b>Zoltan_Invert_Lists</b> computes the list of objects each processor
 will import from other processors.
 The computed lists are 
 allocated in Zoltan; they should not be allocated by the application before
-calling <b>Zoltan_Compute_Destinations</b>.  These lists can be freed through a 
-call to <b><a href="ug_interface_lb.html#Zoltan_LB_Free_Data">Zoltan_LB_Free_Data</a></b>.
+calling <b>Zoltan_Invert_Lists</b>.  These lists can be freed through a 
+call to <b><a href="ug_interface_lb.html#Zoltan_LB_Free_Part">Zoltan_LB_Free_Part</a></b>.
 <br>&nbsp;
 <table WIDTH="100%" >
 <tr>
@@ -152,6 +173,14 @@ processors that the known objects will be received from (sent to).
 </tr>
 
 <tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; known_to_part</i></td>
+
+<td>An array of size <i>num_known</i> listing the partition numbers of the
+partitions that the known objects will be assigned to.
+</td>
+</tr>
+
+<tr>
 <td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; num_found</i></td>
 
 <td>Upon return, the number of objects that must be sent to (received from) other processors.
@@ -182,6 +211,14 @@ IDs of processors that the found objects will be sent to (received from).</td>
 </tr>
 
 <tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; found_to_part</i></td>
+
+<td>An array of size <i>num_found</i> listing the partition numbers of the
+partitions that the found objects will be assigned to.
+</td>
+</tr>
+
+<tr>
 <td><b>Returned Value:</b></td>
 
 <td></td>
@@ -197,65 +234,88 @@ IDs of processors that the found objects will be sent to (received from).</td>
 <p>Note that the number of global and local ID entries (<a href="ug_param.html#NUM_GID_ENTRIES">NUM_GID_ENTRIES</a>
 and <a href="ug_param.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>) should be
 set using <a href="ug_interface_init.html#Zoltan_Set_Param">Zoltan_Set_Param</a>
-before calling <b>Zoltan_Compute_Destinations</b>. All processors must have
+before calling <b>Zoltan_Invert_Lists</b>. All processors must have
 the same values for these two parameters.
 <p>
 
 <!------------------------------------------------------------------------->
 <hr WIDTH="100%">
-<a NAME="Zoltan_Help_Migrate"></a>
+<a NAME="Zoltan_Migrate"></a>
 <hr WIDTH="100%">
 <table WIDTH="100%" NOSAVE >
 <tr NOSAVE>
 <td VALIGN=TOP NOSAVE>C:</td>
 
 <td WIDTH="85%">
-int <b>Zoltan_Help_Migrate</b> (struct <b>Zoltan_Struct</b>
-*<i>zz</i>, int <i>num_import</i>,
-<a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a> <i>import_global_ids</i>,
-<a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a> <i>import_local_ids</i>,
-int *<i>import_procs</i>, int <i>num_export</i>,
-<a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a> <i>export_global_ids</i>,
-<a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a> <i>export_local_ids</i>,
-int *<i>export_procs</i>);&nbsp;</td>
+int <b>Zoltan_Migrate</b> (
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;struct <b>Zoltan_Struct</b> *<i>zz</i>, 
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int <i>num_import</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a> <i>import_global_ids</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a> <i>import_local_ids</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int *<i>import_procs</i>, 
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int *<i>import_to_part</i>, 
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int <i>num_export</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a> <i>export_global_ids</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a> <i>export_local_ids</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int *<i>export_procs</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int *<i>export_to_part</i>);&nbsp;</td>
 </tr>
 
 <tr NOSAVE>
 <td VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</td>
 
-<td>FUNCTION <b>Zoltan_Help_Migrate</b>(<i>zz, num_import, import_global_ids,
-import_local_ids, import_procs, num_export, export_global_ids, export_local_ids,
-export_procs</i>)
-<br>INTEGER(Zoltan_INT) :: Zoltan_Help_Migrate&nbsp;
+<td>FUNCTION <b>Zoltan_Migrate</b>(<i>zz, num_import, import_global_ids,
+import_local_ids, import_procs, import_to_part,
+num_export, export_global_ids, export_local_ids,
+export_procs, export_to_part</i>)
+<br>INTEGER(Zoltan_INT) :: Zoltan_Migrate&nbsp;
 <br>TYPE(Zoltan_Struct),INTENT(IN) :: zz&nbsp;
 <br>INTEGER(Zoltan_INT), INTENT(IN) :: num_import, num_export&nbsp;
 <br>INTEGER(Zoltan_INT), POINTER, DIMENSION(:) :: import_global_ids, export_global_ids&nbsp;
 <br>INTEGER(Zoltan_INT), POINTER, DIMENSION(:) :: import_local_ids, export_local_ids&nbsp;
-<br>INTEGER(Zoltan_INT), POINTER, DIMENSION(:) :: import_procs, export_procs&nbsp;</td>
+<br>INTEGER(Zoltan_INT), POINTER, DIMENSION(:) :: import_procs, export_procs
+<br>INTEGER(Zoltan_INT), POINTER, DIMENSION(:) :: import_to_part, export_to_part
+</td>
 </tr>
 </table>
 
-<hr WIDTH="100%"><b>Zoltan_Help_Migrate</b> takes lists of objects to be sent
+<hr WIDTH="100%"><b>Zoltan_Migrate</b> takes lists of objects to be sent
 to other processors, along with the destinations of those objects, and
 performs the operations necessary to send the data associated with those
-objects to their destinations. If a migration pre-processing routine (<b><a href="ug_query_mig.html#ZOLTAN_PRE_MIGRATE_FN">ZOLTAN_PRE_MIGRATE_FN_TYPE</a></b>)
-is specified, <b>Zoltan_Help_Migrate</b> first calls that function. It then
-calls an application-registered function (<b><a href="ug_query_mig.html#ZOLTAN_OBJ_SIZE_FN">ZOLTAN_OBJ_SIZE_FN_TYPE</a></b>)
-to obtain the size of a migrating object's data. For each object, it calls
-an application-registered packing routine (<b><a href="ug_query_mig.html#ZOLTAN_PACK_OBJ_FN">ZOLTAN_PACK_OBJ_FN_TYPE</a></b>)
-to load communication buffers. It communicates the buffers to the destination
-processors. If a migration mid-processing routine (<b><a href="ug_query_mig.html#ZOLTAN_MID_MIGRATE_FN">ZOLTAN_MID_MIGRATE_FN_TYPE</a></b>)
-is registered, <b>Zoltan_Help_Migrate</b> calls it after the communication.
-Finally, for each object received, it calls an application-registered unpacking
-routine (<b><a href="ug_query_mig.html#ZOLTAN_UNPACK_OBJ_FN">ZOLTAN_UNPACK_OBJ_FN_TYPE</a></b>)
-to move the data from the received communication buffer into the new processor's
-data structures.
+objects to their destinations.  <b>Zoltan_Migrate</b> performs the following
+operations using the application-registered functions:
+<ul>
+<li>
+Call <b><a href="ug_query_mig.html#ZOLTAN_PRE_MIGRATE_PP_FN">ZOLTAN_PRE_MIGRATE_PP_FN_TYPE</a></b> (if registered)
+</li>
+<li>
+For each export object, call <b><a href="ug_query_mig.html#ZOLTAN_OBJ_SIZE_FN">ZOLTAN_OBJ_SIZE_FN_TYPE</a></b> to get object sizes.
+</li>
+<li>
+For each export object, call
+<b><a href="ug_query_mig.html#ZOLTAN_PACK_OBJ_FN">ZOLTAN_PACK_OBJ_FN_TYPE</a></b> to load communication buffers.
+</li>
+<li>
+Communicate buffers to destination processors.
+</li>
+<li>
+Call <b><a href="ug_query_mig.html#ZOLTAN_MID_MIGRATE_PP_FN">ZOLTAN_MID_MIGRATE_PP_FN_TYPE</a></b> (if registered).
+</li>
+<li>
+For each imported object, call
+<b><a href="ug_query_mig.html#ZOLTAN_UNPACK_OBJ_FN">ZOLTAN_UNPACK_OBJ_FN_TYPE</a></b> to move data from the buffer into the new processor's data structures.
+</li>
+<li>
+Call <b><a href="ug_query_mig.html#ZOLTAN_POST_MIGRATE_PP_FN">ZOLTAN_POST_MIGRATE_PP_FN_TYPE</a></b> (if registered).
+</li>
+</ul>
 <p>
-Input arguments <i>num_import</i>, <i>import_global_ids</i>, <i>import_local_ids</i>, and <i>import_procs</i> are optional.  They must be specified only if
+Non-NULL values for input arguments <i>import_global_ids</i>, <i>import_local_ids</i>, <i>import_procs</i>, and <i>import_to_part</i> are optional.  
+The values must be non-NULL only if
 they are used by the application callback functions 
-<a href="ug_query_mig.html#ZOLTAN_PRE_MIGRATE_FN"><b>ZOLTAN_PRE_MIGRATE_FN</b></a>,
-<a href="ug_query_mig.html#ZOLTAN_MID_MIGRATE_FN"><b>ZOLTAN_MID_MIGRATE_FN</b></a>, and 
-<a href="ug_query_mig.html#ZOLTAN_POST_MIGRATE_FN"><b>ZOLTAN_POST_MIGRATE_FN</b></a>.
+<a href="ug_query_mig.html#ZOLTAN_PRE_MIGRATE_PP_FN"><b>ZOLTAN_PRE_MIGRATE_PP_FN</b></a>,
+<a href="ug_query_mig.html#ZOLTAN_MID_MIGRATE_PP_FN"><b>ZOLTAN_MID_MIGRATE_PP_FN</b></a>, and 
+<a href="ug_query_mig.html#ZOLTAN_POST_MIGRATE_PP_FN"><b>ZOLTAN_POST_MIGRATE_PP_FN</b></a>.
 If all processors pass NULL arguments for the import arrays, the value of <i>num_import</i> should be -1.
 <br>&nbsp;
 <table WIDTH="100%" >
@@ -290,9 +350,9 @@ processor that are stored on other processors.
 <br>All processors may pass <i>import_global_ids</i>=NULL if 
 <i>import_global_ids</i> is not
 needed by callback functions
-<a href="ug_query_mig.html#ZOLTAN_PRE_MIGRATE_FN"><b>ZOLTAN_PRE_MIGRATE_FN</b></a>,
-<a href="ug_query_mig.html#ZOLTAN_MID_MIGRATE_FN"><b>ZOLTAN_MID_MIGRATE_FN</b></a>, and 
-<a href="ug_query_mig.html#ZOLTAN_POST_MIGRATE_FN"><b>ZOLTAN_POST_MIGRATE_FN</b></a>.
+<a href="ug_query_mig.html#ZOLTAN_PRE_MIGRATE_PP_FN"><b>ZOLTAN_PRE_MIGRATE_PP_FN</b></a>,
+<a href="ug_query_mig.html#ZOLTAN_MID_MIGRATE_PP_FN"><b>ZOLTAN_MID_MIGRATE_PP_FN</b></a>, and 
+<a href="ug_query_mig.html#ZOLTAN_POST_MIGRATE_PP_FN"><b>ZOLTAN_POST_MIGRATE_PP_FN</b></a>.
 </td>
 </tr>
 
@@ -305,11 +365,11 @@ that are stored on other processors.
 <br>All processors may pass <i>import_local_ids</i>=NULL if 
 <i>import_local_ids</i> is not
 needed by callback functions
-<a href="ug_query_mig.html#ZOLTAN_PRE_MIGRATE_FN"><b>ZOLTAN_PRE_MIGRATE_FN</b></
+<a href="ug_query_mig.html#ZOLTAN_PRE_MIGRATE_PP_FN"><b>ZOLTAN_PRE_MIGRATE_PP_FN</b></
 a>,
-<a href="ug_query_mig.html#ZOLTAN_MID_MIGRATE_FN"><b>ZOLTAN_MID_MIGRATE_FN</b></
+<a href="ug_query_mig.html#ZOLTAN_MID_MIGRATE_PP_FN"><b>ZOLTAN_MID_MIGRATE_PP_FN</b></
 a>, and 
-<a href="ug_query_mig.html#ZOLTAN_POST_MIGRATE_FN"><b>ZOLTAN_POST_MIGRATE_FN</b>
+<a href="ug_query_mig.html#ZOLTAN_POST_MIGRATE_PP_FN"><b>ZOLTAN_POST_MIGRATE_PP_FN</b>
 </a>.
 </td>
 </tr>
@@ -323,11 +383,28 @@ processors).
 <br>All processors may pass <i>import_procs</i>=NULL if 
 <i>import_procs</i> is not
 needed by callback functions
-<a href="ug_query_mig.html#ZOLTAN_PRE_MIGRATE_FN"><b>ZOLTAN_PRE_MIGRATE_FN</b></
+<a href="ug_query_mig.html#ZOLTAN_PRE_MIGRATE_PP_FN"><b>ZOLTAN_PRE_MIGRATE_PP_FN</b></
 a>,
-<a href="ug_query_mig.html#ZOLTAN_MID_MIGRATE_FN"><b>ZOLTAN_MID_MIGRATE_FN</b></
+<a href="ug_query_mig.html#ZOLTAN_MID_MIGRATE_PP_FN"><b>ZOLTAN_MID_MIGRATE_PP_FN</b></
 a>, and 
-<a href="ug_query_mig.html#ZOLTAN_POST_MIGRATE_FN"><b>ZOLTAN_POST_MIGRATE_FN</b>
+<a href="ug_query_mig.html#ZOLTAN_POST_MIGRATE_PP_FN"><b>ZOLTAN_POST_MIGRATE_PP_FN</b>
+</a>.
+</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; import_to_part</i></td>
+
+<td>An array of size <i>num_import</i> listing the partitions to which
+imported objects should be assigned.
+<br>All processors may pass <i>import_to_part</i>=NULL if 
+<i>import_to_part</i> is not
+needed by callback functions
+<a href="ug_query_mig.html#ZOLTAN_PRE_MIGRATE_PP_FN"><b>ZOLTAN_PRE_MIGRATE_PP_FN</b></
+a>,
+<a href="ug_query_mig.html#ZOLTAN_MID_MIGRATE_PP_FN"><b>ZOLTAN_MID_MIGRATE_PP_FN</b></
+a>, and 
+<a href="ug_query_mig.html#ZOLTAN_POST_MIGRATE_PP_FN"><b>ZOLTAN_POST_MIGRATE_PP_FN</b>
 </a>.
 </td>
 </tr>
@@ -361,6 +438,198 @@ this processor.
 
 <td>An array of size <i>num_export</i> listing the processor IDs of processors
 that need the sent objects (i.e., the destination processors).</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; export_to_part</i></td>
+
+<td>An array of size <i>num_export</i> listing the partitions to which
+exported objects should be assigned. 
+</td>
+</tr>
+<tr>
+<td><b>Returned Value:</b></td>
+
+<td></td>
+</tr>
+
+<tr>
+<td VALIGN=TOP>&nbsp;&nbsp;&nbsp; int</td>
+
+<td><a href="ug_interface.html#Error Codes">Error code</a>.</td>
+</tr>
+</table>
+
+<p>Note that the number of global and local ID entries (<a href="ug_param.html#NUM_GID_ENTRIES">NUM_GID_ENTRIES</a>
+and <a href="ug_param.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>) should be
+set using <a href="ug_interface_init.html#Zoltan_Set_Param">Zoltan_Set_Param</a>
+before calling <b>Zoltan_Migrate</b>. All processors must have the same
+values for these two parameters.
+<br>
+ 
+<!------------------------------------------------------------------------->
+<hr WIDTH="100%">
+<a NAME="Zoltan_Compute_Destinations"></a>
+<hr WIDTH="100%">
+<table WIDTH="100%" NOSAVE >
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>C:</td>
+
+<td WIDTH="85%">
+int <b>Zoltan_Compute_Destinations</b>
+(
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;struct <b>Zoltan_Struct</b> *<i>zz</i>, 
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int <i>num_known</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a> <i>known_global_ids</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a> <i>known_local_ids</i>, 
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int *<i>known_procs</i>, 
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int *<i>num_found</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a> *<i>found_global_ids</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a> *<i>found_local_ids</i>, 
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int **<i>found_procs</i>);&nbsp;</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</td>
+
+<td>FUNCTION <b>Zoltan_Compute_Destinations</b>(<i>zz,&nbsp; num_known, known_global_ids,
+known_local_ids, known_procs, num_found, found_global_ids, found_local_ids,
+found_procs</i>)&nbsp;
+<br>INTEGER(Zoltan_INT) :: Zoltan_Compute_Destinations&nbsp;
+<br>TYPE(Zoltan_Struct),INTENT(IN) :: zz
+<br>INTEGER(Zoltan_INT), INTENT(IN) :: num_known
+<br>INTEGER(Zoltan_INT), INTENT(OUT) :: num_found
+<br>INTEGER(Zoltan_INT), POINTER, DIMENSION(:) :: known_global_ids, found_global_ids
+<br>INTEGER(Zoltan_INT), POINTER, DIMENSION(:) :: known_local_ids, found_local_ids
+<br>INTEGER(Zoltan_INT), POINTER, DIMENSION(:) :: known_procs, found_procs
+</td>
+</tr>
+</table>
+
+<hr WIDTH="100%"><b>Zoltan_Compute_Destinations</b> is a wrapper around 
+<a href="#Zoltan_Invert_Lists"><b>Zoltan_Invert_Lists</b></a> that excludes
+partition assignment arrays.  It is maintained for backward compatibility with 
+previous versions of Zoltan.  
+<p>
+<b>Zoltan_Compute_Destinations</b> assumes the 
+number of partitions is equal to the number of processors.
+The computed lists are 
+allocated in Zoltan; they should not be allocated by the application before
+calling <b>Zoltan_Compute_Destinations</b>.  These lists can be freed through a 
+call to <b><a href="ug_interface_lb.html#Zoltan_LB_Free_Data">Zoltan_LB_Free_Data</a></b> or
+<b><a href="ug_interface_lb.html#Zoltan_LB_Free_Part">Zoltan_LB_Free_Part</a></b>.
+<br>&nbsp;
+<table WIDTH="100%" >
+<tr>
+<td VALIGN=TOP WIDTH="20%"><b>Arguments:</b></td>
+
+<td WIDTH="80%"></td>
+</tr>
+
+<tr>
+<td VALIGN=TOP></td>
+
+<td>
+All arguments are analogous to those in 
+<a href="#Zoltan_Invert_Lists"><b>Zoltan_Invert_Lists</b></a>. 
+Partition-assignment arrays <i>known_to_part</i> and <i>found_to_part</i> are
+not included, as partition and processor numbers are assumed to be the same in
+<b>Zoltan_Compute_Destinations</b>.
+</td>
+</tr>
+
+<tr>
+<td><b>Returned Value:</b></td>
+
+<td></td>
+</tr>
+
+<tr>
+<td VALIGN=TOP>&nbsp;&nbsp;&nbsp; int</td>
+
+<td><a href="ug_interface.html#Error Codes">Error code</a>.</td>
+</tr>
+</table>
+
+<p>Note that the number of global and local ID entries (<a href="ug_param.html#NUM_GID_ENTRIES">NUM_GID_ENTRIES</a>
+and <a href="ug_param.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>) should be
+set using <a href="ug_interface_init.html#Zoltan_Set_Param">Zoltan_Set_Param</a>
+before calling <b>Zoltan_Compute_Destinations</b>. All processors must have
+the same values for these two parameters.
+<p>
+
+<!------------------------------------------------------------------------->
+<hr WIDTH="100%">
+<a NAME="Zoltan_Help_Migrate"></a>
+<hr WIDTH="100%">
+<table WIDTH="100%" NOSAVE >
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>C:</td>
+
+<td WIDTH="85%">
+int <b>Zoltan_Help_Migrate</b> (
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;struct <b>Zoltan_Struct</b> *<i>zz</i>, 
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int <i>num_import</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a> <i>import_global_ids</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a> <i>import_local_ids</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int *<i>import_procs</i>, 
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int <i>num_export</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a> <i>export_global_ids</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a> <i>export_local_ids</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int *<i>export_procs</i>);&nbsp;</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</td>
+
+<td>FUNCTION <b>Zoltan_Help_Migrate</b>(<i>zz, num_import, import_global_ids,
+import_local_ids, import_procs, num_export, export_global_ids, export_local_ids,
+export_procs</i>)
+<br>INTEGER(Zoltan_INT) :: Zoltan_Help_Migrate&nbsp;
+<br>TYPE(Zoltan_Struct),INTENT(IN) :: zz&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(IN) :: num_import, num_export&nbsp;
+<br>INTEGER(Zoltan_INT), POINTER, DIMENSION(:) :: import_global_ids, export_global_ids&nbsp;
+<br>INTEGER(Zoltan_INT), POINTER, DIMENSION(:) :: import_local_ids, export_local_ids&nbsp;
+<br>INTEGER(Zoltan_INT), POINTER, DIMENSION(:) :: import_procs, export_procs&nbsp;</td>
+</tr>
+</table>
+
+<hr WIDTH="100%"><b>Zoltan_Help_Migrate</b> 
+is a wrapper around <a href="#Zoltan_Migrate"><b>Zoltan_Migrate</b></a>
+that excludes partition assignment arrays.  It is maintained for backward
+compatibility with previous versions of Zoltan.
+<p>
+<b>Zoltan_Help_Migrate</b> assumes the number of partitions is equal to the
+number of processors.  It uses migration pre-, mid-, and post-processing 
+routines 
+<b><a href="ug_query_mig.html#ZOLTAN_PRE_MIGRATE_FN">ZOLTAN_PRE_MIGRATE_FN_TYPE</a></b>,
+<b><a href="ug_query_mig.html#ZOLTAN_MID_MIGRATE_FN">ZOLTAN_MID_MIGRATE_FN_TYPE</a></b>, and 
+<b><a href="ug_query_mig.html#ZOLTAN_POST_MIGRATE_FN">ZOLTAN_POST_MIGRATE_FN_TYPE</a></b>, respectively, which also exclude partition assignment arrays.
+<p>
+Non-NULL values for input arguments <i>import_global_ids</i>, <i>import_local_ids</i>, and <i>import_procs</i> are optional.  These variables
+must be non-NULL only if
+they are used by the application callback functions 
+<a href="ug_query_mig.html#ZOLTAN_PRE_MIGRATE_FN"><b>ZOLTAN_PRE_MIGRATE_FN</b></a>,
+<a href="ug_query_mig.html#ZOLTAN_MID_MIGRATE_FN"><b>ZOLTAN_MID_MIGRATE_FN</b></a>, and 
+<a href="ug_query_mig.html#ZOLTAN_POST_MIGRATE_FN"><b>ZOLTAN_POST_MIGRATE_FN</b></a>.
+If all processors pass NULL arguments for the import arrays, the value of <i>num_import</i> should be -1.
+<br>&nbsp;
+<table WIDTH="100%" >
+<tr>
+<td VALIGN=TOP WIDTH="20%"><b>Arguments:</b></td>
+<td WIDTH="80%"></td>
+</tr>
+
+<tr>
+<td VALIGN=TOP></td>
+
+<td>
+All arguments are analogous to those in 
+<a href="#Zoltan_Migrate"><b>Zoltan_Migrate</b></a>. 
+Partition-assignment arrays <i>import_to_part</i> and <i>export_to_part</i> are
+not included, as partition and processor numbers are assumed to be the same in
+<b>Zoltan_Help_Migrate</b>.
+</td>
 </tr>
 
 <tr>
