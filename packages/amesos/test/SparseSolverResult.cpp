@@ -31,6 +31,8 @@ void SparseSolverResult::PrintSummary(ostream & os) const {
 #endif
   if ( first_time != UnUsedDbl ) 
     os << setw(10) << setprecision(4) << first_time  ; 
+  else
+    os << "        na " ; 
   if ( middle_time != UnUsedDbl ) 
     os << setw(10) << setprecision(4) << last_time - middle_time ; 
   else

@@ -166,7 +166,7 @@ main(int argc, char **argv)
 #ifdef HAVE_TIME_H
     time_t now = time( NULL ) ; 
     tm *localnow = localtime( &now ) ; 
-    (void) strftime( timebuffer, MAXNAMELENGTH, "20%g%b%d@%H:%M", localnow ) ;
+    (void) strftime( timebuffer, MAXNAMELENGTH, "20%g%b%d@%H:%M:%S", localnow ) ;
 #else
     strcpy( timebuffer, "unknown date" ) ; 
 #endif

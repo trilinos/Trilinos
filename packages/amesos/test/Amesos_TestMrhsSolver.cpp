@@ -400,6 +400,7 @@ int Amesos_TestMrhsSolver( Epetra_Comm &Comm, char *matrix_file, int numsolves,
       EPETRA_CHK_ERR( superludist.SetUseTranspose( transpose ) ); 
       EPETRA_CHK_ERR( superludist.SymbolicFactorization(  ) ); 
       EPETRA_CHK_ERR( superludist.NumericFactorization(  ) ); 
+      SparseDirectTimingVars::SS_Result.Set_First_Time( TotalTime.ElapsedTime() ); 
 
       bool factor = true; 
       for ( int i= 0 ; i < numsolves ; i++ ) { 
@@ -410,15 +411,10 @@ int Amesos_TestMrhsSolver( Epetra_Comm &Comm, char *matrix_file, int numsolves,
 	Problem.SetRHS( dynamic_cast<Epetra_MultiVector *>(passb_i) );
 	EPETRA_CHK_ERR( superludist.Solve( ) ); 
 	factor = false; 
-	if ( i == 0 ) 
-	  SparseDirectTimingVars::SS_Result.Set_First_Time( TotalTime.ElapsedTime() ); 
-	else { 
-	  if ( i < numsolves-1 ) 
-	    SparseDirectTimingVars::SS_Result.Set_Middle_Time( TotalTime.ElapsedTime() ); 
-	  else
-	    SparseDirectTimingVars::SS_Result.Set_Last_Time( TotalTime.ElapsedTime() ); 
-	}
-
+	if ( i < numsolves-1 ) 
+	  SparseDirectTimingVars::SS_Result.Set_Middle_Time( TotalTime.ElapsedTime() ); 
+	else
+	  SparseDirectTimingVars::SS_Result.Set_Last_Time( TotalTime.ElapsedTime() ); 
       }
 #endif
 #ifdef TEST_SPOOLES

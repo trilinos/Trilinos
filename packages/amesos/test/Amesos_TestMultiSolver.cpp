@@ -363,12 +363,6 @@ int Amesos_TestMultiSolver( Epetra_Comm &Comm, char *matrix_file, int numsolves,
     passx->Norm2( &xnorm[0] ) ; 
     SparseDirectTimingVars::SS_Result.Set_Xnorm(xnorm[0]) ;
 
-#if 0
-    if ( iam == 0 )     cout << " Here is B: " << endl; 
-    passb->Print( cout ) ;
-    Comm.Barrier(); 
-    if ( iam == 0 )    cout << endl <<" That was B " << endl ; 
-#endif
 
     if ( false && iam == 0 ) { 
 
