@@ -48,7 +48,7 @@ jdkotul@sandia.gov
 #include "BLAS_prototypes.h"
 double  timing(double secs, int type);
 #include "xlu_solve.h"
-#include <mpi.h>
+#include "mpi.h"
 #include "vars.h"
 #include "macros.h"
 #include "block.h"
@@ -93,9 +93,12 @@ void XLU_SOLVE_ (DATA_TYPE *matrix, int *matrix_size, int *num_procsr,
 
     myrow = mesh_row(me);
     mycol = mesh_col(me);
- 
+
+
     MPI_Comm_split(MPI_COMM_WORLD,myrow,mycol,&row_comm);
+
     MPI_Comm_split(MPI_COMM_WORLD,mycol,myrow,&col_comm);
+
   /* Distribution for the matrix on me */
 
   my_first_col = mesh_col(me);
