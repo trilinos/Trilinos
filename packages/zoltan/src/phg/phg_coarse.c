@@ -70,7 +70,7 @@ int Zoltan_PHG_Coarsening
   count = 0;                      /* number of messages to communicate */
   for (i = 0; i < hg->nVtx; i++)  {    /* loop over every local vertice */
     if (match[i] < 0)  {               /* external processor match */
-      int gx, proc;
+      int gx=-match[i]-1, proc;
       
       /* rule to determine "ownership" of coarsened vertices across procs */
       proc = ((gx + VTX_LNO_TO_GNO (hg,i)) & 1) ? MIN(gx, me) : MAX(gx, me);
@@ -200,6 +200,7 @@ int Zoltan_PHG_Coarsening
     
   ZOLTAN_FREE ((void**) &used_edges);
   
+  /* Update the dist_x array after coarsening: allocate and fill */
   if (!(c_hg->dist_x = (int*)ZOLTAN_MALLOC ((hgc->nProc_x+1) * sizeof(int)))) {
       ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
       ZOLTAN_TRACE_EXIT (zz, yo);
