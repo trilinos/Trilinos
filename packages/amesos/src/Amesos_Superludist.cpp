@@ -581,8 +581,11 @@ int Amesos_Superludist::Factor( ) {
 #else
     set_default_options_dist(&options_);
 #endif
-    if( PrintNonzeros_ == true ) options_.PrintStat = YES;
-    else                         options_.PrintStat = NO;
+
+    //
+    //  superlu_ddefs.h defines YES as 1 but also includes it in the enum yes_no_t
+    //
+#undef YES
 
     int numcols = RowMatrixA_->NumGlobalCols() ; 
     if( NumRows_ != numcols ) EPETRA_CHK_ERR(-3) ; 
