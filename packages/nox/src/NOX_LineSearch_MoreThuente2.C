@@ -148,11 +148,11 @@ int NOX::LineSearch::MoreThuente2::cvsrch(Abstract::Group& newgrp, double& stp,
   // Compute the initial gradient in the search direction and check
   // that s is a descent direction.
   double dginit = 0.0;
-  if (useOptimizedSlopeCalc)
-    dginit = slope.computeSlopeWithOutJac(dir, oldgrp);
+  if (userDefinedMeritFunction)
+    dginit = meritFuncPtr->computeSlope(dir, oldgrp);
   else {
-    if (userDefinedMeritFunction)
-      dginit = meritFuncPtr->computeSlope(dir, oldgrp);
+    if (useOptimizedSlopeCalc)
+      dginit = slope.computeSlopeWithOutJac(dir, oldgrp);
     else
       dginit = slope.computeSlope(dir, oldgrp);
   }
@@ -198,15 +198,12 @@ int NOX::LineSearch::MoreThuente2::cvsrch(Abstract::Group& newgrp, double& stp,
   double fy = finit;
   double dgy = dginit;
 
-  // Get the linear solve tolerance if doing AredPred for sufficient
-  // decrease condition.
+  // Get the linear solve tolerance for adjustable forcing term
   const NOX::Parameter::List& p = s.getParameterList();
   double eta_original = 0.0;
   double eta = 0.0;
-  if (suffDecrCond == AredPred) {
-    eta_original = p.sublist("Direction").sublist("Newton").sublist("Linear Solver").getParameter("Tolerance", -1.0);
-    eta = eta_original;
-  }
+  eta_original = p.sublist("Direction").sublist("Newton").sublist("Linear Solver").getParameter("Tolerance", -1.0);
+  eta = eta_original;
   
 
   // Start of iteration.
@@ -368,11 +365,9 @@ int NOX::LineSearch::MoreThuente2::cvsrch(Abstract::Group& newgrp, double& stp,
       
       print.printStep(nfev, stp, finit, f, message);
 
-      // Set the adjusted tolerance if using AredPred sufficient decr criteria
-      if (suffDecrCond == AredPred) {
-	eta = 1.0 - stp * (1.0 - eta_original);
-	paramsPtr->setParameter("Adjusted Tolerance", eta);
-      }
+      // Set the adjusted tolerance
+      eta = 1.0 - stp * (1.0 - eta_original);
+      paramsPtr->setParameter("Adjusted Tolerance", eta);
 
       // Returning the line search flag
       return info;
@@ -447,15 +442,6 @@ int NOX::LineSearch::MoreThuente2::cvsrch(Abstract::Group& newgrp, double& stp,
 
   } // while-loop
 
-
-  // For directions that require an iterative linear solve:
-  // If we are not using a constant tolerance in the linear solver 
-  // (i.e. we are using Homer Walker's "Type 1" or "Type 2" criteria) 
-  // then we must adjust the old tolerance to be used in the next 
-  // computation of eta in the direction object based on these 
-  // linesearch results
-  //paramsPtr->setParameter("Adjusted Tolerance", eta);
-  
 }
 
 
