@@ -284,8 +284,8 @@ dnl else
 dnl AC_MSG_RESULT($XTRALDADD)
 dnl fi
 
-AC_HELP_STRING([TRILINOS_TEMPLATE_OBJS], 
-[template object file location - often needed on DEC - try 'cxx_repository/*.o'])
+#AC_HELP_STRING([TRILINOS_TEMPLATE_OBJS], 
+#[template object file location - often needed on DEC - try 'cxx_repository/*.o'])
 AC_MSG_CHECKING([for template-specific object files to be linked])
 if test "X$TRILINOS_TEMPLATE_OBJS" = "X"; then
  AC_MSG_RESULT(none)
