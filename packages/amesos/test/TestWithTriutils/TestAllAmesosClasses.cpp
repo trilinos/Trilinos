@@ -160,11 +160,12 @@ int main(int argc, char *argv[]) {
   if( CLP.Has("-problem_size") == false ) CLP.Add("-problem_size", "900" ); 
 
   // disable tests from CLP
-  if( CLP.Has("-disable_klu")         == true ) TestKLU       = false;
-  if( CLP.Has("-disable_superlu")     == true ) TestUMFPACK   = false;
-  if( CLP.Has("-disable_superludist") == true ) TestSuperLU   = false;
-  if( CLP.Has("-disable_mumps" )      == true ) TestMUMPS     = false;
-  if( CLP.Has("-disable_scalapack" )  == true ) TestScaLAPACK = false;
+  if( CLP.Has("-disable-klu")         == true ) TestKLU         = false;
+  if( CLP.Has("-disable-umfpack")     == true ) TestUMFPACK     = false;
+  if( CLP.Has("-disable-superlu")     == true ) TestSuperLU     = false;
+  if( CLP.Has("-disable-superludist") == true ) TestSuperLUdist = false;
+  if( CLP.Has("-disable-mumps" )      == true ) TestMUMPS       = false;
+  if( CLP.Has("-disable-scalapack" )  == true ) TestScaLAPACK   = false;
 
   Gallery.Set(CLP);
   Epetra_LinearProblem * Problem = Gallery.GetLinearProblem();
