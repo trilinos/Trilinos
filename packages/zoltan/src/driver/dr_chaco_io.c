@@ -148,11 +148,12 @@ int read_chaco_mesh(int Proc,
   mesh->num_dims = ndim;
   mesh->num_el_blks = 1;
 
-  mesh->eb_ids = (int *) malloc (4 * mesh->num_el_blks * sizeof(int));
-  if (!mesh->eb_ids) {
+  mesh->eb_etypes = (int *) malloc (5 * mesh->num_el_blks * sizeof(int));
+  if (!mesh->eb_etypes) {
     Gen_Error(0, "fatal: insufficient memory");
     return 0;
   }
+  mesh->eb_ids = mesh->eb_etypes + mesh->num_el_blks;
   mesh->eb_cnts = mesh->eb_ids + mesh->num_el_blks;
   mesh->eb_nnodes = mesh->eb_cnts + mesh->num_el_blks;
   mesh->eb_nattrs = mesh->eb_nnodes + mesh->num_el_blks;
@@ -163,6 +164,7 @@ int read_chaco_mesh(int Proc,
     return 0;
   }
 
+  mesh->eb_etypes[0] = -1;
   mesh->eb_ids[0] = 1;
   mesh->eb_cnts[0] = nvtxs;
   /*

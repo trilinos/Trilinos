@@ -32,6 +32,7 @@
  *    get_side_id()
  *    ss_to_node_list()
  *    get_ss_mirror()
+ *    get_elem_name()
  *+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
 
 /*****************************************************************************/
@@ -1618,3 +1619,47 @@ int get_ss_mirror(const E_Type etype, const int *ss_node_list, int side_num,
 
 } /*-------------------------Ed get_ss_mirror()---------------------------*/
 
+/*****************************************************************************/
+/*****************************************************************************/
+/*****************************************************************************/
+
+char *get_elem_name(int itype) {
+/* Function to return the name of an element given its type.
+ * Inverse of get_elem_type().
+ */
+E_Type etype = (E_Type) itype;
+
+  switch (etype) {
+  case SPHERE:
+    return("SPHERE");
+  case BAR1:
+  case BAR2:
+    return("BAR");
+  case QUAD1:
+  case S_QUAD2:
+  case QUAD2:
+    return("QUAD");
+  case HEX1:
+  case HEXSHELL:
+  case S_HEX2:
+  case HEX2:
+    return("HEX");
+  case TRI1:
+  case TSHELL1:
+  case TRI2:
+  case TSHELL2:
+    return("TRI");
+  case TET1:
+  case TET2:
+    return("TET");
+  case SHELL1:
+  case SHELL2:
+    return("SHELL");
+  case WEDGE1:
+  case WEDGE2:
+    return("WEDGE");
+  default:
+    Gen_Error(0, "fatal: unknown element type read");
+    return("NULL");
+  }
+}

@@ -169,11 +169,14 @@ void LB_Destroy(LB **lb)
  *
  */
 
-  LB_Free_Structure(*lb);
+  if (*lb != NULL) {
 
-  LB_Free_Params(&((*lb)->Params));
+    LB_Free_Structure(*lb);
 
-  MPI_Comm_free(&((*lb)->Communicator));
+    LB_Free_Params(&((*lb)->Params));
 
-  LB_FREE(lb);
+    MPI_Comm_free(&((*lb)->Communicator));
+
+    LB_FREE(lb);
+  }
 }

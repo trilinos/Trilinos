@@ -55,7 +55,7 @@ it is assumed that a partitioning already exists. The problem is to find
 a good partitioning that is also "similar" in some sense to the existing
 partitioning. This keeps the migration cost low. All the problems described
 above are NP-hard so no efficient exact algorithm is known. We remark that
-in Zoltan, the number of partitions is always the same as the number of
+in Zoltan 1.*, the number of partitions is always the same as the number of
 MPI processes (which is normally equal to the number of processors).
 <p>We give only a brief summary of the various ParMETIS methods here; for
 more details see the <a href="http://www-users.cs.umn.edu/~karypis/metis/parmetis/">ParMETIS</a>
@@ -80,7 +80,13 @@ you wish to update incrementally. These methods are well suited&nbsp; for
 dynamic load balancing (for example,&nbsp; adaptive mesh refinement). A
 reasonable strategy is to call PartKway once to obtain a good initial balance
 and&nbsp; later update this balance using one of the Repart* methods.
-<p>This interface is currently compatible with ParMETIS version 2.0.&nbsp;
+
+<p>The graph given to Zoltan/ParMETIS must be symmetric.
+Any self edges (loops) will be ignored. Multiple edges between
+a pair of vertices is not allowed. All weights must
+be non-negative. The graph does not have to be connected.
+
+<p>Zoltan is currently compatible with ParMETIS version 2.0.&nbsp;
 There is no guarantee that Zoltan will work correctly if you have a different
 version of ParMETIS on your computer. Source and documentation for ParMETIS
 can be obtained from the <a href="http://www-users.cs.umn.edu/~karypis/metis/parmetis/">ParMETIS
@@ -90,12 +96,14 @@ is a completely separate library. If you do not wish to install ParMETIS,
 it is possible to compile Zoltan without any references to ParMETIS&nbsp;
 (when you 'make' Zoltan, comment out the PARMETIS_LIBPATH variable in the
 configuration file <i><a href="ug_usage.html#Building the Library">Utilities/Config/Config.&lt;platform></a></i>).
+
 <p>The current version of Zoltan ignores the imbalance tolerance parameter
 IMBALANCE_TOL when ParMETIS is used, as ParMETIS 2.0 fixes the corresponding
 imbalance parameter at 1.05. We expect that future versions of ParMETIS
 will allow the user to select the tolerance for load imbalance. When this
 feature becomes available in ParMETIS, it will also be supported through
 IMBALANCE_TOL in Zoltan.
+
 <br>&nbsp;
 <table WIDTH="100%" NOSAVE >
 <tr>

@@ -147,9 +147,9 @@ of page</a> for a list of valid values.</td>
 <br>/* code segment 2&nbsp; */
 <br>t2 = LB_Time(lb->Timer);
 <br>/* Print timing results */
-<br>LB_Print_Stats(lb, t1-t0, "Time for part 1:");
-<br>LB_Print_Stats(lb, t2-t1, "Time for part 2:");
-<br>LB_Print_Stats(lb, t2-t0, "Total time :");</ul>
+<br>LB_Print_Stats(lb->Communicator, lb->Debug_Proc, t1-t0, "Time for part 1:");
+<br>LB_Print_Stats(lb->Communicator, lb->Debug_Proc, t2-t1, "Time for part 2:");
+<br>LB_Print_Stats(lb->Communicator, lb->Debug_Proc, t2-t0, "Total time :");</ul>
 </tt>
 
 <hr WIDTH="100%">

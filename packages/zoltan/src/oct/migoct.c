@@ -20,16 +20,17 @@ static int LB_Update_Connections(LB *lb, pOctant *octs, int *newpids, pOctant *n
 static int LB_Final_Migration(LB *lb, pOctant *octs, int *newpids, pOctant *newocts, int nocts, int nrecocts);
 static int LB_Update_Map(LB *lb);
 
+/* Use high tag numbers. The MPI standard says all tags should be
+   <= 32767. Note that tags 32766-32767 are used elsewhere. */
 #define MigOctCommCreate 32760
 #define MigOctCommDo 32761
 #define MigOctCommReverse 32762
 #define MigUpdCommCreate 32763
 #define MigUpdCommDo 32764
 #define MigFinCommCreate 32765
-#define MigFinCommDo 32766
-#define RootListCommCreate 32767
-#define RootListCommDo  32768
-
+#define MigFinCommDo 32759
+#define RootListCommCreate 32758
+#define RootListCommDo  32757
 
 typedef struct
 {

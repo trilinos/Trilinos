@@ -116,7 +116,7 @@ int comm[3],gcomm[3];
    * processors to have different values for these numbers.
    */
   comm[0] = lb->Num_GID;
-  comm[1] = lb->Num_GID;
+  comm[1] = lb->Num_LID;
   comm[2] = lb->Return_Lists;
   MPI_Allreduce(comm, gcomm, 3, MPI_INT, MPI_MAX, lb->Communicator);
   lb->Num_GID = *num_gid_entries = gcomm[0];

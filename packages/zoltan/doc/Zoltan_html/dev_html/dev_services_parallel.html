@@ -126,13 +126,13 @@ line is printed; no line is printed otherwise.</TD>
 </TR>
 </TABLE>
 <hr>
-<HR WIDTH="100%"><A NAME="LB_Print_Stats"></A>void <B>LB_Print_Stats</B>(struct
-LB_Struct *lb, double x, char *msg);
+<HR WIDTH="100%"><A NAME="LB_Print_Stats"></A>void <B>LB_Print_Stats</B>(MPI_Comm <i>comm</i>, int <i>debug_proc</i>,
+double <i>x</i>, char <i>*msg</i>);
 <BR>
 <HR WIDTH="100%">
 <BR>LB_Print_Stats is a very simple routine that computes the maximum and
 sum of the variable <I>x</I> over all processors associated with the load-balancing
-structure <I>lb</I>. It also computes and prints&nbsp; the&nbsp; imbalance
+structure <I>lb</I>. It also computes and prints the imbalance
 of <I>x</I>, that is, the maximum value divided by the average minus one.
 If <I>x </I>has the same value on all processors, the imbalance is zero.
 <p>
@@ -142,11 +142,18 @@ If <I>x </I>has the same value on all processors, the imbalance is zero.
 <td WIDTH="80%"></td>
 </tr>
 <TR>
-<TD>&nbsp;&nbsp;&nbsp; <I>lb&nbsp;</I></TD>
+<TD>&nbsp;&nbsp;&nbsp; <I>comm&nbsp;</I></TD>
 
-<TD>The load-balancing data structure used in the invocation of the load-balancing
-routines.</TD>
+<TD>The MPI Communicator to be used in maximum and sum operations.
+</TD>
 </TR>
+<TR>
+<TD>&nbsp;&nbsp;&nbsp; <I>debug_proc&nbsp;</I></TD>
+
+<TD>The processor from which output should be printed.
+</TD>
+</TR>
+
 
 <TR>
 <TD>&nbsp;&nbsp;&nbsp; <I>x</I></TD>

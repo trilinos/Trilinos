@@ -81,6 +81,7 @@ struct Mesh_Description
   int     num_node_sets;	/* number of node sets in the mesh           */
   int     num_side_sets;	/* number of side sets in the mesh           */
   char  **eb_names;		/* element block element names               */
+  int    *eb_etypes;            /* element block element types               */
   int    *eb_ids;		/* element block ids                         */
   int    *eb_cnts;		/* number of elements in each element block  */
   int    *eb_nnodes;		/* number of nodes per element in each

@@ -27,6 +27,11 @@ E_Type get_elem_type(
   const int   num_dim		/* Number of dimensions of the mesh */
 );
 
+extern 
+char *get_elem_name(
+  int         itype             /* ExodusII element type */
+);
+
 extern
 int get_elem_info(
   const int info,		/* The requested information */

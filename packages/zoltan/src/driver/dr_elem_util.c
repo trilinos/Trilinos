@@ -92,7 +92,7 @@ int i;
     safe_free((void **) &(mesh->eb_names[i]));
 
   safe_free((void **) &(mesh->eb_names));
-  safe_free((void **) &(mesh->eb_ids));
+  safe_free((void **) &(mesh->eb_etypes));
   safe_free((void **) &(mesh->ecmap_id));
   safe_free((void **) &(mesh->ecmap_cnt));
   safe_free((void **) &(mesh->ecmap_elemids));

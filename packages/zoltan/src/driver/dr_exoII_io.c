@@ -63,6 +63,7 @@ int read_exoII_mesh(int Proc,
   float  ver;
 
   int    i, pexoid, cpu_ws = 0, io_ws = 0;
+  int   *nnodes = NULL, *etypes = NULL;
 #ifdef DEBUG_EXO
   int    j, k, elem;
 #endif
@@ -116,11 +117,12 @@ int read_exoII_mesh(int Proc,
 
 
   /* alocate some memory for the element blocks */
-  mesh->eb_ids = (int *) malloc (4 * mesh->num_el_blks * sizeof(int));
-  if (!mesh->eb_ids) {
+  mesh->eb_etypes = (int *) malloc (5 * mesh->num_el_blks * sizeof(int));
+  if (!mesh->eb_etypes) {
     Gen_Error(0, "fatal: insufficient memory");
     return 0;
   }
+  mesh->eb_ids = mesh->eb_etypes + mesh->num_el_blks;
   mesh->eb_cnts = mesh->eb_ids + mesh->num_el_blks;
   mesh->eb_nnodes = mesh->eb_cnts + mesh->num_el_blks;
   mesh->eb_nattrs = mesh->eb_nnodes + mesh->num_el_blks;
@@ -136,6 +138,21 @@ int read_exoII_mesh(int Proc,
     return 0;
   }
 
+  /* allocate temporary storage for items needing global reduction.   */
+  /* nemesis does not store most element block info about blocks for  */
+  /* which the processor owns no elements.                            */
+  /* we, however, use this information in migration, so we need to    */
+  /* accumulate it for all element blocks.    kdd 2/2001              */
+
+  if (mesh->num_el_blks > 0) {
+    nnodes = (int *) malloc(2 * mesh->num_el_blks * sizeof(int));
+    if (!nnodes) {
+      Gen_Error(0, "fatal: insufficient memory");
+      return 0;
+    }
+    etypes = nnodes + mesh->num_el_blks;
+  }
+
   /* get the element block information */
   for (i = 0; i < mesh->num_el_blks; i++) {
 
@@ -147,13 +164,32 @@ int read_exoII_mesh(int Proc,
     }
 
     if (ex_get_elem_block(pexoid, mesh->eb_ids[i], mesh->eb_names[i],
-                          &(mesh->eb_cnts[i]), &(mesh->eb_nnodes[i]),
+                          &(mesh->eb_cnts[i]), &(nnodes[i]),
                           &(mesh->eb_nattrs[i])) < 0) {
       Gen_Error(0, "fatal: Error returned from ex_get_elem_block");
       return 0;
     }
 
+    if (mesh->eb_cnts[i] > 0) {
+      if ((etypes[i] =  (int) get_elem_type(mesh->eb_names[i],
+                                            nnodes[i],
+                                            mesh->num_dims)) == E_TYPE_ERROR) {
+        Gen_Error(0, "fatal: could not get element type");
+        return 0;
+      }
+    }
+    else etypes[i] = (int) NULL_EL;
   }
+
+  /* Perform reduction on necessary fields of element blocks.  kdd 2/2001 */
+  MPI_Allreduce(nnodes, mesh->eb_nnodes, mesh->num_el_blks, MPI_INT, MPI_MAX, 
+                MPI_COMM_WORLD);
+  MPI_Allreduce(etypes, mesh->eb_etypes, mesh->num_el_blks, MPI_INT, MPI_MIN, 
+                MPI_COMM_WORLD);
+  for (i = 0; i < mesh->num_el_blks; i++) {
+    strcpy(mesh->eb_names[i], get_elem_name(mesh->eb_etypes[i]));
+  }
+  free(nnodes);
 
   /*
    * allocate memory for the elements
@@ -493,7 +529,7 @@ static int find_adjacency(int Proc, MESH_INFO_PTR mesh,
   int    *hold_elem, *pt_list, nhold, nelem;
   ELEM_INFO_PTR elements = mesh->elements;
 
-  E_Type *eb_etype;
+  int *eb_etype;
 /***************************** BEGIN EXECUTION ******************************/
   /*
    * Use face definition of adjacencies. So, one elements that are
@@ -508,24 +544,7 @@ static int find_adjacency(int Proc, MESH_INFO_PTR mesh,
    * migration.
    */
 
-  /* allocate memory and determine the element type for each element block */
-  eb_etype = (E_Type *) malloc (mesh->num_el_blks * sizeof(E_Type));
-  if(!eb_etype) {
-    Gen_Error(0, "fatal: insufficient memory");
-    return 0;
-  }
-
-  for (iblk = 0; iblk < mesh->num_el_blks; iblk++) {
-    if (mesh->eb_cnts[iblk] > 0) {
-      if ((eb_etype[iblk] =  get_elem_type(mesh->eb_names[iblk],
-                                           mesh->eb_nnodes[iblk],
-                                           mesh->num_dims)) == E_TYPE_ERROR) {
-        Gen_Error(0, "fatal: could not get element type");
-        return 0;
-      }
-    }
-    else eb_etype[iblk] = NULL_EL;
-  }
+  eb_etype = mesh->eb_etypes;
 
   /* allocate space to hold info about surounding elements */
   pt_list = (int *) malloc(2 * max_nsur * sizeof(int));
@@ -542,7 +561,7 @@ static int find_adjacency(int Proc, MESH_INFO_PTR mesh,
     /* exclude circle and sphere elements from graph */
     if (mesh->eb_nnodes[iblk] > 1) {
 
-      if ((nsides = get_elem_info(NSIDES, eb_etype[iblk], 0)) < 0) {
+      if ((nsides = get_elem_info(NSIDES, (E_Type) (eb_etype[iblk]), 0)) < 0) {
         Gen_Error(0, "fatal: could not get element information");
         return 0;
       }
@@ -569,7 +588,8 @@ static int find_adjacency(int Proc, MESH_INFO_PTR mesh,
       for (nscnt = 0; nscnt < nsides; nscnt++) {
 
         /* get the list of nodes on this side set */
-        side_cnt = ss_to_node_list(eb_etype[iblk], elements[ielem].connect,
+        side_cnt = ss_to_node_list((E_Type) (eb_etype[iblk]), 
+                                   elements[ielem].connect,
                                    (nscnt+1), side_nodes);
 
         /*
@@ -625,14 +645,15 @@ static int find_adjacency(int Proc, MESH_INFO_PTR mesh,
                * get the side id of entry. Make sure that ielem is
                * trying to communicate to a valid side of elem
                */
-              side_cnt = get_ss_mirror(eb_etype[iblk], side_nodes, (nscnt+1),
+              side_cnt = get_ss_mirror((E_Type) (eb_etype[iblk]), 
+                                       side_nodes, (nscnt+1),
                                        mirror_nodes);
 
               /*
                * in order to get the correct side order for elem,
                * get the mirror of the side of ielem
                */
-              sid = get_side_id(eb_etype[elements[entry].elem_blk],
+              sid = get_side_id((E_Type) (eb_etype[elements[entry].elem_blk]),
                                 elements[entry].connect,
                                 side_cnt, mirror_nodes);
               if (sid > 0) {
@@ -649,7 +670,8 @@ static int find_adjacency(int Proc, MESH_INFO_PTR mesh,
                  * connecting face
                  */
                 elements[ielem].edge_wgt[nscnt] = 
-                  (float) get_elem_info(NSNODES, eb_etype[iblk], (nscnt+1));
+                  (float) get_elem_info(NSNODES, (E_Type) (eb_etype[iblk]),
+                                       (nscnt+1));
 
               } /* End: "if (sid > 0)" */
               else if (sid < 0) {
@@ -664,7 +686,6 @@ static int find_adjacency(int Proc, MESH_INFO_PTR mesh,
   } /* End: "for (ielem=0; ...)" */
 
   free(pt_list);
-  free(eb_etype);
 
   return 1;
 }
@@ -815,8 +836,7 @@ static int read_comm_map_info(int pexoid, int Proc, PROB_INFO_PTR prob,
       /* translate from element id in the communication map to local elem id */
       loc_elem = mesh->ecmap_elemids[index];
       iblk = elements[loc_elem].elem_blk;
-      etype = get_elem_type(mesh->eb_names[iblk], mesh->eb_nnodes[iblk],
-                            mesh->num_dims);
+      etype = (E_Type) (mesh->eb_etypes[iblk]);
 
       (elements[loc_elem].nadj)++;
       if(elements[loc_elem].nadj > elements[loc_elem].adj_len) {

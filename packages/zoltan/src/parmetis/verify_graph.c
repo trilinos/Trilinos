@@ -32,7 +32,7 @@
 /* Output: an error code (the same on all procs)                     */
 /*                                                                   */
 /* Fatal error :                                                     */
-/*   - non-symmetric graph                                           */
+/*   - non-symmetric graph (or edge weights)                         */
 /*   - incorrect vertex number                                       */
 /*   - negative vertex or edge weight                                */
 /*                                                                   */
@@ -41,7 +41,7 @@
 /*   - zero sum of vertex or edge weights                            */
 /*   - self-edge                                                     */
 /*   - multiple edges between a pair of vertices                     */
-/*   - singletons (vertices with no edges)                              */
+/*   - singletons (vertices with no edges)                           */
 /*                                                                   */
 /*********************************************************************/
 
@@ -175,7 +175,7 @@ int LB_Verify_Graph(MPI_Comm comm, idxtype *vtxdist, idxtype *xadj,
     }
     for (ii=xadj[i]; ii<xadj[i+1]; ii++){
       global_j = adjncy[ii];
-      /* Reasonable vertex value? */
+      /* Valid vertex number? */
       if ((global_j < vtxdist[0]) || (global_j >= vtxdist[nprocs])){
         sprintf(msg, "Edge to invalid vertex %d detected.", global_j);
         LB_PRINT_ERROR(proc, yo, msg);
