@@ -36,6 +36,7 @@ RefCountPtr_test_DEPENDENCIES = $(top_builddir)/src/libteuchos.a
 
 RefCountPtr_test_CXXFLAGS = -I$(top_srcdir)/src
 
-RefCountPtr_test_LDADD = -L$(top_builddir)/src -lteuchos $(FLIBS)
+RefCountPtr_test_LDADD = -L$(top_builddir)/src \
+	$(top_builddir)/src/libteuchos.a $(FLIBS)
 
 
