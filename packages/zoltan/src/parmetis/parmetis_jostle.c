@@ -862,10 +862,13 @@ static int Zoltan_ParMetis_Jostle(
        * when the bugs in ParMETIS and Jostle have been fixed.
        */
       if (strcmp(alg, "JOSTLE") == 0){
-        ZOLTAN_PARMETIS_ERROR(ZOLTAN_FATAL, "No edges on this proc. Jostle will likely fail. You should try a different load balancing method.");
+        ZOLTAN_PARMETIS_ERROR(ZOLTAN_FATAL, "No edges on this proc. Jostle will likely fail. Please try a different load balancing method.");
       } else { /* ParMETIS */
 #if (PARMETIS_MAJOR_VERSION == 2) 
-         ZOLTAN_PARMETIS_ERROR(ZOLTAN_FATAL, "No edges on this proc. ParMETIS 2.x will likely fail. You should upgrade to ParMETIS 3, or try a different load balancing method."); 
+        ZOLTAN_PARMETIS_ERROR(ZOLTAN_FATAL, "No edges on this proc. ParMETIS 2.x will likely fail. You should upgrade to ParMETIS 3, or try a different load balancing method."); 
+#else /* PARMETIS_MAJOR_VERSION == 3 */
+        if (strcmp(alg, "ADAPTIVEREPART") == 0)
+          ZOLTAN_PARMETIS_ERROR(ZOLTAN_FATAL, "No edges on this proc. ParMETIS 3.0 will likely fail with method AdaptiveRepart. Please try a different load balancing method."); 
 #endif
       }
     }
