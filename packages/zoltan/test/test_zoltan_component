@@ -87,7 +87,7 @@ unset ccafe_bin_dir
     switch ( $arch )
     case generic:
     case linux:
-      set run = "${mpi_bin_dir}/mpirun -np"
+      set run = "${mpi_bin_dir}/mpirun -all-local -np"
       breaksw
     default:
       echo "Unknown arch type. Can only support linux as of 2003/09/05 "
