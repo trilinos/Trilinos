@@ -98,10 +98,12 @@ int main(int argc, char *argv[])
   locaStepperList.setParameter("Min Value", 0.05);
   locaStepperList.setParameter("Max Steps", 30);
   locaStepperList.setParameter("Max Nonlinear Iterations", 15);
-  locaStepperList.setParameter("Goal g", 0.5);
-  locaStepperList.setParameter("Max g", 0.7);
+  locaStepperList.setParameter("Enable Arc Length Scaling", true);
+  locaStepperList.setParameter("Goal Arc Length Parameter Contribution", 0.5);
+  locaStepperList.setParameter("Max Arc Length Parameter Contribution", 0.7);
   locaStepperList.setParameter("Initial Scale Factor", 1.0);
   locaStepperList.setParameter("Min Scale Factor", 1.0e-8);
+  locaStepperList.setParameter("Enable Tangent Factor Step Size Scaling",false);
   locaStepperList.setParameter("Min Tangent Factor", 0.8);
   locaStepperList.setParameter("Tangent Factor Exponent",1.5);
 
@@ -131,6 +133,8 @@ int main(int argc, char *argv[])
   stepSizeList.setParameter("Min Step Size", 1.0e-3);
   stepSizeList.setParameter("Max Step Size", 2000.0);
   stepSizeList.setParameter("Aggressiveness", 0.1);
+  stepSizeList.setParameter("Failed Step Reduction Factor", 0.5);
+  stepSizeList.setParameter("Successful Step Increase Factor", 1.26); // for constant
 
   // Set the LOCA Utilities
   NOX::Parameter::List& locaUtilsList = locaParamsList.sublist("Utilities");
