@@ -54,6 +54,7 @@
 #include "Ifpack_CrsRiluk.h"
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_Map.h"
+#include "Teuchos_Time.hpp"
 
 int main(int argc, char *argv[]) {
 #ifdef EPETRA_MPI	
@@ -63,6 +64,7 @@ int main(int argc, char *argv[]) {
   //
   using Teuchos::RefCountPtr;
   using Teuchos::rcp;
+  Teuchos::Time timer("Belos Preconditioned Gmres");
   //
   // Get the problem
   //
@@ -77,16 +79,16 @@ int main(int argc, char *argv[]) {
   if (verbose) cout << endl << endl;
   if (verbose) cout << "Constructing ILU preconditioner" << endl;
   int Lfill = 0;
-  if (argc > 2) Lfill = atoi(argv[2]);
+  // if (argc > 2) Lfill = atoi(argv[2]);
   if (verbose) cout << "Using Lfill = " << Lfill << endl;
   int Overlap = 0;
-  if (argc > 3) Overlap = atoi(argv[3]);
+  // if (argc > 3) Overlap = atoi(argv[3]);
   if (verbose) cout << "Using Level Overlap = " << Overlap << endl;
   double Athresh = 0.0;
-  if (argc > 4) Athresh = atof(argv[4]);
+  // if (argc > 4) Athresh = atof(argv[4]);
   if (verbose) cout << "Using Absolute Threshold Value of " << Athresh << endl;
   double Rthresh = 1.0;
-  if (argc >5) Rthresh = atof(argv[5]);
+  // if (argc >5) Rthresh = atof(argv[5]);
   if (verbose) cout << "Using Relative Threshold Value of " << Rthresh << endl;
   //
   Ifpack_IlukGraph * ilukGraph=0;
@@ -114,6 +116,8 @@ int main(int argc, char *argv[]) {
   //
   typedef Belos::Operator<double> OP;
   typedef Belos::MultiVec<double> MV;
+  typedef Belos::MultiVecTraits<double,MV> MVT;
+  typedef Belos::OperatorTraits<double,MV,OP> OPT;
   //
   // Construct a Belos::Operator instance through the Epetra interface.
   //
@@ -192,17 +196,19 @@ int main(int argc, char *argv[]) {
     cout << numrhs << " right-hand side(s) -- using a block size of " << block
 	 << endl << endl;
   }
+  timer.start();
   MyBlockGmres.Solve();
+  timer.stop();
   //
   // Compute actual residuals.
   //
   double* actual_resids = new double[numrhs];
   double* rhs_norm = new double[numrhs];
-  Belos::PetraVec<double> resid( Map, numrhs );
-  Amat.Apply( soln, resid );
-  resid.MvAddMv( -1.0, resid, 1.0, rhs ); 
-  resid.MvNorm( actual_resids );
-  rhs.MvNorm( rhs_norm );
+  Belos::PetraVec<double> resid(Map, numrhs);
+  OPT::Apply( Amat, soln, resid );
+  MVT::MvAddMv( -1.0, resid, 1.0, rhs, resid ); 
+  MVT::MvNorm( resid, actual_resids );
+  MVT::MvNorm( rhs, rhs_norm );
   if (verbose) {
     cout<< "---------- Actual Residuals (normalized) ----------"<<endl<<endl;
     for ( int i=0; i<numrhs; i++) {
@@ -217,12 +223,15 @@ int main(int argc, char *argv[]) {
   delete [] actual_resids;
   delete [] rhs_norm;	
   
+  if (verbose) {
+    cout << "Solution time: "<<timer.totalElapsedTime()<<endl;
+  }
+  
   if (My_Test.GetStatus() == Belos::Converged) {
     cout<< "***************** The test PASSED !!!********************"<<endl;
     return 0;
   }
   cout<< "********************The test FAILED!!! ********************"<<endl;
-
   return 1;
   //
 } // end test_bl_pgmres_hb.cpp

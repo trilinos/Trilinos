@@ -17,7 +17,7 @@
 #@HEADER
 #@HEADER
 
-SOURCES = $(Dummy_SOURCES) $(bl_gmres_hb_SOURCES) $(bl_gmres_tsfcore_SOURCES) $(bl_pgmres_hb_SOURCES)
+SOURCES = $(Dummy_SOURCES) $(bl_gmres_hb_SOURCES) $(bl_gmres_tsfcore_SOURCES) $(bl_pgmres_hb_SOURCES) $(bl_pgmres_tsfcore_SOURCES)
 
 srcdir = @srcdir@
 top_srcdir = @top_srcdir@
@@ -41,7 +41,7 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 host_triplet = @host@
 noinst_PROGRAMS = $(am__EXEEXT_1) $(am__EXEEXT_2) $(am__EXEEXT_3) \
-	Dummy$(EXEEXT)
+	$(am__EXEEXT_4) Dummy$(EXEEXT)
 @BUILD_TSFCORE_EPETRA_TRUE@am__append_1 = -I$(top_srcdir)/../TSFCore/src/interfaces/Core \
 @BUILD_TSFCORE_EPETRA_TRUE@		-I$(top_srcdir)/../TSFCore/src/utilities/Core \
 @BUILD_TSFCORE_EPETRA_TRUE@		-I$(top_srcdir)/../TSFCore/src/adapters/epetra \
@@ -89,7 +89,8 @@ CONFIG_HEADER = $(top_builddir)/src/Belos_config.h
 CONFIG_CLEAN_FILES =
 am__EXEEXT_1 = bl_gmres_hb$(EXEEXT)
 @BUILD_IFPACK_TRUE@am__EXEEXT_2 = bl_pgmres_hb$(EXEEXT)
-@BUILD_TSFCORE_EPETRA_TRUE@am__EXEEXT_3 = bl_gmres_tsfcore$(EXEEXT)
+@BUILD_IFPACK_TRUE@@BUILD_TSFCORE_EPETRA_TRUE@am__EXEEXT_3 = bl_pgmres_tsfcore$(EXEEXT)
+@BUILD_TSFCORE_EPETRA_TRUE@am__EXEEXT_4 = bl_gmres_tsfcore$(EXEEXT)
 PROGRAMS = $(noinst_PROGRAMS)
 am_Dummy_OBJECTS =
 Dummy_OBJECTS = $(am_Dummy_OBJECTS)
@@ -115,6 +116,10 @@ bl_gmres_tsfcore_OBJECTS = $(am_bl_gmres_tsfcore_OBJECTS)
 am_bl_pgmres_hb_OBJECTS = bl_pgmres_hb-test_bl_pgmres_hb.$(OBJEXT) \
 	bl_pgmres_hb-createEpetraProblem.$(OBJEXT)
 bl_pgmres_hb_OBJECTS = $(am_bl_pgmres_hb_OBJECTS)
+am_bl_pgmres_tsfcore_OBJECTS =  \
+	bl_pgmres_tsfcore-test_bl_pgmres_tsfcore.$(OBJEXT) \
+	bl_pgmres_tsfcore-createEpetraProblem.$(OBJEXT)
+bl_pgmres_tsfcore_OBJECTS = $(am_bl_pgmres_tsfcore_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/src
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
@@ -124,7 +129,9 @@ am__depfiles_maybe = depfiles
 @AMDEP_TRUE@	./$(DEPDIR)/bl_gmres_tsfcore-createEpetraProblem.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/bl_gmres_tsfcore-test_bl_gmres_tsfcore.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/bl_pgmres_hb-createEpetraProblem.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/bl_pgmres_hb-test_bl_pgmres_hb.Po
+@AMDEP_TRUE@	./$(DEPDIR)/bl_pgmres_hb-test_bl_pgmres_hb.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/bl_pgmres_tsfcore-createEpetraProblem.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/bl_pgmres_tsfcore-test_bl_pgmres_tsfcore.Po
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
 CXXLD = $(CXX)
@@ -135,9 +142,11 @@ COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 CCLD = $(CC)
 LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
 SOURCES = $(Dummy_SOURCES) $(bl_gmres_hb_SOURCES) \
-	$(bl_gmres_tsfcore_SOURCES) $(bl_pgmres_hb_SOURCES)
+	$(bl_gmres_tsfcore_SOURCES) $(bl_pgmres_hb_SOURCES) \
+	$(bl_pgmres_tsfcore_SOURCES)
 DIST_SOURCES = $(Dummy_SOURCES) $(bl_gmres_hb_SOURCES) \
-	$(bl_gmres_tsfcore_SOURCES) $(bl_pgmres_hb_SOURCES)
+	$(bl_gmres_tsfcore_SOURCES) $(bl_pgmres_hb_SOURCES) \
+	$(bl_pgmres_tsfcore_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -261,15 +270,18 @@ target_vendor = @target_vendor@
 
 #if BUILD_TRIUTILS
 @BUILD_IFPACK_TRUE@BELOS_BGMRES_IFPACK_EX = bl_pgmres_hb
-@BUILD_TSFCORE_EPETRA_TRUE@BELOS_BGMRES_TSFCORE_EX = bl_gmres_tsfcore
+@BUILD_TSFCORE_EPETRA_TRUE@BELOS_BGMRES_TSFCORE_EX = bl_gmres_tsfcore 
+@BUILD_IFPACK_TRUE@@BUILD_TSFCORE_EPETRA_TRUE@BELOS_BGMRES_TSFCORE_IFPACK_EX = bl_pgmres_tsfcore
 BELOS_BGMRES_HB_EX = bl_gmres_hb 
 Dummy_SOURCES = Dummy
 bl_pgmres_hb_SOURCES = $(srcdir)/test_bl_pgmres_hb.cpp $(srcdir)/createEpetraProblem.cpp
 bl_gmres_hb_SOURCES = $(srcdir)/test_bl_gmres_hb.cpp $(srcdir)/createEpetraProblem.cpp
 bl_gmres_tsfcore_SOURCES = $(srcdir)/test_bl_gmres_tsfcore.cpp $(srcdir)/createEpetraProblem.cpp
+bl_pgmres_tsfcore_SOURCES = $(srcdir)/test_bl_pgmres_tsfcore.cpp $(srcdir)/createEpetraProblem.cpp
 
 # Dependancies
 bl_pgmres_hb_DEPENDENCIES = $(top_builddir)/../triutils/src/libtriutils.a \
+			$(top_builddir)/../ifpack/src/libifpack.a \
 			$(top_builddir)/../epetra/src/libepetra.a \
 			$(top_builddir)/../teuchos/src/libteuchos.a			
 
@@ -280,6 +292,13 @@ bl_gmres_hb_DEPENDENCIES = $(top_builddir)/../triutils/src/libtriutils.a \
 bl_gmres_tsfcore_DEPENDENCIES = $(top_builddir)/../triutils/src/libtriutils.a \
 			$(top_builddir)/../TSFCoreUtils/src/libTSFCoreUtils.a \
 			$(top_builddir)/../TSFCore/src/libTSFCore.a \
+			$(top_builddir)/../epetra/src/libepetra.a \
+			$(top_builddir)/../teuchos/src/libteuchos.a
+
+bl_pgmres_tsfcore_DEPENDENCIES = $(top_builddir)/../triutils/src/libtriutils.a \
+			$(top_builddir)/../TSFCoreUtils/src/libTSFCoreUtils.a \
+			$(top_builddir)/../TSFCore/src/libTSFCore.a \
+			$(top_builddir)/../ifpack/src/libifpack.a \
 			$(top_builddir)/../epetra/src/libepetra.a \
 			$(top_builddir)/../teuchos/src/libteuchos.a
 
@@ -298,6 +317,7 @@ $(am__append_1)
 bl_pgmres_hb_CXXFLAGS = $(common_include_paths)
 bl_gmres_hb_CXXFLAGS = $(common_include_paths)
 bl_gmres_tsfcore_CXXFLAGS = $(common_include_paths)
+bl_pgmres_tsfcore_CXXFLAGS = $(common_include_paths)
 
 # Libraries
 common_libraries = $(top_builddir)/../triutils/src/libtriutils.a $(am__append_2) $(am__append_3) $(top_builddir)/../epetra/src/libepetra.a \
@@ -307,6 +327,7 @@ common_libraries = $(top_builddir)/../triutils/src/libtriutils.a $(am__append_2)
 bl_pgmres_hb_LDADD = $(common_libraries)
 bl_gmres_hb_LDADD = $(common_libraries)
 bl_gmres_tsfcore_LDADD = $(common_libraries)
+bl_pgmres_tsfcore_LDADD = $(common_libraries)
 all: all-am
 
 .SUFFIXES:
@@ -352,6 +373,9 @@ bl_gmres_tsfcore$(EXEEXT): $(bl_gmres_tsfcore_OBJECTS) $(bl_gmres_tsfcore_DEPEND
 bl_pgmres_hb$(EXEEXT): $(bl_pgmres_hb_OBJECTS) $(bl_pgmres_hb_DEPENDENCIES) 
 	@rm -f bl_pgmres_hb$(EXEEXT)
 	$(CXXLINK) $(bl_pgmres_hb_LDFLAGS) $(bl_pgmres_hb_OBJECTS) $(bl_pgmres_hb_LDADD) $(LIBS)
+bl_pgmres_tsfcore$(EXEEXT): $(bl_pgmres_tsfcore_OBJECTS) $(bl_pgmres_tsfcore_DEPENDENCIES) 
+	@rm -f bl_pgmres_tsfcore$(EXEEXT)
+	$(CXXLINK) $(bl_pgmres_tsfcore_LDFLAGS) $(bl_pgmres_tsfcore_OBJECTS) $(bl_pgmres_tsfcore_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -365,6 +389,8 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bl_gmres_tsfcore-test_bl_gmres_tsfcore.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bl_pgmres_hb-createEpetraProblem.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bl_pgmres_hb-test_bl_pgmres_hb.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bl_pgmres_tsfcore-createEpetraProblem.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bl_pgmres_tsfcore-test_bl_pgmres_tsfcore.Po@am__quote@
 
 .cpp.o:
 @am__fastdepCXX_TRUE@	if $(CXXCOMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \
@@ -477,6 +503,38 @@ bl_pgmres_hb-createEpetraProblem.obj: $(srcdir)/createEpetraProblem.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/bl_pgmres_hb-createEpetraProblem.Po' tmpdepfile='$(DEPDIR)/bl_pgmres_hb-createEpetraProblem.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(bl_pgmres_hb_CXXFLAGS) $(CXXFLAGS) -c -o bl_pgmres_hb-createEpetraProblem.obj `if test -f '$(srcdir)/createEpetraProblem.cpp'; then $(CYGPATH_W) '$(srcdir)/createEpetraProblem.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/createEpetraProblem.cpp'; fi`
+
+bl_pgmres_tsfcore-test_bl_pgmres_tsfcore.o: $(srcdir)/test_bl_pgmres_tsfcore.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(bl_pgmres_tsfcore_CXXFLAGS) $(CXXFLAGS) -MT bl_pgmres_tsfcore-test_bl_pgmres_tsfcore.o -MD -MP -MF "$(DEPDIR)/bl_pgmres_tsfcore-test_bl_pgmres_tsfcore.Tpo" -c -o bl_pgmres_tsfcore-test_bl_pgmres_tsfcore.o `test -f '$(srcdir)/test_bl_pgmres_tsfcore.cpp' || echo '$(srcdir)/'`$(srcdir)/test_bl_pgmres_tsfcore.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/bl_pgmres_tsfcore-test_bl_pgmres_tsfcore.Tpo" "$(DEPDIR)/bl_pgmres_tsfcore-test_bl_pgmres_tsfcore.Po"; else rm -f "$(DEPDIR)/bl_pgmres_tsfcore-test_bl_pgmres_tsfcore.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/test_bl_pgmres_tsfcore.cpp' object='bl_pgmres_tsfcore-test_bl_pgmres_tsfcore.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/bl_pgmres_tsfcore-test_bl_pgmres_tsfcore.Po' tmpdepfile='$(DEPDIR)/bl_pgmres_tsfcore-test_bl_pgmres_tsfcore.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(bl_pgmres_tsfcore_CXXFLAGS) $(CXXFLAGS) -c -o bl_pgmres_tsfcore-test_bl_pgmres_tsfcore.o `test -f '$(srcdir)/test_bl_pgmres_tsfcore.cpp' || echo '$(srcdir)/'`$(srcdir)/test_bl_pgmres_tsfcore.cpp
+
+bl_pgmres_tsfcore-test_bl_pgmres_tsfcore.obj: $(srcdir)/test_bl_pgmres_tsfcore.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(bl_pgmres_tsfcore_CXXFLAGS) $(CXXFLAGS) -MT bl_pgmres_tsfcore-test_bl_pgmres_tsfcore.obj -MD -MP -MF "$(DEPDIR)/bl_pgmres_tsfcore-test_bl_pgmres_tsfcore.Tpo" -c -o bl_pgmres_tsfcore-test_bl_pgmres_tsfcore.obj `if test -f '$(srcdir)/test_bl_pgmres_tsfcore.cpp'; then $(CYGPATH_W) '$(srcdir)/test_bl_pgmres_tsfcore.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/test_bl_pgmres_tsfcore.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/bl_pgmres_tsfcore-test_bl_pgmres_tsfcore.Tpo" "$(DEPDIR)/bl_pgmres_tsfcore-test_bl_pgmres_tsfcore.Po"; else rm -f "$(DEPDIR)/bl_pgmres_tsfcore-test_bl_pgmres_tsfcore.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/test_bl_pgmres_tsfcore.cpp' object='bl_pgmres_tsfcore-test_bl_pgmres_tsfcore.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/bl_pgmres_tsfcore-test_bl_pgmres_tsfcore.Po' tmpdepfile='$(DEPDIR)/bl_pgmres_tsfcore-test_bl_pgmres_tsfcore.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(bl_pgmres_tsfcore_CXXFLAGS) $(CXXFLAGS) -c -o bl_pgmres_tsfcore-test_bl_pgmres_tsfcore.obj `if test -f '$(srcdir)/test_bl_pgmres_tsfcore.cpp'; then $(CYGPATH_W) '$(srcdir)/test_bl_pgmres_tsfcore.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/test_bl_pgmres_tsfcore.cpp'; fi`
+
+bl_pgmres_tsfcore-createEpetraProblem.o: $(srcdir)/createEpetraProblem.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(bl_pgmres_tsfcore_CXXFLAGS) $(CXXFLAGS) -MT bl_pgmres_tsfcore-createEpetraProblem.o -MD -MP -MF "$(DEPDIR)/bl_pgmres_tsfcore-createEpetraProblem.Tpo" -c -o bl_pgmres_tsfcore-createEpetraProblem.o `test -f '$(srcdir)/createEpetraProblem.cpp' || echo '$(srcdir)/'`$(srcdir)/createEpetraProblem.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/bl_pgmres_tsfcore-createEpetraProblem.Tpo" "$(DEPDIR)/bl_pgmres_tsfcore-createEpetraProblem.Po"; else rm -f "$(DEPDIR)/bl_pgmres_tsfcore-createEpetraProblem.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/createEpetraProblem.cpp' object='bl_pgmres_tsfcore-createEpetraProblem.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/bl_pgmres_tsfcore-createEpetraProblem.Po' tmpdepfile='$(DEPDIR)/bl_pgmres_tsfcore-createEpetraProblem.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(bl_pgmres_tsfcore_CXXFLAGS) $(CXXFLAGS) -c -o bl_pgmres_tsfcore-createEpetraProblem.o `test -f '$(srcdir)/createEpetraProblem.cpp' || echo '$(srcdir)/'`$(srcdir)/createEpetraProblem.cpp
+
+bl_pgmres_tsfcore-createEpetraProblem.obj: $(srcdir)/createEpetraProblem.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(bl_pgmres_tsfcore_CXXFLAGS) $(CXXFLAGS) -MT bl_pgmres_tsfcore-createEpetraProblem.obj -MD -MP -MF "$(DEPDIR)/bl_pgmres_tsfcore-createEpetraProblem.Tpo" -c -o bl_pgmres_tsfcore-createEpetraProblem.obj `if test -f '$(srcdir)/createEpetraProblem.cpp'; then $(CYGPATH_W) '$(srcdir)/createEpetraProblem.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/createEpetraProblem.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/bl_pgmres_tsfcore-createEpetraProblem.Tpo" "$(DEPDIR)/bl_pgmres_tsfcore-createEpetraProblem.Po"; else rm -f "$(DEPDIR)/bl_pgmres_tsfcore-createEpetraProblem.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/createEpetraProblem.cpp' object='bl_pgmres_tsfcore-createEpetraProblem.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/bl_pgmres_tsfcore-createEpetraProblem.Po' tmpdepfile='$(DEPDIR)/bl_pgmres_tsfcore-createEpetraProblem.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(bl_pgmres_tsfcore_CXXFLAGS) $(CXXFLAGS) -c -o bl_pgmres_tsfcore-createEpetraProblem.obj `if test -f '$(srcdir)/createEpetraProblem.cpp'; then $(CYGPATH_W) '$(srcdir)/createEpetraProblem.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/createEpetraProblem.cpp'; fi`
 uninstall-info-am:
 
 ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)

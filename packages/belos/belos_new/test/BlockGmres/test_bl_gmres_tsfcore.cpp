@@ -57,7 +57,7 @@ int main(int argc, char *argv[]) {
   //
   using Teuchos::RefCountPtr;
   using Teuchos::rcp;
-  Teuchos::Time timer("Belos");
+  Teuchos::Time timer("Belos Gmres");
   bool success = true;
   bool verbose = true;
   try {
@@ -172,5 +172,6 @@ int main(int argc, char *argv[]) {
     return 0;
   }
   cout<< "********************The test FAILED!!! ********************"<<endl;
-  
-}
+  return 1;
+
+} // end test_bl_gmres_tsfcore.cpp
