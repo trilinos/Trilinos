@@ -443,6 +443,12 @@ static int refine_fm2 (
         if (hgp->output_level >= PHG_DEBUG_ALL)        
             printf("%s FM Pass %d (%d->%d) Cut=%.2lf W[%5.0lf, %5.0lf] I= %.2lf LW[%5.0lf, %5.0lf] LI= %.2lf\n", uMe(hgc), round, from, to, cutsize, weights[0], weights[1], imbal, lweights[0], lweights[1], limbal);
 
+
+        /* EBEB: Suggest we let all procs do local FM, then
+           pick the best one in each proc column as the "root"
+           and broadcast those moves to the whole column. 
+           Currently we decide the column root up front. */
+
         if (hgc->myProc_y==root.rank) { /* those are the lucky ones; each proc in column-group
                                  could have compute the same moves concurrently; but for this
                                  version we'll do in in the root procs and broadcast */
@@ -490,10 +496,17 @@ static int refine_fm2 (
                 imbal = fabs(weights[0]-targetw0)/targetw0;
                 limbal = fabs(lweights[0]-ltargetw0)/ltargetw0;
 
-                /* UVC: note that in the loop we're only using local imbal; hence FM might want to continue
-                   to improve local imbalance; but it might be improving the global imbalance at all!
-                   Strangely, if we let FM do this; it seems to be finding better local optimums.
-                   So I'll leave it as it is.
+                /* UVC: note that in the loop we're only using local imbal; 
+                   hence FM might want to continue to improve local imbalance; 
+                   but it might not be improving the global imbalance at all!
+                   Strangely, if we let FM do this; it seems to be finding 
+                   better local optimums.  So I'll leave it as it is.
+
+                   EBEB: We don't really want good local balance; it is
+                   too restrictive. We should allow local imbalance 
+                   but enforce global balance. I suggest having different
+                   weight target on each processor, derived from partition
+                   assignment from previous level.
                 */
                 
                 if ((cutsize<best_cutsize) || (cutsize==best_cutsize && limbal < best_limbal)) {
