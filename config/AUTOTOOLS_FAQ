@@ -32,3 +32,21 @@ Q4) Some systems offer <stdio> but not <stdio.h> others offer
 A4) Do not include <Stdio> or <stdio.h> directly.  Include
 Epetra_ConfigDefs.h (also included in almost any Epetra.*.h file)  
 
+
+
+Q5)  How do I debug configure.ac, Makefile.am, src/Makefile.am and test/Makefile.am
+
+A5)  You can use echo in configure.ac to print out variables. AC_CHECK_FILE can be used
+like an assert on the existence of a particular file.  
+
+
+Q6)  How can I move files (such as data files or test scripts) from the source directory to the build directory?
+
+A6)  Look at aztecoo/test/AztecOO_UserOpUserMat/Makefile.am.  This creates a Makefile
+which when executed causes Ex_AztecOO_UserOpUserMat to be copied from 
+the source directory and renamed to Ex_AztecOO_UserOpUserMat.exe in 
+the build directory.  It also copies referencelog and renames it to 
+referencelog.txt.  We recommend renaming the files to avoid conflicts 
+for users who run configure in the source directory structure (even though 
+we recommend against running configure in the srouce directory.  
+
