@@ -825,6 +825,7 @@ static int ML_DecomposeGraph_with_METIS( ML_Operator *Amatrix,
   /* dimension of the problem (NOTE: only local matrices) */
   
   Nrows = Amatrix->getrow->Nrows;
+
   perm = (int *) ML_allocate( sizeof(int) * Nrows );
 
   /* for some Epetra_matrices, N_nonzeros is set to -1.
@@ -969,23 +970,32 @@ static int ML_DecomposeGraph_with_METIS( ML_Operator *Amatrix,
 	     comm->ML_mypid, count, N_nonzeros, count2, NrowsMETIS );
   }
 
+  if (Nrows == 0)
+    N_parts = 0;
+
   /* idxtype is by default int, but on some architectures can be
      slightly different (for instance, a short int). */
    
-  part = (idxtype *) ML_allocate( sizeof(idxtype) * NrowsMETIS );
-  nodes_per_aggre  = (int *) ML_allocate( sizeof(int) * N_parts );
+  if (N_parts != 0) {
+    part = (idxtype *) ML_allocate( sizeof(idxtype) * NrowsMETIS );
+    nodes_per_aggre  = (int *) ML_allocate( sizeof(int) * N_parts );
+  }
 
   /* ********************************************************************** */
   /* Before calling METIS, I verify that the two extreme situations are     */
   /* handled separately.                                                    */
   /* ********************************************************************** */
   
-  if( N_parts == 1 ) {
+  if (N_parts == 0) {
+    /* do nothing */
+  }
+  else if( N_parts == 1 ) {
 
     for( i=0 ; i<NrowsMETIS ; i++ ) part[i] = 0;
     edgecut = 0;
     
-  } else if( N_parts == NrowsMETIS ) {
+  } 
+  else if( N_parts == NrowsMETIS ) {
 
     fprintf( stderr,
 	     "*ML*WRN*: on proc %d, N_part == N_rows_noDirichlet (%d==%d)\n",
@@ -1136,7 +1146,7 @@ static int ML_DecomposeGraph_with_METIS( ML_Operator *Amatrix,
   /* reordering using METIS to minimize the fill-in during factorization    */
   /* ********************************************************************** */
 
-  if( reorder_flag == ML_YES ) {
+  if (N_parts && (reorder_flag == ML_YES)) {
     
     ML_LocalReorder_with_METIS( NrowsMETIS, xadj, adjncy ,
 				N_parts,  part, current_level, comm );
@@ -1163,7 +1173,7 @@ static int ML_DecomposeGraph_with_METIS( ML_Operator *Amatrix,
      Note that I do not suppose that N_parts is the same
      value among all the processors */
      
-  if( local_or_global == ML_GLOBAL_INDICES ) {
+  if (N_parts && (local_or_global == ML_GLOBAL_INDICES)) {
     ML_DecomposeGraph_BuildOffsets( N_parts, offsets, comm->ML_nprocs,
 				    Amatrix->comm->USR_comm );
   }
@@ -1178,7 +1188,7 @@ static int ML_DecomposeGraph_with_METIS( ML_Operator *Amatrix,
   /* the entire graph in input; in output, we will have the max radius.     */
   /* ********************************************************************** */
 
-  if( ML_Get_Compute_GraphRadiusFlag() == ML_YES ) {
+  if (N_parts && ML_Get_Compute_GraphRadiusFlag() == ML_YES ) {
   
     dep = (int *) ML_allocate(sizeof(int) * Nrows );
     for( i=0 ; i<NrowsMETIS ; i++ ) dep[i] = -7;
