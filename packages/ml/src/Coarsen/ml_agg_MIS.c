@@ -182,7 +182,8 @@ int agg_offset, vertex_offset;
       for (j = 0; j < rowi_N; j++) if (rowi_val[j] != 0.) count2++;
       if (count2 <= 1) dtemp[i] = 1.;
    }
-   ML_free(rowi_col); ML_free(rowi_val);
+   if (rowi_col != NULL) ML_free(rowi_col); 
+   if (rowi_val != NULL) ML_free(rowi_val);
    rowi_col = NULL; rowi_val = NULL;
    allocated = 0; 
 
@@ -546,8 +547,8 @@ int agg_offset, vertex_offset;
    ML_free(temp_leng);
    ML_free(tem2_index);
    ML_free(temp_index);
-   ML_free(rowi_col); rowi_col = NULL;
-   ML_free(rowi_val); rowi_val = NULL;
+   if (rowi_col != NULL) ML_free(rowi_col); rowi_col = NULL;
+   if (rowi_val != NULL) ML_free(rowi_val); rowi_val = NULL;
    allocated = 0;
    ML_free(recv_list);
 
@@ -1568,6 +1569,7 @@ Here is how we do all this:
    ML_memory_free((void**) &recv_leng);
    ML_memory_free((void**) &send_leng);
    ML_memory_free((void**) &send_list);
+   ML_memory_free((void**) &recv_list);
    ML_free(aggr_index);
    ML_memory_free((void**) &aggr_stat);
    ML_memory_free((void**) &sendlist_proc);
