@@ -1,3 +1,11 @@
+<!doctype html public "-//w3c//dtd html 4.0 transitional//en">
+<html>
+<head>
+   <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+   <meta name="GENERATOR" content="Mozilla/4.7 [en] (X11; U; SunOS 5.6 sun4m) [Netscape]">
+   <meta name="sandia.approved" content="SAND99-1376">
+   <meta name="author" content="karen devine, kddevin@sandia.gov">
+   <title> Zoltan Developer's Guide:  Adding Algorithms</title>
 <!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
  ! Zoltan Dynamic Load-Balancing Library for Parallel Applications            !
  ! Copyright (c) 2000, Sandia National Laboratories.                          !
@@ -11,20 +19,11 @@
      $Date$
      $Revision$
 >
-
-<!doctype html public "-//w3c//dtd html 4.0 transitional//en">
-<html>
-<head>
-   <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
-   <meta name="GENERATOR" content="Mozilla/4.7 [en] (X11; U; SunOS 5.7 sun4u) [Netscape]">
-   <meta name="sandia.approved" content="SAND99-1376">
-   <meta name="author" content="karen devine, kddevin@sandia.gov">
-   <title> Zoltan Developer's Guide:  Adding Algorithms</title>
 </head>
 <body bgcolor="#FFFFFF">
 
-<div ALIGN=right><b><i><a href="dev.html">Zoltan Developer's Guide</a>&nbsp; |&nbsp; <a href="dev_add_interface.html">Next</a>&nbsp; |&nbsp; <a href="dev_util_debug.html">Previous</a></i></b></div>
-
+<div align=right><b><i><a href="dev.html">Zoltan Developer's Guide</a>&nbsp;
+|&nbsp; <a href="dev_add_interface.html">Next</a>&nbsp; |&nbsp; <a href="dev_util_debug.html">Previous</a></i></b></div>
 
 <h2>
 <a NAME="new_methods"></a>Adding New Load-Balancing Algorithms to Zoltan</h2>
@@ -33,49 +32,48 @@ to the library is simple. In many cases, existing code can be easily modified
 to use the interface query functions to build the data structures needed
 for the algorithm. The process for adding new algorithms to the library
 is described below; more detail is provided at each link.
-<ul>
+<ol>
 <li>
-Read the <a href="dev_intro_philosophy.html">Philosophy of Zoltan</a> and
-the <a href="dev_intro_coding.html">Coding Principles in Zoltan</a>.</li>
+Make sure you follow the <a href="dev_intro_philosophy.html">Philosophy
+of Zoltan</a> and the <a href="dev_intro_coding.html">Coding Principles
+in Zoltan</a>.</li>
 
 <li>
 Add the algorithm to the <a href="dev_add_interface.html">Load-Balancing
 Interface Routines</a>.</li>
 
 <li>
-Implement a <a href="dev_add_lb.html">Load-Balancing Function</a> front-end
-to the algorithm.</li>
-
-<li>
 Use the load-balancing <a href="dev_add_struct.html">Data Structures</a>
 provided by the library.</li>
 
 <li>
+Implement a <a href="dev_add_lb.html">Load-Balancing Function</a> front-end
+to the algorithm.</li>
+
+<li>
 Add the <a href="dev_add_params.html">Parameters</a> needed by the algorithm.
-Also make sure that the algorithm uses the <a href="dev_util_params.html#key_params">key
-parameters</a> in Zoltan properly.</li>
+Also make sure that the algorithm uses the <a href="ug_alg.html#General_Parameters">&nbsp;
+General Parameters</a> in Zoltan properly, in particular <b>Imbalance_Tol</b> and
+<b>Debug_Level.</b></li>
 
 <li>
-If necessary, write a routine to free your dynamically allocated data structures. 
-See tips on <a href="dev_add_memory.html">memory management</li> in Zoltan.
+If necessary, write a routine to free your dynamically allocated data structures.
+See tips on <a href="dev_add_memory.html">memory management</a></li>
+
+<br><a href="dev_add_memory.html">in Zoltan.</a>
+<li>
+<a href="dev_add_memory.html">Update the </a><a href="dev_fortran.html#fortran dev add">Fortran
+interface</a>.</li>
 
 <li>
-Modify the <a href="dev_fortran.html">Fortran interface</a> if the API
-is changed.</li>
+Document your new method. The documentation should be written in a format
+that can easily be converted into HTML and PDF.</li>
 
 <li>
-Document your new method. The documentation should be written in HTML or
-in a format that can easily be converted into HTML.</li>
-</ul>
-<!--
-  BAH: Modify this section to include the following.
-    Write parameter routine & modify set_params
-    Key params. Mention Imbal_tol and Debug_level.
-    Write free routine if appropriate (& modify Free_Structure to call it)
-    Change Data Structure discussion to emphasize it's only for
-      persistant data.
-    Make this into a checklist.
--->
+Please contact the Zoltan team if you would like your method to be distributed
+with future versions of Zoltan.</li>
+</ol>
+
 <hr WIDTH="100%">
 <br>[<a href="dev.html">Table of Contents</a>&nbsp; |&nbsp; <a href="dev_add_interface.html">Next:&nbsp;
 Load-Balancing Interface Routines</a>&nbsp; |&nbsp; <a href="dev_util_debug.html">Previous:&nbsp;
