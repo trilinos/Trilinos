@@ -688,7 +688,7 @@ for (i=0; i<exp_Nrows; i++)
       if (rows_in_aggs[i] == NULL)
       {
          printf("ERROR: couldn't allocate memory in CoarsenCoupled\n");
-         printf("       requested = %d\n",(int) aggr_cnt_array[i]*sizeof(int));
+         printf("       requested= %d\n",(int) (aggr_cnt_array[i]*sizeof(int)));
          exit(1);
       }
    }
