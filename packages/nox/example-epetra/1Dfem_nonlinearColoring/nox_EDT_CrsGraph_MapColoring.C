@@ -92,7 +92,7 @@ Epetra_MapColoring* CrsGraph_MapColoring::operator()( const Epetra_CrsGraph & or
     multimap<int,int>::iterator iter = adjMap.begin();
     multimap<int,int>::iterator end = adjMap.end();
     for( int i = 1; iter != end; ++iter, ++i )
-      rowOrder[ nRows - i ] = iter->second;
+      rowOrder[ nRows - i ] = (*iter).second;
   }
 
   Epetra_MapColoring * ColorMap = new Epetra_MapColoring( RowMap );
