@@ -161,7 +161,7 @@ for(kkk = 0; kkk < row_length; kkk++)
    temp->values        = val;
    temp->rowptr        = row_ptr;
 
-   omatrix = ML_Operator_Create();
+   omatrix = ML_Operator_Create(my_ml->comm);
    omatrix->data_destroy = ML_CSR_MSRdata_Destroy;
    ML_Operator_Set_1Levels(omatrix, Amat->from, Amat->to);
    ML_Operator_Set_ApplyFuncData(omatrix, Amat->invec_leng,
@@ -532,7 +532,7 @@ extern void ML_subexchange_bdry(double x[], ML_CommInfoOP *comm_info,
 int CSR_submv(ML_Operator *Amat, double p[], double ap[])
 {
    int i, j, k, Nrows, *bindx, total_send, total_rcv, bindx_row, nzeros;
-   double *p2, *val, sum;
+   double *p2, *val, sum, dtemp;
    struct ML_CSR_MSRdata *temp;
    ML_CommInfoOP *getrow_comm;
    int *row_ptr;
@@ -571,8 +571,9 @@ int CSR_submv(ML_Operator *Amat, double p[], double ap[])
 }
 int ML_submv(ML_Operator *Amat, double p[], double ap[])
 {
-   int i, j, k, Nrows, total_send, total_rcv, nzeros, *col, allocated_space;
-   double *p2, *vals, sum;
+   int i, j, k, Nrows, total_send, total_rcv, nzeros, *cols, allocated_space;
+   int length, col;
+   double *p2, *vals, sum, dtemp;
    ML_CommInfoOP *getrow_comm;
 
    Nrows = Amat->matvec->Nrows;
@@ -616,8 +617,9 @@ int ML_submv(ML_Operator *Amat, double p[], double ap[])
 }
 int ML_submatvec(ML_Operator *Amat, double p[], double ap[], int mask)
 {
-   int i, j, k, Nrows, total_send, total_rcv, nzeros, *col, allocated_space;
-   double *p2, *vals, sum;
+   int i, j, k, Nrows, total_send, total_rcv, nzeros, *cols, allocated_space;
+   int col, length;
+   double *p2, *vals, sum, dtemp;
    ML_CommInfoOP *getrow_comm;
 
    Nrows = Amat->matvec->Nrows;

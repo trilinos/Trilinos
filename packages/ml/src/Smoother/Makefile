@@ -37,7 +37,7 @@ CFLAGS=$(ARCH_FLAGS) $(DEFINES) $(INCLUDES)
 #=======================================================================
 
 ML_C = ml_csolve.c     ml_smoother.c     ml_solver.c\
-       ml_superlu.c    ml_xxt.c
+       ml_superlu.c    ml_xyt.c
 
 #=======================================================================
 # ML include files
@@ -83,11 +83,11 @@ ml_superlu.o : ml_superlu.c ../Comm/ml_comm.h ml_solver.h \
                ../Utils/ml_memory.h ../Main/ml_struct.h ../Utils/ml_utils.h 
 	$(CC) -c $(CFLAGS) ml_superlu.c -o $@
 
-ml_xxt.o : ml_xxt.c ../Comm/ml_comm.h ../Comm/ml_comminfoop.h \
+ml_xyt.o : ml_xyt.c ../Comm/ml_comm.h ../Comm/ml_comminfoop.h \
            ../Include/ml_defs.h \
            ../Operator/ml_mat_formats.h ../Utils/ml_memory.h \
            ../Operator/ml_op_utils.h ../Main/ml_struct.h ../Utils/ml_utils.h
-	$(CC) -c $(CFLAGS) ml_xxt.c -o $@
+	$(CC) -c $(CFLAGS) ml_xyt.c -o $@
 
 
 #=======================================================================
