@@ -153,6 +153,7 @@ int Amesos_Superludist::SetParameters( Teuchos::ParameterList &ParameterList ) {
 
   if( debug_ == 1 ) cout << "Entering `SetParameters()' ..." << endl;
   
+  // FIXME: ken, this should be commented out because on atlantis it doesn't compile
   if( (int) &ParameterList == 0 ) return 0;
 
   if (ParameterList.isSublist("Superludist") ) {
@@ -580,7 +581,7 @@ int Amesos_Superludist::Factor( ) {
 #else
     set_default_options_dist(&options_);
 #endif
-    if( PrintNonzeros_ == true ) options_.PrintStat != YES;
+    if( PrintNonzeros_ == true ) options_.PrintStat = YES;
     else                         options_.PrintStat = NO;
 
     int numcols = RowMatrixA_->NumGlobalCols() ; 

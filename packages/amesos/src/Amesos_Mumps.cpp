@@ -392,7 +392,6 @@ int Amesos_Mumps::ConvertToTripletValues()
       if( abs(MatrixValues[i]) >= Threshold_ || true ) {
 	(*Val)[NumMUMPSNonzerosValues] = MatrixValues[i];
 	if( RowIndices[i] == ColIndices[i] ) {
-	  Diag = RowIndices[i];
 	  FoundDiagonal = true;
 	  (*Val)[NumMUMPSNonzerosValues] += AddToDiag_;
 	}
