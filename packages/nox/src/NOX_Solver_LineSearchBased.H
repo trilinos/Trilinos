@@ -47,13 +47,13 @@ namespace Solver {
   The following parameters are valid for this solver:
 
   - "Line Search" - Sublist of the line search parameters, passed to
-    the NOX::Linesearch::Manager constructor. Defaults to an empty list.
+    the NOX::LineSearch::Manager constructor. Defaults to an empty list.
 
   - "%Direction" - Sublist of the direction parameters, passed to
     the NOX::Direction::Manager constructor. Defaults to an empty list.
 
   - "Linear %Solver" - Sublist of the linear solver paramaters, passed
-    to Abstract::Group::computeNewton(). Furthermore, the "Tolerance"
+    to NOX::Abstract::Group::computeNewton(). Furthermore, the "Tolerance"
     within this list may be modified by the
     resetForcingTerm(). Defaults to an empty list.
 
