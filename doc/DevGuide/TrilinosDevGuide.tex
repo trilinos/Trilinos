@@ -45,21 +45,18 @@
     %
     \begin{abstract}
 
-Research efforts in advanced solution algorithms and parallel solver
-libraries have historically had a large impact on engineering and
-scientific computing.  Algorithmic advances increase the range
-of tractable problems and reduce the cost of solving existing
-problems.  Well-designed solver libraries provide a mechanism for
-leveraging solver development across a broad set of applications and
-minimize the cost of solver integration.  Emphasis is
-required in both new algorithms and new software in order
-to achieve the maximum impact of efforts.
+Research efforts in advanced solution algorithms and parallel solver libraries 
+have historically had a large impact on engineering and scientific computing.  
+Algorithmic advances increase the range of tractable problems and reduce the 
+cost of solving existing problems.  Well-designed solver libraries provide a 
+mechanism for leveraging solver development across a broad set of applications 
+and minimize the cost of solver integration.  Emphasis is required in both new 
+algorithms and new software in order to achieve the maximum impact of efforts.
 
-The Trilinos project encompasses a variety of efforts that are to some
-extent self-contained but at the same time inter-related.  The
-Trilinos design allows individual packages to grow and mature
-autonomously to the extent the algorithms and package developers
-dictate. 
+The Trilinos project encompasses a variety of efforts that are to some extent 
+self-contained but at the same time inter-related.  The Trilinos design allows 
+individual packages to grow and mature autonomously to the extent the 
+algorithms and package developers dictate. 
 
 The Trilinos Developer's Guide is meant to assist existing, as well as new and
 potential Trilinos developers.  Topics covered include how to configure and 
@@ -131,8 +128,8 @@ Tuminaro, Jim Willenbring, and Alan Williams.
            Complex linear equation solver using equivalent real formulations,
 	 built on top of Aztec.
 	\item[Ifpack] 
-           Object-oriented algebraic preconditioner, compatible with Epetra and
-	 AztecOO.
+           Object-oriented algebraic preconditioner, compatible with 
+	Epetra and AztecOO.
     \end{itemize}
 
 
@@ -270,9 +267,10 @@ have different dependencies than the core package.  It is possible that not
 all of these dependencies have been accounted for.  Please submit a bug report 
 for any problems found with this matter.
 
-	To install libraries and header files in a particular location, use 
---prefix=<dir>.  If this option is used, libraries will be located in 
-<dir>/lib and header files in <dir>/include/<package>.
+	To install libraries and header files in a particular location, 
+use ``--prefix=<dir>'' on the configure line.  If this option is used, 
+libraries will be located in <dir>/lib and header files in 
+<dir>/include/<package>.
 
 	The second imporant piece of information that a user must provide at 
 this stage is the name and or location of anything that autotools needs and 
@@ -281,23 +279,23 @@ blas library by default, the user must indicate which blas library to use.
 Other more obscure issues dealing with enjoyable topics such as standard 
 noncompliance are also dealt with here.  If all required libraries (often 
 blas, and lapack) are located in standard places, try configuring with what 
-you have.  If the configure stage completes successfully, move on to part 
-III.  However, keep in mind that some issues involving the more 'enjoyable topics' often do not show up until the build stage, so reading on might be 
-worthwhile.
+you have.
 
 	For a machine that requires additional configure line options, a good 
 place to start is Trilinos(-3.0.1)/config.  There are configure invocation 
 scripts here for various platforms.  These scripts are named using the 
 following naming convention:
-arch_comm_machine
-For example "sgi64_mpi_atlantis".  Note that these scripts are examples only.  
-Users should not necessarily expect to be able to find the perfect script and 
-use it, but rather should choose a script for a similar machine, examine the 
-options used in the script and figure out if those options make sense for the 
-case at hand.  Some of the scripts in the repository have not been updated to 
-reflect recent option changes, particularly for mpi option changes.  The 
-greatest value in these scripts tend to be the values for options such as 
-LDFLAGS, CPPFLAGS, and CXXFLAGS.  
+arch\_comm\_machine
+For example "sgi64\_mpi\_atlantis".  Note that these scripts are examples 
+only.  Users should not necessarily expect to be able to find the perfect 
+script and use it, but rather should choose a script for a similar machine, 
+examine the options used in the script and figure out if those options make 
+sense for the case at hand.  Some of the scripts in the repository are not 
+always up to date.  If a user submits a script for a machine that few Trilinos 
+developers have an account on, that script may become obsolete if it is not 
+updated by the user who submitted it.  For reasons such as this, these scripts 
+tend to be primarily useful for the values of options such as LDFLAGS, 
+CPPFLAGS, and CXXFLAGS.  
 
 Users who create scripts for other machines are encouraged to check them into 
 the repository for the benefit of other users.  Users who do not have access to
@@ -595,7 +593,7 @@ to be committed.  First, make sure that all files you modified directly appear
 in the list.  Second, when modifying a Makefile.am, the corresponding 
 Makefile.in will change also.  Third, when modifying configure.ac, configure 
 will also change, but some Makefile.in files may also change when using macros 
-such as AC_SUBST.  Finally, when unsure about whether or not a file should be 
+such as AC\_SUBST.  Finally, when unsure about whether or not a file should be 
 in the commit list, abort the commit by closing the edior without saving, and 
 chosing ``abort''.  Then, if abc.cpp is in question, type 
 \begin{verbatim}
@@ -635,7 +633,10 @@ the code will do when complete.
 
 \section{Package Requirements}
 %	**(Req's and how to satisfy them - break into subsections)**
-
+The Trilinos team makes a conscious effort to minimize the requirements that 
+are placed on Trilinos packages.  Packages can be integrated into Trilinos in 
+a gradual manner.  Listed below are three levels of requirement compliance.  
+It is common for new packages to address these steps one at a time.
 Stages of integration:
 \begin{enumerate}
 \item Put the package in the Trilinos repository.
@@ -645,8 +646,8 @@ Trilinos.  Other than receiving approval from the Trilinos Project Leader to
 add a new package to Trilinos, there are no prerequisites for adding a new 
 package to the Trilinos repository.  At this stage, it does not matter if the 
 package is finished, or even if it works.  However, a package in an unstable 
-state should not be added to the configure and build structure.  A package 
-can remain in this predistribution state indefinitely.  When release branches 
+state should not be added to the Trilinos level configure and build 
+structure.  A package can remain in this predistribution state indefinitely.  When release branches 
 are created, any packages not ready or approved for distribution can easily be 
 ommitted.
 
