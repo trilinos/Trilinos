@@ -91,6 +91,11 @@ void List::setParameter(const string& name, const char* value)
   params[name].setValue(value);
 }
 
+void List::setParameter(const string& name, char* value)
+{
+  params[name].setValue(value);
+}
+
 void List::setParameter(const string& name, const string& value)
 {
   params[name].setValue(value);

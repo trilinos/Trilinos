@@ -88,16 +88,17 @@ public:
     internally. Sets the parameter as "unused".
   */
   //@{
-  void setParameter(const string& name, bool value);
-  void setParameter(const string& name, int value);
-  void setParameter(const string& name, double value);
-  void setParameter(const string& name, const char* value);
-  void setParameter(const string& name, const string& value);
-  void setParameter(const string& name, const Arbitrary& value);
 #ifdef HAVE_NOX_ANY
   template <class T> void setParameter(const string& name, T* value);
   template <class T> void setParameter(const string& name, const T* value);
 #endif // HAVE_NOX_ANY
+  void setParameter(const string& name, bool value);
+  void setParameter(const string& name, int value);
+  void setParameter(const string& name, double value);
+  void setParameter(const string& name, const char* value);
+  void setParameter(const string& name, char *value);
+  void setParameter(const string& name, const string& value);
+  void setParameter(const string& name, const Arbitrary& value);
   //@}
 
   /** @name Getting Parameters 
