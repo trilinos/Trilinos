@@ -26,10 +26,11 @@ static char help[] =
 #include "NOX_Petsc_Vector.H"
 #include "NOX_Petsc_SharedJacobian.H"
 #include "NOX_Petsc_Group.H"
+#include "NOX_Petsc_Options.H"
 
 // User's application specific files 
-#include "Problem_Interface.H" // Interface file to NOX
-#include "FiniteDifference.H"              
+#include "Problem_Interface.H" // Interface to NOX
+#include "FiniteDifference.H"  // The PDE class used for fills 
 
 /*
    User-defined routines.  Note that immediately before each routine below,
@@ -109,9 +110,6 @@ int main(int argc, char *argv[])
   // objects needed to interface to native FormXXX routines.
   FiniteDifference Problem(&snes,&ctx);
 
-  // This should be replaced by NOX interface setup
-  //ierr = SNESSetFunction(snes,r,FormFunction,&ctx);CHKERRQ(ierr);
-
   /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
      Create matrix data structures; set Jacobian evaluation routine
      - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
@@ -147,64 +145,8 @@ int main(int argc, char *argv[])
   // Create the top level parameter list
   NOX::Parameter::List nlParams;
 
-  // Specify nonlinear solver method
-  nlParams.setParameter("Nonlinear Solver", "Line Search Based");
-  //nlParams.setParameter("Nonlinear Solver", "Trust Region Based");
-
-  // Set the printing parameters in the "Printing" sublist
-  NOX::Parameter::List& printParams = nlParams.sublist("Printing");
-  printParams.setParameter("MyPID", ctx.rank);
-  printParams.setParameter("Output Precision", 3);
-  printParams.setParameter("Output Processor", 0);
-  printParams.setParameter("Output Information",
-                        NOX::Utils::OuterIteration +
-                        NOX::Utils::OuterIterationStatusTest +
-                        NOX::Utils::InnerIteration +
-                        NOX::Utils::Parameters +
-                        NOX::Utils::Details +
-                        NOX::Utils::Warning);
-
-  // Sublist for line search
-  NOX::Parameter::List& searchParams = nlParams.sublist("Line Search");
-  searchParams.setParameter("Method", "Full Step");
-  //searchParams.setParameter("Method", "Interval Halving");
-  //searchParams.setParameter("Method", "Polynomial");
-  //searchParams.setParameter("Method", "NonlinearCG");
-  //searchParams.setParameter("Method", "Quadratic");
-  //searchParams.setParameter("Method", "More'-Thuente");
-
-  // Sublist for direction
-  NOX::Parameter::List& dirParams = nlParams.sublist("Direction");
-  dirParams.setParameter("Method", "Newton");
-  NOX::Parameter::List& newtonParams = dirParams.sublist("Newton");
-    newtonParams.setParameter("Forcing Term Method", "Constant");
-    //newtonParams.setParameter("Forcing Term Method", "Type 1");
-    //newtonParams.setParameter("Forcing Term Method", "Type 2");
-    //newtonParams.setParameter("Forcing Term Minimum Tolerance", 1.0e-4);
-    //newtonParams.setParameter("Forcing Term Maximum Tolerance", 0.1);
-  // OR
-  //dirParams.setParameter("Method", "Steepest Descent");
-  //NOX::Parameter::List& sdParams = dirParams.sublist("Steepest Descent");
-    //sdParams.setParameter("Scaling Type", "None");
-    //sdParams.setParameter("Scaling Type", "2-Norm");
-    //sdParams.setParameter("Scaling Type", "Quadratic Model Min");
-  // OR
-  //dirParams.setParameter("Method", "NonlinearCG");
-  //NOX::Parameter::List& nlcgParams = dirParams.sublist("Nonlinear CG");
-    //nlcgParams.setParameter("Restart Frequency", 2000);
-    //nlcgParams.setParameter("Precondition", "On");
-    //nlcgParams.setParameter("Orthogonalize", "Polak-Ribiere");
-    //nlcgParams.setParameter("Orthogonalize", "Fletcher-Reeves");
-
-  // Sublist for linear solver
-  // Note that preconditioning options as well as the following can be
-  // specified on the command line or via the file .petscrc
-  // See Petsc documentation for more info.
-  NOX::Parameter::List& lsParams = dirParams.sublist("Linear Solver");
-  lsParams.setParameter("Max Iterations", 800);  
-  lsParams.setParameter("Tolerance", 1e-4);
-  lsParams.setParameter("Iteration Output Frequency", 50);    
-  lsParams.setParameter("Preconditioning Matrix Type", "None"); 
+  // Allow options to be set from command line or from file
+  NOX::Petsc::Options optionHandler(nlParams, ctx.rank);
 
   // Create the interface between the test problem and the nonlinear solver
   // This is created using inheritance of the abstract base class:
@@ -212,42 +154,11 @@ int main(int argc, char *argv[])
   Problem_Interface interface(Problem);
 
   // Create the Group
-  NOX::Petsc::Group* grp = new NOX::Petsc::Group(lsParams, interface, x, J);
-//  NOX::Petsc::Group* grp2 = new NOX::Petsc::Group(*grp);
-//  cout << "\n\n\t\tGroup created .....";
-//  grp->computeF();
-//  grp2->computeF();
-//  delete grp;
-//  delete grp2;
-//  cout << " and destroyed !!" << endl;
-/*
-  A test to demonstrate memory leaks
-
-  for(int j=0; j<1000000; j++)
-  {
-    grp = new NOX::Petsc::Group(lsParams, interface, x, J);
-    delete grp;
-    if( j % 10000 == 0 )
-      cout << "  Finished : " << j << endl;
-  }
-  exit(0);
-*/
-
+  NOX::Petsc::Group* grp = new NOX::Petsc::Group(interface, x, J);
   grp->computeF(); // Needed to establish the initial convergence state
 
-  // Create the convergence tests
-  NOX::StatusTest::NormF testNormF(1.0e-6);
-  NOX::StatusTest::MaxIters testMaxIters(10);
-  NOX::StatusTest::Combo combo(NOX::StatusTest::Combo::OR, testNormF, testMaxIters);
-
-  //ierr = SNESSolve(snes,x,&it);CHKERRQ(ierr);
-  //ierr = PetscPrintf(PETSC_COMM_SELF,"Newton iterations = %d\n\n",it);CHKERRQ(ierr);
-
   // Create the method and solve
-  NOX::Solver::Manager solver(*grp, combo, nlParams);
-// 
-  //Cut the solve step for now to debug....
-
+  NOX::Solver::Manager solver(*grp, optionHandler.getStatusTest(), nlParams);
   NOX::StatusTest::StatusType status = solver.solve();
 
   if (status != NOX::StatusTest::Converged)
@@ -264,14 +175,7 @@ int main(int argc, char *argv[])
   Vec& nonconst_x = const_cast<Vec&>(x);
 
   printf("\n\tHere is the solution:\n\n");
-//  VecView(nonconst_x, PETSC_VIEWER_STDOUT_WORLD);
   VecView(finalSolution, PETSC_VIEWER_STDOUT_WORLD);
-//
-
-//  NOX::Petsc::Group* grp2 = new NOX::Petsc::Group(*grp);
-//  delete grp; grp = 0;
-//  delete grp2;
-//  delete grp; grp = 0;
 
   /*
      Free work space.  All PETSc objects should be destroyed when they
