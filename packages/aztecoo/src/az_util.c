@@ -1702,7 +1702,7 @@ int AZ_breakdown_f(int N, double v[], double w[], double inner,
   v_norm = AZ_gvector_norm(N, 2, v, proc_config);
   w_norm = AZ_gvector_norm(N, 2, w, proc_config);
 
-  return (fabs(inner) < 100.0 * v_norm * w_norm * DBL_EPSILON);
+  return (fabs(inner) <= 100.0 * v_norm * w_norm * DBL_EPSILON);
 
 } /* breakdown */
 
