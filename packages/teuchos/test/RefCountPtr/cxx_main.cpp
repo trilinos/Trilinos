@@ -163,7 +163,7 @@ int main( int argc, char* argv[] ) {
 
 		// Read options from the commandline
 		CommandLineProcessor  clp(false); // Don't throw exceptions
-		clp.setOption( "verbose", "quite", &verbose, "Set if output is printed or not." );
+		clp.setOption( "verbose", "quiet", &verbose, "Set if output is printed or not." );
 		CommandLineProcessor::EParseCommandLineReturn parse_return = clp.parse(argc,argv);
 		if( parse_return != CommandLineProcessor::PARSE_SUCCESSFULL ) return parse_return;
 

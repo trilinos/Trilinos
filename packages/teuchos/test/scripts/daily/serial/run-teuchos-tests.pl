@@ -16,6 +16,8 @@ printf
 
 my $success = 1;  # Boolean (false=0,true=nonzero)
 my $result;       # success=0, failure=nonzero
-$result = system ('./RefCountPtr/RefCountPtr_test.exe --quite');
+$result = system ('./RefCountPtr/RefCountPtr_test.exe --quiet');
+$success = 0 if ($result != 0);
+$result = system ('./BLAS/BLAS_test.exe');
 $success = 0 if ($result != 0);
 exit ($success ? 0 : -1 );
