@@ -2311,7 +2311,7 @@ report($SUMMARY);
             print outFile "# - the value of the HOST_FILE option can be referred to with the value\n";
             print outFile "#   <HOST_FILE>\n";   
             print outFile "#   For example:\n";
-            print outFile "#   MPI_STARTUP_CMD                 = \"lamboot <HOST_FILE> -v\"\n";}
+            print outFile "#   MPI_STARTUP_CMD                 = \"lamboot <HOST_FILE> -v\"\n";
             print outFile "\n";
  
         push (@optionsOrder, "MPI_STARTUP_CMD");
