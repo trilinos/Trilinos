@@ -70,6 +70,9 @@ static int local_hc (
     return ZOLTAN_FATAL;
   }
 
+  if (hg->nEdge == 0)
+    return ZOLTAN_OK;
+
   if (hg->vwgt)
   { total_weight = 0.0;
     for (i=0; i<hg->nVtx; i++)

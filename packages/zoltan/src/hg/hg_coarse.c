@@ -28,9 +28,9 @@ int Zoltan_HG_Coarsening (
   HGraph *c_hg, 
   int *LevelMap)
 { 
-  int  i, j, k, l, old, vertex, new_vertex, *hsize, *sum, *used_vertices=NULL,
-       *sorted=NULL, deleted_he, deleted_pins, *c_hindex=NULL, *c_hvertex=NULL;
-  float *c_ewgt=NULL;
+  int  i, j, k, l, old, vertex, new_vertex, *hsize, *sum, *used_vertices,
+       *sorted, deleted_he, deleted_pins, *c_hindex, *c_hvertex;
+  float *c_ewgt;
   char *yo = "Zoltan_HG_Coarsening" ;
 
   Zoltan_HG_HGraph_Init(c_hg);
@@ -77,7 +77,6 @@ int Zoltan_HG_Coarsening (
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
     return ZOLTAN_MEMERR;
   }
-
   c_hindex[0] = c_hg->nEdge = c_hg->nPin = 0;
   for (i=0; i<hg->nEdge; i++)
   { for (j=hg->hindex[i]; j<hg->hindex[i+1]; j++)
@@ -94,6 +93,17 @@ int Zoltan_HG_Coarsening (
       c_hg->nPin = c_hindex[c_hg->nEdge];
   }
   ZOLTAN_FREE((void **) &used_vertices);
+
+/* Done if there are no remaining edges */
+  if (c_hg->nEdge == 0)
+  { c_hg->ewgt = NULL;
+    if (!(c_hg->hindex = (int *) ZOLTAN_CALLOC (1,sizeof(int))))
+    { ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
+      return ZOLTAN_MEMERR;
+    }
+    c_hg->hvertex = NULL;
+    return Zoltan_HG_Create_Mirror(zz,c_hg);
+  }
 
 /* Move weight of identical hyperedges to one of them */
   if (!(sorted = (int *) ZOLTAN_MALLOC (sizeof (int) * c_hg->nEdge)) ||
