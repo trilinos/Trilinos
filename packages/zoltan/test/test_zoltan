@@ -17,7 +17,7 @@
 #
 # Usage: test_zoltan [-arch arch-type] [-cmd command] 
 #
-# where arch-type is one of {generic, solaris, gcc, smos, tflop, cplant}.
+# where arch-type is one of {generic, solaris, gcc, smos, tflop, cplant, dec}.
 # Alternatively, give a run command with the -cmd option.
 #
 # Initial version by Erik Boman, SNL 9226, 99/09/15.
@@ -125,6 +125,9 @@ if (! $?run ) then
     case tflop:
     case cplant:
       set run = "yod -proc 3 -sz"
+      breaksw
+    case dec:
+      set run = "dmpirun -np"
       breaksw
     default:
       echo "Unknown arch-type. Please use -cmd to specify the run command."
@@ -390,7 +393,7 @@ exit 0
 # Print usage and exit with error
 usage:
   echo "Usage: $0 [-arch arch-type] [-cmd command]"
-  echo "where arch-type is one of {generic, gcc, solaris, smos, tflop, cplant}."
+  echo "where arch-type is one of {generic, gcc, solaris, smos, tflop, cplant, dec}."
   echo "(If you have set ZOLTAN_ARCH you do not need to use -arch.)"
   echo "Alternatively, specify the command to load and run a parallel "
   echo "program with the -cmd option."
