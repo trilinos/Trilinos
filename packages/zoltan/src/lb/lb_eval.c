@@ -72,8 +72,9 @@ int Zoltan_LB_Eval (ZZ *zz, int print_stats,
   char *yo = "Zoltan_LB_Eval";
   int i, j, k, p, num_obj = 0, max_edges, nedges, cuts, flag, found;
   int num_adj, num_boundary, ierr, compute_part;
-  int imin, imax, isum, nproc = zz->Num_Proc, nparts = zz->LB.Num_Global_Parts;
-  int stats[6*NUM_STATS];
+  int nproc = zz->Num_Proc, nparts = zz->LB.Num_Global_Parts;
+  int stats[4*NUM_STATS];
+  int imin, imax, isum;
   int *proc_count, *nbors_proc;
   float *tmp_vwgt, *vwgts, *ewgts, *tmp_cutwgt;
   ZOLTAN_ID_PTR local_ids; 
@@ -86,9 +87,8 @@ int Zoltan_LB_Eval (ZZ *zz, int print_stats,
   int gid_off, lid_off;
   char msg[256];
   /* Arrays for partition data. */
-  int *nobj_arr, *cut_arr, *bndry_arr, *nadj_arr, *all_arr;
-  float *vwgt_arr, *cutwgt_arr;
-  
+  int *nobj_arr, *cut_arr, *bndry_arr, *nadj_arr, *all_arr, *all_arr_glob;
+  float *vwgt_arr, *vwgt_arr_glob, *cutwgt_arr, *cutwgt_arr_glob;
   
   ZOLTAN_TRACE_ENTER(zz, yo);
 
@@ -103,8 +103,8 @@ int Zoltan_LB_Eval (ZZ *zz, int print_stats,
   vwgts = ewgts = NULL;
   nbors_global = NULL;
   nbors_proc = proc_count = NULL;
-  vwgt_arr = cutwgt_arr = NULL;
-  nobj_arr = cut_arr = bndry_arr = nadj_arr = all_arr = NULL;
+  vwgt_arr = vwgt_arr_glob = cutwgt_arr = cutwgt_arr_glob = NULL;
+  nobj_arr = cut_arr = bndry_arr = nadj_arr = all_arr = all_arr_glob = NULL;
 
   ierr = Zoltan_Get_Obj_List(zz, &num_obj, &global_ids, &local_ids, 
                              zz->Obj_Weight_Dim, &vwgts, &part);
@@ -119,8 +119,8 @@ int Zoltan_LB_Eval (ZZ *zz, int print_stats,
 
   if (compute_part){
     /* Allocate space. */
-    all_arr = (int *)  ZOLTAN_CALLOC(NUM_STATS*nparts, sizeof(int));
-    vwgt_arr = (float *) ZOLTAN_CALLOC(nparts*(zz->Obj_Weight_Dim +
+    all_arr = (int *)  ZOLTAN_CALLOC(2*NUM_STATS*nparts, sizeof(int));
+    vwgt_arr = (float *) ZOLTAN_CALLOC(2*nparts*(zz->Obj_Weight_Dim +
                            zz->Edge_Weight_Dim), sizeof(float));
     if (!all_arr || (zz->Obj_Weight_Dim+zz->Edge_Weight_Dim && !vwgt_arr)){
       ierr = ZOLTAN_MEMERR;
@@ -130,7 +130,10 @@ int Zoltan_LB_Eval (ZZ *zz, int print_stats,
     cut_arr  = nobj_arr + nparts;
     bndry_arr  = cut_arr + nparts;
     nadj_arr = bndry_arr + nparts;
-    cutwgt_arr = vwgt_arr + nparts*(zz->Obj_Weight_Dim);
+    all_arr_glob = all_arr + NUM_STATS*nparts;
+    vwgt_arr_glob = vwgt_arr + nparts*(zz->Obj_Weight_Dim);
+    cutwgt_arr = vwgt_arr_glob + nparts*(zz->Obj_Weight_Dim);
+    cutwgt_arr_glob = cutwgt_arr + nparts*(zz->Edge_Weight_Dim);
 
     /* Count number of objects. */
     for (i=0; i<num_obj; i++){
@@ -140,7 +143,7 @@ int Zoltan_LB_Eval (ZZ *zz, int print_stats,
 
   /* Compute object weight sums */
   if (zz->Obj_Weight_Dim>0){
-    tmp_vwgt = (float *) ZOLTAN_CALLOC(6*zz->Obj_Weight_Dim,  sizeof(float));
+    tmp_vwgt = (float *) ZOLTAN_CALLOC(4*zz->Obj_Weight_Dim,  sizeof(float));
     if (!tmp_vwgt){
       ierr = ZOLTAN_MEMERR;
       goto End;
@@ -191,7 +194,7 @@ int Zoltan_LB_Eval (ZZ *zz, int print_stats,
     /* Allocate space for edge weights if needed */
     if (zz->Edge_Weight_Dim){
       ewgts = (float *)ZOLTAN_MALLOC((zz->Edge_Weight_Dim)*max_edges * sizeof(float));
-      tmp_cutwgt = (float *) ZOLTAN_MALLOC(6*(zz->Edge_Weight_Dim) * sizeof(float));
+      tmp_cutwgt = (float *) ZOLTAN_MALLOC(4*(zz->Edge_Weight_Dim) * sizeof(float));
     }
 
     if ((max_edges && ((!nbors_global) || (!nbors_proc) || (zz->Edge_Weight_Dim && !ewgts))) || 
@@ -282,22 +285,26 @@ int Zoltan_LB_Eval (ZZ *zz, int print_stats,
   }
   
   if (print_stats){
+    imin = 1;
+    imax = 2;
+    isum = 3;
+
     /* Global reduction for object weights. */
     if (zz->Obj_Weight_Dim>0){
-      MPI_Allreduce(tmp_vwgt, &tmp_vwgt[1*zz->Obj_Weight_Dim], 
+      MPI_Allreduce(tmp_vwgt, &tmp_vwgt[imin*zz->Obj_Weight_Dim], 
                     zz->Obj_Weight_Dim, MPI_FLOAT, MPI_MIN, zz->Communicator);
-      MPI_Allreduce(tmp_vwgt, &tmp_vwgt[2*zz->Obj_Weight_Dim], 
+      MPI_Allreduce(tmp_vwgt, &tmp_vwgt[imax*zz->Obj_Weight_Dim], 
                     zz->Obj_Weight_Dim, MPI_FLOAT, MPI_MAX, zz->Communicator);
-      MPI_Allreduce(tmp_vwgt, &tmp_vwgt[3*zz->Obj_Weight_Dim], 
+      MPI_Allreduce(tmp_vwgt, &tmp_vwgt[isum*zz->Obj_Weight_Dim], 
                     zz->Obj_Weight_Dim, MPI_FLOAT, MPI_SUM, zz->Communicator);
     }
     /* Global reduction for comm weights. */
     if (zz->Edge_Weight_Dim>0 && zz->Get_Num_Edges && zz->Get_Edge_List){
-      MPI_Allreduce(tmp_cutwgt, &tmp_cutwgt[1*(zz->Edge_Weight_Dim)], 
+      MPI_Allreduce(tmp_cutwgt, &tmp_cutwgt[imin*(zz->Edge_Weight_Dim)], 
                     zz->Edge_Weight_Dim, MPI_FLOAT, MPI_MIN, zz->Communicator);
-      MPI_Allreduce(tmp_cutwgt, &tmp_cutwgt[2*zz->Edge_Weight_Dim], 
+      MPI_Allreduce(tmp_cutwgt, &tmp_cutwgt[imax*zz->Edge_Weight_Dim], 
                     zz->Edge_Weight_Dim, MPI_FLOAT, MPI_MAX, zz->Communicator);
-      MPI_Allreduce(tmp_cutwgt, &tmp_cutwgt[3*(zz->Edge_Weight_Dim)], 
+      MPI_Allreduce(tmp_cutwgt, &tmp_cutwgt[isum*(zz->Edge_Weight_Dim)], 
                     zz->Edge_Weight_Dim, MPI_FLOAT, MPI_SUM, zz->Communicator);
     }
     /* fflush(stdout); */
@@ -308,9 +315,6 @@ int Zoltan_LB_Eval (ZZ *zz, int print_stats,
     stats[3] = num_adj;
 
     /* Compute min, max, sum in the upper portions of the stats array. */
-    imin = 1;
-    imax = 2;
-    isum = 3;
     MPI_Allreduce(stats, &stats[imin*NUM_STATS], NUM_STATS, MPI_INT, MPI_MIN, 
                   zz->Communicator);
     MPI_Allreduce(stats, &stats[imax*NUM_STATS], NUM_STATS, MPI_INT, MPI_MAX, 
@@ -393,90 +397,70 @@ int Zoltan_LB_Eval (ZZ *zz, int print_stats,
 
   if (compute_part && print_stats){
     /* Compute statistics w.r.t. partitions. */
-    /* Assume that each partition is WHOLLY CONTAINED WITHIN A PROC. */
+    imin = 0;
+    imax = 1;
+    isum = 2;
 
-    /* Find local min, max, sum. */
-    for (i=0; i<6*NUM_STATS; i++)
-      stats[i] = 0;
+    /* Allreduce data w.r.t. partitions onto all procs. */
+    MPI_Allreduce(all_arr, all_arr_glob, NUM_STATS*nparts, 
+                  MPI_INT, MPI_SUM, zz->Communicator);
+    MPI_Allreduce(vwgt_arr, vwgt_arr_glob, nparts*(zz->Obj_Weight_Dim), 
+                  MPI_FLOAT, MPI_SUM, zz->Communicator);
+    MPI_Allreduce(cutwgt_arr, cutwgt_arr_glob, nparts*(zz->Edge_Weight_Dim), 
+                  MPI_FLOAT, MPI_SUM, zz->Communicator);
+
+    /* Find min, max, sum. */
     for (i=0; i<NUM_STATS; i++)
       stats[i] = INT_MAX; /* set min to very large number */
+    for (i=NUM_STATS; i<3*NUM_STATS; i++)
+      stats[i] = 0;       /* max and sum */
  
-    Zoltan_LB_Proc_To_Part(zz, zz->Proc, &p, &k);
-    for (i=k; i<k+p; i++){
+    for (i=0; i<nparts; i++){
       for (j=0; j<NUM_STATS; j++){
-        if (all_arr[j*nparts+i] < stats[j])           /* min */
-          stats[j] = all_arr[j*nparts+i];
-        if (all_arr[j*nparts+i] > stats[NUM_STATS+j]) /* max */
-          stats[NUM_STATS+j] = all_arr[j*nparts+i];
-        stats[2*NUM_STATS+j] += all_arr[j*nparts+i];  /* sum */
+        if (all_arr_glob[j*nparts+i] < stats[j])           /* min */
+          stats[j] = all_arr_glob[j*nparts+i];
+        if (all_arr_glob[j*nparts+i] > stats[imax*NUM_STATS+j]) /* max */
+          stats[imax*NUM_STATS+j] = all_arr_glob[j*nparts+i];
+        stats[isum*NUM_STATS+j] += all_arr_glob[j*nparts+i];  /* sum */
       }
     }
 
-    /* Compute global min, max, sum in the upper part of the stats array. */
-    imin = 3;
-    imax = 4;
-    isum = 5;
-    MPI_Allreduce(stats, &stats[imin*NUM_STATS], NUM_STATS, MPI_INT, MPI_MIN, 
-                  zz->Communicator);
-    MPI_Allreduce(&stats[NUM_STATS], &stats[imax*NUM_STATS], NUM_STATS, 
-                  MPI_INT, MPI_MAX, zz->Communicator);
-    MPI_Allreduce(&stats[2*NUM_STATS], &stats[isum*NUM_STATS], NUM_STATS, 
-                  MPI_INT, MPI_SUM, zz->Communicator);
-
-    /* Local and global reduction for object weights. */
+    /* Min, max, sum for object weights. */
     if (zz->Obj_Weight_Dim>0){
       for (i=0; i<zz->Obj_Weight_Dim; i++)
         tmp_vwgt[i] = FLT_MAX; /*min */
-      for (i=zz->Obj_Weight_Dim; i<6*zz->Obj_Weight_Dim; i++)
+      for (i=zz->Obj_Weight_Dim; i<3*zz->Obj_Weight_Dim; i++)
         tmp_vwgt[i] = 0; /* max and sum */
-      Zoltan_LB_Proc_To_Part(zz, zz->Proc, &p, &k);
-      for (j=k; j<k+p; j++){
+
+      for (j=0; j<nparts; j++){
         for (i=0; i<zz->Obj_Weight_Dim; i++){
-          if (vwgt_arr[j*zz->Obj_Weight_Dim+i] < tmp_vwgt[i]) 
-            tmp_vwgt[i] = vwgt_arr[j*zz->Obj_Weight_Dim+i];
-          if (vwgt_arr[j*zz->Obj_Weight_Dim+i] > tmp_vwgt[zz->Obj_Weight_Dim+i]) 
-            tmp_vwgt[zz->Obj_Weight_Dim+i] = vwgt_arr[j*zz->Obj_Weight_Dim+i];
-          tmp_vwgt[2*zz->Obj_Weight_Dim+i] += vwgt_arr[j*zz->Obj_Weight_Dim+i]; 
+          if (vwgt_arr_glob[j*zz->Obj_Weight_Dim+i] < tmp_vwgt[i]) 
+            tmp_vwgt[i] = vwgt_arr_glob[j*zz->Obj_Weight_Dim+i];
+          if (vwgt_arr_glob[j*zz->Obj_Weight_Dim+i] > tmp_vwgt[imax*zz->Obj_Weight_Dim+i]) 
+            tmp_vwgt[imax*zz->Obj_Weight_Dim+i] = vwgt_arr_glob[j*zz->Obj_Weight_Dim+i];
+          tmp_vwgt[isum*zz->Obj_Weight_Dim+i] += vwgt_arr_glob[j*zz->Obj_Weight_Dim+i]; 
         }
       }
 
-      
-      MPI_Allreduce(tmp_vwgt, &tmp_vwgt[imin*zz->Obj_Weight_Dim], 
-                    zz->Obj_Weight_Dim, MPI_FLOAT, MPI_MIN, zz->Communicator);
-      MPI_Allreduce(&tmp_vwgt[zz->Obj_Weight_Dim], 
-                    &tmp_vwgt[imax*zz->Obj_Weight_Dim], 
-                    zz->Obj_Weight_Dim, MPI_FLOAT, MPI_MAX, zz->Communicator);
-      MPI_Allreduce(&tmp_vwgt[2*zz->Obj_Weight_Dim], 
-                    &tmp_vwgt[isum*zz->Obj_Weight_Dim], 
-                    zz->Obj_Weight_Dim, MPI_FLOAT, MPI_SUM, zz->Communicator);
     }
 
-    /* Local and global reduction for cut weights. */
+    /* Min, max, sum for cut weights. */
     if (zz->Edge_Weight_Dim>0){
       for (i=0; i<zz->Edge_Weight_Dim; i++)
         tmp_cutwgt[i] = FLT_MAX; /*min */
-      for (i=zz->Edge_Weight_Dim; i<6*zz->Edge_Weight_Dim; i++)
+      for (i=zz->Edge_Weight_Dim; i<3*zz->Edge_Weight_Dim; i++)
         tmp_cutwgt[i] = 0; /* max and sum */
-      Zoltan_LB_Proc_To_Part(zz, zz->Proc, &p, &k);
-      for (j=k; j<k+p; j++){
+
+      for (j=0; j<nparts; j++){
         for (i=0; i<zz->Edge_Weight_Dim; i++){
-          if (cutwgt_arr[j*zz->Edge_Weight_Dim+i] < tmp_cutwgt[i]) 
-            tmp_cutwgt[i] = cutwgt_arr[j*zz->Edge_Weight_Dim+i];
-          if (cutwgt_arr[j*zz->Edge_Weight_Dim+i] > tmp_cutwgt[zz->Edge_Weight_Dim+i]) 
-            tmp_cutwgt[zz->Edge_Weight_Dim+i] = cutwgt_arr[j*zz->Edge_Weight_Dim+i];
-          tmp_cutwgt[2*zz->Edge_Weight_Dim+i] += cutwgt_arr[j*zz->Edge_Weight_Dim+i]; 
+          if (cutwgt_arr_glob[j*zz->Edge_Weight_Dim+i] < tmp_cutwgt[i]) 
+            tmp_cutwgt[i] = cutwgt_arr_glob[j*zz->Edge_Weight_Dim+i];
+          if (cutwgt_arr_glob[j*zz->Edge_Weight_Dim+i] > tmp_cutwgt[imax*zz->Edge_Weight_Dim+i]) 
+            tmp_cutwgt[imax*zz->Edge_Weight_Dim+i] = cutwgt_arr_glob[j*zz->Edge_Weight_Dim+i];
+          tmp_cutwgt[isum*zz->Edge_Weight_Dim+i] += cutwgt_arr_glob[j*zz->Edge_Weight_Dim+i]; 
         }
       }
 
-      
-      MPI_Allreduce(tmp_cutwgt, &tmp_cutwgt[imin*zz->Edge_Weight_Dim], 
-                    zz->Edge_Weight_Dim, MPI_FLOAT, MPI_MIN, zz->Communicator);
-      MPI_Allreduce(&tmp_cutwgt[zz->Edge_Weight_Dim], 
-                    &tmp_cutwgt[imax*zz->Edge_Weight_Dim], 
-                    zz->Edge_Weight_Dim, MPI_FLOAT, MPI_MAX, zz->Communicator);
-      MPI_Allreduce(&tmp_cutwgt[2*zz->Edge_Weight_Dim], 
-                    &tmp_cutwgt[isum*zz->Edge_Weight_Dim], 
-                    zz->Edge_Weight_Dim, MPI_FLOAT, MPI_SUM, zz->Communicator);
     }
 
     /* Print min-max-sum of results */
