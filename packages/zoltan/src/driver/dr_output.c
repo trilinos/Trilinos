@@ -152,10 +152,12 @@ int output_results(char *cmd_file,
 
   DEBUG_TRACE_START(Proc, yo);
 
-  global_ids = (int *) malloc(mesh->num_elems * sizeof(int));
-  if (!global_ids) {
-    Gen_Error(0, "fatal: insufficient memory");
-    return 0;
+  if (mesh->num_elems) {
+     global_ids = (int *) malloc(mesh->num_elems * sizeof(int));
+     if (!global_ids) {
+       Gen_Error(0, "fatal: insufficient memory");
+       return 0;
+     }
   }
 
   for (i = j = 0; i < mesh->elem_array_len; i++) {
