@@ -94,6 +94,11 @@ Teuchos must be configured with <i>--enable-teuchos-complex</i>.
   templated functions for generating inline array arguments for
   function calls.
 
+	<li><tt>Teuchos::getConst()</tt> is a silly little templated function that returns a
+	constant reference given any constant object.  This function allows a piece of code
+	to access the <tt>const</t> version of a function given a non-<tt>const</tt> reference
+	to an object.
+
   </ul>
 
 
@@ -114,11 +119,13 @@ Teuchos must be configured with <i>--enable-teuchos-complex</i>.
 
   <ul>
 
-  <li> Test for Exception: The TEST_FOR_EXCEPTION() macro accepts a
+  <li> Testing for Exceptions: The TEST_FOR_EXCEPTION() macro accepts a
   logical test, an exception handler, and a
   message.  It then throws an "intelligent" exception informing the
   user of the file, line, and message where
-  the exception was thrown.
+  the exception was thrown.  The macro TEST_FOR_EXCEPT() is a shorter
+	macro that just accepts a logic test and is therefore easier to write.
+	Please use TEST_FOR_EXCEPT(!test) as an alternative to assert(test).
 
   </ul>
 
