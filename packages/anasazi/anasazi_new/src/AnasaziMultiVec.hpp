@@ -29,7 +29,7 @@
 #ifndef ANASAZI_MULTI_VEC_HPP
 #define ANASAZI_MULTI_VEC_HPP
 
-#include "Teuchos_SerialDenseMatrix.hpp"
+#include "AnasaziMultiVecTraits.hpp"
 #include "AnasaziConfigDefs.hpp"
 
 /*! 	\class Anasazi::MultiVec
@@ -161,6 +161,71 @@ public:
 	//@}
 };
 
-}
+
+  ////////////////////////////////////////////////////////////////////
+  //
+  // Implementation of the Anasazi::MultiVecTraits for Anasazi::MultiVec.
+  //
+  ////////////////////////////////////////////////////////////////////
+
+
+  template<class TYPE>
+  class MultiVecTraits<TYPE,MultiVec<TYPE> >
+  {
+  public:
+    ///
+    static Teuchos::RefCountPtr<MultiVec<TYPE> > Clone( const MultiVec<TYPE>& mv, const int numvecs )
+    { return Teuchos::rcp( const_cast<MultiVec<TYPE>&>(mv).Clone(numvecs) ); }
+    ///
+    static Teuchos::RefCountPtr<MultiVec<TYPE> > CloneCopy( const MultiVec<TYPE>& mv )
+    { return Teuchos::rcp( const_cast<MultiVec<TYPE>&>(mv).CloneCopy() ); }
+    ///
+    static Teuchos::RefCountPtr<MultiVec<TYPE> > CloneCopy( const MultiVec<TYPE>& mv, int index[], int numvecs )
+    { return Teuchos::rcp( const_cast<MultiVec<TYPE>&>(mv).CloneCopy(index,numvecs) ); }
+    ///
+    static Teuchos::RefCountPtr<MultiVec<TYPE> > CloneView( MultiVec<TYPE>& mv, int index[], int numvecs )
+    { return Teuchos::rcp( mv.CloneView(index,numvecs) ); }
+    ///
+    static Teuchos::RefCountPtr<const MultiVec<TYPE> > CloneView( const MultiVec<TYPE>& mv, int index[], int numvecs )
+    { return Teuchos::rcp( const_cast<MultiVec<TYPE>&>(mv).CloneView(index,numvecs) ); }
+    ///
+    static int GetVecLength( const MultiVec<TYPE>& mv )
+    { return mv.GetVecLength(); }
+    ///
+    static int GetNumberVecs( const MultiVec<TYPE>& mv )
+    { return mv.GetNumberVecs(); }
+    ///
+    static void MvTimesMatAddMv( TYPE alpha, const MultiVec<TYPE>& A, 
+				 const Teuchos::SerialDenseMatrix<int,TYPE>& B, 
+				 TYPE beta, MultiVec<TYPE>& mv )
+    { mv.MvTimesMatAddMv(alpha,const_cast<MultiVec<TYPE>&>(A),const_cast<Teuchos::SerialDenseMatrix<int,TYPE>&>(B),beta); }
+    ///
+    static void MvAddMv( TYPE alpha, const MultiVec<TYPE>& A, TYPE beta, const MultiVec<TYPE>& B, MultiVec<TYPE>& mv )
+    { mv.MvAddMv(alpha,const_cast<MultiVec<TYPE>&>(A),beta,const_cast<MultiVec<TYPE>&>(B)); }
+    ///
+    static void MvTransMv( const MultiVec<TYPE>& mv, TYPE alpha, const MultiVec<TYPE>& A, Teuchos::SerialDenseMatrix<int,TYPE>& B )
+    { const_cast<MultiVec<TYPE>&>(mv).MvTransMv(alpha,const_cast<MultiVec<TYPE>&>(A),B); }
+    ///
+    static void MvNorm( const MultiVec<TYPE>& mv, TYPE *normvec )
+    { const_cast<MultiVec<TYPE>&>(mv).MvNorm(normvec); }
+    ///
+    static void SetBlock( const MultiVec<TYPE>& A, int index[], int numvecs, MultiVec<TYPE>& mv )
+    { mv.SetBlock(const_cast<MultiVec<TYPE>&>(A),index,numvecs); }
+    ///
+    static void MvRandom( MultiVec<TYPE>& mv )
+    { mv.MvRandom(); }
+    ///
+    static void MvInit( MultiVec<TYPE>& mv, TYPE alpha = Teuchos::ScalarTraits<TYPE>::zero() )
+    { mv.MvInit(alpha); }
+    ///
+    static void MvPrint( const MultiVec<TYPE>& mv, ostream& os )
+    { const_cast<MultiVec<TYPE>&>(mv).MvPrint(os); }
+    
+  };
+
+
+} // namespace Anasazi
+
 #endif
+
 // end of file AnasaziMultiVec.hpp

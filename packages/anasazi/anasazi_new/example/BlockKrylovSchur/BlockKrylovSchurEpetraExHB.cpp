@@ -149,10 +149,10 @@ int main(int argc, char *argv[]) {
 	typedef Anasazi::Operator<double> OP;
 	//
         // create a EpetraAnasaziVec. Note that the decision to make a view or
-        // or copy is determined by the petra constructor called by Anasazi::EpetraVec.
+        // or copy is determined by the petra constructor called by Anasazi::EpetraMultiVec.
         // This is possible because I pass in arguements needed by petra.
 
-        Teuchos::RefCountPtr<Anasazi::EpetraVec> ivec = Teuchos::rcp( new Anasazi::EpetraVec(Map, block) );
+        Teuchos::RefCountPtr<Anasazi::EpetraMultiVec> ivec = Teuchos::rcp( new Anasazi::EpetraMultiVec(Map, block) );
         ivec->MvRandom();
 
         // call the ctor that calls the petra ctor for a matrix
@@ -199,18 +199,18 @@ int main(int argc, char *argv[]) {
 	std::vector<int> index(nev);
 	for (i=0; i<nev; i++) 
 	  index[i] = i;
-        Anasazi::EpetraVec* evecr = dynamic_cast<Anasazi::EpetraVec*>(MyProblem->GetEvecs()->CloneView( &index[0], nev ));
+        Anasazi::EpetraMultiVec* evecr = dynamic_cast<Anasazi::EpetraMultiVec*>(MyProblem->GetEvecs()->CloneView( &index[0], nev ));
 	for (i=0; i<nev; i++)
 	  index[i] = nev + i;
-        Anasazi::EpetraVec* eveci = dynamic_cast<Anasazi::EpetraVec*>(MyProblem->GetEvecs()->CloneView( &index[0], nev ));
+        Anasazi::EpetraMultiVec* eveci = dynamic_cast<Anasazi::EpetraMultiVec*>(MyProblem->GetEvecs()->CloneView( &index[0], nev ));
 
         // output results to screen
         MySolver.currentStatus();
 
 	// Compute residuals.
 	Teuchos::LAPACK<int,double> lapack;
-	Anasazi::EpetraVec tempevecr(Map,nev), tempAevec(Map,nev);
-	Anasazi::EpetraVec tempeveci(Map,nev);
+	Anasazi::EpetraMultiVec tempevecr(Map,nev), tempAevec(Map,nev);
+	Anasazi::EpetraMultiVec tempeveci(Map,nev);
 	Teuchos::SerialDenseMatrix<int,double> Breal(nev,nev), Breal2(nev,nev);
 	Teuchos::SerialDenseMatrix<int,double> Bimag(nev,nev), Bimag2(nev,nev);
 	std::vector<double> normA(nev), tempnrm(nev);

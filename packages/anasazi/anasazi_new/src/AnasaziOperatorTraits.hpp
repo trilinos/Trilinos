@@ -34,8 +34,6 @@
 	required by the iterative linear solver.
 */
 
-#include "AnasaziMultiVec.hpp"
-#include "AnasaziOperator.hpp"
 #include "AnasaziReturnType.hpp"
 #include "AnasaziConfigDefs.hpp"
 
@@ -54,23 +52,10 @@ namespace Anasazi {
   public:
     
     ///
-    static ReturnType Apply ( const Operator<TYPE>& Op, 
-			      const MultiVec<TYPE>& x, 
-			      MultiVec<TYPE>& y )
+    static ReturnType Apply ( const OP& Op, 
+			      const MV& x, 
+			      MV& y )
     { return UndefinedOperatorTraits<TYPE, MV, OP>::notDefined(); };
-    
-  };
-  
-  template <class TYPE> 
-  class OperatorTraits < TYPE, MultiVec<TYPE>, Operator<TYPE> > 
-  {
-  public:
-    
-    ///
-    static ReturnType Apply ( const Operator<TYPE>& Op, 
-			      const MultiVec<TYPE>& x, 
-			      MultiVec<TYPE>& y )
-    { return Op.Apply( x, y ); }
     
   };
   

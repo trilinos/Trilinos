@@ -152,9 +152,9 @@ int main(int argc, char *argv[]) {
 	typedef Anasazi::MultiVec<double> MV;
 	typedef Anasazi::Operator<double> OP;
 
-	// Create an Anasazi::EpetraVec for an initial vector to start the solver. 
+	// Create an Anasazi::EpetraMultiVec for an initial vector to start the solver. 
 	// Note:  This needs to have the same number of columns as the blocksize.
-	Teuchos::RefCountPtr<Anasazi::EpetraVec> ivec = Teuchos::rcp( new Anasazi::EpetraVec(ColMap, block) );
+	Teuchos::RefCountPtr<Anasazi::EpetraMultiVec> ivec = Teuchos::rcp( new Anasazi::EpetraMultiVec(ColMap, block) );
 	ivec->MvRandom();
 
 	// Call the constructor for the (A^T*A) operator
@@ -195,7 +195,7 @@ int main(int argc, char *argv[]) {
 	double* evals = MyProblem->GetEvals();
 
 	// Retrieve eigenvectors
-	//	Anasazi::EpetraVec* evecr = dynamic_cast<Anasazi::EpetraVec*>(&(MyProblem->GetEvecs()));
+	// Anasazi::EpetraMultiVec* evecr = dynamic_cast<Anasazi::EpetraMultiVec*>(&(MyProblem->GetEvecs()));
 
 	// Output results to screen
 	MySolver.currentStatus();
@@ -215,8 +215,8 @@ int main(int argc, char *argv[]) {
 	std::vector<double> tempnrm(nev), directnrm(nev);
 	std::vector<int> index(nev);
 	for (i=0; i<nev; i++) { index[i] = i; }
-	Anasazi::EpetraVec Av(RowMap,nev), u(RowMap,nev);
-	Anasazi::EpetraVec* evecs = dynamic_cast<Anasazi::EpetraVec* >(MyProblem->GetEvecs()->CloneView( &index[0], nev ));
+	Anasazi::EpetraMultiVec Av(RowMap,nev), u(RowMap,nev);
+	Anasazi::EpetraMultiVec* evecs = dynamic_cast<Anasazi::EpetraMultiVec* >(MyProblem->GetEvecs()->CloneView( &index[0], nev ));
 	Teuchos::SerialDenseMatrix<int,double> S(nev,nev);
         A.Apply( *evecs, Av );
 	Av.MvNorm( &tempnrm[0] );

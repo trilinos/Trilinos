@@ -259,9 +259,9 @@ int main(int argc, char *argv[]) {
 	typedef Anasazi::MultiVec<double> MV;
 	typedef Anasazi::Operator<double> OP;
 
-	// Create a AnasaziEpetraVec for an initial vector to start the solver.
+	// Create a AnasaziEpetraMultiVec for an initial vector to start the solver.
 	// Note:  This needs to have the same number of columns as the blocksize.
-	Teuchos::RefCountPtr<Anasazi::EpetraVec> ivec = Teuchos::rcp( new Anasazi::EpetraVec(Map, block) );
+	Teuchos::RefCountPtr<Anasazi::EpetraMultiVec> ivec = Teuchos::rcp( new Anasazi::EpetraMultiVec(Map, block) );
 	ivec->MvRandom();
     
 	// Call the ctor that calls the petra ctor for a matrix
@@ -311,10 +311,10 @@ int main(int argc, char *argv[]) {
 	// The size of the eigenvector storage is nev.
 	// The real part of the eigenvectors is stored in the first nev vectors.
 	// The imaginary part of the eigenvectors is stored in the second nev vectors.
-	Anasazi::EpetraVec* evecr = dynamic_cast<Anasazi::EpetraVec*>(MyProblem->GetEvecs()->CloneCopy());
+	Anasazi::EpetraMultiVec* evecr = dynamic_cast<Anasazi::EpetraMultiVec*>(MyProblem->GetEvecs()->CloneCopy());
 
 	Teuchos::SerialDenseMatrix<int,double> dmatr(nev,nev);
-	Anasazi::EpetraVec tempvec(Map, evecr->GetNumberVecs());	
+	Anasazi::EpetraMultiVec tempvec(Map, evecr->GetNumberVecs());	
 	A.Apply( *evecr, tempvec );
 	tempvec.MvTransMv( 1.0, *evecr, dmatr );
 

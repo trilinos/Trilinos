@@ -41,126 +41,126 @@
 #include "Epetra_LocalMap.h"
 
 namespace Anasazi {
-
-//--------template class AnasaziEpetraVec-------------------------------------
-class EpetraVec : public MultiVec<double>, public Epetra_MultiVector {
-public:
-// constructors
-	EpetraVec(const Epetra_BlockMap& Map, double * array, const int numvecs, const int stride=0);
-	EpetraVec(const Epetra_BlockMap& Map, const int numvecs);
-	EpetraVec(Epetra_DataAccess CV, const Epetra_MultiVector& P_vec, int index[], int numvecs );
-	EpetraVec(const Epetra_MultiVector & P_vec);
-	~EpetraVec();
-	//
-	//  member functions inherited from Anasazi::MultiVec
-	//
-	//  the following is a virtual copy constructor returning
-	//  a pointer to the pure virtual class. vector values are
-	//  not copied; instead a new MultiVec is created containing
-	//  a non-zero amount of columns.
-	//
-	MultiVec<double> * Clone ( const int numvecs ) const;
-	//
-	//  the following is a virtual copy constructor returning
-	//  a pointer to the pure virtual class. vector values are
-	//  copied and a new stand-alone MultiVector is created.
-	//  (deep copy).
-	//
-	MultiVec<double> * CloneCopy () const;
-	//
-	//  the following is a virtual copy constructor returning
-	//  a pointer to the pure virtual class. vector values are
-	//  copied and a new stand-alone MultiVector is created
-	//  where only selected columns are chosen.  (deep copy).
-	//
-	MultiVec<double> * CloneCopy ( int index[], int numvecs ) const;
-	//
-	//  the following is a virtual view constructor returning
-	//  a pointer to the pure virtual class. vector values are 
-	//  shared and hence no memory is allocated for the columns.
-	//
-	MultiVec<double> * CloneView ( int index[], int numvecs);
-	//
-	//  this routine sets a subblock of the multivector, which
-	//  need not be contiguous, and is given by the indices.
-	//
-	void SetBlock ( const MultiVec<double>& A, int index[], int numvecs );
-	//
-	int GetNumberVecs () const { return NumVectors(); }
-	int GetVecLength () const { return MyLength(); }
-	//
-	// *this <- alpha * A * B + beta * (*this)
-	//
-	void MvTimesMatAddMv ( double alpha, const MultiVec<double>& A, 
-		const Teuchos::SerialDenseMatrix<int,double>& B, double beta );
-	//
-	// *this <- alpha * A + beta * B
-	//
-	void MvAddMv ( double alpha , const MultiVec<double>& A, double beta,
-		       const MultiVec<double>& B);
-        //
-	// B <- alpha * A^T * (*this)
-	//
-	void MvTransMv ( double alpha, const MultiVec<double>& A, Teuchos::SerialDenseMatrix<int,double>& B ) const;
-        //
-        // b[i] = A[i]^T * this[i]
-        // 
-        void MvDot ( const MultiVec<double>& A, double b[] ) const;
-	//
-	// alpha[i] = norm of i-th column of (*this)
-	//	
-        void MvNorm ( double * normvec ) const {
-	  if (normvec)
-	    assert( Norm2(normvec) == 0 );
-	};
-  	//
-	// random vectors in i-th column of (*this)
-	//
-	void MvRandom() { assert( Random() == 0 ); };
-        //
-        // initializes each element of (*this) with alpha
-        //
-        void MvInit ( double alpha );
-	//
-	// print (*this)
-	//
-	void MvPrint() const;
-private:
-};
-//-------------------------------------------------------------
-
-//////////////////////////////////////////////////////////////////////
-// Construction/Destruction
-//////////////////////////////////////////////////////////////////////
-
   
-  EpetraVec::EpetraVec(const Epetra_BlockMap& Map, double * array, 
-		       const int numvecs, const int stride)
+  //--------template class AnasaziEpetraMultiVec-------------------------------------
+  class EpetraMultiVec : public MultiVec<double>, public Epetra_MultiVector {
+  public:
+    // constructors
+    EpetraMultiVec(const Epetra_BlockMap& Map, double * array, const int numvecs, const int stride=0);
+    EpetraMultiVec(const Epetra_BlockMap& Map, const int numvecs);
+    EpetraMultiVec(Epetra_DataAccess CV, const Epetra_MultiVector& P_vec, int index[], int numvecs );
+    EpetraMultiVec(const Epetra_MultiVector & P_vec);
+    ~EpetraMultiVec();
+    //
+    //  member functions inherited from Anasazi::MultiVec
+    //
+    //  the following is a virtual copy constructor returning
+    //  a pointer to the pure virtual class. vector values are
+    //  not copied; instead a new MultiVec is created containing
+    //  a non-zero amount of columns.
+    //
+    MultiVec<double> * Clone ( const int numvecs ) const;
+    //
+    //  the following is a virtual copy constructor returning
+    //  a pointer to the pure virtual class. vector values are
+    //  copied and a new stand-alone MultiVector is created.
+    //  (deep copy).
+    //
+    MultiVec<double> * CloneCopy () const;
+    //
+    //  the following is a virtual copy constructor returning
+    //  a pointer to the pure virtual class. vector values are
+    //  copied and a new stand-alone MultiVector is created
+    //  where only selected columns are chosen.  (deep copy).
+    //
+    MultiVec<double> * CloneCopy ( int index[], int numvecs ) const;
+    //
+    //  the following is a virtual view constructor returning
+    //  a pointer to the pure virtual class. vector values are 
+    //  shared and hence no memory is allocated for the columns.
+    //
+    MultiVec<double> * CloneView ( int index[], int numvecs);
+    //
+    //  this routine sets a subblock of the multivector, which
+    //  need not be contiguous, and is given by the indices.
+    //
+    void SetBlock ( const MultiVec<double>& A, int index[], int numvecs );
+    //
+    int GetNumberVecs () const { return NumVectors(); }
+    int GetVecLength () const { return MyLength(); }
+    //
+    // *this <- alpha * A * B + beta * (*this)
+    //
+    void MvTimesMatAddMv ( double alpha, const MultiVec<double>& A, 
+			   const Teuchos::SerialDenseMatrix<int,double>& B, double beta );
+    //
+    // *this <- alpha * A + beta * B
+    //
+    void MvAddMv ( double alpha , const MultiVec<double>& A, double beta,
+		   const MultiVec<double>& B);
+    //
+    // B <- alpha * A^T * (*this)
+    //
+    void MvTransMv ( double alpha, const MultiVec<double>& A, Teuchos::SerialDenseMatrix<int,double>& B ) const;
+    //
+    // b[i] = A[i]^T * this[i]
+    // 
+    void MvDot ( const MultiVec<double>& A, double b[] ) const;
+    //
+    // alpha[i] = norm of i-th column of (*this)
+    //	
+    void MvNorm ( double * normvec ) const {
+      if (normvec)
+	assert( Norm2(normvec) == 0 );
+    };
+    //
+    // random vectors in i-th column of (*this)
+    //
+    void MvRandom() { assert( Random() == 0 ); };
+    //
+    // initializes each element of (*this) with alpha
+    //
+    void MvInit ( double alpha ) { assert( PutScalar( alpha ) == 0 ); };
+    //
+    // print (*this)
+    //
+    void MvPrint() const { cout<< *this << endl; };
+  private:
+  };
+  //-------------------------------------------------------------
+  
+  //////////////////////////////////////////////////////////////////////
+  // Construction/Destruction
+  //////////////////////////////////////////////////////////////////////
+  
+  
+  EpetraMultiVec::EpetraMultiVec(const Epetra_BlockMap& Map, double * array, 
+				 const int numvecs, const int stride)
     : Epetra_MultiVector(Copy, Map, array, stride, numvecs) 
   {
   }
   
   
-  EpetraVec::EpetraVec(const Epetra_BlockMap& Map, const int numvecs)
+  EpetraMultiVec::EpetraMultiVec(const Epetra_BlockMap& Map, const int numvecs)
     : Epetra_MultiVector(Map, numvecs) 
   {
   }
   
   
-  EpetraVec::EpetraVec(Epetra_DataAccess CV, const Epetra_MultiVector& P_vec, 
-		       int index[], int numvecs )
+  EpetraMultiVec::EpetraMultiVec(Epetra_DataAccess CV, const Epetra_MultiVector& P_vec, 
+				 int index[], int numvecs )
     : Epetra_MultiVector(CV, P_vec, index, numvecs) 
   {
   }
   
   
-  EpetraVec::EpetraVec(const Epetra_MultiVector& P_vec)
+  EpetraMultiVec::EpetraMultiVec(const Epetra_MultiVector& P_vec)
     : Epetra_MultiVector(P_vec) 
   {
   }
   
   
-  EpetraVec::~EpetraVec() 
+  EpetraMultiVec::~EpetraMultiVec() 
   {
   }
   //
@@ -168,13 +168,13 @@ private:
   //
   //
   //  Simulating a virtual copy constructor. If we could rely on the co-variance
-  //  of virtual functions, we could return a pointer to EpetraVec
+  //  of virtual functions, we could return a pointer to EpetraMultiVec
   //  (the derived type) instead of a pointer to the pure virtual base class.
   //
   
-  MultiVec<double>* EpetraVec::Clone ( const int numvecs ) const
+  MultiVec<double>* EpetraMultiVec::Clone ( const int numvecs ) const
   {
-    EpetraVec * ptr_apv = new EpetraVec(Map(), numvecs);
+    EpetraMultiVec * ptr_apv = new EpetraMultiVec(Map(), numvecs);
     return ptr_apv; // safe upcast.
   }
   //
@@ -183,43 +183,41 @@ private:
   //  copied.
   //
   
-  MultiVec<double>* EpetraVec::CloneCopy() const
+  MultiVec<double>* EpetraMultiVec::CloneCopy() const
   {
-    EpetraVec *ptr_apv = new EpetraVec(*this);
+    EpetraMultiVec *ptr_apv = new EpetraMultiVec(*this);
     return ptr_apv; // safe upcast
   }
   
   
-  MultiVec<double>* EpetraVec::CloneCopy ( int index[], int numvecs ) const
+  MultiVec<double>* EpetraMultiVec::CloneCopy ( int index[], int numvecs ) const
   {
-    EpetraVec * ptr_apv = new EpetraVec(Copy, *this, index, numvecs );
+    EpetraMultiVec * ptr_apv = new EpetraMultiVec(Copy, *this, index, numvecs );
     return ptr_apv; // safe upcast.
   }
   
   
-  MultiVec<double>* EpetraVec::CloneView ( int index[], int numvecs ) 
+  MultiVec<double>* EpetraMultiVec::CloneView ( int index[], int numvecs ) 
   {
-    EpetraVec * ptr_apv = new EpetraVec(View, *this, index, numvecs );
+    EpetraMultiVec * ptr_apv = new EpetraMultiVec(View, *this, index, numvecs );
     return ptr_apv; // safe upcast.
   }
   
   
-  void EpetraVec::SetBlock(const MultiVec<double>& A, int index[], int numvecs ) 
+  void EpetraMultiVec::SetBlock(const MultiVec<double>& A, int index[], int numvecs ) 
   {	
-    int i,j,ind;
-    EpetraVec *A_vec = dynamic_cast<EpetraVec *>(&const_cast<MultiVec<double> &>(A)); assert(A_vec!=NULL);
-    int MyNumVecs = (*this).GetNumberVecs();
-    int VecLength = A.GetVecLength();
-    
-    // Set the vector values in the right order, careful that the index
-    // doesn't go beyond the bounds of the multivector
-    for ( j=0; j< numvecs; j++) {
-      ind = index[j];
-      if (ind < MyNumVecs) {
-	for ( i=0; i<VecLength; i++) {
-	  (*this)[ind][i] = (*A_vec)[j][i];	
-	}
-      }
+    EpetraMultiVec temp_vec(View, *this, index, numvecs);
+
+    if ( A.GetNumberVecs() != numvecs ) {
+      std::vector<int> index2( numvecs );
+      for(int i=0; i<numvecs; i++)
+	index2[i] = i;
+      EpetraMultiVec *tmp_vec = dynamic_cast<EpetraMultiVec *>(&const_cast<MultiVec<double> &>(A)); assert(tmp_vec!=NULL);
+      EpetraMultiVec A_vec(View, *tmp_vec, &index2[0], numvecs );
+      temp_vec.MvAddMv( 1.0, A_vec, 0.0, A_vec );
+    }
+    else {
+      temp_vec.MvAddMv( 1.0, A, 0.0, A );
     }
   }								
 
@@ -229,20 +227,15 @@ private:
   //
   //-------------------------------------------------------------
   
-  void EpetraVec::MvTimesMatAddMv ( double alpha, const MultiVec<double>& A, 
+  void EpetraMultiVec::MvTimesMatAddMv ( double alpha, const MultiVec<double>& A, 
 				    const Teuchos::SerialDenseMatrix<int,double>& B, double beta ) 
   {
-    int info=0;
-    const int izero=0;
-    char trans = 'N';
-    Epetra_LocalMap LocalMap(B.numRows(), izero, Map().Comm());
+    Epetra_LocalMap LocalMap(B.numRows(), 0, Map().Comm());
     Epetra_MultiVector B_Pvec(Copy, LocalMap, B.values(), B.stride(), B.numCols());
     
-    EpetraVec *A_vec = dynamic_cast<EpetraVec *>(&const_cast<MultiVec<double> &>(A)); assert(A_vec!=NULL);
+    EpetraMultiVec *A_vec = dynamic_cast<EpetraMultiVec *>(&const_cast<MultiVec<double> &>(A)); assert(A_vec!=NULL);
     
-    info = Multiply( trans, trans, alpha, *A_vec, B_Pvec, beta );
-    
-    assert(info==0);
+    assert( Multiply( 'N', 'N', alpha, *A_vec, B_Pvec, beta ) == 0 );
   }
 
   //-------------------------------------------------------------
@@ -251,16 +244,13 @@ private:
   //
   //-------------------------------------------------------------
   
-  void EpetraVec::MvAddMv ( double alpha , const MultiVec<double>& A, 
+  void EpetraMultiVec::MvAddMv ( double alpha , const MultiVec<double>& A, 
 			    double beta, const MultiVec<double>& B) 
   {
-    int info=0;
-    const double zero = 0.0;
+    EpetraMultiVec *A_vec = dynamic_cast<EpetraMultiVec *>(&const_cast<MultiVec<double> &>(A)); assert(A_vec!=NULL);
+    EpetraMultiVec *B_vec = dynamic_cast<EpetraMultiVec *>(&const_cast<MultiVec<double> &>(B)); assert(B_vec!=NULL);
     
-    EpetraVec *A_vec = dynamic_cast<EpetraVec *>(&const_cast<MultiVec<double> &>(A)); assert(A_vec!=NULL);
-    EpetraVec *B_vec = dynamic_cast<EpetraVec *>(&const_cast<MultiVec<double> &>(B)); assert(B_vec!=NULL);
-    
-    info = Update( alpha, *A_vec, beta, *B_vec, zero ); assert(info==0);
+    assert ( Update( alpha, *A_vec, beta, *B_vec, 0.0 ) == 0 ); 
   }
 
   //-------------------------------------------------------------
@@ -269,24 +259,16 @@ private:
   //
   //-------------------------------------------------------------
   
-  void EpetraVec::MvTransMv ( double alpha, const MultiVec<double>& A,
+  void EpetraMultiVec::MvTransMv ( double alpha, const MultiVec<double>& A,
 			      Teuchos::SerialDenseMatrix<int,double>& B) const
-  {
-    int info=0;
-    const int izero=0;
-    const double zero=0.0;
-    //const double one=1.0;
-    char trans1 = 'T';
-    char trans2 = 'N';
-    
-    EpetraVec *A_vec = dynamic_cast<EpetraVec *>(&const_cast<MultiVec<double> &>(A));
+  {    
+    EpetraMultiVec *A_vec = dynamic_cast<EpetraMultiVec *>(&const_cast<MultiVec<double> &>(A));
     
     if (A_vec) {
-      Epetra_LocalMap LocalMap(B.numRows(), izero, Map().Comm());
+      Epetra_LocalMap LocalMap(B.numRows(), 0, Map().Comm());
       Epetra_MultiVector B_Pvec(View, LocalMap, B.values(), B.stride(), B.numCols());
       
-      info = B_Pvec.Multiply( trans1, trans2, alpha, *A_vec, *this, zero ); 
-      assert(info==0);
+      assert ( B_Pvec.Multiply( 'T', 'N', alpha, *A_vec, *this, 0.0 ) == 0 ); 
     }
   }
   
@@ -296,44 +278,12 @@ private:
   // 
   //-------------------------------------------------------------
   
-  void EpetraVec::MvDot ( const MultiVec<double>& A, double b[] ) const
+  void EpetraMultiVec::MvDot ( const MultiVec<double>& A, double b[] ) const
   {
-    EpetraVec *A_vec = dynamic_cast<EpetraVec *>(&const_cast<MultiVec<double> &>(A)); assert(A_vec!=NULL);
+    EpetraMultiVec *A_vec = dynamic_cast<EpetraMultiVec *>(&const_cast<MultiVec<double> &>(A)); assert(A_vec!=NULL);
     if (A_vec && b) {
       assert( this->Dot( *A_vec, b ) == 0 );
     }
-  }
-  
-  //-------------------------------------------------------------
-  //
-  // initializes each element of (*this) with alpha
-  //
-  //-------------------------------------------------------------
-  
-  void EpetraVec::MvInit( double alpha )
-  {	
-    int i,j;
-    int MyNumVecs = (*this).GetNumberVecs();
-    int MyVecLength = (*this).GetVecLength();
-    
-    // Set the vector values in the right order, careful that the index
-    // doesn't go beyond the bounds of the multivector
-    for ( j=0; j< MyNumVecs; j++) {
-      for ( i=0; i<MyVecLength; i++) {
-			(*this)[j][i] = alpha;	
-      }
-    }
-  }								
-
-  //-------------------------------------------------------------
-  //
-  //  print multivectors
-  //
-  //-------------------------------------------------------------
-  
-  void EpetraVec::MvPrint() const
-  {
-    cout << *this << endl;
   }
   
   ///////////////////////////////////////////////////////////////
@@ -374,17 +324,13 @@ private:
     //
     // This standard operator computes y = A*x
     //
-    int info=0;
     MultiVec<double> & temp_x = const_cast<MultiVec<double> &>(x);
     Epetra_MultiVector* vec_x = dynamic_cast<Epetra_MultiVector* >(&temp_x);
     Epetra_MultiVector* vec_y = dynamic_cast<Epetra_MultiVector* >(&y);
     
     assert( vec_x!=NULL && vec_y!=NULL );
-    //
-    // Need to cast away constness because the member function Apply is not declared const.  
-    // Change the transpose setting for the operator if necessary and change it back when done.
-    //
-    info = const_cast<Epetra_Operator&>(Epetra_Op).Apply( *vec_x, *vec_y );
+
+    int info = Epetra_Op.Apply( *vec_x, *vec_y );
     
     if (info==0) { 
       return Ok; 
@@ -446,10 +392,10 @@ private:
     // Change the transpose setting for the operator if necessary and change it back when done.
     //
     // Apply B
-    info=const_cast<Epetra_Operator&>(Epetra_BOp).Apply( *vec_x, temp_y );
+    info = Epetra_BOp.Apply( *vec_x, temp_y );
     assert(info==0);
     // Apply A
-    info=const_cast<Epetra_Operator&>(Epetra_AOp).Apply( temp_y, *vec_y );
+    info = Epetra_AOp.Apply( temp_y, *vec_y );
     if (info==0) { 
       return Ok; 
     } else { 
@@ -494,34 +440,140 @@ private:
     MultiVec<double> & temp_x = const_cast<MultiVec<double> &>(x);
     Epetra_MultiVector* vec_x = dynamic_cast<Epetra_MultiVector* >(&temp_x);
     Epetra_MultiVector* vec_y = dynamic_cast<Epetra_MultiVector* >(&y);
-    Epetra_MultiVector* temp_vec = new Epetra_MultiVector( Epetra_Op.OperatorRangeMap(), vec_x->NumVectors() );
+    Epetra_MultiVector temp_vec( Epetra_Op.OperatorRangeMap(), vec_x->NumVectors() );
     
-    assert( vec_x!=NULL && vec_y!=NULL && temp_vec!=NULL );
+    assert( vec_x!=NULL && vec_y!=NULL );
     //
     // Need to cast away constness because the member function Apply
     // is not declared const.
     //
     // Compute A*x
-    info=const_cast<Epetra_Operator&>(Epetra_Op).Apply( *vec_x, *temp_vec );
-    if (info!=0) { delete temp_vec; return Failed; }
+    info = Epetra_Op.Apply( *vec_x, temp_vec );
+    if (info!=0) { return Failed; }
     
     // Transpose the operator
-    info=const_cast<Epetra_Operator&>(Epetra_Op).SetUseTranspose( true );
-    if (info!=0) { delete temp_vec; return Failed; }
+    info = const_cast<Epetra_Operator&>(Epetra_Op).SetUseTranspose( true );
+    if (info!=0) { return Failed; }
     
     // Compute A^T*(A*x)
-    info=const_cast<Epetra_Operator&>(Epetra_Op).Apply( *temp_vec, *vec_y );
-    if (info!=0) { delete temp_vec; return Failed; }
+    info = Epetra_Op.Apply( temp_vec, *vec_y );
+    if (info!=0) { return Failed; }
     
     // Un-transpose the operator
-    info=const_cast<Epetra_Operator&>(Epetra_Op).SetUseTranspose( false );
-    delete temp_vec;
+    info = const_cast<Epetra_Operator&>(Epetra_Op).SetUseTranspose( false );
     
     if (info==0)
       return Ok; 
     else
       return Failed; 
   }
+  
+  ////////////////////////////////////////////////////////////////////
+  //
+  // Implementation of the Anasazi::MultiVecTraits for Epetra::MultiVector.
+  //
+  ////////////////////////////////////////////////////////////////////
+
+  template<>
+  class MultiVecTraits<double, Epetra_MultiVector>
+  {
+  public:
+    ///
+    static Teuchos::RefCountPtr<Epetra_MultiVector> Clone( const Epetra_MultiVector& mv, const int numvecs )
+    { return Teuchos::rcp( new Epetra_MultiVector(mv.Map(), numvecs) ); }
+    ///
+    static Teuchos::RefCountPtr<Epetra_MultiVector> CloneCopy( const Epetra_MultiVector& mv )
+    { return Teuchos::rcp( new Epetra_MultiVector( mv ) ); }
+    ///
+    static Teuchos::RefCountPtr<Epetra_MultiVector> CloneCopy( const Epetra_MultiVector& mv, int index[], int numvecs )
+    { return Teuchos::rcp( new Epetra_MultiVector(Copy, mv, index, numvecs) ); }
+    ///
+    static Teuchos::RefCountPtr<Epetra_MultiVector> CloneView( Epetra_MultiVector& mv, int index[], int numvecs )
+    { return Teuchos::rcp( new Epetra_MultiVector(View, mv, index, numvecs) ); }
+    ///
+    static Teuchos::RefCountPtr<const Epetra_MultiVector> CloneView( const Epetra_MultiVector& mv, int index[], int numvecs )
+    { return Teuchos::rcp( new Epetra_MultiVector(View, mv, index, numvecs) ); }
+    ///
+    static int GetVecLength( const Epetra_MultiVector& mv )
+    { return mv.MyLength(); }
+    ///
+    static int GetNumberVecs( const Epetra_MultiVector& mv )
+    { return mv.NumVectors(); }
+    ///
+    static void MvTimesMatAddMv( double alpha, const Epetra_MultiVector& A, 
+				 const Teuchos::SerialDenseMatrix<int,double>& B, 
+				 double beta, Epetra_MultiVector& mv )
+    { 
+      Epetra_LocalMap LocalMap(B.numRows(), 0, mv.Map().Comm());
+      Epetra_MultiVector B_Pvec(Copy, LocalMap, B.values(), B.stride(), B.numCols());
+
+      assert( mv.Multiply( 'N', 'N', alpha, A, B_Pvec, beta ) == 0 );   
+    }
+    ///
+    static void MvAddMv( double alpha, const Epetra_MultiVector& A, double beta, const Epetra_MultiVector& B, Epetra_MultiVector& mv )
+    { 
+      assert( mv.Update( alpha, A, beta, B, 0.0 ) == 0 );
+    }
+    ///
+    static void MvTransMv( const Epetra_MultiVector& mv, double alpha, const Epetra_MultiVector& A, Teuchos::SerialDenseMatrix<int,double>& B )
+    { 
+      Epetra_LocalMap LocalMap(B.numRows(), 0, mv.Map().Comm());
+      Epetra_MultiVector B_Pvec(View, LocalMap, B.values(), B.stride(), B.numCols());
+      
+      assert( B_Pvec.Multiply( 'T', 'N', alpha, A, mv, 0.0 ) == 0 );
+    }
+    ///
+    static void MvNorm( const Epetra_MultiVector& mv, double *normvec )
+    { 
+      if (normvec)
+	assert( mv.Norm2(normvec) == 0 );
+    }
+    ///
+    static void SetBlock( const Epetra_MultiVector& A, int index[], int numvecs, Epetra_MultiVector& mv )
+    { 
+      // Extract the "numvecs" columns of mv indicated by the index vector.
+      Epetra_MultiVector temp_vec(View, mv, index, numvecs);
+
+      if ( A.NumVectors() != numvecs ) {
+        std::vector<int> index2( numvecs );
+        for(int i=0; i<numvecs; i++)
+	  index2[i] = i;
+        Epetra_MultiVector A_vec(View, A, &index2[0], numvecs);      
+        assert( temp_vec.Update( 1.0, A_vec, 0.0, A_vec, 0.0 ) == 0 );
+      }
+      else
+        assert( temp_vec.Update( 1.0, A, 0.0, A, 0.0 ) == 0 );
+    }
+    ///
+    static void MvRandom( Epetra_MultiVector& mv )
+    { assert( mv.Random() == 0 ); }
+    ///
+    static void MvInit( Epetra_MultiVector& mv, double alpha = Teuchos::ScalarTraits<double>::zero() )
+    { assert( mv.PutScalar(alpha) == 0); }
+    ///
+    static void MvPrint( const Epetra_MultiVector& mv, ostream& os )
+    { os << mv << endl; }
+    
+  };        
+
+  ////////////////////////////////////////////////////////////////////
+  //
+  // Implementation of the Anasazi::OperatorTraits for Epetra::Operator.
+  //
+  ////////////////////////////////////////////////////////////////////
+
+  template <> 
+  class OperatorTraits < double, Epetra_MultiVector, Epetra_Operator >
+  {
+  public:
+    
+    ///
+    static ReturnType Apply ( const Epetra_Operator& Op, 
+			      const Epetra_MultiVector& x, 
+			      Epetra_MultiVector& y )
+    { return ( Op.Apply( x, y ) == 0 ? Ok : Failed ); }
+    
+  };
   
 } // end of Anasazi namespace 
 

@@ -6,10 +6,12 @@
 # Copy files from packages/anasazi/anasazi_new to packages/anasazi 
 
 cp configure* ..
+cp Makefile* ..
 
 cp ./src/*.hpp ../src/.
 cp ./src/*.cpp ../src/.
 cp ./src/Makefile* ../src/.
+cp ./src/*.in ../src/.
 
 cp ./example/Makefile* ../example/.
 mkdir ../example/ModeLaplace

@@ -235,9 +235,9 @@ int main(int argc, char *argv[]) {
 	typedef Anasazi::MultiVec<double> MV;
 	typedef Anasazi::Operator<double> OP;
 
-	// Create an Anasazi::EpetraVec for an initial vector to start the solver.
+	// Create an Anasazi::EpetraMultiVec for an initial vector to start the solver.
 	// Note:  This needs to have the same number of columns as the blocksize.
-	Teuchos::RefCountPtr<Anasazi::EpetraVec> ivec = Teuchos::rcp( new Anasazi::EpetraVec(Map, block) );
+	Teuchos::RefCountPtr<Anasazi::EpetraMultiVec> ivec = Teuchos::rcp( new Anasazi::EpetraMultiVec(Map, block) );
 	ivec->MvRandom();
 
 	// Create an Anasazi::EpetraOp for the operator A.
@@ -284,19 +284,19 @@ int main(int argc, char *argv[]) {
 	// The size of the eigenvector storage is 2 x nev.  
 	// The real part of the eigenvectors is stored in the first nev vectors.
 	// The imaginary part of the eigenvectors is stored in the second nev vectors.
-	Anasazi::EpetraVec *evecr = 0, *eveci = 0;
+	Anasazi::EpetraMultiVec *evecr = 0, *eveci = 0;
 	std::vector<int> index(nev);
 	
 	// Get real part.
 	for( i=0; i<nev; i++ )
 	  index[i] = i;
-	evecr = dynamic_cast<Anasazi::EpetraVec*>(MyProblem->GetEvecs()->CloneView( &index[0], nev ));
+	evecr = dynamic_cast<Anasazi::EpetraMultiVec*>(MyProblem->GetEvecs()->CloneView( &index[0], nev ));
 
 	// Get imaginary part, if needed.
 	if (!MyProblem->IsSymmetric()) {
 	  for( i=0; i<nev; i++ )
 	    index[i] = nev + i;
-	  eveci = dynamic_cast<Anasazi::EpetraVec*>(MyProblem->GetEvecs()->CloneView( &index[0], nev ));
+	  eveci = dynamic_cast<Anasazi::EpetraMultiVec*>(MyProblem->GetEvecs()->CloneView( &index[0], nev ));
 	}	  
 	
 	// Output results to screen
@@ -304,7 +304,7 @@ int main(int argc, char *argv[]) {
 	
 	// Compute residuals.
 	Teuchos::LAPACK<int,double> lapack;
-	Anasazi::EpetraVec tempAevec(Map,nev);
+	Anasazi::EpetraMultiVec tempAevec(Map,nev);
 	Teuchos::SerialDenseMatrix<int,double> Breal(nev,nev), Breal2(nev,nev);
 	Teuchos::SerialDenseMatrix<int,double> Bimag(nev,nev), Bimag2(nev,nev);
 	std::vector<double> normA(nev);
