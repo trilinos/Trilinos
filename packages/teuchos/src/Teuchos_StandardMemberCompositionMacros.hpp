@@ -39,37 +39,36 @@
 #include "Teuchos_ConfigDefs.hpp"
 
 ///
-/** \defgroup StandardCompositionMacros_grp  Macro that adds <<std member comp>> attributes to any class
-  * 
-  * For example, if you want to include a <<std member comp>> attribute
-  * as a member object of type MyClass with the name my_attribute you
-  * would include the macro in the public section of YourClass
-  * declaration as follows:
-  \verbatim
+/** Macro that adds <<std member comp>> attributes to any class
+ * 
+ * For example, if you want to include a <<std member comp>> attribute
+ * as a member object of type MyClass with the name my_attribute you
+ * would include the macro in the public section of YourClass
+ * declaration as follows:
+ \verbatim
 
 	class YourClass {
 	public:
 		STANDARD_MEMBER_COMPOSITION_MEMBERS( MyClass, my_attribute )
 	};
-  \endverbatim
-  * This macro adds the following data member to the class declaration:
-  \verbatim
+ \endverbatim
+ * This macro adds the following data member to the class declaration:
+ \verbatim
 	private:
 		MyClass my_attribute_;
-  \endverbatim
-  * and the following methods to your class declaration:
-  \verbatim
+ \endverbatim
+ * and the following methods to your class declaration:
+ \verbatim
 	public:
   void my_attribute( const My_Class & my_attribute )
     { my_attribute_ = my_attribute; }
   const My_Class& my_attribute() const
     { return my_attribute_; }
-  \endverbatim
-  * The advantage of using this type of declaration is that it saves
-  * you a lot of typing and space.  Later if you need to override these
-  * operations you can just implement the member functions by hand.
-  */
-//@{
+ \endverbatim
+ * The advantage of using this type of declaration is that it saves
+ * you a lot of typing and space.  Later if you need to override these
+ * operations you can just implement the member functions by hand.
+ */
 #define STANDARD_MEMBER_COMPOSITION_MEMBERS( TYPE, NAME ) \
 	void NAME (const TYPE & NAME ) \
 	{	NAME ## _ = NAME ; } \
@@ -78,7 +77,5 @@
 private: \
 	TYPE NAME ## _; \
 public:
-
-//@} // end defgroup
 
 #endif	// TEUCHOS_STANDARD_MEMBER_COMPOSITION_MACROS_H

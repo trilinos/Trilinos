@@ -37,7 +37,8 @@
 
 namespace Teuchos {
 
-/// \defgroup CompileTimeAssert_grp  Template classes for testing assertions at compile time.
+/*! \defgroup CompileTimeAssert_grp  Template classes for testing assertions at compile time.
+*/
 ///@{
 
 /// If instantiated (for Test!=0) then this should not compile!
