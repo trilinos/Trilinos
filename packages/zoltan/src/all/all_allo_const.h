@@ -45,6 +45,7 @@ extern double *LB_array_alloc(char *file, int lineno, int numdim, ...);
 #else
 extern double *LB_array_alloc();
 #endif
+extern int LB_Malloc_Set_Param(char *, char *);
 extern void LB_safe_free(void **ptr);
 extern double *LB_smalloc(int n, char *file, int lineno);
 extern double *LB_srealloc(void *ptr, int n, char *filename, int lineno);

@@ -20,13 +20,38 @@ static char *cvs_all_allo_c =
 
 #include <stdio.h>
 #include <stdlib.h>
+#include "lb_const.h"
 #include "all_allo_const.h"
+#include "params_const.h"
 
 #ifdef __STDC__
 #include <stdarg.h>
 #else
 #include <varargs.h>
 #endif
+
+static int MALLOC_DEBUG = 0;	/* Flag for detecting memory leaks */
+
+int LB_Malloc_Set_Param(
+char *name,			/* name of variable */
+char *val)			/* value of variable */
+{
+    int status;
+    PARAM_UTYPE result;		/* value returned from Check_Param */
+    int index;			/* index returned from Check_Param */
+    PARAM_VARS malloc_params[] = {
+	{ "MALLOC_DEBUG", &MALLOC_DEBUG, "INT" },
+	{ NULL, NULL, NULL }
+    };
+
+    status = LB_Check_Param(name, val, malloc_params, &result, &index);
+    if (status == 0 && index == 0) {
+	MALLOC_DEBUG = result.ival;
+	status = 3;
+    }
+
+    return(status);
+}
 
 
 /******************************************************************************
