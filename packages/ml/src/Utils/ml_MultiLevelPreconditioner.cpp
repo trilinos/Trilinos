@@ -524,30 +524,29 @@ int ML_Epetra::MultiLevelPreconditioner::Initialize()
 int ML_Epetra::MultiLevelPreconditioner::ComputeFilteringPreconditioner()
 {
 
-  if (IsComputePreconditionerOK_ == true ){
+  if (IsComputePreconditionerOK_ == true) {
     DestroyPreconditioner();
   }
 
-  // 1.- disable filtering/GGB in ComputePreconditioner()
+  // 1.- disable filtering in ComputePreconditioner()
   List_.set(Prefix_ + "filtering: enable", false);
 
   ComputePreconditioner();
 
   // 2.- now enable, and call the function to compute the "bad-modes"
-  //     (that is, the bad boys. Go Detroit !!!! Beat LA !!!)
-
   List_.set(Prefix_ + "filtering: enable", true);
-  
   List_.set(Prefix_ + "filtering: type", "let ML be my master");
 
-  if( NullSpaceToFree_ ) delete [] NullSpaceToFree_; NullSpaceToFree_ = 0;
+  if (NullSpaceToFree_) {
+    delete [] NullSpaceToFree_;
+    NullSpaceToFree_ = 0;
+  }
+
   int NullSpaceDim = SetFiltering();
-  assert( NullSpaceDim > 0 );
+  assert (NullSpaceDim > 0);
   
   List_.set(Prefix_ + "null space: type", "pre-computed");
-
   List_.set(Prefix_ + "null space: dimension", NullSpaceDim);
-  
   List_.set(Prefix_ + "null space: vectors", NullSpaceToFree_);
 
   NullSpaceToFree_ = 0;
@@ -578,7 +577,7 @@ ComputePreconditioner(const bool CheckPreconditioner)
   if (CheckPreconditioner == true && RateOfConvergence_ != -1.0) {
 
     // If the previous preconditioner was computed with option
-    // "adaptive: enable" == true, we know the rate of convergence
+    // "reuse: enable" == true, we know the rate of convergence
     // with the previous matrix (and this preconditioner. Now, 
     // we recompute this ratio, and compare it with the previous one.
     // This requires an AztecOO object to be defined (ML must have been
@@ -1287,10 +1286,10 @@ ComputePreconditioner(const bool CheckPreconditioner)
   IsComputePreconditionerOK_ = true;
   
   // ====================================================================== //
-  // Compute the rate of convergence (for adaptive preconditioners)         //
+  // Compute the rate of convergence (for reuse preconditioners)            //
   // ====================================================================== //
 
-  if( List_.get(Prefix_ + "adaptive: enable", false) == true ) 
+  if( List_.get(Prefix_ + "reuse: enable", false) == true ) 
     CheckPreconditionerKrylov();
   
   if (AnalyzeMemory_) {
@@ -1436,8 +1435,6 @@ ApplyInverse(const Epetra_MultiVector& X,
 
   // FIXME: What the hell am I doing here?
   if (Scaling_) {
-    // need to do the worst to get the best?
-    // is C++ ethically correct?
     Epetra_RowMatrix* RM = const_cast<Epetra_RowMatrix*>(RowMatrix_);
     RM->RightScale(*Scaling_);
   }
@@ -1690,7 +1687,9 @@ int ML_Epetra::MultiLevelPreconditioner::SetCoarse()
  * - \c Coupled (deprecated)
  * - \c MIS
  * - \c user
+ * - \c greedy
  */
+#include "ml_agg_user.h"
 int ML_Epetra::MultiLevelPreconditioner::SetAggregation() 
 {
 
@@ -1722,6 +1721,16 @@ int ML_Epetra::MultiLevelPreconditioner::SetAggregation()
          ML_Aggregate_Set_CoarsenSchemeLevel_Coupled(level,NumLevels_,agg_);
        else if (CoarsenScheme == "user") 
          ML_Aggregate_Set_CoarsenSchemeLevel_User(level,NumLevels_,agg_);
+#ifdef MARZIO
+       else if (CoarsenScheme == "greedy") {
+         // MS // this is delicate as it burns the "user" aggregation,
+         // MS // should we fix it? 
+         // MS // 05-Dec-04
+         ML_SetUserLabel(ML_Aggregate_GreedyLabel);
+         ML_SetUserPartitions(ML_Aggregate_Greedy);
+         ML_Aggregate_Set_CoarsenSchemeLevel_User(level,NumLevels_,agg_);
+       }
+#endif
        else {
          if( Comm().MyPID() == 0 ) {
            cout << ErrorMsg_ << "specified options ("
