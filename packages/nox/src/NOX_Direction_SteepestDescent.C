@@ -55,7 +55,7 @@ bool SteepestDescent::reset(Parameter::List& params)
   const string tmp = params.getParameter("Scaling Type", "2-Norm");
   if (tmp == "2-Norm")
     scaleType = SteepestDescent::TwoNorm;
-  if (tmp == "F 2-Norm")
+  else if (tmp == "F 2-Norm")
     scaleType = SteepestDescent::FunctionTwoNorm;
   else if (tmp == "Quadratic Model Min")
     scaleType = SteepestDescent::QuadMin;
