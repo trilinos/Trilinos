@@ -27,6 +27,7 @@
 
 class Epetra_MultiVector;
 #include "AztecOO_StatusType.h"
+#include "Epetra_ConfigDefs.h"
 //#include <iostream>
 #include <iomanip>
 

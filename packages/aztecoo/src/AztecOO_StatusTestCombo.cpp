@@ -71,7 +71,7 @@ bool AztecOO_StatusTestCombo::IsSafe(AztecOO_StatusTest& a)
   
   // Recursively test that we're not adding something that's already
   // in the list because that can also lead to infinite recursions.
-  for (vector<AztecOO_StatusTest*>::iterator i = tests_.begin(); i != tests_.end(); ++i) {
+  for (std::vector<AztecOO_StatusTest*>::iterator i = tests_.begin(); i != tests_.end(); ++i) {
     
     AztecOO_StatusTestCombo* ptr = dynamic_cast<AztecOO_StatusTestCombo*>(*i);
     if (ptr != NULL)
@@ -88,7 +88,7 @@ bool AztecOO_StatusTestCombo::ResidualVectorRequired() const
   // If any of the StatusTest object require the residual vector, then return true.
 
   // Recursively test this property.
-  for (vector<AztecOO_StatusTest * const>::iterator i = tests_.begin(); i != tests_.end(); ++i) {
+  for (std::vector<AztecOO_StatusTest * const>::iterator i = tests_.begin(); i != tests_.end(); ++i) {
     
     AztecOO_StatusTest* ptr = dynamic_cast<AztecOO_StatusTest*>(*i);
     if (ptr != NULL)
@@ -125,7 +125,7 @@ void AztecOO_StatusTestCombo::OrOp(int CurrentIter, Epetra_MultiVector * Current
 {
   // Checks the status of each test. The first test it encounters, if
   // any, that is unconverged is the status that it sets itself too.
-  for (vector<AztecOO_StatusTest*>::const_iterator i = tests_.begin(); i != tests_.end(); ++i) {
+  for (std::vector<AztecOO_StatusTest*>::const_iterator i = tests_.begin(); i != tests_.end(); ++i) {
 
     AztecOO_StatusType s = (*i)->CheckStatus(CurrentIter, CurrentResVector, CurrentResNormEst, SolutionUpdated);
 
@@ -143,7 +143,7 @@ void AztecOO_StatusTestCombo::AndOp(int CurrentIter, Epetra_MultiVector * Curren
 {
   bool isUnconverged = false;
 
-  for (vector<AztecOO_StatusTest*>::const_iterator i = tests_.begin(); i != tests_.end(); ++i) {
+  for (std::vector<AztecOO_StatusTest*>::const_iterator i = tests_.begin(); i != tests_.end(); ++i) {
 
     AztecOO_StatusType s = (*i)->CheckStatus(CurrentIter, CurrentResVector, CurrentResNormEst, SolutionUpdated);
 
@@ -175,7 +175,7 @@ ostream& AztecOO_StatusTestCombo::Print(ostream& stream, int indent) const
   stream << " Combination";
   stream << " -> " << endl;
 
-  for (vector<AztecOO_StatusTest*>::const_iterator i = tests_.begin(); i != tests_.end(); ++i) 
+  for (std::vector<AztecOO_StatusTest*>::const_iterator i = tests_.begin(); i != tests_.end(); ++i) 
     (*i)->Print(stream, indent+2);
     
   return stream;

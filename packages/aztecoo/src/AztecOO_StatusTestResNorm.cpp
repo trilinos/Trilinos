@@ -77,7 +77,7 @@ int AztecOO_StatusTestResNorm::DefineResForm( ResType TypeOfResidual, NormType T
 }
 
 int AztecOO_StatusTestResNorm::DefineScaleForm(ScaleType TypeOfScaling, NormType TypeOfNorm, 
-					       Epetra_Vector * Weights = 0, 
+					       Epetra_Vector * Weights, 
 					       double ScaleValue )
 {
 

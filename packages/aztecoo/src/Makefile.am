@@ -50,14 +50,21 @@ WITH_CPP_H = \
 	$(srcdir)/AztecOO_Operator.h \
 	$(srcdir)/Epetra_MsrMatrix.h \
 	$(srcdir)/Aztec2Petra.h \
-	$(srcdir)/AZOO_iterate.h 
+	$(srcdir)/AZOO_iterate.h \
+        $(srcdir)/AztecOO_StatusTestCombo.h \
+        $(srcdir)/AztecOO_StatusTestMaxIters.h \
+        $(srcdir)/AztecOO_StatusTestResNorm.h
+
 
 WITH_CPP = \
 	$(srcdir)/AztecOO.cpp \
 	$(srcdir)/AztecOO_Operator.cpp \
 	$(srcdir)/Epetra_MsrMatrix.cpp \
 	$(srcdir)/Aztec2Petra.cpp \
-	$(srcdir)/AZOO_iterate.cpp
+	$(srcdir)/AZOO_iterate.cpp \
+        $(srcdir)/AztecOO_StatusTestCombo.cpp \
+        $(srcdir)/AztecOO_StatusTestMaxIters.cpp \
+        $(srcdir)/AztecOO_StatusTestResNorm.cpp
 
 ### end option 
 UTIL_H = 

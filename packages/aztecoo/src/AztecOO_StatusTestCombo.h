@@ -124,7 +124,7 @@ protected:
   ComboType type_;
 
   //! Vector of generic status tests
-  vector<AztecOO_StatusTest*> tests_;
+  std::vector<AztecOO_StatusTest*> tests_;
 
   //! Status
    AztecOO_StatusType status_;
