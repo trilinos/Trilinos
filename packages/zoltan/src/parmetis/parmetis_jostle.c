@@ -1638,7 +1638,7 @@ char *val)                      /* value of variable */
         "PARTKWAY", "PARTGEOMKWAY", "PARTGEOM", 
         "REPARTLDIFFUSION", "REPARTGDIFFUSION",
         "REPARTREMAP", "REPARTMLREMAP",
-        "REFINEKWAY",
+        "REFINEKWAY", "ADAPTIVEREPART",
          NULL };
 
     status = Zoltan_Check_Param(name, val, Parmetis_params, &result, &index);
