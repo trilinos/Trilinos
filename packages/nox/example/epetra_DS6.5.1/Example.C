@@ -68,8 +68,11 @@ int main(int argc, char *argv[])
   // Initialize Solution
   if (MyPID==0) {
     soln[0]=2.0;
-    if (NumProc==1) soln[1]=0.5;
-  } else soln[0]=0.5;
+    if (NumProc==1) 
+      soln[1]=0.5;
+  } 
+  else 
+    soln[0]=0.5;
 
   cout << soln << endl;
   

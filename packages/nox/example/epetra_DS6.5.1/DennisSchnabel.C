@@ -26,15 +26,24 @@ DennisSchnabel::DennisSchnabel(int numGlobalElements, Epetra_Comm& comm) :
   // Get the number of elements owned by this processor
   NumMyElements = StandardMap->NumMyElements();
 
-  // Construct an overlaped map for the finite element fill *************
+  // Construct an overlaped map for the fill calls **********************
+  /* The overlap map is needed for multiprocessor jobs.  The unknowns 
+   * are stored in a distributed vector where each node owns one unknown.  
+   * During a function or Jacobian evaluation, each processor needs to have 
+   * both of the unknown values.  The overlapped vector can get this data 
+   * by importing the owned values from the other node to this overlapped map. 
+   * Actual solves must be done using the Standard map where everything is 
+   * distributed.
+   */
   // For single processor jobs, the overlap and standard map are the same
   if (NumProc == 1) {
     OverlapMap = new Epetra_Map(*StandardMap);
-  } else {
+  } 
+  else {
 
     int OverlapNumMyElements;
-    int OverlapMinMyGID;
-    
+    int OverlapMinMyGID;    
+
     OverlapNumMyElements = 2;    
     int OverlapMyGlobalElements[OverlapNumMyElements];
     
@@ -42,7 +51,7 @@ DennisSchnabel::DennisSchnabel(int numGlobalElements, Epetra_Comm& comm) :
       OverlapMyGlobalElements[i] = i;
     
     OverlapMap = new Epetra_Map(-1, OverlapNumMyElements, 
-			    OverlapMyGlobalElements, 0, *Comm);
+				OverlapMyGlobalElements, 0, *Comm);
   } // End Overlap map construction *************************************
 
   // Construct Linear Objects  
@@ -53,10 +62,11 @@ DennisSchnabel::DennisSchnabel(int numGlobalElements, Epetra_Comm& comm) :
   // Allocate the memory for a matrix dynamically (i.e. the graph is dynamic).
   generateGraph(*AA);
 
-  // Create a second matrix using graph of first matrix - this creates a 
-  // static graph so we can refill the new matirx after TransformToLocal()
-  // is called.
+  // Use the graph AA to create a Matrix.
   A = new Epetra_CrsMatrix (Copy, *AA);
+
+  // Transform the global matrix coordinates to local so the matrix can 
+  // be operated upon.
   A->TransformToLocal();
 }
 
@@ -83,23 +93,28 @@ void DennisSchnabel::evaluate(FillType f,
   if (flag == RHS_ONLY) {
     soln = const_cast<Epetra_Vector*>(tmp_soln);
     rhs = tmp_rhs;
-  } else if (flag == MATRIX_ONLY) {
+  } 
+  else if (flag == MATRIX_ONLY) {
     soln = const_cast <Epetra_Vector*> (tmp_soln);
     A = dynamic_cast<Epetra_CrsMatrix*> (tmp_matrix);
-  } else if (flag == ALL) { 
+  } 
+  else if (flag == ALL) { 
     soln = const_cast<Epetra_Vector*>(tmp_soln);
     rhs = tmp_rhs;
     A = dynamic_cast<Epetra_CrsMatrix*> (tmp_matrix);
-  } else {
-    cout << "ERROR: DennisSchnabel::fillMatrix() - FillType flag is broken" << endl;
+  } 
+  else {
+    cout << "ERROR: DennisSchnabel::fillMatrix() - No such flag as " 
+	 << flag << endl;
     throw;
   }
 
-  // Create the overlapped solution and position vectors
+  // Create the overlapped solution
   Epetra_Vector u(*OverlapMap);
 
-  // Export Solution to Overlap vector
-  u.Import(*soln, *Importer, Insert)==0;
+  // Export Solution to Overlap vector so we have all unknowns required
+  // for function and Jacobian evaluations.
+  u.Import(*soln, *Importer, Insert);
 
   // Declare required variables
   int i,j,ierr;
@@ -108,18 +123,22 @@ void DennisSchnabel::evaluate(FillType f,
   if (MyPID==0) OverlapMinMyGID = StandardMap->MinMyGID();
   else OverlapMinMyGID = StandardMap->MinMyGID()-1;
 
-  // Zero out the objects that will be filled
-  if ((flag == MATRIX_ONLY) || (flag == ALL)) i=A->PutScalar(0.0);
-  if ((flag == RHS_ONLY)    || (flag == ALL)) i=rhs->PutScalar(0.0);
+  // Begin RHS fill
+  if((flag == RHS_ONLY) || (flag == ALL)) {
 
- 
+    // Zero out the RHS vector
+    i=rhs->PutScalar(0.0);
 
-  if((flag==RHS_ONLY) || (flag==ALL)) {
-
+    // Processor 0 always fills the first equation.
     if (MyPID==0) { 
       (*rhs)[0]=(u[0]*u[0] + u[1]*u[1] - 2.);
-      if (NumProc==1) (*rhs)[1]=(exp(u[0]-1.) + u[1]*u[1]*u[1] - 2.);
-    } else { 
+
+      // If it's a single processor job, fill the second equation on proc 0.
+      if (NumProc==1) 
+	(*rhs)[1]=(exp(u[0]-1.) + u[1]*u[1]*u[1] - 2.);
+    } 
+    // Multiprocessor job puts the second equation on processor 1.
+    else { 
       (*rhs)[0]=(exp(u[0]-1.) + u[1]*u[1]*u[1] - 2.);
     }
   }
@@ -129,23 +148,34 @@ void DennisSchnabel::evaluate(FillType f,
   int* column = new int[2];
   double* jac = new double[2];
 
-  if((flag==MATRIX_ONLY) || (flag==ALL)) {
+  // The matrix is 2 x 2 and will always be 0 and 1 regardless of 
+  // the coordinates being local or global.
+  column[0] = 0; 
+  column[1] = 1;
+
+  // Begin Jacobian fill
+  if((flag == MATRIX_ONLY) || (flag == ALL)) {
+
+    // Zero out Jacobian
+    i=A->PutScalar(0.0);
 
     if (MyPID==0) {
-      // fill global row 0 on proc 0
-      column[0] = 0;  jac[0] = 2.*u[0];
-      column[1] = 1;  jac[1] = 2.*u[1];
+      // Processor 0 always fills the first equation.
+      jac[0] = 2.*u[0];
+      jac[1] = 2.*u[1];
       ierr=A->ReplaceGlobalValues(0, 2, jac, column);
-      if (NumProc==1) {
-	// Fill global row 1 on proc 0 if single processor job 
-	column[0] = 0;  jac[0] = exp(u[0]-1.);
-	column[1] = 1;  jac[1] = 3.*u[1]*u[1];
+
+      // If it's a single processor job, fill the second equation on proc 0.
+      if (NumProc==1) {	 
+	jac[0] = exp(u[0]-1.);
+	jac[1] = 3.*u[1]*u[1];
 	ierr=A->ReplaceGlobalValues(1, 2, jac, column);
       }
-    } else {
-      // Fill global row 1 on proc 2 if 2 processor job
-      column[0] = 0;  jac[0] = exp(u[0]-1.);
-      column[1] = 1;  jac[1] = 3.*u[1]*u[1];
+    } 
+    // Multiprocessor job puts the second equation on processor 1.
+    else {
+      jac[0] = exp(u[0]-1.);
+      jac[1] = 3.*u[1]*u[1];
       ierr=A->ReplaceGlobalValues(1, 2, jac, column);
     }
 
@@ -156,6 +186,7 @@ void DennisSchnabel::evaluate(FillType f,
   // Sync up processors to be safe
   Comm->Barrier();
  
+  // Transform matrix so it can be operated upon.
   A->TransformToLocal();
 
   return ;
