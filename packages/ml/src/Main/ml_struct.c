@@ -1739,7 +1739,7 @@ int ML_MLS_Setup_Coef(void *sm, int deg)
    */
    const int    nSample=20000;
    double       sample[nSample], gridStep, rho, rho2, ddeg, aux0, aux1; 
-   double       aux_om, om_loc[MLS_MAX_DEG], om2, coord;
+   double       aux_om, om_loc[MLS_MAX_DEG], coord;
    const double pi=4.e0 * atan(1.e0); /* 3.141592653589793115998e0; */
    int          i, j, nGrid;
    int          j_max;
@@ -1814,9 +1814,7 @@ int ML_MLS_Setup_Coef(void *sm, int deg)
 	   widget->mlsBoost = 1.025e0;
    }
    rho2 *= widget->mlsBoost;
-   aux_om = rho2 * (1.e0 - cos((2.e0 * pi)/3.e0)) / 2.e0; 
-   om2    = 1.e0/aux_om;
-   widget->mlsOm2 = om2;
+   widget->mlsOm2 = 2.e0/rho2; 
    for (i=0; i<deg; i++) widget->mlsOm[i] = om_loc[i]; 
 	
    return 0;
