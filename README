@@ -1,4 +1,27 @@
 
+
+To get Trilinos:
+
+Trilinos is kept in a CVS repository on skip.sandia.gov.  Contact
+Paul Sery (pgsery@sandia.gov) for an account.
+
+If you have an account on this machine, you may retrieve Trilinos by setting
+the following environment variables
+
+In csh or tcsh:
+
+setenv CVSROOT :ext:mheroux@skip.sandia.gov:/space/CVS
+setenv CVS_RSH ssh
+
+or in bash:
+
+export CVSROOT=:ext:mheroux@skip.sandia.gov:/space/CVS
+export CVS_RSH=ssh
+
+These variables may also be defined in your .cshrc or .bashrc file.
+
+
+
 To build Trilinos:
 
 1) Define the following environment variable in your .cshrc (or
