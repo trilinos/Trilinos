@@ -478,6 +478,7 @@ void Zoltan_HG_Print(
 int i, j;
 int num_vwgt;
 int num_ewgt;
+float *sum;
 char *yo = "Zoltan_HG_Print";
 
   if (hg == NULL)
@@ -488,6 +489,8 @@ char *yo = "Zoltan_HG_Print";
   num_vwgt = hg->VtxWeightDim;
   num_ewgt = hg->EdgeWeightDim;
 
+  sum = (float *) ZOLTAN_MALLOC(MAX(num_vwgt, num_ewgt) * sizeof(float));
+
   fprintf(fp, "%s nVtx=%d nEdge=%d nPins=%d vWgt=%d eWgt=%d\n", 
           str, hg->nVtx, hg->nEdge, hg->nPins, 
           hg->VtxWeightDim, hg->EdgeWeightDim);
@@ -496,7 +499,7 @@ char *yo = "Zoltan_HG_Print";
   fprintf(fp, "%s Vertices:  (edges)\n", str);
   for (i = 0; i < hg->nVtx; i++) {
     fprintf(fp, "%d (%d) in part %d:  ", 
-            i, VTX_LNO_TO_GNO(hg, i), parts[i]);
+            i, VTX_LNO_TO_GNO(hg, i), (parts ? parts[i] : -1));
     fprintf(fp, "(");
     for (j = hg->vindex[i]; j < hg->vindex[i+1]; j++)
       fprintf(fp, "%d ", hg->vedge[j]);
@@ -504,13 +507,19 @@ char *yo = "Zoltan_HG_Print";
   }
 
   if (hg->vwgt != NULL) {
+    for (j = 0; j < num_vwgt; j++) sum[j] = 0;
     fprintf(fp, "%s Vertices: [weights])\n", str);
     for (i = 0; i < hg->nVtx; i++) {
       fprintf(fp, "%d (%d):  [", i, VTX_LNO_TO_GNO(hg, i));
-      for (j = 0; j < num_vwgt; j++)
+      for (j = 0; j < num_vwgt; j++) {
         fprintf(fp, "%f ", hg->vwgt[i*num_vwgt + j]);
+        sum[j] += hg->vwgt[i*num_vwgt + j];
+      }
       fprintf(fp, "])\n");
     }
+    fprintf(fp, "Total vertex weight = [");
+    for (j = 0; j < num_vwgt; j++) fprintf(fp, "%f  ", sum[j]);
+    fprintf(fp, "]\n");
   }
 
   /* Print Hyperedge Info */
@@ -524,15 +533,23 @@ char *yo = "Zoltan_HG_Print";
   }
 
   if (hg->ewgt != NULL) {
+    for (j = 0; j < num_ewgt; j++) sum[j] = 0;
     fprintf(fp, "%s Hyperedge Weights:  [weights]\n", str);
     for (i = 0; i < hg->nEdge; i++) {
       fprintf(fp, "%d (%d):  ", i, EDGE_LNO_TO_GNO(hg, i));
       fprintf(fp, "[");
-      for (j = 0; j < num_ewgt; j++)
+      for (j = 0; j < num_ewgt; j++) {
         fprintf(fp, "%f ", hg->ewgt[i*num_ewgt + j]);
+        sum[j] += hg->ewgt[i*num_ewgt + j];
+      }
       fprintf(fp, "])\n");
     }
+    fprintf(fp, "Total hyperedge weight = [");
+    for (j = 0; j < num_ewgt; j++) fprintf(fp, "%f  ", sum[j]);
+    fprintf(fp, "]\n");
   }
+
+  ZOLTAN_FREE(&sum);
   ZOLTAN_TRACE_EXIT(zz, yo);
 }
 
