@@ -172,6 +172,16 @@ int ML_CG_ComputeEigenvalues(ML_Krylov *data, int length, int scale_by_diag)
    mypid       = comm->ML_mypid;
    maxiter     = 10;
    if ( totallength < maxiter ) maxiter = totallength;
+
+   /* Check if A is 1x1.  If so, return early. */
+   if (matrix->invec_leng == 1)
+   {
+      ML_Operator_Get_Diag(matrix, 1, &diag); 
+      printf("Retrieving diagonal %e\n",*diag);
+      data->ML_eigen_max = *diag;
+      data->ML_eigen_min = *diag;
+      return 1;
+   }
 /*
    maxiter = - maxiter;
    maxiter = ML_gmax_int(maxiter, comm);
