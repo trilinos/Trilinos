@@ -123,7 +123,7 @@ using namespace std;
 // prints out an error message if variable is not zero,
 // and returns this value.
 #define IFPACK_CHK_ERR(ifpack_err) \
-{ if (ifpack_err != 0) { \
+{ if (ifpack_err < 0) { \
   std::cerr << "IFPACK ERROR " << ifpack_err << ", " \
     << __FILE__ << ", line " << __LINE__ << std::endl; \
     return(ifpack_err);  } }
@@ -131,13 +131,13 @@ using namespace std;
 // prints out an error message if variable is not zero,
 // and returns void
 #define IFPACK_CHK_ERRV(ifpack_err) \
-{ if (ifpack_err != 0) { \
+{ if (ifpack_err < 0) { \
   std::cerr << "IFPACK ERROR " << ifpack_err << ", " \
     << __FILE__ << ", line " << __LINE__ << std::endl; \
     return;  } }
 // prints out an error message and returns
 #define IFPACK_RETURN(ifpack_err) \
-{ if (ifpack_err != 0) { \
+{ if (ifpack_err < 0) { \
   std::cerr << "IFPACK ERROR " << ifpack_err << ", " \
     << __FILE__ << ", line " << __LINE__ << std::endl; \
 		       } return(ifpack_err); }
