@@ -46,7 +46,9 @@ Epetra_SerialDenseMatrix::Epetra_SerialDenseMatrix(int NumRows, int NumCols)
     A_Copied_(false),
     A_(0)
 {
-	Shape(NumRows, NumCols);
+  int errorcode = Shape(NumRows, NumCols);
+  if(errorcode != 0)
+    throw ReportError("Shape returned non-zero value", errorcode);
 }
 
 //=============================================================================
