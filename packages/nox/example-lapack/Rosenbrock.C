@@ -158,11 +158,11 @@ int main()
   NOX::Parameter::List solverParameters;
 
   // Set the level of output (this is the default)
-  solverParameters.setParameter("Output Information", 
-		     NOX::Utils::Warning + 
-		     NOX::Utils::OuterIteration + 
-		     NOX::Utils::InnerIteration + 
-		     NOX::Utils::Parameters);
+  solverParameters.sublist("Printing").setParameter("Output Information", 
+						    NOX::Utils::Warning + 
+						    NOX::Utils::OuterIteration + 
+						    NOX::Utils::InnerIteration + 
+						    NOX::Utils::Parameters);
 
   // Set the solver (this is the default)
   solverParameters.setParameter("Nonlinear Solver", "Line Search Based");

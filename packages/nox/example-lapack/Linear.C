@@ -203,11 +203,11 @@ int main()
   NOX::Parameter::List solverParameters;
 
   // Set the level of output (this is the default)
-  solverParameters.setParameter("Output Information", 
-		     NOX::Utils::Warning + 
-		     NOX::Utils::OuterIteration + 
-		     NOX::Utils::InnerIteration + 
-		     NOX::Utils::Parameters);
+  solverParameters.sublist("Printing").setParameter("Output Information", 
+						    NOX::Utils::Warning + 
+						    NOX::Utils::OuterIteration + 
+						    NOX::Utils::InnerIteration + 
+						    NOX::Utils::Parameters);
 
   // Set the solver (this is the default)
   solverParameters.setParameter("Nonlinear Solver", "Line Search Based");
@@ -223,11 +223,14 @@ int main()
 
   // Set the line search method
   lineSearchParameters.setParameter("Method", "Polynomial");
-  lineSearchParameters.setParameter("Force Interpolation", true);
-  lineSearchParameters.setParameter("Convergence Criteria", "None");
-  lineSearchParameters.setParameter("Default Step", 1.0);
-  lineSearchParameters.setParameter("Min Bounds Factor", 0.0);
 
+  // Create the line search parameters sublist
+  NOX::Parameter::List& polynomialParameters = lineSearchParameters.sublist("Polynomial");
+
+  polynomialParameters.setParameter("Force Interpolation", true);
+  polynomialParameters.setParameter("Convergence Criteria", "None");
+  polynomialParameters.setParameter("Default Step", 1.0);
+  polynomialParameters.setParameter("Min Bounds Factor", 0.0);
 
   // Create the solver
   NOX::Solver::Manager solver(grp, statusTestsCombo, solverParameters);
