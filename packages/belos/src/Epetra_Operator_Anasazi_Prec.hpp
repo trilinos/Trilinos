@@ -5,7 +5,7 @@
 
 #include "Epetra_Operator.h"
 
-#include <cassert>
+#include "BelosConfigDefs.hpp"
 
 #include "AnasaziMatrix.hpp"
 #include "AnasaziPrecondition.hpp"

@@ -94,7 +94,9 @@ libBelosTest_a_SOURCES = \
 	$(MPISMP)
 
 #We need the following to support separate build directories
-AM_CPPFLAGS=-I$(top_srcdir)/../epetra/src -I$(top_builddir)/../epetra/src \
+AM_CPPFLAGS=-I$(top_srcdir)/src -I$(top_builddir)/src \
+		-I$(top_srcdir)/../epetra/src \
+		-I$(top_builddir)/../epetra/src \
 		-I$(top_srcdir)/../triutils/src \
 		-I$(top_builddir)/../triutils/src
 

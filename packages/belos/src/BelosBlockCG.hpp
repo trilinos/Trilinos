@@ -23,11 +23,7 @@
 #define BLOCK_CG_HPP
 
 #include "Epetra_LAPACK.h"
-#include <iostream>
-#include <cassert>
-#include <cmath>
-
-using namespace std;
+#include "BelosConfigDefs.hpp"
 
 //
 // BlockCG base class

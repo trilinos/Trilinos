@@ -3,7 +3,7 @@
 #define ANASAZI_PRECONDITION_HPP
 
 #include "AnasaziMultiVec.hpp"
-#include <iostream>
+#include "BelosConfigDefs.hpp"
 
 template <class TYPE>
 class AnasaziPrecondition {

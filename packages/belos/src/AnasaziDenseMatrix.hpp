@@ -1,7 +1,7 @@
 // AnasaziDenseMatrix.hpp: interface for the AnasaziDenseMatrix class.
 #ifndef ANASAZI_DENSE_MATRIX_HPP
 #define ANASAZI_DENSE_MATRIX_HPP
-#include <iostream>
+#include "BelosConfigDefs.hpp"
 
 template <class TYPE>
 class AnasaziDenseMatrix  {

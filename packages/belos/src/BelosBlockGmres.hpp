@@ -22,11 +22,7 @@
 #define BLOCK_GMRES_HPP
 
 #include "Epetra_LAPACK.h"
-#include <iostream>
-#include <cassert>
-#include <cmath>
-
-using namespace std;
+#include "BelosConfigDefs.hpp"
 
 // 
 // BlockGmres base class

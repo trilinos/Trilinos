@@ -6,8 +6,7 @@
 // file. It ignores any right-hand side, initial guess,
 // and exact solution information that may be in the file.
 
-#include <stdlib.h>
-#include <stdio.h>
+#include "BelosConfigDefs.hpp"
 #include "Trilinos_Util.h"
 #include "Epetra_Comm.h"
 #include "Epetra_Map.h"

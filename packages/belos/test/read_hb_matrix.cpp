@@ -7,8 +7,7 @@
 // and exact solution information that may be in the file.
 // 
 
-#include <stdlib.h>
-#include <stdio.h>
+#include "BelosConfigDefs.hpp"
 #include "Trilinos_Util.h"
 #include "iohb.h"
 #include "Util.h"

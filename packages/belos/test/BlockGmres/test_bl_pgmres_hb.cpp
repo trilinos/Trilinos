@@ -15,11 +15,7 @@
 // numrhs = 1 and block > 1 to sove a single rhs-system with a block implementation. 
 //
 // 
-#include <cassert>
-#include <string>
-#include <cmath>
-#include <stdlib.h>
-#include <iostream>
+#include "BelosConfigDefs.hpp"
 #include "AnasaziPetra.hpp"
 #include "BelosBlockGmres.hpp"
 #include "Trilinos_Util.h"

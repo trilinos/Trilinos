@@ -7,7 +7,7 @@
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_LocalMap.h"
 
-#include <cassert>
+#include "BelosConfigDefs.hpp"
 
 #include "AnasaziMatrix.hpp"
 
