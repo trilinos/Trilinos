@@ -135,13 +135,16 @@ int Zoltan_HG_Create_Mirror(ZZ *, HGraph *);
 int Zoltan_HG_Check        (ZZ *, HGraph *);
 int Zoltan_HG_HGraph_to_Graph(ZZ *, HGraph *, Graph *);
 int Zoltan_HG_Graph_to_HGraph(ZZ *, Graph *, HGraph *);
+void Zoltan_HG_Print(ZZ *, HGraph *);
 
 unsigned long Zoltan_HG_Rand (void) ;
 void          Zoltan_HG_Srand (unsigned long) ;
 void          Zoltan_HG_Rand_Perm_Int (int *, int);
 
 /* Hypergraph read from file */
-int HG_Readfile (ZZ *, HGraph *, char *hgraphfile);
+int hg_readfile (ZZ *, HGraph *, char *, int *);
+int Zoltan_HG_Readfile ( int, FILE *, int *, int *, int *,
+   int **, int **, int *, float **, int *, float **, int *);
 
 /* Hypergraph Partitioning */
 /* Function types for options to hypergraph partitioning */
@@ -228,10 +231,6 @@ void quicksort_pointer_inc_int_int   (int*, int*, int*, int, int);
 void quicksort_list_inc_int          (int*, int, int);
 void quicksort_pointer_inc_int_mult  (int *, int, int, int*, int*);
 
-extern int Zoltan_HG_Readfile ( int, FILE *, int *, int *, int *,
- int **, int **, int *, float **, int *, float **, int *);
-extern void Zoltan_HG_Print(ZZ *, HGraph *);
-
 /* Heap datastructure */
 typedef struct
 { int space;
@@ -244,13 +243,13 @@ typedef struct
 #define heap_not_empty(H)     (((H)->n)!=0)
 #define heap_max_value(H)     ((H)->value[(H)->ele[0]])
 #define heap_peak_max(H)      ((H)->ele[0])
-extern int  heap_init         (ZZ *, HEAP*, int);
-extern void heap_free         (HEAP*);
-extern int  heap_check        (HEAP*);
-extern int  heap_input        (HEAP*, int, float);
-extern int  heap_make         (HEAP*);
-extern int  heap_change_value (HEAP*, int, float);
-extern int  heap_extract_max  (HEAP*);
+int  heap_init         (ZZ *, HEAP*, int);
+void heap_free         (HEAP*);
+int  heap_check        (HEAP*);
+int  heap_input        (HEAP*, int, float);
+int  heap_make         (HEAP*);
+int  heap_change_value (HEAP*, int, float);
+int  heap_extract_max  (HEAP*);
 int move_vertex     (HGraph *, int, int, int, int *, int **, float *, HEAP *);
 
 #ifdef __cplusplus

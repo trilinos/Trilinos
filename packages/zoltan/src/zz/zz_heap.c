@@ -24,6 +24,7 @@ extern "C" {
 
 static void heapify (HEAP*, int);
 
+/* Inititializes the heap values and allocates space */
 int heap_init (ZZ *zz, HEAP *h, int space)
 { char *yo = "heap_init";
   int i;
@@ -42,9 +43,10 @@ int heap_init (ZZ *zz, HEAP *h, int space)
   return ZOLTAN_OK;
 }
 
+/* Frees all memory and sets the heap value back to default */
 void heap_free (HEAP *h)
 { 
-  if (h->space){
+  if (h->space != 0){
     ZOLTAN_FREE ((void **) &(h->ele));
     ZOLTAN_FREE ((void **) &(h->pos));
     ZOLTAN_FREE ((void **) &(h->value));
@@ -53,6 +55,7 @@ void heap_free (HEAP *h)
   h->n = 0;
 }
 
+/* Checks wheather the heap has the Max-Heap property */
 int heap_check (HEAP *h)
 { int i, left, right;
   static char * yo = "heap_check";
@@ -90,6 +93,9 @@ int heap_input (HEAP *h, int element, float value)
   return ZOLTAN_OK;
 }
 
+/* Moves the values in the heap to gain the Max-Heap property.
+   The time is linear!
+*/
 int heap_make (HEAP *h)
 { int i;
   
@@ -98,6 +104,9 @@ int heap_make (HEAP *h)
   return ZOLTAN_OK;
 }
 
+/* Subroutine which gets the heap property if both subtrees already
+   have the heap property.
+*/
 static void heapify (HEAP *h, int root)
 { int	left=root*2+1, right=root*2+2, largest=root; 
 
@@ -113,6 +122,9 @@ static void heapify (HEAP *h, int root)
   }
 }
 
+/* Changes the value of an element in the heap and restores the
+   heap property. This can take O(log(n)) time. 
+*/
 int heap_change_value (HEAP *h, int element, float value)
 { int position, father;
 
@@ -120,8 +132,7 @@ int heap_change_value (HEAP *h, int element, float value)
     return ZOLTAN_FATAL; /* Error */
   }
 
-  position = h->pos[element];
-  if (position >= 0)
+  if ((position=h->pos[element]) >= 0)
   { if (value < h->value[element])
     { h->value[element] = value;
       heapify(h,position);
@@ -139,6 +150,9 @@ int heap_change_value (HEAP *h, int element, float value)
   return ZOLTAN_OK;
 }
 
+/* Extracts the maximum element and restores the heap property. Takes
+   time O(log(n)).
+*/
 int heap_extract_max (HEAP *h)
 { int max = h->ele[0];
 

@@ -20,7 +20,13 @@ extern "C" {
 
 /****************************************************************************/
 
-/* Time O(|P|*log(|P|)), due to sorting */
+/* Procedure to coarsen a hypergraph based on a packing. All vertices
+   of one pack are clustered to one vertex. Identical hyperedges are
+   collapsed to a single hyperedge with combined weight. The array
+   LevelMap is the mapping of the old vertices to the new vertices. It
+   will be used to pass a partition of the coarse graph back to the
+   original graph. Time O(|I|*log(|I|)), due to sorting.
+*/
 int Zoltan_HG_Coarsening (
   ZZ *zz,
   HGraph *hg, 
@@ -36,7 +42,9 @@ int Zoltan_HG_Coarsening (
   Zoltan_HG_HGraph_Init(c_hg);
   c_hg->info = hg->info+1;
 
-/* Calculate the number of vertices */
+/* Calculate the number of coarse vertices. Change pack[vertex] to
+   -pack[vertex]-1.
+*/
   c_hg->nVtx = 0;
   for (i=0; i<hg->nVtx; i++)
     if (pack[i] >= 0)
@@ -52,7 +60,9 @@ int Zoltan_HG_Coarsening (
     return ZOLTAN_MEMERR;
   }
 
-/* Construct the LevelMap */
+/* Construct the LevelMap. pack[vertex] is changed back to original value.
+   Also sum up the vertex weights.
+*/
   new_vertex = 0;
   for (i=0; i<hg->nVtx; i++)
     if (pack[i] < 0)
@@ -66,7 +76,7 @@ int Zoltan_HG_Coarsening (
       new_vertex++;
     }
 
-/* Coarsen the hyperedges */
+/* Coarsen the hyperedges and avoid edges with only one vertex */
   if (!(used_vertices = (int *)  ZOLTAN_CALLOC(c_hg->nVtx,sizeof(int)))   ||
       !(c_ewgt        = (float *)ZOLTAN_MALLOC(hg->nEdge*sizeof(float)))  ||
       !(c_hindex      = (int *)  ZOLTAN_MALLOC((hg->nEdge+1)*sizeof(int)))||
@@ -85,11 +95,11 @@ int Zoltan_HG_Coarsening (
       { used_vertices[new_vertex] = i+1;
         c_hvertex[(c_hg->nPin)++] = new_vertex;
     } }
-    if (c_hg->nPin > c_hindex[c_hg->nEdge]+1)
+    if (c_hg->nPin > c_hindex[c_hg->nEdge]+1)   /* a new hyperedge */
     { c_ewgt[c_hg->nEdge++] = (hg->ewgt?hg->ewgt[i]:1.0);
       c_hindex[c_hg->nEdge] = c_hg->nPin;
     }
-    else
+    else /* no new hyperedge, because it only covers one vertex */
       c_hg->nPin = c_hindex[c_hg->nEdge];
   }
   ZOLTAN_FREE((void **) &used_vertices);

@@ -103,7 +103,7 @@ int Zoltan_HG_Matching (
   Matching match,
   HGPartParams *hgp,
   int *limit)
-{ int   i, ierr, need_graph ;
+{ int   ierr, need_graph ;
   char  *yo = "Zoltan_HG_Matching";
   float *old_ewgt=NULL, *new_ewgt;
   Graph g;
@@ -132,6 +132,8 @@ int Zoltan_HG_Matching (
 /*
     graph_connected_components (g.nVtx,g.nindex,g.neigh,zz->Debug_Level);
 */
+
+    /* Scaling the edge weights */
     if (g.vwgt && hgp->ews>0)
     { if (!(new_ewgt = (float *) ZOLTAN_MALLOC (g.nEdge*sizeof(float))))
       { ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
@@ -146,9 +148,6 @@ int Zoltan_HG_Matching (
     sim_check(hg,&g);
 */
   }
-
-  for (i=0; i<hg->nVtx; i++)
-    match[i] = i;
 
   /* Call matching routine specified by parameters. */
   ierr = hgp->matching(zz,hg,&g,match,limit);
@@ -170,11 +169,11 @@ int Zoltan_HG_Matching (
       for (j=g.nindex[i]; j<g.nindex[i+1]; j++)
       { highest = MAX(highest,g.ewgt[j]);
         if (g.neigh[j] == match[i])
-          if (g.ewgt[j] == FLT_MAX)
+        { if (g.ewgt[j] == FLT_MAX)
             matching_weight = FLT_MAX;
           else
             matching_weight += (g.ewgt[j]);
-      }
+      } }
       if (highest < FLT_MAX)
         upper_bound += highest;
       else
@@ -185,14 +184,13 @@ int Zoltan_HG_Matching (
 
 End:
 /* more temporary code while graphs are being replaced by hypergraphs */
-if (need_graph == 1)
-{
-  if (g.vwgt && hgp->ews)
-  { g.ewgt = old_ewgt;
-    ZOLTAN_FREE ((void **) &new_ewgt);
+  if (need_graph == 1)
+  { if (g.vwgt && hgp->ews)
+    { g.ewgt = old_ewgt;
+      ZOLTAN_FREE ((void **) &new_ewgt);
+    }
+    Zoltan_HG_Graph_Free(&g) ;
   }
-  Zoltan_HG_Graph_Free(&g) ;
-}
 
   ZOLTAN_TRACE_EXIT(zz, yo);
   return ierr;

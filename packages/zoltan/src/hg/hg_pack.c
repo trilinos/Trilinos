@@ -59,12 +59,13 @@ int Zoltan_HG_Set_Packing_Fn(HGPartParams *hgp)
 
 int Zoltan_HG_Packing (ZZ *zz, HGraph *hg, Packing pack, HGPartParams *hgp, int *limit)
 {
-  int   i, ierr = ZOLTAN_OK;
+  int   ierr = ZOLTAN_OK;
   float *old_ewgt=NULL, *new_ewgt;
   char  *yo = "Zoltan_HG_Packing";
 
   ZOLTAN_TRACE_ENTER(zz, yo);
 
+  /* Scale the weight of the edges */
   if (hg->vwgt && hgp->ews)
   { if (!(new_ewgt = (float *) ZOLTAN_MALLOC (hg->nEdge*sizeof(float))))
     { ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
@@ -76,16 +77,18 @@ int Zoltan_HG_Packing (ZZ *zz, HGraph *hg, Packing pack, HGPartParams *hgp, int 
     hg->ewgt = new_ewgt;
   }
 
-  for (i=0; i<hg->nVtx; i++)
-    pack[i] = i;
-
+  /* Do the packing */
   ierr = hgp->packing(zz,hg,pack, limit);
-  if (ierr == ZOLTAN_OK || ierr == ZOLTAN_WARN) {
-     /* Optimization */
-     if (hgp->packing_opt != NULL)
-        ierr = hgp->packing_opt (zz,hg,pack,limit);
+  if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
+    goto End;
   }
 
+  /* Optimization */
+  if (hgp->packing_opt != NULL)
+    ierr = hgp->packing_opt (zz,hg,pack,limit);
+
+End:
+  /* Restore the old edge weights */
   if (hg->vwgt && hgp->ews)
   { hg->ewgt = old_ewgt;
     ZOLTAN_FREE ((void **) &new_ewgt);
@@ -95,6 +98,10 @@ int Zoltan_HG_Packing (ZZ *zz, HGraph *hg, Packing pack, HGPartParams *hgp, int 
 }
 
 /****************************************************************************/
+
+/* Maximal packing. Just goes through all edges and packs it
+   if it is available. Time O(|I|).
+*/
 
 static int packing_mxp (ZZ *zz, HGraph *hg, Packing pack, int *limit)
 {
@@ -117,6 +124,9 @@ static int packing_mxp (ZZ *zz, HGraph *hg, Packing pack, int *limit)
 
 /****************************************************************************/
 
+/* Random Edge packing. Randomly traverses through all edges and
+   packs if it is available. Time O(|I|).
+*/
 static int packing_rep (ZZ *zz, HGraph *hg, Packing pack, int *limit)
 {
   int i, j, *edges=NULL, edge, random ;
@@ -150,6 +160,10 @@ static int packing_rep (ZZ *zz, HGraph *hg, Packing pack, int *limit)
 
 /****************************************************************************/
 
+/* Random Random Packing. Randomly traverses through the vertices
+   and for each vertex it randomly takes one covering edge and packs
+   it if it is available. Time O(|I|).
+*/
 static int packing_rrp (ZZ *zz, HGraph *hg, Packing pack, int *limit)
 {
   int i, j, k, edge, random, *vertices=NULL, vertex ;
@@ -209,6 +223,10 @@ static int packing_rrp (ZZ *zz, HGraph *hg, Packing pack, int *limit)
 
 /****************************************************************************/
 
+/* Random Heavy Packing. Randomly traverses through the vertices
+   and for each vertex it randomly takes the heaviest covering edge and packs
+   it if it is available. Time O(|I|).
+*/
 static int packing_rhp (ZZ *zz, HGraph *hg, Packing pack, int *limit)
 {
    int   i, j, k, *vertices=NULL, *del_edges=NULL, vertex, edge, size,
@@ -293,6 +311,11 @@ static int packing_rhp (ZZ *zz, HGraph *hg, Packing pack, int *limit)
 
 /****************************************************************************/
 
+/* Greedy Packing. It sorts the edges due to their weight and size
+   and packs them if they are available. Time O(|I|+|E|*log(|E|)).
+   it guarantees an approximation of 1/k.
+*/
+
 static int packing_grp (ZZ *zz, HGraph *hg, Packing pack, int *limit)
 {
   int   i, j, *size=NULL, *sorted=NULL;
@@ -332,6 +355,12 @@ static int packing_grp (ZZ *zz, HGraph *hg, Packing pack, int *limit)
 
 /****************************************************************************/
 
+/* Locally Heaviest packing. It is like the locally heaviest matching.
+   It looks for locally heaviest edges by backtracking. For a current
+   edge it has to check the weight of all intersecting edges. Edges
+   may be checked several times, but it is amortized not more than
+   time O(k*|I|) and guarantees an approximation of 1/k.
+*/
 static int lhp_pack (ZZ *zz, HGraph *hg, int edge, int *del_edge, int *Vindex,
                      int *Vindex_old, Packing pack, int *limit)
 { int  i, j, vertex, next_edge, done=0;
@@ -398,6 +427,9 @@ static int packing_lhp (ZZ *zz, HGraph *hg, Packing pack, int *limit)
 
 /****************************************************************************/
 
+/* Path Growing Packing. It constructs two packings olong a path.
+   The time is O(|I|) and the approximation is 1/(2(k-1)).
+*/
 static int packing_pgp (ZZ *zz, HGraph *hg, Packing pack, int *limit)
 {
   int   i, j, k, side, vertex, edge, *Pack[2], limits[2],
@@ -489,6 +521,7 @@ static int packing_pgp (ZZ *zz, HGraph *hg, Packing pack, int *limit)
 
 /****************************************************************************/
 
+/* augmenting of size 1 is identicqal to maximal packing. */
 static int packing_aug1 (ZZ *zz, HGraph *hg, Packing pack, int *limit)
 {
   return packing_mxp (zz,hg,pack,limit);

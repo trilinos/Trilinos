@@ -7,6 +7,7 @@
 #include "hypergraph.h"
 
 /* =========== TIME */
+/* This is used to measure the time of the stand-alone programe hg_test. */
 #ifdef WITHTIME
 static long     t=0, t_init=0, t_load=0, t_part=0, t_rest=0;
 static void times_output ()
@@ -42,6 +43,10 @@ static void times_output () {}
 #define END_TIME()      {}
 #endif
 
+
+
+/* The main procedure for the executable hg_test */
+
 int main (int argc, char **argv)
 { int    i, p=2, *part, memory_graph;
   char   hgraphfile[100]="grid5x5.hg";
@@ -49,8 +54,8 @@ int main (int argc, char **argv)
   HGPartParams hgp;
   ZZ     zz;
   int    base;   /* minimum vertex number in input file; usually 0 or 1. */
-  extern int hg_readfile();
 
+/* Pre-set parameter values */
   hgp.bal_tol = 1.1;
   hgp.redl = 0;
   strcpy(hgp.redm_str, "grg");
@@ -156,4 +161,3 @@ int main (int argc, char **argv)
 
   return 0;
 }
-

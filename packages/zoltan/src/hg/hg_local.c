@@ -216,9 +216,6 @@ static int local_fm (
         sour = 0;
       else if (part_weight[1] > max_weight)
         sour = 1;
-/*
-      else if (part_weight[0] > part_weight[1])
-*/
       else if (heap_max_value(&(heap[0])) > heap_max_value(&(heap[1])))
         sour = 0;
       else
@@ -269,7 +266,6 @@ static int local_fm (
     for (i=0; i<p; i++)
       heap_make(&(heap[i]));
   } while (best_cutsize < cutsize);
-
 
 /*
   gain_check (hg, gain, part, cut);

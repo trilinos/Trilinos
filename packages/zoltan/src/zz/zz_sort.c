@@ -20,6 +20,8 @@ extern "C" {
 
 /****************************************************************************/
 
+/* Sorting pointers in decreasing order. Criteria is float.
+*/
 static void quickpart_pointer_dec_float (
 int *sorted, float *val, int start, int end, int* equal, int* smaller
 )
@@ -54,6 +56,9 @@ int *sorted, float* val, int start, int end
 
 /****************************************************************************/
 
+/* Sorting pointers in decreasing order. Criteria is float. Sub-criteria
+   is int.
+*/
 static void quickpart_pointer_dec_float_int (
 int *sorted, float *val1, int *val2, int start, int end, int *equal, int *smaller
 )
@@ -94,6 +99,8 @@ int *sorted, float* val1, int *val2, int start, int end
 
 /****************************************************************************/
 
+/* Sorting pointers in increasing order. Criteria is int. Sub-criteria is int.
+*/
 static void quickpart_pointer_inc_int_int (
 int *sorted, int *val1, int *val2, int start, int end, int *equal, int *larger)
 { int	i, next, key1, key1_next, key2, key2_next;
@@ -131,6 +138,8 @@ int *sorted, int* val1, int *val2, int start, int end)
 
 /****************************************************************************/
 
+/* Sorting values in increasing order. Criteria is int.
+*/
 static void quickpart_list_inc_int (
 int *list, int start, int end, int *equal, int *larger)
 { int   i, key, change;
@@ -163,6 +172,8 @@ void quicksort_list_inc_int (int* list, int start, int end)
 
 /****************************************************************************/
 
+/* Sorting pointers in increasing order. Criteria are multiple ints.
+*/
 static void quickpart_pointer_inc_int_mult (
 int *sorted, int start, int end, int *equal, int *larger,
 int *index, int *data)

@@ -70,6 +70,7 @@ int Zoltan_HG_HPart_Lib (
   char *yo = "Zoltan_HG_HPart_Lib" ;
   char msg[128];
 
+/* The partition array has to be allocated prior to this procedure */
   if (!part)
   { ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Output partition array is NULL.");
     return ZOLTAN_MEMERR;
@@ -85,12 +86,13 @@ int Zoltan_HG_HPart_Lib (
     }
   }
 
+/* the graph will only be reduced to a size smaller than the number of parts */
   if (hgp->redl < p)
     hgp->redl = p;
 
+/* Something wrong with the part number ? */
   if (p <= 0)
-  { 
-    sprintf(msg, "PART ERROR...p=%d is not a positive number!\n", p);
+  { sprintf(msg, "PART ERROR...p=%d is not a positive number!\n", p);
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, msg);
     return ZOLTAN_FATAL;
   }
@@ -119,7 +121,9 @@ int Zoltan_HG_HPart_Lib (
     { ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
       return ZOLTAN_MEMERR;
     }
-
+    for (i=0; i<hg->nVtx; i++)
+      pack[i] = i;
+ 
     /* Calculate Packing, Grouping or Matching */
     limit = hg->nVtx-hgp->redl;
     if (hgp->packing)
@@ -213,6 +217,9 @@ int Zoltan_HG_HPart_Lib (
 
 /****************************************************************************/
 
+/* Calculates the cutsize of a partition by summing the weight of all edges
+   which span more than one part. Tiem O(|I|).
+*/
 float hcut_size_total (HGraph *hg, Partition part)
 { int   i, j, hpart;
   float cut=0.0;
@@ -228,6 +235,11 @@ float hcut_size_total (HGraph *hg, Partition part)
 
 /****************************************************************************/
 
+/* Calculates the cutsize of a partition. For each edge it calculates
+   the number of parts it spans across. This value minus one is the
+   cutsize of this edge and the total cutsize is the sum of the single
+   cutsizes. Time O(|I|).
+*/
 float hcut_size_links (ZZ *zz, HGraph *hg, int p, Partition part)
 { int   i, j, *parts, nparts;
   float cut=0.0;
@@ -252,6 +264,7 @@ float hcut_size_links (ZZ *zz, HGraph *hg, int p, Partition part)
 
 /****************************************************************************/
 
+/* Output procedures to print the minimal and maximal values of an array */
 static int hmin_max (ZZ *zz, int P, int *q)
 { int   i, values[3];
 
@@ -273,9 +286,6 @@ static int hmin_max (ZZ *zz, int P, int *q)
   } }
   return values[1];
 }
-
-/****************************************************************************/
-
 static float hmin_max_float (ZZ *zz, int P, float *q)
 { int   i;
   float	values[3];
@@ -298,8 +308,7 @@ static float hmin_max_float (ZZ *zz, int P, float *q)
   return values[1];
 }
 
-/****************************************************************************/
-
+/* Prints important values of the partition on screen */
 int Zoltan_HG_HPart_Info (ZZ *zz, HGraph *hg, int p, Partition part)
 { int	i, *size, max_size;
   char *yo = "Zoltan_HG_HPart_Info" ;
