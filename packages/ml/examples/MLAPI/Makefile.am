@@ -9,12 +9,13 @@ EXEEXT = .exe
 
 # List the names of all exe's in this directory here
 
-noinst_PROGRAMS = Blackboard           \
-                  PowerMethod          \
-                  TwoLevelDDAdditive   \
-                  MultiLevel           \
-                  Richardson           \
-                  AdaptiveSA           \
+noinst_PROGRAMS = Blackboard            \
+                  PowerMethod           \
+                  TwoLevelDDAdditive    \
+                  MultiLevel            \
+                  Richardson            \
+                  AdaptiveSA            \
+                  AdaptiveSA_Elasticity \
                   NonSymmetricSA
 
 Blackboard_SOURCES  = $(srcdir)/Blackboard.cpp
@@ -46,6 +47,12 @@ AdaptiveSA_CPPFLAGS = ${ml_common_include_locations}
 AdaptiveSA_CXXFLAGS = ${ml_common_include_locations}
 AdaptiveSA_LDADD    = ${ml_libs} 
 AdaptiveSA_LINK     = ${mllink}
+
+AdaptiveSA_Elasticity_SOURCES  = $(srcdir)/AdaptiveSA_Elasticity.cpp
+AdaptiveSA_Elasticity_CPPFLAGS = ${ml_common_include_locations}
+AdaptiveSA_Elasticity_CXXFLAGS = ${ml_common_include_locations}
+AdaptiveSA_Elasticity_LDADD    = ${ml_libs} 
+AdaptiveSA_Elasticity_LINK     = ${mllink}
 
 Richardson_SOURCES  = $(srcdir)/Richardson.cpp
 Richardson_CPPFLAGS = ${ml_common_include_locations}
