@@ -201,9 +201,6 @@ int Superludist2_OO::Solve(bool factor) {
   assert( Phase2Mat != NULL ) ; 
   const Epetra_Map &Phase2Matmap = Phase2Mat->RowMap() ; 
 
-  //  return 0; // WORK GXX BOGUS KEN -  OK, if we put the return we get a big error, but at least we don't 
-            // do that bizarre double return thing.
-
   //
   //  Glossary:
   //    numrows, numcols = m,n, i.e. the size of the full, global, matrix
@@ -234,14 +231,8 @@ int Superludist2_OO::Solve(bool factor) {
   int nnz_loc = Phase2Mat->NumMyNonzeros() ;
   vector <int> MyRowPtr( m_loc+1 ) ;  
 
-  //  Here is another attempted hack
   int MyFirstElement ;
-  assert( Comm.NumProc() <= 2 ) ; 
-  if ( iam == 0 ) MyFirstElement = 0 ;
-  if ( iam == 1 ) MyFirstElement = numrows - m_loc ; // Proc 0 has the rest
-  
 
-#if 0
   //
   //  Here I compute what a uniform distribution should look like
   //  so that I can compare what I think MyFirstElement should be 
@@ -250,23 +241,13 @@ int Superludist2_OO::Solve(bool factor) {
   int m_per_p = numrows / Comm.NumProc() ;
   cout << " m_per_p = " << m_per_p << endl ; 
   int remainder = numrows - ( m_per_p * Comm.NumProc() );
-  cout << " remainder = " << remainder << endl ; 
-  int MyFirstElement = iam * m_per_p ;
-  if ( iam < remainder ) MyFirstElement =  MyFirstElement + 1 ; 
-#endif
+  MyFirstElement = iam * m_per_p + EPETRA_MIN( iam, remainder );
+
   cout << " iam = " << iam << " MyFirstElement = " << MyFirstElement << endl ; 
-  if ( numrows == 5 && Comm.NumProc() ) {
+  if ( ( numrows == 5 ) && ( Comm.NumProc() == 2)  ) {
     assert( iam ==0 || MyFirstElement == 3 ) ; 
     assert( iam ==1 || MyFirstElement == 0 ) ; 
   }
-
-  //  MyFirstElement = 0 ;  //  WORK GXX  - massive hack works only on a 5x5 matrix
-  //  if (iam == 1) MyFirstElement = 3 ; 
-
-  //  return 0; // WORK GXX BOGUS KEN - still does the bizarre double return before here
-
-
-  //  return 0; // WORK GXX BOGUS KEN   Fails if we return here 
 
   //
   //  Check to make sure that we have exactly the rows (elements) that an uniform
@@ -297,6 +278,8 @@ int Superludist2_OO::Solve(bool factor) {
   cout << "NumMyElements = " <<  Phase2Matmap.NumMyElements() << endl ; 
   cout << "iam = " << iam << " My GIDs = " <<  Phase2Matmap.MinMyGID() << " ..  " 
        << Phase2Matmap.MaxMyGID() << endl ; 
+  assert( MyFirstElement ==  Phase2Matmap.MinMyGID() ) ; 
+  assert( MyFirstElement+m_loc-1 ==  Phase2Matmap.MaxMyGID() ) ; 
 
 
   //
