@@ -54,6 +54,7 @@
 #include "ml_smoother.h"
 #include "ml_aztec_utils.h"
 #include "ml_lapack.h"
+#include "ml_utils.h"
 
 /* ************************************************************************* */
 /* include files for SuperLU and MPI                                         */
@@ -66,8 +67,6 @@
 #include "mpi.h"
 #include "superlu_ddefs.h"
 #endif
-
-#define dabs(x) (((x) > 0 ) ? x : -(x))
 
 /* ************************************************************************* */
 /* Constructor                                                               */
@@ -3967,7 +3966,7 @@ int ML_Smoother_ILUTDecomposition(ML_Sm_ILUT_Data *data, ML_Operator *Amat,
       ML_get_matrix_row(Amat,1,&i,&allocated_space,&cols,&vals,&m,0);
       total_nnz += m;
       for ( j = 0; j < m; j++ ) 
-         if ( cols[j] < extNrows ) rowNorms[i] += dabs(vals[j]);
+         if ( cols[j] < extNrows ) rowNorms[i] += ML_dabs(vals[j]);
       rowNorms[i] /= extNrows;
    }
    for ( i = 0; i < total_recv_leng; i++ ) total_nnz += recv_lengths[i];
@@ -3994,7 +3993,7 @@ int ML_Smoother_ILUTDecomposition(ML_Sm_ILUT_Data *data, ML_Operator *Amat,
             if ( m >= 0 ) ext_ja[j] = map2[m] + Nrows;
             else          ext_ja[j] = -1;
          }
-         if ( ext_ja[j] != -1 ) rowNorms[i+Nrows] += dabs(ext_aa[j]);
+         if ( ext_ja[j] != -1 ) rowNorms[i+Nrows] += ML_dabs(ext_aa[j]);
       }
       rowNorms[i+Nrows] /= extNrows;
       offset += recv_lengths[i];
@@ -4043,7 +4042,7 @@ int ML_Smoother_ILUTDecomposition(ML_Sm_ILUT_Data *data, ML_Operator *Amat,
       rel_tau = tau * rowNorms[i];
       for ( j = first; j < i; j++ ) 
       {
-         if ( dabs(dble_buf[j]) > rel_tau )
+         if ( ML_dabs(dble_buf[j]) > rel_tau )
          {
             ddata = dble_buf[j] / diagonal[j];
             for ( k = mat_ia[j]; k < mat_ia[j+1]; k++ ) 
@@ -4079,7 +4078,7 @@ int ML_Smoother_ILUTDecomposition(ML_Sm_ILUT_Data *data, ML_Operator *Amat,
          index = track_array[j];
          if ( index < i )
          {
-            absval = dabs( dble_buf[index] );
+            absval = ML_dabs( dble_buf[index] );
             if ( absval > rel_tau )
             {
                sortcols[sortcnt] = index;
@@ -4112,7 +4111,7 @@ int ML_Smoother_ILUTDecomposition(ML_Sm_ILUT_Data *data, ML_Operator *Amat,
          }
       }
       diagonal[i] = dble_buf[i];
-      if ( dabs(diagonal[i]) < 1.0e-16 ) diagonal[i] = 1.0E-6;
+      if ( ML_dabs(diagonal[i]) < 1.0e-16 ) diagonal[i] = 1.0E-6;
       mat_aa[nnz_count] = diagonal[i]; 
       mat_ja[nnz_count++] = i;
       sortcnt = 0;
@@ -4121,7 +4120,7 @@ int ML_Smoother_ILUTDecomposition(ML_Sm_ILUT_Data *data, ML_Operator *Amat,
          index = track_array[j];
          if ( index > i )
          {
-            absval = dabs(dble_buf[index]);
+            absval = ML_dabs(dble_buf[index]);
             if ( absval > rel_tau )
             {
                sortcols[sortcnt] = index;
@@ -4198,7 +4197,7 @@ int ML_Smoother_ILUTDecomposition(ML_Sm_ILUT_Data *data, ML_Operator *Amat,
       rel_tau = tau * rowNorms[i+Nrows];
       for ( j = first; j < i+Nrows; j++ )
       {
-         if ( dabs(dble_buf[j]) > rel_tau )
+         if ( ML_dabs(dble_buf[j]) > rel_tau )
          {
             ddata = dble_buf[j] / diagonal[j];
             for ( k = mat_ia[j]; k < mat_ia[j+1]; k++ ) 
@@ -4234,7 +4233,7 @@ int ML_Smoother_ILUTDecomposition(ML_Sm_ILUT_Data *data, ML_Operator *Amat,
          index = track_array[j];
          if ( index < i+Nrows )
          {
-            absval = dabs( dble_buf[index] );
+            absval = ML_dabs( dble_buf[index] );
             if ( absval > rel_tau )
             {
                sortcols[sortcnt] = index;
@@ -4267,7 +4266,7 @@ int ML_Smoother_ILUTDecomposition(ML_Sm_ILUT_Data *data, ML_Operator *Amat,
          }
       }
       diagonal[i+Nrows] = dble_buf[i+Nrows];
-      if ( dabs(diagonal[i+Nrows]) < 1.0e-16 ) diagonal[i+Nrows] = 1.0E-6;
+      if ( ML_dabs(diagonal[i+Nrows]) < 1.0e-16 ) diagonal[i+Nrows] = 1.0E-6;
       mat_aa[nnz_count] = diagonal[i+Nrows]; 
       mat_ja[nnz_count++] = i+Nrows;
       sortcnt = 0;
@@ -4276,7 +4275,7 @@ int ML_Smoother_ILUTDecomposition(ML_Sm_ILUT_Data *data, ML_Operator *Amat,
          index = track_array[j];
          if ( index > i+Nrows )
          {
-            absval = dabs( dble_buf[index] );
+            absval = ML_dabs( dble_buf[index] );
             if ( absval > rel_tau )
             {
                sortcols[sortcnt] = index;

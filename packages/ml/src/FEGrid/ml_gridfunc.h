@@ -73,6 +73,13 @@ extern int ML_GridFunc_Set_GetElmntVolumes(ML_GridFunc *, int (*func)(void*,int,
 extern int ML_GridFunc_Set_GetElmntMatrix(ML_GridFunc *, int (*func)(void*,int,double**));
 extern int ML_GridFunc_Set_GetElmntNullSpace(ML_GridFunc*,int (*func)(void*,int,double*));
 
+
+
+int ML_compute_basis_coefficients3D(void *grid, int index, double *coord,
+				    int ncoord, double *coefs, int *coef_ptr);
+int ML_compute_basis_coefficients2D(void *grid, int index, double *coord,
+				    int ncoord, double *coefs, int *coef_ptr);
+
 #ifdef __cplusplus
 }
 #endif

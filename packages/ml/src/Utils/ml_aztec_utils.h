@@ -129,7 +129,10 @@ extern int ML_MSR_sym_diagonal_scaling(AZ_MATRIX *Amat,
 				       int proc_config[], double **);
 
 extern int ML_MSR_scalesol(double *x, double *scale_vect,int length);
-extern int ML_MSR_scalesol(double *x, double *scale_vect,int length);
+extern int ML_MSR_scalerhs(double *x, double *scale_vect,int length);
+extern int AZ_block_MSR(int **param_bindx, double **param_val,
+			int N_update, int num_PDE_eqns, int *update);
+
 
 extern int  wrapper_DCSR_getrow(int columns[], double values[], int row_lengths[],
         	     struct AZ_MATRIX_STRUCT *Amat, int N_requested_rows,

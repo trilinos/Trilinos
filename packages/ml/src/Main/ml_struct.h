@@ -259,13 +259,20 @@ extern double ML_Cycle_MGFull(ML_1Level *curr, double *sol, double *rhs,
 extern int ML_Solve_AMGV( ML *ml , double *din, double *dout);
 extern double ML_Cycle_AMGV(ML_1Level *curr, double *sol, double *rhs,
                      int approx_all_zeros, ML_Comm *comm);
-int  ML_Gen_MGHierarchy_ReuseExistingOperators(ML *ml, AZ_MATRIX *Amat,
+extern int  ML_Gen_MGHierarchy_ReuseExistingOperators(ML *ml, AZ_MATRIX *Amat,
                                                int Nlocal_edges,
                                                int fine_level, int N_levels,
                                                int incr_or_decrease,
                                                int *proc_config);
-int ML_Gen_Smoother_HiptmairReuse( ML *ml , int nl, int pre_or_post, int ntimes,
-			      double omega);
+extern int ML_Gen_Smoother_HiptmairReuse( ML *ml , int nl, int pre_or_post, 
+					  int ntimes, double omega);
+
+extern int ML_Gen_SmootherGSextra( ML *ml , int nl, int pre_or_post, 
+				   int ntimes, double omega, int Nextra, 
+				   int extra[]);
+extern int ML_MLS_Setup_Coef(void *sm, int deg);
+extern int ML_Seg_Solve( ML *ml , double *din, double *dout);
+extern int ML_Clean_CSolveSuperLU( void *vsolver, ML_CSolveFunc *func);
 
 #ifdef __cplusplus
 }

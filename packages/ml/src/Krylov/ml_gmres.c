@@ -12,7 +12,7 @@
 
 #include <math.h>
 #include "ml_gmres.h"
-#define  dabs(x) ((x) > 0.0 ? (x) : (-(x)))
+#include "ml_utils.h"
 
 /* ******************************************************************** */
 /* ML_CG_Solve                                                          */
@@ -140,7 +140,7 @@ int ML_GMRES_Solve(ML_Krylov *data, int length, double *rhs, double *sol)
          RS[icnt]  = C[icnt] * RS[icnt];
          HH[icnt][icnt] = C[icnt] * HH[icnt][icnt] + 
                           S[icnt] * HH[icnt2][icnt];
-         rnorm2 = dabs(RS[icnt2]);
+         rnorm2 = ML_dabs(RS[icnt2]);
          if (its % print_freq == 0 && comm->ML_mypid == 0)
             printf("ML_GMRES : iter %4d - res. norm = %e (%e)\n",its,
                     rnorm2, eps1);

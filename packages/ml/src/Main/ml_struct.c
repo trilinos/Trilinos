@@ -1788,7 +1788,7 @@ int ML_MLS_Setup_Coef(void *sm, int deg)
    widget->mlsCf[4] = om_loc[0]*om_loc[1]*om_loc[2]*om_loc[3]*om_loc[4];
 
    gridStep = rho/(double)nSample;
-   nGrid    = (int)min(rint(rho/gridStep)+1, nSample);
+   nGrid    = (int) ML_min(rint(rho/gridStep)+1, nSample);
 
    for (j=0; j<nGrid; j++)  {
 	   coord   = (double)(j+1) * gridStep;

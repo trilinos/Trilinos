@@ -21,8 +21,7 @@
 #include <math.h>
 #include "ml_aggregate.h"
 #include "ml_lapack.h"
-
-#define dabs(x) (((x) > 0) ? x : (-(x)))
+#include "ml_utils.h"
 
 /* ************************************************************************* */
 /* internal function defined later on in this file                           */
@@ -31,13 +30,6 @@
 extern int  ML_Aggregate_CoarsenUncoupledCore(ML_Aggregate *, ML_Comm *,
                 ML_Operator *, int *mat_indx, int *bdry_array, 
                 int *aggr_count_in, int **aggr_index_in);
-
-/* ************************************************************************* */
-/* external functions called from this file                                  */
-/* ------------------------------------------------------------------------- */
-
-extern void ML_CSR_MSR_ML_memorydata_Destroy(void *data);
-extern int  ML_randomize(int nlist, int *list);
 
 /* ************************************************************************* */
 /* local defines                                                             */
@@ -234,8 +226,8 @@ int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag,
             if ( dcompare1 > 0.0 )
             {
 	       dcompare2 = diagonal[i] * diagonal[jnode];
-               dcompare1 = dabs( dcompare1 );
-               dcompare2 = dabs( dcompare2 );
+               dcompare1 = ML_dabs( dcompare1 );
+               dcompare2 = ML_dabs( dcompare2 );
 	       if ( dcompare1 >= epsilon * dcompare2 ) 
 	          mat_indx[nz_cnt++] = col_ind[j];
             }
@@ -626,9 +618,9 @@ int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag,
          largest = 0.0; thesign = 1.;
          for (k = 0; k < nullspace_dim; k++) 
          {
-            if ( dabs(qr_tmp[k*agg_sizes[i]+j]) > largest )
+            if ( ML_dabs(qr_tmp[k*agg_sizes[i]+j]) > largest )
             {
-               largest = dabs(qr_tmp[ k*agg_sizes[i] + j ]);
+               largest = ML_dabs(qr_tmp[ k*agg_sizes[i] + j ]);
                if ( qr_tmp[ k*agg_sizes[i] + j ] < 0.0) thesign = -1.;
                else thesign = 1.;
             }

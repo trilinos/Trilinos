@@ -190,6 +190,7 @@ int MSR_getrows(void *data, int N_requested_rows, int requested_rows[],
   }
    return(1);
 }
+#ifdef out
 int MSR_gxtrows(void *data, int N_requested_rows, int requested_rows[],
    int allocated_space, int columns[], double values[], int row_lengths[])
 {
@@ -274,6 +275,7 @@ int CSR_getro2s(void *data, int N_requested_rows, int requested_rows[],
    }
    return(1);
 }
+#endif
 int CSR_getrows(void *data, int N_requested_rows, int requested_rows[],
    int allocated_space, int columns[], double values[], int row_lengths[])
 {

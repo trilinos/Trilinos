@@ -11,6 +11,7 @@
 #include "ml_vendor_lapack.h"
 #include "ml_superlu_lapack.h"
 #include "ml_defs.h"
+#include "ml_utils.h"
 #include <stdio.h>
 /* typedef long int integer; */
 typedef int integer;
@@ -154,12 +155,6 @@ struct Namelist {
 	};
 typedef struct Namelist Namelist;
 
-#define abs(x) ((x) >= 0 ? (x) : -(x))
-#define dabs(x) (doublereal)abs(x)
-#define min(a,b) ((a) <= (b) ? (a) : (b))
-#define max(a,b) ((a) >= (b) ? (a) : (b))
-#define dmin(a,b) (doublereal)min(a,b)
-#define dmax(a,b) (doublereal)max(a,b)
 
 /* procedure parameter types for -A and -C++ */
 
@@ -315,11 +310,11 @@ typedef doublereal E_f;	/* real function with -R not specified */
              On entry, LDA specifies the first dimension of A as declared 
   
              in the calling (sub) program. LDA must be at least   
-             max( 1, n ).   
+             ML_max( 1, n ).   
              Unchanged on exit.   
 
     X      - DOUBLE PRECISION array of dimension at least   
-             ( 1 + ( n - 1 )*abs( INCX ) ).   
+             ( 1 + ( n - 1 )*ML_abs( INCX ) ).   
              Before entry, the incremented array X must contain the n   
              element right-hand side vector b. On exit, X is overwritten 
   
@@ -360,7 +355,7 @@ typedef doublereal E_f;	/* real function with -R not specified */
 	info = 3;
     } else if (*n < 0) {
 	info = 4;
-    } else if (*lda < max(1,*n)) {
+    } else if (*lda < ML_max(1,*n)) {
 	info = 6;
     } else if (*incx == 0) {
 	info = 8;
@@ -582,10 +577,10 @@ typedef doublereal E_f;	/* real function with -R not specified */
             A = P*L*U; the unit diagonal elements of L are not stored.   
 
     LDA     (input) INTEGER   
-            The leading dimension of the array A.  LDA >= max(1,M).   
+            The leading dimension of the array A.  LDA >= ML_max(1,M).   
 
-    IPIV    (output) INTEGER array, dimension (min(M,N))   
-            The pivot indices; for 1 <= i <= min(M,N), row i of the   
+    IPIV    (output) INTEGER array, dimension (ML_min(M,N))   
+            The pivot indices; for 1 <= i <= ML_min(M,N), row i of the   
             matrix was interchanged with row IPIV(i).   
 
     INFO    (output) INTEGER   
@@ -644,7 +639,7 @@ typedef doublereal E_f;	/* real function with -R not specified */
 	*info = -1;
     } else if (*n < 0) {
 	*info = -2;
-    } else if (*lda < max(1,*m)) {
+    } else if (*lda < ML_max(1,*m)) {
 	*info = -4;
     }
     if (*info != 0) {
@@ -662,7 +657,7 @@ typedef doublereal E_f;	/* real function with -R not specified */
 /*     Determine the block size for this environment. */
 
     nb = MLFORTRAN(ilaenv)(&c__1, "DGETRF", " ", m, n, &c_n1, &c_n1, 6L, 1L);
-    if (nb <= 1 || nb >= min(*m,*n)) {
+    if (nb <= 1 || nb >= ML_min(*m,*n)) {
 
 /*        Use unblocked code. */
 
@@ -671,11 +666,11 @@ typedef doublereal E_f;	/* real function with -R not specified */
 
 /*        Use blocked code. */
 
-	i__1 = min(*m,*n);
-	for (j = 1; nb < 0 ? j >= min(*m,*n) : j <= min(*m,*n); j += nb) {
+	i__1 = ML_min(*m,*n);
+	for (j = 1; nb < 0 ? j >= ML_min(*m,*n) : j <= ML_min(*m,*n); j += nb) {
 /* Computing MIN */
-	    i__3 = min(*m,*n) - j + 1;
-	    jb = min(i__3,nb);
+	    i__3 = ML_min(*m,*n) - j + 1;
+	    jb = ML_min(i__3,nb);
 
 /*           Factor diagonal and subdiagonal blocks and test for e
 xact   
@@ -691,8 +686,8 @@ xact
 	    }
 /* Computing MIN */
 	    i__4 = *m, i__5 = j + jb - 1;
-	    i__3 = min(i__4,i__5);
-	    for (i = j; i <= min(*m,j+jb-1); ++i) {
+	    i__3 = ML_min(i__4,i__5);
+	    for (i = j; i <= ML_min(*m,j+jb-1); ++i) {
 		IPIV(i) = j - 1 + IPIV(i);
 /* L10: */
 	    }
@@ -778,7 +773,7 @@ xact
             as computed by DGETRF.   
 
     LDA     (input) INTEGER   
-            The leading dimension of the array A.  LDA >= max(1,N).   
+            The leading dimension of the array A.  LDA >= ML_max(1,N).   
 
     IPIV    (input) INTEGER array, dimension (N)   
             The pivot indices from DGETRF; for 1<=i<=N, row i of the   
@@ -789,7 +784,7 @@ xact
             On exit, the solution matrix X.   
 
     LDB     (input) INTEGER   
-            The leading dimension of the array B.  LDB >= max(1,N).   
+            The leading dimension of the array B.  LDB >= ML_max(1,N).   
 
     INFO    (output) INTEGER   
             = 0:  successful exit   
@@ -835,9 +830,9 @@ xact
 	*info = -2;
     } else if (*nrhs < 0) {
 	*info = -3;
-    } else if (*lda < max(1,*n)) {
+    } else if (*lda < ML_max(1,*n)) {
 	*info = -5;
-    } else if (*ldb < max(1,*n)) {
+    } else if (*ldb < ML_max(1,*n)) {
 	*info = -8;
     }
     if (*info != 0) {
@@ -1180,9 +1175,9 @@ e
   
              in the calling (sub) program.  When  SIDE = 'L' or 'l'  then 
   
-             LDA  must be at least  max( 1, m ),  when  SIDE = 'R' or 'r' 
+             LDA  must be at least  ML_max( 1, m ),  when  SIDE = 'R' or 'r' 
   
-             then LDA must be at least max( 1, n ).   
+             then LDA must be at least ML_max( 1, n ).   
              Unchanged on exit.   
 
     B      - DOUBLE PRECISION array of DIMENSION ( LDB, n ).   
@@ -1197,7 +1192,7 @@ e
   
              in  the  calling  (sub)  program.   LDB  must  be  at  least 
   
-             max( 1, m ).   
+             ML_max( 1, m ).   
              Unchanged on exit.   
 
 
@@ -1244,9 +1239,9 @@ e
 	info = 5;
     } else if (*n < 0) {
 	info = 6;
-    } else if (*lda < max(1,nrowa)) {
+    } else if (*lda < ML_max(1,nrowa)) {
 	info = 9;
-    } else if (*ldb < max(1,*m)) {
+    } else if (*ldb < ML_max(1,*m)) {
 	info = 11;
     }
     if (info != 0) {
@@ -1562,7 +1557,7 @@ e
             The last element of IPIV for which a row interchange will   
             be done.   
 
-    IPIV    (input) INTEGER array, dimension (M*abs(INCX))   
+    IPIV    (input) INTEGER array, dimension (M*ML_abs(INCX))   
             The vector of pivot indices.  Only the elements in positions 
   
             K1 through K2 of IPIV are accessed.   
@@ -1676,10 +1671,10 @@ e
             A = P*L*U; the unit diagonal elements of L are not stored.   
 
     LDA     (input) INTEGER   
-            The leading dimension of the array A.  LDA >= max(1,M).   
+            The leading dimension of the array A.  LDA >= ML_max(1,M).   
 
-    IPIV    (output) INTEGER array, dimension (min(M,N))   
-            The pivot indices; for 1 <= i <= min(M,N), row i of the   
+    IPIV    (output) INTEGER array, dimension (ML_min(M,N))   
+            The pivot indices; for 1 <= i <= ML_min(M,N), row i of the   
             matrix was interchanged with row IPIV(i).   
 
     INFO    (output) INTEGER   
@@ -1730,7 +1725,7 @@ e
 	*info = -1;
     } else if (*n < 0) {
 	*info = -2;
-    } else if (*lda < max(1,*m)) {
+    } else if (*lda < ML_max(1,*m)) {
 	*info = -4;
     }
     if (*info != 0) {
@@ -1745,8 +1740,8 @@ e
 	return 0;
     }
 
-    i__1 = min(*m,*n);
-    for (j = 1; j <= min(*m,*n); ++j) {
+    i__1 = ML_min(*m,*n);
+    for (j = 1; j <= ML_min(*m,*n); ++j) {
 
 /*        Find pivot and test for singularity. */
 
@@ -1774,7 +1769,7 @@ e
 	    *info = j;
 	}
 
-	if (j < min(*m,*n)) {
+	if (j < ML_min(*m,*n)) {
 
 /*           Update trailing submatrix. */
 
@@ -1935,7 +1930,7 @@ doublereal dasum_(integer *n, doublereal *dx, integer *incx)
     i__1 = nincx;
     i__2 = *incx;
     for (i = 1; *incx < 0 ? i >= nincx : i <= nincx; i += *incx) {
-        dtemp += (d__1 = DX(i), abs(d__1));
+        dtemp += (d__1 = DX(i), ML_abs(d__1));
 /* L10: */
     }
     ret_val = dtemp;
@@ -1953,7 +1948,7 @@ L20:
     }
     i__2 = m;
     for (i = 1; i <= m; ++i) {
-        dtemp += (d__1 = DX(i), abs(d__1));
+        dtemp += (d__1 = DX(i), ML_abs(d__1));
 /* L30: */
     }
     if (*n < 6) {
@@ -1963,10 +1958,10 @@ L40:
     mp1 = m + 1;
     i__2 = *n;
     for (i = mp1; i <= *n; i += 6) {
-        dtemp = dtemp + (d__1 = DX(i), abs(d__1)) + (d__2 = DX(i + 1), abs(
-                d__2)) + (d__3 = DX(i + 2), abs(d__3)) + (d__4 = DX(i + 3),
-                abs(d__4)) + (d__5 = DX(i + 4), abs(d__5)) + (d__6 = DX(i + 5)
-                , abs(d__6));
+        dtemp = dtemp + (d__1 = DX(i), ML_abs(d__1)) + (d__2 = DX(i + 1), ML_abs(
+                d__2)) + (d__3 = DX(i + 2), ML_abs(d__3)) + (d__4 = DX(i + 3),
+                ML_abs(d__4)) + (d__5 = DX(i + 4), ML_abs(d__5)) + (d__6 = DX(i + 5)
+                , ML_abs(d__6));
 /* L50: */
     }
 L60:
@@ -2357,9 +2352,9 @@ L40:
   
              in the calling (sub) program. When  TRANSA = 'N' or 'n' then 
   
-             LDA must be at least  max( 1, m ), otherwise  LDA must be at 
+             LDA must be at least  ML_max( 1, m ), otherwise  LDA must be at 
   
-             least  max( 1, k ).   
+             least  ML_max( 1, k ).   
              Unchanged on exit.   
 
     B      - DOUBLE PRECISION array of DIMENSION ( LDB, kb ), where kb is 
@@ -2379,9 +2374,9 @@ L40:
   
              in the calling (sub) program. When  TRANSB = 'N' or 'n' then 
   
-             LDB must be at least  max( 1, k ), otherwise  LDB must be at 
+             LDB must be at least  ML_max( 1, k ), otherwise  LDB must be at 
   
-             least  max( 1, n ).   
+             least  ML_max( 1, n ).   
              Unchanged on exit.   
 
     BETA   - DOUBLE PRECISION.   
@@ -2405,7 +2400,7 @@ L40:
   
              in  the  calling  (sub)  program.   LDC  must  be  at  least 
   
-             max( 1, m ).   
+             ML_max( 1, m ).   
              Unchanged on exit.   
 
 
@@ -2463,11 +2458,11 @@ L40:
 	info = 4;
     } else if (*k < 0) {
 	info = 5;
-    } else if (*lda < max(1,nrowa)) {
+    } else if (*lda < ML_max(1,nrowa)) {
 	info = 8;
-    } else if (*ldb < max(1,nrowb)) {
+    } else if (*ldb < ML_max(1,nrowb)) {
 	info = 10;
-    } else if (*ldc < max(1,*m)) {
+    } else if (*ldc < ML_max(1,*m)) {
 	info = 13;
     }
     if (info != 0) {
@@ -2683,15 +2678,15 @@ integer MLFORTRAN(idamax)(integer *n, doublereal *dx, integer *incx)
 /*        code for increment not equal to 1 */
 
     ix = 1;
-    dmax__ = abs(DX(1));
+    dmax__ = ML_abs(DX(1));
     ix += *incx;
     i__1 = *n;
     for (i = 2; i <= *n; ++i) {
-	if ((d__1 = DX(ix), abs(d__1)) <= dmax__) {
+	if ((d__1 = DX(ix), ML_abs(d__1)) <= dmax__) {
 	    goto L5;
 	}
 	ret_val = i;
-	dmax__ = (d__1 = DX(ix), abs(d__1));
+	dmax__ = (d__1 = DX(ix), ML_abs(d__1));
 L5:
 	ix += *incx;
 /* L10: */
@@ -2701,14 +2696,14 @@ L5:
 /*        code for increment equal to 1 */
 
 L20:
-    dmax__ = abs(DX(1));
+    dmax__ = ML_abs(DX(1));
     i__1 = *n;
     for (i = 2; i <= *n; ++i) {
-	if ((d__1 = DX(i), abs(d__1)) <= dmax__) {
+	if ((d__1 = DX(i), ML_abs(d__1)) <= dmax__) {
 	    goto L30;
 	}
 	ret_val = i;
-	dmax__ = (d__1 = DX(i), abs(d__1));
+	dmax__ = (d__1 = DX(i), ML_abs(d__1));
 L30:
 	;
     }
@@ -2767,7 +2762,7 @@ L30:
              Unchanged on exit.   
 
     X      - DOUBLE PRECISION array of dimension at least   
-             ( 1 + ( m - 1 )*abs( INCX ) ).   
+             ( 1 + ( m - 1 )*ML_abs( INCX ) ).   
              Before entry, the incremented array X must contain the m   
              element vector x.   
              Unchanged on exit.   
@@ -2778,7 +2773,7 @@ L30:
              Unchanged on exit.   
 
     Y      - DOUBLE PRECISION array of dimension at least   
-             ( 1 + ( n - 1 )*abs( INCY ) ).   
+             ( 1 + ( n - 1 )*ML_abs( INCY ) ).   
              Before entry, the incremented array Y must contain the n   
              element vector y.   
              Unchanged on exit.   
@@ -2797,7 +2792,7 @@ L30:
              On entry, LDA specifies the first dimension of A as declared 
   
              in the calling (sub) program. LDA must be at least   
-             max( 1, m ).   
+             ML_max( 1, m ).   
              Unchanged on exit.   
 
 
@@ -2830,7 +2825,7 @@ L30:
 	info = 5;
     } else if (*incy == 0) {
 	info = 7;
-    } else if (*lda < max(1,*m)) {
+    } else if (*lda < ML_max(1,*m)) {
 	info = 9;
     }
     if (info != 0) {
@@ -2944,7 +2939,7 @@ integer MLFORTRAN(ilaenv)(integer *ispec, char *name, char *opts, integer *n1, i
   
             = 6: the crossover point for the SVD (when reducing an m by n 
   
-                 matrix to bidiagonal form, if max(m,n)/min(m,n) exceeds 
+                 matrix to bidiagonal form, if ML_max(m,n)/ML_min(m,n) exceeds 
   
                  this value, a QR factorization is used first to reduce   
                  the matrix to a triangular form.)   
@@ -2999,7 +2994,7 @@ integer MLFORTRAN(ilaenv)(integer *ispec, char *name, char *opts, integer *n1, i
         the optimal blocksize for STRTRI as follows:   
 
         NB = ILAENV( 1, 'STRTRI', UPLO // DIAG, N, -1, -1, -1 )   
-        IF( NB.LE.1 ) NB = MAX( 1, N )   
+        IF( NB.LE.1 ) NB = ML_MAX( 1, N )   
 
     ===================================================================== 
 */
@@ -3425,7 +3420,7 @@ L600:
 
 /*     ISPEC = 6:  crossover point for SVD (used by xGELSS and xGESVD) */
 
-    ret_val = (integer) ((real) min(*n1,*n2) * 1.6f);
+    ret_val = (integer) ((real) ML_min(*n1,*n2) * 1.6f);
     return ret_val;
 
 L700:
@@ -3477,17 +3472,17 @@ L800:
             On entry, the M-by-N matrix A.   
             On exit, the elements on and above the diagonal of the array 
   
-            contain the min(M,N)-by-N upper trapezoidal matrix R (R is   
+            contain the ML_min(M,N)-by-N upper trapezoidal matrix R (R is   
             upper triangular if m >= n); the elements below the diagonal, 
   
             with the array TAU, represent the orthogonal matrix Q as a   
-            product of min(m,n) elementary reflectors (see Further   
+            product of ML_min(m,n) elementary reflectors (see Further   
             Details).   
 
     LDA     (input) INTEGER   
-            The leading dimension of the array A.  LDA >= max(1,M).   
+            The leading dimension of the array A.  LDA >= ML_max(1,M).   
 
-    TAU     (output) DOUBLE PRECISION array, dimension (min(M,N))   
+    TAU     (output) DOUBLE PRECISION array, dimension (ML_min(M,N))   
             The scalar factors of the elementary reflectors (see Further 
   
             Details).   
@@ -3497,7 +3492,7 @@ L800:
             On exit, if INFO = 0, WORK(1) returns the optimal LWORK.   
 
     LWORK   (input) INTEGER   
-            The dimension of the array WORK.  LWORK >= max(1,N).   
+            The dimension of the array WORK.  LWORK >= ML_max(1,N).   
             For optimum performance LWORK >= N*NB, where NB is   
             the optimal blocksize.   
 
@@ -3510,7 +3505,7 @@ L800:
 
     The matrix Q is represented as a product of elementary reflectors   
 
-       Q = H(1) H(2) . . . H(k), where k = min(m,n).   
+       Q = H(1) H(2) . . . H(k), where k = ML_min(m,n).   
 
     Each H(i) has the form   
 
@@ -3566,9 +3561,9 @@ L800:
 	*info = -1;
     } else if (*n < 0) {
 	*info = -2;
-    } else if (*lda < max(1,*m)) {
+    } else if (*lda < ML_max(1,*m)) {
 	*info = -4;
-    } else if (*lwork < max(1,*n)) {
+    } else if (*lwork < ML_max(1,*n)) {
 	*info = -7;
     }
     if (*info != 0) {
@@ -3579,7 +3574,7 @@ L800:
 
 /*     Quick return if possible */
 
-    k = min(*m,*n);
+    k = ML_min(*m,*n);
     if (k == 0) {
 	WORK(1) = 1.;
 	return 0;
@@ -3599,7 +3594,7 @@ L800:
    Computing MAX */
 	i__1 = 0, i__2 = MLFORTRAN(ilaenv)(&c__3, "DGEQRF", " ", m, n, &c_n1, &c_n1, 6L,
 		 1L);
-	nx = max(i__1,i__2);
+	nx = ML_max(i__1,i__2);
 	if (nx < k) {
 
 /*           Determine if workspace is large enough for blocked co
@@ -3617,7 +3612,7 @@ e NB and
 /* Computing MAX */
 		i__1 = 2, i__2 = MLFORTRAN(ilaenv)(&c__2, "DGEQRF", " ", m, n, &c_n1, &
 			c_n1, 6L, 1L);
-		nbmin = max(i__1,i__2);
+		nbmin = ML_max(i__1,i__2);
 	    }
 	}
     }
@@ -3631,7 +3626,7 @@ e NB and
 	for (i = 1; nb < 0 ? i >= k-nx : i <= k-nx; i += nb) {
 /* Computing MIN */
 	    i__3 = k - i + 1;
-	    ib = min(i__3,nb);
+	    ib = ML_min(i__3,nb);
 
 /*           Compute the QR factorization of the current block   
              A(i:m,i:i+ib-1) */
@@ -3710,16 +3705,16 @@ tor
             On entry, the m by n matrix A.   
             On exit, the elements on and above the diagonal of the array 
   
-            contain the min(m,n) by n upper trapezoidal matrix R (R is   
+            contain the ML_min(m,n) by n upper trapezoidal matrix R (R is   
             upper triangular if m >= n); the elements below the diagonal, 
   
             with the array TAU, represent the orthogonal matrix Q as a   
             product of elementary reflectors (see Further Details).   
 
     LDA     (input) INTEGER   
-            The leading dimension of the array A.  LDA >= max(1,M).   
+            The leading dimension of the array A.  LDA >= ML_max(1,M).   
 
-    TAU     (output) DOUBLE PRECISION array, dimension (min(M,N))   
+    TAU     (output) DOUBLE PRECISION array, dimension (ML_min(M,N))   
             The scalar factors of the elementary reflectors (see Further 
   
             Details).   
@@ -3735,7 +3730,7 @@ tor
 
     The matrix Q is represented as a product of elementary reflectors   
 
-       Q = H(1) H(2) . . . H(k), where k = min(m,n).   
+       Q = H(1) H(2) . . . H(k), where k = ML_min(m,n).   
 
     Each H(i) has the form   
 
@@ -3780,7 +3775,7 @@ tor
 	*info = -1;
     } else if (*n < 0) {
 	*info = -2;
-    } else if (*lda < max(1,*m)) {
+    } else if (*lda < ML_max(1,*m)) {
 	*info = -4;
     }
     if (*info != 0) {
@@ -3789,7 +3784,7 @@ tor
 	return 0;
     }
 
-    k = min(*m,*n);
+    k = ML_min(*m,*n);
 
     i__1 = k;
     for (i = 1; i <= k; ++i) {
@@ -3800,7 +3795,7 @@ tor
 	i__2 = *m - i + 1;
 /* Computing MIN */
 	i__3 = i + 1;
-	MLFORTRAN(dlarfg)(&i__2, &A(i,i), &A(min(i+1,*m),i), &
+	MLFORTRAN(dlarfg)(&i__2, &A(i,i), &A(ML_min(i+1,*m),i), &
 		c__1, &TAU(i));
 	if (i < *n) {
 
@@ -3887,7 +3882,7 @@ tor
 
     LDV     (input) INTEGER   
             The leading dimension of the array V.   
-            If STOREV = 'C', LDV >= max(1,N); if STOREV = 'R', LDV >= K. 
+            If STOREV = 'C', LDV >= ML_max(1,N); if STOREV = 'R', LDV >= K. 
   
 
     TAU     (input) DOUBLE PRECISION array, dimension (K)   
@@ -4150,8 +4145,8 @@ i) */
 
     LDV     (input) INTEGER   
             The leading dimension of the array V.   
-            If STOREV = 'C' and SIDE = 'L', LDV >= max(1,M);   
-            if STOREV = 'C' and SIDE = 'R', LDV >= max(1,N);   
+            If STOREV = 'C' and SIDE = 'L', LDV >= ML_max(1,M);   
+            if STOREV = 'C' and SIDE = 'R', LDV >= ML_max(1,N);   
             if STOREV = 'R', LDV >= K.   
 
     T       (input) DOUBLE PRECISION array, dimension (LDT,K)   
@@ -4166,14 +4161,14 @@ i) */
             On exit, C is overwritten by H*C or H'*C or C*H or C*H'.   
 
     LDC     (input) INTEGER   
-            The leading dimension of the array C. LDA >= max(1,M).   
+            The leading dimension of the array C. LDA >= ML_max(1,M).   
 
     WORK    (workspace) DOUBLE PRECISION array, dimension (LDWORK,K)   
 
     LDWORK  (input) INTEGER   
             The leading dimension of the array WORK.   
-            If SIDE = 'L', LDWORK >= max(1,N);   
-            if SIDE = 'R', LDWORK >= max(1,M).   
+            If SIDE = 'L', LDWORK >= ML_max(1,N);   
+            if SIDE = 'R', LDWORK >= ML_max(1,M).   
 
     ===================================================================== 
   
@@ -5001,9 +4996,9 @@ L40:
   
              in the calling (sub) program.  When  SIDE = 'L' or 'l'  then 
   
-             LDA  must be at least  max( 1, m ),  when  SIDE = 'R' or 'r' 
+             LDA  must be at least  ML_max( 1, m ),  when  SIDE = 'R' or 'r' 
   
-             then LDA must be at least max( 1, n ).   
+             then LDA must be at least ML_max( 1, n ).   
              Unchanged on exit.   
 
     B      - DOUBLE PRECISION array of DIMENSION ( LDB, n ).   
@@ -5018,7 +5013,7 @@ L40:
   
              in  the  calling  (sub)  program.   LDB  must  be  at  least 
   
-             max( 1, m ).   
+             ML_max( 1, m ).   
              Unchanged on exit.   
 
 
@@ -5064,9 +5059,9 @@ L40:
 	info = 5;
     } else if (*n < 0) {
 	info = 6;
-    } else if (*lda < max(1,nrowa)) {
+    } else if (*lda < ML_max(1,nrowa)) {
 	info = 9;
-    } else if (*ldb < max(1,*m)) {
+    } else if (*ldb < ML_max(1,*m)) {
 	info = 11;
     }
     if (info != 0) {
@@ -5385,13 +5380,13 @@ L40:
              On entry, LDA specifies the first dimension of A as declared 
   
              in the calling (sub) program. LDA must be at least   
-             max( 1, m ).   
+             ML_max( 1, m ).   
              Unchanged on exit.   
 
     X      - DOUBLE PRECISION array of DIMENSION at least   
-             ( 1 + ( n - 1 )*abs( INCX ) ) when TRANS = 'N' or 'n'   
+             ( 1 + ( n - 1 )*ML_abs( INCX ) ) when TRANS = 'N' or 'n'   
              and at least   
-             ( 1 + ( m - 1 )*abs( INCX ) ) otherwise.   
+             ( 1 + ( m - 1 )*ML_abs( INCX ) ) otherwise.   
              Before entry, the incremented array X must contain the   
              vector x.   
              Unchanged on exit.   
@@ -5407,9 +5402,9 @@ L40:
              Unchanged on exit.   
 
     Y      - DOUBLE PRECISION array of DIMENSION at least   
-             ( 1 + ( m - 1 )*abs( INCY ) ) when TRANS = 'N' or 'n'   
+             ( 1 + ( m - 1 )*ML_abs( INCY ) ) when TRANS = 'N' or 'n'   
              and at least   
-             ( 1 + ( n - 1 )*abs( INCY ) ) otherwise.   
+             ( 1 + ( n - 1 )*ML_abs( INCY ) ) otherwise.   
              Before entry with BETA non-zero, the incremented array Y   
              must contain the vector y. On exit, Y is overwritten by the 
   
@@ -5449,7 +5444,7 @@ L40:
 	info = 2;
     } else if (*n < 0) {
 	info = 3;
-    } else if (*lda < max(1,*m)) {
+    } else if (*lda < ML_max(1,*m)) {
 	info = 6;
     } else if (*incx == 0) {
 	info = 8;
@@ -5696,11 +5691,11 @@ L40:
              On entry, LDA specifies the first dimension of A as declared 
   
              in the calling (sub) program. LDA must be at least   
-             max( 1, n ).   
+             ML_max( 1, n ).   
              Unchanged on exit.   
 
     X      - DOUBLE PRECISION array of dimension at least   
-             ( 1 + ( n - 1 )*abs( INCX ) ).   
+             ( 1 + ( n - 1 )*ML_abs( INCX ) ).   
              Before entry, the incremented array X must contain the n   
              element vector x. On exit, X is overwritten with the   
              tranformed vector x.   
@@ -5740,7 +5735,7 @@ L40:
 	info = 3;
     } else if (*n < 0) {
 	info = 4;
-    } else if (*lda < max(1,*n)) {
+    } else if (*lda < ML_max(1,*n)) {
 	info = 6;
     } else if (*incx == 0) {
 	info = 8;
@@ -5960,8 +5955,8 @@ L40:
             The number of columns of the matrix C.   
 
     V       (input) DOUBLE PRECISION array, dimension   
-                       (1 + (M-1)*abs(INCV)) if SIDE = 'L'   
-                    or (1 + (N-1)*abs(INCV)) if SIDE = 'R'   
+                       (1 + (M-1)*ML_abs(INCV)) if SIDE = 'L'   
+                    or (1 + (N-1)*ML_abs(INCV)) if SIDE = 'R'   
             The vector v in the representation of H. V is not used if   
             TAU = 0.   
 
@@ -5978,7 +5973,7 @@ L40:
             or C * H if SIDE = 'R'.   
 
     LDC     (input) INTEGER   
-            The leading dimension of the array C. LDC >= max(1,M).   
+            The leading dimension of the array C. LDC >= ML_max(1,M).   
 
     WORK    (workspace) DOUBLE PRECISION array, dimension   
                            (N) if SIDE = 'L'   
@@ -6103,7 +6098,7 @@ L40:
             On exit, it is overwritten with the value beta.   
 
     X       (input/output) DOUBLE PRECISION array, dimension   
-                           (1+(N-2)*abs(INCX))   
+                           (1+(N-2)*ML_abs(INCX))   
             On entry, the vector x.   
             On exit, it is overwritten with the vector v.   
 
@@ -6160,7 +6155,7 @@ L40:
 	d__1 = MLFORTRAN(dlapy2)(alpha, &xnorm);
 	beta = -d_sign(&d__1, alpha);
 	safmin = MLFORTRAN(dlamch)("S") / MLFORTRAN(dlamch)("E");
-	if (abs(beta) < safmin) {
+	if (ML_abs(beta) < safmin) {
 
 /*           XNORM, BETA may be inaccurate; scale X and recompute 
 them */
@@ -6173,7 +6168,7 @@ L10:
 	    MLFORTRAN(dscal)(&i__1, &rsafmn, &X(1), incx);
 	    beta *= rsafmn;
 	    *alpha *= rsafmn;
-	    if (abs(beta) < safmin) {
+	    if (ML_abs(beta) < safmin) {
 		goto L10;
 	    }
 
@@ -6259,7 +6254,7 @@ doublereal MLFORTRAN(dnrm2)(integer *n, doublereal *x, integer *incx)
     if (*n < 1 || *incx < 1) {
 	norm = 0.;
     } else if (*n == 1) {
-	norm = abs(X(1));
+	norm = ML_abs(X(1));
     } else {
 	scale = 0.;
 	ssq = 1.;
@@ -6272,7 +6267,7 @@ doublereal MLFORTRAN(dnrm2)(integer *n, doublereal *x, integer *incx)
 	i__2 = *incx;
 	for (ix = 1; *incx < 0 ? ix >= (*n-1)**incx+1 : ix <= (*n-1)**incx+1; ix += *incx) {
 	    if (X(ix) != 0.) {
-		absxi = (d__1 = X(ix), abs(d__1));
+		absxi = (d__1 = X(ix), ML_abs(d__1));
 		if (scale < absxi) {
 /* Computing 2nd power */
 		    d__1 = scale / absxi;
@@ -6780,7 +6775,7 @@ PS. */
 	d__1 = -half;
 	b = MLFORTRAN(dlamc3)(&third, &d__1);
 	b = MLFORTRAN(dlamc3)(&b, &sixth);
-	b = abs(b);
+	b = ML_abs(b);
 	if (b < leps) {
 	    b = leps;
 	}
@@ -6849,40 +6844,40 @@ flow;
 erflow;   
                 e.g., IEEE standard followers ) */
 	    } else {
-		lemin = min(ngpmin,gpmin);
+		lemin = ML_min(ngpmin,gpmin);
 /*            ( A guess; no known machine ) */
 		iwarn = TRUE_;
 	    }
 
 	} else if (ngpmin == gpmin && ngnmin == gnmin) {
-	    if ((i__1 = ngpmin - ngnmin, abs(i__1)) == 1) {
-		lemin = max(ngpmin,ngnmin);
+	    if ((i__1 = ngpmin - ngnmin, ML_abs(i__1)) == 1) {
+		lemin = ML_max(ngpmin,ngnmin);
 /*            ( Twos-complement machines, no gradual underflow
 ;   
                 e.g., CYBER 205 ) */
 	    } else {
-		lemin = min(ngpmin,ngnmin);
+		lemin = ML_min(ngpmin,ngnmin);
 /*            ( A guess; no known machine ) */
 		iwarn = TRUE_;
 	    }
 
-	} else if ((i__1 = ngpmin - ngnmin, abs(i__1)) == 1 && gpmin == gnmin)
+	} else if ((i__1 = ngpmin - ngnmin, ML_abs(i__1)) == 1 && gpmin == gnmin)
 		 {
-	    if (gpmin - min(ngpmin,ngnmin) == 3) {
-		lemin = max(ngpmin,ngnmin) - 1 + lt;
+	    if (gpmin - ML_min(ngpmin,ngnmin) == 3) {
+		lemin = ML_max(ngpmin,ngnmin) - 1 + lt;
 /*            ( Twos-complement machines with gradual underflo
 w;   
                 no known machine ) */
 	    } else {
-		lemin = min(ngpmin,ngnmin);
+		lemin = ML_min(ngpmin,ngnmin);
 /*            ( A guess; no known machine ) */
 		iwarn = TRUE_;
 	    }
 
 	} else {
 /* Computing MIN */
-	    i__1 = min(ngpmin,ngnmin), i__1 = min(i__1,gpmin);
-	    lemin = min(i__1,gnmin);
+	    i__1 = ML_min(ngpmin,ngnmin), i__1 = ML_min(i__1,gpmin);
+	    lemin = ML_min(i__1,gnmin);
 /*         ( A guess; no known machine ) */
 	    iwarn = TRUE_;
 	}
@@ -7091,7 +7086,7 @@ L10:
     =======   
 
     DLAMC5 attempts to compute RMAX, the largest machine floating-point   
-    number, without overflow.  It assumes that EMAX + abs(EMIN) sum   
+    number, without overflow.  It assumes that EMAX + ML_abs(EMIN) sum   
     approximately to a power of 2.  It will fail on machines where this   
     assumption does not hold, for example, the Cyber 205 (EMIN = -28625, 
   
@@ -7126,8 +7121,8 @@ L10:
 
 
        First compute LEXP and UEXP, two powers of 2 that bound   
-       abs(EMIN). We then assume that EMAX + abs(EMIN) will sum   
-       approximately to the bound that is closest to abs(EMIN).   
+       ML_abs(EMIN). We then assume that EMAX + ML_abs(EMIN) will sum   
+       approximately to the bound that is closest to ML_abs(EMIN).   
        (EMAX is the exponent of the required number RMAX). */
     /* Table of constant values */
     static doublereal c_b5 = 0.;
@@ -7284,10 +7279,10 @@ doublereal MLFORTRAN(dlapy2)(doublereal *x, doublereal *y)
 
 
 
-    xabs = abs(*x);
-    yabs = abs(*y);
-    w = max(xabs,yabs);
-    z = min(xabs,yabs);
+    xabs = ML_abs(*x);
+    yabs = ML_abs(*y);
+    w = ML_max(xabs,yabs);
+    z = ML_min(xabs,yabs);
     if (z == 0.) {
 	ret_val = w;
     } else {
@@ -7501,7 +7496,7 @@ return(pow);
             On exit, the M-by-N matrix Q.   
 
     LDA     (input) INTEGER   
-            The first dimension of the array A. LDA >= max(1,M).   
+            The first dimension of the array A. LDA >= ML_max(1,M).   
 
     TAU     (input) DOUBLE PRECISION array, dimension (K)   
             TAU(i) must contain the scalar factor of the elementary   
@@ -7512,7 +7507,7 @@ return(pow);
             On exit, if INFO = 0, WORK(1) returns the optimal LWORK.   
 
     LWORK   (input) INTEGER   
-            The dimension of the array WORK. LWORK >= max(1,N).   
+            The dimension of the array WORK. LWORK >= ML_max(1,N).   
             For optimum performance LWORK >= N*NB, where NB is the   
             optimal blocksize.   
 
@@ -7567,9 +7562,9 @@ return(pow);
 	*info = -2;
     } else if (*k < 0 || *k > *n) {
 	*info = -3;
-    } else if (*lda < max(1,*m)) {
+    } else if (*lda < ML_max(1,*m)) {
 	*info = -5;
-    } else if (*lwork < max(1,*n)) {
+    } else if (*lwork < ML_max(1,*n)) {
 	*info = -8;
     }
     if (*info != 0) {
@@ -7599,7 +7594,7 @@ return(pow);
    Computing MAX */
 	i__1 = 0, i__2 = MLFORTRAN(ilaenv)(&c__3, "DORGQR", " ", m, n, k, &c_n1, 6L, 1L)
 		;
-	nx = max(i__1,i__2);
+	nx = ML_max(i__1,i__2);
 	if (nx < *k) {
 
 /*           Determine if workspace is large enough for blocked co
@@ -7617,7 +7612,7 @@ e NB and
 /* Computing MAX */
 		i__1 = 2, i__2 = MLFORTRAN(ilaenv)(&c__2, "DORGQR", " ", m, n, k, &c_n1,
 			 6L, 1L);
-		nbmin = max(i__1,i__2);
+		nbmin = ML_max(i__1,i__2);
 	    }
 	}
     }
@@ -7630,7 +7625,7 @@ e NB and
 	ki = (*k - nx - 1) / nb * nb;
 /* Computing MIN */
 	i__1 = *k, i__2 = ki + nb;
-	kk = min(i__1,i__2);
+	kk = ML_min(i__1,i__2);
 
 /*        Set A(1:kk,kk+1:n) to zero. */
 
@@ -7665,7 +7660,7 @@ e NB and
 	for (i = ki + 1; -nb < 0 ? i >= 1 : i <= 1; i += -nb) {
 /* Computing MIN */
 	    i__2 = nb, i__3 = *k - i + 1;
-	    ib = min(i__2,i__3);
+	    ib = ML_min(i__2,i__3);
 	    if (i + ib <= *n) {
 
 /*              Form the triangular factor of the block reflec
@@ -7760,7 +7755,7 @@ tor
             On exit, the m-by-n matrix Q.   
 
     LDA     (input) INTEGER   
-            The first dimension of the array A. LDA >= max(1,M).   
+            The first dimension of the array A. LDA >= ML_max(1,M).   
 
     TAU     (input) DOUBLE PRECISION array, dimension (K)   
             TAU(i) must contain the scalar factor of the elementary   
@@ -7807,7 +7802,7 @@ tor
 	*info = -2;
     } else if (*k < 0 || *k > *n) {
 	*info = -3;
-    } else if (*lda < max(1,*m)) {
+    } else if (*lda < ML_max(1,*m)) {
 	*info = -5;
     }
     if (*info != 0) {
@@ -7909,14 +7904,14 @@ tor
             A = U**T*U or A = L*L**T, as computed by DPOTRF.   
 
     LDA     (input) INTEGER   
-            The leading dimension of the array A.  LDA >= max(1,N).   
+            The leading dimension of the array A.  LDA >= ML_max(1,N).   
 
     B       (input/output) DOUBLE PRECISION array, dimension (LDB,NRHS)   
             On entry, the right hand side matrix B.   
             On exit, the solution matrix X.   
 
     LDB     (input) INTEGER   
-            The leading dimension of the array B.  LDB >= max(1,N).   
+            The leading dimension of the array B.  LDB >= ML_max(1,N).   
 
     INFO    (output) INTEGER   
             = 0:  successful exit   
@@ -7958,9 +7953,9 @@ tor
 	*info = -2;
     } else if (*nrhs < 0) {
 	*info = -3;
-    } else if (*lda < max(1,*n)) {
+    } else if (*lda < ML_max(1,*n)) {
 	*info = -5;
-    } else if (*ldb < max(1,*n)) {
+    } else if (*ldb < ML_max(1,*n)) {
 	*info = -7;
     }
     if (*info != 0) {
@@ -8038,16 +8033,16 @@ tor
             On entry, the m by n matrix A.   
             On exit, the elements on and below the diagonal of the array 
   
-            contain the m by min(m,n) lower trapezoidal matrix L (L is   
+            contain the m by ML_min(m,n) lower trapezoidal matrix L (L is   
             lower triangular if m <= n); the elements above the diagonal, 
   
             with the array TAU, represent the orthogonal matrix Q as a   
             product of elementary reflectors (see Further Details).   
 
     LDA     (input) INTEGER   
-            The leading dimension of the array A.  LDA >= max(1,M).   
+            The leading dimension of the array A.  LDA >= ML_max(1,M).   
 
-    TAU     (output) DOUBLE PRECISION array, dimension (min(M,N))   
+    TAU     (output) DOUBLE PRECISION array, dimension (ML_min(M,N))   
             The scalar factors of the elementary reflectors (see Further 
   
             Details).   
@@ -8063,7 +8058,7 @@ tor
 
     The matrix Q is represented as a product of elementary reflectors   
 
-       Q = H(k) . . . H(2) H(1), where k = min(m,n).   
+       Q = H(k) . . . H(2) H(1), where k = ML_min(m,n).   
 
     Each H(i) has the form   
 
@@ -8104,7 +8099,7 @@ tor
 	*info = -1;
     } else if (*n < 0) {
 	*info = -2;
-    } else if (*lda < max(1,*m)) {
+    } else if (*lda < ML_max(1,*m)) {
 	*info = -4;
     }
     if (*info != 0) {
@@ -8113,7 +8108,7 @@ tor
 	return 0;
     }
 
-    k = min(*m,*n);
+    k = ML_min(*m,*n);
 
     i__1 = k;
     for (i = 1; i <= k; ++i) {
@@ -8124,7 +8119,7 @@ tor
 	i__2 = *n - i + 1;
 /* Computing MIN */
 	i__3 = i + 1;
-	MLFORTRAN(dlarfg)(&i__2, &A(i,i), &A(i,min(i+1,*n)), lda,
+	MLFORTRAN(dlarfg)(&i__2, &A(i,i), &A(i,ML_min(i+1,*n)), lda,
 		 &TAU(i));
 	if (i < *m) {
 
@@ -8177,16 +8172,16 @@ tor
             On entry, the M-by-N matrix A.   
             On exit, the elements on and below the diagonal of the array 
   
-            contain the m-by-min(m,n) lower trapezoidal matrix L (L is   
+            contain the m-by-ML_min(m,n) lower trapezoidal matrix L (L is   
             lower triangular if m <= n); the elements above the diagonal, 
   
             with the array TAU, represent the orthogonal matrix Q as a   
             product of elementary reflectors (see Further Details).   
 
     LDA     (input) INTEGER   
-            The leading dimension of the array A.  LDA >= max(1,M).   
+            The leading dimension of the array A.  LDA >= ML_max(1,M).   
 
-    TAU     (output) DOUBLE PRECISION array, dimension (min(M,N))   
+    TAU     (output) DOUBLE PRECISION array, dimension (ML_min(M,N))   
             The scalar factors of the elementary reflectors (see Further 
   
             Details).   
@@ -8196,7 +8191,7 @@ tor
             On exit, if INFO = 0, WORK(1) returns the optimal LWORK.   
 
     LWORK   (input) INTEGER   
-            The dimension of the array WORK.  LWORK >= max(1,M).   
+            The dimension of the array WORK.  LWORK >= ML_max(1,M).   
             For optimum performance LWORK >= M*NB, where NB is the   
             optimal blocksize.   
 
@@ -8209,7 +8204,7 @@ tor
 
     The matrix Q is represented as a product of elementary reflectors   
 
-       Q = H(k) . . . H(2) H(1), where k = min(m,n).   
+       Q = H(k) . . . H(2) H(1), where k = ML_min(m,n).   
 
     Each H(i) has the form   
 
@@ -8265,9 +8260,9 @@ tor
 	*info = -1;
     } else if (*n < 0) {
 	*info = -2;
-    } else if (*lda < max(1,*m)) {
+    } else if (*lda < ML_max(1,*m)) {
 	*info = -4;
-    } else if (*lwork < max(1,*m)) {
+    } else if (*lwork < ML_max(1,*m)) {
 	*info = -7;
     }
     if (*info != 0) {
@@ -8278,7 +8273,7 @@ tor
 
 /*     Quick return if possible */
 
-    k = min(*m,*n);
+    k = ML_min(*m,*n);
     if (k == 0) {
 	WORK(1) = 1.;
 	return 0;
@@ -8298,7 +8293,7 @@ tor
    Computing MAX */
 	i__1 = 0, i__2 = MLFORTRAN(ilaenv)(&c__3, "DGELQF", " ", m, n, &c_n1, &c_n1, 6L,
 		 1L);
-	nx = max(i__1,i__2);
+	nx = ML_max(i__1,i__2);
 	if (nx < k) {
 
 /*           Determine if workspace is large enough for blocked co
@@ -8316,7 +8311,7 @@ e NB and
 /* Computing MAX */
 		i__1 = 2, i__2 = MLFORTRAN(ilaenv)(&c__2, "DGELQF", " ", m, n, &c_n1, &
 			c_n1, 6L, 1L);
-		nbmin = max(i__1,i__2);
+		nbmin = ML_max(i__1,i__2);
 	    }
 	}
     }
@@ -8330,7 +8325,7 @@ e NB and
 	for (i = 1; nb < 0 ? i >= k-nx : i <= k-nx; i += nb) {
 /* Computing MIN */
 	    i__3 = k - i + 1;
-	    ib = min(i__3,nb);
+	    ib = ML_min(i__3,nb);
 
 /*           Compute the LQ factorization of the current block   
              A(i:i+ib-1,i:n) */
@@ -8446,7 +8441,7 @@ tor
                          factorization as returned by DGELQF.   
 
     LDA     (input) INTEGER   
-            The leading dimension of the array A.  LDA >= max(1,M).   
+            The leading dimension of the array A.  LDA >= ML_max(1,M).   
 
     B       (input/output) DOUBLE PRECISION array, dimension (LDB,NRHS)   
             On entry, the matrix B of right hand side vectors, stored   
@@ -8470,7 +8465,7 @@ tor
             squares of elements M+1 to N in that column.   
 
     LDB     (input) INTEGER   
-            The leading dimension of the array B. LDB >= MAX(1,M,N).   
+            The leading dimension of the array B. LDB >= ML_MAX(1,M,N).   
 
     WORK    (workspace/output) DOUBLE PRECISION array, dimension (LWORK) 
   
@@ -8478,9 +8473,9 @@ tor
 
     LWORK   (input) INTEGER   
             The dimension of the array WORK.   
-            LWORK >= min(M,N) + MAX(1,M,N,NRHS).   
+            LWORK >= ML_min(M,N) + ML_MAX(1,M,N,NRHS).   
             For optimal performance,   
-            LWORK >= min(M,N) + MAX(1,M,N,NRHS) * NB   
+            LWORK >= ML_min(M,N) + ML_MAX(1,M,N,NRHS) * NB   
             where NB is the optimum block size.   
 
     INFO    (output) INTEGER   
@@ -8550,7 +8545,7 @@ tor
 #define B(I,J) b[(I)-1 + ((J)-1)* ( *ldb)]
 
     *info = 0;
-    mn = min(*m,*n);
+    mn = ML_min(*m,*n);
     if (! (lsame_(trans, "N") || lsame_(trans, "T"))) {
 	*info = -1;
     } else if (*m < 0) {
@@ -8559,19 +8554,19 @@ tor
 	*info = -3;
     } else if (*nrhs < 0) {
 	*info = -4;
-    } else if (*lda < max(1,*m)) {
+    } else if (*lda < ML_max(1,*m)) {
 	*info = -6;
     } else /* if(complicated condition) */ {
 /* Computing MAX */
-	i__1 = max(1,*m);
-	if (*ldb < max(i__1,*n)) {
+	i__1 = ML_max(1,*m);
+	if (*ldb < ML_max(i__1,*n)) {
 	    *info = -8;
 	} else /* if(complicated condition) */ {
 /* Computing MAX   
    Computing MAX */
-	    i__3 = max(*m,*n);
-	    i__1 = 1, i__2 = mn + max(i__3,*nrhs);
-	    if (*lwork < max(i__1,i__2)) {
+	    i__3 = ML_max(*m,*n);
+	    i__1 = 1, i__2 = mn + ML_max(i__3,*nrhs);
+	    if (*lwork < ML_max(i__1,i__2)) {
 		*info = -10;
 	    }
 	}
@@ -8592,12 +8587,12 @@ tor
 /* Computing MAX */
 		i__1 = nb, i__2 = MLFORTRAN(ilaenv)(&c__1, "DORMQR", "LN", m, nrhs, n, &
 			c_n1, 6L, 2L);
-		nb = max(i__1,i__2);
+		nb = ML_max(i__1,i__2);
 	    } else {
 /* Computing MAX */
 		i__1 = nb, i__2 = MLFORTRAN(ilaenv)(&c__1, "DORMQR", "LT", m, nrhs, n, &
 			c_n1, 6L, 2L);
-		nb = max(i__1,i__2);
+		nb = ML_max(i__1,i__2);
 	    }
 	} else {
 	    nb = MLFORTRAN(ilaenv)(&c__1, "DGELQF", " ", m, n, &c_n1, &c_n1, 6L, 1L);
@@ -8605,18 +8600,18 @@ tor
 /* Computing MAX */
 		i__1 = nb, i__2 = MLFORTRAN(ilaenv)(&c__1, "DORMLQ", "LT", n, nrhs, m, &
 			c_n1, 6L, 2L);
-		nb = max(i__1,i__2);
+		nb = ML_max(i__1,i__2);
 	    } else {
 /* Computing MAX */
 		i__1 = nb, i__2 = MLFORTRAN(ilaenv)(&c__1, "DORMLQ", "LN", n, nrhs, m, &
 			c_n1, 6L, 2L);
-		nb = max(i__1,i__2);
+		nb = ML_max(i__1,i__2);
 	    }
 	}
 
 /* Computing MAX */
-	i__1 = max(*m,*n);
-	wsize = mn + max(i__1,*nrhs) * nb;
+	i__1 = ML_max(*m,*n);
+	wsize = mn + ML_max(i__1,*nrhs) * nb;
 	WORK(1) = (doublereal) wsize;
 
     }
@@ -8630,9 +8625,9 @@ tor
 /*     Quick return if possible   
 
    Computing MIN */
-    i__1 = min(*m,*n);
-    if (min(i__1,*nrhs) == 0) {
-	i__1 = max(*m,*n);
+    i__1 = ML_min(*m,*n);
+    if (ML_min(i__1,*nrhs) == 0) {
+	i__1 = ML_max(*m,*n);
 	dlaset_("Full", &i__1, nrhs, &c_b33, &c_b33, &B(1,1), ldb);
 	return 0;
     }
@@ -8665,7 +8660,7 @@ tor
 
 /*        Matrix all zero. Return zero solution. */
 
-	i__1 = max(*m,*n);
+	i__1 = ML_max(*m,*n);
 	dlaset_("F", &i__1, nrhs, &c_b33, &c_b33, &B(1,1), ldb);
 	goto L50;
     }
@@ -8919,7 +8914,7 @@ L50:
             storage type.   
 
     LDA     (input) INTEGER   
-            The leading dimension of the array A.  LDA >= max(1,M).   
+            The leading dimension of the array A.  LDA >= ML_max(1,M).   
 
     INFO    (output) INTEGER   
             0  - successful exit   
@@ -8980,17 +8975,17 @@ L50:
 	*info = -6;
     } else if (*n < 0 || (itype == 4 && *n != *m) || (itype == 5 && *n != *m)){
 	*info = -7;
-    } else if (itype <= 3 && *lda < max(1,*m)) {
+    } else if (itype <= 3 && *lda < ML_max(1,*m)) {
 	*info = -9;
     } else if (itype >= 4) {
 /* Computing MAX */
 	i__1 = *m - 1;
-	if (*kl < 0 || *kl > max(i__1,0)) {
+	if (*kl < 0 || *kl > ML_max(i__1,0)) {
 	    *info = -2;
 	} else /* if(complicated condition) */ {
 /* Computing MAX */
 	    i__1 = *n - 1;
-	    if (*ku < 0 || *ku > max(i__1,0) || ((itype == 4 || itype == 5) && 
+	    if (*ku < 0 || *ku > ML_max(i__1,0) || ((itype == 4 || itype == 5) && 
 		    *kl != *ku)) {
 		*info = -3;
 	    } else if ((itype == 4 && *lda < *kl + 1) ||(itype == 5 && *lda < *
@@ -9023,11 +9018,11 @@ L50:
 L10:
     cfrom1 = cfromc * smlnum;
     cto1 = ctoc / bignum;
-    if (abs(cfrom1) > abs(ctoc) && ctoc != 0.) {
+    if (ML_abs(cfrom1) > ML_abs(ctoc) && ctoc != 0.) {
 	mul = smlnum;
 	done = FALSE_;
 	cfromc = cfrom1;
-    } else if (abs(cto1) > abs(cfromc)) {
+    } else if (ML_abs(cto1) > ML_abs(cfromc)) {
 	mul = bignum;
 	done = FALSE_;
 	ctoc = cto1;
@@ -9068,7 +9063,7 @@ L10:
 
 	i__1 = *n;
 	for (j = 1; j <= *n; ++j) {
-	    for (i = 1; i <= min(j,*m); ++i) {
+	    for (i = 1; i <= ML_min(j,*m); ++i) {
 		A(i,j) *= mul;
 /* L60: */
 	    }
@@ -9082,7 +9077,7 @@ L10:
 	i__1 = *n;
 	for (j = 1; j <= *n; ++j) {
 /* Computing MIN */
-	    for (i = 1; i <= min(j+1,*m); ++i) {
+	    for (i = 1; i <= ML_min(j+1,*m); ++i) {
 		A(i,j) *= mul;
 /* L80: */
 	    }
@@ -9098,7 +9093,7 @@ L10:
 	i__1 = *n;
 	for (j = 1; j <= *n; ++j) {
 /* Computing MIN */
-	    for (i = 1; i <= min(k3,k4-j); ++i) {
+	    for (i = 1; i <= ML_min(k3,k4-j); ++i) {
 		A(i,j) *= mul;
 /* L100: */
 	    }
@@ -9114,7 +9109,7 @@ L10:
 	i__1 = *n;
 	for (j = 1; j <= *n; ++j) {
 /* Computing MAX */
-	    for (i = max(k1-j,1); i <= k3; ++i) {
+	    for (i = ML_max(k1-j,1); i <= k3; ++i) {
 		A(i,j) *= mul;
 /* L120: */
 	    }
@@ -9133,7 +9128,7 @@ L10:
 	for (j = 1; j <= *n; ++j) {
 /* Computing MAX */
 /* Computing MIN */
-	    for (i = max(k1-j,k2); i <= min(k3,k4-j); ++i) {
+	    for (i = ML_max(k1-j,k2); i <= ML_min(k3,k4-j); ++i) {
 		A(i,j) *= mul;
 /* L140: */
 	    }
@@ -9203,10 +9198,10 @@ L10:
             if UPLO = 'L', A(i,j) = ALPHA, j+1<=i<=m, 1<=j<=n,   
             otherwise,     A(i,j) = ALPHA, 1<=i<=m, 1<=j<=n, i.ne.j,   
 
-            and, for all UPLO, A(i,i) = BETA, 1<=i<=min(m,n).   
+            and, for all UPLO, A(i,i) = BETA, 1<=i<=ML_min(m,n).   
 
     LDA     (input) INTEGER   
-            The leading dimension of the array A.  LDA >= max(1,M).   
+            The leading dimension of the array A.  LDA >= ML_max(1,M).   
 
    ===================================================================== 
   
@@ -9232,7 +9227,7 @@ L10:
 
 	for (j = 2; j <= *n; ++j) {
 /* Computing MIN */
-	    for (i = 1; i <= min(j-1,*m); ++i) {
+	    for (i = 1; i <= ML_min(j-1,*m); ++i) {
 		A(i,j) = *alpha;
 /* L10: */
 	    }
@@ -9245,7 +9240,7 @@ L10:
    
           array to ALPHA. */
 
-	for (j = 1; j <= min(*m,*n); ++j) {
+	for (j = 1; j <= ML_min(*m,*n); ++j) {
 	    for (i = j + 1; i <= *m; ++i) {
 		A(i,j) = *alpha;
 /* L30: */
@@ -9266,9 +9261,9 @@ L10:
 	}
     }
 
-/*     Set the first min(M,N) diagonal elements to BETA. */
+/*     Set the first ML_min(M,N) diagonal elements to BETA. */
 
-    for (i = 1; i <= min(*m,*n); ++i) {
+    for (i = 1; i <= ML_min(*m,*n); ++i) {
 	A(i,i) = *beta;
 /* L70: */
     }
@@ -9302,7 +9297,7 @@ L10:
     where  x( i ) = X( 1 + ( i - 1 )*INCX ). The value of  sumsq  is   
     assumed to be non-negative and  scl  returns the value   
 
-       scl = max( scale, abs( x( i ) ) ).   
+       scl = ML_max( scale, ML_abs( x( i ) ) ).   
 
     scale and sumsq must be supplied in SCALE and SUMSQ and   
     scl and smsq are overwritten on SCALE and SUMSQ respectively.   
@@ -9354,7 +9349,7 @@ L10:
     if (*n > 0) {
 	for (ix = 1; *incx < 0 ? ix >= (*n-1)**incx+1 : ix <= (*n-1)**incx+1; ix += *incx) {
 	    if (X(ix) != 0.) {
-		absxi = (d__1 = X(ix), abs(d__1));
+		absxi = (d__1 = X(ix), ML_abs(d__1));
 		if (*scale < absxi) {
 /* Computing 2nd power */
 		    d__1 = *scale / absxi;
@@ -9401,7 +9396,7 @@ doublereal dlange_(char *norm, integer *m, integer *n, doublereal *a, integer
 
     DLANGE returns the value   
 
-       DLANGE = ( max(abs(A(i,j))), NORM = 'M' or 'm'   
+       DLANGE = ( ML_max(ML_abs(A(i,j))), NORM = 'M' or 'm'   
                 (   
                 ( norm1(A),         NORM = '1', 'O' or 'o'   
                 (   
@@ -9415,7 +9410,7 @@ doublereal dlange_(char *norm, integer *m, integer *n, doublereal *a, integer
   
     normF  denotes the  Frobenius norm of a matrix (square root of sum of 
   
-    squares).  Note that  max(abs(A(i,j)))  is not a  matrix norm.   
+    squares).  Note that  ML_max(ML_abs(A(i,j)))  is not a  matrix norm.   
 
     Arguments   
     =========   
@@ -9437,7 +9432,7 @@ doublereal dlange_(char *norm, integer *m, integer *n, doublereal *a, integer
             The m by n matrix A.   
 
     LDA     (input) INTEGER   
-            The leading dimension of the array A.  LDA >= max(M,1).   
+            The leading dimension of the array A.  LDA >= ML_max(M,1).   
 
     WORK    (workspace) DOUBLE PRECISION array, dimension (LWORK),   
             where LWORK >= M when NORM = 'I'; otherwise, WORK is not   
@@ -9472,18 +9467,18 @@ doublereal dlange_(char *norm, integer *m, integer *n, doublereal *a, integer
 
 #define A(I,J) a[(I)-1 + ((J)-1)* ( *lda)]
 
-    if (min(*m,*n) == 0) {
+    if (ML_min(*m,*n) == 0) {
 	value = 0.;
     } else if (lsame_(norm, "M")) {
 
-/*        Find max(abs(A(i,j))). */
+/*        Find ML_max(ML_abs(A(i,j))). */
 
 	value = 0.;
 	for (j = 1; j <= *n; ++j) {
 	    for (i = 1; i <= *m; ++i) {
 /* Computing MAX */
-		d__2 = value, d__3 = (d__1 = A(i,j), abs(d__1));
-		value = max(d__2,d__3);
+		d__2 = value, d__3 = (d__1 = A(i,j), ML_abs(d__1));
+		value = ML_max(d__2,d__3);
 /* L10: */
 	    }
 /* L20: */
@@ -9496,10 +9491,10 @@ doublereal dlange_(char *norm, integer *m, integer *n, doublereal *a, integer
 	for (j = 1; j <= *n; ++j) {
 	    sum = 0.;
 	    for (i = 1; i <= *m; ++i) {
-		sum += (d__1 = A(i,j), abs(d__1));
+		sum += (d__1 = A(i,j), ML_abs(d__1));
 /* L30: */
 	    }
-	    value = max(value,sum);
+	    value = ML_max(value,sum);
 /* L40: */
 	}
     } else if (lsame_(norm, "I")) {
@@ -9512,7 +9507,7 @@ doublereal dlange_(char *norm, integer *m, integer *n, doublereal *a, integer
 	}
 	for (j = 1; j <= *n; ++j) {
 	    for (i = 1; i <= *m; ++i) {
-		WORK(i) += (d__1 = A(i,j), abs(d__1));
+		WORK(i) += (d__1 = A(i,j), ML_abs(d__1));
 /* L60: */
 	    }
 /* L70: */
@@ -9521,7 +9516,7 @@ doublereal dlange_(char *norm, integer *m, integer *n, doublereal *a, integer
 	for (i = 1; i <= *m; ++i) {
 /* Computing MAX */
 	    d__1 = value, d__2 = WORK(i);
-	    value = max(d__1,d__2);
+	    value = ML_max(d__1,d__2);
 /* L80: */
 	}
     } else if (lsame_(norm, "F") || lsame_(norm, "E")) {
@@ -9669,8 +9664,8 @@ doublereal dlange_(char *norm, integer *m, integer *n, doublereal *a, integer
 
     LDA     (input) INTEGER   
             The leading dimension of the array A.   
-            If SIDE = 'L', LDA >= max(1,M);   
-            if SIDE = 'R', LDA >= max(1,N).   
+            If SIDE = 'L', LDA >= ML_max(1,M);   
+            if SIDE = 'R', LDA >= ML_max(1,N).   
 
     TAU     (input) DOUBLE PRECISION array, dimension (K)   
             TAU(i) must contain the scalar factor of the elementary   
@@ -9682,7 +9677,7 @@ doublereal dlange_(char *norm, integer *m, integer *n, doublereal *a, integer
   
 
     LDC     (input) INTEGER   
-            The leading dimension of the array C. LDC >= max(1,M).   
+            The leading dimension of the array C. LDC >= ML_max(1,M).   
 
     WORK    (workspace/output) DOUBLE PRECISION array, dimension (LWORK) 
   
@@ -9690,8 +9685,8 @@ doublereal dlange_(char *norm, integer *m, integer *n, doublereal *a, integer
 
     LWORK   (input) INTEGER   
             The dimension of the array WORK.   
-            If SIDE = 'L', LWORK >= max(1,N);   
-            if SIDE = 'R', LWORK >= max(1,M).   
+            If SIDE = 'L', LWORK >= ML_max(1,N);   
+            if SIDE = 'R', LWORK >= ML_max(1,M).   
             For optimum performance LWORK >= N*NB if SIDE = 'L', and   
             LWORK >= M*NB if SIDE = 'R', where NB is the optimal   
             blocksize.   
@@ -9777,11 +9772,11 @@ doublereal dlange_(char *norm, integer *m, integer *n, doublereal *a, integer
 	*info = -4;
     } else if (*k < 0 || *k > nq) {
 	*info = -5;
-    } else if (*lda < max(1,nq)) {
+    } else if (*lda < ML_max(1,nq)) {
 	*info = -7;
-    } else if (*ldc < max(1,*m)) {
+    } else if (*ldc < ML_max(1,*m)) {
 	*info = -10;
-    } else if (*lwork < max(1,nw)) {
+    } else if (*lwork < ML_max(1,nw)) {
 	*info = -12;
     }
     if (*info != 0) {
@@ -9806,7 +9801,7 @@ doublereal dlange_(char *norm, integer *m, integer *n, doublereal *a, integer
     i__3[1] = 1, a__1[1] = trans;
     s_cat(ch__1, a__1, i__3, &c__2, 2L);
     i__1 = 64, i__2 = MLFORTRAN(ilaenv)(&c__1, "DORMQR", ch__1, m, n, k, &c_n1, 6L, 2L);
-    nb = min(i__1,i__2);
+    nb = ML_min(i__1,i__2);
     nbmin = 2;
     ldwork = nw;
     if (nb > 1 && nb < *k) {
@@ -9820,7 +9815,7 @@ doublereal dlange_(char *norm, integer *m, integer *n, doublereal *a, integer
 	    s_cat(ch__1, a__1, i__3, &c__2, 2L);
 	    i__1 = 2, i__2 = MLFORTRAN(ilaenv)(&c__2, "DORMQR", ch__1, m, n, k, &c_n1, 
 		    6L, 2L);
-	    nbmin = max(i__1,i__2);
+	    nbmin = ML_max(i__1,i__2);
 	}
     } else {
 	iws = nw;
@@ -9859,7 +9854,7 @@ doublereal dlange_(char *norm, integer *m, integer *n, doublereal *a, integer
 	for (i = i1; i3 < 0 ? i >= i2 : i <= i2; i += i3) {
 /* Computing MIN */
 	    i__4 = nb, i__5 = *k - i + 1;
-	    ib = min(i__4,i__5);
+	    ib = ML_min(i__4,i__5);
 
 /*           Form the triangular factor of the block reflector   
              H = H(i) H(i+1) . . . H(i+ib-1) */
@@ -9959,7 +9954,7 @@ doublereal dlange_(char *norm, integer *m, integer *n, doublereal *a, integer
             A is modified by the routine but restored on exit.   
 
     LDA     (input) INTEGER   
-            The leading dimension of the array A. LDA >= max(1,K).   
+            The leading dimension of the array A. LDA >= ML_max(1,K).   
 
     TAU     (input) DOUBLE PRECISION array, dimension (K)   
             TAU(i) must contain the scalar factor of the elementary   
@@ -9971,7 +9966,7 @@ doublereal dlange_(char *norm, integer *m, integer *n, doublereal *a, integer
   
 
     LDC     (input) INTEGER   
-            The leading dimension of the array C. LDC >= max(1,M).   
+            The leading dimension of the array C. LDC >= ML_max(1,M).   
 
     WORK    (workspace/output) DOUBLE PRECISION array, dimension (LWORK) 
   
@@ -9979,8 +9974,8 @@ doublereal dlange_(char *norm, integer *m, integer *n, doublereal *a, integer
 
     LWORK   (input) INTEGER   
             The dimension of the array WORK.   
-            If SIDE = 'L', LWORK >= max(1,N);   
-            if SIDE = 'R', LWORK >= max(1,M).   
+            If SIDE = 'L', LWORK >= ML_max(1,N);   
+            if SIDE = 'R', LWORK >= ML_max(1,M).   
             For optimum performance LWORK >= N*NB if SIDE = 'L', and   
             LWORK >= M*NB if SIDE = 'R', where NB is the optimal   
             blocksize.   
@@ -10068,11 +10063,11 @@ doublereal dlange_(char *norm, integer *m, integer *n, doublereal *a, integer
 	*info = -4;
     } else if (*k < 0 || *k > nq) {
 	*info = -5;
-    } else if (*lda < max(1,*k)) {
+    } else if (*lda < ML_max(1,*k)) {
 	*info = -7;
-    } else if (*ldc < max(1,*m)) {
+    } else if (*ldc < ML_max(1,*m)) {
 	*info = -10;
-    } else if (*lwork < max(1,nw)) {
+    } else if (*lwork < ML_max(1,nw)) {
 	*info = -12;
     }
     if (*info != 0) {
@@ -10097,7 +10092,7 @@ doublereal dlange_(char *norm, integer *m, integer *n, doublereal *a, integer
     i__3[1] = 1, a__1[1] = trans;
     s_cat(ch__1, a__1, i__3, &c__2, 2L);
     i__1 = 64, i__2 = MLFORTRAN(ilaenv)(&c__1, "DORMLQ", ch__1, m, n, k, &c_n1, 6L, 2L);
-    nb = min(i__1,i__2);
+    nb = ML_min(i__1,i__2);
     nbmin = 2;
     ldwork = nw;
     if (nb > 1 && nb < *k) {
@@ -10111,7 +10106,7 @@ doublereal dlange_(char *norm, integer *m, integer *n, doublereal *a, integer
 	    s_cat(ch__1, a__1, i__3, &c__2, 2L);
 	    i__1 = 2, i__2 = MLFORTRAN(ilaenv)(&c__2, "DORMLQ", ch__1, m, n, k, &c_n1, 
 		    6L, 2L);
-	    nbmin = max(i__1,i__2);
+	    nbmin = ML_max(i__1,i__2);
 	}
     } else {
 	iws = nw;
@@ -10156,7 +10151,7 @@ doublereal dlange_(char *norm, integer *m, integer *n, doublereal *a, integer
 	for (i = i1; i3 < 0 ? i >= i2 : i <= i2; i += i3) {
 /* Computing MIN */
 	    i__4 = nb, i__5 = *k - i + 1;
-	    ib = min(i__4,i__5);
+	    ib = ML_min(i__4,i__5);
 
 /*           Form the triangular factor of the block reflector   
              H = H(i) H(i+1) . . . H(i+ib-1) */
@@ -10260,8 +10255,8 @@ doublereal dlange_(char *norm, integer *m, integer *n, doublereal *a, integer
 
     LDA     (input) INTEGER   
             The leading dimension of the array A.   
-            If SIDE = 'L', LDA >= max(1,M);   
-            if SIDE = 'R', LDA >= max(1,N).   
+            If SIDE = 'L', LDA >= ML_max(1,M);   
+            if SIDE = 'R', LDA >= ML_max(1,N).   
 
     TAU     (input) DOUBLE PRECISION array, dimension (K)   
             TAU(i) must contain the scalar factor of the elementary   
@@ -10272,7 +10267,7 @@ doublereal dlange_(char *norm, integer *m, integer *n, doublereal *a, integer
             On exit, C is overwritten by Q*C or Q'*C or C*Q' or C*Q.   
 
     LDC     (input) INTEGER   
-            The leading dimension of the array C. LDC >= max(1,M).   
+            The leading dimension of the array C. LDC >= ML_max(1,M).   
 
     WORK    (workspace) DOUBLE PRECISION array, dimension   
                                      (N) if SIDE = 'L',   
@@ -10338,9 +10333,9 @@ doublereal dlange_(char *norm, integer *m, integer *n, doublereal *a, integer
 	*info = -4;
     } else if (*k < 0 || *k > nq) {
 	*info = -5;
-    } else if (*lda < max(1,nq)) {
+    } else if (*lda < ML_max(1,nq)) {
 	*info = -7;
-    } else if (*ldc < max(1,*m)) {
+    } else if (*ldc < ML_max(1,*m)) {
 	*info = -10;
     }
     if (*info != 0) {
@@ -10470,7 +10465,7 @@ doublereal dlange_(char *norm, integer *m, integer *n, doublereal *a, integer
             A is modified by the routine but restored on exit.   
 
     LDA     (input) INTEGER   
-            The leading dimension of the array A. LDA >= max(1,K).   
+            The leading dimension of the array A. LDA >= ML_max(1,K).   
 
     TAU     (input) DOUBLE PRECISION array, dimension (K)   
             TAU(i) must contain the scalar factor of the elementary   
@@ -10481,7 +10476,7 @@ doublereal dlange_(char *norm, integer *m, integer *n, doublereal *a, integer
             On exit, C is overwritten by Q*C or Q'*C or C*Q' or C*Q.   
 
     LDC     (input) INTEGER   
-            The leading dimension of the array C. LDC >= max(1,M).   
+            The leading dimension of the array C. LDC >= ML_max(1,M).   
 
     WORK    (workspace) DOUBLE PRECISION array, dimension   
                                      (N) if SIDE = 'L',   
@@ -10542,9 +10537,9 @@ doublereal dlange_(char *norm, integer *m, integer *n, doublereal *a, integer
 	*info = -4;
     } else if (*k < 0 || *k > nq) {
 	*info = -5;
-    } else if (*lda < max(1,*k)) {
+    } else if (*lda < ML_max(1,*k)) {
 	*info = -7;
-    } else if (*ldc < max(1,*m)) {
+    } else if (*ldc < ML_max(1,*m)) {
 	*info = -10;
     }
     if (*info != 0) {

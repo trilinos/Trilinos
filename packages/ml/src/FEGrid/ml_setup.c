@@ -64,22 +64,6 @@
 #include "ml_struct.h"
 
 /* ******************************************************************** */
-/* subroutines used locally but are defined externally (same directory) */
-/* ******************************************************************** */
-
-#ifdef __cplusplus
-extern "C"
-{
-#endif
-
-extern int  ML_sorted_search(int, int, int *);
-extern int  ML_search_insert_sort(int, int *, int *, int *);
-
-#ifdef __cplusplus
-}
-#endif
-
-/* ******************************************************************** */
 /* variable to pass to the local compute_basis_coefficients function    */
 /* ******************************************************************** */
 

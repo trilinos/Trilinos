@@ -586,8 +586,8 @@ double ML_Operator_MaxNorm(ML_Operator *matrix, int divide_diag)
       sum  = 0.;
       diag = 0.;
       for  (j = 0; j < row_length; j++) {
-         if (bindx[j] == i) diag = fabs(val[j]);
-         sum += fabs(val[j]);
+         if (bindx[j] == i) diag = ML_dabs(val[j]);
+         sum += ML_dabs(val[j]);
       }
       if (divide_diag == ML_TRUE) {
          if (diag == 0.) printf("ML_Operator_MaxNorm: zero diagonal\n");

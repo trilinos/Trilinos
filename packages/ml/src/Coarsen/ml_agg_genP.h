@@ -30,19 +30,6 @@ struct ML_AGG_Matrix_Context
 };
 
 /* ************************************************************************* */
-/* external functions                                                        */
-/* ------------------------------------------------------------------------- */
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-extern void ML_2matmult(ML_Operator *Mat1, ML_Operator *Mat2,
-                        ML_Operator *Result);
-#ifdef __cplusplus
-}
-#endif
-
-/* ************************************************************************* */
 /* functions defined here                                                    */
 /* ************************************************************************* */
 

@@ -152,6 +152,8 @@ int ML_Aggregate_Set_CoarsenScheme_Uncoupled( ML_Aggregate * );
 int ML_Aggregate_Set_CoarsenScheme_Coupled( ML_Aggregate * );
 int ML_Aggregate_Set_CoarsenScheme_MIS( ML_Aggregate *ag  );
 int ML_Aggregate_Set_CoarsenScheme_DD( ML_Aggregate *ag  );
+int ML_Aggregate_Set_CoarsenScheme_UncoupledMIS( ML_Aggregate *ag  );
+int ML_Aggregate_Set_CoarsenScheme_UncoupledCoupled( ML_Aggregate *ag  );
 
 /* ------------------------------------------------------------------------- */
 /* set threshold for pruning matrix graph                                    */
@@ -198,12 +200,6 @@ int ML_Aggregate_Coarsen( ML_Aggregate *, ML_Operator *A,
 /* ------------------------------------------------------------------------- */
 /* functions for performing aggregation                                      */
 /* ------------------------------------------------------------------------- */
-
-int ML_Aggregate_CoarsenCoupled( ML_Aggregate *, ML_Operator *A,
-                                 ML_Operator **P, ML_Comm *comm );
-
-int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *, ML_Operator *A,
-                                  ML_Operator **P, ML_Comm *comm );
 
 int ML_Aggregate_CoarsenMIS(ML_Aggregate *ml_ag,ML_Operator *Amatrix,
                             ML_Operator **Pmatrix, ML_Comm *comm);

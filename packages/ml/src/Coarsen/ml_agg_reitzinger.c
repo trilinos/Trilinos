@@ -271,8 +271,8 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
            Thus, stored_counter[i] indicates the lowest coarse grid edge that
            is associated with coarse grid node i.
            To get the edge number we compute 
-                  min_agg = min(agg1,agg2), 
-                  max_agg = max(agg1,agg2);
+                  min_agg = ML_min(agg1,agg2), 
+                  max_agg = ML_max(agg1,agg2);
            The column that we are looking for is given by 
              stored_counter[min_agg] + number of nonzeros in row min_agg of
              Kn_coarse that are greater than min_agg and less than max_agg.

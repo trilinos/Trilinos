@@ -33,18 +33,6 @@ extern int **global_mapping = NULL, global_nrows, global_ncoarse;
 #endif
 
 /* ******************************************************************** */
-/* internal function defined later on in this file                      */
-/* -------------------------------------------------------------------- */
-
-extern void ML_CSR_MSR_ML_memorydata_Destroy(void *data);
-
-/* ******************************************************************** */
-/* external functions called from this file                             */
-/* -------------------------------------------------------------------- */
-
-extern int ML_randomize(int nlist, int *list);
-
-/* ******************************************************************** */
 /* local defines                                                        */
 /* -------------------------------------------------------------------- */
 

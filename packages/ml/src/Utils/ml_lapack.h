@@ -16,6 +16,7 @@ extern FSUB_TYPE dgetrs_(char *, int *, int *, double *, int *, int *,
 
 extern FSUB_TYPE  dgetrf_(int *, int *, double *, int *, int *, int *);
 
+extern double ddot_(int *n1, double *v1, int *dum11, double *v2, int *dum21);
 
 #else
 #include "az_aztec.h"

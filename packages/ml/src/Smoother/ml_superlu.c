@@ -26,6 +26,7 @@
 #include "ml_comm.h"
 #include "ml_struct.h"
 #include "ml_solver.h"
+#include "ml_superlu.h"
 #define REPLACE 1
 #define NEQU    0
 

@@ -470,7 +470,7 @@ int ML_AGG_JacobiSmoother_Getrows(void *data, int N_requested_rows,
       {
          if (columns[i] == requested_rows[0]) 
          {
-            threshold = fabs(values[i])*widget->drop_tol;
+            threshold = ML_dabs(values[i])*widget->drop_tol;
             break;
          }
       }
@@ -478,7 +478,7 @@ int ML_AGG_JacobiSmoother_Getrows(void *data, int N_requested_rows,
       dropped = 0.0;
       for (i = 0; i < row_lengths[0]; i++) 
       {
-         if ( fabs(values[i]) >= threshold) 
+         if ( ML_dabs(values[i]) >= threshold) 
          {
             columns[j] = columns[i];
             values[j]  = values[i];

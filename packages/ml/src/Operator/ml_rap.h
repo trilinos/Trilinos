@@ -51,6 +51,8 @@ extern void ML_get_matrix_row(ML_Operator *input_matrix,int N_requested_rows,
 
 extern void ML_matmat_mult(ML_Operator *Amat, ML_Operator *Bmat, 
                            ML_Operator **Cmat);
+extern void ML_2matmult(ML_Operator *Mat1, ML_Operator *Mat2,
+			ML_Operator *Result);
 
 extern void ML_getrow_matvec(ML_Operator *matrix, double *vec, 
                              int Nvec, double *ovec, int *Novec);
@@ -67,6 +69,22 @@ extern void ML_set_message_info(int N_external, int external[],
                                 int max_per_proc, ML_Operator *omatrix);
 
 extern void ML_sum_duplicates(int accum_col[],double accum_val[],int *Ncols);
+
+extern void ML_get_matrow_CSR(ML_Operator *input_matrix, int N_requested_rows,
+        int requested_rows[], int *allocated_space, int **columns,
+        double **values, int row_lengths[], int index);
+
+extern void ML_get_row_CSR_norow_map(ML_Operator *input_matrix, 
+        int N_requested_rows, int requested_rows[], int *allocated_space, 
+        int **columns, double **values, int row_lengths[], int index);
+
+extern int ML_determine_Brows(int start, int *end, ML_Operator *Amatrix,
+		       int *rows[], int *rows_length, int *NBrows,
+		       int *rows_that_fit, 
+		       void   (*Agetrow)(ML_Operator *,int,int *,int *,int **,
+					 double **,int *,int));
+
+
 
 #ifdef __cplusplus
 }
@@ -93,46 +111,5 @@ extern void ML_sum_duplicates(int accum_col[],double accum_val[],int *Ncols);
 #define ML_send_list           (12 + 3*ML_MAX_NEIGHBORS)
 #define ML_FALSE               0
 #define ML_TRUE                1
-
-#ifdef __cplusplus
-extern "C"
-{
-#endif
-
-extern double ML_gsum_double(double val, ML_Comm *comm);
-
-extern void ML_az_sort(int list[], int N, int list2[], double list3[]);
-
-extern void ML_gsum_vec_int(int vals[],int vals2[],int length,ML_Comm *comm);
-
-extern void ML_rm_duplicates(int array[], int *N);
-
-extern void ML_splitup_big_msg(int num_neighbors,char *ibuffer,char *obuffer,
-                               unsigned int element_size,int *start_send_proc,
-                               int *actual_send_length,int *actual_recv_length,
-                               int *proc_num_neighbor, int type, 
-                               int *total_num_recv, ML_Comm *comm);
-extern double ML_gdot(int N, double r[], double z[], ML_Comm *comm);
-
-extern int ML_gmax_int(int val, ML_Comm *comm);
-
-#ifdef __cplusplus
-}
-#endif
-
-#define max(x,y) (( x > y ) ? x : y)     /* max function  */
-
-#ifdef __cplusplus
-extern "C"
-{
-#endif
-
-extern double ddot_(int *n1, double *v1, int *dum11, double *v2, int *dum21);
-
-extern int    ML_find_index(int key, int list[], int length);
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif

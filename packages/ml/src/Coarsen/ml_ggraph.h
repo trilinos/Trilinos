@@ -59,6 +59,9 @@ extern int  ML_GGraph_Gen_NodeGraph(ML_GGraph*,void*,void (*func),ML_Comm *);
 extern int  ML_GGraph_Get_NodeStates(ML_GGraph*, int *, char **);
 extern int  ML_GGraph_Gen_ElementGraph(ML_GGraph*,void*,void (*gf),ML_Comm*);
 extern int  ML_GGraph_Gen_Restrictor(ML_GGraph*);
+extern int ML_GGraph_CheckMIS( ML_GGraph *ml_gg, ML_Comm *comm );
+extern int ML_GGraph_Find_NeighborElements(int leng1, int *list1, int leng2,
+					   int *list2, int *vlist3);
 
 #ifdef __cplusplus
 }

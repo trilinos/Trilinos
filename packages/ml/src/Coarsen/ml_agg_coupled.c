@@ -26,8 +26,7 @@
 #include <math.h>
 #include "ml_aggregate.h"
 #include "ml_lapack.h"
-
-#define dabs(x) (((x) > 0) ? x : (-(x)))
+#include "ml_utils.h"
 
 /* ************************************************************************* */
 /* internal function defined later on in this file                           */
@@ -68,13 +67,6 @@ int ML_Aggregate_PutInto_Aggregates(char phaseID, int attach_scheme,
 int ML_Graph_CreateFromMatrix(ML_Aggregate *ml_ag, ML_Operator *Amatrix,
            int **mat_indx_out, ML_Comm *comm, double epsilon, int *nrows,
            int **bc_array);
-
-/* ************************************************************************* */
-/* external functions called from this file                                  */
-/* ------------------------------------------------------------------------- */
-
-extern void ML_CSR_MSR_ML_memorydata_Destroy(void *data);
-extern int  ML_randomize(int nlist, int *list);
 
 /* ************************************************************************* */
 /* local defines                                                             */
@@ -723,9 +715,9 @@ int ML_Aggregate_CoarsenCoupled( ML_Aggregate *ml_ag,
          for (k = 0; k < nullspace_dim; k++)
          {
             dtemp = qr_tmp[ k*aggr_cnt_array[i]+j];
-            if ( dabs( dtemp ) > largest )
+            if ( ML_dabs( dtemp ) > largest )
             {
-               largest = dabs( dtemp );
+               largest = ML_dabs( dtemp );
                if ( dtemp < 0.0) thesign = -1.;
                else thesign = 1.;
             }
@@ -2873,7 +2865,7 @@ int ML_Graph_CreateFromMatrix(ML_Aggregate *ml_ag, ML_Operator *Amatrix,
             dcompare1 = col_val[j] * col_val[j];
             if ( dcompare1 > 0.0 )
             {
-               dcompare2 = dabs((diagonal[i] * diagonal[jnode]));
+               dcompare2 = ML_dabs((diagonal[i] * diagonal[jnode]));
                if ( dcompare1 >= epsilon * dcompare2 )
                   mat_indx[nz_cnt++] = col_ind[j];
             }

@@ -1145,6 +1145,7 @@ void AZ_mlcomm2data_org(ML_CommInfoOP *comm_info, int *data_org[])
    free(neighbors);
 }
 
+#ifdef out
 /*********************************************************************/
 /*********************************************************************/
 /*********************************************************************/
@@ -1182,6 +1183,7 @@ void notusedAZML_convert_data_org(ML_Operator *matrix, int data_org[],
        }
     }
 }
+#endif
 int  wrapper_DCSR_getrow(int columns[], double values[], int row_lengths[],
         struct AZ_MATRIX_STRUCT *Amat, int N_requested_rows,
         int requested_rows[], int allocated_space){
@@ -1427,6 +1429,7 @@ void AZ_transform_norowreordering(int proc_config[], int *external[],
 /******************************************************************************/
 /******************************************************************************/
 /******************************************************************************/
+extern int AZ_sys_msg_type;
 void AZ_input_msr_matrix_nodiag(char datafile[], int update[], double **val, int **bindx, 
 												 int N_update, int proc_config[])
 
@@ -1463,7 +1466,6 @@ file specified by the input argument datafile instead from a file called
   int    totalN;
 
   char   *tchar;
-  extern int AZ_sys_msg_type;
 
   /**************************** execution begins ******************************/
 
@@ -2096,6 +2098,9 @@ void AZ_zeroDirichletcolumns(AZ_MATRIX *Amat, double rhs[], int proc_config[] )
     }
   }
 }
+#ifndef DBL_MIN
+#define DBL_MIN 1.0e-30
+#endif
 
 int ML_MSR_sym_diagonal_scaling(AZ_MATRIX *Amat, 
 				int proc_config[], double **scale_vect)
@@ -2176,13 +2181,13 @@ int ML_MSR_sym_diagonal_scaling(AZ_MATRIX *Amat,
     j_last  = bindx[irow+1] - bindx[irow];
     bindx_row = bindx[irow];
 
-    if (fabs(val[irow]) < DBL_MIN) {
+    if (ML_dabs(val[irow]) < DBL_MIN) {
       (void) fprintf(stderr, "%sERROR: diagonal of row %d is zero\n", yo,
 		     irow);
       exit(-1);
     }
 
-    sc_vec[irow] = 1.0 / sqrt(fabs(val[irow]));
+    sc_vec[irow] = 1.0 / sqrt(ML_dabs(val[irow]));
 
     for (j = 0; j < j_last; j++) {
           k       = bindx_row + j;

@@ -13,19 +13,20 @@
 #include <math.h>
 #include "ml_utils.h"
 #include "ml_comm.h"
+#include "ml_lapack.h"
 #include <time.h>
-
-#define max(x,y) (( x > y ) ? x : y) 
 
 /* ******************************************************************** */
 /* Timer subroutine                                                     */
 /* ******************************************************************** */
 
 /* Generic timer ... I hope it works on lots of different machines */
+#ifdef AZTEC
+extern double second(void);
+#endif
 double GetClock(void)
 {
 #ifdef AZTEC
-extern double second(void);
 return( second());
 #else
 #ifdef SMOS
@@ -1215,7 +1216,7 @@ void ML_splitup_big_msg(int num_neighbors, char *ibuffer, char *obuffer,
 
     max_messg_size = 0;
     for (n = 0; n < num_neighbors; n++) {
-      max_messg_size = max(max_messg_size, actual_recv_length[n]);
+      max_messg_size = ML_max(max_messg_size, actual_recv_length[n]);
       finished_send_messg[n] = finished_recv_messg[n] = ML_FALSE;
     }
     max_messg_size = ML_gmax_int(max_messg_size, comm);

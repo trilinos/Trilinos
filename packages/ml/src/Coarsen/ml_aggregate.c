@@ -18,12 +18,12 @@
 #include <math.h>
 #include "ml_aggregate.h"
 #include "ml_lapack.h"
+#include "ml_utils.h"
 
 #if defined(AZTEC) && defined(ML_AGGR_READINFO)
 #include "az_aztec.h"
 #endif
 
-#define dabs(x) (((x) > 0) ? x : (-(x)))
 
 /* ************************************************************************* */
 /* variables used for parallel debugging  (Ray)                              */
@@ -32,18 +32,6 @@
 #ifdef ML_AGGR_PARTEST
 extern int **global_mapping = NULL, global_nrows, global_ncoarse;
 #endif
-
-/* ************************************************************************* */
-/* internal function defined later on in this file                           */
-/* ------------------------------------------------------------------------- */
-
-extern void ML_CSR_MSR_ML_memorydata_Destroy(void *data);
-
-/* ************************************************************************* */
-/* external functions called from this file                                  */
-/* ------------------------------------------------------------------------- */
-
-extern int ML_randomize(int nlist, int *list);
 
 /* ************************************************************************* */
 /* local defines                                                             */

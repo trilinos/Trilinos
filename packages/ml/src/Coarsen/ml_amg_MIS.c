@@ -21,17 +21,11 @@
 #include "ml_aggregate.h"
 #include "ml_smoother.h"
 #include "ml_lapack.h"
+#include "ml_utils.h"
 
 /* ************************************************************************* */
 /* function to be declared later on in this file                             */
 /* ------------------------------------------------------------------------- */
-
-int ML_AMG_LabelVertices(int vlist_cnt, int *vlist, char Vtype,
-           char *vertex_state, char *vertex_type, int nvertices, int *rptr, 
-           int *cptr, int myrank, int **proclist, int send_cnt, 
-           int **send_buf, int *send_proc, int *send_leng, int recv_cnt, 
-           int **recv_buf, int *recv_proc, int *recv_leng, int **recv_list, 
-           int msgtype, ML_Comm *comm, int amg_index[]);
 
 int ML_AMG_GetCommInfo(ML_CommInfoOP *mat_comm, int Nrows, int *A_Nneigh, 
            int **A_neigh, int ***A_sendlist, int ***A_recvlist, 
@@ -46,14 +40,6 @@ int ML_AMG_UpdateVertexStates(int N_remaining_vertices, char vertex_state[],
 
 int ML_AMG_CompatibleRelaxation(ML_AMG *ml_amg, int *CF_array,
            ML_Operator *Amat, int *Ncoarse, int limit);
-
-/* ************************************************************************* */
-/* local defines                                                             */
-/* ------------------------------------------------------------------------- */
-
-#define dabs(x) (((x) >= 0) ? x : -x)
-#define dmin(x,y) (((x) < (y)) ? (x) : (y))
-#define dmax(x,y) (((x) > (y)) ? (x) : (y))
 
 /* ************************************************************************* */
 /* construct the prolongator using Mark Adam's MIS algorithm                 */
@@ -229,8 +215,8 @@ int ML_AMG_CoarsenMIS( ML_AMG *ml_amg, ML_Operator *Amatrix,
       count = 0;
       for (j = 0; j < rowi_N; j++) 
       {
-         if ( rowi_col[j] == i ) diag = dabs( rowi_val[j] );
-         else                    rowsum += dabs( rowi_val[j] );
+         if ( rowi_col[j] == i ) diag = ML_dabs( rowi_val[j] );
+         else                    rowsum += ML_dabs( rowi_val[j] );
          if ( rowi_col[j] >= Nrows ) border_flag[i] = 'T';
          if ( rowi_val[j] != 0.0 ) count++;
       }
@@ -280,12 +266,12 @@ int ML_AMG_CoarsenMIS( ML_AMG *ml_amg, ML_Operator *Amatrix,
       if ( diag >= 0. )
       {
          for (j = 0; j < rowi_N; j++) 
-            if (rowi_col[j] != i) rowmax = dmin(rowmax, rowi_val[j]); 
+            if (rowi_col[j] != i) rowmax = ML_min(rowmax, rowi_val[j]); 
       }
       else
       {
          for (j = 0; j < rowi_N; j++) 
-            if (rowi_col[j] != i) rowmax = dmax(rowmax, rowi_val[j]); 
+            if (rowi_col[j] != i) rowmax = ML_max(rowmax, rowi_val[j]); 
       }
       rowmax *= epsilon;
       if ( diag >= 0. )
@@ -435,8 +421,8 @@ int ML_AMG_CoarsenMIS( ML_AMG *ml_amg, ML_Operator *Amatrix,
          index = offibuffer[j];
          if ( index != (i+Nrows) )
          {
-            if ( diag >= 0. ) rowmax = dmin(rowmax, offdbuffer[j]); 
-            else              rowmax = dmax(rowmax, offdbuffer[j]); 
+            if ( diag >= 0. ) rowmax = ML_min(rowmax, offdbuffer[j]); 
+            else              rowmax = ML_max(rowmax, offdbuffer[j]); 
          }
       }
       rowmax *= epsilon;
@@ -1216,8 +1202,8 @@ for ( i = 0; i < Nrows; i++ )
          for (j = 0; j < rowi_N; j++) 
          {
             col = rowi_col[j];
-            if ( idiag >= 0 ) rowmax = dmin(rowmax, rowi_val[j]);
-            else              rowmax = dmax(rowmax, rowi_val[j]);
+            if ( idiag >= 0 ) rowmax = ML_min(rowmax, rowi_val[j]);
+            else              rowmax = ML_max(rowmax, rowi_val[j]);
             if ( CF_array[col] >= 0 ) numCi++;
          }
          rowmax *= epsilon;
@@ -2120,7 +2106,7 @@ int ML_AMG_CompatibleRelaxation(ML_AMG *ml_amg, int *CF_array,
    /* ------------------------------------------------------------- */
 
    for ( i = 0; i < Nrows; i++ ) indices[i] = i;
-   for ( i = 0; i < Nrows; i++ ) sol[i] = dabs(sol[i]) / initsol[i];
+   for ( i = 0; i < Nrows; i++ ) sol[i] = ML_dabs(sol[i]) / initsol[i];
    ML_split_dsort( sol, Nrows, indices, limit );
    count = 0;
    for ( i = 0; i < Nrows; i++ )

@@ -40,26 +40,5 @@
 #include "ml_op_utils.h"
 #include "ml_agg_reitzinger.h"
 
-#ifdef __cplusplus
-extern "C"
-{
-#endif
-
-extern int  ML_compute_basis_coefficients2D(void *grid, int element_index, 
-               double *set_of_coord,int ncoord,double *coefs,int *coef_ptr);
-
-extern int  ML_compute_basis_coefficients3D(void *grid, int element_index, 
-               double *set_of_coord,int ncoord,double *coefs,int *coef_ptr);
-
-/*
-extern void ML_setup_grid_xsfer_op(void *f_grid, ML_GridFunc *fgrid_fcns,
-               void *c_grid, ML_GridFunc *cgrid_fcns, void **xsfer, 
-               ML_Comm *comm );
-*/
-
-#ifdef __cplusplus
-}
-#endif
-
 #endif
 

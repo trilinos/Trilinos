@@ -3,6 +3,7 @@
 #include "xyt.h"
 #endif
 #include "ml_xyt.h"
+#include "ml_utils.h"
 extern int ML_gpartialsum_int(int val, ML_Comm *comm);
 
 extern int ML_Comm_subGappendInt(ML_Comm *com_ptr, int *vals, int *cur_length, 
@@ -131,7 +132,7 @@ void setup_henry(ML *my_ml, int grid0, int **imapper, int **separator,
   s_sizes[N_bits] = N_count - old_Ncount;
 
 
-  for (i = 0; i < Nrows+Nrecv; i++) mapper[i] = fabs(mapper[i]);
+  for (i = 0; i < Nrows+Nrecv; i++) mapper[i] = ML_dabs(mapper[i]);
 #endif
 
    /* generate a matrix-vector product (with sub communication) */

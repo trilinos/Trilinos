@@ -18,6 +18,13 @@
 #include "ml_defs.h"
 #include "ml_comm.h"
 
+#define ML_dabs(x) (((x) > 0.) ? x : (-(x)))
+#define ML_abs(x) (((x) > 0) ? x : (-(x)))
+#define ML_min(a,b) (((a) <= (b)) ? (a) : (b))
+#define ML_max(x,y) (((x) > (y)) ? (x) : (y))
+
+
+
 /* ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ */
 /* The following is included in the siesta SUN4 environment to solve    */
 /* the random number generation problem                                 */
@@ -38,18 +45,7 @@
 #endif
 
 
-#ifdef __cplusplus
-extern "C" {
-#endif
 
-/*
-  static double elapsed_time;
-*/
-  double ddot_(int *n1, double *v1, int *dum11, double *v2, int *dum21);
-
-#ifdef __cplusplus
-}
-#endif
 
 #define million  0.1e7
 

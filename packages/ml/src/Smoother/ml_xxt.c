@@ -120,7 +120,7 @@ int kkk;
   s_sizes[N_bits] = N_count - old_Ncount;
 
 
-  for (i = 0; i < Nrows+Nrecv; i++) mapper[i] = fabs(mapper[i]);
+  for (i = 0; i < Nrows+Nrecv; i++) mapper[i] = ML_dabs(mapper[i]);
 
    /* generate a matrix-vector product (with sub communication) */
 

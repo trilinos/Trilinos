@@ -70,7 +70,7 @@ void ML_interp_check(ML *ml, int coarse_level, int fine_level)
    for (ii = 0 ; ii < nfine; ii++)  {                      
       fine_funs->USR_grid_get_vertex_coordinate(fine_data , ii, coords);
       dtemp = coords[0] + 3.*coords[1] + .5;
-      d2 = fabs(dtemp - f_data[ii*stride])/(fabs(dtemp)+1.e-9);    
+      d2 = ML_dabs(dtemp - f_data[ii*stride])/(ML_dabs(dtemp)+1.e-9);    
       if ( d2 > 1.e-8)                                      
          printf("%d: f_data[%d] = %e  %e | %e %e\n",ml->comm->ML_mypid,
                 ii,f_data[ii*stride],dtemp,coords[0],coords[1]);
@@ -104,7 +104,7 @@ void ML_check_it(double sol[], double rhs[], ML *ml)
 
    if ( ml->sl_ptr[0]->Dirichlet_eqn_list != NULL) {
       for (i = 0; i < ml->sl_ptr[0]->Dirichlet_eqn_length; i++ ){
-         if (fabs(coarse_rhs[ml->sl_ptr[0]->Dirichlet_eqn_list[i]]) > 1.0e-8)
+         if (ML_dabs(coarse_rhs[ml->sl_ptr[0]->Dirichlet_eqn_list[i]]) > 1.0e-8)
             printf("disc mat not zero on boundary %e\n",
                           coarse_rhs[ml->sl_ptr[0]->Dirichlet_eqn_list[i]]);
       }

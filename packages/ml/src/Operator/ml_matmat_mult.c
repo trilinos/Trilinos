@@ -12,22 +12,6 @@
 #define HASH_SIZE     1024   /* should be a power of two */
 #define MASK          01777  /* should be bit pattern of hash size minus 1 */
 
-/* ******************************************************************** */
-/* functions defined outside this file                                  */
-/* ******************************************************************** */
-
-extern void ML_get_matrow_CSR(ML_Operator *input_matrix, int N_requested_rows,
-        int requested_rows[], int *allocated_space, int **columns,
-        double **values, int row_lengths[], int index);
-extern void ML_get_row_CSR_norow_map(ML_Operator *input_matrix, 
-        int N_requested_rows, int requested_rows[], int *allocated_space, 
-        int **columns, double **values, int row_lengths[], int index);
-extern int ML_determine_Brows(int start, int *end, ML_Operator *Amatrix,
-		       int *rows[], int *rows_length, int *NBrows,
-		       int *rows_that_fit, 
-                void   (*Agetrow)(ML_Operator *,int,int *,int *,int **,
-				  double **,int *,int));
-
 
 /* ******************************************************************** */
 /* matrix matrix multiplication                                         */ 
@@ -641,6 +625,8 @@ void ML_expand_accum(int accum_size, int **accum_col, double **accum_val,
  * Note: Matrices can be stored in chunks. See ml_rap.h for a description
  *       of the matrix structure ML_matrix.
  * -------------------------------------------------------------------- */
+extern void ML_oldmatmat_mult(ML_Operator *Amatrix, ML_Operator *Bmatrix,
+			      ML_Operator **Cmatrix);
 
 void ML_oldmatmat_mult(ML_Operator *Amatrix, ML_Operator *Bmatrix,
                     ML_Operator **Cmatrix)

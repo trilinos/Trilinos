@@ -59,6 +59,7 @@ extern "C" {
 
 int ML_Solver_Create( ML_Solver **sol );
 int ML_Solver_Destroy( ML_Solver **sol );
+int ML_Solver_Check( ML_Solver *sol );
 
 #ifdef __cpluscplus
 }

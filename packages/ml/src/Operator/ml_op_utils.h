@@ -27,8 +27,9 @@ extern int ML_Gen_Restrictor_TransP(ML *, int, int);
 extern int ML_Gen_Prolongator_Getrow(ML *, int , int , int , int ,
             int (*)(void* , int , int *, int , int *, double *, int *),
             int (*)(double *, void*), void *data, int);
-
+  /*
 extern int ML_Operator_Transpose(ML_Operator *Amat, ML_Operator *Amat_trans );
+  */
 extern int ML_Operator_ColPartition2RowPartition(ML_Operator *A, ML_Operator *Atrans);
 extern int eye_getrows(void *data, int N_requested_rows, int requested_rows[],
 		       int allocated_space, int columns[], double values[],
