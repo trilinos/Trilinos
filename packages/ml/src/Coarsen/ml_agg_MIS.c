@@ -1146,9 +1146,10 @@ for (i = 0; i < aggr_count ; i++) printf("counts %d %d\n",i,aggr_cnt_array[i]);
    for (i = 0; i <= Nrows; i++) new_ia[i] = i * nullspace_dim;
 /* trying this when a Dirichlet row is taken out */
 j = 0;
-for (i = 0; i <= Nrows; i++) {
-   new_ia[i] = j;
+new_ia[0] = j;
+for (i = 0; i < Nrows; i++) {
    if (aggr_index[i] != -1) j += nullspace_dim;
+   new_ia[i+1] = j;
 }
 
    /* ------------------------------------------------------------- */
