@@ -202,6 +202,7 @@ static int timer_cpart=-1, timer_gather=-1;
         scomm.nProc = 1;
         first_time = 0;
       }
+      scomm.zz = zz;
 
       /* 
        * Gather parallel hypergraph phg to each processor, creating
