@@ -244,7 +244,7 @@ CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
 	-o $@
 CXXFLAGS = @CXXFLAGS@
 DIST_SOURCES = $(libanasaziutils_a_SOURCES)
-DIST_COMMON = README Makefile.am Makefile.in configure configure.ac
+DIST_COMMON = Makefile.am Makefile.in
 SOURCES = $(libanasaziutils_a_SOURCES)
 
 all: all-am
