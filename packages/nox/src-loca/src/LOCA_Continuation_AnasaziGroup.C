@@ -192,8 +192,8 @@ LOCA::Continuation::AnasaziGroup:: computeEigenvalues(
   computeJacobian();
 
   // Create some temporary vectors
-  NOX::Abstract::Vector *r_evec = 0;
-  NOX::Abstract::Vector *i_evec = 0;
+  NOX::Abstract::Vector *r_evec = xVector.clone(NOX::ShapeCopy);
+  NOX::Abstract::Vector *i_evec = xVector.clone(NOX::ShapeCopy);
   NOX::Abstract::Vector *tempvecr = xVector.clone(NOX::ShapeCopy);
   NOX::Abstract::Vector *tempveci = xVector.clone(NOX::ShapeCopy);
   NOX::Abstract::Group::ReturnType res;
@@ -202,8 +202,8 @@ LOCA::Continuation::AnasaziGroup:: computeEigenvalues(
 
     // Computes z^T(Jz) for each eigenvector z
 
-    r_evec = evecR.GetNOXVector( i );
-    i_evec = evecI.GetNOXVector( i );
+    evecR.GetNOXVector( *r_evec, i );
+    evecI.GetNOXVector( *i_evec, i );
     res = applyJacobian(*r_evec, *tempvecr);
     res = applyJacobian(*i_evec, *tempveci);
     realpart = r_evec->dot(*tempvecr)+i_evec->dot(*tempveci);
@@ -287,6 +287,8 @@ LOCA::Continuation::AnasaziGroup:: computeEigenvalues(
 
   delete [] evalr;
   delete [] evali;
+  delete r_evec;
+  delete i_evec;
   delete tempvecr;
   delete tempveci;
 
