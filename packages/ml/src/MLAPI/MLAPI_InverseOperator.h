@@ -112,6 +112,7 @@ public:
                Teuchos::ParameterList& List)
   {
     ResetTimer();
+    StackPush();
 
     Op_ = Op;
 
@@ -219,6 +220,8 @@ public:
     RCPData_->Initialize();
     RCPData_->Compute();
 
+    StackPop();
+
     UpdateFlops(RCPData_->InitializeFlops());
     UpdateFlops(RCPData_->ComputeFlops());
     UpdateTime();
@@ -285,6 +288,7 @@ public:
   int Apply(const MultiVector& x, MultiVector& y) const
   {
     ResetTimer();
+    StackPush();
 
     if (GetDomainSpace() != x.GetVectorSpace())
       ML_THROW("DomainSpace and x.GetVectorSpace() differ", -1);
@@ -310,6 +314,8 @@ public:
       RCPData_->ApplyInverse(x_Epetra,y_Epetra);
     }
 
+    StackPop();
+
     UpdateFlops(RCPData_->ComputeFlops() - FL);
     UpdateTime();
 
@@ -319,9 +325,14 @@ public:
   //! Applies the operator to LHS, returns the results.
   MultiVector operator()(const MultiVector& LHS)
   {
+    StackPush();
+
     MultiVector RHS(LHS.GetVectorSpace());
     RHS = 0.0;
     Apply(LHS,RHS);
+
+    StackPop();
+
     return(RHS);
   }
 
@@ -341,6 +352,8 @@ public:
   ostream& Print(std::ostream& os, const bool verbose = true) const
   {
 
+    StackPush();
+
     if (GetMyPID() == 0) {
       os << "***MLAPI::InverseOperator" << endl;
       os << "Label             = " << GetLabel() << endl;
@@ -354,6 +367,8 @@ public:
         os << "MFlops rate       = 0.0" << endl;
       os << endl;
     }
+
+    StackPop();
 
     return(os);
 
