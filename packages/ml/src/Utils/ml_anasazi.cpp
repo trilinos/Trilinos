@@ -364,11 +364,8 @@ int Interface(const Epetra_RowMatrix * RowMatrix, Epetra_MultiVector & EigenVect
     
   }
   
-  // FIXME: I am not sure about those guys below
-  /*
   delete [] evalr;
   delete [] evali;
-  */
   
   // populate real and imaginary components of the eigenvectors
   // if the uses has passed RealEigenvalues or ImagEigenvalues not null
