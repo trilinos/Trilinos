@@ -732,11 +732,11 @@ int ML_Smoother_VBlockJacobi(void *sm, int inlen, double x[], int outlen,
    int            i, j, k, iter, blocksize, one=1, *aggr_offset, *block_indices;
    int            Nrows, **perms, Nblocks, info, *blocklengths, row, length;
    int            maxBlocksize, *aggr_group, *cols, allocated_space, col;
-   int            *do_update;
+   int            *do_update = NULL;
    ML_Comm        *comm;
    ML_CommInfoOP  *getrow_comm;
    ML_Operator    *Amat;
-   double         *x_ext, **blockdata, *Ax, *vals, omega;
+   double         *x_ext, **blockdata, *vals, omega;
    double         *unprec_r = NULL, *Mr = NULL, *dtemp = NULL;
    double         r_z_dot, p_ap_dot;
    ML_Smoother    *smooth_ptr;
@@ -800,7 +800,6 @@ int ML_Smoother_VBlockJacobi(void *sm, int inlen, double x[], int outlen,
    else x_ext = x;
    if ( maxBlocksize > 0 )
    {
-      Ax      = (double *) malloc( maxBlocksize * sizeof(double) );
       dtemp   = (double *) malloc( maxBlocksize * sizeof(double) );
    }
    if ( Nblocks > 0 )
@@ -903,7 +902,6 @@ int ML_Smoother_VBlockJacobi(void *sm, int inlen, double x[], int outlen,
       free(x_ext);
    }
 
-   if ( maxBlocksize > 0 ) free( Ax );
    free( vals ); 
    free( cols ); 
    free( aggr_offset );
@@ -930,7 +928,7 @@ int ML_Smoother_VBlockSGS(void *sm, int inlen, double x[],
    ML_Comm        *comm;
    ML_CommInfoOP  *getrow_comm;
    ML_Operator    *Amat;
-   double         *x_ext, **blockdata, *Ax, *res, *vals, omega;
+   double         *x_ext, **blockdata, *Ax = NULL, *res=NULL, *vals, omega;
    ML_Smoother    *smooth_ptr;
    ML_Sm_BGS_Data *dataptr;
    char           N[2];
@@ -1120,7 +1118,7 @@ int ML_Smoother_VBlockSGSSequential(void *sm, int inlen, double x[],
    ML_Comm        *comm;
    ML_CommInfoOP  *getrow_comm;
    ML_Operator    *Amat;
-   double         *x_ext, **blockdata, *Ax, *res, *vals, omega;
+   double         *x_ext, **blockdata, *Ax = NULL, *res = NULL, *vals, omega;
    ML_Smoother    *smooth_ptr;
    ML_Sm_BGS_Data *dataptr;
    char           N[2];
@@ -1431,7 +1429,7 @@ int ML_Smoother_VBlockAdditiveSchwarz(void *sm, int inlen, double x[],
    int                i, j, m, k, extNrows, nblocks, length, *indptr, ntimes;
    int                *blk_size, **blk_indices, max_blk_size;
    int                **aux_bmat_ia, **aux_bmat_ja;
-   double             *dbuffer, **aux_bmat_aa, *rhsbuf, *solbuf, *xbuffer;
+   double             *dbuffer, **aux_bmat_aa, *rhsbuf, *solbuf, *xbuffer = NULL;
    ML_Comm            *comm;
    ML_Operator        *Amat;
    ML_Smoother        *smooth_ptr;
@@ -1602,7 +1600,7 @@ int ML_Smoother_VBlockMultiplicativeSchwarz(void *sm, int inlen, double x[],
    int                i, j, k, m, extNrows, nblocks, length, *indptr, ntimes;
    int                index, *blk_size, **blk_indices, max_blk_size;
    int                **aux_bmat_ia, **aux_bmat_ja;
-   double             *dbuffer, **aux_bmat_aa, *rhsbuf, *solbuf, *xbuffer;
+   double             *dbuffer, **aux_bmat_aa, *rhsbuf, *solbuf, *xbuffer=NULL;
    ML_Comm            *comm;
    ML_Operator        *Amat;
    ML_Smoother        *smooth_ptr;
@@ -2430,8 +2428,8 @@ int ML_Smoother_GetOffProcRows(ML_CommInfoOP *comm_info, ML_Comm *comm,
 {
    int     N_neighbors, *neighbors, total_recv, mtype, msgtype, proc_id;
    int     i, j, index, *temp_list, nbytes, length, offset, allocated_space;
-   int     *cols, *isend_buf, Nrows, m, k, nnz, nnz_offset;
-   double  *vals, *send_buf;
+   int     *cols, *isend_buf=NULL, Nrows, m, k, nnz, nnz_offset;
+   double  *vals, *send_buf=NULL;
    USR_REQ *request;
 
    /* ----------------------------------------------------------- */

@@ -742,14 +742,14 @@ int ML_Aggregate_CoarsenUncoupledCore(ML_Aggregate *ml_ag, ML_Comm *comm,
                       ML_Operator *Amat, int *mat_indx, int *bdry_array,
                       int *aggr_count_in, int **aggr_index_in)
 {
-   int     i, j, k, m, kk, inode, jnode, nbytes, length, Nrows;
+   int     i, j, k, m, kk, inode=0, jnode, nbytes, length, Nrows;
    int     select_flag, aggr_count, index, mypid, inode2;
    int     *aggr_index, search_flag, *itmp_array = NULL, count;
    int     mincount, *aggr_stat, ordering, maxcount, printflag;
    int     *randomVector, *int_buf = NULL, aggr_cnt_leng, *aggr_cnt_array;
    int     min_nodes_per_aggregate, max_neigh_selected, attach_scheme;
-   ML_Node       *node_head, *node_tail, *new_node;
-   ML_SuperNode  *aggr_head, *aggr_curr, *supernode;
+   ML_Node       *node_head=NULL, *node_tail=NULL, *new_node;
+   ML_SuperNode  *aggr_head, *aggr_curr=NULL, *supernode;
 
    /* ============================================================= */
    /* get the machine information and matrix references             */

@@ -278,7 +278,7 @@ int ML_Reader_ReadString(FILE *ifp, char string[], char ch)
 
 {
   int i = 0;
-  int new_ch;
+  int new_ch = 0;
 
   while ( (i < MAX_INPUT_STR_LN) && ((new_ch = getc(ifp)) != ch)
           && (new_ch != '\n')

@@ -1060,7 +1060,7 @@ void ML_exchange_candidates(ML_IntList *inlist, void *fgrid,
                             ML_CommInfoAGX *combuf, ML_Comm *comm)
 {
    int     i, j, k1, k2, leng, nprocs, mypid, proc_id, fromproc; 
-   int     sendproc_cnt, recvproc_cnt, tot_recv_leng, msgtype, index, length;
+   int     sendproc_cnt, recvproc_cnt, tot_recv_leng, msgtype, index= 0, length;
    int     *send_proc, **send_list, *send_leng, *itmp, *proc_flag, elenum;
    int     *recv_proc, *recv_leng, **recv_list, tot_send_leng, *trecv_proc;
    int     ndim, *trecv_msg, *trecv_leng, *elmnt_proc_map, nbytes, *intarray;

@@ -124,7 +124,7 @@ int ML_ElementAGX_ComposeCandidates(ML_ElementAGX *element, int nvert,
               int *cand_list)
 {
    int    i, icnt, ncnt=0, nd;
-   double xmax, xmin, xin, ymax, ymin, yin, zmax, zmin, zin; 
+   double xmax, xmin, xin, ymax, ymin, yin, zmax, zmin, zin = 0; 
 
    xmax = ymax = zmax = - 1.0E10;
    xmin = ymin = zmin =   1.0E10;

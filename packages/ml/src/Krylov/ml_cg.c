@@ -146,8 +146,8 @@ int ML_CG_ComputeEigenvalues(ML_Krylov *data, int length)
    int         *offset_array, myoffset, *itmp_array, nprocs, mypid, totallength;
    int         ext_leng, *index_array, total_length, original_maxiter, Nbc;
    double      alpha, beta, rho, rhom1, sigma, offdiag_norm;
-   double      *r = NULL, *p = NULL, *ap = NULL, res_norm, *alpha_array, *colVal, *diag;
-   double      *rhs, *rnorm_array, **Tmat, init_offdiag_norm;
+   double      *r = NULL, *p = NULL, *ap = NULL, res_norm, *alpha_array, *colVal, *diag=NULL;
+   double      *rhs=NULL, *rnorm_array, **Tmat, init_offdiag_norm;
    double      app, aqq, arr, ass, apq, sign, tau, t, c, s, *u;
    double      max_row_sum, min_row_sum, sum;
    ML_Operator *matrix;

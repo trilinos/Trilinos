@@ -54,7 +54,6 @@ int main(int argc, char *argv[])
   /* variables that follow.                             */
 
   int    proc_config[AZ_PROC_SIZE], options[AZ_OPTIONS_SIZE];
-  int    options2[AZ_OPTIONS_SIZE], options3[AZ_OPTIONS_SIZE];
   double params[AZ_PARAMS_SIZE], status[AZ_STATUS_SIZE];
 
   /* data structure for matrix corresponding to the fine grid */
@@ -365,7 +364,9 @@ int construct_ml_grids(int N_elements, int *proc_config, AZ_MATRIX **Amat_f,
   ML_GridAGX   *f_mesh;
   int N_levels = 5, level, coarsest_level;
   ML_Aggregate *ag;
+  /*
   int          nblocks, *blocks;
+  */
   /*  hacker stuff
   ML          *subml;
   struct aztec_context *context;
@@ -461,7 +462,7 @@ int construct_ml_grids(int N_elements, int *proc_config, AZ_MATRIX **Amat_f,
 
        /*  Sparse approximate inverse smoother that acutally does both */
        /*  pre and post smoothing.                                     */
-       /*
+
        /*
        ML_Gen_Smoother_ParaSails(ml , level, ML_PRESMOOTHER, nsmooth,
                                 parasails_sym, parasails_thresh,
@@ -483,7 +484,7 @@ int construct_ml_grids(int N_elements, int *proc_config, AZ_MATRIX **Amat_f,
     /*                                                           */
     /* This one is used to block the matrix (throw away nonzeros */
     /* between blocks) before calling superlu.                   */
-    /* 
+
     /* ml->Amat[coarsest_level].invec_leng = -7;
        ML_Gen_CoarseSolverSuperLU(ml,coarsest_level);
        ml->Amat[coarsest_level].invec_leng=ml->Amat[coarsest_level].outvec_leng;
@@ -492,7 +493,7 @@ int construct_ml_grids(int N_elements, int *proc_config, AZ_MATRIX **Amat_f,
     /* This one is used to use Aztec on a global matrix. That is */
     /* replicate global matrix on each processor and then apply  */
     /* Aztec to solve it.                                        */
-    /* 
+
     /* oldvalue = options[AZ_max_iter];
        options[AZ_max_iter] = -42;
        ML_Gen_SmootherAztec(ml, coarsest_level, options, params, 

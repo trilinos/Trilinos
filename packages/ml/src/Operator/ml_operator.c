@@ -69,7 +69,7 @@ int ML_Operator_Init( ML_Operator *mat, ML_Comm *comm)
    mat->outvec_leng         = 0;
    mat->data                = NULL;
    mat->diagonal            = NULL;      
-   mat->N_nonzeros          = 0;
+   mat->N_nonzeros          = -1;
    mat->max_nz_per_row      = 0;
    mat->sub_matrix          = NULL;
    mat->from_an_ml_operator = 0;
@@ -612,7 +612,7 @@ int ML_amalg_drop_getrow(void *data, int N_requested_rows, int requested_rows[],
    int    block_size, row, size, i, j, k, tcol, count;
    int    *tcolumns, tallocated_space;
    double *tvalues, *scaled_diag;
-   int offset, status;
+   int offset, status = 1;
    struct ML_GetrowFunc_Struct *amalg_getrow;
    ML_Operator *Amat;
  

@@ -97,7 +97,7 @@ int ML_Aggregate_CoarsenMIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
    struct ML_CSR_MSRdata *csr_data;
    ML_Aggregate_Comm     *aggr_comm;
    ML_GetrowFunc         *getrow_obj;
-   USR_REQ               *request;
+   USR_REQ               *request=NULL;
    ML_Operator           *Asqrd = NULL, *tmatrix;
    struct ML_CSR_MSRdata *temp;
    char                  *vtype, *state, *bdry, *unamalg_bdry;

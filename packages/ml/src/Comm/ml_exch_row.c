@@ -335,7 +335,8 @@ example (with nonutilized ghost variables still works
   ML_Operator_Set_Getrow(*Pappended, ML_EXTERNAL, Nrows + Nrows_new,
                   CSR_getrows);
   (*Pappended)->max_nz_per_row = max_per_row;
-  (*Pappended)->N_nonzeros     = Pmatrix->N_nonzeros + rowptr_new[Nrows_new];
+  if (Pmatrix->N_nonzeros >= 0) 
+     (*Pappended)->N_nonzeros     = Pmatrix->N_nonzeros + rowptr_new[Nrows_new];
 
   (*Pappended)->sub_matrix = Pmatrix; 
 
@@ -627,7 +628,8 @@ void ML_add_appended_rows(ML_CommInfoOP *comm_info, ML_Operator *matrix,
                ML_Operator_Set_Getrow(current, ML_EXTERNAL, row_count, 
 				      CSR_getrows);
                current->max_nz_per_row = max_nz_row_new;
-               current->N_nonzeros =total_nz+matrix->sub_matrix->N_nonzeros;
+               if (matrix->sub_matrix->N_nonzeros >= 0)
+                  current->N_nonzeros =total_nz+matrix->sub_matrix->N_nonzeros;
                current->sub_matrix = previous_matrix;
 
                /* allocate space for new matrix */
@@ -696,7 +698,8 @@ void ML_add_appended_rows(ML_CommInfoOP *comm_info, ML_Operator *matrix,
    matrix->getrow->use_loc_glob_map = ML_NO;
    if (matrix->getrow->row_map != NULL) ML_free(matrix->getrow->row_map);
    matrix->getrow->row_map        = row_map;
-   matrix->N_nonzeros     = total_nz + matrix->sub_matrix->N_nonzeros;
+   if (matrix->sub_matrix->N_nonzeros >= 0)
+     matrix->N_nonzeros     = total_nz + matrix->sub_matrix->N_nonzeros;
    matrix->sub_matrix     = previous_matrix;
    matrix->max_nz_per_row = max_nz_row_new;
    temp = (struct ML_CSR_MSRdata *) matrix->data;

@@ -105,7 +105,7 @@ int ML_crude_search(int key, int nlist, int *list)
 
 int ML_sorted_search(int key, int nlist, int *list) 
 {
-   int  nfirst, nlast, nmid, found, index;
+   int  nfirst, nlast, nmid, found, index = 0;
 
    if (nlist <= 0) return -1;
    nfirst = 0;  
@@ -134,7 +134,7 @@ int ML_sorted_search(int key, int nlist, int *list)
 
 int ML_sorted_search2(int key,int nlist,int *list,int cnum,int **map) 
 {
-   int  nfirst, nlast, nmid, found, index, retdata, col, digit, mask;
+   int  nfirst, nlast, nmid, found, index = 0, retdata = 0, col, digit, mask;
    int  nbit_int=sizeof(int)*8;
 
    nfirst = 0;  

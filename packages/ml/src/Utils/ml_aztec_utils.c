@@ -823,7 +823,7 @@ int az_wrap_solvers(void *data, int in, double x[], int out,
    struct aztec_context *context;
    int    *data_org, i, n, n2, one = 1;
    double *p2, alpha = 1.; 
-   double temp, *global_rhs, *global_x, *orig_x;
+   double temp, *global_rhs, *global_x, *orig_x = NULL;
 
    context = (struct aztec_context *) data;
    data_org = context->Amat->data_org;

@@ -151,7 +151,8 @@ int ML_OperatorAGX_Restrict(void *vop, int inlen, double *din, int outlen,
                             double *dout)
 {
    int     i, j, k, index, icnt, icnt2, cnum, leng; 
-   int     *send_proc, *recv_proc, *send_leng, *recv_leng, ibegin, iend;
+   int     *send_proc = NULL, *recv_proc = NULL, *send_leng, *recv_leng = NULL;
+   int ibegin, iend;
    int     pid, send_cnt, recv_cnt, mtype, step, istep, jstep;
    double  *send_buf, *recv_buf, mult, dtmp, *darray;
    ML_Operator    *op;
@@ -354,7 +355,8 @@ int ML_OperatorAGX_Prolongate(void *vop, int inlen, double *din,
                               int outlen, double *dout)
 {
    int    i, j, k, index, icnt, icnt2, rnum, leng; 
-   int    *send_proc, *recv_proc, *send_leng, *recv_leng, ibegin, iend;
+   int    *send_proc = NULL, *recv_proc = NULL, *send_leng, *recv_leng = NULL;
+   int    ibegin, iend;
    int    pid, send_cnt, recv_cnt, mtype, step, istep, jstep;
    double *send_buf, *recv_buf, mult;
    ML_Operator    *op;
@@ -549,9 +551,10 @@ int ML_OperatorAGX_Getrows(void *data, int N_requested_rows,
    double         *remote_restrict_wgts;
    int            *temp_local_ia, *temp_local_ja, rowind;
    int            *temp_remote_ia, *temp_remote_ja;
-   int            Nlocal, *new_local_ia, *new_local_ja;
-   int            Nremote, *new_remote_ia, *new_remote_ja, ncnt, k, istep;
-   double         *invec, *outvec, *new_remote_a, *temp_remote_a, dtmp;
+   int            Nlocal, *new_local_ia = NULL, *new_local_ja;
+   int            Nremote, *new_remote_ia = NULL, *new_remote_ja = NULL;
+   int            ncnt, k, istep;
+   double         *invec, *outvec, *new_remote_a = NULL, *temp_remote_a, dtmp;
    ML_1Level      *fine, *coarse;
    ML_Operator    *Rmat;
 

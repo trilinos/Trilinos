@@ -644,14 +644,20 @@ int ML_Aggregate_Coarsen( ML_Aggregate *ag, ML_Operator *Amatrix,
       ag->nvblocks = Amatrix->outvec_leng / ag->num_PDE_eqns;
       ag->vblock_info = (int *) malloc(ag->nvblocks*sizeof(int));
       for (i=0; i < ag->nvblocks; i++ ) ag->vblock_info[i] = ag->num_PDE_eqns;
-      Ncoarse = ML_Aggregate_CoarsenUncoupledVBlock(ag,Amatrix,
+
+      /* Cant find VBlock so I am taking it out */
+
+      Ncoarse = ML_Aggregate_CoarsenUncoupled(ag,Amatrix,
                                                     Pmatrix,comm);
       ag->nvblocks = 0;
       free(ag->vblock_info);
 
+      /* rst: I can't find Vblock routines any more so I took out the */
+      /* invokation. */
+
       /*-------------------------------------------------------------- 
       if ((ag->max_levels-ag->cur_level-1)==0 && ag->nvblocks>0)
-         Ncoarse=ML_Aggregate_CoarsenUncoupledVBlock(ag,Amatrix,Pmatrix,comm);
+         Ncoarse=ML_Aggregate_CoarsenUncoupled(ag,Amatrix,Pmatrix,comm);
       else
          Ncoarse = ML_Aggregate_CoarsenUncoupled(ag,Amatrix,Pmatrix,comm);
        *-------------------------------------------------------------- */
@@ -683,7 +689,10 @@ int ML_Aggregate_Coarsen( ML_Aggregate *ag, ML_Operator *Amatrix,
 /*
 Ncoarse = ML_Aggregate_CoarsenCoupled(ag,Amatrix,Pmatrix,comm);
 */
-      Ncoarse = ML_Aggregate_CoarsenCoupledVBlock(ag,Amatrix,Pmatrix,comm);
+      /* rst: I can't find Vblock routines any more so I took out the */
+      /* invokation. */
+
+      Ncoarse = ML_Aggregate_CoarsenCoupled(ag,Amatrix,Pmatrix,comm);
       ag->nvblocks = 0;
       free(ag->vblock_info);
 
@@ -742,7 +751,7 @@ Ncoarse = ML_Aggregate_CoarsenCoupled(ag,Amatrix,Pmatrix,comm);
 int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag,ML_Operator *Amatrix, 
                                   ML_Operator **Pmatrix, ML_Comm *comm)
 {
-   int     i, j, k, m, inode, jnode, nbytes, length, *mat_indx=NULL, Nrows;
+   int     i, j, k, m, inode = 0, jnode, nbytes, length, *mat_indx=NULL, Nrows;
    int     select_flag, aggr_count, index, mypid, Ncoarse, inode2;
    int     *aggr_index = NULL, search_flag, *itmp_array = NULL, count;
    int     mincount, *int_buf = NULL, *aggr_stat = NULL, diff_level;
@@ -758,8 +767,8 @@ int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag,ML_Operator *Amatrix,
    double  *dble_buf = NULL, *tmp_vect = NULL, epsmax;
    double  *nullspace_vect=NULL, *new_null=NULL, *work=NULL, *qr_tmp=NULL;
    struct  ML_CSR_MSRdata *csr_data;
-   ML_Node           *node_head, *node_tail, *new_node;
-   ML_SuperNode      *aggr_head, *aggr_curr, *supernode;
+   ML_Node           *node_head = NULL, *node_tail = NULL, *new_node;
+   ML_SuperNode      *aggr_head, *aggr_curr = NULL, *supernode;
    ML_Aggregate_Comm *aggr_comm;
    ML_GetrowFunc     *getrow_obj;
    int               (*getrowfunc)(void *,int,int*,int,int*,double*,int*);
@@ -2084,7 +2093,7 @@ for (i = 0; i <= Nrows; i++) {
 int ML_Aggregate_CoarsenCoupled( ML_Aggregate *ml_ag, ML_Operator *Amatrix, 
                                  ML_Operator **Pmatrix, ML_Comm *comm)
 {
-   int     i, j, k, kk, m, inode, inode2, jnode, nbytes, length;
+   int     i, j = 0, k, kk, m, inode, inode2, jnode, nbytes, length = 0;
    int     *mat_indx = NULL, jj, Nrows, exp_Nrows, *int_deg_list = NULL;
    int     *ext_deg_list = NULL, N_neighbors, *neighbors = NULL;
    int     *recv_leng = NULL, *send_leng = NULL, *send_list = NULL;
@@ -2109,13 +2118,13 @@ int ML_Aggregate_CoarsenCoupled( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
    double  *tmp_vect = NULL, *work = NULL, *new_null=NULL, *comm_val=NULL;
    double  *dble_buf2;
    int     (*getrowfunc)(void *,int,int*,int,int*,double*,int*);
-   ML_SuperNode          *aggr_head, *aggr_curr, *supernode;
-   ML_Node               *node_head, *new_node;
+   ML_SuperNode          *aggr_head, *aggr_curr = NULL, *supernode;
+   ML_Node               *node_head = NULL, *new_node;
    struct ML_CSR_MSRdata *csr_data;
    ML_Aggregate_Comm     *aggr_comm;
    ML_GetrowFunc         *getrow_obj;
    ML_CommInfoOP         *getrow_comm;
-   USR_REQ               *request;
+   USR_REQ               *request = NULL;
 
    /* ============================================================= */
    /* get the machine information and matrix references             */
@@ -2267,7 +2276,6 @@ int ML_Aggregate_CoarsenCoupled( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
       ML_memory_free((void**) &dble_buf);
 #endif
 
-      
    /* ============================================================= */
    /* build the diagonals of the expanded rows if epsilon != 0      */
    /* (diagonal elements are needed for pruning weak edges)         */

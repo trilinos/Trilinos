@@ -986,8 +986,8 @@ int ML_AGG_DD_Matvec(void *obj,int leng1,double p[],int leng2,double ap[])
 int ML_AGG_DD_Getrow(void *obj,int inNrows, int *rowlist,int alloc_space, 
                      int *col_ind, double *col_val, int *rowcnt)
 {
-   int         i, count, status, nRows, *local_ind;
-   double      *local_val;
+   int         i, count, status, nRows, *local_ind = NULL;
+   double      *local_val = NULL;
    ML_Operator *Amat;
    int         (*getrowfunc)(void *,int,int*,int,int*,double*,int*);
    struct ML_AGG_Matrix_Context *context;

@@ -266,9 +266,9 @@ int ML_Gen_Restrictor_TransP(ML *ml_handle, int level, int level2)
    int  *row_ptr, *colbuf, *cols;
    int isize, osize, i, j, N_nzs, flag, length, sum, new_sum;
    int Nneighbors, *neigh_list, *send_list, *rcv_list, Nsend, Nrcv;
-   void *data;
+   void *data = NULL;
    double *valbuf, *vals;
-   int (*getrow)(void* , int , int *, int , int *, double *, int *);
+   int (*getrow)(void* , int , int *, int , int *, double *, int *) = NULL;
    struct ML_CSR_MSRdata *temp;
    int Nghost = 0, Nghost2 = 0;
    int *remap, remap_leng;
@@ -421,7 +421,7 @@ int ML_Operator_BlockPartition(ML_Operator *matrix, int nLocalNd, int *nblk,
                          int nedges /*= 0*/ )
 {
 #ifdef METIS
-  int locid, ii, numadjac, *bindx = NULL, *itemp;
+  int locid, ii, numadjac, *bindx = NULL;
   idxtype *xadj, *adjncy, *blks;
   int options[5]={0,3,1,1,0};
   int weightflag = ndwts ? 2 : 0;
