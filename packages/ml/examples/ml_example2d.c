@@ -284,7 +284,7 @@ void init_options(int options[], double params[])
 
   AZ_defaults(options, params);
 
-  options[AZ_solver]   = AZ_tfqmr;
+  options[AZ_solver]   = AZ_cg;
   options[AZ_scaling]  = AZ_none;
   options[AZ_precond]  = AZ_user_precond;
   options[AZ_conv]     = AZ_r0;
