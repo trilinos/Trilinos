@@ -115,8 +115,8 @@ static int old_readfile (int Proc,
 
     /* nEdge HYPEREDGE LINES */
     /* KDD -- This logic is wrong if no pins are specified. */
-    if (!((*index)  = (int *) ZOLTAN_MALLOC (sizeof (int) * (*nEdge+1))) ||
-        !((*vertex) = (int *) ZOLTAN_MALLOC (sizeof (int) *  *nPin)))
+    if (!((*index)  = (int *) ZOLTAN_MALLOC ((*nEdge+1)*sizeof(int))) ||
+        !((*vertex) = (int *) ZOLTAN_MALLOC (*nPin*sizeof(int))))
            {
            ZOLTAN_PRINT_ERROR(Proc, yo, "Insufficient memory.");
            ierr = ZOLTAN_MEMERR;
@@ -156,7 +156,7 @@ static int old_readfile (int Proc,
     /* nVtx vertex weights */
     if ((code/10)%10 == 1)
        {
-       if (!((*vwgt) = (float *) ZOLTAN_MALLOC (sizeof (float) * *nVtx)))
+       if (!((*vwgt) = (float *) ZOLTAN_MALLOC (*nVtx*sizeof(float))))
           {
           ZOLTAN_PRINT_ERROR (Proc, yo, "Insufficient memory for vwgt.");
           ierr = ZOLTAN_MEMERR;
@@ -236,8 +236,8 @@ static int patoh_readfile (int Proc,
 
     /* nEdge HYPEREDGE LINES */
     /* KDD -- This logic is wrong if no pins are specified. */
-    if (!((*index)  = (int *) ZOLTAN_MALLOC (sizeof (int) * (*nEdge+1))) ||
-        !((*vertex) = (int *) ZOLTAN_MALLOC (sizeof (int) *  *nPin)))
+    if (!((*index)  = (int *) ZOLTAN_MALLOC ((*nEdge+1)*sizeof(int))) ||
+        !((*vertex) = (int *) ZOLTAN_MALLOC (*nPin*sizeof(int))))
            {
            ZOLTAN_PRINT_ERROR(Proc, yo, "Insufficient memory.");
            ierr = ZOLTAN_MEMERR;
@@ -246,7 +246,7 @@ static int patoh_readfile (int Proc,
     if (code==2 || code==3)
        {
        /* KDD -- This logic is wrong if no edges are specified. */
-       *ewgt = (float *) ZOLTAN_MALLOC (sizeof (float) * *nEdge) ;
+       *ewgt = (float *) ZOLTAN_MALLOC (*nEdge*sizeof(float)) ;
        if (*ewgt == NULL)
           {
           ZOLTAN_PRINT_ERROR(Proc, yo, "Insufficient memory.");
@@ -305,7 +305,7 @@ static int patoh_readfile (int Proc,
 
     /* nVtx vertex weights */
     /* KDD -- shouldn't this code use dims in some way? */
-    if (!((*vwgt) = (float *) ZOLTAN_MALLOC (sizeof (float) * *nVtx)))
+    if (!((*vwgt) = (float *) ZOLTAN_MALLOC (*nVtx*sizeof(float))))
         {
         ZOLTAN_PRINT_ERROR (Proc, yo, "Insufficient memory for vwgt.");
         ierr = ZOLTAN_MEMERR;

@@ -201,8 +201,8 @@ int Zoltan_HG_Create_Mirror (
      outlength = hg->nVtx ;
      index     = hg->hindex ;
      data      = hg->hvertex ;
-     if (!(outindex=hg->vindex=(int*)ZOLTAN_MALLOC(sizeof(int)*(hg->nVtx+1)))||
-         !(outdata =hg->vedge =(int*)ZOLTAN_MALLOC(sizeof(int)* hg->nPin))    )
+     if (!(outindex=hg->vindex=(int*)ZOLTAN_MALLOC((hg->nVtx+1)*sizeof(int)))||
+         !(outdata =hg->vedge =(int*)ZOLTAN_MALLOC(hg->nPin*sizeof(int)))    )
        {
        ZOLTAN_FREE ((void **) &(hg->vindex)) ;
        ZOLTAN_FREE ((void **) &(hg->vedge)) ;
@@ -218,8 +218,8 @@ int Zoltan_HG_Create_Mirror (
      outlength = hg->nEdge ;
      index     = hg->vindex ;
      data      = hg->vedge ;
-     if (!(outindex=hg->hindex =(int*)ZOLTAN_MALLOC(sizeof(int)*(hg->nEdge+1)))||
-         !(outdata =hg->hvertex=(int*)ZOLTAN_MALLOC(sizeof(int)*hg->nPin))     )
+     if (!(outindex=hg->hindex =(int*)ZOLTAN_MALLOC((hg->nEdge+1)*sizeof(int)))||
+         !(outdata =hg->hvertex=(int*)ZOLTAN_MALLOC(hg->nPin*sizeof(int)))     )
        {
        ZOLTAN_FREE ((void **) &(hg->hindex)) ;
        ZOLTAN_FREE ((void **) &(hg->hvertex)) ;
@@ -278,8 +278,8 @@ int Zoltan_HG_Check (
   if (!(hg->hindex) || !(hg->hvertex) || !(hg->vindex) || !(hg->vedge) )
     return ZOLTAN_WARN ;
 
-  check = (int *) ZOLTAN_MALLOC (sizeof (int)
-        * ((hg->nEdge > hg->nVtx) ? hg->nEdge : hg->nVtx)) ;
+  check = (int *) ZOLTAN_MALLOC(((hg->nEdge>hg->nVtx)?hg->nEdge:hg->nVtx)
+                                *sizeof(int)) ;
   if (check == NULL)
      {
      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Unable to allocate memory.");
@@ -398,7 +398,7 @@ int Zoltan_HG_HGraph_to_Graph(
 
 /* copy vertex weights */
   if (hg->vwgt)
-  { if (!(g->vwgt = (float *) ZOLTAN_MALLOC (sizeof (float) * g->nVtx)))
+  { if (!(g->vwgt = (float *) ZOLTAN_MALLOC (g->nVtx*sizeof(float))))
     { ZOLTAN_FREE ((void **) &g->vwgt) ;
       ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
       return ZOLTAN_MEMERR;
@@ -424,7 +424,7 @@ int Zoltan_HG_HGraph_to_Graph(
   }
 
 /* Calculate the initial nindex */
-  if (!(g->nindex = (int *) ZOLTAN_MALLOC (sizeof (int) * (hg->nVtx+1))))
+  if (!(g->nindex = (int *) ZOLTAN_MALLOC ((hg->nVtx+1)*sizeof(int))))
     { ZOLTAN_FREE ((void **) &g->nindex);
       ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
       return ZOLTAN_MEMERR;
@@ -438,8 +438,8 @@ int Zoltan_HG_HGraph_to_Graph(
   g->nindex[hg->nVtx] = e;
   
 /* Calculate the initial neigh and ewgt */
-  if (!(_neigh = (int *)   ZOLTAN_MALLOC (sizeof (int) * roughly_e))  ||
-      !(_ewgt  = (float *) ZOLTAN_MALLOC (sizeof (float) * roughly_e)) )
+  if (!(_neigh = (int *)   ZOLTAN_MALLOC (roughly_e*sizeof(int)))  ||
+      !(_ewgt  = (float *) ZOLTAN_MALLOC (roughly_e*sizeof(float))) )
     { ZOLTAN_FREE ((void **) &_neigh);
       ZOLTAN_FREE ((void **) &_ewgt);
       ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
@@ -493,7 +493,7 @@ int Zoltan_HG_HGraph_to_Graph(
 /* Reallocate to the exact size */
   g->nEdge = g->nindex[g->nVtx];
 
-  if (!(g->neigh = (int *) ZOLTAN_MALLOC (sizeof (int) * g->nindex[hg->nVtx])))
+  if (!(g->neigh = (int *) ZOLTAN_MALLOC (g->nindex[hg->nVtx]*sizeof(int))))
     { ZOLTAN_FREE ((void **) &g->neigh);
       ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
       return ZOLTAN_MEMERR;
@@ -501,7 +501,7 @@ int Zoltan_HG_HGraph_to_Graph(
   memcpy(g->neigh,_neigh,g->nEdge*sizeof(int));
   ZOLTAN_FREE ((void **) &_neigh);
 
-  if (!(g->ewgt = (float *) ZOLTAN_MALLOC (sizeof (float) * g->nindex[hg->nVtx])))
+  if (!(g->ewgt = (float *) ZOLTAN_MALLOC (g->nindex[hg->nVtx]*sizeof(float))))
     { ZOLTAN_FREE ((void **) &g->ewgt);
       ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
       return ZOLTAN_MEMERR;

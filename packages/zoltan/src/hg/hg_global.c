@@ -132,7 +132,7 @@ static int global_ran (
   int i, ierr, *order=NULL;
   char *yo = "global_ran" ;
 
-  if (!(order  = (int *)   ZOLTAN_MALLOC (sizeof (int) * hg->nVtx)))
+  if (!(order  = (int *)   ZOLTAN_MALLOC (hg->nVtx*sizeof(int))))
   { ZOLTAN_FREE ((void **) &order) ;
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
     return ZOLTAN_MEMERR;
@@ -196,7 +196,7 @@ static int bfs_order (
   pnumber = 0;    /* Assign next vertex this partition number */
 
   /* Allocate arrays. */
-  if (!(rank  = (int *)   ZOLTAN_MALLOC (sizeof (int) * hg->nVtx))) {
+  if (!(rank  = (int *)   ZOLTAN_MALLOC (hg->nVtx*sizeof(int)))) {
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
     ierr =  ZOLTAN_MEMERR;
     goto error;
@@ -364,7 +364,7 @@ static int global_bfs (
   int i, ierr, start, *order=NULL;
   char *yo = "global_bfs" ;
 
-  if (!(order  = (int *)   ZOLTAN_MALLOC (sizeof (int) * hg->nVtx)))
+  if (!(order  = (int *)   ZOLTAN_MALLOC (hg->nVtx*sizeof(int))))
   { ZOLTAN_FREE ((void **) &order) ;
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
     return ZOLTAN_MEMERR;
@@ -408,7 +408,7 @@ static int global_bfsh (
   int i, ierr, start, *order=NULL;
   char *yo = "global_bfsh" ;
 
-  if (!(order  = (int *)   ZOLTAN_MALLOC (sizeof (int) * hg->nVtx)))
+  if (!(order  = (int *)   ZOLTAN_MALLOC (hg->nVtx*sizeof(int))))
   { ZOLTAN_FREE ((void **) &order) ;
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
     return ZOLTAN_MEMERR;
@@ -454,7 +454,7 @@ static int global_rbfs (
   int ierr = ZOLTAN_OK;
   char *yo = "global_rbfs" ;
 
-  if (!(order  = (int *) ZOLTAN_MALLOC (sizeof (int) * hg->nVtx))) {
+  if (!(order  = (int *) ZOLTAN_MALLOC (hg->nVtx*sizeof(int)))) {
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
     ierr = ZOLTAN_MEMERR;
     goto error;
@@ -498,7 +498,7 @@ static int global_rbfsh (
   int ierr = ZOLTAN_OK;
   char *yo = "global_rbfsh" ;
 
-  if (!(order  = (int *) ZOLTAN_MALLOC (sizeof (int) * hg->nVtx))) {
+  if (!(order  = (int *) ZOLTAN_MALLOC (hg->nVtx*sizeof(int)))) {
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
     ierr = ZOLTAN_MEMERR;
     goto error;

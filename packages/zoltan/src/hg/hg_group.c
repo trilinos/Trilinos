@@ -61,7 +61,7 @@ int Zoltan_HG_Grouping (ZZ *zz, HGraph *hg, Packing pack, HGPartParams *hgp, int
   ZOLTAN_TRACE_ENTER(zz, yo);
 
   if (hg->vwgt && hgp->ews)
-  { if (!(new_ewgt = (float *) ZOLTAN_MALLOC (sizeof (float) * hg->nEdge)))
+  { if (!(new_ewgt = (float *) ZOLTAN_MALLOC (hg->nEdge*sizeof(float))))
     { ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
       ZOLTAN_TRACE_EXIT(zz, yo);
       return ZOLTAN_MEMERR;
@@ -122,7 +122,7 @@ static int grouping_reg (ZZ *zz, HGraph *hg, Packing pack, int *limit)
    int i, j, *edges=NULL, edge, random, vertex, first_vertex ;
    char *yo = "grouping_reg" ;
 
-   if (!(edges = (int *) ZOLTAN_MALLOC (sizeof (int) * hg->nEdge)))
+   if (!(edges = (int *) ZOLTAN_MALLOC (hg->nEdge*sizeof(int))))
       {
       ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
       return ZOLTAN_MEMERR;
@@ -163,7 +163,7 @@ static int grouping_rrg (ZZ *zz, HGraph *hg, Packing pack, int *limit)
    int i, j, edge, random, *vertices=NULL, vertex, first_vertex, count ;
    char *yo = "grouping_rrg" ;
 
-   if (!(vertices  = (int *) ZOLTAN_MALLOC (sizeof (int) * hg->nVtx)))
+   if (!(vertices  = (int *) ZOLTAN_MALLOC (hg->nVtx*sizeof(int))))
       {
       ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
       return ZOLTAN_MEMERR;
@@ -211,8 +211,8 @@ static int grouping_rhg (ZZ *zz, HGraph *hg, Packing pack, int *limit)
    float best_ewgt;
    char  *yo = "grouping_heg" ;
 
-   if (!(vertices  = (int *) ZOLTAN_MALLOC (sizeof (int) * hg->nVtx)) ||
-       !(del_edges = (int *) ZOLTAN_CALLOC (hg->nEdge,sizeof (int))) )
+   if (!(vertices  = (int *) ZOLTAN_MALLOC (hg->nVtx*sizeof(int))) ||
+       !(del_edges = (int *) ZOLTAN_CALLOC (hg->nEdge,sizeof(int))) )
       {
       ZOLTAN_FREE ((void **) &vertices) ;
       ZOLTAN_FREE ((void **) &del_edges) ;
@@ -304,8 +304,8 @@ static int grouping_grg (ZZ *zz, HGraph *hg, Packing pack, int *limit)
     pack[i] = i;
 
 /* Sort the hyperedges according to their weight and size */
-  if (!(size   = (int *) ZOLTAN_MALLOC (sizeof (int) * hg->nEdge))  ||
-      !(sorted = (int *) ZOLTAN_MALLOC (sizeof (int) * hg->nEdge))   )
+  if (!(size   = (int *) ZOLTAN_MALLOC (hg->nEdge*sizeof(int)))  ||
+      !(sorted = (int *) ZOLTAN_MALLOC (hg->nEdge*sizeof(int)))   )
   { ZOLTAN_FREE ((void **) &size) ;
     ZOLTAN_FREE ((void **) &sorted) ;
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");

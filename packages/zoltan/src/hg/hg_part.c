@@ -115,7 +115,7 @@ int Zoltan_HG_HPart_Lib (
     HGraph c_hg;
 
     /* Allocate Packing Array (used for matching, packing & grouping) */
-    if (!(pack = (int *) ZOLTAN_MALLOC (sizeof (int) * hg->nVtx)))
+    if (!(pack = (int *) ZOLTAN_MALLOC (hg->nVtx*sizeof(int))))
     { ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
       return ZOLTAN_MEMERR;
     }

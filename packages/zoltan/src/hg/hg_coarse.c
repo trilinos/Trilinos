@@ -67,10 +67,10 @@ int Zoltan_HG_Coarsening (
     }
 
 /* Coarsen the hyperedges */
-  if (!(used_vertices = (int *)  ZOLTAN_CALLOC(c_hg->nVtx,sizeof(int)))      ||
-      !(c_ewgt        = (float *)ZOLTAN_MALLOC(sizeof(float)* hg->nEdge))    ||
-      !(c_hindex      = (int *)  ZOLTAN_MALLOC(sizeof(int)  * (hg->nEdge+1)))||
-      !(c_hvertex     = (int *)  ZOLTAN_MALLOC(sizeof(int)  * hg->nPin)) )
+  if (!(used_vertices = (int *)  ZOLTAN_CALLOC(c_hg->nVtx,sizeof(int)))   ||
+      !(c_ewgt        = (float *)ZOLTAN_MALLOC(hg->nEdge*sizeof(float)))  ||
+      !(c_hindex      = (int *)  ZOLTAN_MALLOC((hg->nEdge+1)*sizeof(int)))||
+      !(c_hvertex     = (int *)  ZOLTAN_MALLOC(hg->nPin*sizeof(int)))      )
   { ZOLTAN_FREE ((void **) &used_vertices) ;
     ZOLTAN_FREE ((void **) &c_hindex) ;
     ZOLTAN_FREE ((void **) &c_hvertex) ;
@@ -109,8 +109,8 @@ int Zoltan_HG_Coarsening (
   }
 
 /* Move weight of identical hyperedges to one of them */
-  if (!(sorted = (int *) ZOLTAN_MALLOC (sizeof (int) * c_hg->nEdge)) ||
-      !(hsize  = (int *) ZOLTAN_MALLOC (sizeof (int) * c_hg->nEdge)) ||
+  if (!(sorted = (int *) ZOLTAN_MALLOC (c_hg->nEdge*sizeof(int)))  ||
+      !(hsize  = (int *) ZOLTAN_MALLOC (c_hg->nEdge*sizeof (int))) ||
       !(sum    = (int *) ZOLTAN_CALLOC (c_hg->nEdge,sizeof (int)))  )
   { ZOLTAN_FREE ((void **) &c_hindex) ;
     ZOLTAN_FREE ((void **) &c_hvertex) ;
@@ -175,7 +175,7 @@ int Zoltan_HG_Coarsening (
   c_hg->nPin = c_hindex[c_hg->nEdge];
 
 /* Reallocate the arrays to their exact size */
-  if (!(c_hg->ewgt = (float *) ZOLTAN_MALLOC (sizeof (float) * c_hg->nEdge)))
+  if (!(c_hg->ewgt = (float *) ZOLTAN_MALLOC (c_hg->nEdge*sizeof(float))))
   { ZOLTAN_FREE ((void **) &c_hindex) ;
     ZOLTAN_FREE ((void **) &c_hvertex) ;
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
@@ -183,7 +183,7 @@ int Zoltan_HG_Coarsening (
   }
   memcpy(c_hg->ewgt,c_ewgt,c_hg->nEdge*sizeof(float));
   ZOLTAN_FREE ((void **) &c_ewgt);
-  if (!(c_hg->hindex = (int *) ZOLTAN_MALLOC (sizeof (int) * (c_hg->nEdge+1))))
+  if (!(c_hg->hindex = (int *) ZOLTAN_MALLOC ((c_hg->nEdge+1)*sizeof(int))))
   { ZOLTAN_FREE ((void **) &c_hindex) ;
     ZOLTAN_FREE ((void **) &c_hvertex) ;
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
@@ -191,7 +191,7 @@ int Zoltan_HG_Coarsening (
   }
   memcpy(c_hg->hindex,c_hindex,(c_hg->nEdge+1)*sizeof(int));
   ZOLTAN_FREE ((void **) &c_hindex);
-  if (!(c_hg->hvertex = (int *) ZOLTAN_MALLOC (sizeof (int) * c_hg->nPin)))
+  if (!(c_hg->hvertex = (int *) ZOLTAN_MALLOC (c_hg->nPin*sizeof(int))))
   { ZOLTAN_FREE ((void **) &c_hvertex) ;
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
     return ZOLTAN_MEMERR;

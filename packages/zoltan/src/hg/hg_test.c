@@ -77,7 +77,7 @@ int main (int argc, char **argv)
     puts("-redm   reduction method: {mxm,rem,rrm,rhm,grm,lhm,pgm,");
     puts("                           mxp,rep,rrp,rhp,grp,lhp,pgp,");
     puts("                           mxg,reg,rrg,rhg,(grg)}");
-    puts("-reda   reduction augment:{no,aug1,aug2,(aug3)}");
+    puts("-redmo  reduction augment:{no,aug1,aug2,(aug3)}");
     puts("-reds   reduction scaling:(1)");
     puts("-g      global method:    {ran,lin,bfs,rbfs,bfsh,(rbfsh)}");
     puts("-l      local method:     no,(fm)");
