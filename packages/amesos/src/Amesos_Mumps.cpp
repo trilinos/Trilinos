@@ -89,17 +89,18 @@ Amesos_Mumps::Amesos_Mumps(const Epetra_LinearProblem &prob ) :
   PrintTiming_(false),
   PrintStatus_(false),
   Threshold_(0.0),
-  TimeToShipMatrix_(0.0),
   MUMPSComm_(0),
   UseTranspose_(false),
-  ConvTime_(0.0),
+  ConTime_(0.0),
   SymTime_(0.0),
   NumTime_(0.0),
-  SolveTime_(0.0),
-  RedistorTime_(0.0),
+  SolTime_(0.0),
+  VecTime_(0.0),
+  MatTime_(0.0),
   NumSymbolicFact_(0),
   NumNumericFact_(0),
-  NumSolve_(0)
+  NumSolve_(0),
+  Time(Comm())
 {
   // -777 is for me. It means : never called MUMPS, so
   // SymbolicFactorization will not call Destroy();
@@ -158,7 +159,7 @@ int Amesos_Mumps::ConvertToTriplet()
 
   if( debug_ == 1 ) cout << "Entering `ConvertToTriplet()'" << endl;
   
-  Epetra_Time Time(Comm());
+  Time.ResetStartTime();
 
   // MS // convert to MUMPS format, keeping in distributed form.
   // MS // This doesn't require the matrix to be shipped to proc 0,
@@ -224,6 +225,8 @@ int Amesos_Mumps::ConvertToTriplet()
     }
   }
 
+  ConTime_ == Time.ElapsedTime(); 
+  
   assert(NumMyMUMPSNonzeros_<=NumMyNonzeros());
 
   // MS // bring matrix to proc zero if required. Note that I first
@@ -239,8 +242,6 @@ int Amesos_Mumps::ConvertToTriplet()
 
   }
 
-  ConvTime_ == Time.ElapsedTime(); 
-  
   return 0;
 
 }
@@ -252,8 +253,8 @@ void Amesos_Mumps::RedistributeMatrix(const int NumProcs)
 
   if( debug_ == 1 ) cout << "Entering `RedistributeMatrix()' ..." << endl;
 
-  Epetra_Time T(Comm());
-
+  Time.ResetStartTime();
+  
   Epetra_IntSerialDenseVector * OldRow = Row;
   Epetra_IntSerialDenseVector * OldCol = Col;
   Epetra_SerialDenseVector * OldVal = Val;
@@ -292,7 +293,7 @@ void Amesos_Mumps::RedistributeMatrix(const int NumProcs)
   if( OldCol ) { delete OldCol; OldCol = 0; }
   if( OldVal ) { delete OldVal; OldVal = 0; }
 
-  TimeToShipMatrix_ += T.ElapsedTime();
+  MatTime_ += Time.ElapsedTime();
   
 }
 
@@ -301,10 +302,10 @@ void Amesos_Mumps::RedistributeMatrix(const int NumProcs)
 void Amesos_Mumps::RedistributeMatrixValues(const int NumProcs)
 {
 
-  Epetra_Time T(Comm());
-  
   if( debug_ == 1 ) cout << "Entering `RedistributeMatrixValues()' ..." << endl;
 
+  Time.ResetStartTime();
+  
   // I suppose that NumMyMUMPSNonzeros_ has been computed
   // before calling this method.
 
@@ -333,7 +334,7 @@ void Amesos_Mumps::RedistributeMatrixValues(const int NumProcs)
   
   if( OldVal ) { delete OldVal; OldVal = 0; }
 
-  TimeToShipMatrix_ += T.ElapsedTime();
+  MatTime_ += Time.ElapsedTime();
   
 }
 
@@ -344,7 +345,7 @@ int Amesos_Mumps::ConvertToTripletValues()
 
   if( debug_ == 1 ) cout << "Entering `ConvertToTripletValues()'" << endl;
 
-  Epetra_Time Time(Comm());
+  Time.ResetStartTime();  
 
   // MS // convert to MUMPS format, keeping in distributed form.
   // MS // This doesn't require the matrix to be shipped to proc 0,
@@ -414,7 +415,9 @@ int Amesos_Mumps::ConvertToTripletValues()
 	  << "Amesos_Mumps ERROR : called. # nonzeros (num) = " << NumMUMPSNonzerosValues << endl;
      return -2;
   }  
-    
+
+  ConTime_ += Time.ElapsedTime();
+  
   // MS // bring matrix to proc zero if required
   
   if( MaxProcsInputMatrix_ != Comm().NumProc() ) {
@@ -427,8 +430,6 @@ int Amesos_Mumps::ConvertToTripletValues()
 
   }
 
-  ConvTime_ += Time.ElapsedTime();
-  
   return 0;
 
 }
@@ -717,8 +718,6 @@ int Amesos_Mumps::PerformSymbolicFactorization()
    Destroy();
   }
 
-  Epetra_Time Time(Comm());
-
   if( IsLocal() || UseMpiCommSelf_ ) {
 #ifdef EPETRA_MPI
 #ifndef TFLOP
@@ -735,6 +734,9 @@ int Amesos_Mumps::PerformSymbolicFactorization()
 #if defined(EPETRA_MPI) && ! defined(TFLOP)
     if( MaxProcs_ != Comm().NumProc() ) {
 
+      if( debug_ == 1 ) cout << "Creating MPI Communicator with "
+			     << MaxProcs_ << " procs" << endl;
+      
       if( MUMPSComm_ ) MPI_Comm_free( &MUMPSComm_ );
       
       int * ProcsInGroup = new int[MaxProcs_];
@@ -811,13 +813,15 @@ int Amesos_Mumps::PerformSymbolicFactorization()
   SetICNTLandCNTL(); // initialize icntl and cntl. NOTE: I initialize those vectors
                      // here, and I don't change them anymore. This is not that much
                      // a limitation, though
-  
+
   // Perform symbolic factorization
+
+  Time.ResetStartTime();  
   if( Comm().MyPID() < MaxProcs_ ) dmumps_c( &MDS ) ;
+  SymTime_ += Time.ElapsedTime();
+
   CheckError();
 
-  SymTime_ += Time.ElapsedTime();
-  
   SymbolicFactorizationOK_ = true ;
 
   return 0;
@@ -829,8 +833,6 @@ int Amesos_Mumps::PerformSymbolicFactorization()
 int Amesos_Mumps::PerformNumericFactorization( )
 {
 
-  Epetra_Time Time(Comm());
-  
   if( debug_ == 1 ) cout << "Entering `PerformNumericFactorization()'" << endl;
 
   // set vector for matrix entries. User may have changed it
@@ -846,11 +848,12 @@ int Amesos_Mumps::PerformNumericFactorization( )
 
   MDS.job = 2  ;     // Request numeric factorization
   // Perform numeric factorization
+  Time.ResetStartTime();
   if( Comm().MyPID() < MaxProcs_ ) dmumps_c( &MDS ) ;
-  CheckError();
-
   NumTime_ += Time.ElapsedTime();
   
+  CheckError();
+
   NumericFactorizationOK_ = true;
 
   return 0;
@@ -940,8 +943,6 @@ int Amesos_Mumps::Solve()
   
   if( debug_ == 1 ) cout << "Entering `Solve()'" << endl;
 
-  Epetra_Time TimeForRedistor(Comm());
-  
   Epetra_RowMatrix * Matrix = GetMatrix();
   assert( Matrix != NULL );
   if( Matrix != OldMatrix_ ) {
@@ -974,8 +975,6 @@ int Amesos_Mumps::Solve()
     // MS // shipping the matrix
     
   }
-  
-  Epetra_Time Time(Comm());
 
   Epetra_MultiVector * vecX = GetLHS() ; 
   Epetra_MultiVector * vecB = GetRHS() ;
@@ -1021,36 +1020,42 @@ int Amesos_Mumps::Solve()
 	for( int i=0 ; i<NumMyRows() ; ++i ) (*vecX)[j][i] = (*vecB)[j][i];
 	MDS.rhs = (*vecX)[j];
 	MDS.job = 3  ;     // Request solve
+	Time.ResetStartTime();
 	if( Comm().MyPID() < MaxProcs_ ) dmumps_c( &MDS ) ;  // Perform solve
+	SolTime_ += Time.ElapsedTime();
+	
 	CheckError();
       }
     }
   } else {
 
-    TimeForRedistor.ResetStartTime();
+    // bring rhs to process 0 and take timing for this phase
+    Time.ResetStartTime();
     Redistor_->TargetImport( *vecB, *TargetVector_ ) ;
-    RedistorTime_ += TimeForRedistor.ElapsedTime();
+    VecTime_ += Time.ElapsedTime();
     
     for ( int j =0 ; j < nrhs; j++ ) { 
       if ( Comm().MyPID() == 0 ) {
 	MDS.rhs = (*TargetVector_)[j];
       }
-      MDS.job = 3  ;     // Request solve
+      // solve the linear system and take time
+      MDS.job = 3  ;     
+      Time.ResetStartTime();
       if( Comm().MyPID() < MaxProcs_ )dmumps_c( &MDS ) ;  // Perform solve
+      SolTime_ += Time.ElapsedTime();
+      
       CheckError();
 
     }
 
-    
-    TimeForRedistor.ResetStartTime();
+    // ship solution back and take timing
+    Time.ResetStartTime();
     Redistor_->SourceImport( *vecX, *TargetVector_ ) ;
-    RedistorTime_ += TimeForRedistor.ElapsedTime();
+    VecTime_ += Time.ElapsedTime();
 
   }
 
   EPETRA_CHK_ERR( UpdateLHS() );
-
-  SolveTime_ += Time.ElapsedTime();
 
   // compute vector norms
   if( ComputeVectorNorms_ == true || verbose_ == 2 ) {
@@ -1250,16 +1255,19 @@ void Amesos_Mumps::PrintTiming()
   
   cout << "-------------- -------------------------------------------------------------" << endl;
   cout << "Amesos_Mumps : Time to convert matrix to MUMPS format = "
-       << ConvTime_ << " (s)" << endl;
-  if( MaxProcsInputMatrix_ != Comm().NumProc() )
+       << ConTime_ << " (s)" << endl;
+  if( MaxProcsInputMatrix_ != Comm().NumProc() ) 
     cout << "Amesos_Mumps : Time to redistribute matrix = "
-	 << TimeToShipMatrix_ << " (s)" << endl;
-  cout << "Amesos_Mumps : Number of symbolic factorizaions = "
+	 << MatTime_ << " (s)" << endl;
+  if( ! (IsLocal() || UseMpiCommSelf_) )
+    cout << "Amesos_Mumps : Time to redistribute vectors = "
+       << VecTime_ << " (s)" << endl;
+  cout << "Amesos_Mumps : Number of symbolic factorizations = "
        << NumSymbolicFact_ << endl;
   cout << "Amesos_Mumps : Time for sym fact = "
        << SymTime_ << " (s), avg = " << SymTime_/NumSymbolicFact_
        << " (s)" << endl;
-  cout << "Amesos_Mumps : Number of numeric factorizaions = "
+  cout << "Amesos_Mumps : Number of numeric factorizations = "
        << NumNumericFact_ << endl;
   cout << "Amesos_Mumps : Time for num fact = "
        << NumTime_ << " (s), avg = " << NumTime_/NumNumericFact_
@@ -1267,13 +1275,9 @@ void Amesos_Mumps::PrintTiming()
   cout << "Amesos_Mumps : Number of solve phases = "
        << NumSolve_ << endl;
   cout << "Amesos_Mumps : Time for solve = "
-       << SolveTime_ << " (s), avg = " << SolveTime_/NumSolve_
+       << SolTime_ << " (s), avg = " << SolTime_/NumSolve_
        << " (s)" << endl;
-  if( ! (IsLocal() || UseMpiCommSelf_) )
-    cout << "Amesos_Mumps : Total time for gather B and scatter X = "
-	 << RedistorTime_ << " (s)" << endl;
-
-cout << "----------------------------------------------------------------------------" << endl;
+  cout << "----------------------------------------------------------------------------" << endl;
    
   return;
 }

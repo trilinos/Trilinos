@@ -38,6 +38,7 @@
 #include "Epetra_Comm.h"
 #endif
 #include "Epetra_CrsGraph.h"
+#include "Epetra_Time.h"
 
 #include "superlu_ddefs.h"
 #include "supermatrix.h"
@@ -324,19 +325,23 @@ revert to their default values.
   
   int verbose_;
   int debug_;
-
   
   // timing variables
   // some timing internal to MUMPS
   double NumTime_;
-  double SolveTime_;
-
+  double SolTime_;
+  double VecTime_;
+  double MatTime_;
+  double ConTime_;
+  Epetra_Time Time;
+  
   int NumSymbolicFact_;
   int NumNumericFact_;
   int NumSolve_;
 
   bool ComputeTrueResidual_;
   bool ComputeVectorNorms_;
+
   
 };  // End of  class Amesos_Superludist  
 #endif /* _AMESOS_SUPERLUDIST_H_ */

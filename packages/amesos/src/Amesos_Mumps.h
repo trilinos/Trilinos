@@ -40,6 +40,7 @@ class Epetra_IntSerialDenseVector;
 class Epetra_SerialDenseMatrix;
 class Amesos_EpetraInterface;
 class EpetraExt_Redistor;
+#include "Epetra_Time.h"
 
 #include "Amesos_ConfigDefs.h"
 #include "Amesos_BaseSolver.h"
@@ -450,18 +451,20 @@ protected:
   Epetra_MultiVector * TargetVector_;
 
   // some timing internal to MUMPS
-  double ConvTime_;
-  double SymTime_;
-  double NumTime_;
-  double SolveTime_;
-  double RedistorTime_;
-
+  double ConTime_;                        // time to convert to MUMPS format
+  double SymTime_;                        // time for symbolic factorization
+  double NumTime_;                        // time for numeric factorization
+  double SolTime_;                        // time for solution
+  double VecTime_;                        // time to redistribute vectors
+  double MatTime_;                        // time to redistribute matrix
+  
   int NumSymbolicFact_;
   int NumNumericFact_;
   int NumSolve_;
   
-  double TimeToShipMatrix_;
 
+  Epetra_Time Time;
+  
 #ifdef EPETRA_MPI
   MPI_Comm MUMPSComm_;
 #endif
