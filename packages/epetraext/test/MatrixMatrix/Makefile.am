@@ -28,7 +28,9 @@
 
 EXEEXT = .exe
 
-noinst_PROGRAMS = MatrixMatrix_test
+noinst_PROGRAMS = copyfiles MatrixMatrix_test
+
+copyfiles_SOURCES=$(top_srcdir)/test/MatrixMatrix/infiles
 
 MatrixMatrix_test_SOURCES = \
   $(srcdir)/cxx_main.cpp \
@@ -51,4 +53,8 @@ MatrixMatrix_test_LDADD = \
   $(BLAS_LIBS) \
   $(FLIBS)
 
+copyfiles$(EXEEXT): $(copyfiles_SOURCES)
+	cp $(top_srcdir)/test/MatrixMatrix/infile* $(top_builddir)/test/MatrixMatrix
+	cp $(top_srcdir)/test/MatrixMatrix/roman* $(top_builddir)/test/MatrixMatrix
+	cp $(top_srcdir)/test/MatrixMatrix/*.mtx $(top_builddir)/test/MatrixMatrix
 

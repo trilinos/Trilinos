@@ -42,7 +42,7 @@
 # ************************************************************************
 #@HEADER
 
-SOURCES = $(MatrixMatrix_test_SOURCES)
+SOURCES = $(MatrixMatrix_test_SOURCES) $(copyfiles_SOURCES)
 
 srcdir = @srcdir@
 top_srcdir = @top_srcdir@
@@ -65,7 +65,7 @@ NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
 host_triplet = @host@
-noinst_PROGRAMS = MatrixMatrix_test$(EXEEXT)
+noinst_PROGRAMS = copyfiles$(EXEEXT) MatrixMatrix_test$(EXEEXT)
 subdir = test/MatrixMatrix
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -102,6 +102,9 @@ PROGRAMS = $(noinst_PROGRAMS)
 am_MatrixMatrix_test_OBJECTS = MatrixMatrix_test-cxx_main.$(OBJEXT)
 MatrixMatrix_test_OBJECTS = $(am_MatrixMatrix_test_OBJECTS)
 am__DEPENDENCIES_1 =
+am_copyfiles_OBJECTS =
+copyfiles_OBJECTS = $(am_copyfiles_OBJECTS)
+copyfiles_LDADD = $(LDADD)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/src
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
@@ -115,8 +118,8 @@ COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
 CCLD = $(CC)
 LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
-SOURCES = $(MatrixMatrix_test_SOURCES)
-DIST_SOURCES = $(MatrixMatrix_test_SOURCES)
+SOURCES = $(MatrixMatrix_test_SOURCES) $(copyfiles_SOURCES)
+DIST_SOURCES = $(MatrixMatrix_test_SOURCES) $(copyfiles_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -253,6 +256,7 @@ target_alias = @target_alias@
 target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
+copyfiles_SOURCES = $(top_srcdir)/test/MatrixMatrix/infiles
 MatrixMatrix_test_SOURCES = \
   $(srcdir)/cxx_main.cpp \
   $(top_srcdir)/test/epetra_test_err.h
@@ -516,6 +520,11 @@ uninstall-am: uninstall-info-am
 	mostlyclean-generic pdf pdf-am ps ps-am tags uninstall \
 	uninstall-am uninstall-info-am
 
+
+copyfiles$(EXEEXT): $(copyfiles_SOURCES)
+	cp $(top_srcdir)/test/MatrixMatrix/infile* $(top_builddir)/test/MatrixMatrix
+	cp $(top_srcdir)/test/MatrixMatrix/roman* $(top_builddir)/test/MatrixMatrix
+	cp $(top_srcdir)/test/MatrixMatrix/*.mtx $(top_builddir)/test/MatrixMatrix
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:
