@@ -16,13 +16,25 @@ int main(int argc, char *argv[])
   Epetra_MpiComm Comm( MPI_COMM_WORLD );
   int iam = Comm.MyPID() ; 
 
-  int NumElements = 5; // Was 1000
+  const int NumPoints = 5; // Was 1000
 
   // Construct a Map that puts approximately the same number of 
   // equations on each processor.
 
-  Epetra_Map Map(NumElements, 0, Comm);
+  Epetra_Map Map(NumPoints, 0, Comm);
 
+  cout << " CallAmesosDscpack:: NumMyPoints = " 
+       << Map.NumMyPoints() 
+       << " NumGlobalPoints = " 
+       << Map.NumGlobalPoints() << endl ; 
+
+  cout << " CallAmesosDscpack:: NumMyElements = " 
+       << Map.NumMyElements() 
+       << " NumGlobalElements = " 
+       << Map.NumGlobalElements() << endl ; 
+
+
+  return 0; 
   //
   //  Create an empty EpetraCrsMatrix 
   Epetra_CrsMatrix A(Copy, Map, 0);
@@ -76,7 +88,7 @@ int main(int argc, char *argv[])
   double norm_residual ;
   residual.Norm2( &norm_residual ) ; 
 
-  if ( NumElements < 10 ) {
+  if ( NumPoints < 10 ) {
     cout << " x = " << x << endl ; 
     cout << " b = " << b << endl ; 
   }
@@ -84,7 +96,7 @@ int main(int argc, char *argv[])
   if (iam == 0 ) {
     cout << " norm2(Ax-b) = " << norm_residual << endl ; 
     
-    if ( norm_residual < 1e-15*NumElements ) 
+    if ( norm_residual < 1e-15*NumPoints ) 
       cout << " Test Passed " << endl ;
     else
       cout << " TEST FAILED " << endl ;

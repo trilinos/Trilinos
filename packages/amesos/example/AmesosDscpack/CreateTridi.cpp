@@ -58,12 +58,16 @@ int CreateTridi(Epetra_CrsMatrix& A)
 	Values[2] = -1.0;
 	NumEntries = 3;
       }
-
-     cout << " NumEntries = " << NumEntries << " Indices[] = " 
-	  << Indices[0] << " " << Indices[1] << endl ; 
-     assert(A.InsertGlobalValues(MyGlobalElements[i], NumEntries, Values, Indices)==0);
+    
+    cout << " NumEntries = " << endl ; 
+    cout << " NumEntries = " << NumEntries << " Indices[] = " << endl ; 
+    cout << " NumEntries = " << NumEntries << " Indices[] = " 
+	 << Indices[0] << endl ; 
+    cout << " NumEntries = " << NumEntries << " Indices[] = " 
+	 << Indices[0] << " " << Indices[1] << endl ; 
+    assert(A.InsertGlobalValues(MyGlobalElements[i], NumEntries, Values, Indices)==0);
      // Put in the diagonal entry
-     cout << " i = " <<  i << "MyGlobalElements[" << i << "]=" << MyGlobalElements[i] << endl ; 
+    cout << " i = " <<  i << "MyGlobalElements[" << i << "]=" << MyGlobalElements[i] << endl ; 
      //     assert(A.InsertGlobalValues(MyGlobalElements[i], 1, &two, &MyGlobalElements[i])==0);
     }
   
