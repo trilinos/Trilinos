@@ -1213,6 +1213,10 @@ void
 NOX::EpetraNew::LinearSystemAztecOO::setJacobianOperatorForSolve(
 					 const Epetra_Operator& solveJacOp)
 {
+  // Message type tags must be synchronized between processors (az_comm.c)
+  extern int AZ_sys_msg_type;
+  AZ_sys_msg_type = AZ_MSG_TYPE;
+
   solveJacOpPtr = const_cast<Epetra_Operator*>(&solveJacOp);
   OperatorType solveOpType = getOperatorType(solveJacOp);
   if ((solveOpType == EpetraRowMatrix) ||
