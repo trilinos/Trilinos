@@ -46,12 +46,12 @@ int main(int argc, char *argv[])
   // $TRILINOS_HOME/packages/triutils/src/Trilinos_Util_MatrixGallery.h
   // for more details.
   
-  Trilinos_Util_MatrixGallery G("laplace_2d", Comm);
-  G.Set("problem_size", 10000);
+  Trilinos_Util_CrsMatrixGallery Gallery("laplace_2d", Comm);
+  Gallery.Set("problem_size", 10000);
   
   // retrive pointers for linear system matrix and linear problem
-  Epetra_RowMatrix * A = G.GetMatrix();
-  Epetra_LinearProblem * Problem = G.GetLinearProblem();
+  Epetra_RowMatrix * A = Gallery.GetMatrix();
+  Epetra_LinearProblem * Problem = Gallery.GetLinearProblem();
 
   // Construct a solver object for this problem
   AztecOO solver(*Problem);
@@ -91,7 +91,7 @@ int main(int argc, char *argv[])
   ML_Epetra::MultiLevelPreconditioner * MLPrec = new ML_Epetra::MultiLevelPreconditioner(*A, MLList, true);
 
   // verify unused parameters
-  if( Comm.MyPID() == 0 && ) MLPrec->PrintUnused();
+  MLPrec->PrintUnused(0);
 
   // tell AztecOO to use this preconditioner, then solve
   solver.SetPrecOperator(MLPrec);
@@ -118,8 +118,8 @@ int main(int argc, char *argv[])
   // compute the real residual
 
   double residual, diff;
-  G.ComputeResidual(residual);
-  G.ComputeDiffBetweenStartingAndExactSolutions(diff);
+  Gallery.ComputeResidual(residual);
+  Gallery.ComputeDiffBetweenStartingAndExactSolutions(diff);
   
   if( Comm.MyPID()==0 ) {
     cout << "||b-Ax||_2 = " << residual << endl;

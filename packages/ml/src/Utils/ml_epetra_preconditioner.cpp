@@ -1435,6 +1435,9 @@ void MultiLevelPreconditioner::SetNullSpace()
     ML_Aggregate_Set_NullSpace(agg_,NumPDEEqns_,TotalNullSpaceDim,
 			       NullSpacePtr,
 			       NumMyRows());
+   
+    delete [] RealEigenvalues;
+    delete [] ImagEigenvalues;
     
     if( verbose_ ) cout << PrintMsg_ << "Total time for eigen-analysis = " << Time.ElapsedTime() << " (s)\n";
     
@@ -1444,11 +1447,7 @@ void MultiLevelPreconditioner::SetNullSpace()
      exit( EXIT_FAILURE );
 #endif
 
-     delete [] RealEigenvalues;
-     delete [] ImagEigenvalues;
-     
   }
-
 }
 
 // ================================================ ====== ==== ==== == =
@@ -1747,9 +1746,15 @@ void MultiLevelPreconditioner::SetSmoothingDamping()
   }
 
 #else
-  cout << "This feature is still experimental...\n"
-       << "Now quitting..." << endl;
-  exit( EXIT_FAILURE );  
+
+  char parameter[80];
+  
+  sprintf(parameter,"%seigen-analysis: use symmetric algorithms", Prefix_);
+  bool IsSymmetric = List_.get(parameter,false);
+  
+  if( IsSymmetric ) ML_Aggregate_Set_SpectralNormScheme_Calc(agg_);
+  else              ML_Aggregate_Set_SpectralNormScheme_Anorm(agg_);
+
 #endif       
 
 }
@@ -2034,7 +2039,7 @@ int ML_Epetra::SetDefaultsSA(ParameterList & List, char * Prefix_,
 {
 
   char parameter[80];
-  int MaxLevels = 10;
+  int MaxLevels = 16;
   
   sprintf(parameter,"%smax levels", Prefix_);
   List.set(parameter,MaxLevels);

@@ -183,7 +183,13 @@ ml_common_include_locations = -I$(top_srcdir)/src/Include          \
                    -I$(top_srcdir)/src/Smoother                  \
                    -I$(top_srcdir)/src/Utils                  \
                    -I$(top_srcdir)/../aztecoo/src            \
-                   -I$(top_builddir)/../aztecoo/src
+                   -I$(top_builddir)/../aztecoo/src \
+                   -I$(top_srcdir)/../epetra/src            \
+                   -I$(top_builddir)/../epetra/src \
+                   -I$(top_srcdir)/../teuchos/src            \
+                   -I$(top_builddir)/../teuchos/src \
+                   -I$(top_srcdir)/../triutils/src            \
+                   -I$(top_builddir)/../triutils/src
 
 
 #I'm defining the linker in this way, rather than
@@ -277,8 +283,9 @@ mlguide_par_LINK = ${mllink}
 @ML_STANDALONE_MODE_FALSE@ml_read_salsa_LDADD = ${ml_libs}
 @ML_STANDALONE_MODE_FALSE@ml_read_salsa_LINK = ${mllink}
 
+@ML_STANDALONE_MODE_FALSE@ml_example_epetra_preconditioner_CPPFLAGS = ${ml_common_include_locations}
 @ML_STANDALONE_MODE_FALSE@ml_example_epetra_preconditioner_CXXFLAGS = ${ml_common_include_locations}
-@ML_STANDALONE_MODE_FALSE@ml_example_epetra_preconditioner_LDADD = ${ml_libs}
+@ML_STANDALONE_MODE_FALSE@ml_example_epetra_preconditioner_LDADD = ${ml_libs} ../../teuchos/src/libteuchos.a ../../triutils/src/libtriutils.a ../../epetra/src/libepetra.a
 @ML_STANDALONE_MODE_FALSE@ml_example_epetra_preconditioner_LINK = ${mllink}
 
 @ML_BENCHMARKING_TRUE@@ML_STANDALONE_MODE_FALSE@ml_read_maxwell_CFLAGS = ${ml_common_include_locations}
@@ -444,7 +451,10 @@ ml_example_epetra_preconditioner_OBJECTS = \
 @ML_STANDALONE_MODE_FALSE@ml_example_epetra_preconditioner_DEPENDENCIES = \
 @ML_STANDALONE_MODE_FALSE@	$(top_builddir)/src/libml.a \
 @ML_STANDALONE_MODE_FALSE@	$(top_builddir)/../aztecoo/src/libaztecoo.a \
-@ML_STANDALONE_MODE_FALSE@	$(top_builddir)/../epetra/src/libepetra.a
+@ML_STANDALONE_MODE_FALSE@	$(top_builddir)/../epetra/src/libepetra.a \
+@ML_STANDALONE_MODE_FALSE@	../../teuchos/src/libteuchos.a \
+@ML_STANDALONE_MODE_FALSE@	../../triutils/src/libtriutils.a \
+@ML_STANDALONE_MODE_FALSE@	../../epetra/src/libepetra.a
 ml_example_epetra_preconditioner_LDFLAGS =
 @ML_STANDALONE_MODE_FALSE@am_ml_read_elas_OBJECTS = \
 @ML_STANDALONE_MODE_FALSE@	ml_read_elas-ml_read_elas.$(OBJEXT)

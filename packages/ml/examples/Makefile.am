@@ -110,7 +110,13 @@ ml_common_include_locations = -I$(top_srcdir)/src/Include          \
                    -I$(top_srcdir)/src/Smoother                  \
                    -I$(top_srcdir)/src/Utils                  \
                    -I$(top_srcdir)/../aztecoo/src            \
-                   -I$(top_builddir)/../aztecoo/src
+                   -I$(top_builddir)/../aztecoo/src \
+                   -I$(top_srcdir)/../epetra/src            \
+                   -I$(top_builddir)/../epetra/src \
+                   -I$(top_srcdir)/../teuchos/src            \
+                   -I$(top_builddir)/../teuchos/src \
+                   -I$(top_srcdir)/../triutils/src            \
+                   -I$(top_builddir)/../triutils/src
 
 if ML_STANDALONE_MODE
 #I'm defining the linker in this way, rather than
@@ -205,8 +211,9 @@ ml_read_salsa_CFLAGS = ${ml_common_include_locations}
 ml_read_salsa_LDADD = ${ml_libs}
 ml_read_salsa_LINK = ${mllink}
 
+ml_example_epetra_preconditioner_CPPFLAGS = ${ml_common_include_locations}
 ml_example_epetra_preconditioner_CXXFLAGS = ${ml_common_include_locations}
-ml_example_epetra_preconditioner_LDADD = ${ml_libs}
+ml_example_epetra_preconditioner_LDADD = ${ml_libs} ../../teuchos/src/libteuchos.a ../../triutils/src/libtriutils.a ../../epetra/src/libepetra.a
 ml_example_epetra_preconditioner_LINK = ${mllink}
 
 if ML_BENCHMARKING
