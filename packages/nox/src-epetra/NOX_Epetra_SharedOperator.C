@@ -34,7 +34,8 @@
 
 using namespace NOX::Epetra;
 
-SharedOperator::SharedOperator(Epetra_Operator& m)
+SharedOperator::SharedOperator(Epetra_Operator& m) :
+  owner(0)
 {
   matrix = &m;
 }
