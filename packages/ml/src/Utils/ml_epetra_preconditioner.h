@@ -85,18 +85,18 @@ public:
   }
 
   //! Prints unused parameters in the input ParameterList.
-  void PrintUnused() 
+  void PrintUnused() const
   {
     List_.unused(std::cout);
   }
 
   //! Prints unused parameters in the input ParameterList.
-  void PrintUnused(ostream & os) 
+  void PrintUnused(const ostream & os) const
   {
     List_.unused(os);
   }
 
-  void PrintUnused(int MyPID);
+  void PrintUnused(const int MyPID) const;
 
   Teuchos::ParameterList & GetList() 
   {

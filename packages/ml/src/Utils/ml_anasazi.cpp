@@ -201,11 +201,13 @@ int Interface(const Epetra_RowMatrix * RowMatrix, Epetra_MultiVector & EigenVect
   
   int NumBlocks = EigenVectors.NumVectors();
 
-  int indices[NumBlocks];
+  int * indices = new int[NumBlocks];
   for( int i=0 ; i<NumBlocks ; ++i ) indices[i] = i;
   
   Anasazi::PetraVec<double> Vectors(View,EigenVectors,indices,NumBlocks);
   
+  delete [] indices;
+
   /* ********************************************************************** */
   /* Perform required action                                                */
   /* ********************************************************************** */
@@ -254,9 +256,9 @@ int Interface(const Epetra_RowMatrix * RowMatrix, Epetra_MultiVector & EigenVect
 
   if( List.get("eigen-analysis: normalize eigenvectors",false) ) {
     
-    double MaxVals[NumBlocks];
-    double MinVals[NumBlocks];
-    double Vals[NumBlocks];
+    double * MaxVals = new double[NumBlocks];
+    double * MinVals = new double[NumBlocks];
+    double * Vals = new double[NumBlocks];
     EigenVectors.MaxValue(MaxVals);
     EigenVectors.MinValue(MinVals);
 
@@ -268,6 +270,10 @@ int Interface(const Epetra_RowMatrix * RowMatrix, Epetra_MultiVector & EigenVect
       EigenVectors(i)->Scale(Vals[i]);
 
     }
+
+    delete [] MaxVals;
+    delete [] MinVals;
+    delete [] Vals;
   }
 
   return 0;

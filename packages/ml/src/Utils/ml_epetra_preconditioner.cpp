@@ -793,7 +793,7 @@ int MultiLevelPreconditioner::ComputePreconditioner()
 
 // ============================================================================
 
-void MultiLevelPreconditioner::PrintUnused(int MyPID) 
+void MultiLevelPreconditioner::PrintUnused(const int MyPID) const
 {
   if( Comm().MyPID() == MyPID ) {
     PrintLine();
@@ -1580,6 +1580,7 @@ void MultiLevelPreconditioner::SetSmoothingDamping()
     /* ********************************************************************** */
 
     sprintf(parameter,"%saggregation: damping factor", Prefix_);
+    DampingFactor = 1.333;
     DampingFactor = List_.get(parameter, DampingFactor);
     ML_Aggregate_Set_DampingFactor( agg_, DampingFactor );
     
@@ -1709,7 +1710,7 @@ void MultiLevelPreconditioner::SetSmoothingDamping()
       field_of_values->poly_order =  2;
 	    
       // initialize seed
-      unsigned int s = (int) nearbyint(Time.ElapsedTime()*10000);
+      unsigned int s = (int)(Time.ElapsedTime()*10000);
       srandom(s);
       
       // put random values

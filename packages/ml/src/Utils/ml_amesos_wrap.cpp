@@ -345,25 +345,26 @@ void ML_Amesos_Destroy(void *Amesos_Handle)
 
 #include "ml_include.h"
 #include "ml_amesos_wrap.h"
-#include <iostream>
-using namespace std;
+#include <stdio.h>
 
 int ML_Amesos_Gen(ML *ml, int curr_level, int choice,
 		  int MaxProcs, void **Amesos_Handle)
 {
-  cerr << "You must configure with --with-ml_amesos." << endl;
+  puts("You must configure with --with-ml_amesos.");
   exit( EXIT_FAILURE );
+  return EXIT_FAILURE;
 }
 
 int ML_Amesos_Solve( void *Amesos_Handle, double x[], double rhs[] )
 {
-  cerr << "You must configure with --with-ml_amesos." << endl;
+  puts("You must configure with --with-ml_amesos.");
   exit( EXIT_FAILURE );
+  return EXIT_FAILURE;
 }
 
 void ML_Amesos_Destroy(void *Amesos_Handle)
 {
-  cerr << "You must configure with --with-ml_amesos." << endl;
+  puts("You must configure with --with-ml_amesos.");
   exit( EXIT_FAILURE );
 }
 
