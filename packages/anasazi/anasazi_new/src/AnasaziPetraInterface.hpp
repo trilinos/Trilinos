@@ -529,6 +529,72 @@ ReturnType PetraGenOp::ApplyInverse ( const MultiVec<double>& x,
 	}	
 }
 
+///////////////////////////////////////////////////////////////
+//--------template class AnasaziPetraSymOp---------------------
+class PetraSymOp : public virtual Operator<double> {
+public:
+  PetraSymOp(const Epetra_Operator& Op );
+  ~PetraSymOp();
+  ReturnType Apply ( const MultiVec<double>& x, 
+		     MultiVec<double>& y, ETrans trans=NOTRANS ) const;
+private:
+  const Epetra_Operator& Epetra_Op;
+};
+//-------------------------------------------------------------
+//
+// implementation of the AnasaziPetraSymOp class.
+//
+////////////////////////////////////////////////////////////////////
+//
+// AnasaziOperator constructors
+//
+PetraSymOp::PetraSymOp(const Epetra_Operator& Op) 
+  : Epetra_Op(Op)
+{
+}
+
+PetraSymOp::~PetraSymOp() 
+{
+}
+//
+// AnasaziOperator applications
+//
+ReturnType PetraSymOp::Apply ( const MultiVec<double>& x, 
+				  MultiVec<double>& y, ETrans trans ) const 
+{
+	int info=0;
+	MultiVec<double> & temp_x = const_cast<MultiVec<double> &>(x);
+	Epetra_MultiVector* vec_x = dynamic_cast<Epetra_MultiVector* >(&temp_x);
+	Epetra_MultiVector* vec_y = dynamic_cast<Epetra_MultiVector* >(&y);
+	Epetra_MultiVector* temp_vec = new Epetra_MultiVector( Epetra_Op.OperatorRangeMap(), vec_x->NumVectors() );
+
+	assert( vec_x!=NULL && vec_y!=NULL && temp_vec!=NULL );
+	//
+	// Need to cast away constness because the member function Apply
+	// is not declared const.
+	//
+	// Compute A*x
+	info=const_cast<Epetra_Operator&>(Epetra_Op).Apply( *vec_x, *temp_vec );
+	if (info!=0) { delete temp_vec; return Failed; }
+
+	// Transpose the operator
+	info=const_cast<Epetra_Operator&>(Epetra_Op).SetUseTranspose( true );
+	if (info!=0) { delete temp_vec; return Failed; }
+
+	// Compute A^T*(A*x)
+	info=const_cast<Epetra_Operator&>(Epetra_Op).Apply( *temp_vec, *vec_y );
+	if (info!=0) { delete temp_vec; return Failed; }
+
+	// Un-transpose the operator
+	info=const_cast<Epetra_Operator&>(Epetra_Op).SetUseTranspose( false );
+	delete temp_vec;
+
+	if (info==0)
+		return Ok; 
+	else
+		return Failed; 
+}
+
 } // end of Anasazi namespace 
 
 #endif 
