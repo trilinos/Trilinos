@@ -65,6 +65,7 @@ struct ML_Struct {
                                    /* by the multigrid method.       */
    int            ML_num_transfers;/* number of transfers  */
    int            ML_finest_level, ML_coarsest_level;
+   int            symmetrize_matrix;
    int            output_level;
    int            res_output_freq;
    double         tolerance;
@@ -116,6 +117,7 @@ extern ML_PrintControl ML_PrintLevel;
 extern "C" {
 #endif
 extern int ML_Create(ML **ml, int Nlevels);
+extern int ML_Set_Symmetrize(ML *ml, int true_or_false);
 extern int ML_Set_OutputLevel(ML *ml, int output_level);
 extern int ML_Set_PrintLevel(int);
 extern int ML_Get_PrintLevel(void);
@@ -279,7 +281,7 @@ extern double ML_Cycle_AMGV(ML_1Level *curr, double *sol, double *rhs,
 extern int ML_Gen_SmootherGSextra( ML *ml , int nl, int pre_or_post, 
 				   int ntimes, double omega, int Nextra, 
 				   int extra[]);
-extern int ML_MLS_Setup_Coef(void *sm, int deg);
+extern int ML_MLS_Setup_Coef(void *sm, int deg, int symmetrize);
 extern int ML_Seg_Solve( ML *ml , double *din, double *dout);
 extern int ML_Clean_CSolveSuperLU( void *vsolver, ML_CSolveFunc *func);
 extern int ML_Solver_SetScheme(ML *ml, int scheme);

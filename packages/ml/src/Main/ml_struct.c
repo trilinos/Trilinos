@@ -89,6 +89,7 @@ int ML_Create(ML **ml_ptr, int Nlevels)
    (*ml_ptr)->Rmat               = Rmat;
    (*ml_ptr)->Pmat               = Pmat;
    (*ml_ptr)->spectral_radius = max_eigen;
+   (*ml_ptr)->symmetrize_matrix  = ML_FALSE;
    (*ml_ptr)->Amat_Normalization = Amat_Normalization ;
    (*ml_ptr)->timing             = NULL;
 
@@ -200,6 +201,21 @@ int ML_Destroy(ML **ml_ptr)
 #endif
    }
    return 0;
+}
+
+/* ************************************************************************* */
+/* set symmetrize option
+/* ------------------------------------------------------------------------- */
+
+int ML_Set_Symmetrize(ML *ml, int true_or_false)
+{
+  if (true_or_false == ML_TRUE) ml->symmetrize_matrix = ML_TRUE;
+  else if (true_or_false == ML_FALSE) ml->symmetrize_matrix = ML_FALSE;
+  else {
+    printf("ML_Set_Symmetrize: Unknown option %d\n",true_or_false);
+    return(0);
+  }
+  return(1);
 }
 
 /* ************************************************************************* */
@@ -1755,7 +1771,7 @@ int ML_Gen_Smoother_VBlockMultiplicativeSchwarz(ML *ml , int nl, int pre_or_post
 
 #include "ml_mls.h"
 
-int ML_MLS_Setup_Coef(void *sm, int deg) 
+int ML_MLS_Setup_Coef(void *sm, int deg, int symmetrize) 
 { /* 
    * Preset the coefficients for MLS smoothing on current level to 
    * (rho/2)* ( 1-cos((2Pi*k)/(2*deg+1)) )
@@ -1768,9 +1784,7 @@ int ML_MLS_Setup_Coef(void *sm, int deg)
    const double pi=4.e0 * atan(1.e0); /* 3.141592653589793115998e0; */
    int          i, j, nGrid;
    ML_Krylov   *kdata;
-#ifdef SYMMETRIZE
-   ML_Operator *t3;
-#endif
+   ML_Operator *t2, *t3;
 
    /* Get all the pointers */
 
@@ -1793,14 +1807,34 @@ int ML_MLS_Setup_Coef(void *sm, int deg)
      ML_Krylov_Set_ComputeEigenvalues( kdata );
 #ifdef SYMMETRIZE
      ML_Krylov_Set_Amatrix(kdata, t3);
+     t2 = ML_Operator_Create(Amat->comm);
+     ML_Operator_Transpose_byrow(Amat,t2);
+     t3 = ML_Operator_Create(Amat->comm);
+     ML_Operator_Add(Amat,t2,t3);
 #else
-     ML_Krylov_Set_Amatrix(kdata, Amat);
+     if (symmetrize == ML_TRUE) {
+       t2 = ML_Operator_Create(Amat->comm);
+       ML_Operator_Transpose_byrow(Amat,t2);
+       t3 = ML_Operator_Create(Amat->comm);
+       ML_Operator_Add(Amat,t2,t3);
+       ML_Krylov_Set_Amatrix(kdata, t3);
+     }
+     else  ML_Krylov_Set_Amatrix(kdata, Amat);
 #endif
      ML_Krylov_Solve(kdata, Amat->outvec_leng, NULL, NULL);
      Amat->lambda_max = ML_Krylov_Get_MaxEigenvalue(kdata);
      Amat->lambda_min = kdata->ML_eigen_min; 
      ML_Krylov_Destroy( &kdata );
      rho = Amat->lambda_max;
+#ifdef SYMMETRIZE
+     if (t3 != NULL) ML_Operator_Destroy(t3);
+     if (t2 != NULL) ML_Operator_Destroy(t2);
+#else
+     if (symmetrize == ML_TRUE) {
+       if (t3 != NULL) ML_Operator_Destroy(t3);
+       if (t2 != NULL) ML_Operator_Destroy(t2);
+     }
+#endif
    }
 
    /* Boost the largest eigenvalue by a fudge factor  */
@@ -1912,9 +1946,7 @@ int ML_Gen_Smoother_MLS(ML *ml, int nl, int pre_or_post,
    int iii, jjj, degree;
    ML_Krylov   *kdata;
    int ntimes = 1;
-#ifdef SYMMETRIZE
-   ML_Operator *t3;
-#endif
+   ML_Operator *t2, *t3;
 
 #ifdef ML_TIMING
    double         t0;
@@ -1965,13 +1997,34 @@ int ML_Gen_Smoother_MLS(ML *ml, int nl, int pre_or_post,
      ML_Krylov_Set_ComputeEigenvalues( kdata );
 #ifdef SYMMETRIZE
      ML_Krylov_Set_Amatrix(kdata, t3);
+     t2 = ML_Operator_Create(Amat->comm);
+     ML_Operator_Transpose_byrow(Amat,t2);
+     t3 = ML_Operator_Create(Amat->comm);
+     ML_Operator_Add(Amat,t2,t3);
 #else
-     ML_Krylov_Set_Amatrix(kdata, Amat);
+     if (ml->symmetrize_matrix == ML_TRUE) {
+       t2 = ML_Operator_Create(Amat->comm);
+       ML_Operator_Transpose_byrow(Amat,t2);
+       t3 = ML_Operator_Create(Amat->comm);
+       ML_Operator_Add(Amat,t2,t3);
+       ML_Krylov_Set_Amatrix(kdata, t3);
+     }
+     else  ML_Krylov_Set_Amatrix(kdata, Amat);
 #endif
      ML_Krylov_Solve(kdata, Amat->outvec_leng, NULL, NULL);
      Amat->lambda_max = ML_Krylov_Get_MaxEigenvalue(kdata);
      Amat->lambda_min = kdata->ML_eigen_min; 
      ML_Krylov_Destroy( &kdata );
+#ifdef SYMMETRIZE
+     if (t3 != NULL) ML_Operator_Destroy(t3);
+     if (t2 != NULL) ML_Operator_Destroy(t2);
+#else
+     if (ml->symmetrize_matrix == ML_TRUE) {
+       if (t3 != NULL) ML_Operator_Destroy(t3);
+       if (t2 != NULL) ML_Operator_Destroy(t2);
+     }
+#endif
+
    }
 
 
@@ -2003,7 +2056,7 @@ int ML_Gen_Smoother_MLS(ML *ml, int nl, int pre_or_post,
 				   ntimes, 0.0, str);
 	   /* set up the values needed for MLS  */
 	   if (fun == ML_Smoother_MLS_Apply) {
-	     if (ML_MLS_Setup_Coef(&(ml->pre_smoother[i]), 1)) { 
+	     if (ML_MLS_Setup_Coef(&(ml->pre_smoother[i]), 1,ml->symmetrize_matrix)) { 
 	       return pr_error("*** MLS setup failed!\n");  
 	     }
 	   }
@@ -2016,7 +2069,7 @@ int ML_Gen_Smoother_MLS(ML *ml, int nl, int pre_or_post,
 				  ntimes, 0.0, str);
 	   /* set up the values needed for MLS  */
 	   if (fun == ML_Smoother_MLS_Apply) {
-	     if (ML_MLS_Setup_Coef(&(ml->post_smoother[i]), 1)) { 
+	     if (ML_MLS_Setup_Coef(&(ml->post_smoother[i]), 1,ml->symmetrize_matrix)) { 
 	       return pr_error("*** MLS setup failed!\n");  
 	     }
 	   }
@@ -2037,7 +2090,7 @@ int ML_Gen_Smoother_MLS(ML *ml, int nl, int pre_or_post,
 	   /* set up the values needed for MLS  */
 
 	   if (fun == ML_Smoother_MLS_Apply) {
-	     if (ML_MLS_Setup_Coef(&(ml->post_smoother[i]), 1)) { 
+	     if (ML_MLS_Setup_Coef(&(ml->post_smoother[i]), 1,ml->symmetrize_matrix)) { 
 	       return pr_error("*** MLS setup failed!\n");  
 	     }
 	   }
