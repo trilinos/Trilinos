@@ -26,6 +26,13 @@
 #include "ml_include.h"
 
 extern int AZ_using_fortran;
+int    parasails_factorized = 0;
+int    parasails_sym        = 1;
+double parasails_thresh     = 0.01;
+int    parasails_nlevels    = 0;
+double parasails_filter     = 0.;
+double parasails_loadbal    = 0.;
+
 
 /****************************************************************************/
 /* To Run with a rotated null space do the following:                       */
@@ -539,50 +546,23 @@ null_vect[ i*ndim+ leng + 1 ]=-1.;
       /* set up smoothers */
 
       for (level = N_levels-1; level > coarsest_level; level--) {
-         ML_Gen_Smoother_ParaSails(ml , level, ML_PRESMOOTHER, nsmooth, 0,0.0, 1, 0.0,0,0);
+         ML_Gen_Smoother_ParaSails(ml , level, ML_PRESMOOTHER, nsmooth,
+                                parasails_sym, parasails_thresh,
+                                parasails_nlevels, parasails_filter,
+                                parasails_loadbal, parasails_factorized);
+
 /*
          ML_Gen_Smoother_Jacobi(ml , level, ML_PRESMOOTHER, nsmooth, .67);
-         ML_Gen_Smoother_GaussSeidel(ml, level, ML_PRESMOOTHER, nsmooth,1.);
-         ML_Gen_Smoother_SymGaussSeidel(ml, level, ML_PRESMOOTHER, nsmooth,1.);
-         ML_Gen_Smoother_DDILUT(ml,level,ML_PRESMOOTHER);
-         ML_Gen_Smoother_VBlockAdditiveSchwarz(ml,level,ML_PRESMOOTHER,nsmooth,
-                                               0,NULL);
-         ML_Gen_Smoother_VBlockMultiplicativeSchwarz(ml,level,ML_PRESMOOTHER,
-                                                     nsmooth,0,NULL);
-*/
-/*
-         options[AZ_precond]=AZ_dom_decomp; options[AZ_subdomain_solve]=AZ_ilut;
-         ML_Gen_SmootherAztec(ml, level, options, params, proc_config, status,
-                              AZ_ONLY_PRECONDITIONER, ML_PRESMOOTHER,NULL);
-*/
-/*
          ML_Gen_Smoother_Jacobi(ml , level, ML_POSTSMOOTHER, nsmooth, .67 );
-         ML_Gen_Smoother_GaussSeidel(ml, level, ML_POSTSMOOTHER, nsmooth, 1.);
-*/
+
+         ML_Gen_Smoother_SymGaussSeidel(ml, level, ML_PRESMOOTHER, nsmooth,1.);
          ML_Gen_Smoother_SymGaussSeidel(ml, level, ML_POSTSMOOTHER, nsmooth,1.);
+*/
       }
 
-      if (coarse_iterations == 0) 
-      {
-         /*
-         options[AZ_precond]=AZ_dom_decomp; options[AZ_subdomain_solve]=AZ_ilu;
-         ML_Gen_SmootherAztec(ml, coarsest_level, options, params, proc_config, 
-                   status, AZ_ONLY_PRECONDITIONER, ML_PRESMOOTHER,NULL);
-         */
-         ML_Gen_CoarseSolverSuperLU( ml, coarsest_level);
-      }
-      else if ( coarse_iterations == 1 )
-         ML_Gen_Smoother_ParaSails(ml , coarsest_level, ML_PRESMOOTHER, nsmooth, 0,0.0, 1, 0.0,0,0);
-/*
-         ML_Gen_Smoother_SymGaussSeidel(ml, coarsest_level, ML_PRESMOOTHER, 
-                                        coarse_iterations,1.);
-*/
-      else
-      {
-         options[AZ_precond]=AZ_dom_decomp; options[AZ_subdomain_solve]=AZ_ilut;
-         ML_Gen_SmootherAztec(ml, coarsest_level, options, params, proc_config, 
-                status, AZ_ONLY_PRECONDITIONER, ML_PRESMOOTHER,NULL);
-      }
+      if (coarse_iterations == 0) ML_Gen_CoarseSolverSuperLU( ml, coarsest_level);
+      else ML_Gen_Smoother_SymGaussSeidel(ml, coarsest_level, ML_PRESMOOTHER, 
+                                          coarse_iterations,1.);
 
       ML_Gen_Solver(ml, ML_MGV, N_levels-1, coarsest_level); 
 
