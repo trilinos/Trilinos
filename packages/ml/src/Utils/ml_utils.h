@@ -13,10 +13,12 @@
 #ifndef __MLUTILH__
 #define __MLUTILH__
 
+#ifndef __cplusplus
 #ifdef ICL
 #include <time.h>
 #else
 #include <sys/time.h>
+#endif
 #endif
 
 #ifndef ICL
