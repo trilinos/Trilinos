@@ -72,6 +72,9 @@ int Zoltan_PHG_HPart_Lib (
 
   ZOLTAN_TRACE_ENTER(zz, yo);
 
+  /*
+  uprintf(hg->comm, "Zoltan_PHG_HPart_Lib( H(%d,%d,%d) p=%d level=%d)\n", hg->nVtx, hg->nEdge, hg->nNonZero, p, level);
+  */
   /* Check - The partition array must be already allocated */
   if (!part) {
     ZOLTAN_PRINT_ERROR (zz->Proc, yo, "Output partition array is NULL.");
@@ -215,7 +218,7 @@ int Zoltan_PHG_HPart_Lib (
       goto End;
   }
   if (hgp->output_level >= PHG_DEBUG_LIST)
-      printf("FINAL %3d |V|=%6d |E|=%6d |I|=%6d %d/%s/%s-%s p=%d bal=%.2f cutl=%.2f\n",
+      uprintf(hg->comm, "FINAL %3d |V|=%6d |E|=%6d |I|=%6d %d/%s/%s-%s p=%d bal=%.2f cutl=%.2f\n",
              hg->info, hg->nVtx, hg->nEdge, hg->nNonZero, hg->redl, hgp->redm_str,
              hgp->coarsepartition_str, hgp->refinement_str, p,
              Zoltan_PHG_HPart_balance(zz, hg, p, part),

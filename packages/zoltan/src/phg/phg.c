@@ -120,6 +120,10 @@ int Zoltan_PHG(ZZ *zz,                    /* The Zoltan structure  */
         goto End;
     }
 
+    /*
+      uprintf(zoltan_hg->PHG.comm, "Zoltan_PHG kway=%d #parts=%d\n", hgp.kway, zz->LB.Num_Global_Parts);
+    */
+
     /* UVC: if it is bisection anyways; no need to create vmap etc; rdrive is going to call
      Zoltan_PHG_HPart_Lib anyways... */
     if (hgp.kway || zz->LB.Num_Global_Parts==2) { 
@@ -147,7 +151,6 @@ int Zoltan_PHG(ZZ *zz,                    /* The Zoltan structure  */
                                1.0 / ceil (log((double)zz->LB.Num_Global_Parts) / log(2.0)));
 #endif
         /* partition hypergraph */
-        uprintf(&hgp.comm, "calling recursive bisection\n");
         err = Zoltan_PHG_rdivide(1, zz->LB.Num_Global_Parts, output_parts, zz, 
                                 &zoltan_hg->PHG, &hgp, 0);
         if (err != ZOLTAN_OK)  {

@@ -36,10 +36,10 @@ static int Zoltan_PHG_Fill_Hypergraph (ZZ*, ZPHG*);
 /*****************************************************************************/
 
 int Zoltan_PHG_Build_Hypergraph(
-  ZZ *zz,                            /* Zoltan data structure */
-  ZPHG **zoltan_hg,                   /* Hypergraph to be allocated and built.*/
-  PHGPartParams *hgp                 /* Parameters for HG partitioning.*/
-)
+    ZZ *zz,                            /* Zoltan data structure */
+    ZPHG **zoltan_hg,                   /* Hypergraph to be allocated and built.*/
+    PHGPartParams *hgp                 /* Parameters for HG partitioning.*/
+    )
 {
 /* allocates and builds hypergraph data structure using callback routines */
 ZPHG *zhg;                     /* Temporary pointer to Zoltan_PHGraph. */
@@ -144,7 +144,9 @@ char *yo = "Zoltan_PHG_Build_Hypergraph";
     }
   }
 
-  Zoltan_PHG_Plot_2D_Distrib(zz, &(zhg->PHG));
+
+  if (hgp->output_level >= PHG_DEBUG_PLOT)
+      Zoltan_PHG_Plot_2D_Distrib(zz, &(zhg->PHG));
 
   if (hgp->output_level >= PHG_DEBUG_PRINT)
     Zoltan_PHG_HGraph_Print(zz, zhg, &(zhg->PHG), stdout);

@@ -99,8 +99,21 @@ static int matching_loc(ZZ *zz, PHGraph *hg, Matching match)
     int i, j, *eweight, *adj, *visit, degzero=0;
     char *yo = "matching_loc";
     PHGComm *hgc=hg->comm;
+    struct {
+        int nNonZero;
+        int rank;
+    } rootin, root;
 
-    if (!hgc->myProc_y) { /* only root of each column does this */
+    /* find the index of the proc in column group with the most #nonzeros; it will be our root
+       proc for computing moves since it has better knowedge about global hypergraph */
+    rootin.nNonZero = hg->nNonZero; 
+    rootin.rank = hgc->myProc_y;
+    MPI_Allreduce(&rootin, &root, 1, MPI_2INT, MPI_MAXLOC, hgc->col_comm);
+
+    uprintf(hgc, "root is %d with %d nonzero\n", root.rank, root.nNonZero);
+
+    
+    if (hgc->myProc_y==root.rank) { /* only root of each column does this */
         if (!(visit = (int*) ZOLTAN_MALLOC (hg->nVtx * sizeof(int)))
             || !(adj = (int*) ZOLTAN_MALLOC (hg->nVtx * sizeof(int)))
             || !(eweight = (int*) ZOLTAN_CALLOC (hg->nVtx, sizeof(int))) ) {
@@ -164,9 +177,10 @@ static int matching_loc(ZZ *zz, PHGraph *hg, Matching match)
                 }
         }
     }
-    MPI_Bcast(match, hg->nVtx, MPI_INT, 0, hgc->col_comm);
+    MPI_Bcast(match, hg->nVtx, MPI_INT, root.rank, hgc->col_comm);
 
     Zoltan_Multifree (__FILE__, __LINE__, 3, &visit, &adj, &eweight);
+    MPI_Barrier(hgc->Communicator);
     return ZOLTAN_OK;
 }
     

@@ -30,7 +30,6 @@ int Zoltan_PHG_rdivide (int lo, int hi, Partition final, ZZ *zz, PHGraph *hg,
 /*   hg->redl = 2;    */  /* this seems to be the right thing to do, but trying to match previous answers today. */
     hg->redl = hgp->redl;
 
-    uprintf(hgc, "Rdivide(%d, %d)\n", lo, hi);
     /* only one part remaining, record results and exit */
     if (lo == hi) {
         for (i = 0; i < hg->nVtx; i++)
@@ -53,6 +52,8 @@ int Zoltan_PHG_rdivide (int lo, int hi, Partition final, ZZ *zz, PHGraph *hg,
         ZOLTAN_FREE (&part);
         return err;
     }
+
+    uprintf(hgc, "Rdivide(%d, %d): %.1lf\n", lo, hi, Zoltan_PHG_hcut_size_links(hgc, hg, part, 2));
     
     /* if only two parts total, record results and exit */
     if (lo + 1 == hi)  {
@@ -80,7 +81,6 @@ int Zoltan_PHG_rdivide (int lo, int hi, Partition final, ZZ *zz, PHGraph *hg,
     MPI_Allreduce(lpins[0], pins[0], 2*hg->nEdge, MPI_INT, MPI_SUM, hgc->row_comm);
     ZOLTAN_FREE (&lpins[0]); /* we don't need lpins */
     
-    uprintf(hgc, "before splitting for part 0\n");
     new = (PHGraph*) ZOLTAN_MALLOC (sizeof (PHGraph));
     if (new == NULL)  {
         ZOLTAN_PRINT_ERROR (zz->Proc, yo, "Unable to allocate memory.");
@@ -90,25 +90,18 @@ int Zoltan_PHG_rdivide (int lo, int hi, Partition final, ZZ *zz, PHGraph *hg,
     
     /* recursively divide in two parts and repartition hypergraph */
     err = split_hypergraph (pins, hg, new, part, 0, zz);
-    uprintf(hgc, "after splitting for part 0\n");
     if (err != ZOLTAN_OK)
         return err;
-    uprintf(hgc, "before calling RB for 0\n");
     err = Zoltan_PHG_rdivide (lo, mid, final, zz, new, hgp, level+1);
-    uprintf(hgc, "after calling RB for 0\n");
     Zoltan_PHG_HGraph_Free (new);
     if (err != ZOLTAN_OK)
         return err;
 
-    uprintf(hgc, "before splitting for part 1\n");
     err = split_hypergraph (pins, hg, new, part, 1, zz);
     ZOLTAN_FREE (&pins[0]); /* we don't need pins */
-    uprintf(hgc, "after splitting for part 1\n");
     if (err != ZOLTAN_OK)
         return err;
-    uprintf(hgc, "before calling RB for 1\n");
     err = Zoltan_PHG_rdivide (mid+1, hi, final, zz, new, hgp, level+1);
-    uprintf(hgc, "after calling RB for 1\n");
     Zoltan_PHG_HGraph_Free (new);
     if (err != ZOLTAN_OK)
       return err;
@@ -175,7 +168,8 @@ static int split_hypergraph (int *pins[2], PHGraph *old, PHGraph *new, Partition
     new->nEdge  = 0;
     new->nNonZero = 0;
     for (edge = 0; edge < old->nEdge; edge++)
-        if (pins[partid][edge]) {  /* edge has at least one vertex in partition */
+        if (pins[partid][edge]>1) {  /* edge has at least two vertices in partition:
+                                        we are skipping size 1 nets */
             new->hindex[new->nEdge] = new->nNonZero;
             for (i = old->hindex[edge]; i < old->hindex[edge+1]; i++)
                 if (tmap [old->hvertex[i]] >= 0)  {

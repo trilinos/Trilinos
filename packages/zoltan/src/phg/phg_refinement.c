@@ -21,11 +21,13 @@ extern "C" {
 #include "phg.h"
 
 
+
+
+
+    /*
 #define _DEBUG
 #define _DEBUG2
 #define _DEBUG3
-
-    /*
     */
     
 static ZOLTAN_PHG_REFINEMENT_FN refine_no;
@@ -114,10 +116,16 @@ static void fm2_move_vertex_oneway(int v, PHGraph *hg, Partition part, float *ga
     
         --pins[pno][n];
         --lpins[pno][n];
-#ifdef _DEBUG2
+        ++pins[vto][n];
+        ++lpins[vto][n];
+
+#ifdef _DEBUG
         if (pins[pno][n] < 0)
             errexit("move of %d makes pin[%d][%d]=%d", v, pno, n, pins[pno][n]);
 #endif
+
+        if ((pins[0][n] + pins[1][n])==1) /* size 1 net; it is never critical */
+            continue;
 
         if (pins[pno][n]==1) {
             for (i = hg->hindex[n]; i < hg->hindex[n+1]; ++i) {
@@ -132,8 +140,6 @@ static void fm2_move_vertex_oneway(int v, PHGraph *hg, Partition part, float *ga
             }
         }
 
-        ++pins[vto][n];
-        ++lpins[vto][n];
         if (pins[vto][n]==1) { /* now there is at least one pin here */
             for (i = hg->hindex[n]; i < hg->hindex[n+1]; ++i) {
                 int u = hg->hvertex[i];
@@ -323,7 +329,6 @@ static int refine_fm2 (
     rootin.nNonZero = hg->nNonZero; 
     rootin.rank = hgc->myProc_y;
     MPI_Allreduce(&rootin, &root, 1, MPI_2INT, MPI_MAXLOC, hgc->col_comm);
-    printf("%s #nonzero=%d  root = %d with #nonzero=%d\n", uMe(hgc), hg->nNonZero, root.rank, root.nNonZero);
     
     /* Calculate the weights in each partition and total, then maxima */
     weights[0] = weights[1] = 0.0;
@@ -339,9 +344,7 @@ static int refine_fm2 (
             lweights[part[i]] += 1.0;
     }
 
-    uprintf(hgc, "before weight reduce on row\n");
     MPI_Allreduce(lweights, weights, 2, MPI_DOUBLE, MPI_SUM, hgc->row_comm);
-    uprintf(hgc, "after weight reduce on row\n");
     total_weight = weights[0] + weights[1];
     zeropw = total_weight * ratio;
     total_weight = lweights[0] + lweights[1];
@@ -399,6 +402,8 @@ static int refine_fm2 (
 
         /* decide which way the moves will be in this pass */
         from = (weights[0] < zeropw) ? 1 : 0;
+        /* we want to be sure that everybody!!! picks the same source */
+        MPI_Bcast(&from, 1, MPI_INT, 0, hgc->Communicator); 
         to = 1-from;
                 
 #ifdef _DEBUG
@@ -421,10 +426,12 @@ static int refine_fm2 (
                 lgain[i] = 0;
                 for (j = hg->vindex[i]; j < hg->vindex[i+1]; j++) {
                     int edge = hg->vedge[j];
-                    if (pins[part[i]][edge] == 1)
-                        lgain[i] += (hg->ewgt ? hg->ewgt[edge] : 1.0);
-                    else if (pins[1-part[i]][edge] == 0)
-                        lgain[i] -= (hg->ewgt ? hg->ewgt[edge] : 1.0);
+                    if ((pins[0][edge]+pins[1][edge])>1) { /* if they have at least 2 pins :) */
+                        if (pins[part[i]][edge] == 1)
+                            lgain[i] += (hg->ewgt ? hg->ewgt[edge] : 1.0);
+                        else if (pins[1-part[i]][edge] == 0)
+                            lgain[i] -= (hg->ewgt ? hg->ewgt[edge] : 1.0);
+                    }
                 }
             }
         /* now sum up all gains on only root proc */
@@ -445,7 +452,8 @@ static int refine_fm2 (
             
             while ((v>=0) && (neggaincnt < maxneggain) && ((lweights[to]+minvw) <= max_weight[to]) ) {
 
-
+                if ((hg->nVtx<6000) && (movecnt>0)) /* UVC: for debugging in the second recursive exit after one move */
+                    break;
                 if (Zoltan_heap_empty(&heap[from])) /* too bad it is empty */
                     break;
                 v = Zoltan_heap_extract_max(&heap[from]);    
@@ -550,7 +558,7 @@ static int refine_fm2 (
         imbal = fabs(weights[0]-zeropw)/zeropw;
         printf("%s End of Pass %d Comp.Cut=%.2lf RealCut=%.2lf W[%5.0lf, %5.0lf] Imbal=%.2lf\n", uMe(hgc), round, cutsize, best_cutsize, weights[0], weights[1], imbal);
         if (cutsize<best_cutsize) {
-            errexit("Invalid cut!!!");
+            errexit("*** HEY HEY Invalid cut!!!");
         }
         /* debuggging code ends here */
 #endif
