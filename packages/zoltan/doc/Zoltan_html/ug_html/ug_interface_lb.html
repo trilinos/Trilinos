@@ -253,13 +253,20 @@ to which the exported objects are being exported.</td>
 <tr NOSAVE>
 <td VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</td>
 
-<td>Not yet implemented.&nbsp;</td>
+<td WIDTH="85%">
+function <b>Zoltan_LB_Set_Part_Sizes</b>(
+<i>zz,global_part,len,partids,wgtidx,partsizes</i>)
+<br>integer(Zoltan_INT) :: Zoltan_LB_Set_Part_Sizes
+<br>type(Zoltan_Struct) INTENT(IN) zz
+<br>integer(Zoltan_INT) INTENT(IN) global_part,len,partids(*),wgtidx(*)
+<br>real(Zoltan_FLOAT) INTENT(IN) partsizes(*)
+</td>
 </tr>
 </table>
 
 <hr WIDTH="100%"><b>Zoltan_LB_Set_Part_Sizes</b> is used to specify the
 desired partition sizes in Zoltan. By default, Zoltan assumes that all
-partitions should be of equal size.&nbsp; With Zoltan_LB_Set_Part_Sizes,
+partitions should be of equal size.&nbsp; With <b>Zoltan_LB_Set_Part_Sizes</b>,
 one can specify the relative (not absolute) sizes of the partitions. For
 example, if two partitions are requested and the desired sizes are 1 and
 2, that means that the first partition will be assigned approximately one
