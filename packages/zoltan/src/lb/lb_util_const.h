@@ -25,6 +25,7 @@ static char *cvs_lbutilconsth_id = "$Id$";
 
 extern void LB_perform_error_checking(LB *);
 extern void LB_Get_Obj_List(LB *, LB_GID *, LB_LID *, int, float *, int *);
+extern int LB_pad_for_alignment(int);
 
 /*****************************************************************************/
 /*****************************************************************************/

@@ -69,3 +69,20 @@ void LB_Get_Obj_List(LB *lb, LB_GID *global_ids, LB_LID *local_ids,
   }
 }
 
+/*****************************************************************************/
+/*****************************************************************************/
+/*****************************************************************************/
+
+#define ALIGN_SIZE 8
+int LB_pad_for_alignment(int num_bytes)
+{
+/*
+ * Function returns the number of bytes needed to increase the buffer
+ * to an ALIGN_SIZE-byte boundary. If num_bytes is not divisible by ALIGN_SIZE,
+ * return the number of bytes needed to add to it to get a number
+ * divisible by ALIGN_SIZE.
+ */
+  return(ALIGN_SIZE - (((num_bytes-1) % ALIGN_SIZE) + 1));
+}
+#undef ALIGN_SIZE
+
