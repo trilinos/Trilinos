@@ -141,25 +141,30 @@ bool Problem_Manager::solve()
        << grpB.getNormF() << endl;
   double normSum = grpA.getNormF() + grpB.getNormF();
 
+  // Now do the decoupled solve
+
   while( normSum > 1.e-5 )
   {
-    problemA.setAuxillarySolution(problemB.getSolution());
     solverA.reset(grpA, *statusTest, *nlParams);
     solverA.solve();
-    problemB.setAuxillarySolution(problemA.getSolution());
+
+    // Extract and use final solution
+    const NOX::Epetra::Group& finalGroupA =
+      dynamic_cast<const NOX::Epetra::Group&>(solverA.getSolutionGroup());
+    const Epetra_Vector& finalSolutionA =
+      (dynamic_cast<const NOX::Epetra::Vector&>(finalGroupA.getX())).getEpetraVector();
+
+    problemB.setAuxillarySolution(finalSolutionA);
     solverB.reset(grpB, *statusTest, *nlParams);
     solverB.solve();
 
-    // Extract and use final solutions
-    const NOX::Epetra::Group& finalGroupA =
-      dynamic_cast<const NOX::Epetra::Group&>(solverA.getSolutionGroup());
+    // Extract and use final solution
     const NOX::Epetra::Group& finalGroupB =
       dynamic_cast<const NOX::Epetra::Group&>(solverB.getSolutionGroup());
-    const Epetra_Vector& finalSolutionA =
-      (dynamic_cast<const NOX::Epetra::Vector&>(finalGroupA.getX())).getEpetraVector();
     const Epetra_Vector& finalSolutionB =
       (dynamic_cast<const NOX::Epetra::Vector&>(finalGroupB.getX())).getEpetraVector();
   
+    problemA.setAuxillarySolution(finalSolutionB);
     grpA.setX(finalSolutionA);
     grpA.computeF();
     grpB.setX(finalSolutionB);
