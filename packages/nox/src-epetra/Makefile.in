@@ -123,6 +123,7 @@ EPETRA_H = \
 	$(srcdir)/NOX_Epetra_SharedOperator.H \
         $(srcdir)/NOX_Epetra_MatrixFree.H \
         $(srcdir)/NOX_Epetra_FiniteDifference.H \
+        $(srcdir)/NOX_Epetra_FiniteDifferenceColoring.H \
 	$(srcdir)/NOX_Epetra_Interface.H \
 	$(srcdir)/NOX_Epetra_Operator.H \
 	$(srcdir)/NOX_Epetra_Operator_JacobiPrec.H
@@ -134,6 +135,7 @@ EPETRA = \
 	$(srcdir)/NOX_Epetra_SharedOperator.C \
         $(srcdir)/NOX_Epetra_MatrixFree.C \
         $(srcdir)/NOX_Epetra_FiniteDifference.C \
+        $(srcdir)/NOX_Epetra_FiniteDifferenceColoring.C \
 	$(srcdir)/NOX_Epetra_Operator_JacobiPrec.C
 
 
@@ -192,6 +194,7 @@ am_libnoxepetra_a_OBJECTS = libnoxepetra_a-NOX_Epetra_Vector.$(OBJEXT) \
 	libnoxepetra_a-NOX_Epetra_SharedOperator.$(OBJEXT) \
 	libnoxepetra_a-NOX_Epetra_MatrixFree.$(OBJEXT) \
 	libnoxepetra_a-NOX_Epetra_FiniteDifference.$(OBJEXT) \
+	libnoxepetra_a-NOX_Epetra_FiniteDifferenceColoring.$(OBJEXT) \
 	libnoxepetra_a-NOX_Epetra_Operator_JacobiPrec.$(OBJEXT)
 libnoxepetra_a_OBJECTS = $(am_libnoxepetra_a_OBJECTS)
 
@@ -203,6 +206,7 @@ LIBS = @LIBS@
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 @AMDEP_TRUE@DEP_FILES = \
 @AMDEP_TRUE@	$(DEPDIR)/libnoxepetra_a-NOX_Epetra_FiniteDifference.Po \
+@AMDEP_TRUE@	$(DEPDIR)/libnoxepetra_a-NOX_Epetra_FiniteDifferenceColoring.Po \
 @AMDEP_TRUE@	$(DEPDIR)/libnoxepetra_a-NOX_Epetra_Group.Po \
 @AMDEP_TRUE@	$(DEPDIR)/libnoxepetra_a-NOX_Epetra_MatrixFree.Po \
 @AMDEP_TRUE@	$(DEPDIR)/libnoxepetra_a-NOX_Epetra_Operator_JacobiPrec.Po \
@@ -273,6 +277,8 @@ libnoxepetra_a-NOX_Epetra_MatrixFree.$(OBJEXT): \
 	$(srcdir)/NOX_Epetra_MatrixFree.C
 libnoxepetra_a-NOX_Epetra_FiniteDifference.$(OBJEXT): \
 	$(srcdir)/NOX_Epetra_FiniteDifference.C
+libnoxepetra_a-NOX_Epetra_FiniteDifferenceColoring.$(OBJEXT): \
+	$(srcdir)/NOX_Epetra_FiniteDifferenceColoring.C
 libnoxepetra_a-NOX_Epetra_Operator_JacobiPrec.$(OBJEXT): \
 	$(srcdir)/NOX_Epetra_Operator_JacobiPrec.C
 libnoxepetra.a: $(libnoxepetra_a_OBJECTS) $(libnoxepetra_a_DEPENDENCIES) 
@@ -287,6 +293,7 @@ distclean-compile:
 	-rm -f *.tab.c
 
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/libnoxepetra_a-NOX_Epetra_FiniteDifference.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/libnoxepetra_a-NOX_Epetra_FiniteDifferenceColoring.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/libnoxepetra_a-NOX_Epetra_Group.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/libnoxepetra_a-NOX_Epetra_MatrixFree.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/libnoxepetra_a-NOX_Epetra_Operator_JacobiPrec.Po@am__quote@
@@ -367,6 +374,18 @@ libnoxepetra_a-NOX_Epetra_FiniteDifference.obj: $(srcdir)/NOX_Epetra_FiniteDiffe
 @AMDEP_TRUE@	depfile='$(DEPDIR)/libnoxepetra_a-NOX_Epetra_FiniteDifference.Po' tmpdepfile='$(DEPDIR)/libnoxepetra_a-NOX_Epetra_FiniteDifference.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnoxepetra_a_CXXFLAGS) $(CXXFLAGS) -c -o libnoxepetra_a-NOX_Epetra_FiniteDifference.obj `cygpath -w $(srcdir)/NOX_Epetra_FiniteDifference.C`
+
+libnoxepetra_a-NOX_Epetra_FiniteDifferenceColoring.o: $(srcdir)/NOX_Epetra_FiniteDifferenceColoring.C
+@AMDEP_TRUE@	source='$(srcdir)/NOX_Epetra_FiniteDifferenceColoring.C' object='libnoxepetra_a-NOX_Epetra_FiniteDifferenceColoring.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/libnoxepetra_a-NOX_Epetra_FiniteDifferenceColoring.Po' tmpdepfile='$(DEPDIR)/libnoxepetra_a-NOX_Epetra_FiniteDifferenceColoring.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnoxepetra_a_CXXFLAGS) $(CXXFLAGS) -c -o libnoxepetra_a-NOX_Epetra_FiniteDifferenceColoring.o `test -f $(srcdir)/NOX_Epetra_FiniteDifferenceColoring.C || echo '$(srcdir)/'`$(srcdir)/NOX_Epetra_FiniteDifferenceColoring.C
+
+libnoxepetra_a-NOX_Epetra_FiniteDifferenceColoring.obj: $(srcdir)/NOX_Epetra_FiniteDifferenceColoring.C
+@AMDEP_TRUE@	source='$(srcdir)/NOX_Epetra_FiniteDifferenceColoring.C' object='libnoxepetra_a-NOX_Epetra_FiniteDifferenceColoring.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/libnoxepetra_a-NOX_Epetra_FiniteDifferenceColoring.Po' tmpdepfile='$(DEPDIR)/libnoxepetra_a-NOX_Epetra_FiniteDifferenceColoring.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnoxepetra_a_CXXFLAGS) $(CXXFLAGS) -c -o libnoxepetra_a-NOX_Epetra_FiniteDifferenceColoring.obj `cygpath -w $(srcdir)/NOX_Epetra_FiniteDifferenceColoring.C`
 
 libnoxepetra_a-NOX_Epetra_Operator_JacobiPrec.o: $(srcdir)/NOX_Epetra_Operator_JacobiPrec.C
 @AMDEP_TRUE@	source='$(srcdir)/NOX_Epetra_Operator_JacobiPrec.C' object='libnoxepetra_a-NOX_Epetra_Operator_JacobiPrec.o' libtool=no @AMDEPBACKSLASH@
