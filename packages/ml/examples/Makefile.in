@@ -22,7 +22,7 @@
 #with aztecoo and epetra support enabled, then a c++ linker is invoked
 #for ML's interfaces to those two packages.
 
-SOURCES = $(ml_2level_DD_SOURCES) $(ml_AztecMsr_SOURCES) $(ml_EpetraVbr_SOURCES) $(ml_analyze_SOURCES) $(ml_aztec_simple_SOURCES) $(ml_example1d_SOURCES) $(ml_example1dGS_SOURCES) $(ml_example2d_SOURCES) $(ml_example3d_SOURCES) $(ml_example_elasticity_SOURCES) $(ml_filtering_SOURCES) $(ml_maxwell_SOURCES) $(ml_multiple_rhs_SOURCES) $(ml_operator_SOURCES) $(ml_preconditioner_SOURCES) $(ml_read_elas_SOURCES) $(ml_read_matrix_AIJ_SOURCES) $(ml_read_maxwell_SOURCES) $(ml_read_salsa_SOURCES) $(ml_readfile_SOURCES) $(ml_recirc_SOURCES) $(ml_simple_max_SOURCES) $(ml_viz_SOURCES) $(mlguide_SOURCES) $(mlguide_par_SOURCES)
+SOURCES = $(ml_2level_DD_SOURCES) $(ml_AztecMsr_SOURCES) $(ml_EpetraVbr_SOURCES) $(ml_analyze_SOURCES) $(ml_aztec_simple_SOURCES) $(ml_example1d_SOURCES) $(ml_example1dGS_SOURCES) $(ml_example2d_SOURCES) $(ml_example3d_SOURCES) $(ml_example_elasticity_SOURCES) $(ml_filtering_SOURCES) $(ml_maxwell_SOURCES) $(ml_multiple_rhs_SOURCES) $(ml_operator_SOURCES) $(ml_preconditioner_SOURCES) $(ml_read_elas_SOURCES) $(ml_read_matrix_AIJ_SOURCES) $(ml_read_maxwell_SOURCES) $(ml_read_salsa_SOURCES) $(ml_readfile_SOURCES) $(ml_recirc_SOURCES) $(ml_simple_max_SOURCES) $(ml_user_aggr_SOURCES) $(ml_viz_SOURCES) $(mlguide_SOURCES) $(mlguide_par_SOURCES)
 
 srcdir = @srcdir@
 top_srcdir = @top_srcdir@
@@ -62,6 +62,7 @@ host_triplet = @host@
 @HAVE_MPI_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_operator$(EXEEXT) \
 @HAVE_MPI_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_AztecMsr$(EXEEXT) \
 @HAVE_MPI_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_filtering$(EXEEXT) \
+@HAVE_MPI_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_user_aggr$(EXEEXT) \
 @HAVE_MPI_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_EpetraVbr$(EXEEXT) \
 @HAVE_MPI_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_viz$(EXEEXT) \
 @HAVE_MPI_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_analyze$(EXEEXT) \
@@ -88,6 +89,7 @@ host_triplet = @host@
 @HAVE_MPI_TRUE@@ML_BENCHMARKING_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_operator$(EXEEXT) \
 @HAVE_MPI_TRUE@@ML_BENCHMARKING_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_AztecMsr$(EXEEXT) \
 @HAVE_MPI_TRUE@@ML_BENCHMARKING_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_filtering$(EXEEXT) \
+@HAVE_MPI_TRUE@@ML_BENCHMARKING_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_user_aggr$(EXEEXT) \
 @HAVE_MPI_TRUE@@ML_BENCHMARKING_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_EpetraVbr$(EXEEXT) \
 @HAVE_MPI_TRUE@@ML_BENCHMARKING_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_viz$(EXEEXT) \
 @HAVE_MPI_TRUE@@ML_BENCHMARKING_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_analyze$(EXEEXT) \
@@ -113,6 +115,7 @@ host_triplet = @host@
 @HAVE_MPI_TRUE@@ML_BENCHMARKING_TRUE@@ML_STANDALONE_MODE_FALSE@	ml_operator$(EXEEXT) \
 @HAVE_MPI_TRUE@@ML_BENCHMARKING_TRUE@@ML_STANDALONE_MODE_FALSE@	ml_AztecMsr$(EXEEXT) \
 @HAVE_MPI_TRUE@@ML_BENCHMARKING_TRUE@@ML_STANDALONE_MODE_FALSE@	ml_filtering$(EXEEXT) \
+@HAVE_MPI_TRUE@@ML_BENCHMARKING_TRUE@@ML_STANDALONE_MODE_FALSE@	ml_user_aggr$(EXEEXT) \
 @HAVE_MPI_TRUE@@ML_BENCHMARKING_TRUE@@ML_STANDALONE_MODE_FALSE@	ml_EpetraVbr$(EXEEXT) \
 @HAVE_MPI_TRUE@@ML_BENCHMARKING_TRUE@@ML_STANDALONE_MODE_FALSE@	ml_viz$(EXEEXT) \
 @HAVE_MPI_TRUE@@ML_BENCHMARKING_TRUE@@ML_STANDALONE_MODE_FALSE@	ml_analyze$(EXEEXT) \
@@ -305,6 +308,12 @@ am__ml_simple_max_SOURCES_DIST = $(srcdir)/ml_simple_max.c
 ml_simple_max_OBJECTS = $(am_ml_simple_max_OBJECTS)
 @ML_STANDALONE_MODE_FALSE@ml_simple_max_DEPENDENCIES =  \
 @ML_STANDALONE_MODE_FALSE@	$(am__DEPENDENCIES_9)
+am__ml_user_aggr_SOURCES_DIST = $(srcdir)/ml_user_aggr.cpp
+@ML_STANDALONE_MODE_FALSE@am_ml_user_aggr_OBJECTS =  \
+@ML_STANDALONE_MODE_FALSE@	ml_user_aggr-ml_user_aggr.$(OBJEXT)
+ml_user_aggr_OBJECTS = $(am_ml_user_aggr_OBJECTS)
+@ML_STANDALONE_MODE_FALSE@ml_user_aggr_DEPENDENCIES =  \
+@ML_STANDALONE_MODE_FALSE@	$(am__DEPENDENCIES_9)
 am__ml_viz_SOURCES_DIST = $(srcdir)/ml_viz.cpp
 @ML_STANDALONE_MODE_FALSE@am_ml_viz_OBJECTS = ml_viz-ml_viz.$(OBJEXT)
 ml_viz_OBJECTS = $(am_ml_viz_OBJECTS)
@@ -340,6 +349,7 @@ am__depfiles_maybe = depfiles
 @AMDEP_TRUE@	./$(DEPDIR)/ml_readfile-ml_readfile.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/ml_recirc-ml_recirc.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/ml_simple_max-ml_simple_max.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/ml_user_aggr-ml_user_aggr.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/ml_viz-ml_viz.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/mlguide-mlguide.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/mlguide_par-mlguide_par.Po
@@ -363,7 +373,8 @@ SOURCES = $(ml_2level_DD_SOURCES) $(ml_AztecMsr_SOURCES) \
 	$(ml_read_matrix_AIJ_SOURCES) $(ml_read_maxwell_SOURCES) \
 	$(ml_read_salsa_SOURCES) $(ml_readfile_SOURCES) \
 	$(ml_recirc_SOURCES) $(ml_simple_max_SOURCES) \
-	$(ml_viz_SOURCES) $(mlguide_SOURCES) $(mlguide_par_SOURCES)
+	$(ml_user_aggr_SOURCES) $(ml_viz_SOURCES) $(mlguide_SOURCES) \
+	$(mlguide_par_SOURCES)
 DIST_SOURCES = $(am__ml_2level_DD_SOURCES_DIST) \
 	$(am__ml_AztecMsr_SOURCES_DIST) \
 	$(am__ml_EpetraVbr_SOURCES_DIST) \
@@ -384,7 +395,8 @@ DIST_SOURCES = $(am__ml_2level_DD_SOURCES_DIST) \
 	$(am__ml_read_maxwell_SOURCES_DIST) \
 	$(am__ml_read_salsa_SOURCES_DIST) \
 	$(am__ml_readfile_SOURCES_DIST) $(am__ml_recirc_SOURCES_DIST) \
-	$(am__ml_simple_max_SOURCES_DIST) $(am__ml_viz_SOURCES_DIST) \
+	$(am__ml_simple_max_SOURCES_DIST) \
+	$(am__ml_user_aggr_SOURCES_DIST) $(am__ml_viz_SOURCES_DIST) \
 	$(mlguide_SOURCES) $(mlguide_par_SOURCES)
 ETAGS = etags
 CTAGS = ctags
@@ -543,6 +555,7 @@ mlguide_par_SOURCES = $(srcdir)/mlguide_par.c
 @ML_STANDALONE_MODE_FALSE@ml_operator_SOURCES = $(srcdir)/ml_operator.cpp
 @ML_STANDALONE_MODE_FALSE@ml_AztecMsr_SOURCES = $(srcdir)/ml_AztecMsr.cpp
 @ML_STANDALONE_MODE_FALSE@ml_filtering_SOURCES = $(srcdir)/ml_filtering.cpp
+@ML_STANDALONE_MODE_FALSE@ml_user_aggr_SOURCES = $(srcdir)/ml_user_aggr.cpp
 @ML_STANDALONE_MODE_FALSE@ml_EpetraVbr_SOURCES = $(srcdir)/ml_EpetraVbr.cpp
 @ML_STANDALONE_MODE_FALSE@ml_viz_SOURCES = $(srcdir)/ml_viz.cpp
 @ML_STANDALONE_MODE_FALSE@ml_analyze_SOURCES = $(srcdir)/ml_analyze.cpp
@@ -699,6 +712,10 @@ mlguide_par_LINK = ${mllink}
 @ML_STANDALONE_MODE_FALSE@ml_filtering_CXXFLAGS = ${ml_common_include_locations}
 @ML_STANDALONE_MODE_FALSE@ml_filtering_LDADD = ${ml_libs}
 @ML_STANDALONE_MODE_FALSE@ml_filtering_LINK = ${mllink}
+@ML_STANDALONE_MODE_FALSE@ml_user_aggr_CPPFLAGS = ${ml_common_include_locations}
+@ML_STANDALONE_MODE_FALSE@ml_user_aggr_CXXFLAGS = ${ml_common_include_locations}
+@ML_STANDALONE_MODE_FALSE@ml_user_aggr_LDADD = ${ml_libs}
+@ML_STANDALONE_MODE_FALSE@ml_user_aggr_LINK = ${mllink}
 @ML_STANDALONE_MODE_FALSE@ml_EpetraVbr_CPPFLAGS = ${ml_common_include_locations}
 @ML_STANDALONE_MODE_FALSE@ml_EpetraVbr_CXXFLAGS = ${ml_common_include_locations}
 @ML_STANDALONE_MODE_FALSE@ml_EpetraVbr_LDADD = ${ml_libs}
@@ -831,6 +848,9 @@ ml_recirc$(EXEEXT): $(ml_recirc_OBJECTS) $(ml_recirc_DEPENDENCIES)
 ml_simple_max$(EXEEXT): $(ml_simple_max_OBJECTS) $(ml_simple_max_DEPENDENCIES) 
 	@rm -f ml_simple_max$(EXEEXT)
 	$(ml_simple_max_LINK) $(ml_simple_max_LDFLAGS) $(ml_simple_max_OBJECTS) $(ml_simple_max_LDADD) $(LIBS)
+ml_user_aggr$(EXEEXT): $(ml_user_aggr_OBJECTS) $(ml_user_aggr_DEPENDENCIES) 
+	@rm -f ml_user_aggr$(EXEEXT)
+	$(ml_user_aggr_LINK) $(ml_user_aggr_LDFLAGS) $(ml_user_aggr_OBJECTS) $(ml_user_aggr_LDADD) $(LIBS)
 ml_viz$(EXEEXT): $(ml_viz_OBJECTS) $(ml_viz_DEPENDENCIES) 
 	@rm -f ml_viz$(EXEEXT)
 	$(ml_viz_LINK) $(ml_viz_LDFLAGS) $(ml_viz_OBJECTS) $(ml_viz_LDADD) $(LIBS)
@@ -869,6 +889,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_readfile-ml_readfile.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_recirc-ml_recirc.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_simple_max-ml_simple_max.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_user_aggr-ml_user_aggr.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_viz-ml_viz.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mlguide-mlguide.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mlguide_par-mlguide_par.Po@am__quote@
@@ -1288,6 +1309,22 @@ ml_read_matrix_AIJ-ml_read_matrix_AIJ.obj: $(srcdir)/ml_read_matrix_AIJ.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ml_read_matrix_AIJ-ml_read_matrix_AIJ.Po' tmpdepfile='$(DEPDIR)/ml_read_matrix_AIJ-ml_read_matrix_AIJ.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ml_read_matrix_AIJ_CPPFLAGS) $(CPPFLAGS) $(ml_read_matrix_AIJ_CXXFLAGS) $(CXXFLAGS) -c -o ml_read_matrix_AIJ-ml_read_matrix_AIJ.obj `if test -f '$(srcdir)/ml_read_matrix_AIJ.cpp'; then $(CYGPATH_W) '$(srcdir)/ml_read_matrix_AIJ.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ml_read_matrix_AIJ.cpp'; fi`
+
+ml_user_aggr-ml_user_aggr.o: $(srcdir)/ml_user_aggr.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ml_user_aggr_CPPFLAGS) $(CPPFLAGS) $(ml_user_aggr_CXXFLAGS) $(CXXFLAGS) -MT ml_user_aggr-ml_user_aggr.o -MD -MP -MF "$(DEPDIR)/ml_user_aggr-ml_user_aggr.Tpo" -c -o ml_user_aggr-ml_user_aggr.o `test -f '$(srcdir)/ml_user_aggr.cpp' || echo '$(srcdir)/'`$(srcdir)/ml_user_aggr.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ml_user_aggr-ml_user_aggr.Tpo" "$(DEPDIR)/ml_user_aggr-ml_user_aggr.Po"; else rm -f "$(DEPDIR)/ml_user_aggr-ml_user_aggr.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ml_user_aggr.cpp' object='ml_user_aggr-ml_user_aggr.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ml_user_aggr-ml_user_aggr.Po' tmpdepfile='$(DEPDIR)/ml_user_aggr-ml_user_aggr.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ml_user_aggr_CPPFLAGS) $(CPPFLAGS) $(ml_user_aggr_CXXFLAGS) $(CXXFLAGS) -c -o ml_user_aggr-ml_user_aggr.o `test -f '$(srcdir)/ml_user_aggr.cpp' || echo '$(srcdir)/'`$(srcdir)/ml_user_aggr.cpp
+
+ml_user_aggr-ml_user_aggr.obj: $(srcdir)/ml_user_aggr.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ml_user_aggr_CPPFLAGS) $(CPPFLAGS) $(ml_user_aggr_CXXFLAGS) $(CXXFLAGS) -MT ml_user_aggr-ml_user_aggr.obj -MD -MP -MF "$(DEPDIR)/ml_user_aggr-ml_user_aggr.Tpo" -c -o ml_user_aggr-ml_user_aggr.obj `if test -f '$(srcdir)/ml_user_aggr.cpp'; then $(CYGPATH_W) '$(srcdir)/ml_user_aggr.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ml_user_aggr.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ml_user_aggr-ml_user_aggr.Tpo" "$(DEPDIR)/ml_user_aggr-ml_user_aggr.Po"; else rm -f "$(DEPDIR)/ml_user_aggr-ml_user_aggr.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ml_user_aggr.cpp' object='ml_user_aggr-ml_user_aggr.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ml_user_aggr-ml_user_aggr.Po' tmpdepfile='$(DEPDIR)/ml_user_aggr-ml_user_aggr.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ml_user_aggr_CPPFLAGS) $(CPPFLAGS) $(ml_user_aggr_CXXFLAGS) $(CXXFLAGS) -c -o ml_user_aggr-ml_user_aggr.obj `if test -f '$(srcdir)/ml_user_aggr.cpp'; then $(CYGPATH_W) '$(srcdir)/ml_user_aggr.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ml_user_aggr.cpp'; fi`
 
 ml_viz-ml_viz.o: $(srcdir)/ml_viz.cpp
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ml_viz_CPPFLAGS) $(CPPFLAGS) $(ml_viz_CXXFLAGS) $(CXXFLAGS) -MT ml_viz-ml_viz.o -MD -MP -MF "$(DEPDIR)/ml_viz-ml_viz.Tpo" -c -o ml_viz-ml_viz.o `test -f '$(srcdir)/ml_viz.cpp' || echo '$(srcdir)/'`$(srcdir)/ml_viz.cpp; \

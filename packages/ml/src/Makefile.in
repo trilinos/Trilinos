@@ -92,12 +92,12 @@ am__objects_1 = ml_agg_uncoupled.$(OBJEXT) ml_amg.$(OBJEXT) \
 	ml_agg_coupled.$(OBJEXT) ml_amg_genP.$(OBJEXT) \
 	ml_check.$(OBJEXT) ml_agg_dd.$(OBJEXT) ml_agg_genP.$(OBJEXT) \
 	ml_amg_MIS.$(OBJEXT) ml_agg_MIS.$(OBJEXT) \
-	ml_agg_METIS.$(OBJEXT) ml_agg_VBMETIS.$(OBJEXT) \
-	ml_agg_Zoltan.$(OBJEXT) ml_agg_ParMETIS.$(OBJEXT) \
-	ml_aggregate.$(OBJEXT) ml_ggraph.$(OBJEXT) \
-	ml_agg_reitzinger.$(OBJEXT) ml_gridagx.$(OBJEXT) \
-	ml_pde.$(OBJEXT) ml_bdrypts.$(OBJEXT) ml_grid.$(OBJEXT) \
-	ml_gridfunc.$(OBJEXT) ml_setup.$(OBJEXT) \
+	ml_agg_METIS.$(OBJEXT) ml_agg_user.$(OBJEXT) \
+	ml_agg_VBMETIS.$(OBJEXT) ml_agg_Zoltan.$(OBJEXT) \
+	ml_agg_ParMETIS.$(OBJEXT) ml_aggregate.$(OBJEXT) \
+	ml_ggraph.$(OBJEXT) ml_agg_reitzinger.$(OBJEXT) \
+	ml_gridagx.$(OBJEXT) ml_pde.$(OBJEXT) ml_bdrypts.$(OBJEXT) \
+	ml_grid.$(OBJEXT) ml_gridfunc.$(OBJEXT) ml_setup.$(OBJEXT) \
 	ml_elementagx.$(OBJEXT) ml_get_basis.$(OBJEXT) \
 	ml_mapper.$(OBJEXT) ml_struct.$(OBJEXT) driver.$(OBJEXT) \
 	mli_solver.$(OBJEXT) ml_seg_precond.$(OBJEXT) ml_ggb.$(OBJEXT) \
@@ -165,6 +165,7 @@ am__depfiles_maybe = depfiles
 @AMDEP_TRUE@	./$(DEPDIR)/ml_agg_info.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/ml_agg_reitzinger.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/ml_agg_uncoupled.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/ml_agg_user.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/ml_aggregate.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/ml_amesos.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/ml_amesos_wrap.Po \
@@ -382,6 +383,7 @@ $(srcdir)/FEGrid/ml_gridagx.h \
 $(srcdir)/FEGrid/ml_pde.h       $(srcdir)/FEGrid/ml_bdrypts.h \
 $(srcdir)/Coarsen/ml_agg_reitzinger.h \
 $(srcdir)/Coarsen/ml_agg_METIS.h \
+$(srcdir)/Coarsen/ml_agg_user.h \
 $(srcdir)/Coarsen/ml_agg_VBMETIS.h \
 $(srcdir)/Coarsen/ml_agg_Zoltan.h \
 $(srcdir)/Coarsen/ml_agg_ParMETIS.h \
@@ -423,6 +425,7 @@ $(srcdir)/Coarsen/ml_agg_genP.c \
 $(srcdir)/Coarsen/ml_amg_MIS.c \
 $(srcdir)/Coarsen/ml_agg_MIS.c \
 $(srcdir)/Coarsen/ml_agg_METIS.c \
+$(srcdir)/Coarsen/ml_agg_user.c \
 $(srcdir)/Coarsen/ml_agg_VBMETIS.c \
 $(srcdir)/Coarsen/ml_agg_Zoltan.c \
 $(srcdir)/Coarsen/ml_agg_ParMETIS.c \
@@ -811,6 +814,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_agg_info.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_agg_reitzinger.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_agg_uncoupled.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_agg_user.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_aggregate.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_amesos.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_amesos_wrap.Po@am__quote@
@@ -1045,6 +1049,22 @@ ml_agg_METIS.obj: $(srcdir)/Coarsen/ml_agg_METIS.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/ml_agg_METIS.Po' tmpdepfile='$(DEPDIR)/ml_agg_METIS.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o ml_agg_METIS.obj `if test -f '$(srcdir)/Coarsen/ml_agg_METIS.c'; then $(CYGPATH_W) '$(srcdir)/Coarsen/ml_agg_METIS.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Coarsen/ml_agg_METIS.c'; fi`
+
+ml_agg_user.o: $(srcdir)/Coarsen/ml_agg_user.c
+@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT ml_agg_user.o -MD -MP -MF "$(DEPDIR)/ml_agg_user.Tpo" -c -o ml_agg_user.o `test -f '$(srcdir)/Coarsen/ml_agg_user.c' || echo '$(srcdir)/'`$(srcdir)/Coarsen/ml_agg_user.c; \
+@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/ml_agg_user.Tpo" "$(DEPDIR)/ml_agg_user.Po"; else rm -f "$(DEPDIR)/ml_agg_user.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/Coarsen/ml_agg_user.c' object='ml_agg_user.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/ml_agg_user.Po' tmpdepfile='$(DEPDIR)/ml_agg_user.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o ml_agg_user.o `test -f '$(srcdir)/Coarsen/ml_agg_user.c' || echo '$(srcdir)/'`$(srcdir)/Coarsen/ml_agg_user.c
+
+ml_agg_user.obj: $(srcdir)/Coarsen/ml_agg_user.c
+@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT ml_agg_user.obj -MD -MP -MF "$(DEPDIR)/ml_agg_user.Tpo" -c -o ml_agg_user.obj `if test -f '$(srcdir)/Coarsen/ml_agg_user.c'; then $(CYGPATH_W) '$(srcdir)/Coarsen/ml_agg_user.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Coarsen/ml_agg_user.c'; fi`; \
+@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/ml_agg_user.Tpo" "$(DEPDIR)/ml_agg_user.Po"; else rm -f "$(DEPDIR)/ml_agg_user.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/Coarsen/ml_agg_user.c' object='ml_agg_user.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/ml_agg_user.Po' tmpdepfile='$(DEPDIR)/ml_agg_user.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o ml_agg_user.obj `if test -f '$(srcdir)/Coarsen/ml_agg_user.c'; then $(CYGPATH_W) '$(srcdir)/Coarsen/ml_agg_user.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Coarsen/ml_agg_user.c'; fi`
 
 ml_agg_VBMETIS.o: $(srcdir)/Coarsen/ml_agg_VBMETIS.c
 @am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT ml_agg_VBMETIS.o -MD -MP -MF "$(DEPDIR)/ml_agg_VBMETIS.Tpo" -c -o ml_agg_VBMETIS.o `test -f '$(srcdir)/Coarsen/ml_agg_VBMETIS.c' || echo '$(srcdir)/'`$(srcdir)/Coarsen/ml_agg_VBMETIS.c; \
