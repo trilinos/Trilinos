@@ -681,7 +681,7 @@ if test "X$ac_cv_use_amesos_mumps" != "Xno"; then
 #
   AM_CONDITIONAL(HAVE_AMESOS_MUMPS, true ) 
   AM_CONDITIONAL(NEED_PARAMETER_LIST, true ) 
-  amesos_libs="${amesos_libs} ${tac_with_amesos_mumpslib} ${tac_with_amesos_mumpspordlib} -lfortran"
+  amesos_libs="${amesos_libs} ${tac_with_amesos_mumpslib} ${tac_with_amesos_mumpspordlib}"
 else
   AM_CONDITIONAL(HAVE_AMESOS_MUMPS, false ) 
 fi

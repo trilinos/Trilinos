@@ -8540,7 +8540,7 @@ else
   NEED_PARAMETER_LIST_FALSE=
 fi
 
-  amesos_libs="${amesos_libs} ${tac_with_amesos_mumpslib} ${tac_with_amesos_mumpspordlib} -lfortran"
+  amesos_libs="${amesos_libs} ${tac_with_amesos_mumpslib} ${tac_with_amesos_mumpspordlib}"
 else
 
 
