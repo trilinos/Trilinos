@@ -15,10 +15,6 @@
 #ifndef __OCTANT_CONST_H
 #define __OCTANT_CONST_H
 
-#ifndef lint
-static char *cvs_octantconsth_id = "$Id$";
-#endif
-
 #include "lb_const.h"
 
 typedef double COORD[3];
@@ -61,13 +57,16 @@ typedef struct {
   COORD max;
 } Map;
 
-extern pRList OCT_rootlist;          /* list of all the local roots          */
-extern int OCT_localpid;             /* the processor id                     */
-extern COORD OCT_gmin;
-extern COORD OCT_gmax;
-extern int OCT_dimension;
-extern int GRAY;
-extern int HILBERT;
+typedef struct {
+  pRList OCT_rootlist;          /* list of all the local roots          */
+  int OCT_localpid;             /* the processor id                     */
+  COORD OCT_gmin;
+  COORD OCT_gmax;
+  int OCT_dimension;
+  int GRAY;
+  int HILBERT;
+} OCT_Global_Info;
+
 /* extern Map *array; */
 
 #define vector_set(r,a)     \
@@ -97,14 +96,14 @@ extern int HILBERT;
                 ((a)[1]-(b)[1])*((a)[1]-(b)[1]) + \
                 ((a)[2]-(b)[2])*((a)[2]-(b)[2]) ) )
 
-extern void    POC_init(int pid, int dim);
-extern pOctant POC_new();
-extern void    POC_free(pOctant oct);
+extern OCT_Global_Info *POC_init(struct LB_Struct *, int pid, int dim);
+extern pOctant POC_new(OCT_Global_Info *);
+extern void    POC_free(OCT_Global_Info *, pOctant oct);
 #ifdef LGG_MIGOCT
 extern void    POC_setID(pOctant oct, int id);
 #endif /* LGG_MIGOCT */
 extern int     POC_id(pOctant oct);
-extern void    POC_setparent(pOctant oct, pOctant parent, int ppid);
+extern void    POC_setparent(OCT_Global_Info *OCT_info,pOctant oct, pOctant parent, int ppid);
 extern void    POC_setchildnum(pOctant oct, int childnum);
 extern int     POC_childnum(pOctant oct);
 extern void    POC_setchild(pOctant oct, int i, pOctant child);
@@ -120,7 +119,7 @@ extern void    POC_addRegion(pOctant oct, pRegion region);
 extern void    POC_remRegion(pOctant oct, pRegion region);
 extern void    POC_clearRegions(pOctant oct);
 extern int     POC_nRegions(pOctant oct);
-extern pRList  POC_localroots();
+extern pRList  POC_localroots(OCT_Global_Info *);
 extern void    POC_modify_cost(pOctant oct, float cost);
 extern void    POC_modify_newpid(pOctant oct, int newpid);
 extern float   POC_data_cost(pOctant oct);
@@ -128,14 +127,14 @@ extern int     POC_data_newpid(pOctant oct);
 extern int     POC_nlocal(pOctant oct);
 extern int     POC_nOctants(void);
 extern void    POC_origin_volume(pOctant oct,COORD origin,double *volume);
-extern void    POC_printResults();
+extern void    POC_printResults(OCT_Global_Info *OCT_info);
 extern pOctant POC_malloc();
-extern void    POC_DfsTraversal(pOctant oct);
-extern void    POC_printRegionInfo(pOctant oct);
+extern void    POC_DfsTraversal(OCT_Global_Info *OCT_info, pOctant oct);
+extern void    POC_printRegionInfo(OCT_Global_Info *, pOctant oct);
 extern pOctant POC_nextDfs(pOctant octant);
-extern int     POC_local(pOctant octant, int i);
+extern int     POC_local(OCT_Global_Info *OCT_info, pOctant octant, int i);
 extern void    POC_setCpid(pOctant octant, int i, int cpid); 
-extern int     POC_delTree(pOctant root);
+extern int     POC_delTree(OCT_Global_Info *OCT_info,pOctant root);
 /* extern pOctant POC_nextDfs(pOcant octant);
  * extern void    POC_setOrientation(pOctant octant, int orientation);
  * extern int     POC_getOrientation(pOctant octant);

@@ -15,12 +15,8 @@
 #ifndef __COSTS_CONST_H
 #define __COSTS_CONST_H
 
-#ifndef lint
-static char *cvs_costsconsth_id = "$Id$";
-#endif
-
-extern void  LB_costs_free(pOctant octree); 
+extern void  LB_costs_free(OCT_Global_Info *OCT_info,pOctant octree); 
 extern float LB_costs_value(pOctant octant);
-extern float LB_costs_global_compute();
+extern float LB_costs_global_compute(OCT_Global_Info *OCT_info);
 
 #endif

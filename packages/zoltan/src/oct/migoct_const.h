@@ -15,10 +15,6 @@
 #ifndef __MIGOCT_CONST_H
 #define __MIGOCT_CONST_H
 
-#ifndef lint
-static char *cvs_migoctconsth_id = "$Id$";
-#endif
-
 extern void LB_Migrate_Objects(LB *lb, pOctant *octs, int *newpids, int nocts,
 			       pRegion *export_tags, int *nsentags, 
 			       pRegion *import_tags, int *nrectags, 

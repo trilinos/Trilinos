@@ -12,25 +12,13 @@
  * $Revision$
  *
  *====================================================================*/
-#ifndef lint
-static char *cvs_octantc_id = "$Id$";
-#endif
 
 #include "lb_const.h"
 #include "octant_const.h"
-#include "util_const.h"
+#include "oct_util_const.h"
 #include "all_allo_const.h"
 
 /*****************************************************************************/
-/* WARNING: GLOBAL VARIABLES... BE CAREFUL WHEN USING */
-pRList OCT_rootlist = NULL;          /* list of all the local roots          */
-int OCT_localpid;                    /* the processor id                     */
-COORD OCT_gmin;                      /* global root's min bounds             */
-COORD OCT_gmax;                      /* global root's max bounds             */
-int OCT_dimension;
-int GRAY;
-int HILBERT;
-
 static int OCT_count;                /* count of all local octants           */
 static int OCT_idcount;              /* count for id's, help with uniqueness */
 
@@ -40,17 +28,21 @@ static int OCT_idcount;              /* count for id's, help with uniqueness */
  *
  * sets up global variables for the octree partitioner
  */
-void POC_init(int pid, int dim) {
+OCT_Global_Info *POC_init(struct LB_Struct *lb, int pid, int dim) {
+OCT_Global_Info *OCT_info;
+  OCT_info = (OCT_Global_Info *) LB_MALLOC(sizeof(OCT_Global_Info));
+  lb->Data_Structure = (void *) OCT_info;
   OCT_count=0;
-  OCT_localpid=pid;
-  OCT_rootlist=NULL;
+  OCT_info->OCT_localpid=pid;
+  OCT_info->OCT_rootlist=NULL;
   OCT_idcount=0;
   if((dim > 3) || (dim < 2)) {
     fprintf(stderr,"WARNING: illegal dimension, using default (3D).\n");
-    OCT_dimension = 3;
+    OCT_info->OCT_dimension = 3;
   }
   else
-    OCT_dimension = dim;
+    OCT_info->OCT_dimension = dim;
+  return(OCT_info);
 }
 
 /*****************************************************************************/
@@ -79,7 +71,7 @@ pOctant POC_malloc() {
  * create a new octant on the local processor and return
  * a pointer to it.  It will have no parents or children.
  */
-pOctant POC_new() {
+pOctant POC_new(OCT_Global_Info *OCT_info) {
   pOctant new_ptr;                              /* pointer to the new octant */
   int i;                                        /* index counter */
   
@@ -91,13 +83,13 @@ pOctant POC_new() {
   }
   /* setup default information about octant */
   new_ptr->parent= NULL;
-  new_ptr->ppid = OCT_localpid;
+  new_ptr->ppid = OCT_info->OCT_localpid;
   new_ptr->id = (OCT_idcount++);
   new_ptr->which = -1;
   new_ptr->numChild = 0;
   new_ptr->list=NULL;
   new_ptr->cost = 0;
-  new_ptr->npid = OCT_localpid;
+  new_ptr->npid = OCT_info->OCT_localpid;
   /* new_ptr->orientation = -1; */
   return(new_ptr);
 }
@@ -110,20 +102,20 @@ pOctant POC_new() {
  * this does not delete the attached regions, must specifically call
  * POC_clearRegions 
  */
-void POC_free(pOctant oct) {
+void POC_free(OCT_Global_Info *OCT_info, pOctant oct) {
   pRList ptr, prev;                      /* traversal pointers for root list */
 /*
   pRegion c;                    
 */
   
   /* traverse through local root list, if octant a local root */
-  ptr = OCT_rootlist;
+  ptr = OCT_info->OCT_rootlist;
   prev = NULL;
-  if (oct->ppid != OCT_localpid) {
+  if (oct->ppid != OCT_info->OCT_localpid) {
     while(ptr != NULL) {
       if(ptr->oct->id == oct->id) {
-	if(ptr == OCT_rootlist)
-	  OCT_rootlist = ptr->next;
+	if(ptr == OCT_info->OCT_rootlist)
+	  OCT_info->OCT_rootlist = ptr->next;
 	else
 	  prev->next = ptr->next;
 	ptr->oct = NULL;
@@ -184,12 +176,12 @@ int POC_id(pOctant oct)
  * sets the parent of the octant. If the parent is offprocessor, then
  * add octant to the local root list
  */
-void POC_setparent(pOctant oct, pOctant parent, int ppid) {
+void POC_setparent(OCT_Global_Info *OCT_info, pOctant oct, pOctant parent, int ppid) {
   pRList tmp,                          /* temp variable used for iterating */
          prev;                         /* pointer to previous root looked at */
 
-  if (oct->ppid == OCT_localpid) {                              /* was local */
-    if (ppid != OCT_localpid) {                              /* now nonlocal */
+  if (oct->ppid == OCT_info->OCT_localpid) {                              /* was local */
+    if (ppid != OCT_info->OCT_localpid) {                              /* now nonlocal */
       tmp = (pRList) LB_MALLOC(sizeof(RList));
       if(tmp == NULL) {
 	fprintf(stderr, "%s: %s\n", "POC_setparent",
@@ -197,7 +189,7 @@ void POC_setparent(pOctant oct, pOctant parent, int ppid) {
 	abort();
       }
       tmp->oct = oct;
-      prev = OCT_rootlist;
+      prev = OCT_info->OCT_rootlist;
       if(prev != NULL) {
 	/* add new root to end of rootlist */
 	while(prev->next != NULL)
@@ -206,19 +198,19 @@ void POC_setparent(pOctant oct, pOctant parent, int ppid) {
 	prev->next = tmp;
       }
       else {
-	tmp->next = OCT_rootlist;
-	OCT_rootlist = tmp;
+	tmp->next = OCT_info->OCT_rootlist;
+	OCT_info->OCT_rootlist = tmp;
       }
     }
   }
   else                                                        /* was foreign */
-    if (ppid == OCT_localpid) {                               /* now local   */
-      tmp = OCT_rootlist; 
+    if (ppid == OCT_info->OCT_localpid) {                               /* now local   */
+      tmp = OCT_info->OCT_rootlist; 
       /* delete octant from local root list */
       while(tmp != NULL) {
 	if(tmp->oct->id == oct->id) {
-	  if(tmp == OCT_rootlist)
-	    OCT_rootlist = tmp->next;
+	  if(tmp == OCT_info->OCT_rootlist)
+	    OCT_info->OCT_rootlist = tmp->next;
 	  else
 	    prev->next = tmp->next;
 	  tmp->oct = NULL;
@@ -229,7 +221,7 @@ void POC_setparent(pOctant oct, pOctant parent, int ppid) {
 	  tmp = tmp->next;
 	}
       }
-      /* PList_remItem(OCT_rootlist,oct); */
+      /* PList_remItem(OCT_info->OCT_rootlist,oct); */
     }
   oct->ppid=ppid;
   oct->parent=parent;
@@ -467,9 +459,9 @@ int POC_nRegions(pOctant oct) {
  *
  * return the list of local roots
  */
-pRList POC_localroots()
+pRList POC_localroots(OCT_Global_Info *OCT_info)
 {
-  return(OCT_rootlist);
+  return(OCT_info->OCT_rootlist);
 }
 
 /*****************************************************************************/
@@ -571,13 +563,13 @@ void POC_origin_volume(pOctant oct, COORD origin, double *volume) {
  *
  * prints out the intermediate results of the octree structure
  */
-void POC_printResults() {
+void POC_printResults(OCT_Global_Info *OCT_info) {
   pRList ptr;                                  /* pointer to local root list */
 
-  ptr = OCT_rootlist;
+  ptr = OCT_info->OCT_rootlist;
   /* go through each entry in local root list and travers down subtree */
   while(ptr != NULL) {
-    POC_DfsTraversal(ptr->oct);
+    POC_DfsTraversal(OCT_info, ptr->oct);
     ptr = ptr->next;
   }
 }
@@ -588,17 +580,17 @@ void POC_printResults() {
  *
  * traverse through the octree in DFS order to get a printout
  */
-void POC_DfsTraversal(pOctant oct) {
+void POC_DfsTraversal(OCT_Global_Info *OCT_info, pOctant oct) {
   int i;                                                    /* index counter */
 
   if(oct == NULL)
     return;
   if(POC_isTerminal(oct))
-    POC_printRegionInfo(oct);
+    POC_printRegionInfo(OCT_info, oct);
   else {
     for(i=0; i<8; i++)
-      POC_DfsTraversal(oct->child[i]);
-    POC_printRegionInfo(oct);
+      POC_DfsTraversal(OCT_info, oct->child[i]);
+    POC_printRegionInfo(OCT_info, oct);
   }
 }
 
@@ -608,7 +600,7 @@ void POC_DfsTraversal(pOctant oct) {
  *
  * prints out region information
  */
-void POC_printRegionInfo(pOctant oct) {
+void POC_printRegionInfo(OCT_Global_Info * OCT_info, pOctant oct) {
   pRegion ptr;            /* pointer to iterate through octant's region list */
   pOctant parent;
 
@@ -621,7 +613,7 @@ void POC_printRegionInfo(pOctant oct) {
 
   parent = POC_parent(oct);
   printf("(Proc %d) ocant %d:\n",
-	 OCT_localpid, oct->id);
+	 OCT_info->OCT_localpid, oct->id);
   printf("\tbounds\tmin=%f, %f, %f\n\t\t max %f, %f, %f\n",
 	 oct->min[0], oct->min[1], oct->min[2],
 	 oct->max[0], oct->max[1], oct->max[2]);
@@ -629,7 +621,7 @@ void POC_printRegionInfo(pOctant oct) {
     printf("\tparent octant: %d", parent->id);
   else
     printf("\tparent octant: NULL");
-  printf(" \tmigrate: from %d to %d\n", OCT_localpid, oct->npid);
+  printf(" \tmigrate: from %d to %d\n", OCT_info->OCT_localpid, oct->npid);
 
   if(!POC_isTerminal(oct)) {
     return;
@@ -646,7 +638,7 @@ void POC_printRegionInfo(pOctant oct) {
     /*
       printf("%lf %lf %lf,  %d -> %d\n", 
       ptr->Coord[0], ptr->Coord[1], ptr->Coord[2],
-      OCT_localpid,oct->npid);
+      OCT_info->OCT_localpid,oct->npid);
     */
     ptr = ptr->next;
   }
@@ -693,8 +685,8 @@ pOctant POC_nextDfs(pOctant octant) {
  *
  * returns true if ith child is local
  */
-int POC_local(pOctant octant, int i) {
-  if(octant->cpid[i] == OCT_localpid)
+int POC_local(OCT_Global_Info *OCT_info, pOctant octant, int i) {
+  if(octant->cpid[i] == OCT_info->OCT_localpid)
     return 1;
   else {
     /*
@@ -721,7 +713,7 @@ void POC_setCpid(pOctant octant, int i, int cpid) {
  *
  * recursivly traverses down root's subtree deleting all the octants
  */
-int POC_delTree(pOctant root) {
+int POC_delTree(OCT_Global_Info *OCT_info, pOctant root) {
   int i;                                               /* index counter */
   pOctant child;                                       /* child of an octant */
   
@@ -731,15 +723,15 @@ int POC_delTree(pOctant root) {
   if(POC_isTerminal(root)) {
     if(POC_nRegions(root))
       POC_clearRegions(root);
-    POC_free(root);
+    POC_free(OCT_info, root);
   }
   else {
     for(i=0; i<8; i++) {
       child = POC_child(root, i);
       if(child != NULL)
-	POC_delTree(child);
+	POC_delTree(OCT_info,child);
     }
-    POC_free(root);
+    POC_free(OCT_info, root);
   }
   return 1;
 }

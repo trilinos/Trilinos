@@ -12,9 +12,6 @@
  * $Revision$
  *
  *====================================================================*/
-#ifndef lint
-static char *cvs_msgc_id = "$Id$";
-#endif
 
 #include "lb_const.h"
 #include "msg_const.h"

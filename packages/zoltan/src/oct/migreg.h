@@ -15,13 +15,9 @@
 #ifndef __MIGREG_H
 #define __MIGREG_H
 
-#ifndef lint
-static char *cvs_migregh_id = "$Id$";
-#endif
-
 #include "octant_const.h"
 #include "octupdate_const.h"
-#include "util_const.h"
+#include "oct_util_const.h"
 #include "migreg_const.h"
 
 typedef struct

@@ -15,10 +15,6 @@
 #ifndef __HILBERT_CONST_H
 #define __HILBERT_CONST_H
 
-#ifndef lint
-static char *cvs_hilbertconsth_id = "$Id$";
-#endif
-
 /* Bits per unsigned word */
 
 #define MaxBits ( sizeof(unsigned) * CHAR_BIT )

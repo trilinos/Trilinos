@@ -15,14 +15,10 @@
 #ifndef __COSTS_H
 #define __COSTS_H
 
-#ifndef lint
-static char *cvs_costsh_id = "$Id$";
-#endif
-
 #include "costs_const.h"
 
-extern void  LB_costs_init(pOctant octree);
-extern float LB_costs_subtree_compute(pOctant octant, int *seq);
+extern void  LB_costs_init(OCT_Global_Info *OCT_info,pOctant octree);
+extern float LB_costs_subtree_compute(OCT_Global_Info *OCT_info,pOctant octant, int *seq);
 extern float LB_costs_weight(pOctant octant);
 
 #endif

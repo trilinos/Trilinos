@@ -12,28 +12,26 @@
  * $Revision$
  *
  *====================================================================*/
-#ifndef lint
-static char *cvs_utilc_id = "$Id$";
-#endif
 
 #include "lb_const.h"
 #include "octant_const.h"
-#include "util_const.h"
+#include "oct_util_const.h"
 #include "hilbert_const.h"
 #include "dfs_const.h"
+#include "all_allo_const.h"
 
 /* function prototype */
 static int compare( unsigned * x, unsigned * y);
-static int hilbert_bounds(COORD min, COORD max, COORD cmin[], COORD cmax[]);
-static int hilbert2d_bounds(COORD min, COORD max, COORD cmin[], COORD cmax[]);
+static int hilbert_bounds(OCT_Global_Info *OCT_info,COORD min, COORD max, COORD cmin[], COORD cmax[]);
+static int hilbert2d_bounds(OCT_Global_Info *OCT_info,COORD min, COORD max, COORD cmin[], COORD cmax[]);
 
-void LB_set_method(int method_number) {
+void LB_set_method(OCT_Global_Info *OCT_info, int method_number) {
   
-  GRAY = HILBERT = 0;
+  OCT_info->GRAY = OCT_info->HILBERT = 0;
   if(method_number == 1)
-    GRAY = 1;
+    OCT_info->GRAY = 1;
   else if(method_number == 2)
-    HILBERT = 1;
+    OCT_info->HILBERT = 1;
 }
 
 /*
@@ -44,11 +42,11 @@ void LB_set_method(int method_number) {
  * "upper"
  *
  */
-int LB_in_box(COORD pt, COORD lower, COORD upper) {
+int LB_in_box(OCT_Global_Info *OCT_info, COORD pt, COORD lower, COORD upper) {
   int i;
   int j;
 
-  if(OCT_dimension == 2)
+  if(OCT_info->OCT_dimension == 2)
     j = 2;                                            /* ignore z coord info */
   else
     j = 3;
@@ -103,7 +101,8 @@ void LB_bounds_to_origin(COORD min, COORD max, COORD origin)
   }
 }
 
-void LB_child_bounds_wrapper(pOctant oct, COORD cmin[], COORD cmax[]) {
+void LB_child_bounds_wrapper(OCT_Global_Info *OCT_info,
+                             pOctant oct, COORD cmin[], COORD cmax[]) {
   int cnum;                               /* child number */
   int i;
   COORD min,
@@ -115,18 +114,18 @@ void LB_child_bounds_wrapper(pOctant oct, COORD cmin[], COORD cmax[]) {
   /* calculate the origin from the bounds */
   LB_bounds_to_origin(min,max,origin);
 
-  if(HILBERT) {
+  if(OCT_info->HILBERT) {
     /* fprintf(stderr,"Using Hilbert\n"); */ 
-    if(OCT_dimension == 3)
-      hilbert_bounds(min, max, cmin, cmax);
+    if(OCT_info->OCT_dimension == 3)
+      hilbert_bounds(OCT_info,min, max, cmin, cmax);
     else {
-      hilbert2d_bounds(min, max, cmin, cmax);
+      hilbert2d_bounds(OCT_info,min, max, cmin, cmax);
       for(i=4; i<8; i++) {
 	LB_child_bounds(min, max, origin, i, cmin[i], cmax[i]);
       }
     }
   }
-  else if(GRAY) {
+  else if(OCT_info->GRAY) {
     /* fprintf(stderr,"Using Gray\n"); */
     for(i=0; i<8; i++) {
       cnum = LB_convert_from_gray(i);       /* used for renumbering children */
@@ -146,7 +145,8 @@ void LB_child_bounds_wrapper(pOctant oct, COORD cmin[], COORD cmax[]) {
 static int compare( unsigned * x, unsigned * y)
 { return ( *x == *y ) ? 0 : ( ( *x < *y ) ? -1 : 1 ); }
 
-static int hilbert2d_bounds(COORD min, COORD max, COORD cmin[], COORD cmax[])
+static int hilbert2d_bounds(OCT_Global_Info *OCT_info,
+                            COORD min, COORD max, COORD cmin[], COORD cmax[])
 {
   unsigned ihsfc[4][2];
   unsigned Nword = 1;
@@ -161,8 +161,8 @@ static int hilbert2d_bounds(COORD min, COORD max, COORD cmin[], COORD cmax[])
   for(i=0; i<4; i++) {
     LB_child_bounds(min, max, origin, i, child_min[i], child_max[i]);
     LB_bounds_to_origin(child_min[i], child_max[i], centroid);
-    center[0] = (centroid[0] - OCT_gmin[0])/(OCT_gmax[0] - OCT_gmin[0]);
-    center[1] = (centroid[1] - OCT_gmin[1])/(OCT_gmax[1] - OCT_gmin[1]);
+    center[0] = (centroid[0] - OCT_info->OCT_gmin[0])/(OCT_info->OCT_gmax[0] - OCT_info->OCT_gmin[0]);
+    center[1] = (centroid[1] - OCT_info->OCT_gmin[1])/(OCT_info->OCT_gmax[1] - OCT_info->OCT_gmin[1]);
     LB_fhsfc2d(center, &Nword, ihsfc[i]);
     ihsfc[i][1] = i;
   }
@@ -180,7 +180,8 @@ static int hilbert2d_bounds(COORD min, COORD max, COORD cmin[], COORD cmax[])
   return(k);
 }
 
-static int hilbert_bounds(COORD min, COORD max, COORD cmin[], COORD cmax[])
+static int hilbert_bounds(OCT_Global_Info *OCT_info,
+                          COORD min, COORD max, COORD cmin[], COORD cmax[])
 {
   unsigned ihsfc[8][2];
   unsigned Nword = 1;
@@ -195,9 +196,9 @@ static int hilbert_bounds(COORD min, COORD max, COORD cmin[], COORD cmax[])
   for(i=0; i<8; i++) {
     LB_child_bounds(min, max, origin, i, child_min[i], child_max[i]);
     LB_bounds_to_origin(child_min[i], child_max[i], centroid);
-    center[0] = (centroid[0] - OCT_gmin[0])/(OCT_gmax[0] - OCT_gmin[0]);
-    center[1] = (centroid[1] - OCT_gmin[1])/(OCT_gmax[1] - OCT_gmin[1]);
-    center[2] = (centroid[2] - OCT_gmin[2])/(OCT_gmax[2] - OCT_gmin[2]);
+    center[0] = (centroid[0] - OCT_info->OCT_gmin[0])/(OCT_info->OCT_gmax[0] - OCT_info->OCT_gmin[0]);
+    center[1] = (centroid[1] - OCT_info->OCT_gmin[1])/(OCT_info->OCT_gmax[1] - OCT_info->OCT_gmin[1]);
+    center[2] = (centroid[2] - OCT_info->OCT_gmin[2])/(OCT_info->OCT_gmax[2] - OCT_info->OCT_gmin[2]);
     LB_fhsfc3d(center, &Nword, ihsfc[i]);
     ihsfc[i][1] = i;
   }
@@ -241,7 +242,7 @@ void LB_child_bounds(COORD pmin, COORD pmax, COORD porigin, int cnum,
   }
 }
 
-int LB_child_which_wrapper(pOctant oct, COORD point) {
+int LB_child_which_wrapper(OCT_Global_Info *OCT_info,pOctant oct, COORD point) {
   int cnum;                               /* child number */
   int result;
   COORD min,
@@ -251,18 +252,18 @@ int LB_child_which_wrapper(pOctant oct, COORD point) {
   POC_bounds(oct,min,max);                   /* get the bounds of the octant */
   LB_bounds_to_origin(min,max,origin);         /* convert to bound to origin */
   
-  cnum = LB_child_which(origin, point);       /* find closest child to coord */
+  cnum = LB_child_which(OCT_info,origin, point);       /* find closest child to coord */
   
-  if(HILBERT) {
+  if(OCT_info->HILBERT) {
     /* fprintf(stderr,"Using Hilbert\n"); */
-    if(OCT_dimension == 3) 
-      result = LB_change_to_hilbert(min, max, origin, cnum);
+    if(OCT_info->OCT_dimension == 3) 
+      result = LB_change_to_hilbert(OCT_info,min, max, origin, cnum);
     else 
-      result = LB_change_to_hilbert2d(min, max, origin, cnum);
+      result = LB_change_to_hilbert2d(OCT_info,min, max, origin, cnum);
 
     /* fprintf(stderr,"%d -> %d\n", cnum, result); */
   }
-  else if(GRAY) {
+  else if(OCT_info->GRAY) {
     /* fprintf(stderr,"Using Gray\n"); */
     result = LB_convert_to_gray(cnum);
   }
@@ -283,12 +284,12 @@ int LB_child_which_wrapper(pOctant oct, COORD point) {
  * Note: Finds number in z-curve ordering. Needs to be converted if using
  *       Gray code or Hilbert code.
  */
-int LB_child_which(COORD porigin, COORD point) {
+int LB_child_which(OCT_Global_Info *OCT_info,COORD porigin, COORD point) {
   int cnum;                                                 /* child number */
   int i;                                                    /* index counter */
   int j;
   
-  if(OCT_dimension == 2)
+  if(OCT_info->OCT_dimension == 2)
     j = 1;                                       /* ignore z coordinate info */
   else
     j = 2;
@@ -304,38 +305,6 @@ int LB_child_which(COORD porigin, COORD point) {
   return(cnum);
 }
 
-double LB_dist_point_box(COORD point, COORD min, COORD max) {
-  COORD dist;
-  double pdist;
-  int zero;
-  int i;
-
-  if (LB_in_box(point,min,max))
-    return(0);
-
-  zero=0;
-  pdist=0;
-  for (i=0; i<3; i++) {
-    if (point[i]<min[i]) {
-      pdist=min[i]-point[i];
-      dist[i]=pdist;
-    }
-    else
-      if (point[i]>max[i]) {
-	pdist=point[i]-max[i];
-	dist[i]=pdist;
-      }
-      else {
-	dist[i]=0;
-	zero++;
-      }
-  }
-
-  if (zero<2)
-    pdist=sqrt((dist[0]*dist[0]) + (dist[1]*dist[1]) + (dist[2]*dist[2]));
-
-  return(pdist);
-}
 
 /*
  * int LB_convert_from_gray(int input)
@@ -397,7 +366,7 @@ int LB_convert_to_gray(int input) {
 
 /* lookup table for traversal informaion based on orientation */
 /* unsigned int ltable[4] = {0x099, 0x05A, 0x681, 0x642}; */
-unsigned int ltable[4] = {0x0B4BD9, 0x06CDDA, 0x6B7B01, 0x66FD02};
+static unsigned int ltable[4] = {0x0B4BD9, 0x06CDDA, 0x6B7B01, 0x66FD02};
 
 /* 000 010 011 001 */
 
@@ -529,7 +498,8 @@ int LB_child_orientation(int o, int cnum) {
 #endif
 }
 
-int LB_change_to_hilbert2d(COORD min, COORD max, COORD origin, int cnum) {
+int LB_change_to_hilbert2d(OCT_Global_Info *OCT_info,
+                           COORD min, COORD max, COORD origin, int cnum) {
   unsigned ihsfc[4][2];
   unsigned Nword = 1;
   COORD child_min[4],
@@ -541,8 +511,8 @@ int LB_change_to_hilbert2d(COORD min, COORD max, COORD origin, int cnum) {
   for(i=0; i<4; i++) {
     LB_child_bounds(min, max, origin, i, child_min[i], child_max[i]);
     LB_bounds_to_origin(child_min[i], child_max[i], centroid);
-    center[0] = (centroid[0] - OCT_gmin[0])/(OCT_gmax[0] - OCT_gmin[0]);
-    center[1] = (centroid[1] - OCT_gmin[1])/(OCT_gmax[1] - OCT_gmin[1]);
+    center[0] = (centroid[0] - OCT_info->OCT_gmin[0])/(OCT_info->OCT_gmax[0] - OCT_info->OCT_gmin[0]);
+    center[1] = (centroid[1] - OCT_info->OCT_gmin[1])/(OCT_info->OCT_gmax[1] - OCT_info->OCT_gmin[1]);
     LB_fhsfc2d(center, &Nword, ihsfc[i]);
     ihsfc[i][1] = i;
   }
@@ -566,7 +536,8 @@ int LB_change_to_hilbert2d(COORD min, COORD max, COORD origin, int cnum) {
   return(i);
 }
 
-int LB_change_to_hilbert(COORD min, COORD max, COORD origin, int cnum) {
+int LB_change_to_hilbert(OCT_Global_Info *OCT_info,
+                         COORD min, COORD max, COORD origin, int cnum) {
   unsigned ihsfc[8][2];
   unsigned Nword = 1;
   COORD child_min[8],
@@ -578,9 +549,9 @@ int LB_change_to_hilbert(COORD min, COORD max, COORD origin, int cnum) {
   for(i=0; i<8; i++) {
     LB_child_bounds(min, max, origin, i, child_min[i], child_max[i]);
     LB_bounds_to_origin(child_min[i], child_max[i], centroid);
-    center[0] = (centroid[0] - OCT_gmin[0])/(OCT_gmax[0] - OCT_gmin[0]);
-    center[1] = (centroid[1] - OCT_gmin[1])/(OCT_gmax[1] - OCT_gmin[1]);
-    center[2] = (centroid[2] - OCT_gmin[2])/(OCT_gmax[2] - OCT_gmin[2]);
+    center[0] = (centroid[0] - OCT_info->OCT_gmin[0])/(OCT_info->OCT_gmax[0] - OCT_info->OCT_gmin[0]);
+    center[1] = (centroid[1] - OCT_info->OCT_gmin[1])/(OCT_info->OCT_gmax[1] - OCT_info->OCT_gmin[1]);
+    center[2] = (centroid[2] - OCT_info->OCT_gmin[2])/(OCT_info->OCT_gmax[2] - OCT_info->OCT_gmin[2]);
     LB_fhsfc3d(center, &Nword, ihsfc[i]);
     ihsfc[i][1] = i;
   }
@@ -602,4 +573,17 @@ int LB_change_to_hilbert(COORD min, COORD max, COORD origin, int cnum) {
   }
   
   return(i);
+}
+
+/*****************************************************************************/
+void LB_OCT_Free_Structure(LB *lb)
+{
+/*
+ * Deallocate the persistent RCB data structures in lb->Structure.
+ */
+OCT_Global_Info *OCT_info = (OCT_Global_Info *) (lb->Data_Structure);
+
+  if (OCT_info != NULL) {
+    LB_FREE(&(lb->Data_Structure));
+  }
 }
