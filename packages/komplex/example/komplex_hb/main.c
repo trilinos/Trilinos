@@ -731,6 +731,8 @@ int main(int argc, char *argv[])
       free ((void *) x_mat1);
       x_mat0 = xsolve_mat0;
       x_mat1 = xsolve_mat1;
+      xsolve_mat0 = NULL;
+      xsolve_mat1 = NULL;
     }
   if (xexact_mat0 != NULL)
     {
@@ -761,7 +763,7 @@ int main(int argc, char *argv[])
     AZ_free ((void *) extern_index_mat0);
     AZ_free ((void *) data_org_mat0);
   }
-  free ((void *) xsolve_mat0);
+  if (xsolve_mat0!=NULL) free ((void *) xsolve_mat0);
 
   free ((void *) x_mat1);
   free ((void *) b_mat1);
@@ -774,7 +776,7 @@ int main(int argc, char *argv[])
     AZ_free ((void *) extern_index_mat1);
     AZ_free ((void *) data_org_mat1);
   }
-  free ((void *) xsolve_mat1);
+  if (xsolve_mat1!=NULL) free ((void *) xsolve_mat1);
   if (xexact_mat0 != NULL)
     {
       free ((void *) xx_mat0);  

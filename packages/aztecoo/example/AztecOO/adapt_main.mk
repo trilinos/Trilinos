@@ -8,7 +8,7 @@
 #    4) Make the archive $(LIBAZTECOO) by typing 'make'.
 #
 
-include $(TRILINOS_HOME)/build/TARGET
+include $(TRILINOS_HOME)/build/TRILINOS_TARGET_DEFS
 TRILINOS_TARGET = $(TRILINOS_ARCH).$(TRILINOS_COMM)$(TRILINOS_ID)
 
 LIBEPETRA= $(TRILINOS_HOME)/lib/$(TRILINOS_TARGET)/libepetra.a

@@ -24,7 +24,7 @@ void read_hb(char *data_file, int *proc_config,
 {
   FILE *in_file ;
   char Title[73], Key[9], Rhstype[4];
-  char Type[4];
+  char Type[4] = "   \0";
   char Ptrfmt[17], Indfmt[17], Valfmt[21], Rhsfmt[21];
   int Ptrcrd, Indcrd, Valcrd, Rhscrd;
 
