@@ -16,16 +16,20 @@ CCFLAGS=$(CXXFLAGS)
 LDFLAGS=$(ARCH_LDFLAGS)
 
 
-LIB_PATHS= ../../utils/libbelosutils.$(LIB_EXT) $(LIBEPETRA) $(LIBIFPACK) $(LIBTRIUTILS) \
+LIB_PATHS= ../../utils/libbelosutils.$(LIB_EXT) $(LIBIFPACK) $(LIBEPETRA) $(LIBTRIUTILS) \
 $(LIBLAPACK) $(LIBY12M) $(LIBBLAS)
 
 #=======================================================================
 # EPetra test source files
 #=======================================================================
 
-TEST_CXX = test_bl_pcg_hb.cpp
+TEST_CXX = test_bl_cg_hb.cpp
 TEST_C =
 TEST_F =
+
+PTEST_CXX = test_bl_pcg_hb.cpp
+PTEST_C =
+PTEST_F =
 
 #=======================================================================
 # TEST include files
@@ -36,17 +40,31 @@ TEST_INC =
 
 TEST_OBJ        = $(TEST_CXX:.cpp=.$(OBJ_EXT)) $(TEST_C:.c=.$(OBJ_EXT)) \
                   $(TEST_F:.f=.$(OBJ_EXT))
+
+PTEST_OBJ        = $(PTEST_CXX:.cpp=.$(OBJ_EXT)) $(PTEST_C:.c=.$(OBJ_EXT)) \
+                  $(PTEST_F:.f=.$(OBJ_EXT))
 #=======================================================================
 
-TARGET_MPI = bl_pcg_hb_mpi.exe
-TARGET_SERIAL = bl_pcg_hb_serial.exe
+TARGET_MPI = bl_cg_hb_mpi.exe
+TARGET_SERIAL = bl_cg_hb_serial.exe
 
 TARGET = $(TARGET_$(TRILINOS_COMM))
+
+PTARGET_MPI = bl_pcg_hb_mpi.exe
+PTARGET_SERIAL = bl_pcg_hb_serial.exe
+
+PTARGET = $(PTARGET_$(TRILINOS_COMM))
+
+all: $(TARGET) $(PTARGET)
 #=======================================================================
 
 $(TARGET): $(TEST_OBJ)
 	$(LINKER) $(LDFLAGS) $(TEST_OBJ) $(LIB_PATHS) $(ARCH_LIBS) \
 	$(LIBMPI)  -o $(TARGET)
+
+$(PTARGET): $(PTEST_OBJ)
+	$(LINKER) $(LDFLAGS) $(PTEST_OBJ) $(LIB_PATHS) $(ARCH_LIBS) \
+	$(LIBMPI)  -o $(PTARGET)
 
 #=======================================================================
 # dependencies for 'f' files (none at this time)
