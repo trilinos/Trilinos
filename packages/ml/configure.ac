@@ -371,6 +371,9 @@ AM_CONDITIONAL(ML_USING_TRIUTILS, test "X$ac_cv_use_triutils" = "Xyes")
 TAC_ARG_ENABLE_FEATURE(examples, [Build examples for ML package], EXAMPLES, yes)
 AM_CONDITIONAL(BUILD_EXAMPLES, test "X$ac_cv_use_examples" != "Xno")
 
+TAC_ARG_ENABLE_FEATURE(tests, [Build tests for ML package], TESTS, no)
+AM_CONDITIONAL(BUILD_TESTS, test "X$ac_cv_use_tests" != "Xno")
+
 # ------------------------------------------------------------------------
 # Specify other directories 
 # ------------------------------------------------------------------------
@@ -470,6 +473,11 @@ AC_CONFIG_FILES([
 		Makefile 
 		src/Makefile
 		examples/Makefile
+                test/Makefile
+                test/scripts/Makefile
+                test/scripts/daily/Makefile
+                test/scripts/daily/mpi/Makefile
+                test/scripts/daily/serial/Makefile
 		])
 
 AC_OUTPUT()
