@@ -25,9 +25,9 @@ struct SLUData
 };
 
 Epetra_SLU::Epetra_SLU( Epetra_LinearProblem * Problem,
-                        const int fill_fac,
-                        const int panel_size,
-                        const int relax )
+                        int fill_fac,
+                        int panel_size,
+                        int relax )
 : count_(0)
 {
   using namespace SLU;
@@ -182,11 +182,13 @@ void Epetra_SLU::Copy()
   }
 }
 
-int Epetra_SLU::Solve( const bool Verbose,
-                       const bool Equil,
-                       const bool Factor,
-                       const int perm_type,
-                       const double pivot_thresh )
+int Epetra_SLU::Solve( bool Verbose,
+                       bool Equil,
+                       bool Factor,
+                       int perm_type,
+                       double pivot_thresh,
+                       bool Refact,
+                       bool Trans )
 {
   Copy();
 
@@ -210,11 +212,18 @@ int Epetra_SLU::Solve( const bool Verbose,
   int info = 0;
 
   char fact, trans, refact, equed;
-  trans = 'N';
+
+  if( Trans ) trans = 'T';
+  else        trans = 'N';
+
   if( Equil ) fact = 'E';
   else        fact = 'N';
 
-  if( !count_ ) refact = 'N';
+  if( !count_ || !Refact )
+  {
+    refact = 'N';
+    count_ = 0;
+  }
   else
   {
     refact = 'Y';
@@ -226,6 +235,7 @@ int Epetra_SLU::Solve( const bool Verbose,
 
   double rpg, rcond;
  
+  if( Verbose ) cout << "TRANS:  " << trans << endl;
   if( Verbose ) cout << "REFACT: " << refact << endl;
 
   dgssvx( &fact, &trans, &refact, &(data_->A), &(data_->iparam), perm_c_,
@@ -233,8 +243,7 @@ int Epetra_SLU::Solve( const bool Verbose,
 	NULL, 0, &(data_->B), &(data_->X), &rpg, &rcond,
 	ferr_, berr_, &(data_->mem_usage), &info );
 
-  if( info )
-    cout << "WARNING: SuperLU returned with error code = " << info << endl;
+  if( info ) cout << "WARNING: SuperLU returned with error code = " << info << endl;
 
   if( Verbose )
   {
