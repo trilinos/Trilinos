@@ -206,20 +206,20 @@ endif
 if ( $yes_fortran ) then
 # Using F90
   if ( $no_parmetis ) then
-    set ch_methods = ( rcb rcb-ts rib rib-ts oct0 oct1 oct2 hsfc )
+    set ch_methods = ( rcb rcb-ts rib rib-ts hsfc bsfc oct0 oct1 oct2 )
     set nem_methods = ( )
   else
-    set ch_methods = ( rcb rcb-ts rib rib-ts oct0 oct1 oct2 hsfc partkway partgeom diffusion )
+    set ch_methods = ( rcb rcb-ts rib rib-ts hsfc bsfc oct0 oct1 oct2 partkway partgeom diffusion )
     set nem_methods = ( )
   endif
 else
 # Using C
   if ( $no_parmetis ) then
-    set ch_methods = ( rcb rcb-oneproc rcb-ts rib rib-oneproc rib-ts oct0 oct1 oct2 hsfc)
-    set nem_methods = ( rcb rcb-ts rib rib-ts oct0 oct1 oct2 hsfc)
+    set ch_methods = ( rcb rcb-oneproc rcb-ts rib rib-oneproc rib-ts hsfc bsfc oct0 oct1 oct2 )
+    set nem_methods = ( rcb rcb-ts rib rib-ts hsfc bsfc oct0 oct1 oct2 )
   else
-    set ch_methods = ( rcb rcb-oneproc rcb-ts rib rib-oneproc rib-ts oct0 oct1 oct2 hsfc partkway partkway-oneproc partkway-cyclic partgeom diffusion )
-    set nem_methods = ( rcb rcb-ts rib rib-ts oct0 oct1 oct2 hsfc partkway partgeom diffusion )
+    set ch_methods = ( rcb rcb-oneproc rcb-ts rib rib-oneproc rib-ts hsfc bsfc oct0 oct1 oct2 partkway partkway-oneproc partkway-cyclic partgeom diffusion )
+    set nem_methods = ( rcb rcb-ts rib rib-ts hsfc bsfc oct0 oct1 oct2 partkway partgeom diffusion )
   endif
 endif
 # Check for Jostle

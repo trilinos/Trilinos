@@ -1,4 +1,4 @@
-Decomposition Method 	= sfc
+Decomposition Method 	= bsfc
 Zoltan Parameters	= 
 File Type		= Chaco
 File Name		= nograph

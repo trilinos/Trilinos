@@ -1,4 +1,4 @@
-Decomposition Method 	= sfc
+Decomposition Method 	= bsfc
 Zoltan Parameters	= comm_weight_dim=1
 File Type		= Chaco
 File Name		= ewgt
