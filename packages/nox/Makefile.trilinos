@@ -38,7 +38,7 @@ CXXFLAGS=$(ARCH_CXXFLAGS) $(DEFINES) $(INCLUDES)
 #=======================================================================
 
 NLSPACK_CC = NLS_ParameterList.C NLS_Parameter.C NLS_PetraVector.C \
-             NLS_MethodManager.C NLS_GenericGroup.C
+             NLS_MethodManager.C NLS_PetraGroup.C
 
 NLSPACK_C = 
 
