@@ -5,8 +5,6 @@
 #include <Epetra_CrsMatrix.h>
 #include <Epetra_Vector.h>
 
-using std::vector;
-
 namespace EpetraExt {
 
 LinearProblem_Scale::

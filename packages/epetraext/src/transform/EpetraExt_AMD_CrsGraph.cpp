@@ -7,8 +7,6 @@
 
 #include <vector>
 
-using std::vector;
-
 extern "C" {
 #include <amd.h>
 }

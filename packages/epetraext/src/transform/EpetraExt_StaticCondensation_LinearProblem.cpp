@@ -15,10 +15,6 @@
 #include <map>
 #include <set>
 
-using std::vector;
-using std::map;
-using std::set;
-
 namespace EpetraExt {
 
 LinearProblem_StaticCondensation::

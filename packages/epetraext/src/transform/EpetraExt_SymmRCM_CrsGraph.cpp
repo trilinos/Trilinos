@@ -10,9 +10,6 @@
 #include <Epetra_Map.h>
 #include <Epetra_Import.h>
 
-using std::set;
-using std::vector;
-
 namespace EpetraExt {
 
 CrsGraph_SymmRCM::

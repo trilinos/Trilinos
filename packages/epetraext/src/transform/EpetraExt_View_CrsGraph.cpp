@@ -6,8 +6,6 @@
 
 #include <vector>
 
-using std::vector;
-
 namespace EpetraExt {
 
 CrsGraph_View::

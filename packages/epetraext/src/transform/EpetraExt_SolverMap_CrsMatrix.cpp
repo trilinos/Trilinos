@@ -7,7 +7,6 @@
 #include <Epetra_Comm.h>
 
 #include <vector>
-using std::vector;
 
 namespace EpetraExt {
 
