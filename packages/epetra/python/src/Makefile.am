@@ -56,7 +56,7 @@ setup.txt: $(srcdir)/Makefile.am
 	@echo "  'FLIBS'       : '$(FLIBS)',"       >> $@
 	@echo "  'LIBS'        : '$(LIBS)',"        >> $@
 	@echo "  'BLAS_LIBS'   : '$(BLAS_LIBS)',"   >> $@
-	@echo "  'LAPACK_LIBS' : '$(LAPACKLIBS)',"  >> $@
+	@echo "  'LAPACK_LIBS' : '$(LAPACK_LIBS)'," >> $@
 	@echo "}"                                   >> $@
 
 build: $(WRAPPERS) setup.txt $(tempdir)
