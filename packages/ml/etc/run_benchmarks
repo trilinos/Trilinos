@@ -231,6 +231,11 @@ export ARCH
 export SUMMARY_FILE
 
 #
+# Blow away the old summary file
+#
+rm -f ${SUMMARY_FILE}
+
+#
 # If necessary, update the ml & mlbench directories via cvs.
 #
 if test `expr ${CVS_UPDATE}` = 'TRUE'
@@ -341,7 +346,6 @@ fi
 # Run program within each subdirectory and compare output
 # with that contained in the corresponding ${BENCH_ROOT_DIRECTORY}.
 #
-rm -f ${SUMMARY_FILE}
 echo " *********** Summary ***************" >> ${SUMMARY_FILE}
 echo >> ${SUMMARY_FILE}
 echo >> ${SUMMARY_FILE}
