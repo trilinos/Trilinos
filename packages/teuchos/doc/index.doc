@@ -1,14 +1,47 @@
-/*! \mainpage Trilinos/Teuchos Tools Library
+/*! \mainpage Teuchos:  The Trilinos Tools Library
 
-\section intro Teuchos provides a suite of common tools for Trilinos
+\section intro Introduction
 
+Teuchos provides a suite of common tools for Trilinos for developers to use.  These tools 
+include BLAS/LAPACK wrappers, smart pointers, parameter lists, XML parsers, etc. 
 
+\section contributors Teuchos Contributors
+
+The following people have contributed to the development of Teuchos:
+
+<ul>
+	<li> Roscoe Bartlett, Sandia National Labs, rabartl@sandia.gov
+	<li> Kris Kampshoff, University of Minnesota, kamp@cs.umn.edu
+	<li> Kevin Long, Sandia National Labs, krlong@sandia.gov
+	<li> Heidi Thornquist, Sandia National Labs, hkthorn@sandia.gov
+</ul>
 
 \section startup Overview of Teuchos
 
-\subsection formulations Teuchos Classes
+Teuchos contains a number of classes.  To remain portable, these classes have been divided 
+between a "standard" build and an "experimental" build.  The "standard" build has shown to be 
+a portable subset of the Teuchos tools.  The "experimental" build is portable, for the most 
+part, but still has some platforms that need to be addressed.
 
-Teuchos contains a number of classes.  They can be categorized as follows:
+
+\subsection sclasses Teuchos "Standard" Classes
+
+<ul>
+<li> <b> Low-level math</b>
+<ul>
+
+<li> BLAS wrapper class: Teuchos::BLAS - A ``thin'' layer of C++ code wrapping the basic linear algebra subprograms (BLAS).
+     This class provides a single instance interface between Teuchos and the BLAS.  In this way we can easily
+     switch BLAS interfaces and manage the C++/Fortran translation differences that exist between different
+     computer systems.  This class also provides a very convenient way to templatize the BLAS.
+
+<li> LAPACK wrapper class: Teuchos::LAPACK - A ``thin'' layer of C++ code wrapping LAPACK.  Like Teuchos::BLAS,
+     it provides nice C++ access to LAPACK.
+
+</ul>
+</ul>
+
+\subsection eclasses Teuchos "Experimental" Classes
 
 <ul>
 
@@ -58,26 +91,12 @@ it with a call to Teuchos::Error::setRaiseHandler().
 </ul>
 
 <br>
-<li> <b> Low-level math</b>
-<ul>
-
-<li> BLAS wrapper class: Teuchos::BLAS - A ``thin'' layer of C++ code wrapping the basic linear algebra subprograms (BLAS).
-     This class provides a single instance interface between Teuchos and the BLAS.  In this way we can easily
-     switch BLAS interfaces and manage the C++/Fortran translation differences that exist between different
-     computer systems.  This class also provides a very convenient way to templatize the BLAS.
-
-<li> LAPACK wrapper class: Teuchos::LAPACK - A ``thin'' layer of C++ code wrapping LAPACK.  Like Teuchos::BLAS,
-     it provides nice C++ access to LAPACK.
-
-</ul>
-
-<br>
 <li> <b> Containers </b>
 <ul>
 <li> Teuchos::Array is a templated
 array class similar to the STL vector, but with optional boundschecking.
 Boundschecking is useful for debugging, and can be turned on at compile time with
-the <pre> --enable-boundscheck </pre> configure flag. Boundschecking incurs a significant
+the <pre> --enable-teuchos-abc </pre> configure flag. Boundschecking incurs a significant
 performance penalty and so is not recommended for production builds. 
 <li> Teuchos::Hashtable is a templated map with constant-time lookup.
 <li> Teuchos::HashSet is a templated set with constant-time lookup.
