@@ -303,6 +303,23 @@ SUNOS_DR_LIBS	= -L. -l$(LIB_TARGET) -L$(SUNOS_ARCHD)/lib $(NEM_LIBS) \
 #      TARGETS FOR DIFFERENT MACHINES
 ###########################################################################
 #
+help:
+	@echo ' '
+	@echo 'To build the Zoltan library only, type "gmake target";'
+	@echo 'to build the Zoltan library and the driver zdrive,'
+	@echo 'type "gmake target-dr", where target is one of the following:'
+	@echo ' '
+	@echo '      smos       (for Intel Paragon)'
+	@echo '      sun        (for Solaris with MPI)'
+	@echo '      sunos      (for SunOS4 with MPI)'
+	@echo '      tflop      (for Intel/Sandia ASCI Red)'
+	@echo '      cplant     (for Computational Plant)'
+	@echo ' '
+	@echo 'Accepted compilation flags are'
+	@echo '      NO_PARMETIS=1  (to exclude ParMetis from library)'
+	@echo '      NO_NEMESIS=1   (to exclude Nemesis from driver)'
+	@echo ' '
+
 smos:
 	@if [ ! -d Obj_smos ]; \
 	then mkdir Obj_smos; \
