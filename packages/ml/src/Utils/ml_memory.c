@@ -219,10 +219,10 @@ int ML_memory_check_var(void* var_ptr)
    if (char_ptr != NULL)
    {
       if ( global_comm != NULL )
-         printf("%d : ML_memory_check_var : %d\n",global_comm->ML_mypid,
-                (int)var_ptr);
+         printf("%d : ML_memory_check_var : %ld\n",global_comm->ML_mypid,
+                (long)var_ptr);
       else
-         printf("ML_memory_check_var : %d\n", (int)var_ptr);
+         printf("ML_memory_check_var : %ld\n", (long)var_ptr);
 
       int_ptr = (int *) ((long) char_ptr - ndouble);
       index   = (*int_ptr) - 1;
