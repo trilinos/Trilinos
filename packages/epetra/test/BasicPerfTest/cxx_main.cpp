@@ -48,7 +48,8 @@
                                             
 // prototypes
 
-void GenerateCrsProblem(int nx, int ny, int npoints, int * xoff, int * yoff,
+void GenerateCrsProblem(int numNodesX, int numNodesY, int numProcsX, int numProcsY, int numPoints, 
+			int * xoff, int * yoff,
 			const Epetra_Comm  &comm, 
 			Epetra_Map *& map, 
 			Epetra_CrsMatrix *& A, 
@@ -56,7 +57,8 @@ void GenerateCrsProblem(int nx, int ny, int npoints, int * xoff, int * yoff,
 			Epetra_Vector *& bt,
 			Epetra_Vector *&xexact);
 
-void GenerateCrsProblem(int nx, int ny, int npoints, int * xoff, int * yoff, int nrhs,
+void GenerateCrsProblem(int numNodesX, int numNodesY, int numProcsX, int numProcsY, int numPoints, 
+			int * xoff, int * yoff, int nrhs,
 			const Epetra_Comm  &comm, 
 			Epetra_Map *& map, 
 			Epetra_CrsMatrix *& A, 
@@ -64,7 +66,8 @@ void GenerateCrsProblem(int nx, int ny, int npoints, int * xoff, int * yoff, int
 			Epetra_MultiVector *& bt,
 			Epetra_MultiVector *&xexact);
  
-void GenerateVbrProblem(int nx, int ny, int npoints, int * xoff, int * yoff,
+void GenerateVbrProblem(int numNodesX, int numNodesY, int numProcsX, int numProcsY, int numPoints, 
+			int * xoff, int * yoff,
 			int nsizes, int * sizes,
 			const Epetra_Comm  &comm, 
 			Epetra_BlockMap *& map, 
@@ -73,7 +76,8 @@ void GenerateVbrProblem(int nx, int ny, int npoints, int * xoff, int * yoff,
 			Epetra_Vector *& bt,
 			Epetra_Vector *&xexact);
 
-void GenerateVbrProblem(int nx, int ny, int npoints, int * xoff, int * yoff, 
+void GenerateVbrProblem(int numNodesX, int numNodesY, int numProcsX, int numProcsY, int numPoints, 
+			int * xoff, int * yoff, 
 			int nsizes, int * sizes, int nrhs,
 			const Epetra_Comm  &comm, 
 			Epetra_BlockMap *& map, 
@@ -81,6 +85,9 @@ void GenerateVbrProblem(int nx, int ny, int npoints, int * xoff, int * yoff,
 			Epetra_MultiVector *& b, 
 			Epetra_MultiVector *& bt,
 			Epetra_MultiVector *&xexact);
+
+void GenerateMyGlobalElements(int numNodesX, int numNodesY, int numProcsX, int numProcs,
+			      int myPID, int * & myGlobalElements);
 
 int main(int argc, char *argv[])
 {
@@ -102,9 +109,26 @@ int main(int argc, char *argv[])
   bool verbose = false;
 
   // Check if we should print results to standard out
-  if (argc>1) if (argv[1][0]=='-' && argv[1][1]=='v') verbose = true;
+  if (argc>6) if (argv[6][0]=='-' && argv[6][1]=='v') verbose = true;
 
+  if(argc < 2 && verbose) {
+    cerr << "Usage: " << argv[0]
+         << " NumNodesX NumNodesY NumProcX NumProcY NumPoints [-v]" << endl
+         << "where:" << endl
+         << "NumNodesX         - Number of mesh nodes in X direction per processor" << endl
+         << "NumNodesY         - Number of mesh nodes in Y direction per processor" << endl
+         << "NumProcX          - Number of processors to use in X direction" << endl
+         << "NumProcY          - Number of processors to use in Y direction" << endl
+         << "NumPoints         - Number of points to use in stencil (5 or 9 only)" << endl
+         << "-v                - (Optional) Run in verbose mode if present" << endl
+         << " NOTES: NumProcX*NumProcY must equal the number of processors used to run the problem. Example:" << endl
+         << "mpirun -np 32 " << argv[0] << " 10 12 4 8 -v" << endl
+	 << " Run this program on 32 processors putting a 10 X 12 subgrid on each processor using 4 processors "<< endl
+	 << " in the X direction and 8 in the Y direction.  Total grid size is 40 points in X and 96 in Y."<< endl
+         << endl;
+    return(1);
 
+  }
   //  char tmp;
   //  if (rank==0) cout << "Press any key to continue..."<< endl;
   //  if (rank==0) cin >> tmp;
@@ -122,24 +146,60 @@ int main(int argc, char *argv[])
 
   if (verbose && comm.MyPID()!=0) verbose = false;
 
-  /*
-  // Generate a 5-point 2D Finite Difference matrix
-  int npoints = 5;
-  Epetra_IntSerialDenseVector Xoff(5);
-  Epetra_IntSerialDenseVector Yoff(5);
-  Xoff[0] = -1; Xoff[1] = 1; Xoff[2] = 0; Xoff[3] = 0;  Xoff[4] = 0; 
-  Yoff[0] = 0;  Yoff[1] = 0; Yoff[2] = 0; Yoff[3] = -1; Yoff[4] = 1; 
-  */
-  // Generate a 9-point 2D Finite Difference matrix
-  int npoints = 9;
-  Epetra_IntSerialDenseVector Xoff(9);
-  Epetra_IntSerialDenseVector Yoff(9);
-  Xoff[0] = -1;  Xoff[1] =  0; Xoff[2] =  1; 
-  Yoff[0] = -1;  Yoff[1] = -1; Yoff[2] = -1; 
-  Xoff[3] = -1;  Xoff[4] =  0; Xoff[5] =  1; 
-  Yoff[3] =  0;  Yoff[4] =  0; Yoff[5] =  0; 
-  Xoff[6] = -1;  Xoff[7] =  0; Xoff[8] =  1; 
-  Yoff[6] =  1;  Yoff[7] =  1; Yoff[8] =  1; 
+  int numNodesX = atoi(argv[1]);
+  int numNodesY = atoi(argv[2]);
+  int numProcsX = atoi(argv[3]);
+  int numProcsY = atoi(argv[4]);
+  int numPoints = atoi(argv[5]);
+
+  if (verbose) {
+    cout << " Number of local nodes in X direction  = " << numNodesX << endl
+	 << " Number of local nodes in Y direction  = " << numNodesY << endl
+	 << " Number of global nodes in X direction = " << numNodesX*numProcsX << endl
+	 << " Number of local nonzero entries       = " << numNodesX*numNodesY*numPoints << endl
+	 << " Number of global nonzero entries      = " << numNodesX*numNodesY*numPoints*numProcsX*numProcsY << endl
+	 << " Number of global nodes in X direction = " << numNodesX*numProcsX << endl
+	 << " Number of Processors in X direction   = " << numProcsX << endl
+	 << " Number of Processors in Y direction   = " << numProcsY << endl
+	 << " Number of Points in stencil           = " << numPoints << endl << endl;
+  }
+
+  if (numProcsX*numProcsY!=comm.NumProc()) {
+    cerr << "Number of processors = " << comm.NumProc() << endl
+	 << " is not the product of " << numProcsX << " and " << numProcsY << endl << endl;
+    return(1);
+  }
+
+  if (numPoints!=5 && numPoints!=9) {
+    cerr << "Number of points specified = " << numPoints << endl
+	 << " is not 5 or 9" << endl << endl;
+    return(1);
+  }
+
+  if (numNodesX*numNodesY<=0) {
+    cerr << "Product of number of nodes is <= zero" << endl << endl;
+    return(1);
+  }
+
+  if (numPoints==5) {
+
+     // Generate a 5-point 2D Finite Difference matrix
+    Epetra_IntSerialDenseVector Xoff(5);
+    Epetra_IntSerialDenseVector Yoff(5);
+    Xoff[0] = -1; Xoff[1] = 1; Xoff[2] = 0; Xoff[3] = 0;  Xoff[4] = 0; 
+    Yoff[0] = 0;  Yoff[1] = 0; Yoff[2] = 0; Yoff[3] = -1; Yoff[4] = 1; 
+  }
+  else {
+    // Generate a 9-point 2D Finite Difference matrix
+    Epetra_IntSerialDenseVector Xoff(9);
+    Epetra_IntSerialDenseVector Yoff(9);
+    Xoff[0] = -1;  Xoff[1] =  0; Xoff[2] =  1; 
+    Yoff[0] = -1;  Yoff[1] = -1; Yoff[2] = -1; 
+    Xoff[3] = -1;  Xoff[4] =  0; Xoff[5] =  1; 
+    Yoff[3] =  0;  Yoff[4] =  0; Yoff[5] =  0; 
+    Xoff[6] = -1;  Xoff[7] =  0; Xoff[8] =  1; 
+    Yoff[6] =  1;  Yoff[7] =  1; Yoff[8] =  1; 
+  }
 
   Epetra_Map * map;
   Epetra_CrsMatrix * A;
@@ -147,88 +207,79 @@ int main(int argc, char *argv[])
   Epetra_Vector * bt;
   Epetra_Vector * xexact;
 
-  
-  int nx = 10;
-  for (int k=0; k<3; k++) { // 3 different sized matrices
-			       
-    int ny = nx;
-    GenerateCrsProblem(nx, ny, npoints, Xoff.Values(), Yoff.Values(), comm, 
-		       map, A, b, bt, xexact);
+  GenerateCrsProblem(numNodesX, numNodesY, numProcsX, numProcsY, numPoints, Xoff.Values(), Yoff.Values(), comm, 
+		     map, A, b, bt, xexact);
 
-    if (verbose) cout << npoints << "-point 2D finite difference matrix with nx=ny="
-		      << nx << endl;
-    Epetra_Vector q(b->Map());
-    Epetra_Vector z(b->Map());
-    Epetra_Vector r(b->Map());
+  Epetra_Vector q(b->Map());
+  Epetra_Vector z(b->Map());
+  Epetra_Vector r(b->Map());
 
-    //Timings
-    Epetra_Flops flopcounter;
-    A->SetFlopCounter(flopcounter);
-    Epetra_Time timer(comm);
+  //Timings
+  Epetra_Flops flopcounter;
+  A->SetFlopCounter(flopcounter);
+  Epetra_Time timer(comm);
     
-    for (j=0; j<2; j++) { // j = 0 is notrans, j = 1 is trans
+  for (j=0; j<2; j++) { // j = 0 is notrans, j = 1 is trans
       
-      flopcounter.ResetFlops();
-      timer.ResetStartTime();
-
-      bool TransA = (j==1);
-      //10 matvecs
-      for( int i = 0; i < 10; ++i )
-	A->Multiply(TransA, *xexact, z); // Compute z = A*xexact or z = A'*xexact
-      
-      elapsed_time = timer.ElapsedTime();
-      total_flops = A->Flops();
-      MFLOPs = total_flops/elapsed_time/1000000.0;
-      if (verbose) cout << "\n\nTotal MFLOPs for 10 MatVec's (Trans = " << TransA
-			<< ")     = " << MFLOPs << endl<< endl;
-      
-
-      // Compute residual
-      if (TransA)
-	r.Update(-1.0, z, 1.0, *bt, 0.0); // r = bt - z
-      else
-	r.Update(-1.0, z, 1.0, *b, 0.0); // r = b - z
-
-      double rnorm;
-      r.Norm2(&rnorm);
-      if (verbose) cout << "Norm of difference between computed and exact RHS = " << rnorm << endl;
-    }
-
-    q.SetFlopCounter(*A);
-    z.SetFlopCounter(*A);
-    
-    flopcounter.ResetFlops();
-    timer.ResetStartTime();
-    //10 norms
-    double n_out;
-    for( int i = 0; i < 10; ++i )
-      q.Norm2( &n_out );
-
-    elapsed_time = timer.ElapsedTime();
-    total_flops = q.Flops();
-    MFLOPs = total_flops/elapsed_time/1000000.0;
-    if (verbose) cout << "\n\nTotal MFLOPs for 10 Norm2's= " << MFLOPs << endl<< endl;
-    r.SetFlopCounter(*A);
-    
     flopcounter.ResetFlops();
     timer.ResetStartTime();
 
-    //10 dot's
+    bool TransA = (j==1);
+    //10 matvecs
     for( int i = 0; i < 10; ++i )
-      q.Dot(z, &n_out);
-    
+      A->Multiply(TransA, *xexact, z); // Compute z = A*xexact or z = A'*xexact
+      
     elapsed_time = timer.ElapsedTime();
-    total_flops = q.Flops();
+    total_flops = A->Flops();
     MFLOPs = total_flops/elapsed_time/1000000.0;
-    if (verbose) cout << "\n\nTotal MFLOPs for 10 Dot's= " << MFLOPs << endl<< endl;
-    
-    nx *= 10; // Increase problem size by factor 10
-    delete map;
-    delete A;
-    delete b;
-    delete bt; 
-    delete xexact;
+    if (verbose) cout << "\n\nTotal MFLOPs for 10 MatVec's (Trans = " << TransA
+		      << ")     = " << MFLOPs << endl<< endl;
+      
+
+    // Compute residual
+    if (TransA)
+      r.Update(-1.0, z, 1.0, *bt, 0.0); // r = bt - z
+    else
+      r.Update(-1.0, z, 1.0, *b, 0.0); // r = b - z
+
+    double rnorm;
+    r.Norm2(&rnorm);
+    if (verbose) cout << "Norm of difference between computed and exact RHS = " << rnorm << endl;
   }
+
+  q.SetFlopCounter(*A);
+  z.SetFlopCounter(*A);
+    
+  flopcounter.ResetFlops();
+  timer.ResetStartTime();
+  //10 norms
+  double n_out;
+  for( int i = 0; i < 10; ++i )
+    q.Norm2( &n_out );
+
+  elapsed_time = timer.ElapsedTime();
+  total_flops = q.Flops();
+  MFLOPs = total_flops/elapsed_time/1000000.0;
+  if (verbose) cout << "\n\nTotal MFLOPs for 10 Norm2's= " << MFLOPs << endl<< endl;
+  r.SetFlopCounter(*A);
+    
+  flopcounter.ResetFlops();
+  timer.ResetStartTime();
+
+  //10 dot's
+  for( int i = 0; i < 10; ++i )
+    q.Dot(z, &n_out);
+    
+  elapsed_time = timer.ElapsedTime();
+  total_flops = q.Flops();
+  MFLOPs = total_flops/elapsed_time/1000000.0;
+  if (verbose) cout << "\n\nTotal MFLOPs for 10 Dot's= " << MFLOPs << endl<< endl;
+    
+  delete map;
+  delete A;
+  delete b;
+  delete bt; 
+  delete xexact;
 		
 #ifdef EPETRA_MPI
   MPI_Finalize() ;
@@ -249,11 +300,11 @@ return ierr ;
 //      nx equation at             (nx-1,0)
 //      nx+1st equation at         (0,1)
 
-// npoints (In) - number of points in finite difference stencil
-// xoff    (In) - stencil offsets in x direction (of length npoints)
-// yoff    (In) - stencil offsets in y direction (of length npoints)
+// numPoints (In) - number of points in finite difference stencil
+// xoff    (In) - stencil offsets in x direction (of length numPoints)
+// yoff    (In) - stencil offsets in y direction (of length numPoints)
 //   A standard 5-point finite difference stencil would be described as:
-//     npoints = 5
+//     numPoints = 5
 //     xoff = [-1, 1, 0,  0, 0]
 //     yoff = [ 0, 0, 0, -1, 1]
 
@@ -270,7 +321,8 @@ return ierr ;
 
 // Note: Caller of this function is responsible for deleting all output objects.
 
-void GenerateCrsProblem(int nx, int ny, int npoints, int * xoff, int * yoff,
+void GenerateCrsProblem(int numNodesX, int numNodesY, int numProcsX, int numProcsY, int numPoints, 
+			int * xoff, int * yoff,
 			const Epetra_Comm  &comm, 
 			Epetra_Map *& map, 
 			Epetra_CrsMatrix *& A, 
@@ -280,8 +332,9 @@ void GenerateCrsProblem(int nx, int ny, int npoints, int * xoff, int * yoff,
 
   Epetra_MultiVector * b1, * bt1, * xexact1;
 	
-  GenerateCrsProblem(nx, ny, npoints, xoff, yoff, 1, comm, 
-				   map, A, b1, bt1, xexact1);
+  GenerateCrsProblem(numNodesX, numNodesY, numProcsX, numProcsY, numPoints, 
+		     xoff, yoff, 1, comm, 
+		     map, A, b1, bt1, xexact1);
 
   b = dynamic_cast<Epetra_Vector *>(b1);
   bt = dynamic_cast<Epetra_Vector *>(bt1);
@@ -290,7 +343,8 @@ void GenerateCrsProblem(int nx, int ny, int npoints, int * xoff, int * yoff,
   return;
 }
 
-void GenerateCrsProblem(int nx, int ny, int npoints, int * xoff, int * yoff, int nrhs,
+void GenerateCrsProblem(int numNodesX, int numNodesY, int numProcsX, int numProcsY, int numPoints, 
+			int * xoff, int * yoff, int nrhs,
 			const Epetra_Comm  &comm, 
 			Epetra_Map *& map, 
 			Epetra_CrsMatrix *& A, 
@@ -299,31 +353,37 @@ void GenerateCrsProblem(int nx, int ny, int npoints, int * xoff, int * yoff, int
 			Epetra_MultiVector *&xexact) {
   
   Epetra_Time timer(comm);
-  // Number of global equations is nx*ny.  These will be distributed in a linear fashion
-  int numGlobalEquations = nx*ny;
-  map = new Epetra_Map(numGlobalEquations, 0, comm); // Create map with equal distribution of equations.
+  // Determine my global IDs
+  int * myGlobalElements;
+  GenerateMyGlobalElements(numNodesX, numNodesY, numProcsX, numProcsY, comm.MyPID(), myGlobalElements);
 
-  int numMyEquations = map->NumMyElements();
+  int numMyEquations = numNodesX*numNodesY;
+  
+  map = new Epetra_Map(-1, numMyElements, myGlobalElements, 0, comm); // Create map with 2D block partitioning.
+  delete [] myGlobalElements;
+
+  int numGlobalElements = map->NumGlobalElements();
   
   A = new Epetra_CrsMatrix(Copy, *map, 0); // Construct matrix
 
-  int * indices = new int[npoints];
-  double * values = new double[npoints];
+  int * indices = new int[numPoints];
+  double * values = new double[numPoints];
 
-  double dnpoints = (double) npoints;
+  double dnumPoints = (double) numPoints;
+  int nx = numNodesX*numProcsX;
 
   for (int i=0; i<numMyEquations; i++) {
 
     int rowID = map->GID(i);
     int numIndices = 0;
 
-    for (int j=0; j<npoints; j++) {
+    for (int j=0; j<numPoints; j++) {
       int colID = rowID + xoff[j] + nx*yoff[j]; // Compute column ID based on stencil offsets
       if (colID>-1 && colID<numGlobalEquations) {
 	indices[numIndices] = colID;
 	double value = - ((double) rand())/ ((double) RAND_MAX);
 	if (colID==rowID)
-	  values[numIndices++] = dnpoints - value; // Make diagonal dominant
+	  values[numIndices++] = dnumPoints - value; // Make diagonal dominant
 	else
 	  values[numIndices++] = -value;
       }
@@ -375,11 +435,11 @@ void GenerateCrsProblem(int nx, int ny, int npoints, int * xoff, int * yoff, int
 //      nx equation at             (nx-1,0)
 //      nx+1st equation at         (0,1)
 
-// npoints (In) - number of points in finite difference stencil
-// xoff    (In) - stencil offsets in x direction (of length npoints)
-// yoff    (In) - stencil offsets in y direction (of length npoints)
+// numPoints (In) - number of points in finite difference stencil
+// xoff    (In) - stencil offsets in x direction (of length numPoints)
+// yoff    (In) - stencil offsets in y direction (of length numPoints)
 //   A standard 5-point finite difference stencil would be described as:
-//     npoints = 5
+//     numPoints = 5
 //     xoff = [-1, 1, 0,  0, 0]
 //     yoff = [ 0, 0, 0, -1, 1]
 
@@ -402,7 +462,8 @@ void GenerateCrsProblem(int nx, int ny, int npoints, int * xoff, int * yoff, int
 
 // Note: Caller of this function is responsible for deleting all output objects.
 
-void GenerateVbrProblem(int nx, int ny, int npoints, int * xoff, int * yoff,
+void GenerateVbrProblem(int numNodesX, int numNodesY, int numProcsX, int numProcsY, int numPoints, 
+			int * xoff, int * yoff,
 			int nsizes, int * sizes,
 			const Epetra_Comm  &comm, 
 			Epetra_BlockMap *& map, 
@@ -413,8 +474,9 @@ void GenerateVbrProblem(int nx, int ny, int npoints, int * xoff, int * yoff,
 	
   Epetra_MultiVector * b1, * bt1, * xexact1;
 	
-  GenerateVbrProblem(nx, ny, npoints, xoff, yoff, nsizes, sizes,
-				   1, comm, map, A, b1, bt1, xexact1);
+  GenerateVbrProblem(numNodesX, numNodesY, numProcsX, numProcsY, numPoints,
+		     xoff, yoff, nsizes, sizes,
+		     1, comm, map, A, b1, bt1, xexact1);
 
   b = dynamic_cast<Epetra_Vector *>(b1);
   bt = dynamic_cast<Epetra_Vector *>(bt1);
@@ -423,7 +485,8 @@ void GenerateVbrProblem(int nx, int ny, int npoints, int * xoff, int * yoff,
   return;
 }
 
-void GenerateVbrProblem(int nx, int ny, int npoints, int * xoff, int * yoff, 
+void GenerateVbrProblem(int numNodesX, int numNodesY, int numProcsX, int numProcsY, int numPoints, 
+			int * xoff, int * yoff, 
 			int nsizes, int * sizes, int nrhs,
 			const Epetra_Comm  &comm, 
 			Epetra_BlockMap *& map, 
@@ -434,11 +497,16 @@ void GenerateVbrProblem(int nx, int ny, int npoints, int * xoff, int * yoff,
 
   int i, j;
 
-  // Number of global equations is nx*ny.  These will be distributed in a linear fashion
-  int numGlobalEquations = nx*ny;
-  Epetra_Map ptMap(numGlobalEquations, 0, comm); // Create map with equal distribution of equations.
+  // Determine my global IDs
+  int * myGlobalElements;
+  GenerateMyGlobalElements(numNodesX, numNodesY, numProcsX, numProcsY, comm.MyPID(), myGlobalElements);
 
-  int numMyElements = ptMap.NumMyElements();
+  int numMyElements = numNodesX*numNodesY;
+  
+  ptMap = new Epetra_Map(-1, numMyElements, myGlobalElements, 0, comm); // Create map with 2D block partitioning.
+  delete [] myGlobalElements;
+
+  int numGlobalEquations = ptMap->NumGlobalElements();
 
   Epetra_IntVector elementSizes(ptMap); // This vector will have the list of element sizes
   for (i=0; i<numMyElements; i++) 
@@ -450,8 +518,8 @@ void GenerateVbrProblem(int nx, int ny, int npoints, int * xoff, int * yoff,
   
   A = new Epetra_VbrMatrix(Copy, *map, 0); // Construct matrix
 
-  int * indices = new int[npoints];
-  double * values = new double[npoints];
+  int * indices = new int[numPoints];
+  double * values = new double[numPoints];
 
   // This section of code creates a vector of random values that will be used to create
   // light-weight dense matrices to pass into the VbrMatrix construction process.
@@ -463,13 +531,14 @@ void GenerateVbrProblem(int nx, int ny, int npoints, int * xoff, int * yoff,
   Epetra_Vector randvec(lmap);
   randvec.Random();
   randvec.Scale(-1.0); // Make value negative
+  int nx = numNodesX*numProcsX;
 
 
   for (i=0; i<numMyElements; i++) {
     int rowID = map->GID(i);
     int numIndices = 0;
     int rowDim = sizes[rowID%nsizes];
-    for (j=0; j<npoints; j++) {
+    for (j=0; j<numPoints; j++) {
       int colID = rowID + xoff[j] + nx*yoff[j]; // Compute column ID based on stencil offsets
       if (colID>-1 && colID<numGlobalEquations)
 	indices[numIndices++] = colID;
@@ -525,3 +594,19 @@ void GenerateVbrProblem(int nx, int ny, int npoints, int * xoff, int * yoff,
 
   return;
 }
+void GenerateMyGlobalElements(int numNodesX, int numNodesY, int numProcsX, int numProcs,
+			      int myPID, int * & myGlobalElements) {
+
+  myGlobalElements = new [numNodesX*numNodesY];
+  myProcX = myPID%numProcsX;
+  myProcY = myPID/numProcsX;
+  int curGID = myProcY*(numProcsX*numNodesX)*numNodesY+myProcX*numNodesX;
+  for (int j=0; j<numNodesY; j++) {
+    for (int i=0; i<numNodesX; i++) {
+      myGlobalElements[j*numNodesX] = curGID+i;
+    }
+    curGID+=numNodesX*numProcsX;
+  }
+  return;
+}
+
