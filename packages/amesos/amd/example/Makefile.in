@@ -103,7 +103,7 @@ amd_simple_DEPENDENCIES = \
 	$(top_builddir)/amd/src/libamd.a 
 
 
-amd_simple_LDADD = $(top_builddir)/amd/src/libamd.a
+amd_simple_LDADD = $(top_builddir)/amd/src/libamd.a $(FLIBS)
 subdir = amd/example
 mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/Amesos_config.h

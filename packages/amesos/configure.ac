@@ -318,8 +318,8 @@ esac
 #
 #
 #
-      CXXFLAGS="  ${CXXFLAGS} -O2 -O2 -O2 -I\$(top_srcdir)/amd/src/ -I\$(top_srcdir)/src/klu"
-      CFLAGS="  ${CFLAGS} -O2 -O3 -O2 -I\$(top_srcdir)/amd/src/"
+      CXXFLAGS="  ${CXXFLAGS} -I\$(top_srcdir)/amd/src/ -I\$(top_srcdir)/src/klu"
+      CFLAGS="  ${CFLAGS} -I\$(top_srcdir)/amd/src/"
 
 
 #

@@ -107,7 +107,7 @@ example_SOURCES = $(srcdir)/CallAmesosDscpack.cpp \
 example_DEPENDENCIES = \
 	$(top_builddir)/../epetra/src/libepetra.a \
 	$(top_builddir)/src/libamesos.a \
-	$(top_builddir)/../amd/src/libamd.a \
+	$(top_builddir)/amd/src/libamd.a \
 	$(top_builddir)/../triutils/src/libtriutils.a 
 
 
@@ -116,7 +116,6 @@ example_CXXFLAGS = -I$(top_srcdir)/src
 example_LDADD = $(top_builddir)/src/libamesos.a \
 	$(top_builddir)/../epetra/src/libepetra.a \
 	$(AMESOS_LIBS) \
-	$(top_builddir)/../amd/src/libamd.a \
         $(LAPACK_LIBS) \
 	$(BLAS_LIBS) $(FLIBS) 
 
