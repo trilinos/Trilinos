@@ -435,6 +435,7 @@ int ML_Operator_BlockPartition(ML_Operator *matrix, int n, int *nblks,
   int *map = NULL, *bindx = NULL, *blks = NULL, nprocs, myid, j, ii, jj;
   int allocated = 0, row_length, itemp1, itemp2, Nrows;
   double *val = NULL; 
+  int    offset = -1;
 
 #if defined(HAVE_ML_METIS) || defined(HAVE_ML_JOSTLE) 
   int     Cstyle = 0, dummy = -1;
@@ -447,7 +448,7 @@ int ML_Operator_BlockPartition(ML_Operator *matrix, int n, int *nblks,
   static int jostle_called = 0;
   int    output_level, nnodes, *itmp = NULL, *proc_ids;
   int    *total_nz = NULL, *total_rows = NULL, *temp_part, zz;
-  int    msgtype, offset = -1;
+  int    msgtype;
   USR_REQ *request = NULL; 
   char str[80];
 #endif
