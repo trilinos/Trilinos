@@ -70,7 +70,6 @@ main (int argc, char *argv[]) {
   }
   fclose(fp);
 
-printf ("KDD %d %d\n", njunk, nobj);
 
   /* Next, re-read file to get data */
 
