@@ -1,4 +1,4 @@
-0) ML can be built with automake and autoconfig.   For ML-specific flags, at
+0)  ML can be built with automake and autoconfig.   For ML-specific flags, at
 the ml directory level, type "./configure --help".  The following things are
 enabled by default:
 
