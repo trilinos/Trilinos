@@ -196,7 +196,12 @@ NOX
 
 Pliris (New)
 
-- No release notes submitted. 
+- An Object Oriented interface to a Dense Parallel LU Solver is now in place.
+- The matrix is described in terms of Epetra Vectors and Multivectors.
+- Multiple right hand sides can be addressed.
+- Configure with --enable-pliris
+- Test code allows performance studies - performance is dependent on highly 
+  optimized Level 3 BLAS.
 
 --------------------------------------------------------------------------------
 
