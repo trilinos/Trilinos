@@ -923,7 +923,7 @@ report($SUMMARY);
             
             # find position of last successfully built package in subdir list
             my $i;
-            for ($i=0; $i<$#{@subdirList}; $i++) {
+            for ($i=0; $i<$#{@subdirList}+1; $i++) {
                 if ($subdirList[$i] eq $lastSuccessfulPackage) {
                     last;   # equivalent to break 
                 }
@@ -934,7 +934,7 @@ report($SUMMARY);
             my $foundBrokenPackage = 0;
             
             # find next enabled package in subdir list
-            while ($i < $#{@subdirList} && !$foundBrokenPackage) {
+            while ($i < $#{@subdirList}+1 && !$foundBrokenPackage) {
                 foreach my $entry (@enabledPackageSubdirs) {
                     if ($entry eq $potentialMatch) {
                         $foundBrokenPackage = 1;
