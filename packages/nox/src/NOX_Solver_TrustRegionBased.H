@@ -76,10 +76,6 @@ The "improvement ratio" for a given step \f$ s \f$ is defined as
 
   The following parameters are valid for this solver:
 
-  - "Linear %Solver" - Sublist of the linear solver paramaters, passed
-    to Abstract::Group::computeNewton(). Furthermore, the "Tolerance"
-    within this list may be modified. Defaults to an empty list.
-
   - "%Direction" - Sublist of the direction parameters for the
     %Newton point, passed to the NOX::Direction::Manager
     constructor. If "Method" is not specified, it defaults to
@@ -112,7 +108,13 @@ The "improvement ratio" for a given step \f$ s \f$ is defined as
 
 - "Expansion Factor" - See above. Defaults to 4.0.
 
-= "Recovery Step" - Defaults to 1.0.
+- "Recovery Step" - Defaults to 1.0.
+
+A sublist for output parameters called "Output" will be created and contain the following parameters:
+
+- "Nonlinear Iterations" - Number of nonlinear iterations
+
+- "2-Norm or Residual" - Two-norm of final residual
 
   \author Tammy Kolda (SNL 8950), Roger Pawlowski (SNL 9233)
 */

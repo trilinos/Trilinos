@@ -52,10 +52,11 @@ namespace Solver {
   - "%Direction" - Sublist of the direction parameters, passed to
     the NOX::Direction::Manager constructor. Defaults to an empty list.
 
-  - "Linear %Solver" - Sublist of the linear solver paramaters, passed
-    to NOX::Abstract::Group::computeNewton(). Furthermore, the "Tolerance"
-    within this list may be modified by the
-    resetForcingTerm(). Defaults to an empty list.
+A sublist for output parameters called "Output" will be created and contain the following parameters:
+
+- "Nonlinear Iterations" - Number of nonlinear iterations
+
+- "2-Norm or Residual" - Two-norm of final residual
 
   \author Tammy Kolda (SNL 8950), Roger Pawlowski (SNL 9233)
 */
