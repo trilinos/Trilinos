@@ -38,7 +38,7 @@
 // `visualization' section of this example.
 //
 // \author Marzio Sala, SNL 9214
-// \date Last modified on 17-Nov-04
+// \date Last modified on 19-Jan-05
 
 #include "ml_include.h"
 
@@ -72,7 +72,7 @@ using namespace Trilinos_Util;
 int main(int argc, char *argv[])
 {
   
-#ifdef EPETRA_MPI
+#ifdef HAVE_MPI
   MPI_Init(&argc,&argv);
   Epetra_MpiComm Comm(MPI_COMM_WORLD);
 #else
@@ -93,17 +93,17 @@ int main(int argc, char *argv[])
   Gallery.Set("problem_size", 900);
 
   // retrive pointers for linear system matrix and linear problem
-  Epetra_RowMatrix * A = Gallery.GetVbrMatrix(NumPDEEqns);
-  Epetra_LinearProblem * Problem = Gallery.GetVbrLinearProblem();
+  Epetra_RowMatrix* A = Gallery.GetVbrMatrix(NumPDEEqns);
+  Epetra_LinearProblem* Problem = Gallery.GetVbrLinearProblem();
 
   // Construct a solver object for this problem
   AztecOO solver(*Problem);
 
   // =========================== definition of coordinates =================
   
-  double * x_coord = 0;
-  double * y_coord = 0;
-  double * z_coord = 0; // the problem is 2D, here z_coord will be NULL
+  double* x_coord = 0;
+  double* y_coord = 0;
+  double* z_coord = 0; // the problem is 2D, here z_coord will be NULL
   
   // use the following triutils matrix gallery function to get the
   // coordinates for a Cartesian grid. Note however that the
@@ -205,13 +205,11 @@ int main(int argc, char *argv[])
 
   // tell AztecOO to use this preconditioner, then solve
   solver.SetPrecOperator(MLPrec);
-
   solver.SetAztecOption(AZ_solver, AZ_cg_condnum);
   solver.SetAztecOption(AZ_output, 32);
-
-  // solve with 500 iterations and 1e-12 tolerance  
   solver.Iterate(500, 1e-12);
 
+  // destroy the preconditioner
   delete MLPrec;
   
   // compute the real residual
@@ -230,10 +228,11 @@ int main(int argc, char *argv[])
   if( y_coord ) delete [] y_coord;
   if( z_coord ) delete [] z_coord;
   
+  // for testing purposes only
   if (residual > 1e-5)
     exit(EXIT_FAILURE);
 
-#ifdef EPETRA_MPI
+#ifdef HAVE_MPI
   MPI_Finalize();
 #endif
 

@@ -41,7 +41,7 @@
 //   4             15               2.20
 
 // \author Marzio Sala, SNL 9214
-// \data Last modified on 17-Nov-04
+// \data Last modified on 19-Jan-05
 
 #include "ml_include.h"
 
@@ -80,17 +80,13 @@ using namespace Trilinos_Util;
 int main(int argc, char *argv[])
 {
   
-#ifdef EPETRA_MPI
+#ifdef HAVE_MPI
   MPI_Init(&argc,&argv);
   Epetra_MpiComm Comm(MPI_COMM_WORLD);
 #else
   Epetra_SerialComm Comm;
 #endif
 
-  int WhichArguments = 0;
-  if (argc > 1)
-    if (strcmp(argv[1],"set1") == 0)
-      WhichArguments = 1;
   // Create the linear problem using the class `Trilinos_Util::CrsMatrixGallery.'
   // Several matrix examples are supported; please refer to the
   // Trilinos tutorial for more details.
@@ -137,40 +133,30 @@ int main(int argc, char *argv[])
   MLList.set("max levels",5);
   MLList.set("increasing or decreasing","decreasing");
 
-  if (WhichArguments == 0) {
-    // use Uncoupled scheme to create the aggregate,
-    // from level 3 use the better but more expensive MIS
-    MLList.set("aggregation: type", "Uncoupled");
-    MLList.set("aggregation: type (level 3)", "MIS");
-    
-    // smoother is symmetric Gauss-Seidel. Example file 
-    // ml_2level_DD.cpp shows how to use AZTEC's preconditioners as smoothers
-  
-    MLList.set("smoother: type","symmetric Gauss-Seidel");
-  
-    // use both pre and post smoothing
-    MLList.set("smoother: pre or post", "both");
-    
-    // solve with serial direct solver KLU
-    MLList.set("coarse: type","Amesos-KLU");
-  }
-  else {
-    // use Uncoupled scheme to create the aggregate,
-    // from level 3 use the better but more expensive MIS
-    MLList.set("aggregation: type", "MIS");
-    
-    // smoother is symmetric Gauss-Seidel. Example file 
-    // ml_2level_DD.cpp shows how to use AZTEC's preconditioners as smoothers
-  
-    MLList.set("smoother: type","Jacobi");
-  
-    // use both pre and post smoothing
-    MLList.set("smoother: pre or post", "both");
-    
-    // solve with serial direct solver KLU
-    MLList.set("coarse: type","Jacobi");
-  }
-  
+  // use Uncoupled scheme to create the aggregate,
+  // from level 3 use the better but more expensive MIS
+  MLList.set("aggregation: type", "Uncoupled");
+  MLList.set("aggregation: type (level 3)", "MIS");
+
+  // smoother is symmetric Gauss-Seidel. Example file 
+  // ml_2level_DD.cpp shows how to use AZTEC's preconditioners as smoothers
+  MLList.set("smoother: type","symmetric Gauss-Seidel");
+
+  // use both pre and post smoothing
+  MLList.set("smoother: pre or post", "both");
+
+#ifdef HAVE_ML_AMESOS
+  // solve with serial direct solver KLU
+  MLList.set("coarse: type","Amesos-KLU");
+#else
+  // this is for testing purposes only, you should have 
+  // a direct solver for the coarse problem (either Amesos, or the SuperLU/
+  // SuperLU_DIST interface of ML)
+  MLList.set("aggregation: type", "MIS");
+  MLList.set("smoother: type","Jacobi");
+  MLList.set("coarse: type","Jacobi");
+#endif
+
   // create the preconditioning object. We suggest to use `new' and
   // `delete' because the destructor contains some calls to MPI (as
   // required by ML and possibly Amesos). This is an issue only if the
@@ -183,17 +169,18 @@ int main(int argc, char *argv[])
   // processes)
   MLPrec->PrintUnused(0);
 
-  // tell AztecOO to use this preconditioner, then solve
-  solver.SetPrecOperator(MLPrec);
-
   // =========================== end of ML part =============================
   
+  // tell AztecOO to use the ML preconditioner, specify the solver 
+  // and the output, then solve with 500 maximum iterations and 1e-12 
+  // of tolerance (see AztecOO's user guide for more details)
+  
+  solver.SetPrecOperator(MLPrec);
   solver.SetAztecOption(AZ_solver, AZ_cg_condnum);
   solver.SetAztecOption(AZ_output, 32);
-
-  // solve with 500 iterations and 1e-12 tolerance  
   solver.Iterate(500, 1e-12);
 
+  // destroy the preconditioner
   delete MLPrec;
   
   // compute the real residual
@@ -207,10 +194,11 @@ int main(int argc, char *argv[])
     cout << "||x_exact - x||_2 = " << diff << endl;
   }
 
+  // for testing purposes
   if (residual > 1e-5)
     exit(EXIT_FAILURE);
 
-#ifdef EPETRA_MPI
+#ifdef HAVE_MPI
   MPI_Finalize();
 #endif
 
@@ -239,7 +227,7 @@ int main(int argc, char *argv[])
   MPI_Finalize();
 #endif
   
-  return 0;
+  exit(EXIT_SUCCESS);
 }
 
 #endif /* #if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_TEUCHOS) && defined(HAVE_ML_TRIUTILS) && defined(HAVE_ML_AZTECOO) */

@@ -43,7 +43,7 @@
 // Trilinos 4.0 tutorial
 //
 // \author Marzio Sala, SNL 9214
-// \date Last modified on 17-Nov-04
+// \date Last modified on 19-Jan-05
 
 #include "ml_include.h"
 
@@ -57,11 +57,9 @@
 #endif
 #include "Epetra_Map.h"
 #include "Epetra_Vector.h"
-#include "Epetra_CrsMatrix.h"
 #include "Epetra_LinearProblem.h"
 #include "Epetra_Time.h"
 #include "AztecOO.h"
-#include "Trilinos_Util_CommandLineParser.h"
 #include "Trilinos_Util_CrsMatrixGallery.h"
 #include "ml_epetra_utils.h"
 #include "ml_MultiLevelOperator.h"
@@ -71,8 +69,6 @@ using namespace ML_Epetra;
 using namespace Teuchos;
 using namespace Trilinos_Util;
 
-#include <iostream>
-
 // =========== //
 // main driver //
 // =========== //
@@ -80,7 +76,7 @@ using namespace Trilinos_Util;
 int main(int argc, char *argv[])
 {
   
-#ifdef EPETRA_MPI
+#ifdef HAVE_MPI
   MPI_Init(&argc,&argv);
   Epetra_MpiComm Comm(MPI_COMM_WORLD);
 #else
@@ -89,13 +85,11 @@ int main(int argc, char *argv[])
   
   Epetra_Time Time(Comm);
   
-  CommandLineParser CLP(argc,argv);
   // to read MatrixMarket matrices, simply change "hb" to "matrix_market"
-  CrsMatrixGallery Gallery("hb", Comm);
+  CrsMatrixGallery Gallery("laplace_2d", Comm);
+  int nx = 10;
+  Gallery.Set("problem_size", nx * nx);
 
-  // initialize MatrixGallery object with options specified in the shell
-  Gallery.Set(CLP);
-  
   // get pointer to the linear system matrix
   Epetra_CrsMatrix* A = Gallery.GetMatrix();
 
@@ -118,12 +112,14 @@ int main(int argc, char *argv[])
   int nLevels = 10;            // maximum number of levels
   int maxMgLevels = 6;         // 
   ML_Set_PrintLevel(10);       // print level (0 silent, 10 verbose)
-  ML *ml_handle;               // container of all ML' data
+  ML* ml_handle;               // container of all ML' data
   
   ML_Create(&ml_handle, maxMgLevels);
 
   // convert to epetra matrix, put finest matrix into
-  // position maxMgLevels - 1 of the hierarchy
+  // position maxMgLevels - 1 of the hierarchy. NOTE: the matrix
+  // is only wrapped (that is, a suitable getrow() function is used),
+  // so data in the linear system matrix are NOT replicated.
   EpetraMatrix2MLMatrix(ml_handle, maxMgLevels-1, A);
   
   // create an Aggregate object; this will contain information
@@ -162,17 +158,17 @@ int main(int argc, char *argv[])
 
   // ========== End of MultiLevelOperator SECTION ========================
   
-  // tell AztecOO to use this preconditioner, then solve
+  // tell AztecOO to use ML as preconditioner with GMRES, output
+  // every 16 iterations, then solve with 500 maximum iterations and
+  // tolerance of 1e-5.
+  
   solver.SetPrecOperator(&MLPrec);
-
   solver.SetAztecOption(AZ_solver, AZ_gmres);
-  // set the AztecOO's output level
   solver.SetAztecOption(AZ_output, 16);
-
-  // solve with AztecOO
   solver.Iterate(500, 1e-5);
 
-  // check the real residual
+  // The following is a check to verify that the real residual is small,
+  // using methods of the Gallery.
 
   double residual, diff, res2;
   Gallery.ComputeResidual(&residual);
@@ -185,10 +181,11 @@ int main(int argc, char *argv[])
     cout << "Total Time = " << Time.ElapsedTime() << endl;
   }
 
+  // for testing purposes only
   if (diff > 1e-5)
     exit(EXIT_FAILURE);
 
-#ifdef EPETRA_MPI
+#ifdef HAVE_MPI
   MPI_Finalize();
 #endif
 
@@ -217,7 +214,7 @@ int main(int argc, char *argv[])
   MPI_Finalize();
 #endif
   
-  return 0;
+  exit(EXIT_SUCCESS);
 }
 
 #endif /* #if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_TEUCHOS) && defined(HAVE_ML_TRIUTILS) && defined(HAVE_ML_AZTECOO) */

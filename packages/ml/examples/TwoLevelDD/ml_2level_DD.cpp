@@ -31,14 +31,16 @@
 // preconditioner using class ML_Epetra::MultiLevelPreconditioner.
 //
 // \author Marzio Sala, SNL 9214
-// \date Last modified on 17-Nov-04
+// \date Last modified on 18-Jan-05
 
 #include "ml_include.h"
 
+// configure options:
+// ------------------
 // The C++ interface of ML (more precisely,
 // ML_Epetra::MultiLevelPreconditioner), required Trilinos to be
 // configured with --enable-epetra --enable-teuchos. This example
-// required --enable-triutils (for the definition of the linear systems)
+// requires --enable-triutils (for the definition of the linear systems)
 
 #if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_TEUCHOS) && defined(HAVE_ML_TRIUTILS) && defined(HAVE_ML_AZTECOO)
 
@@ -67,7 +69,7 @@ using namespace Trilinos_Util;
 int main(int argc, char *argv[])
 {
   
-#ifdef EPETRA_MPI
+#ifdef HAVE_MPI
   MPI_Init(&argc,&argv);
   Epetra_MpiComm Comm(MPI_COMM_WORLD);
 #else
@@ -77,46 +79,61 @@ int main(int argc, char *argv[])
   Epetra_Time Time(Comm);
 
   // Create the linear problem using the class `Trilinos_Util::CrsMatrixGallery.'
-  // The matrix is here symmetric; however, we will create a
-  // non-symmetric preconditioner (symmetric preconditioner can be
-  // created as well with minor minofications)
+  // Here, we are using a symmetric matrix; non-symmetric matrices
+  // can be defined as well. Please refer to the Trilinos tutorial
+  // for more details.
 
   CrsMatrixGallery Gallery("laplace_3d", Comm);
-  Gallery.Set("problem_size", 8000);
+  int nx = 20;
+  Gallery.Set("problem_size",nx * nx * nx);
   
   // retrive pointers for linear system matrix and linear problem
-  Epetra_RowMatrix * A = Gallery.GetMatrix();
-  Epetra_LinearProblem * Problem = Gallery.GetLinearProblem();
+  // The linear system matrix, solution and RHS are built by the Gallery
+  Epetra_RowMatrix* A = Gallery.GetMatrix();
+  Epetra_LinearProblem* Problem = Gallery.GetLinearProblem();
 
   // Construct a solver object for this problem
   AztecOO solver(*Problem);
 
   // =========================== begin of ML part ===========================
   
-  // create a parameter list for ML options
+  // create an empty parameter list for ML options
   ParameterList MLList;
 
-  // set defaults for classic smoothed aggregation
+  // set defaults for classic smoothed aggregation with heavy smoothers
+  // (of domain decomposition type, i.e. one-level Schwarz with incomplete
+  // factorizations on each subdomain/process)
+  // We need to define the solvers on each subdomain (== processor).
+  // Here we use an incomplete LU factorization, with no fill-in
+  // and no overlap. To that aim, we use Aztec's preconditioning function.
+  // Aztec requires two more vectors. Note: the following options and params
+  // will be used ONLY for the smoother, and will NOT affect the Aztec solver
+  // NOTE: to use exact solvers change to AZ_lu (requires AztecOO configured
+  // with option--enable-aztecoo-azlu), of use IFPACK smoothers 
+  // (requires Trilinos to be built with options--enable-ifpack --enable-amesos)
+  
   int options[AZ_OPTIONS_SIZE];
   double params[AZ_PARAMS_SIZE];
   AZ_defaults(options,params);
   options[AZ_precond] = AZ_dom_decomp;
   options[AZ_subdomain_solve] = AZ_ilu;
   options[AZ_graph_fill] = 0;
+  options[AZ_overlap] = 0;
   
   // SetDefaults() will call AZ_defaults(options,params), and will also set the
   // preconditioner as `AZ_dom_decomp'. 
-  // NOTE THAT THE VECTORS ARE NOT COPIED! Only the pointer is copied, 
-  // so do not delete options and params before the end of the linear 
-  // system solution!
-  //
-  // You can also call SetDefaults() without passing `options' and `params.' This
-  // way, the code will allocate a int and a double vector, that must be freed by
-  // the user.
-
+  // NOTE THAT THE `options' AND `params' VECTORS ARE NOT COPIED into
+  // the list, only the pointers is stored, so do not delete options 
+  // and params before the end of the linear system solution!
+  // Alternatively, you can also call SetDefaults() without passing 
+  // `options' and `params.' This way, the code will allocate a int 
+  // and a double vector, that must be freed by the user.
+  // `DD' means to set default values for domain decomposition
+  // preconditioners
+  
   ML_Epetra::SetDefaults("DD",MLList,options,params);
   
-  // overwrite some parameters. Please refer to the user's guide
+  // Overwrite some parameters. Please refer to the user's guide
   // for more information
   // Some parameters are reported here to better explain the process
   // even if they are as defaults. 
@@ -129,25 +146,16 @@ int main(int argc, char *argv[])
   MLList.set("aggregation: type", "METIS");
   MLList.set("smoother: type","Aztec");
   
-  // put 64 nodes on each aggregate. This number can be too small
-  // for large problems. In this case, either augment ir, or increase
+  // Put 64 nodes on each aggregate. This number can be too small
+  // for large problems. In this case, either augment this value, or increase
   // the number of levels. Also, use only presmoothing, and KLU as
   // coarse solver (KLU is enabled by default with Amesos)
-
+  
   MLList.set("aggregation: nodes per aggregate", 64);
   MLList.set("smoother: pre or post", "pre");
   MLList.set("coarse: type","Amesos-KLU");
   
-  // now we need to define the solvers on each subdomain (== processor).
-  // Here we use an incomplete Cholesky factorization, with no fill-in
-  // and no overlap. To that aim, we use Aztec's preconditioning function.
-  // Aztec requires two more vectors. Note: the following options and params
-  // will be used ONLY for the smoother, and will NOT affect the Aztec solver
-
-  options[AZ_precond] = AZ_dom_decomp;
-  options[AZ_subdomain_solve] = AZ_icc;
-
-  // create the preconditioning object. We suggest to use `new' and
+  // Create the preconditioning object. We suggest to use `new' and
   // `delete' because the destructor contains some calls to MPI (as
   // required by ML and possibly Amesos). This is an issue only if the
   // destructor is called **after** MPI_Finalize().
@@ -160,11 +168,13 @@ int main(int argc, char *argv[])
 
   // =========================== end of ML part =============================
 
-  solver.SetAztecOption(AZ_solver, AZ_gmres);
-  solver.SetAztecOption(AZ_output, 32);
-
-  // solve with 500 iterations and 1e-12 as tolerance on the
+  // Instruct AztecOO to use GMRES with estimation of the condition
+  // number. Also, requires output every 32 iterations
+  // Then, solve with 500 iterations and 1e-12 as tolerance on the
   // relative residual  
+  
+  solver.SetAztecOption(AZ_solver, AZ_gmres_condnum);
+  solver.SetAztecOption(AZ_output, 32);
   solver.Iterate(500, 1e-12);
 
   // delete the preconditioner. Do it BEFORE MPI_Finalize
@@ -185,7 +195,7 @@ int main(int argc, char *argv[])
   if (residual > 1e-5)
     exit(EXIT_FAILURE);
 
-#ifdef EPETRA_MPI
+#ifdef HAVE_MPI
   MPI_Finalize();
 #endif
 
@@ -214,6 +224,6 @@ int main(int argc, char *argv[])
   MPI_Finalize();
 #endif
   
-  return 0;
+  exit(EXIT_SUCCESS);
 }
 #endif /* #if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_TEUCHOS) && defined(HAVE_ML_TRIUTILS) && defined(HAVE_ML_AZTECOO) */

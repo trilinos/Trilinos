@@ -29,11 +29,13 @@
 
 #include "ml_config.h"
 
-// This example reads a matrix in AIJ format, and creates
-// the corresponding Epetra_CrsMatrix. Then matrix is then
-// distributed over all the available processes.
+// This example reads a SERIAL matrix in AIJ format, and creates
+// the corresponding SERIAL Epetra_CrsMatrix. Then matrix is then
+// distributed over all the available processes, to obtain a
+// DISTRIBUTED matrix that can be solved with all the available
+// processes. 
 //
-// The matrix is stored in an ASCII file (specified by the first
+// The matrix must be stored in an ASCII file (specified by the first
 // argument of the command line), which contains the following lines:
 // ----(file begins line below)---
 // <NumRows>
@@ -49,8 +51,12 @@
 //
 // An example of use can be as:
 // $ mpirun -np 2 ./ml_read_matrix_AIJ.exe <matrix-name>
-// (a small example of matrix.aij is contained in the
-// ml/examples/ExampleMatrices // subdirectory).
+// A small example of matrix.aij is contained in the
+// ml/examples/ExampleMatrices // subdirectory. For example, run the
+// code as follows:
+// $ mpirun -np 2 ./ml_read_matrix_AIJ.exe ~/Trilinos/packages/ml/example/ExampleMatrices/simple_matrix.aij
+// This matrix is very small and it is included only to explain how
+// to write the .aij file.
 //
 // NOTE: this code is not efficient for serial runs,
 // as it creates the distributed matrix anyway (which in that
@@ -87,7 +93,7 @@ using namespace Trilinos_Util;
 int main(int argc, char *argv[])
 {
   
-#ifdef EPETRA_MPI
+#ifdef HAVE_MPI
   MPI_Init(&argc,&argv);
   Epetra_MpiComm Comm(MPI_COMM_WORLD);
 #else
@@ -173,8 +179,13 @@ int main(int argc, char *argv[])
 
   ML_Epetra::SetDefaults("DD",MLList);
  
+#ifdef HAVE_ML_IFPACK
   // use IFPACK smoothers
   MLList.set("smoother: type", "IFPACK");
+#else
+  MLList.set("smoother: type", "Aztec");
+#endif
+
 
   ML_Epetra::MultiLevelPreconditioner * MLPrec = 
     new ML_Epetra::MultiLevelPreconditioner(DistributedMatrix, MLList);
@@ -212,7 +223,7 @@ int main(int argc, char *argv[])
     exit(EXIT_FAILURE);
   }
   
-#ifdef EPETRA_MPI
+#ifdef HAVE_MPI
   MPI_Finalize() ;
 #endif
 
