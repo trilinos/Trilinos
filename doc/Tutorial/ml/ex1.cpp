@@ -56,8 +56,8 @@
 #include "ml_epetra_operator.h"
 #include "ml_epetra_utils.h"
 
-#include "Trilinos_Util_ShellOptions.h"
-#include "Trilinos_Util_MatrixGallery.h"
+#include "Trilinos_Util_CommandLineParser.h"
+#include "Trilinos_Util_CrsMatrixGallery.h"
 
 // =========== //
 // MAIN DRIVER //

@@ -42,8 +42,8 @@
 #include "Epetra_SerialComm.h"
 #endif
 #include "Amesos_Factory.h"
-#include "Trilinos_Util_ShellOptions.h"
-#include "Trilinos_Util_MatrixGallery.h"
+#include "Trilinos_Util_CommandLineParser.h"
+#include "Trilinos_Util_CrsMatrixGallery.h"
 
 int main(int argc, char *argv[]) {
 
