@@ -67,15 +67,18 @@ global_ids</i>, <i>local_ids</i>, <i>rank, iperm</i>,
 </table>
 
 <hr WIDTH="100%"><b>Zoltan_Order </b>invokes the ordering routine specified
-by the&nbsp; <i><a href="ug_alg.html#LB_METHOD">ORDER_METHOD</a></i> parameter.
+by the&nbsp; <i><a href="ug_order.html#ORDER_METHOD">ORDER_METHOD</a></i> parameter.
 Results of the ordering are returned in&nbsp; the arrays <i>rank </i>and
 <i>iperm</i>.
 <i>rank[i]
-</i>gives the rank of <i>global_ids[i] </i>in the computed ordering, while
-<i>iperm </i>is the inverse permutation of
+</i>gives
+the rank of <i>global_ids[i] </i>in the computed ordering, while
+<i>iperm
+</i>is the inverse permutation of
 <i>rank, </i>that is,
 <i>iperm[rank[i]]
-= i.</i>&nbsp; The arrays
+= i.</i>&nbsp; The ordering may be either global or local, depending on
+<i><a href="ug_order.html#ORDER_TYPE">ORDER_TYPE</a></i>. The arrays
 <i>global_ids, local_ids, rank,
 </i>and
 <i>iperm</i>
@@ -129,7 +132,7 @@ releases, ordering only a subset of the objects may be permitted.&nbsp;</td>
 <td>An array of&nbsp; global IDs of objects to be ordered on this processor.
 (size = <i>num_obj</i> * <i>num_gid_entries</i>)&nbsp;
 <br>The array may be uninitialized on input (if <i>REORDER</i> is false),
-but space must have been allocated before <b>Zoltan_Order </b>is called.</td>
+but memory must have been allocated before <b>Zoltan_Order </b>is called.</td>
 </tr>
 
 <tr>
@@ -138,7 +141,7 @@ but space must have been allocated before <b>Zoltan_Order </b>is called.</td>
 <td>An&nbsp; array of&nbsp; local IDs of objects to be ordered on this
 processor. (size = <i>num_obj</i> * <i>num_lid_entries</i>)&nbsp;
 <br>The array may be uninitialized on input (if <i>REORDER</i> is false),
-but space must have been allocated before <b>Zoltan_Order </b>is called.</td>
+but memory must have been allocated before <b>Zoltan_Order </b>is called.</td>
 </tr>
 
 <tr>
@@ -151,8 +154,8 @@ the object corresponding to
 </i>is the<i> j</i>th object
 in the ordering. (This array corresponds directly to the <i>perm </i>array
 in METIS and the <i>order</i> array in ParMETIS.) Note that the rank may
-refer to either a local or a global ordering, depending on ORDER_TYPE.&nbsp;
-Space for this array must have been allocated before <b>Zoltan_Order </b>is
+refer to either a local or a global ordering, depending on <a href="ug_order.html#ORDER_TYPE">ORDER_TYPE</a>.&nbsp;
+Memory for this array must have been allocated before <b>Zoltan_Order</b> is
 called.</td>
 </tr>
 
@@ -160,8 +163,10 @@ called.</td>
 <td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; iperm</i></td>
 
 <td>Upon return, an&nbsp; array of length <i>num_obj </i>containing the
-inverse permutation of <i>rank.</i> That is, <i>iperm[rank[i]] = i. </i>Space
-for this array must have been allocated before <b>Zoltan_Order </b>is called.</td>
+inverse permutation of <i>rank.</i> That is, <i>iperm[rank[i]] = i. </i>In
+other words, <i>iperm[j]</i> gives the <i>j</i>th object in the ordering.
+Memory for this array must have been allocated before <b>Zoltan_Order</b> is
+called.</td>
 </tr>
 
 <tr>
