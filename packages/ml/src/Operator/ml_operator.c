@@ -1529,8 +1529,13 @@ int ML_Operator_Move2HierarchyAndDestroy_fragile(ML_Operator *newmat,
   return 0;	
 }
 
-
-
+int ML_Operator_GetFlops(ML_Operator *mat)
+{
+  if (mat->N_nonzeros != -1)
+    return mat->N_nonzeros;
+  else
+    return 0;
+}
 
 #ifdef WKC
 /* ******************************************************************** */
