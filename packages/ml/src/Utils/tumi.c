@@ -344,11 +344,11 @@ char str [80];
    
    Tmat = ML_Operator_Create(ml_edges->comm);
    
-   ML_Operator_Set_ApplyFuncData(Tmat, *Nnodes, *Nedges, ML_INTERNAL,
+   ML_Operator_Set_ApplyFuncData(Tmat, *Nnodes, *Nedges, 
 				 (void *) wrap_grad_greg_data, *Nedges,
 				 ml_grad_matvec_wrap_of_greg, 0);
    
-   ML_Operator_Set_Getrow(Tmat,ML_INTERNAL,*Nedges,ml_grad_getrow_wrap_of_greg);
+   ML_Operator_Set_Getrow(Tmat,*Nedges,ml_grad_getrow_wrap_of_greg);
    ML_CommInfoOP_Generate(&(Tmat->getrow->pre_comm),ml_grad_comm_wrap_of_greg,
 			  wrap_grad_greg_data, ml_edges->comm,Tmat->invec_leng,
 			  Nghost_node);
@@ -1033,15 +1033,11 @@ struct ml_Tmat_wrap *ml_Tmat_wrap;
   /*------------------------------------------------------------------*/
 
   ml_Tmat_wrap->Tmat_trans = ML_Operator_Create(ml_edges->comm);
-  printf("3a\n"); fflush(stdout);
   ML_Operator_Transpose_byrow(Tmat, ml_Tmat_wrap->Tmat_trans);
-  printf("3b\n"); fflush(stdout);
 
-  if (ml_nodes->Amat[fine_level].getrow->ML_id == ML_EMPTY) {
-    ML_2matmult(ml_Tmat_wrap->Tmat_trans, Tmat, 
+  ML_2matmult(ml_Tmat_wrap->Tmat_trans, Tmat, 
 		&(ml_nodes->Amat[fine_level]),
                 ML_CSR_MATRIX);
-  }
 
 
   /********************************************************************/

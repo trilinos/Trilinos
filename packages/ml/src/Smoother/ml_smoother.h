@@ -227,7 +227,7 @@ extern  int ML_Smoother_Apply(ML_Smoother *,int,Epetra_MultiVector &,
 #endif
 
 
-extern  int ML_Smoother_Set(ML_Smoother *, int, void *,
+extern  int ML_Smoother_Set(ML_Smoother *, void *,
                  int (*internal)(ML_Smoother*,int,double*,int,double *),
                  int, double, char *);
 extern  int ML_Smoother_Jacobi(ML_Smoother *, int, double *x, int, double *);

@@ -909,7 +909,7 @@ void ML_Gen_SmootherAztec(ML *ml_handle, int level, int options[],
    ML_Amat = &(ml_handle->Amat[level]);
    data    = ML_Amat->data;
 
-   if (ML_Amat->matvec->ML_id == ML_EMPTY) {
+   if (ML_Amat->matvec->internal == NULL) {
        if (ml_handle->comm->ML_mypid == 0) {
           printf("ML_Gen_Smoother_Aztec: matvec not defined? \n");
        }

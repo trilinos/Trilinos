@@ -237,14 +237,8 @@ int ML_Gen_MGHierarchy(ML *ml, int fine_level,
       }
 #endif
 
-      if (internal_or_external == ML_INTERNAL)
-      {
-         flag = (*user_gen_prolongator)(ml, level, next,(void *)ag);
-      }
-      else 
-      {
-         flag = (*user_gen_prolongator)(ml, level, next, (void *)ag);
-      }
+      flag = (*user_gen_prolongator)(ml, level, next,(void *)ag);
+
       if (flag < 0) break;
       ML_memory_check("L%d: prolongator end",level);
 
@@ -296,11 +290,7 @@ int ML_Gen_MGHierarchy(ML *ml, int fine_level,
 	ML_Operator_Set_1Levels(&(ml->Pmat[next]), &(ml->SingleLevel[next]), NULL);
 	ML_Operator_Set_BdryPts(&(ml->Pmat[next]), NULL);
 	sprintf(str,"Pmat_%d",next); ML_Operator_Set_Label( &(ml->Pmat[next]),str);
-
-        if (internal_or_external == ML_INTERNAL)
-          flag = (*user_gen_prolongator)(ml, level, next,(void *)ag);
-        else
-          flag = (*user_gen_prolongator)(ml, level, next, (void *)ag);
+	flag = (*user_gen_prolongator)(ml, level, next,(void *)ag);
       }
 
 #endif

@@ -143,15 +143,7 @@ int ML_AMG_Gen_MGHierarchy(ML *ml, int fine_level,
 
    while (next >= 0) 
    {
-      if (internal_or_external == ML_INTERNAL)
-      {
-         flag = user_gen_prolongator(ml, level, next,
-                                     (void*)&(ml->Amat[level]), amg);
-      }
-      else 
-      {
-         flag = user_gen_prolongator(ml, level, next, data, amg);
-      }
+      flag = user_gen_prolongator(ml,level,next,(void*)&(ml->Amat[level]),amg);
       if (flag < 0) break;
 
       ML_Gen_Restrictor_TransP(ml, level, next);

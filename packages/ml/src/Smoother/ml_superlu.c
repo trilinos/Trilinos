@@ -869,7 +869,7 @@ int nblocks = 1, *block_list, old_upper = 0, count, newptr, me, nnzs;
       MLnew_Set_Amatrix_Matvec(subml, 0, CSR_matvec);
       ML_CommInfoOP_Set_neighbors(&(subml->Amat[0].getrow->pre_comm), 0,
                                NULL, ML_OVERWRITE, NULL, 0);
-      ML_Operator_Set_Getrow(&(subml->Amat[0]), ML_INTERNAL, 
+      ML_Operator_Set_Getrow(&(subml->Amat[0]),  
                              subml->Amat[0].outvec_leng, CSR_getrow);
       ML_Gen_Blocks_Metis(subml, 0, &nblocks, &block_list);
       ML_Destroy(&subml);
@@ -914,7 +914,6 @@ int nblocks = 1, *block_list, old_upper = 0, count, newptr, me, nnzs;
    {
       reuse = 0;
       sl->csolve->func->internal = ML_SuperLU_Solve;
-      sl->csolve->func->ML_id = ML_INTERNAL;
       ML_CSolve_Set_Label( sl->csolve, "SuperLU");
 
    }
@@ -1117,7 +1116,7 @@ int nblocks = 1, *block_list, old_upper = 0, count, newptr, me, nnzs;
       ML_Init_Amatrix(subml, 0, nrows, nrows, (void *) temp_ptr);
       ML_CommInfoOP_Set_neighbors(&(subml->Amat[0].getrow->pre_comm), 0,
                                NULL, ML_OVERWRITE, NULL, 0);
-      ML_Operator_Set_Getrow(&(subml->Amat[0]), ML_INTERNAL, 
+      ML_Operator_Set_Getrow(&(subml->Amat[0]),  
                              subml->Amat[0].outvec_leng, CSR_getrow);
 
       MLnew_Set_Amatrix_Matvec(subml, 0, CSR_matvec);
@@ -1209,7 +1208,6 @@ int nblocks = 1, *block_list, old_upper = 0, count, newptr, me, nnzs;
    {
       reuse = 0;
       sl->csolve->func->internal = ML_SuperLU_Solve;
-      sl->csolve->func->ML_id = ML_INTERNAL;
       ML_CSolve_Set_Label( sl->csolve, "Dist. SuperLU");
    }
 
@@ -2215,22 +2213,22 @@ int ML_Gen_Smoother_VBlockAdditiveSchwarz(ML *ml , int nl, int pre_or_post,
    if (pre_or_post == ML_PRESMOOTHER) {
       ml->pre_smoother[nl].data_destroy = ML_Smoother_Destroy_Schwarz_Data;
       sprintf(str,"VBASz_pre%d",nl);
-      return(ML_Smoother_Set(&(ml->pre_smoother[nl]), ML_INTERNAL, 
+      return(ML_Smoother_Set(&(ml->pre_smoother[nl]),  
                         (void *) data, fun, ntimes, 0.0, str));
    }
    else if (pre_or_post == ML_POSTSMOOTHER) {
       ml->post_smoother[nl].data_destroy = ML_Smoother_Destroy_Schwarz_Data;
       sprintf(str,"VBASz_post%d",nl);
-      return(ML_Smoother_Set(&(ml->post_smoother[nl]), ML_INTERNAL, 
+      return(ML_Smoother_Set(&(ml->post_smoother[nl]),  
                              (void *) data, fun, ntimes, 0.0, str));
    }
    else if (pre_or_post == ML_BOTH) {
       ml->post_smoother[nl].data_destroy = ML_Smoother_Destroy_Schwarz_Data;
       sprintf(str,"VBASz_pre%d",nl);
-      ML_Smoother_Set(&(ml->pre_smoother[nl]), ML_INTERNAL, 
+      ML_Smoother_Set(&(ml->pre_smoother[nl]),  
                       (void *) data, fun, ntimes, 0.0, str);
       sprintf(str,"VBASz_post%d",nl);
-      return(ML_Smoother_Set(&(ml->post_smoother[nl]), ML_INTERNAL, 
+      return(ML_Smoother_Set(&(ml->post_smoother[nl]),  
                              (void *) data, fun, ntimes, 0.0, str));
    }
    else return(pr_error("Print unknown pre_or_post choice\n"));
@@ -2324,22 +2322,22 @@ int ML_Gen_Smoother_VBlockMultiplicativeSchwarz(ML *ml , int nl, int pre_or_post
    if (pre_or_post == ML_PRESMOOTHER) {
       ml->pre_smoother[nl].data_destroy = ML_Smoother_Destroy_Schwarz_Data;
       sprintf(str,"VBMSz_pre%d",nl);
-      return(ML_Smoother_Set(&(ml->pre_smoother[nl]), ML_INTERNAL, 
+      return(ML_Smoother_Set(&(ml->pre_smoother[nl]),  
                         (void *) data, fun, ntimes, 0.0, str));
    }
    else if (pre_or_post == ML_POSTSMOOTHER) {
       ml->post_smoother[nl].data_destroy = ML_Smoother_Destroy_Schwarz_Data;
       sprintf(str,"VBMSz_post%d",nl);
-      return(ML_Smoother_Set(&(ml->post_smoother[nl]), ML_INTERNAL, 
+      return(ML_Smoother_Set(&(ml->post_smoother[nl]),  
                              (void *) data, fun, ntimes, 0.0, str));
    }
    else if (pre_or_post == ML_BOTH) {
       ml->post_smoother[nl].data_destroy = ML_Smoother_Destroy_Schwarz_Data;
       sprintf(str,"VBMSz_pre%d",nl);
-      ML_Smoother_Set(&(ml->pre_smoother[nl]), ML_INTERNAL, 
+      ML_Smoother_Set(&(ml->pre_smoother[nl]),  
                         (void *) data, fun, ntimes, 0.0, str);
       sprintf(str,"VBMSz_post%d",nl);
-      return(ML_Smoother_Set(&(ml->post_smoother[nl]), ML_INTERNAL, 
+      return(ML_Smoother_Set(&(ml->post_smoother[nl]),  
                              (void *) data, fun, ntimes, 0.0, str));
    }
    else return(pr_error("Print unknown pre_or_post choice\n"));

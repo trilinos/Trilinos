@@ -1619,32 +1619,21 @@ int ML_Operator_Apply(ML_Operator *Op, int inlen, Epetra_MultiVector &ep_din,
    ep_din.ExtractView ( &pp_din );
    ep_dout.ExtractView ( &pp_dout );
 
-   if (Op->matvec->ML_id == ML_EMPTY)
+   if (Op->matvec->internal == NULL)
       pr_error("ML_Operator_Apply error : matvec not defined\n");
 
 
-   if (Op->matvec->ML_id == ML_INTERNAL) {
-      if ( (void *)Op->matvec->internal == (void *)Epetra_ML_matvec )
-/* WKC  Call the new blocked function!! */
-         Epetra_ML_matvec_WKC ( Op->data, inlen, (double *)&ep_din, olen,
-                                (double *)&ep_dout );
+   if ( (void *)Op->matvec->internal == (void *)Epetra_ML_matvec )
+     /* WKC  Call the new blocked function!! */
+     Epetra_ML_matvec_WKC ( Op->data, inlen, (double *)&ep_din, olen,
+			    (double *)&ep_dout );
 
-      else
+   else if ( (void *)Op->matvec->internal == (void *) MSR_matvec )
+     MSR_matvec_WKC (Op,inlen, (double *)&ep_din , olen , (double *)&ep_dout );
+   else {
          for ( int KK = 0 ; KK != ep_din.NumVectors() ; KK++ ) {
             double *din = pp_din[KK];
             double *dout = pp_dout[KK];
-
-            Op->matvec->internal(Op->data, inlen, din, olen, dout);
-         }
-   } else { 
-      if ( (void *)Op->matvec->internal == (void *) MSR_matvec )
-         MSR_matvec_WKC ( Op , inlen , (double *)&ep_din , olen , (double *)&ep_dout );
-      else
-
-         for ( int KK = 0 ; KK != ep_din.NumVectors() ; KK++ ) {
-            double *din = pp_din[KK];
-            double *dout = pp_dout[KK];
-
             Op->matvec->internal(Op,       inlen, din, olen, dout);
          }
    }

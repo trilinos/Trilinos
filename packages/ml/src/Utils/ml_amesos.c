@@ -108,7 +108,7 @@ int ML_Gen_Smoother_Amesos(ML *ml, int nl, int AmesosSolver,
 
      } 
 
-     status = ML_Smoother_Set(&(ml->post_smoother[nl]), ML_INTERNAL,
+     status = ML_Smoother_Set(&(ml->post_smoother[nl]), 
 			      (void *) Amesos_Handle, fun1, NULL, 1, 0.0,str);
      assert( status == 0 ) ; 
      ml->post_smoother[nl].data_destroy = ML_Smoother_Clean_Amesos;

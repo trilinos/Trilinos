@@ -90,7 +90,7 @@ int ML_Gen_Smoother_Ifpack(ML *ml, int nl, int choice, int * options, double * p
      status = ML_Ifpack_Gen( ml, nl, choice, options, params, &Ifpack_Handle) ; 
      assert( status == 0 ) ; 
 
-     status = ML_Smoother_Set(&(ml->post_smoother[nl]), ML_INTERNAL,
+     status = ML_Smoother_Set(&(ml->post_smoother[nl]), 
 			      (void *) Ifpack_Handle, fun1, NULL, 1, 0.0,NULL);
      assert( status == 0 ) ; 
      ml->post_smoother[nl].data_destroy = ML_Smoother_Clean_Ifpack;
