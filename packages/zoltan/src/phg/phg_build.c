@@ -550,8 +550,6 @@ float *tmpwgts = NULL;
   phg->nVtx = nVtx;
   phg->nEdge = nEdge;
   phg->nPins = nnz;
-  phg->VtxWeightDim = zz->Obj_Weight_Dim;
-  phg->EdgeWeightDim = zz->Edge_Weight_Dim;
   phg->hindex = hindex;
   phg->hvertex = hvertex;
 
@@ -563,7 +561,7 @@ float *tmpwgts = NULL;
 
   /* Send vertex weights, if any. */
 
-  if (phg->VtxWeightDim || zz->LB.Return_Lists != ZOLTAN_LB_NO_LISTS) {
+  if (zz->Obj_Weight_Dim || zz->LB.Return_Lists != ZOLTAN_LB_NO_LISTS) {
     if (phg->comm->nProc_x > 1) {
 
       /* Need a communication plan mapping GIDs to their GNOs processors
@@ -596,14 +594,15 @@ float *tmpwgts = NULL;
   }
   
 
-  if (phg->VtxWeightDim || phg->EdgeWeightDim) {
-    nwgt = MAX(phg->nVtx * phg->VtxWeightDim, phg->nEdge * phg->EdgeWeightDim);
+  if (zz->Obj_Weight_Dim || zz->Edge_Weight_Dim) {
+    nwgt = MAX(phg->nVtx * zz->Obj_Weight_Dim, 
+               phg->nEdge * zz->Edge_Weight_Dim);
     tmpwgts = (float *) ZOLTAN_MALLOC(nwgt * sizeof(float));
     if (nwgt && !tmpwgts) MEMORY_ERROR;
   }
 
-  if (phg->VtxWeightDim) {
-    dim = phg->VtxWeightDim;
+  if (zz->Obj_Weight_Dim) {
+    dim = phg->VtxWeightDim = zz->Obj_Weight_Dim;
     for (i = 0; i < phg->nVtx; i++) tmpwgts[i] = 0;
     nwgt = phg->nVtx * dim;
     phg->vwgt = (float *) ZOLTAN_CALLOC(nwgt, sizeof(float));
@@ -642,6 +641,15 @@ float *tmpwgts = NULL;
     MPI_Allreduce(tmpwgts, phg->vwgt, nwgt, MPI_FLOAT, MPI_MAX, 
                   phg->comm->col_comm);
   }
+  else {
+    /* Application did not specify object weights, but PHG code needs them.
+     * Create uniform weights.
+     */
+    phg->VtxWeightDim = 1;
+    phg->vwgt = (float *) ZOLTAN_MALLOC(phg->nVtx * sizeof(float));
+    for (i = 0; i < phg->nVtx; i++)
+      phg->vwgt[i] = 1.;
+  }
 
   if (zz->LB.Return_Lists == ZOLTAN_LB_NO_LISTS) {
     /* Don't need the plan long-term; destroy it now. */
@@ -652,8 +660,8 @@ float *tmpwgts = NULL;
 
   /*  Send edge weights, if any */
 
-  if (phg->EdgeWeightDim) {
-    dim = phg->EdgeWeightDim;
+  if (zz->Edge_Weight_Dim) {
+    dim = phg->EdgeWeightDim = zz->Edge_Weight_Dim;
     for (i = 0; i < phg->nEdge; i++) tmpwgts[i] = 0;
     nwgt = phg->nEdge * dim;
     phg->ewgt = (float *) ZOLTAN_CALLOC(nwgt, sizeof(float));
@@ -704,6 +712,12 @@ float *tmpwgts = NULL;
 
     MPI_Allreduce(tmpwgts, phg->ewgt, nwgt, MPI_FLOAT, MPI_MAX, 
                   phg->comm->row_comm);
+  }
+  else {
+    /* KDDKDD  For now, do not assume uniform edge weights.
+     * KDDKDD  Can add later if, e.g., we decide to coalesce identical edges.
+     */
+    phg->EdgeWeightDim = 0;
   }
 
 End:

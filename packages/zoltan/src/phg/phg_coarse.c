@@ -38,7 +38,7 @@ int Zoltan_PHG_Coarsening
   int i, j, vertex, edge, *ip, me, size, count;
   int *cmatch=NULL, *used_edges=NULL, *c_vindex=NULL, *c_vedge=NULL;
   int *listgno=NULL, *listlno=NULL, *displs=NULL, *each_size=NULL;
-  float *c_ewgt=NULL, *pwgt;
+  float *pwgt;
   char *buffer=NULL, *rbuffer=NULL;
   PHGComm *hgc = hg->comm;
   char *yo = "Zoltan_PHG_Coarsening";
@@ -62,17 +62,8 @@ int Zoltan_PHG_Coarsening
      return ZOLTAN_MEMERR;
   }    
   
-  if (hg->VtxWeightDim == 0)
-     hg->VtxWeightDim = 1;   /* must use at least unitary weighting */
-  if (hg->vwgt == NULL)  {
-     hg->vwgt = (float*) ZOLTAN_CALLOC (hg->nVtx * hg->VtxWeightDim,
-      sizeof(float));
-     for (i = 0; i < hg->nVtx * hg->VtxWeightDim; i++)
-        hg->vwgt[i] = 1;
-  }
-  if (c_hg->vwgt == NULL)   
-     c_hg->vwgt = (float*) ZOLTAN_CALLOC (hg->nVtx * hg->VtxWeightDim,
-      sizeof(float));    
+  c_hg->vwgt = (float*) ZOLTAN_CALLOC (hg->nVtx * hg->VtxWeightDim,
+      sizeof(float));   
  
   for (i = 0; i < hg->nVtx; i++)
      cmatch[i] = match[i];         /* working copy of match array */
@@ -120,14 +111,13 @@ int Zoltan_PHG_Coarsening
   /* Message is list of <gno, gno's edge count, list of edge lno's> */
   ip = (int*) buffer;
   for (i = 0; i < count; i++)  {
-    *ip++ = listgno[i];                              /* destination vertex gno */
-    for (j = 0; j < hg->VtxWeightDim; j++)
-       {
-       pwgt = (float*) ip++;                                  /* vertex weight */
+    *ip++ = listgno[i];                            /* destination vertex gno */
+    for (j = 0; j < hg->VtxWeightDim; j++) {
+       pwgt = (float*) ip++;                               /* vertex weight */
        *pwgt = hg->vwgt[listlno[i]*hg->VtxWeightDim+j] ;
-       }
+    }
        
-    *ip++ = hg->vindex[listlno[i]+1] - hg->vindex[listlno[i]];        /* count */
+    *ip++ = hg->vindex[listlno[i]+1] - hg->vindex[listlno[i]];      /* count */
     for (j = hg->vindex[listlno[i]]; j < hg->vindex[listlno[i]+1]; j++)
       *ip++ = hg->vedge[j];    
   }    
@@ -167,20 +157,12 @@ int Zoltan_PHG_Coarsening
       return ZOLTAN_MEMERR;
   }
   
-  if (hg->EdgeWeightDim > 0 && hg->ewgt == NULL)
-     {
-     hg->ewgt = (float*) ZOLTAN_MALLOC (hg->nEdge * hg->EdgeWeightDim 
-      * sizeof(float));
-     for (j = 0; j < hg->nEdge * hg->EdgeWeightDim; j++)
-        hg->ewgt[i] = 1;
-     }
-  if (hg->EdgeWeightDim > 0)
-     {
-     c_ewgt = (float*) ZOLTAN_MALLOC (hg->nEdge * hg->EdgeWeightDim 
-      * sizeof(float));
-     for (j = 0; j < hg->nEdge * hg->EdgeWeightDim; j++)
-        c_hg->ewgt[i] = hg->ewgt[i];
-     }
+  if (hg->EdgeWeightDim > 0) {
+    c_hg->ewgt = (float*) ZOLTAN_MALLOC(hg->nEdge * hg->EdgeWeightDim 
+                                                  * sizeof(float));
+    for (j = 0; j < hg->nEdge * hg->EdgeWeightDim; j++)
+      c_hg->ewgt[i] = hg->ewgt[i];
+  }
 
   /* Construct the LevelMap; match[vertex] is changed back to original value */
   /* Coarsen vertices (create vindex, vedge), sum up coarsened vertex weights */
@@ -188,35 +170,34 @@ int Zoltan_PHG_Coarsening
   c_hg->nVtx  = 0;                      /* count of coarsened vertices */
   for (i = 0; i < hg->nVtx; i++)  {
     if (match[i] < 0 && cmatch[i] < 0)  /* match to external vertex, don't own */
-       LevelMap [i] = match[i];         /* negative value => external vtx */         
+      LevelMap [i] = match[i];         /* negative value => external vtx */         
     else if (match[i] < 0) {            /* match from external vertex, I own */
-       LevelMap[i] = c_hg->nVtx;        /* next available coarse vertex */
-       c_vindex[c_hg->nVtx] = c_hg->nPins;
-       ip =  ((int*) rbuffer) + cmatch[i];      /* point to received data */
-       ip++;                                    /* skip over vtx gno */
-       for (j = 0; j < hg->VtxWeightDim; j++)
-          {
-          pwgt = (float*) ip++;
-          c_hg->vwgt[c_hg->nVtx*hg->VtxWeightDim+j] = *pwgt;
-          }  
-       count = *ip++;           /* extract edge count, advance to first edge */
-       while (count--)  {
-          edge = *ip++;           
-          used_edges [edge]      = i+1;
-          c_vedge[c_hg->nPins++] = edge;
-       }
+      LevelMap[i] = c_hg->nVtx;        /* next available coarse vertex */
+      c_vindex[c_hg->nVtx] = c_hg->nPins;
+      ip =  ((int*) rbuffer) + cmatch[i];      /* point to received data */
+      ip++;                                    /* skip over vtx gno */
+      for (j = 0; j < hg->VtxWeightDim; j++) {
+        pwgt = (float*) ip++;
+        c_hg->vwgt[c_hg->nVtx*hg->VtxWeightDim+j] = *pwgt;
+      }  
+      count = *ip++;           /* extract edge count, advance to first edge */
+      while (count--)  {
+        edge = *ip++;           
+        used_edges [edge]      = i+1;
+        c_vedge[c_hg->nPins++] = edge;
+      }
   
-       for (j = 0; j < hg->VtxWeightDim; j++)
-         c_hg->vwgt[c_hg->nVtx * hg->VtxWeightDim + j]
-          += hg->vwgt[vertex   * hg->VtxWeightDim + j] ;
+      for (j = 0; j < hg->VtxWeightDim; j++)
+        c_hg->vwgt[c_hg->nVtx * hg->VtxWeightDim + j]
+         += hg->vwgt[vertex   * hg->VtxWeightDim + j] ;
             
-       for (j = hg->vindex[i]; j < hg->vindex[i+1]; j++)  {
-         if (used_edges [hg->vedge[j]] <= i)   {
-           used_edges [hg->vedge[j]]     = i+1;          
-           c_vedge[c_hg->nPins++] = hg->vedge[j];
-         }      
-       }        
-       c_hg->nVtx++;          
+      for (j = hg->vindex[i]; j < hg->vindex[i+1]; j++)  {
+        if (used_edges [hg->vedge[j]] <= i)   {
+          used_edges [hg->vedge[j]]     = i+1;          
+          c_vedge[c_hg->nPins++] = hg->vedge[j];
+        }      
+      }        
+      c_hg->nVtx++;          
     }
     else if (match[i] >= 0 && cmatch[i] < 0) { /* match/pack/group local vtx's */
       c_vindex[c_hg->nVtx] = c_hg->nPins;
@@ -280,24 +261,25 @@ int Zoltan_PHG_Coarsening
     };
   }
   else  {
-    c_hg->vmap    = hg->vmap;
-    c_hg->hindex  = NULL;
-    c_hg->hvertex = NULL;
-    c_hg->coor    = hg->coor;  /* ??? needs to be fixed */
-    c_hg->nDim    = hg->nDim;    
-    c_hg->ewgt    = c_ewgt; 
     c_hg->vindex  = c_vindex;
     c_hg->vedge   = c_vedge;
-    c_hg->nEdge   = hg->nEdge;
-    c_hg->comm    = hg->comm;
-    c_hg->info    = hg->info + 1;     /* for debugging */
-    c_hg->ratio   = hg->ratio;        /* for "global" recursive bisectioning */
-    c_hg->redl    = hg->redl;         /* to stop coarsening near desired count */
+  }
+
+  c_hg->vmap    = hg->vmap;
+  c_hg->hindex  = NULL;
+  c_hg->hvertex = NULL;
+  c_hg->coor    = hg->coor;  /* ??? needs to be fixed -- YES!! size of 
+                                coor should be proportional to c_hg->nVtx */
+  c_hg->nDim    = hg->nDim;    
+  c_hg->nEdge   = hg->nEdge;
+  c_hg->comm    = hg->comm;
+  c_hg->info    = hg->info + 1;     /* for debugging */
+  c_hg->ratio   = hg->ratio;        /* for "global" recursive bisectioning */
+  c_hg->redl    = hg->redl;         /* to stop coarsening near desired count */
     
-    c_hg->VtxWeightDim  = hg->VtxWeightDim;
-    c_hg->EdgeWeightDim = hg->EdgeWeightDim;
-  }  
-      
+  c_hg->VtxWeightDim  = hg->VtxWeightDim;
+  c_hg->EdgeWeightDim = hg->EdgeWeightDim;
+  
   Zoltan_Multifree (__FILE__, __LINE__, 7, &buffer, &rbuffer, &listgno, &listlno,
    &cmatch, &displs, &each_size);  
   ZOLTAN_TRACE_EXIT (zz, yo);
