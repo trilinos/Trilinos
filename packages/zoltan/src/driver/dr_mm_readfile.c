@@ -25,11 +25,6 @@ extern "C" {
 #include "dr_input_const.h" /* just for the matrix_obj define's */
 #include "dr_mmio.h"
 
-
-#define BUF_LEN 1000
-#define ERROR(proc,yo,msg,err) \
- {printf("Proc(%d) From(%s): %s\n",proc,yo,msg);return(err);}
-
 /* struct for indices i & j and a value */
 struct ijv
 {
