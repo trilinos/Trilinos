@@ -79,7 +79,6 @@ if BUILD_PRERELEASE
 nodist_include_HEADERS = \
 	$(srcdir)/NOX_Direction_Tensor.H \
 	$(srcdir)/NOX_Solver_InexactTrustRegionBased.H \
-	$(srcdir)/NOX_Solver_TensorBased.H \
 	$(srcdir)/NOX_Solver_TensorBasedTest.H \
 	$(srcdir)/NOX_LineSearch_NonlinearCG.H \
 	$(srcdir)/NOX_Direction_NonlinearCG.H \
@@ -92,7 +91,6 @@ nodist_include_HEADERS = \
 nodist_libnox_a_SOURCES = \
 	$(srcdir)/NOX_Direction_Tensor.C \
 	$(srcdir)/NOX_Solver_InexactTrustRegionBased.C \
-	$(srcdir)/NOX_Solver_TensorBased.C \
 	$(srcdir)/NOX_Solver_TensorBasedTest.C \
 	$(srcdir)/NOX_LineSearch_NonlinearCG.C \
 	$(srcdir)/NOX_Direction_NonlinearCG.C \
@@ -193,12 +191,14 @@ SOLVER_H = \
 	$(srcdir)/NOX_Solver_Generic.H \
 	$(srcdir)/NOX_Solver_Manager.H \
 	$(srcdir)/NOX_Solver_LineSearchBased.H \
-	$(srcdir)/NOX_Solver_TrustRegionBased.H 
+	$(srcdir)/NOX_Solver_TrustRegionBased.H \
+	$(srcdir)/NOX_Solver_TensorBased.H
 
 SOLVER = \
 	$(srcdir)/NOX_Solver_Manager.C \
 	$(srcdir)/NOX_Solver_LineSearchBased.C \
-	$(srcdir)/NOX_Solver_TrustRegionBased.C 
+	$(srcdir)/NOX_Solver_TrustRegionBased.C \
+	$(srcdir)/NOX_Solver_TensorBased.C
 
 STATUSTEST_H = \
 	$(srcdir)/NOX_StatusTest_Generic.H \

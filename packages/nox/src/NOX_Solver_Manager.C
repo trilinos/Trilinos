@@ -36,9 +36,9 @@
 // Header files for different solvers
 #include "NOX_Solver_LineSearchBased.H"	 // LineSearch method
 #include "NOX_Solver_TrustRegionBased.H" // Trust region method
+#include "NOX_Solver_TensorBased.H"      // Tensor method
 #ifdef WITH_PRERELEASE
 #include "NOX_Solver_InexactTrustRegionBased.H" // Inexact Trust region method
-#include "NOX_Solver_TensorBased.H"  // Tensor method
 #include "NOX_Solver_TensorBasedTest.H"  // Tensor-Krylov method
 #endif
 
@@ -95,14 +95,14 @@ bool NOX::Solver::Manager::reset(Abstract::Group& grp,
     {
       ptr = new TrustRegionBased(grp, tests, params);
     } 
+    else if (method == "Tensor Based") 
+    {
+      ptr = new TensorBased(grp, tests, params);
+    } 
 #ifdef WITH_PRERELEASE
     else if (method == "Inexact Trust Region Based") 
     {
       ptr = new InexactTrustRegionBased(grp, tests, params);
-    } 
-    else if (method == "Tensor Based") 
-    {
-      ptr = new TensorBased(grp, tests, params);
     } 
     else if (method == "Tensor-Krylov Based") 
     {

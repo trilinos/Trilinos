@@ -111,6 +111,7 @@ am__libnox_a_SOURCES_DIST = $(srcdir)/NOX_Abstract_Vector.C \
 	$(srcdir)/NOX_Parameter_List.C $(srcdir)/NOX_Solver_Manager.C \
 	$(srcdir)/NOX_Solver_LineSearchBased.C \
 	$(srcdir)/NOX_Solver_TrustRegionBased.C \
+	$(srcdir)/NOX_Solver_TensorBased.C \
 	$(srcdir)/NOX_StatusTest_Generic.C \
 	$(srcdir)/NOX_StatusTest_NormF.C \
 	$(srcdir)/NOX_StatusTest_FiniteValue.C \
@@ -140,7 +141,8 @@ am__objects_4 = libnox_a-NOX_Parameter_Entry.$(OBJEXT) \
 	libnox_a-NOX_Parameter_List.$(OBJEXT)
 am__objects_5 = libnox_a-NOX_Solver_Manager.$(OBJEXT) \
 	libnox_a-NOX_Solver_LineSearchBased.$(OBJEXT) \
-	libnox_a-NOX_Solver_TrustRegionBased.$(OBJEXT)
+	libnox_a-NOX_Solver_TrustRegionBased.$(OBJEXT) \
+	libnox_a-NOX_Solver_TensorBased.$(OBJEXT)
 am__objects_6 = libnox_a-NOX_StatusTest_Generic.$(OBJEXT) \
 	libnox_a-NOX_StatusTest_NormF.$(OBJEXT) \
 	libnox_a-NOX_StatusTest_FiniteValue.$(OBJEXT) \
@@ -159,7 +161,6 @@ am_libnox_a_OBJECTS = $(am__objects_1) $(am__objects_2) \
 	$(am__objects_6) $(am__objects_7) $(am__objects_8)
 @BUILD_PRERELEASE_TRUE@nodist_libnox_a_OBJECTS = libnox_a-NOX_Direction_Tensor.$(OBJEXT) \
 @BUILD_PRERELEASE_TRUE@	libnox_a-NOX_Solver_InexactTrustRegionBased.$(OBJEXT) \
-@BUILD_PRERELEASE_TRUE@	libnox_a-NOX_Solver_TensorBased.$(OBJEXT) \
 @BUILD_PRERELEASE_TRUE@	libnox_a-NOX_Solver_TensorBasedTest.$(OBJEXT) \
 @BUILD_PRERELEASE_TRUE@	libnox_a-NOX_LineSearch_NonlinearCG.$(OBJEXT) \
 @BUILD_PRERELEASE_TRUE@	libnox_a-NOX_Direction_NonlinearCG.$(OBJEXT) \
@@ -249,6 +250,7 @@ am__include_HEADERS_DIST = $(srcdir)/NOX.H $(srcdir)/NOX_Common.H \
 	$(srcdir)/NOX_Solver_Manager.H \
 	$(srcdir)/NOX_Solver_LineSearchBased.H \
 	$(srcdir)/NOX_Solver_TrustRegionBased.H \
+	$(srcdir)/NOX_Solver_TensorBased.H \
 	$(srcdir)/NOX_StatusTest_Generic.H \
 	$(srcdir)/NOX_StatusTest_NormF.H \
 	$(srcdir)/NOX_StatusTest_FiniteValue.H \
@@ -461,7 +463,6 @@ include_HEADERS = \
 @BUILD_PRERELEASE_TRUE@nodist_include_HEADERS = \
 @BUILD_PRERELEASE_TRUE@	$(srcdir)/NOX_Direction_Tensor.H \
 @BUILD_PRERELEASE_TRUE@	$(srcdir)/NOX_Solver_InexactTrustRegionBased.H \
-@BUILD_PRERELEASE_TRUE@	$(srcdir)/NOX_Solver_TensorBased.H \
 @BUILD_PRERELEASE_TRUE@	$(srcdir)/NOX_Solver_TensorBasedTest.H \
 @BUILD_PRERELEASE_TRUE@	$(srcdir)/NOX_LineSearch_NonlinearCG.H \
 @BUILD_PRERELEASE_TRUE@	$(srcdir)/NOX_Direction_NonlinearCG.H \
@@ -473,7 +474,6 @@ include_HEADERS = \
 @BUILD_PRERELEASE_TRUE@nodist_libnox_a_SOURCES = \
 @BUILD_PRERELEASE_TRUE@	$(srcdir)/NOX_Direction_Tensor.C \
 @BUILD_PRERELEASE_TRUE@	$(srcdir)/NOX_Solver_InexactTrustRegionBased.C \
-@BUILD_PRERELEASE_TRUE@	$(srcdir)/NOX_Solver_TensorBased.C \
 @BUILD_PRERELEASE_TRUE@	$(srcdir)/NOX_Solver_TensorBasedTest.C \
 @BUILD_PRERELEASE_TRUE@	$(srcdir)/NOX_LineSearch_NonlinearCG.C \
 @BUILD_PRERELEASE_TRUE@	$(srcdir)/NOX_Direction_NonlinearCG.C \
@@ -570,12 +570,14 @@ SOLVER_H = \
 	$(srcdir)/NOX_Solver_Generic.H \
 	$(srcdir)/NOX_Solver_Manager.H \
 	$(srcdir)/NOX_Solver_LineSearchBased.H \
-	$(srcdir)/NOX_Solver_TrustRegionBased.H 
+	$(srcdir)/NOX_Solver_TrustRegionBased.H \
+	$(srcdir)/NOX_Solver_TensorBased.H
 
 SOLVER = \
 	$(srcdir)/NOX_Solver_Manager.C \
 	$(srcdir)/NOX_Solver_LineSearchBased.C \
-	$(srcdir)/NOX_Solver_TrustRegionBased.C 
+	$(srcdir)/NOX_Solver_TrustRegionBased.C \
+	$(srcdir)/NOX_Solver_TensorBased.C
 
 STATUSTEST_H = \
 	$(srcdir)/NOX_StatusTest_Generic.H \
@@ -1113,6 +1115,22 @@ libnox_a-NOX_Solver_TrustRegionBased.obj: $(srcdir)/NOX_Solver_TrustRegionBased.
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnox_a_CXXFLAGS) $(CXXFLAGS) -c -o libnox_a-NOX_Solver_TrustRegionBased.obj `if test -f '$(srcdir)/NOX_Solver_TrustRegionBased.C'; then $(CYGPATH_W) '$(srcdir)/NOX_Solver_TrustRegionBased.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/NOX_Solver_TrustRegionBased.C'; fi`
 
+libnox_a-NOX_Solver_TensorBased.o: $(srcdir)/NOX_Solver_TensorBased.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnox_a_CXXFLAGS) $(CXXFLAGS) -MT libnox_a-NOX_Solver_TensorBased.o -MD -MP -MF "$(DEPDIR)/libnox_a-NOX_Solver_TensorBased.Tpo" -c -o libnox_a-NOX_Solver_TensorBased.o `test -f '$(srcdir)/NOX_Solver_TensorBased.C' || echo '$(srcdir)/'`$(srcdir)/NOX_Solver_TensorBased.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libnox_a-NOX_Solver_TensorBased.Tpo" "$(DEPDIR)/libnox_a-NOX_Solver_TensorBased.Po"; else rm -f "$(DEPDIR)/libnox_a-NOX_Solver_TensorBased.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/NOX_Solver_TensorBased.C' object='libnox_a-NOX_Solver_TensorBased.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libnox_a-NOX_Solver_TensorBased.Po' tmpdepfile='$(DEPDIR)/libnox_a-NOX_Solver_TensorBased.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnox_a_CXXFLAGS) $(CXXFLAGS) -c -o libnox_a-NOX_Solver_TensorBased.o `test -f '$(srcdir)/NOX_Solver_TensorBased.C' || echo '$(srcdir)/'`$(srcdir)/NOX_Solver_TensorBased.C
+
+libnox_a-NOX_Solver_TensorBased.obj: $(srcdir)/NOX_Solver_TensorBased.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnox_a_CXXFLAGS) $(CXXFLAGS) -MT libnox_a-NOX_Solver_TensorBased.obj -MD -MP -MF "$(DEPDIR)/libnox_a-NOX_Solver_TensorBased.Tpo" -c -o libnox_a-NOX_Solver_TensorBased.obj `if test -f '$(srcdir)/NOX_Solver_TensorBased.C'; then $(CYGPATH_W) '$(srcdir)/NOX_Solver_TensorBased.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/NOX_Solver_TensorBased.C'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libnox_a-NOX_Solver_TensorBased.Tpo" "$(DEPDIR)/libnox_a-NOX_Solver_TensorBased.Po"; else rm -f "$(DEPDIR)/libnox_a-NOX_Solver_TensorBased.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/NOX_Solver_TensorBased.C' object='libnox_a-NOX_Solver_TensorBased.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libnox_a-NOX_Solver_TensorBased.Po' tmpdepfile='$(DEPDIR)/libnox_a-NOX_Solver_TensorBased.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnox_a_CXXFLAGS) $(CXXFLAGS) -c -o libnox_a-NOX_Solver_TensorBased.obj `if test -f '$(srcdir)/NOX_Solver_TensorBased.C'; then $(CYGPATH_W) '$(srcdir)/NOX_Solver_TensorBased.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/NOX_Solver_TensorBased.C'; fi`
+
 libnox_a-NOX_StatusTest_Generic.o: $(srcdir)/NOX_StatusTest_Generic.C
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnox_a_CXXFLAGS) $(CXXFLAGS) -MT libnox_a-NOX_StatusTest_Generic.o -MD -MP -MF "$(DEPDIR)/libnox_a-NOX_StatusTest_Generic.Tpo" -c -o libnox_a-NOX_StatusTest_Generic.o `test -f '$(srcdir)/NOX_StatusTest_Generic.C' || echo '$(srcdir)/'`$(srcdir)/NOX_StatusTest_Generic.C; \
 @am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libnox_a-NOX_StatusTest_Generic.Tpo" "$(DEPDIR)/libnox_a-NOX_StatusTest_Generic.Po"; else rm -f "$(DEPDIR)/libnox_a-NOX_StatusTest_Generic.Tpo"; exit 1; fi
@@ -1336,22 +1354,6 @@ libnox_a-NOX_Solver_InexactTrustRegionBased.obj: $(srcdir)/NOX_Solver_InexactTru
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libnox_a-NOX_Solver_InexactTrustRegionBased.Po' tmpdepfile='$(DEPDIR)/libnox_a-NOX_Solver_InexactTrustRegionBased.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnox_a_CXXFLAGS) $(CXXFLAGS) -c -o libnox_a-NOX_Solver_InexactTrustRegionBased.obj `if test -f '$(srcdir)/NOX_Solver_InexactTrustRegionBased.C'; then $(CYGPATH_W) '$(srcdir)/NOX_Solver_InexactTrustRegionBased.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/NOX_Solver_InexactTrustRegionBased.C'; fi`
-
-libnox_a-NOX_Solver_TensorBased.o: $(srcdir)/NOX_Solver_TensorBased.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnox_a_CXXFLAGS) $(CXXFLAGS) -MT libnox_a-NOX_Solver_TensorBased.o -MD -MP -MF "$(DEPDIR)/libnox_a-NOX_Solver_TensorBased.Tpo" -c -o libnox_a-NOX_Solver_TensorBased.o `test -f '$(srcdir)/NOX_Solver_TensorBased.C' || echo '$(srcdir)/'`$(srcdir)/NOX_Solver_TensorBased.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libnox_a-NOX_Solver_TensorBased.Tpo" "$(DEPDIR)/libnox_a-NOX_Solver_TensorBased.Po"; else rm -f "$(DEPDIR)/libnox_a-NOX_Solver_TensorBased.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/NOX_Solver_TensorBased.C' object='libnox_a-NOX_Solver_TensorBased.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libnox_a-NOX_Solver_TensorBased.Po' tmpdepfile='$(DEPDIR)/libnox_a-NOX_Solver_TensorBased.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnox_a_CXXFLAGS) $(CXXFLAGS) -c -o libnox_a-NOX_Solver_TensorBased.o `test -f '$(srcdir)/NOX_Solver_TensorBased.C' || echo '$(srcdir)/'`$(srcdir)/NOX_Solver_TensorBased.C
-
-libnox_a-NOX_Solver_TensorBased.obj: $(srcdir)/NOX_Solver_TensorBased.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnox_a_CXXFLAGS) $(CXXFLAGS) -MT libnox_a-NOX_Solver_TensorBased.obj -MD -MP -MF "$(DEPDIR)/libnox_a-NOX_Solver_TensorBased.Tpo" -c -o libnox_a-NOX_Solver_TensorBased.obj `if test -f '$(srcdir)/NOX_Solver_TensorBased.C'; then $(CYGPATH_W) '$(srcdir)/NOX_Solver_TensorBased.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/NOX_Solver_TensorBased.C'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libnox_a-NOX_Solver_TensorBased.Tpo" "$(DEPDIR)/libnox_a-NOX_Solver_TensorBased.Po"; else rm -f "$(DEPDIR)/libnox_a-NOX_Solver_TensorBased.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/NOX_Solver_TensorBased.C' object='libnox_a-NOX_Solver_TensorBased.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libnox_a-NOX_Solver_TensorBased.Po' tmpdepfile='$(DEPDIR)/libnox_a-NOX_Solver_TensorBased.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnox_a_CXXFLAGS) $(CXXFLAGS) -c -o libnox_a-NOX_Solver_TensorBased.obj `if test -f '$(srcdir)/NOX_Solver_TensorBased.C'; then $(CYGPATH_W) '$(srcdir)/NOX_Solver_TensorBased.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/NOX_Solver_TensorBased.C'; fi`
 
 libnox_a-NOX_Solver_TensorBasedTest.o: $(srcdir)/NOX_Solver_TensorBasedTest.C
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnox_a_CXXFLAGS) $(CXXFLAGS) -MT libnox_a-NOX_Solver_TensorBasedTest.o -MD -MP -MF "$(DEPDIR)/libnox_a-NOX_Solver_TensorBasedTest.Tpo" -c -o libnox_a-NOX_Solver_TensorBasedTest.o `test -f '$(srcdir)/NOX_Solver_TensorBasedTest.C' || echo '$(srcdir)/'`$(srcdir)/NOX_Solver_TensorBasedTest.C; \

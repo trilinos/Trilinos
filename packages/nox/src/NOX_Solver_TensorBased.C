@@ -1,7 +1,6 @@
 // $Id$ 
 // $Source$ 
 
-#ifdef WITH_PRERELEASE
 //@HEADER
 // ************************************************************************
 // 
@@ -1076,4 +1075,3 @@ void NOX::Solver::TensorBased::throwError(const string& functionName,
   throw "NOX Error";
 }
 
-#endif  // WITH_PRERELEASE

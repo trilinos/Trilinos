@@ -1,7 +1,6 @@
 // $Id$ 
 // $Source$ 
 
-#ifdef WITH_PRERELEASE
 //@HEADER
 // ************************************************************************
 // 
@@ -500,5 +499,3 @@ protected:
 } // namespace NOX
 
 #endif
-
-#endif  // WITH_PRERELEASE
