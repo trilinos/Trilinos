@@ -37,8 +37,16 @@
 
 //-----------------------------------------------------------------------------
 Problem_Interface::Problem_Interface(FiniteElementProblem& Problem) :
-  problem(Problem)
-{ }
+  problem(Problem),
+  paramLib()
+{ 
+  paramLib.addParameterEntry("Nonlinear Factor", problem, 
+			     &FiniteElementProblem::factor);
+  paramLib.addParameterEntry("Left BC", problem, 
+			     &FiniteElementProblem::leftBC);
+  paramLib.addParameterEntry("Right BC", problem, 
+			     &FiniteElementProblem::rightBC);
+}
 
 Problem_Interface::~Problem_Interface()
 { }
@@ -78,7 +86,8 @@ bool Problem_Interface::computePreconditioner(const Epetra_Vector& x, Epetra_Ope
 void Problem_Interface::setParameters(const LOCA::ParameterVector& params)
 {
   for (int i = 0; i < params.length(); i++ ) {
-    problem.setParameter(params.getLabel(i), params.getValue(i)); 
+    //problem.setParameter(params.getLabel(i), params.getValue(i)); 
+    paramLib.setParameterValue(params.getLabel(i), params.getValue(i));
   }
 }
 //-----------------------------------------------------------------------------

@@ -102,6 +102,8 @@ private:
   int NumMyElements;      // Number of elements owned by this process
   int NumGlobalElements;  // Total Number of elements
 
+ public:
+
   double factor;          // factor used on nonlinear term
   double leftBC;          // value of the essential BC at x = 0.
   double rightBC;         // value of the essential BC at x = 1.

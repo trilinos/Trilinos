@@ -41,6 +41,8 @@
 #include "Epetra_RowMatrix.h"
 #include "LOCA_Epetra.H"
 
+#include "LOCA_Parameter_Library.H"
+
 // ---------- Forward Declarations ----------
 class FiniteElementProblem;
 namespace LOCA {
@@ -76,6 +78,8 @@ public:
    *  passdown class design by the application code.
    */ 
   FiniteElementProblem& problem;
+
+  LOCA::Parameter::Library paramLib;
 };
 
 #endif

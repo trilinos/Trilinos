@@ -67,7 +67,7 @@ int main(int argc, char *argv[])
   int ierr = 0, i;
   
   // scale factor to test arc-length scaling
-  double scale = 1.0e-6;
+  double scale = 1.0;
 
   // Initialize MPI
 #ifdef HAVE_MPI
