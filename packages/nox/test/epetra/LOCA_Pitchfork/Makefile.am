@@ -1,3 +1,5 @@
+## $Id$ 
+## $Source$ 
 #@HEADER
 # ************************************************************************
 # 
@@ -27,16 +29,32 @@
 # ************************************************************************
 #@HEADER
 
-if BUILD_EPETRA_TESTS
-NOX_SUBDIRS = NOX_NewTest NOX_Vector NOX_Group 1Dfem DS6.5.1 MultiPhysics
-else
-NOX_SUBDIRS = 
-endif
+noinst_PROGRAMS = pitchfork_exe
 
-if BUILD_LOCA_EPETRA_TESTS
-LOCA_SUBDIRS = LOCA_Pitchfork
-else
-LOCA_SUBDIRS =
-endif
+pitchfork_exe_SOURCES = \
+	$(srcdir)/Pitchfork.C \
+	$(srcdir)/FiniteElementProblem.C \
+	$(srcdir)/FiniteElementProblem.H \
+	$(srcdir)/Basis.C \
+	$(srcdir)/Basis.H \
+	$(srcdir)/Problem_Interface.C \
+	$(srcdir)/Problem_Interface.H
 
-SUBDIRS = $(NOX_SUBDIRS) $(LOCA_SUBDIRS)
+pitchfork_exe_DEPENDENCIES = \
+        $(top_builddir)/src/libnox.a \
+        $(top_builddir)/src-epetra/libnoxepetra.a \
+	$(top_builddir)/src-loca/src/libloca.la \
+        $(top_builddir)/src-loca/src-epetra/liblocaepetra.la
+
+pitchfork_exe_CXXFLAGS = $(TRILINOS_CXXFLAGS) \
+		   -I$(top_srcdir)/src \
+                   -I$(top_srcdir)/src-epetra \
+		   -I$(top_srcdir)/src-loca/src \
+                   -I$(top_srcdir)/src-loca/src-epetra
+
+pitchfork_exe_LDADD = \
+	$(top_builddir)/src-loca/src-epetra/liblocaepetra.la \
+	$(top_builddir)/src-loca/src/libloca.la \
+	$(top_builddir)/src-epetra/libnoxepetra.a \
+	$(top_builddir)/src/libnox.a \
+	$(LIBS)

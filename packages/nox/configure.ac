@@ -1890,6 +1890,7 @@ AC_CONFIG_FILES([
                 test/epetra/NOX_Group/Makefile
                 test/epetra/LOCA_NewTest/Makefile
                 test/epetra/LOCA_Group/Makefile
+		test/epetra/LOCA_Pitchfork/Makefile
                 test/epetra/1Dfem/Makefile
                 test/epetra/MultiPhysics/Makefile
                 test/epetra/DS6.5.1/Makefile

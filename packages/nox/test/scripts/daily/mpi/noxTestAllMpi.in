@@ -107,7 +107,7 @@ if ($run_epetra == yes) then
     set tests_epetra = ($tests_epetra NOX_NewTest NOX_Vector NOX_Group 1Dfem)
 endif
 if ($run_loca_epetra == yes) then
-    set tests_epetra = ($tests_epetra)
+    set tests_epetra = ($tests_epetra LOCA_Pitchfork)
 endif
  
 ## testscript returns an error since petsc and lapack are empty so I commented
