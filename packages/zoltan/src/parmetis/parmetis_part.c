@@ -25,6 +25,7 @@ static char *cvs_parmetis_part_id = "$Id$";
 #include "parmetis_const.h"
 #include "params_const.h"
 #include "timer_const.h"
+#include <string.h>
 
 /* ParMetis option defs. These must be identical to the defs
  * in defs.h in the version of ParMetis you are using!
@@ -36,6 +37,23 @@ static char *cvs_parmetis_part_id = "$Id$";
 
 /* Misc. local constants */
 #define CHUNKSIZE 10  /* Number of list nodes to allocate in one chunk. */
+
+/* Macro to free all allocated memory */
+#define FREE_MY_MEMORY \
+  { int i; \
+  LB_FREE(&vtxdist); LB_FREE(&xadj); LB_FREE(&adjncy); \
+  LB_FREE(&vwgt); LB_FREE(&adjwgt); LB_FREE(&part); \
+  LB_FREE(&float_vwgt); LB_FREE(&xyz); \
+  LB_FREE(&sendbuf); LB_FREE(&recvbuf); LB_FREE(&request); \
+  LB_FREE(&status); LB_FREE(&hash_nodes); LB_FREE(&hashtab); \
+  LB_FREE(&nbors_proc); LB_FREE(&nbors_global); \
+  LB_FREE(&local_ids); LB_FREE(&global_ids); \
+  if (proc_nodes !=NULL) \
+    for (i=0; proc_nodes[i] != NULL; i++) \
+      LB_FREE(&(proc_nodes[i])); \
+  LB_FREE(&proc_nodes); LB_FREE(&proc_list); \
+  }
+
 
 /******** Interface routine between Zoltan and ParMetis. ************/
 
@@ -171,6 +189,9 @@ int LB_ParMetis(
   num_obj = lb->Get_Num_Obj(lb->Get_Num_Obj_Data, &ierr);
   if (ierr){
     /* Return error code */
+    printf("[%1d] Error on line %d in %s\n", lb->Proc, __LINE__, __FILE__);
+    FREE_MY_MEMORY;
+    return (ierr);
   }
   
 #ifdef LB_DEBUG
@@ -188,14 +209,15 @@ int LB_ParMetis(
   }
   if (!vtxdist || !global_ids || !local_ids || (vwgt_dim && !float_vwgt)){
     /* Not enough memory */
+    printf("[%1d] Error on line %d in %s\n", lb->Proc, __LINE__, __FILE__);
+    FREE_MY_MEMORY;
     return LB_MEMERR;
   }
   LB_Get_Obj_List(lb, global_ids, local_ids, vwgt_dim, float_vwgt, &ierr);
   if (ierr){
-    /* Return error code ? */
-#ifdef LB_DEBUG
-    printf("[%1d] Error: LB_Get_Obj_List failed!\n", lb->Proc);
-#endif
+    /* Return error */
+    printf("[%1d] Error on line %d in %s\n", lb->Proc, __LINE__, __FILE__);
+    FREE_MY_MEMORY;
     return LB_FATAL;
   }
 
@@ -227,6 +249,10 @@ int LB_ParMetis(
       nedges = lb->Get_Num_Edges(lb->Get_Edge_List_Data, global_ids[i], 
                local_ids[i], &ierr);
       if (ierr){
+        /* Return error */
+        printf("[%1d] Error on line %d in %s\n", lb->Proc, __LINE__, __FILE__);
+        FREE_MY_MEMORY;
+        return (ierr);
       }
       sum_edges += nedges;
       if (nedges>max_edges) max_edges = nedges;
@@ -243,6 +269,8 @@ int LB_ParMetis(
   
     if (!xadj || !adjncy || (ewgt_dim && !adjwgt)){
       /* Not enough memory */
+      printf("[%1d] Error on line %d in %s\n", lb->Proc, __LINE__, __FILE__);
+      FREE_MY_MEMORY;
       return LB_MEMERR;
     }
 #ifdef LB_DEBUG
@@ -259,6 +287,8 @@ int LB_ParMetis(
       sizeof(struct LB_hash_node *) );
     if ((!hash_nodes) || (!hashtab)){
       /* Not enough memory */
+      printf("[%1d] Error on line %d in %s\n", lb->Proc, __LINE__, __FILE__);
+      FREE_MY_MEMORY;
       return LB_MEMERR;
     }
     
@@ -285,6 +315,8 @@ int LB_ParMetis(
       sizeof(struct LB_vtx_list *) );
     if ((!nbors_global) || (!nbors_proc) || (!proc_list) || (!proc_nodes)){
       /* Not enough memory */
+      printf("[%1d] Error on line %d in %s\n", lb->Proc, __LINE__, __FILE__);
+      FREE_MY_MEMORY;
       return LB_MEMERR;
     }
   
@@ -317,7 +349,10 @@ int LB_ParMetis(
       lb->Get_Edge_List(lb->Get_Edge_List_Data, global_ids[i], local_ids[i],
           nbors_global, nbors_proc, ewgt_dim, adjwgt, &ierr);
       if (ierr){
-        /* Return error code */
+        /* Return error */
+        printf("[%1d] Error on line %d in %s\n", lb->Proc, __LINE__, __FILE__);
+        FREE_MY_MEMORY;
+        return (ierr);
       }
   
 #ifdef LB_DEBUG
@@ -340,6 +375,8 @@ int LB_ParMetis(
 #endif
             if (!proc_nodes[row]){
               /* Not enough memory */
+              printf("[%1d] Error on line %d in %s\n", lb->Proc, __LINE__, __FILE__);
+              FREE_MY_MEMORY;
               return LB_MEMERR;
             }
           } 
@@ -407,6 +444,13 @@ int LB_ParMetis(
       recvbuf = (char *) LB_MALLOC(sum_edges*size);
       request = (MPI_Request *) LB_MALLOC(nsend*sizeof(MPI_Request));
       status  = (MPI_Status *) LB_MALLOC(nsend*sizeof(MPI_Status));
+      if ((!sendbuf) || (!recvbuf) || (!request) || (!status)){
+        /* Not enough space */
+        printf("[%1d] Error on line %d in %s\n", lb->Proc, __LINE__, __FILE__);
+        FREE_MY_MEMORY;
+        return LB_MEMERR;
+      }
+
       /* Issue the recvs */
       offset = 0;
       j = 0;
@@ -506,7 +550,6 @@ int LB_ParMetis(
     } /* end if (nsend>0) */
   
     /* Free space for temp data structures */
-    i=0;
     for (i=0; proc_nodes[i] != NULL; i++){
       LB_FREE(&(proc_nodes[i]));
     }
@@ -539,10 +582,18 @@ int LB_ParMetis(
   if (get_geom_data){
     /* Determine how many dimensions the data have */
     ndims = lb->Get_Num_Geom(lb->Get_Num_Geom_Data, &ierr);
+    if (ierr){
+      /* Return error */
+      printf("[%1d] Error on line %d in %s\n", lb->Proc, __LINE__, __FILE__);
+      FREE_MY_MEMORY;
+      return (ierr);
+    }
     /* Allocate space for the geometry data */
     xyz = (float *) LB_MALLOC(ndims*num_obj * sizeof(float));
     if (!xyz){
       /* Not enough space */
+      printf("[%1d] Error on line %d in %s\n", lb->Proc, __LINE__, __FILE__);
+      FREE_MY_MEMORY;
       return LB_MEMERR;
     }
     /* Get the geometry data */
@@ -550,7 +601,10 @@ int LB_ParMetis(
       lb->Get_Geom(lb->Get_Geom_Data, global_ids[i], local_ids[i], 
         geom_vec, &ierr);
       if (ierr) {
-        /* error */
+        /* Return error code */
+        printf("[%1d] Error on line %d in %s\n", lb->Proc, __LINE__, __FILE__);
+        FREE_MY_MEMORY;
+        return (ierr);
       }
       for (j=0; j<ndims; j++)
         xyz[i*ndims+j] = geom_vec[j];
@@ -563,6 +617,8 @@ int LB_ParMetis(
   part = (idxtype *)LB_MALLOC(num_obj * sizeof(idxtype));
   if (!part){
     /* Not enough memory */
+    printf("[%1d] Error on line %d in %s\n", lb->Proc, __LINE__, __FILE__);
+    FREE_MY_MEMORY;
     return LB_MEMERR;
   }
   
@@ -607,6 +663,8 @@ int LB_ParMetis(
   }
   else {
     printf("Error: Unknown ParMetis algorithm %s\n", alg);
+    printf("[%1d] Error on line %d in %s\n", lb->Proc, __LINE__, __FILE__);
+    FREE_MY_MEMORY;
     return LB_FATAL;
   }
 
@@ -628,20 +686,24 @@ int LB_ParMetis(
   (*num_exp) = nsend;
 
   /* Create export lists */
-  *exp_gids = (LB_GID *)LB_MALLOC(nsend * sizeof(LB_GID));
-  *exp_lids = (LB_LID *)LB_MALLOC(nsend * sizeof(LB_LID));
-  *exp_procs = (int *)LB_MALLOC(nsend * sizeof(int));
-  if (!(*exp_gids) || !(*exp_lids) || !(*exp_procs)){
-    /* Not enough memory */
-    return LB_MEMERR;
-  }
-  j = 0;
-  for (i=0; i<num_obj; i++){
-    if (part[i] != lb->Proc){
-      (*exp_gids)[j] = global_ids[i];
-      (*exp_lids)[j] = local_ids[i];
-      (*exp_procs)[j] = part[i];
-      j++;
+  if (nsend>0){
+    *exp_gids = (LB_GID *)LB_MALLOC(nsend * sizeof(LB_GID));
+    *exp_lids = (LB_LID *)LB_MALLOC(nsend * sizeof(LB_LID));
+    *exp_procs = (int *)LB_MALLOC(nsend * sizeof(int));
+    if (!(*exp_gids) || !(*exp_lids) || !(*exp_procs)){
+      /* Not enough memory */
+      printf("[%1d] Error on line %d in %s\n", lb->Proc, __LINE__, __FILE__);
+      FREE_MY_MEMORY;
+      return LB_MEMERR;
+    }
+    j = 0;
+    for (i=0; i<num_obj; i++){
+      if (part[i] != lb->Proc){
+        (*exp_gids)[j] = global_ids[i];
+        (*exp_lids)[j] = local_ids[i];
+        (*exp_procs)[j] = part[i];
+        j++;
+      }
     }
   }
 
