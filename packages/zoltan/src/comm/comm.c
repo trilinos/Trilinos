@@ -210,9 +210,9 @@ struct Comm_Obj *comm_create(
            do this ONLY to remove non-determinism; non-determinism
            may cause different results due to different order of
            migration. 
-*/
 
   debug_sort2_int_int(nrecv, procs_from-1, lengths_from-1);
+*/
 
 /* setup indices_to, including self
    counts = current offset into indices_to for each proc I send to */
