@@ -26,7 +26,7 @@
 % ************************************************************************
 %@HEADER
 
-\documentclass[11pt,letter]{article}
+\documentclass[11pt]{SANDreport}
 \usepackage{graphicx}
 \usepackage{amsmath,amsfonts,amsthm}
 \usepackage{amssymb}
@@ -40,13 +40,14 @@
 \setlength{\textwidth}{150mm}\setlength{\textheight}{210mm}
 \headheight=12.45pt
 
-\author{Ken Stanley, Marzio Sala
-}
 
-\title{Amesos Reference Guide \\
-   SAND2004-XXX \\
-December 2004 \\
-Unlimited Release}
+\title{Amesos Reference Guide}
+\SANDnum{SAND2004-XXX}
+\SANDauthor{
+Marzio Sala, Ken Stanley}
+
+\SANDprintDate{May 2004}
+\SANDreleaseType{Unlimited Release}
 
 \newcommand{\Amesos}{Amesos}
 \newcommand{\Trilinos}{Trilinos}
@@ -83,27 +84,30 @@ Unlimited Release}
 \end{abstract}
 
 \clearpage
+
+\SANDmain
+
+\tableofcontents
+
+\clearpage
+
 \section*{Acknowledgments}
 The authors would like to acknowledge the support of the ASCI and LDRD programs
 that funded development of Trilinos.
 
 \smallskip
 
-Tim Davis is acknowledged for providing KLU and UMFPACK.
+%Tim Davis is acknowledged for providing KLU and UMFPACK.
 
 \smallskip
 
-Xiaoye Sherry Li is thanked for providing all the SuperLU libraries, and
-for the suggestions and supports about the Amesos\_Superludist
-interface.
+%Xiaoye Sherry Li is thanked for providing all the SuperLU libraries, and
+%for the suggestions and supports about the Amesos\_Superludist
+%interface.
 
 \smallskip
 
-The MUMPS developers' team is acknowledged for providing MUMPS.
-
-\clearpage
-
-\tableofcontents
+%The MUMPS developers' team is acknowledged for providing MUMPS.
 
 \clearpage
 
