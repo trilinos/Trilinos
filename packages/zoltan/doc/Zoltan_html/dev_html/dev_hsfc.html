@@ -37,11 +37,14 @@ This partitioning algorithm is based on the 2D & 3D Inverse Hilbert
 Space-Filling Curve code developed by H. Carter Edwards and on the BSFC
 partitioning implementation by Andrew C. Bauer, Department of Engineering,
 State University of New York at Buffalo, as his summer project at SNL in 2001.
+Please refer to the corresponding section in the Zotan User's guide,
+<a href="../ug_html/ug_alg_hsfc.html"><b>Hilbert Space Filling Curve (HSFC),</b></a>
+for information about how to use this module and its parameters.
 <p>
 First, the weights and inverse Hilbert coordinates for each object
 are determined. If the objects do not have weights, unit weights are assigned.
-If the objects have multidimensional weights, only the first dimension of
-weight is used.  The smallest axis-aligned box is found that contains
+If the objects have multiple weights, only the weight is used.  The smallest
+axis-aligned box is found that contains
 all objects using their two or three dimensional coordinates.
 This bounding box is slightly expanded to insure that all objects are strictly
 interior to the boundary surface. The bounding box is necessary to calculate
@@ -61,11 +64,12 @@ The unit interval is divided into N bins. (N=k(P-1)+1, where k is a
 small positive constant.)  Each bin has an left and right endpoint
 specifying the half-open interval [l,r) associated with the bin. The bins form a
 non-overlapping cover of [0,1] with the right endpoint of the last bin forced to include 1.
-For the first loop, the bins are equal size.
-<p> Each loop, an MPI_Allreduce call is made to
-globally sum the weights in each bin.  This same call also determines the maximum and
+The bins are equal size on the first loop.  (Hence each interval or part of the
+partition is a collection of bins.)
+<p> For each loop, an MPI_Allreduce call is made to
+globally sum the weights in each bin.  This call also determines the maximum and
 minimum (inverse Hilbert) coordinate found in each bin.  A greedy algorithm sums the
-weights in the bins from left to right until the next bin would cause an overflow for
+weights of the bins from left to right until the next bin would cause an overflow for
 the current partition. This results in new partition of P intervals. The location of
 each cut (just before an "overflowing" bin) and the size of its "overflowing" bin are
 saved. The "overflowing" bin's maximum and minimum are compared to determine of the bin
@@ -97,7 +101,7 @@ excessive imbalance.
 <p>
 Generally, the number of loops is small (proportional to log(number of objects)).
 A maximum of MAX_LOOPS is
-used to prevent an infinite looping condition due to a programming error.  A user-defined
+used to prevent an infinite looping condition.  A user-defined
 function is used in the MPI_Allreduce call in order to simultaneously determine the
 sum, maximum, and minimum of each bin.  The message length in the MPI_Allreduce is
 proportional to the P, the number of partitions. 
@@ -107,8 +111,8 @@ into a multiple of k-1 intervals which maintains a total of N bins.
 
 <BR>&nbsp;
 <h3>Point Assign</h3>
-The user can use 
-<a href="../ug_html/ug_interface_augment.html#Zoltan_LB_Point_Assign"><b>Zoltan_LB_Point_Assign</b></a> 
+The user can use
+<a href="../ug_html/ug_interface_augment.html#Zoltan_LB_Point_Assign"><b>Zoltan_LB_Point_Assign</b></a>
 to add a new point to the
 appropriate partition.  The bounding box coordinates,
 the final partition, and other related information persist after partitioning.
@@ -116,7 +120,7 @@ The extended bounded box is
 used to compute the new point's inverse Hilbert coordinate.  Then the
 routine performs a binary search on the final partition to determine the partition (interval) which
 includes the point. The routine returns the partition number assigned to that
-interval.
+interval.  This function requires the KEEP_CUTS parameter to be set by the user.
 
 <BR>&nbsp;
 <h3>Box Assign</h3>
@@ -128,7 +132,8 @@ this algorithm creates a regular lattice of points filling the user's box.
 The point assign function is called repeatedly to determine the partition
 for each lattice point.  The function then refines the lattice and repeats
 the process until the same list of partitions is obtained.  This list is
-returned to the user.
+returned to the user.  This function requires the KEEP_CUTS parameter to be set by the user.
+
 <p>
 
 <BR>&nbsp;
