@@ -26,6 +26,8 @@
 #include "ml_comm.h"
 #include "ml_struct.h"
 #include "ml_solver.h"
+#define REPLACE 1
+#define NEQU    0
 
 extern void ML_set_tile( int nprocs, int* tsz, int* stile, int* mtile, int* ltile);
 /*
