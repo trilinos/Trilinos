@@ -44,7 +44,6 @@ int Zoltan_PHG_Coarsening
 
   ZOLTAN_TRACE_ENTER (zz, yo);
   
-uprintf (hgc, "entered coarsening code\n");
   
   Zoltan_PHG_PHGraph_Init (c_hg);   /* inits working copy of hypergraph info */
   c_hg->info  = hg->info + 1;      /* for debugging */
@@ -150,7 +149,7 @@ uprintf (hgc, "entered coarsening code\n");
      
   if (!(used_edges = (int*)   ZOLTAN_CALLOC (hg->nEdge,       sizeof(int)))
    || !(c_hg->vwgt = (float*) ZOLTAN_CALLOC (hg->nVtx,        sizeof(float)))
-   || !(c_ewgt     = (float*) ZOLTAN_MALLOC (hg->nEdge      * sizeof(float)))
+   || (hg->ewgt && !(c_ewgt = (float*) ZOLTAN_MALLOC (hg->nEdge * sizeof(float))))
    || !(c_vindex   = (int*)   ZOLTAN_MALLOC ((hg->nVtx+1)   * sizeof(int)))
    || !(c_vedge    = (int*)   ZOLTAN_MALLOC (hg->nNonZero   * sizeof(int)))) {
       Zoltan_Multifree (__FILE__, __LINE__, 7, c_hg->vwgt,
@@ -158,7 +157,12 @@ uprintf (hgc, "entered coarsening code\n");
       ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
       ZOLTAN_TRACE_EXIT (zz, yo);
       return ZOLTAN_MEMERR;
-  }  
+  }
+
+  if (c_ewgt)   /* TODO: if we collapse edges as well we need to compute actual weights*/
+      for (i=0; i<hg->nEdge; ++i)
+          c_ewgt[i] = hg->ewgt[i];
+
 
   /* Construct the LevelMap; match[vertex] is changed back to original value */
   /* Coarsen vertices (create vindex, vedge), sum up coarsened vertex weights */
@@ -238,7 +242,7 @@ uprintf (hgc, "entered coarsening code\n");
     };
   }
   else  {
-/*    c_hg->ewgt   = c_ewgt; */
+    c_hg->ewgt   = c_ewgt; 
     c_hg->vindex = c_vindex;
     c_hg->vedge  = c_vedge;
     c_hg->nEdge  = hg->nEdge;

@@ -113,11 +113,11 @@ int Zoltan_PHG_HPart_Lib (
         for (i =  0; i < hg->nVtx; i++)
             part[i] = 0;
     }
-    else if (p >= hg->nVtx) { /* more partitions than vertices, trivial answer */
+    else if (p >= hg->dist_x[hg->comm->nProc_x]) { /* more partitions than vertices, trivial answer */
         for (i = 0; i < hg->nVtx; i++)
-            part[i] = i;
+            part[i] = hg->dist_x[hg->comm->myProc_x]+i;
     }
-    else if (hg->nVtx <= hg->redl || hg->nEdge == 0 || hgp->matching == NULL)  {
+    else if (hg->dist_x[hg->comm->nProc_x] <= hg->redl || hg->nEdge == 0 || hgp->matching == NULL)  {
         /* fewer vertices than desired or no edges or no coarsening requested */
         err = Zoltan_PHG_CoarsePartition (zz, hg, p, part, hgp);
         if (err != ZOLTAN_OK && err != ZOLTAN_WARN)
@@ -135,7 +135,6 @@ int Zoltan_PHG_HPart_Lib (
         for (i = 0; i < hg->nVtx; i++)
             match[i] = i;
           
-        uprintf(hg->comm, "before matching call\n"); 
         /* Calculate matching (packing or grouping) */
         if (hgp->matching)  {
             err = Zoltan_PHG_Matching (zz, hg, match, hgp);
@@ -158,16 +157,13 @@ int Zoltan_PHG_HPart_Lib (
             Zoltan_Multifree (__FILE__, __LINE__, 2, &match, &LevelMap);
             goto End;
         }
-
-
-        /* heuristic: stop on diminishing returns */
-        /* RTHRTH - modify this for parallel version (need global view) */
-        if (c_hg.dist_x[hg->comm->nProc_x] > 0.9 * hg->dist_x[hg->comm->nProc_x]) {
-            hg->redl = c_hg.redl = c_hg.nVtx;
-            uprintf(hg->comm, "I'm going to break the loop; not enough matching\n");
-        }
-
         ZOLTAN_FREE ((void**) &match);
+
+        
+        /* heuristic: stop on diminishing returns */
+        if (c_hg.dist_x[c_hg.comm->nProc_x] > 0.9 * hg->dist_x[hg->comm->nProc_x])
+            c_hg.redl = c_hg.dist_x[c_hg.comm->nProc_x];
+
 
         /* Allocate Partition of coarse graph */
         if (!(c_part = (int*) ZOLTAN_CALLOC (c_hg.nVtx, sizeof(int)))) {

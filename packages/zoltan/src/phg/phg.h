@@ -228,9 +228,6 @@ extern double Zoltan_PHG_hcut_size_total(PHGComm*, PHGraph*, Partition, int);
 extern double Zoltan_PHG_hcut_size_links(PHGComm*, PHGraph*, Partition, int);    
 extern double Zoltan_PHG_HPart_balance(ZZ*, PHGraph*, int, Partition);
 
-extern int Zoltan_PHG_move_vertex(PHGraph*, int, int, int, int*, int**, double*,
-                                  HEAP*);
-
 extern int Zoltan_PHG_Build_Hypergraph(ZZ*, ZPHG**, PHGPartParams*);
 extern void Zoltan_PHG_HGraph_Print(ZZ*, ZPHG*,  PHGraph*, FILE*);
 extern void Zoltan_PHG_Plot(int, int, int, int*, int*, int*, char*);

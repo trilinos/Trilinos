@@ -652,6 +652,62 @@ error:
 /*********************************************************************/
 /* Greedy ordering/partitioning based on a priority function
    for selecting vertices. A heap is used as a priority queue. */
+ 
+int Zoltan_PHG_move_vertex (PHGraph *hg, int vertex, int sour, int dest,
+                            int *part, int **cut, double *gain, HEAP *heap)
+{
+    int i, j, edge, v;
+
+    gain[vertex] = 0.0;
+    part[vertex] = dest;
+
+    for (i = hg->vindex[vertex]; i < hg->vindex[vertex+1]; i++) {
+        edge = hg->vedge[i];
+        if (cut[sour][edge] == 1) {
+            for (j = hg->hindex[edge]; j < hg->hindex[edge+1]; j++) {
+                v = hg->hvertex[j];
+                gain[v] -= (hg->ewgt ? hg->ewgt[edge] : 1.0);
+                if (heap)
+                    Zoltan_heap_change_value(&heap[part[v]], v, gain[v]);
+            }
+        }
+        else if (cut[sour][edge] == 2) {
+            for (j = hg->hindex[edge]; j < hg->hindex[edge+1]; j++) {
+                v = hg->hvertex[j];
+                if (part[v] == sour) {
+                    gain[v] += (hg->ewgt ? hg->ewgt[edge] : 1.0);
+                    if (heap)
+                        Zoltan_heap_change_value(&heap[part[v]], v, gain[v]);
+                    break;
+                }
+            }
+        }
+
+        if (cut[dest][edge] == 0) {
+            for (j = hg->hindex[edge]; j < hg->hindex[edge+1]; j++) {
+                v = hg->hvertex[j];
+                gain[v] += (hg->ewgt ? hg->ewgt[edge] : 1.0);
+                if (heap)
+                    Zoltan_heap_change_value(&heap[part[v]], v, gain[v]);
+            }
+        }
+        else if (cut[dest][edge] == 1) {
+            for (j = hg->hindex[edge]; j < hg->hindex[edge+1]; j++) {
+                v = hg->hvertex[j];
+                if (v != vertex && part[v] == dest) {
+                    gain[v] -= (hg->ewgt ? hg->ewgt[edge] : 1.0);
+                    if (heap)
+                        Zoltan_heap_change_value(&heap[part[v]], v, gain[v]);
+                    break;
+                }
+            }
+        }
+        cut[sour][edge]--;
+        cut[dest][edge]++;
+    }
+    return ZOLTAN_OK;
+}
+
 static int greedy_order (
   ZZ *zz,
   PHGraph *hg,		/* Hypergraph. */
