@@ -4,27 +4,26 @@
 
 \image latex AmesosLogo.eps
 
-\section toc Table of Contents
+\section am_toc Table of Contents
 
-The main page of the Doxygen documentation is organized as follows:
-- \ref developers
-- \ref intro
-- \ref copyright
-- \ref comparison
-- \ref matrix
-- \ref install
-- \ref configure
-- \ref example
-- \ref final
-
-\section developers Developers
-
-Amesos is a Trilinos package, developed by M. Sala, K. Stanley,
-R. Hoekstra, T. Davis, and M. Heroux.
-
-\section intro Introduction 
 Amesos provides an object-oriented interface
 to several direct sparse solvers, both sequential and parallel.
+Amesos is developed by M. Sala, K. Stanley, R. Hoekstra, T. Davis, 
+and M. Heroux.
+
+The main page of the Doxygen documentation is organized as follows:
+- \ref am_intro
+- \ref am_copyright
+- \ref am_comparison
+- \ref am_matrix
+- \ref am_install
+- \ref am_example
+- \ref am_future
+- \ref am_final
+
+Click <A HREF="../AmesosReferenceGuide/AmesosReferenceGuide.pdf>here</A> to download the Amesos reference guide (Sandia report number SAND2004-4820).
+
+\section am_intro Introduction 
 
 Amesos supports the following classes:
 
@@ -41,7 +40,7 @@ We refer to the Sandia report SAND-2004-2188 for a detailed overview of
 Amesos. A PDF version of this report can be found the
 \c Trilinos/packages/amesos/doc/AmesosReferenceGuide/AmesosReferenceGuide.pdf.
 
-\section copyright  Copyright and licensing of the third party codes
+\section am_copyright  Copyright and licensing of the third party codes
 
 <p>Most of the Amesos classes are based on a third party code (that is,
 not distributed within Trilinos).  Each
@@ -56,7 +55,7 @@ request that credit be given in any papers which make use of their code.
 Please refer to the web page for the package that you are interested in 
 for details.  
 
-\section comparison  Quick comparison of the Amesos classes
+\section am_comparison  Quick comparison of the Amesos classes
 
 The following table reports an overview of the Amesos classes.
 
@@ -74,7 +73,7 @@ The following table reports an overview of the Amesos classes.
 <tr>
 <td>Default behavior</td>
 <td>Enabled</td>
-<td>Enabled//td>
+<td>Enabled</td>
 <td>Disabled</td>
 <td>Disabled</td>
 <td>Disabled</td>
@@ -181,7 +180,7 @@ prosesses can be used by Amesos_Mumps.
 
 <P> (**) DSCPACK requires a number of processes that is a power of 2.
 
-\section matrix Supported Matrix Formats.
+\section am_matrix Supported Matrix Formats.
 
 The following table details the supported matrix formats for each class.
 
@@ -228,7 +227,7 @@ The following table details the supported matrix formats for each class.
 </tr>
 </table>
 
-\section install  Installing Amesos 
+\section am_install  Installing Amesos 
 
 Each of the Amesos classes provides an interface to a third
 party direct sparse solver code.  In order to install a particular
@@ -244,7 +243,7 @@ Amesos is configured and built using the GNU autoconf
 and automake tools. To configure Amesos from the
 Trilinos top directory, a possible procedure is as follows.  Let
 \c TRILINOS_HOME be a shell variable representing the location
-of the Trilinos source directory, and \verb!%! the shell prompt sign.
+of the Trilinos source directory, and % the shell prompt sign.
 Let us suppose that we want to configure Amesos on a
 LINUX machine with MPI, with support
 for KLU and UMFPACK. Header files for UMFPACK are located
@@ -367,7 +366,21 @@ architectures and compilers tested with Amesos.
 
 </table>
 
-\section example Example of Use of Amesos Classes
+Once Amesos has been compiled, it can be tested using the test harness. A
+quick test (using MPI) can be as follows:
+\code
+% cd amesos/test/Test_Basic
+% make
+% ./TestBasic.csh LAPACK
+% ./TestBasic.csh KLU
+% ./TestBasic.csh <other-solvers>
+\endcode
+
+where <other-solvers> can be: SUPERLU, SUPERLUDIST, MUMPS, DSCPACK. The tests
+exercise some of the Amesos features. Other tests are available for more
+intensive analysis.
+
+\section am_example Example of Use of Amesos Classes
 
 A simple fragment of code using Amesos can read as follows. First,
   we need to include the header files for Amesos:
@@ -470,8 +483,55 @@ he or she must call \c SymbolicFactorization(). However, it is supposed
 that the linear system matrix and the solution and right-hand side vectors
 are still defined with the same \c Epetra_Map.
 
-\section final Final Remarks
+<p>Please consult the examples reported in the amesos/example subdirectory:
+- \ref am_factory shows the use of the Amesos factory class;
+- \ref am_compare reports how to compare the time required by different
+  solvers;
+- \ref am_hb details how to read a Harwell/Boeing matrix
 
-<p>This page last updated 18-Sep-2004.
+\section am_future Known bugs and future developments
+
+Depending on the version of SuperLU and SuperLU_DIST, you may or may not
+configure Amesos with support for both. This is due to conflicts in the header
+files.
+
+You may encounter problems while trying to use the SuperLU/SuperLU_DIST
+classes with KLU enables. This is due to a conflict in the colamd algorithm.
+The version of colamd which is distributed within Amesos is not compatible
+with the version distributed with SuperLU. This cause the code to crash. You
+might need to disable KLU to use SuperLU/SuperLU_DIST.
+
+DSCPACK does not support Epetra_RowMatrix's and Epetra_VbrMatrix. A fix is
+under development (especially for VBR matrices).
+
+Amesos has an incomplete interface to ScaLAPACK under development.
+
+\section am_final Final Remarks
+
+<P>This page is maintained by Marzio Sala, SNL 9214.
+<p>This page last updated 04-Nov-2004.
 
 */
+
+/*!
+\page am_factory
+
+\include example_AmesosFactory.cpp
+*/
+
+*/
+
+/*!
+\page am_compare
+
+\include compare_solvers.cpp
+*/
+
+*/
+
+/*!
+\page am_hb
+
+\include example_AmesosFactory_HB.cpp
+*/
+
