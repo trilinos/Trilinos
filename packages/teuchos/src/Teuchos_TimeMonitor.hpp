@@ -32,6 +32,9 @@
 /*! \file Teuchos_TimeMonitor.hpp
     \brief Timer class that starts when constructed and stops when the destructor is called
 */
+/** \example TimeMonitor/cxx_main.cpp
+    This is an example of how to use the Teuchos::TimeMonitor class.
+*/
 
 #include "Teuchos_ConfigDefs.hpp"
 #include "Teuchos_Time.hpp"
