@@ -42,6 +42,7 @@ MPI_LIB                 = -L/usr/lib64
 MPI_LIBPATH             = -lmpi
 
 PARMETIS_LIBPATH        = -L/Net/pecos/proj/xyce/arch/sgi10k_MPI/lib
+PARMETIS_INCPATH 	= -I/Net/proj/zoltan/arch/all/src
 
 #JOSTLE_LIBPATH         = -L/Net/proj/zoltan/arch/solaris/lib
 #JOSTLE_INCPATH         = -I/Net/proj/zoltan/arch/all/src

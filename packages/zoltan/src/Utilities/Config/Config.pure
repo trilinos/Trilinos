@@ -51,6 +51,7 @@ MPI_LIBPATH		= -L/Net/local/mpi/build/solaris/ch_p4/lib \
                   -L/Net/local/gnu/lib/gcc-lib/sparc-sun-solaris2.6/2.8.1
 
 PARMETIS_LIBPATH 	= -L/Net/proj/zoltan/arch/solaris/lib
+PARMETIS_INCPATH 	= -I/Net/proj/zoltan/arch/all/src
 
 JOSTLE_LIBPATH 		= -L/Net/proj/zoltan/arch/solaris/lib
 JOSTLE_INCPATH 		= -I/Net/proj/zoltan/arch/all/src

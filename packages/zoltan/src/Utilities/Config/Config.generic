@@ -136,13 +136,20 @@ MPI_LIBPATH		=
 # and V. Kumar, U. Minnesota.
 # If you wish to exclude ParMETIS from compilation in Zoltan and 
 # linking in zdrive, comment out the PARMETIS_* variables.  Otherwise,
-# if you already have ParMetis on your machine, give the path here.
-# Otherwise you first need to make ParMetis from the source in
-# the directory parmetis/ParMetis (edit parmetis/ParMetis/Makefile.in 
-# and type "make" over there), and set PARMETIS_LIBPATH to the directory
+# if you already have ParMETIS on your machine, give the path here.
+# Otherwise you first need to obtain and make ParMETIS. A version of
+# ParMETIS that is compatible with Zoltan is distributed with Zoltan.
+# You may also obtain ParMETIS directly from UMN at 
+# http://www-users.cs.umn.edu/~karypis/metis/parmetis/index.html
+# After building ParMETIS, set PARMETIS_LIBPATH to the directory
 # containing the libraries.  (For this example, we copied the ParMETIS
-# libraries to the Obj_* directory.)
+# libraries to the Obj_* directory.) PARMETIS_INCPATH should point to 
+# a directory that contains the parmetis.h header file. If you don't have
+# this header file on your system, you may use the header file that
+# is distributed with Zoltan. Make sure that you use a header file
+# that is compatible with the library version you link. 
 #PARMETIS_LIBPATH 	= -L.
+#PARMETIS_INCPATH      = -I/Net/proj/zoltan/arch/all/src
 
 # For graph-partitioning, Zoltan includes an interface to the
 # Jostle graph-partitioning library of Chris Walshaw, U. Greenwich.

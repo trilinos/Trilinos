@@ -40,6 +40,7 @@ MPI_LIB			= -lmpi
 MPI_LIBPATH		=
 
 PARMETIS_LIBPATH 	= -L/Net/proj/zoltan/arch/tflop/lib
+PARMETIS_INCPATH 	= -I/Net/proj/zoltan/arch/all/src
 
 # Jostle is currently not available for ASCI Red.
 #JOSTLE_LIBPATH 	= -L/Net/proj/zoltan/arch/tflop/lib

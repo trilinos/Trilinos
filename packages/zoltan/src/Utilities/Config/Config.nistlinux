@@ -119,6 +119,7 @@ MPI_LIBPATH	= -L$(MPIR_HOME)/build/LINUX/ch_p4/lib \
 endif
 
 #PARMETIS_LIBPATH 	= -L$(HOME)/lib/LINUX
+#PARMETIS_INCPATH  	= -I/Net/proj/zoltan/arch/all/src
 
 #JOSTLE_LIBPATH 	= -L/Net/proj/zoltan/arch/solaris/lib
 #JOSTLE_INCPATH 	= -I/Net/proj/zoltan/arch/all/src

@@ -41,6 +41,7 @@ MPI_LIB			= -lmpi
 MPI_LIBPATH		= -L/Net/mp/cplant/current/lib
 
 #PARMETIS_LIBPATH 	= -L.
+#PARMETIS_INCPATH 	= -I/Net/proj/zoltan/arch/all/src
 
 #JOSTLE_LIBPATH 	= -L/Net/proj/zoltan/arch/alpha/lib
 #JOSTLE_INCPATH 	= -I/Net/proj/zoltan/arch/all/src

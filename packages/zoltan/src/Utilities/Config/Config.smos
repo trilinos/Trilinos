@@ -42,6 +42,7 @@ MPI_LIB			= -lmpi
 MPI_LIBPATH		= -L/Net/mp/mpi/lib/paragon/ch_nx
 
 #PARMETIS_LIBPATH 	= -L.
+#PARMETIS_INCPATH  	= -I/Net/proj/zoltan/arch/all/src
 
 #JOSTLE is not available for SUNMOS.
 #JOSTLE_LIBPATH 	= -L/Net/proj/zoltan/arch/smos/lib

@@ -42,6 +42,7 @@ MPI_LIB			=
 MPI_LIBPATH		=
 
 PARMETIS_LIBPATH 	= -L/Net/proj/zoltan/arch/solaris/lib
+PARMETIS_INCPATH 	= -I/Net/proj/zoltan/arch/all/src
 
 JOSTLE_LIBPATH 	= -L/Net/proj/zoltan/arch/solaris/lib
 JOSTLE_INCPATH 	= -I/Net/proj/zoltan/arch/all/src
