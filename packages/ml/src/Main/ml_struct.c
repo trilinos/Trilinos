@@ -3249,8 +3249,8 @@ double ML_Cycle_MG(ML_1Level *curr, double *sol, double *rhs,
    if (comm->ML_mypid == 0) printf("|R r| = %e, |r| =  %e\n",norm1, norm2);
 
 #endif
-      free(sol2);
-      free(rhs2);
+      ML_free(sol2);
+      ML_free(rhs2);
 
       ML_Smoother_Apply(post, lengf, sol, lengf, rhss, ML_NONZERO);
 #ifdef ML_ANALYSIS
@@ -3295,10 +3295,10 @@ double ML_Cycle_MG(ML_1Level *curr, double *sol, double *rhs,
          scanf("%s", instring);
      }
 #endif
-      free(res);
+      ML_free(res);
    }
 
-   free(rhss);
+   ML_free(rhss);
    return(res_norm);
 }
 /*****************************************************************************/
