@@ -7,7 +7,6 @@
 /* data structures to hold aggregation information                      */
 /* ******************************************************************** */
 /* Author        : Ray Tuminaro (SNL), Charles Tong (LLNL)              */
-/* Organization  : Sandia National Laboratories                         */
 /* Date          : August, 1999                                         */
 /* ******************************************************************** */
 

@@ -178,6 +178,8 @@ extern int ML_Set_Prolongator_GetrowNeighbors(ML *ml,int level,int N_neigh,
 extern int ML_Set_Prolongator_GetrowCommInfo(ML *ml,int level,int neighbor, 
                      int N_rcv, int *rcv_list, int N_send, int *send_list);
 
+extern int ML_Gen_Blocks_Metis(ML *ml, int level, int *nblocks,int **block_list);
+
 extern int ML_Gen_Smoother_Jacobi( ML *, int nl, int pre_or_post, 
                      int ntimes, double omega );
 extern int ML_Gen_Smoother_GaussSeidel(ML*,int nl,int pre_post,int ntimes,double);
@@ -185,6 +187,10 @@ extern int ML_Gen_Smoother_SymGaussSeidel(ML*,int nl,int pre_post,int ntimes,
 		     double omega);
 extern int ML_Gen_Smoother_OrderedSymGaussSeidel(ML *ml , int nl, int pre_or_post,
                      int ntimes, double omega);
+
+extern int ML_Gen_Smoother_ParaSails(ML *ml, int nl, int pre_or_post, int ntimes,
+   int sym, double thresh, int num_levels, double filter);
+
 extern int ML_Gen_Smoother_BlockGaussSeidel(ML*,int nl,int pre_post,int ntimes,
 		     double omega, int blocksize);
 extern void BGS_Clean(void *data);

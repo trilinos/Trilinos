@@ -114,6 +114,8 @@ struct amalg_drop {
 extern "C" {
 #endif
 
+extern int ML_Operator_BlockPartition(ML_Operator *matrix, int nLocalNd, 
+        int *nblk, int *pnode_part, int *ndwts /*=NULL*/, int *egwts/*=NULL*/, int nedges /*= 0*/ );
 extern ML_Operator *ML_Operator_Create(ML_Comm *comm);
 extern int ML_Operator_Destroy(ML_Operator *);
 
