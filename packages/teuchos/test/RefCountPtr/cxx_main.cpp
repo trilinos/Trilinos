@@ -170,24 +170,46 @@ int main( int argc, char* argv[] ) {
 		// Create some smart pointers
 
 		RefCountPtr<A>       a_ptr1  = rcp(new C);
-		assert( a_ptr1.get() != NULL );
+#ifndef __sun
+		// RAB: 2003/11/24: The Sun compiler ("Forte Developer 7 C++
+		// 5.4 2002/03/09" returned from CC -V) does not seem to be
+		// following the standard when it comes to the handling of
+		// temporary objects and therefore the count() is not currect.
+		// In the above statement, at least one and perhaps two
+		// temporary RefCountPtr objects are created before the object
+		// a_ptr1 is initialized.  However, the standard says that the
+		// lifetime of temprary objects must not extend past the
+		// statement in which it was created (see section 10.4.10 in
+		// Stroustroup, 3ed edition).  This compiler stinks!!!!!
 		assert( a_ptr1.count()  == 1 );
+#endif
+		assert( a_ptr1.get() != NULL );
 		RefCountPtr<D>       d_ptr1  = rcp(new E);
-		assert( d_ptr1.get() != NULL);
+#ifndef __sun
 		assert( d_ptr1.count()  == 1 );
+#endif
+		assert( d_ptr1.get() != NULL);
 
 		if(1) {
 
 			// Create some more smart points (no new memory!)
 
 			const RefCountPtr<const A> ca_ptr1 = rcp_const_cast<const A>(a_ptr1); 
+#ifndef __sun
 			assert( a_ptr1.count()  == 2 );
+#endif
 			assert( ca_ptr1.get() != NULL );
+#ifndef __sun
 			assert( ca_ptr1.count() == 2 );
+#endif
 			const RefCountPtr<const D> cd_ptr1 = rcp_const_cast<const D>(d_ptr1);
+#ifndef __sun
 			assert( d_ptr1.count()  == 2 );
+#endif
 			assert( cd_ptr1.get() != NULL );
+#ifndef __sun
 			assert( cd_ptr1.count() == 2 );
+#endif
 
 #ifdef SHOW_RUN_TIME_ERROR_1
 			// Conversion using get() is a no no!  When a_ptr2 is deleted so will the allocated
@@ -227,9 +249,11 @@ int main( int argc, char* argv[] ) {
 			// Cast down the inheritance hiearchy (const A -> const B1)
 			const RefCountPtr<const B1> cb1_ptr1 = rcp_dynamic_cast<const B1>(ca_ptr1);
 			assert( cb1_ptr1.get() != NULL );
+#ifndef __sun
 			assert( cb1_ptr1.count() == 3 );
 			assert( ca_ptr1.count()  == 3 );
 			assert( a_ptr1.count()   == 3 );
+#endif
 
 			// Cast up the inheritance hiearchy (const B1 -> const A)
 			assert( rcp_implicit_cast<const A>(cb1_ptr1)->A_f()  == A_f_return );
@@ -248,17 +272,21 @@ int main( int argc, char* argv[] ) {
 			const RefCountPtr<C>
 				c_ptr1 = rcp_const_cast<C>(rcp_dynamic_cast<const C>(ca_ptr1));
 			assert( c_ptr1.get() != NULL );
+#ifndef __sun
 			assert( c_ptr1.count()   == 4 );
 			assert( ca_ptr1.count()  == 4 );
 			assert( a_ptr1.count()   == 4 );
+#endif
 
 			// Cast down the inheritance hiearchy using static_cast<...> (const D -> const E)
 			const RefCountPtr<const E>
 				ce_ptr1 = rcp_static_cast<const E>(cd_ptr1); // This is not checked at runtime!
 			assert( ce_ptr1.get() != NULL);
+#ifndef __sun
 			assert( ce_ptr1.count()  == 3 );
 			assert( cd_ptr1.count()  == 3 );
 			assert( d_ptr1.count()   == 3 );
+#endif
 
 			// Cast up the inheritance hiearchy (const E -> const D)
 			assert( rcp_implicit_cast<const D>(ce_ptr1)->D_f()   == D_f_return ); 
@@ -298,8 +326,10 @@ int main( int argc, char* argv[] ) {
 			// Here at the end of the block, all of the other smart pointers are deleted!
 		}
 		// Check that all of the other references where removed but these
+#ifndef __sun
 		assert( a_ptr1.count() == 1 );
 		assert( d_ptr1.count() == 1 );
+#endif
 
 		// Assign some other dynamically created objects.
 	
@@ -355,9 +385,25 @@ int main( int argc, char* argv[] ) {
 		DeallocDelete<C> &a_ptr1_dealloc = get_dealloc<DeallocDelete<C> >(a_ptr1);
 
 		// Test storing extra data and then getting it out again
+#ifdef __sun
+		// RAB: 2003/11/24: The Sun compiler ("Forte Developer 7 C++
+		// 5.4 2002/03/09" returned from CC -V) does not seem to
+		// recongnise default argument values with nonmember template
+		// functions (this same error was discovered by K. Long in the
+		// rcp() function).  I will be dammed if I am going to screw
+		// up all of my interface code to accomidate this crappy
+		// compiler.  I would rather ifdef all of my code to show just
+		// how crapy this compiler really is.
+		const int ctx_int = set_extra_data( int(-5), &a_ptr1, -1 ); // Must specify ctx=-1!
+#else
 		const int ctx_int = set_extra_data( int(-5), &a_ptr1 );
+#endif
 		assert( get_extra_data<int>(a_ptr1,ctx_int) == -5 );
+#ifdef __sun
+		const int ctx_rcp = set_extra_data( rcp(new B1), &a_ptr1, -1 );
+#else
 		const int ctx_rcp = set_extra_data( rcp(new B1), &a_ptr1 );
+#endif
 		assert( get_extra_data<RefCountPtr<B1> >(a_ptr1,ctx_rcp)->B1_f() == B1_f_return );
 		assert( get_extra_data<int>(const_cast<const RefCountPtr<A>&>(a_ptr1),ctx_int) == -5 ); // test const version
 
