@@ -67,6 +67,7 @@ int main(int argc, char *argv[])
   // Initialize the workspace and set the output level
   Init();
   
+  try {
   // create a Epetra_Map from file
   sprintf(filename,"%s/data_update%d.txt",argv[1],nproc);
   Epetra_Map* map = Epetra_ML_readupdatevector(filename,comm);
@@ -76,19 +77,12 @@ int main(int argc, char *argv[])
   // read the Epetra_RowMatrix
   sprintf(filename,"%s/data_matrix.txt",argv[1]);
   Epetra_CrsMatrix* Afine = Epetra_ML_readaztecmatrix(filename,*map,comm);
+
   if (!Afine) {
      cout << "**ERR**: could not read matrix\n"; throw -1; }
 
   // read the nullspace
   int dimNS = 6;
-  Epetra_MultiVector* NSfine = new Epetra_MultiVector(*map,dimNS,true);
-  for (int i=0; i<dimNS; i++)
-  {
-     sprintf(filename,"%s/data_nullsp%d.txt",argv[1],i);
-     bool ok = Epetra_ML_readaztecvector(filename,*NSfine,*map,comm,i);
-     if (!ok) {
-        cout << "**ERR**: could not read nullspace\n"; throw -1; }
-  }
   
   // read the rhs
   Epetra_MultiVector* Rhs = new Epetra_MultiVector(*map,1,true);
@@ -97,7 +91,88 @@ int main(int argc, char *argv[])
   if (!ok) {
      cout << "**ERR**: could not read rhs\n"; throw -1; }
        
+  Afine->FillComplete();
 
+  Space FineSpace(map->NumGlobalElements());
+  Operator A(FineSpace, FineSpace, Afine, true);
+
+    Teuchos::ParameterList List;
+    List.set("smoother: type", "symmetric Gauss-Seidel");
+    List.set("smoother: sweeps", 2);
+    List.set("smoother: damping factor", 1.0);
+    List.set("coarse: type", "Amesos-KLU");
+    List.set("coarse: max size", 32);
+    List.set("adapt: max reduction", 0.1);
+    List.get("adapt: iters fine", 45);
+    List.get("adapt: iters coarse", 5);
+
+    int NumPDEEqns = dimNS;
+    int MaxLevels  = 10;
+    MultiLevelAdaptiveSA Prec(A, List, NumPDEEqns, MaxLevels);
+
+    // ================================================= //
+    // setup the null space, either by default component //
+    // or by reading from file. Here the null space has  //
+    // 6 components.                                     //
+    // Variable UseAdapt toggles the use of adaptation.  //
+    // ================================================= //
+
+    bool ReadKernel = true;
+
+    MultiVector NSfine(FineSpace,dimNS);
+    if (!ReadKernel) {
+      NSfine = 0.0;
+      for (int i = 0 ; i < NSfine.GetMyLength() ; ++i)
+	    for (int j = 0 ; j < NumPDEEqns ;++j)
+		    if (i % NumPDEEqns == j)
+  			    NSfine(i,j) = 1.0;
+    } 
+    else {
+      Epetra_MultiVector* Epetra_NSfine = new Epetra_MultiVector(*map,dimNS,true);
+      for (int i=0; i<dimNS; i++)
+      {
+        sprintf(filename,"%s/data_nullsp%d.txt",argv[1],i);
+        bool ok = Epetra_ML_readaztecvector(filename,*Epetra_NSfine,*map,comm,i);
+        if (!ok) {
+          cout << "**ERR**: could not read nullspace\n"; throw -1; }
+      }
+      for (int i = 0 ; i < NSfine.GetMyLength() ; ++i)
+        for (int v = 0 ; v < dimNS ; ++v) 
+          NSfine(i, v) = (*Epetra_NSfine)[v][i]; 
+    }
+
+    Prec.SetNullSpace(NSfine);
+    Prec.Compute();
+
+    cout << "Current candidates = " << NSfine.GetNumVectors() << endl;
+    cout << "Enter number of additional candidates = ";
+    int NumAdditional;
+    cin >> NumAdditional;
+    for (int i = 0 ; i < NumAdditional ; ++i) {
+      Prec.IncrementNullSpace();
+      Prec.Compute();
+    }
+
+    // test the solver
+    MultiVector LHS(FineSpace);
+    MultiVector RHS(FineSpace);
+
+    LHS.Random();
+    RHS = 0.0;
+
+    List.set("krylov: type", "cg");
+    Krylov(A, LHS, RHS, Prec, List);
+
+    Finalize(); 
+
+  }
+  catch (const int e) {
+    cerr << "Caught integer exception, code = " << e << endl;
+  }
+  catch (...) {
+    cerr << "Caught exception..." << endl;
+  }
+     
 #ifdef HAVE_MPI
   MPI_Finalize(); 
 #endif
