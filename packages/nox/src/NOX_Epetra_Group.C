@@ -605,9 +605,6 @@ bool Group::setLinearSolver(const Parameter::List& params)
   // Set the type of the Jacobian operator 
   jacType = getJacobianType();
 
-  // Set the type of Preconditioning operator
-  precType = getPrecType();
-
   // Set the requested preconditioning option.  Defaults to "None".
   precOption = params.getParameter("Preconditioning", "None");
 
@@ -637,6 +634,9 @@ bool Group::setLinearSolver(const Parameter::List& params)
   }
   else if (precOption == "AztecOO: User RowMatrix") {
     
+    // Set the type of Preconditioning operator
+    precType = getPrecType();
+
     // Get a reference to the Preconditioner 
     /* NOTE:SharedJacobian.getPrec() print a WARNING if no 
      * preconditioner was supplied.  We'll throw an error and explain why. 
