@@ -1706,8 +1706,6 @@ int Epetra_CrsMatrix::RightScale(const Epetra_Vector& x) {
   if(!Filled()) 
     EPETRA_CHK_ERR(-1); // Matrix must be filled.
   double* xp = 0;
-  int ierr = 0;  // If we have to perform an Import, we will 
-		// return a positive error code to indicate a performance hit.
   if(Graph().DomainMap().SameAs(x.Map())) 
     // If we have a non-trivial exporter, we must import elements that are 
     // permuted or are on other processors.
@@ -1721,7 +1719,6 @@ int Epetra_CrsMatrix::RightScale(const Epetra_Vector& x) {
       if(ImportVector_ == 0)
         ImportVector_ = new Epetra_MultiVector(ColMap(),1); // Create import vector if needed
       EPETRA_CHK_ERR(ImportVector_->Import(x, *Importer(), Insert));
-      ierr = 3;// The import causes a performance hit.
       xp = (double*) ImportVector_->Values();
     }
     else
@@ -1745,7 +1742,6 @@ int Epetra_CrsMatrix::RightScale(const Epetra_Vector& x) {
   NormOne_ = -1.0; // Reset Norm so it will be recomputed.
   NormInf_ = -1.0; // Reset Norm so it will be recomputed.
   UpdateFlops(NumGlobalNonzeros());
-  EPETRA_CHK_ERR(ierr);
   return(0);
 }
 
@@ -1778,9 +1774,9 @@ double Epetra_CrsMatrix::NormOne() const {
   if(!Filled()) 
     EPETRA_CHK_ERR(-1); // Matrix must be filled.
 
-  Epetra_Vector* x = new Epetra_Vector(RowMap()); // Need temp vector for column sums
+  Epetra_Vector x(DomainMap()); // Need temp vector for column sums
   
-  double* xp = (double*)x->Values();
+  double* xp = (double*)x.Values();
   Epetra_MultiVector* x_tmp = 0;
   int NumMyCols_ = NumMyCols();
   
@@ -1806,13 +1802,12 @@ double Epetra_CrsMatrix::NormOne() const {
       xp[ColIndices[j]] += fabs(RowValues[j]);
   }
   if(Importer() != 0) {
-    x->PutScalar(0.0);
-    EPETRA_CHK_ERR(x->Export(*x_tmp, *Importer(), Add)); // Fill x with Values from temp vector
+    x.PutScalar(0.0);
+    EPETRA_CHK_ERR(x.Export(*x_tmp, *Importer(), Add)); // Fill x with Values from temp vector
   }
-  x->MaxValue(&NormOne_); // Find max
+  x.MaxValue(&NormOne_); // Find max
   if(x_tmp != 0) 
     delete x_tmp;
-  delete x;
   UpdateFlops(NumGlobalNonzeros());
   return(NormOne_);
 }
