@@ -19,7 +19,9 @@ extern "C" {
 
 
 #include "dr_const.h"
+#include "dr_util_const.h"
 #include "dr_err_const.h"
+#include "dr_dd.h"
 
 /****************************************************************************/
 int build_elem_dd(MESH_INFO_PTR mesh) 
@@ -64,8 +66,8 @@ int i, j;
     return 0;
   }
 
-  safe_free(&gids);
-  safe_free(&parts);
+  safe_free((void **) &gids);
+  safe_free((void **) &parts);
   return 1;
 }
 

@@ -145,7 +145,7 @@ int read_exoII_file(int Proc,
     return 0;
   }
 
-  mesh->hindex = (int) malloc(sizeof(int));
+  mesh->hindex = (int *) malloc(sizeof(int));
   mesh->hindex[0] = 0;
 
   if (ex_get_elem_blk_ids(pexoid, mesh->eb_ids) < 0) {

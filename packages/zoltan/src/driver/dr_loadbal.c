@@ -1312,7 +1312,6 @@ int get_num_hg_edges(
   void *data, 
   int *ierr)
 {
-int tmp;
   MESH_INFO_PTR mesh;
 
   START_CALLBACK_TIMER;
@@ -1337,7 +1336,6 @@ int get_num_hg_pins(
   void *data, 
   int *ierr)
 {
-  int tmp;
   MESH_INFO_PTR mesh;
 
   START_CALLBACK_TIMER;
