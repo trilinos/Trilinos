@@ -237,11 +237,14 @@ static int rdivide_and_prepsend(int lo, int hi, Partition final, ZZ *zz, HGraph 
     Zoltan_HG_Check(zz, hg);
 #endif
     ierr = Zoltan_PHG_rdivide (lo, hi, final, zz, hg, hgp, level);
-    for (*nsend=i=0; i<hg->nVtx; ++i) {
-        proclist[*nsend] = dest[i];
-        sendbuf[(*nsend)*2] = vmap[i];
-        sendbuf[(*nsend)*2+1] = final[i];
-        ++(*nsend);
+    *nsend = 0;
+    if (!hgc->myProc_y) { /* only first row sends the part vector */
+        for (i=0; i<hg->nVtx; ++i) {
+            proclist[*nsend] = dest[i];
+            sendbuf[(*nsend)*2] = vmap[i];
+            sendbuf[(*nsend)*2+1] = final[i];
+            ++(*nsend);
+        }
     }
     
     Zoltan_HG_HGraph_Free (hg);
@@ -448,7 +451,8 @@ static int split_hypergraph (int *pins[2], HGraph *ohg, HGraph *nhg, Partition p
                    nhg->EdgeWeightDim * sizeof(float));
         ++nhg->nEdge;
     }
-  nhg->hindex[nhg->nEdge] = nhg->nPins;
+  if (nhg->hindex)
+      nhg->hindex[nhg->nEdge] = nhg->nPins;
 
   /* We need to compute dist_x, dist_y */
   if (!(nhg->dist_x = (int *) ZOLTAN_CALLOC((hgc->nProc_x+1), sizeof(int)))
