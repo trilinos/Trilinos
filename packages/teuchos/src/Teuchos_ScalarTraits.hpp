@@ -11,8 +11,7 @@
 
 #include "Teuchos_LAPACK.hpp"
 #include "Teuchos_ConfigDefs.hpp"
-#ifndef NO_COMPLEX
-#include <complex>
+#if defined(HAVE_COMPLEX) || defined(HAVE_COMPLEX_H)
 #define ComplexFloat complex<float>
 #define ComplexDouble complex<double>
 #endif
@@ -98,7 +97,7 @@ namespace Teuchos {
     static inline int one()   { return 1; };
     static inline int random() { return rand(); };
     static inline const char * name() { return "int"; };
-    static inline int squareroot(int x) { return (int)::sqrt(x); };
+    static inline int squareroot(int x) { return (int) sqrt(x); };
   };
   
   
@@ -120,7 +119,7 @@ namespace Teuchos {
     static inline magnitudeType magnitude(float a) { return fabs(a); };    
     static inline float zero()  { return(0.0); };
     static inline float one()   { return(1.0); };    
-    static inline float random() { float rnd = (float)std::rand() / RAND_MAX; return (float)(-1.0 + 2.0 * rnd); };
+    static inline float random() { float rnd = (float) rand() / RAND_MAX; return (float)(-1.0 + 2.0 * rnd); };
     static inline const char* name() { return "float"; };
     static inline float squareroot(float x) { return sqrt(x); };
   };
@@ -144,12 +143,12 @@ namespace Teuchos {
     static inline double rmin()  { LAPACK<int, double> lp; return lp.LAMCH('U'); };
     static inline double emax()  { LAPACK<int, double> lp; return lp.LAMCH('L'); };
     static inline double rmax()  { LAPACK<int, double> lp; return lp.LAMCH('O'); };
-    static inline double random() { double rnd = (double)std::rand() / RAND_MAX; return (double)(-1.0 + 2.0 * rnd); };
+    static inline double random() { double rnd = (double) rand() / RAND_MAX; return (double)(-1.0 + 2.0 * rnd); };
     static inline const char* name() { return "double"; };
     static inline double squareroot(double x) { return sqrt(x); };
   };
   
-#ifndef NO_COMPLEX
+#if defined(HAVE_COMPLEX) || defined(HAVE_COMPLEX_H)
   
   template<> 
   struct ScalarTraits<ComplexFloat>
@@ -228,7 +227,7 @@ namespace Teuchos {
     };
   };
 
-#endif  // NO_COMPLEX
+#endif  //  HAVE_COMPLEX || HAVE_COMPLEX_H
 
 #ifdef HAVE_TEUCHOS_ARPREC
 
