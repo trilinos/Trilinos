@@ -102,8 +102,9 @@ MAINTAINERCLEANFILES = Makefile.in aclocal.m4 autom4te.cache/* \
 SWIG       = swig
 SWIG_FLAGS = -Wall -noruntime -python -c++
 
-TRILINOS_HOME    = /usr/local
-TRILINOS_INCLUDE = -I$(TRILINOS_HOME)/include
+EPETRA_INC    = -I$(top_srcdir)/../epetra/src
+NOX_INC       = -I$(top_srcdir)/../nox/src
+NOXEPETRA_INC = -I$(top_srcdir)/../nox/src-epetra
 
 INTERFACES = Abstract.i Epetra.i Parameter.i Solver.i StatusTest.i
 WRAPPERS   = $(patsubst %.i, %_wrap.cxx, $(INTERFACES))
@@ -112,6 +113,22 @@ TARGET     = $(WRAPPERS)
 
 all-am: $(TARGET)
 
-# Generate a C++ wrapper and proxy file from a SWIG interface
-%_wrap.cxx %.py: %.i
-	$(SWIG) $(TRILINOS_INCLUDE) $(SWIG_FLAGS) $<
+# Generate the Abstract C++ wrapper and proxy file from the Abstract SWIG interface
+Abstract_wrap.cxx Abstract.py: Abstract.i
+	$(SWIG) $(NOX_INC) $(SWIG_FLAGS) $<
+
+# Generate the Epetra C++ wrapper and proxy file from the Epetra SWIG interface
+Epetra_wrap.cxx Epetra.py: Epetra.i
+	$(SWIG) $(EPETRA_INC) $(NOX_INC) $(NOXEPETRA_INC) $(SWIG_FLAGS) $<
+
+# Generate the Parameter C++ wrapper and proxy file from the Parameter SWIG interface
+Parameter_wrap.cxx Parameter.py: Parameter.i
+	$(SWIG) $(NOX_INC) $(SWIG_FLAGS) $<
+
+# Generate the Solver C++ wrapper and proxy file from the Solver SWIG interface
+Solver_wrap.cxx Solver.py: Solver.i
+	$(SWIG) $(NOX_INC) $(SWIG_FLAGS) $<
+
+# Generate the StatusTest C++ wrapper and proxy file from the StatusTest SWIG interface
+StatusTest_wrap.cxx StatusTest.py: StatusTest.i
+	$(SWIG) $(NOX_INC) $(SWIG_FLAGS) $<

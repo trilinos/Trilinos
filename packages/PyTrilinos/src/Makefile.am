@@ -103,9 +103,6 @@ SUBDIRS = $(NOX_SUBDIR)
 SWIG       = swig
 SWIG_FLAGS = -Wall -noruntime -python -c++
 
-TRILINOS_HOME    = /usr/local
-TRILINOS_INCLUDE = -I$(TRILINOS_HOME)/include
-
 EPETRA_INC    = -I$(top_srcdir)/../epetra/src
 EPETRAEXT_INC = -I$(top_srcdir)/../epetraext/src/transform \
                 -I$(top_srcdir)/../epetraext/src/coloring
