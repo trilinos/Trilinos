@@ -96,7 +96,14 @@ const double Epetra_MaxDouble = 1.0E+100;
 const double Epetra_Overflow = 1.79E308; // Used to test if equilibration should be done.
 const double Epetra_Underflow = 2.23E-308;
 
-#undef EPETRA_ANSI_CPP // Do not use ANSI/ISO C++ (curently just checked for I/O functions)
+// RAB: 2002/1/25: Define EPETRA_ANSI_CPP as an argument to the compiler!
+//#undef EPETRA_ANSI_CPP // Do not use ANSI/ISO C++ (curently just checked for I/O functions)
+#ifdef EPETRA_ANSI_CPP
+typedef std::ios_base::fmtflags   Epetra_fmtflags;
+#else
+typedef long int                  Epetra_fmtflags;
+#endif
+
 const bool Epetra_FormatStdout = true; // Set true if the ostream << operator should format output
 
 // Delete any previous definition of EPETRA_NO_ERROR_REPORTS
@@ -257,15 +264,9 @@ class Epetra_Object {
 inline ostream& operator<<(ostream& os, const Epetra_Object& obj)
 {
   if (Epetra_FormatStdout) {
-#ifdef EPETRA_ANSI_CPP
-    const ios_base::fmtflags  olda = os.setf(ios::right,ios::adjustfield);
-    const ios_base::fmtflags  oldf = os.setf(ios::scientific,ios::floatfield);
-    const int                 oldp = os.precision(12);
-#else
-    long olda = os.setf(ios::right,ios::adjustfield);
-    long oldf = os.setf(ios::scientific,ios::floatfield);
-    int oldp = os.precision(12);
-#endif
+    const Epetra_fmtflags  olda = os.setf(ios::right,ios::adjustfield);
+    const Epetra_fmtflags  oldf = os.setf(ios::scientific,ios::floatfield);
+    const int              oldp = os.precision(12);
 
     os << obj.Label();
     obj.Print(os);
