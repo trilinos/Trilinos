@@ -340,8 +340,9 @@ NOX::StatusTest::StatusType TrustRegionBased::iterate()
       double numerator = fold - fnew;
       double denominator = abs(dir.dot(oldSoln.getGradient()) + 0.5 * bVec.dot(bVec));
       ratio = numerator / denominator;
-      cout << "Ratio computation: " << Utils::sci(numerator) << "/" 
-	   << Utils::sci(denominator) << "=" << ratio << endl;
+      if (Utils::doPrint(Utils::InnerIteration))
+	cout << "Ratio computation: " << Utils::sci(numerator) << "/" 
+	     << Utils::sci(denominator) << "=" << ratio << endl;
       if ((denominator < 1.0e-12) && ((fnew / fold) >= 0.5))
 	ratio = -1;
     }
