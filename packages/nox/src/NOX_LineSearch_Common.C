@@ -125,7 +125,17 @@ double Common::computeSlopeWithOutJac(const Abstract::Vector& dir, const Abstrac
 
   // Compute the perturbation parameter
   double lambda = 1.0e-6;
-  double eta = lambda * (lambda + grp.getX().norm() / dir.norm());
+  double denominator = dir.norm();
+
+  // Don't divide by zero
+  if (denominator == 0.0)
+    denominator = 1.0;
+
+  double eta = lambda * (lambda + grp.getX().norm() / denominator);
+
+  // Don't divide by zero
+  if (eta == 0.0)
+    eta = 1.0e-6;
 
   // Perturb the solution vector
   *vecPtr = grp.getX();
