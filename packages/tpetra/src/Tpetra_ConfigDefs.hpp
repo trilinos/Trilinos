@@ -129,10 +129,15 @@
 #include <algorithm.h>
 #endif // ifdef HAVE_ALGORITHM
 
+// NOTE: The section for <numeric> should have the same old-style headers
+// as the preceding section for <algorithm>, as the old-style header for 
+// <numeric> is algo.h, or algorithm.h, or who knows what else.
 #ifdef HAVE_NUMERIC
 #include <numeric>
-#else
+#elif defined(HAVE_ALGO_H) 
 #include <algo.h>
+#else
+#include <algorithm.h>
 #endif // ifdef HAVE_NUMERIC
 
 /* 
