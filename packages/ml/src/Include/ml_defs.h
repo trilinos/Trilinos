@@ -7,7 +7,7 @@
 #define MLFORTRAN(aaa) aaa ## _
 #endif
 
-#define ML_VERSION        ml2_0_0_0
+#define ML_VERSION        ml2_0_0_5
 
 #ifndef MB_MODIF
 #define MB_MODIF
@@ -22,6 +22,7 @@
 #define ML_RSAMG          14
 #define ML_SAAMG          15
 #define ML_MGW            16
+#define ML_PAMGV          17
 
 #define ML_GRID_DIMENSION   21
 #define ML_GRID_NVERTICES   22
@@ -120,5 +121,7 @@
 #define ML_TAG_PRESM       1
 #define ML_TAG_POSTSM      101
 
-#endif
+/* maximum dimension of the subspace associated with an ML_Operator type */
+#define ML_MAX_SUBSPACE_DIM 3
 
+#endif
