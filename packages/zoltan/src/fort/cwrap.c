@@ -360,6 +360,21 @@ void LB_Pre_Migrate_Fort_Wrapper(void *data, int num_import,
                                             ierr);
 }
 
+void LB_Post_Migrate_Fort_Wrapper(void *data, int num_import,
+                                  LB_GID *import_global_ids,
+                                  LB_LID *import_local_ids, int *import_procs,
+                                  int num_export, LB_GID *export_global_ids,
+                                  LB_LID *export_local_ids, int *export_procs,
+                                  int *ierr)
+{
+   LB_Current_lb->Migrate.Post_Process_Fort(data, &num_import,
+                                            import_global_ids,
+                                            import_local_ids, import_procs,
+                                            &num_export, export_global_ids,
+                                            export_local_ids, export_procs,
+                                            ierr);
+}
+
 void LB_Pack_Obj_Fort_Wrapper(void *data, LB_GID global_id, LB_LID local_id,
                             int dest_proc, int size, char *buf, int *ierr)
 {
@@ -373,6 +388,69 @@ void LB_Unpack_Obj_Fort_Wrapper(void *data, LB_GID global_id, int size,
    LB_Current_lb->Migrate.Unpack_Obj_Fort(data, &global_id, &size, buf, ierr);
 }
 
+int LB_Num_Coarse_Obj_Fort_Wrapper(void *data, int *ierr)
+{
+   return LB_Current_lb->Get_Num_Coarse_Obj_Fort(data, ierr);
+}
+
+void LB_Coarse_Obj_List_Fort_Wrapper(void *data, LB_GID* global_ids,
+                           LB_LID* local_ids, int *assigned, int *num_vert,
+                           int *vertices, int *in_order, int *in_vertex,
+                           int *out_vertex, int *ierr)
+{
+   LB_Current_lb->Get_Coarse_Obj_List_Fort(data, global_ids, local_ids,
+                                           assigned, num_vert, vertices,
+                                           in_order, in_vertex, out_vertex,
+                                           ierr);
+}
+
+int LB_First_Coarse_Obj_Fort_Wrapper(void *data, LB_GID* global_id,
+                                     LB_LID* local_id, int *assigned,
+                                     int *num_vert, int *vertices,
+                                     int *in_order, int *in_vertex,
+                                     int *out_vertex, int *ierr)
+{
+   return LB_Current_lb->Get_First_Coarse_Obj_Fort(data, global_id, local_id,
+                                                   assigned, num_vert, vertices,
+                                                   in_order, in_vertex,
+                                                   out_vertex, ierr);
+}
+
+int LB_Next_Coarse_Obj_Fort_Wrapper(void *data, LB_GID* global_id,
+                                    LB_LID* local_id, int *assigned,
+                                    int *num_vert, int *vertices,
+                                    int *in_vertex, int *out_vertex, int *ierr)
+{
+   return LB_Current_lb->Get_Next_Coarse_Obj_Fort(data, global_id, local_id,
+                                                  assigned, num_vert, vertices,
+                                                  in_vertex, out_vertex, ierr);
+}
+
+int LB_Num_Child_Fort_Wrapper(void *data, LB_GID global_id, LB_LID local_id,
+                              int *ierr)
+{
+   return LB_Current_lb->Get_Num_Child_Fort(data, &global_id, &local_id, ierr);
+}
+
+void LB_Child_List_Fort_Wrapper(void *data, LB_GID parent_gid,
+                                LB_LID parent_lid, LB_GID *child_gids,
+                                LB_LID *child_lids, int *assigned,
+                                int *num_vert, int *vertices,
+                                LB_REF_TYPE *ref_type, int *in_vertex,
+                                int *out_vertex, int *ierr)
+{
+   LB_Current_lb->Get_Child_List_Fort(data, &parent_gid, &parent_lid,
+                                      child_gids, child_lids, assigned,
+                                      num_vert, vertices,
+                                      ref_type, in_vertex, out_vertex, ierr);
+}
+
+void LB_Child_Weight_Fort_Wrapper(void *data, LB_GID global_id, LB_LID local_id,
+                                  int wgt_dim, float *obj_wgt, int *ierr)
+{
+   LB_Current_lb->Get_Child_Weight_Fort(data, &global_id, &local_id, &wgt_dim,
+                                        obj_wgt, ierr);
+}
 /*--------------------------------------------------------------------*/
 /* C wrapper functions                                                */
 
@@ -496,6 +574,10 @@ int LB_fw_Set_Fn(int *addr_lb, int *nbytes, LB_FN_TYPE *type, void *fn(),
       lb->Migrate.Pre_Process_Fort = (LB_PRE_MIGRATE_FORT_FN *) fn;
       return LB_Set_Fn(lb, *type, (void *)LB_Pre_Migrate_Fort_Wrapper, data);
       break;
+   case LB_POST_MIGRATE_FN_TYPE:
+      lb->Migrate.Post_Process_Fort = (LB_POST_MIGRATE_FORT_FN *) fn;
+      return LB_Set_Fn(lb, *type, (void *)LB_Post_Migrate_Fort_Wrapper, data);
+      break;
    case LB_OBJ_SIZE_FN_TYPE:
       lb->Migrate.Get_Obj_Size_Fort = (LB_OBJ_SIZE_FORT_FN *) fn;
       return LB_Set_Fn(lb, *type, (void *)LB_Obj_Size_Fort_Wrapper, data);
@@ -508,6 +590,35 @@ int LB_fw_Set_Fn(int *addr_lb, int *nbytes, LB_FN_TYPE *type, void *fn(),
       lb->Migrate.Unpack_Obj_Fort = (LB_UNPACK_OBJ_FORT_FN *) fn;
       return LB_Set_Fn(lb, *type, (void *)LB_Unpack_Obj_Fort_Wrapper, data);
       break;
+   case LB_NUM_COARSE_OBJ_FN_TYPE:
+      lb->Get_Num_Coarse_Obj_Fort = (LB_NUM_COARSE_OBJ_FORT_FN *) fn;
+      return LB_Set_Fn(lb, *type, (void *)LB_Num_Coarse_Obj_Fort_Wrapper, data);
+      break;
+   case LB_COARSE_OBJ_LIST_FN_TYPE:
+      lb->Get_Coarse_Obj_List_Fort = (LB_COARSE_OBJ_LIST_FORT_FN *) fn;
+      return LB_Set_Fn(lb, *type, (void *)LB_Coarse_Obj_List_Fort_Wrapper, data);
+      break;
+   case LB_FIRST_COARSE_OBJ_FN_TYPE:
+      lb->Get_First_Coarse_Obj_Fort = (LB_FIRST_COARSE_OBJ_FORT_FN *) fn;
+      return LB_Set_Fn(lb, *type, (void *)LB_First_Coarse_Obj_Fort_Wrapper, data);
+      break;
+   case LB_NEXT_COARSE_OBJ_FN_TYPE:
+      lb->Get_Next_Coarse_Obj_Fort = (LB_NEXT_COARSE_OBJ_FORT_FN *) fn;
+      return LB_Set_Fn(lb, *type, (void *)LB_Next_Coarse_Obj_Fort_Wrapper, data);
+      break;
+   case LB_NUM_CHILD_FN_TYPE:
+      lb->Get_Num_Child_Fort = (LB_NUM_CHILD_FORT_FN *) fn;
+      return LB_Set_Fn(lb, *type, (void *)LB_Num_Child_Fort_Wrapper, data);
+      break;
+   case LB_CHILD_LIST_FN_TYPE:
+      lb->Get_Child_List_Fort = (LB_CHILD_LIST_FORT_FN *) fn;
+      return LB_Set_Fn(lb, *type, (void *)LB_Child_List_Fort_Wrapper, data);
+      break;
+   case LB_CHILD_WEIGHT_FN_TYPE:
+      lb->Get_Child_Weight_Fort = (LB_CHILD_WEIGHT_FORT_FN *) fn;
+      return LB_Set_Fn(lb, *type, (void *)LB_Child_Weight_Fort_Wrapper, data);
+      break;
+
    default:
       return LB_Set_Fn(lb, *type, (void *)NULL, data);
       break;

@@ -1,0 +1,155 @@
+<HTML>
+<HEAD>
+   <META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-1">
+   <META NAME="GENERATOR" CONTENT="Mozilla/4.04 [en] (X11; U; SunOS 5.6 sun4m) [Netscape]">
+   <TITLE>Zoltan User's Guide:  RCB</TITLE>
+<!
+  ------------------------
+  | CVS File Information |
+  ------------------------
+  $RCSfile$
+  $Author$
+  $Date$
+  $Revision$
+>
+</HEAD>
+<BODY BGCOLOR="#FFFFFF">
+
+<DIV ALIGN=right>
+<H3>
+<IMG SRC="figures/ug_header.gif" ALT="Zoltan User's Guide" ></H3></DIV>
+
+<H2>
+<A NAME="REFTREE"></A>Refinement Tree Based Partition</H2>
+The refinement tree based partitioning method is due to William Mitchell
+of the National Institute of Standards and Technology
+[<A HREF="ug_refs.html#reftree">Mitchell</A>].
+It is closely related to the Octree and Space-Filling Curve methods,
+except it uses the tree that represents the adaptive refinement process
+that created the grid.  This tree is constructed through the tree-based
+query functions.
+
+<P>Each node of the refinement tree corresponds to an element that
+occurred during the grid refinement process.  The first level of the tree
+(the children of the root of the tree) corresponds to the initial coarse
+grid, one tree node per initial element.  The children of a node in the
+tree correspond to the elements that were created when the corresponding
+element was refined.  The children are ordered such that a traversal of
+the tree creates a space-filling curve through each initial element.  This order
+is determined by designating "in" and "out" vertices of each element, and
+using refinement-type case dependent code to set the order and in/out
+vertices of the children.  If the initial elements can be ordered with a
+contiguous path through them, then the traversal creates a space-filling
+curve through all the elements.
+
+<P>Weights are assigned to the nodes of the tree.  These weights need not be
+only on the leaves (the elements of the final grid), but can also be on
+interior nodes (for example, to represent work on coarse grids of a multigrid
+algorithm).  The default weights are 1.0 at the leaves and 0.0 at the
+interior nodes, which equidistributes the number elements over the
+partitions.  A tree traversal is used to sum the weights, and a second traversal
+to cut the space-filling curve into equal sized pieces and assign elements to
+partitions.
+
+<P>The Refinement Tree Partitioning code is functional in limited cases, but
+still under development.  The following restrictions should be removed in
+the future.
+<LI>All processors must know all elements of the initial grid.
+<LI>The user must provide the order of the elements in the initial grid.
+<LI>The only refinement type supported for automatic ordering of the children
+is bisection of triangles.  For other refinement types, the user must supply
+the order of the children.  Quadrasection of quadralaterals, octasection
+of hexahedra, and a (more expensive) catch-all method for any type of
+element refinement will be added next.  Some other special cases may be
+added in the future.
+<LI>The code does not automatically select the in/out vertices when requested.
+<LI>The hash table size is fixed, but should be a parameter.
+<LI>The weights on interior nodes of the tree are not included in the summed
+weights.
+<LI>For multicomponent weights, only the first component is used.
+<LI>The load balance tolerance is ignored.  Partition sizes are made as
+close to equal as possible, as if the tolerance is 1.0.
+<BR>&nbsp;
+<BR>&nbsp;
+<TABLE WIDTH="100%" NOSAVE >
+<TR>
+<TD VALIGN=TOP WIDTH="20%"><B>Method String:</B></TD>
+
+<TD><B>REFTREE</B></TD>
+</TR>
+
+<TR>
+<TD><B>Parameters:</B></TD>
+
+<TD></TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP>&nbsp;&nbsp;&nbsp; <I>REFTREE_HASH_SIZE</I></TD>
+
+<TD> The size of the hash table to map from LB_GIDs to refinement tree
+nodes.  Larger values require more memory but may reduce search time.
+Currently, this is a fixed value, but it will be made into a parameter
+soon.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><B>Default:</B></TD>
+
+<TD></TD>
+</TR>
+
+<TR>
+<TD></TD>
+
+<TD><I>REFTREE_HASH_SIZE</I> = 4096</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><B>Required Query Functions:</B></TD>
+
+<TD></TD>
+</TR>
+
+<TR>
+<TD></TD>
+
+<TD><B><A HREF="ug_query_lb.html#LB_NUM_COARSE_OBJ_FN">LB_NUM_COARSE_OBJ_FN</A></B></TD>
+</TR>
+
+<TR>
+<TD></TD>
+
+<TD><B><A HREF="ug_query_lb.html#LB_COARSE_OBJ_LIST_FN">LB_COARSE_OBJ_LIST_FN</A></B>
+or <B><A HREF="ug_query_lb.html#LB_FIRST_COARSE_OBJ_FN">LB_FIRST_COARSE_OBJ_FN</A></B>/<B><A HREF="ug_query_lb.html#LB_NEXT_COARSE_OBJ_FN">LB_NEXT_COARSE_OBJ_FN</A></B>
+pair</TD>
+</TR>
+
+<TR>
+<TD></TD>
+
+<TD><B><A HREF="ug_query_lb.html#LB_NUM_CHILD_FN">LB_NUM_CHILD_FN</A></B></TD>
+</TR>
+
+<TR>
+<TD></TD>
+
+<TD><B><A HREF="ug_query_lb.html#LB_CHILD_LIST_FN">LB_CHILD_LIST_FN</A></B></TD>
+</TR>
+
+<TR>
+<TD></TD>
+
+<TD><B><A HREF="ug_query_lb.html#LB_CHILD_WEIGHT_FN">LB_CHILD_WEIGHT_FN</A></B></TD>
+</TR>
+
+</TABLE>
+&nbsp;
+
+<P>
+<HR WIDTH="100%">[<A HREF="ug.html">Table of Contents</A>&nbsp; |&nbsp;
+<A HREF="ug_examples.html">Next:&nbsp; Examples of Library Usage</A>&nbsp;
+|&nbsp; <A HREF="ug_alg_oct.html">Previous:&nbsp;&nbsp; Octree/Space-Filling
+Curve (SFC) Partitioning</A>]
+</BODY>
+</HTML>

@@ -324,6 +324,114 @@ pointed to by <I>Get_Next_Border_Obj</I>. Set in <B><A HREF="../ug_html/ug_inter
 </TR>
 
 <TR>
+<TD VALIGN=TOP><A HREF="../ug_html/ug_query_lb.html#LB_NUM_COARSE_OBJ_FN">LB_NUM_COARSE_OBJ_FN</A>
+*<I> Get_Num_Coarse_Obj</I></TD>
+
+<TD>A pointer to an application-registered function that returns the number
+of objects in the initial coarse grid. Set in <B><A HREF="../ug_html/ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</A></B>.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP>void <I>*Get_Num_Coarse_Obj_Data</I></TD>
+
+<TD>A pointer to data provided by the user that will be passed to the function
+pointed to by <I>Get_Num_Coarse_Obj</I>. Set in <B><A HREF="../ug_html/ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</A></B>.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><A HREF="../ug_html/ug_query_lb.html#LB_COARSE_OBJ_LIST_FN">LB_COARSE_OBJ_LIST_FN</A>
+*<I> Get_Coarse_Obj_List</I></TD>
+
+<TD>A pointer to an application-registered function that returns arrays
+of objects in the initial coarse grid. Set in <B><A HREF="../ug_html/ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</A></B>.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP>void <I>*Get_Coarse_Obj_List_Data</I></TD>
+
+<TD>A pointer to data provided by the user that will be passed to the function
+pointed to by <I>Get_Coarse_Obj_List</I>. Set in <B><A HREF="../ug_html/ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</A></B>.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><A HREF="../ug_html/ug_query_lb.html#LB_FIRST_COARSE_OBJ_FN">LB_FIRST_COARSE_OBJ_FN</A>
+*<I> Get_First_Coarse_Obj</I></TD>
+
+<TD>A pointer to an application-registered function that returns the first
+object of the initial coarse grid. Used with <I>Get_Next_Coarse_Obj</I>
+as an iterator over all objects in the coarse grid. Set in <B><A HREF="../ug_html/ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</A></B>.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP>void <I>*Get_First_Coarse_Obj_Data</I></TD>
+
+<TD>A pointer to data provided by the user that will be passed to the function
+pointed to by <I>Get_First_Coarse_Obj</I>. Set in <B><A HREF="../ug_html/ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</A></B>.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><A HREF="../ug_html/ug_query_lb.html#LB_NEXT_COARSE_OBJ_FN">LB_NEXT_COARSE_OBJ_FN</A>
+*<I> Get_Next_Coarse_Obj</I></TD>
+
+<TD>A pointer to an application-registered function that, given an object
+in the initial coarse grid, returns the next object in the coarse grid.
+Used with <I>Get_First_Coarse_Obj</I> as an iterator over
+all objects in the coarse grid. Set in <B><A HREF="../ug_html/ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</A></B>.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP>void <I>*Get_Next_Coarse_Obj_Data</I></TD>
+
+<TD>A pointer to data provided by the user that will be passed to the function
+pointed to by <I>Get_Next_Coarse_Obj</I>. Set in <B><A HREF="../ug_html/ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</A></B>.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><A HREF="../ug_html/ug_query_lb.html#LB_NUM_CHILD_FN">LB_NUM_CHILD_FN</A>
+*<I> Get_Num_Child</I></TD>
+
+<TD>A pointer to an application-registered function that returns the number
+of refinement children of an object. Set in <B><A HREF="../ug_html/ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</A></B>.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP>void <I>*Get_Num_Child_Data</I></TD>
+
+<TD>A pointer to data provided by the user that will be passed to the function
+pointed to by <I>Get_Num_Child</I>. Set in <B><A HREF="../ug_html/ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</A></B>.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><A HREF="../ug_html/ug_query_lb.html#LB_CHILD_LIST_FN">LB_CHILD_LIST_FN</A>
+*<I> Get_Child_List</I></TD>
+
+<TD>A pointer to an application-registered function that returns arrays
+of objects that are refinement children of a given object. Set in <B><A HREF="../ug_html/ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</A></B>.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP>void <I>*Get_Child_List_Data</I></TD>
+
+<TD>A pointer to data provided by the user that will be passed to the function
+pointed to by <I>Get_Child_List</I>. Set in <B><A HREF="../ug_html/ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</A></B>.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><A HREF="../ug_html/ug_query_lb.html#LB_CHILD_WEIGHT_FN">LB_CHILD_WEIGHT_FN</A>
+*<I> Get_Child_Weight</I></TD>
+
+<TD>A pointer to an application-registered function that returns the weight
+of an object. Set in <B><A HREF="../ug_html/ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</A></B>.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP>void <I>*Get_Child_Weight_Data</I></TD>
+
+<TD>A pointer to data provided by the user that will be passed to the function
+pointed to by <I>Get_Child_Weight</I>. Set in <B><A HREF="../ug_html/ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</A></B>.</TD>
+</TR>
+
+<TR>
 <TD VALIGN=TOP>LB_MIGRATE <I>Migrate</I></TD>
 
 <TD>A structure with data used by the migration-help tools. See the <A HREF="#Migrate_Fields">table</A>

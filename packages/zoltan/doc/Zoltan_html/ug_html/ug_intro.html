@@ -110,11 +110,11 @@ Within the Zoltan library, many algorithms for dynamically determining
 new processor decompositions can be implemented. Information needed by
 the algorithms is obtained through queries to the application's data structures
 using application defined and registered query routines. Query routines
-provided include both geometric queries (supplying information such as
-coordinates for objects) and graph-based queries (supplying such information
-as edge lists for objects in the communication graph of the computation).
-Capability for tree-based algorithms, using, say, the refinement tree of
-an adaptive mesh-refinement application, will be added in the future.
+provided include geometric queries (supplying information such as
+coordinates for objects), graph-based queries (supplying such information
+as edge lists for objects in the communication graph of the computation),
+and tree-based queries (supplying information about the refinement tree of
+an adaptive mesh-refinement application).
 
 <P>A typical interaction between an application and the dynamic load-balancing
 tools is shown in the <A HREF="#lb_interaction.gif">figure</A> below. Through

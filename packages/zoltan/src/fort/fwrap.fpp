@@ -57,7 +57,21 @@ public :: &
    LB_POST_MIGRATE_FN_TYPE, &
    LB_OBJ_SIZE_FN_TYPE, &
    LB_PACK_OBJ_FN_TYPE, &
-   LB_UNPACK_OBJ_FN_TYPE
+   LB_UNPACK_OBJ_FN_TYPE, &
+   LB_NUM_COARSE_OBJ_FN_TYPE, &
+   LB_COARSE_OBJ_LIST_FN_TYPE, &
+   LB_FIRST_COARSE_OBJ_FN_TYPE, &
+   LB_NEXT_COARSE_OBJ_FN_TYPE, &
+   LB_NUM_CHILD_FN_TYPE, &
+   LB_CHILD_LIST_FN_TYPE, &
+   LB_CHILD_WEIGHT_FN_TYPE
+
+public :: &
+   LB_OTHER_REF, &
+   LB_IN_ORDER, &
+   LB_TRI_BISECT, &
+   LB_QUAD_QUAD, &
+   LB_HEX3D_OCT
 
 public :: &
    LB_OK, &
@@ -123,7 +137,11 @@ type(LB_FN_TYPEF), parameter :: &
    LB_NUM_BORDER_OBJ_FN_TYPE   = LB_FN_TYPEF(8_LB_INT), &
    LB_FIRST_BORDER_OBJ_FN_TYPE = LB_FN_TYPEF(10_LB_INT), &
    LB_NEXT_BORDER_OBJ_FN_TYPE  = LB_FN_TYPEF(11_LB_INT), &
-   LB_OBJ_SIZE_FN_TYPE         = LB_FN_TYPEF(14_LB_INT)
+   LB_OBJ_SIZE_FN_TYPE         = LB_FN_TYPEF(14_LB_INT), &
+   LB_NUM_COARSE_OBJ_FN_TYPE   = LB_FN_TYPEF(17_LB_INT), &
+   LB_FIRST_COARSE_OBJ_FN_TYPE = LB_FN_TYPEF(19_LB_INT), &
+   LB_NEXT_COARSE_OBJ_FN_TYPE  = LB_FN_TYPEF(20_LB_INT), &
+   LB_NUM_CHILD_FN_TYPE        = LB_FN_TYPEF(21_LB_INT)
 
 #ifdef SUNSOFT
 ! bug in SunSoft compiler prevents using parameter
@@ -138,7 +156,20 @@ type(LB_FN_TYPES), parameter :: &
    LB_PRE_MIGRATE_FN_TYPE      = LB_FN_TYPES(12_LB_INT), &
    LB_POST_MIGRATE_FN_TYPE     = LB_FN_TYPES(13_LB_INT), &
    LB_PACK_OBJ_FN_TYPE         = LB_FN_TYPES(15_LB_INT), &
-   LB_UNPACK_OBJ_FN_TYPE       = LB_FN_TYPES(16_LB_INT)
+   LB_UNPACK_OBJ_FN_TYPE       = LB_FN_TYPES(16_LB_INT), &
+   LB_COARSE_OBJ_LIST_FN_TYPE  = LB_FN_TYPES(18_LB_INT), &
+   LB_CHILD_LIST_FN_TYPE       = LB_FN_TYPES(22_LB_INT), &
+   LB_CHILD_WEIGHT_FN_TYPE     = LB_FN_TYPES(23_LB_INT)
+
+! Type of refinement used when building a refinement tree
+! These values must agree with the values in lb/lbi_const.h
+
+integer(LB_INT), parameter :: &
+  LB_OTHER_REF     = 0_LB_INT, &
+  LB_IN_ORDER      = 1_LB_INT, &
+  LB_TRI_BISECT    = 2_LB_INT, &
+  LB_QUAD_QUAD     = 3_LB_INT, &
+  LB_HEX3D_OCT     = 4_LB_INT
 
 ! Error codes for LB library
 ! These values must agree with the values in lb/lbi_const.h

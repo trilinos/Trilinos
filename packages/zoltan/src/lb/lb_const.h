@@ -75,6 +75,7 @@ typedef enum LB_Method {
   OCTPART,
   PARMETIS,
   JOSTLE,
+  REFTREE,
   LB_MAX_METHODS                  /*  This entry should always be last.      */
 } LB_METHOD;
 
@@ -129,6 +130,7 @@ struct LB_Migrate_Struct {
   LB_POST_MIGRATE_FN *Post_Process;    /* Function that performs application
                                           specific post-processing.  Optional
                                           for help-migration.                */
+  LB_POST_MIGRATE_FORT_FN *Post_Process_Fort; /* Fortran version             */
   void *Post_Process_Data;             /* Ptr to user defined data to be
                                           passed to Post_Process()           */
   LB_OBJ_SIZE_FN *Get_Obj_Size;        /* Function that returns the size of
@@ -247,7 +249,7 @@ struct LB_Struct {
   LB_BORDER_OBJ_LIST_FN *Get_Border_Obj_List;  /* Fn ptr to get all objects
                                                   sharing a border with a
                                                   given processor.           */
-  LB_BORDER_OBJ_LIST_FORT_FN *Get_Border_Obj_List_Fort; /* Fortran version  */
+  LB_BORDER_OBJ_LIST_FORT_FN *Get_Border_Obj_List_Fort; /* Fortran version   */
   void *Get_Border_Obj_List_Data;              /* Ptr to user defined data
                                                   to be passed to
                                                   Get_Border_Obj_List()      */
@@ -265,6 +267,48 @@ struct LB_Struct {
   void *Get_Next_Border_Obj_Data;              /* Ptr to user defined data
                                                   to be passed to
                                                   Get_Next_Border_Obj()      */
+  LB_NUM_COARSE_OBJ_FN *Get_Num_Coarse_Obj;    /* Fn ptr to get the number of
+                                                  elements in the coarse grid*/
+  LB_NUM_COARSE_OBJ_FORT_FN *Get_Num_Coarse_Obj_Fort; /* Fortran version     */
+  void *Get_Num_Coarse_Obj_Data;               /* Ptr to user defined data
+                                                  to be passed to
+                                                  Get_Num_Coarse_Obj()       */
+  LB_COARSE_OBJ_LIST_FN *Get_Coarse_Obj_List;  /* Fn ptr to get all
+                                                  elements in the coarse grid*/
+  LB_COARSE_OBJ_LIST_FORT_FN *Get_Coarse_Obj_List_Fort; /* Fortran version   */
+  void *Get_Coarse_Obj_List_Data;              /* Ptr to user defined data
+                                                  to be passed to
+                                                  Get_Coarse_Obj_List()      */
+  LB_FIRST_COARSE_OBJ_FN *Get_First_Coarse_Obj;/* Fn ptr to get the first coarse
+                                                  obj on a proc.             */
+  LB_FIRST_COARSE_OBJ_FORT_FN *Get_First_Coarse_Obj_Fort; /* Fortran version */
+  void *Get_First_Coarse_Obj_Data;             /* Ptr to user defined data
+                                                  to be passed to
+                                                  Get_First_Coarse_Obj()     */
+  LB_NEXT_COARSE_OBJ_FN *Get_Next_Coarse_Obj;  /* Fn ptr to get the next coarse
+                                                  obj on a proc.             */
+  LB_NEXT_COARSE_OBJ_FORT_FN *Get_Next_Coarse_Obj_Fort; /* Fortran version   */
+  void *Get_Next_Coarse_Obj_Data;              /* Ptr to user defined data
+                                                  to be passed to
+                                                  Get_Next_Coarse_Obj()      */
+  LB_NUM_CHILD_FN *Get_Num_Child;              /* Fn ptr to get the number of
+                                                  children of an element     */
+  LB_NUM_CHILD_FORT_FN *Get_Num_Child_Fort;    /* Fortran version            */
+  void *Get_Num_Child_Data;                    /* Ptr to user defined data
+                                                  to be passed to
+                                                  Get_Num_Child()            */
+  LB_CHILD_LIST_FN *Get_Child_List;            /* Fn ptr to get all
+                                                  children of an element     */
+  LB_CHILD_LIST_FORT_FN *Get_Child_List_Fort;  /* Fortran version            */
+  void *Get_Child_List_Data;                   /* Ptr to user defined data
+                                                  to be passed to
+                                                  Get_Child_List()           */
+  LB_CHILD_WEIGHT_FN *Get_Child_Weight;        /* Fn ptr to get the weight
+                                                  of an element              */
+  LB_CHILD_WEIGHT_FORT_FN *Get_Child_Weight_Fort; /* Fortran version         */
+  void *Get_Child_Weight_Data;                 /* Ptr to user defined data
+                                                  to be passed to
+                                                  Get_Child_Weight()         */
   LB_MIGRATE Migrate;                          /* Struct with info for helping
                                                   with migration.            */
   void *Migrate_Data;                          /* Ptr to user defined data
@@ -313,6 +357,7 @@ extern LB_FN LB_rcb;
 extern LB_FN LB_octpart;
 extern LB_FN LB_ParMetis;
 extern LB_FN LB_Jostle;
+extern LB_FN LB_Reftree_Part;
 
 #include "par_const.h"
 

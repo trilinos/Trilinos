@@ -142,6 +142,13 @@ LB *lb;
   lb->Get_Border_Obj_List = NULL;
   lb->Get_First_Border_Obj = NULL;
   lb->Get_Next_Border_Obj = NULL;
+  lb->Get_Num_Coarse_Obj = NULL;
+  lb->Get_Coarse_Obj_List = NULL;
+  lb->Get_First_Coarse_Obj = NULL;
+  lb->Get_Next_Coarse_Obj = NULL;
+  lb->Get_Num_Child = NULL;
+  lb->Get_Child_List = NULL;
+  lb->Get_Child_Weight = NULL;
 
   lb->Get_Num_Edges_Fort = NULL;
   lb->Get_Edge_List_Fort = NULL;
@@ -155,6 +162,13 @@ LB *lb;
   lb->Get_Border_Obj_List_Fort = NULL;
   lb->Get_First_Border_Obj_Fort = NULL;
   lb->Get_Next_Border_Obj_Fort = NULL;
+  lb->Get_Num_Coarse_Obj_Fort = NULL;
+  lb->Get_Coarse_Obj_List_Fort = NULL;
+  lb->Get_First_Coarse_Obj_Fort = NULL;
+  lb->Get_Next_Coarse_Obj_Fort = NULL;
+  lb->Get_Num_Child_Fort = NULL;
+  lb->Get_Child_List_Fort = NULL;
+  lb->Get_Child_Weight_Fort = NULL;
 
   lb->Migrate.Auto_Migrate = FALSE;
   lb->Migrate.Pre_Process = NULL;
@@ -283,6 +297,34 @@ char *yo = "LB_Set_Fn";
     lb->Migrate.Unpack_Obj = (LB_UNPACK_OBJ_FN *) fn;
     lb->Migrate.Unpack_Obj_Data = data;
     break;
+  case LB_NUM_COARSE_OBJ_FN_TYPE:
+    lb->Get_Num_Coarse_Obj = (LB_NUM_COARSE_OBJ_FN *) fn;
+    lb->Get_Num_Coarse_Obj_Data = data;
+    break;
+  case LB_COARSE_OBJ_LIST_FN_TYPE:
+    lb->Get_Coarse_Obj_List = (LB_COARSE_OBJ_LIST_FN *) fn;
+    lb->Get_Coarse_Obj_List_Data = data;
+    break;
+  case LB_FIRST_COARSE_OBJ_FN_TYPE:
+    lb->Get_First_Coarse_Obj = (LB_FIRST_COARSE_OBJ_FN *) fn;
+    lb->Get_First_Coarse_Obj_Data = data;
+    break;
+  case LB_NEXT_COARSE_OBJ_FN_TYPE:
+    lb->Get_Next_Coarse_Obj = (LB_NEXT_COARSE_OBJ_FN *) fn;
+    lb->Get_Next_Coarse_Obj_Data = data;
+    break;
+  case LB_NUM_CHILD_FN_TYPE:
+    lb->Get_Num_Child = (LB_NUM_CHILD_FN *) fn;
+    lb->Get_Num_Child_Data = data;
+    break;
+  case LB_CHILD_LIST_FN_TYPE:
+    lb->Get_Child_List = (LB_CHILD_LIST_FN *) fn;
+    lb->Get_Child_List_Data = data;
+    break;
+  case LB_CHILD_WEIGHT_FN_TYPE:
+    lb->Get_Child_Weight = (LB_CHILD_WEIGHT_FN *) fn;
+    lb->Get_Child_Weight_Data = data;
+    break;
   default:
     fprintf(stderr, "Error from %s:  LB_FN_TYPE %d is invalid.\n", yo, fn_type);
     fprintf(stderr, "Value must be in range 0 to %d\n", LB_MAX_FN_TYPES);
@@ -345,6 +387,10 @@ int LB_Set_Method(LB *lb, char *method_name)
   else if (strcmp(method_upper, "JOSTLE") == 0) {
     lb->Method = JOSTLE;
     lb->LB_Fn = LB_Jostle;
+  }
+  else if (strcmp(method_upper, "REFTREE") == 0) {
+    lb->Method = REFTREE;
+    lb->LB_Fn = LB_Reftree_Part;
   }
   else if (strcmp(method_upper, "NONE") == 0) {
     lb->Method = NONE;

@@ -1,0 +1,75 @@
+#ifndef __REFTREE_CONST_H
+#define __REFTREE_CONST_H
+
+/* Some constants */
+
+/* Maximum number of vertices per element */
+/* Used for dimensioning space for a query function to return vertices */
+#define MAXVERT 8
+
+/* Dimension of the hash table */
+/* TEMP this should be a parameter that the user can reset */
+#define HASH_TABLE_SIZE 4096
+
+/* Data structures for refinement tree */
+
+/* The main refinement tree structure */
+
+struct LB_Reftree_Struct {
+   LB_GID global_id;     /* global ID of the corresponding element */
+   LB_LID local_id;      /* local ID of the corresponding element */
+   struct LB_Reftree_Struct *children; /* array of the children in the tree */
+   int num_child;        /* number of children */
+   float *weight;        /* weight of the node; dimension Obj_Weight_Dim */
+   float *summed_weight; /* sum of the weights in the subtree rooted at
+                            this node */
+   float *my_sum_weight; /* sum of weights of nodes assigned to this proc */
+   int num_vertex;       /* the number of vertices in the corresponding
+                            element */
+   int *vertices;        /* the vertices of the corresponding element;
+                            local to this processor */
+   int in_vertex;        /* starting vertex for determining the path through
+                            the children */
+   int out_vertex;       /* ending vertex for determining the path through
+                            the children */
+   int assigned_to_me;   /* for a leaf, 1 if this element is assigned to
+                            this processor, 0 if not.  for nonleaves, 1 if
+                            the entire subtree is assigned to this proc,
+                            0 if none of the subtree, -1 if part */
+   int partition;        /* partition to which this node is assigned;
+                            meaningful only during the partition algorithm */
+};
+
+typedef struct LB_Reftree_Struct LB_REFTREE;
+
+/* Hash table structures */
+
+struct LB_reftree_hash_node {
+  LB_GID gid;               /* Global id */
+  LB_REFTREE *reftree_node; /* pointer to a node of the refinement tree */
+  struct LB_reftree_hash_node *next;
+};
+
+/* data structure pointed to by lb->Data_Structure */
+
+struct LB_reftree_data_struct {
+  LB_REFTREE *reftree_root;
+  struct LB_reftree_hash_node **hash_table;
+  int hash_table_size;
+};
+
+/* Prototypes */
+
+extern int LB_Reftree_Init(LB *lb);
+extern int LB_Reftree_Build(LB *lb);
+extern void LB_Reftree_Free_Structure(LB *lb);
+extern void LB_Reftree_Reinitialize(LB *lb);
+extern void LB_Reftree_Print(LB *lb,LB_REFTREE *subroot, int level);
+
+extern int LB_Reftree_Sum_Weights(LB *lb);
+
+extern unsigned int LB_Reftree_hashf(LB_GID key, int n);
+extern LB_REFTREE* LB_Reftree_hash_lookup(struct LB_reftree_hash_node **hashtab,
+                                          LB_GID key, int n);
+
+#endif /* __REFTREE_CONST_H */

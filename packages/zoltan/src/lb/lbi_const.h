@@ -51,10 +51,32 @@ enum LB_Fn_Type {
   LB_OBJ_SIZE_FN_TYPE,
   LB_PACK_OBJ_FN_TYPE,
   LB_UNPACK_OBJ_FN_TYPE,
+  LB_NUM_COARSE_OBJ_FN_TYPE,
+  LB_COARSE_OBJ_LIST_FN_TYPE,
+  LB_FIRST_COARSE_OBJ_FN_TYPE,
+  LB_NEXT_COARSE_OBJ_FN_TYPE,
+  LB_NUM_CHILD_FN_TYPE,
+  LB_CHILD_LIST_FN_TYPE,
+  LB_CHILD_WEIGHT_FN_TYPE,
   LB_MAX_FN_TYPES               /*  This entry should always be last.        */
 };
 
 typedef enum LB_Fn_Type LB_FN_TYPE;
+
+/*
+ * Enumerated type used to indicate what type of refinement was used when
+ * building a refinement tree.
+ */
+
+enum LB_Ref_Type {
+  LB_OTHER_REF,      /* unspecified type of refinement */
+  LB_IN_ORDER,       /* user provides the order of the children */
+  LB_TRI_BISECT,     /* bisection of triangles */
+  LB_QUAD_QUAD,      /* quadrasection of quadralaterals */
+  LB_HEX3D_OCT       /* octasection of hexahedra */
+};
+
+typedef enum LB_Ref_Type LB_REF_TYPE;
 
 /*
  *  Other common definitions:
@@ -471,6 +493,13 @@ typedef void LB_POST_MIGRATE_FN(void *data, int num_import,
                                 LB_LID *export_local_ids, int *export_procs,
                                 int *ierr);
 
+typedef void LB_POST_MIGRATE_FORT_FN(void *data, int *num_import,
+                                    LB_GID *import_global_ids,
+                                    LB_LID *import_local_ids, int *import_procs,
+                                    int *num_export, LB_GID *export_global_ids,
+                                    LB_LID *export_local_ids, int *export_procs,
+                                    int *ierr);
+
 /*****************************************************************************/
 /*
  *  Function to pack data to be migrated for the given object.
@@ -522,6 +551,257 @@ typedef void LB_UNPACK_OBJ_FN(void *data, LB_GID global_id, int size,
 
 typedef void LB_UNPACK_OBJ_FORT_FN(void *data, LB_GID *global_id, int *size,
                                    char *buf, int *ierr);
+
+/*****************************************************************************/
+/*
+ *  Function to return the number of objects (elements) in the initial coarse
+ * grid; used for initialization of the refinement tree.
+ *  Input:
+ *    void *data                --  pointer to user defined data structure
+ *  Output:
+ *    int *ierr                 --  error code
+ *  Returned value:
+ *    int                       --  the number of initial elements.
+ */
+
+typedef int LB_NUM_COARSE_OBJ_FN(void *data, int *ierr);
+
+typedef int LB_NUM_COARSE_OBJ_FORT_FN(void *data, int *ierr);
+
+/*****************************************************************************/
+/*
+ *  Function to return a list of all objects (elements) in the initial coarse
+ *  grid.
+ *  Input:
+ *    void *data                --  pointer to user defined data structure
+ *  Output:
+ *    LB_GID *global_ids        --  array of Global IDs of all coarse objects
+ *    LB_LID *local_ids         --  array of Local IDs of all coarse objects
+ *    int *assigned             --  array indicating processor assignment.
+ *                                  1 if the object is currently
+ *                                  assigned to this processor; 0 otherwise.
+ *                                  For elements that have been refined, it
+ *                                  is ignored.
+ *    int *num_vert             --  array containing the number of vertices
+ *                                  for each object
+ *    int *vertices             --  array containing the vertices for each 
+ *                                  object.  If the sum of the number of
+ *                                  vertices for objects 0 through i-1 is N,
+ *                                  then the vertices for object i are in
+ *                                  vertices[N:N+num_vert[i]]
+ *    int *in_order             --  1 if the user is providing the objects in
+ *                                    the order in which they should be used
+ *                                  0 if the order should be determined
+ *                                    automatically
+ *    int *in_vertex            --  array containing the "in" vertex for each
+ *                                  object, if the user provides them.  It is
+ *                                  ignored if in_order==0.  For any with the
+ *                                  value -1, a vertex will be selected
+ *                                  automatically
+ *    int *out_vertex           --  array containing the "out" vertex for each
+ *                                  object; same provisions as in_vertex
+ *    int *ierr                 --  error code
+ */
+
+typedef void LB_COARSE_OBJ_LIST_FN(void *data,
+                                   LB_GID *global_ids, LB_LID *local_ids,
+                                   int *assigned,
+                                   int *num_vert, int *vertices,
+                                   int *in_order, int *in_vertex,
+                                   int *out_vertex, int *ierr);
+
+typedef void LB_COARSE_OBJ_LIST_FORT_FN(void *data,
+                                        LB_GID* global_ids, LB_LID* local_ids,
+                                        int *assigned,
+                                        int *num_vert, int *vertices,
+                                        int *in_order, int *in_vertex,
+                                        int *out_vertex, int *ierr);
+
+/*****************************************************************************/
+/*
+ *  Iterator function for coarse objects; return the first coarse object.
+ *  This function should be used with LB_NEXT_COARSE_OBJ_FN.
+ *  Input:
+ *    void *data                --  pointer to user defined data structure
+ *  Output:
+ *    LB_GID *global_id         --  Global ID of the first coarse object
+ *    LB_LID *local_id          --  Local ID of the first coarse object
+ *    int *assigned             --  indicates processor assignment.
+ *                                  1 if the object is currently
+ *                                  assigned to this processor; 0 otherwise.
+ *                                  For elements that have been refined, it
+ *                                  is ignored.
+ *    int *num_vert             --  number of vertices in the first object
+ *    int *vertices             --  array containing the vertices of the first
+                                    coarse object
+ *    int *in_order             --  1 if the user will be providing the elements
+ *                                    in the order in which they should be used
+ *                                  0 if the order should be determined
+ *                                    automatically
+ *    int *in_vertex            --  the "in" vertex of the first coarse object.
+ *                                  It is ignored if in_order==0.  If the
+ *                                  value is -1, a vertex will be selected
+ *                                  automatically
+ *    int *out_vertex           --  array containing the "out" vertex for the
+ *                                  first object; same provisions as in_vertex
+ *    int *ierr                 --  error code
+ *  Returned value:
+ *    int                       --  1 if a valid object is returned; 0 if
+ *                                  no more objects exist on the processor.
+ */
+
+typedef int LB_FIRST_COARSE_OBJ_FN(void *data,
+                                   LB_GID *global_id, LB_LID *local_id,
+                                   int *assigned,
+                                   int *num_vert, int *vertices,
+                                   int *in_order, int *in_vertex,
+                                   int *out_vertex, int *ierr);
+
+typedef int LB_FIRST_COARSE_OBJ_FORT_FN(void *data,
+                                        LB_GID* global_id, LB_LID* local_id,
+                                        int *assigned,
+                                        int *num_vert, int *vertices,
+                                        int *in_order, int *in_vertex,
+                                        int *out_vertex, int *ierr);
+
+/*****************************************************************************/
+/*
+ *  Iterator function for coarse objects; return the next coarse object.
+ *  This function should be used with LB_FIRST_COARSE_OBJ_FN.
+ *  Input:
+ *    void *data                --  pointer to user defined data structure
+ *  Output:
+ *    LB_GID *global_id         --  Global ID of the next coarse object
+ *    LB_LID *local_id          --  Local ID of the next coarse object
+ *    int *assigned             --  indicates processor assignment.
+ *                                  1 if the object is currently
+ *                                  assigned to this processor; 0 otherwise.
+ *                                  For elements that have been refined, it
+ *                                  is ignored.
+ *    int *num_vert             --  number of vertices in the next object
+ *    int *vertices             --  array containing the vertices of the next
+                                    coarse object
+ *    int *in_vertex            --  the "in" vertex of the next coarse object.
+ *                                  It is ignored if in_order==0 in the call
+ *                                  to LB_FIRST_COARSE_OBJ_FN.  If the
+ *                                  value is -1, a vertex will be selected
+ *                                  automatically
+ *    int *out_vertex           --  the "out" vertex for the next object;
+ *                                  same provisions as in_vertex
+ *    int *ierr                 --  error code
+ *  Returned value:
+ *    int                       --  1 if a valid object is returned; 0 if
+ *                                  no more objects exist on the processor.
+ */
+
+typedef int LB_NEXT_COARSE_OBJ_FN(void *data,
+                                   LB_GID *global_id, LB_LID *local_id,
+                                   int *assigned,
+                                   int *num_vert, int *vertices,
+                                   int *in_vertex,
+                                   int *out_vertex, int *ierr);
+
+typedef int LB_NEXT_COARSE_OBJ_FORT_FN(void *data,
+                                       LB_GID* global_id, LB_LID* local_id,
+                                       int *assigned,
+                                       int *num_vert, int *vertices,
+                                       int *in_vertex,
+                                       int *out_vertex, int *ierr);
+
+/*****************************************************************************/
+/*
+ *  Function to return the number of children of an element; used for
+ *  building a refinement tree.
+ *  Input:
+ *    void *data                --  pointer to user defined data structure
+ *    LB_GID global_id          --  Global ID of the object whose number of
+ *                                  children is requested
+ *    LB_LID local_id           --  Local ID of the object whose number of
+ *                                  children is requested
+ *  Output:
+ *    int *ierr                 --  error code
+ *  Returned value:
+ *    int                       --  the number of children
+ */
+
+typedef int LB_NUM_CHILD_FN(void *data, LB_GID global_id, LB_LID local_id,
+                            int *ierr);
+
+typedef int LB_NUM_CHILD_FORT_FN(void *data, LB_GID *global_id, 
+                                 LB_LID *local_id, int *ierr);
+
+/*****************************************************************************/
+/*
+ *  Function to return a list of all children of an object.
+ *  Input:
+ *    void *data                --  pointer to user defined data structure
+ *    LB_GID parent_gid         --  Global ID of the object whose children
+ *                                  are requested
+ *    LB_LID parent_lid         --  Local ID of the object whose children
+ *                                  are requested
+ *  Output:
+ *    LB_GID *child_gids        --  array of Global IDs of the children
+ *    LB_LID *child_lids        --  array of Local IDs of the children
+ *    int *assigned             --  array indicating processor assignment.
+ *                                  1 if the child object is currently
+ *                                  assigned to this processor; 0 otherwise.
+ *                                  For elements that have been refined, it
+ *                                  is ignored.
+ *    int *num_vert             --  array containing the number of vertices
+ *                                  for each child
+ *    int *vertices             --  array containing the vertices for each 
+ *                                  child.  If the sum of the number of
+ *                                  vertices for children 0 through i-1 is N,
+ *                                  then the vertices for child i are in
+ *                                  vertices[N:N+num_vert[i]]
+ *    LB_REF_TYPE *ref_type     --  indicates what type of refinement was
+ *                                  used to create the children
+ *    int *in_vertex            --  array containing the "in" vertex for each
+ *                                  child, if the user provides them.  It is
+ *                                  ignored if ref_type!=LB_IN_ORDER.  For any
+ *                                  with the value -1, a vertex will be selected
+ *                                  automatically
+ *    int *out_vertex           --  array containing the "out" vertex for each
+ *                                  child; same provisions as in_vertex
+ *    int *ierr                 --  error code
+ */
+
+typedef void LB_CHILD_LIST_FN(void *data, LB_GID parent_gid, LB_LID parent_lid,
+                              LB_GID *child_gids, LB_LID *child_lids,
+                              int *assigned, int *num_vert, int *vertices,
+                              LB_REF_TYPE *ref_type, int *in_vertex,
+                              int *out_vertex, int *ierr);
+
+typedef void LB_CHILD_LIST_FORT_FN(void *data, LB_GID *parent_gid,
+                                   LB_LID *parent_lid, LB_GID *child_gids,
+                                   LB_LID *child_lids, int *assigned,
+                                   int *num_vert, int *vertices,
+                                   LB_REF_TYPE *ref_type, int *in_vertex,
+                                   int *out_vertex, int *ierr);
+
+/*****************************************************************************/
+/*
+ *  Function to return the weight of an object.
+ *  Input:
+ *    void *data                --  pointer to user defined data structure
+ *    LB_GID global_id          --  Global ID of the object whose weight
+ *                                  is requested
+ *    LB_LID local_id           --  Local ID of the object whose weight
+ *                                  is requested
+ *    int wdim                  --  dimension of object weight, or 0 if
+ *                                  the weight is not sought.
+ *  Output:
+ *    float *obj_wgt            --  weight vector for the object
+ *                                  (undefined if wdim=0)
+ *    int *ierr                 --  error code
+ */
+
+typedef void LB_CHILD_WEIGHT_FN(void *data, LB_GID global_id, LB_LID local_id,
+                              int wgt_dim, float *obj_wgt, int *ierr);
+
+typedef void LB_CHILD_WEIGHT_FORT_FN(void *data, LB_GID *global_id,
+                                   LB_LID *local_id, int *wgt_dim,
+                                   float *obj_wgt, int *ierr);
 
 /*****************************************************************************/
 /*****************************************************************************/

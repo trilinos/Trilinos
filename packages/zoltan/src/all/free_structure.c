@@ -39,6 +39,10 @@ LB *lb)				/* load balance object */
     case OCTPART:
       LB_OCT_Free_Structure(lb);
       break;
+
+    case REFTREE:
+      LB_Reftree_Free_Structure(lb);
+      break;
 /*
  * Add calls to additional method-specific free routines here.
  */
