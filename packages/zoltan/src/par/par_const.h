@@ -44,5 +44,6 @@ extern int LB_find_median(
 
 extern void LB_print_sync_start(LB *, int);
 extern void LB_print_sync_end(LB *, int);
+extern void LB_Print_Stats (LB *, double, char *);
 
 #endif
