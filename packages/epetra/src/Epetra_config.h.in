@@ -38,6 +38,12 @@
 /* Define if want to build epetra-abc */
 #undef HAVE_EPETRA_ARRAY_BOUNDS_CHECK
 
+/* Define if want to build epetra-examples */
+#undef HAVE_EPETRA_EXAMPLES
+
+/* Define if want to build epetra-tests */
+#undef HAVE_EPETRA_TESTS
+
 /* Define if want to build examples */
 #undef HAVE_EXAMPLES
 
