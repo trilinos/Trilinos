@@ -133,7 +133,7 @@ int ML_Operator_Clean( ML_Operator *mat)
 #if defined(ML_FLOPS) || defined(ML_TIMING_DETAILED)
    /* this could be wrong if one processor does nothing with a particular
       operator, but others do something. */
-   if  (mat->label != NULL && mat->apply_time ! 0.0)
+   if  (mat->label != NULL && mat->apply_time != 0.0)
    {
      t1 = ML_gsum_double(mat->apply_time, mat->comm);
      nglobflop = mat->nflop;
