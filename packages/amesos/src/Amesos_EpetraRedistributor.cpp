@@ -39,31 +39,82 @@
 #include "Amesos_EpetraInterface.h"
 #include "Amesos_EpetraRedistributor.h"
 
-int Amesos_EpetraRedistributor::CreateSerialMap() 
+Amesos_EpetraRedistributor::Amesos_EpetraRedistributor(const Epetra_LinearProblem & prob,
+						       const AMESOS::Parameter::List &ParameterList) :
+  Amesos_EpetraInterface(prob,ParameterList),
+  TargetMap_(0),
+  TargetBlockMap_(0),
+  TargetRHS_(0),
+  IsTargetMapOK_(false),
+  IsImportAndExportOK_(false),
+  ImportToTarget_(0),
+  ImportFromTarget_(0),
+  NumTargetProcs_(-1)
 {
+  // do nothing
+}
 
-  if( IsSerialMapOK_ ) return 0;
+int Amesos_EpetraRedistributor::SetRedistributor(const int NumTargetProcs) 
+{
+  NumTargetProcs_ = NumTargetProcs;
+
+  if( TargetMap_ ) {
+    delete TargetMap_ ; TargetMap_ = 0;
+  }  
+  if( TargetBlockMap_ ) {
+    delete TargetBlockMap_ ; TargetBlockMap_ = 0;
+  }  
+  if( ImportToTarget_ ) {
+    delete ImportToTarget_; ImportToTarget_ = 0;
+  }  
+  if( ImportFromTarget_ ) {
+    delete ImportFromTarget_; ImportFromTarget_ = 0;
+  }  
+  if( TargetRHS_ ) {
+    delete TargetRHS_; TargetRHS_ = 0;
+  }
+    
+  EPETRA_CHK_ERR(CreateTargetMap());
+  EPETRA_CHK_ERR(CreateImportAndExport());
+  return 0;
+}  
+
+int Amesos_EpetraRedistributor::CreateTargetMap() 
+{
+  
+  if( RowA() == NULL ) return -1;
+  
+  if( NumTargetProcs_<1 || NumTargetProcs_ >  RowA()->Comm().NumProc() ) {
+    NumTargetProcs_ = 1;
+  }
+    
+  //  if( IsTargetMapOK_ ) return 0;
   
   // MS // need to create a linear map. It will be used for:
   // MS // - bring rhs and lhs to proc 0 is KeepMatrixDistributed_ = true
   // MS // - bring rhs, lhs and matrix to proc 0 otherwise.
   // MS // NOTE: one proc case brings to IsLocal_ == 1 (The use can fix this
-  // MS //       value is required). If IsLocal_ == 1, don't build SerialMap_
+  // MS //       value is required). If IsLocal_ == 1, don't build TargetMap_
   
-  if( IsLocal_ == false ) {
+  if( IsLocal() == false ) {
     
-    int NumMyRowsSerial = 0 ;
-    if (RowA()->Comm().MyPID()==0) NumMyRowsSerial = NumGlobalRows();
-    if( MatrixType() != AMESOS_VBR_MATRIX ) {
-      SerialMap_ = new Epetra_Map( -1, NumMyRowsSerial, 0, RowA()->Comm() );
-      assert( SerialMap_ != NULL );
+    int mod = ( NumGlobalRows()) % (NumTargetProcs_);
+    int NumMyRowsTarget = 0 ;
+    if(  RowA()->Comm().MyPID() < NumTargetProcs_ ) {
+      NumMyRowsTarget =  NumGlobalRows()/NumTargetProcs_;
+    }
+    if(  RowA()->Comm().MyPID() == 0 ) NumMyRowsTarget += mod;
+    
+    if(  MatrixType() != AMESOS_VBR_MATRIX ) {
+      TargetMap_ = new Epetra_Map( -1, NumMyRowsTarget, 0,  RowA()->Comm() );
+      assert( TargetMap_ != NULL );
     } else {
-      SerialBlockMap_ = new Epetra_BlockMap(-1,NumMyRowsSerial,NumPDEEqns(),0,RowA()->Comm());
-      assert( SerialBlockMap_ );
+      TargetBlockMap_ = new Epetra_BlockMap(-1,NumMyRowsTarget, NumPDEEqns(),0,RowA()->Comm());
+      assert( TargetBlockMap_ );
     }
   }
   
-  IsSerialMapOK_ = true;
+  IsTargetMapOK_ = true;
   
   return 0;
 }
@@ -71,17 +122,17 @@ int Amesos_EpetraRedistributor::CreateSerialMap()
 int Amesos_EpetraRedistributor::CreateImportAndExport() 
 {
   
-  if( IsImportAndExportOK_ ) return 0;
-  if( IsSerialMapOK_ == false ) CreateSerialMap();
+  //  if( IsImportAndExportOK_ ) return 0;
+  //  if( IsTargetMapOK_ == false ) CreateTargetMap();
   
-  if( IsLocal_ == false ) {
+  if(  IsLocal()  == false ) {
     if( MatrixType() != AMESOS_VBR_MATRIX ) {
       // kludge, don't understant very well
-      ImportToProcZero_   = new Epetra_Import(*SerialMap_, RowA()->RowMatrixRowMap());
-      ImportFromProcZero_ = new Epetra_Import(RowA()->RowMatrixRowMap(), *SerialMap_);
+      ImportToTarget_   = new Epetra_Import(*TargetMap_,  RowA()->RowMatrixRowMap());
+      ImportFromTarget_ = new Epetra_Import( RowA()->RowMatrixRowMap(), *TargetMap_);
     } else {
-      ImportToProcZero_   = new Epetra_Import(*SerialBlockMap_, VbrA()->RowMap());
-      ImportFromProcZero_ = new Epetra_Import(VbrA()->RowMap(), *SerialBlockMap_);
+      ImportToTarget_   = new Epetra_Import(*TargetBlockMap_,  VbrA()->RowMap());
+      ImportFromTarget_ = new Epetra_Import( VbrA()->RowMap(), *TargetBlockMap_);
     }
     
   }
@@ -92,48 +143,43 @@ int Amesos_EpetraRedistributor::CreateImportAndExport()
   
 }
 
-Amesos_EpetraRedistributor::Amesos_EpetraRedistributor(const Epetra_LinearProblem * Problem) :
-  SerialMap_(0),
-  SerialBlockMap_(0),
-  SerialRHS_(0),
-  IsLocal_(false),
-  IsSerialMapOK_(false),
-  IsImportAndExportOK_(false),
-  ImportToProcZero_(0),
-  ImportFromProcZero_(0),
-  Amesos_EpetraInterface(Problem)
-{
-  if( Comm().NumProc() == 1 )  SetIsLocal(true);
-}
-
 Amesos_EpetraRedistributor::~Amesos_EpetraRedistributor() 
 {
-  
-  if( SerialMap_ ) delete SerialMap_ ;
-  if( SerialBlockMap_ ) delete SerialBlockMap_ ; 
-  if( ImportToProcZero_ ) delete ImportToProcZero_;
-  if( ImportFromProcZero_ ) delete ImportFromProcZero_;
-  if( SerialRHS_ ) delete SerialRHS_;
+  if( TargetMap_ ) {
+    delete TargetMap_ ; TargetMap_ = 0;
+  }  
+  if( TargetBlockMap_ ) {
+    delete TargetBlockMap_ ; TargetBlockMap_ = 0;
+  }  
+  if( ImportToTarget_ ) {
+    delete ImportToTarget_; ImportToTarget_ = 0;
+  }  
+  if( ImportFromTarget_ ) {
+    delete ImportFromTarget_; ImportFromTarget_ = 0;
+  }  
+  if( TargetRHS_ ) {
+    delete TargetRHS_; TargetRHS_ = 0;
+  }
   
 }
 
-int Amesos_EpetraRedistributor::CreateSerialRHS(int nrhs)
+int Amesos_EpetraRedistributor::CreateTargetRHS(int nrhs)
 {
 
-  if( IsLocal_ ) return 0;
+  if( IsLocal() ) return 0;
   
-  if( SerialRHS_ != NULL ) 
-    if( nrhs != SerialRHS_->NumVectors() ) {
-      delete SerialRHS_; SerialRHS_ = NULL;
+  if( TargetRHS_ != NULL ) 
+    if( nrhs != TargetRHS_->NumVectors() ) {
+      delete TargetRHS_; TargetRHS_ = NULL;
     }
   
-  if( SerialRHS_ == NULL ) {
+  if( TargetRHS_ == NULL ) {
     if( MatrixType() == AMESOS_VBR_MATRIX )
-      SerialRHS_ = new Epetra_MultiVector( *SerialBlockMap_, nrhs ) ;
+      TargetRHS_ = new Epetra_MultiVector( *TargetBlockMap_, nrhs ) ;
     else
-      SerialRHS_ = new Epetra_MultiVector( *SerialMap_, nrhs ) ;
+      TargetRHS_ = new Epetra_MultiVector( *TargetMap_, nrhs ) ;
     
-    assert( SerialRHS_ != 0 ) ;
+    assert( TargetRHS_ != 0 ) ;
   }
 
   return 0;

@@ -61,12 +61,13 @@ class Amesos_EpetraInterface : public Amesos_BaseSolver {
   
 public:
   
-  Amesos_EpetraInterface(const Epetra_LinearProblem * Problem);
+  Amesos_EpetraInterface(const Epetra_LinearProblem & Problem,
+			 const AMESOS::Parameter::List &ParameterList);
   
   ~Amesos_EpetraInterface();
 
   
-  int SetOperator(Epetra_RowMatrix * Mat);
+  int SetInterface(Epetra_RowMatrix * Mat);
   int GetRow(int BlockRow, int & NumIndices,
 	     int * & RowIndices, 
 	     int * & ColIndices, double * & Values);
@@ -146,12 +147,25 @@ public:
     return VbrA_;
   }
 
+  int IndexBase() const;
+  
   //! Get a pointer to the Problem.
-  const Epetra_LinearProblem *GetProblem() const { return(Problem_); };
+  const Epetra_LinearProblem * GetProblem() const { return(&Problem_); };
 
   //! Returns a pointer to the Epetra_Comm communicator associated with this matrix.
   const Epetra_Comm & Comm() const {return(GetProblem()->GetOperator()->Comm());};
 
+  inline bool IsLocal() const
+  {
+    return( IsLocal_);
+  }
+
+  inline int SetIsLocal(bool flag) 
+  {
+    IsLocal_ = flag;
+    return 0;
+  }
+  
   int AddToSymFactTime(double);
   int AddToNumFactTime(double);
   int AddToSolTime(double);
@@ -203,7 +217,34 @@ public:
     return(MatrixProperty_);
   }
 
+  inline Epetra_RowMatrix * GetMatrix() const 
+  {
+    return( Problem_.GetMatrix() );
+  }
+
+  inline Epetra_MultiVector * GetLHS() const
+  {
+    return( Problem_.GetLHS() );
+  }
+
+  inline Epetra_MultiVector * GetRHS() const
+  {
+    return( Problem_.GetRHS() );
+  }
+
+  // do nothing now, could be useful in the future
+  inline int UpdateLHS() 
+  {
+    return 0;
+  }
+
+  bool MatrixShapeOK() const;  
+
+protected:
+  const AMESOS::Parameter::List * ParameterList_;
+
 private:
+
   int MaxNumEntries_;
   int MatrixType_;
   int NumMyRows_;
@@ -226,9 +267,9 @@ private:
   int BlockIndices_;
   int NumPDEEqns_;
   
-  bool IsSetOperatorOK_;
+  bool IsSetInterfaceOK_;
 
-  const Epetra_LinearProblem * Problem_;
+  const Epetra_LinearProblem & Problem_;
 
   double SymFactTime_;                    // MS // keep trace of timing
   double NumFactTime_;
@@ -237,6 +278,9 @@ private:
   
   int MatrixProperty_;
 
+  bool IsLocal_;            //  1 if Problem_->GetOperator() is stored entirely on process 0
+                           //  Note:  Local Problems do not require redistribution of
+                           //  the matrix A or vectors X and B.  
 }; /* Amesos_EpetraInterface */
 
 

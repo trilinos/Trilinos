@@ -38,7 +38,8 @@
 #include "Epetra_SerialDenseMatrix.h"
 #include "Amesos_EpetraInterface.h"
 
-Amesos_EpetraInterface::Amesos_EpetraInterface(const Epetra_LinearProblem * Problem) :
+Amesos_EpetraInterface::Amesos_EpetraInterface(const Epetra_LinearProblem & Problem,
+					       const AMESOS::Parameter::List &ParameterList) :
   RowIndices_(0),
   ColIndices_(0),
   Values_(0),
@@ -49,7 +50,8 @@ Amesos_EpetraInterface::Amesos_EpetraInterface(const Epetra_LinearProblem * Prob
   NumMyNonzeros_(0),
   NumGlobalNonzeros_(0),
   MyGlobalElements_(0),
-  IsSetOperatorOK_(false),
+  IsSetInterfaceOK_(false),
+  IsLocal_(false),
   Entries_(0),
   BlockIndices_(0),
   NumPDEEqns_(1),
@@ -60,8 +62,7 @@ Amesos_EpetraInterface::Amesos_EpetraInterface(const Epetra_LinearProblem * Prob
   ConvTime_(0.0),
   MatrixProperty_(AMESOS_UNSYM)
 {
-  // requires a non-null pointer
-  assert(Problem_!=NULL);
+  ParameterList_ = & ParameterList;
 
 }
  
@@ -72,10 +73,18 @@ Amesos_EpetraInterface::~Amesos_EpetraInterface()
   if( Values_ ) delete Values_;
 }
 
-int Amesos_EpetraInterface::SetOperator(Epetra_RowMatrix * RowA)
+int Amesos_EpetraInterface::SetInterface(Epetra_RowMatrix * RowA)
 {
 
-  if( IsSetOperatorOK_ ) return 0;
+  //  if( IsSetInterfaceOK_ ) return 0;
+
+  // we could do something smarter, like:
+  // if all the nodes are on process zero, solve using this
+  // process only ????
+  
+  if( RowA == 0 ) return -3;
+  
+  if( Comm().NumProc() == 1 )  SetIsLocal(true);
   
   RowA_ = RowA;       MatrixType_ = AMESOS_ROW_MATRIX;
   assert( RowA_ != NULL );
@@ -128,11 +137,15 @@ int Amesos_EpetraInterface::SetOperator(Epetra_RowMatrix * RowA)
     MyGlobalElements_ = VbrA_->RowMap().MyGlobalElements();
   }
 
+  if( RowIndices_ ) delete RowIndices_;
+  if( ColIndices_ ) delete ColIndices_;
+  if( Values_ ) delete Values_;
+  
   RowIndices_ = new Epetra_IntSerialDenseVector(MaxNumEntries_);
   ColIndices_ = new Epetra_IntSerialDenseVector(MaxNumEntries_);
   Values_     = new Epetra_SerialDenseVector(MaxNumEntries_);
   
-  IsSetOperatorOK_ = true;
+  IsSetInterfaceOK_ = true;
 
   return 0;
 }
@@ -144,12 +157,12 @@ int Amesos_EpetraInterface::GetRow(int BlockRow, int & NumIndices,
 
   int * ColIndices1;
   
-  if( IsSetOperatorOK_ == false ) return -1;
+  if( IsSetInterfaceOK_ == false ) return -1;
   
   switch( MatrixType_ ) {
 
   case AMESOS_CRS_MATRIX: {
-
+    
     CrsA_->ExtractMyRowView(BlockRow, NumIndices, MatrixValues, ColIndices1);
     for( int i=0 ; i<NumIndices ; ++i ) {
       RowIndices[i] = MyGlobalElements_[BlockRow];
@@ -236,4 +249,28 @@ int Amesos_EpetraInterface::AddToConvTime(double t)
   ConvTime_ += t;
   return 0;
   
+}
+
+int Amesos_EpetraInterface::IndexBase() const
+{
+  switch( MatrixType_ ) {
+
+  case AMESOS_CRS_MATRIX:
+    return( CrsA()->IndexBase() );
+    break;
+  case AMESOS_VBR_MATRIX:
+    return( VbrA()->IndexBase() );
+    break;
+  }
+  return 0;  
+}      
+
+//=============================================================================
+bool Amesos_EpetraInterface::MatrixShapeOK() const
+{ 
+  bool OK = true;
+
+  if ( GetProblem()->GetOperator()->OperatorRangeMap().NumGlobalPoints() != 
+       GetProblem()->GetOperator()->OperatorDomainMap().NumGlobalPoints() ) OK = false;
+  return OK; 
 }

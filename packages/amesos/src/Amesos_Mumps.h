@@ -98,7 +98,6 @@ public:
       
       preconditions:<ul>
       <li>GetProblem().GetOperator() != 0 (return -1)
-      <li>MatrixShapeOk(GetProblem().GetOperator()) == true (return -6)
       </ul>
 
       postconditions:<ul>
@@ -121,7 +120,6 @@ public:
 
       preconditions:<ul>
       <li>GetProblem().GetOperator() != 0 (return -1)
-      <li>MatrixShapeOk(GetProblem().GetOperator()) == true (return -6)
       <li>The non-zero structure of the matrix should not have changed
           since the last call to SymbolicFactorization().  
       <li>The distribution of the matrix should not have changed 
@@ -145,7 +143,6 @@ public:
 
       preconditions:<ul>
       <li>GetProblem().GetOperator() != 0 (return -1)
-      <li>MatrixShapeOk(GetProblem().GetOperator()) == true (return -6)
       <li>GetProblem()->CheckInput (see Epetra_LinearProblem::CheckInput() for return values)
       <li>The non-zero structure of the matrix should not have changed
           since the last call to SymbolicFactorization().
@@ -165,6 +162,8 @@ public:
   */
     int Solve();
 
+  int Destroy();
+  
   //@}
   
   //@{ \name Additional methods required to support the Epetra_Operator interface.
@@ -181,7 +180,6 @@ public:
   /*! Returns true if the matrix shape is one that MUMPS can
     handle. MUMPS only works with square matrices.  
   */
-  bool MatrixShapeOK() const ;
 
   int SetUseTranspose(bool UseTranspose) {UseTranspose_ = UseTranspose; return(0);};
 
@@ -295,7 +293,7 @@ private:
 
   */
   int ConvertToTriplet();     
-
+  int ConvertToTripletValues();
   /*
     PerformSymbolicFactorization - Call Mumps to perform symbolic factorization
     Preconditions:
@@ -356,12 +354,11 @@ private:
   const Epetra_Map * Map_;
 
   int NumMUMPSNonzeros_;                  // MS // actual number of nonzeros in the matrix
+  int NumMyMUMPSNonzeros_;                // MS // actual number of nonzeros in the matrix
   int ErrorMsgLevel_;                     // MS // output level 
   
   bool UseTranspose_;
   
-  const AMESOS::Parameter::List * ParameterList_ ; 
-
   int icntl_[40];                         // MS // to allow users overwrite default settings
   double cntl_[5];                        // MS // as specified by Amesos
   double * RowSca_, * ColSca_;
@@ -375,6 +372,8 @@ private:
   Epetra_SerialDenseMatrix * DenseSchurComplement_;
 
   int verbose_;
+  
+  Epetra_RowMatrix * OldMatrix_;
   
 };  // End of  class Amesos_Mumps
 
