@@ -1367,10 +1367,11 @@ int MatrixMatrix::Add(const Epetra_CrsMatrix& A,
     Aprime = const_cast<Epetra_CrsMatrix*>(&A);
 
   //Initialize if B already filled
-  if( B.Filled() ) B.Scale( scalarB );
+  if( B.Filled() )
+    EPETRA_CHK_ERR( B.Scale( scalarB ) );
 
   //Loop over B's rows and sum into
-  int MaxNumEntries = max( A.MaxNumEntries(), B.MaxNumEntries() );
+  int MaxNumEntries = EPETRA_MAX( A.MaxNumEntries(), B.MaxNumEntries() );
   int NumEntries;
   int * Indices = new int[MaxNumEntries];
   double * Values = new double[MaxNumEntries];
@@ -1383,14 +1384,20 @@ int MatrixMatrix::Add(const Epetra_CrsMatrix& A,
     for( int i = 0; i < NumMyRows; ++i )
     {
       Row = B.GRID(i);
-      A.ExtractGlobalRowCopy( Row, MaxNumEntries, NumEntries, Values, Indices );
+      EPETRA_CHK_ERR( A.ExtractGlobalRowCopy( Row, MaxNumEntries, NumEntries, Values, Indices ) );
       if( scalarA != 1.0 )
         for( int j = 0; j < NumEntries; ++j ) Values[j] *= scalarA;
-      B.SumIntoGlobalValues( Row, NumEntries, Values, Indices );
+      if( B.Filled() ) //Sum In Values
+        assert( B.SumIntoGlobalValues( Row, NumEntries, Values, Indices ) >= 0 );
+      else
+        assert( B.InsertGlobalValues( Row, NumEntries, Values, Indices ) >= 0 );
     }
   }
 
   if( Atrans ) delete Atrans;
+
+  if( !B.Filled() ) 
+    EPETRA_CHK_ERR( B.FillComplete() );
 
   return(0);
 }

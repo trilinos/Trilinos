@@ -358,11 +358,8 @@ int check_matrixmatrix_sum(const Epetra_Comm& Comm, bool verbose)
   EPETRA_CHK_ERR( EpetraExt::MatrixMatrix::Add(A, true, 1.0, C, 0.0) );
   EPETRA_CHK_ERR( EpetraExt::MatrixMatrix::Add(B, false, 1.0, C, 1.0) );
 
-  C.FillComplete();
-
   if (verbose) {
-//     cout << "********** A **********"<<endl<<A<<endl;
-    cout << "********** C = (B + (A^T + C)) **********"<<endl<<B<<endl;
+    cout << "********** C = (B + (A^T + C)) **********"<<C<<endl;
   }
 
   return(0);
