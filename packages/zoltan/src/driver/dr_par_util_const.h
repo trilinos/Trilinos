@@ -32,6 +32,7 @@ void print_sync_end (
 
 extern
 void boundary_exchange(
+  MESH_INFO_PTR mesh,
   int vec_len,
   int *send_vec,
   int *recv_vec

@@ -138,6 +138,7 @@ void print_sync_end(int proc, int nprocs, int do_print_line)
 /*****************************************************************************/
 
 void boundary_exchange(
+  MESH_INFO_PTR mesh,
   int vec_len,           /* Length of vector for each element.               */
   int *send_vec,         /* Vector of values to be sent.                     */
   int *recv_vec          /* Vector of values to be received.                 */
@@ -149,27 +150,27 @@ int msg_type = 111;
 MPI_Status  *status = NULL;
 MPI_Request *req = NULL;
 
-  req = (MPI_Request *) malloc(Mesh.necmap * sizeof(MPI_Request));
-  status = (MPI_Status *) malloc(Mesh.necmap * sizeof(MPI_Status));
+  req = (MPI_Request *) malloc(mesh->necmap * sizeof(MPI_Request));
+  status = (MPI_Status *) malloc(mesh->necmap * sizeof(MPI_Status));
 
   /* Post receives */
   offset = 0;
-  for (i = 0; i < Mesh.necmap; i++) {
-    MPI_Irecv(&(recv_vec[offset]), Mesh.ecmap_cnt[i]*vec_len, MPI_INT, 
-              Mesh.ecmap_id[i], msg_type, MPI_COMM_WORLD, &(req[i]));
-    offset += Mesh.ecmap_cnt[i]*vec_len;
+  for (i = 0; i < mesh->necmap; i++) {
+    MPI_Irecv(&(recv_vec[offset]), mesh->ecmap_cnt[i]*vec_len, MPI_INT, 
+              mesh->ecmap_id[i], msg_type, MPI_COMM_WORLD, &(req[i]));
+    offset += mesh->ecmap_cnt[i]*vec_len;
   }
 
   /* Send messages */
   offset = 0;
-  for (i = 0; i < Mesh.necmap; i++) {
-    MPI_Send(&(send_vec[offset]), Mesh.ecmap_cnt[i]*vec_len, MPI_INT, 
-             Mesh.ecmap_id[i], msg_type, MPI_COMM_WORLD);
-    offset += Mesh.ecmap_cnt[i]*vec_len;
+  for (i = 0; i < mesh->necmap; i++) {
+    MPI_Send(&(send_vec[offset]), mesh->ecmap_cnt[i]*vec_len, MPI_INT, 
+             mesh->ecmap_id[i], msg_type, MPI_COMM_WORLD);
+    offset += mesh->ecmap_cnt[i]*vec_len;
   }
 
   /* Receive messages */
-  MPI_Waitall(Mesh.necmap, req, status);
+  MPI_Waitall(mesh->necmap, req, status);
 
   free(req);
   free(status);

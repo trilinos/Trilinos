@@ -90,7 +90,7 @@ extern int read_exoII_mesh(
   int Num_Proc,
   PROB_INFO_PTR prob,
   PARIO_INFO_PTR pio_info,
-  ELEM_INFO **elements
+  MESH_INFO_PTR mesh
 );
 
 extern int read_chaco_mesh(
@@ -98,7 +98,7 @@ extern int read_chaco_mesh(
   int Num_Proc,
   PROB_INFO_PTR prob,
   PARIO_INFO_PTR pio_info,
-  ELEM_INFO **elements
+  MESH_INFO_PTR mesh
 );
 
 

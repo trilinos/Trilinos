@@ -25,7 +25,7 @@
  * Utility functions for evaluating a partition.
  *+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
 
-void driver_eval()
+void driver_eval(MESH_INFO_PTR mesh)
 {
 /*
  * Function to evaluate a partition.  Largely duplicates functionality
@@ -33,30 +33,41 @@ void driver_eval()
  */
 int i;
 int proc;
-int cuts;
+int cuts = 0;
+float load = 0.;
 int gsumcuts, gmaxcuts, gmincuts;
 int gsumelems, gmaxelems, gminelems;
+float gsumload, gmaxload, gminload;
 
   MPI_Comm_rank(MPI_COMM_WORLD, &proc);
 
-  cuts = 0;
-  for (i = 0; i < Mesh.necmap; i++) {
-    cuts += Mesh.ecmap_cnt[i];
+  for (i = 0; i < mesh->necmap; i++) {
+    cuts += mesh->ecmap_cnt[i];
+  }
+  
+  for (i = 0; i < mesh->num_elems; i++) {
+    load += mesh->elements[i].cpu_wgt;
   }
 
   MPI_Allreduce(&cuts, &gsumcuts, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
   MPI_Allreduce(&cuts, &gmaxcuts, 1, MPI_INT, MPI_MAX, MPI_COMM_WORLD);
   MPI_Allreduce(&cuts, &gmincuts, 1, MPI_INT, MPI_MIN, MPI_COMM_WORLD);
 
-  MPI_Allreduce(&(Mesh.num_elems), &gsumelems, 1, MPI_INT, MPI_SUM, 
+  MPI_Allreduce(&(mesh->num_elems), &gsumelems, 1, MPI_INT, MPI_SUM, 
                 MPI_COMM_WORLD);
-  MPI_Allreduce(&(Mesh.num_elems), &gmaxelems, 1, MPI_INT, MPI_MAX, 
+  MPI_Allreduce(&(mesh->num_elems), &gmaxelems, 1, MPI_INT, MPI_MAX, 
                 MPI_COMM_WORLD);
-  MPI_Allreduce(&(Mesh.num_elems), &gminelems, 1, MPI_INT, MPI_MIN, 
+  MPI_Allreduce(&(mesh->num_elems), &gminelems, 1, MPI_INT, MPI_MIN, 
                 MPI_COMM_WORLD);
 
+  MPI_Allreduce(&load, &gsumload, 1, MPI_FLOAT, MPI_SUM, MPI_COMM_WORLD);
+  MPI_Allreduce(&load, &gmaxload, 1, MPI_FLOAT, MPI_MAX, MPI_COMM_WORLD);
+  MPI_Allreduce(&load, &gminload, 1, MPI_FLOAT, MPI_MIN, MPI_COMM_WORLD);
+
   if (proc == 0) {
-    printf("DRIVER EVAL:  load:  max %d  min %d  sum %d\n", 
+    printf("DRIVER EVAL:  load:  max %f  min %f  sum %f\n", 
+           gmaxload, gminload, gsumload);
+    printf("DRIVER EVAL:  objs:  max %d  min %d  sum %d\n", 
            gmaxelems, gminelems, gsumelems);
     printf("DRIVER EVAL:  cuts:  max %d  min %d  sum %d\n",
            gmaxcuts, gmincuts, gsumcuts);

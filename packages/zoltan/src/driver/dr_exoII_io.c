@@ -46,10 +46,10 @@
 
 #define LIST_ALLOC 10
 
-static int read_elem_info(int, int, PROB_INFO_PTR, ELEM_INFO *);
-static int find_surnd_elem(ELEM_INFO *, int **, int *, int *);
-static int find_adjacency(int, ELEM_INFO *, int **, int *, int);
-static int read_comm_map_info(int, int, PROB_INFO_PTR, ELEM_INFO *);
+static int read_elem_info(int, int, PROB_INFO_PTR, MESH_INFO_PTR);
+static int find_surnd_elem(MESH_INFO_PTR, int **, int *, int *);
+static int find_adjacency(int, MESH_INFO_PTR, int **, int *, int);
+static int read_comm_map_info(int, int, PROB_INFO_PTR, MESH_INFO_PTR);
 
 /****************************************************************************/
 /****************************************************************************/
@@ -59,7 +59,7 @@ int read_exoII_mesh(int Proc,
                     int Num_Proc,
                     PROB_INFO_PTR prob,
                     PARIO_INFO_PTR pio_info,
-                    ELEM_INFO **elements)
+                    MESH_INFO_PTR mesh)
 {
 #ifdef LB_NO_NEMESIS
   Gen_Error(0, "Fatal:  Nemesis requested but not linked with driver.");
@@ -117,49 +117,49 @@ int read_exoII_mesh(int Proc,
   }
 
   /* and get initial information */
-  if (ex_get_init(pexoid, title, &(Mesh.num_dims),
-                  &(Mesh.num_nodes), &(Mesh.num_elems),
-                  &(Mesh.num_el_blks), &(Mesh.num_node_sets),
-                  &(Mesh.num_side_sets)) < 0) {
+  if (ex_get_init(pexoid, title, &(mesh->num_dims),
+                  &(mesh->num_nodes), &(mesh->num_elems),
+                  &(mesh->num_el_blks), &(mesh->num_node_sets),
+                  &(mesh->num_side_sets)) < 0) {
     Gen_Error(0, "fatal: Error returned from ex_get_init");
     return 0;
   }
 
 
   /* alocate some memory for the element blocks */
-  Mesh.eb_ids = (int *) malloc (4 * Mesh.num_el_blks * sizeof(int));
-  if (!Mesh.eb_ids) {
+  mesh->eb_ids = (int *) malloc (4 * mesh->num_el_blks * sizeof(int));
+  if (!mesh->eb_ids) {
     Gen_Error(0, "fatal: insufficient memory");
     return 0;
   }
-  Mesh.eb_cnts = Mesh.eb_ids + Mesh.num_el_blks;
-  Mesh.eb_nnodes = Mesh.eb_cnts + Mesh.num_el_blks;
-  Mesh.eb_nattrs = Mesh.eb_nnodes + Mesh.num_el_blks;
+  mesh->eb_cnts = mesh->eb_ids + mesh->num_el_blks;
+  mesh->eb_nnodes = mesh->eb_cnts + mesh->num_el_blks;
+  mesh->eb_nattrs = mesh->eb_nnodes + mesh->num_el_blks;
 
-  Mesh.eb_names = (char **) malloc (Mesh.num_el_blks * sizeof(char *));
-  if (!Mesh.eb_names) {
+  mesh->eb_names = (char **) malloc (mesh->num_el_blks * sizeof(char *));
+  if (!mesh->eb_names) {
     Gen_Error(0, "fatal: insufficient memory");
     return 0;
   }
 
-  if (ex_get_elem_blk_ids(pexoid, Mesh.eb_ids) < 0) {
+  if (ex_get_elem_blk_ids(pexoid, mesh->eb_ids) < 0) {
     Gen_Error(0, "fatal: Error returned from ex_get_elem_blk_ids");
     return 0;
   }
 
   /* get the element block information */
-  for (i = 0; i < Mesh.num_el_blks; i++) {
+  for (i = 0; i < mesh->num_el_blks; i++) {
 
     /* allocate space for name */
-    Mesh.eb_names[i] = (char *) malloc((MAX_STR_LENGTH+1) * sizeof(char));
-    if (!Mesh.eb_names[i]) {
+    mesh->eb_names[i] = (char *) malloc((MAX_STR_LENGTH+1) * sizeof(char));
+    if (!mesh->eb_names[i]) {
       Gen_Error(0, "fatal: insufficient memory");
       return 0;
     }
 
-    if (ex_get_elem_block(pexoid, Mesh.eb_ids[i], Mesh.eb_names[i],
-                          &(Mesh.eb_cnts[i]), &(Mesh.eb_nnodes[i]),
-                          &(Mesh.eb_nattrs[i])) < 0) {
+    if (ex_get_elem_block(pexoid, mesh->eb_ids[i], mesh->eb_names[i],
+                          &(mesh->eb_cnts[i]), &(mesh->eb_nnodes[i]),
+                          &(mesh->eb_nattrs[i])) < 0) {
       Gen_Error(0, "fatal: Error returned from ex_get_elem_block");
       return 0;
     }
@@ -170,9 +170,10 @@ int read_exoII_mesh(int Proc,
    * allocate memory for the elements
    * allocate a little extra for element migration latter
    */
-  Mesh.elem_array_len = Mesh.num_elems + 5;
-  *elements = (ELEM_INFO_PTR) malloc (Mesh.elem_array_len * sizeof(ELEM_INFO));
-  if (!(*elements)) {
+  mesh->elem_array_len = mesh->num_elems + 5;
+  mesh->elements = (ELEM_INFO_PTR) malloc (mesh->elem_array_len 
+                                         * sizeof(ELEM_INFO));
+  if (!(mesh->elements)) {
     Gen_Error(0, "fatal: insufficient memory");
     return 0;
   }
@@ -181,17 +182,17 @@ int read_exoII_mesh(int Proc,
    * intialize all of the element structs as unused by
    * setting the globalID to -1
    */
-  for (i = 0; i < Mesh.elem_array_len; i++) 
-    initialize_element(&((*elements)[i]));
+  for (i = 0; i < mesh->elem_array_len; i++) 
+    initialize_element(&(mesh->elements[i]));
 
   /* read the information for the individual elements */
-  if (!read_elem_info(pexoid, Proc, prob, *elements)) {
+  if (!read_elem_info(pexoid, Proc, prob, mesh)) {
     Gen_Error(0, "fatal: Error returned from read_elem_info");
     return 0;
   }
 
   /* read the communication information */
-  if (!read_comm_map_info(pexoid, Proc, prob, *elements)) {
+  if (!read_comm_map_info(pexoid, Proc, prob, mesh)) {
     Gen_Error(0, "fatal: Error returned from read_comm_map_info");
     return 0;
   }
@@ -204,7 +205,7 @@ int read_exoII_mesh(int Proc,
 
   /* print out the distributed mesh */
   if (Debug_Driver > 3)
-    print_distributed_mesh(Proc, Num_Proc, *elements);
+    print_distributed_mesh(Proc, Num_Proc, mesh);
 
   DEBUG_TRACE_END(Proc, yo);
   return 1;
@@ -219,7 +220,7 @@ int read_exoII_mesh(int Proc,
 #ifndef LB_NO_NEMESIS
 
 static int read_elem_info(int pexoid, int Proc, PROB_INFO_PTR prob,
-                          ELEM_INFO elements[])
+                          MESH_INFO_PTR mesh)
 {
   /* Local declarations. */
   char  *yo = "read_elem_info";
@@ -227,6 +228,7 @@ static int read_elem_info(int pexoid, int Proc, PROB_INFO_PTR prob,
   int    max_nsur = 0;
   int   *nmap, *emap, *connect;
   int  **sur_elem, *nsurnd;
+  ELEM_INFO_PTR elements = mesh->elements;
 
   float *xptr = NULL, *yptr = NULL, *zptr = NULL;
 /***************************** BEGIN EXECUTION ******************************/
@@ -234,12 +236,12 @@ static int read_elem_info(int pexoid, int Proc, PROB_INFO_PTR prob,
   DEBUG_TRACE_START(Proc, yo);
 
   /* allocate memory for the global number maps */
-  nmap = (int *) malloc ((Mesh.num_nodes + Mesh.num_elems) * sizeof(int));
+  nmap = (int *) malloc ((mesh->num_nodes + mesh->num_elems) * sizeof(int));
   if (!nmap) {
     Gen_Error(0, "fatal: insufficient memory");
     return 0;
   }
-  emap = nmap + Mesh.num_nodes;
+  emap = nmap + mesh->num_nodes;
 
 
   /*
@@ -256,17 +258,17 @@ static int read_elem_info(int pexoid, int Proc, PROB_INFO_PTR prob,
   }
 
   /* allocate memory for the coordinates */
-  xptr = (float *) malloc (Mesh.num_dims * Mesh.num_nodes * sizeof(float));
+  xptr = (float *) malloc (mesh->num_dims * mesh->num_nodes * sizeof(float));
   if (!xptr) {
     Gen_Error(0, "fatal: insufficient memory");
     return 0;
   }
-  switch (Mesh.num_dims) {
+  switch (mesh->num_dims) {
     case 3:
-      zptr = xptr + 2 * Mesh.num_nodes;
+      zptr = xptr + 2 * mesh->num_nodes;
       /* FALLTHRU */
     case 2:
-      yptr = xptr + Mesh.num_nodes;
+      yptr = xptr + mesh->num_nodes;
   }
 
   if (ex_get_coord(pexoid, xptr, yptr, zptr) < 0) {
@@ -279,8 +281,8 @@ static int read_elem_info(int pexoid, int Proc, PROB_INFO_PTR prob,
    * the most space for its connect table
    */
   len = 0;
-  for (iblk = 0; iblk < Mesh.num_el_blks; iblk++)
-    if ((iplace = Mesh.eb_cnts[iblk] * Mesh.eb_nnodes[iblk]) > len)
+  for (iblk = 0; iblk < mesh->num_el_blks; iblk++)
+    if ((iplace = mesh->eb_cnts[iblk] * mesh->eb_nnodes[iblk]) > len)
       len = iplace;
 
   connect = (int *) malloc (len * sizeof(int));
@@ -293,16 +295,16 @@ static int read_elem_info(int pexoid, int Proc, PROB_INFO_PTR prob,
   /* Fill the Connect table, Coordinates, Global Ids for each element        */
   /***************************************************************************/
   iplace = 0;
-  for (iblk = 0; iblk < Mesh.num_el_blks; iblk++) {
+  for (iblk = 0; iblk < mesh->num_el_blks; iblk++) {
 
-    if (Mesh.eb_cnts[iblk] > 0) {
-      if (ex_get_elem_conn(pexoid, Mesh.eb_ids[iblk], connect) < 0) {
+    if (mesh->eb_cnts[iblk] > 0) {
+      if (ex_get_elem_conn(pexoid, mesh->eb_ids[iblk], connect) < 0) {
         Gen_Error(0, "fatal: Error returned from ex_get_elem_conn");
         return 0;
       }
 
       cnode = 0;
-      for (ielem = 0; ielem < Mesh.eb_cnts[iblk]; ielem++) {
+      for (ielem = 0; ielem < mesh->eb_cnts[iblk]; ielem++) {
         /* set some fields in the element structure */
         elements[iplace].border = 0;
         elements[iplace].globalID = emap[iplace];
@@ -314,14 +316,14 @@ static int read_elem_info(int pexoid, int Proc, PROB_INFO_PTR prob,
         elements[iplace].mem_wgt = 1.0;
 
         /* allocate space for the connect list and the coordinates */
-        elements[iplace].connect = (int *) malloc(Mesh.eb_nnodes[iblk] *
+        elements[iplace].connect = (int *) malloc(mesh->eb_nnodes[iblk] *
                                                   sizeof(int));
         if (!(elements[iplace].connect)) {
           Gen_Error(0, "fatal: insufficient memory");
           return 0;
         }
 
-        elements[iplace].coord = (float **) malloc(Mesh.eb_nnodes[iblk] *
+        elements[iplace].coord = (float **) malloc(mesh->eb_nnodes[iblk] *
                                                    sizeof(float *));
         if (!(elements[iplace].coord)) {
           Gen_Error(0, "fatal: insufficient memory");
@@ -329,19 +331,19 @@ static int read_elem_info(int pexoid, int Proc, PROB_INFO_PTR prob,
         }
 
         /* save the connect table as local numbers for the moment */
-        for (inode = 0; inode < Mesh.eb_nnodes[iblk]; inode++) {
+        for (inode = 0; inode < mesh->eb_nnodes[iblk]; inode++) {
           lnode = connect[cnode] - 1;
           elements[iplace].connect[inode] = lnode;
           cnode++;
 
-          elements[iplace].coord[inode] = (float *) malloc(Mesh.num_dims *
+          elements[iplace].coord[inode] = (float *) malloc(mesh->num_dims *
                                                            sizeof(float));
           if (!(elements[iplace].coord[inode])) {
             Gen_Error(0, "fatal: insufficient memory");
             return 0;
           }
 
-          switch (Mesh.num_dims) {
+          switch (mesh->num_dims) {
             case 3:
               elements[iplace].coord[inode][2] = zptr[lnode];
               /* FALLTHRU */
@@ -351,13 +353,13 @@ static int read_elem_info(int pexoid, int Proc, PROB_INFO_PTR prob,
             case 1:
               elements[iplace].coord[inode][0] = xptr[lnode];
           }
-        } /* End: "for (inode = 0; inode < Mesh.eb_nnodes[iblk]; inode++)" */
+        } /* End: "for (inode = 0; inode < mesh->eb_nnodes[iblk]; inode++)" */
 
         iplace++;
 
-      } /* End: "for (ielem = 0; ielem < Mesh.eb_cnts[iblk]; ielem++)" */
-    } /* End: "if (Mesh.eb_cnts[iblk] > 0)" */
-  } /* End: "for (iblk = 0; iblk < Mesh.num_el_blks; iblk++)" */
+      } /* End: "for (ielem = 0; ielem < mesh->eb_cnts[iblk]; ielem++)" */
+    } /* End: "if (mesh->eb_cnts[iblk] > 0)" */
+  } /* End: "for (iblk = 0; iblk < mesh->num_el_blks; iblk++)" */
 
   /* free some memory */
   free(connect);
@@ -367,18 +369,18 @@ static int read_elem_info(int pexoid, int Proc, PROB_INFO_PTR prob,
   /* Find the adjacency list for each element                              */
   /*	Part one: find the surrounding elements for each node                */
   /*************************************************************************/
-  sur_elem = (int **) malloc(Mesh.num_nodes * sizeof(int *));
+  sur_elem = (int **) malloc(mesh->num_nodes * sizeof(int *));
   if (!sur_elem) {
     Gen_Error(0, "fatal: insufficient memory");
     return 0;
   }
-  nsurnd = (int *) malloc(Mesh.num_nodes * sizeof(int));
+  nsurnd = (int *) malloc(mesh->num_nodes * sizeof(int));
   if (!nsurnd) {
     Gen_Error(0, "fatal: insufficient memory");
     return 0;
   }
 
-  if (!find_surnd_elem(elements, sur_elem, nsurnd, &max_nsur)) {
+  if (!find_surnd_elem(mesh, sur_elem, nsurnd, &max_nsur)) {
     Gen_Error(0, "fatal: Error returned from find_surnd_elems");
     return 0;
   }
@@ -387,7 +389,7 @@ static int read_elem_info(int pexoid, int Proc, PROB_INFO_PTR prob,
   /*	Part two: Find the adjacencies on this processor                     */
   /*		and get the edge weights                                     */ 
   /*************************************************************************/
-  if (!find_adjacency(Proc, elements, sur_elem, nsurnd, max_nsur)) {
+  if (!find_adjacency(Proc, mesh, sur_elem, nsurnd, max_nsur)) {
     Gen_Error(0, "fatal: Error returned from find_adjacency");
     return 0;
   }
@@ -396,14 +398,14 @@ static int read_elem_info(int pexoid, int Proc, PROB_INFO_PTR prob,
    * convert the node numbers in the connect lists to Global IDs
    * since they will be much easier to work with
    */
-  for (ielem = 0; ielem < Mesh.num_elems; ielem++) {
+  for (ielem = 0; ielem < mesh->num_elems; ielem++) {
     iblk = elements[ielem].elem_blk;
-    for (inode = 0; inode < Mesh.eb_nnodes[iblk]; inode++) {
+    for (inode = 0; inode < mesh->eb_nnodes[iblk]; inode++) {
       elements[ielem].connect[inode] = nmap[elements[ielem].connect[inode]];
     }
   }
 
-  for (inode = 0; inode < Mesh.num_nodes; inode++) free(sur_elem[inode]);
+  for (inode = 0; inode < mesh->num_nodes; inode++) free(sur_elem[inode]);
   free(sur_elem);
   free(nsurnd);
 
@@ -417,22 +419,24 @@ static int read_elem_info(int pexoid, int Proc, PROB_INFO_PTR prob,
 /****************************************************************************/
 /****************************************************************************/
 
-static int find_surnd_elem(ELEM_INFO elements[], int **sur_elem, int *nsurnd,
+static int find_surnd_elem(MESH_INFO_PTR mesh, int **sur_elem, int *nsurnd,
                            int *max_nsur)
 {
   /* Local declarations. */
   int     ielem, inode, lnode;
   int    *alloc_cnt, *tmp_ptr;
+  ELEM_INFO_PTR elements = mesh->elements;
+  
 /***************************** BEGIN EXECUTION ******************************/
 
-  alloc_cnt = (int *) malloc(Mesh.num_nodes * sizeof(int));
+  alloc_cnt = (int *) malloc(mesh->num_nodes * sizeof(int));
   if (!alloc_cnt) {
     Gen_Error(0, "fatal: insufficient memory");
     return 0;
   }
 
   /* Allocate rows of the structure */
-  for(inode=0; inode < Mesh.num_nodes; inode++)
+  for(inode=0; inode < mesh->num_nodes; inode++)
   {
     sur_elem[inode] = (int *) malloc(LIST_ALLOC*sizeof(int));
     if(!(sur_elem[inode])) {
@@ -444,8 +448,8 @@ static int find_surnd_elem(ELEM_INFO elements[], int **sur_elem, int *nsurnd,
   }
 
   /* Find the surrounding elements for each node in the mesh */
-  for(ielem=0; ielem < Mesh.num_elems; ielem++) {
-    for(inode=0; inode < Mesh.eb_nnodes[elements[ielem].elem_blk]; inode++) {
+  for(ielem=0; ielem < mesh->num_elems; ielem++) {
+    for(inode=0; inode < mesh->eb_nnodes[elements[ielem].elem_blk]; inode++) {
       lnode = elements[ielem].connect[inode];
 
       /*
@@ -479,7 +483,7 @@ static int find_surnd_elem(ELEM_INFO elements[], int **sur_elem, int *nsurnd,
       sur_elem[lnode][nsurnd[lnode]-1] = ielem;
     }
 
-  } /* End "for(ielem=0; ielem < Mesh.num_elems; ielem++)" */
+  } /* End "for(ielem=0; ielem < mesh->num_elems; ielem++)" */
 
   free (alloc_cnt);
 
@@ -490,7 +494,7 @@ static int find_surnd_elem(ELEM_INFO elements[], int **sur_elem, int *nsurnd,
 /****************************************************************************/
 /****************************************************************************/
 
-static int find_adjacency(int Proc, ELEM_INFO elements[],
+static int find_adjacency(int Proc, MESH_INFO_PTR mesh,
                           int **sur_elem, int *nsurnd, int max_nsur)
 {
   /* Local declarations. */
@@ -498,6 +502,7 @@ static int find_adjacency(int Proc, ELEM_INFO elements[],
   int     side_cnt, nnodes, sid;
   int     side_nodes[MAX_SIDE_NODES], mirror_nodes[MAX_SIDE_NODES];
   int    *hold_elem, *pt_list, nhold, nelem;
+  ELEM_INFO_PTR elements = mesh->elements;
 
   E_Type *eb_etype;
 /***************************** BEGIN EXECUTION ******************************/
@@ -515,17 +520,17 @@ static int find_adjacency(int Proc, ELEM_INFO elements[],
    */
 
   /* allocate memory and determine the element type for each element block */
-  eb_etype = (E_Type *) malloc (Mesh.num_el_blks * sizeof(E_Type));
+  eb_etype = (E_Type *) malloc (mesh->num_el_blks * sizeof(E_Type));
   if(!eb_etype) {
     Gen_Error(0, "fatal: insufficient memory");
     return 0;
   }
 
-  for (iblk = 0; iblk < Mesh.num_el_blks; iblk++) {
-    if (Mesh.eb_cnts[iblk] > 0) {
-      if ((eb_etype[iblk] =  get_elem_type(Mesh.eb_names[iblk],
-                                           Mesh.eb_nnodes[iblk],
-                                           Mesh.num_dims)) == E_TYPE_ERROR) {
+  for (iblk = 0; iblk < mesh->num_el_blks; iblk++) {
+    if (mesh->eb_cnts[iblk] > 0) {
+      if ((eb_etype[iblk] =  get_elem_type(mesh->eb_names[iblk],
+                                           mesh->eb_nnodes[iblk],
+                                           mesh->num_dims)) == E_TYPE_ERROR) {
         Gen_Error(0, "fatal: could not get element type");
         return 0;
       }
@@ -541,12 +546,12 @@ static int find_adjacency(int Proc, ELEM_INFO elements[],
   }
   hold_elem = pt_list + max_nsur;
 
-  for (ielem = 0; ielem < Mesh.num_elems; ielem++) {
+  for (ielem = 0; ielem < mesh->num_elems; ielem++) {
 
     iblk = elements[ielem].elem_blk;
 
     /* exclude circle and sphere elements from graph */
-    if (Mesh.eb_nnodes[iblk] > 1) {
+    if (mesh->eb_nnodes[iblk] > 1) {
 
       if ((nsides = get_elem_info(NSIDES, eb_etype[iblk], 0)) < 0) {
         Gen_Error(0, "fatal: could not get element information");
@@ -588,7 +593,7 @@ static int find_adjacency(int Proc, ELEM_INFO elements[],
          * NOTE: must check to make sure that this number is not
          *       larger than the number of nodes on the sides (ie - SHELL).
          */
-        nnodes = Mesh.num_dims;
+        nnodes = mesh->num_dims;
         if (side_cnt < nnodes)   nnodes = side_cnt;
         nnodes--;      /* decrement to find the number of intersections  */
 
@@ -680,7 +685,7 @@ static int find_adjacency(int Proc, ELEM_INFO elements[],
 /****************************************************************************/
 
 static int read_comm_map_info(int pexoid, int Proc, PROB_INFO_PTR prob,
-                              ELEM_INFO elements[])
+                              MESH_INFO_PTR mesh)
 {
   /* Local declarations. */
   char *yo = "read_comm_map_info";
@@ -689,6 +694,7 @@ static int read_comm_map_info(int pexoid, int Proc, PROB_INFO_PTR prob,
   int *int_elem, *bor_elem;
   int *proc_ids;
   int  sid;
+  ELEM_INFO_PTR elements = mesh->elements;
 
   E_Type etype;
 
@@ -698,7 +704,7 @@ static int read_comm_map_info(int pexoid, int Proc, PROB_INFO_PTR prob,
   DEBUG_TRACE_START(Proc, yo);
 
   if (ne_get_loadbal_param(pexoid, &nnodei, &nnodeb, &nnodee,
-                     &nelemi, &nelemb, &nncmap, &(Mesh.necmap), Proc) < 0) {
+                     &nelemi, &nelemb, &nncmap, &(mesh->necmap), Proc) < 0) {
     Gen_Error(0, "fatal: Error returned from ne_get_loadbal_param");
     return 0;
   }
@@ -734,44 +740,44 @@ static int read_comm_map_info(int pexoid, int Proc, PROB_INFO_PTR prob,
    * adjacent will have to be added. When that happens,
    * the nodal communication maps will be needed.
    */
-  Mesh.ecmap_cnt = (int *) malloc (Mesh.necmap * sizeof(int));
-  Mesh.ecmap_id = (int *) malloc(Mesh.necmap * sizeof(int));
-  if (!Mesh.ecmap_cnt || !Mesh.ecmap_id) {
+  mesh->ecmap_cnt = (int *) malloc (mesh->necmap * sizeof(int));
+  mesh->ecmap_id = (int *) malloc(mesh->necmap * sizeof(int));
+  if (!mesh->ecmap_cnt || !mesh->ecmap_id) {
     Gen_Error(0, "fatal: insufficient memory");
     return 0;
   }
 
-  if (ne_get_cmap_params(pexoid, NULL, NULL, Mesh.ecmap_id, 
-                         Mesh.ecmap_cnt, Proc) < 0) {
+  if (ne_get_cmap_params(pexoid, NULL, NULL, mesh->ecmap_id, 
+                         mesh->ecmap_cnt, Proc) < 0) {
     Gen_Error(0, "fatal: Error returned from ne_get_cmap_params");
     return 0;
   }
 
   max_len = 0;
-  for (imap = 0; imap < Mesh.necmap; imap++)
-    max_len += Mesh.ecmap_cnt[imap];
+  for (imap = 0; imap < mesh->necmap; imap++)
+    max_len += mesh->ecmap_cnt[imap];
 
   proc_ids = (int *) malloc(max_len * sizeof(int));
-  Mesh.ecmap_elemids = (int *) malloc(max_len * sizeof(int));
-  Mesh.ecmap_sideids = (int *) malloc(max_len * sizeof(int));
-  Mesh.ecmap_neighids = (int *) malloc(max_len * sizeof(int));
-  if (!Mesh.ecmap_elemids || !Mesh.ecmap_sideids || !Mesh.ecmap_neighids) {
+  mesh->ecmap_elemids = (int *) malloc(max_len * sizeof(int));
+  mesh->ecmap_sideids = (int *) malloc(max_len * sizeof(int));
+  mesh->ecmap_neighids = (int *) malloc(max_len * sizeof(int));
+  if (!mesh->ecmap_elemids || !mesh->ecmap_sideids || !mesh->ecmap_neighids) {
     Gen_Error(0, "fatal: insufficient memory");
     return 0;
   }
 
   offset = 0;
-  for (imap = 0; imap < Mesh.necmap; imap++) {
+  for (imap = 0; imap < mesh->necmap; imap++) {
 
-    if(ne_get_elem_cmap(pexoid, Mesh.ecmap_id[imap],
-                        &(Mesh.ecmap_elemids[offset]),
-                        &(Mesh.ecmap_sideids[offset]), 
+    if(ne_get_elem_cmap(pexoid, mesh->ecmap_id[imap],
+                        &(mesh->ecmap_elemids[offset]),
+                        &(mesh->ecmap_sideids[offset]), 
                         &(proc_ids[offset]), Proc) < 0) {
       Gen_Error(0, "fatal: Error returned from ne_get_elem_cmap");
       return 0;
     }
-    offset += Mesh.ecmap_cnt[imap];
-  } /* End: "for (imap = 0; imap < Mesh.necmap; imap++)" */
+    offset += mesh->ecmap_cnt[imap];
+  } /* End: "for (imap = 0; imap < mesh->necmap; imap++)" */
 
   /*
    * Decrement the ecmap_elemids by one for zero-based local numbering.
@@ -781,8 +787,8 @@ static int read_comm_map_info(int pexoid, int Proc, PROB_INFO_PTR prob,
    * anything here.
    */
   for (ielem = 0; ielem < max_len; ielem++) {
-    Mesh.ecmap_elemids[ielem]--;
-    proc_ids[ielem] = elements[Mesh.ecmap_elemids[ielem]].globalID;
+    mesh->ecmap_elemids[ielem]--;
+    proc_ids[ielem] = elements[mesh->ecmap_elemids[ielem]].globalID;
   }
 
   /*
@@ -795,33 +801,33 @@ static int read_comm_map_info(int pexoid, int Proc, PROB_INFO_PTR prob,
    * number that it is for
    */
   offset = 0;
-  for (imap = 0; imap < Mesh.necmap; imap++) {
+  for (imap = 0; imap < mesh->necmap; imap++) {
 
     /*
      * handshake with processor and wait until it is ready
      * to talk
      */
-    MPI_Send(NULL, 0, MPI_INT, Mesh.ecmap_id[imap], 0, MPI_COMM_WORLD);
-    MPI_Recv(NULL, 0, MPI_INT, Mesh.ecmap_id[imap], 0, MPI_COMM_WORLD, &status);
+    MPI_Send(NULL, 0, MPI_INT, mesh->ecmap_id[imap], 0, MPI_COMM_WORLD);
+    MPI_Recv(NULL, 0, MPI_INT, mesh->ecmap_id[imap], 0, MPI_COMM_WORLD, &status);
 
     /* now send list of global element ids to the processor for this map */
-    MPI_Send(&(proc_ids[offset]), Mesh.ecmap_cnt[imap], MPI_INT, 
-             Mesh.ecmap_id[imap], 0, MPI_COMM_WORLD);
-    MPI_Recv(&(Mesh.ecmap_neighids[offset]), Mesh.ecmap_cnt[imap], MPI_INT, 
-             Mesh.ecmap_id[imap], 0, MPI_COMM_WORLD, &status);
-    offset += Mesh.ecmap_cnt[imap];
+    MPI_Send(&(proc_ids[offset]), mesh->ecmap_cnt[imap], MPI_INT, 
+             mesh->ecmap_id[imap], 0, MPI_COMM_WORLD);
+    MPI_Recv(&(mesh->ecmap_neighids[offset]), mesh->ecmap_cnt[imap], MPI_INT, 
+             mesh->ecmap_id[imap], 0, MPI_COMM_WORLD, &status);
+    offset += mesh->ecmap_cnt[imap];
   }
 
   /* now process all of the element ids that have been received */
   offset = 0;
-  for (imap = 0; imap < Mesh.necmap; imap++) {
-    for (ielem = 0; ielem < Mesh.ecmap_cnt[imap]; ielem++) {
+  for (imap = 0; imap < mesh->necmap; imap++) {
+    for (ielem = 0; ielem < mesh->ecmap_cnt[imap]; ielem++) {
       index = ielem + offset;
       /* translate from element id in the communication map to local elem id */
-      loc_elem = Mesh.ecmap_elemids[index];
+      loc_elem = mesh->ecmap_elemids[index];
       iblk = elements[loc_elem].elem_blk;
-      etype = get_elem_type(Mesh.eb_names[iblk], Mesh.eb_nnodes[iblk],
-                            Mesh.num_dims);
+      etype = get_elem_type(mesh->eb_names[iblk], mesh->eb_nnodes[iblk],
+                            mesh->num_dims);
 
       (elements[loc_elem].nadj)++;
       if(elements[loc_elem].nadj > elements[loc_elem].adj_len) {
@@ -834,15 +840,15 @@ static int read_comm_map_info(int pexoid, int Proc, PROB_INFO_PTR prob,
       }
 
       /* Store adjacency info in the adj entry corresponding to this side. */
-      sid = Mesh.ecmap_sideids[index] - 1;
-      elements[loc_elem].adj[sid] = Mesh.ecmap_neighids[index];
-      elements[loc_elem].adj_proc[sid] = Mesh.ecmap_id[imap];
+      sid = mesh->ecmap_sideids[index] - 1;
+      elements[loc_elem].adj[sid] = mesh->ecmap_neighids[index];
+      elements[loc_elem].adj_proc[sid] = mesh->ecmap_id[imap];
       elements[loc_elem].edge_wgt[sid] =
-             (float) get_elem_info(NSNODES, etype, Mesh.ecmap_sideids[index]);
+             (float) get_elem_info(NSNODES, etype, mesh->ecmap_sideids[index]);
 
-    } /* End: "for (ielem = 0; ielem < Mesh.ecmap_cnt[imap]; ielem++)" */
-    offset += Mesh.ecmap_cnt[imap];
-  } /* End: "for for (imap = 0; imap < Mesh.necmap; imap++)" */
+    } /* End: "for (ielem = 0; ielem < mesh->ecmap_cnt[imap]; ielem++)" */
+    offset += mesh->ecmap_cnt[imap];
+  } /* End: "for for (imap = 0; imap < mesh->necmap; imap++)" */
   
   free (proc_ids);
 

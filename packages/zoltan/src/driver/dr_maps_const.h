@@ -18,6 +18,6 @@
 
 #include "dr_const.h"
 
-extern int build_elem_comm_maps(int, ELEM_INFO *);
+extern int build_elem_comm_maps(int, MESH_INFO_PTR);
 
 #endif /* !_DR_MAPS_CONST_H */

@@ -90,7 +90,7 @@ static int Use_Edge_Wgts = 0;         /* Flag indicating whether elements
 /*****************************************************************************/
 int migrate_elements(
   int Proc,
-  ELEM_INFO *elements[],
+  MESH_INFO_PTR mesh,
   struct LB_Struct *lb_obj,
   int num_imp,
   LB_GID *imp_gids,
@@ -103,6 +103,7 @@ int migrate_elements(
 {
 /* Local declarations. */
 char *yo = "migrate_elements";
+int i;
 
 /***************************** BEGIN EXECUTION ******************************/
   DEBUG_TRACE_START(Proc, yo);
@@ -111,31 +112,31 @@ char *yo = "migrate_elements";
    * register migration functions
    */
   if (LB_Set_Fn(lb_obj, LB_PRE_MIGRATE_FN_TYPE, (void *) migrate_pre_process,
-                (void *) *elements) == LB_FATAL) {
+                (void *) mesh) == LB_FATAL) {
     Gen_Error(0, "fatal:  error returned from LB_Set_Fn()\n");
     return 0;
   }
 
   if (LB_Set_Fn(lb_obj, LB_POST_MIGRATE_FN_TYPE, (void *) migrate_post_process,
-                (void *) *elements) == LB_FATAL) {
+                (void *) mesh) == LB_FATAL) {
     Gen_Error(0, "fatal:  error returned from LB_Set_Fn()\n");
     return 0;
   }
 
   if (LB_Set_Fn(lb_obj, LB_OBJ_SIZE_FN_TYPE, (void *) migrate_elem_size,
-               (void *) *elements) == LB_FATAL) {
+               (void *) mesh) == LB_FATAL) {
     Gen_Error(0, "fatal:  error returned from LB_Set_Fn()\n");
     return 0;
   }
 
   if (LB_Set_Fn(lb_obj, LB_PACK_OBJ_FN_TYPE, (void *) migrate_pack_elem,
-                (void *) *elements) == LB_FATAL) {
+                (void *) mesh) == LB_FATAL) {
     Gen_Error(0, "fatal:  error returned from LB_Set_Fn()\n");
     return 0;
   }
 
   if (LB_Set_Fn(lb_obj, LB_UNPACK_OBJ_FN_TYPE, (void *) migrate_unpack_elem,
-                (void *) elements) == LB_FATAL) {
+                (void *) mesh) == LB_FATAL) {
     Gen_Error(0, "fatal:  error returned from LB_Set_Fn()\n");
     return 0;
   }
@@ -169,9 +170,18 @@ int new_proc;           /* New processor assignment for nbor element.       */
 int exp_elem;           /* index of an element being exported */
 int bor_elem;           /* index of an element along the processor border */
 int *send_vec = NULL, *recv_vec = NULL;  /* Communication vecs. */
-ELEM_INFO_PTR elements = (ELEM_INFO_PTR) data;
+MESH_INFO_PTR mesh;
+ELEM_INFO_PTR elements;
+ELEM_INFO_PTR tmp;
 
   *ierr = LB_OK;
+
+  if (data == NULL) {
+    *ierr = LB_FATAL;
+    return;
+  }
+  mesh = (MESH_INFO_PTR) data;
+  elements = mesh->elements;
 
   /*
    *  Set some flags.  Assume if true for one element, true for all elements.
@@ -182,27 +192,25 @@ ELEM_INFO_PTR elements = (ELEM_INFO_PTR) data;
   else
     Use_Edge_Wgts = 0;
 
-
   /*
    *  For all elements, update adjacent elements' processor information.
    *  That way, when perform migration, will be migrating updated adjacency
    *  information.  
    */
   
-  if (Mesh.num_elems == 0) return;  /* No elements to update */
-
   MPI_Comm_rank(MPI_COMM_WORLD, &proc);
 
   /*
    *  Build New_Elem_Index array and list of processor assignments.
    */
-  New_Elem_Index_Size = Mesh.num_elems + num_import - num_export;
-  if (Mesh.elem_array_len > New_Elem_Index_Size) 
-    New_Elem_Index_Size = Mesh.elem_array_len;
+
+  New_Elem_Index_Size = mesh->num_elems + num_import - num_export;
+  if (mesh->elem_array_len > New_Elem_Index_Size) 
+    New_Elem_Index_Size = mesh->elem_array_len;
   New_Elem_Index = (int *) malloc(New_Elem_Index_Size * sizeof(int));
 
-  proc_ids = (int *)  malloc(Mesh.num_elems * sizeof(int));
-  change   = (char *) malloc(Mesh.num_elems * sizeof(char));
+  proc_ids = (int *)  malloc(mesh->num_elems * sizeof(int));
+  change   = (char *) malloc(mesh->num_elems * sizeof(char));
 
   if (New_Elem_Index == NULL || proc_ids == NULL || change == NULL) {
     Gen_Error(0, "fatal: insufficient memory");
@@ -210,13 +218,13 @@ ELEM_INFO_PTR elements = (ELEM_INFO_PTR) data;
     return;
   }
 
-  for (i = 0; i < Mesh.num_elems; i++) {
+  for (i = 0; i < mesh->num_elems; i++) {
     New_Elem_Index[i] = elements[i].globalID;
     proc_ids[i] = proc;
     change[i] = 0;
   }
 
-  for (i = Mesh.num_elems; i < New_Elem_Index_Size; i++) {
+  for (i = mesh->num_elems; i < New_Elem_Index_Size; i++) {
     New_Elem_Index[i] = -1;
   }
 
@@ -255,7 +263,7 @@ ELEM_INFO_PTR elements = (ELEM_INFO_PTR) data;
   }
 
   /* Change adjacency information in marked elements */
-  for (i = 0; i < Mesh.num_elems; i++) {
+  for (i = 0; i < mesh->num_elems; i++) {
     if (change[i] == 0) continue;
 
     /* loop over marked element's adjacencies; look for ones that are moving */
@@ -274,63 +282,63 @@ ELEM_INFO_PTR elements = (ELEM_INFO_PTR) data;
       }
     }
   }
-  free(change);
+  safe_free((void **) &change);
 
   /*
    * Update off-processor information 
    */
 
   maxlen = 0;
-  for (i = 0; i < Mesh.necmap; i++) 
-    maxlen += Mesh.ecmap_cnt[i];
+  for (i = 0; i < mesh->necmap; i++) 
+    maxlen += mesh->ecmap_cnt[i];
 
-  /*  No communication is being done; don't have to update any more info. */
-  if (maxlen == 0) return;
+  if (maxlen > 0) {
+    send_vec = (int *) malloc(maxlen * sizeof(int));
+    if (send_vec == NULL) {
+      Gen_Error(0, "fatal: insufficient memory");
+      *ierr = LB_MEMERR;
+      return;
+    }
 
-  send_vec = (int *) malloc(maxlen * sizeof(int));
-  if (send_vec == NULL) {
-    Gen_Error(0, "fatal: insufficient memory");
-    *ierr = LB_MEMERR;
-    return;
+    /* Load send vector */
+
+    for (i = 0; i < maxlen; i++)
+      send_vec[i] = proc_ids[mesh->ecmap_elemids[i]];
   }
 
-  /* Load send vector */
+  safe_free((void **) &proc_ids);
 
-  for (i = 0; i < maxlen; i++)
-    send_vec[i] = proc_ids[Mesh.ecmap_elemids[i]];
-
-  free(proc_ids);
-  recv_vec = (int *) malloc(maxlen * sizeof(int));
+  if (maxlen > 0)
+    recv_vec = (int *) malloc(maxlen * sizeof(int));
 
   /*  Perform boundary exchange */
 
-  boundary_exchange(1, send_vec, recv_vec);
-  
+  boundary_exchange(mesh, 1, send_vec, recv_vec);
   
   /* Unload receive vector */
 
   offset = 0;
-  for (i = 0; i < Mesh.necmap; i++) {
-    for (j = 0; j < Mesh.ecmap_cnt[i]; j++, offset++) {
-      if (recv_vec[offset] == Mesh.ecmap_id[i]) {
+  for (i = 0; i < mesh->necmap; i++) {
+    for (j = 0; j < mesh->ecmap_cnt[i]; j++, offset++) {
+      if (recv_vec[offset] == mesh->ecmap_id[i]) {
         /* off-processor element is not changing processors.  */
         /* no changes are needed in the local data structure. */
         continue;
       }
       /* Change processor assignment in local element's adjacency list */
-      bor_elem = Mesh.ecmap_elemids[offset];
+      bor_elem = mesh->ecmap_elemids[offset];
       for (k = 0; k < elements[bor_elem].adj_len; k++) {
 
         /* Skip NULL adjacencies (sides that are not adj to another elem). */
         if (elements[bor_elem].adj[k] == -1) continue;
 
-        if (elements[bor_elem].adj[k] == Mesh.ecmap_neighids[offset] &&
-            elements[bor_elem].adj_proc[k] == Mesh.ecmap_id[i]) {
+        if (elements[bor_elem].adj[k] == mesh->ecmap_neighids[offset] &&
+            elements[bor_elem].adj_proc[k] == mesh->ecmap_id[i]) {
           elements[bor_elem].adj_proc[k] = recv_vec[offset];
           if (recv_vec[offset] == proc) {
             /* element is moving to this processor; */
             /* convert adj from global to local ID. */
-            if ((idx = in_list(Mesh.ecmap_neighids[offset], New_Elem_Index_Size,
+            if ((idx = in_list(mesh->ecmap_neighids[offset],New_Elem_Index_Size,
                               New_Elem_Index)) == -1) {
               Gen_Error(0, "fatal: unable to locate element in New_Elem_Index");
               *ierr = LB_FATAL;
@@ -344,8 +352,26 @@ ELEM_INFO_PTR elements = (ELEM_INFO_PTR) data;
     }
   }
 
-  free(recv_vec);
-  free(send_vec);
+  safe_free((void **) &recv_vec);
+  safe_free((void **) &send_vec);
+
+  /*
+   * Allocate space (if needed) for the new element data.
+   */
+
+  if (mesh->elem_array_len < New_Elem_Index_Size) {
+    mesh->elem_array_len = New_Elem_Index_Size;
+    mesh->elements = (ELEM_INFO_PTR) realloc (mesh->elements,
+                                     mesh->elem_array_len * sizeof(ELEM_INFO));
+    if (mesh->elements == NULL) {
+      Gen_Error(0, "fatal: insufficient memory");
+      return;
+    }
+
+    /* initialize the new spots */
+    for (i = mesh->num_elems; i < mesh->elem_array_len; i++)
+      initialize_element(&(mesh->elements[i]));
+  }
 }
 
 /*****************************************************************************/
@@ -358,10 +384,19 @@ void migrate_post_process(void *data, int num_import,
                                LB_LID *export_local_ids, int *export_procs,
                                int *ierr)
 {
-ELEM_INFO *element = (ELEM_INFO *) data;
+MESH_INFO_PTR mesh;
+ELEM_INFO *elements;
 int proc, num_proc;
 int i, j, k, last;
 int adj_elem;
+
+  if (data == NULL) {
+    *ierr = LB_FATAL;
+    return;
+  }
+  mesh = (MESH_INFO_PTR) data;
+  elements = mesh->elements;
+
 
   MPI_Comm_rank(MPI_COMM_WORLD, &proc);
   MPI_Comm_size(MPI_COMM_WORLD, &num_proc);
@@ -381,55 +416,61 @@ int adj_elem;
     /* at the end of the array.  Quit the compacting.                     */
     if (last < i) break;
 
-    /* Copy element[last] to element[i]. */
-    element[i] = element[last];
+    /* Copy elements[last] to elements[i]. */
+    elements[i] = elements[last];
 
     /* Adjust adjacencies for local elements.  Off-processor adjacencies */
     /* don't matter here.                                                */
 
-    for (j = 0; j < element[i].adj_len; j++) {
+    for (j = 0; j < elements[i].adj_len; j++) {
 
       /* Skip NULL adjacencies (sides that are not adjacent to another elem). */
-      if (element[i].adj[j] == -1) continue;
+      if (elements[i].adj[j] == -1) continue;
 
-      adj_elem = element[i].adj[j];
+      adj_elem = elements[i].adj[j];
 
       /* See whether adjacent element is local; if so, adjust its entry */
       /* for local element i.                                           */
-      if (element[i].adj_proc[j] == proc) {
-        for (k = 0; k < element[adj_elem].adj_len; k++) {
-          if (element[adj_elem].adj[k] == last &&
-              element[adj_elem].adj_proc[k] == proc) {
+      if (elements[i].adj_proc[j] == proc) {
+        for (k = 0; k < elements[adj_elem].adj_len; k++) {
+          if (elements[adj_elem].adj[k] == last &&
+              elements[adj_elem].adj_proc[k] == proc) {
             /* found adjacency entry for element last; change it to i */
-            element[adj_elem].adj[k] = i;
+            elements[adj_elem].adj[k] = i;
             break;
           }
         }
       }
     }
-    element[last].globalID = -1;
-    element[last].border = 0;
-    element[last].nadj = 0;
-    element[last].adj_len = 0;
-    element[last].elem_blk = -1;
-    element[last].cpu_wgt = 0;
-    element[last].mem_wgt = 0;
-    element[last].coord = NULL;
-    element[last].connect = NULL;
-    element[last].adj = NULL;
-    element[last].adj_proc = NULL;
-    element[last].edge_wgt = NULL;
+
+    /* Update New_Elem_Index */
+    New_Elem_Index[i] = New_Elem_Index[last];
+    New_Elem_Index[last] = -1;
+
+    /* clear elements[last] */
+    elements[last].globalID = -1;
+    elements[last].border = 0;
+    elements[last].nadj = 0;
+    elements[last].adj_len = 0;
+    elements[last].elem_blk = -1;
+    elements[last].cpu_wgt = 0;
+    elements[last].mem_wgt = 0;
+    elements[last].coord = NULL;
+    elements[last].connect = NULL;
+    elements[last].adj = NULL;
+    elements[last].adj_proc = NULL;
+    elements[last].edge_wgt = NULL;
   }
 
-  if (New_Elem_Index != NULL) free(New_Elem_Index);
+  if (New_Elem_Index != NULL) safe_free((void **) &New_Elem_Index);
   New_Elem_Index_Size = 0;
 
-  if (!build_elem_comm_maps(proc, element)) {
+  if (!build_elem_comm_maps(proc, mesh)) {
     Gen_Error(0, "Fatal: error rebuilding elem comm maps");
   }
 
   if (Debug_Driver > 3)
-    print_distributed_mesh(proc, num_proc, element);
+    print_distributed_mesh(proc, num_proc, mesh);
 }
 
 /*****************************************************************************/
@@ -445,9 +486,17 @@ static int gmax_adj_len = 0; /* Max. adj_len. over all elements.            */
 int max_nnodes = 0;          /* Max. num of nodes/elem over all local elems.*/
 static int gmax_nnodes = 0;  /* Max. num of nodes/elem over all elems.      */
 int i, size;
-ELEM_INFO *elements = (ELEM_INFO *) data;
+MESH_INFO_PTR mesh;
+ELEM_INFO *elements;
 
   *ierr = LB_OK;
+
+  if (data == NULL) {
+    *ierr = LB_FATAL;
+    return 0;
+  }
+  mesh = (MESH_INFO_PTR) data;
+  elements = mesh->elements;
 
   /* 
    * Compute global max of adj_len and nnodes.  Communication package requires
@@ -455,7 +504,7 @@ ELEM_INFO *elements = (ELEM_INFO *) data;
    */
 
   if (gmax_adj_len == 0) {
-    for (i = 0; i < Mesh.num_elems; i++) {
+    for (i = 0; i < mesh->num_elems; i++) {
       if (elements[i].adj_len > max_adj_len) max_adj_len = elements[i].adj_len;
     }
     MPI_Allreduce(&max_adj_len, &gmax_adj_len, 1, MPI_INT, MPI_MAX,
@@ -463,8 +512,8 @@ ELEM_INFO *elements = (ELEM_INFO *) data;
   }
 
   if (gmax_nnodes == 0) {
-    for (i = 0; i < Mesh.num_el_blks; i++) {
-      if (Mesh.eb_nnodes[i] > max_nnodes) max_nnodes = Mesh.eb_nnodes[i];
+    for (i = 0; i < mesh->num_el_blks; i++) {
+      if (mesh->eb_nnodes[i] > max_nnodes) max_nnodes = mesh->eb_nnodes[i];
     }
     MPI_Allreduce(&max_nnodes, &gmax_nnodes, 1, MPI_INT,MPI_MAX,MPI_COMM_WORLD);
   }
@@ -479,7 +528,7 @@ ELEM_INFO *elements = (ELEM_INFO *) data;
   size += pad_for_alignment(size);
 
   /* Add space for connect table. */
-  if (Mesh.num_dims > 0)
+  if (mesh->num_dims > 0)
     size += gmax_nnodes * sizeof(int);
 
   /* Add space for adjacency info (elements[].adj and elements[].adj_proc). */
@@ -494,7 +543,7 @@ ELEM_INFO *elements = (ELEM_INFO *) data;
 
   /* Add space for coordinate info */
   size += pad_for_alignment(size);
-  size += gmax_nnodes * Mesh.num_dims * sizeof(float);
+  size += gmax_nnodes * mesh->num_dims * sizeof(float);
   
   return (size);
 }
@@ -505,6 +554,7 @@ ELEM_INFO *elements = (ELEM_INFO *) data;
 void migrate_pack_elem(void *data, LB_GID elem_gid, LB_LID elem_lid,
                        int mig_proc, int elem_data_size, char *buf, int *ierr)
 {
+  MESH_INFO_PTR mesh;
   ELEM_INFO *elem, *elem_mig;
   ELEM_INFO *current_elem;
   int *buf_int;
@@ -518,12 +568,13 @@ void migrate_pack_elem(void *data, LB_GID elem_gid, LB_LID elem_lid,
     *ierr = LB_FATAL;
     return;
   }
+  mesh = (MESH_INFO_PTR) data;
+  elem = mesh->elements;
 
   MPI_Comm_rank(MPI_COMM_WORLD, &proc);
 
-  elem = (ELEM_INFO *) data; /* this is the head of the element struct array */
   current_elem = &(elem[elem_lid]);
-  num_nodes = Mesh.eb_nnodes[current_elem->elem_blk];
+  num_nodes = mesh->eb_nnodes[current_elem->elem_blk];
 
   elem_mig = (ELEM_INFO *) buf; /* this is the element struct to be migrated */
 
@@ -544,7 +595,7 @@ void migrate_pack_elem(void *data, LB_GID elem_gid, LB_LID elem_lid,
   buf_int = (int *) (buf + size);
 
   /* copy the connect table */
-  if (Mesh.num_dims > 0) {
+  if (mesh->num_dims > 0) {
     for (i = 0; i < num_nodes; i++) {
       *buf_int = current_elem->connect[i];
       buf_int++;
@@ -589,26 +640,26 @@ void migrate_pack_elem(void *data, LB_GID elem_gid, LB_LID elem_lid,
 
   /* copy coordinate data */
   for (i = 0; i < num_nodes; i++) {
-    for (j = 0; j < Mesh.num_dims; j++) {
+    for (j = 0; j < mesh->num_dims; j++) {
       *buf_float = current_elem->coord[i][j];
       buf_float++;
     }
   }
-  size += num_nodes * Mesh.num_dims * sizeof(float);
+  size += num_nodes * mesh->num_dims * sizeof(float);
 
   /*
    * need to update the Mesh struct to reflect this element
    * being gone
    */
-  Mesh.num_elems--;
-  Mesh.eb_cnts[current_elem->elem_blk]--;
+  mesh->num_elems--;
+  mesh->eb_cnts[current_elem->elem_blk]--;
 
   /*
    * need to remove this entry from this procs list of elements
    * do so by setting the globalID to -1
    */
   current_elem->globalID = -1;
-  free_element_arrays(current_elem);
+  free_element_arrays(current_elem, mesh);
 
   /*
    * NOTE: it is not worth the effort to determine the change in the
@@ -627,7 +678,8 @@ void migrate_pack_elem(void *data, LB_GID elem_gid, LB_LID elem_lid,
 void migrate_unpack_elem(void *data, LB_GID elem_gid, int elem_data_size,
                          char *buf, int *ierr)
 {
-  ELEM_INFO **elem, *tmp, *elem_mig;
+  MESH_INFO_PTR mesh;
+  ELEM_INFO *elem, *elem_mig;
   ELEM_INFO *current_elem;
   int *buf_int;
   float *buf_float;
@@ -639,35 +691,11 @@ void migrate_unpack_elem(void *data, LB_GID elem_gid, int elem_data_size,
     *ierr = LB_FATAL;
     return;
   }
-
-  MPI_Comm_rank(MPI_COMM_WORLD, &proc);
-  /*
-   * In this case, data is a pointer to the head of the element
-   * struct array. This is so that the array can be reallocated
-   * to contain this element.
-   */
-  elem = (ELEM_INFO **) data;
+  mesh = (MESH_INFO_PTR) data;
+  elem = mesh->elements;
   elem_mig = (ELEM_INFO *) buf;
 
-  /*
-   * check if the element array has any space
-   * if not, allocate some new space
-   */
-  if (Mesh.elem_array_len < New_Elem_Index_Size) {
-    Mesh.elem_array_len = New_Elem_Index_Size;
-    tmp = (ELEM_INFO_PTR) realloc (*elem,
-                                   Mesh.elem_array_len * sizeof(ELEM_INFO));
-    if (tmp == NULL) {
-      Gen_Error(0, "fatal: insufficient memory");
-      *ierr = LB_MEMERR;
-      return;
-    }
-    *elem = tmp;
-
-    /* initialize the new spots */
-    for (i = Mesh.num_elems; i < Mesh.elem_array_len; i++)
-      (*elem)[i].globalID = -1;
-  }
+  MPI_Comm_rank(MPI_COMM_WORLD, &proc);
 
   if ((idx = in_list(elem_gid, New_Elem_Index_Size, New_Elem_Index)) == -1) {
     Gen_Error(0, "fatal: Unable to locate position for element");
@@ -675,10 +703,10 @@ void migrate_unpack_elem(void *data, LB_GID elem_gid, int elem_data_size,
     return;
   }
 
-  current_elem = &((*elem)[idx]);
+  current_elem = &(elem[idx]);
   /* now put the migrated information into the array */
   *current_elem = *elem_mig;
-  num_nodes = Mesh.eb_nnodes[current_elem->elem_blk];
+  num_nodes = mesh->eb_nnodes[current_elem->elem_blk];
 
   size = sizeof(ELEM_INFO);
 
@@ -691,7 +719,7 @@ void migrate_unpack_elem(void *data, LB_GID elem_gid, int elem_data_size,
   buf_int = (int *) (buf + size);
 
   /* copy the connect table */
-  if (Mesh.num_dims > 0) {
+  if (mesh->num_dims > 0) {
     current_elem->connect = (int *) malloc(num_nodes * sizeof(int));
     if (current_elem->connect == NULL) {
       Gen_Error(0, "fatal: insufficient memory");
@@ -762,24 +790,24 @@ void migrate_unpack_elem(void *data, LB_GID elem_gid, int elem_data_size,
       return;
     }
     for (i = 0; i < num_nodes; i++) {
-      current_elem->coord[i] = (float *) malloc(Mesh.num_dims * sizeof(float));
+      current_elem->coord[i] = (float *) malloc(mesh->num_dims * sizeof(float));
       if (current_elem->coord[i] == NULL) {
         Gen_Error(0, "fatal: insufficient memory");
         *ierr = LB_MEMERR;
         return;
       }
-      for (j = 0; j < Mesh.num_dims; j++) {
+      for (j = 0; j < mesh->num_dims; j++) {
         current_elem->coord[i][j] = *buf_float;
         buf_float++;
       }
     }
-    size += num_nodes * Mesh.num_dims * sizeof(float);
+    size += num_nodes * mesh->num_dims * sizeof(float);
   }
 
 
   /* and update the Mesh struct */
-  Mesh.num_elems++;
-  Mesh.eb_cnts[current_elem->elem_blk]++;
+  mesh->num_elems++;
+  mesh->eb_cnts[current_elem->elem_blk]++;
 
   if (size > elem_data_size) 
     *ierr = LB_WARN;

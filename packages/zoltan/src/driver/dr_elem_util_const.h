@@ -21,6 +21,7 @@
 
 /* Function prototypes */
 extern void initialize_element(ELEM_INFO *elem);
-extern void free_element_arrays(ELEM_INFO *elem);
+extern void free_mesh_arrays(MESH_INFO_PTR mesh);
+extern void free_element_arrays(ELEM_INFO *elem, MESH_INFO_PTR mesh);
 
 #endif

@@ -92,9 +92,6 @@ struct Mesh_Description
                                           element.                           */
   int    *eb_nattrs;		/* number of attributes per element in each
 				   element block                             */
-  int     elem_array_len;	/* length that the ELEM_INFO array is
-				   allocated for. Need to know this when array
-				   is not completely filled during migration */
   int     necmap;               /* number of elemental communication maps.   */
   int    *ecmap_id;             /* IDs of each elemental communication map.  */
   int    *ecmap_cnt;            /* number of elements in each elemental
@@ -106,19 +103,14 @@ struct Mesh_Description
   int    *ecmap_neighids;       /* elements ids of neighboring elements 
                                    for all elemental communication maps. 
                                    (global numbering)                        */
+  int     elem_array_len;	/* length that the ELEM_INFO array is
+				   allocated for. Need to know this when array
+				   is not completely filled during migration */
+  ELEM_INFO_PTR elements;       /* array of elements that are in the mesh.   */
+
 };
 typedef struct Mesh_Description  MESH_INFO;
 typedef struct Mesh_Description *MESH_INFO_PTR;
-
-/*
- * global struct for mesh description
- * The Zoltan callback functions need both the element information struct
- * array and the mesh information struct. It is a lot easier to just pass
- * the element struct array as a data pointer, and have the mesh information
- * as a global variable.
- */
-extern MESH_INFO Mesh;
-
 
 /* Structure for the problem description. */
 typedef char Parameter_Pair[2][128]; /* typedef for parameter strings. 

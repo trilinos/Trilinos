@@ -41,11 +41,9 @@
 #include "dr_err_const.h"
 #include "dr_elem_util_const.h"
 
-/* global mesh information struct variable */
-MESH_INFO Mesh;
 int Debug_Driver = 1;
 
-static int read_mesh(int, int, PROB_INFO_PTR, PARIO_INFO_PTR, ELEM_INFO_PTR *);
+static int read_mesh(int, int, PROB_INFO_PTR, PARIO_INFO_PTR, MESH_INFO_PTR);
 
 /****************************************************************************/
 /****************************************************************************/
@@ -62,9 +60,9 @@ int main(int argc, char *argv[])
   int    Proc, Num_Proc;
   int    error, i;
 
-  PARIO_INFO    pio_info;
-  ELEM_INFO_PTR elements;
-  PROB_INFO     prob;
+  MESH_INFO  mesh;             /* mesh information struct */
+  PARIO_INFO pio_info;
+  PROB_INFO  prob;
 
 /***************************** BEGIN EXECUTION ******************************/
 
@@ -106,17 +104,25 @@ int main(int argc, char *argv[])
   }
 
   /* initialize some variables */
-  Mesh.eb_names			= NULL;
-  Mesh.eb_ids			= NULL;
-  Mesh.eb_cnts			= NULL;
-  Mesh.eb_nnodes		= NULL;
-  Mesh.eb_nattrs		= NULL;
-  Mesh.necmap 			= 0;
-  Mesh.ecmap_id 		= NULL;
-  Mesh.ecmap_cnt 		= NULL;
-  Mesh.ecmap_elemids 		= NULL;
-  Mesh.ecmap_sideids 		= NULL;
-  Mesh.ecmap_neighids 		= NULL;
+  mesh.num_elems = mesh.num_nodes 
+                 = mesh.num_dims
+                 = mesh.num_el_blks
+                 = mesh.num_node_sets
+                 = mesh.num_side_sets
+                 = mesh.necmap
+                 = mesh.elem_array_len
+                 = 0;
+  mesh.eb_names			= NULL;
+  mesh.eb_ids			= NULL;
+  mesh.eb_cnts			= NULL;
+  mesh.eb_nnodes		= NULL;
+  mesh.eb_nattrs		= NULL;
+  mesh.ecmap_id 		= NULL;
+  mesh.ecmap_cnt 		= NULL;
+  mesh.ecmap_elemids 		= NULL;
+  mesh.ecmap_sideids 		= NULL;
+  mesh.ecmap_neighids 		= NULL;
+  mesh.elements                 = NULL;
 
   pio_info.dsk_list_cnt		= -1;
   pio_info.num_dsk_ctrlrs	= -1;
@@ -161,7 +167,7 @@ int main(int argc, char *argv[])
    * This is the only function call to do this. Upon return,
    * the mesh struct and the elements array should be filled.
    */
-  if (!read_mesh(Proc, Num_Proc, &prob, &pio_info, &elements)) {
+  if (!read_mesh(Proc, Num_Proc, &prob, &pio_info, &mesh)) {
       Gen_Error(0, "fatal: Error returned from read_mesh\n");
       error_report(Proc);
       exit(1);
@@ -171,7 +177,7 @@ int main(int argc, char *argv[])
    * now run zoltan to get a new load balance and perform
    * the migration
    */
-  if (!run_zoltan(Proc, &prob, &elements)) {
+  if (!run_zoltan(Proc, &prob, &mesh)) {
       Gen_Error(0, "fatal: Error returned from run_zoltan\n");
       error_report(Proc);
       exit(1);
@@ -180,18 +186,13 @@ int main(int argc, char *argv[])
   /*
    * output the results
    */
-  if (!output_results(Proc, Num_Proc, &prob, &pio_info, elements)) {
+  if (!output_results(Proc, Num_Proc, &prob, &pio_info, &mesh)) {
       Gen_Error(0, "fatal: Error returned from output_results\n");
       error_report(Proc);
       exit(1);
   }
 
-  if (elements != NULL) {
-    for (i = 0; i < Mesh.elem_array_len; i++) {
-      free_element_arrays(&(elements[i]));
-    }
-    free(elements);
-  }
+  free_mesh_arrays(&mesh);
   if (prob.params != NULL) free(prob.params);
   MPI_Finalize();
 
@@ -211,18 +212,18 @@ static int read_mesh(
   int Num_Proc,
   PROB_INFO_PTR prob,
   PARIO_INFO_PTR pio_info,
-  ELEM_INFO **elements)
+  MESH_INFO_PTR mesh)
 {
 /* local declarations */
 /*-----------------------------Execution Begins------------------------------*/
   if (pio_info->file_type == CHACO_FILE) {
-    if (!read_chaco_mesh(Proc, Num_Proc, prob, pio_info, elements)) {
+    if (!read_chaco_mesh(Proc, Num_Proc, prob, pio_info, mesh)) {
         Gen_Error(0, "fatal: Error returned from read_chaco_mesh\n");
         return 0;
     }
   }
   else if (pio_info->file_type == NEMESIS_FILE) {
-    if (!read_exoII_mesh(Proc, Num_Proc, prob, pio_info, elements)) {
+    if (!read_exoII_mesh(Proc, Num_Proc, prob, pio_info, mesh)) {
         Gen_Error(0, "fatal: Error returned from read_exoII_mesh\n");
         return 0;
     }
