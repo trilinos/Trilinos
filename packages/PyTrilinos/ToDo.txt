@@ -43,6 +43,12 @@
     ------ NumPyWrapper
     ------ NumPyArray
 
+****** Change test scripts to use unittest python module
+    ------ testNonContiguous.py
+    ------ testParameter.py
+    ------ testSerialDense.py
+    ------ testStatusTest.py
+
 ****** Change -c swig option to -noruntime
 
 ****** Re-wrap Epetra_Object.Print() method

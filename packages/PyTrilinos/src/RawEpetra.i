@@ -34,13 +34,13 @@
 #include "Epetra_SerialDenseMatrix.h"
 #include "Epetra_SerialDenseVector.h"
 #include "Epetra_SerialSymDenseMatrix.h"
+
 // Local includes
 #include "Callback.h"
 #include "Epetra_NumPyVector.h"
 #include "Epetra_VectorHelper.h"
 #include "NumPyArray.h"
 #include "NumPyWrapper.h"
-// #include "PyObjectHolder.h"
 %}
 
 // Ignore directives
@@ -75,7 +75,6 @@
 %ignore Epetra_VbrMatrix::Solve(bool, bool, bool,
 				Epetra_Vector const&, Epetra_Vector&) const;
 %ignore Epetra_SerialDenseMatrix::operator=(const Epetra_SerialDenseMatrix &);
-//%ignore Epetra_SerialDenseMatrix::operator+=(const Epetra_SerialDenseMatrix &);
 %ignore Epetra_SerialDenseMatrix::operator[](int);
 %ignore Epetra_SerialDenseMatrix::operator[](int) const;
 %ignore Epetra_SerialDenseVector::operator=(const Epetra_SerialDenseVector &);
@@ -83,7 +82,6 @@
 %ignore Epetra_SerialDenseVector::operator[](int) const;
 %ignore Epetra_SerialDenseVector::operator()(int);
 %ignore Epetra_SerialDenseVector::operator()(int) const;
-//%ignore PyObjectHolder::operator PyObject * ();
 %ignore NumPyArrayBase::print(std::ostream &) const;       // faciltated by __str__
 %ignore NumPyArray::print(std::ostream &) const;           // faciltated by __str__
 %ignore NumPyArrayContiguous::print(std::ostream &) const; // faciltated by __str__
@@ -101,7 +99,6 @@
 %rename(BLAS                ) Epetra_BLAS;
 %rename(LAPACK              ) Epetra_LAPACK;
 %rename(MultiVector         ) Epetra_MultiVector;
-//%rename(Vector              ) Epetra_Vector;
 %rename(IntVector           ) Epetra_IntVector;
 %rename(CrsGraph            ) Epetra_CrsGraph;
 %rename(MapColoring         ) Epetra_MapColoring;
@@ -182,7 +179,6 @@
 %include "Epetra_SerialSymDenseMatrix.h"
 
 // Local interface includes
-//%include "PyObjectHolder.h"
 %include "NumPyArray.h"
 %include "Epetra_NumPyVector.h"
 
@@ -202,16 +198,6 @@
     return self->operator[](i);
   }
 }
-
-// %extend Epetra_Vector {
-//   void load(PyObject * p_pyObject) {
-//     Epetra_VectorHelper::loadViaCopy(self, p_pyObject);
-//   }
-
-//   void unload(PyObject * p_pyObject) {
-//     Epetra_VectorHelper::unloadViaCopy(self, p_pyObject);
-//   }
-// }
 
 %extend Epetra_IntVector {
   int & __getitem__(int i) {
@@ -265,9 +251,6 @@
     return Py_None;
   }
 
-//   Epetra_SerialDenseMatrix & __iadd__(const Epetra_SerialDenseMatrix & other) {
-//     return self->operator+=(other);
-//   }
 }
 
 %extend Epetra_SerialDenseVector {
@@ -295,37 +278,3 @@
     return s.substr(0,s.length()-1);  // Return the string minus trailing \n
   }
 }
-
-// %extend Epetra_Vector {
-
-//   // HACK: Constructor that takes a wrapped PyObject pointer to get around
-//   //       a SWIG bug that has been fixed in SWIG 1.3.19.
-//   // NOTE: This must come before the constructor that takes a PyObject
-//   Epetra_Vector(Epetra_BlockMap & map, PyObjectHolder & holder)  {
-//     return Epetra_VectorHelper::new_Epetra_Vector(map, holder);
-//   }
-
-//   Epetra_Vector(Epetra_BlockMap & map, PyObject * p_pyObject)  {
-//     return Epetra_VectorHelper::new_Epetra_Vector(map, p_pyObject);
-//   }
-
-//   // HACK: See note for Epetra_Vector constructor.
-//   // NOTE: This must come before the load method that takes a PyObject
-//   void loadViaCopy (PyObjectHolder & holder) {
-//     Epetra_VectorHelper::loadViaCopy(self, holder);
-//   }
-
-//   void loadViaCopy (PyObject * p_pyObject) {
-//     Epetra_VectorHelper::loadViaCopy(self, p_pyObject);
-//   }
-
-//   // HACK: See note for Epetra_Vector constructor.
-//   // NOTE: This must come before the unload method that takes a PyObject
-//   void unloadViaCopy (PyObjectHolder & holder) {
-//     Epetra_VectorHelper::unloadViaCopy(self, holder);
-//   }
-
-//   void unloadViaCopy (PyObject * p_pyObject) {
-//     Epetra_VectorHelper::unloadViaCopy(self, p_pyObject);
-//   }
-// }

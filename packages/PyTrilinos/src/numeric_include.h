@@ -1,11 +1,15 @@
 #ifndef NUMERIC_INCLUDE_H
 #define NUMERIC_INCLUDE_H
 
-// When including arrayobject.h to use Numeric objects,
-// care must be taken w.r.t the PY_ARRAY_UNIQUE_SYMBOL
-// symbol.  This include file addresses this and should be
-// included by PyNOX code instead of including
-// Numeric/arrayobject.h directly.
+// This include file takes care of three of the four things necessary
+// when including the Numeric header file arrayobject.h.  First, the
+// Python.h header file is included.  Second, the
+// PY_ARRAY_UNIQUE_SYMBOL is defined.  Third, the
+// Numeric/arrayobject.h header file is included.
+
+// The user is responsible for defining the macro NO_IMPORT_ARRAY in
+// those source files that do not call the Numeric routine
+// import_array().
 
 #include <Python.h>
 #define PY_ARRAY_UNIQUE_SYMBOL PyTrilinos

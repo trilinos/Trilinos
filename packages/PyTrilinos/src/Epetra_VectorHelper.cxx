@@ -42,7 +42,7 @@ Epetra_Vector * Epetra_VectorHelper::new_Epetra_Vector(Epetra_BlockMap & map,
 }
 
 void Epetra_VectorHelper::loadViaCopy (Epetra_Vector * p_epetraVector,
-					 PyObject * p_pyObject)
+				       PyObject      * p_pyObject     )
 {
   assert (0 != p_pyObject     && "PyObject pointer passed to function is NULL."     );
   assert (0 != p_epetraVector && "Epetra_Vector pointer passed to function is NULL.");
@@ -54,7 +54,8 @@ void Epetra_VectorHelper::loadViaCopy (Epetra_Vector * p_epetraVector,
 
 
 // Code common to constructor and other loadViaCopy
-void Epetra_VectorHelper::loadViaCopy (Epetra_Vector & epetraVector, const NumPyArrayBase & numPyArray)
+void Epetra_VectorHelper::loadViaCopy (      Epetra_Vector  & epetraVector,
+				       const NumPyArrayBase & numPyArray   )
 {
   assert (numPyArray.getTotalLength() == epetraVector.MyLength() 
           && "Source NumPy array and target Epetra Vector differ in length.");
@@ -83,7 +84,8 @@ void Epetra_VectorHelper::unloadViaCopy (const Epetra_Vector * p_epetraVector, P
 
 
 // Code common to constructor and other loadViaCopy
-void Epetra_VectorHelper::unloadViaCopy (const Epetra_Vector & epetraVector, NumPyArrayBase & numPyArray)
+void Epetra_VectorHelper::unloadViaCopy (const Epetra_Vector  & epetraVector,
+					       NumPyArrayBase & numPyArray   )
 {
   assert (numPyArray.getTotalLength() == epetraVector.MyLength() 
           && "Source NumPy array and target Epetra Vector differ in length.");

@@ -1,16 +1,11 @@
 # Root PyTrilinos directory
 ROOT       := ../
 
-# Library name
-#LIBRARY    := libcommon.a
-
 # Source Files
 SRC        := Callback.cxx            \
               NumPyArray.cxx          \
               NumPyWrapper.cxx        \
 	      PyInterface.cxx
-	      #Epetra_VectorHelper.cxx \
-	      #PyObjectHolder.cxx
 
 # The interface files
 INTERFACES := RawEpetra.i EpetraExt.i NOX_Epetra.i
@@ -36,11 +31,6 @@ all: $(TARGET)
 # Target dependency on common library
 $(TARGET): $(SRC)
 
-# Library target
-# $(LIBRARY): $(OBJECTS)
-# 	ar -r $@ $^
-# 	ranlib $@
-
 # NOX Wrapper target
 NOX_Wrappers:
 	cd NOX && $(MAKE)
@@ -52,4 +42,3 @@ clean:
 # Remove dependency files, proxies, static library and proxies
 clobber: clean
 	rm -f $(DEPDIR)*.d $(PROXIES)
-#	rm -f $(DEPDIR)*.d $(LIBRARY) $(PROXIES)

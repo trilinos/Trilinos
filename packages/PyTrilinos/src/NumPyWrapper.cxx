@@ -7,12 +7,12 @@ using namespace std;
 #endif
 
 // Static initialization
-NumPyWrapper         NumPyWrapper::m_singleton;
+NumPyWrapper NumPyWrapper::m_singleton;
 
 NumPyWrapper::NumPyWrapper()
 {
 #if DEBUG
-  cerr << "Calling import_array() to initialize Numeric C interface." << endl;
+  cerr << "NumPyWrapper: Calling import_array() to initialize Numeric" << endl;
 #endif
   import_array();
 }
