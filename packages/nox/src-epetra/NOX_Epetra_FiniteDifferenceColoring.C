@@ -46,7 +46,13 @@ FiniteDifferenceColoring::FiniteDifferenceColoring(Interface& i,
                              double beta_, double alpha_) :
   FiniteDifference(i, x, beta_, alpha_),
   colorMap(&colorMap_),
-  columns(&columns_)
+  columns(&columns_),
+  numColors(colorMap->NumColors()),
+  colorList(colorMap->ListOfColors()),
+  cMap(0),
+  Importer(0),
+  colorVect(0),
+  mappedColorVect(x)
 {
   label = "NOX::FiniteDifferenceColoring Jacobian";
 }
@@ -59,13 +65,23 @@ FiniteDifferenceColoring::FiniteDifferenceColoring(Interface& i,
                              double beta_, double alpha_) :
   FiniteDifference(i, x, rawGraph_, beta_, alpha_),
   colorMap(&colorMap_),
-  columns(&columns_)
+  columns(&columns_),
+  numColors(colorMap->NumColors()),
+  colorList(colorMap->ListOfColors()),
+  cMap(0),
+  Importer(0),
+  colorVect(0),
+  mappedColorVect(x)
 {
   label = "NOX::FiniteDifferenceColoring Jacobian";
 }
 
 FiniteDifferenceColoring::~FiniteDifferenceColoring()
-{}
+{
+  delete cMap; cMap = 0;
+  delete Importer; Importer = 0;
+  delete colorVect; colorVect = 0;
+}
 
 bool FiniteDifferenceColoring::computeJacobian(const Epetra_Vector& x, Epetra_Operator& Jac)
 {
@@ -99,9 +115,6 @@ bool FiniteDifferenceColoring::computeJacobian(const Epetra_Vector& x, Epetra_Op
   if ( diffType == Backward )
     scaleFactor = -1.0;
 
-  int numColors = colorMap->NumColors();
-  int* colorList = colorMap->ListOfColors();
-
   double eta = 0.0;  // Value to perturb the solution vector 
   eta = beta;
   
@@ -119,13 +132,12 @@ bool FiniteDifferenceColoring::computeJacobian(const Epetra_Vector& x, Epetra_Op
   for (int k = 0; k < numColors; k++) {
 
     // Perturb the solution vector using coloring
-    Epetra_Map* cMap = colorMap->GenerateMap(colorList[k]);
-    Epetra_Import Importer(map, *cMap);
-    Epetra_Vector colorVect(*cMap);
-    colorVect.PutScalar( scaleFactor * eta );
-    Epetra_Vector mappedColorVect(map);
+    cMap = colorMap->GenerateMap(colorList[k]);
+    colorVect = new Epetra_Vector(*cMap);
+    Importer = new Epetra_Import(map, *cMap);
+    colorVect->PutScalar( scaleFactor * eta );
     mappedColorVect.PutScalar(0.0);
-    mappedColorVect.Import(colorVect, Importer, Insert);
+    mappedColorVect.Import(*colorVect, *Importer, Insert);
     x_perturb.Update(1.0, mappedColorVect, 1.0);
 
     // Compute the perturbed RHS
@@ -158,7 +170,10 @@ bool FiniteDifferenceColoring::computeJacobian(const Epetra_Vector& x, Epetra_Op
       }
     }
 
-    delete cMap; // clean up 
+    // Clean up memory for color-dependent objects
+    delete Importer; Importer = 0;
+    delete colorVect; colorVect = 0;
+    delete cMap; cMap = 0;
 
     // Unperturb the solution vector
     x_perturb = x;    

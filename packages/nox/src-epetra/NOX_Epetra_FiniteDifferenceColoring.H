@@ -106,6 +106,24 @@ protected:
   //! vector of Epetra_IntVectors containing columns corresponding to a given row and color
   vector<Epetra_IntVector>* columns;
 
+  //! Number of colors in Color Map 
+  int numColors;
+
+  //! List of colors in Color Map 
+  int* colorList;
+
+  //! Coloring Map created by external algorithm
+  Epetra_Map* cMap;
+
+  //! Importer needed for mapping Color Map to unColored Map
+  Epetra_Import* Importer;
+
+  //! Color vector based on Color Map containing perturbations
+  Epetra_Vector* colorVect;
+
+  //! Color vector based on unColorred Map containing perturbations
+  Epetra_Vector mappedColorVect;
+
 };
 }  // namespace Epetra
 }  // namespace NOX
