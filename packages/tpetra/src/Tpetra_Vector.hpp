@@ -10,7 +10,7 @@
 
 namespace Tpetra {
 
-//! Tpetra::Vector: A class for constructing and using vectors.
+//! Tpetra::Vector: A class for constructing and using sparse vectors.
 
 /*! Vector is templated on ScalarType for the vector entries, and on OrdinalType 
 	  for the vector indices. A VectorSpace object is needed for all Vector objects.
@@ -29,6 +29,7 @@ namespace Tpetra {
 		<ol>
 		<li> +1  Specified vector index not found on this image.
 		<li> +2  Vector sizes do not match.
+		<li> +3  Cannot perform that operation on an empty vector.
 		<li> -1  Invalid number of entries passed to constructor.
 		<li> -99 Internal Vector error. Contact developer.
 		</ol>
@@ -47,14 +48,14 @@ public:
 		: Object("Tpetra::Vector")
 		, BLAS_()
 		, VectorSpace_(VectorSpace)
-		, A_(VectorSpace.getNumMyEntries())
+		, scalarArray_(VectorSpace.getNumMyEntries())
 		, seed_(Teuchos::ScalarTraits<ScalarType>::zero())
 	{
 		ScalarType const scalarZero = Teuchos::ScalarTraits<ScalarType>::zero();
 		OrdinalType const ordinalZero = Teuchos::OrdinalTraits<OrdinalType>::zero();
 		OrdinalType const length = getNumMyEntries();
 		for(OrdinalType i = ordinalZero; i < length; i++)
-			A_[i] = scalarZero;
+			scalarArray_[i] = scalarZero;
 	};
   
   //! Set object values from user array. Throws an exception if an incorrect number of entries are specified.
@@ -62,7 +63,7 @@ public:
 		: Object("Tpetra::Vector")
 		, BLAS_()
 		, VectorSpace_(VectorSpace)
-		, A_(VectorSpace.getNumMyEntries())
+		, scalarArray_(VectorSpace.getNumMyEntries())
 		, seed_(Teuchos::ScalarTraits<ScalarType>::zero())
 	{
 		OrdinalType const length = getNumMyEntries();
@@ -70,7 +71,7 @@ public:
 			throw reportError("numEntries = " + toString(numEntries) + ".  Should be = " + toString(length) + ".", -1);
 		OrdinalType const ordinalZero = Teuchos::OrdinalTraits<OrdinalType>::zero();
 		for(OrdinalType i = ordinalZero; i < length; i++)
-			A_[i] = vectorEntries[i];
+			scalarArray_[i] = vectorEntries[i];
 	};
 
 	//! Copy constructor.
@@ -78,7 +79,7 @@ public:
 		: Object(Source.label())
 		, BLAS_(Source.BLAS_)
 		, VectorSpace_(Source.VectorSpace_)
-		, A_(Source.A_)
+		, scalarArray_(Source.scalarArray_)
 		, seed_(Source.seed_)
 	{};
 
@@ -93,7 +94,7 @@ public:
 	void submitEntries(OrdinalType numEntries, OrdinalType* indices, ScalarType* values) {
 		OrdinalType const ordinalZero = Teuchos::OrdinalTraits<OrdinalType>::zero();
 		for(OrdinalType i = 0; i < numEntries; i++)
-			A_[indices[i]] = values[i];
+			scalarArray_[indices[i]] = values[i];
 	};
 
 	//! Set all entries to scalarValue.
@@ -101,7 +102,7 @@ public:
 		OrdinalType const max = getNumMyEntries();
 		OrdinalType const ordinalZero = Teuchos::OrdinalTraits<OrdinalType>::zero();
 		for(OrdinalType i = ordinalZero; i < max; i++)
-			A_[i] = value;
+			scalarArray_[i] = value;
 	};
 
 	//! Set all entries to random values.
@@ -109,7 +110,7 @@ public:
 		OrdinalType const max = getNumMyEntries();
 		OrdinalType const ordinalZero = Teuchos::OrdinalTraits<OrdinalType>::zero();
 		for(OrdinalType i = ordinalZero; i < max; i++)
-			A_[i] = Teuchos::ScalarTraits<ScalarType>::random();
+			scalarArray_[i] = Teuchos::ScalarTraits<ScalarType>::random();
 	};
 
 	//@}
@@ -122,7 +123,7 @@ public:
 		OrdinalType const max = getNumMyEntries();
 		OrdinalType const ordinalZero = Teuchos::OrdinalTraits<OrdinalType>::zero();
 		for(OrdinalType i = ordinalZero; i < max; i++)
-			userArray[i] = A_[i];
+			userArray[i] = scalarArray_[i];
 	}
 
 	//! Put pointers to vector entries into user array (view)
@@ -130,7 +131,7 @@ public:
 		OrdinalType const max = getNumMyEntries();
 		OrdinalType const ordinalZero = Teuchos::OrdinalTraits<OrdinalType>::zero();
 		for(OrdinalType i = ordinalZero; i < max; i++)
-			userPointerArray[i] = &A_[i];
+			userPointerArray[i] = &scalarArray_[i];
 	};
 
 	//@}
@@ -173,18 +174,51 @@ public:
   ScalarType normWeighted(Vector<OrdinalType, ScalarType> const& weights) const;
 
   //! Compute minimum value of vector.
-  ScalarType minValue() const;
+  ScalarType minValue() const {
+		return(*(min_element(scalarArray.begin(), scalarArray.end()))); // use STL min_element, takes constant time
+	};
 
   //! Compute maximum value of vector.
-  ScalarType maxValue() const;
+  ScalarType maxValue() const {
+		return(*(max_element(scalarArray.begin(), scalarArray.end()))); // use STL max_element, takes constant time
+	};
 
   //! Compute mean (average) value of vector.
-  ScalarType meanValue() const;
+  ScalarType meanValue() const {
+		ScalarType const scalarZero = Teuchos::ScalarTraits<ScalarType>::zero();
+		ScalarType length = getNumMyElements(); // implicit cast from OT to ST
+		ScalarType total = accumulate(scalarArray.begin(), scalarArray.end(), scalarZero); // use STL accumulate, takes linear time
+		return(total / length);
+	};
 
 	//! Vector multiplication (elementwise) 
 	/*! \e this = scalarThis*\e this + scalarXY*x@y, where @ represents elementwise multiplication. */
 	void elementwiseMultiply(ScalarType scalarXY, Vector<OrdinalType, ScalarType> const& x, 
-													 Vector<OrdinalType, ScalarType> const& y, ScalarType scalarThis);
+													 Vector<OrdinalType, ScalarType> const& y, ScalarType scalarThis) {
+		if((x.getNumMyEntries() != y.getNumMyEntries()) || 
+			 (x.getNumGlobalEntries() != y.getNumGlobalEntries()) ||
+			 (x.getNumMyEntries() != getNumMyEntries()) ||
+			 (x.getNumGlobalEntries() != getNumGlobalEntries()))
+			throw reportError("Vector sizes do not match.", 2);
+
+		OrdinalType const ordinalZero = Teuchos::OrdinalTraits<OrdinalType>::zero();
+		OrdinalType const length = getNumMyEntries();
+
+		// calculate this *= scalarThis
+		for(OrdinalType i = ordinalZero; i < length; i++)
+			scalarArray_[i] = scalarArray_[i] * scalarThis;
+
+		// calculate x@y into temp vector
+		vector<ScalarType> temp(length);
+		transform(x.begin(), x.end(), y.begin(), temp.begin(), multiplies<ScalarType>());
+
+		// calculate temp *= scalarXY
+		for(OrdinalType i = ordinalZero; i < length; i++)
+			scalarArray_[i] = scalarArray_[i] * scalarThis;
+
+		// add temp to this
+		transform(scalarArray_.begin(), scalarArray_.end(), temp.begin(), plus<ScalarType>());
+	}
 
 	//! Reciprocal multiply (elementwise)
 	/*! \e this = scalarThis*\e this + scalarXY*y@x, where @ represents elementwise division. */
@@ -213,12 +247,12 @@ public:
 
 	//! [] operator, nonconst version
 	ScalarType& operator[](OrdinalType index) {
-		return(A_[index]);
+		return(scalarArray_[index]);
 	};
 
 	//! [] operator, const version
 	ScalarType const& operator[](OrdinalType index) const {
-		return(A_[index]);
+		return(scalarArray_[index]);
 	};
 
 	//@}
@@ -256,7 +290,7 @@ public:
 				os <<           "Number of Local Entries   = " << getNumMyEntries() << endl;
 				os <<           "Contents: ";
 				for(OrdinalType i = 0; i < getNumMyEntries(); i++)
-					os << A_[i] << " ";
+					os << scalarArray_[i] << " ";
 				os << endl << endl;
 			}
 		}
@@ -272,7 +306,7 @@ private:
 
 	Teuchos::BLAS<OrdinalType, ScalarType> BLAS_;
 	VectorSpace<OrdinalType, ScalarType> VectorSpace_;
-	std::vector<ScalarType> A_;
+	std::vector<ScalarType> scalarArray_;
 	ScalarType seed_;
 
 }; // class Vector
