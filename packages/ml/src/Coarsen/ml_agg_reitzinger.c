@@ -719,10 +719,15 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
      Tfine = Tcoarse;
   } /* Main FOR loop: for grid_level = fine_level-1 ... */
 
-  if (Tfine->comm->ML_mypid==0 && ag->print_flag < ML_Get_PrintLevel())
-    printf("Multilevel complexity is %e\n",((double) Nnz_allgrids)/
-	   ((double) Nnz_finegrid));
 
+  if (ag->print_flag < ML_Get_PrintLevel()) {
+    ML_gsum_vec_int(&Nnz_allgrids,&j,1,ml_nodes->comm);
+    ML_gsum_vec_int(&Nnz_finegrid,&j,1,ml_nodes->comm);
+
+    if (Tfine->comm->ML_mypid==0 )
+      printf("Multilevel complexity is %e\n",((double) Nnz_allgrids)/
+	     ((double) Nnz_finegrid));
+  }
 
   ML_free(bindx);
   ML_free(val);
