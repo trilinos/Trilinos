@@ -751,12 +751,12 @@ typedef void ZOLTAN_PRE_MIGRATE_FORT_FN(
   ZOLTAN_ID_PTR import_global_ids,
   ZOLTAN_ID_PTR import_local_ids, 
   int *import_procs,
-  int *import_to_part,
+/*  int *import_to_part, WFM comment out until cwrap.c is updated */
   int *num_export, 
   ZOLTAN_ID_PTR export_global_ids,
   ZOLTAN_ID_PTR export_local_ids, 
   int *export_procs,
-  int *export_to_part,
+/*  int *export_to_part, WFM comment out until cwrap.c is updated */
   int *ierr
 );
 
@@ -814,12 +814,12 @@ typedef void ZOLTAN_MID_MIGRATE_FORT_FN(
   ZOLTAN_ID_PTR import_global_ids,
   ZOLTAN_ID_PTR import_local_ids, 
   int *import_procs,
-  int *import_to_part,
+/*  int *import_to_part, WFM comment out until cwrap.c is updated */
   int *num_export, 
   ZOLTAN_ID_PTR export_global_ids,
   ZOLTAN_ID_PTR export_local_ids, 
   int *export_procs,
-  int *export_to_part,
+/*  int *export_to_part, WFM comment out until cwrap.c is updated */
   int *ierr
 );
 
@@ -875,12 +875,12 @@ typedef void ZOLTAN_POST_MIGRATE_FORT_FN(
   ZOLTAN_ID_PTR import_global_ids,
   ZOLTAN_ID_PTR import_local_ids, 
   int *import_procs,
-  int *import_to_part,
+/*  int *import_to_part, WFM comment out until cwrap.c is updated */
   int *num_export, 
   ZOLTAN_ID_PTR export_global_ids,
   ZOLTAN_ID_PTR export_local_ids, 
   int *export_procs,
-  int *export_to_part,
+/*  int *export_to_part, WFM comment out until cwrap.c is updated */
   int *ierr
 );
 
