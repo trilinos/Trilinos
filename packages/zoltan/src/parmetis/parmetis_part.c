@@ -96,10 +96,16 @@ void LB_ParMetis_Part(
                 1, num_obj, sizeof(LB_GID) );
   local_ids = (LB_LID *) LB_array_alloc(__FILE__, __LINE__, 
                 1, num_obj, sizeof(LB_LID) );
-  if (!global_ids || !local_ids){
+  if (use_vwgts)
+    float_vwgt = (float *)LB_array_alloc(__FILE__, __LINE__,
+                  1, num_obj, sizeof(float));
+  else
+    float_vwgt = NULL;
+
+  if (!global_ids || !local_ids || (use_vwgts && !float_vwgt)){
     /* Return not-enough-memory error code */
   }
-  LB_Get_Obj_List(lb, global_ids, local_ids, &ierr);
+  LB_Get_Obj_List(lb, global_ids, local_ids, use_vwgts, float_vwgt, &ierr);
   if (ierr){
     /* Return error code */
   }
@@ -401,12 +407,8 @@ void LB_ParMetis_Part(
 #endif
       vwgt = (idxtype *)LB_array_alloc(__FILE__, __LINE__,
                 1, num_obj, sizeof(idxtype));
-      float_vwgt = (float *)LB_array_alloc(__FILE__, __LINE__,
-                1, num_obj, sizeof(float));
       max_wgt = 0;
       for (i=0; i<num_obj; i++){
-        float_vwgt[i] = lb->Get_Obj_Weight(lb->Get_Obj_Weight_Data, 
-          global_ids[i], local_ids[i], &ierr);
         if (float_vwgt[i]>max_wgt) max_wgt = float_vwgt[i];
       }
       /* Convert weights to integers between 1 and 100 */
