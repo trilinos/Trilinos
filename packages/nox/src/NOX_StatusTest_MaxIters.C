@@ -35,6 +35,7 @@
 #include "NOX_Solver_Generic.H"
 
 NOX::StatusTest::MaxIters::MaxIters(int maxIterations) :
+  niters(0),
   maxiters(maxIterations),
   status(Unevaluated)
 {
