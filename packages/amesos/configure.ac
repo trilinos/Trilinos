@@ -743,12 +743,9 @@ if test "X$ac_cv_use_amesos_scalapack" != "Xno" ||
        AC_MSG_RESULT( checkpoint blacs  D ) 
        TAC_ARG_WITH_SUB( amesos, blacslib, [Set BLACS library],  
                          ${tac_with_amesos_blacsdir}/libblacs.a )
-       TAC_CHECK_FILE(${tac_with_amesos_blacslib},blacs_from_t3pl="yes",blacs_from_t3pl="no")
-       if test "X$blacs_from_t3pl" == "Xyes"; then
-       AC_MSG_RESULT( "checkpoint blacs  E" ) 
-          amesos_libs="${amesos_libs} ${tac_with_amesos_blacslib}"
-          BLACSLIB=" ${tac_with_amesos_blacslib} " 
-       fi
+       LIBS=" ${tac_with_amesos_blacslib} ${BASELIBS}"
+       AC_TRY_LINK_FUNC($dgebs2d, BLACSLIB=${tac_with_amesos_blacslib}, ) 
+       AC_MSG_RESULT( "checkpoint blacs  E BLACSLIB= ${tac_with_amesos_blacslib} " ) 
      fi
   fi
 
@@ -786,10 +783,9 @@ if test "X$ac_cv_use_amesos_scalapack" != "Xno" ||
        AC_MSG_RESULT( checkpoint cblacs  D ) 
        TAC_ARG_WITH_SUB( amesos, cblacslib, [Set CBLACS library],  
                          ${tac_with_amesos_blacsdir}/libcblacs.a )
-       TAC_CHECK_FILE(${tac_with_amesos_cblacslib},cblacs_from_t3pl="yes",cblacs_from_t3pl="no")
-       if test "X$cblacs_from_t3pl" == "Xyes"; then
-          CBLACSLIB=" ${tac_with_amesos_cblacslib} ${BLACSLIB} " 
-       fi
+       LIBS=" ${tac_with_amesos_cblacslib} ${BLACSLIB} ${BASELIBS}"
+       AC_TRY_LINK_FUNC(Cblacs_pinfo, CBLACSLIB=" ${tac_with_amesos_cblacslib}  ${BLACSLIB} ", ) 
+       AC_MSG_RESULT( "checkpoint cblacs  E CBLACSLIB=${tac_with_amesos_cblacslib}" ) 
      fi
   fi
 fi
@@ -825,10 +821,9 @@ if test "X$ac_cv_use_amesos_scalapack" != "Xno"; then
        AC_MSG_RESULT( checkpoint scalapack  D ) 
        TAC_ARG_WITH_SUB( amesos, scalapacklib, [Set SCALAPACK library],  
                          ${tac_with_amesos_scalapackdir}/libscalapack.a )
-       TAC_CHECK_FILE(${tac_with_amesos_scalapacklib},scalapack_from_t3pl="yes",scalapack_from_t3pl="no")
-       if test "X$scalapack_from_t3pl" == "Xyes"; then
-          SCALAPACKLIB="  ${tac_with_amesos_scalapacklib} "
-       fi
+       LIBS=" ${tac_with_amesos_scalapacklib} ${CBLACSLIB} ${BLACSLIB} ${BASELIBS}"
+       AC_TRY_LINK_FUNC($pdgetrf, SCALAPACKLIB=" ${tac_with_amesos_scalapacklib} ", ) 
+       AC_MSG_RESULT( "checkpoint scalapack  E SCALACAPKLIB=${tac_with_amesos_scalapcklib}" ) 
      fi
   fi
 
