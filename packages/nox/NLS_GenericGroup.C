@@ -11,18 +11,21 @@
 #include "NLS_GenericGroup.H"
 
 //! Constructor
-NLS_GenericGroup::NLS_GenericGroup() {
+NLS_GenericGroup::NLS_GenericGroup() 
+{
 
 }
 
 //! Copy constructor
-NLS_GenericGroup::NLS_GenericGroup(NLS_Group& copyFrom) {
+NLS_GenericGroup::NLS_GenericGroup(NLS_Group& copyFrom) 
+{
 
 }
 
 //! Create a new group where the new solution vector is grp.x() + step * d
 NLS_GenericGroup::NLS_GenericGroup(NLS_Group& grp, 
-				     NLS_Vector& d, double step) {
+				     NLS_Vector& d, double step) 
+{
 
 }
  
