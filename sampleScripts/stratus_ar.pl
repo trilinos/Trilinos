@@ -51,7 +51,7 @@ if ($templates) {
   foreach $pattern (@pattern_list) {
     $file_pattern = "cxx_repository/" . $pattern; 
     @file_list = glob($file_pattern);
-    if (@file_list > 1) {
+    if (@file_list > 0) {
       $output = $ar_opts_lib . " ";
       foreach $filename (@file_list) {
 	$output = $output . $filename . " ";
