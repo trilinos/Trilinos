@@ -438,7 +438,7 @@ void Group::setAztecOptions(const Parameter::List& p, AztecOO& aztec) const
 
 Abstract::Group* Group::clone(CopyType type) const 
 {
-  Group* newgrp = new Group(*this, type);
+  NOX::Abstract::Group* newgrp = new NOX::Epetra::Group(*this, type);
   return newgrp;
 }
 
