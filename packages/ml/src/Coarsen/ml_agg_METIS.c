@@ -815,8 +815,10 @@ static int ML_DecomposeGraph_with_METIS( ML_Operator *Amatrix,
     wgtflag[0] = 1;    /* weights on edges only */
     numflag    = 0;    /* C style */
     options[0] = 0;    /* default options */
+#ifdef HAVE_ML_METIS
     adjwgt = (idxtype*) ML_allocate((N_nonzeros) * sizeof(idxtype));
     assert (adjwgt != NULL);
+#endif
   }
    
   xadj    = (idxtype *) ML_allocate ((NrowsMETIS+1)*sizeof(idxtype));
@@ -861,6 +863,7 @@ static int ML_DecomposeGraph_with_METIS( ML_Operator *Amatrix,
       }
       count2++;
 
+#ifdef HAVE_ML_METIS
       if (ML_USE_EDGE_WEIGHT == ML_YES) {
         delta = 0;
         for (j = 0 ; j < rowi_N ; ++j) {
@@ -881,6 +884,7 @@ static int ML_DecomposeGraph_with_METIS( ML_Operator *Amatrix,
           ++delta;
         }
       }
+#endif
     }      
   }
 
@@ -1115,7 +1119,9 @@ static int ML_DecomposeGraph_with_METIS( ML_Operator *Amatrix,
   if( part != NULL    ) ML_free( part    );
   if( perm != NULL    ) ML_free( perm    );
   if( nodes_per_aggre != NULL ) ML_free( nodes_per_aggre );
+#ifdef HAVE_ML_METIS
   if (adjwgt != NULL  ) ML_free( adjwgt );
+#endif
   
   t0 = GetClock() - t0;
 
