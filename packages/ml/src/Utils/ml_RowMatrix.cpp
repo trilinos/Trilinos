@@ -8,10 +8,12 @@
 #include "Epetra_Import.h"
 #include "Epetra_MultiVector.h"
 #include "ml_RowMatrix.h"
+#include "ml_lapack.h"
 
 //==============================================================================
 ML_Epetra::RowMatrix::RowMatrix(ML_Operator* Op,
-                                const Epetra_Comm* UserComm) :
+                                const Epetra_Comm* UserComm,
+                                const bool cheap) :
   Op_(0),
   FreeCommObject_(false),
   NumMyRows_(-1),
@@ -52,125 +54,140 @@ ML_Epetra::RowMatrix::RowMatrix(ML_Operator* Op,
   NumMyRows_ = Op->outvec_leng;
   NumMyCols_ = Op->invec_leng;
  
-  Comm().SumAll(&NumMyRows_,&NumGlobalRows_,1);
-  Comm().SumAll(&NumMyCols_,&NumGlobalCols_,1);
-
   // create a row map based on linear distribution
   // I need this map because often codes use the RowMatrixRowMap.
   // Also, I need to check that the map of the input vector
   // and of the output vector are consistent with what I have here
   RangeMap_ = new Epetra_Map(-1,NumMyRows_,0,Comm());
+  if (NumMyCols_ == NumMyRows_)
+    DomainMap_ = RangeMap_;
+  else
+    DomainMap_ = new Epetra_Map(-1,NumMyCols_,0,Comm());
 
-  if (NumGlobalRows_ != RangeMap_->NumGlobalElements())
-    ML_CHK_ERRV(-3); // something went wrong
-
-  DomainMap_ = new Epetra_Map(-1,NumMyCols_,0,Comm());
-
-  if (NumGlobalCols_ != DomainMap_->NumGlobalElements())
-    ML_CHK_ERRV(-3); // something went wrong
+  NumGlobalRows_ = RangeMap_->NumGlobalElements();
+  NumGlobalCols_ = DomainMap_->NumGlobalElements();
 
   // need to perform a getrow() on all lines to setup some
-  // parameters. This should not be too expensive
+  // parameters. Note that NormInf is no longer computed.
 
-  Diagonal_.resize(NumMyRows());
   NumMyRowEntries_.resize(NumMyRows());
 
-  Indices_.resize(Allocated_);
-  Values_.resize(Allocated_);
+  int MaxMyNumEntries;
 
-  int ncnt; // ma che cavolo di nome e`???
-  int MaxMyNumEntries = 0;
-  double MyNormInf = -1.0;
+  if (cheap) {
 
-  for (int i = 0; i < NumMyRows() ; ++i) {
+    NumMyNonzeros_ = Op_->N_nonzeros;
+    MaxMyNumEntries = Op_->max_nz_per_row;
+    Allocated_ = MaxMyNumEntries;
+    Indices_.resize(Allocated_);
+    Values_.resize(Allocated_);
+    NumMyDiagonals_ = NumMyRows_;
+    Diagonal_.resize(0);
 
-    int ierr = ML_Operator_Getrow(Op_,1,&i,Allocated_,
-				  &Indices_[0],&Values_[0],&ncnt);
+  }
+  else {
 
-    if (ierr == 0) {
-      do {
-	Allocated_ *= 2;
-	Indices_.resize(Allocated_);
-	Values_.resize(Allocated_);
-	ierr = ML_Operator_Getrow(Op_,1,&i,Allocated_,
-				  &Indices_[0],&Values_[0],&ncnt);
-      } while (ierr == 0);
-    }
+    Diagonal_.resize(NumMyRows()); 
+    Indices_.resize(Allocated_);
+    Values_.resize(Allocated_);
 
-    NumMyRowEntries_[i] = ncnt;
-    NumMyNonzeros_ += ncnt;
+    int ncnt; // ma che cavolo di nome e`???
+    MaxMyNumEntries = 0;
 
-    if (ncnt > MaxMyNumEntries) 
-      MaxMyNumEntries = ncnt;
-    
-    // extract diagonal element and compute NormInf
-    // NOTE: the diagonal value is set to zero if not present
-    Diagonal_[i] = 0.0;
-    double RowNormInf = 0.0;
-    for (int j = 0 ; j < ncnt ; ++j) {
-      MyNormInf += Values_[j];
-      if (Indices_[j] == i) {
-	Diagonal_[i] = Values_[j];
-	++NumMyDiagonals_;
+    // Note: I do not compute norm inf any more, it was quite
+    // expensive.
+
+    for (int i = 0; i < NumMyRows() ; ++i) {
+
+      int ierr = ML_Operator_Getrow(Op_,1,&i,Allocated_,
+                                    &Indices_[0],&Values_[0],&ncnt);
+
+      if (ierr == 0) {
+        do {
+          Allocated_ *= 2;
+          Indices_.resize(Allocated_);
+          Values_.resize(Allocated_);
+          ierr = ML_Operator_Getrow(Op_,1,&i,Allocated_,
+                                    &Indices_[0],&Values_[0],&ncnt);
+        } while (ierr == 0);
       }
-    }
 
-    if (RowNormInf > MyNormInf)
-      MyNormInf = RowNormInf;
+      NumMyRowEntries_[i] = ncnt;
+      NumMyNonzeros_ += ncnt;
 
-  } // for each row
+      if (ncnt > MaxMyNumEntries) 
+        MaxMyNumEntries = ncnt;
+
+      // extract diagonal element
+      // NOTE: the diagonal value is set to zero if not present
+      Diagonal_[i] = 0.0;
+      for (int j = 0 ; j < ncnt ; ++j) {
+        if (Indices_[j] == i) {
+          Diagonal_[i] = Values_[j];
+          ++NumMyDiagonals_;
+          break;
+        }
+      }
+    } // for each row
+  }
 
   // fix a couple of global integers
 
   Comm().SumAll(&NumMyNonzeros_,&NumGlobalNonzeros_,1);
   Comm().SumAll(&NumMyDiagonals_,&NumGlobalDiagonals_,1);
   Comm().MaxAll(&MaxMyNumEntries,&MaxNumEntries_,1);
-  Comm().MaxAll(&MyNormInf,&NormInf_,1);
 
   // build a list of global indices for columns
 
-  int Nghost;
-  int Ncols;
-  int Ncols_offset;
-
-  if (Op->getrow->pre_comm == NULL)
-    Nghost = 0;
+  if (Comm().NumProc() == 1) {
+    ColMap_ = RangeMap_;
+  }
   else {
-    if (Op->getrow->pre_comm->total_rcv_length <= 0)
-      ML_CommInfoOP_Compute_TotalRcvLength(Op->getrow->pre_comm);
-    Nghost = Op->getrow->pre_comm->total_rcv_length;
+
+    int Nghost;
+    int Ncols;
+    int Ncols_offset;
+
+    if (Op->getrow->pre_comm == NULL)
+      Nghost = 0;
+    else {
+      if (Op->getrow->pre_comm->total_rcv_length <= 0)
+        ML_CommInfoOP_Compute_TotalRcvLength(Op->getrow->pre_comm);
+      Nghost = Op->getrow->pre_comm->total_rcv_length;
+    }
+
+    Ncols = Op->invec_leng;
+
+    Comm().ScanSum(&Ncols,&Ncols_offset,1); 
+    Ncols_offset -= Ncols;
+
+    vector<double> global_col_id; 
+    global_col_id.resize(Ncols + Nghost + 1);
+
+    vector<int> global_col_id_as_int; 
+    global_col_id_as_int.resize(Ncols + Nghost + 1);
+
+    for (int i = 0 ; i < Ncols ; ++i) {
+      global_col_id[i] = (double) (Ncols_offset + i);
+      global_col_id_as_int[i] = Ncols_offset + i;
+    }
+
+    for (int i = 0 ; i < Nghost; i++) 
+      global_col_id[i + Ncols] = -1;
+
+    ML_exchange_bdry(&global_col_id[0],Op->getrow->pre_comm,
+                     Op->invec_leng,Op->comm,ML_OVERWRITE,NULL);
+
+    for (int j = 0; j < Ncols + Nghost; ++j) {
+      global_col_id_as_int[j] = (int) global_col_id[j];
+    }
+
+    // create the column map
+
+    ColMap_ = new Epetra_Map(-1,Ncols + Nghost,
+                             &global_col_id_as_int[0],0,Comm());
+
   }
-
-  Ncols = Op->invec_leng;
-
-  Comm().ScanSum(&Ncols,&Ncols_offset,1); 
-  Ncols_offset -= Ncols;
-
-  vector<double> global_col_id; 
-  global_col_id.resize(Ncols + Nghost + 1);
-
-  vector<int> global_col_id_as_int; 
-  global_col_id_as_int.resize(Ncols + Nghost + 1);
-
-  for (int i = 0 ; i < Ncols ; ++i) {
-    global_col_id[i] = (double) (Ncols_offset + i);
-    global_col_id_as_int[i] = Ncols_offset + i;
-  }
-
-  for (int i = 0 ; i < Nghost; i++) 
-    global_col_id[i + Ncols] = -1;
-
-  ML_exchange_bdry(&global_col_id[0],Op->getrow->pre_comm,
-                 Op->invec_leng,Op->comm,ML_OVERWRITE,NULL);
-
-  for (int j = 0; j < Ncols + Nghost; ++j) {
-    global_col_id_as_int[j] = (int) global_col_id[j];
-  }
-
-  // create the column map
-
-  ColMap_ = new Epetra_Map(-1,Ncols + Nghost,
-			  &global_col_id_as_int[0],0,Comm());
 
   return;
 }
@@ -178,14 +195,23 @@ ML_Epetra::RowMatrix::RowMatrix(ML_Operator* Op,
 //==============================================================================
 ML_Epetra::RowMatrix::~RowMatrix()
 {
-  if (RangeMap_) 
-    delete RangeMap_;
-
+  // the one that is always allocated is RangeMap_;
   if (DomainMap_) 
-    delete DomainMap_;
+    if (DomainMap_ != RangeMap_) {
+      delete DomainMap_;
+      DomainMap_ = 0;
+    }
 
   if (ColMap_)
-    delete ColMap_;
+    if (ColMap_ != RangeMap_) {
+      delete ColMap_;
+      ColMap_ = 0;
+    }
+
+  if (RangeMap_) {
+    delete RangeMap_;
+    RangeMap_ = 0;
+  }
 
   if (Label_)
     delete [] Label_;
@@ -248,8 +274,18 @@ int ML_Epetra::RowMatrix::ExtractDiagonalCopy(Epetra_Vector & Diagonal) const
   if (Diagonal.Map().SameAs(*RangeMap_) != true)
     ML_CHK_ERR(-1); // incompatible maps
 
-  for (int i = 0 ; i < NumMyRows() ; ++i)
-    Diagonal[i] = Diagonal_[i];
+  if (Diagonal_.size() == 0) {
+    int size = NumMyRows();
+    int incr = 1;
+    double* ptr;
+    ML_Operator_Get_Diag(Op_, NumMyRows(), &ptr);
+
+    DCOPY_F77(&size, ptr, &incr, Diagonal.Values(), &incr);
+  }
+  else {
+    for (int i = 0 ; i < NumMyRows() ; ++i)
+      Diagonal[i] = Diagonal_[i];
+  }
 
   return(0);
 }

@@ -446,7 +446,7 @@ ML_Operator * ML_BuildQ( int StartingNumElements,
     }
   }
   
-  assert(Q->FillComplete(ReorderedMap,StartingMap)==0);
+  Q->FillComplete(ReorderedMap,StartingMap);
   
   {int itemp;
   Comm.MaxAll(&ComputeNewNullSpace,&itemp,1);
@@ -647,7 +647,7 @@ ML_Operator * ML_BuildQt( int StartingNumElements,
 
   // Q will be applied to vectors defined on StartingMap,
   // and the output vector will be defined on ReorderdMap
-  assert(Qt->FillComplete(ReorderedMap,StartingMap)==0);
+  Qt->FillComplete(ReorderedMap,StartingMap);
   
   ML_Qt2 = ML_Operator_Create( ml_communicator );
 
@@ -798,7 +798,7 @@ int ML_Operator2EpetraCrsMatrix(ML_Operator *Amat, Epetra_CrsMatrix * &
   delete [] colInd;
   delete [] colVal;
   
-  assert(CrsMatrix->FillComplete(domainmap,rangemap)==0);
+  CrsMatrix->FillComplete(domainmap,rangemap);
 
   CPUTime = Time.ElapsedTime();
 
@@ -951,7 +951,7 @@ int ML_Operator2EpetraCrsMatrix_old(ML_Operator *Ke, Epetra_CrsMatrix * &
   delete [] global_rows;
   delete [] global_nodes;
 
-  assert(CrsMatrix->FillComplete()==0);
+  CrsMatrix->FillComplete();
 
   CPUTime = Time.ElapsedTime();
 

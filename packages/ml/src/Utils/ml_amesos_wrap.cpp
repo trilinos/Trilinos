@@ -255,10 +255,10 @@ int ML_Amesos_Solve( void *Amesos_Handle, double x[], double rhs[] )
   
   (Amesos_LinearProblem->GetMatrix())->Multiply(false,EV_lhs,Ax);
   
-  assert(Ax.Update(1.0, EV_rhs, -1.0)==0);
+  ML_CHK_ERR(Ax.Update(1.0, EV_rhs, -1.0));
   
   double residual;
-  assert(Ax.Norm2(&residual)==0);
+  ML_CHK_ERR(Ax.Norm2(&residual));
   if( residual > MaxError__ ) MaxError__ = residual;
 #endif
   

@@ -1306,7 +1306,7 @@ ML_Operator *ML_Operator_ExplicitlyScale(ML_Operator *matrix,
    /* Get rid of the old data pointer */
 
    new_matrix = ML_Operator_Create(matrix->comm);
-   //   ML_Operator_Init(new_matrix, matrix->comm);
+   /*   ML_Operator_Init(new_matrix, matrix->comm); */
 
    ML_Operator_Set_ApplyFuncData(new_matrix,matrix->invec_leng, 
 				 matrix->outvec_leng,temp,

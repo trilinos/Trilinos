@@ -238,7 +238,7 @@ CreateAuxiliaryMatrixCrs(Epetra_FECrsMatrix* &FakeMatrix)
 	      int col = GlobalCol + k;
 
 	      if (FakeMatrix->SumIntoGlobalValues(1,&row,1,&col,&val) != 0) {
-		assert(FakeMatrix->InsertGlobalValues(1,&row,1,&col,&val) == 0);
+		ML_CHK_ERR(FakeMatrix->InsertGlobalValues(1,&row,1,&col,&val));
 	      }
 
 	    }
@@ -255,7 +255,7 @@ CreateAuxiliaryMatrixCrs(Epetra_FECrsMatrix* &FakeMatrix)
 		int col = GlobalRow+k;
 
 		if( FakeMatrix->SumIntoGlobalValues(1,&row,1,&col,&val) != 0 ) { 
-		  assert(FakeMatrix->InsertGlobalValues(1,&row,1,&col,&val) == 0);
+		  ML_CHK_ERR(FakeMatrix->InsertGlobalValues(1,&row,1,&col,&val));
 		}
 
 	      }

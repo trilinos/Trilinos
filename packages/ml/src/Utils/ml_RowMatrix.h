@@ -28,7 +28,8 @@ class RowMatrix : public virtual Epetra_RowMatrix {
  public:
   //@{ \name Constructor.
     //! Constructor, constructs Comm object if not provided
-    RowMatrix(ML_Operator* Op, const Epetra_Comm* Comm = 0);
+    RowMatrix(ML_Operator* Op, const Epetra_Comm* Comm = 0,
+              const bool cheap = false);
 
   //@}
   //@{ \name Destructor.

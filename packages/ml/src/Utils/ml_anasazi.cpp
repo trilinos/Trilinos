@@ -461,7 +461,7 @@ int Interface(const Epetra_RowMatrix * RowMatrix, Epetra_MultiVector & EigenVect
 
   // Set the number of eigenvalues required
   MyProblem->SetNEV( NumBlocks );
-  assert( MyProblem->SetProblem() == 0 );
+  MyProblem->SetProblem();
 
   // Initialize the Block Arnoldi solver
   Anasazi::BlockKrylovSchur<double, MV, OP> MyBlockKrylovSchur1(MyProblem, MySort, MyOM, AnasaziPL);
@@ -625,7 +625,7 @@ int GetFieldOfValuesBox(const Epetra_RowMatrix * RowMatrix,
     Teuchos::rcp( new Anasazi::BasicEigenproblem<double, MV, OP>(Amat, Vectors) );
   MyProblem->SetSymmetric(true);
   MyProblem->SetNEV( 1 );
-  assert( MyProblem->SetProblem() == 0 );
+  MyProblem->SetProblem();
 
   // Initialize the Block Arnoldi solver
   Anasazi::BlockKrylovSchur<double, MV, OP> MyBlockKrylovSchur1(MyProblem, MySort, MyOM, AnasaziPL);
@@ -666,7 +666,7 @@ int GetFieldOfValuesBox(const Epetra_RowMatrix * RowMatrix,
       Teuchos::rcp( new Anasazi::BasicEigenproblem<double, MV, OP>(Amat2, Vectors) );
     MyProblem2->SetSymmetric(false);
     MyProblem2->SetNEV( 1 );
-    assert( MyProblem2->SetProblem() == 0 );
+    MyProblem2->SetProblem();
     
     // Initialize the Block Arnoldi solver
     Anasazi::BlockKrylovSchur<double, MV, OP> MyBlockKrylovSchur2(MyProblem2, MySort, MyOM, AnasaziPL);
@@ -870,7 +870,7 @@ int ML_Anasazi_Get_SpectralNorm_Anasazi(ML_Operator* Amat,
   if( IsProblemSymmetric == ML_TRUE ) MyProblem->SetSymmetric(true);
   else                                MyProblem->SetSymmetric(false);
 
-  assert( MyProblem->SetProblem() == 0 );
+  MyProblem->SetProblem();
   
   // Initialize the Block Arnoldi solver
   Anasazi::BlockKrylovSchur<double, MV, OP> MyBlockKrylovSchur(MyProblem, MySort, MyOM, AnasaziPL);
