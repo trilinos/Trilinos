@@ -186,7 +186,7 @@ int main(int argc, char *argv[])
   /*
    * output the results
    */
-  if (!output_results(Proc, Num_Proc, &prob, &pio_info, &mesh)) {
+  if (!output_results(cmd_file, Proc, Num_Proc, &prob, &pio_info, &mesh)) {
       Gen_Error(0, "fatal: Error returned from output_results\n");
       error_report(Proc);
       exit(1);
