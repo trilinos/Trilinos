@@ -153,7 +153,7 @@ public :: &
    Zoltan_Set_Pack_Obj_Multi_Fn, Zoltan_Set_Unpack_Obj_Multi_Fn 
 
 public :: &
-   Zoltan_Get_Child_Order ! TEMP child_order
+   Zoltan_Get_Child_Order
 
 !--------------------------------------------------------------------------
 ! user defined types corresponding to the C structs
@@ -1024,7 +1024,6 @@ integer(Zoltan_INT) INTENT_IN nbytes
 end function Zfw_Get_Comm_Dim
 end interface
 
-! TEMP child_order
 interface
 !NAS$ ALIEN "F77 zfw_get_child_order"
 subroutine Zfw_Reftree_Get_Child_Order(zz,nbytes,order,ierr)
@@ -1038,7 +1037,6 @@ integer(Zoltan_INT), intent(inout), dimension(*) :: order
 integer(Zoltan_INT), intent(out) :: ierr
 end subroutine Zfw_Reftree_Get_Child_Order
 end interface
-! end TEMP child_order
 
 !--------------------------------------------------------------------------
 ! generic names for the Fortran wrapper procedures
@@ -1155,7 +1153,6 @@ interface Zoltan_Generate_Files
    module procedure Zf90_Generate_Files
 end interface
 
-! TEMP child_order
 interface Zoltan_Get_Child_Order
    module procedure Zf90_Reftree_Get_Child_Order
 end interface
@@ -2303,7 +2300,6 @@ Zf90_RCB_Box = Zfw_RCB_Box(zz_addr,nbytes,part,ndim,xmin,ymin,zmin,xmax,ymax, &
 end function Zf90_RCB_Box
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-! TEMP child_order
 subroutine Zf90_Reftree_Get_Child_Order(zz,order,ierr)
 type(Zoltan_Struct) INTENT_IN zz
 integer(Zoltan_INT), intent(inout), dimension(*) :: order
@@ -2316,7 +2312,6 @@ do i=1,nbytes
 end do
 call Zfw_Reftree_Get_Child_Order(zz_addr,nbytes,order,ierr)
 end subroutine Zf90_Reftree_Get_Child_Order
-! end TEMP child_order
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 #include "set_numgeom.fn"

@@ -93,7 +93,7 @@ public :: &
    LB_Set_Obj_Size_Fn, LB_Set_Pack_Obj_Fn, LB_Set_Unpack_Obj_Fn 
 
 public :: &
-   LB_Get_Child_Order ! TEMP child_order
+   LB_Get_Child_Order
 
 !--------------------------------------------------------------------------
 ! user defined types corresponding to the C structs
@@ -286,7 +286,6 @@ interface LB_Help_Migrate
    module procedure LBf90_Help_Migrate
 end interface
 
-! TEMP child_order
 interface LB_Get_Child_Order
    module procedure LBf90_Reftree_Get_Child_Order
 end interface

@@ -80,8 +80,7 @@ extern "C" {
 #define Zfw_Get_Address_int            zfw_get_address_int
 #define Zfw_Get_Wgt_Dim                zfw_get_wgt_dim
 #define Zfw_Get_Comm_Dim               zfw_get_comm_dim
-/* TEMP child_order */
-#define Zfw_Reftree_Get_Child_Order         zfw_reftree_get_child_order
+#define Zfw_Reftree_Get_Child_Order    zfw_reftree_get_child_order
 
 #elif FMANGLE==UPPERCASE
 
@@ -133,8 +132,7 @@ extern "C" {
 #define Zfw_Register_Fort_Malloc       ZFW_REGISTER_FORT_MALLOC
 #define Zfw_Get_Address_int            ZFW_GET_ADDRESS_INT
 #define Zfw_Get_Comm_Dim               ZFW_GET_COMM_DIM
-/* TEMP child_order */
-#define Zfw_Reftree_Get_Child_Order         ZFW_REFTREE_GET_CHILD_ORDER
+#define Zfw_Reftree_Get_Child_Order    ZFW_REFTREE_GET_CHILD_ORDER
 
 #elif FMANGLE==UNDERSCORE
 
@@ -187,8 +185,7 @@ extern "C" {
 #define Zfw_Get_Address_int            zfw_get_address_int_
 #define Zfw_Get_Wgt_Dim                zfw_get_wgt_dim_
 #define Zfw_Get_Comm_Dim               zfw_get_comm_dim_
-/* TEMP child_order */
-#define Zfw_Reftree_Get_Child_Order         zfw_reftree_get_child_order_
+#define Zfw_Reftree_Get_Child_Order    zfw_reftree_get_child_order_
 
 #elif FMANGLE==UNDERSCORE2
 
@@ -241,8 +238,7 @@ extern "C" {
 #define Zfw_Get_Address_int            zfw_get_address_int__
 #define Zfw_Get_Wgt_Dim                zfw_get_wgt_dim__
 #define Zfw_Get_Comm_Dim               zfw_get_comm_dim__
-/* TEMP child_order */
-#define Zfw_Reftree_Get_Child_Order         zfw_reftree_get_child_order__
+#define Zfw_Reftree_Get_Child_Order    zfw_reftree_get_child_order__
 
 #endif /* FMANGLE */
 
@@ -1782,7 +1778,6 @@ void Zfw_Register_Fort_Malloc(ZOLTAN_FORT_MALLOC_INT_FN *fort_malloc_int,
 }
 
 /*****************************************************************************/
-/* TEMP child_order */
 void Zfw_Reftree_Get_Child_Order(
   int *addr_lb, 
   int *nbytes, 
@@ -1796,7 +1791,6 @@ void Zfw_Reftree_Get_Child_Order(
    for (i=0; i<(*nbytes); i++) {*p = (unsigned char)addr_lb[i]; p++;}
    Zoltan_Reftree_Get_Child_Order(lb,order,ierr);
 }
-/* end TEMP child_order */
 
 #ifdef __cplusplus
 } /* closing bracket for extern "C" */
