@@ -57,6 +57,7 @@ CORE_H = \
 	$(srcdir)/Teuchos_dyn_cast.hpp \
 	$(srcdir)/Teuchos_Flops.hpp \
 	$(srcdir)/Teuchos_F77_wrappers.h \
+	$(srcdir)/Teuchos_getConst.hpp \
 	$(srcdir)/Teuchos_LAPACK.hpp \
 	$(srcdir)/Teuchos_LAPACK_wrappers.hpp \
 	$(srcdir)/Teuchos_map.hpp \
