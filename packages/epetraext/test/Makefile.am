@@ -30,16 +30,40 @@ if BUILD_TRANSFORM_TESTS
 
 if HAVE_MPI
 
+if BUILD_INOUT_TESTS
+
 SUBDIRS = BTF Composite MapColoring Permutation SingletonFilter SymmRCM View Overlap Zoltan scripts inout
+
+else 
+
+SUBDIRS = BTF Composite MapColoring Permutation SingletonFilter SymmRCM View Overlap Zoltan scripts
+
+endif 
 
 else
 
+if BUILD_INOUT_TESTS
+
 SUBDIRS = BTF Composite MapColoring Permutation SingletonFilter SymmRCM View scripts inout
+
+else
+
+SUBDIRS = BTF Composite MapColoring Permutation SingletonFilter SymmRCM View scripts
+
+endif
 
 endif
 
 else
 
+if BUILD_INOUT_TESTS
+
 SUBDIRS = inout
+
+else 
+
+SUBDIRS = 
+
+endif
 
 endif
