@@ -7,10 +7,11 @@
 const bool TestKLU = true;
 const bool TestUMFPACK = true;
 const bool TestSuperLU = false;
-const bool TestSuperLUdist = true;
-const bool TestMUMPS = false;
+const bool TestSuperLUdist = false;
+const bool TestMUMPS = true;
 const bool TestScaLAPACK = false;
 const bool verbose = true;
+const int OutputLevel = 2;
 
 #ifdef HAVE_MPI
 #include "mpi.h"
@@ -60,11 +61,15 @@ const bool verbose = true;
 #include "Trilinos_Util_CrsMatrixGallery.h"
 #include "Trilinos_Util_CommandLineParser.h"
 
+
 void PrintLine() 
 {
+  cout << endl;
   for( int i=0 ; i<80 ; ++i )
     cout << "=";
   cout << endl;
+  cout << endl;
+  
   return;
 }
 
@@ -82,7 +87,7 @@ void TestAmesos(char ProblemType[],
   Amesos A_Factory;
   
   Amesos_BaseSolver * Solver = A_Factory.Create(ProblemType, Problem);
-
+//  Amesos_Mumps * Solver = new Amesos_Mumps(Problem);
   if( Solver ) {
 
     Solver->SetParameters(AmesosList);
@@ -124,13 +129,13 @@ void TestAmesos(char ProblemType[],
     string msg = ProblemType;
     
     if( A->Comm().MyPID() == 0 ) {
-      cout << msg << "...Using " << A->Comm().NumProc() << " processes, UseTranspose = " << UseTranspose << endl;
-      cout << msg << "...||A x - b||_2 = " << Norm << endl;
-      cout << msg << "...||x_exact - x||_2 = " << sqrt(d_tot) << endl;
-      cout << msg << "...Time for Symbolic Factorization = " << TimeForSymbolicFactorization << endl;
-      cout << msg << "...Time for Numeric Factorization  = " << TimeForNumericFactorization << endl;
-      cout << msg << "...Time for Solve                  = " << TimeForSolve << endl;
-      cout << msg << "...Total Time = " << Time.ElapsedTime() << endl;
+      cout << msg << "......Using " << A->Comm().NumProc() << " processes, UseTranspose = " << UseTranspose << endl;
+      cout << msg << "......||A x - b||_2 = " << Norm << endl;
+      cout << msg << "......||x_exact - x||_2 = " << sqrt(d_tot) << endl;
+      cout << msg << "......Time for Symbolic Factorization = " << TimeForSymbolicFactorization << endl;
+      cout << msg << "......Time for Numeric Factorization  = " << TimeForNumericFactorization << endl;
+      cout << msg << "......Time for Solve                  = " << TimeForSolve << endl;
+      cout << msg << "......Total Time = " << Time.ElapsedTime() << endl;
     }
 
     TotalErrorExactSol += sqrt(d_tot);
@@ -205,7 +210,7 @@ int main(int argc, char *argv[]) {
      TestAmesos("Amesos_Umfpack", AmesosList, false, *Problem, TotalErrorResidual, TotalErrorExactSol );
      
   }
-
+  
   // ==========================================  //
   // UMFPACK -- default options -- use transpose //
   // =========================================== //
@@ -242,7 +247,7 @@ int main(int argc, char *argv[]) {
     TestAmesos("Amesos_Superludist", AmesosList, false, *Problem, TotalErrorResidual, TotalErrorExactSol );
     
   }
-  /*
+
   // ============================================== //
   // Superludist -- default options -- use tranpose //
   // ============================================== //
@@ -254,10 +259,27 @@ int main(int argc, char *argv[]) {
      Teuchos::ParameterList AmesosList;
      TestAmesos("Amesos_Superludist", AmesosList, true, *Problem, TotalErrorResidual, TotalErrorExactSol );
   }
-  */
+
   // ======================== //
   // Superludist -- options 1 //
-  // ========================= //
+  // ======================== //
+
+  if( Comm.MyPID() == 0 ) PrintLine();
+
+  if( TestSuperLUdist ) { 
+
+    Teuchos::ParameterList AmesosList;
+    AmesosList.set("PrintTiming",true);
+    AmesosList.set("PrintStatus",true);
+    AmesosList.set("MaxProcs",7);
+    AmesosList.set("Redistribute",false);
+    TestAmesos("Amesos_Superludist", AmesosList, false, *Problem, TotalErrorResidual, TotalErrorExactSol );
+    
+  }
+
+  // ======================== //
+  // Superludist -- options 2 //
+  // ======================== //
 
   if( Comm.MyPID() == 0 ) PrintLine();
 
@@ -267,6 +289,9 @@ int main(int argc, char *argv[]) {
     AmesosList.set("PrintTiming",true);
     AmesosList.set("PrintStatus",true);
     AmesosList.set("MaxProcs",-2);
+    AmesosList.set("Redistribute",true);
+    AmesosList.set("ComputeTrueResidual",true);    
+    AmesosList.set("ComputeVectorNorms",true);
     TestAmesos("Amesos_Superludist", AmesosList, false, *Problem, TotalErrorResidual, TotalErrorExactSol );
     
   }
@@ -287,10 +312,12 @@ int main(int argc, char *argv[]) {
   // ======================================== //
   // MUMPS -- default options -- use tranpose //
   // ======================================== //
+
   if( Comm.MyPID() == 0 ) PrintLine();
 
   if( TestMUMPS ) {
      Teuchos::ParameterList AmesosList;
+     AmesosList.set("OutputLevel",OutputLevel);
      TestAmesos("Amesos_Mumps", AmesosList, true, *Problem, TotalErrorResidual, TotalErrorExactSol );
   }
   
@@ -303,17 +330,10 @@ int main(int argc, char *argv[]) {
   if( TestMUMPS ) {
   
      Teuchos::ParameterList AmesosList;
-     AmesosList.set("DebugLevel",1);
-     
      AmesosList.set("Threshold",.0);
      AmesosList.set("MaxProcs",-1);
-     AmesosList.set("MaxProcsInputMatrix",-1);
-     if( verbose ) {
-       AmesosList.set("PrintStatus",true);
-       AmesosList.set("PrintTiming",true);
-       AmesosList.set("ComputeTrueResidual",true);
-       AmesosList.set("ComputeVectorNorms",true);
-     }
+     AmesosList.set("MaxProcsMatrix",-1);
+     AmesosList.set("OutputLevel",OutputLevel);
      
      TestAmesos("Amesos_Mumps", AmesosList, false, *Problem, TotalErrorResidual, TotalErrorExactSol );
   }
@@ -329,20 +349,49 @@ int main(int argc, char *argv[]) {
      Teuchos::ParameterList AmesosList;
      
      AmesosList.set("OutputLevel",0);
-     AmesosList.set("KeepMatrixDistributed",true);
-     AmesosList.set("Threshold",.0);
-     AmesosList.set("MaxProcs",4);
-     AmesosList.set("MaxProcsInputMatrix",3);
-     if( verbose ) {
-       AmesosList.set("PrintStatus",true);
-       AmesosList.set("PrintTiming",true);
-       AmesosList.set("ComputeTrueResidual",true);
-       AmesosList.set("ComputeVectorNorms",true);
-     }
+     AmesosList.set("MaxProcs",-2);
+     AmesosList.set("MaxProcsMatrix",-2);
+     AmesosList.set("OutputLevel",OutputLevel);
           
      TestAmesos("Amesos_Mumps", AmesosList, false, *Problem, TotalErrorResidual, TotalErrorExactSol );
   }
   
+  // ================== //
+  // MUMPS -- options 2 //
+  // ================== //
+
+  if( Comm.MyPID() == 0 ) PrintLine();
+
+  if( TestMUMPS ) {
+    
+     Teuchos::ParameterList AmesosList;
+     
+     AmesosList.set("OutputLevel",0);
+     AmesosList.set("MaxProcs",-3);
+     AmesosList.set("MaxProcsMatrix",-3);
+     AmesosList.set("OutputLevel",OutputLevel);
+          
+     TestAmesos("Amesos_Mumps", AmesosList, false, *Problem, TotalErrorResidual, TotalErrorExactSol );
+  }
+
+  // ================== //
+  // MUMPS -- options 3 //
+  // ================== //
+
+  if( Comm.MyPID() == 0 ) PrintLine();
+
+  if( TestMUMPS ) {
+    
+     Teuchos::ParameterList AmesosList;
+     
+     AmesosList.set("OutputLevel",0);
+     AmesosList.set("MaxProcs",4);
+     AmesosList.set("MaxProcsMatrix",2);
+     AmesosList.set("OutputLevel",OutputLevel);
+          
+     TestAmesos("Amesos_Mumps", AmesosList, false, *Problem, TotalErrorResidual, TotalErrorExactSol );
+  }
+
   // ========= //
   // Scalapack //
   // ========= //
@@ -359,8 +408,8 @@ int main(int argc, char *argv[]) {
   
   if( Comm.MyPID() == 0 ) {
     cout << endl;
-    cout << "...Total error for residual = " << TotalErrorResidual << endl;
-    cout << "...Total error for exact solution  = " << TotalErrorExactSol << endl;
+    cout << "......Total error for residual = " << TotalErrorResidual << endl;
+    cout << "......Total error for exact solution  = " << TotalErrorExactSol << endl;
     cout << endl;
  }
   
