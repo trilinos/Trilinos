@@ -43,6 +43,18 @@ extern int **global_mapping = NULL, global_nrows, global_ncoarse;
 #define ML_AGGR_UNCOUPLED 1
 #define ML_AGGR_COUPLED   2
 
+#if defined(OUTPUT_AGGREGATES) || defined(INPUT_AGGREGATES) || (ML_AGGR_INAGGR) || (ML_AGGR_OUTAGGR) || (ML_AGGR_MARKINAGGR)
+#ifndef MAXWELL
+#ifndef ALEGRA
+extern int *update_index, *update, *extern_index, *external;
+#endif
+#else
+extern int *reordered_glob_nodes, *global_node_inds,
+           *reordered_node_externs, *global_node_externs;
+#endif /*ifdef MAXWELL */
+extern int ML_gpartialsum_int(int val, ML_Comm *comm);
+#endif
+
 
 /* ******************************************************************** */
 /* ******************************************************************** */
@@ -114,20 +126,11 @@ int ML_Aggregate_CoarsenMIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
 #endif
 
 #if defined(OUTPUT_AGGREGATES) || defined(INPUT_AGGREGATES) || (ML_AGGR_INAGGR) || (ML_AGGR_OUTAGGR) || (ML_AGGR_MARKINAGGR)
-#ifndef MAXWELL
-#ifndef ALEGRA
-extern int *update_index, *update, *extern_index, *external;
-#endif
-#else
-extern int *reordered_glob_nodes, *global_node_inds,
-           *reordered_node_externs, *global_node_externs;
-#endif /*ifdef MAXWELL */
 FILE *fp;
 char fname[80];
 static int level_count = 0;
 double *d2temp;
 int agg_offset, vertex_offset;
-extern int ML_gpartialsum_int(int val, ML_Comm *comm);
 #endif
 
    /* ============================================================= */
