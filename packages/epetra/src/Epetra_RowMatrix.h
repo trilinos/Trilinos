@@ -109,8 +109,9 @@ class Epetra_RowMatrix: public virtual Epetra_Operator {
   */
     virtual int Multiply(bool TransA, const Epetra_MultiVector& X, Epetra_MultiVector& Y) const = 0;
 
-    //! Returns the result of a Epetra_RowMatrix multiplied by a Epetra_MultiVector X in Y.
-    /*! 
+    //! Returns result of a local-only solve using a triangular Epetra_RowMatrix with Epetra_MultiVectors X and Y.
+    /*! This method will perform a triangular solve independently on each processor of the parallel machine.
+        No communication is performed.
     \param In
 	   Upper -If true, solve Ux = y, otherwise solve Lx = y.
     \param In
