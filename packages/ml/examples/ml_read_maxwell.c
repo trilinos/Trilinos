@@ -987,6 +987,9 @@ if (kk==nx-1) Kn_bindx[Kn_bindx[i]+4] = -1; /* rst dirichlet */
 if (kk==nx-1) Kn_bindx[Kn_bindx[i]+5] = -1; /* rst dirichlet */
   }
   compress_matrix(Kn_val, Kn_bindx, Nlocal_nodes);
+  for (i = 0; i < Nlocal_nodes; i++) {
+    Kn_val[i] = Kn_bindx[i+1] - Kn_bindx[i]; 
+  }
 
 #endif
 #else
@@ -1596,12 +1599,12 @@ nx = nx--; /* rst dirichlet */
      coarsest_level = ML_Gen_MGHierarchy_UsingReitzinger(ml_edges, ml_nodes,
 						         N_levels-1, ML_DECREASING, ag, Tmatbc,
                                  Tmat_transbc, &Tmat_array, &Tmat_trans_array,
-							 ML_NO, 1.0);
+							 ML_NO, 1.333333333333333);
   else
      coarsest_level = ML_Gen_MGHierarchy_UsingReitzinger(ml_edges, ml_nodes,
 						         N_levels-1, ML_DECREASING, ag, Tmat,
                                  Tmat_trans, &Tmat_array, &Tmat_trans_array,
-							 ML_NO, 1.0);
+							 ML_NO, 1.333333333333);
 
 #ifdef ReuseOps
   {printf("Starting reuse\n"); fflush(stdout);}
@@ -2112,7 +2115,6 @@ edge_smoother,edge_args, nodal_smoother,nodal_args);
           printf("Cycle type = other\n");
     }
     fflush(stdout);
-
     AZ_iterate(xxx, rhs, options, params, status, proc_config, Ke_mat, Pmat, scaling); 
 
     options[AZ_pre_calc] = AZ_reuse;
