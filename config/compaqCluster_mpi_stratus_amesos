@@ -1,0 +1,11 @@
+.././configure --enable-mpi --with-cxxflags="-DMPI_NO_CPPBIND" \
+--with-cxxflags=-DMPICH_SKIP_MPICXX \
+--enable-nox-epetra \
+--enable-loca --with-mpi-libs=-lmpi \
+--enable-amesos --enable-amesos-dscpack --enable-amesos-slud \
+--enable-amesos-umfpack \
+--with-amesos-sluddir=/usr/users/jmwille/Trilinos3PL/SuperLU_DIST_2.0 \
+--with-amesos-sludlib=/usr/users/jmwille/Trilinos3PL/SuperLU_DIST_2.0/libsuperlu.a \
+--with-amesos-dscpacklib=/usr/users/jmwille/Trilinos3PL/DSCPACK1.0/DSC_LIB/dsclibdbl.a \
+--with-amesos-dscpackdir=/usr/users/jmwille/Trilinos3PL/DSCPACK1.0 \
+--with-trilinos3pldir=/usr/users/jmwille/Trilinos3PL
