@@ -6,7 +6,7 @@ include $(TRILINOS_HOME)/build/makefile.defaults
 
 ARCH_CXXFLAGS= -O -r10000 -n32 -I/usr/include/CC -Dlint \
               -LANG:std -LANG:ansi-for-init-scope=ON \
-              -DMPI_NO_CPPBIND
+              -DMPI_NO_CPPBIND -ptused
 ARCH_CFLAGS= -O -r10000 -n32 -I/usr/include -Dlint
 ARCH_FFLAGS= -O -r10000 -n32 -Dlint
 ARCH_LDFLAGS= -O -r10000 -n32 -LANG:std
