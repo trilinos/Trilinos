@@ -104,6 +104,9 @@ int ML_Aggregate_CoarsenMIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
 
    /*   int kk, old_upper, nnzs, count2, newptr; */
 
+#ifdef CLEAN_DEBUG
+   char tlabel[80];
+#endif
 
 #ifdef DDEBUG
    int curagg,myagg,*good,*bad, kk;
@@ -202,8 +205,16 @@ extern int ML_gpartialsum_int(int val, ML_Comm *comm);
    epsilon = epsilon * epsilon;
 */
 
+#ifdef CLEAN_DEBUG
+   sprintf(tlabel,"before amalg %d",comm->ML_mypid);
+   ML_CommInfoOP_Print(Amatrix->getrow->pre_comm, tlabel);
+#endif
    ML_Operator_AmalgamateAndDropWeak(Amatrix, num_PDE_eqns, epsilon);
    Nrows /= num_PDE_eqns;
+#ifdef CLEAN_DEBUG
+   sprintf(tlabel,"after amalg %d",comm->ML_mypid);
+   ML_CommInfoOP_Print(Amatrix->getrow->pre_comm, tlabel);
+#endif
 
    nvertices = Amatrix->outvec_leng;
 
@@ -491,9 +502,6 @@ extern int ML_gpartialsum_int(int val, ML_Comm *comm);
 
    ML_Aggregate_Phase2_3_Cleanup(ml_ag, Amatrix, &aggr_count, nvertices, aggr_index,
 				 exp_Nrows, comm, bdry, "MIS", &agg_indx_comm);
-
-
-
 
    /* make sure that boundary nodes are not in any aggregate */
    /* Also, make sure that everyone else is aggregated.      */
@@ -1421,13 +1429,6 @@ for (i = 0; i < aggr_count ; i++) printf("counts %d %d\n",i,aggr_cnt_array[i]);
    for ( i = 0; i < total_send_leng; i++ )
    {
       index = send_list[i];
-      /*
-      if (index == 14)
-      {
-         printf("aggr_index = %d, dble_buf = %e, aggr_count = %d\n",
-                aggr_index[14],dble_buf[i],aggr_count);
-      }
-      */
       if ( aggr_index[index] >= aggr_count )
       {
          dcompare1 = 0.0;
@@ -1447,13 +1448,6 @@ for (i = 0; i < aggr_count ; i++) printf("counts %d %d\n",i,aggr_cnt_array[i]);
                /* new_ja = column index */
                /*new_ja[k+j]  = aggr_index[index]*nullspace_dim+j;*/
                new_ja[ new_ia[index]+j ]  = aggr_index[index]*nullspace_dim+j;
-               /*
-               if (index == 14)
-               {
-                  printf("%d:new_ia[index]+j = %d, new_ja[new_ia[index]+j] = %d\n",
-                         comm->ML_mypid,new_ia[index]+j,new_ja[new_ia[index]+j]);
-               }
-               */
             }
          }
       }
@@ -2216,6 +2210,7 @@ int ML_Aggregate_Phase2_3_Cleanup(ML_Aggregate *ml_ag, ML_Operator *Amatrix,
   double                *rowi_val = NULL, factor = 1.;
   char *bdry = NULL;
   int send_count, k, kk, flag, *temp_aggr_index;
+  int Nleftover = 0, Nsingle = 0;
 
   if (input_bdry == NULL) {
    bdry = (char *) ML_allocate(sizeof(char)*(exp_Nrows + 1));
@@ -2293,14 +2288,14 @@ int ML_Aggregate_Phase2_3_Cleanup(ML_Aggregate *ml_ag, ML_Operator *Amatrix,
      }
    }
 
-   agg_incremented = (int *) ML_allocate(sizeof(int)*(*aggr_count+1));
-   for (i = 0; i < *aggr_count; i++) agg_incremented[i] = 0;
+   agg_incremented = (int *) ML_allocate(sizeof(int)* (exp_Nrows+1));
+                                /* This guarantees that array will be long */
+                                /* enough even for newly created aggregates. */
+   for (i = 0; i < exp_Nrows; i++) agg_incremented[i] = 0;
    connect_type = (int *) ML_allocate(sizeof(int)* (exp_Nrows+1));
    for (i = 0; i < exp_Nrows; i++) connect_type[i] = 100;
-   number_connections = (int *) ML_allocate(sizeof(int)*(*aggr_count+1));
-   for (i = 0; i <= *aggr_count; i++) number_connections[i] = 0;
-   /* iiiiiiiiiiiiiiiissss this big enough for the new aggregates that */
-   /* will follow??????                                                */
+   number_connections = (int *) ML_allocate(sizeof(int)*(exp_Nrows+1));
+   for (i = 0; i < exp_Nrows; i++) number_connections[i] = 0;
 
 
    /* Try to stick unaggregated nodes into a neighboring aggegrate (the */
@@ -2421,8 +2416,18 @@ int ML_Aggregate_Phase2_3_Cleanup(ML_Aggregate *ml_ag, ML_Operator *Amatrix,
 	     /* Do I send this node to the processor 'current_agg'  */
 	     send_count = 0;
 	     for ( k = 0; k < agg_indx_comm->N_neighbors; k++ ) {
+#ifdef CLEAN_DEBUG
+	       printf("%d: my neighbor %d, length %d\n",comm->ML_mypid,
+		      agg_indx_comm->neighbors[k],
+		      agg_indx_comm->send_leng[k]);
+#endif
+
 	       if (agg_indx_comm->neighbors[k] == current_agg) {
 		 for (kk = 0; kk < agg_indx_comm->send_leng[k]; kk++) {
+#ifdef CLEAN_DEBUG
+	       printf("%d: send %d %d\n",comm->ML_mypid,
+		      agg_indx_comm->send_list[send_count+kk],send_count);
+#endif
 		   if (agg_indx_comm->send_list[send_count+kk] == i) {
 #ifdef CLEAN_DEBUG
 		     printf("%d: yes this is in %d on %d\n",
@@ -2484,8 +2489,10 @@ int ML_Aggregate_Phase2_3_Cleanup(ML_Aggregate *ml_ag, ML_Operator *Amatrix,
      }
      ML_free(temp_aggr_index);
    }
-   for (i = 0; i < nvertices; i++) {
+
+   for (i = 0; i < nvertices; i++) { 
      if ((aggr_index[i] == -1) && (bdry[i] != 'T')) {
+       Nleftover++;
 #ifdef CLEAN_DEBUG
        printf("%d: this guy is left %d    %d %d\n",comm->ML_mypid,i,nvertices,Nphase1_agg);
 #endif
@@ -2522,10 +2529,11 @@ int ML_Aggregate_Phase2_3_Cleanup(ML_Aggregate *ml_ag, ML_Operator *Amatrix,
 	   }
 	   if (j < rowi_N) {
 	     aggr_index[i] = current_agg;
-	     agg_incremented[current_agg]++;
+	     (agg_incremented[current_agg])++;
 	     connect_type[i] = connect_type[rowi_col[j]] - 11;
 	   }
 	   else {
+	     Nsingle++;
 #ifdef CLEAN_DEBUG
 	     printf("%d: oh well  %d\n",comm->ML_mypid,i);
 #endif
@@ -2547,6 +2555,9 @@ int ML_Aggregate_Phase2_3_Cleanup(ML_Aggregate *ml_ag, ML_Operator *Amatrix,
 
 
    if (printflag < ML_Get_PrintLevel()) {
+     Nsingle = ML_Comm_GsumInt( comm, Nsingle);
+     Nleftover = ML_Comm_GsumInt( comm, Nleftover);
+
      total_aggs = ML_Comm_GsumInt( comm, *aggr_count);
      j = 0;
      for (i = 0; i < nvertices; i++) if (bdry[i] == 'T') j++;
@@ -2555,6 +2566,7 @@ int ML_Aggregate_Phase2_3_Cleanup(ML_Aggregate *ml_ag, ML_Operator *Amatrix,
      if ( mypid == 0 ) {
        printf("Aggregation(%s) : Phase 2 - total aggregates = %d\n",label, total_aggs);
        printf("Aggregation(%s) : Phase 2 - boundary nodes   = %d\n",label, j);
+       printf("Aggregation(%s) : Phase 3 - leftovers = %d and singletons = %d\n",label ,Nleftover, Nsingle);
      }
    }
   if (input_bdry == NULL) ML_free(bdry);
@@ -2592,6 +2604,7 @@ int ML_aggr_index_communicate(int N_neighbors, int temp_leng[], int send_leng[],
 	 else  temp_index[count]=aggr_index[index];
          count++;
       }
+
       for ( j = 0; j < recv_leng[i]; j++ ) {
          index = recv_list[recv_count++];
          if (aggr_index[index] == -1) temp_index[count] = -1;
