@@ -18,11 +18,11 @@ UNAME       := $(shell uname)
 # Get the host name
 HOSTNAME    := $(shell hostname)
 
-# Get the location of the python executable
-PYTHON_HOME := $(shell $(ROOT)pyLocate)
+# # Get the location of the python executable
+# PYTHON_HOME := $(shell $(ROOT)pyLocate)
 
-# Get the python name with version number
-PYTHON_NAME := $(shell $(ROOT)pyLocate --name)
+# # Get the python name with version number
+# PYTHON_NAME := $(shell $(ROOT)pyLocate --name)
 
 # Get the full present working directory name
 PWD         := $(shell pwd)
@@ -64,8 +64,9 @@ endif
 
 COMMON          := $(ROOT)src
 COMMON_INCLUDE  := -I$(COMMON)
-PYTHON_INCLUDE  := -I$(PYTHON_HOME)/include/$(PYTHON_NAME)
-NUMERIC_INCLUDE := $(PYTHON_INCLUDE)/Numeric
+# PYTHON_INCLUDE  := -I$(PYTHON_HOME)/include/$(PYTHON_NAME)
+PYTHON_INCLUDE  := -I$(shell $(ROOT)pyLocate --include)
+# NUMERIC_INCLUDE := $(PYTHON_INCLUDE)/Numeric
 AUTODEP         := $(ROOT)autodep
 SWIG            := swig
 

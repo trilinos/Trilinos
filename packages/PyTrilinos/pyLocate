@@ -1,47 +1,54 @@
 #!/usr/bin/env python
+# -*- python -*-
 
-import sys
-import os
 import getopt
+import os
+import sys
+from   distutils.sysconfig import get_config_var
+from   distutils.util      import get_platform
 
 def main():
   (execDirName,execBaseName) = os.path.split(sys.argv[0])
 
-  USAGE="usage: "+execBaseName+" [-h] [-v] [--name]"
+  USAGE="usage: "+execBaseName+" [-h] [-v] [--build] [--include]"
 
   try:
-      opts, args = getopt.getopt(sys.argv[1:], "hv", ["help", "verbose", \
-                                                      "name"])
+    opts, args = getopt.getopt(sys.argv[1:], "hv", ["help", "verbose", \
+                                                    "build", "include"])
   except getopt.GetoptError:
-      # print help information and exit:
-      print USAGE
-      sys.exit(2)
+    # print help information and exit:
+    print USAGE
+    sys.exit(2)
 
+  # Flags
   verboseMode  = False
-  nameFlag     = False
-  for flag, value in opts:
-      if flag in ("-h", "--help"):
-          print USAGE
-          sys.exit()
-      if flag in ("-v", "--verbose"):
-          verboseMode = True
-      if flag == "--name":
-          nameFlag = True
+  buildFlag    = False
+  includeFlag  = False
 
-  for i in sys.path:
-    dir = i.replace("/lib/","/include/")
-    file = os.path.join(dir,"Python.h")
-    if (os.access(file, os.R_OK)):
-      # Pop name off of dir to get "python name"
-      (dir, name) = os.path.split(dir)
-      if nameFlag:
-        print name
-      else:
-        # Pop /include off of dir to get "python home"
-        (dir, dummy) = os.path.split(dir)
-        assert (dummy == "include")
-        print dir
-      break
+  # Loop over options
+  for (flag, value) in opts:
+    if flag in ("-h", "--help"):
+      print USAGE
+      sys.exit()
+    if flag in ("-v", "--verbose"):
+      verboseMode = True
+    if flag == "--build":
+      buildFlag = True
+    if flag == "--include":
+      includeFlag = True
+
+  # Python include directory
+  if includeFlag:
+    print get_config_var('INCLUDEPY')
+
+  # Python distutils build directory.  This essentially emulates the code used
+  # by distutils.commands.build to generate the name of the build directory.  If
+  # that code ever changes, this could break, but it is not easily accessible
+  # code, so this is my hack.
+  if buildFlag:
+    lib_dir = "lib.%s-%s" % (get_platform(), sys.version[0:3])
+    build_dir = os.path.join('build', lib_dir)
+    print build_dir
 
 if (__name__ == '__main__'):
-    main()
+  main()
