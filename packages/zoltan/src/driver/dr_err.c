@@ -1,31 +1,30 @@
-/*====================================================================
- * ------------------------
- * | CVS File Information |
- * ------------------------
- *
- * $RCSfile$
- *
- * $Author$
- *
- * $Date$
- *
- * $Revision$
- *
- * $Name$
- *====================================================================*/
+/*****************************************************************************
+ * Zoltan Dynamic Load-Balancing Library for Parallel Applications           *
+ * Copyright (c) 2000, Sandia National Laboratories.                         *
+ * Zoltan is distributed under the GNU Lesser General Public License 2.1.    * 
+ * For more info, see the README file in the top-level Zoltan directory.     *  
+ *****************************************************************************/
+/*****************************************************************************
+ * CVS File Information :
+ *    $RCSfile$
+ *    $Author$
+ *    $Date$
+ *    $Revision$
+ ****************************************************************************/
 
-/*++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
- * Author(s):	Gary L. Hennigan (SNL 9221)
- *----------------------------------------------------------------------------
- * Functions contained in this file:
- *	error_add()
- *	error_report()
- *+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
 #include "dr_err_const.h"
+
+/*++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ * Author(s): Gary L. Hennigan (SNL 9221)
+ *----------------------------------------------------------------------------
+ * Functions contained in this file:
+ *    error_add()
+ *    error_report()
+ *+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
 
 static int error_cnt = 0;
 int error_lev = 3;

@@ -1,31 +1,17 @@
-/*====================================================================
- * ------------------------
- * | CVS File Information |
- * ------------------------
- *
- * $RCSfile$
- *
- * $Author$
- *
- * $Date$
- *
- * $Revision$
- *
- * $Name$
- *====================================================================*/
+/*****************************************************************************
+ * Zoltan Dynamic Load-Balancing Library for Parallel Applications           *
+ * Copyright (c) 2000, Sandia National Laboratories.                         *
+ * Zoltan is distributed under the GNU Lesser General Public License 2.1.    * 
+ * For more info, see the README file in the top-level Zoltan directory.     *  
+ *****************************************************************************/
+/*****************************************************************************
+ * CVS File Information :
+ *    $RCSfile$
+ *    $Author$
+ *    $Date$
+ *    $Revision$
+ ****************************************************************************/
 
-/*++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
- * Author(s):	Gary L. Hennigan (SNL 9221)
- *		Scott A. Hutchinson (SNL 9221)
- *		Matthew M. St. John (SNL 9226)
- *----------------------------------------------------------------------------
- * Functions contained in this file:
- *	get_elem_type()
- *	get_elem_info()
- *	get_side_id()
- *	ss_to_node_list()
- *	get_ss_mirror()
- *+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
 #include <stdio.h>
 #include <stdlib.h>
 #include <ctype.h>
@@ -35,6 +21,19 @@
 #include "dr_elem_const.h"
 #include "dr_util_const.h"
 #include "dr_err_const.h"
+
+/*++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ * Author(s): Gary L. Hennigan (SNL 9221)
+ *            Scott A. Hutchinson (SNL 9221)
+ *            Matthew M. St. John (SNL 9226)
+ *----------------------------------------------------------------------------
+ * Functions contained in this file:
+ *    get_elem_type()
+ *    get_elem_info()
+ *    get_side_id()
+ *    ss_to_node_list()
+ *    get_ss_mirror()
+ *+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
 
 /*****************************************************************************/
 /*****************************************************************************/

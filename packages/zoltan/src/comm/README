@@ -1,3 +1,17 @@
+##############################################################################
+# Zoltan Dynamic Load-Balancing Library for Parallel Applications            #
+# Copyright (c) 2000, Sandia National Laboratories.                          #
+# Zoltan is distributed under the GNU Lesser General Public License 2.1.     #
+# For more info, see the README file in the top-level Zoltan directory.      # 
+##############################################################################
+##############################################################################
+# CVS File Information
+#    $RCSfile$
+#    $Author$
+#    $Date$
+#    $Revision$
+##############################################################################
+
 
 COMM DIRECTORY -- Package to efficiently perform unstructured communication
 		  operations.  The same pattern can be created once and
@@ -15,7 +29,7 @@ comm_do.c      -- Routine that uses communication object to actually perform
 comm_do_reverse.c -- This routine performs the inverse communication of the
 		  operation described in a communication object.
 
-comm_destry.c  -- Free the space allocated for a communication object.
+comm_destroy.c -- Free the space allocated for a communication object.
 
 invert_map.c   -- Given a set of messages to send, determine the
 		  corresponding set recieves for each processor

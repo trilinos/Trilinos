@@ -1,3 +1,17 @@
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+! Zoltan Dynamic Load-Balancing Library for Parallel Applications            !
+! Copyright (c) 2000, Sandia National Laboratories.                          !
+! Zoltan is distributed under the GNU Lesser General Public License 2.1.     !
+! For more info, see the README file in the top-level Zoltan directory.      ! 
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!  CVS File Information :
+!     $RCSfile$
+!     $Author$
+!     $Date$
+!     $Revision$
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
 ! This is a simple preprocessor used for conditional compilation in f90gl.
 ! This is NOT a general purpose preprocessor.  Do not try to use it for any
 ! other purpose -- it'll bite you!

@@ -1,3 +1,17 @@
+##############################################################################
+# Zoltan Dynamic Load-Balancing Library for Parallel Applications            #
+# Copyright (c) 2000, Sandia National Laboratories.                          #
+# Zoltan is distributed under the GNU Lesser General Public License 2.1.     #
+# For more info, see the README file in the top-level Zoltan directory.      # 
+##############################################################################
+##############################################################################
+# CVS File Information
+#    $RCSfile$
+#    $Author$
+#    $Date$
+#    $Revision$
+##############################################################################
+
 
 PARAMS DIRECTORY -- Routines for setting parameter values
 ----------------------------------------------------------------
@@ -14,7 +28,8 @@ bind_param.c        -- Routine to bind a parameter name to a variable.
                        This function must be called before LB_Assign_Param_Vals.
 
 check_param.c       -- Routine LB_Check_Param compares a string against a list
-		       of valid parameter names & checks the type for correctness.
+		       of valid parameter names & checks the type for 
+                       correctness.
 
 free_params.c       -- Frees all the parameters allocated for an LB object.
 

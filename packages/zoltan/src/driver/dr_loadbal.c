@@ -1,30 +1,16 @@
-/*====================================================================
- * ------------------------
- * | CVS File Information |
- * ------------------------
- *
- * $RCSfile$
- *
- * $Author$
- *
- * $Date$
- *
- * $Revision$
- *
- * $Name$
- *====================================================================*/
-
-/*--------------------------------------------------------------------------*/
-/* Purpose: Call Zoltan to determine a new load balance.                    */
-/*          Contains all of the callback functions that Zoltan needs        */
-/*          for the load balancing.                                         */
-/*--------------------------------------------------------------------------*/
-/* Author(s):  Matthew M. St.John (9226)                                    */
-/*--------------------------------------------------------------------------*/
-/*--------------------------------------------------------------------------*/
-/* Revision History:                                                        */
-/*    10 May 1999:       Date of creation.                                  */
-/*--------------------------------------------------------------------------*/
+/*****************************************************************************
+ * Zoltan Dynamic Load-Balancing Library for Parallel Applications           *
+ * Copyright (c) 2000, Sandia National Laboratories.                         *
+ * Zoltan is distributed under the GNU Lesser General Public License 2.1.    * 
+ * For more info, see the README file in the top-level Zoltan directory.     *  
+ *****************************************************************************/
+/*****************************************************************************
+ * CVS File Information :
+ *    $RCSfile$
+ *    $Author$
+ *    $Date$
+ *    $Revision$
+ ****************************************************************************/
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -36,6 +22,12 @@
 #include "dr_loadbal_const.h"
 #include "dr_eval_const.h"
 #include "all_allo_const.h"
+
+/*--------------------------------------------------------------------------*/
+/* Purpose: Call Zoltan to determine a new load balance.                    */
+/*          Contains all of the callback functions that Zoltan needs        */
+/*          for the load balancing.                                         */
+/*--------------------------------------------------------------------------*/
 
 /*
  *  PROTOTYPES for load-balancer interface functions.

@@ -1,3 +1,17 @@
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+! Zoltan Dynamic Load-Balancing Library for Parallel Applications            !
+! Copyright (c) 2000, Sandia National Laboratories.                          !
+! Zoltan is distributed under the GNU Lesser General Public License 2.1.     !
+! For more info, see the README file in the top-level Zoltan directory.      ! 
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!  CVS File Information :
+!     $RCSfile$
+!     $Author$
+!     $Date$
+!     $Revision$
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
 ! LAM 6.3 beta 2 contains external PMPI_WTIME, PMPI_WTICK in mpif.h but
 ! does not define those routines in the library.  This causes an unresoved
 ! reference error with some compilers.  This file contains dummy routines

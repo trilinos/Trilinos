@@ -1,31 +1,16 @@
-/*====================================================================
- * ------------------------
- * | CVS File Information |
- * ------------------------
- *
- * $RCSfile$
- *
- * $Author$
- *
- * $Date$
- *
- * $Revision$
- *
- * $Name$
- *====================================================================*/
-
-/*--------------------------------------------------------------------------*/
-/* Purpose: Determine file types for command files and read in the parallel */
-/*          ExodusII command file.                                          */
-/*          Taken from nemesis utilites nem_spread and nem_join.            */
-/*--------------------------------------------------------------------------*/
-/* Author(s):  Matthew M. St.John (9226)                                    */
-/*--------------------------------------------------------------------------*/
-/*--------------------------------------------------------------------------*/
-/* Revision History:                                                        */
-/*    14 April 1999:       Date of creation.                                */
-/*--------------------------------------------------------------------------*/
-
+/*****************************************************************************
+ * Zoltan Dynamic Load-Balancing Library for Parallel Applications           *
+ * Copyright (c) 2000, Sandia National Laboratories.                         *
+ * Zoltan is distributed under the GNU Lesser General Public License 2.1.    * 
+ * For more info, see the README file in the top-level Zoltan directory.     *  
+ *****************************************************************************/
+/*****************************************************************************
+ * CVS File Information :
+ *    $RCSfile$
+ *    $Author$
+ *    $Date$
+ *    $Revision$
+ ****************************************************************************/
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -39,6 +24,12 @@
 #include "dr_util_const.h"
 #include "dr_err_const.h"
 #include "ch_init_dist_const.h"
+
+/*--------------------------------------------------------------------------*/
+/* Purpose: Determine file types for command files and read in the parallel */
+/*          ExodusII command file.                                          */
+/*          Taken from nemesis utilites nem_spread and nem_join.            */
+/*--------------------------------------------------------------------------*/
 
 #define TLIST_CNT 5
 
