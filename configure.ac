@@ -115,7 +115,8 @@ AM_CONDITIONAL(BUILD_TEUCHOS, test "X$ac_cv_use_teuchos" != "Xno" ||
 	test "X$ac_cv_use_anasazi" != "Xno") 
 
 TAC_ARG_ENABLE_DEFAULT_FEATURE(ml, [Build ml], ML)
-AM_CONDITIONAL(BUILD_ML, test "X$ac_cv_use_ml" != "Xno")
+AM_CONDITIONAL(BUILD_ML, test "X$ac_cv_use_ml" != "Xno" ||
+	test "X$ac_cv_use_tsf" != "Xno")
 
 ## #np# - Copy the next two lines, and change the name
 TAC_ARG_ENABLE_DEFAULT_FEATURE(new_package, [Build new_package], NEW_PACKAGE)
@@ -237,7 +238,8 @@ if test "X$ac_cv_use_meros" != "Xno"; then
   AC_CONFIG_SUBDIRS([packages/meros])
 fi
 
-if test "X$ac_cv_use_ml" != "Xno"; then
+if test "X$ac_cv_use_ml" != "Xno" ||
+	test "X$ac_cv_use_tsf" != "Xno"; then
   AC_CONFIG_SUBDIRS([packages/ml])
 fi
 
