@@ -54,7 +54,8 @@ int main(int argc, char *argv[]) {
 	bool verbose = (MyPID==0);
 
 	//  Dimension of the matrix
-	int NumGlobalElements = 1000;
+        int nx = 10;  			// Discretization points in any one direction.
+	int NumGlobalElements = nx*nx;	// Size of matrix nx*nx
 
 	// We will use zero based indices
 	int IndexBase = 0;
@@ -76,14 +77,28 @@ int main(int argc, char *argv[]) {
 	// on this processor
 	int * NumNz = new int[NumMyElements];
 
-	// We are building a tridiagonal matrix
-	// So we need 2 off-diagonal terms (except for the first and last equation)
+	/* We are building a matrix of block structure:
+	
+			| T -I          |
+			|-I  T -I       |
+			|   -I  T       |
+			|        ...  -I|
+			|           -I T|
+
+	 where each block is dimension nx by nx and the matrix is on the order of
+	 nx*nx.  The block T is a tridiagonal matrix, so we need 5 off-diagonal terms 
+	 (except for the first and last equation)
+	*/
 
 	for (i=0; i<NumMyElements; i++) {
-		if (MyGlobalElements[i]==0 || MyGlobalElements[i] == NumGlobalElements-1)
-			NumNz[i] = 2;
-		else
+		if (MyGlobalElements[i] == 0 || MyGlobalElements[i] == NumGlobalElements-1 || 
+		    MyGlobalElements[i] == nx-1 || MyGlobalElements[i] == nx*(nx-1) )
 			NumNz[i] = 3;
+		else if (MyGlobalElements[i] < nx || MyGlobalElements[i] > nx*(nx-1) || 
+                         MyGlobalElements[i]/nx == 1 || (MyGlobalElements[i]+1)/nx == 1)
+			NumNz[i] = 4;
+		else
+			NumNz[i] = 5;
 	}
 
 	// Create an Epetra_Matrix
@@ -91,18 +106,19 @@ int main(int argc, char *argv[]) {
 	Epetra_CrsMatrix& A = *new Epetra_CrsMatrix(Copy, Map, NumNz);
 
 	// Diffusion coefficient, can be set by user.
-	double rho = 1.0;  
+	double rho = 0.0;  
 
 	// Add  rows one-at-a-time
 	// Need some vectors to help
 
 	const double one = 1.0;
-	double *Values = new double[2];
-	double h = one /(NumGlobalElements + one);
-	double c = rho*h/ 2.0;
-	Values[0] = -one-c; Values[1] = -one+c;
-	int *Indices = new int[2];
-	double diag = 2.0;
+	double *Values = new double[4];
+	double h = one /(nx+1);
+	double h2 = h*h;
+	double c = 5.0e-01*rho/ h;
+	Values[0] = -one/h2 - c; Values[1] = -one/h2 + c; Values[2] = -one/h2; Values[3]= -one/h2;
+	int *Indices = new int[4];
+	double diag = 4.0 / h2;
 	int NumEntries;
 	
 	for (i=0; i<NumMyElements; i++)
@@ -110,20 +126,74 @@ int main(int argc, char *argv[]) {
 		if (MyGlobalElements[i]==0)
 		{
 			Indices[0] = 1;
-			NumEntries = 1;
+			Indices[1] = nx;
+			NumEntries = 2;
 			assert(A.InsertGlobalValues(MyGlobalElements[i], NumEntries, Values+1, Indices)==0);
+		}
+		else if (MyGlobalElements[i] == nx*(nx-1))
+		{
+			Indices[0] = nx*(nx-1)+1;
+			Indices[1] = nx*(nx-2);
+			NumEntries = 2;
+			assert(A.InsertGlobalValues(MyGlobalElements[i], NumEntries, Values+1, Indices)==0);
+		}
+		else if (MyGlobalElements[i] == nx-1)
+		{
+			Indices[0] = nx-2;
+			NumEntries = 1;
+			assert(A.InsertGlobalValues(MyGlobalElements[i], NumEntries, Values, Indices)==0);
+			Indices[0] = 2*nx-1;
+			assert(A.InsertGlobalValues(MyGlobalElements[i], NumEntries, Values+2, Indices)==0);
 		}
 		else if (MyGlobalElements[i] == NumGlobalElements-1)
 		{
 			Indices[0] = NumGlobalElements-2;
 			NumEntries = 1;
 			assert(A.InsertGlobalValues(MyGlobalElements[i], NumEntries, Values, Indices)==0);
+			Indices[0] = nx*(nx-1)-1;
+			assert(A.InsertGlobalValues(MyGlobalElements[i], NumEntries, Values+2, Indices)==0);
+		}
+		else if (MyGlobalElements[i] < nx)
+		{
+                        Indices[0] = MyGlobalElements[i]-1;
+                        Indices[1] = MyGlobalElements[i]+1;
+			Indices[2] = MyGlobalElements[i]+nx;
+                        NumEntries = 3;
+                        assert(A.InsertGlobalValues(MyGlobalElements[i], NumEntries, Values, Indices)==0);
+		}
+		else if (MyGlobalElements[i] > nx*(nx-1))
+		{
+                        Indices[0] = MyGlobalElements[i]-1;
+                        Indices[1] = MyGlobalElements[i]+1;
+			Indices[2] = MyGlobalElements[i]-nx;
+                        NumEntries = 3;
+                        assert(A.InsertGlobalValues(MyGlobalElements[i], NumEntries, Values, Indices)==0);
+		}
+                else if (MyGlobalElements[i]/nx == 1)
+		{
+			Indices[0] = MyGlobalElements[i]+1;
+			Indices[1] = MyGlobalElements[i]-nx;
+			Indices[2] = MyGlobalElements[i]+nx;
+			NumEntries = 3;
+			assert(A.InsertGlobalValues(MyGlobalElements[i], NumEntries, Values+1, Indices)==0);
+		}
+		else if ((MyGlobalElements[i]+1)/nx == 1)
+		{
+			Indices[0] = MyGlobalElements[i]-nx;
+                        Indices[1] = MyGlobalElements[i]+nx;
+                        NumEntries = 2;
+                        assert(A.InsertGlobalValues(MyGlobalElements[i], NumEntries, Values+2, Indices)==0);
+                        Indices[0] = MyGlobalElements[i]-1;
+                        NumEntries = 1;
+                        assert(A.InsertGlobalValues(MyGlobalElements[i], NumEntries, Values, Indices)==0);
 		}
 		else
 		{
 			Indices[0] = MyGlobalElements[i]-1;
 			Indices[1] = MyGlobalElements[i]+1;
-			NumEntries = 2;
+			Indices[2] = MyGlobalElements[i]-nx;
+			Indices[3] = MyGlobalElements[i]+nx;
+			NumEntries = 4;
 			assert(A.InsertGlobalValues(MyGlobalElements[i], NumEntries, Values, Indices)==0);
 		}
 		// Put in the diagonal entry
@@ -140,23 +210,28 @@ int main(int argc, char *argv[]) {
 	//
 	//  Variables used for the Block Arnoldi Method
 	//
-	int block = 5;
-	int length = 30;
-	int nev = 5;
-	double tol = 1.0e-8;
-	string which="LM";
-	int step = 1;
+	int block = 1;
+	int length = 20;
+	int nev = 4;
+	double tol = 1.0e-16;
+	string which="SM";
+	int step = length;
 	int restarts = 10;
 
 	// create a PetraAnasaziVec. Note that the decision to make a view or
 	// or copy is determined by the petra constructor called by Anasazi::PetraVec.
 	// This is possible because I pass in arguements needed by petra.
 	Anasazi::PetraVec<double> ivec(Map, block);
+	Anasazi::PetraVec<double> tempin(Map,block), tempout(Map,block);
+	tempin.MvInit(1.0);
+	tempout.MvInit(0.0);
 	ivec.MvRandom();
 
 	// call the ctor that calls the petra ctor for a matrix
 	Anasazi::PetraMat<double> Amat(A);	
 	Anasazi::Eigenproblem<double> MyProblem(&Amat, &ivec);
+	Amat.ApplyMatrix( tempin, tempout );
+	tempout.MvPrint();
 
 	// initialize the Block Arnoldi solver
 	Anasazi::BlockArnoldi<double> MyBlockArnoldi(MyProblem, tol, nev, length, block, 
