@@ -1,3 +1,11 @@
+<!doctype html public "-//w3c//dtd html 4.0 transitional//en">
+<html>
+<head>
+   <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+   <meta name="GENERATOR" content="Mozilla/4.7 [en] (X11; U; SunOS 5.6 sun4m) [Netscape]">
+   <meta name="sandia.approved" content="SAND99-1376">
+   <meta name="author" content="karen devine, kddevin@sandia.gov">
+   <title> Zoltan Developer's Guide:  Timing Routines</title>
 <!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
  ! Zoltan Dynamic Load-Balancing Library for Parallel Applications            !
  ! Copyright (c) 2000, Sandia National Laboratories.                          !
@@ -10,20 +18,11 @@
      $Date$
      $Revision$
 >
-
-<!doctype html public "-//w3c//dtd html 4.0 transitional//en">
-<html>
-<head>
-   <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
-   <meta name="GENERATOR" content="Mozilla/4.7 [en] (X11; U; SunOS 5.7 sun4u) [Netscape]">
-   <meta name="sandia.approved" content="SAND99-1376">
-   <meta name="author" content="karen devine, kddevin@sandia.gov">
-   <title> Zoltan Developer's Guide:  Timing Routines</title>
 </head>
 <body bgcolor="#FFFFFF">
 
-<div ALIGN=right><b><i><a href="dev.html">Zoltan Developer's Guide</a>&nbsp; |&nbsp; <a href="dev_services_debug.html">Next</a>&nbsp; |&nbsp; <a href="dev_services_hash.html">Previous</a></i></b></div>
-
+<div align=right><b><i><a href="dev.html">Zoltan Developer's Guide</a>&nbsp;
+|&nbsp; <a href="dev_services_debug.html">Next</a>&nbsp; |&nbsp; <a href="dev_services_hash.html">Previous</a></i></b></div>
 
 <h2>
 <a NAME="Timing"></a>Timing Routines</h2>
@@ -33,23 +32,27 @@ provides access to at least two portable timers: one CPU clock and one
 wall clock.
 <p>The routines included in the utility are listed below.
 <blockquote><b><a href="#LB_Time">LB_Time</a></b>: Returns the time (in
-seconds) after some fixed point in time.
+seconds) after some fixed reference point in time.
 <br><b><a href="#LB_Time_Resolution">LB_Time_Resolution</a></b>:&nbsp;
-The resolution of the current clock (timer).</blockquote>
-One can select which timer to use via <b><a href="dev_services_params.html#LB_Set_Param">LB_Set_Param</a></b>.
-Currently, the following values for <i>TIMER</i> are supported:
-<blockquote><i>wall </i>: wall-clock time. On most systems, this timer
-calls MPI_Wtime.
-<br><i>cpu</i>&nbsp; : cpu time.&nbsp; On most systems, this timer calls
-the ANSI C function clock(). Note that this timer may roll over at just
-36 minutes. LB_Time attempts to keep track of the number of roll-overs
+The resolution of the specified timer.
+<p>Currently, the following timers are supported:</blockquote>
+
+<blockquote><i>LB_TIME_WALL </i>: wall-clock time. On most systems, this
+timer calls MPI_Wtime.
+<br><i>LB_TIME_CPU&nbsp;</i> : cpu time.&nbsp; On most systems, this timer
+calls the ANSI C function clock(). Note that this timer may roll over at
+just 36 minutes. LB_Time attempts to keep track of the number of roll-overs
 but this feature will work only if LB_Time is called at least once during
 every period between roll-overs.</blockquote>
-The default value of <i>TIMER</i> is <i>wall</i>. The timer setting is
-global. Consequently, one cannot use different timers for different load-balancing
-structures.
+Within Zoltan, it is recommended to select which timer to use by setting
+<a href="../ug_html/ug_alg.html#General_Parameters">the
+<i>TIMER</i> general parameter</a> via <b><a href="dev_services_params.html#LB_Set_Param">LB_Set_Param</a></b>.
+The default value of <i>TIMER</i> is <i>wall</i>.&nbsp; Zoltan stores an
+integer representation of the selected timing method&nbsp; in <i>lb->Timer
+. </i>This value should be passed on to <b>LB_Time</b>, as in<i> </i><b>LB_Time</b>(<i>lb->Timer</i>).
+<br>&nbsp;
 <p>
-<hr><a NAME="LB_Time"></a>double <b>LB_Time</b>(void);&nbsp;
+<hr><a NAME="LB_Time"></a>double <b>LB_Time</b>(int <i>timer</i>);&nbsp;
 <hr>
 <p><b>LB_Time</b> returns the time in seconds, measured from some fixed
 reference time. Note that the time is <i>not </i>synchronized among different
@@ -64,9 +67,10 @@ time. The timer is selected through <b><a href="../ug_html/ug_interface_lb.html#
 </tr>
 
 <tr>
-<td VALIGN=TOP>&nbsp;</td>
+<td VALIGN=TOP>&nbsp;&nbsp; <i>timer</i></td>
 
-<td>None.</td>
+<td>The timer type (e.g. wall or cpu) represented as an integer. See top
+of page for a list of valid values.</td>
 </tr>
 
 <tr>
@@ -78,12 +82,14 @@ time. The timer is selected through <b><a href="../ug_html/ug_interface_lb.html#
 <tr>
 <td VALIGN=TOP>&nbsp;&nbsp; double&nbsp;</td>
 
-<td>The time in seconds.&nbsp;</td>
+<td>The time in seconds. The time is always positive; a negative value
+indicates an error.</td>
 </tr>
 </table>
 
 <p>
-<hr><a NAME="LB_Time_Resolution"></a>double <b>LB_Time_Resolution</b>(void)
+<hr><a NAME="LB_Time_Resolution"></a>double <b>LB_Time_Resolution</b>(int
+<i>timer</i>)
 ;&nbsp;
 <hr>
 <br><b>LB_Time_Resolution</b> returns the resolution of the current timer.
@@ -96,9 +102,10 @@ time. The timer is selected through <b><a href="../ug_html/ug_interface_lb.html#
 </tr>
 
 <tr>
-<td VALIGN=TOP>&nbsp;</td>
+<td VALIGN=TOP>&nbsp;&nbsp; <i>timer</i></td>
 
-<td>None.</td>
+<td>The timer type (e.g. wall or cpu) represented as an integer. See top
+of page for a list of valid values.</td>
 </tr>
 
 <tr>
@@ -111,7 +118,7 @@ time. The timer is selected through <b><a href="../ug_html/ug_interface_lb.html#
 <td VALIGN=TOP>&nbsp;&nbsp; double&nbsp;</td>
 
 <td>The timer resolution in seconds.&nbsp; If the resolution is unknown,
-zero is returned.</td>
+-1 is returned.</td>
 </tr>
 </table>
 
@@ -119,14 +126,14 @@ zero is returned.</td>
 <p>
 <hr><a NAME="Example"></a>
 <br><b>Example:</b>
-<br>Here is a typical example for how to use the timer routines:
+<br>Here is a simple example for how to use the timer routines:
 <ul>double t0, t1, t2;
-<br>LB_Set_Param(NULL, "TIMER", "wall");
-<br>t0 = LB_Time();
+<br>LB_Set_Param(lb, "TIMER", "wall");
+<br>t0 = LB_Time(lb->Timer);
 <br>/* code segment 1&nbsp; */
-<br>t1 = LB_Time();
+<br>t1 = LB_Time(lb->Timer);
 <br>/* code segment 2&nbsp; */
-<br>t2 = LB_Time();
+<br>t2 = LB_Time(lb->Timer);
 <br>/* Print timing results */
 <br>LB_Print_Stats(lb, t1-t0, "Time for part 1:");
 <br>LB_Print_Stats(lb, t2-t1, "Time for part 2:");
