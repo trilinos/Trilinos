@@ -187,7 +187,7 @@ int main(int argc, char *argv[])
   for (j=0; j<DN; j++)
     for (i=0; i<DM; i++) D[j][i] = (double) (1+i+j*DM) ;
 
-  cout << D << endl;
+  //cout << D << endl;
 
   double NormInfD_ref = (double)(DM*(DN*(DN+1))/2);
   double NormOneD_ref = NormInfD_ref;
@@ -204,7 +204,7 @@ int main(int argc, char *argv[])
   }
   D.Scale(ScalarA); // Scale entire D matrix by this value
 
-  cout << D << endl;
+  //cout << D << endl;
 
   NormInfD = D.NormInf();
   NormOneD = D.NormOne();
