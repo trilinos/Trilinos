@@ -284,6 +284,13 @@ void ML_CSR_MSR_ML_memorydata_Destroy(void *data);
 /* internal function defined later on in this file                           */
 /* ------------------------------------------------------------------------- */
 
+extern int ML_modified_matvec(void *Amat_in, int, double *, int , double *);
+extern int ML_random_global_subset(ML_Operator *Amat, double reduction,
+                                   int **list, int *length);
+extern int ML_repartition_matrix(ML_Operator *mat, ML_Operator **new_mat,
+                                 ML_Operator **permutation);
+
+
 int ML_Aggregate_Compress_Matrix(ML_GetrowFunc *getrow_obj, int *mat_indx, 
            int num_PDEs, ML_Comm *comm, int **new_mat_indx, 
            int *N_neighbors, int **neighbors, int **recv_leng,

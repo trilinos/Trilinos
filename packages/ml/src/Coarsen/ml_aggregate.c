@@ -1063,4 +1063,451 @@ int local_to_global_row(int row)
 
 #endif
 
+int ML_modified_matvec(void *Amat_in, int ilen, double p[], int olen, double ap[])
+{
+  int i, j;
+  double            *p2;
+   ML_CommInfoOP     *getrow_comm;
+   ML_Operator       *Amat;
+   ML_Comm           *comm;
+   int allocated_space = 0; 
+   int *cols = NULL;
+   double *vals = NULL;
+   int length;
+   double *dtemp, diag, best;
+   
+
+   Amat  = (ML_Operator *) Amat_in;
+   comm  = Amat->comm;
+
+
+   getrow_comm= Amat->getrow->pre_comm;
+   if (getrow_comm != NULL) {
+      p2 = (double *) ML_allocate((olen+getrow_comm->minimum_vec_size+1)*
+                                  sizeof(double));
+      dtemp = (double *) ML_allocate((olen+getrow_comm->minimum_vec_size+1)*
+                                  sizeof(double));
+      for (i = 0; i < olen; i++) p2[i] = p[i];
+      ML_exchange_bdry(p2,getrow_comm, olen, comm, ML_OVERWRITE,NULL);
+   }
+   else {
+     p2 = p;
+     dtemp = (double *) ML_allocate((olen+1)*sizeof(double));
+   }
+
+
+   for (i = 0; i < olen; i++) {
+     ap[i] = -1.0e-20;
+     ap[i] = 0.;
+     ML_get_matrix_row(Amat, 1, &i , &allocated_space , &cols, &vals,
+		       &length, 0);
+     ML_random_vec(dtemp,length,Amat->comm);
+     diag = -100.;
+     best = -100.;
+     for (j = 0; j < length; j++) {
+       if ((cols[j] == i) && (p2[cols[j]] > 0.)) diag = p2[cols[j]];
+       else {
+	 if ((dtemp[j] > best) && (p2[cols[j]] > 0.0)) { ap[i] = p2[cols[j]]; best = dtemp[j]; }
+       }
+       if (diag != -100.) ap[i] = diag;
+     }
+   }
+
+
+  if (getrow_comm != NULL) {
+     for (i = 0; i < olen; i++) p[i] = p2[i];
+     ML_free(p2);
+  }
+  ML_free(dtemp);
+  if (cols != NULL) ML_free(cols);
+  if (vals != NULL) ML_free(vals);
+  return(1);
+}
+
+int ML_random_global_subset(ML_Operator *Amat, double reduction,
+			    int **list, int *length)
+{
+  int Nglobal, itemp;
+  int iNtarget, i, *rand_list, *temp_list;
+  double Ntarget, dtemp;
+
+  Nglobal = Amat->outvec_leng;
+  ML_gsum_scalar_int(&Nglobal,&i,Amat->comm);
+
+  Ntarget = ((double) Nglobal)/reduction;
+
+  Ntarget += .5*( (double) (Nglobal))/(reduction*reduction);
+  iNtarget = (int) Ntarget;
+      /* add some additional values because we will have */
+      /* some duplicate random numbers */
+
+  rand_list = (int *) ML_allocate(iNtarget*(sizeof(int)));
+  temp_list = (int *) ML_allocate(iNtarget*(sizeof(int)));
+
+  if (Amat->comm->ML_mypid == 0) {
+    for (i = 0; i < iNtarget; i++) {
+      ML_random_vec(&dtemp,1,Amat->comm);
+      ML_random_vec(&dtemp,1,Amat->comm);
+      dtemp = (1 + dtemp);
+      rand_list[i] = (int ) (((double) Nglobal)  * dtemp);
+      rand_list[i] = (rand_list[i] % Nglobal);
+    }
+    ML_az_sort(rand_list, iNtarget, NULL, NULL);
+    ML_rm_duplicates(rand_list, &iNtarget);
+  }
+  else { 
+    for (i = 0; i < iNtarget; i++) rand_list[i] = 0;
+    iNtarget = 0;
+  }
+  ML_gsum_scalar_int(&iNtarget, &itemp, Amat->comm);
+  ML_gsum_vec_int(&rand_list,&temp_list,iNtarget,Amat->comm);
+  *length = iNtarget;
+  ML_free(temp_list);
+  *list = rand_list;
+
+  return 0;
+}
+
+/*****************************************************************************/
+/*****************************************************************************/
+/*****************************************************************************/
+/* ML_repartition_matrix() is intended to repartitions a matrix onto a subset*/
+/* of processors when the number of rows <= 10 * Nprocs. The basic algorithm */
+/* is fairly crude:                                                          */
+/*      1) A subset of root unknowns is picked randomly. Each root node      */
+/*         will correspond to a processor subdomain.                         */
+/*      2) The root nodes are grown into subdomains using a greedy nearest-  */
+/*         neighbor algorithm. Repeated multiplies with a modified matrix-   */
+/*         vector product routine are used for this. Ties (unknowns adjacent */
+/*         to more than one subdomain) are decided randomly.                 */
+/*                                                                           */
+/* This function is not intended to produce super great partitions. Instead  */
+/* its role is to releave stress from aggregation routines whose quality     */
+/* suffers when each processor has roughly one point. The idea is to generate*/
+/* P_tent via aggregation on the repartitioned matrix and then permute P_tent*/
+/* for use on the original matrix. Specifically, if Q is a permutation       */
+/* defining the repartitioning, then                                         */
+/*                                                                           */
+/*        A_repartition = Q A Q^T                                            */
+/* with coarse grid matrix                                                   */
+/*        Acoarse_repartition = (P_tent)^T A_repartition P_tent              */
+/*                            = (P_tent)^T Q A Q^T P_tent                    */
+/* This implies that Q^T P_tent used with the original matrix generates the  */
+/* same coarse grid operator.                                                */
+/*****************************************************************************/
+/*****************************************************************************/
+/*****************************************************************************/
+
+int ML_repartition_matrix(ML_Operator *mat, ML_Operator **new_mat,
+			  ML_Operator **permutation)
+{
+  int    proc_index, Nsnd, Nrcv, *neighbors, flag, oldj;
+  int    *NeighborList, *Nsnds, *Nrcvs, **SndIndices, **RcvIndices, count;
+  int    *the_list, the_length, offset, Nnonzero, Nglobal, oldNnonzero;
+  int    *remote_offsets, Nneighbors, i, j, Nrows, Nghost;
+  int    *permute_array, *itemp, *columns, *rowptr;
+  double *dvec, *d2vec, *values;
+  ML_Operator *perm_mat, *permt_mat, *permuted_Amat;
+  ML_CommInfoOP *mat_comm = NULL;
+  struct ML_CSR_MSRdata *temp;
+
+  *new_mat = NULL;
+  *permutation = NULL;
+  Nglobal = mat->invec_leng;
+  ML_gsum_scalar_int(&Nglobal, &i, mat->comm);
+
+  if (Nglobal >= 10*mat->comm->ML_nprocs) return 0;
+
+  /* Choose a random subset of global unknowns. These will become root nodes */
+  /* for a very simple aggregation scheme. These aggregates/subdomains are   */ 
+  /* later assigned to processors defining the new partitioning.             */
+
+  ML_random_global_subset(mat, 8.,&the_list, &the_length);
+#ifdef DEBUG
+  if (mat->comm->ML_mypid == 0) {
+    for (i = 0; i < the_length; i++) 
+      printf("%d: ML_reparition_matrix: root_node(%d) = %d\n",mat->comm->ML_mypid,i,the_list[i]);
+  }
+  fflush(stdout);
+#endif
+  if (the_length >= mat->comm->ML_nprocs) {
+    ML_free(the_list);
+    return 0;
+  }
+
+  /* Make up a global numbering for the matrix unknowns. The jth  */
+  /* unknown on processor k has global id = remote_offsets[k] + j */
+
+  remote_offsets = (int *) ML_allocate(sizeof(int)*(mat->comm->ML_nprocs + 1));
+  itemp         = (int *) ML_allocate(sizeof(int)*(Nglobal +
+						   mat->comm->ML_nprocs + 1));
+  for (i = 0; i < mat->comm->ML_nprocs; i++) remote_offsets[i] = 0;
+  remote_offsets[mat->comm->ML_mypid] = mat->invec_leng;
+  ML_gsum_vec_int(&remote_offsets,&itemp,mat->comm->ML_nprocs,mat->comm);
+  j = 0; oldj = 0;
+  for (i = 1; i < mat->comm->ML_nprocs; i++) {
+    oldj = j;
+    j += remote_offsets[i-1];
+    remote_offsets[i-1] = oldj;
+  }
+  remote_offsets[ mat->comm->ML_nprocs-1] = j;
+  remote_offsets[mat->comm->ML_nprocs] = Nglobal;
+  offset = remote_offsets[mat->comm->ML_mypid];
+#ifdef DEBUG
+  if (mat->comm->ML_mypid == 0) 
+    for (i = 0; i <= mat->comm->ML_nprocs; i++)
+      printf("ML_repartition_matrix: REMOTE OFFSET(%d) = %d\n",i,remote_offsets[i]);
+  fflush(stdout);
+#endif
+
+  /* Create a vector which initially has all elements set */
+  /* to zero except those corresponding to the root nodes */
+  /* defined in 'the_list'. These are set to the position */
+  /* in 'the_list' where they reside. A modified matrix-  */
+  /* vector product routine follows using this vector.    */
+  /* This routine will effectively grow the root nodes    */
+  /* into domains.                                        */
+
+  /* Make sure there is enough space for ghost nodes.     */
+  i = mat->invec_leng + 1;
+  if (mat->getrow->pre_comm != NULL) 
+    i += mat->getrow->pre_comm->minimum_vec_size;
+
+  dvec = (double *) ML_allocate(sizeof(double)*i);
+  d2vec = (double *) ML_allocate(sizeof(double)*i);
+
+  for (i = 0; i < mat->invec_leng; i++) dvec[i] = 0.;
+  Nnonzero = the_length;
+  for (i = 0; i < the_length; i++) {
+    if ( (the_list[i] >= offset) &&
+	 (the_list[i] < offset + mat->invec_leng)){
+      dvec[the_list[i]-offset] = (double ) (i + 1);
+    }
+  }
+
+  /* Grow the subdomains by using a modified matvec routine. This */
+  /* routine takes dvec and produces d2vec. This routine works as */
+  /* follows:                                                     */
+  /*    if dvec[k] != 0              ========> d2vec[k] = dvec[k] */
+  /*    if dvec[k] == 0 and                                       */
+  /*	  A(k,j) != 0 for some                                    */
+  /*      dvec[j]!= 0                ========> d2vec[k] = dvec[j] */
+  /*    else                         ========> d2vec[k] = 0       */
+  /* NOTE: if several A(k,j)'s are nonzero with dvec[j] nonzero,  */
+  /* then one j is chosen at random.                              */
+
+  oldNnonzero = 0;
+  while ( (Nglobal - Nnonzero > 0) && (Nnonzero > oldNnonzero)) {
+    ML_modified_matvec( mat, mat->invec_leng, dvec, 
+			mat->outvec_leng, d2vec);
+    oldNnonzero = Nnonzero;
+    Nnonzero = 0;
+    for (i = 0; i < mat->outvec_leng; i++) {
+      dvec[i] = d2vec[i];
+      if (dvec[i] > 0.0) Nnonzero++;
+    }
+    ML_gsum_scalar_int(&Nnonzero,&i,mat->comm);
+  }
+  ML_free(d2vec);
+
+  /* Assign any singletons to the a new domain */
+
+  for (i = 0; i < mat->outvec_leng; i++) {
+    if ( dvec[i] == 0.) dvec[i] = (double) (the_length + 1);
+  }
+
+#ifdef DEBUG
+  for (i = 0; i < mat->outvec_leng; i++) 
+    printf("%d: ML_repartition_matrix: domain_assignment(%d) = %e\n",mat->comm->ML_mypid,i,dvec[i]);
+  fflush(stdout);
+#endif
+
+  /* Build a global array containing all the subdomain assignments */
+
+  permute_array = (int *) ML_allocate(sizeof(int)*Nglobal);
+  for (i = 0; i < Nglobal; i++) permute_array[i] = 0;
+  for (i = 0; i < mat->invec_leng; i++) 
+    permute_array[i+offset] = (int) dvec[i];
+  ML_gsum_vec_int(&permute_array,&itemp,Nglobal,mat->comm);
+  ML_free(itemp);
+  ML_free(dvec);
+
+  /* Count the number of rows assigned to this processor */
+  Nrows = 0;
+  for (i = 0; i < Nglobal; i++) {
+    if (permute_array[i] - 1  == mat->comm->ML_mypid) Nrows++;
+  }
+
+  /* Now build a CSR matrix to represent the permuation */
+  /* along with the communication information.          */
+
+  columns = (int *) ML_allocate(sizeof(int)*Nrows);
+  values  = (double *) ML_allocate(sizeof(double)*Nrows);
+  rowptr = (int *) ML_allocate(sizeof(int)*(Nrows+1));
+  neighbors       = (int *) ML_allocate(sizeof(int)*(Nglobal+1));
+  for (i = 0; i < Nglobal; i++) neighbors[i] = -1;
+  j = 0;	Nghost = 0; proc_index = 0; Nsnd = 0; Nrcv = 0;
+  flag = 0;
+
+
+  /* First determine with which processors do we need to */
+  /* receive information to perform the permutation.     */
+
+  NeighborList =  (int *) ML_allocate(sizeof(int)*
+				      ML_min(Nglobal+1, mat->comm->ML_nprocs));
+  Nneighbors = 0;
+  proc_index = 0;
+  for (i = 0; i <= Nglobal; i++) {
+    if (i != Nglobal) {
+      while (i == remote_offsets[proc_index+1]) {
+	proc_index++;
+      }
+    }
+    if ( (permute_array[i] - 1 == mat->comm->ML_mypid) &&
+	 ( (i < offset) || (i >= offset + mat->invec_leng) )) {
+      if (neighbors[proc_index] == -1) {
+	neighbors[proc_index] = Nneighbors;
+	NeighborList[Nneighbors++] = proc_index;
+      }
+    }
+  }
+	    
+  /* Where (which processors) do we need to send information */
+
+  for (i = offset; i < offset + mat->invec_leng; i++) {
+    if (permute_array[i] - 1 != mat->comm->ML_mypid) {
+      if (neighbors[permute_array[i]-1] == -1) {
+	neighbors[permute_array[i]-1] = Nneighbors;
+	NeighborList[Nneighbors++] = permute_array[i]-1;
+      }
+    }
+  }
+
+  /* Count how much information is sent and received from */
+  /* each processor in the NeighborList.                  */
+
+  Nsnds = (int *) ML_allocate(sizeof(int)*(Nneighbors+1));
+  Nrcvs = (int *) ML_allocate(sizeof(int)*(Nneighbors+1));
+  for (i = 0; i < Nneighbors; i++) Nsnds[i] = 0;
+  for (i = 0; i < Nneighbors; i++) Nrcvs[i] = 0;
+
+  for (i = offset; i < offset + mat->invec_leng; i++) {
+    if (permute_array[i] - 1 != mat->comm->ML_mypid)
+      Nsnds[neighbors[permute_array[i]-1]]++;
+  }
+
+  proc_index = 0;
+  for (i = 0; i <= Nglobal; i++) {
+    if (i != Nglobal) {
+      while (i == remote_offsets[proc_index+1]) proc_index++;
+    }
+    if ( (permute_array[i] - 1 == mat->comm->ML_mypid) &&
+	 ( (i < offset) || (i >= offset + mat->invec_leng) )) {
+      Nrcvs[neighbors[proc_index]]++;
+    }
+  }
+
+  /* Now fill in the indices which must be sent and received */
+  SndIndices = (int **) ML_allocate(sizeof(int)*(Nneighbors+1));
+  RcvIndices = (int **) ML_allocate(sizeof(int)*(Nneighbors+1));
+  for (i = 0; i < Nneighbors; i++) {
+    SndIndices[i] = (int *) ML_allocate(sizeof(int)*(Nsnds[i]+1));
+    RcvIndices[i] = (int *) ML_allocate(sizeof(int)*(Nrcvs[i]+1));
+    Nsnds[i] = 0;
+    Nrcvs[i] = 0;
+  }
+
+  for (i = offset; i < offset + mat->invec_leng; i++) {
+    if (permute_array[i] - 1 != mat->comm->ML_mypid) {
+      j = neighbors[permute_array[i]-1];
+      SndIndices[j][Nsnds[j]] = i - offset;
+      Nsnds[j]++;
+    }
+  }
+
+  count = mat->invec_leng;
+  proc_index = 0;
+  for (i = 0; i <= Nglobal; i++) {
+    if (i != Nglobal) {
+      while (i == remote_offsets[proc_index+1]) proc_index++;
+    }
+    if ( (permute_array[i] - 1 == mat->comm->ML_mypid) &&
+	 ( (i < offset) || (i >= offset + mat->invec_leng) )) {
+      j = neighbors[proc_index];
+      RcvIndices[j][Nrcvs[j]] = count++;
+      Nrcvs[j]++;
+    }
+  }
+  ML_free(remote_offsets);
+  ML_free(neighbors);
+
+
+  ML_CommInfoOP_Set_neighbors(&mat_comm, Nneighbors, 
+			      NeighborList,ML_OVERWRITE, NULL, 0);
+
+
+  for (i = 0; i < Nneighbors; i++) {
+    ML_CommInfoOP_Set_exch_info(mat_comm, NeighborList[i],
+				Nrcvs[i], RcvIndices[i], Nsnds[i], SndIndices[i]);
+    ML_free(SndIndices[i]);
+    ML_free(RcvIndices[i]);
+  }
+  ML_free(NeighborList);
+  ML_free(Nsnds);
+  ML_free(Nrcvs);
+  ML_free(SndIndices);
+  ML_free(RcvIndices);
+
+
+  /* Now put in the CSR data */
+
+  j = 0;	Nghost = 0; proc_index = 0; Nsnd = 0; Nrcv = 0;
+  for (i = 0; i < Nglobal; i++) {
+    if (permute_array[i] - 1 == mat->comm->ML_mypid) {
+      rowptr[j] = j;
+      values[j] = 1.;
+      if ( (i >= offset) && 
+	   (i < offset + mat->invec_leng) ) {
+	/* local row */
+	columns[j] = i - offset;
+      }
+      else {
+	/* remote row */
+	columns[j] = mat->invec_leng + Nghost;
+	Nghost++;
+      }
+      j++;
+    }
+  }
+  ML_free(permute_array);
+  rowptr[Nrows] = Nrows;
+  perm_mat = ML_Operator_Create(mat->comm);
+  temp = (struct ML_CSR_MSRdata *) ML_allocate(sizeof(struct ML_CSR_MSRdata));
+  temp->columns = columns;
+  temp->values = values;
+  temp->rowptr = rowptr;
+
+  ML_Operator_Set_ApplyFuncData(perm_mat,mat->invec_leng,
+				Nrows,ML_EMPTY,temp,mat->invec_leng,NULL,0);
+  ML_Operator_Set_Getrow(perm_mat, ML_EXTERNAL, Nrows, CSR_getrows);
+  ML_Operator_Set_ApplyFunc( perm_mat, ML_INTERNAL, CSR_matvec);
+  perm_mat->getrow->pre_comm = mat_comm;
+  perm_mat->data_destroy = ML_CSR_MSRdata_Destroy;
+
+  permt_mat = ML_Operator_Create(mat->comm);
+  ML_Operator_Transpose_byrow(perm_mat,permt_mat);
+
+  permuted_Amat = ML_Operator_Create(mat->comm);
+  ML_rap(perm_mat,mat,permt_mat,permuted_Amat, ML_CSR_MATRIX);
+
+  *new_mat = permuted_Amat;
+  *permutation = permt_mat;
+
+  ML_Operator_Destroy(&perm_mat);
+
+  return 0;
+}
+
+
+
 
