@@ -20,17 +20,20 @@
 CORE_H = \
 	$(srcdir)/AnasaziBasicEigenproblem.hpp \
 	$(srcdir)/AnasaziBasicSort.hpp \
+        $(srcdir)/AnasaziBlockDavidson.hpp \
 	$(srcdir)/AnasaziBlockKrylovSchur.hpp \
 	$(srcdir)/AnasaziConfigDefs.hpp \
 	$(srcdir)/AnasaziEigenproblem.hpp \
 	$(srcdir)/AnasaziEigensolver.hpp \
 	$(srcdir)/AnasaziEpetraAdapter.hpp \
+	$(srcdir)/AnasaziLOBPCG.hpp \
+	$(srcdir)/AnasaziModalSolverUtils.hpp \
 	$(srcdir)/AnasaziMultiVec.hpp \
 	$(srcdir)/AnasaziMultiVecTraits.hpp \
 	$(srcdir)/AnasaziOperator.hpp \
 	$(srcdir)/AnasaziOperatorTraits.hpp \
 	$(srcdir)/AnasaziOutputManager.hpp \
-	$(srcdir)/AnasaziReturnType.hpp
+	$(srcdir)/AnasaziReturnType.hpp \
 	$(srcdir)/AnasaziSortManager.hpp
 
 CORE = \
@@ -87,7 +90,9 @@ DIST_H =
 DIST = 
 
 COMP_H = \
-	$(srcdir)/AnasaziBlockKrylovSchur.hpp
+	$(srcdir)/AnasaziBlockDavidson.hpp \
+	$(srcdir)/AnasaziBlockKrylovSchur.hpp \
+	$(srcdir)/AnasaziLOBPCG.hpp
 
 COMP = 
 

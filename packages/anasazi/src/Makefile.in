@@ -240,17 +240,21 @@ target_vendor = @target_vendor@
 CORE_H = \
 	$(srcdir)/AnasaziBasicEigenproblem.hpp \
 	$(srcdir)/AnasaziBasicSort.hpp \
+        $(srcdir)/AnasaziBlockDavidson.hpp \
 	$(srcdir)/AnasaziBlockKrylovSchur.hpp \
 	$(srcdir)/AnasaziConfigDefs.hpp \
 	$(srcdir)/AnasaziEigenproblem.hpp \
 	$(srcdir)/AnasaziEigensolver.hpp \
 	$(srcdir)/AnasaziEpetraAdapter.hpp \
+	$(srcdir)/AnasaziLOBPCG.hpp \
+	$(srcdir)/AnasaziModalSolverUtils.hpp \
 	$(srcdir)/AnasaziMultiVec.hpp \
 	$(srcdir)/AnasaziMultiVecTraits.hpp \
 	$(srcdir)/AnasaziOperator.hpp \
 	$(srcdir)/AnasaziOperatorTraits.hpp \
 	$(srcdir)/AnasaziOutputManager.hpp \
-	$(srcdir)/AnasaziReturnType.hpp
+	$(srcdir)/AnasaziReturnType.hpp \
+	$(srcdir)/AnasaziSortManager.hpp
 
 CORE = \
 	$(srcdir)/AnasaziVersion.cpp
@@ -286,7 +290,9 @@ LANG_WRAPS =
 DIST_H = 
 DIST = 
 COMP_H = \
-	$(srcdir)/AnasaziBlockKrylovSchur.hpp
+	$(srcdir)/AnasaziBlockDavidson.hpp \
+	$(srcdir)/AnasaziBlockKrylovSchur.hpp \
+	$(srcdir)/AnasaziLOBPCG.hpp
 
 COMP = 
 
@@ -717,7 +723,6 @@ uninstall-am: uninstall-includeHEADERS uninstall-info-am \
 	uninstall-am uninstall-includeHEADERS uninstall-info-am \
 	uninstall-libLIBRARIES uninstall-nodist_execincludeHEADERS
 
-	$(srcdir)/AnasaziSortManager.hpp
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:
