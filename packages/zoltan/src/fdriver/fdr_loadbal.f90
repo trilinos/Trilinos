@@ -152,37 +152,38 @@ type(PARIO_INFO) :: pio_info
       endif
     endif
 
-!  else if (Test_Local_Partitions == 3) then
-!!   /* Variable partition sizes, but one partition per proc */
-!    idx(1) = 0
-!    psize(1) = Proc   !/* Partition size = myproc */
-!!   /* Set partition sizes using global numbers. */
-!    call Zoltan_LB_Set_Part_Sizes(zz_obj, 1, 1, Proc, idx, psize)
-!!   /* Reset partition sizes for upper half of procs. */
-!    if (Proc >= nprocs/2) then
-!      psize(1) = 0.5 + modulo(Proc,2)
-!      call Zoltan_LB_Set_Part_Sizes(zz_obj, 1, 1, Proc, idx, psize)
-!    endif
-!
-!  else if (Test_Local_Partitions == 4) then
-!!   /* Variable number of partitions per proc and variable sizes. */
-!!   /* Request Proc partitions for each processor, of size 1/Proc.  */
-!    s(1:1) = achar(Proc/100 + iachar('0'))
-!    s(2:2) = achar(Proc/10 + iachar('0'))
-!    s(3:3) = achar(modulo(Proc,10) + iachar('0'))
-!    s(4:4) = '\n'
-!    if (Zoltan_Set_Param(zz_obj, "NUM_LOCAL_PARTITIONS", s) == ZOLTAN_FATAL) then
-!      print *, "fatal:  error returned from Zoltan_Set_Param()"
-!      run_zoltan = .false.
-!      return
-!    endif
-!!   /* Each partition size is inverse to the no. of partitions on a proc. */
-!    do i = 1, Proc
-!      partid(i) = i                  !  /* Local partition number */
-!      idx(i) = 0
-!      psize(i) = 1.0/Proc
-!    end do
-!    call Zoltan_LB_Set_Part_Sizes(zz_obj, 0, Proc, partid, idx, psize)
+  else if (Test_Local_Partitions == 3) then
+!   /* Variable partition sizes, but one partition per proc */
+    partid(1) = Proc
+    idx(1) = 0
+    psize(1) = Proc   !/* Partition size = myproc */
+!   /* Set partition sizes using global numbers. */
+    ierr = Zoltan_LB_Set_Part_Sizes(zz_obj, 1, 1, partid, idx, psize)
+!   /* Reset partition sizes for upper half of procs. */
+    if (Proc >= nprocs/2) then
+      psize(1) = 0.5 + modulo(Proc,2)
+      ierr = Zoltan_LB_Set_Part_Sizes(zz_obj, 1, 1, partid, idx, psize)
+    endif
+
+  else if (Test_Local_Partitions == 4) then
+!   /* Variable number of partitions per proc and variable sizes. */
+!   /* Request Proc partitions for each processor, of size 1/Proc.  */
+    s(1:1) = achar(Proc/100 + iachar('0'))
+    s(2:2) = achar(Proc/10 + iachar('0'))
+    s(3:3) = achar(modulo(Proc,10) + iachar('0'))
+    s(4:4) = '\n'
+    if (Zoltan_Set_Param(zz_obj, "NUM_LOCAL_PARTITIONS", s) == ZOLTAN_FATAL) then
+      print *, "fatal:  error returned from Zoltan_Set_Param()"
+      run_zoltan = .false.
+      return
+    endif
+!   /* Each partition size is inverse to the no. of partitions on a proc. */
+    do i = 1, Proc
+      partid(i) = i-1                 !  /* Local partition number */
+      idx(i) = 0
+      psize(i) = 1.0/Proc
+    end do
+    ierr = Zoltan_LB_Set_Part_Sizes(zz_obj, 0, Proc, partid, idx, psize)
   endif
 
 ! /* Free tenmporary arrays for partition sizes. */
@@ -350,7 +351,6 @@ integer(Zoltan_INT) function get_first_element(data, &
   real(Zoltan_FLOAT), intent(out) :: wgt(*)
   integer(Zoltan_INT), intent(out) :: ierr
 
-  type(ELEM_INFO), pointer :: elem(:)
   type(MESH_INFO), pointer :: mesh_data
   integer(Zoltan_INT) :: gid  ! Temporary variables to change positioning of IDs.
   integer(Zoltan_INT) :: lid
@@ -359,7 +359,6 @@ integer(Zoltan_INT) function get_first_element(data, &
   lid = num_lid_entries
 
   mesh_data => data%ptr
-  elem => mesh_data%elements
 
   if (mesh_data%num_elems.eq.0) then  !no elements on this processor
     ierr = ZOLTAN_OK
@@ -368,17 +367,17 @@ integer(Zoltan_INT) function get_first_element(data, &
   endif
     
 
-  if (.not. associated(elem)) then
+  if (.not. associated(mesh_data%elements)) then
     ierr = ZOLTAN_FATAL
     get_first_element = 0
     return
   endif
   
   if (num_lid_entries.gt.0) local_id(lid) = 0
-  global_id(gid) = elem(0)%globalID
+  global_id(gid) = mesh_data%elements(0)%globalID
 
   if (wdim>0) then
-    wgt(1) = elem(0)%cpu_wgt
+    wgt(1) = mesh_data%elements(0)%cpu_wgt
   endif
 
   if (wdim>1) then
@@ -405,7 +404,7 @@ integer(Zoltan_INT) function get_next_element(data, &
   integer(Zoltan_INT), intent(out) :: ierr
 
   integer(Zoltan_INT) :: found
-  type(ELEM_INFO), pointer :: elem(:), current_elem
+  type(ELEM_INFO), pointer :: current_elem
   type(MESH_INFO), pointer :: mesh_data
   integer(Zoltan_INT) :: idx
   integer(Zoltan_INT) :: gid  ! Temporary variables to change positioning of IDs.
@@ -416,9 +415,8 @@ integer(Zoltan_INT) function get_next_element(data, &
 
   found = 0
   mesh_data => data%ptr
-  elem => mesh_data%elements
 
-  if (.not. associated(elem)) then
+  if (.not. associated(mesh_data%elements)) then
     ierr = ZOLTAN_FATAL
     get_next_element = 0
     return
@@ -426,7 +424,7 @@ integer(Zoltan_INT) function get_next_element(data, &
   
   if (num_lid_entries.gt.0) then
     idx = local_id(lid)
-    current_elem => elem(idx)
+    current_elem => mesh_data%elements(idx)
   else 
     !/* testing zero-length local IDs search by global ID for current elem */
     current_elem => search_by_global_id(mesh, global_id(gid), idx)
@@ -435,10 +433,10 @@ integer(Zoltan_INT) function get_next_element(data, &
   if (idx+1 < mesh_data%num_elems) then
     found = 1
     if (num_lid_entries.gt.0) next_local_id(lid) = idx + 1
-    next_global_id(gid) = elem(idx+1)%globalID
+    next_global_id(gid) = mesh_data%elements(idx+1)%globalID
 
     if (wdim>0) then
-      next_wgt(1) = elem(idx+1)%cpu_wgt
+      next_wgt(1) = mesh_data%elements(idx+1)%cpu_wgt
     endif
 
     if (wdim>1) then
@@ -475,7 +473,6 @@ integer(Zoltan_INT), intent(in) :: global_id(*)
 integer(Zoltan_INT), intent(in) :: local_id(*)
 integer(Zoltan_INT), intent(out) :: ierr
 
-  type(ELEM_INFO), pointer :: elem(:)
   type(ELEM_INFO), pointer :: current_elem
   type(MESH_INFO), pointer :: mesh_data
   integer(Zoltan_INT) :: i, j
@@ -488,15 +485,14 @@ integer(Zoltan_INT), intent(out) :: ierr
   lid = num_lid_entries
 
   mesh_data => data%ptr
-  elem => mesh_data%elements
 
-  if (.not. associated(elem)) then
+  if (.not. associated(mesh_data%elements)) then
     ierr = ZOLTAN_FATAL
     return
   endif
 
   if (num_lid_entries.gt.0) then
-    current_elem => elem(local_id(lid))
+    current_elem => mesh_data%elements(local_id(lid))
   else
     current_elem => search_by_global_id(mesh_data, global_id(gid), idx)
   endif
@@ -520,7 +516,6 @@ integer(Zoltan_INT), intent(in) :: local_id(*)
 real(Zoltan_DOUBLE), intent(out) :: coor(*)
 integer(Zoltan_INT), intent(out) :: ierr
 
-  type(ELEM_INFO), pointer :: elem(:)
   type(ELEM_INFO), pointer :: current_elem
   type(MESH_INFO), pointer :: mesh_data
   integer(Zoltan_INT) :: i, j
@@ -533,15 +528,14 @@ integer(Zoltan_INT), intent(out) :: ierr
   lid = num_lid_entries
 
   mesh_data => data%ptr
-  elem => mesh_data%elements
 
-  if (.not. associated(elem)) then
+  if (.not. associated(mesh_data%elements)) then
     ierr = ZOLTAN_FATAL
     return
   endif
 
   if (num_lid_entries.gt.0) then
-    current_elem => elem(local_id(lid))
+    current_elem => mesh_data%elements(local_id(lid))
   else
     current_elem => search_by_global_id(mesh_data, global_id(gid), idx)
   endif
@@ -579,7 +573,7 @@ integer(Zoltan_INT), intent(in) :: global_id(*)
 integer(Zoltan_INT), intent(in) :: local_id(*)
 integer(Zoltan_INT), intent(out) :: ierr
 
-type(ELEM_INFO), pointer :: elem(:), current_elem
+type(ELEM_INFO), pointer :: current_elem
 type(MESH_INFO), pointer :: mesh_data
 integer(Zoltan_INT) :: idx
 integer(Zoltan_INT) :: gid  ! Temporary variables to change positioning of IDs.
@@ -589,16 +583,15 @@ integer(Zoltan_INT) :: lid
   lid = num_lid_entries
 
   mesh_data => data%ptr
-  elem => mesh_data%elements
 
-  if (.not. associated(elem)) then
+  if (.not. associated(mesh_data%elements)) then
     ierr = ZOLTAN_FATAL
     get_num_edges = 0
     return
   endif
 
   if (num_lid_entries.gt.0) then
-    current_elem => elem(local_id(lid))
+    current_elem => mesh_data%elements(local_id(lid))
   else
     current_elem => search_by_global_id(mesh_data, global_id(gid), idx)
   endif
@@ -623,7 +616,6 @@ integer(Zoltan_INT), intent(in) :: get_ewgts
 real(Zoltan_FLOAT), intent(out) :: nbor_ewgts(*)
 integer(Zoltan_INT), intent(out) :: ierr
 
-  type(ELEM_INFO), pointer :: elem(:)
   type(ELEM_INFO), pointer :: current_elem
   type(MESH_INFO), pointer :: mesh_data
   integer(Zoltan_INT) :: i, j, proc, local_elem, mpierr
@@ -635,15 +627,14 @@ integer(Zoltan_INT), intent(out) :: ierr
   lid = num_lid_entries
 
   mesh_data => data%ptr
-  elem => mesh_data%elements
 
-  if (.not. associated(elem)) then
+  if (.not. associated(mesh_data%elements)) then
     ierr = ZOLTAN_FATAL
     return
   endif
 
   if (num_lid_entries.gt.0) then
-    current_elem => elem(local_id(lid))
+    current_elem => mesh_data%elements(local_id(lid))
   else
     current_elem => search_by_global_id(mesh_data, global_id(gid), idx)
   endif
@@ -659,7 +650,7 @@ integer(Zoltan_INT), intent(out) :: ierr
 
     if (current_elem%adj_proc(i) == proc) then
       local_elem = current_elem%adj(i)
-      nbor_global_id(gid+(j-1)*num_gid_entries) = elem(local_elem)%globalID
+      nbor_global_id(gid+(j-1)*num_gid_entries) = mesh_data%elements(local_elem)%globalID
     else  ! /* adjacent element on another processor */
       nbor_global_id(gid+(j-1)*num_gid_entries) = current_elem%adj(i)
     endif
