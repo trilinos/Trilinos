@@ -105,9 +105,8 @@ namespace Tpetra {
     std::multimap<T1,T2> tempMap;
     typename std::vector<T1>::iterator keyIter = sortVals.begin();
     typename std::vector<T2>::iterator valueIter = otherVals.begin();
-    typedef pair<T1,T2> PAIR;
     for(; keyIter != sortVals.end(); keyIter++, valueIter++)
-      tempMap.insert(PAIR(*keyIter, *valueIter));
+      tempMap.insert(std::map<T1,T2>::value_type(*keyIter, *valueIter));
     
     // multimap will automatically sort them, we just need to pull them out in order
     // and write them back to the original arrays
