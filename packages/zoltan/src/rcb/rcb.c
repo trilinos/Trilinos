@@ -44,6 +44,7 @@ static char *cvs_rcbc_id = "$Id$";
 #include "all_allo_const.h"
 #include "par_const.h"
 #include "params_const.h"
+#include "timer_const.h"
 
 #define MYHUGE 1.0e30
 #define TINY   1.0e-6
@@ -223,8 +224,8 @@ static int rcb(
   struct rcb_tree *treept;         /* tree of RCB cuts - only single cut on 
                                       exit */
 
-  double LB_start_time, LB_end_time;
-  double LB_time[2], LB_max_time[2];
+  double start_time, end_time;
+  double lb_time[2];
 
   /* function prototypes */
 
@@ -244,7 +245,7 @@ static int rcb(
 
   if (stats) {
     MPI_Barrier(lb->Communicator);
-    timestart = time1 = MPI_Wtime();
+    timestart = time1 = LB_Time();
   }
 
   /* setup for parallel */
@@ -257,7 +258,7 @@ static int rcb(
    *  set pointers to information in it.
    */
 
-  LB_start_time = MPI_Wtime();
+  start_time = LB_Time();
   ierr = LB_RCB_Build_Structure(lb, &pdotnum, &dotmax, wgtflag);
   if (ierr == LB_FATAL || ierr == LB_MEMERR) {
     fprintf(stderr, "[%d] Error in %s:  Error returned from "
@@ -270,9 +271,9 @@ static int rcb(
   dotpt  = rcb->Dots; 
   rcbbox = rcb->Box;
   treept = rcb->Tree_Ptr;
-  LB_end_time = MPI_Wtime();
-  LB_time[0] = LB_end_time - LB_start_time;
-  LB_start_time = LB_end_time;
+  end_time = LB_Time();
+  lb_time[0] = end_time - start_time;
+  start_time = end_time;
 
   /* local copies of calling parameters */
 
@@ -363,7 +364,7 @@ static int rcb(
   MPI_Comm_dup(lb->Communicator,&local_comm);
 
   if (stats) {
-    time2 = MPI_Wtime();
+    time2 = LB_Time();
     timers[0] = time2 - time1;
   }
 
@@ -374,7 +375,7 @@ static int rcb(
 
   while (proclower != procupper) {
 
-    if (stats) time1 = MPI_Wtime();
+    if (stats) time1 = LB_Time();
     
     /* procmid = 1st proc in upper half of partition */
     /* if odd # of procs, lower partition gets extra one */
@@ -453,7 +454,7 @@ static int rcb(
     }
     else first_guess = 0;
 
-    if (stats) time2 = MPI_Wtime();
+    if (stats) time2 = LB_Time();
 
     if (!LB_find_median(coord, wgts, dotmark, dotnum, proc, fractionlo,
                         local_comm, &valuehalf, first_guess, &(counters[0]))) {
@@ -461,7 +462,7 @@ static int rcb(
       return LB_FATAL;
     }
 
-    if (stats) time3 = MPI_Wtime();
+    if (stats) time3 = LB_Time();
 
     /* store cut info in tree only if I am procmid */
 
@@ -601,7 +602,7 @@ static int rcb(
     local_comm = tmp_comm;
 
     if (stats) {
-      time4 = MPI_Wtime();
+      time4 = LB_Time();
       timers[1] += time2 - time1;
       timers[2] += time3 - time2;
       timers[3] += time4 - time3;
@@ -621,12 +622,12 @@ static int rcb(
   LB_FREE(&wgts);
   LB_FREE(&dotmark);
 
-  LB_end_time = MPI_Wtime();
-  LB_time[1] = LB_end_time - LB_start_time;
+  end_time = LB_Time();
+  lb_time[1] = end_time - start_time;
 
   if (stats) {
     MPI_Barrier(lb->Communicator);
-    timestop = time1 = MPI_Wtime();
+    timestop = time1 = LB_Time();
   }
 
   /* error checking and statistics */
@@ -637,7 +638,7 @@ static int rcb(
 
   /* update calling routine parameters */
   
-  LB_start_time = MPI_Wtime();
+  start_time = LB_Time();
 
   pdotnum = dotnum;
   pdottop = dottop;
@@ -672,16 +673,14 @@ static int rcb(
       (*import_procs)[i]      = dotpt[ii].Tag.Proc;
     }
   }
-  LB_end_time = MPI_Wtime();
-  LB_time[0] += (LB_end_time - LB_start_time);
+  end_time = LB_Time();
+  lb_time[0] += (end_time - start_time);
 
-  MPI_Allreduce(LB_time, LB_max_time, 2, MPI_DOUBLE, MPI_MAX,
-                lb->Communicator);
   if (lb->Proc == 0) {
     printf("LBLIB RCB Times:  \n");
-    printf("LBLIB     Build:  %f\n", LB_max_time[0]);
-    printf("LBLIB     RCB:    %f\n", LB_max_time[1]);
   }
+  LB_Print_Time(lb, lb_time[0], "LBLIB     Build:       ");
+  LB_Print_Time(lb, lb_time[1], "LBLIB     RCB:         ");
 
   if (lb->Debug > 6) {
     int i;
