@@ -237,12 +237,19 @@ ostream& Ifpack_PointRelaxation::Print(ostream & os) const
   if (!Comm().MyPID()) {
     os << endl;
     os << "================================================================================" << endl;
-    os << "Ifpack_PointRelaxation, Sweeps = " << NumSweeps_ << endl;
+    os << "Ifpack_PointRelaxation" << endl;
+    os << "Sweeps         = " << NumSweeps_ << endl;
     os << "damping factor = " << DampingFactor_;
+    if (PrecType_ == IFPACK_JACOBI)
+      os << "Type           = Jacobi" << endl;
+    else if (PrecType_ == IFPACK_GS)
+      os << "Type           = Gauss-Seidel" << endl;
+    else if (PrecType_ == IFPACK_SGS)
+      os << "Type           = symmetric Gauss-Seidel" << endl;
     if (ZeroStartingSolution_) 
-      cout << ", using zero starting solution" << endl;
+      os << "Using zero starting solution" << endl;
     else
-      cout << ", using input starting solution" << endl;
+      os << "Using input starting solution" << endl;
     os << "Condition number estimate = " << Condest() << endl;
     os << "Global number of rows            = " << Matrix_->NumGlobalRows() << endl;
     if (IsComputed_) {
