@@ -471,8 +471,6 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
      /********************************************************************/
      /* Create Tcoarse_trans.                                            */
      /*------------------------------------------------------------------*/
-   
-     Tcoarse_trans = ML_Operator_Create(ml_edges->comm);
 
      /* Check that both dimensions of T are strictly greater than 0. 
         If not, clean up & break from main loop. */
@@ -503,6 +501,7 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
         break; /* from main loop */
      }
 
+     Tcoarse_trans = ML_Operator_Create(ml_edges->comm);
      ML_Operator_Transpose_byrow(Tcoarse, Tcoarse_trans);
      (*Tmat_trans_array)[grid_level] = Tcoarse_trans;
    
