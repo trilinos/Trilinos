@@ -857,10 +857,6 @@ Optional Features:
   --disable-dependency-tracking Speeds up one-time builds
   --enable-dependency-tracking  Do not reject slow dependency extractors
   --enable-mpi            MPI support
-  --enable-debug          enable debugging (default is no)
-  --enable-opt            enable optimization (default is no)
-  --enable-profile        enable profiling (default is no)
-  --enable-purify         enable purify (default is no)
 
 Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
@@ -875,7 +871,6 @@ Optional Packages:
                           use -I
   --with-mpi-libdir=DIR   MPI library directory [MPIROOT/lib] Do not use
                           -L
-  --with-platform         Utilize a custom platform (must specify)
   --with-ccflags          additional CCFLAGS flags to be added: will prepend
                           to CCFLAGS
   --with-cxxflags         additional CXXFLAGS flags to be added: will
@@ -3233,7 +3228,7 @@ fi
 
 
 # Provide some information about the compiler.
-echo "$as_me:3236:" \
+echo "$as_me:3231:" \
      "checking for Fortran 77 compiler version" >&5
 ac_compiler=`set X $ac_compile; echo $2`
 { (eval echo "$as_me:$LINENO: \"$ac_compiler --version </dev/null >&5\"") >&5
@@ -3444,161 +3439,59 @@ fi
 # Check for --enable-debug, --enable-opt, --enable-profile, and --enable-purify
 #------------------------------------------------------------------------
 
+#TAC_ARG_ENABLE_OPTION(debug, [enable debugging], DEBUG, no)
 
-# Check whether --enable-debug or --disable-debug was given.
-if test "${enable_debug+set}" = set; then
-  enableval="$enable_debug"
-  ac_cv_use_debug=$enableval
-else
-  ac_cv_use_debug=no
-fi;
+#TAC_ARG_ENABLE_OPTION(opt,[enable optimization],OPTIMIZE,no)
 
-echo "$as_me:$LINENO: checking whether to use debug" >&5
-echo $ECHO_N "checking whether to use debug... $ECHO_C" >&6
+#TAC_ARG_ENABLE_OPTION(profile,[enable profiling],PROFILE,no)
 
-if test "X$ac_cv_use_debug" != "Xno"; then
-  echo "$as_me:$LINENO: result: yes" >&5
-echo "${ECHO_T}yes" >&6
-
-cat >>confdefs.h <<\_ACEOF
-#define HAVE_DEBUG 1
-_ACEOF
-
-else
-  echo "$as_me:$LINENO: result: no" >&5
-echo "${ECHO_T}no" >&6
-fi
-
-
-
-# Check whether --enable-opt or --disable-opt was given.
-if test "${enable_opt+set}" = set; then
-  enableval="$enable_opt"
-  ac_cv_use_opt=$enableval
-else
-  ac_cv_use_opt=no
-fi;
-
-echo "$as_me:$LINENO: checking whether to use opt" >&5
-echo $ECHO_N "checking whether to use opt... $ECHO_C" >&6
-
-if test "X$ac_cv_use_opt" != "Xno"; then
-  echo "$as_me:$LINENO: result: yes" >&5
-echo "${ECHO_T}yes" >&6
-
-cat >>confdefs.h <<\_ACEOF
-#define HAVE_OPTIMIZE 1
-_ACEOF
-
-else
-  echo "$as_me:$LINENO: result: no" >&5
-echo "${ECHO_T}no" >&6
-fi
-
-
-
-# Check whether --enable-profile or --disable-profile was given.
-if test "${enable_profile+set}" = set; then
-  enableval="$enable_profile"
-  ac_cv_use_profile=$enableval
-else
-  ac_cv_use_profile=no
-fi;
-
-echo "$as_me:$LINENO: checking whether to use profile" >&5
-echo $ECHO_N "checking whether to use profile... $ECHO_C" >&6
-
-if test "X$ac_cv_use_profile" != "Xno"; then
-  echo "$as_me:$LINENO: result: yes" >&5
-echo "${ECHO_T}yes" >&6
-
-cat >>confdefs.h <<\_ACEOF
-#define HAVE_PROFILE 1
-_ACEOF
-
-else
-  echo "$as_me:$LINENO: result: no" >&5
-echo "${ECHO_T}no" >&6
-fi
-
-
-
-# Check whether --enable-purify or --disable-purify was given.
-if test "${enable_purify+set}" = set; then
-  enableval="$enable_purify"
-  ac_cv_use_purify=$enableval
-else
-  ac_cv_use_purify=no
-fi;
-
-echo "$as_me:$LINENO: checking whether to use purify" >&5
-echo $ECHO_N "checking whether to use purify... $ECHO_C" >&6
-
-if test "X$ac_cv_use_purify" != "Xno"; then
-  echo "$as_me:$LINENO: result: yes" >&5
-echo "${ECHO_T}yes" >&6
-
-cat >>confdefs.h <<\_ACEOF
-#define HAVE_PURIFY 1
-_ACEOF
-
-else
-  echo "$as_me:$LINENO: result: no" >&5
-echo "${ECHO_T}no" >&6
-fi
-
+#TAC_ARG_ENABLE_OPTION(purify,[enable purify],PURIFY,no)
 
 #------------------------------------------------------------------------
 # Check if any user overrides were defined in the above section
 #------------------------------------------------------------------------
+# Likely will permanently remove the concept of a custom platform when
+# another way to turn on debug, opt, profile, and purify is found.
+#AC_ARG_WITH(platform,
+#AC_HELP_STRING([--with-platform],[Utilize a custom platform] (must specify)),
+#ac_cv_use_platform=$withval, ac_cv_use_platform=no)
 
-# Check whether --with-platform or --without-platform was given.
-if test "${with_platform+set}" = set; then
-  withval="$with_platform"
-  ac_cv_use_platform=$withval
-else
-  ac_cv_use_platform=no
-fi;
+#AC_MSG_CHECKING(whether to use a custom platform)
 
-echo "$as_me:$LINENO: checking whether to use a custom platform" >&5
-echo $ECHO_N "checking whether to use a custom platform... $ECHO_C" >&6
-
-if test "X$ac_cv_use_platform" != "Xno"; then
-  echo "$as_me:$LINENO: result: yes" >&5
-echo "${ECHO_T}yes" >&6
+#if test "X$ac_cv_use_platform" != "Xno"; then
+#  AC_MSG_RESULT(yes)
       # case $ac_cv_use_platform in
           # foo*) TAC_SET_COMPILE_OPTIONS_FOO;;
   # esac
-else
-  echo "$as_me:$LINENO: result: no" >&5
-echo "${ECHO_T}no" >&6
-  if test "X$ac_cv_use_debug" != "Xno" || test "X$ac_cv_use_opt" != "Xno" ||
-     test "X$ac_cv_use_profile" != "Xno"|| test "X$ac_cv_use_purify" != "Xno"; then
-    if test "X${CXX}" != "XmpiCC"; then
-      BASE_CXX=${CXX}
-    fi
+#else
+#  AC_MSG_RESULT(no)
+#  if test "X$ac_cv_use_debug" != "Xno" || test "X$ac_cv_use_opt" != "Xno" ||
+#     test "X$ac_cv_use_profile" != "Xno"|| test "X$ac_cv_use_purify" != "Xno"; then
+#    if test "X${CXX}" != "XmpiCC"; then
+#      BASE_CXX=${CXX}
+#    fi
   # Check if user defined a custom platform name
   #otherwise parse info gathered
-  case $target in
-    *linux*)
-      case $BASE_CXX in
- 	 *g++*) TAC_SET_COMPILE_OPTIONS_LINUX_GCC;;
-    esac
-    ;;
+#  case $target in
+#    *linux*)
+#      case $BASE_CXX in
+# 	 *g++*) TAC_SET_COMPILE_OPTIONS_LINUX_GCC;;
+#    esac
+#    ;;
 
-    *solaris*)
-      case $BASE_CXX in
-	*cc* | *CC*) TAC_SET_COMPILE_OPTIONS_SOLARIS_CC;;
-    esac
-    ;;
+#    *solaris*)
+#      case $BASE_CXX in
+#	*cc* | *CC*) TAC_SET_COMPILE_OPTIONS_SOLARIS_CC;;
+#    esac
+#    ;;
     # need to add case for cplant
 
     # need to add case for sgi - and sub-cases for 32 and 64
 
-  esac
+#  esac
 
-  fi
-fi
+#  fi
+#fi
 
 
 # ------------------------------------------------------------------------
@@ -5459,7 +5352,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:5462: \"$ac_link\") >&5
+(eval echo $as_me:5355: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -5538,7 +5431,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:5541: \"$ac_link\") >&5
+(eval echo $as_me:5434: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -7712,7 +7605,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:7715: \"$ac_link\") >&5
+(eval echo $as_me:7608: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -7791,7 +7684,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:7794: \"$ac_link\") >&5
+(eval echo $as_me:7687: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS

@@ -26,9 +26,6 @@
 /* Define to 1 if you have the <cstdlib> header file. */
 #undef HAVE_CSTDLIB
 
-/* Define if want to build with debug enabled */
-#undef HAVE_DEBUG
-
 /* Define to 1 if you have the <inttypes.h> header file. */
 #undef HAVE_INTTYPES_H
 
@@ -55,15 +52,6 @@
 
 /* define if the compiler accepts the new for scoping rules */
 #undef HAVE_NEW_FOR_SCOPING
-
-/* Define if want to build with opt enabled */
-#undef HAVE_OPTIMIZE
-
-/* Define if want to build with profile enabled */
-#undef HAVE_PROFILE
-
-/* Define if want to build with purify enabled */
-#undef HAVE_PURIFY
 
 /* Define to 1 if you have the <stdint.h> header file. */
 #undef HAVE_STDINT_H
