@@ -2621,6 +2621,8 @@ int ML_Gen_MultiLevelHierarchy(ML *ml, int fine_level,
 		level );
 
       flag = (*user_gen_prolongator)(ml, level, next, user_data);
+      ML_Operator_ChangeToSinglePrecision(&(ml->Pmat[next]));
+
       if (flag < 0) break;
 
       /* Now check to make sure prolongator has zero columns. */
