@@ -197,15 +197,19 @@
 #if HAVE_SSTREAM
 #include <sstream>
 typedef std::ostringstream TeuchosOStringStream;
+#define TEUCHOS_OSTRINGSTREAM_GET_C_STR(OSS) (OSS).str().c_str()
 #elif HAVE_SSTREAM_H
 #include <sstream.h>
 typedef ostringstream TeuchosOStringStream;
+#define TEUCHOS_OSTRINGSTREAM_GET_C_STR(OSS) (OSS).str().c_str()
 #elif HAVE_STRSTREAM
 #include <strstream>
 typedef std::ostrstream TeuchosOStringStream;
+#define TEUCHOS_OSTRINGSTREAM_GET_C_STR(OSS) (OSS).str()
 #elif HAVE_STRSTREAM_H
 #include <strstream.h>
 typedef ostrstream TeuchosOStringStream;
+#define TEUCHOS_OSTRINGSTREAM_GET_C_STR(OSS) (OSS).str()
 #else
 #error "Found neither sstream, sstream.h, strstream.h, nor strstream"
 #endif
