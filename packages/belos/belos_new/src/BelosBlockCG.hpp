@@ -100,16 +100,17 @@ public:
    
   //! Get the solvers native residuals for the current block of linear systems.
   /*! 
+      \note The memory for the residual MultiVec must be handled by the calling routine.
    */
-  ReturnType GetNativeResidNorms(TYPE *normvec, NormType norm_type) const;
+  MultiVec<TYPE>* GetNativeResiduals( TYPE *normvec ) const;
   
   //! Get the actual residual vectors for the current block of linear systems.
   /*! This may force the solver to compute a current residual for its linear
-  	systems.  For CG, this method is only useful when the blocksize is larger
-	than the current number of linear systems being solved for.  Otherwise,
-	the solution held in the linear problem manager is current.
+  	systems.  For CG, this method is not useful since the linear problem
+	manager always has the current solution (even when the blocksize is larger
+	than the current number of linear systems being solved for).  
   */
-  MultiVec<TYPE>* GetCurrentSoln() { return _cur_block_sol; };
+  MultiVec<TYPE>* GetCurrentSoln();
   
   //! Get a constant reference to the current linear problem.  
   /*! This may include a current solution, if the solver has recently restarted or completed.
@@ -150,14 +151,11 @@ private:
   //! Pointer to current linear systems block of right-hand sides [obtained from linear problem manager]
   MultiVec<TYPE> *_cur_block_rhs; 
 
-  //! Vector of the current residual norms.
-  TYPE * _cur_resid_norms; 
+  //! Pointer to block of the current residual vectors.
+  MultiVec<TYPE> *_residvecs;
 
-  //! Vector of the initial residual norms.
-  TYPE * _init_resid_norms;
-
-  //! Current blocksize and iteration number.
-  int _blocksize, _iter;
+  //! Current blocksize, iteration number, and basis pointer.
+  int _blocksize, _iter, _new_blk;
 
   //! Numerical breakdown tolerances.
   TYPE _prec, _dep_tol;
@@ -179,10 +177,10 @@ BlockCG<TYPE>::BlockCG(LinearProblemManager<TYPE>& lp,
   _om(om),
   _cur_block_rhs(0),
   _cur_block_sol(0),
+  _residvecs(0),
   _blocksize(0), 
-  _cur_resid_norms(0), 
-  _init_resid_norms(0), 
   _iter(0),
+  _new_blk(1),
   _prec(5.0e-15), 
   _dep_tol(0.75),
   _os(om.GetOStream())
@@ -196,8 +194,7 @@ BlockCG<TYPE>::BlockCG(LinearProblemManager<TYPE>& lp,
 template <class TYPE>
 BlockCG<TYPE>::~BlockCG() 
 {
- if (_cur_resid_norms) delete _cur_resid_norms;
- if (_init_resid_norms) delete _init_resid_norms;
+ if (_residvecs) delete _residvecs; 
 }
 
 template <class TYPE>
@@ -213,15 +210,27 @@ void BlockCG<TYPE>::SetCGBlkTols()
 }
 
 template <class TYPE>
-ReturnType BlockCG<TYPE>::GetNativeResidNorms(TYPE *normvec, NormType norm_type) const 
+MultiVec<TYPE>* BlockCG<TYPE>::GetNativeResiduals( TYPE *normvec ) const 
 {
-  if (normvec) {
-    for (int i=0; i<_blocksize; i++) {
-      normvec[i] = _cur_resid_norms[i];
-    }
-    return Ok;
-  }
-  return Error;
+  int i;
+  int* index = new int[ _blocksize ];
+  if (_new_blk)
+    for (i=0; i<_blocksize; i++) { index[i] = i; }
+  else
+    for (i=0; i<_blocksize; i++) { index[i] = _blocksize + i; }
+  MultiVec<TYPE>* ResidMV = _residvecs->CloneView( index, _blocksize );
+  delete [] index;
+  return ResidMV;
+}
+
+template <class TYPE>
+MultiVec<TYPE>* BlockCG<TYPE>::GetCurrentSoln() 
+{ 
+  int* index = new int[_blocksize];
+  for (int i=0; i<_blocksize; i++) { index[i] = i; }
+  MultiVec<TYPE>* SolnMV = _cur_block_sol->CloneView( index, _blocksize );
+  delete [] index; 
+  return SolnMV;
 }
 
 template <class TYPE>
@@ -235,9 +244,10 @@ void BlockCG<TYPE>::Solve ()
   const TYPE one = Teuchos::ScalarTraits<TYPE>::one();
   const TYPE zero = Teuchos::ScalarTraits<TYPE>::zero();
   Teuchos::LAPACK<int,TYPE> lapack;
-  MultiVec<TYPE> *_basisvecs=0, *_residvecs=0;
+  MultiVec<TYPE> *_basisvecs=0;
   MultiVec<TYPE> *R_prev=0, *R_new=0, *P_prev=0, *P_new=0;
   MultiVec<TYPE> *AP_prev = 0, *temp_blk=0;
+  TYPE *_cur_resid_norms=0, *_init_resid_norms=0;
   //
   // Retrieve the first linear system to be solved.
   //
@@ -391,9 +401,9 @@ void BlockCG<TYPE>::Solve ()
     // 
     if (_om.doOutput( 2 )) _os << "Entering main CG loop" << endl << endl;
     //
-    int new_blk = 1;
+    _new_blk = 1;
     for (_iter=0; _stest.CheckStatus(this) == Unconverged && !exit_flg; _iter++) 
-{
+    {
       //
       //  Clean up before computing another iterate.
       //  Current information is kept for the StatusTest.
@@ -407,7 +417,7 @@ void BlockCG<TYPE>::Solve ()
       //
       // Get views of the previous blocks of residuals, direction vectors, etc.
       //
-      if (new_blk){
+      if (_new_blk){
 	P_prev = _basisvecs->CloneView( ind_idx, ind_blksz );
       }
       else {
@@ -420,7 +430,7 @@ void BlockCG<TYPE>::Solve ()
       for (i=0; i < _blocksize; i++){
 	index2[i] = _blocksize + i;
       }
-      if (new_blk){
+      if (_new_blk){
 	R_prev = _residvecs->CloneView( index, _blocksize );
 	R_new = _residvecs->CloneView( index2, _blocksize );
       }
@@ -532,7 +542,7 @@ void BlockCG<TYPE>::Solve ()
       }
       delete R_new; R_new=0;
       
-      if (new_blk) {
+      if (_new_blk) {
 	R_new = _residvecs->CloneView( index2, ind_blksz );
 	P_new = _basisvecs->CloneView( index2, ind_blksz );
       }
@@ -627,10 +637,10 @@ void BlockCG<TYPE>::Solve ()
       // 
       // *****Update index of new blocks*****************************************
       //
-      if (new_blk)
-	new_blk--;
+      if (_new_blk)
+	_new_blk--;
       else
-	new_blk++;
+	_new_blk++;
       //
     } // end of the main CG loop -- for(_iter = 0;...)
     // *******************************************************************************

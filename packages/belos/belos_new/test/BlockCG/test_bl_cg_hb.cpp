@@ -121,7 +121,7 @@ int main(int argc, char *argv[]) {
 	//
 	// Construct a Belos::Operator instance through the Petra interface.
 	//
-	Belos::PetraMat<double> Amat(A);
+	Belos::PetraMat<double> Amat( &A );
 	//
     	// ********Other information used by block solver***********
 	//*****************(can be user specified)******************

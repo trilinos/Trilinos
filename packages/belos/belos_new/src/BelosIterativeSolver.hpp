@@ -76,20 +76,28 @@ class IterativeSolver {
   virtual int GetNumRestarts() const = 0;
 
   //! Get the solvers native residuals for the current block of linear systems. 
-  /*! This is not be the same as the true residual for most solvers. Somtimes the native
+  /*! This is not be the same as the true residual for most solvers. Sometimes the native
     residuals are not in multivector form, so the norm type is solver dependent.  
-    If the true residual vectors are required, then call GetTrueResidVecs().
-    \note The norm requested for this operation may not be supported by the solver.
-    If it is not, the return type will be undefined.
+    If the true residual is required, then call GetCurrentSoln().
+
+    \note
+    <ol>
+      <li> If the native residual is in multivector form then a non-null pointer will be
+      returned, else the normvec will be populated with the current residual norms. 
+      <li> If the native residual is returned in multivector form, the memory is managed
+      by the calling routine.
+    </ol>
   */
-  virtual ReturnType GetNativeResidNorms(TYPE* normvec, NormType norm_type) const = 0;
+  virtual MultiVec<TYPE>* GetNativeResiduals( TYPE* normvec ) const = 0;
 
   //! Get the actual residual vectors for the current block of linear systems.
   /*! This may force the solver to compute a current residual for its linear
-  	systems.  Some linear solvers don't constantly update their 
-	residuals and solutions (i.e. GMRES), so this may be an expensive request.
-	<b>Using true residuals to determine convergence should be secondary
-	to using the native residuals of the iterative linear solver.</b>
+    systems.  Some linear solvers don't constantly update their 
+    residuals and solutions (i.e. GMRES), so this may be an expensive request.
+    <b>Using true residuals to determine convergence should be secondary
+    to using the native residuals of the iterative linear solver.</b>
+
+    \note The memory of the returned multivector is managed by the calling routine.
   */
   virtual MultiVec<TYPE>* GetCurrentSoln() = 0;
 

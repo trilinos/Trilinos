@@ -289,7 +289,7 @@ ReturnType PetraVec<TYPE>::MvNorm ( TYPE * normvec, NormType norm_type ) {
 	    assert(info==0);
 	    return Ok;
 	  case ( InfNorm ) :	
-	    info = Norm1(normvec);
+	    info = NormInf(normvec);
 	    assert(info==0);
 	    return Ok;
 	  default:
@@ -339,12 +339,13 @@ void PetraVec<TYPE>::MvPrint(ostream& os) {
 template <class TYPE> 
 class PetraMat : public Operator<TYPE> {
 public:
-	PetraMat(const Epetra_Operator& Matrix);
+	PetraMat( Epetra_Operator* Matrix );
 	~PetraMat();
-	ReturnType Apply ( const MultiVec<TYPE>& x, MultiVec<TYPE>& y ) const;
+	ReturnType Apply ( const MultiVec<TYPE>& x, MultiVec<TYPE>& y, ETrans trans=NOTRANS ) const;
+	ReturnType ApplyInverse ( const MultiVec<TYPE>& x, MultiVec<TYPE>& y, ETrans trans=NOTRANS ) const;
 	const Epetra_Operator & GetMat () { return(Epetra_Mat); };
 private:
-	const Epetra_Operator & Epetra_Mat;
+	Epetra_Operator* Epetra_Mat;
 };
 //-------------------------------------------------------------
 //
@@ -355,8 +356,8 @@ private:
 // Operator constructors
 //
 template <class TYPE>
-PetraMat<TYPE>::PetraMat(const Epetra_Operator& Mat) 
-	: Epetra_Mat(Mat) 
+PetraMat<TYPE>::PetraMat( Epetra_Operator* Matrix ) 
+	: Epetra_Mat(Matrix) 
 {
 }
 
@@ -369,19 +370,45 @@ PetraMat<TYPE>::~PetraMat()
 //
 template <class TYPE>
 ReturnType PetraMat<TYPE>::Apply ( const MultiVec<TYPE>& x, 
-				  MultiVec<TYPE>& y ) const {
+				  MultiVec<TYPE>& y, ETrans trans ) const {
 	int info=0;
 	MultiVec<TYPE> & temp_x = const_cast<MultiVec<TYPE> &>(x);
 	Epetra_MultiVector* vec_x = dynamic_cast<Epetra_MultiVector* >(&temp_x);
 	Epetra_MultiVector* vec_y = dynamic_cast<Epetra_MultiVector* >(&y);
-
+	//
 	assert( vec_x!=NULL && vec_y!=NULL );
 	//
-	// Need to cast away constness because the member function Multiply
-	// is not declared const.
+	// Set the operator to apply the transpose if that is requested.
+	// (TO DO:  insert a throw if the application returns a nonzero )
 	//
-	info=const_cast<Epetra_Operator&>(Epetra_Mat).Apply( *vec_x, *vec_y );
-	assert(info==0);
+	if (trans) { 
+	  info = Epetra_Mat->SetUseTranspose( true );
+	  if (info != 0) { return Undefined; }
+  	}
+	info = Epetra_Mat->Apply( *vec_x, *vec_y );
+	if (info != 0) { return Error; }
+	return Ok;	
+}
+
+template <class TYPE>
+ReturnType PetraMat<TYPE>::ApplyInverse ( const MultiVec<TYPE>& x, 
+				  MultiVec<TYPE>& y, ETrans trans ) const {
+	int info=0;
+	MultiVec<TYPE> & temp_x = const_cast<MultiVec<TYPE> &>(x);
+	Epetra_MultiVector* vec_x = dynamic_cast<Epetra_MultiVector* >(&temp_x);
+	Epetra_MultiVector* vec_y = dynamic_cast<Epetra_MultiVector* >(&y);
+	//
+	assert( vec_x!=NULL && vec_y!=NULL );
+	//
+	// Set the operator to apply the transpose if that is requested.
+	// (TO DO:  insert a throw if the application returns a nonzero )
+	//
+	if (trans) { 
+	  info = Epetra_Mat->SetUseTranspose( true );
+	  if (info != 0) { return Undefined; }
+  	}
+	info = Epetra_Mat->ApplyInverse( *vec_x, *vec_y );
+	if (info != 0) { return Error; }
 	return Ok;	
 }
  
@@ -391,12 +418,13 @@ ReturnType PetraMat<TYPE>::Apply ( const MultiVec<TYPE>& x,
 template <class TYPE>
 class PetraPrec : public Operator<TYPE> {
 public:
-        PetraPrec(const Epetra_Operator& Prec);
+        PetraPrec( Epetra_Operator* Prec );
         ~PetraPrec();
-        ReturnType Apply ( const MultiVec<TYPE>& x, MultiVec<TYPE>& y ) const;
+        ReturnType Apply ( const MultiVec<TYPE>& x, MultiVec<TYPE>& y, ETrans trans=NOTRANS ) const;
+	ReturnType ApplyInverse ( const MultiVec<TYPE>& x, MultiVec<TYPE>& y, ETrans trans=NOTRANS ) const;
 	const Epetra_Operator & GetPrec () { return(Epetra_Prec); };
 private:
-   	const Epetra_Operator& Epetra_Prec;
+   	Epetra_Operator* Epetra_Prec;
 };
 //--------------------------------------------------------------
 //
@@ -405,7 +433,8 @@ private:
 // Constructor.
 //
 template <class TYPE>
-PetraPrec<TYPE>::PetraPrec(const Epetra_Operator& Prec) : Epetra_Prec(Prec) 
+PetraPrec<TYPE>::PetraPrec( Epetra_Operator* Prec ) 
+	: Epetra_Prec(Prec) 
 {
 }
 //
@@ -421,7 +450,7 @@ PetraPrec<TYPE>::~PetraPrec()
 //
 template <class TYPE>
 ReturnType PetraPrec<TYPE>::Apply ( const MultiVec<TYPE>& x,
-			      MultiVec<TYPE>& y) const {
+			      MultiVec<TYPE>& y, ETrans trans ) const {
 	int info=0;
 	MultiVec<TYPE> & temp_x = const_cast<MultiVec<TYPE> &>(x);
      	Epetra_MultiVector* vec_x = dynamic_cast<Epetra_MultiVector* >(&temp_x);
@@ -429,11 +458,37 @@ ReturnType PetraPrec<TYPE>::Apply ( const MultiVec<TYPE>& x,
 
      	assert( vec_x!=NULL && vec_y!=NULL );
 	//
-	// Need to cast away constness because the member function Multiply
-	// is not declared const.
+	// Transpose the operator if that is required.
+	// (TO DO:  insert a throw if the application returns a nonzero )
 	//
-	info=const_cast<Epetra_Operator&>(Epetra_Prec).ApplyInverse( *vec_x, *vec_y );
-	assert(info==0);
+	if (trans) {
+	  info = Epetra_Prec->SetUseTranspose( true );
+	  if (info != 0) { return Undefined; }
+	}	  
+	info = Epetra_Prec->ApplyInverse( *vec_x, *vec_y );
+	if (info != 0) { return Error; };
+	return Ok;
+}
+
+template <class TYPE>
+ReturnType PetraPrec<TYPE>::ApplyInverse ( const MultiVec<TYPE>& x,
+			      MultiVec<TYPE>& y, ETrans trans ) const {
+	int info=0;
+	MultiVec<TYPE> & temp_x = const_cast<MultiVec<TYPE> &>(x);
+     	Epetra_MultiVector* vec_x = dynamic_cast<Epetra_MultiVector* >(&temp_x);
+     	Epetra_MultiVector* vec_y = dynamic_cast<Epetra_MultiVector* >(&y);
+
+     	assert( vec_x!=NULL && vec_y!=NULL );
+	//
+	// Transpose the operator if that is required.
+	// (TO DO:  insert a throw if the application returns a nonzero )
+	//
+	if (trans) {
+	  info = Epetra_Prec->SetUseTranspose( true );
+	  if (info != 0) { return Undefined; }
+	}	  
+	info = Epetra_Prec->Apply( *vec_x, *vec_y );
+	if (info != 0) { return Error; };
 	return Ok;
 }
 

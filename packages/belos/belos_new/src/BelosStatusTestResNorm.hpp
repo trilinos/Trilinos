@@ -369,13 +369,15 @@ class StatusTestResNorm: public StatusTest<TYPE> {
   if (restype_==Implicit) {
     //
     // Get the native residual norms from the solver for this block of right-hand sides.
+    // If the residual is returned in multivector form, use the resnormtype to compute the residual norms.
+    // Otherwise the native residual is assumed to be stored in the resvector_.
     //
-    ret = iSolver->GetNativeResidNorms( resvector_ + cur_rhs_num_, resnormtype_ );     
-    if ( ret != Ok ) { 
-      status_ = Failed;
-      return(status_);
-    }
-  } 
+    MultiVec<TYPE>* residMV = iSolver->GetNativeResiduals( resvector_ + cur_rhs_num_ );     
+    if ( residMV != NULL ) { 
+  	residMV->MvNorm( resvector_ + cur_rhs_num_, resnormtype_ );    
+	delete residMV;
+    } 
+  }
   else if (restype_==Explicit) {
     //
     // Request the true residual for this block of right-hand sides.

@@ -100,11 +100,10 @@ namespace Belos {
     int GetNumRestarts() const { return( _restartiter ); }
     
     //! Get the solvers native residuals for the current block of linear systems.
-    /*! For GMRES this is not the same as the actual residual of the linear system.
-        \note If the blocksize is one, then the only available norm for the native
-	residual is the TwoNorm, any other norm will return undefined.
+    /*! For GMRES this is not the same as the actual residual of the linear system and the
+	residual is not in MultiVec form, so the normvec will be populated with the residual norm.
      */
-    ReturnType GetNativeResidNorms(TYPE *normvec, NormType norm_type) const;
+    MultiVec<TYPE>* GetNativeResiduals( TYPE *normvec ) const;
 
     //! Get the true residuals for the current block of linear systems.
     /*! For GMRES this will force the solver to compute a current residual for its linear 
@@ -229,31 +228,25 @@ namespace Belos {
   }
   
   template <class TYPE>
-  ReturnType BlockGmres<TYPE>::GetNativeResidNorms(TYPE *normvec, NormType norm_type) const 
+  MultiVec<TYPE>* BlockGmres<TYPE>::GetNativeResiduals( TYPE *normvec ) const 
   {
-    if (normvec) {
-      if (norm_type == TwoNorm) {
-	//
-        // If this is the first iteration for a new right-hand side return the
- 	// norm of the residual for the current block rhs and solution.
-	//
- 	if (_totaliter == 0) {
-	  MultiVec<TYPE>* temp_res = _cur_block_rhs->Clone(_blocksize); assert(temp_res!=NULL);
-	  _lp.ComputeResVec( temp_res, _cur_block_sol, _cur_block_rhs);
-	  ReturnType res = temp_res->MvNorm( normvec, TwoNorm );
-	  delete temp_res;
-	  return res;
-	}
-	else {
-	  Teuchos::BLAS<int,TYPE> blas;
-	  for (int j=0; j<_blocksize; j++)
-	    normvec[j] = blas.NRM2( _blocksize, &_z(_iter*_blocksize, j ), 1);
-	  return Ok;
-        }
-      } else
-	return Undefined;
+    //
+    // If this is the first iteration for a new right-hand side return the
+    // residual for the current block rhs and solution.
+    //
+    if (_totaliter == 0) {
+      MultiVec<TYPE>* temp_res = _cur_block_rhs->Clone(_blocksize); assert(temp_res!=NULL);
+      _lp.ComputeResVec( temp_res, _cur_block_sol, _cur_block_rhs);
+      temp_res->MvNorm( normvec, TwoNorm );
+      return temp_res;
+    } else {
+      if (normvec) {
+        Teuchos::BLAS<int,TYPE> blas;
+	for (int j=0; j<_blocksize; j++)
+	  normvec[j] = blas.NRM2( _blocksize, &_z(_iter*_blocksize, j ), 1);
+      }
     }
-    return Error;
+    return NULL;
   }
   
   template <class TYPE>
@@ -267,7 +260,6 @@ namespace Belos {
       index[i] = i;
     }
     MultiVec<TYPE> * Vjp1 = _basisvecs->CloneView(index, m); assert(Vjp1!=NULL);
-    MultiVec<TYPE> * RV = _basisvecs->Clone(_blocksize); assert(RV!=NULL);
     MultiVec<TYPE> * cur_sol_copy = _cur_block_sol->CloneCopy(); assert(cur_sol_copy!=NULL);
     //
     //  Make a view and then copy the RHS of the least squares problem.  DON'T OVERWRITE IT!

@@ -159,7 +159,7 @@ int main(int argc, char *argv[]) {
 	//
 	// call the ctor that calls the petra ctor for a matrix
 	//
-	Belos::PetraMat<double> Amat(A);
+	Belos::PetraMat<double> Amat( &A );
 	//
 	A.SetTracebackMode(1); // Shutdown Epetra Warning tracebacks
 	//
@@ -204,7 +204,7 @@ int main(int argc, char *argv[]) {
 	//
 	// call the ctor for the preconditioning object
 	//
-	Belos::PetraPrec<double> EpetraOpPrec(prec);
+	Belos::PetraPrec<double> EpetraOpPrec( &prec );
 	//
 	//*****Construct initial guess and random right-hand-sides *****
 	//

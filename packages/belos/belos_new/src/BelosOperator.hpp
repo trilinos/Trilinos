@@ -56,6 +56,10 @@
 
 namespace Belos {
 
+	enum ETrans     {	NOTRANS = 0, /*!< The operator should not be transposed during this application */
+				TRANS = 1 /*!< The operator should be transposed during this application */
+			};
+
 template <class TYPE>
 class Operator {
 public:
@@ -74,24 +78,19 @@ public:
 	/*! \brief This routine takes the Belos::MultiVec \c x and applies the operator
 	to it resulting in the Belos::MultiVec \c y, which is returned.
 	*/
-	virtual ReturnType Apply (const MultiVec<TYPE>& x, 
-				  MultiVec<TYPE>& y ) const {
-                //
-                // First cast away the const on x.
-                //
-                MultiVec<TYPE>& temp_x = const_cast<MultiVec<TYPE>& >(x);
-                //
-                // Now create the indexing for copying x into y.
-                //
-                int i, numvecs = x.GetNumberVecs();
-                int *index = new int[numvecs]; assert(index!=NULL);
-                for (i=0; i<numvecs; i++) { index[i] = i; }
-                y.SetBlock(temp_x, index, numvecs);
-                delete [] index;
-		return Ok;
-		}
+	virtual ReturnType Apply ( const MultiVec<TYPE>& x, 
+				  MultiVec<TYPE>& y, ETrans trans=NOTRANS ) const 
+		{ return Undefined; };
+	
+	/*! \brief This routine takes the Belos::MultiVec \c x and applies the inverse operator
+	to it resulting in the Belos::MultiVec \c y, which is returned.
+	*/
+	virtual ReturnType ApplyInverse ( const MultiVec<TYPE>& x,
+					MultiVec<TYPE>& y, ETrans trans=NOTRANS ) const
+		{ return Undefined; };
 	//@}
 };
+
 
 } // end Belos namespace
 #endif
