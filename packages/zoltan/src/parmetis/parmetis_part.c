@@ -187,7 +187,6 @@ int LB_ParMetis(
     float_vwgt = NULL;
     vwgt = NULL;
   }
-
   if (!vtxdist || !global_ids || !local_ids || (vwgt_dim && !float_vwgt)){
     /* Not enough memory */
     return LB_MEMERR;
@@ -242,8 +241,6 @@ int LB_ParMetis(
     adjncy = (idxtype *)LB_MALLOC(sum_edges * sizeof(idxtype));
     if (ewgt_dim) 
       adjwgt = (idxtype *)LB_MALLOC(ewgt_dim*sum_edges * sizeof(idxtype));
-    else
-      adjwgt = NULL;
   
     if (!xadj || !adjncy || (ewgt_dim && !adjwgt)){
       /* Not enough memory */
@@ -466,7 +463,7 @@ int LB_ParMetis(
                 /* Free the node in the list we don't need anymore */
                 new = ptr;
                 ptr = ptr->next;
-                LB_Free((void **)&new);
+                LB_FREE(&new);
                 break;
               }
             }
@@ -478,18 +475,18 @@ int LB_ParMetis(
         }
       }
       /* Free space for communication data */
-      LB_Free((void **) &sendbuf);
-      LB_Free((void **) &recvbuf);
-      LB_Free((void **) &request);
-      LB_Free((void **) &status);
+      LB_FREE(&sendbuf);
+      LB_FREE(&recvbuf);
+      LB_FREE(&request);
+      LB_FREE(&status);
     } /* end if (nsend>0) */
   
     /* Free space for temp data structures */
-    LB_Free((void **) &hash_nodes);
-    LB_Free((void **) &hashtab);
-    LB_Free((void **) &proc_list);
-    LB_Free((void **) &nbors_global);
-    LB_Free((void **) &nbors_proc);
+    LB_FREE(&hash_nodes);
+    LB_FREE(&hashtab);
+    LB_FREE(&proc_list);
+    LB_FREE(&nbors_global);
+    LB_FREE(&nbors_proc);
   
     /* Get vertex weights if needed */
     if (vwgt_dim){
@@ -505,7 +502,7 @@ int LB_ParMetis(
       for (i=0; i<vwgt_dim*num_obj; i++){
         vwgt[i] = ceil(float_vwgt[i]*100/max_wgt);
       }
-      LB_Free((void **) &float_vwgt);
+      LB_FREE(&float_vwgt);
     }
 
   } /* end get_graph_data */
@@ -592,8 +589,8 @@ int LB_ParMetis(
 #endif
 
   /* Free weights; they are no longer needed */
-  if (vwgt_dim) LB_Free((void **) &vwgt);
-  if (ewgt_dim) LB_Free((void **) &adjwgt);
+  if (vwgt_dim) LB_FREE(&vwgt);
+  if (ewgt_dim) LB_FREE(&adjwgt);
 
   /* Construct send/recv data from ParMETIS output */
   destproc = (int *)LB_MALLOC(num_obj * sizeof(int));
@@ -685,21 +682,23 @@ int LB_ParMetis(
 #endif
 
     /* Free comm buffers */
-    LB_Free((void **) &sendbuf);
-    LB_Free((void **) &recvbuf);
-    LB_Free((void **) &plan);
+    LB_FREE(&sendbuf);
+    LB_FREE(&recvbuf);
+
+    /* Destroy communication plan */
+    LB_comm_destroy(&plan);
 
   } /* end if (flag>0) */
 
   /* Free space */
-  LB_Free((void **) &part);
-  LB_Free((void **) &local_ids);
-  LB_Free((void **) &global_ids);
-  LB_Free((void **) &destproc);
-  LB_Free((void **) &vtxdist);
-  LB_Free((void **) &xadj);
-  LB_Free((void **) &adjncy);
-  LB_Free((void **) &xyz);
+  LB_FREE(&part);
+  LB_FREE(&local_ids);
+  LB_FREE(&global_ids);
+  LB_FREE(&destproc);
+  LB_FREE(&vtxdist);
+  LB_FREE(&xadj);
+  LB_FREE(&adjncy);
+  LB_FREE(&xyz);
 
   /* Get a time here */
   if (get_times) times[3] = MPI_Wtime();
