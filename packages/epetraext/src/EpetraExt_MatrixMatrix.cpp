@@ -107,6 +107,7 @@ public:
   const Epetra_Map* origRowMap;
   const Epetra_Map* rowMap;
   const Epetra_Map* colMap;
+  const Epetra_Map* domainMap;
   const Epetra_Map* importColMap;
 };
 
@@ -286,6 +287,7 @@ int mult_A_Btrans(CrsMatrixStruct& Aview,
 		  Epetra_CrsMatrix& C)
 {
   int i, j, k;
+  int returnValue = 0;
 
   int maxlen = 0;
   for(i=0; i<Aview.numRows; ++i) {
@@ -295,6 +297,12 @@ int mult_A_Btrans(CrsMatrixStruct& Aview,
     if (Bview.numEntriesPerRow[i] > maxlen) maxlen = Bview.numEntriesPerRow[i];
   }
 
+  //cout << "Aview: " << endl;
+  //dumpCrsMatrixStruct(Aview);
+
+  //cout << "Bview: " << endl;
+  //dumpCrsMatrixStruct(Bview);
+
   int numBcols = Bview.colMap->NumMyElements();
 
   int iworklen = maxlen*2;
@@ -302,6 +310,7 @@ int mult_A_Btrans(CrsMatrixStruct& Aview,
 
   int* bcols = iwork+iworklen;
   int* bgids = Bview.colMap->MyGlobalElements();
+  double* bvals = new double[maxlen];
 
   //bcols will hold the GIDs from B's column-map for fast access
   //during the computations below
@@ -309,6 +318,8 @@ int mult_A_Btrans(CrsMatrixStruct& Aview,
     int blid = Bview.colMap->LID(bgids[i]);
     bcols[blid] = bgids[i];
   }
+
+  Epetra_Util util;
 
   int* Aind = iwork;
   int* Bind = iwork+maxlen;
@@ -340,18 +351,25 @@ int mult_A_Btrans(CrsMatrixStruct& Aview,
     //loop over the rows of B and form results C_ij = dot(A(i,:),B(j,:))
     for(j=0; j<Bview.numRows; ++j) {
       int* Bindices_j = Bview.indices[j];
+      bool remoterows = false;
       for(k=0; k<Bview.numEntriesPerRow[j]; ++k) {
 	if (Bview.remote[j]) {
 	  Bind[k] = Bview.importColMap->GID(Bindices_j[k]);
+          bvals[k] = Bview.values[j][k];
+          remoterows = true;
 	}
 	else {
-	  //Bind[k] = Bview.colMap->GID(Bview.indices[j][k]);
 	  Bind[k] = bcols[Bindices_j[k]];
+          bvals[k] = Bview.values[j][k];
 	}
       }
 
+      if (remoterows) {
+        util.Sort(true, Bview.numEntriesPerRow[j], Bind, 1, &bvals, 0, NULL);
+      }
+
       double C_ij = sparsedot(Aval_i, Aind, A_len_i,
-			      Bview.values[j], Bind,
+			      bvals, Bind,
 			      Bview.numEntriesPerRow[j]);
 
       if (C_ij == 0.0) {
@@ -372,13 +390,22 @@ int mult_A_Btrans(CrsMatrixStruct& Aview,
 	  //or global_col is out of range (less than 0 or non local).
 	  return(err);
 	}
+        if (err > 1) {
+          cerr << "EpetraExt::MatrixMatrix::Multiply Warning: failed to insert"
+              << " value in result matrix at position "<<global_row<<","
+              <<global_col<<", possibly because result matrix has a column-map"
+              <<" that doesn't include column "<<global_col<<" on this proc."
+              <<endl;
+          returnValue = err;
+        }
       }
     }
   }
 
   delete [] iwork;
+  delete [] bvals;
 
-  return(0);
+  return(returnValue);
 }
 
 //kernel method for computing the local portion of C = A^T*B
@@ -461,7 +488,7 @@ int mult_Atrans_B(CrsMatrixStruct& Aview,
 	global_row = Aview.colMap->GID(Ai);
       }
 
-      if (!Aview.origRowMap->MyGID(global_row)) {
+      if (!Aview.domainMap->MyGID(global_row)) {
 	continue;
       }
 
@@ -571,6 +598,12 @@ int mult_Atrans_Btrans(CrsMatrixStruct& Aview,
   double* C_col_j = dwork;
 
   double* C_col_j_import = dwork+C_numCols;
+
+  //cout << "Aview: " << endl;
+  //dumpCrsMatrixStruct(Aview);
+
+  //cout << "Bview: " << endl;
+  //dumpCrsMatrixStruct(Bview);
 
 
   int i, j, k;
@@ -711,6 +744,8 @@ int import_and_extract_views(const Epetra_CrsMatrix& M,
   //of M, then those remotely-owned rows will be imported into 'importM', and
   //views of them will be included in 'Mview'.
 
+  Mview.deleteContents();
+
   const Epetra_Map& Mrowmap = M.RowMap();
 
   int numProcs = Mrowmap.Comm().NumProc();
@@ -745,6 +780,7 @@ int import_and_extract_views(const Epetra_CrsMatrix& M,
   Mview.origRowMap = &(M.RowMap());
   Mview.rowMap = &targetMap;
   Mview.colMap = &(M.ColMap());
+  Mview.domainMap = &(M.DomainMap());
   Mview.importColMap = NULL;
 
   if (numProcs < 2) {
@@ -812,32 +848,25 @@ int import_and_extract_views(const Epetra_CrsMatrix& M,
   return(0);
 }
 
-Epetra_HashTable* create_gid_proc_hashtable(const Epetra_Map* colmap,
-					    const Epetra_Map* rowmap)
+int distribute_list(const Epetra_Comm& Comm,
+                    int lenSendList,
+                    const int* sendList,
+                    int& maxSendLen,
+                    int*& recvList)
 {
-  //Create a hash-table that maps the elements in colmap to the
-  //processors that own them, according to rowmap.
-
-  Epetra_Directory* directory = rowmap->Comm().CreateDirectory(*rowmap);
-
-  int numElements = colmap->NumMyElements();
-  int* mapElements = colmap->MyGlobalElements();
-  int* remoteProcs = new int[numElements];
-
-  int err = directory->GetDirectoryEntries(*rowmap, numElements, mapElements,
-					   remoteProcs, NULL, NULL);
-  delete directory;
-  assert( err == 0 );
-
-  Epetra_HashTable* hashtable = new Epetra_HashTable(numElements);
-
-  for(int i=0; i<numElements; ++i) {
-    hashtable->Add(mapElements[i], remoteProcs[i]);
+  maxSendLen = 0; 
+  Comm.MaxAll(&lenSendList, &maxSendLen, 1);
+  int numProcs = Comm.NumProc();
+  recvList = new int[numProcs*maxSendLen];
+  int* send = new int[maxSendLen];
+  for(int i=0; i<lenSendList; ++i) {
+    send[i] = sendList[i];
   }
 
-  delete [] remoteProcs;
+  Comm.GatherAll(send, recvList, maxSendLen);
+  delete [] send;
 
-  return( hashtable );
+  return(0);
 }
 
 Epetra_Map* create_map_from_imported_rows(const Epetra_Map* map,
@@ -888,102 +917,105 @@ Epetra_Map* create_map_from_imported_rows(const Epetra_Map* map,
   return( import_rows );
 }
 
-int find_trans_import_rows(const Epetra_CrsMatrix& matrix,
-			   Epetra_Map*& import_rows)
+Epetra_Map* find_rows_containing_cols(const Epetra_CrsMatrix& M,
+                                      const Epetra_Map* colmap)
 {
-  //Given a matrix, figure out which remotely-owned rows need to
-  //be imported in order to form the local portion of the transpose
-  //of the matrix.
-  //Create a map containing those rows.
+  int numProcs = colmap->Comm().NumProc();
+  int localProc = colmap->Comm().MyPID();
 
-  const Epetra_Map& rowmap = matrix.RowMap();
-  const Epetra_Map& colmap = matrix.ColMap();
+  int MnumRows = M.NumMyRows();
+  int numCols = colmap->NumMyElements();
 
-  //If this is a serial run, we don't have much to do.
-  const Epetra_Comm& comm = rowmap.Comm();
-  int numProcs = comm.NumProc();
-  int localProc = comm.MyPID();
+  int* iwork = new int[numCols+2*numProcs+numProcs*MnumRows];
+  int iworkOffset = 0;
 
-  if (numProcs < 2) {
-    import_rows = NULL;
-    return(0);
-  }
+  int* cols = &(iwork[iworkOffset]); iworkOffset += numCols;
 
-  Epetra_HashTable* colGIDprocs = create_gid_proc_hashtable(&colmap, &rowmap);
+  cols[0] = numCols;
+  colmap->MyGlobalElements( &(cols[1]) );
+  int* all_proc_cols = NULL;
+  
+  int max_num_cols;
+  distribute_list(colmap->Comm(), numCols+1, cols, max_num_cols, all_proc_cols);
 
-  //Next produce a table with num-rows == numProcs, and each row containing
-  //the list of rows that contain columns that belong on the corresponding
-  //processor.
+  const Epetra_CrsGraph& Mgraph = M.Graph();
+  const Epetra_Map& Mrowmap = M.RowMap();
+  const Epetra_Map& Mcolmap = M.ColMap();
+  int MminMyLID = Mrowmap.MinLID();
 
-  int i;
-  int numRows = matrix.NumMyRows();
-
-  int* procRows_1D = new int[numRows*numProcs];
+  int* procNumCols = &(iwork[iworkOffset]); iworkOffset += numProcs;
+  int* procNumRows = &(iwork[iworkOffset]); iworkOffset += numProcs;
+  int* procRows_1D = &(iwork[iworkOffset]);
+  int** procCols = new int*[numProcs];
   int** procRows = new int*[numProcs];
-  int* procCounter = new int[numProcs];
+  int i, err;
+  int offset = 0;
   for(i=0; i<numProcs; ++i) {
-    procCounter[i] = 0;
-    procRows[i] = &(procRows_1D[i*numRows]);
+    procNumCols[i] = all_proc_cols[offset];
+    procCols[i] = &(all_proc_cols[offset+1]);
+    offset += max_num_cols;
+
+    procNumRows[i] = 0;
+    procRows[i] = &(procRows_1D[i*MnumRows]);
   }
 
-  bool matrixfilled = matrix.Filled();
-  if (!matrixfilled) {
-    cerr << "MatrixMatrix::Multiply ERROR, input matrix not Filled."<<endl;
-    return(-1);
-  }
+  int* Mindices;
 
-  const Epetra_CrsGraph& graph = matrix.Graph();
-
-  int minMyLID = rowmap.MinLID();
-  int minMyGID = rowmap.MinMyGID();
-  int numCols;
-  int* indices;
-  int lastRemoteProc = -1;
-  int totalNumSend = 0;
-
-  for(i=0; i<numRows; ++i) {
-    lastRemoteProc = -1;
-    int localRow = minMyLID+i;
-    int globalRow = minMyGID+i;
-
-    EPETRA_CHK_ERR( graph.ExtractMyRowView(localRow, numCols, indices) );
-
-    for(int j=0; j<numCols; ++j) {
-      int GID = colmap.GID(indices[j]);
-      int remoteProc = colGIDprocs->Get(GID);
-      if (localProc != remoteProc && lastRemoteProc != remoteProc) {
-	procRows[remoteProc][procCounter[remoteProc]++] = globalRow;
-	lastRemoteProc = remoteProc;
-	++totalNumSend;
-      }
+  for(int row=0; row<MnumRows; ++row) {
+    int localRow = MminMyLID+row;
+    int globalRow = Mrowmap.GID(localRow);
+    int MnumCols;
+    err = Mgraph.ExtractMyRowView(localRow, MnumCols, Mindices);
+    if (err != 0) {
+      cerr << "proc "<<localProc<<", error in Mgraph.ExtractMyRowView, row "
+           <<localRow<<endl;
+      return(NULL);
     }
 
+    for(int j=0; j<MnumCols; ++j) {
+      int colGID = Mcolmap.GID(Mindices[j]);
+
+      for(int p=0; p<numProcs; ++p) {
+        if (p==localProc) continue;
+
+        int insertPoint;
+        int foundOffset = Epetra_Util_binary_search(colGID, procCols[p],
+                                                    procNumCols[p], insertPoint);
+        if (foundOffset > -1) {
+          int numRowsP = procNumRows[p];
+          int* prows = procRows[p];
+          if (numRowsP < 1 || prows[numRowsP-1] < globalRow) {
+            prows[numRowsP] = globalRow;
+            procNumRows[p]++;
+          }
+        }
+      }
+    }
   }
 
-  //Now make the contents of procRows occupy a contiguous section 
+  //Now make the contents of procRows occupy a contiguous section
   //of procRows_1D.
-  int offset = procCounter[0];
+  offset = procNumRows[0];
   for(i=1; i<numProcs; ++i) {
-    for(int j=0; j<procCounter[i]; ++j) {
+    for(int j=0; j<procNumRows[i]; ++j) {
       procRows_1D[offset++] = procRows[i][j];
     }
   }
 
-  assert( offset == totalNumSend );
-
+  int totalNumSend = offset;
   //Next we will do a sparse all-to-all communication to send the lists of rows
   //to the appropriate processors, and create a map with the rows we've received
   //from other processors.
-  import_rows = create_map_from_imported_rows(&colmap, totalNumSend,
-					      procRows_1D, numProcs, procCounter);
+  Epetra_Map* recvd_rows =
+    create_map_from_imported_rows(&Mrowmap, totalNumSend,
+                                  procRows_1D, numProcs, procNumRows);
 
-  delete [] procRows_1D;
+  delete [] iwork;
+  delete [] procCols;
   delete [] procRows;
-  delete [] procCounter;
+  delete [] all_proc_cols;
 
-  delete colGIDprocs;
-
-  return(0);
+  return(recvd_rows);
 }
 
 int form_map_union(const Epetra_Map* map1,
@@ -1047,143 +1079,6 @@ int form_map_union(const Epetra_Map* map1,
   return(0);
 }
 
-int find_transtrans_import_rows(const Epetra_CrsMatrix& A,
-				const Epetra_CrsMatrix& B,
-				const Epetra_Map*& import_rows)
-{
-  //This is a support function for the matrix-matrix-multiply scenario
-  //in which the product C = A^T*B^T is being formed.
-  //This function finds the local rows of B that will need to be sent
-  //to remote processors in order for them to do their calculations.
-
-  const Epetra_Map* rowmap = &(A.RowMap());
-  const Epetra_Map* colmap = &(A.ColMap());
-  const Epetra_Comm& comm = rowmap->Comm();
-  int localProc = comm.MyPID();
-  int numProcs = comm.NumProc();
-  if (numProcs < 2) {
-    import_rows = NULL;
-    return(0);
-  }
-
-  Epetra_HashTable* colGIDprocs = create_gid_proc_hashtable(colmap, rowmap);
-
-  int AnumRows = A.NumMyRows();
-  int BnumRows = B.NumMyRows();
-  int* procRows_1D = new int[BnumRows*numProcs];
-  int** procRows = new int*[numProcs];
-  Epetra_HashTable** procHash = new Epetra_HashTable*[numProcs];
-  int* procCounter = new int[numProcs];
-  int i;
-  for(i=0; i<numProcs; ++i) {
-    procCounter[i] = 0;
-    procRows[i] = &(procRows_1D[i*BnumRows]);
-    procHash[i] = new Epetra_HashTable(BnumRows);
-  }
-
-  bool matrixfilled = B.Filled();
-  if (!matrixfilled) {
-    cerr << "MatrixMatrix::Multiply ERROR, input matrix not Filled."<<endl;
-    return(-1);
-  }
-
-  const Epetra_CrsGraph& Agraph = A.Graph();
-  const Epetra_CrsGraph& Bgraph = B.Graph();
-  int minMyLID = rowmap->MinLID();
-  int minMyGID = rowmap->MinMyGID();
-  int numCols;
-  int AnumCols;
-  int* indices;
-  int* Aindices;
-  const Epetra_Map& bcolmap = B.ColMap();
-  int totalNumSend = 0;
-
-  //OK, this is ugly, but necessary.
-  //In calculating C = A^T*B^T, individual entries in C are
-  // C(i,j)=dot(A^T(i,:),B^T(:,j)),
-  //which is complicated by the fact that A and B are both
-  //distributed row-wise...
-  //
-  //We have to figure out which local rows of B need to be sent
-  //to remote processors so that those processors will be able to
-  //access the needed portions of columns of B^T.
-  //
-  //We're holding non-transposed portions of A and B, so here's
-  //what we're going to do:
-  //
-  //1. Scan the rows of A looking for columns that correspond to
-  //   remotely-owned rows of A^T. Rows that contain such columns
-  //   will be called 'Arow'.
-  //2. For each 'Arow', scan the rows of B looking for columns
-  //   that correspond to 'Arow'. Rows that contain such columns
-  //   will be called 'Brow'.
-  //3. The set of 'Brow' rows will be sent to the processors that
-  //   own the columns encountered in step 1 above.
-  //
-  //(The above explanation is much clearer if you can see my hands
-  // waving at the pictures I've drawn...)
-
-  for(int ai=0; ai<AnumRows; ++ai) {
-    int localRow = minMyLID+ai;
-    int Arow = minMyGID+ai;
-    EPETRA_CHK_ERR( Agraph.ExtractMyRowView(localRow, AnumCols, Aindices) );
-
-    for(int aj=0; aj<AnumCols; ++aj) {
-      int colGID = colmap->GID(Aindices[aj]);
-      int remoteProc = colGIDprocs->Get(colGID);
-      if (remoteProc != localProc) {
-
-	//Each row in Bgraph that contains col-GID==Arow will need to be sent
-	//to remoteProc.
-	for(int bi=0; bi<BnumRows; ++bi) {
-	  int localRow = minMyLID+bi;
-	  int Brow = minMyGID+bi;
-	  EPETRA_CHK_ERR( Bgraph.ExtractMyRowView(localRow, numCols, indices) );
-
-	  for(int bj=0; bj<numCols; ++bj) {
-	    int GID = bcolmap.GID(indices[bj]);
-	    if (GID==Arow && procHash[remoteProc]->Get(Brow) < 0) {
-	      procRows[remoteProc][procCounter[remoteProc]++] = Brow;
-	      procHash[remoteProc]->Add(Brow, remoteProc);
-	      ++totalNumSend;
-	    }
-	  }
-	}
-      }
-    }
-  }
-
-  //Now make the contents of procRows occupy a contiguous section 
-  //of procRows_1D.
-  int offset = procCounter[0];
-  for(i=1; i<numProcs; ++i) {
-    for(int j=0; j<procCounter[i]; ++j) {
-      procRows_1D[offset++] = procRows[i][j];
-    }
-  }
-
-  assert( offset == totalNumSend );
-
-  //Next we will do a sparse all-to-all communication to send the lists of rows
-  //to the appropriate processors, and create a map with the rows we've received
-  //from other processors.
-  import_rows = create_map_from_imported_rows(colmap, totalNumSend,
-					      procRows_1D, numProcs, procCounter);
-
-  delete [] procRows_1D;
-  delete [] procRows;
-  delete [] procCounter;
-
-  for(i=0; i<numProcs; ++i) {
-    delete procHash[i];
-  }
-  delete [] procHash;
-
-  delete colGIDprocs;
-
-  return(0);
-}
-
 int MatrixMatrix::Multiply(const Epetra_CrsMatrix& A,
 			   bool transposeA,
 			   const Epetra_CrsMatrix& B,
@@ -1215,11 +1110,14 @@ int MatrixMatrix::Multiply(const Epetra_CrsMatrix& A,
   if (transposeA && transposeB)  scenario = 4;//A^T*B^T
 
   //now check size compatibility
+  int Aouter = transposeA ? A.NumGlobalCols() : A.NumGlobalRows();
+  int Bouter = transposeB ? B.NumGlobalRows() : B.NumGlobalCols();
   int Ainner = transposeA ? A.NumGlobalRows() : A.NumGlobalCols();
   int Binner = transposeB ? B.NumGlobalCols() : B.NumGlobalRows();
   if (Ainner != Binner) {
     cerr << "MatrixMatrix::Multiply: ERROR, inner dimensions of op(A) and op(B) "
-         << "must match for matrix-matrix product."<<endl;
+         << "must match for matrix-matrix product. op(A) is "
+         <<Aouter<<"x"<<Ainner << ", op(B) is "<<Binner<<"x"<<Bouter<<endl;
     return(-1);
   }
 
@@ -1231,76 +1129,75 @@ int MatrixMatrix::Multiply(const Epetra_CrsMatrix& A,
   const Epetra_Map* targetMap_A = NULL;
   const Epetra_Map* targetMap_B = NULL;
 
-  Epetra_Map* colmap_A_transpose = NULL;
-  Epetra_Map* colmap_B_transpose = NULL;
+  const Epetra_Map* rowmap_A = &(A.RowMap());
+  const Epetra_Map* rowmap_B = &(B.RowMap());
 
   const Epetra_Map* colmap_A = &(A.ColMap());
   const Epetra_Map* colmap_B = &(B.ColMap());
 
+  const Epetra_Map* domainmap_A = &(A.DomainMap());
+
+  const Epetra_Map* colmap_op_A = colmap_A;
+
   const Epetra_Map* mapunion1 = NULL;
   const Epetra_Map* mapunion2 = NULL;
+  const Epetra_Map* mapunion3 = NULL;
   const Epetra_Map* import_rows = NULL;
 
-  //The functions 'find_trans_import_rows' and 'find_transtrans_import_rows'
-  //are potentially expensive.
-  //We will skip them if this is a serial run.
+  Epetra_CrsMatrix* importA = NULL;
+  CrsMatrixStruct Aview;
+
+  Epetra_CrsMatrix* importB = NULL;
+  CrsMatrixStruct Bview;
+  Epetra_CrsMatrix* importB2 = NULL;
+  CrsMatrixStruct Bview2;
+
+  //The function 'find_rows_containing_cols' is potentially expensive.
+  //We will avoid calling it if this is a serial run.
 
   int numProcs = A.Comm().NumProc();
   if (numProcs < 2) {
     targetMap_A = &(A.RowMap());
     targetMap_B = &(B.RowMap());
+    EPETRA_CHK_ERR( import_and_extract_views(A, *targetMap_A,
+                                             importA, Aview) );
+    EPETRA_CHK_ERR( import_and_extract_views(B, *targetMap_B,
+                                             importB, Bview) );
   }
   else {
-    switch(scenario) {
-    case 1://A*B
-      targetMap_A = &(A.RowMap());
+    if (transposeA) {
+      import_rows = find_rows_containing_cols(A, colmap_A);
+      EPETRA_CHK_ERR( form_map_union(rowmap_A, import_rows, mapunion1) );
+      targetMap_A = mapunion1;
+      delete import_rows; import_rows = NULL;
+      targetMap_B = targetMap_A;
+    }
+    else {
+      targetMap_A = rowmap_A;
       targetMap_B = colmap_A;
-      break;
+    }
 
-    case 2://A*B^T
-      targetMap_A = &(A.RowMap());
-      EPETRA_CHK_ERR( find_trans_import_rows(B, colmap_B_transpose) );
-      EPETRA_CHK_ERR( form_map_union(colmap_B_transpose, colmap_A, mapunion1) );
-      targetMap_B = mapunion1;
-      break;
+    EPETRA_CHK_ERR( import_and_extract_views(A, *targetMap_A,
+                                             importA, Aview) );
 
-    case 3://A^T*B
-      EPETRA_CHK_ERR( find_trans_import_rows(A, colmap_A_transpose) );
-      EPETRA_CHK_ERR( form_map_union(colmap_A_transpose, colmap_A, mapunion1) );
-      EPETRA_CHK_ERR( form_map_union(colmap_A_transpose, colmap_B, mapunion2) );
-      targetMap_A = mapunion1;
-      targetMap_B = mapunion2;
-      break;
+    if (!transposeB) {
+      EPETRA_CHK_ERR( import_and_extract_views(B, *targetMap_B,
+                                               importB, Bview) );
+    }
+    else {
+      //figure out which rows are needed to form the transpose of B
+      import_rows = find_rows_containing_cols(B, colmap_B);
+      EPETRA_CHK_ERR( form_map_union(rowmap_B, import_rows, mapunion2) );
 
-    case 4://A^T*B^T
-      EPETRA_CHK_ERR( find_trans_import_rows(A, colmap_A_transpose) );
-      EPETRA_CHK_ERR( form_map_union(colmap_A_transpose, colmap_A, mapunion1) );
-      targetMap_A = mapunion1;
-      EPETRA_CHK_ERR( find_transtrans_import_rows(A, B, import_rows) );
-      EPETRA_CHK_ERR( form_map_union(import_rows, colmap_B, mapunion2) );
-      targetMap_B = mapunion2;
-      break;
+      delete import_rows;
+      import_rows = find_rows_containing_cols(B, colmap_A);
+      EPETRA_CHK_ERR( form_map_union(import_rows, mapunion2, mapunion3) );
+      targetMap_B = mapunion3;
 
-    default:
-      cerr << "MatrixMatrix::Multiply ERROR invalid scenario."<<endl;
-      EPETRA_CHK_ERR( -1 );
+      EPETRA_CHK_ERR( import_and_extract_views(B, *targetMap_B,
+                                               importB, Bview) );
     }
   }
-
-  //Now we can import the necessary sections of A and B, and extract views of
-  //their contents for fast access during the calculations. The struct
-  //CrsMatrixStruct, defined above in this file, holds views of the rows
-  //of a matrix.
-
-  Epetra_CrsMatrix* importA = NULL;
-  Epetra_CrsMatrix* importB = NULL;
-  CrsMatrixStruct Aview;
-  CrsMatrixStruct Bview;
-
-  EPETRA_CHK_ERR( import_and_extract_views(A, *targetMap_A, importA, Aview) );
-
-  EPETRA_CHK_ERR( import_and_extract_views(B, *targetMap_B, importB, Bview) );
-
 
   //zero the result matrix before we start the calculations.
   EPETRA_CHK_ERR( C.PutScalar(0.0) );
@@ -1344,11 +1241,9 @@ int MatrixMatrix::Multiply(const Epetra_CrsMatrix& A,
   delete importA;
   delete importB;
 
-  delete colmap_A_transpose;
-  delete colmap_B_transpose;
-
-  delete mapunion1;
-  delete mapunion2;
+  delete mapunion1; mapunion1 = NULL;
+  delete mapunion2; mapunion2 = NULL;
+  delete mapunion3; mapunion3 = NULL;
   delete import_rows;
 
   return(0);
@@ -1366,7 +1261,7 @@ int MatrixMatrix::Add(const Epetra_CrsMatrix& A,
   //A should already be Filled. It doesn't matter whether B is
   //already Filled, but if it is, then its graph must already contain
   //all nonzero locations that will be referenced in forming the
-  //product.
+  //sum.
 
   if (!A.Filled() ) EPETRA_CHK_ERR(-1);
 
@@ -1392,7 +1287,7 @@ int MatrixMatrix::Add(const Epetra_CrsMatrix& A,
   double * Values = new double[MaxNumEntries];
 
   int NumMyRows = B.NumMyRows();
-  int Row;
+  int Row, err;
 
   if( scalarA )
   {
@@ -1403,11 +1298,16 @@ int MatrixMatrix::Add(const Epetra_CrsMatrix& A,
       if( scalarA != 1.0 )
         for( int j = 0; j < NumEntries; ++j ) Values[j] *= scalarA;
       if( B.Filled() ) //Sum In Values
-        assert( B.SumIntoGlobalValues( Row, NumEntries, Values, Indices ) >= 0 );
-      else
-        assert( B.InsertGlobalValues( Row, NumEntries, Values, Indices ) >= 0 );
+        assert( B.SumIntoGlobalValues( Row, NumEntries, Values, Indices ) == 0 );
+      else {
+        err = B.InsertGlobalValues( Row, NumEntries, Values, Indices );
+        assert( err == 0 || err == 1 );
+      }
     }
   }
+
+  delete [] Indices;
+  delete [] Values;
 
   if( Atrans ) delete Atrans;
 
