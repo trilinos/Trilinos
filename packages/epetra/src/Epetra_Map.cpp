@@ -29,26 +29,28 @@
 //==============================================================================
 // Epetra_Map constructor for a Epetra-defined uniform linear distribution of elements.
 Epetra_Map::Epetra_Map(int NumGlobalElements, int IndexBase, const Epetra_Comm& Comm)
-  : Epetra_BlockMap( NumGlobalElements, 1, IndexBase, Comm)
+  : Epetra_BlockMap( NumGlobalElements, 1, IndexBase, Comm) // Map is just a special case of BlockMap
 {
-
+  SetLabel("Epetra::Map");
 }
 //==============================================================================
 // Epetra_Map constructor for a user-defined linear distribution of constant block size elements.
 Epetra_Map::Epetra_Map(int NumGlobalElements, int NumMyElements, int IndexBase, const Epetra_Comm& Comm)
-  : Epetra_BlockMap(NumGlobalElements, NumMyElements, 1, IndexBase, Comm)
+  : Epetra_BlockMap(NumGlobalElements, NumMyElements, 1, IndexBase, Comm) // Map is just a special case of BlockMap
 {
+  SetLabel("Epetra::Map");
 }
 //==============================================================================
 // Epetra_Map constructor for a user-defined arbitrary distribution of constant block size elements.
 Epetra_Map::Epetra_Map(int NumGlobalElements, int NumMyElements, int * MyGlobalElements, 
 		     int IndexBase, const Epetra_Comm& Comm)
-  : Epetra_BlockMap(NumGlobalElements, NumMyElements, MyGlobalElements, 1, IndexBase, Comm)
+  : Epetra_BlockMap(NumGlobalElements, NumMyElements, MyGlobalElements, 1, IndexBase, Comm) // Map is just a special case of BlockMap
 {
+  SetLabel("Epetra::Map");
 }
 //==============================================================================
 Epetra_Map::Epetra_Map(const Epetra_Map& map)
-  : Epetra_BlockMap(map)
+  : Epetra_BlockMap(map) // Map is just a special case of BlockMap
 {
 }
 

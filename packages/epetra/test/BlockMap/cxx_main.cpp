@@ -218,7 +218,7 @@ int main(int argc, char *argv[]) {
   assert(same==false); // Map3 saved from an earlier test
   delete Map3;
 
-
+  // Back to testing copy constructor
   if (verbose) cout << "Checking Epetra_BlockMap(*Map)" << endl;
   ierr = checkmap(*Map1, NumGlobalElements, NumMyElements, MyGlobalElements, ElementSize, ElementSizeList,
 		  NumGlobalEquations, NumMyEquations,

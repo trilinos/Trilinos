@@ -36,12 +36,12 @@
   determined by the constructor.  Once a Epetra_Map is constructed any of the following attributes can 
   be obtained
   by calling a query function that has the name as the attribute, e.g. to get the
-  value of NumGlobalPoints, you can call a function NumGlobalElements().  For attributes that
+  value of NumGlobalElements, you can call a function NumGlobalElements().  For attributes that
   are lists, the query functions return the list values in a user allocated array.
 
   <ul>
   <li> NumGlobalElements - The total number of elements across all processors. If this parameter and
-       NumMyElements are both passed in to the constructor, one of the three cases will apply: 
+       NumMyElements are both passed into the constructor, one of the three cases will apply: 
        <ol> 
        <li> If NumGlobalElements = NumMyElements (and not equal to zero)
             the map is defined to be a local replicated
@@ -84,11 +84,11 @@
        processor 0 gets the first n/p elements, processor 1 gets the next n/p elements, etc. where
        n is the number of elements and p is the number of processors.
   <li> DistributedGlobal() - Returns true if the element space of the map spans more than one processor.
-       This will be true in most cases, but will be false on in serial and for objects
+       This will be true in most cases, but will be false in serial cases and for objects
        that are created via the derived Epetra_LocalMap class.
   </ul>
 
-  \warning A Epetra_Comm object is required for all Epetra_Map constructors.
+  \warning An Epetra_Comm object is required for all Epetra_Map constructors.
 
   \note In the current implementation, Epetra_BlockMap is the base class for Epetra_Map.
 

@@ -14,31 +14,31 @@ int checkmap(Epetra_BlockMap & Map, int NumGlobalElements, int NumMyElements,
   else
     if (Map.ConstantElementSize()) return(-1);
   
-  if (DistributedGlobal!=Map.DistributedGlobal()) return(-3);
+  if (DistributedGlobal!=Map.DistributedGlobal()) return(-2);
 
       int *MyElementSizeList;
 
   if (ElementSizeList==0)
     {
-      if (Map.ElementSize()!=ElementSize) return(-4);
+      if (Map.ElementSize()!=ElementSize) return(-3);
       
       MyElementSizeList = new int[NumMyElements];
       
-      if (Map.ElementSizeList(MyElementSizeList)!=0) return(-5);
+      if (Map.ElementSizeList(MyElementSizeList)!=0) return(-4);
       for (i=0; i<NumMyElements; i++) 
-        if (MyElementSizeList[i]!=ElementSize) return(-5);
+        if (MyElementSizeList[i]!=ElementSize) return(-4);
 
-      if (Map.MaxMyElementSize() != ElementSize) return(-54);
-      if (Map.MinMyElementSize() != ElementSize) return(-56);
+      if (Map.MaxMyElementSize() != ElementSize) return(-5);
+      if (Map.MinMyElementSize() != ElementSize) return(-5);
     }
   else
     {
       MyElementSizeList = new int[NumMyElements];
-      if (Map.ElementSizeList(MyElementSizeList)!=0) return(-5);
+      if (Map.ElementSizeList(MyElementSizeList)!=0) return(-4);
       int MaxSize = MyElementSizeList[0];
       int MinSize = MyElementSizeList[0];
       for (i=0; i<NumMyElements; i++) {
-        if (MyElementSizeList[i]!=ElementSizeList[i]) return(-5);
+        if (MyElementSizeList[i]!=ElementSizeList[i]) return(-4);
 	if (MyElementSizeList[i] > MaxSize)
 	  MaxSize = MyElementSizeList[i];
 	if (MyElementSizeList[i] < MinSize)
@@ -49,8 +49,8 @@ int checkmap(Epetra_BlockMap & Map, int NumGlobalElements, int NumMyElements,
 	if (Map.ElementSize(Map.LID(MyGlobalElements[i])) != ElementSizeList[i])
 	  return(-51);
       }
-      if (MaxSize !=Map.MaxMyElementSize()) return(-53);
-      if (MinSize !=Map.MinMyElementSize()) return(-55);
+      if (MaxSize !=Map.MaxMyElementSize()) return(-5);
+      if (MinSize !=Map.MinMyElementSize()) return(-5);
     }
 
   const Epetra_Comm & Comm1 = Map.Comm();

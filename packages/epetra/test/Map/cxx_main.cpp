@@ -1,4 +1,4 @@
-// Epetra_Comm Test routine
+// Epetra_Map Test routine
 
 #ifdef EPETRA_MPI
 #include "Epetra_MpiComm.h"
@@ -154,6 +154,23 @@ int main(int argc, char *argv[]) {
   // Test Copy constructor
   Epetra_Map * Map1 = new Epetra_Map(*Map);
 
+  // Test SameAs() method
+  bool same = Map1->SameAs(*Map);
+  assert(same==true);// should return true since Map1 is a copy of Map
+
+  Epetra_BlockMap * Map2 = new Epetra_Map(NumGlobalElements, NumMyElements, MyGlobalElements,  IndexBase, Comm);
+  same = Map2->SameAs(*Map);
+  assert(same==true); // Map and Map2 were created with the same sets of parameters
+  delete Map2;
+
+  // now test SameAs() on a map that is different
+
+  Map2 =  new Epetra_Map(NumGlobalElements, NumMyElements, MyGlobalElements, IndexBase-1, Comm);
+  same = Map2->SameAs(*Map);
+  assert(same==false); // IndexBases are different
+  delete Map2;
+
+  // Back to testing copy constructor
   if (verbose) cout << "Checking Epetra_Map(*Map)" << endl;
   ierr = checkmap(*Map1, NumGlobalElements, NumMyElements, MyGlobalElements, 
 		  IndexBase, Comm, DistributedGlobal);
