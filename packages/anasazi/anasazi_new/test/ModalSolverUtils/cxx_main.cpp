@@ -385,7 +385,7 @@ int main(int argc, char *argv[])
 
   // Compute eigenvalues
   info = 0;
-  info = msUtils.directSolver( NumColumns, K, M, &EV, &lambda, nev, 10 );
+  info = msUtils.directSolver( NumColumns, K, 0, &EV, &lambda, nev, 10 );
 
   testFailed = false;
   if (info != 0) {
@@ -422,7 +422,7 @@ int main(int argc, char *argv[])
 
   // Compute eigenvalues
   info = 0;
-  info = msUtils.directSolver( NumColumns, K, M, &EV, &lambda, nev, 1 );
+  info = msUtils.directSolver( NumColumns, K, &M, &EV, &lambda, nev, 1 );
 
   testFailed = false;
   if (info != 0) {
@@ -449,7 +449,7 @@ int main(int argc, char *argv[])
 
   // Compute eigenvalues
   info = 0;
-  info = msUtils.directSolver( NumColumns, K, M, &EV, &lambda, nev, 0 );
+  info = msUtils.directSolver( NumColumns, K, &M, &EV, &lambda, nev, 0 );
 
   testFailed = false;
   if (info != 0) {

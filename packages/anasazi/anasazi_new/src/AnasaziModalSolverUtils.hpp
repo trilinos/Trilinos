@@ -79,7 +79,7 @@ namespace Anasazi {
 			   int orthoType = 0, STYPE kappa = 1.5625) const;
     
     int directSolver(int size, const Teuchos::SerialDenseMatrix<int,STYPE> &KK, 
-		     const Teuchos::SerialDenseMatrix<int,STYPE> &MM,
+		     const Teuchos::SerialDenseMatrix<int,STYPE> *MM,
 		     Teuchos::SerialDenseMatrix<int,STYPE> *EV,
 		     std::vector<STYPE>* theta,
 		     int nev, int esType = 0) const;
@@ -563,7 +563,7 @@ namespace Anasazi {
   
   template<class STYPE, class MV, class OP>
   int ModalSolverUtils<STYPE, MV, OP>::directSolver(int size, const Teuchos::SerialDenseMatrix<int,STYPE> &KK, 
-						    const Teuchos::SerialDenseMatrix<int,STYPE> &MM,
+						    const Teuchos::SerialDenseMatrix<int,STYPE> *MM,
 						    Teuchos::SerialDenseMatrix<int,STYPE>* EV,
 						    std::vector<STYPE>* theta,
 						    int nev, int esType) const
@@ -615,9 +615,8 @@ namespace Anasazi {
     int rank = 0;
     int info = 0;
    
-    std::string lapack_name = "dsytrd";
+    std::string lapack_name = "sytrd";
     std::string lapack_opts = "u";
-    // I need to get around knowing the scalar type, but will leave this hear right now.
     int NB = 5 + lapack.ILAENV(1, lapack_name, lapack_opts, size, -1, -1, -1);
     int lwork = size*NB;
     std::vector<STYPE> work(lwork);
@@ -645,7 +644,7 @@ namespace Anasazi {
 	// Copy KK & MM
 	//
 	KKcopy = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,STYPE>( Teuchos::Copy, KK, rank, rank ) );
-	MMcopy = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,STYPE>( Teuchos::Copy, MM, rank, rank ) );
+	MMcopy = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,STYPE>( Teuchos::Copy, *MM, rank, rank ) );
 	//
 	// Solve the generalized eigenproblem with LAPACK
 	//
@@ -672,10 +671,10 @@ namespace Anasazi {
 	// Check the quality of eigenvectors
 	// ( using mass-orthonormality )
 	//
-	Teuchos::SerialDenseMatrix<int,STYPE> MMcopy2( Teuchos::Copy, MM, size, size );	  
+	Teuchos::SerialDenseMatrix<int,STYPE> MMcopy2( Teuchos::Copy, *MM, size, size );	  
 	for (i = 0; i < size; ++i) {
 	  for (j = 0; j < i; ++j)
-	    MMcopy2(i,j) = MM(j,i);
+	    MMcopy2(i,j) = (*MM)(j,i);
 	}
 	blas.GEMM(Teuchos::NO_TRANS, Teuchos::NO_TRANS, size, rank, size, one, MMcopy2.values(), MMcopy2.stride(), 
 		  KKcopy->values(), KKcopy->stride(), zero, U->values(), U->stride());
@@ -724,7 +723,7 @@ namespace Anasazi {
       // Copy KK & MM
       //
       KKcopy = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,STYPE>( Teuchos::Copy, KK, size, size ) );
-      MMcopy = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,STYPE>( Teuchos::Copy, MM, size, size ) );
+      MMcopy = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,STYPE>( Teuchos::Copy, *MM, size, size ) );
       //
       // Solve the generalized eigenproblem with LAPACK
       //
