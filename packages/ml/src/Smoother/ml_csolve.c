@@ -42,6 +42,7 @@ int ML_CSolve_Create(ML_CSolve **cs)
    ml_cs->build_time = 0.0;
    ml_cs->apply_time = 0.0;
    ml_cs->label      = NULL;
+   ml_cs->data_destroy = NULL;
    return 0;
 } 
 
@@ -63,6 +64,7 @@ int ML_CSolve_Init(ML_CSolve *ml_cs)
    ml_cs->build_time = 0.0;
    ml_cs->apply_time = 0.0;
    ml_cs->label      = NULL;
+   ml_cs->data_destroy = NULL;
    return 0;
 } 
 
@@ -74,17 +76,7 @@ int ML_CSolve_Destroy(ML_CSolve **cs)
 {
    ML_CSolve *ml_cs;
 
-   ml_cs = (*cs);
-   if ( ml_cs->ML_id != ML_ID_CSOLVE ) {
-      printf("ML_CSolve_Destroy error : wrong object.\n");
-      exit(-1);
-   }
-   ml_cs->ML_id = -1; 
-   ml_cs->my_level = NULL;
-   ml_cs->ntimes = 0;
-   ml_cs->tol = 0;
-   ml_cs->data = NULL;
-   ML_memory_free( (void**) &(ml_cs->func) );
+   ML_CSolve_Clean(*cs);
    ML_memory_free( (void**) cs );
    (*cs) = NULL; 
    return 0;
@@ -106,8 +98,12 @@ int ML_CSolve_Clean(ML_CSolve *ml_cs)
       exit(-1);
    }
 #ifdef ML_DETAILED_TIMING
-   if ( (ml_cs->label != NULL) && ( ml_cs->build_time != 0.0))
-      printf(" Build time for %s\t= %e\n",ml_cs->label,ml_cs->build_time);
+   if (ml_cs->label != NULL) {
+      t1 = ML_gsum_double(ml_cs->build_time, global_comm);
+      t1 = t1/((double) global_comm->ML_nprocs);
+      if ( (global_comm->ML_mypid == 0) && (t1 != 0.0))
+         printf(" Build time for %s\t= %e\n",ml_cs->label,t1);
+   }
 
    if  (ml_cs->label != NULL) {
       t1 = ML_gsum_double(ml_cs->apply_time, global_comm);
@@ -121,12 +117,16 @@ int ML_CSolve_Clean(ML_CSolve *ml_cs)
    ml_cs->my_level = NULL;
    ml_cs->ntimes = 0;
    ml_cs->tol = 0;
+   if (ml_cs->data_destroy != NULL)
+      ml_cs->data_destroy( ml_cs->data );
+
    if ( ml_cs->func->internal == SuperLU_Solve ) {
        ML_Clean_CSolveSuperLU( ml_cs->data, ml_cs->func );
    }
    ML_memory_free( (void**) &(ml_cs->func) );
    ml_cs->data = NULL;
    ml_cs->func = NULL;
+   ml_cs->data_destroy = NULL;
    if (ml_cs->label != NULL) { free(ml_cs->label); ml_cs->label = NULL; }
    return 0;
 }

@@ -50,6 +50,7 @@ struct ML_CSolve_Struct
    double                  tol;
    ML_CSolveFunc           *func;
    void                    *data;
+   void                    (*data_destroy)(void *);
    double                  build_time, apply_time;
    char                    *label;
 };
