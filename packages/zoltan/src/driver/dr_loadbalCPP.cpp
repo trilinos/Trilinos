@@ -109,7 +109,7 @@ int setup_zoltan(Zoltan_Object &zz, int Proc, PROB_INFO_PTR prob,
       ierr = zz.Set_Param(prob->params[i].Name, prob->params[i].Val);
     if (ierr == ZOLTAN_FATAL) {
       sprintf(errmsg,
-              "fatal: error in Zoltan_Object::Set_Param when setting parameter %s\n",
+              "fatal: error in Zoltan_Set_Param when setting parameter %s\n",
               prob->params[i].Name);
       Gen_Error(0, errmsg);
       delete [] psize;
@@ -124,7 +124,7 @@ int setup_zoltan(Zoltan_Object &zz, int Proc, PROB_INFO_PTR prob,
 
   /* Set the load-balance method */
   if (zz.Set_Param("LB_METHOD", prob->method) == ZOLTAN_FATAL) {
-    Gen_Error(0, "fatal:  error returned from Zoltan_Object::Set_Param(LB_METHOD)\n");
+    Gen_Error(0, "fatal:  error returned from Zoltan_Set_Param(LB_METHOD)\n");
     delete [] psize;
     delete [] partid;
     return 0;
@@ -135,7 +135,7 @@ int setup_zoltan(Zoltan_Object &zz, int Proc, PROB_INFO_PTR prob,
     char s[8];
     sprintf(s, "%d", Proc);
     if (zz.Set_Param("NUM_LOCAL_PARTITIONS", s) == ZOLTAN_FATAL) {
-      Gen_Error(0, "fatal:  error returned from Zoltan_Object::Set_Param()\n");
+      Gen_Error(0, "fatal:  error returned from Zoltan_Set_Param()\n");
       delete [] psize;
       delete [] partid;
       return 0;
@@ -148,7 +148,7 @@ int setup_zoltan(Zoltan_Object &zz, int Proc, PROB_INFO_PTR prob,
       char s[8];
       sprintf(s, "%d", Proc);
       if (zz.Set_Param("NUM_LOCAL_PARTITIONS", s) == ZOLTAN_FATAL) {
-        Gen_Error(0, "fatal:  error returned from Zoltan_Object::Set_Param()\n");
+        Gen_Error(0, "fatal:  error returned from Zoltan_Set_Param()\n");
         delete [] psize;
         delete [] partid;
         return 0;
@@ -175,7 +175,7 @@ int setup_zoltan(Zoltan_Object &zz, int Proc, PROB_INFO_PTR prob,
     char s[8];
     sprintf(s, "%d", Proc);
     if (zz.Set_Param("NUM_LOCAL_PARTITIONS", s) == ZOLTAN_FATAL) {
-      Gen_Error(0, "fatal:  error returned from Zoltan_Object::Set_Param()\n");
+      Gen_Error(0, "fatal:  error returned from Zoltan_Set_Param()\n");
       delete [] psize;
       delete [] partid;
       return 0;
@@ -235,47 +235,47 @@ int setup_zoltan(Zoltan_Object &zz, int Proc, PROB_INFO_PTR prob,
    */
 
   if (zz.Set_Num_Obj_Fn(get_num_elements, (void *) mesh) == ZOLTAN_FATAL) {
-    Gen_Error(0, "fatal:  error returned from Zoltan_Object::Set_Num_Obj_Fn()\n");
+    Gen_Error(0, "fatal:  error returned from Zoltan_Set_Num_Obj_Fn()\n");
     return 0;
   }
 
   if (Test.Multi_Callbacks) {
     if (zz.Set_Obj_List_Fn(get_elements, (void *) mesh) == ZOLTAN_FATAL) {
       Gen_Error(0, 
-        "fatal:  error returned from Zoltan_Object::Set_Obj_List_Fn()\n");
+        "fatal:  error returned from Zoltan_Set_Obj_List_Fn()\n");
       return 0;
     }
   }
   else {
     if (zz.Set_First_Obj_Fn(get_first_element, (void *) mesh) == ZOLTAN_FATAL) {
       Gen_Error(0, 
-        "fatal:  error returned from Zoltan_Object::Set_First_Obj_Fn()\n");
+        "fatal:  error returned from Zoltan_Set_First_Obj_Fn()\n");
       return 0;
     }
 
     if (zz.Set_Next_Obj_Fn(get_next_element, (void *) mesh) == ZOLTAN_FATAL) {
       Gen_Error(0, 
-        "fatal:  error returned from Zoltan_Object::Set_Next_Obj_Fn()\n");
+        "fatal:  error returned from Zoltan_Set_Next_Obj_Fn()\n");
       return 0;
     }
   }
 
   /* Functions for geometry based algorithms */
   if (zz.Set_Num_Geom_Fn(get_num_geom, (void *) mesh) == ZOLTAN_FATAL) {
-    Gen_Error(0, "fatal:  error returned from Zoltan_Object::Set_Num_Geom_Fn()\n");
+    Gen_Error(0, "fatal:  error returned from Zoltan_Set_Num_Geom_Fn()\n");
     return 0;
   }
 
   if (Test.Multi_Callbacks) {
     if (zz.Set_Geom_Multi_Fn(get_geom_multi, (void *) mesh) == ZOLTAN_FATAL) {
       Gen_Error(0, 
-        "fatal:  error returned from Zoltan_Object::Set_Geom_Multi_Fn()\n");
+        "fatal:  error returned from Zoltan_Set_Geom_Multi_Fn()\n");
       return 0;
     }
   }
   else {
     if (zz.Set_Geom_Fn(get_geom, (void *) mesh) == ZOLTAN_FATAL) {
-      Gen_Error(0, "fatal:  error returned from Zoltan_Object::Set_Geom_Fn()\n");
+      Gen_Error(0, "fatal:  error returned from Zoltan_Set_Geom_Fn()\n");
       return 0;
     }
   }
@@ -285,13 +285,13 @@ int setup_zoltan(Zoltan_Object &zz, int Proc, PROB_INFO_PTR prob,
     if (zz.Set_Num_Edges_Multi_Fn(get_num_edges_multi, 
                       (void *) mesh) == ZOLTAN_FATAL) {
       Gen_Error(0, 
-        "fatal:  error returned from Zoltan_Object::Set_Num_Edges_Multi_Fn()\n");
+        "fatal:  error returned from Zoltan_Set_Num_Edges_Multi_Fn()\n");
       return 0;
     }
     if (zz.Set_Edge_List_Multi_Fn(get_edge_list_multi,
                       (void *) mesh) == ZOLTAN_FATAL) {
       Gen_Error(0, 
-        "fatal:  error returned from Zoltan_Object::Set_Edge_List_Multi_Fn()\n");
+        "fatal:  error returned from Zoltan_Set_Edge_List_Multi_Fn()\n");
       return 0;
     }
 #ifdef PARMETIS_V3_1_MEMORY_ERROR_FIXED
@@ -299,7 +299,7 @@ int setup_zoltan(Zoltan_Object &zz, int Proc, PROB_INFO_PTR prob,
     if (zz.Set_Obj_Size_Multi_Fn(migrate_elem_size_multi,
                       (void *) mesh) == ZOLTAN_FATAL) {
       Gen_Error(0, 
-        "fatal:  error returned from Zoltan_Object::Set_Obj_Size_Multi_Fn()\n");
+        "fatal:  error returned from Zoltan_Set_Obj_Size_Multi_Fn()\n");
       return 0;
     }
 #endif /* PARMETIS_V3_1_MEMORY_ERROR_FIXED */
@@ -307,19 +307,19 @@ int setup_zoltan(Zoltan_Object &zz, int Proc, PROB_INFO_PTR prob,
   else {
     if (zz.Set_Num_Edges_Fn(get_num_edges, (void *) mesh) == ZOLTAN_FATAL) {
       Gen_Error(0, 
-        "fatal:  error returned from Zoltan_Object::Set_Num_Edges_Fn()\n");
+        "fatal:  error returned from Zoltan_Set_Num_Edges_Fn()\n");
       return 0;
     }
     if (zz.Set_Edge_List_Fn(get_edge_list, (void *) mesh)== ZOLTAN_FATAL) {
       Gen_Error(0, 
-        "fatal:  error returned from Zoltan_Object::Set_Edge_List_Fn()\n");
+        "fatal:  error returned from Zoltan_Set_Edge_List_Fn()\n");
       return 0;
     }
 #ifdef PARMETIS_V3_1_MEMORY_ERROR_FIXED
     /* Used in ParMETIS to reduce data movement */
     if (zz.Set_Obj_Size_Fn(migrate_elem_size, (void *) mesh) == ZOLTAN_FATAL) {
       Gen_Error(0, 
-        "fatal:  error returned from Zoltan_Object::Set_Obj_Size_Fn()\n");
+        "fatal:  error returned from Zoltan_Set_Obj_Size_Fn()\n");
       return 0;
     }
 #endif /* PARMETIS_V3_1_MEMORY_ERROR_FIXED */
@@ -329,52 +329,52 @@ int setup_zoltan(Zoltan_Object &zz, int Proc, PROB_INFO_PTR prob,
   /* Functions for tree-based algorithms */
   if (zz.Set_Num_Coarse_Obj_Fn(get_num_elements, (void *) mesh) == ZOLTAN_FATAL) {
     Gen_Error(0, 
-        "fatal:  error returned from Zoltan_Object::Set_Num_Coarse_Obj_Fn()\n");
+        "fatal:  error returned from Zoltan_Set_Num_Coarse_Obj_Fn()\n");
     return 0;
   }
 
   if (zz.Set_First_Coarse_Obj_Fn(get_first_coarse_element,
                     (void *) mesh) == ZOLTAN_FATAL) {
     Gen_Error(0, 
-        "fatal:  error returned from Zoltan_Object::Set_First_Coarse_Obj_Fn()\n");
+        "fatal:  error returned from Zoltan_Set_First_Coarse_Obj_Fn()\n");
     return 0;
   }
 
   if (zz.Set_Next_Coarse_Obj_Fn(get_next_coarse_element,
                     (void *) mesh) == ZOLTAN_FATAL) {
     Gen_Error(0, 
-        "fatal:  error returned from Zoltan_Object::Set_Next_Coarse_Obj_Fn()\n");
+        "fatal:  error returned from Zoltan_Set_Next_Coarse_Obj_Fn()\n");
     return 0;
   }
 
   if (zz.Set_Num_Child_Fn(get_num_child, (void *) mesh) == ZOLTAN_FATAL) {
-    Gen_Error(0, "fatal:  error returned from Zoltan_Object::Set_Num_Child_Fn()\n");
+    Gen_Error(0, "fatal:  error returned from Zoltan_Set_Num_Child_Fn()\n");
     return 0;
   }
 
   if (zz.Set_Child_List_Fn(get_child_elements, (void *) mesh) == ZOLTAN_FATAL) {
     Gen_Error(0, 
-        "fatal:  error returned from Zoltan_Object::Set_Child_List_Fn()\n");
+        "fatal:  error returned from Zoltan_Set_Child_List_Fn()\n");
     return 0;
   }
 
   if (mesh->data_type == HYPERGRAPH) {
     if (zz.Set_Num_HG_Edges_Fn(get_num_hg_edges, (void *) mesh) == ZOLTAN_FATAL) {
       Gen_Error(0, 
-        "fatal:  error returned from Zoltan_Object::Set_Num_HG_Edges_Fn()\n");
+        "fatal:  error returned from Zoltan_Set_Num_HG_Edges_Fn()\n");
       return 0;
     }
 
     if (zz.Set_Num_HG_Pins_Fn(get_num_hg_pins, (void *) mesh) == ZOLTAN_FATAL) {
       Gen_Error(0, 
-        "fatal:  error returned from Zoltan_Object::Set_Num_HG_Pins_Fn()\n");
+        "fatal:  error returned from Zoltan_Set_Num_HG_Pins_Fn()\n");
       return 0;
     }
 
     if (zz.Set_HG_Edge_List_Fn(get_hg_edge_list, 
                   (void *) mesh) == ZOLTAN_FATAL) {
       Gen_Error(0, 
-        "fatal:  error returned from Zoltan_Object::Set_HG_Edge_List_Fn()\n");
+        "fatal:  error returned from Zoltan_Set_HG_Edge_List_Fn()\n");
       return 0;
     }
   }
@@ -384,14 +384,14 @@ int setup_zoltan(Zoltan_Object &zz, int Proc, PROB_INFO_PTR prob,
     if (zz.Set_Partition_Multi_Fn(get_partition_multi, 
                   (void *) mesh) == ZOLTAN_FATAL) {
       Gen_Error(0, 
-        "fatal:  error returned from Zoltan_Object::Set_Partition_Multi_Fn()\n");
+        "fatal:  error returned from Zoltan_Set_Partition_Multi_Fn()\n");
       return 0;
     }
   }
   else {
     if (zz.Set_Partition_Fn(get_partition, (void *) mesh) == ZOLTAN_FATAL) {
       Gen_Error(0, 
-        "fatal:  error returned from Zoltan_Object::Set_Partition_Fn()\n");
+        "fatal:  error returned from Zoltan_Set_Partition_Fn()\n");
       return 0;
     }
   }
@@ -444,7 +444,7 @@ int run_zoltan(Zoltan_Object &zz, int Proc, PROB_INFO_PTR prob,
       if (Proc == 0) cout << "\nBEFORE load balancing" << endl;
       driver_eval(mesh);
       int i = zz.LB_Eval(1, 0, NULL, 0, NULL, 0, 0);
-      if (i) cout << "Warning: Zoltan_Object::LB_Eval returned code " << i << endl;
+      if (i) cout << "Warning: Zoltan_LB_Eval returned code " << i << endl;
     }
     if (Test.Gen_Files) {
       /* Write output files. */
@@ -469,7 +469,7 @@ int run_zoltan(Zoltan_Object &zz, int Proc, PROB_INFO_PTR prob,
                  import_lids, import_procs, import_to_part,
                  num_exported, export_gids,
                  export_lids, export_procs, export_to_part) == ZOLTAN_FATAL){
-      Gen_Error(0, "fatal:  error returned from Zoltan_Object::LB_Partition()\n");
+      Gen_Error(0, "fatal:  error returned from Zoltan_LB_Partition()\n");
       return 0;
     }
     double mytime = MPI_Wtime() - stime;
@@ -477,7 +477,7 @@ int run_zoltan(Zoltan_Object &zz, int Proc, PROB_INFO_PTR prob,
     MPI_Allreduce(&mytime, &maxtime, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
 
     if (Proc == 0)
-      cout << "DRIVER:  Zoltan_Object::LB_Partition time = " << maxtime << endl;
+      cout << "DRIVER:  Zoltan_LB_Partition time = " << maxtime << endl;
     Total_Partition_Time += maxtime;
 
 #ifdef TIMER_CALLBACKS
@@ -538,7 +538,7 @@ int run_zoltan(Zoltan_Object &zz, int Proc, PROB_INFO_PTR prob,
       if (Proc == 0) cout << "\nAFTER load balancing\n" << endl;
       driver_eval(mesh);
       int i = zz.LB_Eval(1, 0, NULL, 0, NULL, 0, 0);
-      if (i) cout << "Warning: Zoltan_Object::LB_Eval returned code " << i << endl;
+      if (i) cout << "Warning: Zoltan_LB_Eval returned code " << i << endl;
     }
     if (Test.Gen_Files) {
       /* Write output files. */
@@ -584,7 +584,7 @@ int run_zoltan(Zoltan_Object &zz, int Proc, PROB_INFO_PTR prob,
     if (zz.Order(num_gid_entries, num_lid_entries,
         mesh->num_elems, order_gids, order_lids,
         order, &order[mesh->num_elems]) == ZOLTAN_FATAL) {
-      Gen_Error(0, "fatal:  error returned from Zoltan_Object::Order()\n");
+      Gen_Error(0, "fatal:  error returned from Zoltan_Order()\n");
       delete [] order;
       delete [] order_gids;
       delete [] order_lids;
@@ -1553,34 +1553,34 @@ int i;
   if (test_both) {
     status = zz.LB_Point_Assign(x, one_proc);
     if (status != ZOLTAN_OK) 
-      fprintf(fp, "error returned from Zoltan_Object::LB_Point_Assign()\n");
+      fprintf(fp, "error returned from Zoltan_LB_Point_Assign()\n");
     else  {
-      fprintf(fp, "%d Zoltan_Object::LB_Point_Assign    (%e %e %e) on proc %d\n",
+      fprintf(fp, "%d Zoltan_LB_Point_Assign    (%e %e %e) on proc %d\n",
               Proc, x[0], x[1], x[2], one_proc);
       for (i = 0; i < proccnt; i++) 
         if (one_proc == procs[i]) 
           break;
       if (i == proccnt) 
-        fprintf(fp, "%d Error:  processor %d (from Zoltan_Object::LB_Point_Assign) "
-                    "not in proc list from Zoltan_Object::LB_Box_Assign\n", 
+        fprintf(fp, "%d Error:  processor %d (from Zoltan_LB_Point_Assign) "
+                    "not in proc list from Zoltan_LB_Box_Assign\n", 
                     Proc, one_proc);
     }
   }
-  else fprintf(fp, "%d Zoltan_Object::LB_Point_Assign not tested.\n", Proc);
+  else fprintf(fp, "%d Zoltan_LB_Point_Assign not tested.\n", Proc);
 
   status = zz.LB_Point_PP_Assign(x, one_proc, one_part);
   if (status != ZOLTAN_OK) 
-    fprintf(fp, "error returned from Zoltan_Object::LB_Point_PP_Assign()\n");
+    fprintf(fp, "error returned from Zoltan_LB_Point_PP_Assign()\n");
   else {
-    fprintf(fp, "%d Zoltan_Object::LB_Point_PP_Assign (%e %e %e) on proc %d part %d\n",
+    fprintf(fp, "%d Zoltan_LB_Point_PP_Assign (%e %e %e) on proc %d part %d\n",
             Proc, x[0], x[1], x[2], one_proc, one_part);
 
     for (i = 0; i < proccnt; i++) 
       if (one_proc == procs[i]) 
         break;
     if (i == proccnt) 
-      fprintf(fp, "%d Error:  processor %d (from Zoltan_Object::LB_Point_PP_Assign) "
-                  "not in proc list from Zoltan_Object::LB_Box_PP_Assign\n", 
+      fprintf(fp, "%d Error:  processor %d (from Zoltan_LB_Point_PP_Assign) "
+                  "not in proc list from Zoltan_LB_Box_PP_Assign\n", 
                   Proc, one_proc);
 
     if (parts != NULL) {
@@ -1588,8 +1588,8 @@ int i;
         if (one_part == parts[i]) 
           break;
       if (i == partcnt) 
-        fprintf(fp, "%d Error:  partition %d (from Zoltan_Object::LB_Point_PP_Assign) "
-                    "not in part list from Zoltan_Object::LB_Box_PP_Assign\n", 
+        fprintf(fp, "%d Error:  partition %d (from Zoltan_LB_Point_PP_Assign) "
+                    "not in part list from Zoltan_LB_Box_PP_Assign\n", 
                     Proc, one_part);
     }
   }
@@ -1619,9 +1619,9 @@ int i;
                                       xhi[0], xhi[1], xhi[2], 
                                       procs, proccnt);
     if (status != ZOLTAN_OK) 
-      fprintf(fp, "error returned from Zoltan_Object::LB_Box_Assign()\n");
+      fprintf(fp, "error returned from Zoltan_LB_Box_Assign()\n");
     else {
-      fprintf(fp, "%d Zoltan_Object::LB_Box_Assign    LO: (%e %e %e)\n"
+      fprintf(fp, "%d Zoltan_LB_Box_Assign    LO: (%e %e %e)\n"
                   "%d                         HI: (%e %e %e)\n", 
                   Proc, xlo[0], xlo[1], xlo[2], Proc, xhi[0], xhi[1], xhi[2]);
   
@@ -1633,12 +1633,12 @@ int i;
       }
       fprintf(fp, "\n");
       if (answer_proc >= 0 && !procfound)
-        fprintf(fp, "%d Zoltan_Object::LB_Box_Assign error:  "
+        fprintf(fp, "%d Zoltan_LB_Box_Assign error:  "
                      "expected proc %d not in output proc list\n",
                       Proc, answer_proc);
     }
   }
-  else fprintf(fp, "%d Zoltan_Object::LB_Box_Assign not tested.\n", Proc);
+  else fprintf(fp, "%d Zoltan_LB_Box_Assign not tested.\n", Proc);
 
 
   status = zz.LB_Box_PP_Assign(xlo[0], xlo[1], xlo[2], 
@@ -1646,9 +1646,9 @@ int i;
                                        procs, proccnt, 
                                        parts, partcnt);
   if (status != ZOLTAN_OK) 
-    fprintf(fp, "error returned from Zoltan_Object::LB_Box_PP_Assign()\n");
+    fprintf(fp, "error returned from Zoltan_LB_Box_PP_Assign()\n");
   else {
-    fprintf(fp, "%d Zoltan_Object::LB_Box_PP_Assign LO: (%e %e %e)\n"
+    fprintf(fp, "%d Zoltan_LB_Box_PP_Assign LO: (%e %e %e)\n"
                 "%d                         HI: (%e %e %e)\n", 
                 Proc, xlo[0], xlo[1], xlo[2], Proc, xhi[0], xhi[1], xhi[2]);
 
@@ -1668,11 +1668,11 @@ int i;
     }
     fprintf(fp, "\n");
     if (answer_proc >= 0 && !procfound)
-      fprintf(fp, "%d Zoltan_Object::LB_Box_PP_Assign error:  "
+      fprintf(fp, "%d Zoltan_LB_Box_PP_Assign error:  "
                    "expected proc %d not in output proc list\n",
                     Proc, answer_proc);
     if (answer_part >= 0 && !partfound)
-      fprintf(fp, "%d Zoltan_Object::LB_Box_PP_Assign error:  "
+      fprintf(fp, "%d Zoltan_LB_Box_PP_Assign error:  "
                   "expected part %d not in output part list\n",
                   Proc, answer_part);
 
