@@ -33,6 +33,15 @@
 #define REPLACE 1
 #define NEQU    0
 
+/* This macro should be defined to reconcile name changes between
+   SuperLU 1.0 & SuperLU 2.0.*/
+#ifdef ML_SUPERLU2_0
+#define DN SLU_DN
+#define _D SLU_D
+#define GE SLU_GE
+#define NR SLU_NR
+#endif
+
 /* ******************************************************************** */
 /* This subroutine calls the SuperLU subroutine to perform LU           */
 /* factorization of a given matrix                                      */
