@@ -31,6 +31,6 @@
 
 if BUILD_LOCA_LAPACK_EXAMPLES
 
-SUBDIRS = Chan 1Dfd_pitchfork Brusselator
+SUBDIRS = Chan 1Dfd_pitchfork Brusselator ThermoSyphon
 
 endif
