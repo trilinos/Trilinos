@@ -128,11 +128,11 @@ SPBLAS_INCLUDES = -I$(TRILINOS_HOME)/external/spblas
 # For typical users, these variables probably don't need to be modified
 ARCH_LIBDIR=$(TRILINOS_TARGET)
 
-LIBBLAS   = $(TRILINOS_HOME)/extenal/blas/lib/$(ARCH_LIBDIR)/libblas.a
-LIBLAPACK = $(TRILINOS_HOME)/external/lapack/lib/$(ARCH_LIBDIR)/liblapack.a
-LIBSPBLAS = $(TRILINOS_HOME)/external/spblas/lib/$(ARCH_LIBDIR)/libspblas.a
-LIBY12M   = $(TRILINOS_HOME)/external/y12m/lib/$(ARCH_LIBDIR)/liby12m.a
-LIBSUPERLU   = $(TRILINOS_HOME)/external/DSuperLU/lib/$(ARCH_LIBDIR)/superlu.a
+LIBBLAS   = $(TRILINOS_HOME)/external/blas/lib/$(TRILINOS_TARGET)/libblas.a
+LIBLAPACK = $(TRILINOS_HOME)/external/lapack/lib/$(TRILINOS_TARGET)/liblapack.a
+LIBSPBLAS = $(TRILINOS_HOME)/external/spblas/lib/$(TRILINOS_TARGET)/libspblas.a
+LIBY12M   = $(TRILINOS_HOME)/external/y12m/lib/$(TRILINOS_TARGET)/liby12m.a
+LIBSUPERLU   = $(TRILINOS_HOME)/external/DSuperLU/lib/$(TRILINOS_TARGET)/superlu.a
 
 
 ################### Package-specific defaults ##########################

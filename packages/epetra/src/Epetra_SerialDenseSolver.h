@@ -251,10 +251,10 @@ class Epetra_SerialDenseSolver : public Epetra_CompObject, public Epetra_BLAS, p
   //@{ \name Data Accessor methods
     
   //! Returns pointer to current matrix.
-  Epetra_SerialDenseMatrix * Matrix()  const {return(Matrix_);};
+   Epetra_SerialDenseMatrix * Matrix()  const {return(Matrix_);};
        
   //! Returns pointer to factored matrix (assuming factorization has been performed).
-  Epetra_SerialDenseMatrix * FactoredMatrix()  const {return(Factor_);};
+   Epetra_SerialDenseMatrix * FactoredMatrix()  const {return(Factor_);};
 
   //! Returns pointer to current LHS.
   Epetra_SerialDenseMatrix * LHS()  const {return(LHS_);};

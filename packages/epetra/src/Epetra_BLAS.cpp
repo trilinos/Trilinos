@@ -148,30 +148,30 @@ void Epetra_BLAS::GEMM(char TRANSA, char TRANSB, int M, int N, int K,
 #endif
 }
 //=============================================================================
-void Epetra_BLAS::SYMM(char SIDE, int M, int N,
+void Epetra_BLAS::SYMM(char SIDE, char UPLO, int M, int N,
 	    float ALPHA, float * A, int LDA, float * B,
 	    int LDB, float BETA, float * C, int LDC) const {
 
 #if defined(INTEL_CXML)
 	unsigned int one = 1;
-	ssymm_(&SIDE, one, &M, &N, &ALPHA,
+	ssymm_(&SIDE, one, &UPLO, one, &M, &N, &ALPHA,
 	   A, &LDA, B, &LDB, &BETA, C, &LDC);
 #else
-	ssymm_(&SIDE, &M, &N, &ALPHA,
+	ssymm_(&SIDE, &UPLO, &M, &N, &ALPHA,
 	   A, &LDA, B, &LDB, &BETA, C, &LDC);
 #endif
 }
 
 //=============================================================================
-void Epetra_BLAS::SYMM(char SIDE, int M, int N,
+void Epetra_BLAS::SYMM(char SIDE, char UPLO, int M, int N,
 	    double ALPHA, double * A, int LDA, double * B,
 	    int LDB, double BETA, double * C, int LDC) const {
 #if defined(INTEL_CXML)
 	unsigned int one = 1;
-    dsymm_(&SIDE, one, &M, &N, &K, &ALPHA,
+    dsymm_(&SIDE, one, &UPLO, one, &M, &N, &K, &ALPHA,
 	   A, &LDA, B, &LDB, &BETA, C, &LDC);
 #else
-    dsymm_(&SIDE, &M, &N, &ALPHA,
+    dsymm_(&SIDE, &UPLO, &M, &N, &ALPHA,
 	   A, &LDA, B, &LDB, &BETA, C, &LDC);
 #endif
 }

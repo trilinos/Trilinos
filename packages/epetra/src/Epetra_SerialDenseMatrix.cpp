@@ -264,9 +264,9 @@ int  Epetra_SerialDenseMatrix::Multiply (char SideA, double ScalarAB,
   else {
     EPETRA_CHK_ERR(-2); // Return error, incorrect value for SideA
   }
-    
-  // Call GEMM function
-  SYMM(SideA, M_, N_, ScalarAB, A.A(), A.LDA(), 
+  
+  // Call SYMM function
+  SYMM(SideA, A.UPLO(), M_, N_, ScalarAB, A.A(), A.LDA(), 
        B.A(), B.LDA(), ScalarThis, A_, LDA_);
   long int nflops = 2*M_;
   nflops *= N_;

@@ -24,6 +24,8 @@
 
 #ifndef _EPETRA_SERIALSPDDENSESOLVER_H_
 #define _EPETRA_SERIALSPDDENSESOLVER_H_
+#include "Epetra_SerialDenseSolver.h"
+class Epetra_SerialSymDenseMatrix;
 
 //! Epetra_SerialSpdDenseSolver: A class for constructing and using symmetric positive definite dense matrices.
 
@@ -121,9 +123,6 @@ EstimateSolutionErrors(true).  Access to the forward (back) error estimates is a
 Examples using Epetra_SerialSpdDenseSolver can be found in the Epetra test directories.
 
 */
-#include "Epetra_Object.h" 
-#include "Epetra_SerialDenseSolver.h"
-class Epetra_SerialSymDenseMatrix;
 
 //=========================================================================
 class Epetra_SerialSpdDenseSolver : public Epetra_SerialDenseSolver {
@@ -215,6 +214,13 @@ class Epetra_SerialSpdDenseSolver : public Epetra_SerialDenseSolver {
   //@}
 
   //@{ \name Data Accessor methods
+    
+  //! Returns pointer to current matrix.
+  Epetra_SerialSymDenseMatrix * SymMatrix()  const {return(SymMatrix_);};
+       
+  //! Returns pointer to factored matrix (assuming factorization has been performed).
+  Epetra_SerialSymDenseMatrix * SymFactoredMatrix()  const {return(SymFactor_);};
+
   //! Ratio of smallest to largest equilibration scale factors for the \e this matrix (returns -1 if not yet computed).
   /*! If SCOND() is >= 0.1 and AMAX() is not close to overflow or underflow, then equilibration is not needed.
    */

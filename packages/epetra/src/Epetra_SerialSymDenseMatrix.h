@@ -24,7 +24,6 @@
 
 #ifndef _EPETRA_SERIALSYMDENSEMATRIX_H_
 #define _EPETRA_SERIALSYMDENSEMATRIX_H_
-#include "Epetra_Object.h" 
 #include "Epetra_SerialDenseMatrix.h"
 
 
@@ -183,10 +182,10 @@ class Epetra_SerialSymDenseMatrix : public Epetra_SerialDenseMatrix {
 
 
   //! Specify that the lower triangle of the \e this matrix should be used.
-  void SetLower() {Upper_ = false;};
+  void SetLower() {Upper_ = false; UPLO_ = 'L';};
 
   //! Specify that the upper triangle of the \e this matrix should be used.
-  void SetUpper() {Upper_ = true;};
+  void SetUpper() {Upper_ = true; UPLO_ = 'U';};
   //@}
 
   //@{ \name Query methods
@@ -195,7 +194,7 @@ class Epetra_SerialSymDenseMatrix : public Epetra_SerialDenseMatrix {
   bool Upper() {return(Upper_);};
 
   //! Returns character value of UPLO used by LAPACK routines.
-  char UPLO() {return(UPLO_);};
+  char UPLO() const {return(UPLO_);};
   //@}
 
   //@{ \name Data Accessor methods
@@ -204,10 +203,10 @@ class Epetra_SerialSymDenseMatrix : public Epetra_SerialDenseMatrix {
   /*!
     \return Integer error code, set to 0 if successful.
   */
-  virtual double OneNorm();
+  double OneNorm();
 
   //! Computes the Infinity-Norm of the \e this matrix.
-  virtual double InfNorm();
+  double InfNorm();
 
   //@}
 

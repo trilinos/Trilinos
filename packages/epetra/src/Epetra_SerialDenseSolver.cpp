@@ -151,13 +151,6 @@ int Epetra_SerialDenseSolver::SetVectors(Epetra_SerialDenseMatrix & X, Epetra_Se
   LDB_ = B.LDA();
   X_ = X.A();
   LDX_ = X.LDA();
-
-
-  if (Equilibrate_) {
-    ierr = EquilibrateRHS();
-    B_Equilibrated_ = true;
-  }
-  EPETRA_CHK_ERR(ierr);
   return(0);
 }
 //=============================================================================
@@ -209,8 +202,13 @@ int Epetra_SerialDenseSolver::Solve(void) {
   // Otherwise, if the matrix is already factored we will call the TRS interface.
   // Otherwise, if the matrix is unfactored we will call the SV interface.
 
-  double DN = N_;
-  double DNRHS = NRHS_;
+
+
+  if (Equilibrate_) {
+    ierr = EquilibrateRHS();
+    B_Equilibrated_ = true;
+  }
+  EPETRA_CHK_ERR(ierr);
   if (A_Equilibrated_ && !B_Equilibrated_) EPETRA_CHK_ERR(-1); // Matrix and vectors must be similarly scaled
   if (!A_Equilibrated_ && B_Equilibrated_) EPETRA_CHK_ERR(-2);
   if (B_==0) EPETRA_CHK_ERR(-3); // No B
@@ -218,6 +216,8 @@ int Epetra_SerialDenseSolver::Solve(void) {
 
   if (ShouldEquilibrate() && !A_Equilibrated_) ierr = 1; // Warn that the system should be equilibrated.
 
+  double DN = N_;
+  double DNRHS = NRHS_;
   if (Inverted()) {
 
     if (B_==X_) EPETRA_CHK_ERR(-100); // B and X must be different for this case
