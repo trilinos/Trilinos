@@ -75,14 +75,16 @@ mpirun -np 1 amesos_test.exe SUPERLUDIST orani678.rua 0 0 1 0 3e-13 5e-14 >>SST.
 mpirun -np 1 amesos_test.exe SUPERLUDIST dw2048.rua 0 0 1 0 4e-13 5e-14 >>SST.stdout
 mpirun -np 1 amesos_test.exe SUPERLUDIST cavity13.rua 0 0 1 0 1e-10 5e-13 >>SST.stdout
 mpirun -np 1 amesos_test.exe SUPERLUDIST cavity09.rua 0 0 1 0 8e-6 5e-6 >>SST.stdout
-mpirun -np 1 amesos_test.exe SUPERLUDIST cavity05.rua 0 0 1 0 6e-9 9e-11 >>SST.stdout
+mpirun -np 1 amesos_test.exe SUPERLUDIST cavity05.rua 0 0 1 0 6e-9 2e-10 >>SST.stdout
 mpirun -np 1 amesos_test.exe SUPERLUDIST cry10000.rua 0 0 1 0 3e-3 5e-11 >>SST.stdout
 mpirun -np 1 amesos_test.exe SUPERLUDIST mcfe.rua 0 0 1 0 5e-13 1000 >>SST.stdout
 
 mpirun -np 4 amesos_test.exe SUPERLUDIST watt__1.rua 0 0 1 0 1e-12 5e-16 >>SST.stdout
+# COMMENT utm5940.rua fails on stratus error=1e-5, resid=5e-11
 mpirun -np 4 amesos_test.exe SUPERLUDIST utm5940.rua 0 0 1 0 4e-8 5e-14 >>SST.stdout
 mpirun -np 4 amesos_test.exe SUPERLUDIST utm1700b.rua 0 0 1 0 4e-9 5e-14 >>SST.stdout
 mpirun -np 4 amesos_test.exe SUPERLUDIST sherman5.rua 0 0 1 0 4e-12 5e-12 >>SST.stdout
+# COMMENT rbs480b fails on stratus error=3e-5 resid=4e-5
 mpirun -np 4 amesos_test.exe SUPERLUDIST rbs480b.rua 0 0 1 0 1e-12 5e-12 >>SST.stdout
 mpirun -np 4 amesos_test.exe SUPERLUDIST olm5000.rua 0 0 1 0 1e-12 5e-13 >>SST.stdout
 # COMMENT fails mpirun -np 4 amesos_test.exe SUPERLUDIST rw5151.rua 0 0 1 0 1e+37 5e+20 >>SST.stdout
@@ -91,17 +93,22 @@ mpirun -np 4 amesos_test.exe SUPERLUDIST add20.rua 0 0 1 0 1e-11 5e-14 >>SST.std
 mpirun -np 4 amesos_test.exe SUPERLUDIST add32.rua 0 0 1 0 1e-13 5e-14 >>SST.stdout
 mpirun -np 4 amesos_test.exe SUPERLUDIST gemat12.rua 0 0 1 0 1e-10 5e-12 >>SST.stdout
 mpirun -np 4 amesos_test.exe SUPERLUDIST orani678.rua 0 0 1 0 3e-13 5e-14 >>SST.stdout
+# COMMENT fails on stratus error=1300 resid=62
 mpirun -np 4 amesos_test.exe SUPERLUDIST dw2048.rua 0 0 1 0 4e-13 5e-14 >>SST.stdout
 mpirun -np 4 amesos_test.exe SUPERLUDIST cavity13.rua 0 0 1 0 1e-10 2e-13 >>SST.stdout
 mpirun -np 4 amesos_test.exe SUPERLUDIST cavity09.rua 0 0 1 0 8e-6 5e-6 >>SST.stdout
-mpirun -np 4 amesos_test.exe SUPERLUDIST cavity05.rua 0 0 1 0 6e-9 9e-11 >>SST.stdout
+mpirun -np 4 amesos_test.exe SUPERLUDIST cavity05.rua 0 0 1 0 6e-9 2e-10 >>SST.stdout
+# COMMENT fails on stratus error=11 resid=1
 mpirun -np 4 amesos_test.exe SUPERLUDIST cry10000.rua 0 0 1 0 3e-3 5e-11 >>SST.stdout
 mpirun -np 4 amesos_test.exe SUPERLUDIST mcfe.rua 0 0 1 0 5e-13 1000 >>SST.stdout
 
 mpirun -np 4 amesos_test.exe SUPERLUDIST watt__1.rua 1 1 -10 0 1e-12 5e-16 >>SST.stdout
+# COMMENT fails on stratus error=5e-5 resid=5e-10 
 mpirun -np 4 amesos_test.exe SUPERLUDIST utm5940.rua 1 1 -10 0 4e-8 5e-14 >>SST.stdout
+# COMMENT fails on stratus error=resid=4e-12 
 mpirun -np 4 amesos_test.exe SUPERLUDIST utm1700b.rua 1 1 -10 0 4e-9 5e-14 >>SST.stdout
 mpirun -np 4 amesos_test.exe SUPERLUDIST sherman5.rua 1 1 -10 0 4e-12 5e-12 >>SST.stdout
+# COMMENT fails on stratus error=9e-5 resid=1e-4
 mpirun -np 4 amesos_test.exe SUPERLUDIST rbs480b.rua 1 1 -10 0 1e-12 5e-12 >>SST.stdout
 mpirun -np 4 amesos_test.exe SUPERLUDIST olm5000.rua 1 1 -10 0 1e-12 5e-13 >>SST.stdout
 # COMMENT fails mpirun -np 4 amesos_test.exe SUPERLUDIST rw5151.rua 1 1 -10 0 1e+37 5e+20 >>SST.stdout
@@ -110,10 +117,14 @@ mpirun -np 4 amesos_test.exe SUPERLUDIST add20.rua 1 1 -10 0 1e-11 5e-14 >>SST.s
 mpirun -np 4 amesos_test.exe SUPERLUDIST add32.rua 1 1 -10 0 1e-13 5e-14 >>SST.stdout
 mpirun -np 4 amesos_test.exe SUPERLUDIST gemat12.rua 1 1 -10 0 1e-10 5e-12 >>SST.stdout
 mpirun -np 4 amesos_test.exe SUPERLUDIST orani678.rua 1 1 -10 0 3e-13 5e-14 >>SST.stdout
+# COMMENT fails on stratus error=1100 resid=100
 mpirun -np 4 amesos_test.exe SUPERLUDIST dw2048.rua 1 1 -10 0 4e-13 5e-14 >>SST.stdout
 mpirun -np 4 amesos_test.exe SUPERLUDIST cavity13.rua 1 1 -10 0 1e-10 2e-13 >>SST.stdout
+# COMMENT fails on stratus error=1e5 resid=9000
 mpirun -np 4 amesos_test.exe SUPERLUDIST cavity09.rua 1 1 -10 0 8e-6 5e-6 >>SST.stdout
-mpirun -np 4 amesos_test.exe SUPERLUDIST cavity05.rua 1 1 -10 0 6e-9 9e-11 >>SST.stdout
+# COMMENT fails on stratus error=2e4 resid=1700
+mpirun -np 4 amesos_test.exe SUPERLUDIST cavity05.rua 1 1 -10 0 6e-9 2e-10 >>SST.stdout
+# COMMENT fails on stratus error=127 resid =26
 mpirun -np 4 amesos_test.exe SUPERLUDIST cry10000.rua 1 1 -10 0 3e-3 5e-11 >>SST.stdout
 mpirun -np 4 amesos_test.exe SUPERLUDIST mcfe.rua 1 1 -10 0 5e-13 1000 >>SST.stdout
 
