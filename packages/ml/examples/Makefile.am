@@ -35,8 +35,7 @@ noinst_PROGRAMS = mlguide mlguide_par ml_aztec_simple ml_example1d \
                   ml_filtering \
 		  ml_example_epetra_preconditioner_vbr \
 		  ml_example_epetra_preconditioner_viz \
-		  ml_example_epetra_preconditioner_Maxwell \
-                  ml_test_bench
+		  ml_example_epetra_preconditioner_Maxwell 
 else
 noinst_PROGRAMS = mlguide mlguide_par ml_aztec_simple ml_example1d \
                   ml_example1dGS ml_example2d ml_example3d ml_simple_max \
@@ -52,8 +51,7 @@ noinst_PROGRAMS = mlguide mlguide_par ml_aztec_simple ml_example1d \
                   ml_filtering \
 		  ml_example_epetra_preconditioner_vbr \
 		  ml_example_epetra_preconditioner_viz \
-		  ml_example_epetra_preconditioner_Maxwell \
-                  ml_test_bench
+		  ml_example_epetra_preconditioner_Maxwell 
 
 endif
 else
@@ -71,8 +69,7 @@ noinst_PROGRAMS = mlguide ml_aztec_simple ml_example1d \
                   ml_filtering \
 		  ml_example_epetra_preconditioner_vbr \
 		  ml_example_epetra_preconditioner_viz \
-		  ml_example_epetra_preconditioner_Maxwell \
-                  ml_test_bench
+		  ml_example_epetra_preconditioner_Maxwell 
 
 endif
 
@@ -110,7 +107,6 @@ ml_filtering_SOURCES = $(srcdir)/ml_filtering.cpp
 ml_example_epetra_preconditioner_vbr_SOURCES= $(srcdir)/ml_example_epetra_preconditioner_vbr.cpp
 ml_example_epetra_preconditioner_viz_SOURCES= $(srcdir)/ml_example_epetra_preconditioner_viz.cpp
 ml_example_epetra_preconditioner_Maxwell_SOURCES = $(srcdir)/ml_example_epetra_preconditioner_Maxwell.cpp
-ml_test_bench_SOURCES = $(srcdir)/ml_test_bench.cpp
 
 if ML_BENCHMARKING
 ml_read_maxwell_SOURCES = $(srcdir)/ml_read_maxwell.c
@@ -321,12 +317,6 @@ ml_example_epetra_preconditioner_Maxwell_CPPFLAGS = ${ml_common_include_location
 ml_example_epetra_preconditioner_Maxwell_CXXFLAGS = ${ml_common_include_locations}
 ml_example_epetra_preconditioner_Maxwell_LDADD = ${ml_libs}
 ml_example_epetra_preconditioner_Maxwell_LINK = ${mllink}
-
-ml_test_bench_CPPFLAGS = ${ml_common_include_locations}
-ml_test_bench_CXXFLAGS = ${ml_common_include_locations}
-ml_test_bench_LDADD = ${ml_libs}
-ml_test_bench_LINK = ${mllink}
-
 
 if ML_BENCHMARKING
 ml_read_maxwell_CFLAGS = ${ml_common_include_locations}
