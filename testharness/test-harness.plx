@@ -71,13 +71,13 @@ prepareBuildDirs();
 # Configure, build, and test--mailing as necessary
 run();
 
-# Send summary email
-report($SUMMARY);
-
 # Clean Up =====================================================================
 
 # Shut down MPI implementation if any tests are parallel
 mpiShutdown();
+
+# Send summary email
+report($SUMMARY);
 
 ################################################################################
 # Subroutines ##################################################################
@@ -211,6 +211,7 @@ mpiShutdown();
             my $command = "";
             $command .= "$options{'CVS_CMD'}[0] update -dP > $options{'TRILINOS_DIR'}[0]";
             $command .= "/testharness/temp/update_log.txt 2>&1";
+            printEvent("cvs update\n\n");
             my $result = system $command;
             if ($result) {
                 report($UPDATE_ERROR);
@@ -232,15 +233,39 @@ mpiShutdown();
     sub mpiStartup {  
         chdir "$options{'TRILINOS_DIR'}[0]";                
         if (defined $options{'MPI_DIR'} && defined $options{'MPI_DIR'}[0]) { 
+            printEvent("mpi startup\n", "\n");
             my $command = "$options{'MPI_STARTUP_CMD'}[0]";
             my $commandFailed = system $command; 
             if ($commandFailed) {
                 report($SYSTEM_COMMAND_ERROR, $command);
-                print $command;          
+                printEvent($command);          
                 die " *** error running system command - aborting test-harness ***\n";
             }
         }
     } # mpiStartup()
+    
+    ############################################################################
+    # mpiShutdown()
+    #
+    # Run the specified mpi shutdown command if an mpi build directory is given
+    #   - global variables used: yes
+    #   - sends mail: no
+    #   - args: 
+    #   - returns: 
+        
+    sub mpiShutdown {    
+        chdir"$options{'TRILINOS_DIR'}[0]";        
+        if (defined $options{'MPI_DIR'} && defined $options{'MPI_DIR'}[0]) {  
+            printEvent("mpi shutdown\n", "\n");            
+            my $command = "$options{'MPI_SHUTDOWN_CMD'}[0]";
+            my $commandFailed = system $command; 
+            if ($commandFailed) {
+                report($SYSTEM_COMMAND_ERROR, $command);
+                printEvent($command);          
+                die " *** error running system command - aborting test-harness ***\n";
+            }
+        }
+    } # mpiShutdown()
 
     ############################################################################
     # prepareBuildDirs()
@@ -314,7 +339,7 @@ mpiShutdown();
                     $message .= "$options{'TRILINOS_DIR'}[0]/$buildDir[$j]/";
                     $message .= "invoke-configure must be present\n";
                     report($FILE_SYSTEM_ERROR, $message, $comm);
-                    print $message;
+                    printEvent($message);
                     die " *** file missing - aborting test-harness ***\n";
                 } 
                 
@@ -324,7 +349,7 @@ mpiShutdown();
                     $message .= "$options{'TRILINOS_DIR'}[0]/$buildDir[$j]/";
                     $message .= "invoke-configure must be readable\n";
                     report($FILE_SYSTEM_ERROR, $message, $comm);
-                    print $message;
+                    printEvent($message);
                     die " *** file permission wrong - aborting test-harness ***\n";
                 } 
                 
@@ -334,7 +359,7 @@ mpiShutdown();
                     $message .= "$options{'TRILINOS_DIR'}[0]/$buildDir[$j]/";
                     $message .= "invoke-configure must be executable\n";
                     report($FILE_SYSTEM_ERROR, $message, $comm);
-                    print $message;
+                    printEvent($message);
                     die " *** file permission wrong - aborting test-harness ***\n";
                 }
                 
@@ -368,11 +393,11 @@ mpiShutdown();
                         # remove broken package
                         system "rm -rf $options{'TRILINOS_DIR'}[0]/$buildDir[$j]/packages/$brokenPackageDir";
                         
-                        print "$comm - Trilinos configuration failed--$brokenPackage broke\n";  
+                        printEvent("$comm - Trilinos configuration failed--$brokenPackage broke\n");  
                         
                         # there is no invoke-configure left or it's empty
                         if (!-f $invokeConfigure || -z $invokeConfigure) { 
-                            print "$comm - invoke-configure missing or empty\n";   
+                            printEvent("$comm - invoke-configure missing or empty\n");   
                             $quitTrying = 1;
                         }
                         
@@ -383,7 +408,7 @@ mpiShutdown();
                     # configure succeeded
                     else {     
                         $configurePassed = 1;
-                        print "$comm - Trilinos configured successfully\n";                      
+                        printEvent("$comm - Trilinos configured successfully\n");                      
                     }
                 
                     # build --------------------------------------------------------
@@ -413,11 +438,11 @@ mpiShutdown();
                             # remove broken package
                             system "rm -rf $options{'TRILINOS_DIR'}[0]/$buildDir[$j]/packages/$brokenPackageDir";
                             
-                            print "$comm - Trilinos build failed--$brokenPackage broke\n";  
+                            printEvent("$comm - Trilinos build failed--$brokenPackage broke\n");  
                         
                             # there is no invoke-configure left or it's empty
                             if (!-f $invokeConfigure || -z $invokeConfigure) {  
-                                print "$comm - invoke-configure missing or empty\n"; 
+                                printEvent("$comm - invoke-configure missing or empty\n"); 
                                 $quitTrying = 1;
                             }
                             
@@ -431,7 +456,7 @@ mpiShutdown();
                         # build succeeded
                         else {    
                             $buildPassed = 1;
-                            print "$comm - Trilinos built successfully\n";                  
+                            printEvent("$comm - Trilinos built successfully\n");                  
                         }
                         
                     } # while ($configurePassed && !$buildPassed && !$quitTrying)
@@ -484,10 +509,10 @@ mpiShutdown();
                                     $testNameOnly =~ s/.*\///; 
                                     
                                     if ($testFailed) {                                               
-                                        print "$testNameOnly - Test failed\n";  
+                                        printEvent("$testNameOnly - Test failed\n");  
                                         report($TEST_FAILED, $testFailed, $comm, $testDir, $potentialScript); 
                                     } else {                                    
-                                        print "$testNameOnly - Test passed\n";  
+                                        printEvent("$testNameOnly - Test passed\n");  
                                         report($TEST_PASSED, $testFailed, $comm, $testDir, $potentialScript);
                                     }
                                     
@@ -499,7 +524,7 @@ mpiShutdown();
                 } # foreach $testDir
             } # if (!-n)
             
-            print "\n";
+            printEvent("\n");
         } # for (buildDirs)                   
     } # run()
 
@@ -534,7 +559,7 @@ mpiShutdown();
                 $message .= "$options{'TRILINOS_DIR'}[0]/testharness/elements-machine";
                 $message .= "/$options{'MACHINE_MPI_CONFIG_FILE'}[0] does not exist\n";
                 report($FILE_SYSTEM_ERROR, $message);
-                print $message;
+                printEvent($message);
                 die " *** file missing - aborting test-harness ***\n";
             }   
         }
@@ -555,7 +580,7 @@ mpiShutdown();
             $message .= "$options{'TRILINOS_DIR'}[0]/testharness/elements-machine";
             $message .= "/$options{'MACHINE_CONFIG_FILE'}[0] does not exist\n";
             report($FILE_SYSTEM_ERROR, $message);
-            print $message;
+            printEvent($message);
             die " *** file missing - aborting test-harness ***\n";
         }   
         
@@ -575,7 +600,7 @@ mpiShutdown();
             $message .= "$options{'TRILINOS_DIR'}[0]/testharness/elements-machine";
             $message .= "/$options{'TRILINOS_CONFIG_FILE'}[0] does not exist\n";
             report($FILE_SYSTEM_ERROR, $message);
-            print $message;
+            printEvent($message);
             die " *** file missing - aborting test-harness ***\n";
         }        
 	    
@@ -664,7 +689,7 @@ mpiShutdown();
     	    $brokenPackage = lc($brokenPackage);    # convert to lowercase
             $brokenPackage =~ s/ /_/g;              # convert spaces to underscores
         } else {
-            print "error fixing invoke-configure--can't detect package\n";
+            printEvent("error fixing invoke-configure--can't detect package\n");
             return ("error", "error");
         }
         
@@ -685,7 +710,7 @@ mpiShutdown();
             my $dropLine = 0;
             my $lastElementIndex = $#{$dependencies{$brokenPackage}};
             for (my $i=0; $i<=$lastElementIndex; $i++) { 
-                if ($line =~ m/$dependencies{$brokenPackage}[$i]/i) {
+                if ($line =~ m/$dependencies{$brokenPackage}[$i]\b/i) {
                     $dropLine = 1;   
                 }   
             }    
@@ -700,7 +725,7 @@ mpiShutdown();
         close INVOKE_CONFIGURE;
         
         if (!$changeMade) {
-            print "error fixing invoke-configure--no changes made ($brokenPackage broke)\n";
+            printEvent("error fixing invoke-configure--no changes made ($brokenPackage broke)\n");
             return ("error", "error");
         }
         
@@ -764,8 +789,13 @@ mpiShutdown();
         chdir"$options{'TRILINOS_DIR'}[0]/$buildDir";     
     
         my $command = "";
-        $command .= "make $options{'MAKE_FLAGS'}[0] >> $options{'TRILINOS_DIR'}[0]";
-        $command .= "/testharness/temp/trilinos_build_log.txt 2>&1";
+        if (defined $options{'MAKE_FLAGS'} && defined $options{'MAKE_FLAGS'}[0]) {
+            $command .= "make $options{'MAKE_FLAGS'}[0] >> $options{'TRILINOS_DIR'}[0]";
+            $command .= "/testharness/temp/trilinos_build_log.txt 2>&1";
+        } else {
+            $command .= "make >> $options{'TRILINOS_DIR'}[0]";
+            $command .= "/testharness/temp/trilinos_build_log.txt 2>&1";
+        }
         return system $command;
         
     } # build()
@@ -791,22 +821,6 @@ mpiShutdown();
         return system $command;
         
     } # test()
-    
-    ############################################################################
-    # mpiShutdown()
-    #
-    # Run the specified mpi shutdown command if an mpi build directory is given
-    #   - global variables used: yes
-    #   - sends mail: no
-    #   - args: 
-    #   - returns: 
-        
-    sub mpiShutdown {    
-        chdir"$options{'TRILINOS_DIR'}[0]";        
-        if (defined $options{'MPI_DIR'} && defined $options{'MPI_DIR'}[0]) { 
-            system "$options{'MPI_SHUTDOWN_CMD'}[0]"; 
-        }
-    } # mpiShutdown()
     
     ############################################################################
     # report()
@@ -897,8 +911,8 @@ mpiShutdown();
         	            $packageRegression .= "-regression\@software.sandia.gov";
                         $mailTo .= "$packageRegression, ";
                     } else {
-            	        print "error - unable to detect package regression list\n";
-                	    print "  sending to trilinos-regression instead\n";
+            	        printEvent("error - unable to detect package regression list\n");
+                	    printEvent("  sending to trilinos-regression instead\n");
                         $mailTo .= "trilinos-regression\@software.sandia.gov, ";
             	    }
                 } # if (configure/build-related)
@@ -941,8 +955,8 @@ mpiShutdown();
                             } else { $error = 1; }
                 	    } else { $error = 1; }
                 	    if ($error) {
-                	        print "error - unable to detect package regression list\n";
-                	        print "  sending to trilinos-regression instead\n";
+                	        printEvent("error - unable to detect package regression list\n");
+                	        printEvent("  sending to trilinos-regression instead\n");
                             $mailTo .= "trilinos-regression\@software.sandia.gov, ";
                 	    }
                     }            
@@ -955,20 +969,24 @@ mpiShutdown();
                 
             } # if (SEND_TO_DEFAULTS)
            
-            # append ALL_EMAILS        
-            my $lastElementIndex = $#{$options{'ALL_EMAILS'}};
-            for (my $i=0; $i<=$lastElementIndex; $i++) {
-                if ($mailTo !~ m/$options{'ALL_EMAILS'}[$i]/i) {
-                    $mailTo .= "$options{'ALL_EMAILS'}[$i], ";
-                } 
+            # append ALL_EMAILS       
+            if (defined $options{'ALL_EMAILS'} && defined $options{'ALL_EMAILS'}[0]) { 
+                my $lastElementIndex = $#{$options{'ALL_EMAILS'}};
+                for (my $i=0; $i<=$lastElementIndex; $i++) {
+                    if ($mailTo !~ m/$options{'ALL_EMAILS'}[$i]/i) {
+                        $mailTo .= "$options{'ALL_EMAILS'}[$i], ";
+                    } 
+                }
             }
             
             # append SUMMARY_EMAIL
             if ($code == $SUMMARY) { 
-                $lastElementIndex = $#{$options{'SUMMARY_EMAIL'}};
-                for (my $i=0; $i<=$lastElementIndex; $i++) {
-                    if ($mailTo !~ m/$options{'SUMMARY_EMAIL'}[$i]/i) {
-                        $mailTo .= "$options{'SUMMARY_EMAIL'}[$i], ";
+                if (defined $options{'SUMMARY_EMAIL'} && defined $options{'SUMMARY_EMAIL'}[0]) {
+                    my $lastElementIndex = $#{$options{'SUMMARY_EMAIL'}};
+                    for (my $i=0; $i<=$lastElementIndex; $i++) {
+                        if ($mailTo !~ m/$options{'SUMMARY_EMAIL'}[$i]/i) {
+                            $mailTo .= "$options{'SUMMARY_EMAIL'}[$i], ";
+                        }
                     }
                 }
             } 
@@ -1108,6 +1126,42 @@ mpiShutdown();
             } 
         } # summary    
         
+        # print the test-harness-config hash of arrays -------------------------        
+        if ($code == $SUMMARY) {
+            $body .= "------------------------------------------------------------\n";
+            $body .= "Test-harness Config: \n";
+            $body .= "\n";        
+            
+            for my $key (sort keys %options) { 
+                my $lastElementIndex = $#{$options{$key}}; 
+                $body .= "$key (".($lastElementIndex+1)."): \n";
+                if ($lastElementIndex+1 > 0) {
+                    for (my $i=0; $i<=$lastElementIndex; $i++) {
+                        $body .= "  $options{$key}[$i]\n";
+                    }
+                } 
+                $body .= "\n";
+            } 
+        } # summary
+        
+        # print the dependencies hash of arrays --------------------------------        
+        if ($code == $SUMMARY) {
+            $body .= "------------------------------------------------------------\n";
+            $body .= "Package Dependencies: \n";
+            $body .= "\n";        
+            
+            for my $key (sort keys %dependencies) { 
+                my $lastElementIndex = $#{$dependencies{$key}}; 
+                $body .= "$key (".($lastElementIndex+1)."): \n";
+                if ($lastElementIndex+1 > 0) {
+                    for (my $i=0; $i<=$lastElementIndex; $i++) {
+                        $body .= "  $dependencies{$key}[$i]\n";
+                    }
+                } 
+                $body .= "\n";
+            } 
+        } # summary
+        
         # attachments ----------------------------------------------------------
         
         my $attachmentText = "";
@@ -1152,7 +1206,7 @@ mpiShutdown();
             }
         }
         
-        # test compile failed
+        # test compile log
         if ($code == $TEST_COMPILE_ERROR && -f "test_compile_log.txt") {
             $attachmentsExist = 1;
             my $log = "test_compile_log.txt";     
@@ -1191,6 +1245,7 @@ mpiShutdown();
             }
         }
         
+        # test output
         if (-f "$options{'TRILINOS_DIR'}[0]/log$hostOS.txt") {
             $attachmentsExist = 1;
             my $log = "log$hostOS.txt";     
@@ -1202,6 +1257,19 @@ mpiShutdown();
                 $attachmentText .= appendFile($log, $logPath);                
             }
         }      
+        
+        # event log
+        if ($code == $SUMMARY && -f "event_log.txt") {
+            $attachmentsExist = 1;
+            my $log = "event_log.txt";     
+            my $logPath = "$options{'TRILINOS_DIR'}[0]/testharness/temp/$log";       
+            if ($options{'REPORT_METHOD'}[0] eq "EMAIL") {
+                $attachmentText .= "    $log\n";
+                $email->attach(Type=>'TEXT', Path=>"$logPath", Disposition=>'attachment');
+            } elsif ($options{'REPORT_METHOD'}[0] eq "LOCAL_FILESYSTEM") { 
+                $attachmentText .= appendFile($log, $logPath);                
+            }
+        }
         
         # invoke-configure attachments -----------------------------------------
         
@@ -1371,7 +1439,7 @@ mpiShutdown();
         # send email / write report ============================================
         
         if ($options{'REPORT_METHOD'}[0] eq "EMAIL") {   
-            print "sending email: $mailTo\n";         
+            printEvent("sending email: $mailTo\n");         
     		$email->attach(Type=>'TEXT', Data=>$body);
     		if ($options{'MAIL_METHOD'}[0] eq "sendmail") {
                 $email->send();
@@ -1379,7 +1447,7 @@ mpiShutdown();
                 $email->send("smtp", $options{'MAIL_METHOD'}[1], Timeout => 30);
             }                
         } else {
-            print "generating report: $filename\n"; 
+            printEvent("generating report: $filename\n"); 
             open (REPORT, ">$options{'TRILINOS_DIR'}[0]/testharness/results/$filename")
                 or die "can't open $filename";
             print REPORT $body;
@@ -1394,6 +1462,7 @@ mpiShutdown();
         system "rm -f $options{'TRILINOS_DIR'}[0]/logMpiErrors.txt";
         system "rm -f $options{'TRILINOS_DIR'}[0]/log$hostOS.txt";
         if ($code == $SUMMARY) {
+            system "rm -f event_log.txt";
             system "rm -f invoke-configure-mpi";
             system "rm -f invoke-configure-mpi-original";
             system "rm -f invoke-configure-mpi-final";
@@ -1431,6 +1500,32 @@ mpiShutdown();
         return $text;
     
     } # appendFile()
+    
+    ############################################################################
+    # printEvent()
+    #
+    # Prints an event to standard out and logs it.
+    #   - global variables used: no
+    #   - sends mail: no
+    #   - args: $event to be printed
+    #   - returns: 
+
+    sub printEvent {
+        my $event = $_[0];
+        my $logOnly = $_[1];
+    
+        my $log = "$options{'TRILINOS_DIR'}[0]/testharness/temp/event_log.txt";
+        
+        # open log for appending; append; close
+        open (LOG, ">>$log")
+            or die "can't open $log";            
+        print LOG "$event";              
+        if (defined $logOnly) { print LOG "$logOnly"; }
+        close LOG;
+        
+        print "$event";
+    
+    } # printEvent()
 
     ############################################################################
     # printHelp()
@@ -1650,16 +1745,21 @@ mpiShutdown();
             }         
         }
         
-        # if HOST_FILE isn't specified, assign empty string
-        if (!defined $options{'HOST_FILE'} || !defined $options{'HOST_FILE'}[0]) {
-            $options{'HOST_FILE'} = ();
-            push (@{$options{'HOST_FILE'}}, "");
-        } 
-        
         # convert <HOST_FILE> psuedo-variable
         for my $name (keys %options) {
             for my $i (0 .. $#{$options{$name}}) {
-                $options{$name}[$i] =~ s/<HOST_FILE>/$options{'HOST_FILE'}[0]/;
+                if ($options{$name}[$i] =~ m/<HOST_FILE>/) {
+                    if (defined $options{'HOST_FILE'} && defined $options{'HOST_FILE'}[0]) {
+                        $options{$name}[$i] =~ s/<HOST_FILE>/$options{'HOST_FILE'}[0]/;
+                    } else {
+                        my $message = "";
+                        $message .= "attempting to use <HOST_FILE> value, but HOST_FILE wasn't given";
+                        report($FILE_SYSTEM_ERROR, $message);
+                        printEvent($message);
+                        die " *** test-harness-config error - aborting test-harness ***\n";
+                        
+                    }
+                } 
             }         
         }      
         
@@ -1668,25 +1768,7 @@ mpiShutdown();
             if (! $options{'MAKE_FLAGS'}[0] =~ m/^-/) {
                 $options{'MAKE_FLAGS'}[0] =~ s/^/-/;
             }
-        } 
-        
-        # if MAKE_FLAGS weren't specified, assign the empty string
-        else {
-            $options{'MAKE_FLAGS'} = ();
-            push (@{$options{'MAKE_FLAGS'}}, "");
         }
-        
-        # if SUMMARY_EMAIL are not specified, assign the empty string
-        if (!defined $options{'SUMMARY_EMAIL'} || !defined $options{'SUMMARY_EMAIL'}[0]) {
-            $options{'SUMMARY_EMAIL'} = ();
-            push (@{$options{'SUMMARY_EMAIL'}}, "");
-        } 
-        
-        # if ALL_EMAILS are not specified, assign the empty string
-        if (!defined $options{'ALL_EMAILS'} || !defined $options{'ALL_EMAILS'}[0]) {
-            $options{'ALL_EMAILS'} = ();
-            push (@{$options{'ALL_EMAILS'}}, "");
-        } 
         
         # create results directory if REPORT_METHOD is LOCAL_FILESYSTEM
         if ($options{'REPORT_METHOD'}[0] eq "LOCAL_FILESYSTEM") { 
@@ -1860,35 +1942,32 @@ mpiShutdown();
         
         print outFile "HOST_FILE                       = <TRILINOS_DIR>/hostfile\n";
         
-        if (!$short) {    
+        if (!$short) {      
             print outFile "\n";  
-            print outFile "#-------------------------------------------------------------------------------\n";     
-            print outFile "# Indicate how report text files should be named. ORDER will result in the files\n";
-            print outFile "# being named such that they will sort in the order that they occurred. EVENT\n";
-            print outFile "# will result in the files being named such that they will sort according to\n";
-            print outFile "# the type of event being reported.\n"; 
+            print outFile "#-------------------------------------------------------------------------------\n";
+            print outFile "# Specify the command to start up the MPI implementation on this machine.\n";
             print outFile "#\n";
-            print outFile "# - recognized values: ORDER EVENT\n";
             print outFile "# - multiple values recognized: NO\n";
-            print outFile "# - value required: YES if REPORT_METHOD is set to LOCAL_FILESYSTEM\n";      
+            print outFile "# - value required: YES MPI_DIR is supplied\n";
+            print outFile "# - the value of the HOST_FILE option can be referred to with the value\n";
+            print outFile "#   <HOST_FILE>\n";   
             print outFile "\n";
         }
         
-        print outFile "REPORT_NAMES                    = ORDER\n";
+        print outFile "MPI_STARTUP_CMD                 = \"lamboot <HOST_FILE> -v\"\n";
         
-        if (!$short) {    
+        if (!$short) {      
             print outFile "\n";  
-            print outFile "#-------------------------------------------------------------------------------\n";     
-            print outFile "# Indicate how mail should be sent. The unix program sendmail is the default.\n"; 
+            print outFile "#-------------------------------------------------------------------------------\n";
+            print outFile "# Specify the command (if any) to shut down the MPI implementation on this\n";
+            print outFile "# machine.\n";
             print outFile "#\n";
-            print outFile "# - recognized values: sendmail\n";
-            print outFile "#                      smtp <mail_server>\n";
-            print outFile "# - multiple values recognized: NO (except \"smtp\" and \"<mail_server>\")\n";
-            print outFile "# - value required: YES if REPORT_METHOD is set to EMAIL\n";      
+            print outFile "# - multiple values recognized: NO\n";
+            print outFile "# - value required: NO\n";
             print outFile "\n";
         }
         
-        print outFile "MAIL_METHOD                     = sendmail\n";
+        print outFile "MPI_SHUTDOWN_CMD                = lamhalt\n";
         
         if (!$short) {      
             print outFile "\n";  
@@ -1929,32 +2008,35 @@ mpiShutdown();
         
         print outFile "CVS_CMD                         = cvs\n";
         
-        if (!$short) {      
+        if (!$short) {    
             print outFile "\n";  
-            print outFile "#-------------------------------------------------------------------------------\n";
-            print outFile "# Specify the command to start up the MPI implementation on this machine.\n";
+            print outFile "#-------------------------------------------------------------------------------\n";     
+            print outFile "# Indicate how report text files should be named. ORDER will result in the files\n";
+            print outFile "# being named such that they will sort in the order that they occurred. EVENT\n";
+            print outFile "# will result in the files being named such that they will sort according to\n";
+            print outFile "# the type of event being reported.\n"; 
             print outFile "#\n";
+            print outFile "# - recognized values: ORDER EVENT\n";
             print outFile "# - multiple values recognized: NO\n";
-            print outFile "# - value required: YES MPI_DIR is supplied\n";
-            print outFile "# - the value of the HOST_FILE option can be referred to with the value\n";
-            print outFile "#   <HOST_FILE>\n";   
+            print outFile "# - value required: YES if REPORT_METHOD is set to LOCAL_FILESYSTEM\n";      
             print outFile "\n";
         }
         
-        print outFile "MPI_STARTUP_CMD                 = \"lamboot <HOST_FILE> -v\"\n";
+        print outFile "REPORT_NAMES                    = ORDER\n";
         
-        if (!$short) {      
+        if (!$short) {    
             print outFile "\n";  
-            print outFile "#-------------------------------------------------------------------------------\n";
-            print outFile "# Specify the command (if any) to shut down the MPI implementation on this\n";
-            print outFile "# machine.\n";
+            print outFile "#-------------------------------------------------------------------------------\n";     
+            print outFile "# Indicate how mail should be sent. The unix program sendmail is the default.\n"; 
             print outFile "#\n";
-            print outFile "# - multiple values recognized: NO\n";
-            print outFile "# - value required: NO\n";
+            print outFile "# - recognized values: sendmail\n";
+            print outFile "#                      smtp <mail_server>\n";
+            print outFile "# - multiple values recognized: NO (except \"smtp\" and \"<mail_server>\")\n";
+            print outFile "# - value required: YES if REPORT_METHOD is set to EMAIL\n";      
             print outFile "\n";
         }
         
-        print outFile "MPI_SHUTDOWN_CMD                = lamhalt\n";
+        print outFile "MAIL_METHOD                     = sendmail\n";
         
         if (!$short) {        
             print outFile "\n";
