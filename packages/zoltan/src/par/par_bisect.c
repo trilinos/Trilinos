@@ -303,8 +303,7 @@ int Zoltan_RB_find_bisector(
     ind[1] -= offset;
     MPI_Address(&(med->totallo[0]), &(ind[2])); 
     ind[2] -= offset;
-    MPI_Address(&(med->wthi[MAX_BISECT_WGTS]), &(ind[3])); 
-    ind[3] -= offset;
+    ind[3] = sizeof(struct bisector);
 
     MPI_Type_struct(4, lengths, ind, types, &med_type);
     MPI_Type_commit(&med_type);
@@ -1096,6 +1095,7 @@ static void Zoltan_scan(double *wt, double *wtupto, int count, MPI_Comm local_co
       to = proc + 1;
       MPI_Send(wtupto, count, MPI_DOUBLE, to, tag, local_comm);
    }
+   ZOLTAN_FREE(&tmp);
 }
 
 /* Compute the appropriate norm of a vector.
