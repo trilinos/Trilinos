@@ -84,7 +84,6 @@ int Ifpack_METISPartitioner::ComputePartitions()
 	}
       }      
     }
-    IFPACK_CHK_ERR(SymGraph->OptimizeStorage());
     IFPACK_CHK_ERR(SymGraph->FillComplete());
     SymIFPACKGraph = new Ifpack_Graph_Epetra_CrsGraph(SymGraph);
     IFPACKGraph = SymIFPACKGraph;
