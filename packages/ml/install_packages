@@ -159,6 +159,28 @@ then
       read directory
       LIBRARIES=`${echo} ${LIBRARIES} $directory`
    fi
+   ${echo} -n "Does the compiler need to know the location of any other libraries? [no] "
+   read yes_or_no
+   yes_or_no=`${echo} ${yes_or_no}s`
+   if test `expr $yes_or_no` = 'yess'
+   then
+      ${echo}
+      ${echo} "List each library path on a line followed by a line with just 'x'"
+      read directory
+      while (test `expr $directory ` != 'x')
+      do
+         LIBRARIES=`${echo} ${LIBRARIES} -L$directory`
+         read directory
+      done
+      ${echo}
+      ${echo} "List each library on a line followed by a line with just 'x'"
+      read directory
+      while (test `expr $directory ` != 'x')
+      do
+         LIBRARIES=`${echo} ${LIBRARIES} -l$directory`
+         read directory
+      done
+   fi
    ${echo} "=================================================================="
 fi 
 ${echo} 
