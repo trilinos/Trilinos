@@ -295,23 +295,29 @@ epetra_incdir = -I$(top_srcdir)/../epetra/src -I$(top_builddir)/../epetra/src
 else
 epetra_incdir =
 endif
+if ML_USING_EPETRAEXT
+epetraext_incdir = -I$(top_srcdir)/../epetraext/src/inout -I$(top_builddir)/../epetraext/src
+else
+epetraext_incdir =
+endif
   
 AM_CPPFLAGS = -I$(srcdir)/Comm \
-	-I$(srcdir)/Operator \
-	-I$(srcdir)/Smoother \
+	-I$(srcdir)/Operator   \
+	-I$(srcdir)/Smoother   \
 	-I$(srcdir)/Coarsen \
-	-I$(srcdir)/Krylov \
-	-I$(srcdir)/Main \
-	-I$(srcdir)/FEGrid \
-	-I$(srcdir)/Utils \
+	-I$(srcdir)/Krylov  \
+	-I$(srcdir)/Main    \
+	-I$(srcdir)/FEGrid  \
+	-I$(srcdir)/Utils   \
 	-I$(srcdir)/Include \
-	$(aztecoo_incdir) \
-	$(ifpack_incdir) \
-	$(amesos_incdir) \
-	$(teuchos_incdir) \
-	$(anasazi_incdir) \
-	$(triutils_incdir) \
-	$(epetra_incdir)
+	$(aztecoo_incdir)   \
+	$(ifpack_incdir)    \
+	$(amesos_incdir)    \
+	$(teuchos_incdir)   \
+	$(anasazi_incdir)   \
+	$(triutils_incdir)  \
+	$(epetra_incdir)    \
+        $(epetraext_incdir)
 
 
 

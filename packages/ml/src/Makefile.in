@@ -609,22 +609,25 @@ COMP =
 @ML_USING_TRIUTILS_TRUE@triutils_incdir = -I$(top_srcdir)/../triutils/src -I$(top_builddir)/../triutils/src
 @ML_USING_EPETRA_FALSE@epetra_incdir = 
 @ML_USING_EPETRA_TRUE@epetra_incdir = -I$(top_srcdir)/../epetra/src -I$(top_builddir)/../epetra/src
+@ML_USING_EPETRAEXT_FALSE@epetraext_incdir = 
+@ML_USING_EPETRAEXT_TRUE@epetraext_incdir = -I$(top_srcdir)/../epetraext/src/inout -I$(top_builddir)/../epetraext/src
 AM_CPPFLAGS = -I$(srcdir)/Comm \
-	-I$(srcdir)/Operator \
-	-I$(srcdir)/Smoother \
+	-I$(srcdir)/Operator   \
+	-I$(srcdir)/Smoother   \
 	-I$(srcdir)/Coarsen \
-	-I$(srcdir)/Krylov \
-	-I$(srcdir)/Main \
-	-I$(srcdir)/FEGrid \
-	-I$(srcdir)/Utils \
+	-I$(srcdir)/Krylov  \
+	-I$(srcdir)/Main    \
+	-I$(srcdir)/FEGrid  \
+	-I$(srcdir)/Utils   \
 	-I$(srcdir)/Include \
-	$(aztecoo_incdir) \
-	$(ifpack_incdir) \
-	$(amesos_incdir) \
-	$(teuchos_incdir) \
-	$(anasazi_incdir) \
-	$(triutils_incdir) \
-	$(epetra_incdir)
+	$(aztecoo_incdir)   \
+	$(ifpack_incdir)    \
+	$(amesos_incdir)    \
+	$(teuchos_incdir)   \
+	$(anasazi_incdir)   \
+	$(triutils_incdir)  \
+	$(epetra_incdir)    \
+        $(epetraext_incdir)
 
 
 # ------------------------------------------------------------------------
