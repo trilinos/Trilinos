@@ -92,6 +92,7 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
   VT_begin(ml_vt_aggregating_state);
 #endif
 
+  ML_memory_check("L%d reitz start",fine_level);
   if (ag == NULL)
   {
      created_ag_obj = 1;
@@ -112,6 +113,7 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
 
   Nlevels_nodal = ML_Gen_MGHierarchy_UsingAggregation(ml_nodes, fine_level, 
                                             ML_DECREASING, ag);
+  ML_memory_check("L%d nodal end",fine_level);
 
   coarsest_level = fine_level - Nlevels_nodal + 1; 
   i = ml_nodes->Amat[coarsest_level].invec_leng;
@@ -322,6 +324,7 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
      Tcoarse_rowptr= (int *)
                      ML_allocate((Kn_coarse->N_nonzeros + Nneg_dirichlet +
 				  Npos_dirichlet + 1)*sizeof(int));
+
      Tcoarse_rowptr[0] = 0;
      counter = 0; nz_ptr = 0;
      nzctr = 0;
@@ -423,6 +426,7 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
      ML_CommInfoOP_Clone(&(Tcoarse->getrow->pre_comm),
                          ml_nodes->Amat[grid_level].getrow->pre_comm);
      (*Tmat_array)[grid_level] = Tcoarse;
+     ML_memory_check("L%d Tcoarse end",grid_level);
    
      Pn_coarse = &(ml_nodes->Pmat[grid_level]);
      Rn_coarse = &(ml_nodes->Rmat[grid_level+1]);
@@ -778,6 +782,7 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
      csr_data->columns = (int *) realloc(csr_data->columns,
 					   sizeof(int)*nz_ptr); 
 
+     ML_memory_check("L%d Tcoarse realloc",grid_level);
      /********************************************************************/
      /* Fix P and R so that they are not normalized. This is so that we  */
      /* can use a matrix triple product combined with post-processing to */
@@ -836,6 +841,7 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
      Tcoarse_trans = ML_Operator_Create(ml_edges->comm);
      ML_Operator_Transpose_byrow(Tcoarse, Tcoarse_trans);
      (*Tmat_trans_array)[grid_level] = Tcoarse_trans;
+     ML_memory_check("L%d Ttrans end",grid_level);
 
 #ifdef ML_VAMPIR
   VT_end(ml_vt_building_coarse_T_state);
@@ -961,6 +967,7 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
 
      ML_rap(Tfine, &(ml_nodes->Pmat[grid_level]), Tcoarse_trans, 
         &(ml_edges->Pmat[grid_level]),ML_CSR_MATRIX);
+     ML_memory_check("L%d Pe RAP",grid_level);
 
      Pe = &(ml_edges->Pmat[grid_level]);
 
@@ -1112,6 +1119,7 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
 #ifdef ML_VAMPIR
   VT_begin(ml_vt_smooth_Pe_state);
 #endif
+     ML_memory_check("L%d Pe not smoothed",grid_level);
      if (smooth_flag == ML_YES)
      {
         if (Tmat->comm->ML_mypid == 0)
@@ -1152,6 +1160,7 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
 
         Pe->N_nonzeros = nz_ptr;
      }
+     ML_memory_check("L%d Pe smoothed",grid_level);
 
 #ifdef ML_VAMPIR
   VT_end(ml_vt_smooth_Pe_state);
@@ -1318,6 +1327,7 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
 #ifdef ML_VAMPIR
   VT_begin(ml_vt_make_coarse_A_with_rap_state);
 #endif
+     ML_memory_check("L%d Pe enriched",grid_level);
 
     if (ag->print_flag < ML_Get_PrintLevel()) {
         Pe = &(ml_edges->Pmat[grid_level]);
@@ -1332,7 +1342,9 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
                  &(ml_edges->SingleLevel[grid_level]), 
                  &(ml_edges->SingleLevel[grid_level+1]));
      ML_Gen_Restrictor_TransP(ml_edges, grid_level+1, grid_level);
+     ML_memory_check("L%d TransP end",grid_level);
      ML_Gen_AmatrixRAP(ml_edges, grid_level+1, grid_level);
+     ML_memory_check("L%d RAP end",grid_level);
 
 #if defined(ML_NEW_ENRICH)
      /* Weed out small values in A (MSR format). */
@@ -1419,6 +1431,8 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
   if (ML_Get_PrintLevel() > 0)
     if (Tfine->comm->ML_mypid==0)
       printf("AMG setup time \t= %e seconds\n",t0);
+
+  ML_memory_check("reitz end");
 
   return(Nlevels_nodal);
 }
