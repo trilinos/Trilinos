@@ -47,14 +47,6 @@ static char *cvs_lbconsth_id = "$Id$";
 
 
 /*
- *  Value used to initialize the parameters when the
- *  load-balancer allocates the parameters array.
- *  BAH: now obsolete
- */
-
-/* #define LB_PARAMS_INIT_VALUE -1. */
-
-/*
  * Type used to store linked list of new values for parameters.
  */
    

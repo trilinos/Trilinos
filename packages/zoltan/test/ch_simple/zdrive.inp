@@ -1,5 +1,5 @@
-Decomposition Info	= method=rcb, tol=0.9
-#Zoltan Parameters	= 0=1.0, 1=0.
+Decomposition Info	= method=rcb
+Zoltan Parameters	= RCB_WGTFLAG=0
 File Type		= Chaco
 File Name		= simple
 Parallel Disk Info	= number=0

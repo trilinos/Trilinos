@@ -65,15 +65,6 @@ typedef enum LB_Fn_Type LB_FN_TYPE;
 
 struct LB_Struct;
 
-
-/*
- *  Maximum number of parameters to be passed to any load-balancing
- *  method.
- */
-/* BAH: this is now obsolete */
-
-#define LB_PARAMS_MAX_SIZE 7
-
 /*
  * Error codes for LB library
  *   LB_OK     - no errors
@@ -584,26 +575,6 @@ extern int LB_Set_Migration(struct LB_Struct *lb, int auto_migrate_flag);
  */
 
 extern int LB_Set_Param(struct LB_Struct *lb, char *name, char *val);
-
-/*****************************************************************************/
-/*
- *  Function to initialize an array to pass parameters to the load-balancing
- *  methods.  This function is provided so that the load-balancer can
- *  look for array entries not set by the application and use default values
- *  for those entries.
- *
- *  Input/Output:
- *    double *params             --  Pointer to the array to be used to pass
- *                                   parameters to the load-balancing methods.
- *                                   Upon return, the values in this array are
- *                                   initialized to an initial value determined
- *                                   by the load-balancer.
- *  Returned value:
- *    int                        --  Error code
- */
-/* BAH: Now obsolete */
-
-extern int LB_Initialize_Params_Array(double *params);
 
 /*****************************************************************************/
 /*

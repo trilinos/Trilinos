@@ -124,15 +124,8 @@ int main(int argc, char *argv[])
   pio_info.pexo_fname[0]	= '\0';
 
   prob.method[0]		= '\0';
-/* BAH: need to put new parameter initialization here */
-/*
-  if ((error = LB_Initialize_Params_Array(prob.params)) != LB_OK) {
-    Gen_Error(0, "fatal: error returned from LB_Initialize_Params_Array");
-    error_report(Proc);
-    exit(1);
-  }
-*/
-  prob.tol			= -1.0;
+  prob.num_params		= 0;
+  prob.params			= NULL;
   prob.read_coord		= 0;
   prob.gen_graph		= 0;
 
@@ -242,10 +235,9 @@ void print_input(int Num_Proc, PROB_INFO_PTR prob)
   printf("Total number of Processors = %d\n\n", Num_Proc);
 
   printf("\nPerforming load balance using %s.\n", prob->method);
-  printf("\tTolerance: %lf\n", prob->tol);
   printf("\tParameters:\n");
-  for (i = 0; i < LB_PARAMS_MAX_SIZE; i++)
-    printf("\t\t%d %lf\n", i, prob->params[i]);
+  for (i = 0; i < prob->num_params; i++)
+    printf("\t\t%s %s\n", prob->params[i][0], prob->params[i][1]);
 
   if (prob->gen_graph)
     printf("\tGenerating graph.\n");

@@ -67,7 +67,7 @@ int read_cmd_file(char *filename, PROB_INFO_PTR prob,
   char  *cptr, *cptr2;
   double value;
   int    i, icnt;
-  int    iret, param;
+  int    iret, num_params_alloc = 0, param_index;
 
 /***************************** BEGIN EXECUTION ******************************/
 
@@ -83,6 +83,7 @@ int read_cmd_file(char *filename, PROB_INFO_PTR prob,
       strcpy(inp_copy, inp_line);
       clean_string(inp_line, " \t");
       cptr = strtok(inp_line, "\t=");
+
       /****** The file type ******/
       if (token_compare(cptr, "file type")) {
         if(pio_info->file_type < 0) {
@@ -90,7 +91,6 @@ int read_cmd_file(char *filename, PROB_INFO_PTR prob,
           strip_string(cptr, " \t\n");
           if (cptr == NULL || strlen(cptr) == 0) {
             Gen_Error(0, "fatal: must specify file type");
-            Gen_Error(0, cmesg);
             return 0;
           }
 
@@ -107,6 +107,7 @@ int read_cmd_file(char *filename, PROB_INFO_PTR prob,
           }
         }
       }
+
       /****** The file name ******/
       if (token_compare(cptr, "file name")) {
         if(strlen(pio_info->pexo_fname) == 0)
@@ -116,6 +117,7 @@ int read_cmd_file(char *filename, PROB_INFO_PTR prob,
           strcpy(pio_info->pexo_fname, cptr);
         }
       }
+
       /****** The Debug reporting level ******/
 /* not sure about this yet ------------->
       else if (token_compare(cptr, "debug")) {
@@ -129,6 +131,7 @@ int read_cmd_file(char *filename, PROB_INFO_PTR prob,
         }
       }
 <-----------------------------------------*/
+
       /****** Parallel Disk Information ******/
       else if (token_compare(cptr, "parallel disk info")) {
 
@@ -225,6 +228,8 @@ int read_cmd_file(char *filename, PROB_INFO_PTR prob,
           cptr = strtok(NULL, ",");
         }
       } /* End "else if (token_compare(cptr, "parallel disk info"))" */
+
+      /****** Parallel File Location ******/
       else if (token_compare(cptr, "parallel file location")) {
         cptr = strchr(cptr, '\0');
         cptr++;
@@ -271,6 +276,8 @@ int read_cmd_file(char *filename, PROB_INFO_PTR prob,
           cptr = strtok(NULL, ",");
         }
       }
+
+      /****** Decomposition Info ******/
       else if (token_compare(cptr, "decomposition info")) {
         /* The method to use for decomposing the graph */
 
@@ -298,26 +305,6 @@ int read_cmd_file(char *filename, PROB_INFO_PTR prob,
               strcpy(prob->method, cptr2);
             }
           }
-          else if(strstr(cptr, "tol"))
-          {
-            if(prob->tol < 0)
-            {
-              cptr2 = strchr(cptr, '=');
-              if(cptr2 == NULL)
-              {
-                Gen_Error(0, "fatal: need to specify a value with tol");
-                return 0;
-              }
-
-              cptr2++;
-              iret = sscanf(cptr2, "%lf", &(prob->tol));
-              if(iret != 1)
-              {
-                Gen_Error(0, "fatal: invalid value for tolerance");
-                return 0;
-              }
-            }
-          }
           else
           {
             sprintf(cmesg,
@@ -329,6 +316,8 @@ int read_cmd_file(char *filename, PROB_INFO_PTR prob,
           cptr = strtok(NULL, ",");
         }
       }
+
+      /****** Zoltan Parameters ******/
       else if (token_compare(cptr, "zoltan parameters")) {
         /* parameters to be passed to Zoltan */
         cptr = strchr(cptr, '\0');
@@ -336,34 +325,53 @@ int read_cmd_file(char *filename, PROB_INFO_PTR prob,
         strip_string(cptr," \t\n=");
         cptr = strtok(cptr, ",");
 
-        /* parameters should be designated by "<param #>=<value>" */
+        /* parameters should be designated by "<param string>=<value string>" */
         while (cptr != NULL) {
-          iret = sscanf(cptr, "%d", &param);
-          if (iret != 1) {
-            Gen_Error(0, "fatal: parameter number must be specified");
-            return 0;
+          param_index = prob->num_params;
+          prob->num_params++;
+
+          /* ensure there is enough memory to store the new parameters */
+          if (prob->num_params > num_params_alloc) {
+            if (num_params_alloc == 0) {
+              num_params_alloc += 5;
+              prob->params = (Parameter_Pair *) malloc(
+                                      num_params_alloc*sizeof(Parameter_Pair));
+            }
+            else {
+              num_params_alloc += 5;
+              prob->params = (Parameter_Pair *) realloc(prob->params,
+                                      num_params_alloc*sizeof(Parameter_Pair));
+            }
+            if (prob->params == NULL) {
+              Gen_Error(0, "fatal: not enough memory for Zoltan parameters");
+              return 0;
+            }
           }
-          if (param > LB_PARAMS_MAX_SIZE || param < 0) {
-            sprintf(cmesg, "fatal: parameter number, %d, invalid", param);
-            Gen_Error(0, cmesg);
-            return 0;
-          }
+
+          /* copy parameter name */
+          i = strcspn(cptr, "=");
+          strncpy(prob->params[param_index][0], cptr, i);
+          prob->params[param_index][0][i]='\0';
+          strip_string(prob->params[param_index][0], " \t\n");
 
           /* now get the value */
           cptr2 = strchr(cptr, '=');
           if(cptr2 == NULL)
           {
-            Gen_Error(0, "fatal: must specify a parameter value");
+            sprintf(cmesg, "fatal: must specify value for parameter %s", 
+                            prob->params[param_index][0]);
+            Gen_Error(0, cmesg);
             return 0;
           }
           cptr2++;
-
-          iret = sscanf(cptr2, "%lf", &value);
-          if (iret != 1) {
-            Gen_Error(0, "fatal: must specify a parameter value");
+          if (strlen(cptr2) == 0) {
+            sprintf(cmesg, "fatal: must specify value for parameter %s", 
+                            prob->params[param_index][0]);
+            Gen_Error(0, cmesg);
             return 0;
           }
-          prob->params[param] = value;
+          strcpy(prob->params[param_index][1], cptr2);
+          strip_string(prob->params[param_index][1], " \t\n");
           cptr = strtok(NULL, ",");
         }
       }
@@ -482,11 +490,6 @@ int check_inp(PROB_INFO_PTR prob, PARIO_INFO_PTR pio_info)
     return 0;
   }
 
-  /* check if the tolerance was set */
-  if (prob->tol < 0.0) {
-    prob->tol = 1.0;  /* default = perfect balance */
-  }
-
   return 1;
 }
 
@@ -497,6 +500,7 @@ void brdcst_cmd_info(int Proc, PROB_INFO_PTR prob, PARIO_INFO_PTR pio_info)
 {
 /* local declarations */
   int ctrl_id;
+  int size;
 /***************************** BEGIN EXECUTION ******************************/
 
   MPI_Bcast(pio_info, sizeof(PARIO_INFO), MPI_BYTE, 0, MPI_COMM_WORLD);
@@ -511,6 +515,12 @@ void brdcst_cmd_info(int Proc, PROB_INFO_PTR prob, PARIO_INFO_PTR pio_info)
 
   /* and broadcast the problem specifications */
   MPI_Bcast(prob, sizeof(PROB_INFO), MPI_BYTE, 0, MPI_COMM_WORLD);
+  if (prob->num_params > 0) {
+    size = prob->num_params * sizeof(Parameter_Pair);
+    if (Proc != 0)
+      prob->params = (Parameter_Pair *) malloc(size);
+    MPI_Bcast(prob->params, size, MPI_CHAR, 0, MPI_COMM_WORLD);
+  }
 
   /* now calculate where the file for this processor is */
   if(pio_info->dsk_list_cnt <= 0) {

@@ -105,16 +105,20 @@ extern MESH_INFO Mesh;
 
 
 /* Structure for the problem description. */
+typedef char Parameter_Pair[2][128]; /* typedef for parameter strings. 
+                                        Parameters are specified as pairs
+                                        of strings:
+                                          param_str = value_str              */
+
 struct Problem_Description
 {
   char   method[32];                 /* this is the method string that will
                                         be passed unchanged to Zoltan        */
-  double params[LB_PARAMS_MAX_SIZE]; /* parameter array to be passed to
-                                        Zoltan. It is assumed that the method
-                                        for doing this will change (Bruce
-                                        wants it different).                 */
-  double tol;                        /* load balance tolerance that Zoltan is
-                                        attempting to achieve                */
+  int num_params;                    /* number of parameters read.           */
+  Parameter_Pair *params;            /* parameter array to be passed to
+                                        Zoltan.  Parameters are specified as
+                                        pairs of strings:
+                                          param_str = value_str              */
   int    gen_graph;                  /* set if method being used needs graph */
   int    read_coord;                 /* set if method being used needs geom  */
 };
