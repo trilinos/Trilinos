@@ -72,10 +72,10 @@ int Zoltan_PHG_rdivide (int lo, int hi, Partition final, ZZ *zz, HGraph *hg,
      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
      return ZOLTAN_MEMERR;
   }
-  if (pins && lpins) {
-     pins[1]  = &( pins[0][hg->nEdge]);
-     lpins[1] = &(lpins[0][hg->nEdge]);
-     }
+  if (pins[0] && lpins[0]) {
+      pins[1]  = &( pins[0][hg->nEdge]);
+      lpins[1] = &(lpins[0][hg->nEdge]);
+  }
      
   /* Initial calculation of the local pin distribution  (sigma in UVC's papers)  */
     for (i = 0; i < hg->nEdge; ++i)
