@@ -908,7 +908,12 @@ Optional Packages:
                           is yes)
   --with-ml_newtpe        Enable latest Maxwell prolongator fixes (default is
                           yes)
-  --with-ml_superlu       Enable SuperLU support (default is no)
+  --with-ml_superlu       Enable SuperLU support. Note: You must also specify
+                          where the SuperLU headers and libraries are located
+                          by the configure options
+                          --with-libdirs=SuperLU-library-directory and
+                          --with-incdirs=SuperLU-include-directory (default is
+                          no)
   --with-ml_complex_maxwell
                           Enable complex maxwell solver capability (default is
                           no)
@@ -3173,7 +3178,7 @@ fi
 
 
 # Provide some information about the compiler.
-echo "$as_me:3176:" \
+echo "$as_me:3181:" \
      "checking for Fortran 77 compiler version" >&5
 ac_compiler=`set X $ac_compile; echo $2`
 { (eval echo "$as_me:$LINENO: \"$ac_compiler --version </dev/null >&5\"") >&5
@@ -5853,6 +5858,13 @@ echo "${ECHO_T}no" >&6
 fi
 
 
+TAC_ARG_ENABLE_FEATURE_SUB( ml, slud, Enable ML interface support for SuperLU,
+        ML_SLU, no)
+
+#if test "X$ac_cv_header_cstdlib" != "Xyes" && test "X$ac_cv_header_stdlib_h" != "Xyes"; then
+#  AC_MSG_ERROR([[Cannot find cstdlib or stdlib.h.  ml requires at least one or the other.]])
+#fi
+
 # ------------------------------------------------------------------------
 # Specify other directories
 # ------------------------------------------------------------------------
@@ -5947,7 +5959,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:5950: \"$ac_link\") >&5
+(eval echo $as_me:5962: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -6027,7 +6039,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:6030: \"$ac_link\") >&5
+(eval echo $as_me:6042: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -8458,7 +8470,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:8461: \"$ac_link\") >&5
+(eval echo $as_me:8473: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -8538,7 +8550,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:8541: \"$ac_link\") >&5
+(eval echo $as_me:8553: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
