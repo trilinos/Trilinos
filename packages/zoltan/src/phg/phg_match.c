@@ -256,28 +256,29 @@ static int matching_col_ipm(ZZ *zz, HGraph *hg, Matching match)
 #define PHASE4 2      /* communication size is 2 ints */
 #define LOOP_FACTOR 8 /* forces ncandidates to have enough degrees of freedom */ 
 #define PIN_FACTOR  2 /* oversizes a Malloc() to avoid future Realloc()s */
-#define THRESHOLD 0   /* ignore inner products (i.p.) less than threshold */
+#define THRESHOLD 0.0 /* ignore inner products (i.p.) less than threshold */
        
 static int matching_ipm (ZZ *zz, HGraph *hg, Matching match)
 {
   int i, j, k, lno, loop, vertex, *order=NULL;
-  int *c_order=NULL, pincnt, count, size, *ip, bestv, bestsum, edgecount, pins;
+  int *c_order=NULL, pincnt, count, size, *ip, bestv, edgecount, pins;
   int *cmatch=NULL, ncandidates, nrounds, *select=NULL, pselect;
   int *m_gno=NULL;
   int *m_vindex=NULL, *m_vedge=NULL;  /* zero-based loopup of edges by vertex */
   int *m_bestv=NULL;                 /* col's best results for matched vertex */
   int *b_gno=NULL;
-  float *psums=NULL, *tsums=NULL, *m_bestsum=NULL, *b_bestsum=NULL;
+  float *psums=NULL, *tsums=NULL, *m_bestsum=NULL, *b_bestsum=NULL, bestsum;
   char *buffer=NULL, *rbuffer=NULL;    /* send and rec buffers */
   int *displs=NULL, *each_size=NULL, *each_count=NULL, total_count;
-  int local_quality[3] = {0,0,0}, global_quality[3] = {0,0,0},  gno;  
+  float local_quality[3] = {0,0,0}, global_quality[3] = {0,0,0},  gno;  
   PHGComm *hgc = hg->comm;  
   char  *yo = "matching_ipm";
+int bobcount=0;
 
 
   /* determine number of basic matching rounds scaled by number of procs */
   nrounds = hgc->nProc_x * LOOP_FACTOR;
-  ncandidates = hg->nVtx/(2 * nrounds) + 1;  /* 2: each match pairs 2 vertices */
+  ncandidates = 1.2 * hg->nVtx/(2 * nrounds) + 1;  /* 2: each match pairs 2 vertices */
         
   /* allocate storage proportional to number of local vertices */  
   if (hg->nVtx > 0 && (
@@ -458,7 +459,7 @@ static int matching_ipm (ZZ *zz, HGraph *hg, Matching match)
        if (hg->ewgt == NULL)
          for (i = m_vindex[vertex]; i < m_vindex[vertex+1]; i++)
            for (j = hg->hindex [m_vedge[i]]; j < hg->hindex [m_vedge[i]+1]; j++)
-             ++psums [hg->hvertex[j]];
+             psums [hg->hvertex[j]] += 1.0;
        else
          for (i = m_vindex[vertex]; i < m_vindex[vertex+1]; i++)
            for (j = hg->hindex [m_vedge[i]]; j < hg->hindex [m_vedge[i]+1]; j++)
@@ -469,14 +470,14 @@ static int matching_ipm (ZZ *zz, HGraph *hg, Matching match)
          psums [VTX_GNO_TO_LNO (hg, m_gno[vertex])] = 0;
        for (i = 0; i < hg->nVtx; i++)
          if (match[i] != i)
-           psums[i] = 0;                  
+           psums[i] = 0.0;                  
      
        /* Want to use sparse communication with explicit summing later but
           for now, all procs in my column have same complete inner products */      
        MPI_Allreduce(psums, tsums, hg->nVtx, MPI_FLOAT, MPI_SUM, hgc->col_comm);
           
        /* each proc computes best, all rows in a column compute same answer */        
-       m_bestsum [vertex] = -1;
+       m_bestsum [vertex] = -1.0;             /* any negative float will do */
        m_bestv   [vertex] =  0;
        for (i = 0; i < hg->nVtx; i++)
          if (tsums[i] > m_bestsum[vertex]  &&  cmatch[i] == i)  {
@@ -502,7 +503,7 @@ static int matching_ipm (ZZ *zz, HGraph *hg, Matching match)
      for (vertex = 0; vertex < total_count; vertex++)  {
        *ip++ = m_gno [vertex];                         /* candidate's gno */
        *ip++ = VTX_LNO_TO_GNO (hg, m_bestv [vertex]);  /* best match gno */   
-       *ip++ = m_bestsum [vertex];                     /* best i.p. value */
+       * (float*) ip++ = m_bestsum [vertex];                     /* best i.p. value */
      }
       
      /* send/rec best results information to all columns in my row */     
@@ -517,7 +518,7 @@ static int matching_ipm (ZZ *zz, HGraph *hg, Matching match)
      for (i = 0; i < total_count * hgc->nProc_x; i++)   {
        vertex  = *ip++;
        bestv   = *ip++;
-       bestsum = *ip++;
+       bestsum = * (float*)ip++;
        
        /* ignore messages whose candidate I don't own */
        if (VTX_TO_PROC_X (hg, vertex) != hgc->myProc_x)
@@ -563,7 +564,7 @@ static int matching_ipm (ZZ *zz, HGraph *hg, Matching match)
          
 if (b_bestsum[select[i]] > THRESHOLD)  {
   local_quality[0] += b_bestsum[select[i]];  
-  local_quality[1]++;
+  local_quality[1] += 1.0;
 }       
      }
            
@@ -595,13 +596,21 @@ if (b_bestsum[select[i]] > THRESHOLD)  {
      Zoltan_Multifree (__FILE__, __LINE__, 2, &buffer, &rbuffer);                          
   } /* DONE: end of large loop over rounds */
   
+bobcount = 0;  
+for (i = pselect; i < hg->nVtx; i++)
+  if (match[order[pselect]] == order[pselect])
+    bobcount++;
+uprintf (hgc, "RTHRTH %d of %d, missed %d vertices with ncandidates %d\n",
+ pselect, hg->nVtx, bobcount, ncandidates);
+
+  
   local_quality[2] = hg->nVtx;    /* to compute the global number of vertices */
   
-  MPI_Allreduce(local_quality,global_quality,3, MPI_INT, MPI_SUM, hgc->row_comm); 
+  MPI_Allreduce(local_quality,global_quality,3, MPI_FLOAT, MPI_SUM, hgc->row_comm); 
        
-  uprintf (hgc, "LOCAL (GLOBAL) i.p. sum %d (%d), matched pairs %d (%d), "
-   "total vertices %d\n", local_quality[0], global_quality[0], local_quality[1],
-   global_quality[1], global_quality[2]);  
+  uprintf (hgc, "LOCAL (GLOBAL) i.p. sum %.2f (%.2f), matched pairs %d (%d), "
+   "total vertices %d\n", local_quality[0], global_quality[0], (int)local_quality[1],
+   (int)global_quality[1], (int)global_quality[2]);  
   
   Zoltan_Multifree (__FILE__, __LINE__, 7, &psums, &tsums, &select, &cmatch,
    &each_size, &each_count, &displs); 
