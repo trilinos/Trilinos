@@ -5,6 +5,7 @@
 
 #include <vector>
 #include <set>
+#include <map>
 
 #include <Epetra_CrsGraph.h>
 #include <Epetra_MapColoring.h>
@@ -50,6 +51,18 @@ std::auto_ptr<Epetra_MapColoring> CrsGraph_MapColoring::operator()( const Epetra
   assert( Adj2.TransformToLocal() == 0 );
   if( verbose_ ) cout << "Adjacency 2 Graph!\n" << Adj2;
 
+  vector<int> rowOrder( nRows );
+  //Simple reordering
+  {
+    multimap<int,int> adjMap;
+    for( int i = 0; i < nRows; ++i )
+      adjMap.insert( pair<int,int>( Adj2.NumMyIndices(i), i ) );
+    multimap<int,int>::iterator iter = adjMap.begin();
+    multimap<int,int>::iterator end = adjMap.end();
+    for( int i = 1; iter != end; ++iter, ++i )
+      rowOrder[ nRows - i ] = iter->second;
+  }
+
   Epetra_MapColoring * ColorMap = new Epetra_MapColoring( RowMap );
 
   //Application of Greedy Algorithm to generate Color Map
@@ -59,12 +72,12 @@ std::auto_ptr<Epetra_MapColoring> CrsGraph_MapColoring::operator()( const Epetra
   {
     for( int i = 0; i < Size; ++i ) allowedColors.insert( i+1 ); 
 
-    Adj2.ExtractMyRowView( col, NumIndices, Indices );
+    Adj2.ExtractMyRowView( rowOrder[col], NumIndices, Indices );
 
     for( int i = 0; i < NumIndices; ++i )
       if( (*ColorMap)[ Indices[i] ] > 0 ) allowedColors.erase( (*ColorMap)[ Indices[i] ] );
 
-    (*ColorMap)[ col ] = *(allowedColors.begin());
+    (*ColorMap)[ rowOrder[col] ] = *(allowedColors.begin());
   }
 
   if( verbose_ ) cout << "ColorMap!\n" << *ColorMap;
