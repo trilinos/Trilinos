@@ -26,4 +26,7 @@
 # ************************************************************************
 #@HEADER
 
-SUBDIRS = CrsRiluk IlukGraph SetParameters scripts
+include ../../Makefile.export
+
+include Makefile.include
+

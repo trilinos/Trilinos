@@ -134,6 +134,8 @@ EXEEXT = @EXEEXT@
 F77 = @F77@
 FFLAGS = @FFLAGS@
 FLIBS = @FLIBS@
+HAVE_IFPACK_TEUCHOS_FALSE = @HAVE_IFPACK_TEUCHOS_FALSE@
+HAVE_IFPACK_TEUCHOS_TRUE = @HAVE_IFPACK_TEUCHOS_TRUE@
 HAVE_MPI_FALSE = @HAVE_MPI_FALSE@
 HAVE_MPI_TRUE = @HAVE_MPI_TRUE@
 INSTALL_DATA = @INSTALL_DATA@
@@ -215,7 +217,7 @@ target_alias = @target_alias@
 target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
-SUBDIRS = CrsRiluk IlukGraph scripts
+SUBDIRS = CrsRiluk IlukGraph SetParameters scripts
 all: all-recursive
 
 .SUFFIXES:

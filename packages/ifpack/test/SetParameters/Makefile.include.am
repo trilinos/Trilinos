@@ -26,4 +26,18 @@
 # ************************************************************************
 #@HEADER
 
-SUBDIRS = CrsRiluk IlukGraph SetParameters scripts
+EXEEXT = .exe
+
+noinst_PROGRAMS = SetParameters
+
+SetParameters_SOURCES = $(srcdir)/cxx_main.cpp
+
+SetParameters_DEPENDENCIES = $(top_builddir)/src/libifpack.a
+
+SetParameters_CXXFLAGS = -I$(top_srcdir)/src \
+	$(IFPACK_INCLUDES)
+
+#Unsure why this test need to link to the BLAS on an IBM.
+SetParameters_LDADD = $(IFPACK_LIBS) \
+	$(LIBS) $(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS)
+

@@ -1,0 +1,10 @@
+
+@HAVE_IFPACK_TEUCHOS_TRUE@TEUCHOS_INCLUDES= -I$(top_builddir)/../teuchos/src -I$(top_srcdir)/../teuchos/src
+@HAVE_IFPACK_TEUCHOS_TRUE@TEUCHOS_LIB= $(top_builddir)/../teuchos/src/libteuchos.a
+
+IFPACK_INCLUDES= -I$(top_builddir)/src -I$(top_srcdir)/src \
+	-I$(top_builddir)/../epetra/src -I$(top_srcdir)/../epetra/src \
+	-I$(top_builddir)/../aztecoo/src -I$(top_srcdir)/../aztecoo/src $(TEUCHOS_INCLUDES)
+
+IFPACK_LIBS= $(top_builddir)/src/libifpack.a \
+	$(top_builddir)/../epetra/src/libepetra.a $(TEUCHOS_LIB)

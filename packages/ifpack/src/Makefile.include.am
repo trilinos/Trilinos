@@ -53,8 +53,7 @@ UTIL_H = \
 ### Should I add a dependence on AztecOO??  Library doesn't necessarily have
 ### to be built - just need some headers???
 
-AM_CPPFLAGS =-I$(top_srcdir)/../aztecoo/src -I$(top_builddir)/../aztecoo/src \
-	-I$(top_srcdir)/../epetra/src -I$(top_builddir)/../epetra/src 
+AM_CPPFLAGS = $(IFPACK_INCLUDES)
 
 SERIAL_H = 
 
@@ -101,14 +100,16 @@ COMP_H = \
 	$(srcdir)/Ifpack_CrsRiluk.h \
 	$(srcdir)/Ifpack_ScalingType.h \
 	$(srcdir)/Ifpack_CrsIct.h \
-	$(srcdir)/icrout_cholesky_mex.h
+	$(srcdir)/icrout_cholesky_mex.h \
+	$(srcdir)/ifp_parameters.h
 
 COMP = \
 	$(srcdir)/Ifpack_IlukGraph.cpp \
 	$(srcdir)/Ifpack_CrsRiluk.cpp \
 	$(srcdir)/Ifpack_CrsIct.cpp \
 	$(srcdir)/icrout_cholesky_mex.c \
-	$(srcdir)/icrout_quicksort.c
+	$(srcdir)/icrout_quicksort.c \
+	$(srcdir)/ifp_parameters.cpp
 
 
 # ------------------------------------------------------------------------

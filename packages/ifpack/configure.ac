@@ -214,6 +214,23 @@ AC_CXX_STD_SPRINTF
 
 ### fill in ifdefs here - EPETRA_MPI, DEBUG, CRAY, COMPLEX_SUPPORT
 
+# The following section is required to decide if the Ifpack ParameterList
+# interface should be built.
+AC_ARG_ENABLE(ifpack-teuchos,
+ [AC_HELP_STRING([--enable-ifpack-teuchos],[Enable Ifpack Teuchos::ParameterList interface. Default is no. Requires Teuchos package.])],
+ ac_cv_use_ifpack_teuchos=$enableval, ac_cv_use_ifpack_teuchos=no)
+
+AC_MSG_CHECKING(whether to use ifpack-teuchos)
+
+if test "X$ac_cv_use_ifpack_teuchos" != "Xno"; then
+  AC_MSG_RESULT(yes)
+  AC_DEFINE([HAVE_IFPACK_TEUCHOS],,[Define if you want to build Ifpack's ParameterList interface])
+else
+ AC_MSG_RESULT(no)
+fi
+
+AM_CONDITIONAL(HAVE_IFPACK_TEUCHOS, [test "X$ac_cv_use_ifpack_teuchos" != "Xno"])
+
 # ------------------------------------------------------------------------
 # Checks if tests should be built
 # ------------------------------------------------------------------------
@@ -318,10 +335,14 @@ AC_SUBST(ac_aux_dir)
 
 AC_CONFIG_FILES([
 		Makefile 
+                Makefile.export
 		src/Makefile
+		src/Makefile.include
 		test/Makefile
 		test/CrsRiluk/Makefile
 		test/IlukGraph/Makefile
+		test/SetParameters/Makefile
+		test/SetParameters/Makefile.include
 		test/scripts/Makefile
           test/scripts/daily/Makefile
           test/scripts/daily/mpi/Makefile
