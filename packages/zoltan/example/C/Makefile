@@ -6,7 +6,7 @@ CEXAMPLES = zoltanSimple zoltanExample1
 all:    $(CEXAMPLES)
 
 % : %.c ../lib/libexzoltan.a 
-	$(CC) -o $@ $(INCLUDE) $(LIBDIR) $< $(LIBS)
+	$(CC) $(CFLAGS) -o $@ $(INCLUDE) $(LIBDIR) $< $(LIBS)
 
 ../lib/libexzoltan.a:
 	cd ..; $(MAKE) exampleLibrary

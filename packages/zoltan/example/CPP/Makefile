@@ -6,7 +6,7 @@ EXAMPLES = zCPPExample1 zCPPExample2
 all:    $(EXAMPLES)
 
 % : %.cpp ../lib/libexzoltan.a 
-	$(CC) -o $@ $(INCLUDE) $(LIBDIR) $< $(LIBS)
+	$(CC) $(CFLAGS) -o $@ $(INCLUDE) $(LIBDIR) $< $(LIBS)
 
 ../lib/libexzoltan.a:
 	cd ..; $(MAKE) exampleLibrary
