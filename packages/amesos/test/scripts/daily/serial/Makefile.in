@@ -92,17 +92,22 @@ ac_aux_dir = @ac_aux_dir@
 am__include = @am__include@
 am__quote = @am__quote@
 install_sh = @install_sh@
-noinst_PROGRAMS = TestAmesosSerial
 
-TestAmesosSerial_SOURCES = $(srcdir)/TestAmesosSerial
+@HAVE_AMESOS_SLUS_TRUE@SLUS_TEST = TestAmesosSerial
+@HAVE_AMESOS_SLUS_FALSE@SLUS_TEST = 
+
+noinst_PROGRAMS = $(SLUS_TEST)
+
+@HAVE_AMESOS_SLUS_TRUE@TestAmesosSerial_SOURCES = $(srcdir)/TestAmesosSerial
 subdir = test/scripts/daily/serial
 mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/Amesos_config.h
 CONFIG_CLEAN_FILES =
-noinst_PROGRAMS = TestAmesosSerial$(EXEEXT)
+@HAVE_AMESOS_SLUS_TRUE@noinst_PROGRAMS = TestAmesosSerial$(EXEEXT)
+@HAVE_AMESOS_SLUS_FALSE@noinst_PROGRAMS =
 PROGRAMS = $(noinst_PROGRAMS)
 
-am_TestAmesosSerial_OBJECTS =
+@HAVE_AMESOS_SLUS_TRUE@am_TestAmesosSerial_OBJECTS =
 TestAmesosSerial_OBJECTS = $(am_TestAmesosSerial_OBJECTS)
 TestAmesosSerial_LDADD = $(LDADD)
 TestAmesosSerial_DEPENDENCIES =
@@ -133,6 +138,9 @@ Makefile: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.in  $(top_builddir)/config.s
 
 clean-noinstPROGRAMS:
 	-test -z "$(noinst_PROGRAMS)" || rm -f $(noinst_PROGRAMS)
+@HAVE_AMESOS_SLUS_FALSE@TestAmesosSerial$(EXEEXT): $(TestAmesosSerial_OBJECTS) $(TestAmesosSerial_DEPENDENCIES) 
+@HAVE_AMESOS_SLUS_FALSE@	@rm -f TestAmesosSerial$(EXEEXT)
+@HAVE_AMESOS_SLUS_FALSE@	$(LINK) $(TestAmesosSerial_LDFLAGS) $(TestAmesosSerial_OBJECTS) $(TestAmesosSerial_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT) core *.core
@@ -246,8 +254,8 @@ uninstall-am: uninstall-info-am
 	uninstall-info-am
 
 
-TestAmesosSerial$(EXEEXT): $(srcdir)/TestAmesosSerial
-	cp $(srcdir)/TestAmesosSerial TestAmesosSerial$(EXEEXT) 
+@HAVE_AMESOS_SLUS_TRUE@TestAmesosSerial$(EXEEXT): $(srcdir)/TestAmesosSerial
+@HAVE_AMESOS_SLUS_TRUE@	cp $(srcdir)/TestAmesosSerial TestAmesosSerial$(EXEEXT) 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

@@ -292,7 +292,7 @@ case "$target" in
       CXXFLAGS="-tweak ${CXXFLAGS}"
     fi
   ;;
-fi
+esac
 
 
 
