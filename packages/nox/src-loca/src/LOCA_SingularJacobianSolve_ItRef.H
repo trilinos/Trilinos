@@ -39,7 +39,30 @@ namespace LOCA {
 
   namespace SingularJacobianSolve {
 
-    //! This class computes the solution to \f$J x = b\f$ using iterative refinement.
+    /*! 
+     * \brief This class computes the solution to \f$J x = b\f$ using 
+     * one step of iterative refinement.
+     */
+    /*!
+     * This singular solve method uses one step of iterative refinement to
+     * improve the accuracy of the solution to the linear system 
+     * \f$J x = b\f$.  In particular, the algorithm used here is
+      * \f[
+     *   \begin{aligned}
+     *     &\text{Solve}\; Jx_1 = b \\
+     *     &r = b - Jx_1 \\
+     *     &\text{Solve}\; Jx_2 = r \\
+     *     &x = x_1 + x_2
+     *   \end{aligned}
+     * \f]
+     * Both solves use the underlying group's applyJacobianInverse() method 
+     * and therefore this is a generic technique for computing solutions to 
+     * nearly singular system since it uses any supplied linear solver.  
+
+     * This algorithm is selected by setting the "Method" parameter of the 
+     * "Singular Solve" sublist of the NOX linear solver parameter list to 
+     * "Iterative Refinement".
+     */
     class ItRef : public LOCA::SingularJacobianSolve::Generic {
 
     public:

@@ -50,10 +50,10 @@ namespace LOCA {
       <li> "Method" - Name of the singular jacobian solve method. 
            Valid choices are
       <ul> 
-      <li> "%Default" (LOCA::SingularJacobianSolve::Default) [Default]
-      <li> "%Nic" (LOCA::SingularJacobianSolve::Nic) 
-      <li> "%Nic-Day" (LOCA::SingularJacobianSolve::NicDay) 
-      <li> "%Iterative Refinement" (LOCA::SingularJacobianSolve::ItRef) 
+      <li> "Default" (LOCA::SingularJacobianSolve::Default) [Default]
+      <li> "Nic" (LOCA::SingularJacobianSolve::Nic) 
+      <li> "Nic-Day" (LOCA::SingularJacobianSolve::NicDay) 
+      <li> "Iterative Refinement" (LOCA::SingularJacobianSolve::ItRef) 
       </ul>
       </ul>
     */  

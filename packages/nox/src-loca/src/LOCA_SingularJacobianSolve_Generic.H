@@ -49,8 +49,9 @@ namespace LOCA {
     
     //! %Generic singular jacobian solve interface.
     /*! 
-      %Generic interface for solving \f$Jx=b\f$ when \f$J\f$ is (nearly) 
-      singular.
+     * %Generic interface for solving \f$Jx=b\f$ when \f$J\f$ is (nearly) 
+     * singular.  All classes the implement a method for computing solutions
+     * to nearly singular systems should be derived from this class.
     */
     class Generic {
 

@@ -41,8 +41,9 @@ namespace LOCA {
 
     //! %Default singular Jacobian solve computation class
     /*! 
-      This class computes the solution to \f$J x = b\f$ using the 
-      applyJacobianInverse method of the group.
+     * This class computes the solution to \f$J x = b\f$ using the 
+     * applyJacobianInverse method of the underlying group ignoring the
+     * null vector data.
     */
     class Default : public LOCA::SingularJacobianSolve::Generic {
 
