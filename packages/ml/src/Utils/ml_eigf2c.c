@@ -61,7 +61,11 @@ int ml_pdneupc__(int *comm,
     /* Local variables */
     static logical rvec;
     static integer i__;
-    /* static doublereal sigma, mu; */
+
+#if defined(HAVE_ML_ARPACK) || defined(HAVE_ML_PARPACK)
+    static doublereal sigma, mu; 
+#endif
+
     static logical *select;
 
     /* Parameter adjustments */
@@ -115,8 +119,8 @@ int ml_pdneupc__(int *comm,
 #else
 #ifdef HAVE_ML_ARPACK    
     
-    dneupd_(&rvec, "A", select, &d__[1], &d__[*ncv + 1], &v[v_offset], ldv, &
-	    sigma, &mu, &workev[1], bmat, n, which, nev, tol, &resid[1], ncv, 
+    dneupd_(&rvec, "A", select, &d__[1], &d__[*ncv + 1], &v[v_offset], ldv, 
+	    &sigma, &mu, &workev[1], bmat, n, which, nev, tol, &resid[1], ncv, 
 	    &v[v_offset], ldv, &iparam[1], &ipntr[1], &workd[1], &workl[1], 
 	    lworkl, ierr, (ftnlen)1, (ftnlen)1, (ftnlen)2);
    
