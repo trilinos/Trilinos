@@ -12,18 +12,13 @@ Poisson2d_SOURCES = $(srcdir)/cxx_main.cpp $(srcdir)/Poisson2dOperator.cpp \
 
 Poisson2d_CXXFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/../epetra/src \
 	-I$(top_srcdir)/../triutils/src -I$(top_builddir)/../epetra/src \
-	-I$(top_builddir)/../triutils/src -I$(top_builddir)/../ifpack/src \
-	-I$(top_srcdir)/../ifpack/src
+	-I$(top_builddir)/../triutils/src
 
 if BUILD_Y12M
 REFERENCE_Y12M_LIBS=-L$(top_builddir)/../../external/y12m -ly12m
 endif
 
-if BUILD_OLDIFPACK
-OLDIFPACK_LIBS=-L$(top_builddir)/../ifpack/src -lifpack
-endif 
-
-Poisson2d_LDADD = -L$(top_builddir)/src -laztecoo $(OLDIFPACK_LIBS) \
+Poisson2d_LDADD = -L$(top_builddir)/src -laztecoo \
 	-L$(top_builddir)/../epetra/src -lepetra $(REFERENCE_Y12M_LIBS) \
 	$(LAPACK_LIBS) $(BLAS_LIBS) $(LIBS) $(FLIBS)
 

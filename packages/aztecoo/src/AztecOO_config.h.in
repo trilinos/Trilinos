@@ -104,6 +104,9 @@
 /* Define if you have the <sys/time.h> header file. */
 #undef HAVE_SYS_TIME_H
 
+/* Define if want to build triutils */
+#undef HAVE_TRIUTILS
+
 /* Define if you have the `uname' function. */
 #undef HAVE_UNAME
 
