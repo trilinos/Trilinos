@@ -22,7 +22,7 @@ my $teuchos_makefile = "${TrilinosBuild}/packages/teuchos/src/Makefile";
 my $cmnd =
 "grep '^CC =' ${teuchos_makefile} ; "
 ."grep '^CXX =' ${teuchos_makefile} ; "
-."grep '^libteuchos_a_AR =' ${teuchos_makefile} ; "
+."grep '^F77 =' ${teuchos_makefile} ; "
 ."grep '^CXXLD =' ${teuchos_makefile} ; "
 ."grep '^DEFS =' ${teuchos_makefile} ; "
 ."grep '^CPPFLAGS =' ${teuchos_makefile} ; "
@@ -35,6 +35,9 @@ my $cmnd =
 ."grep '^BLAS_LIBS =' ${teuchos_makefile} ; "
 ."grep '^LAPACK_LIBS =' ${teuchos_makefile} ; "
 ."grep '^prefix =' ${teuchos_makefile} ; "
+."grep '^AR =' ${teuchos_makefile} ; "
+."grep '^ALTERNATE_AR =' ${teuchos_makefile} ; "
+."grep '^libteuchos_a_AR =' ${teuchos_makefile} ; "
 ."grep '^RANLIB =' ${teuchos_makefile} "
 ;
 
