@@ -3,7 +3,7 @@
 # This C-shell script runs all the test examples 
 # and compares the results against pre-computed results.
 #
-# Usage: run_tests [-arch arch-type] [-cmd command]
+# Usage: run_tests [-arch arch-type] [-cmd command] 
 #
 # where arch-type is one of {sun, sunos, smos, tflop, cplant}.
 # Alternatively, give a run command with the -cmd option.
@@ -13,11 +13,12 @@
 
 # Chaco problems to run, ordered by increasing size/difficulty
 set ch_name = (simple nograph vwgt grid20x19 film hammond)
-set ch_nproc = (4 4 3 5 6 8)
+set ch_nproc = (4 4 3 5 6 8) # no. of procs
 
-# Nemesis problems to run 
-set nem_name = (box_064-m5-r ti_300 ti_4k ti_20k)
-set nem_nproc = (5 6 9 36)
+# Nemesis problems to run  
+set nem_name = (box_064 ti_300 ti_4k)
+set nem_nproc = (5 6 9) # no. of procs
+set nem_pdisk = (1 2 2) # parallel disk info
 
 # Set default options
 @ no_chaco = 0
@@ -41,10 +42,14 @@ endif
 
 while ( $#argv )
 
-  if ( $1 == "-no_parmetis" ) then
+  if ( ($1 == "-h") || ($1 == "-help") ) then
+     goto usage
+  else if ( $1 == "-no_parmetis" ) then
      @ no_parmetis = 1
-  else if ( $1 == "-no_nemesis" ) then
-     @ no_nemesis = 1
+  else if ( $1 == "-no_parmetis" ) then
+     @ no_parmetis = 1
+  else if ( $1 == "-no_chaco" ) then
+     @ no_chaco = 1
   else if ( $1 == "-arch" ) then
   
     # Determine what command to use to launch a parallel program
@@ -180,10 +185,12 @@ if (! $no_chaco ) then
         endif
   
   
-        # Add problem to failure list if it failed
+        # Report success or failure 
         if ( $fail ) then
           @ nfailed = $nfailed + 1
-          echo "Test problem ${ch_name[1]} failed with method ${mtd}." | tee -a ../$outfile
+          echo "Test problem ${ch_name[1]} with method ${mtd} FAILED" | tee -a ../$outfile
+        else
+          echo "Test problem ${ch_name[1]} with method ${mtd} OK" | tee -a ../$outfile 
         endif
 
       endif # !skip
@@ -212,9 +219,96 @@ endif # chaco
 
 # Loop over Nemesis problems
 if (! $no_nemesis ) then
-  echo "Script for Nemesis problems not finished yet."
-endif # nemesis
+  @ nprob = $#nem_name
+  @ nfailed = 0
+  while ( $#nem_name )
 
+    # Go to the next test directory, initialize
+    cd nem_${nem_name[1]}
+    @ np = $nem_nproc[1]
+    echo "Running test case ${nem_name[1]} on ${nem_nproc[1]} procs" | tee -a ../$outfile
+
+    # Check output directories 
+    if (! -d $outdir ) mkdir $outdir
+    if (! -d $answers ) then
+      echo "Warning: Answer directory missing in nem_${nem_name[1]}" | tee -a ../$outfile
+    endif
+
+    # Save input file 
+    if (-e zdrive.inp ) mv zdrive.inp zdrive.inp.bak
+
+    # Loop over all methods
+    foreach mtd ( $nem_methods )
+      # Clear fail flag
+      @ fail = 0
+      @ skip = 0
+
+      if (! $skip ) then
+
+        # Check input file
+        if (-e zdrive.inp.${mtd} ) then
+          cp zdrive.inp.${mtd} zdrive.inp
+    
+          # Run the driver
+          $run $np ../$zdrive
+    
+          # Save and compare output files 
+          @ i = 0
+          @ pdirno = 1 # parallel subdirectory number
+          while ( $i < $np )
+            if ( $pdirno < 10 ) then
+               set pdir = pio_0${pdirno}
+            else
+               set pdir = pio_${pdirno}
+            endif
+            mv ${pdir}/${nem_name[1]}-m${np}-r.par.out.$np.$i  ${outdir}/${nem_name[1]}.$mtd.$np.$i
+            diff -c ${outdir}/${nem_name[1]}.$mtd.$np.$i ${answers}/${nem_name[1]}.$mtd.$np.$i >> ../$outfile
+            if ( $status ) then 
+              @ fail = 1
+            endif
+            @ i = $i + 1
+            @ pdirno = $pdirno + 1
+            if ($pdirno > $nem_pdisk[1]) then
+               @ pdirno = 1
+            endif
+          end
+    
+        else
+          echo "Warning: No input file ${nem_name[1]}/zdrive.inp.${mtd}, skipping..." | tee -a ../$outfile
+        endif
+  
+        # Report success or failure 
+        if ( $fail ) then
+          @ nfailed = $nfailed + 1
+          echo "Test problem ${nem_name[1]} with method ${mtd} FAILED" | tee -a ../$outfile
+        else
+          echo "Test problem ${nem_name[1]} with method ${mtd} OK" | tee -a ../$outfile 
+        endif
+
+      endif # !skip
+
+    end # foreach method
+
+    # Restore zdrive.inp
+    if (-e zdrive.inp.bak ) mv zdrive.inp.bak zdrive.inp
+
+    # Shift list arguments and return to original directory
+    shift nem_name
+    shift nem_nproc
+    shift nem_pdisk
+    cd ..
+  end
+  
+  # Print failure summary
+  echo " " | tee -a $outfile
+  if ( $nfailed == 0 ) then
+    echo "Success: all Nemesis problems passed." | tee -a $outfile
+  else
+    echo "Failure: $nfailed Nemesis problems failed." | tee -a $outfile
+  endif
+  echo " " | tee -a $outfile
+
+endif # Nemesis
 
 # Exit successfully
 exit 0
@@ -225,7 +319,9 @@ usage:
   echo "where arch-type is one of {sun, sunos, smos, tflop, cplant}."
   echo "Either -arch or -cmd must be specified."
   echo "Other options:"
-  echo "   -no_nemesis"
   echo "   -no_parmetis"
+  echo "   -no_nemesis"
+  echo "   -no_chaco"
+  echo "The default is to run all methods and file formats."
   exit -1
 
