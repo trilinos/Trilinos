@@ -1217,7 +1217,6 @@ int ML_Operator_ImplicitTranspose(ML_Operator *Rmat,
 				Pmat->data, -1, cCSR_trans_matvec, 0);
 
   Rmat->getrow->internal = NULL;
-  Rmat->getrow->external = NULL;
   Rmat->data_destroy = NULL;
   return 0;
 }

@@ -54,7 +54,6 @@ int ML_Operator_Init( ML_Operator *mat, ML_Comm *comm)
    mat->matvec->ML_id    = ML_EMPTY;
    mat->matvec->Nrows    = 0;
    mat->matvec->internal = NULL;
-   mat->matvec->external = NULL;
    mat->lambda_max       = -666.666;
    mat->lambda_max_img   = 0.0;
    mat->lambda_min       = -666.666;
@@ -65,7 +64,6 @@ int ML_Operator_Init( ML_Operator *mat, ML_Comm *comm)
    mat->getrow->pre_comm         = NULL;
    mat->getrow->post_comm        = NULL;
    mat->getrow->internal         = NULL;
-   mat->getrow->external         = NULL;
    mat->getrow->data             = NULL;
    mat->getrow->use_loc_glob_map = ML_NO;
    mat->getrow->loc_glob_map     = NULL;
@@ -230,13 +228,11 @@ int ML_Operator_halfClone_Init(ML_Operator *mat,
    mat->matvec->ML_id    = original->matvec->ML_id;
    mat->matvec->Nrows    = original->matvec->Nrows;
    mat->matvec->internal = original->matvec->internal;
-   mat->matvec->external = original->matvec->external;
    mat->getrow->ML_id            = original->getrow->ML_id;
    mat->getrow->Nrows            = original->getrow->Nrows;
    mat->getrow->pre_comm         = original->getrow->pre_comm;
    mat->getrow->post_comm        = original->getrow->post_comm;
    mat->getrow->internal         = original->getrow->internal;
-   mat->getrow->external         = original->getrow->external;
    mat->getrow->data             = original->getrow->data;
    mat->getrow->use_loc_glob_map = original->getrow->use_loc_glob_map;
    mat->getrow->loc_glob_map     = original->getrow->loc_glob_map;
@@ -971,7 +967,6 @@ int ML_Operator_AmalgamateAndDropWeak(ML_Operator *Amat, int block_size,
      Amat->getrow->pre_comm         = NULL;
      Amat->getrow->post_comm        = NULL;
      Amat->getrow->internal         = NULL;
-     Amat->getrow->external         = NULL;
      Amat->getrow->data             = NULL;
      Amat->getrow->use_loc_glob_map = ML_NO;
      Amat->getrow->loc_glob_map     = NULL;

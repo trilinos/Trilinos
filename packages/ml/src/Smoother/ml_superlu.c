@@ -794,8 +794,6 @@ int nblocks = 1, *block_list, old_upper = 0, count, newptr, me, nnzs;
    getrow_flag = 0;
    if ( op->getrow->internal != NULL ) {
       getrow_flag = 1; 
-   } else if ( op->getrow->external != NULL ) {
-      getrow_flag = 2; 
    } else {
       printf("ML_Gen_CoarseSolverSuperLU error : no getrow function.\n");
       exit(-1);
@@ -811,14 +809,8 @@ int nblocks = 1, *block_list, old_upper = 0, count, newptr, me, nnzs;
       row_ptr[0] = nz_ptr;
       flag = 1;
       for (i = 0; i < osize; i++) {
-         if ( getrow_flag == 1 ) {
-            flag = op->getrow->internal((void*)op, 1, &i, space-nz_ptr, 
+	flag = op->getrow->internal((void*)op, 1, &i, space-nz_ptr, 
                               &(cols[nz_ptr]), &(vals[nz_ptr]), &length);
-         } else {
-            flag = op->getrow->external(data, 1, &i, space-nz_ptr, 
-                               &(cols[nz_ptr]), &(vals[nz_ptr]), &length);
-         }
-
          if (flag == 0) break;
          zero_flag = 1;
          for (j = 0; j < length; j++)
@@ -1059,8 +1051,6 @@ int nblocks = 1, *block_list, old_upper = 0, count, newptr, me, nnzs;
    getrow_flag = 0;
    if ( op->getrow->internal != NULL ) {
       getrow_flag = 1;
-   } else if ( op->getrow->external != NULL ) {
-      getrow_flag = 2;
    } else {
       printf("ML_Gen_CoarseSolverSuperLU error : no getrow function.\n");
       exit(-1);
@@ -1076,13 +1066,8 @@ int nblocks = 1, *block_list, old_upper = 0, count, newptr, me, nnzs;
       row_ptr[0] = nz_ptr;
       flag = 1;
       for (i = 0; i < osize; i++) {
-         if ( getrow_flag == 1 ) {
-            flag = op->getrow->internal((void*)op, 1, &i, space-nz_ptr,
+	flag = op->getrow->internal((void*)op, 1, &i, space-nz_ptr,
                               &(cols[nz_ptr]), &(vals[nz_ptr]), &length);
-         } else {
-            flag = op->getrow->external(data, 1, &i, space-nz_ptr,
-                               &(cols[nz_ptr]), &(vals[nz_ptr]), &length);
-         }
          if (flag == 0) break;
          nz_ptr += length;
          row_ptr[i+1] = nz_ptr;

@@ -155,14 +155,8 @@ int ML_Aggregate_CoarsenCoupledVBlock( ML_Aggregate *ml_ag,
    /* ============================================================= */
 
    getrow_obj = Amatrix->getrow;
-   if (getrow_obj->ML_id == ML_EXTERNAL) {
-     getrowfunc = getrow_obj->external;
-     getrowdata = Amatrix->data;
-   }
-   else {
-     getrowfunc = getrow_obj->internal;
-     getrowdata = (void *) Amatrix;
-   }
+   getrowfunc = getrow_obj->internal;
+   getrowdata = (void *) Amatrix;
    if ( getrowfunc == NULL )
    {
       printf("ML_Aggregate_CoarsenCoupledVBlock ERROR : null getrowfunc.\n");

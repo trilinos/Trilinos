@@ -6458,7 +6458,6 @@ int DinvA(ML_Operator *data,  int in, double p[], int out, double ap[])
 
   Amat->matvec->ML_id    = DinvA_widget->ML_id;
   Amat->matvec->internal = DinvA_widget->internal;
-  Amat->matvec->external = DinvA_widget->external;
   Amat->data             = DinvA_widget->data;
   
   ML_Operator_Apply(Amat, in, p, out, ap);
@@ -6555,7 +6554,6 @@ int ML_Smoother_MLS_Apply(ML_Smoother *sm,int inlen,double x[],int outlen,
 
    DinvA_widget.ML_id = Amat->matvec->ML_id;
    DinvA_widget.internal = Amat->matvec->internal;
-   DinvA_widget.external = Amat->matvec->external;
    DinvA_widget.data     = Amat->data;
    DinvA_widget.Amat     = Amat;
    Amat->matvec->ML_id    = ML_INTERNAL;
@@ -6614,7 +6612,6 @@ int ML_Smoother_MLS_Apply(ML_Smoother *sm,int inlen,double x[],int outlen,
 #ifdef RST_MODIF
        Amat->matvec->ML_id    = DinvA_widget.ML_id;
        Amat->matvec->internal = DinvA_widget.internal;
-       Amat->matvec->external = DinvA_widget.external;
        Amat->data             = DinvA_widget.data;
 #endif
        return 0;
@@ -6646,7 +6643,6 @@ int ML_Smoother_MLS_Apply(ML_Smoother *sm,int inlen,double x[],int outlen,
 #ifdef RST_MODIF
    Amat->matvec->ML_id    = DinvA_widget.ML_id;
    Amat->matvec->internal = DinvA_widget.internal;
-   Amat->matvec->external = DinvA_widget.external;
    Amat->data             = DinvA_widget.data;
 #endif
    return 0;
