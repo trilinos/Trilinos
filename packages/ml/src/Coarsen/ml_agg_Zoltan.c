@@ -538,6 +538,7 @@ End:
   puts("you must configure ml with Zoltan support, using");
   puts("parameter --with-ml_zoltan in your configuration line");
   exit(EXIT_FAILURE);
+  return 0;
 #endif
   
 } /* ML_DecomposeGraph_with_Zoltan */
