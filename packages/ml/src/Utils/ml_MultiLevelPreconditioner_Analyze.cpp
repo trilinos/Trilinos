@@ -60,6 +60,102 @@ static void MLP_print(int count, char * str, double status[AZ_STATUS_SIZE], doub
 }
 
 // ============================================================================
+// vector must hold space for external nodes too
+void ML_Epetra::MultiLevelPreconditioner::SmoothnessFactor(ML_Operator* Op,
+							   double* vector,
+							   double* S_F)
+{
+  double* SF = new double[NumPDEEqns_];
+  for (int eq = 0 ; eq < NumPDEEqns_ ; ++eq)
+    SF[eq] = 0.0;
+ 
+  int allocated = 10;
+
+  int* colInd = new int[allocated];
+  double* colVal = new double[allocated];
+  int NumNonzeros;
+
+  // update external nodes
+  ML_exchange_bdry(vector,Op->getrow->pre_comm,
+		   Op->invec_leng,Op->comm,ML_OVERWRITE,NULL);
+
+  // cycle over all rows
+  for (int i = 0 ; i < Op->invec_leng ; ++i) {
+
+    // get nonzero elements
+    int ierr = ML_Operator_Getrow(Op,1,&i,allocated,colInd,colVal,&NumNonzeros);
+
+    if( ierr == 0 ) {
+      do {
+	delete [] colInd;
+	delete [] colVal;
+	
+	allocated *= 2;
+	colInd = new int[allocated];
+	colVal = new double[allocated];
+
+	ierr = ML_Operator_Getrow(Op,1,&i,allocated,colInd,colVal,&NumNonzeros);
+      } while( ierr == 0 );
+    }
+
+    // compute the smoothness factor for this row
+    for (int j = 0 ; j < NumNonzeros ; ++j) {
+      double val = vector[i] - vector[colInd[j]];
+      SF[i % NumPDEEqns_] += val * val;
+    }
+    
+  } // for each row of Op
+
+  delete [] colInd;
+  delete [] colVal;
+   
+  Comm().SumAll(SF,S_F,NumPDEEqns_);
+
+  for (int eq = 0 ; eq < NumPDEEqns_ ; ++eq)
+    S_F[eq] = sqrt(S_F[eq]);
+
+  return;
+}
+
+  
+// ============================================================================
+void ML_Epetra::MultiLevelPreconditioner::VectorNorms(double* vector, 
+						      int size, 
+						      double* L_inf, 
+						      double* L_2)
+{
+ 
+  double* Linf = new double[NumPDEEqns_];
+  double* L2   = new double[NumPDEEqns_];
+
+  for (int i = 0 ; i < NumPDEEqns_ ; ++i) {
+    Linf[i] = 0.0;
+    L2[i] = 0.0;
+  }
+
+  for (int i = 0 ; i < size ; ++i) {
+    // Linf norm 
+    if (abs(vector[i]) > Linf[i % NumPDEEqns_]) 
+      Linf[i % NumPDEEqns_] = abs(vector[i]);
+    // L2 norm
+    L2[i % NumPDEEqns_] += vector[i] * vector[i];
+  }
+
+  Comm().SumAll(Linf,L_inf,NumPDEEqns_);
+  Comm().SumAll(L2,L_2,NumPDEEqns_);
+
+  for (int eq = 0 ; eq < NumPDEEqns_ ; ++eq) {
+    L_inf[eq] = sqrt(L_inf[eq]);
+    L_2[eq] = sqrt(L_2[eq]);
+  }
+
+  delete [] Linf;
+  delete [] L2;
+
+  return;
+}
+
+// ============================================================================
 int ML_Epetra::MultiLevelPreconditioner::AnalyzeMatrix(char * Defaults, bool IsSymmetric)
 {
 
@@ -963,4 +1059,223 @@ void ML_Epetra::MultiLevelPreconditioner::AnalyzeMatrixProperties(char * Default
   return;
 
 }
+
+// ============================================================================
+// date: Aug-17
+int ML_Epetra::MultiLevelPreconditioner::AnalyzeSmoothers(int NumCycles)
+{
+
+  if (IsPreconditionerComputed() == false) 
+    return(-1); // need preconditioner to do this job
+
+  if( ml_ == 0 ) {
+    return(-2); // Does not work with Maxwell (yet)
+  }
+
+  double* before_Linf = new double[NumPDEEqns_];
+  double* before_L2   = new double[NumPDEEqns_];
+  double* after_Linf  = new double[NumPDEEqns_];
+  double* after_L2    = new double[NumPDEEqns_];
+  double* before_SF   = new double[NumPDEEqns_];
+  double* after_SF    = new double[NumPDEEqns_];
+
+  double * tmp_rhs = new double[NumMyRows()]; 
+  double * tmp_sol = new double[NumMyRows()]; 
+  
+  ML_Smoother* ptr;
+
+  if (Comm().MyPID() == 0) {
+    cout << endl;
+    cout << "Solving Ae = 0, with a random initial guess" << endl;
+    cout << "- number of cycle(s) = " << NumCycles << endl;
+    cout << "- all reported data are scaled with their value" << endl
+         << "  before the application of the solver" << endl;
+    cout << "  (0 == perfect solution, 1 == no effect)" << endl;
+    cout << "- SF is the smoothness factor" << endl;
+    cout << endl;
+    cout.width(40); cout.setf(ios::left); 
+    cout << "Solver";
+    cout.width(10); cout.setf(ios::left); 
+    cout << "Linf";
+    cout.width(10); cout.setf(ios::left); 
+    cout << " L2";
+    cout.width(10); cout.setf(ios::left); 
+    cout << " SF" << endl;
+  }
+
+  // =============================================================== //
+  // Cycle over all levels.                                          //
+  // =============================================================== //
+
+  for (int ilevel=0 ; ilevel<NumLevels_ - 1 ; ++ilevel) {
+
+    // ============ //
+    // pre-smoother //
+    // ============ //
+
+    ptr = ((ml_->SingleLevel[LevelID_[ilevel]]).pre_smoother);
+
+    if (ptr != NULL) {
+
+      RandomAndZero(tmp_sol, tmp_rhs,ml_->Amat[LevelID_[ilevel]].outvec_leng);
+      VectorNorms(tmp_sol, NumMyRows(), before_Linf, before_L2);
+      SmoothnessFactor(&(ml_->Amat[LevelID_[ilevel]]), tmp_sol, before_SF);
+
+      // increase the number of applications of the smoother
+      // and run the smoother
+      int old_ntimes = ptr->ntimes;
+      ptr->ntimes = NumCycles;
+      ML_Smoother_Apply(ptr, 
+			ml_->Amat[LevelID_[ilevel]].outvec_leng,
+			tmp_sol,
+			ml_->Amat[LevelID_[ilevel]].outvec_leng,
+			tmp_rhs, ML_NONZERO);
+      ptr->ntimes = old_ntimes;
+
+      VectorNorms(tmp_sol, NumMyRows(), after_Linf, after_L2);
+      SmoothnessFactor(&(ml_->Amat[LevelID_[ilevel]]), tmp_sol, after_SF);
+
+      if (Comm().MyPID() == 0) {
+	for (int eq = 0 ; eq < NumPDEEqns_ ; ++eq) {
+	  cout << "Presmoother  (level " << LevelID_[ilevel] 
+	       << ", eq " << eq << ")\t\t";
+	  cout.width(10); cout.setf(ios::left); 
+	  cout << after_Linf[eq] / before_Linf[eq];
+	  cout << ' ';
+	  cout.width(10); cout.setf(ios::left); 
+	  cout << after_L2[eq] / before_L2[eq];
+	  cout << ' ';
+	  cout.width(10); cout.setf(ios::left); 
+	  cout << after_SF[eq] / before_SF[eq] << endl;
+	}
+      }
+    }
+
+    // ============= //
+    // post-smoother //
+    // ============= //
+
+    ptr = ((ml_->SingleLevel[LevelID_[ilevel]]).post_smoother);
+    if (ptr != NULL) {
+
+      // random solution and 0 rhs
+      RandomAndZero(tmp_sol, tmp_rhs,ml_->Amat[LevelID_[ilevel]].outvec_leng);
+
+      VectorNorms(tmp_sol, NumMyRows(), before_Linf, before_L2);
+      SmoothnessFactor(&(ml_->Amat[LevelID_[ilevel]]), tmp_sol, before_SF);
+
+      // increase the number of applications of the smoother
+      // and run the smoother
+      int old_ntimes = ptr->ntimes;
+      ptr->ntimes = NumCycles;
+      ML_Smoother_Apply(ptr, 
+			ml_->Amat[LevelID_[ilevel]].outvec_leng,
+			tmp_sol,
+			ml_->Amat[LevelID_[ilevel]].outvec_leng,
+			tmp_rhs, ML_ZERO);
+      ptr->ntimes = old_ntimes;
+
+      VectorNorms(tmp_sol, NumMyRows(), after_Linf, after_L2);
+      SmoothnessFactor(&(ml_->Amat[LevelID_[ilevel]]), tmp_sol, after_SF);
+
+      if (Comm().MyPID() == 0) {
+	for (int eq = 0 ; eq < NumPDEEqns_ ; ++eq) {
+	  cout << "Postsmoother (level " << LevelID_[ilevel] 
+	       << ", eq " << eq << ")\t\t";
+	  cout.width(10); cout.setf(ios::left); 
+	  cout << after_Linf[eq] / before_Linf[eq];
+	  cout << ' ';
+	  cout.width(10); cout.setf(ios::left); 
+	  cout << after_L2[eq] / before_L2[eq];
+	  cout << ' ';
+	  cout.width(10); cout.setf(ios::left); 
+	  cout << after_SF[eq] / before_SF[eq] << endl;
+	}
+      }
+    } 
+  } // for( ilevel )
+
+  if (Comm().MyPID() == 0) 
+    cout << endl;
+
+  delete [] before_Linf;
+  delete [] after_Linf;
+  delete [] before_L2;
+  delete [] after_L2;
+  delete [] before_SF;
+  delete [] after_SF;
+
+  delete [] tmp_sol;
+  delete [] tmp_rhs;
+
+  return(0);
+
+}
+
+// ============================================================================
+// run ML cycle on a random vector
+// date: Aug-17
+int ML_Epetra::MultiLevelPreconditioner::AnalyzeCycle(int NumCycles)
+{
+
+  if (IsPreconditionerComputed() == false) 
+    return(-1); // need preconditioner to do this job
+
+  if( ml_ == 0 ) {
+    return(-2); // Does not work with Maxwell (yet)
+  }
+
+  double* before_Linf = new double[NumPDEEqns_];
+  double* before_L2   = new double[NumPDEEqns_];
+  double* after_Linf  = new double[NumPDEEqns_];
+  double* after_L2    = new double[NumPDEEqns_];
+  double* before_SF   = new double[NumPDEEqns_];
+  double* after_SF    = new double[NumPDEEqns_];
+
+  double * tmp_rhs = new double[NumMyRows()]; 
+  double * tmp_sol = new double[NumMyRows()]; 
+
+  // random solution and zero rhs
+  RandomAndZero(tmp_sol, tmp_rhs,ml_->Amat[LevelID_[0]].outvec_leng);
+
+  VectorNorms(tmp_sol, NumMyRows(), before_Linf, before_L2);
+  SmoothnessFactor(&(ml_->Amat[LevelID_[0]]), tmp_sol, before_SF);
+
+  // run the cycle
+  for (int i=0 ; i < NumCycles ; ++i) 
+    ML_Cycle_MG(&(ml_->SingleLevel[ml_->ML_finest_level]),
+		tmp_sol, tmp_rhs,
+		ML_NONZERO, ml_->comm, ML_NO_RES_NORM, ml_);
+
+  VectorNorms(tmp_sol, NumMyRows(), after_Linf, after_L2);
+  SmoothnessFactor(&(ml_->Amat[LevelID_[0]]), tmp_sol, after_SF);
+
+  if (Comm().MyPID() == 0) {
+    cout << endl;
+    cout << PrintMsg_ << "Solving Ae = 0, with a random initial guess" << endl;
+    cout << PrintMsg_ << "using " << NumCycles << " ML cycle(s)." << endl;
+    for (int i = 0 ; i < NumPDEEqns_ ; ++i) {
+      cout << "- (eq " << i << ") scaled Linf norm after application(s) = " 
+	<< after_Linf[i] / before_Linf[i] << endl;
+      cout << "- (eq " << i << ") scaled L2 norm after application(s)   = " 
+	<< after_L2[i] / before_L2[i] << endl;
+      cout << "- (eq " << i << ") scaled smoothness factor              = "
+	<< after_SF[i] / before_SF[i] << endl;
+      cout << endl;
+    }
+  }
+
+  delete [] before_Linf;
+  delete [] after_Linf;
+  delete [] before_L2;
+  delete [] after_L2;
+  delete [] before_SF;
+  delete [] after_SF;
+
+  delete [] tmp_sol;
+  delete [] tmp_rhs;
+
+  return(0);
+}
+
 #endif /*ifdef ML_WITH_EPETRA && ML_HAVE_TEUCHOS*/

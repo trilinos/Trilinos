@@ -535,6 +535,12 @@ public:
   //! Analyze the linear system matrix by testing several ML parameters
   int AnalyzeMatrix(char * Defaults, bool IsSymmetric = false);
   
+  //! Analyze the effect of the ML cycle on a random vector.
+  int AnalyzeCycle(const int NumCycles = 1);
+
+  //! Analyze the effect of each level's smoother on a random vector.
+  int AnalyzeSmoothers(const int NumCycles = 1);
+
   //@}
 
 private:
@@ -617,6 +623,10 @@ private:
   void AnalyzeMatrixEigenvaluesSparse(char * Defaults, bool IsSymmetric = false);
   void AnalyzeMatrixSmoothers(char * Defaults, bool IsSymmetric = false);
   void AnalyzeMatrixCoarsening(char * Defaults, bool IsSymmetric = false);
+
+  void VectorNorms(double*, int, double*,double*);
+
+  void SmoothnessFactor(ML_Operator* Op, double*, double*);
 
   //@}
 
