@@ -200,6 +200,37 @@ int MSR_getrows(void *data, int N_requested_rows, int requested_rows[],
   }
    return(1);
 }
+
+int MSR_get_ones_rows(void *data, int N_requested_rows, int requested_rows[],
+   int allocated_space, int columns[], double values[], int row_lengths[])
+{
+   int    *bindx, j, row, start, finish;
+   struct ML_CSR_MSRdata *input_matrix;
+
+  input_matrix = (struct ML_CSR_MSRdata *) data;
+  bindx  = input_matrix->columns;
+
+  row    = *requested_rows;
+  start  = bindx[row];
+  finish = bindx[row+1];
+  *row_lengths = finish - start + 1;
+  if (*row_lengths > allocated_space) return(0);
+
+  /* diagonal */
+
+  *columns++ = row;
+  *values++  = 1.;
+
+  /* off-diagonals */
+
+  bindx = &(bindx[start]);
+
+  for (j = start; j < finish; j++) {
+     *columns++ = *bindx++;
+     *values++  = 1.;
+  }
+   return(1);
+}
 #ifdef out
 int MSR_gxtrows(void *data, int N_requested_rows, int requested_rows[],
    int allocated_space, int columns[], double values[], int row_lengths[])
