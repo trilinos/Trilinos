@@ -1,11 +1,11 @@
-<HTML>
-<HEAD>
-   <META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-1">
-   <META NAME="GENERATOR" CONTENT="Mozilla/4.04 [en] (X11; U; SunOS 4.1.3_U1 sun4m) [Netscape]">
-   <META NAME="sandia.approved" CONTENT="SAND99-1376">
-   <META NAME="author" CONTENT="karen devine, kddevin@sandia.gov">
-
-   <TITLE> Zoltan Developer's Guide:  Parameter Setting Utilities</TITLE>
+<!doctype html public "-//w3c//dtd html 4.0 transitional//en">
+<html>
+<head>
+   <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+   <meta name="GENERATOR" content="Mozilla/4.7 [en] (X11; U; SunOS 5.7 sun4u) [Netscape]">
+   <meta name="sandia.approved" content="SAND99-1376">
+   <meta name="author" content="karen devine, kddevin@sandia.gov">
+   <title> Zoltan Developer's Guide:  Parameter Setting Utilities</title>
 <!
   ------------------------
   | CVS File Information |
@@ -15,237 +15,358 @@
   $Date$
   $Revision$
 >
+</head>
+<body bgcolor="#FFFFFF">
 
-</HEAD>
-<BODY BGCOLOR="#FFFFFF">
+<div ALIGN=right>
+<h3>
+<img SRC="figures/dev_header.gif" ALT="Zoltan Developer's Guide" ></h3></div>
 
-<DIV ALIGN=right>
-<H3>
-<IMG SRC="figures/dev_header.gif" ALT="Zoltan Developer's Guide" ></H3></DIV>
-
-<H2>
-<A NAME="Memory"></A>Parameter Setting Utilities</H2>
+<h2>
+<a NAME="Memory"></a>Parameter Setting Utilities</h2>
 Zoltan allows applications to change a number of parameter settings at
 runtime. This facility supports debugging by, for instance, allowing control
 over the type and quantity of output. It also allows users to modify some
 of the parameters that characterize the partitioning algorithms. The design
 of the parameter setting routines was driven by several considerations.
 First, we wanted to keep the user interface as simple as possible. Second,
-we wanted to allow different load-balancing structures to have different 
-parameter settings associated with them. This second consideration precluded the
-use of C's static global variables (except in a few special places). The
-parameter routines described below allow developers to provide runtime
-access to any appropriate variables. In some cases (e.g. <A HREF="dev_util_mem.html#Debug_Memory">MEMORY_DEBUG</A>)
+we wanted to allow different load-balancing structures to have different
+parameter settings associated with them. This second consideration precluded
+the use of C's static global variables (except in a few special places).
+The parameter routines described below allow developers to provide runtime
+access to any appropriate variables. In some cases (e.g. <a href="dev_util_mem.html#Debug_Memory">MEMORY_DEBUG</a>)
 it is appropriate to allow developers to tinker with parameters which will
 never be documented for users.
-
-<P>Our solution to parameter setting is to have a single interface routine
-<B><A HREF="#LB_Set_Param">LB_Set_Param</A></B>. This function calls a
-set of more domain-specific parameter setting routines, each of which is
-responsible for a domain-specific set of parameters. Assuming there are
-no errors, the parameter name and new value are placed in a linked list
-of new parameters which is maintained by the load-balancing structure. When
-a partitioning method is invoked on a load-balancing structure, it scans through
-this linked list using the <B><A HREF="#LB_Assign_Param_Vals">LB_Assign_Param_Vals</A></B>
+<p>Our solution to parameter setting is to have a single interface routine
+<b><a href="#LB_Set_Param">LB_Set_Param</a></b>.
+This function calls a set of more domain-specific parameter setting routines,
+each of which is responsible for a domain-specific set of parameters. Assuming
+there are no errors, the parameter name and new value are placed in a linked
+list of new parameters which is maintained by the load-balancing structure.
+When a partitioning method is invoked on a load-balancing structure, it
+scans through this linked list using the <b><a href="#LB_Assign_Param_Vals">LB_Assign_Param_Vals</a></b>
 function, resetting parameter values which are appropriate to the method.
-
-<P>The routines that control parameter setting are listed below.
-<BLOCKQUOTE><B><A HREF="#LB_Set_Param">LB_Set_Param</A></B>:&nbsp; User
+<p>The routines that control parameter setting are listed below.
+<blockquote><b><a href="#LB_Set_Param">LB_Set_Param</a></b>:&nbsp; User
 interface function which calls a set of method-specific routines.
-<BR><B><A HREF="#LB_Check_Param">LB_Check_Param</A></B>:&nbsp; Routine
+<br><b><a href="#LB_Check_Param">LB_Check_Param</a></b>:&nbsp; Routine
 to check if parameter name and value are OK.
-<BR><B><A HREF="#LB_Assign_Param_Vals">LB_Assign_Param_Vals</A></B>:&nbsp;
+<br><b><a href="#LB_Bind_Param">LB_Bind_Param</a></b>: Routine to associate
+a parameter name with a variable.
+<br><b><a href="#LB_Assign_Param_Vals">LB_Assign_Param_Vals</a></b>:&nbsp;
 Scans list of parameter names &amp; values, setting relevant parameters
-accordingly.</BLOCKQUOTE>
+accordingly.
+<br><b><a href="#LB_Free_Params">LB_Free_Params</a></b>: Frees a parameter
+list.</blockquote>
 
-<HR><A NAME="LB_Set_Param"></A>int <B>LB_Set_Param</B>(struct <B>LB_Struct</B>
-* <I>lb</I>, char * <I>param_name</I>, char * <I>new_val</I>);
-<BR>
-<HR>
-
-<P>The <B>LB_Set_Param</B> function is the user interface for parameter
+<hr><a NAME="LB_Set_Param"></a>int <b>LB_Set_Param</b>(struct <b>LB_Struct</b>
+* <i>lb</i>, char * <i>param_name</i>, char * <i>new_val</i>);
+<br>
+<hr>
+<p>The <b>LB_Set_Param</b> function is the user interface for parameter
 setting. It's principle purpose is to call a sequence of more domain-specific
-routines for setting domain-specific paramters (e.g. <B>LB_Set_RCB_Param</B>).
+routines for setting domain-specific paramters (e.g. <b>LB_Set_RCB_Param</b>).
 If you are adding parameters to Zoltan, you must write one of these domain-specific
-paramater routines and modify <B>LB_Set_Param</B> to call it. <B>LB_Set_RCB_Param</B>
+paramater routines and modify <b>LB_Set_Param</b> to call it. <b>LB_Set_RCB_Param</b>
 can serve as a template for this task. The arguments to this routine are
-two strings <I>param_name</I> and <I>new_val</I>. The domain-specific routines
+two strings <i>param_name</i> and <i>new_val</i>. The domain-specific routines
 return an integer value with the following meaning.
-<BLOCKQUOTE>0 - The parameter name was found, and the value passed all
+<blockquote>0 - The parameter name was found, and the value passed all
 error checks.
-<BR>1 - The parameter name was not found among the parameters known by
+<br>1 - The parameter name was not found among the parameters known by
 the domain-specific routine.
-<BR>2 - The parameter name was found, but the value failed the error
-checking.
-<BR>3 - Same as 0, but do not add parameter and value to linked list.
-<BR>Other - More serious error, value is an <A HREF="../ug_html/ug_interface.html#Error Codes">error
-code</A>.</BLOCKQUOTE>
+<br>2 - The parameter name was found, but the value failed the error checking.
+<br>3 - Same as 0, but do not add parameter and value to linked list.
+<br>Other - More serious error, value is an <a href="../ug_html/ug_interface.html#Error Codes">error
+code</a>.</blockquote>
 If one of the domain-specific parameter routines returns with a 0, then
-<B>LB_Set_Param</B> adds the parameter and the value (both strings) to
-a linked list of such pairs that is pointed to by the <I>Params</I> field
-of the <I>lb</I> structure.
-<TABLE WIDTH="100%" >
-<TR VALIGN=TOP>
-<TD VALIGN=TOP WIDTH="20%"><B>Parameters:</B></TD>
+<b>LB_Set_Param</b>
+adds the parameter and the value (both strings) to a linked list of such
+pairs that is pointed to by the <i>Params</i> field of the <i>lb</i> structure.
+<table WIDTH="100%" >
+<tr VALIGN=TOP>
+<td VALIGN=TOP WIDTH="20%"><b>Parameters:</b></td>
 
-<TD></TD>
-</TR>
+<td></td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP>&nbsp;&nbsp; <I>lb</I></TD>
+<tr>
+<td VALIGN=TOP>&nbsp;&nbsp; <i>lb</i></td>
 
-<TD>The load-balancing structure whose parameter value is being modified.</TD>
-</TR>
+<td>The load-balancing structure whose parameter value is being modified.</td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP>&nbsp;&nbsp; <I>param_name</I></TD>
+<tr>
+<td VALIGN=TOP>&nbsp;&nbsp; <i>param_name</i></td>
 
-<TD>A string containing the name of the parameter being modified. It is
-automatically converted to all capitals.</TD>
-</TR>
+<td>A string containing the name of the parameter being modified. It is
+automatically converted to all capitals.</td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP>&nbsp;&nbsp; <I>new_val</I></TD>
+<tr>
+<td VALIGN=TOP>&nbsp;&nbsp; <i>new_val</i></td>
 
-<TD>The new value desired for the parameter, expressed as a string.</TD>
-</TR>
+<td>The new value desired for the parameter, expressed as a string.</td>
+</tr>
 
-<TR>
-<TD><B>Returned Value:</B></TD>
+<tr>
+<td><b>Returned Value:</b></td>
 
-<TD></TD>
-</TR>
+<td></td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP>&nbsp;&nbsp; int</TD>
+<tr>
+<td VALIGN=TOP>&nbsp;&nbsp; int</td>
 
-<TD><A HREF="../ug_html/ug_interface.html#Error Codes">Error code</A>.</TD>
-</TR>
-</TABLE>
+<td><a href="../ug_html/ug_interface.html#Error Codes">Error code</a>.</td>
+</tr>
+</table>
 
-<HR><A NAME="LB_Check_Param"></A>int <B>LB_Check_Param</B>( char * <I>param_name</I>,
-char * <I>new_val</I>, struct <B>PARAM_VARS</B> * <I>params</I>, struct
-<B>PARAM_UTYPE</B> * <I>result</I>, int * <I>matched_index</I>);
-<BR>
-<HR>The <B>LB_Check_Param</B> routine simplifies the task of writing your
-own domain-specific parameter setting function. <B>LB_Check_Param</B> compares
-the <I>param_name</I> string against a list of strings that you provide,
-and if a match is found it extracts the new value from the <I>new_val</I>
-string. See <B>LB_Set_RCB_Param</B> for an example of how to use this routine.
-<TABLE WIDTH="100%" >
-<TR VALIGN=TOP>
-<TD VALIGN=TOP WIDTH="20%"><B>Parameters:</B></TD>
+<hr><a NAME="LB_Check_Param"></a>int <b>LB_Check_Param</b>( char * <i>param_name</i>,
+char * <i>new_val</i>, struct <b>PARAM_VARS</b> * <i>params</i>, struct
+<b>PARAM_UTYPE</b>
+* <i>result</i>, int * <i>matched_index</i>);
+<br>
+<hr>The <b>LB_Check_Param</b> routine simplifies the task of writing your
+own domain-specific parameter setting function. <b>LB_Check_Param</b> compares
+the <i>param_name</i> string against a list of strings that you provide,
+and if a match is found it extracts the new value from the <i>new_val</i>
+string. See <b>LB_Set_RCB_Param</b> for an example of how to use this routine.
+<table WIDTH="100%" >
+<tr VALIGN=TOP>
+<td VALIGN=TOP WIDTH="20%"><b>Parameters:</b></td>
 
-<TD></TD>
-</TR>
+<td></td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP>&nbsp;&nbsp; <I>param_name</I></TD>
+<tr>
+<td VALIGN=TOP>&nbsp;&nbsp; <i>param_name</i></td>
 
-<TD>A capitalized string containing the name of the parameter being modified.</TD>
-</TR>
+<td>A capitalized string containing the name of the parameter being modified.</td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP>&nbsp;&nbsp; <I>new_val</I></TD>
+<tr>
+<td VALIGN=TOP>&nbsp;&nbsp; <i>new_val</i></td>
 
-<TD>The new value desired for the parameter, expressed as a string.</TD>
-</TR>
+<td>The new value desired for the parameter, expressed as a string.</td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP>&nbsp;&nbsp; <I>params</I></TD>
+<tr>
+<td VALIGN=TOP>&nbsp;&nbsp; <i>params</i></td>
 
-<TD>The data structure describing the domain-specific parameters to be
+<td>The data structure describing the domain-specific parameters to be
 matched against. The data structure is an array of items, each of which
 consists of three fields. The first field is a string which is a capitalized
 name of a parameter. The second field is an address which is unused in
-<B>LB_Check_Param</B>, but is used in <B><A HREF="#LB_Assign_Param_Vals">LB_Assign_Param_Vals</A></B>.
+<b>LB_Check_Param</b>,
+but is used in <b><a href="#LB_Assign_Param_Vals">LB_Assign_Param_Vals</a></b>.
 The third field is another capitalized string which indicates the type
 of the parameter from the first field. Currently supported types are "INT",
 "INTEGER", "DOUBLE", "LONG", "STRING" and "CHAR". It is easy to add additional
-types by simple modifications to <B>LB_Check_Param</B> and <B><A HREF="#LB_Assign_Param_Vals">LB_Assign_Param_Vals</A></B>.
+types by simple modifications to <b>LB_Check_Param</b> and <b><a href="#LB_Assign_Param_Vals">LB_Assign_Param_Vals</a></b>.
 The array is terminated by an item consisting of three NULL fields. See
-<B>LB_Set_RCB_Param</B> for an example of how to set up this data structure.&nbsp;</TD>
-</TR>
+<b>LB_Set_RCB_Param</b>
+for an example of how to set up this data structure.&nbsp;</td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP>&nbsp;&nbsp; <I>result</I></TD>
+<tr>
+<td VALIGN=TOP>&nbsp;&nbsp; <i>result</i></td>
 
-<TD>If <I>param_name</I> matches any of the parameter names from the first
-field of the <I>params</I> data structure, then <B>LB_Check_Param</B> attempts
-to decode the value in <I>new_val</I>. The type of the value is determined
-by the third field in the <I>params</I> data structure. If the value decodes
-properly, then it is returned in <I>result</I>.&nbsp;</TD>
-</TR>
+<td>If <i>param_name</i> matches any of the parameter names from the first
+field of the <i>params</i> data structure, then <b>LB_Check_Param</b> attempts
+to decode the value in <i>new_val</i>. The type of the value is determined
+by the third field in the <i>params</i> data structure. If the value decodes
+properly, then it is returned in <i>result</i>.&nbsp;</td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP>&nbsp;&nbsp; <I>matched_index</I></TD>
+<tr>
+<td VALIGN=TOP>&nbsp;&nbsp; <i>matched_index</i></td>
 
-<TD>If <I>param_name</I> matches, then <I>matched_index</I> returns then
-index into the <I>params</I> array which corresponds to the matched parameter
-name. The <I>matched_index</I> and <I>result</I> values allow the developer
-to check that values being assigned to parameters are valid.&nbsp;</TD>
-</TR>
+<td>If <i>param_name</i> matches, then <i>matched_index</i> returns then
+index into the <i>params</i> array which corresponds to the matched parameter
+name. The <i>matched_index</i> and <i>result</i> values allow the developer
+to check that values being assigned to parameters are valid.&nbsp;</td>
+</tr>
 
-<TR>
-<TD><B>Returned Value:</B></TD>
+<tr>
+<td><b>Returned Value:</b></td>
 
-<TD></TD>
-</TR>
+<td></td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP>&nbsp;&nbsp; int</TD>
+<tr>
+<td VALIGN=TOP>&nbsp;&nbsp; int</td>
 
-<TD>0 - <I>param_name</I> found in <I>params</I> data structure and <I>new_val</I>
+<td>0 - <i>param_name</i> found in <i>params</i> data structure and <i>new_val</i>
 decodes OK.&nbsp;
-<BR>1 - <I>param_name</I> not found in <I>params</I> data structure.&nbsp;
-<BR>2 - <I>param_name</I> found in <I>params</I> data structure but <I>new_val</I>
-doesn't decode properly.&nbsp;</TD>
-</TR>
-</TABLE>
+<br>1 - <i>param_name</i> not found in <i>params</i> data structure.&nbsp;
+<br>2 - <i>param_name</i> found in <i>params</i> data structure but <i>new_val</i>
+doesn't decode properly.&nbsp;</td>
+</tr>
+</table>
 
-<HR><A NAME="LB_Assign_Param_Vals"></A>void <B>LB_Assign_Param_Vals</B>(
-struct <B>LB_PARAM</B> * <I>change_list</I>, struct <B>PARAM_VARS</B> *
-<I>params</I>);
-<BR>
-<HR>This routine changes parameter values as specified by the list of names
-and new values which is associated with a load-balancing structure. To use this
-routine, parameter values should first be set to their defaults, and then
-<B>LB_Assign_Param_Vals</B> should be called to alter the values as appropriate.
-See <B>LB_rcb</B> for a template.
-<TABLE WIDTH="100%" >
-<TR VALIGN=TOP>
-<TD VALIGN=TOP WIDTH="20%"><B>Parameters:</B></TD>
+<hr WIDTH="100%"><a NAME="LB_Bind_Param"></a>
+<br>int <b>LB_Bind_Param </b>( <b>PARAM_VARS</b> *<i>params,</i> char *<i>name,</i>
+void *<i>var</i>);
+<br>
+<hr WIDTH="100%">
+<br>This routine is used to associate the name of a parameter in the parameter
+array <i>params</i> with a variable pointed to by <i>var</i>.
+<br>Note that since the variable to be bound can be of an arbitrary type,
+the pointer should be typecasted to a void pointer. <b>LB_Bind_Param</b>
+must be called before <b>LB_Assign_Param_Vals</b>, where the actual assignment
+of values takes place.
+<table WIDTH="100%" >
+<tr VALIGN=TOP>
+<td VALIGN=TOP WIDTH="20%"><b>Parameters:</b></td>
 
-<TD></TD>
-</TR>
+<td></td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP>&nbsp;&nbsp; <I>change_list</I></TD>
+<tr>
+<td VALIGN=TOP>&nbsp;&nbsp; <i>params</i></td>
 
-<TD>The linked list of parameter names names and new values which is constructed
-by <B><A HREF="#LB_Set_Param">LB_Set_Param</A></B> and is a field of the
-structure defining a load-balancing structure.&nbsp;</TD>
-</TR>
+<td>The data structure describing the domain-specific parameters to be
+matched against. The data structure is an array of items, each of which
+consists of three fields. The first field is a string which is a capitalized
+name of a parameter. The second field is an address which is unused in
+<b>LB_Check_Param</b>,
+but is used in <b><a href="#LB_Assign_Param_Vals">LB_Assign_Param_Vals</a></b>.
+The third field is another capitalized string which indicates the type
+of the parameter from the first field. Currently supported types are "INT",
+"INTEGER", "DOUBLE", "LONG", "STRING" and "CHAR". It is easy to add additional
+types by simple modifications to <b>LB_Check_Param</b> and <b><a href="#LB_Assign_Param_Vals">LB_Assign_Param_Vals</a></b>.
+The array is terminated by an item consisting of three NULL fields.&nbsp;</td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP>&nbsp;&nbsp; <I>params</I></TD>
+<tr>
+<td>&nbsp;&nbsp; <i>name</i></td>
 
-<TD>The data structure describing the domain-specific parameters to be
+<td>A capitalized string containing the name of the parameter being modified.</td>
+</tr>
+
+<tr>
+<td>&nbsp;&nbsp; <i>var</i></td>
+
+<td>A pointer to the variable&nbsp; you wish to associate with the parameter
+name <i>name.</i>&nbsp; The pointer should be type cast to a void pointer.
+The user is responsible for ensuring that the pointer really points to
+a variable of appropriate type.&nbsp;</td>
+</tr>
+
+<tr>
+<td><b>Returned Value:</b></td>
+
+<td></td>
+</tr>
+
+<tr>
+<td>&nbsp;&nbsp; int</td>
+
+<td><a href="../ug_html/ug_interface.html#Error Codes">Error code.</a></td>
+</tr>
+</table>
+
+<p>
+<hr><a NAME="LB_Assign_Param_Vals"></a>int&nbsp; <b>LB_Assign_Param_Vals</b>(
+struct <b>LB_PARAM</b> * <i>change_list</i>, struct <b>PARAM_VARS</b> *
+<i>params,
+</i>int<i>
+debug_level,</i> int <i>proc</i>);
+<br>
+<hr>This routine changes parameter values as specified by the list of names
+and new values which is associated with a load-balancing structure. To
+use this routine, parameter values should first be set to their defaults,
+and then
+<b>LB_Assign_Param_Vals</b> should be called to alter the values
+as appropriate. See <b>LB_rcb</b> for a template.
+<table WIDTH="100%" >
+<tr VALIGN=TOP>
+<td VALIGN=TOP WIDTH="20%"><b>Parameters:</b></td>
+
+<td></td>
+</tr>
+
+<tr>
+<td VALIGN=TOP>&nbsp;&nbsp; <i>change_list</i></td>
+
+<td>The linked list of parameter names names and new values which is constructed
+by <b><a href="#LB_Set_Param">LB_Set_Param</a></b> and is a field of the
+structure defining a load-balancing structure.&nbsp;</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP>&nbsp;&nbsp; <i>params</i></td>
+
+<td>The data structure describing the domain-specific parameters to be
 matched against. The data structure is an array of items, each of which
 consists of three fields. The first field is a string which is a capitalized
 name of a parameter. The second field is an address of the parameter which
 should be altered. The third field is another capitalized string which
 indicates the type of the parameter being altered. Currently supported
 types are "INT", "INTEGER", "DOUBLE", "LONG", "STRING" and "CHAR". It is
-easy to add additional types by simple modifications to <B><A HREF="#LB_Check_Param">LB_Check_Param</A></B>
-and <B>LB_Assign_Param_Vals</B>. The array is terminated by an item consisting
-of three NULL fields.&nbsp;</TD>
-</TR>
-</TABLE>
+easy to add additional types by simple modifications to <b><a href="#LB_Check_Param">LB_Check_Param</a></b>
+and <b>LB_Assign_Param_Vals</b>. The array is terminated by an item consisting
+of three NULL fields.&nbsp;</td>
+</tr>
 
-<HR WIDTH="100%">
-<BR>[<A HREF="dev.html">Table of Contents</A>&nbsp; |&nbsp; <A HREF="dev_util_comm.html">Next:&nbsp;
-Irregular Communication Library</A>&nbsp; |&nbsp; <A HREF="dev_util_mem.html">Previous:&nbsp;
-Memory Management Utilities</A>]
-</BODY>
-</HTML>
+<tr>
+<td>&nbsp;&nbsp; <i>debug_level</i></td>
+
+<td>Zoltan debug level. (Normally this is lb->Debug_Level.)</td>
+</tr>
+
+<tr>
+<td>&nbsp;&nbsp; <i>proc</i></td>
+
+<td>Processor number. (Normally this is lb->Proc.)</td>
+</tr>
+
+<tr>
+<td><b>Returned Value:</b></td>
+</tr>
+
+<tr>
+<td>&nbsp;&nbsp;&nbsp; int</td>
+
+<td><a href="../ug_html/ug_interface.html#Error Codes">Error code.</a></td>
+</tr>
+
+<tr>
+<td></td>
+
+<td></td>
+</tr>
+</table>
+The last two input parameters may seem strange. They are present to support
+Zoltan's debugging features. If the parameter utility code is used outside
+of Zoltan, these two parameters may be removed or simply set both input
+values to zero in the function call.
+<p>
+<hr WIDTH="100%">
+<br><a NAME="LB_Free_Params"></a>void <b>LB_Free_Params </b>( struct <b>LB_PARAM</b>
+** <i>param_list</i> );
+<hr WIDTH="100%">
+<br>This routine frees the parameters in the list pointed to by <i>param_list</i>.
+<br>&nbsp;
+<table WIDTH="100%" >
+<tr VALIGN=TOP>
+<td VALIGN=TOP WIDTH="20%"><b>Parameters:</b></td>
+
+<td></td>
+</tr>
+
+<tr>
+<td VALIGN=TOP>&nbsp;&nbsp; <i>param_list</i></td>
+
+<td>A pointer to a list (array) of parameters to be freed.</td>
+</tr>
+</table>
+
+<p>
+<hr WIDTH="100%">
+<br>[<a href="dev.html">Table of Contents</a>&nbsp; |&nbsp; <a href="dev_util_comm.html">Next:&nbsp;
+Irregular Communication Library</a>&nbsp; |&nbsp; <a href="dev_util_mem.html">Previous:&nbsp;
+Memory Management Utilities</a>]
+</body>
+</html>
