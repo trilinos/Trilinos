@@ -4,9 +4,10 @@
 /* ******************************************************************** */
 
 #include "ml_config.h"
+#include "ml_utils.h"
+
 #if defined(HAVE_ML_AMESOS) && defined(HAVE_ML_TEUCHOS)
 
-#include "ml_utils.h"
 #include "ml_epetra_utils.h"
 #include "ml_xyt.h"
 
@@ -331,7 +332,6 @@ void ML_Amesos_Destroy(void *Amesos_Handle)
   Amesos_BaseSolver *A_Base = (Amesos_BaseSolver *) Amesos_Handle ;
   const Epetra_LinearProblem *Amesos_LinearProblem;
   Amesos_LinearProblem = A_Base->GetProblem() ; 
-  const Epetra_Operator *EO = Amesos_LinearProblem->GetOperator() ; 
 
   delete Amesos_LinearProblem->GetOperator() ; 
 
@@ -343,6 +343,29 @@ void ML_Amesos_Destroy(void *Amesos_Handle)
 
 #else
 
-int ciao=0;
+#include "ml_include.h"
+#include "ml_amesos_wrap.h"
+#include <iostream>
+using namespace std;
+
+int ML_Amesos_Gen(ML *ml, int curr_level, int choice,
+		  int MaxProcs, void **Amesos_Handle)
+{
+  cerr << "You must configure with --with-ml_amesos." << endl;
+  exit( EXIT_FAILURE );
+}
+
+int ML_Amesos_Solve( void *Amesos_Handle, double x[], double rhs[] )
+{
+  cerr << "You must configure with --with-ml_amesos." << endl;
+  exit( EXIT_FAILURE );
+}
+
+void ML_Amesos_Destroy(void *Amesos_Handle)
+{
+  cerr << "You must configure with --with-ml_amesos." << endl;
+  exit( EXIT_FAILURE );
+}
+
 
 #endif

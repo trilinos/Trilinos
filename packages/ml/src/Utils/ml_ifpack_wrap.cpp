@@ -48,7 +48,7 @@ int ML_Ifpack_Gen(ML *ml, int curr_level, int choice, int * options,
   string Msg(msg);
   
   int MaxNumNonzeros;
-  double Time1, Time2;
+  double Time1;
   
   ML_Operator *Ke = &(ml->Amat[curr_level]);
   Epetra_CrsMatrix * Ifpack_CrsMatrix;

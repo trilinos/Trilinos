@@ -1,6 +1,7 @@
 #include "ml_common.h"
+#include "ml_include.h"
 
-#if defined(ML_WITH_EPETRA) && defined(HAVE_ML_TEUCHOS) && defined(HAVE_ML_ANASAZI)
+#if defined(ML_WITH_EPETRA) && defined(HAVE_ML_ANASAZI)
 
 #include "Epetra_Map.h"
 #include "Epetra_Vector.h"
@@ -14,8 +15,6 @@
 #else
 #include "Epetra_SerialComm.h"
 #endif
-
-#include "Teuchos_ParameterList.hpp"
 
 #include "AnasaziPetraInterface.hpp"
 #include "AnasaziBlockArnoldi.hpp"
@@ -56,11 +55,11 @@ public:
   
 private:
   const Epetra_RowMatrix & Mat_;
-  Epetra_Vector * Diagonal_;
-  Epetra_MultiVector * tmp_;
   MLMatOp MatOp_;
   const bool UseDiagScaling_;
   double Scale_;
+  Epetra_MultiVector * tmp_;
+  Epetra_Vector * Diagonal_;
   
 };
 
@@ -144,6 +143,9 @@ ReturnType MLMat<TYPE>::ApplyMatrix ( const MultiVec<TYPE>& x,
 
   return Ok; 
 }
+
+#ifdef HAVE_ML_TEUCHOS
+#include "Teuchos_ParameterList.hpp"
 
 namespace ML_Anasazi {
 
@@ -237,6 +239,9 @@ int Interface(const Epetra_RowMatrix * RowMatrix, Epetra_MultiVector & EigenVect
     RealEigenvalues[i] = evalr[i];
     ImagEigenvalues[i] = evali[i];
   }
+
+  delete [] evalr;
+  delete [] evali;
   
   // Output results to screen
   if( PrintCurrentStatus > 5 && MyPID == 0 ) MyBlockArnoldi1.currentStatus();
@@ -337,6 +342,9 @@ int GetFieldOfValuesBox(const Epetra_RowMatrix * RowMatrix,
   if( output > 5 && MyPID == 0 ) {
     cout << "ML_Anasazi : Ritz Residual for A^T + A = " << residuals[0] << endl;
   }
+
+  delete [] evalr;
+  delete [] residuals;  
   
   if( PrintCurrentStatus && MyPID == 0 ) MyBlockArnoldi1.currentStatus();
 
@@ -375,7 +383,9 @@ int GetFieldOfValuesBox(const Epetra_RowMatrix * RowMatrix,
     double * evali = MyBlockArnoldi2.getiEvals();
     
     MaxImag = evali[0] / 2;
-  
+
+    delete [] evali;
+    
     residuals  = MyBlockArnoldi2.getResiduals();
     if( output > 5 && MyPID == 0 ) {
       cout << "ML_Anasazi : Ritz Residual for A^T - A = " << residuals[0] << endl;
@@ -407,7 +417,6 @@ int ML_Anasazi_Get_FiledOfValuesBox_Interface(ML_Operator * Amat,
 					      struct ML_Field_Of_Values * fov )
 {
 
-  char parameter[80];
   Epetra_CrsMatrix * CrsTemp;
   int MaxNumNonzeros;
   double CPUTime;
@@ -431,7 +440,115 @@ int ML_Anasazi_Get_FiledOfValuesBox_Interface(ML_Operator * Amat,
   return 0;
  
 }
+}
 
+#endif /* ifdef HAVE_ML_TEUCHOS */
+
+extern "C" {  
+// ================================================ ====== ==== ==== == =
+
+int ML_Anasazi_Get_SpectralNorm_Anasazi(ML_Operator * Amat,
+					int MaxIters, double Tolerance,
+					int IsProblemSymmetric,
+					int UseDiagonalScaling,
+					double * LambdaMax )
+{
+
+  Epetra_CrsMatrix * RowMatrix;
+  int MaxNumNonzeros;
+  double CPUTime;
+  
+  ML_Operator2EpetraCrsMatrix(Amat,RowMatrix,MaxNumNonzeros,
+			      true,CPUTime);
+  
+  bool verbose( RowMatrix->Comm().MyPID() == 0 && (5 < ML_Get_PrintLevel() ) );
+  
+  int length = MaxIters;
+  int restarts = 1;
+
+  if( verbose ) {
+    cout << "ML_Anasazi : Estimate Lambda Max, ";
+    if( IsProblemSymmetric == ML_TRUE ) cout << "problem is symmetric, ";
+    if( UseDiagonalScaling == ML_TRUE ) cout << "diagonal scaling.";
+    cout << endl;
+  }
+
+  /* ********************************************************************** */
+  /* First compute A + A^T to get the real bound                            */
+  /* ********************************************************************** */
+  
+  Anasazi::PetraVec<double> Vectors(RowMatrix->RowMatrixRowMap(), 1);
+  Vectors.MvRandom();
+  
+  int step = restarts*length*1;
+  
+  // Call the ctor that calls the petra ctor for a matrix
+
+  bool flag = false;
+  if( UseDiagonalScaling == ML_TRUE ) flag = true;
+  
+  MLMat<double> MLMatrix(*RowMatrix,A_MATRIX,flag);
+  
+  Anasazi::Eigenproblem<double> MyProblem(&MLMatrix, &Vectors);
+
+  // Initialize the Block Arnoldi solver
+  Anasazi::BlockArnoldi<double> MyBlockArnoldi(MyProblem, Tolerance, 1, length, 1, 
+						"LM", step, restarts);
+
+  // Inform the solver that the problem is symmetric
+  if( IsProblemSymmetric == ML_TRUE ) MyBlockArnoldi.setSymmetric(true);
+  else                                MyBlockArnoldi.setSymmetric(false);
+  
+  MyBlockArnoldi.setDebugLevel(0);
+
+  //  MyBlockArnoldi.iterate(5);
+  
+  // Solve the problem to the specified tolerances or length
+  MyBlockArnoldi.solve();
+  
+  // Obtain results direc3tly
+
+  double * evalr = MyBlockArnoldi.getEvals();
+  double * evali = MyBlockArnoldi.getiEvals(); 
+
+  *LambdaMax = sqrt(pow(evalr[0],2) + pow(evali[0],2));
+
+  double * residuals  = MyBlockArnoldi.getResiduals();
+  if( verbose ) {
+    cout << "ML_Anasazi : Ritz Residual = " << residuals[0] << endl;
+  }
+  
+  delete RowMatrix;
+
+  delete [] evalr;
+  delete [] evali;
+  
+  return 0;
+ 
+}
+}
+#else
+
+#include <iostream>
+using namespace std;
+
+extern "C" {  
+  // ================================================ ====== ==== ==== == =
+  
+  int ML_Anasazi_Get_SpectralNorm_Anasazi(ML_Operator * Amat,
+					int MaxIters, double Tolerance,
+					  int IsProblemSymmetric,
+					  int UseDiagonalScaling,
+					double * LambdaMax )
+  {
+    
+    cerr << "You must configure with options --with-ml_epetra and " << endl
+	 << "--with-ml_anasazi to estimate lambda max with Anasazi." << endl;
+
+    exit( EXIT_FAILURE );
+    
+  }
+  
 }
 
 #endif

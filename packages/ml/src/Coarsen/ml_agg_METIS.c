@@ -377,7 +377,6 @@ int ML_Aggregate_Set_ReorderingFlag( ML *ml, ML_Aggregate *ag,
 
   int i;
   ML_Aggregate_Options *pointer = NULL;
-  int diff_level;
   int Nlevels = ml->ML_num_levels;
   
   /* ********************************************************************** */
@@ -2236,6 +2235,8 @@ int ML_DecomposeGraph_BuildOffsets( int N_parts,
   
 } /* ML_DecomposeGraph_BuildOffsets */
 
+#ifdef LATER
+
 /* ======================================================================== */
 /*!
  \brief find position of the maximum element in an integer vector
@@ -2349,3 +2350,4 @@ static int ML_Aggregates_CheckAggregates( int Naggregates, int N_rows,
   return 0;
   
 } /* ML_Aggregates_CheckAggregates */
+#endif

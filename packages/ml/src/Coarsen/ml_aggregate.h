@@ -221,6 +221,7 @@ int ML_Aggregate_Set_PSmootherType( ML_Aggregate *, int stype );
 
 int ML_Aggregate_Set_SpectralNormScheme_Calc( ML_Aggregate * );
 int ML_Aggregate_Set_SpectralNormScheme_Anorm( ML_Aggregate * );
+int ML_Aggregate_Set_SpectralNormScheme_Anasazi( ML_Aggregate * );
 
 /* ------------------------------------------------------------------------- */
 /* accessing aggregation information                                         */

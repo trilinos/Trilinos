@@ -7,7 +7,7 @@
 
 // anasazi interface
 
-class Teuchos::ParameterList;
+#include "Teuchos_ParameterList.hpp"
 
 namespace ML_Anasazi {
 
@@ -26,9 +26,13 @@ extern int GetFieldOfValuesBox(const Epetra_RowMatrix * RowMatrix,
 
 extern "C" {
   
-extern int ML_Anasazi_Get_FiledOfValuesBox_Interface(ML_Operator * Amat,
-						     struct ML_Field_Of_Values * fov );
-  
+  extern int ML_Anasazi_Get_FiledOfValuesBox_Interface(ML_Operator * Amat,
+						       struct ML_Field_Of_Values * fov );
+  extern int ML_Anasazi_Get_SpectralNorm_Anasazi(ML_Operator * Amat,
+						 int MaxIters, double Tolerance,
+						 int IsProblemSymmetric,
+						 int UseDiagonalScaling,
+						 double * LambdaMax );
 }
 
 #endif /* #ifndef _ML_ANASAZI_H_ */

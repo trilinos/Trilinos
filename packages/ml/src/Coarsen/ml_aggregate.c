@@ -580,6 +580,19 @@ int ML_Aggregate_Set_SpectralNormScheme_Anorm( ML_Aggregate *ag )
    return 0;
 }
 
+/* ------------------------------------------------------------------------- */
+
+int ML_Aggregate_Set_SpectralNormScheme_Anasazi( ML_Aggregate *ag)
+{
+   if ( ag->ML_id != ML_ID_AGGRE ) 
+   {
+      printf("ML_Aggregate_Set_SpectralNormScheme_Anorm : wrong object. \n");
+      exit(-1);
+   }
+   ag->spectral_radius_scheme = 2;
+   return 0;
+}
+
 /* ************************************************************************* */
 /* set prolongator smoother type (diagonal, block diagonal = 0, 1)      */
 /* -------------------------------------------------------------------- */

@@ -3040,6 +3040,7 @@ void MLAZ_Iterate( double delta_x[], double resid_vector[],
 } /* MLAZ_Iterate */
 
 #include "ml_amesos.h"
+#include "ml_amesos_wrap.h"
 
 int MLAZ_Setup_MLandAggregate( int N_update, int num_PDE_eqns,
 			       int proc_config[AZ_PROC_SIZE],

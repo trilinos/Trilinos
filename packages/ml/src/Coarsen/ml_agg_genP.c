@@ -25,6 +25,14 @@ extern int mls_or_gs, mls_order;
 #include "ml_agg_genP.h"
 #include "ml_memory.h"
 
+extern int ML_Anasazi_Get_FiledOfValuesBox_Interface(ML_Operator * Amat,
+						     struct ML_Field_Of_Values * fov );
+extern int ML_Anasazi_Get_SpectralNorm_Anasazi(ML_Operator * Amat,
+					       int MaxIters, double Tolerance,
+					       int IsProblemSymmetric,
+					       int UseDiagonalScaling,
+					       double * LambdaMax );
+
 /* ************************************************************************* */
 /* wrapper function as smoother                                              */
 /* ------------------------------------------------------------------------- */
@@ -650,11 +658,30 @@ int ML_AGG_Gen_Prolongator(ML *ml,int level, int clevel, void *data)
             printf("Gen_Prolongator warning : max eigen <= 0.0 \n");
             max_eigen = 1.0;
          }
+	 /* I use a print statement after computations
          if ( ml->comm->ML_mypid == 0 && ag->print_flag < ML_Get_PrintLevel()) 
             printf("Gen_Prolongator : max eigen = %e \n", max_eigen);
-
+	 */
          widget.omega  = ag->smoothP_damping_factor / max_eigen;
          ml->spectral_radius[level] = max_eigen;
+      }
+      else if( ag->spectral_radius_scheme == 2 ) {
+	/* Use Anasazi */
+	ML_Anasazi_Get_SpectralNorm_Anasazi( Amat, 10, 1e-5,
+					     ML_FALSE, ML_TRUE, &max_eigen);
+	Amat->lambda_max = max_eigen; 
+	Amat->lambda_min = -12345.6789;
+	if ( max_eigen <= 0.0 ) {
+	  printf("Gen_Prolongator warning : max eigen <= 0.0 \n");
+	  max_eigen = 1.0;
+	}
+	/*
+	if ( ml->comm->ML_mypid == 0 && ag->print_flag < ML_Get_PrintLevel()) 
+	  printf("Gen_Prolongator : max eigen = %e \n", max_eigen);
+	*/
+	widget.omega  = ag->smoothP_damping_factor / max_eigen;
+	ml->spectral_radius[level] = max_eigen;
+	
       }
       else   /* using matrix max norm */
       {
@@ -673,8 +700,12 @@ int ML_AGG_Gen_Prolongator(ML *ml,int level, int clevel, void *data)
       ml->spectral_radius[level] = 1.0;
       widget.omega  = 0.0;
    }
+   
+   if ( ml->comm->ML_mypid == 0 && 7 < ML_Get_PrintLevel()) {
+     printf("Gen_Prolongator : Max eigenvalue = %e\n", max_eigen);
+   }
+   
 #endif
-
 
    if ( ag->smoothP_damping_factor != 0.0 ) {
      widget.drop_tol = ag->drop_tol_for_smoothing;
@@ -2246,7 +2277,7 @@ int ML_MultiLevel_Gen_Prolongator(ML *ml,int level, int clevel, void *data)
 
      /* compute box surrounding field-of-values */
 
-#ifdef HAVE_ML_ANASAZI
+#if defined(HAVE_ML_ANASAZI) && defined(HAVE_ML_TEUCHOS)
      if( fov->choice == 0 ) {
 
        fov->eta = 0;
@@ -2293,7 +2324,8 @@ int ML_MultiLevel_Gen_Prolongator(ML *ml,int level, int clevel, void *data)
      }
 #else
      fprintf( stderr,
-	      "ERROR: You must compile with --with-ml_anasazi for eigen-analysis\n"
+	      "ERROR: You must compile with options --with-ml_anasazi\n"
+	      "ERROR: and --with-ml_teuchos for eigen-analysis\n"
 	      "ERROR: (file %s, line %d)\n",
 	      __FILE__,
 	      __LINE__ );
@@ -2342,7 +2374,6 @@ int ML_MultiLevel_Gen_Restriction(ML *ml,int level, int next, void *data)
 
   ML_Operator *Amat;
   ML_Operator **prev_P_tentatives;
-  ML_Krylov   *kdata;
   ML_Aggregate *ag = (ML_Aggregate *) data;
 
   struct ML_Field_Of_Values * fov;
