@@ -12,35 +12,37 @@
 ##############################################################################
 
 ##############################################################################
-#  Environment variables for compiling the Zoltan and test drivers using gcc 
-#  for solaris on Sandia's 980 LAN.  The compiler flag -Wall tells gcc to
-#  print all warnings!  This option is good for cleaning up the code!
+#  Environment variables for compiling the Zoltan and test drivers 
+#  for suns on Sandia's 980 LAN.  
 #  For explanations of these variables, please see Makefile.generic.
 ##############################################################################
 
 DEFS 			= 
+DEPS			= -xM
 
 RANLIB			= ranlib
 AR			= ar r
 
-CC			= gcc -Wall
-CCPP			= g++
+# use CFLAGS = $(DBG_FLAGS) with purify.
+CC			= /Net/local/bin/cc
+PURE_CC			= 
+
 INCLUDE_PATH		= -I/Net/local/lang/SC3.0.1/include \
 			  -I/Net/local/lang/SC3.0.1/ansi_include \
 			  -I/Net/proj/zoltan/arch/solaris/include \
 			  -I/Net/local/mpi/include \
 			  -I/Net/local/mpi/build/solaris/ch_p4/include
-DBG_FLAGS		= -g 
+DBG_FLAGS		= -g
 OPT_FLAGS		= -O
-CFLAGS = $(DBG_FLAGS)
+CFLAGS 			= $(DBG_FLAGS)
 
-F90			= f90
-LOCAL_F90		= f90
-F90CFLAGS 		= -DFMANGLE=UNDERSCORE -DNO_MPI2
-FFLAGS    		= 
-SPPR_HEAD 		= spprinc.most
-F90_MODULE_PREFIX 	= -M
-FARG      		= farg_typical
+F90                     = f90
+LOCAL_F90               = f90
+F90CFLAGS               = -DFMANGLE=UNDERSCORE -DNO_MPI2
+FFLAGS                  =
+SPPR_HEAD               = spprinc.most
+F90_MODULE_PREFIX       = -M
+FARG                    = farg_typical
 
 MPI_LIB			= -lpmpich -lmpich -lsocket -lnsl -laio -lgcc
 MPI_LIBPATH		= -L/Net/local/mpi/build/solaris/ch_p4/lib \
