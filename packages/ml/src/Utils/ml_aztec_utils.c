@@ -2830,6 +2830,7 @@ void AZ_ML_Build_NodalCoordinates( int N, int N_update, int N_external,
    The maximum number of levels is hardwired. Settings for
    the coarse levels are here stored as well. */
 
+#ifdef AZTEC
 typedef struct MLAZ_LevelSettings 
 {
   int smoother;
@@ -3700,3 +3701,4 @@ void MLAZ_Direct_Solve_Amesos( double delta_x[], double resid_vector[],
   return;
   
 }
+#endif
