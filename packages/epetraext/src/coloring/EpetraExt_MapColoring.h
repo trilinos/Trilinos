@@ -71,7 +71,7 @@ class CrsGraph_MapColoring : public StructuralTransform<Epetra_CrsGraph,Epetra_M
   ///
   /** Generates the Epetra_MapColoring object from an input Epetra_CrsGraph
    */
-  NewTypeRef operator()( OriginalTypeRef orig );
+  CrsGraph_MapColoring::NewTypeRef operator()( CrsGraph_MapColoring::OriginalTypeRef orig );
 
  private:
 
