@@ -33,7 +33,6 @@ struct LB_edge_info {
   LB_GID nbor_gid;   /* Global id of off-proc vtx */
   int nbor_proc;     /* Proc id for the neighboring proc */
   int *adj;          /* Pointer to adjcny array */
-  int send;          /* Send this data to another proc? */
 };
 
 struct LB_hash_node {
@@ -45,7 +44,7 @@ struct LB_hash_node {
 /* Function prototypes */
 
 extern int LB_Set_ParMetis_Param(char *, char *);
-extern int LB_hash_lookup (struct LB_hash_node **, LB_GID, int);
+extern int LB_Set_Jostle_Param(char *, char *);
 
 
 /* ParMETIS data types and definitions. */

@@ -246,7 +246,7 @@ static int LB_ParMetis_Jostle(
 )
 {
   static char *yo = "LB_ParMetis_Jostle";
-  int i, j, k, ierr, packet_size, offset, tmp, flag, ndims;
+  int i, j, ierr, packet_size, offset, tmp, flag, ndims;
   int num_obj, nedges, num_edges, cross_edges, max_edges, edgecut;
   int *nbors_proc, *plist;
   int nsend, nrecv, wgtflag, numflag, num_border, max_proc_list_len;
@@ -457,13 +457,16 @@ static int LB_ParMetis_Jostle(
     nbors_proc = (int *)LB_MALLOC(max_edges * sizeof(int));
     proc_list = (struct LB_edge_info *) LB_MALLOC(max_proc_list_len *
       sizeof(struct LB_edge_info) );
+    plist = (int *)LB_MALLOC(lb->Num_Proc * sizeof(int));
     if ((max_edges && ((!nbors_global) || (!nbors_proc))) || 
-        (!proc_list) ){
+        (!proc_list) || (!plist)){
       /* Not enough memory */
       printf("[%1d] Error on line %d in %s\n", lb->Proc, __LINE__, __FILE__);
       FREE_MY_MEMORY;
       return LB_MEMERR;
     }
+    for (i=0; i<lb->Num_Proc; i++)
+      plist[i] = -1;
   
     /* proc_list[i] will contain a struct with data to send
      * to another processor. We don't know yet the total number
@@ -489,7 +492,6 @@ static int LB_ParMetis_Jostle(
       nedges = lb->Get_Num_Edges(lb->Get_Edge_List_Data, global_ids[i], 
                local_ids[i], &ierr);
       xadj[i+1] = xadj[i] + nedges;
-      tmp = offset;
       lb->Get_Edge_List(lb->Get_Edge_List_Data, global_ids[i], local_ids[i],
           nbors_global, nbors_proc, lb->Comm_Weight_Dim, adjwgt, &ierr);
       if (ierr){
@@ -512,15 +514,12 @@ static int LB_ParMetis_Jostle(
           /* Inter-processor edge. */
           /* Check if we already have gid[i] in proc_list with */
           /* the same destination.                             */
-          flag = 1; /* flag=1 means send this data */
-          for (k=tmp; k<offset; k++){
-            if (proc_list[k].nbor_proc == nbors_proc[j]){
-              flag = 0;
-              break;
-            }
-          }
-          if (flag){
-            nsend++; /* We need to send info about this edge */
+          flag = 0;
+          if (plist[nbors_proc[j]] < i){
+            /* We need to send info about this edge */
+            flag = 1;
+            nsend++; 
+            plist[nbors_proc[j]] = i;
           }
 
           /* Check if we need to allocate more space for proc_list.*/
@@ -542,12 +541,14 @@ static int LB_ParMetis_Jostle(
           ptr->my_gid = global_ids[i];
           ptr->my_gno = hash_lookup(hashtab, global_ids[i], num_obj);
           ptr->nbor_gid = nbors_global[j];
-          ptr->nbor_proc = nbors_proc[j];
+          if (flag)
+            ptr->nbor_proc = nbors_proc[j];
+          else
+            ptr->nbor_proc = -1;
           ptr->adj = adjptr;
-          ptr->send = flag;
 #ifdef LB_DEBUG
-          printf("[%1d] Debug: proc_list[%1d] my_gid=%d, my_gno=%d, nbor_proc=%d, send=%d\n",
-              lb->Proc, offset, ptr->my_gid, ptr->my_gno, ptr->nbor_proc, ptr->send);
+          printf("[%1d] Debug: proc_list[%1d] my_gid=%d, my_gno=%d, nbor_proc=%d\n",
+              lb->Proc, offset, ptr->my_gid, ptr->my_gno, ptr->nbor_proc);
 #endif
           *adjptr++ = -1; /* We need to come back here later */
           offset++;
@@ -555,6 +556,10 @@ static int LB_ParMetis_Jostle(
       }
     }
     cross_edges = offset;
+
+    LB_FREE(&plist);
+    LB_FREE(&nbors_global);
+    LB_FREE(&nbors_proc);
 
     /* Sanity check */
     if (((int)adjptr - (int)adjncy)/sizeof(int) != xadj[num_obj]){
@@ -565,148 +570,145 @@ static int LB_ParMetis_Jostle(
       return LB_FATAL;
     }
   
-      /* Exchange info between processors to resolve global number 
-       * for objects that are off-proc.
-       */
+    /* Exchange info between processors to resolve global number 
+     * for objects that are off-proc.
+     */
+
+    /* Allocate send buffer */
+    packet_size = sizeof(LB_GID) + sizeof(int);
+    sendbuf = (char *) LB_MALLOC(nsend * packet_size);
+    plist = (int *) LB_MALLOC(nsend * sizeof(int));
+
+    if (nsend && (!sendbuf || !plist) ){
+      /* Not enough space */
+      printf("[%1d] Error on line %d in %s\n", lb->Proc, __LINE__, __FILE__);
+      FREE_MY_MEMORY;
+      return LB_MEMERR;
+    }
+
+    /* Pack the data to send */
+#ifdef LB_DEBUG
+    printf("[%1d] Debug: %d messages to send.\n", lb->Proc, nsend);
+#endif
+    offset = 0;
+    j = 0;
+    for (i=0, ptr=proc_list; i<cross_edges; i++, ptr++){
+      if (ptr->nbor_proc >= 0){
+#ifdef LB_DEBUG
+        printf("[%1d] Debug: Sending (%d,%d) to proc %d\n", lb->Proc, 
+          ptr->my_gid, ptr->my_gno, ptr->nbor_proc);
+#endif
+        memcpy(&sendbuf[offset], (char *) &(ptr->my_gid), sizeof(LB_GID)); 
+        offset += sizeof(LB_GID);
+        memcpy(&sendbuf[offset], (char *) &(ptr->my_gno), sizeof(int)); 
+        offset += sizeof(int);
+        plist[j++] = ptr->nbor_proc;
+      }
+    }
+
+    /* Create the communication plan */
+#ifdef LB_DEBUG
+    printf("[%1d] Debug: Calling LB_Comm_Create with %d packets to send.\n",
+      lb->Proc, nsend);
+#endif
+    ierr = LB_Comm_Create( &comm_plan, nsend, plist, comm, TAG1, &nrecv);
+    if (ierr){
+      /* Return error code */
+      printf("[%1d] Error on line %d in %s\n", lb->Proc, __LINE__, __FILE__);
+      FREE_MY_MEMORY;
+      return (ierr);
+    }
+
+    /* Allocate recv buffer */
+    recvbuf = (char *) LB_MALLOC(nrecv * packet_size);
+    if (nrecv && (!sendbuf || !plist) ){
+      /* Not enough space */
+      printf("[%1d] Error on line %d in %s\n", lb->Proc, __LINE__, __FILE__);
+      FREE_MY_MEMORY;
+      return LB_MEMERR;
+    }
+#ifdef LB_DEBUG
+    printf("[%1d] Debug: Ready to receive %d packets.\n", 
+      lb->Proc, nrecv);
+#endif
+
+    /* Do the communication */
+    ierr = LB_Comm_Do( comm_plan, TAG2, sendbuf, packet_size, recvbuf);
+    if (ierr){
+      /* Return error code */
+      printf("[%1d] Error on line %d in %s\n", lb->Proc, __LINE__, __FILE__);
+      FREE_MY_MEMORY;
+      return (ierr);
+    }
+
+    /* Destroy the comm. plan */
+    LB_Comm_Destroy( &comm_plan);
   
-      /* Allocate send buffer */
-      packet_size = sizeof(LB_GID) + sizeof(int);
-      sendbuf = (char *) LB_MALLOC(nsend * packet_size);
-      plist = (int *) LB_MALLOC(nsend * sizeof(int));
+    /* Unpack data into the ParMETIS/Jostle struct.
+     * Resolve off-proc global numbers by:
+     * 1) Insert global ids from recvbuf into hash table;
+     * 2) Look up missing references in proc_list 
+     *    using the hash table.
+     */
 
-      if (nsend && (!sendbuf || !plist) ){
-        /* Not enough space */
-        printf("[%1d] Error on line %d in %s\n", lb->Proc, __LINE__, __FILE__);
-        FREE_MY_MEMORY;
-        return LB_MEMERR;
-      }
-
-      /* Pack the data to send */
-#ifdef LB_DEBUG
-      printf("[%1d] Debug: %d messages to send.\n", lb->Proc, nsend);
-#endif
-      offset = 0;
-      j = 0;
-      for (i=0, ptr=proc_list; i<cross_edges; i++, ptr++){
-        if (ptr->send){
-#ifdef LB_DEBUG
-          printf("[%1d] Debug: Sending (%d,%d) to proc %d\n", lb->Proc, 
-            ptr->my_gid, ptr->my_gno, ptr->nbor_proc);
-#endif
-          memcpy(&sendbuf[offset], (char *) &(ptr->my_gid), sizeof(LB_GID)); 
-          offset += sizeof(LB_GID);
-          memcpy(&sendbuf[offset], (char *) &(ptr->my_gno), sizeof(int)); 
-          offset += sizeof(int);
-          plist[j++] = ptr->nbor_proc;
-        }
-      }
-
-      /* Create the communication plan */
-#ifdef LB_DEBUG
-      printf("[%1d] Debug: Calling LB_Comm_Create with %d packets to send.\n",
-        lb->Proc, nsend);
-#endif
-      ierr = LB_Comm_Create( &comm_plan, nsend, plist, comm, TAG1, &nrecv);
-      if (ierr){
-        /* Return error code */
-        printf("[%1d] Error on line %d in %s\n", lb->Proc, __LINE__, __FILE__);
-        FREE_MY_MEMORY;
-        return (ierr);
-      }
-
-      /* Allocate recv buffer */
-      recvbuf = (char *) LB_MALLOC(nrecv * packet_size);
-      if (nrecv && (!sendbuf || !plist) ){
-        /* Not enough space */
-        printf("[%1d] Error on line %d in %s\n", lb->Proc, __LINE__, __FILE__);
-        FREE_MY_MEMORY;
-        return LB_MEMERR;
-      }
-#ifdef LB_DEBUG
-      printf("[%1d] Debug: Ready to receive %d packets.\n", 
-        lb->Proc, nrecv);
-#endif
-
-      /* Do the communication */
-      ierr = LB_Comm_Do( comm_plan, TAG2, sendbuf, packet_size, recvbuf);
-      if (ierr){
-        /* Return error code */
-        printf("[%1d] Error on line %d in %s\n", lb->Proc, __LINE__, __FILE__);
-        FREE_MY_MEMORY;
-        return (ierr);
-      }
-
-      /* Destroy the comm. plan */
-      LB_Comm_Destroy( &comm_plan);
+    /* Change hash table to contain only border objects */
+    /* that we received from other procs.               */
+    hash_nodes = (struct LB_hash_node *)LB_REALLOC(hash_nodes,
+      nrecv * sizeof(struct LB_hash_node));
+    hashtab = (struct LB_hash_node **) LB_REALLOC(hashtab,
+      nrecv * sizeof(struct LB_hash_node *) );
+    if (nrecv && ((!hash_nodes) || (!hashtab))){
+      /* Not enough memory */
+      printf("[%1d] Error on line %d in %s\n", lb->Proc, __LINE__, __FILE__);
+      FREE_MY_MEMORY;
+      return LB_MEMERR;
+    }
     
-      /* Unpack data into the ParMETIS/Jostle struct.
-       * Resolve off-proc global numbers by:
-       * 1) Insert global ids from recvbuf into hash table;
-       * 2) Look up missing references in proc_list 
-       *    using the hash table.
-       */
+    /* Copy data from recvbuf into hash table nodes */
+    for (i=0; i< nrecv; i++){
+      hashtab[i] = NULL;
+      hash_nodes[i].gid = *((LB_GID *)&recvbuf[i*packet_size]);
+      hash_nodes[i].gno = *((int *)&recvbuf[i*packet_size+sizeof(LB_GID)]);
+      /* Do we need to pad for byte alignment? */
+    }
+  
+    /* Insert nodes into hash table */
+    for (i=0; i< nrecv; i++){
+      j = LB_hashf(hash_nodes[i].gid, nrecv);
+      hash_nodes[i].next = hashtab[j];
+      hashtab[j] = &hash_nodes[i];
+#ifdef LB_DEBUG
+      printf("[%1d] Debug: Hashed GID %d to %d, gno = %d\n",
+        lb->Proc, hash_nodes[i].gid, j, hash_nodes[i].gno);
+#endif
+    }
 
-      /* Change hash table to contain only border objects */
-      /* that we received from other procs.               */
-      hash_nodes = (struct LB_hash_node *)LB_REALLOC(hash_nodes,
-        nrecv * sizeof(struct LB_hash_node));
-      hashtab = (struct LB_hash_node **) LB_REALLOC(hashtab,
-        nrecv * sizeof(struct LB_hash_node *) );
-      if (nrecv && ((!hash_nodes) || (!hashtab))){
-        /* Not enough memory */
-        printf("[%1d] Error on line %d in %s\n", lb->Proc, __LINE__, __FILE__);
+    for (i=0; i<cross_edges; i++){
+      /* Look up unresolved global_ids */
+      if ((tmp=hash_lookup(hashtab, proc_list[i].nbor_gid, nrecv)) <0){
+        /* Error. This should never happen! */
+        printf("[%1d] ERROR: Internal error in %s. "
+               "Off-proc global ID %d is not in hash table.\n", 
+               lb->Proc, yo, proc_list[i].nbor_gid);
         FREE_MY_MEMORY;
-        return LB_MEMERR;
+        return LB_FATAL;
+      }
+      else{
+        /* Insert the global number into adjncy vector */
+        *(proc_list[i].adj) = tmp;
+#ifdef LB_DEBUG
+        printf("[%1d] Debug: GID %d has global number %d\n",
+          lb->Proc, proc_list[i].nbor_gid, tmp);
+#endif
       }
       
-      /* Copy data from recvbuf into hash table nodes */
-      for (i=0; i< nrecv; i++){
-        hashtab[i] = NULL;
-        hash_nodes[i].gid = *((LB_GID *)&recvbuf[i*packet_size]);
-        hash_nodes[i].gno = *((int *)&recvbuf[i*packet_size+sizeof(LB_GID)]);
-        /* Do we need to pad for byte alignment? */
-      }
-    
-      /* Insert nodes into hash table */
-      for (i=0; i< nrecv; i++){
-        j = LB_hashf(hash_nodes[i].gid, nrecv);
-        hash_nodes[i].next = hashtab[j];
-        hashtab[j] = &hash_nodes[i];
-#ifdef LB_DEBUG
-        printf("[%1d] Debug: Hashed GID %d to %d, gno = %d\n",
-          lb->Proc, hash_nodes[i].gid, j, hash_nodes[i].gno);
-#endif
-      }
+    }
 
-      for (i=0; i<cross_edges; i++){
-        /* Look up unresolved global_ids */
-        if ((tmp=hash_lookup(hashtab, proc_list[i].nbor_gid, nrecv)) <0){
-          /* Error. This should never happen! */
-          printf("[%1d] ERROR: Internal error in %s. "
-                 "Off-proc global ID %d is not in hash table.\n", 
-                 lb->Proc, yo, proc_list[i].nbor_gid);
-          FREE_MY_MEMORY;
-          return LB_FATAL;
-        }
-        else{
-          /* Insert the global number into adjncy vector */
-          *(proc_list[i].adj) = tmp;
-#ifdef LB_DEBUG
-          printf("[%1d] Debug: GID %d has global number %d\n",
-            lb->Proc, proc_list[i].nbor_gid, tmp);
-#endif
-        }
-        
-      }
-      /* Free space for communication data */
-      LB_FREE(&sendbuf);
-      LB_FREE(&recvbuf);
-  
-    /* Free space for temp data structures */
+    /* Free space */
+    LB_FREE(&sendbuf);
+    LB_FREE(&recvbuf);
     LB_FREE(&proc_list);
     LB_FREE(&plist);
-    LB_FREE(&nbors_global);
-    LB_FREE(&nbors_proc);
     LB_FREE(&hash_nodes);
     LB_FREE(&hashtab);
   
