@@ -264,10 +264,10 @@ pdgssvx_ABglobal(superlu_options_t *options, SuperMatrix *A,
  *                 Inputs:  all of ScalePermstruct
  *                          all of LUstruct
  *
- *         o Equil (yes_no_t)
+ *         o Equil (equi_t)
  *           Specifies whether to equilibrate the system.
- *           = NO:  no equilibration.
- *           = YES: scaling factors are computed to equilibrate the system:
+ *           = NEQU:  no equilibration.
+ *           = EQUI: scaling factors are computed to equilibrate the system:
  *                      diag(R)*A*diag(C)*inv(diag(C))*X = diag(R)*B.
  *                  Whether or not the system will be equilibrated depends
  *                  on the scaling of the matrix A, but if equilibration is
@@ -291,7 +291,7 @@ pdgssvx_ABglobal(superlu_options_t *options, SuperMatrix *A,
  *           = COLAMD:        approximate minimum degree column ordering.
  *           = MY_PERMC:      the ordering given in ScalePermstruct->perm_c.
  *         
- *         o ReplaceTinyPivot (yes_no_t)
+ *         o ReplaceTinyPivot (place_t)
  *           = NO:  do not modify pivots
  *           = YES: replace tiny pivots by sqrt(epsilon)*norm(A) during 
  *                  LU factorization.
@@ -483,9 +483,12 @@ pdgssvx_ABglobal(superlu_options_t *options, SuperMatrix *A,
     double   *C, *R, *C1, *R1, amax, anorm, colcnd, rowcnd;
     double   *X, *b_col, *b_work, *x_col;
     double   t;
-    mem_usage_t num_mem_usage, symb_mem_usage;
+    mem_usage_t             symb_mem_usage;
+#if ( PRNTlevel>=1 )
+    mem_usage_t             num_mem_usage;
+#endif
 #if ( PRNTlevel>= 2 )
-    double   dmin, dsum, dprod;
+    double                  dmin, dsum, dprod;
 #endif
 
     perm_r = ScalePermstruct->perm_r;
@@ -520,7 +523,7 @@ pdgssvx_ABglobal(superlu_options_t *options, SuperMatrix *A,
 
     /* Initialization */
     factored = (Fact == FACTORED);
-    Equil = (!factored && options->Equil == YES);
+    Equil = (!factored && options->Equil == EQUI);
     notran = (options->Trans == NOTRANS);
     iam = grid->iam;
     job = 5;
@@ -643,9 +646,11 @@ pdgssvx_ABglobal(superlu_options_t *options, SuperMatrix *A,
 	    /* Equilibrate matrix A. */
 	    dlaqgs(A, R, C, rowcnd, colcnd, amax, equed);
 	    if ( lsame_(equed, "R") ) {
-		ScalePermstruct->DiagScale = rowequ = ROW;
+		ScalePermstruct->DiagScale = ROW;
+		rowequ = ROW;
 	    } else if ( lsame_(equed, "C") ) {
-		ScalePermstruct->DiagScale = colequ = COL;
+		ScalePermstruct->DiagScale = COL;
+		colequ = COL;
 	    } else if ( lsame_(equed, "B") ) {
 		ScalePermstruct->DiagScale = BOTH;
 		rowequ = ROW;
@@ -669,17 +674,16 @@ pdgssvx_ABglobal(superlu_options_t *options, SuperMatrix *A,
     /* ------------------------------------------------------------
        Permute rows of A. 
        ------------------------------------------------------------*/
-    if ( options->RowPerm != NO ) {
+    if ( options->RowPerm != NOROWPERM ) {
 	t = SuperLU_timer_();
 
 	if ( Fact == SamePattern_SameRowPerm /* Reuse perm_r. */
 	    || options->RowPerm == MY_PERMR ) { /* Use my perm_r. */
-/*	    for (j = 0; j < n; ++j) {
-		for (i = colptr[j]; i < colptr[j+1]; ++i) {*/
-	    for (i = 0; i < colptr[n]; ++i) {
+            if ( !factored ) {
+	       for (i = 0; i < colptr[n]; ++i) {
 		    irow = rowind[i]; 
 		    rowind[i] = perm_r[irow];
-/*		}*/
+	       }
 	    }
 	} else if ( !factored ) {
 	    if ( job == 5 ) {
@@ -739,13 +743,10 @@ pdgssvx_ABglobal(superlu_options_t *options, SuperMatrix *A,
 		    ScalePermstruct->DiagScale = BOTH;
 		    rowequ = colequ = 1;
 		} else { /* No equilibration. */
-/*		    for (j = 0; j < n; ++j) {
-			for (i = colptr[j]; i < colptr[j+1]; ++i) {*/
 		    for (i = colptr[0]; i < colptr[n]; ++i) {
 			    irow = rowind[i];
 			    rowind[i] = perm_r[irow];
-			}
-/*		    }*/
+		    }
 		}
 		SUPERLU_FREE (R1);
 		SUPERLU_FREE (C1);
@@ -774,7 +775,7 @@ pdgssvx_ABglobal(superlu_options_t *options, SuperMatrix *A,
 	    } else if ( job == 4 ) {
 		if ( !iam ) printf("\tsum of diagonal %e\n", dsum);
 	    } else if ( job == 5 ) {
-		if ( !iam ) eprintf("\t product of diagonal %e\n", dprod);
+		if ( !iam ) printf("\t product of diagonal %e\n", dprod);
 	    }
 #endif
 	    
@@ -944,7 +945,7 @@ pdgssvx_ABglobal(superlu_options_t *options, SuperMatrix *A,
 	/* ------------------------------------------------------------
 	   Permute the right-hand side to form Pr*B.
 	   ------------------------------------------------------------*/
-	if ( options->RowPerm != NO ) {
+	if ( options->RowPerm != NOROWPERM ) {
 	    if ( notran ) {
 		b_col = B;
 		for (j = 0; j < nrhs; ++j) {
