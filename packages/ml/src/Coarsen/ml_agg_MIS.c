@@ -280,6 +280,7 @@ extern int ML_gpartialsum_int(int val, ML_Comm *comm);
    /* record the Dirichlet boundary */
 
    bdry = (char *) malloc(sizeof(char)*(exp_Nrows + 1));
+   for (i = Nrows ; i < exp_Nrows; i++) bdry[i] = 'F';
    for (i = 0; i < Nrows; i++) {
       bdry[i] = 'T';
       ML_get_matrix_row(Amatrix, 1, &i, &allocated, &rowi_col, &rowi_val,
@@ -290,6 +291,7 @@ extern int ML_gpartialsum_int(int val, ML_Comm *comm);
    /* communicate the boundary information */
 
    dtemp = (double *) ML_allocate(sizeof(double)*(exp_Nrows+1));
+   for (i = nvertices; i < exp_Nrows; i++) dtemp[i] = 0;
    for (i = 0; i < nvertices; i++) {
       if (bdry[i] == 'T') dtemp[i] = 1.;
       else  dtemp[i] = 0.;
@@ -345,13 +347,13 @@ extern int ML_gpartialsum_int(int val, ML_Comm *comm);
    ML_Operator_Destroy(Asqrd);
 
 
-   /* Make a new aggr_index[] corresponding ot Amatrix as opposed to the one  */
+   /* Make a new aggr_index[] corresponding to Amatrix as opposed to the one  */
    /* that already exists for Asqrd. These are not entirely the same because  */
    /* the two have different receive lists and in fact Amatrix could have a   */
    /* longer receive list than Asqrd (due to dropping). The good news is that */
    /* at this point we only need information in regular variables (not ghost) */
 
-   tempaggr_index = (int *) malloc(sizeof(int)* exp_Nrows*num_PDE_eqns);
+   tempaggr_index = (int *) malloc(sizeof(int)* (exp_Nrows+1)*num_PDE_eqns);
    for (i = 0;         i < nvertices ; i++) tempaggr_index[i] = aggr_index[i];
    for (i = nvertices; i < exp_Nrows ; i++) tempaggr_index[i] = -1;
    free(aggr_index);
@@ -567,6 +569,16 @@ extern int ML_gpartialsum_int(int val, ML_Comm *comm);
          aggr_index[i*num_PDE_eqns+j] = aggr_index[i];
       }
    }
+
+   ML_Operator_UnAmalgamateAndDropWeak(Amatrix, num_PDE_eqns, epsilon);
+
+   Nrows      *= num_PDE_eqns;
+   nvertices  *= num_PDE_eqns;
+   exp_Nrows  *= num_PDE_eqns;
+   getrow_obj  = Amatrix->getrow;
+   getrow_comm = getrow_obj->pre_comm;
+   N_neighbors = getrow_obj->pre_comm->N_neighbors;
+
 #ifdef ML_AGGR_INAGGR
 
    for (i = 0; i < exp_Nrows; i++) aggr_index[i] = -1;
@@ -580,14 +592,6 @@ extern int ML_gpartialsum_int(int val, ML_Comm *comm);
    }
    fclose(fp);
 #endif
-
-   ML_Operator_UnAmalgamateAndDropWeak(Amatrix, num_PDE_eqns, epsilon);
-   Nrows *= num_PDE_eqns;
-   nvertices *= num_PDE_eqns;
-   exp_Nrows *= num_PDE_eqns;
-   getrow_obj   = Amatrix->getrow;
-   getrow_comm  = getrow_obj->pre_comm;
-   N_neighbors  = getrow_obj->pre_comm->N_neighbors;
 
    /* I'm not sure if I need most of this 'if' code. I just took it from */
    /* Charles ... but I guess that the majority of it is not needed.     */
@@ -774,7 +778,7 @@ extern int ML_gpartialsum_int(int val, ML_Comm *comm);
 
       total_recv_leng = 0;
       for (i = 0; i < N_neighbors; i++) total_recv_leng += recv_leng[i];
-      exp_Nrows = Nrows + total_recv_leng;;
+      exp_Nrows = Nrows + total_recv_leng;
    }
 
 
