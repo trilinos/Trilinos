@@ -4,7 +4,7 @@ rm -f $file
 echo $file
 echo "Date: " `eval date` >> $file
 echo `uname -a` >> $file
-DIRS="BlockMap Comm CrsGraph CrsMatrix CrsRectMatrix FECrsMatrix FEVbrMatrix FEVector ImportExport Map MapColoring MultiVector Object VbrMatrix Vector"
+DIRS="BlockMap Comm CrsGraph CrsMatrix CrsRectMatrix FECrsGraph FECrsMatrix FEVbrMatrix FEVector ImportExport Map MapColoring MultiVector Object VbrMatrix Vector"
 for f in $DIRS
 do
 	cd "$f"

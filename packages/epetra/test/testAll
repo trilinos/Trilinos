@@ -21,7 +21,7 @@ endif
 echo $file
 echo "Date: " `eval date` >>& $file
 echo `uname -a` >>& $file
-foreach f (BlockMap Comm CrsGraph CrsMatrix CrsRectMatrix FECrsMatrix FEVbrMatrix FEVector ImportExport Map MapColoring MultiVector Object VbrMatrix Vector)
+foreach f (BlockMap Comm CrsGraph CrsMatrix CrsRectMatrix FECrsGraph FECrsMatrix FEVbrMatrix FEVector ImportExport Map MapColoring MultiVector Object VbrMatrix Vector)
 	cd $f
 	if( "$5" == "True" ) then
 	    make -f classicMakefile $1 $2 $3 $4 clobber; make -f classicMakefile $1 $2 $3 $4

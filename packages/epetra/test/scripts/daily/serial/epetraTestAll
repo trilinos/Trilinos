@@ -85,7 +85,7 @@ echo `uname -a` >>& $file
 
 ## List the subdirectories of 'test' containing test exe's in the foreach loop
 ## if directory structure is like that of epetra.
-foreach f (BlockMap Comm CrsGraph CrsMatrix CrsRectMatrix FECrsMatrix FEVbrMatrix FEVector ImportExport IntSerialDense Map MapColoring MultiVector Object VbrMatrix Vector)
+foreach f (BlockMap Comm CrsGraph CrsMatrix CrsRectMatrix FECrsGraph FECrsMatrix FEVbrMatrix FEVector ImportExport IntSerialDense Map MapColoring MultiVector Object VbrMatrix Vector)
 	cd $f
 	foreach g(*.exe)
 		echo "############" $g "##############" >>& ../$file
