@@ -35,6 +35,7 @@ typedef struct ML_GetrowFunc_Struct ML_GetrowFunc;
 #include "ml_vec.h"
 
 #ifdef WKC
+#include <Epetra_Comm.h>
 #include <Epetra_MultiVector.h>
 #endif
 

@@ -18,6 +18,7 @@
 #include "ml_memory.h"
 
 #ifdef WKC
+#include <Epetra_Comm.h>
 #include <Epetra_MultiVector.h>
 #endif 
 
