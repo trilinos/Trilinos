@@ -42,7 +42,7 @@
 #  ************************************************************************
 #@HEADER
 
-SOURCES = $(DenseMultiVector_test_SOURCES)
+SOURCES = $(Permutation_test_SOURCES)
 
 srcdir = @srcdir@
 top_srcdir = @top_srcdir@
@@ -65,8 +65,8 @@ NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
 host_triplet = @host@
-noinst_PROGRAMS = DenseMultiVector_test$(EXEEXT)
-subdir = test/DenseMultiVector
+noinst_PROGRAMS = Permutation_test$(EXEEXT)
+subdir = test/Permutation
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/config/ac_cxx_bool.m4 \
@@ -91,21 +91,21 @@ mkinstalldirs = $(mkdir_p)
 CONFIG_HEADER = $(top_builddir)/src/Kokkos_config.h
 CONFIG_CLEAN_FILES =
 PROGRAMS = $(noinst_PROGRAMS)
-am_DenseMultiVector_test_OBJECTS =  \
-	DenseMultiVector_test-cxx_main.$(OBJEXT)
-DenseMultiVector_test_OBJECTS = $(am_DenseMultiVector_test_OBJECTS)
+am_Permutation_test_OBJECTS =  \
+	Permutation_test-cxx_main.$(OBJEXT)
+Permutation_test_OBJECTS = $(am_Permutation_test_OBJECTS)
 am__DEPENDENCIES_1 =
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/src
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
-@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/DenseMultiVector_test-cxx_main.Po
+@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/Permutation_test-cxx_main.Po
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
 CXXLD = $(CXX)
 CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
 	-o $@
-SOURCES = $(DenseMultiVector_test_SOURCES)
-DIST_SOURCES = $(DenseMultiVector_test_SOURCES)
+SOURCES = $(Permutation_test_SOURCES)
+DIST_SOURCES = $(Permutation_test_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -221,10 +221,10 @@ target_alias = @target_alias@
 target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
-DenseMultiVector_test_SOURCES = $(srcdir)/cxx_main.cpp
-DenseMultiVector_test_DEPENDENCIES = $(top_builddir)/src/libkokkos.a
-DenseMultiVector_test_CXXFLAGS = -I$(top_srcdir)/src
-DenseMultiVector_test_LDADD = $(top_builddir)/src/libkokkos.a $(BLAS_LIBS) \
+Permutation_test_SOURCES = $(srcdir)/cxx_main.cpp
+Permutation_test_DEPENDENCIES = $(top_builddir)/src/libkokkos.a
+Permutation_test_CXXFLAGS = -I$(top_srcdir)/src
+Permutation_test_LDADD = $(top_builddir)/src/libkokkos.a $(BLAS_LIBS) \
 	$(LIBS) $(FLIBS)
 
 all: all-am
@@ -240,9 +240,9 @@ $(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am  $(am__confi
 	      exit 1;; \
 	  esac; \
 	done; \
-	echo ' cd $(top_srcdir) && $(AUTOMAKE) --foreign  test/DenseMultiVector/Makefile'; \
+	echo ' cd $(top_srcdir) && $(AUTOMAKE) --foreign  test/Permutation/Makefile'; \
 	cd $(top_srcdir) && \
-	  $(AUTOMAKE) --foreign  test/DenseMultiVector/Makefile
+	  $(AUTOMAKE) --foreign  test/Permutation/Makefile
 .PRECIOUS: Makefile
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	@case '$?' in \
@@ -263,9 +263,9 @@ $(ACLOCAL_M4): @MAINTAINER_MODE_TRUE@ $(am__aclocal_m4_deps)
 
 clean-noinstPROGRAMS:
 	-test -z "$(noinst_PROGRAMS)" || rm -f $(noinst_PROGRAMS)
-DenseMultiVector_test$(EXEEXT): $(DenseMultiVector_test_OBJECTS) $(DenseMultiVector_test_DEPENDENCIES) 
-	@rm -f DenseMultiVector_test$(EXEEXT)
-	$(CXXLINK) $(DenseMultiVector_test_LDFLAGS) $(DenseMultiVector_test_OBJECTS) $(DenseMultiVector_test_LDADD) $(LIBS)
+Permutation_test$(EXEEXT): $(Permutation_test_OBJECTS) $(Permutation_test_DEPENDENCIES) 
+	@rm -f Permutation_test$(EXEEXT)
+	$(CXXLINK) $(Permutation_test_LDFLAGS) $(Permutation_test_OBJECTS) $(Permutation_test_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -273,7 +273,7 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/DenseMultiVector_test-cxx_main.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Permutation_test-cxx_main.Po@am__quote@
 
 .cpp.o:
 @am__fastdepCXX_TRUE@	if $(CXXCOMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \
@@ -291,21 +291,21 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXXCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
 
-DenseMultiVector_test-cxx_main.o: $(srcdir)/cxx_main.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(DenseMultiVector_test_CXXFLAGS) $(CXXFLAGS) -MT DenseMultiVector_test-cxx_main.o -MD -MP -MF "$(DEPDIR)/DenseMultiVector_test-cxx_main.Tpo" -c -o DenseMultiVector_test-cxx_main.o `test -f '$(srcdir)/cxx_main.cpp' || echo '$(srcdir)/'`$(srcdir)/cxx_main.cpp; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/DenseMultiVector_test-cxx_main.Tpo" "$(DEPDIR)/DenseMultiVector_test-cxx_main.Po"; else rm -f "$(DEPDIR)/DenseMultiVector_test-cxx_main.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/cxx_main.cpp' object='DenseMultiVector_test-cxx_main.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/DenseMultiVector_test-cxx_main.Po' tmpdepfile='$(DEPDIR)/DenseMultiVector_test-cxx_main.TPo' @AMDEPBACKSLASH@
+Permutation_test-cxx_main.o: $(srcdir)/cxx_main.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(Permutation_test_CXXFLAGS) $(CXXFLAGS) -MT Permutation_test-cxx_main.o -MD -MP -MF "$(DEPDIR)/Permutation_test-cxx_main.Tpo" -c -o Permutation_test-cxx_main.o `test -f '$(srcdir)/cxx_main.cpp' || echo '$(srcdir)/'`$(srcdir)/cxx_main.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Permutation_test-cxx_main.Tpo" "$(DEPDIR)/Permutation_test-cxx_main.Po"; else rm -f "$(DEPDIR)/Permutation_test-cxx_main.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/cxx_main.cpp' object='Permutation_test-cxx_main.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Permutation_test-cxx_main.Po' tmpdepfile='$(DEPDIR)/Permutation_test-cxx_main.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(DenseMultiVector_test_CXXFLAGS) $(CXXFLAGS) -c -o DenseMultiVector_test-cxx_main.o `test -f '$(srcdir)/cxx_main.cpp' || echo '$(srcdir)/'`$(srcdir)/cxx_main.cpp
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(Permutation_test_CXXFLAGS) $(CXXFLAGS) -c -o Permutation_test-cxx_main.o `test -f '$(srcdir)/cxx_main.cpp' || echo '$(srcdir)/'`$(srcdir)/cxx_main.cpp
 
-DenseMultiVector_test-cxx_main.obj: $(srcdir)/cxx_main.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(DenseMultiVector_test_CXXFLAGS) $(CXXFLAGS) -MT DenseMultiVector_test-cxx_main.obj -MD -MP -MF "$(DEPDIR)/DenseMultiVector_test-cxx_main.Tpo" -c -o DenseMultiVector_test-cxx_main.obj `if test -f '$(srcdir)/cxx_main.cpp'; then $(CYGPATH_W) '$(srcdir)/cxx_main.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/cxx_main.cpp'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/DenseMultiVector_test-cxx_main.Tpo" "$(DEPDIR)/DenseMultiVector_test-cxx_main.Po"; else rm -f "$(DEPDIR)/DenseMultiVector_test-cxx_main.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/cxx_main.cpp' object='DenseMultiVector_test-cxx_main.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/DenseMultiVector_test-cxx_main.Po' tmpdepfile='$(DEPDIR)/DenseMultiVector_test-cxx_main.TPo' @AMDEPBACKSLASH@
+Permutation_test-cxx_main.obj: $(srcdir)/cxx_main.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(Permutation_test_CXXFLAGS) $(CXXFLAGS) -MT Permutation_test-cxx_main.obj -MD -MP -MF "$(DEPDIR)/Permutation_test-cxx_main.Tpo" -c -o Permutation_test-cxx_main.obj `if test -f '$(srcdir)/cxx_main.cpp'; then $(CYGPATH_W) '$(srcdir)/cxx_main.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/cxx_main.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Permutation_test-cxx_main.Tpo" "$(DEPDIR)/Permutation_test-cxx_main.Po"; else rm -f "$(DEPDIR)/Permutation_test-cxx_main.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/cxx_main.cpp' object='Permutation_test-cxx_main.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Permutation_test-cxx_main.Po' tmpdepfile='$(DEPDIR)/Permutation_test-cxx_main.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(DenseMultiVector_test_CXXFLAGS) $(CXXFLAGS) -c -o DenseMultiVector_test-cxx_main.obj `if test -f '$(srcdir)/cxx_main.cpp'; then $(CYGPATH_W) '$(srcdir)/cxx_main.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/cxx_main.cpp'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(Permutation_test_CXXFLAGS) $(CXXFLAGS) -c -o Permutation_test-cxx_main.obj `if test -f '$(srcdir)/cxx_main.cpp'; then $(CYGPATH_W) '$(srcdir)/cxx_main.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/cxx_main.cpp'; fi`
 uninstall-info-am:
 
 ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)
