@@ -674,7 +674,7 @@ bool Tensor::compute(Abstract::Vector& dir,
     else {
       qval = 0;
       lambdaBar = 1.0;
-      if (abs(qa/qb) < 1e-8) {
+      if (fabs(qa/qb) < 1e-8) {
 #if DEBUG_LEVEL > 0
 	cout << "qa is relatively small\n";
 #endif 
@@ -683,7 +683,7 @@ bool Tensor::compute(Abstract::Vector& dir,
       else {
 	double tmp1 = (-qb + sqrt(discriminant)) / (2*qa);
 	double tmp2 = (-qb - sqrt(discriminant)) / (2*qa);
-	y1 = (abs(tmp1) < abs(tmp2)) ? tmp1 : tmp2;
+	y1 = (fabs(tmp1) < fabs(tmp2)) ? tmp1 : tmp2;
       }
     }	
 
@@ -852,7 +852,7 @@ bool Tensor::compute(Abstract::Vector& dir,
   predf->update(1.0, soln.getF(), beta*beta, *acPtr, 1.0);
   double residual3 = predf->norm();
   printf("Actual tensor residual = %8e (using beta = %e)\n", residual3, beta);
-  if ( lambdaBar == 1.0  &&  abs((residual3 - terr)/terr) > 1e-3) 
+  if ( lambdaBar == 1.0  &&  fabs((residual3 - terr)/terr) > 1e-3) 
     printf("  *** Warning - check residuals ***\n");
 #endif  // CHECK_RESIDUALS
 #endif  // DEBUG_LEVEL
