@@ -42,12 +42,14 @@ PETSC_H = \
 	$(srcdir)/NOX_Petsc_Vector.H \
 	$(srcdir)/NOX_Petsc_Group.H \
 	$(srcdir)/NOX_Petsc_SharedJacobian.H \
+	$(srcdir)/NOX_Petsc_Options.H \
 	$(srcdir)/NOX_Petsc_Interface.H
 
 PETSC = \
 	$(srcdir)/NOX_Petsc_Vector.C \
 	$(srcdir)/NOX_Petsc_Group.C \
-	$(srcdir)/NOX_Petsc_SharedJacobian.C
+	$(srcdir)/NOX_Petsc_SharedJacobian.C \
+	$(srcdir)/NOX_Petsc_Options.C
 
 # ------------------------------------------------------------------------
 # Noxpetsc library specifications
