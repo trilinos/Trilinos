@@ -1,0 +1,404 @@
+<!doctype html public "-//w3c//dtd html 4.0 transitional//en">
+<html>
+<head>
+   <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+   <meta name="GENERATOR" content="Mozilla/4.7 [en] (X11; U; SunOS 5.6 sun4m) [Netscape]">
+   <meta name="sandia.approved" content="SAND99-1377">
+   <meta name="author" content="karen devine, kddevin@sandia.gov">
+   <title>Zoltan User's Guide:  Backward Compatilibity</title>
+<!-----------------------------------------------------------------------------
+ ! Zoltan Library for Parallel Applications            !
+ ! Copyright (c) 2000, Sandia National Laboratories.                          !
+ ! This document is released under the GNU Lesser General Public License.     !
+ ! For more info, see the README file in the top-level Zoltan directory.      !
+ !----------------------------------------------------------------------------!
+-->
+<!-- CVS File Information
+     $RCSfile$
+     $Author$
+     $Date$
+     $Revision$
+-->
+
+</head>
+<body bgcolor="#FFFFFF">
+
+<div align=right><b><i><a href="ug.html">Zoltan User's Guide</a>&nbsp; |&nbsp; <a href="ug_refs.html">Next</a>&nbsp; |&nbsp; <a href="ug_fortran_sys.html">Previous</a></i></b></div>
+
+<h2>
+Backward Compatibility with Earlier Versions of Zoltan
+</h2>
+<p>
+Versions of Zoltan before version 1.3 used a different naming convention for 
+the Zoltan interface and query functions.  All functions in Zoltan v.1.3 and 
+above
+are prefixed with <b>Zoltan_</b>; earlier versions were prefixed with 
+<b>LB_</b>. 
+
+<p>
+<b>Zoltan versions 1.3 and above maintain backward compatibility with the 
+earlier
+Zoltan interface.</b>  Thus, applications that used earlier versions of Zoltan
+can continue using Zoltan <b>without changing their source code</b>.  
+<p>
+Only two 
+changes are needed to build the application with Zoltan v.1.3 and higher:
+<ul>
+<li> 
+All Zoltan include files are now in directory <i>Zoltan/include</i>.
+Thus, application include paths must point to this directory.  
+<br>(Previously, include files were in <i>Zoltan/lb</i>.)
+<li> 
+Applications link with Zoltan now by specifying only <i>-lzoltan</i>.
+<br>(Previously, applications had to link with <i>-lzoltan -lzoltan_comm
+-lzoltan_mem</i>.)
+</ul>
+
+<p>
+While it is not necessary for application developers to modify their
+source code to use Zoltan v.1.3 and above, those who want to update their
+source code
+should do the following in their application source files:
+<ul>
+<li> 
+Replace Zoltan calls and constants (<b>LB_*</b>) with new names.  The new
+names can be found through the <a href="#Backward Index">index below</a>.
+<li>
+C programs: Include file <i>zoltan.h</i> instead of <i>lbi_const.h</i>.
+<li>
+F90 programs: Put user-defined data types in file <i>zoltan_user_data.f90</i> instead of <i>lb_user_const.f90</i>.
+</ul>
+
+
+<h2>
+<a NAME="Backward Index"></a>Backward Compatilibity Index for Interface and Query Functions</h2>
+
+
+<table>
+<tr>
+<td>
+Name in Earlier Zoltan Versions
+<hr>
+</td>
+<td>
+Name in Zoltan Version 1.3 and higher
+<hr>
+</td>
+</tr>
+<tr>
+<td>
+LB_BORDER_OBJ_LIST_FN
+</td>
+<td>
+<a href="ug_query_lb.html#ZOLTAN_BORDER_OBJ_LIST_FN">ZOLTAN_BORDER_OBJ_LIST_FN</a>
+</td>
+</tr>
+<tr>
+<td>
+LB_Balance
+</td>
+<td>
+<a href="ug_interface_lb.html#Zoltan_LB_Balance">Zoltan_LB_Balance</a>
+</td>
+</tr>
+<tr>
+<td>
+LB_Box_Assign
+</td>
+<td>
+<a href="ug_interface_augment.html#Zoltan_LB_Box_Assign">Zoltan_LB_Box_Assign</a>
+</td>
+</tr>
+<tr>
+<td>
+LB_CHILD_LIST_FN
+</td>
+<td>
+<a href="ug_query_lb.html#ZOLTAN_CHILD_LIST_FN">ZOLTAN_CHILD_LIST_FN</a>
+</td>
+</tr>
+<tr>
+<td>
+LB_CHILD_WEIGHT_FN
+</td>
+<td>
+<a href="ug_query_lb.html#ZOLTAN_CHILD_WEIGHT_FN">ZOLTAN_CHILD_WEIGHT_FN</a>
+</td>
+</tr>
+<tr>
+<td>
+LB_COARSE_OBJ_LIST_FN
+</td>
+<td>
+<a href="ug_query_lb.html#ZOLTAN_COARSE_OBJ_LIST_FN">ZOLTAN_COARSE_OBJ_LIST_FN</a>
+</td>
+</tr>
+<tr>
+<td>
+LB_Compute_Destinations
+</td>
+<td>
+<a href="ug_interface_mig.html#Zoltan_Compute_Destinations">Zoltan_Compute_Destinations</a>
+</td>
+</tr>
+<tr>
+<td>
+LB_Create
+</td>
+<td>
+<a href="ug_interface_init.html#Zoltan_Create">Zoltan_Create</a>
+</td>
+</tr>
+<tr>
+<td>
+LB_Destroy
+</td>
+<td>
+<a href="ug_interface_lb.html#Zoltan_Destroy">Zoltan_Destroy</a>
+</td>
+</tr>
+<tr>
+<td>
+LB_EDGE_LIST_FN
+</td>
+<td>
+<a href="ug_query_lb.html#ZOLTAN_EDGE_LIST_FN">ZOLTAN_EDGE_LIST_FN</a>
+</td>
+</tr>
+<tr>
+<td>
+LB_Eval
+</td>
+<td>
+<a href="ug_interface_lb.html#Zoltan_LB_Eval">Zoltan_LB_Eval</a>
+</td>
+</tr>
+<tr>
+<td>
+LB_FIRST_BORDER_OBJ_FN
+</td>
+<td>
+<a href="ug_query_lb.html#ZOLTAN_FIRST_BORDER_OBJ_FN">ZOLTAN_FIRST_BORDER_OBJ_FN</a>
+</td>
+</tr>
+<tr>
+<td>
+LB_FIRST_COARSE_OBJ_FN
+</td>
+<td>
+<a href="ug_query_lb.html#ZOLTAN_FIRST_COARSE_OBJ_FN">ZOLTAN_FIRST_COARSE_OBJ_FN</a>
+</td>
+</tr>
+<tr>
+<td>
+LB_FIRST_OBJ_FN
+</td>
+<td>
+<a href="ug_query_lb.html#ZOLTAN_FIRST_OBJ_FN">ZOLTAN_FIRST_OBJ_FN</a>
+</td>
+</tr>
+<tr>
+<td>
+LB_Free_Data
+</td>
+<td>
+<a href="ug_interface_lb.html#Zoltan_LB_Free_Data">Zoltan_LB_Free_Data</a>
+</td>
+</tr>
+<tr>
+<td>
+LB_GEOM_FN
+</td>
+<td>
+<a href="ug_query_lb.html#ZOLTAN_GEOM_FN">ZOLTAN_GEOM_FN</a>
+</td>
+</tr>
+<tr>
+<td>
+LB_Help_Migrate
+</td>
+<td>
+<a href="ug_interface_mig.html#Zoltan_Help_Migrate">Zoltan_Help_Migrate</a>
+</td>
+</tr>
+<tr>
+<td>
+LB_Initialize
+</td>
+<td>
+<a href="ug_interface_init.html#Zoltan_Initialize">Zoltan_Initialize</a>
+</td>
+</tr>
+<tr>
+<td>
+LB_MID_MIGRATE_FN
+</td>
+<td>
+<a href="ug_query_mig.html#ZOLTAN_MID_MIGRATE_FN">ZOLTAN_MID_MIGRATE_FN</a>
+</td>
+</tr>
+<tr>
+<td>
+LB_NEXT_BORDER_OBJ_FN
+</td>
+<td>
+<a href="ug_query_lb.html#ZOLTAN_NEXT_BORDER_OBJ_FN">ZOLTAN_NEXT_BORDER_OBJ_FN</a>
+</td>
+</tr>
+<tr>
+<td>
+LB_NEXT_COARSE_OBJ_FN
+</td>
+<td>
+<a href="ug_query_lb.html#ZOLTAN_NEXT_COARSE_OBJ_FN">ZOLTAN_NEXT_COARSE_OBJ_FN</a>
+</td>
+</tr>
+<tr>
+<td>
+LB_NEXT_OBJ_FN
+</td>
+<td>
+<a href="ug_query_lb.html#ZOLTAN_NEXT_OBJ_FN">ZOLTAN_NEXT_OBJ_FN</a>
+</td>
+</tr>
+<tr>
+<td>
+LB_NUM_BORDER_OBJ_FN
+</td>
+<td>
+<a href="ug_query_lb.html#ZOLTAN_NUM_BORDER_OBJ_FN">ZOLTAN_NUM_BORDER_OBJ_FN</a>
+</td>
+</tr>
+<tr>
+<td>
+LB_NUM_CHILD_FN
+</td>
+<td>
+<a href="ug_query_lb.html#ZOLTAN_NUM_CHILD_FN">ZOLTAN_NUM_CHILD_FN</a>
+</td>
+</tr>
+<tr>
+<td>
+LB_NUM_COARSE_OBJ_FN
+</td>
+<td>
+<a href="ug_query_lb.html#ZOLTAN_NUM_COARSE_OBJ_FN">ZOLTAN_NUM_COARSE_OBJ_FN</a>
+</td>
+</tr>
+<tr>
+<td>
+LB_NUM_EDGES_FN
+</td>
+<td>
+<a href="ug_query_lb.html#ZOLTAN_NUM_EDGES">ZOLTAN_NUM_EDGES_FN</a>
+</td>
+</tr>
+<tr>
+<td>
+LB_NUM_GEOM_FN
+</td>
+<td>
+<a href="ug_query_lb.html#ZOLTAN_NUM_GEOM_FN">ZOLTAN_NUM_GEOM_FN</a>
+</td>
+</tr>
+<tr>
+<td>
+LB_NUM_OBJ_FN
+</td>
+<td>
+<a href="ug_query_lb.html#ZOLTAN_NUM_OBJ_FN">ZOLTAN_NUM_OBJ_FN</a>
+</td>
+</tr>
+<tr>
+<td>
+LB_OBJ_LIST_FN
+</td>
+<td>
+<a href="ug_query_lb.html#ZOLTAN_OBJ_LIST_FN">ZOLTAN_OBJ_LIST_FN</a>
+</td>
+</tr>
+<tr>
+<td>
+LB_OBJ_SIZE_FN
+</td>
+<td>
+<a href="ug_query_mig.html#ZOLTAN_OBJ_SIZE_FN">ZOLTAN_OBJ_SIZE_FN</a>
+</td>
+</tr>
+<tr>
+<td>
+LB_PACK_OBJ_FN
+</td>
+<td>
+<a href="ug_query_mig.html#ZOLTAN_PACK_OBJ_FN">ZOLTAN_PACK_OBJ_FN</a>
+</td>
+</tr>
+<tr>
+<td>
+LB_POST_MIGRATE_FN
+</td>
+<td>
+<a href="ug_query_mig.html#ZOLTAN_POST_MIGRATE_FN">ZOLTAN_POST_MIGRATE_FN</a>
+</td>
+</tr>
+<tr>
+<td>
+LB_PRE_MIGRATE_FN
+</td>
+<td>
+<a href="ug_query_mig.html#ZOLTAN_PRE_MIGRATE_FN">ZOLTAN_PRE_MIGRATE_FN</a>
+</td>
+</tr>
+<tr>
+<td>
+LB_Point_Assign
+</td>
+<td>
+<a href="ug_interface_augment.html#Zoltan_LB_Point_Assign">Zoltan_LB_Point_Assign</a>
+</td>
+</tr>
+<tr>
+<td>
+LB_Set_Fn
+</td>
+<td>
+<a href="ug_interface_init.html#Zoltan_Set_Fn">Zoltan_Set_Fn</a>
+</td>
+</tr>
+<tr>
+<td>
+LB_Set_&lt;<i>lb_fn_type</i>>_Fn
+</td>
+<td>
+<a href="ug_interface_init.html#Zoltan_Set_Specific_Fn">Zoltan_Set_&lt;<i>zoltan_fn_type</i>>_Fn</a>
+</td>
+</tr>
+<tr>
+<td>
+LB_Set_Method
+</td>
+<td>
+<a href="ug_interface_lb.html#Zoltan_LB_Set_Method">Zoltan_LB_Set_Method</a>
+</td>
+</tr>
+<tr>
+<td>
+LB_Set_Param
+</td>
+<td>
+<a href="ug_interface_lb.html#Zoltan_Set_Param">Zoltan_Set_Param</a>
+</td>
+</tr>
+<tr>
+<td>
+LB_UNPACK_OBJ_FN
+</td>
+<td>
+<a href="ug_query_mig.html#ZOLTAN_UNPACK_OBJ_FN">ZOLTAN_UNPACK_OBJ_FN</a>
+</td>
+</tr>
+</table>
+
+<hr WIDTH="100%">[<a href="ug.html">Table of Contents</a>&nbsp; | <a href="ug_refs.html">Next:&nbsp; References</a>&nbsp; |&nbsp; <a href="ug_fortran_sys.html">Previous:&nbsp; Fortran--System-Specific Remarks</a>]
+</body>
+</html>
