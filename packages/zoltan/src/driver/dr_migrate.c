@@ -139,7 +139,7 @@ char *yo = "migrate_elements";
     return 0;
   }
 
-  if (LB_Help_Migrate(lb, num_gid_entries, num_lid_entries,
+  if (LB_Help_Migrate(lb, 
                       num_imp, imp_gids, imp_lids, imp_procs,
                       num_exp, exp_gids, exp_lids, exp_procs) == LB_FATAL) {
     Gen_Error(0, "fatal:  error returned from LB_Help_Migrate()\n");
