@@ -160,54 +160,53 @@ ML_Aggregate_Set_MaxCoarseSize( ag, 300);
 		printf("Coarse level = %d \n", coarsest_level);
 	
 	/* set up smoothers */
-AZ_defaults(options, params);
-options[AZ_precond] = AZ_dom_decomp;
-options[AZ_subdomain_solve] = AZ_ilut;
-params[AZ_ilut_fill] = 1.0;
-options[AZ_reorder] = 1;
+
+        AZ_defaults(options, params);
 	
 	for (level = N_levels-1; level > coarsest_level; level--) {
-/*
-                ML_Gen_SmootherAztec(ml, level, options, params, 
+          /* This is the Aztec domain decomp/ilu smoother that we */
+          /* usually use for this problem.                        */
+
+          options[AZ_precond] = AZ_dom_decomp;
+          options[AZ_subdomain_solve] = AZ_ilut;
+          params[AZ_ilut_fill] = 1.0;
+          options[AZ_reorder] = 1;
+          ML_Gen_SmootherAztec(ml, level, options, params, 
                         proc_config, status, AZ_ONLY_PRECONDITIONER, 
                         ML_PRESMOOTHER,NULL);
-*/
-                ML_Gen_Smoother_ParaSails(ml , level, ML_PRESMOOTHER, nsmooth,
+
+          /*  Sparse approximate inverse smoother that acutally does both */
+          /*  pre and post smoothing.                                     */
+          /*
+
+          ML_Gen_Smoother_ParaSails(ml , level, ML_PRESMOOTHER, nsmooth,
                                 parasails_sym, parasails_thresh,
                                 parasails_nlevels, parasails_filter,
                                 parasails_loadbal, parasails_factorized);
 
-                parasails_thresh /= 4.;
-
+          parasails_thresh /= 4.;
+          */
 
 		
-		ML_Gen_Smoother_SymGaussSeidel(ml , level, ML_PRESMOOTHER, 
-                                               nsmooth,1.);
-		ML_Gen_Smoother_SymGaussSeidel(ml , level, ML_POSTSMOOTHER, 
-                                               nsmooth,1.);
-/*
-                nblocks = ML_Aggregate_Get_AggrCount( ag, level );
-                ML_Aggregate_Get_AggrMap( ag, level, &blocks);
-                ML_Gen_Smoother_VBlockGaussSeidel( ml , level, ML_PRESMOOTHER,
-                                                      nsmooth, nblocks, blocks);
-                ML_Gen_Smoother_VBlockGaussSeidel( ml , level, ML_POSTSMOOTHER,
-                                                      nsmooth, nblocks, blocks);
-*/
-/*
-		ML_Gen_Smoother_GaussSeidel(ml, level, ML_PRESMOOTHER, nsmooth);
-		ML_Gen_Smoother_GaussSeidel(ml, level, ML_POSTSMOOTHER,nsmooth);    
-*/
-/*
+          /* This is the symmetric Gauss-Seidel smoothing. In parallel,    */
+          /* it is not a true Gauss-Seidel in that each processor          */
+          /* does a Gauss-Seidel on its local submatrix independent of the */
+          /* other processors.                                             */
+          /*
+	  ML_Gen_Smoother_SymGaussSeidel(ml,level,ML_PRESMOOTHER, nsmooth,1.);
+	  ML_Gen_Smoother_SymGaussSeidel(ml,level,ML_POSTSMOOTHER,nsmooth,1.);
+
+          /* Block Gauss-Seidel with block size equal to #DOF per node.    */
+          /* Not a true Gauss-Seidel in that each processor does a         */
+          /* Gauss-Seidel on its local submatrix independent of the other  */
+          /* processors.                                                   */
+          /*
 		
-		ML_Gen_Smoother_BlockGaussSeidel(ml , level, ML_PRESMOOTHER, 
-                                                nsmooth, 0.67, num_PDE_eqns);
-		ML_Gen_Smoother_BlockGaussSeidel(ml , level, ML_POSTSMOOTHER, 
-                                                nsmooth, 0.67, num_PDE_eqns);
-*/
-/*
-		ML_Gen_Smoother_Jacobi(ml, level, ML_PRESMOOTHER, nsmooth, .67);
-		ML_Gen_Smoother_Jacobi(ml, level, ML_POSTSMOOTHER,nsmooth, .67);
-*/
+	  ML_Gen_Smoother_BlockGaussSeidel(ml,level,ML_PRESMOOTHER, 
+                                           nsmooth,0.67, num_PDE_eqns);
+	  ML_Gen_Smoother_BlockGaussSeidel(ml,level,ML_POSTSMOOTHER, 
+                                           nsmooth, 0.67, num_PDE_eqns);
+          */
 		
 	}
 	

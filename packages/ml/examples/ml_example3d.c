@@ -418,8 +418,8 @@ int construct_ml_grids(int N_elements, int *proc_config, AZ_MATRIX **Amat_f,
     AZ_ML_Set_Amat(ml, N_levels-1, leng, leng, *Amat_f, proc_config);
 
     ML_Aggregate_Create( &ag );
-ML_Aggregate_Set_MaxCoarseSize(ag, 10);
-ML_Aggregate_Set_Threshold(ag, 0.0);
+    ML_Aggregate_Set_MaxCoarseSize(ag, 10);
+    ML_Aggregate_Set_Threshold(ag, 0.0);
     coarsest_level = ML_Gen_MGHierarchy_UsingAggregation(ml, N_levels-1, ML_DECREASING,ag);
     coarsest_level = N_levels - coarsest_level;
     if ( proc_config[AZ_node] == 0 )
@@ -428,7 +428,10 @@ ML_Aggregate_Set_Threshold(ag, 0.0);
     /* set up smoothers */
 
     for (level = N_levels-1; level > coarsest_level; level--) {
-/*
+       /* Block Gauss-Seidel using all variables within an aggregate */
+       /* as a block.                                                */
+       /*
+
        nblocks = ML_Aggregate_Get_AggrCount( ag, level );
        ML_Aggregate_Get_AggrMap( ag, level, &blocks);
        ML_Gen_Smoother_VBlockSymGaussSeidel( ml , level, ML_PRESMOOTHER, 
@@ -437,20 +440,31 @@ ML_Aggregate_Set_Threshold(ag, 0.0);
        ML_Gen_Smoother_VBlockSymGaussSeidel( ml , level, ML_POSTSMOOTHER, 
  					     nsmooth, 1.0, 
                                              nblocks, blocks);
-*/
+       */
+
+
+       /* This is the symmetric Gauss-Seidel smoothing. In parallel,    */
+       /* it is not a true Gauss-Seidel in that each processor          */
+       /* does a Gauss-Seidel on its local submatrix independent of the */
+       /* other processors.                                             */
+
        ML_Gen_Smoother_SymGaussSeidel(ml , level, ML_POSTSMOOTHER, nsmooth,1.);
        ML_Gen_Smoother_SymGaussSeidel(ml , level, ML_PRESMOOTHER, nsmooth,1.);
-/*
-      ML_Gen_Smoother_ParaSails(ml , level, ML_PRESMOOTHER, nsmooth,
+
+       /*  Sparse approximate inverse smoother that acutally does both */
+       /*  pre and post smoothing.                                     */
+       /*
+       /*
+       ML_Gen_Smoother_ParaSails(ml , level, ML_PRESMOOTHER, nsmooth,
                                 parasails_sym, parasails_thresh,
                                 parasails_nlevels, parasails_filter,
                                 parasails_loadbal, parasails_factorized);
-*/
+       */
 
-/*
+       /*
        ML_Gen_Smoother_Jacobi(ml , level, ML_PRESMOOTHER, 1, 0.67 );
        ML_Gen_Smoother_Jacobi(ml , level, ML_POSTSMOOTHER, 2, 0.67 );
-*/
+       */
     }
 
     if (coarse_iterations == 0) ML_Gen_CoarseSolverSuperLU(ml,coarsest_level);

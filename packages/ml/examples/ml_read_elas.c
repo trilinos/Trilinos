@@ -268,41 +268,49 @@ for (i = 0; i < N_update; i++) rhs[i] = (double) update[i];
 	
    for (level = N_levels-1; level > coarsest_level; level--) {
 		
-/*
+    /*  Sparse approximate inverse smoother that acutally does both */
+    /*  pre and post smoothing.                                     */
+
       ML_Gen_Smoother_ParaSails(ml , level, ML_PRESMOOTHER, nsmooth, 
                                 parasails_sym, parasails_thresh, 
                                 parasails_nlevels, parasails_filter,
                                 parasails_loadbal, parasails_factorized);
-*/
-/*
-      ML_Gen_Smoother_SymGaussSeidel(ml , level, ML_PRESMOOTHER, nsmooth,1.);
-      ML_Gen_Smoother_SymGaussSeidel(ml , level, ML_POSTSMOOTHER, nsmooth,1.);
-*/
-/*
-      ML_Gen_Smoother_Jacobi(ml , level, ML_PRESMOOTHER, nsmooth,.4);
-      ML_Gen_Smoother_Jacobi(ml , level, ML_POSTSMOOTHER, nsmooth,.4);
-*/
 
-/*   
-      nblocks = ML_Aggregate_Get_AggrCount( ag, level );
-      ML_Aggregate_Get_AggrMap( ag, level, &blocks);
-      nblocks = 250;
-      ML_Gen_Blocks_Metis(ml, level, &nblocks, &blocks);
-      ML_Gen_Smoother_VBlockSymGaussSeidel(ml , level, ML_BOTH, nsmooth,1.,
-                                        nblocks, blocks);
-*/
+     /* This is the symmetric Gauss-Seidel smoothing that we usually use. */
+     /* In parallel, it is not a true Gauss-Seidel in that each processor */
+     /* does a Gauss-Seidel on its local submatrix independent of the     */
+     /* other processors.                                                 */
+      /*
+      ML_Gen_Smoother_SymGaussSeidel(ml , level, ML_BOTH, nsmooth,1.);
+      ML_Gen_Smoother_SymGaussSeidel(ml , level, ML_POSTSMOOTHER, nsmooth,1.);
+      */
+
+      /* This is a true Gauss Seidel in parallel. This seems to work for  */
+      /* elasticity problems.  However, I don't believe that this is very */
+      /* efficient in parallel.                                           */       
+      /*
       nblocks = ml->Amat[level].invec_leng;
       for (i =0; i < nblocks; i++) blocks[i] = i;
       ML_Gen_Smoother_VBlockSymGaussSeidelSequential(ml , level, ML_PRESMOOTHER,
                                                   nsmooth, 1., nblocks, blocks);
       ML_Gen_Smoother_VBlockSymGaussSeidelSequential(ml, level, ML_POSTSMOOTHER,
                                                   nsmooth, 1., nblocks, blocks);
-/*
-      ML_Gen_Smoother_VBlockGaussSeidel(ml , level, ML_PRESMOOTHER, nsmooth,
+      */
+
+      /* Jacobi Smoothing                                                 */
+      /*              
+      ML_Gen_Smoother_Jacobi(ml , level, ML_PRESMOOTHER, nsmooth,.4);
+      ML_Gen_Smoother_Jacobi(ml , level, ML_POSTSMOOTHER, nsmooth,.4);
+      */
+
+      /*  This does a block Gauss-Seidel (not true GS in parallel)        */
+      /*  where each processor has 'nblocks' blocks.                      */
+      /*
+      nblocks = 250;
+      ML_Gen_Blocks_Metis(ml, level, &nblocks, &blocks);
+      ML_Gen_Smoother_VBlockSymGaussSeidel(ml , level, ML_BOTH, nsmooth,1.,
                                         nblocks, blocks);
-      ML_Gen_Smoother_VBlockGaussSeidel( ml , level, ML_POSTSMOOTHER, nsmooth,
-                                                 nblocks, blocks);
-*/
+      */
       num_PDE_eqns = 6;
    }
 	

@@ -546,17 +546,26 @@ null_vect[ i*ndim+ leng + 1 ]=-1.;
       /* set up smoothers */
 
       for (level = N_levels-1; level > coarsest_level; level--) {
-/*
+         /*  Sparse approximate inverse smoother that acutally does both */
+         /*  pre and post smoothing.                                     */
+         /*
+         /*
+
          ML_Gen_Smoother_ParaSails(ml , level, ML_PRESMOOTHER, nsmooth,
                                 parasails_sym, parasails_thresh,
                                 parasails_nlevels, parasails_filter,
                                 parasails_loadbal, parasails_factorized);
-*/
+         */
 
 /*
          ML_Gen_Smoother_Jacobi(ml , level, ML_PRESMOOTHER, nsmooth, .67);
          ML_Gen_Smoother_Jacobi(ml , level, ML_POSTSMOOTHER, nsmooth, .67 );
 */
+         /* This is the symmetric Gauss-Seidel smoothing. In parallel,    */
+         /* it is not a true Gauss-Seidel in that each processor          */
+         /* does a Gauss-Seidel on its local submatrix independent of the */
+         /* other processors.                                             */
+
 
          ML_Gen_Smoother_SymGaussSeidel(ml, level, ML_PRESMOOTHER, nsmooth,1.);
          ML_Gen_Smoother_SymGaussSeidel(ml, level, ML_POSTSMOOTHER, nsmooth,1.);
