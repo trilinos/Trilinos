@@ -26,11 +26,9 @@
 // ***********************************************************************
 //@HEADER
 
-//#ifndef _MATLAB_ENGINE_H_
-//#define _MATLAB_ENGINE_H_
-//#include "EpetraExt_MatlabEngine.h"
+#ifndef MATLAB_ENGINE_H
+#define MATLAB_ENGINE_H
 #include <Epetra_ConfigDefs.h>
-//#include "MATLAB_Engine.h"
 
 #ifdef EPETRA_MPI
 #include "Epetra_MpiComm.h"
@@ -38,13 +36,19 @@
 #include "Epetra_SerialComm.h"
 #endif
 #include "Epetra_Comm.h"
-// MatlabEngine declarations:
+
+// the following deal with matlab provided headers:
 #include "engine.h"
 #include "mex.h"
 #undef printf
 //! MatlabEngine: 
 
 class Epetra_MultiVector;
+class Epetra_RowMatrix;
+class Epetra_CrsGraph;
+class Epetra_SerialDenseMatrix;
+class Epetra_BlockMap;
+class Epetra_IntSerialDenseMatrix;
 
 /*! The MATLAB_Engine class provides access to MATLAB from Trilinos 
 
@@ -94,11 +98,16 @@ class MatlabEngine {
 
   //@}
 
-  int PutMultiVector(const Epetra_MultiVector & multiVector, const char * variableName);
+  int PutMultiVector(const Epetra_MultiVector& multiVector, const char* variableName);
+  int PutRowMatrix(const Epetra_RowMatrix& rowMatrix, const char* variableName);
+  int PutCrsGraph(const Epetra_CrsGraph& crsGraph, const char* variableName);
+  int PutSerialDenseMatrix(const Epetra_SerialDenseMatrix& sdMatrix, const char* variableName);
+  int PutIntSerialDenseMatrix(const Epetra_IntSerialDenseMatrix& isdMatrix, const char* variableName);
+  int PutBlockMap(const Epetra_BlockMap& blockMap, const char* variableName);
   
  private:
 
-    Engine *Engine_ ;
+    Engine* Engine_ ;
     int MyPID_ ;
 
     const Epetra_Comm& Comm_ ;
@@ -106,3 +115,4 @@ class MatlabEngine {
 };
 } // namespace EpetraExt
 
+#endif /* MATLAB_ENGINE_H */

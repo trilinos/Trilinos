@@ -43,7 +43,11 @@
 #include "Epetra_MultiVector.h"
 #include "Epetra_Vector.h"
 #include "Epetra_Export.h"
-
+#include "Epetra_SerialDenseMatrix.h"
+#include "Epetra_SerialDenseVector.h"
+#include "Epetra_IntSerialDenseMatrix.h"
+#include "Epetra_IntSerialDenseVector.h"
+#include "Epetra_DataAccess.h"
 #include "EpetraExt_MatlabEngine.h"
 
 #define BUFSIZE 200
@@ -64,29 +68,84 @@ int main(int argc, char *argv[]) {
   char matlabBuffer [MATLABBUF];
   EpetraExt::MatlabEngine engine (comm);
   
+  /* MultiVector test
   Epetra_Map map (50, 0, comm);
   Epetra_MultiVector multiVector (map, 25, false);
-  
   multiVector.Random();
-  
   engine.PutMultiVector(multiVector, "MULT");
+  */
   
+  /*SerialDenseMatrix test
+  double* A = new double[30];
+  double* Aptr = A;
+  int M = 5;
+  int N = 6;
+  for(int i=0; i < M*N; i++) {
+      *Aptr++ = i;
+  }
+
+  Epetra_SerialDenseMatrix sdMatrix (View, A, M, M, N);
+  engine.PutSerialDenseMatrix(sdMatrix, "SDMATRIX");
+  cout << sdMatrix;
+  */
+
+  /* SerialDenseVector test
+  double* A = new double[30];
+  double* Aptr = A;
+  int length = 30;
+  for(int i=0; i < length; i++) {
+      *Aptr++ = i;
+  }
+
+  Epetra_SerialDenseVector sdVector (Copy, A, length);
+  engine.PutSerialDenseMatrix(sdVector, "SDVECTOR");
+  cout << sdVector;
+  */
+
+  /*IntSerialDenseMatrix test
+  int* A = new int[30];
+  int* Aptr = A;
+  int M = 5;
+  int N = 6;
+  for(int i=0; i < M*N; i++) {
+      *Aptr++ = i;
+  }
+
+  Epetra_IntSerialDenseMatrix isdMatrix (View, A, M, M, N);
+  engine.PutIntSerialDenseMatrix(isdMatrix, "ISDMATRIX");
+  cout << isdMatrix;
+  */
+
+
+  /* SerialDenseVector test
+  int* A = new int[30];
+  int* Aptr = A;
+  int length = 30;
+  for(int i=0; i < length; i++) {
+      *Aptr++ = i;
+  }
+
+  Epetra_IntSerialDenseVector isdVector (Copy, A, length);
+  engine.PutIntSerialDenseMatrix(isdVector, "ISDVECTOR");
+  cout << isdVector;
+  */
+
   int err;
   while(1) {
       // Prompt the user and get a string
-      printf (">> ") ;
-      if (fgets (s, BUFSIZE, stdin) == NULL) {
-          printf ("Bye\n") ;
+      printf(">> ");
+      if (fgets(s, BUFSIZE, stdin) == NULL) {
+          printf("Bye\n");
           break ;
       }
       printf ("command :%s:\n", s) ;
       
       // Send the command to MATLAB
       // output goes to stdout
-      err = engine.EvalString (s, matlabBuffer, MATLABBUF) ;
+      err = engine.EvalString(s, matlabBuffer, MATLABBUF);
       if (err != 0) {
           printf("there was an error: %d", err);
-	  err = 0;
+		  err = 0;
       }
       else {
       	  printf("Matlab Output:\n%s", matlabBuffer);
@@ -95,7 +154,7 @@ int main(int argc, char *argv[]) {
   
   //delete engine ;
   
-  return (0) ;
+  return(0);
   
 
   //Epetra_Map * map;
