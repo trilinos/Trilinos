@@ -1,0 +1,38 @@
+Autotools Version
+
+Currently, bootstrapping Trilinos requires Autoconf version 2.53 and Automake
+ version 1.5.
+
+To check the versions on your machine, type 'autoconf --version'
+('automake --version').
+
+To upgrade, a user must have root access.
+
+Upgrading Autoconf
+NOTE: GNU M4 (version 1.4 or later) and perl (5.005_03 or later) are required
+before configuring Autoconf.
+Go to 'http://ftp.gnu.org/gnu/autoconf/
+Download either autoconf-2.53.tar.gz or autoconf-2.53.tar.bz2.
+(If upgrading from 2.52, one can choose to download the 
+autoconf-2.52-2.53.xdelta patch.)
+
+Untar the tarball that was downloaded.  cd into autoconf-2.53.
+Instructions for what to do next are located in the README and INSTALL files.
+
+For most cases, the following short version of the instructions will suffice.
+
+First, decide where to install autoconf.  (When upgrading, rewriting the old
+version is recommended.)  To install autotools in /PATH/bin, type
+'./configure --prefix=PATH'.  If the configure completes sucessfully, type
+'make install'.  To check if the install was successful, type 
+'autoconf --version'.  The first line of output should read 
+'autoconf (GNU Autoconf) 2.53'.  If the install was not successful,
+go back and read README and INSTALL for more help.
+
+If the install was sucessful, the tar file and the expanded autoconf-2.53
+directory can be deleted.
+
+To install Automake, follow the same procedure as for Autoconf except:
+-Replace 'autoconf' with 'automake'.  
+-Keep in mind that the proper version of Automake is 1.5.
+-automake-1.5.tar.bz2 does not exist, choose automake-1.5.tar.gz.
