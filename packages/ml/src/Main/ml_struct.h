@@ -182,6 +182,8 @@ extern int ML_Set_Grid(ML *, int nl, void *grid, ML_GridFunc *);
 
 extern int ML_Init_Amatrix(ML *,int level,int ilen,int olen,void *data);
 extern int ML_Get_Amatrix(ML *ml, int level, ML_Operator **matrix);
+extern int MLnew_Set_Amatrix_Matvec(ML*,int,
+                          int (*func)(void*,int,double*,int,double*));
 extern int ML_Set_Amatrix_Matvec(ML*,int,
                           int (*func)(void*,int,double*,int,double*));
 extern int ML_Set_Amatrix_Diag(ML*,int,int, double *);
@@ -207,14 +209,24 @@ extern int ML_Set_Restrictor_Matvec(ML*,int,
 extern int ML_Set_Restrictor_Getrow(ML *ml, int level,
                      int (*getrow)(void*,int,int*,int,int*,double*,int*),
 		     int (*comm  )(double *vec, void *data), int comm_vec_leng);
+extern int MLnew_Set_Restrictor_Matvec(ML*,int,
+                    int (*func)(void*,int,double*,int,double*));
+extern int MLnew_Set_Restrictor_Getrow(ML *ml, int level,
+                     int (*getrow)(void*,int,int*,int,int*,double*,int*),
+		     int (*comm  )(double *vec, void *data), int comm_vec_leng);
 extern int ML_Set_Restrictor_GetrowNeighbors(ML *ml,int level,int N_neigh,
 	             int *neigh_list);
 extern int ML_Set_Restrictor_GetrowCommInfo(ML *ml,int level,int neighbor,
                      int N_rcv, int *rcv_list, int N_send, int *send_list);
 
 extern int ML_Init_Prolongator(ML*,int L1,int L2,int,int,void *data);
+extern int MLnew_Set_Prolongator_Matvec(ML *ml, int level,
+                     int (*func) (void *, int, double *, int, double *));
 extern int ML_Set_Prolongator_Matvec(ML *ml, int level,
                      int (*func) (void *, int, double *, int, double *));
+extern int MLnew_Set_Prolongator_Getrow(ML *ml, int level,
+                     int (*getrow)(void*,int,int*,int,int*,double*,int*),
+		     int (*comm  )(double *vec, void *data), int comm_vec_leng);
 extern int ML_Set_Prolongator_Getrow(ML *ml, int level,
                      int (*getrow)(void*,int,int*,int,int*,double*,int*),
 		     int (*comm  )(double *vec, void *data), int comm_vec_leng);

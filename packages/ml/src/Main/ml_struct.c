@@ -598,6 +598,15 @@ int ML_Init_Amatrix(ML *ml, int level, int ilen, int olen, void *data)
 
 /* ------------------------------------------------------------------------- */
 
+int MLnew_Set_Amatrix_Matvec(ML *ml, int level,
+                      int (*matvec)(void *, int, double *, int, double *))
+{
+   ML_Operator *matrix;
+   matrix = &(ml->Amat[level]);
+
+   return(ML_Operator_Set_ApplyFunc(matrix,ML_INTERNAL,matvec));
+}
+
 int ML_Set_Amatrix_Matvec(ML *ml, int level,
                       int (*matvec)(void *, int, double *, int, double *))
 {
@@ -773,6 +782,48 @@ int ML_Set_Restrictor_Getrow(ML *ml, int nl,
 
 /* ------------------------------------------------------------------------- */
 
+int MLnew_Set_Restrictor_Matvec( ML *ml , int from_level,
+	int (*func) (void *, int, double *, int, double *))
+{
+   ML_Operator *matrix;
+   matrix = &(ml->Rmat[from_level]);
+
+   return(ML_Operator_Set_ApplyFunc(matrix,ML_INTERNAL,func));
+}
+
+/* ------------------------------------------------------------------------- */
+
+int MLnew_Set_Restrictor_Getrow(ML *ml, int nl,
+        int (*getrow)(void *, int , int* , int , int*, double* , int*),
+        int (*comm  )(double *vec, void *data), int comm_vec_leng )
+{
+   ML_Operator *Rmat;
+   int         Nghost;
+
+   Rmat = &(ml->Rmat[nl]);
+
+   if (comm != NULL) {
+      Nghost = comm_vec_leng - Rmat->invec_leng;
+      if (Nghost < 0) {
+         printf("ML_Set_Restrictor_Getrow: comm_vec_leng is less than the\n");
+         printf("                       matrix's invec_length\n");
+         exit(1);
+      }
+      ML_CommInfoOP_Generate( &(Rmat->getrow->pre_comm), comm, Rmat->data,
+                              ml->comm, Rmat->invec_leng, Nghost);
+   }
+   else {
+      if ((ml->comm->ML_nprocs > 1) & (ml->comm->ML_mypid == 0)) {
+         printf("Warning: No communication information given to ");
+         printf("ML_Set_Restrictor_Getrow\n");
+      }
+   }
+
+   return(ML_Operator_Set_Getrow(Rmat, ML_INTERNAL, Rmat->outvec_leng, getrow));
+}
+
+/* ------------------------------------------------------------------------- */
+
 int ML_Set_Restrictor_GetrowNeighbors(ML *ml, int level, int N_neigh,
                                       int *neigh_list)
 {
@@ -807,6 +858,15 @@ int ML_Init_Prolongator(ML *ml, int level, int level2, int ilen, int olen,
 }
 
 /* ------------------------------------------------------------------------- */
+
+int MLnew_Set_Prolongator_Matvec( ML *ml , int to_level,
+	int (*func) (void *, int, double *, int, double *))
+{
+   ML_Operator *matrix;
+   matrix = &(ml->Pmat[to_level]);
+
+   return(ML_Operator_Set_ApplyFunc(matrix,ML_INTERNAL, func));
+}
 
 int ML_Set_Prolongator_Matvec( ML *ml , int to_level,
 	int (*func) (void *, int, double *, int, double *))
@@ -846,6 +906,35 @@ int ML_Set_Prolongator_Getrow(ML *ml, int nl,
    }
 
    return(ML_Operator_Set_Getrow(Pmat, ML_EXTERNAL, Pmat->outvec_leng, getrow));
+}
+
+int MLnew_Set_Prolongator_Getrow(ML *ml, int nl,
+        int (*getrow)(void *, int , int* , int , int*, double* , int*),
+        int (*comm  )(double *vec, void *data), int comm_vec_leng )
+{
+   ML_Operator *Pmat;
+   int         Nghost;
+
+   Pmat = &(ml->Pmat[nl]);
+
+   if (comm != NULL) {
+      Nghost = comm_vec_leng - Pmat->invec_leng;
+      if (Nghost < 0) {
+         printf("ML_Set_Prolongator_Getrow: comm_vec_leng is less than \n");
+         printf("                           the matrix's invec_length\n");
+         exit(1);
+      }
+      ML_CommInfoOP_Generate( &(Pmat->getrow->pre_comm), comm, Pmat->data,
+                              ml->comm, Pmat->invec_leng, Nghost);
+   }
+   else {
+      if ((ml->comm->ML_nprocs > 1) & (ml->comm->ML_mypid == 0)) {
+         printf("Warning: No communication information given to ");
+         printf("ML_Set_Prolongator_Getrow\n");
+      }
+   }
+
+   return(ML_Operator_Set_Getrow(Pmat, ML_INTERNAL, Pmat->outvec_leng, getrow));
 }
 
 /* ------------------------------------------------------------------------- */
