@@ -876,7 +876,7 @@ Optional Features:
   --enable-dependency-tracking  Do not reject slow dependency extractors
   --enable-aztecoo-azlu   Enable az-lu preconditioner. Default is no. Requires
                           y12m.
-  --enable-triutils       Build triutils (default is yes)
+  --enable-triutils       Build triutils (default is no)
 
 Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
@@ -5923,7 +5923,7 @@ if test "${enable_triutils+set}" = set; then
   enableval="$enable_triutils"
   ac_cv_use_triutils=$enableval
 else
-  ac_cv_use_triutils=yes
+  ac_cv_use_triutils=no
 fi;
 
 echo "$as_me:$LINENO: checking whether to use triutils" >&5
