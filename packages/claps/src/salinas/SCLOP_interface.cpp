@@ -39,7 +39,7 @@ void CLOP_init(
 )
 {
   int overlap, max_iter, atype, ndim, max_N_orthog_vecs, coarse_solver;
-  int *adj_elem1 = 0, *adj_elem2 = 0, local_solver;
+  int *adj_elem1 = 0, *adj_elem2 = 0, local_solver, prt_debug, prt_summary;
   double solver_tol;
   overlap           = params->overlap;
   max_iter          = params->max_iterations;
@@ -49,6 +49,8 @@ void CLOP_init(
   max_N_orthog_vecs = params->max_N_orthog_vecs;
   coarse_solver     = params->coarse_solver;
   local_solver      = params->local_solver;
+  prt_debug         = params->prt_debug;
+  prt_summary       = params->prt_summary;
   //
   // initialize CLOP_ptr
   //
@@ -74,7 +76,8 @@ void CLOP_init(
   // initialize CLOP solver
   //
   CLOP_ptr->CLOP_solver_init(overlap, solver_tol, max_iter, atype, ndim,
-			     local_solver, max_N_orthog_vecs);
+			     local_solver, max_N_orthog_vecs, prt_debug,
+			     prt_summary);
 }
 
 int CLOP_solve( double *f, double *u, CLOPValues &returnvals)
