@@ -32,46 +32,41 @@ static ZOLTAN_HG_PACKING_FN packing_aug3;/* augmenting path; length 3 */
 
 int Zoltan_HG_Set_Packing_Fn(HGPartParams *hgp)
 {
-  int found = 0;
-  char *str;
   static int srand_set = 0;
+
   if (srand_set == 0)
   { srand_set = 1 ;
     srand ((unsigned long) RANDOM_SEED) ;
   }
 
-  str = hgp->redm_str;
-  if      (!strcasecmp(str, "mxp"))  hgp->packing = packing_mxp;
-  else if (!strcasecmp(str, "rep"))  hgp->packing = packing_rep;
-  else if (!strcasecmp(str, "rrp"))  hgp->packing = packing_rrp;
-  else if (!strcasecmp(str, "rhp"))  hgp->packing = packing_rhp;
-  else if (!strcasecmp(str, "grp"))  hgp->packing = packing_grp;
-  else if (!strcasecmp(str, "lhp"))  hgp->packing = packing_lhp;
-  else if (!strcasecmp(str, "pgp"))  hgp->packing = packing_pgp;
-  else                               hgp->packing = NULL;
+  if      (!strcasecmp(hgp->redm_str, "mxp"))  hgp->packing = packing_mxp;
+  else if (!strcasecmp(hgp->redm_str, "rep"))  hgp->packing = packing_rep;
+  else if (!strcasecmp(hgp->redm_str, "rrp"))  hgp->packing = packing_rrp;
+  else if (!strcasecmp(hgp->redm_str, "rhp"))  hgp->packing = packing_rhp;
+  else if (!strcasecmp(hgp->redm_str, "grp"))  hgp->packing = packing_grp;
+  else if (!strcasecmp(hgp->redm_str, "lhp"))  hgp->packing = packing_lhp;
+  else if (!strcasecmp(hgp->redm_str, "pgp"))  hgp->packing = packing_pgp;
+  else                                         hgp->packing = NULL;
 
   if (hgp->packing) {
 
-    found = 1;
-
-    /* 
+     /*
      * If reduction method is a packing, set the improvement and 
      * edge weight scaling functions accordingly.
      */
-    str = hgp->rli_str;
-    if      (!strcasecmp(str, "aug2"))  hgp->packing_rli = packing_aug2;
-    else if (!strcasecmp(str, "aug3"))  hgp->packing_rli = packing_aug3;
-    else                                hgp->packing_rli = NULL;
+    if      (!strcasecmp(hgp->rli_str, "aug2"))  hgp->packing_rli = packing_aug2;
+    else if (!strcasecmp(hgp->rli_str, "aug3"))  hgp->packing_rli = packing_aug3;
+    else                                         hgp->packing_rli = NULL;
 
   }
-  return found;
+  return  hgp->packing ? 1 : 0 ;
 }
 
 /****************************************************************************/
 
 int Zoltan_HG_Packing (ZZ *zz, HGraph *hg, Packing pack, HGPartParams *hgp)
 {
-  int   limit=0 ;   /* reserved for future use */
+  int   limit=hg->nEdge ;   /* reserved for future use */
   int   ierr = ZOLTAN_OK;
   float *old_ewgt=NULL, *new_ewgt;
   char  *yo = "Zoltan_HG_Packing";
@@ -116,7 +111,7 @@ static int packing_mxp (ZZ *zz, HGraph *hg, Packing pack, int limit)
   for (i = 0 ; i < hg->nVtx ; i++)
     pack[i] = i ;
 
-  for (i = 0 ; i < hg->nEdge ; i++)
+  for (i = 0 ; i < hg->nEdge && limit > 0; i++)
   { for (j = hg->hindex[i] ; j < hg->hindex[i+1] ; j++)
       if (pack[hg->hvertex[j]] != hg->hvertex[j])
         break ;
@@ -124,6 +119,7 @@ static int packing_mxp (ZZ *zz, HGraph *hg, Packing pack, int limit)
     { for (j = hg->hindex[i] ; j < hg->hindex[i+1]-1 ; j++)
         pack[hg->hvertex[j]] = hg->hvertex[j+1] ;
       pack[hg->hvertex[j]] = hg->hvertex[hg->hindex[i]] ;
+      limit--;
     }
   }
   return ZOLTAN_OK ;
@@ -145,7 +141,7 @@ static int packing_rep (ZZ *zz, HGraph *hg, Packing pack, int limit)
   for (i = 0 ; i < hg->nVtx ;  i++)
     pack[i]  = i ;
 
-  for (i = hg->nEdge ; i > 0 ; i--)
+  for (i = hg->nEdge ; i > 0 && limit > 0; i--)
   { edge = edges[random=rand()%i] ;
     edges[random] = edges[i-1] ;
 
@@ -156,6 +152,7 @@ static int packing_rep (ZZ *zz, HGraph *hg, Packing pack, int limit)
     { for (j = hg->hindex[edge] ; j < hg->hindex[edge+1]-1 ; j++)
         pack[hg->hvertex[j]] = hg->hvertex[j+1] ;
       pack[hg->hvertex[j]] = hg->hvertex[hg->hindex[edge]] ;
+      limit--;
     }
   }
   ZOLTAN_FREE ((void **) &edges) ;
@@ -180,7 +177,7 @@ static int packing_rrp (ZZ *zz, HGraph *hg, Packing pack, int limit)
   for (i = 0 ; i < hg->nVtx ;  i++)
     vertices[i] = pack[i] = i ;
 
-  for (i = hg->nVtx ; i > 0 ; i--)
+  for (i = hg->nVtx ; i > 0 && limit>0; i--)
   { vertex = vertices[random=rand()%i] ;
     vertices[random] = vertices[i-1] ;
     if (pack[vertex] != vertex)
@@ -210,6 +207,7 @@ static int packing_rrp (ZZ *zz, HGraph *hg, Packing pack, int limit)
       { for (j = hg->hindex[edge] ; j < hg->hindex[edge+1]-1 ; j++)
           pack[hg->hvertex[j]] = hg->hvertex[j+1] ;
         pack[hg->hvertex[j]] = hg->hvertex[hg->hindex[edge]] ;
+        limit--;
       }
       del_edges[edge] = 1 ;
     }
@@ -239,7 +237,7 @@ static int packing_rhp (ZZ *zz, HGraph *hg, Packing pack, int limit)
    for (i = 0 ; i < hg->nVtx ; i++)
       pack[i] = vertices[i] = i ;
 
-   for (i = hg->nVtx ; i > 0 ; i--)
+   for (i = hg->nVtx ; i > 0 && limit>0 ; i--)
       {
       vertex = vertices[number=rand()%i] ;
       vertices[number] = vertices[i-1] ;
@@ -272,6 +270,7 @@ static int packing_rhp (ZZ *zz, HGraph *hg, Packing pack, int limit)
       for (j = hg->hindex[best_edge] ; j < hg->hindex[best_edge+1]-1 ; j++)
          pack[hg->hvertex[j]] = hg->hvertex[j+1] ;
       pack[hg->hvertex[j]] = hg->hvertex[hg->hindex[best_edge]] ;
+      limit--;
       }
    ZOLTAN_FREE ((void **) &vertices) ;
    ZOLTAN_FREE ((void **) &del_edges) ;
@@ -305,7 +304,7 @@ static int packing_grp (ZZ *zz, HGraph *hg, Packing pack, int limit)
   ZOLTAN_FREE ((void **) &size);
 
 /* Match hyperedges along decreasing weight */
-  for (i=0; i<hg->nEdge; i++)
+  for (i=0; i<hg->nEdge /* && limit>0 */; i++)
   { for (j=hg->hindex[sorted[i]]; j<hg->hindex[sorted[i]+1]; j++)
       if (pack[hg->hvertex[j]] != hg->hvertex[j])
         break;
@@ -313,6 +312,7 @@ static int packing_grp (ZZ *zz, HGraph *hg, Packing pack, int limit)
     { for (j=hg->hindex[sorted[i]]; j<hg->hindex[sorted[i]+1]-1; j++)
         pack[hg->hvertex[j]] = hg->hvertex[j+1];
       pack[hg->hvertex[j]] = hg->hvertex[hg->hindex[sorted[i]]];
+      limit--;
   } }
   ZOLTAN_FREE ((void **) &sorted);
   return ZOLTAN_OK;
@@ -416,7 +416,7 @@ static int packing_pgp (ZZ *zz, HGraph *hg, Packing pack, int limit)
   for (i=0; i<hg->nVtx; i++)
      pack1[i] = pack2[i] = i;
 
-  for (i=0; i<hg->nEdge; i++)
+  for (i=0; i<hg->nEdge && limit>0; i++)
     if (taken_edge[i] == 0)
     { cur_edge = i;
       taken_edge[cur_edge] = 1;
@@ -424,6 +424,7 @@ static int packing_pgp (ZZ *zz, HGraph *hg, Packing pack, int limit)
       { for (j=hg->hindex[cur_edge]; j<hg->hindex[cur_edge+1]-1; j++)
           Pack[hg->hvertex[j]] = hg->hvertex[j+1];
         Pack[hg->hvertex[j]] = hg->hvertex[hg->hindex[cur_edge]];
+        limit--;
         if (Pack == pack1)
         { w1 += (hg->ewgt?hg->ewgt[cur_edge]:1.0);
           Pack = pack2;

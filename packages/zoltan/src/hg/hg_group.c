@@ -30,44 +30,40 @@ static ZOLTAN_HG_GROUPING_FN grouping_aug3; /* augmenting path; length 3 */
 
 int Zoltan_HG_Set_Grouping_Fn(HGPartParams *hgp)
 {
-  char *str;
-  int found = 0;
   static int srand_set = 0;
+
   if (srand_set == 0)
      {
      srand_set = 1 ;
      srand ((unsigned long) RANDOM_SEED) ;
      }
 
-  str = hgp->redm_str;
-  if      (!strcasecmp(str, "mxg"))  hgp->grouping = grouping_mxg;
-  else if (!strcasecmp(str, "reg"))  hgp->grouping = grouping_reg;
-  else if (!strcasecmp(str, "rrg"))  hgp->grouping = grouping_rrg;
-  else if (!strcasecmp(str, "rhg"))  hgp->grouping = grouping_rhg;
-  else if (!strcasecmp(str, "grg"))  hgp->grouping = grouping_grg;
-  else                               hgp->grouping = NULL;
+
+  if      (!strcasecmp(hgp->redm_str, "mxg"))  hgp->grouping = grouping_mxg;
+  else if (!strcasecmp(hgp->redm_str, "reg"))  hgp->grouping = grouping_reg;
+  else if (!strcasecmp(hgp->redm_str, "rrg"))  hgp->grouping = grouping_rrg;
+  else if (!strcasecmp(hgp->redm_str, "rhg"))  hgp->grouping = grouping_rhg;
+  else if (!strcasecmp(hgp->redm_str, "grg"))  hgp->grouping = grouping_grg;
+  else                                         hgp->grouping = NULL;
 
   if (hgp->grouping) {
-
-    found = 1;
 
     /*
      * If reduction method is a grouping, set the improvement and
      * edge weight scaling functions accordingly.
      */
-    str = hgp->rli_str;
-    if      (!strcasecmp(str, "aug2"))  hgp->grouping_rli = grouping_aug2;
-    else if (!strcasecmp(str, "aug3"))  hgp->grouping_rli = grouping_aug3;
-    else                                hgp->grouping_rli = NULL;
+    if      (!strcasecmp(hgp->rli_str, "aug2")) hgp->grouping_rli = grouping_aug2;
+    else if (!strcasecmp(hgp->rli_str, "aug3")) hgp->grouping_rli = grouping_aug3;
+    else                                        hgp->grouping_rli = NULL;
   }
 
-  return found;
+  return hgp->grouping ? 1 : 0 ;
 }
 
 /****************************************************************************/
 
 int Zoltan_HG_Grouping (ZZ *zz, HGraph *hg, Packing pack, HGPartParams *hgp)
-{ int   limit=0 ;   /* reserved for future use */
+{ int   limit=hg->nEdge ;   /* reserved for future use */
   int   ierr = ZOLTAN_OK;
   float *old_ewgt=NULL, *new_ewgt;
   char  *yo = "Zoltan_HG_Grouping";
@@ -112,7 +108,7 @@ static int grouping_mxg (ZZ *zz, HGraph *hg, Packing pack, int limit)
    for (i = 0 ; i < hg->nVtx ; i++)
       pack[i] = i ;
 
-   for (i = 0 ; i < hg->nEdge ; i++)
+   for (i = 0 ; i < hg->nEdge && limit>0 ; i++)
       for (j = hg->hindex[i] ; j < hg->hindex[i+1] ; j++)
          if (pack[hg->hvertex[j]] == hg->hvertex[j])
             {
@@ -121,6 +117,7 @@ static int grouping_mxg (ZZ *zz, HGraph *hg, Packing pack, int limit)
                if (pack[hg->hvertex[j]] == hg->hvertex[j])
                   vertex = pack[vertex] = hg->hvertex[j] ;
             pack[vertex] = first_vertex ;
+            limit--;
             break ;       /* not required, might improve speed */
             }
    return ZOLTAN_OK ;
@@ -143,7 +140,7 @@ static int grouping_reg (ZZ *zz, HGraph *hg, Packing pack, int limit)
    for (i = 0 ; i < hg->nVtx ;  i++)
       pack[i]  = i ;
 
-   for (i = hg->nEdge ; i > 0 ; i--)
+   for (i = hg->nEdge ; i > 0 && limit>0 ; i--)
       {
       random = rand() % i ;
       edge = edges[random] ;
@@ -157,6 +154,7 @@ static int grouping_reg (ZZ *zz, HGraph *hg, Packing pack, int limit)
                 if (pack[hg->hvertex[j]] == hg->hvertex[j])
                    vertex = pack[vertex] = hg->hvertex[j] ;
             pack[vertex] = first_vertex ;
+            limit--;
             break ;
             }
       }
@@ -179,7 +177,7 @@ static int grouping_rrg (ZZ *zz, HGraph *hg, Packing pack, int limit)
    for (i = 0 ; i < hg->nVtx ;  i++)
       vertices[i] = pack[i] = i ;
 
-   for (i = hg->nVtx ; i > 0 ; i--)
+   for (i = hg->nVtx ; i > 0 && limit>0; i--)
       {
       random = rand() % i ;
       vertex = vertices[random] ;
@@ -200,6 +198,7 @@ static int grouping_rrg (ZZ *zz, HGraph *hg, Packing pack, int limit)
                if (pack[hg->hvertex[j]] == hg->hvertex[j])
                   vertex = pack[vertex] = hg->hvertex[j] ;
             pack[vertex] = first_vertex ;
+            limit--;
             break ;
             }
       }
@@ -227,7 +226,7 @@ static int grouping_rhg (ZZ *zz, HGraph *hg, Packing pack, int limit)
    for (i = 0 ; i < hg->nVtx ; i++)
       pack[i] = vertices[i] = i ;
 
-   for (i = hg->nVtx ; i > 0 ; i--)
+   for (i = hg->nVtx ; i > 0 && limit>0 ; i--)
       {
       number = rand() % i ;
       vertex = vertices[number] ;
@@ -263,6 +262,7 @@ static int grouping_rhg (ZZ *zz, HGraph *hg, Packing pack, int limit)
                if (pack[hg->hvertex[j]] == hg->hvertex[j])
                   vertex = pack[vertex] = hg->hvertex[j] ;
             pack[vertex] = first_vertex ;
+            limit--;
             break ;
             }
       del_edges[best_edge] = 1 ;
@@ -299,7 +299,7 @@ static int grouping_grg (ZZ *zz, HGraph *hg, Packing pack, int limit)
   ZOLTAN_FREE ((void **) &size);
 
   /* Match hyperedges along decreasing weight */
-  for (i=0; i<hg->nEdge; i++)
+  for (i=0; i<hg->nEdge && limit>0; i++)
       for (j = hg->hindex[sorted[i]] ; j < hg->hindex[sorted[i]+1] ; j++)
          if (pack[hg->hvertex[j]] == hg->hvertex[j])
             {
@@ -308,6 +308,7 @@ static int grouping_grg (ZZ *zz, HGraph *hg, Packing pack, int limit)
                if (pack[hg->hvertex[j]] == hg->hvertex[j])
                   vertex = pack[vertex] = hg->hvertex[j] ;
             pack[vertex] = first_vertex ;
+            limit--;
             break ;
             }
   ZOLTAN_FREE ((void **) &sorted);

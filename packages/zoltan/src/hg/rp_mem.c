@@ -271,7 +271,7 @@ double *Zoltan_Malloc(int n, char *filename, int lineno)
 {
   char *yo = "Zoltan_Malloc";
   struct malloc_debug_data *new_ptr;     /* data structure for malloc data */
-  int       proc;             /* processor ID for debugging msg */
+  int       proc=0;             /* processor ID for debugging msg */
   double *pntr;           /* return value */
 
   if (n > 0) {
@@ -335,7 +335,7 @@ double *Zoltan_Realloc(void *ptr, int n, char *filename, int lineno)
 {
   char *yo = "Zoltan_Realloc";
   struct malloc_debug_data *dbptr;   /* loops through debug list */
-  int       proc;             /* processor ID */
+  int       proc=0;             /* processor ID */
   double   *p;                /* returned pointer */
 
   if (ptr == NULL) {	/* Previous allocation not important */
@@ -393,7 +393,7 @@ void Zoltan_Free (void **ptr, char *filename, int lineno)
 {
   struct malloc_debug_data *dbptr;   /* loops through debug list */
   struct malloc_debug_data **prev;   /* holds previous pointer */
-  int       proc;             /* processor ID */
+  int       proc=0;             /* processor ID */
 
 /*
  *  This version of free calls the system's free function.  It doesn't call
@@ -476,7 +476,7 @@ va_decl
 void      Zoltan_Memory_Stats()
 {
     struct malloc_debug_data *dbptr;	/* loops through debug list */
-    int       proc;		/* processor ID */
+    int       proc=0;		/* processor ID */
 
 
     if (DEBUG_MEMORY == 1) {
@@ -521,8 +521,9 @@ int       Zoltan_Malloc_Num()
 
 int Zoltan_Memory_Usage (int type)
    {
-   if      (type == ZOLTAN_MEM_STAT_TOTAL)    return memory_usage.total ;
-   else if (type == ZOLTAN_MEM_STAT_MAXIMUM)  return memory_usage.maximum ;
+   if (type == ZOLTAN_MEM_STAT_TOTAL)
+      return memory_usage.total ;
+   return memory_usage.maximum ;
    }
 
 /*****************************************************************************/

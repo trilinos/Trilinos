@@ -18,52 +18,48 @@ extern "C" {
 
 #include "hypergraph.h"
 
-static ZOLTAN_HG_MATCHING_FN matching_mxm; /* maximal matching */
-static ZOLTAN_HG_MATCHING_FN matching_rem; /* random edge matching */
-static ZOLTAN_HG_MATCHING_FN matching_rrm; /* random, random edge matching */
-static ZOLTAN_HG_MATCHING_FN matching_rhm; /* random, heavy edge matching */
-static ZOLTAN_HG_MATCHING_FN matching_grm; /* greedy edge matching */
-static ZOLTAN_HG_MATCHING_FN matching_lhm; /* locally heaviest matching */
-static ZOLTAN_HG_MATCHING_FN matching_pgm; /* path growing matching */
-static ZOLTAN_HG_MATCHING_FN matching_aug2;/* post matching optimizer */
-static ZOLTAN_HG_MATCHING_FN matching_aug3;/* post matching optimizer */
+static ZOLTAN_HG_MATCHING_FN matching_mxm;  /* maximal matching */
+static ZOLTAN_HG_MATCHING_FN matching_rem;  /* random edge matching */
+static ZOLTAN_HG_MATCHING_FN matching_rrm;  /* random, random edge matching */
+static ZOLTAN_HG_MATCHING_FN matching_rhm;  /* random, heavy edge matching */
+static ZOLTAN_HG_MATCHING_FN matching_grm;  /* greedy edge matching */
+static ZOLTAN_HG_MATCHING_FN matching_lhm;  /* locally heaviest matching */
+static ZOLTAN_HG_MATCHING_FN matching_pgm;  /* path growing matching */
+static ZOLTAN_HG_MATCHING_FN matching_aug2; /* post matching optimizer */
+static ZOLTAN_HG_MATCHING_FN matching_aug3; /* post matching optimizer */
 
 /*****************************************************************************/
 
 int Zoltan_HG_Set_Matching_Fn(HGPartParams *hgp)
 {
-  int found = 0;
-  char *str;
   static int srand_set = 0;
+
   if (srand_set == 0)
   { srand_set = 1 ;
     srand ((unsigned long) RANDOM_SEED) ;
   }
 
-  str = hgp->redm_str;
-  if      (!strcasecmp(str, "mxm"))  hgp->matching = matching_mxm;
-  else if (!strcasecmp(str, "rem"))  hgp->matching = matching_rem;
-  else if (!strcasecmp(str, "rrm"))  hgp->matching = matching_rrm;
-  else if (!strcasecmp(str, "rhm"))  hgp->matching = matching_rhm;
-  else if (!strcasecmp(str, "grm"))  hgp->matching = matching_grm;
-  else if (!strcasecmp(str, "lhm"))  hgp->matching = matching_lhm;
-  else if (!strcasecmp(str, "pgm"))  hgp->matching = matching_pgm;
-  else                               hgp->matching = NULL;
+  if      (!strcasecmp(hgp->redm_str, "mxm"))  hgp->matching = matching_mxm;
+  else if (!strcasecmp(hgp->redm_str, "rem"))  hgp->matching = matching_rem;
+  else if (!strcasecmp(hgp->redm_str, "rrm"))  hgp->matching = matching_rrm;
+  else if (!strcasecmp(hgp->redm_str, "rhm"))  hgp->matching = matching_rhm;
+  else if (!strcasecmp(hgp->redm_str, "grm"))  hgp->matching = matching_grm;
+  else if (!strcasecmp(hgp->redm_str, "lhm"))  hgp->matching = matching_lhm;
+  else if (!strcasecmp(hgp->redm_str, "pgm"))  hgp->matching = matching_pgm;
+  else                                         hgp->matching = NULL;
 
   if (hgp->matching) {
 
-    found = 1;
     /*
      * If reduction method is a matching, set the improvement and
      * edge weight scaling functions accordingly.
      */
 
-    str = hgp->rli_str;
-    if      (!strcasecmp(str, "aug2"))  hgp->matching_rli = matching_aug2;
-    else if (!strcasecmp(str, "aug3"))  hgp->matching_rli = matching_aug3;
-    else                                hgp->matching_rli = NULL;
+    if      (!strcasecmp(hgp->rli_str, "aug2")) hgp->matching_rli = matching_aug2;
+    else if (!strcasecmp(hgp->rli_str, "aug3")) hgp->matching_rli = matching_aug3;
+    else                                        hgp->matching_rli = NULL;
   }
-  return found;
+  return  hgp->matching ? 1 : 0 ;
 }
 
 /*****************************************************************************/
@@ -114,17 +110,17 @@ End:
 /*****************************************************************************/
 
 static int matching_mxm (ZZ *zz, HGraph *hg, Graph *g, Matching match, int limit)
-{ int   i, j, size=0;
+{ int   i, j ;
 
   for (i=0; i<g->nVtx; i++)
     match[i] = i;
 
-  for (i=0; i<g->nVtx && size<limit; i++)
+  for (i=0; i<g->nVtx && limit>0; i++)
     for (j=g->nindex[i]; j<g->nindex[i+1] && match[i]==i; j++)
       if (match[g->neigh[j]] == g->neigh[j])
       { match[i] = g->neigh[j];
-	match[g->neigh[j]] = i;
-	size++;
+        match[g->neigh[j]] = i;
+        limit--;
       }
   return ZOLTAN_OK;
 }
@@ -135,7 +131,7 @@ static int matching_rem (ZZ *zz, HGraph *hg, Graph *g, Matching match, int limit
    {
    int i,j,k=0, ii, jj ;
    int *v1, *v2 ;
-   int size=0, random ;
+   int random ;
    char *yo = "matching_rem" ;
 
    v1 = (int *) ZOLTAN_MALLOC (sizeof (int) * g->nEdge) ;
@@ -160,7 +156,7 @@ static int matching_rem (ZZ *zz, HGraph *hg, Graph *g, Matching match, int limit
              k++ ;
              }
 
-   for (i = k ; i > 0 && size < limit ; i--)
+   for (i = k ; i > 0 && limit > 0 ; i--)
       {
       random = rand() % i ;
       ii = v1[random] ;
@@ -172,7 +168,7 @@ static int matching_rem (ZZ *zz, HGraph *hg, Graph *g, Matching match, int limit
          {
          match[ii] = jj ;
          match[jj] = ii ;
-         size++ ;
+         limit-- ;
          }
       }
 
@@ -185,7 +181,7 @@ static int matching_rem (ZZ *zz, HGraph *hg, Graph *g, Matching match, int limit
 /*****************************************************************************/
 
 static int matching_rrm (ZZ *zz, HGraph *hg, Graph *g, Matching match, int limit)
-{ int   i, j, size=0, *vertices, vertex, number, free_neighbors, random;
+{ int   i, j, *vertices, vertex, number, free_neighbors, random;
   char *yo = "matching_rrm" ;
 
   if (!(vertices = (int *) ZOLTAN_MALLOC (sizeof (int) * g->nVtx)))
@@ -194,7 +190,7 @@ static int matching_rrm (ZZ *zz, HGraph *hg, Graph *g, Matching match, int limit
   }
   for (i=0; i<g->nVtx; i++)
     match[i] = vertices[i] = i;
-  for (i=g->nVtx; i>0 && size<limit; i--)
+  for (i=g->nVtx; i>0 && limit>0; i--)
   { vertex = vertices[number=rand()%i];
     vertices[number] = vertices[i-1];
     if (match[vertex] == vertex)
@@ -208,7 +204,7 @@ static int matching_rrm (ZZ *zz, HGraph *hg, Graph *g, Matching match, int limit
           if (match[g->neigh[j]]==g->neigh[j] && --free_neighbors==random)
           { match[vertex] = g->neigh[j];
             match[g->neigh[j]] = vertex;
-            size++;
+            limit--;
             break;
   } } }   }
   ZOLTAN_FREE ((void  **) &vertices);
@@ -218,7 +214,7 @@ static int matching_rrm (ZZ *zz, HGraph *hg, Graph *g, Matching match, int limit
 /*****************************************************************************/
 
 static int matching_rhm (ZZ *zz, HGraph *hg, Graph *g, Matching match, int limit)
-{ int   i, j, size=0, *vertices, vertex, number, best_neighbors, random;
+{ int   i, j, *vertices, vertex, number, best_neighbors, random;
   float best_ewgt;
   char *yo = "matching_rhm" ;
 
@@ -231,7 +227,7 @@ static int matching_rhm (ZZ *zz, HGraph *hg, Graph *g, Matching match, int limit
   }
   for (i=0; i<g->nVtx; i++)
     match[i] = vertices[i] = i;
-  for (i=g->nVtx; i>0 && size<limit; i--)
+  for (i=g->nVtx; i>0 && limit>0; i--)
   { vertex = vertices[number=rand()%i];
     vertices[number] = vertices[i-1];
     if (match[vertex] == vertex)
@@ -253,7 +249,7 @@ static int matching_rhm (ZZ *zz, HGraph *hg, Graph *g, Matching match, int limit
               && --best_neighbors==random)
           { match[vertex] = g->neigh[j];
             match[g->neigh[j]] = vertex;
-            size++;
+            limit--;
             break;
   } } }   }
   ZOLTAN_FREE ((void **) &vertices);
@@ -263,7 +259,7 @@ static int matching_rhm (ZZ *zz, HGraph *hg, Graph *g, Matching match, int limit
 /*****************************************************************************/
 
 static int matching_grm (ZZ *zz, HGraph *hg, Graph *g, Matching match, int limit)
-{ int   i, j, size=0, *sorted, *vertex, vertex1, vertex2;
+{ int   i, j, *sorted, *vertex, vertex1, vertex2;
   char *yo = "matching_grm" ;
 
   if (!g->ewgt)
@@ -287,13 +283,13 @@ static int matching_grm (ZZ *zz, HGraph *hg, Graph *g, Matching match, int limit
 
   quicksort_pointer_dec_float (sorted,g->ewgt,0,g->nindex[g->nVtx]-1);
 
-  for (i=0; i<g->nindex[g->nVtx] && size<limit; i++)
+  for (i=0; i<g->nindex[g->nVtx] && limit>0; i++)
   { vertex1 = vertex[sorted[i]];
     vertex2 = g->neigh[sorted[i]];
     if (vertex1!=vertex2 && match[vertex1]==vertex1 && match[vertex2]==vertex2)
     { match[vertex1] = vertex2;
       match[vertex2] = vertex1;
-      size++;
+      limit--;
   } }
   ZOLTAN_FREE ((void **) &sorted);
   ZOLTAN_FREE ((void **) &vertex);
