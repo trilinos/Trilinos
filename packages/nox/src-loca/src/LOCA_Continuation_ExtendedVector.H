@@ -30,10 +30,10 @@
 // ************************************************************************
 //@HEADER
 
-#ifndef LOCA_CONTINUATION_VECTOR_H
-#define LOCA_CONTINUATION_VECTOR_H
+#ifndef LOCA_CONTINUATION_EXTENDEDVECTOR_H
+#define LOCA_CONTINUATION_EXTENDEDVECTOR_H
 
-#include "LOCA_MultiVector.H"  // Base class
+#include "LOCA_ExtendedVector.H"  // Base class
 
 namespace LOCA {
 
@@ -44,26 +44,27 @@ namespace LOCA {
       for continuation equations.
     */
     /*! 
-       This class uses the LOCA::MultiVector implementation to store the
+       This class uses the LOCA::ExtendedVector implementation to store the
        solution and parameter components of the continuation vector
        and merely provides an interface for naming which components of the
        multivector these quantities correspond to.
     */
-    class Vector : public LOCA::MultiVector {
+    class ExtendedVector : public LOCA::ExtendedVector {
 
     public:
   
       //! Constructor.
-      Vector(const NOX::Abstract::Vector& xVec, double param);
+      ExtendedVector(const NOX::Abstract::Vector& xVec, double param);
 
       //! Copy constructor.
-      Vector(const Vector& source, NOX::CopyType type = NOX::DeepCopy);
+      ExtendedVector(const ExtendedVector& source, 
+		     NOX::CopyType type = NOX::DeepCopy);
 
       //! Destructor.
-      virtual ~Vector();
+      virtual ~ExtendedVector();
 
       //! Assignment operator
-      virtual Vector& operator=(const Vector& y);
+      virtual ExtendedVector& operator=(const ExtendedVector& y);
 
       //! Assignment operator
       virtual NOX::Abstract::Vector& operator=(const NOX::Abstract::Vector& y);
@@ -86,7 +87,7 @@ namespace LOCA {
       //! Returns the parameter component of extended vector
       virtual double& getParam();
 
-    }; // class Vector
+    }; // class ExtendedVector
   } // namespace Continuation
 } // namespace LOCA
 

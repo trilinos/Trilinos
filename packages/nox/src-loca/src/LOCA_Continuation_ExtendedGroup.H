@@ -30,14 +30,14 @@
 // ************************************************************************
 //@HEADER
 
-#ifndef LOCA_CONTINUATION_GROUP_H
-#define LOCA_CONTINUATION_GROUP_H
+#ifndef LOCA_CONTINUATION_EXTENDEDGROUP_H
+#define LOCA_CONTINUATION_EXTENDEDGROUP_H
 
 #include "NOX_Parameter_List.H"
-#include "NOX_Abstract_Group.H"        // base class
-#include "LOCA_Abstract_Group.H"       // class data element
-#include "LOCA_Continuation_Vector.H"  // class data element
-#include "NOX_Common.H"                // for string 
+#include "NOX_Abstract_Group.H"                    // base class
+#include "LOCA_Continuation_AbstractGroup.H"       // class data element
+#include "LOCA_Continuation_ExtendedVector.H"      // class data element
+#include "NOX_Common.H"                            // for string 
 
 namespace LOCA { 
 
@@ -72,37 +72,54 @@ namespace LOCA {
       generic algorithms for commom computations among continuation groups.
     */
 
-    class Group : public virtual NOX::Abstract::Group {
+    class ExtendedGroup : public virtual NOX::Abstract::Group {
 
     public:
   
       //! Constructor with integer continuation parameter id
-      Group(const LOCA::Abstract::Group& grp, int paramID,
-	    NOX::Parameter::List& linSolverParams,
-	    NOX::Parameter::List& params);
+      ExtendedGroup(LOCA::Continuation::AbstractGroup& grp, int paramID,
+		    NOX::Parameter::List& linSolverParams,
+		    NOX::Parameter::List& params);
+
+      //! Constructor with const grp, integer continuation parameter id
+      ExtendedGroup(const LOCA::Continuation::AbstractGroup& grp, int paramID,
+		    NOX::Parameter::List& linSolverParams,
+		    NOX::Parameter::List& params);
 
       //! Constructor with string continuation parameter id
-      Group(const LOCA::Abstract::Group& grp, string paramID,
-	    NOX::Parameter::List& linSolverParams,
-	    NOX::Parameter::List& params);
+      ExtendedGroup(LOCA::Continuation::AbstractGroup& grp, string paramID,
+		    NOX::Parameter::List& linSolverParams,
+		    NOX::Parameter::List& params);
+
+      //! Constructor with const grp, string continuation parameter id
+      ExtendedGroup(const LOCA::Continuation::AbstractGroup& grp, 
+		    string paramID,
+		    NOX::Parameter::List& linSolverParams,
+		    NOX::Parameter::List& params);
 
       //! Copy constructor
-      Group(const Group& source, NOX::CopyType type = NOX::DeepCopy);
+      ExtendedGroup(const ExtendedGroup& source, 
+		    NOX::CopyType type = NOX::DeepCopy);
 
       //! Destructor.
-      virtual ~Group();
+      virtual ~ExtendedGroup();
+
+       //! Assignment operator
+      virtual NOX::Abstract::Group& 
+      operator=(const NOX::Abstract::Group& source);
 
       //! Assignment operator
-      virtual Group& operator=(const Group& source);
+      virtual ExtendedGroup& 
+      operator=(const ExtendedGroup& source);
 
       //! Set the previous solution vector y
       virtual void setPrevX(const NOX::Abstract::Vector& y) = 0;
 
       //! Set the previous solution vector y
-      virtual void setPrevX(const LOCA::Continuation::Vector& y) = 0;
+      virtual void setPrevX(const LOCA::Continuation::ExtendedVector& y) = 0;
 
       //! Gets the previous solution vector
-      virtual const LOCA::Continuation::Vector& getPrevX() const = 0;
+      virtual const LOCA::Continuation::ExtendedVector& getPrevX() const = 0;
 
       //! Returns true if the previous solution vector has been set
       virtual bool isPrevXVec() const = 0;
@@ -122,10 +139,12 @@ namespace LOCA {
       computeSecant();
 
       //! Get predictor direction (tangent or secant)
-      virtual const LOCA::Continuation::Vector& getPredictorDirection() const;
+      virtual const LOCA::Continuation::ExtendedVector& 
+      getPredictorDirection() const;
 
       //! Set predictor direction (tangent or secant)
-      virtual void setPredictorDirection(const LOCA::Continuation::Vector&);
+      virtual void setPredictorDirection(
+				   const LOCA::Continuation::ExtendedVector&);
 
       //! Returns true if a predictor direction has been computed
       virtual bool isPredictorDirection() const;
@@ -137,7 +156,10 @@ namespace LOCA {
       virtual double getContinuationParameter() const;
 
       //! Returns the base group (that defines \f$F\f$)
-      virtual const LOCA::Abstract::Group& getGroup() const;
+      virtual const LOCA::Continuation::AbstractGroup& getGroup() const;
+
+      //! Returns the base group (that defines \f$F\f$)
+      virtual LOCA::Continuation::AbstractGroup& getGroup();
 
       //! Sets the scale factor \f$\theta\f$ 
       virtual void setScaleFactor(double theta);
@@ -155,8 +177,22 @@ namespace LOCA {
       virtual void printSolution() const;
 
       //! Computes a scaled dot product between two continuation vectors
-      virtual double scaledDotProduct(const LOCA::Continuation::Vector& x, 
-				      const LOCA::Continuation::Vector& y) const;
+      virtual double computeScaledDotProduct(
+					const NOX::Abstract::Vector& x, 
+					const NOX::Abstract::Vector& y) const;
+
+      //! Computes a scaled dot product between two continuation vectors
+      virtual double computeScaledDotProduct(
+			   const LOCA::Continuation::ExtendedVector& x, 
+			   const LOCA::Continuation::ExtendedVector& y) const;
+
+      //! Return underlying group
+      virtual const LOCA::Continuation::AbstractGroup& 
+      getUnderlyingGroup() const;
+      
+      //! Return underlying group
+      virtual LOCA::Continuation::AbstractGroup& 
+      getUnderlyingGroup();
 
     protected:
 
@@ -166,13 +202,16 @@ namespace LOCA {
     protected:
 
       //! Pointer to base group that defines \f$F\f$
-      LOCA::Abstract::Group* grpPtr;
+      LOCA::Continuation::AbstractGroup* grpPtr;
 
       //! integer id of continuatin parameter
       int conParamID;
 
       //! Vector to hold predictor direction
-      LOCA::Continuation::Vector predictorVec;
+      LOCA::Continuation::ExtendedVector predictorVec;
+
+      //! Flag indicating whether we have our own copy of the underlying group
+      bool ownsGroup;
 
       //! True if predictor has been calculated
       bool isValidPredictor;
@@ -180,8 +219,8 @@ namespace LOCA {
       //! Stores linear solver parameters for computing tangent vector
       NOX::Parameter::List& linearSolverParams;
 
-      //! Stores (extended) scaling vector
-      LOCA::Continuation::Vector scaleVec;
+      //! Stores scaling factor
+      double theta;
 
       /*! 
 	Stores flag indicating whether a constant predictor was used 
@@ -190,11 +229,6 @@ namespace LOCA {
       bool usedConstantPredictor;
   
     };
-
-    //! Computes a scaled dot product
-    double scaledDotProduct(const NOX::Abstract::Vector& x, 
-			    const NOX::Abstract::Vector& y,
-			    const NOX::Abstract::Vector& s);
 
   } // namespace Continuation
 } // namespace LOCA
