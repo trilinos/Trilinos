@@ -684,14 +684,15 @@ static int matching_pgm (ZZ *zz, HGraph *hg, Graph *g, Matching match, int *limi
 #endif
 
 static int matching_pgm (ZZ *zz, HGraph *hg, Graph *g, Matching match, int *limit)
-{ int	i, j, side=0, vertex, *Match[2], limits[2], neighbor, next_vertex;
-  float	w[2]={0.0,0.0}, weight, simweight ;
-  int k, edge ;
-  char *yo = "matching_pgm" ;
+{ int	i, j, k, side=0, edge, vertex, *Match[2], limits[2], neighbor, next_vertex,
+        pins, scale=1;
+  float	w[2]={0.0,0.0}, weight, max_weight, *sims;
+  char  *yo = "matching_pgm" ;
 
   limits[0] = limits[1] = (*limit);
   Match[0] = match;
-  if (!(Match[1] = (int *) ZOLTAN_MALLOC (hg->nVtx*sizeof(int))))
+  if (!(Match[1] = (int *)   ZOLTAN_MALLOC (hg->nVtx*sizeof(int))) ||
+      !(sims     = (float *) ZOLTAN_CALLOC (hg->nVtx,sizeof(int)))  )
   { ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
     return ZOLTAN_MEMERR;
   }
@@ -702,27 +703,53 @@ static int matching_pgm (ZZ *zz, HGraph *hg, Graph *g, Matching match, int *limi
     if (Match[0][i]==i && Match[1][i]==i)
     { vertex = i;
       while (vertex>0 && limits[side]>0)
-      { weight = 0.0;
+      { max_weight = 0.0;
         next_vertex = -1;
+
         for (j=hg->vindex[vertex]; j<hg->vindex[vertex+1]; j++)
-        { edge = hg->vedge[j] ;
+        { edge = hg->vedge[j];
+          pins = hg->hindex[edge+1]-hg->hindex[edge];
+          weight = 2.0/((pins-1)*pins);
+          if (hg->ewgt)
+            weight *= hg->ewgt[edge];
           for (k = hg->hindex[edge] ; k < hg->hindex[edge+1] ; k++)
           { neighbor = hg->hvertex[k] ;
-            if (neighbor == vertex)
-              continue ;
-            simweight= sim(hg, vertex, neighbor) ;
-            if (Match[0][neighbor]==neighbor && Match[1][neighbor]==neighbor
-                && simweight>weight)
-            { weight = simweight;
-              next_vertex = neighbor;
+            if (neighbor!=vertex && Match[0][neighbor]==neighbor &&
+                Match[1][neighbor]==neighbor)
+              sims[neighbor] += weight;
+          }
+        }
+        for (j=hg->vindex[vertex]; j<hg->vindex[vertex+1]; j++)
+        { edge = hg->vedge[j];
+          for (k=hg->hindex[edge]; k<hg->hindex[edge+1]; k++)
+          { neighbor = hg->hvertex[k];
+            if (sims[neighbor] > 0.0)
+            { if (hg->vwgt && scale>0)
+              { if (hg->vwgt[vertex]<=(float)0.0 || hg->vwgt[neighbor]<=(float)0.0)
+                  sims[neighbor] = FLT_MAX/10.0;
+                else if (scale == 1)
+                  sims[neighbor] = sims[neighbor]/(hg->vwgt[vertex]*hg->vwgt[neighbor]);
+                else if (scale == 2)
+                  sims[neighbor] = sims[neighbor]/(hg->vwgt[vertex]+hg->vwgt[neighbor]);
+                else if (scale == 3)
+                  sims[neighbor] = sims[neighbor]/MAX(hg->vwgt[vertex],hg->vwgt[neighbor]);
+                else if (scale == 4)
+                  sims[neighbor] = sims[neighbor]/MIN(hg->vwgt[vertex],hg->vwgt[neighbor]);
+              }
+              if (sims[neighbor] > max_weight)
+              { max_weight = sims[neighbor];
+                next_vertex = neighbor;
+              }
+              sims[neighbor] = 0.0;
             }
           }
         }
+
         if (next_vertex >= 0)
         { Match[side][vertex] = next_vertex;
           Match[side][next_vertex] = vertex;
           limits[side]--;
-          w[side] += weight;
+          w[side] += max_weight;
           side = 1-side;
         }
         vertex = next_vertex;
@@ -738,9 +765,9 @@ static int matching_pgm (ZZ *zz, HGraph *hg, Graph *g, Matching match, int *limi
     (*limit) = limits[0];
 
   ZOLTAN_FREE ((void **) &Match[1]);
+  ZOLTAN_FREE ((void **) &sims);
   return ZOLTAN_OK;
 }
-
 
 /*****************************************************************************/
 
