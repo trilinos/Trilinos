@@ -345,6 +345,7 @@ AC_CONFIG_FILES([
 		example/petra_power_method/Makefile
 		example/verySimple/Makefile
 		example/UG_Ex1/Makefile
+		example/UG_ExMaps/Makefile
 		test/scripts/Makefile
 		test/scripts/daily/Makefile
 		test/scripts/daily/mpi/Makefile
