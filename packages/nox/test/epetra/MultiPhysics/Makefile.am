@@ -27,16 +27,26 @@
 # ************************************************************************
 #@HEADER
 
-if BUILD_EPETRA_TESTS
-NOX_SUBDIRS = NOX_NewTest NOX_Vector NOX_Group 1Dfem MultiPhysics
-else
-NOX_SUBDIRS = 
-endif
 
-if BUILD_LOCA_EPETRA_TESTS
-LOCA_SUBDIRS = LOCA_NewTest LOCA_Group
-else
-LOCA_SUBDIRS =
-endif
+EXAMPLE = example
 
-SUBDIRS = $(NOX_SUBDIRS) $(LOCA_SUBDIRS)
+noinst_PROGRAMS = $(EXAMPLE)
+
+example_SOURCES = $(srcdir)/Example.C \
+	$(srcdir)/Equation_A.C $(srcdir)/Equation_A.H \
+	$(srcdir)/Equation_B.C $(srcdir)/Equation_B.H \
+	$(srcdir)/Basis.C $(srcdir)/Basis.H \
+	$(srcdir)/GenericEpetraProblem.C $(srcdir)/GenericEpetraProblem.H \
+	$(srcdir)/Problem_Interface.C $(srcdir)/Problem_Interface.H \
+	$(srcdir)/Problem_Manager.C $(srcdir)/Problem_Manager.H
+
+example_DEPENDENCIES = $(top_builddir)/src/libnox.a \
+        $(top_builddir)/src-epetra/libnoxepetra.a
+
+example_CXXFLAGS = $(TRILINOS_CXXFLAGS) \
+	-I$(top_srcdir)/src -I$(top_srcdir)/src-epetra
+
+example_LDADD = \
+        $(top_builddir)/src-epetra/libnoxepetra.a \
+        $(top_builddir)/src/libnox.a \
+        $(LIBS)
