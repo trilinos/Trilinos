@@ -3,6 +3,7 @@
 // capabilities of ML
 /////////////////////////////////////////////////////////////
 
+#include "ml_include.h"
 #include "Epetra_ConfigDefs.h"
 
 #include "Epetra_CrsMatrix.h"
@@ -17,7 +18,6 @@
 #include "Epetra_SerialComm.h"
 #endif
 
-#include "ml_include.h"
 #include "ml_epetra_operator.h"
 #include "ml_epetra_utils.h"
 
