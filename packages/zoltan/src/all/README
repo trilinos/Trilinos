@@ -17,11 +17,18 @@ ALL DIRECTORY -- Routines for memory allocation and deallocation.
 
 Files compiled into Zoltan:
 
-all_allo_const.h   -- Prototypes for memory allocation and deallocation
+mem_const.h        -- Prototypes for memory allocation and deallocation
                       routines in all_allo.c.  Definition of LB_MALLOC.
 
-all_allo.c         -- Memory allocation routines LB_array_alloc and LB_malloc.
+mem.c              -- Memory allocation routines LB_array_alloc and LB_malloc.
                       Memory deallocation routine LB_free.
+		      Parameter setting routing LB_Set_Malloc_Param.
+
+all_allo_const.h   -- Prototypes for Zoltan-specific memory allocation and 
+                      deallocation routines in all_allo.c.  
+
+all_allo.c         -- Zoltan-specific Memory routines LB_Special_Malloc and
+                      LB_Special_Free.
 		      Parameter setting routing LB_Set_Malloc_Param.
 
 free_structure.c   -- Calls method-specific routines to free any persistent
