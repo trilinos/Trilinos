@@ -78,7 +78,8 @@ NOX::Solver::TensorBased::TensorBased(NOX::Abstract::Group& xGrp,
   prePostOperatorPtr(0),
   havePrePostOperator(false)
 {
-  init();
+  //init();
+  reset(xGrp, t, p);
 }
 
 // Protected
@@ -89,6 +90,11 @@ void NOX::Solver::TensorBased::init()
   nIter = 0;
   status = NOX::StatusTest::Unconverged;
 
+  // Reset counters 
+  counter.reset();
+  numJvMults = 0;
+  numJ2vMults = 0;
+  
   // Check for a user defined Pre/Post Operator
   NOX::Parameter::List& p = paramsPtr->sublist("Solver Options");
   havePrePostOperator = false;
@@ -117,7 +123,7 @@ void NOX::Solver::TensorBased::init()
     }
   }
   
-  // Print out initialization information
+  // Print out parameters
   if (utils.isPrintProcessAndType(NOX::Utils::Parameters))
   {
     cout << "\n" << NOX::Utils::fill(72) << "\n";
@@ -154,10 +160,23 @@ void NOX::Solver::TensorBased::init()
     cout <<"\n" << NOX::Utils::fill(72) << "\n";
   }
 
-  ///////////////////////////////////////////////////
+}
+
+
+bool NOX::Solver::TensorBased::reset(NOX::Abstract::Group& xGrp,
+				     NOX::StatusTest::Generic& t,
+				     NOX::Parameter::List& p)
+{
+  solnPtr = &xGrp;
+  testPtr = &t;
+  paramsPtr = &p;
+
+  utils.reset(paramsPtr->sublist("Printing"));
+
+  // *** Reset direction parameters ***
+  dirParams = paramsPtr->sublist("Direction");
 
   // bwb: Do we just want to use Method instead of "Compute Step"?
-  // Then we could have separate parameter lists for this one.
   string choice = dirParams.getParameter("Compute Step", "Tensor");
   if (choice == "Tensor")
   {
@@ -165,29 +184,31 @@ void NOX::Solver::TensorBased::init()
   }
   else if (choice == "Newton")
   {
-    //cout << "\n\n\n\n    **** Newton step is requested ***** \n\n\n\n";
     requestedBaseStep = NewtonStep;
+    if (utils.isPrintProcessAndType(NOX::Utils::Parameters))
+      cout << "\n\n    **** Newton step is requested ***** \n\n";
   }
   else
   {
-    cout << "Warning: NOX::Direction::Tensor::reset() - The choice of "
-	 << "\"Compute Step\" \nparameter \"" << choice
-	 << "\" is invalid.  Using \"Tensor\" instead." << endl;
+    if (utils.isPrintProcessAndType(NOX::Utils::Warning))
+      cout << "Warning: NOX::Direction::Tensor::reset() - The choice of "
+	   << "\"Compute Step\" \nparameter \"" << choice
+	   << "\" is invalid.  Using \"Tensor\" instead." << endl;
     requestedBaseStep = TensorStep;
     dirParams.setParameter("Compute Step", "Tensor");
   }
 
   bool useModifiedMethod =
     dirParams.getParameter("Use Modified Bouaricha", true);
-  if (useModifiedMethod)
-    printf("Using ALPHA scaling\n");
+  if (useModifiedMethod  &&  utils.isPrintProcessAndType(NOX::Utils::Parameters))
+    cout << "Using ALPHA scaling" << endl;
   
-  NOX::Parameter::List& teParams = dirParams.sublist("Tensor");
+  //NOX::Parameter::List& teParams = dirParams.sublist("Tensor");
   //doRescue = teParams.getParameter("Rescue Bad Newton Solve", true);
 
   
-  // **** NOX::LineSearch::Tensor::reset(Parameter::List& params)  ****
-  //NOX::Parameter::List& params = paramsPtr->sublist("Line Search");
+  // *** Reset parameters for Line Search ***
+  lsParams = paramsPtr->sublist("Line Search");
 
   NOX::Parameter::List& lsparams =
     lsParams.sublist(lsParams.getParameter("Method", "Tensor"));
@@ -195,10 +216,9 @@ void NOX::Solver::TensorBased::init()
   // Initialize linesearch parameters for this object
   minStep = lsparams.getParameter("Minimum Step", 1.0e-12);
   defaultStep = lsparams.getParameter("Default Step", 1.0);
-  recoveryStep = lsparams.getParameter("Recovery Step", 0.0); // force exit on linesearch failure
+  recoveryStep = lsparams.getParameter("Recovery Step", 0.0); // force exit on failure
   maxIters = lsparams.getParameter("Max Iters", 40);
   alpha = lsparams.getParameter("Alpha Factor", 1.0e-4);
-  //paramsPtr = &params;
 
   // Determine the specific type of tensor linesearch to perform
   choice = lsparams.getParameter("Submethod", "Curvilinear");
@@ -216,7 +236,7 @@ void NOX::Solver::TensorBased::init()
     if (print.isPrintProcessAndType(NOX::Utils::Warning)) {
       cout << "Warning: NOX::Direction::Tensor::reset() - the choice of "
 	   << "\"Line Search\" \nparameter " << choice
-	   << " is invalid.  Using curvilinear line search." << endl;
+	   << " is invalid.  Using \"Curvilinear\" instead." << endl;
     }
     lsparams.setParameter("Submethod", "Curvilinear");
     lsType = Curvilinear;
@@ -229,8 +249,10 @@ void NOX::Solver::TensorBased::init()
     lambdaSelection = Quadratic;
   else
   {
-    cout << "Warning: NOX::Solver::TensorBased::init() - the choice of "
-	 << "\"Lambda Selection\" parameter is invalid." << endl;
+    if (utils.isPrintProcessAndType(NOX::Utils::Warning))
+      cout << "Warning: NOX::Solver::TensorBased::reset() - the choice of "
+	   << "\"Lambda Selection\" \nparameter " << choice
+	   << " is invalid.  Using halving instead." << endl;
     lambdaSelection = Halving;
   }
 
@@ -243,33 +265,7 @@ void NOX::Solver::TensorBased::init()
   else 
     convCriteria = ArmijoGoldstein;     // bwb - the others aren't implemented
 
-  // Reset counters 
-  counter.reset();
-  numJvMults = 0;
-  numJ2vMults = 0;
-  
-
-  havePrePostOperator = false;
-}
-
-
-bool NOX::Solver::TensorBased::reset(NOX::Abstract::Group& xGrp,
-				     NOX::StatusTest::Generic& t,
-				     NOX::Parameter::List& p)
-{
-  solnPtr = &xGrp;
-  testPtr = &t;
-  paramsPtr = &p;
-  utils.reset(paramsPtr->sublist("Printing"));
-  
-  //direction.reset(paramsPtr->sublist("Direction"));
-  dirParams = paramsPtr->sublist("Direction");
-
-  //lineSearch.reset(paramsPtr->sublist("Line Search"));
-  lsParams = paramsPtr->sublist("Line Search");
-
   init();
-
   return true;
 }
 
@@ -294,7 +290,6 @@ NOX::Solver::TensorBased::~TensorBased()
   delete scVecPtr;
   delete tmpVecPtr;
   delete residualVecPtr;
-  //delete dirptr;
 }
 
 
