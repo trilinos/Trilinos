@@ -42,11 +42,11 @@ extern "C" {
 Amesos_Umfpack::Amesos_Umfpack(const Epetra_LinearProblem &prob ) :
   IsSymbolicFactorizationOK_(false), 
   IsNumericFactorizationOK_(false), 
-  SerialCrsMatrixA_(0),
   Symbolic(0),
   Numeric(0),
   SerialMap_(0), 
   SerialMatrix_(0), 
+  SerialCrsMatrixA_(0),
   UseTranspose_(false),
   Problem_(&prob), 
   Rcond_(0.0), 
@@ -581,8 +581,19 @@ void Amesos_Umfpack::PrintStatus()
 
 void Amesos_Umfpack::PrintTiming()
 {
-  if( iam ) return;
+  if (iam) return;
   
+  double SymTime = 0.0, NumTime = 0.0, SolTime = 0.0;
+
+  if (NumSymbolicFact_)
+    SymTime = SymTime_ / NumSymbolicFact_;
+
+  if (NumNumericFact_)
+    NumTime =  NumTime_ / NumNumericFact_;
+
+  if (NumSolve_)
+    SolTime = SolTime_ / NumSolve_;
+
   cout << "----------------------------------------------------------------------------" << endl;
   cout << "Amesos_Umfpack : Time to convert matrix to UMFPACK format = "
        << ConTime_ << " (s)" << endl;
@@ -593,18 +604,15 @@ void Amesos_Umfpack::PrintTiming()
   cout << "Amesos_Umfpack : Number of symbolic factorizations = "
        << NumSymbolicFact_ << endl;
   cout << "Amesos_Umfpack : Time for sym fact = "
-       << SymTime_ << " (s), avg = " << SymTime_/NumSymbolicFact_
-       << " (s)" << endl;
+       << SymTime_ << " (s), avg = " << SymTime << " (s)" << endl;
   cout << "Amesos_Umfpack : Number of numeric factorizations = "
        << NumNumericFact_ << endl;
   cout << "Amesos_Umfpack : Time for num fact = "
-       << NumTime_ << " (s), avg = " << NumTime_/NumNumericFact_
-       << " (s)" << endl;
+       << NumTime_ << " (s), avg = " << NumTime << " (s)" << endl;
   cout << "Amesos_Umfpack : Number of solve phases = "
        << NumSolve_ << endl;
   cout << "Amesos_Umfpack : Time for solve = "
-       << SolTime_ << " (s), avg = " << SolTime_/NumSolve_
-       << " (s)" << endl;
+       << SolTime_ << " (s), avg = " << SolTime << " (s)" << endl;
   cout << "----------------------------------------------------------------------------" << endl;
    
   return;

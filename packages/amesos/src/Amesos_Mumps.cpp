@@ -989,6 +989,17 @@ void Amesos_Mumps::PrintTiming()
 
   if( Comm().MyPID() ) return;
 
+  double SymTime = 0.0, NumTime = 0.0, SolTime = 0.0;
+
+  if (NumSymbolicFact_)
+    SymTime = SymTime_ / NumSymbolicFact_;
+
+  if (NumNumericFact_)
+    NumTime =  NumTime_ / NumNumericFact_;
+
+  if (NumSolve_)
+    SolTime = SolTime_ / NumSolve_;
+
   cout << "----------------------------------------------------------------------------" << endl;
   cout << "Amesos_Mumps : Time to convert matrix to MUMPS format = "
     << ConTime_ << " (s)" << endl;
@@ -1000,18 +1011,15 @@ void Amesos_Mumps::PrintTiming()
   cout << "Amesos_Mumps : Number of symbolic factorizations = "
     << NumSymbolicFact_ << endl;
   cout << "Amesos_Mumps : Time for sym fact = "
-    << SymTime_ << " (s), avg = " << SymTime_/NumSymbolicFact_
-    << " (s)" << endl;
+    << SymTime_ << " (s), avg = " << SymTime << " (s)" << endl;
   cout << "Amesos_Mumps : Number of numeric factorizations = "
     << NumNumericFact_ << endl;
   cout << "Amesos_Mumps : Time for num fact = "
-    << NumTime_ << " (s), avg = " << NumTime_/NumNumericFact_
-    << " (s)" << endl;
+    << NumTime_ << " (s), avg = " << NumTime << " (s)" << endl;
   cout << "Amesos_Mumps : Number of solve phases = "
     << NumSolve_ << endl;
   cout << "Amesos_Mumps : Time for solve = "
-    << SolTime_ << " (s), avg = " << SolTime_/NumSolve_
-    << " (s)" << endl;
+    << SolTime_ << " (s), avg = " << SolTime << " (s)" << endl;
   cout << "----------------------------------------------------------------------------" << endl;
 
   return;

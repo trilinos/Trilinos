@@ -238,10 +238,10 @@ private:
   bool UseTranspose_;
   //! Pointer to the linear problem to solve.
   const Epetra_LinearProblem * Problem_;
-
   //! Reciprocal condition number estimate
   mutable double Rcond_;
-
+  //  True if Rcond_ is the same on all processes
+  mutable bool RcondValidOnAllProcs_;
   //! If \c true, prints timing in the destructor.
   bool PrintTiming_;
   //! If \c true, prints additional information in the destructor.
@@ -252,10 +252,8 @@ private:
   bool ComputeVectorNorms_;
   //! If \c true, prints the norm of the computed residual in Solve().
   bool ComputeTrueResidual_;
-  
   //! Toggles the output level.
   int verbose_;
-
   //! time to convert to MUMPS format
   double ConTime_;
   //! time for symbolic factorization
@@ -280,8 +278,6 @@ private:
   Epetra_Time * Time_;
   //! Importer from distributed to serial (all rows on process 0).
   Epetra_Import * ImportToSerial_;
-  //  True if Rcond_ is the same on all processes
-  mutable bool RcondValidOnAllProcs_;
   
 };  // class Amesos_Umfpack  
 #endif /* AMESOS_UMFPACK_H */

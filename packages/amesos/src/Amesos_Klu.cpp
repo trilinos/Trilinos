@@ -70,14 +70,14 @@ Amesos_Klu::Amesos_Klu(const Epetra_LinearProblem &prob ) :
   Matrix_(0),
   UseTranspose_(false),
   Problem_(&prob),
+  IsSymbolicFactorizationOK_(false),
+  IsNumericFactorizationOK_(false),
   PrintTiming_(false),
   PrintStatus_(false),
   AddToDiag_(0.0),
   ComputeVectorNorms_(false),
   ComputeTrueResidual_(false),
   verbose_(1),
-  IsSymbolicFactorizationOK_(false),
-  IsNumericFactorizationOK_(false),
   refactorize_(false),
   rcond_threshold_(1e-12),
   ScaleMethod_(1),
@@ -683,7 +683,18 @@ void Amesos_Klu::PrintStatus()
 
 void Amesos_Klu::PrintTiming()
 {
-  if( iam ) return;
+  if (iam) return;
+
+  double SymTime = 0.0, NumTime = 0.0, SolTime = 0.0;
+
+  if (NumSymbolicFact_)
+    SymTime = SymTime_ / NumSymbolicFact_;
+
+  if (NumNumericFact_)
+    NumTime =  NumTime_ / NumNumericFact_;
+
+  if (NumSolve_)
+    SolTime = SolTime_ / NumSolve_;
 
   cout << "----------------------------------------------------------------------------" << endl;
   cout << "Amesos_Klu : Time to convert matrix to KLU format = "
@@ -695,18 +706,15 @@ void Amesos_Klu::PrintTiming()
   cout << "Amesos_Klu : Number of symbolic factorizations = "
        << NumSymbolicFact_ << endl;
   cout << "Amesos_Klu : Time for sym fact = "
-       << SymTime_ << " (s), avg = " << SymTime_/NumSymbolicFact_
-       << " (s)" << endl;
+       << SymTime_ << " (s), avg = " << SymTime << " (s)" << endl;
   cout << "Amesos_Klu : Number of numeric factorizations = "
        << NumNumericFact_ << endl;
   cout << "Amesos_Klu : Time for num fact = "
-       << NumTime_ << " (s), avg = " << NumTime_/NumNumericFact_
-       << " (s)" << endl;
+       << NumTime_ << " (s), avg = " << NumTime << " (s)" << endl;
   cout << "Amesos_Klu : Number of solve phases = "
        << NumSolve_ << endl;
   cout << "Amesos_Klu : Time for solve = "
-       << SolTime_ << " (s), avg = " << SolTime_/NumSolve_
-       << " (s)" << endl;
+       << SolTime_ << " (s), avg = " << SolTime << " (s)" << endl;
   cout << "----------------------------------------------------------------------------" << endl;
 
   return;

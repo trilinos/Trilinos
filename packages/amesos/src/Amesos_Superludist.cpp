@@ -1008,8 +1008,16 @@ void Amesos_Superludist::PrintStatus()
 
 void Amesos_Superludist::PrintTiming()
 {
-  if( iam_ ) return;
+  if (iam_) return;
   
+  double NumTime = 0.0, SolTime = 0.0;
+
+  if (NumNumericFact_)
+    NumTime =  NumTime_ / NumNumericFact_;
+
+  if (NumSolve_)
+    SolTime = SolTime_ / NumSolve_;
+
   cout << "----------------------------------------------------------------------------" << endl;
   cout << "Amesos_Superludist : Time to convert matrix to SuperLU_dist format = "
        << ConTime_ << " (s)" << endl;
@@ -1022,13 +1030,11 @@ void Amesos_Superludist::PrintTiming()
   cout << "Amesos_Superludist : Number of numeric factorizations = "
        << NumNumericFact_ << endl;
   cout << "Amesos_Superludist : Time for num fact = "
-       << NumTime_ << " (s), avg = " << NumTime_/NumNumericFact_
-       << " (s)" << endl;
+       << NumTime_ << " (s), avg = " << NumTime << " (s)" << endl;
   cout << "Amesos_Superludist : Number of solve phases = "
        << NumSolve_ << endl;
   cout << "Amesos_Superludist : Time for solve = "
-       << SolTime_ << " (s), avg = " << SolTime_/NumSolve_
-       << " (s)" << endl;  
+       << SolTime_ << " (s), avg = " << SolTime << " (s)" << endl;  
   cout << "----------------------------------------------------------------------------" << endl;
    
   return;
