@@ -675,7 +675,8 @@ end interface
 interface
 !NAS$ ALIEN "F77 lb_fw_eval"
 subroutine LB_fw_Eval(lb,nbytes,print_stats,nobj,obj_wgt, &
-                      cut_wgt,nboundary,nadj,ierr)
+                      cut_wgt,nboundary,nadj,ierr,is_nobj, &
+                      is_obj_wgt,is_cut_wgt,is_nboundary,is_nadj)
 use zoltan_types
 use lb_user_const
 implicit none
@@ -683,6 +684,8 @@ integer(LB_INT), dimension(*) INTENT_IN lb
 integer(LB_INT) INTENT_IN nbytes, print_stats
 integer(LB_INT), intent(out) :: nobj, cut_wgt, nboundary, nadj, ierr
 real(LB_FLOAT), intent(out) :: obj_wgt(*)
+integer(LB_INT), intent(in) :: is_nobj, is_cut_wgt, is_nboundary, is_nadj, &
+                               is_obj_wgt
 end subroutine LB_fw_Eval
 end interface
 
@@ -890,6 +893,18 @@ type(address), intent(in) :: malloc_int,malloc_gid,malloc_lid, &
 external malloc_int,malloc_gid,malloc_lid,free_int,free_gid,free_lid
 #endif
 end subroutine LB_fw_Register_Fort_Malloc
+end interface
+
+interface
+!NAS$ ALIEN "F77 lb_fw_get_wgt_dim"
+function LB_fw_Get_Wgt_Dim(lb,nbytes)
+use zoltan_types
+use lb_user_const
+implicit none
+integer(LB_INT) :: LB_fw_Get_Wgt_Dim
+integer(LB_INT), dimension(*) INTENT_IN lb
+integer(LB_INT) INTENT_IN nbytes
+end function LB_fw_Get_Wgt_Dim
 end interface
 
 !--------------------------------------------------------------------------
@@ -1488,21 +1503,22 @@ function f90LB_Balance11(lb,changes,num_import,import_global_ids, &
                        export_global_ids,export_local_ids,export_procs)
 integer(LB_INT) :: f90LB_Balance11
 type(LB_Struct) INTENT_IN lb
-integer(LB_INT), intent(out) :: changes
+logical, intent(out) :: changes
 integer(LB_INT), intent(out) :: num_import, num_export
 type(LB_GID), pointer, dimension(:) :: import_global_ids, export_global_ids
 type(LB_LID), pointer, dimension(:) :: import_local_ids, export_local_ids
 integer(LB_INT), pointer, dimension(:) :: import_procs, export_procs
 integer(LB_INT), dimension(LB_PTR_LENGTH) :: lb_addr
-integer(LB_INT) :: nbytes, i
+integer(LB_INT) :: nbytes, i, int_changes
 nbytes = LB_PTR_LENGTH
 do i=1,nbytes
    lb_addr(i) = ichar(lb%addr%addr(i:i))
 end do
-f90LB_Balance11 = LB_fw_Balance11(lb_addr,nbytes,changes, &
+f90LB_Balance11 = LB_fw_Balance11(lb_addr,nbytes,int_changes, &
                              num_import,import_global_ids,import_local_ids, &
                              import_procs,num_export,export_global_ids, &
                              export_local_ids,export_procs)
+changes = .not.(int_changes==0)
 end function f90LB_Balance11
 
 function f90LB_Balance12(lb,changes,num_import,import_global_ids, &
@@ -1510,21 +1526,22 @@ function f90LB_Balance12(lb,changes,num_import,import_global_ids, &
                        export_global_ids,export_local_ids,export_procs)
 integer(LB_INT) :: f90LB_Balance12
 type(LB_Struct) INTENT_IN lb
-integer(LB_INT), intent(out) :: changes
+logical, intent(out) :: changes
 integer(LB_INT), intent(out) :: num_import, num_export
 type(LB_GID), pointer, dimension(:) :: import_global_ids, export_global_ids
 integer(LB_INT), pointer, dimension(:) :: import_local_ids, export_local_ids
 integer(LB_INT), pointer, dimension(:) :: import_procs, export_procs
 integer(LB_INT), dimension(LB_PTR_LENGTH) :: lb_addr
-integer(LB_INT) :: nbytes, i
+integer(LB_INT) :: nbytes, i, int_changes
 nbytes = LB_PTR_LENGTH
 do i=1,nbytes
    lb_addr(i) = ichar(lb%addr%addr(i:i))
 end do
-f90LB_Balance12 = LB_fw_Balance12(lb_addr,nbytes,changes, &
+f90LB_Balance12 = LB_fw_Balance12(lb_addr,nbytes,int_changes, &
                              num_import,import_global_ids,import_local_ids, &
                              import_procs,num_export,export_global_ids, &
                              export_local_ids,export_procs)
+changes = .not.(int_changes==0)
 end function f90LB_Balance12
 
 function f90LB_Balance21(lb,changes,num_import,import_global_ids, &
@@ -1532,21 +1549,22 @@ function f90LB_Balance21(lb,changes,num_import,import_global_ids, &
                        export_global_ids,export_local_ids,export_procs)
 integer(LB_INT) :: f90LB_Balance21
 type(LB_Struct) INTENT_IN lb
-integer(LB_INT), intent(out) :: changes
+logical, intent(out) :: changes
 integer(LB_INT), intent(out) :: num_import, num_export
 integer(LB_INT), pointer, dimension(:) :: import_global_ids, export_global_ids
 type(LB_LID), pointer, dimension(:) :: import_local_ids, export_local_ids
 integer(LB_INT), pointer, dimension(:) :: import_procs, export_procs
 integer(LB_INT), dimension(LB_PTR_LENGTH) :: lb_addr
-integer(LB_INT) :: nbytes, i
+integer(LB_INT) :: nbytes, i, int_changes
 nbytes = LB_PTR_LENGTH
 do i=1,nbytes
    lb_addr(i) = ichar(lb%addr%addr(i:i))
 end do
-f90LB_Balance21 = LB_fw_Balance21(lb_addr,nbytes,changes, &
+f90LB_Balance21 = LB_fw_Balance21(lb_addr,nbytes,int_changes, &
                              num_import,import_global_ids,import_local_ids, &
                              import_procs,num_export,export_global_ids, &
                              export_local_ids,export_procs)
+changes = .not.(int_changes==0)
 end function f90LB_Balance21
 
 function f90LB_Balance22(lb,changes,num_import,import_global_ids, &
@@ -1554,31 +1572,36 @@ function f90LB_Balance22(lb,changes,num_import,import_global_ids, &
                        export_global_ids,export_local_ids,export_procs)
 integer(LB_INT) :: f90LB_Balance22
 type(LB_Struct) INTENT_IN lb
-integer(LB_INT), intent(out) :: changes
+logical, intent(out) :: changes
 integer(LB_INT), intent(out) :: num_import, num_export
 integer(LB_INT), pointer, dimension(:) :: import_global_ids, export_global_ids
 integer(LB_INT), pointer, dimension(:) :: import_local_ids, export_local_ids
 integer(LB_INT), pointer, dimension(:) :: import_procs, export_procs
 integer(LB_INT), dimension(LB_PTR_LENGTH) :: lb_addr
-integer(LB_INT) :: nbytes, i
+integer(LB_INT) :: nbytes, i, int_changes
 nbytes = LB_PTR_LENGTH
 do i=1,nbytes
    lb_addr(i) = ichar(lb%addr%addr(i:i))
 end do
-f90LB_Balance22 = LB_fw_Balance22(lb_addr,nbytes,changes, &
+f90LB_Balance22 = LB_fw_Balance22(lb_addr,nbytes,int_changes, &
                              num_import,import_global_ids,import_local_ids, &
                              import_procs,num_export,export_global_ids, &
                              export_local_ids,export_procs)
+changes = .not.(int_changes==0)
 end function f90LB_Balance22
 
 subroutine f90LB_Eval(lb,print_stats,nobj,obj_wgt, &
                       cut_wgt,nboundary,nadj,ierr)
 type(LB_Struct) INTENT_IN lb
 logical INTENT_IN print_stats
-integer(LB_INT), intent(out) :: nobj, cut_wgt, nboundary, nadj, ierr
-real(LB_FLOAT), intent(out) :: obj_wgt(*)
+integer(LB_INT), intent(out), optional :: nobj, cut_wgt, nboundary, nadj
+integer(LB_INT), intent(out) :: ierr
+real(LB_FLOAT), intent(out), optional :: obj_wgt(*)
 integer(LB_INT), dimension(LB_PTR_LENGTH) :: lb_addr
-integer(LB_INT) :: nbytes, i, int_print_stats
+integer(LB_INT) :: nbytes, i, int_print_stats, dim
+integer(LB_INT) :: loc_nobj, loc_cut_wgt, loc_nboundary, loc_nadj
+real(LB_FLOAT), allocatable :: loc_obj_wgt(:)
+integer(LB_INT) :: is_nobj, is_cut_wgt, is_nboundary, is_nadj, is_obj_wgt
 nbytes = LB_PTR_LENGTH
 do i=1,nbytes
    lb_addr(i) = ichar(lb%addr%addr(i:i))
@@ -1588,8 +1611,47 @@ if (print_stats) then
 else
    int_print_stats = 0
 endif
-call LB_fw_Eval(lb_addr,nbytes,int_print_stats,nobj,obj_wgt, &
-                cut_wgt,nboundary,nadj,ierr)
+if (present(nobj)) then
+   is_nobj = 1
+else
+   is_nobj = 0
+endif
+if (present(cut_wgt)) then
+   is_cut_wgt = 1
+else
+   is_cut_wgt = 0
+endif
+if (present(nboundary)) then
+   is_nboundary = 1
+else
+   is_nboundary = 0
+endif
+if (present(nadj)) then
+   is_nadj = 1
+else
+   is_nadj = 0
+endif
+if (present(obj_wgt)) then
+   is_obj_wgt = 1
+   dim = LB_fw_Get_Wgt_Dim(lb_addr,nbytes)
+   allocate(loc_obj_wgt(dim))
+else
+   is_obj_wgt = 0
+   allocate(loc_obj_wgt(1))
+endif
+call LB_fw_Eval(lb_addr,nbytes,int_print_stats,loc_nobj,loc_obj_wgt, &
+                loc_cut_wgt,loc_nboundary,loc_nadj,ierr,is_nobj,is_obj_wgt, &
+                is_cut_wgt,is_nboundary,is_nadj)
+if (present(nobj)) nobj = loc_nobj
+if (present(obj_wgt)) then
+   do i = 1,dim
+      obj_wgt(i) = loc_obj_wgt(i)
+   end do
+endif
+if (present(cut_wgt)) cut_wgt = loc_cut_wgt
+if (present(nboundary)) nboundary = loc_nboundary
+if (present(nadj)) nadj = loc_nadj
+deallocate(loc_obj_wgt)
 end subroutine f90LB_Eval
 
 function f90LB_Free_Data11(import_global_ids, import_local_ids,import_procs, &

@@ -52,6 +52,7 @@
 #define LB_fw_Get_Address_int            lb_fw_get_address_int
 #define LB_fw_Get_Address_GID            lb_fw_get_address_gid
 #define LB_fw_Get_Address_LID            lb_fw_get_address_lid
+#define LB_fw_Get_Wgt_Dim                lb_fw_get_wgt_dim
 
 #elif FMANGLE==UPPERCASE
 
@@ -96,6 +97,7 @@
 #define LB_fw_Get_Address_int            LB_FW_GET_ADDRESS_INT
 #define LB_fw_Get_Address_GID            LB_FW_GET_ADDRESS_GID
 #define LB_fw_Get_Address_LID            LB_FW_GET_ADDRESS_LID
+#define LB_fw_Get_Wgt_Dim                LB_FW_GET_WGT_DIM
 
 #elif FMANGLE==UNDERSCORE
 
@@ -140,6 +142,7 @@
 #define LB_fw_Get_Address_int            lb_fw_get_address_int_
 #define LB_fw_Get_Address_GID            lb_fw_get_address_gid_
 #define LB_fw_Get_Address_LID            lb_fw_get_address_lid_
+#define LB_fw_Get_Wgt_Dim                lb_fw_get_wgt_dim_
 
 #elif FMANGLE==UNDERSCORE2
 
@@ -184,6 +187,7 @@
 #define LB_fw_Get_Address_int            lb_fw_get_address_int__
 #define LB_fw_Get_Address_GID            lb_fw_get_address_gid__
 #define LB_fw_Get_Address_LID            lb_fw_get_address_lid__
+#define LB_fw_Get_Wgt_Dim                lb_fw_get_wgt_dim__
 
 #endif /* FMANGLE */
 
@@ -227,6 +231,16 @@ void LB_fw_Get_Address_GID(LB_GID *addr, int *ret_addr)
 void LB_fw_Get_Address_LID(LB_LID *addr, int *ret_addr)
 {
    *ret_addr = (int)addr;
+}
+
+int LB_fw_Get_Wgt_Dim(int *addr_lb, int *nbytes)
+{
+   struct LB_Struct *lb;
+   unsigned char *p;
+   int i;
+   p = (unsigned char *) &lb;
+   for (i=0; i<(*nbytes); i++) {*p = (unsigned char)addr_lb[i]; p++;}
+   return lb->Obj_Weight_Dim;
 }
 
 /*--------------------------------------------------------------------*/
@@ -804,17 +818,26 @@ int LB_fw_Balance22(int *addr_lb, int *nbytes, int *changes, int *num_import,
 
 void LB_fw_Eval(int *addr_lb, int *nbytes, int *print_stats,
                 int *nobj, float *obj_wgt, int *cut_wgt,
-                int *nboundary, int *nadj, int *ierr)
+                int *nboundary, int *nadj, int *ierr,
+                int *is_nobj, int *is_obj_wgt, int *is_cut_wgt,
+                int *is_nboundary, int *is_nadj)
 {
    struct LB_Struct *lb;
+   int *loc_nobj, *loc_cut_wgt, *loc_nboundary, *loc_nadj;
+   float *loc_obj_wgt;
    unsigned char *p;
    int i;
    p = (unsigned char *) &lb;
    for (i=0; i<(*nbytes); i++) {*p = (unsigned char)addr_lb[i]; p++;}
    LB_Current_lb = lb;
+   if (*is_nobj) {loc_nobj = nobj;} else {loc_nobj = NULL;}
+   if (*is_obj_wgt) {loc_obj_wgt = obj_wgt;} else {loc_obj_wgt = NULL;}
+   if (*is_cut_wgt) {loc_cut_wgt = cut_wgt;} else {loc_cut_wgt = NULL;}
+   if (*is_nboundary) {loc_nboundary = nboundary;} else {loc_nboundary = NULL;}
+   if (*is_nadj) {loc_nadj = nadj;} else {loc_nadj = NULL;}
 
-   LB_Eval(lb, *print_stats, nobj, obj_wgt, cut_wgt,
-           nboundary, nadj, ierr);
+   LB_Eval(lb, *print_stats, loc_nobj, loc_obj_wgt, loc_cut_wgt,
+           loc_nboundary, loc_nadj, ierr);
 }
 
 int LB_fw_Point_Assign(int *addr_lb, int *nbytes, double *coords, int *proc)
