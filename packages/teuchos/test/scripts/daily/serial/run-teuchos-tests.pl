@@ -14,8 +14,8 @@ printf
   "\n*** Running Teuchos tests ****".
   "\n******************************\n";
 
-my $success = 1;
-my $result;
-$result = system ('./RefCountPtr/RefCountPtr_test.exe');
-$success = 0 if (!$result);
-exit ($success ? -1 : 0 );
+my $success = 1;  # Boolean (false=0,true=nonzero)
+my $result;       # success=0, failure=nonzero
+$result = system ('./RefCountPtr/RefCountPtr_test.exe --quite');
+$success = 0 if ($result != 0);
+exit ($success ? 0 : -1 );

@@ -14,6 +14,7 @@
 // above mentioned "Artistic License" for more details.
 
 #include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_CommandLineProcessor.hpp"
 
 // Return constants from class functions
 const int
@@ -141,7 +142,8 @@ public:
 //
 // This program prints minimal output to standard error
 //
-int main() {
+
+int main( int argc, char* argv[] ) {
 
 	using Teuchos::RefCountPtr;
 	using Teuchos::DeallocDelete;
@@ -153,8 +155,17 @@ int main() {
 	using Teuchos::set_extra_data;
 	using Teuchos::get_extra_data;
 	using Teuchos::get_dealloc;
+	using Teuchos::CommandLineProcessor;
 	
+	bool verbose = true;
+
 	try {
+
+		// Read options from the commandline
+		CommandLineProcessor  clp(false); // Don't throw exceptions
+		clp.setOption( "verbose", "quite", &verbose, "Set if output is printed or not." );
+		CommandLineProcessor::EParseCommandLineReturn parse_return = clp.parse(argc,argv);
+		if( parse_return != CommandLineProcessor::PARSE_SUCCESSFULL ) return parse_return;
 
 		// Create some smart pointers
 
@@ -345,12 +356,14 @@ int main() {
 		C *c_ptr5 = new C;      // Okay, no type info lost and address should be same as returned from malloc(...)
 #ifdef SHOW_RUN_TIME_ERROR_VIRTUAL_BASE_CLASS_PRINT
 		const void *c_ptr5_base = dynamic_cast<void*>(c_ptr5);
-		std::cout << "\nSize of C = " << sizeof(C) << std::endl;
-		std::cout << "Base address of object of type C        = " << dynamic_cast<void*>(c_ptr5) << std::endl;
-		std::cout << "Offset to address of object of type C   = " << ((long int)c_ptr5                   - (long int)c_ptr5_base) << std::endl;
-		std::cout << "Offset of B1 object in object of type C = " << ((long int)static_cast<B1*>(c_ptr5) - (long int)c_ptr5_base) << std::endl;
-		std::cout << "Offset of B2 object in object of type C = " << ((long int)static_cast<B2*>(c_ptr5) - (long int)c_ptr5_base) << std::endl;
-		std::cout << "Offset of A object in object of type C  = " << ((long int)static_cast<A*>(c_ptr5)  - (long int)c_ptr5_base) << std::endl;
+		if(verbose) {
+			std::cout << "\nSize of C = " << sizeof(C) << std::endl;
+			std::cout << "Base address of object of type C        = " << dynamic_cast<void*>(c_ptr5) << std::endl;
+			std::cout << "Offset to address of object of type C   = " << ((long int)c_ptr5                   - (long int)c_ptr5_base) << std::endl;
+			std::cout << "Offset of B1 object in object of type C = " << ((long int)static_cast<B1*>(c_ptr5) - (long int)c_ptr5_base) << std::endl;
+			std::cout << "Offset of B2 object in object of type C = " << ((long int)static_cast<B2*>(c_ptr5) - (long int)c_ptr5_base) << std::endl;
+			std::cout << "Offset of A object in object of type C  = " << ((long int)static_cast<A*>(c_ptr5)  - (long int)c_ptr5_base) << std::endl;
+		}
 #endif
 		A *a_rptr5 = c_ptr5;    // Here the address has changed and is no longer the same as the base address
 		a_ptr1 = rcp(a_rptr5);  // This is a no-no and could cause trouble!
@@ -372,15 +385,18 @@ int main() {
 		a_ptr1 = Teuchos::null;
 		d_ptr1 = Teuchos::null;
 
-		std::cerr << "RefCountPtr<...> seems to checks out!\n";
+		if(verbose)
+			std::cout << "RefCountPtr<...> seems to checks out!\n";
 
 	} // end try
 	catch( const std::exception &excpt ) {
-		std::cerr << "*** Caught standard exception : " << excpt.what() << std::endl;
+		if(verbose)
+			std::cerr << "*** Caught standard exception : " << excpt.what() << std::endl;
 		return -1;
 	}
 	catch( ... ) {
-		std::cerr << "*** Caught an unknow exception\n";
+		if(verbose)
+			std::cerr << "*** Caught an unknow exception\n";
 		return -1;
 	}
 
