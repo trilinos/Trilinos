@@ -153,9 +153,11 @@ AM_CONDITIONAL(BUILD_EPETRA, test "X$ac_cv_use_epetra" != "Xno" ||
         test "X$ac_cv_use_meros" != "Xno")
 
 TAC_ARG_ENABLE_FEATURE(kokkos, [Build kokkos], KOKKOS, no)
-AM_CONDITIONAL(BUILD_KOKKOS, test "X$ac_cv_use_kokkos" != "Xno")
+AM_CONDITIONAL(BUILD_KOKKOS, test "X$ac_cv_use_kokkos" != "Xno" ||
+	test "X$ac_cv_use_tpetra" != "Xno")
 
-if test "X$ac_cv_use_kokkos" != "Xno"; then
+if test "X$ac_cv_use_kokkos" != "Xno" ||
+  	test "X$ac_cv_use_tpetra" != "Xno"; then
   AC_CONFIG_SUBDIRS([packages/kokkos])
 fi
 
