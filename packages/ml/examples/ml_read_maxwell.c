@@ -330,8 +330,6 @@ int main(int argc, char *argv[])
   /* Set rhs */
 
   /*rhs=(double *) ML_allocate(Nlocal_edges*sizeof(double));*/
-  rhs = (double *) ML_allocate((Nlocal_edges + Ke_mat->data_org[AZ_N_external])
-                               *sizeof(double)); 
  
   fp = fopen("rhsfile","r");
   if (fp == NULL)
@@ -339,6 +337,9 @@ int main(int argc, char *argv[])
     printf("%d: rhsfile file pointer is NULL\n",proc_config[AZ_node]); fflush(stdout);
     if (proc_config[AZ_node] == 0) printf("taking zero vector for rhs\n");
     fflush(stdout);
+    rhs = (double *)
+	      ML_allocate((Nlocal_edges + Ke_mat->data_org[AZ_N_external])
+                      *sizeof(double)); 
     for (i = 0; i < Nlocal_edges; i++) rhs[i] = 0.0;
   }
   else
@@ -822,68 +823,78 @@ int main(int argc, char *argv[])
     options[AZ_conv] = AZ_expected_values;
     printf("done reading initial guess\n");
   }
-#endif
-
+#endif /* ifdef HierarchyCheck */
 
   coarsest_level = ML_Gen_MGHierarchy_UsingReitzinger(ml_edges, ml_nodes,
 						      N_levels-1, ML_DECREASING, ag, Tmat, Tmat_trans,
 						      &Tmat_array, &Tmat_trans_array);
 
+#ifdef ReuseOps
+  {printf("Starting reuse\n"); fflush(stdout);}
+/*
+  ML_Operator_Clean(ml_edges->Amat);
+  ML_Operator_Init(ml_edges->Amat,ml_edges->comm);
+  AZ_ML_Set_Amat(ml_edges, N_levels-1, Nlocal_edges, Nlocal_edges, Ke_mat, 
+		 proc_config);
+*/
+  ML_Gen_MGHierarchy_ReuseExistingOperators(ml_edges, Ke_mat, Nlocal_edges,
+                                            N_levels-1, coarsest_level,
+                                            ML_DECREASING,proc_config);
+  {printf("Ending reuse\n"); fflush(stdout);}
+#endif
+
 
   coarsest_level = N_levels - coarsest_level;
-  if ( proc_config[AZ_node] == 0 )
-    printf("Coarse level = %d \n", coarsest_level);
 	
 
   /* set up smoothers for all levels but the coarsest */
   for (level = N_levels-1; level > coarsest_level; level--)
   {
-
       num_PDE_eqns = ml_edges->Amat[level].num_PDEs;
 		
       /*  Sparse approximate inverse smoother that acutally does both */
       /*  pre and post smoothing.                                     */
 
       if (ML_strcmp(context->smoother,"Parasails") == 0)
-	{
+	  {
 	  ML_Gen_Smoother_ParaSails(ml_edges , level, ML_PRESMOOTHER, nsmooth, 
 				    parasails_sym, parasails_thresh, 
 				    parasails_nlevels, parasails_filter,
 				    parasails_loadbal, parasails_factorized);
-	}
+	  }
 
       else if (ML_strcmp(context->smoother,"Hiptmair") == 0)
-	{
+	  {
        omega = 1.0;
-       if ( proc_config[AZ_node] == 0 )
-          printf("Damping parameter = %lf\n",omega);
-	  ML_Gen_Smoother_Hiptmair(ml_edges, level, ML_BOTH, nsmooth,
+       /* The damping parameter is actually calculated in the data setup
+          for Hiptmair. */
+	   ML_Gen_Smoother_Hiptmair(ml_edges, level, ML_BOTH, nsmooth,
 				   omega,Tmat_array, Tmat_trans_array);
-	}
+	  }
       /* This is the symmetric Gauss-Seidel smoothing that we usually use. */
       /* In parallel, it is not a true Gauss-Seidel in that each processor */
       /* does a Gauss-Seidel on its local submatrix independent of the     */
       /* other processors.                                                 */
 
       else if (ML_strcmp(context->smoother,"GaussSeidel") == 0)
-	{
+	  {
 	  ML_Gen_Smoother_GaussSeidel(ml_edges , level, ML_BOTH, nsmooth,1.);
-	}
+	  }
       else if (ML_strcmp(context->smoother,"SymGaussSeidel") == 0)
-	{
+	  {
 	  ML_Gen_Smoother_SymGaussSeidel(ml_edges , level, ML_BOTH, nsmooth,1.);
-	}
+	  }
       else if (ML_strcmp(context->smoother,"BlockGaussSeidel") == 0)
-	{
+  	  {
 	  ML_Gen_Smoother_BlockGaussSeidel(ml_edges , level, ML_BOTH, nsmooth,1.,
 					   num_PDE_eqns);
-	}
+	  }
       else if (ML_strcmp(context->smoother,"Aggregate") == 0)
-	{
+	  {
 	  ML_Gen_Blocks_Aggregates(ag, level, &nblocks, &blocks);
 	  ML_Gen_Smoother_VBlockSymGaussSeidel(ml_edges , level, ML_BOTH,
 					       nsmooth,1., nblocks, blocks);
-	}
+	  }
 
       /* This is a true Gauss Seidel in parallel. This seems to work for  */
       /* elasticity problems.  However, I don't believe that this is very */
@@ -902,17 +913,17 @@ int main(int argc, char *argv[])
       /* Jacobi Smoothing                                                 */
 
       else if (ML_strcmp(context->smoother,"Jacobi") == 0)
-	{
+	  {
 	  ML_Gen_Smoother_Jacobi(ml_edges , level, ML_PRESMOOTHER, nsmooth,.67);
 	  ML_Gen_Smoother_Jacobi(ml_edges , level, ML_POSTSMOOTHER, nsmooth,.67);
-	}
+	  }
 
       /*  This does a block Gauss-Seidel (not true GS in parallel)        */
       /*  where each processor has 'nblocks' blocks.                      */
       /* */
 
       else if (ML_strcmp(context->smoother,"Metis") == 0)
-	{
+	  {
 	  nblocks = 250;
 	  nblocks = ml_edges->Amat[level].invec_leng/25;
 	  nblocks++;
@@ -920,12 +931,12 @@ int main(int argc, char *argv[])
 	  ML_Gen_Smoother_VBlockSymGaussSeidel(ml_edges , level, ML_BOTH,
 					       nsmooth,1., nblocks, blocks);
 	  ML_free(blocks);
-	}
+	  }
       else
-	{
+	  {
 	  printf("unknown smoother %s\n",context->smoother);
 	  exit(1);
-	}
+	  }
   }
   nsmooth   = context->coarse_its;
   /*  Sparse approximate inverse smoother that actually does both */
@@ -942,8 +953,8 @@ int main(int argc, char *argv[])
   else if (ML_strcmp(context->coarse_solve,"Hiptmair") == 0)
     {
        omega = 1.0;
-       if ( proc_config[AZ_node] == 0 )
-          printf("Damping parameter = %lf\n",omega);
+       /* The damping parameter is actually calculated in the data setup
+          for Hiptmair. */
       ML_Gen_Smoother_Hiptmair(ml_edges , coarsest_level, ML_BOTH,
 			       nsmooth,omega,Tmat_array, Tmat_trans_array);
     }
@@ -983,6 +994,43 @@ int main(int argc, char *argv[])
     printf("unknown coarse grid solver %s\n",context->coarse_solve);
     exit(1);
   }
+
+#ifdef ReuseOps
+  /* Regenerate Hiptmair smoother data on all levels as a test. */
+  if (ML_strcmp(context->smoother,"Hiptmair") == 0)
+  {
+     if (proc_config[AZ_node] == 0)
+     {
+        printf("Regenerating smoother data\n");
+        fflush(stdout);
+     }
+     for (level = N_levels-1; level > coarsest_level; level--)
+     {
+         num_PDE_eqns = ml_edges->Amat[level].num_PDEs;
+         omega = 1.0;
+         if (proc_config[AZ_node] == 0)
+            printf("Damping parameter = %lf\n",omega);
+	     ML_Gen_Smoother_HiptmairReuse(ml_edges, level, ML_BOTH, nsmooth,
+				                       omega);
+     }
+  }
+  if (ML_strcmp(context->coarse_solve,"Hiptmair") == 0)
+  {
+     if (proc_config[AZ_node] == 0)
+     {
+        printf("Regenerating smoother data on coarsest level\n");
+        fflush(stdout);
+     }
+     omega = 1.0;
+     ML_Gen_Smoother_HiptmairReuse(ml_edges, coarsest_level,
+                                   ML_BOTH, nsmooth, omega);
+  }
+  if (proc_config[AZ_node] == 0)
+  {
+     printf("Done regenerating data\n");
+     fflush(stdout);
+  }
+#endif /* ifdef ReuseOps */
 		
   mg_cycle_type = ML_MGV;
   ML_Gen_Solver(ml_edges, mg_cycle_type, N_levels-1, coarsest_level); 
@@ -1025,8 +1073,6 @@ int main(int argc, char *argv[])
 
   /* Set xxx */
 
-  if (proc_config[AZ_node]== 0)
-     printf("putting in an edge based xxx\n");
   fp = fopen("initguessfile","r");
   if (fp != NULL) {
     fclose(fp);
@@ -1126,7 +1172,7 @@ int main(int argc, char *argv[])
        yyy = (double *) malloc( Amat->outvec_leng * sizeof(double) );
        ML_Operator_Apply(Amat, Amat->invec_leng, rhs,Amat->outvec_leng,yyy);
        dtemp = sqrt(ML_gdot(Amat->outvec_leng, yyy, yyy, ml_edges->comm));
-       printf("||R_e * rhs|| = %10.7e\n",dtemp);
+       printf("||R_e * rhs|| = %20.15e\n",dtemp);
 
        /*
        if (Amat->comm->ML_mypid == 0)
@@ -1135,7 +1181,7 @@ int main(int argc, char *argv[])
 
        ML_Operator_Apply(Amat, Amat->invec_leng, xxx,Amat->outvec_leng,yyy);
        dtemp = sqrt(ML_gdot(Amat->outvec_leng, yyy, yyy, ml_edges->comm));
-       printf("||R_e * xxx|| = %10.7e\n",dtemp);
+       printf("||R_e * xxx|| = %20.15e\n",dtemp);
        ML_free(yyy);
     }
 
@@ -1144,22 +1190,23 @@ int main(int argc, char *argv[])
     yyy = (double *) malloc( Amat->outvec_leng * sizeof(double) );
     ML_Operator_Apply(Amat, Amat->invec_leng, rhs,Amat->outvec_leng,yyy);
     dtemp = sqrt(ML_gdot(Amat->outvec_leng, yyy, yyy, ml_edges->comm));
-    printf("||Ke_mat * rhs|| = %10.7e\n",dtemp);
+    printf("||Ke_mat * rhs|| = %20.15e\n",dtemp);
 
     ML_Operator_Apply(Amat, Amat->invec_leng, xxx,Amat->outvec_leng,yyy);
     dtemp = sqrt(ML_gdot(Amat->outvec_leng, yyy, yyy, ml_edges->comm));
-    printf("||Ke_mat * xxx|| = %10.7e\n",dtemp);
+    printf("||Ke_mat * xxx|| = %20.15e\n",dtemp);
     ML_free(yyy);
 
     Amat = Tmat_trans;
     yyy = (double *) malloc( Amat->outvec_leng * sizeof(double) );
-    ML_Operator_Apply(Amat, Amat->invec_leng, rhs,Amat->outvec_leng,yyy);
-    dtemp = sqrt(ML_gdot(Amat->outvec_leng, yyy, yyy, ml_edges->comm));
-    printf("||Tmat_trans * rhs|| = %10.7e\n",dtemp);
 
     ML_Operator_Apply(Amat, Amat->invec_leng, xxx,Amat->outvec_leng,yyy);
     dtemp = sqrt(ML_gdot(Amat->outvec_leng, yyy, yyy, ml_edges->comm));
-    printf("||Tmat_trans * xxx|| = %10.7e\n",dtemp);
+    printf("||Tmat_trans * xxx|| = %20.15e\n",dtemp);
+
+    ML_Operator_Apply(Amat, Amat->invec_leng, rhs,Amat->outvec_leng,yyy);
+    dtemp = sqrt(ML_gdot(Amat->outvec_leng, yyy, yyy, ml_edges->comm));
+    printf("||Tmat_trans * rhs|| = %20.15e\n",dtemp);
 
     if (N_levels > 1)
     {
@@ -1167,7 +1214,7 @@ int main(int argc, char *argv[])
        vvv = (double *) malloc( Amat->outvec_leng * sizeof(double) );
        ML_Operator_Apply(Amat, Amat->invec_leng, yyy,Amat->outvec_leng,vvv);
        dtemp = sqrt(ML_gdot(Amat->outvec_leng, vvv, vvv, ml_edges->comm));
-       printf("||R_n * Tmat_trans * xxx|| = %10.7e\n",dtemp);
+       printf("||R_n * Tmat_trans * yyy|| = %20.15e\n",dtemp);
        ML_free(vvv);
     }
 
