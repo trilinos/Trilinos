@@ -19,9 +19,9 @@
 #include <values.h>
 
 /***************************  PROTOTYPES *************************************/
-static void initialize_region(LB *, pRegion *, LB_GID, LB_LID, int, float);
-static int lb_oct_init(LB *lb, int *num_import, LB_GID **import_global_ids,
-  LB_LID **import_local_ids, int **import_procs, int oct_dim, int oct_method,
+static void initialize_region(LB *, pRegion *, LB_ID_PTR, LB_ID_PTR, int, float);
+static int lb_oct_init(LB *lb, int *num_import, LB_ID_PTR *import_global_ids,
+  LB_ID_PTR *import_local_ids, int **import_procs, int oct_dim, int oct_method,
   int oct_granularity, int oct_output_level, int oct_wgtflag); 
 static void    LB_oct_gen_tree_from_input_data(LB *lb, int, int *c1, int *c2,
                                                int *c3, float *c0);
@@ -69,23 +69,23 @@ int index;                    /* index returned from LB_Check_Param */
 
 /*****************************************************************************/
 int LB_octpart(
-  LB *lb,                     /* The load-balancing structure with info for
-                                 the OCTPART balancer.                       */
-  int *num_import,            /* Number of non-local objects assigned to this
-                                 processor in the new decomposition.         */
-  LB_GID **import_global_ids, /* Returned value:  array of global IDs for
-                                 non-local objects in this processor's new
-                                 decomposition.                              */
-  LB_LID **import_local_ids,  /* Returned value:  array of local IDs for
-                                 non-local objects in this processor's new
-                                 decomposition.                              */
-  int **import_procs,         /* Returned value:  array of processor IDs for
-                                 processors owning the non-local objects in
-                                 this processor's new decomposition.         */
-  int *num_export,            /* Not computed; return -1. */
-  LB_GID **export_global_ids, /* Not computed. */
-  LB_LID **export_local_ids,  /* Not computed. */
-  int **export_procs          /* Not computed. */
+  LB *lb,                       /* The load-balancing structure with info for
+                                   the OCTPART balancer.                     */
+  int *num_import,              /* Number of non-local objects assigned to this
+                                   processor in the new decomposition.       */
+  LB_ID_PTR *import_global_ids, /* Returned value:  array of global IDs for
+                                   non-local objects in this processor's new
+                                   decomposition.                            */
+  LB_ID_PTR *import_local_ids,  /* Returned value:  array of local IDs for
+                                   non-local objects in this processor's new
+                                   decomposition.                            */
+  int **import_procs,           /* Returned value:  array of processor IDs for
+                                   processors owning the non-local objects in
+                                   this processor's new decomposition.       */
+  int *num_export,              /* Not computed; return -1. */
+  LB_ID_PTR *export_global_ids, /* Not computed. */
+  LB_ID_PTR *export_local_ids,  /* Not computed. */
+  int **export_procs            /* Not computed. */
 ) 
 {
 int oct_dim = 3;              /* Dimension of method to be used (2D or 3D)   */
@@ -144,38 +144,36 @@ int error = FALSE;            /* error flag                                  */
  * initialize the calls needed to start the octree load balancing rounties
  */
 static int lb_oct_init(
-  LB *lb,                     /* The load-balancing structure with info for
-                                 the OCTPART balancer.                       */
-  int *num_import,            /* Number of non-local objects assigned to this
-                                 processor in the new decomposition.         */
-  LB_GID **import_global_ids, /* Returned value:  array of global IDs for
-                                 non-local objects in this processor's new
-                                 decomposition.                              */
-  LB_LID **import_local_ids,  /* Returned value:  array of local IDs for
-                                 non-local objects in this processor's new
-                                 decomposition.                              */
-  int **import_procs,         /* Returned value:  array of processor IDs for
-                                 processors owning the non-local objects in
-                                 this processor's new decomposition.         */
+  LB *lb,                       /* The load-balancing structure with info for
+                                   the OCTPART balancer.                     */
+  int *num_import,              /* Number of non-local objects assigned to this
+                                   processor in the new decomposition.       */
+  LB_ID_PTR *import_global_ids, /* Returned value:  array of global IDs for
+                                   non-local objects in this processor's new
+                                   decomposition.                            */
+  LB_ID_PTR *import_local_ids,  /* Returned value:  array of local IDs for
+                                   non-local objects in this processor's new
+                                   decomposition.                            */
+  int **import_procs,           /* Returned value:  array of processor IDs for
+                                   processors owning the non-local objects in
+                                   this processor's new decomposition.       */
 
-  int oct_dim,                /* Dimension of method to be used (2D or 3D)   */
-  int oct_method,             /* Flag specifying curve to be used.           */
-  int oct_granularity,        /* # of objects in leaves of octree.           */
-  int oct_output_level,       /* Flag specifying amount of output.           */
-  int oct_wgtflag             /* Flag specifying use of object weights.      */
+  int oct_dim,                  /* Dimension of method to be used (2D or 3D) */
+  int oct_method,               /* Flag specifying curve to be used.         */
+  int oct_granularity,          /* # of objects in leaves of octree.         */
+  int oct_output_level,         /* Flag specifying amount of output.         */
+  int oct_wgtflag               /* Flag specifying use of object weights.    */
 ) 
 {
   char *yo = "lb_oct_init";
   OCT_Global_Info *OCT_info;
-  LB_TAG *export_tags;             /* array of LB_TAGS being exported */
-  pRegion export_regs;             /* */
   int nsentags;                    /* number of tags being sent */
   pRegion import_regs;             /* */
   int nrectags;                    /* number of tags received */
   pOctant ptr;                     /* pointer to an octant */
   pRList root;                     
   pRList root2;                     
-  int count, i;
+  int count, i, kk;
   double time1,time2;              /* timers */
   double timestart,timestop;       /* timers */
   double timers[4];                /* diagnostic timers 
@@ -211,7 +209,6 @@ static int lb_oct_init(
   timers[2] = 0.0;
   timers[3] = 0.0;
 
-  export_tags = NULL;
   count = nsentags = nrectags = 0;
 
   OCT_info = POC_init(lb, lb->Proc, oct_dim);
@@ -235,7 +232,7 @@ static int lb_oct_init(
   if (oct_output_level == 3) {
     for(i=0; i<lb->Num_Proc; i++) {
       if(lb->Proc == i) {
-	POC_printResults(OCT_info);
+	POC_printResults(lb, OCT_info);
 	printf("\n\n");
       }
       MPI_Barrier(lb->Communicator);
@@ -244,7 +241,7 @@ static int lb_oct_init(
 
   /* set up tags for migrations */
   time1 = MPI_Wtime();
-  LB_dfs_migrate(lb, &export_regs, &nsentags, &import_regs, &nrectags, 
+  LB_dfs_migrate(lb, &nsentags, &import_regs, &nrectags, 
 	         &c[2], &c[3], &counters[3], &counters[5]);
 
   *num_import = nrectags;
@@ -274,9 +271,11 @@ static int lb_oct_init(
   LB_oct_print_stats(lb, timestop-timestart, timers, counters, c, 
                      oct_output_level);
 
-  LB_FREE(&export_regs);
+  for (kk = 0; kk < nrectags; kk++) {
+    LB_FREE(&(import_regs[kk].Global_ID));
+    LB_FREE(&(import_regs[kk].Local_ID));
+  }
   LB_FREE(&import_regs);
-  LB_FREE(&export_tags);
   root = POC_localroots(OCT_info);
   while(root != NULL) {
     root2 = root->next;
@@ -492,6 +491,8 @@ static void LB_oct_gen_tree_from_input_data(LB *lb, int oct_wgtflag, int *c1,
   LB_FREE(&array);
   while(ptr1 != NULL) {
     ptr = ptr1->next;
+    LB_FREE(&(ptr1->Global_ID));
+    LB_FREE(&(ptr1->Local_ID));
     LB_FREE(&ptr1);
     ptr1 = ptr;
   }
@@ -503,14 +504,16 @@ static void LB_get_bounds(LB *lb, pRegion *ptr1, int *num_objs,
 		   COORD min, COORD max, int wgtflag, float *c0) 
 {
   char *yo = "LB_get_bounds";
-  LB_GID *obj_global_ids = NULL; 
-  LB_LID *obj_local_ids = NULL;
+  LB_ID_PTR obj_global_ids = NULL; 
+  LB_ID_PTR obj_local_ids = NULL;
   float *obj_wgts = NULL;
   int i, found;
   pRegion tmp, ptr;
   COORD global_min, global_max;
   double PADDING = 0.0000001;
   int ierr = 0;
+  int num_gid_entries = lb->Num_GID;
+  int num_lid_entries = lb->Num_LID;
 
   /* Initialization */
   max[0] = max[1] = max[2] = -MAXDOUBLE;
@@ -524,8 +527,8 @@ static void LB_get_bounds(LB *lb, pRegion *ptr1, int *num_objs,
   }
 
   if (*num_objs > 0) {
-    obj_global_ids = (LB_GID *) LB_MALLOC((*num_objs) * sizeof(LB_GID));
-    obj_local_ids  = (LB_LID *) LB_MALLOC((*num_objs) * sizeof(LB_LID));
+    obj_global_ids = LB_MALLOC_GID_ARRAY(lb,(*num_objs));
+    obj_local_ids  = LB_MALLOC_LID_ARRAY(lb,(*num_objs));
     obj_wgts       = (float *) LB_MALLOC((*num_objs) * sizeof(float));
     if (!obj_global_ids || !obj_local_ids || !obj_wgts) {
       fprintf(stderr, "OCT [%d] Error from %s: Insufficient memory\n",lb->Proc,yo);
@@ -543,14 +546,17 @@ static void LB_get_bounds(LB *lb, pRegion *ptr1, int *num_objs,
     }
 
     if (lb->Get_Obj_List != NULL) {
-      lb->Get_Obj_List(lb->Get_Obj_List_Data, obj_global_ids, obj_local_ids,
+      lb->Get_Obj_List(lb->Get_Obj_List_Data,
+                       num_gid_entries, num_lid_entries,
+                       obj_global_ids, obj_local_ids,
                        wgtflag, obj_wgts, &ierr);
       found = TRUE;
     }
     else {
-      found = lb->Get_First_Obj(lb->Get_First_Obj_Data, &(obj_global_ids[0]),
-                                &(obj_local_ids[0]), wgtflag, &(obj_wgts[0]), 
-                                &ierr);
+      found = lb->Get_First_Obj(lb->Get_First_Obj_Data, 
+                                num_gid_entries, num_lid_entries,
+                                &(obj_global_ids[0]), &(obj_local_ids[0]),
+                                wgtflag, &(obj_wgts[0]), &ierr);
     }
     if (ierr) {
       fprintf(stderr, "OCT [%d] %s: Error returned from user defined "
@@ -559,7 +565,7 @@ static void LB_get_bounds(LB *lb, pRegion *ptr1, int *num_objs,
     }
 
     if(found) {
-      initialize_region(lb, &tmp, obj_global_ids[0], obj_local_ids[0],
+      initialize_region(lb, &tmp, &(obj_global_ids[0]), &(obj_local_ids[0]),
                         wgtflag, obj_wgts[0]);
       *c0 = (float)tmp->Weight;
       vector_set(min, tmp->Coord);
@@ -568,10 +574,13 @@ static void LB_get_bounds(LB *lb, pRegion *ptr1, int *num_objs,
     *ptr1 = tmp;
     for (i = 1; i < (*num_objs); i++) {
       if (lb->Get_Obj_List == NULL) {
-        found = lb->Get_Next_Obj(lb->Get_Next_Obj_Data, obj_global_ids[i-1],
-                                 obj_local_ids[i-1], &(obj_global_ids[i]),
-                                 &(obj_local_ids[i]), wgtflag, &(obj_wgts[i]),
-                                 &ierr);
+        found = lb->Get_Next_Obj(lb->Get_Next_Obj_Data, 
+                                 num_gid_entries, num_lid_entries,
+                                 &(obj_global_ids[(i-1)*num_gid_entries]),
+                                 &(obj_local_ids[(i-1)*num_lid_entries]), 
+                                 &(obj_global_ids[i*num_gid_entries]),
+                                 &(obj_local_ids[i*num_lid_entries]), 
+                                 wgtflag, &(obj_wgts[i]), &ierr);
         if (ierr) {
           fprintf(stderr, "OCT [%d] %s: Error returned from user defined "
                           "Get_Next_Obj function.\n", lb->Proc, yo);
@@ -584,9 +593,10 @@ static void LB_get_bounds(LB *lb, pRegion *ptr1, int *num_objs,
                "GET_NEXT_OBJ %d\n", *num_objs, i);
         exit(-1);
       }
-      initialize_region(lb, &(ptr), obj_global_ids[i], obj_local_ids[i],
+      initialize_region(lb, &(ptr), &(obj_global_ids[i*num_gid_entries]), 
+                        &(obj_local_ids[i*num_lid_entries]),
                         wgtflag, obj_wgts[i]);
-      *c0 += (float)tmp->Weight;
+      *c0 += (float)ptr->Weight;
       /* the following is really a hack, since it has no real basis 
          in vector mathematics.... */
       if(ptr->Coord[0] < min[0])
@@ -641,8 +651,8 @@ static void LB_get_bounds(LB *lb, pRegion *ptr1, int *num_objs,
  *  Function that initializes the region data structure.  It uses the 
  *  global ID, coordinates and weight provided by the application.  
  */
-static void initialize_region(LB *lb, pRegion *ret, LB_GID global_id,
-                              LB_LID local_id, int wgtflag, float wgt) 
+static void initialize_region(LB *lb, pRegion *ret, LB_ID_PTR global_id,
+                              LB_ID_PTR local_id, int wgtflag, float wgt) 
 {
   pRegion reg;
   int ierr = 0;
@@ -650,12 +660,15 @@ static void initialize_region(LB *lb, pRegion *ret, LB_GID global_id,
 
   reg = (pRegion) LB_MALLOC(sizeof(Region));
   *ret = reg;
-  LB_SET_GID(reg->Tag.Global_ID, global_id);
-  LB_SET_LID(reg->Tag.Local_ID, local_id);
-  reg->Tag.Proc = lb->Proc;
+  reg->Global_ID = LB_MALLOC_GID(lb);
+  reg->Local_ID = LB_MALLOC_LID(lb);
+  LB_SET_GID(lb, reg->Global_ID, global_id);
+  LB_SET_LID(lb, reg->Local_ID, local_id);
+  reg->Proc = lb->Proc;
   /* reg->Proc = 0; */
   reg->Coord[0] = reg->Coord[1] = reg->Coord[2] = 0.0;
-  lb->Get_Geom(lb->Get_Geom_Data, global_id, local_id, reg->Coord, &ierr);
+  lb->Get_Geom(lb->Get_Geom_Data, lb->Num_GID, lb->Num_LID,
+               global_id, local_id, reg->Coord, &ierr);
   if (ierr) {
     fprintf(stderr, "OCT [%d] %s: Error returned from user defined "
                     "Get_Geom function.\n", lb->Proc, yo);
@@ -665,7 +678,7 @@ static void initialize_region(LB *lb, pRegion *ret, LB_GID global_id,
 #if 0
   LB_Print_Sync_Start(lb->Communicator, TRUE);
     fprintf(stderr, "Result info on %d: %d %d %d  %lf  %lf  %lf\n", lb->Proc, 
-	    reg->Tag.Local_ID, reg->Tag.Global_ID, reg->Tag.Proc,
+	    reg->Local_ID, reg->Global_ID, reg->Proc,
 	    reg->Coord[0], reg->Coord[1], reg->Coord[2]); 
   LB_Print_Sync_End(lb->Communicator, TRUE);
 #endif
@@ -708,7 +721,7 @@ static int LB_oct_fix(LB *lb, pRegion Region_list, int num_objs)
   
   /* associate the objects to the octants */
   nreg=LB_oct_global_insert_object(lb, Region_list, num_objs);
-  LB_oct_global_dref(OCT_info); 
+  LB_oct_global_dref(lb, OCT_info); 
 
   return(nreg);
 }
@@ -806,7 +819,7 @@ OCT_Global_Info *OCT_info = (OCT_Global_Info *)(lb->Data_Structure);
     return(0);
 
   /* add the region to the octant */
-  POC_addRegion(oct, region);
+  POC_addRegion(lb, oct, region);
 
   /* check if octant has too many regions and needs to be refined */
   if(POC_nRegions(oct) > MAXOCTREGIONS)
@@ -983,7 +996,9 @@ static void LB_oct_terminal_refine(LB *lb, pOctant oct,int count)
     entry = region->next;
     cnum=LB_child_which_wrapper(OCT_info,oct, region->Coord);
     /* add region to octant's regionlist */
-    POC_addRegion(child[cnum], region);
+    POC_addRegion(lb, child[cnum], region);
+    LB_FREE(&(region->Global_ID));
+    LB_FREE(&(region->Local_ID));
     LB_FREE(&region);
     region = entry;
   }
@@ -1002,13 +1017,13 @@ static void LB_oct_terminal_refine(LB *lb, pOctant oct,int count)
  * regions in each octant
  *
  */
-static void LB_oct_global_dref(OCT_Global_Info *OCT_info) 
+static void LB_oct_global_dref(LB *lb, OCT_Global_Info *OCT_info) 
 {
   pRList lroots;                              /* list of all the local roots */
 
   lroots = POC_localroots(OCT_info);
   while (lroots != NULL) {
-    LB_oct_subtree_dref(OCT_info,lroots->oct);
+    LB_oct_subtree_dref(lb, OCT_info,lroots->oct);
     lroots = lroots->next;
   }
 }
@@ -1021,7 +1036,7 @@ static void LB_oct_global_dref(OCT_Global_Info *OCT_info)
  * regions. Refinement takes precedence, so coarsening will not take place 
  * unless all subtrees agree on it.
  */
-static int LB_oct_subtree_dref(OCT_Global_Info *OCT_info,pOctant oct) 
+static int LB_oct_subtree_dref(LB *lb, OCT_Global_Info *OCT_info,pOctant oct) 
 {
   pOctant child;                         /* child of an octant */
   int coarsen;                           /* flag to indicate need to coarsen */
@@ -1057,7 +1072,7 @@ static int LB_oct_subtree_dref(OCT_Global_Info *OCT_info,pOctant oct)
       coarsen=0;
     else {
       /* get the number of region of the child */
-      nregions=LB_oct_subtree_dref(OCT_info,child);
+      nregions=LB_oct_subtree_dref(lb, OCT_info,child);
       if (nregions<0)
 	coarsen=0;
       else
@@ -1067,7 +1082,7 @@ static int LB_oct_subtree_dref(OCT_Global_Info *OCT_info,pOctant oct)
 
   /* check if octant can be coarsened */
   if (coarsen && total<MAXOCTREGIONS) {
-    LB_oct_terminal_coarsen(OCT_info,oct);
+    LB_oct_terminal_coarsen(lb, OCT_info,oct);
     
     if (total < MINOCTREGIONS)
       return(total);
@@ -1086,7 +1101,7 @@ static int LB_oct_subtree_dref(OCT_Global_Info *OCT_info,pOctant oct)
  * to octant
  *
  */
-static void LB_oct_terminal_coarsen(OCT_Global_Info *OCT_info,pOctant oct) 
+static void LB_oct_terminal_coarsen(LB *lb, OCT_Global_Info *OCT_info,pOctant oct) 
 {
   pOctant child;                         /* child of an octant */
   pRegion region;                        /* region associated with an octant */
@@ -1127,7 +1142,7 @@ static void LB_oct_terminal_coarsen(OCT_Global_Info *OCT_info,pOctant oct)
     region = regionlist[i];
     /* go through the regionlist and add to octant */
     while(region != NULL) {
-      POC_addRegion(oct,region);           
+      POC_addRegion(lb, oct,region);           
       region = region->next;
     }
   }

@@ -18,7 +18,9 @@ typedef struct Region_Node {           /* region = area in 3-space           */
   struct Region_Node *next;            /* pointer to next region in list     */
   COORD  Coord;                        /* centroid location of region        */
   double Weight;                       /* weight of Region - default is 1    */
-  LB_TAG Tag;                          /* Tag containing IDs for the object  */
+  LB_ID_PTR Global_ID;                 /* Global ID for the object.          */
+  LB_ID_PTR Local_ID;                  /* Local ID for the object.           */
+  int Proc;                            /* Processor originally owning the obj*/
   int    attached;                     /* flag to see if region was attached */
 } Region;
 
@@ -107,7 +109,7 @@ extern pOctant POC_child(pOctant oct, int i);
 extern int     POC_children(pOctant oct, pOctant children[8]);
 extern int     POC_isTerminal(pOctant oct);
 extern pRegion POC_regionlist(pOctant oct);
-extern void    POC_addRegion(pOctant oct, pRegion region);
+extern void    POC_addRegion(LB *lb, pOctant oct, pRegion region);
 extern int     POC_nRegions(pOctant oct);
 extern pRList  POC_localroots(OCT_Global_Info *);
 extern void    POC_modify_cost(pOctant oct, float cost);
@@ -115,7 +117,7 @@ extern void    POC_modify_newpid(pOctant oct, int newpid);
 extern int     POC_data_newpid(pOctant oct);
 extern int     POC_nOctants(void);
 extern void    POC_origin_volume(pOctant oct,COORD origin,double *volume);
-extern void    POC_printResults(OCT_Global_Info *OCT_info);
+extern void    POC_printResults(LB *, OCT_Global_Info *OCT_info);
 extern pOctant POC_nextDfs(pOctant octant);
 extern int     POC_local(OCT_Global_Info *OCT_info, pOctant octant, int i);
 extern void    POC_setCpid(pOctant octant, int i, int cpid); 

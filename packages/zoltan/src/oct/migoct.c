@@ -18,16 +18,18 @@
                         LB_TAG **export_tags, int *nsentags, int **tag_pids,
                         LB_TAG **kept_tags, int *nkeptags); */
 static void tag_regions(LB *, pOctant *octs, int *newpids, int nocts,
-                        Region **export_tags, int *nsentags, int **tag_pids,
-                        Region **prev_tags, int *npimtags, float *c2,
+                        Region **export_tags, LB_ID_PTR *export_gids, LB_ID_PTR *export_lids, int *nsentags, int **tag_pids,
+                        Region **prev_tags, LB_ID_PTR *prev_gids, LB_ID_PTR *prev_lids, int *npimtags, float *c2,
                         int *max_objs);
 
 /* static void malloc_new_objects(int ntags, LB_TAG *tags, int *tag_pids,
                                int *nrectags, LB_TAG **import_tags,
                                LB_TAG *kept_tags, int nkeptags); */
 static void malloc_new_objects(LB *lb, int nsentags, pRegion export_tags,
+                               LB_ID_PTR export_gids, LB_ID_PTR export_lids,
                                int *tag_pids, int *nrectags,
                                pRegion *import_tags, pRegion prev_tags,
+                               LB_ID_PTR prev_gids, LB_ID_PTR prev_lids,
                                int npimtags, float *c3);
 
 /* void LB_fix_tags(LB_TAG **export_tags, int *nsentags, LB_TAG **import_tags,
@@ -36,7 +38,7 @@ static void malloc_new_objects(LB *lb, int nsentags, pRegion export_tags,
  */
 
 /* 
- * void LB_Migrate_Objects(LB *lb, pOctant *octants, int *newpids, 
+ * void LB_migrate_regions(LB *lb, pOctant *octants, int *newpids, 
  *                         int number_of_octants,
  *                         LB_TAG **export_tags, int *number_of_sent_tags,
  *                         LB_TAG **import_tags, int *number_of_received_tags)
@@ -44,29 +46,40 @@ static void malloc_new_objects(LB *lb, int nsentags, pRegion export_tags,
  * sets up the export_tags, and import_tags for the application that called
  * this load balancing routine 
  */
-void LB_Migrate_Objects(LB *lb, pOctant *octs, int *newpids, int nocts,
-		        pRegion *export_regions, int *nsenregs, 
+void LB_migrate_regions(LB *lb, pOctant *octs, int *newpids, int nocts,
+		        int *nsenregs, 
 		        pRegion *import_regions, int *nrecregs,
 		        float *c2, float *c3, int *counter3, int *counter4)
 {
-  int i;                    /* index counter */
+  int i    ;                /* index counter */
   int *tag_pids;            /* array of which processors to send information */
   int npimregs;             /* number of regions previously imported */
   Region *pimreg;           /* previously imported regions */
+  LB_ID_PTR pim_gids;       /* global IDs of previously imported regions */
+  LB_ID_PTR pim_lids;       /* local IDs of previously imported regions */
+  LB_ID_PTR export_gids, export_lids;
+  Region *export_regions;
   int max_objs;
 
-  *import_regions = *export_regions = NULL;
+  *import_regions = export_regions = NULL;
 
   /* tag all the regions to be exported */
-  tag_regions(lb, octs, newpids, nocts, export_regions, nsenregs, &tag_pids, 
-	      &pimreg, &npimregs, c2, &max_objs);
+  tag_regions(lb, octs, newpids, nocts, &export_regions, &export_gids, &export_lids, nsenregs, &tag_pids, 
+	      &pimreg, &pim_gids, &pim_lids, &npimregs, c2, &max_objs);
 
   /* get all the region tags that are being imported */
-  malloc_new_objects(lb, *nsenregs, *export_regions, tag_pids, nrecregs, 
-		     import_regions, pimreg, npimregs, c3);
+  malloc_new_objects(lb, *nsenregs, export_regions, export_gids, export_lids, tag_pids, nrecregs, 
+		     import_regions, pimreg, pim_gids, pim_lids, npimregs, c3);
 
-  if(npimregs > 0)
+  if(npimregs > 0){
     LB_FREE(&pimreg);
+    LB_FREE(&pim_gids);
+    LB_FREE(&pim_lids);
+  }
+
+  LB_FREE(&export_regions);
+  LB_FREE(&export_gids);
+  LB_FREE(&export_lids);
 
   if(max_objs > (*counter3))
    (*counter3) = max_objs;
@@ -77,7 +90,7 @@ void LB_Migrate_Objects(LB *lb, pOctant *octs, int *newpids, int nocts,
 
   /*  fprintf(stderr,"(%d) nrectags = %d\n", lb->Proc, (*nrecregs));
    *  for(i=0; i<(*nrecregs); i++)
-   *    fprintf(stderr,"%d\n", (*import_regions)[i].Tag.Proc);
+   *    fprintf(stderr,"%d\n", (*import_regions)[i].Proc);
    */
   LB_FREE(&tag_pids);
 }
@@ -89,12 +102,12 @@ void LB_Migrate_Objects(LB *lb, pOctant *octs, int *newpids, int nocts,
  * and stores the migrating regions into the export_tags array.
  */
 static void tag_regions(LB *lb, pOctant *octs, int *newpids, int nocts, 
-			Region **export_tags, int *nsentags, int **tag_pids,
-			Region **prev_tags, int *npimtags, float *c2,
+			Region **export_tags, LB_ID_PTR *export_gids, LB_ID_PTR *export_lids, int *nsentags, int **tag_pids,
+			Region **prev_tags, LB_ID_PTR *prev_gids, LB_ID_PTR *prev_lids, int *npimtags, float *c2,
 			int *max_objs)
 {
   char *yo = "tag_regions";
-  int i;                /* index counter */
+  int i;            /* index counter */
   pRegion regionlist;   /* list of region on this processor */
   int index;            /* index counter */
   int index2;           /* yet another index counter */
@@ -104,6 +117,8 @@ static void tag_regions(LB *lb, pOctant *octs, int *newpids, int nocts,
   pRegion mtags;        /* object tags of objects to be migrated */
   pRegion ptags;        /* tags of objects that were previously migrated */
   float ex_load;
+  int num_gid_entries = lb->Num_GID;
+  int num_lid_entries = lb->Num_LID;
 
   ex_load = 0;
   (*max_objs) = 0;
@@ -125,7 +140,7 @@ static void tag_regions(LB *lb, pOctant *octs, int *newpids, int nocts,
   count2 = 0;
   
   for (i=0; i<nocts; i++) {
-    /* if newpids != lb->Proc, the it is being migrated */
+    /* if newpids != lb->Proc, then it is being migrated */
     if(POC_isTerminal(octs[i])) {
       (*max_objs) += POC_nRegions(octs[i]);
       if (newpids[i]!=lb->Proc) {
@@ -136,7 +151,7 @@ static void tag_regions(LB *lb, pOctant *octs, int *newpids, int nocts,
 
 	regions = POC_regionlist(octs[i]);
 	while(regions != NULL) {
-	  if(regions->Tag.Proc != lb->Proc)
+	  if(regions->Proc != lb->Proc)
 	    count2++;
 	  regions = regions->next;
 	}
@@ -165,10 +180,18 @@ static void tag_regions(LB *lb, pOctant *octs, int *newpids, int nocts,
       fprintf(stderr, "OCT ERROR: unable to malloc mtags in %s\n", yo);
       abort();
     }
+    *export_gids = LB_MALLOC_GID_ARRAY(lb, count);
+    *export_lids = LB_MALLOC_LID_ARRAY(lb, count);
+    if(!(*export_gids) || !(*export_lids)) {
+      fprintf(stderr, "OCT ERROR: Insuffcient memory in %s\n", yo);
+      abort();
+    }
   }
   else {
     mtags = NULL;
     export_pids = NULL;
+    *export_gids = NULL;
+    *export_lids = NULL;
   }
   /* set up return pointers */
   *export_tags=mtags;
@@ -182,9 +205,18 @@ static void tag_regions(LB *lb, pOctant *octs, int *newpids, int nocts,
 	      lb->Proc, count2, yo);
       abort();
     }
+    *prev_gids = LB_MALLOC_GID_ARRAY(lb, count2);
+    *prev_lids = LB_MALLOC_LID_ARRAY(lb, count2);
+    if(!(*prev_gids) || !(*prev_lids)) {
+      fprintf(stderr, "OCT ERROR: Insuffcient memory in %s\n", yo);
+      abort();
+    }
   }
-  else
+  else {
     ptags = NULL;
+    *prev_gids = NULL;
+    *prev_lids = NULL;
+  }
   
   /* set up return pointers */
   *prev_tags=ptags;
@@ -198,6 +230,8 @@ static void tag_regions(LB *lb, pOctant *octs, int *newpids, int nocts,
 	while(regionlist != NULL) {
 	  /* place information in the appropritate array */
 	  mtags[index] = *regionlist;
+          LB_SET_GID(lb, &((*export_gids)[index*num_gid_entries]), regionlist->Global_ID);
+          LB_SET_LID(lb, &((*export_lids)[index*num_lid_entries]), regionlist->Local_ID);
 	  ex_load += (float)(regionlist->Weight);
 	  export_pids[index] = newpids[i];
 	  index++;                                      /* increment counter */
@@ -208,8 +242,10 @@ static void tag_regions(LB *lb, pOctant *octs, int *newpids, int nocts,
 	/* get regions associated with the octant */
 	regionlist=POC_regionlist(octs[i]);
 	while(regionlist != NULL) {
-	  if(regionlist->Tag.Proc != lb->Proc) {
+	  if(regionlist->Proc != lb->Proc) {
 	    ptags[index2] = *regionlist;	   /* get region information */
+            LB_SET_GID(lb, &((*prev_gids)[index2*num_gid_entries]), regionlist->Global_ID);
+            LB_SET_LID(lb, &((*prev_lids)[index2*num_lid_entries]), regionlist->Local_ID);
 	    index2++;                                   /* increment counter */
 	  }
 	  regionlist = regionlist->next;                  /* get next region */
@@ -234,8 +270,10 @@ static void tag_regions(LB *lb, pOctant *octs, int *newpids, int nocts,
  * import_tags array, and the nrectags array.
  */
 static void malloc_new_objects(LB *lb, int nsentags, pRegion export_tags, 
+                               LB_ID_PTR export_gids, LB_ID_PTR export_lids,
 			       int *tag_pids, int *nrectags,
 			       pRegion *import_tags, pRegion prev_tags,
+                               LB_ID_PTR prev_gids, LB_ID_PTR prev_lids,
 			       int npimtags, float *c3)
 {
   char *yo = "malloc_new_objects";
@@ -243,9 +281,13 @@ static void malloc_new_objects(LB *lb, int nsentags, pRegion export_tags,
   int nreceives;                          /* number of messages received */
   pRegion imp;                            /* array of tags being imported */
   pRegion tmp = NULL;
+  LB_ID_PTR tmp_gids = NULL;
+  LB_ID_PTR tmp_lids = NULL;
   int msgtag, msgtag2;
   int j;
   int ierr;
+  int num_gid_entries = lb->Num_GID;
+  int num_lid_entries = lb->Num_LID;
   float im_load;
   COMM_OBJ *comm_plan;           /* Object returned by communication routines */
 
@@ -261,7 +303,9 @@ static void malloc_new_objects(LB *lb, int nsentags, pRegion export_tags,
 
   if (nreceives > 0) {
     tmp = (pRegion) LB_MALLOC(nreceives * sizeof(Region));
-    if(tmp == NULL) {
+    tmp_gids = LB_MALLOC_GID_ARRAY(lb, nreceives);
+    tmp_lids = LB_MALLOC_LID_ARRAY(lb, nreceives);
+    if(tmp == NULL || !tmp_gids || !tmp_lids) {
       fprintf(stderr,"OCT %s ERROR cannot allocate memory for import_objs.",yo);
       abort();
     }
@@ -271,18 +315,45 @@ static void malloc_new_objects(LB *lb, int nsentags, pRegion export_tags,
   ierr = LB_Comm_Do(comm_plan, msgtag2, (char *) export_tags, sizeof(Region),
          (char *) tmp);
   if (ierr != COMM_OK && ierr != COMM_WARN) {
-    fprintf(stderr, "OCT %s Error %s returned from LB_Comm_Create\n", yo, 
+    fprintf(stderr, "OCT %s Error %s returned from LB_Comm_Do\n", yo, 
             (ierr == COMM_MEMERR ? "COMM_MEMERR" : "COMM_FATAL"));
     LB_FREE(&tmp);
+    LB_FREE(&tmp_gids);
+    LB_FREE(&tmp_lids);
     abort();
   }
+
+  msgtag2--;
+  ierr = LB_Comm_Do(comm_plan, msgtag2, (char *) export_gids, 
+                    sizeof(LB_ID_TYPE)*num_gid_entries, (char *) tmp_gids);
+  if (ierr != COMM_OK && ierr != COMM_WARN) {
+    fprintf(stderr, "OCT %s Error %s returned from LB_Comm_Do\n", yo, 
+            (ierr == COMM_MEMERR ? "COMM_MEMERR" : "COMM_FATAL"));
+    LB_FREE(&tmp);
+    LB_FREE(&tmp_gids);
+    LB_FREE(&tmp_lids);
+    abort();
+  }
+
+  msgtag2--;
+  ierr = LB_Comm_Do(comm_plan, msgtag2, (char *) export_lids, 
+                    sizeof(LB_ID_TYPE)*num_lid_entries, (char *) tmp_lids);
+  if (ierr != COMM_OK && ierr != COMM_WARN) {
+    fprintf(stderr, "OCT %s Error %s returned from LB_Comm_Do\n", yo, 
+            (ierr == COMM_MEMERR ? "COMM_MEMERR" : "COMM_FATAL"));
+    LB_FREE(&tmp);
+    LB_FREE(&tmp_gids);
+    LB_FREE(&tmp_lids);
+    abort();
+  }
+
   LB_Comm_Destroy(&comm_plan);
 
   /* get each message sent, and store region in import array */
   j=0;
   for (i=0; i<nreceives; i++) {
     im_load += tmp[i].Weight;
-    if(tmp[i].Tag.Proc != lb->Proc) {
+    if(tmp[i].Proc != lb->Proc) {
       j++;
     }
   }
@@ -302,18 +373,39 @@ static void malloc_new_objects(LB *lb, int nsentags, pRegion export_tags,
 
   j=0;
   for (i=0; i<nreceives; i++) {
-    if(tmp[i].Tag.Proc != lb->Proc) {
-      imp[j++] = tmp[i];
+    if(tmp[i].Proc != lb->Proc) {
+      imp[j] = tmp[i];
+      imp[j].Global_ID = LB_MALLOC_GID(lb);
+      imp[j].Local_ID  = LB_MALLOC_LID(lb);
+      if (!(imp[j].Global_ID) || !(imp[j].Local_ID)) {
+        fprintf(stderr, "OCT %s ERROR unable to malloc import array.", yo);
+        abort();
+      }
+      LB_SET_GID(lb, imp[j].Global_ID, &(tmp_gids[i*num_gid_entries]));
+      LB_SET_LID(lb, imp[j].Local_ID,  &(tmp_lids[i*num_lid_entries]));
+      j++;
     }
   }
   
   if(npimtags > 0) {
-    for(i=0; i<npimtags; i++)
-      imp[j++] = prev_tags[i];
+    for(i=0; i<npimtags; i++) {
+      imp[j] = prev_tags[i];
+      imp[j].Global_ID = LB_MALLOC_GID(lb);
+      imp[j].Local_ID  = LB_MALLOC_LID(lb);
+      if (!(imp[j].Global_ID) || !(imp[j].Local_ID)) {
+        fprintf(stderr, "OCT %s ERROR unable to malloc import array.", yo);
+        abort();
+      }
+      LB_SET_GID(lb, imp[j].Global_ID, &(prev_gids[i*num_gid_entries]));
+      LB_SET_LID(lb, imp[j].Local_ID,  &(prev_lids[i*num_lid_entries]));
+      j++;
+    }
   }
   *nrectags = j;
 
   LB_FREE(&tmp);
+  LB_FREE(&tmp_gids);
+  LB_FREE(&tmp_lids);
 
   /*
    * fprintf(stderr,
@@ -343,11 +435,14 @@ static void malloc_new_objects(LB *lb, int nsentags, pRegion export_tags,
  * fixes the import tags so that region tags that were previously
  * exported aren't counted when imported back.
  */
-void LB_fix_tags(LB *lb, LB_GID **import_global_ids, LB_LID **import_local_ids,
+void LB_fix_tags(LB *lb, 
+                 LB_ID_PTR *import_global_ids, LB_ID_PTR *import_local_ids,
                  int **import_procs, int nrectags, pRegion import_regs)
 {
   char *yo = "LB_fix_tags";
   int i;                                  /* index counter */
+  int num_gid_entries = lb->Num_GID;
+  int num_lid_entries = lb->Num_LID;
 
   if (nrectags == 0) {
     *import_global_ids = NULL;
@@ -357,8 +452,6 @@ void LB_fix_tags(LB *lb, LB_GID **import_global_ids, LB_LID **import_local_ids,
   else {
 
     /* allocate memory */
-
-/* KDD  -- added calls to Special_Malloc */
 
     if (!LB_Special_Malloc(lb,(void **)import_global_ids,nrectags,
                            LB_SPECIAL_MALLOC_GID)) {
@@ -382,31 +475,14 @@ void LB_fix_tags(LB *lb, LB_GID **import_global_ids, LB_LID **import_local_ids,
       /* return LB_MEMERR; */ abort();
     }
 
-/* KDD */
-
     /* for each region imported, look at its originating processor */
     for(i=0; i<nrectags; i++) {
-      LB_SET_GID((*import_global_ids)[i], import_regs[i].Tag.Global_ID);
-      LB_SET_LID((*import_local_ids)[i], import_regs[i].Tag.Local_ID);
-      (*import_procs)[i]      = import_regs[i].Tag.Proc;
+      LB_SET_GID(lb, &((*import_global_ids)[i*num_gid_entries]), 
+                 import_regs[i].Global_ID);
+      LB_SET_LID(lb, &((*import_local_ids)[i*num_lid_entries]),
+                 import_regs[i].Local_ID);
+      (*import_procs)[i]      = import_regs[i].Proc;
     }
   }
-#if 0
-
-  /* KDD -- LB_Compute_Destinations will perform this operation for us. */
-  new_export = (LB_TAG *) LB_MALLOC((*nsentags) * sizeof(LB_TAG));
-  if(((*nsentags) > 0) && (new_export == NULL)) {
-    fprintf(stderr,"OCT %s ERROR, unable to allocate space\n", yo);
-    abort();
-  }
-
-  index = 0;
-  for(i=0; i<(*nsentags); i++) {
-      new_export[index++] = export_regs[i].Tag;
-  }
-  /* setup return pointers */
-  *export_tags = new_export;
-
-#endif
 }
 

@@ -17,8 +17,8 @@ static int OCT_idcount;              /* count for id's, help with uniqueness */
 static pOctant POC_malloc();
 static void    POC_clearRegions(pOctant oct);
 static int     POC_nlocal(pOctant oct);
-static void    POC_DfsTraversal(OCT_Global_Info *OCT_info, pOctant oct);
-static void    POC_printRegionInfo(OCT_Global_Info * OCT_info, pOctant oct);
+static void    POC_DfsTraversal(LB *, OCT_Global_Info *OCT_info, pOctant oct);
+static void    POC_printRegionInfo(LB*,OCT_Global_Info * OCT_info, pOctant oct);
 
 
 /*****************************************************************************/
@@ -130,6 +130,8 @@ void POC_free(OCT_Global_Info *OCT_info, pOctant oct) {
   c = oct->list;
   while(c != NULL) {
     oct->list = c->next;
+    LB_FREE(&(c->Global_ID));
+    LB_FREE(&(c->Local_ID));
     LB_FREE(&c);
     c = oct->list;
   }
@@ -333,7 +335,7 @@ pRegion POC_regionlist(pOctant oct) {
  * void POC_addRegion(pOctant octant, pRegion region)
  * add a region to oct's list
  */
-void POC_addRegion(pOctant oct, pRegion region) { 
+void POC_addRegion(LB *lb, pOctant oct, pRegion region) { 
   pRegion entry;                      /* pointer to new entry in region list */
 
   if(oct == NULL) {
@@ -348,12 +350,14 @@ void POC_addRegion(pOctant oct, pRegion region) {
 	    "ERROR in POC_addRegion, cannot allocate memory for region");
     abort();
   }
+  entry->Global_ID = LB_MALLOC_GID(lb);
+  entry->Local_ID = LB_MALLOC_LID(lb);
   /* copy region information into the entry */
   vector_set(entry->Coord, region->Coord);
   entry->Weight = region->Weight;
-  LB_SET_GID(entry->Tag.Global_ID, region->Tag.Global_ID);
-  LB_SET_LID(entry->Tag.Local_ID, region->Tag.Local_ID);
-  entry->Tag.Proc = region->Tag.Proc;
+  LB_SET_GID(lb, entry->Global_ID, region->Global_ID);
+  LB_SET_LID(lb, entry->Local_ID, region->Local_ID);
+  entry->Proc = region->Proc;
 
   /* attach region to region list */
   entry->next = oct->list; 
@@ -371,6 +375,8 @@ static void POC_clearRegions(pOctant oct) {
   ptr = oct->list;
   while(ptr != NULL) {
     oct->list = ptr->next;
+    LB_FREE(&(ptr->Global_ID));
+    LB_FREE(&(ptr->Local_ID));
     LB_FREE(&ptr);
     ptr = oct->list;
   }
@@ -502,13 +508,13 @@ void POC_origin_volume(pOctant oct, COORD origin, double *volume) {
  *
  * prints out the intermediate results of the octree structure
  */
-void POC_printResults(OCT_Global_Info *OCT_info) {
+void POC_printResults(LB *lb, OCT_Global_Info *OCT_info) {
   pRList ptr;                                  /* pointer to local root list */
 
   ptr = OCT_info->OCT_rootlist;
   /* go through each entry in local root list and travers down subtree */
   while(ptr != NULL) {
-    POC_DfsTraversal(OCT_info, ptr->oct);
+    POC_DfsTraversal(lb, OCT_info, ptr->oct);
     ptr = ptr->next;
   }
 }
@@ -519,17 +525,17 @@ void POC_printResults(OCT_Global_Info *OCT_info) {
  *
  * traverse through the octree in DFS order to get a printout
  */
-static void POC_DfsTraversal(OCT_Global_Info *OCT_info, pOctant oct) {
+static void POC_DfsTraversal(LB *lb, OCT_Global_Info *OCT_info, pOctant oct) {
   int i;                                                    /* index counter */
 
   if(oct == NULL)
     return;
   if(POC_isTerminal(oct))
-    POC_printRegionInfo(OCT_info, oct);
+    POC_printRegionInfo(lb, OCT_info, oct);
   else {
     for(i=0; i<8; i++)
-      POC_DfsTraversal(OCT_info, oct->child[i]);
-    POC_printRegionInfo(OCT_info, oct);
+      POC_DfsTraversal(lb, OCT_info, oct->child[i]);
+    POC_printRegionInfo(lb, OCT_info, oct);
   }
 }
 
@@ -539,7 +545,8 @@ static void POC_DfsTraversal(OCT_Global_Info *OCT_info, pOctant oct) {
  *
  * prints out region information
  */
-static void POC_printRegionInfo(OCT_Global_Info * OCT_info, pOctant oct) {
+static void POC_printRegionInfo(LB *lb, OCT_Global_Info * OCT_info, pOctant oct)
+{
   pRegion ptr;            /* pointer to iterate through octant's region list */
   pOctant parent;
 
@@ -571,9 +578,12 @@ static void POC_printRegionInfo(OCT_Global_Info * OCT_info, pOctant oct) {
     printf("\tOctant is EMPTY\n");
 
   while(ptr != NULL) {
-    printf("\tGlobal_ID:%d Local_ID:%d Proc:%d coord:(%f, %f, %f)\n", 
-	   ptr->Tag.Global_ID, ptr->Tag.Local_ID, ptr->Tag.Proc,
-	   ptr->Coord[0], ptr->Coord[1], ptr->Coord[2]);
+    printf("\tGlobal_ID:");
+    LB_PRINT_GID(lb, ptr->Global_ID);
+    printf(" Local_ID:");
+    LB_PRINT_LID(lb, ptr->Local_ID);
+    printf(" Proc:%d coord:(%f, %f, %f)\n", 
+	   ptr->Proc, ptr->Coord[0], ptr->Coord[1], ptr->Coord[2]);
     /*
       printf("%lf %lf %lf,  %d -> %d\n", 
       ptr->Coord[0], ptr->Coord[1], ptr->Coord[2],

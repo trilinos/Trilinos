@@ -12,7 +12,7 @@
 #include "dfs_const.h"
 
 static void LB_insert_orphan(LB *lb, Region reg);
-static void LB_copy_info(pRegion src, pRegion *dest);
+static void LB_copy_info(LB *, pRegion src, pRegion *dest);
 /*
  * LB_migreg_migrate_regions(Message *message_Array, int number_of_regions)
  *
@@ -21,7 +21,8 @@ static void LB_copy_info(pRegion src, pRegion *dest);
  * the local subtree.
  */
 
-void LB_migreg_migrate_regions(LB *lb, Region *regions, int *npids, 
+void LB_migreg_migrate_regions(LB *lb, Region *regions, LB_ID_PTR gids, 
+                               LB_ID_PTR lids, int *npids, 
 			       int nregions, int *c2) {
   char *yo = "LB_migreg_migrate_regions";
   int i;                         /* index counter */
@@ -31,6 +32,10 @@ void LB_migreg_migrate_regions(LB *lb, Region *regions, int *npids,
   COMM_OBJ *comm_plan;           /* Object returned by communication routines */
   Region *import_objs = NULL;    /* Array of import objects used to request 
 				    the objs from other processors. */
+  LB_ID_PTR import_gids = NULL;  /* Array of global IDs of import_objs. */
+  LB_ID_PTR import_lids = NULL;  /* Array of local IDs of import_objs. */
+  int num_gid_entries = lb->Num_GID;
+  int num_lid_entries = lb->Num_LID;
 
   msgtag = 32767;
   ierr = LB_Comm_Create(&comm_plan, nregions, npids, lb->Communicator, 
@@ -43,6 +48,8 @@ void LB_migreg_migrate_regions(LB *lb, Region *regions, int *npids,
   *c2 = n_import;
   if (n_import > 0) {
     import_objs = (Region *) LB_MALLOC(n_import * sizeof(Region));
+    import_gids = LB_MALLOC_GID_ARRAY(lb, n_import);
+    import_lids = LB_MALLOC_LID_ARRAY(lb, n_import);
 
     if(import_objs == NULL) {
       fprintf(stderr,"ERROR in %s: cannot allocate memory for import_objs.\n", 
@@ -55,17 +62,47 @@ void LB_migreg_migrate_regions(LB *lb, Region *regions, int *npids,
   ierr = LB_Comm_Do(comm_plan, msgtag2, (char *) regions, sizeof(Region), 
                    (char *) import_objs);
   if (ierr != COMM_OK && ierr != COMM_WARN) {
-    fprintf(stderr, "OCT %s Error %s returned from LB_Comm_Create\n", yo, 
+    fprintf(stderr, "OCT %s Error %s returned from LB_Comm_Do\n", yo, 
             (ierr == COMM_MEMERR ? "COMM_MEMERR" : "COMM_FATAL"));
     LB_FREE(&import_objs);
+    LB_FREE(&import_gids);
+    LB_FREE(&import_lids);
+    abort();
+  }
+
+  msgtag2--;
+  ierr = LB_Comm_Do(comm_plan, msgtag2, (char *) gids, 
+                    sizeof(LB_ID_TYPE)*num_gid_entries, (char *) import_gids);
+  if (ierr != COMM_OK && ierr != COMM_WARN) {
+    fprintf(stderr, "OCT %s Error %s returned from LB_Comm_Do\n", yo, 
+            (ierr == COMM_MEMERR ? "COMM_MEMERR" : "COMM_FATAL"));
+    LB_FREE(&import_objs);
+    LB_FREE(&import_gids);
+    LB_FREE(&import_lids);
+    abort();
+  }
+
+  msgtag2--;
+  ierr = LB_Comm_Do(comm_plan, msgtag2, (char *) lids, 
+                    sizeof(LB_ID_TYPE)*num_lid_entries, (char *) import_lids);
+  if (ierr != COMM_OK && ierr != COMM_WARN) {
+    fprintf(stderr, "OCT %s Error %s returned from LB_Comm_Do\n", yo, 
+            (ierr == COMM_MEMERR ? "COMM_MEMERR" : "COMM_FATAL"));
+    LB_FREE(&import_objs);
+    LB_FREE(&import_gids);
+    LB_FREE(&import_lids);
     abort();
   }
 
   for (i=0; i<n_import; i++) {
+    import_objs[i].Global_ID = &(import_gids[i*num_gid_entries]);
+    import_objs[i].Local_ID = &(import_lids[i*num_lid_entries]);
     LB_insert_orphan(lb, import_objs[i]);
   }
 
   LB_FREE(&import_objs);
+  LB_FREE(&import_gids);
+  LB_FREE(&import_lids);
   LB_Comm_Destroy(&comm_plan);
 }
 
@@ -152,6 +189,9 @@ void LB_migreg_migrate_orphans(LB *lb, pRegion RegionList, int nregions,
   int     new_num;
   int     n;
   OCT_Global_Info *OCT_info = (OCT_Global_Info *)(lb->Data_Structure);
+  LB_ID_PTR gids2, lids2;
+  int num_gid_entries = lb->Num_GID;
+  int num_lid_entries = lb->Num_LID;
 
   /* create the array of messages to be sent to other processors */
   /* Array = (Message *) LB_MALLOC(nregions * sizeof(Message)); */
@@ -207,7 +247,7 @@ void LB_migreg_migrate_orphans(LB *lb, pRegion RegionList, int nregions,
     /* inform message which processor to send to */
     if(array[j].npid != -1) {
       npids[n] = array[j].npid;
-      LB_copy_info(ptr, &(regions[n++]));
+      LB_copy_info(lb, ptr, &(regions[n++]));
     }
     else {
       LB_insert_orphan(lb, *ptr);
@@ -231,6 +271,8 @@ void LB_migreg_migrate_orphans(LB *lb, pRegion RegionList, int nregions,
   }
 
   regions2 = (Region *) LB_MALLOC(n * sizeof(Region));
+  gids2 = LB_MALLOC_GID_ARRAY(lb, n);
+  lids2 = LB_MALLOC_LID_ARRAY(lb, n);
   npids2 = (int *) LB_MALLOC(n * sizeof(int));
   
   /* fprintf(stderr,"(%d) n = %d\n", LB_Proc, n); */
@@ -238,21 +280,28 @@ void LB_migreg_migrate_orphans(LB *lb, pRegion RegionList, int nregions,
     npids2[i] = npids[i];
     vector_set(regions2[i].Coord, regions[i]->Coord);
     regions2[i].Weight = regions[i]->Weight;
-    LB_SET_GID(regions2[i].Tag.Global_ID, regions[i]->Tag.Global_ID);
-    LB_SET_LID(regions2[i].Tag.Local_ID, regions[i]->Tag.Local_ID);
-    regions2[i].Tag.Proc = regions[i]->Tag.Proc;
+    regions2[i].Global_ID = &(gids2[i*num_gid_entries]);
+    regions2[i].Local_ID = &(lids2[i*num_lid_entries]);
+    LB_SET_GID(lb, &(gids2[i*num_gid_entries]), regions[i]->Global_ID);
+    LB_SET_LID(lb, &(lids2[i*num_lid_entries]), regions[i]->Local_ID);
+    regions2[i].Proc = regions[i]->Proc;
     regions2[i].attached = 0;
   }
 
   *c1 = n;
   /* migrate the orphan regions according to the message array */
-  LB_migreg_migrate_regions(lb, regions2, npids2, n, c2);
+  LB_migreg_migrate_regions(lb, regions2, gids2, lids2, npids2, n, c2);
   
-  for (i=0; i < n; i++) 
+  for (i=0; i < n; i++) {
+    LB_FREE(&(regions[i]->Global_ID));
+    LB_FREE(&(regions[i]->Local_ID));
     LB_FREE(&(regions[i]));
+  }
   LB_FREE(&regions);
   LB_FREE(&npids);
   LB_FREE(&regions2);
+  LB_FREE(&gids2);
+  LB_FREE(&lids2);
   LB_FREE(&npids2);
 }
 
@@ -261,7 +310,7 @@ void LB_migreg_migrate_orphans(LB *lb, pRegion RegionList, int nregions,
  *
  * Copies region information from the source to the destination
  */
-static void LB_copy_info(pRegion src, pRegion *dest) {
+static void LB_copy_info(LB *lb, pRegion src, pRegion *dest) {
   pRegion copy;
 
   /* mallloc space for destination */
@@ -270,6 +319,8 @@ static void LB_copy_info(pRegion src, pRegion *dest) {
     fprintf(stderr,"ERROR in LB_copy_info, cannot allocate memory\n");
     abort();
   }
+  copy->Global_ID = LB_MALLOC_GID(lb);
+  copy->Local_ID  = LB_MALLOC_LID(lb);
   
   /* set up return pointer */
   *dest = copy;
@@ -277,8 +328,8 @@ static void LB_copy_info(pRegion src, pRegion *dest) {
   /* copy all important information */
   vector_set(copy->Coord, src->Coord);
   copy->Weight = src->Weight;
-  LB_SET_GID(copy->Tag.Global_ID, src->Tag.Global_ID);
-  LB_SET_LID(copy->Tag.Local_ID, src->Tag.Local_ID);
-  copy->Tag.Proc = src->Tag.Proc;
+  LB_SET_GID(lb, copy->Global_ID, src->Global_ID);
+  LB_SET_LID(lb, copy->Local_ID, src->Local_ID);
+  copy->Proc = src->Proc;
   copy->attached = 0;
 }

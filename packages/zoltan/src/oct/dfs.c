@@ -268,7 +268,7 @@ static void LB_tag_subtree(OCT_Global_Info *OCT_info,pOctant octant, int part) {
  * sets up information so the migrate octant routines can create the
  * proper export_tags and import_tags arrays
  */
-void LB_dfs_migrate(LB *lb, pRegion *export_regs, int *nsentags,
+void LB_dfs_migrate(LB *lb, int *nsentags,
 		    pRegion *import_regs, int *nrectags, 
 		    float *c2, float *c3, int *counter3, int *counter4) 
 {
@@ -316,8 +316,8 @@ void LB_dfs_migrate(LB *lb, pRegion *export_regs, int *nsentags,
     abort();
   }
 
-  /* setup the import_regs and export_regs */
-  LB_Migrate_Objects(lb, docts, dpids, dcount, export_regs, nsentags, 
+  /* setup the import_regs */
+  LB_migrate_regions(lb, docts, dpids, dcount, nsentags, 
 		     import_regs, nrectags, c2, c3, counter3, counter4);
 
   LB_FREE(&docts);

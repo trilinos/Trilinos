@@ -20,7 +20,7 @@ typedef struct
   int npid;
 } Message;
 
-void LB_migreg_migrate_regions(LB *lb, Region *regions, int *npids, 
+void LB_migreg_migrate_regions(LB *lb, Region *regions, LB_ID_PTR gids, LB_ID_PTR lids, int *npids, 
 			       int nregions, int *c2);
 
 #endif
