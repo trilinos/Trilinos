@@ -32,6 +32,9 @@ int Zoltan_HG_rdivide (int lo, int hi, Partition final, ZZ *zz, HGraph *hg,
    HGraph *new;
    char *yo = "Zoltan_HG_rdivide";
 
+/*   hg->redl = 2;    */  /* this seems to be the right thing to do, but trying to match previous answers today. */
+
+   
    /* only one part remaining, record results and exit */
    if (lo == hi) {
       for (i = 0; i < hg->nVtx; i++)

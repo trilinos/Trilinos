@@ -105,12 +105,11 @@ printf ("RTHRTH: starting\n");
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error building hypergraph.");
     goto End;
   }
-
-  zoltan_hg->HG.redl = hgp.redl;
-    
+   
   zz->LB.Data_Structure = zoltan_hg;
   nVtx = zoltan_hg->HG.nVtx;
-
+ zoltan_hg->HG.redl = hgp.redl;
+ 
   /* allocate output partition memory */
   output_parts = (Partition) ZOLTAN_MALLOC(nVtx * sizeof(int));
   if (nVtx && output_parts == NULL) {

@@ -5,10 +5,10 @@
 C_comp		= cc -DHGEXEC -DZOLTAN_NO_MPI -DZOLTAN_HG
 
 # Assume that environment OSTYPE is set to 'solaris' or 'linux'!
-# OSTYPE        = solaris
+OSTYPE        = solaris
 # OSTYPE        = linux
 
-C_flag_solaris  = -g #-fast
+# C_flag_solaris  = -g #-fast
 C_flag_linux    = -g -Wall
 
 # Use to switch off time measurement

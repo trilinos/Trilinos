@@ -12,7 +12,7 @@ set redm = (mxm rrm rem rhm grm lhm pgm gm2 rm2 gm3 gm4 mxp rep rhp grp lhp rrp 
 
 #set testname = (PolyDFT.hb)
 
-#set testname = (ibm01 ibm02 ibm03 ibm04 ibm05 ibm06 ibm07 ibm08 ibm09 ibm10 ibm11 ibm12)
+#set testname = (ibm01 ibm02 ibm03 ibm04 ibm05 ibm06 ibm07 ibm08 ibm09 ibm10 ibm11 ibm12 ibm13)
 #set redm = (rrm)
 set greedy = (gr0)
 
@@ -28,7 +28,7 @@ foreach test($testname)
       foreach global ($greedy)
          echo "Running test case $test.$ext using method $method global $global"
 #         ./hg_exec -f HBstuff/data/$test.$ext -redm $method -p 12 -redmo no -bal 1.016 > answers/$test-$global.$method
-          ./hg_exec -f ../test/hg_test/$test.$ext -redm $method -p 4 -redl 100 -l fm2 > answers/$test-$global.$method
+          ./hg_exec -f ../test/hg_test/$test.$ext -redm $method -p 4 -l grkway > answers/$test-$global.$method
 #         hg_exec -f ../test/hg_test/umit/chip/$test.$ext -redm $method  >> answers/$test-$global.$method
          end
       end
