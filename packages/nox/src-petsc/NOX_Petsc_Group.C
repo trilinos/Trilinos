@@ -47,11 +47,10 @@ using namespace NOX::Petsc;
 
 Group::Group(const Parameter::List& params, Interface& i,
              Vec& x, Mat& J) :
-  xVector(x), // deep copy x     
-  RHSVector(x, ShapeCopy), // new vector of same size
-  gradVector(x, ShapeCopy), // new vector of same size
-  NewtonVector(x, ShapeCopy), // new vector of same size
-  tmpVectorPtr(NULL),
+  xVector(x, "Solution"), // deep copy x     
+  RHSVector(x, "RHS", ShapeCopy), // new vector of same size
+  gradVector(x, "Grad", ShapeCopy), // new vector of same size
+  NewtonVector(x, "Newton", ShapeCopy), // new vector of same size
   sharedJacobianPtr(new SharedJacobian(J)), // pass J to SharedJacobian
   sharedJacobian(*sharedJacobianPtr), // pass J to SharedJacobian
   jacType("User Supplied"), // the only option for now
@@ -70,11 +69,10 @@ Group::Group(const Parameter::List& params, Interface& i,
 }
 
 Group::Group(const Group& source, CopyType type) :
-  xVector(source.xVector.getPetscVector(), type), 
-  RHSVector(source.RHSVector.getPetscVector(), type), 
-  gradVector(source.gradVector.getPetscVector(), type), 
-  NewtonVector(source.NewtonVector.getPetscVector(), type),
-  tmpVectorPtr(NULL),
+  xVector(source.xVector, type), 
+  RHSVector(source.RHSVector, type), 
+  gradVector(source.gradVector, type), 
+  NewtonVector(source.NewtonVector, type),
   sharedJacobianPtr(NULL),
   sharedJacobian(source.sharedJacobian),
   userInterface(source.userInterface),
@@ -110,7 +108,6 @@ Group::Group(const Group& source, CopyType type) :
 
 Group::~Group() 
 {
-  delete tmpVectorPtr;
   delete sharedJacobianPtr;
 }
 

@@ -191,9 +191,6 @@ protected:
   Vector NewtonVector;
   //@}
 
-  //! An extra temporary vector, only allocated if needed.
-  mutable Vec* tmpVectorPtr;
-
   /** @name IsValid flags 
    *  
    * True if the current solution is up-to-date with respect to the
