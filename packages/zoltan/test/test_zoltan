@@ -34,6 +34,11 @@ set nem_pdisk = (1 2 2) # parallel disk info
 # Set default options
 @ no_chaco = 0
 @ no_nemesis = 0
+@ no_rcb = 0
+@ no_rib = 0
+@ no_hsfc = 0
+@ no_bsfc = 0
+@ no_oct = 0
 @ no_parmetis = 0
 @ yes_jostle = 0
 @ yes_fortran = 0
@@ -49,6 +54,21 @@ if ($?ZOLTAN_ARCH) then
 endif
 if ($?NO_NEMESIS) then
    set no_nemesis = $NO_NEMESIS
+endif
+if ($?NO_RCB) then
+   set no_rcb = $NO_RCB
+endif
+if ($?NO_RIB) then
+   set no_rib = $NO_RIB
+endif
+if ($?NO_HSFC) then
+   set no_hsfc = $NO_HSFC
+endif
+if ($?NO_BSFC) then
+   set no_bsfc = $NO_BSFC
+endif
+if ($?NO_OCT) then
+   set no_oct = $NO_OCT
 endif
 if ($?NO_PARMETIS) then
    set no_parmetis = $NO_PARMETIS
@@ -73,6 +93,16 @@ while ( $#argv )
      @ no_nemesis = 1
   else if ( "$1" == "-no_chaco" ) then
      @ no_chaco = 1
+  else if ( "$1" == "-no_rcb" ) then
+     @ no_rcb = 1
+  else if ( "$1" == "-no_rib" ) then
+     @ no_rib = 1
+  else if ( "$1" == "-no_hsfc" ) then
+     @ no_hsfc = 1
+  else if ( "$1" == "-no_bsfc" ) then
+     @ no_bsfc = 1
+  else if ( "$1" == "-no_oct" ) then
+     @ no_oct = 1
   else if ( "$1" == "-no_parmetis" ) then
      @ no_parmetis = 1
   else if ( "$1" == "-yes_jostle" ) then
@@ -207,15 +237,34 @@ if (! $found) then
   exit -3
 endif
 
+set ch_methods = ( )
+set nem_methods = ( )
+
+# Check for Jostle
+if ( $yes_jostle ) then
+  set ch_methods = ( $ch_methods jostle jostle-diffusion )
+endif
+
 # Methods to try
 if ( $yes_fortran ) then
 # Using F90
-  if ( $no_parmetis ) then
-    set ch_methods = ( rcb rcb-ts rib rib-ts hsfc bsfc oct0 oct1 oct2 )
-    set nem_methods = ( )
-  else
-    set ch_methods = ( rcb rcb-ts rib rib-ts hsfc bsfc oct0 oct1 oct2 partkway partgeom diffusion )
-    set nem_methods = ( )
+  if (! $no_rcb) then
+    set ch_methods = ( $ch_methods rcb rcb-ts )
+  endif
+  if (! $no_rib) then
+    set ch_methods = ( $ch_methods rib rib-ts )
+  endif
+  if (! $no_hsfc) then
+    set ch_methods = ( $ch_methods hsfc hsfc-partless hsfc-partmore )
+  endif
+  if (! $no_bsfc) then
+    set ch_methods = ( $ch_methods bsfc )
+  endif
+  if (! $no_oct) then
+    set ch_methods = ( $ch_methods oct0 oct1 oct2 )
+  endif
+  if (! $no_parmetis) then
+    set ch_methods = ( $ch_methods partkway partgeom diffusion )
   endif
 else
 # Using C
@@ -225,17 +274,30 @@ else
   set ch_name = ($ch_name drake)
   set ch_nproc = ($ch_nproc 3) # no. of procs
 
-  if ( $no_parmetis ) then
-    set ch_methods = ( rcb rcb-oneproc rcb-ts rib rib-oneproc rib-ts hsfc hsfc-oneproc bsfc oct0 oct1 oct2 )
-    set nem_methods = ( rcb rcb-ts rib rib-ts hsfc bsfc oct0 oct1 oct2 )
-  else
-    set ch_methods = ( rcb rcb-oneproc rcb-ts rib rib-oneproc rib-ts hsfc hsfc-oneproc bsfc oct0 oct1 oct2 partkway partkway-oneproc partkway-cyclic partgeom diffusion )
-    set nem_methods = ( rcb rcb-ts rib rib-ts hsfc bsfc oct0 oct1 oct2 partkway partgeom diffusion )
+  if (! $no_rcb) then
+    set ch_methods = ( $ch_methods rcb rcb-oneproc rcb-ts )
+    set nem_methods = ( $nem_methods rcb rcb-ts )
   endif
-endif
-# Check for Jostle
-if ( $yes_jostle ) then
-  set ch_methods = ( $ch_methods jostle jostle-diffusion )
+  if (! $no_rib) then
+    set ch_methods = ( $ch_methods rib rib-oneproc rib-ts )
+    set nem_methods = ( $nem_methods rib rib-ts )
+  endif
+  if (! $no_hsfc) then
+    set ch_methods = ( $ch_methods hsfc hsfc-oneproc hsfc-partless hsfc-partmore hsfc-partlocal1 hsfc-partlocal2 )
+    set nem_methods = ( $nem_methods hsfc hsfc-partless hsfc-partmore hsfc-partlocal1 hsfc-partlocal2 )
+  endif
+  if (! $no_bsfc) then
+    set ch_methods = ( $ch_methods bsfc )
+    set nem_methods = ( $nem_methods bsfc )
+  endif
+  if (! $no_oct) then
+    set ch_methods = ( $ch_methods oct0 oct1 oct2 )
+    set nem_methods = ( $nem_methods oct0 oct1 oct2 )
+  endif
+  if (! $no_parmetis) then
+    set ch_methods = ( $ch_methods partkway partkway-oneproc partkway-cyclic partgeom diffusion )
+    set nem_methods = ( $nem_methods partkway partgeom diffusion )
+  endif
 endif
 
 # Set up log file
@@ -464,10 +526,16 @@ usage:
   echo "Other options:"
   echo "   -logfile filename"
   echo "   -exe filename"
+  echo "   -no_rcb"
+  echo "   -no_rib"
+  echo "   -no_hsfc"
+  echo "   -no_bsfc"
+  echo "   -no_oct"
   echo "   -no_parmetis"
   echo "   -no_nemesis"
   echo "   -no_chaco"
   echo "   -yes_fortran"
-  echo "The default is to run all methods and file formats."
+  echo "   -yes_jostle"
+  echo "The default is to run all methods (except Jostle) and file formats."
   exit -1
 

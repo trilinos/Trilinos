@@ -426,3 +426,25 @@ Test Null Import Lists = 0
 #-----------------------------------------------------------------------------
 Test Multi Callbacks = 0
 
+#-----------------------------------------------------------------------------
+# Test Local Partitions = <integer>
+#
+# This line signals that zdrive should test Zoltan using various values
+# of the NUM_LOCAL_PARTITIONS parameter.
+# While setting NUM_LOCAL_PARTITIONS using a "Zoltan Parameter" above
+# would make all processors have the same number of local partitions,
+# this flag allows different processors to have different values for
+# NUM_LOCAL_PARTITIONS.
+# Valid values are 0, 1, and 2.
+#     0:  NUM_LOCAL_PARTITIONS is not set (unless specified as a 
+#         "Zoltan Parameter" above).
+#     1:  Each processor sets NUM_LOCAL_PARTITIONS to its processor number;
+#         e.g., processor 0 requests zero local partitions; processor 1
+#         requests 1 local partition, etc.
+#     2:  Each odd-numbered processor sets NUM_LOCAL_PARTITIONS to its
+#         processor number; even-numbered processors do not set 
+#         NUM_LOCAL_PARTITIONS.  
+#
+# Default value is 0.
+#-----------------------------------------------------------------------------
+Test Local Partitions = 0

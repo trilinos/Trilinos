@@ -116,8 +116,10 @@ int *export_to_part = NULL;    /* Array used as dummy arg in partitioning. */
 
   /* Determine whether partition parameters were set.  Report error if
    * values are unreasonable. */
-  if ((zz->LB.Num_Global_Parts_Param != zz->Num_Proc) ||
-      (zz->LB.Num_Local_Parts_Param != -1)) {
+  if ((zz->LB.Num_Global_Parts_Param != -1 && 
+       zz->LB.Num_Global_Parts_Param != zz->Num_Proc) ||
+      (zz->LB.Num_Local_Parts_Param != -1 &&
+       zz->LB.Num_Local_Parts_Param != 1)) {
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, 
       "Number of partitions specified != Number of processors; "
       "use Zoltan_LB_Partition.");
@@ -314,13 +316,13 @@ int comm[3],gcomm[3];
           export_local_ids, export_procs, export_to_part);
 
   if (error == ZOLTAN_FATAL || error == ZOLTAN_MEMERR){
-    sprintf(msg, "Partitioning routine returned error code %d.", error);
+    sprintf(msg, "Partitioning routine returned code %d.", error);
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, msg);
     ZOLTAN_TRACE_EXIT(zz, yo);
     return (error);
   }
   else if (error){
-    sprintf(msg, "Partitioning routine returned error code %d.", error);
+    sprintf(msg, "Partitioning routine returned code %d.", error);
     ZOLTAN_PRINT_WARN(zz->Proc, yo, msg);
   }
 
@@ -562,7 +564,8 @@ MPI_User_function Zoltan_PartDist_MPIOp;
   /* Check whether global parts or local parts parameters were used. */
   inflag[0] = (zz->LB.Num_Global_Parts_Param != -1); 
   inflag[1] = (zz->LB.Num_Local_Parts_Param != -1); 
-  inflag[2] = zz->LB.Num_Global_Parts_Param;
+  inflag[2] = ((zz->LB.Num_Global_Parts_Param == -1) 
+                    ? zz->Num_Proc : zz->LB.Num_Global_Parts_Param);
   inflag[3] = ((zz->LB.Num_Local_Parts_Param == -1) 
                     ? 1 : zz->LB.Num_Local_Parts_Param);
 

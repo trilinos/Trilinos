@@ -48,7 +48,7 @@ extern "C" {
 int Debug_Driver = 1;
 int Test_DDirectory = 0;       /* Flag indicating whether to exercise 
                                   DDirectory */
-int Test_Partitions = 0;       /* Flag indicating whether to generate 
+int Test_Local_Partitions = 0;       /* Flag indicating whether to generate 
                                   unusual numbers of partitions per processor */
 int Test_Drops = 0;            /* Flag indicating whether to exercise 
                                   Box Assign and Point Assign functions */

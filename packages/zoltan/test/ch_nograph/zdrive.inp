@@ -1,4 +1,5 @@
-Decomposition Method 	= bsfc
+Decomposition Method 	= parmetis
+Zoltan Parameters	= parmetis_method=partgeom
 Zoltan Parameters       = debug_level=10
 File Type		= Chaco
 File Name		= nograph

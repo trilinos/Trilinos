@@ -170,7 +170,7 @@ typedef struct Problem_Description *PROB_INFO_PTR;
 /* Global variables for driver */
 extern int Debug_Driver;
 extern int Test_DDirectory;
-extern int Test_Partitions;
+extern int Test_Local_Partitions;
 extern int Test_Drops;
 extern int Test_Multi_Callbacks;
 extern int Test_Null_Import_Lists;

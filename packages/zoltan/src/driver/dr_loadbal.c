@@ -102,7 +102,7 @@ int setup_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
     return 0;
   }
 
-  if (Test_Partitions == 1) {
+  if (Test_Local_Partitions == 1) {
     /* Compute Proc partitions for each processor */
     char s[8];
     sprintf(s, "%d", Proc);
@@ -111,12 +111,10 @@ int setup_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
       return 0;
     }
   }
-  else if (Test_Partitions == 2) {
-    /* Compute Proc partitions for lower-ranked processors; let remaining
-     * partitions be in upper-ranked processors. */
-    int Num_Proc;
-    MPI_Comm_size(MPI_COMM_WORLD, &Num_Proc);
-    if (Proc < Num_Proc/2) {
+  else if (Test_Local_Partitions == 2) {
+    /* Compute Proc partitions for odd-ranked processors; let remaining
+     * partitions be in even-ranked processors. */
+    if (Proc%2) {
       char s[8];
       sprintf(s, "%d", Proc);
       if (Zoltan_Set_Param(zz, "NUM_LOCAL_PARTITIONS", s) == ZOLTAN_FATAL) {
@@ -293,7 +291,7 @@ int run_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
       if (Proc == 0) printf("\nBEFORE load balancing\n");
       driver_eval(mesh);
       i = Zoltan_LB_Eval(zz, 1, NULL, NULL, NULL, NULL, NULL, NULL);
-      if (i) printf("Warning: Zoltan_LB_Eval returned error code %d\n", i);
+      if (i) printf("Warning: Zoltan_LB_Eval returned code %d\n", i);
     }
   
     /*
@@ -375,7 +373,7 @@ int run_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
       if (Proc == 0) printf("\nAFTER load balancing\n");
       driver_eval(mesh);
       i = Zoltan_LB_Eval(zz, 1, NULL, NULL, NULL, NULL, NULL, NULL);
-      if (i) printf("Warning: Zoltan_LB_Eval returned error code %d\n", i);
+      if (i) printf("Warning: Zoltan_LB_Eval returned code %d\n", i);
     }
   
     /* Clean up */
