@@ -450,7 +450,7 @@ int Amesos_Klu::PerformNumericFactorization( ) {
 
 //=============================================================================
 bool Amesos_Klu::MatrixShapeOK() const {
-  bool OK ;
+  bool OK = true;
 
   // Comment by Tim:  The following code seems suspect.  The variable "OK"
   // is not set if the condition is true.
