@@ -55,6 +55,8 @@ Newton::~Newton()
 bool Newton::reset(Parameter::List& p)
 {
   paramsptr = &p;
+  if (!paramsptr->sublist("Linear Solver").isParameter("Tolerance"))
+    paramsptr->sublist("Linear Solver").setParameter("Tolerance", 1.0e-10);
   return true;
 }
 
@@ -90,12 +92,34 @@ bool Newton::operator()(Abstract::Vector& dir,
   
   // Compute the Newton direction
   ok = soln.computeNewton(paramsptr->sublist("Linear Solver"));
+
+
+  // It didn't work, but maybe it's ok anyway...
+  if (!ok) {
+
+    if (predrhs == NULL) {
+      predrhs = soln.getRHS().clone(CopyShape);
+    }
+
+    soln.applyJacobian(soln.getNewton(), *predrhs);    
+    predrhs->update(-1.0, soln.getRHS(), 1.0);
+    double accuracy = predrhs->norm();
+    if (accuracy < 1) {
+      ok = true;
+      if (Utils::doPrint(Utils::Warning)) 
+	cout << "WARNING: NOX::Direction::Newton::operator() - Newton solve failure.\n" 
+	     << "Desired accuracy is " 
+	     << Utils::sci(paramsptr->sublist("Linear Solver").getParameter("Tolerance", 1.0e-10)) << ".\n"
+	     << "Using solution with accuracy of " << Utils::sci(accuracy) << "." << endl;
+    }
+  }
+
   if (!ok) {
     if (Utils::doPrint(Utils::Warning))
       cout << "NOX::Direction::Newton::operator() - Unable to compute Newton direction." << endl;
     return false;
   }
-
+  
   // Set search direction.
   dir = soln.getNewton();
 
@@ -150,6 +174,8 @@ bool Newton::resetForcingTerm(const Abstract::Group& soln, const Abstract::Group
       // Create a new vector to be the predicted RHS
       if (predrhs == NULL) {
 	predrhs = oldsoln.getRHS().clone(CopyShape);
+      }
+      if (stepdir == NULL) {
 	stepdir = oldsoln.getRHS().clone(CopyShape);
       }
       
@@ -225,7 +251,8 @@ bool Newton::resetForcingTerm(const Abstract::Group& soln, const Abstract::Group
   else {
 
     if (Utils::doPrint(Utils::Warning))
-      cout << "*** Warning: Invalid Forcing Term Method ***" << endl;
+      cout << "NOX::Direction::Newton::resetForcingTerm - invalid forcing term method (" << method << ")" << endl;
+
     return false;
   }
 
