@@ -1790,9 +1790,6 @@ report($SUMMARY);
         system "rm -f invoke-configure-serial";
         system "rm -f invoke-configure-serial-original";
         system "rm -f invoke-configure-serial-final";
-        system "rm -f $options{'TRILINOS_DIR'}[0]/logErrors.txt";
-        system "rm -f $options{'TRILINOS_DIR'}[0]/logMpiErrors.txt";
-        system "rm -f $options{'TRILINOS_DIR'}[0]/log$hostOS.txt";
         
         # validations, enforcements, etc. ======================================
         
@@ -1901,7 +1898,7 @@ report($SUMMARY);
         }
                 
         # enforce only one SERIAL_DIR
-        if (defined $options{'SERIAL_DIR'}[1]) {
+        elsif (defined $options{'SERIAL_DIR'}[1]) {
             my $message = "";
             $message .= "only one SERIAL_DIR allowed\n";
             if (!$flags{p}) { report($CONFIG_ERROR, $message); }
@@ -1910,7 +1907,7 @@ report($SUMMARY);
         }
                 
         # enforce only one MPI_DIR
-        if (defined $options{'MPI_DIR'}[1]) {
+        elsif (defined $options{'MPI_DIR'}[1]) {
             my $message = "";
             $message .= "only one MPI_DIR allowed\n";
             if (!$flags{p}) { report($CONFIG_ERROR, $message); }
@@ -1997,19 +1994,20 @@ report($SUMMARY);
         # CVS_CMD --------------------------------------------------------------
         
         # enforce presence of CVS_CMD if CVS_UPDATE is set to YES
-        if (defined $options{'CVS_UPDATE'} && defined $options{'CVS_UPDATE'}[0]
-            && $options{'CVS_UPDATE'}[0] eq "YES"
-            && (!defined $options{'CVS_CMD'} 
-            || !defined $options{'CVS_CMD'}[0])) {
-            my $message = "";
-            $message .= "CVS_CMD must be supplied if CVS_UPDATE is set to YES\n";
-            if (!$flags{p}) { report($CONFIG_ERROR, $message); }
-            printEvent($message);
-            $configError = 1;
+        if (defined $options{'CVS_UPDATE'} && defined $options{'CVS_UPDATE'}[0]) {
+            if ($options{'CVS_UPDATE'}[0] eq "YES"
+                && (!defined $options{'CVS_CMD'} 
+                || !defined $options{'CVS_CMD'}[0])) {
+                my $message = "";
+                $message .= "CVS_CMD must be supplied if CVS_UPDATE is set to YES\n";
+                if (!$flags{p}) { report($CONFIG_ERROR, $message); }
+                printEvent($message);
+                $configError = 1;
+            }
         }
                 
         # enforce only one CVS_CMD
-        if (defined $options{'CVS_CMD'}[1]) {
+        elsif (defined $options{'CVS_CMD'}[1]) {
             my $message = "";
             $message .= "only one CVS_CMD allowed\n";
             if (!$flags{p}) { report($CONFIG_ERROR, $message); }
@@ -2020,15 +2018,16 @@ report($SUMMARY);
         # REPORT_NAMES ---------------------------------------------------------
         
         # enforce presence of REPORT_NAMES if REPORT_METHOD is set to LOCAL_FILESYSTEM
-        if (defined $options{'REPORT_METHOD'} && defined $options{'REPORT_METHOD'}[0]
-            && $options{'REPORT_METHOD'}[0] eq "LOCAL_FILESYSTEM"
-            && (!defined $options{'REPORT_NAMES'} 
-            || !defined $options{'REPORT_NAMES'}[0])) {
-            my $message = "";
-            $message .= "REPORT_NAMES must be supplied if REPORT_METHOD is set to LOCAL_FILESYSTEM\n";
-            if (!$flags{p}) { report($CONFIG_ERROR, $message); }
-            printEvent($message);
-            $configError = 1;
+        if (defined $options{'REPORT_METHOD'} && defined $options{'REPORT_METHOD'}[0]) {
+            if ($options{'REPORT_METHOD'}[0] eq "LOCAL_FILESYSTEM"
+                && (!defined $options{'REPORT_NAMES'} 
+                || !defined $options{'REPORT_NAMES'}[0])) {
+                my $message = "";
+                $message .= "REPORT_NAMES must be supplied if REPORT_METHOD is set to LOCAL_FILESYSTEM\n";
+                if (!$flags{p}) { report($CONFIG_ERROR, $message); }
+                printEvent($message);
+                $configError = 1;
+            }
         }
         
         # enforce correct REPORT_NAMES value
@@ -2042,7 +2041,7 @@ report($SUMMARY);
         }
                 
         # enforce only one REPORT_NAMES
-        if (defined $options{'REPORT_NAMES'}[1]) {
+        elsif (defined $options{'REPORT_NAMES'}[1]) {
             my $message = "";
             $message .= "only one REPORT_NAMES value allowed\n";
             if (!$flags{p}) { report($CONFIG_ERROR, $message); }
@@ -2053,19 +2052,20 @@ report($SUMMARY);
         # MAIL_METHOD ----------------------------------------------------------
         
         # enforce presence of MAIL_METHOD if REPORT_METHOD is set to EMAIL
-        if (defined $options{'REPORT_METHOD'} && defined $options{'REPORT_METHOD'}[0]
-            && $options{'REPORT_METHOD'}[0] eq "EMAIL"
-            && (!defined $options{'MAIL_METHOD'} 
-            || !defined $options{'MAIL_METHOD'}[0])) {
-            my $message = "";
-            $message .= "MAIL_METHOD must be supplied if REPORT_METHOD is set to EMAIL\n";
-            if (!$flags{p}) { report($CONFIG_ERROR, $message); }
-            printEvent($message);
-            $configError = 1;
+        if (defined $options{'REPORT_METHOD'} && defined $options{'REPORT_METHOD'}[0]) {
+            if ($options{'REPORT_METHOD'}[0] eq "EMAIL"
+                && (!defined $options{'MAIL_METHOD'} 
+                || !defined $options{'MAIL_METHOD'}[0])) {
+                my $message = "";
+                $message .= "MAIL_METHOD must be supplied if REPORT_METHOD is set to EMAIL\n";
+                if (!$flags{p}) { report($CONFIG_ERROR, $message); }
+                printEvent($message);
+                $configError = 1;
+            }
         }
                 
         # enforce only one MAIL_METHOD if first isn't smtp
-        if (defined $options{'MAIL_METHOD'}[1] && $options{'MAIL_METHOD'}[0] ne "smtp") {
+        elsif (defined $options{'MAIL_METHOD'}[1] && $options{'MAIL_METHOD'}[0] ne "smtp") {
             my $message = "";
             $message .= "only one MAIL_METHOD value allowed if first value isn't \"smtp\"\n";
             if (!$flags{p}) { report($CONFIG_ERROR, $message); }
@@ -2074,7 +2074,7 @@ report($SUMMARY);
         }
                 
         # enforce only two MAIL_METHOD if first is smtp
-        if ($options{'MAIL_METHOD'}[0] eq "smtp" && defined $options{'MAIL_METHOD'}[2]) {
+        elsif ($options{'MAIL_METHOD'}[0] eq "smtp" && defined $options{'MAIL_METHOD'}[2]) {
             my $message = "";
             $message .= "only two MAIL_METHOD values allowed (if first value is \"smtp\")\n";
             if (!$flags{p}) { report($CONFIG_ERROR, $message); }
@@ -2136,7 +2136,7 @@ report($SUMMARY);
         }
         
         # report successful parse and validation if parse flag
-        if (!$configError && $flags{p}) {
+        elsif (!$configError && $flags{p}) {
             print "test-harness config file \"$flags{p}\" successfully parsed and validated\n"
         }
             
