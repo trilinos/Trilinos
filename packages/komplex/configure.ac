@@ -180,6 +180,13 @@ if test "X$ac_cv_header_cmath" != "Xyes" && test "X$ac_cv_header_math_h" != "Xye
   AC_MSG_ERROR([[Cannot find cmath or math.h.  Komplex requires at least one or the other.]])
 fi
 
+if test "X$ac_cv_header_malloc_h" != "Xyes"; then
+ AC_FUNC_MALLOC
+ #if test "X$ac_cv_func_malloc_works" != "Xyes"; then
+ #  AC_MSG_ERROR([malloc function not working, needed by Komplex.])
+ #fi
+fi
+
 # Checks for typedefs, structures, and compiler characteristics.
 AC_C_CONST
 AC_C_INLINE
@@ -210,7 +217,6 @@ TAC_ARG_WITH_INCDIRS
 
 # Checks for library functions.
 AC_SEARCH_LIBS(sqrt,[m],,AC_MSG_ERROR(Cannot find math library))
-AC_FUNC_MALLOC
 AC_CHECK_FUNCS([floor pow sqrt strchr uname])
 
 # Define F77_FUNC that will be used to link with Fortran subroutines
