@@ -29,4 +29,59 @@
 
 # Needed so this is installed with distributions
 include_HEADERS = \
-        $(srcdir)/NOX_TestError.H
+        $(srcdir)/NOX_TestError.H 
+
+NOX_TEST_UTILS = \
+	$(srcdir)/NOX_TestUtils.C
+
+lib_LIBRARIES = libnoxtestutils.a
+
+# ------------------------------------------------------------------------
+# Noxtestutils library specifications
+# ------------------------------------------------------------------------
+
+libnoxtestutils_a_SOURCES = $(NOX_TEST_UTILS) $(include_HEADERS) 
+
+libnoxlapack_a_CXXFLAGS = -I$(top_srcdir)/src-loca/src \
+                           -I$(top_srcdir)/src \
+                           $(TRILINOS_CXXFLAGS) 
+
+#lib_LIBRARIES = libnoxtestutils.a
+
+
+# ------------------------------------------------------------------------
+# For using a special archiver
+# ------------------------------------------------------------------------
+
+# SPECIAL NOTE: Why is the "else" there?  For some reason, automake
+# fails to define <lib>_AR of USE_ALTERNATE_AR is false, so we have to
+# define it manually.
+
+if USE_ALTERNATE_AR
+
+libnoxtestutils_a_AR = $(ALTERNATE_AR)
+
+else
+
+libnoxtestutils_a_AR = $(AR) cru
+
+endif
+
+# ------------------------------------------------------------------------
+# Some C++ compilers create extra .o-files for templates. We need to
+# be sure to include these, and this is the hack to do it.
+# ------------------------------------------------------------------------
+
+libnoxtestutils_a_LIBADD = $(CXXREPOS) $(XTRALDADD)
+
+# ------------------------------------------------------------------------
+# Files to be deleted by 'make maintainer-clean'
+# ------------------------------------------------------------------------
+
+MAINTAINERCLEANFILES = Makefile.in 
+
+# ------------------------------------------------------------------------
+# Files to be deleted by 'make clean'
+# ------------------------------------------------------------------------
+
+MOSTLYCLEANFILES = $(CXXREPOS)
