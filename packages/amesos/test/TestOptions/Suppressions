@@ -53,3 +53,72 @@
    fun:_ZN14Epetra_MpiCommC1Ei
    fun:main
 }
+{
+   <mwrite #1>
+   Memcheck:Param
+   write(buf)
+   fun:__GI___libc_write
+   fun:mwrite
+   fun:_cio_kreqfront
+   fun:_cio_kreq
+}
+{
+   <mwrite #2>
+   Memcheck:Param
+   writev(vector[...])
+   fun:vgAllRoadsLeadToRome_writev
+   fun:__writev
+   fun:mwritev
+   fun:_cio_send
+}
+{
+   <mwrite #3>
+   Memcheck:Param
+   write(buf)
+   fun:__GI___libc_write
+   fun:mwrite
+   fun:_cio_kreqfront
+   fun:_cipc_ksrfront
+}
+{
+   <mwrite #4>
+   Memcheck:Param
+   writev(vector)
+   fun:vgAllRoadsLeadToRome_writev
+   fun:__writev
+   fun:mwritev
+   fun:_cio_send
+}
+{
+   <mwrite #5>
+   Memcheck:Param
+   write(buf)
+   fun:__GI___libc_write
+   fun:mwrite
+   fun:_cio_kreqfront
+   fun:kdetach
+}
+{
+   <Leak in DSCPACK::DSC_Analayze>
+   Memcheck:Leak
+   fun:malloc
+   fun:DSC_Analyze
+   fun:main
+   fun:__libc_start_main
+}
+{
+   <Leak in DSCPACK::order_and_make_tree2>
+   Memcheck:Leak
+   fun:malloc
+   fun:order_and_make_tree2
+   fun:DSC_Order
+   fun:main
+}
+{
+   <Overlap in lam_memcopy>
+   Memcheck:Overlap
+   fun:memcpy
+   fun:lam_memcpy
+   fun:lam_dtsndrcv
+   fun:lam_ssi_coll_lam_basic_gather
+}

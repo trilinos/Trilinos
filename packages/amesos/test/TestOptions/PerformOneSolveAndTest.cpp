@@ -312,22 +312,25 @@ int PerformOneSolveAndTest(char* AmesosClass,
 
 
 
-
-    //    if ( Amesos_Solver != "Amesos_Scalapack" ) { 
-    const int BNumPoints = 6;  // Must be between 2 and 100 (on large matrices,
-    // the problem is quite ill-conditioned) 
+    int BNumPoints;
+    const Epetra_Map* BMap ; 
+    string Aclass = AmesosClass ;
+    const bool AllowDiffProbSize = ( Aclass != "Amesos_Superludist" ) ;
+    if ( AllowDiffProbSize ) { 
+      BNumPoints = 6;  // Must be between 2 and 100 (on large matrices,
+      // the problem is quite ill-conditioned) 
     
-    // Construct a Map that puts approximately the same number of 
-    // equations on each processor.
-    Epetra_Map BMap(BNumPoints, 0, Comm);
-    //    }  else {
-    //      Epetra_Map Bmap = Map ; 
-    //    }
+      // Construct a Map that puts approximately the same number of 
+      // equations on each processor.
+      BMap = new Epetra_Map(BNumPoints, 0, Comm);
+    }  else {
+      BMap = Map ;
+      BNumPoints = BMap->NumGlobalElements();
+    }
     
-    Bmap = Map ;
       
     //  Create an empty EpetraCrsMatrix 
-    Epetra_CrsMatrix B(Copy, BMap, 0);
+    Epetra_CrsMatrix B(Copy, (*BMap), 0);
 
     //
     //  Populate A with a [-1,2,-1] tridiagonal matrix WITH -1 in the
@@ -335,7 +338,7 @@ int PerformOneSolveAndTest(char* AmesosClass,
     //  See CreateTridi.cpp in this directory 
     CreateTridiPlus( B ) ; 
 
-    Epetra_Vector Bx2(BMap), Bx1(BMap), Bx(BMap), Bb(BMap), Bresidual(BMap), Btemp(BMap);
+    Epetra_Vector Bx2((*BMap)), Bx1((*BMap)), Bx((*BMap)), Bb((*BMap)), Bresidual((*BMap)), Btemp((*BMap));
 
     //
 
@@ -436,6 +439,9 @@ int PerformOneSolveAndTest(char* AmesosClass,
 	if (verbose) cout << " TEST FAILED " << endl ;
 	errors += 1 ; 
       }
+    }
+    if ( AllowDiffProbSize ) {
+      delete BMap;
     }
 #endif
 

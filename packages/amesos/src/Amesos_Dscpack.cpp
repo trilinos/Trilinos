@@ -69,7 +69,7 @@ Amesos_Dscpack::~Amesos_Dscpack(void) {
     DSC_End( MyDSCObject ) ; 
   }
 
-  delete DscGraph_;  // This might not exist, is it dangerous to delete it?
+  if ( DscGraph_) delete DscGraph_;  // This might not exist, is it dangerous to delete it?
 }
 
 int Amesos_Dscpack::SetParameters( Teuchos::ParameterList &ParameterList ) 
