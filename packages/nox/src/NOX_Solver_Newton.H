@@ -62,7 +62,11 @@ public:
 
 protected:
   
+  //! Called each iteration to reset the forcing term (ie, the
+  //! convergence tolerance for the linear solver).
   virtual void resetForcingTerm();
+
+  //! Prints the current iteration information.
   virtual void printUpdate();
 
 protected:
@@ -70,12 +74,18 @@ protected:
   //! Current solution.
   Abstract::Group& soln;		
 
-  //! Previous solution.
+  //! Previous solution pointer. 
+  /*! We have both a pointer and a reference because we need to create
+    a DERIVED object and then want to have a reference to it. */
   Abstract::Group* oldsolnptr;	
+  //! Previous solution reference.
   Abstract::Group& oldsoln;	
 
-  //! Current search direction.
+  //! Current search direction.pointer.
+  /*! We have both a pointer and a reference because we need to create
+    a DERIVED object and then want to have a reference to it. */
   Abstract::Vector* dirptr;
+  //! Current search direction.reference.
   Abstract::Vector& dir;
 
   //! Stopping test.

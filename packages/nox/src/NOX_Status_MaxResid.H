@@ -58,6 +58,7 @@ public:
 
 private:
 
+  //! Maximum residual tolerance.
   double tol;
 
 };

@@ -64,7 +64,10 @@ public:
   
 protected:
 
+  //! Use this for operator() when this is an OR type combo
   virtual StatusType orOp(const Solver::Generic& problem) const;
+
+  //! Use this for operator() when this is an AND type combo
   virtual StatusType andOp(const Solver::Generic& problem) const;
 
   //! Check for repeaters.

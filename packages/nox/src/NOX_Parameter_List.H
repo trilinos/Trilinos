@@ -46,8 +46,10 @@ class List {
   //! Parameter container typedef
   typedef map<string, Entry> ParamContainer;
 
-  //! Parameter container iterator typedefs
+  //! Parameter container const iterator typedef
   typedef ParamContainer::const_iterator PCConstIterator;
+
+  //! Parameter container iterator typedef
   typedef ParamContainer::iterator PCIterator;
 
 public:

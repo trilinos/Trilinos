@@ -40,9 +40,9 @@ using namespace NOX::Status;
 
 RelResid::RelResid(double initnorm, double tolerance)
 {
-  tol = tolerance;
+  reltol = tolerance;
   normrhszero = initnorm;
-  reltol = tol * normrhszero;
+  tol = reltol * normrhszero;
 }
 
 RelResid::~RelResid()
@@ -53,7 +53,7 @@ StatusType RelResid::operator()(const Solver::Generic& problem) const
 {
   const Abstract::Group& tmp = problem.getSolutionGroup();
   double normrhs = tmp.getNormRHS();
-  if (normrhs < reltol)
+  if (normrhs < tol)
     return Converged;
   else
     return Unconverged;
@@ -63,6 +63,6 @@ ostream& RelResid::print(ostream& stream, int indent = 0) const
 {
   for (int j = 0; j < indent; j ++)
     stream << ' ';
-  stream << "Relative Residual Norm with Tolerance = " << tol << endl;
+  stream << "Relative Residual Norm with Tolerance = " << reltol << endl;
   return stream;
 }

@@ -58,9 +58,12 @@ public:
 
 private:
 
-  double tol;
+  //! Norm of the intial RHS. First argument of constructor.
   double normrhszero;
+  //! Relative toleranace, i.e., norm < reltol * normrhszero. Second argument of constructor.
   double reltol;
+  //! Absolute tolerance = reltol * normrhszero.
+  double tol;
 };
 
 } // namespace Status

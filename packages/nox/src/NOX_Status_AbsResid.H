@@ -58,6 +58,7 @@ public:
 
 private:
 
+  //! Tolerance for convergence.
   double tol;
 
 };
