@@ -236,9 +236,11 @@ static int matching_ipm (ZZ *zz, PHGraph *hg, Matching match)
   if (!(psums  = (int*) ZOLTAN_CALLOC (hg->nVtx,  sizeof(int)))
    || !(tsums  = (int*) ZOLTAN_CALLOC (hg->nVtx,  sizeof(int)))
    || !(select = (int*) ZOLTAN_MALLOC (NDO      * sizeof(int)))
-   || !(cmatch = (int*) ZOLTAN_MALLOC (hg->nVtx * sizeof(int))))
+   || !(cmatch = (int*) ZOLTAN_MALLOC (hg->nVtx * sizeof(int)))
+   || !(displs = (int*) ZOLTAN_MALLOC (hgc->nProc_x * sizeof(int))))
      {
-     Zoltan_Multifree (__FILE__, __LINE__, 4, &psums, &tsums, &select, &cmatch);
+     Zoltan_Multifree (__FILE__, __LINE__, 5, &psums, &tsums, &select, &cmatch,
+      displs);
      ZOLTAN_PRINT_ERROR (zz->Proc, yo, "Insufficient memory.");
      return ZOLTAN_MEMERR;
      }
