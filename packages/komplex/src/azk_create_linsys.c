@@ -336,7 +336,7 @@ void AZK_create_linsys_no_copy(double *xr, double *xi, double *br, double *bi,
   N_equations = 2 * N_real;
   N_blk_equations = N_equations;
 
-  N_external = max(data_org_real[AZ_N_external], data_org_imag[AZ_N_external]);
+  N_external = AZ_MAX(data_org_real[AZ_N_external], data_org_imag[AZ_N_external]);
 
   if (Amat_real->matrix_type == AZ_MSR_MATRIX) {
       Amat_real->data_org[AZ_N_int_blk] = Amat_real->data_org[AZ_N_internal];

@@ -69,7 +69,7 @@ void AZK_matvec_no_copy(double *x, double *y, AZ_MATRIX *Amat,
 
     N_equations = data_org_real[AZ_N_internal] + data_org_real[AZ_N_border];
 
-    N_external = max(data_org_real[AZ_N_external],
+    N_external = AZ_MAX(data_org_real[AZ_N_external],
 		     data_org_imag[AZ_N_external]);
 
     /* Allocate space for temp copies of real/imag vectors. */
