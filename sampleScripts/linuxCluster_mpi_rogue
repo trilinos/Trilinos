@@ -1,0 +1,8 @@
+../configure \
+LDFLAGS=-L/opt/gm/lib \
+--with-mpi="/usr/local/mpi/mpich/1.2.5..10-gm-2.0.9-2.4.20-28.9smp.gpfs-i686/gcc-3.2.2" \
+--with-mpi-libs="-lmpich" \
+--with-mpi-compilers=/usr/local/mpi/mpich/1.2.5..10-gm-2.0.9-2.4.20-28.9smp.gpfs-i686/gcc-3.2.2/bin \
+CXXFLAGS=-O2 CFLAGS=-O2 FFLAGS=-O2 \
+--enable-nox-epetra --enable-triutils \
+--disable-tests --disable-examples --disable-new_pacakge
