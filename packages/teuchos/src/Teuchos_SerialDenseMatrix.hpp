@@ -25,6 +25,7 @@
 #include "Teuchos_ScalarTraits.hpp"
 #include "Teuchos_DataAccess.hpp"
 #include "Teuchos_ConfigDefs.hpp"
+#include "Teuchos_TestForException.hpp"
 
 namespace Teuchos
 {
@@ -63,6 +64,7 @@ namespace Teuchos
   protected:
     void copyMat(ScalarType* inputMatrix, int strideInput, int numRows, int numCols, ScalarType* outputMatrix, int strideOutput, int startRow, int startCol, bool add);
     void deleteArrays();
+    void checkIndex( int rowIndex, int colIndex = 0 ) const;
     int numRows_;
     int numCols_;
     int stride_;
@@ -279,16 +281,7 @@ namespace Teuchos
   inline ScalarType& SerialDenseMatrix<OrdinalType, ScalarType>::operator () (int rowIndex, int colIndex)
   {
 #ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
-    if (rowIndex >= numRows_)
-      {
-	cout << "Row index = " << rowIndex << " Out of Range 0 - " << numRows_-1 << endl;
-	TEUCHOS_CHK_REF(*values_); // Return reference to values_[0]
-      }
-    if (colIndex >= numCols_)
-      {
-	cout << "Column index = " << colIndex << " Out of Range 0 - " << numCols_-1 << endl;
-	TEUCHOS_CHK_REF(*values_); // Return reference to values_[0]
-      }
+    checkIndex( rowIndex, colIndex );
 #endif
     return(values_[colIndex * stride_ + rowIndex]);
   }
@@ -297,16 +290,7 @@ namespace Teuchos
   inline const ScalarType& SerialDenseMatrix<OrdinalType, ScalarType>::operator () (int rowIndex, int colIndex) const
   {
 #ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
-    if (rowIndex >= numRows_)
-      {
-	cout << "Row index = " << rowIndex << " Out of Range 0 - " << numRows_ - 1 << endl;
-	TEUCHOS_CHK_REF(values_[0]); // Return reference to values_[0]
-      }
-    if (colIndex >= numCols_)
-      {
-	cout << "Column index = " << colIndex << " Out of Range 0 - " << numCols_ - 1 << endl;
-	TEUCHOS_CHK_REF(values_[0]); // Return reference to values_[0]
-      }
+    checkIndex( rowIndex, colIndex );
 #endif
     return(values_[colIndex * stride_ + rowIndex]);
   }
@@ -315,11 +299,7 @@ namespace Teuchos
   inline const ScalarType* SerialDenseMatrix<OrdinalType, ScalarType>::operator [] (int colIndex) const
   {
 #ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
-    if (colIndex >= numCols_)
-      {
-	cout << "Column index = " << colIndex << " Out of Range 0 - " << numCols_ - 1 << endl;
-	TEUCHOS_CHK_PTR(0); // Return zero pointer
-      }
+    checkIndex( 0, colIndex );
 #endif
     return(values_ + colIndex * stride_);
   }
@@ -328,13 +308,9 @@ namespace Teuchos
   inline ScalarType* SerialDenseMatrix<OrdinalType, ScalarType>::operator [] (int colIndex)
   {
 #ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
-    if (colIndex >= numCols_)
-      {
-    cout << "Column index = " << colIndex << " Out of Range 0 - " << numCols_ - 1 << endl;
-    TEUCHOS_CHK_PTR(0); // Return zero pointer
-      }
+    checkIndex( 0, colIndex );
 #endif
-    return(values_ + colIndex * stride_);
+  return(values_ + colIndex * stride_);
   }
 
   //----------------------------------------------------------------------------------------------------
@@ -486,6 +462,16 @@ namespace Teuchos
   //----------------------------------------------------------------------------------------------------
   //   Protected methods 
   //----------------------------------------------------------------------------------------------------  
+
+  template<typename OrdinalType, typename ScalarType>
+  inline void SerialDenseMatrix<OrdinalType, ScalarType>::checkIndex( int rowIndex, int colIndex ) const {
+    TEST_FOR_EXCEPTION(rowIndex < 0 || rowIndex >= numRows_, std::out_of_range,
+                       "SerialDenseMatrix<T>::checkIndex: "
+                       "Row index " << rowIndex << " out of range [0, "<< numRows_ << ")");
+    TEST_FOR_EXCEPTION(colIndex < 0 || colIndex >= numCols_, std::out_of_range,
+                       "SerialDenseMatrix<T>::checkIndex: "
+                       "Col index " << colIndex << " out of range [0, "<< numCols_ << ")");
+  }
 
   template<typename OrdinalType, typename ScalarType>
   void SerialDenseMatrix<OrdinalType, ScalarType>::deleteArrays(void)

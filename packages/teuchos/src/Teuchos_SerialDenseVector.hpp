@@ -23,12 +23,13 @@ namespace Teuchos {
     bool operator == (const SerialDenseVector<OrdinalType, ScalarType> &Operand);
     bool operator != (const SerialDenseVector<OrdinalType, ScalarType> &Operand);
     SerialDenseVector<OrdinalType,ScalarType>& operator = (const SerialDenseVector<OrdinalType,ScalarType>& Source);
-    ScalarType& operator () (int index);
-    const ScalarType& operator () (int index) const;
-    ScalarType& operator [] (int index);
-    const ScalarType& operator [] (int index) const;
+    inline ScalarType& operator () (int index);
+    inline const ScalarType& operator () (int index) const;
+    inline ScalarType& operator [] (int index);
+    inline const ScalarType& operator [] (int index) const;
     int length() const {return(numRows_);};
     virtual void print(ostream& os) const;
+
 };
 
   template<typename OrdinalType, typename ScalarType>
@@ -109,11 +110,7 @@ namespace Teuchos {
   inline ScalarType& SerialDenseVector<OrdinalType, ScalarType>::operator () (int index)
   {
 #ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
-    if (index >= numRows_)
-      {
-	cout << "Row index = " << index << " Out of Range 0 - " << numRows_-1 << endl;
-	TEUCHOS_CHK_REF(*values_); // Return reference to values_[0]
-      }
+    checkIndex( index );
 #endif
     return(values_[index]);
   }
@@ -122,11 +119,7 @@ namespace Teuchos {
   inline const ScalarType& SerialDenseVector<OrdinalType, ScalarType>::operator () (int index) const
   {
 #ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
-    if (index >= numRows_)
-      {
-	cout << "Row index = " << index << " Out of Range 0 - " << numRows_ - 1 << endl;
-	TEUCHOS_CHK_REF(values_[0]); // Return reference to values_[0]
-      }
+    checkIndex( index );
 #endif
     return(values_[index]);
   }
@@ -135,11 +128,7 @@ namespace Teuchos {
   inline const ScalarType& SerialDenseVector<OrdinalType, ScalarType>::operator [] (int index) const
   {
 #ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
-    if (index >= numRows_)
-      {
-	cout << "Row index = " << index << " Out of Range 0 - " << numRows_ - 1 << endl;
-	TEUCHOS_CHK_PTR(0); // Return zero pointer
-      }
+    checkIndex( index );
 #endif
     return(values_[index]);
   }
@@ -148,11 +137,7 @@ namespace Teuchos {
   inline ScalarType& SerialDenseVector<OrdinalType, ScalarType>::operator [] (int index)
   {
 #ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
-    if (index >= numRows_)
-      {
-    cout << "Column index = " << index << " Out of Range 0 - " << numRows_ - 1 << endl;
-    TEUCHOS_CHK_PTR(0); // Return zero pointer
-      }
+    checkIndex( index );
 #endif
     return(values_[index]);
   }
