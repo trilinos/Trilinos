@@ -97,7 +97,7 @@ Copyright 1990 Regents of the University of California.  All rights reserved.
 #endif
 
 #ifdef mingw
-#  include "os_linux.h"
+#  include "os_mingw32.h"
 #  define CONFIGURED
 #endif
 
