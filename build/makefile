@@ -12,13 +12,8 @@ libinstall:
 	@echo "Building $(CUR_LIB) for the following target:" $(TRILINOS_TARGET)
 	@echo "--------------------------------------------------------------"
 	@echo " "
-	mkdir -p $(TRILINOS_HOME)/packages/$(CUR_SRCPATH)$(CUR_LIB)/obj/$(TRILINOS_TARGET)
-	cd $(TRILINOS_HOME)/packages/$(CUR_SRCPATH)$(CUR_LIB)/obj/$(TRILINOS_TARGET); \
-	rm -f Makefile *.[fch]*; \
-	cp  $(TRILINOS_HOME)/packages/$(CUR_SRCPATH)$(CUR_LIB)/src/Makefile . ; \
-	cp  $(TRILINOS_HOME)/packages/$(CUR_SRCPATH)$(CUR_LIB)/src/*.[fch]* .; \
-	$(MAKE); \
-	rm -f Makefile *.[fch]*; \
+	cd $(TRILINOS_HOME)/packages/$(CUR_SRCPATH)$(CUR_LIB)/; mkdir -p obj/$(TRILINOS_TARGET)
+	(cd $(TRILINOS_HOME)/packages/$(CUR_SRCPATH)$(CUR_LIB)/obj/$(TRILINOS_TARGET); rm -f Makefile *.[fch]*; $(LN)  ../../src/Makefile . ; $(LN)  ../../src/*.[fch]* .; $(MAKE)) 
 
 anasazi:
 	$(MAKE) TRILINOS_ARCH="$(TRILINOS_ARCH)" TRILINOS_COMM="$(TRILINOS_COMM)"\

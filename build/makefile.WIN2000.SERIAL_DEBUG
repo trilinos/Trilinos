@@ -121,15 +121,21 @@ ARCH_INCLUDES = $(MPI_INCLUDES)
 LIBMPI =
 ARCH_LIBS = 
 
-#LN=ln -sv
+# Only hard links are avialable on cygwin.
+#
+LN=ln -v
 
 ################## External Libraries ##########################
 ###
-### I assume that the windows LIB environment (that the bash shell
-### by default inherits) has been set to to contain the directory 
-### path for the intel blas and lapack.
-LIBBLAS = mkl_c.lib mkl_p3.lib
-LIBLAPACK = mkl_lapack.lib
+### I assume that the windows LIB environment variable (that the 
+### bash shell by default inherits) has been set to to contain 
+### the directory path for the intel blas and lapack and/pr CXML
+### blas and lapack.
+
+# LIBBLAS = mkl_c.lib mkl_p3.lib
+# LIBLAPACK = mkl_lapack.lib
+LIBBLAS = cxml.lib
+LIBLAPACK = cxml.lib
 LIBSPBLAS = "$(TRILINOS_HOME_WIN)\external\spblas\lib\$(TRILINOS_TARGET)\libspblas.lib"
 LIBSUPERLU   = "d:\software\SuperLU\superlu_win2000.lib"
 LIBY12M   = "$(TRILINOS_HOME_WIN)\external\y12m\lib\$(TRILINOS_TARGET)\y12m.lib"
@@ -162,9 +168,17 @@ LIBY12M   = "$(TRILINOS_HOME_WIN)\external\y12m\lib\$(TRILINOS_TARGET)\y12m.lib"
 #                        support bool, the code that calls Epetra must 
 #                        also use int instead of bool.  Not doing so 
 #                        is a cause of subtle incorrect behavior.
+#
+# One of the following must be set when compiling on win2000 using the
+# cygwin utilities. 
+# INTEL_MKL uses the intel mkl blas and lapack routines and assumes a
+#           c style call for the fortran routines.
+# INTEL_CXML uses the cxml blas and lapack routines and assumes a 
+#            a standard call.
 
 #EPETRA_ARCH_DEFINES = -DINTEL_MKL -DEPETRA_NO_ERROR_REPORTS -D$(WINCOMP)
-EPETRA_ARCH_DEFINES = -DINTEL_MKL -D$(WINCOMP)
+#EPETRA_ARCH_DEFINES = -DINTEL_MKL -D$(WINCOMP)
+EPETRA_ARCH_DEFINES = -DINTEL_CXML -D$(WINCOMP)
 
 #### petra ####
 
