@@ -789,11 +789,11 @@ int ML_Operator_ColPartition2RowPartition(ML_Operator *A, ML_Operator *Atrans)
  
   ML_Operator_Set_ApplyFuncData(eye1, A->invec_leng, A->invec_leng,
             ML_EXTERNAL,NULL, A->invec_leng, eye_matvec, 0);
-  ML_Operator_Set_Getrow(eye1, ML_EXTERNAL, A->invec_leng, eye_getrows);
+  ML_Operator_Set_Getrow(eye1, ML_INTERNAL, A->invec_leng, eye_getrows);
  
   ML_Operator_Set_ApplyFuncData(eye2, A->invec_leng, A->invec_leng,
             ML_EXTERNAL,NULL, A->invec_leng, eye_matvec, 0);
-  ML_Operator_Set_Getrow(eye2, ML_EXTERNAL, A->invec_leng, eye_getrows);
+  ML_Operator_Set_Getrow(eye2, ML_INTERNAL, A->invec_leng, eye_getrows);
   ML_2matmult(A, eye1, Atrans, ML_CSR_MATRIX);
 
   ML_Operator_Destroy(&eye1);
@@ -855,6 +855,7 @@ int eye_getrows(void *data, int N_requested_rows, int requested_rows[],
 {
    int    i;
 
+   
    if (allocated_space < N_requested_rows) {
      ML_avoid_unused_param( data);
      return(0);
