@@ -576,7 +576,11 @@ int LB_Special_Malloc(struct LB_Struct *lb, void **array, int size,
 #ifdef PGI /* special case for PGI Fortran compiler */
          LB_Fort_Malloc_int((int *)(array[1]),&size,&ret_addr,array[2]);
 #else
+#ifdef FUJITSU /* special case for Fujitsu and Lahey Fortran compilers */
+         LB_Fort_Malloc_int((int *)(array[1]),&size,&ret_addr,array[2],0,0);
+#else
          LB_Fort_Malloc_int((int *)(array[1]),&size,&ret_addr);
+#endif
 #endif
          if (ret_addr==0) success=0;
          break;
@@ -585,13 +589,21 @@ int LB_Special_Malloc(struct LB_Struct *lb, void **array, int size,
 #ifdef PGI
             LB_Fort_Malloc_int((int *)(array[1]),&size,&ret_addr,array[2]);
 #else
+#ifdef FUJITSU
+            LB_Fort_Malloc_int((int *)(array[1]),&size,&ret_addr,array[2],0,0);
+#else
             LB_Fort_Malloc_int((int *)(array[1]),&size,&ret_addr);
+#endif
 #endif
          }else{
 #ifdef PGI
             LB_Fort_Malloc_GID((LB_GID *)(array[1]),&size,&ret_addr,array[2]);
 #else
+#ifdef FUJITSU
+            LB_Fort_Malloc_GID((LB_GID *)(array[1]),&size,&ret_addr,array[2],0,0);
+#else
             LB_Fort_Malloc_GID((LB_GID *)(array[1]),&size,&ret_addr);
+#endif
 #endif
          }
          if (ret_addr==0) success=0;
@@ -601,13 +613,21 @@ int LB_Special_Malloc(struct LB_Struct *lb, void **array, int size,
 #ifdef PGI
             LB_Fort_Malloc_int((int *)(array[1]),&size,&ret_addr,array[2]);
 #else
+#ifdef FUJITSU
+            LB_Fort_Malloc_int((int *)(array[1]),&size,&ret_addr,array[2],0,0);
+#else
             LB_Fort_Malloc_int((int *)(array[1]),&size,&ret_addr);
+#endif
 #endif
          }else{
 #ifdef PGI
             LB_Fort_Malloc_LID((LB_LID *)(array[1]),&size,&ret_addr,array[2]);
 #else
+#ifdef FUJITSU
+            LB_Fort_Malloc_LID((LB_LID *)(array[1]),&size,&ret_addr,array[2],0,0);
+#else
             LB_Fort_Malloc_LID((LB_LID *)(array[1]),&size,&ret_addr);
+#endif
 #endif
          }
          if (ret_addr==0) success=0;
@@ -660,7 +680,11 @@ int LB_Special_Free(struct LB_Struct *lb, void **array,
 #ifdef PGI /* special case for PGI Fortran compiler */
          LB_Fort_Free_int((int *)(array[1]),array[2]);
 #else
+#ifdef FUJITSU /* special case for Fujitsu and Lahey Fortran compilers */
+         LB_Fort_Free_int((int *)(array[1]),array[2]);
+#else
          LB_Fort_Free_int((int *)(array[1]));
+#endif
 #endif
          break;
       case LB_SPECIAL_MALLOC_GID:
@@ -668,13 +692,21 @@ int LB_Special_Free(struct LB_Struct *lb, void **array,
 #ifdef PGI
             LB_Fort_Free_int((int *)(array[1]),array[2]);
 #else
+#ifdef FUJITSU
+            LB_Fort_Free_int((int *)(array[1]),array[2]);
+#else
             LB_Fort_Free_int((int *)(array[1]));
+#endif
 #endif
          }else{
 #ifdef PGI
             LB_Fort_Free_GID((LB_GID *)(array[1]),array[2]);
 #else
+#ifdef FUJITSU
+            LB_Fort_Free_GID((LB_GID *)(array[1]),array[2]);
+#else
             LB_Fort_Free_GID((LB_GID *)(array[1]));
+#endif
 #endif
          }
          break;
@@ -683,13 +715,21 @@ int LB_Special_Free(struct LB_Struct *lb, void **array,
 #ifdef PGI
             LB_Fort_Free_int((int *)(array[1]),array[2]);
 #else
+#ifdef FUJITSU
+            LB_Fort_Free_int((int *)(array[1]),array[2]);
+#else
             LB_Fort_Free_int((int *)(array[1]));
+#endif
 #endif
          }else{
 #ifdef PGI
             LB_Fort_Free_LID((LB_LID *)(array[1]),array[2]);
 #else
+#ifdef FUJITSU
+            LB_Fort_Free_LID((LB_LID *)(array[1]),array[2]);
+#else
             LB_Fort_Free_LID((LB_LID *)(array[1]));
+#endif
 #endif
          }
          break;

@@ -68,12 +68,21 @@ typedef void LB_FORT_FREE_INT_FN(int *arg, int *hidden);
 typedef void LB_FORT_FREE_GID_FN(LB_GID *arg, int *hidden);
 typedef void LB_FORT_FREE_LID_FN(LB_LID *arg, int *hidden);
 #else
+#ifdef FUJITSU
+typedef void LB_FORT_MALLOC_INT_FN(int *arg, int *size, int **ret, int *hidden, int hidden2, int hidden3);
+typedef void LB_FORT_MALLOC_GID_FN(LB_GID *arg, int *size, int **ret, int *hidden, int hidden2, int hidden3);
+typedef void LB_FORT_MALLOC_LID_FN(LB_LID *arg, int *size, int **ret, int *hidden, int hidden2, int hidden3);
+typedef void LB_FORT_FREE_INT_FN(int *arg, int *hidden);
+typedef void LB_FORT_FREE_GID_FN(LB_GID *arg, int *hidden);
+typedef void LB_FORT_FREE_LID_FN(LB_LID *arg, int *hidden);
+#else
 typedef void LB_FORT_MALLOC_INT_FN(int *arg, int *size, int **ret);
 typedef void LB_FORT_MALLOC_GID_FN(LB_GID *arg, int *size, int **ret);
 typedef void LB_FORT_MALLOC_LID_FN(LB_LID *arg, int *size, int **ret);
 typedef void LB_FORT_FREE_INT_FN(int *arg);
 typedef void LB_FORT_FREE_GID_FN(LB_GID *arg);
 typedef void LB_FORT_FREE_LID_FN(LB_LID *arg);
+#endif
 #endif
 
 /* type selector for LB_Special_Malloc */
