@@ -26,8 +26,8 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef _TPETRA_BLOCKELEMENTSPACEDATA_HPP_
-#define _TPETRA_BLOCKELEMENTSPACEDATA_HPP_
+#ifndef TPETRA_BLOCKELEMENTSPACEDATA_HPP
+#define TPETRA_BLOCKELEMENTSPACEDATA_HPP
 
 namespace Tpetra {
 
@@ -99,4 +99,4 @@ class BlockElementSpaceData : public Object {
 
 } // namespace Tpetra
 
-#endif // _TPETRA_BLOCKELEMENTSPACEDATA_HPP_
+#endif // TPETRA_BLOCKELEMENTSPACEDATA_HPP

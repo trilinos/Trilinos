@@ -26,8 +26,8 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef _TPETRA_SERIALPLATFORM_HPP_
-#define _TPETRA_SERIALPLATFORM_HPP_
+#ifndef TPETRA_SERIALPLATFORM_HPP
+#define TPETRA_SERIALPLATFORM_HPP
 
 #include "Tpetra_Object.hpp"
 #include "Tpetra_Platform.hpp"
@@ -110,4 +110,4 @@ template<typename OrdinalType> class ElementSpace;
 
 } // namespace Tpetra
 
-#endif // _TPETRA_SERIALPLATFORM_HPP_
+#endif // TPETRA_SERIALPLATFORM_HPP

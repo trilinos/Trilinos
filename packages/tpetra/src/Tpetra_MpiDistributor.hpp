@@ -26,8 +26,8 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef _TPETRA_MPIDISTRIBUTOR_HPP_
-#define _TPETRA_MPIDISTRIBUTOR_HPP_
+#ifndef TPETRA_MPIDISTRIBUTOR_HPP
+#define TPETRA_MPIDISTRIBUTOR_HPP
 
 #include "Tpetra_Object.hpp"
 #include "Tpetra_Distributor.hpp"
@@ -131,4 +131,4 @@ namespace Tpetra {
 
 } // namespace Tpetra
 
-#endif // _TPETRA_MPIDISTRIBUTOR_HPP_
+#endif // TPETRA_MPIDISTRIBUTOR_HPP

@@ -26,8 +26,8 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef _TPETRA_CISMATRIX_HPP_
-#define _TPETRA_CISMATRIX_HPP_
+#ifndef TPETRA_CISMATRIX_HPP
+#define TPETRA_CISMATRIX_HPP
 
 #include <Teuchos_RefCountPtr.hpp>
 #include <Teuchos_CompObject.hpp>
@@ -686,4 +686,4 @@ private:
 
 #include "Tpetra_CisMatrixData.hpp"
 
-#endif // _TPETRA_CISMATRIX_HPP_
+#endif // TPETRA_CISMATRIX_HPP

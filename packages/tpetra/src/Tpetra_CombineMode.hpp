@@ -26,8 +26,8 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef _TPETRA_COMBINEMODE_HPP_
-#define _TPETRA_COMBINEMODE_HPP_
+#ifndef TPETRA_COMBINEMODE_HPP
+#define TPETRA_COMBINEMODE_HPP
 
 /*! \file Tpetra_CombineMode.hpp 
     \brief Tpetra::Combine Mode enumerable type
@@ -54,4 +54,4 @@ namespace Tpetra {
 
 } // namespace Tpetra
 
-#endif /* _TPETRA_COMBINEMODE_HPP_ */
+#endif // TPETRA_COMBINEMODE_HPP

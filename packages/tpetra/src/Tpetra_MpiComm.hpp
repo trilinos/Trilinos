@@ -26,8 +26,8 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef _TPETRA_MPICOMM_HPP_
-#define _TPETRA_MPICOMM_HPP_
+#ifndef TPETRA_MPICOMM_HPP
+#define TPETRA_MPICOMM_HPP
 
 #include "Tpetra_Object.hpp"
 #include "Tpetra_Comm.hpp"
@@ -126,4 +126,4 @@ private:
   
 } // namespace Tpetra
 
-#endif // _TPETRA_MPICOMM_HPP_
+#endif // TPETRA_MPICOMM_HPP

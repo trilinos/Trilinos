@@ -26,8 +26,8 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef _TPETRA_COMM_HPP_
-#define _TPETRA_COMM_HPP_
+#ifndef TPETRA_COMM_HPP
+#define TPETRA_COMM_HPP
 
 #include "Tpetra_ConfigDefs.hpp"
 
@@ -162,4 +162,4 @@ class Comm {
 
 } // namespace Tpetra
 
-#endif // _TPETRA_COMM_HPP_
+#endif // TPETRA_COMM_HPP

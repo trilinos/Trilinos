@@ -26,8 +26,8 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef _TPETRA_DIRECTORY_HPP_
-#define _TPETRA_DIRECTORY_HPP_
+#ifndef TPETRA_DIRECTORY_HPP
+#define TPETRA_DIRECTORY_HPP
 
 namespace Tpetra {
 
@@ -73,4 +73,4 @@ class Directory {
 
 } // namespace Tpetra
 
-#endif // _TPETRA_DIRECTORY_HPP_
+#endif // TPETRA_DIRECTORY_HPP

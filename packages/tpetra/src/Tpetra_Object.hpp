@@ -26,8 +26,8 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef _TPETRA_OBJECT_HPP_
-#define _TPETRA_OBJECT_HPP_
+#ifndef TPETRA_OBJECT_HPP
+#define TPETRA_OBJECT_HPP
 
 #include "Tpetra_ConfigDefs.hpp" // for iostream and string
 
@@ -198,4 +198,4 @@ inline ostream& operator<<(ostream& os, const Tpetra::Object& Obj)
 }
 
 
-#endif /* _TPETRA_OBJECT_HPP_ */
+#endif // TPETRA_OBJECT_HPP

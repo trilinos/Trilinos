@@ -26,8 +26,8 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef _TPETRA_MPIDIRECTORY_HPP_
-#define _TPETRA_MPIDIRECTORY_HPP_
+#ifndef TPETRA_MPIDIRECTORY_HPP
+#define TPETRA_MPIDIRECTORY_HPP
 
 #include "Tpetra_Directory.hpp"
 #include "Tpetra_Object.hpp"
@@ -102,4 +102,4 @@ namespace Tpetra {
   
 } // namespace Tpetra
 
-#endif // _TPETRA_MPIDIRECTORY_HPP_
+#endif // TPETRA_MPIDIRECTORY_HPP

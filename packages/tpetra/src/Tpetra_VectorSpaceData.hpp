@@ -26,8 +26,8 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef _TPETRA_VECTORSPACEDATA_HPP_
-#define _TPETRA_VECTORSPACEDATA_HPP_
+#ifndef TPETRA_VECTORSPACEDATA_HPP
+#define TPETRA_VECTORSPACEDATA_HPP
 
 namespace Tpetra {
 
@@ -78,4 +78,4 @@ class VectorSpaceData : public Object {
 
 } // namespace Tpetra
 
-#endif // _TPETRA_VECTORSPACEDATA_HPP_
+#endif // TPETRA_VECTORSPACEDATA_HPP

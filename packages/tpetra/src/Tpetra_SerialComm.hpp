@@ -26,8 +26,8 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef _TPETRA_SERIALCOMM_HPP_
-#define _TPETRA_SERIALCOMM_HPP_
+#ifndef TPETRA_SERIALCOMM_HPP
+#define TPETRA_SERIALCOMM_HPP
 
 #include "Tpetra_Comm.hpp"
 #include "Tpetra_Object.hpp"
@@ -224,4 +224,4 @@ public:
 
 } // namespace Tpetra
 
-#endif // _TPETRA_SERIALCOMM_HPP_
+#endif // TPETRA_SERIALCOMM_HPP

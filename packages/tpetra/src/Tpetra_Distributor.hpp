@@ -26,8 +26,8 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef _TPETRA_DISTRIBUTOR_HPP_
-#define _TPETRA_DISTRIBUTOR_HPP_
+#ifndef TPETRA_DISTRIBUTOR_HPP
+#define TPETRA_DISTRIBUTOR_HPP
 
 #include "Tpetra_ConfigDefs.hpp"
 
@@ -143,4 +143,4 @@ class Distributor {
 
 } // namespace Tpetra
 
-#endif // _TPETRA_DISTRIBUTOR_HPP_
+#endif // TPETRA_DISTRIBUTOR_HPP

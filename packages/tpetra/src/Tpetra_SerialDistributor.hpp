@@ -26,8 +26,8 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef _TPETRA_SERIALDISTRIBUTOR_HPP_
-#define _TPETRA_SERIALDISTRIBUTOR_HPP_
+#ifndef TPETRA_SERIALDISTRIBUTOR_HPP
+#define TPETRA_SERIALDISTRIBUTOR_HPP
 
 #include "Tpetra_Object.hpp"
 #include "Tpetra_Distributor.hpp"
@@ -135,4 +135,4 @@ namespace Tpetra {
 
 } // namespace Tpetra
 
-#endif // _TPETRA_SERIALDISTRIBUTOR_HPP_
+#endif // TPETRA_SERIALDISTRIBUTOR_HPP

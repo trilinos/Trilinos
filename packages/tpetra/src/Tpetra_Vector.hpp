@@ -26,8 +26,8 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef _TPETRA_VECTOR_HPP_
-#define _TPETRA_VECTOR_HPP_
+#ifndef TPETRA_VECTOR_HPP
+#define TPETRA_VECTOR_HPP
 
 #include "Tpetra_Object.hpp"
 #include "Tpetra_ConfigDefs.hpp" // for STL vector, algorithm, numeric
@@ -553,4 +553,4 @@ private:
 
 #include "Tpetra_VectorData.hpp"
 
-#endif /* _TPETRA_VECTOR_HPP_ */
+#endif // TPETRA_VECTOR_HPP

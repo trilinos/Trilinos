@@ -26,8 +26,8 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef _TPETRA_VECTORSPACE_HPP_
-#define _TPETRA_VECTORSPACE_HPP_
+#ifndef TPETRA_VECTORSPACE_HPP
+#define TPETRA_VECTORSPACE_HPP
 
 #include <Teuchos_RefCountPtr.hpp>
 #include <Teuchos_OrdinalTraits.hpp>
@@ -244,4 +244,4 @@ private:
 #include "Tpetra_Vector.hpp"
 #include "Tpetra_VectorSpaceData.hpp"
 
-#endif // _TPETRA_VECTORSPACE_HPP_
+#endif // TPETRA_VECTORSPACE_HPP

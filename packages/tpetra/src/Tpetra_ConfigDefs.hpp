@@ -26,8 +26,8 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef _TPETRA_CONFIGDEFS_HPP_
-#define _TPETRA_CONFIGDEFS_HPP_
+#ifndef TPETRA_CONFIGDEFS_HPP
+#define TPETRA_CONFIGDEFS_HPP
 
 #ifndef __cplusplus
 #define __cplusplus
@@ -150,4 +150,4 @@ using namespace std;
 
 const int Tpetra_DefaultTracebackMode = 1; // Default value for traceback behavior
 
-#endif // _TPETRA_CONFIGDEFS_HPP_
+#endif // TPETRA_CONFIGDEFS_HPP

@@ -26,8 +26,8 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef _TPETRA_SERIALDIRECTORY_HPP_
-#define _TPETRA_SERIALDIRECTORY_HPP_
+#ifndef TPETRA_SERIALDIRECTORY_HPP
+#define TPETRA_SERIALDIRECTORY_HPP
 
 #include "Tpetra_Directory.hpp"
 #include "Tpetra_Object.hpp"
@@ -134,4 +134,4 @@ void SerialDirectory<OrdinalType>::getDirectoryEntries(OrdinalType numEntries,
 
 } // namespace Tpetra
 
-#endif // _TPETRA_SERIALDIRECTORY_HPP_
+#endif // TPETRA_SERIALDIRECTORY_HPP

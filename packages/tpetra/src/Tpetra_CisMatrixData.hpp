@@ -26,8 +26,8 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef _TPETRA_CISMATRIXDATA_HPP_
-#define _TPETRA_CISMATRIXDATA_HPP_
+#ifndef TPETRA_CISMATRIXDATA_HPP
+#define TPETRA_CISMATRIXDATA_HPP
 
 namespace Tpetra {
 
@@ -125,4 +125,4 @@ class CisMatrixData : public Object {
 
 } // namespace Tpetra
 
-#endif // _TPETRA_CISMATRIXDATA_HPP_
+#endif // TPETRA_CISMATRIXDATA_HPP

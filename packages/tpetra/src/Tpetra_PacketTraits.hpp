@@ -26,8 +26,8 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef _TPETRA_PACKETTRAITS_HPP_
-#define _TPETRA_PACKETTRAITS_HPP_
+#ifndef TPETRA_PACKETTRAITS_HPP
+#define TPETRA_PACKETTRAITS_HPP
 
 #include "Tpetra_ConfigDefs.hpp"
 #include <mpi.h>
@@ -94,4 +94,4 @@ namespace Tpetra {
    
 } // namespace Tpetra
 
-#endif // _TPETRA_PACKETTRAITS_HPP_
+#endif // TPETRA_PACKETTRAITS_HPP

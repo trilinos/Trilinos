@@ -26,8 +26,8 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef _TPETRA_ELEMENTSPACE_HPP_
-#define _TPETRA_ELEMENTSPACE_HPP_
+#ifndef TPETRA_ELEMENTSPACE_HPP
+#define TPETRA_ELEMENTSPACE_HPP
 
 #include <Teuchos_RefCountPtr.hpp>
 #include <Teuchos_OrdinalTraits.hpp>
@@ -569,4 +569,4 @@ void ElementSpace<OrdinalType>::directorySetup() {
 
 } // Tpetra namespace
 
-#endif // _TPETRA_ELEMENTSPACE_HPP_
+#endif // TPETRA_ELEMENTSPACE_HPP

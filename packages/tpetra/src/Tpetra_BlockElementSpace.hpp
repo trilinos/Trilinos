@@ -26,8 +26,8 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef _TPETRA_BLOCKELEMENTSPACE_HPP_
-#define _TPETRA_BLOCKELEMENTSPACE_HPP_
+#ifndef TPETRA_BLOCKELEMENTSPACE_HPP
+#define TPETRA_BLOCKELEMENTSPACE_HPP
 
 #include <Teuchos_RefCountPtr.hpp>
 #include "Tpetra_Object.hpp"
@@ -454,4 +454,4 @@ namespace Tpetra {
 
 #include "Tpetra_BlockElementSpaceData.hpp" // this #include is intentionally down here
 
-#endif // _TPETRA_BLOCKELEMENTSPACE_HPP_
+#endif // TPETRA_BLOCKELEMENTSPACE_HPP

@@ -26,8 +26,8 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef _TPETRA_ELEMENTSPACEDATA_HPP_
-#define _TPETRA_ELEMENTSPACEDATA_HPP_
+#ifndef TPETRA_ELEMENTSPACEDATA_HPP
+#define TPETRA_ELEMENTSPACEDATA_HPP
 
 #include <Teuchos_OrdinalTraits.hpp>
 
@@ -127,4 +127,4 @@ class ElementSpaceData : public Object {
 
 } // namespace Tpetra
 
-#endif // _TPETRA_ELEMENTSPACEDATA_HPP_
+#endif // TPETRA_ELEMENTSPACEDATA_HPP

@@ -26,8 +26,8 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef _TPETRA_PLATFORM_HPP_
-#define _TPETRA_PLATFORM_HPP_
+#ifndef TPETRA_PLATFORM_HPP
+#define TPETRA_PLATFORM_HPP
 
 #include "Tpetra_ConfigDefs.hpp"
 #include "Tpetra_Comm.hpp"
@@ -81,4 +81,4 @@ public:
 	
 } // namespace Tpetra
 
-#endif // _TPETRA_PLATFORM_HPP_
+#endif // TPETRA_PLATFORM_HPP

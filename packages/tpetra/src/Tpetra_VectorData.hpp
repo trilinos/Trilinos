@@ -26,8 +26,8 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef _TPETRA_VECTORDATA_HPP_
-#define _TPETRA_VECTORDATA_HPP_
+#ifndef TPETRA_VECTORDATA_HPP
+#define TPETRA_VECTORDATA_HPP
 
 namespace Tpetra {
 
@@ -61,4 +61,4 @@ class VectorData : public Object {
 
 } // namespace Tpetra
 
-#endif // _TPETRA_VECTORDATA_HPP_
+#endif // TPETRA_VECTORDATA_HPP
