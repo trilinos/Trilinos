@@ -51,4 +51,7 @@ extern int LB_RB_check_geom_input(LB *, struct Dot_Struct *, int);
 extern int LB_RB_check_geom_output(LB *, struct Dot_Struct *, 
   int, int, void *);
 
+extern void LB_RB_stats(LB *, double, struct Dot_Struct *, int , double *, 
+  int *, int, int *, void *, int);
+
 #endif

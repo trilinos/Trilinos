@@ -38,8 +38,6 @@
 #define RIB_DEFAULT_OUTPUT_LEVEL 0
 #define RIB_DEFAULT_OVERALLOC 1.0
 
-static void RIB_stats(LB *, double, struct Dot_Struct *,int, double *,
-                   int *, int);
 
 static int rib_fn(LB *, int *, LB_ID_PTR *, LB_ID_PTR *, int **, double,
             int, int, int, int);
@@ -48,7 +46,7 @@ static int rib_fn(LB *, int *, LB_ID_PTR *, LB_ID_PTR *, int **, double,
 /*  LB_Set_RIB_Param and LB_RIB.                      */
 static PARAM_VARS RIB_params[] = {
                { "RIB_OVERALLOC", NULL, "DOUBLE" },
-               { "RIB_CHECK", NULL, "INT" },
+               { "CHECK_GEOM", NULL, "INT" },
                { "RIB_OUTPUT_LEVEL", NULL, "INT" },
                { "KEEP_CUTS", NULL, "INT" },
                { NULL, NULL, NULL } };
@@ -103,7 +101,7 @@ int LB_rib(
                               later for point and box drop. */
 
   LB_Bind_Param(RIB_params, "RIB_OVERALLOC", (void *) &overalloc);
-  LB_Bind_Param(RIB_params, "RIB_CHECK", (void *) &check_geom);
+  LB_Bind_Param(RIB_params, "CHECK_GEOM", (void *) &check_geom);
   LB_Bind_Param(RIB_params, "RIB_OUTPUT_LEVEL", (void *) &stats);
   LB_Bind_Param(RIB_params, "KEEP_CUTS", (void *) &gen_tree);
 
@@ -476,8 +474,8 @@ static int rib_fn(
   }
 
   if (stats || (lb->Debug_Level >= LB_DEBUG_ATIME))
-    RIB_stats(lb, timestop-timestart, dotpt, dotnum, timers, counters,
-              stats);
+    LB_RB_stats(lb, timestop-timestart, dotpt, dotnum, timers, counters,
+                stats, NULL, NULL, FALSE);
 
   /* update calling routine parameters */
 
@@ -538,165 +536,4 @@ static int rib_fn(
   LB_TRACE_EXIT(lb, yo);
   /* Temporary return value until error codes are fully implemented */
   return(LB_OK);
-}
-
-
-/* ----------------------------------------------------------------------- */
-/* RIB statistics */
-
-static void RIB_stats(LB *lb, double timetotal, struct Dot_Struct *dotpt,
-                   int dotnum, double *timers, int *counters, int stats)
-{
-  int i, proc, nprocs, sum, min, max, print_proc;
-  double ave, rsum, rmin, rmax;
-  double weight, wttot, wtmin, wtmax;
-
-  MPI_Comm_rank(lb->Communicator,&proc);
-  MPI_Comm_size(lb->Communicator,&nprocs);
-  print_proc = lb->Debug_Proc;
-
-  if (proc == print_proc) printf("RIB total time: %g (secs)\n",timetotal);
-
-  if (stats) {
-     if (proc == print_proc) printf("RIB Statistics:\n");
-
-     MPI_Barrier(lb->Communicator);
-
-     /* distribution info */
-
-     for (i = 0, weight = 0.0; i < dotnum; i++) weight += dotpt[i].Weight;
-     MPI_Allreduce(&weight,&wttot,1,MPI_DOUBLE,MPI_SUM,lb->Communicator);
-     MPI_Allreduce(&weight,&wtmin,1,MPI_DOUBLE,MPI_MIN,lb->Communicator);
-     MPI_Allreduce(&weight,&wtmax,1,MPI_DOUBLE,MPI_MAX,lb->Communicator);
-
-     if (proc == print_proc) {
-        printf(" Total weight of dots = %g\n",wttot);
-        printf(" Weight on each proc: ave = %g, max = %g, min = %g\n",
-               wttot/nprocs,wtmax,wtmin);
-     }
-
-     MPI_Barrier(lb->Communicator);
-     if (stats > 1) printf("    Proc %d has weight = %g\n",proc,weight);
-
-     for (i = 0, weight = 0.0; i < dotnum; i++)
-        if (dotpt[i].Weight > weight) weight = dotpt[i].Weight;
-     MPI_Allreduce(&weight,&wtmax,1,MPI_DOUBLE,MPI_MAX,lb->Communicator);
-
-     if (proc == print_proc)
-        printf(" Maximum weight of single dot = %g\n",wtmax);
-
-     MPI_Barrier(lb->Communicator);
-     if (stats > 1) printf("    Proc %d max weight = %g\n",proc,weight);
-
-     /* counter info */
-
-     MPI_Allreduce(&counters[0],&sum,1,MPI_INT,MPI_SUM,lb->Communicator);
-     MPI_Allreduce(&counters[0],&min,1,MPI_INT,MPI_MIN,lb->Communicator);
-     MPI_Allreduce(&counters[0],&max,1,MPI_INT,MPI_MAX,lb->Communicator);
-     ave = ((double) sum)/nprocs;
-     if (proc == print_proc)
-        printf(" Median iter: ave = %g, min = %d, max = %d\n",ave,min,max);
-     MPI_Barrier(lb->Communicator);
-     if (stats > 1)
-        printf("    Proc %d median count = %d\n",proc,counters[0]);
-
-     MPI_Allreduce(&counters[1],&sum,1,MPI_INT,MPI_SUM,lb->Communicator);
-     MPI_Allreduce(&counters[1],&min,1,MPI_INT,MPI_MIN,lb->Communicator);
-     MPI_Allreduce(&counters[1],&max,1,MPI_INT,MPI_MAX,lb->Communicator);
-     ave = ((double) sum)/nprocs;
-     if (proc == print_proc)
-        printf(" Send count: ave = %g, min = %d, max = %d\n",ave,min,max);
-     MPI_Barrier(lb->Communicator);
-     if (stats > 1)
-        printf("    Proc %d send count = %d\n",proc,counters[1]);
-
-     MPI_Allreduce(&counters[2],&sum,1,MPI_INT,MPI_SUM,lb->Communicator);
-     MPI_Allreduce(&counters[2],&min,1,MPI_INT,MPI_MIN,lb->Communicator);
-     MPI_Allreduce(&counters[2],&max,1,MPI_INT,MPI_MAX,lb->Communicator);
-     ave = ((double) sum)/nprocs;
-     if (proc == print_proc)
-        printf(" Recv count: ave = %g, min = %d, max = %d\n",ave,min,max);
-     MPI_Barrier(lb->Communicator);
-     if (stats > 1)
-        printf("    Proc %d recv count = %d\n",proc,counters[2]);
-
-     MPI_Allreduce(&counters[3],&sum,1,MPI_INT,MPI_SUM,lb->Communicator);
-     MPI_Allreduce(&counters[3],&min,1,MPI_INT,MPI_MIN,lb->Communicator);
-     MPI_Allreduce(&counters[3],&max,1,MPI_INT,MPI_MAX,lb->Communicator);
-     ave = ((double) sum)/nprocs;
-     if (proc == print_proc)
-        printf(" Max dots: ave = %g, min = %d, max = %d\n",ave,min,max);
-     MPI_Barrier(lb->Communicator);
-     if (stats > 1)
-        printf("    Proc %d max dots = %d\n",proc,counters[3]);
-
-     MPI_Allreduce(&counters[4],&sum,1,MPI_INT,MPI_SUM,lb->Communicator);
-     MPI_Allreduce(&counters[4],&min,1,MPI_INT,MPI_MIN,lb->Communicator);
-     MPI_Allreduce(&counters[4],&max,1,MPI_INT,MPI_MAX,lb->Communicator);
-     ave = ((double) sum)/nprocs;
-     if (proc == print_proc)
-        printf(" Max memory: ave = %g, min = %d, max = %d\n",ave,min,max);
-     MPI_Barrier(lb->Communicator);
-     if (stats > 1)
-        printf("    Proc %d max memory = %d\n",proc,counters[4]);
-
-     MPI_Allreduce(&counters[6],&sum,1,MPI_INT,MPI_SUM,lb->Communicator);
-     MPI_Allreduce(&counters[6],&min,1,MPI_INT,MPI_MIN,lb->Communicator);
-     MPI_Allreduce(&counters[6],&max,1,MPI_INT,MPI_MAX,lb->Communicator);
-     ave = ((double) sum)/nprocs;
-     if (proc == print_proc)
-        printf(" # of OverAlloc: ave = %g, min = %d, max = %d\n",
-               ave,min,max);
-     MPI_Barrier(lb->Communicator);
-     if (stats > 1)
-        printf("    Proc %d # of OverAlloc = %d\n",proc,counters[6]);
-  }
-
-  /* timer info */
-
-  MPI_Allreduce(&timers[0],&rsum,1,MPI_DOUBLE,MPI_SUM,lb->Communicator);
-  MPI_Allreduce(&timers[0],&rmin,1,MPI_DOUBLE,MPI_MIN,lb->Communicator);
-  MPI_Allreduce(&timers[0],&rmax,1,MPI_DOUBLE,MPI_MAX,lb->Communicator);
-  ave = rsum/nprocs;
-  if (proc == print_proc)
-     printf(" Start-up time %%: ave = %g, min = %g, max = %g\n",
-            ave/timetotal*100.0,rmin/timetotal*100.0,rmax/timetotal*100.0);
-  MPI_Barrier(lb->Communicator);
-  if (stats > 1)
-     printf("    Proc %d start-up time = %g\n",proc,timers[0]);
-
-  MPI_Allreduce(&timers[1],&rsum,1,MPI_DOUBLE,MPI_SUM,lb->Communicator);
-  MPI_Allreduce(&timers[1],&rmin,1,MPI_DOUBLE,MPI_MIN,lb->Communicator);
-  MPI_Allreduce(&timers[1],&rmax,1,MPI_DOUBLE,MPI_MAX,lb->Communicator);
-  ave = rsum/nprocs;
-  if (proc == print_proc)
-     printf(" Pre-median time %%: ave = %g, min = %g, max = %g\n",
-            ave/timetotal*100.0,rmin/timetotal*100.0,rmax/timetotal*100.0);
-  MPI_Barrier(lb->Communicator);
-  if (stats > 1)
-     printf("    Proc %d pre-median time = %g\n",proc,timers[1]);
-
-  MPI_Allreduce(&timers[2],&rsum,1,MPI_DOUBLE,MPI_SUM,lb->Communicator);
-  MPI_Allreduce(&timers[2],&rmin,1,MPI_DOUBLE,MPI_MIN,lb->Communicator);
-  MPI_Allreduce(&timers[2],&rmax,1,MPI_DOUBLE,MPI_MAX,lb->Communicator);
-  ave = rsum/nprocs;
-  if (proc == print_proc)
-     printf(" Median time %%: ave = %g, min = %g, max = %g\n",
-            ave/timetotal*100.0,rmin/timetotal*100.0,rmax/timetotal*100.0);
-  MPI_Barrier(lb->Communicator);
-  if (stats > 1)
-     printf("    Proc %d median time = %g\n",proc,timers[2]);
-
-  MPI_Allreduce(&timers[3],&rsum,1,MPI_DOUBLE,MPI_SUM,lb->Communicator);
-  MPI_Allreduce(&timers[3],&rmin,1,MPI_DOUBLE,MPI_MIN,lb->Communicator);
-  MPI_Allreduce(&timers[3],&rmax,1,MPI_DOUBLE,MPI_MAX,lb->Communicator);
-  ave = rsum/nprocs;
-  if (proc == print_proc)
-     printf(" Comm time %%: ave = %g, min = %g, max = %g\n",
-            ave/timetotal*100.0,rmin/timetotal*100.0,rmax/timetotal*100.0);
-  MPI_Barrier(lb->Communicator);
-  if (stats > 1)
-     printf("    Proc %d comm time = %g\n",proc,timers[3]);
-
-  MPI_Barrier(lb->Communicator);
 }
