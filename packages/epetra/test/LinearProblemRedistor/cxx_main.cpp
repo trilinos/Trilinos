@@ -58,7 +58,6 @@
 #include "Epetra_Time.h"
 #include "Epetra_LinearProblem.h"
 #include "Epetra_LinearProblemRedistor.h"
-#include "Epetra_RowMatrixTransposer.h"
 #include "Trilinos_Util.h"
 #ifdef HAVE_COMM_ASSERT_EQUAL
 #include "Comm_assert_equal.h"
