@@ -113,7 +113,7 @@ class Poisson2dOperator: public virtual Epetra_Operator {
   //@{ \name Atribute access functions
 
   //! Returns a character string describing the operator
-  char * Label() const{return(Label_);};
+  const char * Label() const{return(Label_);};
   
   //! Returns the current UseTranspose setting.
   bool UseTranspose() const {return(useTranspose_);};

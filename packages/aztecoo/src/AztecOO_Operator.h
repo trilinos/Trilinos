@@ -110,7 +110,7 @@ class AztecOO_Operator: public virtual Epetra_Operator {
   //@{ \name Atribute access functions
 
   //! Returns a character string describing the operator
-  char * Label() const {return(Label_);};
+  const char * Label() const {return(Label_);};
 
   //! Returns a pointer to the AztecOO solver object that was used to create this AztecOO_Operator object.
   AztecOO * Solver() const {return(solver_);};
