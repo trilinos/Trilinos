@@ -187,6 +187,9 @@ ml_vec.o : ../Obj/ml_vec.c ../Obj/ml_comm.h ../Obj/ml_defs.h \
         ../Obj/ml_memory.h ../Obj/ml_vec.h
 	$(CC) -c $(CFLAGS) ../Obj/ml_vec.c -o $@
 
+ml_recirc : ../Obj/ml_recirc
+	$(CC) -c $(CFLAGS) ../Obj/ml_recirc -o $@
+
 ml_read_elas.o : ../examples/ml_read_elas.c ../Obj/ml_agg_genP.h \
         ../Obj/ml_aggregate.h ../Obj/ml_aztec_utils.h ../Obj/ml_bicgstabl.h ../Obj/ml_cg.h ../Obj/ml_comm.h ../Obj/ml_defs.h ../Obj/ml_elementagx.h ../Obj/ml_gmres.h ../Obj/ml_grid.h ../Obj/ml_gridagx.h ../Obj/ml_gridfunc.h ../Obj/ml_include.h ../Obj/ml_intlist.h ../Obj/ml_krylov.h ../Obj/ml_operator.h ../Obj/ml_operatoragx.h ../Obj/ml_pde.h ../Obj/ml_solver.h ../Obj/ml_struct.h ../Obj/ml_vec.h ../Obj/mli_solver.h
 	$(CC) -c $(CFLAGS) ../examples/ml_read_elas.c -o $@
