@@ -382,18 +382,18 @@ copying and modifying the \verb!2d_Poisson.csh! script from
 \verb!ml/test/2d_Poisson!.
 You should only need to change the value of the executable name at the top
 of the script.
-\item Add {\tt new-test} to the script file \verb!Test_MLExamples! located in
-one or all of the following:
+\item Append {\tt new-test} to the variable {\tt TEST\_SUBDIRS} in the script
+ file \verb!Test_MLExamples! located in one or all of the following:
 \begin{verbatim}
 <ml-dir>/test/scripts/daily/mpi
 <ml-dir>/test/scripts/daily/serial
 <ml-dir>/test/scripts/weekly/mpi
 <ml-dir>/test/scripts/weekly/serial
 \end{verbatim}
-(Currently, \ML only has daily tests.) {\tt new-test} should be added to
-the {\tt foreach} block.
-\item Modify {\tt ml/configure.ac}, by adding {\tt new-test} to
-  the list contained in {\tt AC\_CONFIG\_FILES}.
+(Currently, \ML only has daily tests.)
+\item Modify {\tt ml/configure.ac} by adding {\tt new-test} to
+  the list contained in {\tt AC\_CONFIG\_FILES}.  (This is near the bottom
+  of {\tt configure.ac}.)
 \item Run {\tt bootstrap}.
 \end{enumerate}
 \end{enumerate}
@@ -1096,7 +1096,7 @@ The following variables can be used to track timing:
 \item \verb!ML_TIMING_DETAILED!.
 \end{itemize}
 
-\subsection{Check Memory Usage}
+\subsection{Checking Memory Usage}
 
 Probably, the easiest way to check the memory usage (under Linux) is to use
 \verb!valgrind!, like for instance
@@ -1114,7 +1114,7 @@ the user can insert a call to \verb!ML_print_it()!, to print out all the
 \ML allocagted memory that is still to be deleted. This check can be
 expensive for large runs.
 
-\subsection{Attach a Debugger to ML}
+\subsection{Attaching a Debugger to ML}
 
 To debug \ML on a serial computer (that is, using only one processor),
 one can simply type somthing like
