@@ -11,6 +11,7 @@
 
 #include <math.h>
 #include "ml_struct.h"
+#include "ml_aztec_utils.h"
 #include "ml_agg_genP.h"
 #include "ml_lapack.h"
 #ifdef ML_MPI

@@ -16,6 +16,7 @@
 #include <math.h>
 #ifdef ML_MPI
 #include "mpi.h"
+#include "ml_struct.h"
 #include "mli_solver.h"
 
 extern int MLI_Solver_Construct_CSRMatrix(int, int*, int*, double*, 

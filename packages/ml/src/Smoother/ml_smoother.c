@@ -43,6 +43,7 @@
 /* ************************************************************************* */
 
 #include "ml_smoother.h"
+#include "ml_aztec_utils.h"
 #include "ml_lapack.h"
 
 #ifdef SUPERLU
