@@ -16,7 +16,6 @@ TestAmesos_DEPENDENCIES = \
 	$(top_builddir)/../triutils/src/libtriutils.a \
 	$(top_builddir)/../epetra/src/libepetra.a \
 	$(top_builddir)/src/libamesos.a \
-	$(top_builddir)/amd/src/libamd.a \
 	$(top_builddir)/../teuchos/src/libteuchos.a \
 	$(top_builddir)/../triutils/src/libtriutils.a 
 

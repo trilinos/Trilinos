@@ -319,8 +319,9 @@ TAC_ARG_ENABLE_FEATURE_SUB( amesos, umfpack, [Enable Amesos interface support fo
 TAC_ARG_ENABLE_FEATURE_SUB( amesos, superlu, [Enable Amesos interface support for SUPERLU], 
 		AMESOS_SUPERLU, no)
 
+# always enable klu
 TAC_ARG_ENABLE_FEATURE_SUB( amesos, klu, [Enable Amesos interface support for KLU], 
-		AMESOS_KLU, yes)
+ 		AMESOS_KLU, yes)
 
 TAC_ARG_ENABLE_FEATURE_SUB( amesos, mumps, [Enable Amesos interface support for MUMPS], 
 		AMESOS_MUMPS, no)
@@ -355,8 +356,10 @@ AM_CONDITIONAL(NEED_PARAMETER_LIST, false )
 #
 #
 #
-      CXXFLAGS="  ${CXXFLAGS} -I\${top_srcdir}/amd/src/ -I\${top_srcdir}/src/klu"
-      CFLAGS="  ${CFLAGS} -I\${top_srcdir}/amd/src/"
+
+# removed:
+#      CXXFLAGS="  ${CXXFLAGS} -I\${top_srcdir}/amd/src/ -I\${top_srcdir}/src/klu"
+#      CFLAGS="  ${CFLAGS} -I\${top_srcdir}/amd/src/"
 
 
 #
@@ -546,7 +549,7 @@ fi
 
 #
 #  --enable-amesos-umfpack, --with-amesos-umfpackdir, --with-amesos-umfpacklib, 
-#    --with-amesos-umfpackamdlib, 
+# ignored:   --with-amesos-umfpackamdlib, 
 #    --with-amesos-umfpackincdir
 #
 #
@@ -602,47 +605,47 @@ if test "X$ac_cv_use_amesos_umfpack" != "Xno"; then
   AC_MSG_ERROR([[Cannot find the UMFPACK library, specify a location using --with-amesos-umfpacklib, (ex. --with-amesos-umfpacklib=/home/username/Trilinos3PL/UMFPACKv4.1/libumfpack.a).  See http://software.sandia.gov/trilinos/packages/amesos/ for details.]]))  
 
 
-
-#
-#       1)  First try to compile without specifying the library.  This allows
-#           the user to specify the needed third party library at compile time.
-#
-  SAVE_LIBS="${LIBS}"
-  AC_TRY_LINK_FUNC(amd_defaults,amd_lib_ok="yes",amd_lib_ok="no")
-     
-  AC_MSG_RESULT( checkpoint amd  A ) 
-  AC_MSG_RESULT( checkpoint amd  A ) 
-  if test "X$amd_lib_ok" != "Xyes"; then
-#
-#       2)  Next try to compile with -lamd.  This allows the user to specify 
-#           the directory while using the default name for the library
-     LIBS=" -lamd ${LIBS}"
-
-     AC_MSG_RESULT( checkpoint amd  B ) 
-     AC_MSG_RESULT( checkpoint amd  B ) 
-     AC_TRY_LINK_FUNC(amd_defaults,amd_with_lib="yes",amd_with_lib="no")
-
-     if test "X$amd_with_lib" == "Xyes"; then
-       AC_MSG_RESULT( checkpoint amd  C ) 
-       AC_MSG_RESULT( checkpoint amd  C ) 
-       amesos_libs="${amesos_libs} -lamd"
-     else
-#       3)  Then try the existing Triliinos3PL scheme. 
-#
-       AC_MSG_RESULT( checkpoint amd D ) 
-       AC_MSG_RESULT( checkpoint amd D ) 
-       TAC_ARG_WITH_SUB( amesos, umfpackamdlib, [Set AMD library],  
-                         ${tac_with_amesos_umfpackdir}/AMD/Lib/libamd.a )
-       TAC_CHECK_FILE(${tac_with_amesos_umfpackamdlib})
-       LIBS="${tac_with_amesos_umfpackamdlib} ${BLAS_LIBS} ${MPI_LIBS} ${FLIBS} ${SAVE_LIBS}"
-       amesos_libs="${amesos_libs} ${tac_with_amesos_umfpackamdlib}"
-     fi
-  fi
-
-  AC_TRY_LINK_FUNC(amd_defaults,,
-  AC_MSG_ERROR([[Cannot find UMFPACK's AMD library, specify a location using --with-amesos-umfpackamdlib, (ex. --with-amesos-umfpackamdlib=/home/username/Trilinos3PL/AMD/Lib/libamd.a).  See http://software.sandia.gov/trilinos/packages/amesos/ for details.]]))  
-
-  LIBS="${SAVE_LIBS}"
+#    ignored:
+# #
+# #       1)  First try to compile without specifying the library.  This allows
+# #           the user to specify the needed third party library at compile time.
+# #
+#   SAVE_LIBS="${LIBS}"
+#   AC_TRY_LINK_FUNC(amd_defaults,amd_lib_ok="yes",amd_lib_ok="no")
+#      
+#   AC_MSG_RESULT( checkpoint amd  A ) 
+#   AC_MSG_RESULT( checkpoint amd  A ) 
+#   if test "X$amd_lib_ok" != "Xyes"; then
+# #
+# #       2)  Next try to compile with -lamd.  This allows the user to specify 
+# #           the directory while using the default name for the library
+#      LIBS=" -lamd ${LIBS}"
+# 
+#      AC_MSG_RESULT( checkpoint amd  B ) 
+#      AC_MSG_RESULT( checkpoint amd  B ) 
+#      AC_TRY_LINK_FUNC(amd_defaults,amd_with_lib="yes",amd_with_lib="no")
+# 
+#      if test "X$amd_with_lib" == "Xyes"; then
+#        AC_MSG_RESULT( checkpoint amd  C ) 
+#        AC_MSG_RESULT( checkpoint amd  C ) 
+#        amesos_libs="${amesos_libs} -lamd"
+#      else
+# #       3)  Then try the existing Triliinos3PL scheme. 
+# #
+#        AC_MSG_RESULT( checkpoint amd D ) 
+#        AC_MSG_RESULT( checkpoint amd D ) 
+#        TAC_ARG_WITH_SUB( amesos, umfpackamdlib, [Set AMD library],  
+#                          ${tac_with_amesos_umfpackdir}/AMD/Lib/libamd.a )
+#        TAC_CHECK_FILE(${tac_with_amesos_umfpackamdlib})
+#        LIBS="${tac_with_amesos_umfpackamdlib} ${BLAS_LIBS} ${MPI_LIBS} ${FLIBS} ${SAVE_LIBS}"
+#        amesos_libs="${amesos_libs} ${tac_with_amesos_umfpackamdlib}"
+#      fi
+#   fi
+# 
+#   AC_TRY_LINK_FUNC(amd_defaults,,
+#   AC_MSG_ERROR([[Cannot find UMFPACK's AMD library, specify a location using --with-amesos-umfpackamdlib, (ex. --with-amesos-umfpackamdlib=/home/username/Trilinos3PL/AMD/Lib/libamd.a).  See http://software.sandia.gov/trilinos/packages/amesos/ for details.]]))  
+# 
+#   LIBS="${SAVE_LIBS}"
 
 #
 #  First try to find umfpack.h without using the UMFPACK incude directory
@@ -664,27 +667,29 @@ if test "X$ac_cv_use_amesos_umfpack" != "Xno"; then
   fi
 
 
-#
-#  First try to find amd.h without using the UMFPACK AMD incude directory
-#
-  AC_CHECK_HEADERS([amd.h],,,)
+# #
+# #  First try to find amd.h without using the UMFPACK AMD incude directory
+# #
+#   AC_CHECK_HEADERS([amd.h],,,)
+# 
+#   if test "X$ac_cv_header_amd_h" != "Xyes"; then
+# #
+# #   if we can't find amd.h in the include search path, look for it in umfpackamdincdir
+# #   which defaults to Trilinos3PL/UMFPACKv4.1/AMD/Include
+# #
+#     TAC_ARG_WITH_SUB( amesos, umfpackamdincdir, [Set UMFPACK include directory],  ${tac_with_amesos_umfpackdir}/AMD/Include )
+# 
+#     TAC_CHECK_FILE(${tac_with_amesos_umfpackamdincdir}/amd.h,,
+#       AC_MSG_ERROR([[Cannot find amd.h in ${tac_with_amesos_umfpackamdincdir} , specify a location using --with-amesos-umfpackamdincdir, --with-amesos-umfpackdir or --with-trilinos3pldir.  See http://software.sandia.gov/trilinos/packages/amesos/ for details.]]) )
+# 
+#     CXXFLAGS="-I${tac_with_amesos_umfpackamdincdir} ${CXXFLAGS}"
+#   fi
 
-  if test "X$ac_cv_header_amd_h" != "Xyes"; then
-#
-#   if we can't find amd.h in the include search path, look for it in umfpackamdincdir
-#   which defaults to Trilinos3PL/UMFPACKv4.1/AMD/Include
-#
-    TAC_ARG_WITH_SUB( amesos, umfpackamdincdir, [Set UMFPACK include directory],  ${tac_with_amesos_umfpackdir}/AMD/Include )
-
-    TAC_CHECK_FILE(${tac_with_amesos_umfpackamdincdir}/amd.h,,
-      AC_MSG_ERROR([[Cannot find amd.h in ${tac_with_amesos_umfpackamdincdir} , specify a location using --with-amesos-umfpackamdincdir, --with-amesos-umfpackdir or --with-trilinos3pldir.  See http://software.sandia.gov/trilinos/packages/amesos/ for details.]]) )
-
-    CXXFLAGS="-I${tac_with_amesos_umfpackamdincdir} ${CXXFLAGS}"
-  fi
 
   AM_CONDITIONAL(HAVE_AMESOS_UMFPACK, true ) 
   AM_CONDITIONAL(NEED_PARAMETER_LIST, true ) 
-  amesos_libs="${amesos_libs} ${tac_with_amesos_umfpacklib} ${tac_with_amesos_umfpackamdlib}"
+#  amesos_libs="${amesos_libs} ${tac_with_amesos_umfpacklib} ${tac_with_amesos_umfpackamdlib}"
+  amesos_libs="${amesos_libs} ${tac_with_amesos_umfpacklib}"
 else
   AM_CONDITIONAL(HAVE_AMESOS_UMFPACK, false ) 
 fi
@@ -701,13 +706,13 @@ fi
 #
 #  --enable-amesos-klu
 #
-if test "X$ac_cv_use_amesos_klu" != "Xno"; then
+# if test "X$ac_cv_use_amesos_klu" != "Xno" & ; then
   AM_CONDITIONAL(HAVE_AMESOS_KLU, true ) 
   AM_CONDITIONAL(NEED_PARAMETER_LIST, true ) 
-  amesos_libs="${amesos_libs} \${top_builddir}/amd/src/libamd.a"
-else
-  AM_CONDITIONAL(HAVE_AMESOS_KLU, false ) 
-fi
+#  amesos_libs="${amesos_libs} \${top_builddir}/amd/src/libamd.a"
+# else
+#   AM_CONDITIONAL(HAVE_AMESOS_KLU, false ) 
+# fi
 
 
 
@@ -1106,9 +1111,6 @@ AC_SUBST(ac_aux_dir)
 #
 AC_CONFIG_FILES([
 		Makefile 
-		amd/Makefile
-		amd/src/Makefile
-		amd/example/Makefile
 		src/Makefile
 		test/Makefile
 		example/Makefile

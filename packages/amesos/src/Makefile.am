@@ -131,25 +131,40 @@ if HAVE_AMESOS_KLU
 # 	$(srcdir)/klu/klu_kernel.h
 KLU_H = \
 	$(srcdir)/Amesos_Klu.h 
+
 KLU = \
-	$(srcdir)/klu/btf.f \
-	$(srcdir)/klu/mc21a.f \
-	$(srcdir)/klu/mc21b.f \
-	$(srcdir)/klu/mc13e.f \
-	$(srcdir)/klu/mc13d.f \
-	$(srcdir)/klu/klu_btf_factor.c \
-	$(srcdir)/klu/klu_btf_free_symbolic.c \
-	$(srcdir)/klu/klu_btf_free_numeric.c \
-	$(srcdir)/klu/klu_btf_refactor.c \
-	$(srcdir)/klu/klu_btf_scale.c \
-	$(srcdir)/klu/klu_btf_solve.c \
-	$(srcdir)/klu/klu_btf_analyze.c \
-	$(srcdir)/klu/klu_dump.c \
-	$(srcdir)/klu/cbtf.c \
 	$(srcdir)/Amesos_Klu.cpp \
-	$(srcdir)/klu/klu.c \
-	$(srcdir)/klu/klu_kernel.c \
-	$(srcdir)/klu/klu_noprune_kernel.c
+	$(srcdir)/AMD/Source/amd_1.c \
+	$(srcdir)/AMD/Source/amd_2.c \
+	$(srcdir)/AMD/Source/amd_aat.c \
+	$(srcdir)/AMD/Source/amd_control.c \
+	$(srcdir)/AMD/Source/amd_defaults.c \
+	$(srcdir)/AMD/Source/amd_dump.c \
+	$(srcdir)/AMD/Source/amd_info.c \
+	$(srcdir)/AMD/Source/amd_order.c \
+	$(srcdir)/AMD/Source/amd_postorder.c \
+	$(srcdir)/AMD/Source/amd_post_tree.c \
+	$(srcdir)/AMD/Source/amd_preprocess.c \
+	$(srcdir)/AMD/Source/amd_valid.c \
+	$(srcdir)/btf/btf.f \
+	$(srcdir)/btf/cbtf.c \
+	$(srcdir)/btf/mc13d.f \
+	$(srcdir)/btf/mc13e.f \
+	$(srcdir)/btf/mc21a.f \
+	$(srcdir)/btf/mc21b.f \
+	$(srcdir)/colamd/colamd.c \
+	$(srcdir)/klu_btf/klu_btf_analyze.c \
+	$(srcdir)/klu_btf/klu_btf_defaults.c \
+	$(srcdir)/klu_btf/klu_btf_factor.c \
+	$(srcdir)/klu_btf/klu_btf_free_numeric.c \
+	$(srcdir)/klu_btf/klu_btf_free_symbolic.c \
+	$(srcdir)/klu_btf/klu_btf_refactor.c \
+	$(srcdir)/klu_btf/klu_btf_scale.c \
+	$(srcdir)/klu_btf/klu_btf_solve.c \
+	$(srcdir)/klu_btf/klu_dump.c \
+	$(srcdir)/klu_kernel/klu.c \
+	$(srcdir)/klu_kernel/klu_kernel.c
+
 else
 KLU_H =
 KLU =
@@ -227,7 +242,13 @@ else
 KUNDERT_CPPFLAGS = 
 endif
 
-AM_CPPFLAGS = -I$(top_srcdir)/../epetra/src  -I$(top_srcdir)/../amd/src \
+AM_CPPFLAGS = -I$(top_srcdir)/../epetra/src \
+	-I$(top_srcdir)/src/AMD/Include \
+	-I$(top_srcdir)/src/AMD/Source \
+	-I$(top_srcdir)/src/colamd \
+	-I$(top_srcdir)/src/btf \
+	-I$(top_srcdir)/src/klu_btf \
+	-I$(top_srcdir)/src/klu_kernel \
 		-I$(top_srcdir)/../teuchos/src  -I$(top_builddir)/../teuchos/src \
 		-I$(top_builddir)/../epetra/src \
 	      $(SLUSERIAL_CPPFLAGS) $(KUNDERT_CPPFLAGS)

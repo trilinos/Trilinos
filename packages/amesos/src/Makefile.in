@@ -113,17 +113,30 @@ LIBRARIES = $(lib_LIBRARIES)
 am__DEPENDENCIES_1 =
 libamesos_a_DEPENDENCIES = $(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
 am__libamesos_a_SOURCES_DIST = $(srcdir)/DscpackOO.cpp \
-	$(srcdir)/Amesos_Dscpack.cpp $(srcdir)/klu/btf.f \
-	$(srcdir)/klu/mc21a.f $(srcdir)/klu/mc21b.f \
-	$(srcdir)/klu/mc13e.f $(srcdir)/klu/mc13d.f \
-	$(srcdir)/klu/klu_btf_factor.c \
-	$(srcdir)/klu/klu_btf_free_symbolic.c \
-	$(srcdir)/klu/klu_btf_free_numeric.c \
-	$(srcdir)/klu/klu_btf_refactor.c $(srcdir)/klu/klu_btf_scale.c \
-	$(srcdir)/klu/klu_btf_solve.c $(srcdir)/klu/klu_btf_analyze.c \
-	$(srcdir)/klu/klu_dump.c $(srcdir)/klu/cbtf.c \
-	$(srcdir)/Amesos_Klu.cpp $(srcdir)/klu/klu.c \
-	$(srcdir)/klu/klu_kernel.c $(srcdir)/klu/klu_noprune_kernel.c \
+	$(srcdir)/Amesos_Dscpack.cpp $(srcdir)/Amesos_Klu.cpp \
+	$(srcdir)/AMD/Source/amd_1.c $(srcdir)/AMD/Source/amd_2.c \
+	$(srcdir)/AMD/Source/amd_aat.c \
+	$(srcdir)/AMD/Source/amd_control.c \
+	$(srcdir)/AMD/Source/amd_defaults.c \
+	$(srcdir)/AMD/Source/amd_dump.c \
+	$(srcdir)/AMD/Source/amd_info.c \
+	$(srcdir)/AMD/Source/amd_order.c \
+	$(srcdir)/AMD/Source/amd_postorder.c \
+	$(srcdir)/AMD/Source/amd_post_tree.c \
+	$(srcdir)/AMD/Source/amd_preprocess.c \
+	$(srcdir)/AMD/Source/amd_valid.c $(srcdir)/btf/btf.f \
+	$(srcdir)/btf/cbtf.c $(srcdir)/btf/mc13d.f \
+	$(srcdir)/btf/mc13e.f $(srcdir)/btf/mc21a.f \
+	$(srcdir)/btf/mc21b.f $(srcdir)/colamd/colamd.c \
+	$(srcdir)/klu_btf/klu_btf_analyze.c \
+	$(srcdir)/klu_btf/klu_btf_defaults.c \
+	$(srcdir)/klu_btf/klu_btf_factor.c \
+	$(srcdir)/klu_btf/klu_btf_free_numeric.c \
+	$(srcdir)/klu_btf/klu_btf_free_symbolic.c \
+	$(srcdir)/klu_btf/klu_btf_refactor.c \
+	$(srcdir)/klu_btf/klu_btf_scale.c \
+	$(srcdir)/klu_btf/klu_btf_solve.c $(srcdir)/klu_btf/klu_dump.c \
+	$(srcdir)/klu_kernel/klu.c $(srcdir)/klu_kernel/klu_kernel.c \
 	$(srcdir)/Amesos_Umfpack.cpp $(srcdir)/Amesos_Scalapack.cpp \
 	$(srcdir)/Amesos_Mumps.cpp \
 	$(srcdir)/Amesos_EpetraBaseSolver.cpp \
@@ -139,19 +152,29 @@ am__libamesos_a_SOURCES_DIST = $(srcdir)/DscpackOO.cpp \
 am__objects_1 =
 @HAVE_AMESOS_DSCPACK_TRUE@am__objects_2 = DscpackOO.$(OBJEXT) \
 @HAVE_AMESOS_DSCPACK_TRUE@	Amesos_Dscpack.$(OBJEXT)
-@HAVE_AMESOS_KLU_TRUE@am__objects_3 = btf.$(OBJEXT) mc21a.$(OBJEXT) \
-@HAVE_AMESOS_KLU_TRUE@	mc21b.$(OBJEXT) mc13e.$(OBJEXT) \
-@HAVE_AMESOS_KLU_TRUE@	mc13d.$(OBJEXT) klu_btf_factor.$(OBJEXT) \
-@HAVE_AMESOS_KLU_TRUE@	klu_btf_free_symbolic.$(OBJEXT) \
+@HAVE_AMESOS_KLU_TRUE@am__objects_3 = Amesos_Klu.$(OBJEXT) \
+@HAVE_AMESOS_KLU_TRUE@	amd_1.$(OBJEXT) amd_2.$(OBJEXT) \
+@HAVE_AMESOS_KLU_TRUE@	amd_aat.$(OBJEXT) amd_control.$(OBJEXT) \
+@HAVE_AMESOS_KLU_TRUE@	amd_defaults.$(OBJEXT) \
+@HAVE_AMESOS_KLU_TRUE@	amd_dump.$(OBJEXT) amd_info.$(OBJEXT) \
+@HAVE_AMESOS_KLU_TRUE@	amd_order.$(OBJEXT) \
+@HAVE_AMESOS_KLU_TRUE@	amd_postorder.$(OBJEXT) \
+@HAVE_AMESOS_KLU_TRUE@	amd_post_tree.$(OBJEXT) \
+@HAVE_AMESOS_KLU_TRUE@	amd_preprocess.$(OBJEXT) \
+@HAVE_AMESOS_KLU_TRUE@	amd_valid.$(OBJEXT) btf.$(OBJEXT) \
+@HAVE_AMESOS_KLU_TRUE@	cbtf.$(OBJEXT) mc13d.$(OBJEXT) \
+@HAVE_AMESOS_KLU_TRUE@	mc13e.$(OBJEXT) mc21a.$(OBJEXT) \
+@HAVE_AMESOS_KLU_TRUE@	mc21b.$(OBJEXT) colamd.$(OBJEXT) \
+@HAVE_AMESOS_KLU_TRUE@	klu_btf_analyze.$(OBJEXT) \
+@HAVE_AMESOS_KLU_TRUE@	klu_btf_defaults.$(OBJEXT) \
+@HAVE_AMESOS_KLU_TRUE@	klu_btf_factor.$(OBJEXT) \
 @HAVE_AMESOS_KLU_TRUE@	klu_btf_free_numeric.$(OBJEXT) \
+@HAVE_AMESOS_KLU_TRUE@	klu_btf_free_symbolic.$(OBJEXT) \
 @HAVE_AMESOS_KLU_TRUE@	klu_btf_refactor.$(OBJEXT) \
 @HAVE_AMESOS_KLU_TRUE@	klu_btf_scale.$(OBJEXT) \
 @HAVE_AMESOS_KLU_TRUE@	klu_btf_solve.$(OBJEXT) \
-@HAVE_AMESOS_KLU_TRUE@	klu_btf_analyze.$(OBJEXT) \
-@HAVE_AMESOS_KLU_TRUE@	klu_dump.$(OBJEXT) cbtf.$(OBJEXT) \
-@HAVE_AMESOS_KLU_TRUE@	Amesos_Klu.$(OBJEXT) klu.$(OBJEXT) \
-@HAVE_AMESOS_KLU_TRUE@	klu_kernel.$(OBJEXT) \
-@HAVE_AMESOS_KLU_TRUE@	klu_noprune_kernel.$(OBJEXT)
+@HAVE_AMESOS_KLU_TRUE@	klu_dump.$(OBJEXT) klu.$(OBJEXT) \
+@HAVE_AMESOS_KLU_TRUE@	klu_kernel.$(OBJEXT)
 @HAVE_AMESOS_UMFPACK_TRUE@am__objects_4 = Amesos_Umfpack.$(OBJEXT)
 @HAVE_AMESOS_SCALAPACK_TRUE@am__objects_5 =  \
 @HAVE_AMESOS_SCALAPACK_TRUE@	Amesos_Scalapack.$(OBJEXT)
@@ -192,9 +215,19 @@ am__depfiles_maybe = depfiles
 @AMDEP_TRUE@	./$(DEPDIR)/DscpackOO.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/EpetraExt_Redistor.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/Epetra_CrsKundertSparse.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/alloc.Po ./$(DEPDIR)/cbtf.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/driver.Po ./$(DEPDIR)/klu.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/klu_btf_analyze.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/alloc.Po ./$(DEPDIR)/amd_1.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/amd_2.Po ./$(DEPDIR)/amd_aat.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/amd_control.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/amd_defaults.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/amd_dump.Po ./$(DEPDIR)/amd_info.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/amd_order.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/amd_post_tree.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/amd_postorder.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/amd_preprocess.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/amd_valid.Po ./$(DEPDIR)/cbtf.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/colamd.Po ./$(DEPDIR)/driver.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/klu.Po ./$(DEPDIR)/klu_btf_analyze.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/klu_btf_defaults.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/klu_btf_factor.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/klu_btf_free_numeric.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/klu_btf_free_symbolic.Po \
@@ -202,7 +235,6 @@ am__depfiles_maybe = depfiles
 @AMDEP_TRUE@	./$(DEPDIR)/klu_btf_scale.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/klu_btf_solve.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/klu_dump.Po ./$(DEPDIR)/klu_kernel.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/klu_noprune_kernel.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/smplinkrows.Po ./$(DEPDIR)/spalloc.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/spbuild.Po ./$(DEPDIR)/spfactor.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/spoutput.Po ./$(DEPDIR)/spsmp.Po \
@@ -459,24 +491,37 @@ target_vendor = @target_vendor@
 
 @HAVE_AMESOS_KLU_FALSE@KLU = 
 @HAVE_AMESOS_KLU_TRUE@KLU = \
-@HAVE_AMESOS_KLU_TRUE@	$(srcdir)/klu/btf.f \
-@HAVE_AMESOS_KLU_TRUE@	$(srcdir)/klu/mc21a.f \
-@HAVE_AMESOS_KLU_TRUE@	$(srcdir)/klu/mc21b.f \
-@HAVE_AMESOS_KLU_TRUE@	$(srcdir)/klu/mc13e.f \
-@HAVE_AMESOS_KLU_TRUE@	$(srcdir)/klu/mc13d.f \
-@HAVE_AMESOS_KLU_TRUE@	$(srcdir)/klu/klu_btf_factor.c \
-@HAVE_AMESOS_KLU_TRUE@	$(srcdir)/klu/klu_btf_free_symbolic.c \
-@HAVE_AMESOS_KLU_TRUE@	$(srcdir)/klu/klu_btf_free_numeric.c \
-@HAVE_AMESOS_KLU_TRUE@	$(srcdir)/klu/klu_btf_refactor.c \
-@HAVE_AMESOS_KLU_TRUE@	$(srcdir)/klu/klu_btf_scale.c \
-@HAVE_AMESOS_KLU_TRUE@	$(srcdir)/klu/klu_btf_solve.c \
-@HAVE_AMESOS_KLU_TRUE@	$(srcdir)/klu/klu_btf_analyze.c \
-@HAVE_AMESOS_KLU_TRUE@	$(srcdir)/klu/klu_dump.c \
-@HAVE_AMESOS_KLU_TRUE@	$(srcdir)/klu/cbtf.c \
 @HAVE_AMESOS_KLU_TRUE@	$(srcdir)/Amesos_Klu.cpp \
-@HAVE_AMESOS_KLU_TRUE@	$(srcdir)/klu/klu.c \
-@HAVE_AMESOS_KLU_TRUE@	$(srcdir)/klu/klu_kernel.c \
-@HAVE_AMESOS_KLU_TRUE@	$(srcdir)/klu/klu_noprune_kernel.c
+@HAVE_AMESOS_KLU_TRUE@	$(srcdir)/AMD/Source/amd_1.c \
+@HAVE_AMESOS_KLU_TRUE@	$(srcdir)/AMD/Source/amd_2.c \
+@HAVE_AMESOS_KLU_TRUE@	$(srcdir)/AMD/Source/amd_aat.c \
+@HAVE_AMESOS_KLU_TRUE@	$(srcdir)/AMD/Source/amd_control.c \
+@HAVE_AMESOS_KLU_TRUE@	$(srcdir)/AMD/Source/amd_defaults.c \
+@HAVE_AMESOS_KLU_TRUE@	$(srcdir)/AMD/Source/amd_dump.c \
+@HAVE_AMESOS_KLU_TRUE@	$(srcdir)/AMD/Source/amd_info.c \
+@HAVE_AMESOS_KLU_TRUE@	$(srcdir)/AMD/Source/amd_order.c \
+@HAVE_AMESOS_KLU_TRUE@	$(srcdir)/AMD/Source/amd_postorder.c \
+@HAVE_AMESOS_KLU_TRUE@	$(srcdir)/AMD/Source/amd_post_tree.c \
+@HAVE_AMESOS_KLU_TRUE@	$(srcdir)/AMD/Source/amd_preprocess.c \
+@HAVE_AMESOS_KLU_TRUE@	$(srcdir)/AMD/Source/amd_valid.c \
+@HAVE_AMESOS_KLU_TRUE@	$(srcdir)/btf/btf.f \
+@HAVE_AMESOS_KLU_TRUE@	$(srcdir)/btf/cbtf.c \
+@HAVE_AMESOS_KLU_TRUE@	$(srcdir)/btf/mc13d.f \
+@HAVE_AMESOS_KLU_TRUE@	$(srcdir)/btf/mc13e.f \
+@HAVE_AMESOS_KLU_TRUE@	$(srcdir)/btf/mc21a.f \
+@HAVE_AMESOS_KLU_TRUE@	$(srcdir)/btf/mc21b.f \
+@HAVE_AMESOS_KLU_TRUE@	$(srcdir)/colamd/colamd.c \
+@HAVE_AMESOS_KLU_TRUE@	$(srcdir)/klu_btf/klu_btf_analyze.c \
+@HAVE_AMESOS_KLU_TRUE@	$(srcdir)/klu_btf/klu_btf_defaults.c \
+@HAVE_AMESOS_KLU_TRUE@	$(srcdir)/klu_btf/klu_btf_factor.c \
+@HAVE_AMESOS_KLU_TRUE@	$(srcdir)/klu_btf/klu_btf_free_numeric.c \
+@HAVE_AMESOS_KLU_TRUE@	$(srcdir)/klu_btf/klu_btf_free_symbolic.c \
+@HAVE_AMESOS_KLU_TRUE@	$(srcdir)/klu_btf/klu_btf_refactor.c \
+@HAVE_AMESOS_KLU_TRUE@	$(srcdir)/klu_btf/klu_btf_scale.c \
+@HAVE_AMESOS_KLU_TRUE@	$(srcdir)/klu_btf/klu_btf_solve.c \
+@HAVE_AMESOS_KLU_TRUE@	$(srcdir)/klu_btf/klu_dump.c \
+@HAVE_AMESOS_KLU_TRUE@	$(srcdir)/klu_kernel/klu.c \
+@HAVE_AMESOS_KLU_TRUE@	$(srcdir)/klu_kernel/klu_kernel.c
 
 @HAVE_AMESOS_MUMPS_FALSE@MUMPS_H = 
 @HAVE_AMESOS_MUMPS_TRUE@MUMPS_H = \
@@ -542,7 +587,13 @@ FACTORY = \
 # SLUSERIAL_CPPFLAGS = 
 # endif
 @HAVE_AMESOS_KUNDERT_TRUE@KUNDERT_CPPFLAGS = -I$(top_srcdir)/src/ksparse
-AM_CPPFLAGS = -I$(top_srcdir)/../epetra/src  -I$(top_srcdir)/../amd/src \
+AM_CPPFLAGS = -I$(top_srcdir)/../epetra/src \
+	-I$(top_srcdir)/src/AMD/Include \
+	-I$(top_srcdir)/src/AMD/Source \
+	-I$(top_srcdir)/src/colamd \
+	-I$(top_srcdir)/src/btf \
+	-I$(top_srcdir)/src/klu_btf \
+	-I$(top_srcdir)/src/klu_kernel \
 		-I$(top_srcdir)/../teuchos/src  -I$(top_builddir)/../teuchos/src \
 		-I$(top_builddir)/../epetra/src \
 	      $(SLUSERIAL_CPPFLAGS) $(KUNDERT_CPPFLAGS)
@@ -734,10 +785,24 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/EpetraExt_Redistor.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Epetra_CrsKundertSparse.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/alloc.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/amd_1.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/amd_2.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/amd_aat.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/amd_control.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/amd_defaults.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/amd_dump.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/amd_info.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/amd_order.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/amd_post_tree.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/amd_postorder.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/amd_preprocess.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/amd_valid.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cbtf.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/colamd.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/driver.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/klu.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/klu_btf_analyze.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/klu_btf_defaults.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/klu_btf_factor.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/klu_btf_free_numeric.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/klu_btf_free_symbolic.Po@am__quote@
@@ -746,7 +811,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/klu_btf_solve.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/klu_dump.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/klu_kernel.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/klu_noprune_kernel.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/smplinkrows.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/spalloc.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/spbuild.Po@am__quote@
@@ -772,197 +836,405 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(COMPILE) -c `$(CYGPATH_W) '$<'`
 
-klu_btf_factor.o: $(srcdir)/klu/klu_btf_factor.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT klu_btf_factor.o -MD -MP -MF "$(DEPDIR)/klu_btf_factor.Tpo" -c -o klu_btf_factor.o `test -f '$(srcdir)/klu/klu_btf_factor.c' || echo '$(srcdir)/'`$(srcdir)/klu/klu_btf_factor.c; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/klu_btf_factor.Tpo" "$(DEPDIR)/klu_btf_factor.Po"; else rm -f "$(DEPDIR)/klu_btf_factor.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/klu/klu_btf_factor.c' object='klu_btf_factor.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/klu_btf_factor.Po' tmpdepfile='$(DEPDIR)/klu_btf_factor.TPo' @AMDEPBACKSLASH@
+amd_1.o: $(srcdir)/AMD/Source/amd_1.c
+@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT amd_1.o -MD -MP -MF "$(DEPDIR)/amd_1.Tpo" -c -o amd_1.o `test -f '$(srcdir)/AMD/Source/amd_1.c' || echo '$(srcdir)/'`$(srcdir)/AMD/Source/amd_1.c; \
+@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/amd_1.Tpo" "$(DEPDIR)/amd_1.Po"; else rm -f "$(DEPDIR)/amd_1.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/AMD/Source/amd_1.c' object='amd_1.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/amd_1.Po' tmpdepfile='$(DEPDIR)/amd_1.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o klu_btf_factor.o `test -f '$(srcdir)/klu/klu_btf_factor.c' || echo '$(srcdir)/'`$(srcdir)/klu/klu_btf_factor.c
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o amd_1.o `test -f '$(srcdir)/AMD/Source/amd_1.c' || echo '$(srcdir)/'`$(srcdir)/AMD/Source/amd_1.c
 
-klu_btf_factor.obj: $(srcdir)/klu/klu_btf_factor.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT klu_btf_factor.obj -MD -MP -MF "$(DEPDIR)/klu_btf_factor.Tpo" -c -o klu_btf_factor.obj `if test -f '$(srcdir)/klu/klu_btf_factor.c'; then $(CYGPATH_W) '$(srcdir)/klu/klu_btf_factor.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/klu/klu_btf_factor.c'; fi`; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/klu_btf_factor.Tpo" "$(DEPDIR)/klu_btf_factor.Po"; else rm -f "$(DEPDIR)/klu_btf_factor.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/klu/klu_btf_factor.c' object='klu_btf_factor.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/klu_btf_factor.Po' tmpdepfile='$(DEPDIR)/klu_btf_factor.TPo' @AMDEPBACKSLASH@
+amd_1.obj: $(srcdir)/AMD/Source/amd_1.c
+@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT amd_1.obj -MD -MP -MF "$(DEPDIR)/amd_1.Tpo" -c -o amd_1.obj `if test -f '$(srcdir)/AMD/Source/amd_1.c'; then $(CYGPATH_W) '$(srcdir)/AMD/Source/amd_1.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/AMD/Source/amd_1.c'; fi`; \
+@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/amd_1.Tpo" "$(DEPDIR)/amd_1.Po"; else rm -f "$(DEPDIR)/amd_1.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/AMD/Source/amd_1.c' object='amd_1.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/amd_1.Po' tmpdepfile='$(DEPDIR)/amd_1.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o klu_btf_factor.obj `if test -f '$(srcdir)/klu/klu_btf_factor.c'; then $(CYGPATH_W) '$(srcdir)/klu/klu_btf_factor.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/klu/klu_btf_factor.c'; fi`
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o amd_1.obj `if test -f '$(srcdir)/AMD/Source/amd_1.c'; then $(CYGPATH_W) '$(srcdir)/AMD/Source/amd_1.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/AMD/Source/amd_1.c'; fi`
 
-klu_btf_free_symbolic.o: $(srcdir)/klu/klu_btf_free_symbolic.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT klu_btf_free_symbolic.o -MD -MP -MF "$(DEPDIR)/klu_btf_free_symbolic.Tpo" -c -o klu_btf_free_symbolic.o `test -f '$(srcdir)/klu/klu_btf_free_symbolic.c' || echo '$(srcdir)/'`$(srcdir)/klu/klu_btf_free_symbolic.c; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/klu_btf_free_symbolic.Tpo" "$(DEPDIR)/klu_btf_free_symbolic.Po"; else rm -f "$(DEPDIR)/klu_btf_free_symbolic.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/klu/klu_btf_free_symbolic.c' object='klu_btf_free_symbolic.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/klu_btf_free_symbolic.Po' tmpdepfile='$(DEPDIR)/klu_btf_free_symbolic.TPo' @AMDEPBACKSLASH@
+amd_2.o: $(srcdir)/AMD/Source/amd_2.c
+@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT amd_2.o -MD -MP -MF "$(DEPDIR)/amd_2.Tpo" -c -o amd_2.o `test -f '$(srcdir)/AMD/Source/amd_2.c' || echo '$(srcdir)/'`$(srcdir)/AMD/Source/amd_2.c; \
+@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/amd_2.Tpo" "$(DEPDIR)/amd_2.Po"; else rm -f "$(DEPDIR)/amd_2.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/AMD/Source/amd_2.c' object='amd_2.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/amd_2.Po' tmpdepfile='$(DEPDIR)/amd_2.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o klu_btf_free_symbolic.o `test -f '$(srcdir)/klu/klu_btf_free_symbolic.c' || echo '$(srcdir)/'`$(srcdir)/klu/klu_btf_free_symbolic.c
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o amd_2.o `test -f '$(srcdir)/AMD/Source/amd_2.c' || echo '$(srcdir)/'`$(srcdir)/AMD/Source/amd_2.c
 
-klu_btf_free_symbolic.obj: $(srcdir)/klu/klu_btf_free_symbolic.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT klu_btf_free_symbolic.obj -MD -MP -MF "$(DEPDIR)/klu_btf_free_symbolic.Tpo" -c -o klu_btf_free_symbolic.obj `if test -f '$(srcdir)/klu/klu_btf_free_symbolic.c'; then $(CYGPATH_W) '$(srcdir)/klu/klu_btf_free_symbolic.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/klu/klu_btf_free_symbolic.c'; fi`; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/klu_btf_free_symbolic.Tpo" "$(DEPDIR)/klu_btf_free_symbolic.Po"; else rm -f "$(DEPDIR)/klu_btf_free_symbolic.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/klu/klu_btf_free_symbolic.c' object='klu_btf_free_symbolic.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/klu_btf_free_symbolic.Po' tmpdepfile='$(DEPDIR)/klu_btf_free_symbolic.TPo' @AMDEPBACKSLASH@
+amd_2.obj: $(srcdir)/AMD/Source/amd_2.c
+@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT amd_2.obj -MD -MP -MF "$(DEPDIR)/amd_2.Tpo" -c -o amd_2.obj `if test -f '$(srcdir)/AMD/Source/amd_2.c'; then $(CYGPATH_W) '$(srcdir)/AMD/Source/amd_2.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/AMD/Source/amd_2.c'; fi`; \
+@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/amd_2.Tpo" "$(DEPDIR)/amd_2.Po"; else rm -f "$(DEPDIR)/amd_2.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/AMD/Source/amd_2.c' object='amd_2.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/amd_2.Po' tmpdepfile='$(DEPDIR)/amd_2.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o klu_btf_free_symbolic.obj `if test -f '$(srcdir)/klu/klu_btf_free_symbolic.c'; then $(CYGPATH_W) '$(srcdir)/klu/klu_btf_free_symbolic.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/klu/klu_btf_free_symbolic.c'; fi`
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o amd_2.obj `if test -f '$(srcdir)/AMD/Source/amd_2.c'; then $(CYGPATH_W) '$(srcdir)/AMD/Source/amd_2.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/AMD/Source/amd_2.c'; fi`
 
-klu_btf_free_numeric.o: $(srcdir)/klu/klu_btf_free_numeric.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT klu_btf_free_numeric.o -MD -MP -MF "$(DEPDIR)/klu_btf_free_numeric.Tpo" -c -o klu_btf_free_numeric.o `test -f '$(srcdir)/klu/klu_btf_free_numeric.c' || echo '$(srcdir)/'`$(srcdir)/klu/klu_btf_free_numeric.c; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/klu_btf_free_numeric.Tpo" "$(DEPDIR)/klu_btf_free_numeric.Po"; else rm -f "$(DEPDIR)/klu_btf_free_numeric.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/klu/klu_btf_free_numeric.c' object='klu_btf_free_numeric.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/klu_btf_free_numeric.Po' tmpdepfile='$(DEPDIR)/klu_btf_free_numeric.TPo' @AMDEPBACKSLASH@
+amd_aat.o: $(srcdir)/AMD/Source/amd_aat.c
+@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT amd_aat.o -MD -MP -MF "$(DEPDIR)/amd_aat.Tpo" -c -o amd_aat.o `test -f '$(srcdir)/AMD/Source/amd_aat.c' || echo '$(srcdir)/'`$(srcdir)/AMD/Source/amd_aat.c; \
+@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/amd_aat.Tpo" "$(DEPDIR)/amd_aat.Po"; else rm -f "$(DEPDIR)/amd_aat.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/AMD/Source/amd_aat.c' object='amd_aat.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/amd_aat.Po' tmpdepfile='$(DEPDIR)/amd_aat.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o klu_btf_free_numeric.o `test -f '$(srcdir)/klu/klu_btf_free_numeric.c' || echo '$(srcdir)/'`$(srcdir)/klu/klu_btf_free_numeric.c
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o amd_aat.o `test -f '$(srcdir)/AMD/Source/amd_aat.c' || echo '$(srcdir)/'`$(srcdir)/AMD/Source/amd_aat.c
 
-klu_btf_free_numeric.obj: $(srcdir)/klu/klu_btf_free_numeric.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT klu_btf_free_numeric.obj -MD -MP -MF "$(DEPDIR)/klu_btf_free_numeric.Tpo" -c -o klu_btf_free_numeric.obj `if test -f '$(srcdir)/klu/klu_btf_free_numeric.c'; then $(CYGPATH_W) '$(srcdir)/klu/klu_btf_free_numeric.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/klu/klu_btf_free_numeric.c'; fi`; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/klu_btf_free_numeric.Tpo" "$(DEPDIR)/klu_btf_free_numeric.Po"; else rm -f "$(DEPDIR)/klu_btf_free_numeric.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/klu/klu_btf_free_numeric.c' object='klu_btf_free_numeric.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/klu_btf_free_numeric.Po' tmpdepfile='$(DEPDIR)/klu_btf_free_numeric.TPo' @AMDEPBACKSLASH@
+amd_aat.obj: $(srcdir)/AMD/Source/amd_aat.c
+@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT amd_aat.obj -MD -MP -MF "$(DEPDIR)/amd_aat.Tpo" -c -o amd_aat.obj `if test -f '$(srcdir)/AMD/Source/amd_aat.c'; then $(CYGPATH_W) '$(srcdir)/AMD/Source/amd_aat.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/AMD/Source/amd_aat.c'; fi`; \
+@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/amd_aat.Tpo" "$(DEPDIR)/amd_aat.Po"; else rm -f "$(DEPDIR)/amd_aat.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/AMD/Source/amd_aat.c' object='amd_aat.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/amd_aat.Po' tmpdepfile='$(DEPDIR)/amd_aat.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o klu_btf_free_numeric.obj `if test -f '$(srcdir)/klu/klu_btf_free_numeric.c'; then $(CYGPATH_W) '$(srcdir)/klu/klu_btf_free_numeric.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/klu/klu_btf_free_numeric.c'; fi`
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o amd_aat.obj `if test -f '$(srcdir)/AMD/Source/amd_aat.c'; then $(CYGPATH_W) '$(srcdir)/AMD/Source/amd_aat.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/AMD/Source/amd_aat.c'; fi`
 
-klu_btf_refactor.o: $(srcdir)/klu/klu_btf_refactor.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT klu_btf_refactor.o -MD -MP -MF "$(DEPDIR)/klu_btf_refactor.Tpo" -c -o klu_btf_refactor.o `test -f '$(srcdir)/klu/klu_btf_refactor.c' || echo '$(srcdir)/'`$(srcdir)/klu/klu_btf_refactor.c; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/klu_btf_refactor.Tpo" "$(DEPDIR)/klu_btf_refactor.Po"; else rm -f "$(DEPDIR)/klu_btf_refactor.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/klu/klu_btf_refactor.c' object='klu_btf_refactor.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/klu_btf_refactor.Po' tmpdepfile='$(DEPDIR)/klu_btf_refactor.TPo' @AMDEPBACKSLASH@
+amd_control.o: $(srcdir)/AMD/Source/amd_control.c
+@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT amd_control.o -MD -MP -MF "$(DEPDIR)/amd_control.Tpo" -c -o amd_control.o `test -f '$(srcdir)/AMD/Source/amd_control.c' || echo '$(srcdir)/'`$(srcdir)/AMD/Source/amd_control.c; \
+@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/amd_control.Tpo" "$(DEPDIR)/amd_control.Po"; else rm -f "$(DEPDIR)/amd_control.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/AMD/Source/amd_control.c' object='amd_control.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/amd_control.Po' tmpdepfile='$(DEPDIR)/amd_control.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o klu_btf_refactor.o `test -f '$(srcdir)/klu/klu_btf_refactor.c' || echo '$(srcdir)/'`$(srcdir)/klu/klu_btf_refactor.c
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o amd_control.o `test -f '$(srcdir)/AMD/Source/amd_control.c' || echo '$(srcdir)/'`$(srcdir)/AMD/Source/amd_control.c
 
-klu_btf_refactor.obj: $(srcdir)/klu/klu_btf_refactor.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT klu_btf_refactor.obj -MD -MP -MF "$(DEPDIR)/klu_btf_refactor.Tpo" -c -o klu_btf_refactor.obj `if test -f '$(srcdir)/klu/klu_btf_refactor.c'; then $(CYGPATH_W) '$(srcdir)/klu/klu_btf_refactor.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/klu/klu_btf_refactor.c'; fi`; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/klu_btf_refactor.Tpo" "$(DEPDIR)/klu_btf_refactor.Po"; else rm -f "$(DEPDIR)/klu_btf_refactor.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/klu/klu_btf_refactor.c' object='klu_btf_refactor.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/klu_btf_refactor.Po' tmpdepfile='$(DEPDIR)/klu_btf_refactor.TPo' @AMDEPBACKSLASH@
+amd_control.obj: $(srcdir)/AMD/Source/amd_control.c
+@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT amd_control.obj -MD -MP -MF "$(DEPDIR)/amd_control.Tpo" -c -o amd_control.obj `if test -f '$(srcdir)/AMD/Source/amd_control.c'; then $(CYGPATH_W) '$(srcdir)/AMD/Source/amd_control.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/AMD/Source/amd_control.c'; fi`; \
+@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/amd_control.Tpo" "$(DEPDIR)/amd_control.Po"; else rm -f "$(DEPDIR)/amd_control.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/AMD/Source/amd_control.c' object='amd_control.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/amd_control.Po' tmpdepfile='$(DEPDIR)/amd_control.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o klu_btf_refactor.obj `if test -f '$(srcdir)/klu/klu_btf_refactor.c'; then $(CYGPATH_W) '$(srcdir)/klu/klu_btf_refactor.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/klu/klu_btf_refactor.c'; fi`
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o amd_control.obj `if test -f '$(srcdir)/AMD/Source/amd_control.c'; then $(CYGPATH_W) '$(srcdir)/AMD/Source/amd_control.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/AMD/Source/amd_control.c'; fi`
 
-klu_btf_scale.o: $(srcdir)/klu/klu_btf_scale.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT klu_btf_scale.o -MD -MP -MF "$(DEPDIR)/klu_btf_scale.Tpo" -c -o klu_btf_scale.o `test -f '$(srcdir)/klu/klu_btf_scale.c' || echo '$(srcdir)/'`$(srcdir)/klu/klu_btf_scale.c; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/klu_btf_scale.Tpo" "$(DEPDIR)/klu_btf_scale.Po"; else rm -f "$(DEPDIR)/klu_btf_scale.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/klu/klu_btf_scale.c' object='klu_btf_scale.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/klu_btf_scale.Po' tmpdepfile='$(DEPDIR)/klu_btf_scale.TPo' @AMDEPBACKSLASH@
+amd_defaults.o: $(srcdir)/AMD/Source/amd_defaults.c
+@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT amd_defaults.o -MD -MP -MF "$(DEPDIR)/amd_defaults.Tpo" -c -o amd_defaults.o `test -f '$(srcdir)/AMD/Source/amd_defaults.c' || echo '$(srcdir)/'`$(srcdir)/AMD/Source/amd_defaults.c; \
+@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/amd_defaults.Tpo" "$(DEPDIR)/amd_defaults.Po"; else rm -f "$(DEPDIR)/amd_defaults.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/AMD/Source/amd_defaults.c' object='amd_defaults.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/amd_defaults.Po' tmpdepfile='$(DEPDIR)/amd_defaults.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o klu_btf_scale.o `test -f '$(srcdir)/klu/klu_btf_scale.c' || echo '$(srcdir)/'`$(srcdir)/klu/klu_btf_scale.c
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o amd_defaults.o `test -f '$(srcdir)/AMD/Source/amd_defaults.c' || echo '$(srcdir)/'`$(srcdir)/AMD/Source/amd_defaults.c
 
-klu_btf_scale.obj: $(srcdir)/klu/klu_btf_scale.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT klu_btf_scale.obj -MD -MP -MF "$(DEPDIR)/klu_btf_scale.Tpo" -c -o klu_btf_scale.obj `if test -f '$(srcdir)/klu/klu_btf_scale.c'; then $(CYGPATH_W) '$(srcdir)/klu/klu_btf_scale.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/klu/klu_btf_scale.c'; fi`; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/klu_btf_scale.Tpo" "$(DEPDIR)/klu_btf_scale.Po"; else rm -f "$(DEPDIR)/klu_btf_scale.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/klu/klu_btf_scale.c' object='klu_btf_scale.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/klu_btf_scale.Po' tmpdepfile='$(DEPDIR)/klu_btf_scale.TPo' @AMDEPBACKSLASH@
+amd_defaults.obj: $(srcdir)/AMD/Source/amd_defaults.c
+@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT amd_defaults.obj -MD -MP -MF "$(DEPDIR)/amd_defaults.Tpo" -c -o amd_defaults.obj `if test -f '$(srcdir)/AMD/Source/amd_defaults.c'; then $(CYGPATH_W) '$(srcdir)/AMD/Source/amd_defaults.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/AMD/Source/amd_defaults.c'; fi`; \
+@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/amd_defaults.Tpo" "$(DEPDIR)/amd_defaults.Po"; else rm -f "$(DEPDIR)/amd_defaults.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/AMD/Source/amd_defaults.c' object='amd_defaults.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/amd_defaults.Po' tmpdepfile='$(DEPDIR)/amd_defaults.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o klu_btf_scale.obj `if test -f '$(srcdir)/klu/klu_btf_scale.c'; then $(CYGPATH_W) '$(srcdir)/klu/klu_btf_scale.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/klu/klu_btf_scale.c'; fi`
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o amd_defaults.obj `if test -f '$(srcdir)/AMD/Source/amd_defaults.c'; then $(CYGPATH_W) '$(srcdir)/AMD/Source/amd_defaults.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/AMD/Source/amd_defaults.c'; fi`
 
-klu_btf_solve.o: $(srcdir)/klu/klu_btf_solve.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT klu_btf_solve.o -MD -MP -MF "$(DEPDIR)/klu_btf_solve.Tpo" -c -o klu_btf_solve.o `test -f '$(srcdir)/klu/klu_btf_solve.c' || echo '$(srcdir)/'`$(srcdir)/klu/klu_btf_solve.c; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/klu_btf_solve.Tpo" "$(DEPDIR)/klu_btf_solve.Po"; else rm -f "$(DEPDIR)/klu_btf_solve.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/klu/klu_btf_solve.c' object='klu_btf_solve.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/klu_btf_solve.Po' tmpdepfile='$(DEPDIR)/klu_btf_solve.TPo' @AMDEPBACKSLASH@
+amd_dump.o: $(srcdir)/AMD/Source/amd_dump.c
+@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT amd_dump.o -MD -MP -MF "$(DEPDIR)/amd_dump.Tpo" -c -o amd_dump.o `test -f '$(srcdir)/AMD/Source/amd_dump.c' || echo '$(srcdir)/'`$(srcdir)/AMD/Source/amd_dump.c; \
+@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/amd_dump.Tpo" "$(DEPDIR)/amd_dump.Po"; else rm -f "$(DEPDIR)/amd_dump.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/AMD/Source/amd_dump.c' object='amd_dump.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/amd_dump.Po' tmpdepfile='$(DEPDIR)/amd_dump.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o klu_btf_solve.o `test -f '$(srcdir)/klu/klu_btf_solve.c' || echo '$(srcdir)/'`$(srcdir)/klu/klu_btf_solve.c
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o amd_dump.o `test -f '$(srcdir)/AMD/Source/amd_dump.c' || echo '$(srcdir)/'`$(srcdir)/AMD/Source/amd_dump.c
 
-klu_btf_solve.obj: $(srcdir)/klu/klu_btf_solve.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT klu_btf_solve.obj -MD -MP -MF "$(DEPDIR)/klu_btf_solve.Tpo" -c -o klu_btf_solve.obj `if test -f '$(srcdir)/klu/klu_btf_solve.c'; then $(CYGPATH_W) '$(srcdir)/klu/klu_btf_solve.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/klu/klu_btf_solve.c'; fi`; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/klu_btf_solve.Tpo" "$(DEPDIR)/klu_btf_solve.Po"; else rm -f "$(DEPDIR)/klu_btf_solve.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/klu/klu_btf_solve.c' object='klu_btf_solve.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/klu_btf_solve.Po' tmpdepfile='$(DEPDIR)/klu_btf_solve.TPo' @AMDEPBACKSLASH@
+amd_dump.obj: $(srcdir)/AMD/Source/amd_dump.c
+@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT amd_dump.obj -MD -MP -MF "$(DEPDIR)/amd_dump.Tpo" -c -o amd_dump.obj `if test -f '$(srcdir)/AMD/Source/amd_dump.c'; then $(CYGPATH_W) '$(srcdir)/AMD/Source/amd_dump.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/AMD/Source/amd_dump.c'; fi`; \
+@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/amd_dump.Tpo" "$(DEPDIR)/amd_dump.Po"; else rm -f "$(DEPDIR)/amd_dump.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/AMD/Source/amd_dump.c' object='amd_dump.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/amd_dump.Po' tmpdepfile='$(DEPDIR)/amd_dump.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o klu_btf_solve.obj `if test -f '$(srcdir)/klu/klu_btf_solve.c'; then $(CYGPATH_W) '$(srcdir)/klu/klu_btf_solve.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/klu/klu_btf_solve.c'; fi`
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o amd_dump.obj `if test -f '$(srcdir)/AMD/Source/amd_dump.c'; then $(CYGPATH_W) '$(srcdir)/AMD/Source/amd_dump.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/AMD/Source/amd_dump.c'; fi`
 
-klu_btf_analyze.o: $(srcdir)/klu/klu_btf_analyze.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT klu_btf_analyze.o -MD -MP -MF "$(DEPDIR)/klu_btf_analyze.Tpo" -c -o klu_btf_analyze.o `test -f '$(srcdir)/klu/klu_btf_analyze.c' || echo '$(srcdir)/'`$(srcdir)/klu/klu_btf_analyze.c; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/klu_btf_analyze.Tpo" "$(DEPDIR)/klu_btf_analyze.Po"; else rm -f "$(DEPDIR)/klu_btf_analyze.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/klu/klu_btf_analyze.c' object='klu_btf_analyze.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/klu_btf_analyze.Po' tmpdepfile='$(DEPDIR)/klu_btf_analyze.TPo' @AMDEPBACKSLASH@
+amd_info.o: $(srcdir)/AMD/Source/amd_info.c
+@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT amd_info.o -MD -MP -MF "$(DEPDIR)/amd_info.Tpo" -c -o amd_info.o `test -f '$(srcdir)/AMD/Source/amd_info.c' || echo '$(srcdir)/'`$(srcdir)/AMD/Source/amd_info.c; \
+@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/amd_info.Tpo" "$(DEPDIR)/amd_info.Po"; else rm -f "$(DEPDIR)/amd_info.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/AMD/Source/amd_info.c' object='amd_info.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/amd_info.Po' tmpdepfile='$(DEPDIR)/amd_info.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o klu_btf_analyze.o `test -f '$(srcdir)/klu/klu_btf_analyze.c' || echo '$(srcdir)/'`$(srcdir)/klu/klu_btf_analyze.c
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o amd_info.o `test -f '$(srcdir)/AMD/Source/amd_info.c' || echo '$(srcdir)/'`$(srcdir)/AMD/Source/amd_info.c
 
-klu_btf_analyze.obj: $(srcdir)/klu/klu_btf_analyze.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT klu_btf_analyze.obj -MD -MP -MF "$(DEPDIR)/klu_btf_analyze.Tpo" -c -o klu_btf_analyze.obj `if test -f '$(srcdir)/klu/klu_btf_analyze.c'; then $(CYGPATH_W) '$(srcdir)/klu/klu_btf_analyze.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/klu/klu_btf_analyze.c'; fi`; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/klu_btf_analyze.Tpo" "$(DEPDIR)/klu_btf_analyze.Po"; else rm -f "$(DEPDIR)/klu_btf_analyze.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/klu/klu_btf_analyze.c' object='klu_btf_analyze.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/klu_btf_analyze.Po' tmpdepfile='$(DEPDIR)/klu_btf_analyze.TPo' @AMDEPBACKSLASH@
+amd_info.obj: $(srcdir)/AMD/Source/amd_info.c
+@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT amd_info.obj -MD -MP -MF "$(DEPDIR)/amd_info.Tpo" -c -o amd_info.obj `if test -f '$(srcdir)/AMD/Source/amd_info.c'; then $(CYGPATH_W) '$(srcdir)/AMD/Source/amd_info.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/AMD/Source/amd_info.c'; fi`; \
+@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/amd_info.Tpo" "$(DEPDIR)/amd_info.Po"; else rm -f "$(DEPDIR)/amd_info.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/AMD/Source/amd_info.c' object='amd_info.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/amd_info.Po' tmpdepfile='$(DEPDIR)/amd_info.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o klu_btf_analyze.obj `if test -f '$(srcdir)/klu/klu_btf_analyze.c'; then $(CYGPATH_W) '$(srcdir)/klu/klu_btf_analyze.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/klu/klu_btf_analyze.c'; fi`
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o amd_info.obj `if test -f '$(srcdir)/AMD/Source/amd_info.c'; then $(CYGPATH_W) '$(srcdir)/AMD/Source/amd_info.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/AMD/Source/amd_info.c'; fi`
 
-klu_dump.o: $(srcdir)/klu/klu_dump.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT klu_dump.o -MD -MP -MF "$(DEPDIR)/klu_dump.Tpo" -c -o klu_dump.o `test -f '$(srcdir)/klu/klu_dump.c' || echo '$(srcdir)/'`$(srcdir)/klu/klu_dump.c; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/klu_dump.Tpo" "$(DEPDIR)/klu_dump.Po"; else rm -f "$(DEPDIR)/klu_dump.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/klu/klu_dump.c' object='klu_dump.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/klu_dump.Po' tmpdepfile='$(DEPDIR)/klu_dump.TPo' @AMDEPBACKSLASH@
+amd_order.o: $(srcdir)/AMD/Source/amd_order.c
+@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT amd_order.o -MD -MP -MF "$(DEPDIR)/amd_order.Tpo" -c -o amd_order.o `test -f '$(srcdir)/AMD/Source/amd_order.c' || echo '$(srcdir)/'`$(srcdir)/AMD/Source/amd_order.c; \
+@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/amd_order.Tpo" "$(DEPDIR)/amd_order.Po"; else rm -f "$(DEPDIR)/amd_order.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/AMD/Source/amd_order.c' object='amd_order.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/amd_order.Po' tmpdepfile='$(DEPDIR)/amd_order.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o klu_dump.o `test -f '$(srcdir)/klu/klu_dump.c' || echo '$(srcdir)/'`$(srcdir)/klu/klu_dump.c
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o amd_order.o `test -f '$(srcdir)/AMD/Source/amd_order.c' || echo '$(srcdir)/'`$(srcdir)/AMD/Source/amd_order.c
 
-klu_dump.obj: $(srcdir)/klu/klu_dump.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT klu_dump.obj -MD -MP -MF "$(DEPDIR)/klu_dump.Tpo" -c -o klu_dump.obj `if test -f '$(srcdir)/klu/klu_dump.c'; then $(CYGPATH_W) '$(srcdir)/klu/klu_dump.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/klu/klu_dump.c'; fi`; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/klu_dump.Tpo" "$(DEPDIR)/klu_dump.Po"; else rm -f "$(DEPDIR)/klu_dump.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/klu/klu_dump.c' object='klu_dump.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/klu_dump.Po' tmpdepfile='$(DEPDIR)/klu_dump.TPo' @AMDEPBACKSLASH@
+amd_order.obj: $(srcdir)/AMD/Source/amd_order.c
+@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT amd_order.obj -MD -MP -MF "$(DEPDIR)/amd_order.Tpo" -c -o amd_order.obj `if test -f '$(srcdir)/AMD/Source/amd_order.c'; then $(CYGPATH_W) '$(srcdir)/AMD/Source/amd_order.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/AMD/Source/amd_order.c'; fi`; \
+@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/amd_order.Tpo" "$(DEPDIR)/amd_order.Po"; else rm -f "$(DEPDIR)/amd_order.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/AMD/Source/amd_order.c' object='amd_order.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/amd_order.Po' tmpdepfile='$(DEPDIR)/amd_order.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o klu_dump.obj `if test -f '$(srcdir)/klu/klu_dump.c'; then $(CYGPATH_W) '$(srcdir)/klu/klu_dump.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/klu/klu_dump.c'; fi`
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o amd_order.obj `if test -f '$(srcdir)/AMD/Source/amd_order.c'; then $(CYGPATH_W) '$(srcdir)/AMD/Source/amd_order.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/AMD/Source/amd_order.c'; fi`
 
-cbtf.o: $(srcdir)/klu/cbtf.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT cbtf.o -MD -MP -MF "$(DEPDIR)/cbtf.Tpo" -c -o cbtf.o `test -f '$(srcdir)/klu/cbtf.c' || echo '$(srcdir)/'`$(srcdir)/klu/cbtf.c; \
+amd_postorder.o: $(srcdir)/AMD/Source/amd_postorder.c
+@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT amd_postorder.o -MD -MP -MF "$(DEPDIR)/amd_postorder.Tpo" -c -o amd_postorder.o `test -f '$(srcdir)/AMD/Source/amd_postorder.c' || echo '$(srcdir)/'`$(srcdir)/AMD/Source/amd_postorder.c; \
+@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/amd_postorder.Tpo" "$(DEPDIR)/amd_postorder.Po"; else rm -f "$(DEPDIR)/amd_postorder.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/AMD/Source/amd_postorder.c' object='amd_postorder.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/amd_postorder.Po' tmpdepfile='$(DEPDIR)/amd_postorder.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o amd_postorder.o `test -f '$(srcdir)/AMD/Source/amd_postorder.c' || echo '$(srcdir)/'`$(srcdir)/AMD/Source/amd_postorder.c
+
+amd_postorder.obj: $(srcdir)/AMD/Source/amd_postorder.c
+@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT amd_postorder.obj -MD -MP -MF "$(DEPDIR)/amd_postorder.Tpo" -c -o amd_postorder.obj `if test -f '$(srcdir)/AMD/Source/amd_postorder.c'; then $(CYGPATH_W) '$(srcdir)/AMD/Source/amd_postorder.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/AMD/Source/amd_postorder.c'; fi`; \
+@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/amd_postorder.Tpo" "$(DEPDIR)/amd_postorder.Po"; else rm -f "$(DEPDIR)/amd_postorder.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/AMD/Source/amd_postorder.c' object='amd_postorder.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/amd_postorder.Po' tmpdepfile='$(DEPDIR)/amd_postorder.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o amd_postorder.obj `if test -f '$(srcdir)/AMD/Source/amd_postorder.c'; then $(CYGPATH_W) '$(srcdir)/AMD/Source/amd_postorder.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/AMD/Source/amd_postorder.c'; fi`
+
+amd_post_tree.o: $(srcdir)/AMD/Source/amd_post_tree.c
+@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT amd_post_tree.o -MD -MP -MF "$(DEPDIR)/amd_post_tree.Tpo" -c -o amd_post_tree.o `test -f '$(srcdir)/AMD/Source/amd_post_tree.c' || echo '$(srcdir)/'`$(srcdir)/AMD/Source/amd_post_tree.c; \
+@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/amd_post_tree.Tpo" "$(DEPDIR)/amd_post_tree.Po"; else rm -f "$(DEPDIR)/amd_post_tree.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/AMD/Source/amd_post_tree.c' object='amd_post_tree.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/amd_post_tree.Po' tmpdepfile='$(DEPDIR)/amd_post_tree.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o amd_post_tree.o `test -f '$(srcdir)/AMD/Source/amd_post_tree.c' || echo '$(srcdir)/'`$(srcdir)/AMD/Source/amd_post_tree.c
+
+amd_post_tree.obj: $(srcdir)/AMD/Source/amd_post_tree.c
+@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT amd_post_tree.obj -MD -MP -MF "$(DEPDIR)/amd_post_tree.Tpo" -c -o amd_post_tree.obj `if test -f '$(srcdir)/AMD/Source/amd_post_tree.c'; then $(CYGPATH_W) '$(srcdir)/AMD/Source/amd_post_tree.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/AMD/Source/amd_post_tree.c'; fi`; \
+@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/amd_post_tree.Tpo" "$(DEPDIR)/amd_post_tree.Po"; else rm -f "$(DEPDIR)/amd_post_tree.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/AMD/Source/amd_post_tree.c' object='amd_post_tree.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/amd_post_tree.Po' tmpdepfile='$(DEPDIR)/amd_post_tree.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o amd_post_tree.obj `if test -f '$(srcdir)/AMD/Source/amd_post_tree.c'; then $(CYGPATH_W) '$(srcdir)/AMD/Source/amd_post_tree.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/AMD/Source/amd_post_tree.c'; fi`
+
+amd_preprocess.o: $(srcdir)/AMD/Source/amd_preprocess.c
+@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT amd_preprocess.o -MD -MP -MF "$(DEPDIR)/amd_preprocess.Tpo" -c -o amd_preprocess.o `test -f '$(srcdir)/AMD/Source/amd_preprocess.c' || echo '$(srcdir)/'`$(srcdir)/AMD/Source/amd_preprocess.c; \
+@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/amd_preprocess.Tpo" "$(DEPDIR)/amd_preprocess.Po"; else rm -f "$(DEPDIR)/amd_preprocess.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/AMD/Source/amd_preprocess.c' object='amd_preprocess.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/amd_preprocess.Po' tmpdepfile='$(DEPDIR)/amd_preprocess.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o amd_preprocess.o `test -f '$(srcdir)/AMD/Source/amd_preprocess.c' || echo '$(srcdir)/'`$(srcdir)/AMD/Source/amd_preprocess.c
+
+amd_preprocess.obj: $(srcdir)/AMD/Source/amd_preprocess.c
+@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT amd_preprocess.obj -MD -MP -MF "$(DEPDIR)/amd_preprocess.Tpo" -c -o amd_preprocess.obj `if test -f '$(srcdir)/AMD/Source/amd_preprocess.c'; then $(CYGPATH_W) '$(srcdir)/AMD/Source/amd_preprocess.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/AMD/Source/amd_preprocess.c'; fi`; \
+@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/amd_preprocess.Tpo" "$(DEPDIR)/amd_preprocess.Po"; else rm -f "$(DEPDIR)/amd_preprocess.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/AMD/Source/amd_preprocess.c' object='amd_preprocess.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/amd_preprocess.Po' tmpdepfile='$(DEPDIR)/amd_preprocess.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o amd_preprocess.obj `if test -f '$(srcdir)/AMD/Source/amd_preprocess.c'; then $(CYGPATH_W) '$(srcdir)/AMD/Source/amd_preprocess.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/AMD/Source/amd_preprocess.c'; fi`
+
+amd_valid.o: $(srcdir)/AMD/Source/amd_valid.c
+@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT amd_valid.o -MD -MP -MF "$(DEPDIR)/amd_valid.Tpo" -c -o amd_valid.o `test -f '$(srcdir)/AMD/Source/amd_valid.c' || echo '$(srcdir)/'`$(srcdir)/AMD/Source/amd_valid.c; \
+@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/amd_valid.Tpo" "$(DEPDIR)/amd_valid.Po"; else rm -f "$(DEPDIR)/amd_valid.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/AMD/Source/amd_valid.c' object='amd_valid.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/amd_valid.Po' tmpdepfile='$(DEPDIR)/amd_valid.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o amd_valid.o `test -f '$(srcdir)/AMD/Source/amd_valid.c' || echo '$(srcdir)/'`$(srcdir)/AMD/Source/amd_valid.c
+
+amd_valid.obj: $(srcdir)/AMD/Source/amd_valid.c
+@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT amd_valid.obj -MD -MP -MF "$(DEPDIR)/amd_valid.Tpo" -c -o amd_valid.obj `if test -f '$(srcdir)/AMD/Source/amd_valid.c'; then $(CYGPATH_W) '$(srcdir)/AMD/Source/amd_valid.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/AMD/Source/amd_valid.c'; fi`; \
+@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/amd_valid.Tpo" "$(DEPDIR)/amd_valid.Po"; else rm -f "$(DEPDIR)/amd_valid.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/AMD/Source/amd_valid.c' object='amd_valid.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/amd_valid.Po' tmpdepfile='$(DEPDIR)/amd_valid.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o amd_valid.obj `if test -f '$(srcdir)/AMD/Source/amd_valid.c'; then $(CYGPATH_W) '$(srcdir)/AMD/Source/amd_valid.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/AMD/Source/amd_valid.c'; fi`
+
+cbtf.o: $(srcdir)/btf/cbtf.c
+@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT cbtf.o -MD -MP -MF "$(DEPDIR)/cbtf.Tpo" -c -o cbtf.o `test -f '$(srcdir)/btf/cbtf.c' || echo '$(srcdir)/'`$(srcdir)/btf/cbtf.c; \
 @am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/cbtf.Tpo" "$(DEPDIR)/cbtf.Po"; else rm -f "$(DEPDIR)/cbtf.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/klu/cbtf.c' object='cbtf.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/btf/cbtf.c' object='cbtf.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/cbtf.Po' tmpdepfile='$(DEPDIR)/cbtf.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o cbtf.o `test -f '$(srcdir)/klu/cbtf.c' || echo '$(srcdir)/'`$(srcdir)/klu/cbtf.c
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o cbtf.o `test -f '$(srcdir)/btf/cbtf.c' || echo '$(srcdir)/'`$(srcdir)/btf/cbtf.c
 
-cbtf.obj: $(srcdir)/klu/cbtf.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT cbtf.obj -MD -MP -MF "$(DEPDIR)/cbtf.Tpo" -c -o cbtf.obj `if test -f '$(srcdir)/klu/cbtf.c'; then $(CYGPATH_W) '$(srcdir)/klu/cbtf.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/klu/cbtf.c'; fi`; \
+cbtf.obj: $(srcdir)/btf/cbtf.c
+@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT cbtf.obj -MD -MP -MF "$(DEPDIR)/cbtf.Tpo" -c -o cbtf.obj `if test -f '$(srcdir)/btf/cbtf.c'; then $(CYGPATH_W) '$(srcdir)/btf/cbtf.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/btf/cbtf.c'; fi`; \
 @am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/cbtf.Tpo" "$(DEPDIR)/cbtf.Po"; else rm -f "$(DEPDIR)/cbtf.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/klu/cbtf.c' object='cbtf.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/btf/cbtf.c' object='cbtf.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/cbtf.Po' tmpdepfile='$(DEPDIR)/cbtf.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o cbtf.obj `if test -f '$(srcdir)/klu/cbtf.c'; then $(CYGPATH_W) '$(srcdir)/klu/cbtf.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/klu/cbtf.c'; fi`
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o cbtf.obj `if test -f '$(srcdir)/btf/cbtf.c'; then $(CYGPATH_W) '$(srcdir)/btf/cbtf.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/btf/cbtf.c'; fi`
 
-klu.o: $(srcdir)/klu/klu.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT klu.o -MD -MP -MF "$(DEPDIR)/klu.Tpo" -c -o klu.o `test -f '$(srcdir)/klu/klu.c' || echo '$(srcdir)/'`$(srcdir)/klu/klu.c; \
+colamd.o: $(srcdir)/colamd/colamd.c
+@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT colamd.o -MD -MP -MF "$(DEPDIR)/colamd.Tpo" -c -o colamd.o `test -f '$(srcdir)/colamd/colamd.c' || echo '$(srcdir)/'`$(srcdir)/colamd/colamd.c; \
+@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/colamd.Tpo" "$(DEPDIR)/colamd.Po"; else rm -f "$(DEPDIR)/colamd.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/colamd/colamd.c' object='colamd.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/colamd.Po' tmpdepfile='$(DEPDIR)/colamd.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o colamd.o `test -f '$(srcdir)/colamd/colamd.c' || echo '$(srcdir)/'`$(srcdir)/colamd/colamd.c
+
+colamd.obj: $(srcdir)/colamd/colamd.c
+@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT colamd.obj -MD -MP -MF "$(DEPDIR)/colamd.Tpo" -c -o colamd.obj `if test -f '$(srcdir)/colamd/colamd.c'; then $(CYGPATH_W) '$(srcdir)/colamd/colamd.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/colamd/colamd.c'; fi`; \
+@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/colamd.Tpo" "$(DEPDIR)/colamd.Po"; else rm -f "$(DEPDIR)/colamd.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/colamd/colamd.c' object='colamd.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/colamd.Po' tmpdepfile='$(DEPDIR)/colamd.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o colamd.obj `if test -f '$(srcdir)/colamd/colamd.c'; then $(CYGPATH_W) '$(srcdir)/colamd/colamd.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/colamd/colamd.c'; fi`
+
+klu_btf_analyze.o: $(srcdir)/klu_btf/klu_btf_analyze.c
+@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT klu_btf_analyze.o -MD -MP -MF "$(DEPDIR)/klu_btf_analyze.Tpo" -c -o klu_btf_analyze.o `test -f '$(srcdir)/klu_btf/klu_btf_analyze.c' || echo '$(srcdir)/'`$(srcdir)/klu_btf/klu_btf_analyze.c; \
+@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/klu_btf_analyze.Tpo" "$(DEPDIR)/klu_btf_analyze.Po"; else rm -f "$(DEPDIR)/klu_btf_analyze.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/klu_btf/klu_btf_analyze.c' object='klu_btf_analyze.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/klu_btf_analyze.Po' tmpdepfile='$(DEPDIR)/klu_btf_analyze.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o klu_btf_analyze.o `test -f '$(srcdir)/klu_btf/klu_btf_analyze.c' || echo '$(srcdir)/'`$(srcdir)/klu_btf/klu_btf_analyze.c
+
+klu_btf_analyze.obj: $(srcdir)/klu_btf/klu_btf_analyze.c
+@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT klu_btf_analyze.obj -MD -MP -MF "$(DEPDIR)/klu_btf_analyze.Tpo" -c -o klu_btf_analyze.obj `if test -f '$(srcdir)/klu_btf/klu_btf_analyze.c'; then $(CYGPATH_W) '$(srcdir)/klu_btf/klu_btf_analyze.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/klu_btf/klu_btf_analyze.c'; fi`; \
+@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/klu_btf_analyze.Tpo" "$(DEPDIR)/klu_btf_analyze.Po"; else rm -f "$(DEPDIR)/klu_btf_analyze.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/klu_btf/klu_btf_analyze.c' object='klu_btf_analyze.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/klu_btf_analyze.Po' tmpdepfile='$(DEPDIR)/klu_btf_analyze.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o klu_btf_analyze.obj `if test -f '$(srcdir)/klu_btf/klu_btf_analyze.c'; then $(CYGPATH_W) '$(srcdir)/klu_btf/klu_btf_analyze.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/klu_btf/klu_btf_analyze.c'; fi`
+
+klu_btf_defaults.o: $(srcdir)/klu_btf/klu_btf_defaults.c
+@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT klu_btf_defaults.o -MD -MP -MF "$(DEPDIR)/klu_btf_defaults.Tpo" -c -o klu_btf_defaults.o `test -f '$(srcdir)/klu_btf/klu_btf_defaults.c' || echo '$(srcdir)/'`$(srcdir)/klu_btf/klu_btf_defaults.c; \
+@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/klu_btf_defaults.Tpo" "$(DEPDIR)/klu_btf_defaults.Po"; else rm -f "$(DEPDIR)/klu_btf_defaults.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/klu_btf/klu_btf_defaults.c' object='klu_btf_defaults.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/klu_btf_defaults.Po' tmpdepfile='$(DEPDIR)/klu_btf_defaults.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o klu_btf_defaults.o `test -f '$(srcdir)/klu_btf/klu_btf_defaults.c' || echo '$(srcdir)/'`$(srcdir)/klu_btf/klu_btf_defaults.c
+
+klu_btf_defaults.obj: $(srcdir)/klu_btf/klu_btf_defaults.c
+@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT klu_btf_defaults.obj -MD -MP -MF "$(DEPDIR)/klu_btf_defaults.Tpo" -c -o klu_btf_defaults.obj `if test -f '$(srcdir)/klu_btf/klu_btf_defaults.c'; then $(CYGPATH_W) '$(srcdir)/klu_btf/klu_btf_defaults.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/klu_btf/klu_btf_defaults.c'; fi`; \
+@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/klu_btf_defaults.Tpo" "$(DEPDIR)/klu_btf_defaults.Po"; else rm -f "$(DEPDIR)/klu_btf_defaults.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/klu_btf/klu_btf_defaults.c' object='klu_btf_defaults.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/klu_btf_defaults.Po' tmpdepfile='$(DEPDIR)/klu_btf_defaults.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o klu_btf_defaults.obj `if test -f '$(srcdir)/klu_btf/klu_btf_defaults.c'; then $(CYGPATH_W) '$(srcdir)/klu_btf/klu_btf_defaults.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/klu_btf/klu_btf_defaults.c'; fi`
+
+klu_btf_factor.o: $(srcdir)/klu_btf/klu_btf_factor.c
+@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT klu_btf_factor.o -MD -MP -MF "$(DEPDIR)/klu_btf_factor.Tpo" -c -o klu_btf_factor.o `test -f '$(srcdir)/klu_btf/klu_btf_factor.c' || echo '$(srcdir)/'`$(srcdir)/klu_btf/klu_btf_factor.c; \
+@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/klu_btf_factor.Tpo" "$(DEPDIR)/klu_btf_factor.Po"; else rm -f "$(DEPDIR)/klu_btf_factor.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/klu_btf/klu_btf_factor.c' object='klu_btf_factor.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/klu_btf_factor.Po' tmpdepfile='$(DEPDIR)/klu_btf_factor.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o klu_btf_factor.o `test -f '$(srcdir)/klu_btf/klu_btf_factor.c' || echo '$(srcdir)/'`$(srcdir)/klu_btf/klu_btf_factor.c
+
+klu_btf_factor.obj: $(srcdir)/klu_btf/klu_btf_factor.c
+@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT klu_btf_factor.obj -MD -MP -MF "$(DEPDIR)/klu_btf_factor.Tpo" -c -o klu_btf_factor.obj `if test -f '$(srcdir)/klu_btf/klu_btf_factor.c'; then $(CYGPATH_W) '$(srcdir)/klu_btf/klu_btf_factor.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/klu_btf/klu_btf_factor.c'; fi`; \
+@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/klu_btf_factor.Tpo" "$(DEPDIR)/klu_btf_factor.Po"; else rm -f "$(DEPDIR)/klu_btf_factor.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/klu_btf/klu_btf_factor.c' object='klu_btf_factor.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/klu_btf_factor.Po' tmpdepfile='$(DEPDIR)/klu_btf_factor.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o klu_btf_factor.obj `if test -f '$(srcdir)/klu_btf/klu_btf_factor.c'; then $(CYGPATH_W) '$(srcdir)/klu_btf/klu_btf_factor.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/klu_btf/klu_btf_factor.c'; fi`
+
+klu_btf_free_numeric.o: $(srcdir)/klu_btf/klu_btf_free_numeric.c
+@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT klu_btf_free_numeric.o -MD -MP -MF "$(DEPDIR)/klu_btf_free_numeric.Tpo" -c -o klu_btf_free_numeric.o `test -f '$(srcdir)/klu_btf/klu_btf_free_numeric.c' || echo '$(srcdir)/'`$(srcdir)/klu_btf/klu_btf_free_numeric.c; \
+@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/klu_btf_free_numeric.Tpo" "$(DEPDIR)/klu_btf_free_numeric.Po"; else rm -f "$(DEPDIR)/klu_btf_free_numeric.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/klu_btf/klu_btf_free_numeric.c' object='klu_btf_free_numeric.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/klu_btf_free_numeric.Po' tmpdepfile='$(DEPDIR)/klu_btf_free_numeric.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o klu_btf_free_numeric.o `test -f '$(srcdir)/klu_btf/klu_btf_free_numeric.c' || echo '$(srcdir)/'`$(srcdir)/klu_btf/klu_btf_free_numeric.c
+
+klu_btf_free_numeric.obj: $(srcdir)/klu_btf/klu_btf_free_numeric.c
+@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT klu_btf_free_numeric.obj -MD -MP -MF "$(DEPDIR)/klu_btf_free_numeric.Tpo" -c -o klu_btf_free_numeric.obj `if test -f '$(srcdir)/klu_btf/klu_btf_free_numeric.c'; then $(CYGPATH_W) '$(srcdir)/klu_btf/klu_btf_free_numeric.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/klu_btf/klu_btf_free_numeric.c'; fi`; \
+@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/klu_btf_free_numeric.Tpo" "$(DEPDIR)/klu_btf_free_numeric.Po"; else rm -f "$(DEPDIR)/klu_btf_free_numeric.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/klu_btf/klu_btf_free_numeric.c' object='klu_btf_free_numeric.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/klu_btf_free_numeric.Po' tmpdepfile='$(DEPDIR)/klu_btf_free_numeric.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o klu_btf_free_numeric.obj `if test -f '$(srcdir)/klu_btf/klu_btf_free_numeric.c'; then $(CYGPATH_W) '$(srcdir)/klu_btf/klu_btf_free_numeric.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/klu_btf/klu_btf_free_numeric.c'; fi`
+
+klu_btf_free_symbolic.o: $(srcdir)/klu_btf/klu_btf_free_symbolic.c
+@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT klu_btf_free_symbolic.o -MD -MP -MF "$(DEPDIR)/klu_btf_free_symbolic.Tpo" -c -o klu_btf_free_symbolic.o `test -f '$(srcdir)/klu_btf/klu_btf_free_symbolic.c' || echo '$(srcdir)/'`$(srcdir)/klu_btf/klu_btf_free_symbolic.c; \
+@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/klu_btf_free_symbolic.Tpo" "$(DEPDIR)/klu_btf_free_symbolic.Po"; else rm -f "$(DEPDIR)/klu_btf_free_symbolic.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/klu_btf/klu_btf_free_symbolic.c' object='klu_btf_free_symbolic.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/klu_btf_free_symbolic.Po' tmpdepfile='$(DEPDIR)/klu_btf_free_symbolic.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o klu_btf_free_symbolic.o `test -f '$(srcdir)/klu_btf/klu_btf_free_symbolic.c' || echo '$(srcdir)/'`$(srcdir)/klu_btf/klu_btf_free_symbolic.c
+
+klu_btf_free_symbolic.obj: $(srcdir)/klu_btf/klu_btf_free_symbolic.c
+@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT klu_btf_free_symbolic.obj -MD -MP -MF "$(DEPDIR)/klu_btf_free_symbolic.Tpo" -c -o klu_btf_free_symbolic.obj `if test -f '$(srcdir)/klu_btf/klu_btf_free_symbolic.c'; then $(CYGPATH_W) '$(srcdir)/klu_btf/klu_btf_free_symbolic.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/klu_btf/klu_btf_free_symbolic.c'; fi`; \
+@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/klu_btf_free_symbolic.Tpo" "$(DEPDIR)/klu_btf_free_symbolic.Po"; else rm -f "$(DEPDIR)/klu_btf_free_symbolic.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/klu_btf/klu_btf_free_symbolic.c' object='klu_btf_free_symbolic.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/klu_btf_free_symbolic.Po' tmpdepfile='$(DEPDIR)/klu_btf_free_symbolic.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o klu_btf_free_symbolic.obj `if test -f '$(srcdir)/klu_btf/klu_btf_free_symbolic.c'; then $(CYGPATH_W) '$(srcdir)/klu_btf/klu_btf_free_symbolic.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/klu_btf/klu_btf_free_symbolic.c'; fi`
+
+klu_btf_refactor.o: $(srcdir)/klu_btf/klu_btf_refactor.c
+@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT klu_btf_refactor.o -MD -MP -MF "$(DEPDIR)/klu_btf_refactor.Tpo" -c -o klu_btf_refactor.o `test -f '$(srcdir)/klu_btf/klu_btf_refactor.c' || echo '$(srcdir)/'`$(srcdir)/klu_btf/klu_btf_refactor.c; \
+@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/klu_btf_refactor.Tpo" "$(DEPDIR)/klu_btf_refactor.Po"; else rm -f "$(DEPDIR)/klu_btf_refactor.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/klu_btf/klu_btf_refactor.c' object='klu_btf_refactor.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/klu_btf_refactor.Po' tmpdepfile='$(DEPDIR)/klu_btf_refactor.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o klu_btf_refactor.o `test -f '$(srcdir)/klu_btf/klu_btf_refactor.c' || echo '$(srcdir)/'`$(srcdir)/klu_btf/klu_btf_refactor.c
+
+klu_btf_refactor.obj: $(srcdir)/klu_btf/klu_btf_refactor.c
+@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT klu_btf_refactor.obj -MD -MP -MF "$(DEPDIR)/klu_btf_refactor.Tpo" -c -o klu_btf_refactor.obj `if test -f '$(srcdir)/klu_btf/klu_btf_refactor.c'; then $(CYGPATH_W) '$(srcdir)/klu_btf/klu_btf_refactor.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/klu_btf/klu_btf_refactor.c'; fi`; \
+@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/klu_btf_refactor.Tpo" "$(DEPDIR)/klu_btf_refactor.Po"; else rm -f "$(DEPDIR)/klu_btf_refactor.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/klu_btf/klu_btf_refactor.c' object='klu_btf_refactor.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/klu_btf_refactor.Po' tmpdepfile='$(DEPDIR)/klu_btf_refactor.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o klu_btf_refactor.obj `if test -f '$(srcdir)/klu_btf/klu_btf_refactor.c'; then $(CYGPATH_W) '$(srcdir)/klu_btf/klu_btf_refactor.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/klu_btf/klu_btf_refactor.c'; fi`
+
+klu_btf_scale.o: $(srcdir)/klu_btf/klu_btf_scale.c
+@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT klu_btf_scale.o -MD -MP -MF "$(DEPDIR)/klu_btf_scale.Tpo" -c -o klu_btf_scale.o `test -f '$(srcdir)/klu_btf/klu_btf_scale.c' || echo '$(srcdir)/'`$(srcdir)/klu_btf/klu_btf_scale.c; \
+@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/klu_btf_scale.Tpo" "$(DEPDIR)/klu_btf_scale.Po"; else rm -f "$(DEPDIR)/klu_btf_scale.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/klu_btf/klu_btf_scale.c' object='klu_btf_scale.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/klu_btf_scale.Po' tmpdepfile='$(DEPDIR)/klu_btf_scale.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o klu_btf_scale.o `test -f '$(srcdir)/klu_btf/klu_btf_scale.c' || echo '$(srcdir)/'`$(srcdir)/klu_btf/klu_btf_scale.c
+
+klu_btf_scale.obj: $(srcdir)/klu_btf/klu_btf_scale.c
+@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT klu_btf_scale.obj -MD -MP -MF "$(DEPDIR)/klu_btf_scale.Tpo" -c -o klu_btf_scale.obj `if test -f '$(srcdir)/klu_btf/klu_btf_scale.c'; then $(CYGPATH_W) '$(srcdir)/klu_btf/klu_btf_scale.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/klu_btf/klu_btf_scale.c'; fi`; \
+@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/klu_btf_scale.Tpo" "$(DEPDIR)/klu_btf_scale.Po"; else rm -f "$(DEPDIR)/klu_btf_scale.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/klu_btf/klu_btf_scale.c' object='klu_btf_scale.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/klu_btf_scale.Po' tmpdepfile='$(DEPDIR)/klu_btf_scale.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o klu_btf_scale.obj `if test -f '$(srcdir)/klu_btf/klu_btf_scale.c'; then $(CYGPATH_W) '$(srcdir)/klu_btf/klu_btf_scale.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/klu_btf/klu_btf_scale.c'; fi`
+
+klu_btf_solve.o: $(srcdir)/klu_btf/klu_btf_solve.c
+@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT klu_btf_solve.o -MD -MP -MF "$(DEPDIR)/klu_btf_solve.Tpo" -c -o klu_btf_solve.o `test -f '$(srcdir)/klu_btf/klu_btf_solve.c' || echo '$(srcdir)/'`$(srcdir)/klu_btf/klu_btf_solve.c; \
+@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/klu_btf_solve.Tpo" "$(DEPDIR)/klu_btf_solve.Po"; else rm -f "$(DEPDIR)/klu_btf_solve.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/klu_btf/klu_btf_solve.c' object='klu_btf_solve.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/klu_btf_solve.Po' tmpdepfile='$(DEPDIR)/klu_btf_solve.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o klu_btf_solve.o `test -f '$(srcdir)/klu_btf/klu_btf_solve.c' || echo '$(srcdir)/'`$(srcdir)/klu_btf/klu_btf_solve.c
+
+klu_btf_solve.obj: $(srcdir)/klu_btf/klu_btf_solve.c
+@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT klu_btf_solve.obj -MD -MP -MF "$(DEPDIR)/klu_btf_solve.Tpo" -c -o klu_btf_solve.obj `if test -f '$(srcdir)/klu_btf/klu_btf_solve.c'; then $(CYGPATH_W) '$(srcdir)/klu_btf/klu_btf_solve.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/klu_btf/klu_btf_solve.c'; fi`; \
+@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/klu_btf_solve.Tpo" "$(DEPDIR)/klu_btf_solve.Po"; else rm -f "$(DEPDIR)/klu_btf_solve.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/klu_btf/klu_btf_solve.c' object='klu_btf_solve.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/klu_btf_solve.Po' tmpdepfile='$(DEPDIR)/klu_btf_solve.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o klu_btf_solve.obj `if test -f '$(srcdir)/klu_btf/klu_btf_solve.c'; then $(CYGPATH_W) '$(srcdir)/klu_btf/klu_btf_solve.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/klu_btf/klu_btf_solve.c'; fi`
+
+klu_dump.o: $(srcdir)/klu_btf/klu_dump.c
+@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT klu_dump.o -MD -MP -MF "$(DEPDIR)/klu_dump.Tpo" -c -o klu_dump.o `test -f '$(srcdir)/klu_btf/klu_dump.c' || echo '$(srcdir)/'`$(srcdir)/klu_btf/klu_dump.c; \
+@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/klu_dump.Tpo" "$(DEPDIR)/klu_dump.Po"; else rm -f "$(DEPDIR)/klu_dump.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/klu_btf/klu_dump.c' object='klu_dump.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/klu_dump.Po' tmpdepfile='$(DEPDIR)/klu_dump.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o klu_dump.o `test -f '$(srcdir)/klu_btf/klu_dump.c' || echo '$(srcdir)/'`$(srcdir)/klu_btf/klu_dump.c
+
+klu_dump.obj: $(srcdir)/klu_btf/klu_dump.c
+@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT klu_dump.obj -MD -MP -MF "$(DEPDIR)/klu_dump.Tpo" -c -o klu_dump.obj `if test -f '$(srcdir)/klu_btf/klu_dump.c'; then $(CYGPATH_W) '$(srcdir)/klu_btf/klu_dump.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/klu_btf/klu_dump.c'; fi`; \
+@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/klu_dump.Tpo" "$(DEPDIR)/klu_dump.Po"; else rm -f "$(DEPDIR)/klu_dump.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/klu_btf/klu_dump.c' object='klu_dump.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/klu_dump.Po' tmpdepfile='$(DEPDIR)/klu_dump.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o klu_dump.obj `if test -f '$(srcdir)/klu_btf/klu_dump.c'; then $(CYGPATH_W) '$(srcdir)/klu_btf/klu_dump.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/klu_btf/klu_dump.c'; fi`
+
+klu.o: $(srcdir)/klu_kernel/klu.c
+@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT klu.o -MD -MP -MF "$(DEPDIR)/klu.Tpo" -c -o klu.o `test -f '$(srcdir)/klu_kernel/klu.c' || echo '$(srcdir)/'`$(srcdir)/klu_kernel/klu.c; \
 @am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/klu.Tpo" "$(DEPDIR)/klu.Po"; else rm -f "$(DEPDIR)/klu.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/klu/klu.c' object='klu.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/klu_kernel/klu.c' object='klu.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/klu.Po' tmpdepfile='$(DEPDIR)/klu.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o klu.o `test -f '$(srcdir)/klu/klu.c' || echo '$(srcdir)/'`$(srcdir)/klu/klu.c
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o klu.o `test -f '$(srcdir)/klu_kernel/klu.c' || echo '$(srcdir)/'`$(srcdir)/klu_kernel/klu.c
 
-klu.obj: $(srcdir)/klu/klu.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT klu.obj -MD -MP -MF "$(DEPDIR)/klu.Tpo" -c -o klu.obj `if test -f '$(srcdir)/klu/klu.c'; then $(CYGPATH_W) '$(srcdir)/klu/klu.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/klu/klu.c'; fi`; \
+klu.obj: $(srcdir)/klu_kernel/klu.c
+@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT klu.obj -MD -MP -MF "$(DEPDIR)/klu.Tpo" -c -o klu.obj `if test -f '$(srcdir)/klu_kernel/klu.c'; then $(CYGPATH_W) '$(srcdir)/klu_kernel/klu.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/klu_kernel/klu.c'; fi`; \
 @am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/klu.Tpo" "$(DEPDIR)/klu.Po"; else rm -f "$(DEPDIR)/klu.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/klu/klu.c' object='klu.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/klu_kernel/klu.c' object='klu.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/klu.Po' tmpdepfile='$(DEPDIR)/klu.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o klu.obj `if test -f '$(srcdir)/klu/klu.c'; then $(CYGPATH_W) '$(srcdir)/klu/klu.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/klu/klu.c'; fi`
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o klu.obj `if test -f '$(srcdir)/klu_kernel/klu.c'; then $(CYGPATH_W) '$(srcdir)/klu_kernel/klu.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/klu_kernel/klu.c'; fi`
 
-klu_kernel.o: $(srcdir)/klu/klu_kernel.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT klu_kernel.o -MD -MP -MF "$(DEPDIR)/klu_kernel.Tpo" -c -o klu_kernel.o `test -f '$(srcdir)/klu/klu_kernel.c' || echo '$(srcdir)/'`$(srcdir)/klu/klu_kernel.c; \
+klu_kernel.o: $(srcdir)/klu_kernel/klu_kernel.c
+@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT klu_kernel.o -MD -MP -MF "$(DEPDIR)/klu_kernel.Tpo" -c -o klu_kernel.o `test -f '$(srcdir)/klu_kernel/klu_kernel.c' || echo '$(srcdir)/'`$(srcdir)/klu_kernel/klu_kernel.c; \
 @am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/klu_kernel.Tpo" "$(DEPDIR)/klu_kernel.Po"; else rm -f "$(DEPDIR)/klu_kernel.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/klu/klu_kernel.c' object='klu_kernel.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/klu_kernel/klu_kernel.c' object='klu_kernel.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/klu_kernel.Po' tmpdepfile='$(DEPDIR)/klu_kernel.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o klu_kernel.o `test -f '$(srcdir)/klu/klu_kernel.c' || echo '$(srcdir)/'`$(srcdir)/klu/klu_kernel.c
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o klu_kernel.o `test -f '$(srcdir)/klu_kernel/klu_kernel.c' || echo '$(srcdir)/'`$(srcdir)/klu_kernel/klu_kernel.c
 
-klu_kernel.obj: $(srcdir)/klu/klu_kernel.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT klu_kernel.obj -MD -MP -MF "$(DEPDIR)/klu_kernel.Tpo" -c -o klu_kernel.obj `if test -f '$(srcdir)/klu/klu_kernel.c'; then $(CYGPATH_W) '$(srcdir)/klu/klu_kernel.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/klu/klu_kernel.c'; fi`; \
+klu_kernel.obj: $(srcdir)/klu_kernel/klu_kernel.c
+@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT klu_kernel.obj -MD -MP -MF "$(DEPDIR)/klu_kernel.Tpo" -c -o klu_kernel.obj `if test -f '$(srcdir)/klu_kernel/klu_kernel.c'; then $(CYGPATH_W) '$(srcdir)/klu_kernel/klu_kernel.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/klu_kernel/klu_kernel.c'; fi`; \
 @am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/klu_kernel.Tpo" "$(DEPDIR)/klu_kernel.Po"; else rm -f "$(DEPDIR)/klu_kernel.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/klu/klu_kernel.c' object='klu_kernel.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/klu_kernel/klu_kernel.c' object='klu_kernel.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/klu_kernel.Po' tmpdepfile='$(DEPDIR)/klu_kernel.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o klu_kernel.obj `if test -f '$(srcdir)/klu/klu_kernel.c'; then $(CYGPATH_W) '$(srcdir)/klu/klu_kernel.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/klu/klu_kernel.c'; fi`
-
-klu_noprune_kernel.o: $(srcdir)/klu/klu_noprune_kernel.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT klu_noprune_kernel.o -MD -MP -MF "$(DEPDIR)/klu_noprune_kernel.Tpo" -c -o klu_noprune_kernel.o `test -f '$(srcdir)/klu/klu_noprune_kernel.c' || echo '$(srcdir)/'`$(srcdir)/klu/klu_noprune_kernel.c; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/klu_noprune_kernel.Tpo" "$(DEPDIR)/klu_noprune_kernel.Po"; else rm -f "$(DEPDIR)/klu_noprune_kernel.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/klu/klu_noprune_kernel.c' object='klu_noprune_kernel.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/klu_noprune_kernel.Po' tmpdepfile='$(DEPDIR)/klu_noprune_kernel.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o klu_noprune_kernel.o `test -f '$(srcdir)/klu/klu_noprune_kernel.c' || echo '$(srcdir)/'`$(srcdir)/klu/klu_noprune_kernel.c
-
-klu_noprune_kernel.obj: $(srcdir)/klu/klu_noprune_kernel.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT klu_noprune_kernel.obj -MD -MP -MF "$(DEPDIR)/klu_noprune_kernel.Tpo" -c -o klu_noprune_kernel.obj `if test -f '$(srcdir)/klu/klu_noprune_kernel.c'; then $(CYGPATH_W) '$(srcdir)/klu/klu_noprune_kernel.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/klu/klu_noprune_kernel.c'; fi`; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/klu_noprune_kernel.Tpo" "$(DEPDIR)/klu_noprune_kernel.Po"; else rm -f "$(DEPDIR)/klu_noprune_kernel.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/klu/klu_noprune_kernel.c' object='klu_noprune_kernel.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/klu_noprune_kernel.Po' tmpdepfile='$(DEPDIR)/klu_noprune_kernel.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o klu_noprune_kernel.obj `if test -f '$(srcdir)/klu/klu_noprune_kernel.c'; then $(CYGPATH_W) '$(srcdir)/klu/klu_noprune_kernel.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/klu/klu_noprune_kernel.c'; fi`
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o klu_kernel.obj `if test -f '$(srcdir)/klu_kernel/klu_kernel.c'; then $(CYGPATH_W) '$(srcdir)/klu_kernel/klu_kernel.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/klu_kernel/klu_kernel.c'; fi`
 
 alloc.o: $(srcdir)/ksparse/alloc.c
 @am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT alloc.o -MD -MP -MF "$(DEPDIR)/alloc.Tpo" -c -o alloc.o `test -f '$(srcdir)/ksparse/alloc.c' || echo '$(srcdir)/'`$(srcdir)/ksparse/alloc.c; \
@@ -1354,35 +1626,35 @@ CrsMatrixTranspose.obj: $(srcdir)/CrsMatrixTranspose.cpp
 .f.obj:
 	$(F77COMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
 
-btf.o: $(srcdir)/klu/btf.f
-	$(F77) $(AM_FFLAGS) $(FFLAGS) -c -o btf.o `test -f '$(srcdir)/klu/btf.f' || echo '$(srcdir)/'`$(srcdir)/klu/btf.f
+btf.o: $(srcdir)/btf/btf.f
+	$(F77) $(AM_FFLAGS) $(FFLAGS) -c -o btf.o `test -f '$(srcdir)/btf/btf.f' || echo '$(srcdir)/'`$(srcdir)/btf/btf.f
 
-btf.obj: $(srcdir)/klu/btf.f
-	$(F77) $(AM_FFLAGS) $(FFLAGS) -c -o btf.obj `if test -f '$(srcdir)/klu/btf.f'; then $(CYGPATH_W) '$(srcdir)/klu/btf.f'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/klu/btf.f'; fi`
+btf.obj: $(srcdir)/btf/btf.f
+	$(F77) $(AM_FFLAGS) $(FFLAGS) -c -o btf.obj `if test -f '$(srcdir)/btf/btf.f'; then $(CYGPATH_W) '$(srcdir)/btf/btf.f'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/btf/btf.f'; fi`
 
-mc21a.o: $(srcdir)/klu/mc21a.f
-	$(F77) $(AM_FFLAGS) $(FFLAGS) -c -o mc21a.o `test -f '$(srcdir)/klu/mc21a.f' || echo '$(srcdir)/'`$(srcdir)/klu/mc21a.f
+mc13d.o: $(srcdir)/btf/mc13d.f
+	$(F77) $(AM_FFLAGS) $(FFLAGS) -c -o mc13d.o `test -f '$(srcdir)/btf/mc13d.f' || echo '$(srcdir)/'`$(srcdir)/btf/mc13d.f
 
-mc21a.obj: $(srcdir)/klu/mc21a.f
-	$(F77) $(AM_FFLAGS) $(FFLAGS) -c -o mc21a.obj `if test -f '$(srcdir)/klu/mc21a.f'; then $(CYGPATH_W) '$(srcdir)/klu/mc21a.f'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/klu/mc21a.f'; fi`
+mc13d.obj: $(srcdir)/btf/mc13d.f
+	$(F77) $(AM_FFLAGS) $(FFLAGS) -c -o mc13d.obj `if test -f '$(srcdir)/btf/mc13d.f'; then $(CYGPATH_W) '$(srcdir)/btf/mc13d.f'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/btf/mc13d.f'; fi`
 
-mc21b.o: $(srcdir)/klu/mc21b.f
-	$(F77) $(AM_FFLAGS) $(FFLAGS) -c -o mc21b.o `test -f '$(srcdir)/klu/mc21b.f' || echo '$(srcdir)/'`$(srcdir)/klu/mc21b.f
+mc13e.o: $(srcdir)/btf/mc13e.f
+	$(F77) $(AM_FFLAGS) $(FFLAGS) -c -o mc13e.o `test -f '$(srcdir)/btf/mc13e.f' || echo '$(srcdir)/'`$(srcdir)/btf/mc13e.f
 
-mc21b.obj: $(srcdir)/klu/mc21b.f
-	$(F77) $(AM_FFLAGS) $(FFLAGS) -c -o mc21b.obj `if test -f '$(srcdir)/klu/mc21b.f'; then $(CYGPATH_W) '$(srcdir)/klu/mc21b.f'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/klu/mc21b.f'; fi`
+mc13e.obj: $(srcdir)/btf/mc13e.f
+	$(F77) $(AM_FFLAGS) $(FFLAGS) -c -o mc13e.obj `if test -f '$(srcdir)/btf/mc13e.f'; then $(CYGPATH_W) '$(srcdir)/btf/mc13e.f'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/btf/mc13e.f'; fi`
 
-mc13e.o: $(srcdir)/klu/mc13e.f
-	$(F77) $(AM_FFLAGS) $(FFLAGS) -c -o mc13e.o `test -f '$(srcdir)/klu/mc13e.f' || echo '$(srcdir)/'`$(srcdir)/klu/mc13e.f
+mc21a.o: $(srcdir)/btf/mc21a.f
+	$(F77) $(AM_FFLAGS) $(FFLAGS) -c -o mc21a.o `test -f '$(srcdir)/btf/mc21a.f' || echo '$(srcdir)/'`$(srcdir)/btf/mc21a.f
 
-mc13e.obj: $(srcdir)/klu/mc13e.f
-	$(F77) $(AM_FFLAGS) $(FFLAGS) -c -o mc13e.obj `if test -f '$(srcdir)/klu/mc13e.f'; then $(CYGPATH_W) '$(srcdir)/klu/mc13e.f'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/klu/mc13e.f'; fi`
+mc21a.obj: $(srcdir)/btf/mc21a.f
+	$(F77) $(AM_FFLAGS) $(FFLAGS) -c -o mc21a.obj `if test -f '$(srcdir)/btf/mc21a.f'; then $(CYGPATH_W) '$(srcdir)/btf/mc21a.f'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/btf/mc21a.f'; fi`
 
-mc13d.o: $(srcdir)/klu/mc13d.f
-	$(F77) $(AM_FFLAGS) $(FFLAGS) -c -o mc13d.o `test -f '$(srcdir)/klu/mc13d.f' || echo '$(srcdir)/'`$(srcdir)/klu/mc13d.f
+mc21b.o: $(srcdir)/btf/mc21b.f
+	$(F77) $(AM_FFLAGS) $(FFLAGS) -c -o mc21b.o `test -f '$(srcdir)/btf/mc21b.f' || echo '$(srcdir)/'`$(srcdir)/btf/mc21b.f
 
-mc13d.obj: $(srcdir)/klu/mc13d.f
-	$(F77) $(AM_FFLAGS) $(FFLAGS) -c -o mc13d.obj `if test -f '$(srcdir)/klu/mc13d.f'; then $(CYGPATH_W) '$(srcdir)/klu/mc13d.f'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/klu/mc13d.f'; fi`
+mc21b.obj: $(srcdir)/btf/mc21b.f
+	$(F77) $(AM_FFLAGS) $(FFLAGS) -c -o mc21b.obj `if test -f '$(srcdir)/btf/mc21b.f'; then $(CYGPATH_W) '$(srcdir)/btf/mc21b.f'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/btf/mc21b.f'; fi`
 uninstall-info-am:
 install-includeHEADERS: $(include_HEADERS)
 	@$(NORMAL_INSTALL)

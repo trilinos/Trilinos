@@ -335,7 +335,8 @@ int Amesos_Klu::PerformSymbolicFactorization() {
   if ( iam == 0 ) { 
     if ( PrivateKluData_->Symbolic_ ) klu_btf_free_symbolic (&(PrivateKluData_->Symbolic_)) ;
 
-    PrivateKluData_->Symbolic_ = klu_btf_analyze (NumGlobalElements_, &Ap[0], &Ai[0] ) ;
+    PrivateKluData_->Symbolic_ = klu_btf_analyze (NumGlobalElements_, &Ap[0], &Ai[0],
+	    (double *) 0, (double *) 0) ;
     if ( PrivateKluData_->Symbolic_ == 0 ) EPETRA_CHK_ERR( 1 ) ; 
   }
 
@@ -352,10 +353,8 @@ int Amesos_Klu::PerformNumericFactorization( ) {
   
   if ( iam == 0 ) {
 
-    const double tol = 0.001; //  At some point we need to expose this to the user 
-
     if ( PrivateKluData_->Numeric_ ) klu_btf_free_numeric (&(PrivateKluData_->Numeric_)) ;
-    PrivateKluData_->Numeric_ = klu_btf_factor (&Ap[0], &Ai[0], &Aval[0], tol, PrivateKluData_->Symbolic_) ;
+    PrivateKluData_->Numeric_ = klu_btf_factor (&Ap[0], &Ai[0], &Aval[0], PrivateKluData_->Symbolic_, (double *) 0, (double *) 0) ;
     if ( PrivateKluData_->Numeric_ == 0 ) EPETRA_CHK_ERR( 2 ) ; 
     
   }
@@ -477,9 +476,10 @@ int Amesos_Klu::Solve() {
 
     assert( SerialXlda == NumGlobalElements_ ) ; 
     
+    vector<double> workspace( NumGlobalElements_ ) ; 
+
     for ( int j =0 ; j < nrhs; j++ ) { 
 
-      vector<double> workspace( NumGlobalElements_ ) ; 
       klu_btf_solve( PrivateKluData_->Symbolic_, PrivateKluData_->Numeric_,
 		     &SerialXvalues[j*SerialXlda], &workspace[0] );
     }

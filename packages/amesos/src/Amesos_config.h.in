@@ -14,9 +14,6 @@
 /* Define if F77 and FC dummy `main' functions are identical. */
 #undef FC_DUMMY_MAIN_EQ_F77
 
-/* Define to 1 if you have the <amd.h> header file. */
-#undef HAVE_AMD_H
-
 /* Define if want to build amesos-dscpack */
 #undef HAVE_AMESOS_DSCPACK
 
