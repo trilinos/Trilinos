@@ -648,13 +648,13 @@ int LB_Special_Malloc(struct LB_Struct *lb, void **array, int size,
 
       switch(type) {
       case LB_SPECIAL_MALLOC_INT:
-         *array = (int *) LB_Malloc(size*sizeof(int),__FILE__,__LINE__);
+         *array = (int *) LB_MALLOC(size*sizeof(int));
          break;
       case LB_SPECIAL_MALLOC_GID:
-         *array = (LB_GID *) LB_Malloc(size*sizeof(LB_GID),__FILE__,__LINE__);
+         *array = (LB_GID *) LB_MALLOC(size*sizeof(LB_GID));
          break;
       case LB_SPECIAL_MALLOC_LID:
-         *array = (LB_LID *) LB_Malloc(size*sizeof(LB_LID),__FILE__,__LINE__);
+         *array = (LB_LID *) LB_MALLOC(size*sizeof(LB_LID));
          break;
       default:
          fprintf(stderr, "Error: illegal value passed for type in LB_Special_Malloc\n");
