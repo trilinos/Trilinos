@@ -3,13 +3,14 @@ include $(TRILINOS_HOME)/build/TRILINOS_TARGET_DEFS
 TRILINOS_TARGET = $(TRILINOS_ARCH).$(TRILINOS_COMM)$(TRILINOS_ID)
 include $(TRILINOS_HOME)/build/makefile.$(TRILINOS_TARGET)
 
-
+MODULE_NAME = elementspace
 
 DEFINES= -D$(TRILINOS_ARCH) $(EPETRA_ARCH_DEFINES) -D$(EPETRA_COMM)
 
 INCLUDES = $(ARCH_INCLUDES) \
 	   -I$(TRILINOS_HOME)/packages/tpetra/src \
-           $(BLAS_INCLUDES) 
+           $(BLAS_INCLUDES) \
+		 -I$(BOOST_HOME)
 
 CFLAGS=$(ARCH_CFLAGS) $(DEFINES) $(INCLUDES)
 FFLAGS=$(ARCH_FFLAGS) $(DEFINES) $(INCLUDES)
@@ -40,12 +41,12 @@ TEST_C_OBJ          = $(TEST_C:.c=.o)
 TEST_CXX_OBJ          = $(TEST_CXX:.cpp=.o)
 TEST_F_OBJ          = $(TEST_F:.f=.o)
 
-TARGET_C_MPI = c_tpetra_estest_mpi
-TARGET_CXX_MPI = cxx_tpetra_estest_mpi
-TARGET_F_MPI = f_tpetra_estest_mpi
-TARGET_C_SERIAL = c_tpetra_estest_serial
-TARGET_CXX_SERIAL = cxx_tpetra_estest_serial
-TARGET_F_SERIAL = f_tpetra_estest_serial
+TARGET_C_MPI = c_tpetra_$(MODULE_NAME)_mpi
+TARGET_CXX_MPI = cxx_tpetra_$(MODULE_NAME)_mpi
+TARGET_F_MPI = f_tpetra_$(MODULE_NAME)_mpi
+TARGET_C_SERIAL = c_tpetra_$(MODULE_NAME)_serial
+TARGET_CXX_SERIAL = cxx_tpetra_$(MODULE_NAME)_serial
+TARGET_F_SERIAL = f_tpetra_$(MODULE_NAME)_serial
 
 TARGET_C = $(TARGET_C_$(TRILINOS_COMM))
 TARGET_CXX = $(TARGET_CXX_$(TRILINOS_COMM))

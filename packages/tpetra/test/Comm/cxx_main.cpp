@@ -1,51 +1,83 @@
 /*Paul
 16-July-2002 CommTester.
+21-Sept-2002 Updated for Comm/Platform split.
 */
 
-#define ORDINALTYPE int
-#define SCALARTYPE float
-
+#include <iostream>
 #include "Tpetra_SerialComm.h"
 
-template<class T>
-void setArray(T* array, T v1, T v2) {
-	array[0] = v1;
-	array[1] = v2;
-}
+// function prototypes
+template<typename PacketType, typename OrdinalType> void setRandom(PacketType& vals, OrdinalType count);
+template<typename PacketType, typename OrdinalType> void setToZero(PacketType& vals, OrdinalType count);
+template<typename PacketType, typename OrdinalType> void commTest(Tpetra::SerialComm<PacketType, OrdinalType>& comm, bool verbose);
 
 int main(int argc, char* argv[]) {
+	bool verbose = false;
+	if (argc>1 && argv[1][0]=='-' && argv[1][1]=='v') 
+		verbose = true;
 
-  ORDINALTYPE in[2];
-  ORDINALTYPE out[2];
-  
-  Tpetra::SerialComm<ORDINALTYPE> comm;
-  cout << "===SerialComm object created." << endl;
-  cout << comm.label() << endl;
-  
-  cout << "===Testing getImageID and getNumImages." << endl;
-  assert(comm.getMyImageID() == 0);
-  assert(comm.getNumImages() == 1);
-  
-  cout << "===Testing barrier." << endl;
-  comm.barrier();
-  
-  cout << "===Testing SumAll(ordinal)." << endl;
-  setArray(in, 2, 4);
-  setArray(out, 0, 0);
-  comm.sumAll(in, out, 2);
-  assert(out[0] == 2);
-  assert(out[1] == 4);
-  
-  /*
-    cout << "===Testing maxAll." << endl;
-    setArray(in, 3.0, 9.8);
-    setArray(out, 0.0, 0.0);
-    comm.maxAll(in, out, 2);
-    assert(in[0] == SCALARTYPE(3.0));
-    assert(out[1] == SCALARTYPE(9.8));
-  */
-  
-  cout << "===Finished." << endl;
-  
+	if(verbose) cout << "Creating SerialComm object...";
+	Tpetra::SerialComm<int, int> comm;
+  if(verbose) cout << "Successful" << endl;
+	commTest(comm, verbose);
+	cout << "SerialComm testing successfull." << endl;
+
   return(0);
+}
+
+template<typename PacketType, typename OrdinalType> 
+void setValues(PacketType& vals, OrdinalType count) {
+	for(OrdinalType i = 0; i < count; i++)
+		vals[i] = 5;
+}
+
+template<typename PacketType, typename OrdinalType> 
+void setToZero(PacketType& vals, OrdinalType count) {
+	for(OrdinalType i = 0; i < count; i++)
+		vals[i] = 0;
+}
+
+template<typename PacketType, typename OrdinalType>
+void commTest(Tpetra::SerialComm<PacketType, OrdinalType>& comm, bool verbose) {
+	OrdinalType count;
+	count = 1;	// eventually, count = randnum
+	PacketType inVal;
+	PacketType outVal;
+
+	inVal = 7; outVal = 7;
+	if(verbose) cout << "Testing broadcast...";
+	comm.broadcast(&inVal, count, 0);
+	assert(inVal = outVal);
+	if(verbose) cout << "Successful" << endl;
+  
+	inVal = 5; outVal = 0;
+	if(verbose) cout << "Testing gatherAll...";
+	comm.gatherAll(&inVal, &outVal, count);
+	assert(inVal = outVal);
+	if(verbose) cout << "Successful" << endl;
+
+	inVal = 2; outVal = 0;
+	if(verbose) cout << "Testing sumAll...";
+	comm.sumAll(&inVal, &outVal, count);
+	assert(inVal = outVal);
+	if(verbose) cout << "Successful" << endl;
+
+	inVal = 6; outVal = 0;
+	if(verbose) cout << "Testing MaxAll...";
+	comm.maxAll(&inVal, &outVal, count);
+	assert(inVal = outVal);
+	if(verbose) cout << "Successful" << endl;
+
+	inVal = 9; outVal = 0;
+	if(verbose) cout << "Testing MinAll...";
+	comm.minAll(&inVal, &outVal, count);
+	assert(inVal = outVal);
+	if(verbose) cout << "Successful" << endl;
+
+	inVal = 1; outVal = 0;
+	if(verbose) cout << "Testing scanSum...";
+	comm.scanSum(&inVal, &outVal, count);
+	assert(inVal = outVal);
+	if(verbose) cout << "Successful" << endl;
+
 }

@@ -1,91 +1,105 @@
+// Tpetra ElementSpace tester
+// Modified: 14-Oct-2002
+// Paul says: I'll get around to making this a more thorough tester real soon now.
+
 #define ORDINALTYPE int
 
 #include <iostream>
 #include <iomanip>
-#include "Tpetra_SerialComm.h" 
+#include "Tpetra_SerialPlatform.h" 
 #include "Tpetra_ElementSpace.h"
 
-void commTester(bool verbose);
-void esTester(bool verbose);
+void platformTester(bool verbose, bool debug);
+void esTester(bool verbose, bool debug);
 void isLgetG(ORDINALTYPE low, ORDINALTYPE high, Tpetra::ElementSpace<ORDINALTYPE>& es);
 void isGgetL(ORDINALTYPE low, ORDINALTYPE high, Tpetra::ElementSpace<ORDINALTYPE>& es);
 
 int main(int argc, char* argv[]) {
-
 	bool verbose = false;
-	if(argc > 1)
+	bool debug = false;
+	if(argc > 1) {
 		if(argv[1][0] == '-' && argv[1][1] == 'v')
 			verbose = true;
+		if(argv[1][0] == '-' && argv[1][1] == 'd') {
+			debug = true;
+			verbose = true;
+		}
+	}
 
-	commTester(verbose);
-	esTester(verbose);
+	platformTester(verbose, debug);
+	esTester(verbose, debug);
 
 	return(0);
 }
 
-void commTester(bool verbose) {
-	cout << "==Creating comm" << endl;
-  Tpetra::SerialComm<ORDINALTYPE> comm;
-	if(verbose) cout << "==comm.print(cout)" << endl;
-	if(verbose) comm.print(cout);
-
+void platformTester(bool verbose, bool debug) {
+	if(verbose) cout << "Creating platform...";
+  Tpetra::SerialPlatform<ORDINALTYPE, ORDINALTYPE> platform;
+	if(verbose) cout << "Successful." << endl;
+	if(debug) cout << platform << endl;
 }
 
-void esTester(bool verbose) {
+void esTester(bool verbose, bool debug) {
 	ORDINALTYPE eList[10] = {1,4,7,8,9,15,22,54,55,58};
 	ORDINALTYPE eSize = 10;
-  Tpetra::SerialComm<ORDINALTYPE> comm;
+  Tpetra::SerialPlatform<ORDINALTYPE, ORDINALTYPE> platform;
 	
-	// Create ES, const 1
-	cout << "==Creating es1" << endl;
-	Tpetra::ElementSpace<ORDINALTYPE> es1(10, 2, comm);
-	if(verbose) cout << "==es1.print(cout)" << endl;
-	if(verbose) es1.print(cout);
+	if(verbose) cout << "Creating es1(contiguous, tpetra-defined)...";
+	Tpetra::ElementSpace<ORDINALTYPE> es1(10, 2, platform);
+	if(verbose) cout << "Successful." << endl;
+	if(debug) cout << es1 << endl;
 	
-	cout << "==Creating es2" << endl;
-	Tpetra::ElementSpace<ORDINALTYPE> es2(-1, 10, 2, comm);
-	if(verbose) cout << "==es2.print(cout)" << endl;
-	if(verbose) es2.print(cout);
+	if(verbose) cout << "Creating es2(contiguous, user-defined)...";
+	Tpetra::ElementSpace<ORDINALTYPE> es2(-1, 10, 2, platform);
+	if(verbose) cout << "Successful." << endl;
+	if(debug) cout << es2 << endl;
 	
-	cout << "==Testing isSameAs (contig)" << endl;
+	if(verbose) cout << "Testing isSameAs (contig)...";
 	assert(es1.isSameAs(es2) == true);
-	Tpetra::ElementSpace<ORDINALTYPE> es2a(10, 10, 3, comm);
+	Tpetra::ElementSpace<ORDINALTYPE> es2a(10, 10, 3, platform);
 	assert(es1.isSameAs(es2a) == false);
+	if(verbose) cout << "Successful." << endl;
 	
-	cout << "==Creating es3" << endl; 
-	Tpetra::ElementSpace<ORDINALTYPE> es3(-1, eSize, eList, 0, comm);
-	if(verbose) cout << "==es3.print(cout)" << endl;
-	if(verbose) es3.print(cout);
+	if(verbose) cout << "Creating es3(noncontiguous)..."; 
+	Tpetra::ElementSpace<ORDINALTYPE> es3(-1, eSize, eList, 0, platform);
+	if(verbose) cout << "Successful." << endl;
+	if(debug) cout << es3 << endl;
 	
-	if(verbose) cout << "==Testing isMyLID and getGID" << endl;
-	if(verbose) isLgetG(0, 13, es3); 
+	if(debug) {
+		cout << "Testing isMyLID and getGID" << endl;
+		isLgetG(0, 13, es3); 
+		cout << "Testing isMyGID and getLID" << endl; 
+		isGgetL(0, 60, es3);
+	}
 	
-	if(verbose) cout << "==Testing isMyGID and getLID" << endl; 
-	if(verbose) isGgetL(0, 60, es3);
-	
-	cout << "==Testing isSameAs (noncontig)" << endl;
-	Tpetra::ElementSpace<ORDINALTYPE> es3a(eSize, eSize, eList, es3.getIndexBase(), comm);
+	if(verbose) cout << "Testing isSameAs (noncontig)...";
+	Tpetra::ElementSpace<ORDINALTYPE> es3a(eSize, eSize, eList, es3.getIndexBase(), platform);
 	assert(es3.isSameAs(es3a) == true);
 	eList[(eSize / 2)] += 2;
-	Tpetra::ElementSpace<ORDINALTYPE> es3b(eSize, eSize, eList, es3.getIndexBase(), comm);
+	Tpetra::ElementSpace<ORDINALTYPE> es3b(eSize, eSize, eList, es3.getIndexBase(), platform);
 	assert(es3.isSameAs(es3b) == false);
+	if(verbose) cout << "Successful." << endl;
 
-	cout << "==Testing constructor #4" << endl;
+	if(verbose) cout << "Testing copy constructor...";
 	Tpetra::ElementSpace<ORDINALTYPE> es4(es3);
 	assert(es3.isSameAs(es4) == true);
 	assert(es4.isSameAs(es3b) == false);
+	if(verbose) cout << "Successful." << endl;
 
-	cout << "==Testing getRemoteIDList" << endl;
-	ORDINALTYPE gList[5] = {1,4,22,55,58};
-	ORDINALTYPE pList[5] = {5,5,5,5,5};
-	ORDINALTYPE lList[5] = {0,0,0,0,0};
+	if(verbose) cout << "Testing getRemoteIDList...";
+	const int len = 5;
+	ORDINALTYPE gList[len] = {1,4,22,55,58};
+	ORDINALTYPE pList[len] = {5,5,5,5,5};
+	ORDINALTYPE lList[len] = {0,0,0,0,0};
 	es3.getRemoteIDList(5, gList, pList, lList);
-	if(verbose)
-		for(int i = 0; i < 5; i++)
-			cout << setw(3) << gList[i] << setw(3) << pList[i] << setw(3) << lList[i] << endl;
+	if(debug) cout << "\nGID PID LID getLID" << endl;
+	for(int i = 0; i < len; i++) {
+		if(debug) cout << setw(3) << gList[i] << setw(4) << pList[i] << setw(4) << lList[i] << setw(4) << es3.getLID(gList[i]) << endl;
+		assert(lList[i] == es3.getLID(gList[i]));
+	}
+	if(verbose) cout << "Successful." << endl;
 	
-	
-	cout << "==ESTester Finished." << endl;
+	cout << "ElementSpace test successful." << endl;
 }
 
 void isLgetG(ORDINALTYPE low, ORDINALTYPE high, Tpetra::ElementSpace<ORDINALTYPE>& es) {
@@ -101,4 +115,3 @@ void isGgetL(ORDINALTYPE low, ORDINALTYPE high, Tpetra::ElementSpace<ORDINALTYPE
 			  cout << "GID" << setw(3) << i << " getLID? " << es.getLID(i) << endl;
 	  }
 }
-

@@ -1,12 +1,14 @@
 /*Paul
 03-August-2002 BES tester. Initial writeup.
+18-Oct-2002 Modified.
+22-Oct-2002 Changed to test out BES/BESData friend wrinkles.
 */
 
 #define ORDINALTYPE int
 
 #include <iostream>
 #include <iomanip>
-#include "Tpetra_SerialComm.h" 
+#include "Tpetra_SerialPlatform.h" 
 #include "Tpetra_ElementSpace.h"
 #include "Tpetra_BlockElementSpace.h"
 
@@ -16,33 +18,42 @@ int main(int argc, char* argv[]) {
 	const ORDINALTYPE NUMELEMENTS = 5;
 	const ORDINALTYPE ELEMENTSIZE = 2;
   
-  bool verbose = false;
-  if((argc > 1) && (argv[1][0] == '-') && (argv[1][1] == 'v'))
-      verbose = true;
+	bool verbose = false;
+	bool debug = false;
+	if(argc > 1) {
+		if(argv[1][0] == '-' && argv[1][1] == 'v')
+			verbose = true;
+		if(argv[1][0] == '-' && argv[1][1] == 'd') {
+			debug = true;
+			verbose = true;
+		}
+	}
   
   // Comm
-  if(verbose) cout << "==Creating comm" << endl;
-  Tpetra::SerialComm<ORDINALTYPE> comm;
+  if(verbose) cout << "Creating platform" << endl;
+  Tpetra::SerialPlatform<ORDINALTYPE, ORDINALTYPE> platform;
 
   // ElementSpace
-  if(verbose) cout << "==Creating es, constructor1" << endl;
-  Tpetra::ElementSpace<ORDINALTYPE> es(5, 0, comm);
-  //if(verbose) cout << "==Creating es, constructor2" << endl;
-  //Tpetra::ElementSpace<ORDINALTYPE> es(-1, NUMELEMENTS, INDEXBASE, comm);
-  //if(verbose) cout << "==Creating es, constructor3" << endl;
+  if(verbose) cout << "Creating es, constructor1" << endl;
+  Tpetra::ElementSpace<ORDINALTYPE> es(5, 0, platform);
+  //if(verbose) cout << "Creating es, constructor2" << endl;
+  //Tpetra::ElementSpace<ORDINALTYPE> es(-1, NUMELEMENTS, INDEXBASE, platform);
+  //if(verbose) cout << "Creating es, constructor3" << endl;
   //ORDINALTYPE gidList[NUMELEMENTS] = {1,4,7,8,9};//,15,22,54,55,58};
-  //Tpetra::ElementSpace<ORDINALTYPE> es(-1, NUMELEMENTS, gidList, INDEXBASE, comm);
-  
-  //cout << es;
+  //Tpetra::ElementSpace<ORDINALTYPE> es(-1, NUMELEMENTS, gidList, INDEXBASE, platform);
+  //if(debug) cout << es;
 
   //BlockElementSpace
-  if(verbose) cout << "==Creating bes, constructor1" << endl;
-  Tpetra::BlockElementSpace<ORDINALTYPE> bes(es, 2);
-	//ORDINALTYPE* tmp = bes.elementSpace().getMyGlobalElements();
-	//cout << "past gMGE" << endl;
-  cout << bes;
-	//cout << bes.elementSpace();
+  if(verbose) cout << "Creating bes, constructor1" << endl;
+  Tpetra::BlockElementSpace<int> bes(es, 2);
+  if(debug) cout << bes;
 
+	if(verbose) cout << "Creating bes, constructor2" << endl;
+	ORDINALTYPE esizelist[NUMELEMENTS] = {3,2,1,5,2};
+	Tpetra::BlockElementSpace<ORDINALTYPE> bes2(es, esizelist);
+	if(debug) cout << bes2;
+	
+	cout << "BlockElementSpace testing successful." << endl;
   return(0); 
 }
 
