@@ -39,7 +39,7 @@
 #ifdef WITH_PRERELEASE
 #include "NOX_Solver_InexactTrustRegionBased.H" // Inexact Trust region method
 #include "NOX_Solver_TensorBased.H"  // Tensor method
-#include "NOX_Solver_TensorBasedTest.H"  // Tensor method
+#include "NOX_Solver_TensorBasedTest.H"  // Tensor-Krylov method
 #endif
 
 NOX::Solver::Manager::Manager(Abstract::Group& grp, StatusTest::Generic &t, Parameter::List& p) :
@@ -104,7 +104,7 @@ bool NOX::Solver::Manager::reset(Abstract::Group& grp,
     {
       ptr = new TensorBased(grp, tests, params);
     } 
-    else if (method == "Tensor Based Test") 
+    else if (method == "Tensor-Krylov Based") 
     {
       ptr = new TensorBasedTest(grp, tests, params);
     } 
