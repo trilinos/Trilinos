@@ -196,7 +196,7 @@ int main(int argc, char *argv[])
 
     // Get the final solution from the stepper
     const LOCA::LAPACK::Group& finalGroup = 
-      dynamic_cast<const LOCA::LAPACK::Group&>(stepper.getUnderlyingGroup());
+      dynamic_cast<const LOCA::LAPACK::Group&>(stepper.getSolutionGroup());
     const NOX::LAPACK::Vector& finalSolution = 
       dynamic_cast<const NOX::LAPACK::Vector&>(finalGroup.getX());
 
