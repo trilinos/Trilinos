@@ -207,13 +207,13 @@ void ML_matmat_mult(ML_Operator *Amatrix, ML_Operator *Bmatrix,
 
    C_ptr     = (int    *) ML_allocate((N+1)* sizeof(int) );
    Cval = NULL; Ccol = NULL;
-   while ( (Cval == NULL) && (Nnz_estimate > Bmatrix->max_nz_per_row) ) {
+   while ( ((Cval == NULL)||(Ccol==NULL)) && (Nnz_estimate > Bmatrix->max_nz_per_row) ) {
       if (Ccol != NULL) ML_free(Ccol);
       Ccol  = (int    *) ML_allocate( Nnz_estimate* sizeof(int) );
       Cval  = (double *) ML_allocate( Nnz_estimate* sizeof(double));
       if (Cval == NULL) Nnz_estimate = Nnz_estimate/2;
    }
-   if ( (Cval == NULL) && (N != 0)) {
+   if ( ((Cval == NULL)||(Ccol==NULL)) && (N != 0)) {
       printf("Not enough space for new matrix in ML_matmatmult().\n");
       printf("trying to allocate %d elements \n",Nnz_estimate);
       printf("Left  matrix has %d rows \n", Amatrix->getrow->Nrows);
@@ -550,7 +550,7 @@ if ((lots_of_space < 4) && (B_allocated > 500)) Bvals = NULL; else
          C_ptr = (int    *) ML_allocate( (N-i+1)* sizeof(int) );
          Ccol  = (int    *) ML_allocate( Nnz_estimate* sizeof(int) );
          Cval  = (double *) ML_allocate( Nnz_estimate* sizeof(double));
-         if (Cval == NULL) {
+         if ((Cval == NULL) || (Ccol == NULL)) {
             printf("Not enough space for matrix\n");
             exit(1);
          }
