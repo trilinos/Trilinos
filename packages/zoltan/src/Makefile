@@ -161,9 +161,9 @@ LINT_TARGET	= llib-l$(LIB_TARGET).ln
 SUBDIRS		= driver ch all lb par rcb comm oct parmetis
 VPATH		= $(SUBDIRS)
 
-#
+##############################################################################
 # sunmos defines
-#
+##############################################################################
 SMOS_CC		= sicc
 SMOS_DBG_FLAGS	= -g
 SMOS_OPT_FLAGS	= -O
@@ -191,9 +191,9 @@ SMOS_PAR_LPATH  = -L$(PARMETISLIB_PATH)/Obj_smos \
 SMOS_DR_LIBS	= -L. -l$(LIB_TARGET) -L$(SMOS_ARCHD)/lib $(NEM_LIBS) \
 		   $(SMOS_MPI_LIB) $(SMOS_PAR_LPATH) $(PARMETIS_LIBS)
 
-#
+##############################################################################
 # Intel P6 defines
-#
+##############################################################################
 #
 TFLOP_CC	= pgcc -cougar
 TFLOP_DBG_FLAGS	= -g
@@ -223,8 +223,9 @@ TFLOP_DR_LIBS	= -L. -l$(LIB_TARGET) -L$(TFLOP_ARCHD)/lib $(NEM_LIBS) \
 	          $(TFLOP_MPI_LIB) $(TFLOP_PAR_LPATH) $(PARMETIS_LIBS)
 
 #
-# SUN defines
-#
+##############################################################################
+# SUN defines (Solaris)
+##############################################################################
 #SUN_CC          = acc -vc -Xa -DUSE_STDARG -DHAVE_STDLIB_H=1 \
 #                -DHAVE_STRING_H=1 -DHAVE_UNISTD_H=1 -DHAVE_STDARG_H=1 \
 #                -DUSE_STDARG=1 -DMALLOC_RET_VOID=1
@@ -263,9 +264,9 @@ SUN_DR_IPATH	= -I$(SUN_ARCHD)/include
 SUN_DR_LIBS	= -L. -l$(LIB_TARGET) -L$(SUN_ARCHD)/lib $(NEM_LIBS) \
 	          $(SUN_PAR_LPATH) $(PARMETIS_LIBS) $(SUN_MPI_LIBS) -lm 
 		  
-#
+##############################################################################
 # SUNOS Definitions
-#
+##############################################################################
 
 SUNOS_CC          = acc-2.0.1 -vc -Xa -DUSE_STDARG -DHAVE_STDLIB_H=1 \
                 -DHAVE_STRING_H=1 -DHAVE_UNISTD_H=1 -DHAVE_STDARG_H=1 \
@@ -287,7 +288,7 @@ SUNOS_PAR_LPATH   = -L$(PARMETISLIB_PATH)/Obj_sunos \
                   -L../$(PARMETISLIB_PATH)/Obj_sunos
 SUNOS_DEFS	= $(GDEFINES)
 
-SUNOS_CCOMP	= $(SUNOS_CC) $(SUNOS_INC_PATH) $(SUN_OPT_FLAGS)
+SUNOS_CCOMP	= $(SUNOS_CC) $(SUNOS_INC_PATH) $(SUNOS_OPT_FLAGS)
 
 # driver stuff
 SUNOS_ARCHD	= $(ROOT_ARCHD)/sun
@@ -302,10 +303,40 @@ SUNOS_DR_IPATH	= -I$(SUNOS_ARCHD)/include
 SUNOS_DR_LIBS	= -L. -l$(LIB_TARGET) -L$(SUNOS_ARCHD)/lib $(NEM_LIBS) \
 	          $(SUNOS_PAR_LPATH) $(PARMETIS_LIBS) $(SUNOS_MPI_LIBS) -lm 
 
+##############################################################################
+# CPlant Definitions
+##############################################################################
+CPLANT_CC          = /Net/mp/cplant/current/bin/cc
+CPLANT_DBG_FLAGS   = -g
+CPLANT_OPT_FLAGS   = -O
+CPLANT_RANLIB      = ranlib
+CPLANT_AR          = ar r
+
+CPLANT_CSRC        = $(LIB_SRC_C)
+CPLANT_INC         = $(INC)
+CPLANT_OBJ         = $(CPLANT_CSRC:.c=.o)
+CPLANT_INC_PATH	= -I/Net/mp/cplant/current/include \
+		  $(SUBINCPATH)
+CPLANT_PAR_LPATH   = -L$(PARMETISLIB_PATH)/Obj_cplant \
+                  -L../$(PARMETISLIB_PATH)/Obj_cplant
+CPLANT_DEFS	= $(GDEFINES)
+
+CPLANT_CCOMP	= $(CPLANT_CC) $(CPLANT_INC_PATH) $(CPLANT_OPT_FLAGS)
+
+# driver stuff
+CPLANT_ARCHD	= $(ROOT_ARCHD)/alpha
+CPLANT_MPI_LIBS	= -L/Net/mp/cplant/current/lib -lmpi
+
+CPLANT_DR_CSRC	= $(DR_CSRC) $(CH_CSRC)
+CPLANT_DR_OBJ	= $(CPLANT_DR_CSRC:.c=.o)
+CPLANT_DR_IPATH	= -I$(CPLANT_ARCHD)/include
+
+CPLANT_DR_LIBS	= -L. -l$(LIB_TARGET) -L$(CPLANT_ARCHD)/lib $(NEM_LIBS) \
+	          $(CPLANT_PAR_LPATH) $(PARMETIS_LIBS) $(CPLANT_MPI_LIBS) -lm
+
 ###########################################################################
-#      TARGETS FOR DIFFERENT MACHINES
+#      HELP HELP HELP HELP HELP
 ###########################################################################
-#
 help:
 	@echo ' '
 	@echo 'To build the Zoltan library only, type "gmake target";'
@@ -323,6 +354,10 @@ help:
 	@echo '      NO_PARMETIS=1  (to exclude ParMetis from library)'
 	@echo '      NO_NEMESIS=1   (to exclude Nemesis from driver)'
 	@echo ' '
+
+###########################################################################
+#      TARGETS FOR DIFFERENT MACHINES
+###########################################################################
 
 smos:
 	@if [ ! -d Obj_smos ]; \
@@ -437,6 +472,33 @@ sunos-dr:
 	"DEFS=$(SUNOS_DEFS)" "VPATH=$(SUB_VPATH)" \
 	"RANLIB=$(SUNOS_RANLIB)" "MAIN_OBJ=$(SUNOS_DR_OBJ)" \
 	"LNK_LIBS=$(SUNOS_DR_LIBS)"
+
+cplant:
+	@if [ ! -d Obj_cplant ]; \
+	then mkdir Obj_cplant; \
+	fi
+	@rm -f Obj_cplant/Makefile
+	@cp Makefile_sub Obj_cplant/Makefile
+	@cd Obj_cplant; \
+	$(MAKE) $(LIB_NAME) "CC=$(CPLANT_CCOMP)"\
+	"LIB_NAME=$(LIB_NAME)" "INC=$(CPLANT_INC)"\
+	"AR=$(CPLANT_AR)" "OBJ_FILES=$(CPLANT_OBJ)" \
+	"DEFS=$(CPLANT_DEFS)" "VPATH=$(SUB_VPATH)" \
+	"RANLIB=$(CPLANT_RANLIB)"
+
+cplant-dr:
+	@if [ ! -d Obj_cplant ]; \
+	then mkdir Obj_cplant; \
+	fi
+	@rm -f Obj_cplant/Makefile
+	@cp Makefile_sub Obj_cplant/Makefile
+	@cd Obj_cplant; \
+	$(MAKE) $(TARGET) "TARGET=$(TARGET)" \
+	"CC=$(CPLANT_CCOMP) $(CPLANT_DR_IPATH)" "LIB_NAME=$(LIB_NAME)" \
+	"AR=$(CPLANT_AR)" "OBJ_FILES=$(CPLANT_OBJ)" \
+	"DEFS=$(CPLANT_DEFS)" "VPATH=$(SUB_VPATH)" \
+	"RANLIB=$(CPLANT_RANLIB)" "MAIN_OBJ=$(CPLANT_DR_OBJ)" \
+	"LNK_LIBS=$(CPLANT_DR_LIBS)"
 #
 ############################################################################
 #          UTILITY TARGETS
