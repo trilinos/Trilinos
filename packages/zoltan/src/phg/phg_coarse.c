@@ -87,8 +87,9 @@ int Zoltan_PHG_Coarsening
       c_hg->nVtx++;
       vertex = i;
       while (cmatch[vertex] >= 0)  {
-        cmatch[vertex] = -cmatch[vertex] - 1;  /* flag this as done already */      
-        vertex         =  cmatch[vertex];
+        j              =  cmatch[vertex];
+        cmatch[vertex] = -cmatch[vertex] - 1;  /* flag this as done already */     
+        vertex         =  j;
       }
     }
   }
@@ -136,7 +137,8 @@ int Zoltan_PHG_Coarsening
     vertex = ip[i];
     if (VTX_TO_PROC_X (hg, vertex) == me)
       cmatch[VTX_GNO_TO_LNO(hg,vertex)] = i;
-    i += ip[++i];  /* count of hyperedges */
+    i++;
+    i += ip[i];  /* count of hyperedges */
   }
       
   if (!(used_edges = (int*)   ZOLTAN_CALLOC (c_hg->nEdge,     sizeof(int)))
