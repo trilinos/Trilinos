@@ -23,8 +23,8 @@
 #
 
 # Chaco problems to run
-set ch_name = (simple nograph vwgt vwgt2 ewgt bug grid20x19 film hammond)
-set ch_nproc = (4 4 3 2 4 3 5 6 8) # no. of procs
+set ch_name = (simple nograph vwgt vwgt2 ewgt bug grid20x19 film hammond brack2_3)
+set ch_nproc = (4 4 3 2 4 3 5 6 8 5) # no. of procs
 
 # Nemesis problems to run  
 set nem_name = (box_064 ti_300 ti_4k)
@@ -358,7 +358,7 @@ if (! $no_chaco ) then
     if (-e zdrive.inp ) /bin/mv zdrive.inp zdrive.inp.bak
 
     # Special case for multiweight problems
-    if (${ch_name[1]} == "vwgt2") then
+    if ((${ch_name[1]} == "vwgt2") || (${ch_name[1]} == "brack2_3")) then
        if ($pmversion > 2) then
           set methods = ( partkway-v$pmversion partgeomkway-v$pmversion adaptive-v$pmversion )
        else
