@@ -37,6 +37,8 @@ class Epetra_BlockMap;
 class Epetra_MultiVector;
 class Epetra_Comm;
 class Epetra_CrsMatrix;
+class Epetra_FECrsMatrix;
+
 #include "Epetra_SerialDenseMatrix.h"
 #include "Epetra_SerialDenseVector.h"
 #include "Epetra_SerialDenseSolver.h"
@@ -532,16 +534,32 @@ public:
   int PrintStencil2D(const int nx, const int ny, 
 		     int NodeID = -1,
 		     const int EquationID = 0);
-  //! Analyze the linear system matrix by testing several ML parameters
-  int AnalyzeMatrix(char * Defaults, bool IsSymmetric = false);
-  
+
+  //! Analyze the effect of each level's smoother on a random vector.
+  int AnalyzeSmoothersSparse(const int NumPreCycles = 1,
+		       const int NumPostCycles = 1);
+
+  //! Analyze the effect of each level's smoother on a random vector.
+  int AnalyzeSmoothersDense(const int NumPreCycles = 1,
+			    const int NumPostCycles = 1,
+			    const int MaxSize = 1024);
+
+  //! Cheap analysis of each level matrix.
+  int AnalyzeMatrixCheap();
+
+  //! Compute the lowest and largest magniture eigenvalues of fine-level matrix.
+  int AnalyzeMatrixEigenvaluesSparse(char* MatVec, bool IsSymmetric = false);
+
+  //! Compute the lowest and largest magniture eigenvalues of fine-level matrix.
+  int AnalyzeMatrixEigenvaluesDense(char* MatVec, bool IsSymmetric = false);
+
   //! Analyze the effect of the ML cycle on a random vector.
   int AnalyzeCycle(const int NumCycles = 1);
 
-  //! Analyze the effect of each level's smoother on a random vector.
-  int AnalyzeSmoothers(const int NumCycles = 1);
-
-  //@}
+  //! Test several smoothers on fine-level matrix.
+  int TestSmoothers(Teuchos::ParameterList InputList,
+		    const bool IsSymmetric = false);
+//@}
 
 private:
 
@@ -617,12 +635,6 @@ private:
   /*! Used only when \c "adaptive: enable" is \c true, and
    * ComputePreconditioner(true) is called. */
   bool CheckPreconditionerKrylov();
-
-  void AnalyzeMatrixProperties(char * Defaults, bool IsSymmetric = false);
-  void AnalyzeMatrixEigenvaluesDense(char * Defaults, bool IsSymmetric = false);
-  void AnalyzeMatrixEigenvaluesSparse(char * Defaults, bool IsSymmetric = false);
-  void AnalyzeMatrixSmoothers(char * Defaults, bool IsSymmetric = false);
-  void AnalyzeMatrixCoarsening(char * Defaults, bool IsSymmetric = false);
 
   void VectorNorms(double*, int, double*,double*);
 

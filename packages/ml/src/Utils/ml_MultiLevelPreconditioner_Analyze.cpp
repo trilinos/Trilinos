@@ -14,50 +14,19 @@
 
 #include "ml_operator.h"
 #include "ml_op_utils.h"
+#include "ml_utils.h"
 
 #include "Epetra_Map.h"
 #include "Epetra_Vector.h"
-#include "Epetra_Import.h"
 #include "Epetra_Time.h"
 #include "Epetra_RowMatrix.h"
-#include "Epetra_FECrsMatrix.h"
 #ifdef ML_MPI
 #include "Epetra_MpiComm.h"
 #else
 #include "Epetra_SerialComm.h"
 #endif
 #include "ml_epetra_preconditioner.h"
-#ifdef HAVE_ML_AZTECOO
-#include "AztecOO.h"
-#endif
 #include <iomanip>
-
-// ============================================================================
-static void MLP_print(int count, char * str, double status[AZ_STATUS_SIZE], double time)
-{
-
-  cout << "#" << count;
-  if( count < 10  )      cout << ".....";
-  else if( count < 100 ) cout << "....";
-  else cout << "...";
-
-  cout.width(30); cout.setf(ios::left); cout.fill('.');
-  cout << str;
-  cout.width(10); cout.setf(ios::left); cout.fill('.');
-  cout << (int)status[AZ_its];
-  cout.width(15); cout.setf(ios::left); cout.fill('.');
-  cout << status[AZ_scaled_r];
-  cout.width(15); cout.setf(ios::left); cout.fill('.');
-  cout << time;
-  
-  if( status[AZ_why] == AZ_normal         ) cout << "N";
-  else if( status[AZ_why] == AZ_maxits    ) cout << "M";
-  else if( status[AZ_why] == AZ_loss      ) cout << "L";
-  else if( status[AZ_why] == AZ_ill_cond  ) cout << "I";
-  else if( status[AZ_why] == AZ_breakdown ) cout << "B";
-
-  cout << endl;
-}
 
 // ============================================================================
 // vector must hold space for external nodes too
@@ -100,8 +69,10 @@ void ML_Epetra::MultiLevelPreconditioner::SmoothnessFactor(ML_Operator* Op,
 
     // compute the smoothness factor for this row
     for (int j = 0 ; j < NumNonzeros ; ++j) {
-      double val = vector[i] - vector[colInd[j]];
-      SF[i % NumPDEEqns_] += val * val;
+      if (colInd[j] % NumPDEEqns_ == i % NumPDEEqns_) {
+	double val = (vector[i] - vector[colInd[j]]) / vector[i];
+	SF[i % NumPDEEqns_] += val * val;
+      }
     }
     
   } // for each row of Op
@@ -117,7 +88,6 @@ void ML_Epetra::MultiLevelPreconditioner::SmoothnessFactor(ML_Operator* Op,
   return;
 }
 
-  
 // ============================================================================
 void ML_Epetra::MultiLevelPreconditioner::VectorNorms(double* vector, 
 						      int size, 
@@ -156,85 +126,82 @@ void ML_Epetra::MultiLevelPreconditioner::VectorNorms(double* vector,
 }
 
 // ============================================================================
-int ML_Epetra::MultiLevelPreconditioner::AnalyzeMatrix(char * Defaults, bool IsSymmetric)
+int ML_Epetra::MultiLevelPreconditioner::AnalyzeMatrixCheap()
 {
 
-  if( RowMatrix_ == 0 ) return -1; // Matrix not yet set
+  // sanity checks
 
-  bool Properties        = List_.get("analysis: matrix properties", true);
-  bool EigenvaluesDense  = List_.get("analysis: matrix eigenvalues (dense)", false);
-  bool EigenvaluesSparse = List_.get("analysis: matrix eigenvalues (sparse)", true);
-  bool Smoother          = List_.get("analysis: smoothers", true);
-  // bool Coarsening  = List_.get("analysis: coarsening", true);
+  if (RowMatrix_ == 0) 
+    return(-1); // Matrix not yet set
+  if (ml_ == 0) 
+    return(-4); // at present does not work with Maxwell (easy fix?)
+
+  // execution begins
+
   double time;
 
-  if (verbose_) {
-    cout << endl;
-    cout << "--------------------------------------------------------------------------------" << endl;
-  }
   time = GetClock();
-    
-  // =============================== //
-  // few analysis on matrix property //
-  // This is just a "cheap" analysis //
-  // =============================== //
 
-  if( Properties ) AnalyzeMatrixProperties(Defaults,IsSymmetric);
-
-  // ========================== //
-  // compute some eigenvalues   //
-  // This can be very expensive //
-  // ========================== //
-
-  if (EigenvaluesDense ) {
-    if (Comm().NumProc() != 1) {
-      cerr << ErrorMsg_ << "Option `analysis: matrix eigenvalues' works only" << endl
-	   << ErrorMsg_ << "for serial runs." << endl;
-    }
-    else
-      AnalyzeMatrixEigenvaluesDense(Defaults,IsSymmetric);
-  }
-  
-  if (EigenvaluesSparse) {
-    AnalyzeMatrixEigenvaluesSparse("A",IsSymmetric);
-    AnalyzeMatrixEigenvaluesSparse("ML^{-1}A",IsSymmetric);
-  }
-
-  // ============================= //
-  // effect of different smoothers //
-  // ============================= //
-
-  if( Smoother ) AnalyzeMatrixSmoothers(Defaults,IsSymmetric);
-
-  // ============================== //
-  // effect of different coarsening //
-  // ============================== //
-  // I am not sure of this right now
-  // if( Coarsening ) AnalyzeMatrixCoarsening(IsSymmetric);
-
-  if (verbose_) {
+  if( Comm().MyPID() == 0 ) {
     cout << endl;
-    cout << "*** End of analysis phase." << endl;
-    cout << "*** Total time for analysis = " << GetClock() - time << " (s)" << endl;
-    cout << "--------------------------------------------------------------------------------" << endl;
+    ML_print_line("-",78);
+    cout << "*******************************************" << endl;
+    cout << "*** Cheap Analysis of each level matrix ***" << endl;
+    cout << "*******************************************" << endl;
     cout << endl;
   }
 
-  return 0;
+  // Analyze the Amat for each level.
+  // I do not use on Epetra matrices because I would like to analyze all
+  // the levels, and not only the finest one.
+  for (int i = 0 ; i < NumLevels_ ; ++i) {
+    char name[80];
+    sprintf(name,"A matrix level %d", LevelID_[i]);
+    ML_Operator_Analyze(&(ml_->Amat[LevelID_[i]]), name);
+  }
+
+  if (Comm().MyPID() == 0) {
+    cout << endl;
+    cout << "*** Total time for analysis = " 
+         << GetClock() - time << " (s)" << endl;
+    ML_print_line("-",78);
+    cout << endl;
+  }
+
+  return(0);
+
 }
 
 // ============================================================================
 #include "ml_anasazi.h"
 #include "float.h"
 #include <fstream>
-void ML_Epetra::MultiLevelPreconditioner::AnalyzeMatrixEigenvaluesSparse(char* MatVec,
-									 bool IsSymmetric)
+int ML_Epetra::MultiLevelPreconditioner::AnalyzeMatrixEigenvaluesSparse(char* MatVec,
+									bool IsSymmetric)
 {
+
+  // sanity checks
+
+  if (RowMatrix_ == 0) 
+    return(-1); // Matrix not yet set
+  if ( (MatVec[0] != 'A') && (IsPreconditionerComputed() != true) )
+    return(-2); // need preconditioner for this job
+  if (ml_ == 0) 
+    return(-4); // at present does not work with Maxwell (easy fix?)
+
+  // execution begins
+
+  double time;
+
+  time = GetClock();
+
   if( Comm().MyPID() == 0 ) {
     cout << endl;
+    ML_print_line("-",78);
     cout << "*** ***************************************************** ***" << endl;
-    cout << "*** Analysis of the spectral properties of A and ML^{-1}A ***" << endl;
+    cout << "*** Analysis of the spectral properties using Anasazi ***" << endl;
     cout << "*** ***************************************************** ***" << endl;
+    cout << "*** Operator = " << MatVec << endl;
     cout << endl;
   }
 
@@ -286,7 +253,7 @@ void ML_Epetra::MultiLevelPreconditioner::AnalyzeMatrixEigenvaluesSparse(char* M
 
 #ifdef HAVE_ML_ANASAZI
   // 2.- call Anasazi and store the results in eigenvectors      
-  if( Comm().MyPID() == 0 ) {
+  if (Comm().MyPID() == 0) {
     cout << "\t*** Computing LM eigenvalues of " << MatVec << endl;
     cout << "\t*** using Anasazi. NumEigenvalues = " << NumEigenvalues 
          << ", tolerance = " << tol << endl;
@@ -295,12 +262,12 @@ void ML_Epetra::MultiLevelPreconditioner::AnalyzeMatrixEigenvaluesSparse(char* M
 			ImagEigenvalues, AnasaziList, 0, 0,
 			&NumRealEigenvectors, &NumImagEigenvectors, ml_);
 #else
-  if( Comm().MyPID() == 0 ) {
+  if (Comm().MyPID() == 0) {
     cerr << ErrorMsg_ << "ML has been configure without the Anasazi interface" << endl
       << ErrorMsg_ << "You must add the option --enable-anasazi to use" << endl
       << ErrorMsg_ << "filtering and Anasazi" << endl;
   }
-  exit( EXIT_FAILURE );
+  exit(EXIT_FAILURE);
 #endif
 
   // 3.- some output, to print out how many vectors we are actually using
@@ -336,7 +303,7 @@ void ML_Epetra::MultiLevelPreconditioner::AnalyzeMatrixEigenvaluesSparse(char* M
   AnasaziList.set("eigen-analysis: action", "SM");
 
 #ifdef HAVE_ML_ANASAZI
-  if( Comm().MyPID() == 0 ) {
+  if (Comm().MyPID() == 0) {
     cout << "\t*** Computing SM eigenvalues of " << MatVec << endl;
     cout << "\t*** using Anasazi. NumEigenvalues = " << NumEigenvalues 
          << ", tolerance = " << tol << endl;
@@ -346,12 +313,12 @@ void ML_Epetra::MultiLevelPreconditioner::AnalyzeMatrixEigenvaluesSparse(char* M
 			ImagEigenvalues, AnasaziList, 0, 0,
 			&NumRealEigenvectors, &NumImagEigenvectors, ml_);
 #else
-  if( Comm().MyPID() == 0 ) {
+  if (Comm().MyPID() == 0) {
     cerr << ErrorMsg_ << "ML has been configure without the Anasazi interface" << endl
       << ErrorMsg_ << "You must add the option --enable-anasazi to use" << endl
       << ErrorMsg_ << "filtering and Anasazi" << endl;
   }
-  exit( EXIT_FAILURE );
+  exit(EXIT_FAILURE);
 #endif
 
   // 3.- some output, to print out how many vectors we are actually using
@@ -383,7 +350,15 @@ void ML_Epetra::MultiLevelPreconditioner::AnalyzeMatrixEigenvaluesSparse(char* M
     cout << endl;
   }
 
-  return;
+  if (Comm().MyPID() == 0) {
+    cout << endl;
+    cout << "*** Total time for analysis = " 
+         << GetClock() - time << " (s)" << endl;
+    ML_print_line("-",78);
+    cout << endl;
+  }
+
+  return(0);
 }
 
 // ============================================================================
@@ -398,15 +373,32 @@ void ML_Epetra::MultiLevelPreconditioner::AnalyzeMatrixEigenvaluesSparse(char* M
 // D) only small problems
 // ============================================================================
 #include "ml_lapack.h"
-void ML_Epetra::MultiLevelPreconditioner::AnalyzeMatrixEigenvaluesDense(char * Defaults, 
+int ML_Epetra::MultiLevelPreconditioner::AnalyzeMatrixEigenvaluesDense(char* MatVec,
 									bool IsSymmetric)
 {
 
+  // sanity checks
+
+  if (RowMatrix_ == 0) 
+    return(-1); // Matrix not yet set
+  if ( (MatVec[0] != 'A') && (IsPreconditionerComputed() != true) )
+    return(-2); // need preconditioner for this job
+  if (Comm().NumProc() != 1)
+    return(-3); // only serial runs
+
+  // execution begins
+ 
+  double time;
+
+  time = GetClock();
+
   if( Comm().MyPID() == 0 ) {
     cout << endl;
-    cout << "*** ***************************************************** ***" << endl;
-    cout << "*** Analysis of the spectral properties of A and ML^{-1}A ***" << endl;
-    cout << "*** ***************************************************** ***" << endl;
+    ML_print_line("-",78);
+    cout << "*** ************************************************ ***" << endl;
+    cout << "*** Analysis of the spectral properties using LAPACK ***" << endl;
+    cout << "*** ************************************************ ***" << endl;
+    cout << "*** Operator = " << MatVec << endl;
     cout << endl;
   }
 
@@ -416,10 +408,12 @@ void ML_Epetra::MultiLevelPreconditioner::AnalyzeMatrixEigenvaluesDense(char * D
   ML_Operator* Amat = &(ml_->Amat[LevelID_[0]]);
   char jobvl, jobvr;
   int lda,  ldvl, ldvr, lwork, info;
-  double *a, *vl, *vr, *work;
+  double* a = 0;
+  double* vl = 0;
+  double* vr = 0;
+  double* work = 0;
   int *ipiv;
   double *Er, *Ei;
-  double time = GetClock();
   double min = DBL_MAX, max = DBL_MIN;
 
   jobvl = 'N'; /* V/N to calculate/not calculate left eigenvectors
@@ -429,62 +423,22 @@ void ML_Epetra::MultiLevelPreconditioner::AnalyzeMatrixEigenvaluesDense(char * D
 
   lda = n; /* The leading dimension of matrix a. */
 
+#ifdef NOT_DEF
   if( n * n * 8 > 536870912 ) {
     cerr << ErrorMsg_ << "LAPACK analysis of finest matrix would" << endl
          << ErrorMsg_ << "require " << n * n * 8 /1024 << " Kbytes. This seems too" << endl
 	 << ErrorMsg_ << "much to me. Now I return; maybe you can change the" << endl
 	 << ErrorMsg_ << "source code (file " << __FILE__ << ", line "
 	 << __LINE__ << ")" << endl;
-    return;
+    return(-1);
   }
+#endif
     
-  // FIXME: now I work only for the finest level...
-  a = new double[NumMyRows()*NumMyRows()];
-  if( a == 0 ) {
-    cerr << ErrorMsg_ << "Not enough memory to allocate"
-         << 8*NumMyRows()*NumMyRows() << "bytes. Now" << endl
-	 << ErrorMsg_ << "skipping the analysis of the eigenvalues." << endl;
-    return;
-  }
-  
-  // set to zero the elements
-  for (int i=0; i<NumMyRows(); ++i)
-   for( int j=0 ; j<NumMyRows() ; ++j ) a[i+j*NumMyRows()] = 0.0;
-
-  // now insert the nonzero elements, row by row
-  
-  int allocated = 1;
-  int * colInd = new int[allocated];
-  double * colVal = new double[allocated];
-  int ierr;
-  int ncnt;
-
-  for (int i = 0; i < n ; i++) {
-
-    ierr = ML_Operator_Getrow(Amat,1,&i,allocated,colInd,colVal,&ncnt);
-
-    if( ierr == 0 ) {
-      do {
-	delete [] colInd;
-	delete [] colVal;
-	allocated *= 2;
-	colInd = new int[allocated];
-	colVal = new double[allocated];
-	ierr = ML_Operator_Getrow(Amat,1,&i,allocated,colInd,colVal,&ncnt);
-      } while( ierr == 0 );
-    }
-    for (int j = 0 ; j < ncnt ; ++j) {
-      a[i+n*colInd[j]] = colVal[j];
-    }
-  }
-
   info = 0;
 
   ipiv = new int[n];
   ldvl = n;
-  vl = new double[n*n];
   ldvr = n;
-  vr = new double[n*n];
   work = new double[4*n];
   lwork = 4*n;
 
@@ -495,582 +449,186 @@ void ML_Epetra::MultiLevelPreconditioner::AnalyzeMatrixEigenvaluesDense(char * D
     Er[i] = 0.0, Ei[i] = 0.0;
   }
 
-  for( int i=0 ; i<n*n ; i++ ) {
-    vl[i] = 0.0, vr[i] = 0.0;
+  a = new double[NumMyRows()*NumMyRows()];
+  if( a == 0 ) {
+    cerr << ErrorMsg_ << "Not enough memory to allocate"
+         << 8*NumMyRows()*NumMyRows() << "bytes. Now" << endl
+	 << ErrorMsg_ << "skipping the analysis of the eigenvalues." << endl;
+    return(-10);
   }
   
-  /* ================================================ */
-  /* largest and smallest eigenvalue (in module) of A */
-  /* ------------------------------------------------ */
+  int allocated = 1;
+  int * colInd = new int[allocated];
+  double * colVal = new double[allocated];
+  int ierr;
+  int ncnt;
 
-  cout << "\t*** Computing eigenvalues of finest-level matrix" << endl;
-  cout << "\t*** using LAPACK. This may take some time..." << endl;
+  if (MatVec[0] == 'A') {
 
-  DGEEV_F77(CHAR_MACRO(jobvl), CHAR_MACRO(jobvr), &n, a, &n, Er, Ei, vl,
-            &ldvl, vr, &ldvr, work, &lwork, &info);
- 
-  cout << "\t*** results are on file `eig_A.m'." << endl;
+    // set to zero the elements
+    for (int i=0; i<NumMyRows(); ++i)
+      for( int j=0 ; j<NumMyRows() ; ++j ) 
+	a[i+j*NumMyRows()] = 0.0;
 
-  std::ofstream eig_A("eig_A.m");
-  eig_A << "eig_A = [" << endl;
-  min = DBL_MAX, max = DBL_MIN;
+    // now insert the nonzero elements, row by row
 
-  for (int i=0 ; i<n ; i++) {
-    double eig = sqrt(Er[i] * Er[i] + Ei[i] * Ei[i]);
-    if( eig < min ) min = eig;
-    if( eig > max ) max = eig;
-    eig_A << Er[i] << " + i * " << Ei[i] << endl;
-  }
-  eig_A << "];";
-  eig_A.close();
+    for (int i = 0; i < n ; i++) {
 
-  cout << endl << "\tmin |lambda_i(A)|         = " << min << endl;
-  cout << "\tmax |lambda_i(A)|         = " << max << endl;
-  if( min != 0.0 ) 
-    cout << "\tspectral condition number = " << max/min << endl;
+      ierr = ML_Operator_Getrow(Amat,1,&i,allocated,colInd,colVal,&ncnt);
 
-  // ================================================= //
-  // Now the same job on ML^{-1}A                      //
-  // 1.- extract one column of A                       //
-  // 2.- apply the ML preconditioner to it             //
-  // 3.- substitute the old column with the new one    //
-  // 4.- compute the eigenvalues of ML^{-1}A           //
-  // ================================================= //
-
-  // LAPACK overwrites the matrix, need to getrow() again
-  for (int i = 0; i < n ; i++) {
-
-    ierr = ML_Operator_Getrow(Amat,1,&i,allocated,colInd,colVal,&ncnt);
-
-    if( ierr == 0 ) {
-      do {
-	delete [] colInd;
-	delete [] colVal;
-	allocated *= 2;
-	colInd = new int[allocated];
-	colVal = new double[allocated];
-	ierr = ML_Operator_Getrow(Amat,1,&i,allocated,colInd,colVal,&ncnt);
-      } while( ierr == 0 );
+      if( ierr == 0 ) {
+	do {
+	  delete [] colInd;
+	  delete [] colVal;
+	  allocated *= 2;
+	  colInd = new int[allocated];
+	  colVal = new double[allocated];
+	  ierr = ML_Operator_Getrow(Amat,1,&i,allocated,colInd,colVal,&ncnt);
+	} while( ierr == 0 );
+      }
+      for (int j = 0 ; j < ncnt ; ++j) {
+	a[i+n*colInd[j]] = colVal[j];
+      }
     }
-    for (int j = 0 ; j < ncnt ; ++j) {
-      a[i+n*colInd[j]] = colVal[j];
-    }
-  }
 
-  Epetra_Vector x(RowMatrixRowMap());
-  Epetra_Vector y(RowMatrixRowMap());
+    /* ================================================ */
+    /* largest and smallest eigenvalue (in module) of A */
+    /* ------------------------------------------------ */
+
+    cout << "\t*** Computing eigenvalues of finest-level matrix" << endl;
+    cout << "\t*** using LAPACK. This may take some time..." << endl;
+
+    DGEEV_F77(CHAR_MACRO(jobvl), CHAR_MACRO(jobvr), &n, a, &n, Er, Ei, vl,
+	      &ldvl, vr, &ldvr, work, &lwork, &info);
+
+    cout << "\t*** results are on file `eig_A.m'." << endl;
+
+    std::ofstream eig_A("eig_A.m");
+    eig_A << "eig_A = [" << endl;
+    min = DBL_MAX, max = DBL_MIN;
+
+    for (int i=0 ; i<n ; i++) {
+      double eig = sqrt(Er[i] * Er[i] + Ei[i] * Ei[i]);
+      if( eig < min ) min = eig;
+      if( eig > max ) max = eig;
+      eig_A << Er[i] << " + i * " << Ei[i] << endl;
+    }
+    eig_A << "];";
+    eig_A.close();
+
+    cout << endl << "\tmin |lambda_i(A)|         = " << min << endl;
+    cout << "\tmax |lambda_i(A)|         = " << max << endl;
+    if( min != 0.0 ) 
+      cout << "\tspectral condition number = " << max/min << endl;
+
+  }
+  else {
+
+    // ================================================= //
+    // Now the same job on ML^{-1}A                      //
+    // 1.- extract one column of A                       //
+    // 2.- apply the ML preconditioner to it             //
+    // 3.- substitute the old column with the new one    //
+    // 4.- compute the eigenvalues of ML^{-1}A           //
+    // ================================================= //
+
+    // LAPACK overwrites the matrix, need to getrow() again
+    for (int i = 0; i < n ; i++) {
+
+      ierr = ML_Operator_Getrow(Amat,1,&i,allocated,colInd,colVal,&ncnt);
+
+      if (ierr == 0) {
+	do {
+	  delete [] colInd;
+	  delete [] colVal;
+	  allocated *= 2;
+	  colInd = new int[allocated];
+	  colVal = new double[allocated];
+	  ierr = ML_Operator_Getrow(Amat,1,&i,allocated,colInd,colVal,&ncnt);
+	} while( ierr == 0 );
+      }
+      for (int j = 0 ; j < ncnt ; ++j) {
+	a[i+n*colInd[j]] = colVal[j];
+      }
+    }
+
+    Epetra_Vector x(RowMatrixRowMap());
+    Epetra_Vector y(RowMatrixRowMap());
+
+
+    for (int j = 0 ; j < n ; ++j) {
+      for (int i = 0 ; i < n ; ++i) {
+	x[i] = a[i+j*n];
+      }
+      // y is put to zero in ApplyInverse()
+      // apply the preconditioner of choice
+      ApplyInverse(x,y);
+      for (int i = 0 ; i < n ; ++i) {
+	a[i+j*n] = y[i];
+      }
+    }
+
+    cout << "\t*** Computing eigenvalues of ML^{-1}A" << endl;
+    cout << "\t*** using LAPACK. This may take some time..." << endl;
+
+    DGEEV_F77(CHAR_MACRO(jobvl), CHAR_MACRO(jobvr), &n, a, &n, Er, Ei, vl,
+	      &ldvl, vr, &ldvr, work, &lwork, &info);
+
+    cout << "\t*** results are on file `eig_PA.m'." << endl;
+
+    std::ofstream eig_PA("eig_PA.m");
+    eig_PA << "eig_PA = [" << endl;
+    min = DBL_MAX, max = DBL_MIN;
+
+    for (int i=0 ; i<n ; i++) {
+      double eig = sqrt(Er[i] * Er[i] + Ei[i] * Ei[i]);
+      if( eig < min ) min = eig;
+      if( eig > max ) max = eig;
+      eig_PA << Er[i] << " + i * " << Ei[i] << endl;
+    }
+    eig_PA << "];";
+    eig_PA.close();
+
+    cout << endl << "\tmin |lambda_i(ML^{-1}A)|  = " << min << endl;
+    cout << "\tmax |lambda_i(ML^{-1}A)|  = " << max << endl;
+    if( min != 0.0 ) 
+      cout << "\tspectral condition number = " << max/min << endl;
+
+  }
   
-
-  for (int j = 0 ; j < n ; ++j) {
-    for (int i = 0 ; i < n ; ++i) {
-      x[i] = a[i+j*n];
-    }
-    // y is put to zero in ApplyInverse()
-    // apply the preconditioner of choice
-    ApplyInverse(x,y);
-    for (int i = 0 ; i < n ; ++i) {
-      a[i+j*n] = y[i];
-    }
-  }
-      
-  cout << "\t*** Computing eigenvalues of ML^{-1}A" << endl;
-  cout << "\t*** using LAPACK. This may take some time..." << endl;
-
-  DGEEV_F77(CHAR_MACRO(jobvl), CHAR_MACRO(jobvr), &n, a, &n, Er, Ei, vl,
-            &ldvl, vr, &ldvr, work, &lwork, &info);
- 
-  cout << "\t*** results are on file `eig_PA.m'." << endl;
-
-  std::ofstream eig_PA("eig_PA.m");
-  eig_PA << "eig_PA = [" << endl;
-  min = DBL_MAX, max = DBL_MIN;
-
-  for (int i=0 ; i<n ; i++) {
-    double eig = sqrt(Er[i] * Er[i] + Ei[i] * Ei[i]);
-    if( eig < min ) min = eig;
-    if( eig > max ) max = eig;
-    eig_PA << Er[i] << " + i * " << Ei[i] << endl;
-  }
-  eig_PA << "];";
-  eig_PA.close();
-    
-  cout << endl << "\tmin |lambda_i(ML^{-1}A)|  = " << min << endl;
-  cout << "\tmax |lambda_i(ML^{-1}A)|  = " << max << endl;
-  if( min != 0.0 ) 
-    cout << "\tspectral condition number = " << max/min << endl;
-
   // free memory
 
   delete [] colInd;
   delete [] colVal;
   delete [] a;
   delete [] ipiv;
-  delete [] vl;
-  delete [] vr;
   delete [] work;
   delete [] Er;
   delete [] Ei;
 
-  cout << endl << "\tTotal time = " << GetClock() - time << "(s)" << endl;
+  cout << endl << "** Total time = " << GetClock() - time << "(s)" << endl;
+  ML_print_line("-",78);
   cout << endl;
 
-  exit(0);
-  return;
-}
-// ============================================================================
-void ML_Epetra::MultiLevelPreconditioner::AnalyzeMatrixSmoothers(char * Defaults,
-								 bool IsSymmetric)
-{
-  int MaxIters = List_.get("analysis: max iters",500);
-  double Tol   = List_.get("analysis: tolerance", 1e-5);
-  double status[AZ_STATUS_SIZE];
-  char smoother[80];
-  int sweeps = 1;
-  Epetra_Time Time(Comm());
-  int count=0;
-  double ReqTime;
-  int BestIters = 1000000;
-  double BestTime = 1000000.0;
-  int BestItersCount = -1, BestTimeCount = -1;
-  
-  // create a new MultiLevePreconditioner based on the same matrix
-  ML_Epetra::MultiLevelPreconditioner * yo;
-
-  // ========================== //
-  // create the AztecOO problem //
-  // ========================== //
-  Epetra_Vector LHS(Map());
-  Epetra_Vector RHS(Map());
-
-  Epetra_LinearProblem Problem(const_cast<Epetra_RowMatrix*>(RowMatrix_),&LHS, &RHS);
-
-  AztecOO solver(Problem);
-
-  if( IsSymmetric ) solver.SetAztecOption(AZ_solver, AZ_cg);
-  else              solver.SetAztecOption(AZ_solver, AZ_gmres); 
-  solver.SetAztecOption(AZ_kspace, 50);
-  solver.SetAztecOption(AZ_conv, AZ_r0);
-  solver.SetAztecOption(AZ_output, AZ_none);
-
-  // output
- 
-  if( Comm().MyPID() == 0 ) {
-    cout << endl;
-    cout << "*** ************************************* ***" << endl;
-    cout << "*** Analysis of ML parameters (smoothers) ***" << endl;
-    cout << "*** ************************************* ***" << endl;
-    cout << endl;;
-    cout << "*** maximum iterations = " << MaxIters << endl;
-    cout << "*** tolerance          = " << Tol << endl;
-    cout << "*** Using default options";
-    if( Defaults ) cout << " (" << Defaults << ")";
-    cout << endl;
-    cout << endl;
-    cout << "count  ";
-    cout.width(30); cout.setf(ios::left); cout.fill('.');
-    cout << "smoother type";
-    cout.width(10); cout.setf(ios::left); cout.fill('.');
-    cout << "its";
-    cout.width(15); cout.setf(ios::left); cout.fill('.');
-    cout << "||r||/||r_0||";
-    cout.width(15); cout.setf(ios::left); cout.fill('.');
-    cout << "time (s)" << endl;
-  }
-
-  // ====== //
-  // Jacobi //
-  // ====== //
-
-  if( Comm().MyPID() == 0 ) cout << endl << "- Jacobi" << endl;
-
-  for( double omega=0.25 ; omega<1.5 ; omega+=0.25)
-  {
-    Time.ResetStartTime();
-
-    Teuchos::ParameterList NewList;
-    ML_Epetra::SetDefaults(Defaults, NewList);
-    NewList.set("output", 0);
-    NewList.set("smoother: type", "Jacobi");
-    NewList.set("smoother: damping", omega);
-    NewList.set("smoother: sweeps", sweeps);
-    yo = new ML_Epetra::MultiLevelPreconditioner(*RowMatrix_,NewList, true);
-    assert( yo != 0 );
-    solver.SetPrecOperator(yo);
-
-    LHS.PutScalar(0.0);
-    RHS.Random();
-
-    solver.Iterate(MaxIters,Tol);
-    solver.GetAllAztecStatus(status);
-    sprintf(smoother,"n=%d, omega=%5.2e", sweeps, omega);
-    ReqTime = Time.ElapsedTime();
-    if (ReqTime < BestTime) {
-      BestTime = ReqTime;
-      BestTimeCount = count;
-    }
-    if ((int) status[AZ_its] < BestIters) {
-      BestIters = (int)status[AZ_its];
-      BestItersCount = count;
-    }
-    if( Comm().MyPID() == 0 ) MLP_print(count++,smoother,status,ReqTime);
-
-    delete yo;
-  }
-  
-  // ============ //
-  // Gauss-Seidel //
-  // ============ //
-
-  if( Comm().MyPID() == 0 ) cout << endl << "- Gauss-Seidel" << endl;
-
-  for( double omega=0.25 ; omega<1.5 ; omega+=0.25)
-  {
-
-    Time.ResetStartTime();
-
-    Teuchos::ParameterList NewList(List_);
-    ML_Epetra::SetDefaults(Defaults, NewList);
-    NewList.set("output", 0);
-
-    NewList.set("smoother: type", "Gauss-Seidel");
-    NewList.set("smoother: damping", omega);
-    NewList.set("smoother: sweeps", sweeps);
-    yo = new ML_Epetra::MultiLevelPreconditioner(*RowMatrix_,NewList, true);
-    assert( yo != 0 );
-    solver.SetPrecOperator(yo);
-
-    LHS.PutScalar(0.0);
-    RHS.Random();
-
-    solver.Iterate(MaxIters,Tol);
-    solver.GetAllAztecStatus(status);
-    sprintf(smoother,"n=%d, omega=%5.2e", sweeps, omega);
-    ReqTime = Time.ElapsedTime();
-    if (ReqTime < BestTime) {
-      BestTime = ReqTime;
-      BestTimeCount = count;
-    }
-    if ((int) status[AZ_its] < BestIters) {
-      BestIters = (int)status[AZ_its];
-      BestItersCount = count;
-    }
-    if( Comm().MyPID() == 0 ) MLP_print(count++,smoother,status,ReqTime);
-
-    delete yo;
-  }
-
-  // ====================== //
-  // symmetric Gauss-Seidel //
-  // ====================== //
-
-  if( Comm().MyPID() == 0 ) cout << endl << "- Gauss-Seidel (sym)" << endl;
-
-  for( double omega=0.25 ; omega<1.5 ; omega+=0.25)
-  {
-
-    Time.ResetStartTime();
-
-    Teuchos::ParameterList NewList(List_);
-    ML_Epetra::SetDefaults(Defaults, NewList);
-    NewList.set("output", 0);
-
-    NewList.set("smoother: type", "symmetric Gauss-Seidel");
-    NewList.set("smoother: damping", omega);
-    NewList.set("smoother: sweeps", sweeps);
-    yo = new ML_Epetra::MultiLevelPreconditioner(*RowMatrix_,NewList, true);
-    assert( yo != 0 );
-    solver.SetPrecOperator(yo);
-
-    LHS.PutScalar(0.0);
-    RHS.Random();
-
-    solver.Iterate(MaxIters,Tol);
-    solver.GetAllAztecStatus(status);
-    sprintf(smoother,"n=%d, omega=%5.2e", sweeps, omega);
-    ReqTime = Time.ElapsedTime();
-    if (ReqTime < BestTime) {
-      BestTime = ReqTime;
-      BestTimeCount = count;
-    }
-    if ((int) status[AZ_its] < BestIters) {
-      BestIters = (int)status[AZ_its];
-      BestItersCount = count;
-    }
-    if( Comm().MyPID() == 0 ) MLP_print(count++,smoother,status,ReqTime);
-
-    delete yo;
-  }
-
-  // ================== //
-  // block Gauss-Seidel //
-  // =================== //
-
-  if( Comm().MyPID() == 0 ) cout << endl << "- Gauss-Seidel (block)" << endl;
-
-  for( double omega=0.25 ; omega<1.5 ; omega+=0.25)
-  {
-    Time.ResetStartTime();
-
-    Teuchos::ParameterList NewList(List_);
-    ML_Epetra::SetDefaults(Defaults, NewList);
-    NewList.set("output", 0);
-
-    NewList.set("smoother: type", "block Gauss-Seidel");
-    yo = new ML_Epetra::MultiLevelPreconditioner(*RowMatrix_,NewList, true);
-    assert( yo != 0 );
-    solver.SetPrecOperator(yo);
-
-    LHS.PutScalar(0.0);
-    RHS.Random();
-
-    solver.Iterate(MaxIters,Tol);
-    solver.GetAllAztecStatus(status);
-    sprintf(smoother,"n=%d, omega=%5.2e", sweeps, omega);
-    ReqTime = Time.ElapsedTime();
-    if (ReqTime < BestTime) {
-      BestTime = ReqTime;
-      BestTimeCount = count;
-    }
-    if ((int) status[AZ_its] < BestIters) {
-      BestIters = (int)status[AZ_its];
-      BestItersCount = count;
-    }
-    if( Comm().MyPID() == 0 ) MLP_print(count++,smoother,status,ReqTime);
-
-    delete yo;
-  } 
-
-  // ==================== //
-  // Aztec preconditioner //
-  // ==================== //
-  
-  if( Comm().MyPID() == 0 ) cout << endl << "- Aztec preconditioner" << endl;
-  
-  for( int fillin=0 ; fillin<3 ; ++fillin ) {
-
-    int options[AZ_OPTIONS_SIZE];
-    double params[AZ_PARAMS_SIZE];
-    AZ_defaults(options,params);
-    options[AZ_graph_fill] = fillin;
-    options[AZ_precond] = AZ_dom_decomp;
-    options[AZ_subdomain_solve] = AZ_ilu;
-    Time.ResetStartTime();
-
-    Teuchos::ParameterList NewList(List_);
-    ML_Epetra::SetDefaults(Defaults, NewList);
-    NewList.set("output", 0);
-
-    NewList.set("smoother: type", "Aztec");
-    NewList.set("smoother: sweeps", sweeps);
-    NewList.set("smoother: Aztec options", options);
-    NewList.set("smoother: Aztec params", params);
-
-    yo = new ML_Epetra::MultiLevelPreconditioner(*RowMatrix_,NewList, true);
-    assert( yo != 0 );
-    solver.SetPrecOperator(yo);
-
-    LHS.PutScalar(0.0);
-    RHS.Random();
-
-    solver.Iterate(MaxIters,Tol);
-    solver.GetAllAztecStatus(status);
-    sprintf(smoother,"ILU(fill=%d)",fillin);
-    ReqTime = Time.ElapsedTime();
-    if (ReqTime < BestTime) {
-      BestTime = ReqTime;
-      BestTimeCount = count;
-    }
-    if ((int) status[AZ_its] < BestIters) {
-      BestIters = (int)status[AZ_its];
-      BestItersCount = count;
-    }
-    if( Comm().MyPID() == 0 ) MLP_print(count++,smoother,status,ReqTime);
-
-    delete yo;
-  }
-
-  // ================= //
-  // Aztec as a solver //
-  // ================= //
-  
-  if( Comm().MyPID() == 0 ) cout << endl << "- Aztec as solver" << endl;
-
-  for( int iters=1 ; iters<6 ; iters+=2 ) {
-    Time.ResetStartTime();
-
-    Teuchos::ParameterList NewList(List_);
-    ML_Epetra::SetDefaults(Defaults, NewList);
-    NewList.set("output", 0);
-
-    NewList.set("smoother: type", "Aztec");
-    NewList.set("smoother: sweeps", iters);
-    NewList.set("smoother: Aztec as solver", true);
-    yo = new ML_Epetra::MultiLevelPreconditioner(*RowMatrix_,NewList, true);
-    assert( yo != 0 );
-     
-    solver.SetAztecOption(AZ_solver, AZ_GMRESR); 
-    solver.SetPrecOperator(yo);
-
-    LHS.PutScalar(0.0);
-    RHS.Random();
-
-    solver.Iterate(MaxIters,Tol);
-    solver.GetAllAztecStatus(status);
-    sprintf(smoother,"iterations=%d", iters);
-    ReqTime = Time.ElapsedTime();
-    if (ReqTime < BestTime) {
-      BestTime = ReqTime;
-      BestTimeCount = count;
-    }
-    if ((int) status[AZ_its] < BestIters) {
-      BestIters = (int)status[AZ_its];
-      BestItersCount = count;
-    }
-    if( Comm().MyPID() == 0 ) MLP_print(count++,smoother,status,ReqTime);
-    solver.SetAztecOption(AZ_solver, AZ_gmres); 
-
-    delete yo;
-  }
-
-  // ========= //
-  // ParaSails //
-  // ========= //
-#ifdef HAVE_ML_PARASAILS
-  if( Comm().MyPID() == 0 ) cout << endl << "- ParaSails" << endl;
-
-  {
-    
-    Time.ResetStartTime();
-
-    Teuchos::ParameterList NewList(List_);
-    ML_Epetra::SetDefaults(Defaults, NewList);
-    NewList.set("output", 0);
-
-    NewList.set("smoother: type", "ParaSails");
-    yo = new ML_Epetra::MultiLevelPreconditioner(*RowMatrix_,NewList, true);
-    assert( yo != 0 );
-    solver.SetPrecOperator(yo);
-
-    LHS.PutScalar(0.0);
-    RHS.Random();
-
-    solver.Iterate(MaxIters,Tol);
-    solver.GetAllAztecStatus(status);
-    sprintf(smoother,"default");
-    ReqTime = Time.ElapsedTime();
-    if (ReqTime < BestTime) {
-      BestTime = ReqTime;
-      BestTimeCount = count;
-    }
-    if ((int) status[AZ_its] < BestIters) {
-      BestIters = (int)status[AZ_its];
-      BestItersCount = count;
-    }
-    if( Comm().MyPID() == 0 ) MLP_print(count++,smoother,status,ReqTime);
-
-    delete yo;
-  }
-#endif
-
-  // ====== //
-  // IFPACK //
-  // ====== //
-
-  // FIXME: IFPACK is broken...
-#ifdef HAVE_ML_IFPACKzzz
-  if( Comm().MyPID() == 0 ) cout << endl << "- IFPACK" << endl;
-
-  {
-    Time.ResetStartTime();
-
-    Teuchos::ParameterList NewList(List_);
-    ML_Epetra::SetDefaults(Defaults, NewList);
-    NewList.set("output", 0);
-
-    NewList.set("smoother: type", "IFPACK");
-    yo = new ML_Epetra::MultiLevelPreconditioner(*RowMatrix_,NewList, true);
-    assert( yo != 0 );
-     
-    solver.SetPrecOperator(yo);
-
-    LHS.PutScalar(0.0);
-    RHS.Random();
-
-    solver.Iterate(MaxIters,Tol);
-    solver.GetAllAztecStatus(status);
-    sprintf(smoother,"default");
-    ReqTime = Time.ElapsedTime();
-    if (ReqTime < BestTime) {
-      BestTime = ReqTime;
-      BestTimeCount = count;
-    }
-    if ((int) status[AZ_its] < BestIters) {
-      BestIters = (int)status[AZ_its];
-      BestItersCount = count;
-    }
-    if( Comm().MyPID() == 0 ) MLP_print(count++,smoother,status,ReqTime);
-
-    delete yo;
-  }
-#endif
-
-  if( Comm().MyPID() == 0 ) {
-    cout << endl;
-    cout << "*** The best iteration count was obtain in test " << BestItersCount << endl;
-    cout << "*** The best CPU-time was obtain in test " << BestTimeCount << endl;
-    cout << endl;
-  }
-
-  // ================ //
-  // that's all folks //
-  // ================ //
-
-  return;
-}
-// ============================================================================
-void ML_Epetra::MultiLevelPreconditioner::AnalyzeMatrixCoarsening(char * Defaults,
-								  bool IsSymmetric)
-{
-  return;
-}
-
-// ============================================================================
-void ML_Epetra::MultiLevelPreconditioner::AnalyzeMatrixProperties(char * Defaults,
-								  bool IsSymmetric)
-{
-
-  if( Comm().MyPID() == 0 ) {
-    cout << endl;
-    cout << "*** *********************************** ***" << endl;
-    cout << "*** Cheap Analysis of all levels matrix ***" << endl;
-    cout << "*** *********************************** ***" << endl;
-    cout << endl;
-  }
-
-  // Analyze the Amat for each level.
-  // I do not rely on Epetra matrices because I would like to analyze all
-  // the levels, and not only the finest one.
-  for( int i=0 ; i<NumLevels_ ; ++i ) {
-    char name[80];
-    sprintf(name,"A matrix level %d", LevelID_[i]);
-    ML_Operator_Analyze(&(ml_->Amat[LevelID_[i]]), name);
-  }
-
-  return;
-
+  return(0);
 }
 
 // ============================================================================
 // date: Aug-17
-int ML_Epetra::MultiLevelPreconditioner::AnalyzeSmoothers(int NumCycles)
+int ML_Epetra::MultiLevelPreconditioner::AnalyzeSmoothersSparse(int NumPreCycles,
+								int NumPostCycles)
 {
+
+  // sanity checks
 
   if (IsPreconditionerComputed() == false) 
     return(-1); // need preconditioner to do this job
 
   if( ml_ == 0 ) {
-    return(-2); // Does not work with Maxwell (yet)
+    return(-2); // Does not work with Maxwell
   }
+
+  // execution begins
 
   double* before_Linf = new double[NumPDEEqns_];
   double* before_L2   = new double[NumPDEEqns_];
@@ -1087,8 +645,9 @@ int ML_Epetra::MultiLevelPreconditioner::AnalyzeSmoothers(int NumCycles)
   if (Comm().MyPID() == 0) {
     cout << endl;
     cout << "Solving Ae = 0, with a random initial guess" << endl;
-    cout << "- number of cycle(s) = " << NumCycles << endl;
-    cout << "- all reported data are scaled with their value" << endl
+    cout << "- number of pre-smoother cycle(s) = " << NumPreCycles << endl;
+    cout << "- number of post-smoother cycle(s) = " << NumPostCycles << endl;
+    cout << "- all reported data are scaled with their values" << endl
          << "  before the application of the solver" << endl;
     cout << "  (0 == perfect solution, 1 == no effect)" << endl;
     cout << "- SF is the smoothness factor" << endl;
@@ -1100,7 +659,7 @@ int ML_Epetra::MultiLevelPreconditioner::AnalyzeSmoothers(int NumCycles)
     cout.width(10); cout.setf(ios::left); 
     cout << " L2";
     cout.width(10); cout.setf(ios::left); 
-    cout << " SF" << endl;
+    cout << "  SF" << endl;
   }
 
   // =============================================================== //
@@ -1124,7 +683,7 @@ int ML_Epetra::MultiLevelPreconditioner::AnalyzeSmoothers(int NumCycles)
       // increase the number of applications of the smoother
       // and run the smoother
       int old_ntimes = ptr->ntimes;
-      ptr->ntimes = NumCycles;
+      ptr->ntimes = NumPreCycles;
       ML_Smoother_Apply(ptr, 
 			ml_->Amat[LevelID_[ilevel]].outvec_leng,
 			tmp_sol,
@@ -1167,7 +726,7 @@ int ML_Epetra::MultiLevelPreconditioner::AnalyzeSmoothers(int NumCycles)
       // increase the number of applications of the smoother
       // and run the smoother
       int old_ntimes = ptr->ntimes;
-      ptr->ntimes = NumCycles;
+      ptr->ntimes = NumPostCycles;
       ML_Smoother_Apply(ptr, 
 			ml_->Amat[LevelID_[ilevel]].outvec_leng,
 			tmp_sol,
@@ -1218,12 +777,16 @@ int ML_Epetra::MultiLevelPreconditioner::AnalyzeSmoothers(int NumCycles)
 int ML_Epetra::MultiLevelPreconditioner::AnalyzeCycle(int NumCycles)
 {
 
+  // sanity checks
+
   if (IsPreconditionerComputed() == false) 
     return(-1); // need preconditioner to do this job
 
   if( ml_ == 0 ) {
     return(-2); // Does not work with Maxwell (yet)
   }
+
+  // execuction begins
 
   double* before_Linf = new double[NumPDEEqns_];
   double* before_L2   = new double[NumPDEEqns_];
@@ -1278,4 +841,219 @@ int ML_Epetra::MultiLevelPreconditioner::AnalyzeCycle(int NumCycles)
   return(0);
 }
 
+// ============================================================================
+// date: Aug-17
+int ML_Epetra::MultiLevelPreconditioner::AnalyzeSmoothersDense(int NumPreCycles,
+							       int NumPostCycles,
+							       int MaxSize)
+{
+
+  // sanity checks
+
+  if (IsPreconditionerComputed() == false) 
+    return(-1); // need preconditioner to do this job
+
+  if( ml_ == 0 ) {
+    return(-2); // Does not work with Maxwell (yet)
+  }
+
+  if (Comm().NumProc() != 1) 
+    return(-3); // only serial runs
+
+  // execution begins
+
+  double before_L2;
+  double after_L2;
+
+  double* tmp_rhs = new double[NumMyRows()]; 
+  double* tmp_sol = new double[NumMyRows()]; 
+  
+  ML_Smoother* ptr;
+
+  // =============================================================== //
+  // Cycle over all levels.                                          //
+  // =============================================================== //
+
+  for (int ilevel=0 ; ilevel<NumLevels_ - 1 ; ++ilevel) {
+
+    ML_Operator* Op;
+    int n;
+    double* EigenVectors = 0;
+    double* RealEigenValues = 0;
+    double* ImagEigenValues = 0;
+    
+    Op = &(ml_->Amat[LevelID_[ilevel]]); 
+    n = Op->outvec_leng;
+
+    // you'd better skip big matrices
+    if (n > MaxSize) 
+      continue;
+    
+    // only square matrices
+    if (n != Op->invec_leng)
+      return(-4);
+
+    EigenVectors = new double[n * n];
+    RealEigenValues = new double[n];
+    ImagEigenValues = new double[n];
+
+    // compute the eigenvalues and eigenvectors for this operator
+
+    int ierr = ML_Operator_Eigensolver_Dense(Op,RealEigenValues,
+					     ImagEigenValues,EigenVectors);
+
+    // define the following variable to plot on file
+    // the eigenvectors of the operator
+#ifdef NOT_DEF
+    double * x_coord = List_.get("viz: x-coordinates", (double *)0);
+    double * y_coord = List_.get("viz: y-coordinates", (double *)0);
+    
+    if ((x_coord != 0) && (y_coord != 0) ) {
+
+      assert(x_coord != 0);
+      assert(y_coord != 0);
+
+      char filename[80];
+      sprintf(filename,"eigenvalues.xyz");
+      std::ofstream evec(filename);
+      for (int k = 0 ; k < n ; ++k) {
+	evec << RealEigenValues[k] << "   ";
+	evec << ImagEigenValues[k] << "   ";
+	evec << sqrt(pow(RealEigenValues[k],2) + pow(ImagEigenValues[k],2));
+	evec << endl;
+      }
+      evec.close();
+
+      for (int kk = 0 ; kk < n ; ++kk) {
+	char filename[80];
+	sprintf(filename,"eigenvectors%d.xyz",kk);
+	std::ofstream evec(filename);
+	for (int k = 0 ; k < n ; ++k) {
+	  evec << x_coord[k] << "   ";
+	  evec << y_coord[k] << "   ";
+	  evec << EigenVectors[k + kk * n];
+	  evec << endl;
+	} // filename
+	evec.close();
+      }
+    }
+#endif 
+
+    assert(ierr == 0);
+
+    char filename[80];
+    sprintf(filename,"presmoother-reduction-level%d.xyz",LevelID_[ilevel]);
+    std::ofstream pre(filename);
+
+    if (Comm().MyPID() == 0) {
+      cout << "Effect of presmoother is reported on file `" << filename
+	   << "'" << endl;
+
+    }
+
+    sprintf(filename,"postsmoother-reduction-level%d.xyz",LevelID_[ilevel]);
+    std::ofstream post(filename);
+
+    if (Comm().MyPID() == 0) {
+      cout << "Effect of postsmoother is reported on file `" << filename
+	   << "'" << endl;
+
+    }
+
+    // =========================== //
+    // cycle over all eigenvectors //
+    // =========================== //
+
+    for (int k = 0 ; k < n ; ++k) {
+
+      // ============ //
+      // pre-smoother //
+      // ============ //
+
+      ptr = ((ml_->SingleLevel[LevelID_[ilevel]]).pre_smoother);
+
+      if (ptr != NULL) {
+
+	before_L2 = 0.0;
+	for (int j = 0 ; j < n ; ++j) {
+	  tmp_sol[j] = EigenVectors[j + k * n];
+	  tmp_rhs[j] = 0.0;
+	  before_L2 += tmp_sol[j] * tmp_sol[j];
+	}
+
+	before_L2 = sqrt(before_L2);
+
+	// increase the number of applications of the smoother
+	// and run the smoother
+	int old_ntimes = ptr->ntimes;
+	ptr->ntimes = NumPreCycles;
+	ML_Smoother_Apply(ptr, n, tmp_sol, n, tmp_rhs, ML_NONZERO);
+	ptr->ntimes = old_ntimes;
+
+	after_L2 = 0.0;
+	for (int j = 0 ; j < n ; ++j) {
+	  after_L2 += tmp_sol[j] * tmp_sol[j];
+	}
+
+	after_L2 = sqrt(after_L2);
+
+	pre << RealEigenValues[k] << "   ";
+	pre << ImagEigenValues[k] << "   ";
+	pre << after_L2 / before_L2 << endl;
+
+      } // ptr != NULL
+
+      // ============ //
+      // post-smoother //
+      // ============ //
+
+      ptr = ((ml_->SingleLevel[LevelID_[ilevel]]).post_smoother);
+
+      if (ptr != NULL) {
+
+	before_L2 = 0.0;
+	for (int j = 0 ; j < n ; ++j) {
+	  tmp_sol[j] = EigenVectors[j + k * n];
+	  tmp_rhs[j] = 0.0;
+	  before_L2 += tmp_sol[j] * tmp_sol[j];
+	}
+
+	before_L2 = sqrt(before_L2);
+
+	// increase the number of applications of the smoother
+	// and run the smoother
+	int old_ntimes = ptr->ntimes;
+	ptr->ntimes = NumPostCycles;
+	ML_Smoother_Apply(ptr, n, tmp_sol, n, tmp_rhs, ML_NONZERO);
+	ptr->ntimes = old_ntimes;
+
+	after_L2 = 0.0;
+	for (int j = 0 ; j < n ; ++j) {
+	  after_L2 += tmp_sol[j] * tmp_sol[j];
+	}
+
+	after_L2 = sqrt(after_L2);
+
+	post << RealEigenValues[k] << "   ";
+	post << ImagEigenValues[k] << "   ";
+	post << after_L2 / before_L2 << endl;
+      } // ptr != NULL
+    } // for (k)
+
+    pre.close();
+    post.close();
+
+    delete [] EigenVectors;
+    delete [] RealEigenValues;
+    delete [] ImagEigenValues;
+
+  } // for (ilevel)
+
+  delete [] tmp_sol;
+  delete [] tmp_rhs;
+
+  return(0);
+
+}
+// ============================================================================
 #endif /*ifdef ML_WITH_EPETRA && ML_HAVE_TEUCHOS*/
