@@ -43,9 +43,8 @@ int main(int argc, char *argv[])
   Epetra_Time Time(Comm);
 
   // Create the linear problem using the class `Trilinos_Util::CrsMatrixGallery.'
-  // Various matrix examples are supported; please refer to file
-  // $TRILINOS_HOME/packages/triutils/src/Trilinos_Util_CrsMatrixGallery.h
-  // for more details.
+  // Various matrix examples are supported; please refer to the
+  // Trilinos tutorial for more details.
   
   CrsMatrixGallery Gallery("laplace_2d", Comm);
   Gallery.Set("problem_size", 10000);
@@ -62,32 +61,38 @@ int main(int argc, char *argv[])
   // create a parameter list for ML options
   ParameterList MLList;
 
-  // to set default values, see user's guide.
-
-  MLList.set("max levels",2);
+  // set defaults for classic smoothed aggregation
+  ML_Epetra::SetDefaults("SA",MLLIst);
+  
+  // overwrite some parameters. Please refer to the user's guide
+  // for more information
+  // some of the parameters do not differ from their default value,
+  // and they are here reported for the sake of clarity
+  
+  // maximum number of levels
+  MLList.set("max levels",5);
   MLList.set("increasing or decreasing","decreasing");
 
-  MLList.set("aggregation: type", "METIS");
-  MLList.set("smoother: type","Aztec");
-  MLList.set("aggregation: nodes per aggregate", 16);
-  MLList.set("smoother: pre or post", "both");
-  MLList.set("coarse: type","Amesos_KLU");
-  MLList.set("coarse: max processes", 4);
+  // use Uncoupled scheme to create the aggregate,
+  // from level 3 use the better but more expensive MIS
+  MLList.set("aggregation: type", "Uncoupled");
+  MLList.set("aggregation: type (level 3)", "MIS");
   
-  // Aztec smoother requires some more vectors. Note: the following options and params
-  // will be used ONLY for the smoother, and will NOT affect the Aztec solver
-  int options[AZ_OPTIONS_SIZE];
-  double params[AZ_PARAMS_SIZE];
-  AZ_defaults(options,params);
-  options[AZ_precond] = AZ_dom_decomp;
-  options[AZ_subdomain_solve] = AZ_icc;
-  MLList.set("smoother: Aztec options", options);
-  MLList.set("smoother: Aztec params", params);
+  // smoother is Gauss-Seidel. Example file 
+  // ml_example_epetra_preconditioner_2level.cpp shows how to use
+  // AZTEC's preconditioners as smoothers
+  MLList.set("smoother: type","Gauss-Seidel");
 
+  // use both pre and post smoothing
+  MLList.set("smoother: pre or post", "both");
+  
+  // solve with serial direct solver KLU
+  MLList.set("coarse: type","Amesos_KLU");
+  
   // create the preconditioner object and compute hierarchy
   ML_Epetra::MultiLevelPreconditioner * MLPrec = new ML_Epetra::MultiLevelPreconditioner(*A, MLList, true);
 
-  // verify unused parameters
+  // verify unused parameters on process 0
   MLPrec->PrintUnused(0);
 
   // tell AztecOO to use this preconditioner, then solve
@@ -95,18 +100,11 @@ int main(int argc, char *argv[])
 
   // =========================== end of ML part =============================
   
-  double rthresh = 1.4;
-  solver.SetAztecParam(AZ_rthresh, rthresh);
   solver.SetAztecOption(AZ_solver, AZ_cg_condnum);
   solver.SetAztecOption(AZ_output, 32);
-  double athresh = 10.0;
-  solver.SetAztecParam(AZ_athresh, athresh);
-  solver.SetAztecParam(AZ_ill_cond_thresh, 1.0e200);
 
-  int Niters = 500;
-  solver.SetAztecOption(AZ_kspace, 160);
-   
-  solver.Iterate(Niters, 1e-12);
+  // solve with 500 iterations and 1e-12 tolerance  
+  solver.Iterate(500, 1e-12);
 
   // print out some information about the preconditioner
   //cout << MLPrec->GetOutputList();
