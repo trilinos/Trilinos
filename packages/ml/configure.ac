@@ -561,6 +561,7 @@ AC_CONFIG_FILES([
 		test/2d_Poisson/Makefile
 		test/3d_Poisson/Makefile
 		test/Zoltan/Makefile
+		test/IFPACKSmoothers/Makefile
                 test/scripts/Makefile
                 test/scripts/daily/Makefile
                 test/scripts/daily/mpi/Makefile
