@@ -24,6 +24,7 @@ extern "C" {
 int Zoltan_PHG_Set_Part_Options (ZZ *zz, PHGPartParams *hgp)
 {
   char *yo = "Zoltan_PHG_Set_Part_Options";
+  int ierr = ZOLTAN_OK;
 
   if (hgp->bal_tol < 1.0) {
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Invalid PHG_BALANCE_TOLERANCE.");
@@ -39,8 +40,9 @@ int Zoltan_PHG_Set_Part_Options (ZZ *zz, PHGPartParams *hgp)
 
   /* Set (serial) coarse partitioning method */
   /* May need parallel partitioning method later if reduction to 1 proc fails */
-  if (!(hgp->CoarsePartition 
-   = Zoltan_PHG_Set_CoarsePartition_Fn(hgp))) {
+  
+  hgp->CoarsePartition = Zoltan_PHG_Set_CoarsePartition_Fn(hgp, &ierr);
+  if (ierr != ZOLTAN_OK) {
       ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Invalid PHG_COARSE_PARTITIONING.");
       return ZOLTAN_FATAL;
   }

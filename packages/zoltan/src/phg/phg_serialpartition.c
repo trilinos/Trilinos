@@ -19,29 +19,52 @@ extern "C" {
 
 #include "phg.h"
 
+/* If adding a new coarse partitioning fn, add prototype here 
+ * AND add entry to CoarsePartitionFns array 
+ * AND increment NUM_COARSEPARTITION_FN.
+ */
+#define NUM_COARSEPARTITION_FNS 11
+
 static ZOLTAN_PHG_COARSEPARTITION_FN coarse_part_ran;
 static ZOLTAN_PHG_COARSEPARTITION_FN coarse_part_lin;
-static ZOLTAN_PHG_COARSEPARTITION_FN coarse_part_bfs;
-static ZOLTAN_PHG_COARSEPARTITION_FN coarse_part_bfsh;
-static ZOLTAN_PHG_COARSEPARTITION_FN coarse_part_rbfs;
-static ZOLTAN_PHG_COARSEPARTITION_FN coarse_part_rbfsh;
 static ZOLTAN_PHG_COARSEPARTITION_FN coarse_part_gr0;
 static ZOLTAN_PHG_COARSEPARTITION_FN coarse_part_gr1;
 static ZOLTAN_PHG_COARSEPARTITION_FN coarse_part_gr2;
 static ZOLTAN_PHG_COARSEPARTITION_FN coarse_part_gr3;
 static ZOLTAN_PHG_COARSEPARTITION_FN coarse_part_gr4;
+static ZOLTAN_PHG_COARSEPARTITION_FN coarse_part_bfs;
+static ZOLTAN_PHG_COARSEPARTITION_FN coarse_part_bfsh;
+static ZOLTAN_PHG_COARSEPARTITION_FN coarse_part_rbfs;
+static ZOLTAN_PHG_COARSEPARTITION_FN coarse_part_rbfsh;
+
+static ZOLTAN_PHG_COARSEPARTITION_FN* CoarsePartitionFns[] = 
+                                      {&coarse_part_gr0,
+                                       &coarse_part_gr1,
+                                       &coarse_part_gr2,
+                                       &coarse_part_gr3,
+                                       &coarse_part_gr4,
+                                       &coarse_part_ran,
+                                       &coarse_part_lin,
+                                       &coarse_part_bfs,
+                                       &coarse_part_bfsh,
+                                       &coarse_part_rbfs,
+                                       &coarse_part_rbfsh};
 
 static int local_coarse_partitioner(ZZ *, HGraph *, int, Partition,
   PHGPartParams *, ZOLTAN_PHG_COARSEPARTITION_FN *);
 
+static void pick_best(ZZ *, PHGComm *, HGraph *, int, int *);
 
 /****************************************************************************/
 
 ZOLTAN_PHG_COARSEPARTITION_FN *Zoltan_PHG_Set_CoarsePartition_Fn(
-  PHGPartParams *hgp
+  PHGPartParams *hgp,
+  int *ierr
 )
 {
 char *str, *str2;
+
+  *ierr = ZOLTAN_OK;
 
   str2 = hgp->coarsepartition_str;
   if (!strncasecmp(str2, "l-", 2)) {
@@ -53,7 +76,8 @@ char *str, *str2;
     hgp->LocalCoarsePartition = 0;
   }
 
-  if      (!strcasecmp(str, "ran"))   return coarse_part_ran;
+  if      (!strcasecmp(str, "auto"))  return NULL;
+  else if (!strcasecmp(str, "ran"))   return coarse_part_ran;
   else if (!strcasecmp(str, "lin"))   return coarse_part_lin;
   else if (!strcasecmp(str, "bfs"))   return coarse_part_bfs;
   else if (!strcasecmp(str, "rbfs"))  return coarse_part_rbfs;
@@ -64,7 +88,7 @@ char *str, *str2;
   else if (!strcasecmp(str, "gr2"))   return coarse_part_gr2;
   else if (!strcasecmp(str, "gr3"))   return coarse_part_gr3;
   else if (!strcasecmp(str, "gr4"))   return coarse_part_gr4;
-  else                                return NULL;
+  else {                              *ierr = ZOLTAN_FATAL; return NULL;}
 }
 
 /****************************************************************************/
@@ -89,15 +113,12 @@ int Zoltan_PHG_CoarsePartition(
  */
 char *yo = "Zoltan_PHG_CoarsePartition";
 int ierr = ZOLTAN_OK;
-HGraph *shg = NULL;           /* Serial hypergraph gathered from phg */
-int *spart = NULL;             /* Partition vector for shg. */
 int i, si;
-static PHGComm scomm;          /* Serial communicator info */
-static int first_time = 1;
-ZOLTAN_PHG_COARSEPARTITION_FN *CoarsePartition;
 
-/* take care of all special cases first */
-  if (numPart == 1) {            /* everything goes in the one partition */
+  /* take care of all special cases first */
+
+  if (numPart == 1) {            
+    /* everything goes in the one partition */
     for (i =  0; i < phg->nVtx; i++)
       part[i] = 0;
   }
@@ -106,15 +127,36 @@ ZOLTAN_PHG_COARSEPARTITION_FN *CoarsePartition;
     for (i = 0; i < phg->nVtx; i++)
       part[i] = phg->dist_x[phg->comm->myProc_x]+i;
   }
+  else if (hgp->LocalCoarsePartition) {
+    /* Apply local partitioner to each column */
+    ierr = local_coarse_partitioner(zz, phg, numPart, part, hgp,
+                                    hgp->CoarsePartition);
+  }
   else {
+    /* Gather distributed HG to each processor;
+     * compute different partitioning on each processor;
+     * select the "best" result.
+     */
+    ZOLTAN_PHG_COARSEPARTITION_FN *CoarsePartition;
 
     /* KDDKDD Select different coarse partitioners for processors here. */
 
     CoarsePartition = hgp->CoarsePartition;
-
+    if (CoarsePartition == NULL) {
+      static int first_time = 1;
+      /* Select a coarse partitioner from the array of coarse partitioners */
+      CoarsePartition = CoarsePartitionFns[phg->comm->myProc % 
+                                           NUM_COARSEPARTITION_FNS];
+      if (first_time) {
+        Zoltan_HG_Srand(phg->comm->myProc);   /* May need more clever seed. */
+        first_time = 0;
+      }
+    }
 
     if (phg->comm->nProc == 1) {
+
       /* Only one processor; no gather needed. */
+
       ierr = CoarsePartition(zz, phg, numPart, part, hgp);
       if (ierr < 0) {
         ZOLTAN_PRINT_ERROR(zz->Proc, yo, 
@@ -122,12 +164,14 @@ ZOLTAN_PHG_COARSEPARTITION_FN *CoarsePartition;
         goto End;
       }
     }
-    else if (hgp->LocalCoarsePartition) {
-      ierr = local_coarse_partitioner(zz, phg, numPart, part, hgp,
-                                      CoarsePartition);
-    }
     else {
-      /* Gather distributed HG to each processor; apply coarse partitioner */
+      static PHGComm scomm;          /* Serial communicator info */
+      static int first_time = 1;
+      HGraph *shg = NULL;            /* Serial hypergraph gathered from phg */
+      int *spart = NULL;             /* Partition vector for shg. */
+
+      /* Set up a serial communication struct for gathered HG */
+
       if (first_time) {
         scomm.nProc_x = scomm.nProc_y = 1;
         scomm.myProc_x = scomm.myProc_y = 0;
@@ -152,8 +196,6 @@ ZOLTAN_PHG_COARSEPARTITION_FN *CoarsePartition;
       /* 
        * Allocate partition array spart for the serial hypergraph shg
        * and partition shg.
-       * KDDKDD Add logic here to compute different coarse partitions on
-       * KDDKDD different processors.
        */
       if (shg->nVtx) {
         spart = (int *) ZOLTAN_MALLOC(shg->nVtx * sizeof(int));
@@ -167,7 +209,6 @@ ZOLTAN_PHG_COARSEPARTITION_FN *CoarsePartition;
         /* KDDKDD For now, want all processors to give same partition, so
          * KDDKDD initialize the seed identically on all.
          */
-        Zoltan_HG_Srand(shg->nVtx);
         ierr = CoarsePartition(zz, shg, numPart, spart, hgp);
         if (ierr < 0) {
           ZOLTAN_PRINT_ERROR(zz->Proc, yo, 
@@ -176,6 +217,8 @@ ZOLTAN_PHG_COARSEPARTITION_FN *CoarsePartition;
         }
 
         /* KDDKDD Evaluate and select the best */
+
+        pick_best(zz, phg->comm, shg, numPart, spart);
     
         /* Map gathered partition back to 2D distribution */
         for (i = 0; i < phg->nVtx; i++) {
@@ -1099,6 +1142,51 @@ static int coarse_part_gr4 (ZZ *zz, HGraph *hg, int p, Partition part,
   PHGPartParams *hgp)
 {
   return coarse_part_greedy(zz, hg, p, part, 4, hgp);
+}
+
+/*****************************************************************************/
+static void pick_best(
+  ZZ *zz, 
+  PHGComm *phg_comm,
+  HGraph *shg, 
+  int numPart,
+  int *spart
+)
+{
+/* Routine to select the best of multiple serial partitions and broadcast
+ * it to all processors
+ */
+struct {
+  float val;
+  int rank;
+} local[2], global[2];
+
+  local[0].val = Zoltan_PHG_Compute_Balance(zz, shg, numPart, spart),
+  local[1].val = Zoltan_PHG_hcut_size_links(shg->comm, shg, spart, numPart);
+  local[0].rank = local[1].rank = phg_comm->myProc;
+  
+  /* KDDKDD DEBUGGING */
+/*
+  printf("%d KDDB %f %f\n", zz->Proc, local[0].val, local[1].val);
+  printf("%d KDDB", zz->Proc);
+  for (int i = 0; i < shg->nVtx; i++) printf(" %d", spart[i]);
+  printf("\n");
+*/
+
+  MPI_Allreduce(local, global, 2, MPI_FLOAT_INT, MPI_MINLOC, 
+                phg_comm->Communicator);
+
+  /* What do we say is "best"?   For now, say lowest cut size. */
+  MPI_Bcast(spart, shg->nVtx, MPI_INT, global[1].rank, 
+            phg_comm->Communicator);
+
+  /* KDDKDD DEBUGGING */
+/*
+  printf("%d KDDA %f %f on %d\n", zz->Proc, global[0].val, global[1].val, global[1].rank);
+  printf("%d KDDA", zz->Proc);
+  for (int i = 0; i < shg->nVtx; i++) printf(" %d", spart[i]);
+  printf("\n");
+*/
 }
 
 #ifdef __cplusplus

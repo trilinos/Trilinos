@@ -165,7 +165,8 @@ int Zoltan_PHG_Coarsening(ZZ*, HGraph*, Matching, HGraph*, int*, int*, int**);
 extern int Zoltan_PHG_Gather_To_All_Procs(ZZ*, HGraph*, PHGComm*, HGraph**);
 extern int Zoltan_PHG_CoarsePartition(ZZ*, HGraph*, int, Partition, 
                                       PHGPartParams*);
-ZOLTAN_PHG_COARSEPARTITION_FN *Zoltan_PHG_Set_CoarsePartition_Fn(PHGPartParams*);
+ZOLTAN_PHG_COARSEPARTITION_FN *Zoltan_PHG_Set_CoarsePartition_Fn(PHGPartParams*,
+                                                                 int*);
 
 /************************/
 /* Refinement functions */ 
