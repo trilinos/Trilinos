@@ -278,6 +278,9 @@ LOCA::Epetra::Group::computeEigenvalues(NOX::Parameter::List& params)
 	 << "\n" << endl;
   }
 
+  // Create updated Jacobian matrix
+  computeJacobian();
+
   // Create the operator and initial vector
   AnasaziLOCAMat<double> Amat( params, *this );
   AnasaziLOCAVec<double> ivec( xVector, blksz );
@@ -311,8 +314,10 @@ LOCA::Epetra::Group::computeEigenvalues(NOX::Parameter::List& params)
   }
 
   /* Comment out Eigenvector extraction for now
-  AnasaziLOCAVec<double> solutions( xVector, blksz );
-  LOCABlockArnoldi.getEvecs( solutions );
+  AnasaziLOCAVec<double> evecR( xVector, nev );
+  LOCABlockArnoldi.getEvecs( evecR );
+  AnasaziLOCAVec<double> evecI( xVector, nev );
+  LOCABlockArnoldi.getiEvecs( evecI );
   */
 
   if (Utils::doPrint(Utils::StepperIteration)) {
