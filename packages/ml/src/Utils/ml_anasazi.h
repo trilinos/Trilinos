@@ -1,3 +1,20 @@
+/*!
+ *  \file ml_anasazi.h
+ *
+ *  \brief Interface to the Trilinos package Anasazi.
+ *
+ *  Anasazi can be used by ML to eigenvalue computations. The user can:
+ *  - use Anasazi to estimate the maximum eigenvalue of a given level matrix
+ *  (for smoothed aggregation);
+ *  - use Anasazi  to compute the low-convergence modes, and filter them;
+ *  - use Anasazi to compute the field-of-values of a non-symmetric operator,
+ *    and use this information to improve smoothed aggregation for highly
+ *    non-symmetric systems.
+ *    
+ *  \date Last update to Doxygen: 22-Jul-04
+ *
+ */
+
 #ifndef _ML_ANASAZI_H_
 #define _ML_ANASAZI_H_
 

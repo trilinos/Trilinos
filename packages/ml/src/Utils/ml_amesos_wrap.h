@@ -1,3 +1,12 @@
+/*!
+ *  \file ml_amesos_wrap.h
+ *
+ *  \brief Interface to the Trilinos package Amesos.
+ *
+ *  \date Last update do Doxygen: 22-Jul-04
+ *
+ */
+
 
 
 #ifndef _MLAMESOSWRAP_
@@ -11,7 +20,7 @@ extern "C" {
 #endif
 #endif
 
-  /** Generates the direct solver. */
+  /** Generates the direct solver using Amesos. */
   /*! This function performs several operations:
     - wrap the ML_Operator for the given level to an Epetra_CrsMatrix
     - creates the Amesos object;

@@ -22,6 +22,15 @@
  * INFORMATION, APPARATUS, PRODUCT, OR PROCESS DISCLOSED, OR REPRESENTS
  * THAT ITS USE WOULD NOT INFRINGE PRIVATELY OWNED RIGHTS. */
 
+/*!
+ *  \file ml_epetra_operator.h
+ *
+ *  \brief Defines an ML preconditioner as a Epetra_Operator derived class.
+ *
+ *  \date Last update do Doxygen: 22-Jul-04
+ *
+ */
+
 #ifndef _ML_EPETRA_OPERATOR_H_
 #define _ML_EPETRA_OPERATOR_H_
 
@@ -41,9 +50,8 @@ namespace ML_Epetra
   
 //! MultiLevelOperator: An implementation of the Epetra_Operator class.
 /*! MultiLevelOperator class implements Epetra_Operator using a
-    pre-constructed ML solver object.  Once constructed, a
-    MultiLevelOperator object can be used as a preconditioner within an
-    AztecOO solver object.
+    pre-constructed ML solver object. This allows ML to be used as 
+    preconditioner within an AztecOO solver object.
 */    
 
 class MultiLevelOperator: public virtual Epetra_Operator {
