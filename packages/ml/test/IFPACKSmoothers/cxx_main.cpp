@@ -8,6 +8,7 @@
 #else
 #include "Epetra_SerialComm.h"
 #endif
+#include "Epetra_Map.h"
 #include "Epetra_Vector.h"
 #include "Epetra_Time.h"
 #include "Epetra_RowMatrix.h"
