@@ -222,12 +222,14 @@ void test(Epetra_Comm& comm, Epetra_Map*& map, Epetra_CrsMatrix*& A, Epetra_Vect
   double tpetraMatvecTime = timer.ElapsedTime() - tstart;
   double tpetraNumFlops = At.getFlops(); // Total number of Tpetra FLOPS in Multiplies
 
-	cout << "=============================================================" << endl;
-	cout << "bcomp_e:" << endl << bcomp_e << endl;
-	cout << "bcomp_t:" << endl << bcomp_t << endl;
-	cout << "xexact:" << endl << *xexact << endl;
-	cout << "xexact_t:" << endl << xexact_t << endl;
-	cout << "=============================================================" << endl;
+	if(smallProblem) {
+		cout << "=============================================================" << endl;
+		cout << "bcomp_e:" << endl << bcomp_e << endl;
+		cout << "bcomp_t:" << endl << bcomp_t << endl;
+		cout << "xexact:" << endl << *xexact << endl;
+		cout << "xexact_t:" << endl << xexact_t << endl;
+		cout << "=============================================================" << endl;
+	}
 
 	// ------------------------------------------------------------------
 	// output results
@@ -268,10 +270,12 @@ void test(Epetra_Comm& comm, Epetra_Map*& map, Epetra_CrsMatrix*& A, Epetra_Vect
 
   resid_e.Update(1.0, *b, -1.0, bcomp_e, 0.0); // resid = xcomp - xexact
 	resid_t.update(1.0, b_t, -1.0, bcomp_t, 0.0);
-	cout << "=============================================================" << endl;
-	cout << "resid_e:" << endl << resid_e << endl;
-	cout << "resid_t:" << endl << resid_t << endl;
-	cout << "=============================================================" << endl;
+	if(smallProblem) {
+		cout << "=============================================================" << endl;
+		cout << "resid_e:" << endl << resid_e << endl;
+		cout << "resid_t:" << endl << resid_t << endl;
+		cout << "=============================================================" << endl;
+	}
   double residual_e, residual_t;
   resid_e.Norm2(&residual_e);   // residual_e = 2norm or resid_e
 	residual_t = resid_t.norm2(); // residual_t = 2norm of resid_t
