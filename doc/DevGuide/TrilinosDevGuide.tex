@@ -520,13 +520,19 @@ adding or editing autoconf-specific files such as configure.ac.
 \end{itemize}
 
 \subsection{Adding and Removing Source Files}
-
+%add how to add directories
 Commonly a developer needs to add files to or remove files from a Trilinos 
 package.  We outline the steps for adding or removing source files from a 
 Trilinos package that uses Autotools.  The below outline assumes the simple 
 addition or removal of files.  Special situations such as adding header file 
 or library dependencies to a Trilinos package or conditionally compiling new 
-files require a more complicated process.
+files require a more complicated process.  In addition, the following 
+restrictions apply only to development and release branches.  If a branch is 
+established for a separate purpose (for example, to attempt an experimental 
+restructuring of existing code), the restrictions do not apply.  However, in 
+this case, the restrictions do apply when any changes from the branch are to 
+be merged back into the development branch.
+ 
 \begin{enumerate}
 \item Obtain the supported versions of Autoconf and Automake.
 
