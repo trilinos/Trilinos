@@ -744,11 +744,11 @@ int ML_Set_Smoother( ML *ml , int nl , int pre_or_post, void *data,
       printf("ML_Set_Smoother: cannot set smoother on level %d\n",nl);
       return 1;
    }
-   if (pre_or_post == ML_PRESMOOTH) {
+   if (pre_or_post == ML_PRESMOOTHER) {
       return(ML_Smoother_Set(&(ml->pre_smoother[nl]), ML_EXTERNAL, data,
                               NULL, func, 1,(double) ML_DEFAULT, tptr));
    }
-   else if (pre_or_post == ML_POSTSMOOTH)
+   else if (pre_or_post == ML_POSTSMOOTHER)
       return(ML_Smoother_Set(&(ml->post_smoother[nl]), ML_EXTERNAL, data,
                               NULL, func, 1, (double) ML_DEFAULT, tptr));
    else if (pre_or_post == ML_BOTH)  {
@@ -781,14 +781,14 @@ int ML_Gen_Smoother_Jacobi( ML *ml , int nl, int pre_or_post, int ntimes,
    fun = ML_Smoother_Jacobi;
    if (omega == ML_DEFAULT) omega = .5;
 
-   if (pre_or_post == ML_PRESMOOTH) {
+   if (pre_or_post == ML_PRESMOOTHER) {
       for (i = start_level; i <= end_level; i++) {
        sprintf(str,"Jac_pre%d",i);
        status = ML_Smoother_Set(&(ml->pre_smoother[i]), ML_INTERNAL, NULL,
                              fun, NULL, ntimes, omega, str);
       }
    }
-   else if (pre_or_post == ML_POSTSMOOTH)
+   else if (pre_or_post == ML_POSTSMOOTHER)
       for (i = start_level; i <= end_level; i++) {
        sprintf(str,"Jac_post%d",i);
        status = ML_Smoother_Set(&(ml->post_smoother[i]), ML_INTERNAL, NULL,
@@ -829,14 +829,14 @@ int ML_Gen_Smoother_GaussSeidel( ML *ml , int nl, int pre_or_post, int ntimes,
 
    fun = ML_Smoother_GaussSeidel;
 
-   if (pre_or_post == ML_PRESMOOTH) {
+   if (pre_or_post == ML_PRESMOOTHER) {
       for (i = start_level; i <= end_level; i++) {
              sprintf(str,"GS_pre%d",i);
              status = ML_Smoother_Set(&(ml->pre_smoother[i]), ML_INTERNAL, NULL,
                                       fun, NULL, ntimes, omega, str);
       }
    }
-   else if (pre_or_post == ML_POSTSMOOTH) {
+   else if (pre_or_post == ML_POSTSMOOTHER) {
       for (i = start_level; i <= end_level; i++) {
              sprintf(str,"GS_post%d",i);
              status = ML_Smoother_Set(&(ml->post_smoother[i]),ML_INTERNAL,NULL,
@@ -922,13 +922,13 @@ int ML_Gen_Smoother_SymGaussSeidel( ML *ml , int nl, int pre_or_post,
          fun2 = ML_Smoother_Clean_MSR_GS;
       }
 
-      if (pre_or_post == ML_PRESMOOTH) {
+      if (pre_or_post == ML_PRESMOOTHER) {
          sprintf(str,"SGS_pre%d",i);
          status = ML_Smoother_Set(&(ml->pre_smoother[i]), ML_INTERNAL, 
                                   sgs_nums, fun, NULL, ntimes, omega, str);
 	 ml->pre_smoother[i].data_destroy = fun2;
       }
-      else if (pre_or_post == ML_POSTSMOOTH) {
+      else if (pre_or_post == ML_POSTSMOOTHER) {
          sprintf(str,"SGS_post%d",i);
 	 status = ML_Smoother_Set(&(ml->post_smoother[i]), ML_INTERNAL, 
                                   sgs_nums, fun, NULL, ntimes, omega, str);
@@ -1015,13 +1015,13 @@ sgs_nums[3] = (double *) extra;
    }
 
 	
-   if (pre_or_post == ML_PRESMOOTH) 
+   if (pre_or_post == ML_PRESMOOTHER) 
       for (i = start_level; i <= end_level; i++) {
          status = ML_Smoother_Set(&(ml->pre_smoother[i]), ML_INTERNAL, sgs_nums,
 				  fun, NULL, ntimes, omega, NULL);
 	 ml->pre_smoother[i].data_destroy = fun2;
    }
-   else if (pre_or_post == ML_POSTSMOOTH)
+   else if (pre_or_post == ML_POSTSMOOTHER)
       for (i = start_level; i <= end_level; i++) {
 	 status = ML_Smoother_Set(&(ml->post_smoother[i]), ML_INTERNAL, sgs_nums,
                              fun, NULL, ntimes, omega, NULL);
@@ -1054,7 +1054,7 @@ int ML_Gen_Smoother_OrderedSymGaussSeidel(ML *ml , int nl, int pre_or_post,
    fun = ML_Smoother_OrderedSGS;
    if (omega == ML_DEFAULT) omega = 1.;
 	
-   if (pre_or_post == ML_PRESMOOTH) 
+   if (pre_or_post == ML_PRESMOOTHER) 
       for (i = start_level; i <= end_level; i++) {
 #ifdef ML_TIMING
          t0 = GetClock();
@@ -1068,7 +1068,7 @@ int ML_Gen_Smoother_OrderedSymGaussSeidel(ML *ml , int nl, int pre_or_post,
          ml->timing->total_build_time   += ml->pre_smoother[i].build_time;
 #endif
       }
-   else if (pre_or_post == ML_POSTSMOOTH)
+   else if (pre_or_post == ML_POSTSMOOTHER)
       for (i = start_level; i <= end_level; i++) {
 #ifdef ML_TIMING
          t0 = GetClock();
@@ -1112,7 +1112,7 @@ int ML_Gen_Smoother_BlockGaussSeidel(ML *ml , int nl, int pre_or_post,
    fun = ML_Smoother_BlockGS;
    if (omega == ML_DEFAULT) omega = 1.;
 
-   if (pre_or_post == ML_PRESMOOTH) {
+   if (pre_or_post == ML_PRESMOOTHER) {
       for (i = start_level; i <= end_level; i++) {
          ML_Smoother_Create_BGS_Data(&data);
 	 ML_Smoother_Gen_BGSFacts(&data, &(ml->Amat[i]), blocksize);
@@ -1126,7 +1126,7 @@ int ML_Gen_Smoother_BlockGaussSeidel(ML *ml , int nl, int pre_or_post,
 #endif
       }
    }
-   else if (pre_or_post == ML_POSTSMOOTH) {
+   else if (pre_or_post == ML_POSTSMOOTHER) {
       for (i = start_level; i <= end_level; i++) {
          ML_Smoother_Create_BGS_Data(&data);
 	 ML_Smoother_Gen_BGSFacts(&data, &(ml->Amat[i]), blocksize);
@@ -1189,13 +1189,13 @@ int ML_Gen_Smoother_VBlockJacobi( ML *ml , int nl, int pre_or_post,
 
    ML_Smoother_Gen_VBGSFacts(&data, &(ml->Amat[nl]), nBlocks, blockIndices);
 
-   if (pre_or_post == ML_PRESMOOTH) {
+   if (pre_or_post == ML_PRESMOOTHER) {
       sprintf(str,"VBJ_pre%d",nl);
       ml->pre_smoother[nl].data_destroy = ML_Smoother_Destroy_BGS_Data;
       return(ML_Smoother_Set(&(ml->pre_smoother[nl]), ML_INTERNAL, 
                         (void *) data, fun, NULL, ntimes, myomega, str));
    }
-   else if (pre_or_post == ML_POSTSMOOTH) {
+   else if (pre_or_post == ML_POSTSMOOTHER) {
       sprintf(str,"VBJ_post%d",nl);
       ml->post_smoother[nl].data_destroy = ML_Smoother_Destroy_BGS_Data;
       return(ML_Smoother_Set(&(ml->post_smoother[nl]), ML_INTERNAL, 
@@ -1238,13 +1238,13 @@ int ML_Gen_Smoother_VBlockSymGaussSeidel( ML *ml , int nl, int pre_or_post,
 
    ML_Smoother_Gen_VBGSFacts(&data, &(ml->Amat[nl]), nBlocks, blockIndices);
 
-   if (pre_or_post == ML_PRESMOOTH) {
+   if (pre_or_post == ML_PRESMOOTHER) {
       ml->pre_smoother[nl].data_destroy = ML_Smoother_Destroy_BGS_Data;
       sprintf(str,"VBSGS_pre%d",nl);
       return(ML_Smoother_Set(&(ml->pre_smoother[nl]), ML_INTERNAL, 
                         (void *) data, fun, NULL, ntimes, omega, str));
    }
-   else if (pre_or_post == ML_POSTSMOOTH) {
+   else if (pre_or_post == ML_POSTSMOOTHER) {
       ml->post_smoother[nl].data_destroy = ML_Smoother_Destroy_BGS_Data;
       sprintf(str,"VBSGS_post%d",nl);
       return(ML_Smoother_Set(&(ml->post_smoother[nl]), ML_INTERNAL, 
@@ -1287,13 +1287,13 @@ int ML_Gen_Smoother_VBlockSymGaussSeidelSequential( ML *ml , int nl,
 
    ML_Smoother_Gen_VBGSFacts(&data, &(ml->Amat[nl]), nBlocks, blockIndices);
 
-   if (pre_or_post == ML_PRESMOOTH) {
+   if (pre_or_post == ML_PRESMOOTHER) {
       ml->pre_smoother[nl].data_destroy = ML_Smoother_Destroy_BGS_Data;
       sprintf(str,"VBSGSS_pre%d",nl);
       return(ML_Smoother_Set(&(ml->pre_smoother[nl]), ML_INTERNAL, 
                              (void *) data, fun, NULL, ntimes, omega, str));
    }
-   else if (pre_or_post == ML_POSTSMOOTH) {
+   else if (pre_or_post == ML_POSTSMOOTHER) {
       ml->post_smoother[nl].data_destroy = ML_Smoother_Destroy_BGS_Data;
       sprintf(str,"VBSGSS_post%d",nl);
       return(ML_Smoother_Set(&(ml->post_smoother[nl]), ML_INTERNAL, 
@@ -1339,13 +1339,13 @@ int ML_Gen_Smoother_VBlockKrylovJacobi( ML *ml , int nl, int pre_or_post,
 
    ML_Smoother_Gen_VBGSFacts(&data, &(ml->Amat[nl]), nBlocks, blockIndices);
 
-   if (pre_or_post == ML_PRESMOOTH) {
+   if (pre_or_post == ML_PRESMOOTHER) {
       ml->pre_smoother[nl].data_destroy = ML_Smoother_Destroy_BGS_Data;
       sprintf(str,"VBKJ_pre%d",nl);
       return(ML_Smoother_Set(&(ml->pre_smoother[nl]), ML_INTERNAL, 
                              (void *) data, fun, NULL, ntimes, myomega,str));
    }
-   else if (pre_or_post == ML_POSTSMOOTH) {
+   else if (pre_or_post == ML_POSTSMOOTHER) {
       ml->post_smoother[nl].data_destroy = ML_Smoother_Destroy_BGS_Data;
       sprintf(str,"VBKJ_post%d",nl);
       return(ML_Smoother_Set(&(ml->post_smoother[nl]), ML_INTERNAL, 
@@ -1424,13 +1424,13 @@ int ML_Gen_Smoother_OverlappedDDILUT( ML *ml , int nl, int pre_or_post )
    /* set it up as smoother                                            */
    /* ---------------------------------------------------------------- */
 
-   if (pre_or_post == ML_PRESMOOTH) {
+   if (pre_or_post == ML_PRESMOOTHER) {
       ml->pre_smoother[nl].data_destroy = ML_Smoother_Destroy_ILUT_Data;
       sprintf(str,"ODDILUT_pre%d",nl);
       return(ML_Smoother_Set(&(ml->pre_smoother[nl]), ML_INTERNAL, 
                         (void *) data, fun, NULL, 1, 0.0,str));
    }
-   else if (pre_or_post == ML_POSTSMOOTH) {
+   else if (pre_or_post == ML_POSTSMOOTHER) {
       ml->post_smoother[nl].data_destroy = ML_Smoother_Destroy_ILUT_Data;
       sprintf(str,"ODDILUT_post%d",nl);
       return(ML_Smoother_Set(&(ml->post_smoother[nl]), ML_INTERNAL, 
@@ -1533,13 +1533,13 @@ int ML_Gen_Smoother_VBlockAdditiveSchwarz(ML *ml , int nl, int pre_or_post,
    /* set it up as smoother                                            */
    /* ---------------------------------------------------------------- */
 
-   if (pre_or_post == ML_PRESMOOTH) {
+   if (pre_or_post == ML_PRESMOOTHER) {
       ml->pre_smoother[nl].data_destroy = ML_Smoother_Destroy_Schwarz_Data;
       sprintf(str,"VBASz_pre%d",nl);
       return(ML_Smoother_Set(&(ml->pre_smoother[nl]), ML_INTERNAL, 
                         (void *) data, fun, NULL, ntimes, 0.0, str));
    }
-   else if (pre_or_post == ML_POSTSMOOTH) {
+   else if (pre_or_post == ML_POSTSMOOTHER) {
       ml->post_smoother[nl].data_destroy = ML_Smoother_Destroy_Schwarz_Data;
       sprintf(str,"VBASz_post%d",nl);
       return(ML_Smoother_Set(&(ml->post_smoother[nl]), ML_INTERNAL, 
@@ -1642,13 +1642,13 @@ int ML_Gen_Smoother_VBlockMultiplicativeSchwarz(ML *ml , int nl, int pre_or_post
    /* set it up as smoother                                            */
    /* ---------------------------------------------------------------- */
 
-   if (pre_or_post == ML_PRESMOOTH) {
+   if (pre_or_post == ML_PRESMOOTHER) {
       ml->pre_smoother[nl].data_destroy = ML_Smoother_Destroy_Schwarz_Data;
       sprintf(str,"VBMSz_pre%d",nl);
       return(ML_Smoother_Set(&(ml->pre_smoother[nl]), ML_INTERNAL, 
                         (void *) data, fun, NULL, ntimes, 0.0, str));
    }
-   else if (pre_or_post == ML_POSTSMOOTH) {
+   else if (pre_or_post == ML_POSTSMOOTHER) {
       ml->post_smoother[nl].data_destroy = ML_Smoother_Destroy_Schwarz_Data;
       sprintf(str,"VBMSz_post%d",nl);
       return(ML_Smoother_Set(&(ml->post_smoother[nl]), ML_INTERNAL, 
