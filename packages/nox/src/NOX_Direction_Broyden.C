@@ -233,7 +233,8 @@ bool NOX::Direction::Broyden::compute(NOX::Abstract::Vector& dir,
       oldJacobianGrpPtr->setX(soln.getX());
 
     // Calcuate new Jacobian
-    cout << "RECALCULATING JACOBIAN!" << endl;
+    if (utils.isPrintProcessAndType(Utils::Details))
+      cout << "RECALCULATING JACOBIAN!" << endl;
  
     status = oldJacobianGrpPtr->computeJacobian();
     if (status != NOX::Abstract::Group::Ok) 
