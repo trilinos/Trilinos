@@ -1412,8 +1412,8 @@ ComputePreconditioner(const bool CheckPreconditioner)
       // kludge because it appears that the nonzeros for ML
       // defined operators are only local, while for Epetra
       // are global.
-      if (LevelID_[i] == 0) {
-        global[1] = local[1];
+      if (i == 0) {
+        global[1] = local[1]; // FIXME: this is black magic
         RowZero = global[0];
         NnzZero = global[1];
       }
