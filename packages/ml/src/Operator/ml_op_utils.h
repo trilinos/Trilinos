@@ -51,6 +51,10 @@ extern int ML_Operator_Analyze(ML_Operator *Op, char *name);
 extern int ML_Operator_PrintSparsity(ML_Operator* Op, char* title,
 				     int PrintDecomposition,
 				     int NumPDEEqns);
+int ML_Operator_Eigensolver_Dense(ML_Operator* Amat,
+				  double* Er,
+				  double* Ei,
+				  double* vectors);
 
 #ifndef ML_CPP
 #ifdef __cplusplus

@@ -1486,6 +1486,7 @@ int ML_Operator_Analyze(ML_Operator * Op, char* name)
   return 0;
 
 }
+
 /****************************************************************
  * Largely inspired from Yousef Saad's SPARSKIT plot function.  *
  * Plots the sparsity pattern of an ML_Operator into a PS file. *
@@ -1832,3 +1833,198 @@ int ML_Operator_PrintSparsity(ML_Operator* Op, char* title,
   return 1;
 }
 
+/****************************************************************
+ * Compute eigenvectors and eigenvalues of an ML_Operator.
+ * This function converts the ML_Operator into a dense matrix,
+ * then call LAPACK (DGEEV) to evaluate the eigenvalues (real and imaginary
+ * part) and the right eigenvectors. (It is trivial to change
+ * the function so that it computed the left eigenvectors.)
+ *
+ * Warning: the code may require a *lot* of memory (as the
+ * ML_Operator must be stored as a dense FORTRAN matrix), and
+ * may take a *lot* of time.
+ *
+ * parameters:
+ * ===========
+ * 
+ * Amat :      ML_Operator to be analyzed.
+ * Er :        double vector, or size Amat->outvec_leng.
+ *             In output, it will contain the real part of the
+ *             computed eigenvalues.
+ * Ei :        double vector, of size Amat->outvec_leng.
+ *             In output, it will contain the imaginary part of the
+ *             computed eigenvalues.
+ * vectors :   double vector, of size (Amat->outvec_leng) ^ 2.
+ *             In output, it will contain the eigenvectors.
+ *             See the LAPACK documentation for DGEEV for 
+ *             details.
+ *
+ * return value:  
+ * ============
+ *
+ * function returns 0 if ok, a negative value otherwise
+ *
+ * date:       19-Aug-03, MS
+ ****************************************************************/
+#include "ml_lapack.h"
+
+int ML_Operator_Eigensolver_Dense(ML_Operator* Amat,
+				  double* Er,
+				  double* Ei,
+				  double* vectors)
+{
+
+  int i;
+  int j;
+  int n;
+  char jobvl, jobvr;
+  int lda,  ldvl, ldvr, lwork, info;
+  double *a, *work;
+  int *ipiv;
+  double time;
+  int allocated = 1;
+  int* colInd;
+  double* colVal;
+  int ierr;
+  int ncnt;
+
+  /* -------------- execution begins ---------------------------- */
+
+  time = GetClock();
+
+  if (Amat->comm->ML_nprocs != 1) {
+    fprintf(stderr,
+	    "*ML*ERR* Function ML_Operator_EigenSolver_Dense()'\n"
+	    "*ML*ERR* can be called with 1 process only.\n");
+    return(-1);
+  }
+
+  if (Amat->invec_leng != Amat->outvec_leng) {
+    fprintf(stderr,
+	    "*ML*ERR* Function `ML_Operator_EigenSolver_Dense()'\n"
+	    "*ML*ERR* requires square matrices.\n");
+    return(-2);
+  }
+
+  n = Amat->invec_leng;
+  jobvl = 'N'; /* V/N to calculate/not calculate left eigenvectors
+                  of matrix H.*/
+
+  jobvr = 'V'; /* As above, but for right eigenvectors. */
+
+  lda = n; /* The leading dimension of matrix a. */
+
+#ifdef NOT_DEF
+  /* crappy check, I got some problems when too much memory
+   * is allocated. Better to return now than never.... */
+
+  if (n * n * 8 > 536870912) {
+    fprintf(stderr,
+	    "ML*ERR* LAPACK analysis of finest matrix would\n"
+	    "require %d Kbytes. This seems too\n"
+	    "much to me. Now I return; maybe you can change the\n"
+	    "source code (file %s, line %d)\n",
+	    n * n * 8 /1024,
+	    __FILE__,
+	    __LINE__);
+    return(-3);
+  }
+#endif
+
+  a = (double*) ML_allocate(sizeof(double)*n*n);
+  if( a == 0 ) {
+    fprintf(stderr,
+	    "*ML*ERR* not enough memory to allocate %d bytes\n"
+	    "*ML*ERR* (file %s, line %d)\n",
+	    (int)sizeof(double)*n*n,
+	    __FILE__,
+	    __LINE__);
+    exit(EXIT_FAILURE);
+  }
+  
+  /* set to zero the elements */
+  for (i = 0; i < n; ++i)
+   for (j = 0 ; j < n ; ++j ) 
+     a[i+j*n] = 0.0;
+
+  /* now insert the nonzero elements, row by row */
+  
+  colInd = (int*) ML_allocate(sizeof(int)*allocated);
+  colVal = (double*) ML_allocate(sizeof(double)*allocated);
+  if( (colInd == NULL) || (colVal == NULL) ) {
+    fprintf(stderr,
+	    "*ML*ERR* not enough memory for %d bytes\n"
+	    "*ML*ERR* (file %s, line %d)\n",
+	    allocated,
+	    __FILE__,
+	    __LINE__);
+    exit(EXIT_FAILURE);
+  }
+
+  for (i = 0; i < n ; i++) {
+
+    ierr = ML_Operator_Getrow(Amat,1,&i,allocated,colInd,colVal,&ncnt);
+
+    if (ierr == 0) {
+      do {
+	ML_free(colInd);
+	ML_free(colVal);
+	allocated *= 2;
+	colInd = (int*) ML_allocate(sizeof(int)*allocated);
+	colVal = (double*) ML_allocate(sizeof(double)*allocated);
+	if( (colInd == NULL) || (colVal == NULL) ) {
+	  fprintf(stderr,
+		  "*ML*ERR* not enough memory for %d bytes\n"
+		  "*ML*ERR* (file %s, line %d)\n",
+		  allocated,
+		  __FILE__,
+		  __LINE__);
+	  exit(EXIT_FAILURE);
+	}
+	ierr = ML_Operator_Getrow(Amat,1,&i,allocated,colInd,colVal,&ncnt);
+      } while (ierr == 0);
+    }
+    for (j = 0 ; j < ncnt ; ++j) {
+      a[i+n*colInd[j]] = colVal[j];
+    }
+  }
+
+  printf("Time to convert ML_Operator into LAPACK format = %e (s)\n",
+	 GetClock() - time);
+
+  time = GetClock();
+
+  info = 0;
+
+  ipiv = (int*) ML_allocate(sizeof(int) * n);
+  ldvl = n;
+  ldvr = n;
+  work = (double*) ML_allocate(sizeof(double) * 4 * n);
+  lwork = 4*n;
+
+  for (i = 0 ; i < n ; i++ ) {
+    Er[i] = 0.0, Ei[i] = 0.0;
+  }
+
+  /* largest and smallest eigenvalue (in module) of A */
+
+  printf("Computing eigenvalues/eigenvectors of given ML_Operator\n"
+	 "using LAPACK (DGEEV). This may take some time...\n");
+
+  DGEEV_F77(&jobvl, &jobvr, &n, a, &n, Er, Ei, NULL,
+            &ldvl, vectors, &ldvr, work, &lwork, &info);
+ 
+  /* free memory */
+
+  ML_free(colInd);
+  ML_free(colVal);
+  ML_free(a);
+  ML_free(ipiv);
+  ML_free(work);
+
+  printf("Time for eigensolver = %e (s)\n", 
+	 GetClock() - time);
+
+  return(0);
+
+} /* ML_Operator_EigenSolver_Dense */
