@@ -54,7 +54,6 @@ am__aclocal_m4_deps = $(top_srcdir)/config/ac_cxx_bool.m4 \
 	$(top_srcdir)/config/acx_lapack.m4 \
 	$(top_srcdir)/config/tac_arg_check_mpi.m4 \
 	$(top_srcdir)/config/tac_arg_config_mpi.m4 \
-	$(top_srcdir)/config/tac_arg_enable_can_use_package.m4 \
 	$(top_srcdir)/config/tac_arg_enable_compiler_options.m4 \
 	$(top_srcdir)/config/tac_arg_enable_feature.m4 \
 	$(top_srcdir)/config/tac_arg_enable_feature_sub.m4 \
@@ -86,7 +85,8 @@ am_TestOptions_OBJECTS = TestOptions-TestOptions.$(OBJEXT) \
 	TestOptions-PerformOneSolveAndTest.$(OBJEXT) \
 	TestOptions-TestOtherClasses.$(OBJEXT)
 TestOptions_OBJECTS = $(am_TestOptions_OBJECTS)
-am__DEPENDENCIES_1 =
+@HAVE_AMESOS_EPETRAEXT_TRUE@am__DEPENDENCIES_1 = $(top_builddir)/../epetraext/src/libepetraext.a
+am__DEPENDENCIES_2 =
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/src
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
@@ -148,6 +148,8 @@ FFLAGS = @FFLAGS@
 FLIBS = @FLIBS@
 HAVE_AMESOS_DSCPACK_FALSE = @HAVE_AMESOS_DSCPACK_FALSE@
 HAVE_AMESOS_DSCPACK_TRUE = @HAVE_AMESOS_DSCPACK_TRUE@
+HAVE_AMESOS_EPETRAEXT_FALSE = @HAVE_AMESOS_EPETRAEXT_FALSE@
+HAVE_AMESOS_EPETRAEXT_TRUE = @HAVE_AMESOS_EPETRAEXT_TRUE@
 HAVE_AMESOS_KLU_FALSE = @HAVE_AMESOS_KLU_FALSE@
 HAVE_AMESOS_KLU_TRUE = @HAVE_AMESOS_KLU_TRUE@
 HAVE_AMESOS_KUNDERT_FALSE = @HAVE_AMESOS_KUNDERT_FALSE@
@@ -255,13 +257,15 @@ target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
 TEST = TestOptions 
+@HAVE_AMESOS_EPETRAEXT_FALSE@EPETRA_EXT_LIB = 
+@HAVE_AMESOS_EPETRAEXT_TRUE@EPETRA_EXT_LIB = $(top_builddir)/../epetraext/src/libepetraext.a 
+@HAVE_AMESOS_EPETRAEXT_FALSE@EPETRA_EXT_INCLUDE = 
+@HAVE_AMESOS_EPETRAEXT_TRUE@EPETRA_EXT_INCLUDE = -I$(top_srcdir)/../epetraext/src/transform -I$(top_builddir)/../epetraext/src/transform -I$(top_srcdir)/../epetraext/src -I$(top_builddir)/../epetraext/src 
 
 #Specify locations of include files within Trilinos, but outside amesos
 AM_CPPFLAGS = -I$(top_srcdir)/../triutils/src \
 -I$(top_srcdir)/../epetra/src  -I$(top_builddir)/../epetra/src \
--I$(top_srcdir)/../epetraext/src/transform  \
--I$(top_srcdir)/../epetraext/src  \
--I$(top_builddir)/../epetraext/src \
+	${EPETRA_EXT_INCLUDE} \
 -I$(top_builddir)/../triutils/src \
    -I$(top_builddir)/../teuchos/src -I$(top_srcdir)/../teuchos/src
 
@@ -284,7 +288,7 @@ TestOptions_SOURCES = $(srcdir)/TestOptions.cpp  \
 
 TestOptions_DEPENDENCIES = \
 	$(top_builddir)/../triutils/src/libtriutils.a \
-	$(top_builddir)/../epetraext/src/libepetraext.a \
+	${EPETRA_EXT_LIB} \
 	$(top_builddir)/../epetra/src/libepetra.a \
 	$(top_builddir)/src/libamesos.a \
 	$(top_builddir)/../teuchos/src/libteuchos.a \
@@ -296,7 +300,7 @@ TestOptions_CXXFLAGS = -I$(top_srcdir)/src
 #  libamesos.a is loaded twice.  The second time allows umfpack to pick up AMD.
 #
 TestOptions_LDADD = $(top_builddir)/src/libamesos.a \
-	$(top_builddir)/../epetraext/src/libepetraext.a \
+	${EPETRA_EXT_LIB} \
 	$(top_builddir)/../epetra/src/libepetra.a \
 	$(top_builddir)/../teuchos/src/libteuchos.a \
 	$(top_builddir)/../triutils/src/libtriutils.a \

@@ -20,6 +20,10 @@
 /* Define if want to build amesos-dscpack */
 #undef HAVE_AMESOS_DSCPACK
 
+/* Define if you want to allow Amesos tests and examples to use Epetraext to
+   build matrices */
+#undef HAVE_AMESOS_EPETRAEXT
+
 /* Define if want to build amesos-examples */
 #undef HAVE_AMESOS_EXAMPLES
 
@@ -47,7 +51,8 @@
 /* Define if want to build amesos-tests */
 #undef HAVE_AMESOS_TESTS
 
-/* Define if want to build with triutils enabled */
+/* Define if you want to allow Amesos tests and examples to use Epetraext to
+   build matrices */
 #undef HAVE_AMESOS_TRIUTILS
 
 /* Define if want to build amesos-umfpack */

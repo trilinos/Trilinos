@@ -100,16 +100,27 @@ amesos_test_SOURCES = $(srcdir)/Amesos_TestDriver.cpp \
 	 $(srcdir)/Amesos_TestMultiSolver.cpp  $(srcdir)/Amesos_TestMrhsSolver.cpp \
 	 $(SRC_CXX)
 
+if HAVE_AMESOS_EPETRAEXT
+   EPETRA_EXT_INCLUDE =	-I$(top_srcdir)/../epetraext/src/transform -I$(top_builddir)/../epetraext/src/transform -I$(top_srcdir)/../epetraext/src -I$(top_builddir)/../epetraext/src 
+else
+   EPETRA_EXT_INCLUDE = 
+endif 
+
 #Specify locations of include files within Trilinos, but outside amesos
 AM_CPPFLAGS = -I$(top_srcdir)/../epetra/src \
 	-I$(top_builddir)/../epetra/src \
 	-I$(top_srcdir)/../teuchos/src -I$(top_builddir)/../teuchos/src \
-	-I$(top_srcdir)/../epetraext/src/transform -I$(top_builddir)/../epetraext/src/transform \
-	-I$(top_srcdir)/../epetraext/src -I$(top_builddir)/../epetraext/src \
+	${EPETRA_EXT_INCLUDE} \
 	-I$(top_srcdir)/../triutils/src -I$(top_builddir)/../triutils/src 
 
+if HAVE_AMESOS_EPETRAEXT
+   EPETRA_EXT_LIB = 	$(top_builddir)/../epetraext/src/libepetraext.a 
+else
+   EPETRA_EXT_LIB = 
+endif 
+
 amesos_test_DEPENDENCIES = \
-	$(top_builddir)/../epetraext/src/libepetraext.a \
+	${EPETRA_EXT_LIB} \
 	$(top_builddir)/../epetra/src/libepetra.a \
 	$(top_builddir)/src/libamesos.a \
 	$(top_builddir)/../teuchos/src/libteuchos.a \
@@ -121,7 +132,7 @@ amesos_test_CXXFLAGS = -I$(top_srcdir)/src
 #  libamesos.a is loaded twice.  The second time allows umfpack to pick up AMD.
 #
 amesos_test_LDADD = $(top_builddir)/src/libamesos.a \
-	$(top_builddir)/../epetraext/src/libepetraext.a \
+	${EPETRA_EXT_LIB} \
 	$(top_builddir)/../epetra/src/libepetra.a \
 	$(top_builddir)/../teuchos/src/libteuchos.a \
 	$(top_builddir)/../triutils/src/libtriutils.a \

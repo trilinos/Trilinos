@@ -269,6 +269,39 @@ AM_CONDITIONAL(BUILD_EXAMPLES, test "X$ac_cv_use_amesos_examples" != "Xno")
 TAC_ARG_ENABLE_FEATURE(valgrind, [Use valgrind to perform memory checks and detect leaks (not all packages are sensitive to this option)], VALGRIND, no)
 AM_CONDITIONAL(HAVE_VALGRIND, test "X$ac_cv_use_valgrind" != "Xno")
 
+
+AC_ARG_ENABLE(epetraext,
+ [AC_HELP_STRING([--enable-epetraext],[Allow Amesos tests and examples to use Epetraext to build matrices.   Default is no. Requires Epetraext package.])],
+ ac_cv_use_epetraext=$enableval, ac_cv_use_epetraext=no)
+
+AC_MSG_CHECKING(whether to use epetraext)
+
+if test "X$ac_cv_use_epetraext" != "Xno"; then
+  AC_MSG_RESULT(yes)
+  AC_DEFINE([HAVE_AMESOS_EPETRAEXT],,[Define if you want to allow Amesos tests and examples to use Epetraext to build matrices])
+else
+ AC_MSG_RESULT(no)
+fi
+
+AM_CONDITIONAL(HAVE_AMESOS_EPETRAEXT, [test "X$ac_cv_use_epetraext" != "Xno"])
+
+
+
+AC_ARG_ENABLE(triutils,
+ [AC_HELP_STRING([--enable-triutils],[Allow Amesos tests and examples to use Triutils to build matrices.   Default is no. Requires Triutils package.])],
+ ac_cv_use_triutils=$enableval, ac_cv_use_triutils=no)
+
+AC_MSG_CHECKING(whether to use triutils)
+
+if test "X$ac_cv_use_triutils" != "Xno"; then
+  AC_MSG_RESULT(yes)
+  AC_DEFINE([HAVE_AMESOS_TRIUTILS],,[Define if you want to allow Amesos tests and examples to use Epetraext to build matrices])
+else
+ AC_MSG_RESULT(no)
+fi
+
+AM_CONDITIONAL(HAVE_AMESOS_TRIUTILS, [test "X$ac_cv_use_triutils" != "Xno"])
+
 TAC_ARG_ENABLE_FEATURE(libcheck, [Check for some third-party libraries including BLAS and LAPACK.  (Cannot be disabled unless tests and examples are also disabled.)], LIBCHECK, yes)
 
 # ------------------------------------------------------------------------
@@ -287,11 +320,11 @@ AC_F77_WRAPPERS
 # Interfaces to other Trilinos packages
 # ------------------------------------------------------------------------
 
-TAC_ARG_ENABLE_CAN_USE_PACKAGE(triutils, [Enable TRIUTILS support. 
-				 Triutils, a Trilinos package, is used by
-				 some Amesos examples to construct the 
-				 linear system], AMESOS_TRIUTILS)
-AM_CONDITIONAL(HAVE_AMESOS_TRIUTILS, test "X$ac_cv_use_triutils" = "Xyes")
+# TAC_ARG_ENABLE_CAN_USE_PACKAGE(triutils, [Enable TRIUTILS support. 
+# 				 Triutils, a Trilinos package, is used by
+# 				 some Amesos examples to construct the 
+# 				 linear system], AMESOS_TRIUTILS)
+# AM_CONDITIONAL(HAVE_TRIUTILS, test "X$ac_cv_use_triutils" = "Xyes")
 
 # ------------------------------------------------------------------------
 # Checks for libraries

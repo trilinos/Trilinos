@@ -49,7 +49,7 @@
 #  where:
 #     KLU SuperLU.rua - The solver to use and the matrix to solve
 #     0 1 1 0                 - MatrixType, Special, NumSolves, Transpose
-#     1e-14 1e-13             - max error, max residual
+    #     1e-14 1e-13             - max error, max residual
 #
 #
 #   MatType = 0 means serial (all stored on process 0) 
