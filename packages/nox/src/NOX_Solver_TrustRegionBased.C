@@ -338,7 +338,7 @@ NOX::StatusTest::StatusType TrustRegionBased::iterate()
 	throw "NOX Error";
       }
       double numerator = oldF - newF;
-      double denominator = abs(dir.dot(oldSoln.getGradient()) + 0.5 * bVec.dot(bVec));
+      double denominator = fabs(dir.dot(oldSoln.getGradient()) + 0.5 * bVec.dot(bVec));
       ratio = numerator / denominator;
       if (Utils::doPrint(Utils::InnerIteration))
 	cout << "Ratio computation: " << Utils::sci(numerator) << "/" 
