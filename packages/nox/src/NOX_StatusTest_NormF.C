@@ -44,7 +44,8 @@ NOX::StatusTest::NormF::NormF(double tolerance, NOX::Abstract::Vector::NormType 
   toleranceType(Absolute),
   specifiedTolerance(tolerance),
   initialTolerance(1.0),
-  trueTolerance(tolerance)
+  trueTolerance(tolerance),
+  normF(0.0)
 {
 }
 
@@ -55,7 +56,8 @@ NOX::StatusTest::NormF::NormF(double tolerance, ScaleType stype) :
   toleranceType(Absolute),
   specifiedTolerance(tolerance),
   initialTolerance(1.0),
-  trueTolerance(tolerance)
+  trueTolerance(tolerance),
+  normF(0.0)
 {
 }
 
@@ -68,7 +70,8 @@ NOX::StatusTest::NormF::NormF(NOX::Abstract::Group& initialGuess, double toleran
   toleranceType(Relative),
   specifiedTolerance(tolerance),
   initialTolerance(0.0),
-  trueTolerance(0.0)
+  trueTolerance(0.0),
+  normF(0.0)
 {
   relativeSetup(initialGuess);
 }
@@ -81,7 +84,8 @@ NOX::StatusTest::NormF::NormF(NOX::Abstract::Group& initialGuess, double toleran
   toleranceType(Relative),
   specifiedTolerance(tolerance),
   initialTolerance(0.0),
-  trueTolerance(0.0)
+  trueTolerance(0.0),
+  normF(0.0)
 {
   relativeSetup(initialGuess);
 }

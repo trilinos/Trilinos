@@ -45,6 +45,7 @@ using namespace NOX::StatusTest;
 
 NormWRMS::NormWRMS(double rtol_, double atol_, double BDFmult_, double tol_,
 		   double alpha_, double beta_) :
+  value(0.0),
   rtol(rtol_),
   atolIsScalar(true),
   atol(atol_),
@@ -66,6 +67,7 @@ NormWRMS::NormWRMS(double rtol_, double atol_, double BDFmult_, double tol_,
 
 NormWRMS::NormWRMS(double rtol_, Abstract::Vector& atolVec_, double BDFmult_,
 		   double tol_, double alpha_, double beta_) :
+  value(0.0),
   rtol(rtol_),
   atolIsScalar(false),
   atol(0.0),

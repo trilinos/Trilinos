@@ -36,7 +36,8 @@
 
 using namespace NOX::StatusTest;
 
-MaxIters::MaxIters(int maxiterations)
+MaxIters::MaxIters(int maxiterations) :
+  niters(0)
 {
   if (maxiterations < 1) {
     cout << "Error: Must choose maxiterations > 1 in NOX::StatusTest::MaxIters" << endl;

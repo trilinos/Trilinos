@@ -45,7 +45,8 @@ NormUpdate::NormUpdate(double tol, Abstract::Vector::NormType ntype, ScaleType s
   updateVectorPtr(NULL),
   normType(ntype),
   scaleType(stype),
-  tolerance(tol)
+  tolerance(tol),
+  normUpdate(0.0)
 {
 }
 
@@ -54,7 +55,8 @@ NormUpdate::NormUpdate(double tol, ScaleType stype) :
   updateVectorPtr(NULL),
   normType(NOX::Abstract::Vector::TwoNorm),
   scaleType(stype),
-  tolerance(tol)
+  tolerance(tol),
+  normUpdate(0.0)
 {
 }
 
