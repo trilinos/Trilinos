@@ -401,16 +401,16 @@ int ML_Epetra::SetDefaultsDD_3Levels_LU(ParameterList & List, const string Prefi
  * - \c "output" = 10
  * - \c "PDE equations" = 1
  * - \c "increasing or decreasing" = "decreasing"
- * - \c "aggregation: type" = "Uncoupled"
+ * - \c "aggregation: type" = "Uncoupled-MIS"
  * - \c "aggregation: damping factor" = 1.3333
- * - \c "coarse: max size" = 16
+ * - \c "coarse: max size" = 75
  * - \c "aggregation: threshold" = 0.0
  * - \c "smoother: sweeps" = 2
  * - \c "smoother: damping factor" = 0.67
  * - \c "smoother: type" = "MLS"
- * - \c "smoother: MLS polynomial order" = 3
+ * - \c "smoother: MLS polynomial order" = 4
  * - \c "smoother: pre or post" = "both"
- * - \c "coarse: type" = "SuperLU"
+ * - \c "coarse: type" = "Amesos-Klu"
  * - \c "prec type" = "MGV"
  * - \c "print unused" = -2
  */
@@ -428,14 +428,14 @@ int ML_Epetra::SetDefaultsMaxwell(ParameterList & List, const string Prefix,
 
   List.set(Prefix+"increasing or decreasing","decreasing");
 
-  // aggregation: Uncoupled for all levels
-  List.set(Prefix+"aggregation: type","Uncoupled");
+  // aggregation: Uncoupled-MIS for all levels
+  List.set(Prefix+"aggregation: type","Uncoupled-MIS");
 
   // optimal value for smoothed aggregation
   List.set(Prefix+"aggregation: damping factor",1.3333);
 
   // relative small coarse size
-  List.set(Prefix+"coarse: max size",16);
+  List.set(Prefix+"coarse: max size",75);
 
   // don't forget any element
   List.set(Prefix+"aggregation: threshold",0.0);
@@ -447,7 +447,7 @@ int ML_Epetra::SetDefaultsMaxwell(ParameterList & List, const string Prefix,
 
   List.set(Prefix+"smoother: type","MLS");
 
-  List.set(Prefix+"smoother: MLS polynomial order",3);
+  List.set(Prefix+"smoother: MLS polynomial order",4);
   
   List.set(Prefix+"smoother: pre or post","both");
   
