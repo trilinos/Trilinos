@@ -89,8 +89,7 @@ Group::Group(const Group& source, CopyType type) :
 
 Group::~Group() 
 {
-  if (tmpVectorPtr != NULL) 
-    delete tmpVectorPtr;
+  delete tmpVectorPtr;
 }
 
 void Group::resetIsValid() //private
