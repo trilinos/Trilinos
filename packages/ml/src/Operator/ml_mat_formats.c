@@ -972,7 +972,7 @@ int cCSR_matvec(void *Amat_in, int ilen, double p[], int olen, double ap[])
      sum = 0;
      for (k = row_ptr[i]; k < row_ptr[i+1]; k++)
      {
-        sum  += ( sgn[val[(int) k]]) * p2[bindx[k]];
+        sum  += ( sgn[(int) val[ k]]) * p2[bindx[k]];
      }
 
      ap2[i] = sum;
