@@ -37,7 +37,7 @@ static PARAM_VARS HG_params[] = {
  { "CHECK_GRAPH", NULL, "INT" },
  { NULL, NULL, NULL } };
 
-static int Zoltan_HG_Initialize_Params(ZZ *, HGParams *);
+static int Zoltan_HG_Initialize_Params(ZZ *, HGPartParams *);
 static int Zoltan_HG_Return_Lists(ZZ *, struct Zoltan_HGraph *, Partition,
   int *, ZOLTAN_ID_PTR *, ZOLTAN_ID_PTR *, int **, int **);
 
@@ -65,7 +65,7 @@ char *yo = "Zoltan_HG";
 struct Zoltan_HGraph *zoltan_hg = NULL;
 int ierr = ZOLTAN_OK;
 int nVtx;                       /* Temporary variable for base graph. */
-HGParams hgp;                   /* Hypergraph parameters. */
+HGPartParams hgp;               /* Hypergraph parameters. */
 Partition output_parts = NULL;  /* Output partition from HG partitioner. */
 
   ZOLTAN_TRACE_ENTER(zz, yo);
@@ -142,7 +142,7 @@ struct Zoltan_HGraph *zoltan_hg=(struct Zoltan_HGraph*)(zz->LB.Data_Structure);
 /*****************************************************************************/
 static int Zoltan_HG_Initialize_Params(
   ZZ *zz,
-  HGParams *hgp
+  HGPartParams *hgp
 )
 {
 int ierr = ZOLTAN_OK;

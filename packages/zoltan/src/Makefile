@@ -191,7 +191,7 @@ HSFC_INC 	= hsfc_hilbert_const.h hsfc_const.h hsfc.h
 HG_CSRC 	= hg.c hg_build.c hg_coarse.c hg_global.c \
 		  hg_group.c hg_local.c \
 		  hg_match.c hg_pack.c \
-		  hg_part.c hg_util.c
+		  hg_part.c hg_sort.c hg_util.c
 HG_INC 		= hg.h hypergraph.h
 
 PARAMS_CSRC	= set_param.c assign_param_vals.c check_param.c print_params.c \

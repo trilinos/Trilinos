@@ -141,23 +141,28 @@ int Zoltan_HG_Readfile     (ZZ *, HGraph *, char *hgraphfile);
 
 /* Hypergraph Partitioning */
 /* Function types for options to hypergraph partitioning */
+
 typedef int ZOLTAN_HG_MATCHING_FN (ZZ *, Graph *,  Matching, int);
 typedef int ZOLTAN_HG_PACKING_FN  (ZZ *, HGraph *, Packing,  int);
 typedef int ZOLTAN_HG_GROUPING_FN (ZZ *, HGraph *, Grouping, int);
 typedef int ZOLTAN_HG_GLOBAL_PART_FN(ZZ *, HGraph *, int, Partition);
 typedef int ZOLTAN_HG_LOCAL_REF_FN(ZZ *, HGraph *);
+
 /* Parameters to the hypergraph functions */
+
 typedef struct {
   int redl;                              /* Reduction limit. */
   char redm_str[MAX_PARAM_STRING_LEN];   /* Reduction method string. */
   ZOLTAN_HG_MATCHING_FN *matching;       /* Pointers to Matching, Packing and */
-  ZOLTAN_HG_PACKING_FN  *packing;        /*  Grouping fn specified by */
-  ZOLTAN_HG_GROUPING_FN *grouping;       /*  redm_str; NULL if not used */
+  ZOLTAN_HG_PACKING_FN  *packing;        /* Grouping fn specified by */
+  ZOLTAN_HG_GROUPING_FN *grouping;       /* redm_str; NULL if not used */
   char global_str[MAX_PARAM_STRING_LEN]; /* Global partitioning string and */
-  ZOLTAN_HG_GLOBAL_PART_FN *global_part; /*  pointer to Global partitioning fn */
+  ZOLTAN_HG_GLOBAL_PART_FN *global_part; /* pointer to Global partitioning fn */
   char local_str[MAX_PARAM_STRING_LEN];  /* Local refinement string and */
-  ZOLTAN_HG_LOCAL_REF_FN *local_ref;     /*  pointer to Local refinement fn */
+  ZOLTAN_HG_LOCAL_REF_FN *local_ref;     /* pointer to Local refinement fn */
+  int check_graph;
 } HGPartParams;
+
 int Zoltan_HG_Set_Options  (ZZ *, HGPartParams *);
 int Zoltan_HG_HPart_Lib    (ZZ *, HGraph *, int, Partition, HGPartParams *);
 int Zoltan_HG_HPart_Info   (ZZ *, HGraph *, int, Partition);
