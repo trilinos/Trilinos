@@ -585,7 +585,7 @@ static int pmatching_ipm(
    * indicated by a negative number, -(gno+1), and must use global numbers
    * (gno's) and not local numbers, lno's which are zero based.        */
 
-  /* Compute vertex visit order. Random is default. */
+  /* Compute candidates' vertex visit order (selection). Random is default. */
   Zoltan_PHG_Vertex_Visit_Order(zz, hg, hgp, visit);
   
   /* Loop processing ncandidates vertices per column each round.
@@ -599,19 +599,21 @@ static int pmatching_ipm(
   
   pvisit = 0;                                    /* marks position in visit[] */
   for (round = 0; round < nRounds; round++)  {
-    mp = master_data;
-    nmaster = 0;                   /* count of data accumulted in master row */    
-    memcpy (cmatch, match, hg->nVtx * sizeof(int));  /* for temporary locking */
-    
     if (cFLAG)  {
       for (nTotal = i = 0; i < hg->nVtx; i++)
-        if (cmatch[i] == i)
+        if (match[i] == i)
           permute[nTotal++] = i;
       goto skip_phase1;
     } 
-             
+
+    
     /************************ PHASE 1: ***************************************/
-            
+    
+    
+    mp = master_data;
+    nmaster = 0;                   /* count of data accumulted in master row */    
+    memcpy (cmatch, match, hg->nVtx * sizeof(int));  /* for temporary locking */
+                
     /* Select upto nCandidates unmatched vertices to globally match. */
     for (sendcnt = 0; sendcnt < nCandidates && pvisit < hg->nVtx; pvisit++)
       if (cmatch[visit[pvisit]] == visit[pvisit])  {         /* unmatched */
@@ -673,11 +675,14 @@ static int pmatching_ipm(
     }
 
 skip_phase1:
+#ifdef RTHRTH
+    /* Communication grouped candidates by processor, scramble them! */
+    if (hgc->nProc_x > 1 || cFLAG)  {
+      Zoltan_Srand_Sync(Zoltan_Rand(NULL), &(hgc->RNGState_col), hgc->col_comm);
+      Zoltan_Rand_Perm_Int (permute, nTotal, &(hgc->RNGState_col));
+    }
+#endif
 
-    /* randomly permute candidate vertices */
-    Zoltan_Srand_Sync(Zoltan_Rand(NULL), &(hgc->RNGState_col), hgc->col_comm);
-    Zoltan_Rand_Perm_Int (permute, nTotal, &(hgc->RNGState_col));   
-            
     /* for each candidate vertex, compute all local partial inner products */
     kstart = old_kstart = 0;         /* next candidate (of nTotal) to process */
     while (kstart < nTotal)  {
@@ -688,6 +693,7 @@ skip_phase1:
         r     = &edgebuf[permute[k]];     
         gno   = *r++;                        /* gno of candidate vertex */
         count = *r++;                        /* count of following hyperedges */
+        
         if (cFLAG)
           gno = permute[k];                  /* need to use next local vertex */
            
@@ -762,7 +768,7 @@ skip_phase1:
         
         /* if local vtx, remove self inner product (useless maximum) */
         if (cFLAG)
-          sums [gno] = 0.0;          /* here gno is really a local id */
+          sums [gno] = 0.0;             /* here gno is really a local id */
         else if (VTX_TO_PROC_X (hg, gno) == hgc->myProc_x)
           sums [VTX_GNO_TO_LNO (hg, gno)] = 0.0;
          
@@ -778,7 +784,7 @@ skip_phase1:
         if (count == 0)
           continue;
 
-         /* HEADER_COUNT (row, col, gno, count of <lno, psum> pairs) */                    
+        /* HEADER_COUNT (row, col, gno, count of <lno, psum> pairs) */                    
         msgsize = HEADER_COUNT + 2 * count;
         
         /* iff necessary, resize send buffer to fit at least first message */
@@ -894,7 +900,7 @@ skip_phase1:
               ZOLTAN_PRINT_ERROR (zz->Proc, yo, "Insufficient memory");
               return ZOLTAN_MEMERR;
             }
-           s = send + sendsize;   /* since realloc buffer may move */ 
+           s = send + sendsize;   /* since realloc buffer could move */ 
           }      
           *s++ = gno;
           *s++ = count;
@@ -943,15 +949,24 @@ skip_phase1:
           bestlno = -1;                    /* any negative value will do */
           for (i = 0; i < count; i++)  {
             lno =          *r++;
-            f   =  (float*) r++;                                     
-            if (*f > bestsum  &&  cmatch[lno] == lno)  {
+            f   =  (float*) r++;       
+            if (cFLAG  && *f > bestsum  &&  match[lno] == lno)  {
+              bestsum = *f;
+              bestlno = lno;
+            }
+                                         
+            if (!cFLAG && *f > bestsum  &&  cmatch[lno] == lno)  {
               bestsum = *f;
               bestlno = lno;
             }
           }
 
-          if (cFLAG  && (bestsum > TSUM_THRESHOLD))
+          if (cFLAG  && match[gno] == gno && (bestsum > TSUM_THRESHOLD))
+            {
             match[bestlno] = gno;
+            match[gno]     = bestlno;
+            }
+                        
           if (!cFLAG && bestsum > TSUM_THRESHOLD)  {
             cmatch[bestlno] = -1;  /* mark pending match to avoid conflicts */
             *mp++ = gno;
@@ -961,7 +976,7 @@ skip_phase1:
             master_procs[nmaster++] = VTX_TO_PROC_X (hg, gno);
           }
         } 
-      if (cFLAG)  {
+      if (cFLAG && hgc->nProc_y > 1)  {
         /* Broadcast what we matched so far */
         MPI_Bcast (match, hg->nVtx, MPI_INT, 0, hgc->col_comm); 
       }    
@@ -1051,7 +1066,6 @@ skip_phase1:
     /* update match array to the entire column */   
     MPI_Bcast (match, hg->nVtx, MPI_INT, 0, hgc->col_comm);
   }                                             /* DONE: loop over rounds */
-
    
 if (0 && hgc->myProc_x == 0 && hgc->myProc_y == 0)
 {
