@@ -1093,6 +1093,8 @@ int ML_Operator_ChangeToSinglePrecision(ML_Operator *matrix)
 
    ML_Operator_Set_Getrow(matrix,ML_EXTERNAL,matrix->getrow->Nrows,sCSR_getrows);
    matrix->data_destroy   = ML_CSR_MSRdata_Destroy;
+   if (values  != NULL) ML_free(values);
+   if (columns != NULL) ML_free(columns);
 
    return 0;
 }
@@ -1164,6 +1166,8 @@ int ML_Operator_ChangeToChar(ML_Operator *matrix)
 
    ML_Operator_Set_Getrow(matrix,ML_EXTERNAL,matrix->getrow->Nrows,cCSR_getrows);
    matrix->data_destroy   = ML_CSR_MSRdata_Destroy;
+   if (values  != NULL) ML_free(values);
+   if (columns != NULL) ML_free(columns);
 
    return 0;
 }
