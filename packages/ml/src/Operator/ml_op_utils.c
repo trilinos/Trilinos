@@ -1330,14 +1330,14 @@ ML_Operator *ML_Operator_ExplicitlyScale(ML_Operator *matrix,
  *******************************************************************/
 int ML_Operator_ChangeToSinglePrecision(ML_Operator *matrix)
 {
-#ifndef ML_LOWMEMORY
-  return 1;
-#else
   int i, k, Nrows, Nnz, allocated = 0, *columns = NULL, row_length;
   int *row_ptr, *col_ptr;
   double *values = NULL;
   float  *val_ptr;
   struct ML_CSR_MSRdata *temp;
+
+  if (ML_Use_LowMemory() != ML_TRUE)
+  return 1;
 
   /* Do not do anything if there is no destroy function for    */
   /* this matrix as we have no way to destroy the old data.    */
@@ -1399,19 +1399,17 @@ int ML_Operator_ChangeToSinglePrecision(ML_Operator *matrix)
    if (columns != NULL) ML_free(columns);
 
    return 0;
-#endif
 }
 int ML_Operator_ChangeToChar(ML_Operator *matrix)
 {
-#ifndef ML_LOWMEMORY
-  return 1;
-#else
   int i, k, Nrows, Nnz, allocated = 0, *columns = NULL, row_length;
   int *row_ptr, *col_ptr;
   double *values = NULL;
   char  *val_ptr;
   struct ML_CSR_MSRdata *temp;
 
+  if (ML_Use_LowMemory() != ML_TRUE)
+    return(1);
 
   /* Do not do anything if there is no destroy function for    */
   /* this matrix as we have no way to destroy the old data.    */
@@ -1475,7 +1473,6 @@ int ML_Operator_ChangeToChar(ML_Operator *matrix)
    if (columns != NULL) ML_free(columns);
 
    return 0;
-#endif
 }
 
 /*******************************************************************
@@ -1498,9 +1495,9 @@ int ML_Operator_ImplicitTranspose(ML_Operator *Rmat,
 				  int PostCommAlreadySet)
 {
 
-#ifndef ML_LOWMEMORY
-  return 1;
-#else
+  if (ML_Use_LowMemory() != ML_TRUE)
+    return 1;
+
   if ( (Pmat == NULL) || (Rmat == NULL)) return 1;
 
   if ( Pmat->getrow == NULL) return 1;
@@ -1527,7 +1524,6 @@ int ML_Operator_ImplicitTranspose(ML_Operator *Rmat,
   Rmat->getrow->func_ptr = NULL;
   Rmat->data_destroy = NULL;
   return 0;
-#endif
 }
 /*******************************************************************
  * Build a communication structure for newly received matrix rows.

@@ -46,9 +46,7 @@ void ML_matmat_mult(ML_Operator *Amatrix, ML_Operator *Bmatrix,
    */
    int tcols, hash_used, j, *tptr;
    int *acc_col_ptr, *Bcol_ptr; double *acc_val_ptr, *Bval_ptr;
-#ifdef ML_LOWMEMORY
    int allzeros;
-#endif
    /*
    t1 = GetClock();
    */
@@ -575,32 +573,34 @@ if ((lots_of_space < 4) && (B_allocated > 500)) Bvals = NULL; else
 
       /* store matrix row */
 
-#ifndef ML_LOWMEMORY
-      memcpy(&(Ccol[next_nz]),accum_col, sizeof(int)*Ncols);
-      memcpy(&(Cval[next_nz]),accum_val, sizeof(double)*Ncols);
-      next_nz += Ncols;
-
-#else
-      /* above code might be a bit faster??? */
-      allzeros = 1;
-      for (k = 0; k < Ncols; k++) {
-      /* This 'if' might break some applications somewhere */
-      /* but I can't remember who and where or why?        */
-      /* For now, I want to reduce memory in alegra so I am*/
-      /* putting it in. If we later want to take this out  */
-      /* we should use the memcpy code above.              */
-        if (accum_val[k] != 0.0) {
-          allzeros = 0;
-          Ccol[next_nz] = accum_col[k];
-          Cval[next_nz++] = accum_val[k];
+      if (ML_Use_LowMemory() != ML_TRUE)
+      {
+        memcpy(&(Ccol[next_nz]),accum_col, sizeof(int)*Ncols);
+        memcpy(&(Cval[next_nz]),accum_val, sizeof(double)*Ncols);
+        next_nz += Ncols;
+      }
+      else
+      {
+        /* above code might be a bit faster??? */
+        allzeros = 1;
+        for (k = 0; k < Ncols; k++) {
+          /* This 'if' might break some applications somewhere */
+          /* but I can't remember who and where or why?        */
+          /* For now, I want to reduce memory in alegra so I am*/
+          /* putting it in. If we later want to take this out  */
+          /* we should use the memcpy code above.              */
+          if (accum_val[k] != 0.0) {
+            allzeros = 0;
+            Ccol[next_nz] = accum_col[k];
+            Cval[next_nz++] = accum_val[k];
+          }
+        }
+        /* if entire row is zero, store one entry to avoid empty row */
+        if (allzeros) {
+          Ccol[next_nz] = accum_col[0];
+          Cval[next_nz++] = accum_val[0];
         }
       }
-      /* if entire row is zero, store one entry to avoid empty row */
-      if (allzeros) {
-        Ccol[next_nz] = accum_col[0];
-        Cval[next_nz++] = accum_val[0];
-      }
-#endif
       /*      */
 #ifdef takeout
 for (jj = 0; jj < Ncols; jj++) accum_val[jj] = 0.;
