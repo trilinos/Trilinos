@@ -217,9 +217,13 @@ End:
 
 
 /* sort by increasing i value */
+/* secondary key is j value */
 static int comp(const void *a, const void *b)
 {
-  return ((struct ijv *)a)->i - ((struct ijv *)b)->i;
+  if ((((struct ijv *)a)->i - ((struct ijv *)b)->i) == 0)
+    return ((struct ijv *)a)->j - ((struct ijv *)b)->j;
+  else
+    return ((struct ijv *)a)->i - ((struct ijv *)b)->i;
 }
 
 #ifdef __cplusplus
