@@ -41,7 +41,7 @@ private:
 	AnasaziMultiVec<TYPE> &_ivec; // must be passed in by the user
 	AnasaziMultiVec<TYPE> *_basisvecs, *_evecr, *_eveci;
 	AnasaziDenseMatrix<TYPE>* _hessmatrix;
-	AnasaziDenseMatrix<TYPE>* _B; // needed for block Krylov decomposition
+	AnasaziDenseMatrix<TYPE>* _resB; // needed for block Krylov decomposition
 	const int _nev, _length, _block, _restarts, _step;
 	const TYPE _residual_tolerance;
 	TYPE *_ritzresiduals, *_evalr, *_evali;
@@ -62,9 +62,9 @@ BlockArnoldi<TYPE>::BlockArnoldi(AnasaziMatrix<TYPE> & mat, AnasaziMultiVec<TYPE
 				_amat(mat), _ivec(vec), _basisvecs(0), _evecr(0), _eveci(0), 
 				_hessmatrix(0), _nev(nev), _length(length), _block(block), 
 				_restarts(restarts), _residual_tolerance(tol), _step(step),
-				_ritzresiduals(0), _evalr(0), _evali(0), _restartiter(0), _B(0), 
+				_ritzresiduals(0), _evalr(0), _evali(0), _restartiter(0), _resB(0), 
 				_iter(0), _jstart(0), _jend(0), _which(which),
-				_initialguess(false), _debuglevel(0), _nevblock(0),
+				_initialguess(true), _debuglevel(0), _nevblock(0),
 				_qrfact(false), _issym(false), _nconv(0) {
 	//	std::cout << "ctor:BlockArnoldi " << this << std::endl;
 	//
@@ -101,7 +101,7 @@ BlockArnoldi<TYPE>::BlockArnoldi(AnasaziMatrix<TYPE> & mat, AnasaziMultiVec<TYPE
 		//
 		// Create the block matrix B need for Krylov decomposition, initialize it to I_b. 
 		//
-		_B = new AnasaziDenseMatrix<TYPE>(_block, _block); assert(_B);
+		_resB = new AnasaziDenseMatrix<TYPE>(_block, _block); assert(_resB);
 		int i, _block2 = _block*_block;
 		TYPE * array = new TYPE [ _block2 ];
 		TYPE one = 1.0, zero = 0.0;
@@ -111,7 +111,7 @@ BlockArnoldi<TYPE>::BlockArnoldi(AnasaziMatrix<TYPE> & mat, AnasaziMultiVec<TYPE
 		for (i=0; i<_block; i++) {
 			array[i*_block + i] = one;				
 		}
-		_B->setvalues( array, _block );
+		_resB->setvalues( array, _block );
 		delete [] array;
 	}
 	else {
@@ -364,6 +364,8 @@ void BlockArnoldi<TYPE>::iterate(int steps) {
 	//
 	// Compute the current eigenvalue estimates before returning.
 	//
+//	std::cout<<"Upper Hessenberg matrix as of iteration :"<<_iter<<std::endl<<std::endl;
+//	_hessmatrix->print();
 	ComputeResiduals( false );		
 	
 	// Output current information if necessary
@@ -378,11 +380,8 @@ void BlockArnoldi<TYPE>::solve () {
 
 	// Right now the solver will just go the remaining iterations, but this design will allow
 	// for checking of the residuals every so many iterations, independent of restarts.
-	while (_nconv < _nev && _iter < (_restarts+1)*_length*_block) {
+	while (_nconv < _nev && _iter < (_restarts+1)*_length) {
 		iterate( _step );
-		if (_debuglevel > 0) {
-			currentStatus();
-		}
 	}
 }
 
@@ -657,27 +656,34 @@ void BlockArnoldi<TYPE>::ComputeResiduals( bool apply ) {
 	// Sort the eigenvalues, this also sorts the _order vector so we know
 	// which ones we want. 
 	//
+//	std::cout<<"Before sorting:"<<std::endl;
+//	for (i=0; i<n; i++) {
+//		std::cout<< _evalr[i] << "\t" << _evali[i] << std::endl;
+//	}
 	Sort( true );
+//	std::cout<<"After sorting:"<<std::endl;
+//	for (i=0; i<n; i++) {
+//		std::cout<< _evalr[i] << '\t' << _evali[i] << std::endl;
+//	}
 	//
 	// Reorder real Schur factorization, remember to add one to the indices for the
 	// fortran call and determine offset.  The offset is necessary since the TREXC
 	// routine reorders in a nonsymmetric fashion, thus we use the reordering in
 	// a stack-like fashion.  Only necessary if we are restarting.
 	//
-
-	int _nevtemp;
-	if (_jstart < _nevblock) {
-		_nevtemp = n;
-	} else {
-		_nevtemp = _nevblock*_block;
-	}		
-	int *index = new int[ n ]; assert(index);
-	for (i = 0; i < n; i++ ) {
-		index[i] = i;
-	}
 	AnasaziBLAS blas;
 
 	if (apply) {
+		int _nevtemp;
+		if (_jstart < _nevblock) {
+			_nevtemp = n;
+		} else {
+			_nevtemp = _nevblock*_block;
+		}		
+		int *index = new int[ n ]; assert(index);
+		for (i = 0; i < n; i++ ) {
+			index[i] = i;
+		}
 		char * compq = "V";
 		int *offset = new int[ _nevtemp ]; assert(offset);
 		for (i=0; i<_nevtemp; i++) {
@@ -715,8 +721,19 @@ void BlockArnoldi<TYPE>::ComputeResiduals( bool apply ) {
 		}
 		delete basistemp, basistemp2;
 		delete [] offset;
+		delete [] index;
 	}
 	else {
+		//
+		// Compute the eigenvectors of the Schur form
+		//
+		char * side = "R";
+		char * howmny = "B";
+		int mm, ldvl = 1;
+		TYPE *vl = new TYPE[ ldvl ];
+		lapack.TREVC( *side, *howmny, select, n, ptr_hj, ldhj, vl, ldvl,
+                		ptr_q, ldq, n, &mm, work, &info );
+		assert(info==0);
 		//
 		// Check the residual errors, the Schur form was never reordered, so use
 		// the _order vector from the sorting routine.
@@ -745,7 +762,7 @@ void BlockArnoldi<TYPE>::ComputeResiduals( bool apply ) {
 //	std::cout<<"Converged eigenvalues : "<<_nconv<<std::endl<<std::endl;
 
 	delete [] work; 
-	delete [] index;
+	delete [] bwork, select;
 }
 
 
