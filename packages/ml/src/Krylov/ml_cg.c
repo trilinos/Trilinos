@@ -333,7 +333,8 @@ int ML_CG_ComputeEigenvalues(ML_Krylov *data, int length, int scale_by_diag)
    rho = 0.0;
    if ( res_norm == 0.0 ) 
    {
-      printf("ML_CG_ComputeEigenvalues : cannot compute (res = 0).\n");
+     if (Nbc != matrix->invec_leng)
+       printf("ML_CG_ComputeEigenvalues : cannot compute (res = 0).\n");
       if (r  != NULL) free(r);
       if (p  != NULL) free(p);
       if (ap != NULL) free(ap);
