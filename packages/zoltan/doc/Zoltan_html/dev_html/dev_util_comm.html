@@ -141,7 +141,6 @@ the plan to allow objects to be of variable sizes.&nbsp;
 associated with a communication plan.&nbsp;</blockquote>
 <b>Low Level Routines:</b>
 <blockquote><b><a href="#LB_Comm_Exchange_Sizes">LB_Comm_Exchange_Sizes</a>:
-
 </b>updates the sizes of the messages each processor will be receiving.
 <br><b><a href="#LB_Comm_Invert_Map">LB_Comm_Invert_Map</a>:&nbsp; </b>given
 a set of messages each processor want to send, determines the set of messages
@@ -299,7 +298,8 @@ must be called before <b>LB_Comm_Do</b>.
 
 <td>The size (in bytes) of the data for one object, or the scale factor
 if the objects have variable sizes. (See <b><a href="#LB_Comm_Resize">LB_Comm_Resize
-</a></b>for more details.)</td>
+</a></b>for
+more details.)</td>
 </tr>
 
 <tr>
@@ -425,9 +425,9 @@ sizes associated with different data transfers.
 <td>An input array of length equal to the <i>nvals</i> argument in the
 call to <b><a href="#LB_Comm_Create">LB_Comm_Create</a></b> which generated
 the <i>plan</i>. Each entry in the array is the size of the corresponding
-object which I want to send. If <i>sizes</i> is <i>NULL</i> then the objects
-are considered to be the same size. Note that the true size of a message
-will be scaled by the <i>nbytes</i> argument to <b><a href="#LB_Comm_Do">LB_Comm_Do</a></b>.&nbsp;</td>
+object which I want to send. If <i>sizes</i> is <i>NULL </i>(on all processors)
+then the objects are considered to be the same size. Note that the true
+size of a message will be scaled by the <i>nbytes</i> argument to <b><a href="#LB_Comm_Do">LB_Comm_Do</a></b>.&nbsp;</td>
 </tr>
 
 <tr>
