@@ -82,13 +82,13 @@ Epetra_DistObject::~Epetra_DistObject(){
 
 
   if (Exports_!=0) {
-		delete[] Exports_;
-		Exports_ = 0;
-	}
+    delete[] Exports_;
+    Exports_ = 0;
+  }
   if (Imports_!=0) {
-		delete[] Imports_;
-		Imports_ = 0;
-	}
+    delete[] Imports_;
+    Imports_ = 0;
+  }
 
 }
 
@@ -167,16 +167,16 @@ int Epetra_DistObject::Import(const Epetra_SrcDistObject& A,
   int Nrecv = Exporter.NumSend();
 
   EPETRA_CHK_ERR(DoTransfer(A, CombineMode, NumSameIDs, NumPermuteIDs, NumRemoteIDs, NumExportIDs, 
-														PermuteToLIDs, PermuteFromLIDs, RemoteLIDs, ExportLIDs, Nsend, Nrecv,
-														LenImports_, Imports_, LenExports_, Exports_, Exporter.Distributor(), 
-														true));
+			    PermuteToLIDs, PermuteFromLIDs, RemoteLIDs, ExportLIDs, Nsend, Nrecv,
+			    LenImports_, Imports_, LenExports_, Exports_, Exporter.Distributor(), 
+			    true));
   return(0);
 }
 
 //=============================================================================
 int Epetra_DistObject::Export(const Epetra_SrcDistObject& A, 
-															const Epetra_Import& Importer,
-															Epetra_CombineMode CombineMode) 
+			      const Epetra_Import& Importer,
+			      Epetra_CombineMode CombineMode) 
 {
 
   if (!Map_.SameAs(Importer.SourceMap())) EPETRA_CHK_ERR(-2);
@@ -194,31 +194,31 @@ int Epetra_DistObject::Export(const Epetra_SrcDistObject& A,
   int Nrecv =Importer.NumSend();
 
   EPETRA_CHK_ERR(DoTransfer(A, CombineMode, NumSameIDs, NumPermuteIDs, NumRemoteIDs, NumExportIDs,  
-														PermuteToLIDs, PermuteFromLIDs,  RemoteLIDs, ExportLIDs, Nsend, Nrecv, 
-														LenImports_, Imports_, LenExports_, Exports_, 
-														Importer.Distributor(), true));
+			    PermuteToLIDs, PermuteFromLIDs,  RemoteLIDs, ExportLIDs, Nsend, Nrecv, 
+			    LenImports_, Imports_, LenExports_, Exports_, 
+			    Importer.Distributor(), true));
   return(0);
 }
 
 //=============================================================================
 int Epetra_DistObject::DoTransfer(const Epetra_SrcDistObject& A, 
-																	Epetra_CombineMode CombineMode, 
-																	int NumSameIDs, 
-																	int NumPermuteIDs, 
-																	int NumRemoteIDs, 
-																	int NumExportIDs, 
-																	int* PermuteToLIDs, 
-																	int* PermuteFromLIDs, 
-																	int* RemoteLIDs, 
-																	int* ExportLIDs,
-																	int Nsend, 
-																	int Nrecv,
-																	int& LenExports, 
-																	char*& Exports,
-																	int& LenImports, 
-																	char*& Imports, 
-																	Epetra_Distributor& Distor, 
-																	bool DoReverse)
+				  Epetra_CombineMode CombineMode, 
+				  int NumSameIDs, 
+				  int NumPermuteIDs, 
+				  int NumRemoteIDs, 
+				  int NumExportIDs, 
+				  int* PermuteToLIDs, 
+				  int* PermuteFromLIDs, 
+				  int* RemoteLIDs, 
+				  int* ExportLIDs,
+				  int Nsend, 
+				  int Nrecv,
+				  int& LenExports, 
+				  char*& Exports,
+				  int& LenImports, 
+				  char*& Imports, 
+				  Epetra_Distributor& Distor, 
+				  bool DoReverse)
 {
 
   EPETRA_CHK_ERR(CheckSizes(A));
@@ -228,13 +228,13 @@ int Epetra_DistObject::DoTransfer(const Epetra_SrcDistObject& A,
   }
 
   if (CombineMode==Zero) 
-		return(0); // All done if CombineMode only involves copying and permuting
+    return(0); // All done if CombineMode only involves copying and permuting
   
   int SizeOfPacket; 
   EPETRA_CHK_ERR(PackAndPrepare(A, NumExportIDs, ExportLIDs, Nsend, Nrecv, 
-																LenExports, Exports, LenImports, Imports, SizeOfPacket, Distor));
+				LenExports, Exports, LenImports, Imports, SizeOfPacket, Distor));
 
-  if (DistributedGlobal_) {
+  if ((DistributedGlobal_ && DoReverse) || (A.Map().DistributedGlobal() && !DoReverse)) {
     if (DoReverse) {
       // Do the exchange of remote data
       EPETRA_CHK_ERR(Distor.DoReverse(Exports, SizeOfPacket, Imports));
@@ -260,7 +260,7 @@ void Epetra_DistObject::Print(ostream& os) const {
       os << "Length of Export buffer (in chars) = " << LenExports_ << endl;
       os << "Length of Import buffer (in chars) = " << LenImports_ << endl;
       os << flush;
-		}
+    }
   }
   return;
 }

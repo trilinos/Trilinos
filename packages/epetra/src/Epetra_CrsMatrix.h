@@ -683,7 +683,7 @@ class Epetra_CrsMatrix: public Epetra_DistObject, public Epetra_CompObject, publ
 	//! Returns the maximum number of nonzero entries across all rows on this processor.
 	int MaxNumEntries() const {return(Graph_->MaxNumIndices());};
 
-	//! Returns the maximum number of nonzero entries across all rows on this processor.
+	//! Returns the maximum number of nonzero entries across all rows on all processors.
 	int GlobalMaxNumEntries() const {return(Graph_->GlobalMaxNumIndices());};
 	
 	//! Returns the current number of nonzero entries in specified local row on this processor.

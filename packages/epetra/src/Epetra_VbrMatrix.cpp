@@ -1299,11 +1299,13 @@ int Epetra_VbrMatrix::Multiply1(bool TransA, const Epetra_Vector& x, Epetra_Vect
 	int ColDim = ColElementSizeList[Index];
 	GEMV('N', RowDim, ColDim, 1.0, A, LDA, curx, 1.0, cury);			
       }
-      if (Exporter()!=0) {
-	y.PutScalar(0.0);
-	EPETRA_CHK_ERR(y.Export(*ExportVector_, *Exporter(), Add)); // Fill y with Values from export vector
-      }
     }
+    if (Exporter()!=0) {
+      y.PutScalar(0.0);
+      EPETRA_CHK_ERR(y.Export(*ExportVector_, *Exporter(), Add)); // Fill y with Values from export vector
+    }
+    // Handle case of rangemap being a local replicated map
+    if (!Graph().RangeMap().DistributedGlobal() && Comm().NumProc()>1) EPETRA_CHK_ERR(y.Reduce());
   }
   
   else { // Transpose operation
@@ -1350,6 +1352,8 @@ int Epetra_VbrMatrix::Multiply1(bool TransA, const Epetra_Vector& x, Epetra_Vect
       y.PutScalar(0.0); // Make sure target is zero
       EPETRA_CHK_ERR(y.Export(*ImportVector_, *Importer(), Add)); // Fill y with Values from export vector
     }
+    // Handle case of rangemap being a local replicated map
+    if (!Graph().DomainMap().DistributedGlobal() && Comm().NumProc()>1) EPETRA_CHK_ERR(y.Reduce());
   }
   
   UpdateFlops(2*NumGlobalNonzeros());
@@ -1426,6 +1430,8 @@ int Epetra_VbrMatrix::Multiply(bool TransA, const Epetra_MultiVector& X, Epetra_
       Y.PutScalar(0.0);
       EPETRA_CHK_ERR(Y.Export(*ExportVector_, *Exporter(), Add)); // Fill Y with Values from export vector
     }
+    // Handle case of rangemap being a local replicated map
+    if (!Graph().RangeMap().DistributedGlobal() && Comm().NumProc()>1) EPETRA_CHK_ERR(Y.Reduce());
   }
   else { // Transpose operation
     
@@ -1478,6 +1484,8 @@ int Epetra_VbrMatrix::Multiply(bool TransA, const Epetra_MultiVector& X, Epetra_
       Y.PutScalar(0.0); // Make sure target is zero
       EPETRA_CHK_ERR(Y.Export(*ImportVector_, *Importer(), Add)); // Fill Y with Values from export vector
     }
+    // Handle case of rangemap being a local replicated map
+    if (!Graph().DomainMap().DistributedGlobal() && Comm().NumProc()>1)  EPETRA_CHK_ERR(Y.Reduce());
   }
 
   UpdateFlops(2*NumVectors*NumGlobalNonzeros());
