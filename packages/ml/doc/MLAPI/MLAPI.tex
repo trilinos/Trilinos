@@ -1,0 +1,801 @@
+\documentclass{article}[11pt]
+% fancybox prevents the TOC from printing
+%\usepackage{fancyhdr, fancybox, tabularx, verbatim, epsfig}
+\usepackage{fancyhdr, tabularx, verbatim, epsfig}
+\usepackage{amssymb,psboxit}
+\usepackage{rotating}
+
+\setlength{\oddsidemargin}{0.1\oddsidemargin}
+\setlength{\evensidemargin}{0.5\evensidemargin}
+\setlength{\topmargin}{0.0\topmargin}
+\setlength{\textheight}{1.16\textheight}
+\setlength{\textwidth}{1.35\textwidth}
+\newcommand{\Aztec}  {{\sc Aztec}}
+\newcommand{\Aztecoo}  {{\sc AztecOO}}
+\newcommand{\aztecoo}  {{\Aztecoo}}
+\newcommand{\epetra}  {{\sc Epetra}}
+\newcommand{\epetraext}  {{\sc EpetraExt}}
+\newcommand{\ML}     {{\sc ml}}
+\newcommand{\trilinos}  {{\sc Trilinos}}
+\newcommand{\amesos}  {{\sc Amesos}}
+\newcommand{\anasazi}  {{\sc Anasazi}}
+\newcommand{\umfpack}  {{\sc Umfpack}}
+\newcommand{\superlu}  {{\sc SuperLU}}
+\newcommand{\superludist}  {{\sc SuperLU\_dist}}
+\newcommand{\mumps}  {{\sc Mumps}}
+\newcommand{\klu}  {{\sc Klu}}
+\newcommand{\metis}  {{\sc Metis}}
+\newcommand{\parmetis}  {{\sc ParMetis}}
+\newcommand{\triutils}  {{\sc Triutils}}
+\newcommand{\ifpack}  {{\sc Ifpack}}
+\newcommand{\parasails}  {{\sc ParaSails}}
+\newcommand{\teuchos}  {{\sc Teuchos}}
+\newcommand{\newpackage}  {{\sc new\_package}}
+\newcommand{\zoltan}  {{\sc Zoltan}}
+\newcommand{\nox}  {{\sc NOX}}
+\newcommand{\loca}  {{\sc Loca}}
+\newcommand{\MLAPI}  {{\sc mlapi }}
+\newcommand{\mlapi}  {{\sc mlapi }}
+\newcommand{\MLAPIns}  {{\sc mlapi}}
+\newcommand{\be}  {\begin{enumerate}}
+\newcommand{\ee}  {\end{enumerate}}
+% Maxwell abbreviations
+\newcommand \Ke {\ensuremath{K^{(e)}}}
+\newcommand \Kn {\ensuremath{K^{(n)}}}
+\newcommand \Th {\ensuremath{T_h}}
+%\newcommand \curlcurl {({\it curl,curl})}
+\newcommand \curlcurl {\ensuremath{\nabla\times\nabla\times}}
+
+\newcommand{\comm}[2]{\bigskip
+                      \begin{tabular}{|p{4.5in}|}\hline
+                      \multicolumn{1}{|c|}{{\bf Comment by #1}}\\ \hline
+                      #2\\ \hline
+                      \end{tabular}\\
+                      \bigskip
+                     }
+%
+% ***********************************************************************
+% * 02 July 1993: McCorkle                                              *
+% * Define a macro that will lightly print the word `DRAFT' diagonally  *
+% * across each page of the document. This macro was obtained from the  *
+% * NMSU math department                                                *
+% *                                                                     *
+% * Usage: \draft                                                       *
+% ***********************************************************************
+%
+\def\optionbox#1#2{\noindent$\hphantom{ii}${\parbox[t]{1.5in}{\it
+#1}}{\parbox[t]{4.8in}{#2}} \\[1.1em]}
+
+\def\choicebox#1#2{\noindent$\hphantom{th}$\parbox[t]{3.0in}{\sf
+#1}\parbox[t]{3.35in}{#2}\\[0.8em]}
+
+\def\structbox#1#2{\noindent$\hphantom{hix}${\parbox[t]{2.10in}{\it
+#1}}{\parbox[t]{3.9in}{#2}} \\[.02cm]}
+
+\def\protobox#1{\vspace{2em}{\flushleft{\bf Prototype}
+\hrulefill}\flushleft{\fbox{\parbox[t]{6in}{\vspace{1em}{\sf
+#1}\vspace{1em}}}}}
+
+
+\def\draft{%
+\special{!userdict begin /bop-hook{gsave
+200 30 translate 65 rotate
+/Times-Roman findfont 216 scalefont setfont
+0 0 moveto 0.9 setgray (DRAFT) show grestore}def end}
+}
+
+\begin{document}
+\bibliographystyle{siam}
+\setcounter{page}{3}
+
+\large
+
+%\draft                                   % Lightly print `DRAFT' on every
+                                         % page of the document
+
+%
+%
+%\hspace{2.22in}
+\begin{center}
+SAND2005--XXXX \\
+%\hfill
+%\hspace{2.41in}
+Unlimited Release \\
+%\hfill
+%\begin{center}
+Printed February 2005
+\end{center}
+
+\vspace{0.2in}
+
+\begin{center}
+{\Large {\bf An Object-Oriented Framework 
+  for the Development of Scalable Parallel Multilevel Preconditioners}}
+%\footnote{ Sandia is a multiprogram laboratory operated by Sandia Corporation,
+%a Lockheed Martin Company, for the United States Department of Energy's
+%National Nuclear Security Administration under contract DE-AC04-94AL85000.}}}
+%\footnote{ This work was supported by
+%        the
+%        Applied Mathematical Sciences program, U.S. Department of Energy,
+%        Office of Energy Research, and was partially performed at 
+%        Sandia National
+%        Laboratories, operated for the U.S. Department of Energy under contract
+%        No. DE-AC04-94AL85000.} }}
+
+\vspace*{0.8in}
+Marzio  Sala \\
+Computational Math \& Algorithms \\
+Sandia National Laboratories\\
+P.O.~Box 5800 \\
+Albuquerque, NM 87185-1110
+\vspace*{1in}
+
+\end{center}
+
+\begin{abstract}
+We outline the main features of MLAPI, the Application Program
+Interface of ML~\cite{ml}.  ML is the algebraic multilevel preconditioning
+package of Trilinos~\cite{trilinos}. ML is mainly written in a procedural
+language (C).  This guarantees high performances, but also makes difficult to
+develop new algorithms, as the ``translation'' from the mathematical framework
+to the actual source code is cluttered by several programming details.
+
+\smallskip
+
+The ideal solution to this problem would be to develop codes in a MATLAB-like
+environment, as MATLAB (at the price of non-parallel and often inefficient
+code) allows a very intuitive programming style. This
+is precisely the goal of MLAPI. This object oriented framework is based on a
+carefully designed set of classes and operator overloading, and allows the
+algorithm developer to write a parallel, efficient (C++) code in a MATLAB-like
+style. Operations on MLAPI classes are then automatically translated by a
+(standard) compiler into efficient code.  The advantage of this approach is
+that the developer can focus on the algorithm itself, without spending time on
+details that can be fixed by the compiler. This reduces the time spent in
+writing and debugging the algorithm, at the only expense of a miminal increase
+in the CPU time.
+
+\smallskip
+
+Using a carefully designed set of classes, we will show that one can
+write a code that is intuitive to write
+and {\sl at the same time} efficient and scalable. Numerical
+experiments show that the overhead due to object-oriented programming is
+negligible.
+
+Preconditioners defined within the MLAPI framework are tested on linear
+systems arising from a Newton procedure applied to the solution of the
+incompressible Navier-Stokes equations discretized by finite elements on
+unstructured 3D grids. Results show that object-oriented programming can be
+effectively used to implement multilevel algebraic algorithms for real-life
+applications on massively parallel computers.
+
+\medskip
+
+\MLAPI could not exist without \ML, and could not be efficient and flexible if 
+\ML\ would not be so. \MLAPI also relies of several other
+\trilinos~\cite{Trilinos-home-page} packages:
+\epetra~\cite{epetra-guide}, \ifpack~\cite{ifpack-guide}, 
+\amesos~\cite{amesos-guide}, \teuchos. Also, \MLAPI can take advantage of
+\aztecoo\ and \triutils. However, note that \MLAPI can be used outside
+\trilinos\ as well (but still requires \trilinos\ to be compiled and linked). 
+\end{abstract}
+
+%
+\clearpage
+\newpage
+
+\vfill
+\begin{center}
+(page intentionally left blank)
+\end{center}
+\clearpage
+\newpage
+
+
+\tableofcontents
+\newpage
+
+%-----------------------------------------------------------------------------%
+\section{Introduction} 
+\label{sec:introduction}
+%-----------------------------------------------------------------------------%
+
+A multilevel (or multigrid) method can be used to solve linear
+system systems of type
+\begin{equation}
+\label{eq:lin_sys}
+A x = b
+\end{equation}
+where $A$ is a user supplied $n \times n$ sparse matrix, $b$ is a
+user supplied vector of length $n$ and $x$ is a vector of length $n$ to
+be computed. 
+While technically any linear system can be considered, we will consider 
+here linear systems that correspond to things that work
+well with multigrid methods (e.g. elliptic PDEs); see for 
+instance~\cite{brandt.classic,hack.book,hack2.book}.
+A multigrid solver tries to approximate
+the original PDE problem of interest on a hierarchy of grids and use
+`solutions' from coarse grids to accelerate the convergence
+on the finest grid. 
+
+\medskip
+
+At least three
+approaches have been presented in literature to define the multilevel
+hierarchy:
+\begin{enumerate}
+\item To use a sequence of grids, as done in geometric multigrid;
+\item To coarsen on each level by identifying a set of coarser-level nodes
+(the so-called C-nodes) and finer-level nodes (F-nodes), as presented
+by Ruge and Stuben;
+\item To coarsen on each level by grouping the nodes into contiguous subsets,
+called aggregates, as done in smoothed aggregation.
+\end{enumerate}
+
+Although extremely successful for certain classes of problems, approach 1
+requires geometric information of the problem at hand, and furthermore
+suitably defined boundary conditions on all levels. Approaches 2 and 3,
+  instead, are black-box approaches, as all the components of the
+  preconditioner can be defined by working on the linear system matrix only.
+
+\medskip
+
+Multilevel and multigrid methods were introduced in the late 70's, and their
+development is testified by the enormous literature and the several
+international conferences organized since then. However, further development
+is still needed, especially to improve the algebraic version, and to obtain
+methods that are more robust and more scalable.
+
+Goal of \MLAPI, the Abstract Programming Interface of ML~\cite{ml-guide}, is
+to allow developers to write MATLAB-like code to define multilevel
+preconditioners in a C++ (parallel) environment, so that the compiler can
+convert this easy-to-develop code into efficient, parallel and scalable code
+(by calling functions usually written in C or FORTRAN).
+
+\medskip
+
+This paper is organized as follows. First, in Section~\ref{sec:design}
+we will outline why an object-oriented interface can be useful to develop
+multilevel preconditioners (and, more general, multilevel solvers).
+Section~\ref{sec:basic} introduces the most important \MLAPI classes, whose
+usage is presented in Section~\ref{sec:usage}. The MATLAB interface is
+detailed in Section~\ref{sec:matlab}. Examples of usage is reported in
+Section~\ref{sec:example}. The reader is also referred to the on-line Doxygen
+documentation for more details.
+
+%-----------------------------------------------------------------------------%
+\section{Design of Parallel Scalable Multilevel Preconditioners}
+\label{sec:design}
+%-----------------------------------------------------------------------------%
+
+Let us consider the following pseudo-code for a multilevel algorithm:
+\begin{verbatim}
+MultiLevelSolve(A, f, x, k) 
+{
+  if (k == CoarsestLevel)
+    u = CoarseSolver(A[k]), b);
+  else {
+    u = Smoother(A[k], f, u);
+    r = R[k] (f - A[k] * u);
+    v = 0;
+    MultiLevelSolve(A[k + 1], v, k + 1);
+    u = u + P[k] * v;
+    u = Smoother(A[k], f, u);
+  }
+}
+\end{verbatim}
+Here, \verb!k! is the current level,
+\verb!A! is an array of matrices, with \verb!A[k]! the operator for 
+level \verb!k! and \verb!A[0]! containing the matrix of the linear system 
+(\ref{eq:lin_sys}), 
+\verb!R[k]! is the restriction operator from level \verb!k! 
+to level \verb!k + 1!, and \verb!P[k]! is the prolongator
+operator from level \verb!k + 1! to level \verb!k!,
+\verb!CoarseSolver()! is a generic direct solver, and
+\verb!Smoother()! is a generic smoother (that is, an approximate solver
+whose goal is to reduce the high frequencies of the error).
+
+The effectiveness of the multilevel algorithm heavily depends on 
+how the operators \verb!A[k], P[k], R[k]! are defined. A possible 
+(and common) startup procedure read as follows:
+follows:
+\begin{verbatim}
+MultiLevelStartUp(A, MaxLevels, k)
+{
+  if (k == MaxLevels)
+    return;
+  else {
+    P[k] = BuildP(); 
+    R[k] = BuildR();
+    A[k] = R[k] * A[k] * P[k];
+  }
+}
+\end{verbatim}
+
+By analyzing the multilevel cycle and its startup procedure, one can identify
+two distinct sets of operations:
+\begin{enumerate}
+\item operations that require operators as unique identities (for example,
+  the application of an operator, \verb!y = A * x!);
+\item operations that require the specific knowledge of the structure
+  of an operator and its internal data (for instance, the definition of the
+  prologator operator \verb!P[k]!).
+\end{enumerate}
+
+Our aim is to simply the coding of a multilevel algorithm, by allowing
+an intuitive syntax for all operations in group (1), and by condensing
+operations in group (2) in well defined functions (or classes). Ideally, the
+code should not look too different from what we have just presented, which
+in turn is just a modest change with respect to the mathematical standpoint
+to define a multilevel method.
+
+Traditionally, coding is made complex by ``details'' that are 
+clearly necessary to the code itself, tough inessential to the algorithm. 
+These details are, for
+example, the dimension of the input and output vector, of flags for the
+smoother or the matrix-matrix product, or the parallel data layout.
+
+Therefore, our aim is the following: {\bf let the
+compiler take care of the details, and let the programmer-developer to
+focus on the algorithm}. In fact, any well designed implementation of a linear
+operator already contains the number of rows and columns, and the
+implementation of a vector contains the number of elements in the vector.
+By using operator C++ overloading, one can instruct the compiler on how to
+look for all the necessary information, so that all operations are properly
+executed.
+
+\smallskip
+
+Operator overloading is an interesting capability of C++ that has been only
+partially used in the scientific computing community. Often, C++ codes are
+considered ``slow'' or ``inefficient'' with respect to FORTRAN and C codes,
+therefore only few preconditioning libraries actually massively exploit 
+operator overloading. To the best of our knowledge, no public domain parallel
+object oriented (OO) multilevel library (other than \ML) is available to
+define multilevel methods and preconditioners.
+
+In this paper, we want to show
+that it is possible to take advantage of OO programming to obtain intuitive,
+easy-to-read and easy-to-develop codes, that are {\sl at the same time}
+efficient and scalable. The approach we have followed is the following:
+first, a set of C structures and functions has been developed for all 
+required operations. Then, few classes have been defined, to define
+operators, smoothers and coarse solvers, and operators \verb!*!, \verb!-! and
+\verb!+! have been overloaded. Finally, a smoothed aggregation multilevel
+code, written in plain C, is compared with an OO code, implementing the 
+{\sl same} algorithm.  We will show that the overhead
+required by OO on modern compilers is negligible, the C++ being remarkably
+shorter and easier to read and understand, and simpler to maintain and test.
+
+%-----------------------------------------------------------------------------%
+\section{How to use \MLAPI objects}
+\label{sec:usage}
+%-----------------------------------------------------------------------------%
+
+Users should never allocate \MLAPI objects using {\tt new}, and therefore never
+free them using {\tt delete}. The code will automatically delete memory
+when it is no longer referenced by any object. Besides, functions or methods
+that need to return \MLAPI objects, should always return an instance of the
+required object, and not a pointer or a reference.
+
+At a first glance, this may appear as a major limitation for optimal
+performances. Dealing with an instance of an object, and not with pointers or
+references, signify that the new instances have to be created and copied,
+usually an expensive operation. This is {\sl not} what happens with \MLAPIns. In
+fact, all \MLAPI objects are defined as light containers of pointers. For
+example, a {\tt MultiVector} (introduced in Section~\ref{sec:multilevel})
+  needs to store a pointer to the double array
+containing the vector elements. When memory is allocated within an \MLAPI
+object, this is done using the so-called smart pointers, or self-counting
+pointers\footnote{\MLAPI uses the RefCountPtr or the \teuchos~package to 
+manage memory. We refer to the Teuchos web page for more details.}.
+
+Let us consider three generic \MLAPI objects.
+The assignment \verb!A = B! means the following: all smart pointers contained
+by \verb!B! are copied in \verb!A!, both \verb!A! and \verb!B! point to the
+same memory location. However, \verb!A! and \verb!B! are not aliases: we can
+still write \verb!B = C!, meaning that \verb!A! contains what was contained in
+\verb!B!, and both \verb!B! and \verb!C! point to the same memory location. 
+Should we need to create a copy of \verb!C! in \verb!B!, we will use the
+instruction \verb!B = Duplicate(C)!, which is instead expensive, as new memory
+needs to be allocated, then all elements in \verb!C! need to be copied in
+\verb!B!.
+
+%-----------------------------------------------------------------------------%
+\section{Comparison between C and C++ Multilevel Preconditioners}
+%-----------------------------------------------------------------------------%
+
+%-----------------------------------------------------------------------------%
+\section{\MLAPI Classes}
+\label{sec:basic}
+%-----------------------------------------------------------------------------%
+
+The most important classes of \MLAPI are the {\tt Space} 
+(analyzed in Section~\ref{sec:space}), {\tt MultiVector}
+(analyzed in Section~\ref{sec:multivector}),
+{\tt Operator} (described in Section~\ref{sec:operator}) and 
+{\tt InverseOperator} (in Section~\ref{sec:inverseoperator}). Furthermore,
+\MLAPI furnishes two matrices classes, {\tt SerialMatrix} and {\tt
+  DistributedMatrix}, so set the matrix elements in a very intuitive 
+  way\footnote{Note that {\tt SerialMatrix} and {\tt DistributedMatrix} 
+    are not supposed to be used in a production code.}.
+
+%-----------------------------------------------------------------------------%
+\subsection{The {\tt Space} class}
+\label{sec:space}
+%-----------------------------------------------------------------------------%
+
+A {\tt Space} is the fundamental \MLAPI class. All distributed objects must have
+underlying spaces, which define the global dimension of the object 
+(for example, the total number of elements in a vector) as well as the
+ parallel layout (i.e., the distribution of these elements across the
+processors). The easiest way to define a {\tt Space} is by specifying the
+number of global elements 
+and/or the number of local elements,
+\begin{verbatim}
+int NumGlobalElements = 128;
+int NumLocalElements  = 16;
+Space S(NumGlobalElements);
+Space S2(-1,NumLocalElements);
+\end{verbatim}
+In both cases, a linear distribution is implicitly 
+assumed\footnote{That is, processor 0 hosts all elements with a global ID
+  from 0 to {\tt NumLocalElements - 1}, processor 1 from {\tt
+    NumLocalElements} to {\tt 2 * NumLocalElements - 1}, etc.}. If a non-linear
+distribution is required, one can simply write
+\begin{verbatim}
+int NumMyElements = 128;
+int* MyGlobalElements;
+// define here MyGlobalElements
+Space S1(-1,NumMyElements,MyGlobalElements);
+\end{verbatim}
+where {\tt MyGlobalElements[i]} is the global ID or local node {\tt i}.
+
+The global ID of local node {\tt i} is returned using the operator ():
+\begin{verbatim}
+int LID = 2;
+int GID = S(LID);
+\end{verbatim}
+
+\smallskip
+
+As all memory is managed using smart pointers, the users can let a object go
+out scope even if this object has been used to define new objects. This is
+typically the case with {\tt Space}'s. Let us consider the following function:
+\begin{verbatim}
+MultiVector foo(int NumGlobalElements)
+{
+  Space S(NumGlobalElements);
+  MultiVector V(S);
+  // do something on V, for example set all elements to 1.0
+  V = 1.0;
+  return(V)
+}
+\end{verbatim}
+Clearly, object {\tt S} will go out of scope after returning from {\tt
+  foo}. However, the code will do the following:
+as {\tt V} is created, a {\tt Space} object, say {\tt V2}, is defined
+within {\tt V}, so that {\tt V2 = V}. All smart pointers in {\tt V} are copied
+within {\tt V2}, so that now {\tt V} can go out of scope without damaging the
+returned vector (and without memory leaks).
+
+%-----------------------------------------------------------------------------%
+\subsection{The {\tt MultiVector} class}
+\label{sec:multivector}
+%-----------------------------------------------------------------------------%
+
+{\tt MultiVector}'s are the \MLAPI class for distributed double-precision
+vectors. Once a space (say, {\tt S}) has been defined, vectors can be created
+as
+\begin{verbatim}
+MultiVector x(S), y(S); // specify the space in ctor...
+MultiVector z;          // ... or create empty vector
+\end{verbatim}
+
+The number of local elements in a vector is returned by method {\tt
+  GetMyLength()}, and the global number of elements by
+{\tt GetGlobalLength()}. To set all the elements of a {\tt MultiVector} to the same value, say 2, simply type {\tt x = 2.0}. To modify a given (local) element, one can proceed as follows:
+\begin{verbatim}
+for (int i = 0 ; i < y.GetMyLength() ; ++i)
+  y(i) = 1.0 * x(i);
+\end{verbatim}
+that is, a reference to the $i-$element of the vector is returned using
+operator \verb!()!.  The sum of two vectors is simply
+\begin{verbatim}
+z = x + y; z = 2.0 * x - 3.0 * y; 
+\end{verbatim}
+The scalar product between {\tt x} and {\tt y} is {\tt x * y}. The 2-norm is
+returned by method {\tt Norm2()}; {\tt Random()} populates the vector with
+random values; {\tt Reciprocal()} replaces each element with its inverse. 
+Method {\tt GetValues()} returns the pointer to the internally stored double
+array. Note
+that efficient BLAS functions are used for copy and DAXPY operations. 
+
+\smallskip
+
+Often, it is necessary to define a set of vectors, all sharing the same space.
+This can be obtained as follows:
+\begin{verbatim}
+int NumVectors = 3;
+MultiVector w(S,NumVectors);
+w.Random();
+for (int i = 0 ; i < w.GetMyLength() ; ++i)
+  for (int j = 0 ; j < w.GetNumVectors() ; ++j)
+    cout << w(i,j) << endl;
+\end{verbatim}
+All vectors in a multivector are stored in the same double array,
+  consecutively.
+
+\smallskip
+
+It is also possible to create a {\tt MultiVector} by providing an already
+allocated double array:
+\begin{verbatim}
+Space S(-1, NumMyElements);
+double* ptr = new double[NumMyElements];
+// here populate ptr as necessary
+MultiVector v(S, ptr, ownership);
+assert (v(i) == ptr[i]);
+\end{verbatim} 
+By setting parameter {\tt ownership} to {\tt true}, then {\tt V} will take
+care of deleting memory when no objects refer to it\footnote{It is supposed
+  that {\tt ptr} has been allocated using {\tt new}.}. By setting {\tt
+  ownership} to {\tt false}, instead, the user will take care of deleting {\tt
+    ptr}.
+
+%-----------------------------------------------------------------------------%
+\subsection{The {\tt Operator} class}
+\label{sec:operator}
+%-----------------------------------------------------------------------------%
+
+An {\tt Operator} is a (linear or nonlinear) map between two {\tt Space}'s, the
+domain space and the range space. An {\tt Operator} object can be created
+by passing a pointer to an already {\tt FillComplete()}'d {\tt
+Epetra\_RowMatrix},
+\begin{verbatim}
+Epetra_RowMatrix* Epetra_A;
+// create and FillComplete() here Epetra_A
+Operator A(DomainSpace, RangeSpace, Epetra_A, ownership);
+\end{verbatim}
+or by passing a pointer to an {\tt ML\_Operator} struct:
+\begin{verbatim}
+ML_Operator* ML_A;
+// create and populate here ML_A
+Operator A(DomainSpace, RangeSpace, ML_A, ownership);
+\end{verbatim}
+Finally, {\tt Operator}'s can be defined 
+by manipulating already existing objects. If {\tt A} and {\tt B} are two
+existing {\tt Operator} objects with suitable spaces, a new {\tt Operator C}
+can be defined, for example, as {\tt C = A
++ B}, {\tt C = 1.0 * A + 3.0 * B}, {\tt C = A * B}. For the particular case of
+triple matrix-matrix product, one can write {\tt D = GetRAP (A, B, C)}.
+%
+
+An {\tt Operator} can be applied to a {\tt MultiVector},
+\begin{verbatim}
+Space DomainSpace(5);
+Space RangeSpace(5);
+MultiVector x(DomainSpace); x = 2;
+MultiVector y(RangeSpace);
+Operator I = Identity(DomainSpace, RangeSpace);
+y = I * x;
+\end{verbatim}
+
+\smallskip
+
+For a symmetric positive definite matrix, the A-norm of a vector can simply be
+defined as \verb!sqrt(z * (A * z))!.
+Some basic operations on matrices are also supported. For example,
+one can extract the diagonal of a matrix as a vector, then create a new
+matrix, containing this vector on the diagonal
+\begin{verbatim}    
+// A is an Operator
+MultiVector z = GetDiagonal(A);
+Operator D = GetDiagonal(z);
+\end{verbatim}
+
+Function {\tt Eig()} can be used to compute the eigenvalues of an
+{\tt Operator}
+(for serial runs only). This function calls LAPACK, therefore the
+{\tt Operator} should be "small".
+\begin{verbatim}    
+    MultiVector ER, EI, V;
+    Eig(A, ER, EI, V);
+
+    for (int i = 0 ; i < ER.GetMyLength() ; ++i)
+      for (int j = 0 ; j < ER.GetNumVectors() ; ++j)
+        cout << "ER(" << i << ", " << j << ") = " << ER(i,j) << endl;
+\end{verbatim}
+
+%-----------------------------------------------------------------------------%
+\subsection{The {\tt InverseOperator} class}
+\label{sec:inverseoperator}
+%-----------------------------------------------------------------------------%
+
+A {\tt InverseOperator} is a (linear or nonlinear) map between two spaces, the
+domain space and the range space, whose application to a given {\tt
+  MultiVector} is meant to approximate the action of a given {\tt Operator}.
+The most important difference between an {\tt Operator} and an {\tt
+  InverseOperator} is that the latter has no definition of nonzero
+  structure of matrix elements. The only mathematical method implemented
+  by {\tt InverseOperator} is {\tt Apply()}.
+
+{\tt InverseOperator}'s usually define smoothers and coarse solvers in a
+multilevel preconditioner. At present, point relaxation smoothers (of Jacobi,
+Gauss-Seidel and symmetric Gauss-Seidel), several incomplete factorizations
+and a complete LU factorization can be used as smoothers and coarse solver. A
+simple example of usage here follows:
+\begin{verbatim}
+Operator A; // define the elements of A
+Teuchos::ParameterList List;
+List.set("smoother: sweeps", 2); 
+List.set("smoother: damping factor", 0.67);
+InverseOperator invA(A, "symmetric Gauss-Seidel",List);
+\end{verbatim}
+where 2 and 0.67 are the number of sweeps and the damping factor,
+  respectively. A coarse solver can be defined as
+\begin{verbatim}
+InverseOperator coarse(A, "Amesos-KLU");
+\end{verbatim}
+which means that the KLU solver of \amesos\ will be adopted to compute the LU
+factorization.
+
+To apply the inverse of A using LU factorization one can write
+\begin{verbatim}
+InverseOperator invA(A,"Amesos-KLU");
+\end{verbatim}
+To verify that $x = A^{-1} A x$,
+\begin{verbatim}
+x = invA * (A * x) - x;
+double NormX = sqrt(x * x);
+\end{verbatim}
+
+%-----------------------------------------------------------------------------%
+\subsection{The {\tt SerialMatrix} class}
+\label{sec:serialmatrix}
+%-----------------------------------------------------------------------------%
+
+\MLAPI offers a very simple and convenient matrix class, derived from
+ the \verb!Epetra_RowMatrix! class and implements most of its methods. 
+ Using this class, the insertion of a new
+ element is just \verb!A(row, col) = val!. Note that this class
+can be used for serial computations only, and it is not meant to be efficient,
+just easy-to-use. Users should consider
+other \verb!Epetra_RowMatrix! derived classes
+to define parallel and scalable matrices. Using class {\tt SerialMatrix}, the \MLAPI
+code may look like the following:
+\begin{verbatim}
+    SerialMatrix A_Mat(S, S);
+    for (int i = 0 ; i < 10 ; ++i) {
+      if (i) A_Mat(i, i - 1) = -1.0;
+      A_Mat(i,i) = 2.0;
+      if (i + 1 != A_Mat.NumGlobalCols())
+        A_Mat(i, i + 1) = -1.0;
+    }
+\end{verbatim}
+Note that {\tt SerialMatrix}'s cannot be copied or reassigned, and no
+operators are overloaded on this class. The only way to use an
+{\tt SerialMatrix} with other \MLAPI objects is to wrap it into an
+{\tt Operator}, as done in the following line.
+\begin{verbatim}
+    Operator A(S, S, &A_Mat, false);
+\end{verbatim}
+The last parameter of the constructor is set to {\tt false} because, in
+this example, the
+\verb!A_Mat! will be deleted by the user.
+
+%-----------------------------------------------------------------------------%
+\subsection{The {\tt DistributedMatrix} class}
+\label{sec:distributedmatrix}
+%-----------------------------------------------------------------------------%
+
+%-----------------------------------------------------------------------------%
+\section{Writing \MLAPI objects in MATLAB format}
+\label{sec:matlab}
+%-----------------------------------------------------------------------------%
+
+Often, it is convenient to use MATLAB to analyze matrices and
+vectors. Distributed \MLAPI objects can dumped to a single, MATLAB compatible
+ASCII file, by using class {\tt MATLABStream}.
+Note that both serial and distributed objects 
+can be save in just one file, which will contain the global object
+(for example, a distributed matrix will be dumped using global row and
+ column ordering). {\tt MATLABStream} behaves like a ``normal'' 
+stream.  Objects can be saved in file by using the operator \verb!<<!.
+First, we have to define a {\tt MATLABStream} object by specifying the
+file name,
+\begin{verbatim}
+MATLABStream matlab("mlapi.m");
+\end{verbatim}
+Now, let {\tt S, V}, and {\tt A} be a {\tt Space}, a {\tt MultiVector}
+and an {\tt Operator}. We first specify the label of each operator, as this
+label will be used to define the name of the object in the output file,
+\begin{verbatim}
+S.SetLabel("S");
+V.SetLabel("V");
+A.SetLabel("A");
+\end{verbatim}
+Now, we can simply write
+\begin{verbatim}
+matlab << "% a string comment is allowed\n";
+matlab << S;
+matlab << V;
+matlab << A;
+\end{verbatim}
+We can also mix objects with MATLAB commands,
+\begin{verbatim}
+matlab << "plot(eig(A))\n";
+\end{verbatim}
+The output file is automatically closed. Note that it is not possible to write
+on file an {\tt InverseOperator} object, as this class only defines the
+action of the inverse of an operator on a given vector.
+
+%-----------------------------------------------------------------------------%
+\section{Examples of usage}
+\label{sec:example}
+%-----------------------------------------------------------------------------%
+
+Probably, the easiest way to learn the \MLAPI functionalities is to use them.
+The following sections reports detailed examples of usage. Compilable codes
+can be found in \verb!ml/examples/MLAPI!.
+
+First, we need to initialize the \MLAPI workspace, using {\tt Init()} 
+(which is automatically called by \MLAPI is the user forgets to do so). The
+workspace should be cleaned using {\tt Finalize()} to avoid memory leaks.
+
+As an example, we now present how to define a 2-level additive
+preconditioner. Let {\tt A} be the fine-level matrix.
+{\tt C}  the coarse level matrix,
+and {\tt FineSolver} and {\tt CoarseSolver} 
+the fine level smoother and the coarse level solver,
+respectively. Let {\tt P} be the prolongator from the coarse space to the fine
+space\footnote{As \MLAPI is based on ML, the user can easily build a
+  prolongator operator based on smoothed aggregation process.}, then {\tt R}
+  is the transpose of {\tt P}, and Galerkin projection is used to define {\tt
+    C}:
+\begin{verbatim}
+Operator A, C, P, R;
+// define here A and P
+R = GetTranspose(P);
+C = GetRAP(R,A,P);
+\end{verbatim} 
+We will use symmetric Gauss-Seidel
+for the fine level, and LU for the coarse level:
+\begin{verbatim}
+InverseOperator FineSolver, CoarseSolver;
+FineSolver.Reshape(A,"symmetric Gauss-Seidel");
+CoarseSolver.Reshape(C,"Amesos-KLU");
+\end{verbatim}
+The application of the preconditioner will read as follows:
+\begin{verbatim}
+void foo(MultiVector& b_f, MultiVector& x_f)
+{
+  x_f = FineSolver(b_f);     // smoother
+  r_c = R * r_f;             // restriction to coarse
+  r_c = CoarseSolver_ * r_c; // solver coarse problem
+  x_f = x_f + P * r_c;       // sum correction
+}
+\end{verbatim}
+
+\bigskip
+
+To conclude this section, we note that all \MLAPI commands should be inserted
+in a {\tt try/catch} block:
+\begin{verbatim}
+try {
+  ... // here MLAPI stuff
+}
+catch (const int e) {
+  cout << "Integer exception, code = " << e << endl;
+} 
+catch (...) {
+  cout << "problems here..." << endl;
+}
+\end{verbatim}
+
+%-----------------------------------------------------------------------------%
+\bibliography{MLAPI}
+%-----------------------------------------------------------------------------%
+
+\end{document}
