@@ -34,7 +34,8 @@ class Zoltan_Comm {
 
 public:
   
-  Zoltan_Comm(int nvals, int *assign, MPI_Comm comm, int tag, int *pnvals_recv)
+  Zoltan_Comm(const int &nvals, int *assign, const MPI_Comm &comm, 
+              const int &tag, int *pnvals_recv)
     {
     // Assumption: MPI has been initialized prior to this call.
     Zoltan_Comm_Create(&this->Plan, nvals, assign, comm, tag, pnvals_recv);
@@ -46,7 +47,8 @@ public:
     // Caller will have to call Create to finish initialization of object
     }
 
-  int Create(int nvals, int *assign, MPI_Comm comm, int tag, int *pnvals_recv)
+  int Create(const int &nvals, int *assign, const MPI_Comm &comm, 
+             const int &tag, int *pnvals_recv)
     {
     if (this->Plan)
       {
@@ -64,40 +66,40 @@ public:
     Zoltan_Comm_Destroy(&this->Plan);
     }
       
-  int Resize(int *sizes, int tag, int *sum_recv_sizes)
+  int Resize(int *sizes, const int &tag, int *sum_recv_sizes)
     {
     return Zoltan_Comm_Resize( this->Plan, sizes, tag, sum_recv_sizes);
     }
   
-  int Do(int tag, char *send_data, int nbytes, char *recv_data)
+  int Do(const int &tag, char *send_data, const int &nbytes, char *recv_data)
     {
     return Zoltan_Comm_Do(this->Plan, tag, send_data, nbytes, recv_data);
     }
 
-  int Do_Post( int tag, char *send_data, int nbytes, char *recv_data)
+  int Do_Post( const int &tag, char *send_data, const int &nbytes, char *recv_data)
     {
     return Zoltan_Comm_Do_Post(this->Plan, tag, send_data, nbytes, recv_data);
     }
 
-  int Do_Wait(int tag, char *send_data, int nbytes, char *recv_data)
+  int Do_Wait(const int &tag, char *send_data, const int &nbytes, char *recv_data)
     {
     return Zoltan_Comm_Do_Wait(this->Plan, tag, send_data, nbytes, recv_data);
     }
   
-  int Do_Reverse(int tag, char *send_data, int nbytes, int *sizes, char *recv_data)
+  int Do_Reverse(const int &tag, char *send_data, const int &nbytes, int *sizes, char *recv_data)
     {
     return Zoltan_Comm_Do_Reverse(this->Plan, tag, send_data, nbytes, sizes, 
         recv_data);
     }
 
-  int Do_Reverse_Post(int tag, char *send_data, int nbytes, int *sizes, 
+  int Do_Reverse_Post(const int &tag, char *send_data, const int &nbytes, int *sizes, 
     char *recv_data)
     {
     return Zoltan_Comm_Do_Reverse_Post(this->Plan, tag, send_data, nbytes, sizes, 
         recv_data);
     }
 
-  int Do_Reverse_Wait(int tag, char *send_data, int nbytes, int *sizes, 
+  int Do_Reverse_Wait(const int &tag, char *send_data, const int &nbytes, int *sizes, 
     char *recv_data)
     {
     return Zoltan_Comm_Do_Reverse_Wait(this->Plan, tag, send_data, nbytes, sizes, 
@@ -107,7 +109,7 @@ public:
   int Info( int *nsends, int *send_procs,
     int *send_lengths, int *send_nvals, int *send_max_size, int *send_list,
     int *nrecvs, int *recv_procs, int *recv_lengths, int *recv_nvals,
-    int *recv_total_size, int *recv_list, int *self_msg)
+    int *recv_total_size, int *recv_list, int *self_msg) const
     {
       return Zoltan_Comm_Info( this->Plan, nsends, send_procs, send_lengths, 
         send_nvals, send_max_size, send_list, nrecvs, recv_procs, recv_lengths, 
@@ -125,18 +127,21 @@ public:
 
   // Static methods
 
-  static int Invert_Map( int *lengths_to, int *procs_to, int nsends, int self_msg,
-    int **plengths_from, int **pprocs_from, int *pnrecvs, int my_proc,
-    int nprocs, int out_of_mem, int tag, MPI_Comm  comm)
+  static int Invert_Map( int *lengths_to, int *procs_to, 
+    const int &nsends, const int &self_msg,
+    int * &plengths_from, int * &pprocs_from, int &pnrecvs, 
+    const int &my_proc, const int &nprocs, const int &out_of_mem, 
+    const int &tag, const MPI_Comm &comm) 
     {
     return Zoltan_Comm_Invert_Map( lengths_to, procs_to, nsends, self_msg,
-        plengths_from, pprocs_from, pnrecvs, my_proc, nprocs, out_of_mem, 
+        &plengths_from, &pprocs_from, &pnrecvs, my_proc, nprocs, out_of_mem, 
         tag, comm);
     }
       
-  static int Exchange_Sizes( int *sizes_to, int *procs_to, int  nsends, int  self_msg,
-    int *sizes_from, int *procs_from, int  nrecvs, int *total_recv_size,
-    int  my_proc, int  tag, MPI_Comm  comm)
+  static int Exchange_Sizes( int *sizes_to, int *procs_to, 
+    const int &nsends, const int &self_msg,
+    int *sizes_from, int *procs_from, const int &nrecvs, int *total_recv_size,
+    const int &my_proc, const int &tag, const MPI_Comm &comm) 
     {
     return Zoltan_Comm_Exchange_Sizes(sizes_to, procs_to, nsends, self_msg,
         sizes_from, procs_from, nrecvs, total_recv_size, my_proc, tag, 
