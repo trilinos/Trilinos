@@ -6,7 +6,7 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
 					ML_Operator *Tmat_trans,
 					ML_Operator ***Tmat_array,
 					ML_Operator ***Tmat_trans_array)
-  {
+{
     int coarsest_level, counter, Nghost, i, *Tcoarse_bindx = NULL;
     int *Tcoarse_rowptr, nz_ptr, row_length, j, *bindx = NULL;
     double *Tcoarse_val = NULL, *node2proc, *val = NULL;
@@ -209,9 +209,6 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
   }
 }
   */
-
-  ML_free(bindx);
-  ML_free(val);
 
   /********************************************************************/
   /* Matrix triple product for Pe where result is stuffed into MG     */
@@ -423,9 +420,12 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
   Tfine = Tcoarse;
   } /* for gridlevel = finelevel-1 ... */
 
+  ML_free(bindx);
+  ML_free(val);
+
   if (created_ag_obj == 1) ML_Aggregate_Destroy(&ag);
   return(Nlevels_nodal);
-  }
+}
 
 int ML_MGHierarchy_ReitzingerDestroy(int finest_level, int coarsest_level,
 				     ML_Operator ***Tmat_array, ML_Operator ***Tmat_trans_array)
