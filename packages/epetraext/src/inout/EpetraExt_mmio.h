@@ -15,6 +15,8 @@
 
 typedef char MM_typecode[4];
 
+namespace EpetraExt {
+
 char *mm_typecode_to_str(MM_typecode matcode);
 
 int mm_read_banner(FILE *f, MM_typecode *matcode);
@@ -129,5 +131,6 @@ int mm_read_unsymmetric_sparse(const char *fname, int *M_, int *N_, int *nz_,
                 double **val_, int **I_, int **J_);
 
 
+} // namespace EpetraExt
 
 #endif

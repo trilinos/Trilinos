@@ -33,8 +33,8 @@ namespace EpetraExt {
 				   const char *matrixDescription, const Epetra_RowMatrix & A, 
 				   bool writeHeader=true);
   int RowMatrixToMatlabFile( const char *filename, const char * matrixName,
-			     const char *matrixDescription, const Epetra_RowMatrix & A) {
-    RowMatrixToMatrixMarketFile(filename, matrixName, matrixDescription, A, false);
+			     const char *matrixDescription, const Epetra_RowMatrix & A);
+   
   int RowMatrixToHandle(FILE * handle, const Epetra_RowMatrix & A);
   int writeRowMatrix(FILE * handle, const Epetra_RowMatrix & A);
 

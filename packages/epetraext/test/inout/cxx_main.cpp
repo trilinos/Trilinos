@@ -51,7 +51,7 @@
 
 #include "Epetra_VbrMatrix.h"
 #include "Epetra_CrsMatrix.h"
-#include "RowMatrixOut.h"
+#include "EpetraExt_RowMatrixOut.h"
 
 int main(int argc, char *argv[]) {
 
@@ -142,7 +142,7 @@ int main(int argc, char *argv[]) {
 
   Comm.Barrier();
 
-  RowMatrixToFile("test.mm", "test matrix", "This is a test matrix", A);
+  EpetraExt::RowMatrixToMatrixMarketFile("test.mm", "test matrix", "This is a test matrix", A);
 				       
 #ifdef EPETRA_MPI
   MPI_Finalize() ;

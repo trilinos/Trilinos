@@ -36,7 +36,14 @@
 #include "Epetra_Import.h"
 #include "Epetra_CrsMatrix.h"
 
+using namespace EpetraExt;
 namespace EpetraExt {
+int RowMatrixToMatlabFile( const char *filename, const char * matrixName,
+			   const char *matrixDescription, const Epetra_RowMatrix & A) {
+
+  // Simple wrapper to make it clear what can be used to write to Matlab format
+  return(RowMatrixToMatrixMarketFile(filename, matrixName, matrixDescription, A, false));
+}
 
 int RowMatrixToMatrixMarketFile( const char *filename, const char * matrixName,
 				 const char *matrixDescription, const Epetra_RowMatrix & A, 
@@ -161,5 +168,4 @@ int writeRowMatrix(FILE * handle, const Epetra_RowMatrix & A) {
   comm.MinAll(&ierr, &ierrGlobal, 1); // If any processor has -1, all return -1
   return(ierrGlobal);
 }
-
 } // namespace EpetraExt
