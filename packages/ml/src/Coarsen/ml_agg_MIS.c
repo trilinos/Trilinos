@@ -597,7 +597,7 @@ extern int ML_gpartialsum_int(int val, ML_Comm *comm);
    }
    aggr_count = 0;
    for (i = 0; i <nvertices; i++) {
-      fscanf(fp,"%d%d",&j,&k);
+     if ( fscanf(fp,"%d%d",&j,&k) != 2) break;
       aggr_index[j] = k;
       if (k >= aggr_count) aggr_count = k+1;
    }
