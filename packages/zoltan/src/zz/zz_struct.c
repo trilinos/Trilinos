@@ -280,7 +280,7 @@ int Zoltan_Copy_To(ZZ *to, ZZ *from)
   
   Zoltan_Copy_Params(&(to->Params), from->Params);
 
-  Zoltan_Timer_Copy(&(to->ZTime), from->ZTime);
+  Zoltan_Timer_Copy_To(&(to->ZTime), from->ZTime);
 
   Zoltan_LB_Copy_Struct(to, from);
 
