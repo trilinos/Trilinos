@@ -24,26 +24,14 @@ extern void LB_Free_Structure(LB *);
 
 #ifdef PGI
 typedef void LB_FORT_MALLOC_INT_FN(int *arg, int *size, int **ret, int *hidden);
-typedef void LB_FORT_MALLOC_GID_FN(LB_GID *arg, int *size, int **ret, int *hidden);
-typedef void LB_FORT_MALLOC_LID_FN(LB_LID *arg, int *size, int **ret, int *hidden);
 typedef void LB_FORT_FREE_INT_FN(int *arg, int *hidden);
-typedef void LB_FORT_FREE_GID_FN(LB_GID *arg, int *hidden);
-typedef void LB_FORT_FREE_LID_FN(LB_LID *arg, int *hidden);
 #else
 #ifdef FUJITSU
 typedef void LB_FORT_MALLOC_INT_FN(int *arg, int *size, int **ret, int *hidden, int hidden2, int hidden3);
-typedef void LB_FORT_MALLOC_GID_FN(LB_GID *arg, int *size, int **ret, int *hidden, int hidden2, int hidden3);
-typedef void LB_FORT_MALLOC_LID_FN(LB_LID *arg, int *size, int **ret, int *hidden, int hidden2, int hidden3);
 typedef void LB_FORT_FREE_INT_FN(int *arg, int *hidden);
-typedef void LB_FORT_FREE_GID_FN(LB_GID *arg, int *hidden);
-typedef void LB_FORT_FREE_LID_FN(LB_LID *arg, int *hidden);
 #else
 typedef void LB_FORT_MALLOC_INT_FN(int *arg, int *size, int **ret);
-typedef void LB_FORT_MALLOC_GID_FN(LB_GID *arg, int *size, int **ret);
-typedef void LB_FORT_MALLOC_LID_FN(LB_LID *arg, int *size, int **ret);
 typedef void LB_FORT_FREE_INT_FN(int *arg);
-typedef void LB_FORT_FREE_GID_FN(LB_GID *arg);
-typedef void LB_FORT_FREE_LID_FN(LB_LID *arg);
 #endif
 #endif
 
@@ -64,10 +52,6 @@ extern int LB_Special_Malloc(struct LB_Struct *lb, void **array, int size,
 extern int LB_Special_Free(struct LB_Struct *lb, void **array,
                       LB_SPECIAL_MALLOC_TYPE type);
 extern void LB_Register_Fort_Malloc(LB_FORT_MALLOC_INT_FN *fort_malloc_int,
-                             LB_FORT_MALLOC_GID_FN *fort_malloc_GID,
-                             LB_FORT_MALLOC_LID_FN *fort_malloc_LID,
-                             LB_FORT_FREE_INT_FN *fort_free_int,
-                             LB_FORT_FREE_GID_FN *fort_free_GID,
-                             LB_FORT_FREE_LID_FN *fort_free_LID);
+                             LB_FORT_FREE_INT_FN *fort_free_int);
 
 #endif
