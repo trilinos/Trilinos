@@ -58,7 +58,7 @@ RCB_INC		= rcb.h
 OCT_CSRC	= msg.c octant.c util.c octupdate.c dfs.c costs.c migoct.c \
 		  output.c migreg.c hilbert.c
 OCT_INC		= msg_const.h octant_const.h util_const.h octupdate_const.h \
-		  octupdate.h dfs_const.h dfs.h migoct_const.h migoct.h \
+		  octupdate.h dfs_const.h dfs.h migoct_const.h \
 		  migreg.h hilbert_const.h
 
 COMM_CSRC	= comm.c
