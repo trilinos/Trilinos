@@ -238,19 +238,19 @@ int get_next_element(void *data, LB_GID global_id, LB_LID local_id,
   
   elem = (ELEM_INFO *) data;
 
-  *next_local_id = local_id + 1;
-  if (*next_local_id < Mesh.num_elems) {
+  if (local_id+1 < Mesh.num_elems) { 
     found = 1;
+    *next_local_id = local_id + 1;
     *next_global_id = elem[*next_local_id].globalID;
+
+    if (wdim>0)
+      *next_wgt = elem[*next_local_id].cpu_wgt;
+
+    if (wdim>1)
+      *ierr = DLB_WARN; /* we didn't expect multidimensional weights */
+    else
+      *ierr = DLB_OK; 
   }
-
-  if (wdim>0)
-    *next_wgt = elem[*next_local_id].cpu_wgt;
-
-  if (wdim>1)
-    *ierr = DLB_WARN; /* we didn't expect multidimensional weights */
-  else
-    *ierr = DLB_OK; 
 
   return(found);
 }
@@ -349,6 +349,8 @@ void get_edge_list (void *data, LB_GID global_id, LB_LID local_id,
 
     if (get_ewgts) {
       if (elem[local_id].edge_wgt == NULL)
+        nbor_ewgts[i] = 1; /* uniform weights is default */
+      else
         nbor_ewgts[i] = (int) elem[local_id].edge_wgt[i];
     }
   }
