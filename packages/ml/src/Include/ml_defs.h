@@ -117,8 +117,6 @@
 #define ML_ONE_STEP_CG       -100
 #define ML_ZERO               3
 #define ML_NONZERO            4
-#define ML_INTERNAL         111
-#define ML_EXTERNAL         112
 #define ML_CONVERGE          -2
 #define ML_NOTSET            -1
 #define ML_NONEMPTY         111
