@@ -1244,10 +1244,10 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
      */
 
      V = &(ml_edges->Amat[grid_level+1]);
-     // W = T * (D_n' \ (T' * M))
+     /* W = T * (D_n' \ (T' * M)) */
      tmpmat = ML_Operator_Create(Pe->comm);
      Tfine_trans = (*Tmat_trans_array)[grid_level+1];
-     // T'*M
+     /* T'*M */
      ML_2matmult((*Tmat_trans_array)[grid_level+1],
                  &(ml_edges->Amat[grid_level+1]),
                  tmpmat, ML_CSR_MATRIX );
@@ -2053,7 +2053,7 @@ double checkit(ML_Operator *A, double *v)
 
   y = (double *) ML_allocate(A->outvec_leng * sizeof(double));
   ML_Operator_Apply(A,A->invec_leng,v,A->outvec_leng,y);
-  //result = sqrt(ML_gdot(A->outvec_leng, y,y, A->comm));
+  /* result = sqrt(ML_gdot(A->outvec_leng, y,y, A->comm)); */
   result = ML_gdot(A->outvec_leng, y,y, A->comm);
   ML_free(y);
   return result;
