@@ -30,6 +30,7 @@
 #include "Epetra_MultiVector.h"
 #include "Epetra_Comm.h"
 #include "Epetra_Distributor.h"
+#include "Epetra_SerialDenseMatrix.h"
 
 //==============================================================================
 Epetra_VbrMatrix::Epetra_VbrMatrix(Epetra_DataAccess CV, const Epetra_BlockMap& RowMap, int *NumBlockEntriesPerRow) 
@@ -1959,9 +1960,6 @@ void Epetra_VbrMatrix::Print(ostream& os) const {
 
   for (int iproc=0; iproc < NumProc; iproc++) {
     if (MyPID==iproc) {
-      const Epetra_fmtflags olda = os.setf(ios::right,ios::adjustfield);
-      const Epetra_fmtflags oldf = os.setf(ios::scientific,ios::floatfield);
-      const int             oldp = os.precision(12);
       if (MyPID==0) {
 	os <<  "\nNumber of Global Block Rows  = "; os << NumGlobalBlockRows(); os << endl;
 	os <<    "Number of Global Block Cols  = "; os << NumGlobalBlockCols(); os << endl;
@@ -1991,11 +1989,6 @@ void Epetra_VbrMatrix::Print(ostream& os) const {
 
       os << flush;
       
-      // Reset os flags
-      
-      os.setf(olda,ios::adjustfield);
-      os.setf(oldf,ios::floatfield);
-      os.precision(oldp);
     }
     // Do a few global ops to give I/O a chance to complete
     Comm().Barrier();
@@ -2005,43 +1998,45 @@ void Epetra_VbrMatrix::Print(ostream& os) const {
 
   for (int iproc=0; iproc < NumProc; iproc++) {
     if (MyPID==iproc) {
-      int NumMyRows1 = NumMyRows();
-      int MaxNumIndices = MaxNumBlockEntries();
-      int * Indices  = new int[MaxNumIndices];
-      double * Values  = new double[MaxNumIndices];
-      int NumIndices;
+      int NumBlockRows1 = NumMyBlockRows();
+      int MaxNumBlockEntries1 = MaxNumBlockEntries();
+      int * BlockIndices1  = new int[MaxNumBlockEntries1];
+      double ** Values1;
+      int RowDim1, NumBlockEntries1, * ColDims1, * LDAs1;
       int i, j;
 
       if (MyPID==0) {
 	os.width(8);
 	os <<  "   Processor ";
 	os.width(10);
-	os <<  "   Row Index ";
+	os <<  "   Block Row Index ";
 	os.width(10);
-	os <<  "   Col Index ";
+	os <<  "   Block Col Index \n";
 	os.width(20);
-	os <<  "   Value     ";
+	os <<  "   Values     ";
 	os << endl;
       }
-      for (i=0; i<NumMyRows1; i++) {
-	int Row = GRID(i); // Get global row number
-	ExtractGlobalRowCopy(Row, MaxNumIndices, NumIndices, Values, Indices);
+      for (i=0; i<NumBlockRows1; i++) {
+	int BlockRow1 = GRID(i); // Get global row number
+	ExtractGlobalBlockRowPointers(BlockRow1, MaxNumBlockEntries1, RowDim1, 
+				      NumBlockEntries1, BlockIndices1, ColDims1,
+				      LDAs1, Values1);
 	
-	for (j = 0; j < NumIndices ; j++) {   
+	for (j = 0; j < NumBlockEntries1 ; j++) {   
 	  os.width(8);
 	  os <<  MyPID ; os << "    ";	
 	  os.width(10);
-	  os <<  Row ; os << "    ";	
+	  os <<  BlockRow1 ; os << "    ";	
 	  os.width(10);
-	  os <<  Indices[j]; os << "    ";
+	  os <<  BlockIndices1[j]; os << "    " << endl;
 	  os.width(20);
-	  os <<  Values[j]; os << "    ";
+	  Epetra_SerialDenseMatrix entry(View, Values1[j], LDAs1[j], RowDim1, ColDims1[j]);
+	  os << entry; os << "    ";
 	  os << endl;
 	}
       }
 
-      delete [] Indices;
-      delete [] Values;
+      delete [] BlockIndices1;
       
       os << flush;
       

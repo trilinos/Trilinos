@@ -47,7 +47,7 @@ Epetra_LinearProblem::Epetra_LinearProblem(void)
 Epetra_LinearProblem::Epetra_LinearProblem(Epetra_RowMatrix * A, 
 					       Epetra_MultiVector * X,
 					       Epetra_MultiVector * B) 
-  : Operator_(A),
+  : Operator_(0),
     A_(A),
     X_(X),
     B_(B),
@@ -58,6 +58,7 @@ Epetra_LinearProblem::Epetra_LinearProblem(Epetra_RowMatrix * A,
     LeftScaleVector_(0),
     RightScaleVector_(0)
 {
+  Operator_ = dynamic_cast<Epetra_Operator *>(A_); // Try to make matrix an operator
 }
 //=============================================================================
 Epetra_LinearProblem::Epetra_LinearProblem(Epetra_Operator * A, 

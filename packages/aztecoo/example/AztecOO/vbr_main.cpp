@@ -37,12 +37,12 @@ int main(int argc, char *argv[])
 
   cout << comm << endl;
 
-  if (comm.MyPID()==0) {
+  // if (comm.MyPID()==0) {
 
-    cout << "Press a key to continue..." << endl;
-    char aaa;
-    cin >> aaa;
-  }
+  //    cout << "Press a key to continue..." << endl;
+  //  char aaa;
+  //  cin >> aaa;
+  //}
   
   comm.Barrier();
   
@@ -133,8 +133,9 @@ int main(int argc, char *argv[])
     }
   }  
   int ierr=A.TransformToLocal();    
-    if (ierr!=0) perror1("Error in Epetra_VbrMatrix TransformToLocal",ierr);
+  if (ierr!=0) perror1("Error in Epetra_VbrMatrix TransformToLocal",ierr);
   
+  cout << A<< endl;
   double * xexactt = xexact;
   Epetra_Vector xx(Copy, map, xexactt);
 
@@ -160,19 +161,20 @@ int main(int argc, char *argv[])
   // Set Problem Difficulty Level
   //problem->SetPDL(easy);
 
-  //solver.SetAztecOption(AZ_precond, AZ_none);
-  solver.SetAztecOption(AZ_precond, AZ_dom_decomp);
+  solver.SetAztecOption(AZ_precond, AZ_none);
+  solver.SetAztecOption(AZ_solver, AZ_cg);
+  //solver.SetAztecOption(AZ_precond, AZ_dom_decomp);
   //solver.SetAztecOption(AZ_precond, AZ_ls);
   //solver.SetAztecOption(AZ_scaling, 8);
-  solver.SetAztecOption(AZ_subdomain_solve, AZ_bilu_ifp); 
+  //solver.SetAztecOption(AZ_subdomain_solve, AZ_bilu_ifp); 
   //solver.SetAztecOption(AZ_output, 0);
-  solver.SetAztecOption(AZ_graph_fill, 2);
-  solver.SetAztecOption(AZ_overlap, 1);
+  //solver.SetAztecOption(AZ_graph_fill, 2);
+  //solver.SetAztecOption(AZ_overlap, 1);
   //solver.SetAztecOption(AZ_poly_ord, 10);
   //solver.SetAztecParam(AZ_ilut_fill, 2.0);
   //solver.SetAztecParam(AZ_drop, 0.1);
-  solver.SetAztecParam(AZ_rthresh, 1e-12);
-  solver.SetAztecParam(AZ_athresh, 1e-12);
+  //solver.SetAztecParam(AZ_rthresh, 1e-12);
+  //solver.SetAztecParam(AZ_athresh, 1e-12);
 
   //solver.SetAztecOption(AZ_reorder, 2);
 
@@ -198,7 +200,7 @@ int main(int argc, char *argv[])
     if (comm.MyPID()==0) 
       cout << "\n Inf-norm of A after  scaling = " << norminf  
 	   << "\n One-norm of A after  scaling = " << normone << endl << endl;
-  }
+  } 
 
   solver.CheckInput();
   solver.Iterate(Niters, 5.0e-14);

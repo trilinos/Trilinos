@@ -148,7 +148,7 @@ int main(int argc, char *argv[])
   //cout << "Abs threshold = " << athresh << endl;
   //solver.SetAztecParam(AZ_athresh, athresh);
 
-  //solver.SetAztecOption(AZ_conv, AZ_noscaled);
+  solver.SetAztecOption(AZ_conv, AZ_noscaled);
   solver.SetAztecParam(AZ_ill_cond_thresh, 1.0e12);
 
 

@@ -410,9 +410,7 @@ class AztecOO {
   Epetra_MultiVector * X_;
   Epetra_MultiVector * B_;
 
-  int N_update_;
   int N_local_;
-  int * update_;
   int x_LDA_;
   double *x_;
   int b_LDA_;

@@ -144,8 +144,6 @@ void AztecOO::DeleteMemory() {
     AZ_matrix_destroy(&Amat_);
     Amat_ = 0;
   }
-
-  delete [] update_;
 }
 
 //=============================================================================
@@ -159,9 +157,7 @@ int AztecOO::SetAztecDefaults() {
  X_ = 0;
  B_ = 0;
  
- N_update_ = 0;
  N_local_ = 0;
- update_ = 0;
  x_LDA_ = 0;
  x_ = 0;
  b_LDA_ = 0;
@@ -193,26 +189,17 @@ int AztecOO::SetUserOperator(Epetra_Operator * UserOperator) {
   if (Amat_ != 0) {
     AZ_matrix_destroy(&Amat_);
     Amat_ = 0;
-    delete [] update_; update_ = 0;
   }
   UserOperator_ = UserOperator;
 
-  N_update_ = UserOperator_->RangeMap().NumMyElements();
-  N_local_ = N_update_;
-  update_ = new int[N_update_];
-  if (update_ == 0) EPETRA_CHK_ERR(-1);
+  N_local_ =  UserOperator_->RangeMap().NumMyPoints();
 
-  UserOperator_->RangeMap().MyGlobalElements(update_);
-
-  if (update_ == 0) EPETRA_CHK_ERR(-1);
-
-
-   Amat_ = AZ_matrix_create(N_local_);
-   AZ_set_MATFREE(Amat_, (void *) UserOperator_, Epetra_Aztec_operatorvec);
-
-   // Aztec needs upper bound for matrix norm if doing polynomial preconditioning
-   if (UserOperator_->HasNormInf())
-     AZ_set_MATFREE_matrix_norm(Amat_, UserOperator_->NormInf()); 
+  Amat_ = AZ_matrix_create(N_local_);
+  AZ_set_MATFREE(Amat_, (void *) UserOperator_, Epetra_Aztec_operatorvec);
+  
+  // Aztec needs upper bound for matrix norm if doing polynomial preconditioning
+  if (UserOperator_->HasNormInf())
+    AZ_set_MATFREE_matrix_norm(Amat_, UserOperator_->NormInf()); 
   return(0);
 }
 
@@ -817,8 +804,8 @@ int AztecOO::AdaptiveIterate(int MaxIters, int MaxSolveAttempts, double Toleranc
 void Epetra_Aztec_matvec(double x[], double y[], AZ_MATRIX *Amat, int proc_config[]) {
 
   Epetra_RowMatrix * A = (Epetra_RowMatrix *) AZ_get_matvec_data(Amat);
-  Epetra_Vector X(View, A->DomainMap(), x);
-  Epetra_Vector Y(View, A->RangeMap(), y);
+  Epetra_Vector X(View, A->DomainMap(), x); X.SetLabel("Epetra_Aztec_matvec X Vector");
+  Epetra_Vector Y(View, A->RangeMap(), y); Y.SetLabel("Epetra_Aztec_matvec Y Vector");
 
   //cout << X << endl;
   //cout << Y << endl;

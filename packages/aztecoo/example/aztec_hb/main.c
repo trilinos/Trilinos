@@ -184,10 +184,12 @@ int main(int argc, char *argv[])
  
   AZ_defaults(options, params);
   options[AZ_solver]  = AZ_gmres;
-  options[AZ_precond] = AZ_dom_decomp ;
-  options[AZ_subdomain_solve] = AZ_bilu_ifp; 
-  params[AZ_rthresh] = 1.0E-7;
-  params[AZ_athresh] = 1.0E-7;
+  options[AZ_precond] = AZ_sym_GS; 
+  options[AZ_poly_ord] = 1;
+  options[AZ_graph_fill] = 1;
+  params[AZ_rthresh] = 0.0E-7;
+  params[AZ_athresh] = 0.0E-7;
+  options[AZ_overlap] = 1;
  /*
   params[AZ_ilut_fill] = 2.0;
   params[AZ_drop] = 0.01;

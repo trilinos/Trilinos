@@ -8,8 +8,8 @@ AZTEC_COMM_MPI             = AZTEC_MPI
 AZTEC_COMM                 = $(AZTEC_COMM_$(TRILINOS_COMM))
 
 DEFINES= -D$(TRILINOS_ARCH) $(AZTEC_ARCH_DEFINES) -D$(AZTEC_COMM) \
-         -DSPARSEBLAS -DAZ_FUNKY_READ_UPDATE
-#         -DIFPACK -DSPARSEBLAS -DTEST_SINGULAR
+         -DIFPACK -DSPARSEBLAS -DTEST_SINGULAR
+#         -DSPARSEBLAS -DAZ_FUNKY_READ_UPDATE
 
 INCLUDES = $(ARCH_INCLUDES) -I$(TRILINOS_HOME)/packages/ifpack/src \
            -I$(TRILINOS_HOME)/packages/aztecoo/src $(BLAS_INCLUDES) \
@@ -34,7 +34,8 @@ LIB_PATHS= $(LIBAZTECOO) $(LIBIFPACK) $(LIBY12M) $(LIBMACHDEP) \
 
 TEST_C = main.c read_hb.c write_vec.c distrib_msr_matrix.c smsrres.c \
            scscres.c read_coo.c scscmv.c distrib_vbr_matrix.c \
-           create_vbr.c svbrres.c iohb.c az_read_update_funky.c
+           create_vbr.c svbrres.c iohb.c
+# az_read_update_funky.c
 
 TEST_F = formats.f blassm.f unary.f
 

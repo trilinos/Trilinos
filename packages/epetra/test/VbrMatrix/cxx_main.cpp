@@ -22,9 +22,9 @@ int check(Epetra_VbrMatrix& A,
 	  int * MyGlobalElements, bool verbose);
 
 int power_method(bool TransA, Epetra_VbrMatrix& A, 
-		 Epetra_Vector& q,
-		 Epetra_Vector& z, 
-		 Epetra_Vector& resid, 
+		 Epetra_MultiVector& q,
+		 Epetra_MultiVector& z, 
+		 Epetra_MultiVector& resid, 
 		 double * lambda, int niters, double tolerance,
 		 bool verbose);
 
@@ -445,9 +445,9 @@ return ierr ;
 }
 
 int power_method(bool TransA, Epetra_VbrMatrix& A, 
-		 Epetra_Vector& q,
-		 Epetra_Vector& z, 
-		 Epetra_Vector& resid, 
+		 Epetra_MultiVector& q,
+		 Epetra_MultiVector& z, 
+		 Epetra_MultiVector& resid, 
 		 double * lambda, int niters, double tolerance,
 		 bool verbose) {  
 

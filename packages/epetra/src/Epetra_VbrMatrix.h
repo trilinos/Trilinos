@@ -1109,7 +1109,4 @@ int GlobalMaxNumBlockEntries() const {return(Graph_->GlobalMaxNumIndices());};
 
 };
 
-//! << operator will work for Epetra_VbrMatrix.
-ostream& operator << (ostream& os, const Epetra_VbrMatrix& A);
-
 #endif /* _EPETRA_VBRMATRIX_H_ */
