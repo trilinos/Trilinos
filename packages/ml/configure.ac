@@ -256,7 +256,6 @@ AC_CXX_STD_SPRINTF
 
 # these are ON by default
  TAC_ARG_WITH_PACKAGE(ml_aztec, [Enable Aztec support], ML_AZTEC, yes)
- TAC_ARG_WITH_PACKAGE(ml_superlu, [Enable SuperLU support], ML_SUPERLU, yes)
 # TAC_ARG_WITH_PACKAGE(ml_mpi, [Enable mpi support], ML_MPI, yes)
  TAC_ARG_WITH_PACKAGE(ml_external_mpi_functions, [Use mpi-provided global communication functions (not ml's internal implementation)], ML_EXTERNAL_MPI_FUNCTIONS, yes)
 # TAC_ARG_WITH_PACKAGE(ml_vendor_blas, [Use system blas library (not ml's internal reference blas)], ML_VENDOR_BLAS, yes)
@@ -265,6 +264,7 @@ AC_CXX_STD_SPRINTF
  TAC_ARG_WITH_PACKAGE(ml_newtpe, [Enable latest Maxwell prolongator fixes], ML_NEW_T_PE, yes)
 
 # these are OFF by default
+ TAC_ARG_WITH_PACKAGE(ml_superlu, [Enable SuperLU support], ML_SUPERLU, no)
  TAC_ARG_WITH_PACKAGE(ml_complex_maxwell, [Enable complex maxwell solver capability], ML_COMPLEX_MAXWELL, no)
  TAC_ARG_WITH_PACKAGE(ml_timing, [Enable timing routines], ML_TIMING, no)
 

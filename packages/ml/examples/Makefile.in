@@ -16,7 +16,6 @@
 
 #@HEADER
 #@HEADER
-#np# This file is an example of a typical Makefile.am to build an example exe. 
 SHELL = @SHELL@
 
 srcdir = @srcdir@
@@ -92,26 +91,26 @@ am__include = @am__include@
 am__quote = @am__quote@
 install_sh = @install_sh@
 
-EXAMPLE = ml_read_maxwell
+#EXAMPLE = ml_read_maxwell
 
-#np# List the names of all exe's in this directory here
+# List the names of all exe's in this directory here
 noinst_PROGRAMS = ml_read_maxwell
 
-#np# One SOURCES primary is needed for EACH exe listed above.  (Notice for all 
-#np# of the  following primaries that the pattern is 
-#np# "(Exe_name)_(PRIMARY_NAME) = ").
-#np# List all source files needed to compile the exe.
+# One SOURCES primary is needed for EACH exe listed above.  (Notice for all 
+# of the  following primaries that the pattern is 
+# "(Exe_name)_(PRIMARY_NAME) = ").
+# List all source files needed to compile the exe.
 ml_read_maxwell_SOURCES = $(srcdir)/ml_read_maxwell.c
 
-#np# One DEPENDENCIES primary is needed for each exe listed above.  List any
-#np# libraries that the exe depends on.  (This primary is not absolutely
-#np# essential.)
+# One DEPENDENCIES primary is needed for each exe listed above.  List any
+# libraries that the exe depends on.  (This primary is not absolutely
+# essential.)
 ml_read_maxwell_DEPENDENCIES = $(top_builddir)/../aztecoo/src/libaztecoo.a \
                        $(top_builddir)/../epetra/src/libepetra.a
 
 
-#np# One CXXFLAGS primary can be defined for each exe listed above.  Include 
-#np# any -I's necessary for building the exe.
+# One CXXFLAGS primary can be defined for each exe listed above.  Include 
+# any -I's necessary for building the exe.
 ml_read_maxwell_CFLAGS = -I$(top_srcdir)/src/Include          \
                    -I$(top_srcdir)/src/Coarsen                  \
                    -I$(top_srcdir)/src/Comm                  \
@@ -126,8 +125,8 @@ ml_read_maxwell_CFLAGS = -I$(top_srcdir)/src/Include          \
                    -I$(top_builddir)/../aztecoo/src       
 
 
-#np# One LDADD primary can be defined for each exe listed above.  Include any
-#np# LDFLAGS  necessary for building the exe.
+# One LDADD primary can be defined for each exe listed above.  Include any
+# LDFLAGS  necessary for building the exe.
 ml_read_maxwell_LDADD = $(top_builddir)/../aztecoo/src/libaztecoo.a        \
                 $(top_builddir)/src/libml.a        \
                 $(top_builddir)/../epetra/src/libepetra.a         \

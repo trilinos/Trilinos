@@ -900,7 +900,6 @@ Optional Packages:
                           to LDFLAGS
   --with-ar               override archiver command (default is "ar cru")
   --with-ml_aztec         Enable Aztec support (default is yes)
-  --with-ml_superlu       Enable SuperLU support (default is yes)
   --with-ml_external_mpi_functions
                           Use mpi-provided global communication functions (not
                           ml's internal implementation) (default is yes)
@@ -908,6 +907,7 @@ Optional Packages:
                           is yes)
   --with-ml_newtpe        Enable latest Maxwell prolongator fixes (default is
                           yes)
+  --with-ml_superlu       Enable SuperLU support (default is no)
   --with-ml_complex_maxwell
                           Enable complex maxwell solver capability (default is
                           no)
@@ -5664,32 +5664,6 @@ else
 echo "${ECHO_T}no" >&6
 fi
 
-
-
-# Check whether --with-ml_superlu or --without-ml_superlu was given.
-if test "${with_ml_superlu+set}" = set; then
-  withval="$with_ml_superlu"
-  ac_cv_use_ml_superlu=$withval
-else
-  ac_cv_use_ml_superlu=yes
-fi;
-
-echo "$as_me:$LINENO: checking whether to use ml_superlu" >&5
-echo $ECHO_N "checking whether to use ml_superlu... $ECHO_C" >&6
-
-if test "X$ac_cv_use_ml_superlu" != "Xno"; then
-  echo "$as_me:$LINENO: result: yes" >&5
-echo "${ECHO_T}yes" >&6
-
-cat >>confdefs.h <<\_ACEOF
-#define HAVE_ML_SUPERLU
-_ACEOF
-
-else
-  echo "$as_me:$LINENO: result: no" >&5
-echo "${ECHO_T}no" >&6
-fi
-
 # TAC_ARG_WITH_PACKAGE(ml_mpi, [Enable mpi support], ML_MPI, yes)
 
 
@@ -5773,6 +5747,32 @@ fi
 
 
 # these are OFF by default
+
+
+# Check whether --with-ml_superlu or --without-ml_superlu was given.
+if test "${with_ml_superlu+set}" = set; then
+  withval="$with_ml_superlu"
+  ac_cv_use_ml_superlu=$withval
+else
+  ac_cv_use_ml_superlu=no
+fi;
+
+echo "$as_me:$LINENO: checking whether to use ml_superlu" >&5
+echo $ECHO_N "checking whether to use ml_superlu... $ECHO_C" >&6
+
+if test "X$ac_cv_use_ml_superlu" != "Xno"; then
+  echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_ML_SUPERLU
+_ACEOF
+
+else
+  echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+fi
+
 
 
 # Check whether --with-ml_complex_maxwell or --without-ml_complex_maxwell was given.
