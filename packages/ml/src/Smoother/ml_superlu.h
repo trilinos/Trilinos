@@ -37,12 +37,20 @@ struct ML_Sm_Schwarz_Data_Struct
 #endif
 };
 
+#ifndef ML_CPP
 #ifdef __cplusplus
 extern "C" {
+#endif
 #endif
 
 extern int ML_SuperLU_Solve(void *vsolver,int ilen,double *x,int olen,
 			    double *rhs);
+
+#ifdef WKC
+// These double *'s are Epetra_MultiVector *'s in disguise
+extern int ML_SuperLU_Solve_WKC(void *vsolver,int ilen,double *x,int olen,
+			    double *rhs);
+#endif
 
 extern int ML_SuperLU_SolveLocal(void *vsolver, double *x, double *rhs);
 extern int ML_CSolve_Clean_SuperLU( void *vsolver, ML_CSolveFunc *func);
@@ -53,8 +61,10 @@ extern  int ML_Smoother_VBlockSchwarzDecomposition(ML_Sm_Schwarz_Data *,
 extern void ML_SuperLU_Set_Tile( int nprocs, int* tsz, int* stile, 
                                  int* mtile, int* ltile);
 
+#ifndef ML_CPP
 #ifdef __cplusplus
 }
+#endif
 #endif
 
 #endif

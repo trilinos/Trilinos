@@ -3,9 +3,13 @@
 
 #include "ml_operator.h"
 
+#ifndef ML_CPP
 #ifdef __cplusplus
 extern "C" {
 #endif
+#endif
+
+
 
 extern void setup_henry(ML *my_ml, int grid0, int **imapper, int **separator,
         int **sep_size, int *Nseparators, int *Nlocal, int *Nghost,
@@ -25,8 +29,10 @@ extern int ML_gpartialsum_int(int val, ML_Comm *comm);
 extern int ML_Comm_subGappendInt(ML_Comm *com_ptr, int *vals, int *cur_length, 
                     int total_length,int sub_mask);
 
+#ifndef ML_CPP
 #ifdef __cplusplus
 }
+#endif
 #endif
 
 #endif

@@ -28,6 +28,10 @@ typedef struct ML_CSolve_Struct ML_CSolve;
 #include "ml_memory.h"
 #include "ml_1level.h"
 
+#ifdef WKC
+#include <Epetra_MultiVector.h>
+#endif
+
 /* ******************************************************************** */
 /* data definition for the ML_CSolve Class                              */
 /* ******************************************************************** */
@@ -61,8 +65,10 @@ struct ML_CSolve_Struct
 /* ******************************************************************** */
 /* ******************************************************************** */
 
+#ifndef ML_CPP
 #ifdef __cplusplus
 extern "C" {
+#endif
 #endif
 extern int ML_CSolve_Create(ML_CSolve **);
 extern int ML_CSolve_Set_Label(ML_CSolve *, char *label);
@@ -72,11 +78,20 @@ extern int ML_CSolve_Clean(ML_CSolve *);
 extern int ML_CSolve_Check(ML_CSolve *);
 extern int ML_CSolve_Set_1Level(ML_CSolve *, ML_1Level *);
 extern int ML_CSolve_Apply(ML_CSolve *, int, double *, int, double *);
+
+#ifdef WKC
+// WKC -- Added prototype
+extern int ML_CSolve_Apply(ML_CSolve *, int, Epetra_MultiVector &, int, 
+                           Epetra_MultiVector &);
+#endif
+
 extern int ML_CSolve_Aggr(void *, int, double *, int, double *);
 extern int ML_CSolve_Clean_Aggr(void *, ML_CSolveFunc *);
 
+#ifndef ML_CPP
 #ifdef __cplusplus
 }
+#endif
 #endif
 
 #endif

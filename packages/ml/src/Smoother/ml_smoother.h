@@ -37,6 +37,10 @@ typedef struct ML_Sm_BlockHiptmair_Data_Struct ML_Sm_BlockHiptmair_Data;
 #include "ml_struct.h"
 #include <math.h>
 
+#ifdef WKC
+#include <Epetra_MultiVector.h>
+#endif
+
 /* ******************************************************************** */
 /* data definition for the ML_Smoother Class                            */
 /* ******************************************************************** */
@@ -208,15 +212,26 @@ struct ML_Sm_BlockHiptmair_Data_Struct
 /* ******************************************************************** */
 /* ******************************************************************** */
 
+#ifndef ML_CPP
 #ifdef __cplusplus
 extern "C" {
 #endif
+#endif
+
 extern  int ML_Smoother_Create(ML_Smoother **, ML_1Level *level_ptr );
 extern  int ML_Smoother_Init(ML_Smoother *, ML_1Level *level_ptr);
 extern  int ML_Smoother_Destroy(ML_Smoother **);
 extern  int ML_Smoother_Clean(ML_Smoother *);
 extern  int ML_Smoother_Set_Label( ML_Smoother *smoo, char *label);
 extern  int ML_Smoother_Apply(ML_Smoother *,int,double *,int,double*,int);
+
+#ifdef WKC
+// WKC Added proto for Epetra stuff!
+extern  int ML_Smoother_Apply(ML_Smoother *,int,Epetra_MultiVector &,
+                              int,Epetra_MultiVector &,int);
+#endif
+
+
 extern  int ML_Smoother_Set(ML_Smoother *, int, void *,
                  int (*internal)(void*,int,double*,int,double *),
                  int (*external)(void*,int,double*,int,double *),
@@ -228,6 +243,13 @@ extern  int ML_Smoother_SGS(void *, int, double *, int, double *);
 extern  int ML_Smoother_BlockGS(void *, int, double *, int, double *);
 extern  int ML_Smoother_MLS_Apply(void *, int, double *, int, double *);
 extern int ML_Cheby(void *sm, int inlen, double x[], int outlen, double rhs[]);
+
+#ifdef WKC
+// WKC -- double * are actually Epetra_MultiVectors
+extern int ML_Cheby_WKC(void *sm, int inlen, double *x, int outlen, double *rhs);
+#endif
+
+
 extern int ML_complex_Cheby(void *sm, int inlen, double x[], int outlen, 
 			    double rhs[]);
 extern  int ML_Smoother_ParaSails(void *, int, double *, int, double *);
@@ -322,8 +344,10 @@ extern void ML_Smoother_Clean_MSR_GS(void *data);
 
 extern int DinvA(void *data,  int in, double p[], int out, double ap[]);
 
+#ifndef ML_CPP
 #ifdef __cplusplus
 }
+#endif
 #endif
 #endif
 

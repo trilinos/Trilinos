@@ -216,7 +216,11 @@ int ML_Smoother_Clean(ML_Smoother *ml_sm)
    {
      printf("This should be switched to using the data_destroy field\n");
      printf("Charles ... can we talk about fixing this -RST\n");
+#ifdef ML_CPP
+      ilut_data = (ML_Sm_ILUT_Data *)ml_sm->smoother->data;
+#else
       ilut_data = ml_sm->smoother->data;
+#endif 
       ML_Smoother_Destroy_ILUT_Data(ilut_data);
       ml_sm->smoother->data = NULL;
    }
@@ -7594,3 +7598,217 @@ if (Amat->comm->ML_mypid == 0)  fflush(stdout);
   ML_free(pAux);
   return 0;
 }
+
+
+
+
+
+#ifdef WKC
+////  WKC
+////  BELOW IS OVERLOADED FUNCTIONS FOR EPETRA STUFF
+
+/* ************************************************************************* */
+/* smoothing operation                                                       */
+/* ************************************************************************* */
+
+
+
+int ML_Smoother_Apply(ML_Smoother *pre, int inlen, Epetra_MultiVector &ep_sol, 
+                      int outlen, Epetra_MultiVector &ep_rhs, int init_guess)
+{
+   double ** pp_sol;
+   double ** pp_rhs;
+   ep_sol.ExtractView ( &pp_sol );
+   ep_rhs.ExtractView ( &pp_rhs );
+
+
+   int         i, n;
+   double      temp, *res, tol;
+   ML_Operator *Amat;
+
+#if defined(ML_TIMING) || defined(ML_TIMING_DETAILED)
+   double      t0;
+   t0 = GetClock();
+#endif
+
+   if (pre->smoother->ML_id == ML_EMPTY) return 1;
+   pre->init_guess = init_guess;
+
+   if (pre->smoother->ML_id == ML_EXTERNAL) {
+      for ( int KK = 0 ; KK != ep_sol.NumVectors() ; KK++ ) {
+         double *sol = pp_sol[KK];
+         double *rhs = pp_rhs[KK];
+        pre->smoother->external(pre->smoother->data,inlen,sol,outlen,rhs);
+      }
+   } else 
+   {
+      if (pre->ntimes == ML_CONVERGE) 
+      {
+         for ( int KK = 0 ; KK != ep_sol.NumVectors() ; KK++ ) {
+            double *sol = pp_sol[KK];
+            double *rhs = pp_rhs[KK];
+
+         Amat = pre->my_level->Amat;
+         n    = Amat->outvec_leng; 
+         res  = (double *) ML_allocate( (n+1)*sizeof(double) );
+         temp = sqrt(ML_gdot(n, rhs, rhs, pre->my_level->comm));
+         tol  = temp*pre->tol;
+         pre->ntimes = 100;
+         while ( temp > tol ) 
+         {
+            pre->smoother->internal(pre,n,sol,n, rhs);
+            ML_Operator_Apply(Amat, n, sol, n, res);
+            for (i = 0; i < n; i++) res[i] = rhs[i] - res[i];
+            temp = sqrt(ML_gdot(n, res, res, pre->my_level->comm));
+         }
+         pre->ntimes = ML_CONVERGE;
+         ML_free(res);
+      }
+      }
+      else {
+
+         if ( (void *)pre->smoother->internal == (void *)ML_Cheby )
+            ML_Cheby_WKC ( pre , inlen , (double *)&ep_sol , outlen , 
+                          (double *) &ep_rhs );
+
+         else {
+            for ( int KK = 0 ; KK != ep_sol.NumVectors() ; KK++ ) {
+               double *sol = pp_sol[KK];
+               double *rhs = pp_rhs[KK];
+
+               pre->smoother->internal(pre,inlen,sol,outlen,rhs);
+            }
+         }
+      }
+   }
+#if defined(ML_TIMING) || defined(ML_TIMING_DETAILED)
+   pre->apply_time += (GetClock() - t0);
+#endif
+   return 1;
+}
+
+
+
+int ML_Cheby_WKC(void *sm, int inlen, double *pep_x, int outlen, double *pep_rhs)
+{
+   Epetra_MultiVector &ep_x ( *(Epetra_MultiVector *)pep_x );
+   Epetra_MultiVector &ep_rhs ( *(Epetra_MultiVector *)pep_rhs );
+
+   ML_Smoother     *smooth_ptr = (ML_Smoother *) sm;
+   ML_Operator     *Amat = smooth_ptr->my_level->Amat;
+   struct MLSthing *widget;
+   int              deg, i, j, k, n, nn;
+
+
+
+   double beta, alpha, theta, delta, s1, rhok, rhokp1;
+   int             *cols, allocated_space;
+   double          *diagonal, *vals, *tdiag, dtemp1, dtemp2;
+
+   n = outlen;
+   widget = (struct MLSthing *) smooth_ptr->smoother->data;
+
+   deg    = widget->mlsDeg;
+   if (deg == 0) return 0;
+
+   /* This is meant for the case when the matrix is the identity.*/
+   if ((Amat->lambda_min == 1.0) && (Amat->lambda_min == Amat->lambda_max)) {
+     for (i = 0; i < Amat->outvec_leng; i++) 
+        for ( int KK = 0 ; KK != ep_x.NumVectors() ; KK++ )
+           ep_x[KK][i] = ep_rhs[KK][i];
+     return 0;
+   }
+
+   beta = 1.1*Amat->lambda_max;   /* try and bracket high */
+   alpha = Amat->lambda_max/(widget->eig_ratio);
+
+   delta = (beta - alpha)/2.;
+   theta = (beta + alpha)/2.;
+   s1 = theta/delta;
+   rhok = 1./s1;
+ 
+
+   /* ----------------------------------------------------------------- */
+   /* extract diagonal using getrow function if not found               */
+   /* ----------------------------------------------------------------- */
+
+   if (Amat->diagonal == NULL) 
+   {
+      if (Amat->getrow->ML_id == ML_EMPTY) 
+         pr_error("Error(MLS_Apply): Need diagonal\n");
+      else 
+      {
+         allocated_space = 30;
+         cols = (int    *) ML_allocate(allocated_space*sizeof(int   ));
+         vals = (double *) ML_allocate(allocated_space*sizeof(double));
+         tdiag = (double *) ML_allocate(Amat->outvec_leng*sizeof(double));
+         for (i = 0; i < Amat->outvec_leng; i++) 
+         {
+            while(ML_Operator_Getrow(Amat,1,&i,allocated_space,
+                                     cols,vals,&nn) == 0) 
+            {
+               allocated_space = 2*allocated_space + 1;
+               ML_free(vals); ML_free(cols); 
+               cols = (int    *) ML_allocate(allocated_space*sizeof(int   ));
+               vals = (double *) ML_allocate(allocated_space*sizeof(double));
+               if (vals == NULL)
+               {
+                  printf("Not enough space to get matrix row. Row length of\n");
+                  printf("%d was not sufficient\n",(allocated_space-1)/2);
+                  exit(1);
+               }
+            }
+	    tdiag[i] = 0.;
+            for (j = 0; j < nn; j++) 
+               if (cols[j] == i) tdiag[i] = vals[j];
+	    if (tdiag[i] == 0.) tdiag[i] = 1.;
+         }
+         ML_free(cols); ML_free(vals);
+         ML_Operator_Set_Diag(Amat, Amat->matvec->Nrows, tdiag);
+         ML_free(tdiag);
+      } 
+   }
+   ML_DVector_GetDataPtr( Amat->diagonal, &diagonal);
+
+   Epetra_MultiVector ep_Aux ( ep_x );
+   Epetra_MultiVector ep_dk ( ep_x );
+
+
+
+   if (smooth_ptr->init_guess == ML_NONZERO) {
+     ML_Operator_Apply(Amat, n, ep_x, n, ep_Aux);
+     for (i = 0; i < n; i++) 
+     for (int KK = 0 ; KK != ep_Aux.NumVectors() ; KK++ )
+     {
+       ep_dk[KK][i] = (ep_rhs[KK][i] - ep_Aux[KK][i])/(theta*diagonal[i]);
+       ep_x[KK][i] += ep_dk[KK][i];
+     }
+   }
+   else { 
+     for (i = 0; i < n; i++) 
+     for (int KK = 0 ; KK != ep_Aux.NumVectors() ; KK++ )
+     {
+       ep_x[KK][i] = ep_dk[KK][i] = ep_rhs[KK][i]/(theta*diagonal[i]);
+     }
+   }
+
+   for (k = 0; k < deg-1; k++) {
+     ML_Operator_Apply(Amat, n, ep_x, n, ep_Aux);
+     rhokp1 = 1./(2.*s1 - rhok);
+     dtemp1 = rhokp1*rhok;
+     dtemp2 = 2.*rhokp1/delta;
+     rhok = rhokp1;
+     for (i = 0; i < n; i++) 
+     for (int KK = 0 ; KK != ep_Aux.NumVectors() ; KK++ )
+     {
+       ep_dk[KK][i] = dtemp1 * ep_dk[KK][i] + dtemp2*
+                             (ep_rhs[KK][i]-ep_Aux[KK][i])/diagonal[i];
+       ep_x[KK][i] += ep_dk[KK][i];
+     }
+   }
+
+   return 0;	
+}
+
+
+#endif

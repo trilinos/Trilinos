@@ -278,7 +278,11 @@ int ML_CSolve_Clean_Aggr( void *vsolver, ML_CSolveFunc *func)
       solver->dble_params1 = NULL;
       if ( solver->Mat1 != NULL )
       {
+#ifdef ML_CPP
+         ML_Matrix_DCSR_Destroy( (ML_Matrix_DCSR **)solver->Mat1 );
+#else
          ML_Matrix_DCSR_Destroy( solver->Mat1 );
+#endif
          ML_memory_free( &(solver->Mat1) );
       }
       solver->Mat1 = NULL;
@@ -291,3 +295,63 @@ int ML_CSolve_Clean_Aggr( void *vsolver, ML_CSolveFunc *func)
    return 0;
 }
 
+
+
+
+#ifdef WKC
+// WKC  EPETRA STUFF TO FOLLOW
+
+/* *********************************************************************** */
+/* perform solve                                                           */
+/* ----------------------------------------------------------------------- */
+#include <iostream>
+
+extern int ML_SuperLU_Solve_WKC(void *vsolver,int ilen,double *x,int olen,
+                            double *rhs);
+
+
+int ML_CSolve_Apply(ML_CSolve *csolve, int inlen, Epetra_MultiVector &ep_din, 
+                    int outlen, Epetra_MultiVector &ep_dout )
+{
+
+   double ** pp_din;
+   double ** pp_dout;
+   ep_din.ExtractView ( &pp_din );
+   ep_dout.ExtractView ( &pp_dout );
+
+#if defined(ML_TIMING) || defined(ML_TIMING_DETAILED)
+   double t0;
+   t0 = GetClock();
+#endif
+   if (csolve->func->ML_id == ML_EMPTY) 
+      pr_error("ML_CSolve_Apply error : coarse solver not defined\n");
+
+   if (csolve->func->ML_id == ML_EXTERNAL) {
+       for ( int KK = 0 ; KK != ep_din.NumVectors() ; KK++ ) {
+         double *din = pp_din[KK];
+         double *dout = pp_dout[KK];
+
+        csolve->func->external(csolve->data, inlen, din, outlen, dout);
+      }
+}   else {
+   if ( (void *) csolve->func->internal == (void *)ML_SuperLU_Solve )
+     ML_SuperLU_Solve_WKC (csolve->data, inlen, (double *) &ep_din, outlen, 
+                         (double *) &ep_dout); 
+   else {
+       for ( int KK = 0 ; KK != ep_din.NumVectors() ; KK++ ) {
+         double *din = pp_din[KK];
+         double *dout = pp_dout[KK];
+
+         csolve->func->internal (csolve->data, inlen, din, outlen, dout); 
+      }
+     }
+   }
+   
+
+#if defined(ML_TIMING) || defined(ML_TIMING_DETAILED)
+   csolve->apply_time += (GetClock() - t0);
+#endif
+   return 0;
+}
+
+#endif
