@@ -241,6 +241,11 @@ report($SUMMARY);
             exit;            
         }
         
+        # fill optionsOrder arry for correctly ordered output of options
+        else {
+            generateConfig(0, 1, 1);
+        }
+        
         # parse config file and exit
         if ($flags{p}) {                         
             parseConfig($flags{p});                  
