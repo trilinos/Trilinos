@@ -74,16 +74,26 @@ namespace LineSearch {
   interval of uncertainty is chosen so that it contains a minimizer of
   \f$f(x+{\rm stp}\;s)\f$.
 
-  The algorithm is designed to find a step which satisfies the
-  sufficient decrease condition
-
+  The algorithm is designed to find a step which satisfies one of two
+  sufficient decrease conditions:
+  
+  (1) Armijo-Goldstein Condition
   \f[
-  f(x + {\rm stp} \; s) <= f(x) + {\rm ftol} \; {\rm stp} \; (\nabla f(x)^T s),
+  f(x + {\rm stp} \; s) \le f(x) + {\rm ftol} \; {\rm stp} \; (\nabla f(x)^T s),
   \f]
+
+  or 
+
+  (2) Ared/Pred Condtition
+  \f[
+  F(x_{n-1}+ \lambda s) \le  F(x_{n-1})(1-\alpha(1-\eta))
+  \f]
+
+
   and the curvature condition
 
   \f[
-  \vert \nabla f(x + {\rm stp} \; s)^T s) \vert <= {\rm gtol} \;  |\nabla f(x)^T s|
+  \vert \nabla f(x + {\rm stp} \; s)^T s) \vert \le {\rm gtol} \;  |\nabla f(x)^T s|
   \f]
 
   If ftol is less than gtol and if, for example, the function is
@@ -109,7 +119,7 @@ namespace LineSearch {
  
   - "Sufficient Decrease Condition" - Choice to use for the sufficient decrease condition. Options are "Ared/Pred" or "Armijo-Goldstein" (defaults to "Armijo-Goldstein").<br>
   1. "Armijo-Goldstein" conditions: \f$ f(x_{n-1}+ \lambda s) \le f(x_{n-1}) +\alpha \lambda f'(x_{n-1}) \f$ <br>
-  2. "Ared/Pred" conditions: \f$ f(x_{n-1}+ \lambda s) \le  f(x_{n-1})(1-\alpha(1-\eta)) \f$ where \f$ \eta \f$ is the linear solve tolerance in the inexact Newton method. <br><br>
+  2. "Ared/Pred" conditions: \f$ F(x_{n-1}+ \lambda s) \le  F(x_{n-1})(1-\alpha(1-\eta)) \f$ where \f$ \eta \f$ is the linear solve tolerance in the inexact Newton method. <br><br>
 
   - "Sufficient Decrease" - The ftol in the sufficient decrease
     condition (defaults to 1.0e-4)

@@ -257,7 +257,7 @@ int NOX::LineSearch::MoreThuente2::cvsrch(Abstract::Group& newgrp, double& stp,
     double ftest1 = finit + stp * dgtest;
 
     // Ared/Pred suffiecient decrease
-    double ftest2 = finit * (1.0 - ftol * (1.0 - eta));
+    double ftest2 = oldgrp.getNormF() * (1.0 - ftol * (1.0 - eta));
 
     // Test for convergence.
 
@@ -281,13 +281,13 @@ int NOX::LineSearch::MoreThuente2::cvsrch(Abstract::Group& newgrp, double& stp,
     //	 << " gtol*(-dginit)=" << gtol*(-dginit) << endl;
 
     // RPP sufficient decrease test can be different
-    double ftest = 0.0;
+    bool sufficientDecreaseTest = false;
     if (suffDecrCond == ArmijoGoldstein)
-      ftest = ftest1;  // Using Armijo-Golstein
+      sufficientDecreaseTest = (f <= ftest1);  // Armijo-Golstein
     else
-      ftest = ftest2;  // Using Ared/Pred
+      sufficientDecreaseTest = (newgrp.getNormF() <= ftest2); // Ared/Pred
 
-    if ((f <= ftest) && (fabs(dg) <= gtol*(-dginit))) 
+    if ((sufficientDecreaseTest) && (fabs(dg) <= gtol*(-dginit))) 
       info = 1;			// Success!!!!
 
     if (info != 0) 		// Line search is done
