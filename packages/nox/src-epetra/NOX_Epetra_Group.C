@@ -35,6 +35,7 @@
 #include "NOX_Epetra_Interface.H"
 #include "NOX_Epetra_SharedOperator.H"
 #include "NOX_Parameter_List.H"
+#include "NOX_Epetra_Scaling.H"
 #include "NOX_Epetra_MatrixFree.H"
 #include "NOX_Epetra_FiniteDifference.H"
 #include "NOX_Epetra_FiniteDifferenceColoring.H"
@@ -81,7 +82,8 @@ Group::Group(Parameter::List& printParams,
   userInterface(i),
   aztecSolver(0),
   ifpackGraph(0),
-  ifpackPreconditioner(0)
+  ifpackPreconditioner(0),
+  scaling(0)
 {
   // Set all isValid flags to false
   resetIsValid();
@@ -110,7 +112,7 @@ Group::Group(Parameter::List& printParams,
   gradVectorPtr(dynamic_cast<NOX::Epetra::Vector*>(x.clone(ShapeCopy))),
   gradVector(*gradVectorPtr), 
   NewtonVectorPtr(dynamic_cast<NOX::Epetra::Vector*>(x.clone(ShapeCopy))),
-  NewtonVector(*NewtonVectorPtr), 
+  NewtonVector(*NewtonVectorPtr),
   tmpVectorPtr(0),
   sharedJacobianPtr(new SharedOperator(J)), // pass J to SharedJacobian
   sharedJacobian(*sharedJacobianPtr), // pass J to SharedJacobian
@@ -119,7 +121,8 @@ Group::Group(Parameter::List& printParams,
   userInterface(i),
   aztecSolver(0),
   ifpackGraph(0),
-  ifpackPreconditioner(0)
+  ifpackPreconditioner(0),
+  scaling(0)
 {
   // Set all isValid flags to false
   resetIsValid();
@@ -157,7 +160,8 @@ Group::Group(Parameter::List& printParams,
   userInterface(i),
   aztecSolver(0),
   ifpackGraph(0),
-  ifpackPreconditioner(0)
+  ifpackPreconditioner(0),
+  scaling(0)
 {
   // Set all isValid flags to false
   resetIsValid();
@@ -195,7 +199,8 @@ Group::Group(Parameter::List& printParams,
   userInterface(i),
   aztecSolver(0),
   ifpackGraph(0),
-  ifpackPreconditioner(0)
+  ifpackPreconditioner(0),
+  scaling(0)
 {
   // Set all isValid flags to false
   resetIsValid();
@@ -234,7 +239,8 @@ Group::Group(const Group& source, CopyType type) :
   preconditioner(source.preconditioner),
   aztecSolver(0),
   ifpackGraph(0),
-  ifpackPreconditioner(0)
+  ifpackPreconditioner(0),
+  scaling(source.scaling)
 {
  
   switch (type) {
@@ -388,7 +394,7 @@ void Group::setAztecOptions(const Parameter::List& p, AztecOO& aztec) const
   string orthog = p.getParameter("Orthogonalization", "Classical");
   if (orthog == "Classical") 
     aztec.SetAztecOption(AZ_orthog, AZ_classic);
-  else if (RcmReordering == "Modified")
+  else if (orthog == "Modified")
     aztec.SetAztecOption(AZ_orthog, AZ_modified);
   else {
     cout << "ERROR: NOX::Epetra::Group::setAztecOptions" << endl
@@ -488,6 +494,10 @@ Abstract::Group& Group::operator=(const Group& source)
   jacobianOperatorType = source.jacobianOperatorType;
   preconditionerOperatorType = source.preconditionerOperatorType;
   preconditioner = source.preconditioner;
+
+  // Copy the scaling
+  if (source.scaling != 0)
+    scaling = source.scaling;
 
   return *this;
 }
@@ -710,51 +720,15 @@ Abstract::Group::ReturnType Group::applyJacobianInverse (Parameter::List &p, con
 
   // ************* Begin linear system scaling *******************
 
-  // Get the norm of the RHS BEFORE scaling the linear system.  This is 
-  // required for adjustable forcing terms when used in combination with
-  // row sum scaling. 
-  double normF = input.norm();
+  if (scaling != 0) {
+    scaling->computeScaling(Problem);
+    scaling->scaleLinearSystem(Problem);
 
-  string scalingOption = p.getParameter("Scaling", "None");
-  if (scalingOption == "Row Sum") {
-    if (tmpVectorPtr == 0) 
-      tmpVectorPtr = new Epetra_Vector(xVector.getEpetraVector());
-
-    // Make sure the Jacobian is an Epetra_RowMatrix, otherwise we can't 
-    // perform a row sum scale!
-    Epetra_RowMatrix* test = 0;
-    test = dynamic_cast<Epetra_RowMatrix*>(&Jacobian);
-    if (test == 0) {
-      cout << "ERROR: NOX::Epetra::Group::applyJacobianInverse() - "
-	   << "For \"Row Sum\" scaling, the Jacobian must be an "
-	   << "Epetra_RowMatrix derived object!" << endl;
-      throw "NOX Error";
+    if (utils.isPrintProcessAndType(Utils::Details)) {
+      cout << *scaling << endl;
     }
-
-    test->InvRowSums(*tmpVectorPtr);
-    Problem.LeftScale(*tmpVectorPtr);
-    
-    // Get the row sum vector back (right now it is the inverse of the row sum)
-    // We need this to (1) unscale the system and (2) for special convergence 
-    // test if row sum scaling and adjustable forcing terms are used in 
-    // combination.
-    tmpVectorPtr->Reciprocal(*tmpVectorPtr);
-
-    if (utils.isPrintProcessAndType(Utils::Details))
-      cout << endl << "       Linear Problem Scaling: Row Sum" << endl;
-
   }
-  else if (scalingOption == "None") {
-    if (utils.isPrintProcessAndType(Utils::Details))
-      cout << endl << "       Linear Problem Scaling: None" << endl;
-  }
-  else {
-    // Throw an error, the requested scaling option is not vaild
-    cout << "ERROR: NOX::Epetra::Group::applyJacobianInverse() - "
-	 << " The parameter chosen for \"Scaling\" is not valid!"
-	 << endl;
-    throw "NOX Error";
-  } 
+
   // ************* End linear system scaling *******************
   
   // Set the default Problem parameters to "hard" (this sets Aztec defaults
@@ -776,96 +750,25 @@ Abstract::Group::ReturnType Group::applyJacobianInverse (Parameter::List &p, con
   int maxit = p.getParameter("Max Iterations", 400);
   double tol = p.getParameter("Tolerance", 1.0e-6);
   
-  // If we are using an adjustable forcing term combined with Row Sum 
-  // scaling, the convergence test in the linear solver must be modified.
-  // Don't use the default ones in Aztec!
-  AztecOO_StatusTestMaxIters* maxIters = 0;
-  AztecOO_StatusTestResNorm* forcingResNorm = 0;
-  AztecOO_StatusTestCombo* convTest = 0;
- 
-  // If an adjustable forcing term is being used, we need to explicitly 
-  // enforce the use of a particular type of convergence test.  Additionally,
-  // if scaling of the linear system is used, the status test must account
-  // for this!
-  bool usingAdjustableForcingTerm =  
-    p.getParameter("Using Adjustable Forcing Term", false);
-  
-  if ((usingAdjustableForcingTerm) && (scalingOption == "Row Sum")) {
-
-    maxIters = new AztecOO_StatusTestMaxIters(maxit);
-
-    forcingResNorm = new AztecOO_StatusTestResNorm(Jacobian, 
-		     result.getEpetraVector(), input.getEpetraVector(), tol);
-
-    forcingResNorm->DefineResForm(AztecOO_StatusTestResNorm::Explicit,
-    			  AztecOO_StatusTestResNorm::TwoNorm,
-    			  tmpVectorPtr);
-
-    forcingResNorm->DefineScaleForm(AztecOO_StatusTestResNorm::UserProvided,
-				    AztecOO_StatusTestResNorm::TwoNorm, 0,
-				    normF);
-
-    convTest = new AztecOO_StatusTestCombo(AztecOO_StatusTestCombo::OR, 
-					   *maxIters, *forcingResNorm);
-
-    aztecSolver->SetStatusTest(convTest);
-  }
-  else if (usingAdjustableForcingTerm) {
-    
-    maxIters = new AztecOO_StatusTestMaxIters(maxit);
-
-    forcingResNorm = new AztecOO_StatusTestResNorm(Jacobian, 
-		     result.getEpetraVector(), input.getEpetraVector(), tol);
-
-    forcingResNorm->DefineResForm(AztecOO_StatusTestResNorm::Implicit,
-    			  AztecOO_StatusTestResNorm::TwoNorm);
-
-    forcingResNorm->DefineScaleForm(AztecOO_StatusTestResNorm::NormOfRHS,
-				    AztecOO_StatusTestResNorm::TwoNorm);
-
-    convTest = new AztecOO_StatusTestCombo(AztecOO_StatusTestCombo::OR, 
-					   *maxIters, *forcingResNorm);
-
-    aztecSolver->SetStatusTest(convTest);
-
-  }
-
-  // Solve Aztec problem
   int aztecStatus = -1;
-  if (p.getParameter("Use Adaptive Linear Solve", false)) {
-    aztecSolver->SetUseAdaptiveDefaultsTrue();
-    aztecStatus = aztecSolver->AdaptiveIterate(maxit, 
-		   p.getParameter("Max Adaptive Solve Attempts", 5), tol);
-  }
-  else
-    aztecStatus = aztecSolver->Iterate(maxit, tol);
 
-  // Unscale the linear problem
-  if (scalingOption == "Row Sum") {
-    Problem.LeftScale(*tmpVectorPtr);
-  }
+  aztecStatus = aztecSolver->Iterate(maxit, tol);
+  
+  // Unscale the linear system
+  if (scaling != 0)
+    scaling->unscaleLinearSystem(Problem);
 
   // Set the output parameters in the "Output" sublist
   NOX::Parameter::List& outputList = p.sublist("Output");
   int prevLinIters = outputList.getParameter("Total Number of Linear Iterations", 0);
   int curLinIters = 0;
   double achievedTol = -1.0;
-  if (usingAdjustableForcingTerm) {
-    curLinIters = maxIters->GetNumIters();
-    achievedTol = forcingResNorm->GetTestValue();
-  }
-  else {
-    curLinIters = aztecSolver->NumIters();
-    achievedTol = aztecSolver->ScaledResidual();
-  }
+  curLinIters = aztecSolver->NumIters();
+  achievedTol = aztecSolver->ScaledResidual();
+
   outputList.setParameter("Number of Linear Iterations", curLinIters);
   outputList.setParameter("Total Number of Linear Iterations", (prevLinIters + curLinIters));
   outputList.setParameter("Achieved Tolerance", achievedTol);
-
-  // Delete the special convergence tests
-  delete convTest;
-  delete maxIters;
-  delete forcingResNorm;
 
   // Delete the solver and reset to NULL.
   destroyAztecSolver();
@@ -1447,4 +1350,10 @@ Group::OperatorType Group::getOperatorType(const Epetra_Operator& Op)
 
   // Otherwise it must be an Epetra_Operator!
   return EpetraOperator;
+}
+
+void Group::setLinearSolveScaling(NOX::Epetra::Scaling& scalingObject)
+{
+  scaling = &scalingObject;
+  return;
 }

@@ -43,6 +43,7 @@ namespace NOX {
   namespace Epetra {
     class Interface;
     class SharedOperator;
+    class Scaling;
   }
   namespace Parameter {
     class List;
@@ -139,18 +140,6 @@ options are valid:
   <ul> 
   <li> "Classical" - (default).
   <li> "Modified" 
-  </ul>
-
-<li> "Scaling" - The scaling of the linear system before it is solved.
-We can NOT use the Aztec scaling methods since AztecOO uses the
-matrix-free interface to Aztec.  Therefore we implement our own
-scaling and apply it to the Epetra_LinearProblem object.  Output from
-the Aztec solve will always say no scaling since we scale things
-before Aztec gets the problem.  The following options are valid:
-
-  <ul>
-  <li> "None" - No scaling is used (default).
-  <li> "Row Sum"
   </ul>
 
 <li> "Convergence Criteria" - Algorithm used to calculate the residual
@@ -554,6 +543,9 @@ public:
   //! Return the userInterface.
   virtual NOX::Epetra::Interface& getUserInterface();
 
+  //! Sets the diagonal scaling vector(s) used in scaling the linear system.  See NOX::Epetra::Scaling for details on how to specify scaling of the linear system.
+  virtual void setLinearSolveScaling(NOX::Epetra::Scaling& scalingObject);
+
 protected:
 
   //! resets the isValid flags to false
@@ -643,10 +635,9 @@ protected:
   NOX::Epetra::Vector* NewtonVectorPtr;
   //! Newton direction vector.
   NOX::Epetra::Vector& NewtonVector;
-  //@}
-
   //! An extra temporary vector, only allocated if needed.
   mutable Epetra_Vector* tmpVectorPtr;
+  //@}
 
   /** @name IsValid flags 
    *  
@@ -766,6 +757,10 @@ protected:
 
   //! If using an IFPACK preconditioner, we must store the IFpack preconditioner.
   mutable Ifpack_CrsRiluk* ifpackPreconditioner;
+
+  //! Scaling object supplied by the user
+  NOX::Epetra::Scaling* scaling;
+
 };
 
 } // namespace Epetra

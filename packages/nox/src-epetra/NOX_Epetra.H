@@ -9,4 +9,4 @@
 #include "NOX_Epetra_FiniteDifferenceColoring.H"
 #include "NOX_Epetra_Operator.H"
 #include "NOX_Epetra_Operator_JacobiPrec.H"
-
+#include "NOX_Epetra_Scaling.H"
