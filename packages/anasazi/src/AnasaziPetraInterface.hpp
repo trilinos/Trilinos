@@ -174,7 +174,7 @@ template<class TYPE>
 void AnasaziPetraVec<TYPE>::SetBlock(AnasaziMultiVec<TYPE>& A, int index[], int numvecs ) 
 {	
 	int i,j,ind;
-	AnasaziPetraVec *A_vec = dynamic_cast<AnasaziPetraVec *>(&A); assert(A_vec);
+	AnasaziPetraVec *A_vec = dynamic_cast<AnasaziPetraVec *>(&A); assert(A_vec!=NULL);
 	int MyNumVecs = (*this).GetNumberVecs();
 	int VecLength = A.GetVecLength();
 
@@ -202,7 +202,7 @@ void AnasaziPetraVec<TYPE>::MvTimesMatAddMv ( TYPE alpha, AnasaziMultiVec<TYPE>&
 	Epetra_LocalMap LocalMap(B.getrows(), izero, Map().Comm());
 	Epetra_MultiVector B_Pvec(Copy, LocalMap, B.getarray(), B.getld(), B.getcols());
 
-	AnasaziPetraVec *A_vec = dynamic_cast<AnasaziPetraVec *>(&A); assert(A_vec);
+	AnasaziPetraVec *A_vec = dynamic_cast<AnasaziPetraVec *>(&A); assert(A_vec!=NULL);
 
 	info = Multiply( *trans, *trans, alpha, *A_vec, B_Pvec, beta );
 
@@ -219,8 +219,8 @@ void AnasaziPetraVec<TYPE>::MvAddMv ( TYPE alpha , AnasaziMultiVec<TYPE>& A,
 	const TYPE one =1.0;
 	const TYPE zero = 0.0;
 
-	AnasaziPetraVec *A_vec = dynamic_cast<AnasaziPetraVec *>(&A); assert(A_vec);
-	AnasaziPetraVec *B_vec = dynamic_cast<AnasaziPetraVec *>(&B); assert(B_vec);
+	AnasaziPetraVec *A_vec = dynamic_cast<AnasaziPetraVec *>(&A); assert(A_vec!=NULL);
+	AnasaziPetraVec *B_vec = dynamic_cast<AnasaziPetraVec *>(&B); assert(B_vec!=NULL);
 
 	info = Update( alpha, *A_vec, beta, *B_vec, zero ); assert(info==0);
 }
@@ -342,7 +342,7 @@ Anasazi_ReturnType AnasaziPetraMat<TYPE>::ApplyMatrix ( const AnasaziMultiVec<TY
 	Epetra_MultiVector* vec_x = dynamic_cast<Epetra_MultiVector* >(&temp_x);
 	Epetra_MultiVector* vec_y = dynamic_cast<Epetra_MultiVector* >(&y);
 
-	assert( vec_x && vec_y );
+	assert( vec_x!=NULL && vec_y!=NULL );
 	//
 	// Need to cast away constness because the member function Apply
 	// is not declared const.
@@ -397,7 +397,7 @@ Anasazi_ReturnType AnasaziPetraStdOp<TYPE>::ApplyOp ( const AnasaziMultiVec<TYPE
 	Epetra_MultiVector* vec_x = dynamic_cast<Epetra_MultiVector* >(&temp_x);
 	Epetra_MultiVector* vec_y = dynamic_cast<Epetra_MultiVector* >(&y);
 
-	assert( vec_x && vec_y );
+	assert( vec_x!=NULL && vec_y!=NULL );
 	//
 	// Need to cast away constness because the member function Apply
 	// is not declared const.
@@ -455,7 +455,7 @@ Anasazi_ReturnType AnasaziPetraGenOp<TYPE>::ApplyOp ( const AnasaziMultiVec<TYPE
 	Epetra_MultiVector* vec_y = dynamic_cast<Epetra_MultiVector* >(&y);
 	Epetra_MultiVector temp_y(*vec_y); 
 
-	assert( vec_x && vec_y );
+	assert( vec_x!=NULL && vec_y!=NULL );
 	//
 	// Need to cast away constness because the member function Apply
 	// is not declared const.

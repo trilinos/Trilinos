@@ -4,7 +4,7 @@
 
 #include "AnasaziMultiVec.hpp"
 #include "AnasaziReturnType.hpp"
-#include <iostream>
+#include "AnasaziCommon.hpp"
 
 /*!	\class AnasaziMatrix
 

@@ -3,7 +3,7 @@
 #define ANASAZI_MULTI_VEC_HPP
 
 #include "AnasaziDenseMatrix.hpp"
-#include <iostream>
+#include "AnasaziCommon.hpp"
 
 /*! 	\class AnasaziMultiVec
 

@@ -10,7 +10,6 @@
 #include "NOX_Abstract_Vector.H"
 #include "LOCA_Abstract_Group.H"
 #include "NOX_Parameter_List.H"
-#include <typeinfo>
 
 namespace Anasazi {
 enum DataAccess {Copy, View};
@@ -262,7 +261,7 @@ template<class TYPE>
 void AnasaziLOCAVec<TYPE>::SetBlock( AnasaziMultiVec<TYPE>& A, int index[], int NumVecs ) {
 
 	int i, ind;
-	AnasaziLOCAVec *A_vec = dynamic_cast<AnasaziLOCAVec *>(&A); assert(A_vec);
+	AnasaziLOCAVec *A_vec = dynamic_cast<AnasaziLOCAVec *>(&A); assert(A_vec!=NULL);
 	int MyNumVecs = mvPtrs.size();
 	for (i=0; i<NumVecs; i++) {
 		ind = index[i];
@@ -280,7 +279,7 @@ void AnasaziLOCAVec<TYPE>::MvTimesMatAddMv ( TYPE alpha, AnasaziMultiVec<TYPE>& 
 						   AnasaziDenseMatrix<TYPE>& B, TYPE beta ) 
 {
 	int i,j;
-	AnasaziLOCAVec *A_vec = dynamic_cast<AnasaziLOCAVec *>(&A); assert(A_vec);
+	AnasaziLOCAVec *A_vec = dynamic_cast<AnasaziLOCAVec *>(&A); assert(A_vec!=NULL);
 	int m = B.getrows();
 	int n = B.getcols();
 	int ldb = B.getld();
@@ -306,8 +305,8 @@ template<class TYPE>
 void AnasaziLOCAVec<TYPE>::MvAddMv ( TYPE alpha , AnasaziMultiVec<TYPE>& A, 
 						   TYPE beta, AnasaziMultiVec<TYPE>& B) {
 	const TYPE zero = 0.0;
-	AnasaziLOCAVec *A_vec = dynamic_cast<AnasaziLOCAVec *>(&A); assert(A_vec);
-	AnasaziLOCAVec *B_vec = dynamic_cast<AnasaziLOCAVec *>(&B); assert(B_vec);
+	AnasaziLOCAVec *A_vec = dynamic_cast<AnasaziLOCAVec *>(&A); assert(A_vec!=NULL);
+	AnasaziLOCAVec *B_vec = dynamic_cast<AnasaziLOCAVec *>(&B); assert(B_vec!=NULL);
 
 	for (int i=0; i<mvPtrs.size(); i++) {
 		mvPtrs[i]->update(alpha, *(A_vec->mvPtrs[i]), beta, *(B_vec->mvPtrs[i]), zero);
@@ -320,7 +319,7 @@ template<class TYPE>
 void AnasaziLOCAVec<TYPE>::MvTransMv ( TYPE alpha, AnasaziMultiVec<TYPE>& A,
 						   AnasaziDenseMatrix<TYPE>& B) {
 	int i,j;
-	AnasaziLOCAVec *A_vec = dynamic_cast<AnasaziLOCAVec *>(&A); assert(A_vec);
+	AnasaziLOCAVec *A_vec = dynamic_cast<AnasaziLOCAVec *>(&A); assert(A_vec!=NULL);
 	int m = B.getrows();
 	int n = B.getcols();
 	int ldb = B.getld();
@@ -409,8 +408,8 @@ Anasazi_ReturnType AnasaziLOCAMat<TYPE>::ApplyMatrix ( const AnasaziMultiVec<TYP
 	
 	NOX::Abstract::Group::ReturnType res;
 	AnasaziMultiVec<TYPE> &temp_x = const_cast<AnasaziMultiVec<TYPE> &>(x);
-	AnasaziLOCAVec<TYPE> *x_vec = dynamic_cast<AnasaziLOCAVec<TYPE> *>(&temp_x); assert(x_vec);
-	AnasaziLOCAVec<TYPE> *y_vec = dynamic_cast<AnasaziLOCAVec<TYPE> *>(&y); assert(y_vec);
+	AnasaziLOCAVec<TYPE> *x_vec = dynamic_cast<AnasaziLOCAVec<TYPE> *>(&temp_x); assert(x_vec!=NULL);
+	AnasaziLOCAVec<TYPE> *y_vec = dynamic_cast<AnasaziLOCAVec<TYPE> *>(&y); assert(y_vec!=NULL);
 
 	int NumVecs = x_vec->GetNumberVecs();
 	for (int i=0; i<NumVecs; i++) {

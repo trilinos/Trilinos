@@ -264,7 +264,7 @@ Anasazi_ReturnType AnasaziEigenproblem<TYPE>::ApplyMatrixB (const AnasaziMultiVe
                 // Now create the indexing for copying X into Y.
                 //
                 int i, numvecs = X.GetNumberVecs();
-                int *index = new int[numvecs]; assert(index);
+                int *index = new int[numvecs]; assert(index!=NULL);
                 for (i=0; i<numvecs; i++) { index[i] = i; }
                 Y.SetBlock(tempX, index, numvecs);
 
