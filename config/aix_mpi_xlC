@@ -1,0 +1,11 @@
+../configure --host=powerpc-ibm-aix5.1.0.0 \
+     --with-blas="-lessl -L/home/jmwille -llapack" \
+     --with-lapack="-L/home/jmwille -llapack" \
+     --enable-referencey12m --enable-aztecoo-azlu \
+     CXX=mpCC CC=mpcc F77=mpxlf \
+     CXXFLAGS="-g" \
+     --enable-mpi --enable-belos \
+        --enable-nox --enable-nox-epetra \
+        --with-mpi-incdir=. \
+     --with-mpi-libdir=.
+
