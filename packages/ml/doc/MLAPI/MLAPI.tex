@@ -100,13 +100,13 @@
 %
 %\hspace{2.22in}
 \begin{center}
-SAND2005--XXXX \\
+SAND2005--1382 \\
 %\hfill
 %\hspace{2.41in}
 Unlimited Release \\
 %\hfill
 %\begin{center}
-Printed February 2005
+Printed March 2005
 \end{center}
 
 \vspace{0.2in}
@@ -143,12 +143,11 @@ both serial and parallel environments.
 
 \smallskip
 
-The main feature of this framework is the use of several programming
- paradigms for the different implementation layes, with a strong emphasis on
- object oriented classes and operator overloading for the top layer, and optimized
- FORTRAN and C code for the layers underneath. In particular, \MLAPI takes advantage
- of \ML~\cite{ml-guide}, 
-the algebraic multilevel preconditioning
+The main feature of this framework is the use of several programming paradigms
+for the different implementation layes, with a strong emphasis on object
+oriented classes and operator overloading for the top layer, and optimized
+FORTRAN and C code for the layers underneath. In particular, \MLAPI takes
+advantage of \ML~\cite{ml-guide}, the algebraic multilevel preconditioning
 package of Trilinos~\cite{Trilinos-home-page}. 
 
 \smallskip
@@ -159,17 +158,6 @@ is very modest, therefore allowing developers to focus on
 the new algorithm they are developing and testing, rather than the implementation details, yet obtaining a
 code whose efficiency and scalability is comparable with that of C or FORTRAN
 layers underneath.
-
-%\smallskip
-
-%Preconditioners defined within the \MLAPI framework are tested on linear
-%systems arising from a Newton procedure applied to the solution of the
-%incompressible Navier-Stokes equations discretized by finite elements on
-%unstructured 3D grids. The presented numerical results show that 
-%the overhead due to the object-oriented programming in negligible,
-%and the object-oriented paradigm can be
-%effectively used to implement multilevel algebraic algorithms for real-life
-%applications on massively parallel computers.
 \end{abstract}
 
 %
@@ -241,17 +229,6 @@ properties:
 \item {\bf $P$ or $P^{-1}$ can be constructed in parallel}, to take advantage of the architecture of modern supercomputers.
 \end{enumerate}
 
-%It is easy to see that the definition of $P$ is driven by many conflicting
-%objectives, such as its efficiency in terms of iterations to converge and in
-%terms of CPU time, its storage requirements, and its robustness; see for
-%instance~\cite{golub97closer,vorst95parallel}. 
-%The situation
-%is significantly complex for non-symmetric problems, as no general
-%theory can clearly explain the converge of GMRES-type methods, and therefore
-%guide the construction of preconditioners. Preconditioners for non-symmetric
-%problems are often very problem-dependent, and finding the optimal choice for
-%a given problem of interest still requires accurate numerical tests.
-
 \smallskip
 
 A very successful class of preconditioners is represented by multilevel (or
@@ -278,12 +255,6 @@ application to more general, non-symmetric, problems still requires
 further developments.
 
 \smallskip
-
-%Although extremely successful for certain classes of problems, approach 1
-%requires geometric information of the problem at hand, and furthermore
-%suitably defined boundary conditions on all levels. Approaches 2 and 3,
-%  instead, are black-box approaches, as all the components of the
-%  preconditioner can be defined by working on the linear system matrix only.
 
 \begin{figure}
 \begin{center}
@@ -1318,6 +1289,3 @@ relies of several other \trilinos~\cite{Trilinos-home-page} packages:
 %-----------------------------------------------------------------------------%
 
 \end{document}
-Using a carefully designed set of classes, we will show that one can
-write a code that is intuitive to write
-and {\sl at the same time} efficient and scalable.  
