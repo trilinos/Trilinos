@@ -75,6 +75,10 @@ Operator(esi::Operator<Scalar, Ordinal>& esi_op)
    petra_import_map_ =
       new Epetra_Map(numGlobalRows_, numGlobalRows_, 0, *petra_comm_);
    petra_import_ = new Epetra_Import(*petra_import_map_, *petra_row_map_);
+   petra_domain_map_ =
+	   petra_import_map_; // By default the map for the domain is the same as the import map?
+   petra_range_map_ =
+	   petra_row_map_;    // By default the map for the range is the same as the row map?
 
    if (petra_row_map_ == NULL || petra_import_map_ == NULL ||
        petra_import_ == NULL) {
