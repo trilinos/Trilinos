@@ -105,7 +105,7 @@ void setup_henry(ML *my_ml, int grid0, int **imapper, int **separator,
      }
      mask2 += mask;
      i = N_count - old_Ncount;
-     ML_Comm_subGappendInt(my_ml->comm, &(sep[old_Ncount]),&i,
+     ML_xytComm_subGappendInt(my_ml->comm, &(sep[old_Ncount]),&i,
                            sep_space-old_Ncount, sub_mask);
 
 
@@ -204,7 +204,7 @@ void setup_henry(ML *my_ml, int grid0, int **imapper, int **separator,
 
 
 
-int ML_Comm_subGappendInt(ML_Comm *com_ptr, int *vals, int *cur_length, 
+int ML_xytComm_subGappendInt(ML_Comm *com_ptr, int *vals, int *cur_length, 
                     int total_length,int sub_mask)
 {
    int     mask, partner, hbit, msgtype, msgbase=145;
@@ -406,7 +406,7 @@ int oldCSR_submv(ML_Operator *Amat, double p[], double ap[])
   return(1);
 }
 #endif
-int CSR_submv(ML_Operator *Amat, double p[], double ap[])
+int CSRxyt_submv(ML_Operator *Amat, double p[], double ap[])
 {
    int i, k, Nrows, *bindx;
    double *val, sum;
@@ -433,7 +433,7 @@ int CSR_submv(ML_Operator *Amat, double p[], double ap[])
   }
   return(1);
 }
-int ML_submv(ML_Operator *Amat, double p[], double ap[])
+int ML_xytsubmv(ML_Operator *Amat, double p[], double ap[])
 {
    int i, j, Nrows, total_send, total_rcv, *cols, col, allocated_space, length;
    double *p2, *vals, dtemp;
@@ -478,7 +478,7 @@ int ML_submv(ML_Operator *Amat, double p[], double ap[])
   }
   return(1);
 }
-int ML_submatvec(ML_Operator *Amat, double p[], double ap[], int mask)
+int ML_xytsubmatvec(ML_Operator *Amat, double p[], double ap[], int mask)
 {
    int i, j, Nrows, total_send, total_rcv, *cols, col, allocated_space, length;
    double *p2, *vals, dtemp;
@@ -501,7 +501,7 @@ int ML_submatvec(ML_Operator *Amat, double p[], double ap[], int mask)
       p2 = (double *) ML_allocate((Nrows+total_rcv+1)*sizeof(double));
       for (i = 0; i < Nrows; i++) p2[i] = p[i];
       for (i = Nrows; i < Nrows+total_rcv; i++) p2[i] = 0.0;
-      ML_subexchange_bdry(p2,getrow_comm, Nrows,total_send,Amat->to->comm,mask);
+      ML_xytsubexchange_bdry(p2,getrow_comm, Nrows,total_send,Amat->to->comm,mask);
    }
    else p2 = p;
 
@@ -525,7 +525,7 @@ int ML_submatvec(ML_Operator *Amat, double p[], double ap[], int mask)
   }
   return(1);
 }
-int CSR_submatvec(ML_Operator *Amat, double p[], double ap[], int mask)
+int CSR_xytsubmatvec(ML_Operator *Amat, double p[], double ap[], int mask)
 {
    int i, k, Nrows, *bindx, total_send, total_rcv;
    double *p2, *val, sum;
@@ -550,7 +550,7 @@ int CSR_submatvec(ML_Operator *Amat, double p[], double ap[], int mask)
       p2 = (double *) ML_allocate((Nrows+total_rcv+1)*sizeof(double));
       for (i = 0; i < Nrows; i++) p2[i] = p[i];
       for (i = Nrows; i < Nrows+total_rcv; i++) p2[i] = 0.0;
-      ML_subexchange_bdry(p2,getrow_comm, Nrows,total_send,Amat->to->comm,mask);
+      ML_xytsubexchange_bdry(p2,getrow_comm, Nrows,total_send,Amat->to->comm,mask);
    }
    else p2 = p;
 
@@ -571,7 +571,7 @@ int CSR_submatvec(ML_Operator *Amat, double p[], double ap[], int mask)
 /******************************************************************************/
 /******************************************************************************/
 
-void ML_subexchange_bdry(double x[], ML_CommInfoOP *comm_info,
+void ML_xytsubexchange_bdry(double x[], ML_CommInfoOP *comm_info,
                       int start_location, int total_send, ML_Comm *comm,
                       int mask)
 

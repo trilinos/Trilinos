@@ -12,4 +12,7 @@ int ML_submatvec(ML_Operator *Amat, double p[], double ap[], int mask);
 
 extern int ML_Comm_subGappendInt(ML_Comm *com_ptr, int *vals, int *cur_length, 
                     int total_length,int sub_mask);
+extern void ML_subexchange_bdry(double x[], ML_CommInfoOP *comm_info,
+                      int start_location, int total_send, ML_Comm *comm,
+                      int mask);
 #endif
