@@ -200,3 +200,23 @@ ostream& AztecOO_StatusTestResNorm::Print(ostream& stream, int indent) const
     
   return stream;
 }
+
+double AztecOO_StatusTestResNorm::GetTolerance() const
+{
+  return tolerance_;
+}
+
+double AztecOO_StatusTestResNorm::GetTestValue() const
+{
+  return testvalue_;
+}
+
+double AztecOO_StatusTestResNorm::GetResNormValue() const
+{
+  return resvalue_;
+}
+
+double AztecOO_StatusTestResNorm::GetScaledNormValue() const
+{
+  return scalevalue_;
+}

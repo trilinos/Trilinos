@@ -75,6 +75,16 @@ class AztecOO_StatusTestMaxIters: public AztecOO_StatusTest {
   virtual ostream& Print(ostream& stream, int indent = 0) const;
   //@}
   
+  //@{ \name Methods to access data members.
+
+  //! Returns the maximum number of iterations set in the constructor.
+  virtual int GetMaxIters() const;
+
+  //! Returns the current number of iterations from the most recent StatusTest call.
+  virtual int GetNumIters() const;
+
+  //@}
+
 private:
 
   //@{ \name Private data members.

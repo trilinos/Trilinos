@@ -187,6 +187,22 @@ class AztecOO_StatusTestResNorm: public AztecOO_StatusTest {
   virtual ostream& Print(ostream& stream, int indent = 0) const;
   //@}
 
+  //@{ \name Methods to access data members.
+
+  //! Returns the value of the tolerance, \f$ \tau \f$, set in the constructor.
+  virtual double GetTolerance() const;
+  
+  //! Returns the test value, \f$ \frac{\|r\|}{\sigma} \f$, computed in most recent call to CheckStatus.
+  virtual double GetTestValue() const;
+
+  //! Returns the residual norm value, \f$ \|r\| \f$, computed in most recent call to CheckStatus.
+  virtual double GetResNormValue() const;
+
+  //! Returns the scaled norm value, \f$ \sigma \f$.
+  virtual double GetScaledNormValue() const;
+
+  //@}
+
  protected:
   //@{ \name Internal Methods.
   

@@ -60,3 +60,11 @@ ostream& AztecOO_StatusTestMaxIters::Print(ostream& stream, int indent) const {
   stream << endl;
  return stream;
 }
+
+int AztecOO_StatusTestMaxIters::GetMaxIters() const {
+  return MaxIters_;
+}
+
+int AztecOO_StatusTestMaxIters::GetNumIters() const {
+  return Niters_;
+}
