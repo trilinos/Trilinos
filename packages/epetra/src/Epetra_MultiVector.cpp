@@ -644,7 +644,6 @@ int Epetra_MultiVector::PackAndPrepare(const Epetra_SrcDistObject & Source,
                                        Epetra_Distributor & Distor) {
 
 
-
   const Epetra_MultiVector & A = dynamic_cast<const Epetra_MultiVector &>(Source);
   int i, j, jj, k;
 
@@ -664,27 +663,26 @@ int Epetra_MultiVector::PackAndPrepare(const Epetra_SrcDistObject & Source,
   double * DoubleExports = 0;
   double * DoubleImports = 0;
 
-  SizeOfPacket = NumVectors*MaxElementSize;
+  SizeOfPacket = NumVectors*MaxElementSize*sizeof(double);
 
-  if (SizeOfPacket*NumExportIDs>LenExports) {
+  if(SizeOfPacket*NumExportIDs>LenExports) {
     if (LenExports>0) delete [] Exports;
     LenExports = SizeOfPacket*NumExportIDs;
-    DoubleExports = new double[LenExports];
+    DoubleExports = new double[NumVectors*MaxElementSize*NumExportIDs];
     Exports = (char *) DoubleExports;
   }
-
-  SizeOfPacket *= sizeof(double);
 
   double * ptr;
 
   if (NumExportIDs>0) {
     ptr = (double *) Exports;
     
-    
     // Point entry case
     if (MaxElementSize==1) {
       
-      if (NumVectors==1) for (j=0; j<NumExportIDs; j++) *ptr++ = From[0][ExportLIDs[j]];
+      if (NumVectors==1)
+        for (j=0; j<NumExportIDs; j++)
+          *ptr++ = From[0][ExportLIDs[j]];
 
       else {
 	for (j=0; j<NumExportIDs; j++) {
