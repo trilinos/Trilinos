@@ -1,19 +1,6 @@
 
-Distribution list for "An Overview of Trilinos"
+Distribution list for "Trilinos 3.1 Tutorial"
 
-Standard distribution addresses (Mel Lucero knows what these are)
-
-All 9200 managers
-All 9100 managers
-
-Steve Thomas, Org 8962, MS 9217 
-Chuck Hartwig, Org 8940, MS 9003 
-Mike Koszykowski, Org 8961, MS 9915 
-Jerry Friesen, Org 8963, MS 8963 
-Paul Nielan, Org 8964, MS 9012 
-Patty Hough, Org 8962, MS 9217 
-Paul Boggs, Org 8962, MS 9217 
-Patrick Klein, Org 8726, MS 9161 
 
 John Shadid
 Scott Hutchinson
@@ -21,13 +8,13 @@ Eric Keiter
 Jonathan Hu
 James Willenbring
 Kevin Long
+Marzio Sala (10)
 Michael Heroux (10)
 Ross Bartlett
 Richard Lehoucq
 Robert Heaphy
 Russell Hooper
 Robert Hoekstra
-Kris Kampshoff
 Roger Pawlowski
 Ray Tuminaro
 Tamara Kolda
@@ -64,6 +51,7 @@ Harry Moffat
 Garth Reese
 David Day
 Bart van Bloemen Waanders
+Patty Hough
 
 External distribution people:
 
@@ -82,6 +70,18 @@ Department of Computational and Applied Mathematics - MS 134
 Rice University
 6100 S. Main Street
 Houston, TX  77005 - 1892
+
+Yousef Saad 
+Department of Computer Science and Engineering 
+University of Minnesota, 
+4-192 EE/CSci Building, 200 Union Street S.E. 
+Minneapolis, MN 55455 
+
+Kris Kampshoff
+Department of Computer Science and Engineering 
+University of Minnesota, 
+EE/CSci Building, 200 Union Street S.E. 
+Minneapolis, MN 55455 
 
 Eric de Sturler
 2312 Digital Computer Laboratory, MC-258 
@@ -117,12 +117,6 @@ Department of Computer Science and Engineering
 The Pennsylvania State University
 University Park, PA 16802-6106
 
-Anshul Gupta
-IBM
-P. O. Box 218
-1101 Kitchawan Road
-Yorktown Heights, NY 10598
-
 Xiaoye Li
 Lawrence Berkeley Lab
 50F-1650 
@@ -151,12 +145,6 @@ Columbia University
 200 S. W. Mudd Building 
 500 W. 120th Street 
 New York, NY, 10027
-
-Steve Ashby
-University of California
-Lawrence Livermore National Laboratory
-7000 East Ave., Livermore, CA 94550-9234
-P.O. Box 808, Livermore, CA 94551-0808
 
 Lois Curfman McInnes
 Mathematics and Computer Science Division
@@ -209,3 +197,14 @@ Program Manager, Applied Mathematics
 U.S. Department of Energy
 1000 Independence Ave., SW
 Washington, DC 20585-1290
+
+Prof. Luca Formaggia
+Mathematics Department
+"F. Brioschi" Politecnico di Milano 
+Piazza L. da Vinci 32, 20133 MILANO, Italy
+
+Prof. Alfio Quarteroni
+IACS-CMCS
+EPFL
+CH-1015 Lausanne (VD) Switzerland
+
