@@ -84,22 +84,34 @@ namespace Kokkos {
     /*!
       This interface supports matrices that implement the Kokkos::CisMatrix matrix interface.
       \param A (In)  An instance of a class that implements the Kokkos::CisMatrix.  All necessary information
-                     about the matrix can be obtained via this interface.
+      about the matrix can be obtained via this interface.
+      \param willKeepStructure (In) If set to true, the user is asserting that the strucuture of the matrix, as
+      defined in the getIndices() method of the CisMatrix object A will be kept.  Specifically, the pointer to an 
+      array of indices returned for each i in that method will continue to point to valid index data.  By default,
+      this argument is set to false, implying that the calling routine is \e not required to maintain the validity 
+      of this data.  If the calling routine is planning to keep this data anyway, setting this argument to true can
+      reduce the overall memory requirements.
       \return Integer error code, set to 0 if successful.
     */
-    int initializeStructure(CisMatrix<OrdinalType, ScalarType> const& A);
+    virtual int initializeStructure(CisMatrix<OrdinalType, ScalarType> const& A, bool willKeepStructure = false);
  
     //! Initialize values of matrix
     /*!
       This interface supports matrices that implement the Kokkos::CisMatrix matrix interface.
       \param A (In)  An instance of a class that implements the Kokkos::CisMatrix.  All necessary information
-                     about the matrix can be obtained via this interface.
+      about the matrix can be obtained via this interface.
+      \param willKeepValues (In) If set to true, the user is asserting that the strucuture of the matrix, as
+      defined in the getIndices() method of the CisMatrix object A will be kept.  Specifically, the pointer to an 
+      array of indices returned for each i in that method will continue to point to valid index data.  By default,
+      this argument is set to false, implying that the calling routine is \e not required to maintain the validity 
+      of this data.  If the calling routine is planning to keep this data anyway, setting this argument to true can
+      reduce the overall memory requirements.
       \param checkStructure (In) If set to true, the structure of A will be checked against the structure of
-                                 the matrix passed in to the initializeStructure() methods.  This parameter is false
-				 by default.
+      the matrix passed in to the initializeStructure() methods.  This parameter is false by default.
       \return Integer error code, set to 0 if successful.
     */
-    int initializeValues(CisMatrix<OrdinalType, ScalarType> const& A, bool checkStructure = false);
+    virtual int initializeValues(CisMatrix<OrdinalType, ScalarType> const& A, bool willKeepValues = false,
+				 bool checkStructure = false);
  
     //@}
 
@@ -116,8 +128,8 @@ namespace Kokkos {
 		
       \return Integer error code, set to 0 if successful.
     */
-    int apply(OrdinalType xLength, ScalarType * x, OrdinalType yLength, ScalarType * y, 
-	      bool transA = false, bool conjA = false) const;
+    virtual int apply(OrdinalType xLength, ScalarType * x, OrdinalType yLength, ScalarType * y, 
+		      bool transA = false, bool conjA = false) const;
 
     //! Returns the result of a Kokkos_BaseSparseOps multiplied by multiple vectors in x, results in y.
     /*! 
@@ -131,8 +143,8 @@ namespace Kokkos {
 		
       \return Integer error code, set to 0 if successful.
     */
-    int apply(OrdinalType numVectors, OrdinalType xLength, ScalarType ** x, OrdinalType yLength, ScalarType ** y, 
-	      bool transA = false, bool conjA = false) const;
+    virtual int apply(OrdinalType numVectors, OrdinalType xLength, ScalarType ** x, OrdinalType yLength, ScalarType ** y, 
+		      bool transA = false, bool conjA = false) const;
 
 
  
@@ -151,8 +163,8 @@ namespace Kokkos {
 
       \warning Any implementation of this method must work for the case when x and y are the same vector!
     */
-    int applyInverse(OrdinalType xLength, ScalarType * x, OrdinalType yLength, ScalarType * y,
-		     bool transA = false, bool conjA = false, bool upper = true, bool unitDiagonal = true) const;
+    virtual int applyInverse(OrdinalType xLength, ScalarType * x, OrdinalType yLength, ScalarType * y,
+			     bool transA = false, bool conjA = false, bool upper = true, bool unitDiagonal = true) const;
  
     //! Returns the result of a triangular solve of multiple vectors in x, results in y.
     /*!
@@ -170,21 +182,39 @@ namespace Kokkos {
 
       \warning Any implementation of this method must work for the case when x and y are the same vector!
     */
-    int applyInverse(OrdinalType numVectors, OrdinalType xLength, ScalarType ** x, OrdinalType yLength, ScalarType ** y,
-		     bool transA = false, bool conjA = false, bool upper = true, bool unitDiagonal = true) const;
+    virtual int applyInverse(OrdinalType numVectors, OrdinalType xLength, ScalarType ** x, OrdinalType yLength, ScalarType ** y,
+			     bool transA = false, bool conjA = false, bool upper = true, bool unitDiagonal = true) const;
  
     //@}
 	
     //@{ \name Matrix Attribute access methods.
+
+    //! Returns true if this implementation of Kokkos::BaseSparseOps can benefit from the user keeping the passed in structure.
+    /*! Some implementations of optimized kernels do not rely on the user's data except for the initial 
+        analysis of structure.  Other implementations, in order to reduce memory requirements, may find it
+	beneficial to rely on the user's data.  Since it is very possible that the user would retain this
+	data anyway, we want to allow for this possibility.  This method is related to the willKeepStructure parameter 
+	passed in to the initializeStructure() method.
+    */
+    virtual bool canUseStructure() const {return(true);};
+
+    //! Returns true if this implementation of Kokkos::BaseSparseOps can benefit from the user keeping the passed in values.
+    /*! Some implementations of optimized kernels do not rely on the user's data except for the initial 
+        copying of values.  Other implementations, in order to reduce memory requirements, may find it
+	beneficial to rely on the user's data.  Since it is very possible that the user would retain this
+	data anyway, we want to allow for this possibility.  This method is related to the willKeepValues parameter 
+	passed in to the initializeValues() method.
+    */
+    virtual bool canUseValues() const {return(true);};
 	
     //! Number of rows
-    OrdinalType numRows() const {return(numRows_);};
+    virtual OrdinalType numRows() const {return(numRows_);};
 	
     //! Number of columns
-    OrdinalType numCols() const {return(numCols_);};
+    virtual OrdinalType numCols() const {return(numCols_);};
 	
     //! Number of matrix entries
-    OrdinalType numEntries() const {return(numEntries_);};
+    virtual OrdinalType numEntries() const {return(numEntries_);};
 	
     //@}
   
@@ -196,6 +226,9 @@ namespace Kokkos {
     int allocate();
 
     bool allocated_;
+    bool willKeepStructure_;
+    bool willKeepValues_;
+    bool isRowOriented_;
   
     OrdinalType numRows_;
     OrdinalType numCols_;
@@ -208,92 +241,240 @@ namespace Kokkos {
     OrdinalType * allIndices_;
 
     OrdinalType * pntr_;
-    OrdinalType ** profile_;
+    OrdinalType * profile_;
 
   };
 
-//==============================================================================
-template<typename OrdinalType, typename ScalarType>
- BaseSparseOps<OrdinalType, ScalarType>::BaseSparseOps() 
-  : CompObject(),
-    allocated_(false),
-    numRows_(0),
-    numCols_(0),
-    numEntries_(0),
-    values_(0),
-    allValues_(0),
-    indices_(0),
-    allIndices_(0),
-    pntr_(0),
-    profile_(0)
-{
-}
+  //==============================================================================
+  template<typename OrdinalType, typename ScalarType>
+  BaseSparseOps<OrdinalType, ScalarType>::BaseSparseOps() 
+    : CompObject(),
+      allocated_(false),
+      willKeepStructure_(false),
+      willKeepValues_(false),
+      isRowOriented_(true),
+      numRows_(0),
+      numCols_(0),
+      numEntries_(0),
+      values_(0),
+      allValues_(0),
+      indices_(0),
+      allIndices_(0),
+      pntr_(0),
+      profile_(0) {
+  }
 
-//==============================================================================
-template<typename OrdinalType, typename ScalarType>
-BaseSparseOps<OrdinalType, ScalarType>::BaseSparseOps(const BaseSparseOps<OrdinalType, ScalarType> &matrix) 
-  : CompObject(matrix),
-    allocated_(matrix.allocated_),
-    numRows_(matrix.numRows_),
-    numCols_(matrix.numCols_),
-    numEntries_(matrix.numEntries_),
-    values_(matrix.values_),
-    allValues_(matrix.allValues_),
-    indices_(matrix.indices_),
-    allIndices_(matrix.allIndices_),
-    pntr_(matrix.pntr_),
-    profile_(matrix.profile_)
+  //==============================================================================
+  template<typename OrdinalType, typename ScalarType>
+  BaseSparseOps<OrdinalType, ScalarType>::BaseSparseOps(const BaseSparseOps<OrdinalType, ScalarType> &matrix) 
+    : CompObject(matrix),
+      allocated_(matrix.allocated_),
+      willKeepStructure_(matrix.willKeepStructure_),
+      willKeepValues_(matrix.willKeepValues_),
+      isRowOriented_(matrix.isRowOriented_),
+      numRows_(matrix.numRows_),
+      numCols_(matrix.numCols_),
+      numEntries_(matrix.numEntries_),
+      values_(matrix.values_),
+      allValues_(matrix.allValues_),
+      indices_(matrix.indices_),
+      allIndices_(matrix.allIndices_),
+      pntr_(matrix.pntr_),
+      profile_(matrix.profile_) {
 
-{
-}
+    if (!willKeepStructure_) copyStructure();
+    if (!willKeepValues_) copyValues()
+  }
 
-//==============================================================================
-template<typename OrdinalType, typename ScalarType>
-BaseSparseOps<OrdinalType, ScalarType>::~BaseSparseOps(){}
+  //==============================================================================
+  template<typename OrdinalType, typename ScalarType>
+  void BaseSparseOps<OrdinalType, ScalarType>::copyStructure() {
 
-//==============================================================================
-template<typename OrdinalType, typename ScalarType>
-void BaseSparseOps<OrdinalType, ScalarType>::initializeDefaults() { // Initialize all attributes that have trivial default values
-  return;
-}
+    // Note:  In order to call this function, the following attributes must be set, and pointers
+    //        must be set to the data that is being copied:
+    // numCols_, numRows_, isRowOriented_ must be set
+    // pntr_, profile_, allIndices_, indices_ must be set to data that will be copied.
+    // These pointers will be set to new memory that is a copy of these arrays (except 
+    // for pointers that are null.
 
-//==============================================================================
-template<typename OrdinalType, typename ScalarType>
-int BaseSparseOps<OrdinalType, ScalarType>::allocate() { // Initialize all attributes that have trivial default values
-  return;
-}
+    OrdinalType i;
+    OrdinalType numRC = numCols_;
+    if (isRowOriented_) numRC = numRows_;
 
-//==============================================================================
-template<typename OrdinalType, typename ScalarType>
-int BaseSparseOps<OrdinalType, ScalarType>::apply(OrdinalType xLength, ScalarType * x, 
+    if (pntr_!=0) copyOrdinals(pntr_, numRC+1);
+    if (profile_!=0) copyOrdinals(profiles_, numRC);
+    if (allIndices_!=0) copyOrdinals(allIndices_, numEntries_);
+    if (indices_!=0) {
+      OrdinalType ** tmp_indices =indices_;
+      indices_ = new OrdinalType*[numRC];
+      for (i=0; i< numRC; i++) {
+	indices_[i] = tmp_indices[i];
+	copyOrdinals(indices_[i], profiles_[i]);
+      }
+    }
+    return;
+  }
+
+  //==============================================================================
+  template<typename OrdinalType, typename ScalarType>
+  void BaseSparseOps<OrdinalType, ScalarType>::copyValues() {
+
+    // Note:  In order to call this function, the following attributes must be set, and pointers
+    //        must be set to the data that is being copied:
+    // numCols_, numRows_, isRowOriented_ must be set
+    // allValues_, values_ must be set to data that will be copied.
+    // These pointers will be set to new memory that is a copy of these arrays (except 
+    // for pointers that are null.
+
+    OrdinalType i;
+    OrdinalType numRC = numCols_;
+    if (isRowOriented_) numRC = numRows_;
+
+    if (allValues_!=0) copyScalars(allValues_, numEntries_);
+    if (values_!=0) {
+      ScalarType ** tmp_values =values_;
+      values_ = new ScalarType*[numRC];
+      for (i=0; i< numRC; i++) {
+	values_[i] = tmp_values[i];
+	copyScalars(values_[i], profiles_[i]);
+      }
+    }
+    return;
+  }
+
+  //==============================================================================
+  template<typename OrdinalType, typename ScalarType>
+  void BaseSparseOps<OrdinalType, ScalarType>::copyOrdinals(OrdinalType * vec, OrdinalType len) {
+
+    OrdinalType i;
+    OrdinalType * tmp_pntr = vec;
+    vec = new OrdinalType[len];
+    for (i=0; i<len; i++) vec[i] = tmp_pntr[i];
+    return;
+  }
+
+  //==============================================================================
+  template<typename OrdinalType, typename ScalarType>
+  void BaseSparseOps<OrdinalType, ScalarType>::copyScalars(ScalarType * vec, OrdinalType len) {
+
+    OrdinalType i;
+    ScalarType * tmp_vals = vec;
+    vec = new OrdinalType[len];
+    for (i=0; i<len; i++) vec[i] = tmp_vals[i];
+    return;
+  }
+
+  //==============================================================================
+  template<typename OrdinalType, typename ScalarType>
+  BaseSparseOps<OrdinalType, ScalarType>::~BaseSparseOps(){}
+
+  //==============================================================================
+  template<typename OrdinalType, typename ScalarType>
+  void BaseSparseOps<OrdinalType, ScalarType>::initializeDefaults() {
+    return;
+  }
+
+  //==============================================================================
+  template<typename OrdinalType, typename ScalarType>
+  int BaseSparseOps<OrdinalType, ScalarType>::allocate() {
+    return(0);
+  }
+
+  //==============================================================================
+  template<typename OrdinalType, typename ScalarType>
+  int BaseSparseOps<OrdinalType, ScalarType>::initializeStructure(CisMatrix<OrdinalType, ScalarType> const& A,
+								  bool willKeepStructure) {
+
+    OrdinalType i;
+    willKeepStructure_ = willKeepStructure;
+    isRowOriented_ = A.isRowOriented();
+    numRows_ = A.numRows();
+    numCols_ = A.numCols();
+    numEntries_ = A.numEntries();
+    OrdinalType numRC = numCols_;
+    if (isRowOriented_) numRC = numRows_;
+
+    OrdinalType * profiles = new[numRC+1];  // Make this longer in case we can use it for pntr data
+    indices_ = new[numRC];
+
+    OrdinalType numRCEntries;
+    OrdinalType * indicesRC;
+
+    bool contiguousStructure = true; // Assume structure is contiguously stored.  Check in the loop below.
+    A.getIndices(0, numRCEntries, indicesRC);
+    profiles[0] = numRCEntries;
+    indices_[0] = indicesRC;
+    for (i=1; i<numRC; i++) {
+      A.getIndices(i, numRCEntries, indicesRC);
+      profiles[i] = numRCEntries;
+      indices_[i] = indicesRC;
+      if (indices_[i-1]+profiles_[i]!=indices_[i]) contiguousStructure = false; // Not contiguous
+    }
+
+    if (contiguousStructure) {
+      allIndices_ = indices_[0];
+      delete [] indices_;
+      indices_ = 0;
+    }
+
+    copyStructure();
+
+    if (contiguousStructure) {
+      pntr_ = profile;
+      OrdinalType numEntries = profile[0];
+      pntr_[0] = 0;
+      for (i=1; i< numRC+1; i++) {
+	numEntries = profile[i];
+	pntr_[i] = pntr_[i-1] + numEntries;
+      }
+    }
+
+
+    return(0);
+  }
+
+  //==============================================================================
+  template<typename OrdinalType, typename ScalarType>
+  int BaseSparseOps<OrdinalType, ScalarType>::initializeValues(CisMatrix<OrdinalType, ScalarType> const& A, 
+							       bool willKeepValues, bool checkStructure) {
+    return(0);
+  }
+
+  //==============================================================================
+  template<typename OrdinalType, typename ScalarType>
+  int BaseSparseOps<OrdinalType, ScalarType>::apply(OrdinalType xLength, ScalarType * x, 
 						    OrdinalType yLength, ScalarType * y,
 						    bool transA, bool conjA) const {
-}
+    return(0);
+  }
 
-//==============================================================================
-template<typename OrdinalType, typename ScalarType>
-int BaseSparseOps<OrdinalType, ScalarType>::apply(OrdinalType numVectors, 
+  //==============================================================================
+  template<typename OrdinalType, typename ScalarType>
+  int BaseSparseOps<OrdinalType, ScalarType>::apply(OrdinalType numVectors, 
 						    OrdinalType xLength, ScalarType ** x, 
 						    OrdinalType yLength, ScalarType ** y,
 						    bool transA, bool conjA) const {
-}
+    return(0);
+  }
 
-//==============================================================================
-template<typename OrdinalType, typename ScalarType>
-int BaseSparseOps<OrdinalType, ScalarType>::applyInverse(OrdinalType xLength, ScalarType * x, 
+  //==============================================================================
+  template<typename OrdinalType, typename ScalarType>
+  int BaseSparseOps<OrdinalType, ScalarType>::applyInverse(OrdinalType xLength, ScalarType * x, 
 							   OrdinalType yLength, ScalarType * y,
 							   bool transA, bool conjA, bool upper, 
 							   bool unitDiagonal) const {
-}
+    return(0);
+  }
 
-//==============================================================================
-template<typename OrdinalType, typename ScalarType>
-int BaseSparseOps<OrdinalType, ScalarType>::applyInverse(OrdinalType numVectors, 
+  //==============================================================================
+  template<typename OrdinalType, typename ScalarType>
+  int BaseSparseOps<OrdinalType, ScalarType>::applyInverse(OrdinalType numVectors, 
 							   OrdinalType xLength, ScalarType ** x, 
 							   OrdinalType yLength, ScalarType ** y,
 							   bool transA, bool conjA, bool upper, 
 							   bool unitDiagonal) const {
-}
+    return(0);
+  }
 
 } // namespace Kokkos
 #endif /* KOKKOS_BASESPARSEOPS_H */

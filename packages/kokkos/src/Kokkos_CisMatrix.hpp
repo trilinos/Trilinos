@@ -83,7 +83,7 @@ namespace Kokkos {
 
     //@{ \name Matrix Attribute access methods.
 	
-    //! Returns true is the compressed index matrix should be interpreted as a row matrix.
+    //! Returns true if the compressed index matrix should be interpreted as a row matrix.
     virtual bool isRowOriented() const = 0;
 	
     //! Number of rows
