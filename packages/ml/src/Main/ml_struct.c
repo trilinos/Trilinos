@@ -41,6 +41,7 @@ ML_PrintControl ML_PrintLevel = {0};
 /* create and initialize a ML object                                         */
 /* ------------------------------------------------------------------------- */
 
+int ml_defines_have_printed = 0;
 int ML_Create(ML **ml_ptr, int Nlevels)
 {
    int             i, length;
@@ -54,6 +55,7 @@ int ML_Create(ML **ml_ptr, int Nlevels)
    ML_DVector      *Amat_Normalization;
    ML_1Level       *SingleLevel;
    char            str[80];
+   ML_Comm         *comm;
 
 #ifdef ML_TIMING
    struct ML_Timing *timing;
@@ -79,6 +81,27 @@ int ML_Create(ML **ml_ptr, int Nlevels)
        (Nlevels <= 0)) {
      printf("ML_Create: Warning No. of requested levels = %d\n",Nlevels);
    }
+
+comm = (*ml_ptr)->comm;
+if (!ml_defines_have_printed && ML_Get_PrintLevel() > 0) {
+#ifdef HAVE_ML_PARMETIS_2x
+  if (comm->ML_mypid == 0) printf("USing ParMETIS 2.x\n");
+#endif
+#ifdef HAVE_ML_PARMETIS_3x
+  if (comm->ML_mypid == 0) printf("USing ParMETIS 3.x\n");
+#endif
+#ifdef ML_NOTALWAYS_LOWEST
+  if (comm->ML_mypid == 0) printf("USing ML_NOTALWAYS_LOWEST\n");
+#endif
+#ifdef ML_USEMPIFUNCTIONS
+  if (comm->ML_mypid == 0) printf("USing ML_USEMPIFUNCTIONS\n");
+#endif
+#ifdef ML_SYNCH
+  if (comm->ML_mypid == 0) printf("USing ML_SYNCH\n");
+#endif
+  ml_defines_have_printed = 1;
+}
+
    ML_memory_check("ml_create start");
 
    ML_memory_alloc((void**) &pre_smoother, sizeof(ML_Smoother)*Nlevels,"MS1");
