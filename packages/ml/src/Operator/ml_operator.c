@@ -91,6 +91,9 @@ int ML_Operator_Init( ML_Operator *mat, ML_Comm *comm)
    mat->num_rigid           = 1;
    mat->N_total_cols_est    = -1;
    mat->subspace            = NULL;
+   ML_Aux_Data_Create(&(mat->aux_data));
+   ML_GridAGX_Create(&(mat->grid_info));
+
    return 0;
 }
 
@@ -257,6 +260,19 @@ int ML_Operator_Clean( ML_Operator *mat)
    mat->num_rigid           = 1;
    mat->halfclone           = ML_FALSE;
 
+   /* MS * Added on 18-Mar-05 */
+   if (mat->aux_data != NULL) 
+   {
+     ML_Aux_Data_Destroy(&(mat->aux_data));
+     mat->aux_data = NULL;
+   }
+
+   if (mat->grid_info != NULL) 
+   {
+     ML_GridAGX_Destroy(&(mat->grid_info)); 
+     mat->grid_info = NULL;
+   }
+
    return 0;
 }
 
@@ -334,6 +350,8 @@ int ML_Operator_halfClone_Init(ML_Operator *mat,
    mat->lambda_max = original->lambda_max;
    mat->lambda_min = original->lambda_min;
    mat->subspace            = original->subspace;
+   mat->aux_data            = NULL;
+   mat->grid_info           = NULL;
    return 1;
 }
 
@@ -794,8 +812,6 @@ double ML_Operator_MaxNorm(ML_Operator *matrix, int divide_diag)
 /* properly set up the data structure (data).                           */
 /* ******************************************************************** */
 
-extern int ML_USE_EDGE_WEIGHT; /* defined in ml_agg_METIS.c */
-
 int ML_amalg_drop_getrow(ML_Operator *data, int N_requested_rows, int requested_rows[],
    int allocated_space, int columns[], double values[], int row_lengths[])
 {
@@ -849,10 +865,7 @@ int ML_amalg_drop_getrow(ML_Operator *data, int N_requested_rows, int requested_
          Amat->outvec_leng /= block_size;
          return(status);
       }
-      /* MS * added ML_USE_EDGE_WEIGHT on 03-Dec-04
-       * MS * to support edge weighting with `METIS' and 
-       * MS * dropping with `user' */
-      if (ML_USE_EDGE_WEIGHT == ML_NO && scaled_diag != NULL) {
+      if (scaled_diag != NULL) {
          count = 0;
          for (j = offset; j < offset + size; j++) {
             tcol = tcolumns[j];
@@ -865,17 +878,7 @@ int ML_amalg_drop_getrow(ML_Operator *data, int N_requested_rows, int requested_
          }
          size = count;
       }
-      else if (ML_USE_EDGE_WEIGHT == ML_YES) {
-         count = 0;
-         for (j = offset; j < offset + size; j++) {
-            tcol = tcolumns[j];
-            if (tvalues[j] != 0.0) {
-              tcolumns[offset+count]  = tcolumns[j];
-              tvalues[offset+count++] = tvalues[j] * tvalues[j];
-            }
-         }
-         size = count;
-      }
+
       tallocated_space -= size;
       offset += size;
    }
@@ -901,8 +904,7 @@ int ML_amalg_drop_getrow(ML_Operator *data, int N_requested_rows, int requested_
       }
    }
 
-   if (ML_USE_EDGE_WEIGHT == ML_YES) {
-     /* store values as well, `METIS' and `user' may use them */
+   /* uncomment the following to store values as well
      for (i = 0 ; i < row_lengths[0] ; ++i)
        values[i] = 0.0;
      for (j = 0; j < offset ; ++j) {
@@ -914,7 +916,7 @@ int ML_amalg_drop_getrow(ML_Operator *data, int N_requested_rows, int requested_
      for (i = 0 ; i < row_lengths[0] ; ++i) {
        values[i] = sqrt(values[i]);
      }
-   }
+    */
 
    Amat->data         = temp;
    Amat->getrow       = amalg_getrow;
@@ -1781,6 +1783,31 @@ void ML_Operator_GetGlobalDimensions(ML_Operator *A,int *nrows,int *ncols)
   *nrows = ML_Comm_GsumInt(A->comm, A->outvec_leng);
   *ncols = ML_Comm_GsumInt(A->comm, A->invec_leng);
 }
+
+void ML_Aux_Data_Create(ML_Aux_Data** ptr)
+{
+  *ptr = ML_allocate(sizeof(ML_Aux_Data));
+  (*ptr)->threshold = 0.0;
+  (*ptr)->allocated = 0.0;
+  (*ptr)->itmp = 0;
+  (*ptr)->dtmp = 0;
+  (*ptr)->enable = 0;
+  (*ptr)->max_level = -1;
+  (*ptr)->num_PDEs = 1;
+}
+
+void ML_Aux_Data_Destroy(ML_Aux_Data** ptr)
+{
+  (*ptr)->itmp = 0;
+  (*ptr)->threshold = 0.0;
+  (*ptr)->allocated = 0.0;
+  if ((*ptr)->itmp != NULL) 
+    ML_free((*ptr)->itmp);
+  if ((*ptr)->dtmp != NULL) 
+    ML_free((*ptr)->dtmp);
+  ML_free(*ptr);
+}
+
 
 
 #ifdef WKC
