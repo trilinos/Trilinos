@@ -58,25 +58,38 @@ int ML_Amesos_Gen(ML *ml, int curr_level, int choice,
 
   int MaxNumNonzeros;
   double Time1, Time2;
-  
+
   ML_Operator *Ke = &(ml->Amat[curr_level]);
   Epetra_CrsMatrix * Amesos_CrsMatrix;
 
-
   ML_Operator2EpetraCrsMatrix( Ke, Amesos_CrsMatrix, MaxNumNonzeros,
 			       true, Time1);
-  
+
   if( Amesos_CrsMatrix->Comm().MyPID() == 0 && ML_Get_PrintLevel()>2 ) {
+#ifdef TFLOP
+    printf("Amesos (level %d) : Time to convert to Epetra_CrsMatrix = %f (s)\n",curr_level,Time1);
+#else
     cout << "Amesos (level " << curr_level
 	 << ") : Time to convert to Epetra_CrsMatrix  = "
 	 << Time1 << " (s)" << endl;
+#endif
   }
+
   
   double NormInf = Amesos_CrsMatrix->NormInf();
   double NormOne = Amesos_CrsMatrix->NormOne();
   int NumGlobalRows = Amesos_CrsMatrix->NumGlobalRows();
   int NumGlobalNonzeros = Amesos_CrsMatrix->NumGlobalNonzeros();
 
+#ifdef TFLOP
+  if( Amesos_CrsMatrix->Comm().MyPID() == 0 && ML_Get_PrintLevel() > 2 ) {
+    printf("Amesos (level %d) : NumGlobalRows = %d\n",curr_level,NumGlobalRows);
+    printf("Amesos (level %d) : NumGlobalNonzeros = %d\n",curr_level,NumGlobalNonzeros);
+    printf("Amesos (level %d) : MaxNonzerosPerRow = %d\n",curr_level,MaxNumNonzeros);
+    printf("Amesos (level %d) : fill-in = %f %\n",curr_level,100.0*NumGlobalNonzeros/(NumGlobalRows*NumGlobalRows));
+    printf("Amesos (level %d) : ||A||_\\infty = %f ||A||_1= %f\n",curr_level,NormInf,NormOne);
+  }
+#else
   if( Amesos_CrsMatrix->Comm().MyPID() == 0 && ML_Get_PrintLevel() > 2 ) {
     cout << "Amesos (level " << curr_level
 	 << ") : NumGlobalRows = "
@@ -96,11 +109,11 @@ int ML_Amesos_Gen(ML *ml, int curr_level, int choice,
 	 << NormInf << " ||A||_1 = "
 	 << NormOne << endl;
   }
-    
   //cout << *Amesos_CrsMatrix;
 
   // MS // introduce support for Amesos_BaseFactory to
   // MS // allow different Amesos_Solvers
+#endif
   
   Epetra_LinearProblem *Amesos_LinearProblem = new Epetra_LinearProblem;
   Amesos_LinearProblem->SetOperator( Amesos_CrsMatrix ) ; 
@@ -116,6 +129,15 @@ int ML_Amesos_Gen(ML *ml, int curr_level, int choice,
       if( Amesos_CrsMatrix->RowMatrixRowMap().LinearMap() == true ) {
 	ParamList.setParameter("Redistribute",false);
       } else {
+#ifdef TFLOP
+	if( Amesos_CrsMatrix->Comm().MyPID() == 0 ) {
+ 	  printf("*ML*WRN* in Amesos_Smoother, you can set MaxProcs = -1\n");
+	  printf("*ML*WRN* (that is, matrix will not be redistributed)\n");
+	  printf("*ML*WRN* ONLY if the matrix map is linear. Now proceeding\n");
+	  printf("*ML*WRN* with redistribution of the matrix\n");
+	  printf("*ML*WRN* (file %s line %d)\n",__FILE__,__LINE__);
+	}
+#else
 	if( Amesos_CrsMatrix->Comm().MyPID() == 0 ) {
 	  cout << "*ML*WRN* in Amesos_Smoother, you can set MaxProcs = -1\n"
 	       << "*ML*WRN* (that is, matrix will not be redistributed)\n"
@@ -124,6 +146,7 @@ int ML_Amesos_Gen(ML *ml, int curr_level, int choice,
 	       << "*ML*WRN* (file " << __FILE__ << ", line "
 	       << __LINE__ << ")\n";
 	}
+#endif
       }
     } else {
       ParamList.setParameter("Redistribute",true);
@@ -142,35 +165,55 @@ int ML_Amesos_Gen(ML *ml, int curr_level, int choice,
   switch( choice ) {
 
   case ML_AMESOS_UMFPACK:
+#ifdef TFLOP
+    if( Amesos_CrsMatrix->Comm().MyPID() == 0 && ML_Get_PrintLevel()>2 )
+      printf("Amesos (level %d) : building UMFPACK\n",curr_level);
+#else
     if( Amesos_CrsMatrix->Comm().MyPID() == 0 && ML_Get_PrintLevel()>2 )
       cout << "Amesos (level " << curr_level
 	   << ") : building UMFPACK\n";
+#endif
     A_Base = A_Factory.Create(AMESOS_UMFPACK, *Amesos_LinearProblem, ParamList );
     assert(A_Base!=0);
     break;
 
   case ML_AMESOS_SUPERLUDIST:
+#ifdef TFLOP
+    if( Amesos_CrsMatrix->Comm().MyPID() == 0 && ML_Get_PrintLevel()>2 )
+      printf("Amesos (level %d) : building SUPERLUDIST\n",curr_level);
+#else
     if( Amesos_CrsMatrix->Comm().MyPID() == 0 && ML_Get_PrintLevel()>2 )
       cout << "Amesos (level " << curr_level
 	   << ") : building SUPERLUDIST\n";
+#endif
     A_Base = A_Factory.Create( AMESOS_SUPERLUDIST, *Amesos_LinearProblem, ParamList );
     
     assert(A_Base!=0);
     break;
 
   case ML_AMESOS_MUMPS:
+#ifdef TFLOP
+    if( Amesos_CrsMatrix->Comm().MyPID() == 0 && ML_Get_PrintLevel()>2 )
+      printf("Amesos (level %d) : building MUMPS\n",curr_level);
+#else
     if( Amesos_CrsMatrix->Comm().MyPID() == 0 && ML_Get_PrintLevel()>2 )
       cout << "Amesos (level " << curr_level
 	   << ") : building MUMPS\n";
+#endif
     A_Base = A_Factory.Create(AMESOS_MUMPS, *Amesos_LinearProblem, ParamList );
     assert(A_Base!=0);
     break;
 
   case ML_AMESOS_KLU:
   default:
+#ifdef TFLOP
+    if( Amesos_CrsMatrix->Comm().MyPID() == 0 && ML_Get_PrintLevel()>2 )
+      printf("Amesos (level %d) : building KLU\n",curr_level);
+#else
     if( Amesos_CrsMatrix->Comm().MyPID() == 0 && ML_Get_PrintLevel()>2 )
       cout << "Amesos (level " << curr_level
 	   << ") : building KLU\n";
+#endif
     A_Base = A_Factory.Create(AMESOS_KLU, *Amesos_LinearProblem, ParamList );
     assert(A_Base!=0);
     break;
@@ -186,7 +229,14 @@ int ML_Amesos_Gen(ML *ml, int curr_level, int choice,
   Time2 = Time.ElapsedTime();
 
   Level__ = -1;
-  
+
+#ifdef TFLOP
+  if( Amesos_CrsMatrix->Comm().MyPID() == 0 && ML_Get_PrintLevel()>2 ) {
+    Level__ = curr_level;
+    printf("Amesos (level %d) : Time for symbolic fact = %f (s)\n",curr_level,Time1);
+    printf("Amesos (level %d) : Time for numerical fact = %f (s)\n",curr_level,Time2);
+  }
+#else
   if( Amesos_CrsMatrix->Comm().MyPID() == 0 && ML_Get_PrintLevel()>2 ) {
     Level__ = curr_level;
     cout << "Amesos (level " << curr_level
@@ -196,7 +246,8 @@ int ML_Amesos_Gen(ML *ml, int curr_level, int choice,
 	 << ") : Time for numerical fact = "
 	 << Time2 << " (s)" << endl;
   }
-
+#endif
+  
   // those are very simple timing for solution
   TimeForSolve__ = 0.0;
   NumSolves__ = 0;
@@ -252,6 +303,15 @@ int ML_Amesos_Solve( void *Amesos_Handle, double x[], double rhs[] )
 void ML_Amesos_Destroy(void *Amesos_Handle)
 {
 
+#ifdef TFLOP
+  if( Level__ != -1 ) {
+    printf("Amesos (level %d) : Time for solve = %f (s)\n",Level__,TimeForSolve__);
+    if( NumSolves__ ) 
+      printf("Amesos (level %d) : avg time for solve = %f (s) ( # solve = %d)\n",Level__,TimeForSolve__/NumSolves__,NumSolves__);
+    else
+      printf("Amesos (level %d) : no solve\n",Level__);
+  }
+#else
   if( Level__ != -1 ) {
     cout << endl;
     cout << "Amesos (level " << Level__
@@ -273,6 +333,7 @@ void ML_Amesos_Destroy(void *Amesos_Handle)
     cout << endl;
 
   }
+#endif
   
   Amesos_BaseSolver *A_Base = (Amesos_BaseSolver *) Amesos_Handle ;
   const Epetra_LinearProblem *Amesos_LinearProblem;
