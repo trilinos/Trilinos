@@ -156,14 +156,8 @@ int main()
     }
   }
 
-  catch (string& s) {
-    cout << s << endl;
-  }
   catch (char *s) {
     cout << s << endl;
-  }
-  catch (exception& e) {
-    cout << e.what() << endl;
   }
   catch (...) {
     cout << "Caught unknown exception!" << endl;
