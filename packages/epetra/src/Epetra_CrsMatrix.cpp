@@ -629,6 +629,9 @@ int Epetra_CrsMatrix::Multiply(bool TransA, const Epetra_Vector& x, Epetra_Vecto
 
     // If we have a non-trivial importer, we must import elements that are permuted or are on other processors
     if (Importer()!=0) {
+      if (ImportVector_!=0) {
+	if (ImportVector_->NumVectors()!=1) { delete ImportVector_; ImportVector_= 0;}
+      }
       if (ImportVector_==0) ImportVector_ = new Epetra_MultiVector(ImportMap(),1); // Create import vector if needed
       ImportVector_->Import(x, *Importer(), Insert);
       xp = (double*)ImportVector_->Values();
@@ -636,6 +639,9 @@ int Epetra_CrsMatrix::Multiply(bool TransA, const Epetra_Vector& x, Epetra_Vecto
 
     // If we have a non-trivial exporter, we must export elements that are permuted or belong to other processors
     if (Exporter()!=0) {
+      if (ExportVector_!=0) {
+	if (ExportVector_->NumVectors()!=1) { delete ExportVector_; ExportVector_= 0;}
+      }
       if (ExportVector_==0) ExportVector_ = new Epetra_MultiVector(RowMap(),1); // Create Export vector if needed
       yp = (double*)ExportVector_->Values();
     }
@@ -661,6 +667,9 @@ int Epetra_CrsMatrix::Multiply(bool TransA, const Epetra_Vector& x, Epetra_Vecto
     // If we have a non-trivial exporter, we must import elements that are permuted or are on other processors
 
     if (Exporter()!=0) {
+      if (ExportVector_!=0) {
+	if (ExportVector_->NumVectors()!=1) { delete ExportVector_; ExportVector_= 0;}
+      }
       if (ExportVector_==0) ExportVector_ = new Epetra_MultiVector(RowMap(),1); // Create Export vector if needed
       ExportVector_->Import(x, *Exporter(), Insert);
       xp = (double*)ExportVector_->Values();
@@ -668,6 +677,9 @@ int Epetra_CrsMatrix::Multiply(bool TransA, const Epetra_Vector& x, Epetra_Vecto
 
     // If we have a non-trivial importer, we must export elements that are permuted or belong to other processors
     if (Importer()!=0) {
+      if (ImportVector_!=0) {
+	if (ImportVector_->NumVectors()!=1) { delete ImportVector_; ImportVector_= 0;}
+      }
       if (ImportVector_==0) ImportVector_ = new Epetra_MultiVector(ImportMap(),1); // Create import vector if needed
       yp = (double*)ImportVector_->Values();
     }
