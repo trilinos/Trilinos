@@ -75,6 +75,7 @@ public:
     
   inline bool SetLabel(string Label) {
     Label_ = Label;
+    return true;
   }
   
   inline string GettLabel(string Label) {
