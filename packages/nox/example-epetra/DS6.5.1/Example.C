@@ -6,6 +6,10 @@
  *    exp(U0-1) + U1**3 -2 = 0
  */
 
+// NOX Library
+#include "NOX.H"
+#include "NOX_Epetra.H"
+
 // Trilinos Objects
 #ifdef HAVE_MPI
 #include "Epetra_MpiComm.h"
@@ -19,11 +23,6 @@
 #include "Epetra_Map.h"
 #include "Epetra_LinearProblem.h"
 #include "AztecOO.h"
-
-// NOX Library
-#include "NOX.H"
-#include "NOX_Epetra.H"
-
 
 // User's application specific files 
 #include "Problem_Interface.H" // Interface file to NOX
