@@ -34,6 +34,7 @@
 #include "Epetra_LinearProblem.h"
 #include "Epetra_MpiComm.h"
 #include "Epetra_CrsGraph.h"
+#include "Epetra_Import.h"
 
 //
 //  dscmain.h does not check to make sure that it is not called twice,
@@ -200,6 +201,13 @@ revert to their default values.
     \return Integer error code, set to 0 if successful. 
    */
    int SetParameters( Teuchos::ParameterList &ParameterList )  ;
+
+  //! Print timing information
+  void PrintTiming();
+  
+  //! Print information about the factorization and solution phases.
+  void PrintStatus();  
+
   //@}
 
  private:  
@@ -233,7 +241,34 @@ revert to their default values.
   int NumLocalStructs;
   int NumLocalNonz ; 
 
+  // MS // added on 01-Jun-04
 
+  bool PrintTiming_;
+  bool PrintStatus_;
+  bool ComputeVectorNorms_;
+  bool ComputeTrueResidual_;
+  
+  int verbose_;
+  int debug_;
+  
+  double ConTime_;                        // time to convert to DSCPACK format
+  double SymTime_;                        // time for symbolic factorization
+  double NumTime_;                        // time for numeric factorization
+  double SolTime_;                        // time for solution
+  double VecTime_;                        // time to redistribute vectors
+  double MatTime_;                        // time to redistribute matrix
+  
+  int NumSymbolicFact_;                   // number of symbolic factorizations 
+  int NumNumericFact_;                    // number of numeric factorizations
+  int NumSolve_;                          // number of solves
 
+  Epetra_Time * Time_;                    // used to track timing
+
+  Epetra_Import * ImportToSerial_;
+
+  Epetra_Map * DscMap_;
+
+  int MaxProcs_;
+  
 };  // End of  class Amesos_Dscpack  
 #endif /* _AMESOS_DSCPACK_H_ */
