@@ -466,7 +466,8 @@ if (maxiter == 0) {
    }
    if ( comm->ML_mypid == 0 && print_freq > 0 )
       printf("min eigenvalue = %e\n", t);
-   
+
+   data->ML_eigen_min = t;   
    /* ----------------------------------------------------------------*/
    /* de-allocate storage for temporary vectors */
    /* ----------------------------------------------------------------*/
