@@ -60,18 +60,25 @@ int main(int argc, char *argv[])
   AZ_PRECOND *Pmat = NULL;
   ML *ml;
   FILE *fp;
-  int ch,i, j, Nrigid, *garbage;
+  int ch,i, j, Nrigid, *garbage, nblocks, *blocks;
   struct AZ_SCALING *scaling;
   ML_Aggregate *ag;
 double *mode, *rigid;
 char filename[80];
 double alpha;
 int    one = 1;
-int *blocks = NULL;
+int allocated, *newbindx, offset, current, *block_list = NULL,  k, block;
+double *newval;
+int old_prec, old_sol;
+double old_tol;
+double *Amode, beta, biggest;
+ML_Operator *Amatrix;
+int *rowi_col, rowi_N, count2, ccc;
+double *rowi_val;
+int max_nz_row, big_ind = -1, ii;
 #ifdef ML_partition
    FILE *fp2;
-   int count, k;
-   int nblocks, *block_list = NULL;
+   int count;
 
    if (argc != 2) {
      printf("Usage: ml_read_elas num_processors\n");
@@ -183,9 +190,9 @@ int *blocks = NULL;
 	
   ML_Aggregate_Create( &ag );
   ML_Aggregate_Set_CoarsenScheme_MIS(ag);
-/*  ML_Aggregate_Set_DampingFactor(ag,1.5); */
+  ML_Aggregate_Set_DampingFactor(ag,1.5);
   ML_Aggregate_Set_Threshold(ag, 0.0);
-   ML_Aggregate_Set_MaxCoarseSize( ag, 300);
+  ML_Aggregate_Set_MaxCoarseSize( ag, 300);
 
 
   /* read in the rigid body modes */
@@ -208,58 +215,97 @@ int *blocks = NULL;
        }
     }
 
-    rhs=(double *)malloc(leng*sizeof(double));
-/*
-    AZ_random_vector(rhs, data_org, proc_config);
-*/
-for (i = 0; i < N_update; i++) rhs[i] = (double) update[i];
+    rhs   = (double *) malloc(leng*sizeof(double));
+    xxx   = (double *) malloc(leng*sizeof(double));
+    for (iii = 0; iii < leng; iii++) xxx[iii] = 0.0; 
+	
+
 
     for (i = 0; i < Nrigid; i++) {
-           sprintf(filename,"rigid_body_mode%d",i+1);
-           AZ_input_msr_matrix(filename, update, &mode, &garbage, N_update, proc_config);
+       sprintf(filename,"rigid_body_mode%d",i+1);
+       AZ_input_msr_matrix(filename,update,&mode,&garbage,N_update,proc_config);
 
-           /*
-            *  Rescale matrix/rigid body modes and checking 
-            *
-             AZ_sym_rescale_sl(mode, Amat->data_org, options, proc_config, scaling);
-             Amat->matvec(mode, rigid, Amat, proc_config);
-             for (j = 0; j < N_update; j++) printf("this is %d %e\n",j,rigid[j]);
-           */
+       /* here is something to stick a rigid body mode as the initial */
+       /* The idea is to solve A x = 0 without smoothing with a two   */
+       /* level method. If everything is done properly, we should     */
+       /* converge in 2 iterations.                                   */
+       /* Note: we must also zero out components of the rigid body    */
+       /* mode that correspond to Dirichlet bcs.                      */
 
-           for (j = 0; j < i; j++) {
-              alpha = -AZ_gdot(N_update, mode, &(rigid[j*N_update]), proc_config)/
-                       AZ_gdot(N_update, &(rigid[j*N_update]), &(rigid[j*N_update]), 
-                               proc_config);
-              daxpy_(&N_update, &alpha,  &(rigid[j*N_update]),  &one, mode, &one);
+       if (i == -4) {
+          for (iii = 0; iii < leng; iii++) xxx[iii] = mode[iii];
+
+          allocated = 0; rowi_col = NULL; rowi_val = NULL;
+          ccc = 0;
+          Amatrix = &(ml->Amat[N_levels-1]);
+          for (iii = 0; iii < Amatrix->outvec_leng; iii++) {
+             ML_get_matrix_row(Amatrix,1,&iii,&allocated,&rowi_col,&rowi_val,
+                               &rowi_N, 0);
+             count2 = 0;
+             for (j = 0; j < rowi_N; j++) if (rowi_val[j] != 0.) count2++;
+             if (count2 <= 1) { xxx[iii] = 0.; ccc++; }
+          }
+       }
+
+       /*
+        *  Rescale matrix/rigid body modes and checking 
+        *
+        AZ_sym_rescale_sl(mode, Amat->data_org, options, proc_config, scaling);
+        Amat->matvec(mode, rigid, Amat, proc_config);
+        for (j = 0; j < N_update; j++) printf("this is %d %e\n",j,rigid[j]);
+        */
+
+        /* Here is some code to check that the rigid body modes are  */
+        /* really rigid body modes. The idea is to multiply by A and */
+        /* then to zero out things that we "think" are boundaries.   */
+        /* In this hardwired example, things near boundaries         */
+        /* correspond to matrix rows that do not have 81 nonzeros.   */
+        /*
+
+        Amode = (double *) malloc(leng*sizeof(double));
+        Amat->matvec(mode, Amode, Amat, proc_config);
+        j = 0;
+        biggest = 0.0;
+        for (ii = 0; ii < N_update; ii++) {
+           if ( Amat->bindx[ii+1] - Amat->bindx[ii] != 80) {
+              Amode[ii] = 0.; j++;
            }
+           else { 
+              if ( fabs(Amode[ii]) > biggest) {
+                 biggest=fabs(Amode[ii]); big_ind = ii;
+              }
+           }
+        }
+        printf("%d entries zeroed out of %d elements\n",j,N_update);
+        alpha = AZ_gdot(N_update, Amode, Amode, proc_config);
+        beta  = AZ_gdot(N_update,  mode,  mode, proc_config);
+        printf("||A r||^2 =%e, ||r||^2 = %e, ratio = %e\n",
+               alpha,beta,alpha/beta);
+        printf("the biggest is %e at row %d\n",biggest,big_ind);
+        free(Amode);
+
+        */
+
+        /* orthogonalize mode with respect to previous modes. */
+
+        for (j = 0; j < i; j++) {
+           alpha = -AZ_gdot(N_update, mode, &(rigid[j*N_update]), proc_config)/
+                    AZ_gdot(N_update, &(rigid[j*N_update]), 
+                               &(rigid[j*N_update]), proc_config);
+           daxpy_(&N_update,&alpha,&(rigid[j*N_update]),  &one, mode, &one);
+        }
    
-           /* rhs orthogonalization */
+        for (j = 0; j < N_update; j++) rigid[i*N_update+j] = mode[j];
+        free(mode);
+        free(garbage);
+    }
 
-           alpha = -AZ_gdot(N_update, mode, rhs, proc_config)/
-                    AZ_gdot(N_update, mode, mode, proc_config);
-           daxpy_(&N_update, &alpha,  mode,  &one, rhs, &one);
+    if (Nrigid != 0) 
+       ML_Aggregate_Set_NullSpace(ag, num_PDE_eqns, Nrigid, rigid, N_update);
 
-           for (j = 0; j < N_update; j++) rigid[i*N_update+j] = mode[j];
-           free(mode);
-           free(garbage);
-  }
-
-  for (j = 0; j < Nrigid; j++) {
-     alpha = -AZ_gdot(N_update, rhs, &(rigid[j*N_update]), proc_config)/
-              AZ_gdot(N_update, &(rigid[j*N_update]), &(rigid[j*N_update]), proc_config);
-     daxpy_(&N_update, &alpha,  &(rigid[j*N_update]),  &one, rhs, &one);
-  }
-
-  if (Nrigid != 0) {
-     ML_Aggregate_Set_NullSpace(ag, num_PDE_eqns, Nrigid, rigid, N_update);
-  }
-
-
-
-
-
-   coarsest_level = ML_Gen_MGHierarchy_UsingAggregation(ml, N_levels-1, ML_DECREASING, 
-                                                        ag);
+    coarsest_level = ML_Gen_MGHierarchy_UsingAggregation(ml, N_levels-1, 
+				ML_DECREASING, ag);
+   AZ_defaults(options, params);
    coarsest_level = N_levels - coarsest_level;
    if ( proc_config[AZ_node] == 0 )
 	printf("Coarse level = %d \n", coarsest_level);
@@ -269,40 +315,54 @@ for (i = 0; i < N_update; i++) rhs[i] = (double) update[i];
 	
    for (level = N_levels-1; level > coarsest_level; level--) {
 		
-     ML_Gen_Smoother_BlockGaussSeidel(ml , level, ML_BOTH, 1, 1., num_PDE_eqns);
+      /* Here is a 1-step CG/Jacobi smoother */
+      /*
+      old_prec = options[AZ_precond];
+      old_sol  = options[AZ_solver];
+      options[AZ_precond] = AZ_Jacobi;
+      options[AZ_solver]  = AZ_cg;
+      options[AZ_poly_ord] = 1;
+      ML_Gen_SmootherAztec(ml, level, options, params,
+                           proc_config, status, 1, ML_PRESMOOTHER, NULL);
+      ML_Gen_SmootherAztec(ml, level, options, params,
+                           proc_config, status, 1, ML_POSTSMOOTHER, NULL);
+      options[AZ_precond] = old_prec;
+      options[AZ_solver] = old_sol;
+      */
+
+     /*
+      ML_Gen_Smoother_BlockGaussSeidel(ml, level,ML_BOTH, 1, 1., num_PDE_eqns);
+      */
 
     /*  Sparse approximate inverse smoother that acutally does both */
     /*  pre and post smoothing.                                     */
-
-/*
+    /*
       ML_Gen_Smoother_ParaSails(ml , level, ML_PRESMOOTHER, nsmooth, 
                                 parasails_sym, parasails_thresh, 
                                 parasails_nlevels, parasails_filter,
                                 parasails_loadbal, parasails_factorized);
-*/
+     */
 
      /* This is the symmetric Gauss-Seidel smoothing that we usually use. */
      /* In parallel, it is not a true Gauss-Seidel in that each processor */
      /* does a Gauss-Seidel on its local submatrix independent of the     */
      /* other processors.                                                 */
-      
-/*
+     /*
       ML_Gen_Smoother_SymGaussSeidel(ml , level, ML_BOTH, nsmooth,1.);
-      ML_Gen_Smoother_SymGaussSeidel(ml , level, ML_POSTSMOOTHER, nsmooth,1.);
-*/
+      */
      
 
       /* This is a true Gauss Seidel in parallel. This seems to work for  */
       /* elasticity problems.  However, I don't believe that this is very */
       /* efficient in parallel.                                           */       
-      /*
-      nblocks = ml->Amat[level].invec_leng;
-      for (i =0; i < nblocks; i++) blocks[i] = i;
+      nblocks = ml->Amat[level].invec_leng/num_PDE_eqns;
+      for (i =0; i < ml->Amat[level].invec_leng; i++) 
+         blocks[i] = i/num_PDE_eqns;
+
       ML_Gen_Smoother_VBlockSymGaussSeidelSequential(ml , level, ML_PRESMOOTHER,
                                                   nsmooth, 1., nblocks, blocks);
       ML_Gen_Smoother_VBlockSymGaussSeidelSequential(ml, level, ML_POSTSMOOTHER,
                                                   nsmooth, 1., nblocks, blocks);
-      */
 
       /* Jacobi Smoothing                                                 */
       /*              
@@ -312,40 +372,47 @@ for (i = 0; i < N_update; i++) rhs[i] = (double) update[i];
 
       /*  This does a block Gauss-Seidel (not true GS in parallel)        */
       /*  where each processor has 'nblocks' blocks.                      */
-      /*                                                                  */
-      if (i == -1) {
-        nblocks = 250;
-        ML_Gen_Blocks_Metis(ml, level, &nblocks, &blocks);
-        ML_Gen_Smoother_VBlockSymGaussSeidel(ml , level, ML_BOTH, nsmooth,1.,
+      /*
+      nblocks = 250;
+      ML_Gen_Blocks_Metis(ml, level, &nblocks, &blocks);
+      ML_Gen_Smoother_VBlockSymGaussSeidel(ml , level, ML_BOTH, nsmooth,1.,
                                         nblocks, blocks);
-      }
       */
       num_PDE_eqns = 6;
    }
 	
+/*
    ML_Gen_CoarseSolverSuperLU( ml, coarsest_level);
+*/
+   /* Aztec smoother on the coarsest grid */
+   old_prec = options[AZ_precond];
+   old_sol  = options[AZ_solver];
+   old_tol  = params[AZ_tol];
+   params[AZ_tol] = 1.0e-13;
+   options[AZ_precond] = AZ_Jacobi;
+   options[AZ_solver]  = AZ_cg;
+   options[AZ_poly_ord] = 1;
+   ML_Gen_SmootherAztec(ml, coarsest_level, options, params,
+            proc_config, status, 700, ML_PRESMOOTHER, NULL);
+   options[AZ_precond] = old_prec;
+   options[AZ_solver] = old_sol;
+   params[AZ_tol] = old_tol;
 		
-	
    ML_Gen_Solver(ml, ML_MGV, N_levels-1, coarsest_level); 
-   AZ_defaults(options, params);
 	
    options[AZ_solver]   = AZ_cg;
    options[AZ_scaling]  = AZ_none;
    options[AZ_precond]  = AZ_user_precond;
    options[AZ_conv]     = AZ_r0;
-options[AZ_conv] = AZ_noscaled;
+   options[AZ_conv] = AZ_noscaled;
    options[AZ_output]   = 1;
-   options[AZ_max_iter] = 300;
+   options[AZ_max_iter] = 100;
    options[AZ_poly_ord] = 5;
    options[AZ_kspace]   = 130;
-   params[AZ_tol]       = 1.0e-8;
+   params[AZ_tol]       = 1.0e-11;
 	
    AZ_set_ML_preconditioner(&Pmat, Amat, ml, options); 
    setup_time = AZ_second() - start_time;
-	
-   xxx = (double *) malloc( leng*sizeof(double));
-
-   for (iii = 0; iii < leng; iii++) xxx[iii] = 0.0; 
 	
    /* Set rhs */
  
@@ -363,7 +430,6 @@ options[AZ_conv] = AZ_noscaled;
       for (i = 0; i < data_org[AZ_N_internal]+data_org[AZ_N_border]; i++) 
          fscanf(fp,"%lf",&(rhs[i]));
       fclose(fp);
-
    }
 
    /* Set x */
@@ -383,10 +449,13 @@ options[AZ_conv] = AZ_noscaled;
 
    /* if Dirichlet BC ... put the answer in */
 
+printf("hey .... should we do something here?\n");
+/*
    for (i = 0; i < data_org[AZ_N_internal]+data_org[AZ_N_border]; i++) {
       if ( (val[i] > .99999999) && (val[i] < 1.0000001))
          xxx[i] = rhs[i];      
    }
+*/
 
    fp = fopen("AZ_no_multilevel.dat","r");
    scaling = AZ_scaling_create();
@@ -413,7 +482,8 @@ options[AZ_conv] = AZ_noscaled;
    }
    else {
       options[AZ_keep_info] = 1;
-options[AZ_conv] = AZ_noscaled;
+      options[AZ_conv] = AZ_noscaled;
+      /* ML_Iterate(ml, xxx, rhs); */
       AZ_iterate(xxx, rhs, options, params, status, proc_config, Amat, Pmat, scaling); 
       options[AZ_pre_calc] = AZ_reuse;
       options[AZ_conv] = AZ_expected_values;
