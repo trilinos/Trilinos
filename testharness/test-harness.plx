@@ -44,7 +44,11 @@ my $SUMMARY = "2048";                    # test-harness summary
 
 # Host Operating System Variable
 chomp (my $hostOS=`uname`);
-$hostOS =~ s/\s*$//; 
+$hostOS =~ s/\s*$//;
+my $isLinux = 0;
+if ($hostOS =~ m/linux/i) {
+    $isLinux = 1;
+}
 
 # Grab program arguments for use with self-updating functionality (see cvsUpdate())
 my @programArguments = @ARGV;
@@ -309,7 +313,7 @@ report($SUMMARY);
                 chdir "$options{'TRILINOS_DIR'}[0]";       
                 my $command = "";
                 $command .= "$options{'CVS_CMD'}[0] update -dP > $options{'TRILINOS_DIR'}[0]";
-                $command .= "/testharness/temp/update_log.txt 2>&1";
+                $command .= "/testharness/temp/update_log.txt".($isLinux?" 2>&1":"");
                 printEvent("updating...\n\n");
                 my $result = system $command;
                 if ($result) {
@@ -509,7 +513,7 @@ report($SUMMARY);
                                 my $command = "";
                                 $command .= "mv $options{'TRILINOS_DIR'}[0]/$buildDir[$j]/packages/$dirNames{$brokenPackage}/config.log ";
                                 $command .= "$options{'TRILINOS_DIR'}[0]/testharness/temp/";
-                                $command .= $hostOS."_".$comm."_".$brokenPackage."_config.log  2>&1";
+                                $command .= $hostOS."_".$comm."_".$brokenPackage."_config.log".($isLinux?" 2>&1":"");
                                 system $command;
                             }
                         
@@ -590,11 +594,11 @@ report($SUMMARY);
                                 if (defined $options{'MAKE_FLAGS'} && defined $options{'MAKE_FLAGS'}[0]) {
                                     $command .= "make $options{'MAKE_FLAGS'}[0] >> ";
                                     $command .= "$options{'TRILINOS_DIR'}[0]/testharness/temp/";
-                                    $command .= $hostOS."_".$comm."_".$brokenPackage."_build.log 2>&1";
+                                    $command .= $hostOS."_".$comm."_".$brokenPackage."_build.log".($isLinux?" 2>&1":"");
                                 } else {
                                     $command .= "make >> ";
                                     $command .= "$options{'TRILINOS_DIR'}[0]/testharness/temp/";
-                                    $command .= $hostOS."_".$comm."_".$brokenPackage."_build.log 2>&1";
+                                    $command .= $hostOS."_".$comm."_".$brokenPackage."_build.log".($isLinux?" 2>&1":"");
                                 }
                                 system $command;
                 
@@ -983,7 +987,7 @@ report($SUMMARY);
             
         my $command = "";
         $command .= "./invoke-configure >> $options{'TRILINOS_DIR'}[0]";
-        $command .= "/testharness/temp/trilinos_configure_log_$hostOS.txt 2>&1";
+        $command .= "/testharness/temp/trilinos_configure_log_$hostOS.txt".($isLinux?" 2>&1":"");
         return system $command;
         
     } # configure()
@@ -1005,10 +1009,10 @@ report($SUMMARY);
         my $command = "";
         if (defined $options{'MAKE_FLAGS'} && defined $options{'MAKE_FLAGS'}[0]) {
             $command .= "make $options{'MAKE_FLAGS'}[0] >> $options{'TRILINOS_DIR'}[0]";
-            $command .= "/testharness/temp/trilinos_build_log_$hostOS.txt 2>&1";
+            $command .= "/testharness/temp/trilinos_build_log_$hostOS.txt".($isLinux?" 2>&1":"");
         } else {
             $command .= "make >> $options{'TRILINOS_DIR'}[0]";
-            $command .= "/testharness/temp/trilinos_build_log_$hostOS.txt 2>&1";
+            $command .= "/testharness/temp/trilinos_build_log_$hostOS.txt".($isLinux?" 2>&1":"");
         }
         return system $command; 
         
@@ -1031,7 +1035,7 @@ report($SUMMARY);
         # run test script
         my $command = "";
         $command .= "$script $buildDir True >> $options{'TRILINOS_DIR'}[0]";
-        $command .= "/testharness/temp/test_compile_log.txt 2>&1";
+        $command .= "/testharness/temp/test_compile_log.txt".($isLinux?" 2>&1":"");
         return system $command;
         
     } # test()
