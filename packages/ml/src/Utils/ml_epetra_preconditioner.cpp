@@ -497,29 +497,29 @@ int ML_Epetra::Set(Teuchos::ParameterList & List,
 
   
   // aggregation
-  if( CLP.Has("-ml_aggr_scheme") )
-    List.set("aggregation: type", CLP.Get("-ml_aggr_scheme","Uncoupled"));
+  if( CLP.Has("-ml_aggr_type") )
+    List.set("aggregation: type", CLP.Get("-ml_aggr_type","Uncoupled"));
 
-  if( CLP.Has("-ml_aggr_scheme_level_0") )
-    List.set("aggregation: type (level 0)", CLP.Get("-ml_aggr_scheme_level_0","Uncoupled"));
-  if( CLP.Has("-ml_aggr_scheme_level_1") )
-    List.set("aggregation: type (level 1)", CLP.Get("-ml_aggr_scheme_level_1","Uncoupled"));
-  if( CLP.Has("-ml_aggr_scheme_level_2") )
-    List.set("aggregation: type (level 2)", CLP.Get("-ml_aggr_scheme_level_2","Uncoupled"));
-  if( CLP.Has("-ml_aggr_scheme_level_3") )
-    List.set("aggregation: type (level 3)", CLP.Get("-ml_aggr_scheme_level_3","Uncoupled"));
-  if( CLP.Has("-ml_aggr_scheme_level_4") )
-    List.set("aggregation: type (level 4)", CLP.Get("-ml_aggr_scheme_level_4","Uncoupled"));
-  if( CLP.Has("-ml_aggr_scheme_level_5") )
-    List.set("aggregation: type (level 5)", CLP.Get("-ml_aggr_scheme_level_5","Uncoupled"));
-  if( CLP.Has("-ml_aggr_scheme_level_6") )
-    List.set("aggregation: type (level 6)", CLP.Get("-ml_aggr_scheme_level_6","Uncoupled"));
-  if( CLP.Has("-ml_aggr_scheme_level_7") )
-    List.set("aggregation: type (level 7)", CLP.Get("-ml_aggr_scheme_level_7","Uncoupled"));
-  if( CLP.Has("-ml_aggr_scheme_level_8") )
-    List.set("aggregation: type (level 8)", CLP.Get("-ml_aggr_scheme_level_8","Uncoupled"));
-  if( CLP.Has("-ml_aggr_scheme_level_9") )
-    List.set("aggregation: type (level 9)", CLP.Get("-ml_aggr_scheme_level_9","Uncoupled"));
+  if( CLP.Has("-ml_aggr_type_level_0") )
+    List.set("aggregation: type (level 0)", CLP.Get("-ml_aggr_type_level_0","Uncoupled"));
+  if( CLP.Has("-ml_aggr_type_level_1") )
+    List.set("aggregation: type (level 1)", CLP.Get("-ml_aggr_type_level_1","Uncoupled"));
+  if( CLP.Has("-ml_aggr_type_level_2") )
+    List.set("aggregation: type (level 2)", CLP.Get("-ml_aggr_type_level_2","Uncoupled"));
+  if( CLP.Has("-ml_aggr_type_level_3") )
+    List.set("aggregation: type (level 3)", CLP.Get("-ml_aggr_type_level_3","Uncoupled"));
+  if( CLP.Has("-ml_aggr_type_level_4") )
+    List.set("aggregation: type (level 4)", CLP.Get("-ml_aggr_type_level_4","Uncoupled"));
+  if( CLP.Has("-ml_aggr_type_level_5") )
+    List.set("aggregation: type (level 5)", CLP.Get("-ml_aggr_type_level_5","Uncoupled"));
+  if( CLP.Has("-ml_aggr_type_level_6") )
+    List.set("aggregation: type (level 6)", CLP.Get("-ml_aggr_type_level_6","Uncoupled"));
+  if( CLP.Has("-ml_aggr_type_level_7") )
+    List.set("aggregation: type (level 7)", CLP.Get("-ml_aggr_type_level_7","Uncoupled"));
+  if( CLP.Has("-ml_aggr_type_level_8") )
+    List.set("aggregation: type (level 8)", CLP.Get("-ml_aggr_type_level_8","Uncoupled"));
+  if( CLP.Has("-ml_aggr_type_level_9") )
+    List.set("aggregation: type (level 9)", CLP.Get("-ml_aggr_type_level_9","Uncoupled"));
 
   if( CLP.Has("-ml_num_nodes_per_aggr") )
     List.set("aggregation: nodes per aggregate", CLP.Get("-ml_num_nodes_per_aggr",512));

@@ -173,8 +173,6 @@ int ML_Aggregate_Set_NodesPerAggr( ML *ml, ML_Aggregate *ag,
     Nnodes_per_aggre = ML_Aggregate_Get_OptimalNumberOfNodesPerAggregate();
   }
 
-  /*! figa */
-  
   /* ********************************************************************** */
   /* take the pointer from the ag object. If it is NULL, this is the first  */
   /* time that this function is called, so allocate memory for all levels   */
