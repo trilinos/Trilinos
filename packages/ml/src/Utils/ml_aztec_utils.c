@@ -391,6 +391,83 @@ void AZ_set_ML_preconditioner(AZ_PRECOND **Precond, AZ_MATRIX *Amat,
    (*Precond)->ml_ptr = (void *) ml_handle;
 }
 
+/*****************************************************************************/
+/*****************************************************************************/
+int AZ_block_MSR(int **param_bindx, double **param_val,
+                 int N_update, int num_PDE_eqns, int *update)
+{
+/*
+ * Take an MSR matrix and stick zeros into it so that it corresponds
+ * to a block matrix where each block is num_PDE_eqns x num_PDE_eqns.
+ * This is useful inside ML when we do Amalgmation for coarsening.
+ */
+
+   int allocated, nblocks, *block_list, i, j, k;
+   int offset, current, block;
+   int *bindx, *newbindx;
+   double *val, *newval;
+
+   bindx = *param_bindx;
+   val   = *param_val;
+
+   allocated  = (int     ) (((double)(bindx[N_update]+5))*1.2);
+   block_list = (int    *) AZ_allocate( 300*sizeof(int));
+
+   newbindx   = (int    *) AZ_allocate( allocated*sizeof(int));
+   newval     = (double *) AZ_allocate( allocated*sizeof(double));
+   *param_bindx = newbindx;
+   *param_val   = newval;
+
+   if (newval == NULL) {printf("out of space\n"); exit(1); }
+
+   /* Get the diagonal */
+
+   for (i = 0; i < N_update; i++) newval[i] = val[i];
+   for (i = 0; i < N_update; i++) newbindx[i] = bindx[i+1] - bindx[i];
+
+   offset = bindx[0];
+   current = bindx[0];
+   newbindx[0] = bindx[0];
+   AZ_sort_msr(bindx,val,N_update);
+
+   for (i = 0; i < N_update; i++) {
+
+      /* make a list of all the block columns in this row */
+
+      nblocks = 0;
+      block_list[nblocks++] = update[i]/num_PDE_eqns;
+      for (j = bindx[i]; j < bindx[i+1]; j++) {
+         block = bindx[j]/num_PDE_eqns;
+         if ((block != block_list[0]) && (block != block_list[nblocks-1])) {
+            block_list[nblocks++] = block;
+         }
+      }
+
+      /* sort the block and make sure that within    */
+      /* each block we have each point column entry. */
+
+      AZ_sort(block_list, nblocks, NULL, NULL);
+      for (j = 0; j < nblocks; j++) {
+         for (k = 0; k < num_PDE_eqns; k++) {
+            if (block_list[j]*num_PDE_eqns+k != update[i]) {
+               if (offset >= allocated)
+                  pr_error("ML_block_MSR: Did not allocate enough space\n");
+
+               newbindx[offset] = block_list[j]*num_PDE_eqns+k;
+               if ( (current < bindx[i+1]) &&
+                    (bindx[current] == newbindx[offset]) ) {
+                  newval[offset++] = val[current++];
+               }
+               else { newval[offset++] = 0.;  }
+            }
+         }
+      }
+      newbindx[i+1] = offset;
+   }
+   return 0;
+}
+
+
 #ifndef AZTEC2_0
 
 /*****************************************************************************/
@@ -778,6 +855,8 @@ void AZ_precond_destroy(AZ_PRECOND **precond)
    AZ_free(*precond);
    *precond = NULL;
 }
+
+
 
 /*****************************************************************************/
 /*****************************************************************************/

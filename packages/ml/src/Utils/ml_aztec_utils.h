@@ -70,6 +70,8 @@ extern void AZ_set_MSR(AZ_MATRIX *Amat, int bindx[], double val[],
 extern void AZ_set_VBR(AZ_MATRIX *Amat, int rpntr[], int cpntr[], int bpntr[],
         int indx[], int bindx[], double val[], int data_org[]);
 
+extern int AZ_block_MSR(int **param_bindx, double **param_val,
+                 int N_update, int num_PDE_eqns, int *update);
 
 #define mdwrap_wait(a,b,c,x,y,z)   md_wrap_wait(a,b,c,(x),(y),(z))
 #define mdwrap_iwrite(a,b,c,x,y,z) md_wrap_iwrite(a,b,c,(x),(y),(z))
