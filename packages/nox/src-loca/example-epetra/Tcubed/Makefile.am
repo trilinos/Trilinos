@@ -33,10 +33,14 @@ if BUILD_LOCA_EPETRA_EXAMPLES
 
 EXAMPLE = example
 EXAMPLETP = exampleTP
+EXAMPLETPCONT = exampleTPContinuation
+EXAMPLETPMOD = exampleTP_ModifiedBordering
+EXAMPLETPCONTMOD = exampleTPContinuation_ModifiedBordering
 
 endif
 
-noinst_PROGRAMS = $(EXAMPLE) $(EXAMPLETP)
+noinst_PROGRAMS = $(EXAMPLE) $(EXAMPLETP) $(EXAMPLETPCONT) $(EXAMPLETPMOD) \
+		  $(EXAMPLETPCONTMOD)
 
 example_SOURCES = $(srcdir)/Example.C \
 	$(srcdir)/FiniteElementProblem.C $(srcdir)/FiniteElementProblem.H \
@@ -71,3 +75,37 @@ exampleTP_DEPENDENCIES = $(example_DEPENDENCIES)
 exampleTP_CXXFLAGS = $(example_CXXFLAGS)
 
 exampleTP_LDADD = $(example_LDADD)
+
+exampleTPContinuation_SOURCES = $(srcdir)/ExampleTPContinuation.C \
+	$(srcdir)/FiniteElementProblem.C $(srcdir)/FiniteElementProblem.H \
+	$(srcdir)/Basis.C $(srcdir)/Basis.H \
+	$(srcdir)/Problem_Interface.C $(srcdir)/Problem_Interface.H
+
+exampleTPContinuation_DEPENDENCIES = $(example_DEPENDENCIES)
+
+exampleTPContinuation_CXXFLAGS = $(example_CXXFLAGS)
+
+exampleTPContinuation_LDADD = $(example_LDADD)
+
+exampleTP_ModifiedBordering_SOURCES = $(srcdir)/ExampleTP_ModifiedBordering.C \
+	$(srcdir)/FiniteElementProblem.C $(srcdir)/FiniteElementProblem.H \
+	$(srcdir)/Basis.C $(srcdir)/Basis.H \
+	$(srcdir)/Problem_Interface.C $(srcdir)/Problem_Interface.H
+
+exampleTP_ModifiedBordering_DEPENDENCIES = $(example_DEPENDENCIES)
+
+exampleTP_ModifiedBordering_CXXFLAGS = $(example_CXXFLAGS)
+
+exampleTP_ModifiedBordering_LDADD = $(example_LDADD)
+
+exampleTPContinuation_ModifiedBordering_SOURCES = \
+	$(srcdir)/ExampleTPContinuation_ModifiedBordering.C \
+	$(srcdir)/FiniteElementProblem.C $(srcdir)/FiniteElementProblem.H \
+	$(srcdir)/Basis.C $(srcdir)/Basis.H \
+	$(srcdir)/Problem_Interface.C $(srcdir)/Problem_Interface.H
+
+exampleTPContinuation_ModifiedBordering_DEPENDENCIES = $(example_DEPENDENCIES)
+
+exampleTPContinuation_ModifiedBordering_CXXFLAGS = $(example_CXXFLAGS)
+
+exampleTPContinuation_ModifiedBordering_LDADD = $(example_LDADD)

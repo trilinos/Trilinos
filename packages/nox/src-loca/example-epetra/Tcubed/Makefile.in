@@ -125,8 +125,13 @@ install_sh = @install_sh@
 
 @BUILD_LOCA_EPETRA_EXAMPLES_TRUE@EXAMPLE = example
 @BUILD_LOCA_EPETRA_EXAMPLES_TRUE@EXAMPLETP = exampleTP
+@BUILD_LOCA_EPETRA_EXAMPLES_TRUE@EXAMPLETPCONT = exampleTPContinuation
+@BUILD_LOCA_EPETRA_EXAMPLES_TRUE@EXAMPLETPMOD = exampleTP_ModifiedBordering
+@BUILD_LOCA_EPETRA_EXAMPLES_TRUE@EXAMPLETPCONTMOD = exampleTPContinuation_ModifiedBordering
 
-noinst_PROGRAMS = $(EXAMPLE) $(EXAMPLETP)
+noinst_PROGRAMS = $(EXAMPLE) $(EXAMPLETP) $(EXAMPLETPCONT) $(EXAMPLETPMOD) \
+		  $(EXAMPLETPCONTMOD)
+
 
 example_SOURCES = $(srcdir)/Example.C \
 	$(srcdir)/FiniteElementProblem.C $(srcdir)/FiniteElementProblem.H \
@@ -166,12 +171,52 @@ exampleTP_DEPENDENCIES = $(example_DEPENDENCIES)
 exampleTP_CXXFLAGS = $(example_CXXFLAGS)
 
 exampleTP_LDADD = $(example_LDADD)
+
+exampleTPContinuation_SOURCES = $(srcdir)/ExampleTPContinuation.C \
+	$(srcdir)/FiniteElementProblem.C $(srcdir)/FiniteElementProblem.H \
+	$(srcdir)/Basis.C $(srcdir)/Basis.H \
+	$(srcdir)/Problem_Interface.C $(srcdir)/Problem_Interface.H
+
+
+exampleTPContinuation_DEPENDENCIES = $(example_DEPENDENCIES)
+
+exampleTPContinuation_CXXFLAGS = $(example_CXXFLAGS)
+
+exampleTPContinuation_LDADD = $(example_LDADD)
+
+exampleTP_ModifiedBordering_SOURCES = $(srcdir)/ExampleTP_ModifiedBordering.C \
+	$(srcdir)/FiniteElementProblem.C $(srcdir)/FiniteElementProblem.H \
+	$(srcdir)/Basis.C $(srcdir)/Basis.H \
+	$(srcdir)/Problem_Interface.C $(srcdir)/Problem_Interface.H
+
+
+exampleTP_ModifiedBordering_DEPENDENCIES = $(example_DEPENDENCIES)
+
+exampleTP_ModifiedBordering_CXXFLAGS = $(example_CXXFLAGS)
+
+exampleTP_ModifiedBordering_LDADD = $(example_LDADD)
+
+exampleTPContinuation_ModifiedBordering_SOURCES = \
+	$(srcdir)/ExampleTPContinuation_ModifiedBordering.C \
+	$(srcdir)/FiniteElementProblem.C $(srcdir)/FiniteElementProblem.H \
+	$(srcdir)/Basis.C $(srcdir)/Basis.H \
+	$(srcdir)/Problem_Interface.C $(srcdir)/Problem_Interface.H
+
+
+exampleTPContinuation_ModifiedBordering_DEPENDENCIES = $(example_DEPENDENCIES)
+
+exampleTPContinuation_ModifiedBordering_CXXFLAGS = $(example_CXXFLAGS)
+
+exampleTPContinuation_ModifiedBordering_LDADD = $(example_LDADD)
 subdir = src-loca/example-epetra/Tcubed
 mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/NOX_Config.h
 CONFIG_CLEAN_FILES =
 @BUILD_LOCA_EPETRA_EXAMPLES_TRUE@noinst_PROGRAMS = example$(EXEEXT) \
-@BUILD_LOCA_EPETRA_EXAMPLES_TRUE@	exampleTP$(EXEEXT)
+@BUILD_LOCA_EPETRA_EXAMPLES_TRUE@	exampleTP$(EXEEXT) \
+@BUILD_LOCA_EPETRA_EXAMPLES_TRUE@	exampleTPContinuation$(EXEEXT) \
+@BUILD_LOCA_EPETRA_EXAMPLES_TRUE@	exampleTP_ModifiedBordering$(EXEEXT) \
+@BUILD_LOCA_EPETRA_EXAMPLES_TRUE@	exampleTPContinuation_ModifiedBordering$(EXEEXT)
 @BUILD_LOCA_EPETRA_EXAMPLES_FALSE@noinst_PROGRAMS =
 PROGRAMS = $(noinst_PROGRAMS)
 
@@ -185,6 +230,29 @@ am_exampleTP_OBJECTS = exampleTP-ExampleTP.$(OBJEXT) \
 	exampleTP-Basis.$(OBJEXT) exampleTP-Problem_Interface.$(OBJEXT)
 exampleTP_OBJECTS = $(am_exampleTP_OBJECTS)
 exampleTP_LDFLAGS =
+am_exampleTPContinuation_OBJECTS = \
+	exampleTPContinuation-ExampleTPContinuation.$(OBJEXT) \
+	exampleTPContinuation-FiniteElementProblem.$(OBJEXT) \
+	exampleTPContinuation-Basis.$(OBJEXT) \
+	exampleTPContinuation-Problem_Interface.$(OBJEXT)
+exampleTPContinuation_OBJECTS = $(am_exampleTPContinuation_OBJECTS)
+exampleTPContinuation_LDFLAGS =
+am_exampleTPContinuation_ModifiedBordering_OBJECTS = \
+	exampleTPContinuation_ModifiedBordering-ExampleTPContinuation_ModifiedBordering.$(OBJEXT) \
+	exampleTPContinuation_ModifiedBordering-FiniteElementProblem.$(OBJEXT) \
+	exampleTPContinuation_ModifiedBordering-Basis.$(OBJEXT) \
+	exampleTPContinuation_ModifiedBordering-Problem_Interface.$(OBJEXT)
+exampleTPContinuation_ModifiedBordering_OBJECTS = \
+	$(am_exampleTPContinuation_ModifiedBordering_OBJECTS)
+exampleTPContinuation_ModifiedBordering_LDFLAGS =
+am_exampleTP_ModifiedBordering_OBJECTS = \
+	exampleTP_ModifiedBordering-ExampleTP_ModifiedBordering.$(OBJEXT) \
+	exampleTP_ModifiedBordering-FiniteElementProblem.$(OBJEXT) \
+	exampleTP_ModifiedBordering-Basis.$(OBJEXT) \
+	exampleTP_ModifiedBordering-Problem_Interface.$(OBJEXT)
+exampleTP_ModifiedBordering_OBJECTS = \
+	$(am_exampleTP_ModifiedBordering_OBJECTS)
+exampleTP_ModifiedBordering_LDFLAGS =
 
 DEFS = @DEFS@
 DEFAULT_INCLUDES =  -I. -I$(srcdir) -I$(top_builddir)/src
@@ -200,7 +268,19 @@ am__depfiles_maybe = depfiles
 @AMDEP_TRUE@	./$(DEPDIR)/exampleTP-Basis.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/exampleTP-ExampleTP.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/exampleTP-FiniteElementProblem.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/exampleTP-Problem_Interface.Po
+@AMDEP_TRUE@	./$(DEPDIR)/exampleTP-Problem_Interface.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/exampleTPContinuation-Basis.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/exampleTPContinuation-ExampleTPContinuation.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/exampleTPContinuation-FiniteElementProblem.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/exampleTPContinuation-Problem_Interface.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/exampleTPContinuation_ModifiedBordering-Basis.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/exampleTPContinuation_ModifiedBordering-ExampleTPContinuation_ModifiedBordering.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/exampleTPContinuation_ModifiedBordering-FiniteElementProblem.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/exampleTPContinuation_ModifiedBordering-Problem_Interface.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/exampleTP_ModifiedBordering-Basis.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/exampleTP_ModifiedBordering-ExampleTP_ModifiedBordering.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/exampleTP_ModifiedBordering-FiniteElementProblem.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/exampleTP_ModifiedBordering-Problem_Interface.Po
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
 CXXLD = $(CXX)
@@ -212,9 +292,12 @@ COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
 CCLD = $(CC)
 LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
-DIST_SOURCES = $(example_SOURCES) $(exampleTP_SOURCES)
+DIST_SOURCES = $(example_SOURCES) $(exampleTP_SOURCES) \
+	$(exampleTPContinuation_SOURCES) \
+	$(exampleTPContinuation_ModifiedBordering_SOURCES) \
+	$(exampleTP_ModifiedBordering_SOURCES)
 DIST_COMMON = Makefile.am Makefile.in
-SOURCES = $(example_SOURCES) $(exampleTP_SOURCES)
+SOURCES = $(example_SOURCES) $(exampleTP_SOURCES) $(exampleTPContinuation_SOURCES) $(exampleTPContinuation_ModifiedBordering_SOURCES) $(exampleTP_ModifiedBordering_SOURCES)
 
 all: all-am
 
@@ -243,6 +326,37 @@ exampleTP-Problem_Interface.$(OBJEXT): $(srcdir)/Problem_Interface.C
 exampleTP$(EXEEXT): $(exampleTP_OBJECTS) $(exampleTP_DEPENDENCIES) 
 	@rm -f exampleTP$(EXEEXT)
 	$(CXXLINK) $(exampleTP_LDFLAGS) $(exampleTP_OBJECTS) $(exampleTP_LDADD) $(LIBS)
+exampleTPContinuation-ExampleTPContinuation.$(OBJEXT): \
+	$(srcdir)/ExampleTPContinuation.C
+exampleTPContinuation-FiniteElementProblem.$(OBJEXT): \
+	$(srcdir)/FiniteElementProblem.C
+exampleTPContinuation-Basis.$(OBJEXT): $(srcdir)/Basis.C
+exampleTPContinuation-Problem_Interface.$(OBJEXT): \
+	$(srcdir)/Problem_Interface.C
+exampleTPContinuation$(EXEEXT): $(exampleTPContinuation_OBJECTS) $(exampleTPContinuation_DEPENDENCIES) 
+	@rm -f exampleTPContinuation$(EXEEXT)
+	$(CXXLINK) $(exampleTPContinuation_LDFLAGS) $(exampleTPContinuation_OBJECTS) $(exampleTPContinuation_LDADD) $(LIBS)
+exampleTPContinuation_ModifiedBordering-ExampleTPContinuation_ModifiedBordering.$(OBJEXT): \
+	$(srcdir)/ExampleTPContinuation_ModifiedBordering.C
+exampleTPContinuation_ModifiedBordering-FiniteElementProblem.$(OBJEXT): \
+	$(srcdir)/FiniteElementProblem.C
+exampleTPContinuation_ModifiedBordering-Basis.$(OBJEXT): \
+	$(srcdir)/Basis.C
+exampleTPContinuation_ModifiedBordering-Problem_Interface.$(OBJEXT): \
+	$(srcdir)/Problem_Interface.C
+exampleTPContinuation_ModifiedBordering$(EXEEXT): $(exampleTPContinuation_ModifiedBordering_OBJECTS) $(exampleTPContinuation_ModifiedBordering_DEPENDENCIES) 
+	@rm -f exampleTPContinuation_ModifiedBordering$(EXEEXT)
+	$(CXXLINK) $(exampleTPContinuation_ModifiedBordering_LDFLAGS) $(exampleTPContinuation_ModifiedBordering_OBJECTS) $(exampleTPContinuation_ModifiedBordering_LDADD) $(LIBS)
+exampleTP_ModifiedBordering-ExampleTP_ModifiedBordering.$(OBJEXT): \
+	$(srcdir)/ExampleTP_ModifiedBordering.C
+exampleTP_ModifiedBordering-FiniteElementProblem.$(OBJEXT): \
+	$(srcdir)/FiniteElementProblem.C
+exampleTP_ModifiedBordering-Basis.$(OBJEXT): $(srcdir)/Basis.C
+exampleTP_ModifiedBordering-Problem_Interface.$(OBJEXT): \
+	$(srcdir)/Problem_Interface.C
+exampleTP_ModifiedBordering$(EXEEXT): $(exampleTP_ModifiedBordering_OBJECTS) $(exampleTP_ModifiedBordering_DEPENDENCIES) 
+	@rm -f exampleTP_ModifiedBordering$(EXEEXT)
+	$(CXXLINK) $(exampleTP_ModifiedBordering_LDFLAGS) $(exampleTP_ModifiedBordering_OBJECTS) $(exampleTP_ModifiedBordering_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT) core *.core
@@ -258,6 +372,18 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/exampleTP-ExampleTP.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/exampleTP-FiniteElementProblem.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/exampleTP-Problem_Interface.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/exampleTPContinuation-Basis.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/exampleTPContinuation-ExampleTPContinuation.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/exampleTPContinuation-FiniteElementProblem.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/exampleTPContinuation-Problem_Interface.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/exampleTPContinuation_ModifiedBordering-Basis.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/exampleTPContinuation_ModifiedBordering-ExampleTPContinuation_ModifiedBordering.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/exampleTPContinuation_ModifiedBordering-FiniteElementProblem.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/exampleTPContinuation_ModifiedBordering-Problem_Interface.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/exampleTP_ModifiedBordering-Basis.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/exampleTP_ModifiedBordering-ExampleTP_ModifiedBordering.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/exampleTP_ModifiedBordering-FiniteElementProblem.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/exampleTP_ModifiedBordering-Problem_Interface.Po@am__quote@
 
 distclean-depend:
 	-rm -rf ./$(DEPDIR)
@@ -369,6 +495,150 @@ exampleTP-Problem_Interface.obj: $(srcdir)/Problem_Interface.C
 @AMDEP_TRUE@	depfile='$(DEPDIR)/exampleTP-Problem_Interface.Po' tmpdepfile='$(DEPDIR)/exampleTP-Problem_Interface.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(exampleTP_CXXFLAGS) $(CXXFLAGS) -c -o exampleTP-Problem_Interface.obj `cygpath -w $(srcdir)/Problem_Interface.C`
+
+exampleTPContinuation-ExampleTPContinuation.o: $(srcdir)/ExampleTPContinuation.C
+@AMDEP_TRUE@	source='$(srcdir)/ExampleTPContinuation.C' object='exampleTPContinuation-ExampleTPContinuation.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/exampleTPContinuation-ExampleTPContinuation.Po' tmpdepfile='$(DEPDIR)/exampleTPContinuation-ExampleTPContinuation.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(exampleTPContinuation_CXXFLAGS) $(CXXFLAGS) -c -o exampleTPContinuation-ExampleTPContinuation.o `test -f '$(srcdir)/ExampleTPContinuation.C' || echo '$(srcdir)/'`$(srcdir)/ExampleTPContinuation.C
+
+exampleTPContinuation-ExampleTPContinuation.obj: $(srcdir)/ExampleTPContinuation.C
+@AMDEP_TRUE@	source='$(srcdir)/ExampleTPContinuation.C' object='exampleTPContinuation-ExampleTPContinuation.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/exampleTPContinuation-ExampleTPContinuation.Po' tmpdepfile='$(DEPDIR)/exampleTPContinuation-ExampleTPContinuation.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(exampleTPContinuation_CXXFLAGS) $(CXXFLAGS) -c -o exampleTPContinuation-ExampleTPContinuation.obj `cygpath -w $(srcdir)/ExampleTPContinuation.C`
+
+exampleTPContinuation-FiniteElementProblem.o: $(srcdir)/FiniteElementProblem.C
+@AMDEP_TRUE@	source='$(srcdir)/FiniteElementProblem.C' object='exampleTPContinuation-FiniteElementProblem.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/exampleTPContinuation-FiniteElementProblem.Po' tmpdepfile='$(DEPDIR)/exampleTPContinuation-FiniteElementProblem.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(exampleTPContinuation_CXXFLAGS) $(CXXFLAGS) -c -o exampleTPContinuation-FiniteElementProblem.o `test -f '$(srcdir)/FiniteElementProblem.C' || echo '$(srcdir)/'`$(srcdir)/FiniteElementProblem.C
+
+exampleTPContinuation-FiniteElementProblem.obj: $(srcdir)/FiniteElementProblem.C
+@AMDEP_TRUE@	source='$(srcdir)/FiniteElementProblem.C' object='exampleTPContinuation-FiniteElementProblem.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/exampleTPContinuation-FiniteElementProblem.Po' tmpdepfile='$(DEPDIR)/exampleTPContinuation-FiniteElementProblem.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(exampleTPContinuation_CXXFLAGS) $(CXXFLAGS) -c -o exampleTPContinuation-FiniteElementProblem.obj `cygpath -w $(srcdir)/FiniteElementProblem.C`
+
+exampleTPContinuation-Basis.o: $(srcdir)/Basis.C
+@AMDEP_TRUE@	source='$(srcdir)/Basis.C' object='exampleTPContinuation-Basis.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/exampleTPContinuation-Basis.Po' tmpdepfile='$(DEPDIR)/exampleTPContinuation-Basis.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(exampleTPContinuation_CXXFLAGS) $(CXXFLAGS) -c -o exampleTPContinuation-Basis.o `test -f '$(srcdir)/Basis.C' || echo '$(srcdir)/'`$(srcdir)/Basis.C
+
+exampleTPContinuation-Basis.obj: $(srcdir)/Basis.C
+@AMDEP_TRUE@	source='$(srcdir)/Basis.C' object='exampleTPContinuation-Basis.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/exampleTPContinuation-Basis.Po' tmpdepfile='$(DEPDIR)/exampleTPContinuation-Basis.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(exampleTPContinuation_CXXFLAGS) $(CXXFLAGS) -c -o exampleTPContinuation-Basis.obj `cygpath -w $(srcdir)/Basis.C`
+
+exampleTPContinuation-Problem_Interface.o: $(srcdir)/Problem_Interface.C
+@AMDEP_TRUE@	source='$(srcdir)/Problem_Interface.C' object='exampleTPContinuation-Problem_Interface.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/exampleTPContinuation-Problem_Interface.Po' tmpdepfile='$(DEPDIR)/exampleTPContinuation-Problem_Interface.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(exampleTPContinuation_CXXFLAGS) $(CXXFLAGS) -c -o exampleTPContinuation-Problem_Interface.o `test -f '$(srcdir)/Problem_Interface.C' || echo '$(srcdir)/'`$(srcdir)/Problem_Interface.C
+
+exampleTPContinuation-Problem_Interface.obj: $(srcdir)/Problem_Interface.C
+@AMDEP_TRUE@	source='$(srcdir)/Problem_Interface.C' object='exampleTPContinuation-Problem_Interface.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/exampleTPContinuation-Problem_Interface.Po' tmpdepfile='$(DEPDIR)/exampleTPContinuation-Problem_Interface.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(exampleTPContinuation_CXXFLAGS) $(CXXFLAGS) -c -o exampleTPContinuation-Problem_Interface.obj `cygpath -w $(srcdir)/Problem_Interface.C`
+
+exampleTPContinuation_ModifiedBordering-ExampleTPContinuation_ModifiedBordering.o: $(srcdir)/ExampleTPContinuation_ModifiedBordering.C
+@AMDEP_TRUE@	source='$(srcdir)/ExampleTPContinuation_ModifiedBordering.C' object='exampleTPContinuation_ModifiedBordering-ExampleTPContinuation_ModifiedBordering.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/exampleTPContinuation_ModifiedBordering-ExampleTPContinuation_ModifiedBordering.Po' tmpdepfile='$(DEPDIR)/exampleTPContinuation_ModifiedBordering-ExampleTPContinuation_ModifiedBordering.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(exampleTPContinuation_ModifiedBordering_CXXFLAGS) $(CXXFLAGS) -c -o exampleTPContinuation_ModifiedBordering-ExampleTPContinuation_ModifiedBordering.o `test -f '$(srcdir)/ExampleTPContinuation_ModifiedBordering.C' || echo '$(srcdir)/'`$(srcdir)/ExampleTPContinuation_ModifiedBordering.C
+
+exampleTPContinuation_ModifiedBordering-ExampleTPContinuation_ModifiedBordering.obj: $(srcdir)/ExampleTPContinuation_ModifiedBordering.C
+@AMDEP_TRUE@	source='$(srcdir)/ExampleTPContinuation_ModifiedBordering.C' object='exampleTPContinuation_ModifiedBordering-ExampleTPContinuation_ModifiedBordering.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/exampleTPContinuation_ModifiedBordering-ExampleTPContinuation_ModifiedBordering.Po' tmpdepfile='$(DEPDIR)/exampleTPContinuation_ModifiedBordering-ExampleTPContinuation_ModifiedBordering.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(exampleTPContinuation_ModifiedBordering_CXXFLAGS) $(CXXFLAGS) -c -o exampleTPContinuation_ModifiedBordering-ExampleTPContinuation_ModifiedBordering.obj `cygpath -w $(srcdir)/ExampleTPContinuation_ModifiedBordering.C`
+
+exampleTPContinuation_ModifiedBordering-FiniteElementProblem.o: $(srcdir)/FiniteElementProblem.C
+@AMDEP_TRUE@	source='$(srcdir)/FiniteElementProblem.C' object='exampleTPContinuation_ModifiedBordering-FiniteElementProblem.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/exampleTPContinuation_ModifiedBordering-FiniteElementProblem.Po' tmpdepfile='$(DEPDIR)/exampleTPContinuation_ModifiedBordering-FiniteElementProblem.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(exampleTPContinuation_ModifiedBordering_CXXFLAGS) $(CXXFLAGS) -c -o exampleTPContinuation_ModifiedBordering-FiniteElementProblem.o `test -f '$(srcdir)/FiniteElementProblem.C' || echo '$(srcdir)/'`$(srcdir)/FiniteElementProblem.C
+
+exampleTPContinuation_ModifiedBordering-FiniteElementProblem.obj: $(srcdir)/FiniteElementProblem.C
+@AMDEP_TRUE@	source='$(srcdir)/FiniteElementProblem.C' object='exampleTPContinuation_ModifiedBordering-FiniteElementProblem.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/exampleTPContinuation_ModifiedBordering-FiniteElementProblem.Po' tmpdepfile='$(DEPDIR)/exampleTPContinuation_ModifiedBordering-FiniteElementProblem.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(exampleTPContinuation_ModifiedBordering_CXXFLAGS) $(CXXFLAGS) -c -o exampleTPContinuation_ModifiedBordering-FiniteElementProblem.obj `cygpath -w $(srcdir)/FiniteElementProblem.C`
+
+exampleTPContinuation_ModifiedBordering-Basis.o: $(srcdir)/Basis.C
+@AMDEP_TRUE@	source='$(srcdir)/Basis.C' object='exampleTPContinuation_ModifiedBordering-Basis.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/exampleTPContinuation_ModifiedBordering-Basis.Po' tmpdepfile='$(DEPDIR)/exampleTPContinuation_ModifiedBordering-Basis.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(exampleTPContinuation_ModifiedBordering_CXXFLAGS) $(CXXFLAGS) -c -o exampleTPContinuation_ModifiedBordering-Basis.o `test -f '$(srcdir)/Basis.C' || echo '$(srcdir)/'`$(srcdir)/Basis.C
+
+exampleTPContinuation_ModifiedBordering-Basis.obj: $(srcdir)/Basis.C
+@AMDEP_TRUE@	source='$(srcdir)/Basis.C' object='exampleTPContinuation_ModifiedBordering-Basis.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/exampleTPContinuation_ModifiedBordering-Basis.Po' tmpdepfile='$(DEPDIR)/exampleTPContinuation_ModifiedBordering-Basis.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(exampleTPContinuation_ModifiedBordering_CXXFLAGS) $(CXXFLAGS) -c -o exampleTPContinuation_ModifiedBordering-Basis.obj `cygpath -w $(srcdir)/Basis.C`
+
+exampleTPContinuation_ModifiedBordering-Problem_Interface.o: $(srcdir)/Problem_Interface.C
+@AMDEP_TRUE@	source='$(srcdir)/Problem_Interface.C' object='exampleTPContinuation_ModifiedBordering-Problem_Interface.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/exampleTPContinuation_ModifiedBordering-Problem_Interface.Po' tmpdepfile='$(DEPDIR)/exampleTPContinuation_ModifiedBordering-Problem_Interface.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(exampleTPContinuation_ModifiedBordering_CXXFLAGS) $(CXXFLAGS) -c -o exampleTPContinuation_ModifiedBordering-Problem_Interface.o `test -f '$(srcdir)/Problem_Interface.C' || echo '$(srcdir)/'`$(srcdir)/Problem_Interface.C
+
+exampleTPContinuation_ModifiedBordering-Problem_Interface.obj: $(srcdir)/Problem_Interface.C
+@AMDEP_TRUE@	source='$(srcdir)/Problem_Interface.C' object='exampleTPContinuation_ModifiedBordering-Problem_Interface.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/exampleTPContinuation_ModifiedBordering-Problem_Interface.Po' tmpdepfile='$(DEPDIR)/exampleTPContinuation_ModifiedBordering-Problem_Interface.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(exampleTPContinuation_ModifiedBordering_CXXFLAGS) $(CXXFLAGS) -c -o exampleTPContinuation_ModifiedBordering-Problem_Interface.obj `cygpath -w $(srcdir)/Problem_Interface.C`
+
+exampleTP_ModifiedBordering-ExampleTP_ModifiedBordering.o: $(srcdir)/ExampleTP_ModifiedBordering.C
+@AMDEP_TRUE@	source='$(srcdir)/ExampleTP_ModifiedBordering.C' object='exampleTP_ModifiedBordering-ExampleTP_ModifiedBordering.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/exampleTP_ModifiedBordering-ExampleTP_ModifiedBordering.Po' tmpdepfile='$(DEPDIR)/exampleTP_ModifiedBordering-ExampleTP_ModifiedBordering.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(exampleTP_ModifiedBordering_CXXFLAGS) $(CXXFLAGS) -c -o exampleTP_ModifiedBordering-ExampleTP_ModifiedBordering.o `test -f '$(srcdir)/ExampleTP_ModifiedBordering.C' || echo '$(srcdir)/'`$(srcdir)/ExampleTP_ModifiedBordering.C
+
+exampleTP_ModifiedBordering-ExampleTP_ModifiedBordering.obj: $(srcdir)/ExampleTP_ModifiedBordering.C
+@AMDEP_TRUE@	source='$(srcdir)/ExampleTP_ModifiedBordering.C' object='exampleTP_ModifiedBordering-ExampleTP_ModifiedBordering.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/exampleTP_ModifiedBordering-ExampleTP_ModifiedBordering.Po' tmpdepfile='$(DEPDIR)/exampleTP_ModifiedBordering-ExampleTP_ModifiedBordering.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(exampleTP_ModifiedBordering_CXXFLAGS) $(CXXFLAGS) -c -o exampleTP_ModifiedBordering-ExampleTP_ModifiedBordering.obj `cygpath -w $(srcdir)/ExampleTP_ModifiedBordering.C`
+
+exampleTP_ModifiedBordering-FiniteElementProblem.o: $(srcdir)/FiniteElementProblem.C
+@AMDEP_TRUE@	source='$(srcdir)/FiniteElementProblem.C' object='exampleTP_ModifiedBordering-FiniteElementProblem.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/exampleTP_ModifiedBordering-FiniteElementProblem.Po' tmpdepfile='$(DEPDIR)/exampleTP_ModifiedBordering-FiniteElementProblem.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(exampleTP_ModifiedBordering_CXXFLAGS) $(CXXFLAGS) -c -o exampleTP_ModifiedBordering-FiniteElementProblem.o `test -f '$(srcdir)/FiniteElementProblem.C' || echo '$(srcdir)/'`$(srcdir)/FiniteElementProblem.C
+
+exampleTP_ModifiedBordering-FiniteElementProblem.obj: $(srcdir)/FiniteElementProblem.C
+@AMDEP_TRUE@	source='$(srcdir)/FiniteElementProblem.C' object='exampleTP_ModifiedBordering-FiniteElementProblem.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/exampleTP_ModifiedBordering-FiniteElementProblem.Po' tmpdepfile='$(DEPDIR)/exampleTP_ModifiedBordering-FiniteElementProblem.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(exampleTP_ModifiedBordering_CXXFLAGS) $(CXXFLAGS) -c -o exampleTP_ModifiedBordering-FiniteElementProblem.obj `cygpath -w $(srcdir)/FiniteElementProblem.C`
+
+exampleTP_ModifiedBordering-Basis.o: $(srcdir)/Basis.C
+@AMDEP_TRUE@	source='$(srcdir)/Basis.C' object='exampleTP_ModifiedBordering-Basis.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/exampleTP_ModifiedBordering-Basis.Po' tmpdepfile='$(DEPDIR)/exampleTP_ModifiedBordering-Basis.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(exampleTP_ModifiedBordering_CXXFLAGS) $(CXXFLAGS) -c -o exampleTP_ModifiedBordering-Basis.o `test -f '$(srcdir)/Basis.C' || echo '$(srcdir)/'`$(srcdir)/Basis.C
+
+exampleTP_ModifiedBordering-Basis.obj: $(srcdir)/Basis.C
+@AMDEP_TRUE@	source='$(srcdir)/Basis.C' object='exampleTP_ModifiedBordering-Basis.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/exampleTP_ModifiedBordering-Basis.Po' tmpdepfile='$(DEPDIR)/exampleTP_ModifiedBordering-Basis.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(exampleTP_ModifiedBordering_CXXFLAGS) $(CXXFLAGS) -c -o exampleTP_ModifiedBordering-Basis.obj `cygpath -w $(srcdir)/Basis.C`
+
+exampleTP_ModifiedBordering-Problem_Interface.o: $(srcdir)/Problem_Interface.C
+@AMDEP_TRUE@	source='$(srcdir)/Problem_Interface.C' object='exampleTP_ModifiedBordering-Problem_Interface.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/exampleTP_ModifiedBordering-Problem_Interface.Po' tmpdepfile='$(DEPDIR)/exampleTP_ModifiedBordering-Problem_Interface.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(exampleTP_ModifiedBordering_CXXFLAGS) $(CXXFLAGS) -c -o exampleTP_ModifiedBordering-Problem_Interface.o `test -f '$(srcdir)/Problem_Interface.C' || echo '$(srcdir)/'`$(srcdir)/Problem_Interface.C
+
+exampleTP_ModifiedBordering-Problem_Interface.obj: $(srcdir)/Problem_Interface.C
+@AMDEP_TRUE@	source='$(srcdir)/Problem_Interface.C' object='exampleTP_ModifiedBordering-Problem_Interface.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/exampleTP_ModifiedBordering-Problem_Interface.Po' tmpdepfile='$(DEPDIR)/exampleTP_ModifiedBordering-Problem_Interface.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(exampleTP_ModifiedBordering_CXXFLAGS) $(CXXFLAGS) -c -o exampleTP_ModifiedBordering-Problem_Interface.obj `cygpath -w $(srcdir)/Problem_Interface.C`
 CXXDEPMODE = @CXXDEPMODE@
 uninstall-info-am:
 

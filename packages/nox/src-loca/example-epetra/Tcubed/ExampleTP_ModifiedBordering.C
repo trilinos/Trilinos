@@ -136,6 +136,9 @@ int main(int argc, char *argv[])
   //lsParams.setParameter("Aztec Preconditioner", "ilut"); 
   //lsParams.setParameter("Overlap", 2);   
   //lsParams.setParameter("Fill Factor", 2.0); 
+
+  lsParams.setParameter("Absolute Threshold", 1.0e-6);
+  lsParams.setParameter("Relative Threshold", 1.0e-6);
   
   //lsParams.setParameter("Fill Factor", 0);  
   //lsParams.setParameter("Convergence Criteria", "r0");
@@ -159,31 +162,25 @@ int main(int argc, char *argv[])
   // uncommenting one or more of the following lines:
   // 1. User supplied (Epetra_RowMatrix)
   Epetra_RowMatrix& A = Problem.getJacobian();
-  // 2. Matrix-Free (Epetra_Operator)
-  //NOX::Epetra::MatrixFree A(interface, soln);
-  // 3. Finite Difference (Epetra_RowMatrix)
-  //NOX::Epetra::FiniteDifference A(interface, soln);
-  // 4. Jacobi Preconditioner
-  //NOX::Epetra::JacobiPreconditioner Prec(soln);
 
   // Create the loca vector
   NOX::Epetra::Vector locaSoln(soln);
 
   // Create the Group
-  LOCA::Epetra::Group grp(nlPrintParams, lsParams, interface, pVector, locaSoln, A);
-  //NOX::Epetra::Group grp(nlPrintParams, lsParams, interface, soln, A); 
-  //NOX::Epetra::Group grp(nlPrintParams, lsParams, interface, soln, A, Prec); 
+  LOCA::Epetra::Group grp(nlPrintParams, lsParams, interface, pVector, locaSoln, A); 
   grp.computeF();
 
-  // Create initial guess for the null vector of jacobian
+   // Create initial guess for the null vector of jacobian
   NOX::Epetra::Vector nullVec(soln);  
   nullVec.init(1.0);             // initial value 1.0
 
   // Create a turning point group that uses the lapack group
-  LOCA::Bifurcation::TPBord::ExtendedGroup tpgrp(grp, nullVec, nullVec, 2);
-  
+  LOCA::Bifurcation::TPBord::ModifiedBorderingGroup tpgrp(grp, nullVec, 
+							    nullVec, 2);
+
+
   // Create the Solver convergence test
-  NOX::StatusTest::NormF normF(1.0e-7);
+  NOX::StatusTest::NormF normF(1.0e-12);
   NOX::StatusTest::MaxIters maxiters(searchParams.getParameter("Max Iters", 10));
   NOX::StatusTest::Combo comboOr(NOX::StatusTest::Combo::OR);
   comboOr.addStatusTest(maxiters);

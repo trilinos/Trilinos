@@ -81,26 +81,91 @@ int main(int argc, char *argv[])
   
   // Begin LOCA Solver ************************************
 
+  // Create parameter list
+  NOX::Parameter::List paramList;
+
+  // Create LOCA sublist
+  NOX::Parameter::List& locaParamsList = paramList.sublist("LOCA");
+
+  // Create the stepper sublist and set the stepper parameters
+  NOX::Parameter::List& locaStepperList = locaParamsList.sublist("Stepper");
+  //locaStepperList.setParameter("Continuation Method", "Natural");
+  locaStepperList.setParameter("Continuation Method", "Arc Length");
+  //locaStepperList.setParameter("Continuation Parameter", "Right BC");
+  locaStepperList.setParameter("Continuation Parameter", "Nonlinear Factor");
+  locaStepperList.setParameter("Initial Value", 1.0);
+  locaStepperList.setParameter("Max Value", 2.0);
+  locaStepperList.setParameter("Min Value", 0.05);
+  locaStepperList.setParameter("Max Steps", 30);
+  locaStepperList.setParameter("Max Nonlinear Iterations", 15);
+  locaStepperList.setParameter("Enable Arc Length Scaling", true);
+  locaStepperList.setParameter("Goal Arc Length Parameter Contribution", 0.5);
+  locaStepperList.setParameter("Max Arc Length Parameter Contribution", 0.7);
+  locaStepperList.setParameter("Initial Scale Factor", 1.0);
+  locaStepperList.setParameter("Min Scale Factor", 1.0e-8);
+  locaStepperList.setParameter("Enable Tangent Factor Step Size Scaling",false);
+  locaStepperList.setParameter("Min Tangent Factor", 0.8);
+  locaStepperList.setParameter("Tangent Factor Exponent",1.5);
+
+  // Create Anasazi Eigensolver sublist (needs --enable-loca-anasazi)
+  locaStepperList.setParameter("Compute Eigenvalues",false);
+  NOX::Parameter::List& aList = locaStepperList.sublist("Anasazi");
+  aList.setParameter("Block Size", 1);
+  aList.setParameter("Arnoldi Size", 10);
+  aList.setParameter("NEV", 3);
+  aList.setParameter("Tol", 2.0e-7);
+  aList.setParameter("Convergence Check", 1);
+  aList.setParameter("Restarts",2);
+  aList.setParameter("Frequency",2);
+  aList.setParameter("Debug Level",1);
   
-  // Create the "Solver" parameters 
-  NOX::Parameter::List nlParams;
+  // Create predictor sublist
+  NOX::Parameter::List& predictorList = locaParamsList.sublist("Predictor");
+  //predictorList.setParameter("Method", "Constant");
+  //predictorList.setParameter("Method", "Tangent");
+  predictorList.setParameter("Method", "Secant");
+
+  // Create step size sublist
+  NOX::Parameter::List& stepSizeList = locaParamsList.sublist("Step Size");
+  //stepSizeList.setParameter("Method", "Constant");
+  stepSizeList.setParameter("Method", "Adaptive");
+  stepSizeList.setParameter("Initial Step Size", 0.1);
+  stepSizeList.setParameter("Min Step Size", 1.0e-3);
+  stepSizeList.setParameter("Max Step Size", 2000.0);
+  stepSizeList.setParameter("Aggressiveness", 0.1);
+  stepSizeList.setParameter("Failed Step Reduction Factor", 0.5);
+  stepSizeList.setParameter("Successful Step Increase Factor", 1.26); // for constant
+
+  // Set the LOCA Utilities
+  NOX::Parameter::List& locaUtilsList = locaParamsList.sublist("Utilities");
+  locaUtilsList.setParameter("MyPID", MyPID);
+  locaUtilsList.setParameter("Output Information", 
+			     LOCA::Utils::Warning +
+			     LOCA::Utils::StepperIteration +
+			     LOCA::Utils::StepperDetails +
+			     LOCA::Utils::Solver +
+			     LOCA::Utils::SolverDetails +
+			     LOCA::Utils::Parameters);
+
+  // Create the "Solver" parameters sublist to be used with NOX Solvers
+  NOX::Parameter::List& nlParams = paramList.sublist("NOX");
   nlParams.setParameter("Nonlinear Solver", "Line Search Based");
 
   // Create the NOX printing parameter list
   NOX::Parameter::List& nlPrintParams = nlParams.sublist("Printing");
   nlPrintParams.setParameter("MyPID", MyPID); 
   nlPrintParams.setParameter("Output Information", 
-			     NOX::Utils::OuterIteration + 
-			     NOX::Utils::OuterIterationStatusTest + 
-			     NOX::Utils::InnerIteration +
-			     NOX::Utils::Parameters + 
-			     NOX::Utils::Details + 
+			     //NOX::Utils::OuterIteration + 
+			     //NOX::Utils::OuterIterationStatusTest + 
+			     //NOX::Utils::InnerIteration +
+			     //NOX::Utils::Parameters + 
+			     //NOX::Utils::Details + 
 			     NOX::Utils::Warning);
 
   // Create the "Line Search" sublist for the "Line Search Based" solver
   NOX::Parameter::List& searchParams = nlParams.sublist("Line Search");
   searchParams.setParameter("Method", "Full Step");
-  searchParams.setParameter("Max Iters", 10);
+  searchParams.setParameter("Max Iters", 7);
   searchParams.setParameter("Default Step", 1.0000);
   searchParams.setParameter("Recovery Step", 0.0001);
   searchParams.setParameter("Minimum Step", 0.0001);
@@ -112,22 +177,19 @@ int main(int argc, char *argv[])
   newParams.setParameter("Forcing Term Method", "Constant");
   //newParams.setParameter("Forcing Term Method", "Type 1");
   //newParams.setParameter("Forcing Term Method", "Type 2");
-  newParams.setParameter("Forcing Term Minimum Tolerance", 1.0e-6);
-  newParams.setParameter("Forcing Term Maximum Tolerance", 0.1);
-  newParams.setParameter("Forcing Term Maximum Alpha", 1.0);
-  newParams.setParameter("Forcing Term Maximum Gamma", 1.0);
+  //newParams.setParameter("Forcing Term Minimum Tolerance", 1.0e-4);
+  //newParams.setParameter("Forcing Term Maximum Tolerance", 0.1);
 
   // Create the "Linear Solver" sublist for the "Direction" sublist
   NOX::Parameter::List& lsParams = newParams.sublist("Linear Solver");
   lsParams.setParameter("Aztec Solver", "GMRES");  
   lsParams.setParameter("Max Iterations", 100);  
   lsParams.setParameter("Tolerance", 1e-4);
-  lsParams.setParameter("Output Frequency", 50);    
+  lsParams.setParameter("Output Frequency", 0);    
   lsParams.setParameter("Scaling", "None");             
   //lsParams.setParameter("Scaling", "Row Sum");          
   //lsParams.setParameter("Preconditioning", "None");   
-  //lsParams.setParameter("Preconditioning", "AztecOO: Jacobian Matrix"); 
-  lsParams.setParameter("Preconditioning", "IFPACK: Jacobian Matrix");
+  lsParams.setParameter("Preconditioning", "AztecOO: Jacobian Matrix");   
   //lsParams.setParameter("Preconditioning", "AztecOO: User RowMatrix"); 
   //lsParams.setParameter("Preconditioning", "User Supplied Preconditioner");
   //lsParams.setParameter("Aztec Preconditioner", "ilu"); 
@@ -135,11 +197,7 @@ int main(int argc, char *argv[])
   //lsParams.setParameter("Graph Fill", 2); 
   //lsParams.setParameter("Aztec Preconditioner", "ilut"); 
   //lsParams.setParameter("Overlap", 2);   
-  //lsParams.setParameter("Fill Factor", 2.0); 
-  
-  //lsParams.setParameter("Fill Factor", 0);  
-  //lsParams.setParameter("Convergence Criteria", "r0");
- 
+  //lsParams.setParameter("Fill Factor", 2.0);   
   //lsParams.setParameter("Drop Tolerance", 1.0e-12);   
   //lsParams.setParameter("Aztec Preconditioner", "Polynomial"); 
   //lsParams.setParameter("Polynomial Order", 6); 
@@ -181,31 +239,30 @@ int main(int argc, char *argv[])
 
   // Create a turning point group that uses the lapack group
   LOCA::Bifurcation::TPBord::ExtendedGroup tpgrp(grp, nullVec, nullVec, 2);
-  
+
   // Create the Solver convergence test
-  NOX::StatusTest::NormF normF(1.0e-7);
+  //NOX::StatusTest::NormWRMS wrms(1.0e-2, 1.0e-8);
+  NOX::StatusTest::NormF wrms(1.0e-7);
   NOX::StatusTest::MaxIters maxiters(searchParams.getParameter("Max Iters", 10));
-  NOX::StatusTest::Combo comboOr(NOX::StatusTest::Combo::OR);
-  comboOr.addStatusTest(maxiters);
-  comboOr.addStatusTest(normF);
+  NOX::StatusTest::Combo combo(NOX::StatusTest::Combo::OR);
+  combo.addStatusTest(wrms);
+  combo.addStatusTest(maxiters);
 
-  // Create the solver
-  NOX::Solver::Manager solver(tpgrp, comboOr, nlParams);
+  // Create the stepper  
+  LOCA::Stepper stepper(tpgrp, combo, paramList);
+  LOCA::Abstract::Iterator::IteratorStatus status = stepper.run();
 
-  // Solve the nonlinear system
-  NOX::StatusTest::StatusType status = solver.solve();
+  if (status != LOCA::Abstract::Iterator::Finished)
+    if (MyPID==0) 
+      cout << "Stepper failed to converge!" << endl;
 
   // End Nonlinear Solver **************************************
 
   // Output the parameter list
-  if (MyPID == 0) {
-    cout.precision(14);
-    cout << "Turning point parameter:  " << tpgrp.getBifParam() << endl 
-	 << endl;
-
+  if (LOCA::Utils::doPrint(LOCA::Utils::Parameters)) {
     cout << endl << "Final Parameters" << endl
 	 << "****************" << endl;
-    solver.getParameterList().print(cout);
+    stepper.getParameterList().print(cout);
     cout << endl;
   }
 
