@@ -674,7 +674,7 @@ uninstall-am: uninstall-info-am
 GetNecessaryFiles: $(EXTRA_DIST)
 	        cp -f $(srcdir)/662_bus.rsa 662_bus_out.rsa
 
-clean:
+clean:  clean-am
 	rm -f  662_bus_out.rsa
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

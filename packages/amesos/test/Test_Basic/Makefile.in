@@ -714,7 +714,7 @@ Matrices: $(srcdir)/662_bus.rsa
 	cp  $(srcdir)/In_KheadSorted.mtx  KheadSorted.mtx
 	cp  $(srcdir)/In_Khead.triS Khead.triS  
 
-clean:
+clean:  clean-am
 	rm -f  662_bus_out.rsa \
 	ImpcolA.rua \
         ImpcolB.rua \
@@ -735,12 +735,15 @@ clean:
         Khead.triS \
         KheadSorted.mtx \
 	AmesosSuperludist.csh  \
+	TestBasic.csh  \
 	AmesosDscpack.csh AmesosUmfpack.csh \
 	AmesosKlu.csh AmesosSuperlu.csh \
 	AmesosScalapack.csh   AmesosMumps.csh \
 	AmesosKluSerial.csh  AmesosSuperluSerial.csh \
 	AmesosUmfpackSerial.csh \
-	Suppressions
+	Suppressions \
+	SST.* \
+	AME.* 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

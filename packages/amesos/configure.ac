@@ -423,9 +423,14 @@ AC_LANG_PUSH([C])
 # Fix libraries 
 
 LIBS="${BLAS_LIBS} ${LIBS} ${FLIBS}"
-if test "X${HAVE_PKG_MPI}" != "Xyes"; then
-  LIBS = "${LIBS} ${MPI_LIBS}"
-fi
+#
+#  Ken Stanley commented these three lines out because they make no sense 
+#  (why include MPI_LIBS while throwing out BLAS_LIBS and FLIBS when mpi is
+#  enabled?).  It seems that this causes problems on atlantis in serial mode.
+#
+# if test "X${HAVE_PKG_MPI}" != "Xyes"; then
+#   LIBS = "${LIBS} ${MPI_LIBS}"
+# fi
 
 #  =====  #
 #  K L U  #

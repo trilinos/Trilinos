@@ -144,20 +144,20 @@ am__libamesos_a_SOURCES_DIST = $(srcdir)/Amesos_Dscpack.cpp \
 	$(srcdir)/Epetra_CrsKundertSparse.cpp \
 	$(srcdir)/ksparse/alloc.c $(srcdir)/ksparse/smplinkrows.c \
 	$(srcdir)/ksparse/spbuild.c $(srcdir)/ksparse/spoutput.c \
-	$(srcdir)/ksparse/spsolve.c $(srcdir)/ksparse/driver.c \
-	$(srcdir)/ksparse/spalloc.c $(srcdir)/ksparse/spfactor.c \
-	$(srcdir)/ksparse/spsmp.c $(srcdir)/ksparse/spmatrix.h \
-	$(srcdir)/ksparse/sperror.h $(srcdir)/ksparse/spconfig.h \
-	$(srcdir)/ksparse/iferrmsg.h $(srcdir)/ksparse/strext.h \
-	$(srcdir)/ksparse/spice.h $(srcdir)/ksparse/util.h \
-	$(srcdir)/ksparse/misc.h $(srcdir)/ksparse/suffix.h \
-	$(srcdir)/ksparse/port.h $(srcdir)/ksparse/hw.h \
-	$(srcdir)/ksparse/config.h $(srcdir)/ksparse/capabil.h \
-	$(srcdir)/ksparse/os_linux.h $(srcdir)/ksparse/os_unix.h \
-	$(srcdir)/ksparse/hw_ieee.h $(srcdir)/ksparse/smpdefs.h \
-	$(srcdir)/ksparse/spdefs.h $(srcdir)/ksparse/sppars.h \
-	$(srcdir)/ksparse/spmat.h $(srcdir)/ksparse/complex.h \
-	$(srcdir)/ksparse/sputils.c $(srcdir)/CrsMatrixTranspose.cpp
+	$(srcdir)/ksparse/spsolve.c $(srcdir)/ksparse/spalloc.c \
+	$(srcdir)/ksparse/spfactor.c $(srcdir)/ksparse/spsmp.c \
+	$(srcdir)/ksparse/spmatrix.h $(srcdir)/ksparse/sperror.h \
+	$(srcdir)/ksparse/spconfig.h $(srcdir)/ksparse/iferrmsg.h \
+	$(srcdir)/ksparse/strext.h $(srcdir)/ksparse/spice.h \
+	$(srcdir)/ksparse/util.h $(srcdir)/ksparse/misc.h \
+	$(srcdir)/ksparse/suffix.h $(srcdir)/ksparse/port.h \
+	$(srcdir)/ksparse/hw.h $(srcdir)/ksparse/config.h \
+	$(srcdir)/ksparse/capabil.h $(srcdir)/ksparse/os_linux.h \
+	$(srcdir)/ksparse/os_unix.h $(srcdir)/ksparse/hw_ieee.h \
+	$(srcdir)/ksparse/smpdefs.h $(srcdir)/ksparse/spdefs.h \
+	$(srcdir)/ksparse/sppars.h $(srcdir)/ksparse/spmat.h \
+	$(srcdir)/ksparse/complex.h $(srcdir)/ksparse/sputils.c \
+	$(srcdir)/CrsMatrixTranspose.cpp
 am__objects_1 =
 @HAVE_AMESOS_DSCPACK_TRUE@am__objects_2 = Amesos_Dscpack.$(OBJEXT)
 @HAVE_AMESOS_KLU_TRUE@am__objects_3 = Amesos_Klu.$(OBJEXT) \
@@ -196,9 +196,9 @@ am__objects_6 = Amesos.$(OBJEXT)
 @HAVE_AMESOS_KUNDERT_TRUE@	alloc.$(OBJEXT) \
 @HAVE_AMESOS_KUNDERT_TRUE@	smplinkrows.$(OBJEXT) \
 @HAVE_AMESOS_KUNDERT_TRUE@	spbuild.$(OBJEXT) spoutput.$(OBJEXT) \
-@HAVE_AMESOS_KUNDERT_TRUE@	spsolve.$(OBJEXT) driver.$(OBJEXT) \
-@HAVE_AMESOS_KUNDERT_TRUE@	spalloc.$(OBJEXT) spfactor.$(OBJEXT) \
-@HAVE_AMESOS_KUNDERT_TRUE@	spsmp.$(OBJEXT) sputils.$(OBJEXT)
+@HAVE_AMESOS_KUNDERT_TRUE@	spsolve.$(OBJEXT) spalloc.$(OBJEXT) \
+@HAVE_AMESOS_KUNDERT_TRUE@	spfactor.$(OBJEXT) spsmp.$(OBJEXT) \
+@HAVE_AMESOS_KUNDERT_TRUE@	sputils.$(OBJEXT)
 am__objects_11 = CrsMatrixTranspose.$(OBJEXT)
 am_libamesos_a_OBJECTS = $(am__objects_1) $(am__objects_2) \
 	$(am__objects_3) $(am__objects_4) $(am__objects_5) \
@@ -228,8 +228,8 @@ am__depfiles_maybe = depfiles
 @AMDEP_TRUE@	./$(DEPDIR)/amd_postorder.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/amd_preprocess.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/amd_valid.Po ./$(DEPDIR)/btf_order.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/colamd.Po ./$(DEPDIR)/driver.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/klu.Po ./$(DEPDIR)/klu_btf_analyze.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/colamd.Po ./$(DEPDIR)/klu.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/klu_btf_analyze.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/klu_btf_analyze_given.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/klu_btf_defaults.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/klu_btf_factor.Po \
@@ -572,7 +572,6 @@ target_vendor = @target_vendor@
 @HAVE_AMESOS_KUNDERT_TRUE@       $(srcdir)/ksparse/spbuild.c \
 @HAVE_AMESOS_KUNDERT_TRUE@       $(srcdir)/ksparse/spoutput.c \
 @HAVE_AMESOS_KUNDERT_TRUE@       $(srcdir)/ksparse/spsolve.c \
-@HAVE_AMESOS_KUNDERT_TRUE@       $(srcdir)/ksparse/driver.c \
 @HAVE_AMESOS_KUNDERT_TRUE@       $(srcdir)/ksparse/spalloc.c \
 @HAVE_AMESOS_KUNDERT_TRUE@       $(srcdir)/ksparse/spfactor.c \
 @HAVE_AMESOS_KUNDERT_TRUE@       $(srcdir)/ksparse/spsmp.c \
@@ -850,7 +849,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/amd_valid.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/btf_order.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/colamd.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/driver.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/klu.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/klu_btf_analyze.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/klu_btf_analyze_given.Po@am__quote@
@@ -1434,22 +1432,6 @@ spsolve.obj: $(srcdir)/ksparse/spsolve.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/spsolve.Po' tmpdepfile='$(DEPDIR)/spsolve.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o spsolve.obj `if test -f '$(srcdir)/ksparse/spsolve.c'; then $(CYGPATH_W) '$(srcdir)/ksparse/spsolve.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ksparse/spsolve.c'; fi`
-
-driver.o: $(srcdir)/ksparse/driver.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT driver.o -MD -MP -MF "$(DEPDIR)/driver.Tpo" -c -o driver.o `test -f '$(srcdir)/ksparse/driver.c' || echo '$(srcdir)/'`$(srcdir)/ksparse/driver.c; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/driver.Tpo" "$(DEPDIR)/driver.Po"; else rm -f "$(DEPDIR)/driver.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/ksparse/driver.c' object='driver.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/driver.Po' tmpdepfile='$(DEPDIR)/driver.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o driver.o `test -f '$(srcdir)/ksparse/driver.c' || echo '$(srcdir)/'`$(srcdir)/ksparse/driver.c
-
-driver.obj: $(srcdir)/ksparse/driver.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT driver.obj -MD -MP -MF "$(DEPDIR)/driver.Tpo" -c -o driver.obj `if test -f '$(srcdir)/ksparse/driver.c'; then $(CYGPATH_W) '$(srcdir)/ksparse/driver.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ksparse/driver.c'; fi`; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/driver.Tpo" "$(DEPDIR)/driver.Po"; else rm -f "$(DEPDIR)/driver.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/ksparse/driver.c' object='driver.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/driver.Po' tmpdepfile='$(DEPDIR)/driver.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o driver.obj `if test -f '$(srcdir)/ksparse/driver.c'; then $(CYGPATH_W) '$(srcdir)/ksparse/driver.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ksparse/driver.c'; fi`
 
 spalloc.o: $(srcdir)/ksparse/spalloc.c
 @am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT spalloc.o -MD -MP -MF "$(DEPDIR)/spalloc.Tpo" -c -o spalloc.o `test -f '$(srcdir)/ksparse/spalloc.c' || echo '$(srcdir)/'`$(srcdir)/ksparse/spalloc.c; \
