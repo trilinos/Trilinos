@@ -51,6 +51,7 @@ typedef void LB_COMM_MIGRATE_OBJ_DATA_FN_TYPE(LB_ID object, char *start_pos_in_b
 
 typedef enum LB_Method {
   RCB = 0,
+  OCTPART,
   WHEAT,
   LB_MAX_METHODS                  /*  This entry should always be last.      */
 } LB_METHOD;
@@ -162,3 +163,4 @@ struct LB_Struct {
 
 extern LB_FN lb_rcb;
 extern LB_FN lb_wheat;
+extern LB_FN oct_init;

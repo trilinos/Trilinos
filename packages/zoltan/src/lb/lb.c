@@ -218,6 +218,10 @@ int i;
     lb->LB_Comm->Build_Send_Request_List = rcb_build_send_request_list;
 */
   }
+  else if (strcasecmp(method_name, "OCTPART") == 0) {
+    lb->Method = OCTPART;
+    lb->LB_Fn = oct_init;
+  }
 
   /*
    *  SET OTHER METHODS HERE!!
@@ -377,8 +381,15 @@ int num_keep;                  /* Set to the number of objects the processor
 double LB_start_time, LB_end_time;
 double LB_time[2], LB_max_time[2];
 
-  LB_start_time = MPI_Wtime();
 
+/* <<<<<<< lb.c
+
+   =======
+   */
+  LB_start_time = MPI_Wtime();
+  /*
+    >>>>>>> 1.9
+    */
   perform_error_checking(lb);
 
   lb->LB_Fn(lb, &num_objs, &num_keep, num_import_objs, import_objs);
