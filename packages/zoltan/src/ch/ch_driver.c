@@ -133,6 +133,6 @@ main(int argc, char **argv)
   if (DEBUG_TRACE) 
     printf("[%1d] Debug: Driver program finished! \n", myproc);
 
-  return DLB_OK;
+  return LB_OK;
 }
 

@@ -315,7 +315,7 @@ static int rcb(
     MPI_Allreduce(&j,&k,1,MPI_INT,MPI_SUM,lb->Communicator);
     if (k > 0) {
       if (proc == 0) printf("RCB ERROR: %d dot weights are <= 0\n",k);
-      return DLB_FATAL;
+      return LB_FATAL;
     }
   }
 
@@ -438,7 +438,7 @@ static int rcb(
     if (!LB_find_median(coord, wgts, dotmark, dotnum, proc, fractionlo,
                         local_comm, &valuehalf, first_guess, &(counters[0]))) {
       fprintf(stderr, "[%d] %s: Error returned from find_median\n", proc, yo);
-      return DLB_FATAL;
+      return LB_FATAL;
     }
 
     if (RCB_STATS) time3 = MPI_Wtime();
@@ -659,15 +659,15 @@ static int rcb(
   MPI_Allreduce(LB_time, LB_max_time, 2, MPI_DOUBLE, MPI_MAX,
                 lb->Communicator);
   if (lb->Proc == 0) {
-    printf("DLBLIB RCB Times:  \n");
-    printf("DLBLIB     Build:  %f\n", LB_max_time[0]);
-    printf("DLBLIB     RCB:    %f\n", LB_max_time[1]);
+    printf("LBLIB RCB Times:  \n");
+    printf("LBLIB     Build:  %f\n", LB_max_time[0]);
+    printf("LBLIB     RCB:    %f\n", LB_max_time[1]);
   }
 
   if (lb->Debug > 6) {
     int i;
     LB_print_sync_start(lb, TRUE);
-    printf("DLBLIB RCB Proc %d  Num_Obj=%d  Num_Keep=%d  Num_Non_Local=%d\n", 
+    printf("LBLIB RCB Proc %d  Num_Obj=%d  Num_Keep=%d  Num_Non_Local=%d\n", 
            lb->Proc, pdotnum, pdottop, *num_import);
     printf("  Assigned objects:\n");
     for (i = 0; i < pdotnum; i++) {
@@ -683,7 +683,7 @@ static int rcb(
   }
 
   /* Temporary return value until error codes are fully implemented */
-  return(DLB_OK);  
+  return(LB_OK);  
 }
 
 

@@ -23,7 +23,7 @@ static char *cvs_dr_const_id = "$Id$";
 #include "lbi_const.h"
 
 /*****************************************************************************
- *  Definitions for the DLB library driver program.
+ *  Definitions for the LB library driver program.
  *****************************************************************************/
 
 #define VER_STR         "1.0"

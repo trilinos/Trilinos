@@ -75,24 +75,16 @@ struct LB_Struct;
 #define LB_PARAMS_MAX_SIZE 7
 
 /*
- * Error codes for DLB library
- *   DLB_OK     - no errors
- *   DLB_WARN   - some warning occurred in DLB library; application should be
- *                able to continue running
- *   DLB_FATAL  - a fatal error occurred
- *   DLB_MEMERR - memory allocation failed; with this error, it could be
- *                possible to try a different, more memory-friendly, algorithm
+ * Error codes for LB library
+ *   LB_OK     - no errors
+ *   LB_WARN   - some warning occurred in LB library; application should be
+ *               able to continue running
+ *   LB_FATAL  - a fatal error occurred
+ *   LB_MEMERR - memory allocation failed; with this error, it could be
+ *               possible to try a different, more memory-friendly, algorithm
  */
-#define DLB_OK     0
-#define DLB_WARN   1
-#define DLB_FATAL  -1
-#define DLB_MEMERR -2
-
-/* DLB_ should be replaced with LB_ to be consistent with 
- * the rest of Zoltan. For now, keep both sets of definitions.
- */
-#define LB_OK      0
-#define LB_WARN    1
+#define LB_OK     0
+#define LB_WARN   1
 #define LB_FATAL  -1
 #define LB_MEMERR -2
 
@@ -465,12 +457,12 @@ typedef void LB_UNPACK_OBJ_FN(void *data, LB_GID global_id, int size,
  *  uses MPI, call this function after calling MPI_Init. If the
  *  application does not use MPI, this function calls MPI_Init for
  *  use by the load balancer. This function returns the version of
- *  the DLB library.
+ *  the LB library.
  *  Input:
  *    int argc                   --  Argument count from main()
  *    char **argv                --  Argument list from main()
  *  Output:
- *    float *ver                 --  Version of DLB library
+ *    float *ver                 --  Version of LB library
  *  Returned value:
  *    int                        --  Error code
  */
@@ -485,9 +477,9 @@ extern int LB_Initialize(int argc, char **argv, float *ver);
  *  Input:
  *    MPI_Comm communicator      --  MPI Communicator to be used for this
  *                                   load-balancing object.
- *    KDD_DLB  --  The communicator is not yet used in the algorithms!
- *    KDD_DLB  --  It will have to be incorporated appropriately.
- *    KDD_DLB  --  But I wanted to get it into the interface now!
+ *    KDD_LB  --  The communicator is not yet used in the algorithms!
+ *    KDD_LB  --  It will have to be incorporated appropriately.
+ *    KDD_LB  --  But I wanted to get it into the interface now!
  *  Returned value:
  *    struct LB_Struct *         --  Pointer to a LB object.
  *                                   If there is an error, NULL is returned.
@@ -506,7 +498,7 @@ extern struct LB_Struct *LB_Create_Object(MPI_Comm communicator);
  *                                   set.
  *    void *()fn_ptr             --  Pointer to the function to be used in the 
  *                                   assignment.
- *    void *data_ptr             --  Pointer to data that the DLB library will
+ *    void *data_ptr             --  Pointer to data that the LB library will
  *                                   pass as an argument to fn(). May be NULL.
  *  Output:
  *    struct LB_Struct *lb       --  Appropriate field set to value in fn_ptr.

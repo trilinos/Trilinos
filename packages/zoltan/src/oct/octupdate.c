@@ -216,7 +216,7 @@ int lb_oct_init(
   }
 
   /* Temporary return value until error codes are fully implemented. */
-  return(DLB_OK);
+  return(LB_OK);
 }
 
 /*****************************************************************************/

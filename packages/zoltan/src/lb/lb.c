@@ -59,9 +59,9 @@ int mpi_flag;
    * the libarary is being used without having to get the source
    * code.
    */
-  *ver = DLB_VER;
+  *ver = LB_VER;
 
-  return (DLB_OK);
+  return (LB_OK);
 }
 
 
@@ -163,7 +163,7 @@ int LB_Set_Fn(LB *lb, LB_FN_TYPE fn_type, void *fn(), void *data)
  *    fn_type           --  Enum type indicating the function to be set.
  *    fn                --  Pointer to the function to be used in the
  *                          assignment.
- *    data              --  Pointer to data that the DLB library will
+ *    data              --  Pointer to data that the LB library will
  *                          pass as an argument to fn(). May be NULL.
  *  Output:
  *    lb                --  Appropriate field set to value in void *().
@@ -239,10 +239,10 @@ char *yo = "LB_Set_Fn";
   default:
     fprintf(stderr, "Error from %s:  LB_FN_TYPE %d is invalid.\n", yo, fn_type);
     fprintf(stderr, "Value must be in range 0 to %d\n", LB_MAX_FN_TYPES);
-    return (DLB_WARN);
+    return (LB_WARN);
   }
 
-  return (DLB_OK);
+  return (LB_OK);
 }
 
 /****************************************************************************/
@@ -307,7 +307,7 @@ int i;
   else {  
     fprintf(stderr, "Error from %s:  Invalid LB method specified:  %s\n", 
             yo, method_name);
-    return (DLB_FATAL);
+    return (LB_FATAL);
   }
 
   if (lb->Proc == 0) {
@@ -326,14 +326,14 @@ int i;
     if (!lb->Params) {
       fprintf(stderr, "[%d] Error from %s: Insufficient memory\n",
               lb->Proc, yo);
-      return (DLB_MEMERR);
+      return (LB_MEMERR);
     }
     for (i = 0; i < LB_PARAMS_MAX_SIZE; i++) 
       lb->Params[i] = params[i];
   }
 */
 
-  return (DLB_OK);
+  return (LB_OK);
 }
 
 /****************************************************************************/
@@ -365,7 +365,7 @@ char *yo = "LB_Set_Tolerance";
     fprintf(stderr, "Error from %s:  LB Tolerance is invalid:  %f\n", 
             yo, tolerance);
     fprintf(stderr, "Tolerance must be between 0 and 1.\n");
-    return (DLB_FATAL);
+    return (LB_FATAL);
   }
 
   /*
@@ -378,7 +378,7 @@ char *yo = "LB_Set_Tolerance";
     printf("LB:  Load balancing tolerance = %f\n", tolerance);
   }
 
-  return (DLB_OK);
+  return (LB_OK);
 }
 
 /****************************************************************************/
@@ -407,7 +407,7 @@ char *yo = "LB_Set_Migration";
     fprintf(stderr, "Error from %s:  Invalid value for Help_Migration:  %d\n", 
             yo, help);
     fprintf(stderr, "Value must be between %d or %d.\n", TRUE, FALSE);
-    return (DLB_FATAL);
+    return (LB_FATAL);
   }
 
   lb->Migrate.Help_Migrate = help;
@@ -415,7 +415,7 @@ char *yo = "LB_Set_Migration";
     printf("LB:  Load balancing Migration flag = %d\n", help);
   }
 
-  return (DLB_OK);
+  return (LB_OK);
 }
 
 /****************************************************************************/
@@ -443,7 +443,7 @@ int i;
   for (i = 0; i < LB_PARAMS_MAX_SIZE; i++)
     params[i] = LB_PARAMS_INIT_VALUE;
 
-  return (DLB_OK);
+  return (LB_OK);
 }
 */
 
@@ -533,14 +533,14 @@ double LB_time[2] = {0.0,0.0}, LB_max_time[2] = {0.0,0.0};
    */
 
   if (LB_PROC_NOT_IN_COMMUNICATOR(lb))
-    return (DLB_OK);
+    return (LB_OK);
 
   if (lb->Method == NONE) {
     if (lb->Proc == 0)
       printf("%s Balancing method selected == NONE; no balancing performed\n",
               yo);
 
-    return (DLB_WARN);
+    return (LB_WARN);
   }
 
   /*
@@ -566,7 +566,7 @@ double LB_time[2] = {0.0,0.0}, LB_max_time[2] = {0.0,0.0};
       printf("%s No changes to the decomposition due to load-balancing; "
              "no migration is needed.\n", yo);
 
-    return (DLB_OK);
+    return (LB_OK);
   }
 
   /*
@@ -611,13 +611,13 @@ double LB_time[2] = {0.0,0.0}, LB_max_time[2] = {0.0,0.0};
   
   MPI_Allreduce(LB_time, LB_max_time, 2, MPI_DOUBLE, MPI_MAX, lb->Communicator);
   if (lb->Proc == 0) {
-    printf("DLBLIB LB  Times:  \n");
-    printf("DLBLIB     Balance:        %f\n", LB_max_time[0]);
-    printf("DLBLIB     HelpMigrate:    %f\n", LB_max_time[1]);
+    printf("LBLIB LB  Times:  \n");
+    printf("LBLIB     Balance:        %f\n", LB_max_time[0]);
+    printf("LBLIB     HelpMigrate:    %f\n", LB_max_time[1]);
   }
 
   *changes = 1;
-  return (DLB_OK);
+  return (LB_OK);
 }
 
 /****************************************************************************/
@@ -675,7 +675,7 @@ int i;
    */
 
   if (LB_PROC_NOT_IN_COMMUNICATOR(lb))
-    return (DLB_OK);
+    return (LB_OK);
 
   /*
    *  Build processor's list of requests for non-local objs.
@@ -687,7 +687,7 @@ int i;
     if (!proc_list) {
       fprintf(stderr, "[%d] Error from %s: Insufficient memory\n",
               lb->Proc, yo);
-      return (DLB_MEMERR);
+      return (LB_MEMERR);
     }
     import_objs = (LB_TAG *) LB_Array_Alloc(__FILE__, __LINE__, 1,
                                             num_import, sizeof(LB_TAG));
@@ -695,7 +695,7 @@ int i;
       fprintf(stderr, "[%d] Error from %s: Insufficient memory\n",
               lb->Proc, yo);
       LB_Free((void **) &proc_list);
-      return (DLB_MEMERR);
+      return (LB_MEMERR);
     }
 
     for (i = 0; i < num_import; i++) {
@@ -728,7 +728,7 @@ int i;
               lb->Proc, yo);
       LB_Free((void **) &proc_list);
       LB_Free((void **) &import_objs);
-      return (DLB_MEMERR);
+      return (LB_MEMERR);
     }
     *export_global_ids  = (LB_GID *) LB_Array_Alloc(__FILE__, __LINE__, 1,
                                                    *num_export, sizeof(LB_GID));
@@ -738,7 +738,7 @@ int i;
       LB_Free((void **) &proc_list);
       LB_Free((void **) &import_objs);
       LB_Free((void **) &export_objs);
-      return (DLB_MEMERR);
+      return (LB_MEMERR);
     }
     *export_local_ids   = (LB_LID *) LB_Array_Alloc(__FILE__, __LINE__, 1,
                                                    *num_export, sizeof(LB_LID));
@@ -749,7 +749,7 @@ int i;
       LB_Free((void **) &import_objs);
       LB_Free((void **) &export_objs);
       LB_Free((void **) export_local_ids);
-      return (DLB_MEMERR);
+      return (LB_MEMERR);
     }
     *export_procs       = (int *)    LB_Array_Alloc(__FILE__, __LINE__, 1,
                                                    *num_export, sizeof(int));
@@ -761,7 +761,7 @@ int i;
       LB_Free((void **) &export_objs);
       LB_Free((void **) export_local_ids);
       LB_Free((void **) export_procs);
-      return (DLB_MEMERR);
+      return (LB_MEMERR);
     }
 
   }
@@ -791,7 +791,7 @@ int i;
   
   LB_comm_destroy(&comm_plan);
 
-  return (DLB_OK);
+  return (LB_OK);
 }
 
 /****************************************************************************/
@@ -860,31 +860,31 @@ int ierr = 0;
    */
 
   if (LB_PROC_NOT_IN_COMMUNICATOR(lb))
-    return (DLB_OK);
+    return (LB_OK);
 
   if (lb->Debug > 4)
-    printf("DLBLIB %d %s Entering HELP_MIGRATE %d %d\n",
+    printf("LBLIB %d %s Entering HELP_MIGRATE %d %d\n",
             lb->Proc, yo, num_import, num_export);
 
   if (lb->Migrate.Get_Obj_Size == NULL) {
-    fprintf(stderr, "DLBLIB %d %s Error:  Must register an "
+    fprintf(stderr, "LBLIB %d %s Error:  Must register an "
            "LB_OBJ_SIZE_FN_TYPE function to use the migration-help tools.\n",
            lb->Proc, yo);
-    return (DLB_FATAL);
+    return (LB_FATAL);
   }
 
   if (lb->Migrate.Pack_Obj == NULL) {
-    fprintf(stderr, "DLBLIB %d %s Error:  Must register an "
+    fprintf(stderr, "LBLIB %d %s Error:  Must register an "
            "LB_PACK_OBJ_FN_TYPE function to use the migration-help tools.\n",
            lb->Proc, yo);
-    return (DLB_FATAL);
+    return (LB_FATAL);
   }
 
   if (lb->Migrate.Unpack_Obj == NULL) {
-    fprintf(stderr, "DLBLIB %d %s Error:  Must register an "
+    fprintf(stderr, "LBLIB %d %s Error:  Must register an "
          "LB_UNPACK_OBJ_FN_TYPE function to use the migration-help tools.\n",
          lb->Proc, yo);
-    return (DLB_FATAL);
+    return (LB_FATAL);
   }
 
   if (lb->Migrate.Pre_Process != NULL) {
@@ -896,18 +896,18 @@ int ierr = 0;
     if (ierr) {
       fprintf(stderr, "[%d] %s: Error returned from user defined "
                       "Migrate.Pre_Process function.\n", lb->Proc, yo);
-      return (DLB_FATAL);
+      return (LB_FATAL);
     }
 
     if (lb->Debug > 5)
-      printf("DLBLIB %d %s Done Pre-Process\n", lb->Proc, yo);
+      printf("LBLIB %d %s Done Pre-Process\n", lb->Proc, yo);
   }
 
   size = lb->Migrate.Get_Obj_Size(lb->Migrate.Get_Obj_Size_Data, &ierr);
   if (ierr) {
     fprintf(stderr, "[%d] %s: Error returned from user defined "
                     "Migrate.Get_Obj_Size function.\n", lb->Proc, yo);
-    return (DLB_FATAL);
+    return (LB_FATAL);
   }
 
 
@@ -917,7 +917,7 @@ int ierr = 0;
     if (!export_buf) {
       fprintf(stderr, "[%d] Error from %s: Insufficient memory\n",
               lb->Proc, yo);
-      return (DLB_FATAL);
+      return (LB_FATAL);
     }
 
     proc_list = (int *) LB_Array_Alloc(__FILE__, __LINE__, 1, num_export,
@@ -926,7 +926,7 @@ int ierr = 0;
       fprintf(stderr, "[%d] Error from %s: Insufficient memory\n",
               lb->Proc, yo);
       LB_Free ((void **) &export_buf);
-      return (DLB_FATAL);
+      return (LB_FATAL);
     }
 
 
@@ -943,7 +943,7 @@ int ierr = 0;
       if (ierr) {
         fprintf(stderr, "[%d] %s: Error returned from user defined "
                         "Migrate.Pack_Obj function.\n", lb->Proc, yo);
-        return (DLB_FATAL);
+        return (LB_FATAL);
       }
       tmp += size;
     }
@@ -969,7 +969,7 @@ int ierr = 0;
               lb->Proc, yo);
       LB_Free ((void **) &export_buf);
       LB_Free ((void **) &proc_list);
-      return (DLB_FATAL);
+      return (LB_FATAL);
     }
 
   }
@@ -1001,17 +1001,17 @@ int ierr = 0;
     if (ierr) {
       fprintf(stderr, "[%d] %s: Error returned from user defined "
                       "Migrate.Unpack_Obj function.\n", lb->Proc, yo);
-      return (DLB_FATAL);
+      return (LB_FATAL);
     }
     tmp += size;
   }
 
   LB_Free((void **) &import_buf);
   if (lb->Debug > 4)
-    printf("DLBLIB %d %s Leaving HELP_MIGRATE %d %d\n",
+    printf("LBLIB %d %s Leaving HELP_MIGRATE %d %d\n",
             lb->Proc, yo, num_import, num_export);
 
-  return (DLB_OK);
+  return (LB_OK);
 }
 
 /****************************************************************************/
@@ -1050,6 +1050,6 @@ int LB_Free_Data(
   LB_Free((void **) export_local_ids);
   LB_Free((void **) export_procs);
 
-  return (DLB_OK);
+  return (LB_OK);
 
 }

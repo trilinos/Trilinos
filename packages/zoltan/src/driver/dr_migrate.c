@@ -68,28 +68,28 @@ int migrate_elements(
   /*
    * register migration functions
    */
-  if (LB_Set_Fn(lb_obj, LB_PRE_MIGRATE_FN_TYPE, NULL, NULL) == DLB_FATAL) {
+  if (LB_Set_Fn(lb_obj, LB_PRE_MIGRATE_FN_TYPE, NULL, NULL) == LB_FATAL) {
     Gen_Error(0, "fatal:  error returned from LB_Set_Fn()\n");
     return 0;
   }
   if (LB_Set_Fn(lb_obj, LB_OBJ_SIZE_FN_TYPE, (void *) migrate_elem_size, NULL)
-        == DLB_FATAL) {
+        == LB_FATAL) {
     Gen_Error(0, "fatal:  error returned from LB_Set_Fn()\n");
     return 0;
   }
   if (LB_Set_Fn(lb_obj, LB_PACK_OBJ_FN_TYPE, (void *) migrate_pack_elem,
-                (void *) *elements) == DLB_FATAL) {
+                (void *) *elements) == LB_FATAL) {
     Gen_Error(0, "fatal:  error returned from LB_Set_Fn()\n");
     return 0;
   }
   if (LB_Set_Fn(lb_obj, LB_UNPACK_OBJ_FN_TYPE, (void *) migrate_unpack_elem,
-                (void *) elements) == DLB_FATAL) {
+                (void *) elements) == LB_FATAL) {
     Gen_Error(0, "fatal:  error returned from LB_Set_Fn()\n");
     return 0;
   }
 
   if (LB_Help_Migrate(lb_obj, num_imp, imp_gids, imp_lids, imp_procs,
-                      num_exp, exp_gids, exp_lids, exp_procs) == DLB_FATAL) {
+                      num_exp, exp_gids, exp_lids, exp_procs) == LB_FATAL) {
     Gen_Error(0, "fatal:  error returned from LB_Help_Migrate()\n");
     return 0;
   }
@@ -111,7 +111,7 @@ int migrate_elem_size(void *data, int *ierr)
  * with the globalID and the rest will be added later.
  */
 {
-  *ierr = DLB_OK;
+  *ierr = LB_OK;
 
   return (sizeof(ELEM_INFO));
 }
@@ -125,7 +125,7 @@ void migrate_pack_elem(void *data, LB_GID elem_gid, LB_LID elem_lid,
   ELEM_INFO *elem, *elem_mig;
 
   if (data == NULL) {
-    *ierr = DLB_FATAL;
+    *ierr = LB_FATAL;
     return;
   }
 
@@ -160,7 +160,7 @@ void migrate_pack_elem(void *data, LB_GID elem_gid, LB_LID elem_lid,
    * completed.
    */
 
-  *ierr = DLB_OK;
+  *ierr = LB_OK;
 }
 
 /*****************************************************************************/
@@ -173,7 +173,7 @@ void migrate_unpack_elem(void *data, LB_GID elem_gid, int elem_data_size,
   int i;
 
   if (data == NULL) {
-    *ierr = DLB_FATAL;
+    *ierr = LB_FATAL;
     return;
   }
 
@@ -196,7 +196,7 @@ void migrate_unpack_elem(void *data, LB_GID elem_gid, int elem_data_size,
                                    Mesh.elem_array_len * sizeof(ELEM_INFO));
     if (tmp == NULL) {
       Gen_Error(0, "fatal: insufficient memory");
-      *ierr = DLB_FATAL;
+      *ierr = LB_FATAL;
       return;
     }
     *elem = tmp;
@@ -221,5 +221,5 @@ void migrate_unpack_elem(void *data, LB_GID elem_gid, int elem_data_size,
   Mesh.num_elems++;
   Mesh.eb_cnts[(*elem)[i].elem_blk]++;
 
-  *ierr = DLB_OK;
+  *ierr = LB_OK;
 }

@@ -35,13 +35,13 @@ int num_obj_fn (void *data, int *ierr)
   int n;
 
   if (data == NULL){
-    *ierr = DLB_FATAL;
+    *ierr = LB_FATAL;
     n = 0;
   }
   else{
     graph = (Graph *)data;
     n = graph->lnvtxs;
-    *ierr = DLB_OK;
+    *ierr = LB_OK;
   }
   return n;
 }
@@ -54,14 +54,14 @@ void list_obj_fn(void *data, LB_GID *global_ids, LB_LID *local_ids,
   int i;
 
   if (data == NULL)
-    *ierr = DLB_FATAL;
+    *ierr = LB_FATAL;
   else{
     graph = (Graph *)data;
     for (i=0; i<graph->lnvtxs; i++){
       local_ids[i]  = i;
       global_ids[i] = i + graph->vtxdist[graph->myproc];
     }
-    *ierr = DLB_OK;
+    *ierr = LB_OK;
   }
 }
 
@@ -72,11 +72,11 @@ float obj_weight_fn (void *data, LB_GID global_id, LB_LID local_id,
   float w;
 
   if (data == NULL)
-    *ierr = DLB_FATAL;
+    *ierr = LB_FATAL;
   else{
     graph = (Graph *)data;
     w = graph->vwgts[local_id];
-    *ierr = DLB_OK;
+    *ierr = LB_OK;
   }
   return w;
 }
@@ -88,11 +88,11 @@ int num_edges_fn(void *data, LB_GID global_id, LB_LID local_id,
   int nedges;
 
   if (data == NULL)
-    *ierr = DLB_FATAL;
+    *ierr = LB_FATAL;
   else{
     graph = (Graph *)data;
     nedges = graph->start[local_id+1] - graph->start[local_id];
-    *ierr = DLB_OK;
+    *ierr = LB_OK;
   }
   return nedges;
 }
@@ -106,10 +106,10 @@ void edge_list_fn (void *data, LB_GID global_id, LB_LID local_id,
   int offset = 1; /* Lowest numbered vertex in input file. Ugly hack... */
 
   if (data == NULL)
-    *ierr = DLB_FATAL;
+    *ierr = LB_FATAL;
   else{
     graph = (Graph *)data;
-    *ierr = DLB_OK;
+    *ierr = LB_OK;
     for (i=0,j=graph->start[local_id]; j<graph->start[local_id+1]; i++,j++){
       nbor_global_id[i] = graph->adjncy[j] - offset;
       if (get_ewgts)
@@ -118,7 +118,7 @@ void edge_list_fn (void *data, LB_GID global_id, LB_LID local_id,
       for (p=0; nbor_global_id[i] >= graph->vtxdist[p+1]; p++);
       nbor_procs[i] = p; 
     }
-    *ierr = DLB_OK;
+    *ierr = LB_OK;
   }
 }
 

@@ -42,7 +42,7 @@ void LB_Get_Obj_List(LB *lb, LB_GID *global_ids, LB_LID *local_ids,
 {
   int i, n;
 
-  *ierr = DLB_OK;
+  *ierr = LB_OK;
   if (lb->Get_Obj_List != NULL){
     /* Get object list directly */
     lb->Get_Obj_List(lb->Get_Obj_List_Data, global_ids, local_ids, 
@@ -65,7 +65,7 @@ void LB_Get_Obj_List(LB *lb, LB_GID *global_ids, LB_LID *local_ids,
     }
   }
   else { /* No way to get objects */
-    *ierr = DLB_FATAL;
+    *ierr = LB_FATAL;
   }
 }
 

@@ -100,7 +100,7 @@ int main(int argc, char *argv[])
   }
 
   /* initialize Zoltan */
-  if ((error = LB_Initialize(argc, argv, &version)) != DLB_OK) {
+  if ((error = LB_Initialize(argc, argv, &version)) != LB_OK) {
     sprintf(cmesg, "fatal: LB_Initialize returned error code, %d", error);
     Gen_Error(0, cmesg);
     error_report(Proc);
@@ -126,7 +126,7 @@ int main(int argc, char *argv[])
   prob.method[0]		= '\0';
 /* BAH: need to put new parameter initialization here */
 /*
-  if ((error = LB_Initialize_Params_Array(prob.params)) != DLB_OK) {
+  if ((error = LB_Initialize_Params_Array(prob.params)) != LB_OK) {
     Gen_Error(0, "fatal: error returned from LB_Initialize_Params_Array");
     error_report(Proc);
     exit(1);

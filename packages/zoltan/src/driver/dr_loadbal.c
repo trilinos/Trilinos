@@ -37,6 +37,7 @@ static char *cvs_loadbal = "$Id$";
 #include "dr_const.h"
 #include "dr_err_const.h"
 #include "dr_loadbal_const.h"
+#include "all_allo_const.h"
 
 /*
  *  PROTOTYPES for load-balancer interface functions.
@@ -80,6 +81,7 @@ int run_zoltan(int Proc, PROB_INFO_PTR prob, ELEM_INFO *elements[])
 
 /***************************** BEGIN EXECUTION ******************************/
 
+
   /*
    *  Create a load-balancing object.
    */
@@ -87,15 +89,16 @@ int run_zoltan(int Proc, PROB_INFO_PTR prob, ELEM_INFO *elements[])
     Gen_Error(0, "fatal:  NULL object returned from LB_Create_Object()\n");
     return 0;
   }
+LB_Set_Param(lb_obj, "debug_memory", "1");
 
   /* set the method */
-  if (LB_Set_Method(lb_obj, prob->method) == DLB_FATAL) {
+  if (LB_Set_Method(lb_obj, prob->method) == LB_FATAL) {
     Gen_Error(0, "fatal:  error returned from LB_Set_Method()\n");
     return 0;
   }
 
   /* set the tolerance */
-  if (LB_Set_Tolerance(lb_obj, prob->tol) == DLB_FATAL) {
+  if (LB_Set_Tolerance(lb_obj, prob->tol) == LB_FATAL) {
     Gen_Error(0, "fatal:  error returned from LB_Set_Tolerance()\n");
     return 0;
   }
@@ -105,19 +108,19 @@ int run_zoltan(int Proc, PROB_INFO_PTR prob, ELEM_INFO *elements[])
    */
 
   if (LB_Set_Fn(lb_obj, LB_NUM_OBJ_FN_TYPE, (void *) get_num_elements,
-                NULL) == DLB_FATAL) {
+                NULL) == LB_FATAL) {
     Gen_Error(0, "fatal:  error returned from LB_Set_Fn()\n");
     return 0;
   }
 
   if (LB_Set_Fn(lb_obj, LB_FIRST_OBJ_FN_TYPE, (void *) get_first_element,
-                (void *) *elements) == DLB_FATAL) {
+                (void *) *elements) == LB_FATAL) {
     Gen_Error(0, "fatal:  error returned from LB_Set_Fn()\n");
     return 0;
   }
 
   if (LB_Set_Fn(lb_obj, LB_NEXT_OBJ_FN_TYPE, (void *) get_next_element,
-                (void *) *elements) == DLB_FATAL) {
+                (void *) *elements) == LB_FATAL) {
     Gen_Error(0, "fatal:  error returned from LB_Set_Fn()\n");
     return 0;
   }
@@ -125,13 +128,13 @@ int run_zoltan(int Proc, PROB_INFO_PTR prob, ELEM_INFO *elements[])
   /* functions for geometry based algorithms */
   if (prob->read_coord) {
     if (LB_Set_Fn(lb_obj, LB_NUM_GEOM_FN_TYPE, (void *) get_num_geom,
-                  NULL) == DLB_FATAL) {
+                  NULL) == LB_FATAL) {
       Gen_Error(0, "fatal:  error returned from LB_Set_Fn()\n");
       return 0;
     }
 
     if (LB_Set_Fn(lb_obj, LB_GEOM_FN_TYPE, (void *) get_geom,
-                  (void *) *elements) == DLB_FATAL) {
+                  (void *) *elements) == LB_FATAL) {
       Gen_Error(0, "fatal:  error returned from LB_Set_Fn()\n");
       return 0;
     }
@@ -140,13 +143,13 @@ int run_zoltan(int Proc, PROB_INFO_PTR prob, ELEM_INFO *elements[])
   /* functions for geometry based algorithms */
   if (prob->gen_graph) {
     if (LB_Set_Fn(lb_obj, LB_NUM_EDGES_FN_TYPE, (void *) get_num_edges,
-                  (void *) *elements) == DLB_FATAL) {
+                  (void *) *elements) == LB_FATAL) {
       Gen_Error(0, "fatal:  error returned from LB_Set_Fn()\n");
       return 0;
     }
 
     if (LB_Set_Fn(lb_obj, LB_EDGE_LIST_FN_TYPE, (void *) get_edge_list,
-                  (void *) *elements) == DLB_FATAL) {
+                  (void *) *elements) == LB_FATAL) {
       Gen_Error(0, "fatal:  error returned from LB_Set_Fn()\n");
       return 0;
     }
@@ -157,12 +160,13 @@ int run_zoltan(int Proc, PROB_INFO_PTR prob, ELEM_INFO *elements[])
    */
 
 
+
   /*
    * call the load balancer
    */
   if (LB_Balance(lb_obj, &new_decomp, &num_imported, &import_gids,
                  &import_lids, &import_procs, &num_exported, &export_gids,
-                 &export_lids, &export_procs) == DLB_FATAL) {
+                 &export_lids, &export_procs) == LB_FATAL) {
     Gen_Error(0, "fatal:  error returned from LB_Balance()\n");
     return 0;
   }
@@ -183,6 +187,8 @@ int run_zoltan(int Proc, PROB_INFO_PTR prob, ELEM_INFO *elements[])
                       &export_gids, &export_lids, &export_procs);
 
 
+LB_Memory_Stats();
+
   return 1;
 
 }
@@ -192,7 +198,7 @@ int run_zoltan(int Proc, PROB_INFO_PTR prob, ELEM_INFO *elements[])
 /*****************************************************************************/
 int get_num_elements(void *data, int *ierr)
 {
-  *ierr = DLB_OK; /* set error code */
+  *ierr = LB_OK; /* set error code */
 
   return(Mesh.num_elems);
 }
@@ -206,7 +212,7 @@ int get_first_element(void *data, LB_GID *global_id, LB_LID *local_id,
   ELEM_INFO *elem;
 
   if (data == NULL) {
-    *ierr = DLB_FATAL;
+    *ierr = LB_FATAL;
     return 0;
   }
   
@@ -219,9 +225,9 @@ int get_first_element(void *data, LB_GID *global_id, LB_LID *local_id,
     *wgt = elem[*local_id].cpu_wgt;
 
   if (wdim>1)
-    *ierr = DLB_WARN; /* we didn't expect multidimensional weights */
+    *ierr = LB_WARN; /* we didn't expect multidimensional weights */
   else
-    *ierr = DLB_OK; 
+    *ierr = LB_OK; 
 
   return 1;
 }
@@ -237,7 +243,7 @@ int get_next_element(void *data, LB_GID global_id, LB_LID local_id,
   ELEM_INFO *elem;
 
   if (data == NULL) {
-    *ierr = DLB_FATAL;
+    *ierr = LB_FATAL;
     return 0;
   }
   
@@ -252,9 +258,9 @@ int get_next_element(void *data, LB_GID global_id, LB_LID local_id,
       *next_wgt = elem[*next_local_id].cpu_wgt;
 
     if (wdim>1)
-      *ierr = DLB_WARN; /* we didn't expect multidimensional weights */
+      *ierr = LB_WARN; /* we didn't expect multidimensional weights */
     else
-      *ierr = DLB_OK; 
+      *ierr = LB_OK; 
   }
 
   return(found);
@@ -266,7 +272,7 @@ int get_next_element(void *data, LB_GID global_id, LB_LID local_id,
 int get_num_geom(void *data, int *ierr)
 {
 
-  *ierr = DLB_OK; /* set error flag */
+  *ierr = LB_OK; /* set error flag */
 
   return(Mesh.num_dims);
 }
@@ -282,7 +288,7 @@ void get_geom(void *data, LB_GID global_id, LB_LID local_id,
   double tmp;
 
   if (data == NULL) {
-    *ierr = DLB_FATAL;
+    *ierr = LB_FATAL;
     return;
   }
   
@@ -300,7 +306,7 @@ void get_geom(void *data, LB_GID global_id, LB_LID local_id,
     coor[i] = tmp / Mesh.eb_nnodes[elem[local_id].elem_blk];
   }
 
-  *ierr = DLB_OK;
+  *ierr = LB_OK;
 }
 
 /*****************************************************************************/
@@ -311,13 +317,13 @@ int get_num_edges(void *data, LB_GID global_id, LB_LID local_id, int *ierr)
   ELEM_INFO *elem;
 
   if (data == NULL) {
-    *ierr = DLB_FATAL;
+    *ierr = LB_FATAL;
     return 0;
   }
 
   elem = (ELEM_INFO *) data;
 
-  *ierr = DLB_OK;
+  *ierr = LB_OK;
 
   return(elem[local_id].nadj);
 }
@@ -333,7 +339,7 @@ void get_edge_list (void *data, LB_GID global_id, LB_LID local_id,
   int i, proc, local_elem;
 
   if (data == NULL) {
-    *ierr = DLB_FATAL;
+    *ierr = LB_FATAL;
     return;
   }
 
@@ -360,5 +366,5 @@ void get_edge_list (void *data, LB_GID global_id, LB_LID local_id,
     }
   }
 
-  *ierr = DLB_OK;
+  *ierr = LB_OK;
 }
