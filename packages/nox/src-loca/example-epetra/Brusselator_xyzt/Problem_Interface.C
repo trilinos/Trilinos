@@ -39,9 +39,8 @@
 #endif
 
 //-----------------------------------------------------------------------------
-Problem_Interface::Problem_Interface(Brusselator& Problem, int replica_) :
+Problem_Interface::Problem_Interface(Brusselator& Problem) :
   problem(Problem),
-  replica(replica_),
   outStep(0),
   oldSolnOrig(Problem.getOldSoln())
 { }
@@ -72,7 +71,7 @@ void Problem_Interface::printSolution(const Epetra_Vector& x, double conParam)
    Epetra_Vector& xMesh = problem.getMesh();
    int NumMyNodes = xMesh.Map().NumMyElements();
    (void) sprintf(file_name, "output.p%02d_t%03d_s%03d", xMesh.Comm().MyPID(),
-		  replica+1, outStep++);
+		  (int)conParam, outStep++);
    ifp = fopen(file_name, "w");
    for (int i=0; i<NumMyNodes; i++)
      fprintf(ifp, "%d  %E  %E  %E\n", xMesh.Map().MinMyGID()+i, xMesh[i],
@@ -108,7 +107,6 @@ bool Problem_Interface::computeMassMatrix(const Epetra_Vector& x)
   problem.setdt(dtOrig);
 
   // Construct mass matrix by:  M/dt =  -2*(J - M/dt) + 2*(J - M/(2*dt)) 
-  cout << "Negative Sign Not Verified On Mass Matrix Computation " << endl;
 #ifdef HAVE_NOX_EPETRAEXT
   ierr = EpetraExt::MatrixMatrix::Add(tmpJac, false, -2.0, JacRef, 2.0);
 #else

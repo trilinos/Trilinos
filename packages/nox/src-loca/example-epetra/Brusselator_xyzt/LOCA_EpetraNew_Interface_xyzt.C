@@ -41,22 +41,27 @@ xyzt::xyzt(LOCA::EpetraNew::Interface::Required &iReq_,
        LOCA::EpetraNew::Interface::MassMatrix &iMass_,
        Epetra_Vector &splitVec_, Epetra_RowMatrix &splitJac_,
        Epetra_RowMatrix &splitMass_, Epetra_MpiComm &globalComm_,
-       int replica_, int timeStepsPerProc_)
+       int timeStepsPerProc_)
        : iReq(iReq_), iJac(iJac_), iMass(iMass_), splitVec(splitVec_),
        splitJac(splitJac_), splitMass(splitMass_), globalComm(globalComm_),
-       replica(replica_), timeStepsPerProc(timeStepsPerProc_),
+       timeStepsPerProc(timeStepsPerProc_),
        splitRes(splitVec_), splitVecOld(splitVec_), solution(0),
        solutionOverlap(0), overlapImporter(0), jacobian(0), rowStencil(0),
-       rowIndex(0), numReplicas(-1)
+       rowIndex(0), numReplicas(globalComm.NumProc() / splitVec.Comm().NumProc())
 {
-    numReplicas = globalComm.NumProc() / splitVec.Comm().NumProc();
-    cout << " In xyzt constructor: NumReplicas =  " << numReplicas << endl;
-
+   if (globalComm.MyPID()==0) cout  << "--------------XYZT Partition Info---------------"
+       << "\n\tNumProcs              = " << globalComm.NumProc()
+       << "\n\tSpatial Decomposition = " << splitVec.Comm().NumProc()
+       << "\n\tNumber of Replicas    = " << numReplicas
+       << "\n\tTime Steps per Proc   = " << timeStepsPerProc
+       << "\n\tNumber of Time Steps  = " << numReplicas*timeStepsPerProc
+       << "\n-----------------------------------------------" << endl;
 
    // Construct global block matrix graph from split jacobian and stencil
    // Each block has identical sparsity, and assumes mass matrix's sparsity 
    // is a subset of the Jacobian's
 
+   int replica = globalComm.MyPID() / splitVec.Comm().NumProc();
    rowStencil = new std::vector< std::vector<int> >(timeStepsPerProc);
    rowIndex = new std::vector<int>;
    for (int i=0; i < timeStepsPerProc; i++) {
@@ -175,10 +180,8 @@ void xyzt::printSolution(const Epetra_Vector& x, double conParam)
   solution->Epetra_Vector::operator=(x);
 
   for (int i=0; i < timeStepsPerProc; i++) {
-
     solution->ExtractBlockValues(splitVec, (*rowIndex)[i]);
-    iReq.printSolution(splitVec, conParam);
-
+    iReq.printSolution(splitVec, (double) ((*rowIndex)[i] + 1) );
   }
 }
 

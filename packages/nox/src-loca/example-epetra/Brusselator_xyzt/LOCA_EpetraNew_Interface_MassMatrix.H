@@ -42,7 +42,9 @@ namespace LOCA {
 
       /*! \brief 
        * Used by LOCA::EpetraNew::Group to provide a link to the
-       * external code for MassMatrix if needed. 
+       * external code for the MassMatrix (coefficient of time dependent
+       * terms).  This is used for: Hopf bifurcation tracking, linear
+       * stability analysis, and space-time solutions (xyzt).
       */
       class MassMatrix  {
 
@@ -62,9 +64,18 @@ namespace LOCA {
         /*! Routine to reset the old solution, the one from the previous
 	 * time step. Different routine for first step, where the old
 	 * solution is set by the user and not part of the solution vector.
+	 * These routines are used by space-time (xyzt) problems, where the
+	 * MassMatrix is calculated as a function of a different solution
+	 * vector then the Jacobian (that is, the previous time step).
          */
-        virtual void setOldSolution(const Epetra_Vector& x) = 0;
-        virtual void setOldSolutionFirstStep() = 0;
+        virtual void setOldSolution(const Epetra_Vector& x) { cout <<
+           "WARNING: LOCA::EpetraNew::Interface::MassMatrix::setOldSolution"
+           << "\n\tempty default implementation not overloaded!" << endl;
+	};
+        virtual void setOldSolutionFirstStep() { cout << 
+           "WARNING: LOCA::EpetraNew::Interface::MassMatrix::setOldSolutionFirstStep"
+           << "\n\tempty default implementation not overloaded!" << endl;
+	};
 
       };
     } // namespace Interface

@@ -54,7 +54,7 @@ class Problem_Interface : public LOCA::EpetraNew::Interface::Required,
                           public LOCA::EpetraNew::Interface::MassMatrix
 {
 public:
-  Problem_Interface(Brusselator& Problem, int replica=0);
+  Problem_Interface(Brusselator& Problem);
   ~Problem_Interface();
 
   //! Compute and return F (LOCA::EpetraNew::Interface::Required)
@@ -93,7 +93,6 @@ public:
 
 private:
   int outStep;  // Output step index
-  int replica;  // only used for printing
   Epetra_Vector oldSolnOrig; // Initial value of solution vector, used as Xold for first time step
 };
 

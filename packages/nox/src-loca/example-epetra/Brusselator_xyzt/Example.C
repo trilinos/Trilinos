@@ -114,7 +114,7 @@ using namespace std;
 
 int main(int argc, char *argv[])
 {
-  int ierr = 0, i, replica=0;
+  int ierr = 0, i;
 
   // Initialize MPI
 #ifdef HAVE_MPI
@@ -134,43 +134,25 @@ int main(int argc, char *argv[])
   // MPI MANIPULATION FOR XYZT PROBLEMS
  
   int ierrmpi, size, rank;
-  int ranksplit, sizesplit;
-  MPI_Comm split_MPI_Comm;
-
   ierrmpi = MPI_Comm_size(MPI_COMM_WORLD, &size);
   ierrmpi = MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-
-  // Divide in chunks of spatialProcs = 2
 
   int spatialProcs= 1; // default
   if (argc>2) { spatialProcs = atoi(argv[2]);}
   int timeStepsPerProc= 1; // default
   if (argc>3) { timeStepsPerProc = atoi(argv[3]);}
 
-  replica = rank/spatialProcs;
-  if (size % spatialProcs != 0) {
-    cout << "ERROR: num spatial procs " << spatialProcs
-	 << " does not divide into num total procs " << size << endl;
-     exit(-1);
-  }
-  int num_replicas = size / spatialProcs;
-  int numTimeSteps =  num_replicas* timeStepsPerProc;
+  if (size % spatialProcs != 0) {cout<<"ERROR: num spatial procs "<<spatialProcs
+     << " does not divide into num total procs " << size << endl;  exit(-1);  }
 
+  // Create split communicators, the size of spatial decomposition
+  MPI_Comm split_MPI_Comm;
+  int replica = rank/spatialProcs;
   ierrmpi =  MPI_Comm_split(MPI_COMM_WORLD, replica, rank, &split_MPI_Comm);
 
-  ierrmpi = MPI_Comm_size(split_MPI_Comm, &sizesplit);
-  ierrmpi = MPI_Comm_rank(split_MPI_Comm, &ranksplit);
-
+  // Construct 2 different epetra communicators
   Epetra_MpiComm Comm(split_MPI_Comm);
   Epetra_MpiComm globalComm(MPI_COMM_WORLD);
-
-  if (globalComm.MyPID()==0) cout  << "--------------XYZT Partition Info---------------" 
-     << "\n\tNumProcs              = " << size
-     << "\n\tSpatial Decomposition = " << spatialProcs
-     << "\n\tNumber of Replicas    = " << num_replicas
-     << "\n\tTime Steps per Proc   = " << timeStepsPerProc
-     << "\n\tNumber of Time Steps  = " << numTimeSteps
-     << "\n-----------------------------------------------" << endl;
 
 #else
   // Create a communicator for Epetra objects
@@ -351,19 +333,18 @@ int main(int argc, char *argv[])
   //lsParams.setParameter("Polynomial Order", 6); 
 
   // Create the interface between the test problem and the nonlinear solver
-  Problem_Interface interface(Problem, replica);
+  Problem_Interface interface(Problem);
 
   // Print initial guess
   interface.printSolution(soln, locaStepperList.getParameter("Initial Value", 0.0));
 
-  // Create the Epetra_RowMatrix.  Uncomment one or more of the following:
-  Epetra_CrsMatrix& A = Problem.getJacobian(); // Default
+  // Create the Epetra_RowMatrix
+  Epetra_RowMatrix& A = Problem.getJacobian();
 
 #ifdef DO_XYZT
   LOCA::EpetraNew::Interface::xyzt ixyzt(interface, interface, interface,
-                                         soln, A, A, globalComm, replica,
-					 timeStepsPerProc);
-  Epetra_CrsMatrix& Axyzt = ixyzt.getJacobian();
+                                 soln, A, A, globalComm, timeStepsPerProc);
+  Epetra_RowMatrix& Axyzt = ixyzt.getJacobian();
   Epetra_Vector& solnxyzt = ixyzt.getSolution();
 
   LOCA::EpetraNew::Interface::Required& iReq = ixyzt;
@@ -423,7 +404,7 @@ int main(int argc, char *argv[])
 
   // Initialize time integration parameters
 #ifdef DO_XYZT
-  int maxTimeSteps = 1;
+  int maxTimeSteps = 1; // No longer need a time integration loop
 #else
   int maxTimeSteps = 5;
 #endif
@@ -454,8 +435,8 @@ int main(int argc, char *argv[])
 
     // End Nonlinear Solver **************************************
 
-    // Print solution
 #ifndef DO_XYZT
+    // Not needed for continuation runs
     interface.printSolution(soln, locaStepperList.getParameter("Initial Value", 0.0));
 
     Problem.reset(finalSolution);

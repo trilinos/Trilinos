@@ -53,23 +53,19 @@
 namespace LOCA {
 namespace EpetraNew {
 
-  /*! 
-    \brief Provides a set of interfaces for users to provide information about the nonlinear problem to NOX.  
-
-    Contains interfaces for the user to supply (1) the evaluation of the nonlinear equations, (2) the Jacobian, and (3) any preconditioning if required.
-  */
 namespace Interface {
 
   /*!
     \brief Interface for space-time (xyzt) problems.
  
-    Code that takes a standard NOX/LOCA problem interface for spatially-discretized
+    Code that takes a standard NOX/LOCA problem interfaces for spatially-discretized
     problems, and creates a NOX/LOCA interface for space-time problems.  This
-    interface can be called by multiple replicas of the spatially discretized
+    interface is called by multiple replicas of the spatially discretized
     problem for parallelism of the time domain. Each replica can also own on 
     one or more time steps. This interface assembles a single space-time system
     including the solution and residual BlockVectors and the Jacobian BlockCrsMatrix.
-    This interface relies heavily on the EpetraExt_Block* classes.
+    This interface relies heavily on the EpetraExt_Block* classes. For usage,
+    see the example problem:  nox/src-loca/example-epetra/Brusselator_xyzt
   */
 class xyzt : public LOCA::EpetraNew::Interface::Required,
              public NOX::EpetraNew::Interface::Jacobian
@@ -78,10 +74,16 @@ class xyzt : public LOCA::EpetraNew::Interface::Required,
 public:
  
   //! Constructor
+  /*! The interface, vector, and matrix arguments are all for the spatially
+   *  decomposed problem. The communicator and timeStepsPerProc arguments
+   *  give this class the information needed to construct the space-time
+   *  system. 
+   */
+
   xyzt(LOCA::EpetraNew::Interface::Required &iReq, NOX::EpetraNew::Interface::Jacobian &iJac,
        LOCA::EpetraNew::Interface::MassMatrix &iMass, Epetra_Vector &splitVec,
        Epetra_RowMatrix &splitJac, Epetra_RowMatrix &splitMass, 
-       Epetra_MpiComm &globalComm, int replica, int timeStepsPerProc);
+       Epetra_MpiComm &globalComm, int timeStepsPerProc);
 
   //! Destructor
   virtual ~xyzt();
@@ -89,7 +91,7 @@ public:
   //! NOX Interface function for computing the function, F, given the vector x.
   //Returns true if computation was successful.
   virtual bool computeF(const Epetra_Vector& x, Epetra_Vector& F, 
-			const FillType fillFlag);
+                        const FillType fillFlag);
   
   //! NOX Interface function for computing the Jacobian matrix
   //Returns true if computation was successful.
@@ -108,7 +110,7 @@ public:
 
 private:
   
-  // Info from split (3D) problem, passed in to the constructor.
+  // Info from split (spatial) problem, passed in to the constructor.
   LOCA::EpetraNew::Interface::Required &iReq;
   NOX::EpetraNew::Interface::Jacobian &iJac;
   LOCA::EpetraNew::Interface::MassMatrix &iMass;
@@ -116,7 +118,6 @@ private:
   Epetra_RowMatrix& splitJac;
   Epetra_RowMatrix& splitMass; // can be same object as splitJac
   Epetra_MpiComm& globalComm;
-  int replica;
   int timeStepsPerProc;
 
   // xyzt objects created in constructor
