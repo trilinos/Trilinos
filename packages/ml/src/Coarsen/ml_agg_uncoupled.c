@@ -674,7 +674,11 @@ if (comm->ML_mypid == 0 )
    ML_memory_free((void**)&tmp_vect);
    ML_memory_free((void**)&work);
    ML_memory_free((void**)&aggr_comm);
-   if ( nvblocks == 1 ) ML_memory_free((void**)&vblock_info);
+
+   /* tuminaro change */
+   /* I think this is what Charles wanted */
+   if ( nvblockflag == 1 ) ML_memory_free((void**)&vblock_info);
+
 
    return Ncoarse;
 }
@@ -696,7 +700,7 @@ int ML_Aggregate_CoarsenUncoupledCore(ML_Aggregate *ml_ag, ML_Comm *comm,
    int     select_flag, aggr_count, index, mypid, inode2;
    int     *aggr_index, search_flag, *itmp_array = NULL, count;
    int     mincount, *aggr_stat, ordering, maxcount, printflag;
-   int     *randomVector, *int_buf, aggr_cnt_leng, *aggr_cnt_array;
+   int     *randomVector, *int_buf = NULL, aggr_cnt_leng, *aggr_cnt_array;
    int     min_nodes_per_aggregate, max_neigh_selected, attach_scheme;
    ML_Node       *node_head, *node_tail, *new_node;
    ML_SuperNode  *aggr_head, *aggr_curr, *supernode;
