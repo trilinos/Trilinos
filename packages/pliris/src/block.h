@@ -34,7 +34,7 @@
 #ifndef __BLOCKH__
 #define __BLOCKH__
 
-#define DEFBLKSZ  48         /*  For the TFLOP  */
+#define DEFBLKSZ  64         /*  For  general 32 bit machines  */
 
 
 #endif
