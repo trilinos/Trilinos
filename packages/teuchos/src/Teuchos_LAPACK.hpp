@@ -262,6 +262,12 @@ namespace Teuchos
         \note This method is not defined when the ScalarType is \c complex<float> or \c complex<double>. 
     */
     ScalarType LAMCH(const char CMACH) const;
+
+    /*! \brief Chooses problem-dependent parameters for the local environment.
+	\note This method should give parameters for good, but not optimal, performance on many currently 
+	available computers.
+    */
+    int ILAENV( const int ispec, const string NAME, const string OPTS, const int N1 = -1, const int N2 = -1, const int N3 = -1, const int N4 = -1 ) const;
     //@}
 
     //@{ \name Miscellaneous Utilities.
@@ -476,6 +482,18 @@ namespace Teuchos
   }
 
   template<typename OrdinalType, typename ScalarType>
+  int LAPACK<OrdinalType, ScalarType>::ILAENV( const int ispec, const string NAME, const string OPTS, const int N1, const int N2, const int N3, const int N4 ) const
+  {
+    unsigned int opts_length = OPTS.length();
+    unsigned int name_length = NAME.length();
+#if defined (INTEL_CXML)
+    return ILAENV_F77(&ispec, &NAME[0], name_length, &OPTS[0], opts_length, &N1, &N2, &N3, &N4 );
+#else
+    return ILAENV_F77(&ispec, &NAME[0], &OPTS[0], &N1, &N2, &N3, &N4, name_length, opts_length );
+#endif
+  }
+ 
+  template<typename OrdinalType, typename ScalarType>
   ScalarType LAPACK<OrdinalType, ScalarType>::LAPY2(const ScalarType x, const ScalarType y) const
   {
     return UndefinedLAPACKRoutine<ScalarType>::notDefined();
@@ -557,6 +575,8 @@ namespace Teuchos
 
     // Machine characteristics.
     float LAMCH(const char CMACH) const;
+    int ILAENV( const int ispec, const string NAME, const string OPTS, const int N1 = -1, const int N2 = -1, const int N3 = -1, const int N4 = -1 ) const;
+
 
     // Miscellaneous routines.
     float LAPY2(const float x, const float y) const;
@@ -784,6 +804,18 @@ namespace Teuchos
   }
 
   template<typename OrdinalType>
+  int LAPACK<OrdinalType, float>::ILAENV( const int ispec, const string NAME, const string OPTS, const int N1, const int N2, const int N3, const int N4 ) const
+  {
+    unsigned int opts_length = OPTS.length();
+    unsigned int name_length = NAME.length();
+#if defined (INTEL_CXML)
+    return ILAENV_F77(&ispec, &NAME[0], name_length, &OPTS[0], opts_length, &N1, &N2, &N3, &N4 );
+#else
+    return ILAENV_F77(&ispec, &NAME[0], &OPTS[0], &N1, &N2, &N3, &N4, name_length, opts_length );
+#endif
+  }
+ 
+  template<typename OrdinalType>
   float LAPACK<OrdinalType, float>::LAPY2(const float x, const float y) const
   {
     return SLAPY2_F77(&x, &y);
@@ -851,6 +883,7 @@ namespace Teuchos
 
     // Machine characteristic routines.
     double LAMCH(const char CMACH) const;
+    int ILAENV( const int ispec, const string NAME, const string OPTS, const int N1 = -1, const int N2 = -1, const int N3 = -1, const int N4 = -1 ) const;
 
     // Miscellaneous routines.
     double LAPY2(const double x, const double y) const;
@@ -1079,6 +1112,18 @@ namespace Teuchos
   }
 
   template<typename OrdinalType>
+  int LAPACK<OrdinalType, double>::ILAENV( const int ispec, const string NAME, const string OPTS, const int N1, const int N2, const int N3, const int N4 ) const
+  {
+    unsigned int opts_length = OPTS.length();
+    unsigned int name_length = NAME.length();
+#if defined (INTEL_CXML)
+    return ILAENV_F77(&ispec, &NAME[0], name_length, &OPTS[0], opts_length, &N1, &N2, &N3, &N4 );
+#else
+    return ILAENV_F77(&ispec, &NAME[0], &OPTS[0], &N1, &N2, &N3, &N4, name_length, opts_length );
+#endif
+  }
+ 
+  template<typename OrdinalType>
   double LAPACK<OrdinalType, double>::LAPY2(const double x, const double y) const
   {
     return DLAPY2_F77(&x, &y);
@@ -1136,6 +1181,9 @@ namespace Teuchos
     // Random number generators
     complex<float> LARND( const OrdinalType idist, OrdinalType* seed ) const;
     void LARNV( const OrdinalType idist, OrdinalType* seed, const OrdinalType n, complex<float>* v ) const;    
+
+    // Machine characteristics
+    int ILAENV( const int ispec, const string NAME, const string OPTS, const int N1 = -1, const int N2 = -1, const int N3 = -1, const int N4 = -1 ) const;
 
   };
 
@@ -1312,6 +1360,18 @@ namespace Teuchos
     CLARNV_F77(&idist, seed, &n, v);
   }
 
+  template<typename OrdinalType>
+  int LAPACK<OrdinalType, complex<float> >::ILAENV( const int ispec, const string NAME, const string OPTS, const int N1, const int N2, const int N3, const int N4 ) const
+  {
+    unsigned int opts_length = OPTS.length();
+    unsigned int name_length = NAME.length();
+#if defined (INTEL_CXML)
+    return ILAENV_F77(&ispec, &NAME[0], name_length, &OPTS[0], opts_length, &N1, &N2, &N3, &N4 );
+#else
+    return ILAENV_F77(&ispec, &NAME[0], &OPTS[0], &N1, &N2, &N3, &N4, name_length, opts_length );
+#endif
+  }
+
   // END COMPLEX<FLOAT> PARTIAL SPECIALIZATION IMPLEMENTATION //
 
   // BEGIN COMPLEX<DOUBLE> PARTIAL SPECIALIZATION DECLARATION //
@@ -1362,6 +1422,9 @@ namespace Teuchos
     // Random number generators
     complex<double> LARND( const OrdinalType idist, OrdinalType* seed ) const;
     void LARNV( const OrdinalType idist, OrdinalType* seed, const OrdinalType n, complex<double>* v ) const;    
+
+    // Machine characteristics
+    int ILAENV( const int ispec, const string NAME, const string OPTS, const int N1 = -1, const int N2 = -1, const int N3 = -1, const int N4 = -1 ) const;
 
   };
 
@@ -1536,6 +1599,18 @@ namespace Teuchos
   void LAPACK<OrdinalType, complex<double> >::LARNV( const OrdinalType idist, OrdinalType* seed, const OrdinalType n, complex<double>* v ) const
   {
     ZLARNV_F77(&idist, seed, &n, v);
+  }
+
+  template<typename OrdinalType>
+  int LAPACK<OrdinalType, complex<double> >::ILAENV( const int ispec, const string NAME, const string OPTS, const int N1, const int N2, const int N3, const int N4 ) const
+  {
+    unsigned int opts_length = OPTS.length();
+    unsigned int name_length = NAME.length();
+#if defined (INTEL_CXML)
+    return ILAENV_F77(&ispec, &NAME[0], name_length, &OPTS[0], opts_length, &N1, &N2, &N3, &N4 );
+#else
+    return ILAENV_F77(&ispec, &NAME[0], &OPTS[0], &N1, &N2, &N3, &N4, name_length, opts_length );
+#endif
   }
 
   // END COMPLEX<DOUBLE> PARTIAL SPECIALIZATION IMPLEMENTATION //

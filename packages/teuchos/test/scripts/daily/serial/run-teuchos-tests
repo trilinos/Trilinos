@@ -69,6 +69,19 @@ if ($result != 0) {
   system ('./BLAS/BLAS_test.exe -v');
 }
 #************************************
+# LAPACK test
+#************************************
+$result = system ('./LAPACK/LAPACK_test.exe');
+if ($result != 0) {
+  $success = 0;  
+  # If we failed run it again in verbose mode.
+  printf
+    "\n\n*****************************************".
+    "\n*** Running Teuchos LAPACK test ****".
+    "\n*****************************************\n\n";
+  system ('./LAPACK/LAPACK_test.exe -v');
+}
+#************************************
 # DenseMatrix test
 #************************************
 $result = system ('./DenseMatrix/DenseMatrix_test.exe');

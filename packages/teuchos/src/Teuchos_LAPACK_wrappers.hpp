@@ -85,6 +85,7 @@
 #define DLAPY2_F77  F77_FUNC(slapy2,SLAPY2)
 #define DLARND_F77  F77_FUNC(slarnd,SLARND)
 #define DLARNV_F77  F77_FUNC(slarnv,SLARNV)
+#define ILAENV_F77  F77_FUNC(ilaenv,ILAENV)
 
 #ifdef HAVE_TEUCHOS_COMPLEX
 
@@ -159,6 +160,7 @@
 #define DLAPY2_F77  F77_FUNC(dlapy2,DLAPY2)
 #define DLARND_F77  F77_FUNC(dlarnd,DLARND)
 #define DLARNV_F77  F77_FUNC(dlarnv,DLARNV)
+#define ILAENV_F77  F77_FUNC(ilaenv,ILAENV)
 
 #ifdef HAVE_TEUCHOS_COMPLEX
 
@@ -233,6 +235,7 @@
 #define DLAPY2_F77  F77_FUNC(dlapy2,DLAPY2)
 #define DLARND_F77  F77_FUNC(dlarnd,DLARND)
 #define DLARNV_F77  F77_FUNC(dlarnv,DLARNV)
+#define ILAENV_F77  F77_FUNC(ilaenv,ILAENV)
 
 #ifdef HAVE_TEUCHOS_COMPLEX
 
@@ -333,6 +336,7 @@
 #define DLAPY2_F77  F77_FUNC(dlapy2,DLAPY2)
 #define DLARND_F77  F77_FUNC(dlarnd,DLARND)
 #define DLARNV_F77  F77_FUNC(dlarnv,DLARNV)
+#define ILAENV_F77  F77_FUNC(ilaenv,ILAENV)
 
 #ifdef HAVE_TEUCHOS_COMPLEX
 
@@ -523,6 +527,12 @@ void PREFIX DLARNV_F77(const int* idist, int* seed, const int* n, double* v);
 
 float PREFIX SLAMCH_F77(Teuchos_fcd);
 double PREFIX DLAMCH_F77(Teuchos_fcd);
+
+#if defined (INTEL_CXML)
+int PREFIX ILAENV_F77( const int* ispec, const char* name, unsigned int name_len, const char* opts, unsigned int opts_len, const int* N1, const int* N2, const int* N3, const int* N4 );
+#else
+int PREFIX ILAENV_F77( const int* ispec, const char* name, const char* opts, const int* N1, const int* N2, const int* N3, const int* N4, unsigned int name_len, unsigned int opts_len );
+#endif
 
 float PREFIX SLAPY2_F77(const float* x, const float* y);
 double PREFIX DLAPY2_F77(const double* x, const double* y);
