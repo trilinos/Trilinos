@@ -1,6 +1,7 @@
 // Kris
 // 07.24.03 -- Initial checkin
 // 08.08.03 -- All test suites except for TRSM are finished.
+// 08.14.03 -- The test suite for TRSM is finished (Heidi).
 
 /*
 
@@ -10,10 +11,7 @@ The test routine for TRSM is still being developed; all of the others are more o
 
 */
 
-#include <cstdlib>
-#include <ctime>
-#include <iostream>
-#include <string>
+#include "Teuchos_ConfigDefs.hpp"
 #include "Teuchos_BLAS.hpp"
 
 #ifdef HAVE_TEUCHOS_ARPREC
@@ -32,6 +30,7 @@ using namespace Teuchos;
 #define SType1     float
 #endif
 #define SType2     double
+#define OType	   int
 
 // TOL defines the tolerance allowed for differences in BLAS output. Set to 0 for strict comparisons.
 #define TOL        1
@@ -180,10 +179,11 @@ int main(int argc, char *argv[])
   SType2 SType2alpha, SType2beta;
   SType1 SType1ASUMresult, SType1DOTresult, SType1NRM2result;
   SType2 SType2ASUMresult, SType2DOTresult, SType2NRM2result;
+  int incx, incy;
   int SType1IAMAXresult;
   int SType2IAMAXresult;
-  int TotalTestCount = 1, GoodTestSubcount, GoodTestCount = 0, M, N, P, LDA, LDB;
-  char UPLO, SIDE, TRANSA, TRANSB, DIAG;
+  int TotalTestCount = 1, GoodTestSubcount, GoodTestCount = 0, M, M2, N, N2, P, LDA, LDB, Mx, My;
+  char UPLO, SIDE, TRANS, TRANSA, TRANSB, DIAG;
   SType2 convertTo;
 
   srand(time(NULL));
@@ -192,14 +192,20 @@ int main(int argc, char *argv[])
   mp::mp_init(200);
 #endif
 
+  //--------------------------------------------------------------------------------
+  // BEGIN LEVEL 1 BLAS TESTS
+  //--------------------------------------------------------------------------------
   // Begin ASUM Tests
+  //--------------------------------------------------------------------------------
   GoodTestSubcount = 0;
   for(i = 0; i < ASUMTESTS; i++)
     {
+      incx = GetRandom(1, SCALARMAX);
       M = GetRandom(MVMIN, MVMAX);
-      SType1x = new SType1[M];
-      SType2x = new SType2[M];
-      for(j = 0; j < M; j++)
+      M2 = M*incx;
+      SType1x = new SType1[M2];
+      SType2x = new SType2[M2];
+      for(j = 0; j < M2; j++)
 	{
 	  SType1x[j] = GetRandom(-SCALARMAX, SCALARMAX);
 	  SType2x[j] = ConvertType(SType1x[j], convertTo);
@@ -207,12 +213,12 @@ int main(int argc, char *argv[])
       if(debug)
 	{
 	  cout << "Test #" << TotalTestCount << " --" << endl;
-	  PrintVector(SType1x, M, "SType1x", matlab);
-	  PrintVector(SType2x, M, "SType2x", matlab);
+	  PrintVector(SType1x, M2, "SType1x", matlab);
+	  PrintVector(SType2x, M2, "SType2x", matlab);
 	}
       TotalTestCount++;
-      SType1ASUMresult = SType1BLAS.ASUM(M, SType1x, 1);
-      SType2ASUMresult = SType2BLAS.ASUM(M, SType2x, 1);
+      SType1ASUMresult = SType1BLAS.ASUM(M, SType1x, incx);
+      SType2ASUMresult = SType2BLAS.ASUM(M, SType2x, incx);
       if(debug)
 	{
 	  cout << "SType1 ASUM result: " << SType1ASUMresult << endl;
@@ -225,21 +231,34 @@ int main(int argc, char *argv[])
   GoodTestCount += GoodTestSubcount;
   if(verbose || debug) cout << "ASUM: " << GoodTestSubcount << " of " << ASUMTESTS << " tests were successful." << endl;
   if(debug) cout << endl;
+  //--------------------------------------------------------------------------------
   // End ASUM Tests
+  //--------------------------------------------------------------------------------
 
+  //--------------------------------------------------------------------------------
   // Begin AXPY Tests
+  //--------------------------------------------------------------------------------
   GoodTestSubcount = 0;
   for(i = 0; i < AXPYTESTS; i++)
     {
+      incx = GetRandom(-SCALARMAX, SCALARMAX);
+      incy = GetRandom(-SCALARMAX, SCALARMAX);
       M = GetRandom(MVMIN, MVMAX);
-      SType1x = new SType1[M];
-      SType1y = new SType1[M];
-      SType2x = new SType2[M];
-      SType2y = new SType2[M]; 
-      for(j = 0; j < M; j++)
+      Mx = M*abs(incx);
+      My = M*abs(incy);
+      if (Mx == 0) { Mx = 1; }
+      if (My == 0) { My = 1; }
+      SType1x = new SType1[Mx];
+      SType1y = new SType1[My];
+      SType2x = new SType2[Mx];
+      SType2y = new SType2[My]; 
+      for(j = 0; j < Mx; j++)
 	{
 	  SType1x[j] = GetRandom(-SCALARMAX, SCALARMAX);
 	  SType2x[j] = ConvertType(SType1x[j], convertTo);
+	}
+      for(j = 0; j < My; j++)
+	{
 	  SType1y[j] = GetRandom(-SCALARMAX, SCALARMAX);
 	  SType2y[j] = ConvertType(SType1y[j], convertTo);
 	}
@@ -250,20 +269,20 @@ int main(int argc, char *argv[])
 	  cout << "Test #" << TotalTestCount << " --" << endl;
 	  cout << "SType1alpha = "  << SType1alpha << endl;
 	  cout << "SType2alpha = " << SType2alpha << endl;
-	  PrintVector(SType1x, M, "SType1x", matlab);
-	  PrintVector(SType1y, M, "SType1y_before_operation", matlab);
-	  PrintVector(SType2x, M, "SType2x", matlab);
-	  PrintVector(SType2y, M, "SType2y_before_operation",  matlab);
+	  PrintVector(SType1x, Mx, "SType1x", matlab);
+	  PrintVector(SType1y, My, "SType1y_before_operation", matlab);
+	  PrintVector(SType2x, Mx, "SType2x", matlab);
+	  PrintVector(SType2y, My, "SType2y_before_operation",  matlab);
 	}
       TotalTestCount++;
-      SType1BLAS.AXPY(M, SType1alpha, SType1x, 1, SType1y, 1);
-      SType2BLAS.AXPY(M, SType2alpha, SType2x, 1, SType2y, 1);
+      SType1BLAS.AXPY(M, SType1alpha, SType1x, incx, SType1y, incy);
+      SType2BLAS.AXPY(M, SType2alpha, SType2x, incx, SType2y, incy);
       if(debug)
 	{
-	  PrintVector(SType1y, M, "SType1y_after_operation", matlab);
-	  PrintVector(SType2y, M, "SType2y_after_operation", matlab);
+	  PrintVector(SType1y, My, "SType1y_after_operation", matlab);
+	  PrintVector(SType2y, My, "SType2y_after_operation", matlab);
 	}
-      GoodTestSubcount += CompareVectors(SType1y, SType2y, M, TOL);
+      GoodTestSubcount += CompareVectors(SType1y, SType2y, My, TOL);
       delete [] SType1x;
       delete [] SType1y;
       delete [] SType2x;
@@ -272,41 +291,54 @@ int main(int argc, char *argv[])
   GoodTestCount += GoodTestSubcount;
   if(verbose || debug) cout << "AXPY: " << GoodTestSubcount << " of " << AXPYTESTS << " tests were successful." << endl;
   if(debug) cout << endl;
+  //--------------------------------------------------------------------------------
   // End AXPY Tests
+  //--------------------------------------------------------------------------------
 
+  //--------------------------------------------------------------------------------
   // Begin COPY Tests
+  //--------------------------------------------------------------------------------
   GoodTestSubcount = 0;
   for(i = 0; i < COPYTESTS; i++)
     {
+      incx = GetRandom(-SCALARMAX, SCALARMAX);
+      incy = GetRandom(-SCALARMAX, SCALARMAX);
       M = GetRandom(MVMIN, MVMAX);
-      SType1x = new SType1[M];
-      SType1y = new SType1[M];
-      SType2x = new SType2[M];
-      SType2y = new SType2[M]; 
-      for(j = 0; j < M; j++)
+      Mx = M*abs(incx);
+      My = M*abs(incy);
+      if (Mx == 0) { Mx = 1; }
+      if (My == 0) { My = 1; }
+      SType1x = new SType1[Mx];
+      SType1y = new SType1[My];
+      SType2x = new SType2[Mx];
+      SType2y = new SType2[My]; 
+      for(j = 0; j < Mx; j++)
 	{
 	  SType1x[j] = GetRandom(-SCALARMAX, SCALARMAX);
 	  SType2x[j] = ConvertType(SType1x[j], convertTo);
+	}
+      for(j = 0; j < My; j++)
+	{
 	  SType1y[j] = GetRandom(-SCALARMAX, SCALARMAX);
 	  SType2y[j] = ConvertType(SType1y[j], convertTo);
 	}
       if(debug)
 	{
 	  cout << "Test #" << TotalTestCount << " --" << endl;
-	  PrintVector(SType1x, M, "SType1x", matlab);
-	  PrintVector(SType1y, M, "SType1y_before_operation", matlab);
-	  PrintVector(SType2x, M, "SType2x", matlab);
-	  PrintVector(SType2y, M, "SType2y_before_operation", matlab);
+	  PrintVector(SType1x, Mx, "SType1x", matlab);
+	  PrintVector(SType1y, My, "SType1y_before_operation", matlab);
+	  PrintVector(SType2x, Mx, "SType2x", matlab);
+	  PrintVector(SType2y, My, "SType2y_before_operation", matlab);
 	}
       TotalTestCount++;
-      SType1BLAS.COPY(M, SType1x, 1, SType1y, 1);
-      SType2BLAS.COPY(M, SType2x, 1, SType2y, 1);
+      SType1BLAS.COPY(M, SType1x, incx, SType1y, incy);
+      SType2BLAS.COPY(M, SType2x, incx, SType2y, incy);
       if(debug)
 	{
-	  PrintVector(SType1y, M, "SType1y_after_operation", matlab);
-	  PrintVector(SType2y, M, "SType2y_after_operation", matlab);
+	  PrintVector(SType1y, My, "SType1y_after_operation", matlab);
+	  PrintVector(SType2y, My, "SType2y_after_operation", matlab);
 	}
-      GoodTestSubcount += CompareVectors(SType1y, SType2y, M, TOL);
+      GoodTestSubcount += CompareVectors(SType1y, SType2y, My, TOL);
       delete [] SType1x;
       delete [] SType1y;
       delete [] SType2x;
@@ -314,35 +346,48 @@ int main(int argc, char *argv[])
     }
    GoodTestCount += GoodTestSubcount; if(verbose || debug) cout << "COPY: " << GoodTestSubcount << " of " << COPYTESTS << " tests were successful." << endl;
   if(debug) cout << endl;
+  //--------------------------------------------------------------------------------
   // End COPY Tests
+  //--------------------------------------------------------------------------------
 
+  //--------------------------------------------------------------------------------
   // Begin DOT Tests
+  //--------------------------------------------------------------------------------
   GoodTestSubcount = 0;
   for(i = 0; i < DOTTESTS; i++)
     {
+      incx = GetRandom(-SCALARMAX, SCALARMAX);
+      incy = GetRandom(-SCALARMAX, SCALARMAX);
       M = GetRandom(MVMIN, MVMAX);
-      SType1x = new SType1[M];
-      SType1y = new SType1[M];
-      SType2x = new SType2[M];
-      SType2y = new SType2[M]; 
-      for(j = 0; j < M; j++)
+      Mx = M*abs(incx);
+      My = M*abs(incy);
+      if (Mx == 0) { Mx = 1; }
+      if (My == 0) { My = 1; }
+      SType1x = new SType1[Mx];
+      SType1y = new SType1[My];
+      SType2x = new SType2[Mx];
+      SType2y = new SType2[My]; 
+      for(j = 0; j < Mx; j++)
 	{
 	  SType1x[j] = GetRandom(-SCALARMAX, SCALARMAX);
 	  SType2x[j] = ConvertType(SType1x[j], convertTo);
+	}
+      for(j = 0; j < My; j++)
+	{
 	  SType1y[j] = GetRandom(-SCALARMAX, SCALARMAX);
 	  SType2y[j] = ConvertType(SType1y[j], convertTo);
 	}
       if(debug)
 	{
 	  cout << "Test #" << TotalTestCount << " --" << endl;
-	  PrintVector(SType1x, M, "SType1x", matlab);
-	  PrintVector(SType1y, M, "SType1y", matlab);
-	  PrintVector(SType2x, M, "SType2x", matlab);
-	  PrintVector(SType2y, M, "SType2y", matlab);
+	  PrintVector(SType1x, Mx, "SType1x", matlab);
+	  PrintVector(SType1y, My, "SType1y", matlab);
+	  PrintVector(SType2x, Mx, "SType2x", matlab);
+	  PrintVector(SType2y, My, "SType2y", matlab);
 	}
       TotalTestCount++;
-      SType1DOTresult = SType1BLAS.DOT(M, SType1x, 1, SType1y, 1);
-      SType2DOTresult = SType2BLAS.DOT(M, SType2x, 1, SType2y, 1);
+      SType1DOTresult = SType1BLAS.DOT(M, SType1x, incx, SType1y, incy);
+      SType2DOTresult = SType2BLAS.DOT(M, SType2x, incx, SType2y, incy);
       if(debug)
 	{
 	  cout << "SType1 DOT result: " << SType1DOTresult << endl;
@@ -357,16 +402,22 @@ int main(int argc, char *argv[])
   GoodTestCount += GoodTestSubcount;
   if(verbose || debug) cout << "DOT: " << GoodTestSubcount << " of " << DOTTESTS << " tests were successful." << endl;
   if(debug) cout << endl;
+  //--------------------------------------------------------------------------------
   // End DOT Tests
+  //--------------------------------------------------------------------------------
 
+  //--------------------------------------------------------------------------------
   // Begin NRM2 Tests
+  //--------------------------------------------------------------------------------
   GoodTestSubcount = 0;
   for(i = 0; i < NRM2TESTS; i++)
     {
+      incx = GetRandom(1, SCALARMAX);
       M = GetRandom(MVMIN, MVMAX);
-      SType1x = new SType1[M];
-      SType2x = new SType2[M];
-      for(j = 0; j < M; j++)
+      M2 = M*incx; 
+      SType1x = new SType1[M2];
+      SType2x = new SType2[M2];
+      for(j = 0; j < M2; j++)
 	{
 	  SType1x[j] = GetRandom(-SCALARMAX, SCALARMAX);
 	  SType2x[j] = ConvertType(SType1x[j], convertTo);
@@ -374,12 +425,12 @@ int main(int argc, char *argv[])
       if(debug)
 	{
 	  cout << "Test #" << TotalTestCount << " --" << endl;
-	  PrintVector(SType1x, M, "SType1x", matlab);
-	  PrintVector(SType2x, M, "SType2x", matlab);
+	  PrintVector(SType1x, M2, "SType1x", matlab);
+	  PrintVector(SType2x, M2, "SType2x", matlab);
 	}
       TotalTestCount++;
-      SType1NRM2result = SType1BLAS.NRM2(M, SType1x, 1);
-      SType2NRM2result = SType2BLAS.NRM2(M, SType2x, 1);
+      SType1NRM2result = SType1BLAS.NRM2(M, SType1x, incx);
+      SType2NRM2result = SType2BLAS.NRM2(M, SType2x, incx);
       if(debug)
 	{
 	  cout << "SType1 NRM2 result: " << SType1NRM2result << endl;
@@ -391,16 +442,25 @@ int main(int argc, char *argv[])
     }
    GoodTestCount += GoodTestSubcount; if(verbose || debug) cout << "NRM2: " << GoodTestSubcount << " of " << NRM2TESTS << " tests were successful." << endl;
   if(debug) cout << endl;
+  //--------------------------------------------------------------------------------
   // End NRM2 Tests
+  //--------------------------------------------------------------------------------
 
+  //--------------------------------------------------------------------------------
   // Begin SCAL Tests
+  //--------------------------------------------------------------------------------
   GoodTestSubcount = 0;
   for(i = 0; i < SCALTESTS; i++)
     {
+      // These will only test for the case that the increment is > 0, the
+      // templated case can handle when incx < 0, but the blas library doesn't 
+      // seem to be able to on some machines.
+      incx = GetRandom(1, SCALARMAX);
       M = GetRandom(MVMIN, MVMAX);
-      SType1x = new SType1[M];
-      SType2x = new SType2[M];
-      for(j = 0; j < M; j++)
+      M2 = M*incx;
+      SType1x = new SType1[M2];
+      SType2x = new SType2[M2];
+      for(j = 0; j < M2; j++)
 	{
 	  SType1x[j] = GetRandom(-SCALARMAX, SCALARMAX);
 	  SType2x[j] = ConvertType(SType1x[j], convertTo);
@@ -412,34 +472,40 @@ int main(int argc, char *argv[])
 	  cout << "Test #" << TotalTestCount << " --" << endl;
 	  cout << "SType1alpha = " << SType1alpha << endl;
 	  cout << "SType2alpha = " << SType2alpha << endl;
-	  PrintVector(SType1x, M, "SType1x_before_operation", matlab);
-	  PrintVector(SType2x, M, "SType2x_before_operation", matlab);
+	  PrintVector(SType1x, M2, "SType1x_before_operation", matlab);
+	  PrintVector(SType2x, M2, "SType2x_before_operation", matlab);
 	}
       TotalTestCount++;
-      SType1BLAS.SCAL(M, SType1alpha, SType1x, 1);
-      SType2BLAS.SCAL(M, SType2alpha, SType2x, 1);
+      SType1BLAS.SCAL(M, SType1alpha, SType1x, incx);
+      SType2BLAS.SCAL(M, SType2alpha, SType2x, incx);
       if(debug)
 	{
-	  PrintVector(SType1x, M, "SType1x_after_operation", matlab);
-	  PrintVector(SType2x, M, "SType2x_after_operation", matlab);
+	  PrintVector(SType1x, M2, "SType1x_after_operation", matlab);
+	  PrintVector(SType2x, M2, "SType2x_after_operation", matlab);
 	}
-      GoodTestSubcount += CompareVectors(SType1x, SType2x, M, TOL);
+      GoodTestSubcount += CompareVectors(SType1x, SType2x, M2, TOL);
       delete [] SType1x;
       delete [] SType2x;
     }
   GoodTestCount += GoodTestSubcount;
   if(verbose || debug) cout << "SCAL: " << GoodTestSubcount << " of " << SCALTESTS << " tests were successful." << endl;
   if(debug) cout << endl;
+  //--------------------------------------------------------------------------------
   // End SCAL Tests
+  //--------------------------------------------------------------------------------
 
+  //--------------------------------------------------------------------------------
   // Begin IAMAX Tests
+  //--------------------------------------------------------------------------------
   GoodTestSubcount = 0;
   for(i = 0; i < IAMAXTESTS; i++)
     {
+      incx = GetRandom(1, SCALARMAX);
       M = GetRandom(MVMIN, MVMAX);
-      SType1x = new SType1[M];
-      SType2x = new SType2[M];
-      for(j = 0; j < M; j++)
+      M2 = M*incx;
+      SType1x = new SType1[M2];
+      SType2x = new SType2[M2];
+      for(j = 0; j < M2; j++)
 	{
 	  SType1x[j] = GetRandom(-SCALARMAX, SCALARMAX);
 	  SType2x[j] = ConvertType(SType1x[j], convertTo);
@@ -447,12 +513,12 @@ int main(int argc, char *argv[])
       if(debug)
 	{
 	  cout << "Test #" << TotalTestCount << " --" << endl;
-	  PrintVector(SType1x, M, "SType1x", matlab);
-	  PrintVector(SType2x, M, "SType2x", matlab);
+	  PrintVector(SType1x, M2, "SType1x", matlab);
+	  PrintVector(SType2x, M2, "SType2x", matlab);
 	}
       TotalTestCount++;
-      SType1IAMAXresult = SType1BLAS.IAMAX(M, SType1x, 1);
-      SType2IAMAXresult = SType2BLAS.IAMAX(M, SType2x, 1);
+      SType1IAMAXresult = SType1BLAS.IAMAX(M, SType1x, incx);
+      SType2IAMAXresult = SType2BLAS.IAMAX(M, SType2x, incx);
       if(debug)
 	{
 	  cout << "SType1 IAMAX result: " << SType1IAMAXresult << endl;
@@ -465,39 +531,72 @@ int main(int argc, char *argv[])
   GoodTestCount += GoodTestSubcount;
   if(verbose || debug) cout << "IAMAX: " << GoodTestSubcount << " of " << IAMAXTESTS << " tests were successful." << endl;
   if(debug) cout << endl;
+  //--------------------------------------------------------------------------------
   // End IAMAX Tests
+  //--------------------------------------------------------------------------------
 
+  //--------------------------------------------------------------------------------
+  // BEGIN LEVEL 2 BLAS TESTS
+  //--------------------------------------------------------------------------------
   // Begin GEMV Tests
+  //--------------------------------------------------------------------------------
   GoodTestSubcount = 0;
   for(i = 0; i < GEMVTESTS; i++)
     {
+      // The parameters used to construct the test problem are chosen to be
+      // valid parameters, so the GEMV routine won't bomb out.
+      incx = GetRandom(-SCALARMAX, SCALARMAX);
+      while (incx == 0) {
+      	  incx = GetRandom(-SCALARMAX, SCALARMAX);
+      }   
+      incy = GetRandom(-SCALARMAX, SCALARMAX);
+      while (incy == 0) {
+      	  incy = GetRandom(-SCALARMAX, SCALARMAX);
+      }   
       M = GetRandom(MVMIN, MVMAX);
       N = GetRandom(MVMIN, MVMAX);
-      SType1A = new SType1[M * N];
-      SType1x = new SType1[N];
-      SType1y = new SType1[M];
-      SType2A = new SType2[M * N];
-      SType2x = new SType2[N];
-      SType2y = new SType2[M]; 
-      for(j = 0; j < M * N; j++)
-	{
-	  SType1A[j] = GetRandom(-SCALARMAX, SCALARMAX);
-	  SType2A[j] = ConvertType(SType1A[j], convertTo);
-	}
-      for(j = 0; j < N; j++)
-	{
-	  SType1x[j] = GetRandom(-SCALARMAX, SCALARMAX);
-	  SType2x[j] = ConvertType(SType1x[j], convertTo);
-	}
-      for(j = 0; j < M; j++)
-	{
-	  SType1y[j] = GetRandom(-SCALARMAX, SCALARMAX);
-	  SType2y[j] = ConvertType(SType1y[j], convertTo);
-	}
+
+      TRANS = RandomTRANS();
+      if (TRANS == 'N') {	
+      	M2 = M*abs(incy);
+      	N2 = N*abs(incx);   
+      } else {
+	M2 = N*abs(incy);
+	N2 = M*abs(incx);
+      }
+
+      LDA = GetRandom(MVMIN, MVMAX);
+      while (LDA < M) {
+          LDA = GetRandom(MVMIN, MVMAX);
+      }   
+
       SType1alpha = GetRandom(-SCALARMAX, SCALARMAX);
       SType1beta = GetRandom(-SCALARMAX, SCALARMAX);
       SType2alpha = ConvertType(SType1alpha, convertTo);
       SType2beta = ConvertType(SType1beta, convertTo);
+
+      SType1A = new SType1[LDA * N];
+      SType1x = new SType1[N2];
+      SType1y = new SType1[M2];
+      SType2A = new SType2[LDA * N];
+      SType2x = new SType2[N2];
+      SType2y = new SType2[M2]; 
+
+      for(j = 0; j < LDA * N; j++)
+	{
+	  SType1A[j] = GetRandom(-SCALARMAX, SCALARMAX);
+	  SType2A[j] = ConvertType(SType1A[j], convertTo);
+	}
+      for(j = 0; j < N2; j++)
+	{
+	  SType1x[j] = GetRandom(-SCALARMAX, SCALARMAX);
+	  SType2x[j] = ConvertType(SType1x[j], convertTo);
+	}
+      for(j = 0; j < M2; j++)
+	{
+	  SType1y[j] = GetRandom(-SCALARMAX, SCALARMAX);
+	  SType2y[j] = ConvertType(SType1y[j], convertTo);
+	}
       if(debug)
 	{
 	  cout << "Test #" << TotalTestCount << " --" << endl;
@@ -505,22 +604,22 @@ int main(int argc, char *argv[])
 	  cout << "SType2alpha = " << SType2alpha << endl;
 	  cout << "SType1beta = " << SType1beta << endl;
 	  cout << "SType2beta = " << SType2beta << endl;
-	  PrintMatrix(SType1A, M, N, M, "SType1A", matlab);
-	  PrintVector(SType1x, N, "SType1x", matlab);
-	  PrintVector(SType1y, M, "SType1y_before_operation", matlab);
-	  PrintMatrix(SType2A, M, N, M, "SType2A", matlab);
-	  PrintVector(SType2x, N, "SType2x", matlab);
-	  PrintVector(SType2y, M, "SType2y_before_operation", matlab);
+	  PrintMatrix(SType1A, M, N, LDA, "SType1A", matlab);
+	  PrintVector(SType1x, N2, "SType1x", matlab);
+	  PrintVector(SType1y, M2, "SType1y_before_operation", matlab);
+	  PrintMatrix(SType2A, M, N, LDA, "SType2A", matlab);
+	  PrintVector(SType2x, N2, "SType2x", matlab);
+	  PrintVector(SType2y, M2, "SType2y_before_operation", matlab);
 	}
       TotalTestCount++;
-      SType1BLAS.GEMV('N', M, N, SType1alpha, SType1A, M, SType1x, 1, SType1beta, SType1y, 1);
-      SType2BLAS.GEMV('N', M, N, SType2alpha, SType2A, M, SType2x, 1, SType2beta, SType2y, 1);
+      SType1BLAS.GEMV(TRANS, M, N, SType1alpha, SType1A, LDA, SType1x, incx, SType1beta, SType1y, incy);
+      SType2BLAS.GEMV(TRANS, M, N, SType2alpha, SType2A, LDA, SType2x, incx, SType2beta, SType2y, incy);
       if(debug)
 	{
-	  PrintVector(SType1y, M, "SType1y_after_operation", matlab);
-	  PrintVector(SType2y, M, "SType2y_after_operation", matlab);
+	  PrintVector(SType1y, M2, "SType1y_after_operation", matlab);
+	  PrintVector(SType2y, M2, "SType2y_after_operation", matlab);
 	}
-      GoodTestSubcount += CompareVectors(SType1y, SType2y, M, TOL);
+      GoodTestSubcount += CompareVectors(SType1y, SType2y, M2, TOL);
       delete [] SType1A;
       delete [] SType1x;
       delete [] SType1y;
@@ -531,9 +630,15 @@ int main(int argc, char *argv[])
   GoodTestCount += GoodTestSubcount;
   if(verbose || debug) cout << "GEMV: " << GoodTestSubcount << " of " << GEMVTESTS << " tests were successful." << endl;
   if(debug) cout << endl;
+  //--------------------------------------------------------------------------------
   // End GEMV Tests
+  //--------------------------------------------------------------------------------
 
+  //--------------------------------------------------------------------------------
+  // BEGIN LEVEL 2 BLAS TESTS
+  //--------------------------------------------------------------------------------
   // Begin TRMV Tests
+  //--------------------------------------------------------------------------------
   GoodTestSubcount = 0;
   for(i = 0; i < TRMVTESTS; i++)
     {
@@ -577,7 +682,9 @@ int main(int argc, char *argv[])
   GoodTestCount += GoodTestSubcount;
   if(verbose || debug) cout << "TRMV: " << GoodTestSubcount << " of " << TRMVTESTS << " tests were successful." << endl;
   if(debug) cout << endl;
+  //--------------------------------------------------------------------------------
   // End TRMV Tests
+  //--------------------------------------------------------------------------------
 
   // Begin GER Tests
   GoodTestSubcount = 0;
@@ -901,10 +1008,11 @@ int main(int argc, char *argv[])
       SIDE = RandomSIDE();
       UPLO = RandomUPLO();
       TRANSA = RandomTRANS();
-      //DIAG = RandomDIAG();  
       // Since the entries are integers, we don't want to use the unit diagonal feature,
       // this creates ill-conditioned, nearly-singular matrices.
+      //DIAG = RandomDIAG();  
       DIAG = 'N';
+      //cout<<SIDE<<"\t"<<UPLO<<"\t"<<TRANSA<<"\t"<<DIAG<<endl;
 
       if(SIDE == 'L')  // The operator is on the left side
 	{
