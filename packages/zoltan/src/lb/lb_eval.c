@@ -440,7 +440,7 @@ int Zoltan_LB_Eval (ZZ *zz, int print_stats,
     Zoltan_LB_Get_Part_Sizes(zz, nparts, obj_wgt_dim, part_sizes);
 
     /* Allreduce data w.r.t. partitions onto all procs. */
-    MPI_Allreduce(all_arr, all_arr_glob, NUM_STATS*nparts, 
+    MPI_Allreduce(all_arr, all_arr_glob, NUM_STATS_PART*nparts, 
                   MPI_INT, MPI_SUM, zz->Communicator);
     if (zz->Obj_Weight_Dim > 0)
       MPI_Allreduce(vwgt_arr, vwgt_arr_glob, nparts*(zz->Obj_Weight_Dim), 
@@ -456,7 +456,7 @@ int Zoltan_LB_Eval (ZZ *zz, int print_stats,
       stats[i] = 0;       /* max and sum */
  
     for (i=0; i<nparts; i++){
-      for (j=0; j<NUM_STATS; j++){
+      for (j=0; j<NUM_STATS_PART; j++){
         if (all_arr_glob[j*nparts+i] < stats[j])           /* min */
           stats[j] = all_arr_glob[j*nparts+i];
         if (all_arr_glob[j*nparts+i] > stats[imax*NUM_STATS+j]) /* max */
@@ -466,11 +466,11 @@ int Zoltan_LB_Eval (ZZ *zz, int print_stats,
     }
 
     /* Compute scaled imbalance. */
-    for (j=0; j<NUM_STATS; j++)
+    for (j=0; j<NUM_STATS_PART; j++)
       imbal[j] = 0.0;
     k = (zz->Obj_Weight_Dim>0 ? zz->Obj_Weight_Dim : 1); 
     for (i=0; i<nparts; i++){
-      for (j=0; j<NUM_STATS; j++){
+      for (j=0; j<NUM_STATS_PART; j++){
         if (all_arr_glob[j*nparts+i]*part_sizes[i*k] != 0.0)
           temp = all_arr_glob[j*nparts+i] / (stats[isum*NUM_STATS+j]
                  * part_sizes[i*k]);
