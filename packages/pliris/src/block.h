@@ -30,4 +30,11 @@
 
 /* Set Block size for matrix update -- for the matrix matrix multiply 
  depends on the processor  */
-#define DEFBLKSZ  32         /*  For the TFLOP  */
+
+#ifndef __BLOCKH__
+#define __BLOCKH__
+
+#define DEFBLKSZ  48         /*  For the TFLOP  */
+
+
+#endif
