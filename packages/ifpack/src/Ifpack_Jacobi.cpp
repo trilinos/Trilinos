@@ -37,6 +37,11 @@
 #include "Epetra_Vector.h"
 #include "Epetra_MultiVector.h"
 
+#ifdef HAVE_IFPACK_TEUCHOS
+#include <Teuchos_ParameterList.hpp>
+#include <ifp_parameters.h>
+#endif
+
 //==============================================================================
 Ifpack_Jacobi::Ifpack_Jacobi(const Ifpack_OverlapGraph * OverlapGraph, bool UseReciprocal, 
 			       int NumSteps) 
@@ -73,6 +78,25 @@ Ifpack_Jacobi::Ifpack_Jacobi(const Ifpack_Jacobi & Source)
 {
   if (DiagValues_!=0) DiagValues_ = new Epetra_Vector(*DiagValues_);
 }
+
+#ifdef HAVE_IFPACK_TEUCHOS
+//==========================================================================
+int Ifpack_Jacobi::SetParameters(const Teuchos::ParameterList& parameterlist,
+				  bool cerr_warning_if_unused)
+{
+  Ifpack::param_struct params;
+  params.use_reciprocal = UseReciprocal_;
+  params.int_params[Ifpack::num_steps-FIRST_INT_PARAM] = NumSteps_;
+
+  Ifpack::set_parameters(parameterlist, params, cerr_warning_if_unused);
+
+  UseReciprocal_ = params.use_reciprocal;
+  NumSteps_ = params.int_params[Ifpack::num_steps-FIRST_INT_PARAM];
+
+  return(0);
+}
+#endif
+
 //==============================================================================
 int Ifpack_Jacobi::ProcessOverlapMatrix(const Epetra_RowMatrix &A)
 {

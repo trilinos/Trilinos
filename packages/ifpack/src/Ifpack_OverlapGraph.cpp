@@ -34,6 +34,11 @@
 #include "Epetra_Map.h"
 #include "Epetra_Import.h"
 
+#ifdef HAVE_IFPACK_TEUCHOS
+#include <Teuchos_ParameterList.hpp>
+#include <ifp_parameters.h>
+#endif
+
 //==============================================================================
 Ifpack_OverlapGraph::Ifpack_OverlapGraph(const Epetra_CrsGraph * UserMatrixGraph, int OverlapLevel)
   : OverlapGraph_(0),
@@ -84,6 +89,21 @@ Ifpack_OverlapGraph::~Ifpack_OverlapGraph() {
     if (OverlapRowMap_!=0) delete OverlapRowMap_;
   }
 }
+
+#ifdef HAVE_IFPACK_TEUCHOS
+//==========================================================================
+int Ifpack_OverlapGraph::SetParameters(const Teuchos::ParameterList& parameterlist,
+				       bool cerr_warning_if_unused)
+{
+  Ifpack::param_struct params;
+  params.int_params[Ifpack::level_overlap-FIRST_INT_PARAM] = OverlapLevel_;
+
+  Ifpack::set_parameters(parameterlist, params, cerr_warning_if_unused);
+
+  OverlapLevel_ = params.int_params[Ifpack::level_overlap-FIRST_INT_PARAM];
+  return(0);
+}
+#endif
 
 //==============================================================================
 int Ifpack_OverlapGraph::ConstructOverlapGraph(const Epetra_CrsGraph * UserMatrixGraph) {

@@ -43,6 +43,12 @@ class Epetra_Map;
 class Epetra_RowMatrix;
 class Epetra_Vector;
 
+#ifdef HAVE_IFPACK_TEUCHOS
+namespace Teuchos {
+  class ParameterList;
+}
+#endif
+
 //! Ifpack_Jacobi: Jacobi preconditioner of a given Epetra_RowMatrix.
 /*! This class supports the construction and use of Jacobi's basic iterative method as a 
     preconditioner for a Krylov iterative method.  It is also possible to use this class to solve a 
@@ -97,12 +103,24 @@ class Ifpack_Jacobi: public Epetra_Object, public Epetra_CompObject, public Ifpa
   
   //! Copy constructor.
   Ifpack_Jacobi(const Ifpack_Jacobi & Source);
-  
+
   //! Ifpack_Jacobi Destructor
   virtual ~Ifpack_Jacobi();
   //@}
 
   //@{ \name Attribute access methods.
+
+#ifdef HAVE_IFPACK_TEUCHOS
+  //! Set parameters using a Teuchos::ParameterList object.
+  /* This method is only available if the configure argument
+     '--enable-ifpack-teuchos' was used.
+     This method recognizes two parameter names: use_reciprocal and num_steps.
+     These names are case insensitive. For each, the ParameterEntry must have
+     type int.
+  */
+  int SetParameters(const Teuchos::ParameterList& parameterlist,
+                    bool cerr_warning_if_unused=false);
+#endif
 
   //! Returns current value of UseReciprocal.
   bool UseReciprocal() const {return(UseReciprocal_);};

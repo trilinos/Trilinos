@@ -35,6 +35,11 @@
 #include "Epetra_Vector.h"
 #include "Epetra_MultiVector.h"
 
+#ifdef HAVE_IFPACK_TEUCHOS
+#include <Teuchos_ParameterList.hpp>
+#include <ifp_parameters.h>
+#endif
+
 //==============================================================================
 Ifpack_CrsRick::Ifpack_CrsRick(const Epetra_CrsMatrix &A, const Ifpack_IlukGraph & Graph) 
   : A_(A),
@@ -100,6 +105,26 @@ Ifpack_CrsRick::~Ifpack_CrsRick(){
   Factored_ = false;
   Allocated_ = false;
 }
+
+#ifdef HAVE_IFPACK_TEUCHOS
+//==========================================================================
+int Ifpack_CrsRick::SetParameters(const Teuchos::ParameterList& parameterlist,
+				  bool cerr_warning_if_unused)
+{
+  Ifpack::param_struct params;
+  params.double_params[Ifpack::relax_value] = RelaxValue_;
+  params.double_params[Ifpack::absolute_threshold] = Athresh_;
+  params.double_params[Ifpack::relative_threshold] = Rthresh_;
+
+  Ifpack::set_parameters(parameterlist, params, cerr_warning_if_unused);
+
+  RelaxValue_ = params.double_params[Ifpack::relax_value];
+  Athresh_ = params.double_params[Ifpack::absolute_threshold];
+  Rthresh_ = params.double_params[Ifpack::relative_threshold];
+
+  return(0);
+}
+#endif
 
 //==========================================================================
 int Ifpack_CrsRick::InitValues() {

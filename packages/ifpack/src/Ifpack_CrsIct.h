@@ -42,6 +42,12 @@ class Epetra_Map;
 class Epetra_CrsMatrix;
 class Epetra_MultiVector;
 
+#ifdef HAVE_IFPACK_TEUCHOS
+namespace Teuchos {
+  class ParameterList;
+}
+#endif
+
 //! Ifpack_CrsIct: A class for constructing and using an incomplete Cholesky factorization of a given Epetra_CrsMatrix.
 
 /*! The Ifpack_CrsIct class computes a threshold based incomplete LDL^T factorization 
@@ -179,6 +185,19 @@ class Ifpack_CrsIct: public Epetra_Object, public Epetra_CompObject, public virt
   //! Set overlap mode type
   void SetOverlapMode( Epetra_CombineMode OverlapMode) {OverlapMode_ = OverlapMode; return;}
 
+#ifdef HAVE_IFPACK_TEUCHOS
+  //! Set parameters using a Teuchos::ParameterList object.
+  /* This method is only available if the configure argument
+     '--enable-ifpack-teuchos' was used.
+     This method recognizes four parameter names: level_fill, drop_tolerance,
+     absolute_threshold and relative_threshold. These names are case
+     insensitive. For level_fill the ParameterEntry must have type int, and
+     the other three must have type double.
+  */
+  int SetParameters(const Teuchos::ParameterList& parameterlist,
+                    bool cerr_warning_if_unused=false);
+#endif
+
   //! Initialize L and U with values from user matrix A.
   /*! Copies values from the user's matrix into the nonzero pattern of L and U.
     \param In 
@@ -247,6 +266,8 @@ class Ifpack_CrsIct: public Epetra_Object, public Epetra_CompObject, public virt
   int Condest(bool Trans, double & ConditionNumberEstimate) const;
   // Atribute access functions
   
+  //! Get relative threshold value
+  double GetRelativeThreshold() {return Rthresh_;}
     
   //! Returns the number of nonzero entries in the global graph.
   int NumGlobalNonzeros() const {return(U().NumGlobalNonzeros()+D().GlobalLength());};

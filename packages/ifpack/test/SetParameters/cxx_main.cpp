@@ -30,8 +30,11 @@
 #include <Ifpack_ConfigDefs.h>
 #include <Ifpack_IlukGraph.h>
 #include <Ifpack_CrsRiluk.h>
+#include <Ifpack_CrsIct.h>
+#include <Ifpack_OverlapGraph.h>
 
 #include <Epetra_CrsGraph.h>
+#include <Epetra_CrsMatrix.h>
 
 #ifdef HAVE_IFPACK_TEUCHOS
 #include <Teuchos_ParameterList.hpp>
@@ -74,6 +77,10 @@ int main(int argc, char* argv[]) {
   paramlist.set("absolute_threshold", 44.0);
   paramlist.set("level_fill", 2);
   paramlist.set("LEVEL_OVERLAP", 2);
+  paramlist.set("relative_threshold", 1.e-2);
+  paramlist.set("fill_tolerance", 2.0);
+  paramlist.set("use_reciprocal", false);
+  paramlist.set("level_overlap", 2);
 
   Ifpack::set_parameters(paramlist, params);
 
@@ -85,7 +92,7 @@ int main(int argc, char* argv[]) {
   }
 #endif
 
-  int local_n = 5;
+  int i, local_n = 5;
   int my_pid = Comm.MyPID();
   int num_procs = Comm.NumProc();
   int global_n = num_procs*local_n;
@@ -94,13 +101,26 @@ int main(int argc, char* argv[]) {
   Epetra_CrsGraph graph(Copy, map, 1);
   int first_global_row = my_pid*local_n;
 
-  for(int i=0; i<local_n; ++i) {
+  for(i=0; i<local_n; ++i) {
     int row = first_global_row + i;
     graph.InsertGlobalIndices(row, 1, &row);
   }
 
+  graph.FillComplete();
+
   Ifpack_IlukGraph ilukgraph(graph, 1,1);
   Ifpack_CrsRiluk crsiluk(ilukgraph);
+  Ifpack_OverlapGraph overlapgraph(&graph, 1);
+
+  Epetra_CrsMatrix A(Copy, graph);
+
+  for(i=0; i<local_n; ++i) {
+    int row = first_global_row + i;
+    double val = 2.0;
+    A.SumIntoGlobalValues(row, 1, &val, &row);
+  }
+
+  Ifpack_CrsIct crsict(A, 1.0, 1);
 
 #ifdef HAVE_IFPACK_TEUCHOS
   ilukgraph.SetParameters(paramlist);
@@ -122,10 +142,28 @@ int main(int argc, char* argv[]) {
 
 #ifdef HAVE_IFPACK_TEUCHOS
   crsiluk.SetParameters(paramlist);
- 
+
   double athresh = crsiluk.GetAbsoluteThreshold();
   if (athresh != 44.0) {
     cerr << "SetParameters test failed to correctly set absolute_threshold."
+        << endl;
+    return(-1);
+  }
+
+  crsict.SetParameters(paramlist);
+
+  double rthresh = crsict.GetRelativeThreshold();
+  if (rthresh != 1.e-2) {
+    cerr << "SetParameters test failed to correctly set relative_threshold."
+        << endl;
+    return(-1);
+  }
+
+  overlapgraph.SetParameters(paramlist);
+
+  int overlaplevel = overlapgraph.OverlapLevel();
+  if (overlaplevel != 2) {
+    cerr << "SetParameters test failed to correctly set overlaplevel."
         << endl;
     return(-1);
   }

@@ -119,8 +119,9 @@ am__DEPENDENCIES_1 =
 libifpack_a_DEPENDENCIES = $(am__DEPENDENCIES_1)
 am__objects_1 =
 am__objects_2 = Ifpack_IlukGraph.$(OBJEXT) Ifpack_CrsRiluk.$(OBJEXT) \
-	Ifpack_CrsIct.$(OBJEXT) icrout_cholesky_mex.$(OBJEXT) \
-	icrout_quicksort.$(OBJEXT) ifp_parameters.$(OBJEXT)
+	Ifpack_CrsIct.$(OBJEXT) Ifpack_OverlapGraph.$(OBJEXT) \
+	icrout_cholesky_mex.$(OBJEXT) icrout_quicksort.$(OBJEXT) \
+	ifp_parameters.$(OBJEXT)
 am_libifpack_a_OBJECTS = $(am__objects_1) $(am__objects_1) \
 	$(am__objects_1) $(am__objects_1) $(am__objects_2) \
 	$(am__objects_1) $(am__objects_1)
@@ -131,6 +132,7 @@ am__depfiles_maybe = depfiles
 @AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/Ifpack_CrsIct.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/Ifpack_CrsRiluk.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/Ifpack_IlukGraph.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/Ifpack_OverlapGraph.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/icrout_cholesky_mex.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/icrout_quicksort.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/ifp_parameters.Po
@@ -304,6 +306,7 @@ DIST =
 COMP_H = \
 	$(srcdir)/Ifpack_IlukGraph.h \
 	$(srcdir)/Ifpack_CrsRiluk.h \
+	$(srcdir)/Ifpack_OverlapGraph.h \
 	$(srcdir)/Ifpack_ScalingType.h \
 	$(srcdir)/Ifpack_CrsIct.h \
 	$(srcdir)/icrout_cholesky_mex.h \
@@ -313,6 +316,7 @@ COMP = \
 	$(srcdir)/Ifpack_IlukGraph.cpp \
 	$(srcdir)/Ifpack_CrsRiluk.cpp \
 	$(srcdir)/Ifpack_CrsIct.cpp \
+	$(srcdir)/Ifpack_OverlapGraph.cpp \
 	$(srcdir)/icrout_cholesky_mex.c \
 	$(srcdir)/icrout_quicksort.c \
 	$(srcdir)/ifp_parameters.cpp
@@ -484,6 +488,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Ifpack_CrsIct.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Ifpack_CrsRiluk.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Ifpack_IlukGraph.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Ifpack_OverlapGraph.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/icrout_cholesky_mex.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/icrout_quicksort.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ifp_parameters.Po@am__quote@
@@ -599,6 +604,22 @@ Ifpack_CrsIct.obj: $(srcdir)/Ifpack_CrsIct.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Ifpack_CrsIct.Po' tmpdepfile='$(DEPDIR)/Ifpack_CrsIct.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Ifpack_CrsIct.obj `if test -f '$(srcdir)/Ifpack_CrsIct.cpp'; then $(CYGPATH_W) '$(srcdir)/Ifpack_CrsIct.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Ifpack_CrsIct.cpp'; fi`
+
+Ifpack_OverlapGraph.o: $(srcdir)/Ifpack_OverlapGraph.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Ifpack_OverlapGraph.o -MD -MP -MF "$(DEPDIR)/Ifpack_OverlapGraph.Tpo" -c -o Ifpack_OverlapGraph.o `test -f '$(srcdir)/Ifpack_OverlapGraph.cpp' || echo '$(srcdir)/'`$(srcdir)/Ifpack_OverlapGraph.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Ifpack_OverlapGraph.Tpo" "$(DEPDIR)/Ifpack_OverlapGraph.Po"; else rm -f "$(DEPDIR)/Ifpack_OverlapGraph.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Ifpack_OverlapGraph.cpp' object='Ifpack_OverlapGraph.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Ifpack_OverlapGraph.Po' tmpdepfile='$(DEPDIR)/Ifpack_OverlapGraph.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Ifpack_OverlapGraph.o `test -f '$(srcdir)/Ifpack_OverlapGraph.cpp' || echo '$(srcdir)/'`$(srcdir)/Ifpack_OverlapGraph.cpp
+
+Ifpack_OverlapGraph.obj: $(srcdir)/Ifpack_OverlapGraph.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Ifpack_OverlapGraph.obj -MD -MP -MF "$(DEPDIR)/Ifpack_OverlapGraph.Tpo" -c -o Ifpack_OverlapGraph.obj `if test -f '$(srcdir)/Ifpack_OverlapGraph.cpp'; then $(CYGPATH_W) '$(srcdir)/Ifpack_OverlapGraph.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Ifpack_OverlapGraph.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Ifpack_OverlapGraph.Tpo" "$(DEPDIR)/Ifpack_OverlapGraph.Po"; else rm -f "$(DEPDIR)/Ifpack_OverlapGraph.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Ifpack_OverlapGraph.cpp' object='Ifpack_OverlapGraph.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Ifpack_OverlapGraph.Po' tmpdepfile='$(DEPDIR)/Ifpack_OverlapGraph.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Ifpack_OverlapGraph.obj `if test -f '$(srcdir)/Ifpack_OverlapGraph.cpp'; then $(CYGPATH_W) '$(srcdir)/Ifpack_OverlapGraph.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Ifpack_OverlapGraph.cpp'; fi`
 
 ifp_parameters.o: $(srcdir)/ifp_parameters.cpp
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ifp_parameters.o -MD -MP -MF "$(DEPDIR)/ifp_parameters.Tpo" -c -o ifp_parameters.o `test -f '$(srcdir)/ifp_parameters.cpp' || echo '$(srcdir)/'`$(srcdir)/ifp_parameters.cpp; \

@@ -37,6 +37,11 @@
 #include "Epetra_Util.h"
 #include "icrout_cholesky_mex.h"
 
+#ifdef HAVE_IFPACK_TEUCHOS
+#include <Teuchos_ParameterList.hpp>
+#include <ifp_parameters.h>
+#endif
+
 //==============================================================================
 Ifpack_CrsIct::Ifpack_CrsIct(const Epetra_CrsMatrix & A, double Droptol, int Lfil) 
   : A_(A),
@@ -132,6 +137,28 @@ Ifpack_CrsIct::~Ifpack_CrsIct(){
   Factored_ = false;
   Allocated_ = false;
 }
+
+#ifdef HAVE_IFPACK_TEUCHOS
+//==========================================================================
+int Ifpack_CrsIct::SetParameters(const Teuchos::ParameterList& parameterlist,
+				 bool cerr_warning_if_unused)
+{
+  Ifpack::param_struct params;
+  params.int_params[Ifpack::level_fill-FIRST_INT_PARAM] = Lfil_;
+  params.double_params[Ifpack::absolute_threshold] = Athresh_;
+  params.double_params[Ifpack::relative_threshold] = Rthresh_;
+  params.double_params[Ifpack::drop_tolerance] = Droptol_;
+
+  Ifpack::set_parameters(parameterlist, params, cerr_warning_if_unused);
+
+  Lfil_ = params.int_params[Ifpack::level_fill-FIRST_INT_PARAM];
+  Athresh_ = params.double_params[Ifpack::absolute_threshold];
+  Rthresh_ = params.double_params[Ifpack::relative_threshold];
+  Droptol_ = params.double_params[Ifpack::drop_tolerance];
+
+  return(0);
+}
+#endif
 
 //==========================================================================
 int Ifpack_CrsIct::InitValues(const Epetra_CrsMatrix & A) {

@@ -37,6 +37,11 @@
 #include "Epetra_Vector.h"
 #include "Epetra_MultiVector.h"
 
+#ifdef HAVE_IFPACK_TEUCHOS
+#include <Teuchos_ParameterList.hpp>
+#include <ifp_parameters.h>
+#endif
+
 //==============================================================================
 Ifpack_CrsIlut::Ifpack_CrsIlut(const Ifpack_OverlapGraph * OverlapGraph, double DropTol, 
 			       double FillTol) 
@@ -69,6 +74,25 @@ Ifpack_CrsIlut::Ifpack_CrsIlut(const Ifpack_CrsIlut & Source)
     FillTol_(Source.FillTol_)
 {
 }
+
+#ifdef HAVE_IFPACK_TEUCHOS
+//==========================================================================
+int Ifpack_CrsIlut::SetParameters(const Teuchos::ParameterList& parameterlist,
+				  bool cerr_warning_if_unused)
+{
+  Ifpack::param_struct params;
+  params.double_params[Ifpack::fill_tolerance] = FillTol_;
+  params.double_params[Ifpack::drop_tolerance] = DropTol_;
+
+  Ifpack::set_parameters(parameterlist, params, cerr_warning_if_unused);
+
+  FillTol_ = params.double_params[Ifpack::fill_tolerance];
+  Droptol_ = params.double_params[Ifpack::drop_tolerance];
+
+  return(0);
+}
+#endif
+
 //==============================================================================
 int Ifpack_CrsIlut::ProcessOverlapMatrix(const Epetra_RowMatrix &A)
 {
