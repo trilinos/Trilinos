@@ -8409,7 +8409,7 @@ tor
 } /* dgelqf_ */
 #endif
 
-#ifndef ML_DGELSL_FUNC
+#ifndef ML_DGELS_FUNC
 
 /* Subroutine */ int dgels_(char *trans, integer *m, integer *n, integer *
 	nrhs, doublereal *a, integer *lda, doublereal *b, integer *ldb, 

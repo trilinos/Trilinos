@@ -31,4 +31,19 @@
 #define ML_DLAMC3_FUNC
 #define ML_DLAMC4_FUNC
 #define ML_DLAMC5_FUNC
+
+#define ML_DPOTRS_FUNC
+#define ML_DGELS_FUNC
+#define ML_DGELQ2_FUNC
+#define ML_DGELQF_FUNC
+#define ML_DLASCL_FUNC
+#define ML_DLASET_FUNC
+#define ML_DLASSQ_FUNC
+#define ML_DLANGE_FUNC
+#define ML_DLABAD_FUNC
+#define ML_DORMQR_FUNC
+#define ML_DORMLQ_FUNC
+#define ML_DORM2R_FUNC
+#define ML_DROML2_FUNC
+
 #endif
