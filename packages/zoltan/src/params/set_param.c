@@ -8,6 +8,7 @@
 #include "rcb_const.h"
 #include "octupdate_const.h"
 #include "parmetis_const.h"
+#include "timer_const.h"
 
 static int add_param(LB *, char *, char *);
 static int clean_string(char *, char **);
@@ -64,9 +65,12 @@ char *val1)			/* value to set this parameter to */
 
     if (status == 1)
         status = LB_Set_Octpart_Param(name, val);
+
+    if (status == 1)
+        status = LB_Set_Timer_Param(name, val);
 /*
     if (status == 1)
-	status = LB_SFC_Set_Param(name, val);
+	status = LB_Set_SFC_Param(name, val);
 */
 
     /* All parameter setting routines have been called, now finish up. */
