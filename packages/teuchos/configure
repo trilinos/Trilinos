@@ -883,12 +883,12 @@ Optional Features:
                           yes)
   --enable-teuchos-abc    Enable array bounds checking (default is no)
   --enable-teuchos-complex
-                          enable Teuchos complex code (default is no)
+                          Enable Teuchos complex code (default is no)
   --enable-teuchos-extended
-                          enable Teuchos extended code (default is no)
+                          Enable Teuchos extended code (default is no)
   --enable-teuchos-arprec Enable Teuchos interface support for the ARbitrary
                           PRECision Library (default is no)
-  --enable-expat          enable expat XML parser
+  --enable-expat          Enable expat XML parser
 
 Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
@@ -915,6 +915,9 @@ Optional Packages:
                           to CFLAGS
   --with-fflags           additional FFLAGS flags to be added: will prepend
                           to FFLAGS
+  --with-libs             List additional libraries here. For example,
+                          --with-libs=-lsuperlu or
+                          --with-libs=/path/libsuperlu.a
   --with-ldflags          additional LDFLAGS flags to be added: will prepend
                           to LDFLAGS
   --with-ar               override archiver command (default is "ar cru")
@@ -923,15 +926,6 @@ Optional Packages:
   --with-incdirs          additional directories containing include files:
                           will prepend to search here for includes, use -Idir
                           format
-  --with-teuchos-arprecdir
-                          Set ARPREC dist directory (default is
-                          arprecdir_is_not_specified, )
-  --with-teuchos-arpreclib
-                          Set ARPREC dist library (default is
-                          ${tac_with_teuchos_arprecdir}/lib/libmp.a, )
-  --with-teuchos-arprecincdir
-                          Set ARPREC dist include directory (default is
-                          ${tac_with_teuchos_arprecdir}/include, )
   --with-blas=<lib>       use BLAS library <lib>
   --with-lapack=<lib>     use LAPACK library <lib>
   --with-expat            specify root directory of EXPAT installation
@@ -3432,7 +3426,7 @@ fi
 
 
 # Provide some information about the compiler.
-echo "$as_me:3435:" \
+echo "$as_me:3429:" \
      "checking for Fortran 77 compiler version" >&5
 ac_compiler=`set X $ac_compile; echo $2`
 { (eval echo "$as_me:$LINENO: \"$ac_compiler --version </dev/null >&5\"") >&5
@@ -4072,6 +4066,25 @@ else
 echo "${ECHO_T}no" >&6
 
 fi;
+
+
+echo "$as_me:$LINENO: checking whether additional libraries are needed" >&5
+echo $ECHO_N "checking whether additional libraries are needed... $ECHO_C" >&6
+
+# Check whether --with-libs or --without-libs was given.
+if test "${with_libs+set}" = set; then
+  withval="$with_libs"
+
+LIBS="${withval} ${LIBS}"
+echo "$as_me:$LINENO: result: LIBS = ${LIBS}" >&5
+echo "${ECHO_T}LIBS = ${LIBS}" >&6
+
+else
+  echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+
+fi;
+
 
 
 echo "$as_me:$LINENO: checking whether additional LDFLAGS flags should be added" >&5
@@ -7060,42 +7073,6 @@ if test "X$ac_cv_use_teuchos_arprec" != "Xno"; then
 #  TAC_ARG_WITH( trilinos3pldir, [Set Trilinos3PL directory], trilinos3pldir_is_not_specified )
 #  if test "X${tac_with_teuchos_trilinos3pldir}" != "Xtrilinos3pldir_is_not_specified"; then
 
-
-
-# Check whether --with-teuchos-arprecdir or --without-teuchos-arprecdir was given.
-if test "${with_teuchos_arprecdir+set}" = set; then
-  withval="$with_teuchos_arprecdir"
-  tac_with_teuchos_arprecdir=$withval
-else
-  tac_with_teuchos_arprecdir=arprecdir_is_not_specified
-fi;
-
-
-  if test "X${tac_with_teuchos_arprecdir}" != "Xarprecdir_is_not_specified"; then
-
-
-# Check whether --with-teuchos-arpreclib or --without-teuchos-arpreclib was given.
-if test "${with_teuchos_arpreclib+set}" = set; then
-  withval="$with_teuchos_arpreclib"
-  tac_with_teuchos_arpreclib=$withval
-else
-  tac_with_teuchos_arpreclib=${tac_with_teuchos_arprecdir}/lib/libmp.a
-fi;
-
-
-
-# Check whether --with-teuchos-arprecincdir or --without-teuchos-arprecincdir was given.
-if test "${with_teuchos_arprecincdir+set}" = set; then
-  withval="$with_teuchos_arprecincdir"
-  tac_with_teuchos_arprecincdir=$withval
-else
-  tac_with_teuchos_arprecincdir=${tac_with_teuchos_arprecdir}/include
-fi;
-
-
-     CPPFLAGS="-I${tac_with_teuchos_arprecincdir} ${CPPFLAGS}"
-     LDFLAGS="${tac_with_teuchos_arpreclib} ${LDFLAGS}"
-  fi
      echo "$as_me:$LINENO: checking for mp/mpreal.h" >&5
 echo $ECHO_N "checking for mp/mpreal.h... $ECHO_C" >&6
      cat >conftest.$ac_ext <<_ACEOF
@@ -7444,7 +7421,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:7447: \"$ac_link\") >&5
+(eval echo $as_me:7424: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -7522,7 +7499,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:7525: \"$ac_link\") >&5
+(eval echo $as_me:7502: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -10052,7 +10029,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:10055: \"$ac_link\") >&5
+(eval echo $as_me:10032: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -10130,7 +10107,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:10133: \"$ac_link\") >&5
+(eval echo $as_me:10110: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS

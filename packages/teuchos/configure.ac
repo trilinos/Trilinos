@@ -134,6 +134,7 @@ TAC_ARG_WITH_FLAGS(ccflags, CCFLAGS)
 TAC_ARG_WITH_FLAGS(cxxflags, CXXFLAGS)
 TAC_ARG_WITH_FLAGS(cflags, CFLAGS)
 TAC_ARG_WITH_FLAGS(fflags, FFLAGS)
+TAC_ARG_WITH_LIBS(libs, LIBS)
 TAC_ARG_WITH_FLAGS(ldflags, LDFLAGS)
 
 # ------------------------------------------------------------------------
@@ -335,14 +336,14 @@ TAC_ARG_ENABLE_FEATURE_SUB( teuchos, abc, [Enable array bounds checking],
 #  --enable-teuchos-complex
 #
 
-TAC_ARG_ENABLE_FEATURE_SUB( teuchos, complex, [enable Teuchos complex code], TEUCHOS_COMPLEX, no)
+TAC_ARG_ENABLE_FEATURE_SUB( teuchos, complex, [Enable Teuchos complex code], TEUCHOS_COMPLEX, no)
 AM_CONDITIONAL(HAVE_TEUCHOS_COMPLEX, [test "X$ac_cv_use_teuchos_complex" != "Xno"])
 
 #
 #  --enable-teuchos-extended
 #
 
-TAC_ARG_ENABLE_FEATURE_SUB( teuchos, extended, [enable Teuchos extended code], TEUCHOS_EXTENDED, no)
+TAC_ARG_ENABLE_FEATURE_SUB( teuchos, extended, [Enable Teuchos extended code], TEUCHOS_EXTENDED, no)
 AM_CONDITIONAL(HAVE_TEUCHOS_EXTENDED, [test "X$ac_cv_use_teuchos_extended" != "Xno"])
 
 #
@@ -358,15 +359,6 @@ if test "X$ac_cv_use_teuchos_arprec" != "Xno"; then
 #  TAC_ARG_WITH( trilinos3pldir, [Set Trilinos3PL directory], trilinos3pldir_is_not_specified )
 #  if test "X${tac_with_teuchos_trilinos3pldir}" != "Xtrilinos3pldir_is_not_specified"; then
 
-  TAC_ARG_WITH_SUB( teuchos, arprecdir, [Set ARPREC dist directory], arprecdir_is_not_specified )
-
-  if test "X${tac_with_teuchos_arprecdir}" != "Xarprecdir_is_not_specified"; then
-     TAC_ARG_WITH_SUB( teuchos, arpreclib, [Set ARPREC dist library], ${tac_with_teuchos_arprecdir}/lib/libmp.a )
-     TAC_ARG_WITH_SUB( teuchos, arprecincdir, [Set ARPREC dist include directory], ${tac_with_teuchos_arprecdir}/include )
-
-     CPPFLAGS="-I${tac_with_teuchos_arprecincdir} ${CPPFLAGS}"
-     LDFLAGS="${tac_with_teuchos_arpreclib} ${LDFLAGS}"
-  fi
      AC_MSG_CHECKING(for mp/mpreal.h)
      AC_TRY_CPP([#include "mp/mpreal.h"],
 	[AC_MSG_RESULT(yes)],  
