@@ -50,61 +50,83 @@ void Epetra_MpiComm::Barrier() const {
 }
 //=============================================================================
 int Epetra_MpiComm::Broadcast(double * Values, int Count, int Root) const {
+  EPETRA_CHK_ERR(CheckInput(Values,Count));
   EPETRA_CHK_ERR(MPI_Bcast(Values, Count, MPI_DOUBLE, Root, Comm_));
   return(0);
 }
 //=============================================================================
 int Epetra_MpiComm::Broadcast(int * Values, int Count, int Root) const {
+  EPETRA_CHK_ERR(CheckInput(Values,Count));
   EPETRA_CHK_ERR(MPI_Bcast(Values, Count, MPI_INT, Root, Comm_));
   return(0);
 }
 //=============================================================================
 int Epetra_MpiComm::GatherAll(double * MyVals, double * AllVals, int Count) const {
+  EPETRA_CHK_ERR(CheckInput(MyVals,Count));
+  EPETRA_CHK_ERR(CheckInput(AllVals,Count));
   EPETRA_CHK_ERR(MPI_Allgather(MyVals, Count, MPI_DOUBLE, AllVals, Count, MPI_DOUBLE, Comm_));
   return(0);
 }
 //=============================================================================
 int Epetra_MpiComm::GatherAll(int * MyVals, int * AllVals, int Count) const {
+  EPETRA_CHK_ERR(CheckInput(MyVals,Count));
+  EPETRA_CHK_ERR(CheckInput(AllVals,Count));
   EPETRA_CHK_ERR(MPI_Allgather(MyVals, Count, MPI_INT, AllVals, Count, MPI_INT, Comm_)); 
   return(0);
 }
 //=============================================================================
 int Epetra_MpiComm::SumAll(double * PartialSums, double * GlobalSums, int Count) const {
+  EPETRA_CHK_ERR(CheckInput(PartialSums,Count));
+  EPETRA_CHK_ERR(CheckInput(GlobalSums,Count));
   EPETRA_CHK_ERR(MPI_Allreduce(PartialSums, GlobalSums, Count, MPI_DOUBLE, MPI_SUM, Comm_));
   return(0);
 }
 //=============================================================================
 int Epetra_MpiComm::SumAll(int * PartialSums, int * GlobalSums, int Count) const {
+  EPETRA_CHK_ERR(CheckInput(PartialSums,Count));
+  EPETRA_CHK_ERR(CheckInput(GlobalSums,Count));
   EPETRA_CHK_ERR(MPI_Allreduce(PartialSums, GlobalSums, Count, MPI_INT, MPI_SUM, Comm_));
   return(0);
 }
 //=============================================================================
 int Epetra_MpiComm::MaxAll(double * PartialMaxs, double * GlobalMaxs, int Count) const {
+  EPETRA_CHK_ERR(CheckInput(PartialMaxs,Count));
+  EPETRA_CHK_ERR(CheckInput(GlobalMaxs,Count));
   EPETRA_CHK_ERR(MPI_Allreduce(PartialMaxs, GlobalMaxs, Count, MPI_DOUBLE, MPI_MAX, Comm_));
   return(0);
 }
 //=============================================================================
 int Epetra_MpiComm::MaxAll(int * PartialMaxs, int * GlobalMaxs, int Count) const {
+  EPETRA_CHK_ERR(CheckInput(PartialMaxs,Count));
+  EPETRA_CHK_ERR(CheckInput(GlobalMaxs,Count));
   EPETRA_CHK_ERR(MPI_Allreduce(PartialMaxs, GlobalMaxs, Count, MPI_INT, MPI_MAX, Comm_));
   return(0);
 }
 //=============================================================================
 int Epetra_MpiComm::MinAll(double * PartialMins, double * GlobalMins, int Count) const {
+  EPETRA_CHK_ERR(CheckInput(PartialMins,Count));
+  EPETRA_CHK_ERR(CheckInput(GlobalMins,Count));
   EPETRA_CHK_ERR(MPI_Allreduce(PartialMins, GlobalMins, Count, MPI_DOUBLE, MPI_MIN, Comm_));
   return(0);
 }
 //=============================================================================
 int Epetra_MpiComm::MinAll(int * PartialMins, int * GlobalMins, int Count) const {
+  EPETRA_CHK_ERR(CheckInput(PartialMins,Count));
+  EPETRA_CHK_ERR(CheckInput(GlobalMins,Count));
   EPETRA_CHK_ERR(MPI_Allreduce(PartialMins, GlobalMins, Count, MPI_INT, MPI_MIN, Comm_));
   return(0);
 }
 //=============================================================================
 int Epetra_MpiComm::ScanSum(double * MyVals, double * ScanSums, int Count) const {
+  EPETRA_CHK_ERR(CheckInput(MyVals,Count));
+  EPETRA_CHK_ERR(CheckInput(ScanSums,Count));
   EPETRA_CHK_ERR(MPI_Scan(MyVals, ScanSums, Count, MPI_DOUBLE, MPI_SUM, Comm_));
   return(0);
 }
 //=============================================================================
 int Epetra_MpiComm::ScanSum(int * MyVals, int * ScanSums, int Count) const {
+  EPETRA_CHK_ERR(CheckInput(MyVals,Count));
+  EPETRA_CHK_ERR(CheckInput(ScanSums,Count));
   EPETRA_CHK_ERR(MPI_Scan(MyVals, ScanSums, Count, MPI_INT, MPI_SUM, Comm_));
   return(0);
 }

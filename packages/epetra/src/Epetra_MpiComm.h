@@ -284,6 +284,8 @@ class Epetra_MpiComm: public Epetra_Object, public virtual Epetra_Comm {
   
  private:
   
+  int CheckInput(double * ptr, int count) const {if ((ptr==0) && (count>0)) return(-1); return(0);};
+  int CheckInput(int * ptr, int count) const {if ((ptr==0) && (count>0)) return(-1); return(0);};
   MPI_Comm Comm_; //!< \internal MPI_Comm variable.
   int rank_;
   int size_;
