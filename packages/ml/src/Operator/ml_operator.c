@@ -128,6 +128,20 @@ int ML_Operator_Clean( ML_Operator *mat)
       if ( (mat->comm->ML_mypid == 0) && (t1 != 0.0))
          printf(" Build time for %s (minimum) \t= %e\n",mat->label,t1);
    }
+   if  (mat->label != NULL) {
+      t1 = ML_gsum_double(mat->apply_time, mat->comm);
+      t1 = t1/((double) mat->comm->ML_nprocs);
+      if ( (mat->comm->ML_mypid == 0) && (t1 != 0.0))
+         printf(" Apply time for %s (average) \t= %e\n",mat->label,t1);
+      t1 = ML_gmax_double(mat->apply_time, mat->comm);
+      if ( (mat->comm->ML_mypid == 0) && (t1 != 0.0))
+         printf(" Apply time for %s (maximum) \t= %e\n",mat->label,t1);
+      t1 = - mat->apply_time;
+      t1 = ML_gmax_double(t1, mat->comm);
+      t1 = - t1;
+      if ( (mat->comm->ML_mypid == 0) && (t1 != 0.0))
+         printf(" Apply time for %s (minimum) \t= %e\n",mat->label,t1);
+   }
 #endif
 #if defined(ML_FLOPS) || defined(ML_TIMING_DETAILED)
    /* this could be wrong if one processor does nothing with a particular
