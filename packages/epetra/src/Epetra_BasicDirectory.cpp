@@ -32,7 +32,7 @@
 #include "Epetra_Map.h"
 #include "Epetra_Comm.h"
 #include "Epetra_Distributor.h"
-
+#include "Epetra_Util.h"
 
 //==============================================================================
 // Epetra_BasicDirectory constructor for a Epetra_BlockMap object
@@ -472,18 +472,34 @@ int Epetra_BasicDirectory::GetDirectoryEntries( const Epetra_BlockMap& Map,
                             c_imports));
   imports = reinterpret_cast<int*>(c_imports);
 
+  //create a sorted copy of the GlobalEntries array, along with a companion
+  //array that will allow us to put result arrays (Procs, LocalEntries &
+  //EntrySizes) in the same order as the unsorted GlobalEntries array
+  int* sortedGE = new int[NumEntries*2];
+  int* offsets = sortedGE+NumEntries;
+  for(i=0; i<NumEntries; ++i) {
+    offsets[i] = i;
+  }
+
+  memcpy(sortedGE, GlobalEntries, NumEntries*sizeof(int));
+  Epetra_Util Utils;
+  Utils.Sort(true, NumEntries, sortedGE, 0, 0, 1, &offsets);
+
   int * ptr = imports;
+  int insertPoint; //insertPoint won't be used, but is argument to binary_search
+
   for( i = 0; i < NumRecv; i++ ) {
     curr_LID = *ptr++;
-    for( j = 0; j < NumEntries; j++ )
-      if( curr_LID == GlobalEntries[j] ) {
-        Procs[j] = *ptr++;
-        if (DoLIDs) LocalEntries[j] = *ptr++;
-        if (DoSizes) EntrySizes[j] = *ptr++;
-        break;
-      }
+    j = Epetra_Util_binary_search(curr_LID, sortedGE, NumEntries, insertPoint);
+    if (j > -1) {
+      Procs[offsets[j]] = *ptr++;
+      if (DoLIDs) LocalEntries[offsets[j]] = *ptr++;
+      if (DoSizes) EntrySizes[offsets[j]] = *ptr++;
+    }
   }
-  
+
+  delete [] sortedGE;
+
   if( send_gids ) delete [] send_gids;
   if( send_procs ) delete [] send_procs;
   
