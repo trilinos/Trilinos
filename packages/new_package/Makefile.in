@@ -258,8 +258,8 @@ config/acx_check_dos_filesys.m4         config/tac_arg_with_flags.m4 \
 config/acx_lapack.m4                    config/tac_arg_with_incdirs.m4 \
 config/acx_pthread.m4                   config/tac_arg_with_lapacklib.m4 \
 config/config.guess                     config/tac_arg_with_libdirs.m4 \
-config/config.sub                       config/tac_arg_with_package.m4
-
+config/config.sub                       config/tac_arg_with_package.m4 \
+bootstrap 
 
 #
 #       I believe that by switching to AUX_DIR(../../config) one 

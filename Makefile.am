@@ -59,7 +59,8 @@ EXTRA_DIST = \
 	config/macosx_serial_samt5980 \
 	config/scyld_mpi_beowulf config/sgi64_mpi_atlantis \
 	config/sgi64_serial_atlantis \
-	config/solaris_mpi_conejo config/solaris_serial_paul
+	config/solaris_mpi_conejo config/solaris_serial_paul \
+	config/AutotoolsVersionInfo
 
 ## #######################################################################
 ## Tools in the auxillary directory 
