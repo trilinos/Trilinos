@@ -31,7 +31,7 @@ void ML_ARPACK_GGB( struct ML_Eigenvalue_Struct *eigen_struct,ML *ml,
   
   /* Eigenvalue definitions */
   int      iparam[11];
-  int      nev, ncv, mode;
+  int      nev, ncv, mode, Fattening;
   double   tol, tm;
   char     bmat[2], which[3];
   ML_Operator *Amat;
@@ -56,6 +56,7 @@ void ML_ARPACK_GGB( struct ML_Eigenvalue_Struct *eigen_struct,ML *ml,
   nev              = eigen_struct->Num_Eigenvalues;
   ncv              = eigen_struct->Arnoldi;
   tol              = eigen_struct->Residual_Tol;
+  Fattening        = eigen_struct->Fattening;
     
      
   /* Set parameters for ARPACK: (2)then those that are fixed for MPSalsa */
@@ -82,7 +83,7 @@ void ML_ARPACK_GGB( struct ML_Eigenvalue_Struct *eigen_struct,ML *ml,
 
   /* ARNOLDI driver. On output nconv is the number of converged eigenvalues */ 
   ML_ARPACK_driver(which, bmat, iparam, mode,
-		     nev, ncv, tol, ml, mydata);
+		     nev, ncv, tol, ml, mydata,Fattening);
   
   printf("Time for eigenvalue computations is %g (sec.)\n",GetClock()-tm);
   
@@ -98,7 +99,7 @@ void ML_ARPACK_GGB( struct ML_Eigenvalue_Struct *eigen_struct,ML *ml,
 void  ML_ARPACK_driver(char which[],
                               char bmat[], int iparam[], int mode, 
                               int nev, int ncv, double tol,  ML *ml, 
-                              struct ML_CSR_MSRdata *mydata)
+                              struct ML_CSR_MSRdata *mydata, int Fattening)
 {
 
   int        /* i, */ j, kk, ldv, lworkl;
@@ -451,9 +452,20 @@ void  ML_ARPACK_driver(char which[],
 
       }
 
-    
-    /* Haim: Convert Information into CSR Format */
-    ML_GGB_2_CSR (eigvec, nconv, nloc2, mydata);
+
+    /* If Fattening is defined than transfer information as one large vector 
+       If not than transfer information in CSR format */ 
+    if (Fattening != 0) {
+      
+      mydata->values = (double *) ML_allocate((ncv*ldv)*sizeof(double));
+      for (kk =0 ; kk < ncv*ldv; kk++ )      mydata->values[kk]   = v[kk];
+      
+      mydata->Ncols    = nconv;
+      mydata->Nrows    = nloc2;
+    }
+    else
+      /* Haim: Convert Information into CSR Format */
+      ML_GGB_2_CSR (eigvec, nconv, nloc2, mydata);
     
     
     /*  Print additional convergence information */

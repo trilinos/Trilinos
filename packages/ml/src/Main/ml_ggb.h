@@ -32,6 +32,7 @@ struct ML_Eigenvalue_Struct  {
   int Num_Eigenvalues;
   int Arnoldi;
   double Residual_Tol;
+  int Fattening;
 };
 
 #ifndef ML_CPP
@@ -44,7 +45,7 @@ extern "C" {
 void  ML_ARPACK_driver(char which[],
 			 char bmat[], int iparam[], int mode,
 			 int nev, int ncv, double tol,  ML *ml,
-			 struct ML_CSR_MSRdata  *mydata);
+			 struct ML_CSR_MSRdata  *mydata, int Fattening);
 
 
 void ML_GGB_2_CSR (double **eigvec, int nconv, int MatSize, struct ML_CSR_MSRdata  *mydata);
