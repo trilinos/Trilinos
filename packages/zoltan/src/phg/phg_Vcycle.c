@@ -212,7 +212,12 @@ int Zoltan_PHG_Partition (
       VCycle *coarser=NULL;
         
       prevVcnt=hg->dist_x[hgc->nProc_x];
-        
+
+#ifdef _DEBUG      
+      /* UVC: load balance stats */
+      Zoltan_PHG_LoadBalStat(zz, hg);
+#endif
+      
       if (hgp->output_level >= PHG_DEBUG_LIST) {
           uprintf(hgc,"START %3d |V|=%6d |E|=%6d #pins=%6d %d/%s/%s/%s p=%d...\n",
                   hg->info, hg->nVtx, hg->nEdge, hg->nPins, hg->redl, hgp->redm_str,
@@ -442,7 +447,8 @@ End:
     del = vcycle;
     vcycle = vcycle->finer;
     if (hgp->use_timers > 2) {
-      Zoltan_Timer_PrintAll(del->timer, zz->Proc, stdout);
+      if (zz->Proc == 0)
+          Zoltan_Timer_PrintAll(del->timer, zz->Proc, stdout);
       Zoltan_Timer_Destroy(&del->timer);
     }
     ZOLTAN_FREE(&del);
@@ -521,52 +527,6 @@ double Zoltan_PHG_Compute_NetCut(
 /****************************************************************************/
 
 
-#ifdef _DEBUG    
-double Zoltan_PHG_hcut_size_links (PHGComm *hgc, HGraph *hg, Partition part, int p)
-{
-    int i, j, *cuts=NULL, *rescuts=NULL, *parts, nparts;
-    double cut = 0.0, totalcut=0.0;
-    char *yo = "Zoltan_PHG_hcut_size_links";
-
-    if (hg->nEdge) {
-        if (!(cuts = (int*) ZOLTAN_CALLOC (p * hg->nEdge, sizeof(int)))) {
-            ZOLTAN_PRINT_ERROR(hgc->myProc, yo, "Insufficient memory.");
-            return ZOLTAN_MEMERR;
-        }
-        if (!hgc->myProc_x)
-            if (!(rescuts = (int*) ZOLTAN_CALLOC (p * hg->nEdge, sizeof(int)))) {
-                ZOLTAN_PRINT_ERROR(hgc->myProc, yo, "Insufficient memory.");
-                return ZOLTAN_MEMERR;
-            }
-        for (i = 0; i < hg->nEdge; ++i) {
-            parts = &cuts[i*p];
-            for (j = hg->hindex[i]; j < hg->hindex[i+1]; ++j)
-                ++parts[part[hg->hvertex[j]]];
-        }
-
-        MPI_Reduce (cuts, rescuts, p*hg->nEdge, MPI_INT, MPI_SUM, 0, hgc->row_comm);
-        ZOLTAN_FREE (&cuts);
-    }
-
-    if (!hgc->myProc_x) {
-        for (i = 0; i < hg->nEdge; ++i) {
-            parts = &rescuts[i*p];
-            for (j = nparts = 0; j< p; ++j)
-                if (parts[j])
-                    ++nparts;
-            if (nparts>1)
-                cut +=  ((nparts-1) * (hg->ewgt ? hg->ewgt[i] : 1.0));
-            else if (nparts==0)
-                printf("%s Error: hyperedge %i has no vertices!\n", yo, i);
-        }
-        ZOLTAN_FREE (&rescuts);
-
-        MPI_Reduce (&cut, &totalcut, 1, MPI_DOUBLE, MPI_SUM, 0, hgc->col_comm);
-    }
-    MPI_Bcast (&totalcut, 1, MPI_DOUBLE, 0, hgc->Communicator);
-    return totalcut;
-}
-#endif
 
 /******************************************************************************/
 double Zoltan_PHG_Compute_ConCut(
@@ -584,20 +544,11 @@ double Zoltan_PHG_Compute_ConCut(
  */
     double cut = 0.0, totalcut=0.0;
     char *yo = "Zoltan_PHG_Compute_ConCut";
-#ifdef _DEBUG
-    double test;
-#endif
     
     if (hg->nEdge) {
         int i, j, *cuts=NULL, *rescuts=NULL, *parts, nEdge, start;
             
         nEdge = MIN(MAXMEMORYALLOC / (2*sizeof(int)*p), hg->nEdge);
-
-#ifdef _DEBUG
-        if (nEdge<hg->nEdge)
-            printf("H(%d, %d, %d) due to memory nEdge=%d\n", 
-                   hg->nVtx, hg->nEdge, hg->nPins, nEdge);
-#endif
 
         if (!(cuts = (int*) ZOLTAN_MALLOC (p * nEdge * sizeof(int)))) {
             ZOLTAN_PRINT_ERROR(hgc->myProc, yo, "Insufficient memory.");
@@ -654,12 +605,7 @@ End:
     if (!hgc->myProc_x) 
         MPI_Reduce (&cut, &totalcut, 1, MPI_DOUBLE, MPI_SUM, 0, hgc->col_comm);
 
-    MPI_Bcast (&totalcut, 1, MPI_DOUBLE, 0, hgc->Communicator);    
-#ifdef _DEBUG    
-    test = Zoltan_PHG_hcut_size_links(hgc, hg, part, p);
-    if (fabs(totalcut-test)>0.00001)
-        errexit("hey new cut function tells that cut=%.5lf but old says it is %.5lf\n", totalcut, test);
-#endif
+    MPI_Bcast (&totalcut, 1, MPI_DOUBLE, 0, hgc->Communicator);
     return totalcut;
 }
 

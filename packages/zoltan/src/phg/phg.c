@@ -247,7 +247,10 @@ End:
      
       /* Add in cut contributions from removed edges */
       err = Zoltan_PHG_Removed_Cuts(zz, zoltan_hg, &remcutl, &remcutn);
-printf("KDDKDD TESTING nRemove = %d cutl = %f + %f   cutn = %f + %f\n", zoltan_hg->nRemove, cutl, remcutl, cutn, remcutn);
+      /*
+        UVC: commented out...
+        printf("KDDKDD TESTING nRemove = %d cutl = %f + %f   cutn = %f + %f\n", zoltan_hg->nRemove, cutl, remcutl, cutn, remcutn);
+      */
       cutl += remcutl;
       cutn += remcutn;
   
