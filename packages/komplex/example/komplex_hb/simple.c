@@ -7,7 +7,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
-#ifdef MPI
+#ifdef AZTEC_MPI
 #include <mpi.h>
 #endif
 
@@ -45,13 +45,13 @@ int main(int argc, char *argv[])
   /* First executable statement */
   /******************************/
 
-#ifdef MPI
+#ifdef AZTEC_MPI
   MPI_Init(&argc,&argv);
 #endif
 
   /* Get number of processors and the name of this processor */
 
-#ifdef MPI
+#ifdef AZTEC_MPI
   AZ_set_proc_config(proc_config,MPI_COMM_WORLD);
 #else
   AZ_set_proc_config(proc_config,0);
@@ -237,7 +237,7 @@ int main(int argc, char *argv[])
   free((void *) xx_imag );
   AZ_matrix_destroy(&Amat_real);
 
-#ifdef MPI
+#ifdef AZTEC_MPI
   MPI_Finalize();
 #endif
 

@@ -1,47 +1,26 @@
-# To run makefile:
-#    1) set environment variable TRILINOS_ARCH to sgi, sun, tflop, or pclinux.
-#       Other machines require an appropriate makefile.$(TRILINOS_ARCH) file.
-#    2) Set TRILINOS_COMM to SERIAL or MPI
-#    3) (Optional) Set TRILINOS_ID to make unique version for same 
-#       architecture and communication mode.
-#
-#    4) Make the archive $(LIBAZTEC) by typing 'make'.
-#
-
-
+include $(TRILINOS_HOME)/build/TRILINOS_TARGET_DEFS
 TRILINOS_TARGET = $(TRILINOS_ARCH).$(TRILINOS_COMM)$(TRILINOS_ID)
-
-LIBKOMPLEX = $(TRILINOS_HOME)/lib/$(TRILINOS_TARGET)/libkomplex.a
-LIBAZTEC = $(TRILINOS_HOME)/lib/$(TRILINOS_TARGET)/libaztec.a
-LIBIFPACK= $(TRILINOS_HOME)/lib/$(TRILINOS_TARGET)/libifpack.a
-LIBMACHDEP= $(TRILINOS_HOME)/lib/$(TRILINOS_TARGET)/libmachdep.a
-
-include $(TRILINOS_HOME)/etc/makefile.$(TRILINOS_TARGET)
-
-# Aztec communication defines
-AZTEC_COMM_SERIAL          = SERIAL
-AZTEC_COMM_MPI             = AZTEC_MPI
-AZTEC_COMM                 = $(AZTEC_COMM_$(TRILINOS_COMM))
-
-DEFINES= -D$(TRILINOS_ARCH) $(AZTEC_ARCH_DEFINES) -D$(AZTEC_COMM) \
-         -DIFPACK -DSPARSEBLAS
-
-INCLUDES = $(ARCH_INCLUDES) -I$(TRILINOS_HOME)/src/komplex \
-           -I$(TRILINOS_HOME)/src/ifpack \
-           -I$(TRILINOS_HOME)/src/aztec $(BLAS_INCLUDES) \
-           $(SPBLAS_INCLUDES)
+include $(TRILINOS_HOME)/build/makefile.$(TRILINOS_TARGET)
 
 FORMAT=NONE
 VBRMATRIX_MSR =
 VBRMATRIX_VBR = -DVBRMATRIX
 
-CFLAGS=$(ARCH_CFLAGS) $(DEFINES) $(INCLUDES) $(VBRMATRIX_$(FORMAT))
-FFLAGS=$(ARCH_FFLAGS) $(DEFINES) $(VBRMATRIX_$(FORMAT))
-CXXFLAGS=$(ARCH_CXXFLAGS) $(DEFINES) $(INCLUDES) $(VBRMATRIX_$(FORMAT))
+DEFINES= -D$(TRILINOS_ARCH) $(AZTECOO_ARCH_DEFINES) -D$(AZTECOO_COMM) \
+         -DIFPACK -DSPARSEBLAS  $(VBRMATRIX_$(FORMAT))
+
+INCLUDES = $(ARCH_INCLUDES) -I$(TRILINOS_HOME)/packages/komplex/src \
+           -I$(TRILINOS_HOME)/packages/ifpack/src \
+           -I$(TRILINOS_HOME)/packages/aztecoo/src \
+           -I$(TRILINOS_HOME)/external/spblas
+
+CFLAGS=$(ARCH_CFLAGS) $(DEFINES) $(INCLUDES)
+FFLAGS=$(ARCH_FFLAGS) $(DEFINES)
+CXXFLAGS=$(ARCH_CXXFLAGS) $(DEFINES) $(INCLUDES)
 LDFLAGS=$(CXXFLAGS)
 
-LIB_PATHS= $(LIBKOMPLEX) $(LIBAZTEC) $(LIBIFPACK) $(LIBY12M) $(LIBMACHDEP) \
-           $(LIBLAPACK) $(LIBSPBLAS) $(LIBBLAS)
+LIB_PATHS= $(LIBKOMPLEX) $(LIBAZTECOO) $(LIBIFPACK) $(LIBY12M) $(LIBMACHDEP) \
+           $(LIBLAPACK) $(LIBSPBLAS) $(LIBBLAS) $(LIBTRILINOS_UTIL)
 
 #=======================================================================
 # Komplex test source files
@@ -104,7 +83,7 @@ NONE:
 	@echo " "
 
 simple: simple.o
-	$(LD_COMPILER) simple.o $(LDFLAGS) -o simple
+	$(LINKER) $(ARCH_FLAGS) simple.o $(LIB_PATHS) $(ARCH_LIBS) $(LIBMPI) -o simple
 	@echo " "
 	@echo " "
 	@echo "Simple test driver is built"
