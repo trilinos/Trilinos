@@ -8,7 +8,7 @@ THEARCHS=$5
 
 for ii in `cat upper_list`
 do
-   ${echo} -n .
+   ${echo} -n . | sed "s/-n//"
    i=`grep -i \^${ii}\$ lower_list`
    \rm -f temprog.c
    ${echo} "#include \"ml_defs.h\"" >> temprog.c
