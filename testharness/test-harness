@@ -5,19 +5,19 @@
 #
 
 # The purpose of this file is to automate the process of running existing trilinos serial and
-# parallel test scripts.  A simple way to automate the script is to use cron.  This must be done 
-# for each new machine that the script is to be run on.  Moving to an automated system will allow 
+# parallel test scripts.  A simple way to automate the script is to use cron.  This must be done
+# for each new machine that the script is to be run on.  Moving to an automated system will allow
 # for frequent testing on several different platforms.  This will lead to faster bug detection by
 # the Trilinos development team.
 
 # To run this script, simply cd to the directory in which it is located and type 'perl trilinos-check'
 # Currently, there are no command line options.  Before running the script, set the paths
 # listed in the section 'THESE OPTIONS CAN BE CONFIGURED AS NEEDED'.  Also, see the 'subdir-list'
-# file located in the same directory as this file.  
+# file located in the same directory as this file.
 
 # Required files:
 # trilinos-check is the main driver program.  It calls existing test scripts - autotoolsTestAll and autotoolsTestAllMpi
-# which are included in the Trilinos package in Trilinos/packages/epetra/test/.  trilinos-check is 
+# which are included in the Trilinos package in Trilinos/packages/epetra/test/.  trilinos-check is
 # based on Paul Lin's salsa-check, which was adapted from Gary Hennigan's Salsa-Check.sh
 #
 # The directory homedir (defined below) should contain a file called "subdir-list".
