@@ -1840,12 +1840,123 @@ Finally, save the file, and exit the CVS editor to commit the changes.
 
 \end{itemize}
 
-%\section{Creating a New Trilinos (Release) Branch with CVS}
+\section{Creating a New Trilinos (Release) Branch with CVS}
 
-%A CVS branch can be used in any situation that requires  a version of the 
-%code that is different than the development branch be maintained.
-%This section describes how to create a Trilinos release branch, bu
+A CVS branch can be used to maintain a version of the 
+code that is different than the primary development branch.  
+This section describes how to create a Trilinos release branch, but the 
+steps can easily be generalized to apply to other types of branches.  For 
+example, developers commonly want to attempt an experimental reworking of 
+a piece of code.  If there is a good chance that this code will not be stable 
+for some time or if the code might not ever become a part of the development 
+branch (ie the experiment fails), the developer might want to create a 
+separate branch.  If the experiment is a success, the changes can always be 
+merged back into the development branch.
 
+%Possibly add a bit about where the whole release process can be found
+
+There are eight steps in creating a Trilinos release branch:
+
+\begin{enumerate}
+\item Checkout Trilinos
+
+It is a good idea to start with a fresh copy of Trilinos.  If an old copy is 
+used, various problems can occur.  Most of these problems are beyond the scope 
+of this brief tutorial, but be advised that it will not work to make changes 
+to a local copy of Trilinos and commit those changes directly to 
+a branch.  A developer must checkout a new working copy, create the branch, 
+copy the changes over, and then commit the changes to the branch.  
+
+To checkout a copy of the development branch, type
+
+\DisplayCommand{cvs checkout Trilinos}
+
+To checkout a different branch or a tagged version of Trilinos, type
+
+\DisplayCommand{cvs checkout -r <name\_of\_branch\_or\_tag> Trilinos}
+
+\item Update packages with specific tags, if necessary
+
+Package developers have the opportunity to include a special tagged version of 
+their package in a release instead of the current version in the 
+development or release branch that is being brached off of for the release.  
+For any packages that have such a tag to use, cd to 
+Trilinos/packages/(package\_name) and type
+
+\DisplayCommand{cvs update -r <name\_of\_tag\_submitted>}
+
+\item Tag the working copy
+
+We want to tag the working copy to mark the point at which the new branch 
+will diverge from the existing branch.  To do this, cd to the top Trilinos 
+directory and type
+
+\DisplayCommand{cvs tag <tag\_name>}
+
+For a release branch, the tag\_name should be 
+\InlineDirectory{root-of-trilinos-release-XYZ-branch}, where XYZ is the 
+release number with the component numbers separated by hyphens instead of 
+periods.  For example for release 3.1.13, XYZ should be 3-1-13.
+
+\item Create a branch
+
+To create a branch, remain in the top Trilinos directory and type
+
+\DisplayCommand{cvs tag -b <branch\_name>}
+
+For the Trilinos release version XYZ mentioned above, the branch\_name 
+should be \InlineDirectory{trilinos-release-XYZ-branch}.
+
+\item Update to convert the working copy to the new branch
+
+The act of creating a new branch does not convert the existing working copy to 
+a copy of that branch.  To make this coversion, remain in the top Trilinos 
+directory and type
+
+\DisplayCommand{cvs update -r <branch\_name>}
+
+To verify that the preceding command was successful, type 
+
+\DisplayCommand{cvs status configure.ac}
+
+The value of the ``Sticky Tag:'' field should begin with ``branch\_name''.
+
+\item Update the Trilinos release version number
+
+When creating a new Trilinos release branch, the release version number needs 
+to be incremented in the \InlineDirectory{Trilinos/configure.ac} file.  First, 
+open the file and search and replace the old version number for the new 
+version number.  The number will need to be updated in two places.  Next, 
+remain in the top Trilinos directory and type
+
+\DisplayCommand{./bootstrap}
+
+to update the generated Autotools files to reflect the new version number.  
+Finally, follow the commit process listed in Section~\ref{Section:CVS} to 
+commit the changes.  In the commit message, note that branch\_name is listed.
+
+\item Tag the new branch
+
+It is a good idea to tag the branch at this point so that the initial state 
+of the branch is easily retrievable.  It is required that the initial state of 
+a release branch is tagged.  To perform this step, type
+
+\DisplayCommand{cvs tag <initial\_tag\_name>}
+
+For the Trilinos release version XYZ mentioned above, the initial\_tag\_name 
+should be \InlineDirectory{initial-trilinos-release-XYZ-branch}.
+
+\item Test the new branch
+
+It is a good idea to test the new branch to help make sure that the above 
+process has been completed properly.  As a part of the general release process,
+a many tests need to be run.  This step simply refers to running a few 
+simple sanity tests (for example, configure and build Trilinos and run the 
+checkin-test-harness or a couple of individual regression tests) to work 
+out any obvious problems before the branch is subjected to the more 
+complete test suite.
+
+\end{enumerate}
 
 %\section{Common Bugzilla Tasks}
 %\label{Section:BugzillaTasks}
