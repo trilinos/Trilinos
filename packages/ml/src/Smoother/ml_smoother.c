@@ -5763,7 +5763,7 @@ int ML_Smoother_MLS_Apply(void *sm,int inlen,double x[],int outlen,
 
        cf = over * mlsCf[0]; 
 
-       //       for (i=0; i<n; i++) x[i] += cf * pAux[i]; 
+              /*for (i=0; i<n; i++) x[i] += cf * pAux[i]; */
        if (smooth_ptr->init_guess == ML_NONZERO) {
 	 ML_Operator_Apply(Amat, n, x, n, pAux);
 	 for (i = 0; i < n; i++) x[i] += cf * (rhs[i]
