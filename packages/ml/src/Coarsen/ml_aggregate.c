@@ -18,8 +18,8 @@
 #include <math.h>
 #include "ml_aggregate.h"
 #include "ml_lapack.h"
-#include "ml_utils.h"
 #include "ml_op_utils.h"
+#include "ml_utils.h"
 
 
 /* ************************************************************************* */
@@ -584,7 +584,7 @@ int ML_Aggregate_Set_NullSpace(ML_Aggregate *ag, int num_PDE_eqns,
      if (ag->nullspace_corrupted == ML_EMPTY)
        ag->nullspace_corrupted = ML_YES;
 
-      ML_memory_free((void **)&(ag->nullspace_vect));
+     ML_memory_free((void **)&(ag->nullspace_vect));
    }
 
    /* if the user-supplied nullspace vector isn't null, allocate space */
@@ -684,12 +684,15 @@ int ML_Aggregate_Scale_NullSpace(ML_Aggregate *ag, double *scale_vect,
 /* ************************************************************************* */
 /* Coarsening routine                                                        */
 /* ------------------------------------------------------------------------- */
-
 int ML_Aggregate_Coarsen( ML_Aggregate *ag, ML_Operator *Amatrix, 
                           ML_Operator **Pmatrix, ML_Comm *comm)
 {
-   int i=1, ndofs, Ncoarse, coarsen_scheme;
+   int i=1, ndofs, Ncoarse, coarsen_scheme, j, offset1, offset2, status;
    int mypid, nprocs;
+   double *new_null;
+   ML_Operator *newA = NULL, *permt = NULL, *perm = NULL, *oldA = NULL;
+   ML_Operator *newP = NULL, *oldP = NULL;
+
 #ifdef ML_TIMING
    double t0;
    t0 = GetClock();
@@ -753,6 +756,45 @@ int ML_Aggregate_Coarsen( ML_Aggregate *ag, ML_Operator *Amatrix,
          return 0;
       }
    }
+
+   /* If the number of points per processor is small, we want to repartition */
+   /* repartition the matrix so that only a few processors are used but they */
+   /* have more points per processor. This way the aggregation routines will */
+   /* work better. The basic idea is to repartition the matrix, update the   */
+   /* nullspace to correspond to this new partitioning, compute a tentative  */
+   /* prolongator, and permute everything back so that it works with the     */
+   /* original A.                                                            */
+
+#ifdef ML_repartition
+   status = ML_repartition_matrix(Amatrix, &newA, &perm, &permt, ag->num_PDE_eqns);
+   
+   if (status == 0) {
+     if (ag->nullspace_vect != NULL) {
+       new_null = ML_allocate(sizeof(double)*ag->nullspace_dim*
+			      perm->outvec_leng);
+       offset1 = 0;
+       offset2 = 0;
+       for (j = 0; j < ag->nullspace_dim; j++) {
+	 ML_Operator_Apply(perm, perm->invec_leng, 
+			   &((ag->nullspace_vect)[offset1]), 
+			   perm->outvec_leng, &(new_null[offset2]));
+
+	 offset1 += perm->invec_leng;
+	 offset2 += perm->outvec_leng;
+       }
+       ML_Aggregate_Set_NullSpace(ag, ag->num_PDE_eqns, ag->nullspace_dim,
+				  new_null,perm->outvec_leng);
+       ML_free(new_null);
+
+     }
+     ML_Operator_Destroy(&perm);
+     oldA = Amatrix;
+     Amatrix= newA;
+     newP = ML_Operator_Create(permt->comm);
+     oldP = *Pmatrix;
+     *Pmatrix = newP;
+   }
+#endif
    switch ( coarsen_scheme ) 
    {
       case ML_AGGR_UNCOUPLED :
@@ -776,6 +818,24 @@ int ML_Aggregate_Coarsen( ML_Aggregate *ag, ML_Operator *Amatrix,
            exit(1);
            break;
    } 
+#ifdef ML_repartition
+
+   /* restore Amatrix and delete repartitioned one */
+
+   if (status == 0) {
+     Amatrix = oldA;
+     ML_Operator_Destroy(&newA);
+
+     /* do a mat-mat mult to get the appropriate P for the */
+     /* unpartitioned matrix.                              */
+
+     ML_2matmult(permt, *Pmatrix, oldP, ML_CSR_MATRIX);
+     ML_Operator_Destroy(Pmatrix);
+     ML_Operator_Destroy(&permt);
+     *Pmatrix = oldP;
+   }
+#endif
+
 
 #ifdef ML_DEBUG
    i = 0;
@@ -1064,9 +1124,10 @@ int local_to_global_row(int row)
 
 #endif
 
-int ML_modified_matvec(void *Amat_in, int ilen, double p[], int olen, double ap[])
+int ML_modified_matvec(void *Amat_in, int ilen, double p[], int olen, double ap[], int num_PDE_eqns)
 {
   int i, j;
+  int jj, kk;
   double            *p2;
    ML_CommInfoOP     *getrow_comm;
    ML_Operator       *Amat;
@@ -1112,6 +1173,12 @@ int ML_modified_matvec(void *Amat_in, int ilen, double p[], int olen, double ap[
        }
        if (diag != -100.) ap[i] = diag;
      }
+     /* make sure that all within num_PDE_block are assigned to the same agg */
+     if (ap[i] > 0) {
+       kk = i/num_PDE_eqns;
+       kk = kk*num_PDE_eqns;
+       for (jj = kk; jj < kk+num_PDE_eqns; jj++) ap[jj] = ap[i];
+     }
    }
 
 
@@ -1126,7 +1193,7 @@ int ML_modified_matvec(void *Amat_in, int ilen, double p[], int olen, double ap[
 }
 
 int ML_random_global_subset(ML_Operator *Amat, double reduction,
-			    int **list, int *length)
+			    int **list, int *length, int num_PDE_eqns)
 {
   int Nglobal, itemp;
   int iNtarget, i, *rand_list, *temp_list;
@@ -1134,6 +1201,7 @@ int ML_random_global_subset(ML_Operator *Amat, double reduction,
 
   Nglobal = Amat->outvec_leng;
   ML_gsum_scalar_int(&Nglobal,&i,Amat->comm);
+  Nglobal = Nglobal/num_PDE_eqns;
 
   Ntarget = ((double) Nglobal)/reduction;
 
@@ -1152,6 +1220,8 @@ int ML_random_global_subset(ML_Operator *Amat, double reduction,
       dtemp = (1 + dtemp);
       rand_list[i] = (int ) (((double) Nglobal)  * dtemp);
       rand_list[i] = (rand_list[i] % Nglobal);
+      rand_list[i] = rand_list[i];
+      rand_list[i] = rand_list[i];
     }
     ML_az_sort(rand_list, iNtarget, NULL, NULL);
     ML_rm_duplicates(rand_list, &iNtarget);
@@ -1200,7 +1270,9 @@ int ML_random_global_subset(ML_Operator *Amat, double reduction,
 /*****************************************************************************/
 
 int ML_repartition_matrix(ML_Operator *mat, ML_Operator **new_mat,
-			  ML_Operator **permutation)
+			  ML_Operator **permutation, ML_Operator **permt,
+			  int num_PDE_eqns)
+			  
 {
   int    proc_index, Nsnd, Nrcv, *neighbors, flag, oldj;
   int    *NeighborList, *Nsnds, *Nrcvs, **SndIndices, **RcvIndices, count;
@@ -1217,13 +1289,14 @@ int ML_repartition_matrix(ML_Operator *mat, ML_Operator **new_mat,
   Nglobal = mat->invec_leng;
   ML_gsum_scalar_int(&Nglobal, &i, mat->comm);
 
-  if (Nglobal >= 10*mat->comm->ML_nprocs) return 0;
+  if (Nglobal/num_PDE_eqns >= 12*mat->comm->ML_nprocs) return 1;
 
   /* Choose a random subset of global unknowns. These will become root nodes */
   /* for a very simple aggregation scheme. These aggregates/subdomains are   */ 
   /* later assigned to processors defining the new partitioning.             */
 
-  ML_random_global_subset(mat, 8.,&the_list, &the_length);
+  ML_random_global_subset(mat, 20.,&the_list, &the_length, num_PDE_eqns);
+  for (i = 0; i < the_length; i++) the_list[i] *= num_PDE_eqns;
 #ifdef DEBUG
   if (mat->comm->ML_mypid == 0) {
     for (i = 0; i < the_length; i++) 
@@ -1231,10 +1304,12 @@ int ML_repartition_matrix(ML_Operator *mat, ML_Operator **new_mat,
   }
   fflush(stdout);
 #endif
+
   if (the_length >= mat->comm->ML_nprocs) {
     ML_free(the_list);
-    return 0;
+    return 1;
   }
+  printf("%d: continue\n",mat->comm->ML_mypid); fflush(stdout);
 
   /* Make up a global numbering for the matrix unknowns. The jth  */
   /* unknown on processor k has global id = remote_offsets[k] + j */
@@ -1282,7 +1357,8 @@ int ML_repartition_matrix(ML_Operator *mat, ML_Operator **new_mat,
   for (i = 0; i < the_length; i++) {
     if ( (the_list[i] >= offset) &&
 	 (the_list[i] < offset + mat->invec_leng)){
-      dvec[the_list[i]-offset] = (double ) (i + 1);
+      for (j = 0 ; j < num_PDE_eqns; j++) 
+	dvec[the_list[i]-offset+j] = (double ) (i + 1);
     }
   }
 
@@ -1300,7 +1376,7 @@ int ML_repartition_matrix(ML_Operator *mat, ML_Operator **new_mat,
   oldNnonzero = 0;
   while ( (Nglobal - Nnonzero > 0) && (Nnonzero > oldNnonzero)) {
     ML_modified_matvec( mat, mat->invec_leng, dvec, 
-			mat->outvec_leng, d2vec);
+			mat->outvec_leng, d2vec, num_PDE_eqns);
     oldNnonzero = Nnonzero;
     Nnonzero = 0;
     for (i = 0; i < mat->outvec_leng; i++) {
@@ -1325,8 +1401,8 @@ int ML_repartition_matrix(ML_Operator *mat, ML_Operator **new_mat,
 
   /* Build a global array containing all the subdomain assignments */
 
-  permute_array = (int *) ML_allocate(sizeof(int)*Nglobal);
-  for (i = 0; i < Nglobal; i++) permute_array[i] = 0;
+  permute_array = (int *) ML_allocate(sizeof(int)*(Nglobal+1));
+  for (i = 0; i <= Nglobal; i++) permute_array[i] = 0;
   for (i = 0; i < mat->invec_leng; i++) 
     permute_array[i+offset] = (int) dvec[i];
   ML_gsum_vec_int(&permute_array,&itemp,Nglobal,mat->comm);
@@ -1494,17 +1570,15 @@ int ML_repartition_matrix(ML_Operator *mat, ML_Operator **new_mat,
   ML_Operator_Set_ApplyFunc( perm_mat, ML_INTERNAL, CSR_matvec);
   perm_mat->getrow->pre_comm = mat_comm;
   perm_mat->data_destroy = ML_CSR_MSRdata_Destroy;
-
   permt_mat = ML_Operator_Create(mat->comm);
+
   ML_Operator_Transpose_byrow(perm_mat,permt_mat);
 
   permuted_Amat = ML_Operator_Create(mat->comm);
   ML_rap(perm_mat,mat,permt_mat,permuted_Amat, ML_CSR_MATRIX);
-
   *new_mat = permuted_Amat;
-  *permutation = permt_mat;
-
-  ML_Operator_Destroy(&perm_mat);
+  *permutation = perm_mat;
+  *permt       = permt_mat;
 
   return 0;
 }
