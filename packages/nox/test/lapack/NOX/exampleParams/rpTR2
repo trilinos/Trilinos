@@ -1,0 +1,21 @@
+#@ HEADER
+
+
+"Nonlinear Solver" string "Trust Region Based"
+
+@ "Trust Region"
+"Minimum Trust Region Radius" double 1.e-15
+@@
+
+@ "Output"
+"Nonlinear Iterations" int 5
+@@
+
+@ "Direction"
+"Method" string "Steepest Descent"
+@@
+
+@ "Printing"
+"Output Precision" int 13
+#"Output Information" int 85
+@@
