@@ -212,6 +212,7 @@ DIST_H = \
 	$(srcdir)/Epetra_BlockMap.h \
 	$(srcdir)/Epetra_CompObject.h \
 	$(srcdir)/Epetra_Directory.h \
+	$(srcdir)/Epetra_SrcDistObject.h \
 	$(srcdir)/Epetra_DistObject.h \
 	$(srcdir)/Epetra_Distributor.h \
 	$(srcdir)/Epetra_Export.h \
