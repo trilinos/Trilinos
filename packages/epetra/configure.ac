@@ -383,6 +383,7 @@ AC_CONFIG_FILES([
 		test/VbrMatrix/Makefile.include
 		test/Vector/Makefile
 		test/Vector/Makefile.include
+		test/src/Makefile
 		example/Makefile 
 		example/petra_power_method/Makefile
 		example/verySimple/Makefile

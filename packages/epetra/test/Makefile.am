@@ -26,7 +26,7 @@
 # ************************************************************************
 #@HEADER
 
-SUBDIRS = BlockMap CrsGraph CrsMatrix CrsRectMatrix \
+SUBDIRS = src BlockMap CrsGraph CrsMatrix CrsRectMatrix \
 FECrsGraph FECrsMatrix FEVbrMatrix FEVector ImportExport \
 IntSerialDense Map MapColoring \
 MultiVector Object SerialDense SerialSpdDense \

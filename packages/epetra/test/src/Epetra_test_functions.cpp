@@ -68,9 +68,9 @@ bool global_check_for_flag_on_proc_0(const char* flag,
 
 Epetra_Comm* create_comm(int argc, char** argv)
 {
+#ifdef EPETRA_MPI
   MPI_Init(&argc, &argv);
 
-#ifdef EPETRA_MPI
   return( new Epetra_MpiComm(MPI_COMM_WORLD) );
 #else
   return( new Epetra_SerialComm );
