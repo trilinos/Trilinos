@@ -232,7 +232,8 @@ report($SUMMARY);
 
     sub mpiStartup {  
         chdir "$options{'TRILINOS_DIR'}[0]";                
-        if (defined $options{'MPI_DIR'} && defined $options{'MPI_DIR'}[0]) { 
+        if (defined $options{'MPI_DIR'} && defined $options{'MPI_DIR'}[0]
+            && defined $options{'MPI_STARTUP_CMD'} && defined $options{'MPI_STARTUP_CMD'}[0]) { 
             printEvent("mpi startup\n", "\n");
             my $command = "$options{'MPI_STARTUP_CMD'}[0]";
             my $commandFailed = system $command; 
@@ -255,7 +256,8 @@ report($SUMMARY);
         
     sub mpiShutdown {    
         chdir"$options{'TRILINOS_DIR'}[0]";        
-        if (defined $options{'MPI_DIR'} && defined $options{'MPI_DIR'}[0]) {  
+        if (defined $options{'MPI_DIR'} && defined $options{'MPI_DIR'}[0]
+            && defined $options{'MPI_SHUTDOWN_CMD'} && defined $options{'MPI_SHUTDOWN_CMD'}[0]) {  
             printEvent("mpi shutdown\n", "\n");            
             my $command = "$options{'MPI_SHUTDOWN_CMD'}[0]";
             my $commandFailed = system $command; 
@@ -1777,19 +1779,10 @@ report($SUMMARY);
             system "mkdir $options{'TRILINOS_DIR'}[0]/testharness/results";
         }
         
-        # delete temp files 
-        chdir "$options{'TRILINOS_DIR'}[0]/testharness/temp";  
-        system "rm -f update_log.txt";
-        system "rm -f trilinos_configure_log.txt";
-        system "rm -f trilinos_build_log.txt";
-        system "rm -f test_compile_log.txt";
-        system "rm -f event_log.txt";
-        system "rm -f invoke-configure-mpi";
-        system "rm -f invoke-configure-mpi-original";
-        system "rm -f invoke-configure-mpi-final";
-        system "rm -f invoke-configure-serial";
-        system "rm -f invoke-configure-serial-original";
-        system "rm -f invoke-configure-serial-final";
+        # delete temp directory and create new one
+        chdir "$options{'TRILINOS_DIR'}[0]/testharness";
+        system "rm -rf temp";
+        system "mkdir temp";
         
         # validations, enforcements, etc. ======================================
         
@@ -1927,13 +1920,11 @@ report($SUMMARY);
         }
         
         # MPI_STARTUP_CMD ------------------------------------------------------
-        
-        # enforce presence of MPI_STARTUP_CMD if MPI_DIR exists
-        if (defined $options{'MPI_DIR'} && defined $options{'MPI_DIR'}[0]
-            && (!defined $options{'MPI_STARTUP_CMD'} 
-            || !defined $options{'MPI_STARTUP_CMD'}[0])) {
+                
+        # enforce only one MPI_STARTUP_CMD
+        if (defined $options{'MPI_STARTUP_CMD'}[1]) {
             my $message = "";
-            $message .= "MPI_STARTUP_CMD must be supplied if MPI_DIR is present\n";
+            $message .= "only one MPI_STARTUP_CMD allowed\n";
             if (!$flags{p}) { report($CONFIG_ERROR, $message); }
             printEvent($message);
             $configError = 1;
@@ -2316,7 +2307,7 @@ report($SUMMARY);
             print outFile "# Specify the command to start up the MPI implementation on this machine.\n";
             print outFile "#\n";
             print outFile "# - multiple values recognized: NO\n";
-            print outFile "# - value required: YES if MPI_DIR is supplied\n";
+            print outFile "# - value required: NO\n";
             print outFile "# - the value of the HOST_FILE option can be referred to with the value\n";
             print outFile "#   <HOST_FILE>\n";   
             print outFile "\n";
@@ -2371,8 +2362,7 @@ report($SUMMARY);
         if (!$short) {      
             print outFile "\n";  
             print outFile "#-------------------------------------------------------------------------------\n";
-            print outFile "# CVS command on this system. Note that CVS access may require a password.\n";
-            print outFile "# An expect script can be used to supply a password if required.\n";
+            print outFile "# CVS command on this system. Note that CVS access must not require a password.\n";
             print outFile "#\n";
             print outFile "# - multiple values recognized: NO\n";
             print outFile "# - value required: YES if CVS_UPDATE is set to YES\n";
