@@ -44,6 +44,7 @@
 #include "Ifpack_Preconditioner.h"
 #include "Ifpack_AdditiveSchwarz.h"
 #include "Ifpack_Amesos.h"
+#include "ml_MultiLevelPreconditioner.h"
 
 namespace ML_Epetra {
 
