@@ -468,7 +468,7 @@ integer(LB_INT) :: nvals_read    ! number of values on last input line read
 	    endif
 	    weight = vals_read(i)
             i = i+1
-	    if (weight <= 0) then
+	    if (weight < 0) then
 		print *,"ERROR in graph file ", inname, &
 		        ": zero or negative weight entered for vertex ", vertex
 		close(fin)
@@ -498,7 +498,7 @@ integer(LB_INT) :: nvals_read    ! number of values on last input line read
                 chaco_input_graph = .false.
 		return
 	    endif
-	    if (neighbor <= 0) then
+	    if (neighbor < 0) then
 		print *,"ERROR in graph file ", inname, &
 		        ": zero or negative vertex in edge (", &
 		        vertex,",",neighbor,")"
@@ -1027,7 +1027,8 @@ integer :: iostat
 ! read the next noncomment line
 
 read(fp,"(a)",iostat=iostat) inp_line
-do while (index(inp_line,"%") /= 0 .and. iostat==0)
+do while ((index(inp_line,"%") /= 0 .or. index(inp_line,"#") /= 0) &
+           .and. iostat==0)
    read(fp,"(a)",iostat=iostat) inp_line
 end do
 
