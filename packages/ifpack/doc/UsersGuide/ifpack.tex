@@ -631,14 +631,16 @@ are performed
 \footnote{For example, in a time dependent setting, if the structure of {\tt
   A} does not change from a given time step to the next but its values do,
   the user can call {\tt Initialize()} only once before the first time step,
-  then {\tt Compute()} at each time step.}.
+  then {\tt Compute()} at each time step. Also calls {\tt Initialize()} if
+  not already done by the user.}
 %
 \item Method \verb!ApplyInverse()! applies the preconditioner. Any class that
 uses \verb!ApplyInverse()! to apply the preconditioner can take advantage of
 an \verb!Ifpack_Preconditioner! derived object\footnote{For example, {\tt
   AztecOO} objects can use {\tt Ifpack\_Preconditioner} objects as
-    preconditioners.}.
-%
+    preconditioners. Note that {\tt Compute()} must be successfully called before using
+    \verb!ApplyInverse()!.}
+
 \item Method \verb!IsInitialized()! returns {\tt true} is the preconditioner has
 been successfully initialized, {\tt false} otherwise.
 %
@@ -1214,7 +1216,7 @@ specified parameter value, whose type can be any C++ object or pointer.
   local blocks (for block relaxation methods). Valid choices are:
   {\tt linear} (use a simple linear decomposition), {\tt greedy} 
   (use a greedy algorithm to partition the local graph), 
-  or {\tt METIS} (call METIS on the local graph). Default: {\tt linear}.}
+  or {\tt metis} (call METIS on the local graph). Default: {\tt linear}.}
 
 \choicebox{\tt partitioner: local parts}{[{\tt int}] Number of (local)
   subgraphs (for block relaxation methods only). Default: 4.}

@@ -11,11 +11,12 @@
 - \ref ifp_params
 - \ref ifp_tools 
 - \ref ifp_error 
+- \ref ifp_bugs
 - \ref ifp_copyright
 
 \section ifp_intro Introduction
 
-IFPACK, developed by Micheal Heroux and Marzio Sala (SNL 9214), 
+IFPACK, developed by Marzio Sala and Micheal Heroux (SNL 9214), 
 provides a suite of object-oriented algebraic preconditioners
 for the solution of preconditioned iterative solvers.  IFPACK
 constructors expect an Epetra_RowMatrix object for construction.
@@ -250,6 +251,10 @@ The complete list of supported parameters is reported below.
   to be preconditioned as starting solution. Otherwise, use the zero vector
   as starting solution.
 
+- \c "relaxation: AztecOO compliant": if \c true, the point or block
+  preconditioner object can be used as preconditioner for AztecOO. ML users
+  should set this option to \c false.
+
 - \c "partitioner: type": specifies the scheme to adopt to partition
   the graph (for block relaxation methods only). Valid values: 
   - \c "linear" (uses a linear decomposition);
@@ -300,7 +305,7 @@ The complete list of supported parameters is reported below.
 
 - \c "fact: relative threshold": defines \f$\rho\f$, so that the diagonal 
   element of the matrix (without the contribution specified by
-  \c "fact: absolute threshold") is multiplied by \f$rhof\$. 
+  \c "fact: absolute threshold") is multiplied by \f$rho \f$. 
 
 - \c "fact: relax value": if different from zero, the elements dropped during
   the factorization process will be added to the diagonal term, multiplied by
@@ -359,6 +364,8 @@ parameter.
 </tr> <tr>
 <td>\c "relaxation: zero starting solution" </td><td>\c bool </td><td>\c "true" </td>
 </tr> <tr>
+<td>\c "relaxation: AztecOO compliant" </td><td>\c bool </td><td>\c "true" </td>
+</tr> <tr>
 <td>\c "partitioner: type"        </td><td>\c string </td><td>\c "greedy" </td>
 </tr> <tr>
 <td>\c "partitioner: overlap"     </td><td>\c int    </td><td>\c "0" </td>
@@ -409,8 +416,9 @@ Users' Tools
 - Ifpack_AdditiveSchwarz is the general handle to define overlapping Schwarz
   methods with overlap.
 - The matrix to be preconditioned can be filtered before performing the 
-  actual factorization. Available filters are Ifpack_LocalFilter (whose documentation
-  explains the creation and use of filters), Ifpack_DropFilter, Ifpack_SparsityFilter;
+  actual factorization. Available filters are Ifpack_LocalFilter,
+  Ifpack_DropFilter, Ifpack_SparsityFilter, Ifpack_DiagonalFilter, 
+  Ifpack_ReoderFilter, Ifpack_SingletonFilter;
 - Function Ifpack_PrintSparsity() and Ifpack_PrintSparsity_Simple() can be
   used to print out the sparsity pattern of an Epetra_RowMatrix (as PS, or on
   screen);
@@ -426,15 +434,14 @@ Developers' Tools
 - Containers are derived from the pure virtual class Ifpack_Container
   (whose documentation describes what a container is). Concrete
   implementations are Ifpack_DenseContainer and Ifpack_SparseContainer;
-- Reorderings are derived from the pure virtual class Ifpack_Reordering
-  (whose documentation outlines the features of reorderings)
+- Reorderings are derived from the pure virtual class Ifpack_Reordering.
   Concrete implementations are
   Ifpack_RCMReordering and Ifpack_METISReordering;
-- Partitioners are derived from the pure virtual class Ifpack_Partitioner 
-  (whose
-  documentation describes the features of partitioners). Concrete
-  implementations are Ifpack_LinearPartitioner, Ifpack_METISPartitioner
-  and Ifpack_EquationPartitioner;
+- Partitioners are derived from the pure virtual class Ifpack_Partitioner.
+  Concrete
+  implementations are Ifpack_LinearPartitioner, Ifpack_METISPartitioner,
+  Ifpack_GreedyPartitioner, Ifpack_EquationPartitioner, and
+  Ifpack_UserPartitioner. See Ifpack_OverlappingPartitioner;
 - Ifpack_ReorderFilter and Ifpack_SingletonFilter are used in
   Ifpack_AdditiveSchwarz.
 
@@ -448,37 +455,44 @@ function or method successfully completed;
 - a negative return function means that an error occurred;
 - a positive value is a warning for the user.
 
+<center>
 <table>
 <tr>
 <td><b>Error Code</b></td><td><b>Meaning</b></td>
 </tr>
 <tr>
-<td>-1</td><td>Generic Error (Called function returns error)</td>
+<td>-1</td><td>Generic Error (called method or function returned an error)</td>
 </tr>
 <tr>
-<td>-2</td><td>Range not valid (Out-of-bounds)</td>
+<td>-2</td><td>Input data not valid (wrong parameter, out-of-bounds, wrong
+dimensions, matrix is not square,...)</td>
 </tr>
 <tr>
 <td>-3</td><td>Data has not been correctly pre-processed</td>
 </tr>
 <tr>
-<td>-4</td><td>Division by zero</td>
+<td>-4</td><td>Problem encountered during application of the 
+algorithm (division by zero, out-of-bounds, ...)</td>
 </tr>
 <tr>
 <td>-5</td><td>Memory allocation error</td>
 </tr>
 <tr>
-<td>-6</td><td>Failure of the algorithm</td>
-</tr>
-<tr>
 <td>-98</td><td>Feature is not supported</td>
 </tr>
 <tr>
-<td>-99</td><td>Feature is not implemented (submit a bug?)</td>
+<td>-99</td><td>Feature is not implemented yet (check \ref ifp_bugs, or submit a bug)</td>
 </tr>
 </table>
+</center>
 
-</tr>
+\section ifp_bugs Known Bugs and Future Developments
+
+- IFPACK does not support Epetra matrices whose OperatorDomainMap() is different from the  OperatorRangeMap() and from RowMatrixRowMap(). Handling of this particular case is under development for class Ifpack_AdditiveSchwarz only.
+- IFPACK does not work correctly when \c UseTranspose() \c == true.
+- Ifpack_ICT and Ifpack_ILUT are still under development.
+
+
 \section ifp_copyright Copyright
 
 \verbatim
