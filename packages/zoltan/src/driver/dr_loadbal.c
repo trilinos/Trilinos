@@ -88,12 +88,12 @@ int run_zoltan(int Proc, PROB_INFO_PTR prob, MESH_INFO_PTR mesh)
     return 0;
   }
 
-  LB_Set_Param(lb, "CHECK_GRAPH", "1");
+  /* LB_Set_Param(lb, "CHECK_GRAPH", "1"); */
 
   /* Set the user-specified parameters */
   for (i = 0; i < prob->num_params; i++) {
     ierr = LB_Set_Param(lb, prob->params[i][0], prob->params[i][1]);
-    if (!((ierr == 0) || (ierr == 3))) {
+    if (ierr == LB_FATAL) {
       sprintf(errmsg,"fatal: error in LB_Set_Param when setting parameter %s\n",
               prob->params[i][0]);
       Gen_Error(0, errmsg);
