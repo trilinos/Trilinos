@@ -107,7 +107,7 @@ int Ifpack_CrsRiluk::AllocateVbr() {
     L_Graph_ = 0;
     U_Graph_ = 0;
   }
-
+  return(0);
 }
 //==============================================================================
 int Ifpack_CrsRiluk::BlockGraph2PointGraph(const Epetra_CrsGraph & BG, Epetra_CrsGraph & PG, bool Upper) {
