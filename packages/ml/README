@@ -63,8 +63,10 @@ Once ML is compiled, a simple sanity check can be performed as follows:
 
    $ cd <your-ml-build-directory>
    $ cd examples
-   $ ./TestExamples.sh
+   $ ~/Trilinos/packages/ml/examples/TestExamples.sh
 
+or replace `~/Trilinos/packages/ml/examples' with the location of your
+Trilinos source files.
 The test will execute most of the examples, and verify that the exit
 code of all of them.
 
