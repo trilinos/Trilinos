@@ -1,0 +1,290 @@
+# ------------------------------------------------------------------------
+# Process this file with autoconf to produce a configure script.
+# ------------------------------------------------------------------------
+
+# @HEADER
+# ************************************************************************
+# 
+#            Trilinos: An Object-Oriented Solver Framework
+#                 Copyright (2002,2003) Sandia Corporation
+# 
+#
+# Copyright (2001,2002,2003) Sandia Corportation. Under the terms of Contract 
+# DE-AC04-94AL85000, there is a non-exclusive license for use of this 
+# work by or on behalf of the U.S. Government.  Export of this program
+# may require a license from the United States Government.
+# 
+# NOTICE:  The United States Government is granted for itself and others
+# acting on its behalf a paid-up, nonexclusive, irrevocable worldwide
+# license in ths data to reproduce, prepare derivative works, and
+# perform publicly and display publicly.  Beginning five (5) years from
+# July 25, 2001, the United States Government is granted for itself and
+# others acting on its behalf a paid-up, nonexclusive, irrevocable
+# worldwide license in this data to reproduce, prepare derivative works,
+# distribute copies to the public, perform publicly and display
+# publicly, and to permit others to do so.
+# 
+# NEITHER THE UNITED STATES GOVERNMENT, NOR THE UNITED STATES DEPARTMENT
+# OF ENERGY, NOR SANDIA CORPORATION, NOR ANY OF THEIR EMPLOYEES, MAKES
+# ANY WARRANTY, EXPRESS OR IMPLIED, OR ASSUMES ANY LEGAL LIABILITY OR
+# RESPONSIBILITY FOR THE ACCURACY, COMPLETENESS, OR USEFULNESS OF ANY
+# INFORMATION, APPARATUS, PRODUCT, OR PROCESS DISCLOSED, OR REPRESENTS
+# THAT ITS USE WOULD NOT INFRINGE PRIVATELY OWNED RIGHTS.
+# 
+# ************************************************************************
+# @HEADER
+
+# ------------------------------------------------------------------------
+# Initialization 
+# ------------------------------------------------------------------------
+
+
+
+# This must be the first line in configure.ac.
+# Optional 3rd argument is email address for bugs.
+
+#  #np# - package name, version number, and e-mail address below
+AC_INIT(belos, 1.0, hkthorn@sandia.gov)
+
+# Hello World!
+echo "----------------------------------------"
+echo "Running Belos Configure Script"
+echo "----------------------------------------"
+
+# This is to protect against accidentally specifying the wrong
+# directory with --srcdir.  Any file in that directory will do,
+# preferably one that is unlikely to be removed or renamed.
+
+# #np# - file name below
+AC_CONFIG_SRCDIR(/src/BelosBlockCG.hpp)
+
+# Specify directory for auxillary build tools (e.g., install-sh,
+# config.sub, config.guess) and M4 files.
+
+#
+AC_CONFIG_AUX_DIR(config)
+# Configure should create src/Belos_config.h from src/Belos_config.h.in
+
+AM_CONFIG_HEADER(src/Belos_config.h:src/Belos_config.h.in)
+
+# AM_MAINTAINER_MODE turns off maintainer-only makefile targets by
+# default, and changes configure to understand a
+# --enable-maintainer-mode option. --enable-maintainer-mode turns the
+# maintainer-only targets back on. The maintainer-only makefile
+# targets permit end users to clean automatically-generated files such
+# as configure, which means they have to have autoconf and automake
+# installed to repair the damage. AM_MAINTAINER_MODE makes it a bit
+# harder for users to shoot themselves in the foot.
+
+AM_MAINTAINER_MODE
+
+# Define $build, $host, $target, etc
+
+AC_CANONICAL_TARGET
+
+# Specify required version of automake. 
+
+AM_INIT_AUTOMAKE(1.8.2)
+
+# Specify required version of autoconf.
+
+AC_PREREQ(2.59)
+
+# ------------------------------------------------------------------------
+# Checks for programs
+# ------------------------------------------------------------------------
+
+AC_PROG_CC(cc gcc)
+AC_PROG_CXX(CC g++ gcc c++ cxx)
+AC_PROG_F77(f77 g77 f90 xlf90)
+AC_PROG_RANLIB
+
+# ------------------------------------------------------------------------
+# Check to see if MPI enabled and if any special configuration done
+# ------------------------------------------------------------------------
+
+TAC_ARG_CONFIG_MPI
+
+# ------------------------------------------------------------------------
+# Checks for extra flags
+# ------------------------------------------------------------------------
+# Check if --with-flags present, prepend any specs to FLAGS
+
+TAC_ARG_WITH_FLAGS(ccflags, CCFLAGS)
+TAC_ARG_WITH_FLAGS(cxxflags, CXXFLAGS)
+TAC_ARG_WITH_FLAGS(cflags, CFLAGS)
+TAC_ARG_WITH_FLAGS(fflags, FFLAGS)
+TAC_ARG_WITH_FLAGS(ldflags, LDFLAGS)
+
+# ------------------------------------------------------------------------
+# Alternate archiver
+# ------------------------------------------------------------------------
+
+TAC_ARG_WITH_AR
+
+# ------------------------------------------------------------------------
+# MPI link check
+# ------------------------------------------------------------------------
+TAC_ARG_CHECK_MPI
+
+# ------------------------------------------------------------------------
+# Checks for header files
+# ------------------------------------------------------------------------
+
+AC_CHECK_HEADERS([cstdlib stdlib.h cstdio stdio.h cassert assert.h],,,)
+AC_CHECK_HEADERS([cmath math.h iostream iostream.h string string.h],,,)
+
+if test "X$ac_cv_header_cstdlib" != "Xyes" && test "X$ac_cv_header_stdlib_h" != "Xyes"; then
+  AC_MSG_ERROR([[Cannot find cstdlib or stdlib.h.  Belos requires at least one or the other.]])
+fi
+
+if test "X$ac_cv_header_cstdio" != "Xyes" && test "X$ac_cv_header_stdio_h" != "Xyes"; then
+  AC_MSG_ERROR([[Cannot find cstdio or stdio.h.  Belos requires at least one or the other.]])
+fi
+
+if test "X$ac_cv_header_cassert" != "Xyes" && test "X$ac_cv_header_assert_h" != "Xyes"; then
+  AC_MSG_ERROR([[Cannot find cassert or assert.h.  Belos requires at least one or the other.]])
+fi
+
+if test "X$ac_cv_header_string" != "Xyes" && test "X$ac_cv_header_string_h" != "Xyes"; then
+  AC_MSG_ERROR([[Cannot find string or string.h.  Belos requires at least one or the other.]])
+fi
+
+if test "X$ac_cv_header_iostream" != "Xyes" && test "X$ac_cv_header_iostream_h" != "Xyes"; then
+  AC_MSG_ERROR([[Cannot find iostream or iostream.h.  Belos requires at least one or the other.]])
+fi
+
+if test "X$ac_cv_header_cmath" != "Xyes" && test "X$ac_cv_header_math_h" != "Xyes"; then
+  AC_MSG_ERROR([[Cannot find cmath or math.h.  Belos requires at least one or the other.]])
+fi
+
+# Checks for typedefs, structures, and compiler characteristics.
+AC_C_CONST
+AC_C_INLINE
+
+# ------------------------------------------------------------------------
+# Checks for compiler characteristics - Epetra_ConfigDefs.h uses these, 
+# so it makes sense to leave them in - see PORTABILITY in this directory
+# ------------------------------------------------------------------------
+AC_CXX_NAMESPACES
+AC_CXX_HAVE_STL
+AC_CXX_BOOL
+AC_CXX_MUTABLE
+# ---------------------------------------------------------------------
+# These are pretty obscure
+# ---------------------------------------------------------------------
+AC_CXX_NEW_FOR_SCOPING
+AC_CXX_STD_SPRINTF
+
+# ------------------------------------------------------------------------
+# Checks for special package flags
+# ------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------
+# Checks if tests should be built and which ones should be built
+# ------------------------------------------------------------------------
+
+TAC_ARG_ENABLE_FEATURE_SUB( belos, tests, [Build belos tests], BELOS_TESTS, yes)
+AM_CONDITIONAL(BUILD_BELOS_TESTS, [test "X$ac_cv_use_belos_tests" != "Xno"])
+TAC_ARG_ENABLE_FEATURE(tests, [Build tests for all Trilinos packages], TESTS, yes)
+AM_CONDITIONAL(BUILD_TESTS, test "X$ac_cv_use_tests" != "Xno")
+TAC_ARG_ENABLE_FEATURE(ifpack, [Build examples which use ifpack], IFPACK, yes)
+AM_CONDITIONAL(BUILD_IFPACK, test "X$ac_cv_use_ifpack" != "Xno")
+#TAC_ARG_ENABLE_FEATURE(ifpack, [Build examples which use triutils], TRIUTILS, no)
+#AM_CONDITIONAL(BUILD_TRIUTILS, test "X$ac_cv_use_triutils" != "Xno")
+
+# ------------------------------------------------------------------------
+# Specify other directories 
+# ------------------------------------------------------------------------
+
+# enable use of --with-libdirs="-Llibdir1 -Llibdir2 ..." to prepend to LDFLAGS
+TAC_ARG_WITH_LIBDIRS
+# enable use of --with-incdirs="-Lincdir1 -Lincdir2 ..." to prepend to CPPFLAGS
+TAC_ARG_WITH_INCDIRS
+
+AC_F77_WRAPPERS
+
+# ------------------------------------------------------------------------
+# Checks for libraries
+# ------------------------------------------------------------------------
+
+AC_SEARCH_LIBS(pow,[m],,AC_MSG_ERROR(Cannot find math library))
+AC_SEARCH_LIBS(sqrt,[m],,AC_MSG_ERROR(Cannot find math library))
+
+### Belos requires both BLAS and LAPACK
+
+  ACX_BLAS([], [AC_MSG_ERROR([[Cannot find blas library, specify a path using --with-ldflags=-I<DIR> (ex. --with-ldflags=-I/usr/path/lib) or a specific library using --with-blas=DIR/LIB (for example --with-blas=/usr/path/lib/libcxml.a)]])])
+  ACX_LAPACK([], [AC_MSG_ERROR([[Cannot find lapack library, specify a path using --with-ldflags=-I<DIR> (ex. --with-dlflags=-I/usr/path/lib) or a specific library using --with-lapack=DIR/LIB (ex. --with-lapack=/usr/path/lib/libcxml.a)]])])
+
+# ------------------------------------------------------------------------
+# Checks for compiler characteristics
+# ------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------
+# Checks for linker characteristics
+# ------------------------------------------------------------------------
+
+# Determine libraries needed for linking with Fortran
+AC_F77_LIBRARY_LDFLAGS
+
+
+#  ----------------------------------------------------
+#  Needs this because Dec handles templates differently
+#  ----------------------------------------------------
+#  #np# - Only uncomment the following lines if the package
+#         creates a subdirectory called cxx_repository for
+#         template object files on DEC.  (HINT: try to build on 
+#         DEC/CPLANT and see if template-related errors occur)
+
+# -- DEC CXX --
+#case $target in
+#  alpha*)
+#    if test $CXX = cxx; then
+#      TRILINOS_TEMPLATE_OBJS="cxx_repository/*.o"
+#    fi
+#  ;;
+#esac
+
+#AC_MSG_CHECKING([for template-specific object files to be linked])
+#if test "X$TRILINOS_TEMPLATE_OBJS" = "X"; then
+# AC_MSG_RESULT(none)
+#else
+# AC_MSG_RESULT($TRILINOS_TEMPLATE_OBJS)
+#fi
+
+#AC_SUBST(TRILINOS_TEMPLATE_OBJS)
+
+# ------------------------------------------------------------------------
+# Checks for library functions
+# ------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------
+# Checks for system services
+# ------------------------------------------------------------------------
+
+
+# ------------------------------------------------------------------------
+# Perform substitutions in output files
+# ------------------------------------------------------------------------
+
+AC_SUBST(ac_aux_dir)
+
+# ------------------------------------------------------------------------
+# Output files
+# ------------------------------------------------------------------------
+##
+
+AC_CONFIG_FILES([
+		Makefile 
+		src/Makefile
+		test/Makefile
+		test/BlockCG/Makefile
+		test/BlockGmres/Makefile
+		])
+
+AC_OUTPUT()
+
+# Bye World!
+echo "----------------------------------------"
+echo "Finished Running Belos Configure Script"
+echo "----------------------------------------"
