@@ -40,7 +40,7 @@ MPI_LIB			= -lmpi
 MPI_LIBPATH		= -L/usr/lib
 
 PARMETIS_LIBPATH 	= -L/paunchy/proj/zoltan/arch/dec/lib/ParMETIS3
-PARMETIS_INCPATH 	= -I/paunchy/proj/zoltan/arch/dec/include/ParMETIS3
+PARMETIS_INCPATH 	= -I/paunchy/proj/zoltan/arch/all/src/ParMETIS3
 
 #JOSTLE_LIBPATH 	= -L/Net/local/proj/zoltan/arch/alpha/lib
 #JOSTLE_INCPATH 	= -I/Net/local/proj/zoltan/arch/all/src
