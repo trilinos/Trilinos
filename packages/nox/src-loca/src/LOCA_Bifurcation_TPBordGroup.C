@@ -45,7 +45,6 @@ LOCA::Bifurcation::TPBordGroup::TPBordGroup(const Abstract::Group& g,
     tpXVec(g.getX(), lenVec, 0.0),
     tpFVec(lenVec, lenVec, 0.0),
     tpNewtonVec(lenVec, lenVec, 0.0),
-    tpTangentVec(lenVec, lenVec, 0.0),
     lengthVecPtr(lenVec.clone(NOX::ShapeCopy)), 
     bifParamId(paramId), 
     derivResidualParamPtr(lenVec.clone(NOX::ShapeCopy)), 
@@ -53,8 +52,7 @@ LOCA::Bifurcation::TPBordGroup::TPBordGroup(const Abstract::Group& g,
     derivPtr(d.clone(NOX::DeepCopy)), 
     isValidF(false),
     isValidJacobian(false),
-    isValidNewton(false),
-    isValidTangent(false)
+    isValidNewton(false)
 {
   tpXVec.getBifParam() = getBifParam();
 }
@@ -65,7 +63,6 @@ LOCA::Bifurcation::TPBordGroup::TPBordGroup(const TPBordGroup& source,
     tpXVec(source.tpXVec, type),
     tpFVec(source.tpFVec, type),
     tpNewtonVec(source.tpNewtonVec, type),
-    tpTangentVec(source.tpTangentVec, type),
     lengthVecPtr(source.lengthVecPtr->clone(type)), 
     bifParamId(source.bifParamId),
     derivResidualParamPtr(source.derivResidualParamPtr->clone(type)),
@@ -73,8 +70,7 @@ LOCA::Bifurcation::TPBordGroup::TPBordGroup(const TPBordGroup& source,
     derivPtr(source.derivPtr->clone(type)),
     isValidF(source.isValidF),
     isValidJacobian(source.isValidJacobian),
-    isValidNewton(source.isValidNewton),
-    isValidTangent(source.isValidTangent) {}
+    isValidNewton(source.isValidNewton) {}
 
 
 LOCA::Bifurcation::TPBordGroup::~TPBordGroup() 
@@ -119,7 +115,6 @@ LOCA::Bifurcation::TPBordGroup::operator=(const TPBordGroup& source)
     tpXVec = source.tpXVec;
     tpFVec = source.tpFVec;
     tpNewtonVec = source.tpNewtonVec;
-    tpTangentVec = source.tpTangentVec;
     lengthVecPtr = source.lengthVecPtr->clone(type);
     derivResidualParamPtr = source.derivResidualParamPtr->clone(type);
     derivNullResidualParamPtr = source.derivNullResidualParamPtr->clone(type);
@@ -128,7 +123,6 @@ LOCA::Bifurcation::TPBordGroup::operator=(const TPBordGroup& source)
     isValidF = source.isValidF;
     isValidJacobian = source.isValidJacobian;
     isValidNewton = source.isValidNewton;
-    isValidTangent = source.isValidTangent;
   }
 
   return *this;
@@ -146,28 +140,38 @@ LOCA::Bifurcation::TPBordGroup::setParams(const ParameterVector& p)
   isValidF = false;
   isValidJacobian = false;
   isValidNewton = false;
-  isValidTangent = false;
 
   grpPtr->setParams(p);
-}
-
-void
-LOCA::Bifurcation::TPBordGroup::computeParams(const ParameterVector& oldParams,
-					      const ParameterVector& direction,
-					      double step) 
-{
-  isValidF = false;
-  isValidJacobian = false;
-  isValidNewton = false;
-  isValidTangent = false;
-
-  grpPtr->computeParams(oldParams, direction, step);
 }
 
 const ParameterVector&
 LOCA::Bifurcation::TPBordGroup::getParams() const 
 {
   return grpPtr->getParams();
+}
+
+void
+LOCA::Bifurcation::TPBordGroup::setParam(int paramID, double val)
+{
+  grpPtr->setParam(paramID, val);
+}
+
+double
+LOCA::Bifurcation::TPBordGroup::getParam(int paramID) const
+{
+  return grpPtr->getParam(paramID);
+}
+
+void
+LOCA::Bifurcation::TPBordGroup::setParam(string paramID, double val)
+{
+  grpPtr->setParam(paramID, val);
+}
+
+double
+LOCA::Bifurcation::TPBordGroup::getParam(string paramID) const
+{
+  return grpPtr->getParam(paramID);
 }
 
 double
@@ -186,7 +190,6 @@ LOCA::Bifurcation::TPBordGroup::setBifParam(double param)
   isValidF = false;
   isValidJacobian = false;
   isValidNewton = false;
-  isValidTangent = false;
 
   grpPtr->setParams(params);
 }
@@ -206,7 +209,6 @@ LOCA::Bifurcation::TPBordGroup::setX(const TPBordVector& y)
   isValidF = false;
   isValidJacobian = false;
   isValidNewton = false;
-  isValidTangent = false;
 }
 
 void
@@ -227,7 +229,6 @@ LOCA::Bifurcation::TPBordGroup::computeX(const TPBordGroup& g,
   isValidF = false;
   isValidJacobian = false;
   isValidNewton = false;
-  isValidTangent = false;
 
   grpPtr->computeX(*(g.grpPtr), d.getXVec(), step);
   tpXVec.update(1.0, g.getX(), step, d, 0.0);
@@ -321,40 +322,6 @@ LOCA::Bifurcation::TPBordGroup::computeNewton(NOX::Parameter::List& params)
 
   tpNewtonVec.scale(-1.0);
   isValidNewton = true;
-
-  return res;
-}
-
-NOX::Abstract::Group::ReturnType
-LOCA::Bifurcation::TPBordGroup::computeTangent(NOX::Parameter::List& params,
-                                      int paramID)
-{
-  if (isValidTangent)
-    return NOX::Abstract::Group::Ok;
-
-  NOX::Abstract::Group::ReturnType res = computeJacobian();
-  if (res != NOX::Abstract::Group::Ok)
-    return res;
-
-  NOX::Abstract::Vector* dfdpVec = tpTangentVec.clone(NOX::ShapeCopy);
-
-  res = computeDfDp(paramID, *dfdpVec);
-  if (res != NOX::Abstract::Group::Ok)
-    return res;
-
-  res = computeJacobian();
-  if (res != NOX::Abstract::Group::Ok)
-    return res;
-
-  res = applyJacobianInverse(params, *dfdpVec, tpTangentVec);
-  if (res != NOX::Abstract::Group::Ok)
-    return res;
-
-  tpTangentVec.scale(-1.0);
-
-  isValidTangent = true;
-
-  delete dfdpVec;
 
   return res;
 }
@@ -651,12 +618,6 @@ LOCA::Bifurcation::TPBordGroup::getGradient() const
        << " - not implemented" << endl;
   throw "LOCA Error";
   return getNewton();
-}
-
-const Vector&
-LOCA::Bifurcation::TPBordGroup::getTangent() const 
-{
-  return tpTangentVec;
 }
 
 const Vector&

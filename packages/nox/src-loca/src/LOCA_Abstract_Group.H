@@ -115,20 +115,20 @@ public:
   //! Set the parameter list in the group to p (pVector = p).  
   virtual void setParams(const ParameterVector& p) = 0;
 
-  //! Compute a new parameter vector where this.pVector = grp.pVector + step*d.
-  virtual void computeParams(const ParameterVector& oldParams, 
-			     const ParameterVector& direction, 
-			     double step) = 0;
-
   //! Return a const reference to the ParameterVector owned by the group. 
   virtual const ParameterVector& getParams() const = 0;
 
-  //! Compute tangent direction
-  virtual NOX::Abstract::Group::ReturnType
-  computeTangent(NOX::Parameter::List& params, int paramID) = 0;
+  //! Set parameter indexed by paramID
+  virtual void setParam(int paramID, double val) = 0;
 
-  //! Get tangent direction vector, needed for predictor
-  virtual const NOX::Abstract::Vector& getTangent() const = 0;
+  //! Return copy of parameter indexed by paramID
+  virtual double getParam(int paramID) const = 0;
+
+  //! Set parameter indexed by paramID
+  virtual void setParam(string paramID, double val) = 0;
+
+  //! Return copy of parameter indexed by paramID
+  virtual double getParam(string paramID) const = 0;
 
   virtual NOX::Abstract::Group::ReturnType
   computeDfDp(int paramID, NOX::Abstract::Vector& result);

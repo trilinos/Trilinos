@@ -92,13 +92,20 @@ public:
   //! Set the parameter list in the group to p (pVector = p).  
   virtual void setParams(const ParameterVector& p);
 
-  //! Compute a new parameter vector where this.pVector = grp.pVector + step*d.
-  virtual void computeParams(const ParameterVector& oldParams, 
-			     const ParameterVector& direction, 
-			     double step);
-
   //! Return a const reference to the ParameterVector owned by the group. 
   virtual const ParameterVector& getParams() const;
+
+  //! Set parameter indexed by paramID
+  virtual void setParam(int paramID, double val);
+
+  //! Return copy of parameter indexed by paramID
+  virtual double getParam(int paramID) const;
+
+  //! Set parameter indexed by paramID
+  virtual void setParam(string paramID, double val);
+
+  //! Return copy of parameter indexed by paramID
+  virtual double getParam(string paramID) const;
 
   //@{ \name "Compute" functions.
 
@@ -153,12 +160,6 @@ public:
   */
   virtual NOX::Abstract::Group::ReturnType 
   computeNewton(NOX::Parameter::List& params);
-
-  //! Compute Tangent direction (dx/ds, dp/ds), using parameters
-  //! for nonlinear solve.
-  virtual NOX::Abstract::Group::ReturnType 
-  computeTangent(NOX::Parameter::List& params,
-		 int paramId);
 
   //@}
 
@@ -298,9 +299,6 @@ public:
   //! Return Newton direction.
   virtual const NOX::Abstract::Vector& getNewton() const;
 
-  //! Return Tangent direction.
-  virtual const NOX::Abstract::Vector& getTangent() const;
-
   /*!
     \brief Return the norm of the Newton solve residual.
   
@@ -343,9 +341,6 @@ protected:
 
   //! Stores the turning point Newton vector
   TPBordVector tpNewtonVec;
-
-  //! Stores the turning point Tangent vector
-  TPBordVector tpTangentVec;
 
   //! Stores the constant length vector
   NOX::Abstract::Vector* lengthVecPtr;
