@@ -211,8 +211,8 @@ int main(int argc, char *argv[]) {
       }
       break;
     }
-  }
 #endif
+  }
 
   // ====================== //
   // default options for DD //
@@ -246,10 +246,9 @@ int main(int argc, char *argv[]) {
       }
       break;
     }
-  }
 #endif
+  }
 
-#ifdef HAVE_ML_METIS
   // ========================================== //
   // default options for DD -- 16 aggr per proc //
   // ========================================== //
@@ -263,7 +262,7 @@ int main(int argc, char *argv[]) {
     MLList.set("aggregation: local aggregates", 16);
     iters = TestMultiLevelPreconditioner("DD", MLList, *Problem, TotalErrorResidual, TotalErrorExactSol );
 
-#ifdef HAVE_ML_AMESOS
+#if defined(HAVE_ML_AMESOS) || defined(HAVE_ML_METIS)
     // expected iterations
     switch( NumProcs ) {
     case 1:
@@ -283,10 +282,8 @@ int main(int argc, char *argv[]) {
       }
       break;
     }
-    
+#endif
   }
-#endif
-#endif
 
   // ========================= //
   // default options for DD-ML //
@@ -322,8 +319,8 @@ int main(int argc, char *argv[]) {
       }
       break;
     }
-  }
 #endif
+  }
 
   // ========================= //
   // default options for DD-ML //
@@ -364,8 +361,8 @@ int main(int argc, char *argv[]) {
       }
       break;
     }
-  }
 #endif
+  }
 
   // ===================== //
   // print out total error //
