@@ -69,6 +69,12 @@ else
 amesos_lib =
 endif
 
+if ML_USING_IFPACK
+ifpack_lib = $(top_builddir)/../ifpack/src/libifpack.a
+else
+ifpack_lib =
+endif
+
 2d_Poisson_DEPENDENCIES = \
 	$(top_builddir)/src/libml.a \
 	$(top_builddir)/../aztecoo/src/libaztecoo.a \
@@ -96,6 +102,7 @@ ml_common_include_locations = -I$(top_srcdir)/src/Include          \
 
 ml_libs = $(top_builddir)/src/libml.a        \
                 $(top_builddir)/../aztecoo/src/libaztecoo.a        \
+                ${ifpack_lib} \
 	            $(top_builddir)/../amesos/src/libamesos.a  \
                 $(top_builddir)/../epetra/src/libepetra.a \
 	            $(top_builddir)/../teuchos/src/libteuchos.a  \

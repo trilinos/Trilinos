@@ -100,14 +100,16 @@ CONFIG_CLEAN_FILES =
 PROGRAMS = $(noinst_PROGRAMS)
 am_2d_Poisson_OBJECTS = 2d_Poisson-ml_example2d.$(OBJEXT)
 2d_Poisson_OBJECTS = $(am_2d_Poisson_OBJECTS)
-am__DEPENDENCIES_1 =
-am__DEPENDENCIES_2 = $(top_builddir)/src/libml.a \
+@ML_USING_IFPACK_TRUE@am__DEPENDENCIES_1 = $(top_builddir)/../ifpack/src/libifpack.a
+am__DEPENDENCIES_2 =
+am__DEPENDENCIES_3 = $(top_builddir)/src/libml.a \
 	$(top_builddir)/../aztecoo/src/libaztecoo.a \
+	$(am__DEPENDENCIES_1) \
 	$(top_builddir)/../amesos/src/libamesos.a \
 	$(top_builddir)/../epetra/src/libepetra.a \
 	$(top_builddir)/../teuchos/src/libteuchos.a \
-	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
-	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
+	$(am__DEPENDENCIES_2) $(am__DEPENDENCIES_2) \
+	$(am__DEPENDENCIES_2) $(am__DEPENDENCIES_2)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/src
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
@@ -263,6 +265,8 @@ EXTRA_DIST = 2d_Poisson.csh baseline1 baseline2 baseline3 baseline5 baseline6 ba
 @ML_USING_AMESOS_TRUE@amesos_lib = $(top_builddir)/../amesos/src/libamesos.a \
 @ML_USING_AMESOS_TRUE@             $(top_builddir)/../teuchos/src/libteuchos.a
 
+@ML_USING_IFPACK_FALSE@ifpack_lib = 
+@ML_USING_IFPACK_TRUE@ifpack_lib = $(top_builddir)/../ifpack/src/libifpack.a
 2d_Poisson_DEPENDENCIES = \
 	$(top_builddir)/src/libml.a \
 	$(top_builddir)/../aztecoo/src/libaztecoo.a \
@@ -290,6 +294,7 @@ ml_common_include_locations = -I$(top_srcdir)/src/Include          \
 
 ml_libs = $(top_builddir)/src/libml.a        \
                 $(top_builddir)/../aztecoo/src/libaztecoo.a        \
+                ${ifpack_lib} \
 	            $(top_builddir)/../amesos/src/libamesos.a  \
                 $(top_builddir)/../epetra/src/libepetra.a \
 	            $(top_builddir)/../teuchos/src/libteuchos.a  \
