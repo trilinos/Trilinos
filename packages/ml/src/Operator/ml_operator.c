@@ -1526,7 +1526,7 @@ int ML_Operator_Move2HierarchyAndDestroy_fragile(ML_Operator *newmat,
 int ML_Operator_GetFlops(ML_Operator *mat)
 {
   if (mat->N_nonzeros != -1)
-    return mat->N_nonzeros;
+    return 2 * mat->N_nonzeros - mat->outvec_leng;
   else
     return 0;
 }
