@@ -1,47 +1,72 @@
-zfdrive: dr_migrate.o farg.o mpistring.o lampmpi.o \
-	dr_main.o dr_loadbal.o dr_input.o dr_chaco_io.o dr_const.o \
-	$(ZOLTAN_OBJ_DIR)/libzoltan.a
-	$(F90) $(FFLAGS) -o zfdrive dr_main.o dr_loadbal.o dr_input.o \
-        dr_chaco_io.o dr_const.o dr_migrate.o farg.o mpistring.o lampmpi.o \
-	-L$(ZOLTAN_OBJ_DIR) -lzoltan $(MPILIB) -lm
+ZOD = $(ZOLTAN_OBJ_DIR)
 
-farg.o: $(FARG).f
-	$(F90) $(FFLAGS) -o farg.o -c $(FARG).f
+zfdrive:	$(ZOD)/fdr_migrate.o \
+		$(ZOD)/farg.o \
+		$(ZOD)/mpistring.o \
+		$(ZOD)/lampmpi.o \
+		$(ZOD)/fdr_main.o \
+		$(ZOD)/fdr_loadbal.o \
+		$(ZOD)/fdr_input.o \
+		$(ZOD)/fdr_chaco_io.o \
+		$(ZOD)/fdr_const.o \
+		$(ZOD)/libzoltan.a
+	$(F90) $(FFLAGS) -o 	zfdrive $(ZOD)/fdr_main.o \
+				$(ZOD)/fdr_loadbal.o $(ZOD)/fdr_input.o \
+        			$(ZOD)/fdr_chaco_io.o $(ZOD)/fdr_const.o \
+				$(ZOD)/fdr_migrate.o $(ZOD)/farg.o \
+				$(ZOD)/mpistring.o $(ZOD)/lampmpi.o \
+				-L$(ZOD) -lzoltan $(MPILIB) -lm
+	/bin/mv zfdrive $(ZOD)
 
-dr_main.o: dr_main.f90 mpi_h.o dr_const.o dr_input.o \
-	dr_chaco_io.o dr_loadbal.o $(ZOLTAN_OBJ_DIR)/libzoltan.a
-	$(F90) $(FFLAGS) $(ZOLTAN_MOD_DIR) -c dr_main.f90
+$(ZOD)/farg.o: $(FARG).f
+	$(F90) $(FFLAGS) -o $(ZOD)/farg.o -c $(FARG).f
 
-dr_migrate.o: dr_migrate.f90 mpi_h.o dr_const.o \
-	dr_chaco_io.o $(ZOLTAN_OBJ_DIR)/libzoltan.a
-	$(F90) $(FFLAGS) $(ZOLTAN_MOD_DIR) -c dr_migrate.f90
+$(ZOD)/fdr_main.o: 	fdr_main.f90 $(ZOD)/mpi_h.o $(ZOD)/fdr_const.o \
+			$(ZOD)/fdr_input.o $(ZOD)/fdr_chaco_io.o \
+			$(ZOD)/fdr_loadbal.o $(ZOD)/libzoltan.a
+	$(F90) $(FFLAGS) $(ZOLTAN_MOD_DIR) -c fdr_main.f90
+	/bin/mv *.o $(ZOD)
 
-dr_loadbal.o: dr_loadbal.f90 mpi_h.o dr_const.o \
-	dr_migrate.o $(ZOLTAN_OBJ_DIR)/libzoltan.a
-	$(F90) $(FFLAGS) $(ZOLTAN_MOD_DIR) -c dr_loadbal.f90
+$(ZOD)/fdr_migrate.o: 	fdr_migrate.f90 $(ZOD)/mpi_h.o $(ZOD)/fdr_const.o \
+			$(ZOD)/fdr_chaco_io.o $(ZOD)/libzoltan.a
+	$(F90) $(FFLAGS) $(ZOLTAN_MOD_DIR) -c fdr_migrate.f90
+	/bin/mv *.o *.mod $(ZOD)
 
-dr_input.o: dr_input.f90 mpi_h.o dr_const.o $(ZOLTAN_OBJ_DIR)/libzoltan.a
-	$(F90) $(FFLAGS) $(ZOLTAN_MOD_DIR) -c dr_input.f90
+$(ZOD)/fdr_loadbal.o: 	fdr_loadbal.f90 $(ZOD)/mpi_h.o $(ZOD)/fdr_const.o \
+			$(ZOD)/fdr_migrate.o $(ZOD)/libzoltan.a
+	$(F90) $(FFLAGS) $(ZOLTAN_MOD_DIR) -c fdr_loadbal.f90
+	/bin/mv *.o *.mod $(ZOD)
 
-dr_chaco_io.o: dr_chaco_io.f90 mpi_h.o dr_const.o dr_input.o \
-	$(ZOLTAN_OBJ_DIR)/libzoltan.a
-	$(F90) $(FFLAGS) $(ZOLTAN_MOD_DIR) -c dr_chaco_io.f90
+$(ZOD)/fdr_input.o: 	fdr_input.f90 $(ZOD)/mpi_h.o $(ZOD)/fdr_const.o \
+			$(ZOD)/libzoltan.a
+	$(F90) $(FFLAGS) $(ZOLTAN_MOD_DIR) -c fdr_input.f90
+	/bin/mv *.o *.mod $(ZOD)
 
-dr_const.o: dr_const.f90 $(ZOLTAN_OBJ_DIR)/libzoltan.a
-	$(F90) $(FFLAGS) $(ZOLTAN_MOD_DIR) -c dr_const.f90
+$(ZOD)/fdr_chaco_io.o: 	fdr_chaco_io.f90 $(ZOD)/mpi_h.o $(ZOD)/fdr_const.o \
+			$(ZOD)/fdr_input.o $(ZOD)/libzoltan.a
+	$(F90) $(FFLAGS) $(ZOLTAN_MOD_DIR) -c fdr_chaco_io.f90
+	/bin/mv *.o *.mod $(ZOD)
 
-mpi_h.o: mpi_h.f
+$(ZOD)/fdr_const.o: 	fdr_const.f90 $(ZOD)/libzoltan.a
+	$(F90) $(FFLAGS) $(ZOLTAN_MOD_DIR) -c fdr_const.f90
+	/bin/mv *.o *.mod $(ZOD)
+
+$(ZOD)/mpi_h.o: 	mpi_h.f
 	$(F90) $(FFLAGS) $(MPIINC) -c mpi_h.f
+	/bin/mv *.o *.mod $(ZOD)
 
-lampmpi.o: lampmpi.f90
+$(ZOD)/lampmpi.o: 	lampmpi.f90
 	$(F90) $(FFLAGS) -c lampmpi.f90
+	/bin/mv *.o $(ZOD)
 
-mpistring.o: mpistring.c
+$(ZOD)/mpistring.o: 	mpistring.c
 	$(CC) -c mpistring.c
+	/bin/mv *.o $(ZOD)
 
-$(ZOLTAN_OBJ_DIR)/libzoltan.a:
+$(ZOD)/libzoltan.a:
 	cd ..; $(MAKE) $(TARGET_ARCH)
 
 clean:
-	rm -f *.o *.mod debug V* *.vo *.dbg zfdrive
+	rm -f $(ZOD)/fdr*.o $(ZOD)/mpi_h.o $(ZOD)/lampmpi.o $(ZOD)/mpistring.o\
+	      *.mod debug V* *.vo *.dbg $(ZOD)/zfdrive
 	rm -Rf album

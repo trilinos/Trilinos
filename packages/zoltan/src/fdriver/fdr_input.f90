@@ -157,12 +157,10 @@ type(PARIO_INFO) :: pio_info
 
   prob%method = "rcb"
 
-! Assume parameters is "RCB_WGTFLAG=0".  This excludes ch_film.
-
   allocate(prob%params(0:0))
   prob%num_params = 1
-  prob%params(0)%str(0) = "RCB_WGTFLAG"
-  prob%params(0)%str(1) = "0"
+  prob%params(0)%str(0) = "DEBUG_MEMORY"
+  prob%params(0)%str(1) = "1"
 
 ! Assume the file type is Chaco
 
