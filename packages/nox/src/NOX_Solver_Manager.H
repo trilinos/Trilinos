@@ -65,6 +65,10 @@ namespace Solver{
 class Manager : public Generic {
 
 public:
+
+  //! Empty constructor - reset called later to really construct it
+  Manager();
+
   /*!
     \brief %Generic interface. On input, the grp should contain the
     initial guess. On output it will contain the solution. 

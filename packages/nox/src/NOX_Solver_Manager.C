@@ -25,6 +25,12 @@ Manager::Manager(Abstract::Group& grp, StatusTest::Generic &t, const Parameter::
   reset(grp, t, p);
 }
 
+Manager::Manager() :
+  method(""),
+  ptr(NULL)
+{
+}
+
 Manager::~Manager()
 {
   delete ptr;
@@ -41,37 +47,45 @@ bool Manager::reset(Abstract::Group& grp, StatusTest::Generic& tests, const Para
     delete ptr;
     ptr = NULL;
     
-    if ((method == "Newton") || (method == "Line Search")) {	// deprecated
+    if ((method == "Newton") || (method == "Line Search")) // deprecated
+    {	
       cout << "Warning: NOX::Solver::Manager - Nonlinear Solver choice \"" << method << "\" is deprecated.\n"
 	   << "                                Use \"Line Search Based\" instead." << endl;
       ptr = new LineSearchBased(grp, tests, params);
     } 
-    else if (method == "Line Search Based") {
+    else if (method == "Line Search Based") 
+    {
       ptr = new LineSearchBased(grp, tests, params);
     } 
-    else if (method == "Trust Region") { // deprecated
+    else if (method == "Trust Region")  // deprecated
+    {
       cout << "Warning: NOX::Solver::Manager - Nonlinear Solver choice \"" << method << "\" is deprecated.\n"
 	   << "                                Use \"Trust Region Based\" instead." << endl;
       ptr = new TrustRegionBased(grp, tests, params);
     } 
-    else if (method == "Trust Region Based") {
+    else if (method == "Trust Region Based") 
+    {
       ptr = new TrustRegionBased(grp, tests, params);
     } 
-    else {
+    else 
+    {
       cout << "ERROR: NOX::Solver::Manager - Invalid solver choice" << endl;
       throw "NOX Error";
     }
 
-    if (ptr == NULL) {
+    if (ptr == NULL) 
+    {
       cerr << "NOX::Solver::Manager::reset - Null pointer error" << endl;
       return false;
     }
 
     return true;
   }
-  else {
+  else 
+  {
 
-    if (ptr == NULL) {
+    if (ptr == NULL) 
+    {
       cerr << "NOX::Solver::Manager::reset - Null pointer error" << endl;
       return false;
     }
@@ -82,7 +96,8 @@ bool Manager::reset(Abstract::Group& grp, StatusTest::Generic& tests, const Para
 
 NOX::StatusTest::StatusType Manager::getStatus()
 {
-  if (ptr == NULL) {
+  if (ptr == NULL) 
+  {
     cout << "NOX::Solver::Manager::getStatus - Null pointer error" << endl;
     throw "NOX Error";
   }
@@ -92,7 +107,8 @@ NOX::StatusTest::StatusType Manager::getStatus()
 
 NOX::StatusTest::StatusType Manager::iterate()
 {
-  if (ptr == NULL) {
+  if (ptr == NULL) 
+  {
     cout << "NOX::Solver::Manager::iterate - Null pointer error" << endl;
     throw "NOX Error";
   }
@@ -102,7 +118,8 @@ NOX::StatusTest::StatusType Manager::iterate()
 
 NOX::StatusTest::StatusType Manager::solve()
 {
-  if (ptr == NULL) {
+  if (ptr == NULL) 
+  {
     cout << "NOX::Solver::Manager::solve - Null pointer error" << endl;
     throw "NOX Error";
   }
@@ -112,7 +129,8 @@ NOX::StatusTest::StatusType Manager::solve()
 
 const Abstract::Group& Manager::getSolutionGroup() const
 {
-  if (ptr == NULL) {
+  if (ptr == NULL) 
+  {
     cout << "NOX::Solver::Manager::getSolutionGroup - Null pointer error" << endl;
     throw "NOX Error";
   }
@@ -122,7 +140,8 @@ const Abstract::Group& Manager::getSolutionGroup() const
 
 const Abstract::Group& Manager::getPreviousSolutionGroup() const
 {
-  if (ptr == NULL) {
+  if (ptr == NULL) 
+  {
     cout << "NOX::Solver::Manager::getPreviousSolutionGroup - Null pointer error" << endl;
     throw "NOX Error";
   }
@@ -140,14 +159,14 @@ int Manager::getNumIterations() const
 
 const Parameter::List& Manager::getParameterList() const
 {
-  if (ptr == NULL) {
+  if (ptr == NULL) 
+  {
     cout << "NOX::Solver::Manager::getParameterList - Null pointer error" << endl;
     throw "NOX Error";
   }
     
   return ptr->getParameterList();
 }
-
 
 
 
