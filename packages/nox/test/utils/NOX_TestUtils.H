@@ -1,3 +1,18 @@
+//@HEADER
+
+/*!
+  \file NOX_TestUtils.H
+  \brief Header for the library that reads NOX input parameter
+  information.
+
+  This header defines the routine NOX::parseTextInputFile,
+  used to read NOX parameter input file information. It also defines
+  a number of required string parsing routines.
+
+  These routines are based on a similar code in APPSPACK. Functionality
+  for vector-typed input parameters has been commented out in this
+  file, but may be reinsated in the future.
+*/
 
 #ifndef NOX_TEST_UTILS_H
 #define NOX_TEST_UTILS_H
@@ -5,10 +20,9 @@
 #include "NOX_Common.H"
 #include "NOX_Parameter_List.H"
 
-using namespace NOX::Parameter;
 
-//namespace APPSPACK
-//{
+namespace NOX
+{
 
 /*!  Get the next quoted string on the given line, starting at
   position pos. 
@@ -27,7 +41,7 @@ using namespace NOX::Parameter;
   false otherwise.
   
 */
-bool getNextQuotedString(const string& line, string::size_type& pos, string& value);
+bool NOX::getNextQuotedString(const string& line, string::size_type& pos, string& value);
 
 /*!  Get the next string on the given line, starting at
   position pos. 
@@ -47,7 +61,7 @@ bool getNextQuotedString(const string& line, string::size_type& pos, string& val
   false otherwise.
   
 */
-bool getNextString(const string& line, string::size_type& pos, string& value);
+bool NOX::getNextString(const string& line, string::size_type& pos, string& value);
 
 /*!  Get the next string on the given line, starting at
   position pos, and convert it to a double. 
@@ -67,7 +81,7 @@ bool getNextString(const string& line, string::size_type& pos, string& value);
   false otherwise.
   
 */
-bool getNextDouble(const string& line, string::size_type& pos, double& value);
+bool NOX::getNextDouble(const string& line, string::size_type& pos, double& value);
 
 
 /*!  Get the next string on the given line, starting at
@@ -88,11 +102,11 @@ bool getNextDouble(const string& line, string::size_type& pos, double& value);
   false otherwise.
   
 */
-bool getNextInt(const string& line, string::size_type& pos, int& value);
+bool NOX::getNextInt(const string& line, string::size_type& pos, int& value);
 
 
 /*!
-  \brief Parse an APPSPACK input file and store the data in the given parameter list.
+  \brief Parse a NOX input file and store the data in the given parameter list.
 
   \param filename - The file name.  See \ref pageExecutables_step2 for details on
   the structure of the input file.
@@ -107,12 +121,12 @@ bool getNextInt(const string& line, string::size_type& pos, int& value);
 */
 
 
-bool parseTextInputFile(const string filename, NOX::Parameter::List& params);
+bool NOX::parseTextInputFile(const string filename, NOX::Parameter::List& params);
 
 //! Process a single line of the text input file.
-bool processTextInputFileLine(const string& line, NOX::Parameter::List& params, 
+bool NOX::processTextInputFileLine(const string& line, NOX::Parameter::List& params, 
 			      NOX::Parameter::List*& subPtr);
 
-//}
+} // namespace NOX
 
 #endif

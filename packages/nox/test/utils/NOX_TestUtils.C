@@ -1,7 +1,8 @@
 
 #include "NOX_TestUtils.H"
 
-bool getNextQuotedString(const string& line, string::size_type& pos, string& value)
+
+bool NOX::getNextQuotedString(const string& line, string::size_type& pos, string& value)
 {
   // Initialize value
   value = "";
@@ -45,7 +46,7 @@ bool getNextQuotedString(const string& line, string::size_type& pos, string& val
   return true;
 }
 
-bool getNextString(const string& line, string::size_type& pos, string& value)
+bool NOX::getNextString(const string& line, string::size_type& pos, string& value)
 {
   // Initialize value
   value = "";
@@ -79,25 +80,25 @@ bool getNextString(const string& line, string::size_type& pos, string& value)
   return true;
 }
 
-bool getNextInt(const string& line, string::size_type& pos, int& value)
+bool NOX::getNextInt(const string& line, string::size_type& pos, int& value)
 {
   string field;
-  if ((!getNextString(line,pos,field)) || (field.size() == 0))
+  if ((!NOX::getNextString(line,pos,field)) || (field.size() == 0))
     return false;
 
   return ((sscanf(field.c_str(), "%d", &value)) == 1);
 }
 
-bool getNextDouble(const string& line, string::size_type& pos, double& value)
+bool NOX::getNextDouble(const string& line, string::size_type& pos, double& value)
 {
   string field;
-  if ((!getNextString(line,pos,field)) || (field.size() == 0))
+  if ((!NOX::getNextString(line,pos,field)) || (field.size() == 0))
     return false;
 
   return ((sscanf(field.c_str(), "%le", &value)) == 1);
 }
 
-bool processTextInputFileLine(const string& line, NOX::Parameter::List& params, 
+bool NOX::processTextInputFileLine(const string& line, NOX::Parameter::List& params, 
 					NOX::Parameter::List*& subPtr)
 {
   
@@ -134,7 +135,7 @@ bool processTextInputFileLine(const string& line, NOX::Parameter::List& params,
     
     while (pos != string::npos)
     {
-      if ((getNextQuotedString(line, pos, field)) && (field.size() > 0))
+      if ((NOX::getNextQuotedString(line, pos, field)) && (field.size() > 0))
 	subPtr = &(subPtr->sublist(field));
     }
 
@@ -145,16 +146,16 @@ bool processTextInputFileLine(const string& line, NOX::Parameter::List& params,
 
     // Get the name
     pos = 0;
-    if ((!getNextQuotedString(line, pos, field)) || (field.empty()))
+    if ((!NOX::getNextQuotedString(line, pos, field)) || (field.empty()))
       return false;
     
     // Read in the type
-    if (!getNextString(line, pos, type))
+    if (!NOX::getNextString(line, pos, type))
       return false;
 
     if (type == "int")
     {
-      if (!getNextInt(line, pos, tmpint))
+      if (!NOX::getNextInt(line, pos, tmpint))
       {
 	return false;
       }
@@ -166,7 +167,7 @@ bool processTextInputFileLine(const string& line, NOX::Parameter::List& params,
     }
     else if (type == "bool")
     {
-      if (!getNextString(line, pos, tmpstring))
+      if (!NOX::getNextString(line, pos, tmpstring))
       {
 	return false;
       }
@@ -178,7 +179,7 @@ bool processTextInputFileLine(const string& line, NOX::Parameter::List& params,
     }
     else if (type == "double")
     {
-      if (!getNextDouble(line, pos, tmpdouble))
+      if (!NOX::getNextDouble(line, pos, tmpdouble))
       {
 	return false;
       }
@@ -190,7 +191,7 @@ bool processTextInputFileLine(const string& line, NOX::Parameter::List& params,
     }
     else if (type == "string")
     {
-      if ((!getNextQuotedString(line, pos, tmpstring)) || (tmpstring.empty()))
+      if ((!NOX::getNextQuotedString(line, pos, tmpstring)) || (tmpstring.empty()))
       {
 	return false;
       }
@@ -323,7 +324,7 @@ bool processTextInputFileLine(const string& line, NOX::Parameter::List& params,
   } /* old style */
 }
 
-bool parseTextInputFile(const string filename, NOX::Parameter::List& params)
+bool NOX::parseTextInputFile(const string filename, NOX::Parameter::List& params)
 {
   // Open the input file
   ifstream fin;
@@ -344,7 +345,7 @@ bool parseTextInputFile(const string filename, NOX::Parameter::List& params)
   {
     getline(fin, line);
       
-    if (!processTextInputFileLine(line, params, subPtr))
+    if (!NOX::processTextInputFileLine(line, params, subPtr))
     {
         cout << "Ignoring input file line: " << line << endl;
     }
