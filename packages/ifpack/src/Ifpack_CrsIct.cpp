@@ -231,7 +231,6 @@ int Ifpack_CrsIct::Factor() {
   crout_ict(m, Aict, DV, Droptol_, Lfil_, Lict, &Ldiag_);
 
   // Get rid of unnecessary data
-  delete Aict;
   delete [] ptr;
   delete U_;
   delete D_;
