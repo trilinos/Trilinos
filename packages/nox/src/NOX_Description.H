@@ -579,7 +579,7 @@ endif
 
 </ol>
 
-Remember to run configure with the \c --with-prerelease option!!
+Remember to run configure with the \c --enable-prerelease option!!
 
 \note
 Prerelease code must still be able to compile.
