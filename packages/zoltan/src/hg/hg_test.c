@@ -64,7 +64,7 @@ int main (int argc, char **argv)
     puts("-p      # of parts:       (2)");
     puts("-redl   reduction level:  (0)");
     puts("-redm   reduction method: {mxp,rep,hep,grp,lhp,pgp,(dep),rrp,mxm,rem,"
-                   "hem,grm,lhm, pgm, mxg, reg, rrg, deg}");
+                   "hem,grm,lhm, pgm, deg, mxg, reg, rrg, heg, grg}");
     puts("-g      global method:    {ran,(lin)}");
     puts("-l      local method:     (no)");
     puts("default values are in brackets ():");
