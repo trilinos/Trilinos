@@ -4,14 +4,19 @@ programs using g++ one just needs to set the environment variable
 TRILINOS_BUILD to the base build directory containing a configured
 version of the package Teuchos.
 
-After setting the environment variable TRILINOS_BUILD, the original
-example program that uses raw C++ pointers (and contains memory
-deallocation errors) can be built from this directory as:
+After setting the environment variable TRILINOS_BUILD, the
+example programs can be built as:
+
+  make -f classicMakefile all
+
+One can build only the original example program that uses raw C++
+pointers (and contains memory deallocation errors) as:
 
   make -f classicMakefile example_raw_cpp_pointers.exe
 
-The refactored example program that uses RefCountPtr<> smart pointers
-(which should be free of any memory deallocation problems) can be
-built as:
+One can also build only the refactored example program that uses
+RefCountPtr<> smart pointers (which should be free of any memory
+deallocation problems) as:
 
   make -f classicMakefile example_ref_count_ptr.exe
+	
