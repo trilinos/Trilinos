@@ -69,6 +69,7 @@ int read_hypergraph_file(
   float *ewgts = NULL;
   float *x = NULL, *y = NULL, *z = NULL;
   int base = 0;   /* Smallest vertex number; usually zero or one. */
+  char filename[256];
 
 /***************************** BEGIN EXECUTION ******************************/
 
@@ -77,10 +78,10 @@ int read_hypergraph_file(
   if (Proc == 0) {
 
     /* Open and read the Chaco graph file. */
-    fp = fopen(pio_info->pexo_fname, "r");
+    sprintf(filename, "%s.hg", pio_info->pexo_fname);
+    fp = fopen(filename, "r");
     if (fp == NULL) {
-      sprintf(cmesg, "fatal:  Could not open hypergraph file %s",
-              pio_info->pexo_fname);
+      sprintf(cmesg, "fatal:  Could not open hypergraph file %s", filename);
       Gen_Error(0, cmesg);
       return 0;
     }
@@ -108,10 +109,10 @@ int read_hypergraph_file(
   /* KDDKDD Need to handle distribution of hyperedges here. */
   mesh->nhedges = nhedges;
   mesh->hewgt_dim = hewgt_dim;
-  if (nvtxs > 0) {
-    mesh->hindex = (int *) malloc((nvtxs+1) * sizeof(int));
-    memcpy(mesh->hindex, hindex, (nvtxs+1) * sizeof(int));
-  }
+
+  mesh->hindex = (int *) malloc((nhedges+1) * sizeof(int));
+  memcpy(mesh->hindex, hindex, (nhedges+1) * sizeof(int));
+
   if (npins > 0) {
     mesh->hvertex = (int *) malloc(npins * sizeof(int));
     memcpy(mesh->hvertex, hvertex, npins * sizeof(int));

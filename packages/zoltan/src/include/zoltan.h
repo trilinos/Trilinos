@@ -70,6 +70,9 @@ enum Zoltan_Fn_Type {
   ZOLTAN_UNPACK_OBJ_MULTI_FN_TYPE,
   ZOLTAN_PARTITION_FN_TYPE,
   ZOLTAN_GET_PROCESSOR_NAME_FN_TYPE,
+  ZOLTAN_NUM_HG_EDGES_FN_TYPE,
+  ZOLTAN_NUM_HG_PINS_FN_TYPE,
+  ZOLTAN_HG_EDGE_LIST_FN_TYPE,
   ZOLTAN_MAX_FN_TYPES               /*  This entry should always be last. */
 };
 
@@ -1666,6 +1669,114 @@ typedef void ZOLTAN_CHILD_WEIGHT_FORT_FN(
 );
 
 /*****************************************************************************/
+/*
+ *  Function to return
+ *  the number of hyperedges on the processor.
+ *  Input:  
+ *    data                --  pointer to user defined data structure
+ *  Output:
+ *    ierr                --  error code
+ *  Returned value:       --  the number of hyperedges
+ */
+
+typedef int ZOLTAN_NUM_HG_EDGES_FN(
+  void *data, 
+  int *ierr
+);
+
+typedef int ZOLTAN_NUM_HG_EDGES_FORT_FN(
+  void *data, 
+  int *ierr
+);
+
+/*****************************************************************************/
+/*
+ *  Function to return
+ *  the number of pins in the local hypergraph.
+ *  Number of pins = sum over all local hyperedges of number of vertices 
+ *  per hyperedge.
+ *  Input:  
+ *    data                --  pointer to user defined data structure
+ *  Output:
+ *    ierr                --  error code
+ *  Returned value:       --  number of pins in the local hypergraph
+ */
+
+typedef int ZOLTAN_NUM_HG_PINS_FN(
+  void *data, 
+  int *ierr
+);
+
+typedef int ZOLTAN_NUM_HG_PINS_FORT_FN(
+  void *data, 
+  int *ierr
+);
+
+/*****************************************************************************/
+/*
+ *  Function to return a list of hyperedges on the processor.
+ *  Each edge is expressed by three fields: a number of vertices in the
+ *  edge, a list of vertices in the edge, and the processor assignment of
+ *  each vertex in the edge.
+ *  Input:  
+ *    data                --  pointer to user defined data structure
+ *    num_gid_entries     --  number of array entries of type ZOLTAN_ID_TYPE
+ *                            in a global ID
+ *    ewgt_dim            --  number of edge weights per edge to be returned.
+ *    nedge               --  number of hyperedges to be returned (as
+ *                            specified by ZOLTAN_NUM_HG_EDGES_FN.
+ *    maxsize             --  maximum total number of vertices that may
+ *                            be specified; this field was used by Zoltan
+ *                            in allocating memory for the edges.
+ *  Output:
+ *    edge_sizes          --  Array containing number of vertices per 
+ *                            hyperedge; edge_sizes[i] == number of vertices
+ *                            in hyperedge i.
+ *    edge_verts          --  Array containing the GIDs of vertices in each
+ *                            hyperedge.  Hyperedges are concatinated in the
+ *                            array; that is, hyperedge 0 is stored in 
+ *                            edge_verts[0] to edge_verts[edge_sizes[0]-1],
+ *                            hyperedge 1 is stored in edge_verts[edge_sizes[0]]
+ *                            to edge_verts[edge_sizes[0]+edge_sizes[1]-1], etc.
+ *    edge_procs          --  Array containing the owning processor of each
+ *                            vertex in edge_verts.  edge_procs[i] contains the
+ *                            processor rank for the processor owning 
+ *                            edge_verts[i].
+ *    edge_weights        --  Array containing the edge weights for each
+ *                            hyperedge.  edge_weights[0] to 
+ *                            edge_weights[ewgt_dim-1] contain weights for 
+ *                            hyperedge 0; edge_weights[ewgt_dim] to 
+ *                            edge_weights[2*ewgt_dim-1] contain weights for
+ *                            hyperedge 1; etc.
+ *  Returned value:
+ *    ierr                --  error code
+ */
+
+typedef int ZOLTAN_HG_EDGE_LIST_FN(
+  void *data, 
+  int num_gid_entries,
+  int ewgt_dim,
+  int nedge,
+  int maxsize,
+  int *edge_sizes,
+  ZOLTAN_ID_PTR edge_verts,
+  int *edge_procs,
+  float *edge_weights
+);
+
+typedef int ZOLTAN_HG_EDGE_LIST_FORT_FN(
+  void *data, 
+  int *num_gid_entries,
+  int *ewgt_dim,
+  int *nedge,
+  int *maxsize,
+  int *edge_sizes,
+  ZOLTAN_ID_PTR edge_verts,
+  int *edge_procs,
+  float *edge_weights
+);
+
+/*****************************************************************************/
 /*****************************************************************************/
 /*******  Functions to set-up Zoltan load-balancing data structure  **********/
 /*****************************************************************************/
@@ -1950,6 +2061,24 @@ extern int Zoltan_Set_Child_List_Fn(
 extern int Zoltan_Set_Child_Weight_Fn(
   struct Zoltan_Struct *zz, 
   ZOLTAN_CHILD_WEIGHT_FN *fn_ptr, 
+  void *data_ptr
+);
+
+extern int Zoltan_Set_Num_HG_Edges_Fn(
+  struct Zoltan_Struct *zz, 
+  ZOLTAN_NUM_HG_EDGES_FN *fn_ptr, 
+  void *data_ptr
+);
+
+extern int Zoltan_Set_Num_HG_Pins_Fn(
+  struct Zoltan_Struct *zz, 
+  ZOLTAN_NUM_HG_PINS_FN *fn_ptr, 
+  void *data_ptr
+);
+
+extern int Zoltan_Set_HG_Edge_List_Fn(
+  struct Zoltan_Struct *zz, 
+  ZOLTAN_HG_EDGE_LIST_FN *fn_ptr, 
   void *data_ptr
 );
 

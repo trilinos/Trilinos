@@ -82,15 +82,15 @@ char *yo = "Zoltan_HG_HPart_Lib";
      return ZOLTAN_MEMERR;
      }
 
-  if (zz->Debug_Level >= ZOLTAN_DEBUG_ALL)
+  if (hgp->output_level >= HG_DEBUG_PLOT)
      Zoltan_HG_Plot(zz->Proc, hg->nVtx, p, hg->vindex, hg->vedge, NULL,
       "coarsening plot");
 
-  if (zz->Debug_Level >= ZOLTAN_DEBUG_LIST) {
-     printf("START %3d |V|=%6d |E|=%6d |I|=%6d %d/%s/%s-%s p=%d...\n",
+  if (hgp->output_level >= HG_DEBUG_LIST) {
+     printf("START %3d |V|=%6d |E|=%6d |I|=%6d %d/%s-%s/%s-%s p=%d...\n",
       hg->info, hg->nVtx, hg->nEdge, hg->nInput, hgp->redl, hgp->redm_str,
-      hgp->global_str, hgp->local_str, p);
-     if (zz->Debug_Level > ZOLTAN_DEBUG_LIST) {
+      hgp->redmo_str, hgp->global_str, hgp->local_str, p);
+     if (hgp->output_level > HG_DEBUG_LIST) {
         err = Zoltan_HG_Info(zz, hg);
         if (err != ZOLTAN_OK && err != ZOLTAN_WARN)
            return err;
@@ -211,17 +211,17 @@ char *yo = "Zoltan_HG_HPart_Lib";
      return err;
 
   /* print useful information (conditionally) */
-  if (zz->Debug_Level > ZOLTAN_DEBUG_LIST) {
-     err = Zoltan_HG_HPart_Info (zz, hg, p, part);
+  if (hgp->output_level > HG_DEBUG_LIST) {
+     err = Zoltan_HG_HPart_Info (zz, hg, p, part, hgp);
      if (err != ZOLTAN_OK && err != ZOLTAN_WARN)
         return err;
      }
-  if (zz->Debug_Level >= ZOLTAN_DEBUG_LIST)
+  if (hgp->output_level >= HG_DEBUG_LIST)
     printf("FINAL %3d |V|=%6d |E|=%6d |I|=%6d %d/%s/%s-%s p=%d cutl=%.2f\n",
      hg->info, hg->nVtx, hg->nEdge, hg->nInput, hgp->redl, hgp->redm_str,
      hgp->global_str, hgp->local_str, p, hcut_size_links(zz, hg, p, part));
 
-  if (zz->Debug_Level >= ZOLTAN_DEBUG_ALL)
+  if (hgp->output_level >= HG_DEBUG_PLOT)
      Zoltan_HG_Plot(zz->Proc, hg->nVtx, p, hg->vindex, hg->vedge, part,
       "partitioned plot");
   return err;
@@ -285,7 +285,7 @@ char *yo = "hcut_size_links";
 
 
 /* Output procedures to print the minimal and maximal values of an array */
-static int hmin_max (ZZ *zz, int P, int *q)
+static int hmin_max (ZZ *zz, int P, int *q, HGPartParams *hgp)
 { int i, values[3];
 
   if (P > 0) {
@@ -296,10 +296,10 @@ static int hmin_max (ZZ *zz, int P, int *q)
         values[0] = MIN(values[0], q[i]);
         values[1] = MAX(values[1], q[i]);
         }
-     if (zz->Debug_Level >= ZOLTAN_DEBUG_LIST)
+     if (hgp->output_level >= HG_DEBUG_LIST)
         printf("%9d    %12.2f %9d    %9d\n", values[0], (float)(values[2]) / P,
          values[1],values[2]);
-     if (zz->Debug_Level > ZOLTAN_DEBUG_LIST) {
+     if (hgp->output_level > HG_DEBUG_LIST) {
         for (i = 0; i < P; i++)
            printf ("%d ", q[i]);
         printf("\n");
@@ -310,7 +310,7 @@ static int hmin_max (ZZ *zz, int P, int *q)
 
 
 
-static float hmin_max_float (ZZ *zz, int P, float *q)
+static float hmin_max_float (ZZ *zz, int P, float *q, HGPartParams *hgp)
 { int i;
   float values[3];
 
@@ -322,10 +322,10 @@ static float hmin_max_float (ZZ *zz, int P, float *q)
         values[0] = MIN(values[0], q[i]);
         values[1] = MAX(values[1], q[i]);
         }
-     if (zz->Debug_Level >= ZOLTAN_DEBUG_LIST)
+     if (hgp->output_level >= HG_DEBUG_LIST)
         printf("%12.2f %12.2f %12.2f %12.2f\n", values[0], values[2]/P,
          values[1], values[2]);
-     if (zz->Debug_Level > ZOLTAN_DEBUG_LIST) {
+     if (hgp->output_level > HG_DEBUG_LIST) {
         for (i = 0; i < P; i++)
             printf ("%.2f ",q[i]);
          printf("\n");
@@ -337,14 +337,17 @@ static float hmin_max_float (ZZ *zz, int P, float *q)
 
 
 /* Prints important values of the partition on screen */
-int Zoltan_HG_HPart_Info (ZZ *zz, HGraph *hg, int p, Partition part)
+int Zoltan_HG_HPart_Info (
+  ZZ *zz, 
+  HGraph *hg, 
+  int p, 
+  Partition part, 
+  HGPartParams *hgp
+)
 {
 int i, *size, max_size;
 char msg[128];
 char *yo = "Zoltan_HG_HPart_Info";
-
-  if (zz->Debug_Level < ZOLTAN_DEBUG_LIST)
-     return ZOLTAN_OK;
 
   puts("---------- Partition Information (min/ave/max/tot) ----------------");
   printf ("VERTEX-based:\n");
@@ -361,7 +364,8 @@ char *yo = "Zoltan_HG_HPart_Info";
         }
      size[part[i]]++;
      }
-  printf (" Size               :"); max_size = hmin_max (zz, p, size);
+  printf (" Size               :"); 
+  max_size = hmin_max (zz, p, size, hgp);
   printf (" Balance            : %.3f\n", (float) max_size * p / hg->nVtx);
   ZOLTAN_FREE ((void **) &size);
 
@@ -376,7 +380,7 @@ char *yo = "Zoltan_HG_HPart_Info";
         tot_w += hg->vwgt[i];
         }
      printf (" Size w.            :");
-     max_size_w = hmin_max_float (zz, p, size_w);
+     max_size_w = hmin_max_float (zz, p, size_w, hgp);
      printf (" Balance w.         : %.3f\n", max_size_w * p / tot_w);
      ZOLTAN_FREE ((void**) &size_w);
      }

@@ -59,7 +59,7 @@ ZOLTAN_HG_GLOBAL_PART_FN *Zoltan_HG_Set_Global_Part_Fn(char *str)
 
 int Zoltan_HG_Global(ZZ *zz,HGraph *hg,int p,Partition part,HGPartParams *hgp)
 {
-  return hgp->global_part(zz,hg,p,part);
+  return hgp->global_part(zz,hg,p,part,hgp);
 }
 
 /****************************************************************************/
@@ -73,7 +73,14 @@ int Zoltan_HG_Global(ZZ *zz,HGraph *hg,int p,Partition part,HGPartParams *hgp)
    EBEB: This is a quick heuristic. We could alternatively use
    a more expensive but optimal algorithm, see e.g. Ali Pinar's thesis. */
 
-static int seq_part (ZZ *zz, HGraph *hg, int *order, int p, Partition part)
+static int seq_part (
+  ZZ *zz, 
+  HGraph *hg, 
+  int *order, 
+  int p, 
+  Partition part,
+  HGPartParams *hgp
+)
 {
   int i, j, number;
   double weight_sum = 0.0, part_sum = 0.0, old_sum, cutoff;
@@ -88,7 +95,7 @@ static int seq_part (ZZ *zz, HGraph *hg, int *order, int p, Partition part)
 
   number = 0; /* Assign next vertex to partition no. number */
   cutoff = weight_sum/p;  /* Cutoff for current partition */
-  if (zz->Debug_Level >= ZOLTAN_DEBUG_ALL)
+  if (hgp->output_level >= HG_DEBUG_ALL)
     printf("GLOBAL_PART weight_sum=%f, cutoff=%f\n",weight_sum, cutoff);
 
   for (i=0; i<hg->nVtx; i++)
@@ -113,7 +120,7 @@ static int seq_part (ZZ *zz, HGraph *hg, int *order, int p, Partition part)
       else
         part_sum = 0.0;
     }
-    if (zz->Debug_Level >= ZOLTAN_DEBUG_ALL)
+    if (hgp->output_level >= HG_DEBUG_ALL)
       printf("GLOBAL_PART i=%2d, part[%2d] = %2d, part_sum=%f\n",i,j,part[j],
        part_sum);
   }
@@ -125,10 +132,16 @@ static int seq_part (ZZ *zz, HGraph *hg, int *order, int p, Partition part)
 
 /* Linear partitioning. Sequence partitioning with vertices in linear order. */
 
-static int global_lin (ZZ *zz, HGraph *hg, int p, Partition part)
+static int global_lin (
+  ZZ *zz, 
+  HGraph *hg, 
+  int p, 
+  Partition part, 
+  HGPartParams *hgp
+)
 {
   /* Call sequence partitioning with no order array. */
-  return seq_part( zz, hg, NULL, p, part);
+  return seq_part( zz, hg, NULL, p, part, hgp);
 }
 
 /****************************************************************************/
@@ -138,7 +151,8 @@ static int global_ran (
   ZZ *zz,
   HGraph *hg,
   int p,
-  Partition part
+  Partition part,
+  HGPartParams *hgp
 )
 {
   int i, ierr, *order=NULL;
@@ -156,7 +170,7 @@ static int global_ran (
   Zoltan_HG_Rand_Perm_Int(order, hg->nVtx);
 
   /* Call sequence partitioning with random order array. */
-  ierr = seq_part( zz, hg, order, p, part);
+  ierr = seq_part( zz, hg, order, p, part, hgp);
 
   ZOLTAN_FREE ((void **) &order);
   return (ierr);
@@ -178,7 +192,8 @@ static int bfs_order (
   int start_vtx,	/* Start the BFS from this vertex. */
   int visit_mode,	/* Visit random (0) or heavy (1) hyperedges first? */
   int p,		/* Optional (input):  Number of partitions. */
-  Partition part	/* Optional (output): Partition array. */
+  Partition part,	/* Optional (output): Partition array. */
+  HGPartParams *hgp     /* Partitioning parameters. */
 )
 {
   int i, j, vtx, edge, bfsnumber, pnumber, nbor, next_vtx, *rank = NULL;
@@ -241,11 +256,11 @@ static int bfs_order (
       weight_sum = (double) hg->nVtx;
 
     cutoff = weight_sum/p;  /* Cutoff for current partition */
-    if (zz->Debug_Level >= ZOLTAN_DEBUG_ALL)
+    if (hgp->output_level >= HG_DEBUG_ALL)
       printf("GLOBAL_PART weight_sum=%f, cutoff=%f\n",weight_sum, cutoff);
   }
 
-  if (zz->Debug_Level >= ZOLTAN_DEBUG_ALL)
+  if (hgp->output_level >= HG_DEBUG_ALL)
     printf("Starting new BFS at vertex %d, part=%2d\n", start_vtx, p);
 
   /* Use order array as a queue. Put start_vtx in queue. */
@@ -285,7 +300,7 @@ static int bfs_order (
       old_sum = part_sum;
       part_sum += hg->vwgt?hg->vwgt[vtx]:1.0;
       part[vtx] = pnumber;
-      if (zz->Debug_Level >= ZOLTAN_DEBUG_ALL)
+      if (hgp->output_level >= HG_DEBUG_ALL)
         printf("GLOBAL_PART vtx=%2d, bfsnum=%2d, part[%2d]=%2d, part_sum=%f\n",
          vtx,bfsnumber-1,vtx,part[vtx],part_sum);
     }
@@ -297,7 +312,7 @@ static int bfs_order (
       if (part_sum-cutoff > cutoff-old_sum){
         part[vtx]++;
         part_sum = old_sum;
-        if (zz->Debug_Level >= ZOLTAN_DEBUG_ALL)
+        if (hgp->output_level >= HG_DEBUG_ALL)
           printf("GLOBAL_PART vtx=%2d, bfsnum=%2d, part[%2d]=%2d\n",
            vtx,bfsnumber-1,vtx,part[vtx]);
       }
@@ -307,7 +322,7 @@ static int bfs_order (
         part_sum = hg->vwgt?hg->vwgt[vtx]:1.0;
       else
         part_sum = 0.0;
-      if (zz->Debug_Level >= ZOLTAN_DEBUG_ALL)
+      if (hgp->output_level >= HG_DEBUG_ALL)
         printf("GLOBAL_PART initializing for partition %2d, cutoff = %f\n",
          pnumber, cutoff);
 
@@ -374,10 +389,11 @@ error:
    Random visit order for hyperedges. */
 
 static int global_bfs (
-  ZZ *zz,
-  HGraph *hg,
-  int p,
-  Partition part
+  ZZ *zz, 
+  HGraph *hg, 
+  int p, 
+  Partition part,
+  HGPartParams *hgp
 )
 {
   int i, ierr, start, *order=NULL;
@@ -392,19 +408,19 @@ static int global_bfs (
   /* Find pseudo-peripheral start vertex */
   start = Zoltan_HG_Rand()%(hg->nVtx);
   for (i=0; i<2; i++){
-    ierr = bfs_order(zz, hg, order, start, 0, 0, NULL);
+    ierr = bfs_order(zz, hg, order, start, 0, 0, NULL, hgp);
     if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN)
       goto error;
     start = order[hg->nVtx -1];
   }
 
   /* Compute BFS order */
-  ierr = bfs_order(zz, hg, order, start, 0, 0, NULL);
+  ierr = bfs_order(zz, hg, order, start, 0, 0, NULL, hgp);
   if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN)
     goto error;
 
   /* Call sequence partitioning with BFS order array. */
-  ierr = seq_part( zz, hg, order, p, part);
+  ierr = seq_part( zz, hg, order, p, part, hgp);
 
 error:
   ZOLTAN_FREE ((void **) &order);
@@ -418,10 +434,11 @@ error:
    Heavy-first visit order for hyperedges. */
 
 static int global_bfsh (
-  ZZ *zz,
-  HGraph *hg,
-  int p,
-  Partition part
+  ZZ *zz, 
+  HGraph *hg, 
+  int p, 
+  Partition part,
+  HGPartParams *hgp
 )
 {
   int i, ierr, start, *order=NULL;
@@ -436,19 +453,19 @@ static int global_bfsh (
   /* Find pseudo-peripheral start vertex */
   start = Zoltan_HG_Rand()%(hg->nVtx);
   for (i=0; i<2; i++){
-    ierr = bfs_order(zz, hg, order, start, 0, 0, NULL);
+    ierr = bfs_order(zz, hg, order, start, 0, 0, NULL, hgp);
     if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN)
       goto error;
     start = order[hg->nVtx -1];
   }
 
   /* Compute BFS order */
-  ierr = bfs_order(zz, hg, order, start, 1, 0, NULL);
+  ierr = bfs_order(zz, hg, order, start, 1, 0, NULL, hgp);
   if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN)
     goto error;
 
   /* Call sequence partitioning with BFS order array. */
-  ierr = seq_part( zz, hg, order, p, part);
+  ierr = seq_part( zz, hg, order, p, part, hgp);
 
 error:
   ZOLTAN_FREE ((void **) &order);
@@ -466,7 +483,8 @@ static int global_rbfs (
   ZZ *zz,
   HGraph *hg,
   int p,
-  Partition part
+  Partition part,
+  HGPartParams *hgp
 )
 {
   int i, start, *order;
@@ -482,14 +500,14 @@ static int global_rbfs (
   /* Find pseudo-peripheral start vertex */
   start = Zoltan_HG_Rand()%(hg->nVtx);
   for (i=0; i<2; i++){
-    ierr = bfs_order(zz, hg, order, start, 0, 0, NULL);
+    ierr = bfs_order(zz, hg, order, start, 0, 0, NULL, hgp);
     if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN)
       goto error;
     start = order[hg->nVtx -1];
   }
 
   /* Call BFS and partition with restart. */
-  ierr = bfs_order(zz, hg, order, start, 0, p, part);
+  ierr = bfs_order(zz, hg, order, start, 0, p, part, hgp);
   if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN)
     goto error;
 
@@ -510,7 +528,8 @@ static int global_rbfsh (
   ZZ *zz,
   HGraph *hg,
   int p,
-  Partition part
+  Partition part,
+  HGPartParams *hgp
 )
 {
   int i, start, *order;
@@ -526,14 +545,14 @@ static int global_rbfsh (
   /* Find pseudo-peripheral start vertex */
   start = Zoltan_HG_Rand()%(hg->nVtx);
   for (i=0; i<2; i++){
-    ierr = bfs_order(zz, hg, order, start, 0, 0, NULL);
+    ierr = bfs_order(zz, hg, order, start, 0, 0, NULL, hgp);
     if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN)
       goto error;
     start = order[hg->nVtx -1];
   }
 
   /* Call BFS and partition with restart. */
-  ierr = bfs_order(zz, hg, order, start, 1, p, part);
+  ierr = bfs_order(zz, hg, order, start, 1, p, part, hgp);
   if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN)
     goto error;
 
@@ -555,7 +574,8 @@ static int greedy_order (
   int start_vtx,	/* Start the ordering from this vertex. */
   int priority_mode,	/* Priority mode for selecting vertices */
   int p,		/* Optional (input):  Number of partitions. */
-  Partition part	/* Optional (output): Partition array. */
+  Partition part,	/* Optional (output): Partition array. */
+  HGPartParams *hgp     /* Partitioning parameters. */
 )
 {
   int i, j, vtx, edge, bfsnumber, pnumber, nbor, *rank;
@@ -636,12 +656,12 @@ static int greedy_order (
       weight_sum = (double) hg->nVtx;
 
     cutoff = weight_sum/p;  /* Cutoff for current partition */
-    if (zz->Debug_Level >= ZOLTAN_DEBUG_ALL)
+    if (hgp->output_level >= HG_DEBUG_ALL)
       printf("GLOBAL_PART weight_sum=%f, cutoff=%f\n",weight_sum,
 cutoff);
   }
 
-  if (zz->Debug_Level >= ZOLTAN_DEBUG_ALL)
+  if (hgp->output_level >= HG_DEBUG_ALL)
     printf("Starting new ordering at vertex %d, part=%2d\n", start_vtx, p);
 
   /* Initialize heap. */
@@ -680,7 +700,7 @@ rank[vtx]);
       old_sum = part_sum;
       part_sum += hg->vwgt?hg->vwgt[vtx]:1.0;
       part[vtx] = pnumber;
-      if (zz->Debug_Level >= ZOLTAN_DEBUG_ALL)
+      if (hgp->output_level >= HG_DEBUG_ALL)
         printf("GLOBAL_PART vtx=%2d, bfsnum=%2d, part[%2d]=%2d, part_sum=%f\n",
                vtx,bfsnumber-1,vtx,part[vtx],part_sum);
     }
@@ -692,7 +712,7 @@ rank[vtx]);
       if (part_sum-cutoff > cutoff-old_sum){
         part[vtx]++;
         part_sum = old_sum;
-        if (zz->Debug_Level >= ZOLTAN_DEBUG_ALL)
+        if (hgp->output_level >= HG_DEBUG_ALL)
           printf("GLOBAL_PART vtx=%2d, bfsnum=%2d, part[%2d]=%2d\n",
                vtx,bfsnumber-1,vtx,part[vtx]);
       }
@@ -706,7 +726,7 @@ rank[vtx]);
         part_sum = 0.0;
         j = Zoltan_HG_heap_peek_max(h); /* j will be the first vertex in the next part. */
       }
-      if (zz->Debug_Level >= ZOLTAN_DEBUG_ALL)
+      if (hgp->output_level >= HG_DEBUG_ALL)
         printf("GLOBAL_PART initializing for partition %2d, cutoff = %f\n",
                pnumber, cutoff);
 
@@ -807,7 +827,8 @@ static int global_greedy (
   HGraph *hg,
   int p,
   Partition part,
-  int pri_mode
+  int pri_mode,
+  HGPartParams *hgp
 )
 {
   int i, start, *order;
@@ -823,14 +844,14 @@ static int global_greedy (
   /* Find pseudo-peripheral start vertex */
   start = Zoltan_HG_Rand()%(hg->nVtx);
   for (i=0; i<2; i++){
-    ierr = bfs_order(zz, hg, order, start, 0, 0, NULL);
+    ierr = bfs_order(zz, hg, order, start, 0, 0, NULL, hgp);
     if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN)
       goto error;
     start = order[hg->nVtx -1];
   }
 
   /* Call greedy_order. */
-  ierr = greedy_order(zz, hg, order, start, pri_mode, p, part);
+  ierr = greedy_order(zz, hg, order, start, pri_mode, p, part, hgp);
   if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN)
     goto error;
 
@@ -844,29 +865,34 @@ error:
 
 /* Entry points for all the greedy methods. */
 
-static int global_gr0 (ZZ *zz, HGraph *hg, int p, Partition part)
+static int global_gr0 (ZZ *zz, HGraph *hg, int p, Partition part,
+  HGPartParams *hgp)
 {
-  return global_greedy(zz, hg, p, part, 0);
+  return global_greedy(zz, hg, p, part, 0, hgp);
 }
 
-static int global_gr1 (ZZ *zz, HGraph *hg, int p, Partition part)
+static int global_gr1 (ZZ *zz, HGraph *hg, int p, Partition part,
+  HGPartParams *hgp)
 {
-  return global_greedy(zz, hg, p, part, 1);
+  return global_greedy(zz, hg, p, part, 1, hgp);
 }
 
-static int global_gr2 (ZZ *zz, HGraph *hg, int p, Partition part)
+static int global_gr2 (ZZ *zz, HGraph *hg, int p, Partition part,
+  HGPartParams *hgp)
 {
-  return global_greedy(zz, hg, p, part, 2);
+  return global_greedy(zz, hg, p, part, 2, hgp);
 }
 
-static int global_gr3 (ZZ *zz, HGraph *hg, int p, Partition part)
+static int global_gr3 (ZZ *zz, HGraph *hg, int p, Partition part,
+  HGPartParams *hgp)
 {
-  return global_greedy(zz, hg, p, part, 3);
+  return global_greedy(zz, hg, p, part, 3, hgp);
 }
 
-static int global_gr4 (ZZ *zz, HGraph *hg, int p, Partition part)
+static int global_gr4 (ZZ *zz, HGraph *hg, int p, Partition part,
+  HGPartParams *hgp)
 {
-  return global_greedy(zz, hg, p, part, 4);
+  return global_greedy(zz, hg, p, part, 4, hgp);
 }
 
 #ifdef __cplusplus

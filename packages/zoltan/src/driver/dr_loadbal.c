@@ -61,6 +61,10 @@ ZOLTAN_NEXT_COARSE_OBJ_FN get_next_coarse_element;
 
 ZOLTAN_PARTITION_FN get_partition;
 
+ZOLTAN_HG_EDGE_LIST_FN get_hg_edge_list;
+ZOLTAN_NUM_HG_EDGES_FN get_num_hg_edges;
+ZOLTAN_NUM_HG_PINS_FN get_num_hg_pins;
+
 /*****************************************************************************/
 /*****************************************************************************/
 /*****************************************************************************/
@@ -103,83 +107,107 @@ int setup_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
    */
 
   if (Zoltan_Set_Fn(zz, ZOLTAN_NUM_OBJ_FN_TYPE, (void (*)()) get_num_elements,
-                (void *) mesh) == ZOLTAN_FATAL) {
+                    (void *) mesh) == ZOLTAN_FATAL) {
     Gen_Error(0, "fatal:  error returned from Zoltan_Set_Fn()\n");
     return 0;
   }
 
-  if (Zoltan_Set_Fn(zz, ZOLTAN_FIRST_OBJ_FN_TYPE, (void (*)()) get_first_element,
-                (void *) mesh) == ZOLTAN_FATAL) {
+  if (Zoltan_Set_Fn(zz, ZOLTAN_FIRST_OBJ_FN_TYPE,
+                    (void (*)()) get_first_element,
+                    (void *) mesh) == ZOLTAN_FATAL) {
     Gen_Error(0, "fatal:  error returned from Zoltan_Set_Fn()\n");
     return 0;
   }
 
   if (Zoltan_Set_Fn(zz, ZOLTAN_NEXT_OBJ_FN_TYPE, (void (*)()) get_next_element,
-                (void *) mesh) == ZOLTAN_FATAL) {
+                    (void *) mesh) == ZOLTAN_FATAL) {
     Gen_Error(0, "fatal:  error returned from Zoltan_Set_Fn()\n");
     return 0;
   }
 
   /* Functions for geometry based algorithms */
   if (Zoltan_Set_Fn(zz, ZOLTAN_NUM_GEOM_FN_TYPE, (void (*)()) get_num_geom,
-                (void *) mesh) == ZOLTAN_FATAL) {
+                    (void *) mesh) == ZOLTAN_FATAL) {
     Gen_Error(0, "fatal:  error returned from Zoltan_Set_Fn()\n");
     return 0;
   }
 
   if (Zoltan_Set_Fn(zz, ZOLTAN_GEOM_FN_TYPE, (void (*)()) get_geom,
-                (void *) mesh) == ZOLTAN_FATAL) {
+                    (void *) mesh) == ZOLTAN_FATAL) {
     Gen_Error(0, "fatal:  error returned from Zoltan_Set_Fn()\n");
     return 0;
   }
 
   /* Functions for graph based algorithms */
   if (Zoltan_Set_Fn(zz, ZOLTAN_NUM_EDGES_FN_TYPE, (void (*)()) get_num_edges,
-                (void *) mesh) == ZOLTAN_FATAL) {
+                    (void *) mesh) == ZOLTAN_FATAL) {
     Gen_Error(0, "fatal:  error returned from Zoltan_Set_Fn()\n");
     return 0;
   }
 
   if (Zoltan_Set_Fn(zz, ZOLTAN_EDGE_LIST_FN_TYPE, (void (*)()) get_edge_list,
-                (void *) mesh)== ZOLTAN_FATAL) {
+                    (void *) mesh)== ZOLTAN_FATAL) {
     Gen_Error(0, "fatal:  error returned from Zoltan_Set_Fn()\n");
     return 0;
   }
 
   /* Functions for tree-based algorithms */
   if (Zoltan_Set_Fn(zz, ZOLTAN_NUM_COARSE_OBJ_FN_TYPE,
-                (void (*)()) get_num_elements,
-                (void *) mesh) == ZOLTAN_FATAL) {
+                    (void (*)()) get_num_elements,
+                    (void *) mesh) == ZOLTAN_FATAL) {
     Gen_Error(0, "fatal:  error returned from Zoltan_Set_Fn()\n");
     return 0;
   }
 
   if (Zoltan_Set_Fn(zz, ZOLTAN_FIRST_COARSE_OBJ_FN_TYPE,
-                (void (*)()) get_first_coarse_element,
-                (void *) mesh) == ZOLTAN_FATAL) {
+                    (void (*)()) get_first_coarse_element,
+                    (void *) mesh) == ZOLTAN_FATAL) {
     Gen_Error(0, "fatal:  error returned from Zoltan_Set_Fn()\n");
     return 0;
   }
 
   if (Zoltan_Set_Fn(zz, ZOLTAN_NEXT_COARSE_OBJ_FN_TYPE,
-                (void (*)()) get_next_coarse_element,
-                (void *) mesh) == ZOLTAN_FATAL) {
+                    (void (*)()) get_next_coarse_element,
+                    (void *) mesh) == ZOLTAN_FATAL) {
     Gen_Error(0, "fatal:  error returned from Zoltan_Set_Fn()\n");
     return 0;
   }
 
   if (Zoltan_Set_Fn(zz, ZOLTAN_NUM_CHILD_FN_TYPE,
-                (void (*)()) get_num_child,
-                (void *) mesh) == ZOLTAN_FATAL) {
+                    (void (*)()) get_num_child,
+                    (void *) mesh) == ZOLTAN_FATAL) {
     Gen_Error(0, "fatal:  error returned from Zoltan_Set_Fn()\n");
     return 0;
   }
 
   if (Zoltan_Set_Fn(zz, ZOLTAN_CHILD_LIST_FN_TYPE,
-                (void (*)()) get_child_elements,
-                (void *) mesh) == ZOLTAN_FATAL) {
+                    (void (*)()) get_child_elements,
+                    (void *) mesh) == ZOLTAN_FATAL) {
     Gen_Error(0, "fatal:  error returned from Zoltan_Set_Fn()\n");
     return 0;
+  }
+
+  if (mesh->data_type == HYPERGRAPH) {
+    if (Zoltan_Set_Fn(zz, ZOLTAN_NUM_HG_EDGES_FN_TYPE, 
+                      (void (*)()) get_num_hg_edges,
+                      (void *) mesh) == ZOLTAN_FATAL) {
+      Gen_Error(0, "fatal:  error returned from Zoltan_Set_Fn()\n");
+      return 0;
+    }
+
+    if (Zoltan_Set_Fn(zz, ZOLTAN_NUM_HG_PINS_FN_TYPE, 
+                      (void (*)()) get_num_hg_pins,
+                      (void *) mesh) == ZOLTAN_FATAL) {
+      Gen_Error(0, "fatal:  error returned from Zoltan_Set_Fn()\n");
+      return 0;
+    }
+
+    if (Zoltan_Set_Fn(zz, ZOLTAN_HG_EDGE_LIST_FN_TYPE, 
+                      (void (*)()) get_hg_edge_list,
+                      (void *) mesh) == ZOLTAN_FATAL) {
+      Gen_Error(0, "fatal:  error returned from Zoltan_Set_Fn()\n");
+      return 0;
+    }
   }
 
   /* Functions for partitions */
@@ -789,6 +817,100 @@ int get_partition(void *data, int num_gid_entries, int num_lid_entries,
   return current_elem->my_part;
 }
 
+/*****************************************************************************/
+/*****************************************************************************/
+/*****************************************************************************/
+int get_num_hg_edges(
+  void *data, 
+  int *ierr)
+{
+  MESH_INFO_PTR mesh;
+  if (data == NULL) {
+    *ierr = ZOLTAN_FATAL;
+    return -1;
+  }
+
+  mesh = (MESH_INFO_PTR) data;
+  *ierr = ZOLTAN_OK;
+  return mesh->nhedges;
+}
+
+/*****************************************************************************/
+/*****************************************************************************/
+/*****************************************************************************/
+int get_num_hg_pins(
+  void *data, 
+  int *ierr)
+{
+  MESH_INFO_PTR mesh;
+
+  if (data == NULL) {
+    *ierr = ZOLTAN_FATAL;
+    return -1;
+  }
+
+  mesh = (MESH_INFO_PTR) data;
+
+  *ierr = ZOLTAN_OK;
+  return mesh->hindex[mesh->nhedges];
+}
+
+/*****************************************************************************/
+/*****************************************************************************/
+/*****************************************************************************/
+int get_hg_edge_list(
+  void *data, 
+  int num_gid_entries,
+  int ewgt_dim,
+  int nedges,
+  int max_size,
+  int *edge_sizes,
+  ZOLTAN_ID_PTR edge_verts,
+  int *edge_procs,
+  float *edge_weights
+)
+{
+  MESH_INFO_PTR mesh;
+  int i, j;
+  int tmp;
+  int gid = num_gid_entries-1;
+  int *hindex;
+  int Proc;
+  int ierr = ZOLTAN_OK;
+
+  MPI_Comm_rank(MPI_COMM_WORLD, &Proc);
+
+  if (data == NULL) {
+    ierr = ZOLTAN_FATAL;
+    goto End;
+  }
+
+  mesh = (MESH_INFO_PTR) data;
+  hindex = mesh->hindex;
+  if (nedges != mesh->nhedges) {
+    ierr = ZOLTAN_FATAL;
+    goto End;
+  }
+
+  for (i = 0; i < nedges; i++) {
+    tmp = hindex[i+1] - hindex[i];
+    edge_sizes[i] = tmp;
+    for (j = hindex[i]; j < hindex[i+1]; j++) {
+      edge_verts[gid + j*num_gid_entries] = mesh->hvertex[j];
+      edge_procs[j] = Proc;  /* KDD -- temporary; will have to do something
+                                KDD -- different in parallel. */
+    }
+    for (j = 0; j < ewgt_dim; j++) {
+      if (mesh->hewgt_dim >= j)
+        edge_weights[j + i*ewgt_dim] = mesh->hewgts[j + i*mesh->hewgt_dim];
+      else
+        edge_weights[j + i*ewgt_dim] = 1.0;
+    }
+  }
+
+End:
+  return ierr;
+}
 /*****************************************************************************/
 /*****************************************************************************/
 /*****************************************************************************/

@@ -43,6 +43,7 @@ void Zoltan_HG_HGraph_Init(
   hgraph->hvertex = NULL;
   hgraph->vindex  = NULL;
   hgraph->vedge   = NULL;
+  hgraph->vtxdist = NULL;
 }
 
 /*****************************************************************************/
@@ -78,8 +79,8 @@ int Zoltan_HG_HGraph_Free(
 )
 {
   if (hg)
-     Zoltan_Multifree (__FILE__, __LINE__, 7, &hg->coor, &hg->vwgt, &hg->ewgt,
-      &hg->hindex, &hg->hvertex, &hg->vindex, &hg->vedge);
+     Zoltan_Multifree (__FILE__, __LINE__, 8, &hg->coor, &hg->vwgt, &hg->ewgt,
+      &hg->hindex, &hg->hvertex, &hg->vindex, &hg->vedge, &hg->vtxdist);
 
   return ZOLTAN_OK;
 }
@@ -112,8 +113,6 @@ int Zoltan_HG_Info (
 int i, size, size_min, size_max;
 float wgt_min, wgt_max, wgt_tot;
 
-  if (zz->Debug_Level < ZOLTAN_DEBUG_LIST)
-     return ZOLTAN_OK;
 
   printf("--------- HGraph Information (min/ave/max/tot) ------------------\n");
   printf("info:%d |V|=%d |E|=%d |P|=%d \n", hg->info, hg->nVtx, hg->nEdge,
@@ -352,16 +351,17 @@ char *yo = "Zoltan_HG_Check";
            }
 
   /* starting from (hindex,hvertex), for each edge determine each associated
-   * vertex. Then for each vertex lookup associated edges using (vindex, vedge) */
+   * vertex. Then for each vertex lookup associated edges using (vindex, vedge)
+   */
   for (iedge = 0; iedge < hg->nEdge; iedge++)
      for (j = hg->hindex[iedge]; j < hg->hindex[iedge+1]; j++) {
         /* for each hyperedge get index to vertices */
         for (k=hg->vindex[hg->hvertex[j]]; k<hg->vindex[hg->hvertex[j]+1]; k++)
            /* for each vertex of current hyperedge get index to hyperedges */
-           if (hg->vedge[k] == iedge)     /* does it match with original edge? */
+           if (hg->vedge[k] == iedge)    /* does it match with original edge? */
               break;
-        if (k == hg->vindex[hg->hvertex[j]+1])   /* if no match was found then */
-           return ZOLTAN_WARN;                   /* failure, else keep on */
+        if (k == hg->vindex[hg->hvertex[j]+1])  /* if no match was found then */
+           return ZOLTAN_WARN;                  /* failure, else keep on */
         }
 
   return err;
@@ -388,7 +388,7 @@ char  *yo = "Zoltan_HG_HGraph_to_Graph";
   g->nDim = hg->nDim;
   g->VertexWeightDim = hg->VertexWeightDim;
   g->EdgeWeightDim = hg->EdgeWeightDim;
-  g->vtxdist = NULL;
+  g->vtxdist = NULL;  /* KDD May need to update vtxdist for use in parallel */
 
    /* copy coordinates */
    /* not necessary at the moment, because matching does not use them */
@@ -490,7 +490,7 @@ char  *yo = "Zoltan_HG_HGraph_to_Graph";
   g->nindex[hg->nVtx] -= empty;
   ZOLTAN_FREE ((void**) &w);
 
-/* Reallocate to the exact size */
+  /* Reallocate to the exact size */
   g->nEdge = g->nindex[g->nVtx];
 
   if (!(g->neigh = (int*) ZOLTAN_MALLOC (g->nindex[hg->nVtx] * sizeof(int)))) {
@@ -543,6 +543,15 @@ int err = ZOLTAN_OK;
   hg->nDim  = g->nDim;
   hg->VertexWeightDim = g->VertexWeightDim;
   hg->EdgeWeightDim = g->EdgeWeightDim;
+
+  /* Copy vtxdist array; it is the same for hypergraph as graph. */
+  if (g->vtxdist) {
+    if (!(hg->vtxdist = (int *) ZOLTAN_MALLOC((zz->Num_Proc+1)*sizeof(int)))) {
+      err = ZOLTAN_MEMERR;
+      goto End;
+    }
+    memcpy(hg->vtxdist, g->vtxdist, (zz->Num_Proc+1) * sizeof(int));
+  }
 
   /* Copy coordinates from graph to hypergraph */
   if (g->coor) {

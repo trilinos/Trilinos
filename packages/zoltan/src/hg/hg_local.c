@@ -40,20 +40,23 @@ ZOLTAN_HG_LOCAL_REF_FN *Zoltan_HG_Set_Local_Ref_Fn(char *str)
 
 int Zoltan_HG_Local(ZZ *zz, HGraph *hg, int p, Partition part, HGPartParams *hgp)
 {
-  return hgp->local_ref(zz, hg, p, part, hgp->bal_tol);
+  return hgp->local_ref(zz, hg, p, part, hgp, hgp->bal_tol);
 }
 
 /****************************************************************************/
 
 
 
-static int local_no (ZZ *zz,     /* Zoltan data structure */
+static int local_no (
+  ZZ *zz,     /* Zoltan data structure */
   HGraph *hg,
   int p,
   Partition part,
+  HGPartParams *hgp,
   float bal_tol
 )
-{ return ZOLTAN_OK;
+{ 
+  return ZOLTAN_OK;
 }
 
 /****************************************************************************/
@@ -150,6 +153,7 @@ static int local_fm (
   HGraph *hg,
   int p,
   Partition part,
+  HGPartParams *hgp,
   float bal_tol
 )
 {
@@ -230,7 +234,7 @@ char   *yo="local_fm";
 
      round++;
      cutsize = best_cutsize;
-     if (zz->Debug_Level > ZOLTAN_DEBUG_LIST)
+     if (hgp->output_level > HG_DEBUG_LIST)
         printf("ROUND %d:\nSTEP VERTEX  PARTS MAX_WGT CHANGE CUTSIZE\n",round);
 
      while (step < hg->nVtx && no_better_steps < hg->nVtx/4) {
@@ -267,11 +271,11 @@ char   *yo="local_fm";
             best_locked  = number_locked;
             best_cutsize = akt_cutsize;
             best_max_weight = max;
-            if (zz->Debug_Level > ZOLTAN_DEBUG_LIST)
+            if (hgp->output_level > HG_DEBUG_LIST)
                printf ("New Partition:%f\n", akt_cutsize);
             no_better_steps = 0;
             }
-        if (zz->Debug_Level > ZOLTAN_DEBUG_LIST+1)
+        if (hgp->output_level > HG_DEBUG_LIST+1)
            printf ("%4d %6d %2d->%2d %7.2f %f %f\n", step, vertex, sour, dest,
             max, akt_cutsize - cutsize, akt_cutsize);
         }

@@ -584,7 +584,8 @@ int check_inp(PROB_INFO_PTR prob, PARIO_INFO_PTR pio_info)
 /*****************************************************************************/
 /*****************************************************************************/
 /*****************************************************************************/
-void brdcst_cmd_info(int Proc, PROB_INFO_PTR prob, PARIO_INFO_PTR pio_info)
+void brdcst_cmd_info(int Proc, PROB_INFO_PTR prob, PARIO_INFO_PTR pio_info,
+                     MESH_INFO_PTR mesh)
 {
 /* local declarations */
   int ctrl_id;
@@ -621,6 +622,18 @@ void brdcst_cmd_info(int Proc, PROB_INFO_PTR prob, PARIO_INFO_PTR pio_info)
   Test_Drops             = int_params[j++];
 
   MPI_Bcast(pio_info, sizeof(PARIO_INFO), MPI_BYTE, 0, MPI_COMM_WORLD);
+
+  switch (pio_info->file_type) {
+  case CHACO_FILE:
+    mesh->data_type = GRAPH;
+    break;
+  case NEMESIS_FILE:
+    mesh->data_type = MESH;
+    break;
+  case HYPERGRAPH_FILE:
+    mesh->data_type = HYPERGRAPH;
+    break;
+  }
 
   if(pio_info->dsk_list_cnt > 0) {
     if(Proc != 0)

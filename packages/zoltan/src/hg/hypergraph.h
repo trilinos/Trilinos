@@ -31,10 +31,11 @@ extern "C" {
 typedef struct
   {
   int Proc;
+  int Num_Proc;
   int Debug_Level;
   } ZZ;
-#define ZOLTAN_DEBUG_LIST            1
-#define ZOLTAN_DEBUG_ALL             2
+#define ZOLTAN_DEBUG_LIST            8
+#define ZOLTAN_DEBUG_ALL             10
 #define ZOLTAN_TRACE_ENTER(a,b)      {}
 #define ZOLTAN_TRACE_EXIT(a,b)       {}
 #define ZOLTAN_TRACE_DETAIL(a,b,c)   {}
@@ -123,6 +124,10 @@ typedef struct {
    /* arrays to look up hyperedges given a vertex */
    int *vindex;  /* length |V|+1 index into vedge, last is |P| */
    int *vedge;   /* length |P| array containing associated hyperedges */
+
+   int *vtxdist;  /* distributions of vertices to processors, as in ParMETIS.
+                     Vertices vtxdist[n] to vtxdist[n+1]-1 are stored on
+                     processor n.   KDD:  temporary; may change later. */
    } HGraph;
 
 
@@ -156,11 +161,14 @@ int Zoltan_HG_Readfile (int, FILE*, int*, int*, int*, int**, int**, int*,
 
 /* Hypergraph Partitioning */
 /* Function types for options to hypergraph partitioning */
+struct HGPartParamsStruct;  /* Forward declaration */
 typedef int ZOLTAN_HG_MATCHING_FN   (ZZ*, HGraph*, Matching, int*);
 typedef int ZOLTAN_HG_PACKING_FN    (ZZ*, HGraph*, Packing,  int*);
 typedef int ZOLTAN_HG_GROUPING_FN   (ZZ*, HGraph*, Grouping, int*);
-typedef int ZOLTAN_HG_GLOBAL_PART_FN(ZZ*, HGraph*, int, Partition);
-typedef int ZOLTAN_HG_LOCAL_REF_FN  (ZZ*, HGraph*, int, Partition, float);
+typedef int ZOLTAN_HG_GLOBAL_PART_FN(ZZ*, HGraph*, int, Partition, 
+                                     struct HGPartParamsStruct *);
+typedef int ZOLTAN_HG_LOCAL_REF_FN  (ZZ*, HGraph*, int, Partition, 
+                                     struct HGPartParamsStruct *, float);
 
 /* Function types for edge-weight scaling functions. */
 /* Placeholder for now; if these functions end up having the same argument */
@@ -172,12 +180,12 @@ typedef int ZOLTAN_HG_GROUPING_EWS_FN (ZZ*, HGraph*);
 
 
 /* Parameters to the hypergraph functions */
-typedef struct {
-  float bal_tol;                        /*Balance tolerance in % of average */
-  int redl;                             /*Reduction limit. */
+struct HGPartParamsStruct {
+  float bal_tol;                        /* Balance tolerance in % of average */
+  int redl;                             /* Reduction limit. */
 
-  char redm_str[MAX_PARAM_STRING_LEN];  /*Reduction method string. */
-  ZOLTAN_HG_MATCHING_FN *matching;      /*Pointers to Matching, Packing and */
+  char redm_str[MAX_PARAM_STRING_LEN];  /* Reduction method string. */
+  ZOLTAN_HG_MATCHING_FN *matching;      /* Pointers to Matching, Packing and */
   ZOLTAN_HG_PACKING_FN  *packing;       /* Grouping fn specified by */
   ZOLTAN_HG_GROUPING_FN *grouping;      /* redm_str; NULL if not used */
 
@@ -188,20 +196,34 @@ typedef struct {
 
   int ews;                              /* Flag for Edge weight scaling */
 
-  char global_str[MAX_PARAM_STRING_LEN];/*Global partitioning string and */
+  char global_str[MAX_PARAM_STRING_LEN];/* Global partitioning string and */
   ZOLTAN_HG_GLOBAL_PART_FN *global_part;/* pointer to Global partitioning fn */
 
-  char local_str[MAX_PARAM_STRING_LEN]; /*Local refinement string and */
+  char local_str[MAX_PARAM_STRING_LEN]; /* Local refinement string and */
   ZOLTAN_HG_LOCAL_REF_FN *local_ref;    /* pointer to Local refinement fn */
 
   int check_graph;                      /* Flag indicating whether the input
                                            hypergraph should be checked for 
                                            errors. */
-} HGPartParams;
+  int output_level;                     /* Flag indicating amount of output
+                                           from HG algorithms.  See levels
+                                           HG_DEBUG_* below.  */
+};
+typedef struct HGPartParamsStruct HGPartParams;
+
+/*
+ * Hypergraph output levels.
+ */
+#define HG_DEBUG_NONE 0
+#define HG_DEBUG_LIST 1
+#define HG_DEBUG_ALL  2
+#define HG_DEBUG_PRINT 3
+#define HG_DEBUG_PLOT 4
+
 
 int Zoltan_HG_Set_Part_Options  (ZZ*, HGPartParams*);
 int Zoltan_HG_HPart_Lib    (ZZ*, HGraph*, int, Partition, HGPartParams*);
-int Zoltan_HG_HPart_Info   (ZZ*, HGraph*, int, Partition);
+int Zoltan_HG_HPart_Info   (ZZ*, HGraph*, int, Partition, HGPartParams*);
 float Zoltan_HG_hcut_size_total (HGraph*, Partition);
 
 /* Scale Edge Weight */

@@ -81,7 +81,8 @@ extern int check_inp(
 extern void brdcst_cmd_info(
   int Proc,
   PROB_INFO_PTR prob,
-  PARIO_INFO_PTR pio_info
+  PARIO_INFO_PTR pio_info,
+  MESH_INFO_PTR mesh
 );
 
 extern void gen_par_filename(

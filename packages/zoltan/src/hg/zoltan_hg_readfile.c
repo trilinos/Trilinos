@@ -148,6 +148,7 @@ static int old_readfile (int Proc,
 
     /* nVtx vertex weights */
     if ((code / 10) % 10 == 1) {
+       *vwgt_dim = 1;
        if (!((*vwgt) = (float*) ZOLTAN_MALLOC (*nVtx * sizeof(float)))) {
           ZOLTAN_PRINT_ERROR (Proc, yo, "Insufficient memory for vwgt.");
           err = ZOLTAN_MEMERR;
@@ -281,6 +282,7 @@ char *yo = "patoh_readfile";
 
     /* nVtx vertex weights */
     /* KDD -- shouldn't this code use dims in some way? */
+    *vwgt_dim = 1;
     if (!((*vwgt) = (float *) ZOLTAN_MALLOC (*nVtx*sizeof(float)))) {
         ZOLTAN_PRINT_ERROR (Proc, yo, "Insufficient memory for vwgt.");
         err = ZOLTAN_MEMERR;

@@ -65,6 +65,7 @@ int    base;   /* minimum vertex number in input file; usually 0 or 1. */
   hgp.bal_tol = 1.1;
   hgp.redl = 0;
   hgp.ews  = 1;
+  hgp.output_level = HG_DEBUG_LIST;
 
   strcpy(hgp.redm_str,   "grg");
   strcpy(hgp.redmo_str,  "aug2");
@@ -72,6 +73,8 @@ int    base;   /* minimum vertex number in input file; usually 0 or 1. */
   strcpy(hgp.local_str,  "fm");
 
   zz.Debug_Level = 1;
+  zz.Proc = 0;
+  zz.Num_Proc = 1;
   Zoltan_Memory_Debug(2);
 
 /* Start of the time*/
@@ -93,7 +96,8 @@ int    base;   /* minimum vertex number in input file; usually 0 or 1. */
      puts("-g      global method:    {ran,lin,bfs,rbfs,bfsh,rbfsh,");
      puts("                           (gr0),gr1,gr2,gr3,gr4}");
      puts("-l      local method:     no,(fm)");
-     puts("-d      debug level:      (1)");
+     puts("-d      HG debug level:      (1)");
+     puts("-zd     Zoltan debug level:  (1)");
      puts("default values are in brackets ():");
      return 0;
      }
@@ -108,12 +112,15 @@ int    base;   /* minimum vertex number in input file; usually 0 or 1. */
     else if(!strcmp(argv[i],"-reds")&&i+1<argc)hgp.ews=atoi(argv[++i]);
     else if(!strcmp(argv[i],"-g")   &&i+1<argc)strcpy(hgp.global_str,argv[++i]);
     else if(!strcmp(argv[i],"-l")   &&i+1<argc)strcpy(hgp.local_str,argv[++i]);
-    else if(!strcmp(argv[i],"-d")   &&i+1<argc)zz.Debug_Level=atoi(argv[++i]);
+    else if(!strcmp(argv[i],"-d")   &&i+1<argc)hgp.output_level=atoi(argv[++i]);
+    else if(!strcmp(argv[i],"-zd")  &&i+1<argc)zz.Debug_Level=atoi(argv[++i]);
     else {
        fprintf(stderr,"ERR...option '%s' not legal or without value\n",argv[i]);
        return 1;
        }
     }
+  zz.Debug_Level = ((hgp.output_level>zz.Debug_Level) ? hgp.output_level 
+                                                      : zz.Debug_Level);
   if (Zoltan_HG_Set_Part_Options(&zz, &hgp))
      return 1;
   ADD_NEW_TIME(t_rest);
@@ -121,7 +128,7 @@ int    base;   /* minimum vertex number in input file; usually 0 or 1. */
   /* load hypergraph and print its info */
   if (hg_readfile(&zz,&hg,hgraphfile,&base))
      return 1;
-  if (zz.Debug_Level > ZOLTAN_DEBUG_ALL)
+  if (hgp.output_level >= HG_DEBUG_PRINT)
      Zoltan_HG_Print(&zz, &hg);
   memory_graph = Zoltan_Memory_Usage (ZOLTAN_MEM_STAT_TOTAL);
   printf("Initial Memory: %d %d\n", memory_graph,
@@ -129,8 +136,9 @@ int    base;   /* minimum vertex number in input file; usually 0 or 1. */
   printf ("local %s, global %s, redl %d\n", hgp.local_str, hgp.global_str,
    hgp.redl);
 
-  if (Zoltan_HG_Info  (&zz, &hg))
-     return 1;
+  if (hgp.output_level >= HG_DEBUG_LIST)
+     if (Zoltan_HG_Info  (&zz, &hg))
+        return 1;
   if (Zoltan_HG_Check (&zz, &hg))
      return 1;
   ADD_NEW_TIME(t_load);
@@ -143,8 +151,9 @@ int    base;   /* minimum vertex number in input file; usually 0 or 1. */
   ADD_NEW_TIME(t_part);
 
   /* partition info */
-  if (Zoltan_HG_HPart_Info (&zz,&hg,p,part))
-     return 1;
+  if (hgp.output_level >= HG_DEBUG_LIST)
+     if (Zoltan_HG_HPart_Info (&zz,&hg,p,part,&hgp))
+        return 1;
   free(part);
 
   /* free hypergraph */

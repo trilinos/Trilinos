@@ -44,8 +44,9 @@ typedef struct Zoltan_HGraph ZHG;
 
 
 /* Prototypes */
-int Zoltan_HG_Build_Hypergraph(ZZ *, ZHG **, int);
-void Zoltan_HG_HGraph_Print   (ZZ *, ZHG *,  HGraph *);
+extern int Zoltan_HG_Build_Hypergraph(ZZ *, ZHG **, HGPartParams *);
+
+extern void Zoltan_HG_HGraph_Print(ZZ *, ZHG *,  HGraph *);
 
 
 

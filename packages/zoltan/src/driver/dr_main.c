@@ -167,7 +167,7 @@ int main(int argc, char *argv[])
   }
 
   /* broadcast the command info to all of the processor */
-  brdcst_cmd_info(Proc, &prob, &pio_info);
+  brdcst_cmd_info(Proc, &prob, &pio_info, &mesh);
 
   Zoltan_Set_Param(NULL, "DEBUG_MEMORY", "1");
 

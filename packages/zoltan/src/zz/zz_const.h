@@ -231,18 +231,6 @@ struct Zoltan_Struct {
   void *Get_Edge_List_Data;                    /* Ptr to user defined data
                                                   to be passed to
                                                   Get_Edge_List()            */
-  ZOLTAN_NUM_EDGES_FN *Get_Num_HG_Edges;       /* Fn ptr to get an object's
-                                                  number of hypergraph edges.*/
-  ZOLTAN_NUM_EDGES_FORT_FN *Get_Num_HG_Edges_Fort;/* Fortran version         */
-  void *Get_Num_HG_Edges_Data;                 /* Ptr to user defined data
-                                                  to be passed to
-                                                  Get_Num_HG_Edges()         */
-  ZOLTAN_EDGE_LIST_FN *Get_HG_Edge_List;       /* Fn ptr to get an object's
-                                                  hyper-edge list.           */
-  ZOLTAN_EDGE_LIST_FORT_FN *Get_HG_Edge_List_Fort;/* Fortran version         */
-  void *Get_HG_Edge_List_Data;                 /* Ptr to user defined data
-                                                  to be passed to
-                                                  Get_HG_Edge_List()         */
   ZOLTAN_NUM_GEOM_FN *Get_Num_Geom;            /* Fn ptr to get an object's
                                                   number of geometry values. */
   ZOLTAN_NUM_GEOM_FORT_FN *Get_Num_Geom_Fort;  /* Fortran version            */
@@ -365,6 +353,25 @@ struct Zoltan_Struct {
   void *Get_Child_Weight_Data;                 /* Ptr to user defined data
                                                   to be passed to
                                                   Get_Child_Weight()         */
+  ZOLTAN_NUM_HG_EDGES_FN *Get_Num_HG_Edges;    /* Fn ptr to get an object's
+                                                  number of hypergraph edges.*/
+  ZOLTAN_NUM_HG_EDGES_FORT_FN *Get_Num_HG_Edges_Fort;/* Fortran version      */
+  void *Get_Num_HG_Edges_Data;                 /* Ptr to user defined data
+                                                  to be passed to
+                                                  Get_Num_HG_Edges()         */
+  ZOLTAN_HG_EDGE_LIST_FN *Get_HG_Edge_List;    /* Fn ptr to get an object's
+                                                  hyper-edge list.           */
+  ZOLTAN_HG_EDGE_LIST_FORT_FN *Get_HG_Edge_List_Fort;/* Fortran version      */
+  void *Get_HG_Edge_List_Data;                 /* Ptr to user defined data
+                                                  to be passed to
+                                                  Get_HG_Edge_List()         */
+  ZOLTAN_NUM_HG_PINS_FN *Get_Num_HG_Pins;      /* Fn ptr to get the total
+                                                  # pins in local hypergraph */
+  ZOLTAN_NUM_HG_PINS_FORT_FN *Get_Num_HG_Pins_Fort; 
+                                              /* Fortran version             */
+  void *Get_Num_HG_Pins_Data;                 /* Ptr to user defined data
+                                                  to be passed to
+                                                  Get_Num_HG_Pins()          */
   ZOLTAN_OBJ_SIZE_FN *Get_Obj_Size;    /* Function that returns the size of
                                           contiguous memory needed to store
                                           the data for a single object for
