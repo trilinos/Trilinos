@@ -1081,6 +1081,13 @@ void ML_Gen_SmootherAztec(ML *ml_handle, int level, int options[],
       }
    }
 
+   /* MS add max norm 23-Aug-04 */
+   if (options_copy[AZ_precond] == AZ_Neumann ||
+       options_copy[AZ_precond] == AZ_ls ) {
+     AZ_set_MATFREE_matrix_norm(AZ_Amat,
+				ML_Operator_MaxNorm(ML_Amat,0));
+   }
+   
    if (options_copy[AZ_precond] == AZ_user_precond) {
        if (prec_function == AZ_precondition) {
           if (ml_handle->comm->ML_mypid == 0) {
