@@ -2596,3 +2596,254 @@ int ML_Operator_Eigensolver_Dense(ML_Operator* Amat,
   return(0);
 
 } /* ML_Operator_EigenSolver_Dense */
+
+/*******************************************************************************
+  ML_Operator_ReportStatistics() dumps out static, communication, and
+  performance statistics for a particular operator.  It's meant to be used in
+  conjunction with ML_Operator_Profile().
+*******************************************************************************/
+
+void ML_Operator_ReportStatistics(ML_Operator *mat, char *appendlabel)
+{
+  double t1;
+  int i,NumActiveProc, proc_active;
+  int Nglobrows,Nglobcols;
+  ML_Comm *comm = mat->comm;
+  int mypid = mat->comm->ML_mypid;
+  int maxrows,maxproc,minrows,minproc;
+  int total_rcv_leng = 0;
+  char *origlabel, *modlabel;
+  ML_CommInfoOP *c_info;
+
+  modlabel = (char *) ML_allocate(80 * sizeof(char));
+
+  if (mat->label != NULL) {
+    if (mat->invec_leng > 0 || mat->outvec_leng > 0)
+      proc_active = 1;
+    else proc_active = 0;
+      NumActiveProc = ML_gsum_int(proc_active, comm);
+
+    if (appendlabel != NULL) {
+      origlabel = mat->label;
+      sprintf(modlabel,"%s_%s",mat->label,appendlabel);
+      mat->label = modlabel;
+    }
+  }
+
+  i = mat->invec_leng; 
+  Nglobcols = ML_gsum_int(i, comm);
+  i = mat->outvec_leng; 
+  Nglobrows = ML_gsum_int(i, comm);
+
+  if  (mat->label != NULL && (NumActiveProc > 0) && mat->ntimes > 0)
+  {
+
+    /* static operator statistics */
+    if (mat->getrow->pre_comm != NULL && proc_active)
+      i = mat->getrow->pre_comm->N_neighbors;
+    else i = 0;
+    i = ML_Comm_GsumInt(comm, i);
+    if (mypid == 0) {
+       printf("===========================================\n");
+       printf("Operator %s: %d rows, %d cols, %d nnz\n",
+              mat->label,Nglobrows,Nglobcols, mat->N_nonzeros);
+       printf("Operator %s: %e avg nbrs, %d active proc.\n",
+              mat->label,((double) i)/((double) NumActiveProc), NumActiveProc);
+    }
+
+    maxrows = ML_gmax_int( mat->outvec_leng , comm);
+    maxproc = ML_gmax_int( (maxrows == mat->outvec_leng ? mypid:0), comm);
+    minrows = ML_gmin_int( (mat->outvec_leng > 0 ? mat->outvec_leng: maxrows),
+                             comm);
+    minproc = ML_gmax_int((minrows == mat->outvec_leng ? mypid:0), comm);
+    if (mypid == 0) {
+      printf("Operator %s: number of rows (max %d) \t= %d\n",
+             mat->label,maxproc,maxrows);
+      printf("Operator %s: number of rows (min %d) \t= %d\n",
+             mat->label,minproc,minrows);
+    }
+    t1 = ML_gsum_double( (proc_active ? (double) mat->outvec_leng : 0.0), comm);
+    t1 = t1/((double) NumActiveProc);
+    if (mypid == 0)
+       printf("Operator %s: number of rows (avg) \t= %e\n",mat->label,t1);
+    t1 = ML_Global_Standard_Deviation((double)mat->outvec_leng, NumActiveProc,
+                                          proc_active, mat->comm);
+    if (mypid == 0)
+       printf("Operator %s: number of rows (stdev) \t= %e\n",mat->label,t1);
+    if (mypid == 0) printf("\n");
+
+    /* communication statistics */
+    if (mat->getrow->pre_comm != NULL) {
+      c_info = mat->getrow->pre_comm;
+      total_rcv_leng = ML_CommInfoOP_Compute_TotalRcvLength(c_info);
+      maxrows = ML_gmax_int( total_rcv_leng , comm);
+      maxproc = ML_gmax_int( (maxrows == total_rcv_leng ? mypid:-1), comm);
+      minrows = ML_gmin_int( (total_rcv_leng > 0 ? total_rcv_leng: maxrows),
+                             comm);
+      minproc = ML_gmax_int((minrows == total_rcv_leng ? mypid:-1), comm);
+      if (mypid == 0) {
+        printf("Operator %s: pre_comm recv length (max %d) \t= %d\n",
+               mat->label,maxproc,maxrows);
+        printf("Operator %s: pre_comm recv length (min %d) \t= %d\n",
+               mat->label,minproc,minrows);
+      }
+      t1 = ML_gsum_double( (proc_active ? (double) total_rcv_leng : 0.0), comm);
+      t1 = t1/((double) NumActiveProc);
+      if (mypid == 0)
+        printf("Operator %s: pre_comm recv length (avg) \t= %e\n",mat->label,t1);
+      t1 = ML_Global_Standard_Deviation((double)total_rcv_leng, NumActiveProc,
+                                          proc_active, mat->comm);
+      if (mypid == 0)
+       printf("Operator %s: pre_comm recv length (stdev) \t= %e\n",mat->label,t1);
+      if (mypid == 0) printf("\n");
+
+      t1 = ML_gsum_double( (proc_active ? c_info->time : 0.0), comm);
+      t1 = t1/((double) NumActiveProc);
+      if (mypid == 0)
+         printf("Operator %s: pre_comm exchange boundary time (avg) \t= %e\n",mat->label,t1);
+      t1 = ML_gmax_double( (proc_active ? c_info->time: 0.0), comm);
+      i =ML_gmax_int((t1 == c_info->time ? mypid:0),comm);
+      if (mypid == 0)
+         printf("Operator %s: pre_comm exchange boundary time (max %d) \t= %e\n",mat->label,i,t1);
+      t1 = - c_info->time;
+      t1 = ML_gmax_double( (proc_active ? t1: -1.0e20), comm);
+      t1 = - t1;
+      i =ML_gmax_int((t1 == c_info->time ? mypid:0),comm);
+      if (mypid == 0)
+         printf("Operator %s: pre_comm exchange boundary time (min %d) \t= %e\n",mat->label,i,t1);
+      t1 = ML_Global_Standard_Deviation(c_info->time, NumActiveProc,
+                                            proc_active, comm);
+      if (mypid == 0)
+         printf("Operator %s: pre_comm exchange boundary time (stdev) \t= %e\n",mat->label,t1);
+      if (mypid == 0) printf("\n");
+    }
+
+    if (mat->getrow->post_comm != NULL) {
+      c_info = mat->getrow->post_comm;
+      total_rcv_leng = ML_CommInfoOP_Compute_TotalRcvLength(c_info);
+      maxrows = ML_gmax_int( total_rcv_leng , comm);
+      maxproc = ML_gmax_int( (maxrows == total_rcv_leng ? mypid:-1), comm);
+      minrows = ML_gmin_int( (total_rcv_leng > 0 ? total_rcv_leng: maxrows),
+                             comm);
+      minproc = ML_gmax_int((minrows == total_rcv_leng ? mypid:-1), comm);
+      if (mypid == 0) {
+        printf("Operator %s: post_comm recv length (max %d) \t= %d\n",
+               mat->label,maxproc,maxrows);
+        printf("Operator %s: post_comm recv length (min %d) \t= %d\n",
+               mat->label,minproc,minrows);
+      }
+      t1 = ML_gsum_double( (proc_active ? (double) total_rcv_leng : 0.0), comm);
+      t1 = t1/((double) NumActiveProc);
+      if (mypid == 0)
+        printf("Operator %s: post_comm recv length (avg) \t= %e\n",mat->label,t1);
+      t1 = ML_Global_Standard_Deviation((double)total_rcv_leng, NumActiveProc,
+                                          proc_active, mat->comm);
+      if (mypid == 0)
+       printf("Operator %s: post_comm recv length (stdev) \t= %e\n",mat->label,t1);
+      if (mypid == 0) printf("\n");
+      t1 = ML_gsum_double( (proc_active ? c_info->time : 0.0), comm);
+      t1 = t1/((double) NumActiveProc);
+      if (mypid == 0)
+         printf("Operator %s: post_comm exchange boundary time (avg) \t= %e\n",mat->label,t1);
+      t1 = ML_gmax_double( (proc_active ? c_info->time: 0.0), comm);
+      i =ML_gmax_int((t1 == c_info->time ? mypid:0),comm);
+      if (mypid == 0)
+         printf("Operator %s: post_comm exchange boundary time (max %d) \t= %e\n",mat->label,i,t1);
+      t1 = - c_info->time;
+      t1 = ML_gmax_double( (proc_active ? t1: -1.0e20), comm);
+      t1 = - t1;
+      i =ML_gmax_int((t1 == c_info->time ? mypid:0),comm);
+      if (mypid == 0)
+         printf("Operator %s: post_comm exchange boundary time (min %d) \t= %e\n",mat->label,i,t1);
+      t1 = ML_Global_Standard_Deviation(c_info->time, NumActiveProc,
+                                            proc_active, comm);
+      if (mypid == 0)
+         printf("Operator %s: post_comm exchange boundary time (stdev) \t= %e\n",mat->label,t1);
+      if (mypid == 0) printf("\n");
+    }
+
+    /* performance statistics */
+    if (mypid == 0)
+       printf("Operator %s: number of applies \t= %d\n",mat->label,mat->ntimes);
+    t1 = ML_gsum_double( (proc_active ? mat->apply_time : 0.0), mat->comm);
+    t1 = t1/((double) NumActiveProc);
+    if (mypid == 0)
+       printf("Operator %s: apply time (avg) \t= %e\n",mat->label,t1);
+    t1 = ML_gmax_double( (proc_active ? mat->apply_time : 0.0 ), mat->comm);
+    i =ML_gmax_int((t1 == mat->apply_time ? mypid:0),mat->comm);
+    if (mypid == 0)
+       printf("Operator %s: apply time (max %d) \t= %e\n",mat->label,i,t1);
+    t1 = - mat->apply_time;
+    t1 = ML_gmax_double( (proc_active ? t1: -1.0e20), mat->comm);
+    t1 = - t1;
+    i =ML_gmax_int((t1 == mat->apply_time ? mypid:0),mat->comm);
+    if (mypid == 0)
+       printf("Operator %s: apply time (min %d) \t= %e\n",mat->label,i,t1);
+    t1 = ML_Global_Standard_Deviation(mat->apply_time, NumActiveProc,
+                                          proc_active, mat->comm);
+    if (mypid == 0) {
+       printf("Operator %s: apply time (stdev) \t= %e\n",mat->label,t1);
+       printf("===========================================\n");
+       fflush(stdout);
+    }
+    if (appendlabel != NULL)
+      mat->label = origlabel;
+  }
+
+  ML_free(modlabel);
+}
+
+/*******************************************************************************
+  ML_Operator_Profile() profiles a particular ML_Operator.  The apply time,
+  communication time, and number of applies are saved.  All processor are
+  sync'd up, then the operator is applied to a vector N times.  The results of
+  this are reported by ML_Operator_ReportStatistics().  Finally, the old apply
+  time, communication time, and number of applies are set for the operator.
+
+  ML_Operator *A            operator to profile
+  char *appendlabel         string to append to operator's label for id purposes
+  int numits                number of applies to perform
+*******************************************************************************/
+
+void ML_Operator_Profile(ML_Operator *A, char *appendlabel, int numits)
+{
+#if defined(ML_TIMING)
+  int j, ntimes;
+  double *xvec,*bvec;
+  double apply_time, pre_time, post_time;
+
+  xvec = (double *) ML_allocate((A->invec_leng) * sizeof(double));
+  ML_random_vec(xvec, A->invec_leng, A->comm);
+  bvec = (double *) ML_allocate((A->outvec_leng) * sizeof(double));
+
+  apply_time = A->apply_time; A->apply_time = 0.0;
+  ntimes = A->ntimes; A->ntimes = 0;
+  if (A->getrow->pre_comm != NULL) {
+    pre_time = A->getrow->pre_comm->time;
+    A->getrow->pre_comm->time = 0.0;
+  }
+  if (A->getrow->post_comm != NULL) {
+    post_time = A->getrow->post_comm->time;
+    A->getrow->post_comm->time = 0.0;
+  }
+
+  MPI_Barrier(MPI_COMM_WORLD);
+  for (j=0; j<numits; j++)
+    ML_Operator_Apply(A,A->invec_leng,xvec,A->outvec_leng,bvec);
+  MPI_Barrier(MPI_COMM_WORLD);
+  ML_Operator_ReportStatistics(A,appendlabel);
+
+  A->apply_time = apply_time;
+  A->ntimes = ntimes;
+  if (A->getrow->pre_comm != NULL)
+    A->getrow->pre_comm->time = pre_time;
+  if (A->getrow->post_comm != NULL)
+    A->getrow->post_comm->time = post_time;
+
+  ML_free(xvec);
+  ML_free(bvec);
+#else
+  if (A->comm->ML_mypid == 0 && ML_Get_PrintLevel() > 0)
+    printf("ML_Operator_Profile: not compiled with -DML_TIMING\n");
+#endif
+}
