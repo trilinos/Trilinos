@@ -506,8 +506,8 @@ createGraphAndJacobian(Interface::Required& i,
   }
 
   graph->TransformToLocal();
-  graph->SortIndices();
-  graph->RemoveRedundantIndices();
+  // No-ops because graph is already sorted (maherou) graph->SortIndices();
+  // No-ops because graph is already sorted (maherou) graph->RemoveRedundantIndices();
   jacobian = new Epetra_CrsMatrix(Copy, *graph);
   jacobian->TransformToLocal();
 
