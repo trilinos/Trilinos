@@ -38,6 +38,10 @@
 #include "NOX_Direction_SteepestDescent.H"
 #include "NOX_Direction_Tensor.H"
 
+#ifdef WITH_PRERELEASE
+#include "NOX_Direction_QuasiNewton.H"
+#endif
+
 #include "NOX_Utils.H"
 #include "NOX_Parameter_List.H"
 
@@ -80,6 +84,10 @@ bool Manager::reset(Parameter::List& params)
       ptr = new SteepestDescent(params);
     else if (method == "Tensor")
       ptr = new Tensor(params);
+#ifdef WITH_PRERELEASE
+    else if (method == "Quasi-Newton")
+      ptr = new QuasiNewton(params);
+#endif
     else {
       ptr = NULL;
       if (Utils::doPrint(NOX::Utils::Warning)) {
