@@ -324,7 +324,7 @@ static int refine_fm2 (
     }
     
     
-    if (hg->nEdge == 0)
+    if (hg->nEdge == 0 || hg->nVtx == 0)
         return ZOLTAN_OK;
 
     /* find the index of the proc in column group with the most #nonzeros; it will be our root
