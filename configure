@@ -811,6 +811,21 @@ Optional Features:
   --enable-new_package    Build new_package (default is no)
   --enable-epetra         Build epetra (default is yes)
 
+
+The options listed above are specific to the Trilinos level.
+For a list of all options for all packages, type
+"configure --help=recursive".  The output for this command
+is bulky.  Consider using the "more" or "grep" command to
+find a specific option.
+
+To view a list of options for a specific package, cd to
+"Trilinos/package/package_name" (replacing "package_name"
+with the name of the package) and type "configure --help".
+
+A list of configuration options that are common to all
+Trilinos packages can be found on the web at
+"http://software.sandia.gov/Trilinos/config_options.html".
+
 Report bugs to <mheroux@cs.sandia.gov>.
 _ACEOF
 fi
@@ -2250,6 +2265,12 @@ if test "X$ac_cv_use_new_package" != "Xno"; then
 subdirs="$subdirs packages/new_package"
 
 fi
+
+# Check whether --enable- or --disable- was given.
+if test "${enable_+set}" = set; then
+  enableval="$enable_"
+
+fi;
 
 ac_config_files="$ac_config_files Makefile packages/Makefile external/Makefile"
 

@@ -178,6 +178,22 @@ if test "X$ac_cv_use_new_package" != "Xno"; then
   AC_CONFIG_SUBDIRS([packages/new_package])
 fi
 
+AC_ARG_ENABLE(,[
+
+The options listed above are specific to the Trilinos level.
+For a list of all options for all packages, type 
+"configure --help=recursive".  The output for this command
+is bulky.  Consider using the "more" or "grep" command to 
+find a specific option.
+
+To view a list of options for a specific package, cd to 
+"Trilinos/package/package_name" (replacing "package_name"
+with the name of the package) and type "configure --help".
+
+A list of configuration options that are common to all
+Trilinos packages can be found on the web at
+"http://software.sandia.gov/Trilinos/config_options.html".])
+
 AC_CONFIG_FILES([
 		Makefile
 		packages/Makefile
