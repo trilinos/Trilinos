@@ -242,12 +242,12 @@ typedef int LB_NUM_OBJ_FORT_FN(void *data, int *ierr);
  *  Function to return a list of all local objects on a processor.
  *  Input:  
  *    void *data                --  pointer to user defined data structure
- *    int wdim                  --  dimension of object weights, or 0 if
- *                                  object weights are not sought. 
  *    int num_gid_entries       --  number of array entries of type LB_ID_TYPE
  *                                  in a global ID
  *    int num_lid_entries       --  number of array entries of type LB_ID_TYPE
  *                                  in a local ID
+ *    int wdim                  --  dimension of object weights, or 0 if
+ *                                  object weights are not sought. 
  *  Output:
  *    LB_ID_PTR global_ids      --  array of Global IDs of all objects on the
  *                                  processor.
@@ -516,8 +516,8 @@ typedef int LB_OBJ_SIZE_FN(void *data, int num_gid_entries,
             int num_lid_entries, LB_ID_PTR global_id, 
             LB_ID_PTR local_id, int *ierr);
 
-typedef int LB_OBJ_SIZE_FORT_FN(void *data, int num_gid_entries,
-            int num_lid_entries, LB_ID_PTR global_id, 
+typedef int LB_OBJ_SIZE_FORT_FN(void *data, int *num_gid_entries,
+            int *num_lid_entries, LB_ID_PTR global_id, 
             LB_ID_PTR local_id, int *ierr);
 
 /*****************************************************************************/
