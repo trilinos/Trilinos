@@ -340,6 +340,8 @@ extern int ML_repartition_matrix(ML_Operator *mat, ML_Operator **new_mat,
 				 ML_Operator **permt, int num_PDE_eqns,int);
 extern int ML_repartition_Acoarse(ML *ml, int fine, int coarse, ML_Aggregate *ag,
 				  int R_is_Ptranspose);
+extern int ML_repartition_Acoarse_edge(ML *ml, ML_Operator *Told,
+               ML_Operator *Toldt, int fine, int coarse, int R_is_Ptranspose);
 
 
 
