@@ -66,6 +66,7 @@ ML_HOME = 	$(TRILINOS_HOME)/packages/ml
 # looking for header files
 
 ANASAZI_INCLUDES =    -I$(TRILINOS_HOME)/packages/anasazi/src
+BELOS_INCLUDES =      -I$(TRILINOS_HOME)/packages/belos/src
 AZTECOO_INCLUDES =    -I$(TRILINOS_HOME)/packages/aztecoo/src
 EPETRA_INCLUDES =     -I$(TRILINOS_HOME)/packages/epetra/src $(EPETRA_RTOP_INCLUDE)
 IFPACK_INCLUDES =     -I$(TRILINOS_HOME)/packages/ifpack/src
@@ -86,6 +87,7 @@ EPETRA_ESI_INCLUDES = -I$(TRILINOS_HOME)/adaptors/epetra_esi/src
 TRILINOS_LIB_PATH= $(TRILINOS_HOME)/lib/$(TRILINOS_TARGET)
 
 LIBANASAZI =    $(TRILINOS_LIB_PATH)/libanasazi.a
+LIBBELOS = 	$(TRILINOS_LIB_PATH)/libbelos.a
 LIBAZTECOO =    $(TRILINOS_LIB_PATH)/libaztecoo.a
 LIBEPETRA =     $(TRILINOS_LIB_PATH)/libepetra.a
 LIBIFPACK =     $(TRILINOS_LIB_PATH)/libifpack.a
