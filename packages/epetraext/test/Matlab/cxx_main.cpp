@@ -35,14 +35,11 @@
 #else
 #include "Epetra_SerialComm.h"
 #endif
-//#include "Trilinos_Util.h"
 #include "Epetra_Comm.h"
 #include "Epetra_Map.h"
-//#include "Epetra_Time.h"
 #include "Epetra_BlockMap.h"
 #include "Epetra_MultiVector.h"
 #include "Epetra_Vector.h"
-//#include "Epetra_Export.h"
 #include "Epetra_SerialDenseMatrix.h"
 #include "Epetra_SerialDenseVector.h"
 #include "Epetra_IntSerialDenseMatrix.h"
@@ -51,6 +48,11 @@
 #include "Epetra_CrsMatrix.h"
 
 #include "EpetraExt_MatlabEngine.h"
+
+// the following deal with matlab provided headers:
+#include "engine.h"
+#include "mex.h"
+#undef printf  // matlab has its own printf that we don't want to use
 
 #define BUFSIZE 200
 #define MATLABBUF 1024 * 16
@@ -74,7 +76,91 @@ cout << "going to setup MPI...\n";
   EpetraExt::EpetraExt_MatlabEngine engine (comm);
   cout << "matlab started\n";
   
-  ///* CrsMatrix test
+  /* GetCrsMatrix test
+  engine.EvalString("CRSM=sparse(eye(8,10))", matlabBuffer, MATLABBUF);
+  cout << matlabBuffer << endl;
+  int myM=4;
+  int M = myM * comm.NumProc();
+  int N = 10;  
+  Epetra_Map getMap (M, 0, comm);
+  Epetra_Map colMap(N, N, 0, comm);
+  Epetra_CrsMatrix getCRSM (Copy, getMap, colMap, N);
+  double colValue = 0;
+  for(int row=myM*MyPID; row < myM*(MyPID+1); row++) {
+    getCRSM.InsertGlobalValues(row, 1, &colValue, &row);
+  }
+  getCRSM.FillComplete(colMap, getMap);
+  //getCRSM.FillComplete();
+  int ierr = engine.GetCrsMatrix("CRSM", getCRSM, false);
+  if (ierr) {
+    cout << "engine.GetCrsMatrix(\"CRSM\", getCRSM, false) failed" << endl;
+  }
+  
+  cout << getCRSM << endl;
+  
+  engine.EvalString("whos", matlabBuffer, MATLABBUF);
+  cout << matlabBuffer << endl;
+  */
+  
+  /* GetIntSerialDenseMatrix test
+  engine.EvalString("ISDM=rand(8,2)*100", matlabBuffer, MATLABBUF);
+  cout << matlabBuffer << endl;
+  int procToGet = 1;
+  int M = 8;
+  int N = 2;  
+  int* A = new int[M*N];
+  Epetra_IntSerialDenseMatrix getISDM (View, A, M, M, N);
+  int ierr = engine.GetIntSerialDenseMatrix("ISDM", getISDM, procToGet);
+  if (ierr) {
+    cout << "engine.GetIntSerialDenseMatrix(\"ISDM\", getISDM, procToGet) failed" << endl;
+  }
+  
+  if (MyPID == 1) cout << getISDM << endl;
+  */
+  
+  /* GetSerialDenseMatrix test
+  engine.EvalString("SDM=rand(8,2)", matlabBuffer, MATLABBUF);
+  cout << matlabBuffer << endl;
+  int procToGet = 1;
+  int M = 8;
+  int N = 2;  
+  double* A = new double[M*N];
+  Epetra_SerialDenseMatrix getSDM (View, A, M, M, N);
+  int ierr = engine.GetSerialDenseMatrix("SDM", getSDM, procToGet);
+  if (ierr) {
+    cout << "engine.GetSerialDenseMatrix(\"SDM\", getSDM, procToGet) failed" << endl;
+  }
+  
+  if (MyPID == 1) cout << getSDM << endl;
+  */
+  
+  /* GetMultiVector test
+  if (comm.NumProc() != 2) {
+    if (MyPID == 0) cout << "Error: this test must be run with exactly two PE." << endl;
+    delete &engine;
+    #ifdef EPETRA_MPI
+    MPI_Finalize();
+    #endif
+    return(-1);
+  }
+  engine.EvalString("MV=rand(8,2)", matlabBuffer, MATLABBUF);
+  cout << matlabBuffer << endl;
+  int myM = 4;
+  int M = myM * comm.NumProc();
+  int N = 2;
+  Epetra_Map getMap (M, 0, comm);
+  double* A = new double[myM*N];
+  Epetra_MultiVector getMV (View, getMap, A, myM, N);
+  cout << "MultiVector created" << endl;
+  int ierr = engine.GetMultiVector("MV", getMV);
+  if (ierr) {
+    cout << "engine.GetMultiVector(\"MV\", getMV) failed" << endl;
+  }
+  
+  cout << getMV << endl;
+  */
+  
+  /* CrsMatrix test
   int numGlobalElements = 8;
   int numMyElements = 8/comm.NumProc();
   int M=numGlobalElements/comm.NumProc();
@@ -133,7 +219,7 @@ cout << "going to setup MPI...\n";
     return(-1);
   }
   
-  //*/
+  */
 
   /* MultiVector test
   cout << MyPID << " going to do multivector test...\n";
@@ -253,12 +339,13 @@ cout << "going to setup MPI...\n";
 
   //delete engine ;
 
-  
+  /*
   engine.EvalString("size(TEST)", matlabBuffer, MATLABBUF);
   cout << matlabBuffer << "\n";
   engine.EvalString("TEST", matlabBuffer, MATLABBUF);
   cout << matlabBuffer << "\n";
-
+  */
+  
   cout << "\n" << comm.MyPID() << " all done\n";
   
 #ifdef EPETRA_MPI
