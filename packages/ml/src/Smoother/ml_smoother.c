@@ -1115,7 +1115,7 @@ int ML_Smoother_Hiptmair(void *sm, int inlen, double x[], int outlen,
 {
   int iter, kk, Nrows, init_guess;
    ML_Operator *Tmat, *Tmat_trans, *TtATmat, *Ke_mat;
-   double *res_edge,
+   double *res_edge, *edge_update,
           *rhs_nodal, *x_nodal;
    ML_Smoother  *smooth_ptr;
    ML_Sm_Hiptmair_Data *dataptr;
@@ -1143,9 +1143,6 @@ int ML_Smoother_Hiptmair(void *sm, int inlen, double x[], int outlen,
    */
    reduced_smoother_flag = (int) dataptr->reduced_smoother;
 
-   res_edge = (double *) dataptr->res_edge;
-   rhs_nodal = (double *) dataptr->rhs_nodal;
-   x_nodal = (double *) dataptr->x_nodal;
 
    if (Ke_mat->getrow->ML_id == ML_EMPTY) 
       pr_error("Error(ML_Hiptmair): Need getrow() for Hiptmair smoother\n");
@@ -1206,11 +1203,10 @@ int ML_Smoother_Hiptmair(void *sm, int inlen, double x[], int outlen,
       }
       init_guess = ML_NONZERO;
 
-      for (kk = 0; kk < TtATmat->invec_leng; kk++) x_nodal[kk] = 0.;
-
       ML_Comm_Envelope_Increment_Tag(envelope);
    
       /* calculate initial residual */ 
+      res_edge = (double *) ML_allocate(Ke_mat->outvec_leng * sizeof(double));
       ML_Operator_Apply(Ke_mat, Ke_mat->invec_leng,
                         x, Ke_mat->outvec_leng,res_edge);
       for (kk = 0; kk < Nrows; kk++) res_edge[kk] = rhs[kk] - res_edge[kk];
@@ -1228,9 +1224,14 @@ int ML_Smoother_Hiptmair(void *sm, int inlen, double x[], int outlen,
       ****************************/
       ML_Comm_Envelope_Increment_Tag(envelope);
 
+      rhs_nodal = (double *) ML_allocate(Tmat_trans->outvec_leng *
+                                         sizeof(double));
       ML_Operator_Apply(Tmat_trans, Tmat_trans->invec_leng,
                         res_edge, Tmat_trans->outvec_leng,rhs_nodal);
+      ML_free(res_edge);
 
+      x_nodal = (double *) ML_allocate(TtATmat->invec_leng * sizeof(double));
+      for (kk = 0; kk < TtATmat->invec_leng; kk++) x_nodal[kk] = 0.;
 #ifdef ML_DEBUG_SMOOTHER
       printf("Before SGS on nodes\n");
 
@@ -1255,15 +1256,19 @@ int ML_Smoother_Hiptmair(void *sm, int inlen, double x[], int outlen,
             sqrt(ML_gdot(Tmat_trans->outvec_leng,rhs_nodal,
                  rhs_nodal,Tmat_trans->comm)));
 #endif
+     ML_free(rhs_nodal);
    
       /************************
       * Update edge solution. *
       ************************/
       ML_Comm_Envelope_Increment_Tag(envelope);
+      edge_update = (double *)ML_allocate(Ke_mat->outvec_leng * sizeof(double));
       ML_Operator_Apply(Tmat, Tmat->invec_leng,
-                        x_nodal, Tmat->outvec_leng,res_edge);
+                        x_nodal, Tmat->outvec_leng,edge_update);
+      ML_free(x_nodal);
    
-      for (kk=0; kk < Nrows; kk++) x[kk] += res_edge[kk];
+      for (kk=0; kk < Nrows; kk++) x[kk] += edge_update[kk];
+      ML_free(edge_update);
 
       if (reduced_smoother_flag)
       {
@@ -3145,9 +3150,6 @@ int ML_Smoother_Create_Hiptmair_Data(ML_Sm_Hiptmair_Data **data)
    ml_data->TtAT_diag = NULL;
    ml_data->TtATmat = NULL;
    ml_data->sm_nodal = NULL;
-   ml_data->res_edge = NULL;
-   ml_data->rhs_nodal = NULL;
-   ml_data->x_nodal = NULL;
    ml_data->max_eig = 0.0;
    ml_data->omega = 1.0;
    ml_data->output_level = 2;
@@ -3272,15 +3274,6 @@ void ML_Smoother_Destroy_Hiptmair_Data(void *data)
  
    if ( ml_data->TtATmat != NULL )
       ML_Operator_Destroy(&(ml_data->TtATmat));
-
-   if ( ml_data->res_edge != NULL )
-      ML_free(ml_data->res_edge);
-
-   if ( ml_data->rhs_nodal != NULL )
-      ML_free(ml_data->rhs_nodal);
-
-   if ( ml_data->x_nodal != NULL )
-      ML_free(ml_data->x_nodal);
 
    if ( (ml_data->sm_nodal != NULL) && (ml_data->sm_nodal->my_level != NULL) )
    {
@@ -3959,11 +3952,6 @@ void *edge_smoother, void **edge_args, void *nodal_smoother, void **nodal_args)
 
    /* Allocate some work vectors that are needed in the smoother. */
 
-   dataptr->res_edge = (double *) ML_allocate( Amat->invec_leng*sizeof(double));
-   dataptr->rhs_nodal = (double *)
-                        ML_allocate(Tmat->invec_leng * sizeof(double));
-   dataptr->x_nodal = (double *)
-                      ML_allocate(Tmat->invec_leng * sizeof(double));
    ML_memory_check("after work vectors");
 
    /*
