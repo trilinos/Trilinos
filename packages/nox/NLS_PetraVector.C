@@ -22,6 +22,7 @@ NLS_PetraVector::NLS_PetraVector(const Epetra_Vector& copyFrom, bool doCopyEntri
     petraVec = new Epetra_Vector(copyFrom.Map()); 
   }
 
+  // delete when this is deleted
   doDeletePetraVec = true;
 }
 
@@ -33,8 +34,11 @@ NLS_PetraVector::NLS_PetraVector(Epetra_Vector& pointTo)
 
 NLS_PetraVector::~NLS_PetraVector()
 {
+  // delete this if it was created by a deep copy
   if (doDeletePetraVec)
     delete petraVec;
+
+  // regardless, set the pointer to NULL
   petraVec = NULL;
 }
 
@@ -47,21 +51,24 @@ NLS_PetraVector& NLS_PetraVector::operator=(const NLS_PetraVector& copyFrom)
 {
   if (petraVec == NULL) {
     // If petraVec is empty, fill it...
-    petraVec = new Epetra_Vector(*(copyFrom.petraVec)); // deep copy
+    petraVec = new Epetra_Vector(copyFrom.getPetraVector()); // deep copy
     doDeletePetraVec = true;
   }
 
   else {
     // Otherwise, copy into existing petraVec
-    int errcode = petraVec->Update(1.0, *(copyFrom.petraVec), 0.0);
-    if (errcode != 0) 
-      cerr << "Error in NLS_Epetra_Vec::operator=!" << endl;
+    petraVec->Update(1.0, copyFrom.getPetraVector(), 0.0);
   }
   
   return *this;
 }
 
 Epetra_Vector& NLS_PetraVector::getPetraVector()
+{
+  return *petraVec;
+}
+
+const Epetra_Vector& NLS_PetraVector::getPetraVector() const
 {
   return *petraVec;
 }
@@ -79,33 +86,44 @@ NLS_Vector& NLS_PetraVector::abs(const NLS_Vector& base)
 
 NLS_Vector& NLS_PetraVector::abs(const NLS_PetraVector& base)
 {
-  petraVec->Abs(*(base.petraVec));
+  petraVec->Abs(base.getPetraVector());
   return *this;
 }
 
-NLS_Vector& NLS_PetraVector::copy(const NLS_Vector& y, double scale = 1.0) 
+NLS_Vector& NLS_PetraVector::copy(const NLS_Vector& y, double scale) 
 {
   throw;
 }
 
-NLS_Vector& NLS_PetraVector::copy(const NLS_PetraVector& y, double scale = 1.0)
+NLS_Vector& NLS_PetraVector::copy(const NLS_PetraVector& y, double scale)
 {
-  petraVec->Update(scale, *(y.petraVec), 0.0);
+  petraVec->Update(scale, y.getPetraVector(), 0.0);
   return *this;
 }
 
-NLS_Vector& NLS_PetraVector::update(double alpha, 
-			       const NLS_Vector& y, 
-			       double beta)
+NLS_Vector& NLS_PetraVector::update(const NLS_Vector& x, double alpha, 
+				    const NLS_Vector& y, double beta,
+				    double gamma)
 {
   throw;
 }
 
-NLS_Vector& NLS_PetraVector::update(double alpha, 
-				    const NLS_PetraVector& y, 
-				    double beta)
+NLS_Vector& NLS_PetraVector::update(const NLS_PetraVector& x, double alpha, 
+				    const NLS_PetraVector& y, double beta,
+				    double gamma)
 {
-  petraVec->Update(beta, *(y.petraVec), alpha);
+  petraVec->Update(alpha, x.getPetraVector(), beta, y.getPetraVector(), gamma);
+  return *this;
+}
+
+NLS_Vector& NLS_PetraVector::update(const NLS_Vector& x, const NLS_Vector& d, double step)
+{
+  throw;
+}
+
+NLS_Vector& NLS_PetraVector::update(const NLS_PetraVector& x, const NLS_PetraVector& d, double step)
+{
+  petraVec->Update(1.0, x.getPetraVector(), step, d.getPetraVector(), 0.0);
   return *this;
 }
 
@@ -117,9 +135,7 @@ NLS_Vector& NLS_PetraVector::scale(double alpha)
 
 NLS_Vector* NLS_PetraVector::newcopy() 
 {
-  NLS_PetraVector *newVec;
-  newVec = new NLS_PetraVector(*this->petraVec,true);
-  newVec->doDeletePetraVec = true;
+  NLS_PetraVector* newVec = new NLS_PetraVector(*petraVec, true);
   return newVec;
 }
 
@@ -152,7 +168,7 @@ double NLS_PetraVector::norm(const NLS_Vector& weights) const
 double NLS_PetraVector::norm(const NLS_PetraVector& weights) const
 {
   double norm;
-  petraVec->NormWeighted(*(weights.petraVec), &norm);
+  petraVec->NormWeighted(weights.getPetraVector(), &norm);
   return norm;
 }
 
@@ -164,7 +180,7 @@ double NLS_PetraVector::dot(const NLS_Vector& y) const
 double NLS_PetraVector::dot(const NLS_PetraVector& y) const
 {
   double dot;
-  petraVec->Dot(*(y.petraVec), &dot);
+  petraVec->Dot(y.getPetraVector(), &dot);
   return dot;
 }
 
