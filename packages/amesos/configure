@@ -894,7 +894,7 @@ Optional Packages:
   --with-trilinos3pldir   Set Trilinos3PL directory (default is
                           ../../../../Trilinos3PL, )
   --with-amesos-sluddir   Set SuperLU dist directory (default is
-                          ${tac_with_trilinos3pldir}/SuperLU_DIST_2.0, )
+                          ${tac_with_trilinos3pldir}/SuperLU_DIST, )
   --with-amesos-sludlib   Set SuperLU dist library (default is
                           ${tac_with_amesos_sluddir}/libsuperludist.a, )
   --with-amesos-sludincdir
@@ -5337,7 +5337,7 @@ if test "${with_amesos_sluddir+set}" = set; then
   withval="$with_amesos_sluddir"
   tac_with_amesos_sluddir=$withval
 else
-  tac_with_amesos_sluddir=${tac_with_trilinos3pldir}/SuperLU_DIST_2.0
+  tac_with_amesos_sluddir=${tac_with_trilinos3pldir}/SuperLU_DIST
 fi;
 
   as_ac_File=`echo "ac_cv_file_${tac_with_amesos_sluddir}" | $as_tr_sh`
@@ -5445,43 +5445,43 @@ fi
 echo "$as_me:$LINENO: result: `eval echo '${'$as_ac_File'}'`" >&5
 echo "${ECHO_T}`eval echo '${'$as_ac_File'}'`" >&6
 
-  echo "$as_me:$LINENO: checking for /home/kstanley/Trilinos3PL/SuperLU_DIST_2.0/SRC/supermatrix.h" >&5
-echo $ECHO_N "checking for /home/kstanley/Trilinos3PL/SuperLU_DIST_2.0/SRC/supermatrix.h... $ECHO_C" >&6
-if test "${ac_cv_file__home_kstanley_Trilinos3PL_SuperLU_DIST_2_0_SRC_supermatrix_h+set}" = set; then
+  echo "$as_me:$LINENO: checking for /home/kstanley/Trilinos3PL/SuperLU_DIST/SRC/supermatrix.h" >&5
+echo $ECHO_N "checking for /home/kstanley/Trilinos3PL/SuperLU_DIST/SRC/supermatrix.h... $ECHO_C" >&6
+if test "${ac_cv_file__home_kstanley_Trilinos3PL_SuperLU_DIST_SRC_supermatrix_h+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
   test "$cross_compiling" = yes &&
   { { echo "$as_me:$LINENO: error: cannot check for file existence when cross compiling" >&5
 echo "$as_me: error: cannot check for file existence when cross compiling" >&2;}
    { (exit 1); exit 1; }; }
-if test -r "/home/kstanley/Trilinos3PL/SuperLU_DIST_2.0/SRC/supermatrix.h"; then
-  ac_cv_file__home_kstanley_Trilinos3PL_SuperLU_DIST_2_0_SRC_supermatrix_h=yes
+if test -r "/home/kstanley/Trilinos3PL/SuperLU_DIST/SRC/supermatrix.h"; then
+  ac_cv_file__home_kstanley_Trilinos3PL_SuperLU_DIST_SRC_supermatrix_h=yes
 else
-  ac_cv_file__home_kstanley_Trilinos3PL_SuperLU_DIST_2_0_SRC_supermatrix_h=no
+  ac_cv_file__home_kstanley_Trilinos3PL_SuperLU_DIST_SRC_supermatrix_h=no
 fi
 fi
-echo "$as_me:$LINENO: result: $ac_cv_file__home_kstanley_Trilinos3PL_SuperLU_DIST_2_0_SRC_supermatrix_h" >&5
-echo "${ECHO_T}$ac_cv_file__home_kstanley_Trilinos3PL_SuperLU_DIST_2_0_SRC_supermatrix_h" >&6
+echo "$as_me:$LINENO: result: $ac_cv_file__home_kstanley_Trilinos3PL_SuperLU_DIST_SRC_supermatrix_h" >&5
+echo "${ECHO_T}$ac_cv_file__home_kstanley_Trilinos3PL_SuperLU_DIST_SRC_supermatrix_h" >&6
 
 
-  echo "$as_me:$LINENO: checking for /home/kstanley/Trilinos3PL/SuperLU_DIST_2.0/SRC/supermatrix.h" >&5
-echo $ECHO_N "checking for /home/kstanley/Trilinos3PL/SuperLU_DIST_2.0/SRC/supermatrix.h... $ECHO_C" >&6
-if test "${ac_cv_file__home_kstanley_Trilinos3PL_SuperLU_DIST_2_0_SRC_supermatrix_h+set}" = set; then
+  echo "$as_me:$LINENO: checking for /home/kstanley/Trilinos3PL/SuperLU_DIST/SRC/supermatrix.h" >&5
+echo $ECHO_N "checking for /home/kstanley/Trilinos3PL/SuperLU_DIST/SRC/supermatrix.h... $ECHO_C" >&6
+if test "${ac_cv_file__home_kstanley_Trilinos3PL_SuperLU_DIST_SRC_supermatrix_h+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
   test "$cross_compiling" = yes &&
   { { echo "$as_me:$LINENO: error: cannot check for file existence when cross compiling" >&5
 echo "$as_me: error: cannot check for file existence when cross compiling" >&2;}
    { (exit 1); exit 1; }; }
-if test -r "/home/kstanley/Trilinos3PL/SuperLU_DIST_2.0/SRC/supermatrix.h"; then
-  ac_cv_file__home_kstanley_Trilinos3PL_SuperLU_DIST_2_0_SRC_supermatrix_h=yes
+if test -r "/home/kstanley/Trilinos3PL/SuperLU_DIST/SRC/supermatrix.h"; then
+  ac_cv_file__home_kstanley_Trilinos3PL_SuperLU_DIST_SRC_supermatrix_h=yes
 else
-  ac_cv_file__home_kstanley_Trilinos3PL_SuperLU_DIST_2_0_SRC_supermatrix_h=no
+  ac_cv_file__home_kstanley_Trilinos3PL_SuperLU_DIST_SRC_supermatrix_h=no
 fi
 fi
-echo "$as_me:$LINENO: result: $ac_cv_file__home_kstanley_Trilinos3PL_SuperLU_DIST_2_0_SRC_supermatrix_h" >&5
-echo "${ECHO_T}$ac_cv_file__home_kstanley_Trilinos3PL_SuperLU_DIST_2_0_SRC_supermatrix_h" >&6
-if test $ac_cv_file__home_kstanley_Trilinos3PL_SuperLU_DIST_2_0_SRC_supermatrix_h = yes; then
+echo "$as_me:$LINENO: result: $ac_cv_file__home_kstanley_Trilinos3PL_SuperLU_DIST_SRC_supermatrix_h" >&5
+echo "${ECHO_T}$ac_cv_file__home_kstanley_Trilinos3PL_SuperLU_DIST_SRC_supermatrix_h" >&6
+if test $ac_cv_file__home_kstanley_Trilinos3PL_SuperLU_DIST_SRC_supermatrix_h = yes; then
   :
 else
   { { echo "$as_me:$LINENO: error: Cannot find supermatrix.h, specify a location using --with-amesos_sluincdir, --with-ameos_sluddir or --with-trilinos3pldir " >&5
@@ -5568,8 +5568,8 @@ if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
 else
   echo "$as_me: failed program was:" >&5
 cat conftest.$ac_ext >&5
-{ { echo "$as_me:$LINENO: error: Cannot find SuperLU Dist library, specify a location using --with-amesos-sludlib, (ex. --with-amesos-sludlib=/home/kstanley/Trilinos3PL/SuperLU_DIST_2.0/libsuperludist.a)" >&5
-echo "$as_me: error: Cannot find SuperLU Dist library, specify a location using --with-amesos-sludlib, (ex. --with-amesos-sludlib=/home/kstanley/Trilinos3PL/SuperLU_DIST_2.0/libsuperludist.a)" >&2;}
+{ { echo "$as_me:$LINENO: error: Cannot find SuperLU Dist library, specify a location using --with-amesos-sludlib, (ex. --with-amesos-sludlib=/home/kstanley/Trilinos3PL/SuperLU_DIST/libsuperludist.a)" >&5
+echo "$as_me: error: Cannot find SuperLU Dist library, specify a location using --with-amesos-sludlib, (ex. --with-amesos-sludlib=/home/kstanley/Trilinos3PL/SuperLU_DIST/libsuperludist.a)" >&2;}
    { (exit 1); exit 1; }; }
 fi
 rm -f conftest.$ac_objext conftest$ac_exeext conftest.$ac_ext

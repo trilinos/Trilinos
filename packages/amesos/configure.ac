@@ -260,7 +260,7 @@ if test "X$ac_cv_use_amesos_slud" != "Xno"; then
   AC_LANG_SAVE
   AC_LANG_C
 
-  TAC_ARG_WITH_SUB( amesos, sluddir, [Set SuperLU dist directory],  ${tac_with_trilinos3pldir}/SuperLU_DIST_2.0 )
+  TAC_ARG_WITH_SUB( amesos, sluddir, [Set SuperLU dist directory],  ${tac_with_trilinos3pldir}/SuperLU_DIST )
   AC_CHECK_FILE(${tac_with_amesos_sluddir})
 
   TAC_ARG_WITH_SUB( amesos, sludlib, [Set SuperLU dist library],  ${tac_with_amesos_sluddir}/libsuperludist.a )
@@ -276,9 +276,9 @@ if test "X$ac_cv_use_amesos_slud" != "Xno"; then
 
 
   AC_CHECK_FILE(${tac_with_amesos_sludincdir}/supermatrix.h)
-  AC_CHECK_FILE(/home/kstanley/Trilinos3PL/SuperLU_DIST_2.0/SRC/supermatrix.h)
+  AC_CHECK_FILE(/home/kstanley/Trilinos3PL/SuperLU_DIST/SRC/supermatrix.h)
 
-  AC_CHECK_FILE(/home/kstanley/Trilinos3PL/SuperLU_DIST_2.0/SRC/supermatrix.h,,
+  AC_CHECK_FILE(/home/kstanley/Trilinos3PL/SuperLU_DIST/SRC/supermatrix.h,,
     AC_MSG_ERROR([[Cannot find supermatrix.h, specify a location using --with-amesos_sluincdir, --with-ameos_sluddir or --with-trilinos3pldir]] ))
 
 
@@ -294,7 +294,7 @@ if test "X$ac_cv_use_amesos_slud" != "Xno"; then
     SAVE_LIBS="${LIBS}"
     LIBS="${tac_with_amesos_sludlib} ${LIBS}"
     AC_TRY_LINK_FUNC(SuperLU_timer_,,
-      AC_MSG_ERROR([[Cannot find SuperLU Dist library, specify a location using --with-amesos-sludlib, (ex. --with-amesos-sludlib=/home/kstanley/Trilinos3PL/SuperLU_DIST_2.0/libsuperludist.a)]]))  
+      AC_MSG_ERROR([[Cannot find SuperLU Dist library, specify a location using --with-amesos-sludlib, (ex. --with-amesos-sludlib=/home/kstanley/Trilinos3PL/SuperLU_DIST/libsuperludist.a)]]))  
     LIBS="${SAVE_LIBS}"
   AM_CONDITIONAL(HAVE_AMESOS_SLUD, true ) 
 else
