@@ -280,8 +280,9 @@ Condest(const Ifpack_CondestType CT,
   if (!IsComputed()) // cannot compute right now
     return(-1.0);
 
-  if (Condest_ == -1.0)
-    Condest_ = Ifpack_Condest(*this, CT, MaxIters, Tol, Matrix);
+  // always computes it. Call Condest() with no parameters to get
+  // the previous estimate.
+  Condest_ = Ifpack_Condest(*this, CT, MaxIters, Tol, Matrix);
 
   return(Condest_);
 }
@@ -596,112 +597,4 @@ ApplyInverseSGS(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
   return(0);
 }
 
-// SOR and SSOR will be fixed later
-#ifdef FIXME
-//==============================================================================
-int Ifpack_PointRelaxation::
-ApplyInverseSOR(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
-{
-  int NumVectors = X.NumVectors();
-
-  int Length = Matrix().MaxNumEntries();
-  vector<int> Indices(Length);
-  vector<double> Values(Length);
-
-  // one iteration of SOR is as damped Gauss-Seidel.
-  // Here I consider the general case only.
-
-  Epetra_MultiVector Xtmp(X);
-
-  for (int j = 0; j < NumSweeps_ ; j++) {
-
-    for (int i = 0 ; i < NumMyRows_ ; ++i) {
-
-      int NumEntries;
-      int col;
-      IFPACK_CHK_ERR(Matrix_->ExtractMyRowCopy(i, Length,NumEntries,
-						&Values[0], &Indices[0]));
-
-      for (int m = 0 ; m < NumVectors ; ++m) {
-
-	double dtemp = 0.0;
-	for (int k = 0 ; k < NumEntries ; ++k) {
-
-	  col = Indices[k];
-
-	  if ((col == i) || (col >= NumMyRows_)) continue;
-
-	  dtemp += Values[k] * Y[m][col];
-	}
-
-	Y[m][i] = (1 - DampingFactor()) * Y[m][i] + 
-	  DampingFactor() * ((*Diagonal_)[i]) * (Xtmp[m][i] - dtemp);
-      }
-    }
-  }
-
-  return(0);
-}
-
-//==============================================================================
-int Ifpack_PointRelaxation::
-ApplyInverseSSOR(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
-{
-
-  int NumVectors = X.NumVectors();
-  int Length = Matrix().MaxNumEntries();
-  vector<int> Indices(Length);
-  vector<double> Values(Length);
-  double w = DampingFactor_;
-
-  for (int iter = 0 ; iter < NumSweeps_ ; ++iter) {
-    
-    for (int i = 0 ; i < NumMyRows_ ; ++i) {
-
-      int NumEntries;
-      int col;
-      double diag = (*Diagonal_)[i];
-      double dtemp = 0.0;
-
-      IFPACK_CHK_ERR(Matrix_->ExtractMyRowCopy(i, Length,NumEntries,
-                                               &Values[0], &Indices[0]));
-
-      for (int m = 0 ; m < NumVectors ; ++m) {
-
-        for (int k = 0 ; k < NumEntries ; ++k) {
-
-          col = Indices[k];
-          dtemp += w * Values[k] * Y[m][col];
-        }
-
-        Y[m][i] += (w * X[m][i] - dtemp) * diag;
-      }
-    }
-
-    for (int i = NumMyRows_  - 1 ; i > -1 ; --i) {
-
-      int NumEntries;
-      int col;
-      double diag = (*Diagonal_)[i];
-      double dtemp = 0.0;
-
-      IFPACK_CHK_ERR(Matrix_->ExtractMyRowCopy(i, Length,NumEntries,
-                                               &Values[0], &Indices[0]));
-
-      for (int m = 0 ; m < NumVectors ; ++m) {
-
-        for (int k = 0 ; k < NumEntries ; ++k) {
-
-          col = Indices[k];
-          dtemp += w * Values[k] * Y[m][col];
-        }
-
-        Y[m][i] += (w * X[m][i] - dtemp) * diag;
-
-      }
-    }
-  }
-  return(0);
-}
-#endif
 #endif

@@ -220,6 +220,12 @@ public:
     return(ApplyInverseTime_);
   }
 
+  //! Returns the number of flops in the initialization phase.
+  virtual double InitializeFlops() const
+  {
+    return(0.0);
+  }
+
   //! Returns the total number of flops to computate the preconditioner.
   virtual double ComputeFlops() const
   {

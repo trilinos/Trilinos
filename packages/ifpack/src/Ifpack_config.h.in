@@ -50,6 +50,9 @@
 /* Define if want to build with aztecoo enabled */
 #undef HAVE_IFPACK_AZTECOO
 
+/* Define if want to build with epetraext enabled */
+#undef HAVE_IFPACK_EPETRAEXT
+
 /* Define if you want to build Ifpack's ParameterList interface */
 #undef HAVE_IFPACK_METIS
 

@@ -114,13 +114,13 @@ public:
   //! Returns true if the  preconditioner has been successfully computed, false otherwise.
   virtual bool IsComputed() const = 0;
 
-  //! Returns the condition number estimate, computes it if necessary.
+  //! Computes the condition number estimate, returns its value.
   virtual double Condest(const Ifpack_CondestType CT = Ifpack_Cheap,
                          const int MaxIters = 1550,
                          const double Tol = 1e-9,
 			 Epetra_RowMatrix* Matrix = 0) = 0;
 
-  //! Returns the condition number estimate, never computes it.
+  //! Returns the computed condition number estimate, or -1.0 if not computed.
   virtual double Condest() const = 0;
 
   //! Applies the preconditioner to vector X, returns the result in Y.
@@ -147,6 +147,9 @@ public:
 
   //! Returns the time spent in ApplyInverse().
   virtual double ApplyInverseTime() const = 0;
+
+  //! Returns the number of flops in the initialization phase.
+  virtual double InitializeFlops() const = 0;
 
   //! Returns the number of flops in the computation phase.
   virtual double ComputeFlops() const = 0;

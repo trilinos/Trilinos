@@ -56,8 +56,7 @@ class Ifpack_LocalFilter : public virtual Epetra_RowMatrix {
 public:
   //@{ \name Constructor.
   //! Constructor
-  Ifpack_LocalFilter(const Epetra_RowMatrix* Matrix,
-		     const double AddToDiag = 0.0);
+  Ifpack_LocalFilter(const Epetra_RowMatrix* Matrix);
 
   //@}
   //@{ \name Destructor.
@@ -365,7 +364,6 @@ private:
   bool UseTranspose_;
   //! Label for \c this object.
   char Label_[80];
-  double AddToDiag_;
   Epetra_Vector* Diagonal_;
   double NormOne_;
   double NormInf_;

@@ -246,10 +246,8 @@ void crout_ict(
     double **pdiag)
 {
     int k, j, i, index;
-    int pos;
     int count_l;
     double norm_l;
-    double norm_al;
 
     /* work arrays; work_l is list of nonzero values */
     double *work_l = new double[n];

@@ -50,7 +50,22 @@ namespace Teuchos {
 #endif
 
 //! Ifpack_ICT: A class for constructing and using an incomplete Cholesky factorization of a given Epetra_RowMatrix.
-// FIXME: role of Threshold ?? Athresh ? Rthresh??
+
+/*! The Ifpack_ICT class computes a threshold based incomplete 
+ LDL^T factorization of a given Epetra_RowMatrix.  The factorization 
+ that is produced is a function of several parameters:
+<ol>
+  <li> Maximum number of entries per row/column in factor - The factorization will contain at most this number of nonzero
+       terms in each row/column of the factorization.
+
+  <li> Diagonal perturbation - Prior to computing the factorization, it is possible to modify the diagonal entries of the matrix
+       for which the factorization will be computing.  If the absolute and relative perturbation values are zero and one,
+       respectively, the
+       factorization will be compute for the original user matrix A.  Otherwise, the factorization
+       will computed for a matrix that differs from the original user matrix in the diagonal values only. Details can be found in \ref ifp_diag_pert.
+</ol>
+
+*/    
 
 class Ifpack_ICT: public Ifpack_Preconditioner {
       
@@ -239,6 +254,12 @@ class Ifpack_ICT: public Ifpack_Preconditioner {
   virtual double ApplyInverseTime() const
   {
     return(ApplyInverseTime_);
+  }
+
+  //! Returns the number of flops in the initialization phase.
+  virtual double InitializeFlops() const
+  {
+    return(0.0);
   }
 
   virtual double ComputeFlops() const

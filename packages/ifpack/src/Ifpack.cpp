@@ -36,9 +36,12 @@ Ifpack_Preconditioner* Ifpack::Create(const string PrecType,
             Ifpack_BlockRelaxation<Ifpack_DenseContainer> >(Matrix,Overlap));
   }
 #ifdef HAVE_IFPACK_AMESOS
-  else if (PrecType == "block relaxation (Amesos)") {
+  else if (PrecType == "block relaxation (Amesos)" && Overlap) {
     return(new Ifpack_AdditiveSchwarz<
             Ifpack_BlockRelaxation<Ifpack_SparseContainer<Ifpack_Amesos> > >(Matrix,Overlap));
+  }
+  else if (PrecType == "Amesos (no AS)") {
+    return(new Ifpack_Amesos(Matrix));
   }
   else if (PrecType == "Amesos") {
     return(new Ifpack_AdditiveSchwarz<Ifpack_Amesos>(Matrix,Overlap));
@@ -52,6 +55,9 @@ Ifpack_Preconditioner* Ifpack::Create(const string PrecType,
     return(new Ifpack_AdditiveSchwarz<Ifpack_ICT>(Matrix,Overlap));
 
   } 
+  else if (PrecType == "ILU (no AS)") {
+    return(new Ifpack_AdditiveSchwarz<Ifpack_ILU>(Matrix,Overlap));
+  }
   else if (PrecType == "ILU") {
     return(new Ifpack_AdditiveSchwarz<Ifpack_ILU>(Matrix,Overlap));
   }
@@ -59,6 +65,7 @@ Ifpack_Preconditioner* Ifpack::Create(const string PrecType,
     return(new Ifpack_AdditiveSchwarz<Ifpack_ILUT>(Matrix,Overlap));
   }
   else
+    // nothing understandable
     return(0);
 
 }

@@ -27,6 +27,7 @@
 //@HEADER
 
 #include "Ifpack_ConfigDefs.h"
+#ifdef HAVE_IFPACK_TEUCHOS
 #include "Ifpack_CondestType.h"
 #include "Ifpack_ILU.h"
 #include "Epetra_ConfigDefs.h"
@@ -37,10 +38,7 @@
 #include "Epetra_MultiVector.h"
 #include "Epetra_CrsGraph.h"
 #include "Epetra_CrsMatrix.h"
-
-#ifdef HAVE_IFPACK_TEUCHOS
 #include "Teuchos_ParameterList.hpp"
-#endif
 
 //==============================================================================
 Ifpack_ILU::Ifpack_ILU(Epetra_RowMatrix* Matrix) :
@@ -99,7 +97,6 @@ Ifpack_ILU::~Ifpack_ILU()
   
 }
 
-#ifdef HAVE_IFPACK_TEUCHOS
 //==========================================================================
 int Ifpack_ILU::SetParameters(Teuchos::ParameterList& List)
 {
@@ -109,11 +106,11 @@ int Ifpack_ILU::SetParameters(Teuchos::ParameterList& List)
   LevelOfFill_ = List.get("fact: level-of-fill", LevelOfFill_);
 
   // set label
-  sprintf(Label_, "IFPACK ILU (fill=%d, relax=%f)",
-	  LevelOfFill_, RelaxValue_);
+  sprintf(Label_, "IFPACK ILU (fill=%d, relax=%f, athr=%f, rthr=%f)",
+	  LevelOfFill(), RelaxValue(), AbsoluteThreshold(), 
+	  RelativeThreshold());
   return(0);
 }
-#endif
 
 //==========================================================================
 int Ifpack_ILU::ComputeSetup() 
@@ -473,7 +470,7 @@ int Ifpack_ILU::Compute()
 //=============================================================================
 // This function finds Y such that LDU Y = X or U(trans) D L(trans) Y = X for multiple RHS
 int Ifpack_ILU::Solve(bool Trans, const Epetra_MultiVector& X, 
-			Epetra_MultiVector& Y) const 
+                      Epetra_MultiVector& Y) const 
 {
 
   //FIXME: Y, Y is correct??
@@ -541,8 +538,50 @@ double Ifpack_ILU::Condest(const Ifpack_CondestType CT,
   if (!IsComputed()) // cannot compute right now
     return(-1.0);
 
-  if (Condest_ == -1.0)
-    Condest_ = Ifpack_Condest(*this, CT, MaxIters, Tol, Matrix);
+  Condest_ = Ifpack_Condest(*this, CT, MaxIters, Tol, Matrix);
 
   return(Condest_);
 }
+
+//=============================================================================
+std::ostream&
+Ifpack_ILU::Print(std::ostream& os) const
+{
+  os << endl << "*** Ifpack_ILU : " << Label() << endl << endl;
+  os << "Level-of-fill      = " << LevelOfFill() << endl;
+  os << "Absolute threshold = " << AbsoluteThreshold() << endl;
+  os << "Relative threshold = " << RelativeThreshold() << endl;
+  os << "Relax value        = " << RelaxValue() << endl;
+//  os << "Relaxation value   = " << RelaxValue() << endl;
+  if (IsInitialized()) {
+    os << "Preconditioner has been initialized" << endl;
+  }
+  if (IsComputed()) {
+    os << "Preconditioner has been computed" << endl;
+    os << endl;
+    os << "Number of rows of L, D, U       = " << L_->NumGlobalRows() << endl;
+    os << "Number of nonzeros of L + U     = " << NumGlobalNonzeros() << endl;
+    os << "nonzeros / rows                 = " 
+       << 1.0 * NumGlobalNonzeros() / U_->NumMyRows() << endl;
+    Epetra_Vector Diagonal(U_->RowMatrixRowMap());
+    U_->ExtractDiagonalCopy(Diagonal);
+    double MinValue;
+    double MaxValue;
+    Diagonal.MinValue(&MinValue);
+    Diagonal.MaxValue(&MaxValue);
+    os << "Minimum diagonal value          = " << MinValue << endl;
+    os << "Maximum diagonal value          = " << MaxValue << endl;
+  }
+  os << endl;
+  os << "Number of initialization phases = " << NumInitialize_ << endl;
+  os << "Number of computation phases    = " << NumCompute_ << endl;
+  os << "Number of applications          = " << NumApplyInverse_ << endl;
+  os << endl;
+  os << "Total time for Initialize()     = " << InitializeTime_ << " (s)\n";
+  os << "Total time for Compute()        = " << ComputeTime_ << " (s)\n";
+  os << "Total time for ApplyInverse()   = " << ApplyInverseTime_ << " (s)\n";
+  os << endl;
+  
+  return(os);
+}
+#endif // IFPACK_TEUCHOS

@@ -16,23 +16,21 @@ class Epetra_Vector;
 class Epetra_RowMatrix;
 class Epetra_Import;
 
-//! Ifpack_PointRelaxation: a class to define point relaxation preconditioners of Ifpack_Preconditioner's.
+//! Ifpack_PointRelaxation: a class to define point relaxation preconditioners of for Epetra_RowMatrix's.
 
 /*! 
   The Ifpack_PointRelaxation class enables the construction of point
   relaxation
   preconditioners of an Epetra_RowMatrix. Ifpack_PointRelaxation 
   is derived from 
-  the Ifpack_Preconditioner class, which is derived from Epetra_Operator.
+  the Ifpack_Preconditioner class, which is itself derived from Epetra_Operator.
   Therefore this object can be used as preconditioner everywhere an
   ApplyInverse() method is required in the preconditioning step.
  
 This class enables the construction of the following simple preconditioners:
 - Jacobi;
 - Gauss-Seidel;
-- symmetric Gauss-Seidel;
-- SOR;
-- SSOR.
+- symmetric Gauss-Seidel.
 
 <P>We now briefly describe the main features of the above preconditioners.
 Consider a linear system of type
@@ -48,7 +46,7 @@ where \f$D\f$ is the diagonal of A, \f$-E\f$ is the strict lower part, and
 \f$-F\f$ is the strict upper part. It is assumed that the diagonal entries
 of \f$A\f$ are different from zero.
 
-<P>Given an starting solution \f$x_0\f$, an iteration of the Jacobi
+<P>Given an starting solution \f$x_0\f$, an iteration of the (damped) Jacobi
 method can be written in matrix form as follows:
 \f[
 x_{k+1} = \omega D^{-1}(E + F) x_k + D_{-1}b,
@@ -60,7 +58,7 @@ Using Ifpack_Jacobi, the user can apply the specified number of sweeps
 the class simply applies the inverse of the diagonal of A to the input
 vector.
 
-<P>Given an starting solution \f$x_0\f$, an iteration of the GaussSeidel
+<P>Given an starting solution \f$x_0\f$, an iteration of the (damped) GaussSeidel
 method can be written in matrix form as follows:
 \f[
 (D - E) x_{k+1} = \omega F x_k + b,
@@ -82,9 +80,12 @@ by class Ifpack_AdditiveSchwarz, which takes care of calling methods ApplyInvers
 of Ifpack_PointRelaxation with two vectors pointing to different memory
 locations.
 
+<P>The complete list of supported parameters is reported in page \ref ifp_params. For a presentation of basic relaxation schemes, please refer to page
+\ref Ifpack_PointRelaxation.
+
 \author Marzio Sala, SNL 9214.
 
-\date Last modified: Nov-04.
+\date Last modified on 22-Jan-05.
   
 */
 class Ifpack_PointRelaxation : public Ifpack_Preconditioner {
@@ -95,8 +96,8 @@ public:
   //! Ifpack_PointRelaxation constructor with given Epetra_RowMatrix.
   /*! Creates an instance of Ifpack_PointRelaxation class.
    *
-   * \param In
-   * Matrix - Pointer to matrix to precondition.
+   * \param
+   * Matrix - (In) Pointer to matrix to precondition.
    */
   Ifpack_PointRelaxation(const Epetra_RowMatrix* Matrix);
 
@@ -123,10 +124,10 @@ public:
 
   //! Applies the matrix to an Epetra_MultiVector.
   /*! 
-    \param In
-    X - A Epetra_MultiVector of dimension NumVectors to multiply with matrix.
-    \param Out
-    Y -A Epetra_MultiVector of dimension NumVectors containing the result.
+    \param 
+    X - (In) A Epetra_MultiVector of dimension NumVectors to multiply with matrix.
+    \param 
+    Y - (Out) A Epetra_MultiVector of dimension NumVectors containing the result.
 
     \return Integer error code, set to 0 if successful.
     */
@@ -134,10 +135,10 @@ public:
 
   //! Applies the preconditioner to X, returns the result in Y.
   /*! 
-    \param In
-    X - A Epetra_MultiVector of dimension NumVectors to be preconditioned.
-    \param Out
-    Y -A Epetra_MultiVector of dimension NumVectors containing result.
+    \param
+    X - (In) A Epetra_MultiVector of dimension NumVectors to be preconditioned.
+    \param
+    Y - (InOut) A Epetra_MultiVector of dimension NumVectors containing result.
 
     \return Integer error code, set to 0 if successful.
 
@@ -205,12 +206,13 @@ public:
     return(*Matrix_);
   }
 
-  //! Returns the condition number estimate.
+  //! Computes the condition number estimates and returns the value.
   virtual double Condest(const Ifpack_CondestType CT = Ifpack_Cheap,
                          const int MaxIters = 1550,
                          const double Tol = 1e-9,
 			 Epetra_RowMatrix* Matrix = 0);
 
+  //! Returns the condition number estimate, or -1.0 if not computed.
   virtual double Condest() const
   {
     return(Condest_);
@@ -219,8 +221,7 @@ public:
   //! Sets all the parameters for the preconditioner
   virtual int SetParameters(Teuchos::ParameterList& List);
 
-  //! Print object to an output stream
-  //! Print method
+  //! Prints object to an output stream
   virtual ostream& Print(ostream & os) const;
 
   //@}
@@ -263,6 +264,12 @@ public:
     return(ApplyInverseTime_);
   }
 
+  //! Returns the number of flops in the initialization phase.
+  virtual double InitializeFlops() const
+  {
+    return(0.0);
+  }
+
   //! Returns the number of flops in the computation phase.
   virtual double ComputeFlops() const
   {
@@ -293,15 +300,6 @@ private:
   virtual int ApplyInverseSGS(const Epetra_MultiVector& X, 
                               Epetra_MultiVector& Y) const;
 
-#ifdef FIXME
-  //! Applies the Jacobi preconditioner to X, returns the result in Y.
-  virtual int ApplyInverseSOR(const Epetra_MultiVector& X, 
-                              Epetra_MultiVector& Y) const;
-
-  //! Applies the Jacobi preconditioner to X, returns the result in Y.
-  virtual int ApplyInverseSSOR(const Epetra_MultiVector& X, 
-                               Epetra_MultiVector& Y) const;
-#endif
   //@}
 
 private:

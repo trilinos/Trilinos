@@ -28,6 +28,7 @@
 */
 
 #include "Ifpack_ConfigDefs.h"
+#ifdef HAVE_IFPACK_TEUCHOS
 #include "Ifpack_Preconditioner.h"
 #include "Ifpack_ILUT.h"
 #include "Ifpack_Condest.h"
@@ -38,10 +39,7 @@
 #include "Epetra_Vector.h"
 #include "Epetra_MultiVector.h"
 #include "Epetra_Util.h"
-
-#ifdef HAVE_IFPACK_TEUCHOS
 #include "Teuchos_ParameterList.hpp"
-#endif
 #include <functional>
 
 //==============================================================================
@@ -52,6 +50,7 @@ Ifpack_ILUT::Ifpack_ILUT(const Epetra_RowMatrix* A) :
   L_(0),
   U_(0),
   Condest_(-1.0),
+  Relax_(0.),
   Athresh_(0.0),
   Rthresh_(0.0),
   LevelOfFill_(1.0),
@@ -66,32 +65,7 @@ Ifpack_ILUT::Ifpack_ILUT(const Epetra_RowMatrix* A) :
   ComputeTime_(0.0),
   ApplyInverseTime_(0.0),
   Time_(Comm())
-{
-}
-
-//==============================================================================
-Ifpack_ILUT::Ifpack_ILUT(const Ifpack_ILUT& rhs) :
-  A_(rhs.Matrix()),
-  Comm_(Comm()),
-  L_(0),
-  U_(0),
-  Condest_(rhs.Condest()),
-  Athresh_(rhs.AbsoluteThreshold()),
-  Rthresh_(rhs.RelativeThreshold()),
-  LevelOfFill_(rhs.LevelOfFill()),
-  IsInitialized_(rhs.IsInitialized()),
-  IsComputed_(rhs.IsComputed()),
-  NumInitialize_(rhs.NumInitialize()),
-  NumCompute_(rhs.NumCompute()),
-  NumApplyInverse_(rhs.NumApplyInverse()),
-  InitializeTime_(rhs.InitializeTime()),
-  ComputeTime_(rhs.ComputeTime()),
-  ApplyInverseTime_(rhs.ApplyInverseTime()),
-  Time_(Comm())
-{
-  L_ = new Epetra_CrsMatrix(rhs.L());
-  U_ = new Epetra_CrsMatrix(rhs.U());
-}
+{ }
 
 //==============================================================================
 Ifpack_ILUT::~Ifpack_ILUT()
@@ -107,7 +81,6 @@ Ifpack_ILUT::~Ifpack_ILUT()
   IsComputed_ = false;
 }
 
-#ifdef HAVE_IFPACK_TEUCHOS
 //==========================================================================
 int Ifpack_ILUT::SetParameters(Teuchos::ParameterList& List)
 {
@@ -118,14 +91,14 @@ int Ifpack_ILUT::SetParameters(Teuchos::ParameterList& List)
 
   Athresh_ = List.get("fact: absolute threshold", Athresh_);
   Rthresh_ = List.get("fact: relative threshold", Rthresh_);
+  Relax_ = List.get("fact: relax value", Relax_);
 
   // set label
-  sprintf(Label_, "IFPACK ILUT (fill=%f, athr=%f, rthr=%f)",
-	  LevelOfFill(), AbsoluteThreshold(), 
+  sprintf(Label_, "IFPACK ILUT (fill=%f, relax=%f, athr=%f, rthr=%f)",
+	  LevelOfFill(), RelaxValue(), AbsoluteThreshold(), 
 	  RelativeThreshold());
   return(0);
 }
-#endif
 
 //==========================================================================
 int Ifpack_ILUT::Initialize()
@@ -209,9 +182,9 @@ int Ifpack_ILUT::Compute() {
     UV[i].resize((int)(LevelOfFill() * (U_size[i] + 1)));
 
     int L_count = 0;
-    int U_count = 0;
+    int U_count = 0; 
 
-    // zero diagonal is always the first of U
+    // diagonal element is always the first of U
     UI[i][U_count] = i;
     UV[i][U_count] = 0.0;
     ++U_count;
@@ -224,15 +197,15 @@ int Ifpack_ILUT::Compute() {
         LV[i][L_count] = RowValues[j];
         ++L_count;
       }
-      else {
-        if (col == i) {
+      else if (col == i) {
           UV[i][0] = RowValues[j];
-        }
-        else {
-          UI[i][U_count] = col;
-          UV[i][U_count] = RowValues[j];
-          ++U_count;
-        }
+      }
+      else if (col < NumMyRows_) {
+        UI[i][U_count] = col;
+        double v = RowValues[j];
+        // change the diagonal value, following SetParameters()
+        UV[i][U_count] = Rthresh_ * v + EPETRA_SGN(v) * Athresh_;
+        ++U_count;
       }
     }
   }
@@ -269,6 +242,8 @@ int Ifpack_ILUT::Compute() {
   // cycle over all rows 
   for (int i = 1 ; i < NumMyRows_ ; ++i) {
 
+    double dropped_values = 0.0;
+
     // populate tmp with nonzeros of this row
     for (int j = 0 ; j < (int)L_size[i] ; ++j) {
       tmp[LI[i][j]] = LV[i][j];
@@ -284,17 +259,19 @@ int Ifpack_ILUT::Compute() {
       first = i;
 
     double diag = UV[i][0];
-    double drop = 1e-4 * diag;
+    double drop = 0.0 * diag; // FIXME
 
     for (int k = first ; k < i ; ++k) {
 
       if (tmp[k] == 0.0)
         continue;
 
+#if 0
       if (IFPACK_ABS(tmp[k]) < drop) {
         tmp[k] = 0.0;
         continue;
       }
+#endif
 
       tmp[k] /= UV[k][0];
 
@@ -309,8 +286,6 @@ int Ifpack_ILUT::Compute() {
     }
 
     // track diagonal element and insert it
-    if (tmp[i] < 1-9)
-      tmp[i] = 1.0; // FIXME
     UV[i][0] = tmp[i];
     double abs_diag = IFPACK_ABS(UV[i][0]);
     tmp[i] = 0.0;
@@ -324,24 +299,26 @@ int Ifpack_ILUT::Compute() {
     int u_count = 0;
     for (int j = 0 ; j < i ; ++j) {
       double val = IFPACK_ABS(tmp[j]);
-      if (val <= this_l_cutoff || val <= drop) {
+      if (val < this_l_cutoff || val < drop) {
+        dropped_values += tmp[j];
         tmp[j] = 0.0;
-        continue;
+      } else {
+        // store in l pointer
+        l_atmp[l_count] = val;
+        l_index[l_count] = j;
+        ++l_count;
       }
-      // store in l pointer
-      l_atmp[l_count] = val;
-      l_index[l_count] = j;
-      ++l_count;
     }
     for (int j = i + 1 ; j < NumMyRows_ ; ++j) {
       double val = IFPACK_ABS(tmp[j]);
       if (val <= this_u_cutoff || val <= drop) {
+        dropped_values += tmp[j];
         tmp[j] = 0.0;
-        continue;
+      } else {
+        u_atmp[u_count] = val;
+        u_index[u_count] = j;
+        ++u_count;
       }
-      u_atmp[u_count] = val;
-      u_index[u_count] = j;
-      ++u_count;
     }
 
     int l_LOF = (int)(LevelOfFill() * L_size[i]);
@@ -369,6 +346,8 @@ int Ifpack_ILUT::Compute() {
         LV[i][L_count] = tmp[col];
         ++L_count;
       }
+      else
+        dropped_values += tmp[col];
       tmp[col] = 0.0;
     }
     for (int kk = 0 ; kk < u_count ; ++kk) {
@@ -379,9 +358,14 @@ int Ifpack_ILUT::Compute() {
         UV[i][U_count] = tmp[col];
         ++U_count;
       }
+      else
+        dropped_values += tmp[col];
       tmp[col] = 0.0;
     }
 
+    // relaxing dropped elements
+    UV[i][0] += Relax_ * dropped_values;
+    
     // reset the number in processed row
     L_size[i] = L_count;
     U_size[i] = U_count;
@@ -446,7 +430,7 @@ int Ifpack_ILUT::Compute() {
   return(0);
 
 }
-
+  
 //=============================================================================
 int Ifpack_ILUT::ApplyInverse(const Epetra_MultiVector& X, 
 			     Epetra_MultiVector& Y) const
@@ -517,6 +501,7 @@ Ifpack_ILUT::Print(std::ostream& os) const
   os << "Level-of-fill      = " << LevelOfFill() << endl;
   os << "Absolute threshold = " << AbsoluteThreshold() << endl;
   os << "Relative threshold = " << RelativeThreshold() << endl;
+  os << "Relax value        = " << RelaxValue() << endl;
 //  os << "Relaxation value   = " << RelaxValue() << endl;
   if (IsInitialized()) {
     os << "Preconditioner has been initialized" << endl;
@@ -524,7 +509,7 @@ Ifpack_ILUT::Print(std::ostream& os) const
   if (IsComputed()) {
     os << "Preconditioner has been computed" << endl;
     os << endl;
-    os << "Number of rows of L + U         = " << L_->NumMyRows() << endl;
+    os << "Number of rows of L, U          = " << L_->NumMyRows() << endl;
     os << "Number of nonzeros of L + U     = " << NumGlobalNonzeros() << endl;
     os << "nonzeros / rows                 = " 
        << 1.0 * NumGlobalNonzeros() / U_->NumMyRows() << endl;
@@ -549,3 +534,4 @@ Ifpack_ILUT::Print(std::ostream& os) const
   
   return(os);
 }
+#endif // HAVE_IFPACK_TEUCHOS

@@ -157,7 +157,7 @@ public:
     IFPACK_CHK_ERR(-1); // FIXME: can I work with the transpose?
   }
 
-  virtual const char * Label() const;
+  virtual const char* Label() const;
  
   //! Returns the current UseTranspose setting.
   virtual bool UseTranspose() const
@@ -262,6 +262,12 @@ public:
   virtual double ApplyInverseTime() const
   {
     return(ApplyInverseTime_);
+  }
+
+  //! Returns the number of flops in the initialization phase.
+  virtual double InitializeFlops() const
+  {
+    return(0.0);
   }
 
   virtual double ComputeFlops() const

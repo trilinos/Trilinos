@@ -34,8 +34,6 @@ int Ifpack_GreedyPartitioner::ComputePartitions()
     Partition_[i] = -1;
   }
 
-  int MaxNnzPerRow = MaxNumEntries();
-
   int CrsNumEntries;
 
   int CurrentPart = 0;

@@ -58,34 +58,8 @@ namespace Teuchos {
        for which the factorization will be computing.  If the absolute and relative perturbation values are zero and one,
        respectively, the
        factorization will be compute for the original user matrix A.  Otherwise, the factorization
-       will computed for a matrix that differs from the original user matrix in the diagonal values only.  Below we discuss
-       the details of diagonal perturbations.
-       The absolute and relative threshold values are set by calling SetAbsoluteThreshold() and SetRelativeThreshold(), 
-       respectively.
+       will computed for a matrix that differs from the original user matrix in the diagonal values only. Details can be found in \ref ifp_diag_pert.
 </ol>
-
-<b>\e A \e priori Diagonal Perturbations</b>
-
-Given the above method to estimate the conditioning of the incomplete factors,
-if we detect that our factorization is too ill-conditioned
-we can improve the conditioning by perturbing the matrix diagonal and
-restarting the factorization using
-this more diagonally dominant matrix.  In order to apply perturbation,
-prior to starting
-the factorization, we compute a diagonal perturbation of our matrix
-\f$A\f$ and perform the factorization on this perturbed
-matrix.  The overhead cost of perturbing the diagonal is minimal since
-the first step in computing the incomplete factors is to copy the
-matrix \f$A\f$ into the memory space for the incomplete factors.  We
-simply compute the perturbed diagonal at this point. 
-
-The actual perturbation values we use are the diagonal values \f$(d_1, d_2, \ldots, d_n)\f$
-with \f$d_i = sgn(d_i)\alpha + d_i\rho\f$, \f$i=1, 2, \ldots, n\f$, where
-\f$n\f$ is the matrix dimension and \f$sgn(d_i)\f$ returns
-the sign of the diagonal entry.  This has the effect of
-forcing the diagonal values to have minimal magnitude of \f$\alpha\f$ and
-to increase each by an amount proportional to \f$\rho\f$, and still keep
-the sign of the original diagonal entry.
 
 */    
 
@@ -310,6 +284,12 @@ class Ifpack_IC: public Ifpack_Preconditioner {
   virtual double ApplyInverseTime() const
   {
     return(ApplyInverseTime_);
+  }
+
+  //! Returns the number of flops in the initialization phase.
+  virtual double InitializeFlops() const
+  {
+    return(0.0);
   }
 
   virtual double ComputeFlops() const

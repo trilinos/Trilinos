@@ -8,15 +8,13 @@
 #include "Ifpack_LocalFilter.h"
 
 //==============================================================================
-Ifpack_LocalFilter::Ifpack_LocalFilter(const Epetra_RowMatrix* Matrix,
-				       const double AddToDiag) :
+Ifpack_LocalFilter::Ifpack_LocalFilter(const Epetra_RowMatrix* Matrix) :
   Matrix_(Matrix),
   Map_(0),
   NumRows_(0),
   NumNonzeros_(0),
   MaxNumEntries_(0),
   MaxNumEntriesA_(0),
-  AddToDiag_(AddToDiag),
   Diagonal_(0)
 {
   sprintf(Label_,"Ifpack_LocalFilter");
@@ -38,8 +36,7 @@ Ifpack_LocalFilter::Ifpack_LocalFilter(const Epetra_RowMatrix* Matrix,
   // and always with the diagonal entry)
   NumEntries_.resize(NumRows_);
 
-  // want to store the diagonal vector (diagonal elements
-  // are augmented by AddToDiag_)
+  // want to store the diagonal vector. FIXME: am I really useful?
   Diagonal_ = new Epetra_Vector(*Map_);
   assert (Diagonal_ != 0);
   
@@ -72,7 +69,7 @@ Ifpack_LocalFilter::Ifpack_LocalFilter(const Epetra_RowMatrix* Matrix,
     
     NumEntries_[i] = 0;
     int Nnz;
-    ExtractMyRowCopy(i,MaxNumEntries_,Nnz,&Val[0],&Ind[0]);
+    assert (ExtractMyRowCopy(i,MaxNumEntries_,Nnz,&Val[0],&Ind[0]) == 0);
 
     if (Nnz > ActualMaxNumEntries)
       ActualMaxNumEntries = Nnz;
@@ -121,29 +118,16 @@ ExtractMyRowCopy(int MyRow, int Length, int & NumEntries,
 
   // populate the user's vectors, add diagonal if not found
   NumEntries = 0;
-  bool FoundDiag = false;
 
   for (int j = 0 ; j < Nnz ; ++j) {
     // only local indices
     if (Indices_[j] < NumRows_ ) {
       Indices[NumEntries] = Indices_[j];
       Values[NumEntries] = Values_[j];
-      // diagonal found, add AddToDiag_
-      if (Indices_[j] == MyRow) {
-	FoundDiag = true;
-	Values[NumEntries] += AddToDiag_;
-      }
       ++NumEntries;
     }
   }
     
-  // need to add the diagonal value, not found before
-  if (FoundDiag == false) {
-    Values[NumEntries] = AddToDiag_;
-    Indices[NumEntries] = MyRow;
-    ++NumEntries;
-  }
-
   return(0);
 
 }
@@ -175,8 +159,9 @@ int Ifpack_LocalFilter::Apply(const Epetra_MultiVector& X,
   for (int i = 0 ; i < NumRows_ ; ++i) {
     
     int Nnz;
-    Matrix_->ExtractMyRowCopy(i,MaxNumEntries_,Nnz,&Values_[0],
-			      &Indices_[0]);
+    int ierr = Matrix_->ExtractMyRowCopy(i,MaxNumEntriesA_,Nnz,&Values_[0],
+                                         &Indices_[0]);
+    IFPACK_CHK_ERR(ierr);
 
     for (int j = 0 ; j < Nnz ; ++j) {
       if (Indices_[j] < NumRows_ ) {
