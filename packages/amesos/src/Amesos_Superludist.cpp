@@ -465,6 +465,8 @@ int Amesos_Superludist::Factor( ) {
 
   if( debug_ == 1 ) cout << "Entering `Factor()' ..." << endl;
   
+  Time_->ResetStartTime();
+
   //
   //  For now, if you change the shape of a matrix, you need to 
   //  create a new Amesos instance.
@@ -496,6 +498,10 @@ int Amesos_Superludist::Factor( ) {
 
     SuperluMat_ = RowMatrixA_ ;
   }
+
+  MatTime_ += Time_->ElapsedTime();
+
+  Time_->ResetStartTime();
 
   //
   //  Extract Ai_, Ap_ and Aval_ from SuperluMat_
@@ -574,8 +580,10 @@ int Amesos_Superludist::Factor( ) {
     }
   }
 
+  ConTime_ += Time_->ElapsedTime();
+
   Time_->ResetStartTime();
-  
+
   //
   //  Only those processes in the grid participate from here on
   //
@@ -668,8 +676,8 @@ int Amesos_Superludist::Factor( ) {
     PStatFree(&stat);
   }
 
-  SolTime_ += Time_->ElapsedTime();
-  
+  NumTime_ += Time_->ElapsedTime();
+
   return 0;
 }
 
