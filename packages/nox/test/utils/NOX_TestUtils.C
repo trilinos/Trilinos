@@ -1,6 +1,5 @@
 
 #include "NOX_TestUtils.H"
-#include "NOX_TestCommon.H"
 
 bool getNextQuotedString(const string& line, string::size_type& pos, string& value)
 {

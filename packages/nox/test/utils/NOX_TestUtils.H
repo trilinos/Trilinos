@@ -1,14 +1,8 @@
 
-#include <string>
-using namespace std;
-
-//#ifndef UTILS_HPP
-//#define UTILS_HPP
-
 #ifndef NOX_TEST_UTILS_H
 #define NOX_TEST_UTILS_H
 
-#include "NOX_TestCommon.H"
+#include "NOX_Common.H"
 #include "NOX_Parameter_List.H"
 
 using namespace NOX::Parameter;
