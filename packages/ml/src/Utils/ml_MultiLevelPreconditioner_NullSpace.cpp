@@ -118,6 +118,11 @@ void MultiLevelPreconditioner::SetNullSpace()
 
     sprintf(parameter,"%snull space: vectors to compute", Prefix_);    
     NullSpaceDim = List_.get(parameter, 1);
+
+    // by default, 0 means to compute one eigenvector per equation.
+    // This number can be doubled if the imaginary part is added.
+    // Although, eigenvectors with 0-norm are discarded.
+    if( NullSpaceDim == 0 ) NullSpaceDim = NumPDEEqns_;
     
 #ifdef HAVE_ML_ANASAZI
 
