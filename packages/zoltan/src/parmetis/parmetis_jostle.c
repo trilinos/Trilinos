@@ -860,8 +860,8 @@ static int LB_ParMetis_Jostle(
 
   /* Verify that graph is correct */
   if (get_graph_data){
-     ierr = LB_verify_graph(lb->Communicator, vtxdist, xadj, adjncy, vwgt, adjwgt, 
-                            wgtflag, check_graph, yo);
+     ierr = LB_verify_graph(lb->Communicator, vtxdist, xadj, adjncy, vwgt, 
+               adjwgt, obj_wgt_dim, comm_wgt_dim, check_graph);
   }
   
   /* Get a time here */
