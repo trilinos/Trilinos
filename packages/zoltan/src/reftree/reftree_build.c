@@ -2104,8 +2104,8 @@ ZOLTAN_ID_PTR lid;        /* temporary coarse element Local ID; used to pass
 int *assigned;        /* 1 if the element is assigned to this proc */
 int *num_vert;        /* number of vertices for each coarse element */
 ZOLTAN_ID_PTR vertices; /* vertices for the coarse elements */
-int *in_vertex;       /* "in" vertex for each coarse element */
-int *out_vertex;      /* "out" vertex for each coarse element */
+ZOLTAN_ID_PTR in_vertex;       /* "in" vertex for each coarse element */
+ZOLTAN_ID_PTR out_vertex;      /* "out" vertex for each coarse element */
 ZOLTAN_ID_PTR slocal_gids;/* coarse element Global IDs from user */
 ZOLTAN_ID_PTR slocal_lids;/* coarse element Local IDs from user */
 ZOLTAN_ID_PTR plocal_gids;/* previous coarse element Global IDs from user */

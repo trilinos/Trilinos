@@ -1161,10 +1161,10 @@ typedef void ZOLTAN_COARSE_OBJ_LIST_FN(
   ZOLTAN_ID_PTR local_ids,
   int *assigned,
   int *num_vert,
-  int *vertices,
+  ZOLTAN_ID_PTR vertices,
   int *in_order,
-  int *in_vertex,
-  int *out_vertex,
+  ZOLTAN_ID_PTR in_vertex,
+  ZOLTAN_ID_PTR out_vertex,
   int *ierr
 );
 
@@ -1176,10 +1176,10 @@ typedef void ZOLTAN_COARSE_OBJ_LIST_FORT_FN(
   ZOLTAN_ID_PTR local_ids,
   int *assigned,
   int *num_vert,
-  int *vertices,
+  ZOLTAN_ID_PTR vertices,
   int *in_order,
-  int *in_vertex,
-  int *out_vertex,
+  ZOLTAN_ID_PTR in_vertex,
+  ZOLTAN_ID_PTR out_vertex,
   int *ierr
 );
 
@@ -1227,10 +1227,10 @@ typedef int ZOLTAN_FIRST_COARSE_OBJ_FN(
   ZOLTAN_ID_PTR local_id,
   int *assigned,
   int *num_vert,
-  int *vertices,
+  ZOLTAN_ID_PTR vertices,
   int *in_order,
-  int *in_vertex,
-  int *out_vertex,
+  ZOLTAN_ID_PTR in_vertex,
+  ZOLTAN_ID_PTR out_vertex,
   int *ierr
 );
 
@@ -1242,10 +1242,10 @@ typedef int ZOLTAN_FIRST_COARSE_OBJ_FORT_FN(
   ZOLTAN_ID_PTR local_id,
   int *assigned,
   int *num_vert,
-  int *vertices,
+  ZOLTAN_ID_PTR vertices,
   int *in_order,
-  int *in_vertex,
-  int *out_vertex,
+  ZOLTAN_ID_PTR in_vertex,
+  ZOLTAN_ID_PTR out_vertex,
   int *ierr
 );
 
@@ -1294,9 +1294,9 @@ typedef int ZOLTAN_NEXT_COARSE_OBJ_FN(
   ZOLTAN_ID_PTR next_local_id,
   int *assigned,
   int *num_vert,
-  int *vertices,
-  int *in_vertex,
-  int *out_vertex,
+  ZOLTAN_ID_PTR vertices,
+  ZOLTAN_ID_PTR in_vertex,
+  ZOLTAN_ID_PTR out_vertex,
   int *ierr
 );
 
@@ -1310,9 +1310,9 @@ typedef int ZOLTAN_NEXT_COARSE_OBJ_FORT_FN(
   ZOLTAN_ID_PTR next_local_id,
   int *assigned,
   int *num_vert,
-  int *vertices,
-  int *in_vertex,
-  int *out_vertex,
+  ZOLTAN_ID_PTR vertices,
+  ZOLTAN_ID_PTR in_vertex,
+  ZOLTAN_ID_PTR out_vertex,
   int *ierr
 );
 
@@ -1403,10 +1403,10 @@ typedef void ZOLTAN_CHILD_LIST_FN(
   ZOLTAN_ID_PTR child_lids,
   int *assigned,
   int *num_vert,
-  int *vertices,
+  ZOLTAN_ID_PTR vertices,
   ZOLTAN_REF_TYPE *ref_type,
-  int *in_vertex,
-  int *out_vertex,
+  ZOLTAN_ID_PTR in_vertex,
+  ZOLTAN_ID_PTR out_vertex,
   int *ierr
 );
 
@@ -1420,10 +1420,10 @@ typedef void ZOLTAN_CHILD_LIST_FORT_FN(
   ZOLTAN_ID_PTR child_lids,
   int *assigned,
   int *num_vert,
-  int *vertices,
+  ZOLTAN_ID_PTR vertices,
   ZOLTAN_REF_TYPE *ref_type,
-  int *in_vertex,
-  int *out_vertex,
+  ZOLTAN_ID_PTR in_vertex,
+  ZOLTAN_ID_PTR out_vertex,
   int *ierr
 );
 

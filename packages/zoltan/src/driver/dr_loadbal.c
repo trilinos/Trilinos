@@ -617,8 +617,9 @@ void get_edge_list (void *data, int num_gid_entries, int num_lid_entries,
 int get_first_coarse_element(void *data, int num_gid_entries, 
                       int num_lid_entries,
                       ZOLTAN_ID_PTR global_id, ZOLTAN_ID_PTR local_id,
-                      int *assigned, int *num_vert, int *vertices,
-                      int *in_order, int *in_vertex, int *out_vertex, int *ierr)
+                      int *assigned, int *num_vert, ZOLTAN_ID_PTR vertices,
+                      int *in_order, ZOLTAN_ID_PTR in_vertex, 
+                      ZOLTAN_ID_PTR out_vertex, int *ierr)
 {
 
 MESH_INFO_PTR mesh;
@@ -668,8 +669,9 @@ int get_next_coarse_element(void *data, int num_gid_entries,
                       int num_lid_entries,
                       ZOLTAN_ID_PTR prev_global_id, ZOLTAN_ID_PTR prev_local_id,
                       ZOLTAN_ID_PTR global_id, ZOLTAN_ID_PTR local_id,
-                      int *assigned, int *num_vert, int *vertices,
-                      int *in_vertex, int *out_vertex, int *ierr)
+                      int *assigned, int *num_vert, ZOLTAN_ID_PTR vertices,
+                      ZOLTAN_ID_PTR in_vertex, ZOLTAN_ID_PTR out_vertex,
+                      int *ierr)
 {
 
 MESH_INFO_PTR mesh;
@@ -729,9 +731,9 @@ int get_num_child(void *data, int num_gid_entries, int num_lid_entries,
 void get_child_elements(void *data, int num_gid_entries, int num_lid_entries,
                    ZOLTAN_ID_PTR parent_gid, ZOLTAN_ID_PTR parent_lid, 
                    ZOLTAN_ID_PTR child_gids, ZOLTAN_ID_PTR child_lids, 
-                   int *assigned, int *num_vert, int *vertices, 
+                   int *assigned, int *num_vert, ZOLTAN_ID_PTR vertices, 
                    ZOLTAN_REF_TYPE *ref_type,
-                   int *in_vertex, int *out_vertex, int *ierr)
+                   ZOLTAN_ID_PTR in_vertex, ZOLTAN_ID_PTR out_vertex, int *ierr)
 {
   *ierr = ZOLTAN_OK;
 }
