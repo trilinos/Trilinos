@@ -3,13 +3,13 @@
 
 #include "ml_common.h"
 
-#ifdef matched
+#ifdef ML_MATCHED
 #define MLFORTRAN(aaa) aaa
 #else
 #define MLFORTRAN(aaa) aaa ## _
 #endif
 
-#define ML_VERSION        ml2_0_0_5
+#define ML_VERSION        ml2_2_0_0
 
 #ifndef MB_MODIF
 #define MB_MODIF
