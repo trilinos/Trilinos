@@ -92,6 +92,7 @@ Epetra_Import::Epetra_Import( const Epetra_BlockMap &  TargetMap, const Epetra_B
   // Define remote and permutation lists
   
   int * RemoteGIDs=0;
+  RemoteLIDs_ = 0;
   if (NumRemoteIDs_>0) {
     RemoteLIDs_ = new int[NumRemoteIDs_];
     RemoteGIDs = new int[NumRemoteIDs_];
@@ -206,12 +207,12 @@ Epetra_Import::Epetra_Import( const Epetra_BlockMap &  TargetMap, const Epetra_B
       }
       
       // Clean up and leave....
-      
       delete [] RemoteLIDs_;
-      delete [] RemoteGIDs;
       RemoteLIDs_ = ReorderedRemoteLIDs;
     }
   }
+
+  if( RemoteGIDs ) delete [] RemoteGIDs;
 
   if (NumTargetIDs>0) delete [] TargetGIDs;
   if (NumSourceIDs>0) delete [] SourceGIDs;
