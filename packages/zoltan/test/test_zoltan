@@ -17,7 +17,7 @@
 #
 # Usage: test_zoltan [-arch arch-type] [-cmd command] 
 #
-# where arch-type is one of {generic, solaris, gcc, linux, tflop, cplant, dec, 
+# where arch-type is one of {generic, sun, solaris, gcc, linux, tflop, cplant, dec, 
 # linux, sgi32, sgi64}.
 # Alternatively, give a run command with the -cmd option.
 #
@@ -134,6 +134,7 @@ if (! $?run ) then
     case gccP3:
     case linux:
     case solaris:
+    case sun:
     case sgi32:
     case sgi64:
       set run = "mpirun -np"
@@ -445,7 +446,7 @@ exit 0
 # Print usage and exit with error
 usage:
   echo "Usage: $0 [-arch arch-type] [-cmd command]"
-  echo "where arch-type is one of {generic, gcc, solaris, tflop, cplant, dec, linux, sgi32, sgi64}."
+  echo "where arch-type is one of {generic, gcc, sun, solaris, tflop, cplant, dec, linux, sgi32, sgi64}."
   echo "(If you have set ZOLTAN_ARCH you do not need to use -arch.)"
   echo "Alternatively, specify the command to load and run a parallel "
   echo "program with the -cmd option."
