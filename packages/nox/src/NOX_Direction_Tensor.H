@@ -34,6 +34,11 @@
 #include "NOX_Direction_Generic.H" // base class
 #include "NOX_Parameter_List.H"	   // class data element 
 
+// Forward declaration
+namespace NOX {
+class Utils;
+}
+
 namespace NOX {
 namespace Direction {
 
@@ -68,7 +73,7 @@ class Tensor : public Generic {
 public:
 
   //! Constructor
-  Tensor(NOX::Parameter::List& params);
+  Tensor(const NOX::Utils& u, NOX::Parameter::List& params);
 
   //! Destructor
   virtual ~Tensor();
@@ -77,18 +82,29 @@ public:
   virtual bool reset(NOX::Parameter::List& params);
 
   // derived
-  virtual bool compute(NOX::Abstract::Vector& dir, 
-		       NOX::Abstract::Group& grp, 
+  virtual bool compute(NOX::Abstract::Vector& dir, NOX::Abstract::Group& grp, 
 		       const NOX::Solver::Generic& solver);
 
+  // Compute the approximate step 
+  bool compute_step(NOX::Abstract::Vector& dir, NOX::Abstract::Group& grp, 
+		    const NOX::Solver::Generic& solver, const double errTol,
+		    double& error);
+
   //! Compute the curvilinear step dT(lambda) and return in dir.
-  bool computeCurvilinearStep(NOX::Abstract::Vector& dir, 
+  bool computeCurvilinearStep(NOX::Abstract::Vector& dir,
 			      NOX::Abstract::Group& grp, 
-			      const NOX::Solver::Generic& solver, 
+			      const NOX::Solver::Generic& solver,
 			      double lambda);
 
+  //! Return the approximate Newton step generated alongside tensor step 
+  const NOX::Abstract::Vector& getNewton() const;
 
 protected:
+
+private:
+
+  //! Print an error message
+  void throwError(const string& functionName, const string& errorMsg);
 
 private:
 
@@ -126,19 +142,65 @@ private:
   //!  Calculate 2-norm of x
   double norm(int n, double* x);
 
-  //!  Apply Givens rotations to vector v
-  void givapp(double* c, double* s, double* v, int k);
+  //!  Compute Givens sin and cos values
+  void NOX::Direction::Tensor::computeGivens(double a, double b,
+					     double& c, double& s);
+
+  //!  Apply Givens rotations to vector [a; b]
+  void NOX::Direction::Tensor::applyGivens(double c, double s,
+					   double& a, double& b);
+
+  //!  Compute Householder vector
+  void NOX::Direction::Tensor::computeHouseholder(double** a, int j, 
+						  int i1, int i2, double* z);
+
+  //!  Apply Householder rotations to a column vector in a matrix
+  void NOX::Direction::Tensor::applyHouseholder(const double* z, double** a,
+						int j, int i1, int i2);
+
+  //!  Apply Householder rotations to a vector
+  void NOX::Direction::Tensor::applyHouseholder(const double* z, double* a,
+						int i1, int i2);
+
+  //!  Calculate beta by solving the quadratic equation
+  double NOX::Direction::Tensor::calculateBeta(double qa, double qb, double qc,
+					       double& qval, double& lambdaBar,
+					       double dir0xsc = 0,
+					       double normS = 1);
+
+  //!  Calculate norm of local model residual
+  double NOX::Direction::Tensor::getNormModelResidual(
+				       const NOX::Abstract::Vector& dir,
+				       const NOX::Abstract::Group& soln,
+				       const NOX::Solver::Generic& solver,
+				       bool isTensorModel);
+
+  //!  Calculate directional derivative
+  double NOX::Direction::Tensor::getDirectionalDerivative(
+				       const NOX::Abstract::Vector& dir,
+				       const NOX::Abstract::Group& soln);
 
   //!  Backsolve an upper triangular system Ux=b.
-  double* backsolve(double** U, double* b, int* p, int n, int dim=0);
+  double* backsolve(double** U, double* b, int* p, int n, int dim=0,
+		    bool isTranspose=false);
   
+
 private:
+
+  //! Printing Utilities
+  const NOX::Utils& utils;
+
+  //! Types of steps 
+  enum stepType {NewtonStep, TensorStep3, TensorStep2, TensorStepFP};
 
   //! Types of preconditioning 
   enum preconditioningType {None, Left, Right};
 
   //! Types of reorthogonalization
   enum reorthogonalizeType {Never, AsNeeded, Always};
+
+  //! Flag for the base direction to compute after the first iteration 
+  stepType requestedBaseStep;
 
   //! Flag for type of preconditioning (left/right)
   preconditioningType precondition;
@@ -147,10 +209,32 @@ private:
   reorthogonalizeType reorth;
 
   //! "Direction" sublist with parameters for the direction vector
+  /*!
+    \note This is pointer rather than a reference to allow for the
+    reset function.
+  */
   NOX::Parameter::List* paramsPtr;
 
-  //! Vector containing the predicted RHS
-  NOX::Abstract::Vector* predf;
+  //! "Linear Solver" sublist inside "Direction"->"Tensor" sublist
+  NOX::Parameter::List* localParamsPtr;
+  
+  //! Determined based on "Use Shortcut Method".
+  bool useShortcutMethod;
+
+  //! Determined based on "Rescue Bad %Newton Solve".
+  bool doRescue;
+
+  //! Vector containing the tensor term sc
+  NOX::Abstract::Vector* scPtr;
+
+  //! Vector containing the tensor term ac
+  NOX::Abstract::Vector* acPtr;
+
+  //! Vector containing the product Jc*sc/norm(sc)
+  NOX::Abstract::Vector* jcxshatPtr;
+
+  //! Vector containing M'\sc
+  NOX::Abstract::Vector* mtinvscPtr;
 
   //! Temporary storage vectors
   NOX::Abstract::Vector* vecw;
@@ -170,25 +254,34 @@ private:
   //! Flag for "continuing" with reset() inside compute() where n is known
   bool isFreshlyReset;
 
-  //! Flag for noting whether dt has been calculated
+  //! Flag for noting if tensor step has been calculated (for curvilinear step)
   bool isTensorCalculated;
 
   //! Flag for noting whether dt(lambdaBar) and params have been calculated
   bool isCLParamsCalculated;
 
+  //! Flag for noting whether to augment the subspace with direction sc
+  bool isSubspaceAugmented;
+
+  //! Flag for noting whether the transpose of the preconditioner is available
+  bool isMinvTransAvailable;
+
   //! Problem size
   int probSize;
+
+  //! Maximum number of times to restart local solver
+  int maxRestarts;
 
   //! Maximum number of Krylov iterations (kmax <= n)
   int kmax;
 
   //! Maximum number of starting vectors in initial basis
-  int maxp;
+  int pmax;
 
   //! Frequency for printing iteration history
   int outputFreq;
 
-  //! Maximum dimension of data structures (maxDim = kmax + p)
+  //! Maximum dimension of data structures (maxDim = kmax + pmax)
   int maxDim;
 
   //! Threshold tolerance for tensor solve
@@ -203,6 +296,30 @@ private:
   //! Matrix of coefficients for Givens rotations
   double** givensS;
 
+  //! Matrix of coefficients for Householder reflections
+  double** hhZ;
+
+  //! Temporary vector for Hessenberg matrix H*Q1
+  double* hq1save;
+
+  //! Temporary vector for right-hand side g
+  double* gsave;
+
+  //! Temporary vector for right-hand side q
+  double* qsave;
+  
+  //! Vector for orthogonal Hessenberg matrix Q1, kth column
+  double* qk;
+  
+  //! Vector for orthogonal Hessenberg matrix Q1, subdiagonal
+  double* q1subdiag;
+  
+  //! Vector for orthogonal Hessenberg matrix Q1, norm-squared of column
+  double* qNorm2;
+  
+  //! Vector for ghost column of H
+  double* hk;
+  
   //! Working vector for the new column of Hessenberg matrix
   double* newHessCol;
 
@@ -246,4 +363,5 @@ private:
 } // namespace Direction
 } // namespace NOX
 #endif
-#endif
+
+#endif  // WITH_PRERELEASE
