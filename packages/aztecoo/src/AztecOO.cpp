@@ -230,6 +230,7 @@ int AztecOO::SetUserOperator(Epetra_Operator * UserOperator) {
   // Aztec needs upper bound for matrix norm if doing polynomial preconditioning
   if (UserOperator_->HasNormInf())
     AZ_set_MATFREE_matrix_norm(Amat_, UserOperator_->NormInf()); 
+
   return(0);
 }
 
@@ -431,6 +432,7 @@ int AztecOO::SetPreconditioner(void  (*prec_function)
 {
   if (Pmat_==0) EPETRA_CHK_ERR(-1); // No matrix yet
   EPETRA_CHK_ERR(DestroyPreconditioner()); // Delete existing preconditioner if one exists
+  if (Pmat_==0) EPETRA_CHK_ERR(-1); // No Pmat defined.
   Prec_ = AZ_precond_create(Pmat_,prec_function, p_data);
   options_[AZ_precond] = AZ_user_precond;
 
@@ -508,8 +510,10 @@ int AztecOO::recursiveIterate(int MaxIters, double Tolerance)
   int prec_allocated = 0;
   if (Prec_ == 0) {
     if (options_[AZ_precond] == AZ_user_precond) EPETRA_CHK_ERR(-10); // Cannot have user prec==0
-    Prec_ = AZ_precond_create(Pmat_, AZ_precondition, NULL);
-    prec_allocated = 1;
+    if (Pmat_!=0) {
+      Prec_ = AZ_precond_create(Pmat_, AZ_precondition, NULL);
+      prec_allocated = 1;
+    }
   }
 
   options_[AZ_recursion_level]++;
@@ -549,15 +553,11 @@ int AztecOO::Iterate(int MaxIters, double Tolerance)
   
   int prec_allocated = 0;
   if (Prec_ == 0) {
-    if (options_[AZ_precond] == AZ_user_precond) {
-      if (proc_config_[AZ_node] == 0) {
-	cerr << "AztecOO::Iterate: Can not use NULL for precond argument when\n";
-	cerr << "                   options[AZ_precond] == AZ_user_precond.\n";
-      }
-      EPETRA_CHK_ERR(-2);
+    if (options_[AZ_precond] == AZ_user_precond) EPETRA_CHK_ERR(-10); // Cannot have user prec==0
+    if (Pmat_!=0) {
+      Prec_ = AZ_precond_create(Pmat_, AZ_precondition, NULL);
+      prec_allocated = 1;
     }
-    Prec_ = AZ_precond_create(Pmat_, AZ_precondition, NULL);
-    prec_allocated = 1;
   }
 
   AZ_iterate(x_, b_, options_, params_, status_, proc_config_,
