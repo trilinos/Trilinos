@@ -155,7 +155,7 @@ int **exp_to_part )         /* list of partitions to which exported objs
 #endif
 
     /* partition hypergraph */
-    err = Zoltan_PHG_rdivide (1, p, output_parts, zz, hg, &hgp, 0);
+    err = Zoltan_PHG_rdivide (0, p-1, output_parts, zz, hg, &hgp, 0);
 
     if (hgp.output_level >= PHG_DEBUG_LIST)     
       uprintf(hg->comm, "FINAL %3d |V|=%6d |E|=%6d |Z|=%6d %s/%s/%s p=%d "

@@ -32,7 +32,7 @@ int Zoltan_PHG_rdivide (int lo, int hi, Partition final, ZZ *zz, HGraph *hg,
   /* only one part remaining, record results and exit */
   if (lo == hi) {
     for (i = 0; i < hg->nVtx; i++)      
-      final [hg->vmap[i]] = lo - 1;
+      final [hg->vmap[i]] = lo;
     return ZOLTAN_OK;
   }
 
@@ -44,8 +44,8 @@ int Zoltan_PHG_rdivide (int lo, int hi, Partition final, ZZ *zz, HGraph *hg,
   /* bipartition current hypergraph with appropriate split ratio */
   mid = (lo+hi)/2;
   tgpartsize[0] = tgpartsize[1] = 0.;
-  for (i = lo; i <= mid; i++)  tgpartsize[0] += hgp->part_sizes[i-1];
-  for (i = lo; i <= hi;  i++)  tgpartsize[1] += hgp->part_sizes[i-1];
+  for (i = lo; i <= mid; i++)  tgpartsize[0] += hgp->part_sizes[i];
+  for (i = lo; i <= hi;  i++)  tgpartsize[1] += hgp->part_sizes[i];
   hg->ratio = (double) tgpartsize[0] / (double) tgpartsize[1];
   tgpartsize[0] = hg->ratio;
   tgpartsize[1] = 1. - tgpartsize[0];
@@ -61,7 +61,7 @@ int Zoltan_PHG_rdivide (int lo, int hi, Partition final, ZZ *zz, HGraph *hg,
   /* if only two parts total, record results and exit */
   if (lo + 1 == hi)  {
     for (i = 0; i < hg->nVtx; i++)
-      final [hg->vmap[i]] = ((part[i] == 0) ? (lo-1) : (hi-1));
+      final [hg->vmap[i]] = ((part[i] == 0) ? lo : hi);
     ZOLTAN_FREE (&part);
     return ZOLTAN_OK;
   }
