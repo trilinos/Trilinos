@@ -60,7 +60,8 @@ namespace Direction {
 
 //! %Generic direction interface
 /*!
-  %Generic interface for calculating a search direction.
+  %Generic interface for calculating a search direction, \f$d\f$, to
+  be used in updating the iterate.
  */
 class Generic {
 
@@ -89,10 +90,13 @@ public:
     information such as the past solution, the iteration number, and
     so on.
   */
-  virtual bool compute(NOX::Abstract::Vector& dir, NOX::Abstract::Group& grp, const NOX::Solver::Generic& solver) = 0;
+  virtual bool compute(NOX::Abstract::Vector& dir, NOX::Abstract::Group& grp, 
+		       const NOX::Solver::Generic& solver) = 0;
 
   /*!
-    \brief Same as compute(NOX::Abstract::Vector&, NOX::Abstract::Group&, const NOX::Solver::Generic&)
+
+    \brief Same as compute(NOX::Abstract::Vector&,
+    NOX::Abstract::Group&, const NOX::Solver::Generic&)
 
     Enables direct support for line search based solvers for the
     purpose of efficiency since the LineSearchBased object has a
@@ -101,7 +105,8 @@ public:
     If it is not redefined in the derived class, it will just call the
     compute with the NOX::Solver::Generic argument.
   */
-  virtual bool compute(NOX::Abstract::Vector& dir, NOX::Abstract::Group& grp, const NOX::Solver::LineSearchBased& solver);
+  virtual bool compute(NOX::Abstract::Vector& dir, NOX::Abstract::Group& grp, 
+		       const NOX::Solver::LineSearchBased& solver);
 };
 } // namespace Direction
 } // namespace NOX

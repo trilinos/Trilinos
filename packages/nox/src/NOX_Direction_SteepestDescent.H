@@ -46,28 +46,33 @@ namespace Direction {
 //! %Calculates the steepest descent direction.
 /*! 
 
-Calculates the direction
-\f[
-s = - \gamma \nabla f(x) = -\gamma J(x)^T F(x)
-\f]
+  Calculates the direction
+  \f[
+  d = - \gamma \nabla f(x) = -\gamma J(x)^T F(x)
+  \f]
 
-  To use this direction, specify that the "Method" is "Steepest Descent" in the
-  "Direction" sublist of the parameters that are passed to the solver
-  (see NOX::Direction::Manager for more information on choosing the
-  search direction).
+  This is the (scaled) gradient of the function \f$f(x) = \frac{1}{2}
+  \|F(x)\|^2\f$. The valued of \f$\gamma\f$ depends on the choice of
+  "Scaling Type" below.
 
-  The following options may be specified in the "Steepest Descent"
-  sublist of the "Direction" sublist of the solver parameters.
+<B>Parameters</B>
+
+"Direction":
+<ul>
+<li>"Method" = "Steepest Descent"
+</ul>
+
+"Direction"/"Steepest Descent":
 
 <ul>
 <li>"Scaling Type" can be either of:
 
     <ul>
-    <li>"2-Norm" - \f$ \gamma = \displaystyle\frac{1}{\|s\|_2} \f$ [default]
+    <li>"2-Norm" - \f$ \gamma = \displaystyle\frac{1}{\|d\|_2} \f$ [default]
 
-    <li>"Quadratic Model Min" - \f$ \gamma = \displaystyle\frac{\|s\|_2}{s^T J^T J s} \f$
+    <li>"Quadratic Model Min" - \f$ \gamma = \displaystyle\frac{\|d\|_2}{d^T J^T J d} \f$
 
-    <li>"F 2-Norm" - \f$ \gamma = \displaystyle\frac{1}{\|F(x)\|_2} \f$ [default]
+    <li>"F 2-Norm" - \f$ \gamma = \displaystyle\frac{1}{\|F(x)\|_2} \f$
 
     <li>"None" - No scaling
 
