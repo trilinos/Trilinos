@@ -1574,6 +1574,9 @@ extern unsigned int md_wrap_wait(void *, unsigned int, int *, int *,int *,MPI_AZ
 
 extern unsigned int md_wrap_write(void *, unsigned int , int , int , int *);
 
+extern unsigned int md_wrap_request_free(MPI_AZRequest *);
+
+#define mdwrap_request_free(a)   md_wrap_request_free(a)
 #ifdef AZTEC_MPI
 #define mdwrap_wait(a,b,c,x,y,z)   md_mpi_wait(a,b,c,(x),(y),(z),proc_config)
 #define mdwrap_iwrite(a,b,c,x,y,z) md_mpi_iwrite(a,b,c,(x),(y),(z),proc_config)

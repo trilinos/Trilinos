@@ -540,3 +540,34 @@ int md_mpi_iwrite(void *buf, int bytes, int dest, int type, int *flag,
   return err;
 
 } /* md_mpi_write */
+/******************************************************************************/
+/******************************************************************************/
+/******************************************************************************/
+
+int md_wrap_request_free(MPI_Request *request)
+
+/*******************************************************************************
+
+  Machine dependent wrapped request object deletion routine.
+
+  Author:          Michael A. Heroux, SNL, 9214
+  =======
+
+  Return code:     int
+  ============
+
+  Parameter list:
+  ===============
+
+  request:           Pointer to an existing request object that will be freed.
+
+*******************************************************************************/
+{
+
+  int err = 0;
+  if (request != NULL)
+    err = MPI_Request_free(request);
+
+  return err;
+
+} /* md_wrap_request_free */

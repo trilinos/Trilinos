@@ -1735,6 +1735,7 @@ void AZ_print_sync_end(int proc_config[], int do_print_line)
                  &request2);
   }
 
+  mdwrap_request_free(&request); /* Free request object from iwrite call */
   /*
    * Do a final sync amongst all the processors, so that all of the other
    * processors must wait for Proc 0 to receive the final message from

@@ -143,3 +143,34 @@ int md_write(char *buf, int bytes, int dest, int type, int *flag)
   return 0;
 
 }
+
+/******************************************************************************/
+/******************************************************************************/
+/******************************************************************************/
+
+int md_wrap_request_free(MPI_Request *request)
+
+/*******************************************************************************
+
+  Machine dependent wrapped request object deletion routine. 
+  (Trivial function except for MPI version).
+
+  Author:          Michael A. Heroux, SNL, 9214
+  =======
+
+  Return code:     int
+  ============
+
+  Parameter list:
+  ===============
+
+  request:           Pointer to an existing request object that will be freed.
+
+*******************************************************************************/
+{
+
+  int err = 0;
+  return err;
+
+} /* md_wrap_request_free */
+
