@@ -1,0 +1,100 @@
+// NOX headers
+#include "NOX.H"  // Required headers
+#include "NOX_Epetra.H" // Epetra Interface headers
+#include "nox_test_err.h" // Test Suite headers
+
+// Trilinos headers
+#ifdef HAVE_MPI
+#include "Epetra_MpiComm.h"
+#else
+#include "Epetra_SerialComm.h"
+#endif
+#include "Epetra_Map.h"
+#include "Epetra_Vector.h"
+#include "Epetra_RowMatrix.h"
+#include "Epetra_CrsMatrix.h"
+#include "Epetra_Map.h"
+#include "Epetra_LinearProblem.h"
+#include "AztecOO.h"
+
+int main(int argc, char *argv[]) {
+
+  // Initialize MPI
+#ifdef HAVE_MPI
+  MPI_Init(&argc,&argv);
+#endif
+
+  // Create a communicator for Epetra objects
+#ifdef HAVE_MPI
+  Epetra_MpiComm Comm( MPI_COMM_WORLD );
+#else
+  Epetra_SerialComm Comm;
+#endif
+ 
+  // Get the process ID and the total number of processors
+  int MyPID = Comm.MyPID();
+  int NumProc = Comm.NumProc();
+
+  // Set up the printing utilities
+  // Only print output if the "-v" flag is set on the command line
+  NOX::Parameter::List noxParams;
+  NOX::Parameter::List& printParams = noxParams.sublist("Printing");
+  printParams.setParameter("MyPID", MyPID); 
+  printParams.setParameter("Output Precision", 5);
+  printParams.setParameter("Output Processor", 0);
+  if (argc > 1) { 
+    if (argv[1][0]=='-' && argv[1][1]=='v')
+       printParams.setParameter("Output Information", 
+			NOX::Utils::OuterIteration + 
+			NOX::Utils::OuterIterationStatusTest + 
+			NOX::Utils::InnerIteration +
+			NOX::Utils::Parameters + 
+			NOX::Utils::Details + 
+			NOX::Utils::Warning +
+			NOX::Utils::TestDetails);
+    else
+       printParams.setParameter("Output Information", NOX::Utils::Error);
+  }
+  NOX::Utils printing(printParams);
+
+  // Identify the test problem
+  if (printing.isPrintProcessAndType(NOX::Utils::TestDetails))
+    cout << "Starting epetra/NOX_Vector/NOX_Vector.exe" << endl;
+
+  // Identify processor information
+#ifdef HAVE_MPI
+  if (printing.isPrintProcessAndType(NOX::Utils::TestDetails)) {
+    cout << "Parallel Run" << endl;
+    cout << "Number of processors = " << NumProc << endl;
+    cout << "Print Process = " << MyPID << endl;
+  }
+  Comm.Barrier();
+  if (printing.isPrintType(NOX::Utils::TestDetails))
+    cout << "Process " << MyPID << " is alive!" << endl;
+  Comm.Barrier();
+#else
+  if (printing.isPrintProcessAndType(NOX::Utils::TestDetails))
+    cout << "Serial Run" << endl;
+#endif
+
+  // Return value
+  int status = 0;
+
+  // *** Insert Testing Here!!! ***
+
+
+
+  if (printing.isPrintProcessAndType(NOX::Utils::TestDetails)) {
+    if (status == 0)
+      cout << "Test Successfull!" << endl;
+    else 
+      cout << "Test Failed!" << endl;
+  }
+
+  // return 0 for a successful test
+  return status;
+}
+
+/*
+  end of file test.C
+*/
