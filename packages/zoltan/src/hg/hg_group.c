@@ -239,42 +239,6 @@ static int grouping_rhg (ZZ *zz, HGraph *hg, Packing pack, int limit)
 
 /****************************************************************************/
 
-static void quickpart_dec_float_int (float *val1, int *val2, int *sorted,
-int start, int end, int *equal, int *smaller)
-{ int	i, next, key2, key2_next;
-  float key1, key1_next;
-
-  i = (end+start)/2;
-  key1 = val1?val1[sorted[i]]:1.0;
-  key2 = val2?val2[sorted[i]]:1;
-
-  (*equal) = (*smaller) = start;
-  for (i=start; i<=end; i++)
-  { next = sorted[i];
-    key1_next = val1?val1[next]:1.0;
-    key2_next = val2?val2[next]:1;
-    if (key1_next>key1 || (key1_next==key1 && key2_next>key2))
-    { sorted[i] = sorted[(*smaller)];
-      sorted[(*smaller)++] = sorted[(*equal)];
-      sorted[(*equal)++] = next;
-    }
-    else if (key1_next==key1 && key2_next==key2)
-    { sorted[i] = sorted[(*smaller)];
-      sorted[(*smaller)++] = next;
-  } }
-}
-
-static void quicksort_dec_float_int (float* val1, int *val2, int* sorted,
-int start, int end)
-{ int  equal, smaller;
-
-  if (start < end)
-  { quickpart_dec_float_int (val1,val2,sorted,start,end,&equal,&smaller);
-    quicksort_dec_float_int (val1,val2,sorted,start,equal-1);
-    quicksort_dec_float_int (val1,val2,sorted,smaller,end);
-  }
-}
-
 static int grouping_grg (ZZ *zz, HGraph *hg, Packing pack, int limit)
 {                                      /* limit is defined for future use */
   int   i, j, *size=NULL, *sorted=NULL, first_vertex, vertex ;
@@ -296,7 +260,7 @@ static int grouping_grg (ZZ *zz, HGraph *hg, Packing pack, int limit)
      size[i] = -(hg->hindex[i+1]-hg->hindex[i]);
   for (i=0; i<hg->nEdge; i++)
      sorted[i] = i;
-  quicksort_dec_float_int(hg->ewgt,size,sorted,0,hg->nEdge-1);
+  quicksort_dec_float_int(sorted,hg->ewgt,size,0,hg->nEdge-1);
   ZOLTAN_FREE ((void **) &size);
 
   /* Match hyperedges along decreasing weight */

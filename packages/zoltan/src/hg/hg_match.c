@@ -88,7 +88,6 @@ static int matching_mxm (ZZ *zz, Graph *g, Matching match, int limit)
   return ZOLTAN_OK;
 }
 
-
 /*****************************************************************************/
 
 static int matching_rrm (ZZ *zz, Graph *g, Matching match, int limit)
@@ -169,35 +168,6 @@ static int matching_rhm (ZZ *zz, Graph *g, Matching match, int limit)
 
 /*****************************************************************************/
 
-static void quickpart_dec_float (float *val, int* sorted, int start, int end,
- int* equal, int* smaller)
-{ int   i, next;
-  float	key=(val?val[sorted[(end+start)/2]]:1.0);
-
-  (*equal) = (*smaller) = start;
-  for (i=start; i<=end; i++)
-  { next = sorted[i];
-    if ((val?val[next]:1.0) > key)
-    { sorted[i] = sorted[(*smaller)];
-      sorted[(*smaller)++] = sorted[(*equal)];
-      sorted[(*equal)++] = next;
-    }
-    else if ((val?val[next]:1.0) == key)
-    { sorted[i] = sorted[(*smaller)];
-      sorted[(*smaller)++] = next;
-  } }
-}
-
-static void quicksort_dec_float (float* val, int *sorted, int start, int end)
-{ int  equal, smaller;
-
-  if (start < end)
-  { quickpart_dec_float (val,sorted,start,end,&equal,&smaller);
-    quicksort_dec_float (val,sorted,start,equal-1);
-    quicksort_dec_float (val,sorted,smaller,end);
-  }
-}
-
 static int matching_grm (ZZ *zz, Graph *g, Matching match, int limit)
 { int   i, j, size=0, *sorted, *vertex, vertex1, vertex2;
   char *yo = "matching_grm" ;
@@ -221,7 +191,7 @@ static int matching_grm (ZZ *zz, Graph *g, Matching match, int limit)
     for (j=g->nindex[i]; j<g->nindex[i+1]; j++)
       vertex[j] = i;
 
-  quicksort_dec_float (g->ewgt,sorted,0,g->nindex[g->nVtx]-1);
+  quicksort_dec_float (sorted,g->ewgt,0,g->nindex[g->nVtx]-1);
 
   for (i=0; i<g->nindex[g->nVtx] && size<limit; i++)
   { vertex1 = vertex[sorted[i]];

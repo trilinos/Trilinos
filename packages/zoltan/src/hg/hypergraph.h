@@ -28,12 +28,7 @@ extern "C" {
 #ifdef HTEST
 typedef struct
   {
-  int Num_GID;
-  int Num_LID;
   int Debug_Level;
-  int Obj_Weight_Dim;
-  int Edge_Weight_Dim;
-  int Proc;
   } ZZ ;
 #define ZOLTAN_DEBUG_LIST            1
 #define ZOLTAN_DEBUG_ALL             1
@@ -162,8 +157,6 @@ typedef struct {
   ZOLTAN_HG_GLOBAL_PART_FN *global_part; /*  pointer to Global partitioning fn */
   char local_str[MAX_PARAM_STRING_LEN];  /* Local refinement string and */
   ZOLTAN_HG_LOCAL_REF_FN *local_ref;     /*  pointer to Local refinement fn */
-  int check_graph;                       /* Flag to indicate input hgraph
-                                            checking level*/
 } HGPartParams;
 int Zoltan_HG_Set_Options  (ZZ *, HGPartParams *);
 int Zoltan_HG_HPart_Lib    (ZZ *, HGraph *, int, Partition, HGPartParams *);
@@ -193,6 +186,9 @@ ZOLTAN_HG_GLOBAL_PART_FN *Zoltan_HG_Set_Global_Part_Fn(char *);
 /* Local refinement functions */ /* KDD Placeholder for later. */
 ZOLTAN_HG_LOCAL_REF_FN *Zoltan_HG_Set_Local_Ref_Fn(char *);
 
+/* Sorting */
+void quicksort_dec_float_int (int *, float*, int *, int, int);
+void quicksort_dec_float     (int *, float*, int, int);
 
 #ifdef __cplusplus
 } /* closing bracket for extern "C" */

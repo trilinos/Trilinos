@@ -39,21 +39,15 @@ int main (int argc, char **argv)
 { int    i, p=2, *part;
   char   hgraphfile[100]="grid5x5.hg";
   HGraph hg;
-  ZZ     zz;
   HGPartParams hgp;
+  ZZ     zz;
 
   hgp.redl = 0;
   strcpy(hgp.redm_str, "grg");
   strcpy(hgp.global_str, "lin");
   strcpy(hgp.local_str, "no");
-  hgp.check_graph = 1;
 
-  zz.Num_GID = 1;
-  zz.Num_LID = 1;
   zz.Debug_Level = 1;
-  zz.Obj_Weight_Dim = 1;
-  zz.Edge_Weight_Dim = 1;
-  zz.Proc = 1;
 
 /* Start of the time*/
   INIT_TIME();
@@ -69,18 +63,20 @@ int main (int argc, char **argv)
     puts("                           mxg,reg,rrg,rhg,(grg)}");
     puts("-g      global method:    {ran,(lin)}");
     puts("-l      local method:     (no)");
+    puts("-d      debug level:      (1)");
     puts("default values are in brackets ():");
   }
   i = 0;
   while (++i<argc)
-  { if     (!strcmp(argv[i],"-f")   && i+1<argc) strcpy (hgraphfile, argv[++i]);
-    else if(!strcmp(argv[i],"-p")   && i+1<argc) p = atoi(argv[++i]);
-    else if(!strcmp(argv[i],"-redl")&& i+1<argc) hgp.redl = atoi(argv[++i]);
-    else if(!strcmp(argv[i],"-redm")&& i+1<argc) strcpy(hgp.redm_str,argv[++i]);
-    else if(!strcmp(argv[i],"-g")   && i+1<argc) strcpy(hgp.global_str,argv[++i]);
-    else if(!strcmp(argv[i],"-l")   && i+1<argc) strcpy(hgp.local_str,argv[++i]);
+  { if     (!strcmp(argv[i],"-f")   &&i+1<argc)strcpy(hgraphfile,argv[++i]);
+    else if(!strcmp(argv[i],"-p")   &&i+1<argc)p=atoi(argv[++i]);
+    else if(!strcmp(argv[i],"-redl")&&i+1<argc)hgp.redl=atoi(argv[++i]);
+    else if(!strcmp(argv[i],"-redm")&&i+1<argc)strcpy(hgp.redm_str,argv[++i]);
+    else if(!strcmp(argv[i],"-g")   &&i+1<argc)strcpy(hgp.global_str,argv[++i]);
+    else if(!strcmp(argv[i],"-l")   &&i+1<argc)strcpy(hgp.local_str,argv[++i]);
+    else if(!strcmp(argv[i],"-d")   &&i+1<argc)zz.Debug_Level=atoi(argv[++i]); 
     else 
-    { fprintf(stderr, "ERROR...option '%s' not legal or without value\n", argv[i]);
+    { fprintf(stderr,"ERR...option '%s' not legal or without value\n",argv[i]);
       return 1;
     }
   }

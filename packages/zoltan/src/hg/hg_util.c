@@ -455,7 +455,7 @@ int Zoltan_HG_Graph_to_HGraph(
  *  Hyperedge i consists of vertex i + all edge neighbors of i in graph g.
  */
 char *yo = "Zoltan_HG_Graph_to_HGraph";
-int i, j, k;
+int i, j;
 int *hindex = NULL, *hvertex = NULL;  /* temporary array pointers */
 int cnt;
 int ierr = ZOLTAN_OK;
