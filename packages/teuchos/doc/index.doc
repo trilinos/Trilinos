@@ -99,6 +99,12 @@ Teuchos must be configured with <i>--enable-teuchos-complex</i>.
 	to access the <tt>const</tt> version of a member function given a non-<tt>const</tt> reference
 	to an object.
 
+	<li><tt>Teuchos::oblackholestream</tt> is a concrete subclass of <tt>std::ostream</tt>
+	that ignores all output.  This class is very useful in writting SPMD parallel programs
+	and controlling which processor(s) produce output.  Generally only the the root process
+	uses a real <tt>std::ostream</tt> object while all of the slave processors use
+	a <tt>Teuchos::oblackholestream</tt> for console output.
+
   </ul>
 
 
