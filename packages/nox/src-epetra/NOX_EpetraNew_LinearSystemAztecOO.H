@@ -500,7 +500,6 @@ protected:
   
   //! Aztec solver object.
   mutable AztecOO* aztecSolverPtr;
-  mutable AztecOO& aztecSolver;
 
   /*! 
     \brief Stores the ifpack graph. 
