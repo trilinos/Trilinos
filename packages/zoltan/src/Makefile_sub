@@ -31,6 +31,15 @@ ifdef MAIN_OBJ
 include $(MAIN_OBJ:.o=.d)
 endif
 
+# On Solaris machines, the C++ include directories may contain .cc files
+# with the same name as headers (i.e. string.cc and string).  make will
+# try to build the .cc file if it's newer than the header.
+#
+%:	%.cc
+	@echo "IGNORE attempt to compile $< "
+#
+#########################################################################
+
 %.o:	%.cpp
 	@echo "Compiling $<..."
 	@$(CC) $(DEFS) -c $<
