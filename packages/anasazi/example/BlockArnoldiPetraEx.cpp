@@ -8,7 +8,7 @@
 
 #include "AnasaziPetraInterface.hpp"
 #include "AnasaziBlockArnoldi.hpp"
-#include "AnasaziCommon.hpp"
+#include "AnasaziConfigDefs.hpp"
 #include "Epetra_CrsMatrix.h"
 
 #ifdef EPETRA_MPI

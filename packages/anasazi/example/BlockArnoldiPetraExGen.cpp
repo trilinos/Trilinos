@@ -12,7 +12,7 @@
 #include "AnasaziPetraInterface.hpp"
 #include "BelosPetraInterface.hpp"
 #include "AnasaziBlockArnoldi.hpp"
-#include "AnasaziCommon.hpp"
+#include "AnasaziConfigDefs.hpp"
 #include "Ifpack_CrsIct.h"
 #include "Epetra_CrsMatrix.h"
 #include "BelosEpetraOperator.hpp"
