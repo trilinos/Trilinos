@@ -20,6 +20,7 @@ typedef struct ML_Aggregate_Viz_Stats_Struct
   int Naggregates;
   int local_or_global;
   int is_filled;
+  int graph_radius;
   void *Amatrix;  /* void * so that I do not have to include
 		     ml_operator.h */
   
