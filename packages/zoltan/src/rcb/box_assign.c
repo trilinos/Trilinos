@@ -1,21 +1,16 @@
-/*====================================================================
- * ------------------------
- * | CVS File Information |
- * ------------------------
- *
- * $RCSfile$
- *
- * $Author$
- *
- * $Date$
- *
- * $Revision$
- *
- *====================================================================*/
-
-/* Determine which processors a box intersects.
-   Currently assumes that partitioning has used RCB or IRB, but should be
-   modified to return an error message if other method was used */
+/*****************************************************************************
+ * Zoltan Dynamic Load-Balancing Library for Parallel Applications           *
+ * Copyright (c) 2000, Sandia National Laboratories.                         *
+ * Zoltan is distributed under the GNU Lesser General Public License 2.1.    * 
+ * For more info, see the README file in the top-level Zoltan directory.     *  
+ *****************************************************************************/
+/*****************************************************************************
+ * CVS File Information :
+ *    $RCSfile$
+ *    $Author$
+ *    $Date$
+ *    $Revision$
+ ****************************************************************************/
 
 #include <stdio.h>
 #include <math.h>
@@ -39,6 +34,10 @@ double          zmax,           /* upper z extent of box */
 int            *procs,          /* list of procs that box intersects */
 int            *numprocs)       /* number of processors in proc list */
 {
+/* Determine which processors a box intersects.
+   Currently assumes that partitioning has used RCB or IRB, but should be
+   modified to return an error message if other method was used */
+
      RCB_STRUCT        *rcb;    /* Pointer to data structures for RCB. */
      struct rcb_tree   *treept; /* tree of RCB cuts */
      IRB_STRUCT        *irb;    /* Pointer to data structures for IRB. */

@@ -1,17 +1,29 @@
-/*====================================================================
- * ------------------------
- * | CVS File Information |
- * ------------------------
- *
- * $RCSfile$
- *
- * $Author$
- *
- * $Date$
- *
- * $Revision$
- *
- *====================================================================*/
+/*****************************************************************************
+ * Zoltan Dynamic Load-Balancing Library for Parallel Applications           *
+ * Copyright (c) 2000, Sandia National Laboratories.                         *
+ * Zoltan is distributed under the GNU Lesser General Public License 2.1.    * 
+ * For more info, see the README file in the top-level Zoltan directory.     *  
+ *****************************************************************************/
+/*****************************************************************************
+ * CVS File Information :
+ *    $RCSfile$
+ *    $Author$
+ *    $Date$
+ *    $Revision$
+ ****************************************************************************/
+
+#include <stdio.h>
+#include <math.h>
+#include <memory.h>
+#include "lb_const.h"
+#include "irb_const.h"
+#include "all_allo_const.h"
+#include "par_const.h"
+#include "params_const.h"
+#include "timer_const.h"
+#include "create_proc_list_const.h"
+#include "comm_const.h"
+#include "ha_const.h"
 
 /* Inertial recursive bisection (IRB) load balancing routine operates on
    "dots" as defined in irb.h */
@@ -23,19 +35,6 @@
    can extend "irb_dot" data structure in calling program, see irb_const.h
    returned tree only contains one cut on each proc,
    need to do MPI_Allgather if wish to collect it on all procs */
-
-#include <stdio.h>
-#include <math.h>
-#include <memory.h>
-#include "lb_const.h"
-#include "irb_const.h"
-#include "all_allo_const.h"
-#include "par_const.h"
-#include "params_const.h"
-#include "timer_const.h"
-#include "create_proc_list.h"
-#include "comm_const.h"
-#include "ha_const.h"
 
 #define TINY   1.0e-6
 

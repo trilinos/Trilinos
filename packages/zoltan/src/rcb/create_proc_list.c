@@ -1,27 +1,21 @@
-/*====================================================================
- * ------------------------
- * | CVS File Information |
- * ------------------------
- *
- * $RCSfile$
- *
- * $Author$
- *
- * $Date$
- *
- * $Revision$
- *
- *====================================================================*/
-
-/* This routine calculates a communication pattern for the situation where
-   there are two groups of processors and each processor has a number of
-   items which need to be communicated to the other group.  This routine
-   calculates a communication pattern which seeks to minimize the number
-   of items that any one processor has after communication. */
+/*****************************************************************************
+ * Zoltan Dynamic Load-Balancing Library for Parallel Applications           *
+ * Copyright (c) 2000, Sandia National Laboratories.                         *
+ * Zoltan is distributed under the GNU Lesser General Public License 2.1.    * 
+ * For more info, see the README file in the top-level Zoltan directory.     *  
+ *****************************************************************************/
+/*****************************************************************************
+ * CVS File Information :
+ *    $RCSfile$
+ *    $Author$
+ *    $Date$
+ *    $Revision$
+ ****************************************************************************/
 
 #include "lb_const.h"
 #include "comm_const.h"
 #include "all_allo_const.h"
+#include "create_proc_list_const.h"
 
 int LB_Create_Proc_List(
      int       set,           /* set that processor is in */
@@ -31,6 +25,12 @@ int LB_Create_Proc_List(
      MPI_Comm  comm           /* communicator for partition */
 )
 {
+/* This routine calculates a communication pattern for the situation where
+   there are two groups of processors and each processor has a number of
+   items which need to be communicated to the other group.  This routine
+   calculates a communication pattern which seeks to minimize the number
+   of items that any one processor has after communication. */
+
      int  nprocs;             /* number of processors in partition */
      int  rank;               /* my processor number in partition */
      int *send;               /* array of number of dots outgoing */

@@ -1,20 +1,16 @@
-/*====================================================================
- * ------------------------
- * | CVS File Information |
- * ------------------------
- *
- * $RCSfile$
- *
- * $Author$
- *
- * $Date$
- *
- * $Revision$
- *
- *====================================================================*/
-
-/* Locate which processor a point is inside within the tree defined
-   by the recursive bisection algorithm chosen. */
+/*****************************************************************************
+ * Zoltan Dynamic Load-Balancing Library for Parallel Applications           *
+ * Copyright (c) 2000, Sandia National Laboratories.                         *
+ * Zoltan is distributed under the GNU Lesser General Public License 2.1.    * 
+ * For more info, see the README file in the top-level Zoltan directory.     *  
+ *****************************************************************************/
+/*****************************************************************************
+ * CVS File Information :
+ *    $RCSfile$
+ *    $Author$
+ *    $Date$
+ *    $Revision$
+ ****************************************************************************/
 
 #include <stdio.h>
 #include "lb_const.h"
@@ -27,6 +23,9 @@ LB       *lb,                   /* The load-balancing structure */
 double   *coords,               /* vector of point coordinates */
 int      *proc)                 /* processor that point lands in */
 {
+/* Locate which processor a point is inside within the tree defined
+   by the recursive bisection algorithm chosen. */
+
      int               procmid; /* 1st processor in upper half */
      RCB_STRUCT        *rcb;    /* Pointer to data structures for RCB.  */
      struct rcb_tree   *treept; /* tree of RCB cuts */
