@@ -5,5 +5,5 @@ TARGET=html/index.html
 $(TARGET): ../src/*.hpp Doxyfile tpetra.* footer.html index.doc
 	doxygen
 
-clean:
+clean: 
 	rm -rf html latex man rtf

@@ -25,30 +25,32 @@ template<typename OrdinalType> class ElementSpace;
 template<typename OrdinalType, typename ScalarType>
 class Platform {
 public:
-
-		//@{ \name Constructor/Destructor Methods
-		//! Destructor
-		virtual ~Platform() {};
-		//@}
-
-		//@{ \name Class Creation and Accessor Methods
-		//! Comm Instances
-		virtual Comm<ScalarType, OrdinalType>* createScalarComm() const = 0;
-		virtual Comm<OrdinalType, OrdinalType>* createOrdinalComm() const = 0;
-		//! Distributor Instances
-		virtual Distributor<ScalarType, OrdinalType>* createScalarDistributor() const = 0;
-		virtual Distributor<OrdinalType, OrdinalType>* createOrdinalDistributor() const = 0;
-		//! Directory Instance
-		virtual Directory<OrdinalType>* createDirectory(ElementSpace<OrdinalType> const& elementSpace) const = 0;
-		//@}
-
-		//@{ \name I/O Methods
-		//! printInfo
-		virtual void printInfo(ostream& os) const = 0;
-		//@}
-
-	}; // Platform class
-
+	
+	//@{ \name Constructor/Destructor Methods
+	//! Destructor
+	virtual ~Platform() {};
+	//! Clone method
+	virtual Platform<OrdinalType, ScalarType>* clone() const = 0;
+	//@}
+	
+	//@{ \name Class Creation and Accessor Methods
+	//! Comm Instances
+	virtual Comm<ScalarType, OrdinalType>* createScalarComm() const = 0;
+	virtual Comm<OrdinalType, OrdinalType>* createOrdinalComm() const = 0;
+	//! Distributor Instances
+	virtual Distributor<ScalarType, OrdinalType>* createScalarDistributor() const = 0;
+	virtual Distributor<OrdinalType, OrdinalType>* createOrdinalDistributor() const = 0;
+	//! Directory Instance
+	virtual Directory<OrdinalType>* createDirectory(ElementSpace<OrdinalType> const& elementSpace) const = 0;
+	//@}
+	
+	//@{ \name I/O Methods
+	//! printInfo
+	virtual void printInfo(ostream& os) const = 0;
+	//@}
+	
+}; // Platform class
+	
 } // namespace Tpetra
 
 #endif // _TPETRA_PLATFORM_HPP_

@@ -101,4 +101,7 @@ using namespace std;
 
 const int Tpetra_DefaultTracebackMode = 1; // Default value for traceback behavior
 
+//#define ORDINAL_ZERO Teuchos::OrdinalTraits<OrdinalType>::zero()
+//#define ORDINAL_ONE Teuchos::OrdinalTraits<OrdinalType>::one()
+
 #endif // _TPETRA_CONFIGDEFS_HPP_

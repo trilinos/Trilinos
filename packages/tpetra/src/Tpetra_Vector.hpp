@@ -2,8 +2,8 @@
 #define _TPETRA_VECTOR_HPP_
 
 #include "Tpetra_Object.hpp"
-#include "Tpetra_CompObject.hpp"
-#include "Tpetra_BLAS.hpp"
+#include <Teuchos_CompObject.hpp>
+#include <Tpetra_BLAS.hpp>
 
 namespace Tpetra {
 
@@ -32,7 +32,7 @@ namespace Tpetra {
 */
 
 template<typename OrdinalType, typename ScalarType>
-class Vector : public CompObject, public Object, public BLAS<OrdinalType, ScalarType>
+class Vector : public Teuchos::CompObject, public Object
 {
 
 public:
@@ -175,6 +175,9 @@ public:
 	//! Print method, used by overloaded << operator.
 	void print(ostream& os) const;
 	//@}
+
+private:
+	Teuchos::BLAS<OrdinalType, ScalarType> BLAS_;
 
 }; // class Vector
 

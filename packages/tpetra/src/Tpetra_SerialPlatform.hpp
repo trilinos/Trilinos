@@ -25,6 +25,12 @@ template<typename OrdinalType> class ElementSpace;
 		SerialPlatform(SerialPlatform<OrdinalType, ScalarType> const& platform) : Object(platform.label()) {};
 		//! Destructor
 		~SerialPlatform() {};
+		//! Clone constructor
+		Platform<OrdinalType, ScalarType>* clone() const {
+			Platform<OrdinalType, ScalarType>* platform = static_cast<Platform<OrdinalType, ScalarType>*>
+				(new SerialPlatform<OrdinalType, ScalarType>(*this));
+			return(platform);
+		};
 		//@}
 
 		//@{ \name Class Creation and Accessor Methods

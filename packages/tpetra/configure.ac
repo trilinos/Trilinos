@@ -266,6 +266,7 @@ AC_CONFIG_FILES([
 		test/Platform/Makefile
 		test/ElementSpace/Makefile
 		test/BlockElementSpace/Makefile
+		test/VectorSpace/Makefile
 		])
 
 AC_OUTPUT()

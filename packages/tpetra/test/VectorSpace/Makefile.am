@@ -32,11 +32,13 @@ noinst_PROGRAMS = VectorSpace_test
 
 VectorSpace_test_SOURCES = $(srcdir)/cxx_main.cpp
 
-VectorSpace_test_DEPENDENCIES = $(top_builddir)/src/libtpetra.a
+VectorSpace_test_DEPENDENCIES = $(top_builddir)/src/libtpetra.a \
+	$(top_builddir)/../teuchos/src/libteuchos.a
 
-VectorSpace_test_CXXFLAGS = -I$(top_srcdir)/src
+VectorSpace_test_CXXFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/../teuchos/src \
+	-I$(top_builddir)/../teuchos/src
 
-VectorSpace_test_LDADD = $(top_builddir)/src/libtpetra.a $(BLAS_LIBS) \
+VectorSpace_test_LDADD = $(top_builddir)/src/libtpetra.a \
+	$(top_builddir)/../teuchos/src/libteuchos.a \
 	$(LIBS) $(FLIBS)
-
 

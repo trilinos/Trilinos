@@ -30,3 +30,8 @@ This also makes const usage consistent with functions and function return types.
 
 8. Member initializations in a constructor should be in the same order as the members are listed in the class declaration.
 
+9. Code should be written Java-style, with the function definitions inline with the function declarations in the class's *.hpp file.
+
+10. Prefer member initialization to member assignment in constructor body.
+
+11. If a class has non-trivial data members, always declare a default constructor, a copy constructor, a destructor, and an assignment operator. You don't need to define them, but always declare them. This will prevent the compiler from adding in those functions, which it will usually write poorly. This way, if someone tries to use one of those functions, it will be a compile-time error instead of working but potentially producing the Wrong behavior. Always document these declarations as such.

@@ -2,8 +2,6 @@
 #define _TPETRA_OBJECT_HPP_
 
 #include "Tpetra_ConfigDefs.hpp" // for iostream
-//#include <Teuchos_CombineMode.hpp>
-//#include <Teuchos_DataAccess.hpp>
 
 namespace Tpetra
 {

@@ -79,7 +79,6 @@ MPI =
 
 endif
 
-
 USERBASE_H = 
 
 
@@ -95,7 +94,8 @@ DIST_H = \
 
 DIST = 
 
-COMP_H =
+COMP_H = \
+	$(srcdir)/Tpetra_VectorSpace.hpp
 
 COMP = 
 

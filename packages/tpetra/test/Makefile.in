@@ -115,7 +115,7 @@ am__include = @am__include@
 am__quote = @am__quote@
 install_sh = @install_sh@
 
-SUBDIRS = Comm Platform Distributor ElementSpace BlockElementSpace
+SUBDIRS = Comm Platform Distributor ElementSpace BlockElementSpace VectorSpace
 subdir = test
 mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/Tpetra_config.h
