@@ -14,7 +14,7 @@
 #define __MLGRIDG__
 
 #include <stdio.h>
-#include <stdlib.h>
+/* #include <stdlib.h> */
 
 #include "ml_defs.h"
 #include "ml_comm.h"

@@ -14,7 +14,7 @@
 #define __MLAMGH__
 
 #include <stdio.h>
-#include <stdlib.h>
+/* #include <stdlib.h> */
 #include "ml_defs.h"
 
 /* ************************************************************************* */

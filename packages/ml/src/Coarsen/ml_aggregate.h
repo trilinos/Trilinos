@@ -14,7 +14,7 @@
 #define __MLAGGH__
 
 #include <stdio.h>
-#include <stdlib.h>
+/* #include <stdlib.h> */
 
 /* ************************************************************************* */
 /* definition of the aggregate structure                                     */
