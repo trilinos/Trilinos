@@ -33,7 +33,7 @@ int ML_Gen_MGHierarchy_UsingAMG(ML *ml, int start,
                                 int increment_or_decrement, ML_AMG *amg)
 {
    int    i, j, level, idata=0, nrows, blksize;
-   double dnnz;
+   double dnnz = 1.;
    ML_AMG *ml_amg;
 #ifdef ML_TIMING
    double t0;

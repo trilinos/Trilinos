@@ -92,13 +92,13 @@ int ML_Aggregate_CoarsenDomainDecomp( ML_Aggregate *ml_ag,
    /* ============================================================= */
 
    nbytes = maxnnz_per_row * sizeof( int );
-   ML_memory_alloc((void**) &col_ind, nbytes, "ACA");
+   ML_memory_alloc((void**) &col_ind, (unsigned int) nbytes, "ACA");
    nbytes = maxnnz_per_row * sizeof( double );
-   ML_memory_alloc((void**) &col_val, nbytes, "ACB");
+   ML_memory_alloc((void**) &col_val, (unsigned int) nbytes, "ACB");
    if ( Nrows > 0 )
    {
       nbytes = Nrows * sizeof( double );
-      ML_memory_alloc((void**) &diagonal, nbytes, "ACC");
+      ML_memory_alloc((void**) &diagonal, (unsigned int) nbytes, "ACC");
    }
    else diagonal = NULL;
 
@@ -118,9 +118,9 @@ int ML_Aggregate_CoarsenDomainDecomp( ML_Aggregate *ml_ag,
          ML_memory_free((void**) &col_val);
          maxnnz_per_row = maxnnz_per_row * 2 + 1;
          nbytes = maxnnz_per_row * sizeof( int );
-         ML_memory_alloc((void**) &col_ind, nbytes, "ACD");
+         ML_memory_alloc((void**) &col_ind, (unsigned int) nbytes, "ACD");
          nbytes = maxnnz_per_row * sizeof( double );
-         ML_memory_alloc((void**) &col_val,  nbytes, "ACE");
+         ML_memory_alloc((void**) &col_val, (unsigned int) nbytes, "ACE");
       }
       for ( j = 0; j < m; j++ )
       {
@@ -140,7 +140,7 @@ int ML_Aggregate_CoarsenDomainDecomp( ML_Aggregate *ml_ag,
    /* ============================================================= */
 
    nbytes = (count + 1) * sizeof( int );
-   ML_memory_alloc((void**) &mat_indx, nbytes, "ACG");
+   ML_memory_alloc((void**) &mat_indx, (unsigned int) nbytes, "ACG");
    k = ML_Comm_GsumInt( comm, Nrows);
    m = ML_Comm_GsumInt( comm, count);
 
@@ -205,7 +205,7 @@ int ML_Aggregate_CoarsenDomainDecomp( ML_Aggregate *ml_ag,
    ML_memory_alloc((void**) &aggr_cnt_array, sizeof(int), "ACJ");
    aggr_cnt_array[0] = Nrows;
    nbytes = Nrows * sizeof(int);
-   if ( nbytes > 0 ) ML_memory_alloc((void**) &aggr_index, nbytes, "ACJ");
+   if ( nbytes > 0 ) ML_memory_alloc((void**) &aggr_index, (unsigned int) nbytes, "ACJ");
    else              aggr_index = NULL;
    for ( i = 0; i < Nrows; i++ ) aggr_index[i] = 0;
 
@@ -222,7 +222,7 @@ int ML_Aggregate_CoarsenDomainDecomp( ML_Aggregate *ml_ag,
    level = ml_ag->cur_level;
    nbytes = Nrows * sizeof( int );
    if ( nbytes > 0 )
-      ML_memory_alloc((void**) &(ml_ag->aggr_info[level]), nbytes, "ACK");
+      ML_memory_alloc((void**) &(ml_ag->aggr_info[level]), (unsigned int) nbytes, "ACK");
    else
       ml_ag->aggr_info[level] = NULL;
 
@@ -244,12 +244,12 @@ int ML_Aggregate_CoarsenDomainDecomp( ML_Aggregate *ml_ag,
                 Ncoarse);
    }
    nbytes = ( new_Nrows + 1 ) * sizeof(int);
-   ML_memory_alloc((void**)&(new_ia), nbytes, "ACO");
+   ML_memory_alloc((void**)&(new_ia), (unsigned int) nbytes, "ACO");
    nbytes = new_Nrows * nullspace_dim * sizeof(int);
-   if ( nbytes > 0 ) ML_memory_alloc((void**)&(new_ja), nbytes, "ACP");
+   if ( nbytes > 0 ) ML_memory_alloc((void**)&(new_ja), (unsigned int) nbytes, "ACP");
    else              new_ja = NULL;
    nbytes = new_Nrows * nullspace_dim * sizeof(double);
-   if ( nbytes > 0 ) ML_memory_alloc((void**)&(new_val), nbytes, "ACQ");
+   if ( nbytes > 0 ) ML_memory_alloc((void**)&(new_val), (unsigned int) nbytes, "ACQ");
    else              new_ja = NULL;
    for ( i = 0; i < new_Nrows*nullspace_dim; i++ ) new_val[i] = 0.0;
 
@@ -259,7 +259,7 @@ int ML_Aggregate_CoarsenDomainDecomp( ML_Aggregate *ml_ag,
 
    nbytes = Ncoarse * nullspace_dim * nullspace_dim * sizeof(double);
    if ( nbytes > 0 )
-      ML_memory_alloc((void**)&(new_null),nbytes,"ACR");
+      ML_memory_alloc((void**)&(new_null), (unsigned int) nbytes,"ACR");
    else
       new_null = NULL;
    for (i = 0; i < Ncoarse*nullspace_dim*nullspace_dim; i++)
@@ -316,15 +316,15 @@ int ML_Aggregate_CoarsenDomainDecomp( ML_Aggregate *ml_ag,
       if (aggr_cnt_array[i] > max_agg_size) max_agg_size = aggr_cnt_array[i];
    }
    nbytes = max_agg_size * nullspace_dim * sizeof(double);
-   if ( nbytes > 0 ) ML_memory_alloc((void**)&qr_tmp, nbytes, "ACU");
+   if ( nbytes > 0 ) ML_memory_alloc((void**)&qr_tmp, (unsigned int) nbytes, "ACU");
    else              qr_tmp = NULL;
    nbytes = nullspace_dim * sizeof(double);
-   if ( nbytes > 0 ) ML_memory_alloc((void**)&tmp_vect, nbytes, "ACV");
+   if ( nbytes > 0 ) ML_memory_alloc((void**)&tmp_vect, (unsigned int) nbytes, "ACV");
    else              tmp_vect = NULL;
 
    lwork  = nullspace_dim;
    nbytes = nullspace_dim * sizeof(double);
-   if ( nbytes > 0 ) ML_memory_alloc((void**)&work, nbytes, "ACW");
+   if ( nbytes > 0 ) ML_memory_alloc((void**)&work, (unsigned int) nbytes, "ACW");
    else              work = NULL;
 
    /* ------------------------------------------------------------- */

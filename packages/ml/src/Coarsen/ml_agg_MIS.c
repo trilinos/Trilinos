@@ -1697,7 +1697,7 @@ Here is how we do all this:
 /* A subroutine to label vertices of a particular type                  */
 /* -------------------------------------------------------------------- */
 
-int ML_Aggregate_LabelVertices(int vlist_cnt, int *vlist, char Vtype,
+int ML_Aggregate_LabelVertices(int vlist_cnt, int *vlist, int Vtype,
                            char *vertex_state, char *vertex_type,
                            int nvertices, int *rptr, int *cptr, 
                            int myrank, int **proclist, int send_cnt, 

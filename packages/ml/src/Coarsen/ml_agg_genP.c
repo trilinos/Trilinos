@@ -247,7 +247,7 @@ int ML_Gen_MGHierarchy(ML *ml, int fine_level,
 	  ml->symmetrize_matrix = ML_FALSE;
 	  /*	  printf(" what is this %e\n",ml->Amat[level].lambda_max); */
 	  fov = (struct ML_Field_Of_Values * )(ag->field_of_values);
-	  dtemp = fov->R_coeff[0] + fov->eta * fov->R_coeff[1] + pow(fov->eta,2) * fov->R_coeff[2];
+	  dtemp = fov->R_coeff[0] + fov->eta * fov->R_coeff[1] + pow(fov->eta,2.) * fov->R_coeff[2];
 	  ml->Amat[level].lambda_max = dtemp;
 	}
       }
@@ -1263,7 +1263,7 @@ int ML_AGG_Gen_DDProlongator(ML *ml,int level, int clevel, void *data)
    ML_Set_Amatrix_Diag( newml, newNlevels-1, Nfine, diagonal);
    ML_free( diagonal );
    ML_Aggregate_Create( &newag );
-   ML_Aggregate_Set_OutputLevel( newag, 0 );
+   ML_Aggregate_Set_OutputLevel( newag, 0.);
    ML_Aggregate_Set_CoarsenScheme_Uncoupled( newag );
    ML_Aggregate_Set_Threshold( newag, 0.08 );
 ML_Aggregate_Set_DampingFactor( newag, 0.0/3.0 );
@@ -1356,11 +1356,11 @@ ML_Aggregate_Set_DampingFactor( newag, 0.0/3.0 );
    for (j = 0; j < Nfine; j++) darray[j] = darray[j] / norm;
 
    nbytes = ( Nfine + 1 ) * sizeof(int);
-   ML_memory_alloc((void**)&(new_ia), nbytes, "AD1");
+   ML_memory_alloc((void**)&(new_ia), (unsigned int) nbytes, "AD1");
    nbytes = Nfine * sizeof(int);
-   ML_memory_alloc((void**)&(new_ja), nbytes, "AD2");
+   ML_memory_alloc((void**)&(new_ja), (unsigned int) nbytes, "AD2");
    nbytes = Nfine * sizeof(double);
-   ML_memory_alloc((void**)&(new_val), nbytes, "AD3");
+   ML_memory_alloc((void**)&(new_val), (unsigned int) nbytes, "AD3");
    for (i = 0; i <= Nfine; i++) new_ia[i] = i;
    for (i = 0; i < Nfine; i++) new_ja[i] = 0;
 /* */
@@ -1467,11 +1467,11 @@ for (i = 0; i < Nfine; i++) darray[i] = 1.0/sqrt((double) Nfine);
       for ( j = 0; j < Nfine; j++ ) if ( ap_aa[i][j] != 0.0 ) nnz++;
 
    nbytes = ( Nfine + 1 ) * sizeof(int);
-   ML_memory_alloc((void**)&(new_ia), nbytes, "ADA");
+   ML_memory_alloc((void**)&(new_ia), (unsigned int) nbytes, "ADA");
    nbytes = nnz * sizeof(int);
-   ML_memory_alloc((void**)&(new_ja), nbytes, "ADB");
+   ML_memory_alloc((void**)&(new_ja), (unsigned int) nbytes, "ADB");
    nbytes = nnz * sizeof(double);
-   ML_memory_alloc((void**)&(new_val), nbytes, "ADC");
+   ML_memory_alloc((void**)&(new_val), (unsigned int) nbytes, "ADC");
 
    nnz = 0;
    new_ia[0] = nnz;
@@ -1884,7 +1884,7 @@ int ML_AGG_Gen_DDProlongator2(ML *ml,int level, int clevel, void *data)
       ML_Set_Amatrix_Diag( newml, newNlevels-1, Nfine, diagonal);
       ML_free( diagonal );
       ML_Aggregate_Create( &newag );
-      ML_Aggregate_Set_OutputLevel( newag, 0 );
+      ML_Aggregate_Set_OutputLevel( newag, 0.);
       ML_Aggregate_Set_CoarsenScheme_Uncoupled( newag );
       ML_Aggregate_Set_MaxCoarseSize( newag, 50 );
       ML_Aggregate_Set_PSmootherType( newag, 0 );
@@ -1907,11 +1907,11 @@ int ML_AGG_Gen_DDProlongator2(ML *ml,int level, int clevel, void *data)
    /* ----------------------------------------------------------------- */
 
    nbytes = ( Nfine + 1 ) * sizeof(int);
-   ML_memory_alloc((void**)&(new_ia), nbytes, "AD1");
+   ML_memory_alloc((void**)&(new_ia), (unsigned int) nbytes, "AD1");
    nbytes = Nfine * sizeof(int);
-   ML_memory_alloc((void**)&(new_ja), nbytes, "AD2");
+   ML_memory_alloc((void**)&(new_ja), (unsigned int) nbytes, "AD2");
    nbytes = Nfine * sizeof(double);
-   ML_memory_alloc((void**)&(new_val), nbytes, "AD3");
+   ML_memory_alloc((void**)&(new_val), (unsigned int) nbytes, "AD3");
    for (i = 0; i <= Nfine; i++) new_ia[i] = i;
    for (i = 0; i < Nfine; i++) new_ja[i] = 0;
 /*
@@ -2489,7 +2489,7 @@ int ML_MultiLevel_Gen_Prolongator(ML *ml,int level, int clevel, void *data)
        }
 
        eta = fov->eta;
-       dtemp = fov->R_coeff[0] + eta * (fov->R_coeff[1]) + pow(eta,2) * (fov->R_coeff[2]);
+       dtemp = fov->R_coeff[0] + eta * (fov->R_coeff[1]) + pow(eta,2.) * (fov->R_coeff[2]);
        if( dtemp < 0.0 ) dtemp = 0.000001;
        dtemp2 = fov->real_max;
        
@@ -2499,7 +2499,7 @@ int ML_MultiLevel_Gen_Prolongator(ML *ml,int level, int clevel, void *data)
      } else if( fov->choice == 2 ) {
 
        ML_Anasazi_Get_FieldOfValuesBox_Interface(Amat,fov);
-       fov->eta = sqrt(pow(fov->real_max,2) + pow(fov->imag_max,2));
+       fov->eta = sqrt(pow(fov->real_max,2.) + pow(fov->imag_max,2.));
 
        if( ml->comm->ML_mypid == 0 && 5 < ML_Get_PrintLevel() ) {
 	 printf("\nLargest eigenvalue (in modulus) = %e\n\n",
@@ -2507,7 +2507,7 @@ int ML_MultiLevel_Gen_Prolongator(ML *ml,int level, int clevel, void *data)
        }
 
        eta = fov->eta;
-       dtemp = fov->R_coeff[0] + eta * (fov->R_coeff[1]) + pow(eta,2) * (fov->R_coeff[2]);
+       dtemp = fov->R_coeff[0] + eta * (fov->R_coeff[1]) + pow(eta,2.) * (fov->R_coeff[2]);
        if( dtemp < 0.0 ) dtemp = 0.000001;
        dtemp2 = fov->real_max;
        
@@ -2612,7 +2612,7 @@ int ML_MultiLevel_Gen_Restriction(ML *ml,int level, int next, void *data)
     fov = (struct ML_Field_Of_Values *)(ag->field_of_values);
     eta = fov->eta;
     
-    dtemp = fov->P_coeff[0] + eta * (fov->P_coeff[1]) + pow(eta,2) * (fov->P_coeff[2]);
+    dtemp = fov->P_coeff[0] + eta * (fov->P_coeff[1]) + pow(eta,2.) * (fov->P_coeff[2]);
     if( dtemp < 0.0 ) dtemp = 0.000001;
     dtemp2 = fov->real_max;
  	      

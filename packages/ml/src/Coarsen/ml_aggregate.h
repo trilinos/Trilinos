@@ -303,7 +303,7 @@ int ML_Aggregate_ProjectCoordinates(ML_Operator *P_tentative,
 				    ML_Aggregate *ag, int num_PDEs,
 				    int relative_level);
 int ML_Aggregate_KeepInfo(ML_Aggregate *ag, int value);
-int ML_Aggregate_LabelVertices(int, int *, char, char *,char *,int,
+int ML_Aggregate_LabelVertices(int, int *, int, char *,char *,int,
               int *, int *, int, int **, int, int **, int *, int *,
               int, int **, int *, int *, int **, int, ML_Comm *, int *);
 
@@ -371,7 +371,7 @@ int ML_Aggregate_ComposeExpandedCommInfo(ML_GetrowFunc *getrow_obj,
 int ML_Aggregate_ComposeRecvFromSend(int nprocs, int mypid, int new_N_send,
            int *new_send_leng, int *new_send_neighbors, int *N_rcv, 
            int **recv_leng, int **recv_neighbors, ML_Comm *comm);
-int ML_Aggregate_Form_Aggregates(char phaseID, int phaseAFlag, int Nrows, 
+int ML_Aggregate_Form_Aggregates(int phaseID, int phaseAFlag, int Nrows, 
            int *mat_indx, int *aggr_index, int *aggr_stat, 
            int *node_type, int *node_type2, int *order_array, 
            int *aggr_count_in, int *aggr_cnt_leng_in,

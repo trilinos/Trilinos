@@ -32,7 +32,7 @@ int ML_AMG_CoarsenMIS( ML_AMG *ml_amg, ML_Operator *Amatrix,
                        ML_Operator **Pmatrix, ML_Comm *comm)
 {
   unsigned int nbytes;
-   int     i, j, k, m, offset, count, index, ind2, col, *vlist;
+   int     i, j= 0, k, m, offset, count, index, ind2, col, *vlist;
    int     num_PDE_eqns, Nrows, exp_Nrows, Ncoarse, exp_Ncoarse, total_nnz;
    int     *rowptr, *column, *new_ia=NULL, *new_ja=NULL, *short_list;
    int     *CF_array, *sort_array, sortleng, bitindex,intindex, short_leng;
@@ -47,7 +47,7 @@ int ML_AMG_CoarsenMIS( ML_AMG *ml_amg, ML_Operator *Amatrix,
    int     *A_neigh=NULL, Nghost, **A_sndbuf=NULL, **A_rcvbuf=NULL;
    int     **A_sendlist=NULL, **A_recvlist=NULL, **proclist, *templist, nbdry;
    int     new_Nsend, new_Nrecv, *new_send_leng, *new_recv_leng, A_nnz;
-   int     *new_send_list, *new_send_neigh, *new_recv_neigh, tmpcnt;
+   int     *new_send_list, *new_send_neigh, *new_recv_neigh, tmpcnt = 0;
    int     *short_size;
    double  *new_val=NULL, epsilon, *rowi_val=NULL, *darray, rowmax, diag;
    double  *values, *offdbuffer, *dsumCij, dsumCi, rowsum, dtemp;
@@ -1478,7 +1478,7 @@ for ( i = 0; i < Nrows; i++ )
 /* A subroutine to label vertices of a particular type                       */
 /* ------------------------------------------------------------------------- */
 
-int ML_AMG_LabelVertices(int vlist_cnt2, int *vlist2, char Vtype,
+int ML_AMG_LabelVertices(int vlist_cnt2, int *vlist2, int Vtype,
                           char *vertex_state, char *vertex_type,
                           int nvertices, int *rptr, int *cptr, 
                           int myrank, int **proclist, int send_cnt, 
@@ -1488,13 +1488,13 @@ int ML_AMG_LabelVertices(int vlist_cnt2, int *vlist2, char Vtype,
                           ML_Comm *comm, int amg_index[])
 {
    int     i, j, k, m, N_remaining_vertices, index, select_flag, fproc, col;
-   int     NremainingRcvProcs, change_flag, *proc_flag, send_flag,nselected;
+   int     NremainingRcvProcs, change_flag, *proc_flag=NULL, send_flag,nselected;
    int     *pref_list=NULL, col2, loop_cnt, pref_cnt;
    unsigned int nbytes;
    int     pref_index, *vlist, vlist_cnt;
    int     *pref_rank, vlist_ind;
    char    *in_preflist=NULL;
-   USR_REQ *Request;
+   USR_REQ *Request=NULL;
    int msg_type = 1041;
 
    /* ------------------------------------------------------------- */

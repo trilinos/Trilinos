@@ -182,7 +182,7 @@ extern int  ML_AMG_Set_CoarseSolve(ML_AMG *ml_amg, int solve_type, int ntimes,
 extern int  ML_AMG_Print(ML_AMG *);
 extern int  ML_AMG_Print_Complexity(ML_AMG *);
 
-extern int  ML_AMG_LabelVertices(int nvertices, int *vlist, char,
+extern int  ML_AMG_LabelVertices(int nvertices, int *vlist, int,
                   char *state, char *vtype, int nvert, int *rowptr, 
                   int *columns, int mypid, int **proclist, int Nneigh,
                   int **sndbuf, int *neigh, int *sndleng, int Nneigh2,
