@@ -38,12 +38,12 @@ extern "C" {
 /*****************************************************************************/
 /*****************************************************************************/
 
-#define NUM_STATS 4 /* Number of graph stats other than vertex/edge weights */
-#define NUM_STATS_PART 3 /* Number of graph stats for partitions. */
+#define NUM_STATS 5 /* Number of graph stats other than vertex/edge weights */
+#define NUM_STATS_PART 4 /* Number of graph stats for partitions. */
 
 static int eval_edge_list(ZZ *, int, int, ZOLTAN_ID_PTR, int *, ZOLTAN_ID_PTR,
-  int *, float *, int, int, int, int *, int *, int *, float *,
-  int *, float *, int *);
+  int *, float *, int, int, int, int *, int *, int *, int *, float *,
+  int *, float *, int *, int *);
 
 /*****************************************************************************/
 /*****************************************************************************/
@@ -80,7 +80,7 @@ int Zoltan_LB_Eval (ZZ *zz, int print_stats,
 {
   char *yo = "Zoltan_LB_Eval";
   int i, j, k, max_edges, num_edges;
-  int cuts;
+  int cuts, comm_vol;
   int num_obj = 0, num_adj, num_boundary, ierr, compute_part;
   int nproc = zz->Num_Proc, nparts, maxpart, obj_wgt_dim;
   int stats[4*NUM_STATS];
@@ -102,7 +102,7 @@ int Zoltan_LB_Eval (ZZ *zz, int print_stats,
   int sum;
   char msg[256];
   /* Arrays for partition data. */
-  int *nobj_arr, *cut_arr, *bndry_arr, *all_arr, *all_arr_glob;
+  int *nobj_arr, *cut_arr, *bndry_arr, *commvol_arr, *all_arr, *all_arr_glob;
   float *vwgt_arr, *vwgt_arr_glob, *cutwgt_arr, *cutwgt_arr_glob;
   
   ZOLTAN_TRACE_ENTER(zz, yo);
@@ -182,6 +182,7 @@ int Zoltan_LB_Eval (ZZ *zz, int print_stats,
     nobj_arr = all_arr;
     cut_arr  = nobj_arr + nparts;
     bndry_arr  = cut_arr + nparts;
+    commvol_arr  = bndry_arr + nparts;
     all_arr_glob = all_arr + NUM_STATS*nparts;
     vwgt_arr_glob = vwgt_arr + nparts*(zz->Obj_Weight_Dim);
     cutwgt_arr = vwgt_arr_glob + nparts*(zz->Obj_Weight_Dim);
@@ -214,9 +215,10 @@ int Zoltan_LB_Eval (ZZ *zz, int print_stats,
   /* Compute (weighted) edge cuts, #boundary vertices,
      and # adjacent procs if possible */
 
-  num_boundary = 0;
   num_adj = 0;
   cuts = 0;
+  num_boundary = 0;
+  comm_vol = 0;
 
   if (have_graph_callbacks) {
     /* Use the basic graph query functions */
@@ -272,8 +274,9 @@ int Zoltan_LB_Eval (ZZ *zz, int print_stats,
                               &(ewgts[sum*zz->Edge_Weight_Dim]), 
                               edges_per_obj[k],
                               num_obj, compute_part, proc_count,
-                              &cuts, &num_boundary, 
-                              tmp_cutwgt, cut_arr, cutwgt_arr, bndry_arr);
+                              &cuts, &num_boundary, &comm_vol,
+                              tmp_cutwgt, cut_arr, cutwgt_arr, 
+                              bndry_arr, commvol_arr);
         if (ierr) {
           ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error in eval_edge_list");
           goto End;
@@ -301,8 +304,9 @@ int Zoltan_LB_Eval (ZZ *zz, int print_stats,
         ierr = eval_edge_list(zz, k, num_gid_entries, global_ids, part, 
                               nbors_global, nbors_proc, ewgts, edges_per_obj[k],
                               num_obj, compute_part, proc_count,
-                              &cuts, &num_boundary, 
-                              tmp_cutwgt, cut_arr, cutwgt_arr, bndry_arr);
+                              &cuts, &num_boundary, &comm_vol, 
+                              tmp_cutwgt, cut_arr, cutwgt_arr, 
+                              bndry_arr, commvol_arr);
         if (ierr) {
           ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error in eval_edge_list");
           goto End;
@@ -344,7 +348,8 @@ int Zoltan_LB_Eval (ZZ *zz, int print_stats,
     stats[0] = num_obj;
     stats[1] = cuts;
     stats[2] = num_boundary;
-    stats[3] = num_adj;
+    stats[3] = comm_vol;
+    stats[4] = num_adj;
 
     /* Compute min, max, sum in the upper portions of the stats array. */
     MPI_Allreduce(stats, &stats[imin*NUM_STATS], NUM_STATS, MPI_INT, MPI_MIN, 
@@ -393,7 +398,9 @@ int Zoltan_LB_Eval (ZZ *zz, int print_stats,
                    break;
           case 2:  sprintf(msg, "%s", "Boundary objects : ");
                    break;
-          case 3:  sprintf(msg, "%s", "Adjacent procs   : ");
+          case 3:  sprintf(msg, "%s", "Comm. volume     : ");
+                   break;
+          case 4:  sprintf(msg, "%s", "Adjacent procs   : ");
                    break;
           default: sprintf(msg, "%s", "                   ");
                    break;
@@ -571,7 +578,9 @@ int Zoltan_LB_Eval (ZZ *zz, int print_stats,
                  break;
         case 2:  sprintf(msg, "%s", "Boundary objects : ");
                  break;
-        case 3:  sprintf(msg, "%s", "Adj. partitions  : ");
+        case 3:  sprintf(msg, "%s", "Comm. volume     : ");
+                 break;
+        case 4:  sprintf(msg, "%s", "Adj. partitions  : ");
                  break;
         default: sprintf(msg, "%s", "                   ");
                  break;
@@ -626,10 +635,12 @@ static int eval_edge_list(
   int *proc_count,            /* # of nbors on each other proc */
   int *cuts,                  /* # of cut edges */
   int *num_boundary,          /* # of boundary objs */
-  float *tmp_cutwgt,          /* total weight of cut edges (and other stats) */
+  int *comm_vol,              /* communication volume */
+  float *cutwgt,              /* total weight of cut edges (and other stats) */
   int *cut_arr,               /* # of partition cut edges. */
   float *cutwgt_arr,          /* weights of partition cut edges */
-  int *bndry_arr              /* # of partition boundary objs */
+  int *bndry_arr,             /* # of partition boundary objs */
+  int *commvol_arr            /* communication volume (for partitions) */
 )
 {
 /* Function to evaluate edge cuts, etc., for an object's edge list. */
@@ -647,7 +658,7 @@ int proc_flag, part_flag;
     if (nbors_proc[j] != zz->Proc){
       (*cuts)++;
       for (i=0; i<zz->Edge_Weight_Dim; i++)
-        tmp_cutwgt[i] += ewgts[j*(zz->Edge_Weight_Dim)+i];
+        cutwgt[i] += ewgts[j*(zz->Edge_Weight_Dim)+i];
       if (proc_flag==0){
         (*num_boundary)++;
         proc_flag = 1;
