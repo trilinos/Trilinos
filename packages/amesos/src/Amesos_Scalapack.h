@@ -186,6 +186,12 @@ public:
     will need to make an explicit call to ReadParameterList.
    */
   int ReadParameterList() ;
+
+  const Teuchos::ParameterList* getList() const
+  {
+    return (const Teuchos::ParameterList *) &ParameterList_;
+  }
+  
   //@}
 
  private:  

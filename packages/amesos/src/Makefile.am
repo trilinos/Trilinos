@@ -70,13 +70,15 @@ endif
 #  flag to configure.ac 
 #
 if NEED_PARAMETER_LIST
-PARAM_H = \
-	$(srcdir)/Amesos_Parameter_List.h \
-	$(srcdir)/Amesos_Parameter_Arbitrary.h \
-	$(srcdir)/Amesos_Parameter_Entry.h
-PARAM = \
-	$(srcdir)/Amesos_Parameter_List.cpp \
-	$(srcdir)/Amesos_Parameter_Entry.cpp
+# PARAM_H = \
+# 	$(srcdir)/Amesos_Parameter_List.h \
+# 	$(srcdir)/Amesos_Parameter_Arbitrary.h \
+# 	$(srcdir)/Amesos_Parameter_Entry.h
+# PARAM = \
+# 	$(srcdir)/Amesos_Parameter_List.cpp \
+# 	$(srcdir)/Amesos_Parameter_Entry.cpp
+PARAM_H = 
+PARAM = 
 else
 PARAM_H = 
 PARAM = 

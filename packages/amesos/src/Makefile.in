@@ -112,8 +112,7 @@ libLIBRARIES_INSTALL = $(INSTALL_DATA)
 LIBRARIES = $(lib_LIBRARIES)
 am__DEPENDENCIES_1 =
 libamesos_a_DEPENDENCIES = $(am__DEPENDENCIES_1)
-am__libamesos_a_SOURCES_DIST = $(srcdir)/Amesos_Parameter_List.cpp \
-	$(srcdir)/Amesos_Parameter_Entry.cpp $(srcdir)/DscpackOO.cpp \
+am__libamesos_a_SOURCES_DIST = $(srcdir)/DscpackOO.cpp \
 	$(srcdir)/Amesos_Dscpack.cpp $(srcdir)/klu/btf.f \
 	$(srcdir)/klu/mc21a.f $(srcdir)/klu/mc21b.f \
 	$(srcdir)/klu/mc13e.f $(srcdir)/klu/mc13d.f \
@@ -138,9 +137,7 @@ am__libamesos_a_SOURCES_DIST = $(srcdir)/Amesos_Parameter_List.cpp \
 	$(srcdir)/ksparse/spalloc.c $(srcdir)/ksparse/spfactor.c \
 	$(srcdir)/ksparse/spsmp.c $(srcdir)/ksparse/sputils.c \
 	$(srcdir)/CrsMatrixTranspose.cpp
-@NEED_PARAMETER_LIST_TRUE@am__objects_1 =  \
-@NEED_PARAMETER_LIST_TRUE@	Amesos_Parameter_List.$(OBJEXT) \
-@NEED_PARAMETER_LIST_TRUE@	Amesos_Parameter_Entry.$(OBJEXT)
+am__objects_1 =
 @HAVE_AMESOS_DSCPACK_TRUE@am__objects_2 = DscpackOO.$(OBJEXT) \
 @HAVE_AMESOS_DSCPACK_TRUE@	Amesos_Dscpack.$(OBJEXT)
 @HAVE_AMESOS_KLU_TRUE@am__objects_3 = btf.$(OBJEXT) mc21a.$(OBJEXT) \
@@ -192,8 +189,6 @@ am__depfiles_maybe = depfiles
 @AMDEP_TRUE@	./$(DEPDIR)/Amesos_Factory.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/Amesos_Klu.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/Amesos_Mumps.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/Amesos_Parameter_Entry.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/Amesos_Parameter_List.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/Amesos_Scalapack.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/Amesos_Superlu.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/Amesos_Superludist.Po \
@@ -235,9 +230,7 @@ F77LINK = $(F77LD) $(AM_FFLAGS) $(FFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o \
 SOURCES = $(libamesos_a_SOURCES) $(EXTRA_libamesos_a_SOURCES)
 DIST_SOURCES = $(am__libamesos_a_SOURCES_DIST) \
 	$(EXTRA_libamesos_a_SOURCES)
-am__include_HEADERS_DIST = $(srcdir)/Amesos_Parameter_List.h \
-	$(srcdir)/Amesos_Parameter_Arbitrary.h \
-	$(srcdir)/Amesos_Parameter_Entry.h $(srcdir)/Amesos_Dscpack.h \
+am__include_HEADERS_DIST = $(srcdir)/Amesos_Dscpack.h \
 	$(srcdir)/Amesos_Umfpack.h $(srcdir)/Amesos_Scalapack.h \
 	$(srcdir)/Amesos_Klu.h $(srcdir)/Amesos_Mumps.h \
 	$(srcdir)/Amesos_EpetraBaseSolver.h \
@@ -422,16 +415,16 @@ target_vendor = @target_vendor@
 #  platforms, we will have to add a NEED_PARAMETER_LIST
 #  flag to configure.ac 
 #
-@NEED_PARAMETER_LIST_TRUE@PARAM_H = \
-@NEED_PARAMETER_LIST_TRUE@	$(srcdir)/Amesos_Parameter_List.h \
-@NEED_PARAMETER_LIST_TRUE@	$(srcdir)/Amesos_Parameter_Arbitrary.h \
-@NEED_PARAMETER_LIST_TRUE@	$(srcdir)/Amesos_Parameter_Entry.h
-
+# PARAM_H = \
+# 	$(srcdir)/Amesos_Parameter_List.h \
+# 	$(srcdir)/Amesos_Parameter_Arbitrary.h \
+# 	$(srcdir)/Amesos_Parameter_Entry.h
+# PARAM = \
+# 	$(srcdir)/Amesos_Parameter_List.cpp \
+# 	$(srcdir)/Amesos_Parameter_Entry.cpp
+@NEED_PARAMETER_LIST_TRUE@PARAM_H = 
 @NEED_PARAMETER_LIST_FALSE@PARAM = 
-@NEED_PARAMETER_LIST_TRUE@PARAM = \
-@NEED_PARAMETER_LIST_TRUE@	$(srcdir)/Amesos_Parameter_List.cpp \
-@NEED_PARAMETER_LIST_TRUE@	$(srcdir)/Amesos_Parameter_Entry.cpp
-
+@NEED_PARAMETER_LIST_TRUE@PARAM = 
 @HAVE_AMESOS_DSCPACK_FALSE@DSCPACK_H = 
 
 #
@@ -774,8 +767,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Amesos_Factory.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Amesos_Klu.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Amesos_Mumps.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Amesos_Parameter_Entry.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Amesos_Parameter_List.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Amesos_Scalapack.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Amesos_Superlu.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Amesos_Superludist.Po@am__quote@
@@ -1193,38 +1184,6 @@ sputils.obj: $(srcdir)/ksparse/sputils.c
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/$*.Po' tmpdepfile='$(DEPDIR)/$*.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXXCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
-
-Amesos_Parameter_List.o: $(srcdir)/Amesos_Parameter_List.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Amesos_Parameter_List.o -MD -MP -MF "$(DEPDIR)/Amesos_Parameter_List.Tpo" -c -o Amesos_Parameter_List.o `test -f '$(srcdir)/Amesos_Parameter_List.cpp' || echo '$(srcdir)/'`$(srcdir)/Amesos_Parameter_List.cpp; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Amesos_Parameter_List.Tpo" "$(DEPDIR)/Amesos_Parameter_List.Po"; else rm -f "$(DEPDIR)/Amesos_Parameter_List.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Amesos_Parameter_List.cpp' object='Amesos_Parameter_List.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Amesos_Parameter_List.Po' tmpdepfile='$(DEPDIR)/Amesos_Parameter_List.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Amesos_Parameter_List.o `test -f '$(srcdir)/Amesos_Parameter_List.cpp' || echo '$(srcdir)/'`$(srcdir)/Amesos_Parameter_List.cpp
-
-Amesos_Parameter_List.obj: $(srcdir)/Amesos_Parameter_List.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Amesos_Parameter_List.obj -MD -MP -MF "$(DEPDIR)/Amesos_Parameter_List.Tpo" -c -o Amesos_Parameter_List.obj `if test -f '$(srcdir)/Amesos_Parameter_List.cpp'; then $(CYGPATH_W) '$(srcdir)/Amesos_Parameter_List.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Amesos_Parameter_List.cpp'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Amesos_Parameter_List.Tpo" "$(DEPDIR)/Amesos_Parameter_List.Po"; else rm -f "$(DEPDIR)/Amesos_Parameter_List.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Amesos_Parameter_List.cpp' object='Amesos_Parameter_List.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Amesos_Parameter_List.Po' tmpdepfile='$(DEPDIR)/Amesos_Parameter_List.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Amesos_Parameter_List.obj `if test -f '$(srcdir)/Amesos_Parameter_List.cpp'; then $(CYGPATH_W) '$(srcdir)/Amesos_Parameter_List.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Amesos_Parameter_List.cpp'; fi`
-
-Amesos_Parameter_Entry.o: $(srcdir)/Amesos_Parameter_Entry.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Amesos_Parameter_Entry.o -MD -MP -MF "$(DEPDIR)/Amesos_Parameter_Entry.Tpo" -c -o Amesos_Parameter_Entry.o `test -f '$(srcdir)/Amesos_Parameter_Entry.cpp' || echo '$(srcdir)/'`$(srcdir)/Amesos_Parameter_Entry.cpp; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Amesos_Parameter_Entry.Tpo" "$(DEPDIR)/Amesos_Parameter_Entry.Po"; else rm -f "$(DEPDIR)/Amesos_Parameter_Entry.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Amesos_Parameter_Entry.cpp' object='Amesos_Parameter_Entry.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Amesos_Parameter_Entry.Po' tmpdepfile='$(DEPDIR)/Amesos_Parameter_Entry.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Amesos_Parameter_Entry.o `test -f '$(srcdir)/Amesos_Parameter_Entry.cpp' || echo '$(srcdir)/'`$(srcdir)/Amesos_Parameter_Entry.cpp
-
-Amesos_Parameter_Entry.obj: $(srcdir)/Amesos_Parameter_Entry.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Amesos_Parameter_Entry.obj -MD -MP -MF "$(DEPDIR)/Amesos_Parameter_Entry.Tpo" -c -o Amesos_Parameter_Entry.obj `if test -f '$(srcdir)/Amesos_Parameter_Entry.cpp'; then $(CYGPATH_W) '$(srcdir)/Amesos_Parameter_Entry.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Amesos_Parameter_Entry.cpp'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Amesos_Parameter_Entry.Tpo" "$(DEPDIR)/Amesos_Parameter_Entry.Po"; else rm -f "$(DEPDIR)/Amesos_Parameter_Entry.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Amesos_Parameter_Entry.cpp' object='Amesos_Parameter_Entry.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Amesos_Parameter_Entry.Po' tmpdepfile='$(DEPDIR)/Amesos_Parameter_Entry.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Amesos_Parameter_Entry.obj `if test -f '$(srcdir)/Amesos_Parameter_Entry.cpp'; then $(CYGPATH_W) '$(srcdir)/Amesos_Parameter_Entry.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Amesos_Parameter_Entry.cpp'; fi`
 
 DscpackOO.o: $(srcdir)/DscpackOO.cpp
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT DscpackOO.o -MD -MP -MF "$(DEPDIR)/DscpackOO.Tpo" -c -o DscpackOO.o `test -f '$(srcdir)/DscpackOO.cpp' || echo '$(srcdir)/'`$(srcdir)/DscpackOO.cpp; \

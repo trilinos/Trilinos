@@ -1,4 +1,3 @@
-b;
 // @HEADER
 // ***********************************************************************
 // 
@@ -266,6 +265,11 @@ int Amesos_Scalapack::ConvertToScalapack(){
   //  int MyActualFirstElement = ScaLAPACK1DMatrix_->RowMatrixRowMap().MinMyGID() ; 
   int NumMyElements = ScaLAPACK1DMatrix_->NumMyRows() ; 
   //  int nnz_loc = ScaLAPACK1DMatrix_->NumMyNonzeros() ;
+  cout << " Amesos_Scalapack.cpp::268 NumGlobalElements = " 
+       << NumGlobalElements_ << endl ;
+  cout << " Amesos_Scalapack.cpp::268 ScaLAPACK1DMatrix_->NumGlobalRows() = " 
+       << ScaLAPACK1DMatrix_->NumGlobalRows() << endl ;
+
   assert( NumGlobalElements_ ==ScaLAPACK1DMatrix_->NumGlobalRows());
   assert( NumGlobalElements_ ==ScaLAPACK1DMatrix_->NumGlobalCols());
   DenseA_.resize( NumGlobalElements_ * NumMyElements ) ;
@@ -359,7 +363,7 @@ int Amesos_Scalapack::ReadParameterList() {
 
   if (ParameterList_->isSublist("Scalapack") ) {
     Teuchos::ParameterList ScalapackParams = ParameterList_->sublist("Scalapack") ;
-    MaxProcesses_ = ScalapackParams.getParameter("MaxProcesses",MaxProcesses_);
+    MaxProcesses_ = ScalapackParams.get("MaxProcesses",MaxProcesses_);
 
   }  
   return 0;
@@ -424,7 +428,9 @@ int Amesos_Scalapack::NumericFactorization() {
   iam_ = Comm().MyPID();
   
   RedistributeA();
+  cout << " Amesos_Scalapack.cpp::426 " << endl ; 
   ConvertToScalapack();
+  cout << " Amesos_Scalapack.cpp::428 " << endl ; 
 
 
   return PerformNumericFactorization( );
