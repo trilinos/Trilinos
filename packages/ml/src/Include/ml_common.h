@@ -116,6 +116,7 @@
 
 #ifdef HAVE_ML_TIMING
 #define ML_TIMING
+#define ML_TIMING_DETAILED
 #endif
 
 #ifdef ML_MULTIPLE_RHS_BLOCK_FACTOR
