@@ -204,23 +204,63 @@ unique GID.
 
 \subsection{Primary Linear Algebra Classes}
 Although there are many classes in Epetra, the core linear algebra classes are the
-vector, graph and matrix classes.  A simple use of Epetra usually
+vector, graph and matrix classes.  All of these classes implement the
+\distobject{} interface, and can therefore be redistributed across the
+parallel machine in a variety of ways.  However, a simple use of Epetra usually
 involves the construction of a single \comm{} object, which is passed
 in to the constructor of a single \map{} object and the resulting \map{}
-is then used to construct any number of vector and matrix objects.
+is then used to construct any number of vector and matrix objects,
+something we illustrate in Section~\ref{Section:FirstExample}.
 The primary Epetra linear algebra classes are as follows:
 \begin{enumerate}
 \item {\bf \vector{}: } Supports construction and use of distributed
 vectors of double-precision numbers.  Once constructed, \vector{}
-objects can be used in multiple ways.  Common operations
+objects can be used in multiple ways.  Common operations such as
+norms, dot products and vector updates are supported by methods in
+this class.  Additional functionality is available via several
+extension techniques discussed later.
+\item{\bf \multivector{}: } An \multivector{} object is a collection
+of \vector{} objects (although \vector{} is actually implemented as a
+specialization of \multivector{}).  Specifically, an \multivector{}
+object is a collection of vectors with the same size and
+distribution.  This kind of object is useful for block algorithms and
+applications that manage multiple vectors simultaneously.  \vector{}
+and \multivector{} objects are understood by all Trilinos packages.
+\item{\bf \crsgraph{}:} Supports the construction and use of adjacency
+graphs.  These graphs are used to describe the pattern of Epetra
+sparse matrix classes and provide pattern-based information to
+load-balancing interfaces.  The graphs are also used to implement
+overlapping subdomain algorithms and a variety of other parallel
+algorithms.
+\item{\bf \crsmatrix{}:} Supports construction and use of distributed
+sparse matrix objects.  Once constructed, an \crsmatrix{} object can
+be used with any Trilinos solvers or preconditioners.  This class also
+supports common matrix and matrix-vector operations such as matrix
+scaling, matrix norms and matrix-vector multiplication.
+\item{\bf \vbrmatrix{}:} Although less frequently used than the
+\crsmatrix{} class, this class supports the construction of sparse
+matrices whose entries are dense matrices.  This type of matrix is
+frequently found in applications where multiple degrees of freedom are
+tracked at each mesh point.  When properly used, the \vbrmatrix{}
+class can offer substantial machine performance and algorithmic
+robustness improvements.
 
 \end{enumerate}
 
 \section{A First Example}
+\label{Section:FirstExample}
+Before proceeding with additional descriptive information, we
+introduce a simple example in this section in order to explicitly
+illustrate a straight-forward use of Epetra.  Although this example only
+starts to tap the capabilities of Epetra, we hope the reader finds it
+useful.
 
-%\begin{Verbatim}[frame=single,numbers=left,commandchars=\\\{\}]
-%\input{../../example/UG_Ex1/cxx_main.cpp}
-%\end{Verbatim}
+The example code, listed in Figures~\ref{Figure:FirstExample}
+and~\{Figure:FirstExamplePowerMethod}, is the main program driver and
+a simple implementation of the Power Method~\cite{GoluVanL96} for computing the dominant
+eigenvalue and associated eigenvector of a given matrix,
+respectively.  In the remainder of this section we proceed with a
+description of the code in these figures.
 \begin{figure}
 \begin{center}
 \input{Ex1}
@@ -237,6 +277,107 @@ objects can be used in multiple ways.  Common operations
 \caption{Simple Power Method Routine}
 \end{figure}
 
+\subsection{Explanation of Figure~\ref{Figure:FirstExample}}
+
+\subsubsection{Lines 1--2}
+Include system header files needed for screen output and system
+functions.
+\subsubsection{Lines 3--8}
+Include the appropriate implementation of the \comm{} class.  If
+Epetra was built in MPI mode, the macro ``HAVE\_MPI'' will be defined
+and this example will be built with MPI support.  If not, then the
+example will be built in serial mode.  Note that these lines of code
+ and lines 15--20 are the only difference between a serial and distributed memory
+version of the example. 
+\subsubsection{Lines 9--11}
+Include the other Epetra header files needed to use Epetra classes.
+It is a good practice to explicitly include header files for all
+Epetra classes you explicitly use and only those header files.
+\subsubsection{Lines 12--13}
+Declare prototype for power_method function.
+\subsubsection{Line 14}
+Start of main program.  Note that argv[1] will be used to pass in the
+problem size.
+\subsubsection{Lines 15--21}
+Depending on whether or not Epetra was built in MPI
+mode\footnote{Whether or not Trilinos, and Epetra as a Trilinos package, is built
+in MPI mode is determined by how the Trilinos (or Epetra) {\tt
+configure} script in invoked.  If no MPI-related arguments are passed
+to the configure script, then packages are built in serial mode only.
+If one or more MPI options are invoked, then packages are built with
+MPI support (in addition to serial support).}, MPI will be initialized
+and an \mpicomm{} object will be constructed, or an \serialcomm{}
+object will be constructed.  Please note that, in principle, the serial
+version of this example would work, even if Epetra were built in MPI
+mode.  Serial mode is always available.
+
+Line 21 prints the Comm object to cout.  Most Epetra classes have
+implemented the ostream << operator so that an instance of an Epetra
+object can be viewed.  Sometime the volume of output can be very
+large, so some care is needed when using this feature.
+\subsubsection{Lines 22--27}
+This example accepts a single integer argument
+specifying the number of equations that should be used.  These lines
+of code capture that number and put it into NumGlobalElements.
+\subsubsection{Lines 28--31}
+Constructs an \map{} object that has NumGlobalElements elements spread
+across the parallel (or serial) machine.  The second argument (a
+``0'') indicates that our global indices are zero-based.  Fortran
+users would typically pass in a ``1'' here.  The third argument is the
+Comm object we just built.
+\subsubsection{Line 32}
+Once an \map{} object is constructed, we can query it for how many
+elements of the map are on the calling process\footnote{For readers
+who are not familiar with a single-program, multiple data (SPMD)
+programming model, it may be useful to read a bit about it.  Typing
+``SPMD tutorial'' into a web search engine should be a sufficient
+starting point.}.  In this way, the remainder of our code can operate
+independent of how data was distributed.
+\subsubsection{Lines 33--34}
+Instantiates (creates) an \crsmatrix{}.  The first argument tells the
+constructor whether or not data passed in to this object should be
+copied (user values and indices will be copied to internal storage) or
+viewed (user values and indices will be pointed to by this object and
+the user {\it must} guarantee the integrity of that data).  View mode
+is available across many Epetra classes.  In general, this is a very
+dangerous practice.  However, in certain very important situations, it
+is essential to have this mode.  This is especially true when using
+Epetra with Fortran, or when accepting matrix data from other parts of
+application where it is too expensive to replicate the data storage.
+
+The second argument is the \map{} object we just constructed.  The
+third argument is an advisory value telling the constructor
+approximately how many nonzero values will be defined for each row of
+the matrix\footnote{getting this value wrong does not
+affect the correctness of results, but may affect performance and
+efficient use of memory}.  We are constructing a diagonal matrix, so the value ``1''
+is appropriate.
+
+At this point the matrix is an empty ``bucket'' ready to receive
+matrix values and indices.  Also, at this point, most of the methods
+in the \crsmatrix{} cannot be called successfully for this object.
+\subsubsection{Lines 35--41}
+These lines insert values and indices into the matrix we just
+instantiated.  Our matrix is very simple--a single diagonal entry per
+row--so these lines may be a bit confusing.  The \crsmatrix{} class is
+designed to accept matrix entries in a variety of ways.  However,
+there is a strong bias in the interface to accept multiple entries in
+a specified row.  Any matrix entry can be submitted one or more times,
+with subsequent values being added to any existing value.
+Section~\ref{Section:ConstructingCrsMatrices} discusses these issues
+in detail.
+
+Line 35 defines a simple double variable that will be passed in on
+line 40 as an array of length 1.  Line 37 loops over all elements
+owned by the calling processor.  Line 38 get the global ID associated
+with the current loop index.  This value will be used 
+
+
+\section{Constructing \crsmatrix{} Objects}
+\label{Section:ConstructingCrsMatrices}
+
+\section{ Advanced topics}
+\subsection {Using \crsmatrix{} Objects as Column Matrices}
 
 \clearpage
 \bibliographystyle{plain}
