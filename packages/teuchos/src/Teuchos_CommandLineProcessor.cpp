@@ -32,6 +32,10 @@
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_TestForException.hpp"
 
+#ifdef HAVE_MPI
+#include "mpi.h"
+#endif
+
 namespace {
 
 inline int my_max( int a, int b ) { return a > b ? a : b; }
@@ -131,7 +135,11 @@ CommandLineProcessor::parse(
 	std::string        opt_name;
 	std::string        opt_val_str;
 	const std::string  help_opt = "help";
-
+	const std::string  pause_opt = "pause-for-debugging";
+#ifdef HAVE_MPI
+	int procRank = -1;
+	MPI_Comm_rank( MPI_COMM_WORLD, &procRank );
+#endif
 	for( int i = 1; i < argc; ++i ) {
 		bool gov_return = get_opt_val( argv[i], &opt_name, &opt_val_str );
 		if( !gov_return && recogniseAllOptions() ) {
@@ -142,14 +150,28 @@ CommandLineProcessor::parse(
 			print_help_msg( argc, argv, errout );
 			return PARSE_HELP_PRINTED;
 		}
+		if( opt_name == pause_opt ) {
+#ifdef HAVE_MPI
+			if(procRank==0) {
+#endif
+				std::cerr << "\nType 0 and press enter to continue : ";
+				int dummy_int = 0;
+				std::cin >> dummy_int;
+#ifdef HAVE_MPI
+			}
+			MPI_Barrier(MPI_COMM_WORLD);
+#endif
+			continue;
+		}
+		// Lookup the option (we had better find it!)
 		options_list_t::const_iterator  itr = options_list_.find(opt_name);
 		if( itr == options_list_.end() && recogniseAllOptions() ) {
  			print_bad_opt(i,argv,errout);
 			return PARSE_UNRECOGNISED_OPTION;
 		}
-                // Changed access to second value of map to not use overloaded arrow operator, 
-                // otherwise this code will not compile on Janus (HKT, 12/01/2003) 
-                const opt_val_val_t &opt_val_val = (*itr).second;
+		// Changed access to second value of map to not use overloaded arrow operator, 
+		// otherwise this code will not compile on Janus (HKT, 12/01/2003) 
+		const opt_val_val_t &opt_val_val = (*itr).second;
 		switch( opt_val_val.opt_type ) {
 			case OPT_BOOL_TRUE:
 				*((bool*)opt_val_val.opt_val) = true;
@@ -217,7 +239,7 @@ void CommandLineProcessor::print_help_msg(
 	const char spc_chars[] = "  ";
 
 	// Get the maximum length of an option name
-	int opt_name_w = 4; // For the 'help' options
+	int opt_name_w = 19; // For the 'pause-for-debugging' option
 	options_documentation_list_t::const_iterator itr;
 	for( itr = options_documentation_list_.begin(); itr != options_documentation_list_.end(); ++itr ) {
 		opt_name_w = my_max(opt_name_w,itr->opt_name.length());
@@ -240,6 +262,17 @@ void CommandLineProcessor::print_help_msg(
 	        << std::setiosflags(std::ios::left) << setw(opt_type_w) << " "
 #endif
 		<< "Prints this help message"
+		<< endl
+		<< spc_chars
+		<< "--"
+#ifdef HAVE_STD_IOS_BASE_FMTFLAGS
+		<< std::left << setw(opt_name_w) << "pause-for-debugging"
+		<< std::left << setw(opt_type_w) << " "
+#else
+	        << std::setiosflags(std::ios::left) << setw(opt_name_w) << "pause-for-debugging"
+	        << std::setiosflags(std::ios::left) << setw(opt_type_w) << " "
+#endif
+		<< "Pauses for user input to allow attaching a debugger"
 		<< endl;
 	for( itr = options_documentation_list_.begin(); itr != options_documentation_list_.end(); ++itr ) {
 		*errout
