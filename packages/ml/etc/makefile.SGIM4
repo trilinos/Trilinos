@@ -4,9 +4,8 @@ CC=cc
 FC=f77
 LINKER=$(FC)
 RANLIB=touch
-ARCH_LIBS=
-#ARCH_LIBS=-lcomplib.sgimath
-#ARCH_LIBS=-lcomplib.sgimath /Net/pecos/rf_crew/arch/sgi10k/lib/liby12m.a
+ARCH_LIBS=-lm
+#ARCH_LIBS=-lcomplib.sgimath -lm
 AR=ar
 
 

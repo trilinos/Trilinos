@@ -70,7 +70,7 @@ $(APPLICATION): $(APPLICATION_OBJ) libml.a
 	   $(INCLUDES) \
 	   -o $(APPLICATION) libml.a \
 	   $(LIB_PATHS) \
-	   $(ARCH_LIBS) -lm
+	   $(ARCH_LIBS)
 
 libml.a: $(ML_OBJ)
 	$(AR) rc libml.a $(ML_OBJ); \

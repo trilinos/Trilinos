@@ -4,5 +4,5 @@ CC=cc
 FC=f77
 RANLIB=touch
 LINKER=$(CC)
-ARCH_LIBS= -lUfor -lfor -lFutil 
+ARCH_LIBS= -lUfor -lfor -lFutil -lm
 AR=ar

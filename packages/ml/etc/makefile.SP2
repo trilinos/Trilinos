@@ -4,5 +4,5 @@ CC=mpcc
 FC=mpxlf
 RANLIB=ranlib
 LINKER=$(CC)
-ARCH_LIBS=-lxlf90
+ARCH_LIBS=-lxlf90 -lm
 AR=ar
