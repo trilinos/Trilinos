@@ -147,20 +147,16 @@ int ML_CG_ComputeEigenvalues(ML_Krylov *data, int length, int scale_by_diag)
 {
    int         i, j, k, its, maxiter, ncnt, *colInd, allocated, print_freq;
    int         *offset_array, myoffset, *itmp_array, nprocs, mypid, totallength;
-   int         ext_leng, *index_array, total_length, original_maxiter, Nbc;
+   int         ext_leng, total_length, original_maxiter, Nbc;
    int         level;
    double      alpha, beta, rho, rhom1, sigma, offdiag_norm;
-   double      *r = NULL, *p = NULL, *ap = NULL, res_norm, *alpha_array, *colVal, *diag=NULL;
-   double      *rhs=NULL, *rnorm_array, **Tmat, init_offdiag_norm;
+   double      *r = NULL, *p = NULL, *ap = NULL, res_norm, *alpha_array = NULL, *colVal = NULL, *diag=NULL;
+   double      *rhs=NULL, *rnorm_array = NULL, **Tmat = NULL, init_offdiag_norm;
    double      app, aqq, arr, ass, apq, sign, tau, t, c, s, *u;
    double      max_row_sum, min_row_sum, sum;
    ML_Operator *matrix;
    ML_Comm     *comm;
    ML_CommInfoOP *getrow_comm;
-#ifdef PRINTMAT
-   FILE        *fp;
-#endif
-   char        fname[100];
 
    /* ----------------------------------------------------------------*/
    /* get all parameters from parent object*/
@@ -207,15 +203,6 @@ int ML_CG_ComputeEigenvalues(ML_Krylov *data, int length, int scale_by_diag)
    if (getrow_comm != NULL) {
       ext_leng = length + getrow_comm->total_rcv_length;
    } else ext_leng = length;
-   u = (double *) ML_allocate((ext_leng+1)*sizeof(double));
-   for (i = 0; i < length; i++) u[i] = myoffset + i;
-   for (i = length; i <= ext_leng; i++) u[i] = 0.0;
-   if (getrow_comm != NULL) {
-      ML_exchange_bdry(u,getrow_comm, length,comm,ML_OVERWRITE,NULL);
-   }
-   index_array = (int *) ML_allocate((ext_leng+1)*sizeof(int));
-   for (i = 0; i <= ext_leng; i++) index_array[i] = (int) u[i];
-   ML_free(u);
 
    /* ----------------------------------------------------------------*/
    /* allocate temporary memory  */
@@ -258,10 +245,6 @@ int ML_CG_ComputeEigenvalues(ML_Krylov *data, int length, int scale_by_diag)
    allocated = 100;
    colInd = (int    *) ML_allocate( allocated * sizeof(int) );
    colVal = (double *) ML_allocate( allocated * sizeof(double) );
-   sprintf(fname, "mat_%d", mypid);
-#ifdef PRINTMAT
-   fp = fopen(fname, "w");
-#endif
    Nbc = 0;  /* rst to handle nonsymmetric (due to BCs) matrices */
    if (scale_by_diag) {
    for ( i = 0; i < length; i++ )
@@ -279,10 +262,6 @@ int ML_CG_ComputeEigenvalues(ML_Krylov *data, int length, int scale_by_diag)
       {
          if ( colInd[j] == i ) diag[i] = colVal[j];
          else sum += ML_dabs(colVal[j]);
-#ifdef PRINTMAT
-         fprintf(fp,"A(%d,%d) = %e;\n",myoffset+i+1,index_array[colInd[j]]+1,
-            colVal[j]);
-#endif
       }
       /* kludging this in to handle Dirichlet BC's */
       if ( sum == 0.0) { rhs[i] = 0.; Nbc++; diag[i] = 1.;}
@@ -311,9 +290,6 @@ int ML_CG_ComputeEigenvalues(ML_Krylov *data, int length, int scale_by_diag)
    else {
      for (i = 0; i < length; i++) diag[i] = 1.;
    }
-#ifdef PRINTMAT
-   fclose(fp);
-#endif
 
 
    max_row_sum = -1.0E10;
@@ -350,9 +326,19 @@ int ML_CG_ComputeEigenvalues(ML_Krylov *data, int length, int scale_by_diag)
        data->ML_eigen_max = 1.;
        data->ML_eigen_min = 1.;
      }
-     if (r  != NULL) ML_free(r);
-     if (p  != NULL) ML_free(p);
+     if (diag != NULL) ML_free(diag);
+     if (rhs != NULL) ML_free(rhs);
      if (ap != NULL) ML_free(ap);
+     if (p  != NULL) ML_free(p);
+     if (r  != NULL) ML_free(r);
+     if (u  != NULL) ML_free(u);
+     if (alpha_array != NULL) ML_free(alpha_array);
+     if (rnorm_array != NULL) ML_free(rnorm_array);
+     if (Tmat != NULL) {
+          for ( i = 0; i <= original_maxiter; i++ ) ML_free(Tmat[i]);
+	  ML_free(Tmat);
+     }
+
      return 1;
    }
 
@@ -375,9 +361,18 @@ int ML_CG_ComputeEigenvalues(ML_Krylov *data, int length, int scale_by_diag)
        data->ML_eigen_max = max_row_sum;
        data->ML_eigen_min = min_row_sum;
      }
-     if (r  != NULL) ML_free(r);
-     if (p  != NULL) ML_free(p);
+     if (diag != NULL) ML_free(diag);
+     if (rhs != NULL) ML_free(rhs);
      if (ap != NULL) ML_free(ap);
+     if (p  != NULL) ML_free(p);
+     if (r  != NULL) ML_free(r);
+     if (u  != NULL) ML_free(u);
+     if (alpha_array != NULL) ML_free(alpha_array);
+     if (rnorm_array != NULL) ML_free(rnorm_array);
+     if (Tmat != NULL) {
+          for ( i = 0; i <= original_maxiter; i++ ) ML_free(Tmat[i]);
+	  ML_free(Tmat);
+     }
 
      return 1;
    }
@@ -532,7 +527,6 @@ if (maxiter == 0) {
    }
    ML_free(alpha_array);
    ML_free(rnorm_array);
-   ML_free(index_array);
    for ( i = 0; i <= original_maxiter; i++ ) ML_free(Tmat[i]);
    ML_free(Tmat);
    return 1;
