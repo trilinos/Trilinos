@@ -86,8 +86,7 @@ int main(int argc, char *argv[]) {
 			|           -I T|
 
 	 where each block is dimension nx by nx and the matrix is on the order of
-	 nx*nx.  The block T is a tridiagonal matrix, so we need 5 off-diagonal terms 
-	 (except for the first and last equation)
+	 nx*nx.  The block T is a tridiagonal matrix. 
 	*/
 
 	for (i=0; i<NumMyElements; i++) {
@@ -95,7 +94,7 @@ int main(int argc, char *argv[]) {
 		    MyGlobalElements[i] == nx-1 || MyGlobalElements[i] == nx*(nx-1) )
 			NumNz[i] = 3;
 		else if (MyGlobalElements[i] < nx || MyGlobalElements[i] > nx*(nx-1) || 
-                         MyGlobalElements[i]/nx == 1 || (MyGlobalElements[i]+1)/nx == 1)
+                         MyGlobalElements[i]%nx == 0 || (MyGlobalElements[i]+1)%nx == 0)
 			NumNz[i] = 4;
 		else
 			NumNz[i] = 5;
@@ -106,11 +105,11 @@ int main(int argc, char *argv[]) {
 	Epetra_CrsMatrix& A = *new Epetra_CrsMatrix(Copy, Map, NumNz);
 
 	// Diffusion coefficient, can be set by user.
+	// When rho*h/2 <= 1, the discrete convection-diffusion operator has real eigenvalues.
+	// When rho*h/2 > 1, the operator has complex eigenvalues.
 	double rho = 0.0;  
 
-	// Add  rows one-at-a-time
-	// Need some vectors to help
-
+	// Compute coefficients for discrete convection-diffution operator
 	const double one = 1.0;
 	double *Values = new double[4];
 	double h = one /(nx+1);
@@ -169,7 +168,7 @@ int main(int argc, char *argv[]) {
                         NumEntries = 3;
                         assert(A.InsertGlobalValues(MyGlobalElements[i], NumEntries, Values, Indices)==0);
 		}
-                else if (MyGlobalElements[i]/nx == 1)
+                else if (MyGlobalElements[i]%nx == 0)
 		{
 			Indices[0] = MyGlobalElements[i]+1;
 			Indices[1] = MyGlobalElements[i]-nx;
@@ -177,7 +176,7 @@ int main(int argc, char *argv[]) {
 			NumEntries = 3;
 			assert(A.InsertGlobalValues(MyGlobalElements[i], NumEntries, Values+1, Indices)==0);
 		}
-		else if ((MyGlobalElements[i]+1)/nx == 1)
+		else if ((MyGlobalElements[i]+1)%nx == 0)
 		{
 			Indices[0] = MyGlobalElements[i]-nx;
                         Indices[1] = MyGlobalElements[i]+nx;
@@ -210,28 +209,23 @@ int main(int argc, char *argv[]) {
 	//
 	//  Variables used for the Block Arnoldi Method
 	//
-	int block = 1;
+	int block = 2;
 	int length = 20;
 	int nev = 4;
-	double tol = 1.0e-16;
+	double tol = 1.0e-14;
 	string which="SM";
-	int step = length;
-	int restarts = 10;
+	int step = 1;
+	int restarts = 300;
 
 	// create a PetraAnasaziVec. Note that the decision to make a view or
 	// or copy is determined by the petra constructor called by Anasazi::PetraVec.
 	// This is possible because I pass in arguements needed by petra.
 	Anasazi::PetraVec<double> ivec(Map, block);
-	Anasazi::PetraVec<double> tempin(Map,block), tempout(Map,block);
-	tempin.MvInit(1.0);
-	tempout.MvInit(0.0);
 	ivec.MvRandom();
 
 	// call the ctor that calls the petra ctor for a matrix
 	Anasazi::PetraMat<double> Amat(A);	
 	Anasazi::Eigenproblem<double> MyProblem(&Amat, &ivec);
-	Amat.ApplyMatrix( tempin, tempout );
-	tempout.MvPrint();
 
 	// initialize the Block Arnoldi solver
 	Anasazi::BlockArnoldi<double> MyBlockArnoldi(MyProblem, tol, nev, length, block, 
@@ -270,6 +264,8 @@ int main(int argc, char *argv[]) {
 
 	// output results to screen
 	MyBlockArnoldi.currentStatus();
+
+
 
 #ifdef UNIX
 	if (verbose)
