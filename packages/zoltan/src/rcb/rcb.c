@@ -505,7 +505,6 @@ static int rcb_fn(
     wgtflag = 1;
     for (i = 0; i < dotnum; i++) dotpt[i].Weight[0] = 1.0;
     weightlo[0] = (double) dotnum;
-    wgtscale[0]= 1.0;
   }
   else {
     /* put sum of weights in weightlo */
@@ -519,6 +518,7 @@ static int rcb_fn(
   MPI_Allreduce(weightlo, weight, wgtflag, MPI_DOUBLE, MPI_SUM, zz->Communicator);
 
   /* Set weight scaling factors. */
+  wgtscale[0]= 1.0;
   if (wgtdim>1){
     for (j=0; j<wgtdim; j++){
       if (obj_wgt_comp || (weight[j]==0.0))
