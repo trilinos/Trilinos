@@ -264,7 +264,7 @@ int ML_Aggregate_VisualizeWithOpenDX( ML_Aggregate_Viz_Stats info,
 
 #ifdef ML_MPI
     MPI_Scan ( &Naggregates, &offset, 1, MPI_INT, MPI_SUM,
-	       MPI_COMM_WORLD );
+	       comm->USR_comm );
     offset -= Naggregates;
 #else
     offset = 0;

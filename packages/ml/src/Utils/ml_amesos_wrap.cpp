@@ -38,7 +38,8 @@ int ML_Amesos_Gen(ML *ml, int curr_level, int choice,
 {
 
   ML_Operator *Ke = &(ml->Amat[curr_level]);
-  ML_Epetra::RowMatrix* Amesos_Matrix = new ML_Epetra::RowMatrix(Ke);
+  ML_Epetra::RowMatrix* Amesos_Matrix = 
+    new ML_Epetra::RowMatrix(Ke, 0, false, ml->comm->USR_comm);
   assert (Amesos_Matrix != 0);
   
   int NumGlobalRows = Amesos_Matrix->NumGlobalRows();

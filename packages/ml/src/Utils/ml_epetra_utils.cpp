@@ -1020,8 +1020,7 @@ int ML_Operator_DiscreteLaplacian(ML_Operator* Op, int SymmetricPattern,
   // need an Epetra_Comm object. This in general exists, but I
   // don't know an easy way to pass it up to here
 #ifdef ML_MPI
-  // FIXME: I work with MPI_COMM_WORLD only, not with the comm of ML!
-  Epetra_MpiComm Comm(MPI_COMM_WORLD);
+  Epetra_MpiComm Comm(Op->comm->USR_comm);
 #else
   Epetra_SerialComm Comm;
 #endif
