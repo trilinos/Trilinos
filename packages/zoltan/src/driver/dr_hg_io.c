@@ -41,7 +41,8 @@ extern "C" {
 #endif
 
 static int dist_hyperedges(MPI_Comm comm, PARIO_INFO_PTR, int, int, int *,
-                           int *, int **, int **, int *, float **, short **);
+                           int *, int **, int **, int **, int *, float **, 
+                           short **);
 
 /****************************************************************************/
 /****************************************************************************/
@@ -63,6 +64,7 @@ int read_hypergraph_file(
   int    nvtxs = 0, gnhedges = 0, nhedges = 0, npins = 0;
   int    vwgt_dim=0, hewgt_dim=0;
   int   *hindex = NULL, *hvertex = NULL;
+  int   *hgid = NULL;
   float *hewgts = NULL, *vwgts = NULL;
   FILE  *fp;
   int base = 0;   /* Smallest vertex number; usually zero or one. */
@@ -104,7 +106,7 @@ int read_hypergraph_file(
 
     /* read the array in on processor 0 */
     if (Zoltan_HG_Readfile(Proc, fp, &nvtxs, &nhedges, &npins,
-                           &hindex, &hvertex,
+                           &hgid, &hindex, &hvertex,
                            &vwgt_dim, &vwgts, &hewgt_dim, &hewgts, &base) != 0){
       Gen_Error(0, "fatal: Error returned from Zoltan_HG_Readfile");
       return 0;
@@ -158,7 +160,7 @@ int read_hypergraph_file(
   }
 
   if (!dist_hyperedges(MPI_COMM_WORLD, pio_info, 0, base, &gnhedges,
-                       &nhedges, &hindex, &hvertex,
+                       &nhedges, &hgid, &hindex, &hvertex, 
                        &hewgt_dim, &hewgts, &ch_assignments)) {
     Gen_Error(0, "fatal: Error returned from dist_hyperedges");
     return 0;
@@ -178,6 +180,7 @@ int read_hypergraph_file(
   mesh->nhedges = nhedges;
   mesh->hewgt_dim = hewgt_dim;
 
+  mesh->hgid = hgid;
   mesh->hindex = hindex;
   mesh->hvertex = hvertex;
   mesh->hewgts = hewgts;
@@ -277,6 +280,7 @@ static int dist_hyperedges(
                                    0 or 1?). */
   int     *gnhedges,		/* global number of hyperedges */
   int     *nhedges,		/* local number of hyperedges */
+  int     **hgid,		/* global hyperedge numbers */
   int     **hindex,		/* Starting hvertex entry for hyperedges */
   int     **hvertex,		/* Array of vertices in hyperedges */
   int     *hewgt_dim,           /* number of weights per hyperedge */
@@ -296,7 +300,7 @@ int nprocs, myproc, i, h, p;
 int *old_hindex = NULL, *old_hvertex = NULL; 
 int *size = NULL, *num_send = NULL;
 int **send = NULL;
-int *send_hindex = NULL, *send_hvertex = NULL;
+int *send_hgid = NULL, *send_hindex = NULL, *send_hvertex = NULL;
 int max_size, max_num_send;
 int hcnt[2];
 int hecnt, hvcnt;
@@ -361,6 +365,7 @@ MPI_Status status;
       if (num_send[p] > max_num_send) max_num_send = num_send[p];
     }
 
+    send_hgid = (int *) malloc((max_num_send) * sizeof(int));
     send_hindex = (int *) malloc((max_num_send+1) * sizeof(int));
     send_hvertex = (int *) malloc(max_size * sizeof(int));
     send_hewgts = (float *) malloc(max_num_send * (*hewgt_dim) * sizeof(float));
@@ -375,6 +380,7 @@ MPI_Status status;
       send_hindex[0] = 0;
       for (h = 0; h < *gnhedges; h++) {
         if (send[p][h]) {
+          send_hgid[hecnt] = h;
           send_hindex[hecnt+1] = send_hindex[hecnt] 
                                + (old_hindex[h+1] - old_hindex[h]);
           for (i = 0; i < *hewgt_dim; i++)
@@ -390,17 +396,20 @@ MPI_Status status;
       hcnt[1] = hvcnt;
 
       MPI_Send(hcnt, 2, MPI_INT, p, 1, comm);
-      MPI_Send(send_hindex, hecnt+1, MPI_INT, p, 2, comm);
-      MPI_Send(send_hvertex, hvcnt, MPI_INT, p, 3, comm);
-      MPI_Send(send_hewgts, hecnt*(*hewgt_dim), MPI_FLOAT, p, 4, comm);
+      MPI_Send(send_hgid, hecnt, MPI_INT, p, 2, comm);
+      MPI_Send(send_hindex, hecnt+1, MPI_INT, p, 3, comm);
+      MPI_Send(send_hvertex, hvcnt, MPI_INT, p, 4, comm);
+      MPI_Send(send_hewgts, hecnt*(*hewgt_dim), MPI_FLOAT, p, 5, comm);
     }
 
+    safe_free((void **) &send_hgid);
     safe_free((void **) &send_hindex);
     safe_free((void **) &send_hvertex);
     safe_free((void **) &send_hewgts);
 
     /* Copy data owned by myproc into new local storage */
     *nhedges = num_send[myproc];
+    *hgid = (int *) malloc(*nhedges * sizeof(int));
     *hindex = (int *) malloc((*nhedges+1) * sizeof(int));
     *hvertex = (int *) malloc(size[myproc] * sizeof(int));
     *hewgts = (float *) malloc(*nhedges * *hewgt_dim * sizeof(float));
@@ -411,6 +420,7 @@ MPI_Status status;
 
     for (h = 0; h < *gnhedges; h++) {
       if (send[myproc][h]) {
+        (*hgid)[hecnt] = h;
         (*hindex)[hecnt+1] = (*hindex)[hecnt]
                            + (old_hindex[h+1] - old_hindex[h]);
         for (i = 0; i < *hewgt_dim; i++)
@@ -433,12 +443,14 @@ MPI_Status status;
     /* host_proc != myproc; receive hedge data from host_proc */
     MPI_Recv(hcnt, 2, MPI_INT, host_proc, 1, comm, &status);
     *nhedges = hcnt[0];
+    *hgid = (int *) malloc(hcnt[0] * sizeof(int));
     *hindex = (int *) malloc((hcnt[0]+1) * sizeof(int));
     *hvertex = (int *) malloc(hcnt[1] * sizeof(int));
     *hewgts = (float *) malloc(hcnt[0] * *hewgt_dim * sizeof(float));
-    MPI_Recv(*hindex, hcnt[0]+1, MPI_INT, host_proc, 2, comm, &status);
-    MPI_Recv(*hvertex, hcnt[1], MPI_INT, host_proc, 3, comm, &status);
-    MPI_Recv(*hewgts, hcnt[0]* *hewgt_dim, MPI_FLOAT, host_proc, 4, comm, 
+    MPI_Recv(*hgid, hcnt[0], MPI_INT, host_proc, 2, comm, &status);
+    MPI_Recv(*hindex, hcnt[0]+1, MPI_INT, host_proc, 3, comm, &status);
+    MPI_Recv(*hvertex, hcnt[1], MPI_INT, host_proc, 4, comm, &status);
+    MPI_Recv(*hewgts, hcnt[0]* *hewgt_dim, MPI_FLOAT, host_proc, 5, comm, 
              &status);
   }
 

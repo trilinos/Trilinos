@@ -146,6 +146,9 @@ struct Mesh_Description
                                    hyperedges.*/
   int     hewgt_dim;            /* for hypergraphs, the number of weights per
                                    hyperedge.                                */
+  int    *hgid;                /* Global numbering for hyperedges; numbering
+                                   is derived implicitly from order hyperedges
+                                   are read from file. Numbering is 0-based. */
   int    *hindex;               /* for hypergraphs, an entry for each 
                                    hyperedge, giving the starting index into
                                    hvertex for that hyperedge.               */ 

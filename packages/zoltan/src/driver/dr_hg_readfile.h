@@ -23,7 +23,7 @@ extern "C" {
 #include <stdio.h>
 
 /* Hypergraph read from file */
-int Zoltan_HG_Readfile (int, FILE*, int*, int*, int*, int**, int**, int*,
+int Zoltan_HG_Readfile (int, FILE*, int*, int*, int*, int**, int**, int**, int*,
  float**, int*, float**, int*);
 
 #ifdef __cplusplus

@@ -40,21 +40,29 @@ static int patoh_readfile (int, FILE*, int*, int*, int*, int**, int**, int*,
 /*****************************************************************************/
 
 int Zoltan_HG_Readfile (
-int Proc,
-FILE *f,
-int *nVtx, int *nEdge, int *nInput,
-int **hindex, int **hvertex,
-int *vwgt_dim, float **vwgt,
-int *ewgt_dim, float **ewgt,
-int *base)
+  int Proc,
+  FILE *f,
+  int *nVtx, 
+  int *nEdge, 
+  int *nInput,
+  int **hgid,
+  int **hindex, 
+  int **hvertex,
+  int *vwgt_dim, 
+  float **vwgt,
+  int *ewgt_dim, 
+  float **ewgt,
+  int *base
+)
 {
 char string[81], *s;
 int err = ZOLTAN_OK;
 char *yo = "Zoltan_HG_Readfile";
+int i;
 
   /* Initialize return values in case of error. */
   *nVtx   = *nEdge   = *nInput = *vwgt_dim = *ewgt_dim = 0;
-  *hindex = *hvertex = NULL;
+  *hgid  = *hindex  = *hvertex = NULL;
   *vwgt   = *ewgt    = NULL;
   *base   = 0;
 
@@ -73,6 +81,10 @@ char *yo = "Zoltan_HG_Readfile";
   else if (atoi(s) > 1)
     err = old_readfile (Proc, f, nVtx, nEdge, nInput, hindex, hvertex,
                         vwgt_dim, vwgt, ewgt_dim, ewgt, base);
+
+  *hgid = (int *) malloc(*nEdge * sizeof(int));
+  for (i = 0; i < *nEdge; i++) 
+    (*hgid)[i] = i;
 
 End:
   return  err;

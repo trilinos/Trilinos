@@ -113,6 +113,7 @@ int i;
   safe_free((void **) &(mesh->ecmap_elemids));
   safe_free((void **) &(mesh->ecmap_sideids));
   safe_free((void **) &(mesh->ecmap_neighids));
+  safe_free((void **) &(mesh->hgid));
   safe_free((void **) &(mesh->hindex));
   safe_free((void **) &(mesh->hvertex));
 }
