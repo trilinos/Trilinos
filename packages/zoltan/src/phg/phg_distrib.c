@@ -243,7 +243,7 @@ static int Zoltan_PHG_Redistribute_Hypergraph(
 
 
     /* now communicate vertex weights */
-    if (ohg->vwgt && ohg->VtxWeightDim) {
+    if (ohg->VtxWeightDim) {
         if (nVtx)
             nhg->vwgt = (float*) ZOLTAN_MALLOC(nVtx*ohg->VtxWeightDim*sizeof(float));
     
@@ -256,7 +256,7 @@ static int Zoltan_PHG_Redistribute_Hypergraph(
     Zoltan_Comm_Destroy(&plan);
 
     
-    if (ohg->ewgt && ohg->EdgeWeightDim) { /* now communicate edge weights */
+    if (ohg->EdgeWeightDim) { /* now communicate edge weights */
         nsend = 0;
         if (!ocomm->myProc_x)  /* only first column sends to first column of ncomm */
             for (n = 0; n < ohg->nEdge; ++n) 
