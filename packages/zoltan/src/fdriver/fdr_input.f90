@@ -188,8 +188,10 @@ type(PARIO_INFO) :: pio_info
 ! assumes no blanks between second "=" and the parameter name
 ! skip the input line if there are no parameters specified on it.
        if (index(prob%params(prob%num_params)%str(0),"=").gt.0) then
-           prob%params(prob%num_params)%str(1) = lowercase(trim(prob%params(prob%num_params)%str(0)(index(prob%params(prob%num_params)%str(0),"=")+1:)))
-           prob%params(prob%num_params)%str(0) = lowercase(trim(prob%params(prob%num_params)%str(0)(1:index(prob%params(prob%num_params)%str(0),"=")-1)))
+           prob%params(prob%num_params)%str(1) = &
+              lowercase(trim(prob%params(prob%num_params)%str(0)(index(prob%params(prob%num_params)%str(0),"=")+1:)))
+           prob%params(prob%num_params)%str(0) = &
+              lowercase(trim(prob%params(prob%num_params)%str(0)(1:index(prob%params(prob%num_params)%str(0),"=")-1)))
            prob%num_params = prob%num_params+1
         endif
     endif

@@ -130,7 +130,7 @@ end interface
   allocate(Mesh, stat=alloc_stat)
   if (alloc_stat /= 0) then
     print *, "fatal: insufficient memory"
-    exit
+    stop
   endif
 
   nullify(Mesh%eb_names,Mesh%eb_ids,Mesh%eb_cnts,Mesh%eb_nnodes, &

@@ -109,7 +109,8 @@ type(PROB_INFO) :: prob
 !   */
 
 ! if (LB_Set_Fn(lb_obj, LB_NUM_OBJ_FN_TYPE, get_num_elements) == LB_FATAL) then
-  if (LB_Set_Num_Obj_Fn(lb_obj, get_num_elements) == LB_FATAL) then
+  if (LB_Set_Num_Obj_Fn(lb_obj, get_num_elements, &
+                        mesh_wrapper) == LB_FATAL) then
     print *, "fatal:  error returned from LB_Set_Fn()"
     run_zoltan = .false.
     return
@@ -135,7 +136,8 @@ type(PROB_INFO) :: prob
 
 !  /* Functions for geometry based algorithms */
 ! if (LB_Set_Fn(lb_obj, LB_NUM_GEOM_FN_TYPE, get_num_geom) == LB_FATAL) then
-  if (LB_Set_Num_Geom_Fn(lb_obj, get_num_geom) == LB_FATAL) then
+  if (LB_Set_Num_Geom_Fn(lb_obj, get_num_geom, &
+                         mesh_wrapper) == LB_FATAL) then
     print *, "fatal:  error returned from LB_Set_Fn()"
     run_zoltan = .false.
     return
@@ -226,12 +228,12 @@ end function run_zoltan
 !/*****************************************************************************/
 !/*****************************************************************************/
 integer(LB_INT) function get_num_elements(data, ierr)
-integer(LB_INT) :: data(*)
-integer(LB_INT) :: ierr
+type(LB_User_Data_2), intent(in) :: data
+integer(LB_INT), intent(out) :: ierr
 
   ierr = LB_OK !/* set error code */
 
-  get_num_elements = Mesh%num_elems
+  get_num_elements = data%ptr%num_elems
 end function get_num_elements
 
 !/*****************************************************************************/
@@ -242,14 +244,14 @@ integer(LB_INT) function get_first_element(data, &
                                           global_id, local_id, &
                                           wdim, wgt, ierr)
 
-  type(LB_User_Data_2) :: data
-  integer(LB_INT) :: num_gid_entries
-  integer(LB_INT) :: num_lid_entries
-  integer(LB_INT) :: global_id(*)
-  integer(LB_INT) :: local_id(*)
-  integer(LB_INT) :: wdim
-  real(LB_FLOAT) :: wgt
-  integer(LB_INT) :: ierr
+  type(LB_User_Data_2), intent(in) :: data
+  integer(LB_INT), intent(in) :: num_gid_entries
+  integer(LB_INT), intent(in) :: num_lid_entries
+  integer(LB_INT), intent(out) :: global_id(*)
+  integer(LB_INT), intent(out) :: local_id(*)
+  integer(LB_INT), intent(in) :: wdim
+  real(LB_FLOAT), intent(out) :: wgt(*)
+  integer(LB_INT), intent(out) :: ierr
 
   type(ELEM_INFO), pointer :: elem(:)
   type(MESH_INFO), pointer :: mesh_data
@@ -272,7 +274,7 @@ integer(LB_INT) function get_first_element(data, &
   global_id(gid) = elem(0)%globalID
 
   if (wdim>0) then
-    wgt = elem(0)%cpu_wgt
+    wgt(1) = elem(0)%cpu_wgt
   endif
 
   if (wdim>1) then
@@ -290,13 +292,13 @@ end function get_first_element
 integer(LB_INT) function get_next_element(data, &
                      num_gid_entries, num_lid_entries, global_id, local_id, &
                      next_global_id, next_local_id, wdim, next_wgt, ierr)
-  type(LB_User_Data_2) :: data
-  integer(LB_INT) :: num_gid_entries, num_lid_entries
-  integer(LB_INT) :: global_id(*), next_global_id(*)
-  integer(LB_INT) :: local_id(*), next_local_id(*)
-  integer(LB_INT) :: wdim
-  real(LB_FLOAT)  :: next_wgt
-  integer(LB_INT) :: ierr
+  type(LB_User_Data_2), intent(in) :: data
+  integer(LB_INT), intent(in) :: num_gid_entries, num_lid_entries
+  integer(LB_INT), intent(in) :: global_id(*), local_id(*)
+  integer(LB_INT), intent(out) :: next_global_id(*), next_local_id(*)
+  integer(LB_INT), intent(in) :: wdim
+  real(LB_FLOAT), intent(out) :: next_wgt(*)
+  integer(LB_INT), intent(out) :: ierr
 
   integer(LB_INT) :: found
   type(ELEM_INFO), pointer :: elem(:), current_elem
@@ -326,13 +328,13 @@ integer(LB_INT) function get_next_element(data, &
     current_elem => search_by_global_id(mesh, global_id(gid), idx)
   endif
 
-  if (idx+1 < Mesh%num_elems) then
+  if (idx+1 < mesh_data%num_elems) then
     found = 1
     if (num_lid_entries.gt.0) next_local_id(lid) = idx + 1
     next_global_id(gid) = elem(idx+1)%globalID
 
     if (wdim>0) then
-      next_wgt = elem(idx+1)%cpu_wgt
+      next_wgt(1) = elem(idx+1)%cpu_wgt
     endif
 
     if (wdim>1) then
@@ -349,12 +351,12 @@ end function get_next_element
 !/*****************************************************************************/
 !/*****************************************************************************/
 integer(LB_INT) function get_num_geom(data, ierr)
-integer(LB_INT) :: data(*)
-integer(LB_INT) :: ierr
+type(LB_User_Data_2), intent(in) :: data
+integer(LB_INT), intent(out) :: ierr
 
   ierr = LB_OK ! /* set error flag */
 
-  get_num_geom = Mesh%num_dims
+  get_num_geom = data%ptr%num_dims
 end function get_num_geom
 
 !/*****************************************************************************/
@@ -362,12 +364,12 @@ end function get_num_geom
 !/*****************************************************************************/
 subroutine get_geom(data, num_gid_entries, num_lid_entries, &
                     global_id, local_id, coor, ierr)
-type (LB_User_Data_2) :: data
-integer(LB_INT) :: num_gid_entries, num_lid_entries
-integer(LB_INT) :: global_id(*)
-integer(LB_INT) :: local_id(*)
-real(LB_DOUBLE) :: coor(*)
-integer(LB_INT) :: ierr
+type (LB_User_Data_2), intent(in) :: data
+integer(LB_INT), intent(in) :: num_gid_entries, num_lid_entries
+integer(LB_INT), intent(in) :: global_id(*)
+integer(LB_INT), intent(in) :: local_id(*)
+real(LB_DOUBLE), intent(out) :: coor(*)
+integer(LB_INT), intent(out) :: ierr
 
   type(ELEM_INFO), pointer :: elem(:)
   type(ELEM_INFO), pointer :: current_elem
@@ -395,7 +397,7 @@ integer(LB_INT) :: ierr
     current_elem => search_by_global_id(mesh_data, global_id(gid), idx)
   endif
 
-  if (Mesh%eb_nnodes(current_elem%elem_blk) == 0) then
+  if (mesh_data%eb_nnodes(current_elem%elem_blk) == 0) then
     !/* No geometry info was read. */
     ierr = LB_FATAL
     return
@@ -405,13 +407,13 @@ integer(LB_INT) :: ierr
 !   * calculate the geometry of the element by averaging
 !   * the coordinates of the nodes in its connect table
 !   */
-  do i = 0, Mesh%num_dims-1
+  do i = 0, mesh_data%num_dims-1
     tmp = 0.0_LB_DOUBLE
-    do j = 0, Mesh%eb_nnodes(current_elem%elem_blk)-1
+    do j = 0, mesh_data%eb_nnodes(current_elem%elem_blk)-1
       tmp = tmp + current_elem%coord(i,j)
     end do
 
-    coor(i+1) = tmp / Mesh%eb_nnodes(current_elem%elem_blk)
+    coor(i+1) = tmp / mesh_data%eb_nnodes(current_elem%elem_blk)
   end do
 
   ierr = LB_OK
@@ -422,11 +424,11 @@ end subroutine get_geom
 !/*****************************************************************************/
 integer(LB_INT) function get_num_edges(data, num_gid_entries, num_lid_entries, &
                                        global_id, local_id, ierr)
-type(LB_User_Data_2) :: data
-integer(LB_INT) :: num_gid_entries, num_lid_entries
-integer(LB_INT) :: global_id(*)
-integer(LB_INT) :: local_id(*)
-integer(LB_INT) :: ierr
+type(LB_User_Data_2), intent(in) :: data
+integer(LB_INT), intent(in) :: num_gid_entries, num_lid_entries
+integer(LB_INT), intent(in) :: global_id(*)
+integer(LB_INT), intent(in) :: local_id(*)
+integer(LB_INT), intent(out) :: ierr
 
 type(ELEM_INFO), pointer :: elem(:), current_elem
 type(MESH_INFO), pointer :: mesh_data
@@ -463,12 +465,14 @@ end function get_num_edges
 subroutine get_edge_list (data, num_gid_entries, num_lid_entries, &
                           global_id, local_id, nbor_global_id, &
                           nbor_procs, get_ewgts, nbor_ewgts, ierr)
-type(LB_User_Data_2) :: data
-integer(LB_INT) :: num_gid_entries, num_lid_entries
-integer(LB_INT) :: global_id(*), nbor_global_id(*)
-integer(LB_INT) :: local_id(*)
-integer(LB_INT) :: nbor_procs(*), get_ewgts, ierr
-real(LB_FLOAT)  :: nbor_ewgts(*)
+type(LB_User_Data_2), intent(in) :: data
+integer(LB_INT), intent(in) :: num_gid_entries, num_lid_entries
+integer(LB_INT), intent(in) :: global_id(*), local_id(*)
+integer(LB_INT), intent(out) :: nbor_global_id(*)
+integer(LB_INT), intent(out) :: nbor_procs(*)
+integer(LB_INT), intent(in) :: get_ewgts
+real(LB_FLOAT), intent(out) :: nbor_ewgts(*)
+integer(LB_INT), intent(out) :: ierr
 
   type(ELEM_INFO), pointer :: elem(:)
   type(ELEM_INFO), pointer :: current_elem

@@ -159,12 +159,13 @@ subroutine migrate_pre_process(data, num_gid_entries, num_lid_entries, &
                                import_local_ids, import_procs, num_export, &
                                export_global_ids, export_local_ids, &
                                export_procs, ierr)
-type(LB_User_Data_2) :: data
-integer(LB_INT) :: num_gid_entries, num_lid_entries
-integer(LB_INT) :: num_import, num_export, ierr
-integer(LB_INT) :: import_global_ids(*), import_local_ids(*), &
+type(LB_User_Data_2), intent(in) :: data
+integer(LB_INT), intent(in) :: num_gid_entries, num_lid_entries
+integer(LB_INT), intent(in) :: num_import, num_export
+integer(LB_INT), intent(in) :: import_global_ids(*), import_local_ids(*), &
                     export_global_ids(*), export_local_ids(*)
-integer(LB_INT) :: import_procs(*), export_procs(*)
+integer(LB_INT), intent(in) :: import_procs(*), export_procs(*)
+integer(LB_INT), intent(out) :: ierr
 
 integer(LB_INT) :: i, j, k, idx, maxlen, proc, offset, mpierr, allocstat
 integer(LB_INT), allocatable :: proc_ids(:) !/* Temp array of processor assignments for elements.*/
@@ -177,7 +178,6 @@ integer(LB_INT), allocatable :: send_vec(:), recv_vec(:) !/* Communication vecs.
 type(ELEM_INFO), pointer :: elements(:), tmp(:), exp_elem_ptr
 type(MESH_INFO), pointer :: mesh_data
 logical :: flag
-integer(LB_INT) :: idx
 integer(LB_INT) :: gid  ! Temporary variables to change positioning of IDs.
 integer(LB_INT) :: lid
 
@@ -415,11 +415,13 @@ subroutine migrate_post_process(data, num_gid_entries, num_lid_entries, &
                                 import_local_ids, import_procs, num_export, &
                                 export_global_ids, export_local_ids, &
                                 export_procs, ierr)
-type(LB_User_Data_2) :: data
-integer(LB_INT) :: num_gid_entries, num_lid_entries
-integer(LB_INT) :: num_import, num_export, ierr
-integer(LB_INT) :: import_global_ids(*), import_local_ids(*), import_procs(*), &
-                   export_global_ids(*), export_local_ids(*), export_procs(*)
+type(LB_User_Data_2), intent(in) :: data
+integer(LB_INT), intent(in) :: num_gid_entries, num_lid_entries
+integer(LB_INT), intent(in) :: num_import, num_export
+integer(LB_INT), intent(in) :: import_global_ids(*), import_local_ids(*), &
+                               import_procs(*), export_global_ids(*), &
+                               export_local_ids(*), export_procs(*)
+integer(LB_INT), intent(out) :: ierr
 
 type(ELEM_INFO), pointer :: element(:)
 integer(LB_INT) :: proc, num_proc
@@ -507,10 +509,10 @@ end subroutine migrate_post_process
 !/*****************************************************************************/
 !/*****************************************************************************/
 integer(LB_INT) function migrate_elem_size(data, num_gid_entries, num_lid_entries, elem_gid, elem_lid, ierr)
-type(LB_User_Data_2) :: data
-integer(LB_INT) :: ierr
-integer(LB_INT) :: num_gid_entries, num_lid_entries
-integer(LB_INT) :: elem_gid(*), elem_lid(*)
+type(LB_User_Data_2), intent(in) :: data
+integer(LB_INT), intent(in) :: num_gid_entries, num_lid_entries
+integer(LB_INT), intent(in) :: elem_gid(*), elem_lid(*)
+integer(LB_INT), intent(out) :: ierr
 !/*
 ! * Function to return size of element information for a single element.
 ! */
@@ -567,12 +569,12 @@ end function migrate_elem_size
 subroutine migrate_pack_elem(data, num_gid_entries, num_lid_entries, &
                              elem_gid, elem_lid,  mig_proc, &
                              elem_data_size, buf, ierr)
-type(LB_User_Data_2) :: data
-integer(LB_INT) :: num_gid_entries, num_lid_entries
-integer(LB_INT) :: elem_gid(*), elem_lid(*)
-integer(LB_INT) :: mig_proc, elem_data_size, ierr
-integer(LB_INT) :: buf(*)
-integer(LB_INT) :: idx
+type(LB_User_Data_2), intent(in) :: data
+integer(LB_INT), intent(in) :: num_gid_entries, num_lid_entries
+integer(LB_INT), intent(in) :: elem_gid(*), elem_lid(*)
+integer(LB_INT), intent(in) :: mig_proc, elem_data_size
+integer(LB_INT), intent(out) :: buf(*)
+integer(LB_INT), intent(out) :: ierr
 
 ! NOTE: this assumes that a float is no bigger than an int
 !       (see the use of the transfer function)
@@ -581,6 +583,7 @@ integer(LB_INT) :: idx
   type(ELEM_INFO), pointer :: current_elem
   integer(LB_INT) :: size
   integer(LB_INT) :: i, j
+  integer(LB_INT) :: idx
   integer(LB_INT) :: proc
   integer(LB_INT) :: num_nodes
   integer(LB_INT) :: mpierr
@@ -692,11 +695,12 @@ end subroutine migrate_pack_elem
 !/*****************************************************************************/
 subroutine migrate_unpack_elem(data, num_gid_entries, &
                                elem_gid, elem_data_size, buf, ierr)
-type(LB_User_Data_2) :: data
-integer(LB_INT) :: num_gid_entries
-integer(LB_INT) :: elem_gid(*)
-integer(LB_INT) :: elem_data_size, ierr
-integer(LB_INT) :: buf(*)
+type(LB_User_Data_2), intent(in) :: data
+integer(LB_INT), intent(in) :: num_gid_entries
+integer(LB_INT), intent(in) :: elem_gid(*)
+integer(LB_INT), intent(in) :: elem_data_size
+integer(LB_INT), intent(in) :: buf(*)
+integer(LB_INT), intent(out) :: ierr
 
   type(ELEM_INFO), pointer :: elem(:)
   type(ELEM_INFO), pointer :: current_elem
