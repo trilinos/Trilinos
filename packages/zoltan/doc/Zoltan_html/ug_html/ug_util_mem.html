@@ -89,7 +89,7 @@ the <a href="#Debug_Memory">description</a> below.
 <a href="#Debug_Memory">memory debugging</a> statistics, such as memory
 leak information.
 <br><b><a href="#Zoltan_Memory_Usage">Zoltan_Memory_Usage</a></b>:&nbsp; Returns
-user specified information about memory usage (i.e. maximum memory used, total
+user-specified information about memory usage (i.e. maximum memory used, total
 memory currently allocated).
 </blockquote>
 </td>
@@ -569,8 +569,8 @@ about memory allocation and deallocation are stored, depending on the debug leve
 through a call to <a href="#Zoltan_Set_Memory_Debug"><b>Zoltan_Set_Memory_Debug</b></a>.&nbsp This information is printed either when an error or
 warning occurs, or when <a href="#Zoltan_Memory_Stats"><b>Zoltan_Memory_Stats</b></a> is called.&nbsp
 We have found values of one and two to
-be very helpful in our development efforts.&nbsp;  The routine <a href="Zoltan_Memory_Usage">
-<b>Zoltan_Memory_Usage</b></a> can be called to return user specified information about memory
+be very helpful in our development efforts.&nbsp;  The routine <a href="#Zoltan_Memory_Usage">
+<b>Zoltan_Memory_Usage</b></a> can be called to return user-specified information about memory
 utilization to the user's program.
 <p>
 
@@ -663,7 +663,10 @@ debug level set through a call to <a href="#Zoltan_Set_Memory_Debug"><b>Zoltan_S
 int <b>Zoltan_Memory_Usage</b>(int <i>type</i>);
 <hr>
 The <b>Zoltan_Memory_Usage</b> function returns information about memory
-utilization. <br>&nbsp;
+utilization. 
+The memory debug level (set through a call to <a href="#Zoltan_Set_Memory_Debug"><b>Zoltan_Set_Memory_Debug</b></a>) must be at least 2 for this function to 
+return non-zero values.
+<br>&nbsp;
 <table WIDTH="100%" >
 <tr VALIGN=TOP>
 <td VALIGN=TOP WIDTH="20%"><b>Arguments:</b></td>
