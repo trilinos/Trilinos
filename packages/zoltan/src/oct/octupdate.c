@@ -111,6 +111,8 @@ int lb_oct_init(
   count = nsentags = nrectags = 0;
 
   if(lb->Params != NULL) {
+/* BAH: need to put new params stuff into octupdate */
+/*
     if(lb->Params[0] == LB_PARAMS_INIT_VALUE)
       POC_init(lb->Proc, 3);
     else
@@ -125,6 +127,7 @@ int lb_oct_init(
       LB_oct_set_maxregions(1);
     else
       LB_oct_set_maxregions(lb->Params[2]);
+*/
   }
   else {
     POC_init(lb->Proc, 3);
@@ -147,7 +150,9 @@ int lb_oct_init(
   timers[1] = time2 - time1;              /* time took to partition octree */
 
   /* intermediate result print out */
-  if(lb->Params[4] != LB_PARAMS_INIT_VALUE)          /* WARNING BIG OUTPUT!! */
+/* BAH: need to put new params stuff into octupdate */
+/*if(lb->Params[4] != LB_PARAMS_INIT_VALUE)*/          /* WARNING BIG OUTPUT!! */
+  if (0) {
     for(i=0; i<lb->Num_Proc; i++) {
       if(lb->Proc == i) {
 	POC_printResults();
@@ -155,6 +160,7 @@ int lb_oct_init(
       }
       MPI_Barrier(lb->Communicator);
     }
+  }	
 
   /* set up tags for migrations */
   time1 = MPI_Wtime();
@@ -186,12 +192,15 @@ int lb_oct_init(
   timestop = MPI_Wtime();
 
   if(lb->Params != NULL) {
+/* BAH: need to put new params stuff into octupdate */
+/*
     if(lb->Params[3] == LB_PARAMS_INIT_VALUE)
       LB_print_stats(lb, timestop - timestart, timers, counters, c, 1);
     else
       if(lb->Params[3] != 0)
 	LB_print_stats(lb, timestop-timestart, timers, counters, c,
                        lb->Params[3]);
+*/
   }
   else
     LB_print_stats(lb, timestop - timestart, timers, counters, c, 1);
@@ -445,10 +454,13 @@ void LB_get_bounds(LB *lb, pRegion *ptr1, int *num_objs,
   /* ATTN: wgtflag should be determined by a user-defined option,
      probably set by LB_Set_Param. For now, read as input parameter. */
   if (lb->Params != NULL) {
+/* BAH: need to put new params stuff into octupdate */
+/*
     if (lb->Params[LB_PARAMS_MAX_SIZE-1] == LB_PARAMS_INIT_VALUE)
       wgtflag = 0;
     else
       wgtflag = lb->Params[LB_PARAMS_MAX_SIZE-1];
+*/
   }
 
   *num_objs = lb->Get_Num_Obj(lb->Get_Num_Obj_Data, &ierr);
