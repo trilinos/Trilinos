@@ -42,15 +42,10 @@ char *val)			/* value of variable */
 
     if (status == 0) {
       if (index == 0) {		/* Imbalance_Tol */
-	if (result.dval > 1.0) {
+	if (result.dval < 1.0) {
 	    fprintf(stderr, "WARNING: Invalid Imbalance_Tol value (%g) "
 		"being set to 1.0\n", result.dval);
 	    result.dval = 1.0;
-	}
-	if (result.dval < 0.0) {
-	    fprintf(stderr, "WARNING: Invalid Imbalance_Tol value (%g) "
-		"being set to 0.0\n", result.dval);
-	    result.dval = 0.0;
 	}
 	lb->Imbalance_Tol = result.dval;
 	status = 3;		/* Don't add to Params field of LB */

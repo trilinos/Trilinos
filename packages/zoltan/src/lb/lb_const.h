@@ -184,7 +184,7 @@ struct LB_Struct {
                                       based on the method used.              */
   LB_PARAM *Params;               /*  List of parameter names & new vals */
   double Imbalance_Tol;           /*  Tolerance to which to load balance;
-                                      Imbalance_Tol = 0.1 implies 10% imbalance
+                                      Imbalance_Tol = 1.1 implies 10% imbalance
                                       is acceptable, i.e. max/avg = 1.1.     */
   void *Data_Structure;           /*  Data structure used by the load 
                                       balancer; cast by the method routines
