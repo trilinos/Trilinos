@@ -33,7 +33,7 @@ static double determinant(double[3][3]);
 static void eigenvec3(double[3][3], double, double *, double *);
 
 int LB_inertial3d(
-     struct irb_dot   *dotpt,   /* graph data structure */
+     struct Dot_Struct *dotpt,  /* graph data structure */
      int              dotnum,   /* number of vtxs in graph */
      int              wgtflag,  /* are vertex weights being used? */
      double           cm[3],    /* center of mass in each direction */

@@ -14,15 +14,9 @@
 #ifndef __IRB_CONST_H
 #define __IRB_CONST_H
 
-/* Data structures for parallel inertial recursive bisection method
-*/
+#include "shared_const.h"
 
-                                /* dot to balance on for inertial method */
-struct irb_dot {                /* dot = point in 3-space */
-    double    X[3];             /* location of dot */
-    double    Weight;           /* weight of dot - if used must be > 0 */
-    LB_TAG    Tag;              /* Tag containing IDs for the object.  */
-};
+/* Data structures for parallel inertial recursive bisection method */
 
 struct irb_tree {               /* tree of irb method cuts */
     double    cm[3];            /* center of mass */
@@ -34,9 +28,11 @@ struct irb_tree {               /* tree of irb method cuts */
 };
 
 typedef struct IRB_Struct {
-    struct irb_dot  *Dots;
-    struct irb_tree *Tree_Ptr;
-    int               Num_Geom;
+    LB_ID_PTR Global_IDs;
+    LB_ID_PTR Local_IDs;
+    struct Dot_Struct *Dots;
+    struct irb_tree   *Tree_Ptr;
+    int                Num_Geom;
 } IRB_STRUCT;
 
 extern int LB_IRB_Build_Structure(LB *, int *, int *, int);
@@ -45,11 +41,11 @@ extern int LB_Set_IRB_Param(char *, char *);
 
 /* function prototypes */
 
-extern int LB_inertial1d(struct irb_dot *, int, int, double *, double *,
+extern int LB_inertial1d(struct Dot_Struct *, int, int, double *, double *,
                          double *);
-extern int LB_inertial2d(struct irb_dot *, int, int, double *, double *,
+extern int LB_inertial2d(struct Dot_Struct *, int, int, double *, double *,
                          double *, MPI_Comm);
-extern int LB_inertial3d(struct irb_dot *, int, int, double *, double *,
+extern int LB_inertial3d(struct Dot_Struct *, int, int, double *, double *,
                          double *, MPI_Comm);
 
 #endif

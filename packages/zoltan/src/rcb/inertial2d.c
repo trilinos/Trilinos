@@ -30,7 +30,7 @@ static void evals2(double[2][2], double *, double *);
 static void eigenvec2(double[2][2], double, double *, double *);
 
 int LB_inertial2d(
-     struct irb_dot   *dotpt,   /* graph data structure for weights */
+     struct Dot_Struct *dotpt,  /* graph data structure for weights */
      int              dotnum,   /* number of vtxs in graph */
      int              wgtflag,  /* are vertex weights being used? */
      double           cm[3],    /* center of mass in each direction */
@@ -115,6 +115,10 @@ int LB_inertial2d(
      for (i = 0; i < dotnum; i++)
         value[i] = (dotpt[i].X[0] - xcm)*evec[0] +
                    (dotpt[i].X[1] - ycm)*evec[1];
+
+     /* KDDKDD -- Do we need to set cm[0] and cm[1]? */
+     cm[0] = xcm;
+     cm[1] = ycm;
 
      /* zero unused third dimension */
      cm[2] = evec[2] = 0.0;

@@ -22,7 +22,7 @@
 #include "irb_const.h"
 
 int LB_inertial1d(
-     struct irb_dot *dotpt,     /* graph data structure for weights */
+     struct Dot_Struct *dotpt,  /* graph data structure for weights */
      int              dotnum,   /* number of vtxs in graph */
      int              wgtflag,  /* are vertex weights being used? */
      double           cm[3],    /* center of mass in each direction */
