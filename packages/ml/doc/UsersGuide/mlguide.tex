@@ -629,7 +629,7 @@ pointer and a \teuchos~parameter list\footnote{In order to use the
 %Class MultiLevelPreconditioner is defined in a header
 %file, that must be included as
 %\begin{verbatim}
-%#include "ml_epetra_preconditioner.h"
+%#include "ml_MultiLevelPreconditioner.h"
 %\end{verbatim}
   In order to compile, it may also be necessary to include the following
   files: \verb!ml_config.h! (as first \ML\ include),
@@ -638,7 +638,7 @@ pointer and a \teuchos~parameter list\footnote{In order to use the
   \verb!Epetra_LinearProblem.h!, and \verb!AztecOO.h!. Check the {\sc
     Epetra} and {\sc AztecOO} documentation for more details.
   Additionally, the user must include the header file
-  \verb!"ml_epetra_preconditioner.h"!.  Also note that the macro
+  \verb!"ml_MultiLevelPreconditioner.h"!.  Also note that the macro
   \verb!HAVE_CONFIG_H!  must be defined either in the user's code or as
   a compiler flag.
 
@@ -648,7 +648,7 @@ pointer and a \teuchos~parameter list\footnote{In order to use the
 We now give a very simple fragment of code that uses the
 MultiLevelPreconditioner.
 For the complete code, see
-\verb!$ML_HOME/examples/ml_example_epetra_preconditioner.cpp!.
+\verb!$ML_HOME/examples/ml_example_MultiLevelPreconditioner.cpp!.
 (In order to be effectively compiled, this example
 requires \ML\ to be configured with option \verb!--enable-triutils!; see
 Section~\ref{configure}.)  The linear operator \verb!A! is derived from an
@@ -657,7 +657,7 @@ Epetra\_RowMatrix, \verb!Solver! is an AztecOO object, and
 
 \begin{verbatim}
 #include "ml_include.h"
-#include "ml_epetra_preconditioner.h"
+#include "ml_MultiLevelPreconditioner.h"
 #include "Teuchos_ParameterList.hpp"
 
 ...
@@ -1396,9 +1396,9 @@ matrix.
 
 Two examples are included in the \ML~distribution:
 \begin{itemize}
-\item File \verb!ml_example_epetra_preconditioner_viz.cpp! shows how to
+\item File \verb!ml_example_MultiLevelPreconditioner_viz.cpp! shows how to
 visualize the effect of the \ML~cycle and each level's smoother on a random vector;
-\item File \verb!ml_example_epetra_preconditioner_analyze.cpp! shows who to
+\item File \verb!ml_example_MultiLevelPreconditioner_analyze.cpp! shows who to
 get some quantitative information about each level's matrix, and multilevel preconditioner.
 \end{itemize}
 
@@ -1824,7 +1824,7 @@ MLPrec->VisualizeCycle(10);
 // and 1 step of postsmoother
 MLPrec->VisualizeSmoothers(5,1);
 \end{verbatim}
-(File \verb!ml_example_epetra_preconditioner_viz.cpp! contains the complete
+(File \verb!ml_example_MultiLevelPreconditioner_viz.cpp! contains the compilable
  code.) We note that the parameters must be set {\sl before} calling
 {\tt ComputePreconditioner()}. See also Section~\ref{sec:MLP:auxiliary} for
 the requirements on the coordinates vectors.
@@ -2254,7 +2254,7 @@ these will be made available to users.
 Class ML\_Epetra::MultiLevelOperator is defined in a header file, that must
 be included as
 \begin{verbatim}
-#include "ml_epetra_operator.h" 
+#include "ml_MultiLevelOperator.h" 
 \end{verbatim}
 Users may also need to include \verb!ml_config.h!,
 \verb!Epetra_Operator.h!, \verb!Epetra_MultiVector.h!,
