@@ -24,18 +24,22 @@ my $reportCount;            # count of how many reports have been generated
 my %dependencies;           # package dependencies
 my %dirNames;               # lowercaseName/directoryName pairs
 my %emails;                 # packageDirName/regressionEmailPrefix pairs
-my @codes;                  # strings corresponding to error code constants
+my %codes;                  # strings corresponding to error code constants
 
 # Error constants
-my $FILE_SYSTEM_ERROR = 0;            # files absent or have incorrect permissions
-my $SYSTEM_COMMAND_ERROR = 1;         # system command failed or doesn't exist
-my $CONFIG_ERROR = 2;                 # test-harness configure file isn't valid
-my $UPDATE_ERROR = 3;                 # cvs update failed
-my $TRILINOS_CONFIGURE_ERROR = 4;     # Trilinos configure failed
-my $TRILINOS_BUILD_ERROR = 5;         # Trilinos build failed
-my $TEST_FAILED = 6;                  # test failed
-my $TEST_PASSED = 7;                  # test passed
-my $SUMMARY = 8;                      # test-harness summary
+my $SUCCESS = 0;                    # success/no error
+my $UNKNOWN = 1;                    # unknown
+my $FILE_SYSTEM_ERROR = 2;          # files absent or have incorrect permissions
+my $SYSTEM_COMMAND_ERROR = 4;       # system command failed or doesn't exist
+my $TEST_HARNESS_CONFIG_ERROR = 8;  # test-harness configure file isn't valid
+my $UPDATE_ERROR = 16;              # cvs update failed
+my $CONFIGURE_ERROR = 32;  # configure failed
+my $BUILD_ERROR = 64;      # build failed
+my $IC_FIX_FAIL_NO_DETECT = 128;    # fixing invoke-configure failed: can't detect broken package
+my $IC_FIX_FAIL_NO_CHANGE = 256;    # fixing invoke-configure failed: no changes made
+my $TEST_FAILED = 512;              # test failed
+my $TEST_PASSED = 1024;             # test passed
+my $SUMMARY = 2048;                 # test-harness summary
 
 # Host Operating System Variable
 chomp (my $hostOS=`uname`);
@@ -124,18 +128,24 @@ report($SUMMARY);
         $reportCount = "000";          
         @optionsOrder = ();
         
-        $codes[$FILE_SYSTEM_ERROR] = "file system error";           
-        $codes[$SYSTEM_COMMAND_ERROR] = "system command error";        
-        $codes[$CONFIG_ERROR] = "test-harness config error";
-        $codes[$UPDATE_ERROR] = "cvs update error";
-        $codes[$TRILINOS_CONFIGURE_ERROR] = "Trilinos configure error";
-        $codes[$TRILINOS_BUILD_ERROR] = "Trilinos build error";
-        $codes[$TEST_FAILED] = "test failed";
-        $codes[$TEST_PASSED] = "test passed";
-        $codes[$SUMMARY] = "summary";
+        $codes{$FILE_SYSTEM_ERROR} = "file system error";           
+        $codes{$SYSTEM_COMMAND_ERROR} = "system command error";        
+        $codes{$TEST_HARNESS_CONFIG_ERROR} = "test-harness config error";
+        $codes{$UPDATE_ERROR} = "cvs update error";
+        $codes{$CONFIGURE_ERROR} = "configure error";
+        $codes{$BUILD_ERROR} = "build error";
+        $codes{$IC_FIX_FAIL_NO_DETECT} = "i-c fix failed: can't detect broken package";
+        $codes{$IC_FIX_FAIL_NO_CHANGE} = "i-c fix failed: no changes made";
+        $codes{$CONFIGURE_ERROR+$IC_FIX_FAIL_NO_DETECT} = "configure error i-c fix failed";
+        $codes{$CONFIGURE_ERROR+$IC_FIX_FAIL_NO_CHANGE} = "configure error i-c fix failed";
+        $codes{$BUILD_ERROR+$IC_FIX_FAIL_NO_DETECT} = "build error i-c fix failed";
+        $codes{$BUILD_ERROR+$IC_FIX_FAIL_NO_CHANGE} = "build error i-c fix failed";        
+        $codes{$TEST_FAILED} = "test failed";
+        $codes{$TEST_PASSED} = "test passed";
+        $codes{$SUMMARY} = "summary";
             
-        $summary{$TRILINOS_CONFIGURE_ERROR} = ();
-        $summary{$TRILINOS_BUILD_ERROR} = ();
+        $summary{$CONFIGURE_ERROR} = ();
+        $summary{$BUILD_ERROR} = ();
         $summary{$TEST_FAILED} = ();
         $summary{$TEST_PASSED} = ();        
         
@@ -473,29 +483,33 @@ report($SUMMARY);
                         my $log = "$options{'TRILINOS_DIR'}[0]/testharness/temp/trilinos_configure_log_$hostOS.txt";
                         my $invokeConfigure ="$options{'TRILINOS_DIR'}[0]/$buildDir[$j]/invoke-configure";
                         (my $fixFailed, my $brokenPackage) = fixInvokeConfigure($log, $invokeConfigure, $comm);
-                            
-                        # quit if error fixing invoke-configure
-                        if ($fixFailed != 0) {
-                            $quitTrying = 1; 
-                            report($TRILINOS_CONFIGURE_ERROR, $brokenPackage, $comm); 
-                            last; # equivalent to break                          
-                        }    
                         
-                        if (-f "$options{'TRILINOS_DIR'}[0]/$buildDir[$j]/packages/$dirNames{$brokenPackage}/config.log") {                
-                            # rename config.log (and move to testharness/temp) so 
-                            # developers don't have to rename each file they get 
-                            # from each OS and comm.
-                            my $command = "";
-                            $command .= "mv $options{'TRILINOS_DIR'}[0]/$buildDir[$j]/packages/$dirNames{$brokenPackage}/config.log ";
-                            $command .= "$options{'TRILINOS_DIR'}[0]/testharness/temp/";
-                            $command .= $hostOS."_".$comm."_".$brokenPackage."_config.log  2>&1";
-                            system $command;   
+                        if ($fixFailed == $SUCCESS || $fixFailed == $IC_FIX_FAIL_NO_CHANGE) {
+                            
+                            if (-f "$options{'TRILINOS_DIR'}[0]/$buildDir[$j]/packages/$dirNames{$brokenPackage}/config.log") {                
+                                # rename config.log (and move to testharness/temp) so 
+                                # developers don't have to rename each file they get 
+                                # from each OS and comm.
+                                my $command = "";
+                                $command .= "mv $options{'TRILINOS_DIR'}[0]/$buildDir[$j]/packages/$dirNames{$brokenPackage}/config.log ";
+                                $command .= "$options{'TRILINOS_DIR'}[0]/testharness/temp/";
+                                $command .= $hostOS."_".$comm."_".$brokenPackage."_config.log  2>&1";
+                                system $command;
+                            }
+                        
+                            # remove broken package
+                            system "rm -rf $options{'TRILINOS_DIR'}[0]/$buildDir[$j]/packages/$dirNames{$brokenPackage}";
+                        }
+
+                        # quit if error fixing invoke-configure
+                        if ($fixFailed != $SUCCESS) {
+                            $quitTrying = 1;
+                            my $compoundErrorCode = $CONFIGURE_ERROR + $fixFailed;
+                            report($compoundErrorCode, $brokenPackage, $comm);
+                            last; # equivalent to break
                         }
                         
-                        # remove broken package
-                        system "rm -rf $options{'TRILINOS_DIR'}[0]/$buildDir[$j]/packages/$dirNames{$brokenPackage}";
-                        
-                        printEvent("$comm - Trilinos configuration failed--$brokenPackage broke\n");  
+                        printEvent("$comm - configure failed--$brokenPackage broke\n");  
                         
                         # there is no invoke-configure left or it's empty
                         if (!-f $invokeConfigure || -z $invokeConfigure) { 
@@ -504,7 +518,7 @@ report($SUMMARY);
                         }
                         
                         # send email
-                        report($TRILINOS_CONFIGURE_ERROR, $brokenPackage, $comm);
+                        report($CONFIGURE_ERROR, $brokenPackage, $comm);
                     } 
                     
                     # configure succeeded
@@ -532,43 +546,46 @@ report($SUMMARY);
                             my $invokeConfigure ="$options{'TRILINOS_DIR'}[0]/$buildDir[$j]/invoke-configure";
                             (my $fixFailed, my $brokenPackage) = fixInvokeConfigure($log, $invokeConfigure, $comm);
                             
+                            if ($fixFailed == $SUCCESS || $fixFailed == $IC_FIX_FAIL_NO_CHANGE) {
+                                # descend into $brokenPackage and capture output from "make clean"
+                                chdir "$options{'TRILINOS_DIR'}[0]/$buildDir[$j]/packages/$dirNames{$brokenPackage}";
+                            
+                                my $command = "";
+                                if (defined $options{'MAKE_FLAGS'} && defined $options{'MAKE_FLAGS'}[0]) {
+                                    $command .= "make $options{'MAKE_FLAGS'}[0] clean &> /dev/null";
+                                } else {
+                                    $command .= "make clean &> /dev/null";
+                                }
+                                system $command;        
+                                                    
+                                $command = "";
+                                if (defined $options{'MAKE_FLAGS'} && defined $options{'MAKE_FLAGS'}[0]) {
+                                    $command .= "make $options{'MAKE_FLAGS'}[0] >> ";
+                                    $command .= "$options{'TRILINOS_DIR'}[0]/testharness/temp/";
+                                    $command .= $hostOS."_".$comm."_".$brokenPackage."_build.log 2>&1";
+                                } else {
+                                    $command .= "make >> ";
+                                    $command .= "$options{'TRILINOS_DIR'}[0]/testharness/temp/";
+                                    $command .= $hostOS."_".$comm."_".$brokenPackage."_build.log 2>&1";
+                                }
+                                system $command;
+                
+                                # return to build dir
+                                chdir"$options{'TRILINOS_DIR'}[0]/$buildDir[$j]";                           
+                                
+                                # remove broken package                            
+                                system "rm -rf $options{'TRILINOS_DIR'}[0]/$buildDir[$j]/packages/$dirNames{$brokenPackage}";
+                            }
+                            
                             # quit if error fixing invoke-configure
                             if ($fixFailed != 0) {
-                                $quitTrying = 1; 
-                                report($TRILINOS_BUILD_ERROR, $brokenPackage, $comm); 
-                                last; # equivalent to break                               
+                                $quitTrying = 1;
+                                my $compoundErrorCode = $BUILD_ERROR + $fixFailed;
+                                report($compoundErrorCode, $brokenPackage, $comm);
+                                last; # equivalent to break
                             }
                             
-                            # descend into $brokenPackage and capture output from "make clean"
-                            chdir "$options{'TRILINOS_DIR'}[0]/$buildDir[$j]/packages/$dirNames{$brokenPackage}";
-                            
-                            my $command = "";
-                            if (defined $options{'MAKE_FLAGS'} && defined $options{'MAKE_FLAGS'}[0]) {
-                                $command .= "make $options{'MAKE_FLAGS'}[0] clean &> /dev/null";
-                            } else {
-                                $command .= "make clean &> /dev/null";
-                            }
-                            system $command;        
-                                                
-                            $command = "";
-                            if (defined $options{'MAKE_FLAGS'} && defined $options{'MAKE_FLAGS'}[0]) {
-                                $command .= "make $options{'MAKE_FLAGS'}[0] >> ";
-                                $command .= "$options{'TRILINOS_DIR'}[0]/testharness/temp/";
-                                $command .= $hostOS."_".$comm."_".$brokenPackage."_build.log 2>&1";
-                            } else {
-                                $command .= "make >> ";
-                                $command .= "$options{'TRILINOS_DIR'}[0]/testharness/temp/";
-                                $command .= $hostOS."_".$comm."_".$brokenPackage."_build.log 2>&1";
-                            }
-                            system $command;        
-                
-                            # return to build dir
-                            chdir"$options{'TRILINOS_DIR'}[0]/$buildDir[$j]";                           
-                            
-                            # remove broken package                            
-                            system "rm -rf $options{'TRILINOS_DIR'}[0]/$buildDir[$j]/packages/$dirNames{$brokenPackage}";
-                            
-                            printEvent("$comm - Trilinos build failed--$brokenPackage broke\n");  
+                            printEvent("$comm - build failed--$brokenPackage broke\n");  
                         
                             # there is no invoke-configure left or it's empty
                             if (!-f $invokeConfigure || -z $invokeConfigure) {  
@@ -580,7 +597,7 @@ report($SUMMARY);
                             $configurePassed = 0;
                             
                             # send email
-                            report($TRILINOS_BUILD_ERROR, $brokenPackage, $comm); 
+                            report($BUILD_ERROR, $brokenPackage, $comm); 
                         } 
                         
                         # build succeeded
@@ -835,7 +852,7 @@ report($SUMMARY);
             $brokenPackage = lc($brokenPackage);    # convert to lower-case
         } else {
             printEvent("error fixing invoke-configure--can't detect package\n");
-            return (2, "unknown");
+            return ($IC_FIX_FAIL_NO_DETECT, "unknown");
         }
         
         system "cp $invokeConfigure $invokeConfigure-broken";
@@ -880,7 +897,7 @@ report($SUMMARY);
         
         if (!$changeMade) {
             printEvent("error fixing invoke-configure--no changes made ($brokenPackage broke)\n");
-            return (1, $brokenPackage);
+            return ($IC_FIX_FAIL_NO_CHANGE, $brokenPackage);
         }
         
         # prepare new invoke-configure
@@ -896,7 +913,7 @@ report($SUMMARY);
         close INVOKE_CONFIGURE; 
         
         # return broken package name
-        return (0, $brokenPackage);
+        return ($SUCCESS, $brokenPackage);
         
     } # fixInvokeConfigure()
 
@@ -1040,18 +1057,37 @@ report($SUMMARY);
             $testName =~ s/.*\///;
         }
         
-        # extract summary data ------------------------------------------------- 
-        if ($code == $TRILINOS_CONFIGURE_ERROR || $code == $TRILINOS_BUILD_ERROR) {
-            push (@{$summary{$code}}, "$comm ($message broke)");
-        }        
+        # extract summary data -------------------------------------------------
+        
         if ($code == $TEST_FAILED || $code == $TEST_PASSED) {
-            my $package;                
+            my $package;
             $testDir =~ m/packages\/(.*?)\//;
             if ($1) { 
                 $package = $1;
                 push (@{$summary{$code}}, "$comm - $package - $testName");
             } else {
                 push (@{$summary{$code}}, "$comm - $testName");
+            }
+        } 
+        
+        elsif ($code == $CONFIGURE_ERROR || $code == $BUILD_ERROR) {
+            push (@{$summary{$code}}, "$comm ($message broke)");
+        } 
+        
+        else {
+            if (($code & $CONFIGURE_ERROR) == $CONFIGURE_ERROR) {
+                if (($code & $IC_FIX_FAIL_NO_DETECT) == $IC_FIX_FAIL_NO_DETECT) {
+                    push (@{$summary{$CONFIGURE_ERROR}}, "$comm (couldn't detect broken package)");   
+                } elsif (($code & $IC_FIX_FAIL_NO_CHANGE) == $IC_FIX_FAIL_NO_CHANGE) {
+                    push (@{$summary{$CONFIGURE_ERROR}}, "$comm ($message broke, but invoke-configure could not be fixed)");
+                }
+            }
+            if (($code & $BUILD_ERROR) == $BUILD_ERROR) {
+                if (($code & $IC_FIX_FAIL_NO_DETECT) == $IC_FIX_FAIL_NO_DETECT) {
+                    push (@{$summary{$BUILD_ERROR}}, "$comm (couldn't detect broken package)");   
+                } elsif (($code & $IC_FIX_FAIL_NO_CHANGE) == $IC_FIX_FAIL_NO_CHANGE) {
+                    push (@{$summary{$BUILD_ERROR}}, "$comm ($message broke, but invoke-configure could not be fixed)");
+                }
             }
         }
 
@@ -1063,7 +1099,9 @@ report($SUMMARY);
             if ($options{'SEND_TO_DEFAULTS'}[0] eq "YES") {
                 
                 # configure/build-related
-                if ($code == $TRILINOS_CONFIGURE_ERROR || $code == $TRILINOS_BUILD_ERROR) {
+                if ($code == $CONFIGURE_ERROR || $code == $BUILD_ERROR ||
+                    (($code & $CONFIGURE_ERROR) == $CONFIGURE_ERROR) ||
+                    (($code & $BUILD_ERROR) == $BUILD_ERROR)) {
                     my $package = $message;
                     my $packageRegression = "";   
                     if ($emails{$package}) {
@@ -1163,11 +1201,11 @@ report($SUMMARY);
         # subject/filename =====================================================
         
         my $subject = "";
-        my $filename;
+        my $filename = "";
         
         # subject (email)
         if ($options{'REPORT_METHOD'}[0] eq "EMAIL") {
-            $subject .= $codes[$code];
+            $subject .= $codes{$code};
             $subject .= " - $hostOS - $hostName - ";
             if (defined $comm) {$subject .= "$comm - ";}
             if (defined $testName) {$subject .= "$testName";}
@@ -1177,19 +1215,21 @@ report($SUMMARY);
         elsif ($options{'REPORT_METHOD'}[0] eq "LOCAL_FILESYSTEM") {
             if ($options{'REPORT_NAMES'}[0] eq "ORDER") {
                 if (defined $comm) {    
-                    $filename = "$reportCount"."-$comm-$codes[$code]";
+                    $filename = "$reportCount"."-$comm-$codes{$code}";
                 } else {
-                    $filename = "$reportCount"."-$codes[$code]";
+                    $filename = "$reportCount"."-$codes{$code}";
                 }
             } elsif ($options{'REPORT_NAMES'}[0] eq "EVENT") {   
                 if (defined $comm) {         
-                    $filename = "$comm-$codes[$code]";
+                    $filename = "$comm-$codes{$code}";
                 } else {
-                    $filename = "$codes[$code]";
+                    $filename = "$codes{$code}";
                 }
             }            
         
-            if ($code == $TRILINOS_CONFIGURE_ERROR || $code == $TRILINOS_BUILD_ERROR) {
+            if ($code == $CONFIGURE_ERROR || $code == $BUILD_ERROR ||
+                (($code & $CONFIGURE_ERROR) == $CONFIGURE_ERROR) ||
+                (($code & $BUILD_ERROR) == $BUILD_ERROR)) {
                 $filename .= "($message)";
             }
             
@@ -1245,18 +1285,85 @@ report($SUMMARY);
             {$body .= "Test Name:        $testName\n";}
         if (defined $testName) 
             {$body .= "Frequency:        $options{'FREQUENCY'}[0]\n";}
-            $body .= "\n";        
-        if ($code == $TRILINOS_CONFIGURE_ERROR || $code == $TRILINOS_BUILD_ERROR) {
-            $body .= "Result:           $codes[$code] - $message broke\n";
+            $body .= "\n";       
+        if ($code == $CONFIGURE_ERROR || $code == $BUILD_ERROR ||
+            (($code & $CONFIGURE_ERROR) == $CONFIGURE_ERROR) ||
+            (($code & $BUILD_ERROR) == $BUILD_ERROR)) {
+            $body .= "Result:           $codes{$code} - $message broke\n";
             $body .= "\n";   
         } elsif ($code != $SUMMARY) {
-            $body .= "Result:           $codes[$code]\n";
+            $body .= "Result:           $codes{$code}\n";
             $body .= "\n";   
-        }             
+        }
+        
+        # invoke-configure fix fail error: can't detect broken package ---------
+        if (($code & $IC_FIX_FAIL_NO_DETECT) == $IC_FIX_FAIL_NO_DETECT) {
+            
+            my $stepCode = 0;        
+            if (($code & $CONFIGURE_ERROR) == $CONFIGURE_ERROR) {
+                $stepCode = $CONFIGURE_ERROR;
+            } elsif (($code & $BUILD_ERROR) == $BUILD_ERROR) {
+                $stepCode = $BUILD_ERROR;
+            }    
+            
+            if ($stepCode != 0) {            
+                $body .= "------------------------------------------------------------\n";
+                $body .= "Error fixing invoke-configure: can't detect broken package\n";
+                $body .= "\n";
+                if ($stepCode == $CONFIGURE_ERROR) {
+                    $body .= "After an unsuccessful configure attempt, the test harness\n";
+                } elsif ($stepCode == $BUILD_ERROR) {
+                    $body .= "After an unsuccessful build attempt, the test harness\n";                
+                }
+                $body .= "attempted to fix the invoke configure to disable the broken\n";           
+                $body .= "package and any dependencies so that the configure/build\n";
+                $body .= "process could continue, but the test harness could not\n";           
+                $body .= "detect the package that broke. Because of this, the test\n"; 
+                $body .= "harness had to quit trying to configure/build and instead\n";
+                $body .= "proceeded to the test whatever had already been built\n";      
+                $body .= "successfully. Note: Trilinos never completed a successful\n";      
+                $body .= "configure/build cycle!\n";      
+                $body .= "\n";
+            } 
+        }
+        
+        # invoke-configure fix fail error: no changes made ---------------------
+        if (($code & $IC_FIX_FAIL_NO_CHANGE) == $IC_FIX_FAIL_NO_CHANGE) {        
+            
+            my $stepCode = 0;        
+            if (($code & $CONFIGURE_ERROR) == $CONFIGURE_ERROR) {
+                $stepCode = $CONFIGURE_ERROR;
+            } elsif (($code & $BUILD_ERROR) == $BUILD_ERROR) {
+                $stepCode = $BUILD_ERROR;
+            }  
+            
+            if ($stepCode != 0) {              
+                $body .= "------------------------------------------------------------\n";
+                $body .= "Error fixing invoke-configure: no changes made\n";
+                $body .= "\n"; 
+                if ($stepCode == $CONFIGURE_ERROR) {
+                    $body .= "After an unsuccessful configure attempt, the test harness\n";
+                } elsif ($stepCode == $BUILD_ERROR) {
+                    $body .= "After an unsuccessful build attempt, the test harness\n";                
+                }    
+                $body .= "attempted to fix the invoke configure to disable the broken\n";           
+                $body .= "package and any dependencies (based on information in\n";
+                $body .= "Trilinos/testharness/dependencies) so that the\n";
+                $body .= "configure/build process could continue, but the test harness\n";
+                $body .= "could not find any changes to be made to the current\n";           
+                $body .= "invoke-configure based on the detected broken package and\n";
+                $body .= "the information in the dependencies file. Because no changes\n";
+                $body .= "could be made, the test harness had to quit trying to\n"; 
+                $body .= "configure/build and instead proceeded to the test whatever\n";
+                $body .= "had already been built successfully. Note: Trilinos never\n";      
+                $body .= "completed a successful configure/build cycle!\n";
+                $body .= "\n";
+            }  
+        }
         
         # fatal error ----------------------------------------------------------
         if ($code == $FILE_SYSTEM_ERROR || $code == $SYSTEM_COMMAND_ERROR ||
-            $code == $CONFIG_ERROR || $code == $UPDATE_ERROR) {
+            $code == $TEST_HARNESS_CONFIG_ERROR || $code == $UPDATE_ERROR) {
         
             $body .= "------------------------------------------------------------\n";
             $body .= "FATAL ERROR\n";
@@ -1278,7 +1385,7 @@ report($SUMMARY);
             
             for my $id (reverse sort keys %summary) { 
                 my $lastElementIndex = $#{$summary{$id}}; 
-                $body .= "- $codes[$id] (".($lastElementIndex+1)."): \n";
+                $body .= "- $codes{$id} (".($lastElementIndex+1)."): \n";
                 $body .= "\n";
                 if ($lastElementIndex+1 > 0) {
                     for (my $i=0; $i<=$lastElementIndex; $i++) {
@@ -1344,29 +1451,35 @@ report($SUMMARY);
         } 
         
         # trilinos configure failed
-        if ($code == $TRILINOS_CONFIGURE_ERROR && $message ne "error" && -f $hostOS."_".$comm."_".$message."_config.log") {    
-            $attachmentsExist = 1;
-            my $log = $hostOS."_".$comm."_".$message."_config.log";
-            my $logPath = "$options{'TRILINOS_DIR'}[0]/testharness/temp/$log";       
-            if ($options{'REPORT_METHOD'}[0] eq "EMAIL") {
-                $attachmentText .= "    $log\n";
-                $email->attach(Type=>'TEXT', Path=>"$logPath", Disposition=>'attachment');
-            } elsif ($options{'REPORT_METHOD'}[0] eq "LOCAL_FILESYSTEM") { 
-                $attachmentText .= appendFile($log, $logPath);                
-            }
+        if (($code == $CONFIGURE_ERROR ||
+            (($code & $CONFIGURE_ERROR) == $CONFIGURE_ERROR &&
+            ($code & $IC_FIX_FAIL_NO_CHANGE) == $IC_FIX_FAIL_NO_CHANGE)) &&
+            -f $hostOS."_".$comm."_".$message."_config.log") {    
+                $attachmentsExist = 1;
+                my $log = $hostOS."_".$comm."_".$message."_config.log";
+                my $logPath = "$options{'TRILINOS_DIR'}[0]/testharness/temp/$log";       
+                if ($options{'REPORT_METHOD'}[0] eq "EMAIL") {
+                    $attachmentText .= "    $log\n";
+                    $email->attach(Type=>'TEXT', Path=>"$logPath", Disposition=>'attachment');
+                } elsif ($options{'REPORT_METHOD'}[0] eq "LOCAL_FILESYSTEM") { 
+                    $attachmentText .= appendFile($log, $logPath);                
+                }
         }
         
         # trilinos build failed
-        if ($code == $TRILINOS_BUILD_ERROR && $message ne "error" && -f $hostOS."_".$comm."_".$message."_build.log") {             
-            $attachmentsExist = 1;
-            my $log = $hostOS."_".$comm."_".$message."_build.log";  
-            my $logPath = "$options{'TRILINOS_DIR'}[0]/testharness/temp/$log";         
-            if ($options{'REPORT_METHOD'}[0] eq "EMAIL") {
-                $attachmentText .= "    $log\n";
-                $email->attach(Type=>'APPLICATION', Path=>"$logPath", Disposition=>'attachment');
-            } elsif ($options{'REPORT_METHOD'}[0] eq "LOCAL_FILESYSTEM") {
-                $attachmentText .= appendFile($log, $logPath);                
-            }
+        if (($code == $BUILD_ERROR ||
+            (($code & $BUILD_ERROR) == $BUILD_ERROR &&
+            ($code & $IC_FIX_FAIL_NO_CHANGE) == $IC_FIX_FAIL_NO_CHANGE)) &&
+            -f $hostOS."_".$comm."_".$message."_build.log") {             
+                $attachmentsExist = 1;
+                my $log = $hostOS."_".$comm."_".$message."_build.log";  
+                my $logPath = "$options{'TRILINOS_DIR'}[0]/testharness/temp/$log";         
+                if ($options{'REPORT_METHOD'}[0] eq "EMAIL") {
+                    $attachmentText .= "    $log\n";
+                    $email->attach(Type=>'APPLICATION', Path=>"$logPath", Disposition=>'attachment');
+                } elsif ($options{'REPORT_METHOD'}[0] eq "LOCAL_FILESYSTEM") {
+                    $attachmentText .= appendFile($log, $logPath);                
+                }
         }
         
         # test compile log
@@ -1530,8 +1643,10 @@ report($SUMMARY);
         } # invoke-configure attachments for the summary email
         
         # Trilinos configure/build or test compile/pass/fail email
-        if ($code == $TRILINOS_CONFIGURE_ERROR || $code == $TRILINOS_BUILD_ERROR 
-            || $code == $TEST_FAILED || $code == $TEST_PASSED) {
+        if ($code == $CONFIGURE_ERROR || $code == $BUILD_ERROR ||
+            ($code & $CONFIGURE_ERROR) == $CONFIGURE_ERROR ||
+            ($code & $BUILD_ERROR) == $BUILD_ERROR ||
+            $code == $TEST_FAILED || $code == $TEST_PASSED) {
             
             # build directory
             my $buildDir = "";
@@ -1540,17 +1655,19 @@ report($SUMMARY);
             my $invokeConfigure = "$options{'TRILINOS_DIR'}[0]/$buildDir/invoke-configure";
             
             # configure/build failed--attach broken invoke-configure
-            if (($code == $TRILINOS_CONFIGURE_ERROR || $code == $TRILINOS_BUILD_ERROR)
-                && -f $invokeConfigure."-broken" && ! -z $invokeConfigure."-broken") {
-                $attachmentsExist = 1;
-                my $log = "invoke-configure-broken";     
-                my $logPath = "$invokeConfigure-broken";       
-                if ($options{'REPORT_METHOD'}[0] eq "EMAIL") {
-                    $attachmentText .= "    $log\n";
-                    $email->attach(Type =>'TEXT', Path=>"$logPath", Disposition=>'attachment');
-                } elsif ($options{'REPORT_METHOD'}[0] eq "LOCAL_FILESYSTEM") { 
-                    $attachmentText .= appendFile($log, $logPath);                
-                }   
+            if (($code == $CONFIGURE_ERROR || $code == $BUILD_ERROR ||
+                ($code & $CONFIGURE_ERROR) == $CONFIGURE_ERROR ||
+                ($code & $BUILD_ERROR) == $BUILD_ERROR) &&
+                -f $invokeConfigure."-broken" && ! -z $invokeConfigure."-broken") {
+                    $attachmentsExist = 1;
+                    my $log = "invoke-configure-broken";     
+                    my $logPath = "$invokeConfigure-broken";       
+                    if ($options{'REPORT_METHOD'}[0] eq "EMAIL") {
+                        $attachmentText .= "    $log\n";
+                        $email->attach(Type =>'TEXT', Path=>"$logPath", Disposition=>'attachment');
+                    } elsif ($options{'REPORT_METHOD'}[0] eq "LOCAL_FILESYSTEM") { 
+                        $attachmentText .= appendFile($log, $logPath);                
+                    }   
             } 
             
             elsif (($code == $TEST_FAILED || $code == $TEST_PASSED)
@@ -1726,6 +1843,11 @@ report($SUMMARY);
         print "\n";
         print "  -sg FILE : Same as -g, but comments are omitted\n";
         print "             (must be of the form: -sg FILE) (do not use -gs)\n";
+        print "\n";
+        print "  -u       : Force test harness to skip cvs update. Overrides\n";
+        print "             \"CVS_UPDATE = YES\" in config file. (This flag is used\n";
+        print "             internally by the test harness to re-execute itself after\n";
+        print "             being updated so the updated test harness is used.)\n";
         print "\n";
         print "  -h       : Print this help page and exit\n";
         print "\n";
@@ -1916,7 +2038,7 @@ report($SUMMARY);
                     } else {
                         my $message = "";
                         $message .= "attempting to use <HOST_FILE> value, but HOST_FILE wasn't given\n";
-                        if (!$flags{p}) { report($CONFIG_ERROR, $message); }
+                        if (!$flags{p}) { report($TEST_HARNESS_CONFIG_ERROR, $message); }
                         printEvent($message);
                         $configError = 1;
                     }
@@ -1965,7 +2087,7 @@ report($SUMMARY);
         if (!defined $options{'MACHINE_CONFIG_FILE'} || !defined $options{'MACHINE_CONFIG_FILE'}[0]) {
             my $message = "";
             $message .= "MACHINE_CONFIG_FILE required\n";
-            if (!$flags{p}) { report($CONFIG_ERROR, $message); }
+            if (!$flags{p}) { report($TEST_HARNESS_CONFIG_ERROR, $message); }
             printEvent($message);
             $configError = 1;
         }
@@ -1974,7 +2096,7 @@ report($SUMMARY);
         elsif (defined $options{'MACHINE_CONFIG_FILE'}[1]) {
             my $message = "";
             $message .= "only one MACHINE_CONFIG_FILE allowed\n";
-            if (!$flags{p}) { report($CONFIG_ERROR, $message); }
+            if (!$flags{p}) { report($TEST_HARNESS_CONFIG_ERROR, $message); }
             printEvent($message);
             $configError = 1;
         }
@@ -1987,7 +2109,7 @@ report($SUMMARY);
             || !defined $options{'MACHINE_MPI_CONFIG_FILE'}[0])) {
             my $message = "";
             $message .= "MACHINE_MPI_CONFIG_FILE must be supplied if MPI_DIR is present\n";
-            if (!$flags{p}) { report($CONFIG_ERROR, $message); }
+            if (!$flags{p}) { report($TEST_HARNESS_CONFIG_ERROR, $message); }
             printEvent($message);
             $configError = 1;
         }
@@ -1996,7 +2118,7 @@ report($SUMMARY);
         elsif (defined $options{'MACHINE_MPI_CONFIG_FILE'}[1]) {
             my $message = "";
             $message .= "only one MACHINE_MPI_CONFIG_FILE allowed\n";
-            if (!$flags{p}) { report($CONFIG_ERROR, $message); }
+            if (!$flags{p}) { report($TEST_HARNESS_CONFIG_ERROR, $message); }
             printEvent($message);
             $configError = 1;
         }
@@ -2007,7 +2129,7 @@ report($SUMMARY);
         if (!defined $options{'TRILINOS_CONFIG_FILE'} || !defined $options{'TRILINOS_CONFIG_FILE'}[0]) {
             my $message = "";
             $message .= "TRILINOS_CONFIG_FILE required\n";
-            if (!$flags{p}) { report($CONFIG_ERROR, $message); }
+            if (!$flags{p}) { report($TEST_HARNESS_CONFIG_ERROR, $message); }
             printEvent($message);
             $configError = 1;
         }
@@ -2016,7 +2138,7 @@ report($SUMMARY);
         elsif (defined $options{'TRILINOS_CONFIG_FILE'}[1]) {
             my $message = "";
             $message .= "only one TRILINOS_CONFIG_FILE allowed\n";
-            if (!$flags{p}) { report($CONFIG_ERROR, $message); }
+            if (!$flags{p}) { report($TEST_HARNESS_CONFIG_ERROR, $message); }
             printEvent($message);
             $configError = 1;
         }
@@ -2027,7 +2149,7 @@ report($SUMMARY);
         if (!defined $options{'REPORT_METHOD'} || !defined $options{'REPORT_METHOD'}[0]) {
             my $message = "";
             $message .= "REPORT_METHOD required\n";
-            if (!$flags{p}) { report($CONFIG_ERROR, $message); }
+            if (!$flags{p}) { report($TEST_HARNESS_CONFIG_ERROR, $message); }
             printEvent($message);
             $configError = 1;
         }
@@ -2036,7 +2158,7 @@ report($SUMMARY);
         elsif (defined $options{'REPORT_METHOD'}[1]) {
             my $message = "";
             $message .= "only one REPORT_METHOD allowed\n";
-            if (!$flags{p}) { report($CONFIG_ERROR, $message); }
+            if (!$flags{p}) { report($TEST_HARNESS_CONFIG_ERROR, $message); }
             printEvent($message);
             $configError = 1;
         }
@@ -2046,7 +2168,7 @@ report($SUMMARY);
             || $options{'REPORT_METHOD'}[0] eq "LOCAL_FILESYSTEM")) {
             my $message = "";
             $message .= "invalid value for REPORT_METHOD\n";
-            if (!$flags{p}) { report($CONFIG_ERROR, $message); }
+            if (!$flags{p}) { report($TEST_HARNESS_CONFIG_ERROR, $message); }
             printEvent($message);
             $configError = 1;
         }
@@ -2058,7 +2180,7 @@ report($SUMMARY);
             && (!defined $options{'MPI_DIR'} || !defined $options{'MPI_DIR'}[0])) {
             my $message = "";
             $message .= "at least one SERIAL_DIR or MPI_DIR required\n";
-            if (!$flags{p}) { report($CONFIG_ERROR, $message); }
+            if (!$flags{p}) { report($TEST_HARNESS_CONFIG_ERROR, $message); }
             printEvent($message);
             $configError = 1;
         }
@@ -2067,7 +2189,7 @@ report($SUMMARY);
         elsif (defined $options{'SERIAL_DIR'}[1]) {
             my $message = "";
             $message .= "only one SERIAL_DIR allowed\n";
-            if (!$flags{p}) { report($CONFIG_ERROR, $message); }
+            if (!$flags{p}) { report($TEST_HARNESS_CONFIG_ERROR, $message); }
             printEvent($message);
             $configError = 1;
         }
@@ -2076,7 +2198,7 @@ report($SUMMARY);
         elsif (defined $options{'MPI_DIR'}[1]) {
             my $message = "";
             $message .= "only one MPI_DIR allowed\n";
-            if (!$flags{p}) { report($CONFIG_ERROR, $message); }
+            if (!$flags{p}) { report($TEST_HARNESS_CONFIG_ERROR, $message); }
             printEvent($message);
             $configError = 1;
         }
@@ -2087,7 +2209,7 @@ report($SUMMARY);
         if (defined $options{'HOST_FILE'}[1]) {
             my $message = "";
             $message .= "only one HOST_FILE allowed\n";
-            if (!$flags{p}) { report($CONFIG_ERROR, $message); }
+            if (!$flags{p}) { report($TEST_HARNESS_CONFIG_ERROR, $message); }
             printEvent($message);
             $configError = 1;
         }
@@ -2098,7 +2220,7 @@ report($SUMMARY);
         if (defined $options{'MPI_STARTUP_CMD'}[1]) {
             my $message = "";
             $message .= "only one MPI_STARTUP_CMD allowed\n";
-            if (!$flags{p}) { report($CONFIG_ERROR, $message); }
+            if (!$flags{p}) { report($TEST_HARNESS_CONFIG_ERROR, $message); }
             printEvent($message);
             $configError = 1;
         }
@@ -2109,7 +2231,7 @@ report($SUMMARY);
         if (defined $options{'MPI_SHUTDOWN_CMD'}[1]) {
             my $message = "";
             $message .= "only one MPI_SHUTDOWN_CMD allowed\n";
-            if (!$flags{p}) { report($CONFIG_ERROR, $message); }
+            if (!$flags{p}) { report($TEST_HARNESS_CONFIG_ERROR, $message); }
             printEvent($message);
             $configError = 1;
         }
@@ -2120,7 +2242,7 @@ report($SUMMARY);
         elsif (defined $options{'MPIGO_CMD'}[1]) {
             my $message = "";
             $message .= "only one MPIGO_CMD allowed\n";
-            if (!$flags{p}) { report($CONFIG_ERROR, $message); }
+            if (!$flags{p}) { report($TEST_HARNESS_CONFIG_ERROR, $message); }
             printEvent($message);
             $configError = 1;
         }
@@ -2131,7 +2253,7 @@ report($SUMMARY);
         if (defined $options{'MAKE_FLAGS'}[1]) {
             my $message = "";
             $message .= "only one MAKE_FLAGS value allowed\n";
-            if (!$flags{p}) { report($CONFIG_ERROR, $message); }
+            if (!$flags{p}) { report($TEST_HARNESS_CONFIG_ERROR, $message); }
             printEvent($message);
             $configError = 1;
         }
@@ -2142,7 +2264,7 @@ report($SUMMARY);
         if (!defined $options{'CVS_UPDATE'} || !defined $options{'CVS_UPDATE'}[0]) {
             my $message = "";
             $message .= "CVS_UPDATE required\n";
-            if (!$flags{p}) { report($CONFIG_ERROR, $message); }
+            if (!$flags{p}) { report($TEST_HARNESS_CONFIG_ERROR, $message); }
             printEvent($message);
             $configError = 1;
         }
@@ -2151,7 +2273,7 @@ report($SUMMARY);
         elsif (defined $options{'CVS_UPDATE'}[1]) {
             my $message = "";
             $message .= "only one CVS_UPDATE allowed\n";
-            if (!$flags{p}) { report($CONFIG_ERROR, $message); }
+            if (!$flags{p}) { report($TEST_HARNESS_CONFIG_ERROR, $message); }
             printEvent($message);
             $configError = 1;
         }
@@ -2161,7 +2283,7 @@ report($SUMMARY);
             || $options{'CVS_UPDATE'}[0] eq "NO")) {
             my $message = "";
             $message .= "invalid value for CVS_UPDATE\n";
-            if (!$flags{p}) { report($CONFIG_ERROR, $message); }
+            if (!$flags{p}) { report($TEST_HARNESS_CONFIG_ERROR, $message); }
             printEvent($message);
             $configError = 1;
         }
@@ -2175,7 +2297,7 @@ report($SUMMARY);
                 || !defined $options{'CVS_CMD'}[0])) {
                 my $message = "";
                 $message .= "CVS_CMD must be supplied if CVS_UPDATE is set to YES\n";
-                if (!$flags{p}) { report($CONFIG_ERROR, $message); }
+                if (!$flags{p}) { report($TEST_HARNESS_CONFIG_ERROR, $message); }
                 printEvent($message);
                 $configError = 1;
             }
@@ -2185,7 +2307,7 @@ report($SUMMARY);
         elsif (defined $options{'CVS_CMD'}[1]) {
             my $message = "";
             $message .= "only one CVS_CMD allowed\n";
-            if (!$flags{p}) { report($CONFIG_ERROR, $message); }
+            if (!$flags{p}) { report($TEST_HARNESS_CONFIG_ERROR, $message); }
             printEvent($message);
             $configError = 1;
         }
@@ -2199,7 +2321,7 @@ report($SUMMARY);
                 || !defined $options{'REPORT_NAMES'}[0])) {
                 my $message = "";
                 $message .= "REPORT_NAMES must be supplied if REPORT_METHOD is set to LOCAL_FILESYSTEM\n";
-                if (!$flags{p}) { report($CONFIG_ERROR, $message); }
+                if (!$flags{p}) { report($TEST_HARNESS_CONFIG_ERROR, $message); }
                 printEvent($message);
                 $configError = 1;
             }
@@ -2210,7 +2332,7 @@ report($SUMMARY);
             || $options{'REPORT_NAMES'}[0] eq "EVENT")) {
             my $message = "";
             $message .= "invalid value for REPORT_NAMES\n";
-            if (!$flags{p}) { report($CONFIG_ERROR, $message); }
+            if (!$flags{p}) { report($TEST_HARNESS_CONFIG_ERROR, $message); }
             printEvent($message);
             $configError = 1;
         }
@@ -2219,7 +2341,7 @@ report($SUMMARY);
         elsif (defined $options{'REPORT_NAMES'}[1]) {
             my $message = "";
             $message .= "only one REPORT_NAMES value allowed\n";
-            if (!$flags{p}) { report($CONFIG_ERROR, $message); }
+            if (!$flags{p}) { report($TEST_HARNESS_CONFIG_ERROR, $message); }
             printEvent($message);
             $configError = 1;
         }
@@ -2233,7 +2355,7 @@ report($SUMMARY);
                 || !defined $options{'MAIL_METHOD'}[0])) {
                 my $message = "";
                 $message .= "MAIL_METHOD must be supplied if REPORT_METHOD is set to EMAIL\n";
-                if (!$flags{p}) { report($CONFIG_ERROR, $message); }
+                if (!$flags{p}) { report($TEST_HARNESS_CONFIG_ERROR, $message); }
                 printEvent($message);
                 $configError = 1;
             }
@@ -2243,7 +2365,7 @@ report($SUMMARY);
         elsif (defined $options{'MAIL_METHOD'}[1] && $options{'MAIL_METHOD'}[0] ne "smtp") {
             my $message = "";
             $message .= "only one MAIL_METHOD value allowed if first value isn't \"smtp\"\n";
-            if (!$flags{p}) { report($CONFIG_ERROR, $message); }
+            if (!$flags{p}) { report($TEST_HARNESS_CONFIG_ERROR, $message); }
             printEvent($message);
             $configError = 1;
         }
@@ -2252,7 +2374,7 @@ report($SUMMARY);
         elsif ($options{'MAIL_METHOD'}[0] eq "smtp" && defined $options{'MAIL_METHOD'}[2]) {
             my $message = "";
             $message .= "only two MAIL_METHOD values allowed (if first value is \"smtp\")\n";
-            if (!$flags{p}) { report($CONFIG_ERROR, $message); }
+            if (!$flags{p}) { report($TEST_HARNESS_CONFIG_ERROR, $message); }
             printEvent($message);
             $configError = 1;
         }
@@ -2271,7 +2393,7 @@ report($SUMMARY);
         if (!defined $options{'SEND_TO_DEFAULTS'} || !defined $options{'SEND_TO_DEFAULTS'}[0]) {
             my $message = "";
             $message .= "SEND_TO_DEFAULTS required\n";
-            if (!$flags{p}) { report($CONFIG_ERROR, $message); }
+            if (!$flags{p}) { report($TEST_HARNESS_CONFIG_ERROR, $message); }
             printEvent($message);
             $configError = 1;
         }
@@ -2280,7 +2402,7 @@ report($SUMMARY);
         elsif (defined $options{'SEND_TO_DEFAULTS'}[1]) {
             my $message = "";
             $message .= "only one SEND_TO_DEFAULTS allowed\n";
-            if (!$flags{p}) { report($CONFIG_ERROR, $message); }
+            if (!$flags{p}) { report($TEST_HARNESS_CONFIG_ERROR, $message); }
             printEvent($message);
             $configError = 1;
         }
@@ -2290,7 +2412,7 @@ report($SUMMARY);
             || $options{'SEND_TO_DEFAULTS'}[0] eq "NO")) {
             my $message = "";
             $message .= "invalid value for SEND_TO_DEFAULTS\n";
-            if (!$flags{p}) { report($CONFIG_ERROR, $message); }
+            if (!$flags{p}) { report($TEST_HARNESS_CONFIG_ERROR, $message); }
             printEvent($message);
             $configError = 1;
         }
