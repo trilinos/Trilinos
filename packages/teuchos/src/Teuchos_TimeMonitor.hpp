@@ -41,6 +41,11 @@
 #include "Teuchos_RefCountPtr.hpp"
 #include "Teuchos_Array.hpp"
 
+#define TEUCHOS_TIMER(funcName, strName) \
+static Teuchos::Time& funcName() \
+{static Teuchos::RefCountPtr<Time> rtn = \
+Teuchos::TimeMonitor::getNewTimer(strName); return *rtn;}
+
 namespace Teuchos
 {
 
