@@ -22,7 +22,6 @@ extern void ML_get_matrow_CSR(ML_Operator *input_matrix, int N_requested_rows,
 extern void ML_get_row_CSR_norow_map(ML_Operator *input_matrix, 
         int N_requested_rows, int requested_rows[], int *allocated_space, 
         int **columns, double **values, int row_lengths[], int index);
-extern int ML_hash_it( int new_val, int hash_list[], int hash_length, int *hash_used);
 extern int ML_determine_Brows(int start, int *end, ML_Operator *Amatrix,
 		       int *rows[], int *rows_length, int *NBrows,
 		       int *rows_that_fit, 

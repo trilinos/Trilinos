@@ -2137,15 +2137,12 @@ int ML_MSR_sym_diagonal_scaling(AZ_MATRIX *Amat,
 
   /* local variables */
 
-  register int j, k, irow, icol;
-  int          N, m;
-  int          j_last, bindx_row, i;
+  register int j, k, irow;
+  int          N;
+  int          j_last, bindx_row;
   double       *sc_vec;
-  int count;
-  char         label[80];
-
   char        *yo = "AZ_sym_diagonal_scaling: ";
-  int         *indx, *bindx, *rpntr, *cpntr, *bpntr, *data_org;
+  int         *indx, *bindx, *data_org;
   double      *val;
 
 

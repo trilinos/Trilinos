@@ -13,6 +13,7 @@
 #include "ml_struct.h"
 #include "ml_aztec_utils.h"
 #include "ml_agg_genP.h"
+#include "ml_amg_genP.h"
 #include "ml_lapack.h"
 #include "ml_smoother.h"
 #ifdef ML_MPI
@@ -2039,7 +2040,6 @@ int ML_Gen_AmatrixRAP(ML *ml, int parent_level, int child_level)
 {
    ML_Operator *Amat, *Rmat, *Pmat;
    int i, output_level;
-   char str[128];
 
 #ifdef ML_TIMING
    double t0;
@@ -2119,10 +2119,6 @@ int ML_Gen_AmatrixRAP(ML *ml, int parent_level, int child_level)
           &(ml->Pmat[child_level]), &(ml->Amat[child_level]),
           ML_MSR_MATRIX);
 
-/*
-   sprintf(str,"Amat[%d]",child_level);
-   ML_Operator_Print(&(ml->Amat[child_level]),str);
-*/
 #ifdef ML_TIMING
    ml->Amat[child_level].build_time = GetClock() - t0;
    ml->timing->total_build_time   += ml->Amat[child_level].build_time;
@@ -4449,11 +4445,11 @@ int ML_Gen_Blocks_Metis(ML *ml, int level, int *nblocks, int **block_list)
 
 int ML_Gen_CoarseSolverAggregation(ML *ml_handle, int level, ML_Aggregate *ag)
 {
-   int            i, j, k, *mat_ia, *mat_ja, nrows, nnz, offset, N_local;
+   int            i, j, k, offset, N_local;
    int            reuse, coarsest_level, flag, space, *cols, nz_ptr;
    int            getrow_flag, osize, *row_ptr, length, zero_flag;
-   int            local_nlevels, local_clevel, nbytes;
-   double         *mat_val, *vals, dsize, di, *diagonal;
+   int            local_nlevels, local_clevel;
+   double         *vals, dsize, di, *diagonal;
    void           *data;
    ML_1Level      *sl;
    ML_Operator    *op;

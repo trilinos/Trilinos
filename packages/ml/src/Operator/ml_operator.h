@@ -127,6 +127,8 @@ extern int ML_Operator_halfDestroy( ML_Operator *mat);
 
 extern int ML_Operator_Init(ML_Operator *, ML_Comm *comm);
 extern int ML_Operator_Clean(ML_Operator *);
+extern int ML_hash_it( int new_val, int hash_list[], int hash_length, 
+		       int *hash_used);
 
 extern int ML_Operator_Set_Label(ML_Operator *, char *str);
 extern int ML_Operator_Set_1Levels(ML_Operator *, ML_1Level*, ML_1Level*);

@@ -1123,7 +1123,7 @@ int ML_CommInfoOP_Compute_TotalRcvLength(ML_CommInfoOP *comm_info)
 void ML_transposed_exchange_bdry(double x[], ML_CommInfoOP *comm_info,
     int start_location, ML_Comm *comm, int overwrite_or_add)
 {
-  double          *send_buf, **rcv_buf, *tempv;
+  double          *send_buf, **rcv_buf;
   int              type, N_neighbors, *temp, i, j, k, rtype;
   USR_REQ         *request;
   ML_NeighborList *neighbor;
@@ -1279,6 +1279,7 @@ int ML_Comm_Envelope_Set_Tag(ML_Comm_Envelope* envelope,
 int ML_Comm_Envelope_Increment_Tag(ML_Comm_Envelope* envelope)
 {
    envelope->tag++;
+   return 0;
 }
 /*
 extern int ML_Comm_Envelope_Print(ML_Comm_Envelope*);

@@ -67,7 +67,7 @@ int ML_AMG_CoarsenMIS( ML_AMG *ml_amg, ML_Operator *Amatrix,
    int     *rowptr, *column, *new_ia=NULL, *new_ja=NULL, *short_list;
    int     *CF_array, *sort_array, sortleng, bitindex,intindex, short_leng;
    int     printflag, sizeint, logsizeint, offnrows, *offibuffer, *offmap;
-   int     *offmap2, *offlengths, numCi, *Ci_array, *int_array, *int_buf;
+   int     *offmap2, *offlengths, numCi, *Ci_array,/* *int_array,*/ *int_buf;
    int     allocated=0, *rowi_col=NULL, rowi_N, nnz_per_row, *sys_array;
    int     msgtype, mypid, nprocs, *send_leng=NULL, *recv_leng=NULL;
    int     N_neighbors, *neighbors=NULL, *send_list=NULL, sys_unk_filter;
@@ -1521,8 +1521,8 @@ int ML_AMG_LabelVertices(int vlist_cnt2, int *vlist2, char Vtype,
 {
    int     i, j, k, m, N_remaining_vertices, index, select_flag, fproc, col;
    int     NremainingRcvProcs, change_flag, *proc_flag, send_flag,nselected;
-   int     *pref_list=NULL, col2, loop_cnt, nbytes, *tlist=NULL, pref_cnt;
-   int     pref_index, rootv, *vlist, vlist_cnt;
+   int     *pref_list=NULL, col2, loop_cnt, nbytes, pref_cnt;
+   int     pref_index, *vlist, vlist_cnt;
    int     *pref_rank, vlist_ind;
    char    *in_preflist=NULL;
    USR_REQ *Request;
@@ -2025,7 +2025,7 @@ int ML_AMG_CompatibleRelaxation(ML_AMG *ml_amg, int *CF_array,
 {
    int           i, j, iter, Nrows, length, allocated, *cols, col;
    int           *indices, count;
-   double        *initsol, *rhs, *sol, *res;
+   double        *initsol, *rhs, *sol;
    double        dtemp, diag_term, *vals, omega=1.0;
    ML_Comm       *comm;
    ML_CommInfoOP *getrow_comm;

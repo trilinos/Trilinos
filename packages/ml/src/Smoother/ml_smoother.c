@@ -132,7 +132,7 @@ int ML_Smoother_Clean(ML_Smoother *ml_sm)
    int    nprocs, mypid;
    double t1;
 #endif
-   ML_Sm_BGS_Data     *ml_data;
+   /* ML_Sm_BGS_Data     *ml_data; */
    ML_Sm_ILUT_Data    *ilut_data;
    ML_Sm_Schwarz_Data *schwarz_data;
 
@@ -560,18 +560,19 @@ int ML_Smoother_GaussSeidel(void *sm, int inlen, double x[], int outlen,
 
 int ML_Smoother_SGS(void *sm,int inlen,double x[],int outlen, double rhs[])
 {
-   int iter, i, j, nnz, length, allocated_space, *cols, col;
+   int iter, i, j, length, allocated_space, *cols, col;
    double dtemp, diag_term, *vals, omega;
    ML_Operator *Amat;
    ML_Comm *comm;
    ML_CommInfoOP *getrow_comm;
-   int Nrows, *rptr;
+   int Nrows;
    double *x2;
 #ifdef ML_DEBUG_SMOOTHER
    double *res2, res_norm, init_norm;
 #endif
    ML_Smoother  *smooth_ptr;
 #ifdef ML_FAST
+   int *rptr, nnz;
    ML_Sm_ILUT_Data *ilut_data;
 #endif
 
@@ -799,20 +800,20 @@ int ML_Smoother_SGS(void *sm,int inlen,double x[],int outlen, double rhs[])
 int ML_Smoother_Hiptmair(void *sm, int inlen, double x[], int outlen, 
                             double rhs[])
 {
-   int iter, i, j, kk, Nrows,ntimes;
-   double dtemp;
-   ML_Operator *Tmat, *Tmat_trans,
-               *ATmat, *TtATmat,
-               *Ke_mat;
+   int iter, kk, Nrows,ntimes;
+   ML_Operator *Tmat, *Tmat_trans, *TtATmat, *Ke_mat;
    ML_Comm *comm;
-   ML_CommInfoOP *getrow_comm;
    double *res_edge, *edge_update,
           *rhs_nodal, *x_nodal;
-   ML_Smoother  *smooth_ptr, *sm_nodal;
+   ML_Smoother  *smooth_ptr;
+#ifdef USEJACOBI
+   ML_Smoother  *sm_nodal;
+#endif
    ML_Sm_Hiptmair_Data *dataptr;
    double omega, max_eig;
    ML_Comm_Envelope *envelope;
 #ifdef ML_DEBUG_SMOOTHER
+   int i,j;
    double *res2, res_norm;
 #endif
 
@@ -977,6 +978,7 @@ int ML_Smoother_Hiptmair(void *sm, int inlen, double x[], int outlen,
 #ifdef ML_DEBUG_SMOOTHER
   #undef ML_DEBUG_SMOOTHER
 #endif
+   return 0;
 }
 #endif /* ifdef MatrixProductHiptmair */
 
@@ -3004,17 +3006,9 @@ int ML_Smoother_Gen_Hiptmair_Data(ML_Sm_Hiptmair_Data **data, ML_Operator *Amat,
 {
    ML_Sm_Hiptmair_Data *dataptr;
    ML_Operator *tmpmat;
-   int *cols = NULL, length, allocated_space;
-   double *vals = NULL;
-   int i,j;
-   ML_CommInfoOP *getrow_comm;
-   int totalsize;
-   struct ML_CSR_MSRdata *Amat_data, *eye_csr_data;
    ML_1Level *mylevel;
-   double max_eig;
    ML_Krylov   *kdata; 
 #ifdef ML_TIMING_DETAILED
-   int    nprocs, mypid;
    double t0;
 
    t0 = GetClock();
@@ -3107,10 +3101,8 @@ int ML_Smoother_Gen_Hiptmair_DataReuse(ML_Sm_Hiptmair_Data **data,
 {
    ML_Sm_Hiptmair_Data *dataptr;
    ML_Operator *tmpmat, *Tmat, *Tmat_trans;
-   double max_eig;
    ML_Krylov   *kdata; 
 #ifdef ML_TIMING_DETAILED
-   int    nprocs, mypid;
    double t0;
 
    t0 = GetClock();
@@ -5394,8 +5386,8 @@ int ML_MLS_SandwPres(void *sm, int inlen, double x[], int outlen, double y[])
     ML_Smoother     *smooth_ptr = (ML_Smoother *) sm;
     ML_Operator     *Amat = smooth_ptr->my_level->Amat;
     struct MLSthing *widget;
-    int              i, deg, lv, dg, n = outlen;
-    double           cf, *omV, om;      
+    int              i, deg, dg, n = outlen;
+    double           *omV, om;      
 
     widget = (struct MLSthing *) smooth_ptr->smoother->data;
 
@@ -5433,8 +5425,8 @@ int ML_MLS_SandwPost(void *sm, int inlen, double x[], int outlen, double y[])
     ML_Smoother     *smooth_ptr = (ML_Smoother *) sm;
     ML_Operator     *Amat = smooth_ptr->my_level->Amat;
     struct MLSthing *widget;
-    int              i, deg, lv, dg, n = outlen;
-    double           cf, *omV, om;      
+    int              i, deg, dg, n = outlen;
+    double           *omV, om;      
 
     widget = (struct MLSthing *) smooth_ptr->smoother->data;
 
@@ -5470,7 +5462,7 @@ int ML_MLS_SPrime_Apply(void *sm,int inlen,double x[],int outlen, double rhs[])
     ML_Smoother     *smooth_ptr = (ML_Smoother *) sm;
     ML_Operator     *Amat = smooth_ptr->my_level->Amat;
     struct MLSthing *widget;
-    int              i, deg, lv, dg, n = outlen;
+    int              i, deg, n = outlen;
     double           cf, om2, over;
     double          *pAux, *y;      
 
@@ -5514,9 +5506,8 @@ int ML_Smoother_MLS_Apply(void *sm,int inlen,double x[],int outlen,
 
    ML_Smoother     *smooth_ptr = (ML_Smoother *) sm;
    ML_Operator     *Amat = smooth_ptr->my_level->Amat;
-   ML_1Level       *from = Amat->from; 
    struct MLSthing *widget;
-   int              deg, lv, dg, n = outlen, i;
+   int              deg, dg, n = outlen, i;
    double          *res0, *res, *y, cf, over, *mlsCf;
 
    widget = (struct MLSthing *) smooth_ptr->smoother->data;

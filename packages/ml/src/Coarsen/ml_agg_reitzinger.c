@@ -12,12 +12,14 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
   double *Tcoarse_val = NULL, *node2proc, *val = NULL;
   int allocated = 0, lower;
   ML_Operator *Kn_coarse, *Rn_coarse, *Tcoarse, *Pn_coarse;
-  ML_Operator *Pe, *Tcoarse_trans, *Tfine, *Ke, *Re;
+  ML_Operator *Pe, *Tcoarse_trans, *Tfine;
   struct ML_CSR_MSRdata *csr_data;
   int Nlevels_nodal, grid_level;
-  double *fido,*yyy, *vvv, dtemp;
   int created_ag_obj = 0;
+  /*
+  double *fido,*yyy, *vvv, dtemp;
   struct aztec_context *temp;
+  */
   int nzctr;
   int ieqj;
 
@@ -578,4 +580,5 @@ int  ML_Gen_MGHierarchy_ReuseExistingOperators(ML *ml, AZ_MATRIX *Amat,
          ML_Gen_AmatrixRAP(ml, grid_level+1, grid_level);
       }
    }
+   return 0;
 }

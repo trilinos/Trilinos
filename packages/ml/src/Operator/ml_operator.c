@@ -1097,7 +1097,7 @@ int ML_Operator_Add(ML_Operator *A, ML_Operator *B, ML_Operator *C)
 {
   int A_allocated = 0, *A_bindx = NULL, B_allocated = 0, *B_bindx = NULL;
   double *A_val = NULL, *B_val = NULL, *hashed_vals;
-  int i, A_length, B_length, *hashed_inds, total_Nz;
+  int i, A_length, B_length, *hashed_inds;
   int max_nz_per_row = 0, j;
   int hash_val, index_length;
   int *columns, *rowptr, nz_ptr, hash_used;

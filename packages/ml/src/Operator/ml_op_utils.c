@@ -5,6 +5,7 @@
 
 #include "ml_struct.h"
 #include "ml_op_utils.h"
+#include "ml_agg_genP.h"
 
 /* ******************************************************************** */
 /* Blow away any inter-mixing between boundary and interior points in   */
@@ -435,9 +436,7 @@ int ML_Operator_BlockPartition(ML_Operator *matrix, int nLocalNd, int *nblk,
   int nmbng = 0, edgecut = -1, n = nLocalNd, np = *nblk;
   double *val = NULL;
   int allocated = 0, row_length, j;
-  float partwts[4] ={.10, .40, .38, .12};
-  FILE *fp;
-  int edgecount;
+  /* FILE *fp; */
 
   if( egwts ) weightflag++;
 
