@@ -59,6 +59,8 @@ LN=ln -sv
 
 ################## Trilinos Component Includes ##########################
 
+ML_HOME = 	$(TRILINOS_HOME)/packages/ml
+
 # The Trilinos build environment will use the following locations when
 # looking for header files
 
@@ -71,6 +73,7 @@ PETRA_INCLUDES =      -I$(TRILINOS_HOME)/packages/petra/src
 TPETRA_INCLUDES =     -I$(TRILINOS_HOME)/packages/tpetra/src
 TRIUTILS_INCLUDES =   -I$(TRILINOS_HOME)/packages/triutils/src
 TSF_INCLUDES =        -I$(TRILINOS_HOME)/packages/tsf/src
+ML_INCLUDES =         -I$(ML_HOME)/Obj
 EPETRA_ESI_INCLUDES = -I$(TRILINOS_HOME)/adaptors/epetra_esi/src
 
 
@@ -90,6 +93,7 @@ LIBPETRA =      $(TRILINOS_LIB_PATH)/libpetra.a
 LIBTPETRA =     $(TRILINOS_LIB_PATH)/libtpetra.a
 LIBTRIUTILS =   $(TRILINOS_LIB_PATH)/libtriutils.a
 LIBTSF =        $(TRILINOS_LIB_PATH)/libtsf.a
+LIBML =         $(ML_HOME)/Obj/libml.a
 LIBEPETRA_ESI = $(TRILINOS_LIB_PATH)/libepetra_esi.a
 
 ################## External Libraries ##########################
@@ -131,7 +135,8 @@ LIBBLAS   = $(TRILINOS_HOME)/external/blas/lib/$(TRILINOS_TARGET)/libblas.a
 LIBLAPACK = $(TRILINOS_HOME)/external/lapack/lib/$(TRILINOS_TARGET)/liblapack.a
 #LIBSPBLAS = $(TRILINOS_HOME)/external/spblas/lib/$(TRILINOS_TARGET)/libspblas.a
 LIBY12M   = $(TRILINOS_HOME)/external/y12m/lib/$(TRILINOS_TARGET)/liby12m.a
-LIBSUPERLU   = $(TRILINOS_HOME)/external/DSuperLU/lib/$(TRILINOS_TARGET)/superlu.a
+#LIBSUPERLU   = $(TRILINOS_HOME)/external/DSuperLU/lib/$(TRILINOS_TARGET)/superlu.a
+LIBSUPERLU   = $(ML_HOME)/lib/DSuperLU/superluPCLINUX.a
 
 
 ################### Package-specific defaults ##########################
