@@ -62,9 +62,8 @@ int Zoltan_HG_Set_Grouping_Fn(HGPartParams *hgp)
 
 /****************************************************************************/
 
-int Zoltan_HG_Grouping (ZZ *zz, HGraph *hg, Packing pack, HGPartParams *hgp)
-{ int   limit=hg->nVtx;   /* reserved for future use */
-  int   ierr = ZOLTAN_OK;
+int Zoltan_HG_Grouping (ZZ *zz, HGraph *hg, Packing pack, HGPartParams *hgp, int *limit)
+{ int   ierr = ZOLTAN_OK;
   float *old_ewgt=NULL, *new_ewgt;
   char  *yo = "Zoltan_HG_Grouping";
 
@@ -88,7 +87,7 @@ int Zoltan_HG_Grouping (ZZ *zz, HGraph *hg, Packing pack, HGPartParams *hgp)
 
   /* Optimization */
   if (hgp->grouping_rli != NULL)
-   ierr = hgp->grouping_rli (zz,hg,pack,limit);
+    ierr = hgp->grouping_rli (zz,hg,pack,limit);
 
 End:
   if (hg->vwgt && hgp->ews)
@@ -101,23 +100,23 @@ End:
 
 /****************************************************************************/
 
-static int grouping_mxg (ZZ *zz, HGraph *hg, Packing pack, int limit)
+static int grouping_mxg (ZZ *zz, HGraph *hg, Packing pack, int *limit)
    {
    int i, j, vertex, first_vertex ;
 
    for (i = 0 ; i < hg->nVtx ; i++)
       pack[i] = i ;
 
-   for (i = 0 ; i < hg->nEdge && limit>0 ; i++)
+   for (i = 0 ; i < hg->nEdge && (*limit)>0 ; i++)
       for (j = hg->hindex[i] ; j < hg->hindex[i+1] ; j++)
          if (pack[hg->hvertex[j]] == hg->hvertex[j])
             {
             first_vertex = vertex = hg->hvertex[j] ;
-            for (j++ ; j < hg->hindex[i+1] && limit>0 ; j++)
+            for (j++ ; j < hg->hindex[i+1] && (*limit)>0 ; j++)
                if (pack[hg->hvertex[j]] == hg->hvertex[j])
                   {
                   vertex = pack[vertex] = hg->hvertex[j] ;
-                  limit--;
+                  (*limit)--;
                   }
             pack[vertex] = first_vertex ;
             break ;       /* not required, might improve speed */
@@ -127,7 +126,7 @@ static int grouping_mxg (ZZ *zz, HGraph *hg, Packing pack, int limit)
 
 /****************************************************************************/
 
-static int grouping_reg (ZZ *zz, HGraph *hg, Packing pack, int limit)
+static int grouping_reg (ZZ *zz, HGraph *hg, Packing pack, int *limit)
    {
    int i, j, *edges=NULL, edge, random, vertex, first_vertex ;
    char *yo = "grouping_reg" ;
@@ -142,7 +141,7 @@ static int grouping_reg (ZZ *zz, HGraph *hg, Packing pack, int limit)
    for (i = 0 ; i < hg->nVtx ;  i++)
       pack[i]  = i ;
 
-   for (i = hg->nEdge ; i > 0 && limit>0 ; i--)
+   for (i = hg->nEdge ; i > 0 && (*limit)>0 ; i--)
       {
       random = rand() % i ;
       edge = edges[random] ;
@@ -152,11 +151,11 @@ static int grouping_reg (ZZ *zz, HGraph *hg, Packing pack, int limit)
          if (pack[hg->hvertex[j]] == hg->hvertex[j])
             {
             first_vertex = vertex = hg->hvertex[j] ;
-            for (j++ ; j < hg->hindex[edge+1] && limit>0 ; j++)
+            for (j++ ; j < hg->hindex[edge+1] && (*limit)>0 ; j++)
                 if (pack[hg->hvertex[j]] == hg->hvertex[j])
                    {
                    vertex = pack[vertex] = hg->hvertex[j] ;
-                   limit--;
+                   (*limit)--;
                    }
             pack[vertex] = first_vertex ;
             break ;
@@ -168,7 +167,7 @@ static int grouping_reg (ZZ *zz, HGraph *hg, Packing pack, int limit)
 
 /****************************************************************************/
 
-static int grouping_rrg (ZZ *zz, HGraph *hg, Packing pack, int limit)
+static int grouping_rrg (ZZ *zz, HGraph *hg, Packing pack, int *limit)
    {
    int i, j, edge, random, *vertices=NULL, vertex, first_vertex, count ;
    char *yo = "grouping_rrg" ;
@@ -181,7 +180,7 @@ static int grouping_rrg (ZZ *zz, HGraph *hg, Packing pack, int limit)
    for (i = 0 ; i < hg->nVtx ;  i++)
       vertices[i] = pack[i] = i ;
 
-   for (i = hg->nVtx ; i > 0 && limit>0; i--)
+   for (i = hg->nVtx ; i > 0 && (*limit)>0; i--)
       {
       random = rand() % i ;
       vertex = vertices[random] ;
@@ -198,11 +197,11 @@ static int grouping_rrg (ZZ *zz, HGraph *hg, Packing pack, int limit)
          if (pack[hg->hvertex[j]] == hg->hvertex[j])
             {
             first_vertex = vertex = hg->hvertex[j] ;
-            for (j++ ; j < hg->hindex[edge+1] && limit>0; j++)
+            for (j++ ; j < hg->hindex[edge+1] && (*limit)>0; j++)
                if (pack[hg->hvertex[j]] == hg->hvertex[j])
                   {
                   vertex = pack[vertex] = hg->hvertex[j] ;
-                  limit--;
+                  (*limit)--;
                   }
             pack[vertex] = first_vertex ;
             break ;
@@ -214,7 +213,7 @@ static int grouping_rrg (ZZ *zz, HGraph *hg, Packing pack, int limit)
 
 /****************************************************************************/
 
-static int grouping_rhg (ZZ *zz, HGraph *hg, Packing pack, int limit)
+static int grouping_rhg (ZZ *zz, HGraph *hg, Packing pack, int *limit)
 {
    int   i, j, *vertices=NULL, *del_edges=NULL, vertex, first_vertex, edge,
          number, best_edge, best_size, best_neighbors, random, size;
@@ -232,7 +231,7 @@ static int grouping_rhg (ZZ *zz, HGraph *hg, Packing pack, int limit)
    for (i = 0 ; i < hg->nVtx ; i++)
       pack[i] = vertices[i] = i ;
 
-   for (i = hg->nVtx ; i > 0 && limit>0 ; i--)
+   for (i = hg->nVtx ; i > 0 && (*limit)>0 ; i--)
       {
       number = rand() % i ;
       vertex = vertices[number] ;
@@ -287,11 +286,11 @@ static int grouping_rhg (ZZ *zz, HGraph *hg, Packing pack, int limit)
          if (pack[hg->hvertex[j]] == hg->hvertex[j])
             {
             first_vertex = vertex = hg->hvertex[j] ;
-            for (j++ ; j < hg->hindex[best_edge+1] && limit>0 ; j++)
+            for (j++ ; j < hg->hindex[best_edge+1] && (*limit)>0 ; j++)
                if (pack[hg->hvertex[j]] == hg->hvertex[j])
                   {
                   vertex = pack[vertex] = hg->hvertex[j] ;
-                  limit--;
+                  (*limit)--;
                   }
             pack[vertex] = first_vertex ;
             break ;
@@ -305,7 +304,7 @@ static int grouping_rhg (ZZ *zz, HGraph *hg, Packing pack, int limit)
 
 /****************************************************************************/
 
-static int grouping_grg (ZZ *zz, HGraph *hg, Packing pack, int limit)
+static int grouping_grg (ZZ *zz, HGraph *hg, Packing pack, int *limit)
 {
   int   i, j, *size=NULL, *sorted=NULL, first_vertex, vertex ;
   char *yo = "grouping_grg" ;
@@ -330,16 +329,16 @@ static int grouping_grg (ZZ *zz, HGraph *hg, Packing pack, int limit)
   ZOLTAN_FREE ((void **) &size);
 
   /* Match hyperedges along decreasing weight */
-  for (i=0; i<hg->nEdge && limit>0; i++)
+  for (i=0; i<hg->nEdge && (*limit)>0; i++)
       for (j = hg->hindex[sorted[i]] ; j < hg->hindex[sorted[i]+1] ; j++)
          if (pack[hg->hvertex[j]] == hg->hvertex[j])
             {
             first_vertex = vertex = hg->hvertex[j] ;
-            for (j++ ; j < hg->hindex[sorted[i]+1] && limit>0; j++)
+            for (j++ ; j < hg->hindex[sorted[i]+1] && (*limit)>0; j++)
                if (pack[hg->hvertex[j]] == hg->hvertex[j])
                   {
                   vertex = pack[vertex] = hg->hvertex[j] ;
-                  limit--;
+                  (*limit)--;
                   }
             pack[vertex] = first_vertex ;
             break ;
@@ -349,14 +348,14 @@ static int grouping_grg (ZZ *zz, HGraph *hg, Packing pack, int limit)
   }
 
 /****************************************************************************/
-static int grouping_aug2 (ZZ *zz, HGraph *hg, Packing pack, int limit)
+static int grouping_aug2 (ZZ *zz, HGraph *hg, Packing pack, int *limit)
 {
 /* Placeholder for grouping_aug2. */
   return ZOLTAN_OK;
 }
 
 /****************************************************************************/
-static int grouping_aug3 (ZZ *zz, HGraph *hg, Packing pack, int limit)
+static int grouping_aug3 (ZZ *zz, HGraph *hg, Packing pack, int *limit)
 {
 /* Placeholder for grouping_aug3. */
   return ZOLTAN_OK;

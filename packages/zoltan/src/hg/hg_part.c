@@ -114,7 +114,7 @@ int Zoltan_HG_HPart_Lib (
       return ierr;
   }
   else /* normal multilevel situation */
-  { int    *pack=NULL, *LevelMap=NULL, *c_part=NULL;
+  { int    *pack=NULL, *LevelMap=NULL, *c_part=NULL, limit;
     HGraph c_hg;
 
     /* Allocate Packing Array (used for matching, packing & grouping) */
@@ -124,10 +124,11 @@ int Zoltan_HG_HPart_Lib (
     }
 
     /* Calculate Packing, Grouping or Matching */
+    limit = hg->nVtx-hgp->redl;
     if (hgp->packing)
-      ierr = Zoltan_HG_Packing (zz,hg,pack,hgp);
+      ierr = Zoltan_HG_Packing (zz,hg,pack,hgp,&limit);
     else if (hgp->grouping)
-      ierr = Zoltan_HG_Grouping (zz,hg,pack,hgp) ;
+      ierr = Zoltan_HG_Grouping (zz,hg,pack,hgp,&limit) ;
     else
     { Graph g;
       ierr = Zoltan_HG_HGraph_to_Graph (zz, hg, &g) ;
@@ -136,7 +137,7 @@ int Zoltan_HG_HPart_Lib (
         Zoltan_HG_Graph_Free(&g);
         return ierr ;
       }
-      ierr = Zoltan_HG_Matching(zz, hg, &g, pack, hgp, g.nVtx-hgp->redl) ;
+      ierr = Zoltan_HG_Matching(zz,hg,&g,pack,hgp,&limit) ;
       Zoltan_HG_Graph_Free(&g);
     }
     if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN)
@@ -159,6 +160,11 @@ int Zoltan_HG_HPart_Lib (
       return ierr ;
     }
 
+    if (c_hg.nVtx < hgp->redl)
+    { printf("wanted coarsen to %d vertices, but reached %d vertices.\n",hgp->redl,c_hg.nVtx);
+      return ZOLTAN_FATAL;
+    }
+  
     /* Free Packing */
     ZOLTAN_FREE ((void **) &pack);
 
