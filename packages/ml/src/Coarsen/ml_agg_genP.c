@@ -406,7 +406,7 @@ int ML_AGG_Gen_Prolongator(ML *ml,int level, int clevel, void *data)
    
    widget.near_bdry = NULL;
    Amat->num_PDEs = ag->num_PDE_eqns;
-   prev_P_tentatives = (ML_Operator **) ag->P_tentative;
+   prev_P_tentatives = ag->P_tentative;
 
 #ifdef EXTREME_DEBUG
    printf("### %e %e\n",  ag->smoothP_damping_factor, max_eigen);
@@ -830,7 +830,7 @@ int ML_AGG_Gen_Prolongator(ML *ml,int level, int clevel, void *data)
      else {
        if (prev_P_tentatives == NULL) {
 	 ag->P_tentative = ML_Operator_ArrayCreate(ag->max_levels);
-         prev_P_tentatives = (ML_Operator **) ag->P_tentative;
+         prev_P_tentatives = ag->P_tentative;
 	 for (jj = 0; jj < ag->max_levels; jj++) prev_P_tentatives[jj] = NULL;
        }
        prev_P_tentatives[clevel] = Pmatrix;
@@ -2311,7 +2311,7 @@ int ML_MultiLevel_Gen_Prolongator(ML *ml,int level, int clevel, void *data)
    widget.near_bdry = NULL;
    Amat     = &(ml->Amat[level]);
    Amat->num_PDEs = ag->num_PDE_eqns;
-   prev_P_tentatives = (ML_Operator **) ag->P_tentative;
+   prev_P_tentatives = ag->P_tentative;
 
    Nfine    = Amat->outvec_leng;
    gNfine   = ML_Comm_GsumInt( ml->comm, Nfine);
@@ -2521,7 +2521,7 @@ int ML_MultiLevel_Gen_Restriction(ML *ml,int level, int next, void *data)
   double dtemp, dtemp2, eta;
   char str[80];
 
-  prev_P_tentatives = (ML_Operator **) ag->P_tentative;
+  prev_P_tentatives = ag->P_tentative;
   
   Amat = &(ml->Amat[level]);
 
