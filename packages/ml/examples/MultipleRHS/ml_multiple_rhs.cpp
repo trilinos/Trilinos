@@ -10,7 +10,7 @@
 #include "Epetra_MultiVector.h"
 #include "Epetra_Time.h"
 
-#ifdef EPETRA_MPI
+#ifdef ML_MPI
 #include "Epetra_MpiComm.h"
 #include "mpi.h"
 #else
@@ -26,7 +26,7 @@ int main(int argc, char *argv[]) {
   int myPid = 0;
   int numProc = 1;
 
-#ifdef EPETRA_MPI
+#ifdef ML_MPI
   // Initialize MPI
   MPI_Init(&argc,&argv);
   MPI_Comm_size(MPI_COMM_WORLD, &numProc);
@@ -36,7 +36,7 @@ int main(int argc, char *argv[]) {
   Epetra_SerialComm Comm;
 #endif
 
-  int numElePerDirection = 4*numProc;
+  int numElePerDirection = 20*numProc;
   int numNodes = (numElePerDirection - 1)*(numElePerDirection - 1);
 
   Epetra_Map Map(numNodes, 0, Comm);
@@ -129,7 +129,7 @@ int main(int argc, char *argv[]) {
 
   ML_Epetra::MultiLevelOperator Prec(ml_handle, Comm, Map, Map);
 
-#ifdef WKC
+#ifdef ML_MULTIPLE_RHS_BLOCK_FACTOR
   // Check the multiple right hand side capabilities
   Epetra_Time MyWatch(Comm);
   for (int iBlock = 1; iBlock < 21; ++iBlock) {
@@ -161,12 +161,12 @@ int main(int argc, char *argv[]) {
     t2 += MyWatch.WallTime();
 
     // Check the norms
-    int *y0Norm = new int[iBlock];
-    Y0.Norm2((double *)y0Norm);
+    double *y0Norm = new double[iBlock];
+    Y0.Norm2(y0Norm);
 
     Y1.Update(1.0, Y0, -1.0);
-    int *y1Norm = new int[iBlock];
-    Y1.Norm2((double *)y1Norm);
+    double *y1Norm = new double[iBlock];
+    Y1.Norm2(y1Norm);
     double maxError1 = 0.0;
     for (int j = 0; j < iBlock; ++j) {
       if (y1Norm[j] > maxError1*y0Norm[j])
@@ -174,8 +174,8 @@ int main(int argc, char *argv[]) {
     } 
 
     Y2.Update(1.0, Y0, -1.0);
-    int *y2Norm = new int[iBlock];
-    Y2.Norm2((double *)y2Norm);
+    double *y2Norm = new double[iBlock];
+    Y2.Norm2(y2Norm);
     double maxError2 = 0.0;
     for (int j = 0; j < iBlock; ++j) {
       if (y2Norm[j] > maxError2*y0Norm[j])
@@ -189,7 +189,7 @@ int main(int argc, char *argv[]) {
 
     if (myPid == 0) {
       cout << " --- Block size " << iBlock << " --- " << endl;
-      cout << " >> Blocking factor " << WKC;
+      cout << " >> Blocking factor " << ML_MULTIPLE_RHS_BLOCK_FACTOR;
       cout << " ... Error " << maxError1 << " Speedup " << t0/t1 << endl;
       cout << " >> Blocking factor " << iBlock;
       cout << " ... Error " << maxError2 << " Speedup " << t0/t2 << endl;
@@ -199,15 +199,13 @@ int main(int argc, char *argv[]) {
   }
 #else
   if (Comm.MyPID() == 0)
-    cout << "\n !!! ML has not been compiled with the MRHS capability !!!\n\n";
-#endif
+    cout << "Please configure ML with the option --with-ml_multiple_rhs=NN,\nwhere NN is the blocking factor.";
+#endif //ifdef ML_MULTIPLE_RHS_BLOCK_FACTOR
 
-#ifdef EPETRA_MPI
+#ifdef ML_MPI
   MPI_Finalize();
 #endif
 
   return 0;
 
 }
-
-
