@@ -89,31 +89,34 @@ int LB_Create_Proc_List(
         sum_send += send[i];
      for (i = ob, sum_rem = 0; i <= oe; i++)
         sum_rem += rem[i];
-     a = (sum_send + sum_rem)/op;
 
      /* Modify the value of a, which is now the number of dots that a processor
         will have after communication if the number of dots that it keeps is
         not greater than a.  Set a so there is a non-negative number left. */
-     sp = -1;
-     s = k = 0;
-     while (!k) {
-        for (i = ob; i <= oe; i++)
-           if (rem[i] < a)
-              s += a - rem[i];
-        if (s == sum_send)
-           k = 1;
-        else if (s < sum_send)
-                if (sp > sum_send)
-                   k = 1;
-                else
-                   a++;
-             else {
-                a--;
-                if (sp < sum_send && sp > 0)
-                   k = 1;
-             }
-        sp = s;
-     }
+     if (sum_send) {
+        a = (sum_send + sum_rem)/op;
+        sp = -1;
+        s = k = 0;
+        while (!k) {
+           for (i = ob; i <= oe; i++)
+              if (rem[i] < a)
+                 s += a - rem[i];
+           if (s == sum_send)
+              k = 1;
+           else if (s < sum_send)
+                   if (sp > sum_send)
+                      k = 1;
+                   else
+                      a++;
+                else {
+                   a--;
+                   if (sp < sum_send && sp > 0)
+                      k = 1;
+                }
+           sp = s;
+        }
+     } else
+        a = 0;
 
      /* Allocate who recieves how much and if necessary give out remainder.
         The variable send is now the number that will be received by each
