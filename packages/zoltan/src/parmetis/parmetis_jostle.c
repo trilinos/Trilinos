@@ -504,6 +504,7 @@ static int Zoltan_ParMetis_Jostle(
   int num_lid_entries = zz->Num_LID;
   int num_proc = zz->Num_Proc;     /* Temporary variables whose addresses are*/
   int num_part = zz->LB.Num_Global_Parts;/* passed to Jostle/ParMETIS. Don't */
+  int new_map;          /* flag indicating whether parts were remapped */
 #ifdef ZOLTAN_PARMETIS
   MPI_Comm comm = zz->Communicator;/* want to risk letting external packages */
                                    /* change our zz struct.                  */
@@ -1199,6 +1200,18 @@ static int Zoltan_ParMetis_Jostle(
         ZOLTAN_PARMETIS_ERROR(ZOLTAN_FATAL, 
          "Zoltan_LB_Part_To_Proc returned invalid processor number.");
       }
+    }
+  
+    if (zz->LB.Remap_Flag) {
+      ierr = Zoltan_LB_Remap(zz, &new_map, num_obj, newproc, input_parts, 
+                             part, 1);
+      if (ierr < 0) {
+        ZOLTAN_PARMETIS_ERROR(ZOLTAN_FATAL,
+                              "Error returned from Zoltan_LB_Remap");
+      }
+    }
+
+    for (i=0; i<num_obj; i++){
       if ((part[i] != input_parts[i]) || ((!compute_only_part_changes) && 
                                           (newproc[i] != zz->Proc))) 
         nsend++;
