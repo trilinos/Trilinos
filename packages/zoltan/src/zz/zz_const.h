@@ -50,7 +50,8 @@ extern "C" {
  * has.
  */
 #define UTIL_NAME "zoltan"
-#define ZOLTAN_VER   1.4
+#define ZOLTAN_VER   1.401
+#define ZOLTAN_BETA  A
 
 
 /*
