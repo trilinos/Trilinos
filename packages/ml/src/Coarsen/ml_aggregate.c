@@ -1009,6 +1009,7 @@ int ML_Aggregate_Coarsen( ML_Aggregate *ag, ML_Operator *Amatrix,
 #ifdef ML_repartition
       if (coarsen_scheme == ML_AGGR_UNCOUPLED) 
          coarsen_scheme = ML_AGGR_UNCOUPLED;
+      else 
 #endif
       if (coarsen_scheme == ML_AGGR_COUPLED) 
          coarsen_scheme = ML_AGGR_COUPLED;
@@ -1594,7 +1595,7 @@ int ML_repartition_matrix(ML_Operator *mat, ML_Operator **new_mat,
  int GlobalId_RowsStaying_WithMe;
 #endif
  int mypid, nprocs, Nglobal, i, j, oldj, *the_list = NULL, the_length, offset;
- int *remote_offsets, *itemp = NULL, Nnonzero, oldNnonzero, *iwork = NULL;
+ int *remote_offsets = NULL, *itemp = NULL, Nnonzero, oldNnonzero, *iwork = NULL;
  int *ttemp = NULL, *Procs_WhoGive_TheirUnPermuted_Rows = NULL;
  int Nprocs_WhoGive_TheirUnPermuted_Rows, msgtype, prev;
  int *NRows_IGet_ForPermuted = NULL, *N_UnPermutedRows_ToSend = NULL;
@@ -1608,7 +1609,8 @@ int ML_repartition_matrix(ML_Operator *mat, ML_Operator **new_mat,
  USR_REQ *request = NULL; 
  ML_Comm *comm;
 
- 
+ int *block_list; 
+
  comm = mat->comm;
  mypid = comm->ML_mypid;
  nprocs = comm->ML_nprocs;
@@ -1616,6 +1618,25 @@ int ML_repartition_matrix(ML_Operator *mat, ML_Operator **new_mat,
   *permutation = NULL;
   Nglobal = mat->invec_leng;
   ML_gsum_scalar_int(&Nglobal, &i, comm);
+
+#if defined(HAVE_ML_PARMETIS_2x) || defined(HAVE_ML_PARMETIS_3x)
+   block_list = (int *) ML_allocate(1 + mat->outvec_leng*sizeof(int));
+   if (block_list == NULL)
+      pr_error("ML_repartition_matrix: out of space\n");
+
+   the_length = nprocs - 3; /* reduces the number of processors with */
+                            /* points */
+   ML_Operator_BlockPartition(mat, mat->outvec_leng,
+                             &the_length, block_list, NULL, NULL, 0,
+			      ML_USEPARMETIS);
+   
+
+   dvec = (double *) ML_allocate(sizeof(double)*mat->outvec_leng);
+   for (i = 0; i < mat->outvec_leng; i++) 
+     dvec[i] = (double) ( block_list[i] + 1);
+   ML_free(block_list);
+
+#else
   if (Nglobal/num_PDE_eqns >= 12*nprocs) return 1;
 
   /* Choose a random subset of global unknowns. These will become root nodes */
@@ -1713,7 +1734,7 @@ int ML_repartition_matrix(ML_Operator *mat, ML_Operator **new_mat,
   }
   if (d2vec != NULL) ML_free(d2vec);
 
-  /* Assign any singletons to the a new domain */
+  /* Assign any singletons to a new domain */
 
   for (i = 0; i < mat->outvec_leng; i++) {
     if ( dvec[i] == 0.) dvec[i] = (double) (the_length + 1);
@@ -1725,6 +1746,7 @@ int ML_repartition_matrix(ML_Operator *mat, ML_Operator **new_mat,
   fflush(stdout);
 #endif
 
+#endif
   /* Change dvec so that it now contains the global id (instead */
   /* of the subdomain number) corresponding to the row in the   */
   /* permuted system.                                           */
@@ -1910,14 +1932,18 @@ int ML_repartition_matrix(ML_Operator *mat, ML_Operator **new_mat,
 				ML_EMPTY,temp,Nrows_Permuted,NULL,0);
   ML_Operator_Set_Getrow(permt_mat, ML_EXTERNAL, mat->invec_leng, CSR_getrows);
   ML_Operator_Set_ApplyFunc( permt_mat, ML_INTERNAL, CSR_matvec);
+  permt_mat->data_destroy = ML_CSR_MSRdata_Destroy;
   permt_mat->max_nz_per_row = 1;
   permt_mat->N_nonzeros     = mat->invec_leng;
   *permt = ML_Operator_Create(comm);
   ML_back_to_csrlocal(permt_mat, *permt, max_per_processor);
-  printf("almost finished\n");
+  ML_Operator_Destroy(&permt_mat);
   perm_mat = ML_Operator_Create(comm);
   ML_Operator_Transpose_byrow(*permt, perm_mat);
+  printf("%d: almost finished %d\n",mypid,perm_mat->outvec_leng);
+
   permuted_Amat = ML_Operator_Create(comm);
+
   ML_rap(perm_mat,mat,*permt,permuted_Amat, ML_CSR_MATRIX);
   *new_mat = permuted_Amat;
   *permutation = perm_mat;
