@@ -1,6 +1,6 @@
 CPPFLAGS="-D__USE_STD_IOSTREAM"
 CXXFLAGS="-O3 -DMPICH_SKIP_MPICXX"
-TRILINOS_TEMPLATE_OBJS=cxx_repository/*.o
+TRILINOS_TEMPLATE_OBJS="cxx_repository"
 CFLAGS=-O3
 FFLAGS=-O3
 --with-ar="/usr/users/jmwille/Trilinos/sampleScripts/stratus_ar.pl ar cru"
