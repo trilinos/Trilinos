@@ -22,7 +22,7 @@
 #with aztecoo and epetra support enabled, then a c++ linker is invoked
 #for ML's interfaces to those two packages.
 
-SOURCES = $(ml_aztec_simple_SOURCES) $(ml_aztec_simple_METIS_SOURCES) $(ml_aztec_simple_ParMETIS_SOURCES) $(ml_example1d_SOURCES) $(ml_example1dGS_SOURCES) $(ml_example2d_SOURCES) $(ml_example3d_SOURCES) $(ml_example_epetra_preconditioner_SOURCES) $(ml_read_elas_SOURCES) $(ml_read_salsa_SOURCES) $(ml_readfile_SOURCES) $(ml_recirc_SOURCES) $(ml_simple_max_SOURCES) $(ml_two_level_DD_SOURCES) $(mlaz_example_SOURCES) $(mlguide_SOURCES)
+SOURCES = $(ml_aztec_simple_SOURCES) $(ml_aztec_simple_METIS_SOURCES) $(ml_aztec_simple_ParMETIS_SOURCES) $(ml_example1d_SOURCES) $(ml_example1dGS_SOURCES) $(ml_example2d_SOURCES) $(ml_example3d_SOURCES) $(ml_example_epetra_preconditioner_SOURCES) $(ml_read_elas_SOURCES) $(ml_read_maxwell_SOURCES) $(ml_read_salsa_SOURCES) $(ml_readfile_SOURCES) $(ml_recirc_SOURCES) $(ml_simple_max_SOURCES) $(ml_two_level_DD_SOURCES) $(mlaz_example_SOURCES) $(mlguide_SOURCES) $(mlguide_par_SOURCES)
 
 srcdir = @srcdir@
 top_srcdir = @top_srcdir@
@@ -102,7 +102,7 @@ host_triplet = @host@
 @HAVE_MPI_TRUE@@ML_STANDALONE_MODE_TRUE@noinst_PROGRAMS =  \
 @HAVE_MPI_TRUE@@ML_STANDALONE_MODE_TRUE@	mlguide$(EXEEXT) \
 @HAVE_MPI_TRUE@@ML_STANDALONE_MODE_TRUE@	mlguide_par$(EXEEXT)
-mlguide_DEPENDENCIES = $(am__DEPENDENCIES_2)
+EXTRA_PROGRAMS = ml_read_maxwell$(EXEEXT) mlguide_par$(EXEEXT)
 subdir = examples
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -202,6 +202,10 @@ am__ml_read_elas_SOURCES_DIST = $(srcdir)/ml_read_elas.c
 ml_read_elas_OBJECTS = $(am_ml_read_elas_OBJECTS)
 @ML_STANDALONE_MODE_FALSE@ml_read_elas_DEPENDENCIES =  \
 @ML_STANDALONE_MODE_FALSE@	$(am__DEPENDENCIES_2)
+am__ml_read_maxwell_SOURCES_DIST = $(srcdir)/ml_read_maxwell.c
+@ML_BENCHMARKING_TRUE@@ML_STANDALONE_MODE_FALSE@am_ml_read_maxwell_OBJECTS = ml_read_maxwell-ml_read_maxwell.$(OBJEXT)
+ml_read_maxwell_OBJECTS = $(am_ml_read_maxwell_OBJECTS)
+@ML_BENCHMARKING_TRUE@@ML_STANDALONE_MODE_FALSE@ml_read_maxwell_DEPENDENCIES = $(am__DEPENDENCIES_2)
 am__ml_read_salsa_SOURCES_DIST = $(srcdir)/ml_read_salsa.c
 @ML_STANDALONE_MODE_FALSE@am_ml_read_salsa_OBJECTS = ml_read_salsa-ml_read_salsa.$(OBJEXT)
 ml_read_salsa_OBJECTS = $(am_ml_read_salsa_OBJECTS)
@@ -237,6 +241,10 @@ mlaz_example_OBJECTS = $(am_mlaz_example_OBJECTS)
 @ML_STANDALONE_MODE_FALSE@	$(am__DEPENDENCIES_2)
 am_mlguide_OBJECTS = mlguide-mlguide.$(OBJEXT)
 mlguide_OBJECTS = $(am_mlguide_OBJECTS)
+mlguide_DEPENDENCIES = $(am__DEPENDENCIES_2)
+am_mlguide_par_OBJECTS = mlguide_par-mlguide_par.$(OBJEXT)
+mlguide_par_OBJECTS = $(am_mlguide_par_OBJECTS)
+mlguide_par_DEPENDENCIES = $(am__DEPENDENCIES_2)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/src
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
@@ -250,13 +258,15 @@ am__depfiles_maybe = depfiles
 @AMDEP_TRUE@	./$(DEPDIR)/ml_example3d-ml_example3d.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/ml_example_epetra_preconditioner-ml_example_epetra_preconditioner.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/ml_read_elas-ml_read_elas.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/ml_read_maxwell-ml_read_maxwell.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/ml_read_salsa-ml_read_salsa.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/ml_readfile-ml_readfile.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/ml_recirc-ml_recirc.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/ml_simple_max-ml_simple_max.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/ml_two_level_DD-ml_two_level_DD.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/mlaz_example-mlaz_example.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/mlguide-mlguide.Po
+@AMDEP_TRUE@	./$(DEPDIR)/mlguide-mlguide.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/mlguide_par-mlguide_par.Po
 COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
 CCLD = $(CC)
@@ -271,10 +281,11 @@ SOURCES = $(ml_aztec_simple_SOURCES) $(ml_aztec_simple_METIS_SOURCES) \
 	$(ml_example1dGS_SOURCES) $(ml_example2d_SOURCES) \
 	$(ml_example3d_SOURCES) \
 	$(ml_example_epetra_preconditioner_SOURCES) \
-	$(ml_read_elas_SOURCES) $(ml_read_salsa_SOURCES) \
-	$(ml_readfile_SOURCES) $(ml_recirc_SOURCES) \
-	$(ml_simple_max_SOURCES) $(ml_two_level_DD_SOURCES) \
-	$(mlaz_example_SOURCES) $(mlguide_SOURCES)
+	$(ml_read_elas_SOURCES) $(ml_read_maxwell_SOURCES) \
+	$(ml_read_salsa_SOURCES) $(ml_readfile_SOURCES) \
+	$(ml_recirc_SOURCES) $(ml_simple_max_SOURCES) \
+	$(ml_two_level_DD_SOURCES) $(mlaz_example_SOURCES) \
+	$(mlguide_SOURCES) $(mlguide_par_SOURCES)
 DIST_SOURCES = $(am__ml_aztec_simple_SOURCES_DIST) \
 	$(am__ml_aztec_simple_METIS_SOURCES_DIST) \
 	$(am__ml_aztec_simple_ParMETIS_SOURCES_DIST) \
@@ -284,11 +295,13 @@ DIST_SOURCES = $(am__ml_aztec_simple_SOURCES_DIST) \
 	$(am__ml_example3d_SOURCES_DIST) \
 	$(am__ml_example_epetra_preconditioner_SOURCES_DIST) \
 	$(am__ml_read_elas_SOURCES_DIST) \
+	$(am__ml_read_maxwell_SOURCES_DIST) \
 	$(am__ml_read_salsa_SOURCES_DIST) \
 	$(am__ml_readfile_SOURCES_DIST) $(am__ml_recirc_SOURCES_DIST) \
 	$(am__ml_simple_max_SOURCES_DIST) \
 	$(am__ml_two_level_DD_SOURCES_DIST) \
-	$(am__mlaz_example_SOURCES_DIST) $(mlguide_SOURCES)
+	$(am__mlaz_example_SOURCES_DIST) $(mlguide_SOURCES) \
+	$(mlguide_par_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -436,8 +449,15 @@ mlguide_par_SOURCES = $(srcdir)/mlguide_par.c
 ml_integrated_dependencies = $(top_builddir)/../aztecoo/src/libaztecoo.a \
                        $(top_builddir)/../epetra/src/libepetra.a
 
-@ML_STANDALONE_MODE_FALSE@mlguide_DEPENDENCIES = ${ml_integrated_dependencies}
-@ML_STANDALONE_MODE_TRUE@mlguide_DEPENDENCIES = 
+
+# This is not working.  
+# It should be ok to omit it because when _DEPENDENCIES is not
+# specified, the value is calculated from the corresponding _LDADD value.
+#if ML_STANDALONE_MODE
+#mlguide_DEPENDENCIES =
+#else
+#mlguide_DEPENDENCIES = ${ml_integrated_dependencies}
+#endif
 ml_common_include_locations = -I$(top_srcdir)/src/Include          \
                    -I$(top_srcdir)/src/Coarsen                  \
                    -I$(top_srcdir)/src/Comm                  \
@@ -595,6 +615,9 @@ ml_example_epetra_preconditioner$(EXEEXT): $(ml_example_epetra_preconditioner_OB
 ml_read_elas$(EXEEXT): $(ml_read_elas_OBJECTS) $(ml_read_elas_DEPENDENCIES) 
 	@rm -f ml_read_elas$(EXEEXT)
 	$(ml_read_elas_LINK) $(ml_read_elas_LDFLAGS) $(ml_read_elas_OBJECTS) $(ml_read_elas_LDADD) $(LIBS)
+ml_read_maxwell$(EXEEXT): $(ml_read_maxwell_OBJECTS) $(ml_read_maxwell_DEPENDENCIES) 
+	@rm -f ml_read_maxwell$(EXEEXT)
+	$(ml_read_maxwell_LINK) $(ml_read_maxwell_LDFLAGS) $(ml_read_maxwell_OBJECTS) $(ml_read_maxwell_LDADD) $(LIBS)
 ml_read_salsa$(EXEEXT): $(ml_read_salsa_OBJECTS) $(ml_read_salsa_DEPENDENCIES) 
 	@rm -f ml_read_salsa$(EXEEXT)
 	$(ml_read_salsa_LINK) $(ml_read_salsa_LDFLAGS) $(ml_read_salsa_OBJECTS) $(ml_read_salsa_LDADD) $(LIBS)
@@ -616,6 +639,9 @@ mlaz_example$(EXEEXT): $(mlaz_example_OBJECTS) $(mlaz_example_DEPENDENCIES)
 mlguide$(EXEEXT): $(mlguide_OBJECTS) $(mlguide_DEPENDENCIES) 
 	@rm -f mlguide$(EXEEXT)
 	$(mlguide_LINK) $(mlguide_LDFLAGS) $(mlguide_OBJECTS) $(mlguide_LDADD) $(LIBS)
+mlguide_par$(EXEEXT): $(mlguide_par_OBJECTS) $(mlguide_par_DEPENDENCIES) 
+	@rm -f mlguide_par$(EXEEXT)
+	$(mlguide_par_LINK) $(mlguide_par_LDFLAGS) $(mlguide_par_OBJECTS) $(mlguide_par_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -632,6 +658,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_example3d-ml_example3d.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_example_epetra_preconditioner-ml_example_epetra_preconditioner.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_read_elas-ml_read_elas.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_read_maxwell-ml_read_maxwell.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_read_salsa-ml_read_salsa.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_readfile-ml_readfile.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_recirc-ml_recirc.Po@am__quote@
@@ -639,6 +666,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_two_level_DD-ml_two_level_DD.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mlaz_example-mlaz_example.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mlguide-mlguide.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mlguide_par-mlguide_par.Po@am__quote@
 
 .c.o:
 @am__fastdepCC_TRUE@	if $(COMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \
@@ -784,6 +812,22 @@ ml_read_elas-ml_read_elas.obj: $(srcdir)/ml_read_elas.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ml_read_elas_CFLAGS) $(CFLAGS) -c -o ml_read_elas-ml_read_elas.obj `if test -f '$(srcdir)/ml_read_elas.c'; then $(CYGPATH_W) '$(srcdir)/ml_read_elas.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ml_read_elas.c'; fi`
 
+ml_read_maxwell-ml_read_maxwell.o: $(srcdir)/ml_read_maxwell.c
+@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ml_read_maxwell_CFLAGS) $(CFLAGS) -MT ml_read_maxwell-ml_read_maxwell.o -MD -MP -MF "$(DEPDIR)/ml_read_maxwell-ml_read_maxwell.Tpo" -c -o ml_read_maxwell-ml_read_maxwell.o `test -f '$(srcdir)/ml_read_maxwell.c' || echo '$(srcdir)/'`$(srcdir)/ml_read_maxwell.c; \
+@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/ml_read_maxwell-ml_read_maxwell.Tpo" "$(DEPDIR)/ml_read_maxwell-ml_read_maxwell.Po"; else rm -f "$(DEPDIR)/ml_read_maxwell-ml_read_maxwell.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/ml_read_maxwell.c' object='ml_read_maxwell-ml_read_maxwell.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/ml_read_maxwell-ml_read_maxwell.Po' tmpdepfile='$(DEPDIR)/ml_read_maxwell-ml_read_maxwell.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ml_read_maxwell_CFLAGS) $(CFLAGS) -c -o ml_read_maxwell-ml_read_maxwell.o `test -f '$(srcdir)/ml_read_maxwell.c' || echo '$(srcdir)/'`$(srcdir)/ml_read_maxwell.c
+
+ml_read_maxwell-ml_read_maxwell.obj: $(srcdir)/ml_read_maxwell.c
+@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ml_read_maxwell_CFLAGS) $(CFLAGS) -MT ml_read_maxwell-ml_read_maxwell.obj -MD -MP -MF "$(DEPDIR)/ml_read_maxwell-ml_read_maxwell.Tpo" -c -o ml_read_maxwell-ml_read_maxwell.obj `if test -f '$(srcdir)/ml_read_maxwell.c'; then $(CYGPATH_W) '$(srcdir)/ml_read_maxwell.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ml_read_maxwell.c'; fi`; \
+@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/ml_read_maxwell-ml_read_maxwell.Tpo" "$(DEPDIR)/ml_read_maxwell-ml_read_maxwell.Po"; else rm -f "$(DEPDIR)/ml_read_maxwell-ml_read_maxwell.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/ml_read_maxwell.c' object='ml_read_maxwell-ml_read_maxwell.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/ml_read_maxwell-ml_read_maxwell.Po' tmpdepfile='$(DEPDIR)/ml_read_maxwell-ml_read_maxwell.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ml_read_maxwell_CFLAGS) $(CFLAGS) -c -o ml_read_maxwell-ml_read_maxwell.obj `if test -f '$(srcdir)/ml_read_maxwell.c'; then $(CYGPATH_W) '$(srcdir)/ml_read_maxwell.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ml_read_maxwell.c'; fi`
+
 ml_read_salsa-ml_read_salsa.o: $(srcdir)/ml_read_salsa.c
 @am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ml_read_salsa_CFLAGS) $(CFLAGS) -MT ml_read_salsa-ml_read_salsa.o -MD -MP -MF "$(DEPDIR)/ml_read_salsa-ml_read_salsa.Tpo" -c -o ml_read_salsa-ml_read_salsa.o `test -f '$(srcdir)/ml_read_salsa.c' || echo '$(srcdir)/'`$(srcdir)/ml_read_salsa.c; \
 @am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/ml_read_salsa-ml_read_salsa.Tpo" "$(DEPDIR)/ml_read_salsa-ml_read_salsa.Po"; else rm -f "$(DEPDIR)/ml_read_salsa-ml_read_salsa.Tpo"; exit 1; fi
@@ -895,6 +939,22 @@ mlguide-mlguide.obj: $(srcdir)/mlguide.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/mlguide-mlguide.Po' tmpdepfile='$(DEPDIR)/mlguide-mlguide.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mlguide_CFLAGS) $(CFLAGS) -c -o mlguide-mlguide.obj `if test -f '$(srcdir)/mlguide.c'; then $(CYGPATH_W) '$(srcdir)/mlguide.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/mlguide.c'; fi`
+
+mlguide_par-mlguide_par.o: $(srcdir)/mlguide_par.c
+@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mlguide_par_CFLAGS) $(CFLAGS) -MT mlguide_par-mlguide_par.o -MD -MP -MF "$(DEPDIR)/mlguide_par-mlguide_par.Tpo" -c -o mlguide_par-mlguide_par.o `test -f '$(srcdir)/mlguide_par.c' || echo '$(srcdir)/'`$(srcdir)/mlguide_par.c; \
+@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/mlguide_par-mlguide_par.Tpo" "$(DEPDIR)/mlguide_par-mlguide_par.Po"; else rm -f "$(DEPDIR)/mlguide_par-mlguide_par.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/mlguide_par.c' object='mlguide_par-mlguide_par.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/mlguide_par-mlguide_par.Po' tmpdepfile='$(DEPDIR)/mlguide_par-mlguide_par.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mlguide_par_CFLAGS) $(CFLAGS) -c -o mlguide_par-mlguide_par.o `test -f '$(srcdir)/mlguide_par.c' || echo '$(srcdir)/'`$(srcdir)/mlguide_par.c
+
+mlguide_par-mlguide_par.obj: $(srcdir)/mlguide_par.c
+@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mlguide_par_CFLAGS) $(CFLAGS) -MT mlguide_par-mlguide_par.obj -MD -MP -MF "$(DEPDIR)/mlguide_par-mlguide_par.Tpo" -c -o mlguide_par-mlguide_par.obj `if test -f '$(srcdir)/mlguide_par.c'; then $(CYGPATH_W) '$(srcdir)/mlguide_par.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/mlguide_par.c'; fi`; \
+@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/mlguide_par-mlguide_par.Tpo" "$(DEPDIR)/mlguide_par-mlguide_par.Po"; else rm -f "$(DEPDIR)/mlguide_par-mlguide_par.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/mlguide_par.c' object='mlguide_par-mlguide_par.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/mlguide_par-mlguide_par.Po' tmpdepfile='$(DEPDIR)/mlguide_par-mlguide_par.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mlguide_par_CFLAGS) $(CFLAGS) -c -o mlguide_par-mlguide_par.obj `if test -f '$(srcdir)/mlguide_par.c'; then $(CYGPATH_W) '$(srcdir)/mlguide_par.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/mlguide_par.c'; fi`
 
 .cpp.o:
 @am__fastdepCXX_TRUE@	if $(CXXCOMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \

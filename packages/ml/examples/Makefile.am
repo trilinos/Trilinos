@@ -51,6 +51,9 @@ noinst_PROGRAMS = mlguide ml_aztec_simple ml_example1d \
 endif
 
 endif
+#The following line cleans up bootstrap problems because these programs
+#are not built when nothing is defined.
+EXTRA_PROGRAMS = ml_read_maxwell mlguide_par
 
 # One SOURCES primary is needed for EACH exe listed above.  (Notice for all 
 # of the  following primaries that the pattern is 
@@ -86,11 +89,14 @@ endif
 ml_integrated_dependencies = $(top_builddir)/../aztecoo/src/libaztecoo.a \
                        $(top_builddir)/../epetra/src/libepetra.a
 
-if ML_STANDALONE_MODE
-mlguide_DEPENDENCIES =
-else
-mlguide_DEPENDENCIES = ${ml_integrated_dependencies}
-endif
+# This is not working.  
+# It should be ok to omit it because when _DEPENDENCIES is not
+# specified, the value is calculated from the corresponding _LDADD value.
+#if ML_STANDALONE_MODE
+#mlguide_DEPENDENCIES =
+#else
+#mlguide_DEPENDENCIES = ${ml_integrated_dependencies}
+#endif
 
 
 ml_common_include_locations = -I$(top_srcdir)/src/Include          \
