@@ -264,8 +264,8 @@ int Ifpack_ILUT::Compute()
       
       where = SingleRowU.find(col_k);
       if (where != SingleRowU.end() && 
-          IFPACK_ABS(where->second) > DropTolerance()) {
-        SingleRowL[col_k] = where->second / DiagonalValueK;
+          IFPACK_ABS((*where).second) > DropTolerance()) {
+        SingleRowL[col_k] = (*where).second / DiagonalValueK;
         ++flops;
 
         for (int j = 0 ; j < ColNnzK ; ++j) {
@@ -293,8 +293,8 @@ int Ifpack_ILUT::Compute()
     // drop elements to satisfy LevelOfFill(), start with L
     count = 0;
     for (where = SingleRowL.begin() ; where != SingleRowL.end() ; ++where) {
-      if (IFPACK_ABS(where->second) > DropTolerance()) {
-        AbsRow[count++] = IFPACK_ABS(where->second);
+      if (IFPACK_ABS((*where).second) > DropTolerance()) {
+        AbsRow[count++] = IFPACK_ABS((*where).second);
       }
     }
 
@@ -306,12 +306,12 @@ int Ifpack_ILUT::Compute()
 
     // set the multipliers in L_
     for (where = SingleRowL.begin() ; where != SingleRowL.end() ; ++where) {
-      if (IFPACK_ABS(where->second) >= cutoff) {
-        IFPACK_CHK_ERR(L_->InsertGlobalValues(row_i,1, &(where->second),
-                                              (int*)&(where->first)));
+      if (IFPACK_ABS((*where).second) >= cutoff) {
+        IFPACK_CHK_ERR(L_->InsertGlobalValues(row_i,1, &((*where).second),
+                                              (int*)&((*where).first)));
       }
       else
-        DiscardedElements += where->second;
+        DiscardedElements += (*where).second;
     }
 
     // add 1 to the diagonal
@@ -322,8 +322,8 @@ int Ifpack_ILUT::Compute()
     // same business with U_
     count = 0;
     for (where = SingleRowU.begin() ; where != SingleRowU.end() ; ++where) {
-      if (where->first >= row_i && IFPACK_ABS(where->second) > DropTolerance()) {
-        AbsRow[count++] = IFPACK_ABS(where->second);
+      if ((*where).first >= row_i && IFPACK_ABS((*where).second) > DropTolerance()) {
+        AbsRow[count++] = IFPACK_ABS((*where).second);
       }
     }
 
@@ -335,13 +335,13 @@ int Ifpack_ILUT::Compute()
 
     // sets the factors in U_
     for (where = SingleRowU.begin() ; where != SingleRowU.end() ; ++where) {
-      if (where->first >= row_i) {
-        if (IFPACK_ABS(where->second) >= cutoff) {
-          IFPACK_CHK_ERR(U_->InsertGlobalValues(row_i,1, &(where->second),
-                                                (int*)&(where->first)));
+      if ((*where).first >= row_i) {
+        if (IFPACK_ABS((*where).second) >= cutoff) {
+          IFPACK_CHK_ERR(U_->InsertGlobalValues(row_i,1, &((*where).second),
+                                                (int*)&((*where).first)));
         }
         else
-          DiscardedElements += where->second;
+          DiscardedElements += (*where).second;
       }
     }
 

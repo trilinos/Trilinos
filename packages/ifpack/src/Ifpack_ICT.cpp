@@ -203,7 +203,7 @@ int Ifpack_ICT::Compute()
       double h_ij = 0.0, h_jj = 0.0;
       where = SingleRow.find(col_j);
       if (where != SingleRow.end())
-        h_ij = SingleRow[where->first];
+        h_ij = SingleRow[(*where).first];
 
       // get pointers to row `col_j'
       int* ColIndices;
@@ -219,7 +219,7 @@ int Ifpack_ICT::Compute()
         else {
           where = SingleRow.find(col_k);
           if (where != SingleRow.end()) {
-            h_ij -= ColValues[k] * SingleRow[where->first];
+            h_ij -= ColValues[k] * SingleRow[(*where).first];
             flops += 2;
           }
         }
@@ -239,7 +239,7 @@ int Ifpack_ICT::Compute()
     vector<double> AbsRow(size);
     int count = 0;
     for (where = SingleRow.begin() ; where != SingleRow.end() ; ++where) {
-      AbsRow[count++] = IFPACK_ABS(where->second);
+      AbsRow[count++] = IFPACK_ABS((*where).second);
     }
 
     double cutoff = 0.0;
@@ -251,7 +251,7 @@ int Ifpack_ICT::Compute()
 
     // fix the diagonal element
     for (where = SingleRow.begin() ; where != SingleRow.end() ; ++where) {
-      h_ii -= where->second * where->second;
+      h_ii -= ((*where).second) * ((*where).second);
     }
     if (h_ii < 0.0) h_ii = 1e-12;;
 
@@ -263,12 +263,12 @@ int Ifpack_ICT::Compute()
     double DiscardedElements = 0.0;
 
     for (where = SingleRow.begin() ; where != SingleRow.end() ; ++where) {
-      if (IFPACK_ABS(where->second) > cutoff) {
-        IFPACK_CHK_ERR(H_->InsertGlobalValues(row_i,1, &(where->second),
-                                              (int*)&(where->first)));
+      if (IFPACK_ABS((*where).second) > cutoff) {
+        IFPACK_CHK_ERR(H_->InsertGlobalValues(row_i,1, &((*where).second),
+                                              (int*)&((*where).first)));
       }
       else
-        DiscardedElements += where->second;
+        DiscardedElements += (*where).second;
     }
 
     // FIXME: not so sure of that!
