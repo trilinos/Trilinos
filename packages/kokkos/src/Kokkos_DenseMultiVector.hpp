@@ -143,14 +143,14 @@ namespace Kokkos {
                           entries are spaced a distance of getColInc().  Subsequent row entries
 			  are spaced by getRowInc() increments.
       \param rowInc (In) The increment between two elements in a row of the multivector.  
-                         Typically this value should be set to numCols, which is the default value.
+                         Typically this value should be set to numRows.
       \param colInc (In) The increment between two elements in a column of the multivector.  
                          Typically this value should be set to 1, which is the default value.
 
       \return Integer error code, set to 0 if successful.
     */
     int initializeValues(OrdinalType numRows, OrdinalType numCols, ScalarType * values,
-			 OrdinalType rowInc = numCols, OrdinalType colInc = 1) {
+			 OrdinalType rowInc, OrdinalType colInc = 1) {
       numRows_ = numRows;
       numCols_ = numCols;
       rowInc_ = rowInc;

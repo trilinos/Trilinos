@@ -9,11 +9,6 @@ using namespace Kokkos;
 #define OTYPE int
 #define STYPE double
 
-template<typename TYPE>
-int PrintTestResults(string, TYPE, TYPE, bool);
-
-int ReturnCodeCheck(string, int, int, bool);
-
 typedef DenseMultiVector<OTYPE, STYPE> DMultiVector;
 typedef DenseVector<OTYPE, STYPE> DVector;
 
@@ -120,52 +115,3 @@ int main(int argc, char* argv[])
 
  return 0;
 }  
-
-template<typename TYPE>
-int PrintTestResults(string testName, TYPE calculatedResult, TYPE expectedResult, bool verbose)
-{
-  int result;
-  if(calculatedResult == expectedResult)
-    {
-      if(verbose) cout << testName << " successful." << endl;
-      result = 0;
-    }
-  else
-    {
-      if(verbose) cout << testName << " unsuccessful." << endl;
-      result = 1;
-    }
-  return result;
-}
-
-int ReturnCodeCheck(string testName, int returnCode, int expectedResult, bool verbose)
-{
-  int result;
-  if(expectedResult == 0)
-    {
-      if(returnCode == 0)
-	{
-	  if(verbose) cout << testName << " test successful." << endl;
-	  result = 0;
-	}
-      else
-	{
-	  if(verbose) cout << testName << " test unsuccessful. Return code was " << returnCode << "." << endl;
-	  result = 1;
-	}
-    }
-  else
-    {
-      if(returnCode != 0)
-	{
-	  if(verbose) cout << testName << " test successful -- failed as expected." << endl;
-	  result = 0;
-	}
-      else
-	{
-	  if(verbose) cout << testName << " test unsuccessful -- did not fail as expected. Return code was " << returnCode << "." << endl;
-	  result = 1;
-	}
-    }
-  return result;
-}

@@ -1,0 +1,16 @@
+SRCDIR=../../src
+CXXFLAGS=-I$(SRCDIR) -O0 -g
+TARGET=Permutation.exe
+SRC=cxx_main.cpp
+OBJ_EXT=o
+OBJ=$(SRC:.cpp=.$(OBJ_EXT))
+
+$(TARGET): $(OBJ)
+	$(CXX) -o $(TARGET) $(OBJ)
+
+cxx_main.o: cxx_main.cpp $(SRCDIR)/*.hpp
+
+clean:
+	rm -rf $(OBJ) $(TARGET) *~
+
+again: clean $(TARGET)

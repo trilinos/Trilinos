@@ -42,7 +42,14 @@ namespace Kokkos {
     applied to the left of a matrix or vector, rearranging the rows or entries, respectively.  A
     permutation can also be applied on the right of a matrix (or a vector tranpose), thereby rearranging
     the columns of the matrix.  Permutations also have the property that the inverse and 
-    the transpose are identical.
+    the transpose are identical.  
+
+    In this class, the default constructors builds an identity permutation (the identity matrix).  
+    Non-identity permutations require the specification of an integer array where 
+    the array indices will be interpreted as a left
+    permutation by the apply() method such that if j = indices[i], then row j of the operand 
+    becomes row i of the result.  They will be interpreted as a left inverse permutation by the applyInverse()
+    methods, in which case row i gets mapped back to row j.
 
     This class is most important as a way for a Kokkos::SparseOperation object to define a row, column or
     two-sided permutation of the matrix that presumably improves performance of the sparse operation.
@@ -66,15 +73,15 @@ namespace Kokkos {
       indices_(0) {};
   
     //! Non-identity permutation constructor.
-    Permutation (const OrdinalType * indices, OrdinalType length):
+    Permutation (OrdinalType length, const OrdinalType * indices):
       isIdentity_(indices==0),
       dataInitialized_(indices!=0),
       length_(length),
-      indices_(indices) {};
+      indices_((OrdinalType *) indices) {};
 
     //! Copy constructor.
     Permutation(const Permutation& source):
-      isIdentity_(source.isIdentity),
+      isIdentity_(source.isIdentity_),
       dataInitialized_(source.dataInitialized_),
       length_(source.length_),
       indices_(source.indices_) {
@@ -82,6 +89,31 @@ namespace Kokkos {
 
     //! Permutation Destructor
     virtual ~Permutation(){};
+    //@}
+
+
+    //@{ \name Intialization methods.
+	
+    //! Defines a nontrivial permutation.
+    /*! Post-construction definition of the permutation.  The array indices will be interpreted as a left
+        permutation by the apply() method such that if j = indices[i], then row j of the operand 
+	becomes row i of the result.
+
+      \param length (Out) Dimension of the permutation.
+      \param indices (In) An array of OrdinalType values used to define the permutation.
+
+      \warning The array indices is NOT copies.  The caller of this method is responsible for retaining
+      the indices array for the life of the permutation class.
+		
+      \return Integer error code, set to 0 if successful.
+    */
+    virtual int initialize(OrdinalType length, const OrdinalType * indices) {
+      isIdentity_ = (indices==0);
+      dataInitialized_ = (indices!=0);
+      length_ = length;
+      indices_ = (OrdinalType *) indices;
+      return(0);
+    };
     //@}
 
 
@@ -130,6 +162,9 @@ namespace Kokkos {
     //! Length (dimension) of permutation operator.
     virtual OrdinalType getLength() const {return(length_);};
 	
+    //! Pointer to the array of indices, returns 0 if permutation is the identity.
+    virtual OrdinalType * getIndices() const {return(indices_);};
+	
     //! Returns true if the permutation is the identity, otherwise returns false.
     virtual bool getIsIdentity() const {return(isIdentity_);};
 	
@@ -153,8 +188,13 @@ namespace Kokkos {
     ScalarType * yp = y.getValues();
     OrdinalType length = x.getLength();
 
-    for(OrdinalType i = 0; i < length; i++)
-      yp[indices_[i]] = xp[i];
+    if (isIdentity_) 
+      for(OrdinalType i = 0; i < length; i++)
+	yp[i] = xp[i];
+    else
+      for(OrdinalType i = 0; i < length; i++)
+	yp[indices_[i]] = xp[i];
+
     return(0);
   }
 
@@ -170,12 +210,21 @@ namespace Kokkos {
     ScalarType ** ypp = y.getValues();
     OrdinalType length = x.getNumRows();
 
-    for (OrdinalType k=0; k<numVectors; k++) {
-      ScalarType * xp = xpp[k];
-      ScalarType * yp = ypp[k];
-      for(OrdinalType i = 0; i < length; i++)
-	yp[indices_[i]] = xp[i];
-    }
+    if (isIdentity_) 
+      for (OrdinalType k=0; k<numVectors; k++) {
+	ScalarType * xp = xpp[k];
+	ScalarType * yp = ypp[k];
+	for(OrdinalType i = 0; i < length; i++)
+	  yp[i] = xp[i];
+      }
+    else
+      for (OrdinalType k=0; k<numVectors; k++) {
+	ScalarType * xp = xpp[k];
+	ScalarType * yp = ypp[k];
+	for(OrdinalType i = 0; i < length; i++)
+	  yp[indices_[i]] = xp[i];
+      }
+
     return(0);
   }
 
@@ -191,8 +240,13 @@ namespace Kokkos {
     ScalarType * yp = y.getValues();
     OrdinalType length = x.getLength();
 
-    for(OrdinalType i = 0; i < length; i++)
-      yp[i] = xp[indices_[i]];
+    if (isIdentity_) 
+      for(OrdinalType i = 0; i < length; i++)
+	yp[i] = xp[i];
+    else
+      for(OrdinalType i = 0; i < length; i++)
+	yp[i] = xp[indices_[i]];
+
     return(0);
   }
 
@@ -208,12 +262,21 @@ namespace Kokkos {
     ScalarType ** ypp = y.getValues();
     OrdinalType length = x.getNumRows();
 
-    for (OrdinalType k=0; k<numVectors; k++) {
-      ScalarType * xp = xpp[k];
-      ScalarType * yp = ypp[k];
-      for(OrdinalType i = 0; i < length; i++)
-	yp[i] = xp[indices_[i]];
-    }
+    if (isIdentity_) 
+      for (OrdinalType k=0; k<numVectors; k++) {
+	ScalarType * xp = xpp[k];
+	ScalarType * yp = ypp[k];
+	for(OrdinalType i = 0; i < length; i++)
+	  yp[i] = xp[i];
+      }
+    else
+      for (OrdinalType k=0; k<numVectors; k++) {
+	ScalarType * xp = xpp[k];
+	ScalarType * yp = ypp[k];
+	for(OrdinalType i = 0; i < length; i++)
+	  yp[i] = xp[indices_[i]];
+      }
+
     return(0);
   }
 

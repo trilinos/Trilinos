@@ -54,12 +54,14 @@ namespace Kokkos {
     DenseVector(void):
       dataInitialized_(false),
       length_(0),
+      inc_(0),
       values_(0) {};
   
     //! Copy constructor.
     DenseVector(const DenseVector& source):
       dataInitialized_(source.dataInitialized_),
       length_(source.length_),
+      inc_(source.inc_),
       values_(source.values_) {};
 
     //! DenseVector Destructor
