@@ -317,20 +317,12 @@ void Epetra_LAPACK::TREXC( char COMPQ, int N, double * T, int LDT, double * Q, i
   DTREXC_F77( CHAR_MACRO(COMPQ), &N, T, &LDT, Q, &LDQ, &IFST, &ILST, WORK, INFO);
 }
 //=============================================================================
-float Epetra_LAPACK::SLAMCH( char CMACH) const {
-#if defined (INTEL_CXML)
-  return(SLAMCH_F77(CMACH));
-#else
-  return(SLAMCH_F77(&CMACH));
-#endif
+void Epetra_LAPACK::LAMCH( char CMACH, float & T) const {
+  T = SLAMCH_F77( CHAR_MACRO(CMACH));
 }
 //=============================================================================
-double Epetra_LAPACK::DLAMCH( char CMACH) const {
-#if defined (INTEL_CXML)
-  return(DLAMCH_F77(CMACH));
-#else
-  return(DLAMCH_F77(&CMACH));
-#endif
+void Epetra_LAPACK::LAMCH( char CMACH, double & T) const {
+  T = DLAMCH_F77( CHAR_MACRO(CMACH));
 }
   
 

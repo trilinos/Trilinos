@@ -234,12 +234,11 @@ class Epetra_LAPACK {
   void GESVD( char JOBU, char JOBVT, int M, int N, double * A, int LDA, double * S, double * U,
 	      int LDU, double * VT, int LDVT, double * WORK, int * LWORK, int * INFO) const;
    //@}
-
   //@{ \name Machine characteristics routines.
-  //! Epetra_LAPACK wrapper for DLAMCH routine that returns machine double precision floating point characteristics
-  double DLAMCH( char CMACH) const; 
-  //! Epetra_LAPACK wrapper for SLAMCH routine that returns machine single precision floating point characteristics
-  float SLAMCH( char CMACH) const;
+  //! Epetra_LAPACK wrapper for DLAMCH routine.  On out, T holds machine double precision floating point characteristics.  This information is returned by the Lapack routine.
+  void LAMCH ( char CMACH, float & T) const;
+  //! Epetra_LAPACK wrapper for SLAMCH routine.  On out, T holds machine single precision floating point characteristics.  This information is returned by the Lapack routine.
+  void LAMCH ( char CMACH, double & T) const;
  //@}
 
 };
