@@ -302,7 +302,7 @@ As a final operation, we can transform the matrix into local
 indexes. This phase in required in order to perform efficient parallel
 matrix-vector products and other matrix operations.
 \begin{verbatim}
-A.TransformToLocal();
+A.FillComplete();
 \end{verbatim}
 
 The above presentation refers to a rather common case: In a parallel
@@ -357,7 +357,7 @@ for( int i=0 ; i<NumElementsA ; ++i ) {
 }
 \end{verbatim}
 Now, as both $X$ and $B$ are defined using \verb!MapB!, instead of
-calling \verb!TransformToLocal()!, we do
+calling \verb!FillComplete()!, we do
 \begin{verbatim}
 A.FillComplete(MapB,MapB);
 \end{verbatim}

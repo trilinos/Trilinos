@@ -170,7 +170,7 @@ an Ifpack\_CrsIct object,
 Ifpack_CrsIct * ICT = NULL;
 ICT = Ifpack_CrsIct(A,DropTol,LevelFill);
 \end{verbatim}
-where \verb!A! is an Epetra\_CrsMatrix (already TransformToLocal'd), and
+where \verb!A! is an Epetra\_CrsMatrix (already FillComplete'd), and
 \verb!DropTop! and \verb!LevelFill! are the drop tolerance and the
 level-of-fill, respectively. Then, we can set the values and compute the
 factors,

@@ -203,7 +203,7 @@ Solver.Iterate(1000,1E-9);
 The complete code is in \TriExe{aztec/ex1.cpp}.
 
 Note that the matrix must be in local coordinates (that is, the command
-\verb!A.TransformToLocal()! has been called before attempting to solve
+\verb!A.FillComplete()! has been called before attempting to solve
 the linear system).  Note also that the procedure to solve a linear
 system with AztecOO is identical for sequential and parallel runs.
 However (for certain choices of the preconditioners), the convergence
