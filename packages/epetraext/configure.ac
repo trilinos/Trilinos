@@ -101,7 +101,8 @@ dnl Commented out this line for now because it causes headaches in
 dnl committing.
 dnl AC_REVISION($Revision$)
 
-# ------------------------------------------------------------------------# Check to see if MPI enabled and if any special configuration done
+# ------------------------------------------------------------------------
+# Check to see if MPI enabled and if any special configuration done
 # ------------------------------------------------------------------------                                                                          
 TAC_ARG_CONFIG_MPI
                                                                           
@@ -363,6 +364,42 @@ if test "X$ac_cv_use_epetraext_zoltan" != "Xno"; then
   AC_CHECK_LIB(metis,METIS_PartGraphKway,[],[AC_MSG_ERROR([Cannot find libmetis.a library needed for Zoltan subpkg, specify using --with-libs=-L<DIR>])])
   AC_CHECK_LIB(parmetis,ParMETIS_PartKway,[],[AC_MSG_ERROR([Cannot find libparmetis.a library needed for Zoltan subpkg, specify using --with-libs=-L<DIR>])])
   AC_CHECK_LIB(zoltan,Zoltan_LB_Balance,[],[AC_MSG_ERROR([Cannot find libzoltan.a library needed for Zoltan subpkg, specify using --with-libs=-L<DIR>])])
+fi
+
+if test "X$ac_cv_use_epetraext_matlab" != "Xno"; then
+     
+     AC_MSG_CHECKING(for engine.h)
+     AC_TRY_CPP([#include "engine.h"], [AC_MSG_RESULT(yes)],
+     	[
+	 AC_MSG_RESULT(no)
+	 echo "-----"
+     	 echo "Cannot find Matlab libeng header file engine.h."
+	 echo "For informatin on how to specify the proper Matlab headers/libraries see epetraext/doc/matlab.README."
+     	 echo "Use --with-incdirs=-I<DIR> to specify the include directory containing engine.h."
+     	 echo "-----"
+     	 AC_MSG_ERROR(Matlab header file engine.h not found)
+     	])
+	
+	
+     AC_MSG_CHECKING(for mex.h)
+     AC_TRY_CPP([#include "mex.h"], [AC_MSG_RESULT(yes)],  
+	[
+	 AC_MSG_RESULT(no)
+	 echo "-----"
+     	 echo "Cannot find Matlab libmx header file mex.h."
+	 echo "For informatin on how to specify the proper Matlab headers/libraries see epetraext/doc/matlab.README."
+     	 echo "Use --with-incdirs=-I<DIR> to specify the include directory containing mex.h."
+     	 echo "-----"
+     	 AC_MSG_ERROR(Matlab header file engine.h not found)
+     	])
+	
+     AC_CHECK_LIB(eng,engPutVariable,[],[
+     	AC_CHECK_LIB(eng,engPutArray,[
+	  AC_DEFINE(USE_ENGPUTARRAY)
+	],[AC_MSG_ERROR([Cannot find libeng.a library needed for Matlab subpkg, specify using --with-libs=-L<DIR> For informatin on how to specify the proper Matlab headers/libraries see epetraext/doc/matlab.README.])])
+     ])
+     
+     AC_CHECK_LIB(mx,mxCreateDoubleMatrix,[],[AC_MSG_ERROR([Cannot find libmx.a library needed for Matlab subpkg, specify using --with-libs=-L<DIR> For informatin on how to specify the proper Matlab headers/libraries see epetraext/doc/matlab.README.])])
 fi
 
 # ------------------------------------------------------------------------
