@@ -485,9 +485,15 @@ extern void AZ_fortransolve(double x[], double b[], int options[],
 /* function definitions */
 
 #ifndef __cplusplus
+#ifndef max
 #define max(x,y) (( (x) > (y) ) ?  (x) : (y))     /* max function  */
+#endif
+#ifndef min
 #define min(x,y) (( (x) < (y) ) ?  (x) : (y))     /* min function  */
+#endif
+#ifndef sgn
 #define sgn(x)   (( (x) < 0.0 ) ? -1.0 : 1.0)  /* sign function */
+#endif
 #endif
 
 /*
@@ -1306,6 +1312,13 @@ extern void   AZ_reorder_matrix(int N_update, int bindx[], double val[],
 
 extern void   AZ_reorder_vec(double vec[], int data_org[], int update_index[],
 			     int rpntr[]);
+
+extern void AZ_global2local(int data_org[], int bindx[], int update[], 
+			    int update_index[], int externs[], int extern_index[]);
+
+extern void AZ_restore_unreordered_bindx(int bindx[], double val[], int update[],
+					 int update_index[], int external[],
+					 int extern_index[], int data_org[]);
 
 extern void   AZ_reverse_it(int indx[], int length, int first, int total,
                             int b[]);

@@ -928,6 +928,7 @@ double *dtmp;
   }
 
   else if (action == AZ_ALLOC) {
+    *status = AZ_OLD_ADDRESS;
     if (size == 0) return (double *) 0;
 
     /* first look for entry */
@@ -2551,6 +2552,7 @@ void AZ_set_VBR(AZ_MATRIX *Amat, int rpntr[], int cpntr[], int bpntr[],
 }
 void AZ_matrix_destroy(AZ_MATRIX **Amat)
 {
+  if ( (*Amat) == NULL) return;
    if ((*Amat)->must_free_data_org == 1) {
       AZ_free((*Amat)->data_org);
       (*Amat)->data_org = NULL;
@@ -2560,6 +2562,7 @@ void AZ_matrix_destroy(AZ_MATRIX **Amat)
 }
 void AZ_precond_destroy(AZ_PRECOND **precond)
 {
+  if ( (*precond) == NULL) return;
    if ( (*precond)->print_string != NULL) AZ_free( (*precond)->print_string);
    AZ_free(*precond);
    *precond = NULL;
@@ -3421,6 +3424,174 @@ void AZ_clean_scaling(struct AZ_SCALING **scaling)
    AZ_free_memory((*scaling)->mat_name);
    AZ_scaling_destroy(scaling);
 }
+
+void AZ_restore_unreordered_bindx(int bindx[], double val[], int update[],
+				  int update_index[], int external[],
+				  int extern_index[], int data_org[])
+{
+  /* Restore the bindx & val arrays to how they were before AZ_transform was */
+  /* invoked. NOTE: this routine should only be used when reordering is      */
+  /* turned off inside AZ_transfrom. That is, AZ_ALL in AZ_transform() should*/
+  /* be changed to AZ_EXTERNS.                                               */
+
+
+  int N, Nghost, i, *rev_extern_ind, global_id;
+  
+  N = data_org[AZ_N_internal] + data_org[AZ_N_border];
+  Nghost = data_org[AZ_N_external];
+
+  /* first check that we have an MSR matrix */
+
+  if ( data_org[AZ_matrix_type] != AZ_MSR_MATRIX) {
+    fprintf(stderr,"AZ_restore_unreordered_bindx: Error! Only MSR matrices can be restored.\n");
+    exit(1);
+  }
+
+  /* now check to make sure that the matrix has not been reordered */
+
+  for (i = 0; i < N; i++) {
+    if (update_index[i] != i) {
+      fprintf(stderr,"AZ_restore_unreordered_bindx: Only unreordered matrices can be restored.\n");
+      fprintf(stderr,"                              Change AZ_ALL in the file 'az_tools.c'\n");
+      fprintf(stderr,"                              during the AZ_order_ele() invokation within 'AZ_transform()' to AZ_EXTERNS'.\n");
+      exit(1);
+    }
+  }
+
+  /* now build the reverse index for the externals */
+
+  rev_extern_ind = (int *) AZ_allocate(sizeof(int)*(Nghost+1));
+  if (rev_extern_ind == NULL) {
+    fprintf(stderr,"AZ_restore_unreordered_bindx: Not enough space\n");
+    exit(1);
+  }
+
+  for (i = 0; i < Nghost; i++) {
+    rev_extern_ind[extern_index[i] - N] = i;
+  }
+
+  /* copy the external part of the matrix */
+
+
+  for (i = N+1; i < bindx[N]; i++) {
+    if (bindx[i] < N) bindx[i] = update[bindx[i]];
+    else {
+      global_id = external[rev_extern_ind[bindx[i]-N]];
+      bindx[i] = global_id;
+    }
+  }
+
+  AZ_free(rev_extern_ind);
+}
+
+/******************************************************************************/
+/******************************************************************************/
+/******************************************************************************/
+
+void AZ_global2local(int data_org[], int bindx[], int update[], int update_index[],
+                     int externs[], int extern_index[])
+
+/*******************************************************************************
+
+  Given the global column indices for the matrix and a list of elements updated
+  on this processor, restore the local indices using information computed
+  from a previous AZ_transform().
+
+
+  On input, the column index bindx[k] is converted to j on output where
+
+          update[j] = bindx[k]
+   or
+          external[i - N_update] = bindx[k] where extern_index[j] = i
+
+  Author:          Ray S. Tuminaro, SNL, 1422
+  =======
+
+  Return code:     void
+  ============
+
+  Parameter list:
+  ===============
+
+  data_org:        Az computed from previous call to AZ_transform.
+
+  bindx:           MSR. On input, they refer to global
+                   column indices. On output, they refer to local column indices
+                   as described above. See User's Guide for more information.
+
+  update:          List (global indices) of elements updated on this node.
+
+  external:        List (global indices) of external elements on this node.
+
+  N_external:      Number of external elements on this processor.
+
+
+*******************************************************************************/
+
+{
+
+  /* local variables */
+
+  int  i, j, k;
+  int *bins,shift;
+  int  start,end;
+  int N_update, N_external;
+
+  /**************************** execution begins ******************************/
+
+  N_update = data_org[AZ_N_internal] + data_org[AZ_N_border];
+  N_external = data_org[AZ_N_external];
+  if ( data_org[AZ_matrix_type] != AZ_MSR_MATRIX) {
+    fprintf(stderr,"AZ_restore_unreordered_bindx: Error! Only MSR matrices can be restored.\n");
+    exit(1);
+  }
+
+  /* now check to make sure that the matrix has not been reordered */
+
+  for (i = 0; i < N_update; i++) {
+    if (update_index[i] != i) {
+      fprintf(stderr,"AZ_restore_unreordered_bindx: Only unreordered matrices can be restored.\n");
+      fprintf(stderr,"                              Change AZ_ALL in the file 'az_tools.c'\n");
+      fprintf(stderr,"                              during the AZ_order_ele() invokation within 'AZ_transform()' to AZ_EXTERNS'.\n");
+      exit(1);
+    }
+  }
+
+  /* set up some bins so that we will be able to use AZ_quick_find() */
+
+  bins = (int *) AZ_allocate((N_update / 4 + 10)*sizeof(int));
+  if  (bins == NULL) {
+    (void) fprintf(stderr, "ERROR: Not enough temp space\n");
+    exit(-1);
+  }
+
+  AZ_init_quick_find(update, N_update, &shift, bins);
+
+  /*
+   * Compute the location of the first and last column index that is stored in
+   * the bindx[].
+   */
+
+  start = bindx[0]; end = bindx[bindx[0]-1]; 
+  
+  for (j = start; j < end; j++) {
+    k = AZ_quick_find(bindx[j], update, N_update,shift,bins);
+
+    if (k != -1) bindx[j] = k;
+    else {
+       k = AZ_find_index(bindx[j], externs,N_external);
+       if (k != -1) bindx[j] = extern_index[k];
+       else {
+        (void) fprintf(stderr, "ERROR: column number not found %d\n",
+                       bindx[j]);
+        exit(-1);
+      }
+    }
+  }
+
+  AZ_free((char *) bins);
+
+} 
 
 /***********************************************************************/
 /***********************************************************************/

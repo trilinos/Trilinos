@@ -208,8 +208,11 @@ double *block;
   if ((options[AZ_output] != AZ_none) &&
       (options[AZ_output] != AZ_last) &&
       (options[AZ_output] != AZ_warnings) && (proc == 0))
+   {
     (void) fprintf(stdout, "%siter:    0           residual = %e\n",
                    prefix,scaled_r_norm);
+     fflush(stdout);
+   }
 
   converged = scaled_r_norm < epsilon;
 
@@ -312,8 +315,11 @@ double *block;
     }
 
     if ( (iter%print_freq == 0) && proc == 0 )
+    {
       (void) fprintf(stdout, "%siter: %4d           residual = %e\n", prefix, iter,
                      scaled_r_norm);
+       fflush(stdout);
+     }
 
     /* convergence tests */
 
@@ -357,8 +363,11 @@ double *block;
   iter--;
   if ( (iter%print_freq != 0) && (proc == 0) && (options[AZ_output] != AZ_none)
        && (options[AZ_output] != AZ_warnings) )
+  {
     (void) fprintf(stdout, "%siter: %4d           residual = %e\n", prefix, iter,
                    scaled_r_norm);
+    fflush(stdout);
+  }
 
   /* check if we exceeded maximum number of iterations */
 

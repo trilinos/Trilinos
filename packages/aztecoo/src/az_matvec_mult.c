@@ -394,8 +394,14 @@ void AZ_MSR_matvec_mult (double *b, double *c,AZ_MATRIX *Amat,int proc_config[])
 {
   double *val;
   int *data_org, *bindx;
-  register int j, k, irow, bindx_row;
-  int          N, nzeros;
+  register int j, k, irow;
+ int          N;
+#ifndef ML_PACKAGE
+  int bindx_row, nzeros;
+#else
+ int          *bindx_ptr;
+ double       sum;
+#endif
 
   val = Amat->val;
   bindx = Amat->bindx;
@@ -408,6 +414,31 @@ void AZ_MSR_matvec_mult (double *b, double *c,AZ_MATRIX *Amat,int proc_config[])
 
   AZ_exchange_bdry(b, data_org, proc_config);
 
+#ifdef ML_PACKAGE
+  j = bindx[0];
+  bindx_ptr = &bindx[j];
+  for (irow = 0; irow < N; irow++) {
+    sum =  val[irow]*b[irow];
+    while (j+10 < bindx[irow+1]) {
+      sum += val[j+9]*b[bindx_ptr[9]] +
+	val[j+8]*b[bindx_ptr[8]] +
+	val[j+7]*b[bindx_ptr[7]] +
+	val[j+6]*b[bindx_ptr[6]] +
+	val[j+5]*b[bindx_ptr[5]] +
+	val[j+4]*b[bindx_ptr[4]] +
+	val[j+3]*b[bindx_ptr[3]] +
+	val[j+2]*b[bindx_ptr[2]] +
+	val[j+1]*b[bindx_ptr[1]] +
+	val[j]*b[*bindx_ptr];
+      bindx_ptr += 10;
+      j += 10;
+    }
+    while (j < bindx[irow+1]) {
+      sum += val[j++] * b[*bindx_ptr++];
+    }
+    c[irow] = sum;
+  }
+#else
   for (irow = 0; irow < N; irow++) {
 
     /* compute diagonal contribution */
@@ -425,6 +456,6 @@ void AZ_MSR_matvec_mult (double *b, double *c,AZ_MATRIX *Amat,int proc_config[])
     }
     c++;
   }
- 
+#endif
 } /* AZ_MSR_matvec_mult */
 

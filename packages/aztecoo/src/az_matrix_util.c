@@ -1135,7 +1135,11 @@ void AZ_capture_matrix(double val[], int indx[], int bindx[], int rpntr[],
      /***** Print out the MSR i,j,a(i,j) information for the matrix *****/
 
 	  AZ_capt_matrix = fopen("AZ_capture_matrix.dat","a");
+#ifdef MB_MODIF
+	  fprintf(AZ_capt_matrix, "* Start of MSR matrix\n");
+#else
 	  fprintf(AZ_capt_matrix, "Start of MSR matrix\n");
+#endif
 	  fprintf(AZ_capt_matrix, "%d %d\n", 
 		  num_total_equations, num_total_nonzeros);
 	  for (i = 0; i < num_total_equations; i++) {

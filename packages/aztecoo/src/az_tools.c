@@ -2578,7 +2578,7 @@ void AZ_read_update(int *N_update, int *update[], int proc_config[],
 
     t1 = 0;            /* total number of points distributed */
     if (proc == 0) {
-      (void) printf("reading from file .update\n"); fflush(stdout);
+      (void) printf("Reading from file .update\n"); fflush(stdout);
 
       if ( (fp = fopen(".update", "r")) == NULL) {
         (void) fprintf(stderr, "ERROR: file '.update' not found\n");
@@ -3678,7 +3678,8 @@ file specified by the input argument datafile instead from a file called
       (void) fprintf(stderr, "ERROR: Matrix data file %s not found\n", datafile);
       exit(-1);
     }
-    (void) fprintf(stdout, " reading matrix (current version is very slow) .");
+    (void) fprintf(stdout, "Reading matrix from %s "
+                           "(current version is very slow) .",datafile);
     (void) fflush(stdout);
 
     /* read in number of blks */
@@ -4467,7 +4468,11 @@ void AZ_transform(int proc_config[], int *external[], int bindx[], double val[],
   }
 
   AZ_order_ele(*update_index, *extern_index, &N_internal, &N_border, N_update,
+#ifdef MB_MODIF
+               bnptr, bindx, extern_proc, N_extern, AZ_EXTERNS, mat_type);
+#else
                bnptr, bindx, extern_proc, N_extern, AZ_ALL, mat_type);
+#endif
 
   /*
    * Permute the matrix using the new ordering.  IMPORTANT: This routine assumes
@@ -4907,8 +4912,7 @@ void AZ_find_global_ordering(int proc_config[], AZ_MATRIX *Amat,
 
   for (i=0; i< N_blk_rows; i++) (*update)[i] = offset +i;
 
-  /* end AZ_find_global_ordering
-   */
+  /* end AZ_find_global_ordering */
 }
 
 void AZ_revert_to_global(int proc_config[], 

@@ -1,30 +1,23 @@
 include $(TRILINOS_HOME)/build/TRILINOS_TARGET_DEFS
 TRILINOS_TARGET = $(TRILINOS_ARCH).$(TRILINOS_COMM)$(TRILINOS_ID)
-include $(TRILINOS_HOME)/etc/makefile.$(TRILINOS_TARGET)
+include $(TRILINOS_HOME)/build/makefile.$(TRILINOS_TARGET)
 
-# Aztec communication defines
-AZTEC_COMM_SERIAL          = SERIAL
-AZTEC_COMM_MPI             = AZTEC_MPI
-AZTEC_COMM                 = $(AZTEC_COMM_$(TRILINOS_COMM))
-
-DEFINES= -D$(TRILINOS_ARCH) $(AZTEC_ARCH_DEFINES) -D$(AZTEC_COMM) \
+DEFINES= -D$(TRILINOS_ARCH) $(AZTECOO_ARCH_DEFINES) -D$(AZTECOO_COMM) \
          -DIFPACK -DSPARSEBLAS
 
-INCLUDES = $(ARCH_INCLUDES) -I$(TRILINOS_HOME)/src/ifpack \
-           -I$(TRILINOS_HOME)/src/aztec $(BLAS_INCLUDES) \
-           $(SPBLAS_INCLUDES)
+INCLUDES = $(ARCH_INCLUDES) -I$(TRILINOS_HOME)/packages/ifpack/src \
+           -I$(TRILINOS_HOME)/packages/aztecoo/src $(SPBLAS_INCLUDES)
 
 CFLAGS=$(ARCH_CFLAGS) $(DEFINES) $(INCLUDES)
 FFLAGS=$(ARCH_FFLAGS) $(DEFINES) 
 CXXFLAGS=$(ARCH_CXXFLAGS) $(DEFINES) $(INCLUDES)
+LDFLAGS=$(ARCH_LDFLAGS)
 
-
-
-LIB_PATHS= $(LIBAZTEC) $(LIBIFPACK) $(LIBY12M) $(LIBMACHDEP) \
+LIB_PATHS= $(LIBAZTECOO) $(LIBIFPACK) $(LIBY12M) $(LIBMACHDEP) \
            $(LIBLAPACK) $(LIBSPBLAS) $(LIBBLAS)
 
 #=======================================================================
-# Aztec test source and include files
+# Aztecoo test source and include files
 #=======================================================================
 
 # Choose the application you want to run:
@@ -93,7 +86,7 @@ $(TARGET): $(TEST_OBJ)
 #
 # dependencies for 'f' files (none at this time)
 #
-#include ../../etc/depends.aztec
+#include ../../build/depends.aztecoo
 
 clean:
 	@echo "junk" > dummy.o

@@ -31,6 +31,7 @@
       integer  AZ_row_sum 
       integer  AZ_sym_diag 
       integer  AZ_sym_row_sum 
+      integer  AZ_equil
       integer  AZ_sym_BJacobi 
       integer  AZ_none 
       integer  AZ_Jacobi 
@@ -228,7 +229,8 @@
       parameter (AZ_row_sum = 3) 
       parameter (AZ_sym_diag = 4) 
       parameter (AZ_sym_row_sum = 5) 
-      parameter (AZ_sym_BJacobi = 6) 
+      parameter (AZ_equil = 6) 
+      parameter (AZ_sym_BJacobi = 7) 
       parameter (AZ_none = 0) 
       parameter (AZ_Jacobi = 1) 
       parameter (AZ_sym_GS = 2) 

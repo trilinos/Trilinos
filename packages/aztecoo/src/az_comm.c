@@ -3064,15 +3064,15 @@ int AZ_extract_comm_info(int **idata_org,int (*user_comm)(double *,AZ_MATRIX *),
    type = 4901;
    for (i = 0; i < N_send_procs ; i++) {
      send_neighbors[i] = -1; /* receive from anyone */
-     md_wrap_iread((void *) &(send_length[i]), sizeof(int) ,
+     mdwrap_iread((void *) &(send_length[i]), sizeof(int) ,
                 &(send_neighbors[i]), &type, request+i);
    }
    for (i = 0; i < N_rcv_procs; i++) {
-      md_wrap_write((void *) &(rcv_length[i]), sizeof(int),
+      mdwrap_write((void *) &(rcv_length[i]), sizeof(int),
                           rcv_neighbors[i], type, &status);
    }
    for (i = 0; i < N_send_procs ; i++) {
-     md_wrap_wait((void *) &(send_length[i]), sizeof(int) ,
+     mdwrap_wait((void *) &(send_length[i]), sizeof(int) ,
                 &(send_neighbors[i]), &type, &status, request+i);
    }
    AZ_sort( send_neighbors, N_send_procs , send_length, NULL);
@@ -3099,7 +3099,7 @@ int AZ_extract_comm_info(int **idata_org,int (*user_comm)(double *,AZ_MATRIX *),
    type++;
    j = 0;
    for (i = 0; i < N_send_procs ; i++) {
-      md_wrap_iread((void *) &(send_list[j]), sizeof(int)*
+      mdwrap_iread((void *) &(send_list[j]), sizeof(int)*
                                send_length[i], &(send_neighbors[i]), &type,
                                request+i);
       j += send_length[i];
@@ -3107,12 +3107,12 @@ int AZ_extract_comm_info(int **idata_org,int (*user_comm)(double *,AZ_MATRIX *),
    for (i = 0; i < N_rcv_procs; i++) {
       for (j = 0; j < rcv_length[i]; j++)
          collect[j] = (int) data_vec[ rcv_list[i][j] ];
-      md_wrap_write((void *) collect, rcv_length[i]*sizeof(int),
+      mdwrap_write((void *) collect, rcv_length[i]*sizeof(int),
                           rcv_neighbors[i], type, &status);
    }
    j = 0;
    for (i = 0; i < N_send_procs ; i++) {
-      md_wrap_wait((void *) &(send_list[j]), sizeof(int)*
+      mdwrap_wait((void *) &(send_list[j]), sizeof(int)*
                              send_length[i], &(send_neighbors[i]), &type,
                              &status, request+i);
       j += send_length[i];
