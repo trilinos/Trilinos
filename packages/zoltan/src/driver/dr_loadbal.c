@@ -100,7 +100,7 @@ int run_zoltan(int Proc, PROB_INFO_PTR prob, MESH_INFO_PTR mesh)
   /* Set the user-specified parameters */
   for (i = 0; i < prob->num_params; i++) {
     ierr = LB_Set_Param(lb_obj, prob->params[i][0], prob->params[i][1]);
-    if (!(ierr == 0) || (ierr == 3)) {
+    if (!((ierr == 0) || (ierr == 3))) {
       sprintf(errmsg, "fatal: error in LB_Set_Param when setting parameter %s\n", prob->params[i][0]);
       Gen_Error(0, errmsg);
       return 0;
@@ -166,7 +166,7 @@ int run_zoltan(int Proc, PROB_INFO_PTR prob, MESH_INFO_PTR mesh)
   if (Debug_Driver > 0) {
     if (lb_obj->Proc == 0) printf("\nBEFORE load balancing\n");
     driver_eval(mesh);
-    LB_Eval(lb_obj, 1, 1, 0, NULL, NULL, NULL, NULL, NULL, &i);
+    LB_Eval(lb_obj, 1, NULL, NULL, NULL, NULL, NULL, &i);
     if (i) printf("Warning: LB_Eval returned error code %d\n", i);
   }
 
@@ -196,7 +196,7 @@ int run_zoltan(int Proc, PROB_INFO_PTR prob, MESH_INFO_PTR mesh)
   if (Debug_Driver > 0) {
     if (lb_obj->Proc == 0) printf("\nAFTER load balancing\n");
     driver_eval(mesh);
-    LB_Eval(lb_obj, 1, 1, 0, NULL, NULL, NULL, NULL, NULL, &i);
+    LB_Eval(lb_obj, 1, NULL, NULL, NULL, NULL, NULL, &i);
     if (i) printf("Warning: LB_Eval returned error code %d\n", i);
   }
 
