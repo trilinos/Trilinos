@@ -9,6 +9,20 @@
  *
  */
 
+/* Notes on memory analyzer (MS):
+ * - if mallinfo() is available, ML_MALLINFO is automatically defined
+ *   by configure. This should be reasonably cheap and accurate.
+ * - define ML_MEM_CHECK to an expensive analysis of memory corruption
+ *   and memory leaks, for all blocks allocated using ML's allocating
+ *   functions. Users have to set this variable explicitly (not handled by
+ *   configure).
+ * - define ML_MALLOC to estimate the maximum free memory by calling
+ *   malloc(). This may be severely slow on some machine. Not defined by
+ *   default. Users have to set this variable explicitly (not handled by
+ *   configure). This option gives sometimes "strange" results, to be
+ *   used only as last resort!
+ */
+
 /*
   Current revision: $Revision$
   Branch:           $Branch$
@@ -152,47 +166,49 @@ int ML_Epetra::MultiLevelPreconditioner::DestroyPreconditioner()
   int min[ML_MEM_SIZE], max[ML_MEM_SIZE], avg[ML_MEM_SIZE];
   for( int i=0 ; i<ML_MEM_SIZE ; ++i ) avg[i] = 0;
 
-  if( AnalyzeMemory_ ) {
+  if (AnalyzeMemory_) {
     memory_[ML_MEM_TOT2] = memory_[ML_MEM_TOT1] + memory_[ML_MEM_PREC_FIRST];
-    memory_[ML_MEM_TOT2_USED] = memory_[ML_MEM_TOT1_USED] + memory_[ML_MEM_PREC_FIRST_USED];
+#ifdef ML_MALLOC
+    memory_[ML_MEM_TOT2_MALLOC] = memory_[ML_MEM_TOT1_MALLOC] + memory_[ML_MEM_PREC_FIRST_MALLOC];
+#endif
     Comm().MinAll(memory_,min,ML_MEM_SIZE);
     Comm().MaxAll(memory_,max,ML_MEM_SIZE);
     Comm().SumAll(memory_,avg,ML_MEM_SIZE);
   }
   
-  for( int i=0 ; i<ML_MEM_SIZE ; ++i ) avg[i] /= Comm().NumProc();
+  for (int i = 0 ; i < ML_MEM_SIZE ; ++i) avg[i] /= Comm().NumProc();
 
-  if( verbose_ && NumApplications_ ) {
+  if (verbose_ && NumApplications_) {
 
     // print on screen
     
     ML_print_line("-",78);
     double TotalTime = FirstApplicationTime_ + ApplicationTime_;
-    cout << PrintMsg_ << "   ML time information" << endl << endl
-	 << "   1- Construction time             = " << ConstructionTime_ << " (s)" << endl;
-    cout << PrintMsg_ << "   2- Time for all applications     = " << TotalTime << " (s)" << endl;
-    cout << PrintMsg_ << "   3- Time for first application(s) = " << FirstApplicationTime_ << " (s)" << endl;
-    cout << PrintMsg_ << "   4- Each of " << NumApplications_
-	 << " applications took " << TotalTime/NumApplications_ << " (s)" << endl;
-    
+    cout << PrintMsg_ << "   ML time information                    total          avg" << endl << endl
+	 << PrintMsg_ << "   1- Construction time             = " 
+         << std::setw(10) << ConstructionTime_ << "  "
+         << std::setw(10) << ConstructionTime_ / NumConstructions_ << " (s)" << endl;
+    cout << PrintMsg_ << "   2- Time for all applications     = " 
+         << std::setw(10) << ApplicationTime_ << "  "
+         << std::setw(10) << ApplicationTime_ / NumApplications_ << " (s)" << endl;
+    cout << PrintMsg_ << "      (w/o first application time)" << endl;
+    cout << PrintMsg_ << "   3- Time for first application(s) = " 
+         << std::setw(10) << FirstApplicationTime_ << "  " 
+         << std::setw(10) << FirstApplicationTime_ / NumConstructions_ << " (s)" << endl;
+    cout << PrintMsg_ << "   4- Total time required by ML so far is " 
+         << ConstructionTime_ + TotalTime << " (s)" << endl;
+    cout << PrintMsg_ << "      (constr + all applications)" << endl;
   }
 
-  if( verbose_ && AnalyzeMemory_ ) {
+  if (verbose_ && AnalyzeMemory_) {
     
     // print memory usage
 
     cout << endl;
-    cout << "   ML memory information:                 min     avg     max" << endl
-	 << "   (warning: data may be incorrect for small runs, or" << endl
-	 << "    if more processes share the same physical memory)" << endl
-	 << endl
-	 << "   1- max allocatable contiguous chunk, using malloc()" << endl;
-    PrintMem("      before the ML construction     = %5d   %5d   %5d",
-	     min[ML_MEM_INITIAL],avg[ML_MEM_INITIAL],max[ML_MEM_INITIAL]);
-    PrintMem("      after the ML construction      = %5d   %5d   %5d",
-	     min[ML_MEM_FINAL],avg[ML_MEM_FINAL],max[ML_MEM_FINAL]);
-    cout << endl
-	 << "   2- estimated ML memory usage, using malloc()" << endl;
+    cout << "   ML memory information:                 min     avg     max" 
+         << endl << endl;
+#ifdef ML_MALLINFO    
+    cout << "   1- estimated ML memory usage, using mallinfo()" << endl;
     PrintMem("      for the hierarchy              = %5d   %5d   %5d",
 	     min[ML_MEM_HIERARCHY],avg[ML_MEM_HIERARCHY],max[ML_MEM_HIERARCHY]);
     PrintMem("      for the smoother(s)            = %5d   %5d   %5d",
@@ -206,21 +222,27 @@ int ML_Epetra::MultiLevelPreconditioner::DestroyPreconditioner()
     PrintMem("      total (w/  other prec data)    = %5d   %5d   %5d",
 	     min[ML_MEM_TOT2],avg[ML_MEM_TOT2],max[ML_MEM_TOT2]);
     cout << endl;
-#ifdef ML_MALLINFO    
-    cout << "   3- estimated ML memory usage, using mallinfo()" << endl;
-    PrintMem("      for the hierarchy              = %5d   %5d   %5d",
-	     min[ML_MEM_HIERARCHY_USED],avg[ML_MEM_HIERARCHY_USED],max[ML_MEM_HIERARCHY_USED]);
-    PrintMem("      for the smoother(s)            = %5d   %5d   %5d",
-	     min[ML_MEM_SMOOTHER_USED],avg[ML_MEM_SMOOTHER_USED],max[ML_MEM_SMOOTHER_USED]);
-    PrintMem("      for the coarse solver          = %5d   %5d   %5d",
-	     min[ML_MEM_COARSE_USED],avg[ML_MEM_COARSE_USED],max[ML_MEM_COARSE_USED]);
-    PrintMem("      preconditioning                = %5d   %5d   %5d",
-	     min[ML_MEM_PREC_FIRST_USED],avg[ML_MEM_PREC_FIRST_USED],max[ML_MEM_PREC_FIRST_USED]);
-    PrintMem("      total (w/o other prec data)    = %5d   %5d   %5d",
-	     min[ML_MEM_TOT1_USED],avg[ML_MEM_TOT1_USED],max[ML_MEM_TOT1_USED]);
-    PrintMem("      total (w/  other prec data)    = %5d   %5d   %5d",
-	     min[ML_MEM_TOT2_USED],avg[ML_MEM_TOT2_USED],max[ML_MEM_TOT2_USED]);
 #endif
+#ifdef ML_MALLOC
+    cout << "   3- estimated ML memory usage, using malloc()" << endl;
+    PrintMem("      for the hierarchy              = %5d   %5d   %5d",
+	     min[ML_MEM_HIERARCHY_MALLOC],avg[ML_MEM_HIERARCHY_MALLOC],max[ML_MEM_HIERARCHY_MALLOC]);
+    PrintMem("      for the smoother(s)            = %5d   %5d   %5d",
+	     min[ML_MEM_SMOOTHER_MALLOC],avg[ML_MEM_SMOOTHER_MALLOC],max[ML_MEM_SMOOTHER_MALLOC]);
+    PrintMem("      for the coarse solver          = %5d   %5d   %5d",
+	     min[ML_MEM_COARSE_MALLOC],avg[ML_MEM_COARSE_MALLOC],max[ML_MEM_COARSE_MALLOC]);
+    PrintMem("      preconditioning                = %5d   %5d   %5d",
+	     min[ML_MEM_PREC_FIRST_MALLOC],avg[ML_MEM_PREC_FIRST_MALLOC],max[ML_MEM_PREC_FIRST_MALLOC]);
+    PrintMem("      total (w/o other prec data)    = %5d   %5d   %5d",
+	     min[ML_MEM_TOT1_MALLOC],avg[ML_MEM_TOT1_MALLOC],max[ML_MEM_TOT1_MALLOC]);
+    PrintMem("      total (w/  other prec data)    = %5d   %5d   %5d",
+	     min[ML_MEM_TOT2_MALLOC],avg[ML_MEM_TOT2_MALLOC],max[ML_MEM_TOT2_MALLOC]);
+    cout << endl;
+#endif
+    cout << "      (memory for Aztec smoothers reported in `preconditioning')" << endl;
+    cout << "      (warning: data may be incorrect for small runs, or" << endl
+	 << "       if more processes share the same physical memory)" << endl
+	 << endl;
   }
 
   if (verbose_ && NumApplications_) 
@@ -619,15 +641,21 @@ ComputePreconditioner(const bool CheckPreconditioner)
   
   FirstApplication_ = true;
 
-  int call1 = 0, call2 = 0, call1_used = 0, call2_used = 0;
+  int call1 = 0, call2 = 0; 
+#ifdef ML_MALLOC
+  int call1_malloc = 0, call2_malloc = 0;
+#endif
 
   AnalyzeMemory_ = List_.get(Prefix_ + "analyze memory", false);  
 
   if( AnalyzeMemory_ ) {
-    memory_[ML_MEM_INITIAL] = ML_MaxAllocatableSize();
+    memory_[ML_MEM_INITIAL] = ML_MaxMemorySize();
     call1 = memory_[ML_MEM_INITIAL];
-    call1_used = ML_MaxMemorySize();
-    if( verbose_ ) cout << "Memory : max allocatable block = " << call1 << " Mbytes" << endl;
+#ifdef ML_MALLOC
+    call1_malloc = ML_MaxAllocatableSize();
+    memory_[ML_MEM_INITIAL_MALLOC] = call1_malloc;
+    if (verbose_) cout << "Memory : max allocatable block = " << call1_malloc << " Mbytes" << endl;
+#endif
   }
 
   if( Label_ ) delete [] Label_;
@@ -665,7 +693,8 @@ ComputePreconditioner(const bool CheckPreconditioner)
     cout << PrintMsg_ << "*** ML_Epetra::MultiLevelPreconditioner" << endl;
     cout << PrintMsg_ << "***" << endl;
     cout << PrintMsg_ << "Matrix has " << RowMatrix_->NumGlobalRows()
-	 << " rows, distributed over " << Comm().NumProc() << " process(es)" << endl;
+	 << " rows and " << RowMatrix_->NumGlobalNonzeros() 
+         << " nonzeros, distributed over " << Comm().NumProc() << " process(es)" << endl;
     {
       const Epetra_CrsMatrix * dummy = dynamic_cast<const Epetra_CrsMatrix *>(RowMatrix_);
       if( dummy ) cout << "The linear system matrix is an Epetra_CrsMatrix" << endl;
@@ -724,6 +753,8 @@ ComputePreconditioner(const bool CheckPreconditioner)
     if (N_ghost < 0) N_ghost = 0;  // A->NumMyCols() = 0 for an empty matrix
     
     ML_Init_Amatrix(ml_,LevelID_[0],NumMyRows, NumMyRows, (void *) RowMatrix_);
+    // set the number of nonzeros
+    ml_->Amat[LevelID_[0]].N_nonzeros = RowMatrix_->NumGlobalNonzeros();
     ML_Set_Amatrix_Getrow(ml_, LevelID_[0], Epetra_ML_getrow,
 			  Epetra_ML_comm_wrapper, NumMyRows+N_ghost);
     
@@ -1092,14 +1123,15 @@ ComputePreconditioner(const bool CheckPreconditioner)
   }
   
   if( AnalyzeMemory_ ) {
-    call2 = ML_MaxAllocatableSize();
-    if( verbose_ ) cout << "Memory : max allocatable block = " << call2 << " Mbytes" << endl;    
-    memory_[ML_MEM_HIERARCHY] = call1-call2;
+    call2 = ML_MaxMemorySize();
+    memory_[ML_MEM_HIERARCHY] = call2-call1;
     call1 = call2;
-
-    call2_used = ML_MaxMemorySize();
-    memory_[ML_MEM_HIERARCHY_USED] = call2_used-call1_used;
-    call1_used = call2_used;
+#ifdef ML_MALLOC
+    call2_malloc = ML_MaxAllocatableSize();
+    if (verbose_) cout << "Memory : max allocatable block = " << call2_malloc << " Mbytes" << endl;    
+    memory_[ML_MEM_HIERARCHY_MALLOC] = call1_malloc-call2_malloc;
+    call1_malloc = call2_malloc;
+#endif
   }
   
   if( verbose_ ) cout << PrintMsg_ << "Number of actual levels : " << NumLevels_ << endl;
@@ -1122,14 +1154,16 @@ ComputePreconditioner(const bool CheckPreconditioner)
     ML_CHK_ERR(SetSmoothersMaxwell());
   }
 
-  if( AnalyzeMemory_ ) {
-    call2 = ML_MaxAllocatableSize();
-    if( verbose_ ) cout << "Memory : max allocatable block = " << call2 << " Mbytes" << endl;        
-    memory_[ML_MEM_SMOOTHER] = call1 - call2;
+  if (AnalyzeMemory_) {
+    call2 = ML_MaxMemorySize();
+    memory_[ML_MEM_SMOOTHER] = call2 - call1;
     call1 = call2;
-    call2_used = ML_MaxMemorySize();
-    memory_[ML_MEM_SMOOTHER_USED] = call2_used - call1_used;
-    call1_used = call2_used;
+#ifdef ML_MALLOC
+    call2_malloc = ML_MaxAllocatableSize();
+    if (verbose_) cout << "Memory : max allocatable block = " << call2_malloc << " Mbytes" << endl;        
+    memory_[ML_MEM_SMOOTHER_MALLOC] = call1_malloc - call2_malloc;
+    call1_malloc = call2_malloc;
+#endif
   }
   
   /* ********************************************************************** */
@@ -1150,14 +1184,16 @@ ComputePreconditioner(const bool CheckPreconditioner)
   /* be implemented as a post smoother (FIXME)                              */
   /* ********************************************************************** */
 
-  if( AnalyzeMemory_ ) {
-    call2 = ML_MaxAllocatableSize();
-    if( verbose_ ) cout << "Memory : max allocatable block = " << call2 << " Mbytes" << endl;        
-    memory_[ML_MEM_COARSE] = call1 - call2;
+  if (AnalyzeMemory_) {
+    call2 = ML_MaxMemorySize();
+    memory_[ML_MEM_COARSE] = call2 - call1;
     call1 = call2;
-    call2_used = ML_MaxMemorySize();
-    memory_[ML_MEM_COARSE_USED] = call2_used - call1_used;
-    call1_used = call2_used;
+#ifdef ML_MALLOC
+    call2_malloc = ML_MaxAllocatableSize();
+    if (verbose_) cout << "Memory : max allocatable block = " << call2_malloc << " Mbytes" << endl;        
+    memory_[ML_MEM_COARSE_MALLOC] = call1_malloc - call2_malloc;
+    call1_malloc = call2_malloc;
+#endif
   }
   
   if( SolvingMaxwell_ == false ) 
@@ -1255,11 +1291,13 @@ ComputePreconditioner(const bool CheckPreconditioner)
   if( List_.get(Prefix_ + "adaptive: enable", false) == true ) 
     CheckPreconditionerKrylov();
   
-  if( AnalyzeMemory_ ) {
-    memory_[ML_MEM_FINAL] = ML_MaxAllocatableSize();
-    memory_[ML_MEM_TOT1] = memory_[ML_MEM_INITIAL] - memory_[ML_MEM_FINAL];
-    memory_[ML_MEM_FINAL_USED] = ML_MaxMemorySize();
-    memory_[ML_MEM_TOT1_USED] = memory_[ML_MEM_FINAL_USED] - memory_[ML_MEM_INITIAL_USED];
+  if (AnalyzeMemory_) {
+    memory_[ML_MEM_FINAL] = ML_MaxMemorySize();
+    memory_[ML_MEM_TOT1] = memory_[ML_MEM_FINAL] - memory_[ML_MEM_INITIAL];
+#ifdef ML_MALLOC
+    memory_[ML_MEM_FINAL_MALLOC] = ML_MaxAllocatableSize();
+    memory_[ML_MEM_TOT1_MALLOC] = memory_[ML_MEM_INITIAL_MALLOC] - memory_[ML_MEM_FINAL_MALLOC];
+#endif
   }
   
   // print unused parameters
@@ -1287,6 +1325,7 @@ ComputePreconditioner(const bool CheckPreconditioner)
     ML_print_line("-",78);
 
   ConstructionTime_ += Time.ElapsedTime();
+  ++NumConstructions_;
   
   return 0;
   
@@ -1401,16 +1440,22 @@ ApplyInverse(const Epetra_MultiVector& X,
     RM->RightScale(*Scaling_);
   }
 
-  int before = 0, after = 0, before_used = 0, after_used = 0;
+  int before = 0, after = 0;
+#ifdef ML_MALLOC
+  int before_malloc = 0, after_malloc = 0;
+#endif
+
   if (AnalyzeMemory_) {
-    before = ML_MaxAllocatableSize();
-    before_used = ML_MaxMemorySize();
+#ifdef ML_MALLOC
+    before_malloc = ML_MaxAllocatableSize();
+#endif
+    before = ML_MaxMemorySize();
   }
     
   Epetra_Time Time(Comm());
   
-#if FIXME
-  // these checks can be expensive
+#if 0
+  // these checks can be expensive, I skip them
   if (!X.Map().SameAs(OperatorDomainMap())) 
     ML_CHK_ERR(-1);
   if (!Y.Map().SameAs(OperatorRangeMap())) 
@@ -1550,20 +1595,27 @@ ApplyInverse(const Epetra_MultiVector& X,
 
   MultiLevelPreconditioner * This = const_cast<MultiLevelPreconditioner *>(this);
 
-  if( AnalyzeMemory_ ) {
-    after = ML_MaxAllocatableSize();
-    after_used = ML_MaxMemorySize();
+  if (AnalyzeMemory_) {
+#ifdef ML_MALLOC
+    after_malloc = ML_MaxAllocatableSize();
+#endif
+    after = ML_MaxMemorySize();
   }
   
   double t = Time.ElapsedTime();
-  if( FirstApplication_ ) {
+  if (FirstApplication_) {
     This->FirstApplication_ = false;
     This->FirstApplicationTime_ += t;
-    This->memory_[ML_MEM_PREC_FIRST] = before - after;
-    This->memory_[ML_MEM_PREC_FIRST_USED] = after_used - before_used;
-  } else {
-    This->memory_[ML_MEM_PREC_OTHER] = before - after;
-    This->memory_[ML_MEM_PREC_OTHER_USED] = after_used - before_used;
+    This->memory_[ML_MEM_PREC_FIRST] = after - before;
+#ifdef ML_MALLOC
+    This->memory_[ML_MEM_PREC_FIRST_MALLOC] = before_malloc - after_malloc;
+#endif
+  } 
+  else {
+    This->memory_[ML_MEM_PREC_OTHER] = after - before;
+#ifdef ML_MALLOC
+    This->memory_[ML_MEM_PREC_OTHER_MALLOC] = before_malloc - after_malloc;
+#endif
   }
   
   This->ApplicationTime_ += t;

@@ -70,15 +70,15 @@ class Epetra_VbrMatrix;
 #define ML_MEM_PREC_OTHER 6
 #define ML_MEM_TOT1       7
 #define ML_MEM_TOT2       8
-#define ML_MEM_INITIAL_USED    10
-#define ML_MEM_FINAL_USED      11
-#define ML_MEM_SMOOTHER_USED   12
-#define ML_MEM_COARSE_USED     13
-#define ML_MEM_HIERARCHY_USED  14
-#define ML_MEM_PREC_FIRST_USED 15
-#define ML_MEM_PREC_OTHER_USED 16
-#define ML_MEM_TOT1_USED       17
-#define ML_MEM_TOT2_USED       18
+#define ML_MEM_INITIAL_MALLOC    10
+#define ML_MEM_FINAL_MALLOC      11
+#define ML_MEM_SMOOTHER_MALLOC   12
+#define ML_MEM_COARSE_MALLOC     13
+#define ML_MEM_HIERARCHY_MALLOC  14
+#define ML_MEM_PREC_FIRST_MALLOC 15
+#define ML_MEM_PREC_OTHER_MALLOC 16
+#define ML_MEM_TOT1_MALLOC       17
+#define ML_MEM_TOT2_MALLOC       18
 
 #ifdef HAVE_ML_TRIUTILS
 #include "Trilinos_Util_CommandLineParser.h"
