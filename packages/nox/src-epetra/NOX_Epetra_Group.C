@@ -463,6 +463,21 @@ bool Group::computePrecMatrix()
 {
   cout << "NOX::Epetra::Group::computePrecMatrix() NOT Implemented yet!!" << endl;
   exit(0);
+
+  /* RPP: This will come online soon 
+
+  // Skip if the preconditioning matrix is already valid
+  if (isPrecMatrix())
+    return true;
+
+  // Take ownership of the PrecMatrix and get a reference to the underlying operator
+  Epetra_Operator& prec = sharedPrecMatrix.getOperator(this);
+
+  // Fill the Preconditioning matrix
+
+  //RPP: Move over the computePreconditioner() method into here!!
+
+  */
 }
 
 bool Group::applyJacobian(const Abstract::Vector& input, Abstract::Vector& result) const

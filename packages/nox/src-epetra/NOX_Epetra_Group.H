@@ -59,7 +59,7 @@ namespace Epetra {
 /*! This group is set up to use the AztecOO Linear %Solver.
   The user has multiple options for forming the Jacobian operator and preconditioning operator.  
   
-  A linear solve using this class requires that the user supply at a minimum a Jacobian operator class derived from the pure virtual Epetra_Operator class.  This does not have to be an explicit matrix since Newton-Krylov methods only require the action of the Jacobian on a vector (Jy).  The user can pass in their own Epetra_Operator derived object or use one of the predefined Epetra_Operators provided by %Trilinos/%Epetra (Epetra_CrsMatrix Epetra_VbrMatrix) or NOX (NOX::Epetra::MatrixFree or NOX::Epetra::FiniteDifference).  Certain functions in the NOX::Epetra::Interface object are required to be implemented by the user depending on the type of Jacobian used: 
+  A linear solve using this class requires that the user supply at a minimum a Jacobian operator class derived from the pure virtual Epetra_Operator class.  This does not have to be an explicit matrix since Newton-Krylov methods only require the action of the Jacobian on a vector (Jy).  The user can pass in their own Epetra_Operator derived object or use one of the predefined Epetra_Operators provided by %Trilinos/%Epetra (an Epetra_CrsMatrix or an Epetra_VbrMatrix) or one provided by NOX (a NOX::Epetra::MatrixFree or a NOX::Epetra::FiniteDifference).  Certain functions in the NOX::Epetra::Interface object are required to be implemented by the user depending on the type of Jacobian used: 
   <ul>
   <li> User Created Epetra_Operator or %Trilinos/%Epetra - The user must supply the operator to the group constructor.  This could  be any Epetra_RowMatrix or a user created class.  To be able to use this object, NOX requires the user to implement the following functions in the NOX::Epetra::Interface object: 
   <ul>
@@ -183,13 +183,13 @@ public:
   Group(const Parameter::List& linearSolverParams, Interface& i, 
  	Epetra_Vector& x, Epetra_Operator& J);
 
-  //! Constructor with  Jacobian (J) and a separate Preconditioner (M).  
-  //! linearSolverParams is the "Linear Solver" sublist of parameter list.
+  //! Constructor with a separate Jacobian (J) and %Preconditioner (M).  
+  //! linearSolverParams is the "Linear %Solver" sublist of parameter list.
   Group(const Parameter::List& linearSolverParams, Interface& i, 
  	Epetra_Vector& x, Epetra_Operator& J, Epetra_Operator& M);
 
   /*! \brief Copy constructor. If type is DeepCopy, takes ownership of
-    valid shared Jacobian. */
+    valid shared Jacobian and shared preconditioning matrix. */
   Group(const Group& source, CopyType type = DeepCopy);
 
   //! Destructor.
@@ -314,12 +314,12 @@ protected:
   //! Computes the preconditioner based on the current solution vector and sets the correct preconditioning option (Operator or RowMatrix) in the AztecOO object.
   virtual bool computePreconditioner(AztecOO& aztec);
   
-  //! Returns the type of Jacobian matrix that is passed into the 
-  //! group constructors.
+  //! Returns the type of Jacobian matrix that is passed into the group constructors.
+  /*! Uses dynamic casting to identify the underlying object type. */
   virtual JacType getJacobianType();
 
-  //! Returns the type of Preconditioning matrix that is passed into the 
-  //! group constructors.
+  //! Returns the type of Preconditioning matrix that is passed into the group constructors.  
+  /*! Uses dynamic casting to identify the underlying object type. */
   virtual PrecType getPrecType();
   //@}
 
