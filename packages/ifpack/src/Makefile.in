@@ -191,12 +191,17 @@ EXTRA_DIST = \
 COMP_H = \
 	$(srcdir)/Ifpack_IlukGraph.h \
 	$(srcdir)/Ifpack_CrsRiluk.h \
-	$(srcdir)/Ifpack_ScalingType.h
+	$(srcdir)/Ifpack_ScalingType.h \
+	$(srcdir)/Ifpack_CrsIct.h \
+	$(srcdir)/icrout_cholesky_mex.h
 
 
 COMP = \
 	$(srcdir)/Ifpack_IlukGraph.cpp \
-	$(srcdir)/Ifpack_CrsRiluk.cpp 
+	$(srcdir)/Ifpack_CrsRiluk.cpp \
+	$(srcdir)/Ifpack_CrsIct.cpp \
+	$(srcdir)/icrout_cholesky_mex.c \
+	$(srcdir)/icrout_quicksort.c
 
 
 
@@ -287,10 +292,16 @@ LIBRARIES = $(lib_LIBRARIES)
 libifpack_a_DEPENDENCIES =
 @BUILD_OLDIFPACK_FALSE@@HAVE_MPI_TRUE@am_libifpack_a_OBJECTS = \
 @BUILD_OLDIFPACK_FALSE@@HAVE_MPI_TRUE@	Ifpack_IlukGraph.$(OBJEXT) \
-@BUILD_OLDIFPACK_FALSE@@HAVE_MPI_TRUE@	Ifpack_CrsRiluk.$(OBJEXT)
+@BUILD_OLDIFPACK_FALSE@@HAVE_MPI_TRUE@	Ifpack_CrsRiluk.$(OBJEXT) \
+@BUILD_OLDIFPACK_FALSE@@HAVE_MPI_TRUE@	Ifpack_CrsIct.$(OBJEXT) \
+@BUILD_OLDIFPACK_FALSE@@HAVE_MPI_TRUE@	icrout_cholesky_mex.$(OBJEXT) \
+@BUILD_OLDIFPACK_FALSE@@HAVE_MPI_TRUE@	icrout_quicksort.$(OBJEXT)
 @BUILD_OLDIFPACK_FALSE@@HAVE_MPI_FALSE@am_libifpack_a_OBJECTS = \
 @BUILD_OLDIFPACK_FALSE@@HAVE_MPI_FALSE@	Ifpack_IlukGraph.$(OBJEXT) \
-@BUILD_OLDIFPACK_FALSE@@HAVE_MPI_FALSE@	Ifpack_CrsRiluk.$(OBJEXT)
+@BUILD_OLDIFPACK_FALSE@@HAVE_MPI_FALSE@	Ifpack_CrsRiluk.$(OBJEXT) \
+@BUILD_OLDIFPACK_FALSE@@HAVE_MPI_FALSE@	Ifpack_CrsIct.$(OBJEXT) \
+@BUILD_OLDIFPACK_FALSE@@HAVE_MPI_FALSE@	icrout_cholesky_mex.$(OBJEXT) \
+@BUILD_OLDIFPACK_FALSE@@HAVE_MPI_FALSE@	icrout_quicksort.$(OBJEXT)
 @BUILD_OLDIFPACK_TRUE@@HAVE_MPI_TRUE@am_libifpack_a_OBJECTS = \
 @BUILD_OLDIFPACK_TRUE@@HAVE_MPI_TRUE@	az_ifpack_prec_create.$(OBJEXT) \
 @BUILD_OLDIFPACK_TRUE@@HAVE_MPI_TRUE@	az_ifpack_precon.$(OBJEXT) \
@@ -307,7 +318,10 @@ libifpack_a_DEPENDENCIES =
 @BUILD_OLDIFPACK_TRUE@@HAVE_MPI_TRUE@	ifp_spmm.$(OBJEXT) \
 @BUILD_OLDIFPACK_TRUE@@HAVE_MPI_TRUE@	ifp_spsm.$(OBJEXT) \
 @BUILD_OLDIFPACK_TRUE@@HAVE_MPI_TRUE@	Ifpack_IlukGraph.$(OBJEXT) \
-@BUILD_OLDIFPACK_TRUE@@HAVE_MPI_TRUE@	Ifpack_CrsRiluk.$(OBJEXT)
+@BUILD_OLDIFPACK_TRUE@@HAVE_MPI_TRUE@	Ifpack_CrsRiluk.$(OBJEXT) \
+@BUILD_OLDIFPACK_TRUE@@HAVE_MPI_TRUE@	Ifpack_CrsIct.$(OBJEXT) \
+@BUILD_OLDIFPACK_TRUE@@HAVE_MPI_TRUE@	icrout_cholesky_mex.$(OBJEXT) \
+@BUILD_OLDIFPACK_TRUE@@HAVE_MPI_TRUE@	icrout_quicksort.$(OBJEXT)
 @BUILD_OLDIFPACK_TRUE@@HAVE_MPI_FALSE@am_libifpack_a_OBJECTS = \
 @BUILD_OLDIFPACK_TRUE@@HAVE_MPI_FALSE@	az_ifpack_prec_create.$(OBJEXT) \
 @BUILD_OLDIFPACK_TRUE@@HAVE_MPI_FALSE@	az_ifpack_precon.$(OBJEXT) \
@@ -324,7 +338,10 @@ libifpack_a_DEPENDENCIES =
 @BUILD_OLDIFPACK_TRUE@@HAVE_MPI_FALSE@	ifp_spmm.$(OBJEXT) \
 @BUILD_OLDIFPACK_TRUE@@HAVE_MPI_FALSE@	ifp_spsm.$(OBJEXT) \
 @BUILD_OLDIFPACK_TRUE@@HAVE_MPI_FALSE@	Ifpack_IlukGraph.$(OBJEXT) \
-@BUILD_OLDIFPACK_TRUE@@HAVE_MPI_FALSE@	Ifpack_CrsRiluk.$(OBJEXT)
+@BUILD_OLDIFPACK_TRUE@@HAVE_MPI_FALSE@	Ifpack_CrsRiluk.$(OBJEXT) \
+@BUILD_OLDIFPACK_TRUE@@HAVE_MPI_FALSE@	Ifpack_CrsIct.$(OBJEXT) \
+@BUILD_OLDIFPACK_TRUE@@HAVE_MPI_FALSE@	icrout_cholesky_mex.$(OBJEXT) \
+@BUILD_OLDIFPACK_TRUE@@HAVE_MPI_FALSE@	icrout_quicksort.$(OBJEXT)
 libifpack_a_OBJECTS = $(am_libifpack_a_OBJECTS)
 
 DEFS = @DEFS@
@@ -333,13 +350,16 @@ CPPFLAGS = @CPPFLAGS@
 LDFLAGS = @LDFLAGS@
 LIBS = @LIBS@
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
-@AMDEP_TRUE@DEP_FILES = $(DEPDIR)/Ifpack_CrsRiluk.Po \
+@AMDEP_TRUE@DEP_FILES = $(DEPDIR)/Ifpack_CrsIct.Po \
+@AMDEP_TRUE@	$(DEPDIR)/Ifpack_CrsRiluk.Po \
 @AMDEP_TRUE@	$(DEPDIR)/Ifpack_IlukGraph.Po \
 @AMDEP_TRUE@	$(DEPDIR)/az_ifpack_iterate.Po \
 @AMDEP_TRUE@	$(DEPDIR)/az_ifpack_prec_create.Po \
 @AMDEP_TRUE@	$(DEPDIR)/az_ifpack_prec_destroy.Po \
 @AMDEP_TRUE@	$(DEPDIR)/az_ifpack_precon.Po \
 @AMDEP_TRUE@	$(DEPDIR)/az_ifpack_solve.Po \
+@AMDEP_TRUE@	$(DEPDIR)/icrout_cholesky_mex.Po \
+@AMDEP_TRUE@	$(DEPDIR)/icrout_quicksort.Po \
 @AMDEP_TRUE@	$(DEPDIR)/ifp_BlockMat.Po $(DEPDIR)/ifp_BlockVec.Po \
 @AMDEP_TRUE@	$(DEPDIR)/ifp_DenseMat.Po \
 @AMDEP_TRUE@	$(DEPDIR)/ifp_SparseUtil.Po $(DEPDIR)/ifp_biluk.Po \
@@ -430,6 +450,9 @@ clean-libLIBRARIES:
 	-test -z "$(lib_LIBRARIES)" || rm -f $(lib_LIBRARIES)
 Ifpack_IlukGraph.$(OBJEXT): $(srcdir)/Ifpack_IlukGraph.cpp
 Ifpack_CrsRiluk.$(OBJEXT): $(srcdir)/Ifpack_CrsRiluk.cpp
+Ifpack_CrsIct.$(OBJEXT): $(srcdir)/Ifpack_CrsIct.cpp
+icrout_cholesky_mex.$(OBJEXT): $(srcdir)/icrout_cholesky_mex.c
+icrout_quicksort.$(OBJEXT): $(srcdir)/icrout_quicksort.c
 az_ifpack_prec_create.$(OBJEXT): $(srcdir)/az_ifpack_prec_create.c
 az_ifpack_precon.$(OBJEXT): $(srcdir)/az_ifpack_precon.c
 az_ifpack_iterate.$(OBJEXT): $(srcdir)/az_ifpack_iterate.c
@@ -455,6 +478,7 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/Ifpack_CrsIct.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/Ifpack_CrsRiluk.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/Ifpack_IlukGraph.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/az_ifpack_iterate.Po@am__quote@
@@ -462,6 +486,8 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/az_ifpack_prec_destroy.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/az_ifpack_precon.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/az_ifpack_solve.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/icrout_cholesky_mex.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/icrout_quicksort.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/ifp_BlockMat.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/ifp_BlockVec.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/ifp_DenseMat.Po@am__quote@
@@ -486,6 +512,30 @@ distclean-depend:
 @AMDEP_TRUE@	depfile='$(DEPDIR)/$*.Po' tmpdepfile='$(DEPDIR)/$*.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 	$(COMPILE) -c `cygpath -w $<`
+
+icrout_cholesky_mex.o: $(srcdir)/icrout_cholesky_mex.c
+@AMDEP_TRUE@	source='$(srcdir)/icrout_cholesky_mex.c' object='icrout_cholesky_mex.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/icrout_cholesky_mex.Po' tmpdepfile='$(DEPDIR)/icrout_cholesky_mex.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o icrout_cholesky_mex.o `test -f $(srcdir)/icrout_cholesky_mex.c || echo '$(srcdir)/'`$(srcdir)/icrout_cholesky_mex.c
+
+icrout_cholesky_mex.obj: $(srcdir)/icrout_cholesky_mex.c
+@AMDEP_TRUE@	source='$(srcdir)/icrout_cholesky_mex.c' object='icrout_cholesky_mex.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/icrout_cholesky_mex.Po' tmpdepfile='$(DEPDIR)/icrout_cholesky_mex.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o icrout_cholesky_mex.obj `cygpath -w $(srcdir)/icrout_cholesky_mex.c`
+
+icrout_quicksort.o: $(srcdir)/icrout_quicksort.c
+@AMDEP_TRUE@	source='$(srcdir)/icrout_quicksort.c' object='icrout_quicksort.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/icrout_quicksort.Po' tmpdepfile='$(DEPDIR)/icrout_quicksort.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o icrout_quicksort.o `test -f $(srcdir)/icrout_quicksort.c || echo '$(srcdir)/'`$(srcdir)/icrout_quicksort.c
+
+icrout_quicksort.obj: $(srcdir)/icrout_quicksort.c
+@AMDEP_TRUE@	source='$(srcdir)/icrout_quicksort.c' object='icrout_quicksort.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/icrout_quicksort.Po' tmpdepfile='$(DEPDIR)/icrout_quicksort.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o icrout_quicksort.obj `cygpath -w $(srcdir)/icrout_quicksort.c`
 
 az_ifpack_prec_create.o: $(srcdir)/az_ifpack_prec_create.c
 @AMDEP_TRUE@	source='$(srcdir)/az_ifpack_prec_create.c' object='az_ifpack_prec_create.o' libtool=no @AMDEPBACKSLASH@
@@ -583,6 +633,18 @@ Ifpack_CrsRiluk.obj: $(srcdir)/Ifpack_CrsRiluk.cpp
 @AMDEP_TRUE@	depfile='$(DEPDIR)/Ifpack_CrsRiluk.Po' tmpdepfile='$(DEPDIR)/Ifpack_CrsRiluk.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Ifpack_CrsRiluk.obj `cygpath -w $(srcdir)/Ifpack_CrsRiluk.cpp`
+
+Ifpack_CrsIct.o: $(srcdir)/Ifpack_CrsIct.cpp
+@AMDEP_TRUE@	source='$(srcdir)/Ifpack_CrsIct.cpp' object='Ifpack_CrsIct.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/Ifpack_CrsIct.Po' tmpdepfile='$(DEPDIR)/Ifpack_CrsIct.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Ifpack_CrsIct.o `test -f $(srcdir)/Ifpack_CrsIct.cpp || echo '$(srcdir)/'`$(srcdir)/Ifpack_CrsIct.cpp
+
+Ifpack_CrsIct.obj: $(srcdir)/Ifpack_CrsIct.cpp
+@AMDEP_TRUE@	source='$(srcdir)/Ifpack_CrsIct.cpp' object='Ifpack_CrsIct.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/Ifpack_CrsIct.Po' tmpdepfile='$(DEPDIR)/Ifpack_CrsIct.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Ifpack_CrsIct.obj `cygpath -w $(srcdir)/Ifpack_CrsIct.cpp`
 
 ifp_BlockMat.o: $(srcdir)/ifp_BlockMat.cpp
 @AMDEP_TRUE@	source='$(srcdir)/ifp_BlockMat.cpp' object='ifp_BlockMat.o' libtool=no @AMDEPBACKSLASH@

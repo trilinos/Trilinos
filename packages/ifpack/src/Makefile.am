@@ -118,11 +118,16 @@ endif
 COMP_H = \
 	$(srcdir)/Ifpack_IlukGraph.h \
 	$(srcdir)/Ifpack_CrsRiluk.h \
-	$(srcdir)/Ifpack_ScalingType.h
+	$(srcdir)/Ifpack_ScalingType.h \
+	$(srcdir)/Ifpack_CrsIct.h \
+	$(srcdir)/icrout_cholesky_mex.h
 
 COMP = \
 	$(srcdir)/Ifpack_IlukGraph.cpp \
-	$(srcdir)/Ifpack_CrsRiluk.cpp 
+	$(srcdir)/Ifpack_CrsRiluk.cpp \
+	$(srcdir)/Ifpack_CrsIct.cpp \
+	$(srcdir)/icrout_cholesky_mex.c \
+	$(srcdir)/icrout_quicksort.c
 
 
 # ------------------------------------------------------------------------
