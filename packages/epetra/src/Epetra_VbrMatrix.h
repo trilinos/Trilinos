@@ -1200,6 +1200,15 @@ class Epetra_VbrMatrix : public Epetra_DistObject,
 			int * ElementSizeList,
 			Epetra_SerialDenseMatrix** As,
 			double ** X, double ** Y, int NumVectors) const;
+  //
+  // Assumes Alpha=Beta=1 and works only on storage optimized matrices
+  //
+  void FastBlockRowMultiply(bool TransA, int RowDim, int NumEntries, 
+			    int * BlockIndices, int RowOff,
+			    int * FirstPointInElementList,
+			    int * ElementSizeList,
+			    Epetra_SerialDenseMatrix** As,
+			    double ** X, double ** Y, int NumVectors) const;
 
   int InverseSums(bool DoRows, Epetra_Vector& x) const;
   int Scale(bool DoRows, const Epetra_Vector& x);
@@ -1257,7 +1266,7 @@ class Epetra_VbrMatrix : public Epetra_DistObject,
 	int GeneratePointObjects() const;
 	int BlockMap2PointMap(const Epetra_BlockMap & BlockMap, Epetra_Map * & PointMap) const;
 	int UpdateOperatorXY(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const;
-	
+
   Epetra_CrsGraph * Graph_;
   bool Allocated_;
   bool StaticGraph_;
@@ -1279,7 +1288,9 @@ class Epetra_VbrMatrix : public Epetra_DistObject,
 
   Epetra_SerialDenseMatrix ***Entries_;
 
-  double **All_Values_;
+  double *All_Values_Orig_;
+  double *All_Values_;
+
   mutable double NormInf_;
   mutable double NormOne_;
 

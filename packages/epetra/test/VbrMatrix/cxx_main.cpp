@@ -249,7 +249,7 @@ int checkmultiply( bool transpose, Epetra_VbrMatrix& A, Epetra_MultiVector& X, E
 //		RowMapColMap_VEPR, RowMapColMap_FEPR, RowMapColMap_NEPR, 
 //		WithGraph, CopyConstructor
 //  The matching ConsTypes are:  
-//               VariableEntriesPerRow, RowMapColMap_VEPR, NoEntriesPerRow, RowMapColMap_NEPR
+//               VariableEntriesPerRow, RowMapColMap_VEPR, NoEntriesPerRow, RowMapColMap_NEPR, WithGraph
 //               FixedEntriesPerRow, RowMapColMap_FEPR
 //
 //  TestMatrix() when called with ConsType=WithGraph, returns with PreviousA = 0 ;
@@ -314,6 +314,7 @@ int TestMatrix( Epetra_Comm& Comm, bool verbose, bool debug,
   // Get update list and number of local elements from newly created Map
   int NumGlobalElements = Map.NumGlobalElements();
   int * MyGlobalElements = Map.MyGlobalElements();
+  int * MyLocalElements = Map.PointToElementList();
   bool DistributedGlobal = Map.DistributedGlobal();
 
   // Create an integer vector NumNz that is used to build the Petra Matrix.
@@ -367,6 +368,7 @@ int TestMatrix( Epetra_Comm& Comm, bool verbose, bool debug,
     graph =  new Epetra_CrsGraph( (*PreviousA)->Graph() );
     A = new Epetra_VbrMatrix( Copy, *graph );
     HaveGraph = true; 
+    HaveColMap = true; 
     break; 
   case CopyConstructor:
     A = new Epetra_VbrMatrix( (**PreviousA) );
@@ -380,6 +382,8 @@ int TestMatrix( Epetra_Comm& Comm, bool verbose, bool debug,
   if ( ExtraBlocks ) assert( FixedBlockSize );        // ExtraBlocks is only supported for fixed block sizes
   if ( ExtraBlocks ) assert( ! HaveColMap );          // Matrices constructed with a column map cannot be extended
   if ( FixedNumEntries) assert( FixedBlockSize ) ;   // Can't handle a Fixed Number of Entries and a variable block size
+  if ( insertlocal && HaveGraph ) assert( ! FixedNumEntries ) ;   // HaveGraph assumes the standard matrix shape
+  if ( insertlocal && HaveGraph ) assert( ! ExtraBlocks ) ;   // HaveGraph assumes the standard matrix shape
 
 
   // WORK    Insert/Replace/Suminto  MY should fail here when there is no colmap 
@@ -420,8 +424,24 @@ int TestMatrix( Epetra_Comm& Comm, bool verbose, bool debug,
   int NumMyNonzeros = 0, NumMyEquations = 0;
 
 
+#if 0 
+  cout << " MyLocalElements = " ; for (i=0; i<NumMyElements; i++) cout <<" "<< MyLocalElements[i] ; cout << endl ; 
+  cout << " MyGlobalElements = " ; for (i=0; i<NumMyElements; i++) cout <<" "<< MyGlobalElements[i] ; cout << endl ; 
+  cout << " NumGlobalElements = " << NumGlobalElements << endl ; 
+
+  if ( HaveColMap ) { 
+    cout << " LIDs = " ; for (i=0; i<NumGlobalElements; i++) cout <<" "<< rowmap->LID( i ) ; cout << endl ; 
+    cout << " GIDs = " ; for (i=0; i<NumGlobalElements; i++) cout <<" "<< rowmap->GID( i ) ; cout << endl ; 
+  }
+#endif
+
   for (i=0; i<NumMyElements; i++) {
+    int MyCurRow = MyLocalElements[i];
     int CurRow = MyGlobalElements[i];
+    if ( HaveColMap ) { 
+      assert ( i == rowmap->LID( CurRow ) ) ; 
+      assert ( CurRow == rowmap->GID( i ) ) ; 
+    }
     int RowDim = ElementSizeList[i]-MinSize;
     NumMyEquations += BlockEntries[RowDim][RowDim].M();
 
@@ -468,15 +488,24 @@ int TestMatrix( Epetra_Comm& Comm, bool verbose, bool debug,
 	else ColDims[2] = ElementSizeList[i+1] - MinSize;
       }
     if ( insertlocal ) { 
-      assert( false ) ; 
       for ( int ii=0; ii < NumEntries; ii++ ) 
 	MyIndices[ii] = colmap->LID( Indices[ii] ) ; 
+#if 0
+      cout << "PiD = " << Comm.MyPID() << " Indices = " ;
+      for ( int ii=0; ii < NumEntries; ii++ ) cout << " " << Indices[ii] ; 
+      cout << endl ; 
+      cout << " PiD = " << Comm.MyPID() << " MyIndices = " ;
+      for ( int ii=0; ii < NumEntries; ii++ ) cout << " " << MyIndices[ii] ; 
+      cout << endl ; 
+#endif
+      //      Epetra_MpiComm* MComm = dynamic_cast<Epetra_MpiComm*>( &Comm ) ;
+      //  MComm->SetTracebackMode(1); // This should enable error traceback reporting
       if ( HaveGraph ) {
-	assert( false ) ; // This branch won't be taken 
-	EPETRA_TEST_ERR(!(A->BeginReplaceMyValues(CurRow, NumEntries, MyIndices)==0),ierr);
+	EPETRA_TEST_ERR(!(A->BeginReplaceMyValues(rowmap->LID(CurRow), NumEntries, MyIndices)==0),ierr);
       } else { 
-	EPETRA_TEST_ERR(!(A->BeginInsertMyValues(CurRow, NumEntries, MyIndices)==0),ierr);
+	EPETRA_TEST_ERR(!(A->BeginInsertMyValues(rowmap->LID(CurRow), NumEntries, MyIndices)==0),ierr);
       }
+      //  MComm->SetTracebackMode(0); // This should shut down any error traceback reporting
     } else { 
       if ( HaveGraph ) { 
 	EPETRA_TEST_ERR(!(A->BeginReplaceGlobalValues(CurRow, NumEntries, Indices)==0),ierr);
@@ -564,14 +593,19 @@ int TestMatrix( Epetra_Comm& Comm, bool verbose, bool debug,
   }
 
   // Finish up
-  if ( ! HaveGraph ) 
+  if ( ! HaveGraph && ! insertlocal ) 
     EPETRA_TEST_ERR(!(A->IndicesAreGlobal()),ierr);
   EPETRA_TEST_ERR(!(A->FillComplete()==0),ierr);
   EPETRA_TEST_ERR(!(A->IndicesAreLocal()),ierr);
   EPETRA_TEST_ERR((A->IndicesAreGlobal()),ierr);
   EPETRA_TEST_ERR(A->StorageOptimized(),ierr);
+
   A->OptimizeStorage();
-  EPETRA_TEST_ERR(!(A->StorageOptimized()),ierr);
+  if ( FixedBlockSize ) {
+    EPETRA_TEST_ERR(!(A->StorageOptimized()),ierr);
+  } else { 
+    EPETRA_TEST_ERR(A->StorageOptimized(),ierr);
+  }
   EPETRA_TEST_ERR(A->UpperTriangular(),ierr);
   EPETRA_TEST_ERR(A->LowerTriangular(),ierr);
 
@@ -598,6 +632,7 @@ int TestMatrix( Epetra_Comm& Comm, bool verbose, bool debug,
 
   if ( false && ExtraBlocks ) {
     A->Print( cout ) ; 
+    cout << " NumMyNonzeros = " <<NumMyNonzeros << endl ; 
     cout << " NumGlobalNonzeros = " <<NumGlobalNonzeros << endl ; 
   }
 
@@ -963,12 +998,23 @@ int TestMatrix( Epetra_Comm& Comm, bool verbose, bool debug,
 	if (i==NumMyElements-1) ColDims[2] = MaxSize - MinSize;
 	else ColDims[2] = ElementSizeList[i+1] - MinSize;
       }
-      EPETRA_TEST_ERR(!(A->BeginSumIntoGlobalValues(CurRow, NumEntries, Indices)==0),ierr);
+      if ( insertlocal ) {
+	for ( int ii=0; ii < NumEntries; ii++ ) 
+	  MyIndices[ii] = colmap->LID( Indices[ii] ) ; 
+	EPETRA_TEST_ERR(!(A->BeginSumIntoMyValues( rowmap->LID(CurRow), NumEntries, MyIndices)==0),ierr);
+      } else { 
+	EPETRA_TEST_ERR(!(A->BeginSumIntoGlobalValues(CurRow, NumEntries, Indices)==0),ierr);
+      }
       forierr = 0;
       for (j=0; j < NumEntries; j++) {
 	Epetra_SerialDenseMatrix * AD = &(BlockEntries[RowDim][ColDims[j]]);
 	NumMyNonzeros += AD->M() * AD->N();	  
-	forierr += !(A->SubmitBlockEntry(AD->A(), AD->LDA(), AD->M(), AD->N())==0);
+	//  This has nothing to do with insertlocal, but that is a convenient bool to key on 
+	if ( insertlocal ) {
+	  forierr += !(A->SubmitBlockEntry( *AD )==0);
+	} else { 
+	  forierr += !(A->SubmitBlockEntry(AD->A(), AD->LDA(), AD->M(), AD->N())==0);
+	}
       }
       EPETRA_TEST_ERR(forierr,ierr);
 
@@ -1110,7 +1156,7 @@ int main(int argc, char *argv[])
   bool symmetric = true; 
   bool NonSymmetric = false; 
   bool NoInsertLocal = false ; 
-  bool InsertLocal = false ; 
+  bool InsertLocal = true ; 
 
   Epetra_VbrMatrix* PreviousA = 0 ; 
 
@@ -1133,28 +1179,36 @@ int main(int argc, char *argv[])
 
   ierr = TestMatrix( Comm, verbose, debug, NumMyElements, MinSize, MaxSize, RowMapColMap_NEPR, NoExtraBlocks, NoInsertLocal, symmetric, &PreviousA ); 
 
-
   ierr = TestMatrix( Comm, verbose, debug, NumMyElements, MinSize, MaxSize, RowMapColMap_VEPR, NoExtraBlocks, InsertLocal, symmetric, &PreviousA );
 
   ierr = TestMatrix( Comm, verbose, debug, NumMyElements, MinSize, MaxSize, RowMapColMap_NEPR, NoExtraBlocks, InsertLocal, symmetric, &PreviousA ); 
 
-
   ierr = TestMatrix( Comm, verbose, debug, NumMyElements, MinSize, MaxSize, WithGraph, NoExtraBlocks, NoInsertLocal, symmetric, &PreviousA ); 
   assert ( PreviousA == 0 ) ; 
 
-  ierr = TestMatrix( Comm, verbose, debug, NumMyElements, MinSize, MinSize, FixedEntriesPerRow, NoExtraBlocks, NoInsertLocal, symmetric, &PreviousA );   
-
-  ierr = TestMatrix( Comm, verbose, debug, NumMyElements, MinSize, MinSize, RowMapColMap_FEPR, NoExtraBlocks, NoInsertLocal, symmetric, &PreviousA );   
 
   //
   //  Check some various options
   //
+  ierr = TestMatrix( Comm, verbose, debug, NumMyElements, MinSize, MaxSize, NoEntriesPerRow, NoExtraBlocks, NoInsertLocal, symmetric, &PreviousA ); 
+
+  ierr = TestMatrix( Comm, verbose, debug, NumMyElements, MinSize, MaxSize, RowMapColMap_NEPR, NoExtraBlocks, InsertLocal, symmetric, &PreviousA ); 
+
+  ierr = TestMatrix( Comm, verbose, debug, NumMyElements, MinSize, MaxSize, WithGraph, NoExtraBlocks, InsertLocal, symmetric, &PreviousA ); 
+  assert ( PreviousA == 0 ) ; 
+
+  ierr = TestMatrix( Comm, verbose, debug, NumMyElements, 4, 4, NoEntriesPerRow, NoExtraBlocks, NoInsertLocal, symmetric, &PreviousA ); 
+
+  ierr = TestMatrix( Comm, verbose, debug, NumMyElements, 4, 4, RowMapColMap_NEPR, NoExtraBlocks, InsertLocal, symmetric, &PreviousA ); 
+
+  ierr = TestMatrix( Comm, verbose, debug, NumMyElements, 4, 4, WithGraph, NoExtraBlocks, InsertLocal, symmetric, &PreviousA ); 
+  assert ( PreviousA == 0 ) ; 
 
 
-  ierr = TestMatrix( Comm, verbose, debug, NumMyElements, MinSize, MinSize, VariableEntriesPerRow, ExtraBlocks, NoInsertLocal, symmetric, &PreviousA );
 
-  ierr = TestMatrix( Comm, verbose, debug, NumMyElements, MinSize, MinSize, VariableEntriesPerRow, ExtraBlocks, NoInsertLocal, NonSymmetric, &PreviousA );
+  ierr = TestMatrix( Comm, verbose, debug, NumMyElements, MinSize, MinSize, FixedEntriesPerRow, NoExtraBlocks, NoInsertLocal, symmetric, &PreviousA );   
 
+  ierr = TestMatrix( Comm, verbose, debug, NumMyElements, MinSize, MinSize, RowMapColMap_FEPR, NoExtraBlocks, NoInsertLocal, symmetric, &PreviousA );   
 
   delete PreviousA;
 

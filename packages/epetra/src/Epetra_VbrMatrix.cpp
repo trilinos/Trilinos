@@ -1,4 +1,3 @@
-
 //@HEADER
 // ************************************************************************
 // 
@@ -92,7 +91,6 @@ Epetra_VbrMatrix::Epetra_VbrMatrix(Epetra_DataAccess CV, const Epetra_BlockMap& 
   InitializeDefaults();
   Graph_ = new Epetra_CrsGraph(CV, RowMap, ColMap, NumBlockEntriesPerRow);
   int err = Allocate();
-
   assert( err == 0 );
 }
 
@@ -178,26 +176,79 @@ Epetra_VbrMatrix& Epetra_VbrMatrix::operator=(const Epetra_VbrMatrix& src)
   assert( err == 0 );
 
   int i, j;
-  
+
+#if 0  
+  bool ConstantShape = true;
+  const int NOTSETYET = -13 ; 
+  int MyLda = NOTSETYET ; 
+  int MyColDim = NOTSETYET ; 
+  int MyRowDim = NOTSETYET ; 
+  //  int ierr = Graph_->OptimizeStorage(); // Make sure graph has optimized storage
+  //  if (ierr) EPETRA_CHK_ERR(ierr);
+  //  if ( ierr != 0 ) ConstantShape = false ;   // Do we really need this?
+  assert( ConstantShape ) ; 
   for (i=0; i<NumMyBlockRows_; i++) {
     int NumBlockEntries = NumBlockEntriesPerRow_[i];
     for (j=0; j < NumBlockEntries; j++) {
-      Entries_[i][j] = new Epetra_SerialDenseMatrix(*(src.Entries_[i][j]));
+      Epetra_SerialDenseMatrix* ThisBlock = src.Entries_[i][j];
+      if ( MyLda == NOTSETYET ) {
+	MyLda = ThisBlock->LDA() ; 
+        MyColDim = ThisBlock->ColDim() ; 
+        MyRowDim = ThisBlock->RowDim() ; 
+      } else {
+	if ( MyLda !=  ThisBlock->LDA() ) ConstantShape = false ; 
+	if ( MyRowDim !=  ThisBlock->RowDim() ) ConstantShape = false ; 
+	if ( MyColDim !=  ThisBlock->ColDim() ) ConstantShape = false ; 
+      }
     }
+  }  
+  if ( false &&  ConstantShape ) {
+
+    int NumMyNonzeros = src.Graph_->NumMyNonzeros();
+
+    All_Values_ = new double[NumMyNonzeros];
+    All_Values_Orig_ = All_Values_ ;
+    for (i=0; i<NumMyBlockRows_; i++) {
+      double* Values_ThisBlockRow = All_Values_ ; 
+      int NumBlockEntries = NumBlockEntriesPerRow_[i];
+      for (j=0; j < NumBlockEntries; j++) {
+	double* Values_ThisBlockEntry = All_Values_ ; 
+	Epetra_SerialDenseMatrix* M_SDM = src.Entries_[i][j] ;
+	for ( int kk = 0 ; kk < MyColDim ; kk++ ) { 
+	  for ( int ll = 0 ; ll < MyRowDim ; ll++ ) { 
+	    *All_Values_ = (*M_SDM)(ll,kk); 
+	    All_Values_++ ; 
+	  }
+	}
+	Entries_[i][j] = new Epetra_SerialDenseMatrix(View, Values_ThisBlockEntry,
+						      MyLda, MyRowDim, MyColDim );
+      }
+    }
+  } else { 
+#endif    
+    for (i=0; i<NumMyBlockRows_; i++) {
+      int NumBlockEntries = NumBlockEntriesPerRow_[i];
+      for (j=0; j < NumBlockEntries; j++) {
+	Entries_[i][j] = new Epetra_SerialDenseMatrix(*(src.Entries_[i][j]));
+      }
+#if 0
+    }
+#endif
   }
 
-  if ( src.StorageOptimized() ) OptimizeStorage() ;
-
+  int NewNumMyNonzeros = this->Graph_->NumMyNonzeros();
+  if ( src.StorageOptimized() ) this->OptimizeStorage() ;
+  
   return( *this );
 }
 
 //==============================================================================
 void Epetra_VbrMatrix::InitializeDefaults() { // Initialize all attributes that have trivial default values
 
-  StorageOptimized_ = false ;
   UseTranspose_ = false;
   Entries_ = 0;
   All_Values_ = 0;
+  All_Values_Orig_ = 0;
   NormInf_ = -1.0;
   NormOne_ = -1.0;
   ImportVector_ = 0;
@@ -238,6 +289,7 @@ void Epetra_VbrMatrix::InitializeDefaults() { // Initialize all attributes that 
   OperatorDomainMap_ = 0;
   OperatorRangeMap_ = 0;
   HavePointObjects_ = false;
+  StorageOptimized_ = false ; 
   
   OperatorX_ = 0;
   OperatorY_ = 0;
@@ -290,38 +342,46 @@ void Epetra_VbrMatrix::DeleteMemory()
 {
   int i;
 
+  // cout << __FILE__ << " " << __LINE__ << endl ; 
+
   for (i=0; i<NumMyBlockRows_; i++) {
     int NumAllocatedBlockEntries = NumAllocatedBlockEntriesPerRow_[i];
     
+  // cout << __FILE__ << " " << __LINE__ << endl ; 
     if (NumAllocatedBlockEntries >0) {
-      if (All_Values_!=0) delete [] All_Values_[i];
-      else {
-	for (int j=0; j < NumAllocatedBlockEntries; j++) {
-	  if (Entries_[i][j]!=0) {
-	    delete Entries_[i][j];
-	  }
+  
+      // cout << __FILE__ << " i=" << i << " linje =" << __LINE__ << endl ; 
+      for (int j=0; j < NumAllocatedBlockEntries; j++) {
+	if (Entries_[i][j]!=0) {
+	  delete Entries_[i][j];
 	}
       }
       delete [] Entries_[i];
     }
   }
 
-  if (All_Values_!=0)   delete [] All_Values_;
-  All_Values_ = NULL;
+  // cout << __FILE__ << " " << __LINE__ << endl ; 
+  if (All_Values_Orig_!=0)   delete [] All_Values_Orig_;
+  All_Values_Orig_ = 0;
 
+  // cout << __FILE__ << " " << __LINE__ << endl ; 
   if (Entries_!=0)       delete [] Entries_;
-  Entries_ = NULL;
+  Entries_ = 0;
 
+  // cout << __FILE__ << " " << __LINE__ << endl ; 
   if (ImportVector_!=0) delete ImportVector_;
-  ImportVector_ = NULL;
+  ImportVector_ = 0;
 
+  // cout << __FILE__ << " " << __LINE__ << endl ; 
   NumMyBlockRows_ = 0;
 
+  // cout << __FILE__ << " " << __LINE__ << endl ; 
   if (LenTemps_>0) {
     delete [] TempRowDims_;
     delete [] TempEntries_;
   }
 
+  // cout << __FILE__ << " " << __LINE__ << endl ; 
   // Delete any objects related to supporting the RowMatrix and Operator interfaces
   if (HavePointObjects_) {
 #if 1
@@ -339,15 +399,20 @@ void Epetra_VbrMatrix::DeleteMemory()
     HavePointObjects_ = false;
   }
 	
+  // cout << __FILE__ << " " << __LINE__ << endl ; 
   if (OperatorX_!=0) {
     delete OperatorX_;
     delete OperatorY_;
   }
 
+  // cout << __FILE__ << " " << __LINE__ << endl ; 
   InitializeDefaults(); // Reset all basic pointers to zero
   Allocated_ = false;
 
+  // cout << __FILE__ << " " << __LINE__ << endl ; 
   if (!StaticGraph())   delete Graph_; // We created the graph, so must delete it.
+  // cout << __FILE__ << " " << __LINE__ << endl ; 
+
 }
 
 //==============================================================================
@@ -394,10 +459,10 @@ int Epetra_VbrMatrix::BeginInsertGlobalValues(int BlockRow, int NumBlockEntries,
 
   if (IndicesAreLocal()) EPETRA_CHK_ERR(-2); // Cannot insert global values into local graph
   Graph_->SetIndicesAreGlobal(true);
-  BlockRow = LRID(BlockRow); // Find local row number for this global row index
+  int LocalBlockRow = LRID(BlockRow); // Find local row number for this global row index
   
   bool IndicesAreLocal = false;
-  EPETRA_CHK_ERR(BeginInsertValues(BlockRow, NumBlockEntries, BlockIndices, IndicesAreLocal));
+  EPETRA_CHK_ERR(BeginInsertValues(LocalBlockRow, NumBlockEntries, BlockIndices, IndicesAreLocal));
   return(0);
 }
 
@@ -405,7 +470,7 @@ int Epetra_VbrMatrix::BeginInsertGlobalValues(int BlockRow, int NumBlockEntries,
 int Epetra_VbrMatrix::BeginInsertMyValues(int  BlockRow, int NumBlockEntries,
 					  int * BlockIndices)
 {
-  if (IndicesAreGlobal()) EPETRA_CHK_ERR(-2); // Cannot insert global values into filled graph
+  if (IndicesAreGlobal()) EPETRA_CHK_ERR(-2); // Cannot insert local values until MakeIndicesLocal() is called either directly or through FillComplete()
   Graph_->SetIndicesAreLocal(true);
   bool IndicesAreLocal = true;
   EPETRA_CHK_ERR(BeginInsertValues(BlockRow, NumBlockEntries, BlockIndices, IndicesAreLocal));
@@ -421,7 +486,9 @@ int Epetra_VbrMatrix::BeginInsertValues(int BlockRow, int NumBlockEntries,
 
   int ierr = 0;
 
-  if (BlockRow < 0 || BlockRow >= NumMyBlockRows_) EPETRA_CHK_ERR(-1); // Not in BlockRow range    
+  if (BlockRow < 0 || BlockRow >= NumMyBlockRows_) {
+    EPETRA_CHK_ERR(-1); // Not in BlockRow range    
+  }
   if (CV_==View && Entries_[BlockRow]!=0) ierr = 2; // This row has be defined already. Issue warning.    
   if (IndicesAreContiguous()) EPETRA_CHK_ERR(-3); // Indices cannot be individually deleted and new
 
@@ -838,15 +905,81 @@ int Epetra_VbrMatrix::MergeRedundantEntries()
 //==========================================================================
 int Epetra_VbrMatrix::OptimizeStorage() {
 
+  if (StorageOptimized()) return(0); // Have we been here before?
 
-  StorageOptimized_ = true; 
+  // cout << __FILE__ << " " << __LINE__ << " " << Graph_->NumMyNonzeros() << endl ; 
+
+  bool ConstantShape = true;
+  int i,j;
+  const int NOTSETYET = -13 ; 
+  int MyLda = NOTSETYET ; 
+  int MyColDim = NOTSETYET ; 
+  int MyRowDim = NOTSETYET ; 
+  //
+  //  I don't know why the underlying graph musthave optimized storage, but 
+  //  the test for optimized storage depends upon the graph hainvg optimized 
+  //  storage and that is enough for me.  
+  //
+  //  Ideally, we would like to have optimized storage for the graph.  But, 
+  //  for now, this is commented out until bug 1097 is fixed
+  //
+  //  int ierr = Graph_->OptimizeStorage(); // Make sure graph has optimized storage
+  //  if (ierr) EPETRA_CHK_ERR(ierr);
+  //  if ( ierr != 0 ) ConstantShape = false ; 
+  if( ConstantShape ) {
+    for (i=0; i<NumMyBlockRows_; i++) {
+      int NumBlockEntries = NumBlockEntriesPerRow_[i];
+      for (j=0; j < NumBlockEntries; j++) {
+	Epetra_SerialDenseMatrix* ThisBlock = Entries_[i][j];
+	if ( MyLda == NOTSETYET ) {
+	  MyLda = ThisBlock->LDA() ; 
+	  MyColDim = ThisBlock->ColDim() ; 
+	  MyRowDim = ThisBlock->RowDim() ; 
+	} else {
+	  if ( MyLda !=  ThisBlock->LDA() ) ConstantShape = false ; 
+	  if ( MyRowDim !=  ThisBlock->RowDim() ) ConstantShape = false ; 
+	  if ( MyColDim !=  ThisBlock->ColDim() ) ConstantShape = false ; 
+	}
+      }
+    }    
+  }  
+  // cout << __FILE__ << " " << __LINE__ << " " << Graph_->NumMyNonzeros() << endl ; 
+
+  if ( ConstantShape ) {
+
+    int NumMyNonzeros = Graph_->NumMyNonzeros();
+    All_Values_ = new double[NumMyNonzeros];
+    All_Values_Orig_ = All_Values_ ;
+    for (i=0; i<NumMyBlockRows_; i++) {
+      double* Values_ThisBlockRow = All_Values_ ; 
+      int NumBlockEntries = NumBlockEntriesPerRow_[i];
+      for (j=0; j < NumBlockEntries; j++) {
+	double* Values_ThisBlockEntry = All_Values_ ; 
+	Epetra_SerialDenseMatrix* M_SDM = Entries_[i][j] ;
+	for ( int kk = 0 ; kk < MyColDim ; kk++ ) { 
+	  for ( int ll = 0 ; ll < MyRowDim ; ll++ ) { 
+	    *All_Values_ = (*M_SDM)(ll,kk) ;
+	    All_Values_++ ; 
+	  }
+	}
+	//	Entries_[i][j] = new Epetra_SerialDenseMatrix(*(src.Entries_[i][j]));
+	delete Entries_[i][j]; 
+	Entries_[i][j] = new Epetra_SerialDenseMatrix(View, Values_ThisBlockEntry,
+						      MyLda, MyRowDim, MyColDim );
+      }
+    }
+    StorageOptimized_ = true ; 
+  }
+
+  // cout << __FILE__ << " " << __LINE__ << " " << Graph_->NumMyNonzeros() << endl ; 
+
+
   /* Work on later...
      int i, j;
 
      // The purpose of this routine is to make the block entries in each row contiguous in memory
      // so that a single call to GEMV or GEMM call be used to compute an entire block row.
 
-     if (StorageOptimized()) return(0); // Have we been here before?
 
      bool Contiguous = true; // Assume contiguous is true
      for (i=1; i<NumMyBlockRows_; i++){
@@ -864,7 +997,7 @@ int Epetra_VbrMatrix::OptimizeStorage() {
      // NOTE:  At the end of the above loop set, there is a possibility that NumEntries and NumAllocatedEntries
      //        for the last row could be different, but I don't think it matters.
 
-
+     
      if ((CV_==View) && !Contiguous) EPETRA_CHK_ERR(-1);  // This is user data, it's not contiguous and we can't make it so.
 
      int ierr = Graph_->OptimizeStorage(); // Make sure graph has optimized storage
@@ -889,6 +1022,7 @@ int Epetra_VbrMatrix::OptimizeStorage() {
      tmp += NumEntries;
      }
   */
+  // cout << __FILE__ << " " << __LINE__ << " " << Graph_->NumMyNonzeros() << endl ; 
   return(0);
 }
 //==========================================================================
@@ -1413,8 +1547,6 @@ int Epetra_VbrMatrix::Multiply1(bool TransA, const Epetra_Vector& x, Epetra_Vect
 	GEMV('N', RowDim, ColDim, 1.0, A, LDA, curx, 1.0, cury);			
       }
     }
-
-
     if (Exporter()!=0) {
       yref.PutScalar(0.0);
       EPETRA_CHK_ERR(yref.Export(*ExportVector_, *Exporter(), Add)); // Fill y with Values from export vector
@@ -1476,12 +1608,12 @@ int Epetra_VbrMatrix::Multiply1(bool TransA, const Epetra_Vector& x, Epetra_Vect
     // Handle case of rangemap being a local replicated map
     if (!Graph().DomainMap().DistributedGlobal() && Comm().NumProc()>1) EPETRA_CHK_ERR(yref.Reduce());
   }
-  
+
   if (x_and_y_same == true) {
     y = *ytemp;
     delete ytemp;
   }
-
+  
   UpdateFlops(2*NumGlobalNonzeros());
   return(0);
 }
@@ -1557,15 +1689,115 @@ int Epetra_VbrMatrix::Multiply(bool TransA, const Epetra_MultiVector& X, Epetra_
     }
 
     // Do actual computation
-    for (i=0; i < NumMyBlockRows_; i++) {
-      int      NumEntries = *NumBlockEntriesPerRow++;
-      int *    BlockRowIndices = *Indices++;
-      Epetra_SerialDenseMatrix** BlockRowValues  = *Entries++;
-      int  yoff = *RowFirstPointInElementList++;
-      int RowDim = *RowElementSizeList++;
-      BlockRowMultiply(TransA, RowDim, NumEntries, BlockRowIndices, yoff, 
-		       ColFirstPointInElementList, ColElementSizeList, 
-		       BlockRowValues, Xp, Yp, NumVectors);
+    if ( All_Values_ != 0 ) { // Contiguous Storage 
+      if ( ! TransA && *RowElementSizeList <= 3 ) { 
+
+	int RowDim = *RowElementSizeList ;
+	int RowDimSquared = RowDim * RowDim ; 
+
+	Epetra_SerialDenseMatrix* Asub = **Entries;
+	double *A = Asub->A_ ;
+
+	if ( false && NumVectors == 1 ) { 
+	  double * xptr = Xp[0];
+	  double * yptr = Yp[0];
+
+	  for (i=0; i < NumMyBlockRows_; i++) {
+	    int      NumEntries = *NumBlockEntriesPerRow++;
+	    int *    BlockRowIndices = *Indices++;
+	  
+	    double y0 = 0.0;
+	    double y1 = 0.0;
+	    for (int j=0; j < NumEntries; ++j) {
+	      
+	      int xoff = ColFirstPointInElementList[*BlockRowIndices++];
+	      
+	      y0 += A[0]*xptr[xoff] + A[2]*xptr[xoff+1];
+	      y1 += A[1]*xptr[xoff] + A[3]*xptr[xoff+1];
+	      A += RowDimSquared ;
+	    }
+	    int  yoff = *RowFirstPointInElementList++;
+	    yptr[yoff] = y0;
+	    yptr[yoff+1] = y1;
+	  }
+	} else { // NumVectors != 1 
+	  double *OrigA = A ; 
+	  for (i=0; i < NumMyBlockRows_; i++) {
+	    int      NumEntries = *NumBlockEntriesPerRow++;
+	    int  yoff = *RowFirstPointInElementList++;
+	    int *    BRI = *Indices++;
+	  
+	    for (int k=0; k<NumVectors; k++) {
+	      int *    BlockRowIndices = BRI;
+	      A = OrigA ; 
+	      double * xptr = Xp[k];
+	      double y0 = 0.0;
+	      double y1 = 0.0;
+	      double y2 = 0.0;
+	      for (int j=0; j < NumEntries; ++j) {
+		
+		int xoff = ColFirstPointInElementList[*BlockRowIndices++];
+
+		switch(RowDim) {
+		case 1:
+
+		  y0 += A[0]*xptr[xoff];
+		  break;
+
+		case 2:
+		  y0 += A[0]*xptr[xoff] + A[2]*xptr[xoff+1];
+		  y1 += A[1]*xptr[xoff] + A[3]*xptr[xoff+1];
+		  break;
+		  
+		case 3:
+		  y0 += A[0]*xptr[xoff+0] + A[3]*xptr[xoff+1] + A[6]*xptr[xoff+2];
+		  y1 += A[1]*xptr[xoff+0] + A[4]*xptr[xoff+1] + A[7]*xptr[xoff+2];
+		  y2 += A[2]*xptr[xoff+0] + A[5]*xptr[xoff+1] + A[8]*xptr[xoff+2];
+		  break;
+		default:
+		  assert(false);
+		}
+
+		A += RowDimSquared ;
+	      }
+	      switch(RowDim) {
+	      case 3:
+		*(Yp[k]+yoff+2) = y2;
+	      case 2:
+		*(Yp[k]+yoff+1) = y1;
+	      case 1:
+		*(Yp[k]+yoff) = y0;
+	      }
+	    }
+	    OrigA = A ; 
+	  }
+	} // end else NumVectors != 1 
+
+      } else {  
+	
+	for (i=0; i < NumMyBlockRows_; i++) {
+	  int      NumEntries = *NumBlockEntriesPerRow++;
+	  int *    BlockRowIndices = *Indices++;
+	  Epetra_SerialDenseMatrix** BlockRowValues  = *Entries++;
+	  int  yoff = *RowFirstPointInElementList++;
+	  int RowDim = *RowElementSizeList++;
+	  
+	  FastBlockRowMultiply(TransA, RowDim, NumEntries, BlockRowIndices, yoff, 
+			       ColFirstPointInElementList, ColElementSizeList, 
+			       BlockRowValues, Xp, Yp, NumVectors);
+	}
+      }
+    } else { 
+      for (i=0; i < NumMyBlockRows_; i++) {
+	int      NumEntries = *NumBlockEntriesPerRow++;
+	int *    BlockRowIndices = *Indices++;
+	Epetra_SerialDenseMatrix** BlockRowValues  = *Entries++;
+	int  yoff = *RowFirstPointInElementList++;
+	int RowDim = *RowElementSizeList++;
+	BlockRowMultiply(TransA, RowDim, NumEntries, BlockRowIndices, yoff, 
+			 ColFirstPointInElementList, ColElementSizeList, 
+			 BlockRowValues, Xp, Yp, NumVectors);
+      }
     }
 
     if (Exporter()!=0) {
@@ -1610,16 +1842,29 @@ int Epetra_VbrMatrix::Multiply(bool TransA, const Epetra_MultiVector& X, Epetra_
       Yref.PutScalar(0.0); // Zero y values
 
     // Do actual computation
-    
-    for (i=0; i < NumMyBlockRows_; i++) {
-      int      NumEntries = *NumBlockEntriesPerRow++;
-      int *    BlockRowIndices = *Indices++;
-      Epetra_SerialDenseMatrix** BlockRowValues  = *Entries++;
-      int  xoff = *ColFirstPointInElementList++;
-      int RowDim = *ColElementSizeList++;
-      BlockRowMultiply(TransA, RowDim, NumEntries, BlockRowIndices, xoff, 
-		       RowFirstPointInElementList, RowElementSizeList, 
-		       BlockRowValues, Xp, Yp, NumVectors);
+
+    if ( All_Values_ != 0 ) { // Contiguous Storage 
+      for (i=0; i < NumMyBlockRows_; i++) {
+	int      NumEntries = *NumBlockEntriesPerRow++;
+	int *    BlockRowIndices = *Indices++;
+	Epetra_SerialDenseMatrix** BlockRowValues  = *Entries++;
+	int  xoff = *ColFirstPointInElementList++;
+	int RowDim = *ColElementSizeList++;
+	FastBlockRowMultiply(TransA, RowDim, NumEntries, BlockRowIndices, xoff, 
+			 RowFirstPointInElementList, RowElementSizeList, 
+			 BlockRowValues, Xp, Yp, NumVectors);
+      }
+    } else {
+      for (i=0; i < NumMyBlockRows_; i++) {
+	int      NumEntries = *NumBlockEntriesPerRow++;
+	int *    BlockRowIndices = *Indices++;
+	Epetra_SerialDenseMatrix** BlockRowValues  = *Entries++;
+	int  xoff = *ColFirstPointInElementList++;
+	int RowDim = *ColElementSizeList++;
+	BlockRowMultiply(TransA, RowDim, NumEntries, BlockRowIndices, xoff, 
+			 RowFirstPointInElementList, RowElementSizeList, 
+			 BlockRowValues, Xp, Yp, NumVectors);
+      }
     }
 
     if (Importer()!=0) {
@@ -1693,6 +1938,161 @@ void Epetra_VbrMatrix::BlockRowMultiply(bool TransA,
   return;
 }
 //=============================================================================
+void Epetra_VbrMatrix::FastBlockRowMultiply(bool TransA,
+	int RowDim,
+	int NumEntries, 
+	int * BlockRowIndices,
+	int yoff,
+	int * ColFirstPointInElementList,
+	int * ColElementSizeList,
+	Epetra_SerialDenseMatrix** BlockRowValues,
+	double ** Xp,
+	double ** Yp,
+	int NumVectors) const
+{
+  int j, k;
+  if (!TransA) {
+    for (k=0; k<NumVectors; k++) {
+      double * y = Yp[k] + yoff;
+      double * xptr = Xp[k];
+
+      Epetra_SerialDenseMatrix* Asub = BlockRowValues[0];
+      double *OrigA = Asub->A_;
+      int LDA = Asub->LDA_;
+      int OrigBlockIndex = BlockRowIndices[0];
+      int ColDim = ColElementSizeList[OrigBlockIndex];
+ 
+      assert( RowDim == ColDim ) ; 
+      assert( RowDim == LDA ) ; 
+      double y0 = y[0];
+      double y1 = y[0];
+      double *A = OrigA ;
+      
+      switch(RowDim) {
+      case 1:
+	for (j=0; j < NumEntries; ++j) {
+	  
+	  int BlockIndex = BlockRowIndices[j];
+	  int xoff = ColFirstPointInElementList[BlockIndex];
+	  
+	  double *A = OrigA + j * ColDim * LDA  ;
+	  double *x = xptr + xoff;
+	  y[0] += A[0]*x[0];
+	}//end for (j
+	break;
+	
+      case 2:
+	for (j=0; j < NumEntries; ++j) {
+	  
+	  int BlockIndex = BlockRowIndices[j];
+	  int xoff = ColFirstPointInElementList[BlockIndex];
+	  
+	  y0 += A[0]*xptr[xoff] + A[2]*xptr[xoff+1];
+	  y1 += A[1]*xptr[xoff] + A[3]*xptr[xoff+1];
+	  A += ColDim * LDA  ;
+	}
+	y[0] = y0;
+	y[1] = y1;
+	break;
+	
+      case 3:
+	for (j=0; j < NumEntries; ++j) {
+	    
+	  int BlockIndex = BlockRowIndices[j];
+	  int xoff = ColFirstPointInElementList[BlockIndex];
+	    
+	  double *A = OrigA + j * ColDim * LDA  ;
+	  double *x = xptr + xoff;
+	  y[0] += A[0]*x[0] + A[3]*x[1] + A[6]*x[2];
+	  y[1] += A[1]*x[0] + A[4]*x[1] + A[7]*x[2];
+	  y[2] += A[2]*x[0] + A[5]*x[1] + A[8]*x[2];
+	}
+	break;
+
+      case 4:
+	for (j=0; j < NumEntries; ++j) {
+	    
+	  int BlockIndex = BlockRowIndices[j];
+	  int xoff = ColFirstPointInElementList[BlockIndex];
+	    
+	  double *A = OrigA + j * ColDim * LDA  ;
+	  double *x = xptr + xoff;
+	  y[0] += A[0]*x[0] + A[4]*x[1] + A[8]*x[2] + A[12]*x[3];
+	  y[1] += A[1]*x[0] + A[5]*x[1] + A[9]*x[2] + A[13]*x[3];
+	  y[2] += A[2]*x[0] + A[6]*x[1] + A[10]*x[2] + A[14]*x[3];
+	  y[3] += A[3]*x[0] + A[7]*x[1] + A[11]*x[2] + A[15]*x[3];
+	}
+	break;
+
+      case 5:
+	for (j=0; j < NumEntries; ++j) {
+	    
+	  int BlockIndex = BlockRowIndices[j];
+	  int xoff = ColFirstPointInElementList[BlockIndex];
+	    
+	  double *A = OrigA + j * ColDim * LDA  ;
+	  double *x = xptr + xoff;
+	  y[0] += A[0]*x[0] + A[5]*x[1] + A[10]*x[2] + A[15]*x[3] + A[20]*x[4];
+	  y[1] += A[1]*x[0] + A[6]*x[1] + A[11]*x[2] + A[16]*x[3] + A[21]*x[4];
+	  y[2] += A[2]*x[0] + A[7]*x[1] + A[12]*x[2] + A[17]*x[3] + A[22]*x[4];
+	  y[3] += A[3]*x[0] + A[8]*x[1] + A[13]*x[2] + A[18]*x[3] + A[23]*x[4];
+	  y[4] += A[4]*x[0] + A[9]*x[1] + A[14]*x[2] + A[19]*x[3] + A[24]*x[4];
+	}
+	break;
+
+      case 6:
+	for (j=0; j < NumEntries; ++j) {
+	    
+	  int BlockIndex = BlockRowIndices[j];
+	  int xoff = ColFirstPointInElementList[BlockIndex];
+	    
+	  double *A = OrigA + j * ColDim * LDA  ;
+	  double *x = xptr + xoff;
+	  y[0] += A[0]*x[0] + A[6]*x[1] + A[12]*x[2] + A[18]*x[3] + A[24]*x[4]
+	    + A[30]*x[5];
+	  y[1] += A[1]*x[0] + A[7]*x[1] + A[13]*x[2] + A[19]*x[3] + A[25]*x[4]
+	    + A[31]*x[5];
+	  y[2] += A[2]*x[0] + A[8]*x[1] + A[14]*x[2] + A[20]*x[3] + A[26]*x[4]
+	    + A[32]*x[5];
+	  y[3] += A[3]*x[0] + A[9]*x[1] + A[15]*x[2] + A[21]*x[3] + A[27]*x[4]
+	    + A[33]*x[5];
+	  y[4] += A[4]*x[0] + A[10]*x[1] + A[16]*x[2] + A[22]*x[3] + A[28]*x[4]
+	    + A[34]*x[5];
+	  y[5] += A[5]*x[0] + A[11]*x[1] + A[17]*x[2] + A[23]*x[3] + A[29]*x[4]
+	    + A[35]*x[5];
+	}
+	break;
+
+      default:
+	for (j=0; j < NumEntries; ++j) {
+	    
+	  int BlockIndex = BlockRowIndices[j];
+	  int xoff = ColFirstPointInElementList[BlockIndex];
+	    
+	  double *A = OrigA + j * ColDim * LDA  ;
+	  double *x = xptr + xoff;
+	  GEMV('N', RowDim, ColDim, 1.0, A, LDA, x, 1.0, y);
+	}
+      }//end switch
+
+    }//end for (k
+  }
+  else { //TransA == true
+    for (j=0; j < NumEntries; j++) {
+      double * A = BlockRowValues[j]->A();
+      int LDA = BlockRowValues[j]->LDA();
+      int BlockIndex = BlockRowIndices[j];
+      int Yyoff = ColFirstPointInElementList[BlockIndex];
+      int ColDim = ColElementSizeList[BlockIndex];
+      for (k=0; k<NumVectors; k++) {
+	double * x = Xp[k] + yoff;
+	double * y = Yp[k] + Yyoff;
+	GEMV('T', RowDim, ColDim, 1.0, A, LDA, x, 1.0, y);
+      }
+    }
+  }
+
+}
 void Epetra_VbrMatrix::BlockRowMultiply(bool TransA,
 					int RowDim,
 					int NumEntries, 
@@ -1982,7 +2382,7 @@ int Epetra_VbrMatrix::InverseSums(bool DoRows, Epetra_Vector& x) const {
 
   if (!DoRows) {
     if (Importer()!=0){
-      Epetra_Vector  *x_blocked = NULL;
+      Epetra_Vector  *x_blocked = 0;
       if(hasOperatorMap)
         x_blocked = new Epetra_Vector( ::View, DoRows ? Graph().RangeMap() : Graph().DomainMap(), &x[0] );
       else
@@ -2121,7 +2521,7 @@ int Epetra_VbrMatrix::Scale(bool DoRows, const Epetra_Vector& x) {
 //=============================================================================
 double Epetra_VbrMatrix::NormInf() const {
 
-  //  if (NormInf_>-1.0) return(NormInf_);    Temporarily disabled until bug #1104 is resolved 
+  //  if (NormInf_>-1.0) return(NormInf_);
 
   if (!Filled()) EPETRA_CHK_ERR(-1); // Matrix must be filled.
 
