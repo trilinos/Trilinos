@@ -42,7 +42,9 @@ using namespace NOX;
 using namespace NOX::LineSearch;
 
 NonlinearCG::NonlinearCG(const NOX::Utils& u, Parameter::List& params) :
-  utils(u)
+  utils(u),
+  vecPtr(0),
+  grpPtr(0)
 {
   reset(params);
 }
