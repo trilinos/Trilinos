@@ -1000,7 +1000,7 @@ void ML_2matmult(ML_Operator *Mat1, ML_Operator *Mat2,
    else Mat1Mat2comm = Mat1Mat2;
 
    if (matrix_type == ML_CSR_MATRIX)
-     ML_back_to_csrlocal(Mat1Mat2, Result, max_per_proc);
+     ML_back_to_csrlocal(Mat1Mat2comm, Result, max_per_proc);
    else if (matrix_type == ML_MSR_MATRIX) {
      if (Mat1Mat2->invec_leng != Mat1Mat2->outvec_leng) 
        pr_error("ML_2matmult: MSR format only valid for square matrices.\n");
