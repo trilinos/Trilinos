@@ -90,7 +90,8 @@ echo `uname -a` >>& $file
 ## List the subdirectories of 'test' containing test exe's in the foreach loop
 ## if directory structure is like that of epetra.
 set tests_lapack = 
-set tests_epetra = (NOX_NewTest NOX_Vector NOX_Group LOCA_NewTest LOCA_Group)
+set tests_epetra = (NOX_NewTest NOX_Vector NOX_Group 1Dfem \
+                    LOCA_NewTest LOCA_Group)
 set tests_petsc = 
 
 foreach h (lapack epetra petsc)
