@@ -24,9 +24,9 @@ extern "C" {
 #include <limits.h>
 #include <float.h>
 #include <string.h>
-#include "zoltan_mem.h"
 
 #ifdef HTEST
+#include "rp_mem.h"
 typedef struct
   {
   int Debug_Level;

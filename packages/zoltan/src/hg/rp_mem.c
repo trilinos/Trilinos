@@ -22,7 +22,7 @@ extern "C" {
 #include <stdlib.h>
 #include <malloc.h>
 #include <string.h>
-#include "zoltan_mem.h"
+#include "rp_mem.h"
 
 #ifdef __STDC__
 #include <stdarg.h>
