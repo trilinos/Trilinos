@@ -311,18 +311,26 @@ static int rcb_fn(
   double weight[RB_MAX_WGTS];       /* weight for current set */
   double weightlo[RB_MAX_WGTS];     /* weight of lower side of cut */
   double weighthi[RB_MAX_WGTS];     /* weight of upper side of cut */
-  double fraclo[RB_MAX_WGTS];       /* desired wt in lower half */
+  double weightlo_best[RB_MAX_WGTS];     /* temp weightlo */
+  double weighthi_best[RB_MAX_WGTS];     /* temp weighthi */
+  double fraclo[RB_MAX_WGTS];       /* desired weight in lower half */
   int *dotlist = NULL;              /* list of dots used only in find_median;
                                        allocated above find_median for 
                                        better efficiency (don't necessarily
                                        have to realloc for each find_median).*/
   int lock_direction = 0;           /* flag to determine direction after first
                                        iteration */
+  int one_cut_dir= 0;               /* try only one cut direction */
   int level;                        /* recursion level of RCB for preset_dir */
   int *dim_spec = NULL;             /* specified direction for preset_dir */
   int fp;                           /* first partition assigned to this proc */
   int np;                           /* number of parts assigned to this proc */
   int wgtdim;                       /* max(wgtflag,1) */
+  int breakflag;                    /* flag for exiting loop */
+  int *dotmark0 = NULL;             /* temp dotmark array */
+  int *dotmark_best = NULL;         /* temp dotmark array */
+  int valuehalf_best;               /* temp valuehalf */
+  int dim_best= -1;                 /* best cut dimension  */
   char msg[128];                    /* buffer for error messages */
 
   /* MPI data types and user functions */
@@ -616,57 +624,111 @@ static int rcb_fn(
       }
     }
 
-    /* copy correct coordinate value into the temporary array */
+    /* try all cut directions and pick best one. */
+    breakflag= 0;
+    one_cut_dir = (wgtflag<=1) || lock_direction || preset_dir;
+    if (!one_cut_dir){
+      if (!(dotmark0 = (int *) ZOLTAN_MALLOC(dotmax*sizeof(int)))
+       || !(dotmark_best = (int *) ZOLTAN_MALLOC(dotmax*sizeof(int))))
+        ZOLTAN_PRINT_ERROR(proc, yo, "Memory error.");
+        ierr = ZOLTAN_MEMERR;
+        goto End;
+      for (j=0; j<dotnum; j++)
+        dotmark0[j] = dotmark[j];
+    }
 
-    dim = cut_dimension(lock_direction, treept, partmid, 
+    for (dim=0; dim<3; dim++){
+
+      /* One cut direction only */
+      if (one_cut_dir){
+        dim = cut_dimension(lock_direction, treept, partmid, 
                         preset_dir, dim_spec, &level, rcbbox);
-    dotpt = rcb->Dots;
-    for (i = 0; i < dotnum; i++) {
-      coord[i] = dotpt[i].X[dim];
+        breakflag= 1;
+      }
+      else {
+        /* Restore original dotmark array. */
+        for (j=0; j<dotnum; j++)
+          dotmark[j] = dotmark0[j];
+      }
+
+      /* copy correct coordinate value into the temporary array */
+      dotpt = rcb->Dots;
+      for (i = 0; i < dotnum; i++) {
+        coord[i] = dotpt[i].X[dim];
+        for (j=0; j<wgtflag; j++){
+          wgts[i*wgtflag+j] = dotpt[i].Weight[j];
+        }
+      }
+  
+      /* determine if there is a first guess to use */
+      /* The test on old_nparts is for the TFLOPS_SPECIAL flag */
+      if (old_nparts > 1 && reuse && dim == treept[partmid].dim) {
+        if (stats) counters[5]++;
+        valuehalf = treept[partmid].cut;
+        first_guess = 1;
+      }
+      else first_guess = 0;
+  
+      if (stats || (zz->Debug_Level >= ZOLTAN_DEBUG_ATIME)) 
+        time2 = Zoltan_Time(zz->Timer);
+  
+      if (wgtflag <= 1){
+        if (!Zoltan_RB_find_median(
+               zz->Tflops_Special, coord, wgts, dotmark, dotnum, proc, 
+               fraclo[0], local_comm, &valuehalf, first_guess, &(counters[0]),
+               nprocs, old_nprocs, proclower, old_nparts, 
+               wgtflag, rcbbox->lo[dim], rcbbox->hi[dim], 
+               weight[0], weightlo, weighthi,
+               dotlist, rectilinear_blocks)) {
+          ZOLTAN_PRINT_ERROR(proc, yo,"Error returned from Zoltan_RB_find_median.");
+          ierr = ZOLTAN_FATAL;
+          goto End;
+        }
+      }
+      else { 
+        if (Zoltan_RB_find_bisector(
+               zz, zz->Tflops_Special, coord, wgts, dotmark, dotnum, 
+               wgtflag, mcnorm, fraclo, local_comm, 
+               &valuehalf, first_guess, counters,
+               old_nprocs, proclower, old_nparts, 
+               rcbbox->lo[dim], rcbbox->hi[dim], 
+               weight, weightlo, weighthi,
+               dotlist, rectilinear_blocks, obj_wgt_comp)
+          != ZOLTAN_OK) {
+          ZOLTAN_PRINT_ERROR(proc, yo,"Error returned from Zoltan_RB_find_bisector.");
+          ierr = ZOLTAN_FATAL;
+          goto End;
+        }
+        /* test for better balance */
+        /* EBEB For now, simulate old code!! */
+        if (dim == cut_dimension(lock_direction, treept, partmid, 
+                        preset_dir, dim_spec, &level, rcbbox)){
+          dim_best = dim;
+          for (j=0; j<wgtflag; j++){
+            weightlo_best[j] = weightlo[j];
+            weighthi_best[j] = weighthi[j];
+          }
+          for (j=0; j<dotnum; j++)
+            dotmark_best[j] = dotmark[j];
+          valuehalf_best = valuehalf;
+        }
+      }
+      if (breakflag) break; /* if one_cut_dir is true */
+    }
+
+    if (!one_cut_dir){
+      /* We have tried all cut directions. Restore best result. */
+      dim = dim_best;
       for (j=0; j<wgtflag; j++){
-        wgts[i*wgtflag+j] = dotpt[i].Weight[j];
+        weightlo[j] = weightlo_best[j];
+        weighthi[j] = weighthi_best[j];
       }
-    }
-
-    /* determine if there is a first guess to use */
-    /* The test on old_nparts is for the TFLOPS_SPECIAL flag */
-    if (old_nparts > 1 && reuse && dim == treept[partmid].dim) {
-      if (stats) counters[5]++;
-      valuehalf = treept[partmid].cut;
-      first_guess = 1;
-    }
-    else first_guess = 0;
-
-    if (stats || (zz->Debug_Level >= ZOLTAN_DEBUG_ATIME)) 
-      time2 = Zoltan_Time(zz->Timer);
-
-    if (wgtflag <= 1){
-      if (!Zoltan_RB_find_median(
-             zz->Tflops_Special, coord, wgts, dotmark, dotnum, proc, 
-             fraclo[0], local_comm, &valuehalf, first_guess, &(counters[0]),
-             nprocs, old_nprocs, proclower, old_nparts, 
-             wgtflag, rcbbox->lo[dim], rcbbox->hi[dim], 
-             weight[0], weightlo, weighthi,
-             dotlist, rectilinear_blocks)) {
-        ZOLTAN_PRINT_ERROR(proc, yo,"Error returned from Zoltan_RB_find_median.");
-        ierr = ZOLTAN_FATAL;
-        goto End;
-      }
-    }
-    else { 
-      if (Zoltan_RB_find_bisector(
-             zz, zz->Tflops_Special, coord, wgts, dotmark, dotnum, 
-             wgtflag, mcnorm, fraclo, local_comm, 
-             &valuehalf, first_guess, counters,
-             old_nprocs, proclower, old_nparts, 
-             rcbbox->lo[dim], rcbbox->hi[dim], 
-             weight, weightlo, weighthi,
-             dotlist, rectilinear_blocks, obj_wgt_comp)
-        != ZOLTAN_OK) {
-        ZOLTAN_PRINT_ERROR(proc, yo,"Error returned from Zoltan_RB_find_bisector.");
-        ierr = ZOLTAN_FATAL;
-        goto End;
-      }
+      for (j=0; j<dotnum; j++)
+        dotmark[j] = dotmark_best[j];
+      valuehalf = valuehalf_best;
+      /* free temp data (EBEB: reuse for serial_rcb?) */
+      ZOLTAN_FREE(&dotmark0);
+      ZOLTAN_FREE(&dotmark_best);
     }
 
     if (set)    /* set weight for current partition */
@@ -932,6 +994,8 @@ End:
   ZOLTAN_FREE(&dotmark);
   ZOLTAN_FREE(&dotlist);
   if (preset_dir) ZOLTAN_FREE(&dim_spec);
+  if (dotmark0) ZOLTAN_FREE(&dotmark0);
+  if (dotmark_best) ZOLTAN_FREE(&dotmark_best);
 
   if (!reuse && !gen_tree) {
     /* Free all memory used. */
