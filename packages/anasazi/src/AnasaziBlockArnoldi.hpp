@@ -1147,7 +1147,11 @@ void BlockArnoldi<TYPE>::ComputeResiduals( bool apply ) {
 	//		
 	TYPE _scalefactor = sub_block_h.getfronorm();
 	_schurerror = sub_block_b2.getfronorm()/_scalefactor;
-        for (i=0; i<_nevtemp ; i++) {
+	//
+	// ------------>  NOT SURE IF RITZRESIDUALS CAN BE UPDATED AFTER DEFLATION!
+	//
+        //for (i=0; i<_nevtemp ; i++) {
+        for (i=_defblock*_block; i<_nevtemp ; i++) {
         	AnasaziDenseMatrix<TYPE> s(sub_block_b,0,i,_block,1);
                 TYPE *ptr_s=s.getarray();
                 _ritzresiduals[i] = blas.NRM2(_block, ptr_s)/_scalefactor;
@@ -1157,13 +1161,14 @@ void BlockArnoldi<TYPE>::ComputeResiduals( bool apply ) {
 	//
 	if (apply) {	
 		//
-		// Update the Krylov basis.
+		// Update the Krylov basis.  Take into account that deflated blocks
+		// need not be updated.
 		//	
 		int *index = new int[ n ]; assert(index);
 		for (i = 0; i < n; i++ ) {
 			index[i] = i;
 		}
-		AnasaziDenseMatrix<TYPE> Qnev(Q,n,_nevtemp);
+		AnasaziDenseMatrix<TYPE> Qnev(Q, n, _nevtemp);
 		AnasaziMultiVec<TYPE>* basistemp = _basisvecs->CloneView( index, _nevtemp );
 		AnasaziMultiVec<TYPE>* basistemp2 = _basisvecs->CloneCopy( index, n );
 		basistemp->MvTimesMatAddMv ( one, *basistemp2, Qnev, zero );
@@ -1295,28 +1300,37 @@ void BlockArnoldi<TYPE>::Restart() {
 	}
 	_basisvecs->SetBlock( *F_vec, index, _block);
 	//
-	//  Orthogonalize the first _nevblock blocks of vectors
-	//
-	//for (i=0; i<_nevtemp; i++) {
-	//	index[i] = i;
-	//}
-	//AnasaziMultiVec<TYPE>* U_vec = _basisvecs->CloneView(index, _nevtemp);
-	//assert(U_vec);
-	//AnasaziDenseMatrix<TYPE> G10(_nevtemp,_nevtemp);
-	//QRFactorization( *U_vec, G10 );
-	//
 	//  Check for blocks to deflate
 	//
-	std::cout<<"Deflating blocks with eigenvalue residuals below : "<<_def_tol<<std::endl;
-	for (i=_defblock; i<_nevblock; i++) {
+	i = _defblock;
+	while ( i<_nevblock ) {
 		defcnt = 0;
 		for (j=0; j<_block; j++) {
 			if (_ritzresiduals[i*_block+j] < _def_tol ) { defcnt++; }
 		}
 		if (defcnt == _block) {
-			std::cout<<"We can deflate a block!"<<std::endl;
+			_defblock++;
 		}
+		i++;
 	}		
+	//
+	//  If there are blocks to deflate, we need to set the subdiagonal entries to zero
+	//
+	if (_defblock > 0) {
+		if (_debuglevel > 2) {
+			std::cout<<"Deflating blocks with eigenvalue residuals below : "<<_def_tol<<std::endl;
+			std::cout<<"Number of blocks being deflated : "<<_defblock<<std::endl;
+		}
+		TYPE zero = 0.0;
+		AnasaziDenseMatrix<TYPE> Hj_temp(*_hessmatrix, _nevtemp, 0, _block, _defblock*_block);
+		TYPE *ptr_hj = Hj_temp.getarray();
+		int ld_hj = Hj_temp.getld();
+		for (i=0; i<_block; i++) {
+		    for (j=0; j<_defblock*_block; j++) {
+			ptr_hj[j*ld_hj + i] = zero;
+		    }
+		}
+	}
 	//
 	//  Reset the pointer.
 	//
@@ -1325,7 +1339,6 @@ void BlockArnoldi<TYPE>::Restart() {
 	//  Clean up
 	//
 	delete F_vec;
-	//delete U_vec;
 	delete [] index;
 }
 
