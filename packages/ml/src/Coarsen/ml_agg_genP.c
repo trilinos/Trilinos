@@ -12,13 +12,14 @@
 /* ******************************************************************** */
 /* ******************************************************************** */
 
-#include "ml_include.h"
-#include "ml_agg_genP.h"
 #include <math.h>
+#include "ml_include.h"
+#include "ml_op_utils.h"
+#include "ml_agg_genP.h"
 
-int ML_AGG_Amat_Getrows(void *data, int N_requested_rows, 
-   int requested_rows[], int allocated_space, int columns[], 
-   double values[], int row_lengths[]);
+extern int ML_AGG_Amat_Getrows(void *data, int N_requested_rows, 
+               int requested_rows[], int allocated_space, int columns[], 
+               double values[], int row_lengths[]);
 
 /* ******************************************************************** */
 /* wrapper function as smoother                                         */
