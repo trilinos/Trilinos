@@ -1,4 +1,3 @@
-
 //@HEADER
 // ************************************************************************
 // 
@@ -126,6 +125,26 @@ namespace Kokkos {
     */
     int initializeStructure(OrdinalType numRows, OrdinalType numCols, bool isRowOriented,
 			    OrdinalType * profile, OrdinalType ** indx);
+ 
+    //! Initialize structure of matrix (Generalized Harwell-Boeing Format)
+    /*!
+      This interface supports matrices that are stored in the classical Harwell-Boeing format.
+      \param values (In)  An array of pointers to arrays of matrix values. values[[i][0] contains the first entry of the ith row
+      (if isRowOriented is true) or ith column (if isRowOriented is false).
+      \return Integer error code, set to 0 if successful.
+    */
+    int initializeValues(ScalarType ** values);
+ 
+    //@}
+
+    //@{ \name Abstract Kokkos::CisMatrix Interface Initialization Methods
+ 
+    //! Initialize structure of matrix (using Kokkos::CisMatrix interface)
+    /*!
+      This interface supports matrices that implement the Kokkos::CisMatrix matrix interface.
+      \return Integer error code, set to 0 if successful.
+    */
+    int initializeStructure(CisMatrix<OrdinalType, ScalarType> const& A);
  
     //! Initialize structure of matrix (Generalized Harwell-Boeing Format)
     /*!
