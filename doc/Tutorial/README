@@ -1,0 +1,7 @@
+All tutorial files are now contained in the DIDASKO package,
+located in Trilinos/packages/didasko.
+
+The PDF document is located in
+        Trilinos/packages/didasko/doc/tutorial.pdf
+and the examples in
+        Trilinos/packages/didasko/examples.
