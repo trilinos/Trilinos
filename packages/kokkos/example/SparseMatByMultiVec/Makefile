@@ -1,12 +1,15 @@
-FFLAGS = -O3
-LD = f77 -O3
-#FFLAGS = -g -O0
-#LD = g77 -g -O0
-#FC=g77
+
+FC=g77
+FFLAGS = -O5 -funroll-all-loops -malign-double
+
+#CFLAGS = -DWALL
+
+LD = g77 -O5 -funroll-all-loops -malign-double
+
 LIBS = 
 
 OBJS= tsploops.o csrcsc.o  scscrd.o scscmm1.o scscmm2a.o scsrmm1.o scsrmm2a.o \
-      snrm2.o srelerr.o swaxpy.o second_sparc.o
+      snrm2.o srelerr.o swaxpy.o timer.o
 
 TARGET=tsploops
 

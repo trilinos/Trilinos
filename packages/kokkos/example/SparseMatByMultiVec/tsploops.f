@@ -198,7 +198,7 @@ c     -----------------------
 C           soln(i) = 1.0
  15     continue
 
-      ntrials = max(10,min(mod(n*nrhs,1000),10))
+      ntrials = max(20,min(mod(n*nrhs,1000),10))
       fnops = 2.0 * float(nrhs)  * float(nnz) * float(ntrials)
 c
 c     *********************
