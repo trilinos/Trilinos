@@ -3,7 +3,7 @@
 namespace Tpetra {
 
     string Tpetra_Version() {
-        return("Tpetra Version 0.1 - Not yet publicly released");
+        return("Tpetra Version 1.0 - Not yet publicly released");
     }
 
 } // namespace Tpetra

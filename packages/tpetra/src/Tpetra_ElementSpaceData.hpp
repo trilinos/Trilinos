@@ -1,6 +1,8 @@
 #ifndef _TPETRA_ELEMENTSPACEDATA_HPP_
 #define _TPETRA_ELEMENTSPACEDATA_HPP_
 
+#include <Teuchos_OrdinalTraits.hpp>
+
 namespace Tpetra {
 
 template<typename OrdinalType>
@@ -31,12 +33,13 @@ class ElementSpaceData : public Object {
 		, maxMyGID_(maxMyGID)
 		, minAllGID_(minAllGID)
 		, maxAllGID_(maxAllGID)
+		, zero_(Teuchos::OrdinalTraits<OrdinalType>::zero())
 		, contiguous_(contiguous)
 		, global_(checkGlobalness())
 		, lgMap_(lgMap)
 		, glMap_(glMap)
 		, myGlobalElements_(0)
-		, Directory_(0) 
+		, Directory_(0)
 		{};
 
 	~ElementSpaceData() {
@@ -66,6 +69,7 @@ class ElementSpaceData : public Object {
 	OrdinalType const maxMyGID_;
 	OrdinalType const minAllGID_;
 	OrdinalType const maxAllGID_;
+	OrdinalType const zero_;
 	bool const contiguous_;
 	bool const global_;
   map<OrdinalType, OrdinalType> lgMap_;

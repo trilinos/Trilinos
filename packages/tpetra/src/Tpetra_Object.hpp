@@ -2,9 +2,8 @@
 #define _TPETRA_OBJECT_HPP_
 
 #include "Tpetra_ConfigDefs.hpp"
-#include "Teuchos_CombineMode.hpp"
-#include "Teuchos_DataAccess.hpp"
-//#include "Tpetra_ReportError.hpp"
+#include <Teuchos_CombineMode.hpp>
+#include <Teuchos_DataAccess.hpp>
 
 namespace Tpetra
 {
@@ -44,7 +43,7 @@ class Object
   
   //@{ \name Attribute set/get methods.
 
-  //! Object Label definition using char *.
+  //! Object Label definition using char*.
   /*! Defines the label used to describe the \e this object.  
   */
   virtual void setLabel(const char* const label);

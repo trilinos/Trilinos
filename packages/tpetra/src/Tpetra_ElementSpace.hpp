@@ -394,8 +394,8 @@ void ElementSpace<OrdinalType>::getMyGlobalElements(OrdinalType* elementList) co
       elementList[i] = minMyGID + i;
 	}
   else { // not contiguous
-    map<OrdinalType, OrdinalType>::iterator lgi = ElementSpaceData_->lgMap_.begin();
-    map<OrdinalType, OrdinalType>::iterator lgmax = ElementSpaceData_->lgMap_.end();
+    typename std::map<OrdinalType, OrdinalType>::iterator lgi = ElementSpaceData_->lgMap_.begin();
+    typename std::map<OrdinalType, OrdinalType>::iterator lgmax = ElementSpaceData_->lgMap_.end();
     for(OrdinalType i = 0; lgi != lgmax; i++) {
       elementList[i] = lgi->second;
       lgi++;

@@ -39,7 +39,7 @@
 # This must be the first line in configure.ac.
 # Optional 3rd argument is email address for bugs.
 
-AC_INIT(tpetra, 0.1, pmsext@software.sandia.gov)
+AC_INIT(tpetra, 1.0, pmsext@software.sandia.gov)
 
 # Hello World!
 echo "----------------------------------------"
@@ -85,12 +85,6 @@ AM_INIT_AUTOMAKE(1.6.3)
 
 AC_PREREQ(2.57)
 
-#  #np# - can eliminate compiler checks below if your package does not use the
-#         language corresponding to the check.  Please note that if you use
-#	  F77_FUNC to determine Fortran name mangling, you should not remove
-#	  the Fortran compiler check or the check for Fortran flags.  Doing
-#	  so will prevent the detection of the proper name mangling in some
-#	  cases.
 # ------------------------------------------------------------------------
 # Checks for programs
 # ------------------------------------------------------------------------
@@ -106,13 +100,6 @@ AC_PROG_RANLIB
 
 TAC_ARG_CONFIG_MPI
 
-# ------------------------------------------------------------------------
-# Checks for extra flags
-# #np# - You can pull flag checks for languages not used in package.  Please 
-#	  note that if you use F77_FUNC to determine Fortran name mangling, 
-#	  you should not remove the Fortran compiler check or the check for 
-#	  Fortran flags.  Doing so will prevent the detection of the proper 
-#	  name mangling in some cases.
 # ------------------------------------------------------------------------
 # Check if --with-flags present, prepend any specs to FLAGS
 
@@ -133,9 +120,8 @@ TAC_ARG_WITH_AR
 # ------------------------------------------------------------------------
 TAC_ARG_CHECK_MPI
 
-#  #np# - Customize the checks for headers needed in package being added.
-#NOTE: This section still needs to be updated for new_package, it is still 
-# code from Epetra
+#NOTE: This section still needs to be updated for Tpetra, it is still 
+# code from Epetra (via new_package)
 # ------------------------------------------------------------------------
 # Checks for header files - used in Epetra_ConfigDefs.h 
 # ------------------------------------------------------------------------
@@ -202,26 +188,6 @@ AC_CXX_STD_SPRINTF
 # Checks for special package flags
 # ------------------------------------------------------------------------
 
-#
-#  #np# - These options are specific to Epetra and are left only as examples.
-#         If uncommented, the following lines would define HAVE_FATAL_MESSAGES
-#         in the (package)_config.h file.  Developers should use a 
-#         more specific name such as 'new_package-fatal_messages', rather
-#         than 'fatal_messages'.
-#TAC_ARG_ENABLE_OPTION(fatal_messages, [enable printing of fatal error messages], 
-#                   FATAL_MESSAGES, yes)
-#TAC_ARG_ENABLE_OPTION(warning_messages, [enable printing of warning error messages], 
-#                   WARNING_MESSAGES, no)
-#TAC_ARG_ENABLE_OPTION(format_io, [Use package-defined IO formatting for output], 
-#                   FORMAT_IO, yes)
-
-#  #np# - These are specific to Epetra and are left only as examples.
-#         If uncommented, the following line would define HAVE_ZOLTAN in
-#         the (package)_config.h file.  Developers should use a more
-#         specific name such as 'new_package-zoltan', rather than 'zoltan'.
-# TAC_ARG_WITH_PACKAGE(zoltan, [Enable Zoltan interface support], ZOLTAN, no)
-# TAC_ARG_WITH_PACKAGE(rtop, [Enable RTOp interface support], RTOP, no)
-
 # ------------------------------------------------------------------------
 # Checks if tests and examples should be built
 # ------------------------------------------------------------------------
@@ -241,8 +207,6 @@ TAC_ARG_WITH_LIBDIRS
 # enable use of --with-incdirs="-Lincdir1 -Lincdir2 ..." to prepend to CPPFLAGS
 TAC_ARG_WITH_INCDIRS
 
-# #np# - Yet another opportunity to remove code if you aren't
-# using Fortran
 # Define F77_FUNC that will be used to link with Fortran subroutines, e.g., BLAS/LAPACK - trash WORKGXX 
 AC_F77_WRAPPERS
 
@@ -250,17 +214,9 @@ AC_F77_WRAPPERS
 # Checks for libraries
 # ------------------------------------------------------------------------
 
-# #np# - 
-# To add any libraries that you want to check for, replace pow below 
-# with the name of an entry point in that library.
-# checks for libraries now
 dnl Replace `main' with a function in -lm:
-#  #np# These lines can be removed if the math lib is not needed.
 AC_SEARCH_LIBS(pow,[m],,AC_MSG_ERROR(Cannot find math library))
 AC_SEARCH_LIBS(sqrt,[m],,AC_MSG_ERROR(Cannot find math library))
-
-# #np# If Lapack is also needed, see the  
-# configure.ac file for epetra (Trilinos/packages/epetra)
 
 dnl Check for user-specified names for BLAS lib
 TAC_ARG_WITH_BLASLIB
@@ -278,33 +234,6 @@ TAC_ARG_WITH_BLASLIB
 
 # Determine libraries needed for linking with Fortran
 AC_F77_LIBRARY_LDFLAGS
-
-
-#  ----------------------------------------------------
-#  Needs this because Dec handles templates differently
-#  ----------------------------------------------------
-#  #np# - Only uncomment the following lines if the package
-#         creates a subdirectory called cxx_repository for
-#         template object files on DEC.  (HINT: try to build on 
-#         DEC/CPLANT and see if template-related errors occur)
-
-# -- DEC CXX --
-#case $target in
-#  alpha*)
-#    if test $CXX = cxx; then
-#      TRILINOS_TEMPLATE_OBJS="cxx_repository/*.o"
-#    fi
-#  ;;
-#esac
-
-#AC_MSG_CHECKING([for template-specific object files to be linked])
-#if test "X$TRILINOS_TEMPLATE_OBJS" = "X"; then
-# AC_MSG_RESULT(none)
-#else
-# AC_MSG_RESULT($TRILINOS_TEMPLATE_OBJS)
-#fi
-
-#AC_SUBST(TRILINOS_TEMPLATE_OBJS)
 
 # ------------------------------------------------------------------------
 # Checks for library functions
@@ -324,9 +253,6 @@ AC_SUBST(ac_aux_dir)
 # ------------------------------------------------------------------------
 # Output files
 # ------------------------------------------------------------------------
-##
-#  #np# - Most packages should have an example and a full suite 
-#  of tests.  New package comes only with src and example.
 #  You will need to change AC_CONFIG_FILES below and Makefile.am
 #  to add a new directory.
 AC_CONFIG_FILES([
