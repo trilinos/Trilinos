@@ -16,7 +16,6 @@
 #endif
 #include "ml_aztec_utils.h"
 #include "ml_memory.h"
-#include "ml_utils.h"
 #ifdef ML_WITH_EPETRA
 #include "az_blas_wrappers.h"
 #endif
@@ -997,7 +996,7 @@ int az_wrap_solvers(void *data, int in, double x[], int out,
                     double rhs[])
 {
    struct aztec_context *context;
-   int    *data_org, i, n, n2, one = 1;
+   int    *data_org, i, n, n2;
    double *p2, alpha = 1.; 
    double temp, *global_rhs, *global_x, *orig_x = NULL;
 
@@ -1041,7 +1040,7 @@ int az_wrap_solvers(void *data, int in, double x[], int out,
       context->Prec->prec_function(p2,context->options,
                                     context->proc_config,context->params,
                                     context->Amat, context->Prec);
-      MLFORTRAN(daxpy)(&n,&alpha, p2, &one, x, &one);
+      for (i = 0; i < n; i++)	x[i] += alpha*p2[i];
    }
    else {
       AZ_oldsolve(p2,rhs,context->options,context->params, 
@@ -2575,8 +2574,14 @@ void AZ_block_matvec(double *x, double *y, AZ_MATRIX *Amat,
 
 #else
 
-/* to satisfy the requirement of certain compilers */
-int ML_emptyjunk;
+int AZ_get_MSR_arrays(ML_Operator *Amat, int **bindx, double **val)
+{
+  ML_avoid_unused_param( (void *) Amat);
+  ML_avoid_unused_param( (void *) bindx);
+  ML_avoid_unused_param( (void *) val);
+  printf("AZ_get_MSR_arrays: Aztec Not linked in\n");
+  return -1;
+}
 
 #endif
 

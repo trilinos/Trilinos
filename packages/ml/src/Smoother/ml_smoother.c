@@ -55,7 +55,6 @@
 #include "ml_smoother.h"
 #include "ml_lapack.h"
 #include "ml_utils.h"
-#include "ml_aztec_utils.h"
 
 #ifdef out
 /* ************************************************************************* */
@@ -436,9 +435,7 @@ int ML_Smoother_Jacobi(void *sm,int inlen,double x[],int outlen,double rhs[])
    if (comm->ML_mypid == 0)
      printf("       entering: |diag| = %e\n", res_norm);
 #endif
-
-   for (j = 0; j < smooth_ptr->ntimes; j++) 
-   {
+   for (j = 0; j < smooth_ptr->ntimes; j++) {
       ML_Operator_Apply(Amat, n, x, n, res);
       for (i = 0; i < n; i++) res[i] = rhs[i] - res[i];
 #ifdef ML_DEBUG_SMOOTHER

@@ -51,7 +51,6 @@ extern int **global_mapping = NULL, global_nrows, global_ncoarse;
 /* Constructor                                                               */
 /* ------------------------------------------------------------------------- */
 
-#include "ml_aztec_utils.h"
 int ML_Aggregate_Create( ML_Aggregate **ag )
 {
    ML_memory_alloc( (void **) ag, sizeof(ML_Aggregate), "AG1" );

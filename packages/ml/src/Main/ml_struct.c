@@ -18,7 +18,6 @@
 #include "ml_amg_genP.h"
 #include "ml_smoother.h"
 #include "ml_op_utils.h"
-#include "ml_aztec_utils.h"
 #ifdef ML_MPI
 #include "mpi.h"
 #endif

@@ -112,7 +112,6 @@ extern void AZ_mlcomm2data_org(ML_CommInfoOP *comm_info,int *data_org[]);
 extern void AZ_set_ML_preconditioner(AZ_PRECOND **Precond, AZ_MATRIX *Amat,
 				ML *ml_handle, int options[]);
 
-extern int AZ_get_MSR_arrays(ML_Operator *, int **bindx, double **val);
 
 extern int az_comm_wrapper(double vector[], void *data);
 extern int az_wrap_ml_comm(double vector[], AZ_MATRIX *Amat);
