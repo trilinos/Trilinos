@@ -342,9 +342,12 @@ int Epetra_MapColoring::CheckSizes(const Epetra_SrcDistObject& Source) {
 }
 
 //=========================================================================
-int Epetra_MapColoring::CopyAndPermute(const Epetra_SrcDistObject& Source, int NumSameIDs, 
-				       int NumPermuteIDs, int * PermuteToLIDs, 
-				       int *PermuteFromLIDs) {
+int Epetra_MapColoring::CopyAndPermute(const Epetra_SrcDistObject& Source,
+                                       int NumSameIDs, 
+				       int NumPermuteIDs,
+                                       int * PermuteToLIDs, 
+				       int *PermuteFromLIDs,
+                                       const Epetra_OffsetIndex * Indexor) {
 
   const Epetra_MapColoring & A = dynamic_cast<const Epetra_MapColoring &>(Source);
 
@@ -366,11 +369,15 @@ int Epetra_MapColoring::CopyAndPermute(const Epetra_SrcDistObject& Source, int N
 }
 
 //=========================================================================
-int Epetra_MapColoring::PackAndPrepare(const Epetra_SrcDistObject & Source, int NumExportIDs, int * ExportLIDs,
-				      int Nsend, int Nrecv,
-				      int & LenExports, char * & Exports, int & LenImports, 
-				      char * & Imports, 
-				      int & SizeOfPacket, Epetra_Distributor & Distor) {
+int Epetra_MapColoring::PackAndPrepare(const Epetra_SrcDistObject & Source,
+                                       int NumExportIDs,
+                                       int * ExportLIDs,
+				       int & LenExports,
+                                       char * & Exports,
+				       int & SizeOfPacket,
+				       int * Sizes,
+				       bool & VarSizes,
+                                       Epetra_Distributor & Distor) {
 
 
 
@@ -380,22 +387,14 @@ int Epetra_MapColoring::PackAndPrepare(const Epetra_SrcDistObject & Source, int 
   int * IntExports = 0;
   int * IntImports = 0;
 
-  if (Nsend>LenExports) {
+  SizeOfPacket = sizeof(int); 
+
+  if (NumExportIDs*SizeOfPacket>LenExports) {
     if (LenExports>0) delete [] Exports;
-    LenExports = Nsend;
+    LenExports = NumExportIDs*SizeOfPacket;
     IntExports = new int[LenExports];
     Exports = (char *) IntExports;
   }
-
-
-  if (Nrecv>LenImports) {
-    if (LenImports>0) delete [] Imports;
-    LenImports = Nrecv;
-    IntImports = new int[LenImports];
-    Imports = (char *) IntImports;
-  }
-
-  SizeOfPacket = sizeof(int); 
 
   int * ptr;
 
@@ -409,10 +408,14 @@ int Epetra_MapColoring::PackAndPrepare(const Epetra_SrcDistObject & Source, int 
 
 //=========================================================================
 int Epetra_MapColoring::UnpackAndCombine(const Epetra_SrcDistObject & Source,
-					 int NumImportIDs, int * ImportLIDs, 
-					char * Imports, int & SizeOfPacket, 
+					 int NumImportIDs,
+                                         int * ImportLIDs, 
+                                         int LenImports,
+					 char * Imports,
+                                         int & SizeOfPacket, 
 					 Epetra_Distributor & Distor, 
-					 Epetra_CombineMode CombineMode ) {
+					 Epetra_CombineMode CombineMode,
+                                         const Epetra_OffsetIndex * Indexor ) {
   int j;
   
   if(    CombineMode != Add

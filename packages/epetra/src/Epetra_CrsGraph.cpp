@@ -39,6 +39,7 @@
 #include "Epetra_RowMatrix.h"
 #include "Epetra_IntSerialDenseVector.h"
 #include "Epetra_SerialDenseVector.h"
+#include "Epetra_OffsetIndex.h"
 
 //==============================================================================
 Epetra_CrsGraph::Epetra_CrsGraph(Epetra_DataAccess CV, const Epetra_BlockMap& RowMap, int* NumIndicesPerRow) 
@@ -1067,18 +1068,19 @@ int Epetra_CrsGraph::CopyAndPermute(const Epetra_SrcDistObject& Source,
 				    int NumSameIDs, 
 				    int NumPermuteIDs, 
 				    int* PermuteToLIDs,
-				    int* PermuteFromLIDs) 
+				    int* PermuteFromLIDs,
+                                    const Epetra_OffsetIndex * Indexor)
 { 
   try {
     const Epetra_CrsGraph& A = dynamic_cast<const Epetra_CrsGraph&>(Source);
     EPETRA_CHK_ERR(CopyAndPermuteCrsGraph(A, NumSameIDs, NumPermuteIDs, PermuteToLIDs,
-					  PermuteFromLIDs));
+					  PermuteFromLIDs,Indexor));
   }
   catch(...) {
     try {
       const Epetra_RowMatrix& A = dynamic_cast<const Epetra_RowMatrix&>(Source);
       EPETRA_CHK_ERR(CopyAndPermuteRowMatrix(A, NumSameIDs, NumPermuteIDs, PermuteToLIDs,
-					     PermuteFromLIDs));
+					     PermuteFromLIDs,Indexor));
     }
     catch(...) {
       EPETRA_CHK_ERR(-1); // Incompatible SrcDistObject
@@ -1093,7 +1095,8 @@ int Epetra_CrsGraph::CopyAndPermuteRowMatrix(const Epetra_RowMatrix& A,
 					     int NumSameIDs, 
 					     int NumPermuteIDs, 
 					     int* PermuteToLIDs,
-					     int* PermuteFromLIDs)
+					     int* PermuteFromLIDs,
+                                             const Epetra_OffsetIndex * Indexor)
 {
   int i;
   int j;
@@ -1120,8 +1123,7 @@ int Epetra_CrsGraph::CopyAndPermuteRowMatrix(const Epetra_RowMatrix& A,
       Indices[j] = ColMap.GID(Indices[j]); // convert to GIDs
     // Place into target graph.  
     int ierr = InsertGlobalIndices(ToRow, NumIndices, Indices.Values());
-    if(ierr < 0)
-      EPETRA_CHK_ERR(ierr);
+    if(ierr < 0) EPETRA_CHK_ERR(ierr);
   }
   
   // Do local permutation next
@@ -1132,8 +1134,7 @@ int Epetra_CrsGraph::CopyAndPermuteRowMatrix(const Epetra_RowMatrix& A,
     for(j = 0; j < NumIndices; j++) 
       Indices[j] = ColMap.GID(Indices[j]); // convert to GIDs
     int ierr = InsertGlobalIndices(ToRow, NumIndices, Indices.Values()); // Place into target graph.
-    if(ierr < 0) 
-      EPETRA_CHK_ERR(ierr);
+    if(ierr < 0) EPETRA_CHK_ERR(ierr);
   }
   
   return(0);
@@ -1144,7 +1145,8 @@ int Epetra_CrsGraph::CopyAndPermuteCrsGraph(const Epetra_CrsGraph& A,
 					    int NumSameIDs, 
 					    int NumPermuteIDs, 
 					    int* PermuteToLIDs,
-					    int* PermuteFromLIDs) 
+					    int* PermuteFromLIDs,
+                                            const Epetra_OffsetIndex * Indexor)
 {
   int i;
   int Row;
@@ -1163,22 +1165,20 @@ int Epetra_CrsGraph::CopyAndPermuteCrsGraph(const Epetra_CrsGraph& A,
   if(NumSameIDs > 0) {
     if(A.IndicesAreLocal()) {
       for(i = 0; i < NumSameIDs; i++) {
-	Row = GRID(i);
-	EPETRA_CHK_ERR(A.ExtractGlobalRowCopy(Row, MaxNumIndices, NumIndices, Indices));
-	// Place into target graph.  
-	int ierr = InsertGlobalIndices(Row, NumIndices, Indices); 
-	if(ierr < 0) 
-	  EPETRA_CHK_ERR(ierr); 
+        Row = GRID(i);
+        EPETRA_CHK_ERR(A.ExtractGlobalRowCopy(Row, MaxNumIndices, NumIndices, Indices));
+        // Place into target graph.  
+        int ierr = InsertGlobalIndices(Row, NumIndices, Indices); 
+        if(ierr < 0) EPETRA_CHK_ERR(ierr); 
       }
     }
     else { // A.IndiceAreGlobal()
       for(i = 0; i < NumSameIDs; i++) {
-	Row = GRID(i);
-	EPETRA_CHK_ERR(A.ExtractGlobalRowView(Row, NumIndices, Indices)); // Set pointer	
-	// Place into target graph.
-	int ierr = InsertGlobalIndices(Row, NumIndices, Indices); 
-	if(ierr < 0) 
-	  EPETRA_CHK_ERR(ierr); 
+        Row = GRID(i);
+        EPETRA_CHK_ERR(A.ExtractGlobalRowView(Row, NumIndices, Indices));
+        // Place into target graph.  
+        int ierr = InsertGlobalIndices(Row, NumIndices, Indices); 
+        if(ierr < 0) EPETRA_CHK_ERR(ierr); 
       }
     }	
   }
@@ -1187,24 +1187,22 @@ int Epetra_CrsGraph::CopyAndPermuteCrsGraph(const Epetra_CrsGraph& A,
   if(NumPermuteIDs > 0) {
     if(A.IndicesAreLocal()) {
       for(i = 0; i < NumPermuteIDs; i++) {
-	FromRow = A.GRID(PermuteFromLIDs[i]);
-	ToRow = GRID(PermuteToLIDs[i]);
-	EPETRA_CHK_ERR(A.ExtractGlobalRowCopy(FromRow, MaxNumIndices, NumIndices, Indices));
-	// Place into target graph.
-	int ierr = InsertGlobalIndices(ToRow, NumIndices, Indices); 
-	if (ierr < 0) 
-	  EPETRA_CHK_ERR(ierr); 
+        FromRow = A.GRID(PermuteFromLIDs[i]);
+        ToRow = GRID(PermuteToLIDs[i]);
+        EPETRA_CHK_ERR(A.ExtractGlobalRowCopy(FromRow, MaxNumIndices, NumIndices, Indices));
+        // Place into target graph.
+        int ierr = InsertGlobalIndices(ToRow, NumIndices, Indices); 
+        if (ierr < 0) EPETRA_CHK_ERR(ierr); 
       }
     }
     else { // A.IndiceAreGlobal()
       for(i = 0; i < NumPermuteIDs; i++) {
-	FromRow = A.GRID(PermuteFromLIDs[i]);
-	ToRow = GRID(PermuteToLIDs[i]);
-	EPETRA_CHK_ERR(A.ExtractGlobalRowView(FromRow, NumIndices, Indices)); // Set pointer
-	// Place into target graph.
-	int ierr = InsertGlobalIndices(ToRow, NumIndices, Indices); 
-	if(ierr < 0) 
-	  EPETRA_CHK_ERR(ierr); 
+        FromRow = A.GRID(PermuteFromLIDs[i]);
+        ToRow = GRID(PermuteToLIDs[i]);
+        EPETRA_CHK_ERR(A.ExtractGlobalRowView(FromRow, NumIndices, Indices));
+        // Place into target graph.
+        int ierr = InsertGlobalIndices(ToRow, NumIndices, Indices); 
+        if (ierr < 0) EPETRA_CHK_ERR(ierr); 
       }
     }
   }	
@@ -1216,50 +1214,60 @@ int Epetra_CrsGraph::CopyAndPermuteCrsGraph(const Epetra_CrsGraph& A,
 int Epetra_CrsGraph::PackAndPrepare(const Epetra_SrcDistObject& Source, 
 				    int NumExportIDs, 
 				    int* ExportLIDs,
-				    int Nsend, 
-				    int Nrecv,
 				    int& LenExports, 
 				    char*& Exports, 
-				    int& LenImports, 
-				    char*& Imports, 
 				    int& SizeOfPacket, 
+                                    int * Sizes,
+                                    bool& VarSizes,
 				    Epetra_Distributor& Distor) 
 {
   int GlobalMaxNumIndices = 0;
+  int TotalSendSize = 0;
 
-  try {
-    const Epetra_CrsGraph& A = dynamic_cast<const Epetra_CrsGraph&>(Source);
-    GlobalMaxNumIndices = A.GlobalMaxNumIndices();
-  }
-  catch(...) {
-    try {
-      const Epetra_RowMatrix& A = dynamic_cast<const Epetra_RowMatrix&>(Source);
-      int MaxNumIndices = A.MaxNumEntries();
-      A.Comm().MaxAll(&MaxNumIndices, &GlobalMaxNumIndices, 1);
-    }
-    catch(...) {
-      EPETRA_CHK_ERR(-1); // Bad cast
-    }
-  }
-
-  int IntPacketSize = GlobalMaxNumIndices + 2;
-  SizeOfPacket = IntPacketSize * sizeof(int); 
-
-  CrsGraphData_->ReAllocateAndCast(Exports, LenExports, IntPacketSize*Nsend);
-  CrsGraphData_->ReAllocateAndCast(Imports, LenImports, IntPacketSize*Nrecv);
+  VarSizes = true;
 
   if(NumExportIDs <= 0) 
     return(0);
 
   try {
     const Epetra_CrsGraph& A = dynamic_cast<const Epetra_CrsGraph&>(Source);
-    EPETRA_CHK_ERR(PackAndPrepareCrsGraph(A, NumExportIDs, ExportLIDs, Nsend, Nrecv, LenExports, Exports,
-					  LenImports, Imports, SizeOfPacket, Distor, IntPacketSize));
+    GlobalMaxNumIndices = A.GlobalMaxNumIndices();
+    for( int i = 0; i < NumExportIDs; ++i )
+    {
+      Sizes[i] = (A.NumMyIndices( ExportLIDs[i] ) + 2);
+      TotalSendSize += Sizes[i];
+    }
+  }
+  catch(...) {
+    try {
+      const Epetra_RowMatrix& A = dynamic_cast<const Epetra_RowMatrix&>(Source);
+      int MaxNumIndices = A.MaxNumEntries();
+      A.Comm().MaxAll(&MaxNumIndices, &GlobalMaxNumIndices, 1);
+      for( int i = 0; i < NumExportIDs; ++i )
+      {
+        int NumEntries;
+        A.NumMyRowEntries( ExportLIDs[i], NumEntries );
+        Sizes[i] = (NumEntries + 2);
+        TotalSendSize += Sizes[i];
+      }
+    }
+    catch(...) {
+      EPETRA_CHK_ERR(-1); // Bad cast
+    }
+  }
+
+  SizeOfPacket = sizeof(int); 
+  CrsGraphData_->ReAllocateAndCast(Exports, LenExports, TotalSendSize*SizeOfPacket);
+
+  try {
+    const Epetra_CrsGraph& A = dynamic_cast<const Epetra_CrsGraph&>(Source);
+    EPETRA_CHK_ERR(PackAndPrepareCrsGraph(A, NumExportIDs, ExportLIDs, LenExports, Exports,
+					  SizeOfPacket, Sizes, VarSizes, Distor));
   }
   catch(...) {
     const Epetra_RowMatrix& A = dynamic_cast<const Epetra_RowMatrix&>(Source);
-    EPETRA_CHK_ERR(PackAndPrepareRowMatrix(A, NumExportIDs, ExportLIDs, Nsend, Nrecv, LenExports, Exports,
-					   LenImports, Imports, SizeOfPacket, Distor, IntPacketSize));
+    EPETRA_CHK_ERR(PackAndPrepareRowMatrix(A, NumExportIDs, ExportLIDs, LenExports, Exports,
+					   SizeOfPacket, Sizes, VarSizes, Distor));
   }
   return(0);
 }
@@ -1268,19 +1276,16 @@ int Epetra_CrsGraph::PackAndPrepare(const Epetra_SrcDistObject& Source,
 int Epetra_CrsGraph::PackAndPrepareCrsGraph(const Epetra_CrsGraph& A, 
 					    int NumExportIDs, 
 					    int* ExportLIDs,
-					    int Nsend, 
-					    int Nrecv,
 					    int& LenExports, 
 					    char*& Exports, 
-					    int& LenImports, 
-					    char*& Imports, 
 					    int& SizeOfPacket, 
-					    Epetra_Distributor& Distor, 
-					    int IntPacketSize) 
+                                            int* Sizes,
+                                            bool& VarSizes,
+					    Epetra_Distributor& Distor)
 {
   int i;
   int NumIndices;
-  int* Indices;
+  int* Indices = 0;
   int FromRow;
   int* intptr;
   
@@ -1291,6 +1296,8 @@ int Epetra_CrsGraph::PackAndPrepareCrsGraph(const Epetra_CrsGraph& A,
   // Any remaining space (of length GlobalMaxNumIndices - NumIndices ints) will be wasted but we need fixed
   //   sized segments for current communication routines.
   int MaxNumIndices = A.MaxNumIndices();
+  if( MaxNumIndices ) Indices = new int[MaxNumIndices];
+
   intptr = (int*) Exports;
   for(i = 0; i < NumExportIDs; i++) {
     FromRow = A.GRID(ExportLIDs[i]);
@@ -1298,8 +1305,10 @@ int Epetra_CrsGraph::PackAndPrepareCrsGraph(const Epetra_CrsGraph& A,
     Indices = intptr + 2;
     EPETRA_CHK_ERR(A.ExtractGlobalRowCopy(FromRow, MaxNumIndices, NumIndices, Indices));
     intptr[1] = NumIndices; // Load second slot of segment
-    intptr += IntPacketSize; // Point to next segment
+    intptr += (NumIndices+2); // Point to next segment
   }
+
+  if( Indices ) delete [] Indices;
     
   return(0);
 }
@@ -1308,20 +1317,17 @@ int Epetra_CrsGraph::PackAndPrepareCrsGraph(const Epetra_CrsGraph& A,
 int Epetra_CrsGraph::PackAndPrepareRowMatrix(const Epetra_RowMatrix& A, 
 					     int NumExportIDs, 
 					     int* ExportLIDs,
-					     int Nsend, 
-					     int Nrecv,
 					     int& LenExports, 
 					     char*& Exports, 
-					     int& LenImports, 
-					     char*& Imports, 
 					     int& SizeOfPacket, 
-					     Epetra_Distributor& Distor, 
-					     int IntPacketSize) 
+                                             int* Sizes,
+                                             bool& VarSizes,
+					     Epetra_Distributor& Distor)
 {  
   int i;
   int j;
   int NumIndices;
-  int* Indices;
+  int* Indices = 0;
   int FromRow;
   int* intptr;
   Epetra_SerialDenseVector Values;
@@ -1333,8 +1339,10 @@ int Epetra_CrsGraph::PackAndPrepareRowMatrix(const Epetra_RowMatrix& A,
   // Any remaining space (of length GlobalMaxNumIndices - NumIndices ints) will be wasted but we need fixed
   //   sized segments for current communication routines.
   int MaxNumIndices = A.MaxNumEntries();
-  if(MaxNumIndices > 0) 
+  if(MaxNumIndices > 0) {
     Values.Size(MaxNumIndices);
+    Indices = new int[MaxNumIndices];
+  }
   const Epetra_Map& RowMap = A.RowMatrixRowMap();
   const Epetra_Map& ColMap = A.RowMatrixColMap();
 
@@ -1344,46 +1352,29 @@ int Epetra_CrsGraph::PackAndPrepareRowMatrix(const Epetra_RowMatrix& A,
     *intptr = FromRow;
     Indices = intptr + 2;
     EPETRA_CHK_ERR(A.ExtractMyRowCopy(ExportLIDs[i], MaxNumIndices, NumIndices, Values.Values(), Indices));
-    for(j = 0; j < NumIndices; j++) 
-      Indices[j] = ColMap.GID(Indices[j]); // convert to GIDs
+    for(j = 0; j < NumIndices; j++) Indices[j] = ColMap.GID(Indices[j]); // convert to GIDs
     intptr[1] = NumIndices; // Load second slot of segment
-    intptr += IntPacketSize; // Point to next segment
+    intptr += (NumIndices+2); // Point to next segment
   }
 
+  if( Indices ) delete [] Indices;
+ 
   return(0);
 }
 
 // private =====================================================================
 int Epetra_CrsGraph::UnpackAndCombine(const Epetra_SrcDistObject& Source, 
-				      int NumImportIDs, 
-				      int* ImportLIDs, 
-				      char* Imports, 
-				      int& SizeOfPacket, 
-				      Epetra_Distributor& Distor,
-				      Epetra_CombineMode CombineMode) 
+                                      int NumImportIDs, 
+                                      int* ImportLIDs, 
+                                      int LenImports, 
+                                      char* Imports, 
+                                      int& SizeOfPacket, 
+                                      Epetra_Distributor& Distor,
+                                      Epetra_CombineMode CombineMode,
+                                      const Epetra_OffsetIndex * Indexor) 
 {
   if(NumImportIDs <= 0) 
     return(0);
-
-  int GlobalMaxNumIndices = 0;
-
-  try {
-    const Epetra_CrsGraph& A = dynamic_cast<const Epetra_CrsGraph&>(Source);
-    GlobalMaxNumIndices = A.GlobalMaxNumIndices();
-  }
-  catch(...) {
-    try {
-      const Epetra_RowMatrix& A = dynamic_cast<const Epetra_RowMatrix&>(Source);
-      int MaxNumIndices = A.MaxNumEntries();
-      A.Comm().MaxAll(&MaxNumIndices, &GlobalMaxNumIndices, 1);
-    }
-    catch(...) {
-      EPETRA_CHK_ERR(-1); // Bad cast
-    }
-  }
-
-  int IntPacketSize = GlobalMaxNumIndices + 2;
-
 
   int NumIndices;
   int* Indices;
@@ -1397,8 +1388,6 @@ int Epetra_CrsGraph::UnpackAndCombine(const Epetra_SrcDistObject& Source,
   // 1st int: GRID of row where GRID is the global row ID for the source graph
   // next int:  NumIndices, Number of indices in row.
   // next NumIndices: The actual indices for the row.
-  // Any remaining space (of length GlobalMaxNumIndices - NumIndices ints) will be 
-  //  wasted but we need fixed sized segments for current communication routines.
 
   intptr = (int*) Imports;
     
@@ -1411,7 +1400,19 @@ int Epetra_CrsGraph::UnpackAndCombine(const Epetra_SrcDistObject& Source,
     int ierr = InsertGlobalIndices(ToRow, NumIndices, Indices);
     if(ierr < 0) 
       EPETRA_CHK_ERR(ierr);
-    intptr += IntPacketSize; // Point to next segment
+    intptr += (NumIndices+2); // Point to next segment
+  }
+
+  //destroy buffers since this operation is usually only done once
+  if( LenExports_ ) {
+    delete [] Exports_;
+    Exports_ = 0;
+    LenExports_ = 0;
+  }
+  if( LenImports_ ) {
+    delete [] Imports_;
+    Imports_ = 0;
+    LenImports_ = 0;
   }
   
   return(0);

@@ -1151,21 +1151,33 @@ class Epetra_VbrMatrix : public Epetra_DistObject,
   void SetStaticGraph(bool Flag) {StaticGraph_ = Flag;};
 
   int CheckSizes(const Epetra_SrcDistObject& A);
+
   int CopyAndPermute(const Epetra_SrcDistObject & Source,
-		     int NumSameIDs, 
-		     int NumPermuteIDs, int * PermuteToLIDs,
-		     int *PermuteFromLIDs);
+                     int NumSameIDs, 
+                     int NumPermuteIDs,
+                     int * PermuteToLIDs,
+                     int *PermuteFromLIDs,
+                     const Epetra_OffsetIndex * Indexor);
   
-  int PackAndPrepare(const Epetra_SrcDistObject & Source,int NumExportIDs, int * ExportLIDs,
-				      int Nsend, int Nrecv,
-				      int & LenExports, char * & Exports, int & LenImports, 
-				      char * & Imports, 
-				      int & SizeOfPacket, Epetra_Distributor & Distor);
+  int PackAndPrepare(const Epetra_SrcDistObject & Source,
+                     int NumExportIDs,
+                     int * ExportLIDs,
+                     int & LenExports,
+                     char * & Exports,
+                     int & SizeOfPacket,
+                     int * Sizes,
+                     bool & VarSizes,
+                     Epetra_Distributor & Distor);
   
   int UnpackAndCombine(const Epetra_SrcDistObject & Source, 
-		       int NumImportIDs, int * ImportLIDs, 
-		       char * Imports, int & SizeOfPacket, 
-		       Epetra_Distributor & Distor, Epetra_CombineMode CombineMode);
+                       int NumImportIDs,
+                       int * ImportLIDs, 
+                       int LenImports,
+                       char * Imports,
+                       int & SizeOfPacket, 
+                       Epetra_Distributor & Distor,
+                       Epetra_CombineMode CombineMode,
+                       const Epetra_OffsetIndex * Indexor);
 
   bool StaticGraph() const {return(StaticGraph_);};
 

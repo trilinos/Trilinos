@@ -1,4 +1,3 @@
-
 //@HEADER
 /*
 ************************************************************************
@@ -73,12 +72,14 @@ class Epetra_MpiDistributor: public Epetra_Object, public virtual Epetra_Distrib
     \param ExportPIDs In
            List of processors that will get the exported IDs.
     \param Deterministic In
-           If set to true, communication will be deterministic (repeatable) from call to call.
+           No Op.
     \param NumRemoteIDs Out
            Number of IDs this processor will be receiving.
   */
-  int CreateFromSends( const int & NumExportIDs,const int * ExportPIDs,
-			const bool & Deterministic, int & NumRemoteIDs );
+  int CreateFromSends( const int & NumExportIDs,
+                       const int * ExportPIDs,
+		       bool Deterministic,
+                       int & NumRemoteIDs );
 
   //! Create Distributor object using list of Remote global IDs and corresponding PIDs
   /*! Take a list of global IDs and construct a plan for efficiently scattering to these processes.
@@ -90,58 +91,84 @@ class Epetra_MpiDistributor: public Epetra_Object, public virtual Epetra_Distrib
     \param RemotePIDs In
            List of processors that will send the remote IDs.
     \param Deterministic In
-           If set to true, communication will be deterministic (repeatable) from call to call.
+           No Op.
     \param NumExportIDs Out
            Number of IDs that need to be sent from this processor.
+    \param ExportGIDs Out
+           List of processors that will get the exported IDs.
     \param ExportPIDs Out
            List of processors that will get the exported IDs.
   */
-  int CreateFromRecvs( const int & NumRemoteIDs, const int * RemoteGIDs, const int * RemotePIDs,
-			const bool & Deterministic,int & NumExportIDs,
-			int *& ExportGIDs, int *& ExportPIDs);
+  int CreateFromRecvs( const int & NumRemoteIDs,
+                       const int * RemoteGIDs,
+                       const int * RemotePIDs,
+		       bool Deterministic,
+                       int & NumExportIDs,
+                       int *& ExportGIDs,
+                       int *& ExportPIDs);
   //@}
 
   //@{ \name Execute Gather/Scatter Operations
 
   //! Execute plan on buffer of export objects in a single step
-  int Do       (char * export_objs,const int & obj_size, char * import_objs);
+  int Do( char * export_objs,
+          int obj_size,
+          int & len_import_objs,
+          char *& import_objs );
 
   //! Execute reverse of plan on buffer of export objects in a single step
-  int DoReverse(char * export_objs,const int & obj_size, char * import_objs);
+  int DoReverse( char * export_objs,
+                 int obj_size,
+                 int & len_import_objs,
+                 char *& import_objs );
 
   //! Post buffer of export objects (can do other local work before executing Waits)
-  int DoPosts(char * export_objs,const int & obj_size, char * import_objs);
+  int DoPosts( char * export_objs,
+               int obj_size,
+               int & len_import_objs,
+               char *& import_objs );
   //! Wait on a set of posts
-  int DoWaits(char * export_objs,const int & obj_size, char * import_objs);
+  int DoWaits();
 
   //! Do reverse post of buffer of export objects (can do other local work before executing Waits)
-  int DoReversePosts(char * export_objs,const int & obj_size, char * import_objs);
+  int DoReversePosts( char * export_objs,
+                      int obj_size,
+                      int & len_import_objs,
+                      char *& import_objs );
 
   //! Wait on a reverse set of posts
-  int DoReverseWaits(char * export_objs,const int & obj_size, char * import_objs);
-
-  //! Resize method allowing for variable message lengths
-  int Resize (int *sizes, int &recv_size);
+  int DoReverseWaits();
   //@}
 
-  //@{ \name Execute Gather/Scatter Operations (Non-constant size objects: NOT IMPLEMENTED)
+  //@{ \name Execute Gather/Scatter Operations (Non-constant size objects)
 
   //! Execute plan on buffer of export objects in a single step (object size may vary)
-  int Do       (char * export_objs, const int * & obj_size, char * import_objs);
+  int Do( char * export_objs,
+          int obj_size,
+          int *& sizes,
+          int & len_import_objs,
+          char *& import_objs );
   
   //! Execute reverse of plan on buffer of export objects in a single step (object size may vary)
-  int DoReverse(char * export_objs, const int * & obj_size, char * import_objs);
+  int DoReverse( char * export_objs,
+                 int obj_size,
+                 int *& sizes,
+                 int & len_import_objs,
+                 char *& import_objs );
   
   //! Post buffer of export objects (can do other local work before executing Waits)
-  int DoPosts(char * export_objs, const int * & obj_size, char * import_objs);
-  //! Wait on a set of posts
-  int DoWaits(char * export_objs, const int * & obj_size, char * import_objs);
+  int DoPosts( char * export_objs,
+               int obj_size,
+               int *& sizes,
+               int & len_import_objs,
+               char *& import_objs);
   
   //! Do reverse post of buffer of export objects (can do other local work before executing Waits)
-  int DoReversePosts(char * export_objs, const int * & obj_size, char * import_objs);
-  
-  //! Wait on a reverse set of posts
-  int DoReverseWaits(char * export_objs, const int * & obj_size, char * import_objs);
+  int DoReversePosts( char * export_objs,
+                      int obj_size,
+                      int *& sizes,
+                      int & len_import_objs,
+                      char *& import_objs );
   //@}
   
   //@{ \name Print object to an output stream
@@ -149,31 +176,33 @@ class Epetra_MpiDistributor: public Epetra_Object, public virtual Epetra_Distrib
   //@}
   private:
 
-    int ComputeRecvs( const int & my_proc,
-	               const int & nprocs,
-	               const bool & Deterministic );
+    int ComputeRecvs_( int my_proc,
+	               int nprocs );
 
-    int ComputeSends( const int & num_imports,
-		       const int * import_ids,
-		       const int * import_procs,
+    int ComputeSends_( int num_imports,
+		       const int *& import_ids,
+		       const int *& import_procs,
 		       int & num_exports,
 		       int *& export_ids,
 		       int *& export_procs,
-		       const int & my_proc );
+		       int my_proc );
 
-    int Sort_ints( int *vals, int *other, int nvals );
+
+    int Resize_(int *sizes);
+
+    int Sort_ints_( int *vals, int *other, int nvals );
 
   private:
 
     int * lengths_to_;
     int * procs_to_;
     int * indices_to_;
-    int  size_indices_to_;
+    int   size_indices_to_;
 
     int * lengths_from_;
     int * procs_from_;
     int * indices_from_;
-    int  size_indices_from_;
+    int   size_indices_from_;
 
     int * sizes_;
 
@@ -192,6 +221,7 @@ class Epetra_MpiDistributor: public Epetra_Object, public virtual Epetra_Distrib
     int   nexports_;
 
     int   self_msg_;
+
     int   max_send_length_;
     int   total_recv_length_;
 
@@ -205,8 +235,8 @@ class Epetra_MpiDistributor: public Epetra_Object, public virtual Epetra_Distrib
 
     bool no_delete_;
 
-    char * recv_array_;
     char * send_array_;
+    int send_array_size_;
 
     Epetra_MpiDistributor * comm_plan_reverse_;
 

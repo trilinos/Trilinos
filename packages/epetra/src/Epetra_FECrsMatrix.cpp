@@ -482,6 +482,7 @@ int Epetra_FECrsMatrix::GlobalAssemble(bool callFillComplete)
     if (callFillComplete) {
       EPETRA_CHK_ERR( FillComplete() );
     }
+    delete sourceMap;
     return(0);
   }
 

@@ -66,12 +66,14 @@ class Epetra_Distributor {
     \param ExportPIDs In
            List of processors that will get the exported IDs.
     \param Deterministic In
-           If set to true, communication will be deterministic (repeatable) from call to call.
+           No op.
     \param NumRemoteIDs Out
            Number of IDs this processor will be receiving.
   */
-  virtual int CreateFromSends( const int & NumExportIDs,const int * ExportPIDs,
-			const bool & Deterministic, int & NumRemoteIDs ) = 0;
+  virtual int CreateFromSends( const int & NumExportIDs,
+                               const int * ExportPIDs,
+			       bool Deterministic,
+                               int & NumRemoteIDs ) = 0;
 
   //! Create Distributor object using list of Remote global IDs and corresponding PIDs
   /*! Take a list of global IDs and construct a plan for efficiently scattering to these processes.
@@ -83,55 +85,84 @@ class Epetra_Distributor {
     \param RemotePIDs In
            List of processors that will send the remote IDs.
     \param Deterministic In
-           If set to true, communication will be deterministic (repeatable) from call to call.
+           No op.
     \param NumExportIDs Out
            Number of IDs that need to be sent from this processor.
     \param ExportPIDs Out
            List of processors that will get the exported IDs.
   */
-  virtual int CreateFromRecvs( const int & NumRemoteIDs, const int * RemoteGIDs, const int * RemotePIDs,
-			const bool & Deterministic,int & NumExportIDs,
-			int *& ExportGIDs, int *& ExportPIDs) = 0;
+  virtual int CreateFromRecvs( const int & NumRemoteIDs,
+                               const int * RemoteGIDs,
+			       const int * RemotePIDs,
+			       bool Deterministic,
+			       int & NumExportIDs,
+			       int *& ExportGIDs,
+			       int *& ExportPIDs) = 0;
   //@}
 
   //@{ \name Execute Gather/Scatter Operations (Constant size objects)
 
   //! Execute plan on buffer of export objects in a single step
-  virtual int Do       (char * export_objs,const int & obj_size, char * import_objs) = 0;
+  virtual int Do( char * export_objs,
+                  int obj_size,
+                  int & len_import_objs,
+                  char *& import_objs) = 0;
 
   //! Execute reverse of plan on buffer of export objects in a single step
-  virtual int DoReverse(char * export_objs,const int & obj_size, char * import_objs) = 0;
+  virtual int DoReverse( char * export_objs,
+                         int obj_size,
+                         int & len_import_objs,
+                         char *& import_objs ) = 0;
 
   //! Post buffer of export objects (can do other local work before executing Waits)
-  virtual int DoPosts(char * export_objs,const int & obj_size, char * import_objs) = 0;
+  virtual int DoPosts( char * export_objs, 
+                       int obj_size,
+                       int & len_import_objs,
+                       char *& import_objs ) = 0;
+
   //! Wait on a set of posts
-  virtual int DoWaits(char * export_objs,const int & obj_size, char * import_objs) = 0;
+  virtual int DoWaits() = 0;
 
   //! Do reverse post of buffer of export objects (can do other local work before executing Waits)
-  virtual int DoReversePosts(char * export_objs,const int & obj_size, char * import_objs) = 0;
+  virtual int DoReversePosts( char * export_objs,
+                              int obj_size,
+                              int & len_import_objs,
+                              char *& import_objs) = 0;
 
   //! Wait on a reverse set of posts
-  virtual int DoReverseWaits(char * export_objs,const int & obj_size, char * import_objs) = 0;
+  virtual int DoReverseWaits() = 0;
   //@}
 
   //@{ \name Execute Gather/Scatter Operations (Non-constant size objects)
 
   //! Execute plan on buffer of export objects in a single step (object size may vary)
-  virtual int Do       (char * export_objs, const int * & obj_size, char * import_objs) = 0;
+  virtual int Do( char * export_objs,
+                  int obj_size,
+                  int *& sizes,
+                  int & len_import_objs,
+                  char *& import_objs) = 0;
 
   //! Execute reverse of plan on buffer of export objects in a single step (object size may vary)
-  virtual int DoReverse(char * export_objs, const int * & obj_size, char * import_objs) = 0;
+  virtual int DoReverse( char * export_objs,
+                         int obj_size,
+                         int *& sizes,
+                         int & len_import_objs,
+                         char *& import_objs) = 0;
 
   //! Post buffer of export objects (can do other local work before executing Waits)
-  virtual int DoPosts(char * export_objs, const int * & obj_size, char * import_objs) = 0;
-  //! Wait on a set of posts
-  virtual int DoWaits(char * export_objs, const int * & obj_size, char * import_objs) = 0;
+  virtual int DoPosts( char * export_objs,
+                       int obj_size,
+                       int *& sizes,
+                       int & len_import_objs,
+                       char *& import_objs) = 0;
 
   //! Do reverse post of buffer of export objects (can do other local work before executing Waits)
-  virtual int DoReversePosts(char * export_objs, const int * & obj_size, char * import_objs) = 0;
+  virtual int DoReversePosts( char * export_objs,
+                              int obj_size,
+                              int *& sizes,
+                              int & len_import_objs,
+                              char *& import_objs) = 0;
 
-  //! Wait on a reverse set of posts
-  virtual int DoReverseWaits(char * export_objs, const int * & obj_size, char * import_objs) = 0;
   //@}
 
   //@{ \name Print object to an output stream

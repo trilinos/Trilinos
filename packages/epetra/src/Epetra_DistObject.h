@@ -38,7 +38,7 @@ class Epetra_Comm;
 class Epetra_Import;
 class Epetra_Export;
 class Epetra_Distributor;
-
+class Epetra_OffsetIndex;
 
 //! Epetra_DistObject: A class for constructing and using dense multi-vectors, vectors and matrices in parallel.
 
@@ -123,7 +123,7 @@ class Epetra_DistObject: public Epetra_Object, public virtual Epetra_SrcDistObje
 
     \return Integer error code, set to 0 if successful.
   */
-  int Import(const Epetra_SrcDistObject& A, const Epetra_Import& Importer, Epetra_CombineMode CombineMode);
+  int Import(const Epetra_SrcDistObject& A, const Epetra_Import& Importer, Epetra_CombineMode CombineMode, const Epetra_OffsetIndex * Indexor = 0);
 
   //! Imports an Epetra_DistObject using the Epetra_Export object.
   /*!
@@ -138,7 +138,7 @@ class Epetra_DistObject: public Epetra_Object, public virtual Epetra_SrcDistObje
 
     \return Integer error code, set to 0 if successful.
   */
-  int Import(const Epetra_SrcDistObject& A, const Epetra_Export& Exporter, Epetra_CombineMode CombineMode);
+  int Import(const Epetra_SrcDistObject& A, const Epetra_Export& Exporter, Epetra_CombineMode CombineMode, const Epetra_OffsetIndex * Indexor = 0);
 
   //! Exports an Epetra_DistObject using the Epetra_Import object.
   /*!
@@ -153,7 +153,7 @@ class Epetra_DistObject: public Epetra_Object, public virtual Epetra_SrcDistObje
 
     \return Integer error code, set to 0 if successful.
   */
-  int Export(const Epetra_SrcDistObject& A, const Epetra_Import & Importer, Epetra_CombineMode CombineMode);
+  int Export(const Epetra_SrcDistObject& A, const Epetra_Import & Importer, Epetra_CombineMode CombineMode, const Epetra_OffsetIndex * Indexor = 0);
 
   //! Exports an Epetra_DistObject using the Epetra_Export object.
   /*!
@@ -168,7 +168,7 @@ class Epetra_DistObject: public Epetra_Object, public virtual Epetra_SrcDistObje
 
     \return Integer error code, set to 0 if successful.
   */
-  int Export(const Epetra_SrcDistObject& A, const Epetra_Export& Exporter, Epetra_CombineMode CombineMode);
+  int Export(const Epetra_SrcDistObject& A, const Epetra_Export& Exporter, Epetra_CombineMode CombineMode, const Epetra_OffsetIndex * Indexor = 0);
   //@}
   
   //@{ \name Attribute accessor methods.
@@ -192,11 +192,23 @@ class Epetra_DistObject: public Epetra_Object, public virtual Epetra_SrcDistObje
 
   //@{ \name Internal utilities  
   //! Perform actual transfer (redistribution) of data across memory images, using Epetra_Distributor object.
-  virtual int DoTransfer(const Epetra_SrcDistObject& A, Epetra_CombineMode CombineMode,
-												 int NumSameIDs, int NumPermuteIDs, int NumRemoteIDs, int NumExportIDs, 
-												 int* PermuteToLIDs, int* PermuteFromLIDs, int* RemoteLIDs, int* ExportLIDs,
-												 int Nsend, int Nrecv, int& LenExports, char*& Exports, int& LenImports, 
-												 char*& Imports, Epetra_Distributor& Distor, bool DoReverse);
+  virtual int DoTransfer(const Epetra_SrcDistObject& A,
+                         Epetra_CombineMode CombineMode,
+                         int NumSameIDs,
+                         int NumPermuteIDs,
+                         int NumRemoteIDs,
+                         int NumExportIDs, 
+                         int* PermuteToLIDs,
+                         int* PermuteFromLIDs,
+                         int* RemoteLIDs,
+                         int* ExportLIDs,
+                         int& LenExports,
+                         char*& Exports,
+                         int& LenImports, 
+                         char*& Imports,
+                         Epetra_Distributor& Distor,
+                         bool DoReverse,
+                         const Epetra_OffsetIndex * Indexor );
   //@}
 
   // These methods must be implemented by derived class
@@ -205,21 +217,34 @@ class Epetra_DistObject: public Epetra_Object, public virtual Epetra_SrcDistObje
   //! Allows the source and target (\e this) objects to be compared for compatibility, return nonzero if not.
   virtual int CheckSizes(const Epetra_SrcDistObject& Source) = 0;
   //! Perform ID copies and permutations that are on processor.
-  virtual int CopyAndPermute(const Epetra_SrcDistObject& Source, int NumSameIDs, 
-														 int NumPermuteIDs, int * PermuteToLIDs, int * PermuteFromLIDs) = 0;
+  virtual int CopyAndPermute(const Epetra_SrcDistObject& Source,
+                             int NumSameIDs, 
+                             int NumPermuteIDs,
+                             int * PermuteToLIDs,
+                             int * PermuteFromLIDs,
+                             const Epetra_OffsetIndex * Indexor) = 0;
 
   //! Perform any packing or preparation required for call to DoTransfer().
-  virtual int PackAndPrepare(const Epetra_SrcDistObject& Source, int NumExportIDs, int* ExportLIDs,
-														 int Nsend, int Nrecv,
-														 int& LenExports, char*& Exports, int& LenImports, 
-														 char*& Imports, 
-														 int& SizeOfPacket, Epetra_Distributor& Distor) = 0;
+  virtual int PackAndPrepare(const Epetra_SrcDistObject& Source,
+                             int NumExportIDs,
+                             int* ExportLIDs,
+                             int& LenExports,
+                             char*& Exports,
+                             int& SizeOfPacket,
+                             int* Sizes,
+                             bool & VarSizes,
+                             Epetra_Distributor& Distor) = 0;
   
   //! Perform any unpacking and combining after call to DoTransfer().
   virtual int UnpackAndCombine(const Epetra_SrcDistObject& Source, 
-															 int NumImportIDs, int* ImportLIDs, 
-															 char* Imports, int& SizeOfPacket, 
-															 Epetra_Distributor& Distor, Epetra_CombineMode CombineMode ) = 0;
+                               int NumImportIDs,
+                               int* ImportLIDs, 
+                               int LenImports,
+                               char* Imports,
+                               int& SizeOfPacket, 
+                               Epetra_Distributor& Distor,
+                               Epetra_CombineMode CombineMode,
+                               const Epetra_OffsetIndex * Indexor) = 0;
 
   //@}
   Epetra_BlockMap Map_;
@@ -229,6 +254,7 @@ class Epetra_DistObject: public Epetra_Object, public virtual Epetra_SrcDistObje
   char* Imports_;
   int LenExports_;
   int LenImports_;
+  int *Sizes_;
 
 };
 

@@ -223,9 +223,12 @@ int Epetra_IntVector::CheckSizes(const Epetra_SrcDistObject& Source) {
 }
 
 //=========================================================================
-int Epetra_IntVector::CopyAndPermute(const Epetra_SrcDistObject& Source, int NumSameIDs, 
-				       int NumPermuteIDs, int * PermuteToLIDs, 
-				       int *PermuteFromLIDs) {
+int Epetra_IntVector::CopyAndPermute(const Epetra_SrcDistObject& Source,
+                                     int NumSameIDs, 
+                                     int NumPermuteIDs,
+                                     int * PermuteToLIDs, 
+                                     int *PermuteFromLIDs,
+                                     const Epetra_OffsetIndex * Indexor) {
 
   const Epetra_IntVector & A = dynamic_cast<const Epetra_IntVector &>(Source);
 
@@ -310,13 +313,15 @@ int Epetra_IntVector::CopyAndPermute(const Epetra_SrcDistObject& Source, int Num
 }
 
 //=========================================================================
-int Epetra_IntVector::PackAndPrepare(const Epetra_SrcDistObject & Source, int NumExportIDs, int * ExportLIDs,
-				      int Nsend, int Nrecv,
-				      int & LenExports, char * & Exports, int & LenImports, 
-				      char * & Imports, 
-				      int & SizeOfPacket, Epetra_Distributor & Distor) {
-
-
+int Epetra_IntVector::PackAndPrepare(const Epetra_SrcDistObject & Source,
+                                     int NumExportIDs,
+                                     int * ExportLIDs,
+                                     int & LenExports,
+                                     char * & Exports,
+                                     int & SizeOfPacket,
+                                     int * Sizes,
+                                     bool & VarSizes,
+                                     Epetra_Distributor & Distor) {
 
   const Epetra_IntVector & A = dynamic_cast<const Epetra_IntVector &>(Source);
 
@@ -335,30 +340,18 @@ int Epetra_IntVector::PackAndPrepare(const Epetra_SrcDistObject & Source, int Nu
     FromElementSizeList = A.Map().ElementSizeList();
   }
 
-  int * IntExports = 0;
-  int * IntImports = 0;
+  SizeOfPacket = MaxElementSize * sizeof(int); 
 
-  if (Nsend>LenExports) {
+  if(NumExportIDs*SizeOfPacket>LenExports) {
     if (LenExports>0) delete [] Exports;
-    LenExports = Nsend;
-    IntExports = new int[LenExports];
-    Exports = (char *) IntExports;
+    LenExports = NumExportIDs*SizeOfPacket;
+    Exports = new char[LenExports];
   }
-
-  if (Nrecv>LenImports) {
-    if (LenImports>0) delete [] Imports;
-    LenImports = Nrecv;
-    IntImports = new int[LenImports];
-    Imports = (char *) IntImports;
-  }
-
-  SizeOfPacket = Map().MaxElementSize() * sizeof(int); 
 
   int * ptr;
 
   if (NumExportIDs>0) {
     ptr = (int *) Exports;
-    
     
     // Point entry case
     if (MaxElementSize==1) for (j=0; j<NumExportIDs; j++) *ptr++ = From[ExportLIDs[j]];
@@ -392,10 +385,14 @@ int Epetra_IntVector::PackAndPrepare(const Epetra_SrcDistObject & Source, int Nu
 
 //=========================================================================
 int Epetra_IntVector::UnpackAndCombine(const Epetra_SrcDistObject & Source,
-					 int NumImportIDs, int * ImportLIDs, 
-					char * Imports, int & SizeOfPacket, 
-					 Epetra_Distributor & Distor, 
-					 Epetra_CombineMode CombineMode ) {
+                                       int NumImportIDs,
+                                       int * ImportLIDs, 
+                                       int LenImports, 
+                                       char * Imports,
+                                       int & SizeOfPacket, 
+                                       Epetra_Distributor & Distor, 
+                                       Epetra_CombineMode CombineMode,
+                                       const Epetra_OffsetIndex * Indexor) {
   int j, jj, k;
   
   if(    CombineMode != Add

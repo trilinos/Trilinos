@@ -1,4 +1,3 @@
-
 //@HEADER
 // ************************************************************************
 // 
@@ -31,6 +30,7 @@
 #include "Epetra_BlockMap.h"
 #include "Epetra_Distributor.h"
 #include "Epetra_Comm.h"
+#include "Epetra_Util.h"
 
 //==============================================================================
 // Epetra_Export constructor for a Epetra_BlockMap object
@@ -77,10 +77,8 @@ Epetra_Export::Epetra_Export( const Epetra_BlockMap &  SourceMap, const Epetra_B
 
   int MinIDs = EPETRA_MIN(NumSourceIDs, NumTargetIDs);
 
-
   NumSameIDs_ = 0;
   for (i=0; i< MinIDs; i++) if (TargetGIDs[i]==SourceGIDs[i]) NumSameIDs_++; else break;
-
 
   // Find count of Source IDs that are truly remote and those that are local but permuted
 
@@ -89,8 +87,6 @@ Epetra_Export::Epetra_Export( const Epetra_BlockMap &  SourceMap, const Epetra_B
   for (i=NumSameIDs_; i< NumSourceIDs; i++) 
     if (TargetMap.MyGID(SourceGIDs[i])) NumPermuteIDs_++; // Check if Source GID is a local Target GID
     else NumExportIDs_++; // If not, then it is remote
-
-
 
   // Define remote and permutation lists
 
@@ -161,13 +157,19 @@ Epetra_Export::Epetra_Export( const Epetra_BlockMap &  SourceMap, const Epetra_B
       }
     }
     
+    //Make sure Export IDs are ordered by processor
+    Epetra_Util util;
+    int * tmpPtr[2];
+    tmpPtr[0] = ExportLIDs_, tmpPtr[1] = ExportGIDs;
+    util.Sort(true,NumExportIDs_,ExportPIDs_,0,0,2,tmpPtr);
+
     Distor_ = SourceMap.Comm().CreateDistributor();
     
     // Construct list of exports that calling processor needs to send as a result
     // of everyone asking for what it needs to receive.
     
     bool Deterministic = true;
-    ierr = Distor_->CreateFromSends( NumExportIDs_, ExportPIDs_,Deterministic, NumRemoteIDs_);
+    ierr = Distor_->CreateFromSends( NumExportIDs_, ExportPIDs_, true, NumRemoteIDs_);
     if (ierr!=0) throw ReportError("Error in Epetra_Distributor.CreateFromSends()", ierr);
     
     // Use comm plan with ExportGIDs to find out who is sending to us and
@@ -176,19 +178,23 @@ Epetra_Export::Epetra_Export( const Epetra_BlockMap &  SourceMap, const Epetra_B
     
     if (NumRemoteIDs_>0) RemoteLIDs_ = new int[NumRemoteIDs_]; // Allocate space for LIDs in target that are
     // going to get something from off-processor.
+    int * RemoteGIDs = 0; //Do will alloc memory for this object
+    int LenRemoteGIDs = 0;
     ierr = Distor_->Do(reinterpret_cast<char *> (ExportGIDs), 
 		sizeof( int ),
-		reinterpret_cast<char *> (RemoteLIDs_));
+		LenRemoteGIDs,
+		reinterpret_cast<char *> (RemoteGIDs));
     if (ierr) throw ReportError("Error in Epetra_Distributor.Do()", ierr);
 
     // Remote IDs come in as GIDs, convert to LIDs
     for (i=0; i< NumRemoteIDs_; i++) {
-      RemoteLIDs_[i] = TargetMap.LID(RemoteLIDs_[i]);
+      RemoteLIDs_[i] = TargetMap.LID(RemoteGIDs[i]);
       //NumRecv_ += TargetMap.ElementSize(RemoteLIDs_[i]); // Count total number of entries to receive
       NumRecv_ += TargetMap.MaxElementSize(); // Count total number of entries to receive (currently need max)
     }
 
     if (NumExportIDs_>0) delete [] ExportGIDs;
+    if (LenRemoteGIDs>0) delete [] RemoteGIDs;
   }
   if (NumTargetIDs>0) delete [] TargetGIDs;
   if (NumSourceIDs>0) delete [] SourceGIDs;

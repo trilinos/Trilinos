@@ -106,7 +106,8 @@ int main(int argc, char *argv[])
   // Redefine verbose to only print on PE 0
   if (verbose && rank!=0) verbose = false;
 
-  int NumMyElements = 1000;
+//  int NumMyElements = 1000;
+  int NumMyElements = 10;
   if (MyPID < 3) NumMyElements++;
 
   // Define pseudo-random block sizes using a Petra Vector of random numbers

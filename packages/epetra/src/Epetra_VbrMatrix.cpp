@@ -129,6 +129,7 @@ Epetra_VbrMatrix::Epetra_VbrMatrix(const Epetra_VbrMatrix & Source)
     NumMyBlockRows_(0),
     HavePointObjects_(false),
     CV_(Copy) {
+
   InitializeDefaults();
   operator=(Source);
 }
@@ -288,10 +289,8 @@ void Epetra_VbrMatrix::DeleteMemory()
   if (Entries_!=0)       delete [] Entries_;
   Entries_ = NULL;
 
-
   if (ImportVector_!=0) delete ImportVector_;
   ImportVector_ = NULL;
-
 
   NumMyBlockRows_ = 0;
 
@@ -314,7 +313,7 @@ void Epetra_VbrMatrix::DeleteMemory()
     delete OperatorX_;
     delete OperatorY_;
   }
-  
+
   InitializeDefaults(); // Reset all basic pointers to zero
   Allocated_ = false;
 
@@ -2110,9 +2109,11 @@ int Epetra_VbrMatrix::CheckSizes(const Epetra_SrcDistObject & Source) {
 }
 //=========================================================================
 int Epetra_VbrMatrix::CopyAndPermute(const Epetra_SrcDistObject & Source,
-				     int NumSameIDs, 
-				     int NumPermuteIDs, int * PermuteToLIDs,
-				     int *PermuteFromLIDs){
+                                     int NumSameIDs, 
+                                     int NumPermuteIDs,
+                                     int * PermuteToLIDs,
+                                     int *PermuteFromLIDs,
+                                     const Epetra_OffsetIndex * Indexor) {
   
   const Epetra_VbrMatrix & A = dynamic_cast<const Epetra_VbrMatrix &>(Source);
   int i, j;
@@ -2174,13 +2175,16 @@ int Epetra_VbrMatrix::CopyAndPermute(const Epetra_SrcDistObject & Source,
 }
 
 //=========================================================================
-int Epetra_VbrMatrix::PackAndPrepare(const Epetra_SrcDistObject & Source,int NumExportIDs, int * ExportLIDs,
-				     int Nsend, int Nrecv,
-				     int & LenExports, char * & Exports, int & LenImports, 
-				     char * & Imports, 
-				     int & SizeOfPacket, Epetra_Distributor & Distor){
+int Epetra_VbrMatrix::PackAndPrepare(const Epetra_SrcDistObject & Source,
+                                     int NumExportIDs,
+                                     int * ExportLIDs,
+                                     int & LenExports,
+                                     char * & Exports,
+                                     int & SizeOfPacket,
+                                     int * Sizes,
+                                     bool & VarSizes,
+                                     Epetra_Distributor & Distor) {
   
-
   const Epetra_VbrMatrix & A = dynamic_cast<const Epetra_VbrMatrix &>(Source);
 
   double * DoubleExports = 0;
@@ -2192,21 +2196,11 @@ int Epetra_VbrMatrix::PackAndPrepare(const Epetra_SrcDistObject & Source,int Num
     (((2*GlobalMaxNumBlockEntries+3)+sizeof(int)-1)*sizeof(int))/sizeof(double);
   SizeOfPacket = DoublePacketSize * sizeof(double); 
 
-
-
-
-  if (DoublePacketSize*Nsend>LenExports) {
-    if (LenExports>0) delete [] Exports;
-    LenExports = DoublePacketSize*Nsend;
-    DoubleExports = new double[LenExports];
-    Exports = (char *) DoubleExports;
-  }
-
-  if (DoublePacketSize*Nrecv>LenImports) {
-    if (LenImports>0) delete [] Imports;
-    LenImports = DoublePacketSize*Nrecv;
-    DoubleImports = new double[LenImports];
-    Imports = (char *) DoubleImports;
+  if (DoublePacketSize*NumExportIDs>LenExports_) {
+    if (LenExports_>0) delete [] Exports_;
+    LenExports_ = DoublePacketSize*NumExportIDs;
+    DoubleExports = new double[LenExports_];
+    Exports_ = (char *) DoubleExports;
   }
 
   if (NumExportIDs<=0) return(0); // All done if nothing to pack
@@ -2262,17 +2256,21 @@ int Epetra_VbrMatrix::PackAndPrepare(const Epetra_SrcDistObject & Source,int Num
 
 //=========================================================================
 int Epetra_VbrMatrix::UnpackAndCombine(const Epetra_SrcDistObject & Source, 
-				       int NumImportIDs, int * ImportLIDs, 
-				       char * Imports, int & SizeOfPacket, 
-				       Epetra_Distributor & Distor, 
-				       Epetra_CombineMode CombineMode){
+                                       int NumImportIDs,
+                                       int * ImportLIDs, 
+                                       int LenImports,
+                                       char * Imports,
+                                       int & SizeOfPacket, 
+                                       Epetra_Distributor & Distor, 
+                                       Epetra_CombineMode CombineMode,
+                                       const Epetra_OffsetIndex * Indexor) {
+
   if (NumImportIDs<=0) return(0);
 
   if(   CombineMode != Add
 	&& CombineMode != Zero
 	&& CombineMode != Insert )
     EPETRA_CHK_ERR(-1); // CombineMode not supported, default to mode Zero
-
 
   const Epetra_VbrMatrix & A = dynamic_cast<const Epetra_VbrMatrix &>(Source);
   int NumBlockEntries;

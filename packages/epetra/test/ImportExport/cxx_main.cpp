@@ -78,7 +78,7 @@ int main(int argc, char *argv[])
   // Redefine verbose to only print on PE 0
   if (verbose && Comm.MyPID()!=0) verbose = false;
 
-  int NumMyEquations = 10000;
+  int NumMyEquations = 20;
   int NumGlobalEquations = NumMyEquations*NumProc+EPETRA_MIN(NumProc,3);
   if (MyPID < 3) NumMyEquations++;
   // Construct a Source Map that puts approximately the same Number of equations on each processor in 
@@ -91,7 +91,6 @@ int main(int argc, char *argv[])
   int * SourceMyGlobalElements = new int[NumMyElements];
   SourceMap.MyGlobalElements(SourceMyGlobalElements);
 
-
   // Construct a Target Map that will contain:
   //  some unchanged elements (relative to the soure map),
   //  some permuted elements
@@ -101,7 +100,8 @@ int main(int argc, char *argv[])
 
   int *TargetMyGlobalElements = new int[NumMyElements];
 
-  for (i=0; i< NumMyEquations/2; i++) TargetMyGlobalElements[i] = i; // Half will be the same...
+  int MinGID = SourceMap.MinMyGID();
+  for (i=0; i< NumMyEquations/2; i++) TargetMyGlobalElements[i] = i + MinGID; // Half will be the same...
   for (i=NumMyEquations/2; i<NumMyEquations; i++) {
     int index = abs((int)(((double) (NumGlobalEquations-1) ) * RandVec[i]));
     TargetMyGlobalElements[i] = EPETRA_MIN(NumGlobalEquations-1,EPETRA_MAX(0,index));
@@ -264,7 +264,6 @@ int main(int argc, char *argv[])
   EPETRA_TEST_ERR(StandardGraph.UpperTriangular(),ierr);
   EPETRA_TEST_ERR(StandardGraph.LowerTriangular(),ierr);
 
-
   // Create Epetra_CrsMatrix using the just-built graph
 
   Epetra_CrsMatrix StandardMatrix(Copy, StandardGraph);
@@ -394,10 +393,6 @@ int main(int argc, char *argv[])
   int StandardNumMyRows = StandardMatrix.NumMyRows();
   int GatheredNumMyRows = GatheredMatrix.NumMyRows();
   EPETRA_TEST_ERR(!(StandardNumMyRows==GatheredNumMyRows),ierr);
-
-  //cout << " Overlap Matrix "  << endl<< OverlapMatrix   << endl
-  //     << " Standard Matrix " << endl << StandardMatrix << endl 
-  //     << "GatheredMatrix "   << endl << GatheredMatrix << endl;
 
   forierr = 0;
   for (i=0; i< StandardNumMyRows; i++)

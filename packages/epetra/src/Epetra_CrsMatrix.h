@@ -885,32 +885,54 @@ class Epetra_CrsMatrix: public Epetra_DistObject, public Epetra_CompObject, publ
   int Allocate();
 
   int InsertValues(int LocalRow, int NumEntries, double* Values, int* Indices);
+
+  int InsertOffsetValues(int GlobalRow, int NumEntries, double *Values, int *Indices);
+  int ReplaceOffsetValues(int GlobalRow, int NumEntries, double *Values, int *Indices);
+  int SumIntoOffsetValues(int GlobalRow, int NumEntries, double *Values, int *Indices);
+
   void SetStaticGraph(bool Flag) {StaticGraph_ = Flag;};
+
   int CheckSizes(const Epetra_SrcDistObject& A);
+
   int CopyAndPermute(const Epetra_SrcDistObject& Source,
-										 int NumSameIDs, 
-										 int NumPermuteIDs, int* PermuteToLIDs,
-										 int* PermuteFromLIDs);
+                     int NumSameIDs, 
+                     int NumPermuteIDs,
+                     int* PermuteToLIDs,
+                     int* PermuteFromLIDs,
+                     const Epetra_OffsetIndex * Indexor);
   int CopyAndPermuteCrsMatrix(const Epetra_CrsMatrix& A,
-															int NumSameIDs, 
-															int NumPermuteIDs, int* PermuteToLIDs,
-															int* PermuteFromLIDs);
+                              int NumSameIDs, 
+                              int NumPermuteIDs,
+                              int* PermuteToLIDs,
+                              int* PermuteFromLIDs,
+                              const Epetra_OffsetIndex * Indexor);
   int CopyAndPermuteRowMatrix(const Epetra_RowMatrix& A,
-															int NumSameIDs, 
-															int NumPermuteIDs, int* PermuteToLIDs,
-															int* PermuteFromLIDs);
+                              int NumSameIDs, 
+                              int NumPermuteIDs,
+                              int* PermuteToLIDs,
+                              int* PermuteFromLIDs,
+                              const Epetra_OffsetIndex * Indexor);
   
-  int PackAndPrepare(const Epetra_SrcDistObject& Source, int NumExportIDs, int* ExportLIDs,
-										 int Nsend, int Nrecv,
-										 int& LenExports, char*& Exports, int& LenImports, 
-										 char*& Imports, 
-										 int& SizeOfPacket, Epetra_Distributor& Distor);
+  int PackAndPrepare(const Epetra_SrcDistObject& Source,
+                     int NumExportIDs,
+                     int* ExportLIDs,
+                     int& LenExports,
+                     char*& Exports,
+                     int& SizeOfPacket,
+                     int* Sizes,
+                     bool& VarSizes,
+                     Epetra_Distributor& Distor);
 
   int UnpackAndCombine(const Epetra_SrcDistObject& Source, 
-		       int NumImportIDs, int* ImportLIDs, 
-		       char* Imports, int& SizeOfPacket, 
-		       Epetra_Distributor& Distor, Epetra_CombineMode CombineMode);
-
+                       int NumImportIDs,
+                       int* ImportLIDs, 
+                       int LenImports,
+                       char* Imports,
+                       int& SizeOfPacket, 
+                       Epetra_Distributor& Distor,
+                       Epetra_CombineMode CombineMode,
+                       const Epetra_OffsetIndex * Indexor);
+  
   void DeleteMemory();
 
   Epetra_CrsGraph* Graph_;

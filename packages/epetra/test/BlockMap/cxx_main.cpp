@@ -165,8 +165,8 @@ int main(int argc, char *argv[]) {
 
   if (verbose) cout << "Checking Epetra_BlockMap(NumGlobalElements, NumMyElements, ElementSize, IndexBase, Comm)" << endl;
   ierr = checkmap(*Map, NumGlobalElements, NumMyElements, 0, ElementSize, 0,
-									NumGlobalElements*ElementSize, NumMyElements*ElementSize,
-									IndexBase, Comm, DistributedGlobal);
+                   NumGlobalElements*ElementSize, NumMyElements*ElementSize,
+		   IndexBase, Comm, DistributedGlobal);
 
   EPETRA_TEST_ERR(ierr,returnierr);
   if (verbose && ierr==0) cout << "Checked OK\n\n" <<endl;
@@ -184,11 +184,12 @@ int main(int argc, char *argv[]) {
 		MyGlobalElements[i] = MaxMyGID-i;
 
   Map = new Epetra_BlockMap(NumGlobalElements, NumMyElements, MyGlobalElements, ElementSize,
-														IndexBase, Comm);
+                            IndexBase, Comm);
+
   if (verbose) cout << "Checking Epetra_BlockMap(NumGlobalElements, NumMyElements, MyGlobalElements,  ElementSize, IndexBase, Comm)" << endl;
   ierr = checkmap(*Map, NumGlobalElements, NumMyElements, MyGlobalElements, ElementSize, 0,
-									NumGlobalElements*ElementSize, NumMyElements*ElementSize,
-									IndexBase, Comm, DistributedGlobal);
+                  NumGlobalElements*ElementSize, NumMyElements*ElementSize,
+                  IndexBase, Comm, DistributedGlobal);
 
   EPETRA_TEST_ERR(ierr,returnierr);
   if (verbose && ierr==0) cout << "Checked OK\n\n" <<endl;

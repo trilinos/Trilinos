@@ -1,4 +1,3 @@
-
 //@HEADER
 // ************************************************************************
 // 
@@ -54,8 +53,8 @@ Epetra_MpiDistributor::Epetra_MpiDistributor(const Epetra_MpiComm & Comm):
   request_(0),
   status_(0),
   no_delete_(false),
-  recv_array_(0),
   send_array_(0),
+  send_array_size_(0),
   comm_plan_reverse_(0),
   sizes_(0),
   sizes_to_(0),
@@ -91,8 +90,8 @@ Epetra_MpiDistributor::Epetra_MpiDistributor(const Epetra_MpiDistributor & Distr
   request_(0),
   status_(0),
   no_delete_(Distributor.no_delete_),
-  recv_array_(0),
   send_array_(0),
+  send_array_size_(0),
   comm_plan_reverse_(0),
   sizes_(0),
   sizes_to_(0),
@@ -149,12 +148,22 @@ Epetra_MpiDistributor::~Epetra_MpiDistributor() {
     if( lengths_from_ != 0 ) delete [] lengths_from_;
     if( procs_from_ != 0 ) delete [] procs_from_;
     if( indices_from_ != 0 ) delete [] indices_from_;
+    if( starts_to_ != 0 ) delete [] starts_to_;
+    if( starts_from_ != 0 ) delete [] starts_from_;
   }
+
+  if( sizes_ != 0 ) delete [] sizes_;
+  if( sizes_to_ != 0 ) delete [] sizes_to_;
+  if( sizes_from_ != 0 ) delete [] sizes_from_;
+  if( starts_to_ptr_ != 0 ) delete [] starts_to_ptr_;
+  if( starts_from_ptr_ != 0 ) delete [] starts_from_ptr_;
+  if( indices_to_ptr_ != 0 ) delete [] indices_to_ptr_;
+  if( indices_from_ptr_ != 0 ) delete [] indices_from_ptr_;
 
   if( request_ != 0 ) delete [] request_;
   if( status_ != 0 ) delete [] status_;
 
-  if( send_array_ != 0 ) delete [] send_array_;
+  if( send_array_size_ != 0 ) { delete [] send_array_; send_array_size_ = 0; }
 
   if( comm_plan_reverse_ != 0 ) delete comm_plan_reverse_;
 }
@@ -166,9 +175,12 @@ Epetra_MpiDistributor::~Epetra_MpiDistributor() {
 // - create communication plan given a known list of procs to send to
 //---------------------------------------------------------------------------
 int Epetra_MpiDistributor::CreateFromSends( const int & NumExportIDs,
-			           const int * ExportPIDs,
-			           const bool & Deterministic,
-			           int & NumRemoteIDs ) {
+                                            const int * ExportPIDs,
+                                            bool Deterministic,
+                                            int & NumRemoteIDs )
+{
+  nexports_ = NumExportIDs;
+
   int i;
 
   int my_proc;
@@ -186,9 +198,12 @@ int Epetra_MpiDistributor::CreateFromSends( const int & NumExportIDs,
     starts[i] = 0;
 
   int nactive = 0;
+  bool no_send_buff = true;
 
   for( i = 0; i < NumExportIDs; i++ )
   {
+    if( no_send_buff && i && (ExportPIDs[i] < ExportPIDs[i-1]) )
+      no_send_buff = false;
     if( ExportPIDs[i] >= 0 )
     {
       ++starts[ ExportPIDs[i] ];
@@ -199,69 +214,109 @@ int Epetra_MpiDistributor::CreateFromSends( const int & NumExportIDs,
   self_msg_ = ( starts[my_proc] != 0 );
 
   nsends_ = 0;
-  if( starts[0] != 0 ) nsends_ = 1;
 
-  for( i = 1; i < nprocs; i++ )
+  if( no_send_buff ) //grouped by processor, no send buffer or indices_to_ needed
   {
-    if( starts[i] != 0 ) ++nsends_;
-    starts[i] += starts[i-1];
+    for( i = 0; i < nprocs; ++i )
+      if( starts[i] ) ++nsends_;
+
+    if( nsends_ )
+    {
+      procs_to_ = new int[nsends_];
+      starts_to_ = new int[nsends_];
+      lengths_to_ = new int[nsends_];
+    }
+
+    int index = 0;
+    int proc;
+    for( i = 0; i < nsends_; ++i )
+    {
+      starts_to_[i] = index;
+      proc = ExportPIDs[index];
+      procs_to_[i] = proc;
+      index += starts[proc];
+    }
+
+    if( nsends_ )
+      Sort_ints_( procs_to_, starts_to_, nsends_ );
+
+    max_send_length_ = 0;
+
+    for( i = 0; i < nsends_; ++i )
+    {
+      proc = procs_to_[i];
+      lengths_to_[i] = starts[proc];
+      if( (proc != my_proc) && (lengths_to_[i] > max_send_length_) )
+        max_send_length_ = lengths_to_[i];
+    }
   }
+  else //not grouped by processor, need send buffer and indices_to_
+  {
+    if( starts[0] != 0 ) nsends_ = 1;
 
-  for( i = nprocs-1; i != 0; i-- )
-    starts[i] = starts[i-1];
+    for( i = 1; i < nprocs; i++ )
+    {
+      if( starts[i] != 0 ) ++nsends_;
+      starts[i] += starts[i-1];
+    }
 
-  starts[0] = 0;
+    for( i = nprocs-1; i != 0; i-- )
+      starts[i] = starts[i-1];
 
-  if (nactive>0) {
-    indices_to_ = new int[ nactive ];
-    size_indices_to_ = nactive;
-  }
+    starts[0] = 0;
 
-  for( i = 0; i < NumExportIDs; i++ )
+    if (nactive>0) {
+      indices_to_ = new int[ nactive ];
+      size_indices_to_ = nactive;
+    }
+
+    for( i = 0; i < NumExportIDs; i++ )
     if( ExportPIDs[i] >= 0 )
     {
       indices_to_[ starts[ ExportPIDs[i] ] ] = i;
       ++starts[ ExportPIDs[i] ];
     }
 
-  //Reconstuct starts array to index into indices_to.
+    //Reconstuct starts array to index into indices_to.
 
-  for( i = nprocs-1; i != 0; i-- )
-    starts[i] = starts[i-1];
-  starts[0] = 0;
-  starts[nprocs] = nactive;
+    for( i = nprocs-1; i != 0; i-- )
+      starts[i] = starts[i-1];
+    starts[0] = 0;
+    starts[nprocs] = nactive;
 
-  if (nsends_>0) {
-    lengths_to_ = new int[ nsends_ ];
-    procs_to_ = new int[ nsends_ ];
-  }
-
-  int j = 0;
-  max_send_length_ = 0;
-
-  for( i = 0; i < nprocs; i++ )
-    if( starts[i+1] != starts[i] )
-    {
-      lengths_to_[j] = starts[i+1] - starts[i];
-      if( ( i != my_proc ) && ( lengths_to_[j] > max_send_length_ ) )
-        max_send_length_ = lengths_to_[j];
-      procs_to_[j] = i;
-      j++;
+    if (nsends_>0) {
+      lengths_to_ = new int[ nsends_ ];
+      procs_to_ = new int[ nsends_ ];
+      starts_to_ = new int[ nsends_ ];
     }
+
+    int j = 0;
+    max_send_length_ = 0;
+
+    for( i = 0; i < nprocs; i++ )
+      if( starts[i+1] != starts[i] )
+      {
+        lengths_to_[j] = starts[i+1] - starts[i];
+        starts_to_[j] = starts[i];
+        if( ( i != my_proc ) && ( lengths_to_[j] > max_send_length_ ) )
+          max_send_length_ = lengths_to_[j];
+        procs_to_[j] = i;
+        j++;
+      }
+  }
     
   delete [] starts;
 
-  //Invert map to see what msgs are received and what length
-  EPETRA_CHK_ERR(ComputeRecvs( my_proc, nprocs, Deterministic ));
+  nsends_ -= self_msg_;
 
-  total_recv_length_ = 0;
-  for( i = 0; i < nrecvs_; i++ )
-    total_recv_length_ += lengths_from_[i];
+  //Invert map to see what msgs are received and what length
+  assert(ComputeRecvs_( my_proc, nprocs ) == 0);
 
   if (nrecvs_>0) {
     request_ = new MPI_Request[ nrecvs_ ];
     status_ = new MPI_Status[ nrecvs_ ];
   }
+
   NumRemoteIDs = total_recv_length_;
 
   return 0;
@@ -275,7 +330,7 @@ int Epetra_MpiDistributor::CreateFromSends( const int & NumExportIDs,
 int Epetra_MpiDistributor::CreateFromRecvs( const int & NumRemoteIDs,
 				   const int * RemoteGIDs,
 			           const int * RemotePIDs,
-			           const bool & Deterministic,
+				   bool Deterministic,
 			           int & NumExportIDs,
 				   int *& ExportGIDs,
 				   int *& ExportPIDs )
@@ -288,91 +343,11 @@ int Epetra_MpiDistributor::CreateFromRecvs( const int & NumRemoteIDs,
   int nprocs;
   MPI_Comm_size( comm_, &nprocs );
 
-  EPETRA_CHK_ERR(ComputeSends( NumRemoteIDs, RemoteGIDs, RemotePIDs, NumExportIDs,
-			    ExportGIDs, ExportPIDs, my_proc));
+  assert(ComputeSends_( NumRemoteIDs, RemoteGIDs, RemotePIDs, NumExportIDs,
+			    ExportGIDs, ExportPIDs, my_proc) == 0);
 
-  // Setup data structures for quick traversal of arrays
-  int * starts = new int[ nprocs + 1 ];
-  for( i = 0; i < nprocs; i++ )
-    starts[i] = 0;
-
-  int nactive = 0;
-
-  for( i = 0; i < NumExportIDs; i++ )
-  {
-    if( ExportPIDs[i] >= 0 )
-    {
-      ++starts[ ExportPIDs[i] ];
-      ++nactive;
-    }
-  }
-
-  self_msg_ = ( starts[my_proc] != 0 );
-
-  nsends_ = 0;
-  if( starts[0] != 0 ) nsends_ = 1;
-
-  for( i = 1; i < nprocs; i++ )
-  {
-    if( starts[i] != 0 ) ++nsends_;
-    starts[i] += starts[i-1];
-  }
-
-  for( i = nprocs-1; i != 0; i-- )
-    starts[i] = starts[i-1];
-
-  starts[0] = 0;
-
-  if (nactive>0) {
-    indices_to_ = new int[ nactive ];
-    size_indices_to_ = nactive;
-  }
-
-  for( i = 0; i < NumExportIDs; i++ )
-    if( ExportPIDs[i] >= 0 )
-    {
-      indices_to_[ starts[ ExportPIDs[i] ] ] = i;
-      ++starts[ ExportPIDs[i] ];
-    }
-
-  //Reconstuct starts array to index into indices_to.
-
-  for( i = nprocs-1; i != 0; i-- )
-    starts[i] = starts[i-1];
-  starts[0] = 0;
-  starts[nprocs] = nactive;
- 
-  if (nsends_>0) {
-    lengths_to_ = new int[ nsends_ ];
-    procs_to_ = new int[ nsends_ ];
-  }
-
-  int j = 0;
-  max_send_length_ = 0;
-
-  for( i = 0; i < nprocs; i++ )
-    if( starts[i+1] != starts[i] )
-    {
-      lengths_to_[j] = starts[i+1] - starts[i];
-      if( ( i != my_proc ) && ( lengths_to_[j] > max_send_length_ ) )
-        max_send_length_ = lengths_to_[j];
-      procs_to_[j] = i;
-      j++;
-    }
-    
-  delete [] starts;
-
-  //Invert map to see what msgs are received and what length
-  EPETRA_CHK_ERR(ComputeRecvs( my_proc, nprocs, Deterministic));
-
-  total_recv_length_ = 0;
-  for( i = 0; i < ( nrecvs_ + self_msg_ ); i++ )
-    total_recv_length_ += lengths_from_[i];
-
-  if (nrecvs_>0) {
-    request_ = new MPI_Request[ nrecvs_ ];
-    status_ = new MPI_Status[ nrecvs_ ];
-  }
+  int testNumRemoteIDs;
+  assert( CreateFromSends( NumExportIDs, ExportPIDs, Deterministic, testNumRemoteIDs ) == 0 );
 
   return(0);
 }
@@ -381,9 +356,8 @@ int Epetra_MpiDistributor::CreateFromRecvs( const int & NumRemoteIDs,
 //---------------------------------------------------------------------------
 //ComputeRecvs Method
 //---------------------------------------------------------------------------
-int Epetra_MpiDistributor::ComputeRecvs( const int & my_proc, 
-			        const int & nprocs, 
-			        const bool & Deterministic )
+int Epetra_MpiDistributor::ComputeRecvs_( int my_proc, 
+			        int nprocs )
 {
   int * msg_count = new int[ nprocs ];
   int * counts = new int[ nprocs ];
@@ -397,7 +371,7 @@ int Epetra_MpiDistributor::ComputeRecvs( const int & my_proc,
     counts[i] = 1;
   }
 
-  for( i = 0; i < nsends_; i++ )
+  for( i = 0; i < nsends_+self_msg_; i++ )
     msg_count[ procs_to_[i] ] = 1;
 
   MPI_Reduce_scatter( msg_count, &nrecvs_, counts, MPI_INT, MPI_SUM, comm_ );
@@ -406,25 +380,25 @@ int Epetra_MpiDistributor::ComputeRecvs( const int & my_proc,
   delete [] counts;
 
   if (nrecvs_>0) {
-    lengths_from_ = new int[ nrecvs_ + self_msg_ ];
-    procs_from_ = new int[ nrecvs_ + self_msg_ ];
-    for(i=0; i<nrecvs_+self_msg_; ++i) {
+    lengths_from_ = new int[nrecvs_];
+    procs_from_ = new int[nrecvs_];
+    for(i=0; i<nrecvs_; ++i) {
       lengths_from_[i] = 0;
       procs_from_[i] = 0;
     }
   }
-  for( i = 0; i < nsends_; i++ )
+  for( i = 0; i < (nsends_+self_msg_); i++ )
     if( procs_to_[i] != my_proc ) {
       MPI_Send( &(lengths_to_[i]), 1, MPI_INT, procs_to_[i], tag_, comm_ );
     }
     else
     {
-      assert(nrecvs_>0);
+      //set self_msg_ to end block of recv arrays
       lengths_from_[nrecvs_-1] = lengths_to_[i];
       procs_from_[nrecvs_-1] = my_proc;
     }
 
-  for( i = 0; i < ( nrecvs_ - self_msg_ ); i++ )
+  for( i = 0; i < (nrecvs_-self_msg_); i++ )
   {
     MPI_Recv( &(lengths_from_[i]), 1, MPI_INT, MPI_ANY_SOURCE, tag_, comm_, &status );
     procs_from_[i] = status.MPI_SOURCE;
@@ -432,58 +406,50 @@ int Epetra_MpiDistributor::ComputeRecvs( const int & my_proc,
 
   MPI_Barrier( comm_ );
 
-  if( Deterministic )
-  {
-    int j;
-    int temp;
-
-    for( i = 1; i < ( nrecvs_ - self_msg_ ); i++ )
-    {
-      j = i;
-
-      while( ( j > 0 ) && ( procs_from_[j] < procs_from_[j-1] ) )
-      {
-        temp = procs_from_[j];
-        procs_from_[j] = procs_from_[j-1];
-        procs_from_[j-1] = temp;
-
-        temp = lengths_from_[j];
-        lengths_from_[j] = lengths_from_[j-1];
-        lengths_from_[j-1] = temp;
-
-        j--;
-      }
-    }
-  }
+  Sort_ints_( procs_from_, lengths_from_, nrecvs_ );
 
   // Compute indices_from_
-
   size_indices_from_ = 0;
-  for( i = 0; i < nrecvs_; i++ )  size_indices_from_ += lengths_from_[i];
-  indices_from_ = new int[ size_indices_from_ ];
+  if( nrecvs_ > 0 )
+  {
+    for( i = 0; i < nrecvs_; i++ )  size_indices_from_ += lengths_from_[i];
+    indices_from_ = new int[ size_indices_from_ ];
 
-  for (i=0; i<size_indices_from_; i++) indices_from_[i] = i;
+    for (i=0; i<size_indices_from_; i++) indices_from_[i] = i;
+  }
+
+  starts_from_ = new int[nrecvs_];
+  int j = 0;
+  for( i=0; i<nrecvs_; ++i )
+  {
+    starts_from_[i] = j;
+    j += lengths_from_[i];
+  }
+
+  total_recv_length_ = 0;
+  for( i = 0; i < nrecvs_; i++ )
+    total_recv_length_ += lengths_from_[i];
+
+  nrecvs_ -= self_msg_;
 
   MPI_Barrier( comm_ );
-
   
   return false;
-
 }
 
 //==============================================================================
 //---------------------------------------------------------------------------
 //ComputeSends Method
 //---------------------------------------------------------------------------
-int Epetra_MpiDistributor::ComputeSends( const int & num_imports,
-				const int * import_ids,
-				const int * import_procs,
+int Epetra_MpiDistributor::ComputeSends_( int num_imports,
+				const int *& import_ids,
+				const int *& import_procs,
 				int & num_exports,
 				int *& export_ids,
 				int *& export_procs,
-				const int & my_proc ) {
+				int my_proc ) {
  
- Epetra_MpiDistributor tmp_plan(*epComm_);
+  Epetra_MpiDistributor tmp_plan(*epComm_);
   int i;
 
   int * proc_list = 0;
@@ -504,11 +470,11 @@ int Epetra_MpiDistributor::ComputeSends( const int & num_imports,
     }
   }
 
-  EPETRA_CHK_ERR(tmp_plan.CreateFromSends( num_imports, proc_list, true, num_exports)); 
+  assert(tmp_plan.CreateFromSends( num_imports, proc_list, true, num_exports)==0); 
   if( num_exports > 0 )
   {
-    export_objs = new int[ 2 * num_exports ];
-    export_ids = new int[ num_exports ]; // Note: export_ids and export_procs must be deleted by the calling routine
+    //export_objs = new int[ 2 * num_exports ];
+    export_ids = new int[ num_exports ];
     export_procs = new int[ num_exports ];
   }
   else
@@ -517,10 +483,11 @@ int Epetra_MpiDistributor::ComputeSends( const int & num_imports,
     export_procs = 0;
   }
 
-  EPETRA_CHK_ERR(tmp_plan.Do(reinterpret_cast<char *> (import_objs), 
-			   2 * sizeof( int ), 
-			   reinterpret_cast<char *> (export_objs)));
-
+  int len_export_objs = 0;
+  assert(tmp_plan.Do(reinterpret_cast<char *> (import_objs), 
+                     2 * sizeof( int ), 
+                     len_export_objs,
+                     reinterpret_cast<char *> (export_objs))==0);
 
   for( i = 0; i < num_exports; i++ ) {
     export_ids[i] = export_objs[2*i];
@@ -529,7 +496,7 @@ int Epetra_MpiDistributor::ComputeSends( const int & num_imports,
 
   if( proc_list != 0 ) delete [] proc_list;
   if( import_objs != 0 ) delete [] import_objs;
-  if( export_objs != 0 ) delete [] export_objs;
+  if( len_export_objs != 0 ) delete [] export_objs;
 
   return(0);
 
@@ -537,29 +504,36 @@ int Epetra_MpiDistributor::ComputeSends( const int & num_imports,
 
 //==============================================================================
 // Do method
-int Epetra_MpiDistributor::Do(char * export_objs, const int & obj_size, char * import_objs )
+int Epetra_MpiDistributor::Do( char * export_objs,
+                               int obj_size,
+                               int & len_import_objs,
+                               char *& import_objs )
 {
-  EPETRA_CHK_ERR(DoPosts(export_objs, obj_size, import_objs));
-  EPETRA_CHK_ERR(DoWaits(export_objs, obj_size, import_objs));
- return(0);
+  assert(DoPosts(export_objs, obj_size, len_import_objs, import_objs)==0);
+  assert(DoWaits()==0);
+  return(0);
 }
 
 //==============================================================================
 // DoReverse method
-int Epetra_MpiDistributor::DoReverse(char * export_objs,const int & obj_size, char * import_objs )
+int Epetra_MpiDistributor::DoReverse( char * export_objs,
+                                      int obj_size,
+                                      int & len_import_objs,
+                                      char *& import_objs )
 {
-
-  EPETRA_CHK_ERR(DoReversePosts(export_objs, obj_size, import_objs));
-  EPETRA_CHK_ERR(DoReverseWaits(export_objs, obj_size, import_objs));
+  assert(DoReversePosts(export_objs, obj_size, len_import_objs, import_objs)==0);
+  assert(DoReverseWaits()==0);
   return(0);
 }
 //==============================================================================
 //---------------------------------------------------------------------------
 //Do_Posts Method
 //---------------------------------------------------------------------------
-int Epetra_MpiDistributor::DoPosts(char * export_objs,
-				const int & obj_size,
-				char * import_objs ) {
+int Epetra_MpiDistributor::DoPosts( char * export_objs,
+				    int obj_size,
+                                    int & len_import_objs,
+				    char *& import_objs )
+{
   int i, j, k;
 
   int my_proc = 0;
@@ -567,19 +541,26 @@ int Epetra_MpiDistributor::DoPosts(char * export_objs,
 
   MPI_Comm_rank( comm_, &my_proc );
 
-  recv_array_ = import_objs;
+  if( len_import_objs < (total_recv_length_*obj_size) )
+  {
+    if( len_import_objs ) delete [] import_objs;
+    len_import_objs = total_recv_length_*obj_size;
+    import_objs = new char[len_import_objs];
+    for( i=0; i<len_import_objs; ++i ) import_objs[i]=0;
+  }
 
-  j = 0;
   k = 0;
 
-  for( i = 0; i < nrecvs_; i++ )
+  j = 0;
+  for( i = 0; i < (nrecvs_+self_msg_); i++ )
   {
     if( procs_from_[i] != my_proc )
     {
-      //cout << "Processor " << my_proc << "lengths_from_["<<i<<"] = " << lengths_from_[i] << " obj_size = " <<obj_size<<endl;
-      MPI_Irecv( &(recv_array_[j]), lengths_from_[i] * obj_size,
-	MPI_CHAR, procs_from_[i], tag_, comm_,
-	&(request_[k]) );
+      MPI_Irecv( &(import_objs[j]),
+                 lengths_from_[i] * obj_size,
+                 MPI_CHAR, procs_from_[i],
+                 tag_, comm_,
+                 &(request_[k]) );
       k++;
     }
     else
@@ -590,65 +571,99 @@ int Epetra_MpiDistributor::DoPosts(char * export_objs,
 
   MPI_Barrier( comm_ );
 
+  //setup scan through procs_to list starting w/ higher numbered procs 
+  //Should help balance msg traffic
+  int nblocks = nsends_ + self_msg_; 
+  int proc_index = 0; 
+  while( proc_index < nblocks && procs_to_[proc_index] < my_proc )
+    ++proc_index;                    
+  if( proc_index == nblocks ) proc_index = 0;
+   
   int self_num, self_index;
+  int p;
 
-  if (max_send_length_* obj_size>0) 
-    send_array_ = new char[ max_send_length_ * obj_size ];
-
-  j = 0;
-  for( i = 0; i < nsends_; i++ )
+  if( !indices_to_ ) //data already blocked by processor
   {
-    if( procs_to_[i] != my_proc )
+    for( i = 0; i < nblocks; ++i )
     {
-      int offset = 0;
-      for( k = 0; k < lengths_to_[i]; k++ )
+      p = i + proc_index;
+      if( p > (nblocks-1) ) p -= nblocks;
+
+      if( procs_to_[p] != my_proc )
+        MPI_Rsend( &export_objs[starts_to_[p]*obj_size],
+                   lengths_to_[p]*obj_size,
+                   MPI_CHAR,
+                   procs_to_[p],
+                   tag_,
+                   comm_ );
+      else
+       self_num = p;
+    }
+
+    if( self_msg_ )
+      memcpy( &import_objs[self_recv_address],
+              &export_objs[starts_to_[self_num]*obj_size],
+              lengths_to_[self_num]*obj_size );
+  }
+  else //data not blocked by proc, use send buffer
+  {
+    if( send_array_size_ < (max_send_length_*obj_size) )
+    {
+      if( send_array_size_ ) delete [] send_array_;
+      send_array_size_ = max_send_length_*obj_size;
+      send_array_ = new char[send_array_size_];
+    }
+
+    j = 0;
+    for( i = 0; i < nblocks; i++ )
+    {
+      p = i + proc_index;
+      if( p > (nblocks-1) ) p -= nblocks;
+      if( procs_to_[p] != my_proc )
       {
-        memcpy( &(send_array_[offset]), 
- 	  &(export_objs[indices_to_[j]*obj_size]), obj_size );
-        j++;
-        offset += obj_size;
+        int offset = 0;
+        j = starts_to_[p];
+        for( k = 0; k < lengths_to_[p]; k++ )
+        {
+          memcpy( &(send_array_[offset]), 
+                  &(export_objs[indices_to_[j]*obj_size]),
+                  obj_size );
+          ++j;
+          offset += obj_size;
+        }
+        MPI_Rsend( send_array_,
+                   lengths_to_[p] * obj_size,
+                   MPI_CHAR,
+                   procs_to_[p],
+                   tag_, comm_ );
       }
-      //   cout << "my_proc = " << my_proc << " length = " << lengths_to_[i] * obj_size 
-      //   << " send to = " << procs_to_[i] << " tag = " << tag << endl;
-      //cout << "Processor " << my_proc << "lengths_to_["<<i<<"] = " << lengths_to_[i] << " obj_size = " <<obj_size<<endl;
-      MPI_Rsend( send_array_, lengths_to_[i] * obj_size,
-	MPI_CHAR, procs_to_[i], tag_, comm_ );
-    }
-    else
-    {
-      self_num = i;
-      self_index = j;
-      j += lengths_to_[i];
-    }
-  }
-
-  if( self_msg_ )
-    for( k = 0; k < lengths_to_[self_num]; k++ )
-    {
-      memcpy( &(recv_array_[self_recv_address]),
-	 &(export_objs[indices_to_[self_index]*obj_size]),
-	  obj_size );
-      self_index++;
-      self_recv_address += obj_size;
+      else
+      {
+        self_num = p;
+        self_index = starts_to_[p];
+      }
     }
 
-  if (send_array_!=0) {
-    delete [] send_array_;
-    send_array_ = 0;
+    if( self_msg_ )
+      for( k = 0; k < lengths_to_[self_num]; k++ )
+      {
+        memcpy( &(import_objs[self_recv_address]),
+                &(export_objs[indices_to_[self_index]*obj_size]),
+                obj_size );
+        self_index++;
+        self_recv_address += obj_size;
+      }
   }
+
   return(0);
 }
 //==============================================================================
 //---------------------------------------------------------------------------
 //Do_Waits Method
 //---------------------------------------------------------------------------
-int Epetra_MpiDistributor::DoWaits(char * export_objs,
-			       const int & obj_size,
-			       char * import_objs )
+int Epetra_MpiDistributor::DoWaits()
 {
-  if( nrecvs_ - self_msg_ > 0 )
-    MPI_Waitall( nrecvs_ - self_msg_, 
-		 request_, status_ );
+  if( nrecvs_ > 0 ) MPI_Waitall( nrecvs_, request_, status_ );
 
   return(0);
 }
@@ -657,45 +672,57 @@ int Epetra_MpiDistributor::DoWaits(char * export_objs,
 //---------------------------------------------------------------------------
 //DoReverse_Posts Method
 //---------------------------------------------------------------------------
-int Epetra_MpiDistributor::DoReversePosts(char * export_objs,
-				       const int & obj_size,
-				       char * import_objs )
+int Epetra_MpiDistributor::DoReversePosts( char * export_objs,
+                                           int obj_size,
+                                           int & len_import_objs,
+                                           char *& import_objs )
 {
+  assert(indices_to_==0); //Can only do reverse comm when original data
+                          // is blocked by processor
+
   int i;
   int my_proc = 0;
 
   MPI_Comm_rank( comm_, &my_proc );
 
-  int total_send_length = 0;
-  for( i = 0; i < nsends_; i++ )
-    total_send_length += lengths_to_[i];
+  if( comm_plan_reverse_ == 0 )
+  {
+    int total_send_length = 0;
+    for( i = 0; i < nsends_+self_msg_; i++ )
+      total_send_length += lengths_to_[i];
 
-  int max_recv_length = 0;
-  for( i = 0; i < nrecvs_; i++ )
-    if( procs_from_[i] != my_proc )
-      if( lengths_from_[i] > max_recv_length )
-        max_recv_length = lengths_from_[i];
+    int max_recv_length = 0;
+    for( i = 0; i < nrecvs_; i++ )
+      if( procs_from_[i] != my_proc )
+        if( lengths_from_[i] > max_recv_length )
+          max_recv_length = lengths_from_[i];
 
-  comm_plan_reverse_ = new Epetra_MpiDistributor(*epComm_);
+    comm_plan_reverse_ = new Epetra_MpiDistributor(*epComm_);
 
-  comm_plan_reverse_->lengths_to_ = lengths_from_;
-  comm_plan_reverse_->procs_to_ = procs_from_;
-  comm_plan_reverse_->indices_to_ = indices_from_;
-  comm_plan_reverse_->lengths_from_ = lengths_to_;
-  comm_plan_reverse_->procs_from_ = procs_to_;
-  comm_plan_reverse_->indices_from_ = indices_to_;
-  comm_plan_reverse_->nrecvs_ = nsends_;
-  comm_plan_reverse_->nsends_ = nrecvs_;
-  comm_plan_reverse_->self_msg_ = self_msg_;
-  comm_plan_reverse_->max_send_length_ = max_recv_length;
-  comm_plan_reverse_->total_recv_length_ = total_send_length;
+    comm_plan_reverse_->lengths_to_ = lengths_from_;
+    comm_plan_reverse_->procs_to_ = procs_from_;
+    comm_plan_reverse_->indices_to_ = indices_from_;
+    comm_plan_reverse_->starts_to_ = starts_from_;
 
-  comm_plan_reverse_->request_ = new MPI_Request[ comm_plan_reverse_->nrecvs_ ];
-  comm_plan_reverse_->status_= new MPI_Status[ comm_plan_reverse_->nrecvs_ ];
+    comm_plan_reverse_->lengths_from_ = lengths_to_;
+    comm_plan_reverse_->procs_from_ = procs_to_;
+    comm_plan_reverse_->indices_from_ = indices_to_;
+    comm_plan_reverse_->starts_from_ = starts_to_;
 
-  comm_plan_reverse_->no_delete_ = true;
+    comm_plan_reverse_->nsends_ = nrecvs_;
+    comm_plan_reverse_->nrecvs_ = nsends_;
+    comm_plan_reverse_->self_msg_ = self_msg_;
 
-  int comm_flag = comm_plan_reverse_->DoPosts(export_objs, obj_size, import_objs);
+    comm_plan_reverse_->max_send_length_ = max_recv_length;
+    comm_plan_reverse_->total_recv_length_ = total_send_length;
+
+    comm_plan_reverse_->request_ = new MPI_Request[ comm_plan_reverse_->nrecvs_ ];
+    comm_plan_reverse_->status_= new MPI_Status[ comm_plan_reverse_->nrecvs_ ];
+
+    comm_plan_reverse_->no_delete_ = true;
+  }
+
+  int comm_flag = comm_plan_reverse_->DoPosts(export_objs, obj_size, len_import_objs, import_objs);
 
   return(comm_flag);
 }
@@ -704,18 +731,11 @@ int Epetra_MpiDistributor::DoReversePosts(char * export_objs,
 //---------------------------------------------------------------------------
 //DoReverse_Waits Method
 //---------------------------------------------------------------------------
-int Epetra_MpiDistributor::DoReverseWaits(char * export_objs,
-		 	           const int & obj_size,
-			           char * import_objs )
+int Epetra_MpiDistributor::DoReverseWaits()
 {
   if( comm_plan_reverse_ == 0 ) return (-1);
 
-  int comm_flag = comm_plan_reverse_->DoWaits(export_objs, obj_size, import_objs );
-
-  if (comm_plan_reverse_!=0) {
-    delete comm_plan_reverse_;
-    comm_plan_reverse_ = 0;
-  }
+  int comm_flag = comm_plan_reverse_->DoWaits();
 
   return(comm_flag);
 }
@@ -724,89 +744,121 @@ int Epetra_MpiDistributor::DoReverseWaits(char * export_objs,
 //---------------------------------------------------------------------------
 //Resize Method                      (Heaphy) 
 //---------------------------------------------------------------------------
-int Epetra_MpiDistributor::Resize( int * sizes, int & recv_size )
+int Epetra_MpiDistributor::Resize_( int * sizes )
 { 
   int  i, j, k;         // loop counters
   int sum; 
  
-  if (sizes == 0) return 0; 
+  //if (sizes == 0) return 0; 
      
   int my_proc; 
   MPI_Comm_rank (comm_, &my_proc);  
      
-  if( sizes_ == 0 ) 
-  {  
-    sizes_ = new int[nexports_]; 
-    sizes_to_ = new int[nsends_ + self_msg_];
-    sizes_from_ = new int [nrecvs_ + self_msg_];
-    starts_to_ptr_ = new int[nsends_ + self_msg_];
-    indices_to_ptr_ = new int[nexports_]; 
-    starts_from_ptr_  = new int[nrecvs_ + self_msg_]; 
-  }
-  else 
+  if( sizes_ )
   {  
     //test and see if we are already setup for these sizes
     bool match = true; 
     for( i = 0; i < nexports_; ++i )
       match = match && (sizes_[i]==sizes[i]);
     if( match )  
-    {
-      recv_size = total_recv_length_;
       return 0;
-    }
-    else
-      EPETRA_CHK_ERR(-1); //currently do not support resetting of sizes...
+    else //reset existing sizing arrays
+      max_send_length_ = 0;
   } 
  
+  if( !sizes_ && nexports_ ) sizes_ = new int[nexports_]; 
   for (i = 0; i < nexports_; i++)
     sizes_[i] = sizes[i]; 
  
-  for (i = 0; i < nsends_ + self_msg_; i++) 
+  if( !sizes_to_ && (nsends_+self_msg_) ) sizes_to_ = new int[nsends_+self_msg_];
+  for (i = 0; i < (nsends_+self_msg_); ++i) 
     sizes_to_[i] = 0;                       
  
-  //Sends not blocked, so have to do more work
-  int * offset = new int[nexports_];
-   
-  //Compute address for every item in send array
-  sum = 0; 
-  for( i = 0; i < nexports_; ++i )
-  {  
-    offset[i] = sum; 
-    sum += sizes_[i];
-  }
-   
-  sum = 0;
-  max_send_length_ = 0;
-  for( i = 0; i < nsends_ + self_msg_; ++i )
+  if( !starts_to_ptr_ && (nsends_+self_msg_) ) starts_to_ptr_ = new int[nsends_+self_msg_];
+
+  if( !indices_to_ ) //blocked sends
   {
-    starts_to_ptr_[i] = sum;
-    for( j = starts_to_[i]; j < (starts_to_[i]+lengths_to_[i]); ++j )
+    int * index = new int[nsends_+self_msg_];
+    int * sort_val = new int[nsends_+self_msg_];
+
+    for( i = 0; i < (nsends_+self_msg_); ++i )
     {
-      indices_to_ptr_[j] = offset[ indices_to_[j] ];
-      sizes_to_[i] += sizes_[ indices_to_[j] ];
+      j = starts_to_[i];
+      for( k = 0; k < lengths_to_[i]; ++k )
+        sizes_to_[i] += sizes[j++];
+      if( (sizes_to_[i] > max_send_length_) && (procs_to_[i] != my_proc) )
+        max_send_length_ = sizes_to_[i];
     }
-    if( sizes_to_[i] > max_send_length_ && procs_to_[i] != my_proc )
-      max_send_length_ = sizes_to_[i];
-    sum += sizes_to_[i];
+
+    for( i = 0; i < (nsends_+self_msg_); ++i )
+    {
+      sort_val[i] = starts_to_[i];
+      index[i] = i;
+    }
+
+    if( nsends_+self_msg_ )
+      Sort_ints_( sort_val, index, (nsends_+self_msg_) );
+
+    int sum = 0;
+    for( i = 0; i < (nsends_+self_msg_); ++i )
+    {
+      starts_to_ptr_[ index[i] ] = sum;
+      sum += sizes_to_[ index[i] ];
+    }
+
+    delete [] index;
+    delete [] sort_val;
   }
+  else //Sends not blocked, so have to do more work
+  {
+    if( !indices_to_ptr_ && nexports_ ) indices_to_ptr_ = new int[nexports_]; 
+    int * offset = 0;
+    if( nexports_ ) offset = new int[nexports_];
+   
+    //Compute address for every item in send array
+    sum = 0; 
+    for( i = 0; i < nexports_; ++i )
+    {  
+      offset[i] = sum; 
+      sum += sizes_[i];
+    }
+   
+    sum = 0;
+    max_send_length_ = 0;
+    for( i = 0; i < (nsends_+self_msg_); ++i )
+    {
+      starts_to_ptr_[i] = sum;
+      for( j = starts_to_[i]; j < (starts_to_[i]+lengths_to_[i]); ++j )
+      {
+        indices_to_ptr_[j] = offset[ indices_to_[j] ];
+        sizes_to_[i] += sizes_[ indices_to_[j] ];
+      }
+      if( sizes_to_[i] > max_send_length_ && procs_to_[i] != my_proc )
+        max_send_length_ = sizes_to_[i];
+      sum += sizes_to_[i];
+    }
  
-  delete [] offset;
+    delete [] offset;
+  }
  
   //  Exchange sizes routine inserted here:
   int self_index_to = -1;
-  for (i = 0; i < nsends_ + self_msg_; i++)
+  for (i = 0; i < (nsends_+self_msg_); i++)
   {
     if(procs_to_[i] != my_proc)
-      MPI_Send ((void *) &sizes_to_[i], 1, MPI_INT, procs_to_[i], tag_, comm_);
+      MPI_Send ((void *) &(sizes_to_[i]), 1, MPI_INT, procs_to_[i], tag_, comm_);
     else
       self_index_to = i;
   }
- 
+
   total_recv_length_ = 0;
-  for (i = 0; i < nrecvs_ + self_msg_; i++)
+  MPI_Status status;
+  if( !sizes_from_ && (nrecvs_+self_msg_) ) sizes_from_ = new int [nrecvs_+self_msg_];
+  for (i = 0; i < (nrecvs_+self_msg_); ++i)
   {
+    sizes_from_[i] = 0;
     if (procs_from_[i] != my_proc)
-      MPI_Recv((void *) &sizes_from_[i], 1, MPI_INT, procs_from_[i], tag_, comm_, status_);
+      MPI_Recv((void *) &(sizes_from_[i]), 1, MPI_INT, procs_from_[i], tag_, comm_, &status);
     else
       sizes_from_[i] = sizes_to_[self_index_to];
     total_recv_length_ += sizes_from_[i];
@@ -814,77 +866,234 @@ int Epetra_MpiDistributor::Resize( int * sizes, int & recv_size )
   // end of exchanges sizes insert
  
   sum = 0;
-  for (i = 0; i < nrecvs_ + self_msg_; i++)
+  if( !starts_from_ptr_ ) starts_from_ptr_  = new int[nrecvs_+self_msg_]; 
+  for (i = 0; i < (nrecvs_+self_msg_); ++i)
   {
      starts_from_ptr_[i] = sum;
      sum += sizes_from_[i];
   }
- 
-  recv_size = total_recv_length_;
- 
+
   return 0;
 }
 
 //==============================================================================
 // GSComm_Comm Do method
-int Epetra_MpiDistributor::Do(char * export_objs, const int * & obj_size, char * import_objs )
+int Epetra_MpiDistributor::Do( char * export_objs,
+                               int obj_size,
+                               int *& sizes,
+                               int & len_import_objs,
+                               char *& import_objs )
 {
-  EPETRA_CHK_ERR(-1); // This method should never be called 
-  return(-1);
+  assert(DoPosts(export_objs, obj_size, sizes, len_import_objs, import_objs)==0);
+  assert(DoWaits()==0);
+
+  return(0);
 }
 
 //==============================================================================
 // GSComm_Comm DoReverse method
-int Epetra_MpiDistributor::DoReverse(char * export_objs,const int * & obj_size, char * import_objs )
+int Epetra_MpiDistributor::DoReverse( char * export_objs,
+                                      int obj_size,
+                                      int *& sizes,
+                                      int & len_import_objs,
+                                      char *& import_objs )
 {
-  EPETRA_CHK_ERR(-1); // This method should never be called 
-  return(-1);
-}
-//==============================================================================
-//---------------------------------------------------------------------------
-//Do_Posts Method
-//---------------------------------------------------------------------------
-int Epetra_MpiDistributor::DoPosts(char * export_objs,
-				const int * & obj_size,
-				char * import_objs ) {
-  EPETRA_CHK_ERR(-1); // This method should never be called 
-  return(-1);
+  assert(DoReversePosts(export_objs, obj_size, sizes, len_import_objs, import_objs)==0);
+  assert(DoReverseWaits()==0);
 
+  return(0);
 }
 //==============================================================================
 //---------------------------------------------------------------------------
-//Do_Waits Method
+//Do_Posts Method (Variable Block Size)
 //---------------------------------------------------------------------------
-int Epetra_MpiDistributor::DoWaits(char * export_objs,
-			       const int * & obj_size,
-			       char * import_objs )
+int Epetra_MpiDistributor::DoPosts( char * export_objs,
+                                    int obj_size,
+                                    int *& sizes,
+                                    int & len_import_objs,
+                                    char *& import_objs )
 {
-  EPETRA_CHK_ERR(-1); // This method should never be called 
-  return(-1);
+  int ierr = Resize_(sizes);
+
+  MPI_Barrier( comm_ );
+
+  int i, j, k;
+
+  int my_proc = 0;
+  int self_recv_address = 0;
+
+  MPI_Comm_rank( comm_, &my_proc );
+
+  if( len_import_objs < (total_recv_length_*obj_size) )
+  {
+    if( len_import_objs ) delete [] import_objs;
+    len_import_objs = total_recv_length_*obj_size;
+    import_objs = new char[len_import_objs];
+  }
+
+  k = 0;
+
+  for( i = 0; i < (nrecvs_+self_msg_); ++i )
+  {
+    if( procs_from_[i] != my_proc )
+    {
+      MPI_Irecv( &(import_objs[starts_from_ptr_[i] * obj_size]),
+                 sizes_from_[i] * obj_size,
+                 MPI_CHAR, procs_from_[i], tag_, comm_, &(request_[k]) );
+      k++;
+    }
+    else
+      self_recv_address = starts_from_ptr_[i] * obj_size;
+  }
+
+  //setup scan through procs_to list starting w/ higher numbered procs 
+  //Should help balance msg traffic
+  int nblocks = nsends_ + self_msg_; 
+  int proc_index = 0; 
+  while( proc_index < nblocks && procs_to_[proc_index] < my_proc )
+    ++proc_index;                    
+  if( proc_index == nblocks ) proc_index = 0;
+   
+  int self_num, self_index;
+  int p;
+
+  if( !indices_to_ ) //data already blocked by processor
+  {
+    for( i = 0; i < nblocks; ++i )
+    {
+      p = i + proc_index;
+      if( p > (nblocks-1) ) p -= nblocks;
+
+      if( procs_to_[p] != my_proc )
+        MPI_Rsend( &export_objs[starts_to_ptr_[p]*obj_size],
+                   sizes_to_[p]*obj_size,
+                   MPI_CHAR,
+                   procs_to_[p],
+                   tag_,
+                   comm_ );
+      else
+        self_num = p;
+    }
+
+    if( self_msg_ )
+      memcpy( &import_objs[self_recv_address],
+              &export_objs[starts_to_ptr_[self_num]*obj_size],
+              sizes_to_[self_num]*obj_size );
+  }
+  else //data not blocked by proc, need to copy to buffer
+  {
+    if( send_array_size_ && send_array_size_ < (max_send_length_*obj_size) )
+    {
+      delete [] send_array_;
+      send_array_size_ = 0;
+    }
+    if( !send_array_size_ )
+    {
+      send_array_size_ = max_send_length_*obj_size;
+      send_array_ = new char[send_array_size_];
+    }
+
+    for( i=0; i<nblocks; ++i )
+    {
+      p = i + proc_index;
+      if( p > (nblocks-1) ) p -= nblocks;
+
+      if( procs_to_[p] != my_proc )
+      {
+        int offset = 0;
+        j = starts_to_[p];
+        for( k=0; k<lengths_to_[p]; ++k )
+        {
+          memcpy( &send_array_[offset],
+                  &export_objs[indices_to_ptr_[j]*obj_size],
+                  sizes_[indices_to_[j]]*obj_size );
+          offset += sizes_[indices_to_[j]]*obj_size;
+          ++j;
+        }
+        MPI_Rsend( send_array_, sizes_to_[p]*obj_size,
+                   MPI_CHAR, procs_to_[p], tag_, comm_ );
+      }
+      else
+        self_num = p;
+    }
+
+    if( self_msg_ )
+    {
+      int jj;
+      j = starts_to_[self_num];
+      for( k=0; k<lengths_to_[self_num]; ++k )
+      {
+        jj = indices_to_ptr_[j];
+        memcpy( &import_objs[self_recv_address],
+                &export_objs[jj*obj_size],
+                sizes_[indices_to_[j]*obj_size] );
+        self_recv_address += (obj_size*sizes_[indices_to_[j]]);
+        ++jj;
+      }
+    }
+  }
+
+  return(0);
 }
 
 //==============================================================================
 //---------------------------------------------------------------------------
 //DoReverse_Posts Method
 //---------------------------------------------------------------------------
-int Epetra_MpiDistributor::DoReversePosts(char * export_objs,
-				       const int * & obj_size,
-				       char * import_objs )
+int Epetra_MpiDistributor::DoReversePosts( char * export_objs,
+				           int obj_size,
+                                           int *& sizes,
+                                           int & len_import_objs,
+				           char *& import_objs )
 {
-  EPETRA_CHK_ERR(-1); // This method should never be called 
-  return(-1);
-}
+  assert(indices_to_==0); //Can only do reverse comm when original data
+                          // is blocked by processor
 
-//==============================================================================
-//---------------------------------------------------------------------------
-//DoReverse_Waits Method
-//---------------------------------------------------------------------------
-int Epetra_MpiDistributor::DoReverseWaits(char * export_objs,
-		 	           const int * & obj_size,
-			           char * import_objs )
-{
-  EPETRA_CHK_ERR(-1); // This method should never be called 
-  return(-1);
+  int i;
+  int my_proc = 0;
+
+  MPI_Comm_rank( comm_, &my_proc );
+
+  if( comm_plan_reverse_ == 0 )
+  {
+    int total_send_length = 0;
+    for( i = 0; i < nsends_+self_msg_; i++ )
+      total_send_length += lengths_to_[i];
+
+    int max_recv_length = 0;
+    for( i = 0; i < nrecvs_; i++ )
+      if( procs_from_[i] != my_proc )
+        if( lengths_from_[i] > max_recv_length )
+          max_recv_length = lengths_from_[i];
+
+    comm_plan_reverse_ = new Epetra_MpiDistributor(*epComm_);
+
+    comm_plan_reverse_->lengths_to_ = lengths_from_;
+    comm_plan_reverse_->procs_to_ = procs_from_;
+    comm_plan_reverse_->indices_to_ = indices_from_;
+    comm_plan_reverse_->starts_to_ = starts_from_;
+
+    comm_plan_reverse_->lengths_from_ = lengths_to_;
+    comm_plan_reverse_->procs_from_ = procs_to_;
+    comm_plan_reverse_->indices_from_ = indices_to_;
+    comm_plan_reverse_->starts_from_ = starts_to_;
+
+    comm_plan_reverse_->nsends_ = nrecvs_;
+    comm_plan_reverse_->nrecvs_ = nsends_;
+    comm_plan_reverse_->self_msg_ = self_msg_;
+
+    comm_plan_reverse_->max_send_length_ = max_recv_length;
+    comm_plan_reverse_->total_recv_length_ = total_send_length;
+
+    comm_plan_reverse_->request_ = new MPI_Request[ comm_plan_reverse_->nrecvs_ ];
+    comm_plan_reverse_->status_= new MPI_Status[ comm_plan_reverse_->nrecvs_ ];
+
+    comm_plan_reverse_->no_delete_ = true;
+  }
+
+  int comm_flag = comm_plan_reverse_->DoPosts(export_objs, obj_size, sizes, len_import_objs, import_objs);
+
+  return(comm_flag);
 }
 
 //==============================================================================
@@ -937,7 +1146,7 @@ void Epetra_MpiDistributor::Print( ostream & os) const
 }
 
 //---------------------------------------------------------------------------
-int Epetra_MpiDistributor::Sort_ints(
+int Epetra_MpiDistributor::Sort_ints_(
  int *vals_sort,     //  values to be sorted  
  int *vals_other,    // other array to be reordered with sort
  int  nvals)         // length of these two arrays

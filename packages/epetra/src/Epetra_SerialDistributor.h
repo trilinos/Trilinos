@@ -63,31 +63,65 @@ class Epetra_SerialDistributor: public Epetra_Object, public virtual Epetra_Dist
   //@}
 
   
-  int CreateFromSends( const int & NumExportIDs,const int * ExportPIDs,
-			const bool & Deterministic, int & NumRemoteIDs );
-  int CreateFromRecvs( const int & NumRemoteIDs, const int * RemoteGIDs, const int * RemotePIDs,
-			const bool & Deterministic,int & NumExportIDs,
-			int *& ExportGIDs, int *& ExportPIDs);
+  int CreateFromSends( const int & NumExportIDs,
+                       const int * ExportPIDs,
+		       bool Deterministic,
+                       int & NumRemoteIDs );
+
+  int CreateFromRecvs( const int & NumRemoteIDs,
+                       const int * RemoteGIDs,
+                       const int * RemotePIDs,
+		       bool Deterministic,
+                       int & NumExportIDs,
+                       int *& ExportGIDs,
+                       int *& ExportPIDs);
 
 
-  int Do       (char * export_objs, const int & obj_size, char * import_objs);
-  int DoReverse(char * export_objs, const int & obj_size, char * import_objs);
+  int Do       (char * export_objs,
+                int obj_size,
+                int & len_import_objs,
+                char *& import_objs);
+  int DoReverse(char * export_objs,
+                int obj_size,
+                int & len_import_objs,
+                char *& import_objs);
 
-  int DoPosts(char * export_objs, const int & obj_size, char * import_objs);
-  int DoWaits(char * export_objs, const int & obj_size, char * import_objs);
+  int DoPosts(char * export_objs,
+              int obj_size,
+              int & len_import_objs,
+              char *& import_objs);
+  int DoWaits();
 
-  int DoReversePosts(char * export_objs, const int & obj_size, char * import_objs);
-  int DoReverseWaits(char * export_objs, const int & obj_size, char * import_objs);
+  int DoReversePosts(char * export_objs,
+                     int obj_size,
+                     int & len_import_objs,
+                     char *& import_objs);
+  int DoReverseWaits();
 
 
-  int Do       (char * export_objs, const int * & obj_size, char * import_objs);
-  int DoReverse(char * export_objs, const int * & obj_size, char * import_objs);
+  int Do       (char * export_objs,
+                int obj_size,
+                int *& sizes,
+                int & len_import_objs,
+                char *& import_objs);
+  int DoReverse(char * export_objs,
+                int obj_size,
+                int *& sizes,
+                int & len_import_objs,
+                char *& import_objs);
 
-  int DoPosts(char * export_objs, const int * & obj_size, char * import_objs);
-  int DoWaits(char * export_objs, const int * & obj_size, char * import_objs);
+  int DoPosts(char * export_objs,
+              int obj_size,
+              int *& sizes,
+              int & len_import_objs,
+              char *& import_objs);
 
-  int DoReversePosts(char * export_objs, const int * & obj_size, char * import_objs);
-  int DoReverseWaits(char * export_objs, const int * & obj_size, char * import_objs);
+  int DoReversePosts(char * export_objs,
+                     int obj_size,
+                     int *& sizes,
+                     int & len_import_objs,
+                     char *& import_objs);
+
 
   virtual void Print(ostream & os) const;
 };

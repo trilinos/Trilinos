@@ -54,7 +54,7 @@ Epetra_SerialDistributor::~Epetra_SerialDistributor() {
 //---------------------------------------------------------------------------
 int Epetra_SerialDistributor::CreateFromSends( const int & NumExportIDs,
 			           const int * ExportPIDs,
-			           const bool & Deterministic,
+				   bool Deterministic,
 			           int & NumRemoteIDs ) {
   EPETRA_CHK_ERR(-1); // This method should never be called 
   return(-1);
@@ -68,7 +68,7 @@ int Epetra_SerialDistributor::CreateFromSends( const int & NumExportIDs,
 int Epetra_SerialDistributor::CreateFromRecvs( const int & NumRemoteIDs,
 				   const int * RemoteGIDs,
 			           const int * RemotePIDs,
-			           const bool & Deterministic,
+				   bool Deterministic,
 			           int & NumExportIDs,
 				   int *& ExportGIDs,
 				   int *& ExportPIDs )
@@ -79,7 +79,10 @@ int Epetra_SerialDistributor::CreateFromRecvs( const int & NumRemoteIDs,
 
 //==============================================================================
 // GSComm_Comm Do method
-int Epetra_SerialDistributor::Do(char * export_objs, const int & obj_size, char * import_objs )
+int Epetra_SerialDistributor::Do(char * export_objs,
+                                 int obj_size,
+                                 int & len_import_objs,
+                                 char *& import_objs )
 {
   EPETRA_CHK_ERR(-1); // This method should never be called 
   return(-1);
@@ -87,7 +90,10 @@ int Epetra_SerialDistributor::Do(char * export_objs, const int & obj_size, char 
 
 //==============================================================================
 // GSComm_Comm DoReverse method
-int Epetra_SerialDistributor::DoReverse(char * export_objs,const int & obj_size, char * import_objs )
+int Epetra_SerialDistributor::DoReverse(char * export_objs,
+                                        int obj_size,
+                                        int & len_import_objs,
+                                        char *& import_objs )
 {
   EPETRA_CHK_ERR(-1); // This method should never be called 
   return(-1);
@@ -97,9 +103,10 @@ int Epetra_SerialDistributor::DoReverse(char * export_objs,const int & obj_size,
 //Do_Posts Method
 //---------------------------------------------------------------------------
 int Epetra_SerialDistributor::DoPosts(char * export_objs,
-				const int & obj_size,
-				char * import_objs ) {
-
+                                      int obj_size,
+                                      int & len_import_objs,
+                                      char *& import_objs )
+{
   EPETRA_CHK_ERR(-1); // This method should never be called 
   return(-1);
 }
@@ -107,9 +114,7 @@ int Epetra_SerialDistributor::DoPosts(char * export_objs,
 //---------------------------------------------------------------------------
 //Do_Waits Method
 //---------------------------------------------------------------------------
-int Epetra_SerialDistributor::DoWaits(char * export_objs,
-			       const int & obj_size,
-			       char * import_objs )
+int Epetra_SerialDistributor::DoWaits()
 {
   EPETRA_CHK_ERR(-1); // This method should never be called 
   return(-1);
@@ -120,8 +125,9 @@ int Epetra_SerialDistributor::DoWaits(char * export_objs,
 //DoReverse_Posts Method
 //---------------------------------------------------------------------------
 int Epetra_SerialDistributor::DoReversePosts(char * export_objs,
-				       const int & obj_size,
-				       char * import_objs )
+                                             int obj_size,
+                                             int & len_import_objs,
+                                             char *& import_objs )
 {
   EPETRA_CHK_ERR(-1); // This method should never be called 
   return(-1);
@@ -131,9 +137,7 @@ int Epetra_SerialDistributor::DoReversePosts(char * export_objs,
 //---------------------------------------------------------------------------
 //DoReverse_Waits Method
 //---------------------------------------------------------------------------
-int Epetra_SerialDistributor::DoReverseWaits(char * export_objs,
-		 	           const int & obj_size,
-			           char * import_objs )
+int Epetra_SerialDistributor::DoReverseWaits()
 {
   EPETRA_CHK_ERR(-1); // This method should never be called 
   return(-1);
@@ -141,7 +145,11 @@ int Epetra_SerialDistributor::DoReverseWaits(char * export_objs,
 
 //==============================================================================
 // GSComm_Comm Do method
-int Epetra_SerialDistributor::Do(char * export_objs, const int * & obj_size, char * import_objs )
+int Epetra_SerialDistributor::Do(char * export_objs,
+                                 int obj_size,
+                                 int *& sizes,
+                                 int & len_import_objs,
+                                 char *& import_objs )
 {
   EPETRA_CHK_ERR(-1); // This method should never be called 
   return(-1);
@@ -149,7 +157,11 @@ int Epetra_SerialDistributor::Do(char * export_objs, const int * & obj_size, cha
 
 //==============================================================================
 // GSComm_Comm DoReverse method
-int Epetra_SerialDistributor::DoReverse(char * export_objs,const int * & obj_size, char * import_objs )
+int Epetra_SerialDistributor::DoReverse(char * export_objs,
+                                        int obj_size,
+                                        int *& sizes,
+                                        int & len_import_objs,
+                                        char *& import_objs )
 {
   EPETRA_CHK_ERR(-1); // This method should never be called 
   return(-1);
@@ -159,19 +171,10 @@ int Epetra_SerialDistributor::DoReverse(char * export_objs,const int * & obj_siz
 //Do_Posts Method
 //---------------------------------------------------------------------------
 int Epetra_SerialDistributor::DoPosts(char * export_objs,
-				const int * & obj_size,
-				char * import_objs ) {
-
-  EPETRA_CHK_ERR(-1); // This method should never be called 
-  return(-1);
-}
-//==============================================================================
-//---------------------------------------------------------------------------
-//Do_Waits Method
-//---------------------------------------------------------------------------
-int Epetra_SerialDistributor::DoWaits(char * export_objs,
-			       const int * & obj_size,
-			       char * import_objs )
+                                      int obj_size,
+                                      int *& sizes,
+                                      int & len_import_objs,
+                                      char *& import_objs )
 {
   EPETRA_CHK_ERR(-1); // This method should never be called 
   return(-1);
@@ -182,20 +185,10 @@ int Epetra_SerialDistributor::DoWaits(char * export_objs,
 //DoReverse_Posts Method
 //---------------------------------------------------------------------------
 int Epetra_SerialDistributor::DoReversePosts(char * export_objs,
-				       const int * & obj_size,
-				       char * import_objs )
-{
-  EPETRA_CHK_ERR(-1); // This method should never be called 
-  return(-1);
-}
-
-//==============================================================================
-//---------------------------------------------------------------------------
-//DoReverse_Waits Method
-//---------------------------------------------------------------------------
-int Epetra_SerialDistributor::DoReverseWaits(char * export_objs,
-		 	           const int * & obj_size,
-			           char * import_objs )
+                                             int obj_size,
+                                             int *& sizes,
+                                             int & len_import_objs,
+                                             char *& import_objs )
 {
   EPETRA_CHK_ERR(-1); // This method should never be called 
   return(-1);

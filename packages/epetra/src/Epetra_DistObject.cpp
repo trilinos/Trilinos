@@ -46,7 +46,8 @@ Epetra_DistObject::Epetra_DistObject(const Epetra_BlockMap& Map)
     Exports_(0),
     Imports_(0),
     LenExports_(0),
-    LenImports_(0)
+    LenImports_(0),
+    Sizes_(0)
 {}
 
 //=============================================================================
@@ -60,7 +61,8 @@ Epetra_DistObject::Epetra_DistObject(const Epetra_BlockMap& Map, const char* con
     Exports_(0),
     Imports_(0),
     LenExports_(0),
-    LenImports_(0)
+    LenImports_(0),
+    Sizes_(0)
 {}
 
 //=============================================================================
@@ -74,28 +76,34 @@ Epetra_DistObject::Epetra_DistObject(const Epetra_DistObject& Source)
     Exports_(0),
     Imports_(0),
     LenExports_(0),
-    LenImports_(0)
+    LenImports_(0),
+    Sizes_(0)
 {}
 
 //=============================================================================
 Epetra_DistObject::~Epetra_DistObject(){
 
 
-  if (Exports_!=0) {
+  if (LenExports_!=0) {
     delete[] Exports_;
     Exports_ = 0;
+    LenExports_ = 0;
   }
-  if (Imports_!=0) {
+  if (LenImports_!=0) {
     delete[] Imports_;
     Imports_ = 0;
+    LenImports_ = 0;
   }
 
+  if (Sizes_!=0) delete [] Sizes_;
+  Sizes_ = 0;
 }
 
 //=============================================================================
 int Epetra_DistObject::Import(const Epetra_SrcDistObject& A, 
 			      const Epetra_Import& Importer,
-			      Epetra_CombineMode CombineMode) 
+			      Epetra_CombineMode CombineMode,
+                              const Epetra_OffsetIndex * Indexor) 
 {
 
   if (!Map_.SameAs(Importer.TargetMap())) EPETRA_CHK_ERR(-2);
@@ -113,16 +121,17 @@ int Epetra_DistObject::Import(const Epetra_SrcDistObject& A,
   int Nrecv = Importer.NumRecv();
 
   EPETRA_CHK_ERR(DoTransfer(A, CombineMode, NumSameIDs, NumPermuteIDs, NumRemoteIDs, NumExportIDs,
-			    PermuteToLIDs, PermuteFromLIDs, RemoteLIDs, ExportLIDs, Nsend, Nrecv, 
+			    PermuteToLIDs, PermuteFromLIDs, RemoteLIDs, ExportLIDs, 
 			    LenExports_, Exports_, LenImports_, Imports_, Importer.Distributor(), 
-			    false));
+			    false, Indexor));
   return(0);
 }
 
 //=============================================================================
 int Epetra_DistObject::Export(const Epetra_SrcDistObject& A, 
 			      const Epetra_Export& Exporter,
-			      Epetra_CombineMode CombineMode) 
+			      Epetra_CombineMode CombineMode,
+                              const Epetra_OffsetIndex * Indexor) 
 {
 
   if (!Map_.SameAs(Exporter.TargetMap())) EPETRA_CHK_ERR(-2);
@@ -140,16 +149,17 @@ int Epetra_DistObject::Export(const Epetra_SrcDistObject& A,
   int Nrecv = Exporter.NumRecv();
 
   EPETRA_CHK_ERR(DoTransfer(A, CombineMode, NumSameIDs, NumPermuteIDs, NumRemoteIDs, NumExportIDs,
-			    PermuteToLIDs, PermuteFromLIDs, RemoteLIDs, ExportLIDs, Nsend, Nrecv, 
+			    PermuteToLIDs, PermuteFromLIDs, RemoteLIDs, ExportLIDs,
 			    LenExports_, Exports_,LenImports_, Imports_, Exporter.Distributor(), 
-			    false));
+			    false, Indexor));
   return(0);
 }
 
 //=============================================================================
 int Epetra_DistObject::Import(const Epetra_SrcDistObject& A, 
 			      const Epetra_Export& Exporter,
-			      Epetra_CombineMode CombineMode) 
+			      Epetra_CombineMode CombineMode,
+                              const Epetra_OffsetIndex * Indexor) 
 {
 
   if (!Map_.SameAs(Exporter.SourceMap())) EPETRA_CHK_ERR(-2);
@@ -167,16 +177,17 @@ int Epetra_DistObject::Import(const Epetra_SrcDistObject& A,
   int Nrecv = Exporter.NumSend();
 
   EPETRA_CHK_ERR(DoTransfer(A, CombineMode, NumSameIDs, NumPermuteIDs, NumRemoteIDs, NumExportIDs, 
-			    PermuteToLIDs, PermuteFromLIDs, RemoteLIDs, ExportLIDs, Nsend, Nrecv,
+			    PermuteToLIDs, PermuteFromLIDs, RemoteLIDs, ExportLIDs,
 			    LenImports_, Imports_, LenExports_, Exports_, Exporter.Distributor(), 
-			    true));
+			    true, Indexor));
   return(0);
 }
 
 //=============================================================================
 int Epetra_DistObject::Export(const Epetra_SrcDistObject& A, 
 			      const Epetra_Import& Importer,
-			      Epetra_CombineMode CombineMode) 
+			      Epetra_CombineMode CombineMode,
+                              const Epetra_OffsetIndex * Indexor) 
 {
 
   if (!Map_.SameAs(Importer.SourceMap())) EPETRA_CHK_ERR(-2);
@@ -194,9 +205,9 @@ int Epetra_DistObject::Export(const Epetra_SrcDistObject& A,
   int Nrecv =Importer.NumSend();
 
   EPETRA_CHK_ERR(DoTransfer(A, CombineMode, NumSameIDs, NumPermuteIDs, NumRemoteIDs, NumExportIDs,  
-			    PermuteToLIDs, PermuteFromLIDs,  RemoteLIDs, ExportLIDs, Nsend, Nrecv, 
+			    PermuteToLIDs, PermuteFromLIDs,  RemoteLIDs, ExportLIDs,
 			    LenImports_, Imports_, LenExports_, Exports_, 
-			    Importer.Distributor(), true));
+			    Importer.Distributor(), true, Indexor));
   return(0);
 }
 
@@ -211,39 +222,50 @@ int Epetra_DistObject::DoTransfer(const Epetra_SrcDistObject& A,
 				  int* PermuteFromLIDs, 
 				  int* RemoteLIDs, 
 				  int* ExportLIDs,
-				  int Nsend, 
-				  int Nrecv,
 				  int& LenExports, 
 				  char*& Exports,
 				  int& LenImports, 
 				  char*& Imports, 
 				  Epetra_Distributor& Distor, 
-				  bool DoReverse)
+				  bool DoReverse,
+                                  const Epetra_OffsetIndex * Indexor)
 {
 
   EPETRA_CHK_ERR(CheckSizes(A));
 
   if (NumSameIDs + NumPermuteIDs > 0) {
-    EPETRA_CHK_ERR(CopyAndPermute(A, NumSameIDs, NumPermuteIDs, PermuteToLIDs, PermuteFromLIDs));
+    EPETRA_CHK_ERR(CopyAndPermute(A, NumSameIDs, NumPermuteIDs, PermuteToLIDs, PermuteFromLIDs,Indexor));
   }
 
   if (CombineMode==Zero) 
     return(0); // All done if CombineMode only involves copying and permuting
   
   int SizeOfPacket; 
-  EPETRA_CHK_ERR(PackAndPrepare(A, NumExportIDs, ExportLIDs, Nsend, Nrecv, 
-				LenExports, Exports, LenImports, Imports, SizeOfPacket, Distor));
+  bool VarSizes = false;
+  if( !Sizes_ && NumExportIDs ) Sizes_ = new int[NumExportIDs];
+  EPETRA_CHK_ERR(PackAndPrepare(A, NumExportIDs, ExportLIDs,
+                 LenExports, Exports, SizeOfPacket, Sizes_, VarSizes, Distor));
 
   if ((DistributedGlobal_ && DoReverse) || (A.Map().DistributedGlobal() && !DoReverse)) {
     if (DoReverse) {
       // Do the exchange of remote data
-      EPETRA_CHK_ERR(Distor.DoReverse(Exports, SizeOfPacket, Imports));
+      if( VarSizes ) {
+        EPETRA_CHK_ERR(Distor.DoReverse(Exports, SizeOfPacket, Sizes_, LenImports, Imports));
+      }
+      else {
+        EPETRA_CHK_ERR(Distor.DoReverse(Exports, SizeOfPacket, LenImports, Imports));
+      }
     }
     else {
       // Do the exchange of remote data
-      EPETRA_CHK_ERR(Distor.Do(Exports, SizeOfPacket, Imports));
+      if( VarSizes ) {
+        EPETRA_CHK_ERR(Distor.Do(Exports, SizeOfPacket, Sizes_, LenImports, Imports));
+      }
+      else {
+        EPETRA_CHK_ERR(Distor.Do(Exports, SizeOfPacket, LenImports, Imports));
+      }
     }
-    EPETRA_CHK_ERR(UnpackAndCombine(A, NumRemoteIDs, RemoteLIDs, Imports, SizeOfPacket, Distor, CombineMode));
+    EPETRA_CHK_ERR(UnpackAndCombine(A, NumRemoteIDs, RemoteLIDs, LenImports, Imports, SizeOfPacket, Distor, CombineMode, Indexor));
   }
 
   return(0);

@@ -943,28 +943,51 @@ class Epetra_MultiVector: public Epetra_DistObject, public Epetra_CompObject, pu
   // Internal utilities
 
   int Reduce(); 
+
   int AllocateForCopy(void);
   int DoCopy(void);
+
   int AllocateForView(void);
   int DoView(void);
-  int ChangeGlobalValue(int GlobalBlockRow, int BlockRowOffset, 
-			int VectorIndex, double ScalarValue, bool SumInto);
-  int ChangeMyValue(int MyBlockRow, int BlockRowOffset, 
-		    int VectorIndex, double ScalarValue, bool SumInto);
-  int CheckSizes(const Epetra_SrcDistObject& A);
-  int CopyAndPermute(const Epetra_SrcDistObject & Source, int NumSameIDs, 
-		     int NumPermuteIDs, int * PermuteToLIDs, int * PermuteFromLIDs);
+  int ChangeGlobalValue(int GlobalBlockRow,
+                        int BlockRowOffset, 
+                        int VectorIndex,
+                        double ScalarValue,
+                        bool SumInto);
+  int ChangeMyValue(int MyBlockRow,
+                    int BlockRowOffset, 
+                    int VectorIndex,
+                    double ScalarValue,
+                    bool SumInto);
 
-  int PackAndPrepare(const Epetra_SrcDistObject & Source, int NumExportIDs, int * ExportLIDs,
-		     int Nsend, int Nrecv,
-		     int & LenExports, char * & Exports, int & LenImports, 
-		     char * & Imports, 
-		     int & SizeOfPacket, Epetra_Distributor & Distor);
+  int CheckSizes(const Epetra_SrcDistObject& A);
+
+  int CopyAndPermute(const Epetra_SrcDistObject & Source,
+                     int NumSameIDs, 
+                     int NumPermuteIDs,
+                     int * PermuteToLIDs,
+                     int * PermuteFromLIDs,
+                     const Epetra_OffsetIndex * Indexor);
+
+  int PackAndPrepare(const Epetra_SrcDistObject & Source,
+                     int NumExportIDs,
+                     int * ExportLIDs,
+                     int & LenExports,
+                     char * & Exports,
+                     int & SizeOfPacket,
+                     int * Sizes,
+                     bool & VarSizes,
+                     Epetra_Distributor & Distor);
   
   int UnpackAndCombine(const Epetra_SrcDistObject & Source,
-		       int NumImportIDs, int * ImportLIDs, 
-		       char * Imports, int & SizeOfPacket, 
-		       Epetra_Distributor & Distor, Epetra_CombineMode CombineMode );
+                       int NumImportIDs,
+                       int * ImportLIDs, 
+                       int LenImports, 
+                       char * Imports,
+                       int & SizeOfPacket, 
+                       Epetra_Distributor & Distor,
+                       Epetra_CombineMode CombineMode,
+                       const Epetra_OffsetIndex * Indexor );
 
   int MyLength_;
   int GlobalLength_;
@@ -977,6 +1000,7 @@ class Epetra_MultiVector: public Epetra_DistObject, public Epetra_CompObject, pu
   int * IntTemp_;
   Epetra_Vector ** Vectors_;
   Epetra_Util Util_;
+
 };
 
 #endif /* EPETRA_MULTIVECTOR_H */

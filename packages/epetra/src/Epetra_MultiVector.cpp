@@ -231,7 +231,6 @@ Epetra_MultiVector::~Epetra_MultiVector(){
   delete [] DoubleTemp_;
   delete [] IntTemp_;
 
-
 }
 
 //=========================================================================
@@ -531,10 +530,12 @@ int Epetra_MultiVector::CheckSizes(const Epetra_SrcDistObject& Source) {
 }
 
 //=========================================================================
-int Epetra_MultiVector::CopyAndPermute(const Epetra_SrcDistObject& Source, int NumSameIDs, 
-				       int NumPermuteIDs, int * PermuteToLIDs, 
-				       int *PermuteFromLIDs) {
-
+int Epetra_MultiVector::CopyAndPermute(const Epetra_SrcDistObject& Source,
+                                       int NumSameIDs, 
+                                       int NumPermuteIDs,
+                                       int * PermuteToLIDs, 
+                                       int *PermuteFromLIDs,
+                                       const Epetra_OffsetIndex * Indexor) {
 
   const Epetra_MultiVector & A = dynamic_cast<const Epetra_MultiVector &>(Source);
 
@@ -632,11 +633,15 @@ int Epetra_MultiVector::CopyAndPermute(const Epetra_SrcDistObject& Source, int N
 }
 
 //=========================================================================
-int Epetra_MultiVector::PackAndPrepare(const Epetra_SrcDistObject & Source, int NumExportIDs, int * ExportLIDs,
-				      int Nsend, int Nrecv,
-				      int & LenExports, char * & Exports, int & LenImports, 
-				      char * & Imports, 
-				      int & SizeOfPacket, Epetra_Distributor & Distor) {
+int Epetra_MultiVector::PackAndPrepare(const Epetra_SrcDistObject & Source,
+                                       int NumExportIDs,
+                                       int * ExportLIDs,
+                                       int & LenExports,
+                                       char * & Exports,
+                                       int & SizeOfPacket,
+                                       int * Sizes,
+                                       bool & VarSizes,
+                                       Epetra_Distributor & Distor) {
 
 
 
@@ -644,8 +649,8 @@ int Epetra_MultiVector::PackAndPrepare(const Epetra_SrcDistObject & Source, int 
   int i, j, jj, k;
 
   double **From = A.Pointers();
-  int NumVectors = NumVectors_;
   int MaxElementSize = Map().MaxElementSize();
+  int NumVectors = NumVectors_;
   bool ConstantElementSize = Map().ConstantElementSize();
 
   int * FromFirstPointInElementList = 0;
@@ -659,21 +664,16 @@ int Epetra_MultiVector::PackAndPrepare(const Epetra_SrcDistObject & Source, int 
   double * DoubleExports = 0;
   double * DoubleImports = 0;
 
-  if (NumVectors*Nsend>LenExports) {
+  SizeOfPacket = NumVectors*MaxElementSize;
+
+  if (SizeOfPacket*NumExportIDs>LenExports) {
     if (LenExports>0) delete [] Exports;
-    LenExports = NumVectors*Nsend;
+    LenExports = SizeOfPacket*NumExportIDs;
     DoubleExports = new double[LenExports];
     Exports = (char *) DoubleExports;
   }
 
-  if (NumVectors*Nrecv>LenImports) {
-    if (LenImports>0) delete [] Imports;
-    LenImports = NumVectors*Nrecv;
-    DoubleImports = new double[LenImports];
-    Imports = (char *) DoubleImports;
-  }
-
-  SizeOfPacket = NumVectors_ * Map().MaxElementSize() * sizeof(double); 
+  SizeOfPacket *= sizeof(double);
 
   double * ptr;
 
@@ -726,10 +726,14 @@ int Epetra_MultiVector::PackAndPrepare(const Epetra_SrcDistObject & Source, int 
 
 //=========================================================================
 int Epetra_MultiVector::UnpackAndCombine(const Epetra_SrcDistObject & Source,
-					 int NumImportIDs, int * ImportLIDs, 
-					char * Imports, int & SizeOfPacket, 
-					 Epetra_Distributor & Distor, 
-					 Epetra_CombineMode CombineMode ) {
+                                         int NumImportIDs,
+                                         int * ImportLIDs, 
+                                         int LenImports, 
+                                         char * Imports,
+                                         int & SizeOfPacket, 
+                                         Epetra_Distributor & Distor, 
+                                         Epetra_CombineMode CombineMode,
+                                         const Epetra_OffsetIndex * Indexor ) {
   int i, j, jj, k;
   
   if(    CombineMode != Add
@@ -899,7 +903,7 @@ int Epetra_MultiVector::UnpackAndCombine(const Epetra_SrcDistObject & Source,
       }
     }
   }
-  
+
   return(0);
 }
 

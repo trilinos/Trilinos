@@ -177,7 +177,8 @@ DIST_H = \
 	$(srcdir)/Epetra_Import.h \
 	$(srcdir)/Epetra_LocalMap.h \
 	$(srcdir)/Epetra_Map.h \
-	$(srcdir)/Epetra_MapColoring.h
+	$(srcdir)/Epetra_MapColoring.h \
+        $(srcdir)/Epetra_OffsetIndex.h
 
 DIST = \
 	$(srcdir)/Epetra_BasicDirectory.cpp \
@@ -188,7 +189,8 @@ DIST = \
 	$(srcdir)/Epetra_Import.cpp \
 	$(srcdir)/Epetra_LocalMap.cpp \
 	$(srcdir)/Epetra_Map.cpp \
-	$(srcdir)/Epetra_MapColoring.cpp
+	$(srcdir)/Epetra_MapColoring.cpp \
+        $(srcdir)/Epetra_OffsetIndex.h
 
 
 COMP_H = \

@@ -31,6 +31,7 @@
 #include "Epetra_BlockMap.h"
 #include "Epetra_Distributor.h"
 #include "Epetra_Comm.h"
+#include "Epetra_Util.h"
 
 
 //==============================================================================
@@ -140,23 +141,38 @@ Epetra_Import::Epetra_Import( const Epetra_BlockMap &  TargetMap, const Epetra_B
       for( i = 0; i < NumRemoteIDs_; ++i )
         if( RemotePIDs[i] == -1 ) ++cnt;
       if( cnt ) {
-        int * NewRemoteGIDs = new int[NumRemoteIDs_-cnt];
-        int * NewRemotePIDs = new int[NumRemoteIDs_-cnt];
-        cnt = 0;
-        for( i = 0; i < NumRemoteIDs_; ++i )
-          if( RemotePIDs[i] != -1 ) {
-            NewRemoteGIDs[cnt] = RemoteGIDs[i];
-            NewRemotePIDs[cnt] = RemotePIDs[i];
-            ++cnt;
-          }
-        NumRemoteIDs_ = cnt;
-        delete [] RemoteGIDs;
-        delete [] RemotePIDs;
-        RemoteGIDs = NewRemoteGIDs;
-        RemotePIDs = NewRemotePIDs;
-        ReportError("Warning in Epetra_Import: Target IDs not found in Source Map (Do you want to import to subset of Target Map?)", 1);
+        if( NumRemoteIDs_-cnt ) {
+          int * NewRemoteGIDs = new int[NumRemoteIDs_-cnt];
+          int * NewRemotePIDs = new int[NumRemoteIDs_-cnt];
+          cnt = 0;
+          for( i = 0; i < NumRemoteIDs_; ++i )
+            if( RemotePIDs[i] != -1 ) {
+              NewRemoteGIDs[cnt] = RemoteGIDs[i];
+              NewRemotePIDs[cnt] = RemotePIDs[i];
+              ++cnt;
+            }
+          NumRemoteIDs_ = cnt;
+          delete [] RemoteGIDs;
+          delete [] RemotePIDs;
+          RemoteGIDs = NewRemoteGIDs;
+          RemotePIDs = NewRemotePIDs;
+          ReportError("Warning in Epetra_Import: Target IDs not found in Source Map (Do you want to import to subset of Target Map?)", 1);
+        }
+        else { //valid RemoteIDs empty
+          NumRemoteIDs_ = 0;
+          delete [] RemoteGIDs;
+          RemoteGIDs = 0;
+          delete [] RemotePIDs;
+          RemotePIDs = 0;
+        }
       }
     }
+
+    //Sort Remote IDs by processor so DoReverses will work
+    Epetra_Util util;
+    int * tmpPtr[2];
+    tmpPtr[0] = RemoteLIDs_, tmpPtr[1] = RemoteGIDs;
+    util.Sort(true,NumRemoteIDs_,RemotePIDs,0,0,2,tmpPtr);
 
     Distor_ = SourceMap.Comm().CreateDistributor();
     
@@ -164,59 +180,19 @@ Epetra_Import::Epetra_Import( const Epetra_BlockMap &  TargetMap, const Epetra_B
     // of everyone asking for what it needs to receive.
     
     bool Deterministic = true;
-    ierr = Distor_->CreateFromRecvs( NumRemoteIDs_, RemoteGIDs,
-					 RemotePIDs, Deterministic,
-					 NumExportIDs_, ExportLIDs_, ExportPIDs_ );
+    ierr = Distor_->CreateFromRecvs( NumRemoteIDs_, RemoteGIDs, RemotePIDs,
+                       Deterministic, NumExportIDs_, ExportLIDs_, ExportPIDs_ );
     if (ierr!=0) throw ReportError("Error in Epetra_Distributor.CreateFromRecvs()", ierr);
-    
-    // Use comm plan with Export GIDs (stored in ExportLIDs_) to
-    // get proper ordering of GIDs for remote entries 
-    // (that we will convert to LIDs when done).
-    
-    ierr = Distor_->Do( reinterpret_cast<char *> (ExportLIDs_), 
-		sizeof( int ),
-		reinterpret_cast<char *> (RemoteGIDs));
-    if (ierr!=0) throw ReportError("Error in Epetra_Distributor.Do()", ierr);
 
-        
     // Export IDs come in as GIDs, convert to LIDs
     for (i=0; i< NumExportIDs_; i++) {
       if (ExportPIDs_[i] < 0) throw ReportError("TargetMap requested a GID that is not in the SourceMap.", -1);
-      
       ExportLIDs_[i] = SourceMap.LID(ExportLIDs_[i]);
-      //NumSend_ += SourceMap.ElementSize(ExportLIDs_[i]); // Count total number of entries to send
-      NumSend_ += SourceMap.MaxElementSize(); // Count total number of entries to send (currently need max)
-    }
-    
-    // Remote IDs come in as GIDs, convert to LIDs in proper order
-
-    // for (i=0; i< NumRemoteIDs_; i++) RemoteLIDs_[i] = TargetMap.LID(RemoteGIDs[i]); // Only works when target map has no repeated GIDs
-    
-    if (NumRemoteIDs_>0) {
-      int * ReorderedRemoteLIDs = RemotePIDs; // Reuse some temp space
-      for (i=0; i< NumRemoteIDs_; i++) {
-	int CurrentGID = RemoteGIDs[i];
-	bool Found = false;
-	for (int j=0; j < NumRemoteIDs_; j++) {
-	  if (RemoteLIDs_[j]!= -1) {
-	    if (CurrentGID==TargetGIDs[RemoteLIDs_[j]]) {
-	      ReorderedRemoteLIDs[i] = RemoteLIDs_[j];
-	      RemoteLIDs_[j] = -1;
-	      Found = true;
-	      break;
-	    }
-	  }
-	}
-	if (!Found) throw ReportError("Internal error.  Cannot map incoming GID to Target Map", -2);
-      }
-      
-      // Clean up and leave....
-      delete [] RemoteLIDs_;
-      RemoteLIDs_ = ReorderedRemoteLIDs;
     }
   }
 
-  if( RemoteGIDs ) delete [] RemoteGIDs;
+  if( NumRemoteIDs_>0 ) delete [] RemoteGIDs;
+  if( NumRemoteIDs_>0 ) delete [] RemotePIDs;
 
   if (NumTargetIDs>0) delete [] TargetGIDs;
   if (NumSourceIDs>0) delete [] SourceGIDs;
@@ -298,6 +274,12 @@ void Epetra_Import::Print(ostream & os) const
   else Distor_->Print(os);
   
   os << "Number of Same IDs = " << NumSameIDs_ << endl;
+
+  os << "Number of Permute IDs = " << NumPermuteIDs_ << endl;
+
+  os << "Number of Export IDs = " << NumExportIDs_ << endl;
+
+  os << "Number of Remote IDs = " << NumRemoteIDs_ << endl;
   
   os << "Epetra_Import Print Needs attention!!!!" << endl;
   return;
