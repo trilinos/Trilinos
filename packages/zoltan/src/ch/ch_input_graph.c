@@ -97,24 +97,26 @@ float   **eweights 		/* edge weight list data */
 	return(1);
     }
 
+    /*  Check if vertex or edge weights are used */
     if (!end_flag) {
 	option = read_int(fin, &end_flag);
     }
-
     using_ewgts = option - 10 * (option / 10);
     option /= 10;
     using_vwgts = option - 10 * (option / 10);
     option /= 10;
     vtxnums = option - 10 * (option / 10);
 
-    /* Read weight dimensions */
+    /* Get weight dimensions from Chaco option */
     (*vwgt_dim) = using_vwgts;
     (*ewgt_dim) = using_ewgts;
-    if (using_vwgts){
+
+    /* Read weight dimensions if they are specified separately */
+    if (!end_flag && using_vwgts==1){
        j = read_int(fin, &end_flag);
        if (!end_flag) (*vwgt_dim) = j;
     }
-    if (using_ewgts){
+    if (!end_flag && using_ewgts==1){
        j = read_int(fin, &end_flag);
        if (!end_flag) (*ewgt_dim) = j;
     }
