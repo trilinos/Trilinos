@@ -442,12 +442,16 @@ MultiLevelPreconditioner::MultiLevelPreconditioner(const Epetra_RowMatrix & RowM
   /* Parse command line to get main options                                 */
   /* ********************************************************************** */
 
+  string def = CLP.Get("-default","DD");
+  SetDefaults(def,List_,"",SmootherOptions_,SmootherParams_);
+  
   List_.set("max levels",CLP.Get("-num_levels",2));
   List_.set("increasing or decreasing",CLP.Get("-incr_or_decr","increasing"));
 
   List_.set("aggregation: type", CLP.Get("-aggr_scheme","Uncoupled"));
   List_.set("smoother: type", CLP.Get("-smoother_type","Gauss-Seidel"));
   List_.set("aggregation: nodes per aggregate", CLP.Get("-num_nodes_per_aggr",512));
+  List_.set("aggregation: local aggregate", CLP.Get("-num_local_aggr",512));
   List_.set("smoother: pre or post", CLP.Get("-smoother_pre_or_post","both"));
   List_.set("smoother: damping factor", CLP.Get("-smoother_damping_factor",1.0));
   List_.set("coarse: type", CLP.Get("-coarse_type","Amesos_KLU"));
@@ -468,7 +472,7 @@ MultiLevelPreconditioner::MultiLevelPreconditioner(const Epetra_RowMatrix & RowM
   List_.set("compute null space", CLP.Has("-compute_null_space"));
   List_.set("null space dimension", CLP.Get("-null_space_dim",1));
   List_.set("add default null space", CLP.Has("-add_default_null_space"));
-  List_.set("R and P smoothing: type", CLP.Get("-RP_smoothing","default"));
+  List_.set("R and P smoothing: type", CLP.Get("-RP_smoothing","classic"));
   List_.set("R and P smoothing: damping", CLP.Get("-RP_damping","default"));
 
   /* ********************************************************************** */
@@ -1537,7 +1541,7 @@ void MultiLevelPreconditioner::SetSmoothingDamping()
   
   /* start looping over different options */
   
-  if( RandPSmoothing == "standard" ) {
+  if( RandPSmoothing == "classic" ) {
 
     /* ********************************************************************** */
     /* This is the standard approach followed by ML (R = P^T)                 */
@@ -1762,13 +1766,13 @@ int ML_Epetra::SetDefaults(string ProblemType, ParameterList & List, char * Pref
     return( ML_Epetra::SetDefaultsSA(List, Prefix_, SmootherOptions, SmootherParams ) );
   else if( ProblemType == "maxwell" )
     return( ML_Epetra::SetDefaultsMaxwell(List, Prefix_, SmootherOptions, SmootherParams ) );
-  else if( ProblemType == "DD 3-levels" )
+  else if( ProblemType == "DD-ML" )
     return( ML_Epetra::SetDefaultsDD_3Levels(List, Prefix_, SmootherOptions, SmootherParams ) );
   else if( ProblemType == "DD" )
     return( ML_Epetra::SetDefaultsDD(List, Prefix_, SmootherOptions, SmootherParams ) );
   else {
     cerr << "ERROR: Wrong input parameter in `SetDefaults'. Should be: " << endl
-	 << "ERROR: <SA> / <DD> / <DD 3-levels> / <maxwell>" << endl;
+	 << "ERROR: <SA> / <DD> / <DD-ML> / <maxwell>" << endl;
     rv = 1;
   }
 
@@ -2034,22 +2038,22 @@ int ML_Epetra::SetDefaultsSA(ParameterList & List, char * Prefix_,
   List.set(parameter,MaxLevels);
 
   sprintf(parameter,"%soutput", Prefix_);
-  List.set(parameter,10);
+  List.set(parameter,16);
   
   sprintf(parameter,"%sPDE equations", Prefix_);
   List.set(parameter,1);
 
   sprintf(parameter,"%sincreasing or decreasing", Prefix_);
-  List.set(parameter,"decreasing");
+  List.set(parameter,"increasing");
 
   // aggregation: Uncoupled for first levels, then MIS
-  sprintf(parameter,"%saggregation: type (level %d)",Prefix_,MaxLevels-1);
+  sprintf(parameter,"%saggregation: type (level 0)",Prefix_);
   List.set(parameter,"Uncoupled");
 
-  sprintf(parameter,"%saggregation: type (level %d)",Prefix_,MaxLevels-2);
+  sprintf(parameter,"%saggregation: type (level 1)",Prefix_);
   List.set(parameter,"Uncoupled");
 
-  sprintf(parameter,"%saggregation: type (level %d)",Prefix_,MaxLevels-3);
+  sprintf(parameter,"%saggregation: type (level 2)",Prefix_);
   List.set(parameter,"MIS");
   
   // optimal value for smoothed aggregation
@@ -2065,16 +2069,16 @@ int ML_Epetra::SetDefaultsSA(ParameterList & List, char * Prefix_,
   List.set(parameter,0.0);
 
   // guass-seidel for all levels
-  sprintf(parameter,"%ssmoother: sweeps (level %d)",Prefix_,MaxLevels-1);
+  sprintf(parameter,"%ssmoother: sweeps",Prefix_);
   List.set(parameter,2);
 
-  sprintf(parameter,"%ssmoother: damping factor (level %d)",Prefix_,MaxLevels-1);
+  sprintf(parameter,"%ssmoother: damping factor",Prefix_);
   List.set(parameter,0.67);
 
-  sprintf(parameter,"%ssmoother: type (level %d)",Prefix_,MaxLevels-1);
+  sprintf(parameter,"%ssmoother: type",Prefix_);
   List.set(parameter,"Gauss-Seidel");
   
-  sprintf(parameter,"%ssmoother: pre or post (level %d)",Prefix_,MaxLevels-1);
+  sprintf(parameter,"%ssmoother: pre or post",Prefix_);
   List.set(parameter,"both");
   
   // simplest solver on coarse problem
