@@ -184,7 +184,7 @@ public:
     if (fillF) 
       rhs->PutScalar(0.0);
     if (fillMatrix) 
-      Jacobian->PutScalar(0.0);
+      jacobian->PutScalar(0.0);
   
     // Loop Over # of Finite Elements on Processor
     for (int ne=0; ne < OverlapNumMyElements-1; ne++) {
@@ -228,7 +228,7 @@ public:
                 8.0/factor/factor*
                 (2.0*basis.uu-3.0*basis.uu*basis.uu)*
                 basis.phi[j]*basis.phi[i]);
-  	      ierr=Jacobian->SumIntoGlobalValues(row, 1, &jac, &column);
+  	      ierr=jacobian->SumIntoGlobalValues(row, 1, &jac, &column);
   	    }
   	  }
   	}
@@ -244,10 +244,10 @@ public:
       if (fillMatrix) {
         column=0;
         jac=1.0;
-        Jacobian->ReplaceGlobalValues(0, 1, &jac, &column);
+        jacobian->ReplaceGlobalValues(0, 1, &jac, &column);
         column=1;
         jac=0.0;
-        Jacobian->ReplaceGlobalValues(0, 1, &jac, &column);
+        jacobian->ReplaceGlobalValues(0, 1, &jac, &column);
       }
     }
 
@@ -260,17 +260,17 @@ public:
       row=NumGlobalElements-1;
       column=row;
       jac=1.0;
-      Jacobian->ReplaceGlobalValues(row, 1, &jac, &column);
+      jacobian->ReplaceGlobalValues(row, 1, &jac, &column);
       column--;
       jac=0.0;
-      Jacobian->ReplaceGlobalValues(row, 1, &jac, &column);
+      jacobian->ReplaceGlobalValues(row, 1, &jac, &column);
     }
   }
 
     // Sync up processors to be safe
     Comm->Barrier();
    
-    Jacobian->TransformToLocal();
+    jacobian->TransformToLocal();
   
     return true;
   }

@@ -59,7 +59,7 @@ Interface::Interface(int numGlobalElements, Epetra_Comm& comm, double xmin_,
   initialSolution(0),
   rhs(0),
   Graph(0),
-  Jacobian(0),
+  jacobian(0),
   xptr(0)
 {
 
@@ -107,10 +107,10 @@ Interface::Interface(int numGlobalElements, Epetra_Comm& comm, double xmin_,
   createGraph();
 
   // Construct a matrix
-  Jacobian = new Epetra_CrsMatrix (Copy, *Graph);
+  jacobian = new Epetra_CrsMatrix (Copy, *Graph);
 
   // Clean-up 
-  Jacobian->TransformToLocal();
+  jacobian->TransformToLocal();
 
   // Create the nodal coordinates
   xptr = new Epetra_Vector(*StandardMap);
@@ -127,7 +127,7 @@ Interface::Interface(int numGlobalElements, Epetra_Comm& comm, double xmin_,
 // Destructor
 Interface::~Interface()
 {
-  delete Jacobian;
+  delete jacobian;
   delete Graph;
   delete Importer;
   delete initialSolution;
@@ -220,7 +220,7 @@ bool Interface::evaluate(NOX::EpetraNew::Interface::Required::FillType flag,
   if (fillF) 
     rhs->PutScalar(0.0);
   if (fillMatrix) 
-    Jacobian->PutScalar(0.0);
+    jacobian->PutScalar(0.0);
 
   // Loop Over # of Finite Elements on Processor
   for (int ne=0; ne < OverlapNumMyElements-1; ne++) {
@@ -257,7 +257,7 @@ bool Interface::evaluate(NOX::EpetraNew::Interface::Required::FillType flag,
 				     basis.dphide[j]*basis.dphide[i]
 				     +2.0*factor*basis.uu*basis.phi[j]*
 				     basis.phi[i]);  
-	      ierr=Jacobian->SumIntoGlobalValues(row, 1, &jac, &column);
+	      ierr=jacobian->SumIntoGlobalValues(row, 1, &jac, &column);
 	    }
 	  }
 	}
@@ -273,17 +273,17 @@ bool Interface::evaluate(NOX::EpetraNew::Interface::Required::FillType flag,
     if (fillMatrix) {
       column=0;
       jac=1.0;
-      Jacobian->ReplaceGlobalValues(0, 1, &jac, &column);
+      jacobian->ReplaceGlobalValues(0, 1, &jac, &column);
       column=1;
       jac=0.0;
-      Jacobian->ReplaceGlobalValues(0, 1, &jac, &column);
+      jacobian->ReplaceGlobalValues(0, 1, &jac, &column);
     }
   }
 
   // Sync up processors to be safe
   Comm->Barrier();
  
-  Jacobian->TransformToLocal();
+  jacobian->TransformToLocal();
 
   return true;
 }
@@ -300,7 +300,7 @@ Epetra_Vector& Interface::getMesh()
   
 Epetra_CrsMatrix& Interface::getJacobian()
 {
-  return *Jacobian;
+  return *jacobian;
 }
 
 bool Interface::createGraph()

@@ -129,7 +129,7 @@ protected:
   Epetra_Vector* initialSolution;
   Epetra_Vector* rhs;
   Epetra_CrsGraph* Graph;
-  Epetra_CrsMatrix* Jacobian;
+  Epetra_CrsMatrix* jacobian;
   Epetra_Vector* xptr;
 
 };
