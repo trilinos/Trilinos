@@ -1,5 +1,5 @@
 /*Paul
-27-July-2002 Status: Templated, OrdinalType only. All Epetra methods except Distributor.
+04-Aug-2002 Status: Templated for class T. All Epetra methods except Distributor. Fully documented. Switched to images.
 */
 
 #ifndef _TPETRA_COMM_H_
@@ -10,46 +10,148 @@
 namespace Tpetra {
 
 // forward declarations
-template<typename OrdinalType> class Directory;
-template<typename OrdinalType> class ElementSpace;
+template<class OrdinalType> class Directory;
+template<class OrdinalType> class ElementSpace;
 
-template<typename OrdinalType>
+//! Tpetra::Comm:  The Tpetra Communication Abstract Base Class.
+/*! The Tpetra Comm class is an interface that encapsulates the general
+  information and services needed for other Tpetra classes to run on a parallel computer.
+  A Comm object is required for building all Tpetra ElementSpace and BlockElementSpace objects,
+  as well as for most other Tpetra objects.
+  
+  Comm currently has one default implementation, via SerialComm, for serial execution.
+  (A second default implementation is planned. MpiComm will be for MPI
+  distributed memory execution.)  It is meant to insulate the user from
+  the specifics of communication that are not required for normal
+  manipulation of linear algebra objects.  Most Comm interfaces are similar to MPI
+  interfaces, except that the type of data is not required as an argument since C++ can bind
+  to the appropriate interface based on argument typing.
+
+  Any implementation of the Comm interface is also responsible for generating
+  Tpetra::Distributor and Tpetra::Directory objects.
+*/
+
+template<class PacketType, class OrdinalType>
 class Comm {
   public:
 
-  // Destructor.
+  //@{ \name Constructor/Destructor Methods
+  //! Destructor
   virtual ~Comm() {};
-
-  // myPID
-  virtual int myPID() const = 0;
+  //@}
   
-  // numProc
-  virtual int numProc() const = 0;
-	
-	// Barrier
+  //@{ \name Barrier Methods
+  //! Barrier. Each image must stop until all images have reached the barrier.
   virtual void barrier() const = 0;
+  //@}
 
-	// Broadcast
-  virtual void broadcast(OrdinalType* MyVals, OrdinalType count, int root) const = 0;
+  //@{ \name Broadcast Methods
+  //! Broadcast
+  /*!Take list of input values from the root image and sends to all other images.
+    \param myVals InOut
+           On entry, the root image contains the list of values.  On exit,
+	   all images will have the same list of values.  Note that values must be
+	   aalocated on all images before the broadcast.
+    \param count In
+           On entry, contains the length of the list of myVals.
+    \param root In
+           On entry, contains the imageID from which all images will receive a copy of myVals.
+  */
+  virtual void broadcast(PacketType* myVals, OrdinalType count, int root) const = 0;
+  //@}
 
-	// Gather All
-  virtual void gatherAll(OrdinalType* myVals, OrdinalType* allVals, OrdinalType count) const = 0;
+  //@{ \name Gather Methods
+  //! Gather All function.
+  /*! Take list of input values from all images in the communicator and creates an ordered contiguous list of
+    those values on each image.
+    \param myVals In
+           On entry, contains the list of values to be sent to all images.
+    \param allVals Out
+           On exit, contains the list of values from all images. Must be of size numImages*count.
+    \param count In
+           On entry, contains the length of the list of values.
+  */
+  virtual void gatherAll(PacketType* myVals, PacketType* allVals, OrdinalType count) const = 0;
+  //@}
 
-  // Sum
-  virtual void sumAll(OrdinalType* partialSums, OrdinalType* globalSums, OrdinalType count) const = 0;
+  //@{ \name Sum Methods
+  //! Global Sum function.
+  /*!Take list of input values from all images in the communicator, computes the sum and returns the
+    sum to all images.
+    \param partialSums In
+           On entry, contains the list of values, usually partial sums computed locally,
+	   to be summed across all images.
+    \param globalSums Out
+           On exit, contains the list of values summed across all images.
+    \param count In
+           On entry, contains the length of the list of values.
+  */
+  virtual void sumAll(PacketType* partialSums, PacketType* globalSums, OrdinalType count) const = 0;
+  //@}
 	
-  // Max/Min
-  virtual void maxAll(OrdinalType* partialMaxs, OrdinalType* globalMaxs, OrdinalType count) const = 0;
-  virtual void minAll(OrdinalType* partialMins, OrdinalType* globalMins, OrdinalType count) const = 0;
+  //@{ \name Max/Min Methods
+  //! Global Max function.
+  /*! Take list of input values from all images in the communicator, computes the max and returns the
+    max to all images.
+    \param partialMaxs In
+           On entry, contains the list of values, usually partial maxs computed locally;
+	   using these Partial Maxs, the max across all images will be computed.
+    \param globalMaxs Out
+           On exit, contains the list of maxs computed across all images.
+    \param count In
+           On entry, contains the length of the list of values.
+  */
+  virtual void maxAll(PacketType* partialMaxs, PacketType* globalMaxs, OrdinalType count) const = 0;
+  //! Global Min function.
+  /*! Take list of input values from all images in the communicator, computes the min and returns the
+    min to all images.
+    \param partialMins In
+           On entry, contains the list of values, usually partial mins computed locally;
+	   using these Partial Mins, the min across all images will be computed.
+    \param globalMins Out
+           On exit, contains the list of mins computed across all images.
+    \param count In
+           On entry, contains the length of the list of values.
+  */
+  virtual void minAll(PacketType* partialMins, PacketType* globalMins, OrdinalType count) const = 0;
+  //@}
 
-  // Scan Sum
-  virtual void scanSum(OrdinalType* myVals, OrdinalType* scanSums, OrdinalType count) const = 0;
+  //@{ \name Parallel Prefix Methods
+  //! Scan Sum function.
+  /*! Take list of input values from all images in the communicator, computes the scan sum and returns it 
+    to all images such that image i contains the sum of values from image 0 up to and including
+   image i.
+    \param myVals In
+           On entry, contains the list of values to be summed across all images.
+    \param scanSums Out
+           On exit, contains the list of values summed across images 0 through i.
+    \param count In
+           On entry, contains the length of the list of values.
+  */
+  virtual void scanSum(PacketType* myVals, PacketType* scanSums, OrdinalType count) const = 0;
+  //@}
 
-	// Directory
-	virtual Directory<OrdinalType>* createDirectory(const ElementSpace<OrdinalType>& ElementSpace) const = 0;
+  //@{ \name Attribute Accessor Methods
+  //! Returns the imageID of the calling image. 
+  /*! In serial mode returns 0.
+   */
+  virtual int getMyImageID() const = 0;
+  
+  //! Returns total number of images in the communicator. 
+  /*! In serial mode returns 1.
+   */
+  virtual int getNumImages() const = 0;
+  //@}
 
-	// Print Info
-	virtual void printInfo(ostream& os) const = 0;
+  //@{ \name Gather/Scatter and Directory Constructors
+  //! Create a directory object for the given Tpetra::ElementSpace.
+    virtual Directory<OrdinalType>* createDirectory(const ElementSpace<OrdinalType>& ElementSpace) const = 0;
+  //@}
+  
+  //@{ \name I/O Methods
+  //! Print object to an output stream.
+  virtual void printInfo(ostream& os) const = 0;
+  //@}
 	
 }; // class Comm
 

@@ -1,4 +1,7 @@
-// 27-May-2002 General cleanup. Checked for newNamingConvention (already done). Moved some code into Tpetra_CompObject.cpp
+/*Paul
+27-May-2002 General cleanup. Checked for newNamingConvention (already done). Moved some code into Tpetra_CompObject.cpp
+06-August-2002 Changed to images (nothing changed).
+*/
 
 #ifndef _TPETRA_COMPOBJECT_H_
 #define _TPETRA_COMPOBJECT_H_

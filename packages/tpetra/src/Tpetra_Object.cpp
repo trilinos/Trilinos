@@ -1,80 +1,81 @@
 /*Paul
 27-May-2002 General cleanup. Changed method names to fit namingConvention. Moved some code in from Tpetra::Object.h. Commented out reportError method.
 09-June-2002 Switched comment format.
+06-August-2002 Changed to images (nothing changed). Also touched up a few things.
 */
 
 namespace Tpetra
 {
 //=============================================================================
-Object::Object(int TracebackModeIn) : Label_(0)
+Object::Object(int tracebackModeIn) : label_(0)
 {
   setLabel("Tpetra::Object");
-  TracebackMode = (TracebackModeIn != -1) ? TracebackModeIn : TracebackMode;
+  tracebackMode = (tracebackModeIn != -1) ? tracebackModeIn : tracebackMode;
 }
 //=============================================================================
-Object::Object(const char* const Label, int TracebackModeIn) : Label_(0)
+Object::Object(const char* const label, int tracebackModeIn) : label_(0)
 {
-  setLabel(Label);
-  TracebackMode = (TracebackModeIn != -1) ? TracebackModeIn : TracebackMode;
+  setLabel(label);
+  tracebackMode = (tracebackModeIn != -1) ? tracebackModeIn : tracebackMode;
 }
 //=============================================================================
-Object::Object(const Object& Obj) : Label_(0)
+Object::Object(const Object& Obj) : label_(0)
 {
-  setLabel(Obj.Label_);
+  setLabel(Obj.label());
 }
 // Set TracebackMode value to default
-int Object::TracebackMode(-1);
+int Object::tracebackMode(-1);
 
-void Object::setTracebackMode(int TracebackModeValue)
+void Object::setTracebackMode(int tracebackModeValue)
 {
-  if (TracebackModeValue < 0)
-    TracebackModeValue = 0;
-  Object TempObject(TracebackModeValue);
+  if (tracebackModeValue < 0)
+    tracebackModeValue = 0;
+  Object tempObject(tracebackModeValue);
 }
 
 int Object::getTracebackMode()
 {
-  int temp = Object::TracebackMode;
-  if (temp==-1)
+  int temp = Object::tracebackMode;
+  if (temp == -1)
     temp = Tpetra_DefaultTracebackMode;
   return(temp);
 }
 //=============================================================================
 void Object::print(ostream& os) const
 {
-  // os << Label_; // No need to print label, since ostream does it already
-  return;
+  // os << label_; // No need to print label, since ostream does it already
 }
 //=============================================================================
-int Tpetra::Object::reportError(const string Message, int ErrorCode) const
+int Tpetra::Object::reportError(const string message, int errorCode) const
 {
 #ifndef TPETRA_NO_ERROR_REPORTS
   // NOTE:  We are extracting a C-style string from Message because 
   //        the SGI compiler does not have a real string class with 
   //        the << operator.  Some day we should get rid of ".c_str()"
-  cerr << endl << "Error in Tpetra Object with label:  " << Label_ << endl
-       << "Tpetra Error:  " << Message.c_str() << "  Error Code:  " << ErrorCode << endl;
+  cerr << endl << "Error in Tpetra Object with label:  " << label_ << endl
+       << "Tpetra Error:  " << message.c_str() << "  Error Code:  " << errorCode << endl;
 #endif
-  return(ErrorCode);
+  return(errorCode);
 }
 //=============================================================================
 Object::~Object()  
 {
-  if (Label_!=0)
-    delete [] Label_;
+  if (label_!=0) {
+    delete [] label_;
+		label_ = 0;
+	}
 }
 //=============================================================================
-char * Object::label() const
+char* Object::label() const
 {
-  return(Label_);
+  return(label_);
 }
 //=============================================================================
-void Object::setLabel(const char* const Label)
+void Object::setLabel(const char* const label)
 { 
-  if (Label_!=0)
-    delete [] Label_;
-  Label_ = new char[strlen(Label)+1];
-  strcpy(Label_,Label);
-  return;
+  if (label_ != 0)
+    delete [] label_;
+  label_ = new char[strlen(label) + 1];
+  strcpy(label_, label);
 }
 } // namespace Tpetra

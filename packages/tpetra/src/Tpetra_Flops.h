@@ -1,4 +1,7 @@
-// 27-May-2002 General cleanup. Changed method names to fit namingConvention (already done). Moved some code to Tpetra_Flops.cpp
+/*Paul
+27-May-2002 General cleanup. Changed method names to fit namingConvention (already done). Moved some code to Tpetra_Flops.cpp
+06-August-2002 Changed to images (nothing changed).
+*/
 
 #ifndef _TPETRA_FLOPS_H_
 #define _TPETRA_FLOPS_H_

@@ -1,4 +1,7 @@
-// 27-May-2002 General cleanup. Checked for newNamingConvention (nothing changed).
+/*Paul
+27-May-2002 General cleanup. Checked for newNamingConvention (nothing changed).
+06-August-2002 Changed to images (nothing changed).
+*/
 
 #ifndef _TPETRA_DATAACCESS_H_
 #define _TPETRA_DATAACCESS_H_

@@ -1,7 +1,8 @@
 /*Paul
-// 16-May-2002 - Changed names to use Tpetra instead of TPetra
-// 17-May-2002 - Switched from Petra_Comm, Petra_Time, and Petra_Map to Epetra's versions
-// 20-May-2002 - Changed formatting for readability, no real changes
+16-May-2002 - Changed names to use Tpetra instead of TPetra
+17-May-2002 - Switched from Petra_Comm, Petra_Time, and Petra_Map to Epetra's versions
+20-May-2002 - Changed formatting for readability, no real changes
+06-August-2002 Changed to images, and to templated Comm. Touched up a few naming conventions.
 */
 
 #include <complex>
@@ -17,7 +18,7 @@
 #include "Tpetra_DenseMatrix.h"
 
 // Used to easily change scalar type
-#define SCALARTYPE complex<float>
+#define SCALARTYPE complex<double>
 
 // Local prototypes
 template<class scalarType> bool check(int M, int N, Tpetra::DenseMatrix<scalarType> A, Tpetra::DenseMatrix<scalarType> B, Tpetra::DenseMatrix<scalarType>& C);
@@ -29,19 +30,19 @@ int main(int argc, char *argv[])
 
   // Initialize MPI
 
-  MPI_Init(&argc,&argv);
+  MPI_Init(&argc,&argv);complex<float>
   int size, rank; // Number of MPI processes, My process ID
 
   MPI_Comm_size(MPI_COMM_WORLD, &size);
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
-  Tpetra::MpiComm comm( MPI_COMM_WORLD );
+  Tpetra::MpiComm<SCALARTYPE> comm( MPI_COMM_WORLD );
 
 #else
 
   int size = 1; // Serial case (not using MPI)
   int rank = 0;
-  Tpetra::SerialComm comm;
+  Tpetra::SerialComm<SCALARTYPE, int> comm;
 
 #endif
 
@@ -50,15 +51,15 @@ int main(int argc, char *argv[])
   // Check if we should print results to standard out
   if (argc>1) if (argv[1][0]=='-' && argv[1][1]=='v') verbose = true;
 
-  int MyPID = comm.myPID();
-  int NumProc = comm.numProc();
-  if (verbose) cout << "Processor "<<MyPID<<" of "<< NumProc << " is alive."<<endl;
+  int myImageID = comm.getMyImageID();
+  int numImages = comm.getNumImages();
+  if (verbose) cout << "Image "<< myImageID <<" of "<< numImages << " is alive."<<endl;
 
   bool verbose1 = verbose;
-  verbose = (MyPID==0);  // Only print most results on PE 0
+  verbose = (myImageID == 0);  // Only print most results on PE 0
 
   if (verbose) cout << endl 
-		    << "#################################################"  << endl
+				<< "#################################################"  << endl
 		    << "Testing ScalarType: " << Tpetra::ScalarTraits<SCALARTYPE>::name() << endl
 		    << "#################################################" << endl;
 
@@ -83,8 +84,8 @@ int main(int argc, char *argv[])
   Tpetra::DenseMatrix<SCALARTYPE> C2;
   
 
-  int M = 60;
-  int N = 70;
+  int M = 220;
+  int N = 220;
   SCALARTYPE zero = Tpetra::ScalarTraits<SCALARTYPE>::zero();
   SCALARTYPE one = Tpetra::ScalarTraits<SCALARTYPE>::one(); 
   A.shape(M,N);
@@ -105,7 +106,8 @@ int main(int argc, char *argv[])
 
   Tpetra::Flops flop_counter;
   C1.setFlopCounter(flop_counter);
-  Tpetra::Time timer(comm);
+  Tpetra::SerialComm<double, int> dbleComm;
+  Tpetra::Time timer(dbleComm);
   
   double startFlops = C1.flops();
   double startTime = timer.elapsedTime();

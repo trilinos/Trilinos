@@ -1,4 +1,7 @@
-// 27-May-2002 General cleanup. Changed method names to fit namingConvention (already done). Moved error-reporting macros to Tpetra_Object.h
+/*Paul
+27-May-2002 General cleanup. Changed method names to fit namingConvention (already done). Moved error-reporting macros to Tpetra_Object.h
+06-August-2002 Changed to images (nothing changed).
+*/
 
 namespace Tpetra
 {

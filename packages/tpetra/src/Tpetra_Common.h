@@ -1,5 +1,6 @@
 /*Paul
 24-July-2002 Initial writeup. All system includes go here, and a few other things too.
+06-August-2002 Changed to images (nothing changed).
 */
 
 #ifndef _TPETRA_COMMON_H_

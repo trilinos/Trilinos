@@ -1,4 +1,7 @@
-// 27-May-2002 General cleanup. Changed method names to fit namingConvention (nothing changed).
+/*Paul
+27-May-2002 General cleanup. Changed method names to fit namingConvention (nothing changed).
+06-August-2002 Changed to images (nothing changed).
+*/
 
 #ifndef _TPETRA_LAPACK_H_
 #define _TPETRA_LAPACK_H_

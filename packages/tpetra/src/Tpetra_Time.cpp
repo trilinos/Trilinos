@@ -1,21 +1,24 @@
-// 27-May-2002 Major Overhaul. Changed method names to fit naming Convention (already done).
-// 28-May-2002 Heroux fixes things.
+/*Paul
+27-May-2002 Major Overhaul. Changed method names to fit naming Convention (already done).
+28-May-2002 Heroux fixes things.
+06-August-2002 Changed to images (nothing changed). Updated a few naming comnventions, and to use a templated Comm.
+*/
 
 namespace Tpetra {
 //=============================================================================
-Time::Time(const Tpetra::Comm &comm) : comm_(&comm) {
+Time::Time(const Comm<double, int>& Comm) : Object("Tpetra::Time"), Comm_(&Comm) {
   startTime_ = wallTime();
 }
+
 //=============================================================================
-Time::Time(const Tpetra::Time &time) : comm_(time.comm_) {
-  startTime_ = time.startTime_; // We do want to do this in a copy constructor, after all, right?
+Time::Time(const Time& Time) : Object(Time.label()), Comm_(Time.Comm_) {
+  startTime_ = Time.startTime_; // We do want to do this in a copy constructor, after all, right?
 }
-//=============================================================================
-Time::~Time() {}
+
 //=============================================================================
 double Time::wallTime() const {
   struct timeval tp;
-  static long start=0, startu;
+  static long start = 0, startu;
   if (!start)
   {
     gettimeofday(&tp, NULL);
@@ -26,10 +29,12 @@ double Time::wallTime() const {
   gettimeofday(&tp, NULL);
   return( ((double) (tp.tv_sec - start)) + (tp.tv_usec-startu)/1000000.0 );
 }
+
 //=============================================================================
 void Time::resetStartTime() {
   startTime_ = wallTime();
 }
+
 //=============================================================================
 double Time::elapsedTime() const {
   return(wallTime() - startTime_);

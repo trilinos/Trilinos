@@ -1,4 +1,7 @@
-// 27-May-2002 General cleanup. Changed method names to fit namingConvention (already done).
+/*Paul
+27-May-2002 General cleanup. Changed method names to fit namingConvention (already done).
+06-August-2002 Changed to images (nothing changed). Documentation cleaned up a bit.
+*/
 
 #ifndef _TPETRA_DENSEMATRIX_H_
 #define _TPETRA_DENSEMATRIX_H_
@@ -11,20 +14,20 @@ namespace Tpetra
 
 //! Tpetra::DenseMatrix: A class for constructing and using template<scalarType> general dense matrices.
 
-/*! The Tpetra::DenseMatrix class enables the construction and use of general template<scalarType>
-    dense matrices.  It is built on the BLAS, and derives from the TPetra_BLAS.  Of course, it's also built
+/*! The DenseMatrix class enables the construction and use of general template<scalarType>
+    dense matrices.  It is built on the BLAS, and derives from the TPetra::BLAS.  Of course, it's also built
     on ScalarTraits, which derives from LAPACK. In any case, 
 
-The Tpetra::DenseMatrix class is intended to provide very basic support for dense rectangular matrices.
+The DenseMatrix class is intended to provide very basic support for dense rectangular matrices.
 
 
-<b>Constructing Tpetra::DenseMatrix Objects</b>
+<b>Constructing DenseMatrix Objects</b>
 
-There are three Tpetra::DenseMatrix constructors.  The first constructs a zero-sized object which should be made
+There are three DenseMatrix constructors.  The first constructs a zero-sized object which should be made
 to appropriate length using the Shape() or Reshape() functions and then filled with the [] or () operators. 
 The second is a constructor that accepts user
 data as a 2D array, the third is a copy constructor. The second constructor has
-two data access modes (specified by the Petra_DataAccess argument):
+two data access modes (specified by the Tpetra_DataAccess argument):
 <ol>
   <li> Copy mode - Allocates memory and makes a copy of the user-provided data. In this case, the
        user data is not needed after construction.
@@ -36,26 +39,26 @@ two data access modes (specified by the Petra_DataAccess argument):
 Therefore, we strongly encourage users to develop code using Copy mode first and 
 only use the View mode in a secondary optimization phase.
 
-<b>Extracting Data from Tpetra::DenseMatrix Objects</b>
+<b>Extracting Data from DenseMatrix Objects</b>
 
-Once a Tpetra::DenseMatrix is constructed, it is possible to view the data via access functions.
+Once a DenseMatrix is constructed, it is possible to view the data via access functions.
 
 \warning Use of these access functions cam be \e extremely dangerous from a data hiding perspective.
 
 
 <b>Vector and Utility Functions</b>
 
-Once a Tpetra::DenseMatrix is constructed, several mathematical functions can be applied to
+Once a DenseMatrix is constructed, several mathematical functions can be applied to
 the object.  Specifically:
 <ul>
   <li> Multiplication.
   <li> Norms.
 </ul>
 
-The final useful function is flops().  Each Tpetra::DenseMatrix object keep track of the number
+The final useful function is flops().  Each DenseMatrix object keep track of the number
 of \e serial floating point operations performed using the specified object as the \e this argument
 to the function.  The flops() function returns this number as a double precision number.  Using this 
-information, in conjunction with the Tpetra_Time class, one can get accurate parallel performance
+information, in conjunction with the Tpetra::Time class, one can get accurate parallel performance
 numbers.
 
 
@@ -70,7 +73,7 @@ class DenseMatrix : public CompObject, public Object, public BLAS<scalarType>
   //@{ \name Constructor/Destructor Methods
   //! Default constructor; defines a zero size object.
   /*!
-    Tpetra::DenseMatrix objects defined by the default constructor should be sized with the 
+    DenseMatrix objects defined by the default constructor should be sized with the 
     Shape() or Reshape functions.  
     Values should be defined by using the [] or () operators.
    */
@@ -79,7 +82,7 @@ class DenseMatrix : public CompObject, public Object, public BLAS<scalarType>
   //! Set object values from two-dimensional array.
   /*!
     \param In 
-           Petra_DataAccess - Enumerated type set to Copy or View.
+           Tpetra_DataAccess - Enumerated type set to Copy or View.
     \param In
            A - Pointer to an array of template<scalarType> numbers.  The first vector starts at A.
 	   The second vector starts at A+stride, the third at A+2*stride, and so on.
@@ -103,14 +106,14 @@ class DenseMatrix : public CompObject, public Object, public BLAS<scalarType>
   //@}
 
   //@{ \name Shaping/sizing Methods
-  //! Set dimensions of a Tpetra::DenseMatrix object; init values to zero.
+  //! Set dimensions of a DenseMatrix object; init values to zero.
   /*!
     \param In 
            numRows - number of rows in object.
     \param In 
            numCols - number of columns in object.
 
-	   Allows user to define the dimensions of a Tpetra::DenseMatrix at any point. This function can
+	   Allows user to define the dimensions of a DenseMatrix at any point. This function can
 	   be called at any point after construction.  Any values that were previously in this object are
 	   destroyed and the resized matrix starts off with all zero values.
 
@@ -118,14 +121,14 @@ class DenseMatrix : public CompObject, public Object, public BLAS<scalarType>
   */
   int shape(int numRows, int numCols);
   
-  //! Reshape a Tpetra::DenseMatrix object.
+  //! Reshape a DenseMatrix object.
   /*!
     \param In 
            numRows - number of rows in object.
     \param In 
            numCols - number of columns in object.
 
-	   Allows user to define the dimensions of a Tpetra::DenseMatrix at any point. This function can
+	   Allows user to define the dimensions of a DenseMatrix at any point. This function can
 	   be called at any point after construction.  Any values that were previously in this object are
 	   copied into the new shape.  If the new shape is smaller than the original, the upper left portion
 	   of the original matrix (the principal submatrix) is copied to the new matrix.

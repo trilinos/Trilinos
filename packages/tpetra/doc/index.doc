@@ -1,22 +1,23 @@
-/*! \mainpage Trilinos/Epetra: Linear Algebra Services Package.
+/*! \mainpage Trilinos/Tpetra: Templated Linear Algebra Services Package.
 \htmlonly
 <center>
-<img align=center lowsrc="../Epetra.gif" src="../Epetra.gif" 
-     width=500 height=300 alt="Epetra"><br>
+<img align=center lowsrc="../tpetra.gif" src="../tpetra.gif" 
+     width=500 height=300 alt="Tpetra"><br>
 </center>
 \endhtmlonly
 
 \section intro Introduction
-Epetra provides the fundamental construction
-routines and services function that are required for serial and
-parallel linear algebra libraries.  Epetra provides the underlying
-foundation for all Trilinos solvers.
+Tpetra is an attempt at applying generic algorithm techniques to the
+serial and parallel linear algebra libraries of Epetra.  It is hoped that
+Tpetra will complement Epetra by providing an alternative foundation 
+for future Trilinos solvers.  The lessons learned and discoveries made 
+while creating Tpetra are also being applied to improving their Epetra cousins.
 
-\section startup Overview of Epetra.
+\section startup Overview of Tpetra.
 
-\subsection formulations Epetra Classes
+\subsection formulations Tpetra Classes
 
-Epetra contains a number of classes.  They can be categorized as follows:
+Tpetra contains a number of classes.  They can be categorized as follows:
 
 <ul> 
 
@@ -24,49 +25,19 @@ Epetra contains a number of classes.  They can be categorized as follows:
 
 <ol>
 
-<li> Communicator class: Epetra_Comm -  
-     Contains specific information about the parallel machine we are using.  Currently
-     supports serial, MPI and prototype hybrid MPI/threaded parallel programming models.
+<li> Communicator class: Tpetra::Comm - Contains specific information about the parallel machine we are using.  Currently
+     only supports serial, but support is planned for other models, including MPI 
+		 and hybrid MPI/threaded.
 
-<li> Map classes: Epetra_Map, Epetra_LocalMap, Epetra_BlockMap - Contain information used to
-                  distribute vectors, matrices and other objects on a parallel (or serial) machine.
+<li> Mapping classes: Tpetra::ElementSpace and Tpetra::BlockElementSpace - Contain information used to
+     distribute vectors, matrices and other objects on a parallel (or serial) machine.
 
-<li> Vector class: Epetra_RDP_Vector - Real double precision vector
-     class.  Supports construction and use of vectors on a parallel machine.
-
-<li> Multi-vector class: Epetra_RDP_MultiVector - Real double precision
-     multi-vector class.  Supports construction and use of multi-vectors 
-     on a parallel machine.  A multi-vector is a collection vectors.
-     It is a generalizaion of a 2D array.
-
-<li> Sparse row graph class: Epetra_CRS_Graph - Allows construction
-     of a serial or parallel graph.  The graph determines the communication pattern
-     for subsequent matrix objects.
-
-<li> Pure virtual row matrix class: Epetra_RDP_RowMatrix - Pure virtual class that specifies
-     interfaces needed to do most of the common operations required by a row matrix.  
-     The Epetra_RDP_LinearProblem expects the matrix as a Epetra_RDP_RowMatrix.  Both the
-     Epetra_RDP_CRS_Matrix and Epetra_RDP_VBR_Matrix classes implement the Epetra_RDP_RowMatrix interface and
-     therefore objects from either of these classes can be used with Epetra_RDP_LinearProblem and with
-     Aztec_OO.  Furthermore, any class that implements Epetra_RDP_RowMatrix can be used with
-     Epetra_RDP_LinearProblem and Aztec_OO.
-
-<li> Sparse row matrix class: Epetra_RDP_CRS_Matrix - Real double
-     precision sparse matrix class.  Supports construction and use of
-     row-wise sparse matrices.
-
-<li> Sparse block row matrix class:  Epetra_RDP_VBR_Matrix - Real double 
-     precision block sparse matrix class.  Supports construction and use of
-     row-wise block sparse matrices.  
-
-<li> Import/Export classes:  Epetra_Import and Epetra_Export - Constructed from two
-     Epetra_BlockMap (or Epetra_Map or Epetra_LocalMap).  Allows
-     efficient transfer of objects built using one map to a new
-     object with a new map.  Supports local and global permutations,
+<li> Import/Export classes:  Tpetra::Import and Tpetra::Export - Constructed from two
+     ElementSpace or BlockElementSpace objects.  Allows
+     efficient transfer of objects built using one mapping to a new
+     object with a new mapping.  Supports local and global permutations,
      overlapping Schwarz operations and many other data movement
      algorithms.
-     
-
 
 </ol>
 
@@ -75,80 +46,41 @@ Epetra contains a number of classes.  They can be categorized as follows:
 
 <ol>
 
-<li> General dense matrix class: Epetra_RDP_DenseMatrix - Provides dense matrix services such as 
+<li> General dense matrix class: Tpetra::DenseMatrix - Provides dense matrix services such as 
      factorizations, solves, QR, SVD, etc., with special attention focused on numerically robust solutions.
-
-<li> Symmetric definite dense matrix class: Epetra_RDP_SPD_DenseMatrix - Similar to Epetra_RDP_DenseMatrix 
-     except focused specifically on symmetric definite systems.
-
 </ol>
 
 <li> Utility classes. 
 
 <ol>
-<li> Timing class: Epetra_Time - Provides timing functions for the
+<li> Timing class: Tpetra::Time - Provides timing functions for the
      purposes of performance analysis.
 
-<li> Floating point operation class: Epetra_Flops - Provides floating point operations (FLOPS)
-     counting and reporting functions for the purposes of performance analysis.  All Epetra computational
+<li> Floating point operation class: Tpetra::Flops - Provides floating point operations (FLOPS)
+     counting and reporting functions for the purposes of performance analysis.  All Tpetra computational
      classes accumulate FLOP counts associated with the \e this object of the computations.
 
-<li> Distributed directory class:  Epetra_Directory - Allows construction of a distributed directory.
+<li> Distributed directory class:  Tpetra::Directory - Allows construction of a distributed directory.
      Once constructed, a directory allows one to access randomly distributed objects in an efficient, scalable
-     manner.  This class is intended for support of general Epetra_BlockMap and Epetra_Map objects, but is 
+     manner.  This class is intended for support of general ElementSpace and BlockElementSpace objects, but is 
      useful in other settings as well.
 
-<li> BLAS wrapper class: Epetra_BLAS - A ``thin'' layer of C++ code wrapping the basic linear algebra subprograms (BLAS).
+<li> BLAS wrapper class: Tpetra::BLAS - A ``thin'' layer of C++ code wrapping the basic linear algebra subprograms (BLAS).
      This class provides a single instance interface between Epetra and the BLAS.  In this way we can easily
      switch BLAS interfaces and manage the C++/Fortran translation differences that exist between different
      computer systems.  This class also provides a very convenient way to templatize the BLAS.
 
-<li> LAPACK wrapper class: Epetra_LAPACK - A ``thin'' layer of C++ code wrapping LAPACK.  Like Epetra_BLAS,
+<li> LAPACK wrapper class: Tpetra::LAPACK - A ``thin'' layer of C++ code wrapping LAPACK.  Like Tpetra::BLAS,
      it provides nice C++ access to LAPACK.
 
 </ol>
 </ul>
      
 
-\subsection trilinos Trilinos and Epetra
+\subsection trilinos Trilinos and Tpetra
 
-Epetra can be used as a stand-alone package.  However, it also provides the foundation for
-Trilinos.  Trilinos is a collection of solver packages.  The first available
-package is Aztec_OO, a C++ implementation of the preconditioned iterative solver package Aztec.  
-This particular class can be used to solve a linear system as defined by a Epetra_RDP_LinearProblem 
-object that is passed in at construction.  Alternatively, one may pass in the matrix, initial guess and
-right-hand-side as Epetra objects and solves a linear system using preconditioner and
-solver options set by the user.
+Tpetra can be used as a stand-alone package.  However, in the future it will also provides the foundation for
+Trilinos.  Trilinos is a collection of solver packages, such as AztecOO and TSF.  But as Tpetra is not yet completed, 
+it is suggested that for the time being, Epetra be used in conjunction with other Trilinos solvers instead.
 
-\note Aztec_OO supports all the functionality of Aztec except for explicit scaling options.  Explicit
-scaling is done instead by the Epetra_RDP_LinearProblem class (which in turn uses the scaling methods
-in the Epetra_RDP_RowMatrix and Epetra_RDP_MultiVector classes).  Documentation for Aztec can be found
-in your Trilinos archive in the file Trilinos/doc/aztec/manual.ps
-
-\subsection aztec2trilinos Transition support for current Aztec users
-
-In order to support existing Aztec users, we have developed a few modules that aid in the transition from
-Aztec to Trilinos/Aztec_OO.  The first module is AZOO_iterate().  This function has an identical interface to
-AZ_iterate and, for most purpose, these two should be interchangeable.  AZOO_iterate() differs from AZ_iterate in
-that it first converts the Aztec objects to Epetra objects using the module Aztec2Epetra().  It then creates a 
-Epetra_RDP_LinearProblem and performs any requested scaling explicitly,
-and then calls Aztec_OO.  The transition to AZOO_iterate() is meant to be trivial and temporary.  We encourage users 
-to customize their own version of AZOO_iterate(), and to eventually build Epetra objects directly.
-
-\subsection wrappers Epetra C and Fortran Wrappers
-
-Epetra supports a full set of C and Fortran wrappers.  Currently these wrappers are not up to
-date.
-
-\subsection example Example Codes
-The following example code generates a simple tridiagonal matrix of
-dimension "n" where "n" is passed in as an argument.  The matrix is
-then used by the power method to compute the largest eigenvalue and
-corresponding eigenvector.
-
-The point of this example is to illustrate the flow of calls when
-using Epetra.  This example program can be found in the file
-Trilinos/examples/Epetra_power_method/cxx_main.cpp.  
-
-\verbinclude cxx_main.cpp
 */

@@ -3,6 +3,8 @@
 17-July-2002 Now the real ElementSpace, being built up in extreme coding style
 24-July-2002 all including directory. untemplated. gMGE & print still not const.
 27-July-2002 gMGE & print const. Templated for OrdinalType.
+05-Aug-2002 switched from PID to imageID
+06-Aug-2002 Completed switch to images.
 */
 
 #include "Tpetra_Comm.h"
@@ -12,58 +14,59 @@ namespace Tpetra {
 // constructor #1, tpetra contig
 //=======================================================================
 template<typename OrdinalType>
-ElementSpace<OrdinalType>::ElementSpace(OrdinalType numGlobalElements, OrdinalType indexBase, const Comm<OrdinalType>& Comm)
- : Object("Tpetra::ElementSpace")
-	 ,numGlobalElements_(numGlobalElements)
-	 ,indexBase_(indexBase)
-	 ,contiguous_(true)
-	 ,lgMap_()
-	 ,glMap_()
-	 ,Comm_(&Comm)
-	 ,myGlobalElements_(0)
-	 ,Directory_(0)
+ElementSpace<OrdinalType>::ElementSpace(OrdinalType numGlobalElements, OrdinalType indexBase, const Comm<OrdinalType, OrdinalType>& Comm)
+  : Object("Tpetra::ElementSpace")
+   ,numGlobalElements_(numGlobalElements)
+   ,indexBase_(indexBase)
+   ,contiguous_(true)
+   ,lgMap_()
+   ,glMap_()
+   ,Comm_(&Comm)
+   ,myGlobalElements_(0)
+   ,Directory_(0)
 {
   if (numGlobalElements_ < 0)
     throw reportError("numGlobalElements = " + toString(numGlobalElements_) + ".  Should be >= 0.", -1);
   
   global_ = checkGlobalness(numGlobalElements_, numMyElements_);
 
-  OrdinalType numProc = comm().numProc();
-  OrdinalType myPID = comm().myPID();
+  OrdinalType numImages = comm().getNumImages();
+  OrdinalType myImageID = comm().getMyImageID();
   
-  numMyElements_ = numGlobalElements_ / numProc;
-  OrdinalType remainder = numGlobalElements_ % numProc;
-  OrdinalType start_index = myPID * (numMyElements_ + 1);
+  numMyElements_ = numGlobalElements_ / numImages;
+  OrdinalType remainder = numGlobalElements_ % numImages;
+  OrdinalType start_index = myImageID * (numMyElements_ + 1);
   
-  if (myPID < remainder)
+  if (myImageID < remainder)
     numMyElements_++;
   else
-    start_index -= (myPID - remainder);
+    start_index -= (myImageID - remainder);
   
   minAllGID_ = indexBase_;
   maxAllGID_ = minAllGID_ + numGlobalElements_ - 1;
   minMyGID_ = start_index + indexBase_;
   maxMyGID_ = minMyGID_ + numMyElements_ - 1;
-	minLID_ = indexBase_;
+  minLID_ = indexBase_;
   maxLID_ = minLID_ + numMyElements_ - 1;
 	
-	directorySetup();
+  directorySetup();
 }
 
 // constructor #2, user contig
 //=======================================================================
 template<typename OrdinalType>
-ElementSpace<OrdinalType>::ElementSpace(OrdinalType numGlobalElements, OrdinalType numMyElements, OrdinalType indexBase, const Comm<OrdinalType>& Comm)
- : Object("Tpetra::ElementSpace")
-	 ,numGlobalElements_(numGlobalElements)
-	 ,numMyElements_(numMyElements)
-	 ,indexBase_(indexBase)
-	 ,contiguous_(true)
-	 ,lgMap_()
-	 ,glMap_()
-	 ,Comm_(&Comm)
-	 ,myGlobalElements_(0)
-	 ,Directory_(0)
+ElementSpace<OrdinalType>::ElementSpace(OrdinalType numGlobalElements, OrdinalType numMyElements, OrdinalType indexBase, 
+					const Comm<OrdinalType, OrdinalType>& Comm)
+  : Object("Tpetra::ElementSpace")
+   ,numGlobalElements_(numGlobalElements)
+   ,numMyElements_(numMyElements)
+   ,indexBase_(indexBase)
+   ,contiguous_(true)
+   ,lgMap_()
+   ,glMap_()
+   ,Comm_(&Comm)
+   ,myGlobalElements_(0)
+   ,Directory_(0)
 {
   if(numGlobalElements_ < -1) 
     throw reportError("numGlobalElements = " + toString(numGlobalElements_) + ".  Should be >= -1.", -1);
@@ -72,19 +75,19 @@ ElementSpace<OrdinalType>::ElementSpace(OrdinalType numGlobalElements, OrdinalTy
 
   global_ = checkGlobalness(numGlobalElements, numMyElements);
 
-  OrdinalType numProc = comm().numProc();
-  OrdinalType myPID = comm().myPID();
+  OrdinalType numImages = comm().getNumImages();
+  OrdinalType myImageID = comm().getMyImageID();
 
   // Locally replicated and uniprocessor case:  Each processor gets a complete copy of all elements
-  if (!global_ || numProc==1) {
+  if (!global_ || numImages==1) {
     numGlobalElements_ = numMyElements_;
     // Check to see if user's value for numGlobalElements is either indexBase-1 
     // (in which case we use our computed value) or matches ours.
     if ((numGlobalElements != -1) && (numGlobalElements != numGlobalElements_)) 
       throw reportError("Invalid numGlobalElements.  numGlobalElements = " + toString(numGlobalElements) + 
-			  ".  Should equal " + toString(numGlobalElements_) + 
-			  ", or be set to -1 to compute automatically", -3);
-      
+			".  Should equal " + toString(numGlobalElements_) + 
+			", or be set to -1 to compute automatically", -3);
+    
     minAllGID_ = indexBase_;
     maxAllGID_ = minAllGID_ + numGlobalElements_ - 1;
     minMyGID_ = indexBase_;
@@ -92,7 +95,7 @@ ElementSpace<OrdinalType>::ElementSpace(OrdinalType numGlobalElements, OrdinalTy
     minLID_ = indexBase_;
     maxLID_ = minLID_ + numMyElements_ - 1;
   }
-  else if (numProc > 1) {
+  else if (numImages > 1) {
     // Sum up all local element counts to get global count
     comm().sumAll(&numMyElements_, &numGlobalElements_, 1);
 
@@ -100,13 +103,13 @@ ElementSpace<OrdinalType>::ElementSpace(OrdinalType numGlobalElements, OrdinalTy
     // (in which case we use our computed value) or matches ours.
     if ((numGlobalElements != -1) && (numGlobalElements != numGlobalElements_))
       throw reportError("Invalid numGlobalElements.  numGlobalElements = " + toString(numGlobalElements) + 
-			  ".  Should equal " + toString(numGlobalElements_) + 
-			  ", or be set to -1 to compute automatically", -3);
-
+			".  Should equal " + toString(numGlobalElements_) + 
+			", or be set to -1 to compute automatically", -3);
+    
     minAllGID_ = indexBase_;
     maxAllGID_ = minAllGID_ + numGlobalElements_ - 1;
     minLID_ = indexBase_;
-		maxLID_ = minLID_ + numMyElements_ - 1;
+    maxLID_ = minLID_ + numMyElements_ - 1;
 
     comm().scanSum(&numMyElements_, &maxMyGID_, 1);
 
@@ -116,31 +119,32 @@ ElementSpace<OrdinalType>::ElementSpace(OrdinalType numGlobalElements, OrdinalTy
   }
   else 
     throw reportError("Internal Error.  Report to Tpetra developer", -99);
-
-	directorySetup();
+  
+  directorySetup();
 }
 
 // constructor #3, user non-contig
 //=======================================================================
 template<typename OrdinalType>
-ElementSpace<OrdinalType>::ElementSpace(OrdinalType numGlobalElements, OrdinalType numMyElements, OrdinalType* elementList, OrdinalType indexBase, const Comm<OrdinalType>& Comm)
- : Object("Tpetra::ElementSpace")
-	 ,numGlobalElements_(numGlobalElements)
-	 ,myGlobalElements_(0)
-	 ,numMyElements_(numMyElements)
-	 ,indexBase_(indexBase)
-	 ,contiguous_(false)
-	 ,lgMap_()
-	 ,glMap_()
-	 ,Comm_(&Comm)
-	 ,Directory_(0)
+ElementSpace<OrdinalType>::ElementSpace(OrdinalType numGlobalElements, OrdinalType numMyElements, OrdinalType* elementList, 
+					OrdinalType indexBase, const Comm<OrdinalType, OrdinalType>& Comm)
+  : Object("Tpetra::ElementSpace")
+    ,numGlobalElements_(numGlobalElements)
+    ,myGlobalElements_(0)
+    ,numMyElements_(numMyElements)
+    ,indexBase_(indexBase)
+    ,contiguous_(false)
+    ,lgMap_()
+    ,glMap_()
+    ,Comm_(&Comm)
+    ,Directory_(0)
 {
   if (numGlobalElements_ < - 1) 
     throw reportError("numGlobalElements = " + toString(numGlobalElements_) + ".  Should be >= -1.", -1);
   if (numMyElements_ < 0) 
     throw reportError("numMyElements = " + toString(numGlobalElements_) + ".  Should be >= 0.", -2);
 
-  OrdinalType numProc = comm().numProc();
+  OrdinalType numImages = comm().getNumImages();
   
   if (numMyElements > 0) {
     for(OrdinalType i = 0; i < numMyElements_; i++) {
@@ -149,40 +153,40 @@ ElementSpace<OrdinalType>::ElementSpace(OrdinalType numGlobalElements, OrdinalTy
     }
     minMyGID_ = elementList[0];
     maxMyGID_ = elementList[numMyElements_ - 1];
-		minLID_ = indexBase_;
-		maxLID_ = minLID_ + numMyElements_ - 1;
+    minLID_ = indexBase_;
+    maxLID_ = minLID_ + numMyElements_ - 1;
   }
   else {
     minMyGID_ = indexBase_;
     maxMyGID_ = indexBase_;
-		minLID_ = indexBase_;
-		maxLID_ = indexBase_;
+    minLID_ = indexBase_;
+    maxLID_ = indexBase_;
   }
   
   global_ = checkGlobalness(numGlobalElements, numMyElements);
 
   // Local Map and uniprocessor case:  Each processor gets a complete copy of all elements
-  if (!global_ || numProc == 1) {
+  if (!global_ || numImages == 1) {
     numGlobalElements_ = numMyElements_;
     // Check to see if user's value for numGlobalElements is either indexBase-1 
     // (in which case we use our computed value) or matches ours.
     if ((numGlobalElements != -1) && (numGlobalElements != numGlobalElements_)) 
       throw reportError("Invalid numGlobalElements.  numGlobalElements = " + toString(numGlobalElements) + 
-			  ".  Should equal " + toString(numGlobalElements_) + 
-			  ", or be set to -1 to compute automatically", -3);
+			".  Should equal " + toString(numGlobalElements_) + 
+			", or be set to -1 to compute automatically", -3);
       
     minAllGID_ = minMyGID_;
     maxAllGID_ = maxMyGID_;
   }
-  else if (numProc > 1) {
+  else if (numImages > 1) {
     // Sum up all local element counts to get global count
     comm().sumAll(&numMyElements_, &numGlobalElements_, 1);
     // Check to see if user's value for NumGlobalElements is either -1
     // (in which case we use our computed value) or matches ours.
     if ((numGlobalElements != -1) && (numGlobalElements != numGlobalElements_)) 
       throw reportError("Invalid numGlobalElements.  numGlobalElements = " + toString(numGlobalElements) + 
-			  ".  Should equal " + toString(numGlobalElements_) + 
-			  ", or be set to -1 to compute automatically", -3);
+			".  Should equal " + toString(numGlobalElements_) + 
+			", or be set to -1 to compute automatically", -3);
       
     // Use the Allreduce function to find min/max GID 
     comm().minAll(&minMyGID_, &minAllGID_, 1);
@@ -191,53 +195,53 @@ ElementSpace<OrdinalType>::ElementSpace(OrdinalType numGlobalElements, OrdinalTy
   else
     throw reportError("Internal Error.  Report to Tpetra developer", -99);
 
-	if (minAllGID_ < indexBase_)
+  if (minAllGID_ < indexBase_)
     throw reportError("Minimum global element index = " + toString(minAllGID_) + " is less than index base = " + toString(indexBase_) +".", -4);
 
-	directorySetup();
+  directorySetup();
 }
 
 // copy constructor
 //=======================================================================
 template<typename OrdinalType>
 ElementSpace<OrdinalType>::ElementSpace (const ElementSpace<OrdinalType>& ElementSpace) 
- : Object(ElementSpace.label())
-	 ,numGlobalElements_(ElementSpace.numGlobalElements_)
-	 ,numMyElements_(ElementSpace.numMyElements_)
-	 ,indexBase_(ElementSpace.indexBase_)
-	 ,minLID_(ElementSpace.minLID_)
-	 ,maxLID_(ElementSpace.maxLID_)
-	 ,minMyGID_(ElementSpace.minMyGID_)
-	 ,maxMyGID_(ElementSpace.maxMyGID_)
-	 ,minAllGID_(ElementSpace.minAllGID_)
-	 ,maxAllGID_(ElementSpace.maxMyGID_)
-	 ,contiguous_(ElementSpace.contiguous_)
-	 ,global_(ElementSpace.global_)
-	 ,lgMap_(ElementSpace.lgMap_)
-	 ,glMap_(ElementSpace.glMap_)
-	 ,Comm_(ElementSpace.Comm_)
-	 ,myGlobalElements_(0)
-	 ,Directory_(0)
+  : Object(ElementSpace.label())
+    ,numGlobalElements_(ElementSpace.numGlobalElements_)
+    ,numMyElements_(ElementSpace.numMyElements_)
+    ,indexBase_(ElementSpace.indexBase_)
+    ,minLID_(ElementSpace.minLID_)
+    ,maxLID_(ElementSpace.maxLID_)
+    ,minMyGID_(ElementSpace.minMyGID_)
+    ,maxMyGID_(ElementSpace.maxMyGID_)
+    ,minAllGID_(ElementSpace.minAllGID_)
+    ,maxAllGID_(ElementSpace.maxMyGID_)
+    ,contiguous_(ElementSpace.contiguous_)
+    ,global_(ElementSpace.global_)
+    ,lgMap_(ElementSpace.lgMap_)
+    ,glMap_(ElementSpace.glMap_)
+    ,Comm_(ElementSpace.Comm_)
+    ,myGlobalElements_(0)
+    ,Directory_(0)
 {
-	// Create mGE array if ElementSpace had one
-	if(ElementSpace.myGlobalElements_ != 0)
-		OrdinalType* tmp = getMyGlobalElements();
-	// Create directory if ElementSpace had one
-	if(ElementSpace.Directory_ != 0)
-		directorySetup();
+  // Create mGE array if ElementSpace had one
+  if(ElementSpace.myGlobalElements_ != 0)
+    OrdinalType* tmp = getMyGlobalElements();
+  // Create directory if ElementSpace had one
+  if(ElementSpace.Directory_ != 0)
+    directorySetup();
 }
 
 //=======================================================================
 template<typename OrdinalType>
 ElementSpace<OrdinalType>::~ElementSpace() {
-	if(Directory_ != 0) {
-		delete Directory_;
-		Directory_ = 0;
-	}
-	if(myGlobalElements_ != 0) {
-		delete myGlobalElements_;
-		myGlobalElements_ = 0;
-	}
+  if(Directory_ != 0) {
+    delete Directory_;
+    Directory_ = 0;
+  }
+  if(myGlobalElements_ != 0) {
+    delete [] myGlobalElements_;
+    myGlobalElements_ = 0;
+  }
 }
 
 //=======================================================================
@@ -291,28 +295,32 @@ bool ElementSpace<OrdinalType>::isMyLID (OrdinalType LID) const {
 //=======================================================================
 template<typename OrdinalType>
 void ElementSpace<OrdinalType>::getMyGlobalElements(OrdinalType* elementList) const {
-	if(elementList == 0)
-		throw reportError("Pointer does not have child allocated.", 3);
-	else if(isContiguous())
-		for(OrdinalType i = 0; i < numMyElements_; i++)
-			elementList[i] = minMyGID_ + i;
-	else { // not contiguous
-		map<OrdinalType, OrdinalType>::iterator lgi = lgMap_.begin();
-		for(OrdinalType i = 0; lgi != lgMap_.end(); i++) {
-			elementList[i] = lgi->second;
-			lgi++;
-		}
-	}
+  if(elementList == 0)
+    throw reportError("Pointer does not have child allocated.", 3);
+  else if(isContiguous())
+    for(OrdinalType i = 0; i < numMyElements_; i++)
+      elementList[i] = minMyGID_ + i;
+  else { // not contiguous
+    map<OrdinalType, OrdinalType>::iterator lgi = lgMap_.begin();
+    for(OrdinalType i = 0; lgi != lgMap_.end(); i++) {
+      elementList[i] = lgi->second;
+      lgi++;
+    }
+  }
 }
 
 //=======================================================================
 template<typename OrdinalType>
 OrdinalType* ElementSpace<OrdinalType>::getMyGlobalElements() const {
-	if(myGlobalElements_ == 0 && getNumMyElements() > 0) {
-	  myGlobalElements_ = new OrdinalType[numMyElements_ + 1];
-		getMyGlobalElements(myGlobalElements_);
-	}
-	return(myGlobalElements_);
+	cout << "ES(gMGE): beginning gMGE()" << endl;
+	OrdinalType numMyElements = getNumMyElements();
+  if((myGlobalElements_ == 0) && (numMyElements > 0)) {
+		cout << "ES(gMGE): allocating mGE child" << endl;
+		myGlobalElements_ = new OrdinalType[numMyElements];
+		cout << "ES(gMGE): calling gMGE(OT*)" << endl;
+    getMyGlobalElements(myGlobalElements_);
+  }
+  return(myGlobalElements_);
 }
 
 //=======================================================================
@@ -348,14 +356,15 @@ bool ElementSpace<OrdinalType>::isSameAs (const ElementSpace<OrdinalType>& Eleme
 //=======================================================================
 template<typename OrdinalType>
 void ElementSpace<OrdinalType>::print(ostream& os) const {
+	cout << "ES(print): init mGE1" << endl;
   OrdinalType* myGlobalElements1 = getMyGlobalElements();
-
-  OrdinalType myPID = comm().myPID();
-  OrdinalType numProc = comm().numProc();
+	cout << "ES(print): getting Comm info" << endl;
+  OrdinalType myImageID = comm().getMyImageID();
+  OrdinalType numImages = comm().getNumImages();
   
-  for (int iproc=0; iproc < numProc; iproc++) {
-    if (myPID==iproc) {
-      if (myPID==0) {
+  for (int imageCtr = 0; imageCtr < numImages; imageCtr++) {
+    if (myImageID == imageCtr) {
+      if (myImageID == 0) {
 				os <<  "\nNumber of Global Elements  = "; os << getNumGlobalElements(); os << endl;
 				os <<    "Maximum of all GIDs        = "; os << getMaxAllGID(); os << endl;
 				os <<    "Minimum of all GIDs        = "; os << getMinAllGID(); os << endl;
@@ -369,7 +378,7 @@ void ElementSpace<OrdinalType>::print(ostream& os) const {
       os << endl;
 
       os.width(14);
-      os <<  "       PID"; os << "    ";
+      os <<  "   ImageID"; os << "    ";
       os.width(14);
       os <<  "       Local Index "; os << " ";
       os.width(14);
@@ -378,7 +387,7 @@ void ElementSpace<OrdinalType>::print(ostream& os) const {
     
       for (OrdinalType i = 0, lid = minLID_; i < numMyElements_; i++, lid++) {
 				os.width(14);
-				os <<  myPID; os << "    ";
+				os <<  myImageID; os << "    ";
 				os.width(14);
 				os << lid; os << "    ";
 				os.width(14);
@@ -399,8 +408,8 @@ void ElementSpace<OrdinalType>::print(ostream& os) const {
 //=======================================================================
 template<typename OrdinalType>
 bool ElementSpace<OrdinalType>::checkGlobalness(OrdinalType numGlobalElements, OrdinalType numMyElements) {
-	bool global = false;
-  if(comm().numProc() > 1) {
+  bool global = false;
+  if(comm().getNumImages() > 1) {
     int localRep = 0;
     int allLocalRep;
     if(numGlobalElements == numMyElements)
@@ -415,9 +424,9 @@ bool ElementSpace<OrdinalType>::checkGlobalness(OrdinalType numGlobalElements, O
 //=======================================================================
 template<typename OrdinalType>
 void ElementSpace<OrdinalType>::directorySetup() {
-	if(getNumGlobalElements() != 0)
-	  if(Directory_ == 0)
-			Directory_ = comm().createDirectory(*this); // Make directory
+  if(getNumGlobalElements() != 0)
+    if(Directory_ == 0)
+      Directory_ = comm().createDirectory(*this); // Make directory
 }
 
 

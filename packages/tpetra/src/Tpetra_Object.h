@@ -1,5 +1,6 @@
 /*Paul
 27-May-2002 General cleanup. Changed method names to fit namingConvention. Commented out reportError method (see Tpetra_Object.cpp for details).
+06-August-2002 Changed to images (nothing changed). Also touched up the documentation a bit, and updated some naming conventions.
 */
 
 #ifndef _TPETRA_OBJECT_H_
@@ -14,7 +15,7 @@ namespace Tpetra
 
 
 //! Tpetra::Object:  The base Tpetra class.
-/*! The Tpetra::Object class provides capabilities common to all Tpetra objects,
+/*! The Object class provides capabilities common to all Tpetra objects,
     such as a label that identifies an object instance, constant definitions,
     enum types.
   
@@ -24,42 +25,42 @@ class Object
 {
   public:
   //@{ \name Constructors/destructor.
-  //! Tpetra::Object Constructor.
-  /*! Tpetra::Object is the primary base class in Tpetra.  All Tpetra class
+  //! Object Constructor.
+  /*! Object is the primary base class in Tpetra.  All Tpetra class
       are derived from it, directly or indirectly.  This class is seldom
       used explictly.
   */
-  Object(int TracebackModeIn = -1);
+  Object(int tracebackModeIn = -1);
 
-  //! Tpetra::Object Constructor.
-  /*! Creates a Tpetra::Object with the given label.
+  //! Object Constructor.
+  /*! Creates an Object with the given label.
   */
-  Object(const char* const Label, int TracebackModeIn = -1);
+  Object(const char* const label, int tracebackModeIn = -1);
 
-  //! Tpetra::Object Copy Constructor.
-  /*! Makes an exact copy of an existing Tpetra::Object instance.
+  //! Object Copy Constructor.
+  /*! Makes an exact copy of an existing Object instance.
   */
   Object(const Object& Obj);
 
-  //! Tpetra::Object Destructor.
-  /*! Completely deletes a Tpetra::Object object.  
+  //! Object Destructor.
+  /*! Completely deletes an Object object.  
   */
   virtual ~Object();
   //@}
   
   //@{ \name Attribute set/get methods.
 
-  //! Tpetra::Object Label definition using char *.
+  //! Object Label definition using char *.
   /*! Defines the label used to describe the \e this object.  
   */
-  virtual void setLabel(const char* const Label);
+  virtual void setLabel(const char* const label);
 
-  //! Tpetra::Object Label access funtion.
+  //! Object Label access funtion.
   /*! Returns the string used to define this object.  
   */
   virtual char* label() const;
 
-  //! Set the value of the Tpetra::Object error traceback report mode.
+  //! Set the value of the Object error traceback report mode.
   /*! Sets the integer error traceback behavior.  
       TracebackMode controls whether or not traceback information is printed when run time 
       integer errors are detected:
@@ -72,9 +73,9 @@ class Object
 
       Default is set to 1.
   */
-  static void setTracebackMode(int TracebackModeValue);
+  static void setTracebackMode(int tracebackModeValue);
 
-  //! Get the value of the Tpetra::Object error report mode.
+  //! Get the value of the Object error report mode.
   static int getTracebackMode();
   //@}
 
@@ -85,19 +86,19 @@ class Object
   virtual void print(ostream& os) const;
 
   //! Error reporting method.
-  virtual int reportError(const string Message, int ErrorCode) const;
+  virtual int reportError(const string message, int errorCode) const;
   //@}
 
   
-// TracebackMode controls how much traceback information is printed when run time 
+// tracebackMode controls how much traceback information is printed when run time 
 // integer errors are detected:
 // = 0 - No information report
 // = 1 - Fatal (negative) values are reported
 // = 2 - All values (except zero) reported.
 
 // Default is set to 2.  Can be set to different value using setTracebackMode() method in
-// Tpetra::Object class
-  static int TracebackMode;
+// Object class
+  static int tracebackMode;
 
 
  protected:
@@ -117,7 +118,7 @@ class Object
 
  private:
 
-  char* Label_;
+  char* label_;
 
 }; // class Object
 
@@ -125,7 +126,7 @@ class Object
 
 #include "Tpetra_Object.cpp"
 
-inline ostream& operator<<(ostream& os, const Tpetra::Object& obj)
+inline ostream& operator<<(ostream& os, const Tpetra::Object& Obj)
 {
   if (Tpetra_FormatStdout)
   {
@@ -133,8 +134,8 @@ inline ostream& operator<<(ostream& os, const Tpetra::Object& obj)
     const Tpetra_fmtflags  oldf = os.setf(ios::scientific,ios::floatfield);
     const int              oldp = os.precision(12);
 
-    os << obj.label() << endl;
-    obj.print(os);
+    os << Obj.label() << endl;
+    Obj.print(os);
 
     os.setf(olda,ios::adjustfield);
     os.setf(oldf,ios::floatfield);
@@ -143,8 +144,8 @@ inline ostream& operator<<(ostream& os, const Tpetra::Object& obj)
   else
   {
 
-    os << obj.label();
-    obj.print(os);
+    os << Obj.label();
+    Obj.print(os);
   }
   
   return os;

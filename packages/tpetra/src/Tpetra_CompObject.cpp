@@ -1,4 +1,7 @@
-// 27-May-2002 General cleanup. Checked for newNamingConvention (already done). Moved some code here from Tpetra_CompObject.h
+/*Paul
+27-May-2002 General cleanup. Checked for newNamingConvention (already done). Moved some code here from Tpetra_CompObject.h
+06-August-2002 Changed to images (nothing changed).
+*/
 
 // Constructor
 
