@@ -12,7 +12,7 @@
 
 #include "ml_comm.h"
 
-ML_Comm *global_comm; /* should not be used to avoid side effect */
+ML_Comm *global_comm = NULL; /* should not be used to avoid side effect */
 
 /* ******************************************************************** */
 /* Create a communicator for ML                                         */
