@@ -49,21 +49,25 @@ Problem_Manager::~Problem_Manager()
   vector<Problem_Interface*>::iterator InterfacesIter = Interfaces.begin();
   vector<NOX::Solver::Manager*>::iterator SolversIter = Solvers.begin();
 
+#ifdef HAVE_NOX_EPETRAEXT
   vector<EpetraExt::CrsGraph_MapColoring*>::iterator TmpMapColoringsIter = TmpMapColorings.begin();
   vector<Epetra_MapColoring*>::iterator ColorMapsIter = ColorMaps.begin();
   vector<EpetraExt::CrsGraph_MapColoringIndex*>::iterator ColorMapIndexSetsIter = ColorMapIndexSets.begin();
   vector<vector<Epetra_IntVector>*>::iterator ColumnsSetsIter = ColumnsSets.begin();
   vector<Epetra_Operator*>::iterator MatrixOperatorsIter = MatrixOperators.begin();
+#endif
 
   while( iter != last)
   {
     delete *MatrixOperatorsIter++;
+    delete *SolversIter++;
+    delete *GroupsIter++;
+#ifdef HAVE_NOX_EPETRAEXT
     delete *TmpMapColoringsIter++;
     delete *ColorMapsIter++;
     delete *ColorMapIndexSetsIter++;
     //delete *ColumnsSetsIter++;
-    delete *SolversIter++;
-    delete *GroupsIter++;
+#endif
     iter++; // Problems are owned by the app driver (Example.C)
   }
 }

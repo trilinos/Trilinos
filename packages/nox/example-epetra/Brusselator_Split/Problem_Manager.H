@@ -71,12 +71,14 @@ private:
   NOX::Parameter::List* nlParams;          // NLSolver parameter list
   NOX::StatusTest::Combo* statusTest;      // Convergence criterion (ia)
 
+#ifdef HAVE_NOX_EPETRAEXT
   // Additional containers to allow each problem to use FD Coloring
   vector<EpetraExt::CrsGraph_MapColoring*> TmpMapColorings;
   vector<Epetra_MapColoring*> ColorMaps;
   vector<EpetraExt::CrsGraph_MapColoringIndex*> ColorMapIndexSets;
   vector<vector<Epetra_IntVector>*> ColumnsSets;
   vector<Epetra_Operator*> MatrixOperators;
+#endif
 
 
 };
