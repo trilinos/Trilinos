@@ -67,7 +67,7 @@ read_test_CXXFLAGS = -I$(top_srcdir)/src
 
 read_test_LDADD = $(top_builddir)/../epetra/src/libepetra.a \
 	$(top_builddir)/src/libtriutils.a \
-	$(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS) 
+	$(LIBS) $(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS) 
 
 # SUBDIRS = example1
 SUBDIRS = 
