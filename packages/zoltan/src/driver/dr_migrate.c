@@ -103,7 +103,6 @@ int migrate_elements(
 {
 /* Local declarations. */
 char *yo = "migrate_elements";
-int i;
 
 /***************************** BEGIN EXECUTION ******************************/
   DEBUG_TRACE_START(Proc, yo);
@@ -172,7 +171,6 @@ int bor_elem;           /* index of an element along the processor border */
 int *send_vec = NULL, *recv_vec = NULL;  /* Communication vecs. */
 MESH_INFO_PTR mesh;
 ELEM_INFO_PTR elements;
-ELEM_INFO_PTR tmp;
 
   *ierr = LB_OK;
 
