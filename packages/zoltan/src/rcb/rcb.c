@@ -44,12 +44,15 @@ static char *cvs_rcbc_id = "$Id$";
 #include "rcb_const.h"
 #include "all_allo_const.h"
 #include "par_const.h"
+#include "params_const.h"
 
 #define MYHUGE 1.0e30
 #define TINY   1.0e-6
 
 #define RCB_DEFAULT_OVERALLOC 1.0
 #define RCB_DEFAULT_REUSE FALSE
+
+static int rcb(LB *, int *, LB_GID **, LB_LID **, int **, double, int, int);
 
 /*  RCB_CHECK = 0  No consistency check on input or results */
 /*  RCB_CHECK = 1  Check input weights and final results for consistency */
@@ -60,7 +63,29 @@ static int RCB_CHECK = 1;
 /*  RCB_STATS = 2  Log times and counts, print for each proc */
 static int RCB_STATS = 1;
 
-int lb_rcb(
+/*---------------------------------------------------------------------------*/
+
+int LB_RCB_Set_Param(
+char *name,			/* name of variable */
+char *val)			/* value of variable */
+{
+    int status;
+    PARAM_UTYPE result;		/* value returned from Check_Param */
+    int index;			/* index returned from Check_Param */
+    PARAM_VARS rcb_params[] = {
+	{ "RCB_OVERALLOC", NULL, "DOUBLE" },
+	{ "RCB_REUSE", NULL, "INT" },
+	{ "RCB_WGTFLAG", NULL, "INT" },
+	{ NULL, NULL, NULL } };
+
+    status = LB_Check_Param(name, val, rcb_params, &result, &index);
+
+    return(status);
+}
+
+/*---------------------------------------------------------------------------*/
+
+int LB_rcb(
   LB *lb,                     /* The load-balancing structure with info for
                                  the RCB balancer.                           */
   int *num_import,            /* Number of non-local objects assigned to this
@@ -76,7 +101,60 @@ int lb_rcb(
                                  this processor's new decomposition.         */
 )
 {
-  char    yo[] = "lb_rcb";
+    /* Wrapper routine to set parameter values and call the real rcb. */
+    double overalloc;         /* amount to overallocate by when realloc
+                                 of dot array must be done.     
+                                 1.0 = no extra; 1.5 = 50% extra; etc. */
+    int reuse;                /* (0) don't use (1) use previous cuts
+                                 stored in treept at initial guesses.  */
+    int wgtflag;              /* (0) do not (1) do use weights.
+                                 Multidimensional weights not supported */
+    PARAM_VARS rcb_params[] = {
+	{ "RCB_OVERALLOC", NULL, "DOUBLE" },
+	{ "RCB_REUSE", NULL, "INT" },
+	{ "RCB_WGTFLAG", NULL, "INT" },
+	{ NULL, NULL, NULL } };
+    
+    rcb_params[0].ptr = (void *) &overalloc;
+    rcb_params[1].ptr = (void *) &reuse;
+    rcb_params[2].ptr = (void *) &wgtflag;
+
+    overalloc = RCB_DEFAULT_OVERALLOC;
+    reuse = RCB_DEFAULT_REUSE;
+    wgtflag = 0;
+
+    LB_Assign_Param_Vals(lb->Params, rcb_params);
+
+    return(rcb(lb, num_import, import_global_ids, import_local_ids,
+		 import_procs, overalloc, reuse, wgtflag));
+}
+
+/*---------------------------------------------------------------------------*/
+
+static int rcb(
+  LB *lb,                     /* The load-balancing structure with info for
+                                 the RCB balancer.                           */
+  int *num_import,            /* Number of non-local objects assigned to this
+                                 processor in the new decomposition.         */
+  LB_GID **import_global_ids, /* Returned value:  array of global IDs for
+                                 non-local objects in this processor's new
+                                 decomposition.                              */
+  LB_LID **import_local_ids,  /* Returned value:  array of local IDs for
+                                 non-local objects in this processor's new
+                                 decomposition.                              */
+  int **import_procs,         /* Returned value:  array of processor IDs for
+                                 processors owning the non-local objects in
+                                 this processor's new decomposition.         */
+  double overalloc,           /* amount to overallocate by when realloc
+                                 of dot array must be done.     
+                                 1.0 = no extra; 1.5 = 50% extra; etc. */
+  int reuse,                  /* (0) don't use (1) use previous cuts
+                                 stored in treept at initial guesses.  */
+  int wgtflag                 /* (0) do not (1) do use weights.
+                                      Multidimensional weights not supported */
+)
+{
+  char    yo[] = "rcb";
   int     proc,nprocs;              /* my proc id, total # of procs */
   struct rcb_dot *dotbuf, *dotpt;   /* local dot arrays */
   struct rcb_box boxtmp;            /* tmp rcb box */
@@ -119,13 +197,6 @@ int lb_rcb(
   int     i,ii,j,k;                 /* local variables */
 
   RCB_STRUCT *rcb;                 /* Pointer to data structures for RCB.  */
-  int wgtflag = 0;                 /* (0) do not (1) do use weights.
-                                      Multidimensional weights not supported */
-  double overalloc;                /* amount to overallocate by when realloc
-                                      of dot array must be done.     
-                                      1.0 = no extra; 1.5 = 50% extra; etc. */
-  int reuse;                       /* (0) don't use (1) use previous cuts
-                                      stored in treept at initial guesses.  */
   struct rcb_box *rcbbox;          /* bounding box of final RCB sub-domain */
   struct rcb_tree *treept;         /* tree of RCB cuts - only single cut on 
                                       exit */
@@ -159,30 +230,6 @@ int lb_rcb(
   proc = lb->Proc;
   nprocs = lb->Num_Proc;
 
-  if (lb->Params == NULL) {
-    /* 
-     *  No application-specified parameters; use defaults.
-     */
-    overalloc = RCB_DEFAULT_OVERALLOC;
-    reuse = RCB_DEFAULT_REUSE;
-    wgtflag = 0;
-  }
-  else {
-    if (lb->Params[0] == LB_PARAMS_INIT_VALUE)
-      overalloc = RCB_DEFAULT_OVERALLOC;
-    else 
-      overalloc = lb->Params[0];
-
-    if (lb->Params[1] == LB_PARAMS_INIT_VALUE)
-      reuse = RCB_DEFAULT_REUSE;
-    else
-      reuse = lb->Params[1];
-
-    if (lb->Params[LB_PARAMS_MAX_SIZE-1] == LB_PARAMS_INIT_VALUE)
-      wgtflag = 0;
-    else
-      wgtflag = lb->Params[LB_PARAMS_MAX_SIZE-1];
-  }
   /*
    *  Build the RCB Data structure and 
    *  set pointers to information in it.
