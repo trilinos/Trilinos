@@ -5,7 +5,6 @@
 #ifdef HAVE_IFPACK_TEUCHOS
 #include "Ifpack_Partitioner.h"
 #include "Teuchos_ParameterList.hpp"
-#include <vector>
 class Epetra_Comm;
 class Ifpack_Graph;
 class Epetra_Map;

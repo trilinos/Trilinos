@@ -124,6 +124,10 @@ public:
   virtual double Condest(const Ifpack_CondestType CT = Ifpack_Cheap,
 			 Epetra_RowMatrix* Matrix = 0) = 0;
 
+  //! Returns the condition number estimate, never computes it.
+  virtual double Condest(const Ifpack_CondestType CT = Ifpack_Cheap,
+			 Epetra_RowMatrix* Matrix = 0) const = 0;
+
   //! Applies the preconditioner to vector X, returns the result in Y.
   virtual int ApplyInverse(const Epetra_MultiVector& X,
 			   Epetra_MultiVector& Y) const = 0;
@@ -131,8 +135,27 @@ public:
   //! Returns a pointer to the matrix to be preconditioned.
   virtual const Epetra_RowMatrix& Matrix() const = 0;
 
-  //! Returns a pointer to the matrix to be preconditioned (non-const /version).
-  virtual Epetra_RowMatrix& Matrix() = 0;
+  //! Returns the number of calls to Initialize().
+  virtual int NumInitialize() const = 0;
+
+  //! Returns the number of calls to Compute().
+  virtual int NumCompute() const = 0;
+
+  //! Returns the number of calls to ApplyInverse().
+  virtual int NumApplyInverse() const = 0;
+
+  //! Returns the time spent in Initialize().
+  virtual double InitializeTime() const = 0;
+
+  //! Returns the time spent in Compute().
+  virtual double ComputeTime() const = 0;
+
+  //! Returns the time spent in ApplyInverse().
+  virtual double ApplyInverseTime() const = 0;
+
+  virtual long int ComputeFlops() const = 0;
+
+  virtual long int ApplyInverseFlops() const = 0;
 
   //! Prints basic information on iostream. This function is used by operator<<.
   virtual ostream& Print(std::ostream& os) const = 0;

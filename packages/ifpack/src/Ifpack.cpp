@@ -9,8 +9,9 @@
 #include "Ifpack_BlockJacobi.h"
 #include "Ifpack_BlockGaussSeidel.h"
 #include "Ifpack_BlockSymGaussSeidel.h"
-#include "Ifpack_Ict.h"
-#include "Ifpack_Riluk.h"
+#include "Ifpack_gIct.h"
+#include "Ifpack_vIct.h"
+#include "Ifpack_gRiluk.h"
 #include "Ifpack_AdditiveSchwarz.h"
 #include "Ifpack_DenseContainer.h"
 #include "Ifpack_SparseContainer.h"
@@ -67,12 +68,16 @@ Ifpack_Preconditioner* Ifpack::Create(const string PrecType,
     return(new Ifpack_AdditiveSchwarz<Ifpack_Amesos>(Matrix,Overlap));
   }
 #endif
-  else if (PrecType == "ICT") {
-    return(new Ifpack_AdditiveSchwarz<Ifpack_Ict>(Matrix,Overlap));
+  else if (PrecType == "gICT") {
+    return(new Ifpack_AdditiveSchwarz<Ifpack_gIct>(Matrix,Overlap));
 
   } 
-  else if (PrecType == "RILUK") {
-    return(new Ifpack_AdditiveSchwarz<Ifpack_Riluk>(Matrix,Overlap));
+  else if (PrecType == "vICT") {
+    return(new Ifpack_AdditiveSchwarz<Ifpack_vIct>(Matrix,Overlap));
+
+  } 
+  else if (PrecType == "gILUK") {
+    return(new Ifpack_AdditiveSchwarz<Ifpack_gRiluk>(Matrix,Overlap));
   }
   else
     return(0);

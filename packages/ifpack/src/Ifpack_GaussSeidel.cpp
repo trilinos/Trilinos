@@ -9,7 +9,6 @@
 #include "Epetra_Vector.h"
 #include "Epetra_Import.h"
 #include "Epetra_BlockMap.h"
-#include <vector>
 
 //==============================================================================
 void Ifpack_GaussSeidel::SetLabel()

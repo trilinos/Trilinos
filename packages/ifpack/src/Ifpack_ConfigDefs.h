@@ -133,6 +133,14 @@
 #error "Found neither iostream nor iostream.h"
 #endif
 
+#if HAVE_VECTOR
+#include <vector>
+#elif HAVE_IOSTREAM_H
+#include <vector.h>
+#else
+#error "Found neither vector nor vector.h"
+#endif
+
 #if defined(TFLOP)
 #ifdef HAVE_STRING
 using std::string;

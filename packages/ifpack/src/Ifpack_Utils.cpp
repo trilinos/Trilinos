@@ -9,7 +9,6 @@
 #include "Epetra_Import.h"
 #include "Epetra_MultiVector.h"
 #include "Epetra_Vector.h"
-#include <vector>
 
 //============================================================================
 void Ifpack_BreakForDebugger(Epetra_Comm& Comm)

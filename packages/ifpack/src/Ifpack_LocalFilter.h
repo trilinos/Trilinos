@@ -1,5 +1,5 @@
 #ifndef IFPACK_LOCALFILTER_H
-#define IFPACK_LOCALFILTERROWMATRIX_H
+#define IFPACK_LOCALFILTER_H
 
 #include "Ifpack_ConfigDefs.h"
 #ifdef HAVE_MPI
@@ -8,7 +8,6 @@
 #include "Epetra_SerialComm.h"
 #endif
 #include "Epetra_RowMatrix.h"
-#include <vector>
 class Epetra_Map;
 class Epetra_MultiVector;
 class Epetra_Vector;

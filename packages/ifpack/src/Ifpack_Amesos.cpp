@@ -128,9 +128,8 @@ ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
   if (NumVectors != Y.NumVectors())
     IFPACK_CHK_ERR(-1); // wrong input
   
-  Epetra_MultiVector Xtmp(X);
   Problem_->SetLHS(&Y);
-  Problem_->SetRHS((Epetra_MultiVector*)&Xtmp);
+  Problem_->SetRHS((Epetra_MultiVector*)&X);
   IFPACK_CHK_ERR(Solver_->Solve());
 
   return(0);

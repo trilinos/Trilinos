@@ -38,8 +38,9 @@ public:
 
     \return Integer error code, set to 0 if successful.
 
-    \warning In order to work with AztecOO, any implementation of this method 
-    must support the case where X and Y are the same object.
+    \warning I do consider that X and Y are two distinct objects.
+    This means that this method will not work with AztecOO; the
+    class must be used through Ifpack_AdditiveSchwarz only.
     */
   int ApplyInverse(const Epetra_MultiVector& X, 
 		   Epetra_MultiVector& Y) const
@@ -54,10 +55,7 @@ public:
     if (X.NumVectors() != Y.NumVectors())
       IFPACK_CHK_ERR(-1); // not valid
 
-    // need an additional vector for AztecOO preconditioning
-    // (as X and Y both point to the same memory space)
-    // FIXME: is overlap between blocks is zero, I can save
-    // a vector
+    // needed in ApplyBSGS
     Epetra_MultiVector Xtmp(X);
 
     if (ZeroStartingSolution_)

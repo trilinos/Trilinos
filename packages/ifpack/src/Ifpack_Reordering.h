@@ -8,6 +8,7 @@ namespace Teuchos {
 }
 class Epetra_MultiVector;
 class Ifpack_Graph;
+class Epetra_RowMatrix;
 
 //! Ifpack_Reordering: basic class for reordering for a Ifpack_Graph.
 /*!

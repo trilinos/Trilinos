@@ -98,12 +98,13 @@ DIST =
 COMP_H = \
 	$(srcdir)/Ifpack_IlukGraph.h          \
 	$(srcdir)/Ifpack_CrsRiluk.h           \
-	$(srcdir)/Ifpack_Riluk.h              \
+	$(srcdir)/Ifpack_gRiluk.h             \
 	$(srcdir)/Ifpack_OverlapGraph.h       \
 	$(srcdir)/Ifpack_ScalingType.h        \
 	$(srcdir)/Ifpack_CrsIct.h             \
-	$(srcdir)/Ifpack_Ict.h                \
-	$(srcdir)/Ifpack_Ict_Utils.h          \
+	$(srcdir)/Ifpack_vIct.h               \
+	$(srcdir)/Ifpack_gIct.h               \
+	$(srcdir)/Ifpack_gIct_Utils.h         \
 	$(srcdir)/icrout_cholesky_mex.h       \
 	$(srcdir)/Ifpack_Preconditioner.h     \
 	$(srcdir)/Ifpack_CondestType.h        \
@@ -141,16 +142,19 @@ COMP_H = \
 	$(srcdir)/Ifpack_Amesos.h                 \
 	$(srcdir)/Ifpack_Utils.h                  \
 	$(srcdir)/Ifpack_Reordering.h             \
-	$(srcdir)/Ifpack_RCMReordering.h
+	$(srcdir)/Ifpack_RCMReordering.h          \
+	$(srcdir)/Ifpack_METISReordering.h        \
+	$(srcdir)/Ifpack_Time.h
 
 
 COMP = \
 	$(srcdir)/Ifpack_IlukGraph.cpp           \
 	$(srcdir)/Ifpack_CrsRiluk.cpp            \
-	$(srcdir)/Ifpack_Riluk.cpp               \
+	$(srcdir)/Ifpack_gRiluk.cpp              \
 	$(srcdir)/Ifpack_CrsIct.cpp              \
-	$(srcdir)/Ifpack_Ict.cpp                 \
-	$(srcdir)/Ifpack_Ict_Utils.cpp           \
+	$(srcdir)/Ifpack_vIct.cpp                \
+	$(srcdir)/Ifpack_gIct.cpp                \
+	$(srcdir)/Ifpack_gIct_Utils.cpp          \
 	$(srcdir)/Ifpack_OverlapGraph.cpp        \
 	$(srcdir)/icrout_cholesky_mex.c          \
 	$(srcdir)/icrout_quicksort.c             \
@@ -177,7 +181,8 @@ COMP = \
 	$(srcdir)/Ifpack_GreedyPartitioner.cpp      \
 	$(srcdir)/Ifpack_METISPartitioner.cpp       \
 	$(srcdir)/Ifpack_EquationPartitioner.cpp    \
-	$(srcdir)/Ifpack_RCMReordering.cpp
+	$(srcdir)/Ifpack_RCMReordering.cpp          \
+	$(srcdir)/Ifpack_METISReordering.cpp
 
 
 # ------------------------------------------------------------------------

@@ -6,7 +6,6 @@
 #include "Ifpack_Partitioner.h"
 #include "Ifpack_OverlappingPartitioner.h"
 #include "Teuchos_ParameterList.hpp"
-#include <vector>
 class Epetra_Comm;
 class Ifpack_Graph;
 class Epetra_Map;

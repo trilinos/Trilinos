@@ -173,10 +173,64 @@ public:
   virtual double Condest(const Ifpack_CondestType CT = Ifpack_Cheap,
 			 Epetra_RowMatrix* Matrix= 0)
   {
+    // FIXME
     return(Condest_);
   }
   
+  virtual double Condest(const Ifpack_CondestType CT = Ifpack_Cheap,
+			 Epetra_RowMatrix* Matrix= 0) const
+  {
+    return(Condest_);
+  }
+
   virtual std::ostream& Print(std::ostream& os) const;
+
+  //! Returns the number of calls to Initialize().
+  virtual int NumInitialize() const
+  {
+    return(NumInitialize_);
+  }
+
+  //! Returns the number of calls to Compute().
+  virtual int NumCompute() const
+  {
+    return(NumCompute_);
+  }
+
+  //! Returns the number of calls to ApplyInverse().
+  virtual int NumApplyInverse() const
+  {
+    return(NumApplyInverse_);
+  }
+
+  //! Returns the time spent in Initialize().
+  virtual double InitializeTime() const
+  {
+    return(InitializeTime_);
+  }
+
+  //! Returns the time spent in Compute().
+  virtual double ComputeTime() const
+  {
+    return(ComputeTime_);
+  }
+
+  //! Returns the time spent in ApplyInverse().
+  virtual double ApplyInverseTime() const
+  {
+    return(ApplyInverseTime_);
+  }
+
+  virtual long int ComputeFlops() const
+  {
+    return(ComputeFlops_);
+  }
+
+  virtual long int ApplyInverseFlops() const
+  {
+    return(ApplyInverseFlops_);
+  }
+
 
 private:
 
@@ -198,6 +252,25 @@ private:
   bool ComputeCondest_;
   //! Contains a copy of the input parameter list.
   Teuchos::ParameterList List_;
+ 
+  //! Contains the number of successful calls to Initialize().
+  int NumInitialize_;
+  //! Contains the number of successful call to Compute().
+  int NumCompute_;
+  //! Contains the number of successful call to ApplyInverse().
+  int NumApplyInverse_;
+
+  //! Contains the time for all successful calls to Initialize().
+  double InitializeTime_;
+  //! Contains the time for all successful calls to Compute().
+  double ComputeTime_;
+  //! Contains the time for all successful calls to ApplyInverse().
+  double ApplyInverseTime_;
+
+  //! Contains the number of flops for Compute().
+  long int ComputeFlops_;
+  //! Contain sthe number of flops for ApplyInverse().
+  long int ApplyInverseFlops_;
 
 };
 

@@ -52,22 +52,19 @@ ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
   // general case (solver) //
   // --------------------- //
 
-  // need an additional vector for AztecOO preconditioning
-  // (as X and Y both point to the same memory space)
-  Epetra_MultiVector Xtmp(X);
   Epetra_MultiVector AX(X);
 
   if (ZeroStartingSolution_)
     Y.PutScalar(0.0);
   
   if (PrintFrequency())
-    Ifpack_PrintResidual(Label(),Matrix(),Y,Xtmp);
+    Ifpack_PrintResidual(Label(),Matrix(),Y,X);
 
   for (int j = 0; j < NumSweeps() ; j++) {
 
     // compute the residual
     IFPACK_CHK_ERR(Apply(Y,AX));
-    AX.Update(1.0,Xtmp,-1.0);
+    AX.Update(1.0,X,-1.0);
 
     // apply the inverse of the diagonal
     AX.Multiply(1.0, AX, *Diagonal_, 0.0);
@@ -76,12 +73,12 @@ ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
     Y.Update(DampingFactor(), AX, 1.0);
 
     if (PrintFrequency() && (j != 0) && (j % PrintFrequency() == 0))
-      Ifpack_PrintResidual(j,Matrix(),Y,Xtmp);
+      Ifpack_PrintResidual(j,Matrix(),Y,X);
 
   }
 
   if (PrintFrequency())
-    Ifpack_PrintResidual(NumSweeps(),Matrix(),Y,Xtmp);
+    Ifpack_PrintResidual(NumSweeps(),Matrix(),Y,X);
 
   return(0);
 

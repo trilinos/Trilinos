@@ -37,8 +37,9 @@ public:
 
     \return Integer error code, set to 0 if successful.
 
-    \warning In order to work with AztecOO, any implementation of this method 
-    must support the case where X and Y are the same object.
+    \warning I do consider that X and Y are two distinct objects.
+    This means that this method will not work with AztecOO; the
+    class must be used through Ifpack_AdditiveSchwarz only.
     */
   int ApplyInverse(const Epetra_MultiVector& X, 
 		   Epetra_MultiVector& Y) const
@@ -53,12 +54,6 @@ public:
     if (X.NumVectors() != Y.NumVectors())
       IFPACK_CHK_ERR(-1); // not valid
 
-    // need an additional vector for AztecOO preconditioning
-    // (as X and Y both point to the same memory space)
-    // FIXME: is overlap between blocks is zero, I can save
-    // a vector
-    Epetra_MultiVector Xtmp(X);
-
     if (ZeroStartingSolution_)
       Y.PutScalar(0.0);
 
@@ -68,7 +63,7 @@ public:
 
     if (NumSweeps() == 1 && ZeroStartingSolution_
 	&& (PrintFrequency() != 0)) {
-      IFPACK_CHK_ERR(ApplyBGS(Xtmp,Y));
+      IFPACK_CHK_ERR(ApplyBGS(X,Y));
       return(0);
     }
 
@@ -77,10 +72,10 @@ public:
     // --------------------- //
 
     if (PrintFrequency())
-      Ifpack_PrintResidual(Label(),Matrix(),Y,Xtmp);
+      Ifpack_PrintResidual(Label(),Matrix(),Y,X);
 
     // starting solution
-    Epetra_MultiVector AX(Xtmp);
+    Epetra_MultiVector AX(X);
     Epetra_MultiVector Ynew(Y);
 
     for (int j = 0; j < NumSweeps() ; j++) {
@@ -89,7 +84,7 @@ public:
       // if starting solution is zero
       if (j || !ZeroStartingSolution_) {
 	IFPACK_CHK_ERR(Apply(Y,AX));
-	AX.Update(1.0,Xtmp,-1.0);
+	AX.Update(1.0,X,-1.0);
       }
 
       // apply the block diagonal of A and update the residual
@@ -98,12 +93,12 @@ public:
       Y.Update(DampingFactor(),Ynew,1.0);
 
       if (PrintFrequency() && (j != 0) && (j % PrintFrequency() == 0))
-	Ifpack_PrintResidual(j,Matrix(),Y,Xtmp);
+	Ifpack_PrintResidual(j,Matrix(),Y,X);
 
     }
 
     if (PrintFrequency())
-      Ifpack_PrintResidual(NumSweeps(),Matrix(),Y,Xtmp);
+      Ifpack_PrintResidual(NumSweeps(),Matrix(),Y,X);
 
     return(0);
 

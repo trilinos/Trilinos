@@ -3,7 +3,6 @@
 
 #include "Ifpack_ConfigDefs.h"
 #include "Ifpack_Reordering.h"
-#include <vector>
 
 namespace Teuchos {
   class ParameterList;

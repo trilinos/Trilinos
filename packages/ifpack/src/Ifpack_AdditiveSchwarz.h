@@ -7,6 +7,7 @@
 #include "Ifpack_Preconditioner.h"
 #include "Ifpack_Reordering.h"
 #include "Ifpack_RCMReordering.h"
+#include "Ifpack_METISReordering.h"
 #include "Ifpack_LocalFilter.h"
 #include "Ifpack_ReorderFilter.h"
 #include "Ifpack_DropFilter.h"
@@ -17,6 +18,7 @@
 #include "Epetra_MultiVector.h"
 #include "Epetra_Map.h"
 #include "Epetra_Comm.h"
+#include "Epetra_Time.h"
 #include "Epetra_LinearProblem.h"
 #include "Epetra_Import.h"
 #include "Epetra_Export.h"
@@ -69,7 +71,7 @@
 */
 
 template<typename T>
-class Ifpack_AdditiveSchwarz : public Ifpack_Preconditioner {
+class Ifpack_AdditiveSchwarz : public virtual Ifpack_Preconditioner {
       
 public:
 
@@ -219,6 +221,13 @@ public:
   virtual double Condest(const Ifpack_CondestType CT = Ifpack_Cheap,
 			 Epetra_RowMatrix* Matrix = 0);
 
+  //! Returns the estimated condition number, never computes it.
+  virtual double Condest(const Ifpack_CondestType CT = Ifpack_Cheap,
+			 Epetra_RowMatrix* Matrix = 0) const
+  {
+    return(Condest_);
+  }
+
   //! Returns a refernence to the internally stored matrix.
   virtual const Epetra_RowMatrix& Matrix() const
   {
@@ -240,6 +249,57 @@ public:
   //! Prints major information about this preconditioner.
   virtual std::ostream& Print(std::ostream&) const;
   
+  virtual const T* Inverse() const
+  {
+    return(Inverse_);
+  }
+
+  //! Returns the number of calls to Initialize().
+  virtual int NumInitialize() const
+  {
+    return(NumInitialize_);
+  }
+
+  //! Returns the number of calls to Compute().
+  virtual int NumCompute() const
+  {
+    return(NumCompute_);
+  }
+
+  //! Returns the number of calls to ApplyInverse().
+  virtual int NumApplyInverse() const
+  {
+    return(NumApplyInverse_);
+  }
+
+  //! Returns the time spent in Initialize().
+  virtual double InitializeTime() const
+  {
+    return(InitializeTime_);
+  }
+
+  //! Returns the time spent in Compute().
+  virtual double ComputeTime() const
+  {
+    return(ComputeTime_);
+  }
+
+  //! Returns the time spent in ApplyInverse().
+  virtual double ApplyInverseTime() const
+  {
+    return(ApplyInverseTime_);
+  }
+
+  virtual long int ComputeFlops() const
+  {
+    return(ComputeFlops_);
+  }
+
+  virtual long int ApplyInverseFlops() const
+  {
+    return(ApplyInverseFlops_);
+  }
+
 protected:
 
   //! Sets up LocalizedMatrix_, Importer and Exporter_.
@@ -279,12 +339,33 @@ protected:
   double CondestTol_;
   
   bool UseReordering_;
+  string ReorderingType_;
   Ifpack_Reordering* Reordering_;
   Ifpack_ReorderFilter* ReorderedLocalizedMatrix_;
   bool UseFilter_;
   Epetra_RowMatrix* FilteredMatrix_;
   Ifpack_SingletonFilter* SingletonFilter_;
+ 
+  //! Contains the number of successful calls to Initialize().
+  int NumInitialize_;
+  //! Contains the number of successful call to Compute().
+  int NumCompute_;
+  //! Contains the number of successful call to ApplyInverse().
+  mutable int NumApplyInverse_;
 
+  //! Contains the time for all successful calls to Initialize().
+  double InitializeTime_;
+  //! Contains the time for all successful calls to Compute().
+  double ComputeTime_;
+  //! Contains the time for all successful calls to ApplyInverse().
+  mutable double ApplyInverseTime_;
+
+  //! Contains the number of flops for Compute().
+  long int ComputeFlops_;
+  //! Contain sthe number of flops for ApplyInverse().
+  mutable long int ApplyInverseFlops_;
+
+  Epetra_Time* Time_;
 };
 
 //==============================================================================
@@ -311,7 +392,16 @@ Ifpack_AdditiveSchwarz(Epetra_RowMatrix* Matrix,
   Reordering_(0),
   UseFilter_(false),
   FilteredMatrix_(0),
-  SingletonFilter_(0)
+  SingletonFilter_(0),
+  NumInitialize_(0),
+  NumCompute_(0),
+  NumApplyInverse_(0),
+  InitializeTime_(0.0),
+  ComputeTime_(0.0),
+  ApplyInverseTime_(0.0),
+  ComputeFlops_(0),
+  ApplyInverseFlops_(0),
+  Time_(0)
 {
   if (Matrix_->Comm().NumProc() == 1)
     OverlapLevel_ = 0;
@@ -369,6 +459,10 @@ void Ifpack_AdditiveSchwarz<T>::Destroy()
   if (Reordering_)
     delete Reordering_;
   Reordering_ = 0;
+
+  if (Time_)
+    delete Time_;
+  Time_ = 0;
 }
 
 //==============================================================================
@@ -388,22 +482,30 @@ int Ifpack_AdditiveSchwarz<T>::Setup()
   if (LocalizedMatrix_ == 0)
     IFPACK_CHK_ERR(-1);
 
+  // FIXME: Add a check to verify that one singleton is present
   SingletonFilter_ = new Ifpack_SingletonFilter(LocalizedMatrix_);
 
-  Epetra_RowMatrix* Matrix = SingletonFilter_;
+  Epetra_RowMatrix* MatrixPtr = SingletonFilter_;
 
   if (UseReordering_) {
 
     // create reordeing and compute it
-    Reordering_ = new Ifpack_RCMReordering();
+    if (ReorderingType_ == "RCM")
+      Reordering_ = new Ifpack_RCMReordering();
+    else if (ReorderingType_ == "METIS")
+      Reordering_ = new Ifpack_METISReordering();
+    else {
+      cerr << "reordering type not correct (" << ReorderingType_ << ")" << endl;
+      exit(EXIT_FAILURE);
+    }
     IFPACK_CHK_ERR(Reordering_->SetParameters(List_));
-    IFPACK_CHK_ERR(Reordering_->Compute(*LocalizedMatrix_));
+    IFPACK_CHK_ERR(Reordering_->Compute(*MatrixPtr));
 
     // now create reordered localized matrix
     ReorderedLocalizedMatrix_ = 
-      new Ifpack_ReorderFilter(LocalizedMatrix_,Reordering_);
+      new Ifpack_ReorderFilter(MatrixPtr,Reordering_);
     assert(ReorderedLocalizedMatrix_ != 0);
-    Matrix = ReorderedLocalizedMatrix_;
+    MatrixPtr = ReorderedLocalizedMatrix_;
   }
 
   if (UseFilter_) {
@@ -411,13 +513,13 @@ int Ifpack_AdditiveSchwarz<T>::Setup()
 
     if (DropScheme == "by-value") {
       double DropValue = List_.get("filter: drop value", 1e-9);
-      FilteredMatrix_ = new Ifpack_DropFilter(Matrix,DropValue);
+      FilteredMatrix_ = new Ifpack_DropFilter(MatrixPtr,DropValue);
     }
     else if (DropScheme == "by-sparsity") {
       int AllowedEntries = List_.get("filter: allowed entries", 1);
       int AllowedBandwidth = List_.get("filter: allowed bandwidth", 
-				   Matrix->NumMyRows());
-      FilteredMatrix_ = new Ifpack_SparsityFilter(Matrix,AllowedEntries,
+				   MatrixPtr->NumMyRows());
+      FilteredMatrix_ = new Ifpack_SparsityFilter(MatrixPtr,AllowedEntries,
 						  AllowedBandwidth);
     }
     else {
@@ -427,10 +529,10 @@ int Ifpack_AdditiveSchwarz<T>::Setup()
     }
       
     assert (FilteredMatrix_ != 0);
-    Matrix = FilteredMatrix_;
+    MatrixPtr = FilteredMatrix_;
   }
 
-  Inverse_ = new T(Matrix);
+  Inverse_ = new T(MatrixPtr);
 
   if (Inverse_ == 0)
     IFPACK_CHK_ERR(-1);
@@ -453,7 +555,8 @@ int Ifpack_AdditiveSchwarz<T>::SetParameters(Teuchos::ParameterList& List)
 {
  
   CombineMode_ = List.get("schwarz: combine mode", CombineMode_);
-  UseReordering_ = List.get("schwarz: use RCM reordering", UseReordering_);
+  UseReordering_ = List.get("schwarz: use reordering", UseReordering_);
+  ReorderingType_ = List.get("schwarz: reordering type", "RCM");
   UseFilter_ = List.get("schwarz: use filter", UseFilter_);
   CondestMaxIters_ = List.get("condest: max iters", CondestMaxIters_);
   CondestTol_ = List.get("condest: tolerance", CondestTol_);
@@ -474,6 +577,11 @@ int Ifpack_AdditiveSchwarz<T>::Initialize()
   Condest_ = -1.0; // zero-out condest
 
   Destroy();
+
+  if (Time_ == 0)
+    Time_ = new Epetra_Time(Comm());
+
+  Time_->ResetStartTime();
 
   // compute the overlapping matrix if necessary
   if (IsOverlapping_) {
@@ -499,6 +607,8 @@ int Ifpack_AdditiveSchwarz<T>::Initialize()
     + ", local solver = \n\t\t***** `" + string(Inverse_->Label()) + "'";
 
   IsInitialized_ = true;
+  ++NumInitialize_;
+  InitializeTime_ += Time_->ElapsedTime();
 
   return(0);
 }
@@ -510,22 +620,25 @@ int Ifpack_AdditiveSchwarz<T>::Compute()
   if (IsInitialized() == false)
     IFPACK_CHK_ERR(Initialize());
 
+  Time_->ResetStartTime();
   IsComputed_ = false;
   Condest_ = -1.0;
   
   IFPACK_CHK_ERR(Inverse_->Compute());
 
-  IsComputed_ = true;
-
   string R = "";
   if (UseReordering_)
-    R = "RCM reord, ";
+    R = ReorderingType_ + " reord, ";
 
   // reset lavel with condest()
   Label_ = "Ifpack_AdditiveSchwarz, ov = " + Ifpack_toString(OverlapLevel_)
     + ", local solver = \n\t\t***** `" + string(Inverse_->Label()) + "'"
     + "\n\t\t***** " + R + "Condition number estimate = "
     + Ifpack_toString(Condest());
+
+  IsComputed_ = true;
+  ++NumCompute_;
+  ComputeTime_ += Time_->ElapsedTime();
 
   return(0);
 }
@@ -600,9 +713,10 @@ template<typename T>
 int Ifpack_AdditiveSchwarz<T>::
 ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
 {
+  int NumVectors = X.NumVectors();
 
   // FIXME: Only One between Import and Export
-  if (X.NumVectors() != Y.NumVectors())
+  if (NumVectors != Y.NumVectors())
     IFPACK_CHK_ERR(-1); // wrong input
 
   // FIXME
@@ -611,52 +725,56 @@ ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
   if (!Y.Map().SameAs(Matrix().RowMatrixRowMap()))
     IFPACK_CHK_ERR(-99);
 
-  assert (UseReordering_ == false); // FIXME
+  Time_->ResetStartTime();
 
-  if (IsOverlapping() == false) {
-    if (!UseReordering_) {
-      Epetra_Vector ReducedX(SingletonFilter_->Map());
-      Epetra_Vector ReducedY(SingletonFilter_->Map());
-      SingletonFilter_->SolveSingletons(X,Y);
+  Epetra_MultiVector* OverlappingX;
+  Epetra_MultiVector* OverlappingY;
 
-      SingletonFilter_->CreateReducedRHS(Y,X,ReducedX);
-      Inverse_->ApplyInverse(ReducedX,ReducedY);
-      SingletonFilter_->UpdateLHS(ReducedY,Y);
-    }
-    else {
-      Epetra_MultiVector Xtilde(X);
-      Epetra_MultiVector Ytilde(Y);
-      Reordering_->P(X,Xtilde);
-      Inverse_->ApplyInverse(Xtilde,Ytilde);
-      Reordering_->Pinv(Ytilde,Y);
-    }
+  // process overlap, may need to create vectors and import data
+  if (IsOverlapping()) {
+    OverlappingX = new Epetra_MultiVector(OverlappingMatrix_->RowMatrixRowMap(),
+					  X.NumVectors());
+    OverlappingY = new Epetra_MultiVector(OverlappingMatrix_->RowMatrixRowMap(),
+					  Y.NumVectors());
+    assert (OverlappingY != 0);
+
+    IFPACK_CHK_ERR(OverlappingX->Export(X,*Exporter_,Insert));
   }
   else {
-    // a bit more with overlap
-    Epetra_MultiVector OverlappingX(OverlappingMatrix_->RowMatrixRowMap(),
-				     X.NumVectors());
-    Epetra_MultiVector OverlappingY(OverlappingMatrix_->RowMatrixRowMap(),
-				     Y.NumVectors());
-
-    IFPACK_CHK_ERR(OverlappingX.Export(X,*Exporter_,Insert));
-    Epetra_MultiVector LocalX(View,LocalizedMatrix_->RowMatrixRowMap(),
-			      OverlappingX.Pointers(),X.NumVectors());
-    Epetra_MultiVector LocalY(View,LocalizedMatrix_->RowMatrixRowMap(),
-			      OverlappingY.Pointers(),Y.NumVectors());
-
-    // fix singletons first
-    Epetra_Vector ReducedX(SingletonFilter_->Map());
-    Epetra_Vector ReducedY(SingletonFilter_->Map());
-    SingletonFilter_->SolveSingletons(LocalX,LocalY);
-    // modify RHS
-    SingletonFilter_->CreateReducedRHS(LocalY,LocalX,ReducedX);
-    // solve non-singletons
-    Inverse_->ApplyInverse(ReducedX,ReducedY);
-    // update the local solution
-    SingletonFilter_->UpdateLHS(ReducedY,LocalY);
-    // export back
-    IFPACK_CHK_ERR(Y.Export(OverlappingY,*Importer_,CombineMode_));
+    OverlappingX = (Epetra_MultiVector*)&X;
+    OverlappingY = &Y;
   }
+
+  // process singleton filter
+  Epetra_MultiVector ReducedX(SingletonFilter_->Map(),NumVectors);
+  Epetra_MultiVector ReducedY(SingletonFilter_->Map(),NumVectors);
+  SingletonFilter_->SolveSingletons(*OverlappingX,*OverlappingY);
+  SingletonFilter_->CreateReducedRHS(*OverlappingY,*OverlappingX,ReducedX);
+
+  // process reordering
+  if (!UseReordering_) {
+    IFPACK_CHK_ERR(Inverse_->ApplyInverse(ReducedX,ReducedY));
+  }
+  else {
+    Epetra_MultiVector ReorderedX(ReducedX);
+    Epetra_MultiVector ReorderedY(ReducedY);
+    IFPACK_CHK_ERR(Reordering_->P(ReducedX,ReorderedX));
+    IFPACK_CHK_ERR(Inverse_->ApplyInverse(ReorderedX,ReorderedY));
+    IFPACK_CHK_ERR(Reordering_->Pinv(ReorderedY,ReducedY));
+  }
+
+  // finish up with singletons
+  SingletonFilter_->UpdateLHS(ReducedY,*OverlappingY);
+  
+  // export data (FIXME: option to avoid this?)
+  if (IsOverlapping()) {
+    IFPACK_CHK_ERR(Y.Export(*OverlappingY,*Importer_,CombineMode_));
+    delete OverlappingX;
+    delete OverlappingY;
+  }
+
+  ++NumApplyInverse_;
+  ApplyInverseTime_ += Time_->ElapsedTime();
 
   return(0);
  
@@ -670,22 +788,35 @@ Print(std::ostream& os) const
   if( Matrix().Comm().MyPID())
     return(os);
 
-  os << "*** " << Label() << endl;
+  os << "*** Ifpack_AdditiveSchwarz" << endl << endl;
+  os << "Cond number estimate = " << Condest_ << endl;
+  os << "Overlap level        = " << OverlapLevel_ << endl;
   if (CombineMode_ == Insert)
-    os << "*** Combine mode              = Insert" << endl;
+    os << "Combine mode         = Insert" << endl;
   else if (CombineMode_ == Add)
-    os << "*** Combine mode              = Add" << endl;
+    os << "Combine mode         = Add" << endl;
   else if (CombineMode_ == Zero)
-    os << "*** Combine mode              = Zero" << endl;
+    os << "Combine mode         = Zero" << endl;
   else if (CombineMode_ == Average)
-    os << "*** Combine mode              = Average" << endl;
+    os << "Combine mode         = Average" << endl;
   else if (CombineMode_ == AbsMax)
-    os << "*** Combine mode              = AbsMax" << endl;
-  os << "*** Overlap Level               = " << OverlapLevel_ << endl;
-  os << "*** Condition number estimate = " << Condest_ << endl;
+    os << "Combine mode         = AbsMax" << endl;
 
-  os << "*** Inverse label             = `" 
-     << Inverse_->Label() << "'" << endl;
+  os << endl;
+  os << "Number of initialization phases = " << NumInitialize_ << endl;
+  os << "Number of computation phases    = " << NumCompute_ << endl;
+  os << "Number of applications          = " << NumApplyInverse_ << endl;
+  os << endl;
+  os << "Total time for Initialize()     = " << InitializeTime_ << " (s)\n";
+  os << "Total time for Compute()        = " << ComputeTime_ << " (s)\n";
+  os << "Total time for ApplyInverse()   = " << ApplyInverseTime_ << " (s)\n";
+  os << endl;
+
+  if (Comm().MyPID() == 0) {
+    os << endl << "Printing Inverse() on process 0..." << endl;
+    os << *Inverse_;
+  }
+  os << endl;
 
   return(os);
 }

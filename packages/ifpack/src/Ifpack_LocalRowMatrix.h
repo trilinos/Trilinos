@@ -8,7 +8,6 @@
 #include "Epetra_SerialComm.h"
 #endif
 #include "Epetra_RowMatrix.h"
-#include <vector>
 class Epetra_Map;
 class Epetra_MultiVector;
 class Epetra_Import;

@@ -3,7 +3,6 @@
 
 #include "Ifpack_ConfigDefs.h"
 #include "Epetra_RowMatrix.h"
-#include <vector>
 class Epetra_Comm;
 class Epetra_Map;
 class Epetra_MultiVector;
