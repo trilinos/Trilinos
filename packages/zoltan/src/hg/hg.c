@@ -53,6 +53,9 @@ static int Zoltan_HG_Return_Lists(ZZ*, ZHG*, Partition, int*,
 
 int Zoltan_HG(
   ZZ *zz,                    /* The Zoltan structure  */
+  float *part_sizes,         /* Input:  Array of size zz->Num_Global_Parts
+                                containing the percentage of work to be
+                                assigned to each partition.               */
   int *num_imp,              /* not computed */
   ZOLTAN_ID_PTR *imp_gids,   /* not computed */
   ZOLTAN_ID_PTR *imp_lids,   /* not computed */

@@ -234,6 +234,9 @@ double start_time, end_time;
 double lb_time[2] = {0.0,0.0};
 char msg[256];
 int comm[3],gcomm[3]; 
+float *part_sizes = NULL;
+int i;
+float sum;
 
   ZOLTAN_TRACE_ENTER(zz, yo);
 
@@ -317,12 +320,43 @@ int comm[3],gcomm[3];
   }
 
   /*
+   * Generate partitions sizes.
+   */
+  if (!(zz->LB.Uniform_Parts)) {
+    part_sizes = (float *) ZOLTAN_MALLOC(zz->LB.Num_Global_Parts*sizeof(float));
+    if (part_sizes == NULL) {
+      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Memory error.");
+      ZOLTAN_TRACE_EXIT(zz, yo);
+      return (ZOLTAN_MEMERR);
+    }
+
+    /* Access parameters to get partition size values */
+    /* KDDKDD Temporary until we have appropriate parameter setting. */
+    for (sum = 0.0, i = 0; i < zz->LB.Num_Global_Parts; i++) {
+/* KDDKDD Backward test -- highest to lowest; zero on last proc.
+      part_sizes[i] = zz->LB.Num_Global_Parts - 1 - (float) (i);
+*/
+      part_sizes[i] = (float) (i);
+      sum += part_sizes[i];
+    }
+    /* Normalize partition sizes */
+    for (i = 0; i < zz->LB.Num_Global_Parts; i++) {
+      part_sizes[i] /= sum;
+    }
+    /* Error checking across processors? */
+  }
+
+  /*
    * Call the actual load-balancing function.
    */
 
-  error = zz->LB.LB_Fn(zz, num_import_objs, import_global_ids, import_local_ids,
-          import_procs, import_to_part, num_export_objs, export_global_ids, 
-          export_local_ids, export_procs, export_to_part);
+  error = zz->LB.LB_Fn(zz, part_sizes,
+                       num_import_objs, import_global_ids, import_local_ids,
+                       import_procs, import_to_part, 
+                       num_export_objs, export_global_ids, export_local_ids, 
+                       export_procs, export_to_part);
+
+  ZOLTAN_FREE(&part_sizes);
 
   if (error == ZOLTAN_FATAL || error == ZOLTAN_MEMERR){
     sprintf(msg, "Partitioning routine returned code %d.", error);
@@ -562,7 +596,7 @@ int *pdist;
 int local_parts = 0;
 int *local_parts_params = NULL;
 int i, j, cnt, pcnt;
-int frac, mod;
+int frac = 0, mod = 0;
 MPI_Op op;
 MPI_User_function Zoltan_PartDist_MPIOp;
 

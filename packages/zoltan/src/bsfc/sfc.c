@@ -107,6 +107,9 @@ char *val)			/* value of variable */
 int Zoltan_BSFC(
   ZZ *zz,                       /* The Zoltan structure with info for
                                    the RCB balancer.                         */
+  float *part_sizes,            /* Input:  Array of size zz->Num_Global_Parts
+                                   containing the percentage of work to be
+                                   assigned to each partition.               */
   int *num_import,              /* Not computed.  Set to -1. */
   ZOLTAN_ID_PTR *import_global_ids, /* Not computed. */
   ZOLTAN_ID_PTR *import_local_ids,  /* Not computed. */

@@ -47,7 +47,7 @@ static void Zoltan_Reftree_Sum_My_Weights(ZZ *zz, ZOLTAN_REFTREE *subroot,
 static void Zoltan_Reftree_Sum_All_Weights(ZZ *zz, ZOLTAN_REFTREE *subroot, int wdim);
 static void Zoltan_Reftree_List_Other_Leaves(ZZ *zz, ZOLTAN_REFTREE *subroot, 
        ZOLTAN_ID_PTR list, int *count);
-static int Zoltan_Reftree_Partition(ZZ *zz, int *num_export, 
+static int Zoltan_Reftree_Partition(ZZ *zz, float *part_sizes, int *num_export, 
        ZOLTAN_ID_PTR *export_global_ids, ZOLTAN_ID_PTR *export_local_ids, 
        int **export_to_partition, int **export_procs);
 static int Zoltan_Reftree_Part_Recursive(ZZ *zz, ZOLTAN_REFTREE *subroot, int *part,
@@ -69,6 +69,9 @@ static int get_current_partition(ZOLTAN_REFTREE *subroot, ZZ *zz, int *ierr);
 int Zoltan_Reftree_Part(
 
   ZZ *zz,                       /* The Zoltan structure */
+  float *part_sizes,            /* Input:  Array of size zz->Num_Global_Parts
+                                   containing the percentage of work to be
+                                   assigned to each partition.               */
   int *num_import,              /* Not computed, set to -1 */
   ZOLTAN_ID_PTR *import_global_ids, /* Not computed */
   ZOLTAN_ID_PTR *import_local_ids,  /* Not computed */
@@ -147,7 +150,7 @@ double time0, time1, time2, time3, time4;
    * determine the new partition
    */
 
-  ierr = Zoltan_Reftree_Partition(zz, num_export, export_global_ids,
+  ierr = Zoltan_Reftree_Partition(zz, part_sizes, num_export, export_global_ids,
                           export_local_ids, export_to_partition, export_procs);
   if (ierr==ZOLTAN_FATAL || ierr==ZOLTAN_MEMERR) {
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, 
@@ -562,7 +565,7 @@ int j;   /* loop counter */
 /*****************************************************************************/
 /*****************************************************************************/
 
-static int Zoltan_Reftree_Partition(ZZ *zz, int *num_export, 
+static int Zoltan_Reftree_Partition(ZZ *zz, float *part_sizes, int *num_export, 
        ZOLTAN_ID_PTR *export_global_ids, ZOLTAN_ID_PTR *export_local_ids, 
        int **export_to_partition, int **export_procs)
 
@@ -615,8 +618,15 @@ int ierr;             /* error flag */
     return(ZOLTAN_MEMERR);
   }
 
-  for (part=0; part<num_part; part++) {
-    cutoff[part] = ((float)(part+1))/((float)num_part);
+  if (part_sizes == NULL) 
+    for (part=0; part<num_part; part++) {
+      cutoff[part] = ((float)(part+1))/((float)num_part);
+    }
+  else {
+    cutoff[0] = part_sizes[0];
+    for (part = 1; part < num_part; part++) {
+       cutoff[part] = cutoff[part-1] + part_sizes[part];
+    }
   }
   cutoff[num_part-1] = 1.0; /* just to make sure roundoff doesn't bite us */
 

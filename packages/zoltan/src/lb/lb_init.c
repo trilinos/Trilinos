@@ -62,6 +62,7 @@ void Zoltan_LB_Init(struct Zoltan_LB_Struct *lb, int num_proc)
   lb->Method = RCB;
   lb->LB_Fn = Zoltan_RCB;
   lb->Return_Lists = ZOLTAN_LB_RETURN_LISTS_DEF;
+  lb->Uniform_Parts = 1;
   lb->Imbalance_Tol = ZOLTAN_LB_IMBALANCE_TOL_DEF;
   lb->Data_Structure = NULL;
   lb->Free_Structure = Zoltan_RCB_Free_Structure;

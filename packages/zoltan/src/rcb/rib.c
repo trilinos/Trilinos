@@ -83,7 +83,11 @@ int Zoltan_RIB_Set_Param(
 int Zoltan_RIB(
   ZZ *zz,                       /* The Zoltan structure with info for
                                 the RIB balancer.                       */
-  int *num_import,              /* Number of non-local objects assigned to
+  float *part_sizes,            /* Input:  Array of size zz->Num_Global_Parts
+                                containing the percentage of work to be
+                                assigned to each partition.               */
+  int *num_import,              /* Returned value: Number of non-local 
+                                objects assigned to
                                 this processor in the new decomposition.*/
   ZOLTAN_ID_PTR *import_global_ids, /* Returned value: array of global IDs for
                                 non-local objects in this processor's new

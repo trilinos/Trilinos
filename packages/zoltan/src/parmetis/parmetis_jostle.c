@@ -102,6 +102,9 @@ static int pmv3method(char *alg);
 
 int Zoltan_ParMetis(
   ZZ *zz,               /* Zoltan structure */
+  float *part_sizes,    /* Input:  Array of size zz->Num_Global_Parts
+                           containing the percentage of work to be
+                           assigned to each partition.               */
   int *num_imp,         /* number of objects to be imported */
   ZOLTAN_ID_PTR *imp_gids,  /* global ids of objects to be imported */
   ZOLTAN_ID_PTR *imp_lids,  /* local  ids of objects to be imported */
@@ -306,6 +309,9 @@ int Zoltan_ParMetis_Order(
 
 int Zoltan_Jostle(
   ZZ *zz,               /* Zoltan structure */
+  float *part_sizes,    /* Input:  Array of size zz->Num_Global_Parts
+                           containing the percentage of work to be
+                           assigned to each partition.               */
   int *num_imp,         /* number of objects to be imported */
   ZOLTAN_ID_PTR *imp_gids,  /* global ids of objects to be imported */
   ZOLTAN_ID_PTR *imp_lids,  /* local  ids of objects to be imported */

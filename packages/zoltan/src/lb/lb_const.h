@@ -30,7 +30,7 @@ extern "C" {
 
 struct Zoltan_Struct;
 
-typedef int ZOLTAN_LB_FN(struct Zoltan_Struct *, int *, 
+typedef int ZOLTAN_LB_FN(struct Zoltan_Struct *, float *, int *, 
                          ZOLTAN_ID_PTR *, ZOLTAN_ID_PTR *, int **, int **,
                          int *, ZOLTAN_ID_PTR *, 
                          ZOLTAN_ID_PTR *, int **, int **);
@@ -108,6 +108,8 @@ struct Zoltan_LB_Struct {
                                       is set to be < zz->Num_Proc.           */
   int Return_Lists;               /*  Flag indicating which lists (if any)
                                       should be returned by Zoltan_LB_Balance.*/
+  int Uniform_Parts;              /*  Flag indicating whether partitions are
+                                      uniformly sized. */
   int *PartDist;                  /*  Array describing distribution of 
                                       partitions to processors.  
                                       If Single_Proc_Per_Part, partition i

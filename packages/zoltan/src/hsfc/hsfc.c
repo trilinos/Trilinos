@@ -42,6 +42,9 @@ static PARAM_VARS HSFC_params[] =
 
 int Zoltan_HSFC( /* Zoltan_HSFC - Load Balance: Hilbert Space Filling Curve */
  ZZ            *zz,
+ float *part_sizes,                /* Input:  Array of size zz->Num_Global_Parts
+                                      containing the percentage of work to be
+                                      assigned to each partition.           */
  int           *num_import,        /* set to -1 to indicate imports not used */
  ZOLTAN_ID_PTR *import_gids,       /* ignored */
  ZOLTAN_ID_PTR *import_lids,       /* ignored */
@@ -76,14 +79,14 @@ int Zoltan_HSFC( /* Zoltan_HSFC - Load Balance: Hilbert Space Filling Curve */
    int     ndots ;                 /* number of dots on this machine */
    int     pcount ;                /* number of partitions in grand partition */
    double  start_time, end_time ;  /* used to time execution */
-   double  total_weight ;
+   double  total_weight = 0.0;
 
    /* temporary variables, loop counters, etc. */
    int        tmp;
    int        i, j, k ;            /* loop counters */
    double     sum ;
    int        done, out_of_tolerance ;    /* binary flags */
-   Partition *p ;
+   Partition *p = NULL;
    int        loop ;
    double     actual, desired, corrected ;
    double     temp, in[9], out[9] ;
@@ -147,7 +150,6 @@ int Zoltan_HSFC( /* Zoltan_HSFC - Load Balance: Hilbert Space Filling Curve */
 
    /* allocate storage for partitions and "binned" weights */
    pcount = N * (zz->LB.Num_Global_Parts - 1) + 1 ;
-   work_fraction   = (float *)   ZOLTAN_MALLOC (sizeof (float)     * zz->LB.Num_Global_Parts);
    target          = (float *)   ZOLTAN_MALLOC (sizeof (float)     * zz->LB.Num_Global_Parts);
    partition       = (double *)  ZOLTAN_MALLOC (sizeof (double)    * zz->LB.Num_Global_Parts);
    delta           = (double *)  ZOLTAN_MALLOC (sizeof (double)    * zz->LB.Num_Global_Parts);
@@ -156,9 +158,21 @@ int Zoltan_HSFC( /* Zoltan_HSFC - Load Balance: Hilbert Space Filling Curve */
    temp_weight     = (double *)  ZOLTAN_MALLOC (sizeof (double)    * pcount * 3) ;
 
    if (partition == NULL || grand_weight == NULL || grand_partition == NULL
-    || temp_weight == NULL || target == NULL || work_fraction == NULL
-    || delta == NULL)
+    || temp_weight == NULL || target == NULL || delta == NULL)
       ZOLTAN_HSFC_ERROR (ZOLTAN_MEMERR, "Malloc error for partitions, targets") ;
+
+   if (part_sizes != NULL) 
+      work_fraction = part_sizes;
+   else
+      {
+      work_fraction = (float *) ZOLTAN_MALLOC(sizeof(float) * zz->LB.Num_Global_Parts);
+      if (work_fraction == NULL)
+         ZOLTAN_HSFC_ERROR (ZOLTAN_MEMERR, "Malloc error for work_fraction") ;
+        
+      /* Initialize work fraction for uniform partitions */
+      for (i = 0 ; i < zz->LB.Num_Global_Parts ; i++)
+         work_fraction[i] = 1.0 / (double) zz->LB.Num_Global_Parts ;
+      }
 
    /* Get bounding box, smallest coordinate aligned box containing all dots */
    for (i =  0              ; i <   d->ndimension ; i++)   in[i] =  0.0 ;
@@ -198,10 +212,6 @@ int Zoltan_HSFC( /* Zoltan_HSFC - Load Balance: Hilbert Space Filling Curve */
          out[j] = (dots[i].x[j] - d->bbox_lo[j]) / d->bbox_extent[j] ;
       dots[i].fsfc = d->fhsfc (out) ;      /* Note, this is a function call */
       }
-
-   /* Initialize work fraction (should be user specified vector in future) */
-   for (i = 0 ; i < zz->LB.Num_Global_Parts ; i++)
-      work_fraction[i] = 1.0 / (double) zz->LB.Num_Global_Parts ;
 
    /* Initialize grand partition to equally spaced intervals on [0,1] */
    for (i = 0 ; i < pcount ; i++)
@@ -315,7 +325,7 @@ int Zoltan_HSFC( /* Zoltan_HSFC - Load Balance: Hilbert Space Filling Curve */
    ZOLTAN_FREE (&grand_weight) ;
    ZOLTAN_FREE (&partition) ;
    ZOLTAN_FREE (&delta) ;
-   ZOLTAN_FREE (&work_fraction) ;
+   if (part_sizes == NULL) ZOLTAN_FREE (&work_fraction) ;
    d->nloops = loop ;                 /* remember work required to balance */
 
    d->final_partition= (Partition *)ZOLTAN_MALLOC(sizeof(Partition)*zz->LB.Num_Global_Parts);
@@ -503,9 +513,9 @@ free:
    ZOLTAN_FREE (&temp_weight) ;
    ZOLTAN_FREE (&weights) ;
    ZOLTAN_FREE (&target) ;
-   ZOLTAN_FREE (&work_fraction) ;
+   if (part_sizes == NULL) ZOLTAN_FREE (&work_fraction) ;
    ZOLTAN_FREE (&delta) ;
-   ZOLTAN_FREE (&parts);
+   ZOLTAN_FREE (&parts) ;
 
    end_time = Zoltan_Time(zz->Timer) ;
    if (zz->Debug_Level >= ZOLTAN_DEBUG_ATIME  &&  zz->Proc == 0)
