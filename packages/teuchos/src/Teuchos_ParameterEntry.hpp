@@ -12,9 +12,9 @@ class Entry
 {
 public:
   Entry();
-  Entry(EntryType, bool);
-  Entry(const Entry &);
-  Entry & operator= (const Entry &);
+  Entry(EntryType newData, bool isCreatedByGet = 0);
+  Entry(const Entry &Source);
+  Entry & operator= (const Entry &Source);
   EntryType GetData();
   bool isUsed();
 
@@ -33,7 +33,7 @@ Entry<EntryType>::Entry()
 }
 
 template<typename EntryType>
-Entry<EntryType>::Entry(EntryType newData, bool isCreatedByGet = 0)
+Entry<EntryType>::Entry(EntryType newData, bool isCreatedByGet)
 {
   data = newData;
   isSetByGet = isCreatedByGet;

@@ -54,7 +54,7 @@ ParameterList::ParameterList()
 template<typename CPType>
 ParameterList::ParameterList(std::string name, CPType newData)
 {
-  cout << "Unsupported Parameter Type! Unable to add Parameter " << name << std::endl;
+  cout << "Unsupported Parameter Type! Unable to add Parameter " << name << endl;
 }
 
 // Need a specialized constructor template function for each supported type
@@ -154,7 +154,7 @@ ParameterList & ParameterList::operator= (const ParameterList &Source)
 template<typename SPType>
 void ParameterList::SetParameter(std::string name, SPType newData)
 {
-  std::cout << "Unsupported Parameter Type! Unable to add Parameter " << name << std::endl;
+  cout << "Unsupported Parameter Type! Unable to add Parameter " << name << endl;
 }
 
 // Need a specialized SetParameter function for each supported type
@@ -224,7 +224,7 @@ void ParameterList::SetParameter<std::string>(std::string name, std::string newD
 template<typename GPType>
 GPType ParameterList::GetParameter(std::string name, GPType nominal)
 {
-  std::cout << "Unsupported Parameter Type! Unable to retrieve Parameter " << name << std::endl;
+  cout << "Unsupported Parameter Type! Unable to retrieve Parameter " << name << endl;
   return nominal;
 }
 
@@ -386,7 +386,7 @@ void ParameterList::Print(int indent)
       while(charIter != CharMap.end())
 	{
 	  PrintTabs(indent);
-	  std::cout << "[(char) " << (*charIter).first << " = '" << (*charIter).second.GetData() << "']" << std::endl;
+	  cout << "[(char) " << (*charIter).first << " = '" << (*charIter).second.GetData() << "']" << endl;
 	  charIter++;
 	}
     }
@@ -396,7 +396,7 @@ void ParameterList::Print(int indent)
       while(complexdoubleIter != ComplexDoubleMap.end())
 	{
 	  PrintTabs(indent);
-	  std::cout << "[(complex<double>) " << (*complexdoubleIter).first << " = " << (*complexdoubleIter).second.GetData() << "]" << std::endl;
+	  cout << "[(complex<double>) " << (*complexdoubleIter).first << " = " << (*complexdoubleIter).second.GetData() << "]" << endl;
 	  complexdoubleIter++;
 	}
     }
@@ -406,7 +406,7 @@ void ParameterList::Print(int indent)
       while(complexfloatIter != ComplexFloatMap.end())
 	{
 	  PrintTabs(indent);
-	  std::cout << "[(complex<float>) " << (*complexfloatIter).first << " = " << (*complexfloatIter).second.GetData() << "]" << std::endl;
+	  cout << "[(complex<float>) " << (*complexfloatIter).first << " = " << (*complexfloatIter).second.GetData() << "]" << endl;
 	  complexfloatIter++;
 	}
     }
@@ -416,7 +416,7 @@ void ParameterList::Print(int indent)
       while(doubleIter != DoubleMap.end())
 	{
 	  PrintTabs(indent);
-	  std::cout << "[(double) " << (*doubleIter).first << " = " << (*doubleIter).second.GetData() << "]" << std::endl;
+	  cout << "[(double) " << (*doubleIter).first << " = " << (*doubleIter).second.GetData() << "]" << endl;
 	  doubleIter++;
 	}
     }
@@ -426,7 +426,7 @@ void ParameterList::Print(int indent)
       while(floatIter != FloatMap.end())
 	{
 	  PrintTabs(indent);
-	  std::cout << "[(float) " << (*floatIter).first << " = " << (*floatIter).second.GetData() << "]" << std::endl;
+	  cout << "[(float) " << (*floatIter).first << " = " << (*floatIter).second.GetData() << "]" << endl;
 	  floatIter++;
 	}
     }
@@ -436,7 +436,7 @@ void ParameterList::Print(int indent)
       while(intIter != IntMap.end())
 	{
 	  PrintTabs(indent);
-	  std::cout << "[(int) " << (*intIter).first << " = " << (*intIter).second.GetData() << "]" << std::endl;
+	  cout << "[(int) " << (*intIter).first << " = " << (*intIter).second.GetData() << "]" << endl;
 	  intIter++;
 	}
     }
@@ -446,7 +446,7 @@ void ParameterList::Print(int indent)
       while(stringIter != StringMap.end())
 	{
 	  PrintTabs(indent);
-	  std::cout << "[(string) " << (*stringIter).first << " = \"" << (*stringIter).second.GetData() << "\"]" << std::endl;
+	  cout << "[(string) " << (*stringIter).first << " = \"" << (*stringIter).second.GetData() << "\"]" << endl;
 	  stringIter++;
 	}
     }
@@ -456,7 +456,7 @@ void ParameterList::Print(int indent)
 //       while(ArbitraryIter != ArbitraryMap.end())
 // 	{
 // 	  PrintTabs(indent);
-// 	  std::cout << "[(Arbitrary) " << (*ArbitraryIter).first << " = " << (*ArbitraryIter).second.GetData() << "]" << std::endl;
+// 	  cout << "[(Arbitrary) " << (*ArbitraryIter).first << " = " << (*ArbitraryIter).second.GetData() << "]" << endl;
 // 	  ArbitraryIter++;
 // 	}
 //     }
@@ -466,7 +466,7 @@ void ParameterList::Print(int indent)
 //       while(ParameterListIter != ParameterListMap.end())
 // 	{
 // 	  PrintTabs(indent);
-// 	  std::cout << "[(ParameterList) " << (*ParameterListIter).first << ":]" << std::endl;
+// 	  cout << "[(ParameterList) " << (*ParameterListIter).first << ":]" << endl;
 // 	  (*(*ParameterListIter).second.GetData()).Print(indent + 1);
 // 	  ParameterListIter++;
 // 	}
@@ -478,7 +478,7 @@ void ParameterList::PrintTabs(int n)
   int i;
   for(i = 0; i < n; i++)
     {
-      std::cout << "\t";
+      cout << "\t";
     }
 }
 
