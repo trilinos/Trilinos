@@ -2268,7 +2268,6 @@ void ML_PauseForDebugger(ML_Comm *comm)
         fflush(stdout);
         sleep(1);
       }
-      //global_sync();
     }
     if(mypid == 0) {
       printf("\n");
@@ -2280,5 +2279,4 @@ void ML_PauseForDebugger(ML_Comm *comm)
 	  scanf("%c",&go);
     }
   }
-  //global_sync();
 }
