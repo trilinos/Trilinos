@@ -11,6 +11,7 @@ Jump to:
 <A HREF="#MINGW">mingw</A>
 <A HREF="#SGI10K">sgi10k</A>
 <A HREF="#SGIN32">sgin32</A>
+<A HREF="#Solaris">solaris</A>
 
 <A NAME="ALPHA-OSF1"><H3>Configuring for alpha-osf1 (electron)</H3></A>
 
@@ -87,7 +88,7 @@ ln -s /Net/Proj/Xyce/arch/alpha-osf1/include/nox
 cd /Net/Proj/Xyce/people/tgkolda/freebsd/nox<BR>
 ../../nox/configure \<BR>
 LIBS="-L/usr/local/lib -L/Net/Proj/Xyce/arch/freebsd/lib/epetra" \<BR>
---prefix=/Net/Proj/Xyce/arch/freebsd <BR>
+--prefix=/Net/Proj/Xyce/arch/freebsd \ <BR>
 --enable-examples 
 </CODE>
 
@@ -160,9 +161,9 @@ ln -s /Net/Proj/Xyce/arch/freebsd/include/nox
 
 <CODE>
 cd /Net/Proj/Xyce/people/tgkolda/freebsd_gcc3/nox<BR>
-../../nox/configure CXX=g++30 \<BR>
+../../nox/configure CXX=g++30 CC=gcc30 F77=g77-30 \<BR>
 LIBS="-L/usr/local/lib -L/Net/Proj/Xyce/arch/freebsd_gcc3/lib/epetra" \<BR>
---prefix=/Net/Proj/Xyce/arch/freebsd_gcc3 <BR>
+--prefix=/Net/Proj/Xyce/arch/freebsd_gcc3 \<BR>
 --enable-examples 
 </CODE>
 
@@ -183,7 +184,7 @@ make install
 
 <CODE>
 cd /Net/Proj/Xyce/people/tgkolda/freebsd_gcc3/Xyce<BR>
-../../Xyce/configure \<BR>
+../../Xyce/configure CXX=g++30 CC=gcc30 F77=g77-30 \<BR>
 --with-archdir=/Net/Proj/Xyce/arch/freebsd_gcc3 \<BR>
 --enable-nox
 </CODE>
@@ -343,6 +344,7 @@ cd /Net/Proj/Xyce/people/tgkolda/Xyce_Test/TestScripts<BR>
 ./tvr_test_serial  /Net/Proj/Xyce/people/tgkolda/mingw/Xyce/src/Xyce
 </CODE>
 
+<!--
 <P><EM>Create links for other versions on the same OS</EM></P>
 
 <CODE>
@@ -359,7 +361,8 @@ ln -s /Net/Proj/Xyce/arch/mingw/include/nox
 
 <CODE>
 cd /Net/Proj/Xyce/people/tgkolda/sgi10k/nox<BR>
-../../nox/configure --prefix=/Net/Proj/Xyce/arch/sgi10k --enable-examples 
+../../nox/configure --prefix=/Net/Proj/Xyce/arch/sgi10k \ <BR>
+--enable-examples CC=cc CFLAGS=-64
 </CODE>
 
 <P><EM>Compile and test NOX's simple example</EM></P>
@@ -483,6 +486,72 @@ ln -s /Net/Proj/Xyce/arch/sgin32/lib/libnox.a<BR>
 cd ../include<BR>
 ln -s /Net/Proj/Xyce/arch/sgin32/include/nox
 </CODE>
+
+<A NAME="Solaris"><H3>Configuring for solaris (landau)</H3></A>
+
+<P><EM>Configure NOX</EM></P>
+
+<CODE>
+set path = (/usr/ccs/bin /opt/SUNWspro/bin $path) <BR>
+cd /Net/Proj/Xyce/people/tgkolda/solaris/nox<BR>
+../../nox/configure \<BR>
+--prefix=/Net/Proj/Xyce/arch/solaris
+</CODE>
+
+<P><EM>Compile and test NOX's simple example</EM></P>
+
+<CODE>
+make
+</CODE>
+
+<P><EM>Compile and install NOX</EM></p>
+
+<CODE>
+make install
+</CODE>
+
+<P><EM>Compile Xyce with NOX</EM></P>
+
+<CODE>
+cd /Net/Proj/Xyce/people/tgkolda/solaris/Xyce<BR>
+../../Xyce/configure \<BR>
+--with-archdir=/Net/Proj/Xyce/arch/solaris --enable-solaris \<BR>
+--enable-nox
+</CODE>
+
+<P><EM>Clean Xyce executable and NonlinearSolverPKG</EM></P>
+
+<CODE>
+cd /Net/Proj/Xyce/people/tgkolda/solaris/Xyce<BR>
+/bin/rm -rf src/Xyce<BR>
+cd src/NonlinearSolverPKG<BR>
+make clean<BR>
+cd ../..
+</CODE>
+
+<P><EM>Compile Xyce with NOX</EM></P>
+
+<CODE>
+make
+</CODE>
+
+<P><EM>Test Xyce</EM></P>
+
+<CODE>
+cd /Net/Proj/Xyce/people/tgkolda/Xyce_Test/TestScripts<BR>
+./tvr_test_serial  /Net/Proj/Xyce/people/tgkolda/solaris/Xyce/src/Xyce
+</CODE>
+
+<!--
+<P><EM>Create links for other versions on the same OS</EM></P>
+
+<CODE>
+cd /Net/Proj/Xyce/arch/solaris_MPI/lib<BR>
+ln -s /Net/Proj/Xyce/arch/solaris/lib/libnox.a<BR>
+cd ../include<BR>
+ln -s /Net/Proj/Xyce/arch/solaris/include/nox
+</CODE>
+-->
 
 </html>
 
