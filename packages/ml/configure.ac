@@ -538,6 +538,8 @@ AC_CONFIG_FILES([
 		src/Makefile
 		examples/Makefile
                 test/Makefile
+                test/MultiLevelPreconditioner_NonSym/Makefile
+		test/MultiLevelPreconditioner_Sym/Makefile
                 test/scripts/Makefile
                 test/scripts/daily/Makefile
                 test/scripts/daily/mpi/Makefile
