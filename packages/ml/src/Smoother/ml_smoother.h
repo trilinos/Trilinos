@@ -182,6 +182,7 @@ extern  int ML_Smoother_SGSSequential(void *, int,double *, int, double *);
 extern  int ML_Smoother_SGS(void *, int, double *, int, double *);
 extern  int ML_Smoother_BlockGS(void *, int, double *, int, double *);
 extern  int ML_Smoother_MLS_Apply(void *, int, double *, int, double *);
+extern int ML_Cheby(void *sm, int inlen, double x[], int outlen, double rhs[]);
 extern  int ML_Smoother_ParaSails(void *, int, double *, int, double *);
 extern  int ML_Smoother_ParaSailsSym(void *, int, double *, int, double *);
 extern  int ML_Smoother_ParaSailsTrans(void *, int, double *, int, double *);

@@ -6235,3 +6235,112 @@ int ML_Smoother_HiptmairSubsmoother_Create(ML **ml_subproblem,
 }
 
  
+ 
+int ML_Cheby(void *sm, int inlen, double x[], int outlen, double rhs[])
+{
+
+   ML_Smoother     *smooth_ptr = (ML_Smoother *) sm;
+   ML_Operator     *Amat = smooth_ptr->my_level->Amat;
+   struct MLSthing *widget;
+   int              deg, i, j, k, n, nn;
+   double          *pAux, *res, *dk;
+   double beta, alpha, theta, delta, s1, rhok, rhokp1;
+   int             *cols, allocated_space;
+   double          *diagonal, *vals, *tdiag;
+
+
+   n = outlen;
+   widget = (struct MLSthing *) smooth_ptr->smoother->data;
+
+   deg    = widget->mlsDeg;
+
+   pAux  = (double *) ML_allocate(n*sizeof(double));
+   res   = (double *) ML_allocate(n*sizeof(double));
+   dk     = (double *) ML_allocate(n*sizeof(double));
+
+   if (pAux == NULL) pr_error("ML_Smoother_MLS_Apply: allocation failed\n");
+   if (res  == NULL) pr_error("ML_Smoother_MLS_Apply: allocation failed\n");
+   if (dk    == NULL) pr_error("ML_Smoother_MLS_Apply: allocation failed\n");
+
+   if (smooth_ptr->init_guess == ML_NONZERO)
+     ML_Operator_Apply(Amat, n, x, n, pAux);
+   else { 
+     for (i = 0; i < n; i++) pAux[i] = 0.0;
+   }
+   for (i = 0; i < n; i++) res[i] = rhs[i] - pAux[i]; 
+
+   beta = Amat->lambda_max;   /* try and bracket high */
+   alpha = beta/8.;           /* frequency errors.    */
+   /*
+   ML_Operator_Print(Amat,"hi");
+   for (i = 0; i < n; i++) printf("x(%d) = %20.13e;\n",i+1,x[i]);
+   for (i = 0; i < n; i++) printf("rhs(%d) = %20.13e;\n",i+1,rhs[i]);
+   */
+
+   delta = (beta - alpha)/2.;
+   theta = (beta + alpha)/2.;
+   s1 = theta/delta;
+   rhok = 1./s1;
+ 
+
+   /* ----------------------------------------------------------------- */
+   /* extract diagonal using getrow function if not found               */
+   /* ----------------------------------------------------------------- */
+
+   if (Amat->diagonal == NULL) 
+   {
+      if (Amat->getrow->ML_id == ML_EMPTY) 
+         pr_error("Error(MLS_Apply): Need diagonal\n");
+      else 
+      {
+         allocated_space = 30;
+         cols = (int    *) malloc(allocated_space*sizeof(int   ));
+         vals = (double *) malloc(allocated_space*sizeof(double));
+         tdiag = (double *) malloc(Amat->outvec_leng*sizeof(double));
+         for (i = 0; i < Amat->outvec_leng; i++) 
+         {
+            while(ML_Operator_Getrow(Amat,1,&i,allocated_space,
+                                     cols,vals,&nn) == 0) 
+            {
+               allocated_space = 2*allocated_space + 1;
+               free(vals); free(cols); 
+               cols = (int    *) malloc(allocated_space*sizeof(int   ));
+               vals = (double *) malloc(allocated_space*sizeof(double));
+               if (vals == NULL)
+               {
+                  printf("Not enough space to get matrix row. Row length of\n");
+                  printf("%d was not sufficient\n",(allocated_space-1)/2);
+                  exit(1);
+               }
+            }
+            for (j = 0; j < nn; j++) 
+               if (cols[j] == i) tdiag[i] = vals[j];
+	    if (tdiag[i] == 0.) tdiag[i] = 1.;
+         }
+         free(cols); free(vals);
+         ML_Operator_Set_Diag(Amat, Amat->matvec->Nrows, tdiag);
+         free(tdiag);
+      } 
+   }
+   ML_DVector_GetDataPtr( Amat->diagonal, &diagonal);
+
+   for (i = 0; i < Amat->outvec_leng; i++) dk[i] = res[i] /(theta*diagonal[i]);
+
+   for (k = 0; k < deg; k++) {
+     for (i = 0; i < Amat->outvec_leng; i++) x[i] += dk[i];
+     rhokp1 = 1./(2.*s1 - rhok);
+     /*
+     printf("%d:      res = %e \n",k,sqrt(ML_gdot(n, res, res, Amat->comm)));
+     */
+     ML_Operator_Apply(Amat, n, x, n, pAux);
+     for (i = 0; i < Amat->outvec_leng; i++) res[i] = rhs[i] - pAux[i]; 
+
+     for (i = 0; i < Amat->outvec_leng; i++) {
+        dk[i] = rhokp1 * rhok * dk[i] + 2.*rhokp1*res[i]/(delta*diagonal[i]);
+     }
+     rhok = rhokp1;
+   }
+   ML_free(dk);
+   ML_free(res);
+   ML_free(pAux);
+}
