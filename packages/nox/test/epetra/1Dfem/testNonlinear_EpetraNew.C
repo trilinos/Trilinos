@@ -58,6 +58,13 @@
 // User's application specific files 
 #include "Interface_EpetraNew.H" 
 
+#ifdef HAVE_NOX_ML_EPETRA
+#include "Teuchos_ParameterList.hpp"
+#endif
+#ifdef HAVE_NOX_ANY
+#include "Teuchos_ParameterList.hpp"
+#endif
+
 using namespace std;
 
 int main(int argc, char *argv[])
