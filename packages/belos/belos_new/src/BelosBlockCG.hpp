@@ -62,8 +62,10 @@
 #include "BelosIterativeSolver.hpp"
 #include "BelosLinearProblemManager.hpp"
 #include "BelosOutputManager.hpp"
+#include "BelosOperator.hpp"
 #include "BelosStatusTest.hpp"
 #include "BelosMultiVecTraits.hpp"
+#include "BelosCG.hpp"
 
 /*!	\class Belos::BlockCG
 
@@ -134,6 +136,7 @@ private:
 		   int[], int&);
   void CheckCGOrth(MV&, MV&);
   void PrintCGIterInfo(int[], const int);
+  void BlockIteration();
 
   //! Linear problem manager [ must be passed in by the user ]
   RefCountPtr<LinearProblemManager<TYPE,OP,MV> > _lp; 
@@ -162,7 +165,7 @@ private:
   //! Numerical breakdown tolerances.
   TYPE _prec, _dep_tol;
 
-  typedef MultiVecTraits<TYPE,MV>  MVT;
+  typedef MultiVecTraits<TYPE,MV> MVT;
 };
 
 //
@@ -191,7 +194,8 @@ BlockCG<TYPE,OP,MV>::BlockCG(const RefCountPtr<LinearProblemManager<TYPE,OP,MV> 
 
 template <class TYPE, class OP, class MV>
 BlockCG<TYPE,OP,MV>::~BlockCG() 
-{}
+{
+}
 
 template <class TYPE, class OP, class MV>
 void BlockCG<TYPE,OP,MV>::SetCGBlkTols() 
@@ -223,18 +227,6 @@ template <class TYPE, class OP, class MV>
 void BlockCG<TYPE,OP,MV>::Solve () 
 {
   //
-  int i, j, k, info, num_ind;
-  int ind_blksz, prev_ind_blksz;
-  bool exit_flg = false;
-  char UPLO = 'U';
-  const TYPE one = Teuchos::ScalarTraits<TYPE>::one();
-  const TYPE zero = Teuchos::ScalarTraits<TYPE>::zero();
-  Teuchos::LAPACK<int,TYPE> lapack;
-  RefCountPtr<MV> R_prev, R_new, P_prev, P_new;
-  RefCountPtr<MV> AP_prev, temp_blk;
-  RefCountPtr<MV> _basisvecs;
-  TYPE *_cur_resid_norms=0, *_init_resid_norms=0;
-  //
   // Retrieve the first linear system to be solved.
   //
   _cur_block_sol = _lp->GetCurrLHSVec();
@@ -244,412 +236,438 @@ void BlockCG<TYPE,OP,MV>::Solve ()
   //
   while (_cur_block_sol.get() && _cur_block_rhs.get() ) {
     //
-    if (_om->doOutput( 0 )) {
-      *_os << endl;
-      *_os << "===================================================" << endl;
-      *_os << "Solving linear system(s):  " << _lp->GetRHSIndex() << " through " << _lp->GetRHSIndex()+_lp->GetNumToSolve() << endl;
-      *_os << endl;
-    }	
-    //
     // Get the blocksize for this set of linear systems.
     //
     _blocksize = _lp->GetBlockSize();
-    //
-    // Make additional space needed during iteration
-    //
-    int *index2 = new int[ _blocksize ]; assert(index2!=NULL);
-    int *index = new int[ _blocksize ]; assert(index!=NULL);
-    int *ind_idx = new int[_blocksize]; assert(ind_idx!=NULL);
-    int *cols = new int[_blocksize]; assert(cols!=NULL);
-    //
-    // Make room for the direction, residual, and operator applied to direction vectors.
-    // We save 3 blocks of these vectors.  Also create 2 vectors of _blocksize to store
-    // The residual norms used to determine valid direction/residual vectors.
-    //
-    _basisvecs = MVT::Clone( *_cur_block_sol, 2*_blocksize); 
-    _residvecs = MVT::Clone( *_cur_block_sol, 2*_blocksize); 
-    temp_blk = MVT::Clone( *_cur_block_sol, _blocksize); 
-    _cur_resid_norms = new TYPE[_blocksize]; assert(_cur_resid_norms!=NULL);
-    _init_resid_norms= new TYPE[_blocksize]; assert(_init_resid_norms!=NULL);
-    //
-    ind_blksz = _blocksize;
-    prev_ind_blksz = _blocksize;
-    Teuchos::SerialDenseMatrix<int,TYPE> alpha( _blocksize, _blocksize );
-    Teuchos::SerialDenseMatrix<int,TYPE> beta( _blocksize, _blocksize );
-    Teuchos::SerialDenseMatrix<int,TYPE> T2( _blocksize, _blocksize );
-    //
-    for (i=0;i<_blocksize;i++){
-      index[i] = i;
-      ind_idx[i] = i; 
-      cols[i] = i;
+    if (_blocksize == 1 ) {
+      //
+      // Create single vector CG solver for this linear system.
+      //
+      Belos::CG<TYPE,OP,MV> CGSolver(_lp, _stest, _om);
+      CGSolver.Solve();
+      //
+    } else {
+      BlockIteration();
     }
-    //
-    // ************ Compute the initial residuals ********************************
-    //
-    // Associate the first block of _basisvecs with P_prev and the
-    // first block of _residvecs with R_prev
-    //
-    P_prev = MVT::CloneView( *_basisvecs, ind_idx, _blocksize); 
-    R_prev = MVT::CloneView( *_residvecs, ind_idx, _blocksize); 
-    AP_prev = MVT::CloneView( *temp_blk, ind_idx, _blocksize);
-    //
-    // Store initial guesses to AX = B in 1st block of _basisvecs
-    //         P_prev = one*cur_block_sol + zero*P_prev
-    //
-    MVT::MvAddMv(one, *_cur_block_sol, zero, *P_prev, *P_prev);
-    //
-    // Multiply by A and store in AP_prev
-    //       AP_prev = A*P_prev
-    //
-    _lp->ApplyOp( *P_prev, *AP_prev );
-    //
-    // Compute initial residual block and store in 1st block of _residvecs
-    //     R_prev = cur_block_rhs - A*P_prev
-    //
-    MVT::MvAddMv(one, *_cur_block_rhs, -one, *AP_prev, *R_prev);
-    //
-    //-------Compute and save the initial residual norms----------
-    //
-    MVT::MvNorm(*R_prev, _init_resid_norms);
-    //
-    // Update indices of current (independent) blocks.
-    // If a residual is too small, it will be dropped from
-    // the current block, thus, from future computations
-    //
-    k = 0; j = 0;
-    for (i=0; i<_blocksize; i++){
-      _cur_resid_norms[i] = _init_resid_norms[i];
-      if (_init_resid_norms[i] > _prec){
-	ind_idx[k] = i;
-	k = k+1;
-      }
-    }
-    ind_blksz = k; 
-    //
-    if (ind_blksz > 0) { 
-      //
-      // All initial residuals have not converged -- continue Block CG	
-      // Compute the initial block of direciton vectors
-      //
-      // Associate current blocks of residuals, directions, and solution block
-      // with R_prev, P_prev, and cur_sol
-      //
-      MVT::CloneView( *R_prev, ind_idx, ind_blksz );
-      MVT::CloneView( *P_prev, ind_idx, ind_blksz );
-      //
-      //----------------Compute initial direction vectors--------------------------
-      // Initially, they are set to the preconditioned residuals
-      //
-      if (_lp->ApplyLeftPrec( *R_prev, *P_prev ) != Ok ) { MVT::MvAddMv( one , *R_prev, zero, *R_prev, *P_prev); }
-      //
-      // Compute an orthonormal block of initial direction vectors,
-      // and check for dependencies, adjusting indices of independent
-      // vectors if needed
-      //
-      Teuchos::SerialDenseMatrix<int,TYPE> G(ind_blksz, ind_blksz);
-      num_ind = 0; exit_flg = false;
-      exit_flg = QRFactorDef(*P_prev, G, cols, num_ind);
-      //
-      if ( exit_flg ) {
-	if (_om->doOutput( 0 )) {
-	  *_os << " Exiting Block CG iteration " << endl; 
-	  *_os << " Reason: No independent initial direction vectors" << endl;
-	}
-      }		
-      if (num_ind < ind_blksz) {
-	// The initial block of direction vectors are linearly dependent
-	if (_om->doOutput( 0 )) {
-	  *_os << " Initial direction vectors are dependent" << endl;
-	  *_os << " Adjusting blocks and indices for iteration" << endl;
-	}
-	//
-	ind_blksz = num_ind;
-	for (i=0; i< ind_blksz; i++){
-	  ind_idx[i] = ind_idx[cols[i]];
-	}	
-      }  // end if (num < ind_blksz)
-    }  // end if (ind_blksz > 0)
-    //		
-    else {  // all initial residuals have converged
-      if (_om->doOutput( 0 )) {
-	*_os << " Exiting Block CG iteration " 
-	     << " -- Iteration# " << _iter << endl;
-	*_os << "Reason: All initial residuals have converged" << endl;
-      }
-      exit_flg = true;
-    }
-
-    // ***************************************************************************
-    // ************************Main CG Loop***************************************
-    // ***************************************************************************
-    // 
-    if (_om->doOutput( 2 )) *_os << "Entering main CG loop" << endl << endl;
-    //
-    _new_blk = 1;
-    for (_iter=0; _stest->CheckStatus(this) == Unconverged && !exit_flg; _iter++) 
-    {
-      //
-      //----------------Compute the new blocks of iterates and residuals------------------
-      //
-      // Get views of the previous blocks of residuals, direction vectors, etc.
-      //
-      if (_new_blk){
-	P_prev = MVT::CloneView( *_basisvecs, ind_idx, ind_blksz );
-      }
-      else {
-        for (i=0; i< ind_blksz; i++) {
-	  index2[i] = _blocksize + ind_idx[i];
-        } 
-	P_prev = MVT::CloneView( *_basisvecs, index2, ind_blksz);
-      }
-      //
-      for (i=0; i < _blocksize; i++){
-	index2[i] = _blocksize + i;
-      }
-      if (_new_blk){
-	R_prev = MVT::CloneView( *_residvecs, index, _blocksize );
-	R_new = MVT::CloneView( *_residvecs, index2, _blocksize );
-      }
-      else {
-	R_prev = MVT::CloneView( *_residvecs, index2, _blocksize );
-	R_new = MVT::CloneView( *_residvecs, index, _blocksize );
-      }
-      //
-      // Compute the coefficient matrix alpha
-      //
-      // P_prev^T * A * P_prev * alpha = P_prev^T * R_prev
-      // 1) Compute P_prev^T * A * P_prev = T2 and P_prev^T * R_prev = T1
-      // 2) Compute the Cholesky Factorization of T2
-      // 3) Back and Forward Solves for alpha
-      //
-      // 1)
-      if ( ind_blksz < prev_ind_blksz ) {  
-	//
-	// The number of independent direction vectors has changed,
-	// so the dimension of the application multivectors needs to be resized.
-	//
-	AP_prev = MVT::CloneView( *temp_blk, ind_idx, ind_blksz ); 
-	alpha.reshape( ind_blksz, _blocksize );
-	T2.reshape( ind_blksz, ind_blksz );
-      }
-      _lp->ApplyOp( *P_prev, *AP_prev );
-      MVT::MvTransMv(*R_prev, one, *P_prev, alpha);   
-      MVT::MvTransMv(*AP_prev, one, *P_prev, T2);
-      //
-      // 2)
-      lapack.POTRF(UPLO, ind_blksz, T2.values(), ind_blksz, &info);
-      if (info != 0) {
-	if(_om->doOutput( 0 )){
-	  *_os << " Exiting Block CG iteration "
-	       << " -- Iteration# " << _iter << endl;
-	  *_os << " Reason: Cannot compute coefficient matrix alpha" << endl;
-	  *_os << " P_prev'* A*P_prev is singular" << endl;
-	  *_os << " Solution will be updated upon exiting loop" << endl;
-	}
-	break;
-      }
-      // 3)
-      lapack.POTRS(UPLO, ind_blksz, _blocksize, T2.values(), ind_blksz, alpha.values(), ind_blksz, &info);
-      // Note: solution returned in alpha
-      if (info != 0) {
-	if(_om->doOutput( 0 )){
-	  *_os << " Exiting Block CG iteration "
-	       << " -- Iteration# " << _iter << endl;
-	  *_os << " Reason: Cannot compute coefficient matrix alpha" << endl;
-	  *_os << " Solution will be updated upon exiting loop" << endl;
-	}
-	break;
-      }
-      //
-      // Update the solution: cur_block_sol = cur_block_sol + P_prev*alpha
-      // 
-      MVT::MvTimesMatAddMv( one, *P_prev, alpha, one, *_cur_block_sol );
-      _lp->SolutionUpdated();
-      //
-      // Update the residual vectors: R_new = R_prev - A*P_prev*alpha
-      //
-      MVT::MvAddMv(one, *R_prev, zero, *R_prev, *R_new);
-      MVT::MvTimesMatAddMv(-one, *AP_prev, alpha, one, *R_new);
-      //
-      // ****Compute the Current Relative Residual Norms and the Block Error****
-      //
-      MVT::MvNorm( *R_new, _cur_resid_norms);
-      //
-      prev_ind_blksz = ind_blksz; // Save old ind_blksz of P_prev
-      //
-      // Update the number of current residuals that correspond
-      // to linearly independent direction vectors. Note that
-      // ind_idx are a subset of cur_idx.
-      //
-      k = 0;
-      for (i=0; i< ind_blksz; i++){
-	if (_cur_resid_norms[ ind_idx[i] ] / _init_resid_norms[ ind_idx[i] ] > _prec){
-	  ind_idx[k] = ind_idx[i]; k = k+1;
-	}
-      }
-      ind_blksz = k;
-      //
-      // ****************Print iteration information*****************************
-      //
-      if (_om->doOutput( 2 )) {
-	PrintCGIterInfo( ind_idx, ind_blksz );
-      }
-      //
-      // ****************Test for breakdown*************************************
-      //
-      if (ind_blksz <= 0){
-	if (_om->doOutput( 0 )) {
-	  *_os << " Exiting Block CG iteration " 
-	       << " -- Iteration# " << _iter << endl;
-	  *_os << " Reason: No more independent direction vectors" << endl;
-	  *_os << " Solution will be updated upon exiting loop" << endl;
-	}
-	break;
-      }
-      //
-      // **************Compute the new block of direction vectors****************
-      //
-      // Get views of the new blocks of independent direction vectors and
-      // the corresponding residuals. Note: ind_idx are a subset of cur_idx.
-      //
-      for (i=0; i<ind_blksz; i++){
-	index2[i] = _blocksize + ind_idx[i];
-      }
-      
-      if (_new_blk) {
-	R_new = MVT::CloneView( *_residvecs, index2, ind_blksz );
-	P_new = MVT::CloneView( *_basisvecs, index2, ind_blksz );
-      }
-      else {
-	R_new = MVT::CloneView( *_residvecs, ind_idx, ind_blksz );
-	P_new = MVT::CloneView( *_basisvecs, ind_idx, ind_blksz );
-      }
-      //
-      // Put the current preconditioned initial residual into P_new since P_new = precond_resid + P_prev * beta
-      //
-      if (_lp->ApplyLeftPrec( *R_new, *P_new ) != Ok ) { MVT::MvAddMv( one, *R_new, zero, *R_new, *P_new ); }
-      // 
-      // Compute coefficient matrix beta
-      //
-      // P_prev^T A * P_prev * beta = P_prev^T A * precond_resid
-      // 1) Compute P_prev^T A * P_prev = T2 and P_prev^T * A * precond_resid = T3
-      //                                     or (A*P_prev)^T * precond_resid (A SPD)
-      // 2) Compute the Cholesky Factorization of T2
-      // 3) Back and Forward Solves for beta
-      //
-      beta.reshape(prev_ind_blksz,ind_blksz);
-      //
-      // 1 & 2)  Note: we already have computed T2 and its Cholesky
-      //         factorization during computation of alpha
-      MVT::MvTransMv(*P_new, -one, *AP_prev, beta);
-      // 3)
-      lapack.POTRS(UPLO, prev_ind_blksz, ind_blksz, T2.values(), prev_ind_blksz, beta.values(), prev_ind_blksz, &info);
-      // Note: Solution returned in beta
-      if (info != 0) {
-	if (_om->doOutput( 0 )) {
-	  *_os << " Exiting Block CG iteration " 
-	       << " -- Iteration# " << _iter << endl;
-	  *_os << "Reason: Cannot compute coefficient matrix beta" << endl;
-	  *_os << "Solution will be updated upon exiting loop" << endl;
-	}
-	break;
-      }
-      //
-      // Compute: P_new = precond_resid + P_prev * beta
-      // ( remember P_new already = precond_resid )
-      MVT::MvTimesMatAddMv(one, *P_prev, beta, one, *P_new);
-      //
-      // Check A-orthogonality of new and previous blocks of direction vectors
-      //
-      if (_om->doOutput( 2 )) {
-	*_os << "Orthogonality check" << endl;
-	CheckCGOrth(*P_prev, *P_new);   
-      }
-      //
-      // Compute orthonormal block of direction vectors,
-      // and check for dependencies, adjusting indices of
-      // independent vectors if needed
-      //
-      Teuchos::SerialDenseMatrix<int,TYPE> G(ind_blksz,ind_blksz);
-      exit_flg = QRFactorDef(*P_new, G, cols, num_ind);
-      //
-      // Check if the orthogonalization has failed.
-      //
-      if ( exit_flg ) {
-        ind_blksz = num_ind;
-	if (_om->doOutput( 0 )) {
-	  *_os  << " Exiting Block CG iteration "  
-		<< " -- Iteration# " << _iter << endl;
-	  *_os << "Reason: No more linearly independent direction vectors" << endl;
-	  *_os << " Solution will be updated upon exiting loop" << endl;
-	}
-	break;
-      }
-      //
-      // Check if the new block of direction vectors are linearly dependent
-      //
-      if (num_ind < ind_blksz) {
-	if (_om->doOutput( 2 )) {
-	  *_os << "The new block of direction vectors are dependent " << endl;
-	  *_os << "# independent direction vectors: " << num_ind << endl;
-	  *_os << " Independent indices: " << endl;
-	  for (i=0; i<num_ind ; i++)
-	    *_os << cols[i] << " ";
-	  *_os << endl << endl;
-	}
-	ind_blksz = num_ind;
-        for (i=0; i<ind_blksz; i++)
-	  ind_idx[i] = ind_idx[cols[i]];
-      }
-      //
-      // Check A-orthogonality after orthonormalization
-      //
-      if (_om->doOutput( 2 )) {
-	*_os << "Orthogonality check after orthonormalization " << endl; 
-	CheckCGOrth(*P_prev, *P_new);
-      }
-      // 
-      // *****Update index of new blocks*****************************************
-      //
-      if (_new_blk)
-	_new_blk--;
-      else
-	_new_blk++;
-      //
-    } // end of the main CG loop -- for(_iter = 0;...)
-    // *******************************************************************************
-    //
-    // Inform the linear problem manager that we are done with the current block of linear systems.
-    //
-    _lp->SetCurrLSVec();
     //
     // Get the next block of linear systems, if it returns the null pointer we are done.
     //
     _cur_block_sol = _lp->GetCurrLHSVec();
     _cur_block_rhs = _lp->GetCurrRHSVec();
     //
-    // Print out solver status.
-    //
-    if (_om->doOutput( 0 )) {
-      _stest->Print(*_os);
-    }
-    //
-    // **************Free heap space**************
-    //   
-    delete [] index; index=0;
-    delete [] index2; index2=0;
-    delete [] ind_idx; ind_idx = 0;
-    delete [] cols; cols = 0;
-    delete [] _cur_resid_norms; _cur_resid_norms = 0;
-    delete [] _init_resid_norms; _init_resid_norms = 0;
-    //
   } // end while ( _cur_block_sol && _cur_block_rhs )
   // **********************************************************************************
   //
-} // end CGSolve()
+} // end Solve()
 //
 
+
 template <class TYPE, class OP, class MV>
+void BlockCG<TYPE,OP,MV>::BlockIteration ( ) 
+{
+  //
+  int i, j, k, info, num_ind;
+  int ind_blksz, prev_ind_blksz;
+  bool exit_flg = false;
+  char UPLO = 'U';
+  const TYPE one = Teuchos::ScalarTraits<TYPE>::one();
+  const TYPE zero = Teuchos::ScalarTraits<TYPE>::zero();
+  Teuchos::LAPACK<int,TYPE> lapack;
+  RefCountPtr<MV> P_prev, R_prev, AP_prev, P_new, R_new;
+  //
+  // Make additional space needed during iteration
+  //
+  int *index2 = new int[ _blocksize ]; assert(index2!=NULL);
+  int *index = new int[ _blocksize ]; assert(index!=NULL);
+  int *ind_idx = new int[_blocksize]; assert(ind_idx!=NULL);
+  int *cols = new int[_blocksize]; assert(cols!=NULL);
+  //
+  // Make room for the direction, residual, and operator applied to direction vectors.
+  // We save 3 blocks of these vectors.  Also create 2 vectors of _blocksize to store
+  // The residual norms used to determine valid direction/residual vectors.
+  //
+  RefCountPtr<MV> _basisvecs = MVT::Clone( *_cur_block_sol, 2*_blocksize ); 
+  RefCountPtr<MV> temp_blk = MVT::Clone( *_cur_block_sol, _blocksize );
+  TYPE* _cur_resid_norms = new TYPE[_blocksize]; assert(_cur_resid_norms!=NULL);
+  TYPE* _init_resid_norms= new TYPE[_blocksize]; assert(_init_resid_norms!=NULL);
+  _residvecs = MVT::Clone( *_cur_block_sol, 2*_blocksize ); 
+  //
+  ind_blksz = _blocksize;
+  prev_ind_blksz = _blocksize;
+  Teuchos::SerialDenseMatrix<int,TYPE> alpha( _blocksize, _blocksize );
+  Teuchos::SerialDenseMatrix<int,TYPE> beta( _blocksize, _blocksize );
+  Teuchos::SerialDenseMatrix<int,TYPE> T2( _blocksize, _blocksize );
+  //
+  for (i=0;i<_blocksize;i++){
+    index[i] = i;
+    ind_idx[i] = i; 
+    cols[i] = i;
+  }
+  //
+  if (_om->doOutput( 0 )) {
+    *_os << endl;
+    *_os << "===================================================" << endl;
+    *_os << "Solving linear system(s):  " << _lp->GetRHSIndex() << " through " << _lp->GetRHSIndex()+_lp->GetNumToSolve() << endl;
+    *_os << endl;
+  }	
+  //
+  //
+  // ************ Compute the initial residuals ********************************
+  //
+  // Associate the first block of _basisvecs with P_prev and the
+  // first block of _residvecs with R_prev
+  //
+  P_prev = MVT::CloneView( *_basisvecs, ind_idx, _blocksize);
+  R_prev = MVT::CloneView( *_residvecs, ind_idx, _blocksize);
+  AP_prev = MVT::CloneView( *temp_blk, ind_idx, _blocksize);
+  //
+  // Store initial guesses to AX = B in 1st block of _basisvecs
+  //         P_prev = one*cur_block_sol + zero*P_prev
+  //
+  MVT::MvAddMv(one, *_cur_block_sol, zero, *_cur_block_sol, *P_prev);
+  //
+  // Multiply by A and store in AP_prev
+  //       AP_prev = A*P_prev
+  //
+  _lp->ApplyOp( *P_prev, *AP_prev );
+  //
+  // Compute initial residual block and store in 1st block of _residvecs
+  //     R_prev = cur_block_rhs - A*P_prev
+  //
+  MVT::MvAddMv(one, *_cur_block_rhs, -one, *AP_prev, *R_prev );
+  //
+  //-------Compute and save the initial residual norms----------
+  //
+  MVT::MvNorm(*R_prev, _init_resid_norms);
+  //
+  // Update indices of current (independent) blocks.
+  // If a residual is too small, it will be dropped from
+  // the current block, thus, from future computations
+  //
+  k = 0; j = 0;
+  for (i=0; i<_blocksize; i++){
+    _cur_resid_norms[i] = _init_resid_norms[i];
+    if (_init_resid_norms[i] > _prec){
+      ind_idx[k] = i;
+      k = k+1;
+    }
+  }
+  ind_blksz = k; 
+  //
+  if (ind_blksz > 0) { 
+    //
+    // All initial residuals have not converged -- continue Block CG	
+    // Compute the initial block of direciton vectors
+    //
+    // Associate current blocks of residuals, directions, and solution block
+    // with R_prev, P_prev, and cur_sol
+    //
+    R_prev = MVT::CloneView( *_residvecs, ind_idx, ind_blksz );
+    P_prev = MVT::CloneView( *_basisvecs, ind_idx, ind_blksz );
+    //
+    //----------------Compute initial direction vectors--------------------------
+    // Initially, they are set to the preconditioned residuals
+    //
+    if (_lp->ApplyLeftPrec( *R_prev, *P_prev ) != Ok ) { MVT::MvAddMv( one , *R_prev, zero, *R_prev, *P_prev); }
+    //
+    // Compute an orthonormal block of initial direction vectors,
+    // and check for dependencies, adjusting indices of independent
+    // vectors if needed
+    //
+    Teuchos::SerialDenseMatrix<int,TYPE> G(ind_blksz, ind_blksz);
+    num_ind = 0; exit_flg = false;
+    exit_flg = QRFactorDef(*P_prev, G, cols, num_ind);
+    //
+    if ( exit_flg ) {
+      if (_om->doOutput( 0 )) {
+	*_os << " Exiting Block CG iteration " << endl; 
+	*_os << " Reason: No independent initial direction vectors" << endl;
+      }
+    }		
+    if (num_ind < ind_blksz) {
+      // The initial block of direction vectors are linearly dependent
+      if (_om->doOutput( 0 )) {
+	*_os << " Initial direction vectors are dependent" << endl;
+	*_os << " Adjusting blocks and indices for iteration" << endl;
+      }
+      //
+      ind_blksz = num_ind;
+      for (i=0; i< ind_blksz; i++){
+	ind_idx[i] = ind_idx[cols[i]];
+      }	
+    }  // end if (num < ind_blksz)
+  }  // end if (ind_blksz > 0)
+  //		
+  else {  // all initial residuals have converged
+    if (_om->doOutput( 0 )) {
+      *_os << " Exiting Block CG iteration " 
+	     << " -- Iteration# " << _iter << endl;
+      *_os << "Reason: All initial residuals have converged" << endl;
+    }
+    exit_flg = true;
+  }
+
+  // ***************************************************************************
+  // ************************Main CG Loop***************************************
+  // ***************************************************************************
+  // 
+  if (_om->doOutput( 2 )) *_os << "Entering main CG loop" << endl << endl;
+  //
+  _new_blk = 1;
+  for (_iter=0; _stest->CheckStatus(this) == Unconverged && !exit_flg; _iter++) {
+    //
+    //----------------Compute the new blocks of iterates and residuals------------------
+    //
+    // Get views of the previous blocks of residuals, direction vectors, etc.
+    //
+    if (_new_blk){
+      P_prev = MVT::CloneView( *_basisvecs, ind_idx, ind_blksz );
+    }
+    else {
+      for (i=0; i< ind_blksz; i++) {
+	index2[i] = _blocksize + ind_idx[i];
+      } 
+      P_prev = MVT::CloneView( *_basisvecs, index2, ind_blksz);
+    }
+    //
+    for (i=0; i < _blocksize; i++){
+      index2[i] = _blocksize + i;
+    }
+    if (_new_blk){
+      R_prev = MVT::CloneView( *_residvecs, index, _blocksize );
+      R_new = MVT::CloneView( *_residvecs, index2, _blocksize );
+    }
+    else {
+      R_prev = MVT::CloneView( *_residvecs, index2, _blocksize );
+      R_new = MVT::CloneView( *_residvecs, index, _blocksize );
+    }
+    //
+    // Compute the coefficient matrix alpha
+    //
+    // P_prev^T * A * P_prev * alpha = P_prev^T * R_prev
+    // 1) Compute P_prev^T * A * P_prev = T2 and P_prev^T * R_prev = T1
+    // 2) Compute the Cholesky Factorization of T2
+    // 3) Back and Forward Solves for alpha
+    //
+    // 1)
+    if ( ind_blksz < prev_ind_blksz ) {  
+      //
+      // The number of independent direction vectors has changed,
+      // so the dimension of the application multivectors needs to be resized.
+      //
+      AP_prev = MVT::CloneView( *temp_blk, ind_idx, ind_blksz ); 
+      alpha.reshape( ind_blksz, _blocksize );
+      T2.reshape( ind_blksz, ind_blksz );
+    }
+    _lp->ApplyOp( *P_prev, *AP_prev );
+    MVT::MvTransMv( *R_prev, one, *P_prev, alpha);   
+    MVT::MvTransMv( *AP_prev, one, *P_prev, T2);
+    //
+    // 2)
+    lapack.POTRF(UPLO, ind_blksz, T2.values(), ind_blksz, &info);
+    if (info != 0) {
+      if(_om->doOutput( 0 )){
+	*_os << " Exiting Block CG iteration "
+	    << " -- Iteration# " << _iter << endl;
+	*_os << " Reason: Cannot compute coefficient matrix alpha" << endl;
+	*_os << " P_prev'* A*P_prev is singular" << endl;
+	*_os << " Solution will be updated upon exiting loop" << endl;
+      }
+      break;
+    }
+    // 3)
+    lapack.POTRS(UPLO, ind_blksz, _blocksize, T2.values(), ind_blksz, alpha.values(), ind_blksz, &info);
+    // Note: solution returned in alpha
+    if (info != 0) {
+      if(_om->doOutput( 0 )){
+	*_os << " Exiting Block CG iteration "
+	    << " -- Iteration# " << _iter << endl;
+	*_os << " Reason: Cannot compute coefficient matrix alpha" << endl;
+	*_os << " Solution will be updated upon exiting loop" << endl;
+      }
+      break;
+    }
+    //
+    // Update the solution: cur_block_sol = cur_block_sol + P_prev*alpha
+    // 
+    MVT::MvTimesMatAddMv( one, *P_prev, alpha, one, *_cur_block_sol );
+    _lp->SolutionUpdated();
+    //
+    // Update the residual vectors: R_new = R_prev - A*P_prev*alpha
+    //
+    MVT::MvAddMv(one, *R_prev, zero, *R_prev, *R_new);
+    MVT::MvTimesMatAddMv(-one, *AP_prev, alpha, one, *R_new);
+    //
+    // ****Compute the Current Relative Residual Norms and the Block Error****
+    //
+    MVT::MvNorm( *R_new, _cur_resid_norms);
+    //
+    prev_ind_blksz = ind_blksz; // Save old ind_blksz of P_prev
+    //
+    // Update the number of current residuals that correspond
+    // to linearly independent direction vectors. Note that
+    // ind_idx are a subset of cur_idx.
+    //
+    k = 0;
+    for (i=0; i< ind_blksz; i++){
+      if (_cur_resid_norms[ ind_idx[i] ] / _init_resid_norms[ ind_idx[i] ] > _prec){
+	ind_idx[k] = ind_idx[i]; k = k+1;
+      }
+    }
+    ind_blksz = k;
+    //
+    // ****************Print iteration information*****************************
+    //
+    if (_om->doOutput( 2 )) {
+      PrintCGIterInfo( ind_idx, ind_blksz );
+    }
+    //
+    // ****************Test for breakdown*************************************
+    //
+    if (ind_blksz <= 0){
+      if (_om->doOutput( 0 )) {
+	*_os << " Exiting Block CG iteration " 
+	    << " -- Iteration# " << _iter << endl;
+	*_os << " Reason: No more independent direction vectors" << endl;
+	*_os << " Solution will be updated upon exiting loop" << endl;
+      }
+      break;
+    }
+    //
+    // **************Compute the new block of direction vectors****************
+    //
+    // Get views of the new blocks of independent direction vectors and
+    // the corresponding residuals. Note: ind_idx are a subset of cur_idx.
+    //
+    for (i=0; i<ind_blksz; i++){
+      index2[i] = _blocksize + ind_idx[i];
+    }
+    
+    if (_new_blk) {
+      R_new = MVT::CloneView( *_residvecs, index2, ind_blksz );
+      P_new = MVT::CloneView( *_basisvecs, index2, ind_blksz );
+    }
+    else {
+      R_new = MVT::CloneView( *_residvecs, ind_idx, ind_blksz );
+      P_new = MVT::CloneView( *_basisvecs, ind_idx, ind_blksz );
+    }
+    //
+    // Put the current preconditioned initial residual into P_new since P_new = precond_resid + P_prev * beta
+    //
+    if (_lp->ApplyLeftPrec( *R_new, *P_new ) != Ok ) { MVT::MvAddMv( one, *R_new, zero, *R_new, *P_new ); }
+    // 
+    // Compute coefficient matrix beta
+    //
+    // P_prev^T A * P_prev * beta = P_prev^T A * precond_resid
+    // 1) Compute P_prev^T A * P_prev = T2 and P_prev^T * A * precond_resid = T3
+    //                                     or (A*P_prev)^T * precond_resid (A SPD)
+    // 2) Compute the Cholesky Factorization of T2
+    // 3) Back and Forward Solves for beta
+    //
+    beta.reshape(prev_ind_blksz,ind_blksz);
+    //
+    // 1 & 2)  Note: we already have computed T2 and its Cholesky
+    //         factorization during computation of alpha
+    MVT::MvTransMv(*P_new, -one, *AP_prev, beta);
+    // 3)
+    lapack.POTRS(UPLO, prev_ind_blksz, ind_blksz, T2.values(), prev_ind_blksz, beta.values(), prev_ind_blksz, &info);
+    // Note: Solution returned in beta
+    if (info != 0) {
+      if (_om->doOutput( 0 )) {
+	*_os << " Exiting Block CG iteration " 
+	    << " -- Iteration# " << _iter << endl;
+	*_os << "Reason: Cannot compute coefficient matrix beta" << endl;
+	*_os << "Solution will be updated upon exiting loop" << endl;
+      }
+      break;
+    }
+    //
+    // Compute: P_new = precond_resid + P_prev * beta
+    // ( remember P_new already = precond_resid )
+    MVT::MvTimesMatAddMv(one, *P_prev, beta, one, *P_new);
+    //
+    // Check A-orthogonality of new and previous blocks of direction vectors
+    //
+    if (_om->doOutput( 2 )) {
+      *_os << "Orthogonality check" << endl;
+      CheckCGOrth(*P_prev, *P_new);   
+    }
+    //
+    // Compute orthonormal block of direction vectors,
+    // and check for dependencies, adjusting indices of
+    // independent vectors if needed
+    //
+    Teuchos::SerialDenseMatrix<int,TYPE> G(ind_blksz,ind_blksz);
+    exit_flg = QRFactorDef(*P_new, G, cols, num_ind);
+    //
+    // Check if the orthogonalization has failed.
+    //
+    if ( exit_flg ) {
+      ind_blksz = num_ind;
+      if (_om->doOutput( 0 )) {
+	*_os  << " Exiting Block CG iteration "  
+	     << " -- Iteration# " << _iter << endl;
+	*_os << "Reason: No more linearly independent direction vectors" << endl;
+	*_os << " Solution will be updated upon exiting loop" << endl;
+      }
+      break;
+    }
+    //
+    // Check if the new block of direction vectors are linearly dependent
+    //
+    if (num_ind < ind_blksz) {
+      if (_om->doOutput( 2 )) {
+	*_os << "The new block of direction vectors are dependent " << endl;
+	*_os << "# independent direction vectors: " << num_ind << endl;
+	*_os << " Independent indices: " << endl;
+	for (i=0; i<num_ind ; i++)
+	  *_os << cols[i] << " ";
+	*_os << endl << endl;
+      }
+      ind_blksz = num_ind;
+      for (i=0; i<ind_blksz; i++)
+	ind_idx[i] = ind_idx[cols[i]];
+    }
+    //
+    // Check A-orthogonality after orthonormalization
+    //
+    if (_om->doOutput( 2 )) {
+      *_os << "Orthogonality check after orthonormalization " << endl; 
+      CheckCGOrth(*P_prev, *P_new);
+    }
+    // 
+    // *****Update index of new blocks*****************************************
+    //
+    if (_new_blk)
+      _new_blk--;
+    else
+      _new_blk++;
+    //
+  } // end of the main CG loop -- for(_iter = 0;...)
+  //
+  // Inform the linear problem manager that we are done with the current block of linear systems.
+  //
+  _lp->SetCurrLSVec();
+  //
+  // Print out solver status.
+  //
+  if (_om->doOutput( 0 )) {
+    _stest->Print(*_os);
+  }  
+  // *******************************************************************************
+  // **************Free heap space**************
+  //   
+  delete [] index; index=0;
+  delete [] index2; index2=0;
+  delete [] ind_idx; ind_idx = 0;
+  delete [] cols; cols = 0;
+  delete [] _cur_resid_norms; _cur_resid_norms = 0;
+  delete [] _init_resid_norms; _init_resid_norms = 0;
+  //
+} // end BlockIteration()
+//
+
+template<class TYPE, class OP, class MV>
 bool BlockCG<TYPE,OP,MV>::QRFactorDef (MV& VecIn, 
 				 Teuchos::SerialDenseMatrix<int,TYPE>& FouierR, 
 				 int cols[], int &num) 
@@ -692,7 +710,7 @@ bool BlockCG<TYPE,OP,MV>::QRFactorDef (MV& VecIn,
     // Grab the j-th column of VecIn (the first column is indexed to 
     // be the zero-th one).
     //
-    qj = MVT::CloneView( VecIn, index+j, IntOne); 
+    qj = MVT::CloneView( VecIn, index+j, IntOne);
     if ( j ) {
       //
       // Grab the first j columns of VecIn (that are now an orthogonal
@@ -737,7 +755,7 @@ bool BlockCG<TYPE,OP,MV>::QRFactorDef (MV& VecIn,
       // Normalize qj to make it into a unit vector.
       //
       TYPE rjj = one / FouierR(j,j);
-      MVT::MvAddMv ( rjj, *qj, zero, *qj, *qj );
+      MVT::MvAddMv( rjj, *qj, zero, *qj, *qj );
       cols[num] = j;
       num++;
     }
@@ -768,7 +786,7 @@ bool BlockCG<TYPE,OP,MV>::QRFactorDef (MV& VecIn,
 } // end QRFactorDef
 
 
-template <class TYPE, class OP, class MV>
+template<class TYPE, class OP, class MV>
 void BlockCG<TYPE,OP,MV>::CheckCGOrth(MV& P1, MV& P2) 
 {
   //
@@ -806,7 +824,7 @@ void BlockCG<TYPE,OP,MV>::CheckCGOrth(MV& P1, MV& P2)
 //
 
 
-template <class TYPE, class OP, class MV>
+template<class TYPE, class OP, class MV>
 void BlockCG<TYPE,OP,MV>::PrintCGIterInfo( int ind[], const int indsz )
 {
   //
