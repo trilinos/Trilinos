@@ -19,6 +19,7 @@
 #define _TEUCHOS_BLAS_HPP_
 
 #include "Teuchos_BLAS_wrappers.hpp"
+#include "Teuchos_BLAS_types.hpp"
 #include "Teuchos_ScalarTraits.hpp"
 #include "Teuchos_OrdinalTraits.hpp"
 
@@ -45,11 +46,6 @@ namespace Teuchos
     since the standard BLAS are only specified for serial execution 
     (or shared memory parallel).
 */
-
-  enum ESide{ LEFT_SIDE, RIGHT_SIDE };
-  enum ETransp { NO_TRANS, TRANS, CONJ_TRANS };
-  enum EUplo { UPPER_TRI, LOWER_TRI };
-  enum EDiag { UNIT_DIAG, NON_UNIT_DIAG };
 
   extern const char ESideChar[];
   extern const char ETranspChar[];

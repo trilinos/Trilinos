@@ -22,6 +22,7 @@ CORE_H = \
 	$(srcdir)/Teuchos_basic_oblackholestream.hpp \
 	$(srcdir)/Teuchos_BLAS.hpp \
 	$(srcdir)/Teuchos_BLAS_wrappers.hpp \
+	$(srcdir)/Teuchos_BLAS_types.hpp \
 	$(srcdir)/Teuchos_Comm.hpp \
 	$(srcdir)/Teuchos_CommandLineProcessor.hpp \
 	$(srcdir)/Teuchos_CompObject.hpp \
