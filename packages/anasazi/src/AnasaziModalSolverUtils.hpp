@@ -59,39 +59,103 @@ namespace Anasazi {
     
     //@{ \name Constructor/Destructor
 
+    //! Basic constructor.  
+    /*! @param om [in] OutputManager to handle output from the utilities.
+     */
     ModalSolverUtils( const Teuchos::RefCountPtr<OutputManager<ScalarType> > &om ); 
     
+    //! Destructor.
     virtual ~ModalSolverUtils() {};
     
     //@}
     
     //@{ \name Sorting Methods
     
+    //! Sort the vector of eigenvalues \c y, optionally returning the permutation vector \c perm. 
     int sortScalars(int n, ScalarType *y, int *perm = 0) const;
     
+    //! Sort the vector of eigenvalues \c lambda, and optionally the corresponding multi-vector \c Q and residual vector \c resids. 
     int sortScalars_Vectors(int n, ScalarType* lambda, MV* Q, std::vector<ScalarType>* resids = 0) const;
 
     //@} 
 
     //@{ \name Eigensolver Projection Methods
 
+    //! Mass orthogonalize \c X with-respect-to the orthogonalization parameter \c orthoType.
+    /*! @param X [in/out] Multi-vector being orthogonalized/orthonormalized.
+    @param MX [in/out] Image of the multi-vector \c X by the mass matrix \c M, not referenced if \c MX=0.
+    @param M [in] Pointer to the mass matrix, not referenced if 0.
+    @param Q [in] Vectors to orthogonalize against.
+    @param howMany [in] Number of vectors X to orthogonalize.
+    @param orthoType [in] Orthogonalization type
+    <ul>
+    <li> orthoType = 0 (default) > Performs both operations
+    <li> orthoType = 1           > Performs \f$Q^TMX = 0\f$
+    <li> orthoType = 2           > Performs \f$X^TMX = I\f$
+    </ul>
+    @param kappa [in] Coefficient determining when to perform a second Gram-Schmidt step
+    Default value = 1.5625 = (1.25)^2 (as suggested in Parlett's book)
+
+    \return Integer \c info on the status of the computation
+    <ul>
+    <li> info = 0 >> Success
+    <li> info > 0 >> Indicate how many vectors have been tried to avoid rank deficiency for X 
+    <li> info =-1 >> Failure: X has zero columns, #col of X > #rows of X, #col of [Q X] > #rows of X, or no good random vectors could be found
+    </ul>
+    */    
     int massOrthonormalize(MV &X, MV &MX, const OP *M, const MV &Q, int howMany,
 			   int orthoType = 0, ScalarType kappa = 1.5625) const;
     
+
+    //! Routine for computing the first NEV generalized eigenpairs of the symmetric pencil <tt>(KK, MM)</tt>
+    /*!
+      @param size [in] Dimension of the eigenproblem (KK, MM)
+      @param KK [in] Symmetric "stiffness" matrix 
+      @param MM [in] Symmetric Positive "mass" matrix
+      @param EV [in] Dense matrix to store the nev eigenvectors 
+      @param theta [in] Array to store the eigenvalues (Size = nev )
+      @param nev [in/out] Number of the smallest eigenvalues requested (in) / computed (out)
+      @param esType [in] Flag to select the algorithm
+      <ul>
+      <li> esType =  0  (default) Uses LAPACK routine (Cholesky factorization of MM)
+                        with deflation of MM to get orthonormality of 
+                        eigenvectors (\f$S^TMMS = I\f$)
+      <li> esType =  1  Uses LAPACK routine (Cholesky factorization of MM)
+                        (no check of orthonormality)
+      <li> esType = 10  Uses LAPACK routine for simple eigenproblem on KK
+                        (MM is not referenced in this case)
+      </ul>
+
+      \note The code accesses only the upper triangular part of KK and MM.
+      \return Integer \c info on the status of the computation
+      // Return the integer info on the status of the computation
+      <ul>
+      <li> info = 0 >> Success
+      <li> info = - 20 >> Failure in LAPACK routine
+      </ul>
+    */
     int directSolver(int size, const Teuchos::SerialDenseMatrix<int,ScalarType> &KK, 
 		     const Teuchos::SerialDenseMatrix<int,ScalarType> *MM,
 		     Teuchos::SerialDenseMatrix<int,ScalarType> *EV,
 		     std::vector<ScalarType>* theta,
 		     int nev, int esType = 0) const;
-
     //@}
 
     //@{ \name Sanity Checking Methods
 
+    //! Return the maximum value of \f$R_i^T M X_j / || MR_i || || X_j ||\f$
+    /*! \note When \c M is not specified, the identity is used.
+     */
     ScalarType errorOrthogonality(const MV *X, const MV *R, const OP *M = 0) const;
     
+    //! Return the maximum coefficient of the matrix \f$X^T M X - I\f$
+    /*! \note When M is not specified, the identity is used.
+     */
     ScalarType errorOrthonormality(const MV *X, const OP *M = 0) const;
     
+    //! Return the maximum coefficient of the matrix \f$M * X - MX\f$ scaled by the maximum coefficient of \c MX.
+    /*! \note When \c M is not specified, the identity is used.
+     */
     ScalarType errorEquality(const MV *X, const MV *MX, const OP *M = 0) const;
     
     //@}

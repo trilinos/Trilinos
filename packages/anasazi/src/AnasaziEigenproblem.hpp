@@ -29,6 +29,11 @@
 #ifndef ANASAZI_EIGENPROBLEM_H
 #define ANASAZI_EIGENPROBLEM_H
 
+/*! \file AnasaziEigenproblem.hpp
+  \brief Abstract base class which defines the interface required by an eigensolver and
+  status test class to compute solutions to an eigenproblem
+*/
+
 #include "AnasaziReturnType.hpp"
 #include "Teuchos_SerialDenseMatrix.hpp"
 #include "Teuchos_SerialDenseVector.hpp"
@@ -60,31 +65,33 @@ namespace Anasazi {
     
     /*! \brief Set the operator for which eigenvalues will be computed.  
 
-    NOTE:  This may be different from \c A if a spectral transformation is employed, for example.      
+    \note This may be different from the \c A if a spectral transformation is employed. 
+    For example, this operator may apply the operation \f$(A-\sigma I)^{-1}\f$ if you are
+    looking for eigenvalues of \c A around \f$\sigma\f$.  
     */
     virtual void SetOperator( const Teuchos::RefCountPtr<OP> &Op ) = 0;
     
-    /*! \brief Set the operator A of the eigenvalue problem AX = BX\lambda.
+    /*! \brief Set the operator \c A of the eigenvalue problem \f$Ax=\lambda Mx\f$.
     */
     virtual void SetA( const Teuchos::RefCountPtr<OP> &A ) = 0;
     
-    /*! \brief Set the operator B of the eigenvalue problem AX = BX\lambda.
+    /*! \brief Set the operator \c B of the eigenvalue problem \f$Ax=\lambda Mx\f$.
     */
-    virtual void SetB( const Teuchos::RefCountPtr<OP> &B ) = 0;
+    virtual void SetM( const Teuchos::RefCountPtr<OP> &M ) = 0;
     
-    /*! \brief Set the preconditioner for this eigenvalue problem AX = BX\lambda.
+    /*! \brief Set the preconditioner for this eigenvalue problem \f$Ax=\lambda Mx\f$.
      */
     virtual void SetPrec( const Teuchos::RefCountPtr<OP> &Prec ) = 0;
     
     /*! \brief Set the initial guess.  
 
-    NOTE:  This multivector should have the same number of columns as the blocksize.
+    \note This multivector should have the same number of columns as the blocksize.
     */
     virtual void SetInitVec( const Teuchos::RefCountPtr<MV> &InitVec ) = 0; 
     
     /*! \brief Set auxilliary vectors.
 
-    NOTE:  This multivector can have any number of columns, an most likely will contain vectors that
+    \note This multivector can have any number of columns, and most likely will contain vectors that
     will be used by the eigensolver to orthogonalize against.
     */
     virtual void SetAuxVec( const Teuchos::RefCountPtr<MV> &AuxVec ) = 0;
@@ -107,14 +114,14 @@ namespace Anasazi {
     
     //@{ \name Accessor Methods.
     
-    //! Get a pointer to the Operator.
+    //! Get a pointer to the operator for which eigenvalues will be computed.
     virtual Teuchos::RefCountPtr<OP> GetOperator() const = 0;
     
-    //! Get a pointer to the operator A of the eigenproblem AX = \lambda BX.
+    //! Get a pointer to the operator \c A of the eigenproblem \f$AX=\lambda Mx\f$.
     virtual Teuchos::RefCountPtr<OP> GetA() const = 0;
     
-    //! Get a pointer to the operator B of the eigenproblem AX = \lambda BX.
-    virtual Teuchos::RefCountPtr<OP> GetB() const = 0;
+    //! Get a pointer to the operator \c M of the eigenproblem \f$AX=\lambda Mx\f$.
+    virtual Teuchos::RefCountPtr<OP> GetM() const = 0;
     
     //! Get a pointer to the preconditioner.
     virtual Teuchos::RefCountPtr<OP> GetPrec() const = 0;
@@ -127,14 +134,14 @@ namespace Anasazi {
     
     /*! \brief Get a pointer to the eigenvalues of the operator.
     
-    NOTE:  If the operator is nonsymmetric, the length of this vector is 2*NEV where the 
+    \note If the operator is nonsymmetric, the length of this vector is 2*NEV where the 
     real part of eigenvalue \c j is entry \c j and the imaginary part is entry \c j+NEV .
     */
     virtual Teuchos::RefCountPtr<std::vector<ScalarType> > GetEvals() = 0;
     
     /*! \brief Get a pointer to the eigenvectors of the operator.
       
-    NOTE:  If the operator is nonsymmetric, this multivector has 2*NEV columns where the 
+    \note If the operator is nonsymmetric, this multivector has 2*NEV columns where the 
     real part of eigenvector \c j is column \c j and the imaginary part is column \c j+NEV .
     */
     virtual Teuchos::RefCountPtr<MV> GetEvecs() = 0;
@@ -152,6 +159,9 @@ namespace Anasazi {
     
     //@{ \name Inner Product Methods.
     /*! \brief Computes inner product as needed by the eigensolver, for orthogonalization purposes.
+
+    \note This can be different than the MvTransMv method for the multivector class.  For example,
+    if there is a mass matrix \c M, then this might be the \c M inner product (\f$x^HMx\f$)
      */
     virtual ReturnType InnerProd( const MV& X, const MV& Y,
 				  Teuchos::SerialDenseMatrix<int,ScalarType>& Z ) const = 0;
@@ -159,9 +169,10 @@ namespace Anasazi {
 
     //@{ \name Norm Methods.
     /*! \brief Computes the multivector norm as needed by the eigensolver, for orthogonalization purposes.
-
-    NOTE:  This can be different than the MvNorm method for the multivector class, which is 
-    assumed to be the euclidean norm of each column.
+    
+    On return, normvec[i] holds the norm of the \c i-th vector (column) of \c X.
+    \note This can be different than the MvNorm method for the multivector class.  For example,
+    if there is a mass matrix \c M, then this might be the <tt>M</tt>-norm (\f$||x_i||_M\f$)
      */
     virtual ReturnType MvNorm( const MV& X, std::vector<ScalarType>* normvec ) const = 0;
     

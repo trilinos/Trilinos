@@ -29,6 +29,10 @@
 #ifndef ANASAZI_BASIC_EIGENPROBLEM_H
 #define ANASAZI_BASIC_EIGENPROBLEM_H
 
+/*! \file AnasaziBasicEigenproblem.hpp
+  \brief Basic implementation of the Anasazi::Eigenproblem class
+*/
+
 #include "AnasaziEigenproblem.hpp"
 #include "AnasaziMultiVecTraits.hpp"
 #include "AnasaziOperatorTraits.hpp"
@@ -67,34 +71,38 @@ namespace Anasazi {
     
     //@{ \name Set Methods.
     
-    /*! \brief Set the operator for which eigenvalues will be computed.  This may be different
-      from the matrix \c A if a spectral transformation is employed, for example.  
+    /*! \brief Set the operator for which eigenvalues will be computed.  
+
+    \note This may be different from the \c A if a spectral transformation is employed. 
+    For example, this operator may apply the operation \f$(A-\sigma I)^{-1}\f$ if you are
+    looking for eigenvalues of \c A around \f$\sigma\f$.  
     */
     void SetOperator( const Teuchos::RefCountPtr<OP>& Op ) { _Op = Op; _isSet=false; };
     
-    /*! \brief Set the operator A of the eigenvalue problem AX = BX\lambda.
+    /*! \brief Set the operator \c A of the eigenvalue problem \f$Ax=Mx\lambda\f$.
     */
     void SetA( const Teuchos::RefCountPtr<OP>& A ) { _AOp = A; _isSet=false; };
     
-    /*! \brief Set the operator B of the eigenvalue problem AX = BX\lambda.
+    /*! \brief Set the operator \c M of the eigenvalue problem \f$Ax = Mx\lambda\f$.
      */
-    void SetB( const Teuchos::RefCountPtr<OP>& B ) { _BOp = B; _isSet=false; };
+    void SetM( const Teuchos::RefCountPtr<OP>& M ) { _MOp = M; _isSet=false; };
     
-    /*! \brief Set the preconditioner for this eigenvalue problem AX = BX\lambda.
+    /*! \brief Set the preconditioner for this eigenvalue problem \f$Ax = Mx\lambda\f$.
      */
     void SetPrec( const Teuchos::RefCountPtr<OP>& Prec ) { _Prec = Prec; _isSet=false; };
     
     /*! \brief Set the initial guess.  
 
     This vector is required to create all the space needed 
-    by Anasazi to solve the eigenvalue problem.  Even if an initial guess is not known
-    by the user, an initial vector must be passed in.  
+    by Anasazi to solve the eigenvalue problem.  
+
+    \note Even if an initial guess is not known by the user, an initial vector must be passed in.  
     */
     void SetInitVec( const Teuchos::RefCountPtr<MV>& InitVec ) { _InitVec = InitVec; _isSet=false; };
     
     /*! \brief Set auxilliary vectors.
 
-    NOTE:  This multivector can have any number of columns, and most likely will contain vectors that
+    \note This multivector can have any number of columns, and most likely will contain vectors that
     will be used by the eigensolver to orthogonalize against.
     */
     void SetAuxVec( const Teuchos::RefCountPtr<MV>& AuxVec ) { _AuxVec = AuxVec; _isSet=false; };
@@ -117,34 +125,34 @@ namespace Anasazi {
     
     //@{ \name Accessor Methods.
     
-    //! Get a pointer to the Operator.
+    //! Get a pointer to the operator for which eigenvalues will be computed.
     Teuchos::RefCountPtr<OP> GetOperator() const { return( _Op ); };
     
-    //! Get a pointer to the stiffness matrix.
+    //! Get a pointer to the operator \c A of the eigenproblem \f$Ax=\lambda Mx\f$.
     Teuchos::RefCountPtr<OP> GetA() const { return( _AOp ); };
     
-    //! Get a pointer to the mass matrix.
-    Teuchos::RefCountPtr<OP> GetB() const { return( _BOp ); };
+    //! Get a pointer to the operator \c M of the eigenproblem \f$Ax=\lambda Mx\f$.
+    Teuchos::RefCountPtr<OP> GetM() const { return( _MOp ); };
     
-    //! Get a pointer to the preconditioner.
+    //! Get a pointer to the preconditioner of the eigenproblem \f$Ax=\lambda Mx\f$.
     Teuchos::RefCountPtr<OP> GetPrec() const { return( _Prec ); };
     
     //! Get a pointer to the initial vector
     Teuchos::RefCountPtr<MV> GetInitVec() const { return( _InitVec ); };
     
-    //! Get a pointer to the initial vector
+    //! Get a pointer to the auxilliary vector
     Teuchos::RefCountPtr<MV> GetAuxVec() const { return( _AuxVec ); };
     
     /*! \brief Get a pointer to the eigenvalues of the operator.
     
-    NOTE:  If the operator is nonsymmetric, the length of this vector is 2*NEV where the 
+    \note If the operator is nonsymmetric, the length of this vector is 2*NEV where the 
     real part of eigenvalue \c j is entry \c j and the imaginary part is entry \c j+NEV .
     */
     Teuchos::RefCountPtr<std::vector<ScalarType> > GetEvals() { return( _Evals ); };
     
     /*! \brief Get a pointer to the eigenvectors of the operator.
 
-    NOTE:  If the operator is nonsymmetric, this multivector has 2*NEV columns where the 
+    \note If the operator is nonsymmetric, this multivector has 2*NEV columns where the 
     real part of eigenvector \c j is column \c j and the imaginary part is column \c j+NEV .
     */
     Teuchos::RefCountPtr<MV> GetEvecs() { return( _Evecs ); };
@@ -161,17 +169,14 @@ namespace Anasazi {
     //@}	
     
     //@{ \name Inner Product Methods.
-    /*! \brief Computes inner product as needed by the eigensolver, for orthogonalization purposes.
+    /*! \brief Computes the \c M inner product as needed by the eigensolver, for orthogonalization purposes.
      */
     ReturnType InnerProd( const MV& X, const MV& Y,
 			  Teuchos::SerialDenseMatrix<int,ScalarType>& Z ) const;
     //@}
 
     //@{ \name Norm Methods.
-    /*! \brief Computes the multivector norm as needed by the eigensolver.
-      
-    NOTE:  This can be different than the MvNorm method for the multivector class, which is 
-    assumed to be the euclidean norm of each column.
+    /*! \brief Computes the multivector norm \f$||x_i||_M\f$ as needed by the eigensolver.      
     */
     ReturnType MvNorm( const MV& X, std::vector<ScalarType>* normvec ) const;
     
@@ -179,16 +184,51 @@ namespace Anasazi {
     
   protected:
     
-    Teuchos::RefCountPtr<OP> _AOp, _BOp; 
-    Teuchos::RefCountPtr<OP> _Op, _Prec;
-    Teuchos::RefCountPtr<MV> _InitVec, _AuxVec;
+    //! Reference-counted pointer for \c A of the eigenproblem \f$Ax=\lambda Mx\f$
+    Teuchos::RefCountPtr<OP> _AOp;
+
+    //! Reference-counted pointer for \c M of the eigenproblem \f$Ax=\lambda Mx\f$
+    Teuchos::RefCountPtr<OP> _MOp; 
+
+    //! Reference-counted pointer for the operator of the eigenproblem \f$Ax=\lambda Mx\f$
+    Teuchos::RefCountPtr<OP> _Op;
+
+    //! Reference-counted pointer for the preconditioner of the eigenproblem \f$Ax=\lambda Mx\f$
+    Teuchos::RefCountPtr<OP> _Prec;
+
+    //! Reference-counted pointer for the initial vector of the eigenproblem \f$Ax=\lambda Mx\f$
+    Teuchos::RefCountPtr<MV> _InitVec;
+
+    //! Reference-counted pointer for the auxilliary vector of the eigenproblem \f$Ax=\lambda Mx\f$
+    Teuchos::RefCountPtr<MV> _AuxVec;
+
+    //! Reference-counted pointer for the computed eigenvectors of \f$Ax=\lambda Mx\f$
+    /*! \note If the operator is nonsymmetric, this multivector has 2*NEV columns where the 
+      real part of eigenvector \c j is column \c j and the imaginary part is column \c j+NEV .
+    */
     Teuchos::RefCountPtr<MV> _Evecs;
+
+    //! Reference-counted pointer for the computed eigenvalues of \f$Ax=\lambda Mx\f$
+    /*! \note If the operator is nonsymmetric, the length of this vector is 2*NEV where the 
+      real part of eigenvalue \c j is entry \c j and the imaginary part is entry \c j+NEV .
+    */
     Teuchos::RefCountPtr<std::vector<ScalarType> > _Evals;
+
+    //! Number of eigenvalues requested
     int _nev;
+
+    //! Symmetry of the eigenvalue problem
+    /*! \note A generalized eigenvalue problem \f$Ax= \lambda Mx\f$ is considered symmetric
+      if the operator \c M is positive (semi) definite.
+    */
     bool _isSym;
+
+    //! Sanity Check Flag
     bool _isSet;
 
+    //! Type-definition for the MultiVecTraits class corresponding to the \c MV type
     typedef MultiVecTraits<ScalarType,MV> MVT;
+    //! Type-definition for the OperatorTraits class corresponding to the \c OP type
     typedef OperatorTraits<ScalarType,MV,OP> OPT;
   };		
   
@@ -219,9 +259,9 @@ namespace Anasazi {
   //=============================================================================
   
   template <class ScalarType, class MV, class OP>
-  BasicEigenproblem<ScalarType, MV, OP>::BasicEigenproblem( const Teuchos::RefCountPtr<OP>& Op, const Teuchos::RefCountPtr<OP>& B,
+  BasicEigenproblem<ScalarType, MV, OP>::BasicEigenproblem( const Teuchos::RefCountPtr<OP>& Op, const Teuchos::RefCountPtr<OP>& M,
 							    const Teuchos::RefCountPtr<MV>& InitVec ) :
-    _BOp(B), 
+    _MOp(M), 
     _Op(Op), 
     _InitVec(InitVec), 
     _nev(0), 
@@ -235,7 +275,7 @@ namespace Anasazi {
   template <class ScalarType, class MV, class OP>
   BasicEigenproblem<ScalarType, MV, OP>::BasicEigenproblem( const BasicEigenproblem<ScalarType,MV,OP>& Problem ) :
     _AOp(Problem._AOp), 
-    _BOp(Problem._BOp), 
+    _MOp(Problem._MOp), 
     _Op(Problem._Op), 
     _Prec(Problem._Prec), 
     _InitVec(Problem._InitVec), 
@@ -315,15 +355,15 @@ namespace Anasazi {
 							       Teuchos::SerialDenseMatrix<int,ScalarType>& Z ) const
   {
     if (_isSet) {
-      if ( _BOp.get() ) {
-        Teuchos::RefCountPtr<MV> BY = MVT::CloneCopy( Y );
+      if ( _MOp.get() ) {
+        Teuchos::RefCountPtr<MV> MY = MVT::CloneCopy( Y );
       
-        // Apply B and check that it returned Ok.
-        ReturnType ret = OPT::Apply( *_BOp, Y, *BY );
+        // Apply M and check that it returned Ok.
+        ReturnType ret = OPT::Apply( *_MOp, Y, *MY );
         if ( ret != Ok ) { return ret; }
       
         // Now perform inner product.  Result is stored in Z.
-        MVT::MvTransMv( Teuchos::ScalarTraits<ScalarType>::one(), X, *BY, Z );
+        MVT::MvTransMv( Teuchos::ScalarTraits<ScalarType>::one(), X, *MY, Z );
       
       } else {
         // Perform the inner product, assume B=I.

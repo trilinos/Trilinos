@@ -26,6 +26,10 @@
 // ***********************************************************************
 // @HEADER
 
+/*! \file AnasaziBlockDavidson.hpp
+  \brief Implementation of the block Davidson method
+*/
+
 #ifndef ANASAZI_BLOCK_DAVIDSON_HPP
 #define ANASAZI_BLOCK_DAVIDSON_HPP
 
@@ -125,7 +129,7 @@ namespace Anasazi {
     // Information obtained from the eigenproblem
     //
     Teuchos::RefCountPtr<OP> _Op;
-    Teuchos::RefCountPtr<OP> _BOp;
+    Teuchos::RefCountPtr<OP> _MOp;
     Teuchos::RefCountPtr<OP> _Prec;
     Teuchos::RefCountPtr<MV> _evecs;
     Teuchos::RefCountPtr<std::vector<ScalarType> > _evals;
@@ -160,7 +164,7 @@ namespace Anasazi {
     _om(om),
     _pl(pl),
     _Op(_problem->GetOperator()),
-    _BOp(_problem->GetB()),
+    _MOp(_problem->GetM()),
     _Prec(_problem->GetPrec()),
     _evecs(_problem->GetEvecs()), 
     _evals(problem->GetEvals()), 
@@ -252,7 +256,7 @@ namespace Anasazi {
     // Check to see if there is a mass matrix, so we know how much space is required.
     // [ If there isn't a mass matrix we can use a view of X.]
     //
-    if (_BOp.get())
+    if (_MOp.get())
       MX = MVT::Clone( *iVec, _blockSize );
     else {
       std::vector<int> index( _blockSize );
@@ -313,24 +317,24 @@ namespace Anasazi {
 	//
 	// Apply the mass matrix.
 	//	
-	if (_BOp.get())
-	  OPT::Apply( *_BOp, *Xcurrent, *MX );
+	if (_MOp.get())
+	  OPT::Apply( *_MOp, *Xcurrent, *MX );
 	//
 	// Orthonormalize Xcurrent again the known eigenvectors and previous vectors.
 	//
 	if (nb == bStart) {
 	  if (nFound > 0) {
 	    if (_knownEV == 0) {
-	      info = _MSUtils.massOrthonormalize( *Xcurrent, *MX, _BOp.get(), *Xcurrent, nFound, 2 );
+	      info = _MSUtils.massOrthonormalize( *Xcurrent, *MX, _MOp.get(), *Xcurrent, nFound, 2 );
 	    }
 	    else {
-	      info = _MSUtils.massOrthonormalize( *Xcurrent, *MX, _BOp.get(), *Xprev, nFound, 0 );
+	      info = _MSUtils.massOrthonormalize( *Xcurrent, *MX, _MOp.get(), *Xprev, nFound, 0 );
 	    }
 	  }
 	  nFound = 0;
 	} 
 	else {
-	  info = _MSUtils.massOrthonormalize( *Xcurrent, *MX, _BOp.get(), *Xprev, _blockSize, 0 );
+	  info = _MSUtils.massOrthonormalize( *Xcurrent, *MX, _MOp.get(), *Xprev, _blockSize, 0 );
 	}
 	//
 	// Exit the code if there has been a problem.
@@ -399,8 +403,8 @@ namespace Anasazi {
 	//
 	// Apply the mass matrix for the next block
 	// 
-	if (_BOp.get())
-	  OPT::Apply( *_BOp, *KX, *MX );
+	if (_MOp.get())
+	  OPT::Apply( *_MOp, *KX, *MX );
 	//
 	// Apply the stiffness matrix for the next block
 	//
@@ -413,7 +417,7 @@ namespace Anasazi {
 	for (i=0; i<_blockSize; i++ )
 	  D(i,i) = -_theta[i];
 	//
-	if (_BOp.get()) {
+	if (_MOp.get()) {
 	  MVT::MvTimesMatAddMv( one, *MX, D, one, *R );
 	}
 	else {
@@ -715,13 +719,13 @@ namespace Anasazi {
       ScalarType tmp;
       
       if (X) {
-	if (_BOp.get()) {
+	if (_MOp.get()) {
 	  if (MX) {
-	    tmp = _MSUtils.errorEquality(X, MX, _BOp.get());
+	    tmp = _MSUtils.errorEquality(X, MX, _MOp.get());
 	    if (_om->doPrint())
 	      _os << " >> Difference between MX and M*X = " << tmp << endl;
 	  }
-	  tmp = _MSUtils.errorOrthonormality(X, _BOp.get());
+	  tmp = _MSUtils.errorOrthonormality(X, _MOp.get());
 	  if (_om->doPrint())
 	    _os << " >> Error in X^T M X - I = " << tmp << endl;
 	}
@@ -735,12 +739,12 @@ namespace Anasazi {
       if (Q == 0)
 	return;
       
-      if (_BOp.get()) {
-	tmp = _MSUtils.errorOrthonormality(Q, _BOp.get());
+      if (_MOp.get()) {
+	tmp = _MSUtils.errorOrthonormality(Q, _MOp.get());
 	if (_om->doPrint())
 	  _os << " >> Error in Q^T M Q - I = " << tmp << endl;
 	if (X) {
-	  tmp = _MSUtils.errorOrthogonality(Q, X, _BOp.get());
+	  tmp = _MSUtils.errorOrthogonality(Q, X, _MOp.get());
 	  if (_om->doPrint())
 	    _os << " >> Orthogonality Q^T M X up to " << tmp << endl;
 	}

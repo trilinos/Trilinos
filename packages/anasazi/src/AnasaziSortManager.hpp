@@ -30,7 +30,8 @@
 #define ANASAZI_SORT_MANAGER_HPP
 
 /*!     \file AnasaziSortManager.hpp
-        \brief Class which manages the sorting of approximate eigenvalues computed by Anasazi solvers.
+        \brief Virtual base class which defines the interface between an eigensolver and a class whose
+	job is the sorting of the computed eigenvalues
 */
 
 /*!    \class Anasazi::SortManager

@@ -26,6 +26,10 @@
 // ***********************************************************************
 // @HEADER
 
+/*! \file AnasaziLOBPCG.hpp
+  \brief Implementation of the locally-optimal block preconditioned conjugate gradient method
+*/
+
 #ifndef ANASAZI_LOBPCG_HPP
 #define ANASAZI_LOBPCG_HPP
 
@@ -141,7 +145,7 @@ namespace Anasazi {
     // Information obtained from the eigenproblem
     //
     Teuchos::RefCountPtr<OP> _Op;
-    Teuchos::RefCountPtr<OP> _BOp;
+    Teuchos::RefCountPtr<OP> _MOp;
     Teuchos::RefCountPtr<OP> _Prec;
     Teuchos::RefCountPtr<MV> _evecs;
     Teuchos::RefCountPtr<std::vector<ScalarType> > _evals;
@@ -176,7 +180,7 @@ namespace Anasazi {
     _om(om),
     _pl(pl),
     _Op(_problem->GetOperator()),
-    _BOp(_problem->GetB()),
+    _MOp(_problem->GetM()),
     _Prec(_problem->GetPrec()),
     _evecs(_problem->GetEvecs()), 
     _evals(problem->GetEvals()), 
@@ -256,7 +260,7 @@ namespace Anasazi {
     // Check to see if there is a mass matrix, so we know how much space is required.
     // [ If there isn't a mass matrix we can use a view of X.]
     //
-    if (_BOp.get())
+    if (_MOp.get())
       MX = MVT::Clone( *iVec, _blockSize );
     else {
       std::vector<int> index( _blockSize );
@@ -271,7 +275,7 @@ namespace Anasazi {
     H = MVT::Clone( *iVec, _blockSize );
     KH = MVT::Clone( *iVec, _blockSize );
     //
-    if (_BOp.get())
+    if (_MOp.get())
       MH = MVT::Clone( *iVec, _blockSize );
     else {
       std::vector<int> index( _blockSize );
@@ -286,7 +290,7 @@ namespace Anasazi {
     P = MVT::Clone( *iVec, _blockSize );
     KP = MVT::Clone( *iVec, _blockSize );
     //
-    if (_BOp.get())
+    if (_MOp.get())
       MP = MVT::Clone( *iVec, _blockSize );
     else {
       std::vector<int> index( _blockSize );
@@ -344,8 +348,8 @@ namespace Anasazi {
 	  
 	  // Apply the mass matrix to X
 	  //timeMassOp -= MyWatch.WallTime();
-	  if (_BOp.get())
-	    OPT::Apply( *_BOp, *X2, *MX2 );
+	  if (_MOp.get())
+	    OPT::Apply( *_MOp, *X2, *MX2 );
 	  //timeMassOp += MyWatch.WallTime();
 	  //massOp += nFound;
 	  
@@ -359,7 +363,7 @@ namespace Anasazi {
 	    Teuchos::RefCountPtr<MV> copyQ = MVT::CloneView( *X, index );
 	    
 	    //timeOrtho -= MyWatch.WallTime();
-	    info = _MSUtils.massOrthonormalize( *X, *MX, _BOp.get(), *copyQ, nFound, 0 );
+	    info = _MSUtils.massOrthonormalize( *X, *MX, _MOp.get(), *copyQ, nFound, 0 );
 	    //timeOrtho += MyWatch.WallTime();
 	    
 	    // Exit the code if the orthogonalization did not succeed
@@ -393,8 +397,8 @@ namespace Anasazi {
 
 	// Apply the mass matrix on H
 	// timeMassOp -= MyWatch.WallTime();
-	if (_BOp.get())
-	  OPT::Apply( *_BOp, *H, *MH);
+	if (_MOp.get())
+	  OPT::Apply( *_MOp, *H, *MH);
 	//timeMassOp += MyWatch.WallTime();
 	//massOp += blockSize;
 	
@@ -408,7 +412,7 @@ namespace Anasazi {
 	  Teuchos::RefCountPtr<MV> copyQ = MVT::CloneView( *X, index );
 
 	  //timeOrtho -= MyWatch.WallTime();
-	  _MSUtils.massOrthonormalize( *H, *MH, _BOp.get(), *copyQ, _blockSize, 1);
+	  _MSUtils.massOrthonormalize( *H, *MH, _MOp.get(), *copyQ, _blockSize, 1);
 	  //timeOrtho += MyWatch.WallTime();
 	} // if (knownEV > 0)
 	
@@ -623,7 +627,7 @@ namespace Anasazi {
 	MVT::MvAddMv( one, *KX, zero, *KX, *R );
 	MVT::MvTimesMatAddMv( one, *R, S11, zero, *KX );
 	
-	if (_BOp.get()) {
+	if (_MOp.get()) {
 	  MVT::MvAddMv( one, *MX, zero, *MX, *R );
 	  MVT::MvTimesMatAddMv( one, *R, S11, zero, *MX );
 	}
@@ -636,7 +640,7 @@ namespace Anasazi {
 	  MVT::MvTimesMatAddMv( one, *KH, S21, zero, *KP );
 	  MVT::MvAddMv( one, *KP, one, *KX, *KX );
 	  
-	  if (_BOp.get()) {
+	  if (_MOp.get()) {
 	    MVT::MvTimesMatAddMv( one, *MH, S21, zero, *MP );
 	    MVT::MvAddMv( one, *MP, one, *MX, *MX );
 	  }
@@ -654,7 +658,7 @@ namespace Anasazi {
 	  MVT::MvTimesMatAddMv( one, *KH, S21, one, *KP );
 	  MVT::MvAddMv( one, *KP, one, *KX, *KX );
 	  
-	  if (_BOp.get()) {
+	  if (_MOp.get()) {
 	    MVT::MvAddMv( one, *MP, zero, *MP, *R );
 	    MVT::MvTimesMatAddMv( one, *R, S31, zero, *MP );
 	    MVT::MvTimesMatAddMv( one, *MH, S21, one, *MP );
@@ -814,7 +818,7 @@ namespace Anasazi {
       MVT::MvAddMv( one, *KX, zero, *KX, *R );
       MVT::MvTimesMatAddMv( one, *R, S11new, zero, *KX );
       
-      if (_BOp.get()) {
+      if (_MOp.get()) {
 	MVT::MvAddMv( one, *MX, zero, *MX, *R );
 	MVT::MvTimesMatAddMv( one, *R, S11new, zero, *MX );
       }
@@ -823,14 +827,14 @@ namespace Anasazi {
 	Teuchos::SerialDenseMatrix<int,ScalarType> S21new( Teuchos::View, S, _blockSize, leftOver, _blockSize, nFound );	
 	MVT::MvTimesMatAddMv( one, *H, S21new, one, *X );
 	MVT::MvTimesMatAddMv( one, *KH, S21new, one, *KX );
-	if (_BOp.get()) 
+	if (_MOp.get()) 
 	  MVT::MvTimesMatAddMv( one, *MH, S21new, one, *MX );
 	
 	if (localSize >= threeBlocks) {
 	  Teuchos::SerialDenseMatrix<int,ScalarType> S31new( Teuchos::View, S, _blockSize, leftOver, twoBlocks, nFound );
 	  MVT::MvTimesMatAddMv( one, *P, S31new, one, *X );
 	  MVT::MvTimesMatAddMv( one, *KP, S31new, one, *KX );
-	  if (_BOp.get())
+	  if (_MOp.get())
 	    MVT::MvTimesMatAddMv( one, *MP, S31new, one, *MX );
         }
       }
@@ -879,13 +883,13 @@ namespace Anasazi {
     ScalarType tmp;
     
     if (X) {
-      if (_BOp.get()) {
+      if (_MOp.get()) {
 	if (MX) {
-	  tmp = _MSUtils.errorEquality(X, MX, _BOp.get());
+	  tmp = _MSUtils.errorEquality(X, MX, _MOp.get());
 	  if (_om->doPrint())
 	    _os << " >> Difference between MX and M*X = " << tmp << endl;
 	}
-	tmp = _MSUtils.errorOrthonormality(X, _BOp.get());
+	tmp = _MSUtils.errorOrthonormality(X, _MOp.get());
 	if (_om->doPrint())
 	  _os << " >> Error in X^T M X - I = " << tmp << endl;
       }
@@ -905,22 +909,22 @@ namespace Anasazi {
     if (Q == 0)
       return;
     
-    if (_BOp.get()) {
-      tmp = _MSUtils.errorOrthonormality(Q, _BOp.get());
+    if (_MOp.get()) {
+      tmp = _MSUtils.errorOrthonormality(Q, _MOp.get());
       if (_om->doPrint())
 	_os << " >> Error in Q^T M Q - I = " << tmp << endl;
       if (X) {
-	tmp = _MSUtils.errorOrthogonality(Q, X, _BOp.get());
+	tmp = _MSUtils.errorOrthogonality(Q, X, _MOp.get());
 	if (_om->doPrint())
 	  _os << " >> Orthogonality Q^T M X up to " << tmp << endl;
       }
       if (H) {
-	tmp = _MSUtils.errorOrthogonality(Q, H, _BOp.get());
+	tmp = _MSUtils.errorOrthogonality(Q, H, _MOp.get());
 	if (_om->doPrint())
 	  _os << " >> Orthogonality Q^T M H up to " << tmp << endl;
       }
       if (P) {
-	tmp = _MSUtils.errorOrthogonality(Q, P, _BOp.get());
+	tmp = _MSUtils.errorOrthogonality(Q, P, _MOp.get());
 	if (_om->doPrint())
 	  _os << " >> Orthogonality Q^T M P up to " << tmp << endl;
       }

@@ -26,6 +26,11 @@
 // ***********************************************************************
 // @HEADER
 
+/*! \file AnasaziConfigDefs.hpp
+  \brief Anasazi header file which uses auto-configuration information to include
+  necessary C++ headers
+*/
+
 #ifndef ANASAZI_CONFIGDEFS_HPP
 #define ANASAZI_CONFIGDEFS_HPP
 

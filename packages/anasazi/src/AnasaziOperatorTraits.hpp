@@ -30,8 +30,7 @@
 #define ANASAZI_OPERATOR_TRAITS_HPP
 
 /*!     \file AnasaziOperatorTraits.hpp
-        \brief Virtual base class which defines the operator interface 
-	required by the iterative linear solver.
+        \brief Virtual base class which defines basic traits for the operator type
 */
 
 #include "AnasaziReturnType.hpp"
@@ -39,23 +38,46 @@
 
 namespace Anasazi {
 
+/*! \struct UndefinedOperatorTraits
+   \brief This is the default struct used by OperatorTraits<ScalarType, MV, OP> class to produce a
+   compile time error when the specialization does not exist for operator type <tt>OP</tt>.
+*/
+
   template< class ScalarType, class MV, class OP >
   struct UndefinedOperatorTraits
   {
     //! This function should not compile if there is an attempt to instantiate!
+    /*! \note Any attempt to compile this function results in a compile time error.  This means
+      that the template specialization of Anasazi::OperatorTraits class does not exist for type
+      <tt>OP</tt>, or is not complete.
+    */
     static inline ReturnType notDefined() { return OP::this_type_is_missing_a_specialization(); };
   };
   
+  /*! \class OperatorTraits
+    \brief Virtual base class which defines basic traits for the operator type.
+
+    An adapter for this traits class must exist for the <tt>MV</tt> and <tt>OP</tt> types.
+    If not, this class will produce a compile-time error.
+  */
+
   template <class ScalarType, class MV, class OP>
   class OperatorTraits 
   {
   public:
     
-    ///
+    //@{ Matrix/Operator application method.
+    
+    //! Application method which performs operation <b>y = Op*x</b>
+    /*!
+      \return Status of the operation.
+    */
     static ReturnType Apply ( const OP& Op, 
 			      const MV& x, 
 			      MV& y )
     { return UndefinedOperatorTraits<ScalarType, MV, OP>::notDefined(); };
+    
+    //@}
     
   };
   

@@ -26,6 +26,10 @@
 // ***********************************************************************
 // @HEADER
 
+/*! \file AnasaziBlockKrylovSchur.hpp
+  \brief Implementation of the block Krylov-Schur method
+*/
+
 #ifndef ANASAZI_BLOCK_KRYLOV_SCHUR_HPP
 #define ANASAZI_BLOCK_KRYLOV_SCHUR_HPP
 
@@ -153,14 +157,14 @@ namespace Anasazi {
     
     // Information obtained from the eigenproblem
     Teuchos::RefCountPtr<OP> _Op;
-    Teuchos::RefCountPtr<OP> _BOp;
+    Teuchos::RefCountPtr<OP> _MOp;
     Teuchos::RefCountPtr<MV> _evecs;
     Teuchos::RefCountPtr<std::vector<ScalarType> > _evals;
     const int _nev;  
     
-    const int _maxBlocks, _restarts, _blockSize, _stepSize;
+    const int _restarts, _blockSize, _stepSize;
     const ScalarType _residual_tolerance;
-    int _numRestarts, _iter, _jstart, _jend, _nevblock, _totallength;
+    int _numRestarts, _iter, _jstart, _jend, _nevblock, _totallength, _maxBlocks;
     int _offset, _maxoffset;
     bool _isdecompcurrent, _isevecscurrent, _exit_flg, _dep_flg;
     ScalarType _schurerror, _dep_tol, _blk_tol, _sing_tol, _def_tol;
@@ -190,7 +194,7 @@ namespace Anasazi {
     _om(om),
     _pl(pl),
     _Op(_problem->GetOperator()),
-    _BOp(_problem->GetB()),
+    _MOp(_problem->GetM()),
     _evecs(_problem->GetEvecs()), 
     _evals(_problem->GetEvals()), 
     _nev(_problem->GetNEV()), 
@@ -333,15 +337,38 @@ namespace Anasazi {
     //
     Teuchos::RefCountPtr<MV> ivec = _problem->GetInitVec();
     //
+    if ( ivec.get() == 0 ) {
+      if (_om->isVerbosityAndPrint( Anasazi::Error )) 
+	_os << "ERROR : Initial vector is not specified, set initial vector in eigenproblem "<<endl;
+      //return Failed;
+    }
+    
     if ( _maxBlocks<=0 ) {
       if (_om->isVerbosityAndPrint( Anasazi::Error )) 
 	_os << "ERROR : maxBlocks = "<< _maxBlocks <<" [ should be positive number ] " << endl;
+      //return Failed;
     } 
 
+    int dim = MVT::GetVecLength( *ivec );
+    if (_maxBlocks*_blockSize > dim ) {
+      if (_om->isVerbosityAndPrint( Anasazi::Warning ))
+	_os << "WARNING : Krylov subspace dimension (maxBlocks*blockSize) = "<< _maxBlocks*_blockSize 
+	    <<" [ should not be greater than " << dim << " ] " << endl;
+      
+      // Set the maximum number of blocks in the factorization below the dimension of the space.
+      _maxBlocks = dim / _blockSize;
+
+      if (_om->isVerbosityAndPrint( Anasazi::Warning ))
+	_os << "WARNING : maxBlocks reset to "<< _maxBlocks << endl;
+    }
+    
     if ( _stepSize<=0 ) {
       if (_om->isVerbosityAndPrint( Anasazi::Error )) 
 	_os << "ERROR : stepSize = "<< _stepSize <<" [ should be positive number ] " << endl;
+      //return Failed;
     } 
+
+
     //
     // Make room for theArnoldi vectors and F.
     //
@@ -1310,13 +1337,6 @@ namespace Anasazi {
 	//
 	Teuchos::SerialDenseMatrix<int,ScalarType> Hjp1(Teuchos::View, _hessmatrix, _blockSize, _nevtemp, _nevtemp );
 	Hjp1.assign( sub_block_b );
-	/*
-	for (i=0; i<_blockSize; i++) {
-	  for (j=0; j<_nevtemp; j++) {
-	    Hjp1(i, j) = sub_block_b(i, j);
-	  }
-	}      
-	*/
       }
     }
   }

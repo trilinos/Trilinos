@@ -26,12 +26,16 @@
 // ***********************************************************************
 // @HEADER
 
+/*! \file AnasaziVersion.cpp
+    \brief Version function that will return the current version of Anasazi being utilized
+*/
+
 #include "AnasaziConfigDefs.hpp"
 
 namespace Anasazi {
 
 	string Anasazi_Version() { 
-		return("Anasazi Version 1.0 - Not yet publicly released"); 
+		return("Anasazi Version 1.0d - 4/1/2005"); 
 	}
 
 } // namespace Anasazi

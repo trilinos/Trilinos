@@ -26,6 +26,10 @@
 // ***********************************************************************
 // @HEADER
 
+/*! \file AnasaziBasicSort.hpp
+  \brief Basic implementation of the Anasazi::SortManager class
+*/
+
 #ifndef ANASAZI_BASIC_SORT_HPP
 #define ANASAZI_BASIC_SORT_HPP
 
@@ -33,7 +37,7 @@
        \brief An implementation of the Anasazi::SortManager that performs a collection
        of common sorting techniques.
 
-       \author Heidi Thornquist
+       \author Ulrich Hetmaniuk, Rich Lehoucq, and Heidi Thornquist
 */
 
 #include "AnasaziSortManager.hpp"
@@ -96,6 +100,17 @@ namespace Anasazi {
     
   protected: 
     
+    //! Sorting type
+    /*! \note Sorting choices:
+       <ul>
+       <li> "LM" - Largest Magnitude [ default ]
+       <li> "SM" - Smallest Magnitude
+       <li> "LR" - Largest Real 
+       <li> "SR" - Smallest Real 
+       <li> "LI" - Largest Imaginary 
+       <li> "SI" - Smallest Imaginary 
+       </ul>
+    */
     string _which;
 
   };

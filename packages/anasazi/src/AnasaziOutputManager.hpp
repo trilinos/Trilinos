@@ -30,7 +30,7 @@
 #define ANASAZI_OUTPUT_MANAGER_HPP
 
 /*!     \file AnasaziOutputManager.hpp
-        \brief Class which manages the output and verbosity of the Anasazi solvers.
+        \brief Basic output manager for sending information of select verbosity levels to the appropriate output stream
 */
 
 #include "AnasaziConfigDefs.hpp"
@@ -40,23 +40,28 @@
 	\brief Anasazi's basic output manager for sending information of select verbosity levels
 	to the appropriate output stream.
 
-	This output manager will remove the need for the solver or linear problem to know any information
+	This output manager will remove the need for the eigensolver to know any information
 	about the required output.  Calling <tt>isVerbosity( MsgType type )</tt> will inform the solver if
 	it is supposed to output the information corresponding to the message type (\c type ).
 
-	\author Michael Heroux and Heidi Thornquist
+	\author Ulrich Hetmaniuk, Rich Lehoucq, and Heidi Thornquist
 */
 
 namespace Anasazi {
 
-	enum MsgType {	Error = 0,  		//! Errors [ always printed ]
-			Warning = 0x1, 		//! Internal warnings
-			IterationDetails = 0x2, //! Approximate eigenvalues, errors
-			OrthoDetails = 0x4,	//! Orthogonalization/orthonormalization details
-			FinalSummary = 0x8, 	//! Final computational summary
-			Debug = 0x10		//! Debugging information
-		};
-
+  /*! \enum MsgType
+    \brief Enumerated list of available message types recognized by the eigensolvers.
+  */
+	enum MsgType 
+	  {	
+	    Error = 0,                  /*!< Errors [ always printed ] */
+	    Warning = 0x1,              /*!< Internal warnings */
+	    IterationDetails = 0x2, 	/*!< Approximate eigenvalues, errors */
+	    OrthoDetails = 0x4,	        /*!< Orthogonalization/orthonormalization details */
+	    FinalSummary = 0x8, 	/*!< Final computational summary */
+	    Debug = 0x10                /*!< Debugging information */
+	  };
+  
 template <class ScalarType>
 class OutputManager {
 

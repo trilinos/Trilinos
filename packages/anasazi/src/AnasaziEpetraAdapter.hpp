@@ -26,6 +26,10 @@
 // ***********************************************************************
 // @HEADER
 
+/*! \file AnasaziEpetraAdapter.hpp
+  \brief Implementations of Anasazi multi-vector and operator classes using Epetra_MultiVector and Epetra_Operator classes
+*/
+
 #ifndef ANASAZI_EPETRA_ADAPTER_HPP
 #define ANASAZI_EPETRA_ADAPTER_HPP
 
@@ -43,90 +47,154 @@
 namespace Anasazi {
   
   //--------template class AnasaziEpetraMultiVec-------------------------------------
+  
+  /*! \class EpetraMultiVec
+    \brief Basic adapter class for Anasazi::MultiVec that uses Epetra_MultiVector.
+
+    \note The Epetra package performs double-precision arithmetic, so the use of Epetra with Anasazi will
+    only provide a double-precision eigensolver.
+  */
   class EpetraMultiVec : public MultiVec<double>, public Epetra_MultiVector {
   public:
-    // constructors
-    EpetraMultiVec(const Epetra_BlockMap& Map, double * array, const int numvecs, const int stride=0);
+    //@{ \name Constructors/Destructors
+
+    //! Basic EpetraMultiVec constructor.
+    /*! @param Map [in] An Epetra_LocalMap, Epetra_Map or Epetra_BlockMap.
+      @param numvecs [in] Number of vectors in multi-vector.
+
+      \returns Pointer to an EpetraMultiVec
+    */
     EpetraMultiVec(const Epetra_BlockMap& Map, const int numvecs);
-    EpetraMultiVec(Epetra_DataAccess CV, const Epetra_MultiVector& P_vec, const std::vector<int>& index);
+
+    //! Copy constructor.
     EpetraMultiVec(const Epetra_MultiVector & P_vec);
-    ~EpetraMultiVec();
-    //
-    //  member functions inherited from Anasazi::MultiVec
-    //
-    //  the following is a virtual copy constructor returning
-    //  a pointer to the pure virtual class. vector values are
-    //  not copied; instead a new MultiVec is created containing
-    //  a non-zero amount of columns.
-    //
+    
+    //! Create multi-vector with values from two dimensional array.
+    /*! @param Map [in] An Epetra_LocalMap, Epetra_Map or Epetra_BlockMap
+      @param array [in] Pointer to an array of double precision numbers.  The first vector starts at \c array, the
+      second at \c array+stride, and so on.  This array is copied.
+      @param numvecs [in] Number of vectors in the multi-vector.
+      @param stride [in] The stride between vectors in memory of \c array.
+
+      \returns Pointer to an EpetraMultiVec
+    */
+    EpetraMultiVec(const Epetra_BlockMap& Map, double * array, const int numvecs, const int stride=0);
+
+    //! Create multi-vector from list of vectors in an existing EpetraMultiVec.
+    /*! @param CV [in] Enumerated type set to Copy or View.
+      @param P_vec [in] An existing fully constructed Epetra_MultiVector.
+      @param index [in] A integer vector containing the indices of the vectors to copy out of \c P_vec.
+
+      \returns Pointer to an EpetraMultiVec
+    */
+    EpetraMultiVec(Epetra_DataAccess CV, const Epetra_MultiVector& P_vec, const std::vector<int>& index);
+
+    //! Destructor
+    virtual ~EpetraMultiVec() {};
+
+    //@}
+
+    //@{ \name Creation methods
+
+    /*! \brief Creates a new empty EpetraMultiVec containing \c numvecs columns.
+      
+    \returns Pointer to an EpetraMultiVec
+    */
     MultiVec<double> * Clone ( const int numvecs ) const;
-    //
-    //  the following is a virtual copy constructor returning
-    //  a pointer to the pure virtual class. vector values are
-    //  copied and a new stand-alone MultiVector is created.
-    //  (deep copy).
-    //
+
+    /*! \brief Creates a new EpetraMultiVec and copies contents of \c *this into
+      the new vector (deep copy).
+      
+      \returns Pointer to an EpetraMultiVec
+    */	
     MultiVec<double> * CloneCopy () const;
-    //
-    //  the following is a virtual copy constructor returning
-    //  a pointer to the pure virtual class. vector values are
-    //  copied and a new stand-alone MultiVector is created
-    //  where only selected columns are chosen.  (deep copy).
-    //
+
+    /*! \brief Creates a new EpetraMultiVec and copies the selected contents of \c *this 
+      into the new vector (deep copy).  
+      
+      The copied vectors from \c *this are indicated by the \c index.size() indices in \c index.
+      
+      \returns Pointer to an EpetraMultiVec
+    */
     MultiVec<double> * CloneCopy ( const std::vector<int>& index ) const;
-    //
-    //  the following is a virtual view constructor returning
-    //  a pointer to the pure virtual class. vector values are 
-    //  shared and hence no memory is allocated for the columns.
-    //
+    
+    /*! \brief Creates a new EpetraMultiVec that shares the selected contents of \c *this.
+      
+    The index of the \c numvecs vectors shallow copied from \c *this are indicated by the
+    indices given in \c index.
+    
+    \returns Pointer to an EpetraMultiVec
+    */
     MultiVec<double> * CloneView ( const std::vector<int>& index );
-    //
-    //  this routine sets a subblock of the multivector, which
-    //  need not be contiguous, and is given by the indices.
-    //
-    void SetBlock ( const MultiVec<double>& A, const std::vector<int>& index );
-    //
+
+    //@}
+
+    //@{ \name Attribute methods	
+
+    //! Obtain the vector length of *this.
     int GetNumberVecs () const { return NumVectors(); }
+
+    //! Obtain the number of vectors in *this.
     int GetVecLength () const { return GlobalLength(); }
-    //
-    // *this <- alpha * A * B + beta * (*this)
-    //
+
+    //@}
+
+    //@{ \name Update methods
+    /*! \brief Update \c *this with \f$\alpha AB + \beta (*this)\f$.
+     */
     void MvTimesMatAddMv ( const double alpha, const MultiVec<double>& A, 
 			   const Teuchos::SerialDenseMatrix<int,double>& B, const double beta );
-    //
-    // *this <- alpha * A + beta * B
-    //
+
+    /*! \brief Replace \c *this with \f$\alpha A + \beta B\f$.
+     */
     void MvAddMv ( const double alpha, const MultiVec<double>& A, const double beta,
 		   const MultiVec<double>& B);
-    //
-    // B <- alpha * A^T * (*this)
-    //
+
+    /*! \brief Compute a dense matrix \c B through the matrix-matrix multiply \f$\alpha A^T(*this)\f$.
+    */
     void MvTransMv ( const double alpha, const MultiVec<double>& A, Teuchos::SerialDenseMatrix<int,double>& B ) const;
-    //
-    // b[i] = A[i]^T * this[i]
-    // 
+
+    /*! \brief Compute a vector \c b where the components are the individual dot-products, i.e. \f$ b[i] = A[i]^T(this[i])\f$ where \c A[i] is the i-th column of \c A.
+	*/
     void MvDot ( const MultiVec<double>& A, std::vector<double>* b ) const;
-    //
-    // alpha[i] = norm of i-th column of (*this)
-    //	
+
+    //@}
+    //@{ \name Norm method
+    
+    /*! \brief Compute the 2-norm of each individual vector of \c *this.  
+      Upon return, \c normvec[i] holds the 2-norm of the \c i-th vector of \c *this
+    */
     void MvNorm ( std::vector<double>* normvec ) const {
       if (normvec && (normvec->size() >= GetNumberVecs()) ) {
 	int ret = Norm2(&(*normvec)[0]);
 	assert( ret == 0 );
       }
     };
-    //
-    // random vectors in i-th column of (*this)
-    //
+    //@}
+
+    //@{ \name Initialization methods
+    /*! \brief Copy the vectors in \c A to a set of vectors in \c *this.  
+
+    The \c numvecs vectors in \c A are copied to a subset of vectors in \c *this
+    indicated by the indices given in \c index.
+    */
+    void SetBlock ( const MultiVec<double>& A, const std::vector<int>& index );
+
+    /*! \brief Fill the vectors in \c *this with random numbers.
+     */
     void MvRandom() { int ret = Random(); assert( ret == 0 ); };
-    //
-    // initializes each element of (*this) with alpha
-    //
+
+    /*! \brief Replace each element of the vectors in \c *this with \c alpha.
+     */
     void MvInit ( const double alpha ) { int ret = PutScalar( alpha ); assert( ret == 0 ); };
-    //
-    // print (*this)
-    //
+
+    //@}
+    //@{ \name Print method.
+    /*! \brief Print \c *this EpetraMultiVec.
+     */
     void MvPrint() const { std::cout<< *this << endl; };
+    //@}
+
   private:
   };
   //-------------------------------------------------------------
@@ -162,9 +230,6 @@ namespace Anasazi {
   }
   
   
-  EpetraMultiVec::~EpetraMultiVec() 
-  {
-  }
   //
   //  member functions inherited from Anasazi::MultiVec
   //
@@ -301,12 +366,32 @@ namespace Anasazi {
   ///////////////////////////////////////////////////////////////
   //--------template class AnasaziEpetraOp---------------------
   
+  /*! \class EpetraOp
+    \brief Basic adapter class for Anasazi::Operator that uses Epetra_Operator.
+
+    \note The Epetra package performs double-precision arithmetic, so the use of Epetra with Anasazi will
+    only provide a double-precision eigensolver.
+  */
   class EpetraOp : public virtual Operator<double> {
   public:
+    //@{ \name Constructor/Destructor
+    
+    //! Basic constructor.  Accepts reference-counted pointer to an Epetra_Operator.
     EpetraOp(const Teuchos::RefCountPtr<Epetra_Operator> &Op );
+    
+    //! Destructor
     ~EpetraOp();
+    //@}
+    
+    //@{ \name Operator application method.
+    
+    /*! \brief This method takes the Anasazi::MultiVec \c x and
+      applies the operator to it resulting in the Anasazi::MultiVec \c y.
+    */
     ReturnType Apply ( const MultiVec<double>& x, 
 		       MultiVec<double>& y ) const;
+    //@} 
+    
   private:
     Teuchos::RefCountPtr<Epetra_Operator> Epetra_Op;
   };
@@ -357,13 +442,13 @@ namespace Anasazi {
   class EpetraGenOp : public virtual Operator<double> {
   public:
     EpetraGenOp(const Teuchos::RefCountPtr<Epetra_Operator> &AOp, 
-                const Teuchos::RefCountPtr<Epetra_Operator> &BOp );
+                const Teuchos::RefCountPtr<Epetra_Operator> &MOp );
     ~EpetraGenOp();
     ReturnType Apply ( const MultiVec<double>& x, 
 		       MultiVec<double>& y ) const;
   private:
     Teuchos::RefCountPtr<Epetra_Operator> Epetra_AOp;
-    Teuchos::RefCountPtr<Epetra_Operator> Epetra_BOp;
+    Teuchos::RefCountPtr<Epetra_Operator> Epetra_MOp;
   };
   //-------------------------------------------------------------
   //
@@ -375,8 +460,8 @@ namespace Anasazi {
   //
   
   EpetraGenOp::EpetraGenOp(const Teuchos::RefCountPtr<Epetra_Operator> &AOp,
-			   const Teuchos::RefCountPtr<Epetra_Operator> &BOp) 
-    : Epetra_AOp(AOp), Epetra_BOp(BOp) 
+			   const Teuchos::RefCountPtr<Epetra_Operator> &MOp) 
+    : Epetra_AOp(AOp), Epetra_MOp(MOp) 
   {
   }
   
@@ -391,7 +476,7 @@ namespace Anasazi {
 				  MultiVec<double>& y ) const 
   {
     //
-    // This generalized operator computes y = A*B*x of y = (A*B)^T*x
+    // This generalized operator computes y = A*M*x of y = (A*M)^T*x
     //
     int info=0;
     MultiVec<double> & temp_x = const_cast<MultiVec<double> &>(x);
@@ -404,8 +489,8 @@ namespace Anasazi {
     // Need to cast away constness because the member function Apply is not declared const.  
     // Change the transpose setting for the operator if necessary and change it back when done.
     //
-    // Apply B
-    info = Epetra_BOp->Apply( *vec_x, temp_y );
+    // Apply M
+    info = Epetra_MOp->Apply( *vec_x, temp_y );
     assert(info==0);
     // Apply A
     info = Epetra_AOp->Apply( temp_y, *vec_y );
@@ -534,7 +619,6 @@ namespace Anasazi {
     Epetra_MultiVector* vec_y = dynamic_cast<Epetra_MultiVector* >(&y);
     
     if (isTrans_) {
-      const int izero=0;
       Epetra_LocalMap localMap( Epetra_MV->NumVectors(), 0, Epetra_MV->Map().Comm() );
       Epetra_MultiVector Pvec( localMap, temp_x.GetNumberVecs() );
       
@@ -561,48 +645,94 @@ namespace Anasazi {
       return Failed; 
   }
   
-
+  
   ////////////////////////////////////////////////////////////////////
   //
   // Implementation of the Anasazi::MultiVecTraits for Epetra::MultiVector.
   //
   ////////////////////////////////////////////////////////////////////
 
+  /*! \class MultiVecTraits< double, Epetra_MultiVector >
+    \brief Template specialization of Anasazi::MultiVecTraits class using the Epetra_MultiVector class.
+
+    This interface will ensure that any Epetra_MultiVector will be accepted by the Anasazi
+    templated solvers.  
+
+    \note The Epetra package performs double-precision arithmetic, so the use of Epetra with Anasazi will
+    only provide a double-precision eigensolver.
+  */
+
   template<>
   class MultiVecTraits<double, Epetra_MultiVector>
   {
   public:
-    ///
+
+    //@{ \name Creation methods
+
+    /*! \brief Creates a new empty Epetra_MultiVector containing \c numvecs columns.
+      
+    \return Reference-counted pointer to the new Epetra_MultiVector.
+    */
     static Teuchos::RefCountPtr<Epetra_MultiVector> Clone( const Epetra_MultiVector& mv, const int numvecs )
     { return Teuchos::rcp( new Epetra_MultiVector(mv.Map(), numvecs) ); }
-    ///
+
+    /*! \brief Creates a new Epetra_MultiVector and copies contents of \c mv into the new vector (deep copy).
+      
+      \return Reference-counted pointer to the new Epetra_MultiVector.
+    */
     static Teuchos::RefCountPtr<Epetra_MultiVector> CloneCopy( const Epetra_MultiVector& mv )
     { return Teuchos::rcp( new Epetra_MultiVector( mv ) ); }
-    ///
+
+    /*! \brief Creates a new Epetra_MultiVector and copies the selected contents of \c mv into the new vector (deep copy).  
+
+      The copied vectors from \c mv are indicated by the \c index.size() indices in \c index.      
+      \return Reference-counted pointer to the new Epetra_MultiVector.
+    */
     static Teuchos::RefCountPtr<Epetra_MultiVector> CloneCopy( const Epetra_MultiVector& mv, const std::vector<int>& index )
     { 
       std::vector<int>& tmp_index = const_cast<std::vector<int> &>( index );
       return Teuchos::rcp( new Epetra_MultiVector(Copy, mv, &tmp_index[0], index.size()) ); 
     }
-    ///
+
+    /*! \brief Creates a new Epetra_MultiVector that shares the selected contents of \c mv (shallow copy).
+
+    The index of the \c numvecs vectors shallow copied from \c mv are indicated by the indices given in \c index.
+    \return Reference-counted pointer to the new Epetra_MultiVector.
+    */      
     static Teuchos::RefCountPtr<Epetra_MultiVector> CloneView( Epetra_MultiVector& mv, const std::vector<int>& index )
     { 
       std::vector<int>& tmp_index = const_cast<std::vector<int> &>( index );
       return Teuchos::rcp( new Epetra_MultiVector(View, mv, &tmp_index[0], index.size()) ); 
     }
-    ///
+
+    /*! \brief Creates a new const Epetra_MultiVector that shares the selected contents of \c mv (shallow copy).
+
+    The index of the \c numvecs vectors shallow copied from \c mv are indicated by the indices given in \c index.
+    \return Reference-counted pointer to the new const Epetra_MultiVector.
+    */      
     static Teuchos::RefCountPtr<const Epetra_MultiVector> CloneView( const Epetra_MultiVector& mv, const std::vector<int>& index )
     { 
       std::vector<int>& tmp_index = const_cast<std::vector<int> &>( index );
       return Teuchos::rcp( new Epetra_MultiVector(View, mv, &tmp_index[0], index.size()) ); 
     }
-    ///
+
+    //@}
+
+    //@{ \name Attribute methods
+
+    //! Obtain the vector length of \c mv.
     static int GetVecLength( const Epetra_MultiVector& mv )
     { return mv.GlobalLength(); }
-    ///
+
+    //! Obtain the number of vectors in \c mv
     static int GetNumberVecs( const Epetra_MultiVector& mv )
     { return mv.NumVectors(); }
-    ///
+    //@}
+
+    //@{ \name Update methods
+
+    /*! \brief Update \c mv with \f$ \alpha AB + \beta mv \f$.
+     */
     static void MvTimesMatAddMv( const double alpha, const Epetra_MultiVector& A, 
 				 const Teuchos::SerialDenseMatrix<int,double>& B, 
 				 const double beta, Epetra_MultiVector& mv )
@@ -613,13 +743,17 @@ namespace Anasazi {
       int ret = mv.Multiply( 'N', 'N', alpha, A, B_Pvec, beta );
       assert( ret == 0 );   
     }
-    ///
+
+    /*! \brief Replace \c mv with \f$\alpha A + \beta B\f$.
+     */
     static void MvAddMv( const double alpha, const Epetra_MultiVector& A, const double beta, const Epetra_MultiVector& B, Epetra_MultiVector& mv )
     { 
       int ret = mv.Update( alpha, A, beta, B, 0.0 );
       assert( ret == 0 );
     }
-    ///
+
+    /*! \brief Compute a dense matrix \c B through the matrix-matrix multiply \f$ \alpha A^Tmv \f$.
+    */
     static void MvTransMv( const double alpha, const Epetra_MultiVector& A, const Epetra_MultiVector& mv, Teuchos::SerialDenseMatrix<int,double>& B )
     { 
       Epetra_LocalMap LocalMap(B.numRows(), 0, mv.Map().Comm());
@@ -628,19 +762,32 @@ namespace Anasazi {
       int ret = B_Pvec.Multiply( 'T', 'N', alpha, A, mv, 0.0 );
       assert( ret == 0 );
     }
-    ///
+    
+    /*! \brief Compute a vector \c b where the components are the individual dot-products of the \c i-th columns of \c A and \c mv, i.e.\f$b[i] = A[i]^Tmv[i]\f$.
+     */
     static void MvDot( const Epetra_MultiVector& mv, const Epetra_MultiVector& A, std::vector<double>* b )
     {
       int ret = mv.Dot( A, &(*b)[0] );
       assert( ret == 0 );
     }
-    ///
+
+    //@}
+    //@{ \name Norm method
+
+    /*! \brief Compute the 2-norm of each individual vector of \c mv.  
+      Upon return, \c normvec[i] holds the value of \f$||mv_i||_2\f$, the \c i-th column of \c mv.
+    */
     static void MvNorm( const Epetra_MultiVector& mv, std::vector<double>* normvec )
     { 
       int ret = mv.Norm2(&(*normvec)[0]);
       assert( ret == 0 );
     }
-    ///
+
+    //@}
+
+    //@{ \name Initialization methods
+    /*! \brief Copy the vectors in \c A to a set of vectors in \c mv indicated by the indices given in \c index.
+     */
     static void SetBlock( const Epetra_MultiVector& A, const std::vector<int>& index, Epetra_MultiVector& mv )
     { 
       // Extract the "numvecs" columns of mv indicated by the index vector.
@@ -661,16 +808,27 @@ namespace Anasazi {
 	assert( ret == 0 );
       }
     }
-    ///
+
+    /*! \brief Replace the vectors in \c mv with random vectors.
+     */
     static void MvRandom( Epetra_MultiVector& mv )
     { int ret = mv.Random(); assert( ret == 0 ); }
-    ///
+
+    /*! \brief Replace each element of the vectors in \c mv with \c alpha.
+     */
     static void MvInit( Epetra_MultiVector& mv, double alpha = Teuchos::ScalarTraits<double>::zero() )
     { int ret = mv.PutScalar(alpha); assert( ret == 0 ); }
-    ///
+
+    //@}
+
+    //@{ \name Print method
+
+    /*! \brief Print the \c mv multi-vector to the \c os output stream.
+     */
     static void MvPrint( const Epetra_MultiVector& mv, ostream& os )
     { os << mv << endl; }
-    
+
+    //@}
   };        
 
   ////////////////////////////////////////////////////////////////////
@@ -679,12 +837,25 @@ namespace Anasazi {
   //
   ////////////////////////////////////////////////////////////////////
 
+  /*! \class OperatorTraits< double, Epetra_MultiVector, Epetra_Operator >
+    \brief Template specialization of Anasazi::OperatorTraits class using the Epetra_Operator virtual base class and 
+    Epetra_MultiVector class.
+
+    This interface will ensure that any Epetra_Operator and Epetra_MultiVector will be accepted by the Anasazi
+    templated solvers.
+
+    \note The Epetra package performs double-precision arithmetic, so the use of Epetra with Anasazi will
+    only provide a double-precision eigensolver.
+  */
+
   template <> 
   class OperatorTraits < double, Epetra_MultiVector, Epetra_Operator >
   {
   public:
     
-    ///
+    /*! \brief This method takes the Epetra_MultiVector \c x and
+      applies the Epetra_Operator \c Op to it resulting in the Epetra_MultiVector \c y.
+    */    
     static ReturnType Apply ( const Epetra_Operator& Op, 
 			      const Epetra_MultiVector& x, 
 			      Epetra_MultiVector& y )

@@ -26,6 +26,10 @@
 // ***********************************************************************
 // @HEADER
 
+/*! \file AnasaziOperator.hpp
+  \brief  Templated virtual class for creating operators that can interface with the Anasazi::OperatorTraits class
+*/
+
 #ifndef ANASAZI_OPERATOR_HPP
 #define ANASAZI_OPERATOR_HPP
 
@@ -35,13 +39,13 @@
 
 /*!	\class Anasazi::Operator
 
-	\brief Anasazi's templated virtual class for constructing the operator that is
-	used by the eigensolver.
+	\brief Anasazi's templated virtual class for constructing an operator that can interface with the 
+	Anasazi::OperatorTraits class used by the eigensolvers.
 	
 	A concrete implementation of this class is necessary.  The user can create their own implementation
 	if those supplied are not suitable for their needs.
 
-	\author Rich Lehoucq, Heidi Thornquist
+	\author Ulrich Hetmaniuk, Rich Lehoucq, and Heidi Thornquist
 */
 
 namespace Anasazi {
@@ -57,16 +61,14 @@ namespace Anasazi {
     virtual ~Operator(void) {};
     //@}
     
-    //@{ \name Matrix/Operator application method.
+    //@{ \name Operator application method.
     
-    /*! \brief This routine takes the %Anasazi::MultiVec \c x and
-      applies the operator to it resulting in the %Anasazi::MultiVec \c y,
-      which is returned.  If this routine is not overridden, then the %Anasazi::MultiVec
-      \c x will be passed directly to \c y.  Thus the operator is the identity if this
-      method is defined by the user.
+    /*! \brief This method takes the Anasazi::MultiVec \c x and
+      applies the operator to it resulting in the Anasazi::MultiVec \c y.
     */
     virtual ReturnType Apply ( const MultiVec<ScalarType>& x, MultiVec<ScalarType>& y ) const = 0;
-    
+
+    //@}
   };
   
   ////////////////////////////////////////////////////////////////////
@@ -76,16 +78,30 @@ namespace Anasazi {
   //
   ////////////////////////////////////////////////////////////////////  
   
+  /*! \class OperatorTraits< ScalarType, MultiVec<ScalarType>, Operator<ScalarType> >
+    \brief Template specialization of Anasazi::OperatorTraits class using Anasazi::Operator and Anasazi::MultiVec virtual
+    base classes.
+
+    Any class that inherits from Anasazi::Operator will be accepted by the Anasazi templated solvers due to this
+    interface to the Anasazi::OperatorTraits class.
+  */
+
   template <class ScalarType> 
   class OperatorTraits < ScalarType, MultiVec<ScalarType>, Operator<ScalarType> > 
   {
   public:
-    
-    ///
+  
+    //@{ \name Operator application method
+
+    /*! \brief This method takes the Anasazi::MultiVec \c x and
+      applies the Anasazi::Operator \c Op to it resulting in the Anasazi::MultiVec \c y.
+    */
     static ReturnType Apply ( const Operator<ScalarType>& Op, 
 			      const MultiVec<ScalarType>& x, 
 			      MultiVec<ScalarType>& y )
     { return Op.Apply( x, y ); }
+
+    //@}
     
   };
   
