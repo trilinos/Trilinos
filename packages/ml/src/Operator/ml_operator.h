@@ -227,8 +227,8 @@ extern int ML_Operator_GetDistributedDiagBlocks(ML_Operator *mat, int *blkinfo,
 
 extern double ML_Operator_GetMaxEig(ML_Operator *Amat);
 
-extern void *ML_Operator_ArrayCreate( int length);
-extern int ML_Operator_ArrayDestroy( void *array, int length);
+extern ML_Operator **ML_Operator_ArrayCreate( int length);
+extern int ML_Operator_ArrayDestroy( ML_Operator **array, int length);
 extern int ML_Operator_SetSubspace(ML *ml, double **vectors, int numvecs,
                                    int vecleng);
 extern int ML_Operator_Amalgamate_Vec_Trans(ML_Operator *Amat, int *blocked, 
