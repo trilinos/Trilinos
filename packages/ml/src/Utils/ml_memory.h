@@ -40,7 +40,8 @@ extern void *ML_allocate(ml_size_t size);
 
 #ifndef ML_MEM_CHECK
 #define ML_allocate(i)    malloc((i + sizeof(double) ))
-#define ML_free(i)        { if (i != NULL) {free( (void*) i); i = NULL;} }
+void *ml_void_mem_ptr;
+#define ML_free(i)        { ml_void_mem_ptr = (void *) i;  if (ml_void_mem_ptr != NULL) {free( (void*) i); i = NULL;} }
 #else
 #define ML_free(i)        { ML_myfree(i); i = NULL; }
 #endif
