@@ -98,7 +98,21 @@ int main(int argc, char *argv[])
   ParameterList MLList;
 
   // set defaults for classic smoothed aggregation
-  ML_Epetra::SetDefaults("DD",MLList);
+  int options[AZ_OPTIONS_SIZE];
+  double params[AZ_PARAMS_SIZE];
+  
+  // SetDefaults() will call AZ_defaults(options,params), and will also set the
+  // preconditioner as `AZ_dom_decomp'. We will overwrite some values later in
+  // this file.
+  // NOTE THAT THE VECTORS ARE NOT COPIED! Only the pointer is copied, 
+  // so do not destroy options and params
+  // before the end of the linear system solution!
+  //
+  // You can also call SetDefaults() without passing `options' and `params.' This
+  // way, the code will allocate a int and a double vector, that must be freed by
+  // the user.
+
+  ML_Epetra::SetDefaults("DD",MLList,options,params);
   
   // overwrite some parameters. Please refer to the user's guide
   // for more information
@@ -106,7 +120,7 @@ int main(int argc, char *argv[])
   // even if they are as defaults
  
   MLList.set("aggregation: type", "MIS");
-  MLList.set("smoother: type","Gauss-Seidel");
+  MLList.set("smoother: type","Aztec");
   
   // put 16 nodes on each aggregate. This number can be too small
   // for large problems. In this case, either augment ir, or increase
@@ -123,18 +137,8 @@ int main(int argc, char *argv[])
   // Aztec requires two more vectors. Note: the following options and params
   // will be used ONLY for the smoother, and will NOT affect the Aztec solver
 
-  int options[AZ_OPTIONS_SIZE];
-  double params[AZ_PARAMS_SIZE];
-  AZ_defaults(options,params);
   options[AZ_precond] = AZ_dom_decomp;
   options[AZ_subdomain_solve] = AZ_icc;
-
-  // stick pointers in the parameters' list. NOTE THAT THE VECTORS ARE NOT
-  // COPIED! Only the pointer is copied, so do not destroy options and params
-  // before the end of the linear system solution!
-
-  MLList.set("smoother: Aztec options", options);
-  MLList.set("smoother: Aztec params", params);
 
   // create the preconditioning object. We suggest to use `new' and
   // `delete' because the destructor contains some calls to MPI (as
