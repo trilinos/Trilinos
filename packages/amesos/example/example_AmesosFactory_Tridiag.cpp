@@ -61,8 +61,11 @@
 // NOTE: this example can be run with one or more processes.
 //
 // NOTE2: More details about Amesos can be found in
-// example example_AmesosFactory.cpp and the
+// example file example_AmesosFactory.cpp and the
 // Amesos users' guide.
+//
+// Author: Marzio Sala, SNL 9214
+// Last modified: Nov-04
 
 int main(int argc, char *argv[]) 
 {
@@ -107,25 +110,22 @@ int main(int argc, char *argv[])
   int* MyGlobalElements = Map.MyGlobalElements();
 
   // At this point we simply set the nonzero structure of A.
-  // Actual values will be inserted later.
+  // Actual values will be inserted later (now all zeros)
   for (int i=0; i<NumMyElements; i++) {
 
     if (MyGlobalElements[i] == 0) {
       Indices[0] = 0; Indices[1] = 1;
-      Values[0]  = 2.0; Values[1]  = -1.0;
       NumEntries = 2;
     }
     else if (MyGlobalElements[i] == NumGlobalElements-1) {
       Indices[0] = NumGlobalElements-1;
       Indices[1] = NumGlobalElements-2;
-      Values[0]  = 2.0; Values[1]  = -1.0;
       NumEntries = 2;
     }
     else {
       Indices[0] = MyGlobalElements[i]-1;
       Indices[1] = MyGlobalElements[i];
       Indices[2] = MyGlobalElements[i]+1;
-      Values[0] = -1.0; Values[1] = 2.0; Values[2] = -1.0;
       NumEntries = 3;
     }
 
@@ -133,10 +133,10 @@ int main(int argc, char *argv[])
 					NumEntries, Values, Indices));
   }
 
-  assert(A.TransformToLocal()==0);
+  assert(A.FillComplete()==0);
 
   // Finish up. Now the matrix STRUCTURE is set. We cannot add
-  // nonzero elements, but we can still change the
+  // new nonzero elements, but we can still change the
   // numerical values of all inserted elements (as we will
   // do later).
 
@@ -161,8 +161,10 @@ int main(int argc, char *argv[])
   // Factory.Create() returns 0 if the requested solver
   // is not available
  
-  if (Solver == 0) 
-    return(EXIT_FAILURE);
+  if (Solver == 0) {
+    cerr << "Selected solver is not available" << endl;
+    exit(EXIT_FAILURE);
+  }
 
   // At this point we can perform the numeric factorization.
   // Note that the matrix contains 0's only.
@@ -203,7 +205,7 @@ int main(int argc, char *argv[])
   // ... and we can compute the numeric factorization.
   Solver->NumericFactorization();
 
-  // Finally, we set up the RHS vector (Random().
+  // Finally, we set up the LHS and the RHS vector (Random().
   Epetra_Vector b(Map);
   b.Random();
   Epetra_Vector x(Map);
@@ -233,19 +235,20 @@ int main(int argc, char *argv[])
     cout << "After AMESOS solution, ||b-Ax||_2 = " << residual << endl;
   }
 
-  // delete Solver. MPI calls can occur.
+  // delete Solver. Do this before MPI_Finalize()
+  // as MPI calls can occur in the destructor.
   delete Solver;
   delete [] Values;
   delete [] Indices;
     
+  if (residual > 1e-5)
+    return(EXIT_FAILURE);
+
 #ifdef HAVE_MPI
   MPI_Finalize();
 #endif
 
-  if (residual < 1e-5)
-    return(EXIT_SUCCESS);
-  else
-    return(EXIT_FAILURE);
+  return(EXIT_SUCCESS);
 
 } // end of main()
 

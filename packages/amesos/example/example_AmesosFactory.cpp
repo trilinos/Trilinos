@@ -2,8 +2,8 @@
 // @HEADER
 // ***********************************************************************
 // 
-//            Trilinos: An Object-Oriented Solver Framework
-//                 Copyright (2001) Sandia Corporation
+//            Amesos: An Interface to Direct Solvers
+//                 Copyright (2004) Sandia Corporation
 // 
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
@@ -27,16 +27,15 @@
 // ***********************************************************************
 // @HEADER
 
-#include "Epetra_config.h"
+#include "Amesos_ConfigDefs.h"
+// This example needs triutils to generate the linear system.
+#ifdef HAVE_AMESOS_TRIUTILS
 #ifdef HAVE_MPI
 #include "mpi.h"
 #include "Epetra_MpiComm.h"
 #else
 #include "Epetra_SerialComm.h"
 #endif
-#include "Amesos_ConfigDefs.h"
-// This example needs triutils to generate the linear system.
-#ifdef HAVE_AMESOS_TRIUTILS
 #include "Amesos.h"
 #include "Epetra_RowMatrix.h"
 #include "Epetra_MultiVector.h"
@@ -60,8 +59,7 @@ using namespace Trilinos_Util;
 // 2.- The linear system matrix, solution and rhs
 //     are distributed among the available processors,
 //     using a linear distribution. This is for 
-//     simplicity only! Amesos can support any
-//     Epetra_Map.
+//     simplicity only! Amesos can support any Epetra_Map.
 // 3.- Once the linear problem is created, we
 //     create an Amesos Factory object.
 // 4.- With the Factory, we create the required Amesos_BaseSolver
@@ -70,7 +68,7 @@ using namespace Trilinos_Util;
 //     is not available (that is, if Amesos has *not*
 //     been configured with support for this solver),
 //     the factory returns 0. Usually, Amesos_Klu
-//     is always avaiable.
+//     is always available.
 // 5.- At this point we can factorize the matrix,
 //     and solve the linear system. Only three methods
 //     should be used for an Amesos_BaseSolver object:
@@ -82,6 +80,9 @@ using namespace Trilinos_Util;
 //     actually needed to compile the Amesos library only.
 //
 // NOTE: this example can be run with one or more processors.
+//
+// Author: Marzio Sala, 9214
+// Last modified: Nov-04
 
 int main(int argc, char *argv[]) 
 {
@@ -100,14 +101,14 @@ int main(int argc, char *argv[])
 			     // multiple RHS.
 
   // initialize an Gallery object.
-  // NOTE: only this example needs triutils, to 
-  // build in an easy way the linear system matrix.
+  // NOTE: this example uses the Trilinos package triutils
+  // to define in an easy way the linear system matrix.
   // The user can easily change the matrix type;
   // consult the Trilinos tutorial on the triutils
   // chapter for more details.
   //
-  // Amesos itself is INDEPENDENT from triutils.
-
+  // Amesos itself is INDEPENDENT of triutils.
+  //
   CrsMatrixGallery Gallery("laplace_2d", Comm);
   Gallery.Set("problem_size", NumGlobalRows);
   Gallery.Set("num_vectors", NumVectors);
@@ -115,51 +116,54 @@ int main(int argc, char *argv[])
   // get pointers to Gallery's objects. Matrix, LHS and
   // RHS are constructed by Gallery. The matrix is actually
   // stored as Epetra_CrsMatrix.
-  // Problem will be used in the Amesos contruction.
-
-  Epetra_RowMatrix* Matrix = Gallery.GetMatrix();
+  // `Problem' will be used in the Amesos contruction.
+  //
   Epetra_MultiVector* LHS  = Gallery.GetStartingSolution();
   Epetra_MultiVector* RHS  = Gallery.GetRHS();
-  Epetra_LinearProblem * Problem = Gallery.GetLinearProblem();
+  Epetra_LinearProblem* Problem = Gallery.GetLinearProblem();
 
-  // random RHS and zero LHS
-  RHS->Random();
-  LHS->PutScalar(0.0);
+  RHS->Random();         // random right-hand side
+  LHS->PutScalar(0.0);   // zero solution
 
   // ===================================================== //
   // B E G I N N I N G   O F  T H E   AM E S O S   P A R T //
   // ===================================================== //
 
   // initialize Amesos solver. This is the base class for
-  // Amesos. It is a pure virtual class (hence object of this
-  // class cannot be allocated, only pointers or references).
-
+  // Amesos. It is a pure virtual class (hence objects of this
+  // class cannot be allocated, and can exist only as pointers 
+  // or references).
+  //
   Amesos_BaseSolver * Solver;
 
   // initialize the Factory. Factory is a function class (a
   // class that contains methods only, no data). Factory
   // will be used to create Amesos_BaseSolver derived
   // objects.
-
+  //
   Amesos Factory;
 
   // solver can assume one of the following values:
-  // - Amesos_Klu: for KLU solver
-  // - Amesos_Superlu: for SuperLU
-  // - Amesos_Superludist: for SuperLU_DIST 2.0 or later
-  // - Amesos_MUMPS: for MUMPS 4.3.2 or later
+  // - Lapack: LAPACK (dense) solver
+  // - Klu: for KLU solver
+  // - Superlu: for SuperLU
+  // - Superludist: for SuperLU_DIST 2.0 or later
+  // - Mumps: for MUMPS 4.3.2 or later
+  // - Dscpack: for DSCPACK (only symmetric matrices)
   // 
   // Note that users can change solver simply changing
   // this parameter!
-
-  string SolverType = "Amesos_Klu";
-  Solver = Factory.Create((char*)SolverType.c_str(), *Problem);
+  //
+  string SolverType = "Klu";
+  Solver = Factory.Create(SolverType, *Problem);
 
   // Factory.Create() returns 0 if the requested solver
   // is not available
- 
-  if (Solver == 0) 
+  //
+  if (Solver == 0) {
+    cerr << "Specified solver is not avaiable" << endl;
     return(EXIT_FAILURE);
+  }
 
   // Parameters for all Amesos solvers are set through
   // a call to SetParameters(List). List is a Teuchos
@@ -167,11 +171,13 @@ int main(int argc, char *argv[])
   // In most cases, users can proceed without calling
   // SetParameters(). Please refer to the Amesos guide
   // for more details.
+  // NOTE: you can skip this call; then the solver will
+  // use default parameters.
   //
   // Parameters in the list are set using 
   // List.set("parameter-name", ParameterValue);
   // In this example, we specify that we want more output.
-
+  //
   Teuchos::ParameterList List;
   List.set("PrintTiminig", true);
   List.set("PrintStatus", true);
@@ -183,11 +189,12 @@ int main(int argc, char *argv[])
   // and finally Solve(). Note that:
   // - the numerical values of the linear system matrix
   //   are *not* required before NumericFactorization();
-  // - solution and rhs are *not* required before
+  // - solution and rhs are *not* required before calling
   //   Solve().
-
   Solver->SymbolicFactorization();
+  // you can change the matrix values here
   Solver->NumericFactorization();
+  // you can change LHS and RHS here
   Solver->Solve();
 
   // =========================================== //
@@ -214,14 +221,14 @@ int main(int argc, char *argv[])
   delete Solver;
   delete [] residual;
     
+  if (residual[0] > 1e-5)
+    return(EXIT_FAILURE);
+
 #ifdef HAVE_MPI
   MPI_Finalize();
 #endif
 
-  if (residual[0] < 1e-5)
-    return(EXIT_SUCCESS);
-  else
-    return(EXIT_FAILURE);
+  return(EXIT_SUCCESS);
 
 } // end of main()
 

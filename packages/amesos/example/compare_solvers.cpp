@@ -1,9 +1,34 @@
-// This example compares all the available Amesos solvers
-// for the solution of the same linear system. 
-//
-// The example can be run in serial and in parallel.
+// @HEADER
+// ***********************************************************************
+// 
+//                Amesos: An Interface to Direct Solvers
+//                 Copyright (2004) Sandia Corporation
+// 
+// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
+// license for use of this work by or on behalf of the U.S. Government.
+// 
+// This library is free software; you can redistribute it and/or modify
+// it under the terms of the GNU Lesser General Public License as
+// published by the Free Software Foundation; either version 2.1 of the
+// License, or (at your option) any later version.
+//  
+// This library is distributed in the hope that it will be useful, but
+// WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// Lesser General Public License for more details.
+//  
+// You should have received a copy of the GNU Lesser General Public
+// License along with this library; if not, write to the Free Software
+// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+// USA
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
+// 
+// ***********************************************************************
+// @HEADER
 
 #include "Amesos_ConfigDefs.h"
+// This example needs triutils to generate the linear system.
+#ifdef HAVE_AMESOS_TRIUTILS
 #ifdef HAVE_MPI
 #include "mpi.h"
 #include "Epetra_MpiComm.h"
@@ -14,7 +39,6 @@
 #include "Epetra_Time.h"
 #include "Epetra_RowMatrix.h"
 #include "Epetra_CrsMatrix.h"
-#include "Epetra_VbrMatrix.h"
 #include "Amesos.h"
 #include "Amesos_BaseSolver.h"
 #include <vector>
@@ -22,6 +46,18 @@
 #include "Trilinos_Util_CrsMatrixGallery.h"
 
 using namespace Trilinos_Util;
+
+// ===================== //
+// M A I N   D R I V E R //
+// ===================== //
+//
+// This example compares all the available Amesos solvers
+// for the solution of the same linear system. 
+//
+// The example can be run in serial and in parallel.
+//
+// Author: Marzio Sala, SNL 9214
+// Last modified: Nov-04
 
 int main(int argc, char *argv[]) {
 
@@ -75,7 +111,7 @@ int main(int argc, char *argv[]) {
 
   // Cycle over all solvers.
   // Only installed solvers will be tested.
-  for (int i = 0 ; i < SolverType.size() ; ++i) {
+  for (unsigned int i = 0 ; i < SolverType.size() ; ++i) {
 
     // Check whether the solver is available or not
     if (Factory.Query(SolverType[i])) {
@@ -98,34 +134,34 @@ int main(int argc, char *argv[]) {
       Time.ResetStartTime();
       AMESOS_CHK_ERR(Solver->SymbolicFactorization());
       if (verbose) 
-	cout << endl
-	     << "Solver " << SolverType[i] 
-	     << ", symbolic factorization time = " 
-	     << Time.ElapsedTime() << endl;
+        cout << endl
+             << "Solver " << SolverType[i] 
+             << ", symbolic factorization time = " 
+             << Time.ElapsedTime() << endl;
 
       AMESOS_CHK_ERR(Solver->NumericFactorization());
       if (verbose) 
-	cout << "Solver " << SolverType[i] 
-	     << ", numeric factorization time = " 
-	     << Time.ElapsedTime() << endl;
+        cout << "Solver " << SolverType[i] 
+             << ", numeric factorization time = " 
+             << Time.ElapsedTime() << endl;
 
       AMESOS_CHK_ERR(Solver->Solve());
       if (verbose) 
-	cout << "Solver " << SolverType[i] 
-	     << ", solve time = " 
-	     << Time.ElapsedTime() << endl;
+        cout << "Solver " << SolverType[i] 
+             << ", solve time = " 
+             << Time.ElapsedTime() << endl;
   
       // 6.- compute difference between exact solution and Amesos one
       //     (there are other ways of doing this in Epetra, but let's
       //     keep it simple)
       double d = 0.0, d_tot = 0.0;
       for (int j = 0 ; j< lhs->Map().NumMyElements() ; ++j)
-	d += ((*lhs)[0][j] - 1.0) * ((*lhs)[0][j] - 1.0);
+        d += ((*lhs)[0][j] - 1.0) * ((*lhs)[0][j] - 1.0);
 
       Comm.SumAll(&d,&d_tot,1);
       if (verbose)
-	cout << "Solver " << SolverType[i] << ", ||x - x_exact||_2 = " 
-	     << sqrt(d_tot) << endl;
+        cout << "Solver " << SolverType[i] << ", ||x - x_exact||_2 = " 
+             << sqrt(d_tot) << endl;
 
       // 7.- delete the object
       delete Solver;
@@ -134,13 +170,30 @@ int main(int argc, char *argv[]) {
     }
   }
 
+  if (TotalResidual > 1e-9) 
+    exit(EXIT_FAILURE);
+
 #ifdef HAVE_MPI
   MPI_Finalize();
 #endif
 
-  if (TotalResidual < 1e-9) 
-    exit(EXIT_SUCCESS);
-  else
-    exit(EXIT_FAILURE);
+  exit(EXIT_SUCCESS);
+} // end of main()
 
+#else
+
+// Triutils is not available. Sorry, we have to give up.
+
+#include <stdlib.h>
+#include <stdio.h>
+
+int main(int argc, char *argv[])
+{
+  puts("Please configure AMESOS with --enable-triutils");
+  puts("to run this example");
+  
+  return 0;
 }
+
+#endif
+

@@ -2,8 +2,8 @@
 // @HEADER
 // ***********************************************************************
 // 
-//            Trilinos: An Object-Oriented Solver Framework
-//                 Copyright (2001) Sandia Corporation
+//            Amesos: An Interface to Direct Solvers
+//                 Copyright (2004) Sandia Corporation
 // 
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
@@ -52,8 +52,8 @@
 //
 // This example will:
 // 1.- Read an H/B matrix from file;
-// 2.- distribute (part of) it to all the available
-//     processes
+// 2.- redistribute the linear system matrix to the
+//     available processes
 // 3.- set up LHS/RHS if not present
 // 4.- create an Amesos_BaseSolver object
 // 5.- solve the linear problem.
@@ -62,6 +62,9 @@
 // example_AmesosFactory.cpp, and the Amesos users' guide.
 //
 // NOTE: this example can be run with one or more processors.
+//
+// Author: Marzio Sala, SNL 2914
+// Last modified: Nov-04
 
 int main(int argc, char *argv[]) 
 {
@@ -129,17 +132,18 @@ int main(int argc, char *argv[])
   // B E G I N N I N G   O F   T H E   A M E S O S   P A R T //
   // ======================================================= //
 
-  string SolverType = "Amesos_Klu";
+  string SolverType = "Klu";
   Amesos_BaseSolver* Solver = 0;
   Amesos Factory;
   
-  Solver = Factory.Create((char*)SolverType.c_str(), Problem);
+  Solver = Factory.Create(SolverType,Problem);
 
   // Factory.Create() returns 0 if the requested solver
   // is not available
-
-  if (Solver == 0)
+  if (Solver == 0) {
+    cerr << "Selected solver is not available" << endl;
     return(EXIT_FAILURE);
+  }
 
   // Parameters for all Amesos solvers are set through
   // a call to SetParameters(List). List is a Teuchos
@@ -189,17 +193,18 @@ int main(int argc, char *argv[])
     cout << "After AMESOS solution, ||b-Ax||_2 = " << residual << endl;
   }
 
-  // delete Solver. MPI calls can occur.
+  // delete Solver. Do this before calling MPI_Finalize() because
+  // MPI calls can occur.
   delete Solver;
+
+  if (residual > 1e-5)
+    return(EXIT_FAILURE);
 
 #ifdef HAVE_MPI
   MPI_Finalize();
 #endif
 
-  if (residual < 1e-5)
-    return(EXIT_SUCCESS);
-  else
-    return(EXIT_FAILURE);
+  return(EXIT_SUCCESS);
 
 } // end of main()
 
