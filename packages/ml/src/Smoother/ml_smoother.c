@@ -7604,8 +7604,8 @@ if (Amat->comm->ML_mypid == 0)  fflush(stdout);
 
 
 #ifdef WKC
-////  WKC
-////  BELOW IS OVERLOADED FUNCTIONS FOR EPETRA STUFF
+/*  WKC
+    BELOW IS OVERLOADED FUNCTIONS FOR EPETRA STUFF */
 
 /* ************************************************************************* */
 /* smoothing operation                                                       */

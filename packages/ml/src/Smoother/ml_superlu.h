@@ -49,7 +49,7 @@ extern int ML_SuperLU_Solve(void *vsolver,int ilen,double *x,int olen,
 			    double *rhs);
 
 #ifdef WKC
-// These double *'s are Epetra_MultiVector *'s in disguise
+/* These double *'s are Epetra_MultiVector *'s in disguise */
 extern int ML_SuperLU_Solve_WKC(void *vsolver,int ilen,double *x,int olen,
 			    double *rhs);
 #endif
