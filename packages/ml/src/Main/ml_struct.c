@@ -1772,6 +1772,8 @@ int ML_MLS_Setup_Coef(void *sm, int deg)
    ML_Operator *t3;
 #endif
 
+   /* Get all the pointers */
+
    ML_Smoother *smooth_ptr = (ML_Smoother *) sm;
    ML_Operator *Amat = smooth_ptr->my_level->Amat;
    struct MLSthing *widget = (struct MLSthing *) smooth_ptr->smoother->data;
@@ -1779,6 +1781,11 @@ int ML_MLS_Setup_Coef(void *sm, int deg)
    if (deg > MLS_MAX_DEG) { 
        return (pr_error("*** value of deg larger than MLS_MAX_DEG !\n"));
    }
+
+   /* See if we already have the largest eigenvalue */
+   /* corresponding to D^-{1/2} A D^{-1/2}. If we   */
+   /* don't (rho = -666.666),  compute it.          */
+
    rho = Amat->lambda_max;
    if ((rho < -666.) && (rho > -667)) {
      kdata = ML_Krylov_Create( Amat->comm );
@@ -1795,9 +1802,24 @@ int ML_MLS_Setup_Coef(void *sm, int deg)
      ML_Krylov_Destroy( &kdata );
      rho = Amat->lambda_max;
    }
+
+   /* Boost the largest eigenvalue by a fudge factor  */
+   /* (mlsOver is now set to 1.1 in the code[1/7/02]).*/
+   /* We know that our eigenvalue estimate is a lower */
+   /* bound. Undershooting the largest eigenvalue for */
+   /* a polynomial method is a bit risky.             */
+
    rho *= widget->mlsOver;
 
    for (i=0; i<MLS_MAX_DEG; i++) { widget->mlsOm[i] = 0.e0; om_loc[i] = 0.e0; }
+
+   /* compute a set of polynomial coefficients. These */
+   /* almost look like Chebyshev coefficients. They   */
+   /* correspond to                                   */
+   /*        2/(rho * ( 1 - cos(2 pi (j+1)/(2n + 1))) */
+   /* By the way, this polynomial is done via products*/
+   /* I think? that it corresponds to                 */
+   /*    (I - om_loc[0] A) * (I - om_loc[1] A) * ...  */
 
    ddeg = (double)deg; 
    aux1 = 1.e0/(2.e0 * ddeg + 1.e0); 
@@ -1807,6 +1829,10 @@ int ML_MLS_Setup_Coef(void *sm, int deg)
 	   aux_om = rho/2.e0 * (1.e0 - cos(aux0 * aux1));
 	   om_loc[j] = 1.e0/aux_om;
    }
+
+   /* Compute the coefficients of the polynomial      */
+   /*    (I - om_loc[0] A) * (I - om_loc[1] A) * ...  */
+
    widget->mlsCf[0] = + om_loc[0] + om_loc[1] + om_loc[2]+om_loc[3] + om_loc[4];
    widget->mlsCf[1] = -(om_loc[0]*om_loc[1]   + om_loc[0]*om_loc[2]
 	              + om_loc[0]*om_loc[3]   + om_loc[0]*om_loc[4]
@@ -1830,6 +1856,12 @@ int ML_MLS_Setup_Coef(void *sm, int deg)
                       + om_loc[1]*om_loc[2]*om_loc[3]*om_loc[4]);
    widget->mlsCf[4] = om_loc[0]*om_loc[1]*om_loc[2]*om_loc[3]*om_loc[4];
 
+   /* Here I believe that we are trying to estimate the largest */
+   /* to estimate the largest eigenvalue of p(A)*p(A)*A where   */
+   /*   p(A) = (I - om_loc[0] A) * (I - om_loc[1] A) * ...      */
+   /* Normally, deg = 1 so we just go the hardwired stuff in the*/
+   /* else clause.                                              */
+
    if (deg > 1) {
      gridStep = rho/(double)nSample;
      nGrid    = ML_min((int)rint(rho/gridStep)+1, nSample);
@@ -1849,6 +1881,8 @@ int ML_MLS_Setup_Coef(void *sm, int deg)
        rho2 = 4.0e0/(27.e0 * om_loc[0]);
    }
 
+   /* Boost the eigenvalue estimate for p(A)*p(A)*A */
+   /* and store coefficients for later application. */
    
    if (deg < 2) {
            widget->mlsBoost = 1.5e0;
