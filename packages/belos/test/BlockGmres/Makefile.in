@@ -17,7 +17,7 @@
 #@HEADER
 #@HEADER
 
-SOURCES = $(bl_gmres_hb_SOURCES) $(bl_gmres_tsfcore_SOURCES) $(bl_pgmres_hb_SOURCES)
+SOURCES = $(Dummy_SOURCES) $(bl_gmres_hb_SOURCES) $(bl_gmres_tsfcore_SOURCES) $(bl_pgmres_hb_SOURCES)
 
 srcdir = @srcdir@
 top_srcdir = @top_srcdir@
@@ -40,7 +40,8 @@ NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
 host_triplet = @host@
-noinst_PROGRAMS = $(am__EXEEXT_1) $(am__EXEEXT_2) $(am__EXEEXT_3)
+noinst_PROGRAMS = $(am__EXEEXT_1) $(am__EXEEXT_2) $(am__EXEEXT_3) \
+	Dummy$(EXEEXT)
 subdir = test/BlockGmres
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -74,6 +75,9 @@ am__EXEEXT_1 = bl_gmres_hb$(EXEEXT)
 @BUILD_IFPACK_TRUE@am__EXEEXT_2 = bl_pgmres_hb$(EXEEXT)
 @BUILD_TSFCORE_EPETRA_TRUE@am__EXEEXT_3 = bl_gmres_tsfcore$(EXEEXT)
 PROGRAMS = $(noinst_PROGRAMS)
+am_Dummy_OBJECTS =
+Dummy_OBJECTS = $(am_Dummy_OBJECTS)
+Dummy_LDADD = $(LDADD)
 am_bl_gmres_hb_OBJECTS = bl_gmres_hb-test_bl_gmres_hb.$(OBJEXT)
 bl_gmres_hb_OBJECTS = $(am_bl_gmres_hb_OBJECTS)
 am__DEPENDENCIES_1 =
@@ -93,10 +97,14 @@ CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 CXXLD = $(CXX)
 CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
 	-o $@
-SOURCES = $(bl_gmres_hb_SOURCES) $(bl_gmres_tsfcore_SOURCES) \
-	$(bl_pgmres_hb_SOURCES)
-DIST_SOURCES = $(bl_gmres_hb_SOURCES) $(bl_gmres_tsfcore_SOURCES) \
-	$(bl_pgmres_hb_SOURCES)
+COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
+	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
+CCLD = $(CC)
+LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
+SOURCES = $(Dummy_SOURCES) $(bl_gmres_hb_SOURCES) \
+	$(bl_gmres_tsfcore_SOURCES) $(bl_pgmres_hb_SOURCES)
+DIST_SOURCES = $(Dummy_SOURCES) $(bl_gmres_hb_SOURCES) \
+	$(bl_gmres_tsfcore_SOURCES) $(bl_pgmres_hb_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -221,6 +229,7 @@ target_vendor = @target_vendor@
 @BUILD_IFPACK_TRUE@BELOS_BGMRES_IFPACK_EX = bl_pgmres_hb
 @BUILD_TSFCORE_EPETRA_TRUE@BELOS_BGMRES_TSFCORE_EX = bl_gmres_tsfcore
 BELOS_BGMRES_HB_EX = bl_gmres_hb 
+Dummy_SOURCES = Dummy
 bl_pgmres_hb_SOURCES = $(srcdir)/test_bl_pgmres_hb.cpp
 bl_gmres_hb_SOURCES = $(srcdir)/test_bl_gmres_hb.cpp
 bl_gmres_tsfcore_SOURCES = $(srcdir)/test_bl_gmres_tsfcore.cpp
@@ -233,7 +242,10 @@ bl_gmres_hb_DEPENDENCIES = $(top_builddir)/../triutils/src/libtriutils.a \
 			$(top_builddir)/../teuchos/src/libteuchos.a
 
 bl_gmres_tsfcore_DEPENDENCIES = $(top_builddir)/../triutils/src/libtriutils.a \
-			$(top_builddir)/../TSFCoreUtils/src/libTSFCoreUtils.a
+			$(top_builddir)/../TSFCoreUtils/src/libTSFCoreUtils.a \
+			$(top_builddir)/../TSFCore/src/libTSFCore.a \
+			$(top_builddir)/../epetra/src/libepetra.a \
+			$(top_builddir)/../teuchos/src/libteuchos.a
 
 bl_pgmres_hb_CXXFLAGS = -I$(top_srcdir)/src \
 		-I$(top_srcdir)/../epetra/src \
@@ -572,9 +584,10 @@ uninstall-am: uninstall-info-am
 	mostlyclean-generic pdf pdf-am ps ps-am tags uninstall \
 	uninstall-am uninstall-info-am
 
-			$(top_builddir)/../TSFCore/src/libTSFCore.a
-			$(top_builddir)/../epetra/src/libepetra.a \
-			$(top_builddir)/../teuchos/src/libteuchos.a
+
+Dummy$(EXEEXT): $(srcdir)/Dummy
+	cp  $(srcdir)/orsirr1.hb orsirr1.hb
+	cp  $(srcdir)/fidap036.hb fidap036.hb
 
 #
 # Tell versions [3.59,3.63) of GNU make to not export all variables.

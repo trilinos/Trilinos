@@ -3,42 +3,36 @@
 # ------------------------------------------------------------------------
 
 # @HEADER
-# ************************************************************************
-# 
-#            Trilinos: An Object-Oriented Solver Framework
-#                 Copyright (2002,2003) Sandia Corporation
-# 
+# ***********************************************************************
 #
-# Copyright (2001,2002,2003) Sandia Corportation. Under the terms of Contract 
-# DE-AC04-94AL85000, there is a non-exclusive license for use of this 
-# work by or on behalf of the U.S. Government.  Export of this program
-# may require a license from the United States Government.
-# 
-# NOTICE:  The United States Government is granted for itself and others
-# acting on its behalf a paid-up, nonexclusive, irrevocable worldwide
-# license in ths data to reproduce, prepare derivative works, and
-# perform publicly and display publicly.  Beginning five (5) years from
-# July 25, 2001, the United States Government is granted for itself and
-# others acting on its behalf a paid-up, nonexclusive, irrevocable
-# worldwide license in this data to reproduce, prepare derivative works,
-# distribute copies to the public, perform publicly and display
-# publicly, and to permit others to do so.
-# 
-# NEITHER THE UNITED STATES GOVERNMENT, NOR THE UNITED STATES DEPARTMENT
-# OF ENERGY, NOR SANDIA CORPORATION, NOR ANY OF THEIR EMPLOYEES, MAKES
-# ANY WARRANTY, EXPRESS OR IMPLIED, OR ASSUMES ANY LEGAL LIABILITY OR
-# RESPONSIBILITY FOR THE ACCURACY, COMPLETENESS, OR USEFULNESS OF ANY
-# INFORMATION, APPARATUS, PRODUCT, OR PROCESS DISCLOSED, OR REPRESENTS
-# THAT ITS USE WOULD NOT INFRINGE PRIVATELY OWNED RIGHTS.
-# 
-# ************************************************************************
+#                 Belos: Block Linear Solvers Package
+#                 Copyright (2004) Sandia Corporation
+#
+# Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
+# license for use of this work by or on behalf of the U.S. Government.
+#
+# This library is free software; you can redistribute it and/or modify
+# it under the terms of the GNU Lesser General Public License as
+# published by the Free Software Foundation; either version 2.1 of the
+# License, or (at your option) any later version.
+#
+# This library is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# Lesser General Public License for more details.
+#
+# You should have received a copy of the GNU Lesser General Public
+# License along with this library; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+# USA
+# Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+#
+# ***********************************************************************
 # @HEADER
 
 # ------------------------------------------------------------------------
 # Initialization 
 # ------------------------------------------------------------------------
-
-
 
 # This must be the first line in configure.ac.
 # Optional 3rd argument is email address for bugs.
@@ -77,8 +71,7 @@ AC_ARG_WITH(install,
    INSTALL_DATA="$withval -m 644"
  ],)
 
-# AM_MAINTAINER_MODE turns off maintainer-only makefile 
-targets by
+# AM_MAINTAINER_MODE turns off maintainer-only makefile targets by
 # default, and changes configure to understand a
 # --enable-maintainer-mode option. --enable-maintainer-mode turns the
 # maintainer-only targets back on. The maintainer-only makefile
@@ -302,6 +295,9 @@ AC_CONFIG_FILES([
 		test/Makefile
 		test/BlockCG/Makefile
 		test/BlockGmres/Makefile
+		test/scripts/Makefile
+		test/scripts/daily/Makefile
+		test/scripts/daily/serial/Makefile
 		])
 
 AC_OUTPUT()

@@ -13,7 +13,13 @@ endif
 BELOS_BGMRES_HB_EX = bl_gmres_hb 
 #endif
 
-noinst_PROGRAMS = $(BELOS_BGMRES_HB_EX) $(BELOS_BGMRES_IFPACK_EX) $(BELOS_BGMRES_TSFCORE_EX)
+noinst_PROGRAMS = $(BELOS_BGMRES_HB_EX) $(BELOS_BGMRES_IFPACK_EX) $(BELOS_BGMRES_TSFCORE_EX) Dummy
+
+Dummy$(EXEEXT): $(srcdir)/Dummy
+	cp  $(srcdir)/orsirr1.hb orsirr1.hb
+	cp  $(srcdir)/fidap036.hb fidap036.hb
+
+Dummy_SOURCES = Dummy
 
 bl_pgmres_hb_SOURCES = $(srcdir)/test_bl_pgmres_hb.cpp
 
@@ -30,8 +36,8 @@ bl_gmres_hb_DEPENDENCIES = $(top_builddir)/../triutils/src/libtriutils.a \
 			$(top_builddir)/../teuchos/src/libteuchos.a
 
 bl_gmres_tsfcore_DEPENDENCIES = $(top_builddir)/../triutils/src/libtriutils.a \
-			$(top_builddir)/../TSFCoreUtils/src/libTSFCoreUtils.a
-			$(top_builddir)/../TSFCore/src/libTSFCore.a
+			$(top_builddir)/../TSFCoreUtils/src/libTSFCoreUtils.a \
+			$(top_builddir)/../TSFCore/src/libTSFCore.a \
 			$(top_builddir)/../epetra/src/libepetra.a \
 			$(top_builddir)/../teuchos/src/libteuchos.a
 

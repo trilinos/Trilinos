@@ -73,16 +73,28 @@ int main(int argc, char *argv[]) {
 	
 	int MyPID = Comm.MyPID();
 	
-	bool verbose = (MyPID==0);
+	bool verbose = 0;
 	//
-    	if(argc < 2 && verbose) {
-     	cerr << "Usage: " << argv[0] 
-	 << " HB_filename [level_fill [level_overlap [absolute_threshold [ relative_threshold]]]]" << endl
-	 << "where:" << endl
-	 << "HB_filename        - filename and path of a Harwell-Boeing data set" << endl
-	 << endl;
-    	return(1);
-	}
+        if((argc < 2 || argc > 4)&& MyPID==0) {
+        cerr << "Usage: " << argv[0]
+         << " [ -v ] [ HB_filename ]" << endl
+         << "where:" << endl
+         << "-v                 - run test in verbose mode" << endl
+         << "HB_filename        - filename and path of a Harwell-Boeing data set" << endl
+         << endl;
+        return(1);
+        }
+        //
+        // Find verbosity flag
+        //
+        int file_arg = 1;
+        for(i = 1; i < argc; i++)
+        {
+          if(argv[i][0] == '-' && argv[i][1] == 'v') {
+            verbose = (MyPID == 0);
+            if(i==1) file_arg = 2;
+          }
+        }
 	//
 	//**********************************************************************
 	//******************Set up the problem to be solved*********************
@@ -92,7 +104,7 @@ int main(int argc, char *argv[]) {
 	//
 	// *****Read in matrix from HB file******
 	//
-        Trilinos_Util_read_hb(argv[1], MyPID, &NumGlobalElements, &n_nonzeros,
+        Trilinos_Util_read_hb(argv[file_arg], MyPID, &NumGlobalElements, &n_nonzeros,
                               &val, &bindx, &xguess, &b, &xexact);
         // 
         // *****Distribute data among processors*****
@@ -171,7 +183,8 @@ int main(int argc, char *argv[]) {
 	Belos::StatusTestCombo<double> My_Test( Belos::StatusTestCombo<double>::OR, test3, test4 );
 
 	Belos::OutputManager<double> My_OM( MyPID );
-	//My_OM.SetVerbosity( 1 );
+	if (verbose)
+	  My_OM.SetVerbosity( 2 );
 
 	Belos::BlockGmres<double> MyBlockGmres(My_LP, My_Test, My_OM, maxits);
 
@@ -202,7 +215,6 @@ int main(int argc, char *argv[]) {
 	timer.start();
 	MyBlockGmres.Solve();
 	timer.stop();
-	My_Test.Print(cout);
 
 	if (verbose) {
 		cout << "Solution time: "<<timer.totalElapsedTime()<<endl;
@@ -218,6 +230,8 @@ int main(int argc, char *argv[]) {
   if (xguess) delete [] xguess;
   if (b) delete [] b;
 	
-  return 0;
+  if (My_Test.GetStatus() == Belos::Converged)
+    return 0;
+  return 1;
   //
 } // end test_bl_gmres_hb.cpp

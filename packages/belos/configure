@@ -1440,8 +1440,7 @@ if test "${with_install+set}" = set; then
 
 fi;
 
-# AM_MAINTAINER_MODE turns off maintainer-only makefile
-targets by
+# AM_MAINTAINER_MODE turns off maintainer-only makefile targets by
 # default, and changes configure to understand a
 # --enable-maintainer-mode option. --enable-maintainer-mode turns the
 # maintainer-only targets back on. The maintainer-only makefile
@@ -3400,7 +3399,7 @@ fi
 
 
 # Provide some information about the compiler.
-echo "$as_me:3403:" \
+echo "$as_me:3402:" \
      "checking for Fortran 77 compiler version" >&5
 ac_compiler=`set X $ac_compile; echo $2`
 { (eval echo "$as_me:$LINENO: \"$ac_compiler --version </dev/null >&5\"") >&5
@@ -5825,7 +5824,7 @@ if test "${enable_default_packages+set}" = set; then
   enableval="$enable_default_packages"
   ac_cv_use_default_packages=$enableval
 else
-  ac_cv_use_default_packages=no
+  ac_cv_use_default_packages=yes
 fi;
 
 # Check whether --enable-ifpack or --disable-ifpack was given.
@@ -6336,7 +6335,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:6339: \"$ac_link\") >&5
+(eval echo $as_me:6338: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -6414,7 +6413,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:6417: \"$ac_link\") >&5
+(eval echo $as_me:6416: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -8940,7 +8939,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:8943: \"$ac_link\") >&5
+(eval echo $as_me:8942: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -9018,7 +9017,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:9021: \"$ac_link\") >&5
+(eval echo $as_me:9020: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -9238,7 +9237,7 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 # ------------------------------------------------------------------------
 ##
 
-                                                  ac_config_files="$ac_config_files Makefile src/Makefile test/Makefile test/BlockCG/Makefile test/BlockGmres/Makefile"
+                                                                                ac_config_files="$ac_config_files Makefile src/Makefile test/Makefile test/BlockCG/Makefile test/BlockGmres/Makefile test/scripts/Makefile test/scripts/daily/Makefile test/scripts/daily/serial/Makefile"
 
 
 cat >confcache <<\_ACEOF
@@ -9858,6 +9857,9 @@ do
   "test/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/Makefile" ;;
   "test/BlockCG/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/BlockCG/Makefile" ;;
   "test/BlockGmres/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/BlockGmres/Makefile" ;;
+  "test/scripts/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/scripts/Makefile" ;;
+  "test/scripts/daily/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/scripts/daily/Makefile" ;;
+  "test/scripts/daily/serial/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/scripts/daily/serial/Makefile" ;;
   "depfiles" ) CONFIG_COMMANDS="$CONFIG_COMMANDS depfiles" ;;
   "src/Belos_config.h" ) CONFIG_HEADERS="$CONFIG_HEADERS src/Belos_config.h:src/Belos_config.h.in" ;;
   *) { { echo "$as_me:$LINENO: error: invalid argument: $ac_config_target" >&5

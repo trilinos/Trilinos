@@ -72,16 +72,28 @@ int main(int argc, char *argv[]) {
 	
 	int MyPID = Comm.MyPID();
 	int NumProc = Comm.NumProc();
-	bool verbose = (MyPID == 0);
+	bool verbose = 0;
 	//
-    	if(argc < 2 && verbose) {
+    	if((argc < 2 || argc > 4)&& MyPID==0) {
      	cerr << "Usage: " << argv[0] 
-	 << " HB_filename [level_fill [level_overlap [absolute_threshold [ relative_threshold]]]]" << endl
+	 << " [ -v ] [ HB_filename ]" << endl
 	 << "where:" << endl
+	 << "-v                 - run test in verbose mode" << endl
 	 << "HB_filename        - filename and path of a Harwell-Boeing data set" << endl
 	 << endl;
     	return(1);
 	}
+	//
+	// Find verbosity flag
+	//
+	int file_arg = 1;
+        for(i = 1; i < argc; i++)
+	{
+	  if(argv[i][0] == '-' && argv[i][1] == 'v') {
+	    verbose = (MyPID == 0);
+	    if(i==1) file_arg = 2;
+	  }
+        }
 	//
 	//**********************************************************************
 	//******************Set up the problem to be solved*********************
@@ -91,7 +103,7 @@ int main(int argc, char *argv[]) {
 	//
 	// *****Read in matrix from HB file******
 	//
-        Trilinos_Util_read_hb(argv[1], MyPID, &NumGlobalElements, &n_nonzeros,
+        Trilinos_Util_read_hb(argv[file_arg], MyPID, &NumGlobalElements, &n_nonzeros,
                               &val, &bindx, &xguess, &b, &xexact);
         // 
         // *****Distribute data among processors*****
@@ -144,14 +156,12 @@ int main(int argc, char *argv[]) {
 	//
 	int numrhs = 1;  // total number of right-hand sides to solve for
     	int block = 1;  // blocksize used by solver
-	int maxits = NumGlobalElements/block - 1; // maximum number of iterations to run
-    	double tol = 1.0e-6;  // relative residual tolerance
+	int maxits = NumGlobalElements/block; // maximum number of iterations to run
+    	double tol = 1.0e-5;  // relative residual tolerance
 	//
 	// Construct the right-hand side and solution multivectors.
 	//
 	Belos::PetraVec<double> rhs(Map, b, numrhs, NumMyElements);
-	//Belos::PetraVec<double> rhs( Map, numrhs );
-	//rhs.MvRandom();
 	Belos::PetraVec<double> soln( Map, numrhs );
 	Belos::PetraVec<double> xx(Map, xexact, numrhs, NumMyElements);
 	//
@@ -169,7 +179,8 @@ int main(int argc, char *argv[]) {
 	Belos::StatusTestCombo<double> My_Test( Belos::StatusTestCombo<double>::OR, test1, test2 );
 	//
 	Belos::OutputManager<double> My_OM( MyPID );
-	//My_OM.SetVerbosity( 1 );
+	if (verbose)
+	  My_OM.SetVerbosity( 2 );	
 	//
 	Belos::BlockCG<double> MyBlockCG(My_LP, My_Test, My_OM);
 	//
@@ -197,7 +208,6 @@ int main(int argc, char *argv[]) {
 	timer.start();
 	MyBlockCG.Solve();
 	timer.stop();
-	My_Test.Print(cout);
 
 	if (verbose) {
 		cout << "Solution time : "<< timer.totalElapsedTime()<<endl;
@@ -212,9 +222,12 @@ int main(int argc, char *argv[]) {
   delete [] xguess;
   delete [] update; 
   delete [] bindx;
-  return 0;
+
+  if (My_Test.GetStatus()==Belos::Converged)
+    return 0;
+  return 1;
   //
-} // end test_bl_pgmrs_hb.cpp
+} // end test_bl_cg_hb.cpp
 
 
 

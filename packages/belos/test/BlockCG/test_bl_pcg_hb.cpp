@@ -78,22 +78,27 @@ int main(int argc, char *argv[]) {
 	
 	int MyPID = Comm.MyPID();
 	int NumProc = Comm.NumProc();	
-	bool verbose = (MyPID==0);
+	bool verbose = 0;
 	//
-    	if(argc < 2 && verbose) {
-     	cerr << "Usage: " << argv[0] 
-	 << " HB_filename [level_fill [level_overlap [absolute_threshold [ relative_threshold]]]]" << endl
-	 << "where:" << endl
-	 << "HB_filename        - filename and path of a Harwell-Boeing data set" << endl
-	 << "level_fill         - The amount of fill to use for ICT preconditioner (default 0)" << endl
-	 << "level_overlap      - The amount of overlap used for overlapping Schwarz subdomains (default 0)" << endl
-	 << "absolute_threshold - The minimum value to place on the diagonal prior to factorization (default 0.0)" << endl
-	 << "relative_threshold - The relative amount to perturb the diagonal prior to factorization (default 1.0)" << endl << endl
-	 << "To specify a non-default value for one of these parameters, you must specify all" << endl
-	 << " preceding values but not any subsequent parameters. Example:" << endl
-	 << "bl_pcg_hb_mpi.exe mymatrix.hb 1  - loads mymatrix.hb, uses level fill of one, all other values are defaults" << endl
-	 << endl;
-    	return(1);
+        if((argc < 2 || argc > 4)&& MyPID==0) {
+        cerr << "Usage: " << argv[0]
+         << " [ -v ] [ HB_filename ]" << endl
+         << "where:" << endl
+         << "-v                 - run test in verbose mode" << endl
+         << "HB_filename        - filename and path of a Harwell-Boeing data set" << endl
+         << endl;
+        return(1);
+        }
+        //
+        // Find verbosity flag
+        //
+        int file_arg = 1;
+        for(i = 1; i < argc; i++)
+        {
+          if(argv[i][0] == '-' && argv[i][1] == 'v') {
+            verbose = (MyPID == 0);
+            if(i==1) file_arg = 2;
+          }
 	}
 	//
 	//**********************************************************************
@@ -104,7 +109,7 @@ int main(int argc, char *argv[]) {
 	//
 	// *****Read in matrix from HB file******
 	//
-	Trilinos_Util_read_hb(argv[1], MyPID, &NumGlobalElements, &n_nonzeros, &val, 
+	Trilinos_Util_read_hb(argv[file_arg], MyPID, &NumGlobalElements, &n_nonzeros, &val, 
 		                    &bindx);
 	//
 	// *****Distribute data among processors*****
@@ -228,7 +233,8 @@ int main(int argc, char *argv[]) {
         Belos::StatusTestCombo<double> My_Test( Belos::StatusTestCombo<double>::OR, test1, test2 );
 
 	Belos::OutputManager<double> My_OM( MyPID );
-	//My_OM.SetVerbosity( 1 );
+	if (verbose)
+	  My_OM.SetVerbosity( 2 );
 
 	Belos::BlockCG<double> MyBlockCG(My_LP, My_Test, My_OM);
 	//
@@ -252,9 +258,7 @@ int main(int argc, char *argv[]) {
 	   cout << numrhs << " right-hand side(s) -- using a block size of " << block
 			<< endl << endl;
 	}
-	MyBlockCG.Solve();
-	My_Test.Print(cout);
-	
+	MyBlockCG.Solve();	
         //
         // Compute actual residuals.
         //
@@ -265,13 +269,13 @@ int main(int argc, char *argv[]) {
         resid.MvAddMv( -1.0, resid, 1.0, rhs );
         resid.MvNorm( actual_resids );
         rhs.MvNorm( rhs_norm );
-        cout<< "---------- Actual Residuals (normalized) ----------"<<endl<<endl;
-        for (i=0; i<numrhs; i++) {
+        if (verbose) {
+          cout<< "---------- Actual Residuals (normalized) ----------"<<endl<<endl;
+          for (i=0; i<numrhs; i++) {
                 cout<<"Problem "<<i<<" : \t"<< actual_resids[i]/rhs_norm[i] <<endl;
+          }
         }
-
-// Release all objects  
-
+  // Release all objects  
   if (ICT) { delete ICT; ICT = 0; }
   delete [] NumNz;
   delete [] bindx;
@@ -280,7 +284,9 @@ int main(int argc, char *argv[]) {
   delete [] actual_resids;
   delete [] rhs_norm;
 	
-  return 0;
+  if (My_Test.GetStatus()==Belos::Converged)
+    return 0;
+  return 1;
   //
 } // end test_bl_pcg_hb.cpp
 
