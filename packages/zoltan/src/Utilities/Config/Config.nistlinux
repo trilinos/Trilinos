@@ -111,15 +111,13 @@ LOCAL_F90		= $(F90)
 ifeq "$(MPI_VERSION)" "lam"
 MPI_LIB		= -lmpi -largs -ltrillium -ltstdio -lt -lgcc
 MPI_LIBPATH	= -L$(LAMHOME)/lib \
-  	  	  -L/usr/lib/gcc-lib/i386-redhat-linux/egcs-2.91.66 
 else
 MPI_LIB 	= -lpmpich -lmpich -lg2c
 MPI_LIBPATH	= -L$(MPIR_HOME)/build/LINUX/ch_p4/lib \
-		  -L/usr/lib/gcc-lib/i386-redhat-linux/egcs-2.91.66
 endif
 
-#PARMETIS_LIBPATH 	= -L$(HOME)/lib/LINUX
-#PARMETIS_INCPATH  	= -I$(HOME)/ParMETIS/ParMETISLib
+PARMETIS_LIBPATH 	= -L$(PARMETISHOME)/linux_$(MPI_VERSION)
+PARMETIS_INCPATH  	= -I$(PARMETISHOME)
 
 #JOSTLE_LIBPATH 	= -L/Net/proj/zoltan/arch/solaris/lib
 #JOSTLE_INCPATH 	= -I/Net/proj/zoltan/arch/all/src
