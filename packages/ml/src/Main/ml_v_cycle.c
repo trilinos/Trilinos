@@ -262,7 +262,6 @@
       /* --------------------------------------------------------- */
       /* process the next level and transfer back to this level    */
       /* --------------------------------------------------------- */
-#ifdef ML_SINGLE_LEVEL_PROFILING
       i = curr->levelnum-1;
       switch(i) {
          case 9:
@@ -321,12 +320,6 @@
 	ML_Cycle_MG( Rmat->to, sol2, rhs2, ML_NONZERO,comm, ML_NO_RES_NORM,ml);
            break;
    }
-
-#else
-      ML_Cycle_MG( Rmat->to, sol2, rhs2, ML_ZERO,comm, ML_NO_RES_NORM, ml);
-      if ( (ml->ML_scheme == ML_MGW) && (Rmat->to->Rmat->to != NULL))
-	ML_Cycle_MG( Rmat->to, sol2, rhs2, ML_NONZERO,comm, ML_NO_RES_NORM,ml);
-#endif
 
       /* ------------------------------------------------------------ */
       /* transform the data from equation to grid space, do grid      */
