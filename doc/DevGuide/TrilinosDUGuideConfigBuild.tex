@@ -135,13 +135,30 @@ arguments to the configure invocation line as described in ``Trilinos
 Configuration Options'', section~\ref{subsect:TrilinosConfigOptions}.
 
 Also, to build the default set of Trilinos libraries, no action is 
-necessary, but to exclude a package that is built by default, Komplex for 
-example, append \newline \InlineCommand{--disable-komplex} to the configure 
+necessary, but to exclude a package that is built by default, AztecOO for 
+example, append \newline \InlineCommand{--disable-aztecoo} to the configure 
 invocation  line.  Similarly, to include a package that is not currently built 
-by default, NOX for example, append \InlineCommand{--enable-nox} to 
-the configure invocation line.  It is recommended that users always configure 
+by default, Komplex for example, append \InlineCommand{--enable-komplex} to 
+the configure invocation line.  
+
+\begin{minipage}[c]{\textwidth}
+\begin{minipage}[l]{.6\textwidth}
+
+Users are strongly encouraged to build 
+only the packages that are necessary because configuring and 
+building can take a long time.  It is well worth the time to look at which
+packages are build by default enable and disable packages as necessary.
+\end{minipage}\hfill
+\framebox{\begin{minipage}[r]{.35\textwidth}{
+{\bf Key Point:}
+$\ldots$ build only the packages that are necessary because configuring and 
+building can take a long time.
+}\end{minipage}}
+\end{minipage}
+
+It is recommended that users always configure 
 from the Trilinos level and use \InlineCommand{--disable-<package>} as 
-necessary, rather than trying to configure from a lower level.  To see which 
+required, rather than trying to configure from a lower level.  To see which 
 packages are built by default and which ones aren't, simply cd to the Trilinos home directory and type \DisplayCommand{./configure --help}
 
 
@@ -225,11 +242,21 @@ an option doesn't make sense for a particular package (for example, a
 package that does not include any Fortran code will not be sensitive to 
 \InlineCommand{F77=g77}), or otherwise noted.  For options specific to 
 an individual package, cd to the home directory of the 
-package and type \DisplayCommand{./configure --help}.
+package and type \DisplayCommand{./configure --help}
 
 Basic Options
 
 \begin{itemize}
+\item \InlineCommand{--enable-examples}
+
+Build examples for all Trilinos packages (that are sensitive to 
+this option).  By default, this option is enabled.
+
+\item \InlineCommand{--enable-tests} 
+
+Build tests for all Trilinos packages (that are sensitive to this option).  
+By default, this option is enabled.
+
 \item \InlineCommand{--enable-debug} 
 
 (NOX only.)  This turns on compiler debugger flags. It has 
