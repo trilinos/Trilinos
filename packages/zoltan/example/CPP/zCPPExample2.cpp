@@ -10,13 +10,14 @@
 //
 
 #include <stdlib.h>
+#include <unistd.h>
 #include <mpi.h>
 #include <zoltan_cpp.h>
 #include <iostream>
 #include "exzoltan.h"
 
-#define MPICPP
-#define NAMESPACES_OK
+//#define MPICPP
+//#define NAMESPACES_OK
 #define TEST_COPY
 
 #ifdef NAMESPACES_OK
@@ -25,6 +26,9 @@ using namespace std;
 #ifdef MPICPP
 using namespace MPI;
 #endif
+#else
+#define cout std::cout
+#define endl std::endl
 #endif
 
 static int MyNumPts=0;

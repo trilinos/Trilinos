@@ -11,8 +11,8 @@
 #include <iostream>
 #include "exzoltan.h"
 
-#define MPICPP
-#define NAMESPACES_OK
+//#define MPICPP
+//#define NAMESPACES_OK
 
 #ifdef NAMESPACES_OK
 using namespace std;
