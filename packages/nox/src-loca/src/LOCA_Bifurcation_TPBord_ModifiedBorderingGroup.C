@@ -182,9 +182,11 @@ LOCA::Bifurcation::TPBord::ModifiedBorderingGroup::applyJacobianInverse(
   }
 
   // Compute a
-  finalStatus = grpPtr->applyBorderedJacobianInverse(false, params, *u, v, 
-						     input_x, 0.0, *a, aa);
-  LOCA::ErrorCheck::checkReturnType(finalStatus, callingFunction);
+  status = grpPtr->applyBorderedJacobianInverse(false, params, *u, v, 
+						input_x, 0.0, *a, aa);
+  finalStatus = 
+    LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
+						 callingFunction);
 
   // Compute b
   status = grpPtr->applyBorderedJacobianInverse(false, params, *u, v, 
@@ -257,8 +259,11 @@ LOCA::Bifurcation::TPBord::ModifiedBorderingGroup::applyJacobianInverse(
   int piv[3];
   int info;
   DGESV_F77(&three, &one, A, &three, piv, B, &three, &info);
-  if (info != 0)
+  if (info != 0) {
+    LOCA::ErrorCheck::throwError(callingFunction,
+				 "Solve of 3x3 coefficient matrix failed!");
     return NOX::Abstract::Group::Failed;
+  }
 
   double alpha = B[0];
   double beta = B[1];
