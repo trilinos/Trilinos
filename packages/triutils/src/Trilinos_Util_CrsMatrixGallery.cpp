@@ -282,6 +282,9 @@ int Trilinos_Util::CrsMatrixGallery::Set(const string parameter, const double va
   } else if( parameter == "alpha" ) {
     alpha_ = value;
     return 0;
+  } else if( parameter == "epsilon" ) {
+    epsilon_= value;
+    return 0;
   } else if( parameter == "lx" ) {
     lx_ = value;
     return 0;
@@ -551,7 +554,9 @@ void Trilinos_Util::CrsMatrixGallery::CreateMap(void)
   else if( name_ == "laplace_2d" || name_ == "laplace_2d_n" 
 	   || name_ == "cross_stencil_2d"
 	   || name_ == "laplace_2d_9pt" || name_ == "recirc_2d"
-	   || name_ == "uni_flow_2d" || name_ == "recirc_2d_divfree" ) {
+	   || name_ == "uni_flow_2d" || name_ == "recirc_2d_divfree" 
+	   || name_ == "stretched_2d" ) {
+
     if( NumGlobalElements_ <= 0 ) {  
       if( nx_ > 0 && ny_ > 0 )
 	NumGlobalElements_ = nx_*ny_;
@@ -879,6 +884,8 @@ void Trilinos_Util::CrsMatrixGallery::CreateMatrix(void)
     else if( name_ == "laplace_2d_n" ) CreateMatrixLaplace2dNeumann();
 
     else if( name_ == "laplace_2d_9pt" ) CreateMatrixLaplace2d_9pt();
+
+    else if( name_ == "stretched_2d" ) CreateMatrixStretched2d();
 
     else if( name_ == "recirc_2d" ) CreateMatrixRecirc2d();
 
@@ -1596,9 +1603,6 @@ void Trilinos_Util::CrsMatrixGallery::CreateMatrixLaplace2d(void)
 
   if( verbose_ == true ) {
     cout << OutputMsg << "Creating matrix `laplace_2d'...\n";
-    if( Scaling ) {
-      cout << OutputMsg << "nx = " << nx_ << ", ny = " << ny_ << endl;
-    }
   }
 
   if( Scaling ) {
@@ -1897,6 +1901,86 @@ void Trilinos_Util::CrsMatrixGallery::CreateMatrixLaplace3d(void)
   return;
 }
 
+// ================================================ ====== ==== ==== == =
+void Trilinos_Util::CrsMatrixGallery::CreateMatrixStretched2d(void)
+{
+
+  if( epsilon_ == UNDEF ) epsilon_ = 1e-5;
+  
+  if( verbose_ == true ) {
+    cout << OutputMsg << "Creating matrix `stretched_2d'...\n";
+  }
+
+  SetupCartesianGrid2D();
+    
+  int left, right, lower, upper;
+  double diag = 8.0;
+    
+  matrix_ = new Epetra_CrsMatrix(Copy,*map_,9);
+    
+  // Add  rows one-at-a-time
+    
+  double Values[8];
+  int Indices[8];
+
+  //  z1  d  z2
+  for( int i=0 ; i<NumMyElements_; ++i ) {
+    int NumEntries=0;
+    GetNeighboursCartesian2d(  MyGlobalElements_[i], nx_, ny_, 
+			       left, right, lower, upper);
+    if( left != -1 ) {
+      Indices[NumEntries] = left;
+      Values[NumEntries] = 2.0-epsilon_;
+      ++NumEntries;
+    }
+    if( right != -1 ) {
+      Indices[NumEntries] = right;
+      Values[NumEntries] = 2.0-epsilon_;
+      ++NumEntries;
+    }
+    if( lower != -1 ) {
+      Indices[NumEntries] = lower;
+      Values[NumEntries] = -4.0+epsilon_;
+      ++NumEntries;
+    }
+    if( upper != -1 ) {
+      Indices[NumEntries] = upper;
+      Values[NumEntries] = -4.0+epsilon_;
+      ++NumEntries;
+    }
+    if( left != -1 && lower != -1 ) {
+      Indices[NumEntries] = lower-1;
+      Values[NumEntries] = -1.0;
+      ++NumEntries;
+    }
+    if( right != -1 && lower != -1 ) {
+      Indices[NumEntries] = lower+1;
+      Values[NumEntries] = -1.0;
+      ++NumEntries;
+    }
+    if( left != -1 && upper != -1 ) {
+      Indices[NumEntries] = upper-1;
+      Values[NumEntries] = -1.0;
+      ++NumEntries;
+    }
+    if( right != -1 && upper != -1 ) {
+      Indices[NumEntries] = upper+1;
+      Values[NumEntries] = -1.0;
+      ++NumEntries;
+    }
+    
+    // put the off-diagonal entries
+    assert(matrix_->InsertGlobalValues(MyGlobalElements_[i], NumEntries, 
+				       Values, Indices)==0);
+    // Put in the diagonal entry
+    assert(matrix_->InsertGlobalValues(MyGlobalElements_[i], 1, 
+				       &diag, MyGlobalElements_+i)==0);
+  }
+  matrix_->FillComplete();
+
+  return;
+      
+}
 // ================================================ ====== ==== ==== == =
 void Trilinos_Util::CrsMatrixGallery::CreateMatrixCrossStencil3d(void)
 {
@@ -2835,6 +2919,7 @@ void Trilinos_Util::CrsMatrixGallery::ZeroOutData()
   beta_  = UNDEF;
   gamma_ = UNDEF;
   delta_ = UNDEF;
+  epsilon_ = UNDEF;
 
   conv_ = UNDEF;
   diff_ = UNDEF;
@@ -2938,15 +3023,20 @@ void Trilinos_Util::CrsMatrixGallery::GetCartesianCoordinates(double * & x,
 
   int ix, iy, iz;
   
+  // need coordinates for all elements in ColMap(). This is because often the
+  // coordiantes of the so-called external nodes (in the old Aztec notation) are required 
+  int NumMyElements = matrix_->RowMatrixColMap().NumMyElements();
+  int * MyGlobalElements = matrix_->RowMatrixColMap().MyGlobalElements();
+  
   if( name_ == "diag" || name_ == "tridiag"  ||
       name_ == "laplace_1d" || name_ == "eye" ) {
     
     delta_x = length/(nx_-1);
 
-    x = new double[NumMyElements_];
+    x = new double[NumMyElements];
     assert( x != 0 );
     
-    for( int i=0 ; i<NumMyElements_ ; ++i ) {
+    for( int i=0 ; i<NumMyElements ; ++i ) {
 
       ix = MyGlobalElements_[i];
       x[i] = delta_x * ix;
@@ -2955,19 +3045,21 @@ void Trilinos_Util::CrsMatrixGallery::GetCartesianCoordinates(double * & x,
     
   } else  if( name_ == "laplace_2d" || name_ == "cross_stencil_2d"
 	      || name_ == "laplace_2d_9pt" || name_ == "recirc_2d"
-	      || name_ == "laplace_2d_n" || name_ == "uni_flow_2d" ) {
+	      || name_ == "laplace_2d_n" || name_ == "uni_flow_2d" 
+	      || name_ == "stretched_2d" ) {
   
-    delta_x = length/(nx_-1);
-    delta_y = length/(ny_-1);
+    delta_x = lx_/(nx_-1);
+    delta_y = ly_/(ny_-1);
 
-    x =  new double[NumMyElements_];
-    y =  new double[NumMyElements_];
+    // the user has to deallocate these guys 
+    x =  new double[NumMyElements];
+    y =  new double[NumMyElements];
     assert( x != 0 ); assert( y != 0 );
     
-    for( int i=0 ; i<NumMyElements_ ; ++i ) {
+    for( int i=0 ; i<NumMyElements ; ++i ) {
 
-      ix = MyGlobalElements_[i]%nx_;
-      iy = (MyGlobalElements_[i] - ix)/ny_;
+      ix = MyGlobalElements[i]%nx_;
+      iy = (MyGlobalElements[i] - ix)/ny_;
 
       x[i] = delta_x * ix;
       y[i] = delta_y * iy;
@@ -2976,19 +3068,19 @@ void Trilinos_Util::CrsMatrixGallery::GetCartesianCoordinates(double * & x,
     
   } else if( name_ == "laplace_3d" || name_ == "cross_stencil_3d" ) {
   
-    delta_x = length/(nx_-1);
-    delta_y = length/(ny_-1);
-    delta_z = length/(nz_-1);
+    delta_x = lx_/(nx_-1);
+    delta_y = ly_/(ny_-1);
+    delta_z = lz_/(nz_-1);
 
-    x =  new double[NumMyElements_];
-    y =  new double[NumMyElements_];
-    z =  new double[NumMyElements_];
+    x =  new double[NumMyElements];
+    y =  new double[NumMyElements];
+    z =  new double[NumMyElements];
     assert( x != 0 ); assert( y != 0 ); assert( z != 0 );
     
-    for( int i=0 ; i<NumMyElements_ ; i++ ) {
+    for( int i=0 ; i<NumMyElements ; i++ ) {
 
-      int ixy = MyGlobalElements_[i]%(nx_*ny_);
-      iz = (MyGlobalElements_[i] - ixy)/(nx_*ny_);
+      int ixy = MyGlobalElements[i]%(nx_*ny_);
+      iz = (MyGlobalElements[i] - ixy)/(nx_*ny_);
 
       ix = ixy%nx_;
       iy = (ixy - ix)/ny_;
@@ -3006,7 +3098,7 @@ void Trilinos_Util::CrsMatrixGallery::GetCartesianCoordinates(double * & x,
 	   << ErrorMsg << "<diag> / <tridiag> / <laplace_1d> / <eye>" << endl
 	   << ErrorMsg << "<laplace_2d> / <cross_stencil_2d> / <laplace_2d_9pt> / <recirc_2d>" << endl
 	   << ErrorMsg << "<laplace_2d_n> / <uni_flow_n>" << endl
-	   << ErrorMsg << "<laplace_3d> / <cross_stencil_3d>" << endl;
+	   << ErrorMsg << "<laplace_3d> / <cross_stencil_3d> / <stretched_2d>" << endl;
 
       exit( EXIT_FAILURE );
   }
@@ -3401,7 +3493,7 @@ void Trilinos_Util::VbrMatrixGallery::CreateVbrMatrix(void)
       exit( EXIT_FAILURE );
     }
     Epetra_Util Util;
-    double r;
+    double r = 0.0;
     
     for( int i=0 ; i<CrsNumEntries ; ++i ) {
 	

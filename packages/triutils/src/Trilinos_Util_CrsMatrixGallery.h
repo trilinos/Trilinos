@@ -297,6 +297,8 @@ protected:
 
   void CreateMatrixLaplace2d_9pt();
 
+  void CreateMatrixStretched2d();
+
   void CreateMatrixRecirc2d();
 
   void CreateMatrixRecirc2dDivFree();
@@ -407,6 +409,7 @@ protected:
   double a_, b_, c_, d_, e_, f_, g_;
   double alpha_, beta_, gamma_, delta_;
   double conv_, diff_, source_;
+  double epsilon_;
   
   string FileName_;
 
