@@ -156,7 +156,7 @@ class Epetra_Comm;
     Examples of inappropriate changes in parameters include: <ul>
     <li><b>Changing drop tolerance rules between solve steps.</b>
     <pre> Solver.NumericFactorization();
-    Solver.GetParameterList()->setParameter("DropTolerance",.001);
+    Solver.getList()->set("DropTolerance",.001);
     Solver.Solve(); </pre> </ul> Results of making inappropriate
     changes in parameters is unpredictable and could include an error
     return, a bogus result or ignoring the parameter change.
@@ -342,7 +342,7 @@ class Amesos_BaseSolver {
     virtual const Epetra_LinearProblem* GetProblem() const = 0;
 
     //! Returns the parameter list
-    virtual const Teuchos::ParameterList* GetParameterList() const = 0;
+    virtual const Teuchos::ParameterList* getList() const = 0;
 
 #if 0
     //! Returns a character string describing the operator

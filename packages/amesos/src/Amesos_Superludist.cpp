@@ -62,7 +62,7 @@ int Superludist_NumProcRows( int NumProcs ) {
 
   //=============================================================================
   Amesos_Superludist::Amesos_Superludist(const Epetra_LinearProblem &prob, 
-				 const Teuchos::ParameterList &ParameterList ) :  
+					 const Teuchos::ParameterList &ParameterList ) :  
 
     GridCreated_(0), 
     FactorizationDone_(0), 
@@ -155,33 +155,33 @@ int Amesos_Superludist::ReadParameterList() {
   
   // parameters for all packages
   
-  Redistribute_ = ParameterList_->getParameter("Redistribute",Redistribute_);
-  AddZeroToDiag_ = ParameterList_->getParameter("AddZeroToDiag",AddZeroToDiag_);
+  //FIXME  Redistribute_ = ParameterList_->get("Redistribute",Redistribute_);
+  //FIXME  AddZeroToDiag_ = ParameterList_->get("AddZeroToDiag",AddZeroToDiag_);
   
   // parameters for Superludist only
   
-  if (ParameterList_->isParameterSublist("Superludist") ) {
+  if (ParameterList_->isSublist("Superludist") ) {
     Teuchos::ParameterList SuperludistParams = ParameterList_->sublist("Superludist") ;
-    ReuseSymbolic_ = SuperludistParams.getParameter("ReuseSymbolic",ReuseSymbolic_);
-    string FactOption = SuperludistParams. getParameter("Fact", "SamePattern_SameRowPerm");
+    ReuseSymbolic_ = SuperludistParams.get("ReuseSymbolic",ReuseSymbolic_);
+    string FactOption = SuperludistParams.get("Fact", "SamePattern_SameRowPerm");
     if( FactOption == "SamePattern_SameRowPerm" ) FactOption_ = SamePattern_SameRowPerm;
     else if( FactOption == "DOFACT" ) FactOption_ = DOFACT;
     else if( FactOption == "SamePattern" ) FactOption_ = SamePattern;
     else if( FactOption == "FACTORED" ) FactOption_ = FACTORED;
     
-    MaxProcesses_ = SuperludistParams.getParameter("MaxProcesses",MaxProcesses_);
+    MaxProcesses_ = SuperludistParams.get("MaxProcesses",MaxProcesses_);
     if( MaxProcesses_ > Comm().NumProc() ) MaxProcesses_ = Comm().NumProc();
-    nprow_ = SuperludistParams.getParameter("nprow",MaxProcesses_);
-    npcol_ = SuperludistParams.getParameter("npcol",MaxProcesses_);
-    Equil_ = SuperludistParams.getParameter("Equil",true);
-    ColPerm_ = SuperludistParams.getParameter("ColPerm","MMD_AT_PLUS_A");
-    if( ColPerm_ == "MY_PERMC" ) perm_c_ = SuperludistParams.getParameter("perm_c",perm_c_);
-    RowPerm_ = SuperludistParams.getParameter("RowPerm","LargeDiag");
-    if( RowPerm_ == "MY_PERMR" ) perm_r_ = SuperludistParams.getParameter("perm_r",perm_r_);
-    IterRefine_ = SuperludistParams.getParameter("IterRefine","DOUBLE");
-    ReplaceTinyPivot_ = SuperludistParams.getParameter("ReplaceTinyPivot",true);
+    nprow_ = SuperludistParams.get("nprow",MaxProcesses_);
+    npcol_ = SuperludistParams.get("npcol",MaxProcesses_);
+    Equil_ = SuperludistParams.get("Equil",true);
+    ColPerm_ = SuperludistParams.get("ColPerm","MMD_AT_PLUS_A");
+    if( ColPerm_ == "MY_PERMC" ) perm_c_ = SuperludistParams.get("perm_c",perm_c_);
+    RowPerm_ = SuperludistParams.get("RowPerm","LargeDiag");
+    if( RowPerm_ == "MY_PERMR" ) perm_r_ = SuperludistParams.get("perm_r",perm_r_);
+    IterRefine_ = SuperludistParams.get("IterRefine","DOUBLE");
+    ReplaceTinyPivot_ = SuperludistParams.get("ReplaceTinyPivot",true);
 
-    PrintStat_ = SuperludistParams.getParameter("PrintStat",false);
+    PrintStat_ = SuperludistParams.get("PrintStat",false);
 
   } 
 

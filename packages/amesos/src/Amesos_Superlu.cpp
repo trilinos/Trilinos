@@ -232,7 +232,7 @@ int Amesos_Superlu::ConvertToSuperluCRS(bool firsttime){
 
 
 int Amesos_Superlu::ReadParameterList() {
-  if (ParameterList_->isParameterSublist("Superlu") ) {
+  if (ParameterList_->isSublist("Superlu") ) {
     Teuchos::ParameterList SuperluParams = ParameterList_->sublist("Superlu") ;
   }  
   return 0;

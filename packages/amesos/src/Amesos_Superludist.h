@@ -205,6 +205,11 @@ public:
    */
   int ReadParameterList() ;
 
+  const Teuchos::ParameterList* getList() const
+  {
+    return (const Teuchos::ParameterList *) &ParameterList_;
+  }
+  
  private:  
 
   int RedistributeA() ;

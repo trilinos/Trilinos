@@ -71,7 +71,7 @@ Amesos_Dscpack::~Amesos_Dscpack(void) {
 }
 
 int Amesos_Dscpack::ReadParameterList() {
-  if (ParameterList_->isParameterSublist("Dscpack") ) {
+  if (ParameterList_->isSublist("Dscpack") ) {
     Teuchos::ParameterList DscpackParams = ParameterList_->sublist("Dscpack") ;
   }  
   return 0;

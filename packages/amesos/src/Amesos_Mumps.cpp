@@ -446,64 +446,64 @@ int Amesos_Mumps::ReadParameterList()
 
   // retrive general parameters
 
-  if( ParameterList_->getParameter("UseTranspose",false) )
+  if( ParameterList_->get("UseTranspose",false) )
     SetUseTranspose(true);
 
-  Threshold_ = ParameterList_->getParameter("Threshold", 0.0);
+  Threshold_ = ParameterList_->get("Threshold", 0.0);
 
-  AddZeroToDiag_ = ParameterList_->getParameter("AddZeroToDiag", false);
+  AddZeroToDiag_ = ParameterList_->get("AddZeroToDiag", false);
   if( AddZeroToDiag_ && Comm().MyPID() == 0 ) {
     cerr << "Amesos_Mumps Warning: AddZeroToDiag not yet implemented." << endl;
   }
   
-  PrintTiming_ = ParameterList_->getParameter("PrintTiming", true);
+  PrintTiming_ = ParameterList_->get("PrintTiming", true);
 
-  PrintStatistics_ = ParameterList_->getParameter("PrintStatistics", true);
+  PrintStatistics_ = ParameterList_->get("PrintStatistics", true);
 
   // retrive MUMPS' parameters
   
-  if (ParameterList_->isParameterSublist("mumps") ) {
+  if (ParameterList_->isSublist("mumps") ) {
     Teuchos::ParameterList MumpsParams = ParameterList_->sublist("mumps") ;
     // integer array of parameters
     if( MumpsParams.isParameter("ICNTL") ) {
       int * ICNTL = NULL;
-      ICNTL = MumpsParams.getParameter("ICNTL", ICNTL);
+      ICNTL = MumpsParams.get("ICNTL", ICNTL);
       SetICNTL(ICNTL);
     }
     // double array of parameters
     if( MumpsParams.isParameter("CNTL") ) {
       double * CNTL = NULL;
-      CNTL = MumpsParams.getParameter("CNTL", CNTL);
+      CNTL = MumpsParams.get("CNTL", CNTL);
       SetCNTL(CNTL);
     }
     // ordering
      if( MumpsParams.isParameter("PermIn") ) {
       int * PermIn = NULL;
-      PermIn = MumpsParams.getParameter("PermIn", PermIn);
+      PermIn = MumpsParams.get("PermIn", PermIn);
       SetOrdering(PermIn);
     }
      // Maxis
      if( MumpsParams.isParameter("Maxis") ) {
        int Maxis = 0;
-       Maxis = MumpsParams.getParameter("Maxis", Maxis);
+       Maxis = MumpsParams.get("Maxis", Maxis);
        SetMaxis(Maxis);
      }
      // Maxs
      if( MumpsParams.isParameter("Maxs") ) {
        int Maxs = 0;
-       Maxs = MumpsParams.getParameter("Maxs", Maxs);
+       Maxs = MumpsParams.get("Maxs", Maxs);
        SetMaxs(Maxs);
      }
      // Col scaling
      if( MumpsParams.isParameter("ColScaling") ) {
        double * ColSca = NULL;
-       ColSca = MumpsParams.getParameter("ColScaling", ColSca);
+       ColSca = MumpsParams.get("ColScaling", ColSca);
        SetColScaling(ColSca);
      }
      // Row scaling
      if( MumpsParams.isParameter("RowScaling") ) {
        double * RowSca = NULL;
-       RowSca = MumpsParams.getParameter("RowScaling", RowSca);
+       RowSca = MumpsParams.get("RowScaling", RowSca);
        SetRowScaling(RowSca);
      }
      // that's all folks
@@ -853,7 +853,7 @@ int Amesos_Mumps::Solve()
   AddToSolTime(Time.ElapsedTime());
 
   // compute vector norms
-  if( ParameterList_->getParameter("ComputeVectorNorms",false) ) {
+  if( ParameterList_->get("ComputeVectorNorms",false) ) {
     double NormLHS, NormRHS;
     for( int i=0 ; i<nrhs ; ++i ) {
       assert((*vecX)(i)->Norm2(&NormLHS)==0);
@@ -866,7 +866,7 @@ int Amesos_Mumps::Solve()
   }
 
   // compute true residual
-  if( ParameterList_->getParameter("ComputeTrueResidual",false) ) {
+  if( ParameterList_->get("ComputeTrueResidual",false) ) {
     double Norm;
     Epetra_Vector Ax(vecB->Map());
     for( int i=0 ; i<nrhs ; ++i ) {
@@ -879,9 +879,9 @@ int Amesos_Mumps::Solve()
     }
   }
 
-  //  ParameterList_->setParameter("solution time",GetSolTime());
+  //  ParameterList_->set("solution time",GetSolTime());
 			      
-  if( ParameterList_->getParameter("PrintStatistics",true) ) PrintInformation();
+  if( ParameterList_->get("PrintStatistics",true) ) PrintInformation();
   
   return(0) ; 
 }

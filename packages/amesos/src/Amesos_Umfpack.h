@@ -252,6 +252,11 @@ public:
   */
   int PerformNumericFactorization(); 
 
+  const Teuchos::ParameterList* getList() const
+  {
+    return (const Teuchos::ParameterList *) &ParameterList_;
+  }
+  
  protected:
 
   bool SymbolicFactorizationOK_;   // True if SymbolicFactorization has been done

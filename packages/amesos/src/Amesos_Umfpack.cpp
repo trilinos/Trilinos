@@ -162,7 +162,7 @@ int Amesos_Umfpack::ConvertToUmfpackCRS(){
 
 
 int Amesos_Umfpack::ReadParameterList() {
-  if (ParameterList_->isParameterSublist("Umfpack") ) {
+  if (ParameterList_->isSublist("Umfpack") ) {
     Teuchos::ParameterList UmfpackParams = ParameterList_->sublist("Umfpack") ;
   }  
   return 0;

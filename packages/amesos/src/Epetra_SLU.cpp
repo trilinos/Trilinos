@@ -30,6 +30,9 @@
 
 namespace SLU
 {
+  //FIXME
+  typedef int int_t;
+  
 extern "C" {
 #include "dsp_defs.h"
 }

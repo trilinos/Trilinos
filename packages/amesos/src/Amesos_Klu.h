@@ -298,6 +298,11 @@ public:
   */
   int PerformNumericFactorization(); 
 
+  const Teuchos::ParameterList* getList() const
+  {
+    return (const Teuchos::ParameterList *) &ParameterList_;
+  }
+  
  protected:
 
     int *Lp, *Li, *Up, *Ui, *P ;	

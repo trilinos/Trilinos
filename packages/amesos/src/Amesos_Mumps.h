@@ -371,6 +371,11 @@ private:
   void SetUseMpiCommSelf() {
     UseMpiCommSelf_ = true;
   }
+
+  const Teuchos::ParameterList* getList() const
+  {
+    return (const Teuchos::ParameterList *) &ParameterList_;
+  }
   
  protected:
 
@@ -433,7 +438,7 @@ private:
   Epetra_RowMatrix * OldMatrix_;
 
   Epetra_MultiVector * TargetVector_;
-  
+
 };  // End of  class Amesos_Mumps
 
 #endif /* _AMESOS_MUMPS_H_ */
