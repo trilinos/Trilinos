@@ -126,7 +126,6 @@ LANG_WRAPS = \
 DIST_H = \
 	$(srcdir)/Epetra_BasicDirectory.h \
 	$(srcdir)/Epetra_BlockMap.h \
-	$(srcdir)/Epetra_CompObject.h \
 	$(srcdir)/Epetra_Directory.h \
 	$(srcdir)/Epetra_SrcDistObject.h \
 	$(srcdir)/Epetra_DistObject.h \
@@ -140,7 +139,6 @@ DIST_H = \
 DIST = \
 	$(srcdir)/Epetra_BasicDirectory.cpp \
 	$(srcdir)/Epetra_BlockMap.cpp \
-	$(srcdir)/Epetra_CompObject.cpp \
 	$(srcdir)/Epetra_DistObject.cpp \
 	$(srcdir)/Epetra_Export.cpp \
 	$(srcdir)/Epetra_Import.cpp \

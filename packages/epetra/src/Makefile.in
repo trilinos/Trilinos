@@ -211,7 +211,6 @@ LANG_WRAPS = \
 DIST_H = \
 	$(srcdir)/Epetra_BasicDirectory.h \
 	$(srcdir)/Epetra_BlockMap.h \
-	$(srcdir)/Epetra_CompObject.h \
 	$(srcdir)/Epetra_Directory.h \
 	$(srcdir)/Epetra_SrcDistObject.h \
 	$(srcdir)/Epetra_DistObject.h \
@@ -226,7 +225,6 @@ DIST_H = \
 DIST = \
 	$(srcdir)/Epetra_BasicDirectory.cpp \
 	$(srcdir)/Epetra_BlockMap.cpp \
-	$(srcdir)/Epetra_CompObject.cpp \
 	$(srcdir)/Epetra_DistObject.cpp \
 	$(srcdir)/Epetra_Export.cpp \
 	$(srcdir)/Epetra_Import.cpp \
@@ -376,7 +374,6 @@ libepetra_a_DEPENDENCIES =
 @HAVE_MPI_FALSE@@HAVE_THREADS_TRUE@	Epetra_SerialDistributor.$(OBJEXT) \
 @HAVE_MPI_FALSE@@HAVE_THREADS_TRUE@	Epetra_BasicDirectory.$(OBJEXT) \
 @HAVE_MPI_FALSE@@HAVE_THREADS_TRUE@	Epetra_BlockMap.$(OBJEXT) \
-@HAVE_MPI_FALSE@@HAVE_THREADS_TRUE@	Epetra_CompObject.$(OBJEXT) \
 @HAVE_MPI_FALSE@@HAVE_THREADS_TRUE@	Epetra_DistObject.$(OBJEXT) \
 @HAVE_MPI_FALSE@@HAVE_THREADS_TRUE@	Epetra_Export.$(OBJEXT) \
 @HAVE_MPI_FALSE@@HAVE_THREADS_TRUE@	Epetra_Import.$(OBJEXT) \
@@ -414,7 +411,6 @@ libepetra_a_DEPENDENCIES =
 @HAVE_MPI_FALSE@@HAVE_THREADS_FALSE@	Epetra_SerialDistributor.$(OBJEXT) \
 @HAVE_MPI_FALSE@@HAVE_THREADS_FALSE@	Epetra_BasicDirectory.$(OBJEXT) \
 @HAVE_MPI_FALSE@@HAVE_THREADS_FALSE@	Epetra_BlockMap.$(OBJEXT) \
-@HAVE_MPI_FALSE@@HAVE_THREADS_FALSE@	Epetra_CompObject.$(OBJEXT) \
 @HAVE_MPI_FALSE@@HAVE_THREADS_FALSE@	Epetra_DistObject.$(OBJEXT) \
 @HAVE_MPI_FALSE@@HAVE_THREADS_FALSE@	Epetra_Export.$(OBJEXT) \
 @HAVE_MPI_FALSE@@HAVE_THREADS_FALSE@	Epetra_Import.$(OBJEXT) \
@@ -450,7 +446,6 @@ libepetra_a_DEPENDENCIES =
 @HAVE_MPI_TRUE@@HAVE_THREADS_TRUE@	Epetra_SerialDistributor.$(OBJEXT) \
 @HAVE_MPI_TRUE@@HAVE_THREADS_TRUE@	Epetra_BasicDirectory.$(OBJEXT) \
 @HAVE_MPI_TRUE@@HAVE_THREADS_TRUE@	Epetra_BlockMap.$(OBJEXT) \
-@HAVE_MPI_TRUE@@HAVE_THREADS_TRUE@	Epetra_CompObject.$(OBJEXT) \
 @HAVE_MPI_TRUE@@HAVE_THREADS_TRUE@	Epetra_DistObject.$(OBJEXT) \
 @HAVE_MPI_TRUE@@HAVE_THREADS_TRUE@	Epetra_Export.$(OBJEXT) \
 @HAVE_MPI_TRUE@@HAVE_THREADS_TRUE@	Epetra_Import.$(OBJEXT) \
@@ -490,7 +485,6 @@ libepetra_a_DEPENDENCIES =
 @HAVE_MPI_TRUE@@HAVE_THREADS_FALSE@	Epetra_SerialDistributor.$(OBJEXT) \
 @HAVE_MPI_TRUE@@HAVE_THREADS_FALSE@	Epetra_BasicDirectory.$(OBJEXT) \
 @HAVE_MPI_TRUE@@HAVE_THREADS_FALSE@	Epetra_BlockMap.$(OBJEXT) \
-@HAVE_MPI_TRUE@@HAVE_THREADS_FALSE@	Epetra_CompObject.$(OBJEXT) \
 @HAVE_MPI_TRUE@@HAVE_THREADS_FALSE@	Epetra_DistObject.$(OBJEXT) \
 @HAVE_MPI_TRUE@@HAVE_THREADS_FALSE@	Epetra_Export.$(OBJEXT) \
 @HAVE_MPI_TRUE@@HAVE_THREADS_FALSE@	Epetra_Import.$(OBJEXT) \
@@ -661,13 +655,13 @@ Epetra_SerialDistributor.$(OBJEXT): \
 	$(srcdir)/Epetra_SerialDistributor.cpp
 Epetra_BasicDirectory.$(OBJEXT): $(srcdir)/Epetra_BasicDirectory.cpp
 Epetra_BlockMap.$(OBJEXT): $(srcdir)/Epetra_BlockMap.cpp
-Epetra_CompObject.$(OBJEXT): $(srcdir)/Epetra_CompObject.cpp
 Epetra_DistObject.$(OBJEXT): $(srcdir)/Epetra_DistObject.cpp
 Epetra_Export.$(OBJEXT): $(srcdir)/Epetra_Export.cpp
 Epetra_Import.$(OBJEXT): $(srcdir)/Epetra_Import.cpp
 Epetra_LocalMap.$(OBJEXT): $(srcdir)/Epetra_LocalMap.cpp
 Epetra_Map.$(OBJEXT): $(srcdir)/Epetra_Map.cpp
 Epetra_MapColoring.$(OBJEXT): $(srcdir)/Epetra_MapColoring.cpp
+Epetra_CompObject.$(OBJEXT): $(srcdir)/Epetra_CompObject.cpp
 Epetra_CrsGraph.$(OBJEXT): $(srcdir)/Epetra_CrsGraph.cpp
 Epetra_CrsMatrix.$(OBJEXT): $(srcdir)/Epetra_CrsMatrix.cpp
 Epetra_LinearProblem.$(OBJEXT): $(srcdir)/Epetra_LinearProblem.cpp
@@ -939,18 +933,6 @@ Epetra_BlockMap.obj: $(srcdir)/Epetra_BlockMap.cpp
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Epetra_BlockMap.obj `cygpath -w $(srcdir)/Epetra_BlockMap.cpp`
 
-Epetra_CompObject.o: $(srcdir)/Epetra_CompObject.cpp
-@AMDEP_TRUE@	source='$(srcdir)/Epetra_CompObject.cpp' object='Epetra_CompObject.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/Epetra_CompObject.Po' tmpdepfile='$(DEPDIR)/Epetra_CompObject.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Epetra_CompObject.o `test -f $(srcdir)/Epetra_CompObject.cpp || echo '$(srcdir)/'`$(srcdir)/Epetra_CompObject.cpp
-
-Epetra_CompObject.obj: $(srcdir)/Epetra_CompObject.cpp
-@AMDEP_TRUE@	source='$(srcdir)/Epetra_CompObject.cpp' object='Epetra_CompObject.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/Epetra_CompObject.Po' tmpdepfile='$(DEPDIR)/Epetra_CompObject.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Epetra_CompObject.obj `cygpath -w $(srcdir)/Epetra_CompObject.cpp`
-
 Epetra_DistObject.o: $(srcdir)/Epetra_DistObject.cpp
 @AMDEP_TRUE@	source='$(srcdir)/Epetra_DistObject.cpp' object='Epetra_DistObject.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@	depfile='$(DEPDIR)/Epetra_DistObject.Po' tmpdepfile='$(DEPDIR)/Epetra_DistObject.TPo' @AMDEPBACKSLASH@
@@ -1022,6 +1004,18 @@ Epetra_MapColoring.obj: $(srcdir)/Epetra_MapColoring.cpp
 @AMDEP_TRUE@	depfile='$(DEPDIR)/Epetra_MapColoring.Po' tmpdepfile='$(DEPDIR)/Epetra_MapColoring.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Epetra_MapColoring.obj `cygpath -w $(srcdir)/Epetra_MapColoring.cpp`
+
+Epetra_CompObject.o: $(srcdir)/Epetra_CompObject.cpp
+@AMDEP_TRUE@	source='$(srcdir)/Epetra_CompObject.cpp' object='Epetra_CompObject.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/Epetra_CompObject.Po' tmpdepfile='$(DEPDIR)/Epetra_CompObject.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Epetra_CompObject.o `test -f $(srcdir)/Epetra_CompObject.cpp || echo '$(srcdir)/'`$(srcdir)/Epetra_CompObject.cpp
+
+Epetra_CompObject.obj: $(srcdir)/Epetra_CompObject.cpp
+@AMDEP_TRUE@	source='$(srcdir)/Epetra_CompObject.cpp' object='Epetra_CompObject.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/Epetra_CompObject.Po' tmpdepfile='$(DEPDIR)/Epetra_CompObject.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Epetra_CompObject.obj `cygpath -w $(srcdir)/Epetra_CompObject.cpp`
 
 Epetra_CrsGraph.o: $(srcdir)/Epetra_CrsGraph.cpp
 @AMDEP_TRUE@	source='$(srcdir)/Epetra_CrsGraph.cpp' object='Epetra_CrsGraph.o' libtool=no @AMDEPBACKSLASH@
