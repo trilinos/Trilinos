@@ -125,6 +125,10 @@ void NOX::Direction::Broyden::BroydenMemory::reset()
 
 void NOX::Direction::Broyden::BroydenMemory::push(const NOX::Abstract::Vector& d)
 {
+  // Do nothing if the Brodyen memory size is zero.
+  if (mMax == 0)
+    return;
+
   // Number of updates currently stored
   int m = index.size();
   
