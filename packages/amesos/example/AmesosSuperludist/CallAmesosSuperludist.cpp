@@ -309,6 +309,8 @@ int SubTest(Epetra_Comm &Comm, AMESOS::Parameter::List ParamList )
   }
 #endif
 
+  delete Abase;
+
   return errors;
 }
 
