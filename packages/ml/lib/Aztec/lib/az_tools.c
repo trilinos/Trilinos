@@ -2130,6 +2130,10 @@ int oldk, iii, *ext_copy, **exch_buffers, exch_count,
     for (iii = exch_count-1 ; iii >= 0; iii--) AZ_free(exch_buffers[iii]);
     AZ_free(exch_buffers);
     AZ_free(ext_copy);
+#ifdef AZ_MPI
+   for (i = 0; i < send_counter; i++) 
+      MPI_Request_free( &(send_request[i]) );
+#endif
   }
 
   AZ_free((char *) neigh_list);
@@ -2137,10 +2141,6 @@ int oldk, iii, *ext_copy, **exch_buffers, exch_count,
   AZ_free((char *) extern_mess);
 
   AZ_sort(external, N_external, *extern_proc, NULL);
-#ifdef AZ_MPI
-   for (i = 0; i < send_counter; i++) 
-      MPI_Request_free( &(send_request[i]) );
-#endif
 
 } /* AZ_find_procs_for_externs */
 
