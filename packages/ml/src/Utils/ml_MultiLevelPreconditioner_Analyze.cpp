@@ -246,8 +246,9 @@ int ML_Epetra::MultiLevelPreconditioner::AnalyzeMatrixEigenvaluesSparse(char* Ma
   // this is the starting value -- random
   Epetra_MultiVector EigenVectors(OperatorDomainMap(),NumEigenvalues);
   EigenVectors.Random();
-
+#ifdef HAVE_ML_ANASAZI
   int NumRealEigenvectors, NumImagEigenvectors;
+#endif
 
   AnasaziList.set("eigen-analysis: action", "LM");
 
