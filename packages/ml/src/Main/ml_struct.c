@@ -72,6 +72,9 @@ int ML_Create(ML **ml_ptr, int Nlevels)
    (*ml_ptr)->res_output_freq = 1;
    (*ml_ptr)->tolerance       = 1.e-8;
    (*ml_ptr)->max_iterations  = 1000;
+   (*ml_ptr)->MinPerProc_repartition = -1;
+   (*ml_ptr)->LargestMinMaxRatio_repartition = -1.;
+
 
    ML_Comm_Create( &((*ml_ptr)->comm) );
    if (global_comm == NULL)
