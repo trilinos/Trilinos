@@ -22,9 +22,12 @@ extern "C" {
 #include <mpi.h>
 
 /*
- *  Include user-defined data types and comparison macros for LB_GID and LB_LID.
+ *  Data type LB_ID for global and local identifiers used in Zoltan.
  */
-#include "lb_user_const.h"
+
+typedef unsigned int    LB_ID_TYPE;
+typedef LB_ID_TYPE     *LB_ID_PTR;
+#define LB_ID_MPI_TYPE  MPI_UNSIGNED
 
 /*
  *  Data types and functions describing the interface between the
@@ -115,19 +118,27 @@ struct LB_Struct;
  *  the given object must communicate).
  *  Input:  
  *    void *data                --  pointer to user defined data structure
- *    LB_GID global_id          --  the Global ID for the object
- *    LB_LID local_id           --  the Local ID for the object
+ *    int num_gid_entries       --  number of array entries of type LB_ID_TYPE
+ *                                  in a global ID
+ *    int num_lid_entries       --  number of array entries of type LB_ID_TYPE
+ *                                  in a local ID
+ *    LB_ID_PTR global_id       --  the Global ID for the object
+ *    LB_ID_PTR local_id        --  the Local ID for the object
  *  Output:
  *    int *ierr                 --  error code
  *  Returned value:
  *    int                       --  the number of neighbor objects.
  */
 
-typedef int LB_NUM_EDGES_FN(void *data, LB_GID global_id, LB_LID local_id,
+typedef int LB_NUM_EDGES_FN(void *data, 
+                            int num_gid_entries, int num_lid_entries,
+                            LB_ID_PTR global_id, LB_ID_PTR local_id,
                             int *ierr);
 
-typedef int LB_NUM_EDGES_FORT_FN(void *data, LB_GID *global_id,
-                                 LB_LID *local_id, int *ierr);
+typedef int LB_NUM_EDGES_FORT_FN(void *data, 
+                                 int *num_gid_entries, int *num_lid_entries,
+                                 LB_ID_PTR global_id, LB_ID_PTR local_id, 
+                                 int *ierr);
 
 /*****************************************************************************/
 /*
@@ -136,12 +147,16 @@ typedef int LB_NUM_EDGES_FORT_FN(void *data, LB_GID *global_id,
  *  communicate.
  *  Input:  
  *    void *data                --  pointer to user defined data structure
- *    LB_GID global_id          --  the Global ID for the object
- *    LB_LID local_id           --  the Local ID for the object
+ *    int num_gid_entries       --  number of array entries of type LB_ID_TYPE
+ *                                  in a global ID
+ *    int num_lid_entries       --  number of array entries of type LB_ID_TYPE
+ *                                  in a local ID
+ *    LB_ID_PTR global_id       --  the Global ID for the object
+ *    LB_ID_PTR local_id        --  the Local ID for the object
  *    int    wdim               --  dimension of edge weights, or 0 if
  *                                  edge weights are not sought.
  *  Output:
- *    LB_GID *nbor_global_ids   --  Array of Global IDs of neighboring objects.
+ *    LB_ID_PTR nbor_global_ids --  Array of Global IDs of neighboring objects.
  *    int    *nbor_procs        --  Array of neighboring procs.
  *    int    *nbor_ewgts        --  Array of edge weights, where 
  *                                  nbor_ewgts[i*wdim:(i+1)*wdim-1]
@@ -149,12 +164,16 @@ typedef int LB_NUM_EDGES_FORT_FN(void *data, LB_GID *global_id,
  *    int *ierr                 --  error code
  */
 
-typedef void LB_EDGE_LIST_FN(void *data, LB_GID global_id, LB_LID local_id,
-                             LB_GID *nbor_global_id, int *nbor_procs,
+typedef void LB_EDGE_LIST_FN(void *data, 
+                             int num_gid_entries, int num_lid_entries,
+                             LB_ID_PTR global_id, LB_ID_PTR local_id,
+                             LB_ID_PTR nbor_global_id, int *nbor_procs,
                              int wdim, float *nbor_ewgts, int *ierr);
 
-typedef void LB_EDGE_LIST_FORT_FN(void *data, LB_GID *global_id,
-                                  LB_LID *local_id, LB_GID *nbor_global_id,
+typedef void LB_EDGE_LIST_FORT_FN(void *data, 
+                                  int *num_gid_entries, int *num_lid_entries,
+                                  LB_ID_PTR global_id, LB_ID_PTR local_id, 
+                                  LB_ID_PTR nbor_global_id,
                                   int *nbor_procs, int *wdim, int *nbor_ewgts,
                                   int *ierr);
 
@@ -181,18 +200,25 @@ typedef int LB_NUM_GEOM_FORT_FN(void *data, int *ierr);
  *  the geometry information for the object (e.g., coordinates).
  *  Input:  
  *    void *data                --  pointer to user defined data structure
- *    LB_GID global_id          --  the Global ID for the object
- *    LB_LID local_id           --  the Local ID for the object
+ *    int num_gid_entries       --  number of array entries of type LB_ID_TYPE
+ *                                  in a global ID
+ *    int num_lid_entries       --  number of array entries of type LB_ID_TYPE
+ *                                  in a local ID
+ *    LB_ID_PTR global_id       --  the Global ID for the object
+ *    LB_ID_PTR local_id        --  the Local ID for the object
  *  Output:
  *    double *geom_vec          --  the geometry info for the object
  *                                  (e.g., coordinates)
  *    int *ierr                 --  error code
  */
 
-typedef void LB_GEOM_FN(void *data, LB_GID global_id, LB_LID local_id,
+typedef void LB_GEOM_FN(void *data, int num_gid_entries, int num_lid_entries,
+                        LB_ID_PTR global_id, LB_ID_PTR local_id,
                         double *geom_vec, int *ierr);
 
-typedef void LB_GEOM_FORT_FN(void *data, LB_GID *global_id, LB_LID *local_id,
+typedef void LB_GEOM_FORT_FN(void *data, 
+                             int *num_gid_entries, int *num_lid_entries,
+                             LB_ID_PTR global_id, LB_ID_PTR local_id,
                              double *geom_vec, int *ierr);
 
 /*****************************************************************************/
@@ -218,21 +244,29 @@ typedef int LB_NUM_OBJ_FORT_FN(void *data, int *ierr);
  *    void *data                --  pointer to user defined data structure
  *    int wdim                  --  dimension of object weights, or 0 if
  *                                  object weights are not sought. 
+ *    int num_gid_entries       --  number of array entries of type LB_ID_TYPE
+ *                                  in a global ID
+ *    int num_lid_entries       --  number of array entries of type LB_ID_TYPE
+ *                                  in a local ID
  *  Output:
- *    LB_GID *global_ids        --  array of Global IDs of all objects on the
+ *    LB_ID_PTR global_ids      --  array of Global IDs of all objects on the
  *                                  processor.
- *    LB_LID *local_ids         --  array of Local IDs of all objects on the
+ *    LB_ID_PTR local_ids       --  array of Local IDs of all objects on the
  *                                  processor.
  *    float *objwgts            --  objwgts[i*wdim:(i+1)*wdim-1] correponds
  *                                  to the weight of object i 
  *    int *ierr                 --  error code
  */
 
-typedef void LB_OBJ_LIST_FN(void *data, LB_GID *global_ids, LB_LID *local_ids,
+typedef void LB_OBJ_LIST_FN(void *data, 
+                            int num_gid_entries, int num_lid_entries,
+                            LB_ID_PTR global_ids, LB_ID_PTR local_ids,
                             int wdim, float *objwgts, int *ierr);
 
-typedef void LB_OBJ_LIST_FORT_FN(void *data, LB_GID *global_ids,
-                                 LB_LID *local_ids, int *wdim, float *objwgts,
+typedef void LB_OBJ_LIST_FORT_FN(void *data, 
+                                 int *num_gid_entries, int *num_lid_entries,
+                                 LB_ID_PTR global_ids, LB_ID_PTR local_ids,
+                                 int *wdim, float *objwgts,
                                  int *ierr);
 
 /*****************************************************************************/
@@ -243,10 +277,14 @@ typedef void LB_OBJ_LIST_FORT_FN(void *data, LB_GID *global_ids,
  *    void *data                --  pointer to user defined data structure
  *    int wdim                  --  dimension of object weight, or 0 if
  *                                  the weight is not sought.
+ *    int num_gid_entries       --  number of array entries of type LB_ID_TYPE
+ *                                  in a global ID
+ *    int num_lid_entries       --  number of array entries of type LB_ID_TYPE
+ *                                  in a local ID
  *  Output:
- *    LB_GID *first_global_id   --  Global ID of the first object; NULL if no
+ *    LB_ID_PTR first_global_id --  Global ID of the first object; NULL if no
  *                                  objects.
- *    LB_LID *first_local_id    --  Local ID of the first object; NULL if no
+ *    LB_ID_PTR first_local_id  --  Local ID of the first object; NULL if no
  *                                  objects.
  *    float *first_obj_wgt      --  weight vector for first object
  *                                  (undefined if wdim=0)
@@ -256,12 +294,16 @@ typedef void LB_OBJ_LIST_FORT_FN(void *data, LB_GID *global_ids,
  *                                  no more objects exist on the processor.
  */
 
-typedef int LB_FIRST_OBJ_FN(void *data, LB_GID *first_global_id,
-                            LB_LID *first_local_id, 
+typedef int LB_FIRST_OBJ_FN(void *data, 
+                            int num_gid_entries, int num_lid_entries,
+                            LB_ID_PTR first_global_id,
+                            LB_ID_PTR first_local_id, 
                             int wdim, float *first_obj_wgt, int *ierr);
 
-typedef int LB_FIRST_OBJ_FORT_FN(void *data, LB_GID *first_global_id,
-                                 LB_LID *first_local_id, int *wdim,
+typedef int LB_FIRST_OBJ_FORT_FN(void *data, 
+                                 int *num_gid_entries, int *num_lid_entries,
+                                 LB_ID_PTR first_global_id,
+                                 LB_ID_PTR first_local_id, int *wdim,
                                  float *first_obj_wgt, int *ierr);
 
 /*****************************************************************************/
@@ -270,14 +312,18 @@ typedef int LB_FIRST_OBJ_FORT_FN(void *data, LB_GID *first_global_id,
  *  This function should be used with LB_FIRST_OBJ_FN.
  *  Input:  
  *    void *data                --  pointer to user defined data structure
- *    LB_GID global_id          --  Global ID of the previous object.
- *    LB_LID local_id           --  Local ID of the previous object.
+ *    int num_gid_entries       --  number of array entries of type LB_ID_TYPE
+ *                                  in a global ID
+ *    int num_lid_entries       --  number of array entries of type LB_ID_TYPE
+ *                                  in a local ID
+ *    LB_ID_PTR global_id       --  Global ID of the previous object.
+ *    LB_ID_PTR local_id        --  Local ID of the previous object.
  *    int wdim                  --  dimension of object weight, or 0 if
  *                                  the weight is not sought.
  *  Output:
- *    LB_GID *next_global_id    --  Global ID of the next object; NULL if no
+ *    LB_ID_PTR next_global_id  --  Global ID of the next object; NULL if no
  *                                  more objects.
- *    LB_LID *next_local_id     --  Local ID of the next object; NULL if no
+ *    LB_ID_PTR next_local_id   --  Local ID of the next object; NULL if no
  *                                  more objects.
  *    float *next_obj_wgt       --  weight vector for the next object
  *                                  (undefined if wdim=0)
@@ -288,12 +334,16 @@ typedef int LB_FIRST_OBJ_FORT_FN(void *data, LB_GID *first_global_id,
  *                                  the last object).
  */
 
-typedef int LB_NEXT_OBJ_FN(void *data, LB_GID global_id, LB_LID local_id,
-                           LB_GID *next_global_id, LB_LID *next_local_id,
+typedef int LB_NEXT_OBJ_FN(void *data, int num_gid_entries, int num_lid_entries,
+                           LB_ID_PTR global_id, LB_ID_PTR local_id,
+                           LB_ID_PTR next_global_id, LB_ID_PTR next_local_id,
                            int wdim, float *next_obj_wgt, int *ierr);
 
-typedef int LB_NEXT_OBJ_FORT_FN(void *data, LB_GID *global_id, LB_LID *local_id,
-                                LB_GID *next_global_id, LB_LID *next_local_id,
+typedef int LB_NEXT_OBJ_FORT_FN(void *data, 
+                                int *num_gid_entries, int *num_lid_entries,
+                                LB_ID_PTR global_id, LB_ID_PTR local_id,
+                                LB_ID_PTR next_global_id,
+                                LB_ID_PTR next_local_id,
                                 int *wdim, float *next_obj_wgt, int *ierr);
 
 /*****************************************************************************/
@@ -319,14 +369,18 @@ typedef int LB_NUM_BORDER_OBJ_FORT_FN(void *data, int *nbor_proc, int *ierr);
  *  with a given processor.
  *  Input:  
  *    void *data                --  pointer to user defined data structure
+ *    int num_gid_entries       --  number of array entries of type LB_ID_TYPE
+ *                                  in a global ID
+ *    int num_lid_entries       --  number of array entries of type LB_ID_TYPE
+ *                                  in a local ID
  *    int nbor_proc             --  processor ID of the neighboring processor.
  *    int wdim                  --  dimension of object weight, or 0 if
  *                                  the weights are not sought.
  *  Output:
- *    LB_GID *global_ids        --  array of Global IDs of all objects on the
+ *    LB_ID_PTR global_ids      --  array of Global IDs of all objects on the
  *                                  processor border with the given neighboring
  *                                  processor.
- *    LB_LID *local_ids         --  array of Local IDs of all objects on the 
+ *    LB_ID_PTR local_ids       --  array of Local IDs of all objects on the 
  *                                  processor border with the given neighboring 
  *                                  processor.
  *    float *objwgts            --  objwgts[i*wdim:(i+1)*wdim-1] correponds
@@ -335,13 +389,17 @@ typedef int LB_NUM_BORDER_OBJ_FORT_FN(void *data, int *nbor_proc, int *ierr);
  *    int *ierr                 --  error code
  */
 
-typedef void LB_BORDER_OBJ_LIST_FN(void *data, int nbor_proc,
-                                   LB_GID *global_ids, LB_LID *local_ids,
+typedef void LB_BORDER_OBJ_LIST_FN(void *data, 
+                                   int num_gid_entries, int num_lid_entries,
+                                   int nbor_proc,
+                                   LB_ID_PTR global_ids, LB_ID_PTR local_ids,
                                    int wdim, float *objwgts, int *ierr);
 
-typedef void LB_BORDER_OBJ_LIST_FORT_FN(void *data, int *nbor_proc,
-                                        LB_GID *global_ids, LB_LID *local_ids,
-                                        int *wdim, float *objwgts, int *ierr);
+typedef void LB_BORDER_OBJ_LIST_FORT_FN(void *data,
+                                     int *num_gid_entries, int *num_lid_entries,
+                                     int *nbor_proc,
+                                     LB_ID_PTR global_ids, LB_ID_PTR local_ids,
+                                     int *wdim, float *objwgts, int *ierr);
 
 /*****************************************************************************/
 /*
@@ -349,13 +407,17 @@ typedef void LB_BORDER_OBJ_LIST_FORT_FN(void *data, int *nbor_proc,
  *  along the subdomain boundary with a given processor.
  *  Input:  
  *    void *data                --  pointer to user defined data structure
+ *    int num_gid_entries       --  number of array entries of type LB_ID_TYPE
+ *                                  in a global ID
+ *    int num_lid_entries       --  number of array entries of type LB_ID_TYPE
+ *                                  in a local ID
  *    int nbor_proc             --  processor ID of the neighboring processor.
  *    int wdim                  --  dimension of object weight, or 0 if
  *                                  the weight is not sought.
  *  Output:
- *    LB_GID *first_global_id   --  Global ID of the first object; NULL if no
+ *    LB_ID_PTR first_global_id --  Global ID of the first object; NULL if no
  *                                  objects.
- *    LB_LID *first_local_id    --  Local ID of the first object; NULL if no 
+ *    LB_ID_PTR first_local_id  --  Local ID of the first object; NULL if no 
  *                                  objects.
  *    float *first_obj_wgt      --  weight vector for the first object
  *                                  (undefined if wdim=0)
@@ -366,17 +428,21 @@ typedef void LB_BORDER_OBJ_LIST_FORT_FN(void *data, int *nbor_proc,
  *                                  the last object).
  */
 
-typedef int LB_FIRST_BORDER_OBJ_FN(void *data, int nbor_proc,
-                                   LB_GID *first_global_id,
-                                   LB_LID *first_local_id, 
+typedef int LB_FIRST_BORDER_OBJ_FN(void *data, 
+                                   int num_gid_entries, int num_lid_entries, 
+                                   int nbor_proc,
+                                   LB_ID_PTR first_global_id,
+                                   LB_ID_PTR first_local_id, 
                                    int wdim, float *first_obj_wgt,
                                    int *ierr);
 
-typedef int LB_FIRST_BORDER_OBJ_FORT_FN(void *data, int *nbor_proc,
-                                        LB_GID *first_global_id,
-                                        LB_LID *first_local_id, 
-                                        int *wdim, float *first_obj_wgt,
-                                        int *ierr);
+typedef int LB_FIRST_BORDER_OBJ_FORT_FN(void *data, 
+                                    int *num_gid_entries, int *num_lid_entries, 
+                                    int *nbor_proc,
+                                    LB_ID_PTR first_global_id,
+                                    LB_ID_PTR first_local_id, 
+                                    int *wdim, float *first_obj_wgt,
+                                    int *ierr);
 
 /*****************************************************************************/
 /*
@@ -384,15 +450,19 @@ typedef int LB_FIRST_BORDER_OBJ_FORT_FN(void *data, int *nbor_proc,
  *  along the subdomain boundary with a given processor.
  *  Input:  
  *    void *data                --  pointer to user defined data structure
- *    LB_GID global_id          --  Global ID of the previous object.
- *    LB_LID local_id           --  Local ID of the previous object.
+ *    int num_gid_entries       --  number of array entries of type LB_ID_TYPE
+ *                                  in a global ID
+ *    int num_lid_entries       --  number of array entries of type LB_ID_TYPE
+ *                                  in a local ID
+ *    LB_ID_PTR global_id       --  Global ID of the previous object.
+ *    LB_ID_PTR local_id        --  Local ID of the previous object.
  *    int nbor_proc             --  processor ID of the neighboring processor.
  *    int wdim                  --  dimension of object weight, or 0 if
  *                                  the weight is not sought.
  *  Output:
- *    LB_GID *next_global_id    --  Global ID of the next object; NULL if no
+ *    LB_ID_PTR next_global_id  --  Global ID of the next object; NULL if no
  *                                  more objects.
- *    LB_LID *next_local_id     --  Local ID of the next object; NULL if no 
+ *    LB_ID_PTR next_local_id   --  Local ID of the next object; NULL if no 
  *                                  more objects.
  *    float *next_obj_wgt       --  weight vector for the next object
  *                                  (undefined if wdim=0)
@@ -403,19 +473,23 @@ typedef int LB_FIRST_BORDER_OBJ_FORT_FN(void *data, int *nbor_proc,
  *                                  the last object).
  */
 
-typedef int LB_NEXT_BORDER_OBJ_FN(void *data, LB_GID global_id,
-                                  LB_LID local_id, int nbor_proc,
-                                  LB_GID *next_global_id,
-                                  LB_LID *next_local_id, 
+typedef int LB_NEXT_BORDER_OBJ_FN(void *data, 
+                                  int num_gid_entries, int num_lid_entries,
+                                  LB_ID_PTR global_id,
+                                  LB_ID_PTR local_id, int nbor_proc,
+                                  LB_ID_PTR next_global_id,
+                                  LB_ID_PTR next_local_id, 
                                   int wdim, float *next_obj_wgt,
                                   int *ierr);
 
-typedef int LB_NEXT_BORDER_OBJ_FORT_FN(void *data, LB_GID *global_id,
-                                       LB_LID *local_id, int *nbor_proc,
-                                       LB_GID *next_global_id,
-                                       LB_LID *next_local_id, 
-                                       int *wdim, float *next_obj_wgt,
-                                       int *ierr);
+typedef int LB_NEXT_BORDER_OBJ_FORT_FN(void *data, 
+                                     int *num_gid_entries, int *num_lid_entries,
+                                     LB_ID_PTR global_id,
+                                     LB_ID_PTR local_id, int *nbor_proc,
+                                     LB_ID_PTR next_global_id,
+                                     LB_ID_PTR next_local_id, 
+                                     int *wdim, float *next_obj_wgt,
+                                     int *ierr);
 
 /*****************************************************************************/
 /*
@@ -442,32 +516,43 @@ typedef int LB_OBJ_SIZE_FORT_FN(void *data, int *ierr);
  *  to help migrate the data.  The application can perform any type of 
  *  pre-processing in this function.
  *  Input:  
- *    void *data                --  pointer to user defined data structure
- *    int num_import            --  Number of objects to be imported.
- *    LB_GID *import_global_ids --  Global IDs of objects to be imported.
- *    LB_LID *import_local_ids  --  Local IDs of objects to be imported.
- *    int *import_procs         --  Processor IDs of importing processors.
- *    int num_export            --  Number of objects to be exported.
- *    LB_GID *export_global_ids --  Global IDs of objects to be exported.
- *    LB_LID *export_local_ids  --  Local IDs of objects to be exported.
- *    int *export_procs         --  Processor IDs of processors to receive
- *                                  the objects.
+ *    void *data                  --  pointer to user defined data structure
+ *    int num_gid_entries         --  number of array entries of type LB_ID_TYPE
+ *                                    in a global ID
+ *    int num_lid_entries         --  number of array entries of type LB_ID_TYPE
+ *                                    in a local ID
+ *    int num_import              --  Number of objects to be imported.
+ *    LB_ID_PTR import_global_ids --  Global IDs of objects to be imported.
+ *    LB_ID_PTR import_local_ids  --  Local IDs of objects to be imported.
+ *    int *import_procs           --  Processor IDs of importing processors.
+ *    int num_export              --  Number of objects to be exported.
+ *    LB_ID_PTR export_global_ids --  Global IDs of objects to be exported.
+ *    LB_ID_PTR export_local_ids  --  Local IDs of objects to be exported.
+ *    int *export_procs           --  Processor IDs of processors to receive
+ *                                    the objects.
  *  Output:
- *    int *ierr                 --  error code
+ *    int *ierr                   --  error code
  */
 
-typedef void LB_PRE_MIGRATE_FN(void *data, int num_import,
-                               LB_GID *import_global_ids,
-                               LB_LID *import_local_ids, int *import_procs,
-                               int num_export, LB_GID *export_global_ids,
-                               LB_LID *export_local_ids, int *export_procs,
+typedef void LB_PRE_MIGRATE_FN(void *data, 
+                               int num_gid_entries, int num_lid_entries,
+                               int num_import,
+                               LB_ID_PTR import_global_ids,
+                               LB_ID_PTR import_local_ids, int *import_procs,
+                               int num_export, LB_ID_PTR export_global_ids,
+                               LB_ID_PTR export_local_ids, int *export_procs,
                                int *ierr);
 
-typedef void LB_PRE_MIGRATE_FORT_FN(void *data, int *num_import,
-                                    LB_GID *import_global_ids,
-                                    LB_LID *import_local_ids, int *import_procs,
-                                    int *num_export, LB_GID *export_global_ids,
-                                    LB_LID *export_local_ids, int *export_procs,
+typedef void LB_PRE_MIGRATE_FORT_FN(void *data, 
+                                    int *num_gid_entries, int *num_lid_entries,
+                                    int *num_import,
+                                    LB_ID_PTR import_global_ids,
+                                    LB_ID_PTR import_local_ids, 
+                                    int *import_procs,
+                                    int *num_export, 
+                                    LB_ID_PTR export_global_ids,
+                                    LB_ID_PTR export_local_ids, 
+                                    int *export_procs,
                                     int *ierr);
 
 /*****************************************************************************/
@@ -479,32 +564,43 @@ typedef void LB_PRE_MIGRATE_FORT_FN(void *data, int *num_import,
  *  to help migrate the data.  The application can perform any type of 
  *  processing in this function.
  *  Input:  
- *    void *data                --  pointer to user defined data structure
- *    int num_import            --  Number of objects to be imported.
- *    LB_GID *import_global_ids --  Global IDs of objects to be imported.
- *    LB_LID *import_local_ids  --  Local IDs of objects to be imported.
- *    int *import_procs         --  Processor IDs of importing processors.
- *    int num_export            --  Number of objects to be exported.
- *    LB_GID *export_global_ids --  Global IDs of objects to be exported.
- *    LB_LID *export_local_ids  --  Local IDs of objects to be exported.
- *    int *export_procs         --  Processor IDs of processors to receive
- *                                  the objects.
+ *    void *data                  --  pointer to user defined data structure
+ *    int num_gid_entries         --  number of array entries of type LB_ID_TYPE
+ *                                    in a global ID
+ *    int num_lid_entries         --  number of array entries of type LB_ID_TYPE
+ *                                    in a local ID
+ *    int num_import              --  Number of objects to be imported.
+ *    LB_ID_PTR import_global_ids --  Global IDs of objects to be imported.
+ *    LB_ID_PTR import_local_ids  --  Local IDs of objects to be imported.
+ *    int *import_procs           --  Processor IDs of importing processors.
+ *    int num_export              --  Number of objects to be exported.
+ *    LB_ID_PTR export_global_ids --  Global IDs of objects to be exported.
+ *    LB_ID_PTR export_local_ids  --  Local IDs of objects to be exported.
+ *    int *export_procs           --  Processor IDs of processors to receive
+ *                                    the objects.
  *  Output:
- *    int *ierr                 --  error code
+ *    int *ierr                   --  error code
  */
 
-typedef void LB_MID_MIGRATE_FN(void *data, int num_import,
-                               LB_GID *import_global_ids,
-                               LB_LID *import_local_ids, int *import_procs,
-                               int num_export, LB_GID *export_global_ids,
-                               LB_LID *export_local_ids, int *export_procs,
+typedef void LB_MID_MIGRATE_FN(void *data, 
+                               int num_gid_entries, int num_lid_entries,
+                               int num_import,
+                               LB_ID_PTR import_global_ids,
+                               LB_ID_PTR import_local_ids, int *import_procs,
+                               int num_export, LB_ID_PTR export_global_ids,
+                               LB_ID_PTR export_local_ids, int *export_procs,
                                int *ierr);
 
-typedef void LB_MID_MIGRATE_FORT_FN(void *data, int *num_import,
-                                    LB_GID *import_global_ids,
-                                    LB_LID *import_local_ids, int *import_procs,
-                                    int *num_export, LB_GID *export_global_ids,
-                                    LB_LID *export_local_ids, int *export_procs,
+typedef void LB_MID_MIGRATE_FORT_FN(void *data, 
+                                    int *num_gid_entries, int *num_lid_entries,
+                                    int *num_import,
+                                    LB_ID_PTR import_global_ids,
+                                    LB_ID_PTR import_local_ids, 
+                                    int *import_procs,
+                                    int *num_export, 
+                                    LB_ID_PTR export_global_ids,
+                                    LB_ID_PTR export_local_ids, 
+                                    int *export_procs,
                                     int *ierr);
 
 /*****************************************************************************/
@@ -514,33 +610,44 @@ typedef void LB_MID_MIGRATE_FORT_FN(void *data, int *num_import,
  *  to help migrate the data.  The application can perform any type of 
  *  post-processing in this function.
  *  Input:  
- *    void *data                --  pointer to user defined data structure
- *    int num_import            --  Number of objects to be imported.
- *    LB_GID *import_global_ids --  Global IDs of objects to be imported.
- *    LB_LID *import_local_ids  --  Local IDs of objects to be imported.
- *    int *import_procs         --  Processor IDs of importing processors.
- *    int num_export            --  Number of objects to be exported.
- *    LB_GID *export_global_ids --  Global IDs of objects to be exported.
- *    LB_LID *export_local_ids  --  Local IDs of objects to be exported.
- *    int *export_procs         --  Processor IDs of processors to receive
- *                                  the objects.
+ *    void *data                  --  pointer to user defined data structure
+ *    int num_gid_entries         --  number of array entries of type LB_ID_TYPE
+ *                                    in a global ID
+ *    int num_lid_entries         --  number of array entries of type LB_ID_TYPE
+ *                                    in a local ID
+ *    int num_import              --  Number of objects to be imported.
+ *    LB_ID_PTR import_global_ids --  Global IDs of objects to be imported.
+ *    LB_ID_PTR import_local_ids  --  Local IDs of objects to be imported.
+ *    int *import_procs           --  Processor IDs of importing processors.
+ *    int num_export              --  Number of objects to be exported.
+ *    LB_ID_PTR export_global_ids --  Global IDs of objects to be exported.
+ *    LB_ID_PTR export_local_ids  --  Local IDs of objects to be exported.
+ *    int *export_procs           --  Processor IDs of processors to receive
+ *                                    the objects.
  *  Output:
- *    int *ierr                 --  error code
+ *    int *ierr                   --  error code
  */
 
-typedef void LB_POST_MIGRATE_FN(void *data, int num_import,
-                                LB_GID *import_global_ids,
-                                LB_LID *import_local_ids, int *import_procs,
-                                int num_export, LB_GID *export_global_ids,
-                                LB_LID *export_local_ids, int *export_procs,
+typedef void LB_POST_MIGRATE_FN(void *data, 
+                                int num_gid_entries, int num_lid_entries,
+                                int num_import,
+                                LB_ID_PTR import_global_ids,
+                                LB_ID_PTR import_local_ids, int *import_procs,
+                                int num_export, LB_ID_PTR export_global_ids,
+                                LB_ID_PTR export_local_ids, int *export_procs,
                                 int *ierr);
 
-typedef void LB_POST_MIGRATE_FORT_FN(void *data, int *num_import,
-                                    LB_GID *import_global_ids,
-                                    LB_LID *import_local_ids, int *import_procs,
-                                    int *num_export, LB_GID *export_global_ids,
-                                    LB_LID *export_local_ids, int *export_procs,
-                                    int *ierr);
+typedef void LB_POST_MIGRATE_FORT_FN(void *data, 
+                                     int *num_gid_entries, int *num_lid_entries,
+                                     int *num_import,
+                                     LB_ID_PTR import_global_ids,
+                                     LB_ID_PTR import_local_ids, 
+                                     int *import_procs,
+                                     int *num_export, 
+                                     LB_ID_PTR export_global_ids,
+                                     LB_ID_PTR export_local_ids, 
+                                     int *export_procs,
+                                     int *ierr);
 
 /*****************************************************************************/
 /*
@@ -551,8 +658,12 @@ typedef void LB_POST_MIGRATE_FORT_FN(void *data, int *num_import,
  *  by the load-balancer.
  *  Input:  
  *    void *data                --  pointer to user defined data structure
- *    LB_GID global_id          --  Global ID of the object to be packed.
- *    LB_LID local_id           --  Local ID of the object to be packed.
+ *    int num_gid_entries       --  number of array entries of type LB_ID_TYPE
+ *                                  in a global ID
+ *    int num_lid_entries       --  number of array entries of type LB_ID_TYPE
+ *                                  in a local ID
+ *    LB_ID_PTR global_id       --  Global ID of the object to be packed.
+ *    LB_ID_PTR local_id        --  Local ID of the object to be packed.
  *    int dest_proc             --  Processor ID of the destination processor.
  *    int size                  --  number of bytes allowed for the object to
  *                                  be packed.
@@ -564,11 +675,15 @@ typedef void LB_POST_MIGRATE_FORT_FN(void *data, int *num_import,
  *    int *ierr                 --  error code
  */
 
-typedef void LB_PACK_OBJ_FN(void *data, LB_GID global_id, LB_LID local_id,
+typedef void LB_PACK_OBJ_FN(void *data, 
+                            int num_gid_entries, int num_lid_entries,
+                            LB_ID_PTR global_id, LB_ID_PTR local_id,
                             int dest_proc, int size, char *buf, int *ierr);
 
-typedef void LB_PACK_OBJ_FORT_FN(void *data, LB_GID *global_id,
-                                 LB_LID *local_id, int *dest_proc, int *size,
+typedef void LB_PACK_OBJ_FORT_FN(void *data, 
+                                 int *num_gid_entries, int *num_lid_entries,
+                                 LB_ID_PTR global_id, LB_ID_PTR local_id,
+                                 int *dest_proc, int *size,
                                  char *buf, int *ierr);
 
 /*****************************************************************************/
@@ -579,7 +694,9 @@ typedef void LB_PACK_OBJ_FORT_FN(void *data, LB_GID *global_id,
  *  size of the data for the object is included.
  *  Input:  
  *    void *data                --  pointer to user defined data structure
- *    LB_GID global_id          --  Global ID of the object to be unpacked.
+ *    int num_gid_entries       --  number of array entries of type LB_ID_TYPE
+ *                                  in a global ID
+ *    LB_ID_PTR global_id       --  Global ID of the object to be unpacked.
  *    int size                  --  number of bytes in the buffer for the
  *                                  object.
  *    char *buf                 --  starting address of buffer into which to
@@ -588,10 +705,12 @@ typedef void LB_PACK_OBJ_FORT_FN(void *data, LB_GID *global_id,
  *    int *ierr                 --  error code
  */
 
-typedef void LB_UNPACK_OBJ_FN(void *data, LB_GID global_id, int size,
-                              char *buf, int *ierr);
+typedef void LB_UNPACK_OBJ_FN(void *data, 
+                              int num_gid_entries, LB_ID_PTR global_id, 
+                              int size, char *buf, int *ierr);
 
-typedef void LB_UNPACK_OBJ_FORT_FN(void *data, LB_GID *global_id, int *size,
+typedef void LB_UNPACK_OBJ_FORT_FN(void *data, int *num_gid_entries, 
+                                   LB_ID_PTR global_id, int *size,
                                    char *buf, int *ierr);
 
 /*****************************************************************************/
@@ -607,7 +726,8 @@ typedef void LB_UNPACK_OBJ_FORT_FN(void *data, LB_GID *global_id, int *size,
  *    int  *ierr                -- error code
  */
 
-typedef void LB_GET_PROCESSOR_NAME_FN(void *data, char *name, int *length, int *ierr);
+typedef void LB_GET_PROCESSOR_NAME_FN(void *data, char *name, int *length, 
+                                      int *ierr);
 
 
 /*****************************************************************************/
@@ -632,9 +752,13 @@ typedef int LB_NUM_COARSE_OBJ_FORT_FN(void *data, int *ierr);
  *  grid.
  *  Input:
  *    void *data                --  pointer to user defined data structure
+ *    int num_gid_entries       --  number of array entries of type LB_ID_TYPE
+ *                                  in a global ID
+ *    int num_lid_entries       --  number of array entries of type LB_ID_TYPE
+ *                                  in a local ID
  *  Output:
- *    LB_GID *global_ids        --  array of Global IDs of all coarse objects
- *    LB_LID *local_ids         --  array of Local IDs of all coarse objects
+ *    LB_ID_PTR global_ids      --  array of Global IDs of all coarse objects
+ *    LB_ID_PTR local_ids       --  array of Local IDs of all coarse objects
  *    int *assigned             --  array indicating processor assignment.
  *                                  1 if the object is currently
  *                                  assigned to this processor; 0 otherwise.
@@ -661,19 +785,22 @@ typedef int LB_NUM_COARSE_OBJ_FORT_FN(void *data, int *ierr);
  *    int *ierr                 --  error code
  */
 
-typedef void LB_COARSE_OBJ_LIST_FN(void *data,
-                                   LB_GID *global_ids, LB_LID *local_ids,
+typedef void LB_COARSE_OBJ_LIST_FN(void *data, 
+                                   int num_gid_entries, int num_lid_entries,
+                                   LB_ID_PTR global_ids, LB_ID_PTR local_ids,
                                    int *assigned,
                                    int *num_vert, int *vertices,
                                    int *in_order, int *in_vertex,
                                    int *out_vertex, int *ierr);
 
 typedef void LB_COARSE_OBJ_LIST_FORT_FN(void *data,
-                                        LB_GID* global_ids, LB_LID* local_ids,
-                                        int *assigned,
-                                        int *num_vert, int *vertices,
-                                        int *in_order, int *in_vertex,
-                                        int *out_vertex, int *ierr);
+                                    int *num_gid_entries, int *num_lid_entries,
+                                    LB_ID_PTR global_ids, 
+                                    LB_ID_PTR local_ids,
+                                    int *assigned,
+                                    int *num_vert, int *vertices,
+                                    int *in_order, int *in_vertex,
+                                    int *out_vertex, int *ierr);
 
 /*****************************************************************************/
 /*
@@ -681,9 +808,13 @@ typedef void LB_COARSE_OBJ_LIST_FORT_FN(void *data,
  *  This function should be used with LB_NEXT_COARSE_OBJ_FN.
  *  Input:
  *    void *data                --  pointer to user defined data structure
+ *    int num_gid_entries       --  number of array entries of type LB_ID_TYPE
+ *                                  in a global ID
+ *    int num_lid_entries       --  number of array entries of type LB_ID_TYPE
+ *                                  in a local ID
  *  Output:
- *    LB_GID *global_id         --  Global ID of the first coarse object
- *    LB_LID *local_id          --  Local ID of the first coarse object
+ *    LB_ID_PTR global_id       --  Global ID of the first coarse object
+ *    LB_ID_PTR local_id        --  Local ID of the first coarse object
  *    int *assigned             --  indicates processor assignment.
  *                                  1 if the object is currently
  *                                  assigned to this processor; 0 otherwise.
@@ -708,19 +839,21 @@ typedef void LB_COARSE_OBJ_LIST_FORT_FN(void *data,
  *                                  no more objects exist on the processor.
  */
 
-typedef int LB_FIRST_COARSE_OBJ_FN(void *data,
-                                   LB_GID *global_id, LB_LID *local_id,
+typedef int LB_FIRST_COARSE_OBJ_FN(void *data, 
+                                   int num_gid_entries, int num_lid_entries,
+                                   LB_ID_PTR global_id, LB_ID_PTR local_id,
                                    int *assigned,
                                    int *num_vert, int *vertices,
                                    int *in_order, int *in_vertex,
                                    int *out_vertex, int *ierr);
 
 typedef int LB_FIRST_COARSE_OBJ_FORT_FN(void *data,
-                                        LB_GID* global_id, LB_LID* local_id,
-                                        int *assigned,
-                                        int *num_vert, int *vertices,
-                                        int *in_order, int *in_vertex,
-                                        int *out_vertex, int *ierr);
+                                    int *num_gid_entries, int *num_lid_entries,
+                                    LB_ID_PTR global_id, LB_ID_PTR local_id,
+                                    int *assigned,
+                                    int *num_vert, int *vertices,
+                                    int *in_order, int *in_vertex,
+                                    int *out_vertex, int *ierr);
 
 /*****************************************************************************/
 /*
@@ -728,9 +861,13 @@ typedef int LB_FIRST_COARSE_OBJ_FORT_FN(void *data,
  *  This function should be used with LB_FIRST_COARSE_OBJ_FN.
  *  Input:
  *    void *data                --  pointer to user defined data structure
+ *    int num_gid_entries       --  number of array entries of type LB_ID_TYPE
+ *                                  in a global ID
+ *    int num_lid_entries       --  number of array entries of type LB_ID_TYPE
+ *                                  in a local ID
  *  Output:
- *    LB_GID *global_id         --  Global ID of the next coarse object
- *    LB_LID *local_id          --  Local ID of the next coarse object
+ *    LB_ID_PTR global_id       --  Global ID of the next coarse object
+ *    LB_ID_PTR local_id        --  Local ID of the next coarse object
  *    int *assigned             --  indicates processor assignment.
  *                                  1 if the object is currently
  *                                  assigned to this processor; 0 otherwise.
@@ -752,19 +889,21 @@ typedef int LB_FIRST_COARSE_OBJ_FORT_FN(void *data,
  *                                  no more objects exist on the processor.
  */
 
-typedef int LB_NEXT_COARSE_OBJ_FN(void *data,
-                                   LB_GID *global_id, LB_LID *local_id,
+typedef int LB_NEXT_COARSE_OBJ_FN(void *data, 
+                                  int num_gid_entries, int num_lid_entries,
+                                   LB_ID_PTR global_id, LB_ID_PTR local_id,
                                    int *assigned,
                                    int *num_vert, int *vertices,
                                    int *in_vertex,
                                    int *out_vertex, int *ierr);
 
-typedef int LB_NEXT_COARSE_OBJ_FORT_FN(void *data,
-                                       LB_GID* global_id, LB_LID* local_id,
-                                       int *assigned,
-                                       int *num_vert, int *vertices,
-                                       int *in_vertex,
-                                       int *out_vertex, int *ierr);
+typedef int LB_NEXT_COARSE_OBJ_FORT_FN(void *data, 
+                                     int *num_gid_entries, int *num_lid_entries,
+                                     LB_ID_PTR global_id, LB_ID_PTR local_id,
+                                     int *assigned,
+                                     int *num_vert, int *vertices,
+                                     int *in_vertex,
+                                     int *out_vertex, int *ierr);
 
 /*****************************************************************************/
 /*
@@ -772,9 +911,13 @@ typedef int LB_NEXT_COARSE_OBJ_FORT_FN(void *data,
  *  building a refinement tree.
  *  Input:
  *    void *data                --  pointer to user defined data structure
- *    LB_GID global_id          --  Global ID of the object whose number of
+ *    int num_gid_entries       --  number of array entries of type LB_ID_TYPE
+ *                                  in a global ID
+ *    int num_lid_entries       --  number of array entries of type LB_ID_TYPE
+ *                                  in a local ID
+ *    LB_ID_PTR global_id       --  Global ID of the object whose number of
  *                                  children is requested
- *    LB_LID local_id           --  Local ID of the object whose number of
+ *    LB_ID_PTR local_id        --  Local ID of the object whose number of
  *                                  children is requested
  *  Output:
  *    int *ierr                 --  error code
@@ -782,24 +925,32 @@ typedef int LB_NEXT_COARSE_OBJ_FORT_FN(void *data,
  *    int                       --  the number of children
  */
 
-typedef int LB_NUM_CHILD_FN(void *data, LB_GID global_id, LB_LID local_id,
+typedef int LB_NUM_CHILD_FN(void *data, 
+                            int num_gid_entries, int num_lid_entries,
+                            LB_ID_PTR global_id, LB_ID_PTR local_id,
                             int *ierr);
 
-typedef int LB_NUM_CHILD_FORT_FN(void *data, LB_GID *global_id, 
-                                 LB_LID *local_id, int *ierr);
+typedef int LB_NUM_CHILD_FORT_FN(void *data, 
+                                 int *num_gid_entries, int *num_lid_entries,
+                                 LB_ID_PTR global_id, LB_ID_PTR local_id,
+                                 int *ierr);
 
 /*****************************************************************************/
 /*
  *  Function to return a list of all children of an object.
  *  Input:
  *    void *data                --  pointer to user defined data structure
- *    LB_GID parent_gid         --  Global ID of the object whose children
+ *    int num_gid_entries       --  number of array entries of type LB_ID_TYPE
+ *                                  in a global ID
+ *    int num_lid_entries       --  number of array entries of type LB_ID_TYPE
+ *                                  in a local ID
+ *    LB_ID_PTR parent_gid      --  Global ID of the object whose children
  *                                  are requested
- *    LB_LID parent_lid         --  Local ID of the object whose children
+ *    LB_ID_PTR parent_lid      --  Local ID of the object whose children
  *                                  are requested
  *  Output:
- *    LB_GID *child_gids        --  array of Global IDs of the children
- *    LB_LID *child_lids        --  array of Local IDs of the children
+ *    LB_ID_PTR child_gids      --  array of Global IDs of the children
+ *    LB_ID_PTR child_lids      --  array of Local IDs of the children
  *    int *assigned             --  array indicating processor assignment.
  *                                  1 if the child object is currently
  *                                  assigned to this processor; 0 otherwise.
@@ -824,15 +975,19 @@ typedef int LB_NUM_CHILD_FORT_FN(void *data, LB_GID *global_id,
  *    int *ierr                 --  error code
  */
 
-typedef void LB_CHILD_LIST_FN(void *data, LB_GID parent_gid, LB_LID parent_lid,
-                              LB_GID *child_gids, LB_LID *child_lids,
+typedef void LB_CHILD_LIST_FN(void *data, 
+                              int num_gid_entries, int num_lid_entries,
+                              LB_ID_PTR parent_gid, LB_ID_PTR parent_lid,
+                              LB_ID_PTR child_gids, LB_ID_PTR child_lids,
                               int *assigned, int *num_vert, int *vertices,
                               LB_REF_TYPE *ref_type, int *in_vertex,
                               int *out_vertex, int *ierr);
 
-typedef void LB_CHILD_LIST_FORT_FN(void *data, LB_GID *parent_gid,
-                                   LB_LID *parent_lid, LB_GID *child_gids,
-                                   LB_LID *child_lids, int *assigned,
+typedef void LB_CHILD_LIST_FORT_FN(void *data, 
+                                   int *num_gid_entries, int *num_lid_entries,
+                                   LB_ID_PTR parent_gid, LB_ID_PTR parent_lid,
+                                   LB_ID_PTR child_gids, LB_ID_PTR child_lids,
+                                   int *assigned,
                                    int *num_vert, int *vertices,
                                    LB_REF_TYPE *ref_type, int *in_vertex,
                                    int *out_vertex, int *ierr);
@@ -842,9 +997,13 @@ typedef void LB_CHILD_LIST_FORT_FN(void *data, LB_GID *parent_gid,
  *  Function to return the weight of an object.
  *  Input:
  *    void *data                --  pointer to user defined data structure
- *    LB_GID global_id          --  Global ID of the object whose weight
+ *    int num_gid_entries       --  number of array entries of type LB_ID_TYPE
+ *                                  in a global ID
+ *    int num_lid_entries       --  number of array entries of type LB_ID_TYPE
+ *                                  in a local ID
+ *    LB_ID_PTR global_id       --  Global ID of the object whose weight
  *                                  is requested
- *    LB_LID local_id           --  Local ID of the object whose weight
+ *    LB_ID_PTR local_id        --  Local ID of the object whose weight
  *                                  is requested
  *    int wdim                  --  dimension of object weight, or 0 if
  *                                  the weight is not sought.
@@ -854,12 +1013,15 @@ typedef void LB_CHILD_LIST_FORT_FN(void *data, LB_GID *parent_gid,
  *    int *ierr                 --  error code
  */
 
-typedef void LB_CHILD_WEIGHT_FN(void *data, LB_GID global_id, LB_LID local_id,
-                              int wgt_dim, float *obj_wgt, int *ierr);
+typedef void LB_CHILD_WEIGHT_FN(void *data, 
+                                int num_gid_entries, int num_lid_entries,
+                                LB_ID_PTR global_id, LB_ID_PTR local_id,
+                                int wgt_dim, float *obj_wgt, int *ierr);
 
-typedef void LB_CHILD_WEIGHT_FORT_FN(void *data, LB_GID *global_id,
-                                   LB_LID *local_id, int *wgt_dim,
-                                   float *obj_wgt, int *ierr);
+typedef void LB_CHILD_WEIGHT_FORT_FN(void *data, 
+                                     int *num_gid_entries, int *num_lid_entries,
+                                     LB_ID_PTR global_id, LB_ID_PTR local_id,
+                                     int *wgt_dim, float *obj_wgt, int *ierr);
 
 /*****************************************************************************/
 /*****************************************************************************/
@@ -1090,52 +1252,57 @@ extern int LB_Set_Param(struct LB_Struct *lb, char *name, char *val);
  *  Function to invoke the load-balancer.
  *
  *  Input:
- *    struct LB_Struct *lb       --  The load balancing structure containing 
- *                                   info about this load-balancing invocation.
+ *    struct LB_Struct *lb         --  The load balancing structure containing 
+ *                                     info for this load-balancing invocation.
  *  Output:
- *    int *changes               --  This value tells whether the new 
- *                                   decomposition computed by Zoltan differs 
- *                                   from the one given as input to Zoltan.
- *                                   It can be either a one or a zero:
- *                                   zero - No changes to the decomposition
- *                                          were made by the load-balancing
- *                                          algorithm; migration is not needed.
- *                                   one  - A new decomposition is suggested
- *                                          by the load-balancer; migration
- *                                          is needed to establish the new
- *                                          decomposition.
- *    int *num_import            --  The number of non-local objects in the 
- *                                   processor's new decomposition (i.e.,
- *                                   number of objects to be imported).
- *    LB_GID **import_global_ids --  Pointer to array of Global IDs for the
- *                                   objects to be imported.
- *    LB_LID **import_local_ids  --  Pointer to array of Local IDs for the 
- *                                   objects to be imported (local to the
- *                                   exporting processor).
- *    int **import_procs         --  Pointer to array of Processor IDs for the 
- *                                   objects to be imported (processor IDs of
- *                                   source processor).
- *    int *num_export            --  The number of local objects that need to be
- *                                   exported from the processor to establish
- *                                   the new decomposition.
- *    LB_GID **export_global_ids --  Pointer to array of Global IDs for the
- *                                   objects to be exported from the current
- *                                   processor.
- *    LB_LID **export_local_ids  --  Pointer to array of Local IDs for the
- *                                   objects to be exported (local to the
- *                                   current processor).
- *    int **export_procs         --  Pointer to array of Processor IDs for the
- *                                   objects to be exported (processor IDs of
- *                                   destination processors).
+ *    int *changes                 --  This value tells whether the new 
+ *                                     decomposition computed by Zoltan differs 
+ *                                     from the one given as input to Zoltan.
+ *                                     It can be either a one or a zero:
+ *                                     zero - No changes to the decomposition
+ *                                            were made by the load-balancing
+ *                                            algorithm; migration isn't needed.
+ *                                     one  - A new decomposition is suggested
+ *                                            by the load-balancer; migration
+ *                                            is needed to establish the new
+ *                                            decomposition.
+ *    int *num_gid_entries         --  number of entries of type LB_ID_TYPE
+ *                                     in a global ID
+ *    int *num_lid_entries         --  number of entries of type LB_ID_TYPE
+ *                                     in a local ID
+ *    int *num_import              --  The number of non-local objects in the 
+ *                                     processor's new decomposition (i.e.,
+ *                                     number of objects to be imported).
+ *    LB_ID_PTR *import_global_ids --  Pointer to array of Global IDs for the
+ *                                     objects to be imported.
+ *    LB_ID_PTR *import_local_ids  --  Pointer to array of Local IDs for the 
+ *                                     objects to be imported (local to the
+ *                                     exporting processor).
+ *    int **import_procs           --  Pointer to array of Processor IDs for the
+ *                                     objects to be imported (processor IDs of
+ *                                     source processor).
+ *    int *num_export              --  The number of local objects that must be
+ *                                     exported from the processor to establish
+ *                                     the new decomposition.
+ *    LB_ID_PTR *export_global_ids --  Pointer to array of Global IDs for the
+ *                                     objects to be exported from the current
+ *                                     processor.
+ *    LB_ID_PTR *export_local_ids  --  Pointer to array of Local IDs for the
+ *                                     objects to be exported (local to the
+ *                                     current processor).
+ *    int **export_procs           --  Pointer to array of Processor IDs for the
+ *                                     objects to be exported (processor IDs of
+ *                                     destination processors).
  *  Returned value:
- *    int                        --  Error code
+ *    int                          --  Error code
  */
 
 extern int LB_Balance(struct LB_Struct *lb, int *changes,
-                      int *num_import, LB_GID **import_global_ids,
-                      LB_LID **import_local_ids, int **import_procs,
-                      int *num_export, LB_GID **export_global_ids,
-                      LB_LID **export_local_ids, int **export_procs);
+                      int *num_gid_entries, int *num_lid_entries,
+                      int *num_import, LB_ID_PTR *import_global_ids,
+                      LB_ID_PTR *import_local_ids, int **import_procs,
+                      int *num_export, LB_ID_PTR *export_global_ids,
+                      LB_ID_PTR *export_local_ids, int **export_procs);
 
 /*****************************************************************************/
 /*
@@ -1145,42 +1312,50 @@ extern int LB_Balance(struct LB_Struct *lb, int *changes,
  *  decomposition.
  *
  *  Input:
- *    struct LB_Struct *lb       --  Load balancing structure for current 
- *                                   balance.
- *    int num_import             --  Number of non-local objects assigned to the
- *                                   processor in the new decomposition.
- *    LB_GID *import_global_ids  --  Array of global IDs for non-local objects
- *                                   assigned to this processor in the new
- *                                   decomposition.
- *    LB_LID *import_local_ids   --  Array of local IDs for non-local objects
- *                                   assigned to the processor in the new
- *                                   decomposition.
- *    int *import_procs          --  Array of processor IDs of processors owning
- *                                   the non-local objects that are assigned to
- *                                   this processor in the new decomposition.
+ *    struct LB_Struct *lb         --  Load balancing structure for current 
+ *                                     balance.
+ *    int num_gid_entries          --  number of entries of type LB_ID_TYPE
+ *                                     in a global ID
+ *    int num_lid_entries          --  number of entries of type LB_ID_TYPE
+ *                                     in a local ID
+ *    int num_import               --  Number of non-local objects assigned to 
+ *                                     the processor in the new decomposition.
+ *    LB_ID_PTR import_global_ids  --  Array of global IDs for non-local objects
+ *                                     assigned to this processor in the new
+ *                                     decomposition.
+ *    LB_ID_PTR import_local_ids   --  Array of local IDs for non-local objects
+ *                                     assigned to the processor in the new
+ *                                     decomposition.
+ *    int *import_procs            --  Array of IDs of processors owning the
+ *                                     non-local objects that are assigned to
+ *                                     this processor in the new decomposition.
  *  Output:
- *    int *num_export            --  The number of local objects that need to be
- *                                   exported from the processor to establish
- *                                   the new decomposition.
- *    LB_GID **export_global_ids --  Pointer to array of Global IDs for the
- *                                   objects to be exported from the current
- *                                   processor.
- *    LB_LID **export_local_ids  --  Pointer to array of Local IDs for the
- *                                   objects to be exported (local to the
- *                                   current processor).
- *    int **export_procs         --  Pointer to array of Processor IDs for the
- *                                   objects to be exported (processor IDs of
- *                                   destination processors).
+ *    int *num_export              --  The number of local objects that must be
+ *                                     exported from the processor to establish
+ *                                     the new decomposition.
+ *    LB_ID_PTR *export_global_ids --  Pointer to array of Global IDs for the
+ *                                     objects to be exported from the current
+ *                                     processor.
+ *    LB_ID_PTR *export_local_ids  --  Pointer to array of Local IDs for the
+ *                                     objects to be exported (local to the
+ *                                     current processor).
+ *    int **export_procs           --  Pointer to array of Processor IDs for the
+ *                                     objects to be exported (processor IDs of
+ *                                     destination processors).
  *  Returned value:
- *    int                        --  Error code
+ *    int                          --  Error code
  */
 
 
 extern int LB_Compute_Destinations(struct LB_Struct *lb,
-                                   int num_import, LB_GID *import_global_ids,
-                                   LB_LID *import_local_ids, int *import_procs, 
-                                   int *num_export, LB_GID **export_global_ids,
-                                   LB_LID **export_local_ids,
+                                   int num_gid_entries, int num_lid_entries,
+                                   int num_import, 
+                                   LB_ID_PTR import_global_ids,
+                                   LB_ID_PTR import_local_ids, 
+                                   int *import_procs, 
+                                   int *num_export, 
+                                   LB_ID_PTR *export_global_ids,
+                                   LB_ID_PTR *export_local_ids,
                                    int **export_procs);
 
 /*****************************************************************************/
@@ -1202,12 +1377,16 @@ extern int LB_Compute_Destinations(struct LB_Struct *lb,
  *  Input:
  *    struct LB_Struct *lb       --  Load balancing structure for current 
  *                                   balance.
+ *    int num_gid_entries        --  number of entries of type LB_ID_TYPE
+ *                                   in a global ID
+ *    int num_lid_entries        --  number of entries of type LB_ID_TYPE
+ *                                   in a local ID
  *    int num_import             --  Number of non-local objects assigned to the
  *                                   processor in the new decomposition.
- *    LB_GID *import_global_ids  --  Array of global IDs for non-local objects
+ *    LB_ID_PTR import_global_ids--  Array of global IDs for non-local objects
  *                                   assigned to this processor in the new
  *                                   decomposition.
- *    LB_LID *import_local_ids   --  Array of local IDs for non-local objects
+ *    LB_ID_PTR import_local_ids --  Array of local IDs for non-local objects
  *                                   assigned to the processor in the new
  *                                   decomposition.
  *    int *import_procs          --  Array of processor IDs of processors owning
@@ -1216,9 +1395,9 @@ extern int LB_Compute_Destinations(struct LB_Struct *lb,
  *    int num_export             --  The number of local objects that need to be
  *                                   exported from the processor to establish
  *                                   the new decomposition.
- *    LB_GID *export_global_ids  --  Array of Global IDs for the objects to be 
+ *    LB_ID_PTR export_global_ids--  Array of Global IDs for the objects to be
  *                                   exported from the current processor.
- *    LB_LID *export_local_ids   --  Array of Local IDs for the objects to be 
+ *    LB_ID_PTR export_local_ids --  Array of Local IDs for the objects to be 
  *                                   exported (local to the current processor).
  *    int *export_procs          --  Array of Processor IDs for the objects to
  *                                   be exported (processor IDs of destination
@@ -1231,11 +1410,12 @@ extern int LB_Compute_Destinations(struct LB_Struct *lb,
  *    int                        --  Error code
  */
 
-extern int LB_Help_Migrate(struct LB_Struct *lb,
-                           int num_import, LB_GID *import_global_ids,
-                           LB_LID *import_local_ids, int *import_procs,
-                           int num_export, LB_GID *export_global_ids,
-                           LB_LID *export_local_ids, int *export_procs);
+extern int LB_Help_Migrate(struct LB_Struct *lb, 
+                           int num_gid_entries, int num_lid_entries,
+                           int num_import, LB_ID_PTR import_global_ids,
+                           LB_ID_PTR import_local_ids, int *import_procs,
+                           int num_export, LB_ID_PTR export_global_ids,
+                           LB_ID_PTR export_local_ids, int *export_procs);
 
 /*****************************************************************************/
 /*
@@ -1243,24 +1423,26 @@ extern int LB_Help_Migrate(struct LB_Struct *lb,
  *  are freed and the pointers are set to NULL.
  *
  *  Input:
- *    LB_GID **import_global_ids --  Pointer to array of global IDs for imported
- *                                   objects.
- *    LB_LID **import_local_ids  --  Pointer to array of local IDs for imported 
- *                                   objects.
- *    int **import_procs         --  Pointer to array of processor IDs of 
- *                                   imported objects.
- *    LB_GID **export_global_ids --  Pointer to array of global IDs for exported
- *                                   objects.
- *    LB_LID **export_local_ids  --  Pointer to array of local IDs for exported
- *                                   objects.
- *    int **export_procs         --  Pointer to array of destination processor
- *                                   IDs of exported objects.
+ *    LB_ID_PTR *import_global_ids --  Pointer to array of global IDs for 
+ *                                     imported objects.
+ *    LB_ID_PTR *import_local_ids  --  Pointer to array of local IDs for 
+ *                                     imported objects.
+ *    int **import_procs           --  Pointer to array of processor IDs of 
+ *                                     imported objects.
+ *    LB_ID_PTR *export_global_ids --  Pointer to array of global IDs for 
+ *                                     exported objects.
+ *    LB_ID_PTR *export_local_ids  --  Pointer to array of local IDs for 
+ *                                     exported objects.
+ *    int **export_procs           --  Pointer to array of destination processor
+ *                                     IDs of exported objects.
  *  Returned value:
- *    int                        --  Error code
+ *    int                          --  Error code
  */
-extern int LB_Free_Data(LB_GID **import_global_ids, LB_LID **import_local_ids,
+extern int LB_Free_Data(LB_ID_PTR *import_global_ids, 
+                        LB_ID_PTR *import_local_ids,
                         int **import_procs,
-                        LB_GID **export_global_ids, LB_LID **export_local_ids,
+                        LB_ID_PTR *export_global_ids, 
+                        LB_ID_PTR *export_local_ids,
                         int **export_procs);
 
 /*****************************************************************************/

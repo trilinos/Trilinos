@@ -58,8 +58,11 @@ int LB_Eval (LB *lb, int print_stats,
   int stats[4*NUM_STATS];
   int *proc, *nbors_proc;
   float *tmp_vwgt, *vwgts, *ewgts, *tmp_cutwgt, nproc;
-  LB_LID * local_ids;
-  LB_GID *global_ids, *nbors_global;
+  LB_ID_PTR local_ids;
+  LB_ID_PTR global_ids, nbors_global;
+  int num_gid_entries = lb->Num_GID;
+  int num_lid_entries = lb->Num_LID;
+  int gid_off, lid_off;
   char msg[256];
   
   LB_TRACE_ENTER(lb, yo);
@@ -84,8 +87,8 @@ int LB_Eval (LB *lb, int print_stats,
   if (num_obj>0){
 
     /* Allocate space for object data */
-    global_ids = (LB_GID *) LB_MALLOC(num_obj * sizeof(LB_GID));
-    local_ids  = (LB_LID *) LB_MALLOC(num_obj * sizeof(LB_LID));
+    global_ids = LB_MALLOC_GID_ARRAY(lb, num_obj);
+    local_ids  = LB_MALLOC_LID_ARRAY(lb, num_obj);
       
     if ((!global_ids) || (!local_ids)){
       LB_FREE(&global_ids);
@@ -144,8 +147,10 @@ int LB_Eval (LB *lb, int print_stats,
        amount of space */
     max_edges = 0;
     for (i=0; i< num_obj; i++){
-      nedges = lb->Get_Num_Edges(lb->Get_Edge_List_Data, global_ids[i], 
-               local_ids[i], &ierr);
+      nedges = lb->Get_Num_Edges(lb->Get_Edge_List_Data, 
+                                 num_gid_entries, num_lid_entries,
+                                 &(global_ids[i*num_gid_entries]), 
+                                 &(local_ids[i*num_lid_entries]), &ierr);
       if (ierr){
         sprintf(msg, "Get_Num_Edges returned error code %d.", ierr);
         LB_PRINT_ERROR(lb->Proc, yo, msg);
@@ -160,7 +165,7 @@ int LB_Eval (LB *lb, int print_stats,
     }
 
     /* Allocate edge list space */
-    nbors_global = (LB_GID *)LB_MALLOC(max_edges * sizeof(LB_GID));
+    nbors_global = LB_MALLOC_GID_ARRAY(lb, max_edges);
     nbors_proc = (int *)LB_MALLOC(max_edges * sizeof(int));
     /* Allocate a proc list for computing nadjacent */
     proc = (int *)LB_MALLOC((lb->Num_Proc)* sizeof(int));
@@ -192,8 +197,12 @@ int LB_Eval (LB *lb, int print_stats,
 
     for (k=0; k<num_obj; k++){
       flag = 0;
-      nedges = lb->Get_Num_Edges(lb->Get_Edge_List_Data, global_ids[k], 
-               local_ids[k], &ierr);
+      gid_off = k * num_gid_entries;
+      lid_off = k * num_lid_entries;
+      nedges = lb->Get_Num_Edges(lb->Get_Edge_List_Data, 
+                                 num_gid_entries, num_lid_entries,
+                                 &(global_ids[gid_off]),
+                                 &(local_ids[lid_off]), &ierr);
       if (ierr == LB_FATAL){
         LB_FREE(&global_ids);
         LB_FREE(&local_ids);
@@ -207,8 +216,11 @@ int LB_Eval (LB *lb, int print_stats,
         LB_TRACE_EXIT(lb, yo);
         return ierr;
       }
-      lb->Get_Edge_List(lb->Get_Edge_List_Data, global_ids[k], local_ids[k],
-          nbors_global, nbors_proc, lb->Comm_Weight_Dim, ewgts, &ierr);
+      lb->Get_Edge_List(lb->Get_Edge_List_Data, 
+                        num_gid_entries, num_lid_entries,
+                        &(global_ids[gid_off]), &(local_ids[lid_off]), 
+                        nbors_global, nbors_proc, 
+                        lb->Comm_Weight_Dim, ewgts, &ierr);
       if (ierr == LB_FATAL){
         LB_FREE(&global_ids);
         LB_FREE(&local_ids);

@@ -28,30 +28,34 @@
 /*****************************************************************************/
 
 int LB_Compute_Destinations(
-  LB *lb,                    /* Load balancing structure for current balance.*/
-  int num_import,            /* Number of non-local objects assigned to the 
-                                processor in the new decomposition.          */
-  LB_GID *import_global_ids, /* Array of global IDs for non-local objects 
-                                assigned to this processor in the new
-                                decomposition.                               */
-  LB_LID *import_local_ids,  /* Array of local IDs for non-local objects
-                                assigned to the processor in the new
-                                decomposition.                               */
-  int *import_procs,         /* Array of processor IDs of processors owning
-                                the non-local objects that are assigned to
-                                this processor in the new decomposition.     */
-  int *num_export,           /* Returned value:  Number of objs to be exported
-                                to other processors to establish the new
-                                decomposition.                               */
-  LB_GID **export_global_ids,/* Returned value:  Array of global IDs of
-                                objects to be exported to other processors
-                                to establish the new decomposition.          */
-  LB_LID **export_local_ids, /* Returned value:  Array of local IDs of
-                                objects to be exported to other processors
-                                to establish the new decomposition.          */
-  int **export_procs         /* Returned value:  Array of processor IDs
-                                to which objects will be exported 
-                                to establish the new decomposition.          */
+  LB *lb,                      /* Load balancing structure.                  */
+  int num_gid_entries,         /* Number of array entries of type LB_ID_TYPE
+                                  in a global ID.                            */
+  int num_lid_entries,         /* Number of array entries of type LB_ID_TYPE
+                                  in a local ID.                             */
+  int num_import,              /* Number of non-local objects assigned to the 
+                                  processor in the new decomposition.        */
+  LB_ID_PTR import_global_ids, /* Array of global IDs for non-local objects 
+                                  assigned to this processor in the new
+                                  decomposition.                             */
+  LB_ID_PTR import_local_ids,  /* Array of local IDs for non-local objects
+                                  assigned to the processor in the new
+                                  decomposition.                             */
+  int *import_procs,           /* Array of processor IDs of processors owning
+                                  the non-local objects that are assigned to
+                                  this processor in the new decomposition.   */
+  int *num_export,             /* Returned value:  Number of objs to be exported
+                                  to other processors to establish the new
+                                  decomposition.                             */
+  LB_ID_PTR *export_global_ids,/* Returned value:  Array of global IDs of
+                                  objects to be exported to other processors
+                                  to establish the new decomposition.        */
+  LB_ID_PTR *export_local_ids, /* Returned value:  Array of local IDs of
+                                  objects to be exported to other processors
+                                  to establish the new decomposition.        */
+  int **export_procs           /* Returned value:  Array of processor IDs
+                                  to which objects will be exported 
+                                  to establish the new decomposition.        */
 )
 {
 /*
@@ -66,14 +70,12 @@ char msg[256];
 int *proc_list = NULL;      /* List of processors from which objs are to be 
                                imported.                                    */
 COMM_OBJ *comm_plan;        /* Object returned communication routines  */
-LB_TAG *import_objs = NULL; /* Array of import objects used to request objs
-                               from other processors.                       */
-LB_TAG *export_objs = NULL; /* Array of export objects describing which objs
-                               must be sent to other processors.            */
+int *import_proc_list = NULL;
+                            /* Array containing owning processor IDs of import
+                               objects; used to request objs from other procs.*/
 int msgtag, msgtag2;        /* Message tags for communication routines */
 int i;
 int ierr = LB_OK;
-
 
   LB_TRACE_ENTER(lb, yo);
   /*
@@ -97,8 +99,8 @@ int ierr = LB_OK;
       LB_TRACE_EXIT(lb, yo);
       return (LB_MEMERR);
     }
-    import_objs = (LB_TAG *) LB_MALLOC(num_import*sizeof(LB_TAG));
-    if (!import_objs) {
+    import_proc_list = (int *) LB_MALLOC(num_import * sizeof(int));
+    if (!import_proc_list) {
       LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
       LB_FREE(&proc_list);
       LB_TRACE_EXIT(lb, yo);
@@ -107,10 +109,7 @@ int ierr = LB_OK;
 
     for (i = 0; i < num_import; i++) {
       proc_list[i] = import_procs[i];
-
-      LB_SET_GID(import_objs[i].Global_ID, import_global_ids[i]);
-      LB_SET_LID(import_objs[i].Local_ID, import_local_ids[i]);
-      import_objs[i].Proc = lb->Proc;
+      import_proc_list[i] = lb->Proc;
     }
   }
 
@@ -127,7 +126,6 @@ int ierr = LB_OK;
             (ierr == COMM_MEMERR ? "COMM_MEMERR" : "COMM_FATAL"));
     LB_PRINT_ERROR(lb->Proc, yo, msg);
     LB_FREE(&proc_list);
-    LB_FREE(&import_objs);
     LB_TRACE_EXIT(lb, yo);
     return (ierr == COMM_MEMERR ? LB_MEMERR : LB_FATAL);
   }
@@ -141,20 +139,10 @@ int ierr = LB_OK;
    */
 
   if (*num_export > 0) {
-    export_objs = (LB_TAG *) LB_MALLOC((*num_export)*sizeof(LB_TAG));
-    if (!export_objs) {
-      LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
-      LB_FREE(&proc_list);
-      LB_FREE(&import_objs);
-      LB_TRACE_EXIT(lb, yo);
-      return (LB_MEMERR);
-    }
     if (!LB_Special_Malloc(lb,(void **)export_global_ids,*num_export,
                            LB_SPECIAL_MALLOC_GID)) {
       LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
       LB_FREE(&proc_list);
-      LB_FREE(&import_objs);
-      LB_FREE(&export_objs);
       LB_TRACE_EXIT(lb, yo);
       return (LB_MEMERR);
     }
@@ -162,8 +150,6 @@ int ierr = LB_OK;
                            LB_SPECIAL_MALLOC_LID)) {
       LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
       LB_FREE(&proc_list);
-      LB_FREE(&import_objs);
-      LB_FREE(&export_objs);
       LB_Special_Free(lb,(void **)export_global_ids,LB_SPECIAL_MALLOC_GID);
       LB_TRACE_EXIT(lb, yo);
       return (LB_MEMERR);
@@ -172,52 +158,69 @@ int ierr = LB_OK;
                            LB_SPECIAL_MALLOC_INT)) {
       LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
       LB_FREE(&proc_list);
-      LB_FREE(&import_objs);
-      LB_FREE(&export_objs);
       LB_Special_Free(lb,(void **)export_global_ids,LB_SPECIAL_MALLOC_GID);
       LB_Special_Free(lb,(void **)export_local_ids,LB_SPECIAL_MALLOC_LID);
       LB_TRACE_EXIT(lb, yo);
       return (LB_MEMERR);
     }
-
   }
   else {
-    export_objs = NULL;
     *export_global_ids = NULL;
     *export_local_ids = NULL;
     *export_procs = NULL;
   }
 
+  /*
+   *  Use the communication plan to send global IDs, local IDs, and processor
+   *  numbers.  Do in separate communications to avoid a memory copy and to
+   *  simplify implementation when a data type is added to the comm. package
+   *  (to support heterogeneous computing).
+   */
+
   msgtag2 = 32766;
-  ierr = LB_Comm_Do(comm_plan, msgtag2, (char *) import_objs, 
-                    (int) sizeof(LB_TAG), (char *) export_objs);
+  ierr = LB_Comm_Do(comm_plan, msgtag2, (char *) import_global_ids, 
+                    (int) (sizeof(LB_ID_TYPE)*num_gid_entries), 
+                    (char *) *export_global_ids);
   if (ierr != COMM_OK && ierr != COMM_WARN) {
     sprintf(msg, "Error %s returned from LB_Comm_Do.", 
             (ierr == COMM_MEMERR ? "COMM_MEMERR" : "COMM_FATAL"));
     LB_PRINT_ERROR(lb->Proc, yo, msg);
     LB_FREE(&proc_list);
-    LB_FREE(&import_objs);
-    LB_FREE(&export_objs);
     LB_Comm_Destroy(&comm_plan);
     LB_TRACE_EXIT(lb, yo);
     return (ierr == COMM_MEMERR ? LB_MEMERR : LB_FATAL);
   }
 
-  LB_TRACE_DETAIL(lb, yo, "Done comm_do");
-
-  /*
-   *  Put the exported LB_TAGs into the output format.
-   */
-
-  for (i = 0; i < *num_export; i++) {
-    LB_SET_GID((*export_global_ids)[i], export_objs[i].Global_ID);
-    LB_SET_LID((*export_local_ids)[i], export_objs[i].Local_ID);
-    (*export_procs)[i]      = export_objs[i].Proc;
+  msgtag2--;
+  ierr = LB_Comm_Do(comm_plan, msgtag2, (char *) import_local_ids, 
+                    (int) (sizeof(LB_ID_TYPE)*num_lid_entries), 
+                    (char *) *export_local_ids);
+  if (ierr != COMM_OK && ierr != COMM_WARN) {
+    sprintf(msg, "Error %s returned from LB_Comm_Do.", 
+            (ierr == COMM_MEMERR ? "COMM_MEMERR" : "COMM_FATAL"));
+    LB_PRINT_ERROR(lb->Proc, yo, msg);
+    LB_FREE(&proc_list);
+    LB_Comm_Destroy(&comm_plan);
+    LB_TRACE_EXIT(lb, yo);
+    return (ierr == COMM_MEMERR ? LB_MEMERR : LB_FATAL);
   }
 
+  msgtag2--;
+  ierr = LB_Comm_Do(comm_plan, msgtag2, (char *) import_proc_list, 
+                    (int) sizeof(int), (char *) *export_procs);
+  if (ierr != COMM_OK && ierr != COMM_WARN) {
+    sprintf(msg, "Error %s returned from LB_Comm_Do.", 
+            (ierr == COMM_MEMERR ? "COMM_MEMERR" : "COMM_FATAL"));
+    LB_PRINT_ERROR(lb->Proc, yo, msg);
+    LB_FREE(&proc_list);
+    LB_Comm_Destroy(&comm_plan);
+    LB_TRACE_EXIT(lb, yo);
+    return (ierr == COMM_MEMERR ? LB_MEMERR : LB_FATAL);
+  }
+  LB_TRACE_DETAIL(lb, yo, "Done comm_do");
+
   LB_FREE(&proc_list);
-  LB_FREE(&import_objs);
-  LB_FREE(&export_objs);
+  LB_FREE(&import_proc_list);
   
   LB_Comm_Destroy(&comm_plan);
 
@@ -232,34 +235,38 @@ int ierr = LB_OK;
 /****************************************************************************/
 
 int LB_Help_Migrate(
-  LB *lb,                    /* Load balancing structure for current balance.*/
-  int num_import,            /* Number of non-local objects assigned to the 
-                                processor in the new decomposition.          */
-  LB_GID *import_global_ids, /* Array of global IDs for non-local objects 
-                                assigned to this processor in the new
-                                decomposition; this field can be NULL if 
-                                the application does not provide import IDs. */
-  LB_LID *import_local_ids,  /* Array of local IDs for non-local objects
-                                assigned to the processor in the new
-                                decomposition; this field can be NULL if the 
-                                application does not provide import IDs.     */
-  int *import_procs,         /* Array of processor IDs of processors owning
-                                the non-local objects that are assigned to
-                                this processor in the new decomposition; this
-                                field can be NULL if the application does
-                                not provide import IDs.                      */
-  int num_export,            /* Number of objs to be exported
-                                to other processors to establish the new
-                                decomposition.                               */
-  LB_GID *export_global_ids, /* Array of global IDs of
-                                objects to be exported to other processors
-                                to establish the new decomposition.          */
-  LB_LID *export_local_ids,  /* Array of local IDs of
-                                objects to be exported to other processors
-                                to establish the new decomposition.          */
-  int *export_procs          /* Array of processor IDs
-                                to which objects will be exported 
-                                to establish the new decomposition.          */
+  LB *lb,                      /* Load balancing structure.                  */
+  int num_gid_entries,         /* Number of array entries of type LB_ID_TYPE
+                                  in a global ID.                            */
+  int num_lid_entries,         /* Number of array entries of type LB_ID_TYPE
+                                  in a local ID.                             */
+  int num_import,              /* Number of non-local objects assigned to the 
+                                  processor in the new decomposition.        */
+  LB_ID_PTR import_global_ids, /* Array of global IDs for non-local objects 
+                                  assigned to this processor in the new
+                                  decomposition; this field can be NULL if 
+                                  the application doesn't provide import IDs.*/
+  LB_ID_PTR import_local_ids,  /* Array of local IDs for non-local objects
+                                  assigned to the processor in the new
+                                  decomposition; this field can be NULL if the 
+                                  application does not provide import IDs.   */
+  int *import_procs,           /* Array of processor IDs of processors owning
+                                  the non-local objects that are assigned to
+                                  this processor in the new decomposition; this
+                                  field can be NULL if the application does
+                                  not provide import IDs.                    */
+  int num_export,              /* Number of objs to be exported
+                                  to other processors to establish the new
+                                  decomposition.                             */
+  LB_ID_PTR export_global_ids, /* Array of global IDs of
+                                  objects to be exported to other processors
+                                  to establish the new decomposition.        */
+  LB_ID_PTR export_local_ids,  /* Array of local IDs of
+                                  objects to be exported to other processors
+                                  to establish the new decomposition.        */
+  int *export_procs            /* Array of processor IDs
+                                  to which objects will be exported 
+                                  to establish the new decomposition.        */
 )
 {
 /*
@@ -285,10 +292,10 @@ char *tmp;               /* temporary pointer into buffers.                 */
 int i;                   /* loop counter.                                   */
 int tmp_import;          /* number of objects to be imported.               */
 int *proc_list = NULL;   /* list of processors to which this proc exports.  */
-LB_GID global_id;        /* tmp global ID for unpacking objects.            */
-LB_GID *tmp_id;          /* pointer to storage for an LB_GID in comm buf    */
+LB_ID_PTR tmp_id = NULL; /* pointer to storage for a global ID in comm buf  */
 COMM_OBJ *comm_plan;     /* Object returned by communication routines       */
 int msgtag, msgtag2;     /* Tags for communication routines                 */
+int gid_off, lid_off;    /* Offsets into arrays of global and local IDs.    */
 int ierr = 0;
 
   LB_TRACE_ENTER(lb, yo);
@@ -327,6 +334,7 @@ int ierr = 0;
 
   if (lb->Migrate.Pre_Migrate != NULL) {
     lb->Migrate.Pre_Migrate(lb->Migrate.Pre_Migrate_Data,
+                            num_gid_entries, num_lid_entries,
                             num_import, import_global_ids,
                             import_local_ids, import_procs,
                             num_export, export_global_ids,
@@ -342,13 +350,14 @@ int ierr = 0;
   LB_TRACE_DETAIL(lb, yo, "Done pre-migration processing");
 
   /*
-   * For each object, allow space for its LB_GID and its data.
-   * Zoltan will pack the LB_GIDs; the application must pack the data
-   * through the pack routine.  Zoltan needs the LB_GIDs for unpacking,
+   * For each object, allow space for its global ID and its data.
+   * Zoltan will pack the global IDs; the application must pack the data
+   * through the pack routine.  Zoltan needs the global IDs for unpacking,
    * as the order of the data received during communication is not 
    * necessarily the same order as import_global_ids[].
    */
-  id_size = sizeof(LB_GID) + LB_pad_for_alignment(sizeof(LB_GID));
+  id_size = num_gid_entries * sizeof(LB_ID_TYPE) 
+          + LB_pad_for_alignment(num_gid_entries * sizeof(LB_ID_TYPE));
   size = lb->Migrate.Get_Obj_Size(lb->Migrate.Get_Obj_Size_Data, &ierr)
        + id_size;
   if (ierr) {
@@ -383,14 +392,18 @@ int ierr = 0;
     tmp = export_buf;
     for (i = 0; i < num_export; i++) {
       proc_list[i] = export_procs[i];
+      gid_off = i * num_gid_entries;  /* offset in global ids array */
+      lid_off = i * num_lid_entries;  /* offset in local ids array */
 
       /* Pack the object's global ID */
-      tmp_id = (LB_GID *) tmp;
-      LB_SET_GID(*tmp_id, export_global_ids[i]);
+      tmp_id = (LB_ID_PTR) tmp;
+      LB_SET_GID(lb, tmp_id, &(export_global_ids[gid_off]));
     
       /* Pack the object's data */
-      lb->Migrate.Pack_Obj(lb->Migrate.Pack_Obj_Data, export_global_ids[i],
-                           export_local_ids[i], export_procs[i], size,
+      lb->Migrate.Pack_Obj(lb->Migrate.Pack_Obj_Data, 
+                           num_gid_entries, num_lid_entries,
+                           &(export_global_ids[gid_off]),
+                           &(export_local_ids[lid_off]), export_procs[i], size,
                            tmp+id_size, &ierr);
       if (ierr) {
         LB_PRINT_ERROR(lb->Proc, yo, "Error returned from user defined "
@@ -473,6 +486,7 @@ int ierr = 0;
    */
   if (lb->Migrate.Mid_Migrate != NULL) {
     lb->Migrate.Mid_Migrate(lb->Migrate.Mid_Migrate_Data,
+                            num_gid_entries, num_lid_entries,
                             num_import, import_global_ids,
                             import_local_ids, import_procs,
                             num_export, export_global_ids,
@@ -495,11 +509,11 @@ int ierr = 0;
   for (i = 0; i < num_import; i++) {
 
     /* Unpack the object's global ID */
-    tmp_id = (LB_GID *) tmp;
-    LB_SET_GID(global_id, *tmp_id);
+    tmp_id = (LB_ID_PTR) tmp;
 
     /* Unpack the object's data */
-    lb->Migrate.Unpack_Obj(lb->Migrate.Unpack_Obj_Data, global_id, size,
+    lb->Migrate.Unpack_Obj(lb->Migrate.Unpack_Obj_Data, num_gid_entries,
+                           tmp_id, size,
                            tmp+id_size, &ierr);
     if (ierr) {
       LB_PRINT_ERROR(lb->Proc, yo, "Error returned from user defined "
@@ -517,10 +531,11 @@ int ierr = 0;
 
   if (lb->Migrate.Post_Migrate != NULL) {
     lb->Migrate.Post_Migrate(lb->Migrate.Post_Migrate_Data,
-                            num_import, import_global_ids,
-                            import_local_ids, import_procs,
-                            num_export, export_global_ids,
-                            export_local_ids, export_procs, &ierr);
+                             num_gid_entries, num_lid_entries,
+                             num_import, import_global_ids,
+                             import_local_ids, import_procs,
+                             num_export, export_global_ids,
+                             export_local_ids, export_procs, &ierr);
     if (ierr) {
       LB_PRINT_ERROR(lb->Proc, yo, "Error returned from user defined "
                       "Migrate.Post_Migrate function.");
