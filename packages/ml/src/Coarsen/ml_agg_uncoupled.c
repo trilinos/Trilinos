@@ -216,31 +216,31 @@ int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag,
    mat_indx[0] = nz_cnt; 
 
    for ( i = 0; i < Nrows; i++ ) 
-     {
-       getrowfunc(Amatrix->data,1,&i,maxnnz_per_row,col_ind,col_val, &m);
-       if ( m > maxnnz_per_row ) printf("Aggregation WARNING (1)\n");
+   {
+     getrowfunc(Amatrix->data,1,&i,maxnnz_per_row,col_ind,col_val, &m);
+     if ( m > maxnnz_per_row ) printf("Aggregation WARNING (1)\n");
 
-       for (j = 0; j < m; j++) 
-	 {
-	   jnode = col_ind[j];
+     for (j = 0; j < m; j++) 
+     {
+       jnode = col_ind[j];
 	   if ( jnode != i && jnode < Nrows && epsilon > 0.0 ) 
-	     {
-	       dcompare1 = col_val[j] * col_val[j];
-	       if ( dcompare1 > 0.0 )
-		 {
-		   dcompare2 = diagonal[i] * diagonal[jnode];
-		   dcompare1 = ML_dabs( dcompare1 );
-		   dcompare2 = ML_dabs( dcompare2 );
-		   if ( dcompare1 >= epsilon * dcompare2 ) 
-		     mat_indx[nz_cnt++] = col_ind[j];
+       {
+          dcompare1 = col_val[j] * col_val[j];
+          if ( dcompare1 > 0.0 )
+          {
+             dcompare2 = diagonal[i] * diagonal[jnode];
+             dcompare1 = ML_dabs( dcompare1 );
+             dcompare2 = ML_dabs( dcompare2 );
+             if ( dcompare1 >= epsilon * dcompare2 ) 
+                mat_indx[nz_cnt++] = col_ind[j];
 		 }
-	     } 
+       } 
 	   else if ( jnode != i && jnode < Nrows && col_val[j] != 0.0)
-	     mat_indx[nz_cnt++] = col_ind[j];
+          mat_indx[nz_cnt++] = col_ind[j];
 	 }
-       mat_indx[i+1] = nz_cnt;
-       if ( m <= 1 ) mat_indx[i] = -mat_indx[i];
-     }
+     mat_indx[i+1] = nz_cnt;
+     if ( m <= 1 ) mat_indx[i] = -mat_indx[i]; //JJH checking for Dir. b.c.
+   }
    ML_free(col_ind);
    ML_free(col_val);
    if ( diagonal != NULL ) ML_free(diagonal);
@@ -272,12 +272,14 @@ int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag,
    for ( i = 0; i < nvblocks; i++) bdry_array[i] = 0;
 
 
-   if ((nvblockflag == 1) && (ml_ag->num_PDE_eqns == 1)) {
+   if ((nvblockflag == 1) && (ml_ag->num_PDE_eqns == 1))
+   {
      for ( i = 0; i < nvblocks; i++) {
        if ( mat_indx[i] < 0 ) bdry_array[i] = 1;
      }
    }
-   else {
+   else
+   {
      nbytes = (nz_cnt + 1) * sizeof( int ); /* probably excessive */
      if (nbytes > 0) ML_memory_alloc((void**) &amal_mat_indx,nbytes,"AVB");
 
@@ -302,17 +304,17 @@ int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag,
 	   }
 	 if ( bdry_blk == 1 ) {row += vblock_info[i]; bdry_array[i] = 1;}
 	 else
-	   { 
-	     for ( j = 0; j < vblock_info[i]; j++) 
-	       {
+     { 
+       for ( j = 0; j < vblock_info[i]; j++) 
+       {
 		 ibeg = mat_indx[row]; 
 		 iend = mat_indx[row+1];
 		 if ( iend < 0 ) iend = - iend;
 		 for ( k = ibeg; k < iend; k++) 
-		   {
-		     if ( mat_indx[k] < vblock_info2[0] ) index = 0;
-		     else
-		       {
+         {
+           if ( mat_indx[k] < vblock_info2[0] ) index = 0;
+           else
+           {
 			 /* if we really have variable blocks we search
 			    though ... this might be better: 
 			    index=ML_fastsorted_search(mat_indx[k],nvblocks,
@@ -325,19 +327,19 @@ int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag,
 
 			 if ( index < 0 ) index = - index;
 			 else             index++;
-		       }
-		     if ( index < 0 || index >= nvblocks )
-		       printf("ERROR : in almalgamation %d => %d(%d).\n",mat_indx[k],
+           }
+		   if ( index < 0 || index >= nvblocks )
+             printf("ERROR : in almalgamation %d => %d(%d).\n",mat_indx[k],
 			      index,nvblocks);
-		     if (col_entered[index] == 'F') 
-		       {
+           if (col_entered[index] == 'F') 
+           {
 			 amal_mat_indx[ amal_count++] = index;
 			 col_entered[index] = 'T';
-		       }
-		   }
-		 row++;
-	       }
-	   }
+           }
+         }
+         row++;
+       }
+     }
 	 amal_mat_indx[i+1] = amal_count;
 	 col_entered[i] = 'F';
 	 for ( j = amal_mat_indx[i]; j < amal_mat_indx[i+1]; j++)
@@ -352,14 +354,14 @@ int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag,
    /* perform coarsening                                            */
    /* ============================================================= */
 
-
-
-
    csr_data = (struct ML_CSR_MSRdata *) ML_allocate(sizeof(
 						  struct ML_CSR_MSRdata));
    csr_data->values  = NULL;
    Cmatrix = ML_Operator_Create(Amatrix->comm);
    if ((nvblockflag == 1) && (ml_ag->num_PDE_eqns == 1)) {
+     /*JJH Prevents aggregation error in Phase2_3 clean up.*/
+     for ( i = 0; i < nz_cnt; i++ ) mat_indx[i] = abs(mat_indx[i]);
+
      csr_data->columns = mat_indx;
      ML_Operator_Set_ApplyFuncData(Cmatrix,Amatrix->invec_leng, 
 				   Amatrix->outvec_leng,
@@ -372,6 +374,7 @@ int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag,
 				       bdry_array, &aggr_count, &aggr_index);
    }
    else {
+     /*JJH same error as above could occur here!*/
      csr_data->columns = amal_mat_indx;
      ML_Operator_Set_ApplyFuncData(Cmatrix,nvblocks, nvblocks, ML_EMPTY,
 				   csr_data, nvblocks, NULL,0);
