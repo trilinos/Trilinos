@@ -33,6 +33,7 @@
 #include "NOX_Solver_Manager.H"
 #include "NOX_Parameter_List.H"
 #include "NOX_Parameter_UserNorm.H"
+#include "NOX_Parameter_MeritFunction.H"
 #include "NOX_StatusTest_Generic.H"
 #include "NOX_StatusTest_Combo.H"
 #include "NOX_StatusTest_NormF.H"
