@@ -27,6 +27,7 @@ struct ML_Operator_blockmat_data {
   void *M_matvec_data, *M_getrow_data;
   double *M_diag;
   ML_Operator *M_mat;
+  int    destroy_M_mat;
 
   int N_Ke, Nghost;
   int *cols;         /* work vectors for block matrix getrow */
@@ -45,6 +46,9 @@ extern int  ML_Operator_Gen_blockmat(ML_Operator *blockmat,
 				     ML_Operator *original1,
 				     ML_Operator *original2);
 extern void  ML_Operator_blockmatdata_Destroy(void *data);
+extern int ML_Operator_blockmat_set_M_mat_destroy(ML_Operator *blockmat,
+						  int yes_or_no);
+
 #ifdef __cplusplus
 }
 #endif

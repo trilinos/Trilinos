@@ -249,6 +249,9 @@ int  ML_Operator_Gen_blockmat(ML_Operator *blockmat, ML_Operator *Ke,
 				       sizeof(struct ML_Operator_blockmat_data));
   ML_Operator_blockmat_data->Ke_diag = NULL;
   ML_Operator_blockmat_data->M_diag  = NULL;
+  ML_Operator_blockmat_data->M_mat   = NULL;
+  ML_Operator_blockmat_data->destroy_M_mat = ML_YES;
+
   ML_Operator_blockmat_data->N_Ke = Ke->invec_leng;
   Nghost = 0;
   if (Ke->getrow->pre_comm != NULL) {
@@ -349,9 +352,19 @@ void  ML_Operator_blockmatdata_Destroy(void *data)
     if (temp->vals != NULL) ML_free(temp->vals);
     if (temp->Ke_diag != NULL) ML_free(temp->Ke_diag);
     if (temp->M_diag != NULL ) ML_free(temp->M_diag);
-    if (temp->M_mat != NULL) ML_Destroy(temp->M_mat);
+
+    if ( (temp->M_mat != NULL) && (temp->destroy_M_mat == ML_YES) ) {
+      ML_Operator_Destroy(&(temp->M_mat));
+    }
     ML_free(temp);
   }
 }
+int ML_Operator_blockmat_set_M_mat_destroy(ML_Operator *blockmat,
+					   int yes_or_no)
+{
+  struct ML_Operator_blockmat_data *temp;
 
-
+  temp  = (struct ML_Operator_blockmat_data *) blockmat->data;
+  temp->destroy_M_mat = yes_or_no;
+  return 1;
+}
