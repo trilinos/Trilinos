@@ -167,7 +167,7 @@ int *ierr)&nbsp;</TT>&nbsp;
 <BR><TT>&nbsp;&nbsp;&nbsp;&nbsp; double *geom_vec, int *ierr)&nbsp;</TT>&nbsp;
 <BR><TT>{&nbsp;</TT>&nbsp;
 <BR><TT>&nbsp;&nbsp;&nbsp; /* <I>use local_id to index into the Nodes array.</I>
-*/&nbsp;</TT>
+*/&nbsp;</TT>&nbsp;
 <BR><TT>&nbsp;&nbsp;&nbsp; geom_vec[0] = Mesh.Nodes[local_id].Coordinates[0];&nbsp;</TT>&nbsp;
 <BR><TT>&nbsp;&nbsp;&nbsp; geom_vec[1] = Mesh.Nodes[local_id].Coordinates[1];&nbsp;</TT>&nbsp;
 <BR><TT>&nbsp;&nbsp;&nbsp; geom_vec[2] = Mesh.Nodes[local_id].Coordinates[2];&nbsp;</TT>&nbsp;
@@ -336,7 +336,8 @@ int *ierr)</TT>&nbsp;
 */</TT>&nbsp;<TT>&nbsp;</TT>&nbsp;
 <BR><TT>&nbsp;&nbsp;&nbsp; /* <I>return index into Nodes array for local_ids.</I>
 */</TT>&nbsp;
-<BR><TT>&nbsp;&nbsp;&nbsp; for (i = 0; i &lt; Number_Owned; i++) {</TT>&nbsp;
+<BR><TT>&nbsp;&nbsp;&nbsp; for (i = 0; i &lt; mesh_ptr->Number_Owned; i++)
+{</TT>&nbsp;
 <BR><TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; global_ids[i] = <FONT COLOR="#FF0000">mesh_ptr->Nodes[i].Global_ID_Num</FONT>;</TT>&nbsp;
 <BR><TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; local_ids[i] = i;</TT>&nbsp;
 <BR><TT>&nbsp;&nbsp;&nbsp; }</TT>&nbsp;
@@ -407,49 +408,49 @@ used.</I> */</TT>&nbsp;
 NULL);&nbsp;&nbsp;</TT>&nbsp;
 <BR><TT>&nbsp;&nbsp;&nbsp; <A HREF="ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</A>(lb,
 <A HREF="ug_query_mig.html#LB_PACK_OBJ_FN">LB_PACK_OBJ_FN_TYPE</A>, user_pack_node,
-NULL);&nbsp;</TT>
+NULL);&nbsp;</TT>&nbsp;
 <BR><TT>&nbsp;&nbsp;&nbsp; <A HREF="ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</A>(lb,
 <A HREF="ug_query_mig.html#LB_UNPACK_OBJ_FN">LB_UNPACK_OBJ_FN_TYPE</A>,
 user_unpack_node, NULL);&nbsp;&nbsp;</TT>&nbsp;
 <BR><TT>...&nbsp;</TT>&nbsp;
 <BR><TT>}&nbsp;</TT>&nbsp;
 
-<P><TT>int user_size_node(void *data, int *ierr)</TT>
-<BR><TT>{</TT>
-<BR><TT>/* <I>Return the size of data associated with one node.</I> */</TT>
-<BR><TT>&nbsp;&nbsp;&nbsp; *ierr = DLB_OK;</TT>
-<BR><TT>&nbsp;&nbsp;&nbsp; return(sizeof(struct Node_Type));</TT>
-<BR><TT>}</TT><TT></TT>
+<P><TT>int user_size_node(void *data, int *ierr)</TT>&nbsp;
+<BR><TT>{</TT>&nbsp;
+<BR><TT>/* <I>Return the size of data associated with one node.</I> */</TT>&nbsp;
+<BR><TT>&nbsp;&nbsp;&nbsp; *ierr = DLB_OK;</TT>&nbsp;
+<BR><TT>&nbsp;&nbsp;&nbsp; return(sizeof(struct Node_Type));</TT>&nbsp;
+<BR><TT>}</TT>&nbsp;
 
-<P><TT>void user_pack_node(void *data, LB_GID global_id, LB_LID local_id,&nbsp;</TT>
+<P><TT>void user_pack_node(void *data, LB_GID global_id, LB_LID local_id,&nbsp;</TT>&nbsp;
 <BR><TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-int dest_proc, int size, char *buf, int *ierr)&nbsp;</TT>
-<BR><TT>{</TT>
-<BR><TT>/* Copy<I> the specified node's data into buffer buf.</I> */</TT>
-<BR><TT>struct Node_Type *node_buf = (struct Node_Type *) buf;</TT><TT></TT>
+int dest_proc, int size, char *buf, int *ierr)&nbsp;</TT>&nbsp;
+<BR><TT>{</TT>&nbsp;
+<BR><TT>/* Copy<I> the specified node's data into buffer buf.</I> */</TT>&nbsp;
+<BR><TT>struct Node_Type *node_buf = (struct Node_Type *) buf;</TT>&nbsp;
 
-<P><TT>&nbsp;&nbsp;&nbsp; *ierr = DLB_OK;</TT>
-<BR><TT>&nbsp;&nbsp;&nbsp; node_buf->Coordinates[0] = Mesh.Nodes[local_id].Coordinates[0];</TT>
-<BR><TT>&nbsp;&nbsp;&nbsp; node_buf->Coordinates[1] = Mesh.Nodes[local_id].Coordinates[1];</TT>
-<BR><TT>&nbsp;&nbsp;&nbsp; node_buf->Coordinates[2] = Mesh.Nodes[local_id].Coordinates[2];</TT>
-<BR><TT>&nbsp;&nbsp;&nbsp; node_buf->Global_ID_Num = Mesh.Nodes[local_id].Global_ID_Num;</TT>
-<BR><TT>}</TT><TT></TT>
+<P><TT>&nbsp;&nbsp;&nbsp; *ierr = DLB_OK;</TT>&nbsp;
+<BR><TT>&nbsp;&nbsp;&nbsp; node_buf->Coordinates[0] = Mesh.Nodes[local_id].Coordinates[0];</TT>&nbsp;
+<BR><TT>&nbsp;&nbsp;&nbsp; node_buf->Coordinates[1] = Mesh.Nodes[local_id].Coordinates[1];</TT>&nbsp;
+<BR><TT>&nbsp;&nbsp;&nbsp; node_buf->Coordinates[2] = Mesh.Nodes[local_id].Coordinates[2];</TT>&nbsp;
+<BR><TT>&nbsp;&nbsp;&nbsp; node_buf->Global_ID_Num = Mesh.Nodes[local_id].Global_ID_Num;</TT>&nbsp;
+<BR><TT>}</TT>&nbsp;
 
-<P><TT>void user_unpack_node(void *data, LB_GID global_id, int size,&nbsp;</TT>
+<P><TT>void user_unpack_node(void *data, LB_GID global_id, int size,&nbsp;</TT>&nbsp;
 <BR><TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-char *buf, int *ierr)</TT>
-<BR><TT>{</TT>
-<BR><TT>/* <I>Copy the node data in buf into the Mesh data structure. </I>*/</TT>
-<BR><TT>int i;</TT>
-<BR><TT>struct Node_Type *node_buf = (struct Node_Type *) buf;</TT><TT></TT>
+char *buf, int *ierr)</TT>&nbsp;
+<BR><TT>{</TT>&nbsp;
+<BR><TT>/* <I>Copy the node data in buf into the Mesh data structure. </I>*/</TT>&nbsp;
+<BR><TT>int i;</TT>&nbsp;
+<BR><TT>struct Node_Type *node_buf = (struct Node_Type *) buf;</TT>&nbsp;
 
-<P><TT>&nbsp;&nbsp;&nbsp; *ierr = DLB_OK;</TT>
-<BR><TT>&nbsp;&nbsp;&nbsp; i = Mesh.Number_Owned;</TT>
-<BR><TT>&nbsp;&nbsp;&nbsp; Mesh.Number_Owned = Mesh.Number_Owned + 1;</TT>
-<BR><TT>&nbsp;&nbsp;&nbsp; Mesh.Nodes[i].Coordinates[0] = node_buf->Coordinates[0];</TT>
-<BR><TT>&nbsp;&nbsp;&nbsp; Mesh.Nodes[i].Coordinates[1] = node_buf->Coordinates[1];</TT>
-<BR><TT>&nbsp;&nbsp;&nbsp; Mesh.Nodes[i].Coordinates[2] = node_buf->Coordinates[2];</TT>
-<BR><TT>&nbsp;&nbsp;&nbsp; Mesh.Nodes[i].Global_ID_Num = node_buf->Global_ID_Num;</TT>
+<P><TT>&nbsp;&nbsp;&nbsp; *ierr = DLB_OK;</TT>&nbsp;
+<BR><TT>&nbsp;&nbsp;&nbsp; i = Mesh.Number_Owned;</TT>&nbsp;
+<BR><TT>&nbsp;&nbsp;&nbsp; Mesh.Number_Owned = Mesh.Number_Owned + 1;</TT>&nbsp;
+<BR><TT>&nbsp;&nbsp;&nbsp; Mesh.Nodes[i].Coordinates[0] = node_buf->Coordinates[0];</TT>&nbsp;
+<BR><TT>&nbsp;&nbsp;&nbsp; Mesh.Nodes[i].Coordinates[1] = node_buf->Coordinates[1];</TT>&nbsp;
+<BR><TT>&nbsp;&nbsp;&nbsp; Mesh.Nodes[i].Coordinates[2] = node_buf->Coordinates[2];</TT>&nbsp;
+<BR><TT>&nbsp;&nbsp;&nbsp; Mesh.Nodes[i].Global_ID_Num = node_buf->Global_ID_Num;</TT>&nbsp;
 <BR><TT>}</TT>&nbsp;</TD>
 </TR>
 
