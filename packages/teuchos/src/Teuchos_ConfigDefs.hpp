@@ -153,6 +153,7 @@
 
 #ifdef HAVE_VECTOR
 #include <vector>
+#include <deque> // RAB: 2003/11/10: If you have <vector> you should have <deque>
 #elif defined(HAVE_VECTOR_H)
 #include <vector.h>
 #endif

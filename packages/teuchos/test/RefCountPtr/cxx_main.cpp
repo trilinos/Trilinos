@@ -362,10 +362,11 @@ int main() {
 	DeallocDelete<C> &a_ptr1_dealloc = get_dealloc<DeallocDelete<C> >(a_ptr1);
 
 	// Test storing extra data and then getting it out again
-	set_extra_data( int(-5), &a_ptr1 );
-	assert( get_extra_data<int>(a_ptr1) == -5 );
-	set_extra_data( rcp(new B1), &a_ptr1 );
-	assert( get_extra_data<RefCountPtr<B1> >(a_ptr1)->B1_f() == B1_f_return );
+	const int ctx_int = set_extra_data( int(-5), &a_ptr1 );
+	assert( get_extra_data<int>(a_ptr1,ctx_int) == -5 );
+	const int ctx_rcp = set_extra_data( rcp(new B1), &a_ptr1 );
+	assert( get_extra_data<RefCountPtr<B1> >(a_ptr1,ctx_rcp)->B1_f() == B1_f_return );
+	assert( get_extra_data<int>(a_ptr1,ctx_int) == -5 );
 
 	// Set pointers to null to force releasing any owned memory
 	a_ptr1 = Teuchos::null;

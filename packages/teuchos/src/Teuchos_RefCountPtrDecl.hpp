@@ -399,47 +399,67 @@ RefCountPtr<T2> rcp_dynamic_cast(const RefCountPtr<T1>& p1);
 ///
 /** Set extra data associated with a <tt>RefCountPtr</tt> object.
  *
- * Preconditions:<ul>
- * <li> <tt>p.get() != NULL</tt> (throws <tt>std::logic_error</tt>)
- * <li> The deallocator object type used to construct <tt>p</tt> is same as <tt>Dealloc_T</tt>
- *      (throws <tt>std::logic_error</tt>)
- * </ul>
+ * @param  extra_data
+ *               [in] Data object that will be set (copied)
+ * @param  p     [out] On output, will be updated with the input <tt>extra_data</tt>
+ * @param  ctx   [in] The context used to define the client that is adding (or
+ *               replacing) this extra data.  If <tt>ctx > 0</tt> then this value
+ *               of <tt>ctx</tt> must have been a value returned from a previous
+ *               call to <tt>set_extra_data(...,p)</tt> and in this case
+ *               the currently set extra data will be replaced with <tt>extra_data</tt>.
+ *               Otherwise, if <tt>ctx < 0</tt> (the default value), then a new
+ *               bit of extra data will be added to <tt>*p</tt>.
  *
- * ToDo: finish documentation!
+ * @return Returns a context number that must be used to access this object
+ * in a latter call to <tt>get_extra_data()</tt> or <tt>set_extra_data()</tt>.
+ * If <tt>ctx >= 0</tt> on input and this function returns without throwing
+ * an exception, then the return value will equal the value input in <tt>ctx</tt>.
+ *
+ * Preconditions:<ul>
+ * <li> <tt>p->get() != NULL</tt> (throws <tt>std::logic_error</tt>)
+ * <li> [<tt>ctx >= 0</tt>] <tt>ctx</tt> must be value returned from a previous
+ *      call to <tt>set_extra_data()</tt> (throws <tt>std::invalid_argument</tt>).
+ * </ul>
  *
  * Note, this function is made a non-member function to be consistent
  * with the non-member <tt>get_extra_data()</tt> functions.
  */
 template<class T1, class T2>
-void set_extra_data( const T1 &extra_data, RefCountPtr<T2> *p );
+int set_extra_data( const T1 &extra_data, RefCountPtr<T2> *p, int ctx = -1 );
 
 ///
 /** Get a non-const reference to extra data associated with a <tt>RefCountPtr</tt> object.
  *
+ * @param  p    [in] Smart pointer object that extra data is being extraced from.
+ * @param  ctx  [in] The context for the extra data object being extraced.
+ *
+ * @return Returns a non-const reference to the extra_data object.
+ *
  * Preconditions:<ul>
  * <li> <tt>p.get() != NULL</tt> (throws <tt>std::logic_error</tt>)
- * <li> The deallocator object type used to construct <tt>p</tt> is same as <tt>Dealloc_T</tt>
- *      (throws <tt>std::logic_error</tt>)
+ * <li> <tt>cxt >= 0</tt> must be value returned from a previous
+ *      call to <tt>set_extra_data()</tt> (throws <tt>std::invalid_argument</tt>).
  * </ul>
- *
- * ToDo: finish documentation!
  *
  * Note, this function must be a non-member function since the client
  * must manually select the first template argument.
  */
 template<class T1, class T2>
-T1& get_extra_data( RefCountPtr<T2>& p );
+T1& get_extra_data( RefCountPtr<T2>& p, int ctx );
 
 ///
 /** Get a const reference to extra data associated with a <tt>RefCountPtr</tt> object.
  *
+ * @param  p    [in] Smart pointer object that extra data is being extraced from.
+ * @param  ctx  [in] The context for the extra data object being extraced.
+ *
+ * @return Returns a const reference to the extra_data object.
+ *
  * Preconditions:<ul>
  * <li> <tt>p.get() != NULL</tt> (throws <tt>std::logic_error</tt>)
- * <li> The deallocator object type used to construct <tt>p</tt> is same as <tt>Dealloc_T</tt>
- *      (throws <tt>std::logic_error</tt>)
+ * <li> <tt>cxt >= 0</tt> must be value returned from a previous
+ *      call to <tt>set_extra_data()</tt> (throws <tt>std::invalid_argument</tt>).
  * </ul>
- *
- * ToDo: finish documentation!
  *
  * Note, this function must be a non-member function since the client
  * must manually select the first template argument.
@@ -451,7 +471,7 @@ T1& get_extra_data( RefCountPtr<T2>& p );
  * types of accidental changes to this extra data.
  */
 template<class T1, class T2>
-const T1& get_extra_data( const RefCountPtr<T2>& p );
+const T1& get_extra_data( const RefCountPtr<T2>& p, int ctx );
 
 ///
 /** Return a non-const reference to the underlying deallocator object.

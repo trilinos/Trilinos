@@ -34,10 +34,12 @@ void assert_not_null(const void *);
 class RefCountPtr_node {
 public:
 	RefCountPtr_node(bool has_ownership)
-		: count_(1), has_ownership_(has_ownership)
+		: count_(1), has_ownership_(has_ownership), extra_data_array_(NULL)
 	{}
 	virtual ~RefCountPtr_node()
-	{}
+	{
+		if(extra_data_array_) delete extra_data_array_;
+	}
 	int count() const {
 		return count_;	
 	}
@@ -53,11 +55,18 @@ public:
 	bool has_ownership() const {
 		return has_ownership_;
 	}
-	any extra_data;
+	int set_extra_data( const any &extra_data, int ctx );
+    any& get_extra_data( int ctx );
+    const any& get_extra_data( int ctx ) const {
+		return const_cast<RefCountPtr_node*>(this)->get_extra_data(ctx);
+	}
 private:
-	int         count_;
-	bool        has_ownership_;
-	// not defined and not to be called
+	typedef std::deque<any> extra_data_array_t;  // A std::deque should have a smaller footprint than std::vector
+	int                 count_;
+	bool                has_ownership_;
+	extra_data_array_t  *extra_data_array_;
+	// This is made a pointer to reduce overhead for the general case
+	// where this is not used
 	RefCountPtr_node();
 	RefCountPtr_node(const RefCountPtr_node&);
 	RefCountPtr_node& operator=(const RefCountPtr_node&);
@@ -344,18 +353,18 @@ Teuchos::rcp_dynamic_cast(const RefCountPtr<T1>& p1)
 
 template<class T1, class T2>
 REFCOUNTPTR_INLINE
-void Teuchos::set_extra_data( const T1 &extra_data, RefCountPtr<T2> *p )
+int Teuchos::set_extra_data( const T1 &extra_data, RefCountPtr<T2> *p, int ctx )
 {
 	*(*p); // Assert not NULL
-	p->access_node()->extra_data = extra_data;
+	return p->access_node()->set_extra_data( extra_data, ctx );
 }
 
 template<class T1, class T2>
 REFCOUNTPTR_INLINE
-T1& Teuchos::get_extra_data( RefCountPtr<T2>& p )
+T1& Teuchos::get_extra_data( RefCountPtr<T2>& p, int ctx )
 {
 	*p; // Assert not NULL
-	return any_cast<T1>(p.access_node()->extra_data);
+	return any_cast<T1>(p.access_node()->get_extra_data(ctx));
 }
 
 template<class T1, class T2>
