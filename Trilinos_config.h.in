@@ -3,6 +3,9 @@
 /* Define if want to build amesos */
 #undef HAVE_AMESOS
 
+/* Define if want to build anasazi */
+#undef HAVE_ANASAZI
+
 /* Define if want to build aztecoo */
 #undef HAVE_AZTECOO
 
