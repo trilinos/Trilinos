@@ -1,0 +1,12 @@
+--disable-default-packages --disable-examples --disable-tests --enable-ml-examples --enable-ml-tests --enable-ml
+--enable-ifpack 
+--enable-ifpack-metis 
+--enable-teuchos 
+--with-ml_metis 
+--with-ml_superlu 
+--with-ml_arpack 
+--enable-amesos 
+--with-ml_parmetis3x 
+--enable-epetra 
+--with-ml_zoltan 
+--enable-anasazi 
