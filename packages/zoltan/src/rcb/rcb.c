@@ -43,6 +43,7 @@
 #include "params_const.h"
 #include "timer_const.h"
 #include "create_proc_list.h"
+#include "comm_const.h"
 
 #define MYHUGE 1.0e30
 #define TINY   1.0e-6
@@ -563,8 +564,8 @@ static int rcb(
                sizeof(struct rcb_dot));
     }
 
-    ierr = LB_Comm_Do(cobj, message_tag, dotbuf, sizeof(struct rcb_dot),
-                       &dotpt[keep]);
+    ierr = LB_Comm_Do(cobj, message_tag, (char *) dotbuf, 
+                      sizeof(struct rcb_dot), (char *) (&dotpt[keep]));
     if (ierr != LB_OK) {
        LB_FREE(&dotmark);
        LB_FREE(&coord);
