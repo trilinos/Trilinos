@@ -84,6 +84,62 @@ report($SUMMARY);
 ################################################################################
 
     ############################################################################
+    # prepareVariables()
+    #
+    # Prepares global varibles.
+    #   - global variables used: yes
+    #   - sends mail: on error
+    #   - args: 
+    #   - returns: 
+
+    sub prepareVariables {    
+                
+        $reportCount = "000";          
+        @optionsOrder = ();
+        
+        $codes[$FILE_SYSTEM_ERROR] = "file system error";           
+        $codes[$SYSTEM_COMMAND_ERROR] = "system command error";        
+        $codes[$CONFIG_ERROR] = "test-harness config error";
+        $codes[$UPDATE_ERROR] = "cvs update error";
+        $codes[$TRILINOS_CONFIGURE_ERROR] = "Trilinos configure error";
+        $codes[$TRILINOS_BUILD_ERROR] = "Trilinos build error";
+        $codes[$TEST_FAILED] = "test failed";
+        $codes[$TEST_PASSED] = "test passed";
+        $codes[$SUMMARY] = "summary";
+            
+        $summary{$TRILINOS_CONFIGURE_ERROR} = ();
+        $summary{$TRILINOS_BUILD_ERROR} = ();
+        $summary{$TEST_FAILED} = ();
+        $summary{$TEST_PASSED} = ();
+        
+        $emails{"amesos"} = "amesos";
+        $emails{"anasazi"} = "anasazi";
+        $emails{"aztecoo"} = "aztecoo";
+        $emails{"belos"} = "belos";
+        $emails{"epetra"} = "epetra";
+        $emails{"epetraext"} = "epetra";
+        $emails{"ifpack"} = "ifpack";
+        $emails{"jpetra"} = "jpetra";
+        $emails{"kokkos"} = "kokkos";
+        $emails{"komplex"} = "komplex";
+        $emails{"meros"} = "meros";
+        $emails{"ml"} = "ml";
+        $emails{"new_package"} = "trilinos";
+        $emails{"nox"} = "nox";
+        $emails{"superludist"} = "trilinos";
+        $emails{"teuchos"} = "teuchos";
+        $emails{"tpetra"} = "tpetra";
+        $emails{"triutils"} = "triutils";
+        $emails{"TSF"} = "tsf";
+        $emails{"TSFCore"} = "tsf";
+        $emails{"TSFCoreUtils"} = "tsf";
+        $emails{"TSFExtended"} = "tsf";
+        $emails{"trilinos"} = "trilinos";
+        $emails{"error"} = "trilinos";
+        
+    } # prepareVariables()
+
+    ############################################################################
     # parseFlags()
     #
     # Parse command line flags.
@@ -137,62 +193,6 @@ report($SUMMARY);
             exit;
         } 
     } # parseFlags()
-
-    ############################################################################
-    # prepareVariables()
-    #
-    # Prepares global varibles.
-    #   - global variables used: yes
-    #   - sends mail: on error
-    #   - args: 
-    #   - returns: 
-
-    sub prepareVariables {    
-        
-        $reportCount = "000";          
-        @optionsOrder = ();
-        
-        $codes[$FILE_SYSTEM_ERROR] = "file system error";           
-        $codes[$SYSTEM_COMMAND_ERROR] = "system command error";        
-        $codes[$CONFIG_ERROR] = "test-harness config error";
-        $codes[$UPDATE_ERROR] = "cvs update error";
-        $codes[$TRILINOS_CONFIGURE_ERROR] = "Trilinos configure error";
-        $codes[$TRILINOS_BUILD_ERROR] = "Trilinos build error";
-        $codes[$TEST_FAILED] = "test failed";
-        $codes[$TEST_PASSED] = "test passed";
-        $codes[$SUMMARY] = "summary";
-            
-        $summary{$TRILINOS_CONFIGURE_ERROR} = ();
-        $summary{$TRILINOS_BUILD_ERROR} = ();
-        $summary{$TEST_FAILED} = ();
-        $summary{$TEST_PASSED} = ();
-        
-        $emails{"amesos"} = "amesos";
-        $emails{"anasazi"} = "anasazi";
-        $emails{"aztecoo"} = "aztecoo";
-        $emails{"belos"} = "belos";
-        $emails{"epetra"} = "epetra";
-        $emails{"epetraext"} = "epetra";
-        $emails{"ifpack"} = "ifpack";
-        $emails{"jpetra"} = "jpetra";
-        $emails{"kokkos"} = "kokkos";
-        $emails{"komplex"} = "komplex";
-        $emails{"meros"} = "meros";
-        $emails{"ml"} = "ml";
-        $emails{"new_package"} = "trilinos";
-        $emails{"nox"} = "nox";
-        $emails{"superludist"} = "trilinos";
-        $emails{"teuchos"} = "teuchos";
-        $emails{"tpetra"} = "tpetra";
-        $emails{"triutils"} = "triutils";
-        $emails{"TSF"} = "tsf";
-        $emails{"TSFCore"} = "tsf";
-        $emails{"TSFCoreUtils"} = "tsf";
-        $emails{"TSFExtended"} = "tsf";
-        $emails{"trilinos"} = "trilinos";
-        $emails{"error"} = "trilinos";
-        
-    } # prepareVariables()
 
     ############################################################################
     # cvsUpdate()
@@ -387,6 +387,7 @@ report($SUMMARY);
                         # quit if error fixing invoke-configure
                         if ($brokenPackage eq "error") {
                             $quitTrying = 1; 
+                            report($TRILINOS_BUILD_ERROR, $brokenPackage, $comm); 
                             last; # equivalent to break                          
                         }       
                         
@@ -432,6 +433,7 @@ report($SUMMARY);
                             # quit if error fixing invoke-configure
                             if ($brokenPackage eq "error") {
                                 $quitTrying = 1; 
+                                report($TRILINOS_BUILD_ERROR, $brokenPackage, $comm); 
                                 last; # equivalent to break                               
                             }
                             
@@ -503,8 +505,6 @@ report($SUMMARY);
                     
                                     # test
                                     my $testFailed = test($buildDir[$j], $potentialScript);
-                                    
-##################################### figure out difference between compile fail and test fail
                                     
                                     # extract test name from path (for printing)
                                     my $testNameOnly = $potentialScript;
@@ -681,7 +681,7 @@ report($SUMMARY);
     	    $file =~ m/.*^Running(.*?)Configure Script/ms;
 	        if (defined $1) { $brokenPackage = $1; }
     	} elsif ($log =~ m/build/) {    
-    	    $file =~ m/.*\/packages\/(.*?)\b/ms;
+    	    $file =~ m/.*\/packages\/(\w*)\W/ms;
 	        if (defined $1) { $brokenPackage = $1; }
         }
 	    
@@ -1776,6 +1776,23 @@ report($SUMMARY);
             system "rm -rf $options{'TRILINOS_DIR'}[0]/testharness/results";
             system "mkdir $options{'TRILINOS_DIR'}[0]/testharness/results";
         }
+        
+        # delete temp files 
+        chdir "$options{'TRILINOS_DIR'}[0]/testharness/temp";  
+        system "rm -f update_log.txt";
+        system "rm -f trilinos_configure_log.txt";
+        system "rm -f trilinos_build_log.txt";
+        system "rm -f test_compile_log.txt";
+        system "rm -f event_log.txt";
+        system "rm -f invoke-configure-mpi";
+        system "rm -f invoke-configure-mpi-original";
+        system "rm -f invoke-configure-mpi-final";
+        system "rm -f invoke-configure-serial";
+        system "rm -f invoke-configure-serial-original";
+        system "rm -f invoke-configure-serial-final";
+        system "rm -f $options{'TRILINOS_DIR'}[0]/logErrors.txt";
+        system "rm -f $options{'TRILINOS_DIR'}[0]/logMpiErrors.txt";
+        system "rm -f $options{'TRILINOS_DIR'}[0]/log$hostOS.txt";
         
         # validations, enforcements, etc. ======================================
         
