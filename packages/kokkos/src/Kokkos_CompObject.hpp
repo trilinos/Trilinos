@@ -52,7 +52,7 @@ class CompObject {
 
   //! CompObject copy constructor.
   
-  CompObject(const CompObject& Source) 
+  CompObject(const CompObject& source) 
     : flopCounter_(source.flopCounter_){};
   
   

@@ -66,7 +66,7 @@ namespace Kokkos {
 
     //@{ \name Attribute access/reset methods.
     //! Returns the number of floating point operations with \e this object and resets the count.
-    double flops() const {double tmp = flops_; flops_ = 0.0; return(tmp);};
+    double getFlops() const {double tmp = flops_; flops_ = 0.0; return(tmp);};
 
     //! Resets the number of floating point operations to zero for \e this multi-vector.
     void resetFlops() {flops_=0.0;};

@@ -27,12 +27,12 @@
 // ************************************************************************
 //@HEADER
 
-#include "Kokkos_OptMatrix.hpp"
+#include "Kokkos_OptSparseMatrix.hpp"
 using namespace Kokkos;
 //==============================================================================
 template<typename OrdinalType, typename ScalarType>
- OptMatrix<OrdinalType, ScalarType>::CrsMatrix() 
-  : Kokkos_CompObject(),
+ OptSparseMatrix<OrdinalType, ScalarType>::OptSparseMatrix() 
+  : CompObject(),
     allocated_(false),
     numRows_(0),
     numCols_(0),
@@ -48,8 +48,8 @@ template<typename OrdinalType, typename ScalarType>
 
 //==============================================================================
 template<typename OrdinalType, typename ScalarType>
-OptMatrix<OrdinalType, ScalarType>::OptMatrix(const OptMatrix<OrdinalType, ScalarType> &matrix) 
-  : Kokkos_CompObject(matrix),
+OptSparseMatrix<OrdinalType, ScalarType>::OptSparseMatrix(const OptSparseMatrix<OrdinalType, ScalarType> &matrix) 
+  : CompObject(matrix),
     allocated_(matrix.allocated_),
     numRows_(matrix.numRows_),
     numCols_(matrix.numCols_),
@@ -66,43 +66,48 @@ OptMatrix<OrdinalType, ScalarType>::OptMatrix(const OptMatrix<OrdinalType, Scala
 
 //==============================================================================
 template<typename OrdinalType, typename ScalarType>
-void OptMatrix<OrdinalType, ScalarType>::initializeDefaults() { // Initialize all attributes that have trivial default values
+OptSparseMatrix<OrdinalType, ScalarType>::~OptSparseMatrix(){}
+
+//==============================================================================
+template<typename OrdinalType, typename ScalarType>
+void OptSparseMatrix<OrdinalType, ScalarType>::initializeDefaults() { // Initialize all attributes that have trivial default values
   return;
 }
 
 //==============================================================================
 template<typename OrdinalType, typename ScalarType>
-void OptMatrix<OrdinalType, ScalarType>::allocate() { // Initialize all attributes that have trivial default values
+int OptSparseMatrix<OrdinalType, ScalarType>::allocate() { // Initialize all attributes that have trivial default values
   return;
 }
 
 //==============================================================================
 template<typename OrdinalType, typename ScalarType>
-void OptMatrix<OrdinalType, ScalarType>::~Kokkos_OptMatrix(){
+int OptSparseMatrix<OrdinalType, ScalarType>::apply(OrdinalType xLength, ScalarType * x, 
+						    OrdinalType yLength, ScalarType * y,
+						    bool transA, bool conjA) const {
 }
 
 //==============================================================================
 template<typename OrdinalType, typename ScalarType>
-int OptMatrix<OrdinalType, ScalarType>::apply(OrdinalType xLength, ScalarType * x, 
-					      OrdinalType yLength, ScalarType * y) const {
+int OptSparseMatrix<OrdinalType, ScalarType>::apply(OrdinalType numVectors, 
+						    OrdinalType xLength, ScalarType ** x, 
+						    OrdinalType yLength, ScalarType ** y,
+						    bool transA, bool conjA) const {
 }
 
 //==============================================================================
 template<typename OrdinalType, typename ScalarType>
-int OptMatrix<OrdinalType, ScalarType>::apply(OrdinalType numVectors, 
-					      OrdinalType xLength, ScalarType ** x, 
-					      OrdinalType yLength, ScalarType ** y) const {
+int OptSparseMatrix<OrdinalType, ScalarType>::applyInverse(OrdinalType xLength, ScalarType * x, 
+							   OrdinalType yLength, ScalarType * y,
+							   bool transA, bool conjA, bool upper, 
+							   bool unitDiagonal) const {
 }
 
 //==============================================================================
 template<typename OrdinalType, typename ScalarType>
-int OptMatrix<OrdinalType, ScalarType>::applyInverse(OrdinalType xLength, ScalarType * x, 
-						     OrdinalType yLength, ScalarType * y) const {
-}
-
-//==============================================================================
-template<typename OrdinalType, typename ScalarType>
-int OptMatrix<OrdinalType, ScalarType>::applyInverse(OrdinalType numVectors, 
-						     OrdinalType xLength, ScalarType ** x, 
-						     OrdinalType yLength, ScalarType ** y) const {
+int OptSparseMatrix<OrdinalType, ScalarType>::applyInverse(OrdinalType numVectors, 
+							   OrdinalType xLength, ScalarType ** x, 
+							   OrdinalType yLength, ScalarType ** y,
+							   bool transA, bool conjA, bool upper, 
+							   bool unitDiagonal) const {
 }

@@ -169,7 +169,6 @@ namespace Kokkos {
     int apply(OrdinalType numVectors, OrdinalType xLength, ScalarType ** x, OrdinalType yLength, ScalarType ** y, 
 	      bool transA = false, bool conjA = false) const;
 
-    */
 
  
     //! Returns the result of a triangular solve of vector x in y.
