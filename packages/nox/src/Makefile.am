@@ -12,10 +12,6 @@ ABSTRACT_H = \
 	$(srcdir)/NOX_Abstract_Vector.H  \
 	$(srcdir)/NOX_Abstract_Group.H
 
-# Common is **not** an installed header because it is created by configure.
-COMMON = \
-	$(srcdir)/common/NOX_Config.h
-
 LINESEARCH_H = \
 	$(srcdir)/NOX_Linesearch_Generic.H \
 	$(srcdir)/NOX_Linesearch_Fullstep.H \
@@ -94,7 +90,6 @@ NOX_H = \
 
 
 libnox_a_SOURCES = \
-	$(COMMON) \
 	$(LINESEARCH) \
 	$(PARAMETER) \
 	$(SOLVER) \
