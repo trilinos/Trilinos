@@ -364,8 +364,7 @@ static int grouping_aug1 (ZZ *zz, HGraph *hg, Packing pack, int *limit)
 static int grouping_aug2 (ZZ *zz, HGraph *hg, Packing pack, int *limit)
 {
 /* Placeholder for grouping_aug2. */
-  grouping_aug1 (zz,hg,pack,limit);
-  return ZOLTAN_OK;
+  return grouping_aug1 (zz,hg,pack,limit);
 }
 
 /****************************************************************************/

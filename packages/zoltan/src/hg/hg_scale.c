@@ -39,7 +39,7 @@ int Zoltan_HG_Scale_HGraph_Weight (ZZ *zz, HGraph *hg, float *new_ewgt, int scal
         }
         factor /= 2.0;
         if (factor <= 0.0)
-          new_ewgt[i] = FLT_MAX;
+          new_ewgt[i] = FLT_MAX/10.0;
         else
           new_ewgt[i] = (hg->ewgt?hg->ewgt[i]:1.0)/factor;
     } }
@@ -55,7 +55,7 @@ int Zoltan_HG_Scale_HGraph_Weight (ZZ *zz, HGraph *hg, float *new_ewgt, int scal
       if (hg->vwgt)
         for (j=hg->hindex[i]; j<hg->hindex[i+1]; j++)
         { if (hg->vwgt[hg->hvertex[j]] <= 0.0)
-          { new_ewgt[i] = FLT_MAX;
+          { new_ewgt[i] = FLT_MAX/10.0;
             break;
           }
           else
@@ -68,7 +68,7 @@ int Zoltan_HG_Scale_HGraph_Weight (ZZ *zz, HGraph *hg, float *new_ewgt, int scal
       { for (j=hg->hindex[i]; j<hg->hindex[i+1]; j++)
           sum += (double)(hg->vwgt[hg->hvertex[j]]);
         if (sum <= 0.0)
-          new_ewgt[i] = FLT_MAX;
+          new_ewgt[i] = FLT_MAX/10.0;
         else
           new_ewgt[i] = (hg->ewgt?hg->ewgt[i]:1.0)/sum;
     } }
@@ -122,7 +122,7 @@ int Zoltan_HG_Scale_Graph_Weight (ZZ *zz, Graph *g, float *new_ewgt, int scale)
   { for (i=0; i<g->nVtx; i++)
       for (j=g->nindex[i]; j<g->nindex[i+1]; j++)
         if (g->vwgt[i]<=0.0 || (vwgt_j=g->vwgt[g->neigh[j]])<=0.0)
-          new_ewgt[j] = FLT_MAX;
+          new_ewgt[j] = FLT_MAX/10.0;
         else
           new_ewgt[j] = (g->ewgt?g->ewgt[j]:1.0)/(g->vwgt[i]*vwgt_j);
   }
@@ -130,7 +130,7 @@ int Zoltan_HG_Scale_Graph_Weight (ZZ *zz, Graph *g, float *new_ewgt, int scale)
   { for (i=0; i<g->nVtx; i++)
       for (j=g->nindex[i]; j<g->nindex[i+1]; j++)
         if (g->vwgt[i]<=0.0 || (vwgt_j=g->vwgt[g->neigh[j]])<=0.0)
-          new_ewgt[j] = FLT_MAX;
+          new_ewgt[j] = FLT_MAX/10.0;
         else
           new_ewgt[j] = (g->ewgt?g->ewgt[j]:1.0)/(g->vwgt[i]+vwgt_j);
   }
@@ -138,7 +138,7 @@ int Zoltan_HG_Scale_Graph_Weight (ZZ *zz, Graph *g, float *new_ewgt, int scale)
   { for (i=0; i<g->nVtx; i++)
       for (j=g->nindex[i]; j<g->nindex[i+1]; j++)
         if (g->vwgt[i]<=0.0 || (vwgt_j=g->vwgt[g->neigh[j]])<=0.0)
-          new_ewgt[j] = FLT_MAX;
+          new_ewgt[j] = FLT_MAX/10.0;
         else
           new_ewgt[j] = (g->ewgt?g->ewgt[j]:1.0)/MAX(g->vwgt[i],vwgt_j);
   }
@@ -146,7 +146,7 @@ int Zoltan_HG_Scale_Graph_Weight (ZZ *zz, Graph *g, float *new_ewgt, int scale)
   { for (i=0; i<g->nVtx; i++)
       for (j=g->nindex[i]; j<g->nindex[i+1]; j++)
         if (g->vwgt[i]<=0.0 || (vwgt_j=g->vwgt[g->neigh[j]])<=0.0)
-          new_ewgt[j] = FLT_MAX;
+          new_ewgt[j] = FLT_MAX/10.0;
         else if (scale == 4)
           new_ewgt[j] = (g->ewgt?g->ewgt[j]:1.0)/MIN(g->vwgt[i],vwgt_j);
   }
@@ -162,28 +162,35 @@ int Zoltan_HG_Scale_Graph_Weight (ZZ *zz, Graph *g, float *new_ewgt, int scale)
 */
 
 float sim (HGraph *hg, int a, int b)
-{ int    i, j, edge, pins;
+{ int    i, j, edge, pins, end, scale=1;
   float  weight, sim=0.0;
 
   /* First calculate the edge weight of the graph between a and b */
   for (i=hg->vindex[a]; i<hg->vindex[a+1]; i++)
   { edge = hg->vedge[i];
+    end = hg->hindex[edge+1];
     j = hg->hindex[edge];
-    while (j<hg->hindex[edge+1] && hg->hvertex[j]!=b)
+    while (j<end && hg->hvertex[j]!=b)
       j++;
-    if (j < hg->hindex[edge+1])
-    { pins = hg->hindex[edge+1]-hg->hindex[edge];
+    if (j < end)
+    { pins = end-hg->hindex[edge];
       weight = 2.0/((pins-1)*pins);
       if (hg->ewgt)
         weight *= hg->ewgt[edge];
       sim += weight;
   } }
   /* Now scale the edge weight...currently only scaling option 1 implemented */
-  if (hg->vwgt)
+  if (hg->vwgt && scale>0)
   { if (hg->vwgt[a]<=(float)0.0 || hg->vwgt[b]<=(float)0.0)
       sim = FLT_MAX/10.0;
-    else
+    else if (scale == 1)
       sim = sim/(hg->vwgt[a]*hg->vwgt[b]);
+    else if (scale == 2)
+      sim = sim/(hg->vwgt[a]+hg->vwgt[b]);
+    else if (scale == 3)
+      sim = sim/MAX(hg->vwgt[a],hg->vwgt[b]);
+    else if (scale == 4)
+      sim = sim/MIN(hg->vwgt[a],hg->vwgt[b]);
   }
   return sim;
 }

@@ -603,19 +603,16 @@ static int lhm_match (int a, int b, float ewgt_ab, int *nindex, int *neigh,
 }
 
 static int matching_lhm (ZZ *zz, HGraph *hg, Graph *g, Matching match, int *limit)
-{ int	i, j, *Nindex;
+{ int  i, j, *Nindex;
   char *yo = "matching_lhm" ;
 
-  if (!g->ewgt)
-     return matching_mxm(zz,hg,g,match,limit);
-
-  if (!(Nindex = (int *) ZOLTAN_MALLOC ((g->nVtx+1)*sizeof(int))))
+  if (!(Nindex = (int *) ZOLTAN_MALLOC ((hg->nVtx+1)*sizeof(int))))
   { ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
     return ZOLTAN_MEMERR;
   }
   memcpy(Nindex,g->nindex,(g->nVtx+1)*sizeof(int));
 
-  for (i=0; i<g->nVtx && (*limit)>0; i++)
+  for (i=0; i<hg->nVtx && (*limit)>0; i++)
     for (j=g->nindex[i]; match[i]==i && j<g->nindex[i+1]; j++)
       if (match[g->neigh[j]] == g->neigh[j])
         lhm_match(i,g->neigh[j],g->ewgt[j],g->nindex,g->neigh,g->ewgt,Nindex,limit,match);
@@ -793,7 +790,8 @@ static int matching_aug2 (ZZ *zz, HGraph *hg, Graph *g, Matching match, int *lim
               match[vertex] = i;
               (*limit)--;
             }
-            else if ((gain=sim(hg,i,vertex)-sim(hg,vertex,match[vertex])) > (1.0+EPS)*gain_2)
+            else if ((gain=sim(hg,i,vertex)-sim(hg,vertex,match[vertex]))
+                     > (1.0+EPS)*gain_2)
             { gain_2 = gain;
               best_2 = vertex;
       }   } }

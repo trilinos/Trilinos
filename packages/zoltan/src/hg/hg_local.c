@@ -51,6 +51,7 @@ static int local_no (
 
 /****************************************************************************/
 
+/*
 static int gain_check (HGraph *hg, float *gain, int *part, int **cut)
 { float g;
   int vertex, j, edge;
@@ -71,6 +72,7 @@ static int gain_check (HGraph *hg, float *gain, int *part, int **cut)
   }
   return ZOLTAN_OK;
 }
+*/
 
 /****************************************************************************/
 
