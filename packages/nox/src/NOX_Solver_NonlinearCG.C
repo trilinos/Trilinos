@@ -113,7 +113,6 @@ NonlinearCG::~NonlinearCG()
   delete preconditionedDirptr;
   delete preconditionedOldDirptr;
   delete diffVector;
-  delete testptr;
 }
 
 bool NonlinearCG::reset(Abstract::Group& xgrp, Status::Test& t, const Parameter::List& p) 
