@@ -78,6 +78,7 @@ Amesos_Klu::~Amesos_Klu(void) {
   if ( TransposeMatrix_ ) delete TransposeMatrix_ ; 
   delete PrivateKluData_; 
 }
+//  See  pre and post conditions in Amesos_Klu.h
 
 int Amesos_Klu::ConvertToSerial() { 
   
@@ -108,6 +109,10 @@ int Amesos_Klu::ConvertToSerial() {
   Comm().Broadcast( &IsLocal_, 1, 0 ) ; 
 
   //
+  //  KEN:  Consider giving Epetra_RowMatrix_Transposer a shot
+  //  I am not confident that  Epetra_RowMatrix_Transposer works, 
+  //  but it is worth a try.  
+  //
   //  Convert Original Matrix to Serial (if it is not already) 
   //
   if (SerialMap_) { delete SerialMap_ ; SerialMap_ = 0 ; } 
@@ -122,7 +127,7 @@ int Amesos_Klu::ConvertToSerial() {
 
     if ( SerialCrsMatrixA_ ) delete SerialCrsMatrixA_ ; 
     SerialCrsMatrixA_ = new Epetra_CrsMatrix(Copy, *SerialMap_, 0);
-    SerialCrsMatrixA_->Export( *CastCrsMatrixA, export_to_serial, Add ); 
+    SerialCrsMatrixA_->Export( *RowMatrixA, export_to_serial, Add ); 
     
     SerialCrsMatrixA_->TransformToLocal() ; 
     SerialMatrix_ = SerialCrsMatrixA_ ;
@@ -131,13 +136,42 @@ int Amesos_Klu::ConvertToSerial() {
   return 0;
 } 
 
-int Amesos_Klu::ConvertToKluCRS(){
+//
+//  See also pre and post conditions in Amesos_Klu.h
+//  Preconditions:  
+//    SerialMatrix_ points to the matrix to be factored and solved
+//    NumGlobalElements_ has been set to the dimension of the matrix
+//    numentries_ has been set to the number of non-zeros in the matrix
+//      (i.e. ConvertToSerial() has been callded) 
+//
+//  Postconditions:
+//    Ap, Ai, Aval contain the matrix as Klu needs it (transposed 
+//     iff UseTranspose() is NOT true)
+//
+//  Issues:
+//    Is there a way to avoid deleting and recreating TransposeMatrix_?
+//    The straight forward attempt at a solution, i.e. re-using 
+//    TransposeMatrix_, fails in the call to CrsMatrixTranspose.
+//    However, since we own CrsMatrixTranspose, we can fix it.
+//
+//    Mike has mentioned a desire to have a Matrix Transpose operation
+//    in epetra (or epetraext).
+//
+int Amesos_Klu::ConvertToKluCRS(bool firsttime){
   
   if ( UseTranspose() ) { 
     Matrix_ = SerialMatrix_ ; 
   } else { 
+#if 1
     if ( TransposeMatrix_ ) delete TransposeMatrix_ ; 
     TransposeMatrix_ =  new Epetra_CrsMatrix(Copy, (Epetra_Map &)SerialMatrix_->Map(), 0);
+#else
+    //
+    //  This fails in CrsMatrixTranspose
+    //
+    if ( firsttime && TransposeMatrix_ ) delete TransposeMatrix_ ; 
+    if ( firsttime ) TransposeMatrix_ =  new Epetra_CrsMatrix(Copy, (Epetra_Map &)SerialMatrix_->Map(), 0);
+#endif
     EPETRA_CHK_ERR( CrsMatrixTranspose( SerialMatrix_, TransposeMatrix_ ) ) ; 
     Matrix_ = TransposeMatrix_ ; 
   }
@@ -154,12 +188,27 @@ int Amesos_Klu::ConvertToKluCRS(){
     Aval.resize( EPETRA_MAX( NumGlobalElements_, numentries_) ) ; 
 
     int NumEntriesThisRow;
-    double *RowValues;
-    int *ColIndices;
     int Ai_index = 0 ; 
     int MyRow;
+#ifdef USE_VIEW
+    double *RowValues;
+    int *ColIndices;
+#else
+    int MaxNumEntries_ = Matrix_->MaxNumEntries();
+    vector<int>ColIndices(MaxNumEntries_);
+    vector<double>RowValues(MaxNumEntries_);
+#endif
     for ( MyRow = 0; MyRow <NumGlobalElements_; MyRow++ ) {
-      assert( Matrix_->ExtractMyRowView( MyRow, NumEntriesThisRow, RowValues, ColIndices ) == 0 ) ;
+#ifdef USE_VIEW
+      EPETRA_CHK_ERR( Matrix_->
+		      ExtractMyRowView( MyRow, NumEntriesThisRow, RowValues, 
+					ColIndices ) != 0 ) ;
+#else
+      EPETRA_CHK_ERR( Matrix_->
+		      ExtractMyRowCopy( MyRow, MaxNumEntries_, 
+					NumEntriesThisRow, &RowValues[0], 
+					&ColIndices[0] ) != 0 ) ;
+#endif
       Ap[MyRow] = Ai_index ; 
       for ( int j = 0; j < NumEntriesThisRow; j++ ) { 
 	Ai[Ai_index] = ColIndices[j] ; 
@@ -173,6 +222,14 @@ int Amesos_Klu::ConvertToKluCRS(){
   
   return 0;
 }   
+
+
+int Amesos_Klu::ReadParameterList() {
+  if (ParameterList_->isParameterSublist("Klu") ) {
+    AMESOS::Parameter::List KluParams = ParameterList_->sublist("Klu") ;
+  }  
+  return 0;
+}
 
 
 int Amesos_Klu::PerformSymbolicFactorization() {
@@ -212,11 +269,9 @@ bool Amesos_Klu::MatrixShapeOK() const {
 
 int Amesos_Klu::SymbolicFactorization() {
 
-  //  cout << " SymbolicFactorization() B = " << *(Problem_->GetRHS()) << endl ; 
-
   ConvertToSerial() ; 
   
-  ConvertToKluCRS();
+  ConvertToKluCRS(true);
   
   PerformSymbolicFactorization();
 
@@ -225,7 +280,8 @@ int Amesos_Klu::SymbolicFactorization() {
 
 int Amesos_Klu::NumericFactorization() {
   
-  //  cout << " NumericFactorization() B = " << *(Problem_->GetRHS()) << endl ; 
+  ConvertToSerial() ; 
+  ConvertToKluCRS(false);
 
   PerformNumericFactorization( );
   return 0;

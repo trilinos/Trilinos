@@ -881,6 +881,7 @@ AC_CONFIG_FILES([
 		example/Makefile
 		example/AmesosDscpack/Makefile
 		example/AmesosFactory/Makefile
+		example/AmesosSuperludist/Makefile
 		test/scripts/Makefile
 		test/scripts/daily/Makefile
 		test/scripts/daily/mpi/Makefile

@@ -36,13 +36,17 @@
 #include "Epetra_CrsGraph.h"
 
 
-//! Amesos_Klu:  An object-oriented wrapper for Klu.
-/*!  Amesos_Klu will solve a linear systems of equations: <TT>A X = B</TT>
+//! Amesos_Klu:  A serial, unblocked code ideal for getting started and for very sparse matrices, such as circuit matrces.  AmesosKlu computes <p class="code">A<sup>T</sup> X = B</p> more efficiently than <p class="code">A X = B</p>.
+/*!  Amesos_Klu, an object-oriented wrapper for Klu, will solve a linear systems of equations: <TT>A X = B</TT>
    using Epetra objects and the Klu solver library, where
   <TT>A</TT> is an Epetra_RowMatrix and <TT>X</TT> and <TT>B</TT> are 
   Epetra_MultiVector objects.
 
-klu is Davis' implementation of Gilbert-Peierl's left-looking
+<br /><br /><p>AmesosKlu computes <p class="code">A<sup>T</sup> X = B</p> 
+more efficiently than <p class="code">A X = B</p>.  The
+latter requires a matrix transpose - which costs both time and space.
+
+<br /><br /><p>klu is Davis' implementation of Gilbert-Peierl's left-looking
 sparse partial pivoting algorithm, with Eisenstat & Liu's symmetric
 pruning.  Gilbert's version appears as [L,U,P]=lu(A) in MATLAB.
 It doesn't exploit dense matrix kernels, but it is the only sparse
@@ -54,7 +58,7 @@ do not suffer much fill-in (such as most circuit matrices when
 permuted properly) dense matrix kernels do not help, and the
 asymptotic run-time is of practical importance.
 
-The klu_btf code first permutes the matrix to upper block
+<br /><br /><p>The klu_btf code first permutes the matrix to upper block
 triangular form (using two algorithms by Duff and Reid,
 MC13 and MC21, in the ACM Collected Algorithms).  It then permutes
 each block via a symmetric minimum degree ordering (AMD, by Amestoy,
@@ -62,11 +66,12 @@ Davis, and Duff).  This ordering phase can be done just once
 for a sequence of matrices.  Next, it factorizes each reordered
 block via the klu routine, which also attempts to preserve
 diagonal pivoting, but allows for partial pivoting if the diagonal
-is to small.    A fast-factorization version of klu is
-available, which does not do any partial pivoting at all.
+is to small.    
+<!-- A fast-factorization version of klu is
+available, which does not do any partial pivoting at all.  -->
 
 
-  Klu execution can be tuned through a variety of parameters.
+<br /><br /><p>  Klu execution can be tuned through a variety of parameters.
   Amesos_Klu.h allows control of these parameters through the
   following named parameters, ignoring parameters with names that it
   does not recognize.  Where possible, the parameters are common to
@@ -155,7 +160,7 @@ public:
   */
     int NumericFactorization() ;
 
-    //! Solves A X = B (or A<SUP>T</SUP> x = B) 
+    //! Solves A X = B (or A<SUP>T</SUP> X = B) 
     /*! 
 
       preconditions:<ul>
@@ -201,6 +206,21 @@ public:
   */
   bool MatrixShapeOK() const ;
 
+  //! SetUseTranpose(true) is more efficient in Amesos_Klu
+  /*! 
+<ul>
+  <li>If SetUseTranspose() is set to true, 
+    <ul>
+       <li><p class="code">A<sup>T</sup> X = B</p> is computed</li>
+       <li>(This is the more efficient operation)</li>
+    </ul></li>
+  <li>else
+    <ul>
+       <li><p class="code">A X = B</p> is computed</li>
+       <li>(This requires a matrix transpose)</li>
+    </ul></li>
+</ul>
+  */  
   int SetUseTranspose(bool UseTranspose) {UseTranspose_ = UseTranspose; return(0);};
 
   //! Returns the current UseTranspose setting.
@@ -208,6 +228,13 @@ public:
 
   //! Returns a pointer to the Epetra_Comm communicator associated with this matrix.
   const Epetra_Comm & Comm() const {return(GetProblem()->GetOperator()->Comm());};
+
+  //! Reads the parameter list and updates internal variables. 
+  /*!
+    ReadParameterList is called by SymbolicFactorization.  Hence, few codes 
+    will need to make an explicit call to ReadParameterList.
+   */
+  int ReadParameterList() ;
   //@}
 
  private:  
@@ -237,7 +264,7 @@ public:
       Ai, Ap, and Aval are resized and populated with a compresses row storage 
       version of the input matrix A.
   */
-  int ConvertToKluCRS();     
+  int ConvertToKluCRS(bool firsttime);     
 
   /*
     PerformSymbolicFactorization - Call Klu to perform symbolic factorization
@@ -295,8 +322,16 @@ public:
                                          //  IsLocal==1 - Points to the original matix 
                                          //  IsLocal==0 - Points to SerialCrsMatrixA
   Epetra_CrsMatrix *TransposeMatrix_ ;   //  Points to a Serial Transposed Copy of A 
+  //
+  //  This USE_VIEW define shows that we can could easily support the 
+  //  Epetra_RowMatrix interface.  
+  //
+#define USE_VIEW
+#ifdef USE_VIEW
   Epetra_CrsMatrix *Matrix_ ;            //  Points to the matrix that is used to compute
-                                         //  the values passed to Klu
+#else
+  Epetra_RowMatrix *Matrix_ ;            //  Points to the matrix that is used to compute
+#endif                                         //  the values passed to Klu
                                      
 
   bool UseTranspose_;      //  Set by 

@@ -34,8 +34,8 @@ class Epetra_Comm;
 
 //! Amesos_BaseSolver: A pure virtual class for direct solution of real-valued double-precision operators.
 /*! The Amesos_BaseSolver class is a pure virtual class (specifies
-    interface only) that enable the use of real-valued
-    double-precision direct sparse solvers.  Every Amesos Class named 
+    interface only) that enables the use of real-valued
+    double-precision direct sparse solvers.  Every Amesos class named 
     Amesos_<i>SolverName</i> implements Amesos_BaseSolver.
 
     <H1>Usage Examples</H1> 
@@ -52,6 +52,8 @@ class Epetra_Comm;
 
       Code which may change A or B
 
+   Solver.SymbolicFactorization() ; 
+   Solver.NumericFactorization() ; 
    Solver.Solve() ; 
 </pre>
     
@@ -70,6 +72,7 @@ class Epetra_Comm;
       Code which may change B or the non-zero values 
       (but not the non-zero structure) of A 
 
+    Solver.NumericFactorization() ; 
     Solver.Solve() ; 
 </pre>
     
@@ -209,19 +212,16 @@ class Amesos_BaseSolver {
   //@{ \name Atribute set methods.
 
     //! If set true, X will be set to the solution of A<SUP>T</SUP> X = B (not A X = B) 
-    /*! This flag allows the transpose of the given operator to be
-           used implicitly.  If the implementation of this interface
-           does not support transpose use, this method should return a
-           value of -1.  
+    /*! If the implementation of this interface does not support
+           transpose use, this method should return a value of -1.
       
-      preconditions:<ul>
-      <li>None
+      <br \>Preconditions:<ul>
+      <li>SetTranspose() should be called prior to the call to SymbolicFactorization() If NumericFactorization() or Solve() is called after SetTranspose() without an intervening call to SymbolicFactorization() the result is implementation dependent. </li>
       </ul>
 
-      postconditions:<ul> 
-      <li>The next solve will be performed with
-      the new value of UseTranspose.  If necessary, the factorization will be
-      performed again prior to the next solve.  
+      <br \>Postconditions:<ul> 
+      <li>The next factorization and solve will be performed with
+      the new value of UseTranspose. </li>
       </ul>
 
     \param In
@@ -232,6 +232,25 @@ class Amesos_BaseSolver {
            this implementation does not support transpose.
   */
     virtual int SetUseTranspose(bool UseTranspose) = 0;
+  //! Reads the parameter list and updates internal variables. 
+  /*!  ReadParameterList is called by SymbolicFactorization().
+    Changing parameter values after the call to
+    SymbolicFactorization() may lead to implementation dependent
+    results.  Hence, few codes will need to make an explicit call to
+    ReadParameterList.
+
+      <br \>Preconditions:<ul>
+      <li>None.</li>
+
+      <br \>Postconditions:<ul> 
+      <li>Internal variables controlling the factorization and solve will
+      be updated and take effect on all subseuent calls to NumericFactorization() 
+      and Solve().
+
+    \return Integer error code, set to 0 if successful. 
+   */
+    virtual int ReadParameterList() = 0 ;
+
   //@}
   
   //@{ \name Mathematical functions.
@@ -243,12 +262,12 @@ class Amesos_BaseSolver {
       be made to the non-zero structure of the underlying matrix without 
       a subsequent call to SymbolicFactorization().
       
-      preconditions:<ul>
+      <br \>Preconditions:<ul>
       <li>GetProblem().GetOperator() != 0 (return -1)
       <li>MatrixShapeOk(GetProblem().GetOperator()) == true (return -6)
       </ul>
 
-      postconditions:<ul>
+      <br \>Postconditions:<ul> 
       <li>Symbolic Factorization will be performed (or marked to be performed) 
       allowing NumericFactorization() and Solve() to be called.
       </ul>
@@ -264,7 +283,7 @@ class Amesos_BaseSolver {
       the underlying matrix without a subsequent call to
       NumericFactorization().  
 
-      preconditions:<ul>
+      <br \>Preconditions:<ul>
       <li>GetProblem().GetOperator() != 0 (return -1)
       <li>MatrixShapeOk(GetProblem().GetOperator()) == true (return -6)
       <li>The non-zero structure of the matrix should not have changed
@@ -273,7 +292,7 @@ class Amesos_BaseSolver {
           since the last call to SymbolicFactorization()
       </ul>
 
-      postconditions:<ul>
+      <br \>Postconditions:<ul> 
       <li>Numeric Factorization will be performed (or marked to be performed) 
       allowing Solve() to be performed correctly despite a potential change in 
       in the matrix values (though not in the non-zero structure).
@@ -286,7 +305,7 @@ class Amesos_BaseSolver {
     //! Solves A X = B (or A<SUP>T</SUP> x = B) 
     /*! 
 
-      preconditions:<ul>
+      <br \>Preconditions:<ul>
       <li>GetProblem().GetOperator() != 0 (return -1)
       <li>MatrixShapeOk(GetProblem().GetOperator()) == true (return -6)
       <li>GetProblem()->CheckInput (see Epetra_LinearProblem::CheckInput() for return values)
@@ -298,7 +317,7 @@ class Amesos_BaseSolver {
           since the last call to NumericFactorization().
       </ul>
 
-      postconditions:<ul> 
+      <br \>Postconditions:<ul> 
       <li>X will be set such that A X = B (or
       A<SUP>T</SUP> X = B), within the limits of the accuracy of the
       underlying solver.  

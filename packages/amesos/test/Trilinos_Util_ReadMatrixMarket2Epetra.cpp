@@ -17,6 +17,8 @@ int Trilinos_Util_ReadMatrixMarket2Epetra( char *data_file,
   FILE *in_file ;
   int N_rows, nnz ; 
 
+  bool diag = false;   // If set to false, this prevents any entries on the diagonal
+
   const int BUFSIZE = 800 ; 
   char buffer[BUFSIZE] ; 
   vector<int> non_zeros;   // Number of non-zeros in each row
@@ -29,6 +31,7 @@ int Trilinos_Util_ReadMatrixMarket2Epetra( char *data_file,
   vector<int> ptrs(N_rows+1) ; // Pointers into inds and vals for the start of each row
   vector<int> inds(nnz);     //  Column Indices
   vector<double> vals(nnz);  //  Matrix values
+  vector<int> iptrs ;        //  Current pointers into inds and vals for each row
 
   if(comm.MyPID() == 0)  { 
     //  ptrs, inds and vals together constitute a compressed row storage of the matrix.
@@ -42,7 +45,7 @@ int Trilinos_Util_ReadMatrixMarket2Epetra( char *data_file,
       ptrs[i+1] = ptrs[i] + non_zeros[i]; 
     }
 
-    vector<int> iptrs = ptrs ; //  Current pointers into inds and vals for each row
+    iptrs = ptrs ; //  Current pointers into inds and vals for each row
 
     fgets( buffer, BUFSIZE, in_file ) ;  // Pick symmetry info off of this string 
     bool symmetric = false ; 
@@ -56,25 +59,44 @@ int Trilinos_Util_ReadMatrixMarket2Epetra( char *data_file,
     while ( fgets( buffer, BUFSIZE, in_file ) ) { 
       int i, j; 
       double val ; 
+      i = -13 ;   // Check for blank lines 
       sscanf( buffer, "%d %d %lg", &i, &j, &val ) ; 
+      assert( i != -13) ; 
+#if 0
+      if ( true ) cout << " i,j = " << i <<  " " << j << " val = " << val << endl ; 
+#else
       if ( i == j && i%100 == 0 ) cout << " i,j = " << i << " val = " << val << endl ; 
-      int iptr = iptrs[i-1] ; 
-      iptrs[i-1]++ ;
-      vals[iptr] = val ; 
-      inds[iptr] = j-1 ; 
-      //
-      //  If this is a symmetric matrix, we need to enter the entry 
-      //  for the other triangular half
-      //
-      if (symmetric && i != j ) {
-	iptr = iptrs[j-1] ; 
-	iptrs[j-1]++;
+      if ( i == 1056 ) cout << " i,j = " << i << " " << j << " val = " << val << endl ; 
+      if ( j == 1056 ) cout << " i,j = " << i << " " << j << " val = " << val << endl ; 
+      if ( val > 50049 && val < 50050 ) 
+	 cout << " ############# i,j = " << i << " " << j << " val = " << val << endl ; 
+#endif
+      if ( diag || i != j ) { 
+	int iptr = iptrs[i-1] ; 
+	iptrs[i-1]++ ;
 	vals[iptr] = val ; 
-	inds[iptr] = i-1 ; 
+	inds[iptr] = j-1 ; 
+	//
+	//  If this is a symmetric matrix, we need to enter the entry 
+	//  for the other triangular half
+	//
+	if (symmetric && i != j ) {
+	  iptr = iptrs[j-1] ; 
+	  iptrs[j-1]++;
+	  vals[iptr] = val ; 
+	  inds[iptr] = i-1 ; 
+	}
       }
-    } 
+    }
     fclose(in_file);
+
+
+    if ( diag ) { 
+      for (int i=0; i<N_rows; i++)
+	assert( iptrs[i] == ptrs[i+1] ) ; 
+    }
   }
+
 
   int nlocal = 0;
   if (comm.MyPID()==0) nlocal = N_rows;
@@ -82,9 +104,40 @@ int Trilinos_Util_ReadMatrixMarket2Epetra( char *data_file,
   
   A = new Epetra_CrsMatrix(Copy, *map, 0); // Construct matrix on PE 0
   if (comm.MyPID()==0)
-    for (int i=0; i<N_rows; i++)
-      A->InsertGlobalValues(i, ptrs[i+1]-ptrs[i], &vals[ptrs[i]], &inds[ptrs[i]]);
+    for (int i=0; i<N_rows; i++) {
+      if ( i == 1056-1 ) {
+	int num_vals = iptrs[i]-ptrs[i];
+	cout << " i+1 = " << i+1 << "num_vals = " << num_vals << endl ; 
+	for (int j = 0; j < num_vals ; j++ ) 
+	  cout << " inds = " << inds[ptrs[i]+j]+1 << " vals = " <<  vals[ptrs[i]+j] << endl ; 
+      }
+      A->InsertGlobalValues(i, iptrs[i]-ptrs[i], &vals[ptrs[i]], &inds[ptrs[i]]);
+    }
   A->TransformToLocal();
+
+  Epetra_Vector diagA(*map);
+  Epetra_Vector Row1056(*map);
+
+  A->ExtractDiagonalCopy( diagA ) ; 
+  A->ExtractDiagonalCopy( Row1056 ) ; 
+
+  comm.Barrier();
+  cout << " diagA = " << diagA  << endl ; 
+  comm.Barrier();
+
+  vector <int> r1055ptrs[10000];
+  vector <double> r1055vals[10000];
+
+  diagA.PutScalar( 0.0 ) ; 
+  diagA.ReplaceGlobalValue( 1055, 0, 1.0 ) ; //  Will generate an error code of 1 on processes which do not own entry 1055 
+
+  A->Multiply( false, diagA, Row1056 ); 
+  cout << " Row1056 = " << Row1056  << endl ; 
+
+  //  cout << " A = " << *A  << endl ; 
+
+
+  assert( diag || A->NoDiagonal() ) ;
 
   vector<double> hbx(N_rows);
   vector<double> hbb(N_rows);

@@ -35,7 +35,6 @@ At present, either USE_LOCAL or USE_STL_SORT is required
 #include "Amesos_Dscpack.h"
 #include "Epetra_Map.h"
 #include "Epetra_Import.h"
-#include "Epetra_Export.h"
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_Vector.h"
 #include "Epetra_Util.h"
@@ -64,6 +63,13 @@ Amesos_Dscpack::~Amesos_Dscpack(void) {
   }
 
   delete DscGraph_;  // This might not exist, is it dangerous to delete it?
+}
+
+int Amesos_Dscpack::ReadParameterList() {
+  if (ParameterList_->isParameterSublist("Dscpack") ) {
+    AMESOS::Parameter::List DscpackParams = ParameterList_->sublist("Dscpack") ;
+  }  
+  return 0;
 }
 
 
@@ -219,8 +225,10 @@ int Amesos_Dscpack::PerformNumericFactorization() {
     EPETRA_CHK_ERR( DscMat.Import( *CastCrsMatrixA, ImportToDsc, Insert) );
     EPETRA_CHK_ERR( DscMat.TransformToLocal() ) ; 
 
+    cout << "Amesos_Dscpack.cpp:: DscMat = " << DscMat << endl ; 
 
-    assert( DscGraph_ == 0 ) ; 
+
+    //    assert( DscGraph_ == 0 ) ; 
     if ( DscGraph_ ) delete DscGraph_ ; 
     DscGraph_ = new Epetra_CrsGraph ( DscMat.Graph() ); 
 

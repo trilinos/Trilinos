@@ -149,6 +149,9 @@ SpoolesScript$(EXEEXT): $(srcdir)/SpoolesScript
 	cp  $(srcdir)/In_Diagonal.mtx Diagonal.mtx 
 	cp  $(srcdir)/In_KheadK.mtx KheadK.mtx 
 	cp  $(srcdir)/In_KheadSorted.mtx KheadSorted.mtx 
+	cp  $(srcdir)/In_ZD2.triU ZD2.triU 
+	cp  $(srcdir)/In_ZD5.triU ZD5.triU 
+	cp  $(srcdir)/In_ZD16.triU ZD16.triU 
 
 
 

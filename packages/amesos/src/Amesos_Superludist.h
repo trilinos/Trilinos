@@ -1,4 +1,3 @@
-
 /* Copyright (2001) Sandia Corportation. Under the terms of Contract 
  * DE-AC04-94AL85000, there is a non-exclusive license for use of this 
  * work by or on behalf of the U.S. Government.  Export of this program
@@ -153,7 +152,15 @@ public:
 
   //@}
   
-  //@{ \name Additional methods required to support the Epetra_Operator interface.
+  //@{ \name Atribute set methods
+  //!  Amesos_Superludist does not support transpose at this time.
+  /*!  returns 0 if UseTranspose is set to false, else 1 (failure)
+   */
+  int SetUseTranspose(bool UseTranspose) {UseTranspose_ = UseTranspose; return( UseTranspose_?1:0 );};
+
+  //@}
+  
+  //@{ \name Atribute access functions
 
 #if 0
   //! Returns a character string describing the operator
@@ -172,12 +179,6 @@ public:
   */
   bool MatrixShapeOK() const ;
 
-  //
-  //!  Amesos_Superludist does not support transpose at this time.
-  /*!  returns 0 if UseTranspose is set to false, else 1 (failure)
-   */
-  int SetUseTranspose(bool UseTranspose) {UseTranspose_ = UseTranspose; return( UseTranspose_?1:0 );};
-
   //! Returns the current UseTranspose setting.
   bool UseTranspose() const {return(UseTranspose_);};
 
@@ -185,55 +186,80 @@ public:
   const Epetra_Comm & Comm() const {return(GetProblem()->GetOperator()->Comm());};
   //@}
 
- private:  
-  /*
-    PerformSymbolicFactorization - Call Superludist to perform symbolic factorization
-    Preconditions:
-      IsLocal must be set to 1 if the input matrix is entirely stored on process 0
-      Ap, Ai and Aval are a compressed row storage version of the input matrix A.
-    Postconditions:
-      Symbolic points to an SUPERLUDIST internal opaque object containing the
-        symbolic factorization and accompanying information.  
-      SymbolicFactorizationOK_ = true; 
-    Note:  All action is performed on process 0
-  */
-      
-  int PerformSymbolicFactorization(); 
+  //! Reads the parameter list and updates internal variables. 
+  /*!
+    ReadParameterList is called by SymbolicFactorization.  Hence, few codes 
+    will need to make an explicit call to ReadParameterList.
+   */
+  int ReadParameterList() ;
 
-  /*
-    PerformNumericFactorization - Call Superludist to perform numeric factorization
-    Preconditions:
-      IsLocal must be set 
-      Ap, Ai and Aval are a compressed row storage version of the input matrix A.
-      Symbolic must be set
-    Postconditions:
-      Numeric points to an SUPERLUDIST internal opaque object containing the
-        numeric factorization and accompanying information.  
-      NumericFactorizationOK_ = true; 
-    Note:  All action is performed on process 0
-  */
-  int PerformNumericFactorization(); 
+ private:  
+
+  int RedistributeA() ;
+
+  int ReFactor() ;
+  int Factor() ;
 
  protected:
 
+  //
+  //  Parameters set by the Parameter list
+  //
+  bool ReuseSymbolic_; // default is false ; Allows FactOption to be used on subsequent
+                       // calls to pdgssvx from NumericFactorization
+  bool AddZeroToDiag_; // default is false ; Adds zero to diagonal of redistributed matrix
+                       // (in case Superludist chokes on a matrix with a partly empty diag)
+  fact_t FactOption_;  // default is SamePattern_SameRow
+  bool Redistribute_ ; //  default = true;  redistribute the input matrix 
+                       //  prior to calling Superludist
+  int MaxProcesses_;   // default is -1 ; If positive, distribute problem over
+                       // MaxPricesses
+
+
+  //
+  //  These are used to determine what needs to be cleaned up.
+  //
   int GridCreated_ ; 
   int FactorizationDone_ ; 
 
-  int numrows_; 
-  bool redistribute_ ;         //  True if we redistribute the input matrix 
-                               //  prior to calling Superludist
+  int NumRows_; 
+  int NumGlobalNonzeros_; 
   Epetra_Map *UniformMap_ ;    //  Uniform Map (SuperLUdist requires a linear map)
+  Epetra_CrsMatrix *UniformMatrix_;  
+  Epetra_Export *ExportToDist_; // Exporter from Input Matrix to UniformMatrix_
+
+  Epetra_Import *ImportToDistributed_ ;
+  Epetra_Import *ImportBackToOriginal_ ;
+
+  //
+  //  These variables are here just to keep the code a bit shorter
+  //  They are set in NumericFactorization_
+  //
+  Epetra_RowMatrix *RowMatrixA_ ;  // Problem_->GetOperator()
+  int iam_;                        // Comm_.MyPID() ;
+
+
+  Epetra_RowMatrix *SuperluMat_ ;  // As passed to Superludist
+
   //
   //  Ap, Ai, Aval form the compressed row storage used by Klu
   //
-  vector <int> Ap;
-  vector <int> Ai;
-  vector <double> Aval;
+  vector <int> Ap_;
+  vector <int> Ai_;
+  vector <double> Aval_;
+
+  Epetra_MultiVector *vecXdistributed_; 
+  Epetra_MultiVector *vecBdistributed_; 
+
+  vector<int>ColIndicesV_;
+  vector<double>RowValuesV_;
+  vector <int>Global_Columns_; 
+
 
   //
   //  Here are the structures used by Superlu
   //
-  SuperMatrix superluA_;
+  SuperMatrix SuperluA_;
   ScalePermstruct_t ScalePermstruct_;
   LUstruct_t LUstruct_;
   SOLVEstruct_t SOLVEstruct_; 
@@ -243,6 +269,10 @@ public:
   gridinfo_t grid_;                 // SuperLU's grid information
   superlu_options_t options_;
   
+  bool FactorizationOK_ ;           // True if the matrix factorization has
+                                    // been performed more recently than the
+                                    // latest call to SymbolicFactorization()
+
   bool UseTranspose_;      // Set by SetUseTranpose() 
   const Epetra_LinearProblem * Problem_;
   const AMESOS::Parameter::List * ParameterList_ ; 

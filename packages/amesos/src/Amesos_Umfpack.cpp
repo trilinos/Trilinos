@@ -165,6 +165,13 @@ int Amesos_Umfpack::ConvertToUmfpackCRS(){
 }   
 
 
+int Amesos_Umfpack::ReadParameterList() {
+  if (ParameterList_->isParameterSublist("Umfpack") ) {
+    AMESOS::Parameter::List UmfpackParams = ParameterList_->sublist("Umfpack") ;
+  }  
+  return 0;
+}
+
 int Amesos_Umfpack::PerformSymbolicFactorization() {
 
   double *Control = (double *) NULL, *Info = (double *) NULL ;

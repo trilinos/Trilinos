@@ -25,6 +25,15 @@
 #include "Amesos_config.h"
 #include "Amesos_Factory.h"
 #include "Amesos_Klu.h"
+#ifdef HAVE_AMESOS_UMFPACK
+#include "Amesos_Umfpack.h"
+#endif
+#ifdef HAVE_AMESOS_SUPERLUDIST
+#include "Amesos_Superludist.h"
+#endif
+#ifdef HAVE_AMESOS_DSCPACK
+#include "Amesos_Dscpack.h"
+#endif
 #include "Epetra_Object.h"
 
 Amesos_BaseSolver* Amesos_Factory::Create( AmesosClassType ClassType, 
@@ -32,11 +41,35 @@ Amesos_BaseSolver* Amesos_Factory::Create( AmesosClassType ClassType,
 			     const AMESOS::Parameter::List &ParameterList ) {
 
   switch( ClassType ) {
+  case AMESOS_UMFPACK:
+#ifdef HAVE_AMESOS_UMFPACK
+    return new Amesos_Umfpack(LinearProblem,ParameterList); 
+#else
+    cerr << "Amesos_Umfpack is not implemented" << endl ; 
+    return 0 ; 
+#endif
+    break;
+  case AMESOS_DSCPACK:
+#ifdef HAVE_AMESOS_DSCPACK
+    return new Amesos_Dscpack(LinearProblem,ParameterList); 
+#else
+    cerr << "Amesos_Dscpack is not implemented" << endl ; 
+    return 0 ; 
+#endif
+    break;
   case AMESOS_KLU:
 #ifdef HAVE_AMESOS_KLU
     return new Amesos_Klu(LinearProblem,ParameterList); 
 #else
     cerr << "Amesos_Klu is not implemented" << endl ; 
+    return 0 ; 
+#endif
+    break;
+  case AMESOS_SUPERLUDIST:
+#ifdef HAVE_AMESOS_SUPERLUDIST
+    return new Amesos_Superludist(LinearProblem,ParameterList); 
+#else
+    cerr << "Amesos_Superludist is not implemented" << endl ; 
     return 0 ; 
 #endif
     break;

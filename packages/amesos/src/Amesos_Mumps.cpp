@@ -178,6 +178,13 @@ int Amesos_Mumps::ConvertToTriplet(){
 }   
 
 
+int Amesos_Mumps::ReadParameterList() {
+  if (ParameterList_->isParameterSublist("Mumps") ) {
+    AMESOS::Parameter::List MumpsParams = ParameterList_->sublist("Mumps") ;
+  }  
+  return 0;
+}
+
 int Amesos_Mumps::PerformSymbolicFactorization() {
 
   //

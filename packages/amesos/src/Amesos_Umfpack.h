@@ -182,6 +182,13 @@ public:
 
   //! Returns a pointer to the Epetra_Comm communicator associated with this matrix.
   const Epetra_Comm & Comm() const {return(GetProblem()->GetOperator()->Comm());};
+
+  //! Reads the parameter list and updates internal variables. 
+  /*!
+    ReadParameterList is called by SymbolicFactorization.  Hence, few codes 
+    will need to make an explicit call to ReadParameterList.
+   */
+  int ReadParameterList() ;
   //@}
 
  private:  

@@ -1,3 +1,4 @@
+
 #include "Amesos_ConfigDefs.h"
 #include "Amesos_Parameter_List.h"
 #include <string>
@@ -11,6 +12,7 @@
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_LinearProblem.h"
 #include "Epetra_Time.h"
+
 #ifdef HAVE_AMESOS_KUNDERT
 #include "KundertOO.h"
 #endif
@@ -80,6 +82,15 @@ int Amesos_TestSolver( Epetra_Comm &Comm, char *matrix_file,
 
   int iam = Comm.MyPID() ;
 
+
+
+  if ( iam == 0 ) {
+    cout << " SparseSolver == " << SparseSolver << 
+      " UMFPACK = " <<   UMFPACK << 
+      " SUPERLUDIST = " <<   SUPERLUDIST << endl ;
+  }
+    
+
   //  int whatever;
   //  if ( iam == 0 )  cin >> whatever ; 
   //  Comm.Barrier();
@@ -127,6 +138,7 @@ int Amesos_TestSolver( Epetra_Comm &Comm, char *matrix_file,
   }
 
   Epetra_RowMatrix * passA = 0; 
+  Epetra_RowMatrix * multiplyA = 0; 
   Epetra_Vector * passx = 0; 
   Epetra_Vector * passb = 0;
   Epetra_Vector * passxexact = 0;
@@ -138,6 +150,7 @@ int Amesos_TestSolver( Epetra_Comm &Comm, char *matrix_file,
 
   Epetra_Export exporter(*readMap, map);
   Epetra_CrsMatrix A(Copy, map, 0);
+  Epetra_CrsMatrix AwithDiag(Copy, map, 0);
 
   Epetra_Vector x(map);
   Epetra_Vector b(map);
@@ -160,20 +173,40 @@ int Amesos_TestSolver( Epetra_Comm &Comm, char *matrix_file,
     Comm.Barrier();
     
     A.Export(*serialA, exporter, Add);
-    Comm.Barrier();
+    assert(A.FillComplete()==0);    
+    
+    //
+    //  Add 0.0 to each diagonal entry to avoid empty diagonal entries;
+    //  This is a workaround for Bug #614 
+    //
+    double zero = 0.0;
 
-    assert(A.TransformToLocal()==0);    
+    AwithDiag.Export(*serialA, exporter, Add);
+
+    AwithDiag.SetTracebackMode(0);
+    for ( int i = 0 ; i < map.NumGlobalElements(); i++ ) 
+      if ( AwithDiag.LRID(i) >= 0 ) 
+	AwithDiag.InsertGlobalValues( i, 1, &zero, &i ) ;
+    AwithDiag.SetTracebackMode(1);
+
+    assert(AwithDiag.FillComplete()==0);    
     
     Comm.Barrier();
 
     passA = &A; 
+    multiplyA = &AwithDiag; 
+
+    //    cout << " mulitplyA = " << AwithDiag << endl ; 
+
     passx = &x; 
     passb = &b;
     passxexact = &xexact;
     passresid = &resid;
     passtmp = &tmp;
   } else { 
+
     passA = serialA; 
+    multiplyA = serialA; 
     passx = readx; 
     passb = readb;
     passxexact = readxexact;
@@ -192,6 +225,12 @@ int Amesos_TestSolver( Epetra_Comm &Comm, char *matrix_file,
 
   for ( int i = 0; i < 1+special ; i++ ) { 
     Epetra_Time TotalTime( Comm ) ; 
+  if ( false && iam == 0 ) {
+    cout << " Here we are::  SparseSolver == " << SparseSolver << 
+      " UMFPACK = " <<   UMFPACK << 
+      " SUPERLUDIST = " <<   SUPERLUDIST << endl ;
+  }
+    
     if ( false ) { 
       //  TEST_UMFPACK is never set by configure
 #ifdef TEST_UMFPACK
@@ -218,9 +257,15 @@ int Amesos_TestSolver( Epetra_Comm &Comm, char *matrix_file,
 #endif
 #ifdef HAVE_AMESOS_SUPERLUDIST
     } else if ( SparseSolver == SUPERLUDIST ) {
-      
 	AMESOS::Parameter::List ParamList ;
 	Amesos_Superludist A_Superludist( Problem, ParamList ) ; 
+
+  ParamList.setParameter( "Redistribute", true );
+  ParamList.setParameter( "AddZeroToDiag", true );
+  AMESOS::Parameter::List& SuperludistParams = ParamList.sublist("Superludist") ;
+  SuperludistParams.setParameter( "ReuseSymbolic", true );
+  SuperludistParams.setParameter( "MaxProcesses", 100 );
+
 	EPETRA_CHK_ERR( A_Superludist.SetUseTranspose( transpose ) ); 
 	EPETRA_CHK_ERR( A_Superludist.SymbolicFactorization(  ) ); 
 	EPETRA_CHK_ERR( A_Superludist.NumericFactorization(  ) ); 
@@ -271,6 +316,7 @@ int Amesos_TestSolver( Epetra_Comm &Comm, char *matrix_file,
 	EPETRA_CHK_ERR( A_klu.SymbolicFactorization(  ) ); 
 	EPETRA_CHK_ERR( A_klu.NumericFactorization(  ) ); 
 	EPETRA_CHK_ERR( A_klu.Solve(  ) ); 
+
 #endif
 #ifdef TEST_SPOOLES
     } else if ( SparseSolver == SPOOLES ) { 
@@ -314,7 +360,9 @@ int Amesos_TestSolver( Epetra_Comm &Comm, char *matrix_file,
 #endif
     } else { 
       SparseDirectTimingVars::log_file << "Solver not implemented yet" << endl ;
-      cerr << "\n\n####################  Requested solver not available on this platform #####################\n" << endl ;
+      cerr << "\n\n####################  Requested solver not available on this platform ##################### ATS\n" << endl ;
+      cout << " SparseSolver = " << SparseSolver << endl ; 
+      cerr << " SparseSolver = " << SparseSolver << endl ; 
     }
     
     SparseDirectTimingVars::SS_Result.Set_Total_Time( TotalTime.ElapsedTime() ); 
@@ -339,8 +387,8 @@ int Amesos_TestSolver( Epetra_Comm &Comm, char *matrix_file,
   //  Compute the residual = norm(Ax - b)
   //
   double residual ; 
-  passA->Multiply( transpose, *passx, *passtmp);
-  //  passresid->Norm2(&error);    BOGUS - I claim
+
+  multiplyA->Multiply( transpose, *passx, *passtmp);
   passresid->Update(1.0, *passtmp, -1.0, *passb, 0.0); 
   passresid->Norm2(&residual);
 

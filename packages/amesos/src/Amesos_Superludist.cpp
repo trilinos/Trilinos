@@ -1,4 +1,4 @@
-  /* Copyright (2003) Sandia Corportation. Under the terms of Contract 
+/* Copyright (2003) Sandia Corportation. Under the terms of Contract 
    * DE-AC04-94AL85000, there is a non-exclusive license for use of this 
    * work by or on behalf of the U.S. Government.  Export of this program
    * may require a license from the United States Government. */
@@ -28,7 +28,7 @@
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_Vector.h"
 #include "Epetra_Util.h"
-#include "CrsMatrixTranspose.h"
+// #include "CrsMatrixTranspose.h"
 
 int Superludist_NumProcRows( int NumProcs ) {
 #ifdef TFLOP
@@ -55,10 +55,23 @@ int Superludist_NumProcRows( int NumProcs ) {
   Amesos_Superludist::Amesos_Superludist(const Epetra_LinearProblem &prob, 
 				 const AMESOS::Parameter::List &ParameterList ) :  
 
-    UseTranspose_(false), 
     GridCreated_(0), 
     FactorizationDone_(0), 
-    UniformMap_(0) 
+    NumRows_(0), 
+    NumGlobalNonzeros_(0), 
+    UniformMap_(0), 
+    UniformMatrix_(0) ,
+    ExportToDist_(0),
+    ImportToDistributed_(0),
+    ImportBackToOriginal_(0),
+    RowMatrixA_(0), 
+    SuperluMat_(0),
+    vecBdistributed_(0),
+    vecXdistributed_(0),
+    nprow_(0),
+    npcol_(0),
+    FactorizationOK_(false), 
+    UseTranspose_(false)
 {
 
   Problem_ = &prob ; 
@@ -69,9 +82,9 @@ int Superludist_NumProcRows( int NumProcs ) {
 Amesos_Superludist::~Amesos_Superludist(void) {
 
   if ( FactorizationDone_ ) {
-    SUPERLU_FREE( superluA_.Store );
+    SUPERLU_FREE( SuperluA_.Store );
     ScalePermstructFree(&ScalePermstruct_);
-    Destroy_LU(numrows_, &grid_, &LUstruct_);
+    Destroy_LU(NumRows_, &grid_, &LUstruct_);
     LUstructFree(&LUstruct_);
     if ( options_.SolveInitialized ) {
       dSolveFinalize(&options_, &SOLVEstruct_ ) ; 
@@ -81,183 +94,299 @@ Amesos_Superludist::~Amesos_Superludist(void) {
     superlu_gridexit(&grid_);
   }
   if (UniformMap_ ) delete UniformMap_ ; 
+  if (UniformMatrix_ ) delete UniformMatrix_ ; 
+  if (ExportToDist_) delete ExportToDist_ ;
+  if (ImportToDistributed_) delete ImportToDistributed_;
+  if (ImportBackToOriginal_) delete ImportBackToOriginal_;
 
 }
 
+//
+//  ReadParameterList
+//
+//    Preconditions:
+//       None
+//
+//    Postconditions:
+//       MaxProcesses_, Redistribute_, AddZeroToDiag_, FactOption_ and 
+//       ReuseSymbolic_ set according to ParameterList_ values.
+//
+int Amesos_Superludist::ReadParameterList() {
 
+  //
+  //  We have to set these to their defaults here because user codes 
+  //  are not guaranteed to have a "Superludist" parameter list.
+  //
+  MaxProcesses_ = - 1; 
+  Redistribute_ = true;
+  AddZeroToDiag_ = false;
+  FactOption_ = SamePattern_SameRowPerm ;
+  ReuseSymbolic_ = false ; 
 
-int Amesos_Superludist::PerformSymbolicFactorization() {
+  Redistribute_ = ParameterList_->getParameter("Redistribute",Redistribute_);
+  AddZeroToDiag_ = ParameterList_->getParameter("AddZeroToDiag",AddZeroToDiag_);
 
-  //  Superludist does not offer SymbolicFactorization
+  if (ParameterList_->isParameterSublist("Superludist") ) {
+    AMESOS::Parameter::List SuperludistParams = ParameterList_->sublist("Superludist") ;
+    ReuseSymbolic_ = SuperludistParams.getParameter("ReuseSymbolic",ReuseSymbolic_);
+    FactOption_ = (fact_t) SuperludistParams.
+      getParameter("Options.Fact",
+		   (int) FactOption_);
+    MaxProcesses_ = SuperludistParams.getParameter("MaxProcesses",MaxProcesses_);
+  } 
 
+  
   return 0;
 }
 
-int Amesos_Superludist::PerformNumericFactorization( ) {
+//
+//  RedistributeA
+//
+//    Preconditions:
+//       ReadParameters() 
+//
+//    Postconditions:
+//       nprow_, npcol_
+//       UniformMap_
+//       UniformMatrix_
+//       ExportToDist_
+//
+int Amesos_Superludist::RedistributeA( ) {
 
+  const Epetra_Map &OriginalMap = RowMatrixA_->RowMatrixRowMap() ; 
+
+  //  Establish the grid (nprow vs. npcol) 
+  //  Note:  The simple heuristic below is untested and 
+  //  will lead to a poor grid shape if ProcessNumHeuristic is large
+  //  and nearly prime.
   //
-  //  Cast input matrix to a CrsMatrix 
-  //
-  Epetra_RowMatrix *RowMatrixA = 
-    dynamic_cast<Epetra_RowMatrix *>(Problem_->GetOperator());
-  EPETRA_CHK_ERR( RowMatrixA == 0 ) ; 
+  NumGlobalNonzeros_ = RowMatrixA_->NumGlobalNonzeros() ; 
+  assert( NumRows_ == RowMatrixA_->NumGlobalRows() ) ; 
 
-  Epetra_CrsMatrix *CastCrsMatrixA = dynamic_cast<Epetra_CrsMatrix*>(RowMatrixA) ; 
-  EPETRA_CHK_ERR( CastCrsMatrixA == 0 ) ; 
-
-  // Ken note:  If the following does not work, move OrignalMap_ to Amesos_Superludist.h
-  // 
-  const Epetra_Map OriginalMap = CastCrsMatrixA->RowMap() ; 
-  const Epetra_Comm &Comm = RowMatrixA->Comm();
-  
-  int iam = Comm.MyPID() ;
+  const Epetra_Comm &Comm_ = RowMatrixA_->Comm();
+  int NumberOfProcesses = Comm_.NumProc() ; 
+  if ( MaxProcesses_ > 0 ) {
+    NumberOfProcesses = EPETRA_MIN( NumberOfProcesses, MaxProcesses_ ) ; 
+  }
+  else {
+    int ProcessNumHeuristic = 1+EPETRA_MAX( NumRows_/10000, NumGlobalNonzeros_/1000000 );
+    NumberOfProcesses = EPETRA_MIN( NumberOfProcesses,  ProcessNumHeuristic );
+  }
+  nprow_ = Superludist_NumProcRows( NumberOfProcesses ) ; 
+  npcol_ = NumberOfProcesses / nprow_ ;
+  assert ( nprow_ * npcol_ == NumberOfProcesses ) ; 
 
   //
   //  Compute a cannonical uniform distribution:
   //    MyFirstElement - The first element which this processor would have
   //    NumExpectedElemetns - The number of elements which this processor would have
   //
-  numrows_ = OriginalMap.NumGlobalElements() ; 
-  assert( numrows_ == CastCrsMatrixA->NumGlobalRows() ) ; 
-  int numcols = CastCrsMatrixA->NumGlobalCols() ; 
-  assert( numrows_ == numcols ) ; 
-
-  int m_per_p = numrows_ / Comm.NumProc() ;
-  int remainder = numrows_ - ( m_per_p * Comm.NumProc() );
-  int MyFirstElement = iam * m_per_p + EPETRA_MIN( iam, remainder );
-  int MyFirstNonElement = (iam+1) * m_per_p + EPETRA_MIN( iam+1, remainder );
+  int m_per_p = NumRows_ / NumberOfProcesses ;
+  int remainder = NumRows_ - ( m_per_p * NumberOfProcesses );
+  int MyFirstElement = iam_ * m_per_p + EPETRA_MIN( iam_, remainder );
+  int MyFirstNonElement = (iam_+1) * m_per_p + EPETRA_MIN( iam_+1, remainder );
   int NumExpectedElements = MyFirstNonElement - MyFirstElement ; 
 
+  if ( iam_ >= NumberOfProcesses ) {
+    NumExpectedElements = 0 ; 
+  }
+  assert( NumRows_ ==  RowMatrixA_->NumGlobalRows() ) ; 
+  if ( UniformMap_ ) delete( UniformMap_ ) ; 
+  UniformMap_ = new Epetra_Map( NumRows_, NumExpectedElements, 0, Comm_ );
+  if ( UniformMatrix_ ) delete( UniformMatrix_ ) ; 
+  UniformMatrix_ = new Epetra_CrsMatrix(Copy, *UniformMap_, 0);
+  if ( ExportToDist_ ) delete ExportToDist_;
+  ExportToDist_ = new Epetra_Export( OriginalMap, *UniformMap_);
+  if (ImportToDistributed_) delete ImportToDistributed_;
+  ImportToDistributed_ = new Epetra_Import( *UniformMap_, OriginalMap);
+
+  // cout << " Here we are redoing ImportToDistributed  203 " << " NumRows = " << NumRows_ << endl ; 
+
+  if (ImportBackToOriginal_) delete ImportBackToOriginal_;
+  ImportBackToOriginal_ = new Epetra_Import( OriginalMap,*UniformMap_);
+  UniformMatrix_->Export( *RowMatrixA_, *ExportToDist_, Add ); 
+  
+  if (AddZeroToDiag_ ) { 
+    //
+    //  Add 0.0 to each diagonal entry to avoid empty diagonal entries;
+    //
+    double zero = 0.0;
+    UniformMatrix_->SetTracebackMode(0);
+    for ( int i = 0 ; i < UniformMap_->NumGlobalElements(); i++ ) 
+      if ( UniformMatrix_->LRID(i) >= 0 ) 
+	UniformMatrix_->InsertGlobalValues( i, 1, &zero, &i ) ;
+    UniformMatrix_->SetTracebackMode(1);
+  }
+  
+  UniformMatrix_->FillComplete() ; 
+  
+  UniformMatrix_->Export( *RowMatrixA_, *ExportToDist_, Insert ); 
+  
+  return 0;
+}
+
+
+//
+//  Factor
+//
+//    Preconditions:
+//       ReadParameters() 
+//       Problem_
+//         ->GetOperator() must be a RowMatrix else return -1
+//         If Redistribute_ is not set, ->GetOperator()->RowMatrixRowMap() 
+//           must be a LinearMap() else return -2
+//         ->GetOperator() must represent a square matrix, else return -3
+//         ->GetOperator() must be non-singular (and factorizable by Superludist)
+//           else positive return code.  Values less than n indicate the 
+//           diagonal element which was zero.  Values greater than n indicate
+//           a memory allocation failure.  
+//
+//    Postconditions:
+//       The matrix specified by Problem_->Operator() will have been redistributed,
+//         converted to the form needed by Superludist and factored.
+//       nprow_, npcol_
+//       UniformMap_
+//       UniformMatrix_
+//       ExportToDist_
+//       SuperLUmat_
+//       RowValuesV_
+//       ColValuesV_
+//       Ap_, Ai_, Aval_
+//       SuperluA_
+//       SuperLU internal data structures reflecting the LU factorization:
+//         ScalePermstruct_
+//         LUstructInit_
+//
+//   
+int Amesos_Superludist::Factor( ) {
+
+
   //
-  //  Convert the matrix to the form needed by SuperLU
-  //  If the matrix is already in the right form, 
-  //    SuperLUmat points to CastCrsMatrixA 
-  //  Else
-  //    The matrix is redistributed to UniformMatrix 
-  //    SuperLUmat points to UniformMatrix
+  //  For now, if you change the shape of a matrix, you need to 
+  //  create a new Amesos instance.
+  //  
   //
-  //  KEN NOTE:  debugxx work - redistribute should be set automatically
+  if ( NumRows_ != 0 &&   NumRows_ != RowMatrixA_->NumGlobalRows() ) 
+    EPETRA_CHK_ERR(-5);
+  NumRows_ = RowMatrixA_->NumGlobalRows() ; 
+
   //
-  Epetra_CrsMatrix *SuperLUmat = 0 ;
-  UniformMap_ = new Epetra_Map(  OriginalMap.NumGlobalElements(), NumExpectedElements, 0, Comm );
-  Epetra_CrsMatrix UniformMatrix(Copy, *UniformMap_, 0);
+  //  Set the matrix and grid shapes and populate the matrix SuperluMat
+  //
+  if ( Redistribute_ ) {
 
-  redistribute_ = true ;
-  if ( redistribute_ ) {
+    RedistributeA() ; 
+    SuperluMat_ = UniformMatrix_ ;
 
-    Epetra_Export export_to_dist( OriginalMap, *UniformMap_);
-
-    UniformMatrix.Export( *CastCrsMatrixA, export_to_dist, Add ); 
-    UniformMatrix.TransformToLocal() ; 
-    SuperLUmat = &UniformMatrix ;
-
-    
   } else {
-    {  
-      EPETRA_CHK_ERR( ! ( OriginalMap.LinearMap())  ) ; // Map must be contiguously divided
-      //
-      //  This is another way to check that the distribution is as pdgssvx expects it
-      //  (i.e. a linear map)
-      //
-      int Phase2NumElements = OriginalMap.NumMyElements() ; 
-      vector <int> MyRows( Phase2NumElements ) ; 
-      OriginalMap.MyGlobalElements( &MyRows[0] ) ; 
-      for (int row = 0 ; row < Phase2NumElements ; row++ ) {
-	EPETRA_CHK_ERR( MyFirstElement+row != MyRows[row] ) ;
-      }
-    }
-    SuperLUmat = CastCrsMatrixA ;
+    //  Revision 1.7 Oct 29, 2003 has a detailed check for cannonical distribution
+    if( ! ( RowMatrixA_->RowMatrixRowMap().LinearMap())  ) EPETRA_CHK_ERR(-2);
+
+    const Epetra_Comm &Comm_ = RowMatrixA_->Comm();
+    int numprocs = Comm_.NumProc() ; 
+    nprow_ = Superludist_NumProcRows( numprocs ) ; 
+    npcol_ = numprocs / nprow_ ;
+    assert ( nprow_ * npcol_ == numprocs ) ; 
+
+    SuperluMat_ = RowMatrixA_ ;
   }
 
-  int MyActualFirstElement = SuperLUmat->RowMap().MinMyGID() ; 
-  int NumMyElements = SuperLUmat->NumMyRows() ; 
-  vector <int> MyRowPtr( NumMyElements+1 ) ;  
-  //
-  //  This is actually redundant with the Ap below
-  //
-  MyRowPtr[0] = 0 ; 
-  int CurrentRowPtr = 0 ;
-  for ( int i = 0; i < NumMyElements ; i++ ) { 
-    CurrentRowPtr += SuperLUmat->NumMyEntries( i ) ; 
-    MyRowPtr[i+1] = CurrentRowPtr ; 
-  }
+
 
   //
-  //  Extract Ai, Ap and Aval from SuperLUmat
+  //  Extract Ai_, Ap_ and Aval_ from SuperluMat_
   //
-
-  int nnz_loc = SuperLUmat->NumMyNonzeros() ;
-  //
-  //  Step 6) Convert the matrix to Ap, Ai, Aval
-  //
-  Ap.resize( NumMyElements+1 );
-  Ai.resize( EPETRA_MAX( NumMyElements, nnz_loc) ) ; 
-  Aval.resize( EPETRA_MAX( NumMyElements, nnz_loc) ) ; 
+  int MyActualFirstElement = SuperluMat_->RowMatrixRowMap().MinMyGID() ; 
+  int NumMyElements = SuperluMat_->NumMyRows() ; 
+  int nnz_loc = SuperluMat_->NumMyNonzeros() ;
+  Ap_.resize( NumMyElements+1 );
+  Ai_.resize( EPETRA_MAX( NumMyElements, nnz_loc) ) ; 
+  Aval_.resize( EPETRA_MAX( NumMyElements, nnz_loc) ) ; 
   
   int NzThisRow ;
-  double *RowValues;
-  int *ColIndices;
   int Ai_index = 0 ; 
   int MyRow;
-  int num_my_cols = SuperLUmat->NumMyCols() ; 
-  vector <int>Global_Columns( num_my_cols ) ; 
+  int num_my_cols = SuperluMat_->NumMyCols() ; 
+  double *RowValues;
+  int *ColIndices;
+  int MaxNumEntries_ = SuperluMat_->MaxNumEntries();
+  Global_Columns_.resize( num_my_cols ) ; 
   for ( int i = 0 ; i < num_my_cols ; i ++ ) { 
-    Global_Columns[i] = SuperLUmat->GCID( i ) ; 
+    Global_Columns_[i] = SuperluMat_->RowMatrixColMap().GID( i ) ; 
   }
-  
+
+  Epetra_CrsMatrix *SuperluCrs = dynamic_cast<Epetra_CrsMatrix *>(SuperluMat_);
   for ( MyRow = 0; MyRow < NumMyElements ; MyRow++ ) {
-    int status = SuperLUmat->ExtractMyRowView( MyRow, NzThisRow, RowValues, ColIndices ) ;
-    assert( status == 0 ) ; 
-    Ap[MyRow] = Ai_index ; 
-    assert( Ap[MyRow] == MyRowPtr[MyRow] ) ; 
+    if ( SuperluCrs != 0 ) {
+      EPETRA_CHK_ERR( SuperluCrs->
+		      ExtractMyRowView( MyRow, NzThisRow, RowValues, 
+					ColIndices ) != 0 ) ;
+    }
+    else {
+      ColIndicesV_.resize(MaxNumEntries_);
+      RowValuesV_.resize(MaxNumEntries_);
+      EPETRA_CHK_ERR( SuperluMat_->
+		      ExtractMyRowCopy( MyRow, MaxNumEntries_, 
+					NzThisRow, &RowValuesV_[0], 
+					&ColIndicesV_[0] ) != 0 );
+      RowValues =  &RowValuesV_[0];
+      ColIndices = &ColIndicesV_[0];
+    }
+    Ap_[MyRow] = Ai_index ; 
     for ( int j = 0; j < NzThisRow; j++ ) { 
-      Ai[Ai_index] = Global_Columns[ColIndices[j]] ; 
-      Aval[Ai_index] = RowValues[j] ; 
+      Ai_[Ai_index] = Global_Columns_[ColIndices[j]] ; 
+      Aval_[Ai_index] = RowValues[j] ; 
       Ai_index++;
     }
   }
   assert( NumMyElements == MyRow );
-  Ap[ NumMyElements ] = Ai_index ; 
+  Ap_[ NumMyElements ] = Ai_index ; 
 
   //
-  //  Call SuperludistOO
+  //  Setup Superlu's grid 
   //
-  //
-  //
-  const Epetra_MpiComm & comm1 = dynamic_cast<const Epetra_MpiComm &> (Comm);
+  const Epetra_Comm &Comm_ = RowMatrixA_->Comm();
+  const Epetra_MpiComm & comm1 = dynamic_cast<const Epetra_MpiComm &> (Comm_);
   MPI_Comm MPIC = comm1.Comm() ;
 
+  //
+  //  Bug:  If nprow_ and npcol_ have changed since grid_ was created, we 
+  //  could have a problem here.
+  //
   if ( ! GridCreated_ ) {
     GridCreated_ = true; 
-    int numprocs = Comm.NumProc() ;                 
-    nprow_ = Superludist_NumProcRows( numprocs ) ; 
-    npcol_ = numprocs / nprow_ ;
-    assert ( nprow_ * npcol_ == numprocs ) ; 
+
     superlu_gridinit( MPIC, nprow_, npcol_, &grid_);
-  } else {
-    assert( nprow_ * npcol_ == Comm.NumProc() ) ; 
   }
 
-  /* Bail out if I do not belong in the grid. */
-  if ( iam < nprow_ * npcol_ ) {
-	
-    if ( FactorizationDone_ ) { 
-      assert( false ) ; 
-      //      free a:  ken note debugxx work - free stuff here
-      //  Copy from the destructor - or not - do we really need to?
-    } 
+  if ( FactorizationDone_ ) {
+    SUPERLU_FREE( SuperluA_.Store );
+    ScalePermstructFree(&ScalePermstruct_);
+    Destroy_LU(NumRows_, &grid_, &LUstruct_);
+    LUstructFree(&LUstruct_);
+    if ( options_.SolveInitialized ) {
+      dSolveFinalize(&options_, &SOLVEstruct_ ) ; 
+    }
+  }
+  //
+  //  Only those processes in the grid participate from here on
+  //
+  if ( iam_ < nprow_ * npcol_ ) {
+    //
+    //  Set up Superlu's data structures
+    //
     set_default_options(&options_);
-    
-    dCreate_CompRowLoc_Matrix_dist( &superluA_, numrows_, numcols, 
-				    nnz_loc, NumMyElements, MyActualFirstElement,
-				    &Aval[0], &Ai[0], &Ap[0], 
-				    SLU_NR_loc, SLU_D, SLU_GE );
-    
-    FactorizationDone_ = true; 
+    int numcols = RowMatrixA_->NumGlobalCols() ; 
+    if( NumRows_ != numcols ) EPETRA_CHK_ERR(-3) ; 
 
-    /* Initialize ScalePermstruct and LUstruct. */
-    ScalePermstructInit(numrows_, numcols, &ScalePermstruct_);
-    LUstructInit(numrows_, numcols, &LUstruct_);
+    dCreate_CompRowLoc_Matrix_dist( &SuperluA_, NumRows_, numcols, 
+				    nnz_loc, NumMyElements, MyActualFirstElement,
+				    &Aval_[0], &Ai_[0], &Ap_[0], 
+				    SLU_NR_loc, SLU_D, SLU_GE );
+    FactorizationDone_ = true;   // i.e. clean up Superlu data structures in the destructor
+
+    ScalePermstructInit(NumRows_, numcols, &ScalePermstruct_);
+    LUstructInit(NumRows_, numcols, &LUstruct_);
     
     assert( options_.Fact == DOFACT );  
     options_.Fact = DOFACT ;       
@@ -265,26 +394,117 @@ int Amesos_Superludist::PerformNumericFactorization( ) {
     SuperLUStat_t stat;
     PStatInit(&stat);    /* Initialize the statistics variables. */
 
-    NRformat_loc *Astore;
-    Astore = (NRformat_loc *) superluA_.Store;
-
+    //
+    //  Factor A using Superludsit (via a call to pdgssvx)
+    //
     int info ;
     double berr ;    //  Should be untouched
     double xValues;  //  Should be untouched
     int nrhs = 0 ;   //  Prevents forward and back solves
-    int ldx = numrows_;     //  Should be untouched
-    pdgssvx(&options_, &superluA_, &ScalePermstruct_, &xValues, ldx, nrhs, &grid_,
+    int ldx = NumRows_;     //  Should be untouched
+    pdgssvx(&options_, &SuperluA_, &ScalePermstruct_, &xValues, ldx, nrhs, &grid_,
 	    &LUstruct_, &SOLVEstruct_, &berr, &stat, &info);
     EPETRA_CHK_ERR( info ) ; 
 
     PStatFree(&stat);
   }
-
+  
   return 0;
 }
 
+//
+//   Refactor - Refactor the matrix 
+//
+//     Preconditions:
+//       The non-zero pattern of the matrix must not have changed since the 
+//         previous call to Factor().  Refactor ensures that each process owns 
+//         the same number of columns that it did on the previous call to Factor()
+//         and returns -4 if a discrepancy is found.  However, that check does not
+//         guarantee that no change was made to the non-zero structure of the matrix.
+//       No call to ReadParameters should be made between the call to Factor()
+//         and the call to Refactor().  If the user does not call ReadParameters, 
+//         as they need never do, they are safe on this.
+//
+//     Postconditions:
+//       The matrix specified by Problem_->Operator() will have been redistributed,
+//         converted to the form needed by Superludist and factored.
+//       Ai_, Aval_ 
+//       SuperluA_
+//       SuperLU internal data structures reflecting the LU factorization
+//         ScalePermstruct_
+//         LUstructInit_
+//       
+//     Performance notes:
+//       Refactor does not allocate or de-allocate memory.
+//         
+//     Return codes:
+//       -4 if we detect a change to the non-zero structure of the matrix.
+//
+int Amesos_Superludist::ReFactor( ) {
+
+    //
+    //  Update Ai_ and Aval_ (while double checking Ap_)
+    //
+    if ( Redistribute_ ) { 
+      if( UniformMatrix_->Export( *RowMatrixA_, *ExportToDist_, Insert ) ) 
+	EPETRA_CHK_ERR(-4); 
+    }
+    
+    Epetra_CrsMatrix *SuperluCrs = dynamic_cast<Epetra_CrsMatrix *>(SuperluMat_);
+    
+    double *RowValues;
+    int *ColIndices;
+    int MaxNumEntries_ = SuperluMat_->MaxNumEntries();
+    int NumMyElements = SuperluMat_->NumMyRows() ; 
+    int NzThisRow ;
+    int Ai_index = 0 ; 
+    int MyRow;
+    int num_my_cols = SuperluMat_->NumMyCols() ; 
+    for ( MyRow = 0; MyRow < NumMyElements ; MyRow++ ) {
+      if ( SuperluCrs != 0 ) {
+	EPETRA_CHK_ERR( SuperluCrs->
+			ExtractMyRowView( MyRow, NzThisRow, RowValues, 
+					  ColIndices ) != 0 ) ;
+      }
+      else {
+	EPETRA_CHK_ERR( SuperluMat_->
+			ExtractMyRowCopy( MyRow, MaxNumEntries_,
+					  NzThisRow, &RowValuesV_[0], 
+					  &ColIndicesV_[0] ) != 0 );
+	RowValues =  &RowValuesV_[0];
+	ColIndices = &ColIndicesV_[0];
+      }
+
+      if ( Ap_[MyRow] != Ai_index ) EPETRA_CHK_ERR(-4);
+      for ( int j = 0; j < NzThisRow; j++ ) { 
+	//  pdgssvx alters Ai_, so we have to set it again.
+	Ai_[Ai_index] = Global_Columns_[ColIndices[j]];
+	Aval_[Ai_index] = RowValues[j] ; 
+	Ai_index++;
+      }
+    }
+    if( Ap_[ NumMyElements ] != Ai_index ) EPETRA_CHK_ERR(-4); 
 
 
+    if ( iam_ < nprow_ * npcol_ ) {
+	
+      set_default_options(&options_);
+      
+      options_.Fact = FactOption_;
+      SuperLUStat_t stat;
+      PStatInit(&stat);    /* Initialize the statistics variables. */
+      int info ;
+      double berr ;    //  Should be untouched
+      double xValues;  //  Should be untouched
+      int nrhs = 0 ;   //  Prevents forward and back solves
+      int ldx = NumRows_;     //  Should be untouched
+      pdgssvx(&options_, &SuperluA_, &ScalePermstruct_, &xValues, ldx, nrhs, &grid_,
+	      &LUstruct_, &SOLVEstruct_, &berr, &stat, &info);
+      EPETRA_CHK_ERR( info ) ;
+    } 
+  
+  return 0;
+}
 
 bool Amesos_Superludist::MatrixShapeOK() const { 
   bool OK ;
@@ -297,22 +517,41 @@ bool Amesos_Superludist::MatrixShapeOK() const {
 
 int Amesos_Superludist::SymbolicFactorization() {
 
-  PerformSymbolicFactorization();
+  EPETRA_CHK_ERR(ReadParameterList());
+  FactorizationOK_ = false ; 
 
   return 0;
 }
 
 int Amesos_Superludist::NumericFactorization() {
-  
-  PerformNumericFactorization( );
+
+
+  // cout << " Amesos_Superludist.cpp::489 NumericFactorization TOP" << endl ; 
+  RowMatrixA_ = dynamic_cast<Epetra_RowMatrix *>(Problem_->GetOperator());
+  // cout << " Amesos_S.cp: RowMatrixA_->NumGlobalRows() = " <<
+  //    RowMatrixA_->NumGlobalRows() << endl ; 
+  if( RowMatrixA_ == 0 ) EPETRA_CHK_ERR(-1); 
+
+  const Epetra_Comm &Comm_ = RowMatrixA_->Comm();
+  iam_ = Comm_.MyPID() ;
+
+  if ( FactorizationOK_ && ReuseSymbolic_ ) {
+    ReFactor() ; 
+  }  else { 
+    Factor() ; 
+    FactorizationOK_ = true;   
+
+  }
+  // cout << " Amesos_Superludist.cpp::489 NumericFactorization BOTTOM" << endl ; 
   return 0;
 }
 
 
 int Amesos_Superludist::Solve() { 
 
-    NRformat_loc *Astore;
-    Astore = (NRformat_loc *) superluA_.Store;
+  // cout << " Amesos_Superludist.cpp::519 Solve() TOP" << endl ; 
+  NRformat_loc *Astore;
+  Astore = (NRformat_loc *) SuperluA_.Store;
 
   Epetra_MultiVector   *vecX = Problem_->GetLHS() ; 
   Epetra_MultiVector   *vecB = Problem_->GetRHS() ; 
@@ -336,34 +575,58 @@ int Amesos_Superludist::Solve() {
   double *xValues ;
   int ldb, ldx ; 
 
-  Epetra_MultiVector vecXdistributed( *UniformMap_, nrhs ) ; 
-  Epetra_MultiVector vecBdistributed( *UniformMap_, nrhs ) ; 
+
   Epetra_MultiVector* vecXptr; 
   Epetra_MultiVector* vecBptr; 
 
+  // cout << " Amesos_Superludist.cpp::549 Redistribute_ = " << Redistribute_ << endl ; 
   
-  if ( redistribute_ ) {
-    Epetra_RowMatrix *RowMatrixA = dynamic_cast<Epetra_RowMatrix *>(Problem_->GetOperator());
-    Epetra_CrsMatrix *CastCrsMatrixA = dynamic_cast<Epetra_CrsMatrix*>(RowMatrixA) ; 
-    const Epetra_Map OriginalMap = CastCrsMatrixA->RowMap() ; 
-    Epetra_Import ImportToDistributed( *UniformMap_, OriginalMap);
+  if ( Redistribute_ ) {
+    //
+    //  I couldn't figure out how to change the number of vectors in a multivector,
+    //  so if we need more vectors in the distributed versions of X and B, I 
+    //  delete them and rebuild them.  Ugly, but it isn't all that likely that codes
+    //  will change the number of right hand sides repeatedly.
+    //
+  // cout << " Amesos_Superludist.cpp::558 Solve() Redistribute" << endl ; 
+    if ( vecXdistributed_ != 0 ) {
+      assert( vecBdistributed_ != 0 ) ;
+  // cout << " Amesos_Superludist.cpp::562 Solve() Redistribute" << endl ; 
+      if ( vecXdistributed_->NumVectors() != nrhs ) {
+	delete vecXdistributed_ ; 
+	delete vecBdistributed_ ; 
+	vecXdistributed_ = 0 ; 
+  // cout << " Amesos_Superludist.cpp::569 Solve() Redistribute" << endl ; 
+	vecBdistributed_ = 0 ; 
+      } else {
+	assert(  vecBdistributed_->NumVectors() == nrhs ) ;
+  // cout << " Amesos_Superludist.cpp::575 Solve() Redistribute" << endl ; 
+      }
+    }
+    if ( vecXdistributed_ == 0 ) {
+  // cout << " Amesos_Superludist.cpp::605 Solve() Redistribute" << endl ; 
+      vecXdistributed_ = new Epetra_MultiVector( *UniformMap_, nrhs ) ; 
+      vecBdistributed_ = new Epetra_MultiVector( *UniformMap_, nrhs ) ; 
+    }
 
-    vecXdistributed.Import( *vecX, ImportToDistributed, Insert ) ;
-    vecBdistributed.Import( *vecB, ImportToDistributed, Insert ) ;
+    vecXdistributed_->Import( *vecX, *ImportToDistributed_, Insert ) ;
+    vecBdistributed_->Import( *vecB, *ImportToDistributed_, Insert ) ;
+  // cout << " Amesos_Superludist.cpp::614 Solve() Redistribute" << endl ; 
 
-    vecXptr = &vecXdistributed ; 
-    vecBptr = &vecBdistributed ; 
+    vecXptr = vecXdistributed_ ; 
+    vecBptr = vecBdistributed_ ; 
   } else {
     vecXptr = vecX ; 
     vecBptr = vecB ; 
   }
+  // cout << " Amesos_Superludist.cpp::599 Solve() HERE" << endl ; 
 
 
   int NumMyElements = vecBptr->MyLength(); 
   EPETRA_CHK_ERR( vecBptr->ExtractView( &bValues, &ldb ) )  ; 
   EPETRA_CHK_ERR( vecXptr->ExtractView( &xValues, &ldx ) ) ; 
-  EPETRA_CHK_ERR( ! ( ldx == ldb ) ) ; 
-  EPETRA_CHK_ERR( ! ( ldx == NumMyElements ) ) ; 
+  //  EPETRA_CHK_ERR( ! ( ldx == ldb ) ) ; 
+  //  EPETRA_CHK_ERR( ! ( ldx == NumMyElements ) ) ; 
 
   //
   //  pdgssvx returns x in b, so we copy b into x.  
@@ -371,12 +634,8 @@ int Amesos_Superludist::Solve() {
   for ( int j = 0 ; j < nrhs; j++ )
     for ( int i = 0 ; i < NumMyElements; i++ ) xValues[i+j*ldx] = bValues[i+j*ldb]; 
   
-  Epetra_RowMatrix *RowMatrixA = dynamic_cast<Epetra_RowMatrix *>(Problem_->GetOperator());
-  const Epetra_Comm &Comm = RowMatrixA->Comm();
-  int iam = Comm.MyPID() ;
-  
   /* Bail out if I do not belong in the grid. */
-  if ( iam < nprow_ * npcol_ ) {
+  if ( iam_ < nprow_ * npcol_ ) {
     int info ;
     vector<double>berr(nrhs);
     SuperLUStat_t stat;
@@ -388,12 +647,12 @@ int Amesos_Superludist::Solve() {
 
     bool BlockSolve = false ; 
     if ( BlockSolve ) { 
-      pdgssvx(&options_, &superluA_, &ScalePermstruct_, &xValues[0], ldx, nrhs, &grid_,
+      pdgssvx(&options_, &SuperluA_, &ScalePermstruct_, &xValues[0], ldx, nrhs, &grid_,
 	      &LUstruct_, &SOLVEstruct_, &berr[0], &stat, &info);
       EPETRA_CHK_ERR( info ) ;
     } else {
       for ( int j =0 ; j < nrhs; j++ ) { 
-	pdgssvx(&options_, &superluA_, &ScalePermstruct_, &xValues[j*ldx], ldx, 1, &grid_,
+	pdgssvx(&options_, &SuperluA_, &ScalePermstruct_, &xValues[j*ldx], ldx, 1, &grid_,
 		&LUstruct_, &SOLVEstruct_, &berr[0], &stat, &info);
 	EPETRA_CHK_ERR( info ) ;
       }
@@ -402,14 +661,10 @@ int Amesos_Superludist::Solve() {
     PStatFree(&stat);
   }
   
-  if ( redistribute_ ) { 
-    Epetra_RowMatrix *RowMatrixA = dynamic_cast<Epetra_RowMatrix *>(Problem_->GetOperator());
-    Epetra_CrsMatrix *CastCrsMatrixA = dynamic_cast<Epetra_CrsMatrix*>(RowMatrixA) ; 
-    const Epetra_Map OriginalMap = CastCrsMatrixA->RowMap() ; 
-    Epetra_Import ImportBackToOriginal( OriginalMap,*UniformMap_);
-    
-    vecX->Import( *vecXptr, ImportBackToOriginal, Insert ) ;
+  if ( Redistribute_ ) { 
+    vecX->Import( *vecXptr, *ImportBackToOriginal_, Insert ) ;
   }
 
+  // cout << " Amesos_Superludist.cpp::627 Solve() BOTTOM" << endl ; 
   return(0) ; 
 }

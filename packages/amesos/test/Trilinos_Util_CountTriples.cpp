@@ -44,31 +44,34 @@ void Trilinos_Util_CountTriples( const char *data_file,
     while ( fgets( buffer, BUFSIZE, in_file ) ) { 
       int i, j; 
       double val ; 
+      i = -13 ;   // Check for blank lines 
       sscanf( buffer, "%d %d %f", &i, &j, &val ) ; 
-      int needvecsize = i;
-      if (symmetric) needvecsize = EPETRA_MAX(i,j) ;
-      if ( needvecsize >= vecsize ) {
-	int oldvecsize = vecsize; 
-	vecsize += EPETRA_MAX(1000,needvecsize-vecsize) ; 
-	non_zeros.resize(vecsize) ; 
-        for ( int i= oldvecsize; i < vecsize ; i++ ) non_zeros[i] = 0 ; 
-      }
-      N_rows = EPETRA_MAX( N_rows, i ) ; 
-      if (symmetric) N_rows = EPETRA_MAX( N_rows, j ) ; 
-      non_zeros[i-1]++ ; 
-      nnz++; 
-      if ( symmetric && i != j ) {
-	if ( first_off_diag ) { 
-	  upper = j > i ; 
-	  first_off_diag = false ; 
+      if ( i > 0 ) { 
+	int needvecsize = i;
+	if (symmetric) needvecsize = EPETRA_MAX(i,j) ;
+	if ( needvecsize >= vecsize ) {
+	  int oldvecsize = vecsize; 
+	  vecsize += EPETRA_MAX(1000,needvecsize-vecsize) ; 
+	  non_zeros.resize(vecsize) ; 
+	  for ( int i= oldvecsize; i < vecsize ; i++ ) non_zeros[i] = 0 ; 
 	}
-	if ( ( j > i && ! upper ) || ( i > j && upper ) ) { 
-	  cout << "file not symmetric" << endl ; 
-	  exit(1) ; 
-	}
-	non_zeros[j-1]++ ; 
+	N_rows = EPETRA_MAX( N_rows, i ) ; 
+	if (symmetric) N_rows = EPETRA_MAX( N_rows, j ) ; 
+	non_zeros[i-1]++ ; 
 	nnz++; 
-      } 
+	if ( symmetric && i != j ) {
+	  if ( first_off_diag ) { 
+	    upper = j > i ; 
+	    first_off_diag = false ; 
+	  }
+	  if ( ( j > i && ! upper ) || ( i > j && upper ) ) { 
+	    cout << "file not symmetric" << endl ; 
+	    exit(1) ; 
+	  }
+	  non_zeros[j-1]++ ; 
+	  nnz++; 
+	}
+      }
     } 
     fclose(in_file);
   }

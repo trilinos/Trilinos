@@ -1,6 +1,7 @@
 #@HEADER
 #@HEADER
 
-SUBDIRS = AmesosDscpack AmesosFactory
+SUBDIRS = AmesosDscpack AmesosFactory  AmesosSuperludist
+
 
 
