@@ -112,6 +112,8 @@ class Group(NOX.LAPACK.Group,Abstract.Group):
     def printSolution(*args): return _LAPACK.Group_printSolution(*args)
     def applyMassMatrix(*args): return _LAPACK.Group_applyMassMatrix(*args)
     def hasMass(*args): return _LAPACK.Group_hasMass(*args)
+    def getJacobianMatrix(*args): return _LAPACK.Group_getJacobianMatrix(*args)
+    def getMassMatrix(*args): return _LAPACK.Group_getMassMatrix(*args)
 
 class GroupPtr(Group):
     def __init__(self, this):

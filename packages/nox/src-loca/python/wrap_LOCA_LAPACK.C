@@ -3390,6 +3390,48 @@ static PyObject *_wrap_Group_hasMass(PyObject *, PyObject *args) {
 }
 
 
+static PyObject *_wrap_Group_getJacobianMatrix(PyObject *, PyObject *args) {
+    PyObject *resultobj;
+    LOCA::LAPACK::Group *arg1 = (LOCA::LAPACK::Group *) 0 ;
+    NOX::LAPACK::Matrix *result;
+    PyObject * obj0 = 0 ;
+    
+    if(!PyArg_ParseTuple(args,(char *)"O:Group_getJacobianMatrix",&obj0)) goto fail;
+    SWIG_Python_ConvertPtr(obj0, (void **)&arg1, SWIGTYPE_p_LOCA__LAPACK__Group, SWIG_POINTER_EXCEPTION | 0);
+    if (SWIG_arg_fail(1)) SWIG_fail;
+    {
+        NOX::LAPACK::Matrix &_result_ref = (arg1)->getJacobianMatrix();
+        result = (NOX::LAPACK::Matrix *) &_result_ref;
+    }
+    
+    resultobj = SWIG_NewPointerObj((void*)(result), SWIGTYPE_p_NOX__LAPACK__Matrix, 0);
+    return resultobj;
+    fail:
+    return NULL;
+}
+
+
+static PyObject *_wrap_Group_getMassMatrix(PyObject *, PyObject *args) {
+    PyObject *resultobj;
+    LOCA::LAPACK::Group *arg1 = (LOCA::LAPACK::Group *) 0 ;
+    NOX::LAPACK::Matrix *result;
+    PyObject * obj0 = 0 ;
+    
+    if(!PyArg_ParseTuple(args,(char *)"O:Group_getMassMatrix",&obj0)) goto fail;
+    SWIG_Python_ConvertPtr(obj0, (void **)&arg1, SWIGTYPE_p_LOCA__LAPACK__Group, SWIG_POINTER_EXCEPTION | 0);
+    if (SWIG_arg_fail(1)) SWIG_fail;
+    {
+        NOX::LAPACK::Matrix &_result_ref = (arg1)->getMassMatrix();
+        result = (NOX::LAPACK::Matrix *) &_result_ref;
+    }
+    
+    resultobj = SWIG_NewPointerObj((void*)(result), SWIGTYPE_p_NOX__LAPACK__Matrix, 0);
+    return resultobj;
+    fail:
+    return NULL;
+}
+
+
 static PyObject * Group_swigregister(PyObject *, PyObject *args) {
     PyObject *obj;
     if (!PyArg_ParseTuple(args,(char*)"O", &obj)) return NULL;
@@ -3429,6 +3471,8 @@ static PyMethodDef SwigMethods[] = {
 	 { (char *)"Group_printSolution", _wrap_Group_printSolution, METH_VARARGS, NULL},
 	 { (char *)"Group_applyMassMatrix", _wrap_Group_applyMassMatrix, METH_VARARGS, NULL},
 	 { (char *)"Group_hasMass", _wrap_Group_hasMass, METH_VARARGS, NULL},
+	 { (char *)"Group_getJacobianMatrix", _wrap_Group_getJacobianMatrix, METH_VARARGS, NULL},
+	 { (char *)"Group_getMassMatrix", _wrap_Group_getMassMatrix, METH_VARARGS, NULL},
 	 { (char *)"Group_swigregister", Group_swigregister, METH_VARARGS, NULL},
 	 { NULL, NULL, 0, NULL }
 };
