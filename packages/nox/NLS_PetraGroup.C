@@ -10,70 +10,125 @@
 
 #include "NLS_PetraGroup.H"
 
-//! Constructor
-NLS_PetraGroup::NLS_PetraGroup() :
-  xVector(NULL),
-  RHSVector(NULL),
-  gradVector(NULL),
-  NewtonVector(NULL)
+NLS_PetraGroup::NLS_PetraGroup(Epetra_Vector& x) :
+  xVector(new NLS_PetraVector(x,true)),
+  RHSVector(new NLS_PetraVector(x,false)),
+  gradVector(new NLS_PetraVector(x,false)),
+  NewtonVector(new NLS_PetraVector(x,false)),
+  Jac(NULL)
 {
   resetVectorStatus();
+  doDeleteJacobian = false;
+}
+
+NLS_PetraGroup::NLS_PetraGroup(Epetra_Vector& x, Epetra_RowMatrix& J) :
+  xVector(new NLS_PetraVector(x,true)),
+  RHSVector(new NLS_PetraVector(x,false)),
+  gradVector(new NLS_PetraVector(x,false)),
+  NewtonVector(new NLS_PetraVector(x,false)),
+  Jac(&J)
+{
+  resetVectorStatus();
+  doDeleteJacobian = false;
 }
 
 //! Copy constructor
-NLS_PetraGroup::NLS_PetraGroup(NLS_Group& copyFrom) {
-
+NLS_PetraGroup::NLS_PetraGroup(NLS_Group& copyFrom, bool newJacobian) 
+{
+  // Copy vectors
+  xVector = dynamic_cast<NLS_PetraVector*>((copyFrom.getX()).newcopy());
+  RHSVector = dynamic_cast<NLS_PetraVector*>((copyFrom.getRHS()).newcopy());
+  gradVector = dynamic_cast<NLS_PetraVector*>((copyFrom.getGrad()).newcopy());
+  NewtonVector = dynamic_cast<NLS_PetraVector*>((copyFrom.getNewton()).newcopy());
+  // Copy Status Flags
+  statusRHS = copyFrom.isRHS();
+  statusJacobian = copyFrom.isJacobian();
+  statusGrad = copyFrom.isGrad();
+  statusNewton = copyFrom.isNewton();
+  // Copy Jacobian Matrix if required
+  NLS_PetraGroup& tmpGroup = dynamic_cast<NLS_PetraGroup&> (copyFrom);
+  if (newJacobian) {
+    Jac = new Epetra_CrsMatrix(*(dynamic_cast<Epetra_CrsMatrix*> (tmpGroup.Jac)));
+    doDeleteJacobian = true;
+  } else {
+    Jac = tmpGroup.Jac;
+    doDeleteJacobian = false;
+  }
 }
 
 //! Create a new group where the new solution vector is grp.x() + step * d
-NLS_PetraGroup::NLS_PetraGroup(NLS_Group& grp, 
-				     NLS_Vector& d, double step) {
-
+NLS_PetraGroup::NLS_PetraGroup(NLS_Group& grp, NLS_Vector& d, double step,
+			       bool newJacobian) 
+{
+  // Copy vectors
+  xVector = dynamic_cast<NLS_PetraVector*>((grp.getX()).newcopy());
+  xVector->update(1.0,d,step);
+  RHSVector = dynamic_cast<NLS_PetraVector*>((grp.getRHS()).newcopy());
+  gradVector = dynamic_cast<NLS_PetraVector*>((grp.getGrad()).newcopy());
+  NewtonVector = dynamic_cast<NLS_PetraVector*>((grp.getNewton()).newcopy());
+  // Copy Status Flags
+  statusRHS = grp.isRHS();
+  statusJacobian = grp.isJacobian();
+  statusGrad = grp.isGrad();
+  statusNewton = grp.isNewton();
+  // Copy Jacobian Matrix if required
+  NLS_PetraGroup& tmpGroup = dynamic_cast<NLS_PetraGroup&> (grp);
+  if (newJacobian) {
+    Jac = new Epetra_CrsMatrix(*(dynamic_cast<Epetra_CrsMatrix*> (tmpGroup.Jac)));
+    doDeleteJacobian = true;
+  } else {
+    Jac = tmpGroup.Jac;
+    doDeleteJacobian = false;
+  }
 }
  
 //! NLS_Group deconstructor
-NLS_PetraGroup::~NLS_PetraGroup() {
-
-}
-
-//! Copy Constructor
-NLS_PetraGroup& NLS_PetraGroup::operator=(NLS_PetraGroup& 
-							copyFrom) {
+NLS_PetraGroup::~NLS_PetraGroup() 
+{
+  delete xVector;
+  delete RHSVector;
+  delete gradVector;
+  delete NewtonVector;
+  if (doDeleteJacobian) delete Jac;
 
 }
 
 //! Compute and return solution vector
 NLS_Vector& NLS_PetraGroup::computeX(NLS_Group& x, NLS_Vector& d, double step) {
-  xVector.update(step, d, 1.0);
+  xVector->update(1.0, d, step);
   resetVectorStatus();
 }
 
 //! Compute and return RHS
 NLS_Vector& NLS_PetraGroup::computeRHS() {
-  //interface.loadFunction(xVector);
+  cout << "ERROR: NLS_PetraGroup::computeRHS() - This function must be overloaded to\n"
+    "interface with user's code!" << endl;
+  exit(-1);
 }
 
 //! Compute RHS
 void NLS_PetraGroup::computeJacobian() {
-  //interface.loadJacobian(xVector);
+  cout << "ERROR: NLS_PetraGroup::computeJacobian() - This function must be overloaded to\n"
+    "interface with user's code!" << endl;
+  exit(-1);
 }
 
 //! Compute and return gradient 
 /*! Throws an error if RHS and Jacobian have not been computed */
 NLS_Vector& NLS_PetraGroup::computeGrad() {
-  if (!isRHS) {
-    cout << "ERROR: computeGrad() - RHS is out of date wrt X!" << endl;
+  if (!isRHS()) {
+    cout << "ERROR: NLS_PetraGroup::computeGrad() - RHS is out of date wrt X!" << endl;
     throw;
   }
-  else if (!isJacobian) {
-    cout << "ERROR: computeGrad() - Jacobian is out of date wrt X!" << endl;
+  if (!isJacobian()) {
+    cout << "ERROR: NLS_PetraGroup::computeGrad() - Jacobian is out of date wrt X!" << endl;
     throw;
   }
   bool TransJ = true;
-  double scaleFactor = 1.0/RHSVector.norm2();
-  interface.Jacobian.Multiply(TransJ, RHSVector.petraVec, gradVector.petraVec);
-  gradVector.scaleVector(scaleFactor);
-  return gradVector;
+  double scaleFactor = 1.0/RHSVector->norm();
+  //interface.Jacobian.Multiply(TransJ, RHSVector.petraVec, gradVector.petraVec);
+  //gradVector->scale(scaleFactor);
+  return *gradVector;
 }
 
 //! Compute and return Newton direction 
@@ -87,22 +142,20 @@ NLS_Vector& NLS_PetraGroup::computeNewton() {
 //! Compute and return Newton direction, using desired accuracy for nonlinear solve
 /*! Throws an error if RHS and Jacobian have not been computed */
 NLS_Vector& NLS_PetraGroup::computeNewton(string& name, NLS_Parameter& parameter) {
-  if (!isRHS) {
+  if (!isRHS()) {
     cout << "ERROR: computeNewton() - RHS is out of date wrt X!" << endl;
     throw;
   }
-  else if (!isJacobian) {
+  else if (!isJacobian()) {
     cout << "ERROR: computeNewton() - Jacobian is out of date wrt X!" << endl;
     throw;
   }
-  Epetra_LinearProblem Problem(interface.Jacobian,
-				  xVector.petraVec,
-				  RHSVector.petraVec);
+  Epetra_LinearProblem Problem(Jac, xVector->petraVec, RHSVector->petraVec);
   // For now, set problem level to hard, moderate, or easy
   Problem.SetPDL(hard);
-  AztecOO aztec(Problem);
-  aztec.Iterate(nlParamsPtr->getMaxLinearStep(), eta_k);
-  return NewtonVector;
+  //AztecOO aztec(Problem);
+  //aztec.Iterate(nlParamsPtr->getMaxLinearStep(), eta_k);
+  return *NewtonVector;
 }
 
 /** @name Checks to see if various objects have been computed. 
@@ -133,7 +186,7 @@ NLS_Vector& NLS_PetraGroup::getX() {return *xVector;}
 
 //! Return rhs (throws an error if RHS has not been computed)
 NLS_Vector& NLS_PetraGroup::getRHS() {  
-  if (isRHS) return *RHSVector;
+  if (isRHS()) return *RHSVector;
   else {
     cout << "ERROR: RHS Vector does NOT correspond to current Group "
       "solution vector!" << endl;
@@ -143,7 +196,7 @@ NLS_Vector& NLS_PetraGroup::getRHS() {
 
 //! Return gradient (throws an error if gradient has not been computed)
 NLS_Vector& NLS_PetraGroup::getGrad() { 
-  if (isGrad) return *gradVector;
+  if (isGrad()) return *gradVector;
   else {
     cout << "ERROR: Grad Vector does NOT correspond to current Group "
       "solution vector!" << endl;
@@ -153,7 +206,7 @@ NLS_Vector& NLS_PetraGroup::getGrad() {
 
 //! Return Newton direction (throws an error if newton direction has not been computed)
 NLS_Vector& NLS_PetraGroup::getNewton() {
-  if (isNewton) return *NewtonVector;
+  if (isNewton()) return *NewtonVector;
   else {
     cout << "ERROR: Newton Vector does NOT correspond to current Group "
       "solution vector!" << endl;
@@ -161,7 +214,13 @@ NLS_Vector& NLS_PetraGroup::getNewton() {
   }
 }
 
-void NLS_PetraGroup::resetVectorStatus() {
+NLS_Group* NLS_PetraGroup::newcopy(bool newJacobian) 
+{
+  // **************** Not Finished yet!! ****************
+}
+
+void NLS_PetraGroup::resetVectorStatus() 
+{
   statusRHS = false;
   statusJacobian = false;
   statusGrad = false;

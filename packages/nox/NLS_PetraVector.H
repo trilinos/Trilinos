@@ -26,8 +26,7 @@ class NLS_PetraVector : public NLS_Vector {
   /*! The input vector is used to specify the map.  The contents are
     only copied if doCopyEntries is true.  If false, the vector is 
     initialized to all zeros.  */
-  NLS_PetraVector(const Epetra_Vector& copyFrom, 
-		  bool doCopyEntries = false);
+  NLS_PetraVector(const Epetra_Vector& copyFrom, bool doCopyEntries);
 
   //! Construct an NLS_PetraVector by pointing to an external Epetra_Vector.
   //! Creates a shallow copy (view) of the original vector.
@@ -52,10 +51,12 @@ class NLS_PetraVector : public NLS_Vector {
 
   virtual NLS_Vector& abs(const NLS_Vector& y);
 
+  //! See above for definition
   virtual NLS_Vector& abs(const NLS_PetraVector& y);
 
   virtual NLS_Vector& copy(const NLS_Vector& y, double scale = 1.0);
 
+  //! See above for definition
   virtual NLS_Vector& copy(const NLS_PetraVector& y, double scale = 1.0);
 
   NLS_Vector& update(double alpha, const NLS_Vector& y, double beta);
@@ -85,6 +86,8 @@ class NLS_PetraVector : public NLS_Vector {
 
   //! Print Function
   void print() const;
+  
+  friend class NLS_PetraGroup;
 
  private:
   

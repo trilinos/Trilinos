@@ -105,7 +105,11 @@ public:
 
   //! Create a \b new NLS_Group by copying this one. 
   //! Returns a pointer to the new group.
-  virtual NLS_Group* newcopy() = 0;
+  /*! The flag "newJacobian" determines if the Jacobian associated with
+   *  the new group should be a deep copy (true) or point to a 
+   *  Jacobian owned by the source NLS_Group (false).
+   */ 
+  virtual NLS_Group* newcopy(bool newJacobian=false) = 0;
 
   //@}
   

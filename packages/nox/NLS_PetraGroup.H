@@ -11,8 +11,14 @@
 #ifndef _NLS_PETRA_GROUP_H
 #define _NLS_PETRA_GROUP_H
 
+#include "Epetra_RowMatrix.h"
+#include "Epetra_CrsMatrix.h"
+#include "Epetra_LinearProblem.h"
+//#include "AztecOO.h"
 #include "NLS_Parameter.H"
+#include "NLS_ParameterList.H"
 #include "NLS_Vector.H"
+#include "NLS_PetraVector.H"
 #include "NLS_Group.H"
 
 //! Concrete implementation of the pure virtual NLS_Group.
@@ -29,20 +35,29 @@ class NLS_PetraGroup : public NLS_Group {
 
 public:
 
-  //! NLS_Group constructor
-  NLS_PetraGroup();
+  //! Constructor.  All vectors in group (solution, RHS, gradient and Newton) 
+  //! are deep copies based on the Epetra Vector passed in.
+  NLS_PetraGroup(Epetra_Vector& x);
 
-  //! Copy constructor
-  NLS_PetraGroup(NLS_Group& copyFrom);
+  //! Constructor.  All vectors in group (solution, RHS, gradient and Newton) 
+  //! are deep copies based on the Epetra Vector passed in.
+  NLS_PetraGroup(Epetra_Vector& x, Epetra_RowMatrix& J);
 
-  //! Create a new group where the new solution vector is grp.x() + step * d
-  NLS_PetraGroup(NLS_Group& grp, NLS_Vector& d, double step);
+  //! Copy constructor.
+  //! If newJacobian is true a deep copy of the Jacobian is created, 
+  //! otherwise a shallow copy is created.
+  NLS_PetraGroup(NLS_Group& copyFrom, bool newJacobian=false);
+
+  //! Create a new group where the new solution vector is grp.x() + step * d.  
+  //! If newJacobian is true a deep copy of the Jacobian is created, 
+  //! otherwise a shallow copy is created.
+  NLS_PetraGroup(NLS_Group& grp, NLS_Vector& d, double step, 
+		 bool newJacobian=false);
  
-  //! NLS_Group deconstructor
+  //! Deconstructor
   virtual ~NLS_PetraGroup();
 
-  //! Copy
-  virtual NLS_PetraGroup& operator=(NLS_PetraGroup& copyFrom);
+  virtual NLS_Group* newcopy(bool newJacobian=false);
 
   /** @name "Compute" functions */
   //@{
@@ -103,27 +118,35 @@ public:
 
 protected:
 
+  //! Disallow Copy operator for now.
+  virtual NLS_PetraGroup& operator=(NLS_PetraGroup& copyFrom) { };
+
   //! resets the status flags to false
   void resetVectorStatus();
 
 /** @name Vectors */
 //@{
 //! Solution vector.
-NLS_PetraVector* xVector;
+  NLS_PetraVector* xVector;
 //! Right-hand-side vector (function evaluation).
-NLS_PetraVector* RHSVector;
+  NLS_PetraVector* RHSVector;
 //! Gradient vector (steepest descent vector).
-NLS_PetraVector* gradVector;
+  NLS_PetraVector* gradVector;
 //! Newton direction vector.
-NLS_PetraVector* NewtonVector;
+  NLS_PetraVector* NewtonVector;
 //@}
+
+  //! Pointer to Epetra Jacobian Matrix 
+  Epetra_RowMatrix* Jac;
+
+  //! true if we should delete the Jacobian matrix when object 
+  //! is deconstructed.
+  bool doDeleteJacobian;
 
 /** @name Status flags 
  *  Tells if the vector is out of date with respect to the current 
  *  solution vector.
- *
  *  false = vector is now out of date.
- * 
  *  true = vector is up to date with current solution. */
 //@{
 bool statusRHS;
