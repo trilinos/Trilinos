@@ -81,7 +81,7 @@ typedef struct Dots
    double fsfc ;         /* computed normalized SFC coordinate     */
    double x[3] ;         /* dots coordinates in problem domain     */
    float weight ;        /* scalar computed from weight vector     */
-   int   proc ;          /* processor owning dots                  */
+   int   part ;          /* partition owning dots                  */
    } Dots ;              /* represents objects being load-balanced */
 
 
