@@ -39,6 +39,8 @@ extern "C" {
    Dept 9221, MS 1111
    (505) 845-7873
    sjplimp@cs.sandia.gov
+
+   Heavily modified and enhanced for Zoltan.
 */
 
 /* Notes:
@@ -72,7 +74,7 @@ static int set_preset_dir(int, int, int, struct rcb_box *, int **);
 static int serial_rcb(ZZ *, struct Dot_Struct *, int *, int *, int, int,
   struct rcb_box *, double *, int, int, int *, int *, int, int, int, int,
   int, int, int, int, int, int, int, int, int *, struct rcb_tree *, int *, int,
-  double *, double *, float *);
+  double *, double *, float *, double *, int, double);
 
 /*****************************************************************************/
 /*  Parameters structure for RCB method.  Used in  */
@@ -160,7 +162,7 @@ int Zoltan_RCB(
                                  4: yxz,        5: zxy,      6: zyx  */
     int rectilinear_blocks;   /* (0) do (1) don't break ties in find_median */
     int obj_wgt_comp;         /* 1 if all (multi-)weights for an object 
-                                 have same units, 0 otherwise. */
+                                 have same units (comparable), 0 otherwise. */
     int mcnorm;               /* norm (1,2,3) to use in multicriteria alg. */
     double max_aspect_ratio;  /* maximum allowed ratio of box dimensions */
     int average_cuts;         /* Flag forcing median line to be drawn halfway
@@ -250,8 +252,9 @@ static int rcb_fn(
                                     1: xyz,        2: xzy,      3: yzx,
                                     4: yxz,        5: zxy,      6: zyx  */
   int rectilinear_blocks,       /* (0) do (1) don't break ties in find_median*/
-  int obj_wgt_comp,             /* (1) obj wgts have same units, no scaling */
-  int mcnorm,                   /* norm for multicriteria bisection */
+  int obj_wgt_comp,             /* (0) obj wgts not comparable, use autoscaling
+                                   (1) obj wgts have same units, no scaling */
+  int mcnorm,                   /* norm (1-3) for multicriteria bisection */
   double max_aspect_ratio,      /* max allowed ratio of box dimensions */
   int average_cuts,             /* Flag forcing median line to be drawn halfway
                                    between two closest objects. */
@@ -952,7 +955,8 @@ static int rcb_fn(
                preset_dir, 
                rectilinear_blocks, obj_wgt_comp, mcnorm, average_cuts,
                counters, treept, dim_spec, level,
-               coord, wgts, part_sizes);
+               coord, wgts, part_sizes, wgtscale, rcb->Num_Dim,
+               max_aspect_ratio);
     ZOLTAN_FREE(&dindx);
     if (ierr < 0) {
       ZOLTAN_PRINT_ERROR(proc, yo, "Error returned from serial_rcb");
@@ -1329,24 +1333,37 @@ static int serial_rcb(
   int level,                 /* recursion level of RCB for preset_dir */
   double *coord,             /* temp array for median_find */
   double *wgts,              /* temp array for median_find */
-  float *part_sizes          /* Array of size zz->LB.Num_Global_Parts
+  float *part_sizes,         /* Array of size zz->LB.Num_Global_Parts
                                 containing the percentage of work to be
                                 assigned to each partition.               */
+  double *wgtscale,          /* Array of size wgtflag that gives the
+                                scaling factors for each weight dimension. */
+  int ndim,                  /* number of geometric dimensions */
+  double max_aspect_ratio 
 )
 {
-char *yo = "serial_rcb";
-int ierr = ZOLTAN_OK;
-int i, j;
-int dim;
-int first_guess;
-int new_nparts;
-int partmid;
-double valuehalf;
-double fractionlo[RB_MAX_WGTS];
-double weightlo[RB_MAX_WGTS], weighthi[RB_MAX_WGTS];
-int set0, set1;
-struct rcb_box tmpbox;
-double norm_max;
+  char *yo = "serial_rcb";
+  int ierr = ZOLTAN_OK;
+  int i, j;
+  int dim;
+  int first_guess;
+  int new_nparts;
+  int partmid;
+  double valuehalf;
+  double fractionlo[RB_MAX_WGTS];    /* desired weight in lower half */
+  double weightlo[RB_MAX_WGTS];      /* weight in lower half */
+  double weighthi[RB_MAX_WGTS];      /* weight in upper half */
+  double weightlo_best[RB_MAX_WGTS]; /* temp weightlo */
+  double weighthi_best[RB_MAX_WGTS]; /* temp weighthi */
+  int set0, set1, breakflag, one_cut_dir, tfs_disregard_results;
+  struct rcb_box tmpbox;
+  int *dotmark0 = NULL;             /* temp dotmark array */
+  int *dotmark_best = NULL;         /* temp dotmark array */
+  double valuehalf_best;            /* temp valuehalf */
+  int dim_best;                     /* best cut dimension  */
+  double norm_max, norm_best;       /* norm of largest half after bisection */
+  double max_box;                   /* largest length of bbox */
+
 
   if (num_parts == 1) {
     for (i = 0; i < dotnum; i++)
@@ -1356,40 +1373,90 @@ double norm_max;
     ierr = Zoltan_Divide_Parts(zz, zz->Obj_Weight_Dim, part_sizes, num_parts,
                                &partlower, &partmid, fractionlo);
 
-    dim = cut_dimension(lock_direction, treept, partmid, 
-                        preset_dir, dim_spec, &level, rcbbox);
+    /* Compute max box length. */
+    max_box = 0.0;
+    for (dim=0; dim<3; dim++)
+      if (rcbbox->hi[dim] - rcbbox->lo[dim] > max_box) 
+        max_box = rcbbox->hi[dim] - rcbbox->lo[dim];
 
-    for (i = 0; i < dotnum; i++) {
-      coord[i] = dotpt[dindx[i]].X[dim];
-      for (j=0; j<wgtflag; j++)
-        wgts[i*wgtflag+j] = dotpt[dindx[i]].Weight[j];
-    }
-
-    if (reuse && dim == treept[partmid].dim) {
-      if (stats) counters[5]++;
-      valuehalf = treept[partmid].cut;
-      first_guess = 1;
-    }
-    else
-      first_guess = 0;
-
-    if (wgtflag <= 1){
-      /* Call find_median with Tflops_Special == 0; avoids communication */
-      if (!Zoltan_RB_find_median(0, coord, wgts, dotmark, dotnum, proc, 
-                                 fractionlo[0], MPI_COMM_SELF, &valuehalf,
-                                 first_guess, counters, 1, 1, 0, 
-                                 num_parts, wgtflag, rcbbox->lo[dim], 
-                                 rcbbox->hi[dim], weight[0], weightlo, weighthi,
-                                 dotlist, rectilinear_blocks, average_cuts)) {
-        ZOLTAN_PRINT_ERROR(proc, yo, 
-                           "Error returned from Zoltan_RB_find_median");
-        ierr = ZOLTAN_FATAL;
+    /* try all cut directions and pick best one. */
+    breakflag= 0;
+    dim_best = -1;
+    norm_best = -1.;
+    one_cut_dir = (wgtflag<=1) || lock_direction || preset_dir;
+    if (!one_cut_dir){
+      if (!(dotmark0 = (int *) ZOLTAN_MALLOC(dotnum*sizeof(int)))
+       || !(dotmark_best = (int *) ZOLTAN_MALLOC(dotnum*sizeof(int)))){
+        ZOLTAN_PRINT_ERROR(proc, yo, "Memory error.");
+        ierr = ZOLTAN_MEMERR;
         goto End;
       }
+      for (j=0; j<dotnum; j++)
+        dotmark0[j] = dotmark[j];
     }
-    else {
-      /* Call find_bisector with Tflops_Special == 0; avoids communication */
-      if (Zoltan_RB_find_bisector(
+
+    for (dim=0; dim<ndim; dim++){
+
+      /* One cut direction only */
+      if (one_cut_dir){
+        dim = cut_dimension(lock_direction, treept, partmid, 
+                        preset_dir, dim_spec, &level, rcbbox);
+        breakflag= 1;
+      }
+      else {
+        /* Do not cut along this dimension if box is too thin. */
+        /* EBEB Do we need the tfs_disregard_results special case? */
+        if (zz->Tflops_Special) tfs_disregard_results = 0;
+
+        if (rcbbox->hi[dim] - rcbbox->lo[dim] < max_box/max_aspect_ratio) {
+          if (zz->Tflops_Special)/* All procs must participate in find_bisector;
+                                    compute cut but don't use the results. */
+            tfs_disregard_results = 1;
+          else 
+            continue;
+        }
+
+        /* Restore original dotmark array. */
+        for (j=0; j<dotnum; j++)
+          dotmark[j] = dotmark0[j];
+      }
+
+      /* copy correct coordinate value into the temporary array */
+      /* dotpt = rcb->Dots; */
+      for (i = 0; i < dotnum; i++) {
+        coord[i] = dotpt[dindx[i]].X[dim];
+        for (j=0; j<wgtflag; j++){
+          /* use the scaled weights. */
+          wgts[i*wgtflag+j] = wgtscale[j]*dotpt[i].Weight[j];
+        }
+      }
+  
+      /* determine if there is a first guess to use */
+      if (reuse && dim == treept[partmid].dim) {
+        if (stats) counters[5]++;
+        valuehalf = treept[partmid].cut;
+        first_guess = 1;
+      }
+      else first_guess = 0;
+  
+      if (wgtflag <= 1){
+        /* Call find_median with Tflops_Special == 0; avoids communication */
+        if (!Zoltan_RB_find_median(
+               0, coord, wgts, dotmark, dotnum, proc, 
+               fractionlo[0], MPI_COMM_SELF, &valuehalf, 
+               first_guess, &(counters[0]),
+               1, 1, 0, num_parts,
+               wgtflag, rcbbox->lo[dim], rcbbox->hi[dim], 
+               weight[0], weightlo, weighthi,
+               dotlist, rectilinear_blocks, average_cuts)) {
+          ZOLTAN_PRINT_ERROR(proc, yo,"Error returned from Zoltan_RB_find_median.");
+          ierr = ZOLTAN_FATAL;
+          goto End;
+        }
+      }
+      else { 
+        /* Call find_bisector with Tflops_Special == 0; avoids communication */
+        if (Zoltan_RB_find_bisector(
              zz, 0, coord, wgts, dotmark, dotnum, 
              wgtflag, mcnorm, fractionlo, MPI_COMM_SELF, 
              &valuehalf, first_guess, counters,
@@ -1397,14 +1464,67 @@ double norm_max;
              rcbbox->lo[dim], rcbbox->hi[dim], 
              weight, weightlo, weighthi, &norm_max,
              dotlist, rectilinear_blocks, average_cuts)
-        != ZOLTAN_OK) {
-        ZOLTAN_PRINT_ERROR(proc, yo,
-                           "Error returned from Zoltan_RB_find_bisector.");
+          != ZOLTAN_OK) {
+          ZOLTAN_PRINT_ERROR(proc, yo,"Error returned from Zoltan_RB_find_bisector.");
+          ierr = ZOLTAN_FATAL;
+          goto End;
+        }
+
+        /* test for better balance */
+        if ((!one_cut_dir) && 
+            ((norm_best<0.) ||
+              (!tfs_disregard_results && (norm_max < norm_best)))) {
+          norm_best = norm_max; 
+          dim_best = dim;
+          for (j=0; j<wgtflag; j++){
+            weightlo_best[j] = weightlo[j];
+            weighthi_best[j] = weighthi[j];
+          }
+          for (j=0; j<dotnum; j++)
+            dotmark_best[j] = dotmark[j];
+          valuehalf_best = valuehalf;
+        }
+        if (zz->Debug_Level >= ZOLTAN_DEBUG_ALL){
+          printf("[%1d] Debug: cut dim=%1d, norm_max=%f, dim_best=%1d, norm_best=%f, cut value=%f\n", 
+            proc, dim, norm_max, dim_best, norm_best, valuehalf);
+          if (wgtflag>1)
+            printf("[%1d] Debug: weightlo=(%f,%f), weighthi=(%f,%f)\n",
+              proc, weightlo[0], weightlo[1],  weighthi[0], weighthi[1]);
+        }
+      }
+      if (breakflag) break; /* if one_cut_dir is true */
+    }
+
+    if (!one_cut_dir){
+      /* We have tried all cut directions. Restore best result. */
+      if (dim_best<0){
+        ZOLTAN_PRINT_ERROR(proc, yo, 
+                           "Zoltan could not find any valid RCB cut.");
         ierr = ZOLTAN_FATAL;
         goto End;
       }
+      dim = dim_best;
+      for (j=0; j<wgtflag; j++){
+        weightlo[j] = weightlo_best[j];
+        weighthi[j] = weighthi_best[j];
+      }
+      for (j=0; j<dotnum; j++)
+        dotmark[j] = dotmark_best[j];
+      valuehalf = valuehalf_best;
+      /* free temp arrays */
+      ZOLTAN_FREE(&dotmark0);
+      ZOLTAN_FREE(&dotmark_best);
+
+      if (zz->Debug_Level >= ZOLTAN_DEBUG_ALL){
+        printf("[%1d] Debug: BEST dim=%1d, cut value=%f, norm_max=%f \n", 
+          proc, dim, valuehalf, norm_max);
+        if (wgtflag>1)
+          printf("[%1d] Debug: BEST weightlo=(%f,%f), weighthi=(%f,%f)\n",
+            proc, weightlo[0], weightlo[1],  weighthi[0], weighthi[1]);
+      }
     }
 
+    /* By now, we have the right values for the best cut. */
     treept[partmid].dim = dim;
     treept[partmid].cut = valuehalf;
     treept[partmid].parent = old_set ? -(root+1) : root+1;
@@ -1437,7 +1557,8 @@ double norm_max;
                         preset_dir, 
                         rectilinear_blocks, obj_wgt_comp, mcnorm, average_cuts,
                         counters, treept, dim_spec, level,
-                        coord, wgts, part_sizes);
+                        coord, wgts, part_sizes, wgtscale, ndim,
+                        max_aspect_ratio);
       if (ierr < 0) {
         goto End;
       }
@@ -1455,7 +1576,8 @@ double norm_max;
                         proc, wgtflag, lock_direction, reuse, stats, gen_tree, 
                         preset_dir, rectilinear_blocks, obj_wgt_comp, mcnorm,
                         average_cuts, counters, treept, dim_spec, level,
-                        coord, wgts, part_sizes);
+                        coord, wgts, part_sizes, wgtscale, ndim,
+                        max_aspect_ratio);
       if (ierr < 0) {
         goto End;
       }
