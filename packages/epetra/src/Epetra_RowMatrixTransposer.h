@@ -26,12 +26,13 @@
 #define EPETRA_CRSMATRIXTRANSPOSER_H
 class Epetra_RowMatrix;
 class Epetra_CrsMatrix;
+class Epetra_Map;
+class Epetra_Export;
 
 //! Epetra_RowMatrixTransposer: A class for transposing an Epetra_RowMatrix object.
 
 /*! This class provides capabilities to construct a transpose matrix of an existing Epetra_RowMatrix
-	  object an (optionally) redistribute it
-	  across a parallel distributed memory machine.
+	  object and (optionally) redistribute it across a parallel distributed memory machine.
 */
 
 class Epetra_RowMatrixTransposer {
@@ -74,8 +75,9 @@ class Epetra_RowMatrixTransposer {
 		\return Integer error code, 0 if no errors.  Negative if some fatal error occured.
 					 
   */
-  int CreateTranspose(const bool MakeDataContiguous, Epetra_Map * TransposeRowMap = 0,
-											Epetra_CrsMatrix *& TransposeMatrix);
+  int CreateTranspose(const bool MakeDataContiguous,
+											Epetra_CrsMatrix *& TransposeMatrix,
+											Epetra_Map * TransposeRowMap = 0);
 
 	
   //! Update the values of an already-redistributed problem.
@@ -90,39 +92,48 @@ class Epetra_RowMatrixTransposer {
 		\return Integer error code, 0 if no errors.  Negative if some fatal error occured.
 					 
   */
-  int UpdateValues(Epetra_RowMatrix * MatrixWithNewValues);
+  int UpdateTransposeValues(Epetra_RowMatrix * MatrixWithNewValues);
   //@}
   
   //@{ \name Reverse transformation methods.
-  //! Update values of original matrix (not sure if we will implement this).
-
-   \return Error code, returns 0 if no error.
-  */
-   int UpdateOriginalMatrix();
+  //! Update values of original matrix (Not implemented and not sure if we will implement this).
+   int UpdateOriginalMatrixValues();
   //@}
   
   //@{ \name Attribute accessor methods.
 
-  //! Returns const reference to the Epetra_Export object used to redistribute the original matrix.
+  //! Returns const reference to the Epetra_Map object describing the row distribution of the transpose matrix.
   /*! The RedistExporter object can be used to redistribute other Epetra_DistObject objects whose maps are compatible with
 		  the original linear problem map, or with the RedistMap().
+			\warning Must not be called before CreateTranspose()is called.
   */
-  const Epetra_Export & TransposeExporter() const;
+  const Epetra_Map & TransposeRowMap() const {return(*TransposeRowMap_);};
+  //! Returns const reference to the Epetra_Export object used to redistribute the original matrix.
+  /*! The TransposeExporter object can be used to redistribute other Epetra_DistObject objects whose maps are compatible with
+		  the original matrix. 
+			\warning Must not be called before CreateTranspose() is called.
+  */
+  const Epetra_Export & TransposeExporter() const{return(*TransposeExporter_);};
   //@}
   
  private: 
+	void DeleteData();
 	Epetra_RowMatrix * OrigMatrix_;
 	Epetra_CrsMatrix * TransposeMatrix_;
+	Epetra_Export * TransposeExporter_;
+	Epetra_Map * TransposeRowMap_;
 	bool MakeDataContiguous_;
 	bool TransposeCreated_;
 	int NumMyRows_;
 	int NumMyCols_;
-	int NumMyEquations_;
 	int MaxNumEntries_;
 	int * Indices_;
-	int * TransNumNz_;
 	double * Values_;
-		
+	int * TransNumNz_;
+	int ** TransIndices_;
+	double ** TransValues_;
+	int * TransMyGlobalEquations_;
+	bool OrigMatrixIsCrsMatrix_;
 
 };
 

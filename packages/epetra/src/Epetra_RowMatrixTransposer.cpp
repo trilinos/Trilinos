@@ -27,10 +27,14 @@
 #include "Epetra_RowMatrix.h"
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_CrsGraph.h"
+#include "Epetra_Map.h"
+#include "Epetra_Export.h"
 //=============================================================================
 Epetra_RowMatrixTransposer::Epetra_RowMatrixTransposer(Epetra_RowMatrix * OrigMatrix)
   : OrigMatrix_(OrigMatrix),
     TransposeMatrix_(0),
+		TransposeExporter_(0),
+		TransposeRowMap_(0),
     MakeDataContiguous_(false)
 {
 }
@@ -38,10 +42,13 @@ Epetra_RowMatrixTransposer::Epetra_RowMatrixTransposer(Epetra_RowMatrix * OrigMa
 Epetra_RowMatrixTransposer::Epetra_RowMatrixTransposer(const Epetra_RowMatrixTransposer& Source)
   :OrigMatrix_(Source.OrigMatrix_),
     TransposeMatrix_(0),
+		TransposeExporter_(0),
+		TransposeRowMap_(0),
     MakeDataContiguous_(Source.MakeDataContiguous_) 
 {
 	TransposeMatrix_ = new Epetra_CrsMatrix(*Source.TransposeMatrix_);
 	if (MakeDataContiguous_) TransposeMatrix_->MakeDataContiguous();
+	TransposeExporter_ = new Epetra_Export(*Source.TransposeExporter_);
 }
 //=========================================================================
 Epetra_RowMatrixTransposer::~Epetra_RowMatrixTransposer(){
@@ -51,35 +58,47 @@ Epetra_RowMatrixTransposer::~Epetra_RowMatrixTransposer(){
 }
 
 //=========================================================================
-void Epetra_RowMatrixTransposer::Allocate (Epetra_CrsMatrix * CrsMatrix){
-
-	NumMyRows_ = OrigMatrix_->NumMyRows();
-	NumMyCols_ = OrigMatrix_->NumMyCols();
-	if (CrsMatrix!=0) {
-		MaxNumEntries_ = CrsMatrix_->MaxNumEntries();
-	}
-	else {
-		MaxNumEntries_ = 0;
-		for (i=0; i<NumMyRows_; i++) EPETRA_MAX(MaxNumEntries_, NumMyRowEntries(i));
-		Indices_ = new int[MaxNumEntries_];
-		Values_ = new double[MaxNumEntries_];
-	}
-		TransNumNz = new int[NumMyCols];
-}
-
-//=========================================================================
 void Epetra_RowMatrixTransposer::DeleteData (){
 
+	int i;
+
 	if (TransposeMatrix_!=0) {delete TransposeMatrix_; TransposeMatrix_=0;}
+	if (TransposeExporter_!=0) {delete TransposeExporter_; TransposeExporter_=0;}
+
+	// Delete any intermediate storage
+
+	if (!OrigMatrixIsCrsMatrix_) {
+		delete [] Indices_;
+		delete [] Values_;
+	}
+	
+	
+  for(i=0; i<NumMyCols_; i++) {
+    int NumIndices = TransNumNz_[i];
+    if (NumIndices>0) {
+      delete [] TransIndices_[i];
+      delete [] TransValues_[i];
+    }
+  }
+	delete [] TransNumNz_;
+	delete [] TransIndices_;
+	delete [] TransValues_;
+	delete [] TransMyGlobalEquations_;
 }
 
 //=========================================================================
-int Epetra_RowMatrixTransposer::CreateTranspose (const bool MakeDataContiguous, Epetra_CrsMatrix *& TransposeMatrix
-																								 Epetra_Map * TransposeRowMap){
+int Epetra_RowMatrixTransposer::CreateTranspose (const bool MakeDataContiguous, 
+																								 Epetra_CrsMatrix *& TransposeMatrix, 
+																								 Epetra_Map * TransposeRowMap) {
 
 	int i, j;
 
   if (TransposeCreated_) DeleteData(); // Get rid of existing data first
+
+	if (TransposeRowMap==0)
+		TransposeRowMap_ = (Epetra_Map *) &(OrigMatrix_->OperatorDomainMap()); // Should be replaced with refcount =
+	else
+		TransposeRowMap_ = TransposeRowMap; 
 
 	// This routine will work for any RowMatrix object, but will attempt cast the matrix to a CrsMatrix if
 	// possible (because we can then use a View of the matrix and graph, which is much cheaper).
@@ -88,66 +107,79 @@ int Epetra_RowMatrixTransposer::CreateTranspose (const bool MakeDataContiguous, 
   // transpose graph on each processor
 
 
-	Epetra_CrsMatrix * CrsMatrix = dynamic_cast<Epetra_CrsMatrix *>(OrigMatrix_);
+	Epetra_CrsMatrix * OrigCrsMatrix = dynamic_cast<Epetra_CrsMatrix *>(OrigMatrix_);
 
-	bool IsCrsMatrix = (CrsMatrix!=0); // If this pointer is non-zero, the cast to CrsMatrix worked
+	OrigMatrixIsCrsMatrix_ = (OrigCrsMatrix!=0); // If this pointer is non-zero, the cast to CrsMatrix worked
 
-	// Allocate internal storage
-	Allocate(CrsMatrix);
+	NumMyRows_ = OrigMatrix_->NumMyRows();
+	NumMyCols_ = OrigMatrix_->NumMyCols();
+	NumMyRows_ = OrigMatrix_->NumMyRows();
+	TransNumNz_ = new int[NumMyCols_];
+  TransIndices_ = new int*[NumMyCols_];
+  TransValues_ = new double*[NumMyCols_];
 
-	if (IsCrsMatrix) {
+
+	int NumIndices;
+
+	if (OrigMatrixIsCrsMatrix_) {
 
 
-		const Epetra_CrsGraph & AG = A->Graph(); // Get matrix graph
+		const Epetra_CrsGraph & OrigGraph = OrigCrsMatrix->Graph(); // Get matrix graph
 
-		for (i=0;i<NumMyCols; i++) TransNumNz[i] = 0;
-		for (i=0; i<NumMyEquations; i++) {
-			EPETRA_CHK_ERR(AG.ExtractMyRowView(i, NumIndices, Indices)); // Get view of ith row
-			for (j=0; j<NumIndices; j++) ++TransNumNz[Indices[j]];
+		for (i=0;i<NumMyCols_; i++) TransNumNz_[i] = 0;
+		for (i=0; i<NumMyRows_; i++) {
+			EPETRA_CHK_ERR(OrigGraph.ExtractMyRowView(i, NumIndices, Indices_)); // Get view of ith row
+			for (j=0; j<NumIndices; j++) ++TransNumNz_[Indices_[j]];
 		}
 	}
 	else { // OrigMatrix is not a CrsMatrix
 
+		MaxNumEntries_ = 0;
+		int NumEntries;
+		for (i=0; i<NumMyRows_; i++) {
+			OrigMatrix_->NumMyRowEntries(i, NumEntries);
+			EPETRA_MAX(MaxNumEntries_, NumEntries);
+		}
+		Indices_ = new int[MaxNumEntries_];
+		Values_ = new double[MaxNumEntries_];
 
-
-		for (i=0;i<NumMyCols; i++) TransNumNz[i] = 0;
-		for (i=0; i<NumMyEquations; i++) {
+		for (i=0;i<NumMyCols_; i++) TransNumNz_[i] = 0;
+		for (i=0; i<NumMyRows_; i++) {
 			// Get view of ith row
-			EPETRA_CHK_ERR(OrigMatrix_->ExtractMyRowCopy(i, MaxNumEntries, NumIndices, Values, Indices)); 
-			for (j=0; j<NumIndices; j++) ++TransNumNz[Indices[j]];
+			EPETRA_CHK_ERR(OrigMatrix_->ExtractMyRowCopy(i, MaxNumEntries_, NumIndices, Values_, Indices_)); 
+			for (j=0; j<NumIndices; j++) ++TransNumNz_[Indices_[j]];
 		}
 	}
 
+
 	// Most of remaining code is common to both cases
 
-  int ** TransIndices = new int*[NumMyCols];
-  double ** TransValues = new double*[NumMyCols];
-
-  for(i=0; i<NumMyCols; i++) {
-    NumIndices = TransNumNz[i];
+  for(i=0; i<NumMyCols_; i++) {
+    NumIndices = TransNumNz_[i];
     if (NumIndices>0) {
-      TransIndices[i] = new int[NumIndices];
-      TransValues[i] = new double[NumIndices];
+      TransIndices_[i] = new int[NumIndices];
+      TransValues_[i] = new double[NumIndices];
     }
   }
 
   // Now copy values and global indices into newly create transpose storage
 
-  for (i=0;i<NumMyCols; i++) TransNumNz[i] = 0; // Reset transpose NumNz counter
-  for (i=0; i<NumMyEquations; i++) {
-		if (IsCrsMatrix) {
-			EPETRA_CHK_ERR(CrsMatrix->ExtractMyRowView(i, NumIndices, Values, Indices));
+  for (i=0;i<NumMyCols_; i++) TransNumNz_[i] = 0; // Reset transpose NumNz counter
+  for (i=0; i<NumMyRows_; i++) {
+		if (OrigMatrixIsCrsMatrix_) {
+			EPETRA_CHK_ERR(OrigCrsMatrix->ExtractMyRowView(i, NumIndices, Values_, Indices_));
 		}
 		else {
-			EPETRA_CHK_ERR(OrigMatrix_->ExtractMyRowCopy(i, MaxNumEntries, NumIndices, Values, Indices));
+			EPETRA_CHK_ERR(OrigMatrix_->ExtractMyRowCopy(i, MaxNumEntries_, NumIndices, Values_, Indices_));
+		}
 
     int ii = OrigMatrix_->RowMatrixRowMap().GID(i);
     for (j=0; j<NumIndices; j++) {
-      int TransRow = Indices[j];
-      int loc = TransNumNz[TransRow];
-      TransIndices[TransRow][loc] = ii;
-      TransValues[TransRow][loc] = Values[j];
-      ++TransNumNz[TransRow]; // increment counter into current transpose row
+      int TransRow = Indices_[j];
+      int loc = TransNumNz_[TransRow];
+      TransIndices_[TransRow][loc] = ii;
+      TransValues_[TransRow][loc] = Values_[j];
+      ++TransNumNz_[TransRow]; // increment counter into current transpose row
     }
   }
 
@@ -156,16 +188,16 @@ int Epetra_RowMatrixTransposer::CreateTranspose (const bool MakeDataContiguous, 
 
   const Epetra_Map & TransMap = OrigMatrix_->RowMatrixColMap();
 
-  Epetra_CrsMatrix TempTransA1(View, TransMap, TransNumNz);
-  int * TransMyGlobalEquations = new int[NumMyCols];
-  TransMap.MyGlobalElements(TransMyGlobalEquations);
+  Epetra_CrsMatrix TempTransA1(View, TransMap, TransNumNz_);
+  TransMyGlobalEquations_ = new int[NumMyCols_];
+  TransMap.MyGlobalElements(TransMyGlobalEquations_);
   
   /* Add  rows one-at-a-time */
 
-  for (i=0; i<NumMyCols; i++)
+  for (i=0; i<NumMyCols_; i++)
     {
-     EPETRA_CHK_ERR(TempTransA1.InsertGlobalValues(TransMyGlobalEquations[i], 
-				      TransNumNz[i], TransValues[i], TransIndices[i]));
+     EPETRA_CHK_ERR(TempTransA1.InsertGlobalValues(TransMyGlobalEquations_[i], 
+				      TransNumNz_[i], TransValues_[i], TransIndices_[i]));
     }
  
   // Note: The following call to TransformToLocal is currently necessary because
@@ -175,39 +207,94 @@ int Epetra_RowMatrixTransposer::CreateTranspose (const bool MakeDataContiguous, 
   // Now that transpose matrix with shared rows is entered, create a new matrix that will
   // get the transpose with uniquely owned rows (using the same row distribution as A).
 
-   TransposeMatrix_ = new Epetra_CrsMatrix(Copy, TransposeRowMap,0);
+   TransposeMatrix_ = new Epetra_CrsMatrix(Copy, *TransposeRowMap_,0);
 
   // Create an Export object that will move TempTransA around
 
-  Epetra_Export Export(TransMap, TransposeRowMap);
+  TransposeExporter_ = new Epetra_Export(TransMap, *TransposeRowMap_);
 
-  EPETRA_CHK_ERR(Transposematrix_->Export(TempTransA1, Export, Add));
+  EPETRA_CHK_ERR(TransposeMatrix_->Export(TempTransA1, *TransposeExporter_, Add));
   
-  EPETRA_CHK_ERR(Transposematrix_->TransformToLocal());
+  EPETRA_CHK_ERR(TransposeMatrix_->TransformToLocal());
 
 	if (MakeDataContiguous) {
-		EPETRA_CHK_ERR(Transposematrix_->MakeDataContiguous());
+		EPETRA_CHK_ERR(TransposeMatrix_->MakeDataContiguous());
 	}
 
-	// Delete any temp storage
+	TransposeCreated_ = true;
 
-	if (!IsCrsMatrix) {
-		delete [] Indices;
-		delete [] Values;
+  return(0);
+}
+//=========================================================================
+int Epetra_RowMatrixTransposer::UpdateTransposeValues(Epetra_RowMatrix * MatrixWithNewValues){
+
+	int i, j, NumIndices;
+
+  if (!TransposeCreated_) EPETRA_CHK_ERR(-1); // Transpose must be already created
+
+	// Sanity check of incoming matrix.  Perform some tests to see if it is compatible with original input matrix
+	if (OrigMatrix_!=MatrixWithNewValues) { // Check if pointer of new matrix is same as previous input matrix
+		OrigMatrix_ = MatrixWithNewValues; // Reset this pointer if not, then check for other attributes
+		if (NumMyRows_ != OrigMatrix_->NumMyRows() ||
+				NumMyCols_ != OrigMatrix_->NumMyCols() ||
+				NumMyRows_ != OrigMatrix_->NumMyRows()) {
+			EPETRA_CHK_ERR(-2); // New matrix not compatible with previous
+		}
 	}
+
+	Epetra_CrsMatrix * OrigCrsMatrix = dynamic_cast<Epetra_CrsMatrix *>(MatrixWithNewValues);
+
 	
-  for(i=0; i<NumMyCols; i++) {
-    NumIndices = TransNumNz[i];
-    if (NumIndices>0) {
-      delete [] TransIndices[i];
-      delete [] TransValues[i];
+	OrigMatrixIsCrsMatrix_ = (OrigCrsMatrix!=0); // If this pointer is non-zero, the cast to CrsMatrix worked
+
+
+  // Now copy values and global indices into newly create transpose storage
+
+  for (i=0;i<NumMyCols_; i++) TransNumNz_[i] = 0; // Reset transpose NumNz counter
+  for (i=0; i<NumMyRows_; i++) {
+		if (OrigMatrixIsCrsMatrix_) {
+			EPETRA_CHK_ERR(OrigCrsMatrix->ExtractMyRowView(i, NumIndices, Values_, Indices_));
+		}
+		else {
+			EPETRA_CHK_ERR(OrigMatrix_->ExtractMyRowCopy(i, MaxNumEntries_, NumIndices, Values_, Indices_));
+		}
+
+    int ii = OrigMatrix_->RowMatrixRowMap().GID(i);
+    for (j=0; j<NumIndices; j++) {
+      int TransRow = Indices_[j];
+      int loc = TransNumNz_[TransRow];
+      TransIndices_[TransRow][loc] = ii;
+      TransValues_[TransRow][loc] = Values_[j];
+      ++TransNumNz_[TransRow]; // increment counter into current transpose row
     }
   }
-	delete [] TransNumNz;
-	delete [] TransIndices;
-	delete [] TransValues;
-	delete [] TransMyGlobalEquations
-	TransposeCreated_ = true;
+
+  //  Build Transpose matrix with some rows being shared across processors.
+  //  We will use a view here since the matrix will not be used for anything else
+
+  const Epetra_Map & TransMap = OrigMatrix_->RowMatrixColMap();
+
+  Epetra_CrsMatrix TempTransA1(View, TransMap, TransNumNz_);
+  TransMyGlobalEquations_ = new int[NumMyCols_];
+  TransMap.MyGlobalElements(TransMyGlobalEquations_);
+  
+  /* Add  rows one-at-a-time */
+
+  for (i=0; i<NumMyCols_; i++)
+    {
+     EPETRA_CHK_ERR(TempTransA1.InsertGlobalValues(TransMyGlobalEquations_[i], 
+				      TransNumNz_[i], TransValues_[i], TransIndices_[i]));
+    }
+ 
+  // Note: The following call to TransformToLocal is currently necessary because
+  //       some global constants that are needed by the Export () are computed in this routine
+  EPETRA_CHK_ERR(TempTransA1.TransformToLocal());
+
+  // Now that transpose matrix with shared rows is entered, update values of target transpose matrix
+
+	TransposeMatrix_->PutScalar(0.0);  // Zero out all values of the matrix
+
+  EPETRA_CHK_ERR(TransposeMatrix_->Export(TempTransA1, *TransposeExporter_, Add));
 
   return(0);
 }
