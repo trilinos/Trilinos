@@ -487,6 +487,12 @@ int Ifpack_CrsRiluk::Factor() {
     for (j=0; j<NumIn; j++) colflag[InI[j]] = -1;
   }
 
+  // Validate that the L and U factors are actually lower and upper triangular
+
+  if( !L_->LowerTriangular() ) 
+    EPETRA_CHK_ERR(-2);
+  if( !U_->UpperTriangular() ) 
+    EPETRA_CHK_ERR(-3);
   
   // Add up flops
  
