@@ -99,6 +99,7 @@ COMP_H = \
 	$(srcdir)/Ifpack_IlukGraph.h          \
 	$(srcdir)/Ifpack_CrsRiluk.h           \
 	$(srcdir)/Ifpack_gRiluk.h             \
+	$(srcdir)/Ifpack_vRiluk.h             \
 	$(srcdir)/Ifpack_OverlapGraph.h       \
 	$(srcdir)/Ifpack_ScalingType.h        \
 	$(srcdir)/Ifpack_CrsIct.h             \
@@ -135,13 +136,15 @@ COMP_H = \
 	$(srcdir)/Ifpack_Utils.h                  \
 	$(srcdir)/Ifpack_Reordering.h             \
 	$(srcdir)/Ifpack_RCMReordering.h          \
-	$(srcdir)/Ifpack_METISReordering.h  
+	$(srcdir)/Ifpack_METISReordering.h        \
+	$(srcdir)/Ifpack_OverlappingRowMatrix.h
 
 
 COMP = \
 	$(srcdir)/Ifpack_IlukGraph.cpp           \
 	$(srcdir)/Ifpack_CrsRiluk.cpp            \
 	$(srcdir)/Ifpack_gRiluk.cpp              \
+	$(srcdir)/Ifpack_vRiluk.cpp              \
 	$(srcdir)/Ifpack_CrsIct.cpp              \
 	$(srcdir)/Ifpack_vIct.cpp                \
 	$(srcdir)/Ifpack_gIct.cpp                \
@@ -168,7 +171,8 @@ COMP = \
 	$(srcdir)/Ifpack_METISPartitioner.cpp       \
 	$(srcdir)/Ifpack_EquationPartitioner.cpp    \
 	$(srcdir)/Ifpack_RCMReordering.cpp          \
-	$(srcdir)/Ifpack_METISReordering.cpp
+	$(srcdir)/Ifpack_METISReordering.cpp        \
+	$(srcdir)/Ifpack_OverlappingRowMatrix.cpp
 
 
 # ------------------------------------------------------------------------

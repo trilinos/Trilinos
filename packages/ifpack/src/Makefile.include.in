@@ -120,14 +120,15 @@ am__DEPENDENCIES_1 =
 libifpack_a_DEPENDENCIES = $(am__DEPENDENCIES_1)
 am__objects_1 =
 am__objects_2 = Ifpack_IlukGraph.$(OBJEXT) Ifpack_CrsRiluk.$(OBJEXT) \
-	Ifpack_gRiluk.$(OBJEXT) Ifpack_CrsIct.$(OBJEXT) \
-	Ifpack_vIct.$(OBJEXT) Ifpack_gIct.$(OBJEXT) \
-	Ifpack_gIct_Utils.$(OBJEXT) Ifpack_OverlapGraph.$(OBJEXT) \
-	icrout_cholesky_mex.$(OBJEXT) icrout_quicksort.$(OBJEXT) \
-	ifp_parameters.$(OBJEXT) Ifpack_PointRelaxation.$(OBJEXT) \
-	Ifpack_Condest.$(OBJEXT) Ifpack.$(OBJEXT) \
-	Ifpack_LocalFilter.$(OBJEXT) Ifpack_DropFilter.$(OBJEXT) \
-	Ifpack_SparsityFilter.$(OBJEXT) Ifpack_ReorderFilter.$(OBJEXT) \
+	Ifpack_gRiluk.$(OBJEXT) Ifpack_vRiluk.$(OBJEXT) \
+	Ifpack_CrsIct.$(OBJEXT) Ifpack_vIct.$(OBJEXT) \
+	Ifpack_gIct.$(OBJEXT) Ifpack_gIct_Utils.$(OBJEXT) \
+	Ifpack_OverlapGraph.$(OBJEXT) icrout_cholesky_mex.$(OBJEXT) \
+	icrout_quicksort.$(OBJEXT) ifp_parameters.$(OBJEXT) \
+	Ifpack_PointRelaxation.$(OBJEXT) Ifpack_Condest.$(OBJEXT) \
+	Ifpack.$(OBJEXT) Ifpack_LocalFilter.$(OBJEXT) \
+	Ifpack_DropFilter.$(OBJEXT) Ifpack_SparsityFilter.$(OBJEXT) \
+	Ifpack_ReorderFilter.$(OBJEXT) \
 	Ifpack_SingletonFilter.$(OBJEXT) \
 	Ifpack_Graph_Epetra_RowMatrix.$(OBJEXT) \
 	Ifpack_Graph_Epetra_CrsGraph.$(OBJEXT) Ifpack_Amesos.$(OBJEXT) \
@@ -137,7 +138,8 @@ am__objects_2 = Ifpack_IlukGraph.$(OBJEXT) Ifpack_CrsRiluk.$(OBJEXT) \
 	Ifpack_METISPartitioner.$(OBJEXT) \
 	Ifpack_EquationPartitioner.$(OBJEXT) \
 	Ifpack_RCMReordering.$(OBJEXT) \
-	Ifpack_METISReordering.$(OBJEXT)
+	Ifpack_METISReordering.$(OBJEXT) \
+	Ifpack_OverlappingRowMatrix.$(OBJEXT)
 am_libifpack_a_OBJECTS = $(am__objects_1) $(am__objects_1) \
 	$(am__objects_1) $(am__objects_1) $(am__objects_2) \
 	$(am__objects_1) $(am__objects_1)
@@ -162,6 +164,7 @@ am__depfiles_maybe = depfiles
 @AMDEP_TRUE@	./$(DEPDIR)/Ifpack_METISReordering.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/Ifpack_OverlapGraph.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/Ifpack_OverlappingPartitioner.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/Ifpack_OverlappingRowMatrix.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/Ifpack_PointRelaxation.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/Ifpack_RCMReordering.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/Ifpack_ReorderFilter.Po \
@@ -172,6 +175,7 @@ am__depfiles_maybe = depfiles
 @AMDEP_TRUE@	./$(DEPDIR)/Ifpack_gIct_Utils.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/Ifpack_gRiluk.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/Ifpack_vIct.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/Ifpack_vRiluk.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/icrout_cholesky_mex.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/icrout_quicksort.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/ifp_parameters.Po
@@ -354,6 +358,7 @@ COMP_H = \
 	$(srcdir)/Ifpack_IlukGraph.h          \
 	$(srcdir)/Ifpack_CrsRiluk.h           \
 	$(srcdir)/Ifpack_gRiluk.h             \
+	$(srcdir)/Ifpack_vRiluk.h             \
 	$(srcdir)/Ifpack_OverlapGraph.h       \
 	$(srcdir)/Ifpack_ScalingType.h        \
 	$(srcdir)/Ifpack_CrsIct.h             \
@@ -390,12 +395,14 @@ COMP_H = \
 	$(srcdir)/Ifpack_Utils.h                  \
 	$(srcdir)/Ifpack_Reordering.h             \
 	$(srcdir)/Ifpack_RCMReordering.h          \
-	$(srcdir)/Ifpack_METISReordering.h  
+	$(srcdir)/Ifpack_METISReordering.h        \
+	$(srcdir)/Ifpack_OverlappingRowMatrix.h
 
 COMP = \
 	$(srcdir)/Ifpack_IlukGraph.cpp           \
 	$(srcdir)/Ifpack_CrsRiluk.cpp            \
 	$(srcdir)/Ifpack_gRiluk.cpp              \
+	$(srcdir)/Ifpack_vRiluk.cpp              \
 	$(srcdir)/Ifpack_CrsIct.cpp              \
 	$(srcdir)/Ifpack_vIct.cpp                \
 	$(srcdir)/Ifpack_gIct.cpp                \
@@ -422,7 +429,8 @@ COMP = \
 	$(srcdir)/Ifpack_METISPartitioner.cpp       \
 	$(srcdir)/Ifpack_EquationPartitioner.cpp    \
 	$(srcdir)/Ifpack_RCMReordering.cpp          \
-	$(srcdir)/Ifpack_METISReordering.cpp
+	$(srcdir)/Ifpack_METISReordering.cpp        \
+	$(srcdir)/Ifpack_OverlappingRowMatrix.cpp
 
 
 # ------------------------------------------------------------------------
@@ -605,6 +613,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Ifpack_METISReordering.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Ifpack_OverlapGraph.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Ifpack_OverlappingPartitioner.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Ifpack_OverlappingRowMatrix.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Ifpack_PointRelaxation.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Ifpack_RCMReordering.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Ifpack_ReorderFilter.Po@am__quote@
@@ -615,6 +624,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Ifpack_gIct_Utils.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Ifpack_gRiluk.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Ifpack_vIct.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Ifpack_vRiluk.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/icrout_cholesky_mex.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/icrout_quicksort.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ifp_parameters.Po@am__quote@
@@ -730,6 +740,22 @@ Ifpack_gRiluk.obj: $(srcdir)/Ifpack_gRiluk.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Ifpack_gRiluk.Po' tmpdepfile='$(DEPDIR)/Ifpack_gRiluk.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Ifpack_gRiluk.obj `if test -f '$(srcdir)/Ifpack_gRiluk.cpp'; then $(CYGPATH_W) '$(srcdir)/Ifpack_gRiluk.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Ifpack_gRiluk.cpp'; fi`
+
+Ifpack_vRiluk.o: $(srcdir)/Ifpack_vRiluk.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Ifpack_vRiluk.o -MD -MP -MF "$(DEPDIR)/Ifpack_vRiluk.Tpo" -c -o Ifpack_vRiluk.o `test -f '$(srcdir)/Ifpack_vRiluk.cpp' || echo '$(srcdir)/'`$(srcdir)/Ifpack_vRiluk.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Ifpack_vRiluk.Tpo" "$(DEPDIR)/Ifpack_vRiluk.Po"; else rm -f "$(DEPDIR)/Ifpack_vRiluk.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Ifpack_vRiluk.cpp' object='Ifpack_vRiluk.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Ifpack_vRiluk.Po' tmpdepfile='$(DEPDIR)/Ifpack_vRiluk.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Ifpack_vRiluk.o `test -f '$(srcdir)/Ifpack_vRiluk.cpp' || echo '$(srcdir)/'`$(srcdir)/Ifpack_vRiluk.cpp
+
+Ifpack_vRiluk.obj: $(srcdir)/Ifpack_vRiluk.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Ifpack_vRiluk.obj -MD -MP -MF "$(DEPDIR)/Ifpack_vRiluk.Tpo" -c -o Ifpack_vRiluk.obj `if test -f '$(srcdir)/Ifpack_vRiluk.cpp'; then $(CYGPATH_W) '$(srcdir)/Ifpack_vRiluk.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Ifpack_vRiluk.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Ifpack_vRiluk.Tpo" "$(DEPDIR)/Ifpack_vRiluk.Po"; else rm -f "$(DEPDIR)/Ifpack_vRiluk.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Ifpack_vRiluk.cpp' object='Ifpack_vRiluk.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Ifpack_vRiluk.Po' tmpdepfile='$(DEPDIR)/Ifpack_vRiluk.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Ifpack_vRiluk.obj `if test -f '$(srcdir)/Ifpack_vRiluk.cpp'; then $(CYGPATH_W) '$(srcdir)/Ifpack_vRiluk.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Ifpack_vRiluk.cpp'; fi`
 
 Ifpack_CrsIct.o: $(srcdir)/Ifpack_CrsIct.cpp
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Ifpack_CrsIct.o -MD -MP -MF "$(DEPDIR)/Ifpack_CrsIct.Tpo" -c -o Ifpack_CrsIct.o `test -f '$(srcdir)/Ifpack_CrsIct.cpp' || echo '$(srcdir)/'`$(srcdir)/Ifpack_CrsIct.cpp; \
@@ -1130,6 +1156,22 @@ Ifpack_METISReordering.obj: $(srcdir)/Ifpack_METISReordering.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Ifpack_METISReordering.Po' tmpdepfile='$(DEPDIR)/Ifpack_METISReordering.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Ifpack_METISReordering.obj `if test -f '$(srcdir)/Ifpack_METISReordering.cpp'; then $(CYGPATH_W) '$(srcdir)/Ifpack_METISReordering.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Ifpack_METISReordering.cpp'; fi`
+
+Ifpack_OverlappingRowMatrix.o: $(srcdir)/Ifpack_OverlappingRowMatrix.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Ifpack_OverlappingRowMatrix.o -MD -MP -MF "$(DEPDIR)/Ifpack_OverlappingRowMatrix.Tpo" -c -o Ifpack_OverlappingRowMatrix.o `test -f '$(srcdir)/Ifpack_OverlappingRowMatrix.cpp' || echo '$(srcdir)/'`$(srcdir)/Ifpack_OverlappingRowMatrix.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Ifpack_OverlappingRowMatrix.Tpo" "$(DEPDIR)/Ifpack_OverlappingRowMatrix.Po"; else rm -f "$(DEPDIR)/Ifpack_OverlappingRowMatrix.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Ifpack_OverlappingRowMatrix.cpp' object='Ifpack_OverlappingRowMatrix.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Ifpack_OverlappingRowMatrix.Po' tmpdepfile='$(DEPDIR)/Ifpack_OverlappingRowMatrix.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Ifpack_OverlappingRowMatrix.o `test -f '$(srcdir)/Ifpack_OverlappingRowMatrix.cpp' || echo '$(srcdir)/'`$(srcdir)/Ifpack_OverlappingRowMatrix.cpp
+
+Ifpack_OverlappingRowMatrix.obj: $(srcdir)/Ifpack_OverlappingRowMatrix.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Ifpack_OverlappingRowMatrix.obj -MD -MP -MF "$(DEPDIR)/Ifpack_OverlappingRowMatrix.Tpo" -c -o Ifpack_OverlappingRowMatrix.obj `if test -f '$(srcdir)/Ifpack_OverlappingRowMatrix.cpp'; then $(CYGPATH_W) '$(srcdir)/Ifpack_OverlappingRowMatrix.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Ifpack_OverlappingRowMatrix.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Ifpack_OverlappingRowMatrix.Tpo" "$(DEPDIR)/Ifpack_OverlappingRowMatrix.Po"; else rm -f "$(DEPDIR)/Ifpack_OverlappingRowMatrix.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Ifpack_OverlappingRowMatrix.cpp' object='Ifpack_OverlappingRowMatrix.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Ifpack_OverlappingRowMatrix.Po' tmpdepfile='$(DEPDIR)/Ifpack_OverlappingRowMatrix.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Ifpack_OverlappingRowMatrix.obj `if test -f '$(srcdir)/Ifpack_OverlappingRowMatrix.cpp'; then $(CYGPATH_W) '$(srcdir)/Ifpack_OverlappingRowMatrix.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Ifpack_OverlappingRowMatrix.cpp'; fi`
 uninstall-info-am:
 install-includeHEADERS: $(include_HEADERS)
 	@$(NORMAL_INSTALL)
