@@ -22,7 +22,7 @@
 #  For explanations of these variables, please see Makefile.generic.
 ##############################################################################
 
-F90_COMPILER		= nag
+F90_COMPILER		= lahey
 MPI_VERSION 		= lam
 
 
@@ -118,8 +118,8 @@ MPI_LIBPATH	= -L$(MPIR_HOME)/build/LINUX/ch_p4/lib \
 		  -L/usr/lib/gcc-lib/i386-redhat-linux/egcs-2.91.66
 endif
 
-PARMETIS_LIBPATH 	= -L$(HOME)/lib/LINUX
-PARMETIS_INCPATH  	= -I$(HOME)/ParMETIS/ParMETISLib
+#PARMETIS_LIBPATH 	= -L$(HOME)/lib/LINUX
+#PARMETIS_INCPATH  	= -I$(HOME)/ParMETIS/ParMETISLib
 
 #JOSTLE_LIBPATH 	= -L/Net/proj/zoltan/arch/solaris/lib
 #JOSTLE_INCPATH 	= -I/Net/proj/zoltan/arch/all/src
