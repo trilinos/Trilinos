@@ -3,7 +3,7 @@ DRIVER DIRECTORY -- Zoltan test driver application source code.
 ------------------------------------------------------------------------
 
 NOTE: a well documented example input driver is included with the documentation
-in the file DLB/docs/Zoltan_html/ug_html/zdrive.inp.
+in the file Zoltan/docs/Zoltan_html/ug_html/zdrive.inp.
 
 dr_const.h          -- Main data structures and defines for driver.
 
