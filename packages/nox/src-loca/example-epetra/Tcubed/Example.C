@@ -136,6 +136,11 @@ int main(int argc, char *argv[])
   locaStepperList.setParameter("Min Tangent Factor", 0.8);
   locaStepperList.setParameter("Tangent Factor Exponent",1.5);
 
+  // Create bifurcation sublist
+    NOX::Parameter::List& bifurcationList = 
+      locaParamsList.sublist("Bifurcation");
+    bifurcationList.setParameter("Method", "None");
+
   // Create Anasazi Eigensolver sublist (needs --enable-loca-anasazi)
   locaStepperList.setParameter("Compute Eigenvalues",true);
   NOX::Parameter::List& aList = locaStepperList.sublist("Anasazi");

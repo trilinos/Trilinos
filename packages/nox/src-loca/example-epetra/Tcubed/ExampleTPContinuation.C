@@ -107,6 +107,10 @@ int main(int argc, char *argv[])
 
   // Initialize Solution
   soln.PutScalar(1.0);
+
+  // Create initial guess for the null vector of jacobian
+  NOX::Epetra::Vector nullVec(soln);  
+  nullVec.init(1.0);             // initial value 1.0
   
   // Begin LOCA Solver ************************************
 
@@ -135,6 +139,16 @@ int main(int argc, char *argv[])
   locaStepperList.setParameter("Enable Tangent Factor Step Size Scaling",false);
   locaStepperList.setParameter("Min Tangent Factor", 0.8);
   locaStepperList.setParameter("Tangent Factor Exponent",1.5);
+
+  // Create bifurcation sublist
+  NOX::Parameter::List& bifurcationList = 
+    locaParamsList.sublist("Bifurcation");
+  bifurcationList.setParameter("Method", "Turning Point");
+  bifurcationList.setParameter("Bifurcation Parameter", "Right BC");
+  bifurcationList.setParameter("Length Normalization Vector", 
+			       dynamic_cast<NOX::Abstract::Vector*>(&nullVec));
+  bifurcationList.setParameter("Initial Null Vector",
+			       dynamic_cast<NOX::Abstract::Vector*>(&nullVec));
 
   // Create Anasazi Eigensolver sublist (needs --enable-loca-anasazi)
   locaStepperList.setParameter("Compute Eigenvalues",false);
@@ -262,13 +276,6 @@ int main(int argc, char *argv[])
   //NOX::Epetra::Group grp(nlPrintParams, lsParams, interface, soln, A, Prec); 
   grp.computeF();
 
-  // Create initial guess for the null vector of jacobian
-  NOX::Epetra::Vector nullVec(soln);  
-  nullVec.init(1.0);             // initial value 1.0
-
-  // Create a turning point group that uses the lapack group
-  LOCA::Bifurcation::TPBord::ExtendedGroup tpgrp(grp, nullVec, nullVec, 2);
-
   // Create the Solver convergence test
   //NOX::StatusTest::NormWRMS wrms(1.0e-2, 1.0e-8);
   NOX::StatusTest::NormF wrms(1.0e-7);
@@ -278,7 +285,7 @@ int main(int argc, char *argv[])
   combo.addStatusTest(maxiters);
 
   // Create the stepper  
-  LOCA::Stepper stepper(tpgrp, combo, paramList);
+  LOCA::Stepper stepper(grp, combo, paramList);
   LOCA::Abstract::Iterator::IteratorStatus status = stepper.run();
 
   if (status != LOCA::Abstract::Iterator::Finished)

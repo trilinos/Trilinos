@@ -133,6 +133,11 @@ int main(int argc, char *argv[])
   locaStepperList.setParameter("Enable Tangent Factor Step Size Scaling",false);
   locaStepperList.setParameter("Min Tangent Factor", -1.0);
   locaStepperList.setParameter("Tangent Factor Exponent",1.0);
+
+  // Create bifurcation sublist
+    NOX::Parameter::List& bifurcationList = 
+      locaParamsList.sublist("Bifurcation");
+    bifurcationList.setParameter("Method", "None");
   
   // Create predictor sublist
   NOX::Parameter::List& predictorList = locaParamsList.sublist("Predictor");
