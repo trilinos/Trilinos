@@ -722,7 +722,10 @@ int ML_Aggregate_VizAndStats_Compute( ML *ml, ML_Aggregate *ag,
   int Nlocal, Naggregates;
   char graphfile[132];
   ML_Aggregate_Viz_Stats * info;
-  int dim, diff;
+  int dim;
+#ifdef COMPUTE_RADIUS
+  int diff;
+#endif
   double dmin, davg, dmax, dstd;
   int  imin, iavg, imax;
   ML_Comm *comm;
@@ -804,7 +807,9 @@ int ML_Aggregate_VizAndStats_Compute( ML *ml, ML_Aggregate *ag,
     
     begin = finest_level;
     end   = coarsest_level;
+#ifdef COMPUTE_RADIUS
     diff  = +1;
+#endif
 
   } else {
 
@@ -816,7 +821,9 @@ int ML_Aggregate_VizAndStats_Compute( ML *ml, ML_Aggregate *ag,
     
     begin = coarsest_level+1;
     end   = finest_level+1;
+#ifdef COMPUTE_RADIUS
     diff  = -1;
+#endif
 
   }
 
@@ -1426,12 +1433,11 @@ int ML_Aggregate_Stats_ComputeCoordinates( ML *ml, ML_Aggregate *ag,
   int i, ilevel;
   int Naggregates;
   ML_Aggregate_Viz_Stats * info;
-  int dim, diff;
+  int dim;
   ML_Comm *comm;
   int finest_level = ml->ML_finest_level;
   int coarsest_level = ml->ML_coarsest_level;
   int incr_or_decr;
-  int begin, end;
   
   /* ------------------- execution begins --------------------------------- */
   
@@ -1465,20 +1471,6 @@ int ML_Aggregate_Stats_ComputeCoordinates( ML *ml, ML_Aggregate *ag,
   info[finest_level].x = x;
   info[finest_level].y = y;
   info[finest_level].z = z;
-
-  if( incr_or_decr == ML_INCREASING ) {
-
-    begin = finest_level;
-    end   = coarsest_level;
-    diff  = +1;
-
-  } else {
-
-    begin = coarsest_level+1;
-    end   = finest_level+1;
-    diff  = -1;
-
-  }
 
   if( dim > 0 )
   {
@@ -1545,13 +1537,12 @@ int ML_Aggregate_Stats_Analyze( ML *ml, ML_Aggregate *ag)
   int finest_level = ml->ML_finest_level;
   int coarsest_level = ml->ML_coarsest_level;
   int incr_or_decr;
-  int num_PDE_eqns  = ag->num_PDE_eqns;
   double h, H;
   int begin, end;
   int radius;
   int * itemp = NULL, * itemp2 = NULL;
   double * dtemp = NULL, dsum;
-  int Nrows, Naggregates_global, Nrows_global, offset;
+  int Naggregates_global, Nrows_global, offset;
   int mypid = ml->comm->ML_mypid;
   
   /* ------------------- execution begins --------------------------------- */
@@ -1582,7 +1573,7 @@ int ML_Aggregate_Stats_Analyze( ML *ml, ML_Aggregate *ag)
   /* statistics about the decomposition into subdomains                     */
   /* ********************************************************************** */
 
-  Nrows = ml->Amat[finest_level].outvec_leng/num_PDE_eqns;
+  /* Nrows = ml->Amat[finest_level].outvec_leng/num_PDE_eqns; */
 
   ML_Info_DomainDecomp( info[finest_level], comm, &H, &h );
     
@@ -1794,12 +1785,7 @@ int ML_Aggregate_Viz( ML *ml, ML_Aggregate *ag, int choice,
 {
 
   ML_Aggregate_Viz_Stats * info;
-  int diff;
   ML_Comm *comm;
-  int finest_level = ml->ML_finest_level;
-  int coarsest_level = ml->ML_coarsest_level;
-  int incr_or_decr;
-  int begin, end;
   char graphfile[132];
   
   /* ------------------- execution begins --------------------------------- */
@@ -1808,23 +1794,6 @@ int ML_Aggregate_Viz( ML *ml, ML_Aggregate *ag, int choice,
 
   info = (ML_Aggregate_Viz_Stats *) (ag->aggr_viz_and_stats);
   comm = ml->comm;
-
-  if( finest_level > coarsest_level ) incr_or_decr = ML_DECREASING;
-  else                                incr_or_decr = ML_INCREASING;
-
-  if( incr_or_decr == ML_INCREASING ) {
-
-    begin = finest_level;
-    end   = coarsest_level;
-    diff  = +1;
-
-  } else {
-
-    begin = coarsest_level+1;
-    end   = finest_level+1;
-    diff  = -1;
-
-  }
 
   /* OpenDX, does not support everything (like plotting vector values),
    * but it works for 1D, 2D, and 3D
