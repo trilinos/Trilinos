@@ -226,15 +226,27 @@ for (my $i=0; $i<$numsubdirs; $i++) {
 	system "make clean";
 #Note that the 'invoke-configure' script must be executable
 	$compileFail+=system "./invoke-configure >> $homedir/trilinosCompileLog.txt 2>&1";
-	$compileFail+=system "make >> $homedir/trilinosCompileLog.txt 2>&1";
-	if ($compileFail) {
-	  # The build process failed, skip associated tests, report the failure
-	  ++$errorcount;
-	  ++$trilinosCompileError;
-	  print ERRORS "Trilinos compilation process failed for the $subdirs[$i] test.\nWill skip associated tests.\n";
-	  &sendemail;
-	  $compileFail=0; # reset so the positive value doesn't trigger an error again
-	}
+     if ($compileFail) {
+       # The configure process failed, skip associated tests, report the
+	  # failure
+       ++$errorcount;
+       ++$trilinosCompileError;
+       print ERRORS "Trilinos configure process failed for the
+$subdirs[$i] test.\nWill skip associated tests.\n";
+       &sendemail;
+       $compileFail=0; # reset so the positive value doesn't trigger
+					# an error again
+     }
+	else {
+		$compileFail+=system "make >> $homedir/trilinosCompileLog.txt 2>&1";
+		if ($compileFail) {
+	  		# The build process failed, skip associated tests, report the failure
+	  		++$errorcount;
+	  		++$trilinosCompileError;
+	  		print ERRORS "Trilinos compilation process failed for the $subdirs[$i] test.\nWill skip associated tests.\n";
+	  		&sendemail;
+	  		$compileFail=0; # reset so the positive value doesn't trigger an error again
+		}
 	else {
 	  #
 	  # Run tests
@@ -281,6 +293,7 @@ for (my $i=0; $i<$numsubdirs; $i++) {
 	  }
 	}
       }
+	}
 #
 # Check if any tests were parallel tests, if so, do a lamhalt.
 #
