@@ -328,7 +328,8 @@ static int first_time = 1;
     }
 
     for (i = 0; i < npins; i++) {
-      hg->hvertex[i] = hash_lookup(zz, zhg, &(edge_verts[i]), nVtx, hash_tab);
+      hg->hvertex[i] = hash_lookup(zz, zhg, &(edge_verts[i*num_gid_entries]),
+                                   nVtx, hash_tab);
       if (hg->hvertex[i] == -1) {
         ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Hyperedge GID not found.")
         ierr = ZOLTAN_FATAL;
