@@ -1,4 +1,6 @@
 /*
+#define AZ_CONVR0
+#ifdef AZ_CONVRHS
 #define ML_partition
 #define ReuseOps
 */
@@ -146,7 +148,8 @@ int    *cpntr = NULL, *Ke_bindx = NULL, *Kn_bindx = NULL, Nlocal_edges, iii, *Tm
 int    *update, *update_index;
 int *external, *extern_index;
 struct reader_context *context;
-int mls_poly_degree;
+int mls_poly_degree, eig_ratio_tol = 27.;
+int reduced_smoother_flag = 0;
 
 #ifdef debugSmoother
 double *xxx;
@@ -1650,13 +1653,20 @@ nx = nx--; /* rst dirichlet */
 	  edge_smoother  = (void *) ML_Gen_Smoother_SymGaussSeidel;
 	  nodal_omega    = ML_DDEFAULT;
 	  edge_omega     = ML_DDEFAULT;
-	  nodal_args = ML_Smoother_Arglist_Create(2);
+	  nodal_args = ML_Smoother_Arglist_Create(3);
 	  ML_Smoother_Arglist_Set(nodal_args, 0, &nodal_its);
 	  ML_Smoother_Arglist_Set(nodal_args, 1, &nodal_omega);
+      /*this flag doesn't matter and is just to make the nodal and edge
+        arg arrays the same length. */
+	  ML_Smoother_Arglist_Set(nodal_args, 2, &reduced_smoother_flag);
 
-	  edge_args = ML_Smoother_Arglist_Create(2);
+	  edge_args = ML_Smoother_Arglist_Create(3);
 	  ML_Smoother_Arglist_Set(edge_args, 0, &edge_its);
 	  ML_Smoother_Arglist_Set(edge_args, 1, &edge_omega);
+      /* if flag is nonzero, in Hiptmair do edge/nodal combination on pre-
+         smooth and nodal/edge combination on post-smooth.   This maintains
+         symmetry of the preconditioner. */
+	  ML_Smoother_Arglist_Set(edge_args, 2, &reduced_smoother_flag);
 	}
       else if (ML_strcmp(context->subsmoother,"MLS") == 0)
 	{
@@ -1664,10 +1674,12 @@ nx = nx--; /* rst dirichlet */
 	  nodal_smoother = (void *) ML_Gen_Smoother_MLS;
 	  nodal_omega    = 1.0;
 	  edge_omega     = 1.0;
-	  nodal_args = ML_Smoother_Arglist_Create(3);
+	  nodal_args = ML_Smoother_Arglist_Create(5);
 	  ML_Smoother_Arglist_Set(nodal_args, 0, &nodal_its);
-	  edge_args = ML_Smoother_Arglist_Create(3);
+	  ML_Smoother_Arglist_Set(nodal_args, 2, &nodal_omega);
+	  edge_args = ML_Smoother_Arglist_Create(5);
 	  ML_Smoother_Arglist_Set(edge_args, 0, &edge_its);
+	  ML_Smoother_Arglist_Set(edge_args, 2, &edge_omega);
 	}
     }
 
@@ -1697,8 +1709,8 @@ nx = nx--; /* rst dirichlet */
              calculation in ML_Smoother_Gen_Hiptmair_Data. */
           omega = (double) ML_DEFAULT;
 	  if (edge_smoother == (void *) ML_Gen_Smoother_MLS) {
-	    edge_eig_ratio[level] = 20.;
-	    nodal_eig_ratio[level] = 20.;
+	    edge_eig_ratio[level] = eig_ratio_tol;
+	    nodal_eig_ratio[level] = eig_ratio_tol;
 	    temp1[0] = Tmat_array[level]->outvec_leng;
 	    temp1[2] = Tmat_array[level]->invec_leng;
 	    if (level != 0) {
@@ -1714,14 +1726,17 @@ nx = nx--; /* rst dirichlet */
 	      edge_eig_ratio[level] = 2.*((double) temp1[0])/ ((double) temp1[1]);
 	      nodal_eig_ratio[level] = 2.*((double) temp1[2])/ ((double) temp1[3]);
 	    }
-	    if ( edge_eig_ratio[level] < 4.) edge_eig_ratio[level] = 4.;
-	    if (nodal_eig_ratio[level] < 4.) nodal_eig_ratio[level] = 4.;
+	    if ( edge_eig_ratio[level] < eig_ratio_tol) edge_eig_ratio[level] = eig_ratio_tol;
+	    if (nodal_eig_ratio[level] < eig_ratio_tol) nodal_eig_ratio[level] = eig_ratio_tol;
 	    ML_Smoother_Arglist_Set(edge_args, 1, &(edge_eig_ratio[level]));
 	    ML_Smoother_Arglist_Set(nodal_args, 1, &(nodal_eig_ratio[level]));
         mls_poly_degree = 1;
-        printf("\n\nChebychev polynomial degree hardwired to 1\a\a\n\n");
-	    ML_Smoother_Arglist_Set(nodal_args, 2, &mls_poly_degree);
-	    ML_Smoother_Arglist_Set(edge_args, 2, &mls_poly_degree);
+        printf("\n\nChebychev polynomial degree hardwired to %d\a\a\n\n",
+                mls_poly_degree);
+        ML_Smoother_Arglist_Set(edge_args, 3, &eig_ratio_tol);
+        ML_Smoother_Arglist_Set(nodal_args, 3, &eig_ratio_tol);
+	    ML_Smoother_Arglist_Set(nodal_args, 4, &mls_poly_degree);
+	    ML_Smoother_Arglist_Set(edge_args, 4, &mls_poly_degree);
 	  }
       if (level == N_levels-1)
          ML_Gen_Smoother_Hiptmair(ml_edges, level, ML_BOTH, nsmooth,
@@ -1775,8 +1790,11 @@ nx = nx--; /* rst dirichlet */
 
       else if (ML_strcmp(context->smoother,"Jacobi") == 0)
 	  {
+	  /*
 	  ML_Gen_Smoother_Jacobi(ml_edges , level, ML_PRESMOOTHER, nsmooth,.67);
 	  ML_Gen_Smoother_Jacobi(ml_edges , level, ML_POSTSMOOTHER, nsmooth,.67);
+	  */
+      ML_Gen_Smoother_Jacobi(ml_edges , level, ML_BOTH, nsmooth, 0.67);
 	  }
 
       /*  This does a block Gauss-Seidel (not true GS in parallel)        */
@@ -1818,16 +1836,19 @@ nx = nx--; /* rst dirichlet */
   {
     /* Setting omega to any other value will override the automatic
        calculation in ML_Smoother_Gen_Hiptmair_Data. */
-    edge_eig_ratio[coarsest_level] = 20.;
-    nodal_eig_ratio[coarsest_level] = 20.;
+    edge_eig_ratio[coarsest_level] = eig_ratio_tol;
+    nodal_eig_ratio[coarsest_level] = eig_ratio_tol;
     omega = (double) ML_DEFAULT;
     if (edge_smoother == (void *) ML_Gen_Smoother_MLS) {
        ML_Smoother_Arglist_Set(edge_args, 1, &(edge_eig_ratio[coarsest_level]));
        ML_Smoother_Arglist_Set(nodal_args, 1, &(nodal_eig_ratio[coarsest_level]));
        mls_poly_degree = 1;
-       printf("\n\nChebychev polynomial degree hardwired to 1\a\a\n\n");
-       ML_Smoother_Arglist_Set(edge_args, 2, &mls_poly_degree);
-       ML_Smoother_Arglist_Set(nodal_args, 2, &mls_poly_degree);
+       printf("\n\nChebychev polynomial degree hardwired to %d\a\a\n\n",
+              mls_poly_degree);
+       ML_Smoother_Arglist_Set(edge_args, 3, &eig_ratio_tol);
+       ML_Smoother_Arglist_Set(nodal_args, 3, &eig_ratio_tol);
+       ML_Smoother_Arglist_Set(edge_args, 4, &mls_poly_degree);
+       ML_Smoother_Arglist_Set(nodal_args, 4, &mls_poly_degree);
     }
     if (coarsest_level == N_levels-1)
        ML_Gen_Smoother_Hiptmair(ml_edges, level, ML_BOTH, nsmooth,
@@ -1856,7 +1877,7 @@ edge_smoother,edge_args, nodal_smoother,nodal_args);
   }
   else if (ML_strcmp(context->coarse_solve,"Jacobi") == 0) {
     printf("number of steps is %d\n",nsmooth);
-    ML_Gen_Smoother_Jacobi(ml_edges , coarsest_level, ML_BOTH, nsmooth,.5);
+    ML_Gen_Smoother_Jacobi(ml_edges , coarsest_level, ML_BOTH, nsmooth,.67);
   }
   else if (ML_strcmp(context->coarse_solve,"Metis") == 0) {
     nblocks = 250;
@@ -1970,10 +1991,12 @@ edge_smoother,edge_args, nodal_smoother,nodal_args);
   }
   options[AZ_scaling]  = AZ_none;
   options[AZ_precond]  = AZ_user_precond;
-#ifdef AZ_SCALERES
-  options[AZ_conv]     = AZ_r0;
-#else
   options[AZ_conv]     = AZ_noscaled;
+#ifdef AZ_CONVR0
+  options[AZ_conv]     = AZ_r0;
+#endif
+#ifdef AZ_CONVRHS
+  options[AZ_conv]     = AZ_rhs;
 #endif
   options[AZ_output]   = 1;
   options[AZ_max_iter] = 300;
@@ -2000,12 +2023,20 @@ edge_smoother,edge_args, nodal_smoother,nodal_args);
     if (proc_config[AZ_node]== 0) printf("reading initial guess from file\n");
     AZ_input_msr_matrix("initguessfile", global_edge_inds, &xxx, &garbage,
 			Nlocal_edges, proc_config);
-    options[AZ_conv] = AZ_expected_values;
     printf("done reading initial guess\n");
   }
-  else if (proc_config[AZ_node]== 0) printf("taking random initial guess \n");
-
+  else
+  {
+    if (proc_config[AZ_node]== 0) printf("taking random initial guess \n");
+    AZ_random_vector(xxx, Ke_data_org, proc_config);
+  }
   AZ_reorder_vec(xxx, Ke_data_org, reordered_glob_edges, NULL);
+  /*
+  fp = fopen("randomvec","w");
+  for (i=0; i<Nlocal_edges; i++)
+     fprintf(fp,"%20.15f\n",xxx[i]); 
+  fclose(fp);
+  */
 
   dtemp = sqrt(ML_gdot(Nlocal_edges, xxx, xxx, ml_edges->comm));
   if (proc_config[AZ_node]== 0 && 5 < ML_Get_PrintLevel() )
@@ -2049,6 +2080,8 @@ edge_smoother,edge_args, nodal_smoother,nodal_args);
     options[AZ_scaling] = AZ_sym_diag;
     options[AZ_ignore_scaling] = AZ_TRUE;
 
+    printf("hereeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee\n");
+
     options[AZ_keep_info] = 1;
 
     AZ_iterate(xxx, rhs, options, params, status, proc_config, Ke_mat, NULL, scaling); 
@@ -2067,10 +2100,12 @@ edge_smoother,edge_args, nodal_smoother,nodal_args);
   else
   {
     options[AZ_keep_info] = 1;
-#ifdef AZ_SCALERES
+    options[AZ_conv]     = AZ_noscaled;
+#ifdef AZ_CONVR0
   options[AZ_conv]     = AZ_r0;
-#else
-  options[AZ_conv]     = AZ_noscaled;
+#endif
+#ifdef AZ_CONVRHS
+  options[AZ_conv]     = AZ_rhs;
 #endif
     options[AZ_output] = 1;
 
@@ -2083,10 +2118,12 @@ edge_smoother,edge_args, nodal_smoother,nodal_args);
       printf("huhhhh %e\n",Ke_mat->val[0]);
       */
 
-#ifdef AZ_SCALERES
-  options[AZ_conv]     = AZ_r0;
-#else
   options[AZ_conv]     = AZ_noscaled;
+#ifdef AZ_CONVR0
+  options[AZ_conv]     = AZ_r0;
+#endif
+#ifdef AZ_CONVRHS
+  options[AZ_conv]     = AZ_rhs;
 #endif
     /*options[AZ_conv] = AZ_expected_values;*/
 
@@ -2170,7 +2207,7 @@ edge_smoother,edge_args, nodal_smoother,nodal_args);
           printf("Cycle type = other\n");
     }
     fflush(stdout);
-    options[AZ_conv] = AZ_r0;
+    options[AZ_scaling] = AZ_none;
     AZ_iterate(xxx, rhs, options, params, status, proc_config, Ke_mat, Pmat, scaling); 
 
     options[AZ_pre_calc] = AZ_reuse;
