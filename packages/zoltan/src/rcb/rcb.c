@@ -119,7 +119,8 @@ void lb_rcb(
   int     i,ii,j,k;                 /* local variables */
 
   RCB_STRUCT *rcb;                 /* Pointer to data structures for RCB.  */
-  int wtflag;                      /* (0) do not (1) do use weights.  */
+  int wgtflag;                     /* (0) do not (1) do use weights.
+                                      Multidimensional weights not supported */
   double overalloc;                /* amount to overallocate by when realloc
                                       of dot array must be done.     
                                       1.0 = no extra; 1.5 = 50% extra; etc. */
@@ -164,15 +165,15 @@ void lb_rcb(
    */
 
   LB_start_time = MPI_Wtime();
-  LB_rcb_build_data_structure(lb, &pdotnum, &dotmax);
+  wgtflag = 0;  /* No weights in this version. Using weights or not
+                   should be set by the user via LB_Set_Param() */
+  LB_rcb_build_data_structure(lb, &pdotnum, &dotmax, wgtflag);
 
   rcb = (RCB_STRUCT *) (lb->Data_Structure);
 
   dotpt  = rcb->Dots; 
   rcbbox = rcb->Box;
   treept = rcb->Tree_Ptr;
-  wtflag = (lb->Get_Obj_Weight != NULL);   /* Use weights if application 
-                                             specified a weight function  */
   LB_end_time = MPI_Wtime();
   LB_time[0] = LB_end_time - LB_start_time;
   LB_start_time = LB_end_time;
@@ -252,7 +253,7 @@ void lb_rcb(
 
   /* set dot weights = 1.0 if user didn't */
 
-  if (!wtflag)
+  if (!wgtflag)
     for (i = 0; i < dotnum; i++) dotpt[i].Weight = 1.0;
 
   /* check that all weights > 0 */
