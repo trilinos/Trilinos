@@ -124,6 +124,9 @@ void NOX::Solver::TensorBasedTest::init()
   //NOX::Parameter::List& teParams = dirParams.sublist("Newton");
   //doRescue = teParams.getParameter("Rescue Bad Newton Solve", true);
 
+  // bwb: Probably want to move this to outside of the Linear Solver parameter
+  // list or just use Method instead of this.  Then we could have separate
+  // parameter lists for this one.
   string choice = localParams.getParameter("Compute Step", "Tensor");
   if (choice == "Tensor") {
     requestedBaseStep = TensorStep;
@@ -208,8 +211,8 @@ void NOX::Solver::TensorBasedTest::init()
 
 
 bool NOX::Solver::TensorBasedTest::reset(NOX::Abstract::Group& xgrp,
-				     NOX::StatusTest::Generic& t,
-				     NOX::Parameter::List& p)
+					 NOX::StatusTest::Generic& t,
+					 NOX::Parameter::List& p)
 {
   solnPtr = &xgrp;
   testPtr = &t;
@@ -227,7 +230,7 @@ bool NOX::Solver::TensorBasedTest::reset(NOX::Abstract::Group& xgrp,
 }
 
 bool NOX::Solver::TensorBasedTest::reset(NOX::Abstract::Group& xgrp,
-				     NOX::StatusTest::Generic& t)
+					 NOX::StatusTest::Generic& t)
 {
   solnPtr = &xgrp;
   testPtr = &t;

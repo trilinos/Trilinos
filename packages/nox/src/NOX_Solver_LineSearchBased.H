@@ -83,7 +83,7 @@ namespace Solver {
 
   - "Nonlinear Iterations" - Number of nonlinear iterations
   
-  - "2-Norm or Residual" - Two-norm of final residual
+  - "2-Norm of Residual" - Two-norm of final residual
 
   \author Tammy Kolda (SNL 8950), Roger Pawlowski (SNL 9233)
 */

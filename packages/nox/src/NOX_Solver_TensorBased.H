@@ -217,18 +217,18 @@ class TensorBased : public Generic {
 public:
 
   //! %TensorBased-method constructor. 
-  TensorBased(NOX::Abstract::Group& xgrp,
-	      NOX::StatusTest::Generic& t,
-	      NOX::Parameter::List& p);
+  TensorBased(NOX::Abstract::Group& grp,
+	      NOX::StatusTest::Generic& tests,
+	      NOX::Parameter::List& params);
 
   //! Destructor
   virtual ~TensorBased();
 
-  virtual bool reset(NOX::Abstract::Group& xgrp,
-		     NOX::StatusTest::Generic& t,
-		     NOX::Parameter::List& p);
-  virtual bool reset(NOX::Abstract::Group& xgrp,
-		     NOX::StatusTest::Generic& t);
+  virtual bool reset(NOX::Abstract::Group& grp,
+		     NOX::StatusTest::Generic& tests,
+		     NOX::Parameter::List& params);
+  virtual bool reset(NOX::Abstract::Group& grp,
+		     NOX::StatusTest::Generic& tests);
   virtual NOX::StatusTest::StatusType getStatus();
   virtual NOX::StatusTest::StatusType iterate();
   virtual NOX::StatusTest::StatusType solve();
@@ -236,6 +236,8 @@ public:
   virtual const NOX::Abstract::Group& getPreviousSolutionGroup() const;
   virtual int getNumIterations() const;
   virtual const NOX::Parameter::List& getParameterList() const;
+
+  //!  Return the direction object
   virtual const NOX::Direction::Tensor& getDirection() const;
 
 protected:

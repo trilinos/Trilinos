@@ -50,6 +50,169 @@
 namespace NOX {
 namespace Solver {
 
+/*! 
+  \brief Nonlinear solver based on a rank-1 tensor method.
+  
+  Solves \f$F(x)=0\f$ using a rank-1 tensor method and a linesearch
+  globalization.
+  
+  At the kth nonlinear iteration, the solver does the following:
+
+  <ul>
+
+  <li>Computes the tensor direction \f$ d_T \f$ by finding the root or
+      smallest magnitude minimizer of the local model \f[ M_T(x_k+d) =
+      F_k + J_kd + a_k(s_k^Td)^2, \f] where \f[ a_k = 2(F_{k-1} - F_k
+      - J_ks_k) / (s_k^Ts_k)^2 \f] and \f[ s_k = s_{k-1} - s_k. \f]
+
+  <li>Modifies the step according to a global strategy and updates
+      \f$x\f$ as \f$x_{k+1} = x_k + d(\lambda) \f$ via a linesearch
+      method, where \f$ d(\lambda) \f$ is some function of \f$ \lambda
+      \f$.  For instance, the curvilinear step \f$ d_{\lambda T} \f$
+      is a function of the linesearch parameter \f$ \lambda \f$ and is
+      a parametric step that spans the directions of the tensor step
+      and the Newton step.  At \f$ \lambda=1 \f$, the curvilinear step
+      equals the full tensor step, and as \f$ \lambda \f$ nears 0, the
+      curvilinear step approaches the Newton direction.  This step
+      provides a monotonic decrease in the norm of the local tensor
+      model as \f$ \lambda \f$ varies from 0 to 1.
+
+  </ul>
+  
+  The solver iterates until the status tests (see NOX::StatusTest)
+  determine either failure or convergence.
+
+  <B>Input Parameters</B>
+
+  To use this solver, set the "Nonlinear Solver" parameter to be
+  "Tensor Based".  Then, specify the following sublists with the
+  appropriate parameters as indicated below.
+
+  <ul>
+
+  <li> "Direction" - Sublist of the direction parameters, passed to
+       the NOX::Direction::Manager constructor. Defaults to an empty
+       list.
+
+       <ul>
+
+       <li> "Method" - Name of the direction to be computed in this
+       solver.  "Tensor" and "Newton" are the only two valid choices.
+       A sublist by that name specifies all of the parameters to
+       be passed to the linear solver.  See below.
+
+       <li> "Rescue Bad Newton Solve" (Boolean) - If the linear solve
+       does not meet the tolerance specified by the forcing term, then
+       use the step anyway. Defaults to true.
+
+       <li> "Linear Solver" - Sublist for the specific linear solver
+       parameters that are passed to
+       NOX::Abstract::Group::computeNewton() and
+       NOX::Abstract::Group::applyJacobianInverse().  "Linear Solver"
+       is itself a sublist of the list specified in "Method" above.
+       Below is a partial list of standard parameters usually
+       available in common linear solvers.  Check with the specific
+       linear solver being used for other parameters.
+
+	    <ul>
+     
+	    <li> "Max Iterations" - Maximum number of Arnoldi
+            iterations (also max Krylov space dimension)
+
+            <li> "Tolerance" - Relative tolerance for solving local
+            model [default = 1e-4]
+
+	    <li> "Output Frequency" - Print output at every number of
+            iterations [default = 20]
+
+	    </ul>
+
+       </ul> 
+
+  <li> "Line Search" - Sublist of the line search parameters. Defaults
+       to an empty list.  Be aware that the tensor step is not
+       guaranteed to be a descent direction on the function.  Thus,
+       not all "basic" line search approaches would be appropriate.
+       This solver class approriately handles these considerations.
+       The following parameters specify the specific options for this
+       line search:
+
+       <ul>
+
+       <li> "Method" - Name of the line search available to tensor
+       methods Valid choices are:
+
+            <ul> 
+
+	    <li> "Standard" - Backtrack along tensor direction unless
+	    it is not a descent direction, in which case backtrack
+	    along Newton direction.
+
+	    <li> "Dual" - Backtrack along both the Newton and tensor
+	    directions and choose the better of the two.
+
+            <li> "Curvilinear" - Backtrack along the "curvilinear"
+	    path that spans the tensor direction and the Newton
+	    direction and that maintains monotonicity on the tensor
+	    model. [Default]
+
+            </ul>
+
+       <li> "Lambda selection" - flag for how to calculate next lambda
+       (quadratic, halving)
+
+       <li> "Default Step" - starting value of linesearch parameter
+       (defaults to 1.0)
+
+       <li> "Minimum Step" - minimum acceptable linesearch parameter
+       before the linesearch terminates (defaults to 1.0e-12)
+
+       <li> "Recovery Step" - step parameter to take when the line
+       search fails (defaults to value for "Default Step")
+
+       <li> "Max Iters" - maximum number of iterations (i.e., backtracks)
+
+       </ul>
+
+  </ul>
+
+  <B>Output Parameters</B>
+
+  Every time solve() is called, a sublist for output parameters called
+  "Output" will be created and will contain the following parameters:
+
+  <ul>
+
+  <li> "Nonlinear Iterations" - Number of nonlinear iterations
+  
+  <li> "2-Norm of Residual" - L-2 norm of the final residual \f$ F(x_k) \f$.
+
+  </ul>
+
+  
+<b>References</b>
+
+  <ul>
+
+  <li> B. W. Bader, <em>Tensor-Krylov methods for solving large-scale
+  systems of nonlinear equations</em>, Ph.D. Thesis, 2003, University
+  of Colorado, Boulder, Colorado.
+
+  <li> B. W. Bader, <em>Tensor-Krylov methods for solving large-scale
+  systems of nonlinear equations</em>, submitted to SIAM J. Opt.
+
+  <li> B. W. Bader and R. B. Schnabel, <em>Curvilinear linesearch for
+  tensor methods</em>, SISC, 25(2):604-622.
+
+  <li> R. B. Schnabel and P. D. Frank, <em>Tensor methods for
+  nonlinear equations</em>, SIAM J. Numer. Anal., 21(5):815-843.
+
+  </ul>
+
+
+  \author Brett Bader (SNL 9233)
+  
+*/
 
 class TensorBasedTest : public Generic {
 
@@ -60,18 +223,18 @@ public:
 
     See reset() for description. 
   */
-  TensorBasedTest(NOX::Abstract::Group& xgrp, 
-		   NOX::StatusTest::Generic& t, 
-		   NOX::Parameter::List& p);
+  TensorBasedTest(NOX::Abstract::Group& grp, 
+		  NOX::StatusTest::Generic& tests, 
+		  NOX::Parameter::List& params);
 
   //! Destructor
   virtual ~TensorBasedTest();
 
+  virtual bool reset(NOX::Abstract::Group& grp, 
+		     NOX::StatusTest::Generic& tests, 
+		     NOX::Parameter::List& params);
   virtual bool reset(NOX::Abstract::Group& xgrp, 
-		     NOX::StatusTest::Generic& t, 
-		     NOX::Parameter::List& p);
-  virtual bool reset(NOX::Abstract::Group& xgrp, 
-		     NOX::StatusTest::Generic& t);
+		     NOX::StatusTest::Generic& tests);
   virtual NOX::StatusTest::StatusType getStatus();
   virtual NOX::StatusTest::StatusType iterate();
   virtual NOX::StatusTest::StatusType solve();
@@ -144,8 +307,9 @@ protected:
   double selectLambda(double newf, double oldf,
 		      double oldfprime, double lambda);
 
+  //! Throw an error with a method's name and error message
   void NOX::Solver::TensorBasedTest::throwError(const string& functionName,
-						 const string& errorMsg) const;
+						const string& errorMsg) const;
   
 protected:
   
@@ -253,7 +417,8 @@ protected:
   LineSearchType lsType;
   
   //! Algorithms used to determine convergence of the line search
-  enum ConvergenceCriteriaType {
+  enum ConvergenceCriteriaType
+  {
     //! Sufficient decrease condition
     ArmijoGoldstein, 
     //! Ared/Pred condition
@@ -267,10 +432,10 @@ protected:
 
   //! Types of lambda selection 
   enum LambdaSelectionType
-    {
-      Halving,
-      Quadratic
-    };
+  {
+    Halving,
+    Quadratic
+  };
 
   //! Flag for lambda selection (Halving/Quadratic)
   LambdaSelectionType lambdaSelection;
