@@ -14,7 +14,7 @@ PICTURES =
 
 SIAM = siam.bst       siam10.clo     siamltex.cls   siamltex.sty docultex.tex lexample.tex
 
-all: ${PAPER}.ps
+all: ${PAPER}.pdf
 
 ########################################################################
 #
@@ -38,6 +38,9 @@ force:
 
 ${PAPER}.ps:    ${PAPER}.dvi
 	dvips -Ppdf -o ${PAPER}.ps ${PAPER}
+
+${PAPER}.pdf:    ${PAPER}.ps
+	ps2pdf ${PAPER}.ps ${PAPER}.pdf
 
 tarfile:
 	tar chvf ${PAPER}.tar Makefile ${PARTS} ${PICTURES} ${BIBFILE} ${SIAM}

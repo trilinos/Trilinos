@@ -396,7 +396,8 @@ other \trilinos~packages.
 To configure and build \ML\ through \trilinos, you may need do the
 following (actual configuration options may vary depending on the
 specific architecture, installation, and user's need).  It's assumed
-that shell variable \verb!$TRILINOS_HOME!  identifies the
+that shell variable \verb!$TRILINOS_HOME! (here introduced for the
+sake of simplicity only) identifies the
 \trilinos~directory, and, for example, that we are compiling under LINUX
 and MPI.
 \begin{verbatim}
@@ -506,16 +507,21 @@ is built through the \trilinos~{\tt configure}.)  In order to link the
 packages' libraries\footnote{An example of configuration line that enables \metis~and \parmetis~might be as follows:
 {\tt ./configure --with-mpi-compilers --enable-ml\_metis --enable-ml\_parmetis3x --with-cflags="-I\$HOME/include" \
  --with-cppflags="-I\$HOME/include" \
- --with-ldflags="-L\$HOME/lib/LINUX\_MPI -lparmetis-3.1 -lmetis-4.0" }.}
+ --with-ldflags="-L\$HOME/lib/LINUX\_MPI" --with-libs="-lparmetis-3.1 -lmetis-4.0" }.}
 , with the option
 \begin{verbatim}
 --with-ldflags=lib-locations
+--with-libs=lib-list
 \end{verbatim}
 The user might find useful the option 
 \begin{verbatim}
 --disable-examples
 \end{verbatim}
-which turns off compilation and linking of the examples.
+which turns off compilation and linking of all Trilinos examples, or
+\begin{verbatim}
+--disable-ml-examples
+\end{verbatim}
+which turns off compilation and linking of \ML\ examples. 
 
 \smallskip
 
