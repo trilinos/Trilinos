@@ -207,42 +207,40 @@ library and related examples do depend on MPI.
 \section lapack_options LAPACK-Related Options
 
 <ul>
-  <li> \c --enable-lapack         
+  <li> \c --enable-nox-lapack         
     <ul>
       <li> Compile noxlapack library (libnoxlapack.a). Default is not to compile the library.
     </ul>
-  <li> \c --enable-lapack-examples
+  <li> \c --enable-nox-lapack-examples
     <ul>
       <li> Compile lapack examples. 
-           Requires \c --enable-lapack.
     </ul>
 </ul>
 
 \section epetra_options Epetra-Related Options
 
 <ul>
-  <li> \c --enable-epetra         
+  <li> \c --enable-nox-epetra         
     <ul>
       <li> Compile noxepetra library (libnoxepetra.a). Default is not to compile the library.
     </ul>
-  <li> \c --enable-epetra-examples
+  <li> \c --enable-nox-epetra-examples
     <ul>
       <li> Compile epetra examples. 
-           Requires \c --enable-epetra.
     </ul>
 </ul>
 
 \section petsc_options PETSc-Related Options
 
 <ul>
-  <li> \c --enable-petsc      
+  <li> \c --enable-nox-petsc      
     <ul>
       <li> Compile noxpetsc library (libnoxpetsc.a). Default is not to compile the library.
     </ul>
-  <li> \c --enable-petsc-examples
+  <li> \c --enable-nox-petsc-examples
     <ul>
       <li> Compile petsc examples. 
-           Requires \c --enable-petsc.
+           Requires \c --enable-nox-petsc.
     </ul>
 </ul>
 
@@ -252,15 +250,7 @@ library and related examples do depend on MPI.
   <li> \c --enable-loca
     <ul>
       <li> Compile the loca library (libloca.a). Default is not to compile the library.
-    </ul>
-  <li> \c --enable-loca-epetra    
-    <ul>
-      <li> Compile the locaepetra library (liblocaepetra.a). Default is not to compile the library.
-    </ul>
-  <li> \c --enable-loca-epetra-examples
-    <ul>
-      <li> Compile loca epetra examples. 
-           Requires \c --enable-loca, \c --enable-epetra, and \c --enable-loca-epetra.
+           Also compiles appropriate interfaces if they have been enabled (e.g., lapack and epetra)
     </ul>
 </ul>
 
