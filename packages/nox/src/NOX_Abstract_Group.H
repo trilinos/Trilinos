@@ -187,7 +187,7 @@
 
      \return
      <ul>
-     <li> NOX::Abstract::Group::NotDefined - Returned by default implementation
+     <li> NOX::Abstract::Group::NotDefined - Returned by default implementation in NOX::Abstract::Group
      <li> NOX::Abstract::Group::Failed - If the computation fails in any other way
      <li> NOX::Abstract::Group::Ok - Otherwise
      </ul>
@@ -208,7 +208,7 @@
 
      \return
      <ul>
-     <li> NOX::Abstract::Group::NotDefined - Returned by default implementation
+     <li> NOX::Abstract::Group::NotDefined - Returned by default implementation in NOX::Abstract::Group
      <li> NOX::Abstract::Group::BadDependency - If either \f$F\f$ or \f$J\f$ has not been computed
      <li> NOX::Abstract::Group::Failed - If the computation fails in any other way
      <li> NOX::Abstract::Group::Ok - Otherwise
@@ -235,7 +235,7 @@
      
      \return
      <ul>
-     <li> NOX::Abstract::Group::NotDefined - Returned by default implementation
+     <li> NOX::Abstract::Group::NotDefined - Returned by default implementation in NOX::Abstract::Group
      <li> NOX::Abstract::Group::BadDependency - If either \f$F\f$ or \f$J\f$ has not been computed
      <li> NOX::Abstract::Group::NotConverged - If the linear solve fails to satisfy the "Tolerance" 
 	  specified in \c params
@@ -262,7 +262,7 @@
 
      \return
      <ul>
-     <li> NOX::Abstract::Group::NotDefined - Returned by default implementation
+     <li> NOX::Abstract::Group::NotDefined - Returned by default implementation in NOX::Abstract::Group
      <li> NOX::Abstract::Group::BadDependency - If the Jacobian \f$J\f$ has not been computed
      <li> NOX::Abstract::Group::Failed - If the computation fails
      <li> NOX::Abstract::Group::Ok - Otherwise
@@ -281,7 +281,7 @@
 
      \return
      <ul>
-     <li> NOX::Abstract::Group::NotDefined - Returned by default implementation
+     <li> NOX::Abstract::Group::NotDefined - Returned by default implementation in NOX::Abstract::Group
      <li> NOX::Abstract::Group::BadDependency - If \f$J\f$ has not been computed
      <li> NOX::Abstract::Group::Failed - If the computation fails
      <li> NOX::Abstract::Group::Ok - Otherwise
@@ -299,7 +299,7 @@
      \f[ v = J^{-1} u, \f]
      where \f$J\f$ is the Jacobian, \f$u\f$ is the input vector, and \f$v\f$ is the result vector.
 
-     The "Tolerance" parameter specifies that the solution should be such that
+     The "Tolerance" parameter specifies that the
      solution should be such that
      \f[
      \frac{\| J v - u \|_2}{\max \{ 1, \|u\|_2\} } < \mbox{Tolerance}
@@ -307,7 +307,7 @@
 
      \return
      <ul>
-     <li> NOX::Abstract::Group::NotDefined - Returned by default implementation
+     <li> NOX::Abstract::Group::NotDefined - Returned by default implementation in NOX::Abstract::Group
      <li> NOX::Abstract::Group::BadDependency - If \f$J\f$ has not been computed
      <li> NOX::Abstract::Group::NotConverged - If the linear solve fails to satisfy the "Tolerance" 
 	  specified in \c params
@@ -334,7 +334,7 @@
      \f[ u = M^{-1} v, \f]
      where \f$u\f$ is the input vector and \f$v\f$ is the result vector.
 
-     The "Tolerance" parameter specifies that the solution should be such that
+     The "Tolerance" parameter specifies that the
      solution should be such that
      \f[
      \frac{\| M v - u \|_2}{\max \{ 1, \|u\|_2\} } < \mbox{Tolerance}
@@ -342,7 +342,7 @@
 
      \return
      <ul>
-     <li> NOX::Abstract::Group::NotDefined - Returned by default implementation
+     <li> NOX::Abstract::Group::NotDefined - Returned by default implementation in NOX::Abstract::Group
      <li> NOX::Abstract::Group::NotConverged - If the linear solve fails to satisfy the "Tolerance" 
 	  specified in \c params
      <li> NOX::Abstract::Group::Failed - If the computation fails
@@ -371,15 +371,15 @@
   virtual bool isF() const = 0;
 
   //! Return true if the Jacobian is valid.
-  /*! \note Default implementation returns false. */
+  /*! \note Default implementation in NOX::Abstract::Group returns false. */
   virtual bool isJacobian() const;
 
   //! Return true if the gradient is valid.
-  /*! \note Default implementation returns false. */
+  /*! \note Default implementation in NOX::Abstract::Group returns false. */
   virtual bool isGradient() const;
 
   //! Return true if the Newton direction is valid.
-  /*! \note Default implementation returns false. */
+  /*! \note Default implementation in NOX::Abstract::Group returns false. */
   virtual bool isNewton() const;
   //@}
 
@@ -413,7 +413,7 @@
   
      \return
      <ul>
-     <li> NOX::Abstract::Group::NotDefined - Returned by default implementation
+     <li> NOX::Abstract::Group::NotDefined - Returned by default implementation in NOX::Abstract::Group
      <li> NOX::Abstract::Group::BadDependency - If no linear solve has been calculated
      <li> NOX::Abstract::Group::Failed - Any other type of failure
      <li> NOX::Abstract::Group::Ok - Otherwise
