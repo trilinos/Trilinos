@@ -85,9 +85,8 @@ public:
    */
 
   xyzt(LOCA::EpetraNew::Interface::Required &iReq, NOX::EpetraNew::Interface::Jacobian &iJac,
-       LOCA::EpetraNew::Interface::MassMatrix &iMass, Epetra_Vector &splitVec,
-       Epetra_RowMatrix &splitJac, Epetra_RowMatrix &splitMass, 
-       Epetra_Comm &globalComm, int timeStepsPerProc);
+       LOCA::EpetraNew::Interface::MassMatrix &iMass, Epetra_MultiVector &splitMultiVec,
+       Epetra_RowMatrix &splitJac, Epetra_RowMatrix &splitMass, Epetra_Comm &globalComm);
 
   //! Destructor
   virtual ~xyzt();
@@ -118,20 +117,22 @@ private:
   LOCA::EpetraNew::Interface::Required &iReq;
   NOX::EpetraNew::Interface::Jacobian &iJac;
   LOCA::EpetraNew::Interface::MassMatrix &iMass;
-  Epetra_Vector& splitVec;
   Epetra_RowMatrix& splitJac;
   Epetra_RowMatrix& splitMass; // can be same object as splitJac
   Epetra_Comm& globalComm;
-  int timeStepsPerProc;
 
   // xyzt objects created in constructor
+  Epetra_Vector splitVec; //tmp space
   Epetra_Vector splitRes; //tmp space
   Epetra_Vector splitVecOld; //tmp space
   EpetraExt::BlockCrsMatrix* jacobian;
   EpetraExt::BlockVector* solution;
   EpetraExt::BlockVector* solutionOverlap;
   Epetra_Import* overlapImporter;
+  int timeStepsPerProc; // computed from NumVectors of initial guess MultiVector
   int numReplicas;
+  int replica;
+  int conStep;
   std::vector< std::vector<int> >* rowStencil;
   std::vector<int>* rowIndex;
 

@@ -77,6 +77,14 @@ namespace LOCA {
            << "\n\tempty default implementation not overloaded!" << endl;
 	};
 
+        /*! This routine is called from Interface::xyzt::printSolution() just
+	 *  before the call to Interface::Required::printSolution(x,param),
+	 *  and gives the application some indices that can be used for
+	 *  creating a unique name/index for the output files.
+         *  */
+        virtual void dataForPrintSolution(const int conStep, const int timeStep,
+                                          const int totalTimeSteps) {};
+
       };
     } // namespace Interface
   } // namespace Epetra

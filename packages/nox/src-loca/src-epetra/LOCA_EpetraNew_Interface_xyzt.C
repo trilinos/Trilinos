@@ -38,19 +38,19 @@ using namespace  LOCA::EpetraNew::Interface;
 xyzt::xyzt(LOCA::EpetraNew::Interface::Required &iReq_,
        NOX::EpetraNew::Interface::Jacobian &iJac_,
        LOCA::EpetraNew::Interface::MassMatrix &iMass_,
-       Epetra_Vector &splitVec_, Epetra_RowMatrix &splitJac_,
-       Epetra_RowMatrix &splitMass_, Epetra_Comm &globalComm_,
-       int timeStepsPerProc_)
-       : iReq(iReq_), iJac(iJac_), iMass(iMass_), splitVec(splitVec_),
+       Epetra_MultiVector &splitMultiVec_, Epetra_RowMatrix &splitJac_,
+       Epetra_RowMatrix &splitMass_, Epetra_Comm &globalComm_)
+       : iReq(iReq_), iJac(iJac_), iMass(iMass_),
        splitJac(splitJac_), splitMass(splitMass_), globalComm(globalComm_),
-       timeStepsPerProc(timeStepsPerProc_),
-       splitRes(splitVec_), splitVecOld(splitVec_), solution(0),
+       timeStepsPerProc(splitMultiVec_.NumVectors()), splitVec(*(splitMultiVec_(0))),
+       splitRes(*(splitMultiVec_(0))), splitVecOld(*(splitMultiVec_(0))), solution(0),
        solutionOverlap(0), overlapImporter(0), jacobian(0), rowStencil(0),
-       rowIndex(0), numReplicas(globalComm.NumProc() / splitVec.Comm().NumProc())
+       rowIndex(0), numReplicas(globalComm_.NumProc() / splitMultiVec_.Comm().NumProc()),
+       replica(globalComm_.MyPID() / splitMultiVec_.Comm().NumProc()), conStep(0)
 {
    if (globalComm.MyPID()==0) cout  << "--------------XYZT Partition Info---------------"
        << "\n\tNumProcs              = " << globalComm.NumProc()
-       << "\n\tSpatial Decomposition = " << splitVec.Comm().NumProc()
+       << "\n\tSpatial Decomposition = " << splitMultiVec_.Comm().NumProc()
        << "\n\tNumber of Replicas    = " << numReplicas
        << "\n\tTime Steps per Proc   = " << timeStepsPerProc
        << "\n\tNumber of Time Steps  = " << numReplicas*timeStepsPerProc
@@ -60,7 +60,6 @@ xyzt::xyzt(LOCA::EpetraNew::Interface::Required &iReq_,
    // Each block has identical sparsity, and assumes mass matrix's sparsity 
    // is a subset of the Jacobian's
 
-   int replica = globalComm.MyPID() / splitVec.Comm().NumProc();
    rowStencil = new std::vector< std::vector<int> >(timeStepsPerProc);
    rowIndex = new std::vector<int>;
    for (int i=0; i < timeStepsPerProc; i++) {
@@ -72,8 +71,6 @@ xyzt::xyzt(LOCA::EpetraNew::Interface::Required &iReq_,
    jacobian = new EpetraExt::BlockCrsMatrix(splitJac, *rowStencil, *rowIndex, globalComm);
 
    // Construct global solution vector, the overlap vector, and importer between them
-   //solution = new EpetraExt::BlockVector(splitVec.Map(), jacobian->RowMap());
-   //solutionOverlap = new EpetraExt::BlockVector(splitVec.Map(), jacobian->ColMap());
    solution = new EpetraExt::BlockVector(splitJac.RowMatrixRowMap(), jacobian->RowMap());
    solutionOverlap = new EpetraExt::BlockVector(splitJac.RowMatrixRowMap(), jacobian->ColMap());
   
@@ -82,7 +79,7 @@ xyzt::xyzt(LOCA::EpetraNew::Interface::Required &iReq_,
 
    // Load initial guess into block solution vector
    for (int i=0; i < timeStepsPerProc; i++) 
-           solution->LoadBlockValues(splitVec, (*rowIndex)[i]);
+           solution->LoadBlockValues(*(splitMultiVec_(i)), (*rowIndex)[i]);
 
    cout << "Ending xyzt constructor" << endl;
 }
@@ -181,10 +178,17 @@ void xyzt::printSolution(const Epetra_Vector& x, double conParam)
 {
   solution->Epetra_Vector::operator=(x);
 
+  // Barriers force printing of all time steps in order
+  for (int j=0; j<replica; j++) globalComm.Barrier();
   for (int i=0; i < timeStepsPerProc; i++) {
     solution->ExtractBlockValues(splitVec, (*rowIndex)[i]);
-    iReq.printSolution(splitVec, (double) ((*rowIndex)[i] + 1) );
+    // Pass indexing data for possible application use in output naming convention
+    iMass.dataForPrintSolution(conStep, (*rowIndex)[i], numReplicas*timeStepsPerProc);
+    iReq.printSolution(splitVec, conParam);
   }
+  for (int j=replica; j<numReplicas-1; j++) globalComm.Barrier();
+
+  conStep++; // Counter for continuation step, used for printing
 }
 
 EpetraExt::BlockVector& xyzt::getSolution()
