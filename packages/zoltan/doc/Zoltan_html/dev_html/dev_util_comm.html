@@ -1,10 +1,11 @@
-<HTML>
-<HEAD>
-   <META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-1">
-   <META NAME="GENERATOR" CONTENT="Mozilla/4.04 [en] (X11; U; SunOS 5.6 sun4m) [Netscape]">
-   <META NAME="sandia.approved" CONTENT="SAND99-1376">
-   <META NAME="author" CONTENT="karen devine, kddevin@sandia.gov">
-   <TITLE> Zoltan Developer's Guide:  Communication Utilities</TITLE>
+<!doctype html public "-//w3c//dtd html 4.0 transitional//en">
+<html>
+<head>
+   <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+   <meta name="GENERATOR" content="Mozilla/4.7 [en] (X11; U; SunOS 5.7 sun4u) [Netscape]">
+   <meta name="sandia.approved" content="SAND99-1376">
+   <meta name="author" content="karen devine, kddevin@sandia.gov">
+   <title> Zoltan Developer's Guide:  Communication Utilities</title>
 <!
   ------------------------
   | CVS File Information |
@@ -14,62 +15,59 @@
   $Date$
   $Revision$
 >
-</HEAD>
-<BODY BGCOLOR="#FFFFFF">
+</head>
+<body bgcolor="#FFFFFF">
 
-<DIV ALIGN=right>
-<H3>
-<IMG SRC="figures/dev_header.gif" ALT="Zoltan Developer's Guide" ></H3></DIV>
+<div ALIGN=right>
+<h3>
+<img SRC="figures/dev_header.gif" ALT="Zoltan Developer's Guide" ></h3></div>
 
-<H2>
-<A NAME="irreg_comm"></A>Irregular Communication Library</H2>
+<h2>
+<a NAME="irreg_comm"></a>Irregular Communication Library</h2>
 For much of its communication, the Zoltan library uses the irregular communication
 package developed by Bruce Hendrickson and Steve Plimpton.&nbsp; The package
 consists of a few simple functions which create communication maps, perform
 communication, and destroy communication maps upon completion.
-<BR>The functions are listed below.
-<BLOCKQUOTE><B><A HREF="#LB_Comm_Create">LB_Comm_Create</A>:&nbsp; </B>computes
+<br>The functions are listed below.
+<blockquote><b><a href="#LB_Comm_Create">LB_Comm_Create</a>:&nbsp; </b>computes
 a communication plan for sending objects to destination processors.
-<BR><B><A HREF="#LB_Comm_Do">LB_Comm_Do</A>:&nbsp; </B>uses a communication
+<br><b><a href="#LB_Comm_Do">LB_Comm_Do</a>:&nbsp; </b>uses a communication
 plan to send objects to destination processors.
-<BR><B><A HREF="#LB_Comm_Destroy">LB_Comm_Destroy</A>:</B>&nbsp; free memory
-associated with a communication plan.</BLOCKQUOTE>
+<br><b><a href="#LB_Comm_Destroy">LB_Comm_Destroy</a>:</b>&nbsp; free memory
+associated with a communication plan.</blockquote>
 The Zoltan library uses the irregular communication package in its migration-help
-tools and in some of the load-balancing algorithms. For example, in <B><A HREF="../ug_html/ug_interface_mig.html#LB_Help_Migrate">LB_Help_Migrate</A></B>,
-<B><A HREF="#LB_Comm_Create">LB_Comm_Create</A></B> is used to develop
-a communication map for sending objects to be exported to their new destination
-processors. The data for the objects is packed into a communication buffer
-and sent to the other processors through a call to <B><A HREF="#LB_Comm_Do">LB_Comm_Do</A></B>.
-Simultaneously, each processor receives a communication buffer with data
-for objects it is importing. After the imported objects are unpacked, the
-communication plan is no longer needed; it is deallocated by a call to
-<B><A HREF="#LB_Comm_Destroy">LB_Comm_Destroy</A></B>. Developers should
-use the package whenever it is appropriate.
-
-<P>The order that messages are processed in the communication package is
-non-deterministic; it depends only on the order they are received by a
-processor. This non-deterministic logic provides the most efficient execution;
+tools and in some of the load-balancing algorithms. For example, in <b><a href="../ug_html/ug_interface_mig.html#LB_Help_Migrate">LB_Help_Migrate</a></b>,
+<b><a href="#LB_Comm_Create">LB_Comm_Create</a></b>
+is used to develop a communication map for sending objects to be exported
+to their new destination processors. The data for the objects is packed
+into a communication buffer and sent to the other processors through a
+call to <b><a href="#LB_Comm_Do">LB_Comm_Do</a></b>. Simultaneously, each
+processor receives a communication buffer with data for objects it is importing.
+After the imported objects are unpacked, the communication plan is no longer
+needed; it is deallocated by a call to
+<b><a href="#LB_Comm_Destroy">LB_Comm_Destroy</a></b>.
+Developers should use the package whenever possible, as improvements made
+to the package to support heterogeneous architectures can then automatically
+propagate to the algorithms.
+<p>The order that messages are processed in the communication package is,
+by default, deterministic.&nbsp; Messages are processed in order of their
+sending processors' ID&nbsp;numbers.&nbsp; Setting the <a href="../ug_html/ug_alg.html#General_Parameters">general
+parameter</a> <b>DETERMINISTIC</b>&nbsp;to FALSE allows the communication
+package to process messages in the order they are received by a processor.
+This non-deterministic logic provides slightly more efficient execution;
 the library reads messages from any processor and sets pointers to the
-storage for that processor sequentially in the receiving buffer. Thus,
+storage for that processor sequentially in the receiving buffer. However,
 imported objects may be processed in different orders, depending on the
-order of their sending processors in the communication plan. For debugging,
-however, it is sometimes useful to impose a deterministic order upon the
-message processing. In such cases, the function call to <B>debug_sort2_int_int</B>
-in <B><A HREF="#LB_Comm_Create">LB_Comm_Create</A></B> should be used.
-It sorts the received messages in order of their processor numbers. Thus,
-imported objects are processed in order of their sending processors.&nbsp;
-Ensuring deterministic results this way will be possible through a parameter
-in future versions.
-<BR>&nbsp;
-<BR>&nbsp;
-
-<P>
-<HR><A NAME="LB_Comm_Create"></A>int<B> LB_Comm_Create</B>(struct Comm_Obj&nbsp;
-**<I>plan</I>,<B> </B>int <I>nsend</I>, int *<I>proclist</I>, MPI_Comm
-<I>comm</I> , int <I>tag</I>, int *<I>nreturn</I>);&nbsp;
-<HR>
-
-<P>The <B>LB_Comm_Create</B> function sets up the communication plan in
+order of their sending processors in the communication plan, causing the
+results to vary over several executions of the program.
+<br>&nbsp;
+<p>
+<hr><a NAME="LB_Comm_Create"></a>int<b> LB_Comm_Create</b>(struct Comm_Obj&nbsp;
+**<i>plan</i>,<b> </b>int <i>nsend</i>, int *<i>proclist</i>, MPI_Comm
+<i>comm</i>
+, int <i>tag</i>, int *<i>nreturn</i>);&nbsp;
+<hr>
+<p>The <b>LB_Comm_Create</b> function sets up the communication plan in
 the irregular communication package. Its input is a count of objects to
 be sent to other processors, a list of the processors to which the objects
 should be sent (repetitions are allowed), and an MPI communicator and tag.
@@ -77,182 +75,178 @@ It allocates and builds a communication plan that describes to which processors
 data will be sent and from which processors data will be received. It also
 computes the amount of data to be sent to and received from each processor.
 It returns the number of objects to be received by the processor and a
-pointer to the communication plan it created. In <B><A HREF="../ug_html/ug_interface_mig.html#LB_Help_Migrate">LB_Help_Migrate</A></B>,
+pointer to the communication plan it created. In <b><a href="../ug_html/ug_interface_mig.html#LB_Help_Migrate">LB_Help_Migrate</a></b>,
 for example, the number of objects to be exported by a processor and a
-list of the destination processors for the objects are passed to <B>LB_Comm_Create</B>;
+list of the destination processors for the objects are passed to <b>LB_Comm_Create</b>;
 the resulting plan describes the communication patterns needed to export
 the objects and to import objects to establish a new decomposition. This
-plan is then used by calls to <B><A HREF="#LB_Comm_Do">LB_Comm_Do</A></B>
+plan is then used by calls to <b><a href="#LB_Comm_Do">LB_Comm_Do</a></b>
 to perform the actual communication.
-<BR>&nbsp;
-<TABLE WIDTH="100%" >
-<TR VALIGN=TOP>
-<TD VALIGN=TOP WIDTH="20%"><B>Parameters:</B></TD>
+<br>&nbsp;
+<table WIDTH="100%" >
+<tr VALIGN=TOP>
+<td VALIGN=TOP WIDTH="20%"><b>Parameters:</b></td>
 
-<TD></TD>
-</TR>
+<td></td>
+</tr>
 
-<TR>
-<TD>&nbsp;&nbsp;&nbsp; <I>plan</I></TD>
+<tr>
+<td>&nbsp;&nbsp;&nbsp; <i>plan</i></td>
 
-<TD>A pointer to the communication plan created by <B>LB_Comm_Create</B>.</TD>
-</TR>
+<td>A pointer to the communication plan created by <b>LB_Comm_Create</b>.</td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; nsend</I></TD>
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; nsend</i></td>
 
-<TD>The number of objects to be sent to other processors.</TD>
-</TR>
+<td>The number of objects to be sent to other processors.</td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; proclist</I></TD>
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; proclist</i></td>
 
-<TD>An array of size <I>nsend</I> of destination processor numbers for
-each of the objects to be sent.</TD>
-</TR>
+<td>An array of size <i>nsend</i> of destination processor numbers for
+each of the objects to be sent.</td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; comm</I></TD>
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; comm</i></td>
 
-<TD>The MPI communicator for the irregular communication.</TD>
-</TR>
+<td>The MPI communicator for the irregular communication.</td>
+</tr>
 
-<TR>
-<TD>&nbsp;&nbsp;&nbsp; <I>tag</I></TD>
+<tr>
+<td>&nbsp;&nbsp;&nbsp; <i>tag</i></td>
 
-<TD>A tag for MPI communication.</TD>
-</TR>
+<td>A tag for MPI communication.</td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP>&nbsp;&nbsp;&nbsp; <I>nreturn</I></TD>
+<tr>
+<td VALIGN=TOP>&nbsp;&nbsp;&nbsp; <i>nreturn</i></td>
 
-<TD>Upon return, the number of objects to be received by the processor.</TD>
-</TR>
+<td>Upon return, the number of objects to be received by the processor.</td>
+</tr>
 
-<TR>
-<TD><B>Returned Value:</B></TD>
+<tr>
+<td><b>Returned Value:</b></td>
 
-<TD></TD>
-</TR>
+<td></td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP>&nbsp;&nbsp; int</TD>
+<tr>
+<td VALIGN=TOP>&nbsp;&nbsp; int</td>
 
-<TD>Error code.</TD>
-</TR>
-</TABLE>
-&nbsp;
+<td>Error code.</td>
+</tr>
+</table>
 
-<P>
-<HR><A NAME="LB_Comm_Do"></A>int<B> LB_Comm_Do</B>(struct Comm_Obj *<I>plan</I>,
-int <I>tag</I>, char *<I>sendbuf</I>, int <I>nsize</I>, char *<I>recvbuf</I>);&nbsp;
-<HR>
-
-<P>The <B>LB_Comm_Do</B> function performs the communication described
-in a communication plan built by <B><A HREF="#LB_Comm_Create">LB_Comm_Create</A></B>.
+<p>
+<hr><a NAME="LB_Comm_Do"></a>int<b> LB_Comm_Do</b>(struct Comm_Obj *<i>plan</i>,
+int <i>tag</i>, char *<i>sendbuf</i>, int <i>nsize</i>, char *<i>recvbuf</i>);&nbsp;
+<hr>
+<p>The <b>LB_Comm_Do</b> function performs the communication described
+in a communication plan built by <b><a href="#LB_Comm_Create">LB_Comm_Create</a></b>.
 Using the plan, it takes a buffer of object data to be sent and the size
 (in bytes) of each object's data in that buffer and sends the data to other
-processors. In <B><A HREF="../ug_html/ug_interface_mig.html#LB_Help_Migrate">LB_Help_Migrate</A></B>,
-for example, the send buffer is filled by <B><A HREF="../ug_html/ug_interface_mig.html#LB_Help_Migrate">LB_Help_Migrate</A></B>
-through calls to the <I>lb->Pack_Obj</I> function for all objects to be
-exported. The <B>LB_Comm_Do</B> function also receives object data from
-other processors and stores it in a receive buffer. In <B><A HREF="../ug_html/ug_interface_mig.html#LB_Help_Migrate">LB_Help_Migrate</A></B>,
-the data for objects to be imported is received in <I>recvbuf</I> and can
-then be unpacked through calls to the <I>lb->Unpack_Obj</I> function for
+processors. In <b><a href="../ug_html/ug_interface_mig.html#LB_Help_Migrate">LB_Help_Migrate</a></b>,
+for example, the send buffer is filled by <b><a href="../ug_html/ug_interface_mig.html#LB_Help_Migrate">LB_Help_Migrate</a></b>
+through calls to the <i>lb->Pack_Obj</i> function for all objects to be
+exported. The <b>LB_Comm_Do</b> function also receives object data from
+other processors and stores it in a receive buffer. In <b><a href="../ug_html/ug_interface_mig.html#LB_Help_Migrate">LB_Help_Migrate</a></b>,
+the data for objects to be imported is received in <i>recvbuf</i> and can
+then be unpacked through calls to the <i>lb->Unpack_Obj</i> function for
 each imported object. The receive buffer must be allocated by the code
-calling <B>LB_Comm_Do</B> using the number of received objects returned
-by <B><A HREF="#LB_Comm_Create">LB_Comm_Create.</A></B><I> </I>All objects
+calling <b>LB_Comm_Do</b> using the number of received objects returned
+by <b><a href="#LB_Comm_Create">LB_Comm_Create.</a></b><i> </i>All objects
 (both sent and received) are assumed to have the same data size.
-<BR>&nbsp;
-<TABLE WIDTH="100%" >
-<TR VALIGN=TOP>
-<TD VALIGN=TOP WIDTH="20%"><B>Parameters:</B></TD>
+<br>&nbsp;
+<table WIDTH="100%" >
+<tr VALIGN=TOP>
+<td VALIGN=TOP WIDTH="20%"><b>Parameters:</b></td>
 
-<TD></TD>
-</TR>
+<td></td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; plan</I></TD>
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; plan</i></td>
 
-<TD>A pointer to a communication plan built by <B><A HREF="#LB_Comm_Create">LB_Comm_Create</A></B>.</TD>
-</TR>
+<td>A pointer to a communication plan built by <b><a href="#LB_Comm_Create">LB_Comm_Create</a></b>.</td>
+</tr>
 
-<TR>
-<TD>&nbsp;&nbsp;&nbsp; <I>tag</I></TD>
+<tr>
+<td>&nbsp;&nbsp;&nbsp; <i>tag</i></td>
 
-<TD>An MPI message tag.</TD>
-</TR>
+<td>An MPI message tag.</td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; sendbuf</I></TD>
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; sendbuf</i></td>
 
-<TD>A buffer filled with object data to be sent to other processors.</TD>
-</TR>
+<td>A buffer filled with object data to be sent to other processors.</td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; nsize</I></TD>
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; nsize</i></td>
 
-<TD>The size (in bytes) of the data for one object.</TD>
-</TR>
+<td>The size (in bytes) of the data for one object.</td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP>&nbsp;&nbsp;&nbsp; <I>recvbuf</I></TD>
+<tr>
+<td VALIGN=TOP>&nbsp;&nbsp;&nbsp; <i>recvbuf</i></td>
 
-<TD>Upon return, a buffer filled with object data received from other processors.</TD>
-</TR>
+<td>Upon return, a buffer filled with object data received from other processors.</td>
+</tr>
 
-<TR>
-<TD><B>Returned Value:</B></TD>
+<tr>
+<td><b>Returned Value:</b></td>
 
-<TD></TD>
-</TR>
+<td></td>
+</tr>
 
-<TR>
-<TD>&nbsp;&nbsp;&nbsp; int</TD>
+<tr>
+<td>&nbsp;&nbsp;&nbsp; int</td>
 
-<TD>Error code.</TD>
-</TR>
-</TABLE>
-&nbsp;
+<td>Error code.</td>
+</tr>
+</table>
 
-<P>
-<HR><A NAME="LB_Comm_Destroy"></A>int <B>LB_Comm_Destroy</B>(struct Comm_Obj
-**<I>plan</I>);&nbsp;
-<HR>
+<p>
+<hr><a NAME="LB_Comm_Destroy"></a>int <b>LB_Comm_Destroy</b>(struct Comm_Obj
+**<i>plan</i>);&nbsp;
+<hr>
+<p>The <b>LB_Comm_Destroy</b> function frees all memory associated with
+a communication plan created by <b><a href="#LB_Comm_Create">LB_Comm_Create</a></b>.
+<br>&nbsp;
+<table WIDTH="100%" >
+<tr VALIGN=TOP>
+<td VALIGN=TOP WIDTH="20%"><b>Parameters:</b></td>
 
-<P>The <B>LB_Comm_Destroy</B> function frees all memory associated with
-a communication plan created by <B><A HREF="#LB_Comm_Create">LB_Comm_Create</A></B>.
-<BR>&nbsp;
-<TABLE WIDTH="100%" >
-<TR VALIGN=TOP>
-<TD VALIGN=TOP WIDTH="20%"><B>Parameters:</B></TD>
+<td></td>
+</tr>
 
-<TD></TD>
-</TR>
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; plan</i></td>
 
-<TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; plan</I></TD>
+<td>A pointer to a communication plan built by <b><a href="#LB_Comm_Create">LB_Comm_Create</a></b>.&nbsp;
+Upon return, <i>plan</i> is set to NULL.&nbsp;</td>
+</tr>
 
-<TD>A pointer to a communication plan built by <B><A HREF="#LB_Comm_Create">LB_Comm_Create</A></B>.&nbsp;
-Upon return, <I>plan</I> is set to NULL.&nbsp;</TD>
-</TR>
+<tr>
+<td><b>Returned Value:</b></td>
 
-<TR>
-<TD><B>Returned Value:</B></TD>
+<td></td>
+</tr>
 
-<TD></TD>
-</TR>
+<tr>
+<td>&nbsp;&nbsp;&nbsp; int</td>
 
-<TR>
-<TD>&nbsp;&nbsp;&nbsp; int</TD>
+<td>Error code.</td>
+</tr>
+</table>
 
-<TD>Error code.</TD>
-</TR>
-</TABLE>
-
-<HR WIDTH="100%">
-<BR>[<A HREF="dev.html">Table of Contents</A>&nbsp; |&nbsp; <A HREF="dev_util_parallel.html">Next:&nbsp;
-Parallel Computing Utilities</A>&nbsp; |&nbsp; <A HREF="dev_util_params.html">Previous:&nbsp;
-Parameter Setting Utilities</A>]
-</BODY>
-</HTML>
+<hr WIDTH="100%">
+<br>[<a href="dev.html">Table of Contents</a>&nbsp; |&nbsp; <a href="dev_util_parallel.html">Next:&nbsp;
+Parallel Computing Utilities</a>&nbsp; |&nbsp; <a href="dev_util_params.html">Previous:&nbsp;
+Parameter Setting Utilities</a>]
+</body>
+</html>
