@@ -46,10 +46,12 @@ LOCA_ABSTRACT = \
 	$(srcdir)/LOCA_Abstract_Iterator.C
 
 LOCA_UTILS_H = \
-        $(srcdir)/LOCA_Utils.H
+        $(srcdir)/LOCA_Utils.H \
+        $(srcdir)/LOCA_ErrorCheck.H
 
 LOCA_UTILS = \
-        $(srcdir)/LOCA_Utils.C
+        $(srcdir)/LOCA_Utils.C \
+        $(srcdir)/LOCA_ErrorCheck.C
 
 LOCA_PARAMETER_VECTOR_H = \
         $(srcdir)/LOCA_Parameter_Vector.H
@@ -117,6 +119,12 @@ LOCA_BIFURCATION = \
 	$(srcdir)/LOCA_Bifurcation_PitchforkBordVector.C \
 	$(srcdir)/LOCA_Bifurcation_PitchforkBordGroup.C
 
+LOCA_HOMOTOPY_H = \
+        $(srcdir)/LOCA_HomotopyGroup.H
+
+LOCA_HOMOTOPY = \
+        $(srcdir)/LOCA_HomotopyGroup.C
+
 LOCA_DERIVUTILS_H = \
         $(srcdir)/LOCA_DerivUtils.H
 
@@ -132,6 +140,7 @@ LOCA_H = \
 	$(LOCA_PREDICTOR_H) \
 	$(LOCA_STEPSIZE_H) \
 	$(LOCA_BIFURCATION_H) \
+        $(LOCA_HOMOTOPY_H) \
 	$(LOCA_DERIVUTILS_H) \
 	$(LOCA_STEPPER_H)
 
@@ -143,6 +152,7 @@ LOCA = \
 	$(LOCA_PREDICTOR) \
 	$(LOCA_STEPSIZE) \
 	$(LOCA_BIFURCATION) \
+        $(LOCA_HOMOTOPY) \
 	$(LOCA_DERIVUTILS) \
 	$(LOCA_STEPPER)
 
