@@ -91,8 +91,6 @@ int main(int argc, char *argv[])
   if (!ok) {
      cout << "**ERR**: could not read rhs\n"; throw -1; }
        
-  Afine->FillComplete();
-
   Space FineSpace(map->NumGlobalElements());
   Operator A(FineSpace, FineSpace, Afine, true);
 
