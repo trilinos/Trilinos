@@ -77,6 +77,7 @@ endif
 ##############################################################################
 # Default values for inclusion of methods.
 ZOLTAN_HG=1
+ZOLTAN_HG=1
 ZOLTAN_OCT=1
 
 GDEFINES	=
@@ -272,7 +273,7 @@ ZDRIVE_CSRC 	= $(DR_CSRC) $(CH_CSRC)
 ZDRIVE_OBJ	= $(ZDRIVE_CSRC:.c=.o)
 ZDRIVE_LIBS	= -L. -l$(LIB_TARGET) \
 	          $(THIRD_PARTY_LIBPATH) $(THIRD_PARTY_LIBS) \
-		  $(MPI_LIBPATH) $(MPI_LIB) -lm
+		  $(MPI_LIBPATH) $(MPI_LIB) -lm 
 #		  -lzoltan_comm -lzoltan_mem -lzoltan_dd \
 ZDRIVE_DEPS	= libzoltan_comm.a libzoltan_mem.a libzoltan_dd.a
 
@@ -492,6 +493,12 @@ zscript:
 	@echo "cd .." >> zoltan_script
 	@chmod +x zoltan_script
 
+# Makefile target to compile ZoltanComponent. This assumesthat the CCA_SPEC_DIR and
+# DCCAFE_DIR definitions in Utilities/Config/Config.<arch> exist.
+
+zoltan_component : zoltan zdrive
+	cd ZoltanComponent ; ./configure --with-ZoltanArch=$(ZOLTAN_ARCH) ; make ; cd ..
+
 #
 ############################################################################
 #          UTILITY TARGETS
@@ -525,7 +532,8 @@ clean:
 	 cd fdriver_old; $(MAKE) "ZOLTAN_OBJ_DIR=$$a" clean; cd ..; \
 	 $(RM) -rf $$a/*; \
 	 done;
-	 cd Utilities; $(MAKE) clean; cd ..
+	 cd Utilities; $(MAKE) clean; cd .. ; \
+	 if test -d ZoltanComponent ; then cd ZoltanComponent ; $(MAKE) clean ; cd .. fi
 	 exit 0
 
 cleantest:
