@@ -6,13 +6,8 @@
 !  CVS File Information :
 !     $RCSfile$
 !     $Author$
-<<<<<<< zoltan_user_data.f90
 !     $Date$
 !     $Revision$
-=======
-!     $Date$
-!     $Revision$
->>>>>>> 1.8
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 module zoltan_user_data
