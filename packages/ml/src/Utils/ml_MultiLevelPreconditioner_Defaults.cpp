@@ -109,7 +109,7 @@ int ML_Epetra::SetDefaults(string ProblemType, ParameterList & List,
   - \c "smoother: Aztec as solver" = false
   - \c "coarse: type" = Amesos-KLU"
   - \c "prec type" = MGV"
-  - \c "print unused" = 1
+  - \c "print unused" = 0
  */
 int ML_Epetra::SetDefaultsDD(ParameterList & List, const string Prefix,
 			     int * options, double * params) 
@@ -162,7 +162,7 @@ int ML_Epetra::SetDefaultsDD(ParameterList & List, const string Prefix,
 
   List.set(Prefix+"prec type","MGV");
 
-  List.set(Prefix+"print unused",-1);
+  List.set(Prefix+"print unused",0);
 
   return 0;
 
@@ -222,7 +222,7 @@ int ML_Epetra::SetDefaultsDD_LU(ParameterList & List, const string Prefix,
 
   List.set(Prefix+"prec type","MGV");
 
-  List.set(Prefix+"print unused",-1);
+  List.set(Prefix+"print unused",0);
 
   return 0;
 
@@ -255,7 +255,7 @@ int ML_Epetra::SetDefaultsDD_LU(ParameterList & List, const string Prefix,
  - \c "smoother: Aztec as solver (level 0)" = false
  - \c "coarse: type" = "Amesos-KLU"
  - \c "prec type" = "MGV"
- - \c "print unused" = -1
+ - \c "print unused" = 0
  */
 int ML_Epetra::SetDefaultsDD_3Levels(ParameterList & List, const string Prefix,
 				     int * options, double * params)
@@ -312,7 +312,7 @@ int ML_Epetra::SetDefaultsDD_3Levels(ParameterList & List, const string Prefix,
 
   List.set(Prefix+"prec type","MGV");
 
-  List.set(Prefix+"print unused",-1);
+  List.set(Prefix+"print unused",0);
   
   return 0;
 
@@ -377,7 +377,7 @@ int ML_Epetra::SetDefaultsDD_3Levels_LU(ParameterList & List, const string Prefi
 
   List.set(Prefix+"prec type","MGV");
 
-  List.set(Prefix+"print unused",-1);
+  List.set(Prefix+"print unused",0);
   
   return 0;
 
@@ -401,7 +401,7 @@ int ML_Epetra::SetDefaultsDD_3Levels_LU(ParameterList & List, const string Prefi
  * - \c "smoother: pre or post" = "both"
  * - \c "coarse: type" = "SuperLU"
  * - \c "prec type" = "MGV"
- * - \c "print unused" = -1
+ * - \c "print unused" = 0
  */
 int ML_Epetra::SetDefaultsMaxwell(ParameterList & List, const string Prefix,
 				  int * options, double * params)
@@ -449,7 +449,7 @@ int ML_Epetra::SetDefaultsMaxwell(ParameterList & List, const string Prefix,
   List.set(Prefix+"prec type","MGV");
 
   // print unused Prefixs on proc 0
-  List.set(Prefix+"print unused",-1);
+  List.set(Prefix+"print unused",0);
 
   return 0;
   
@@ -472,7 +472,7 @@ int ML_Epetra::SetDefaultsMaxwell(ParameterList & List, const string Prefix,
  * - \c "smoother: pre or post" = "both"
  * - \c "coarse: type" = "Amesos-KLU"
  * - \c "prec type" = "MGV"
- * - \c "print unused" =-1
+ * - \c "print unused" = 0
  */
 int ML_Epetra::SetDefaultsSA(ParameterList & List, const string Prefix,
 			     int * options, double * params)
@@ -515,7 +515,7 @@ int ML_Epetra::SetDefaultsSA(ParameterList & List, const string Prefix,
   List.set(Prefix+"prec type","MGV");
 
   // print unused Prefixs on proc 0
-  List.set(Prefix+"print unused",-1);
+  List.set(Prefix+"print unused",0);
   
   return 0;
 
