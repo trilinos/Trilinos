@@ -85,6 +85,10 @@ namespace Direction {
   The following options may be specified in the "Direction" sublist of
   the solver parameters.
 
+  - "Reset Jacobian" - Number of nonlinear iterations to take between
+    Jacobian evaluations.  A modified Newton method corresponds to a 
+    value > 1.  Default value is 1.
+
   - "Forcing Term Method" - Method to compute the forcing term, i.e.,
     the tolerance for the linear solver. Choices are "Constant", 
     "Type 1", and "Type 2".  Defaults to "Constant". 
@@ -155,6 +159,9 @@ private:
 
   //! Vector containing the computed direction
   Abstract::Vector* stepdir;
+
+  //! Number of nonlinear iterations between Jacobian evaluations
+  int nResetJacobian;
 
 };
 } // namespace Direction
