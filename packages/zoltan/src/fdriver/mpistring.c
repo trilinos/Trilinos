@@ -14,6 +14,7 @@
    difference between how Fortran compilers pass strings */
 
 #include <mpi.h>
+#include <malloc.h>
 
 void my_get_processor_name_(int *int_name, int *namelen, int *ierr)
 {
