@@ -40,4 +40,57 @@ int Ifpack_Analyze(const Epetra_RowMatrix& A, const int NumEquations = 1);
 int Ifpack_PrintSparsity(const Epetra_RowMatrix& A, char* title,
                        char* FileName,
                        int NumPDEEqns = 1);
+
+//==============================================================================
+class Ifpack_Element {
+
+public:
+  Ifpack_Element() {};
+
+  Ifpack_Element(const Ifpack_Element& rhs) {
+    i_ = rhs.Index();
+    val_ = rhs.Value();
+    aval_ = rhs.AbsValue();
+  }
+
+  inline int Index() const {
+    return(i_);
+  }
+
+  inline double Value() const {
+    return(val_);
+  }
+
+  inline double AbsValue() const {
+    return(aval_);
+  }
+
+  inline void SetIndex(const int i)
+  {
+    i_ = i;
+  }
+
+  inline void SetValue(const double val)
+  {
+    val_ = val;
+    aval_ = IFPACK_ABS(val_);
+  }
+
+  inline bool operator <(const Ifpack_Element& rhs) const 
+  {
+    if (rhs.AbsValue() > AbsValue())
+      return(false);
+    else if (rhs.AbsValue() < AbsValue())
+      return(true);
+    else if (rhs.Index() < Index())
+        return(true);
+  }
+
+private:
+  int i_;
+  double val_;
+  double aval_;
+
+};
+
 #endif // IFPACK_UTILS_H

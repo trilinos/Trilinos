@@ -31,6 +31,7 @@
 #include "Ifpack_Preconditioner.h"
 #include "Ifpack_vIct.h"
 #include "Ifpack_Condest.h"
+#include "Ifpack_Utils.h"
 #include "Epetra_Comm.h"
 #include "Epetra_Map.h"
 #include "Epetra_RowMatrix.h"
@@ -42,58 +43,6 @@
 #ifdef HAVE_IFPACK_TEUCHOS
 #include "Teuchos_ParameterList.hpp"
 #endif
-
-//==============================================================================
-class Ifpack_Element {
-
-public:
-  Ifpack_Element() {};
-
-  Ifpack_Element(const Ifpack_Element& rhs) {
-    i_ = rhs.Index();
-    val_ = rhs.Value();
-    aval_ = rhs.AbsValue();
-  }
-
-  inline int Index() const {
-    return(i_);
-  }
-
-  inline double Value() const {
-    return(val_);
-  }
-
-  inline double AbsValue() const {
-    return(aval_);
-  }
-
-  inline void SetIndex(const int i)
-  {
-    i_ = i;
-  }
-
-  inline void SetValue(const double val)
-  {
-    val_ = val;
-    aval_ = IFPACK_ABS(val_);
-  }
-
-  inline bool operator <(const Ifpack_Element& rhs) const 
-  {
-    if (rhs.AbsValue() > AbsValue())
-      return(false);
-    else if (rhs.AbsValue() < AbsValue())
-      return(true);
-    else if (rhs.Index() < Index())
-        return(true);
-  }
-
-private:
-  int i_;
-  double val_;
-  double aval_;
-
-};
 
 //==============================================================================
 // FIXME: allocate Comm_ and Time_ the first Initialize() call
