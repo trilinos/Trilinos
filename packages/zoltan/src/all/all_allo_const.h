@@ -17,6 +17,8 @@
 #ifndef __ALL_ALLO_H
 #define __ALL_ALLO_H
 
+#include "lb_const.h"
+
 #ifndef lint
 static char *cvs_all_allo_h =
   "$Id$";
@@ -51,5 +53,6 @@ extern double *LB_Malloc(int n, char *file, int lineno);
 extern double *LB_Realloc(void *ptr, int n, char *filename, int lineno);
 extern void LB_Memory_Stats();
 extern int LB_Memory_Num();
+extern void LB_Free_Structure(LB *);
 
 #endif

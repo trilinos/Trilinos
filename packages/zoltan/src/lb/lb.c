@@ -20,6 +20,7 @@ static char *cvs_lbc_id = "$Id$";
 #include "lb_util_const.h"
 #include "comm_const.h"
 #include "all_allo_const.h"
+#include "params_const.h"
 
 /*****************************************************************************/
 /*****************************************************************************/
@@ -154,6 +155,30 @@ int flag;
 /****************************************************************************/
 /****************************************************************************/
 
+void LB_Destroy_Object(LB **lb)
+{
+/*
+ *  Function to free a load balancing object.
+ *  Input:
+ *    LB *               --  Pointer to a LB object.
+ *
+ */
+
+char *yo = "LB_Destroy_Object";
+
+  LB_Free_Structure(*lb);
+
+  LB_Free_Params(*lb);
+
+  MPI_Comm_free(&((*lb)->Communicator));
+
+  LB_Free((void **) lb);
+}
+
+/****************************************************************************/
+/****************************************************************************/
+/****************************************************************************/
+
 int LB_Set_Fn(LB *lb, LB_FN_TYPE fn_type, void *fn(), void *data)
 {
 /*
@@ -269,7 +294,10 @@ int i;
   /*
    *  Compare method_name string with standard strings for methods.
    *  If a match is found, set lb->Method and other pointers.
+   *  But first free any left-over data from the previous method.
    */
+
+  LB_Free_Structure(lb);
 
   if (strcasecmp(method_name, "RCB") == 0) {
     lb->Method = RCB;

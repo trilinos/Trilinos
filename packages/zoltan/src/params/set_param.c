@@ -73,6 +73,10 @@ char *val1)			/* value to set this parameter to */
 
     if (status == 0)		/* Parameter OK, add it to list */
 	add_param(lb, name, val);
+    else {
+	LB_Free((void **) &name);
+	LB_Free((void **) &val);
+    }
 
     if (status == 1)		/* Parameter name never found */
 	printf("Warning: parameter `%s' not found; not reset to `%s'.\n",

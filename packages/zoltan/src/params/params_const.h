@@ -45,4 +45,5 @@ extern int LB_Set_Param(LB *, char *, char *);
 extern int LB_Set_Key_Param(LB *, char *, char *);
 extern int LB_Check_Param(char *, char *, PARAM_VARS *,
     PARAM_UTYPE *, int *);
+extern void LB_Free_Params(LB *);
 

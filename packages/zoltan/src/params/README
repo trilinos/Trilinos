@@ -13,6 +13,8 @@ assign_param_vals.c -- Contains LB_Assign_Param_Vals which loops over the set
 check_param.c       -- Routine LB_Check_Param compares a string against a list
 		       of valid parameter names & checks the type for correctness.
 
+free_params.c       -- Frees all the parameters allocated for an LB object.
+
 key_params.c        -- Set parameter values for variables in LB object.
 
 print_params.c      -- Debugging routine to print out the parameter settings.

@@ -88,7 +88,7 @@ ID_INC		= id_const.h id_util.h id_util_const.h
 VX_CSRC		= vx.c
 VX_INC		= vx_const.h
 
-ALL_CSRC	= all_allo.c
+ALL_CSRC	= all_allo.c free_structure.c
 ALL_INC		= all_const.h all_allo_const.h
 
 LB_CSRC		= lb.c lb_util.c 
@@ -104,7 +104,7 @@ OCT_INC		= msg_const.h octant_const.h util_const.h octupdate_const.h \
 		  migreg.h hilbert_const.h
 
 PARAMS_CSRC	= set_param.c assign_param_vals.c check_param.c print_params.c \
-		  key_params.c
+		  key_params.c free_params.c
 PARAMS_INC	= params_const.h
 
 

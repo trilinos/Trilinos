@@ -11,6 +11,9 @@ all_allo.c         -- Memory allocation routines LB_array_alloc and LB_malloc.
                       Memory deallocation routine LB_free.
 		      Parameter setting routing LB_Set_Malloc_Param.
 
+free_structure.c   -- Calls method-specific routines to free any persistent
+		      data structure when changing methods or freeing LB object.
+
 Files NOT compiled into Zoltan:
 
 all_const.h        -- Type definitions for data structures and prototypes for 

@@ -72,13 +72,13 @@ char *val)			/* value of variable */
     int status;
     PARAM_UTYPE result;		/* value returned from Check_Param */
     int index;			/* index returned from Check_Param */
-    PARAM_VARS rcb_params[] = {
+    PARAM_VARS RCB_params[] = {
 	{ "RCB_OVERALLOC", NULL, "DOUBLE" },
 	{ "RCB_REUSE", NULL, "INT" },
 	{ "RCB_WGTFLAG", NULL, "INT" },
 	{ NULL, NULL, NULL } };
 
-    status = LB_Check_Param(name, val, rcb_params, &result, &index);
+    status = LB_Check_Param(name, val, RCB_params, &result, &index);
 
     return(status);
 }
@@ -109,21 +109,21 @@ int LB_rcb(
                                  stored in treept at initial guesses.  */
     int wgtflag;              /* (0) do not (1) do use weights.
                                  Multidimensional weights not supported */
-    PARAM_VARS rcb_params[] = {
+    PARAM_VARS RCB_params[] = {
 	{ "RCB_OVERALLOC", NULL, "DOUBLE" },
 	{ "RCB_REUSE", NULL, "INT" },
 	{ "RCB_WGTFLAG", NULL, "INT" },
 	{ NULL, NULL, NULL } };
     
-    rcb_params[0].ptr = (void *) &overalloc;
-    rcb_params[1].ptr = (void *) &reuse;
-    rcb_params[2].ptr = (void *) &wgtflag;
+    RCB_params[0].ptr = (void *) &overalloc;
+    RCB_params[1].ptr = (void *) &reuse;
+    RCB_params[2].ptr = (void *) &wgtflag;
 
     overalloc = RCB_DEFAULT_OVERALLOC;
     reuse = RCB_DEFAULT_REUSE;
     wgtflag = 0;
 
-    LB_Assign_Param_Vals(lb->Params, rcb_params);
+    LB_Assign_Param_Vals(lb->Params, RCB_params);
 
     return(rcb(lb, num_import, import_global_ids, import_local_ids,
 		 import_procs, overalloc, reuse, wgtflag));
@@ -206,9 +206,9 @@ static int rcb(
 
   /* function prototypes */
 
-  static void rcb_error(LB *, int);
-  static void rcb_check(LB *, struct rcb_dot *, int, int, struct rcb_box *);
-  static void rcb_stats(LB *, double, struct rcb_dot *,int, double *, 
+  static void RCB_error(LB *, int);
+  static void RCB_check(LB *, struct rcb_dot *, int, int, struct rcb_box *);
+  static void RCB_stats(LB *, double, struct rcb_dot *,int, double *, 
 		 int *, struct rcb_box *, int);
 
   /* MPI data types and user functions */
@@ -236,7 +236,7 @@ static int rcb(
    */
 
   LB_start_time = MPI_Wtime();
-  LB_rcb_build_data_structure(lb, &pdotnum, &dotmax, wgtflag);
+  LB_RCB_Build_Structure(lb, &pdotnum, &dotmax, wgtflag);
 
   rcb = (RCB_STRUCT *) (lb->Data_Structure);
 
@@ -274,19 +274,19 @@ static int rcb(
     dotmark = (int *) LB_Array_Alloc(__FILE__, __LINE__, 1, (unsigned) dotmax,
                                      sizeof(int));
     if (dotmark == NULL)
-      rcb_error(lb, dotmax*sizeof(int));
+      RCB_error(lb, dotmax*sizeof(int));
     coord = (double *) LB_Array_Alloc(__FILE__, __LINE__, 1, (unsigned) dotmax,
                                       sizeof(double));
     if (coord == NULL) {
       LB_Free((void **) &dotmark);
-      rcb_error(lb, dotmax*sizeof(int));
+      RCB_error(lb, dotmax*sizeof(int));
     }
     wgts = (double *) LB_Array_Alloc(__FILE__, __LINE__, 1, (unsigned) dotmax,
                                      sizeof(double));
     if (wgts == NULL) {
       LB_Free((void **) &dotmark);
       LB_Free((void **) &coord);
-      rcb_error(lb, dotmax*sizeof(int));
+      RCB_error(lb, dotmax*sizeof(int));
     }
   }
   else {
@@ -403,19 +403,19 @@ static int rcb(
       dotmark = (int *) LB_Array_Alloc(__FILE__, __LINE__, 1,
                                        (unsigned) dotmax, sizeof(int));
       if (dotmark == NULL)
-        rcb_error(lb, dotmax*sizeof(int));
+        RCB_error(lb, dotmax*sizeof(int));
       coord = (double *) LB_Array_Alloc(__FILE__, __LINE__, 1,
                                         (unsigned) dotmax, sizeof(double));
       if (coord == NULL) {
         LB_Free((void **) &dotmark);
-        rcb_error(lb, dotmax*sizeof(int));
+        RCB_error(lb, dotmax*sizeof(int));
       }
       wgts = (double *) LB_Array_Alloc(__FILE__, __LINE__, 1,
                                        (unsigned) dotmax, sizeof(double));
       if (wgts == NULL) {
         LB_Free((void **) &dotmark);
         LB_Free((void **) &coord);
-        rcb_error(lb, dotmax*sizeof(int));
+        RCB_error(lb, dotmax*sizeof(int));
       }
     }
 
@@ -490,7 +490,7 @@ static int rcb(
       if (dotmax < dotnew) dotmax = dotnew;
       dotpt = (struct rcb_dot *) 
 	LB_REALLOC(dotpt,(unsigned) dotmax * sizeof(struct rcb_dot));
-      if (dotpt == NULL) rcb_error(lb, dotmax*sizeof(struct rcb_dot));
+      if (dotpt == NULL) RCB_error(lb, dotmax*sizeof(struct rcb_dot));
       rcb->Dots = dotpt;
       if (RCB_STATS) counters[6]++;
     }
@@ -509,7 +509,7 @@ static int rcb(
                                                  (unsigned) outgoing,
                                                  sizeof(struct rcb_dot));
       if (dotbuf == NULL) {
-        rcb_error(lb, outgoing*sizeof(struct rcb_dot));
+        RCB_error(lb, outgoing*sizeof(struct rcb_dot));
       }
     }
     else 
@@ -612,8 +612,8 @@ static int rcb(
 
   /* error checking and statistics */
 
-  if (RCB_CHECK) rcb_check(lb, dotpt,dotnum,pdotnum,rcbbox);
-  if (RCB_STATS) rcb_stats(lb, timestop-timestart,dotpt,dotnum,
+  if (RCB_CHECK) RCB_check(lb, dotpt,dotnum,pdotnum,rcbbox);
+  if (RCB_STATS) RCB_stats(lb, timestop-timestart,dotpt,dotnum,
 			   timers,counters,rcbbox,reuse);
 
   /* update calling routine parameters */
@@ -630,19 +630,19 @@ static int rcb(
     *import_global_ids = (LB_GID *) LB_Array_Alloc(__FILE__, __LINE__, 1,
                                                   *num_import, sizeof(LB_GID));
     if (!(*import_global_ids))
-      rcb_error(lb, *num_import*sizeof(LB_GID));
+      RCB_error(lb, *num_import*sizeof(LB_GID));
     *import_local_ids  = (LB_LID *) LB_Array_Alloc(__FILE__, __LINE__, 1,
                                                   *num_import, sizeof(LB_LID));
     if (!(*import_local_ids)) {
       LB_Free((void **) import_global_ids);
-      rcb_error(lb, *num_import*sizeof(LB_LID));
+      RCB_error(lb, *num_import*sizeof(LB_LID));
     }
     *import_procs      = (int *) LB_Array_Alloc(__FILE__, __LINE__, 1,
                                                   *num_import, sizeof(int));
     if (!(*import_procs)) {
       LB_Free((void **) import_global_ids);
       LB_Free((void **) import_local_ids);
-      rcb_error(lb, *num_import*sizeof(int));
+      RCB_error(lb, *num_import*sizeof(int));
     }
 
 
@@ -692,7 +692,7 @@ static int rcb(
 
 /* error message for malloc/realloc overflow */
 
-static void rcb_error(LB *lb, int size)
+static void RCB_error(LB *lb, int size)
 
 {
   int proc;
@@ -726,7 +726,7 @@ void rcb_box_merge(void *in, void *inout, int *len, MPI_Datatype *dptr)
 
 /* consistency checks on RCB results */
 
-static void rcb_check(LB *lb, struct rcb_dot *dotpt, int dotnum, int dotorig,
+static void RCB_check(LB *lb, struct rcb_dot *dotpt, int dotnum, int dotorig,
 	       struct rcb_box *rcbbox)
 
 {
@@ -793,7 +793,7 @@ static void rcb_check(LB *lb, struct rcb_dot *dotpt, int dotnum, int dotorig,
 
 /* RCB statistics */
 
-static void rcb_stats(LB *lb, double timetotal, struct rcb_dot *dotpt,
+static void RCB_stats(LB *lb, double timetotal, struct rcb_dot *dotpt,
 	       int dotnum, double *timers, int *counters,
 	       struct rcb_box *rcbbox, int reuse)
 

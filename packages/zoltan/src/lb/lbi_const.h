@@ -482,6 +482,16 @@ extern struct LB_Struct *LB_Create_Object(MPI_Comm communicator);
 
 /*****************************************************************************/
 /*
+ *  Function to free the space associated with a load balancing object.
+ *  The input pointer is set to NULL when the routine returns.
+ *  Input:
+ *    struct LB_Struct **         --  Pointer to a LB object.
+ */
+
+extern void LB_Destroy_Object(struct LB_Struct **lb);
+
+/*****************************************************************************/
+/*
  *  Function to initialize a given LB interface function.
  *  Input:
  *    struct LB_Struct *lb       --  Pointer to a LB object.

@@ -208,11 +208,11 @@ va_dcl
   dim[0].index = va_arg(va, int);
 
   if (dim[0].index <= 0) {
-#ifdef DEBUG
-    fprintf(stderr, "WARNING, %s (%s: %d) called with first "
+    if (DEBUG_MEMORY > 0) {
+      fprintf(stderr, "WARNING, %s (%s: %d) called with first "
             "dimension <= 0, %d; will return NULL\n", 
             yo, file, lineno, dim[0].index);
-#endif
+    }
     return((double *) NULL);
   }
 
@@ -275,7 +275,6 @@ double *LB_Malloc(int n, char *filename, int lineno)
   double *pntr;           /* return value */
 
   if (n > 0) {
-    nmalloc++;
     pntr = (double *) malloc((unsigned) n);
     if (pntr == NULL) {
       MPI_Comm_rank(MPI_COMM_WORLD, &proc);
@@ -283,6 +282,7 @@ double *LB_Malloc(int n, char *filename, int lineno)
               "requested = %d\n", yo, filename, lineno, proc, n);
       return ((double *) NULL);
     }
+    nmalloc++;
   }
   else if (n == 0)
     pntr = NULL;
@@ -397,9 +397,8 @@ void LB_Free (void **ptr)
   int       proc;             /* processor ID */
 
 /*
- *  This version of free calls the system's free function
- *  with maximum error checking. It also doesn't call free if ptr is
- *  the NULL pointer.
+ *  This version of free calls the system's free function.  It doesn't call
+ *  free if ptr is the NULL pointer.
  */
  
   if (ptr == NULL || *ptr == NULL) 
@@ -441,13 +440,14 @@ void      LB_Memory_Stats()
     struct malloc_debug_data *dbptr;	/* loops through debug list */
     int       proc;		/* processor ID */
 
-    MPI_Comm_rank(MPI_COMM_WORLD, &proc);
 
     if (DEBUG_MEMORY == 1) {
+        MPI_Comm_rank(MPI_COMM_WORLD, &proc);
 	fprintf(stderr, "Proc %d: Calls to malloc = %d,  Calls to free = %d\n",
 		proc, nmalloc, nfree);
     }
     if (DEBUG_MEMORY > 1) {
+        MPI_Comm_rank(MPI_COMM_WORLD, &proc);
 	fprintf(stderr, "Proc %d: Calls to malloc = %d,  Calls to free = %d, maximum bytes = %d\n",
 		proc, nmalloc, nfree, bytes_max);
 	if (top != NULL) {
@@ -471,11 +471,3 @@ int       LB_Malloc_Num()
 /*****************************************************************************/
 /*                      END of all_allo.c                                     */
 /*****************************************************************************/
-
-
-
-
-
-
-
-
