@@ -41,7 +41,7 @@
 namespace NOX {
 namespace Epetra {
 class Interface;
-class SharedJacobian;
+class SharedOperator;
 }
 namespace Parameter {
 class List;
@@ -59,7 +59,7 @@ namespace Epetra {
 /*! This group is set up to use the AztecOO Linear %Solver.
   The user has multiple options for forming the Jacobian operator and preconditioning operator.  
   
-  A linear solve using this Group class requires that the user supply at a minimum an object for the Jacobian operator derived from the pure virtual Epetra_Operator class.  This does not have to be an explicit matrix since Newton-Krylov methods only require the action of the Jacobian on a vector (Jy).  The user can pass in their own Epetra_Operator or use one of the predefined Epetra_Operators provided by %Trilinos/%Epetra (Epetra_CrsMatrix Epetra_VbrMatrix) or NOX (NOX::Epetra::MatrixFree or NOX::Epetra::FiniteDifference).  Certain functions in the NOX::Epetra::Interface object are required to be supplied by the user depending on the type of Jacobian used: 
+  A linear solve using this class requires that the user supply at a minimum a Jacobian operator class derived from the pure virtual Epetra_Operator class.  This does not have to be an explicit matrix since Newton-Krylov methods only require the action of the Jacobian on a vector (Jy).  The user can pass in their own Epetra_Operator derived object or use one of the predefined Epetra_Operators provided by %Trilinos/%Epetra (Epetra_CrsMatrix Epetra_VbrMatrix) or NOX (NOX::Epetra::MatrixFree or NOX::Epetra::FiniteDifference).  Certain functions in the NOX::Epetra::Interface object are required to be implemented by the user depending on the type of Jacobian used: 
   <ul>
   <li> User Created Epetra_Operator or %Trilinos/%Epetra - The user must supply the operator to the group constructor.  This could  be any Epetra_RowMatrix or a user created class.  To be able to use this object, NOX requires the user to implement the following functions in the NOX::Epetra::Interface object: 
   <ul>
@@ -82,25 +82,23 @@ The solver type is set in the "Linear %Solver" sublist using the parameter tag "
   <li> "LU" - Sparse direct solve (single processor only).
   </ul>
 
-The scaling of the linear system can be handled in Aztec.  Scaling is set in the "Linear %Solver" sublist with the parameter tag "Scaling".  Scaling in aztec only works for MSR and VBR type matrices.  The following options are valid:
+The scaling of the linear system is set in the "Linear %Solver" sublist with the parameter tag "Scaling".  The following options are valid:
   <ul>
   <li> "None" - No scaling is used (default).
   <li> "Point Jacobi" 
-  <li> "Block Jacobi" 
   <li> "Row Sum"
-  <li> "Symmetric Diagonal"
-  <li> "Symmetric Row Sum"
+  <li> "Column Sum"
   </ul>
 
 Preconditioning also has multiple options that may depend on the Jacobian. A flag in the "Linear %Solver" sublist labelled "Preconditioning" must be set to turn on any preconditioning of the linear solver.  A preconditioner object is an Epetra_Operator derived class just like th Jacobian.  If the AztecOO preconditioners are to be used, they require some knowledge of the matrix and thus at a minimum the preconditioner object must also be an Epetra_RowMatrix. The valid options are listed below:
   <ul>
   <li> "None" - no preconditioning.  This is the default setting.
 
-  <li> "AztecOO: Jacobian Matrix" - An AztecOO preconditioner will be used.  The preconditioning will be based on the Jacobian.  This requires that the Jacobian operator MUST be an Epetra_RowMatrix (NOX will test for this and throw an error if it is not).  This means a NOX::Epetra::MatrixFree Jacobian can NOT be used with this option for preconditioning.
+  <li> "AztecOO: Jacobian Matrix" - An AztecOO preconditioner will be used.  The preconditioning will be based on the Jacobian matrix.  This requires that the Epetra_Operator supplied for the Jacobian MUST be an Epetra_RowMatrix (NOX will test for this and throw an error if it is not).  AztecOO preconditioners need to know the graph pattern of the matrix.  This means a NOX::Epetra::MatrixFree Jacobian can NOT be used with this option for preconditioning.
 
-  <li> "AztecOO: User RowMatrix" - An AztecOO preconditioner will be used.  The preconditioning will be based on an Epetra_Operator that is separate from the Jacobian.  The constructor with separate Jacobian and preconditioner Epetra_Operators must be used. Since AztecOO preconditioners require matrix information, the preconditioning object (M) must be an Epetra_RowMatix (NOX will test for this and throw an error if it is not). This option requires the user to implement the function computePrecMatrix() in the NOX::Epetra::Interface derived class.
+  <li> "AztecOO: User RowMatrix" - An AztecOO preconditioner will be used.  The preconditioning will be based on an Epetra_Operator that is separate from the Jacobian.  The Group constructor with separate entries for the Jacobian and preconditioner Epetra_Operators must be used. Since AztecOO preconditioners require matrix information, the preconditioning object (M) must be an Epetra_RowMatix (NOX will test for this and throw an error if it is not). This option requires the user to implement the function computePrecMatrix() in the NOX::Epetra::Interface derived class.
 
-  <li> "User Supplied %Preconditioner" - The user supplies an Epetra_Operator or NOX::Epetra::Preconditioner. This object will compute and apply the preconditioner to a vector that is passed in.  If an Epetra_Operator is passed in, the user must implement the function computePreconditioner() in the NOX::Epetra::Interface derived class.  If a NOX::Epetra::Preconditioner is passed in, the user does not need to implement the computePreconditioner function in the NOX::Epetra::Interface object. 
+  <li> "User Supplied %Preconditioner" - The user supplies an Epetra_Operator or NOX::Epetra::Preconditioner and computes their own inverse of the preconditioning matrix. This object will compute and then apply the preconditioner to an Eeptra_Vector that is passed in.  If an Epetra_Operator is passed in, the user must implement the function computePreconditioner() in the NOX::Epetra::Interface derived class.  Alternately, the user could implement and pass in a NOX::Epetra::Preconditioner object instead of a pure Epetra_Operator. In this case, the user does not need to implement the computePreconditioner function in the NOX::Epetra::Interface object since it is implemented as part of the NOX::Epetra::Preconditioner class. 
   </ul>
 
 If an AztecOO preconditioner is used, the type of preconditioner can be set with the flag "Aztec Preconditioner" in the "Linear %Solver" sublist (defaults to ilu). Currently supported preconditioners and their corresponding parameters that can be set in the "Linear %Solver" sublist are shown below (See the Aztec 2.0 manual for more information):
@@ -148,7 +146,6 @@ Addtional Parameters that are set in the "Linear %Solver" sublist:
 
   <li> "Output Frequency" - number of linear solve iterations between output of the linear solve residual. Takes an integer, AZ_none, or AZ_all as a value.
   </ul>
-
 
  */
 
@@ -226,6 +223,8 @@ public:
 
   virtual bool computeNewton(Parameter::List& params);
 
+  virtual bool computePrecMatrix();
+
   //@}
 
   /** @name Jacobian operations.
@@ -247,9 +246,9 @@ public:
   //! See above
   virtual bool applyJacobianDiagonalInverse(const Abstract::Vector& input, Abstract::Vector& result) const;
   
-  virtual bool preconditionVector(const Vector& input, Vector& result) const;
+  virtual bool applyPrecMatrixInverse(const Vector& input, Vector& result) const;
   //! See above
-  virtual bool preconditionVector(const Abstract::Vector& input, Abstract::Vector& result) const;
+  virtual bool applyPrecMatrixInverse(const Abstract::Vector& input, Abstract::Vector& result) const;
 
   //@}
 
@@ -265,6 +264,7 @@ public:
   virtual bool isJacobian() const;
   virtual bool isGradient() const;
   virtual bool isNewton() const;
+  virtual bool isPrecMatrix() const;
 
   //@}
 
@@ -289,7 +289,10 @@ public:
   virtual Abstract::Group* clone(CopyType type = DeepCopy) const;
 
   //! Return the SharedJacobian.
-  virtual SharedJacobian& getSharedJacobian();
+  virtual SharedOperator& getSharedJacobian();
+
+  //! Return the SharedPrecMatrix.
+  virtual SharedOperator& getSharedPrecMatrix();
 
   //! Return the userInterface.
   virtual Interface& getUserInterface();
@@ -346,16 +349,23 @@ protected:
   bool isValidJacobian;
   bool isValidGrad;
   bool isValidNewton;
+  bool isValidPrecMatrix;
   //@}
   
   //! Norm of RHS
   double normRHS;
 
+  /** @name Shared Operators */
+  //@{
   //! Pointer to shared Jacobian matrix 
-  SharedJacobian* sharedJacobianPtr;
+  SharedOperator* sharedJacobianPtr;
 
   //! Reference to shared Jacobian matrix 
-  SharedJacobian& sharedJacobian;
+  SharedOperator& sharedJacobian;
+
+  //! Pointer to shared Preconditioning matrix.  We do not create a corresponding reference as we did with the sharedJacobian since this object is optionally supplied. 
+  SharedOperator* sharedPrecMatrixPtr;
+  //@}
 
   //! Reference to the user supplied interface functions
   Interface& userInterface;

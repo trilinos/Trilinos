@@ -116,8 +116,8 @@ class Preconditioner : public Epetra_Operator {
   //! Returns the Epetra_BlockMap object associated with the range of this matrix operator.
   virtual const Epetra_BlockMap& RangeMap () const = 0;
 
-  //! Compute Jacobian given the specified input vector, x.  Returns true if computation was successful.
-  virtual bool computePreconditioner(const Epetra_Vector& x) = 0;
+  //! Compute the Preconditioner given the specified input vector, x.  This may need access to the Jacobian so we allow a second argument, an Epetra_Operator that points to the Jacobian to be passed in.  Returns true if computation was successful.
+  virtual bool computePreconditioner(const Epetra_Vector& x, const Epetra_Operator* Jacobian = 0) = 0;
 
 };
 } // namespace Epetra

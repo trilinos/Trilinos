@@ -97,6 +97,8 @@ public:
 
   virtual bool computeNewton(Parameter::List& params);
 
+  virtual bool computePrecMatrix();
+
   //@}
 
   /** @name Jacobian operations.
@@ -127,12 +129,10 @@ public:
       be accomplished by specifying \b -pc_type \b lu (serial only),
       whereas diagonal scaling can be achieved via \b -pc_type \b jacobi.
   */ 
-  virtual bool preconditionVector(const Vector& input, 
-                                  Vector& result) const; 
-  //! See above 
-  virtual bool preconditionVector(const Abstract::Vector& input, 
-                                  Abstract::Vector& result) const;
-
+  virtual bool applyPrecMatrixInverse(const Vector& input, Vector& result) const;
+  //! See above
+  virtual bool applyPrecMatrixInverse(const Abstract::Vector& input, Abstract::Vector& result) const;
+  
   //@}
 
   /** @name "Is" functions
@@ -147,6 +147,7 @@ public:
   virtual bool isJacobian() const;
   virtual bool isGradient() const;
   virtual bool isNewton() const;
+  virtual bool isPrecMatrix() const;
 
   //@}
 
@@ -201,6 +202,7 @@ protected:
   bool isValidJacobian;
   bool isValidGrad;
   bool isValidNewton;
+  bool isValidPrecMatrix;
   //@}
   
   //! Norm of RHS

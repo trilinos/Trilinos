@@ -95,6 +95,7 @@ void Group::resetIsValid() //private
   isValidJacobian = false;
   isValidGradient = false;
   isValidNewton = false;
+  isValidPrecMatrix = false;
 }
 
 Abstract::Group* Group::clone(CopyType type) const 
@@ -118,6 +119,7 @@ Abstract::Group& Group::operator=(const Group& source)
   isValidGradient = source.isValidGradient;
   isValidNewton = source.isValidNewton;
   isValidJacobian = source.isValidJacobian;
+  isValidPrecMatrix = source.isValidPrecMatrix;
 
   // Only copy vectors that are valid
   if (isValidF) {
@@ -260,6 +262,14 @@ bool Group::computeNewton(NOX::Parameter::List& p)
   return isValidNewton;
 }
 
+bool Group::computePrecMatrix()
+{
+  cout << "ERROR: NOX::Example::Group::computePrecMatrix() is not implemented"
+       << " since only direct solvers are used." << endl;
+  throw "NOX Error";
+  return false;
+}
+
 bool Group::applyJacobian(const Abstract::Vector& input, Abstract::Vector& result) const
 {
   const Vector& exampleinput = dynamic_cast<const Vector&> (input);
@@ -331,14 +341,14 @@ bool Group::applyJacobianDiagonalInverse(const Vector& input, Vector& result) co
   return true;
 }
 
-bool Group::preconditionVector(const Abstract::Vector& input, Abstract::Vector& result) const
+bool Group::applyPrecMatrixInverse(const Abstract::Vector& input, Abstract::Vector& result) const
 {
   const Vector& exampleinput = dynamic_cast<const Vector&> (input);
   Vector& exampleresult = dynamic_cast<Vector&> (result);
-  return preconditionVector(exampleinput, exampleresult);
+  return applyPrecMatrixInverse(exampleinput, exampleresult);
 }
 
-bool Group::preconditionVector(const Vector& input, Vector& result) const
+bool Group::applyPrecMatrixInverse(const Vector& input, Vector& result) const
 {
   cerr << "Warning - NOX::Example::Group::preconditionVector - not supported" << endl;
   return false;
@@ -362,6 +372,11 @@ bool Group::isGradient() const
 bool Group::isNewton() const 
 {   
   return isValidNewton;
+}
+
+bool Group::isPrecMatrix() const 
+{   
+  return isValidPrecMatrix;
 }
 
 const Abstract::Vector& Group::getX() const 

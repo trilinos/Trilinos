@@ -131,6 +131,10 @@ public:
   */
   virtual bool computeNewton(Parameter::List& params) = 0;
 
+  //! Compute the Preconditioning matrix, \f$ M \f$,  based on the current solution vector.
+  //! Returns true if successfully computed. 
+  virtual bool computePrecMatrix() = 0;
+
   //@}
 
   /** @name Jacobian operations.
@@ -161,20 +165,14 @@ public:
     \f[ \mbox{result} = J^T \; \mbox{input}. \f]
   */
   virtual bool applyJacobianTranspose(const Vector& input, Vector& result) const = 0;
-  
-  /*!
-    \brief Applies the Jacobian Diagonal to the given input vector.
-  */
-  /*! In other words, compute 
-    \f[ \mbox{result}_i = \frac{1}{J_{ii}} \; \mbox{input}_i \quad \mbox{for } i = 1,\dots,n. \f]
-  */
-  virtual bool applyJacobianDiagonalInverse(const Vector& input, Vector& result) const = 0;
     
   /*!
-    \brief Applies general preconditioing to the given input vector.
+    \brief Applies the inverse of the preconditioning matrix to the given input vector.
   */
-  virtual bool preconditionVector(const Vector& input, Vector& result) const = 0;
-    
+  /*! In other words, compute:
+    \f[ \mbox{result} = M^{-1} \mbox{input} \f]
+  */
+  virtual bool applyPrecMatrixInverse(const Vector& input, Vector& result) const = 0;
 
   //@}
 
@@ -196,7 +194,8 @@ public:
   virtual bool isGradient() const = 0;
   //! Return \c true if the Newton direction is valid.
   virtual bool isNewton() const = 0;
-
+  //! Return \c true if the Preconditioning Matrix is valid.
+  virtual bool isPrecMatrix() const = 0;
   //@}
 
   /** @name "Get" functions.

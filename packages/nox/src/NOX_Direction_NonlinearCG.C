@@ -121,7 +121,7 @@ bool NonlinearCG::compute(Abstract::Vector& dir, Abstract::Group& soln,
     if(!soln.isJacobian())
       soln.computeJacobian();
     tmpVec = dir;
-    status = soln.preconditionVector(tmpVec, dir);
+    status = soln.applyPrecMatrixInverse(tmpVec, dir);
   }
 
   dir.scale(-1.0);

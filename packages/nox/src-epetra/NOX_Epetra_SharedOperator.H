@@ -30,8 +30,8 @@
 // ************************************************************************
 //@HEADER
 
-#ifndef NOX_PETRA_SHARED_JACOBIAN_H
-#define NOX_PETRA_SHARED_JACOBIAN_H
+#ifndef NOX_PETRA_SHARED_OPERATOR_H
+#define NOX_PETRA_SHARED_OPERATOR_H
 
 #include "NOX_Common.H"
 
@@ -42,56 +42,40 @@ namespace Epetra {
 
 class Group;			// forward declaration
 
-  /*! \brief Shared Jacobian for NOX::Epetra::Group objects.
+  /*! \brief Shared operator object for NOX::Epetra::Group objects.
    * 
-   * Due to the size of the Jacobian, we cannot afford to have
-   * multiple copies. Instead we implement a shared Jacobian that
+   * Due to the size of certain operators (i.e. the Jacobian and 
+   * Preconditioning Matrices), we cannot afford to have
+   * multiple copies. Instead we implement a shared operator class that
    * that all groups use. 
-   *
-   * NOTE: I have added a preconditioner Matrix to the SharedJacobian
-   * in anticipation of having a separate Matrix for the Jacobian 
-   * and the Preconditioner.  This option will be in Trilinos by the end 
-   * of Feb 02. 
    */
 
-class SharedJacobian {
+class SharedOperator {
 
 public:
 
   //! Constructor
-  SharedJacobian(Epetra_Operator& j);
-
-  //! Constructor with separate Matrices for the Jacobian and preconditioner 
-  SharedJacobian(Epetra_Operator& j, Epetra_Operator& p);
+  SharedOperator(Epetra_Operator& m);
 
   //! Destructor
-  ~SharedJacobian();
+  ~SharedOperator();
 
-  //! Get a reference to the Jacobian AND take ownership
-  Epetra_Operator& getJacobian(const Group* newowner);
+  //! Get a non-const reference to the underlying matrix (an epetra operator)
+  Epetra_Operator& getOperator(const Group* newowner);
 
-  //! Return a const pointer to the Jacobian
-  const Epetra_Operator& getJacobian() const;
+  //! Return a const reference to the Jacobian
+  const Epetra_Operator& getOperator() const;
 
   //! Return true if grp is the owner of the Jacobian
   bool isOwner(const Group* grp) const;
 
-  //! Get a reference to the Preconditioner AND take ownership
-  Epetra_Operator& getPrec(const Group* newowner);
-
-  //! Return a const pointer to the Preconditioner
-  const Epetra_Operator& getPrec() const;
-
-  //! RPP: This is a hack that is needed to get MPSalsa running.  I will remove this when the Epetra_Vbr is fixed to get a view with Aztec2Petra.
-  bool setJacobian(Epetra_Operator& j);
+  //! RPP: This is a hack that is needed to get MPSalsa running.  I will remove this when the Epetra_Vbr is fixed to get a matrix "View" with Aztec2Petra.  Essentially, this function allows the underlying Epetra_Operator to be changed.  We need this if the operator is destroyed and a new one is created during the NOX::Epetra::Interface::computeJacobian() call. 
+  bool setOperator(Epetra_Operator& m);
 
 protected:
 
   //! Pointer to Epetra Jacobian matrix 
-  Epetra_Operator* jacobian;
-
-  //! Pointer to Epetra Preconditioning Matrix 
-  Epetra_Operator* prec;
+  Epetra_Operator* matrix;
 
   //! Pointer to const group that owns Jacobian
   const Group* owner;

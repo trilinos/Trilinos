@@ -92,16 +92,7 @@ int main(int argc, char *argv[])
   nlParams.setParameter("MyPID", MyPID); 
   //nlParams.setParameter("Nonlinear Solver", "Newton");
   nlParams.setParameter("Nonlinear Solver", "Line Search");
-  //nlParams.setParameter("Nonlinear Solver", "Trust Region"); 
-  //nlParams.setParameter("Nonlinear Solver", "NonlinearCG"); 
-  //nlParams.setParameter("Diagonal Precondition", "On");  // default = "Off"
-  //nlParams.setParameter("Direction", "Steepest Descent");  // default
-  //nlParams.setParameter("Direction", "Richardson"); 
-  //nlParams.setParameter("Max Iterations", 100); 
-  //nlParams.setParameter("Orthogonalize", "Fletcher-Reeves");  // default
-  //nlParams.setParameter("Orthogonalize", "Polak-Ribiere"); 
-  //nlParams.setParameter("Restart Frequency", 5);  // default = 10
-  //nlParams.setParameter("Output Frequency", 10);  // default = 1 
+  //nlParams.setParameter("Nonlinear Solver", "Trust Region");
 
   // Sublist for line search
   NOX::Parameter::List& searchParams = nlParams.sublist("Line Search");
@@ -117,7 +108,16 @@ int main(int argc, char *argv[])
   // Sublist for direction
   NOX::Parameter::List& dirParams = nlParams.sublist("Direction");
   dirParams.setParameter("Method", "Newton");
-  //dirParams.setParameter("Method", "Steepest Descent");
+  //dirParams.setParameter("Method", "Steepest Descent"); 
+  //dirParams.setParameter("Method", "NonlinearCG"); 
+  //dirParams.setParameter("Diagonal Precondition", "On");  // default = "Off"
+  //dirParams.setParameter("Direction", "Steepest Descent");  // default
+  //dirParams.setParameter("Direction", "Richardson"); 
+  //dirParams.setParameter("Max Iterations", 100); 
+  //dirParams.setParameter("Orthogonalize", "Fletcher-Reeves");  // default
+  //dirParams.setParameter("Orthogonalize", "Polak-Ribiere"); 
+  //dirParams.setParameter("Restart Frequency", 5);  // default = 10
+  //dirParams.setParameter("Output Frequency", 10);  // default = 1 
 
   // Create the interface between the test problem and the nonlinear solver
   // This is created by the user using inheritance of the abstract base class:
@@ -139,10 +139,10 @@ int main(int argc, char *argv[])
   //lsParams.setParameter("Aztec Preconditioner", "ilu"); 
   //lsParams.setParameter("Overlap", 2);  
   //lsParams.setParameter("Graph Fill", 2); 
-  lsParams.setParameter("Aztec Preconditioner", "ilut"); 
-  lsParams.setParameter("Overlap", 2);   
-  lsParams.setParameter("Fill Factor", 2.0);   
-  lsParams.setParameter("Drop Tolerance", 1.0e-12);   
+  //lsParams.setParameter("Aztec Preconditioner", "ilut"); 
+  //lsParams.setParameter("Overlap", 2);   
+  //lsParams.setParameter("Fill Factor", 2.0);   
+  //lsParams.setParameter("Drop Tolerance", 1.0e-12);   
   //lsParams.setParameter("Aztec Preconditioner", "Polynomial"); 
   //lsParams.setParameter("Polynomial Order", 6); 
 
@@ -150,13 +150,15 @@ int main(int argc, char *argv[])
   // 1. User supplied (Epetra_RowMatrix)
   Epetra_RowMatrix& A = Problem.getJacobian();
   // 2. Matrix-Free (Epetra_Operator)
-  //NOX::Epetra::MatrixFree AA(interface, soln);
+  //NOX::Epetra::MatrixFree A(interface, soln);
   // 3. Finite Difference (Epetra_RowMatrix)
-  //NOX::Epetra::FiniteDifference AAA(interface, soln);
+  //NOX::Epetra::FiniteDifference A(interface, soln);
+  // 4. Jacobi Preconditioner
+  //NOX::Epetra::JacobiPreconditioner Prec(soln);
 
   // Create the Group
   NOX::Epetra::Group grp(lsParams, interface, soln, A); 
-  //NOX::Epetra::Group grp(lsParams, interface, soln, AA, AAA); 
+  //NOX::Epetra::Group grp(lsParams, interface, soln, A, Prec); 
   grp.computeF();
 
   // ATOL vector if using NOX::StatusTest::WRMS
@@ -174,7 +176,7 @@ int main(int argc, char *argv[])
   converged.addStatusTest(relresid);
   converged.addStatusTest(wrms);
   converged.addStatusTest(update);
-  NOX::StatusTest::MaxIters maxiters(2000);
+  NOX::StatusTest::MaxIters maxiters(80);
   NOX::StatusTest::Combo combo(NOX::StatusTest::Combo::OR);
   combo.addStatusTest(converged);
   combo.addStatusTest(maxiters);

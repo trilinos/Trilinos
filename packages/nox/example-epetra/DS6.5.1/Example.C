@@ -101,7 +101,7 @@ int main(int argc, char *argv[])
   NOX::Parameter::List& dirParams = nlParams.sublist("Direction");
   //dirParams.setParameter("Method", "Newton");
   //dirParams.setParameter("Method", "Steepest Descent");
-    //dirParams.setParameter("Scaling Type", "None");
+  //dirParams.setParameter("Scaling Type", "None");
   dirParams.setParameter("Method", "NonlinearCG");
     dirParams.setParameter("Restart Frequency", 10);
     dirParams.setParameter("Precondition", "On");

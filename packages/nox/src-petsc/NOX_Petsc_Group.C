@@ -88,6 +88,7 @@ Group::Group(const Group& source, CopyType type) :
     isValidGrad = source.isValidGrad;
     isValidNewton = source.isValidNewton;
     isValidJacobian = source.isValidJacobian;
+    isValidPrecMatrix = source.isValidPrecMatrix;
     normRHS = source.normRHS;
     
     // New copy takes ownership of the shared Jacobian
@@ -119,6 +120,7 @@ void Group::resetIsValid() //private
   isValidJacobian = false;
   isValidGrad = false;
   isValidNewton = false;
+  isValidPrecMatrix = false;
 }
 
 Abstract::Group* Group::clone(CopyType type) const 
@@ -145,6 +147,7 @@ Abstract::Group& Group::operator=(const Group& source)
   isValidGrad = source.isValidGrad;
   isValidNewton = source.isValidNewton;
   isValidJacobian = source.isValidJacobian;
+  isValidPrecMatrix = source.isValidPrecMatrix;
 
   // Only copy vectors that are valid
   if (isValidRHS) {
@@ -346,6 +349,13 @@ bool Group::computeNewton(NOX::Parameter::List& p)
   return true;
 }
 
+bool Group::computePrecMatrix()
+{
+  cout << "NOX::Petsc::Group::computePrecMatrix() - Not yet implemented!" << endl;
+  exit(0);
+  return false;
+}
+
 bool Group::applyJacobian(const Abstract::Vector& input, Abstract::Vector& result) const
 {
   const Vector& petscinput = dynamic_cast<const Vector&> (input);
@@ -421,14 +431,14 @@ bool Group::applyJacobianDiagonalInverse(const Vector& input, Vector& result) co
 }
 
 
-bool Group::preconditionVector(const Abstract::Vector& input, Abstract::Vector& result) const
+bool Group::applyPrecMatrixInverse(const Abstract::Vector& input, Abstract::Vector& result) const
 {
   const Vector& petscinput = dynamic_cast<const Vector&> (input);
   Vector& petscresult = dynamic_cast<Vector&> (result);
-  return preconditionVector(petscinput, petscresult);
+  return applyPrecMatrixInverse(petscinput, petscresult);
 }
 
-bool Group::preconditionVector(const Vector& input, Vector& result) const
+bool Group::applyPrecMatrixInverse(const Vector& input, Vector& result) const
 {
   if (!isJacobian()) 
     return false;
@@ -517,6 +527,11 @@ bool Group::isGradient() const
 bool Group::isNewton() const 
 {   
   return isValidNewton;
+}
+
+bool Group::isPrecMatrix() const 
+{   
+  return isValidPrecMatrix;
 }
 
 const Abstract::Vector& Group::getX() const 
