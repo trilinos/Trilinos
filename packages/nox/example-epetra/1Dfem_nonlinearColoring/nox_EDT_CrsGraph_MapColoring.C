@@ -57,7 +57,11 @@ Epetra_MapColoring* CrsGraph_MapColoring::operator()( const Epetra_CrsGraph & or
   {
     multimap<int,int> adjMap;
     for( int i = 0; i < nRows; ++i )
+#ifdef MUST_CONST_STL_MAP_KEY
+      adjMap.insert( pair<const int,int>( Adj2.NumMyIndices(i), i ) );
+#else
       adjMap.insert( pair<int,int>( Adj2.NumMyIndices(i), i ) );
+#endif
     multimap<int,int>::iterator iter = adjMap.begin();
     multimap<int,int>::iterator end = adjMap.end();
     for( int i = 1; iter != end; ++iter, ++i )
