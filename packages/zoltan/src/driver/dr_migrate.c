@@ -120,8 +120,8 @@ char *yo = "migrate_elements";
   /*
    * register migration functions
    */
-  if (!Test.Null_Import_Lists) {
-    /* If not passing NULL import lists, let Help_Migrate call the
+  if (!Test.Null_Lists) {
+    /* If not passing NULL lists, let Help_Migrate call the
      * pre-processing and post-processing routines.
      */
     if (Zoltan_Set_Fn(zz, ZOLTAN_PRE_MIGRATE_PP_FN_TYPE, 
@@ -185,7 +185,7 @@ char *yo = "migrate_elements";
   }
 
 
-  if (!Test.Null_Import_Lists) {
+  if (Test.Null_Lists == NONE) {
     if (Zoltan_Migrate(zz, num_imp, imp_gids, imp_lids, imp_procs, imp_to_part,
                            num_exp, exp_gids, exp_lids, exp_procs, exp_to_part)
       == ZOLTAN_FATAL) {
@@ -201,11 +201,23 @@ char *yo = "migrate_elements";
                         num_imp, imp_gids, imp_lids, imp_procs, imp_to_part,
                         num_exp, exp_gids, exp_lids, exp_procs, exp_to_part,
                         &ierr);
-    if (Zoltan_Migrate(zz, -1, NULL, NULL, NULL, NULL,
-                           num_exp, exp_gids, exp_lids, exp_procs, exp_to_part)
-        == ZOLTAN_FATAL) {
-      Gen_Error(0, "fatal:  error returned from Zoltan_Migrate()\n");
-      return 0;
+    if (Test.Null_Lists == IMPORT_LISTS) {
+      if (Zoltan_Migrate(zz,
+                         -1, NULL, NULL, NULL, NULL,
+                         num_exp, exp_gids, exp_lids, exp_procs, exp_to_part)
+          == ZOLTAN_FATAL) {
+        Gen_Error(0, "fatal:  error returned from Zoltan_Migrate()\n");
+        return 0;
+      }
+    }
+    else {
+      if (Zoltan_Migrate(zz,
+                         num_imp, imp_gids, imp_lids, imp_procs, imp_to_part,
+                         -1, NULL, NULL, NULL, NULL)
+          == ZOLTAN_FATAL) {
+        Gen_Error(0, "fatal:  error returned from Zoltan_Migrate()\n");
+        return 0;
+      }
     }
     migrate_post_process((void *) mesh, 1, 1,  
                          num_imp, imp_gids, imp_lids, imp_procs, imp_to_part,

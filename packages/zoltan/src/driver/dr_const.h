@@ -42,6 +42,12 @@ extern "C" {
 #define MAX_DIM		 3 /* max number of coordinate dimensions */
 #define MAX_CPU_WGTS	10 /* max number of cpu weights */
 
+enum LISTS {  /* NULL lists to pass to Zoltan_Migrate */
+  NONE = 0,
+  IMPORT_LISTS,
+  EXPORT_LISTS
+};
+
 enum DATA_TYPE {
   MESH = 0,
   GRAPH,
@@ -174,7 +180,8 @@ struct Test_Flags {
                                ways. */
   int Drops;                /* Exercises point- and box-assign. */
   int Multi_Callbacks;      /* Exercises list-based callback functions. */
-  int Null_Import_Lists;    /* Exercises null import lists to Zoltan_Migrate. */
+  int Null_Lists;           /* Exercises null import or export lists to
+                               Zoltan_Migrate. */
 };
 
 /* Structure for output flags for various types of output. */
