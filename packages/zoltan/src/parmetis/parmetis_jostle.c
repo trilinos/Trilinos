@@ -37,6 +37,7 @@ static PARAM_VARS Jostle_params[] = {
         { "JOSTLE_MATCHING", NULL, "STRING" },
         { "JOSTLE_REDUCTION", NULL, "STRING" },
         { "JOSTLE_CONNECT", NULL, "STRING" },
+        { "JOSTLE_SCATTER", NULL, "STRING" },
         { NULL, NULL, NULL } };
 
 /**********  parameters structure used by both ParMetis and Jostle **********/
@@ -152,11 +153,12 @@ int LB_Jostle(
 #else /* LB_JOSTLE */
   static LB *lb_prev = NULL; /* Last lb structure used */
   static char *alg = "JOSTLE";
+  char *cptr;
   char str[MAX_PARAM_STRING_LEN+1]; 
-  char blank[MAX_PARAM_STRING_LEN+1]; 
   char matching[MAX_PARAM_STRING_LEN+1];
   char reduction[MAX_PARAM_STRING_LEN+1];
   char connect[MAX_PARAM_STRING_LEN+1];
+  char scatter[MAX_PARAM_STRING_LEN+1];
   int  i, output_level, threshold, gather_threshold; 
   int num_proc = lb->Num_Proc;     /* Temporary variables whose addresses are */
   int proc = lb->Proc;             /* passed to Jostle. We don't              */
@@ -172,11 +174,6 @@ int LB_Jostle(
      pjostle_comm(&comm);
   }
 
-  /* Blank string */
-  for (i=0; i<MAX_PARAM_STRING_LEN; i++)
-    blank[i] = ' ';
-  blank[MAX_PARAM_STRING_LEN] = '\0';
-
   /* Set parameters */
   output_level = 0;
   threshold = 0;
@@ -184,6 +181,7 @@ int LB_Jostle(
   matching[0] = '\0';
   reduction[0] = '\0';
   connect[0] = '\0';
+  scatter[0] = '\0';
   LB_Bind_Param(Jostle_params, "JOSTLE_OUTPUT_LEVEL", 
                 (void *) &output_level);
   LB_Bind_Param(Jostle_params, "JOSTLE_THRESHOLD",    
@@ -196,34 +194,51 @@ int LB_Jostle(
                 (void *) reduction);
   LB_Bind_Param(Jostle_params, "JOSTLE_CONNECT",    
                 (void *) connect);
+  LB_Bind_Param(Jostle_params, "JOSTLE_SCATTER",    
+                (void *) scatter);
 
   LB_Assign_Param_Vals(lb->Params, Jostle_params, lb->Debug_Level, lb->Proc,
                        lb->Debug_Proc); 
 
   /* Set Jostle parameters using jostle_env() */
   if (threshold){
-    sprintf(str, "%s", blank);
-    sprintf(str, "threshold = %d", threshold);
+    sprintf(str, "threshold = %d\0", threshold);
     jostle_env(str);
   }
   if (gather_threshold){
-    sprintf(str, "%s", blank);
-    sprintf(str, "gather threshold = %d", gather_threshold);
+    sprintf(str, "gather threshold = %d\0", gather_threshold);
     jostle_env(str);
   }
   if (matching[0]){
-    sprintf(str, "%s", blank);
-    sprintf(str, "matching = %s", matching);
+    sprintf(str, "matching = %s\0", matching);
+    /* Convert to lower case */
+    for (cptr=str; *cptr; cptr++){
+      *cptr = tolower(*cptr);
+    }
     jostle_env(str);
   }
   if (reduction[0]){
-    sprintf(str, "%s", blank);
-    sprintf(str, "reduction = %s", reduction);
+    sprintf(str, "reduction = %s\0", reduction);
+    /* Convert to lower case */
+    for (cptr=str; *cptr; cptr++){
+      *cptr = tolower(*cptr);
+    }
     jostle_env(str);
   }
   if (connect[0]){
-    sprintf(str, "%s", blank);
-    sprintf(str, "connect = %s", connect);
+    sprintf(str, "connect = %s\0", connect);
+    /* Convert to lower case */
+    for (cptr=str; *cptr; cptr++){
+      *cptr = tolower(*cptr);
+    }
+    jostle_env(str);
+  }
+  if (scatter[0]){
+    sprintf(str, "scatter = %s\0", scatter);
+    /* Convert to lower case */
+    for (cptr=str; *cptr; cptr++){
+      *cptr = tolower(*cptr);
+    }
     jostle_env(str);
   }
 
@@ -332,18 +347,18 @@ static int LB_ParMetis_Jostle(
   /* Check weight dimensions */
   if (lb->Obj_Weight_Dim<0){
     fprintf(stderr, "ZOLTAN warning: Object weight dimension is %d, "
-            "but should be >= 0. Using Obj_Weight_Dim = 1.\n",
+            "but should be >= 0. Using Obj_Weight_Dim = 0.\n",
             lb->Obj_Weight_Dim);
-    obj_wgt_dim = 1;
+    obj_wgt_dim = 0;
   }
   else {
     obj_wgt_dim = lb->Obj_Weight_Dim;
   }
   if (lb->Comm_Weight_Dim<0){
     fprintf(stderr, "ZOLTAN warning: Communication weight dimension is %d, "
-            "but should be >= 0. Using Comm_Weight_Dim = 1.\n",
+            "but should be >= 0. Using Comm_Weight_Dim = 0.\n",
             lb->Comm_Weight_Dim);
-    comm_wgt_dim = 1;
+    comm_wgt_dim = 0;
   }
   else if (lb->Comm_Weight_Dim>1){
     fprintf(stderr, "ZOLTAN warning: This method does not support "
@@ -480,12 +495,12 @@ static int LB_ParMetis_Jostle(
   
     /* Allocate space for ParMETIS data structs */
     xadj   = (idxtype *)LB_MALLOC((num_obj+1) * sizeof(idxtype));
-    adjncy = (idxtype *)LB_MALLOC((num_edges+1) * sizeof(idxtype));
+    adjncy = (idxtype *)LB_MALLOC(num_edges * sizeof(idxtype));
     if (comm_wgt_dim) 
       adjwgt = (idxtype *)LB_MALLOC(comm_wgt_dim 
                 * num_edges * sizeof(idxtype));
   
-    if (!xadj || !adjncy || (num_edges && comm_wgt_dim && !adjwgt)){
+    if (!xadj || (num_edges && !adjncy) || (num_edges && comm_wgt_dim && !adjwgt)){
       /* Not enough memory */
       FREE_MY_MEMORY;
       LB_TRACE_EXIT(lb, yo);
@@ -889,7 +904,8 @@ static int LB_ParMetis_Jostle(
     }
   }
 
-  /* Get ready to call ParMETIS */
+  /* Get ready to call ParMETIS or Jostle */
+  edgecut = -1; 
   wgtflag = 2*(obj_wgt_dim>0) + (comm_wgt_dim>0); /* Multidim wgts not supported yet */
   numflag = 0;
   part = (idxtype *)LB_MALLOC((num_obj+1) * sizeof(idxtype));
@@ -1009,8 +1025,8 @@ static int LB_ParMetis_Jostle(
   if (get_times) times[2] = LB_Time();
 
   if (lb->Debug_Level >= LB_DEBUG_ALL)
-    printf("[%1d] Debug: Returned from ParMETIS partitioner with "
-           "edgecut= %d\n", lb->Proc, edgecut);
+    printf("[%1d] Debug: Returned from partitioner with edgecut= %d\n", 
+      lb->Proc, edgecut);
 
   /* Free weights; they are no longer needed */
   if (obj_wgt_dim) LB_FREE(&vwgt);
