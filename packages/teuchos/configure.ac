@@ -490,6 +490,7 @@ AC_CONFIG_FILES([
 		example/hilbert/Makefile
 		example/LAPACK/Makefile
 		example/ParameterList/Makefile
+		example/RefCountPtr/Makefile
 		example/TimeMonitor/Makefile
 		])
 
