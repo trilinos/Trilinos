@@ -60,7 +60,7 @@ int read_chaco_mesh(int Proc,
   char   cmesg[256];
   char   chaco_fname[FILENAME_MAX + 8];
 
-  int    i, start_id, nvtxs;
+  int    i, nvtxs;
   int    ndim = 0;
   int   *start = NULL, *adj = NULL, *vwgts = NULL, *vtxdist = NULL;
 
@@ -198,10 +198,10 @@ static int fill_elements(
   char cmesg[256];
 /***************************** BEGIN EXECUTION ******************************/
 
-  start_id = vtxdist[Proc];
+  start_id = vtxdist[Proc]+1;  /* global ids start at 1 */
 
   for (i = 0; i < Mesh.num_elems; i++) {
-    elem[i].globalID = start_id + i + 1; /* global ids start at 1 */
+    elem[i].globalID = start_id + i;
     if (vwgts != NULL)
       elem[i].cpu_wgt = vwgts[i];
     else
@@ -281,8 +281,7 @@ static int fill_elements(
     } /* End: "if (elem[i].nadj > 0)" */
   } /* End: "for (i = 0; i < Mesh.num_elems; i++)" */
 
-/*
   print_distributed_mesh(Proc, Num_Proc, prob, elem);
-*/
+
   return 1;
 }
