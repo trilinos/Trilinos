@@ -6,14 +6,12 @@
 // LICENSE & WARRANTY INFORMATION in README.txt and LICENSE.txt.
 // CONTACT T. Kolda (tgkolda@sandia.gov) or R. Pawlowski (rppawlo@sandia.gov)
 
-#include <cmath>
-#include <cstring>
-#include "NLS_Vector.H"
-#include "NLS_Utilities.H"
+#include "NLS_AdaptiveTolerance.H" // struct definition
 
-#include "NLS_ForcingTerm.H"
+#include <cmath>		// for min, max
+#include "NLS_Utilities.H"	// for static function doPrint
 
-double NLS_ForcingTerm::operator()(NLS_ParameterList& p, double normrhs, 
+double NLS_AdaptiveTolerance::operator()(NLS_ParameterList& p, double normrhs, 
 				   double normoldrhs, double normpredrhs)
 {
   const double eta_min = p.getParameter("Minimum Linear Solver Tolerance", 1.0e-6);

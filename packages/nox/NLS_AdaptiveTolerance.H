@@ -9,8 +9,7 @@
 #ifndef _NLS_FORCINGTERM_H
 #define _NLS_FORCINGTERM_H
   
-#include "NLS_ParameterList.H"
-#include "NLS_Group.H"
+#include "NLS_ParameterList.H"	// Argument to functor
 
 //! Functor to calculate the linear solver tolerance using an various
 //! adaptive strategies.
@@ -26,7 +25,7 @@
  *
  * Authors: J. N. Shadid, H. F. Walker */
 
-class NLS_ForcingTerm {
+struct NLS_AdaptiveTolerance {
 
 public:
 
