@@ -108,6 +108,11 @@ int ML_Aggregate_Set_OptimalNumberOfNodesPerAggregate( int optimal_value )
   OPTIMAL_VALUE = optimal_value;
   return 0;
   
+} /* ML_Aggregate_Set_OptimalNumberOfNodesPerAggregate */
+
+int ML_Aggregate_Get_OptimalNumberOfNodesPerAggregate( ) 
+{
+  return OPTIMAL_VALUE;
 }
 
 /* ======================================================================== */
