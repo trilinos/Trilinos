@@ -1,3 +1,10 @@
+#define MatrixProductHiptmair
+#define USESGSSequential
+/*
+#define MatrixFreeHiptmair
+#define USEJACOBI
+*/
+
 /* ************************************************************************* */
 /* See the file COPYRIGHT for a complete copyright notice, contact person,   */
 /* and disclaimer.                                                           */
@@ -782,6 +789,165 @@ int ML_Smoother_SGS(void *sm,int inlen,double x[],int outlen, double rhs[])
 }
 
 /* ************************************************************************* */
+/* Hiptmair smoother with matrix products                                    */
+/* ------------------------------------------------------------------------- */
+
+#ifdef MatrixProductHiptmair
+int ML_Smoother_Hiptmair(void *sm, int inlen, double x[], int outlen, 
+                            double rhs[])
+{
+   int iter, i, j, kk, Nrows,ntimes;
+   double dtemp;
+   ML_Operator *Tmat, *Tmat_trans,
+               *ATmat, *TtATmat,
+               *Ke_mat;
+   ML_Comm *comm;
+   ML_CommInfoOP *getrow_comm;
+   double *res_edge, *edge_update,
+          *rhs_nodal, *x_nodal;
+   ML_Smoother  *smooth_ptr, *sm_nodal;
+   ML_Sm_Hiptmair_Data *dataptr;
+#ifdef ML_DEBUG_SMOOTHER
+   double *res2, res_norm;
+#endif
+
+   smooth_ptr = (ML_Smoother *) sm;
+
+   Ke_mat = smooth_ptr->my_level->Amat;
+   comm = smooth_ptr->my_level->comm;
+   Nrows = Ke_mat->getrow->Nrows;
+
+   /* pointer to private smoother data */
+   dataptr = (ML_Sm_Hiptmair_Data *) smooth_ptr->smoother->data;
+
+   Tmat = (ML_Operator *) dataptr->Tmat;
+   Tmat_trans  = (ML_Operator *) dataptr->Tmat_trans;
+   TtATmat = (ML_Operator *) dataptr->TtATmat;
+
+   res_edge = (double *) dataptr->res_edge;
+   edge_update = (double *) dataptr->edge_update;
+   rhs_nodal = (double *) dataptr->rhs_nodal;
+   x_nodal = (double *) dataptr->x_nodal;
+
+   if (Ke_mat->getrow->ML_id == ML_EMPTY) 
+      pr_error("Error(ML_Hiptmair): Need getrow() for Hiptmair smoother\n");
+
+#ifdef ML_DEBUG_SMOOTHER
+   printf("\n--------------------------------\n");
+   printf("Coming into matrix Hiptmair\n");
+   printf("\t%d: ||x|| = %15.10e\n", Tmat_trans->comm->ML_mypid,
+           sqrt((ML_gdot(Nrows, x, x, comm))));
+   printf("\t%d: ||rhs|| = %15.10e\n", Tmat_trans->comm->ML_mypid,
+          sqrt((ML_gdot(Nrows, rhs, rhs, comm))));
+   fflush(stdout);
+#endif
+
+   for (iter = 0; iter < smooth_ptr->ntimes; iter++) 
+   {
+   
+      /********************************************
+      * One SGS smoothing sweep on edge solution. *
+      ********************************************/
+
+      /* Without this, the following call will do N sweeps,
+         where N is the number of Hiptmair sweeps. */
+      ntimes = smooth_ptr->ntimes;
+      smooth_ptr->ntimes = 1;
+
+#ifdef USEJACOBI
+      smooth_ptr->omega = 0.5;
+      ML_Smoother_Jacobi(sm, inlen, x, outlen, rhs);
+      smooth_ptr->omega = 1.0;
+#elif defined(USESGSSequential)
+      ML_Smoother_SGSSequential(sm, inlen, x, outlen, rhs);
+#else
+      ML_Smoother_SGS(sm, inlen, x, outlen, rhs);
+#endif
+      smooth_ptr->ntimes = ntimes;
+      for (kk = 0; kk < TtATmat->invec_leng; kk++) x_nodal[kk] = 0.;
+   
+      /* calculate initial residual */ 
+      ML_Operator_Apply(Ke_mat, Ke_mat->invec_leng,
+                        x, Ke_mat->outvec_leng,res_edge);
+      for (kk = 0; kk < Nrows; kk++) res_edge[kk] = rhs[kk] - res_edge[kk];
+   
+#ifdef ML_DEBUG_SMOOTHER
+      printf("After SGS on edges\n");
+      printf("\t%d: ||x|| = %15.10e\n", Tmat_trans->comm->ML_mypid,
+             sqrt(ML_gdot(Nrows, x, x, comm)));
+      printf("\t%d: ||res|| = %15.10e\n", Tmat_trans->comm->ML_mypid,
+             sqrt(ML_gdot(Nrows,res_edge,res_edge,comm)));
+#endif
+   
+      /****************************
+      * Symmetric sweep on nodes. *
+      ****************************/
+      ML_Operator_Apply(Tmat_trans, Tmat_trans->invec_leng,
+                        res_edge, Tmat_trans->outvec_leng,rhs_nodal);
+   
+#ifdef ML_DEBUG_SMOOTHER
+      printf("Before SGS on nodes\n");
+      printf("\t%d: ||x_nodal|| = %15.10e\n", Tmat_trans->comm->ML_mypid,
+             sqrt(ML_gdot(Tmat_trans->outvec_leng,
+                          x_nodal,x_nodal,Tmat_trans->comm)));
+      printf("\t%d: ||rhs_nodal|| = %15.10e\n", Tmat_trans->comm->ML_mypid,
+             sqrt(ML_gdot(Tmat_trans->outvec_leng,
+                          rhs_nodal,rhs_nodal,Tmat_trans->comm)));
+#endif
+
+#ifdef USEJACOBI
+      dataptr->sm->omega = 0.5;
+      ML_Smoother_Jacobi(dataptr->sm, TtATmat->invec_leng, x_nodal,
+                      TtATmat->outvec_leng, rhs_nodal);
+      dataptr->sm->omega = 1.0;
+#elif defined(USESGSSequential)
+      ML_Smoother_SGSSequential(dataptr->sm, TtATmat->invec_leng, x_nodal,
+                                TtATmat->outvec_leng, rhs_nodal);
+#else
+      ML_Smoother_SGS(dataptr->sm, TtATmat->invec_leng, x_nodal,
+                      TtATmat->outvec_leng, rhs_nodal);
+#endif
+
+#ifdef ML_DEBUG_SMOOTHER
+      printf("After SGS on nodes\n");
+      printf("\t%d: ||x_nodal|| = %15.10e\n", Tmat_trans->comm->ML_mypid,
+             sqrt(ML_gdot(Tmat_trans->outvec_leng,
+                  x_nodal,x_nodal,Tmat_trans->comm)));
+      printf("\t%d: ||rhs_nodal|| = %15.10e\n", Tmat_trans->comm->ML_mypid,
+            sqrt(ML_gdot(Tmat_trans->outvec_leng,rhs_nodal,
+                 rhs_nodal,Tmat_trans->comm)));
+#endif
+   
+      /************************
+      * Update edge solution. *
+      ************************/
+      ML_Operator_Apply(Tmat, Tmat->invec_leng,
+                        x_nodal, Tmat->outvec_leng,edge_update);
+   
+      for (kk=0; kk < Nrows; kk++) x[kk] += edge_update[kk];
+
+#ifdef ML_DEBUG_SMOOTHER
+      printf("After updating edge solution\n");
+      printf("\t%d: ||x|| = %15.10e\n", Tmat_trans->comm->ML_mypid,
+             sqrt((ML_gdot(Nrows,x,x,comm))));
+      printf("--------------------------------\n");
+#endif
+   
+   } /*for (iter = 0; ...*/
+
+/*
+   smooth_ptr->omega = 0.5;
+   ML_Smoother_Jacobi(sm, inlen, x, outlen, rhs);
+   smooth_ptr->omega = 1.0;
+*/
+
+#ifdef ML_DEBUG_SMOOTHER
+  #undef ML_DEBUG_SMOOTHER
+#endif
+}
+#endif /* ifdef MatrixProductHiptmair */
+
+/* ************************************************************************* */
 /* Hiptmair smoother                                                         */
 /* ------------------------------------------------------------------------- */
 
@@ -805,7 +971,7 @@ int ML_Smoother_Hiptmair(void *sm, int inlen, double x[], int outlen,
    double *Tmat_trans_val;
    int *ATmat_trans_rowptr, *ATmat_trans_bindx;
    double *ATmat_trans_val;
-#define ML_DEBUG_SMOOTHER
+   int ntimes;
 #ifdef ML_DEBUG_SMOOTHER
    double *res2, res_norm, dtemp, *tmpvec1, *tmpvec2;
 #endif
@@ -847,16 +1013,23 @@ int ML_Smoother_Hiptmair(void *sm, int inlen, double x[], int outlen,
    fflush(stdout);
 #endif
 
-   /* Symmetric GS on edges */
-   /*
-         fun = ML_Smoother_MSR_SGS;
-	 */
+   /************************
+   * Symmetric GS on edges *
+   ************************/
+
+   /* Only do one smooth over the edges.  Without this, the following call
+      will do N sweeps, where N is the number of Hiptmair sweeps. */
+   ntimes = smooth_ptr->ntimes;
+   smooth_ptr->ntimes = 1;
+
+   /* fun = ML_Smoother_MSR_SGS; */
 #ifdef SPECIAL
-     ML_Smoother_MSR_SGSnodamping(sm, inlen, x, outlen, rhs);
+   ML_Smoother_MSR_SGSnodamping(sm, inlen, x, outlen, rhs);
 #else
    ML_Smoother_SGS(sm, inlen, x, outlen, rhs); 
    /*ML_Smoother_Jacobi(sm, inlen, x, outlen, rhs);*/
 #endif
+   smooth_ptr->ntimes = ntimes;
 
 #ifdef ML_DEBUG_SMOOTHER
    printf("\t%d:After SGS on edges, norm of x = %15.10e\n",
@@ -1141,141 +1314,6 @@ vals = &(ATmat_trans_val[ATmat_trans_rowptr[i]]);
 #endif
 }
 #endif /*ifdef MatrixFreeHiptmair*/
-
-/* ************************************************************************* */
-/* Hiptmair smoother with matrix products                                    */
-/* ------------------------------------------------------------------------- */
-
-#define MatrixProductHiptmair
-#ifdef MatrixProductHiptmair
-int ML_Smoother_Hiptmair(void *sm, int inlen, double x[], int outlen, 
-                            double rhs[])
-{
-   int iter, i, j, kk, Nrows,ntimes;
-   double dtemp;
-   ML_Operator *Tmat, *Tmat_trans,
-               *ATmat, *TtATmat,
-               *Ke_mat;
-   ML_Comm *comm;
-   ML_CommInfoOP *getrow_comm;
-   double *res_edge, *edge_update,
-          *rhs_nodal, *x_nodal;
-   ML_Smoother  *smooth_ptr, *sm_nodal;
-   ML_Sm_Hiptmair_Data *dataptr;
-#ifdef ML_DEBUG_SMOOTHER
-   double *res2, res_norm;
-#endif
-
-   smooth_ptr = (ML_Smoother *) sm;
-
-   Ke_mat = smooth_ptr->my_level->Amat;
-   comm = smooth_ptr->my_level->comm;
-   Nrows = Ke_mat->getrow->Nrows;
-
-   /* pointer to private smoother data */
-   dataptr = (ML_Sm_Hiptmair_Data *) smooth_ptr->smoother->data;
-
-   Tmat = (ML_Operator *) dataptr->Tmat;
-   Tmat_trans  = (ML_Operator *) dataptr->Tmat_trans;
-   TtATmat = (ML_Operator *) dataptr->TtATmat;
-
-   res_edge = (double *) dataptr->res_edge;
-   edge_update = (double *) dataptr->edge_update;
-   rhs_nodal = (double *) dataptr->rhs_nodal;
-   x_nodal = (double *) dataptr->x_nodal;
-
-   if (Ke_mat->getrow->ML_id == ML_EMPTY) 
-      pr_error("Error(ML_Hiptmair): Need getrow() for Hiptmair smoother\n");
-
-#ifdef ML_DEBUG_SMOOTHER
-   printf("\n--------------------------------\n");
-   printf("Coming into matrix Hiptmair\n");
-   printf("\t%d: ||x|| = %15.10e\n", Tmat_trans->comm->ML_mypid,
-           sqrt((ML_gdot(Nrows, x, x, comm))));
-   printf("\t%d: ||rhs|| = %15.10e\n", Tmat_trans->comm->ML_mypid,
-          sqrt((ML_gdot(Nrows, rhs, rhs, comm))));
-   fflush(stdout);
-#endif
-
-   for (iter = 0; iter < smooth_ptr->ntimes; iter++) 
-   {
-   
-      /********************************************
-      * One SGS smoothing sweep on edge solution. *
-      ********************************************/
-      ntimes = smooth_ptr->ntimes;
-      smooth_ptr->ntimes = 1;
-      ML_Smoother_SGS(sm, inlen, x, outlen, rhs);
-      smooth_ptr->ntimes = ntimes;
-      /*ML_Smoother_Jacobi(sm, inlen, x, outlen, rhs);*/
-      for (kk = 0; kk < TtATmat->invec_leng; kk++) x_nodal[kk] = 0.;
-   
-      /* calculate initial residual */ 
-      ML_Operator_Apply(Ke_mat, Ke_mat->invec_leng,
-                        x, Ke_mat->outvec_leng,res_edge);
-      for (kk = 0; kk < Nrows; kk++) res_edge[kk] = rhs[kk] - res_edge[kk];
-   
-#ifdef ML_DEBUG_SMOOTHER
-      printf("After SGS on edges\n");
-      printf("\t%d: ||x|| = %15.10e\n", Tmat_trans->comm->ML_mypid,
-             sqrt(ML_gdot(Nrows, x, x, comm)));
-      printf("\t%d: ||res|| = %15.10e\n", Tmat_trans->comm->ML_mypid,
-             sqrt(ML_gdot(Nrows,res_edge,res_edge,comm)));
-#endif
-   
-      /****************************
-      * Symmetric sweep on nodes. *
-      ****************************/
-      ML_Operator_Apply(Tmat_trans, Tmat_trans->invec_leng,
-                        res_edge, Tmat_trans->outvec_leng,rhs_nodal);
-   
-#ifdef ML_DEBUG_SMOOTHER
-      printf("Before SGS on nodes\n");
-      printf("\t%d: ||x_nodal|| = %15.10e\n", Tmat_trans->comm->ML_mypid,
-             sqrt(ML_gdot(Tmat_trans->outvec_leng,
-                          x_nodal,x_nodal,Tmat_trans->comm)));
-      printf("\t%d: ||rhs_nodal|| = %15.10e\n", Tmat_trans->comm->ML_mypid,
-             sqrt(ML_gdot(Tmat_trans->outvec_leng,
-                          rhs_nodal,rhs_nodal,Tmat_trans->comm)));
-#endif
-   
-      ML_Smoother_SGS(dataptr->sm, TtATmat->invec_leng, x_nodal,
-                      TtATmat->outvec_leng, rhs_nodal);
-      /*ML_Smoother_Jacobi(dataptr->sm, TtATmat->invec_leng, x_nodal,
-                      TtATmat->outvec_leng, rhs_nodal);*/
-   
-#ifdef ML_DEBUG_SMOOTHER
-      printf("After SGS on nodes\n");
-      printf("\t%d: ||x_nodal|| = %15.10e\n", Tmat_trans->comm->ML_mypid,
-             sqrt(ML_gdot(Tmat_trans->outvec_leng,
-                  x_nodal,x_nodal,Tmat_trans->comm)));
-      printf("\t%d: ||rhs_nodal|| = %15.10e\n", Tmat_trans->comm->ML_mypid,
-            sqrt(ML_gdot(Tmat_trans->outvec_leng,rhs_nodal,
-                 rhs_nodal,Tmat_trans->comm)));
-#endif
-   
-      /************************
-      * Update edge solution. *
-      ************************/
-      ML_Operator_Apply(Tmat, Tmat->invec_leng,
-                        x_nodal, Tmat->outvec_leng,edge_update);
-   
-      for (kk=0; kk < Nrows; kk++) x[kk] += edge_update[kk];
-
-#ifdef ML_DEBUG_SMOOTHER
-      printf("After updating edge solution\n");
-      printf("\t%d: ||x|| = %15.10e\n", Tmat_trans->comm->ML_mypid,
-             sqrt((ML_gdot(Nrows,x,x,comm))));
-      printf("--------------------------------\n");
-#endif
-   
-   } /*for (iter = 0; ...*/
-
-#ifdef ML_DEBUG_SMOOTHER
-  #undef ML_DEBUG_SMOOTHER
-#endif
-}
-#endif /* ifdef MatrixProductHiptmair */
 
 /* ************************************************************************* */
 /* sequential Symmetric Gauss-Seidel smoother                                */
@@ -2921,19 +2959,25 @@ void ML_Smoother_Destroy_Schwarz_Data(void *data)
 /* on one level.                                                             */
 /* ************************************************************************* */
 
+#ifdef MatrixProductHiptmair
 int ML_Smoother_Gen_Hiptmair_Data(ML_Sm_Hiptmair_Data **data, ML_Operator *Amat,
                                  ML_Operator *Tmat, ML_Operator *Tmat_trans)
 {
    ML_Sm_Hiptmair_Data *dataptr;
-   ML_Operator *tmpmat, *eyemat;
+   ML_Operator *tmpmat;
    int *cols = NULL, length, allocated_space;
    double *vals = NULL;
-   double *tmpdiag;
    int i,j;
    ML_CommInfoOP *getrow_comm;
    int totalsize;
    struct ML_CSR_MSRdata *Amat_data, *eye_csr_data;
    ML_1Level *mylevel;
+#ifdef ML_TIMING_DETAILED
+   int    nprocs, mypid;
+   double t0;
+
+   t0 = GetClock();
+#endif
 
    dataptr = *data;
    dataptr->Tmat_trans = Tmat_trans;
@@ -2972,14 +3016,6 @@ int ML_Smoother_Gen_Hiptmair_Data(ML_Sm_Hiptmair_Data **data, ML_Operator *Amat,
    tmpmat = ML_Operator_Create(Amat->comm);
    ML_rap(Tmat_trans, Amat, Tmat, tmpmat, ML_CSR_MATRIX);
 
-   /* and pick off the diagonal entries. */
-   dataptr->TtAT_diag = (double *)
-                        malloc( tmpmat->outvec_leng * sizeof(double) );
-   ML_Operator_Get_Diag(tmpmat, tmpmat->outvec_leng, &tmpdiag );
-   for (i=0; i< tmpmat->outvec_leng; i++)
-      if (tmpdiag[i] == 0) dataptr->TtAT_diag[i] = 1.;
-	  else dataptr->TtAT_diag[i] = tmpdiag[i];
-
    /* Create ML_Smoother data structure for nodes.
       This is used in symmetric GS sweep over nodes. */
    mylevel = (ML_1Level *) ML_allocate(sizeof(ML_1Level));
@@ -3000,32 +3036,18 @@ int ML_Smoother_Gen_Hiptmair_Data(ML_Sm_Hiptmair_Data **data, ML_Operator *Amat,
                       ML_allocate(Tmat->invec_leng * sizeof(double));
    dataptr->edge_update = (double * )
                           ML_allocate(Amat->invec_leng * sizeof(double));
-
-   /* Force the diagonal to not be zero. */
- 
-/*
-   if (Amat->getrow->external == MSR_getrows){
-      Amat_data   = (struct ML_CSR_MSRdata *) Amat->data;
-      vals  = Amat_data->values;
-      cols = Amat_data->columns;
-   }
-#ifdef AZTEC
-   else AZ_get_MSR_arrays(Amat, &cols, &vals);
-#endif
-   if (vals != NULL) {
-      for (i = 0; i < Amat->invec_leng; i++)
-         if (vals[i] == 0.0) vals[i] = 1.;
-   } 
-*/
-
+#ifdef ML_TIMING
+         ml->pre_smoother[i].build_time = GetClock() - t0;
+#endif       
    return 0;
 }
+#endif /* ifdef MatrixProductHiptmair */
 
 /*******************************************************************************
 * The old ML_Smoother_Gen_Hiptmair_Data function.                              *
 *******************************************************************************/
 
-#ifdef oldML_Smoother_Gen_Hiptmair_Data
+#ifdef MatrixFreeHiptmair
 #ifdef debugSmoother
 extern double *xxx;
 #endif
@@ -3127,20 +3149,7 @@ int ML_Smoother_Gen_Hiptmair_Data(ML_Sm_Hiptmair_Data **data, ML_Operator *Amat,
       if (tmpdiag[i] == 0) dataptr->TtAT_diag[i] = 1.;
 	  else dataptr->TtAT_diag[i] = tmpdiag[i];
 
-   /* Create ML_Smoother data structure for the SGS sweep over the nodes. */
-   mylevel = (ML_1Level *) ML_allocate(sizeof(ML_1Level));
-   ML_Smoother_Create(&(dataptr->sm), mylevel);
-   dataptr->sm->ntimes = 1;
-   dataptr->sm->omega = 1;
-   dataptr->sm->my_level->Amat = tmpmat;
-   dataptr->sm->my_level->comm = tmpmat->comm;
-   dataptr->TtATmat = tmpmat;
-
-   /* need comm, Nrows */
-
-/*
    ML_Operator_Destroy(tmpmat);
-*/
 
    /* Force the diagonal to not be zero */
 
@@ -3160,7 +3169,7 @@ int ML_Smoother_Gen_Hiptmair_Data(ML_Sm_Hiptmair_Data **data, ML_Operator *Amat,
 
    return 0;
 }
-#endif /* ifdef oldML_Smoother_Gen_Hiptmair_Data */
+#endif /* ifdef MatrixFreeHiptmair */
 
 /* ************************************************************************* */
 /* function to generate the factorizations of the diagonal blocks of A.      */
