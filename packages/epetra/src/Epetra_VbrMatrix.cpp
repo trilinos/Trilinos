@@ -509,7 +509,7 @@ int Epetra_VbrMatrix::EndReplaceSumIntoValues() {
 	CopyMat(TempValues_[j], TempLDAs_[j], RowDim, TempColDims_[j], 
 		Values_[CurBlockRow_][Loc], LDAs_[CurBlockRow_][Loc], SumInto);
       }
-      else {EPETRA_CHK_ERR(-2)}; // Value not found
+      else ierr=2; // Block Discarded, Not Found
     }
   }
   else {
@@ -527,7 +527,7 @@ int Epetra_VbrMatrix::EndReplaceSumIntoValues() {
 	CopyMat(TempValues_[j], TempLDAs_[j], RowDim, TempColDims_[j], 
 		Values_[CurBlockRow_][Loc], LDAs_[CurBlockRow_][Loc], SumInto);
       }
-      else {EPETRA_CHK_ERR(-2)}; // Value not found
+      else ierr=2; // Block Discarded, Not Found
     }
   }
   EPETRA_CHK_ERR(ierr);
@@ -539,14 +539,42 @@ int Epetra_VbrMatrix::EndInsertValues() {
 
   int ierr = 0;
   int j;
+
+  int NumValidBlockIndices = CurNumBlockEntries_;
+  int * ValidBlockIndices = new int[CurNumBlockEntries_];
+  for( j=0; j < CurNumBlockEntries_; ++j ) ValidBlockIndices[j] = j;
+    
+  if( Graph_->ColMap_ ) { //test and discard indices not in ColMap
+    int dummy;
+    NumValidBlockIndices = 0;
+    if( CurIndicesAreLocal_ ) {
+      for( j = 0; j < CurNumBlockEntries_; ++j ) {
+        if( Graph_->ColMap_->MyLID( CurBlockIndices_[j] ) )
+          ValidBlockIndices[ NumValidBlockIndices++ ] = j;
+        else ierr=2; // Discarding a Block not found in ColMap
+      }
+    }
+    else {
+      for( j = 0; j < CurNumBlockEntries_; ++j ) {
+        if( Graph_->ColMap_->MyGID( CurBlockIndices_[j] ) )
+          ValidBlockIndices[ NumValidBlockIndices++ ] = j;
+        else ierr=2; // Discarding a Block not found in ColMap
+      }
+    }
+  }
+
   int start = NumBlockEntriesPerRow_[CurBlockRow_];
-  int stop = start + CurNumBlockEntries_;
+//  int stop = start + CurNumBlockEntries_;
+  int stop = start + NumValidBlockIndices;
   int NumAllocatedEntries = NumAllocatedBlockEntriesPerRow_[CurBlockRow_];
   if (stop > NumAllocatedEntries){
     if (NumAllocatedEntries==0) { // BlockRow was never allocated, so do it
-      Values_[CurBlockRow_] = new double*[CurNumBlockEntries_];
-      ColDims_[CurBlockRow_] = new int[CurNumBlockEntries_];
-      LDAs_[CurBlockRow_] = new int[CurNumBlockEntries_];
+//      Values_[CurBlockRow_] = new double*[CurNumBlockEntries_];
+//      ColDims_[CurBlockRow_] = new int[CurNumBlockEntries_];
+//      LDAs_[CurBlockRow_] = new int[CurNumBlockEntries_];
+      Values_[CurBlockRow_] = new double*[NumValidBlockIndices];
+      ColDims_[CurBlockRow_] = new int[NumValidBlockIndices];
+      LDAs_[CurBlockRow_] = new int[NumValidBlockIndices];
     }
     else {
       ierr = 1; // Out of room.  Must delete and allocate more space...
@@ -569,18 +597,18 @@ int Epetra_VbrMatrix::EndInsertValues() {
   }
   if (CV_==View) {
     for (j=start; j<stop; j++) {
-      Values_[CurBlockRow_][j] = TempValues_[j-start];
-      ColDims_[CurBlockRow_][j] = TempColDims_[j-start];
-      LDAs_[CurBlockRow_][j] = TempLDAs_[j-start];
+      Values_[CurBlockRow_][j] = TempValues_[ ValidBlockIndices[j-start] ];
+      ColDims_[CurBlockRow_][j] = TempColDims_[ ValidBlockIndices[j-start] ];
+      LDAs_[CurBlockRow_][j] = TempLDAs_[ ValidBlockIndices[j-start] ];
     }
   }
   else { // Copy not view
     int RowDim = ElementSizeList_[CurBlockRow_];
     for (j=start; j<stop; j++) {
-      int ColDim =  TempColDims_[j-start];
-      int LDA = TempLDAs_[j-start];
+      int ColDim =  TempColDims_[ ValidBlockIndices[j-start] ];
+      int LDA = TempLDAs_[ ValidBlockIndices[j-start] ];
       Values_[CurBlockRow_][j] = new double[RowDim*ColDim];
-      CopyMat(TempValues_[j-start], LDA, RowDim, ColDim, Values_[CurBlockRow_][j], RowDim, false);
+      CopyMat(TempValues_[ ValidBlockIndices[j-start] ], LDA, RowDim, ColDim, Values_[CurBlockRow_][j], RowDim, false);
       ColDims_[CurBlockRow_][j] = ColDim;
       LDAs_[CurBlockRow_][j] = RowDim;
     }
