@@ -3,7 +3,7 @@
 Via Autoconf and Automake the Trilinos configuration facilities
 provide a great deal of flexibility for configuring and building the
 existing Trilinos packages.  However, unless a user has prior experience
-with Autotools, we recommend the following process to build and
+with Autotools, we very strongly recommend the following process to build and
 maintain local builds of Trilinos.
 
 To start, we defined two useful terms:
@@ -183,7 +183,8 @@ information, the user must provide anything that Autotools needs and
 cannot find.  Also, if Autotools selects, for example, the wrong 
 BLAS library by default, the user must indicate which BLAS library to use.  
 Other issues such as standards 
-non-compliance are also dealt with here.  If all required libraries (often 
+non-compliance are also commonly dealt with using configure options.  
+If all required libraries (often 
 the BLAS and LAPACK) are located in standard places and no special 
 compiler flags are required, try configuring without
 providing additional information.
@@ -194,7 +195,7 @@ providing additional information.
 \begin{minipage}[l]{.6\textwidth}
 
 Sample configure invocation scripts for a wide variety of platforms can be 
-found in \InlineDirectory{Trilinos/sampleScripts}.  These scripts are 
+found in \InlineDirectory{Trilinos/sampleScripts}.  These scripts are generally 
 named using the following convention: \InlineCommand{arch\_comm\_machine}.
 For example, \InlineCommand{sgi64\_mpi\_atlantis}.  
 \end{minipage}\hfill
@@ -219,7 +220,7 @@ become obsolete if it is not updated by the user who submitted it.
 
 Users who create scripts for other machines are encouraged to check them into 
 the repository for the benefit of other users.  Users who do not have access to
-the repository can send scripts to the Trilinos Library Manager.
+the repository can send scripts to trilinos-help@software.sandia.gov.
 
 The following is an example configure invocation script for an SGI machine:
 
@@ -389,7 +390,7 @@ If the configure stage completed successfully, just type \DisplayCommand{make}
  and then, if 
 \InlineCommand{--prefix} was specified, \DisplayCommand{make install}
 
-\subsection{Tips for Making the Configure and Build Processes More Efficient}
+\subsection{Tips for Making the Configure, Build, and Install Processes More Efficient}
 
 Trilinos has grown to become a large piece of software.  Not surprisingly,
 it can take a very long time to configure and build all of Trilinos.  Below 
@@ -398,11 +399,13 @@ are some tips for speeding up the process:
 \begin{itemize}
 \item Only build the Trilinos libraries that are necessary.
 
-Know which packages are built by default.  Packages that 
-necessary packages are dependent on will be turned on automatically, so
+An easy way to do this is to use the --disable-default-packages option.  
+This option allows users to easily specify exactly which packages should be 
+built.  Packages that enabled 
+packages are dependent on will be turned on automatically, so
 don't shy away from disabling all packages that are not used directly.  
 If a package configures and builds that was not enabled explicitly, 
-keep in mind that a package that was enabled probably depends on this package.
+keep in mind that a package that was enabled probably depends on that package.
 
 \item Consider disabling tests and examples.
 
@@ -447,12 +450,12 @@ words
 
 When used in this way, the number of jobs created is unlimited.  For machines 
 with a large number of processors this appears to work in some situations, but
-machines with fewer than four processors appear to get bogged down with 
+machines with fewer than four processors tend to get bogged down with 
 overhead.
 
 \end{itemize}
 
-Other important notes about the configure and build processes:
+Other important notes about the configure, build, and install process:
 \begin{itemize}
 \begin{minipage}[c]{\textwidth}
                                                                                 
@@ -471,7 +474,10 @@ Any code that links to Trilinos must define
 \item Do not attempt to specify optimization flags using the 
 \InlineCommand{--with-cxxflags}, \InlineCommand{--with-cflags}, or 
 \InlineCommand{--with-fflags} options.   Use \InlineCommand{CXXFLAGS}, 
-\InlineCommand{CFLAGS} and \InlineCommand{FFLAGS} instead.
+\InlineCommand{CFLAGS} and \InlineCommand{FFLAGS} instead.  Use 
+\InlineCommand{--with-cxxflags}, \InlineCommand{--with-cflags}, and 
+\InlineCommand{--with-fflags} to specify flags that are to be used in 
+addition to the default optimization flags. 
 
 \item When creating a configure invocation script, be sure to use 
 line continuation characters properly.  The characters should be at the 
@@ -483,12 +489,12 @@ Autoconf, open the \InlineDirectory{config.status} file in the top level of
 the build tree and grep for the string "with options".  Here you will find all 
 of the options that Autoconf pulled from the invoke configure script.
 
-\item Autoconf cannot detect spelling mistakes in configure invocation scripts.
+\item Autoconf cannot detect most 
+spelling mistakes in configure invocation scripts.
 
 \item When experiencing problems during the make phase, it is often useful to 
 \InlineCommand{make clean} before attempting to \InlineCommand{make} again.  
-Sometimes it even helps to blow away the entire build tree and start over, 
-although this is rarely necessary.
+Sometimes it even helps to blow away the entire build tree and start over. 
 
 \item When building with LAM under RH9 Linux, configure complains that it 
 cannot find mpi++.h.  The message in the config.log file is:
