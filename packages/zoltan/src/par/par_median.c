@@ -293,8 +293,8 @@ int Zoltan_RB_find_median(
                                                     of dots has worse balance*/
             } else {
               if (Tflops_Special)
-                Zoltan_RB_scan_double(&wtok, &wtupto, local_comm, proc, rank, 
-                                      num_procs);
+                Zoltan_RB_scan_double(&wtok, &wtupto, 1, local_comm, 
+                                      proc, rank, num_procs);
               else
                 MPI_Scan(&wtok,&wtupto,1,MPI_DOUBLE,MPI_SUM,local_comm);
               wtmax = targetlo - weightlo;
@@ -363,8 +363,8 @@ int Zoltan_RB_find_median(
                                                     of dots has worse balance*/
             } else {
               if (Tflops_Special)
-                Zoltan_RB_scan_double(&wtok, &wtupto, local_comm, proc, rank, 
-                                      num_procs);
+                Zoltan_RB_scan_double(&wtok, &wtupto, 1, local_comm, 
+                                      proc, rank, num_procs);
               else
                 MPI_Scan(&wtok,&wtupto,1,MPI_DOUBLE,MPI_SUM,local_comm);
               wtmax = targethi - weighthi;

@@ -22,13 +22,15 @@ extern "C" {
 #include <stdlib.h>
 #include <mpi.h>
 #include "par_tflops_special_const.h"
+#include "zoltan_mem.h"
 
 /* Generic Tflops_special routines to avoid certain types of 
    collective communication routines. */
 
 void Zoltan_RB_scan_double(
-   double *wtok,          /* local weight */
-   double *wtupto,        /* sum of weights for prcessors <= rank */
+   double *wtok,          /* in: local weight */
+   double *wtupto,        /* out: sum of weights for processors <= rank */
+   int count,             /* number of elements to scan */
    MPI_Comm local_comm,   /* MPI Communicator */
    int proc,              /* global processor number */
    int rank,              /* rank in this partition */
@@ -40,13 +42,26 @@ void Zoltan_RB_scan_double(
    int nprocs_large;      /* power of 2 processor that contains num_procs */
    int hbit;              /* 2^hbit = nprocs_large */
    int mask;              /* mask to determine communication partner */
+   int i;                 /* loop index */
    int tag = 32108;       /* message tag */
-   double tmp;            /* temporary double to recieve */
-   double sendout;        /* temporary double to send */
+   double *tmpin;         /* temporary double array to recieve */
+   double *tmpout;        /* temporary double array to send */
+   double temp[2];        /* temp buffer to avoid malloc when count==1 */
    MPI_Status status;
 
    /* this subroutine performs a scan operation summing doubles on a subset
       of a set of processors for Tflops_Special */
+
+   if (count==0)
+     return;
+   else if (count==1){ /* avoid malloc */
+     tmpin = temp;
+     tmpout = &temp[1];
+   }
+   else /* count>1 */ {
+     tmpin = (double *) ZOLTAN_MALLOC(2*count*sizeof(double));
+     tmpout = tmpin + count;
+   }
 
    /* Find next lower power of 2. */
    for (hbit = 0; (num_procs >> hbit) != 0; hbit++);
@@ -54,18 +69,25 @@ void Zoltan_RB_scan_double(
    nprocs_large = 1 << hbit;
    if (nprocs_large == 2*num_procs) nprocs_large = num_procs;
 
-   sendout = *wtupto = *wtok;
+   for (i=0; i<count; i++)
+      tmpout[i] = wtupto[i] = wtok[i];
    for (mask = 1; mask <= nprocs_large; mask *= 2) {
       tag++;
       tor = (rank ^ mask);
       to = proc - rank + tor;
       if (tor < num_procs) {
-         MPI_Send(&sendout, 1, MPI_DOUBLE, to, tag, local_comm);
-         MPI_Recv(&tmp, 1, MPI_DOUBLE, to, tag, local_comm, &status);
-         sendout += tmp;
-         if (to < proc) *wtupto += tmp;
+         MPI_Send(tmpout, 1, MPI_DOUBLE, to, tag, local_comm);
+         MPI_Recv(tmpin, 1, MPI_DOUBLE, to, tag, local_comm, &status);
+         for (i=0; i<count; i++){
+            tmpout[i] += tmpin[i];
+            if (to < proc) 
+               wtupto[i] += tmpin[i];
+         }
       }
    }
+
+   if (count>1)
+      ZOLTAN_FREE(&tmpin);
 }
 
 void Zoltan_RB_sum_double(
