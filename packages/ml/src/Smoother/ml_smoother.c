@@ -6694,14 +6694,14 @@ void ML_Smoother_Destroy_MLS(void *data)
 /* Sparse approximate inverse smoother                                       */
 /* ------------------------------------------------------------------------- */
 
-#ifdef PARASAILS
+#ifdef HAVE_ML_PARASAILS
 #include "Matrix.h"
 #include "ParaSails.h"
 
-int ML_Smoother_ParaSails(void *sm,int inlen,double x[],int outlen,
-                        double rhs[])
+int ML_Smoother_ParaSails(ML_Smoother *smooth_ptr,int inlen,double x[],
+			  int outlen,
+			  double rhs[])
 {
-   ML_Smoother    *smooth_ptr = (ML_Smoother *) sm;
    ML_Operator    *Amat = smooth_ptr->my_level->Amat;
    int            n = outlen, i;
    double         *res, *temp;
@@ -6741,10 +6741,9 @@ int ML_Smoother_ParaSails(void *sm,int inlen,double x[],int outlen,
    return 0;
 }
 
-int ML_Smoother_ParaSailsTrans(void *sm,int inlen,double x[],int outlen,
+int ML_Smoother_ParaSailsTrans(ML_Smoother *smooth_ptr,int inlen,double x[],int outlen,
                         double rhs[])
 {
-   ML_Smoother    *smooth_ptr = (ML_Smoother *) sm;
    ML_Operator    *Amat = smooth_ptr->my_level->Amat;
    int            n = outlen, i;
    double         *res, *temp;
@@ -6784,10 +6783,9 @@ int ML_Smoother_ParaSailsTrans(void *sm,int inlen,double x[],int outlen,
    return 0;
 }
 
-int ML_Smoother_ParaSailsSym(void *sm,int inlen,double x[],int outlen,
+int ML_Smoother_ParaSailsSym(ML_Smoother *smooth_ptr,int inlen,double x[],int outlen,
                         double rhs[])
 {
-   ML_Smoother    *smooth_ptr = (ML_Smoother *) sm;
    ML_Operator    *Amat = smooth_ptr->my_level->Amat;
    int            n = outlen, i;
    double         *res, *temp, *temp2;
