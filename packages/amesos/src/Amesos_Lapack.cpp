@@ -137,11 +137,11 @@ int Amesos_Lapack::SetParameters( Teuchos::ParameterList &ParameterList ) {
  
   // MS // now comment it out, if we have parameters for LAPACK sublist
   // MS // uncomment it
-  /*
+  
   if (ParameterList.isSublist("Lapack") ) {
-    Teuchos::ParameterList KluParams = ParameterList.sublist("Lapack") ;
+    Teuchos::ParameterList& LAPACKParams = ParameterList.sublist("Lapack") ;
   }
-  */
+    DenseSolver_.FactorWithEquilibration(true);
 
   return 0;
 }
