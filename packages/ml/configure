@@ -875,6 +875,17 @@ Optional Features:
   --enable-mpi            MPI support
   --disable-dependency-tracking  speeds up one-time build
   --enable-dependency-tracking   do not reject slow dependency extractors
+  --enable-ml_multiple_rhs
+                          Enables blocked code for multiple right hand sides.
+                          Example: --enable-ml_multiple_rhs=4 for a blocking
+                          factor of 4. NOTE: With the icc compiler, you may
+                          need to add CXXFLAGS="-Kc++" to the configure line,
+                          in order for it to interpret *.c files as c++ files.
+                          Similarly, with Compaq compilers, you may need to
+                          add CXXFLAGS="-x cxx" to the configure line. One
+                          word of warning: be sure that whatever compiler
+                          flags you want used are given in CXXFLAGS, as CFLAGS
+                          will be overwritten by CXXFLAGS. (default is no)
   --enable-ml_newtpe      Enable latest Maxwell prolongator fixes (default is
                           yes)
   --enable-ml_enrich      Enable latest enriched Maxwell prolongator (default
@@ -949,14 +960,6 @@ Optional Packages:
                           use -I
   --with-mpi-libdir=DIR   MPI library directory [MPIROOT/lib] Do not use
                           -L
-  --with-ml_multiple_rhs  Enables blocked code for multiple right hand sides.
-                          Example: --with-ml_multiple_rhs=4 for a blocking
-                          factor of 4. NOTE: With the icc compiler, you may
-                          need to add CFLAGS="-x c++" to the configure line,
-                          in order for it to interpret *.c files as c++ files.
-                          Similarly, with Compaq compilers, you may need to
-                          add CFLAGS="-x cxx" to the configure line.(default
-                          is no)
   --with-ccflags          additional CCFLAGS flags to be added: will prepend
                           to CCFLAGS
   --with-cxxflags         additional CXXFLAGS flags to be added: will
@@ -980,12 +983,21 @@ Optional Packages:
                           --with-ml-64bit-integer="long long" for LINUX,
                           TFLOP, IRIXN32"; --with-ml-64bit-integer="long" for
                           IRIX64, ALPHA (Cplant)
-  --with-ml_superlu       Enable SuperLU support. Note 1: SuperLU is a third
-                          party library. As such, configure assumes that it
-                          has already been built. Note 2: You must also
-                          specify the location and name of the SuperLU headers
-                          and libraries like so: configure --with-libs="<other
-                          libraries> -lsuperlu"
+  --with-ml_superlu       Enable serial SuperLU (version 1.0) support. Note 1:
+                          SuperLU is a third party library. As such, configure
+                          assumes that it has already been built. Note 2: You
+                          must also specify the location and name of the
+                          SuperLU headers and libraries like so: configure
+                          --with-libs="<other libraries> -lsuperlu"
+                          --with-ldflags="-L<SuperLU-library-path>"
+                          --with-incdirs="<SuperLU-include-path>". (default is
+                          no)
+  --with-ml_superlu2      Enable serial SuperLU (version 2.0) support. Note 1:
+                          SuperLU is a third party library. As such, configure
+                          assumes that it has already been built. Note 2: You
+                          must also specify the location and name of the
+                          SuperLU headers and libraries like so: configure
+                          --with-libs="<other libraries> -lsuperlu"
                           --with-ldflags="-L<SuperLU-library-path>"
                           --with-incdirs="<SuperLU-include-path>". (default is
                           no)
@@ -1958,7 +1970,7 @@ fi
 
 # Define the identity of the package.
  PACKAGE=ml
- VERSION=3.0
+ VERSION=3.1
 
 
 cat >>confdefs.h <<_ACEOF
@@ -3195,11 +3207,10 @@ fi
 
 
 
-
-# Check whether --with-ml_multiple_rhs or --without-ml_multiple_rhs was given.
-if test "${with_ml_multiple_rhs+set}" = set; then
-  withval="$with_ml_multiple_rhs"
-  ac_cv_use_ml_multiple_rhs=${withval}
+# Check whether --enable-ml_multiple_rhs or --disable-ml_multiple_rhs was given.
+if test "${enable_ml_multiple_rhs+set}" = set; then
+  enableval="$enable_ml_multiple_rhs"
+  ac_cv_use_ml_multiple_rhs=${enableval}
 else
   ac_cv_use_ml_multiple_rhs=no
 fi;
@@ -3921,7 +3932,7 @@ fi
 
 
 # Provide some information about the compiler.
-echo "$as_me:3924:" \
+echo "$as_me:3935:" \
      "checking for Fortran 77 compiler version" >&5
 ac_compiler=`set X $ac_compile; echo $2`
 { (eval echo "$as_me:$LINENO: \"$ac_compiler --version </dev/null >&5\"") >&5
@@ -4155,11 +4166,9 @@ fi
 
 echo "$as_me:$LINENO: checking finding build directory" >&5
 echo $ECHO_N "checking finding build directory... $ECHO_C" >&6
-if test "X" = "X"; then
-  ML_BUILD_DIRECTORY=`pwd`
-  echo "$as_me:$LINENO: result: $ML_BUILD_DIRECTORY" >&5
+ML_BUILD_DIRECTORY=`pwd`
+echo "$as_me:$LINENO: result: $ML_BUILD_DIRECTORY" >&5
 echo "${ECHO_T}$ML_BUILD_DIRECTORY" >&6
-fi
 
 # ------------------------------------------------------------------------
 # Perform substitutions in output files
@@ -4216,6 +4225,26 @@ echo "${ECHO_T}no" >&6
 
 fi;
 
+# The next line is to override the CFLAGS line.  This is necessary for
+# --with-ml_multiple_rhs to work properly on stratus.  Bsically, the problem is
+# that the cxx compiler needs an additional option "-x cxx" to force it to
+# compile all sources as if they are c++ sources.
+#
+# configure uses cc and CFLAGS during its internal builds.  On stratus the cc
+# compiler doesn't understand "-x cxx", so this option can't be set in CFLAGS
+# on the configure line.
+# Just setting "-x cxx" via CXXFLAGS on the configure line doesn't work because
+# cxx in the end will be using the options in CFLAGS.
+#
+# The solution is to set CXXFLAGS = "-x cxx" and then override the value of
+# CFLAGS with CXXFLAGS after configure compile testing is done.
+#
+# This is a very fragile option, one I view as a temporary patch until some of
+# the multiple right hand side code is rewritten.
+#
+if test "X$ac_cv_use_ml_multiple_rhs" != "Xno"; then
+CFLAGS=${CXXFLAGS}
+fi
 
 echo "$as_me:$LINENO: checking whether additional CFLAGS flags should be added" >&5
 echo $ECHO_N "checking whether additional CFLAGS flags should be added... $ECHO_C" >&6
@@ -7595,6 +7624,33 @@ fi
 #
 
 
+# Check whether --with-ml_superlu2 or --without-ml_superlu2 was given.
+if test "${with_ml_superlu2+set}" = set; then
+  withval="$with_ml_superlu2"
+  ac_cv_use_ml_superlu2=$withval
+else
+  ac_cv_use_ml_superlu2=no
+fi;
+
+echo "$as_me:$LINENO: checking whether to use ml_superlu2" >&5
+echo $ECHO_N "checking whether to use ml_superlu2... $ECHO_C" >&6
+
+if test "X$ac_cv_use_ml_superlu2" != "Xno"; then
+  echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_ML_SUPERLU2_0
+_ACEOF
+
+else
+  echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+fi
+
+#
+
+
 # Check whether --with-ml_superlu_dist or --without-ml_superlu_dist was given.
 if test "${with_ml_superlu_dist+set}" = set; then
   withval="$with_ml_superlu_dist"
@@ -8369,7 +8425,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:8372: \"$ac_link\") >&5
+(eval echo $as_me:8428: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -8447,7 +8503,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:8450: \"$ac_link\") >&5
+(eval echo $as_me:8506: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -11400,7 +11456,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:11403: \"$ac_link\") >&5
+(eval echo $as_me:11459: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -11478,7 +11534,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:11481: \"$ac_link\") >&5
+(eval echo $as_me:11537: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS

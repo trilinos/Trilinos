@@ -103,7 +103,7 @@ AC_CANONICAL_TARGET
 # Use automake
 
 # Package name and version below
-AM_INIT_AUTOMAKE(ml, 3.0)
+AM_INIT_AUTOMAKE(ml, 3.1)
 
 # Specify required version of autoconf.
 
@@ -119,16 +119,18 @@ TAC_ARG_CONFIG_MPI
 
 AC_PROG_CXX(CC g++ gcc c++ cxx)
 
-AC_ARG_WITH( ml_multiple_rhs,
-             AC_HELP_STRING([--with-ml_multiple_rhs],[Enables blocked code
+AC_ARG_ENABLE( ml_multiple_rhs,
+             AC_HELP_STRING([--enable-ml_multiple_rhs],[Enables blocked code
                 for multiple right hand sides.  Example:
-                --with-ml_multiple_rhs=4 for a blocking factor of 4.
+                --enable-ml_multiple_rhs=4 for a blocking factor of 4.
                 NOTE:  With the icc compiler, you may need to add
-                CFLAGS="-x c++" to the configure line, in order for it to
+                CXXFLAGS="-Kc++" to the configure line, in order for it to
                 interpret *.c files as c++ files.  Similarly, with Compaq
-                compilers, you may need to add CFLAGS="-x cxx" to the configure
-                line.(default is no)]),
-             [ac_cv_use_ml_multiple_rhs=${withval}],
+                compilers, you may need to add CXXFLAGS="-x cxx" to the
+                configure line.  One word of warning:  be sure that whatever
+                compiler flags you want used are given in CXXFLAGS, as CFLAGS
+                will be overwritten by CXXFLAGS. (default is no)]),
+             [ac_cv_use_ml_multiple_rhs=${enableval}],
              [ac_cv_use_ml_multiple_rhs=no])
 
 if test "X$ac_cv_use_ml_multiple_rhs" != "Xno"; then
@@ -151,10 +153,8 @@ AC_PROG_RANLIB
 # ------------------------------------------------------------------------
 
 AC_MSG_CHECKING([finding build directory])
-if test "X" = "X"; then
-  ML_BUILD_DIRECTORY=`pwd`
-  AC_MSG_RESULT($ML_BUILD_DIRECTORY)
-fi
+ML_BUILD_DIRECTORY=`pwd`
+AC_MSG_RESULT($ML_BUILD_DIRECTORY)
 
 # ------------------------------------------------------------------------
 # Perform substitutions in output files
@@ -177,6 +177,26 @@ AC_SUBST(ML_BUILD_DIRECTORY)
 
 TAC_ARG_WITH_FLAGS(ccflags, CCFLAGS)
 TAC_ARG_WITH_FLAGS(cxxflags, CXXFLAGS)
+# The next line is to override the CFLAGS line.  This is necessary for
+# --with-ml_multiple_rhs to work properly on stratus.  Bsically, the problem is
+# that the cxx compiler needs an additional option "-x cxx" to force it to
+# compile all sources as if they are c++ sources.
+# 
+# configure uses cc and CFLAGS during its internal builds.  On stratus the cc
+# compiler doesn't understand "-x cxx", so this option can't be set in CFLAGS
+# on the configure line.
+# Just setting "-x cxx" via CXXFLAGS on the configure line doesn't work because
+# cxx in the end will be using the options in CFLAGS.
+#
+# The solution is to set CXXFLAGS = "-x cxx" and then override the value of
+# CFLAGS with CXXFLAGS after configure compile testing is done. 
+#
+# This is a very fragile option, one I view as a temporary patch until some of
+# the multiple right hand side code is rewritten.
+#
+if test "X$ac_cv_use_ml_multiple_rhs" != "Xno"; then
+CFLAGS=${CXXFLAGS}
+fi
 TAC_ARG_WITH_FLAGS(cflags, CFLAGS)
 TAC_ARG_WITH_FLAGS(fflags, FFLAGS)
 TAC_ARG_WITH_LIBS(libs, LIBS)
@@ -378,7 +398,9 @@ fi
 #### interfaces to 3rd party packages
 ############################################
 #
-TAC_ARG_WITH_PACKAGE(ml_superlu, [Enable SuperLU support.  Note 1: SuperLU is a third party library.  As such, configure assumes that it has already been built.  Note 2: You must also specify the location and name of the SuperLU headers and libraries like so: configure --with-libs="<other libraries> -lsuperlu" --with-ldflags="-L<SuperLU-library-path>" --with-incdirs="<SuperLU-include-path>".], ML_SUPERLU, no)
+TAC_ARG_WITH_PACKAGE(ml_superlu, [Enable serial SuperLU (version 1.0) support.  Note 1: SuperLU is a third party library.  As such, configure assumes that it has already been built.  Note 2: You must also specify the location and name of the SuperLU headers and libraries like so: configure --with-libs="<other libraries> -lsuperlu" --with-ldflags="-L<SuperLU-library-path>" --with-incdirs="<SuperLU-include-path>".], ML_SUPERLU, no)
+#
+TAC_ARG_WITH_PACKAGE(ml_superlu2, [Enable serial SuperLU (version 2.0) support.  Note 1: SuperLU is a third party library.  As such, configure assumes that it has already been built.  Note 2: You must also specify the location and name of the SuperLU headers and libraries like so: configure --with-libs="<other libraries> -lsuperlu" --with-ldflags="-L<SuperLU-library-path>" --with-incdirs="<SuperLU-include-path>".], ML_SUPERLU2_0, no)
 #
 TAC_ARG_WITH_PACKAGE(ml_superlu_dist, [Enable SuperLU_DIST support.  Note 1: SuperLU_DIST is a third party library.  As such, configure assumes that it has already been built.  Note 2: You must also specify the location and name of the SuperLU_DIST headers and libraries like so: configure --with-libs="<other libraries> -lsuperlu_dist" --with-ldflags="-L<SuperLU_DIST-library-path>" --with-incdirs="<SuperLU_DIST-include-path>".], ML_SUPERLU_DIST, no)
 #

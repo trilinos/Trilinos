@@ -138,6 +138,9 @@
 /* Define if want to build with ml_superlu enabled */
 #undef HAVE_ML_SUPERLU
 
+/* Define if want to build with ml_superlu2 enabled */
+#undef HAVE_ML_SUPERLU2_0
+
 /* Define if want to build with ml_superlu_dist enabled */
 #undef HAVE_ML_SUPERLU_DIST
 
