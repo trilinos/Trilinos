@@ -42,6 +42,7 @@ void LB_Get_Obj_List(LB *lb, LB_GID *global_ids, LB_LID *local_ids,
 {
   int i;
 
+  *ierr = DLB_OK;
   if (lb->Get_Obj_List != NULL){
     /* Get object list directly */
     lb->Get_Obj_List(lb->Get_Obj_List_Data, global_ids, local_ids, 
@@ -49,13 +50,14 @@ void LB_Get_Obj_List(LB *lb, LB_GID *global_ids, LB_LID *local_ids,
   }
   else if ((lb->Get_First_Obj != NULL) && (lb->Get_Next_Obj != NULL)){
     /* Use iterator functions to loop through object list */
-    if (lb->Get_First_Obj(lb->Get_Obj_List_Data, global_ids, local_ids, 
+    if (lb->Get_First_Obj(lb->Get_First_Obj_Data, global_ids, local_ids, 
         wdim, objwgts, ierr)){
       i = 0;
-      while (!ierr && lb->Get_Next_Obj(lb->Get_Obj_List_Data, 
+      while (!(*ierr) && lb->Get_Next_Obj(lb->Get_Next_Obj_Data, 
         global_ids[i], local_ids[i], &global_ids[i+1], &local_ids[i+1], 
-        wdim, &objwgts[(i+1)*wdim], ierr))
-        i++;
+        wdim, &objwgts[(i+1)*wdim], ierr)){
+          i++;
+      }
     }
   }
   else { /* No way to get objects */
