@@ -49,6 +49,10 @@
 void test(Epetra_Comm& comm, Epetra_Map*& map, Epetra_CrsMatrix*& A, Epetra_Vector*& xexact,
 					Epetra_Vector*& b, int dim, int nnz, bool verbose, bool smallProblem);
 
+void tpetraAlone(Epetra_Comm& comm, Epetra_Map*& map, Epetra_CrsMatrix*& A, Epetra_Vector*& xexact,
+								 Epetra_Vector*& b, int dim, int nnz, bool verbose, bool smallProblem);
+
+
 int main(int argc, char *argv[]) {
 
 #ifdef EPETRA_MPI
@@ -63,7 +67,7 @@ int main(int argc, char *argv[]) {
   int MyPID = comm.MyPID();
 
   bool verbose = false;
-  bool verbose1 = true;
+  //bool verbose1 = true; // *WARNING-UNUSED*
   if (MyPID==0) verbose = true;
 
   if(argc < 2 && verbose) {
@@ -95,23 +99,25 @@ int main(int argc, char *argv[]) {
   bool smallProblem = false;
   int dim = map->NumGlobalElements();
   int nnz = A->NumGlobalNonzeros();
-  if (dim<100) smallProblem = true;
+  if(dim < 100) 
+		smallProblem = true;
 
-  if (smallProblem)
+  if(verbose && smallProblem)
     cout << "Original Matrix = " << endl << *A   << endl;
 
   x->PutScalar(0.0);
 
-  double norm1a = A->NormInf();
-  if (verbose)
+  //double norm1a = A->NormInf(); // *WARNING-UNUSED*
+  if(verbose)
     cout << "Problem Dimension        = " << dim << endl
-	 << "Number of matrix entries = " << nnz << endl;
+				 << "Number of matrix entries = " << nnz << endl;
 
 	// ------------------------------------------------------------------
 	// start of performance testing
 	// ------------------------------------------------------------------
 
 	test(comm, map, A, xexact, b, dim, nnz, verbose, smallProblem);
+	//tpetraAlone(comm, map, A, xexact, b, dim, nnz, verbose, smallProblem);
 
 	// ------------------------------------------------------------------
 	// end of performance testing
@@ -131,7 +137,8 @@ int main(int argc, char *argv[]) {
 	return(0);
 }
 
-
+//=========================================================================================
+// main testing function: does performance testing on both Epetra and Tpetra
 //=========================================================================================
 void test(Epetra_Comm& comm, Epetra_Map*& map, Epetra_CrsMatrix*& A, Epetra_Vector*& xexact, 
 					Epetra_Vector*& b, int dim, int nnz, bool verbose, bool smallProblem) {
@@ -223,14 +230,14 @@ void test(Epetra_Comm& comm, Epetra_Map*& map, Epetra_CrsMatrix*& A, Epetra_Vect
   double tpetraMatvecTime = timer.ElapsedTime() - tstart;
   double tpetraNumFlops = At.getFlops(); // Total number of Tpetra FLOPS in Multiplies
 
-	if(smallProblem) {
-		cout << "=============================================================" << endl;
-		cout << "bcomp_e:" << endl << bcomp_e << endl;
-		cout << "bcomp_t:" << endl << bcomp_t << endl;
-		cout << "xexact:" << endl << *xexact << endl;
-		cout << "xexact_t:" << endl << xexact_t << endl;
-		cout << "=============================================================" << endl;
-	}
+	/*if(smallProblem) {
+		cout << "=============================================================" << endl; 
+		cout << "bcomp_e:" << endl << bcomp_e << endl; 
+		cout << "bcomp_t:" << endl << bcomp_t << endl; 
+		cout << "xexact:" << endl << *xexact << endl; 
+		cout << "xexact_t:" << endl << xexact_t << endl; 
+		cout << "=============================================================" << endl; 
+		}*/
 
 	// ------------------------------------------------------------------
 	// output results
@@ -267,16 +274,25 @@ void test(Epetra_Comm& comm, Epetra_Map*& map, Epetra_CrsMatrix*& A, Epetra_Vect
 	// ------------------------------------------------------------------
 
   Epetra_Vector resid_e(bcomp_e);
-	Tpetra::Vector<int, double> resid_t(bcomp_t);
+	//Tpetra::Vector<int, double> resid_t(bcomp_t);
+	Tpetra::Vector<int, double> resid_t(bcomp_t.scalarPointer(), bcomp_t.getNumMyEntries(), bcomp_t.vectorSpace());
+
+	/*cout << "=============================================================" << endl;
+	cout << "bcomp_t addrs: " << &bcomp_t << " " << bcomp_t.scalarPointer() << endl; 
+	cout << "resid_t addrs: " << &resid_t << " " << resid_t.scalarPointer() << endl; 
+	cout << "bcomp_t contents: "; bcomp_t.printValues(cout); 
+	cout << "resid_t contents: "; resid_t.printValues(cout); 
+	cout << "=============================================================" << endl;*/
 
   resid_e.Update(1.0, *b, -1.0, bcomp_e, 0.0); // resid = xcomp - xexact
 	resid_t.update(1.0, b_t, -1.0, bcomp_t, 0.0);
-	if(smallProblem) {
-		cout << "=============================================================" << endl;
-		cout << "resid_e:" << endl << resid_e << endl;
-		cout << "resid_t:" << endl << resid_t << endl;
-		cout << "=============================================================" << endl;
-	}
+	/*if(smallProblem) {
+		cout << "=============================================================" << endl; 
+		cout << "resid_e:" << endl << resid_e << endl; 
+		cout << "resid_t:" << endl << resid_t << endl; 
+		cout << "bcomp_t:" << endl << bcomp_t << endl; 
+		cout << "=============================================================" << endl; 
+		}*/
   double residual_e, residual_t;
   resid_e.Norm2(&residual_e);   // residual_e = 2norm or resid_e
 	residual_t = resid_t.norm2(); // residual_t = 2norm of resid_t
@@ -291,4 +307,80 @@ void test(Epetra_Comm& comm, Epetra_Map*& map, Epetra_CrsMatrix*& A, Epetra_Vect
 				 << "2-norm of exact RHS                                          = " << normb_exact << endl
 				 << "2-norm of difference between computed and exact RHS (Epetra) = " << residual_e << endl
 				 << "2-norm of difference between computed and exact RHS (Tpetra) = " << residual_t << endl;
+
+
+}
+
+
+//=========================================================================================
+// Tpetra code from test, isolated and with timings removed
+//=========================================================================================
+void tpetraAlone(Epetra_Comm& comm, Epetra_Map*& map, Epetra_CrsMatrix*& A, Epetra_Vector*& xexact, 
+								 Epetra_Vector*& b, int dim, int nnz, bool verbose, bool smallProblem) {
+	// ------------------------------------------------------------------
+	// create Tpetra versions of map, xexact, and b
+	// ------------------------------------------------------------------
+
+	// create Tpetra VectorSpace<int, double> , named vectorspace
+	// should be compatible with map.
+	if(!map->LinearMap())
+		cerr << "*** Epetra_Map is not contiguous, can't create VectorSpace (yet). ***" << endl;
+	Tpetra::SerialPlatform<int, double> platformV;
+	Tpetra::SerialPlatform<int, int> platformE;
+	Tpetra::ElementSpace<int> elementspace(map->NumGlobalElements(), map->NumMyElements(), map->IndexBase(), platformE);
+	Tpetra::VectorSpace<int, double> vectorspace(elementspace, platformV);
+
+	// create Tpetra Vector<int, double>, named xexact_t
+	// should be identical to xexact
+	Tpetra::Vector<int, double> xexact_t(xexact->Values(), xexact->GlobalLength(), vectorspace);
+
+	// create Tpetra Vector<int, double>, named b_t
+	// should be identical to b
+	Tpetra::Vector<int, double> b_t(b->Values(), b->GlobalLength(), vectorspace);
+
+	// ------------------------------------------------------------------
+	// do creation, insertions, and fillComplete
+	// ------------------------------------------------------------------
+  int numEntries;
+  double* values;
+  int* indices;
+
+  Tpetra::CisMatrix<int, double> At(vectorspace);
+  for (int i = 0; i < dim; i++) {
+    A->ExtractMyRowView(i, numEntries, values, indices);
+    At.submitEntries(Tpetra::Insert, i, numEntries, values, indices);
+  }
+
+	At.fillComplete();
+
+	cout << "===== [ETP] At, after fillComplete ================" << endl;
+	cout << At;
+	cout << "===================================================" << endl;
+
+	// ------------------------------------------------------------------
+	// do apply
+	// ------------------------------------------------------------------
+
+  int niters = (int) (100000000.0/((double) 2*nnz));
+  if(smallProblem) niters = 1;
+  Tpetra::Vector<int, double> bcomp_t(vectorspace);
+
+	/*cout << "===== [ETP] before apply ==========================" << endl;
+	cout << "xexact_t: \t" << &xexact_t << " \t"; xexact_t.printValues(cout);
+	cout << "b_t: \t" << &b_t << " \t"; b_t.printValues(cout);
+	cout << "bcomp_t: \t" << &bcomp_t << " \t"; bcomp_t.printValues(cout);
+	cout << "===================================================" << endl;*/
+
+  for(int i = 0; i < niters; i++) 
+		At.apply(xexact_t, bcomp_t); // At * xexact_t = bcomp_t
+
+	// ------------------------------------------------------------------
+	// output results
+	// ------------------------------------------------------------------
+
+	/*cout << "===== [ETP] after apply ===========================" << endl;
+	cout << "xexact_t: " << &xexact_t << " "; xexact_t.printValues(cout);
+	cout << "b_t: " << &b_t << " "; b_t.printValues(cout);
+	cout << "bcomp_t: " << &bcomp_t << " "; bcomp_t.printValues(cout);
+	cout << "===================================================" << endl;*/
 }

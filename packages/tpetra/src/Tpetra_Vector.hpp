@@ -82,7 +82,7 @@ public:
 		, VectorData_()
 	{
 		ScalarType const scalarZero = Teuchos::ScalarTraits<ScalarType>::zero();
-		OrdinalType const ordinalZero = Teuchos::OrdinalTraits<OrdinalType>::zero();
+		//OrdinalType const ordinalZero = Teuchos::OrdinalTraits<OrdinalType>::zero(); // *WARNING-UNUSED*
 		OrdinalType const length = VectorSpace.getNumMyEntries();
 
 		VectorData_ = Teuchos::rcp(new VectorData<OrdinalType, ScalarType>(VectorSpace, length, scalarZero));
@@ -491,18 +491,16 @@ public:
 				os <<   "ImageID = " << myImageID << endl;
 				os <<           "Number of Local Entries   = " << getNumMyEntries() << endl;
 				os <<           "Contents: ";
-				for(OrdinalType i = ordinalZero; i < getNumMyEntries(); i++)
-					os << VectorData_->scalarArray_[i] << " ";
-				os << endl;
+				printValues(os);
 			}
 		}
 	}
-    
-    void printValues(ostream& os) const {
-        for(OrdinalType i = Teuchos::OrdinalTraits<OrdinalType>::zero(); i < getNumMyEntries(); i++)
-            os << VectorData_->scalarArray_[i] << " ";
-        os << endl;        
-    }
+	
+	void printValues(ostream& os) const {
+		for(typename std::vector<ScalarType>::const_iterator i = scalarArray().begin(); i != scalarArray().end(); i++)
+			os << *i << " ";
+		os << endl;
+	}
 	//@}
 
 	//@{ \name Misc. 

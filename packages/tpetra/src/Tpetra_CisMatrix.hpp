@@ -270,19 +270,19 @@ public:
     
     // create secondary distribution if we need to
     if(!data().haveSecondary_) {
+			/* !!!!!!!!!!!!! Temporary fix:  leave secondary ES equal to primary ES !!!!!!!!!!!!!!!!!!!!!!!
 			// create elementspace first
-      /* !!!!!!!!!!!!! Temporary fix:  Making secondary ES equal to primary ES !!!!!!!!!!!!!!!!!!!!!!!
 			OrdinalType numGlobalElements = ordinalZero - ordinalOne; // set to -1
 			OrdinalType numMyElements = data().indx_.size();
 			OrdinalType* elementList = &data().indx_.front(); // address of first element in indx_
 			OrdinalType indexBase = getPrimaryDist().getIndexBase();
 			Platform<OrdinalType, OrdinalType> const& platformO = getPrimaryDist().elementSpace().platform();
 			ElementSpace<OrdinalType> elementspace(numGlobalElements, numMyElements, elementList, indexBase, platformO);
+			//cout << "[CIS] nGE=" << numGlobalElements << " nME=" << numMyElements << " iB=" << indexBase;
 			// then create vectorspace using it
 			Platform<OrdinalType, ScalarType> const& platformS = platform();
-			VectorSpace<OrdinalType, ScalarType> vectorspace(elementspace, platformS);
-      */
-      data().secondary_ = data().primary_;
+			VectorSpace<OrdinalType, ScalarType> vectorspace(elementspace, platformS);*/
+      
 			data().haveSecondary_ = true;
 			if(isRowOriented())
 				data().haveCol_ = true;
@@ -291,14 +291,18 @@ public:
     }
 
     // initialize Kokkos::HbMatrix (Classical form)
-		data().HbMatrix_.initializeStructure(getRowDist().getNumMyEntries(), 
-                                         getColumnDist().getNumMyEntries(), 
-                                         isRowOriented(), 
-                                         &data().pntr_.front(), 
-                                         &data().indx_.front());
-    data().HbMatrix_.initializeValues(&data().values_.front());
+		int errorcode = data().HbMatrix_.initializeStructure(getRowDist().getNumMyEntries(), 
+																												 getColumnDist().getNumMyEntries(), 
+																												 isRowOriented(), 
+																												 &data().pntr_.front(), 
+																												 &data().indx_.front());
+		if(errorcode) 
+			throw reportError("HbMatrix_.initializeStructure returned non-zero. code = " + toString(errorcode) + ".", -99);
 
-    
+    errorcode = data().HbMatrix_.initializeValues(&data().values_.front());
+		if(errorcode) 
+			throw reportError("HbMatrix_.initializeValues returned non-zero. code = " + toString(errorcode) + ".", -99);
+
     data().fillCompleted_ = true;
   }
   
@@ -314,16 +318,26 @@ public:
     // setup kokkos x vector
     Kokkos::DenseVector<OrdinalType, ScalarType> kx;
     ScalarType* scalarArray = const_cast<ScalarType*>(x.scalarPointer()); // x is logically const but not bitwise const
-    kx.initializeValues(x.getNumMyEntries(), scalarArray);                // we will not be modifying it, but initializeValues is not a const function.
+    int errorcode = kx.initializeValues(x.getNumMyEntries(), scalarArray);// we will not be modifying it, 
+		                                                                      // but initializeValues is not a const function.
+		if(errorcode) 
+			throw reportError("kx.initializeValues returned non-zero. code = " + toString(errorcode) + ".", -99);
+		
 
     // setup kokkos y vector
     Kokkos::DenseVector<OrdinalType, ScalarType> ky;
-    ky.initializeValues(y.getNumMyEntries(), y.scalarPointer());
+    errorcode = ky.initializeValues(y.getNumMyEntries(), y.scalarPointer());
+		if(errorcode) 
+			throw reportError("ky.initializeValues returned non-zero. code = " + toString(errorcode) + ".", -99);
 
     // setup kokkos sparsemultiply object
     Kokkos::BaseSparseMultiply<OrdinalType, ScalarType> axy;
-    axy.initializeStructure(data().HbMatrix_);
-    axy.initializeValues(data().HbMatrix_);
+    errorcode = axy.initializeStructure(data().HbMatrix_);
+		if(errorcode) 
+			throw reportError("axy.initializeStructure returned non-zero. code = " + toString(errorcode) + ".", -99);
+    errorcode = axy.initializeValues(data().HbMatrix_);
+		if(errorcode) 
+			throw reportError("ky.initializeValues returned non-zero. code = " + toString(errorcode) + ".", -99);
 
 		/*cout << "=BEFORE APPLY================================================" << endl;
 		cout << "x:" << endl << x << endl;
@@ -331,7 +345,9 @@ public:
 		cout << "=============================================================" << endl;*/
 
     // do Kokkos apply operation
-    axy.apply(kx, ky);
+    errorcode = axy.apply(kx, ky);
+		if(errorcode) 
+			throw reportError("axy.apply returned non-zero. code = " + toString(errorcode) + ".", -99);
 
 		/*cout << "=AFTER APPLY=================================================" << endl;
 		cout << "x:" << endl << x << endl;
@@ -547,6 +563,26 @@ public:
       for(typename OrdScalMap::iterator j = innermap.begin(); j != innermap.end(); j++)
         cout << setw(15) << (*i).first << setw(18) << (*j).first << setw(15) << (*j).second << endl;
     }
+
+		if(isFillCompleted()) {
+			os << "---HB data---" << endl;
+			os << "pntr_: ";
+			for(typename std::vector<OrdinalType>::const_iterator i = data().pntr_.begin(); i != data().pntr_.end(); i++)
+				os << *i << " ";
+			os << endl << "indx_: ";
+			for(typename std::vector<OrdinalType>::const_iterator i = data().indx_.begin(); i != data().indx_.end(); i++)
+				os << *i << " ";
+			os << endl << "values_: ";
+			for(typename std::vector<ScalarType>::const_iterator i = data().values_.begin(); i != data().values_.end(); i++)
+				os << *i << " ";
+			os << endl;
+		}
+
+		os << "---Defined Distributions---" << endl;
+		os << "Primary:" << endl << getPrimaryDist();
+		if(data().haveSecondary_) os << "Secondary:" << endl << getSecondaryDist();
+		if(data().haveDomain_) os << "Domain:" << endl << getDomainDist();
+		if(data().haveRange_) os << "Range:" << endl << getRangeDist();
 	}
   
   //@}
