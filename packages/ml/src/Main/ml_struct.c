@@ -1900,7 +1900,8 @@ int ML_MLS_Setup_Coef(void *sm, int deg)
 }
 
 
-int ML_Gen_Smoother_MLS(ML *ml, int nl, int pre_or_post, int ntimes)
+int ML_Gen_Smoother_MLS(ML *ml, int nl, int pre_or_post, int ntimes,
+			double eig_ratio)
 {
    int              start_level, end_level, i, j, errCode=0;   
    struct MLSthing *widget;
@@ -1988,6 +1989,8 @@ int ML_Gen_Smoother_MLS(ML *ml, int nl, int pre_or_post, int ntimes)
 	 widget->pAux     = NULL;   /* currently reserved */
 	 widget->res      = NULL;   /* currently reserved */
 	 widget->y        = NULL;   /* currently reserved */
+	 if (eig_ratio >= 4.) widget->eig_ratio = eig_ratio;
+	 else widget->eig_ratio = 20.;
 
 	 if (pre_or_post == ML_PRESMOOTHER) {
 	   ml->pre_smoother[i].data_destroy = ML_Smoother_Destroy_MLS;

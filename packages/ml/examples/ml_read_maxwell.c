@@ -208,7 +208,8 @@ int main(int argc, char *argv[])
   int mg_cycle_type;
   double omega, nodal_omega, edge_omega;
   void **edge_args, **nodal_args, *edge_smoother, *nodal_smoother;
-  int  edge_its, nodal_its;
+  int  edge_its, nodal_its, temp1[4], temp2[4];
+  double edge_eig_ratio[25], nodal_eig_ratio[25];
 #ifndef debugSmoother
   double *xxx;
 #endif
@@ -818,7 +819,16 @@ Ke_mat->matvec(rhs, xxx, Ke_mat, proc_config);
 for (i = 0; i < Nlocal_edges; i++) rhs[i] = xxx[i];
 free(xxx);
 
-
+#ifdef HARDWIRE2D
+ sum = 0.;
+ for (i = 0; i < Nlocal_edges/2; i++) sum += rhs[i];
+ sum = -2.*sum/((double) Nlocal_edges);
+ for (i = 0; i < Nlocal_edges/2; i++) rhs[i] += sum;
+ sum = 0.;
+ for (i = 0; i < Nlocal_edges/2; i++) sum += rhs[i+Nlocal_edges/2];
+ sum = -2.*sum/((double) Nlocal_edges);
+ for (i = 0; i < Nlocal_edges/2; i++) rhs[i+Nlocal_edges/2] += sum;
+#endif
   }
   else
   {
@@ -1651,9 +1661,9 @@ nx = nx--; /* rst dirichlet */
 	  nodal_smoother = (void *) ML_Gen_Smoother_MLS;
 	  nodal_omega    = 1.0;
 	  edge_omega     = 1.0;
-	  nodal_args = ML_Smoother_Arglist_Create(1);
+	  nodal_args = ML_Smoother_Arglist_Create(2);
 	  ML_Smoother_Arglist_Set(nodal_args, 0, &nodal_its);
-	  edge_args = ML_Smoother_Arglist_Create(1);
+	  edge_args = ML_Smoother_Arglist_Create(2);
 	  ML_Smoother_Arglist_Set(edge_args, 0, &edge_its);
 	}
     }
@@ -1679,9 +1689,33 @@ nx = nx--; /* rst dirichlet */
 
       else if (ML_strcmp(context->smoother,"Hiptmair") == 0)
 	  {
+
           /* Setting omega to any other value will override the automatic
              calculation in ML_Smoother_Gen_Hiptmair_Data. */
           omega = (double) ML_DEFAULT;
+	  if (edge_smoother == (void *) ML_Gen_Smoother_MLS) {
+	    edge_eig_ratio[level] = 20.;
+	    nodal_eig_ratio[level] = 20.;
+	    temp1[0] = Tmat_array[level]->outvec_leng;
+	    temp1[2] = Tmat_array[level]->invec_leng;
+	    if (level != 0) {
+	      temp1[1] = Tmat_array[level-1]->outvec_leng;
+	      temp1[3] = Tmat_array[level-1]->invec_leng;
+	    }
+	    else { 
+	      temp1[1] = 0;
+	      temp1[3] = 0;
+	    }
+	    ML_gsum_vec_int(temp1, temp2, 4, ml_edges->comm);
+	    if (temp1[1] != 0) {
+	      edge_eig_ratio[level] = ((double) temp1[0])/ ((double) temp1[1]);
+	      nodal_eig_ratio[level] = ((double) temp1[2])/ ((double) temp1[3]);
+	    }
+	    if ( edge_eig_ratio[level] < 4.) edge_eig_ratio[level] = 4.;
+	    if (nodal_eig_ratio[level] < 4.) nodal_eig_ratio[level] = 4.;
+	    ML_Smoother_Arglist_Set(edge_args, 1, &(edge_eig_ratio[level]));
+	    ML_Smoother_Arglist_Set(nodal_args, 1, &(nodal_eig_ratio[level]));
+	  }
           if (level == N_levels-1)
              ML_Gen_Smoother_Hiptmair(ml_edges, level, ML_BOTH, nsmooth,
 				      Tmat_array, Tmat_trans_array,
@@ -1779,7 +1813,13 @@ edge_smoother,edge_args, nodal_smoother,nodal_args);
   {
     /* Setting omega to any other value will override the automatic
        calculation in ML_Smoother_Gen_Hiptmair_Data. */
+    edge_eig_ratio[coarsest_level] = 20.;
+    nodal_eig_ratio[coarsest_level] = 20.;
     omega = (double) ML_DEFAULT;
+    if (edge_smoother == (void *) ML_Gen_Smoother_MLS) {
+       ML_Smoother_Arglist_Set(edge_args, 1, &(edge_eig_ratio[coarsest_level]));
+       ML_Smoother_Arglist_Set(nodal_args, 1, &(nodal_eig_ratio[coarsest_level]));
+    }
     if (coarsest_level == N_levels-1)
        ML_Gen_Smoother_Hiptmair(ml_edges, level, ML_BOTH, nsmooth,
 				Tmat_array, Tmat_trans_array, Tmatbc, 
@@ -2121,6 +2161,7 @@ edge_smoother,edge_args, nodal_smoother,nodal_args);
           printf("Cycle type = other\n");
     }
     fflush(stdout);
+    options[AZ_conv] = AZ_r0;
     AZ_iterate(xxx, rhs, options, params, status, proc_config, Ke_mat, Pmat, scaling); 
 
     options[AZ_pre_calc] = AZ_reuse;
