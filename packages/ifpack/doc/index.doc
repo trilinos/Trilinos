@@ -14,7 +14,7 @@
 
 \section intro Introduction
 
-IFPACK, developed by Micheal Heroux and Marzio Sala (9214), 
+IFPACK, developed by Micheal Heroux and Marzio Sala (SNL 9214), 
 provides a suite of object-oriented algebraic preconditioners
 for the solution of preconditioned iterative solvers.  IFPACK
 constructors expect an Epetra_RowMatrix object for construction.
@@ -30,21 +30,23 @@ The resulting preconditioner reads:
 \f[
 P_{IFPACK}^{-1} = \sum_{i = 0}^{NumProcs-1} P_i A_i^{-1} R_i
 \f]
-where \f$R_i\f$ is the restriction from the global vector, to the
+where \f$R_i\f$ is the restriction operator from the global vector, to the
 overlapping subdomain \f$i\f$,
-and \f$P_i\f$ is the prolongator. \f$P_i\f$ can simply be the transpose of 
-\f$R_i\f$.
+and \f$P_i\f$ is the prolongator operator. 
+\f$P_i\f$ is generally be the transpose of \f$R_i\f$ (in which case
+the resulting preconditioner is symmetic).
 If is supposed that each subdomain
 is assigned to a different processors.
 
-<P>The action of the inverse of the local matrix can be defined by one of the
+<P>A key component of the previous formula is a strategy to apply
+\f$A_i^{-1}\f$. Using IFPACK, this can be defined by one of the
 following:
 - one or more steps of a point/block method (like Jacobi and Gauss-Seidel);
 - an incomplete factorization (ICT or RILUK);
 - an exact LU solve (using Amesos' factorizations).
 
 More precisely, the choices for \f$A_i^{-1}\f$ are:
-- simple point preconditioners:
+- point preconditioners:
   - Jacobi
   - Gauss-Seidel
   - symmetric Guass-Seidel
@@ -61,22 +63,28 @@ More precisely, the choices for \f$A_i^{-1}\f$ are:
   - all Amesos classes can be used to compute the LU factorization
     of a given matrix.
 
-Point preconditioners are generally used as smoothers in a multilevel
-setting (for instance, within ML). The user can select the damping factor,
+Point preconditioners are probably the simplest iterative methods,
+and are generally used as smoothers in multilevel
+methods (for instance, within ML). The user can select the damping factor,
 and the number of sweeps.
 
-Block preconditioners can be very effective on some classes of problems.
-For small blocks, LAPACK functions can be used to apply the inverse of each
-block. For large blocks, any class derived from Ifpack_Preconditioner
-can be used. IFPACK already furnishes an interface to Amesos (this requires
-IFPACK to be configured with \c --enable-amesos), so that all Amesos-supported
-(and enables) factorizations can be used to apply the inverse of each
-block.
+Block preconditioners represent an extension of point preconditioners.  The
+local matrix \f$A_i\f$ is divided into blocks, than the Jacobi or the
+Gauss-Seidel methods are applied on the block structure rather than
+point-wise. The code extracts the diagonal blocks (the application of whose
+inverse is required), and stored them either as dense or as sparse matrices.
+The first approach is suggested for small blocks. In this case, LAPACK
+functions will be used to factorize the block and to perform the backsolve.
+For large blocks, instead, it is suggested to store the blocks are sparse
+matrices (Epetra_CrsMatrix's). Any IFPACK preconditioner derived from
+Ifpack_Preconditioner can be used to apply the inverse of the diagonal blocks.
+As IFPACK contains an interface to Amesos (this requires IFPACK to be
+configured with \c --enable-amesos), all Amesos-supported (and enables)
+factorizations can be used to apply the inverse of each block.
 
-\note Block Jacobi allows overlapping blocks, while block
-Gauss-Seidel and block symmetric Gauss-Seidel support only non-overlapping
-blocks. Here overlap refers to the overlap between blocks within local rows
-
+\note For block Jacobi preconditioner, the user can specify the amount
+of overlap among blocks (which is a-priori different from the amount
+of overlap among the processes.
 
 \section download Download IFPACK
 
@@ -87,8 +95,10 @@ IFPACK can be downloaded from the web page http://software.sandia.gov/trilinos/d
 This section details how to use the IFPACK Factory class.
 
 <P>Probably, the easiest way to use IFPACK is through the function class
-Ifpack. This is a \e factory class, that returns an instance of the
-selected preconditioner. 
+Ifpack. This is a \e factory class, that contains only one method,
+Create(). A call to Create() returns a pointer to a newly-created
+IFPACK object. 
+
 An example of usage is reported by the following code:
 \code
 #include "Ifpack.h"
@@ -104,11 +114,12 @@ IFPACK_CHK_ERR(Prec->SetParameters(List));
 IFPACK_CHK_ERR(Prec->Initialize());
 IFPACK_CHK_ERR(Prec->Compute());
 \endcode
-Please refer to the doxygen documentation of this class for more details.
 
-<P>Ifpack factory is appropriate for most users, but for more customized
-preconditioners the user should directly create them, as outlined
-in the following fragment of code:
+<P>Although the Ifpack factory is appropriate for most users, 
+it is possible to create IFPACK preconditioners by handling
+directly an Ifpack_AdditiveSchwarz object.
+The preconditioner of the previous example is equivalent to
+the one created in the following fragment of code:
 \code
 #include "Ifpack_AdditiveSchwarz.h"
 ...
@@ -160,13 +171,14 @@ comments:
                             each subdomain, using Amesos. This example
                             is very similar to the previous one.
                             Difficulty = beginners.
-- \ref ex_ict     shows how to define incomplete Cholesky
-                            factorizations and tune parameters. Although
-                            an ICT factorization can be constructed using
+- \ref ex_vict     shows how to define incomplete Cholesky
+                            factorizations (with dropping based on values),
+			    and tune parameters. Although
+                            an vICT factorization can be constructed using
                             the Factory (as done in file
                             Ifpack_ex_Factory.cpp), this example tells
                             the real story: how to define an
-                            Ifpack_AdditiveSchwar which uses ICT on
+                            Ifpack_AdditiveSchwar which uses vICT on
                             each subdomain.
                             Difficulty: intermediate.
 - \ref ex_block  shows how to define block preconditioner
@@ -182,7 +194,8 @@ The distribution contains several other classes, that are supposed to
 be used as \e tools for Ifpack_AdditiveSchwarz (see above examples). These
 classes are Ifpack_Jacobi, Ifpack_GaussSeidel, Ifpack_SymGaussSeidel,
 Ifpack_SOR, Ifpack_SSOR, Ifpack_BlockJacobi, Ifpack_BlockGaussSeidel,
-Ifpack_BlockSymGaussSeidel, Ifpack_Amesos, Ifpack_Ict, Ifpack_Riluk.
+Ifpack_BlockSymGaussSeidel, Ifpack_Amesos, Ifpack_vIct, Ifpack_vRiluk,
+Ifpack_gIct, Ifpack_gRiluk.
 These classes operate on local components only (with the assumption that
 OperatorDomainMap(), OperatorRangeMap() and RowMatrixRowMap()
 coincide). A robust code should use them directly only
@@ -193,19 +206,28 @@ to specify templates for Ifpack_AdditiveSchwarz objects.
 
 IFPACK contains several classes, meant for developers rather than
 for users:
-- Graphs are derived from Ifpack_Graph, which is implemented
-  in Ifpack_Graph_Epetra_CrsGraph and Ifpack_Graph_Epetra_RowMatrix;
-- Containers are derived from Ifpack_Container, which is implemented
-  in Ifpack_DenseContainer and Ifpack_SparseContainer;
-- Reorderings are derived from Ifpack_Reordering, which is
-  implemented in Ifpack_RCMReordering and Ifpack_METISReordering;
-- Partitioners are derived from Ifpack_Partitioner, which is
-  implemented in Ifpack_LinearPartitioner, Ifpack_METISPartitioner
+- Graphs are derived from the pure virtual class Ifpack_Graph
+  (whose documentation details the concept of graphs for IFPACK).
+  Concreate implementations are Ifpack_Graph_Epetra_CrsGraph 
+  and Ifpack_Graph_Epetra_RowMatrix;
+- Containers are derived from the pure virtual class Ifpack_Container
+  (whose documentation describes what a container is). Concreate
+  implementations are Ifpack_DenseContainer and Ifpack_SparseContainer;
+- Reorderings are derived from the pure virtual class Ifpack_Reordering
+  (whose documentation outlines the features of reorderings)
+  Concreate implementations are
+  Ifpack_RCMReordering and Ifpack_METISReordering;
+- Partitioners are derived from the pure virtual class Ifpack_Partitioner 
+  (whose
+  documentation describes the features of partitioners). Concrete
+  implementations are Ifpack_LinearPartitioner, Ifpack_METISPartitioner
   and Ifpack_EquationPartitioner;
-- Available filters are Ifpack_LocalFilter, Ifpack_ReorderFilter,
+- Available filters are Ifpack_LocalFilter (whose documentation
+  explains the creation and use of filters), Ifpack_ReorderFilter,
   Ifpack_DropFilter, Ifpack_SparsityFilter;
 - Semi-virtual classes are Ifpack_PointPreconditioner and
-  Ifpack_BlockPreconditioner.
+  Ifpack_BlockPreconditioner, which contain the main functionalities
+  of Jacobi, Gauss-Seidel and other point- and block-preconditioners.
 
 \section error Error Table
 
@@ -234,10 +256,10 @@ function or method successfully completed;
 <td>-4</td><td>Division by zero</td>
 </tr>
 <tr>
-<td>-10</td><td>Memory allocation error</td>
+<td>-5</td><td>Memory allocation error</td>
 </tr>
 <tr>
-<td>-20</td><td>Failure of the algorithm</td>
+<td>-6</td><td>Failure of the algorithm</td>
 </tr>
 <tr>
 <td>-98</td><td>Feature is not supported</td>
@@ -284,9 +306,9 @@ USA
 
 */
 
-/*! \page ex_ict
+/*! \page ex_vict
 
-\include Ifpack_ex_Ict.cpp
+\include Ifpack_ex_vIct.cpp
 
 */
 
