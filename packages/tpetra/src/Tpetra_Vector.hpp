@@ -5,6 +5,7 @@
 #include "Tpetra_VectorSpace.hpp"
 #include <Teuchos_CompObject.hpp>
 #include <Teuchos_BLAS.hpp>
+#include <vector>
 
 namespace Tpetra {
 
@@ -45,9 +46,8 @@ public:
 		: Object("Tpetra::Vector")
 		, BLAS_()
 		, VectorSpace_(VectorSpace)
-	{
-		cout << "VECTOR:: constructor called" << endl;
-	};
+		, A_(VectorSpace_.getNumMyEntries())
+	{};
   
   //! Set object values from user array. Throws an exception if an incorrect number of entries are specified.
 	//Vector(ScalarType* vectorEntries, VectorSpace<OrdinalType, ScalarType> const& vectorSpace);
@@ -56,15 +56,12 @@ public:
   Vector(Vector<OrdinalType, ScalarType> const& Source)
 		: Object(Source.label())
 		, BLAS_(Source.BLAS_)
-		, VectorSpace_(Source.vectorSpace_)
-	{
-		cout << "VECTOR:: copy constructor called" << endl;
-	};
+		, VectorSpace_(Source.VectorSpace_)
+		, A_(Source.A_)
+	{};
 
   //! Destructor.  
-  ~Vector() {
-		cout << "VECTOR:: destructor called" << endl;
-	};
+  ~Vector() {};
 
   //@}
 
@@ -73,12 +70,12 @@ public:
 
 	//! [] operator, nonconst version
 	ScalarType& operator[](OrdinalType index) {
-		cout << "VECTOR:: operator[] called, nonconst version" << endl;
+		return(A_[index]);
 	};
 
 	//! [] operator, const version
 	ScalarType const& operator[](OrdinalType index) const {
-		cout << "VECTOR:: operator[] called, const version" << endl;
+		return(A_[index]);
 	};
 
 	//@}
@@ -88,13 +85,11 @@ public:
 
 	//! Returns number of vector entries owned by this image.
 	OrdinalType getNumMyEntries() const {
-		cout << "VECTOR:: getNumMyEntries called" << endl;
 		return(vectorSpace().getNumMyEntries());
 	};
 
 	//! Returns number of vector entries across all images.
 	OrdinalType getNumGlobalEntries() const {
-		cout << "VECTOR:: getNumGlobalEntries called" << endl;
 		return(vectorSpace().getNumGlobalEntries());
 	};
 
@@ -118,6 +113,7 @@ private:
 
 	Teuchos::BLAS<OrdinalType, ScalarType> BLAS_;
 	VectorSpace<OrdinalType, ScalarType> VectorSpace_;
+	std::vector<ScalarType> A_;
 
 }; // class Vector
 
