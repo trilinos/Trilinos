@@ -42,6 +42,7 @@ AM_CONDITIONAL(BUILD_Y12M, test "X$ac_cv_use_referencey12m" != "Xno")
 #default could be changed to yes.
 TAC_ARG_ENABLE_FEATURE(amesos, [Build amesos], AMESOS, no)
 AM_CONDITIONAL(BUILD_AMESOS, test "X$ac_cv_use_amesos" != "Xno")
+
 # After building Nox from the Trilinos level is stabilized, the default should be 
 # changed to yes.
 TAC_ARG_ENABLE_FEATURE(nox, [Build nox], NOX, no)
@@ -67,6 +68,11 @@ AM_CONDITIONAL(BUILD_IFPACK, test "X$ac_cv_use_ifpack" != "Xno" ||
 TAC_ARG_ENABLE_FEATURE(triutils, [Build triutils], TRIUTILS, yes)
 AM_CONDITIONAL(BUILD_TRIUTILS, test "X$ac_cv_use_triutils" != "Xno")
 
+# After building EpetraExt from the Trilinos level is stabilized, the 
+#default could be changed to yes.
+TAC_ARG_ENABLE_FEATURE(epetraext, [Build epetraext], EPETRAEXT, no)
+AM_CONDITIONAL(BUILD_EPETRAEXT, test "X$ac_cv_use_epetraext" != "Xno")
+
 TAC_ARG_ENABLE_FEATURE(epetra, [Build epetra], EPETRA, yes)
 AM_CONDITIONAL(BUILD_EPETRA, test "X$ac_cv_use_epetra" != "Xno" || 
 	test "X$ac_cv_use_ifpack" != "Xno" || 
@@ -75,7 +81,8 @@ AM_CONDITIONAL(BUILD_EPETRA, test "X$ac_cv_use_epetra" != "Xno" ||
 	test "X$ac_cv_use_oldifpack" != "Xno" ||
 	test "X$ac_cv_use_triutils" != "Xno" ||
 	test "X$ac_cv_use_aztecoo" != "Xno" ||
-	test "X$ac_cv_use_komplex" != "Xno")
+	test "X$ac_cv_use_komplex" != "Xno" ||
+        test "X$ac_cv_use_epetraext" != "Xyes")
 
 if test "X$ac_cv_use_y12m" != "Xno"; then
   AC_CONFIG_SUBDIRS([external/y12m])
@@ -129,6 +136,10 @@ fi
 
 if test "X$ac_cv_use_amesos" != "Xno"; then
   AC_CONFIG_SUBDIRS([packages/amesos])
+fi
+
+if test "X$ac_cv_use_epetraext" != "Xno"; then
+  AC_CONFIG_SUBDIRS([packages/epetraext])
 fi
 
 AC_CONFIG_FILES([
