@@ -532,7 +532,10 @@ int main(int argc, char *argv[])
   Epetra_SerialComm Comm;
 #endif
 
-  puts("please configure IFPACK with --eanble-aztecoo --enable-teuchos");
+  puts("please configure IFPACK with:");
+  puts("--eanble-aztecoo");
+  puts("--enable-teuchos");
+  puts("--enable-amesos");
   puts("to run this test");
 
 #ifdef HAVE_MPI
