@@ -58,4 +58,4 @@ example_LDADD = -L$(top_builddir)/src \
                 -L$(top_builddir)/src-epetra \
                 -L$(top_builddir)/src-loca/src \
                 -L$(top_builddir)/src-loca/src-epetra \
-		-llocaepetra -lnoxepetra -lloca -lnox
+		-llocaepetra -lnoxepetra -lloca -lnox $(LIBS)
