@@ -105,6 +105,7 @@ double exceptFunc()
       if (sqrt((double) i) > 60.0) Error::raise("throw an exception");
       sum += std::sqrt((double) i);
     }
+  return sum;
 }
 
 
