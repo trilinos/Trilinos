@@ -121,7 +121,7 @@ int main(int argc, char *argv[])
   MLList.set("coarse: max size", 30);
   MLList.set("aggregation: threshold", 0.0);
 
-  MLList.set("coarse: type", "Amesos_KLU");
+  MLList.set("coarse: type", "Amesos-KLU");
 
   ML_Epetra::MultiLevelPreconditioner * MLPrec =
     new ML_Epetra::MultiLevelPreconditioner(*Epetra_Ke, *Epetra_T, *Epetra_Kn,
