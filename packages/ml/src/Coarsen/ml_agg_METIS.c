@@ -729,12 +729,14 @@ static int ML_DecomposeGraph_with_METIS( ML_Operator *Amatrix,
 					 int *total_nz)
 {
 
-  int i, j,jj,  count, count2, count_start, delta;
+  int i, j,jj,  count, count2, count_start;
   int Nrows, Nrows_global,NrowsMETIS, N_nonzeros, N_bdry_nodes;
   int *wgtflag=NULL, numflag, *options=NULL, edgecut;
   idxtype *xadj=NULL, *adjncy=NULL;
 #ifdef HAVE_ML_METIS
+  int     delta;
   idxtype *vwgt=NULL, *adjwgt=NULL;
+  double diag_i = 0.0;
 #endif
   idxtype *part=NULL;
   ML_Comm * comm;
@@ -748,7 +750,6 @@ static int ML_DecomposeGraph_with_METIS( ML_Operator *Amatrix,
   double t0;
   int * perm = NULL;
   char str[80];
-  double diag_i = 0.0;
   
   /* ------------------- execution begins --------------------------------- */
   
