@@ -22,7 +22,6 @@ cd ${TRILINOS_HOME}/testharness
 # parmetis      Epetra + Teuchos + ParMETIS (only MPI)
 # all           My script, with all I have on my machien (only MPI)
 TEST="standalone epetra basic trilinos parmetis all"
-TEST="epetra"
 StartTime=`date`
 for t in $TEST
 do
@@ -32,6 +31,12 @@ do
   perl test-harness.plx $OPT ${TEST_HOME}/$t-input
   /bin/rm -rf ${TRILINOS_HOME}/$t-results
   cp -r ${TRILINOS_HOME}/testharness/results ${TRILINOS_HOME}/$t-results/
+  echo 
+  echo "Analyzing results:"
+  echo "1) build error files:"
+  ls -1 $t-results/ | grep -i error
+  echo "2) test failed files:"
+  ls -1 $t-results/ | grep -i failed
 done
 EndTime=`date`
 echo "Test started on $StartTime,"

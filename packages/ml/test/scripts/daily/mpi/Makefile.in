@@ -67,7 +67,7 @@ POST_UNINSTALL = :
 host_triplet = @host@
 @HAVE_MPI_TRUE@noinst_PROGRAMS =  \
 @HAVE_MPI_TRUE@	TestMultiLevelPreconditioner$(EXEEXT) \
-@HAVE_MPI_TRUE@	TestExamples$(EXEEXT) Test_MLExamples$(EXEEXT)
+@HAVE_MPI_TRUE@	TestExamples$(EXEEXT) $(am__EXEEXT_1)
 subdir = test/scripts/daily/mpi
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -99,6 +99,7 @@ am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/ml_config.h
 CONFIG_CLEAN_FILES =
+@HAVE_MPI_TRUE@@ML_USING_AMESOS_TRUE@@ML_USING_AZTECOO_TRUE@am__EXEEXT_1 = Test_MLExamples$(EXEEXT)
 PROGRAMS = $(noinst_PROGRAMS)
 am__TestExamples_SOURCES_DIST = $(srcdir)/TestExamples
 am_TestExamples_OBJECTS =
@@ -258,6 +259,13 @@ target_alias = @target_alias@
 target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
+@HAVE_MPI_TRUE@@ML_USING_AMESOS_FALSE@@ML_USING_AZTECOO_TRUE@TEST_AMESOS = 
+# Nothing should be done for a serial build
+
+# actually the following tests can be executed with SuperLU as well
+# (to be fixed?)
+@HAVE_MPI_TRUE@@ML_USING_AMESOS_TRUE@@ML_USING_AZTECOO_TRUE@TEST_AMESOS = Test_MLExamples
+@HAVE_MPI_TRUE@@ML_USING_AZTECOO_FALSE@TEST_AMESOS = 
 @HAVE_MPI_TRUE@TestMultiLevelPreconditioner_SOURCES = $(srcdir)/TestMultiLevelPreconditioner
 @HAVE_MPI_TRUE@TestExamples_SOURCES = $(srcdir)/TestExamples
 @HAVE_MPI_TRUE@Test_MLExamples_SOURCES = $(srcdir)/Test_MLExamples

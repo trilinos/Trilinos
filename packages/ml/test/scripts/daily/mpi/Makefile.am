@@ -30,7 +30,19 @@ EXEEXT = .exe
 # Nothing should be done for a serial build
 if  HAVE_MPI
 
-noinst_PROGRAMS = TestMultiLevelPreconditioner TestExamples Test_MLExamples
+# actually the following tests can be executed with SuperLU as well
+# (to be fixed?)
+if ML_USING_AZTECOO
+if ML_USING_AMESOS
+TEST_AMESOS = Test_MLExamples
+else
+TEST_AMESOS =
+endif
+else
+TEST_AMESOS =
+endif
+
+noinst_PROGRAMS = TestMultiLevelPreconditioner TestExamples ${TEST_AMESOS}
 
 TestMultiLevelPreconditioner_SOURCES = $(srcdir)/TestMultiLevelPreconditioner
 TestMultiLevelPreconditioner$(EXEEXT): $(srcdir)/TestMultiLevelPreconditioner

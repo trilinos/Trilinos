@@ -354,18 +354,21 @@ int main(int argc, char *argv[]) {
 
 #include <stdlib.h>
 #include <stdio.h>
+#ifdef HAVE_MPI
+#include "mpi.h"
+#endif
 
 int main(int argc, char *argv[])
 {
   // still need to deal with MPI, some architecture don't like
   // an exit(0) without MPI_Finalize()
-#ifdef ML_MPI
+#ifdef HAVE_MPI
   MPI_Init(&argc,&argv);
 #endif
     
   puts("Please configure ML with --enable-epetra --enable-teuchos --enable-triutils");
 
-#ifdef ML_MPI
+#ifdef HAVEML_MPI
   MPI_Finalize();
 #endif
 
