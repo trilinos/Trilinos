@@ -438,11 +438,11 @@ int Zoltan_HSFC( /* Zoltan_HSFC - Load Balance: Hilbert Space Filling Curve */
    for (i = 0 ; i < ndots ; i++)
       {
       int proc ;
-      err = Zoltan_HSFC_Point_Drop (zz, dots[i].x, &proc) ;
+      err = Zoltan_HSFC_Point_Assign (zz, dots[i].x, &proc) ;
       if (dots[i].proc != proc || err != ZOLTAN_OK)
          j++ ;
       }
-   printf ("<%d> Point Drop Test %s\n", zz->Proc, j ? "FAILED" : "PASSED");
+   printf ("<%d> Point Assign Test %s\n", zz->Proc, j ? "FAILED" : "PASSED");
 
    /* (optional) test box drop functionality */
    if (zz->Proc == 0)
@@ -458,8 +458,8 @@ int Zoltan_HSFC( /* Zoltan_HSFC - Load Balance: Hilbert Space Filling Curve */
       zlo = d->bbox_lo[2] + ZOLTAN_HSFC_EPSILON ;
 
       proclist = (int *) ZOLTAN_MALLOC (sizeof(int) * zz->Num_Proc);
-      Zoltan_HSFC_Box_Drop (zz, xlo, ylo, zlo, xhi, yhi, zhi, proclist, &i) ;
-      printf ("Box Drop Test %s\n", (i==zz->Num_Proc) ? "PASSED" : "FAILED") ;
+      Zoltan_HSFC_Box_Assign (zz, xlo, ylo, zlo, xhi, yhi, zhi, proclist, &i) ;
+      printf ("Box Assign Test %s\n", (i==zz->Num_Proc) ? "PASSED" : "FAILED") ;
       ZOLTAN_FREE (&proclist) ;
       }
 #endif
