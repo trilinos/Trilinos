@@ -22,6 +22,7 @@ extern int mls_or_gs, mls_order;
 #include "ml_struct.h"
 #include "ml_op_utils.h"
 #include "ml_agg_genP.h"
+#include "ml_memory.h"
 
 extern int ML_AGG_Amat_Getrows(void *data, int N_requested_rows, 
                int requested_rows[], int allocated_space, int columns[], 

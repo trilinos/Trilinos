@@ -8,6 +8,7 @@
 #include <math.h>
 #include "ml_struct.h"
 #include "ml_rap.h"
+#include "ml_memory.h"
 
 #define HASH_SIZE     1024   /* should be a power of two */
 #define MASK          01777  /* should be bit pattern of hash size minus 1 */

@@ -9,6 +9,7 @@
 
 #include "ml_comminfoop.h"
 #include "ml_utils.h"
+#include "ml_memory.h"
 extern int ML_gpartialsum_int(int val, ML_Comm *comm);
 
 /* ******************************************************************** */

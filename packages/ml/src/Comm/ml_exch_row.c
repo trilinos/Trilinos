@@ -7,7 +7,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include "ml_struct.h"
-
+#include "ml_memory.h"
 /******************************************************************************/
 /******************************************************************************
   Routine to exchange rows between neighboring processors. 

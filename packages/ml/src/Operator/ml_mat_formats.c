@@ -10,7 +10,7 @@
 /* ******************************************************************** */
 
 #include "ml_mat_formats.h"
-
+#include "ml_memory.h"
 /*********************************************************************/
 /* Perform a matrix vector product with an MSR matrix: c = matrix * b*/
 /* NOTE: matrix can only have pre-communication and both 'recv_list' */

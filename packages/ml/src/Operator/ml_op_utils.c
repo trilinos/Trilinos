@@ -6,6 +6,7 @@
 #include "ml_struct.h"
 #include "ml_op_utils.h"
 #include "ml_agg_genP.h"
+#include "ml_memory.h"
 
 /* ******************************************************************** */
 /* Blow away any inter-mixing between boundary and interior points in   */

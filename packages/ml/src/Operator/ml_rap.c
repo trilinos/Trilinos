@@ -12,6 +12,7 @@
 #include <math.h>
 #include "ml_struct.h"
 #include "ml_rap.h"
+#include "ml_memory.h"
 
 /* ******************************************************************** */
 /* Given R, A, and P, generate a Galerkin operator at a given level     */

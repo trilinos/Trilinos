@@ -15,6 +15,7 @@
 #endif
 #include "ml_struct.h"
 #include "ml_aztec_utils.h"
+#include "ml_memory.h"
 
 int warning_flag = 0;
 
