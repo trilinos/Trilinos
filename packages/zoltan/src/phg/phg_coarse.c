@@ -272,7 +272,7 @@ if (VTX_GNO_TO_LNO(hg,ip[i]) < 0 || VTX_GNO_TO_LNO(hg,ip[i]) >= hg->nVtx)
     c_hg->info   = hg->info + 1;      /* for debugging */
     c_hg->ratio  = hg->ratio;         /* for "global" recursive bisectioning */
     c_hg->redl   = hg->redl;          /* to stop coarsening near desired count */  
-    c_hg->VtxWeightDim  = hg->VtxWeightDim;
+    c_hg->VtxWeightDim  = MAX(hg->VtxWeightDim,1);
     c_hg->EdgeWeightDim = hg->EdgeWeightDim;
   }
   
