@@ -28,89 +28,21 @@
 
 EXEEXT = .exe
 
-if ML_USING_EPETRA
-epetra_lib = $(top_builddir)/../epetra/src/libepetra.a
-else
-epetra_lib =
-endif
-
-if ML_USING_AZTECOO
-aztecoo_lib = $(top_builddir)/../aztecoo/src/libaztecoo.a
-else
-aztecoo_lib =
-endif
-
-if ML_USING_AMESOS
-amesos_lib = $(top_builddir)/../amesos/src/libamesos.a
-else
-amesos_lib =
-endif
-
-if ML_USING_ANASAZI
-anasazi_lib = $(top_builddir)/../anasazi/src/libanasazi.a
-else
-anasazi_lib = 
-endif
-
-if ML_USING_TEUCHOS 
-teuchos_lib = $(top_builddir)/../teuchos/src/libteuchos.a
-else
-teuchos_lib =
-endif
-
-if ML_USING_TRIUTILS
-triutils_lib = $(top_builddir)/../triutils/src/libtriutils.a
-else
-triutils_lib =
-endif
-
-if ML_USING_IFPACK
-ifpack_lib = $(top_builddir)/../ifpack/src/libifpack.a
-else
-ifpack_lib =
-endif
+# include definitions of ML_EXPORT_INCLUDES and ML_EXPORT_LIBS
+include $(top_builddir)/Makefile.export
+ml_common_include_locations = $(ML_EXPORT_INCLUDES)
+ml_libs =       $(ML_EXPORT_LIBS)     \
+                $(LIBS)               \
+                $(LAPACK_LIBS)        \
+                $(BLAS_LIBS)          \
+                $(FLIBS)
 
 noinst_PROGRAMS = AztecSimple
 
 AztecSimple_SOURCES = $(srcdir)/AztecSimple.c
 
 AztecSimple_DEPENDENCIES = \
-	$(top_builddir)/src/libml.a \
-	$(epetra_lib) \
-	$(triutils_lib) \
-	$(teuchos_lib)
-
-ml_common_include_locations = -I$(top_srcdir)/src/Include          \
-                   -I$(top_srcdir)/src/Coarsen                  \
-                   -I$(top_srcdir)/src/Comm                  \
-                   -I$(top_srcdir)/src/FEGrid                  \
-                   -I$(top_srcdir)/src/Include                  \
-                   -I$(top_srcdir)/src/Krylov                  \
-                   -I$(top_srcdir)/src/Main                  \
-                   -I$(top_srcdir)/src/Operator                  \
-                   -I$(top_srcdir)/src/Smoother                  \
-                   -I$(top_srcdir)/src/Utils                  \
-                   -I$(top_srcdir)/../aztecoo/src            \
-                   -I$(top_builddir)/../aztecoo/src \
-                   -I$(top_srcdir)/../epetra/src            \
-                   -I$(top_builddir)/../epetra/src \
-                   -I$(top_srcdir)/../teuchos/src            \
-                   -I$(top_builddir)/../teuchos/src \
-                   -I$(top_srcdir)/../triutils/src            \
-                   -I$(top_builddir)/../triutils/src
-
-ml_libs = $(top_builddir)/src/libml.a        \
-                $(aztecoo_lib) \
-                $(ifpack_lib) \
-                $(amesos_lib) \
-                $(anasazi_lib) \
-                $(teuchos_lib) \
-                $(triutils_lib) \
-                $(epetra_lib) \
-                $(LIBS) \
-                $(LAPACK_LIBS)                            \
-                $(BLAS_LIBS)                            \
-                $(FLIBS)
+	$(top_builddir)/src/libml.a
 
 mllink = $(CXX) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
 
