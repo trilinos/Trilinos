@@ -49,8 +49,10 @@ include $(CONFIG)
 OBJ_DIR = Obj_$(ZOLTAN_ARCH)
 ALL_OBJ_DIRS := $(wildcard Obj_*)
 
-ifndef LIB_DIR
-LIB_DIR = ../$(OBJ_DIR)
+ifdef ZOLTAN_LIB_DIR
+LIB_DIR = $(ZOLTAN_LIB_DIR)
+else
+LIB_DIR = $(OBJ_DIR)
 endif
 
 ############################################################################
