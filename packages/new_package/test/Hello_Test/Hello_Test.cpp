@@ -35,8 +35,19 @@
 #include <istream>
 #include <ostream>
 #include <string>
+#ifdef HAVE_MPI
+#include "mpi.h"
+#endif
 
-int main(){
+int main(int argc, char *argv[]){
+
+// This is not really an mpi test, but we throw this in so that we can
+// have an example mpi test script for the test harness. 
+#ifdef HAVE_MPI
+  // Initialize MPI
+  MPI_Init(&argc,&argv);
+#endif
+
   using namespace std;
   Epetra_SerialComm esc;
   Epetra_Comm * ec;
@@ -60,5 +71,8 @@ int main(){
     return 1;
   }
   cout << "Test passed!" << endl;
+#ifdef EPETRA_MPI
+  MPI_Finalize() ;
+#endif
   return 0;
 }
