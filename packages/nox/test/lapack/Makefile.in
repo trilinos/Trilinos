@@ -123,7 +123,7 @@ am__include = @am__include@
 am__quote = @am__quote@
 install_sh = @install_sh@
 
-@BUILD_LAPACK_TESTS_TRUE@NOX_SUBDIRS = NOX_NewTest NOX_Group 
+@BUILD_LAPACK_TESTS_TRUE@NOX_SUBDIRS = NOX_NewTest NOX_Group NOX
 @BUILD_LAPACK_TESTS_FALSE@NOX_SUBDIRS = 
 
 @BUILD_LOCA_LAPACK_TESTS_TRUE@LOCA_SUBDIRS = LOCA_NewTest LOCA_Group LOCA_ChanProblem
@@ -141,7 +141,7 @@ RECURSIVE_TARGETS = info-recursive dvi-recursive install-info-recursive \
 	install-exec-recursive installdirs-recursive install-recursive \
 	uninstall-recursive check-recursive installcheck-recursive
 DIST_COMMON = Makefile.am Makefile.in
-DIST_SUBDIRS = NOX_NewTest NOX_Group LOCA_NewTest LOCA_Group \
+DIST_SUBDIRS = NOX_NewTest NOX_Group NOX LOCA_NewTest LOCA_Group \
 	LOCA_ChanProblem
 all: all-recursive
 

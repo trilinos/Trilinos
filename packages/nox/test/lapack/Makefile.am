@@ -28,7 +28,7 @@
 #@HEADER
 
 if BUILD_LAPACK_TESTS
-NOX_SUBDIRS = NOX_NewTest NOX_Group 
+NOX_SUBDIRS = NOX_NewTest NOX_Group NOX
 else
 NOX_SUBDIRS = 
 endif
