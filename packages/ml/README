@@ -1,3 +1,31 @@
+               ML: A Multilevel Preconditioner Package
+                 Copyright (2002) Sandia Corporation
+
+Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
+license for use of this work by or on behalf of the U.S. Government.
+
+This library is free software; you can redistribute it and/or modify
+it under the terms of the GNU Lesser General Public License as
+published by the Free Software Foundation; either version 2.1 of the
+License, or (at your option) any later version.
+ 
+This library is distributed in the hope that it will be useful, but
+WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+Lesser General Public License for more details.
+ 
+You should have received a copy of the GNU Lesser General Public
+License along with this library; if not, write to the Free Software
+Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+USA
+Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
+
+
+
+Please submit ML bugs with at software.sandia.gov/buzgilla, or
+report bugs to jhu@sandia.gov.
+	
+------------------------------------------------------------------------------
 Welcome to ML.   The ml directory contains the following files:
 
 aclocal.m4                  autoconf file
@@ -9,82 +37,15 @@ configure.ac                autoconf file
 COPYRIGHT                   copyright information
 CVS/
 doc/                        ML documentation
-etc/                        
+etc/                        various scripts and utilities for developers
 examples/                   ML examples
-FAQ
-INSTALL
-installer
-install_packages
 Makefile.am                 automake file
 Makefile.in                 automake file
-ML_revision_history         an (incomplete) history of ML updates
+Changelog                    an (incomplete) history of ML changes
 README                      this file
 src/                        ML source files
 util/                       various utility programs, such as file converters
 
 
--1) If you want to build ML without any other package, do the following:
-
-   a) cd to the ml root directory
-   b) Type "./configure --without-ml_epetra --without-ml_aztecoo"
-   c) Type "make".  This should build the library, libml.a, and a small
-      example, ml/examples/mlguide.exe.
-   d) Type "./configure --without-ml_epetra --without-ml_aztecoo \
-            --with-mpi-compilers=/the/path/to/your/mpi/compilers"
-      to build both ml/examples/mlguide.exe and a parallel example,
-      ml/examples/mlguide_par.exe.
-   e) Note that a larger suite of examples is built if epetra and aztecoo
-      are available.
-
-0)  ML can be built with automake and autoconfig.   For ML-specific flags, at
-    the ml directory level, type "./configure --help".  Here are ML specific
-    configure options.
-
-    --enable-ml_multiple_rhs
-    --enable-ml_enrich
-    --enable-ml_newtpe
-    --enable-ml_timing
-    --enable-ml_flops
-    --with-ml_external_mpi_functions
-    --with-ml_superlu
-
-    The following items are enabled by default:
-
-        vendor blas & lapack (i.e., not ml's internal versions)
-        epetra & aztec support
-        the latest Maxwell prolongator improvements
-
-    The following items are NOT enabled by default:
-
-        MPI
-        SuperLU
-
-    Here is an example configure and build line:
-
-     > cd /home/jhu/Trilinos/packages/ml
-     > ./configure --with-mpi-compilers=/usr/local/mpich/bin --with-ml_superlu \
-        --with-ldflags="/usr/local/superlu/lib/libsuperlu.a" \
-        --with-incdirs="-I/usr/local/superlu/include"
-     > make
-
-    In general it's not a good idea to configure in the
-    Trilinos/packages/ml directory structure.   Instead, you should make a
-    "sandbox" where you configure and build, away from the Trilinos source.
-    See the file Trilinos/config/AUTOTOOLS_README for details.
-
-
-2)  Look in the doc directory for documentation.
-
-
-3)  There are several Mailing lists that you can sign up for
-    to get information updates about ML. They can be found
-    at the following address: 
-       http://software.sandia.gov/mailman/listinfo
-
-    For most people, the lists ML-Announce and ML-Users will
-    be of most interest.
-
-
-4)  Finally, there is a bugzilla interface for reporting bugs
-    and enhancement requests. This can be found at 
-        http://software.sandia.gov/bugzilla
+For instructions on installing and using ML, see the ML User's Guide
+(Version 3.0) in doc/mlguide.[ps|pdf].
