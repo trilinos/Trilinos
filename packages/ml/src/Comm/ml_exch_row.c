@@ -910,6 +910,7 @@ void ML_back_to_local(ML_Operator *imatrix, ML_Operator *omatrix,
    ML_free(bindx);
    bindx = (int    *)  ML_allocate( (N_nonzeros+5)*sizeof(int   ));
    val   = (double *)  ML_allocate( (N_nonzeros+5)*sizeof(double));
+
       /* need extra room (2) for diagonal guy and wasted space */
   
    bindx[0] = imatrix->getrow->Nrows+1;
@@ -919,6 +920,7 @@ void ML_back_to_local(ML_Operator *imatrix, ML_Operator *omatrix,
                         &row_length, next_nz);
       ii = next_nz;
 
+      val[i] = 0.;
       for (k = 0; k < row_length; k++) {
          dtemp = val[ii];
          col   = bindx[ii++];
