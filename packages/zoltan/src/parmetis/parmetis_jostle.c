@@ -436,10 +436,6 @@ static int LB_ParMetis_Jostle(
     local_ids = (LB_LID *) LB_MALLOC(num_obj * sizeof(LB_LID) );
     if (obj_wgt_dim)
       float_vwgt = (float *)LB_MALLOC(obj_wgt_dim*num_obj * sizeof(float));
-    else {
-      float_vwgt = NULL;
-      vwgt = NULL;
-    }
     if (!vtxdist || !global_ids || !local_ids || (obj_wgt_dim && !float_vwgt)){
       /* Not enough memory */
       FREE_MY_MEMORY;
@@ -1122,10 +1118,12 @@ static int LB_ParMetis_Jostle(
   /* Free weights; they are no longer needed */
   if (obj_wgt_dim) {
     LB_FREE(&vwgt);
+    if (float_vwgt) LB_FREE(&float_vwgt);
     LB_FREE(&imb_tols);
   }
-  /* if (comm_wgt_dim) */
+  if (comm_wgt_dim){
     LB_FREE(&adjwgt);
+  }
 
   /* If we have been using a scattered graph, convert partition result back to original distribution */
   if (scatter){
