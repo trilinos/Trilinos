@@ -524,7 +524,9 @@ if ((lots_of_space < 4) && (B_allocated > 500)) Bvals = NULL; else
    ML_free(A_i_vals);
    ML_free(A_i_cols);
    t6 = GetClock();
+   /*
    printf("matmat  ==> %e   %d\n", t6-t1,Bmatrix->comm->ML_mypid); fflush(stdout);
+   */
 
    /* create 'parent' object corresponding to the resulting matrix */
 
