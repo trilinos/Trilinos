@@ -265,7 +265,7 @@ namespace LOCA {
       //! Is Newton vector valid
       bool isValidNewton;
 
-      //! Is Newton vector valid
+      //! Is Gradient vector valid
       bool isValidGradient;
 
       //! Is previous solution vector valid
