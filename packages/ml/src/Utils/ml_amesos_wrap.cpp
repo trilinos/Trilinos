@@ -64,7 +64,7 @@ int ML_Amesos_Gen(ML *ml, int curr_level, int choice,
   
   if( Amesos_CrsMatrix->Comm().MyPID() == 0 && ML_Get_PrintLevel()>2 ) {
     cout << "Amesos (level " << curr_level
-	 << "): Time to convert to Epetra_CrsMatrix  = "
+	 << ") : Time to convert to Epetra_CrsMatrix  = "
 	 << Time1 << " (s)" << endl;
   }
   
@@ -235,10 +235,14 @@ void ML_Amesos_Destroy(void *Amesos_Handle)
     cout << "Amesos (level " << Level__
 	 << ") : Time for solve = "
 	 << TimeForSolve__ << " (s)" << endl;
-    cout << "Amesos (level " << Level__
-	 << ") : avg time for solve = "
-	 << TimeForSolve__/NumSolves__ << " (s) ( # solve = "
-	 << NumSolves__ << ")" << endl;
+    if( NumSolves__ ) 
+      cout << "Amesos (level " << Level__
+	   << ") : avg time for solve = "
+	   << TimeForSolve__/NumSolves__ << " (s) ( # solve = "
+	   << NumSolves__ << ")" << endl;
+    else
+      cout << "Amesos (level " << Level__
+	   << ") : no solve" << endl;
     cout << endl;
   }
   

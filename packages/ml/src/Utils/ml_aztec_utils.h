@@ -228,6 +228,7 @@ extern void new_norm(AZ_PRECOND *prec, double res[], double *result);
 #define MLAZ_MLS_poly_order                19
 #define MLAZ_MLS_alpha                     20
 #define MLAZ_timing_detailed               21
+#define MLAZ_prec_type                     22
   
 /*  MLAZ_smoother */
 #define MLAZ_Jacobi                 0 /* ML's Jacobi smoother */

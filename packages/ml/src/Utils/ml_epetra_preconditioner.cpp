@@ -38,9 +38,13 @@ double ML_DD_OneLevel(ML_1Level *curr, double *sol, double *rhs,
 			    int approx_all_zeros, ML_Comm *comm,
 			    int res_norm_or_not, ML *ml)
 {
+
   ML_Smoother * post = curr->post_smoother;
   ML_Operator * Amat = curr->Amat;
   int lengf = Amat->outvec_leng;
+
+  for ( int i = 0; i < lengf; i++ ) sol[i] = 0.0;
+  
   ML_Smoother_Apply(post, lengf, sol, lengf, rhs, approx_all_zeros);
 
   return 0.0;
@@ -529,7 +533,7 @@ Epetra_ML_Preconditioner::Epetra_ML_Preconditioner( const Epetra_RowMatrix & Row
   /* ********************************************************************** */
 
   string str = List_.getParameter("prec type","MGV");
-  if( str == "fine level postsmoothing" ) {
+  if( str == "1-level postsmoothing only" ) {
     
     sprintf(Label_, "1-level postsmoothing only");
     ml_->ML_scheme = ML_ONE_LEVEL_DD;
@@ -567,6 +571,8 @@ Epetra_ML_Preconditioner::Epetra_ML_Preconditioner( const Epetra_RowMatrix & Row
       }
     }
 
+  } else if( str == "MGV" ) {
+    // do nothing now
   } else {
 
     if( Comm_.MyPID() == 0 ) {

@@ -515,6 +515,21 @@ temp+globbie->outvec_leng);
 }
 #endif
 
+#ifdef MARZIO
+extern double ML_DD_OneLevel(ML_1Level *curr, double *sol, double *rhs,
+			     int approx_all_zeros, ML_Comm *comm,
+			     int res_norm_or_not, ML *ml);
+extern double ML_DD_Additive(ML_1Level *curr, double *sol, double *rhs,
+			     int approx_all_zeros, ML_Comm *comm,
+			     int res_norm_or_not, ML *ml);
+extern double ML_DD_Hybrid(ML_1Level *curr, double *sol, double *rhs,
+			   int approx_all_zeros, ML_Comm *comm,
+			   int res_norm_or_not, ML *ml);
+extern double ML_DD_Hybrid_2(ML_1Level *curr, double *sol, double *rhs,
+			     int approx_all_zeros, ML_Comm *comm,
+			     int res_norm_or_not, ML *ml);
+#endif
+
 /*****************************************************************************/
 /*****************************************************************************/
 /*****************************************************************************/
@@ -573,6 +588,25 @@ void ML_precondition(double ff[], int options[], int proc_config[],
 #endif
   /* pre- and post-processing projection step */
   else if (ml->ML_scheme == ML_PAMGV) ML_Solve_ProjectedAMGV( ml, ff, ffout);
+#ifdef MARZIO
+  else if( ml->ML_scheme == ML_ONE_LEVEL_DD ) {
+    ML_DD_OneLevel(&(ml->SingleLevel[ml->ML_finest_level]),
+		   ffout, ff,
+		   ML_ZERO, ml->comm, ML_NO_RES_NORM, ml);
+  }
+  else if (ml->ML_scheme == ML_TWO_LEVEL_DD_ADD )
+    ML_DD_Additive(&(ml->SingleLevel[ml->ML_finest_level]),
+		   ffout, ff,
+		   ML_ZERO, ml->comm, ML_NO_RES_NORM, ml);
+  else if( ml->ML_scheme == ML_TWO_LEVEL_DD_HYBRID) 
+    ML_DD_Hybrid(&(ml->SingleLevel[ml->ML_finest_level]),
+		 ffout,ff,
+		 ML_ZERO, ml->comm, ML_NO_RES_NORM, ml);    
+  else if( ml->ML_scheme == ML_TWO_LEVEL_DD_HYBRID_2 )
+    ML_DD_Hybrid_2(&(ml->SingleLevel[ml->ML_finest_level]),
+		   ffout, ff,
+		   ML_ZERO, ml->comm, ML_NO_RES_NORM, ml); 
+#endif
   else ML_Solve_MGV( ml, ff, ffout );
   for (i = 0; i < lenf; i++) ff[i] = ffout[i];
   ML_free(ffout);
@@ -2835,6 +2869,7 @@ typedef struct MLAZ_Settings
   int MLS_poly_order;
   double MLS_alpha;
   int timing_detailed;
+  int prec_type;
   
 } MLAZ_Settings;
 
@@ -3268,6 +3303,28 @@ int MLAZ_Setup_MLandAggregate( int N_update, int num_PDE_eqns,
   
   t4 = AZ_second();
 
+  /* ******************************************************************** */
+  /* Terrible hack to get other domain decomposition preconditioners and  */
+  /* to compute the condition number of one-level methods.                */
+  /* ******************************************************************** */
+
+  switch( Settings.prec_type ) {
+  case -777:
+    ml->ML_scheme = ML_ONE_LEVEL_DD;
+    break;
+  case -888:
+    ml->ML_scheme = ML_TWO_LEVEL_DD_ADD;
+    break;
+  case -999:
+    ml->ML_scheme = ML_TWO_LEVEL_DD_HYBRID;
+    break;
+  case -1111:
+    ml->ML_scheme = ML_TWO_LEVEL_DD_HYBRID_2;
+    break;
+  default:
+    /* do nothing */
+  }
+  
   if( Settings.output > 0 && proc_config[AZ_node] == 0 ) {
     printf("Timing : Settings                = %e (s)\n", t1-t0  + t3-t2 );
     printf("Timing : Building AMG levels     = %e (s)\n", t2-t1);
@@ -3299,6 +3356,7 @@ void MLAZ_Defaults( void )
   MLAZ_Set_Option(MLAZ_req_aggre_per_proc, 128);
   MLAZ_Set_Option(MLAZ_MLS_poly_order, 3);
   MLAZ_Set_Option(MLAZ_timing_detailed, 0);
+  MLAZ_Set_Option(MLAZ_prec_type, 0);
   
   MLAZ_Set_Param(MLAZ_smoothP_damping_factor, 0.0);
   MLAZ_Set_Param(MLAZ_threshold, 0.0);
@@ -3358,6 +3416,10 @@ void MLAZ_Set_Option(int option, int value)
     Settings.timing_detailed = value;
     break;
     
+  case MLAZ_prec_type:
+    Settings.prec_type = value;
+    break;
+
   default:
     fprintf( stderr,
 	     "*ERR*ML* input option not valid\n" );
