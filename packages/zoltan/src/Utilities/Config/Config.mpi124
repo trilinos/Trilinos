@@ -45,12 +45,12 @@ MPI_LIBPATH		= -L/export/home/mpich/mpich-1.2.4/lib \
                   -L/Net/local/gnu/lib/gcc-lib/sparc-sun-solaris2.7/3.0.3 \
                   -L/Net/local/lang/SUNWspro/lib
 
-PARMETIS_LIBPATH 	= -L/home/u/kddevin/code/ParMETIS/ParMETIS2
-PARMETIS_INCPATH 	= -I/home/u/kddevin/code/ParMETIS/ParMETIS2/include
+#PARMETIS_LIBPATH 	= -L/home/u/kddevin/code/ParMETIS/ParMETIS2
+#PARMETIS_INCPATH 	= -I/home/u/kddevin/code/ParMETIS/ParMETIS2/include
 
-JOSTLE_LIBPATH 		= -L/Net/local/proj/zoltan/arch/solaris/lib
-JOSTLE_INCPATH 		= -I/Net/local/proj/zoltan/arch/all/src
-JOSTLE_SRCPATH 		= /Net/local/proj/zoltan/arch/all/src
+#JOSTLE_LIBPATH 		= -L/Net/local/proj/zoltan/arch/solaris/lib
+#JOSTLE_INCPATH 		= -I/Net/local/proj/zoltan/arch/all/src
+#JOSTLE_SRCPATH 		= /Net/local/proj/zoltan/arch/all/src
 
 NEMESIS_LIBPATH		= -L/Net/local/proj/zoltan/arch/solaris/lib
 NEMESIS_INCPATH		= -I/Net/local/proj/zoltan/arch/solaris/include
