@@ -114,6 +114,25 @@ void outputSubHeading(std::string const message) {
   cout << message << endl;
 };
 
+// this function works much the way Teuchos::Array::toString works.
+// it allows std::vector to be used with an ostream.
+// The contents of the vector are printed in the following format:
+// "{4, 7, 18, 23, 6, 2}"
+template<typename T>
+inline ostream& operator<<(ostream& os, std::vector<T> const& vector)
+{
+  os << "{";
+  if(!vector.empty()) {
+    typename std::vector<T>::const_iterator i = vector.begin();
+    os << *i;
+    i++;
+    for(; i != vector.end(); i++)
+      os << "," << *i;
+  }
+  os << "}";
+  return(os);
+}
+
 //======================================================================
 // functions for generator
 //======================================================================

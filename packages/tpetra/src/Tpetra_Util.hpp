@@ -68,41 +68,56 @@ namespace Tpetra {
     return(Teuchos::toString(x));
   }
 
-template<typename T>
-inline ostream& operator<<(ostream& os, std::vector<T> const& vector)
-{
-  os << "{";
-  if(!vector.empty()) {
-    typename std::vector<T>::const_iterator i = vector.begin();
-    os << *i;
-    i++;
-    for(; i != vector.end(); i++)
-      os << "," << *i;
+  // this function works much the way Teuchos::Array::toString works.
+  // it allows std::vector to be used with an ostream.
+  // The contents of the vector are printed in the following format:
+  // "{4, 7, 18, 23, 6, 2}"
+  template<typename T>
+  inline ostream& operator<<(ostream& os, std::vector<T> const& vector)
+  {
+    os << "{";
+    if(!vector.empty()) {
+      typename std::vector<T>::const_iterator i = vector.begin();
+      os << *i;
+      i++;
+      for(; i != vector.end(); i++)
+        os << "," << *i;
+    }
+    os << "}";
+    return(os);
   }
-  os << "}";
-  return(os);
-}
 
+  // sort function for multiple arrays
+  // The values in sortVals will be sorted in ascending order.
+  // The same permutation required to sort sortVals will be applied
+  // to otherVals.
+  template<typename T1, typename T2>
+  void sortArrays(std::vector<T1>& sortVals, std::vector<T2>& otherVals) {
+    // if sortVals and otherVals are not the same length, throw exception
+    if(sortVals.size() != otherVals.size()) {
+      cerr << "Error in Tpetra_Util::sortArrays: sortVals and otherVals are not equally sized" << endl;
+      throw (-99);
+    }
+    
+    // copy sortVals and otherVals into a multimap
+    // (using a multimap instead of a map because values in sortVals may be duplicated)
+    std::multimap<T1,T2> tempMap;
+    typename std::vector<T1>::iterator keyIter = sortVals.begin();
+    typename std::vector<T2>::iterator valueIter = otherVals.begin();
+    typedef pair<T1,T2> PAIR;
+    for(; keyIter != sortVals.end(); keyIter++, valueIter++)
+      tempMap.insert(PAIR(*keyIter, *valueIter));
+    
+    // multimap will automatically sort them, we just need to pull them out in order
+    // and write them back to the original arrays
+    keyIter = sortVals.begin();
+    valueIter = otherVals.begin();
+    for(typename std::multimap<T1, T2>::iterator i = tempMap.begin(); i != tempMap.end(); i++, keyIter++, valueIter++) {
+      *keyIter = i->first;
+      *valueIter = i->second;
+    }
+  }
+  
 } // namespace Tpetra
-
-
-// this function works much the way Teuchos::Array::toString works.
-// it allows std::vector to be used with an ostream.
-// The contents of the vector are printed in the following format:
-// "{4, 7, 18, 23, 6, 2}"
-template<typename T>
-inline ostream& operator<<(ostream& os, std::vector<T> const& vector)
-{
-  os << "{";
-  if(!vector.empty()) {
-    typename std::vector<T>::const_iterator i = vector.begin();
-    os << *i;
-    i++;
-    for(; i != vector.end(); i++)
-      os << "," << *i;
-  }
-  os << "}";
-  return(os);
-}
 
 #endif // TPETRA_UTIL_HPP
