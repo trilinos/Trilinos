@@ -1787,10 +1787,14 @@ int Epetra_VbrMatrix::InverseSums(bool DoRows, Epetra_Vector& x) const {
 
   if (!Filled()) EPETRA_CHK_ERR(-1); // Matrix must be filled.
   if (DoRows) {
-    if (!Graph().RangeMap().SameAs(x.Map())) EPETRA_CHK_ERR(-2); // x must have the same distribution as the range of A
+    //if (!Graph().RangeMap().SameAs(x.Map())) EPETRA_CHK_ERR(-2); // x must have the same distribution as the range of A
+    if ( !Graph().RangeMap().SameAs(x.Map()) && !OperatorRangeMap().SameAs(x.Map()) )
+      EPETRA_CHK_ERR(-2); // x must have the same distribution as the range of A
   }
   else {
-    if (!Graph().DomainMap().SameAs(x.Map())) EPETRA_CHK_ERR(-2); // x must have the same distribution as the domain of A
+    //if (!Graph().DomainMap().SameAs(x.Map())) EPETRA_CHK_ERR(-2); // x must have the same distribution as the domain of A
+    if ( !Graph().RangeMap().SameAs(x.Map()) && !OperatorDomainMap().SameAs(x.Map()) )
+      EPETRA_CHK_ERR(-2); // x must have the same distribution as the range of A
   }
   int ierr = 0;
   int * NumBlockEntriesPerRow = NumBlockEntriesPerRow_;
