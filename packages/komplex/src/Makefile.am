@@ -36,7 +36,8 @@
 # For now, these are just guesses as to where the files belong.
 
 CORE_H = \
-	$(srcdir)/azk_komplex.h
+	$(srcdir)/azk_komplex.h \
+	$(srcdir)/Komplex_Version.h
 
 CORE = \
 	$(srcdir)/azk_create_linsys.c \

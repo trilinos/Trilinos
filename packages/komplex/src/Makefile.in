@@ -254,7 +254,8 @@ target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
 CORE_H = \
-	$(srcdir)/azk_komplex.h
+	$(srcdir)/azk_komplex.h \
+	$(srcdir)/Komplex_Version.h
 
 CORE = \
 	$(srcdir)/azk_create_linsys.c \
