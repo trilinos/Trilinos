@@ -1,11 +1,11 @@
 #include "ml_agg_reitzinger.h"
 
 int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes, 
-				      int fine_level, int incr_or_decrease,
-				      ML_Aggregate *ag, ML_Operator *Tmat,
-				      ML_Operator *Tmat_trans,
-				      ML_Operator ***Tmat_array,
-				      ML_Operator ***Tmat_trans_array)
+					int fine_level, int incr_or_decrease,
+					ML_Aggregate *ag, ML_Operator *Tmat,
+					ML_Operator *Tmat_trans,
+					ML_Operator ***Tmat_array,
+					ML_Operator ***Tmat_trans_array)
   {
     int coarsest_level, counter, Nghost, i, *Tcoarse_bindx = NULL;
     int *Tcoarse_rowptr, nz_ptr, row_length, j, *bindx = NULL;
@@ -15,24 +15,21 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
     ML_Operator *Pe, *Tcoarse_trans, *Tfine;  
     struct ML_CSR_MSRdata *csr_data;
     int Nlevels_nodal, grid_level;
-	double *fido,*yyy, dtemp,*xxx;
+    double *fido,*yyy, dtemp,*xxx;
+    int created_ag_obj = 0;
 
- if (incr_or_decrease != ML_DECREASING)
-    pr_error("Hiptmair: Only ML_DECREASING is supported\n");
+    if (incr_or_decrease != ML_DECREASING)
+      pr_error("Hiptmair: Only ML_DECREASING is supported\n");
 
- printf("ag is %u\n",ag);
- printf("................................................................\n");
- printf("................................................................\n");
- printf("................................................................\n");
- printf("................................................................\n");
- printf("................................................................\n");
- printf("overwriting aggregate info in UsingReitzinger\n");
- printf("\a\a\a\a\a\a\a\n");
- ML_Aggregate_Create(&ag);
- ML_Aggregate_Set_CoarsenScheme_MIS(ag);
- ML_Aggregate_Set_DampingFactor(ag,0.0);
- ML_Aggregate_Set_Threshold( ag, 0.0);
- Tfine = Tmat;
+
+    if (ag == NULL) {
+      created_ag_obj = 1;
+      ML_Aggregate_Create(&ag);
+      ML_Aggregate_Set_CoarsenScheme_MIS(ag);
+      ML_Aggregate_Set_DampingFactor(ag,0.0);
+      ML_Aggregate_Set_Threshold( ag, 0.0);
+    }
+    Tfine = Tmat;
   /********************************************************************/
   /* Set up the operators corresponding to regular unsmoothed         */
   /* aggregation on the nodal matrix.                                 */
@@ -45,6 +42,10 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
 					     ml_nodes->ML_num_levels);
   *Tmat_trans_array = (ML_Operator **) ML_allocate(sizeof(ML_Operator *)*
 					     ml_nodes->ML_num_levels);
+  for (i = 0; i < ml_nodes->ML_num_levels; i++) {
+     (*Tmat_array)[i] = NULL;
+     (*Tmat_trans_array)[i] = NULL;
+  }
   (*Tmat_array)[fine_level] = Tfine;
   (*Tmat_trans_array)[fine_level] = Tmat_trans;
 
@@ -128,6 +129,7 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
   csr_data->rowptr  = Tcoarse_rowptr;
 
   Tcoarse = ML_Operator_Create(ml_edges->comm);
+  Tcoarse->data_destroy = ML_CSR_MSRdata_Destroy;
   ML_Operator_Set_ApplyFuncData( Tcoarse, Kn_coarse->outvec_leng, counter, 
                                   ML_EMPTY, csr_data, counter, NULL, 0);
   ML_Operator_Set_Getrow(Tcoarse, ML_EXTERNAL, counter, CSR_getrows);
@@ -208,6 +210,8 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
 }
   */
 
+  ML_free(bindx);
+  ML_free(val);
 
   /********************************************************************/
   /* Matrix triple product for Pe where result is stuffed into MG     */
@@ -419,6 +423,25 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
   Tfine = Tcoarse;
   } /* for gridlevel = finelevel-1 ... */
 
+  if (created_ag_obj == 1) ML_Aggregate_Destroy(&ag);
   return(Nlevels_nodal);
   }
+
+int ML_MGHierarchy_ReitzingerDestroy(int finest_level, int coarsest_level,
+				     ML_Operator ***Tmat_array, ML_Operator ***Tmat_trans_array)
+{
+    int level;
+
+    for (level = finest_level; level >= coarsest_level; level--) {
+      if ((*Tmat_array)[level] != NULL)   ML_Operator_Destroy((*Tmat_array)[level]);
+      if ((*Tmat_trans_array)[level] != NULL)   ML_Operator_Destroy((*Tmat_trans_array)[level]);
+      (*Tmat_array)[level] = NULL;
+      (*Tmat_trans_array)[level] = NULL;
+    }
+    ML_free(*Tmat_array); ML_free(*Tmat_trans_array);
+    *Tmat_array = NULL;
+    *Tmat_trans_array = NULL;
+    return 0;
+}
+
 
