@@ -100,7 +100,7 @@ int ML_Epetra::MultiLevelPreconditioner::DestroyPreconditioner()
 
   // destroy main objects
   if (agg_ != 0) { ML_Aggregate_Destroy(&agg_); agg_ = 0; }
-  if (agg_edge_ != 0) { ML_Aggregate_Destroy(&agg_); agg_edge_ = 0; }
+  if (agg_edge_ != 0) { ML_Aggregate_Destroy(&agg_edge_); agg_edge_ = 0; }
   if (ml_ != 0) { ML_Destroy(&ml_); ml_ = 0; }
   if (ml_nodes_ != 0) { ML_Destroy(&ml_nodes_); ml_nodes_ = 0; }
   if (ml_edges_ != 0) { ML_Destroy(&ml_edges_); ml_edges_ = 0; }
