@@ -86,6 +86,8 @@ endif  #if test `expr ${VERBOSE}` = '-vtt'
 # 0 = all tests passed, 1 = at least one test failed
 if ( ${EXITCODE} == 1 ) then
   echo " ***** Test ${TESTNAME} failed *****"
+else
+  ${RM} -f ${SUMMARY_FILE}
 endif
 
 #exit ${EXITCODE}
