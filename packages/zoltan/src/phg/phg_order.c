@@ -26,7 +26,10 @@ int Zoltan_PHG_Vertex_Visit_Order(
   PHGPartParams *hgp, 
   int *order)
 {
-  int i;
+  int i, j, edge;
+  int *ldegree=NULL, *gdegree=NULL; /* local/global degree */
+  int *lpins=NULL, *gpins=NULL; /* local/global sum of pins */
+  char *yo= "Zoltan_PHG_Vertex_Visit_Order";
 
   /* Start with linear order. */
   for (i=0; i<hg->nVtx; i++)
@@ -38,6 +41,56 @@ int Zoltan_PHG_Vertex_Visit_Order(
       /* random node visit order */
       Zoltan_Rand_Perm_Int (order, hg->nVtx);
       break;
+
+    case 2: 
+      /* increasing vertex weight */
+      /* EBEB: This will not work with multidimensional weights! */
+      Zoltan_quicksort_pointer_inc_float (order, hg->vwgt, 0, hg->nVtx-1);
+      break;
+
+    case 3: 
+      /* increasing vertex degree */
+    case 4: 
+      /* increasing vertex degree, weighted by # pins */
+
+      /* allocate 4 arrays of size hg->nVtx with a single malloc */
+      if (!(ldegree = (int *) ZOLTAN_MALLOC (4*sizeof(int) * hg->nVtx))){
+        ZOLTAN_PRINT_WARN(zz->Proc, yo, "Out of memory");
+        ZOLTAN_FREE (&ldegree);
+        return ZOLTAN_MEMERR;
+      }
+      /* first local data, then global data */
+      lpins = ldegree + hg->nVtx;
+      gdegree = lpins + hg->nVtx;
+      gpins = gdegree + hg->nVtx;
+
+      /* loop over vertices */
+      for (i=0; i<hg->nVtx; i++){
+         ldegree[i] = hg->vindex[i+1] - hg->vindex[i]; /* local degree */
+         lpins[i] = 0;
+         /* loop over edges, sum up #pins */
+         for (j= hg->vindex[i]; j < hg->vindex[i+1]; j++) {
+           edge = hg->vedge[j];
+           lpins[i] += hg->hindex[edge+1] - hg->hindex[edge];
+         }
+      }
+
+      /* sum up local degrees in each column to get global degrees */
+      /* also sum up #pins in same communication */
+      MPI_Allreduce(ldegree, gdegree, 2*hg->nVtx, MPI_INT, MPI_SUM, 
+         hg->comm->col_comm);
+
+      /* sort by global values. same on every processor. */
+      if (hgp->visit_order == 3)
+        Zoltan_quicksort_pointer_inc_int_int (order, gdegree, gpins,
+          0, hg->nVtx-1);
+      else /* hgp->visit_order == 4 */
+        Zoltan_quicksort_pointer_inc_int_int (order, gpins, gdegree,
+          0, hg->nVtx-1);
+
+      ZOLTAN_FREE (&ldegree);
+      break;
+
     /* add more cases here */
   }
 

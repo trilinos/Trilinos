@@ -48,7 +48,6 @@ float key = (val ? val[sorted[(end+start)/2]] : 1.0);
 }
 
 
-
 void Zoltan_quicksort_pointer_dec_float (
   int *sorted, float* val, int start, int end
 )
@@ -62,8 +61,29 @@ int  equal, smaller;
      }
 }
 
+
 /****************************************************************************/
 
+/* Sort in increasing order by first calling the decreasing sort,
+   then reverse the order in linear time. */
+void Zoltan_quicksort_pointer_inc_float (
+  int *sorted, float* val, int start, int end
+)
+{
+  int i, j;
+  float temp;
+
+  /* sort in decreasing order */
+  Zoltan_quicksort_pointer_dec_float(sorted, val, start, end);
+  /* reverse order */
+  for (i=start, j=end; i<j; i++, j--){
+    temp = sorted[i];
+    sorted[i] = sorted[j];
+    sorted[j] = temp;
+  }
+}
+
+/****************************************************************************/
 
 
 /* Sorting pointers in decreasing order. Sort key is float. Sub key is int. */
