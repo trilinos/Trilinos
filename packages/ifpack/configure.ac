@@ -37,7 +37,7 @@
 # This must be the first line in configure.ac.
 # Optional 3rd argument is email address for bugs.
 
-AC_INIT(ifpack, 2.2d, maherou@sandia.gov)
+AC_INIT(ifpack, 3.0, maherou@sandia.gov)
 
 # Hello World!
 echo "----------------------------------------"
@@ -223,6 +223,7 @@ AC_CXX_STD_SPRINTF
 # - Amesos is used by Ifpack_Amesos
 # - Triutils is used in some examples, to generate the linear system.
 # - Teuchos is used for the parameters list in several classes.
+# - EpetraExt is used in some examples
 # ------------------------------------------------------------------------
 
 TAC_ARG_ENABLE_CAN_USE_PACKAGE(aztecoo, [Enable AztecOO support. AztecOO, a Trilinos package, is used in some of the examples for solve the linear system.], IFPACK_AZTECOO)
@@ -236,6 +237,9 @@ AM_CONDITIONAL(HAVE_IFPACK_TEUCHOS, test "X$ac_cv_use_teuchos" = "Xyes")
 #
 TAC_ARG_ENABLE_CAN_USE_PACKAGE(amesos, [Enable AMESOS support. Amesos, a Trilinos package, can be adopted as local solver for additive Schwarz preconditioners.  ], IFPACK_AMESOS)
 AM_CONDITIONAL(HAVE_IFPACK_AMESOS, test "X$ac_cv_use_amesos" = "Xyes")
+
+TAC_ARG_ENABLE_CAN_USE_PACKAGE(epetraext, [Enable EpetraExt support. EpetraExt, a Trilinos package, can be used to read matrices, maps and multivectors from file], IFPACK_EPETRAEXT)
+AM_CONDITIONAL(HAVE_IFPACK_EPETRAEXT, test "X$ac_cv_use_epetraext" = "Xyes")
 
 # ------------------------------------------------------------------------
 # Checks for special package flags
@@ -428,6 +432,10 @@ AC_CONFIG_FILES([
 		test/OverlappingRowMatrix/Makefile.include
 		test/CompareWithAztecOO/Makefile
 		test/CompareWithAztecOO/Makefile.include
+		test/ILU/Makefile
+		test/ILU/Makefile.include
+		test/IC/Makefile
+		test/IC/Makefile.include
 		test/scripts/Makefile
           test/scripts/daily/Makefile
           test/scripts/daily/mpi/Makefile

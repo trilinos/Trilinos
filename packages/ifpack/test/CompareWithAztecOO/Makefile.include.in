@@ -102,8 +102,6 @@ am_TestCompareWithAztecOO_OBJECTS =  \
 	TestCompareWithAztecOO-cxx_main.$(OBJEXT)
 TestCompareWithAztecOO_OBJECTS = $(am_TestCompareWithAztecOO_OBJECTS)
 am__DEPENDENCIES_1 =
-@HAVE_IFPACK_TRIUTILS_TRUE@am__DEPENDENCIES_2 = $(top_builddir)/../triutils/src/libtriutils.a
-@HAVE_IFPACK_AZTECOO_TRUE@am__DEPENDENCIES_3 = $(top_builddir)/../aztecoo/src/libaztecoo.a
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/src
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
@@ -154,6 +152,8 @@ HAVE_IFPACK_AMESOS_FALSE = @HAVE_IFPACK_AMESOS_FALSE@
 HAVE_IFPACK_AMESOS_TRUE = @HAVE_IFPACK_AMESOS_TRUE@
 HAVE_IFPACK_AZTECOO_FALSE = @HAVE_IFPACK_AZTECOO_FALSE@
 HAVE_IFPACK_AZTECOO_TRUE = @HAVE_IFPACK_AZTECOO_TRUE@
+HAVE_IFPACK_EPETRAEXT_FALSE = @HAVE_IFPACK_EPETRAEXT_FALSE@
+HAVE_IFPACK_EPETRAEXT_TRUE = @HAVE_IFPACK_EPETRAEXT_TRUE@
 HAVE_IFPACK_METIS_FALSE = @HAVE_IFPACK_METIS_FALSE@
 HAVE_IFPACK_METIS_TRUE = @HAVE_IFPACK_METIS_TRUE@
 HAVE_IFPACK_TEUCHOS_FALSE = @HAVE_IFPACK_TEUCHOS_FALSE@
@@ -242,20 +242,10 @@ target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
 TestCompareWithAztecOO_SOURCES = $(srcdir)/cxx_main.cpp
-TestCompareWithAztecOO_DEPENDENCIES = $(IFPACK_LIBS)
-TestCompareWithAztecOO_CXXFLAGS = $(IFPACK_INCLUDES)  \
-	-I$(top_srcdir)/../triutils/src \
-	-I$(top_builddir)/../triutils/src
-
-@HAVE_IFPACK_TRIUTILS_FALSE@triutils_lib = 
-@HAVE_IFPACK_TRIUTILS_TRUE@triutils_lib = $(top_builddir)/../triutils/src/libtriutils.a 
-@HAVE_IFPACK_AZTECOO_FALSE@aztecoo_lib = 
-@HAVE_IFPACK_AZTECOO_TRUE@aztecoo_lib = $(top_builddir)/../aztecoo/src/libaztecoo.a 
-TestCompareWithAztecOO_LDADD = $(TRILINOS_TEMPLATE_OBJS) \
- 	$(triutils_lib) \
- 	$(aztecoo_lib) \
-	$(IFPACK_LIBS) \
-	$(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS)
+TestCompareWithAztecOO_DEPENDENCIES = $(top_builddir)/../ifpack/src/libifpack.a 
+TestCompareWithAztecOO_CXXFLAGS = $(IFPACK_INCLUDES)
+TestCompareWithAztecOO_LDADD = $(IFPACK_LIBS) $(LAPACK_LIBS) \
+                                      $(BLAS_LIBS) $(FLIBS)  $(FLIBS)
 
 all: all-am
 
@@ -501,6 +491,8 @@ uninstall-am: uninstall-info-am
 	mostlyclean-generic pdf pdf-am ps ps-am tags uninstall \
 	uninstall-am uninstall-info-am
 
+
+include $(top_builddir)/Makefile.export
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

@@ -26,26 +26,13 @@
 # ************************************************************************
 #@HEADER
 
+include $(top_builddir)/Makefile.export
 EXEEXT = .exe
 
 noinst_PROGRAMS = TestContainer
 
-TestContainer_SOURCES = $(srcdir)/cxx_main.cpp
-
-TestContainer_DEPENDENCIES = $(IFPACK_LIBS)
-
-TestContainer_CXXFLAGS = $(IFPACK_INCLUDES)  \
-	-I$(top_srcdir)/../triutils/src \
-	-I$(top_builddir)/../triutils/src
-
-if HAVE_IFPACK_TRIUTILS
-triutils_lib = $(top_builddir)/../triutils/src/libtriutils.a 
-else
-triutils_lib = 
-endif
-
-TestContainer_LDADD = $(TRILINOS_TEMPLATE_OBJS) \
- 	$(triutils_lib) \
-	$(IFPACK_LIBS) \
-	$(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS)
-
+TestContainer_SOURCES      = $(srcdir)/cxx_main.cpp
+TestContainer_DEPENDENCIES = $(top_builddir)/../ifpack/src/libifpack.a 
+TestContainer_CXXFLAGS     = $(IFPACK_INCLUDES)
+TestContainer_LDADD        = $(IFPACK_LIBS) $(LAPACK_LIBS) \
+                             $(BLAS_LIBS) $(FLIBS)  $(FLIBS)

@@ -66,7 +66,7 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 host_triplet = @host@
 noinst_PROGRAMS = TestRelaxation$(EXEEXT)
-subdir = test/Relaxation
+subdir = test/PointPreconditioner
 DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/Makefile.include.am \
 	$(srcdir)/Makefile.include.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -100,8 +100,7 @@ CONFIG_CLEAN_FILES = Makefile
 PROGRAMS = $(noinst_PROGRAMS)
 am_TestRelaxation_OBJECTS = TestRelaxation-cxx_main.$(OBJEXT)
 TestRelaxation_OBJECTS = $(am_TestRelaxation_OBJECTS)
-@HAVE_IFPACK_TRIUTILS_TRUE@am__DEPENDENCIES_1 = $(top_builddir)/../triutils/src/libtriutils.a
-am__DEPENDENCIES_2 =
+am__DEPENDENCIES_1 =
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/src
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
@@ -151,6 +150,8 @@ HAVE_IFPACK_AMESOS_FALSE = @HAVE_IFPACK_AMESOS_FALSE@
 HAVE_IFPACK_AMESOS_TRUE = @HAVE_IFPACK_AMESOS_TRUE@
 HAVE_IFPACK_AZTECOO_FALSE = @HAVE_IFPACK_AZTECOO_FALSE@
 HAVE_IFPACK_AZTECOO_TRUE = @HAVE_IFPACK_AZTECOO_TRUE@
+HAVE_IFPACK_EPETRAEXT_FALSE = @HAVE_IFPACK_EPETRAEXT_FALSE@
+HAVE_IFPACK_EPETRAEXT_TRUE = @HAVE_IFPACK_EPETRAEXT_TRUE@
 HAVE_IFPACK_METIS_FALSE = @HAVE_IFPACK_METIS_FALSE@
 HAVE_IFPACK_METIS_TRUE = @HAVE_IFPACK_METIS_TRUE@
 HAVE_IFPACK_TEUCHOS_FALSE = @HAVE_IFPACK_TEUCHOS_FALSE@
@@ -239,16 +240,10 @@ target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
 TestRelaxation_SOURCES = $(srcdir)/cxx_main.cpp
-TestRelaxation_DEPENDENCIES = $(IFPACK_LIBS)
-TestRelaxation_CXXFLAGS = $(IFPACK_INCLUDES)  \
-	-I$(top_srcdir)/../triutils/src \
-	-I$(top_builddir)/../triutils/src
-
-@HAVE_IFPACK_TRIUTILS_FALSE@triutils_lib = 
-@HAVE_IFPACK_TRIUTILS_TRUE@triutils_lib = $(top_builddir)/../triutils/src/libtriutils.a 
-TestRelaxation_LDADD = $(triutils_lib) \
-	$(IFPACK_LIBS) \
-	$(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS)
+TestRelaxation_DEPENDENCIES = $(top_builddir)/../ifpack/src/libifpack.a 
+TestRelaxation_CXXFLAGS = $(IFPACK_INCLUDES)
+TestRelaxation_LDADD = $(IFPACK_LIBS) $(LAPACK_LIBS) \
+                              $(BLAS_LIBS) $(FLIBS)  $(FLIBS)
 
 all: all-am
 
@@ -263,9 +258,9 @@ $(srcdir)/Makefile.include.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.include
 	      exit 1;; \
 	  esac; \
 	done; \
-	echo ' cd $(top_srcdir) && $(AUTOMAKE) --foreign  test/Relaxation/Makefile.include'; \
+	echo ' cd $(top_srcdir) && $(AUTOMAKE) --foreign  test/PointPreconditioner/Makefile.include'; \
 	cd $(top_srcdir) && \
-	  $(AUTOMAKE) --foreign  test/Relaxation/Makefile.include
+	  $(AUTOMAKE) --foreign  test/PointPreconditioner/Makefile.include
 .PRECIOUS: Makefile.include
 Makefile.include: $(srcdir)/Makefile.include.in $(top_builddir)/config.status
 	@case '$?' in \
@@ -494,6 +489,8 @@ uninstall-am: uninstall-info-am
 	mostlyclean-generic pdf pdf-am ps ps-am tags uninstall \
 	uninstall-am uninstall-info-am
 
+
+include $(top_builddir)/Makefile.export
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

@@ -30,15 +30,18 @@ EXEEXT = .exe
 # Nothing should be done for a serial build
 if  HAVE_MPI
 
-noinst_PROGRAMS = ifpackTestAllMpi
+noinst_PROGRAMS = ifpackTestAllMpi ifpackExamples
 
 ifpackTestAllMpi_SOURCES = $(srcdir)/ifpackTestAllMpi
-
 ifpackTestAllMpi$(EXEEXT): $(srcdir)/ifpackTestAllMpi
 	cp $(srcdir)/ifpackTestAllMpi ifpackTestAllMpi$(EXEEXT) 
+
+ifpackExamples_SOURCES = $(srcdir)/ifpackExamples
+ifpackExamples$(EXEEXT): $(srcdir)/ifpackExamples
+	cp $(srcdir)/ifpackExamples ifpackExamples$(EXEEXT) 
 else
 
-EXTRA_DIST = ifpackTestAllMpi
+EXTRA_DIST = ifpackTestAllMpi ifpackExamples
 
 endif
 

@@ -42,7 +42,7 @@
 # ************************************************************************
 #@HEADER
 
-SOURCES = $(ifpackTestAllMpi_SOURCES)
+SOURCES = $(ifpackExamples_SOURCES) $(ifpackTestAllMpi_SOURCES)
 
 srcdir = @srcdir@
 top_srcdir = @top_srcdir@
@@ -65,7 +65,8 @@ NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
 host_triplet = @host@
-@HAVE_MPI_TRUE@noinst_PROGRAMS = ifpackTestAllMpi$(EXEEXT)
+@HAVE_MPI_TRUE@noinst_PROGRAMS = ifpackTestAllMpi$(EXEEXT) \
+@HAVE_MPI_TRUE@	ifpackExamples$(EXEEXT)
 subdir = test/scripts/daily/mpi
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -97,6 +98,10 @@ mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/Ifpack_config.h
 CONFIG_CLEAN_FILES =
 PROGRAMS = $(noinst_PROGRAMS)
+am__ifpackExamples_SOURCES_DIST = $(srcdir)/ifpackExamples
+am_ifpackExamples_OBJECTS =
+ifpackExamples_OBJECTS = $(am_ifpackExamples_OBJECTS)
+ifpackExamples_LDADD = $(LDADD)
 am__ifpackTestAllMpi_SOURCES_DIST = $(srcdir)/ifpackTestAllMpi
 am_ifpackTestAllMpi_OBJECTS =
 ifpackTestAllMpi_OBJECTS = $(am_ifpackTestAllMpi_OBJECTS)
@@ -106,8 +111,9 @@ COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
 CCLD = $(CC)
 LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
-SOURCES = $(ifpackTestAllMpi_SOURCES)
-DIST_SOURCES = $(am__ifpackTestAllMpi_SOURCES_DIST)
+SOURCES = $(ifpackExamples_SOURCES) $(ifpackTestAllMpi_SOURCES)
+DIST_SOURCES = $(am__ifpackExamples_SOURCES_DIST) \
+	$(am__ifpackTestAllMpi_SOURCES_DIST)
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 ACLOCAL = @ACLOCAL@
 ALTERNATE_AR = @ALTERNATE_AR@
@@ -144,6 +150,8 @@ HAVE_IFPACK_AMESOS_FALSE = @HAVE_IFPACK_AMESOS_FALSE@
 HAVE_IFPACK_AMESOS_TRUE = @HAVE_IFPACK_AMESOS_TRUE@
 HAVE_IFPACK_AZTECOO_FALSE = @HAVE_IFPACK_AZTECOO_FALSE@
 HAVE_IFPACK_AZTECOO_TRUE = @HAVE_IFPACK_AZTECOO_TRUE@
+HAVE_IFPACK_EPETRAEXT_FALSE = @HAVE_IFPACK_EPETRAEXT_FALSE@
+HAVE_IFPACK_EPETRAEXT_TRUE = @HAVE_IFPACK_EPETRAEXT_TRUE@
 HAVE_IFPACK_METIS_FALSE = @HAVE_IFPACK_METIS_FALSE@
 HAVE_IFPACK_METIS_TRUE = @HAVE_IFPACK_METIS_TRUE@
 HAVE_IFPACK_TEUCHOS_FALSE = @HAVE_IFPACK_TEUCHOS_FALSE@
@@ -232,7 +240,8 @@ target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
 @HAVE_MPI_TRUE@ifpackTestAllMpi_SOURCES = $(srcdir)/ifpackTestAllMpi
-@HAVE_MPI_FALSE@EXTRA_DIST = ifpackTestAllMpi
+@HAVE_MPI_TRUE@ifpackExamples_SOURCES = $(srcdir)/ifpackExamples
+@HAVE_MPI_FALSE@EXTRA_DIST = ifpackTestAllMpi ifpackExamples
 all: all-am
 
 .SUFFIXES:
@@ -268,6 +277,9 @@ $(ACLOCAL_M4): @MAINTAINER_MODE_TRUE@ $(am__aclocal_m4_deps)
 
 clean-noinstPROGRAMS:
 	-test -z "$(noinst_PROGRAMS)" || rm -f $(noinst_PROGRAMS)
+@HAVE_MPI_FALSE@ifpackExamples$(EXEEXT): $(ifpackExamples_OBJECTS) $(ifpackExamples_DEPENDENCIES) 
+@HAVE_MPI_FALSE@	@rm -f ifpackExamples$(EXEEXT)
+@HAVE_MPI_FALSE@	$(LINK) $(ifpackExamples_LDFLAGS) $(ifpackExamples_OBJECTS) $(ifpackExamples_LDADD) $(LIBS)
 @HAVE_MPI_FALSE@ifpackTestAllMpi$(EXEEXT): $(ifpackTestAllMpi_OBJECTS) $(ifpackTestAllMpi_DEPENDENCIES) 
 @HAVE_MPI_FALSE@	@rm -f ifpackTestAllMpi$(EXEEXT)
 @HAVE_MPI_FALSE@	$(LINK) $(ifpackTestAllMpi_LDFLAGS) $(ifpackTestAllMpi_OBJECTS) $(ifpackTestAllMpi_LDADD) $(LIBS)
@@ -396,9 +408,10 @@ uninstall-am: uninstall-info-am
 	mostlyclean-compile mostlyclean-generic pdf pdf-am ps ps-am \
 	uninstall uninstall-am uninstall-info-am
 
-
 @HAVE_MPI_TRUE@ifpackTestAllMpi$(EXEEXT): $(srcdir)/ifpackTestAllMpi
 @HAVE_MPI_TRUE@	cp $(srcdir)/ifpackTestAllMpi ifpackTestAllMpi$(EXEEXT) 
+@HAVE_MPI_TRUE@ifpackExamples$(EXEEXT): $(srcdir)/ifpackExamples
+@HAVE_MPI_TRUE@	cp $(srcdir)/ifpackExamples ifpackExamples$(EXEEXT) 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

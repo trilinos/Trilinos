@@ -26,33 +26,13 @@
 # ************************************************************************
 #@HEADER
 
+include $(top_builddir)/Makefile.export
 EXEEXT = .exe
 
 noinst_PROGRAMS = TestCompareWithAztecOO
 
-TestCompareWithAztecOO_SOURCES = $(srcdir)/cxx_main.cpp
-
-TestCompareWithAztecOO_DEPENDENCIES = $(IFPACK_LIBS)
-
-TestCompareWithAztecOO_CXXFLAGS = $(IFPACK_INCLUDES)  \
-	-I$(top_srcdir)/../triutils/src \
-	-I$(top_builddir)/../triutils/src
-
-if HAVE_IFPACK_TRIUTILS
-triutils_lib = $(top_builddir)/../triutils/src/libtriutils.a 
-else
-triutils_lib = 
-endif
-
-if HAVE_IFPACK_AZTECOO
-aztecoo_lib = $(top_builddir)/../aztecoo/src/libaztecoo.a 
-else
-aztecoo_lib = 
-endif
-
-TestCompareWithAztecOO_LDADD = $(TRILINOS_TEMPLATE_OBJS) \
- 	$(triutils_lib) \
- 	$(aztecoo_lib) \
-	$(IFPACK_LIBS) \
-	$(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS)
-
+TestCompareWithAztecOO_SOURCES      = $(srcdir)/cxx_main.cpp
+TestCompareWithAztecOO_DEPENDENCIES = $(top_builddir)/../ifpack/src/libifpack.a 
+TestCompareWithAztecOO_CXXFLAGS     = $(IFPACK_INCLUDES)
+TestCompareWithAztecOO_LDADD        = $(IFPACK_LIBS) $(LAPACK_LIBS) \
+                                      $(BLAS_LIBS) $(FLIBS)  $(FLIBS)
