@@ -222,7 +222,11 @@ int ML_Operator_halfClone_Init(ML_Operator *mat,
    mat->invec_leng          = original->invec_leng;
    mat->outvec_leng         = original->outvec_leng;
    mat->data                = original->data;
-   mat->diagonal            = original->diagonal;
+   /* Take out the diagonal. We want to have the ability to free the */
+   /* diagonal when we clean up the half clone. Within the hiptmair  */
+   /* subsmoother, sometimes half clones allocate the diagonal. -rst */
+   /*   mat->diagonal = original->diagonal; */
+   mat->diagonal            = NULL;
    mat->N_nonzeros          = original->N_nonzeros;
    mat->max_nz_per_row      = original->max_nz_per_row;
    mat->sub_matrix          = original->sub_matrix;
@@ -252,6 +256,9 @@ int ML_Operator_halfClone_Init(ML_Operator *mat,
 int ML_Operator_halfClone_Clean( ML_Operator *mat)
 {
   if (mat == NULL) return 0;
+   if (mat->diagonal != NULL) {
+      ML_DVector_Destroy( &(mat->diagonal) );
+   }
    mat->sub_matrix = NULL;
    mat->sub_matrix1 = NULL;
    mat->subspace = NULL;

@@ -45,7 +45,7 @@ int ML_Operator_blockmat_matvec(void *data, int inlen, double invec[],
   }
 
   ML_free(z);
-
+  return 1;
 }
 
 /*****************************************************************/
@@ -240,6 +240,7 @@ int  ML_Operator_Gen_blockmat(ML_Operator *blockmat, ML_Operator *Ke,
   /* and ML_Operator_blockmat_getrow will use. Shove new data structure into */
   /* into blockmat along with matvec/getrow/comm function ptrs.  */
 
+  ML_Operator_Clean(blockmat);
   ML_Operator_Init(blockmat,Ke->comm);
 
   blockmat->max_nz_per_row = 30; /* we shouldn't need to set this */

@@ -641,7 +641,7 @@ int CSR_ones_matvec(void *Amat_in, int ilen, double p[], int olen, double ap[])
 {
 
    int i, jj, k, /* Nrows,*/ *bindx;
-   double            *p2, *val, sum, *ap2;
+   double            *p2, sum, *ap2;
    struct ML_CSR_MSRdata *temp;
    ML_CommInfoOP     *getrow_comm;
    ML_Operator       *Amat;
@@ -653,7 +653,6 @@ int CSR_ones_matvec(void *Amat_in, int ilen, double p[], int olen, double ap[])
    /* Nrows   = Amat->outvec_leng; */
    Nstored = Amat->getrow->Nrows;
    temp    = (struct ML_CSR_MSRdata *) Amat->data;
-   val     = temp->values;
    bindx   = temp->columns;
    row_ptr = temp->rowptr;
 
