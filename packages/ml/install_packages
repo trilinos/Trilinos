@@ -183,7 +183,7 @@ then
          BLAS=
          if test `expr $GOT_BLAS` = 'no'
          then
-            BLAS="blas1.f blas2.f blas3.f"
+            BLAS="blas1.f blas2.f blas3.f lsame.f xerbla.f"
          fi
          mb=`grep "^DEFINES" ../../../etc/flat_Makefile | grep MB_MODIF | wc | \
              sed "s/^ *//" | sed "s/ .*//"`
@@ -194,7 +194,7 @@ then
          tfFLAGS=`${echo} ${tFLAGS} ${ARCH_FLAGS} | sed "s/-Dmatched//g" | sed "s/-DNoChange//g"`
          if test `expr ${GOT_LAPACK}` = 'no'
          then
-            LA_SRC="blas1.f blas2.f blas3.f"
+            LA_SRC="blas1.f blas2.f blas3.f lsame.f xerbla.f"
             make "CC=${CC}" "FC=${FC}" "AR=${AR}" "TIMER=md_timer_generic.c" \
                  "COMMUNICATION=${AZCOMM}" "RNLIB=${RANLIB}" \
                  "CFLAGS=${tFLAGS} -Dlint ${ARCH_FLAGS} ${PACKAGES}" "FFLAGS=${tfFLAGS}" \
