@@ -2582,8 +2582,8 @@ int ML_Iterate(ML *ml, double *sol, double *rhs)
 		   res_norm/prev_res_norm);
          count = 0;
       }
-      if (i == 1) r0 = res_norm + 1.e-15;
-      prev_res_norm = res_norm + 1.e-15;
+      if (i == 1) r0 = res_norm + 1.e-25;
+      prev_res_norm = res_norm + 1.e-25;
       reduction = res_norm/r0;
 /*
       if (reduction >= old_reduction) {
