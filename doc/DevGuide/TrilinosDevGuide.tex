@@ -1,0 +1,196 @@
+\documentclass[12pt]{report}
+
+%
+% Set the title, author, and date
+%
+    \title{Trilinos Developer's Guide}
+
+    \author{James Willenbring\\
+       Computational Mathematics \& Algorithms \\
+	  Sandia National Laboratories\\
+	  P.O. Box 5800\\
+	  Albuquerque, NM 87185-1110 \\
+	  jmwille@sandia.gov \\
+	 }
+
+    % While this document is under active development, the date
+    % field will reflect the current date, eventually a final date
+    % will be assigned.
+%    \today - Latex spits out errors when this is used here
+
+%
+% Start the document
+%
+    \begin{document}
+	\maketitle
+
+%
+% Page style chosen that prints chapter heading and page number in the 
+% header on each page.
+%
+
+    \pagestyle{headings}
+
+    % -------------------------------------------------- %
+    % Acknowledgement section
+    % Use \section* since we don't want it in the table of context
+    %
+    %\clearpage - this is the beginning of the document
+    \section*{Acknowledgement}
+The author would like to acknowledge the support of the ASCI and LDRD programs 
+that funded development of Trilinos and the talented group of Trilinos 
+contributors: Michael Heroux, Robert Hoekstra, Alan Williams, Richard Lehoucq, 
+Kevin Long, Tamara Kolda, Roger Pawlowski, David Day, Ray Tuminaro, 
+Jonathan Hu, Mark Adams and Teri Barth.
+
+    % --------------------------------------------------------- %
+    % The table of contents and list of figures and tables
+    % Comment out \listoffigures and \listoftables if there are no
+    % figures or tables. Make sure this starts on an odd numbered page
+    %
+    \clearpage
+    \tableofcontents
+    \listoffigures
+    \listoftables
+
+
+
+% ------------------------------------------- %
+% Introduction to Developer's Guide
+%
+    \chapter{Introduction}
+	\section{Briew Overview}
+	\begin{quote}
+The Trilinos Project is an effort to develop parallel solver algorithms and 
+libraries within 
+an object-oriented software framework for the solution of large-scale, complex
+multi-physics engineering and scientific applications.   Our emphasis is on 
+developing robust, scalable algorithms in a software framework, using abstract 
+interfaces for flexible interoperability of components and providing a 
+full-featured set of concrete classes that implement all abstract interfaces. 
+Trilinos components are primarily written in C++, but provide essential C and 
+Fortran user interface support.  We provide an open architecture that allows 
+easy integration with other solver packages and we deliver our software to 
+the outside community via the Gnu Lesser General Public License
+(LGPL)~\cite{gnu-license-site}.
+	\end{quote}
+% Figure out how to cite Mike's overview doc
+	\section{Motivation}
+	\begin{quote}
+Research efforts in advanced solution algorithms and parallel solver
+libraries have historically had a large impact on engineering and
+scientific computing.  Algorithmic advances increase the range
+of tractable problems and reduce the cost of solving existing
+problems.  Well-designed solver libraries provide a mechanism for
+leveraging solver development across a broad set of applications and
+minimize the cost of solver integration.  Emphasis is
+required in both new algorithms and new software in order
+to achieve the maximum impact of efforts.
+
+The Trilinos project encompasses a variety of efforts that are to some
+extent self-contained but at the same time inter-related.  The
+Trilinos design allows individual packages to grow and mature
+autonomously to the extent the algorithms and package developers
+dictate. 
+	\end{quote}
+%85
+
+	\section{What is Covered in this Guide}
+**(see lines 230-243)
+
+The Trilinos Developer's Guide is meant to assist existing, as well as new and
+potential Trilinos developers.  Topics covered include what is required to
+integrate an existing package into Trilinos and examples of how those 
+requirements can be met, as well as what tools are available as a Trilinos
+package.  **(rewrite this section)**
+
+For a higher-level view of the Trilinos project, please see **(Cite An Overview
+of the Trilinos Project by Mike Heroux). 
+
+% start reading Mike's stuff at 243
+
+	\chapter{Requirements \& Guildlines}
+	**(Req's and how to satisfy them - break into sections)**
+
+
+
+	\chapter{Suggested Practices}
+	**(suggested coding guidelines, and other non-manditory practices that are encouraged - break up.  See Overview Doc pg 11,14-15.)**
+	
+
+
+	\chapter{Services Available to Trilinos Packages}
+	A number of services exist for Trilinos packages.
+	\section{Configuration Management}
+	**(See Overview Doc pg 12)**
+Autoconf~\cite{Autoconf},  Automake~\cite{Automake} and
+Libtool~\cite{Libtool} provide a robust, full-featured set of tools for
+building software across a broad set of platforms (see also the ``Goat
+Book''~\cite{GoatBook}).  Although these
+tools are not official standards, they are commonly used in many
+packages.  Many existing
+Trilinos packages use Autoconf and Automake (and will use
+Libtool in the future).  However, use of these tools is not required.
+
+In order to minimize the amount of redudant effort, Trilinos provides a set of
+M4~\cite{M4} macros that can be used by any other
+package that wants to use Autoconf and Automake for configuring and
+building libraries.  These macros perform common configuration tasks such as
+locating a valid LAPACK~\cite{lapack} library, or checking for a user-defined 
+MPI C compiler.  These macros can be found ...
+**(Add something about looking at the configure.ac files, and who to contact)**
+
+	\section{Regression Testing}
+	**(See Overview Doc pg 12)**
+	
+	\section{Source Code Repository and Build Tools}
+	**(See Overview Doc pg 12)**
+Source code repository and build tools: Trilinos source code is
+maintained in a CVS~\cite{CVS} repository that is accessible via a
+web-based interface package called Bonsai~\cite{Bonsai}.  Features and bug reports
+are tracked using Bugzilla~\cite{Bugzilla}, and email lists are
+maintained for Trilinos as a whole and for each package.  Support for new
+packages can easily be added.  All tools are accessible from the main
+Trilinos website~\cite{Trilinos-home-page}.
+**(Break this down and talk about how to use the various tools)**
+
+	\chapter{Tools Available to Trilinos Packages}
+	**(Maybe break up by category and then by tool - reword title, this section for software that doesn't need to be duplicated)**
+	\section{Portable Interface to BLAS and LAPACK}
+	**(See Overview Doc pg 12)**
+
+Portable interface to BLAS and LAPACK: The Basic Linear Algebra
+Subprograms (BLAS)~\cite{BLAS1,BLAS2,BLAS3} and LAPACK~\cite{lapack}
+provide a large repository of robust, high-performance mathematical
+software for serial and shared memory parallel dense linear algebra
+computations.  However, the BLAS and LAPACK interfaces are Fortran
+specifications, and the mechanism for calling Fortran interfaces from
+C and C++ varies across computing platforms.  Epetra (and Tpetra)
+provide a set of simple, portable interfaces to the BLAS and LAPACK
+that provide uniform access to the BLAS and LAPACK across a broad
+set of platforms.  These interfaces are accessible to
+other packages.
+**(Expand on this)**
+
+
+	\chapter{Integrating a Package into Trilinos}
+	**(list formal? process, meet above requirements Overview Doc pg 11,14-15)**
+
+
+
+
+	\chapter{Interoperability Status for Existing Trilinos Packages}
+
+
+    % ---------------------------------------------------------------------- %
+    % References
+    %
+    \clearpage
+    \bibliographystyle{plain}
+    \bibliography{TrilinosDevGuide}
+    \addcontentsline{toc}{section}{References}
+
+% Include Appendices??  If they are needed, they go here.
+
+
+\end{document}
