@@ -17,7 +17,6 @@ void Trilinos_Util_CountMatrixMarket( const char *data_file,
 				      const Epetra_Comm  &comm) { 
 
   FILE *in_file ;
-  bool symmetric = true;  // Later we should pick this off of line 1 of the file
   
   N_rows = 0 ; 
   nnz = 0 ; 
@@ -40,6 +39,10 @@ void Trilinos_Util_CountMatrixMarket( const char *data_file,
       }
     
     fgets( buffer, BUFSIZE, in_file ) ;
+    bool symmetric = false ; 
+    string headerline1 = buffer;
+    if ( headerline1.find("symmetric") != string::npos) symmetric = true; 
+
     fgets( buffer, BUFSIZE, in_file ) ;
     while ( fgets( buffer, BUFSIZE, in_file ) ) { 
       int i, j; 

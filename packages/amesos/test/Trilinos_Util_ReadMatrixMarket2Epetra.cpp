@@ -16,7 +16,6 @@ int Trilinos_Util_ReadMatrixMarket2Epetra( char *data_file,
 				      Epetra_Vector *&xexact ) {
   FILE *in_file ;
   int N_rows, nnz ; 
-  bool symmetric = true;  //  Later we should pick this off the first line of the file.
 
   const int BUFSIZE = 800 ; 
   char buffer[BUFSIZE] ; 
@@ -46,6 +45,10 @@ int Trilinos_Util_ReadMatrixMarket2Epetra( char *data_file,
     vector<int> iptrs = ptrs ; //  Current pointers into inds and vals for each row
 
     fgets( buffer, BUFSIZE, in_file ) ;  // Pick symmetry info off of this string 
+    bool symmetric = false ; 
+    string headerline1 = buffer;
+    if ( headerline1.find("symmetric") != string::npos) symmetric = true; 
+
     //  http://www.yolinux.com/TUTORIALS/LinuxTutorialC++StringClass.html 
     //  says that Var.find() is the function that we want.
     fgets( buffer, BUFSIZE, in_file ) ;
