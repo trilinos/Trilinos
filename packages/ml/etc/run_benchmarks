@@ -24,9 +24,13 @@ PARALLEL_CMD=`echo mpirun -machinefile ${HOME}/bin/machinefile -np `
 #      tell you what the defaults are. If these are not correct, add
 #      arguments to run_benchmarks.
 #
-#       Usage: run_benchmarks [bench_directory executable_directory 
+#       Usage: run_benchmarks [script_directory bench_directory
+#                              executable_directory 
 #                              scratch_directory parallel={TRUE,FALSE}]
 #       where
+#
+#           script_directory     ml/etc/ directory where run_bench lives
+#
 #           bench_directory      Directory path to mlbench test problems.
 # 
 #           executable_directory Path to directory where ml should be 
@@ -38,8 +42,8 @@ PARALLEL_CMD=`echo mpirun -machinefile ${HOME}/bin/machinefile -np `
 #                                parallel benchmarks should be run.
 #
 SCRIPT_DIRECTORY=${PWD}
-#BENCH_DIRECTORY=${HOME}/mlbench
-BENCH_DIRECTORY=${HOME}/tmp/mlbench
+BENCH_DIRECTORY=${HOME}/mlbench
+#BENCH_DIRECTORY=${HOME}/tmp/mlbench
 EXECUTABLE_DIRECTORY=${PWD}/../Obj
 SCRATCH_DIRECTORY=/tmp/mlbench_results
 PARALLEL=FALSE
@@ -118,15 +122,15 @@ then
    exit
 fi
 
-#echo "Usage: run_benchmarks [bench_directory executable_directory scratch_directory paralel={TRUE,FALSE}]
+#echo "Usage: run_benchmarks [script_directory bench_directory executable_directory scratch_directory paralel={TRUE,FALSE}]
 
 #echo $* $#
 #
 # Take command line arguments and replace defaults
 #
-if test $# -ge 5
+if test $# -ge 6
 then
-  echo "Usage: run_benchmarks [bench_directory executable_directory scratch_directory parallel={TRUE,FALSE}]"
+  echo "Usage: run_benchmarks [script_directory bench_directory executable_directory scratch_directory parallel={TRUE,FALSE}]"
   exit
 fi
 if test $# -eq 0
@@ -138,31 +142,37 @@ then
   echo "      PARALLEL             = " $PARALLEL
   echo 
   echo "If defaults not wanted, overwrite using ..."
-  echo "    Usage: run_benchmarks [bench_directory executable_directory scratch_directory parallel={TRUE,FALSE} ]"
+  echo "    Usage: run_benchmarks [script_directory bench_directory executable_directory scratch_directory parallel={TRUE,FALSE} ]"
   echo
 fi
 if test $# -ge 1
 then
-  BENCH_DIRECTORY=$1
+  SCRIPT_DIRECTORY=$1
 fi
 if test $# -ge 2
 then
-  EXECUTABLE_DIRECTORY=$2
+  BENCH_DIRECTORY=$2
 fi
 if test $# -ge 3
 then
-  SCRATCH_DIRECTORY=$3
+  EXECUTABLE_DIRECTORY=$3
 fi
 if test $# -ge 4
 then
-  PARALLEL=$4
+  SCRATCH_DIRECTORY=$4
 fi
+if test $# -ge 5
+then
+  PARALLEL=$5
+fi
+
 
 export SCRIPT_DIRECTORY
 export BENCH_DIRECTORY
 export EXECUTABLE_DIRECTORY
 export SCRATCH_DIRECTORY
 export PARALLEL
+export PARALLEL_CMD
 
 #
 #  Check for the benchmark directory containing the 

@@ -1,4 +1,4 @@
-#!/bin/sh 
+#!/bin/sh
 #
       /bin/rm -f ml_inputfile
 #     check that the executable file name is there
