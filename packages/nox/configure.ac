@@ -639,45 +639,6 @@ AC_TRY_COMPILE(
 )
 
 # ------------------------------------------------------------------------
-# Check for MPI library
-# ------------------------------------------------------------------------
-
-if test "X${HAVE_PKG_MPI}" = "Xyes" && test X${BUILD_EPETRA_EXAMPLES} = Xyes; then
-
-  if test -n "${MPI_DIR}" && test -z "${MPI_LIBDIR}"; then
-    MPI_LIBDIR="${MPI_DIR}/lib"
-  fi
-
-  if test -n "${MPI_LIBDIR}"; then
-    LDFLAGS="${LDFLAGS} -L${MPI_LIBDIR}"
-  fi
-
-  if test -z "${MPI_LIBS}" && test -n "${MPI_LIBDIR}"; then
-    MPI_LIBS="-lmpi"
-  fi
-
-  if test -n "${MPI_LIBS}"; then
-    LIBS="${MPI_LIBS} ${LIBS}"
-  fi
-
-  AC_LANG_CPLUSPLUS 
-  AC_MSG_CHECKING(whether MPI will link using C++ compiler)
-  AC_TRY_LINK([#include <mpi.h>],
-  [int c; char** v; MPI_Init(&c,&v);],
-  [AC_MSG_RESULT(yes)], 
-  [AC_MSG_RESULT(no)  
-   echo "-----"
-   echo "Cannot link simple MPI program."
-   echo "Try --with-mpi-cxx to specify MPI C++ compile script."
-   echo "Or try --with-mpi-libs, --with-mpi-incdir, --with-mpi-libdir"
-   echo "to specify all the specific MPI compile options."
-   echo "-----"
-   AC_MSG_ERROR(MPI cannot link)]
-  )
-
-fi
-
-# ------------------------------------------------------------------------
 # Which Add-Ons To Build
 # ------------------------------------------------------------------------
 
@@ -800,6 +761,45 @@ if test X${BUILD_LIBLOCA} = Xyes && test X${ADDON_epetra_EXAMPLES} = Xyes; then
 else
   AC_MSG_RESULT(no)
   AM_CONDITIONAL(BUILD_LOCA_EPETRA_EXAMPLES, false)
+fi
+
+# ------------------------------------------------------------------------
+# Check for MPI library
+# ------------------------------------------------------------------------
+
+if test "X${HAVE_PKG_MPI}" = "Xyes" && test X${ADDON_epetra_EXAMPLES} = Xyes; then
+
+  if test -n "${MPI_DIR}" && test -z "${MPI_LIBDIR}"; then
+    MPI_LIBDIR="${MPI_DIR}/lib"
+  fi
+
+  if test -n "${MPI_LIBDIR}"; then
+    LDFLAGS="${LDFLAGS} -L${MPI_LIBDIR}"
+  fi
+
+  if test -z "${MPI_LIBS}" && test -n "${MPI_LIBDIR}"; then
+    MPI_LIBS="-lmpi"
+  fi
+
+  if test -n "${MPI_LIBS}"; then
+    LIBS="${MPI_LIBS} ${LIBS}"
+  fi
+
+  AC_LANG_CPLUSPLUS 
+  AC_MSG_CHECKING(whether MPI will link using C++ compiler)
+  AC_TRY_LINK([#include <mpi.h>],
+  [int c; char** v; MPI_Init(&c,&v);],
+  [AC_MSG_RESULT(yes)], 
+  [AC_MSG_RESULT(no)  
+   echo "-----"
+   echo "Cannot link simple MPI program."
+   echo "Try --with-mpi-cxx to specify MPI C++ compile script."
+   echo "Or try --with-mpi-libs, --with-mpi-incdir, --with-mpi-libdir"
+   echo "to specify all the specific MPI compile options."
+   echo "-----"
+   AC_MSG_ERROR(MPI cannot link)]
+  )
+
 fi
 
 # ------------------------------------------------------------------------
@@ -1199,6 +1199,20 @@ fi
 # ------------------------------------------------------------------------
 # Checks for linker characteristics
 # ------------------------------------------------------------------------
+
+## RPP: 5/23/2003 - CXXREPOS is not standard.  All of Trilinos uses
+##                  the flag TRILINOS_TEMPLATE_OBJECTS instead 
+##                  of CXXREPOS.  I added the check for 
+##                  TRILINOS_TEMPLATE_OBJECTS to be consistent
+##                  with the rest of trilinos (otherwise trilinos 
+##                  users must set redundant flags when configuring).
+AC_MSG_CHECKING([for trilinos template-specific object files to be linked])
+if test "X$TRILINOS_TEMPLATE_OBJS" = "X"; then
+ AC_MSG_RESULT(none)
+else
+ AC_MSG_RESULT($TRILINOS_TEMPLATE_OBJS)
+ CXXREPOS=$TRILINOS_TEMPLATE_OBJS
+fi
 
 # -- DEC CXX --
 case $target in

@@ -170,7 +170,7 @@ liblocaepetra_a_CXXFLAGS = -I$(top_srcdir)/src-loca/src \
 # Some C++ compilers create extra .o-files for templates. We need to
 # be sure to include these, and this is the hack to do it.
 # ------------------------------------------------------------------------
-liblocaepetra_a_LIBADD = $(CXXREPOS)
+liblocaepetra_a_LIBADD = $(XTRALDADD)
 
 
 # ------------------------------------------------------------------------

@@ -107,13 +107,19 @@ endif
 # be sure to include these, and this is the hack to do it.
 # ------------------------------------------------------------------------
 
-libnoxepetra_a_LIBADD = $(CXXREPOS)
+libnoxepetra_a_LIBADD = $(CXXREPOS) $(XTRALDADD)
 
 # ------------------------------------------------------------------------
 # Files to be deleted by 'make maintainer-clean'
 # ------------------------------------------------------------------------
 
 MAINTAINERCLEANFILES = Makefile.in 
+
+# ------------------------------------------------------------------------
+# Files to be deleted by 'make clean'
+# ------------------------------------------------------------------------
+
+MOSTLYCLEANFILES = $(CXXREPOS)
 
 
 
