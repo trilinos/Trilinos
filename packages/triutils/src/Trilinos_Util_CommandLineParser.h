@@ -126,13 +126,13 @@ private:
   
 };
 
-//! Trilinos_Util_CommandLineParser: A class for managing the input arguments and variables.
+//! Trilinos_Util::CommandLineParser: A class for managing the input arguments and variables.
 
 /* ======================================================================== */
 /*!
- \class Trilinos_Util_ShellOptions
+ \class Trilinos_Util::CommandLineParser
 
- Using Trilinos_Util_ShellOptions, it is easy to handle input line arguments and shell
+ Using Trilinos_Util::CommandLineParser, it is easy to handle input line arguments and shell
  varibles. For instance, the user can write
  \verbatim
  $ ./a.out -nx 10 -tol 1e-6 -solver=cg
@@ -144,11 +144,11 @@ private:
  int main(int argc, char *argv[])
   {
 
-   ShellOptions Args(argc,argv);
-   int nx = Args.GetInt("-nx", 123);
-   int ny = Args.GetInt("-ny", 145);
-   double tol = Args.GetDouble("-tol", 1e-12);
-   string solver = Args.GetInt("-solver");
+   Trilinos_Util::CommandLineParser CLP(argc,argv);
+   int nx = CLP.GetInt("-nx", 123);
+   int ny = CLP.GetInt("-ny", 145);
+   double tol = CLP.GetDouble("-tol", 1e-12);
+   string solver = CLP.GetInt("-solver");
 
    cout << "nx = " << nx << endl;
    cout << "ny = " << ny << " (default value)" << endl;
@@ -210,14 +210,16 @@ private:
 */
 // ================================================ ====== ==== ==== == =
 
-class Trilinos_Util_CommandLineParser : public Trilinos_Util_Map 
+namespace Trilinos_Util {
+
+class CommandLineParser : public Trilinos_Util_Map 
 {
 
  public:
 
   //@{ \name Constructors/Destructor.
   //! Trilinos_Util_ShellOptions constructor using the options given at the shell line.
-  Trilinos_Util_CommandLineParser(int argc, char *argv[] );
+  CommandLineParser(int argc, char *argv[] );
 
   // ============= //
   // query and add //
@@ -255,13 +257,13 @@ class Trilinos_Util_CommandLineParser : public Trilinos_Util_Map
 
 // ================================================ ====== ==== ==== == =
 
-class Trilinos_Util_FileOptions : public Trilinos_Util_Map 
+class InputFileReader : public Trilinos_Util_Map 
 {
 
  public:
 
-  Trilinos_Util_FileOptions(const char FileName[] );
-  ~Trilinos_Util_FileOptions();
+  InputFileReader(const char FileName[] );
+  ~InputFileReader();
 
   virtual string GetFileName(void) const;
 
@@ -280,4 +282,6 @@ private:
   string SeparationChars_;
   bool FileHasBeenRead_;
 };
+
+} // namespace Trilinos_Util
 #endif

@@ -56,10 +56,10 @@ void Trilinos_Util_Map::Reset(void)
 
 // ================================================ ====== ==== ==== == =
 
-Trilinos_Util_CommandLineParser::Trilinos_Util_CommandLineParser(int argc, char *argv[])
+Trilinos_Util::CommandLineParser::CommandLineParser(int argc, char *argv[])
 {
 
-  SetLabel("Trilinos_Util_CommandLineParser");
+  SetLabel("Trilinos_Util::CommandLineParser");
 
   char str[80];
   string value, param;
@@ -221,7 +221,7 @@ bool Trilinos_Util_Map::Set( const string input, const double value )
 {
 
   char value2[80];
-  sprintf( value2, "%lf", value);
+  sprintf( value2, "%e", value);
   return( Set(input,value2) );
 }
 
@@ -253,13 +253,13 @@ bool Trilinos_Util_Map::Set( const string input, const char * value )
 
 } /* Set */
 
-string Trilinos_Util_CommandLineParser::GetProgramName( void )
+string Trilinos_Util::CommandLineParser::GetProgramName( void )
 {
   return( Get("_PROGRAM_NAME_", "UNDEFINED" ) );
   
 }
 
-int Trilinos_Util_CommandLineParser::GetIntShellVariable( const char *str )
+int Trilinos_Util::CommandLineParser::GetIntShellVariable( const char *str )
 {
 
   char * buffer;
@@ -272,7 +272,7 @@ int Trilinos_Util_CommandLineParser::GetIntShellVariable( const char *str )
   
 } /* GetIntShellVariable */
 
-double Trilinos_Util_CommandLineParser::GetDoubleShellVariable( const char *str )
+double Trilinos_Util::CommandLineParser::GetDoubleShellVariable( const char *str )
 {
 
   char * buffer;
@@ -285,7 +285,7 @@ double Trilinos_Util_CommandLineParser::GetDoubleShellVariable( const char *str 
   
 } /* GetDoubleShellVariable */
 
-string Trilinos_Util_CommandLineParser::GetStringShellVariable( const char *str ) 
+string Trilinos_Util::CommandLineParser::GetStringShellVariable( const char *str ) 
 {
 
   char * buffer;
@@ -309,13 +309,13 @@ ostream & operator << (ostream & os,
 
 // ================================================ ====== ==== ==== == =
 
-Trilinos_Util_FileOptions::Trilinos_Util_FileOptions(const char FileName[]) :
+Trilinos_Util::InputFileReader::InputFileReader(const char FileName[]) :
   FileName_(FileName), CommentChars_("#"), SeparationChars_("="),
   FileHasBeenRead_(false)
 {
 }
 
-Trilinos_Util_FileOptions::~Trilinos_Util_FileOptions() 
+Trilinos_Util::InputFileReader::~InputFileReader() 
 {
   
   FileName_ = "";
@@ -326,18 +326,18 @@ Trilinos_Util_FileOptions::~Trilinos_Util_FileOptions()
   
 }
 
-string Trilinos_Util_FileOptions::GetFileName() const
+string Trilinos_Util::InputFileReader::GetFileName() const
 {
   return FileName_;
 }
 
-void Trilinos_Util_FileOptions::SetCommentChars(const string c)
+void Trilinos_Util::InputFileReader::SetCommentChars(const string c)
 {
   CommentChars_ = c;
   return;
 }
 
-void Trilinos_Util_FileOptions::SetSeparationChars(const string c)
+void Trilinos_Util::InputFileReader::SetSeparationChars(const string c)
 {
   SeparationChars_ = c;
   return;
@@ -346,14 +346,14 @@ void Trilinos_Util_FileOptions::SetSeparationChars(const string c)
 #include <iostream>
 #include <fstream>
 
-int Trilinos_Util_FileOptions::ReadFile(const char * FileName) 
+int Trilinos_Util::InputFileReader::ReadFile(const char * FileName) 
 {
   FileName_ = FileName;
 
   return( ReadFile() );
 }
 
-int Trilinos_Util_FileOptions::ReadFile()
+int Trilinos_Util::InputFileReader::ReadFile()
 {
   
   ifstream File(FileName_.c_str());
