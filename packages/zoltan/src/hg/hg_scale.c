@@ -22,23 +22,26 @@ extern "C" {
 
 int Zoltan_HG_Scale_Graph_Weight (ZZ *zz, Graph *g, float *new_ewgt, int scale)
 { int   i, j;
+  float vwgt_i, vwgt_j;
 
   if (!g->vwgt)
     return ZOLTAN_FATAL;
 
   for (i=0; i<g->nVtx; i++)
+  { vwgt_i = g->vwgt[i];
     for (j=g->nindex[i]; j<g->nindex[i+1]; j++)
-    { if (g->vwgt[i]<=0.0 || g->vwgt[g->neigh[j]]<=0.0)
+    { vwgt_j = g->vwgt[g->neigh[j]];
+      if (vwgt_i<=0.0 || vwgt_j<=0.0)
         new_ewgt[j] = FLT_MAX;
       else if (scale == 1)
-        new_ewgt[j] = (g->ewgt?g->ewgt[j]:1.0)/(g->vwgt[i]*g->vwgt[g->neigh[j]]);
+        new_ewgt[j] = (g->ewgt?g->ewgt[j]:1.0)/(vwgt_i*vwgt_j);
       else if (scale == 2)
-        new_ewgt[j] = (g->ewgt?g->ewgt[j]:1.0)/(g->vwgt[i]+g->vwgt[g->neigh[j]]);
+        new_ewgt[j] = (g->ewgt?g->ewgt[j]:1.0)/(vwgt_i+vwgt_j);
       else if (scale == 3)
-        new_ewgt[j] = (g->ewgt?g->ewgt[j]:1.0)/MAX(g->vwgt[i],g->vwgt[g->neigh[j]]);
+        new_ewgt[j] = (g->ewgt?g->ewgt[j]:1.0)/MAX(vwgt_i,vwgt_j);
       else if (scale == 4)
-        new_ewgt[j] = (g->ewgt?g->ewgt[j]:1.0)/MIN(g->vwgt[i],g->vwgt[g->neigh[j]]);
-    }
+        new_ewgt[j] = (g->ewgt?g->ewgt[j]:1.0)/MIN(vwgt_i,vwgt_j);
+  } }
   return ZOLTAN_OK;
 }
 
@@ -52,7 +55,7 @@ int Zoltan_HG_Scale_HGraph_Weight (ZZ *zz, HGraph *hg, float *new_ewgt)
     return ZOLTAN_FATAL;
 
   for (i=0; i<hg->nEdge; i++)
-  { scale = sum = (float)0.0;
+  { scale = sum = 0.0;
     if (hg->vwgt)
     { for (j=hg->hindex[i]; j<hg->hindex[i+1]; j++)
         sum += hg->vwgt[hg->hvertex[j]];
@@ -60,15 +63,15 @@ int Zoltan_HG_Scale_HGraph_Weight (ZZ *zz, HGraph *hg, float *new_ewgt)
       { weight = hg->vwgt[hg->hvertex[j]];
         scale += weight*(sum-weight);
       }
-      scale /= (float)2.0;
+      scale /= 2.0;
     }
     else
       scale = (float)(hg->hindex[i+1]-hg->hindex[i]);
 
-    if (scale == (float)0.0)
+    if (scale == 0.0)
       new_ewgt[i] = FLT_MAX;
     else
-      new_ewgt[i] = (hg->ewgt?hg->ewgt[i]:(float)1.0)/scale;
+      new_ewgt[i] = (hg->ewgt?hg->ewgt[i]:1.0)/scale;
   }
   return ZOLTAN_OK;
 }

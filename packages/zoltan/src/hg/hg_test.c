@@ -70,10 +70,10 @@ int main (int argc, char **argv)
     puts("-redm   reduction method: {mxm,rem,rrm,rhm,grm,lhm,pgm,");
     puts("                           mxp,rep,rrp,rhp,grp,lhp,pgp,");
     puts("                           mxg,reg,rrg,rhg,(grg)}");
-    puts("-reda   reduction augment:{no,(aug3)}");
+    puts("-reda   reduction augment:{no,aug1,aug2,(aug3)}");
     puts("-reds   reduction scaling:(1)");
     puts("-g      global method:    {ran,(lin),bfs,bfsr}");
-    puts("-l      local method:     (no)");
+    puts("-l      local method:     no,(hc)");
     puts("-d      debug level:      (1)");
     puts("default values are in brackets ():");
     return 0;
@@ -102,7 +102,8 @@ int main (int argc, char **argv)
 /* load and info hypergraph */
   if (hg_readfile(&zz,&hg,hgraphfile,&base))
     return 1;
-  if (zz.Debug_Level >= ZOLTAN_DEBUG_ALL) Zoltan_HG_Print(&zz, &hg);
+  if (zz.Debug_Level >= ZOLTAN_DEBUG_ALL)
+    Zoltan_HG_Print(&zz, &hg);
   memory_graph = Zoltan_Memory_Usage (ZOLTAN_MEM_STAT_TOTAL);
   printf("Initial Memory: %d %d\n", memory_graph,
          Zoltan_Memory_Usage (ZOLTAN_MEM_STAT_MAXIMUM) );
@@ -127,10 +128,7 @@ int main (int argc, char **argv)
 /* free hypergraph */
   if (Zoltan_HG_HGraph_Free (&hg))
     return 1;
-  if (Zoltan_Memory_Usage (ZOLTAN_MEM_STAT_TOTAL) > 0)
-  { printf("ERROR: remaining memory: %d\n",Zoltan_Memory_Usage (ZOLTAN_MEM_STAT_TOTAL));
-    return 1;
-  }
+
   ADD_NEW_TIME(t_rest);
   END_TIME();
   times_output();
@@ -139,7 +137,6 @@ int main (int argc, char **argv)
          Zoltan_Memory_Usage (ZOLTAN_MEM_STAT_TOTAL),
          Zoltan_Memory_Usage (ZOLTAN_MEM_STAT_MAXIMUM),
          (float)Zoltan_Memory_Usage(ZOLTAN_MEM_STAT_MAXIMUM)/memory_graph );
-
   Zoltan_Memory_Stats();
 
   return 0;

@@ -157,24 +157,24 @@ int ierr = ZOLTAN_OK;
                                 (void *) &(hgp->redl));
   Zoltan_Bind_Param(HG_params, "HG_REDUCTION_METHOD", 
                                 (void *) hgp->redm_str);
-  Zoltan_Bind_Param(HG_params, "HG_LOCAL_REFINEMENT", 
-                                (void *) hgp->local_str);
-  Zoltan_Bind_Param(HG_params, "HG_GLOBAL_PARTITIONING",
-                                (void *) hgp->global_str);
   Zoltan_Bind_Param(HG_params, "HG_REDUCTION_LOCAL_IMPROVEMENT",
                                 (void *) hgp->redmo_str);
-  Zoltan_Bind_Param(HG_params, "HG_EDGE_WEIGHT_SCALING", 
+  Zoltan_Bind_Param(HG_params, "HG_EDGE_WEIGHT_SCALING",
                                 (void *) &(hgp->ews));
+  Zoltan_Bind_Param(HG_params, "HG_GLOBAL_PARTITIONING",
+                                (void *) hgp->global_str);
+  Zoltan_Bind_Param(HG_params, "HG_LOCAL_REFINEMENT", 
+                                (void *) hgp->local_str);
   Zoltan_Bind_Param(HG_params, "CHECK_GRAPH",
                                 (void *) &(hgp->check_graph));
 
   /* Set default values */
   hgp->redl = zz->LB.Num_Global_Parts;
   strcpy(hgp->redm_str, "grg");
-  strcpy(hgp->local_str, "hc");
-  strcpy(hgp->global_str, "lin");
   strcpy(hgp->redmo_str, "aug3");
   hgp->ews = 1;
+  strcpy(hgp->global_str, "lin");
+  strcpy(hgp->local_str, "hc");
   hgp->check_graph = 1;
 
   /* Get application values of parameters. */
