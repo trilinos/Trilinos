@@ -420,6 +420,8 @@ int last_proc;        /* First processor for partition add_part+1. */
 int add_proc;         /* First processor for partition add_part.   */
 int i;
 
+     if (zz->LB.Remap) add_part = zz->LB.Remap[add_part];
+
      if (include_parts) {
         /* Add partition to partition list */
         parts[*numparts] = add_part;

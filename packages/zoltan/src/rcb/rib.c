@@ -185,9 +185,7 @@ static int rib_fn(
 {
   char    yo[] = "rib_fn";
   int     proc,nprocs;        /* my proc id, total # of procs */
-  ZOLTAN_ID_PTR gidpt = NULL;     /* local global IDs array. */
-  ZOLTAN_ID_PTR lidpt = NULL;     /* local local IDs array. */
-  struct Dot_Struct *dotpt;   /* local dot arrays */
+  struct Dot_Struct *dotpt;   /* temporary pointer to local dot arrays */
   int     pdotnum;            /* # of dots - decomposition changes it */
   int     pdottop;            /* dots >= this index are new */
   int    *dotmark = NULL;     /* which side of median for each dot */
@@ -298,9 +296,6 @@ static int rib_fn(
 
   rib = (RIB_STRUCT *) (zz->LB.Data_Structure);
 
-  gidpt = rib->Global_IDs;
-  lidpt = rib->Local_IDs;
-  dotpt  = rib->Dots;
   treept = rib->Tree_Ptr;
   end_time = Zoltan_Time(zz->Timer);
   lb_time[0] = end_time - start_time;
@@ -341,6 +336,7 @@ static int rib_fn(
 
   /* set dot weights = 1.0 if user didn't and determine total weight */
 
+  dotpt = rib->Dots;
   if (!wgtflag) {
     wgtflag = 1;
     for (i = 0; i < dotnum; i++) dotpt[i].Weight[0] = 1.0;
@@ -433,6 +429,7 @@ static int rib_fn(
       }
     }
 
+    dotpt = rib->Dots;
     for (i = 0; i < dotnum; i++) {
       wgts[i] = dotpt[i].Weight[0];
     }
@@ -515,7 +512,8 @@ static int rib_fn(
       root = partmid;
     }
 
-    ierr = Zoltan_RB_Send_Outgoing(zz, &gidpt, &lidpt, &dotpt, &dotmark,
+    ierr = Zoltan_RB_Send_Outgoing(zz, &(rib->Global_IDs), &(rib->Local_IDs), 
+                               &(rib->Dots), &dotmark,
                                &dottop, &dotnum, &dotmax,
                                set, &allocflag, overalloc,
                                stats, counters, use_ids, local_comm, proclower,
@@ -526,16 +524,6 @@ static int rib_fn(
       goto End;
     }
     
-    if (allocflag) {
-      /* 
-       * gidpt, lidpt and dotpt were reallocated in Zoltan_RB_Send_Outgoing;
-       * store their values in rib.
-       */
-      rib->Global_IDs = gidpt;
-      rib->Local_IDs = lidpt;
-      rib->Dots = dotpt;
-    }
-
     /* create new communicators */
 
     if (zz->Tflops_Special) {
@@ -569,7 +557,8 @@ static int rib_fn(
      most notably when a processor has zero partitions on it, but still has
      some dots after the parallel partitioning. */
 
-  ierr = Zoltan_RB_Send_To_Part(zz, &gidpt, &lidpt, &dotpt, &dotmark, &dottop,
+  ierr = Zoltan_RB_Send_To_Part(zz, &(rib->Global_IDs), &(rib->Local_IDs),
+                               &(rib->Dots), &dotmark, &dottop,
                                &dotnum, &dotmax, set, &allocflag, overalloc,
                                stats, counters, use_ids);
 
@@ -577,16 +566,6 @@ static int rib_fn(
     ZOLTAN_PRINT_ERROR(zz->Proc, yo,
                        "Error returned from Zoltan_RB_Send_To_Part");
     goto End;
-  }
-
-  if (allocflag) {
-    /* 
-     * gidpt, lidpt and dotpt were reallocated in Zoltan_RB_Send_To_Part;
-     * store their values in rib.
-     */
-    rib->Global_IDs = gidpt;
-    rib->Local_IDs = lidpt;
-    rib->Dots = dotpt;
   }
 
   /* All dots are now on the processors they will end up on; now generate
@@ -612,8 +591,8 @@ static int rib_fn(
     for (i = 0; i < dotnum; i++)
       dindx[i] = i;
 
-    ierr = serial_rib(zz, dotpt, dotmark, dotlist, old_set, root, rib->Num_Geom,
-                      weight[0], dotnum, num_parts,
+    ierr = serial_rib(zz, rib->Dots, dotmark, dotlist, old_set, root,
+                      rib->Num_Geom, weight[0], dotnum, num_parts,
                       &(dindx[0]), &(tmpdindx[0]), partlower,
                       proc, wgtflag, stats, gen_tree,
                       counters, treept, value, wgts, part_sizes);
@@ -635,7 +614,7 @@ static int rib_fn(
   /* error checking and statistics */
 
   if (check_geom) {
-    ierr = Zoltan_RB_check_geom_output(zz, dotpt, part_sizes, np, fp,
+    ierr = Zoltan_RB_check_geom_output(zz, rib->Dots, part_sizes, np, fp,
                                        dotnum, pdotnum, NULL);
     if (ierr < 0) {
       ZOLTAN_PRINT_ERROR(proc, yo,
@@ -645,7 +624,7 @@ static int rib_fn(
   }
 
   if (stats || (zz->Debug_Level >= ZOLTAN_DEBUG_ATIME))
-    Zoltan_RB_stats(zz, timestop-timestart, dotpt, dotnum, timers, counters,
+    Zoltan_RB_stats(zz, timestop-timestart, rib->Dots, dotnum, timers, counters,
                 stats, NULL, NULL, FALSE);
 
   /* update calling routine parameters */
@@ -655,11 +634,24 @@ static int rib_fn(
   pdotnum = dotnum;
   pdottop = dottop;
 
+  /* Perform remapping (if requested) */
+
+  if (zz->LB.Remap_Flag) {
+    ierr = Zoltan_RB_Remap(zz, &(rib->Global_IDs), &(rib->Local_IDs),
+                               &(rib->Dots), &dotnum, &dottop, &dotmax,
+                           &allocflag, overalloc, stats, counters, use_ids);
+    if (ierr < 0) {
+      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error returned from Zoltan_RB_Remap.");
+      goto End;
+    }
+  }
+
   /*  build return arguments */
 
   if (zz->LB.Return_Lists) {
     /* zz->LB.Return_Lists is true ==> use_ids is true */
-    ierr = Zoltan_RB_Return_Arguments(zz, gidpt, lidpt, dotpt, num_import,
+    ierr = Zoltan_RB_Return_Arguments(zz, rib->Global_IDs, rib->Local_IDs, 
+                                      rib->Dots, num_import,
                                       import_global_ids, import_local_ids,
                                       import_procs, import_to_part, 
                                       dotnum, dottop);

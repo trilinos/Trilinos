@@ -59,10 +59,18 @@ int Zoltan_HSFC_Point_Assign (
     sizeof (Partition), Zoltan_HSFC_compare);
    if (p == NULL)
       ZOLTAN_HSFC_ERROR (ZOLTAN_FATAL, "programming error, shouldn't happen");
-   if (part != NULL)
-      *part = p->index;
-   if (proc != NULL)
-      *proc = Zoltan_LB_Part_To_Proc(zz, p->index, NULL);
+   if (part != NULL) {
+      if (zz->LB.Remap)
+         *part = zz->LB.Remap[p->index];
+      else
+         *part = p->index;
+      }
+   if (proc != NULL) {
+      if (zz->LB.Remap) 
+         *proc = Zoltan_LB_Part_To_Proc(zz, zz->LB.Remap[p->index], NULL);
+      else
+         *proc = Zoltan_LB_Part_To_Proc(zz, p->index, NULL);
+      }
    err = ZOLTAN_OK;
 
 free:

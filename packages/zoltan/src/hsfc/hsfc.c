@@ -67,6 +67,8 @@ int Zoltan_HSFC(
    ZOLTAN_ID_PTR  gids        = NULL;
    ZOLTAN_ID_PTR  lids        = NULL;
    int       *parts           = NULL;   /* initial partitions for objects */
+   int       *new_proc        = NULL;   /* new processor assignments for dots */
+   int       *new_part        = NULL;   /* new partition assignments for dots */
    Partition *grand_partition = NULL;   /* fine partition of [0,1] */
    double    *partition       = NULL;   /* course partition of [0,1] */
    double    *grand_weight    = NULL;   /* "binned" weights on grand partition */
@@ -82,6 +84,8 @@ int Zoltan_HSFC(
    /* other (non malloc'd) variables */
    int     ndots;                 /* number of dots on this machine */
    int     pcount;                /* number of partitions in grand partition */
+   int     new_map;               /* flag indicating whether parts were
+                                     remapped */
    double  start_time, end_time;  /* used to time execution */
    double  total_weight = 0.0;
 
@@ -415,8 +419,12 @@ int Zoltan_HSFC(
          out_of_tolerance = 1;
    ZOLTAN_TRACE_DETAIL (zz, yo, "Determined final partition");
 
-   /* Count the number of objects to export from this processor */
-   *num_export = 0;
+   new_part = (int *) ZOLTAN_MALLOC(2 * ndots * sizeof(int));
+   if (ndots && !new_part) 
+      ZOLTAN_HSFC_ERROR (ZOLTAN_MEMERR, "Memory error.");
+   new_proc = new_part + ndots;
+
+   /* Set the final part number for all dots */
    for (i = 0; i < ndots; i++) {
       j = dots[i].part / N; /* grand_partition is N times final_partition parts*/
       if (dots[i].fsfc <  d->final_partition[j].r
@@ -429,17 +437,31 @@ int Zoltan_HSFC(
           ZOLTAN_HSFC_ERROR (ZOLTAN_FATAL, "BSEARCH RETURNED ERROR");
 
       dots[i].part = p->index;
-      tmp = Zoltan_LB_Part_To_Proc(zz, p->index, gids + i * zz->Num_GID);
-      if (dots[i].part != parts[i]  ||  zz->Proc != tmp)
-         ++(*num_export);
+      new_part[i] = dots[i].part;
+      new_proc[i] = Zoltan_LB_Part_To_Proc(zz, p->index,
+        gids + i * zz->Num_GID);
+      }
+
+   /* Remap partitions to reduce data movement. */
+   if (zz->LB.Remap_Flag) {
+      err = Zoltan_LB_Remap(zz, &new_map, ndots, new_proc, parts, new_part, 1);
+      if (err < 0) 
+         ZOLTAN_HSFC_ERROR (ZOLTAN_FATAL,"Error returned from Zoltan_LB_Remap");
       }
 
    /* free stuff before next required allocations */
    Zoltan_Multifree (__FILE__, __LINE__, 3, &temp_weight, &grand_partition,
     &target);
 
+   /* Count the number of objects to export from this processor */
+   *num_export = 0;
+   for (i = 0; i < ndots; i++) {
+      if (new_part[i] != parts[i]  ||  zz->Proc != new_proc[i])
+         ++(*num_export);
+      }
+
    if (!zz->LB.Return_Lists)
-     *num_export = -1;
+      *num_export = -1;
    else if (*num_export > 0) {
       /* allocate storage for export information and fill in data */
       if (zz->Num_GID > 0) {
@@ -468,20 +490,19 @@ int Zoltan_HSFC(
 
       /* Fill in export arrays */
       for (j = i = 0; i < ndots; i++) {
-        tmp = Zoltan_LB_Part_To_Proc(zz, dots[i].part, gids + i*zz->Num_GID);
-
-        if (dots[i].part != parts[i] || zz->Proc != tmp) {
-           *((*export_procs)   +j) = tmp;
-           *((*export_to_parts)+j) = dots[i].part;
-           if (zz->Num_GID > 0)
-              ZOLTAN_SET_GID(zz, *export_gids+j*zz->Num_GID, gids+i*zz->Num_GID);
-           if (zz->Num_LID > 0)
-              ZOLTAN_SET_LID(zz, *export_lids+j*zz->Num_LID, lids+i*zz->Num_LID);
-           j++;
-           }
-        }
+         if (new_part[i] != parts[i] || zz->Proc != new_proc[i]) {
+            *((*export_procs)   +j) = new_proc[i];
+            *((*export_to_parts)+j) = new_part[i];
+            if (zz->Num_GID > 0)
+               ZOLTAN_SET_GID(zz, *export_gids+j*zz->Num_GID, gids+i*zz->Num_GID);
+            if (zz->Num_LID > 0)
+               ZOLTAN_SET_LID(zz, *export_lids+j*zz->Num_LID, lids+i*zz->Num_LID);
+            j++;
+            }
+         }
       }
     ZOLTAN_TRACE_DETAIL (zz, yo, "Filled in export information");
+
 
    /* DEBUG: print useful information */
    if (zz->Debug_Level >= ZOLTAN_DEBUG_ALL  &&  zz->Proc == 0)
@@ -491,10 +512,12 @@ int Zoltan_HSFC(
    if (zz->Debug_Level >= ZOLTAN_DEBUG_LIST)
       for (i = 0; i < ndots; i++) {
          printf ("<%d> GID: %u  LID: %u  Part: %d  Weight %.1f  HSFC  %.6f\n",
-          zz->Proc, gids[i*zz->Num_GID], lids[i*zz->Num_LID], dots[i].part,
+          zz->Proc, gids[i*zz->Num_GID], lids[i*zz->Num_LID], new_part[i],
           dots[i].weight, dots[i].fsfc);
          printf ("PROC %d DOT %03u\n", p->index, gids[i]);
          }
+
+   ZOLTAN_FREE(&new_part);
 
    /* done, do we keep data structure for box drop and point drop? */
    Zoltan_Bind_Param (HSFC_params, "KEEP_CUTS", (void*) &param);

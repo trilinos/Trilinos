@@ -41,6 +41,7 @@ int Zoltan_HSFC_Box_Assign (
    int       *proc_array = NULL;
    HSFC_Data *d;                    /* HFSC's portion of Zoltan data structure */
    int        n, i, loop;                 /* loop counters */
+   int        tmp;
    int        first_proc, last_proc;
    double     fsfc, starting;
    Partition *p;
@@ -170,20 +171,25 @@ fini:
    if (parts)  {
       *part_count = 0;
       for (i = 0; i < zz->LB.Num_Global_Parts; i++)
-         if (part_array[i] > 0)
-            parts[(*part_count)++] = i;
+         if (part_array[i] > 0) {
+            if (zz->LB.Remap)
+               parts[(*part_count)++] = zz->LB.Remap[i];
+            else
+               parts[(*part_count)++] = i;
+            }
       }
 
    if (procs)  {
       for (i = 0; i < zz->LB.Num_Global_Parts; i++)
          if (part_array[i] > 0) {
-            first_proc = Zoltan_LB_Part_To_Proc(zz, i, NULL);
+            tmp = (zz->LB.Remap ? zz->LB.Remap[i] : i);
+            first_proc = Zoltan_LB_Part_To_Proc(zz, tmp, NULL);
             proc_array[first_proc] = 1;
             if (!zz->LB.Single_Proc_Per_Part) {
                /* Part may be spread across multiple procs. Include them all. */
                int j;
-               if (i < zz->LB.Num_Global_Parts - 1)
-                  last_proc = Zoltan_LB_Part_To_Proc (zz, i + 1, NULL);
+               if (tmp < zz->LB.Num_Global_Parts - 1)
+                  last_proc = Zoltan_LB_Part_To_Proc (zz, tmp + 1, NULL);
                else
                   last_proc = zz->Num_Proc;
 

@@ -45,6 +45,7 @@ static PARAM_VARS Key_params[] = {
   { "NUM_GLOBAL_PARTITIONS", NULL, "INT", 0 },
   { "NUM_LOCAL_PARTITIONS", NULL, "INT", 0 },
   { "MIGRATE_ONLY_PROC_CHANGES", NULL, "INT", 0 },
+  { "REMAP", NULL, "INT", 0 },
   { NULL, NULL, NULL, 0 } };
 /*****************************************************************************/
 /*****************************************************************************/
@@ -291,7 +292,12 @@ int  idx 			/* index of vector param, -1 if scalar */
 	status = 3;		/* Don't add to Params field of ZZ */
         break;
 
-
+      case 17:		/* LB.Remap */
+        if (result.def)
+            result.ival = 0;
+	zz->LB.Remap_Flag = result.ival;
+	status = 3;		/* Don't add to Params field of ZZ */
+        break;
       }  /* end switch (index) */
     }
 
@@ -354,6 +360,8 @@ void Zoltan_Print_Key_Params(ZZ *zz)
          zz->LB.Num_Global_Parts_Param);
   printf("ZOLTAN Parameter %s = %d\n", Key_params[15].name, 
          zz->LB.Num_Local_Parts_Param);
+  printf("ZOLTAN Parameter %s = %d", Key_params[17].name, 
+         zz->LB.Remap_Flag);
 }
 
 #ifdef __cplusplus

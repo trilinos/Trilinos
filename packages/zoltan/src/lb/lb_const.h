@@ -119,6 +119,10 @@ struct Zoltan_LB_Struct {
                                       be spread across multiple processors.
                                       Happens only when NUM_GLOBAL_PARTITIONS
                                       is set to be < zz->Num_Proc.           */
+  int Remap_Flag;                 /*  Flag indicating whether partitions
+                                      should be remapped to reduce data mvmt. */
+  int *Remap;                     /*  Remapping array; relabels computed 
+                                      partitions to decrease data mvmt. */
   int Return_Lists;               /*  Flag indicating which lists (if any)
                                       should be returned by Zoltan_LB_Balance.*/
   int Uniform_Parts;              /*  Flag indicating whether partitions are
@@ -238,6 +242,8 @@ extern int Zoltan_LB_Part_To_Proc(struct Zoltan_Struct *, int, ZOLTAN_ID_PTR);
 extern int Zoltan_LB_Proc_To_Part(struct Zoltan_Struct *, int, int *, int *);
 extern int Zoltan_LB_Get_Part_Sizes(struct Zoltan_Struct *, int, int, float *);
 extern int Zoltan_LB_Build_PartDist(struct Zoltan_Struct *);
+extern int Zoltan_LB_Remap(struct Zoltan_Struct *, int *, int, int *, int *,
+  int *, int);
 
 /* PARTITIONING FUNCTIONS */
 extern ZOLTAN_LB_FN Zoltan_RCB;

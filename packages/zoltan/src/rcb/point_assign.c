@@ -70,11 +70,6 @@ int      *part                  /* partition that point lands in;
               partmid = treept[partmid].left_leaf;
            else
               partmid = treept[partmid].right_leaf;
-
-        if (part != NULL)
-           *part = -partmid;
-        if (proc != NULL)
-           *proc = Zoltan_LB_Part_To_Proc(zz, -partmid, NULL);
      }
      else if (zz->LB.Method == RIB) {
         rib = (RIB_STRUCT *) (zz->LB.Data_Structure);
@@ -116,18 +111,22 @@ int      *part                  /* partition that point lands in;
                     partmid = itree[partmid].right_leaf;
               break;
         }
+     }
 
-        if (part != NULL)
+     if (part != NULL) {
+        if (zz->LB.Remap)
+           *part = zz->LB.Remap[-partmid];
+        else
            *part = -partmid;
-        if (proc != NULL)
+     }
+
+     if (proc != NULL) {
+        if (zz->LB.Remap)
+           *proc = Zoltan_LB_Part_To_Proc(zz, zz->LB.Remap[-partmid], NULL);
+        else 
            *proc = Zoltan_LB_Part_To_Proc(zz, -partmid, NULL);
      }
-     else {
-        ZOLTAN_PRINT_ERROR(zz->Proc, yo, 
-          "Valid only when load-balancing method is RCB or RIB.");
-        ierr = ZOLTAN_FATAL;
-        goto End;
-     }
+
 End:
      if (ierr == ZOLTAN_FATAL) {
         if (part != NULL)

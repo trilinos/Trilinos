@@ -303,6 +303,9 @@ int part_dim;
 
   ZOLTAN_TRACE_DETAIL(zz, yo, "Done machine description");
 
+  /* Since generating a new partition, need to free old mapping vector */
+  ZOLTAN_FREE(&zz->LB.Remap);
+
   error = Zoltan_LB_Build_PartDist(zz);
   if (error != ZOLTAN_OK && error != ZOLTAN_WARN) {
     ZOLTAN_TRACE_EXIT(zz, yo);

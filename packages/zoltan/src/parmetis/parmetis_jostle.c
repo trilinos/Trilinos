@@ -495,7 +495,7 @@ static int Zoltan_ParMetis_Jostle(
   ZOLTAN_ID_PTR global_ids;    
   ZOLTAN_ID_PTR lid;        /* Temporary pointer to a local id; used to pass
                                NULL to query fns when NUM_LID_ENTRIES == 0. */
-  int *parts;               /* Initial partitions for objects. */
+  int *input_parts;         /* Initial partitions for objects. */
   int *newproc;             /* New processor for each object. */
   ZOLTAN_COMM_OBJ *comm_plan;
   double times[5];
@@ -529,7 +529,7 @@ static int Zoltan_ParMetis_Jostle(
   geom_vec = NULL;
   local_ids = NULL;
   global_ids = NULL;
-  parts = part_orig = NULL;
+  input_parts = part_orig = NULL;
   newproc = NULL;
 
   /* Start timer */
@@ -641,7 +641,7 @@ static int Zoltan_ParMetis_Jostle(
   /* If reorder is true, we already have the id lists. Ignore weights. */
   if (!(order_opt && order_opt->reorder)){
     ierr = Zoltan_Get_Obj_List(zz, &num_obj, &global_ids, &local_ids,
-                               obj_wgt_dim, &float_vwgt, &parts);
+                               obj_wgt_dim, &float_vwgt, &input_parts);
     if (ierr){
       /* Return error */
       ZOLTAN_PARMETIS_ERROR(ierr, "Get_Obj_List returned error.");
@@ -690,9 +690,9 @@ static int Zoltan_ParMetis_Jostle(
     /* Not enough memory */
     ZOLTAN_PARMETIS_ERROR(ZOLTAN_MEMERR, "Out of memory.");
   }
-  /* Copy parts array to part, in case ParMetis needs it. */
+  /* Copy input_parts array to part, in case ParMetis needs it. */
   for (i=0; i<num_obj; i++) 
-    part[i] = parts[i];
+    part[i] = input_parts[i];
 
   /* Special error checks to avoid certain death in ParMETIS.
    * AdaptiveRepart uses input partition number to index into an array 
@@ -1199,12 +1199,12 @@ static int Zoltan_ParMetis_Jostle(
         ZOLTAN_PARMETIS_ERROR(ZOLTAN_FATAL, 
          "Zoltan_LB_Part_To_Proc returned invalid processor number.");
       }
-      if ((part[i] != parts[i]) || ((!compute_only_part_changes) && 
-                                   (newproc[i] != zz->Proc))) 
+      if ((part[i] != input_parts[i]) || ((!compute_only_part_changes) && 
+                                          (newproc[i] != zz->Proc))) 
         nsend++;
       if (zz->Debug_Level >= ZOLTAN_DEBUG_ALL)
         printf("[%1d] DEBUG: local object %1d: old part = %1d, new part = %1d\n", 
-        zz->Proc, i, parts[i], part[i]);
+        zz->Proc, i, input_parts[i], part[i]);
     }
   
     /* Create export lists */
@@ -1231,7 +1231,7 @@ static int Zoltan_ParMetis_Jostle(
         }
         j = 0;
         for (i=0; i<num_obj; i++){
-          if ((part[i] != parts[i]) || ((!compute_only_part_changes) 
+          if ((part[i] != input_parts[i]) || ((!compute_only_part_changes) 
                && (newproc[i] != zz->Proc))){ 
             /* Object should move to new partition or processor */
             ZOLTAN_SET_GID(zz, &((*exp_gids)[j*num_gid_entries]),
@@ -1294,7 +1294,7 @@ End:
   ZOLTAN_FREE(&adjncy);
   ZOLTAN_FREE(&xyz);
   ZOLTAN_FREE(&part);
-  ZOLTAN_FREE(&parts);
+  ZOLTAN_FREE(&input_parts);
 
   ZOLTAN_TRACE_EXIT(zz, yo);
   return (ierr);

@@ -44,10 +44,13 @@ static int gather_and_build_remap(ZZ *, int *, int, int *);
 static int set_remap_type(ZZ *, int *);
 static int malloc_HEinfo(ZZ *, int, int **);
 static int do_match(ZZ*, HGraph *, int *, int);
+static int matching_mxm(ZZ *, HGraph *, int *, int *);
+static int matching_pgm(ZZ *, HGraph *, int *, int *);
 static int local_HEs_from_import_lists(ZZ *, int, int, int *, int *, int *,
   int *, int **);
 static int local_HEs_from_export_lists(ZZ *, int, int, int *, int *, int *,
   int *, int **);
+static void measure_stays(ZZ *, HGraph *, int, char *);
 
 /******************************************************************************/
 
@@ -84,6 +87,14 @@ int *HEinfo = NULL;           /* Array of HE info; for each HE, two pins and
                                  to minimize communication calls.  */
 
   *new_map = 0;
+
+  if (!(zz->LB.Uniform_Parts)) {
+    ZOLTAN_PRINT_WARN(zz->Proc, yo, 
+                     "Remapping does not respect requested non-uniform "
+                     "partition sizes; no remapping done.");
+    ierr = ZOLTAN_WARN;
+    goto End;
+  }
 
   /* Determine type of remapping that is appropriate */
   ierr = set_remap_type(zz, &remap_type);
@@ -217,6 +228,16 @@ int *HEwgt = NULL;            /* Array of HE weights.  Initially includes
       if (old_part[i] < minp) minp = old_part[i];
       if (old_part[i] > maxp) maxp = old_part[i];
     }
+
+    /* Don't include old partition numbers that are greater than 
+     * zz->LB.Num_Global_Parts - 1; they are not valid values for 
+     * remapping of new partition numbers. 
+     */
+    if (minp >= zz->LB.Num_Global_Parts)
+      minp = zz->LB.Num_Global_Parts-1;
+    if (maxp >= zz->LB.Num_Global_Parts)
+      maxp = zz->LB.Num_Global_Parts-1;
+
     old_size = maxp - minp + 1; 
 
     Zoltan_LB_Proc_To_Part(zz, my_proc, &np, &fp);
@@ -229,8 +250,14 @@ int *HEwgt = NULL;            /* Array of HE weights.  Initially includes
     }
 
     for (i = 0; i < nobj; i++) {
-      tmp = (new_part[i]-fp) * old_size;
-      HEwgt[tmp + (old_part[i]-minp)]++;
+      if (old_part[i] < zz->LB.Num_Global_Parts) {  
+        /* Include only HEs to old partitions numbered 
+         * 0 to zz->LB.Num_Global_Parts-1; these are the only valid
+         * remapping values for the new partition numbers.
+         */
+        tmp = (new_part[i]-fp) * old_size;
+        HEwgt[tmp + (old_part[i]-minp)]++;
+      }
     }
 
     *HEcnt = 0;
@@ -428,28 +455,30 @@ static int do_match(
   ZZ *zz,
   HGraph *hg,   /* Hypergraph data structure on which to do the matching. */
   int *match,   /* Matching array -- output */
-  int limit     /* max number of matches that are allowed */
+  int limit    /* max number of matches that are allowed */
 )
 {
 /* Temporary function; will be replace by a real matching function later. */
 int ierr = ZOLTAN_OK;
 int i;
+int lastvtx = hg->nVtx - 1;
   
   /* Default initialization -- no change in mapping */
   for (i = 0; i < hg->nVtx; i++)
     match[i] = i;
 
+#ifdef KDDKDD_SILLY
   /* Silly hand-made matching -- reverse partition assignments. */
-  for (i = limit; i < hg->nVtx; i++) {
-    int part = i - limit;
-    int tmp = 2 * limit - i - 1;
-#ifdef KDDKDD 
-    if (part%2) continue;   /* Don't match odd-numbered parts */
-#endif
-    match[i] = tmp;
-    match[tmp] = i;
+  for (i = 0; i < limit; i++) {
+    match[i] = lastvtx - i;
+    match[lastvtx-i] = i;
   }
+#endif
 
+/*
+  ierr = matching_mxm(zz, hg, match, &limit);
+*/
+  ierr = matching_pgm(zz, hg, match, &limit);
 
   /* Diagnostics -- print matching vector */
   if (zz->Proc == zz->Debug_Proc)
@@ -499,7 +528,6 @@ static int gather_and_build_remap(
 char *yo = "gather_and_remap";
 int ierr = ZOLTAN_OK;
 int i, uidx, tmp;
-int num_move, gnum_move = 0;
 int *each_size = NULL;        /* sizes (# HEs * HEINFO_ENTRIES) for each proc */
 int *recvbuf = NULL;          /* Receive buffer for gatherv */
 int *displs = NULL;           /* Displacement buffer for gatherv */
@@ -515,14 +543,6 @@ int *used = NULL;             /* Vector indicating which partitions are used
 int limit;                    /* Maximum number of matches that are allowed */
 HGraph hg;                    /* Hypergraph for matching */
 
-  /* Diagnostics:  put into high Debug_Level later */
-  for (num_move = 0, i = 0; i < HEcnt; i++) {
-    tmp = i * HEINFO_ENTRIES;
-    if (HEinfo[tmp] != HEinfo[tmp+1]) num_move += HEinfo[tmp+2];
-  }
-  MPI_Allreduce(&num_move, &gnum_move, 1, MPI_INT, MPI_SUM, zz->Communicator);
-  if (zz->Proc == zz->Debug_Proc)
-    printf("%d REMAP--BEFORE: TOTAL NUM MOVE = %d\n\n", zz->Proc, gnum_move);
 
   /* Gather HEs from each processor into a local complete HG. */
 
@@ -605,6 +625,9 @@ HGraph hg;                    /* Hypergraph for matching */
     if (zz->Proc == zz->Debug_Proc) Zoltan_HG_Print(zz, &hg, stdout);
   }
 
+  /* Diagnostics:  put into high Debug_Level later */
+  measure_stays(zz, &hg, max0, "BEFORE");
+
   /* Do matching */
 
   match = (int *) ZOLTAN_CALLOC(hg.nVtx + max1, sizeof(int));
@@ -615,7 +638,7 @@ HGraph hg;                    /* Hypergraph for matching */
     goto End;
   }
 
-  limit = max0;   /* Max # matches allowed */
+  limit = (max0 < max1 ? max0 : max1);   /* Max # matches allowed */
   do_match(zz, &hg, match, limit);
 
       
@@ -639,24 +662,36 @@ HGraph hg;                    /* Hypergraph for matching */
 
 
     /* First, process all parts that were matched. Mark matched parts as used.*/
+
     for (i = 0; i < zz->LB.Num_Global_Parts; i++) {
-      zz->LB.Remap[i] = -1;  /* FOR SANITY CHECK ONLY, REMOVE LATER */
+      zz->LB.Remap[i] = -1; 
       tmp = match[i+max0];
       if (tmp != i+max0) {
         zz->LB.Remap[i] = tmp;
         used[tmp] = 1;
       }
     }
+
+    /* Second, process unmatched parts; if possible, keep same part number. */
+
+    for (i = 0; i < zz->LB.Num_Global_Parts; i++) {
+      if (zz->LB.Remap[i] > -1) continue;  /* Already processed part i */
+      /* match[i+max0] == i+max0 */
+      if (!used[i]) {  /* Keep the same part number if it is not used */
+        zz->LB.Remap[i] = i;
+        used[i] = 1;
+      }
+    }
   
-    /* Second, process all unmatched parts; assign them to unused partitions.*/
+    /* Third, process remaining unmatched parts; assign them to 
+       unused partitions.*/
   
     for (uidx = 0, i = 0; i < zz->LB.Num_Global_Parts; i++) {
-      tmp = match[i+max0];
-      if (tmp == i+max0) {
-        while (used[uidx]) uidx++;   /* Find next unused partition */
-        zz->LB.Remap[i] = uidx;
-        used[uidx] = 1;
-      }
+      if (zz->LB.Remap[i] > -1) continue;  /* Already processed part i */
+      /* match[i+max0] == i+max0 */
+      while (used[uidx]) uidx++;   /* Find next unused partition */
+      zz->LB.Remap[i] = uidx;
+      used[uidx] = 1;
     }
   }
 
@@ -669,14 +704,8 @@ HGraph hg;                    /* Hypergraph for matching */
         printf("%d REMAP Part %d to Part %d\n", zz->Proc, i, zz->LB.Remap[i]);
       }
 
-    for (gnum_move = 0, i = 0; i < hg.nEdge; i++) {
-      tmp = i + i;
-      if (hg.hvertex[tmp] != zz->LB.Remap[hg.hvertex[tmp+1]-max0]) {
-        gnum_move += hg.ewgt[i];
-      }
-    }
-    if (zz->Proc == zz->Debug_Proc)
-      printf("%d REMAP--AFTER: TOTAL NUM MOVE = %d\n\n", zz->Proc, gnum_move);
+    /* Diagnostics:  put into high Debug_Level later */
+    measure_stays(zz, &hg, max0, "AFTER");
   }
 
 End:
@@ -686,6 +715,152 @@ End:
   return ierr;
 }
 
+/******************************************************************************/
+static void measure_stays(
+  ZZ *zz,
+  HGraph *hg, 
+  int max0,
+  char *when
+)
+{
+/* Routine that measures and prints the amount of data that doesn't move
+ * as described by the hypergraph. 
+ */
+
+float stay = 0.;
+int tmp, i;
+
+  for (i = 0; i < hg->nEdge; i++) {
+    tmp = i + i;
+    if (zz->LB.Remap) {
+      if (hg->hvertex[tmp] == zz->LB.Remap[hg->hvertex[tmp+1]-max0]) 
+        stay += hg->ewgt[i];
+    }
+    else {
+      if (hg->hvertex[tmp] == (hg->hvertex[tmp+1]-max0))
+        stay += hg->ewgt[i];
+    }
+  }
+  if (zz->Proc == zz->Debug_Proc)
+    printf("%d REMAP--%s: TOTAL AMT STAY = %g\n\n",
+            zz->Proc, when, stay);
+}
+
+
+/******************************************************************************/
+
+static int matching_mxm(
+  ZZ *zz, 
+  HGraph *hg, 
+  int *match, 
+  int *limit
+)
+{
+/* Maximal matching, lifted from HG code. */
+int  i, j, edge, vertex, *Hindex = NULL;
+char *yo = "matching_mxm";
+
+  if (!(Hindex = (int*) ZOLTAN_MALLOC (sizeof(int) * (hg->nEdge+1)) )) {
+     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Memory error.");
+     return ZOLTAN_MEMERR;
+     }
+  for (i = 0; i <= hg->nEdge; i++)
+     Hindex[i] = hg->hindex[i];
+
+  for (i = 0; i < hg->nVtx  &&  *limit > 0; i++)
+     for (j = hg->vindex[i]; match[i] == i && j < hg->vindex[i+1]; j++) {
+        edge = hg->vedge[j];
+        while (Hindex[edge] < hg->hindex[edge+1]) {
+           vertex = hg->hvertex[Hindex[edge]++];
+           if (vertex != i && match[vertex] == vertex) {
+              match[i]      = vertex;
+              match[vertex] = i;
+              (*limit)--;
+              break;   /* terminate while loop */
+              }
+           }
+        }
+  ZOLTAN_FREE ((void**) &Hindex);
+  return ZOLTAN_OK;
+}
+
+/******************************************************************************/
+
+/* path growing matching, hypergraph version */
+static int matching_pgm (ZZ *zz, HGraph *hg, Matching match, int *limit)
+{
+int i, j, k, side = 0, edge, vertex, *Match[2], limits[2], neighbor,
+ next_vertex, pins;
+double w[2]={0.0,0.0}, weight, max_weight, *sims;
+char  *yo = "matching_pgm";
+
+  limits[0] = limits[1] = *limit;
+  Match[0] = match;
+  if (!(Match[1] = (int*)   ZOLTAN_MALLOC (hg->nVtx * sizeof(int)))
+   || !(sims     = (double*) ZOLTAN_CALLOC (hg->nVtx,  sizeof(double))) ) {
+      Zoltan_Multifree (__FILE__, __LINE__, 2, &Match[1], &sims);
+      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
+      return ZOLTAN_MEMERR;
+      }
+  for (i = 0; i < hg->nVtx; i++)
+     Match[1][i] = i;
+
+  for (i = 0; i < hg->nVtx  &&  limits[side] > 0; i++)
+     if (Match[0][i] == i && Match[1][i] == i) {
+        vertex = i;
+        while (vertex > 0 && limits[side] > 0) {
+           max_weight = 0.0;
+           next_vertex = -1;
+
+           for (j = hg->vindex[vertex]; j < hg->vindex[vertex+1]; j++) {
+              edge = hg->vedge[j];
+              pins = hg->hindex[edge+1] - hg->hindex[edge];
+              weight = 2.0 / ((pins-1)*pins);
+              if (hg->ewgt)
+                 weight *= hg->ewgt[edge];
+              for (k = hg->hindex[edge]; k < hg->hindex[edge+1]; k++) {
+                 neighbor = hg->hvertex[k];
+                 if (neighbor != vertex && Match[0][neighbor] == neighbor
+                  && Match[1][neighbor]==neighbor)
+                     sims[neighbor] += weight;
+                 }
+              }
+        for (j = hg->vindex[vertex]; j < hg->vindex[vertex+1]; j++) {
+           edge = hg->vedge[j];
+           for (k = hg->hindex[edge]; k < hg->hindex[edge+1]; k++) {
+              neighbor = hg->hvertex[k];
+              if (sims[neighbor] > 0.0) {
+                 if (sims[neighbor] > max_weight) {
+                    max_weight = sims[neighbor];
+                    next_vertex = neighbor;
+                    }
+                 sims[neighbor] = 0.0;
+                 }
+              }
+           }
+
+        if (next_vertex >= 0) {
+           Match[side][vertex] = next_vertex;
+           Match[side][next_vertex] = vertex;
+           limits[side]--;
+           w[side] += max_weight;
+           side = 1-side;
+           }
+        vertex = next_vertex;
+        }
+     }
+
+  if (w[0] < w[1]) {
+     for (i = 0; i < hg->nVtx; i++)
+        match[i] = Match[1][i];
+     *limit = limits[1];
+     }
+  else
+     *limit = limits[0];
+
+  Zoltan_Multifree (__FILE__, __LINE__, 2, &Match[1], &sims);
+  return ZOLTAN_OK;
+}
 
 /******************************************************************************/
 

@@ -251,9 +251,9 @@ int Zoltan_RB_Send_Outgoing(
                        "Error returned from Zoltan_RB_Create_Proc_List.");
     goto End;
   }
-  ierr = Zoltan_RB_Send_Dots(zz, gidpt, lidpt, dotpt, dotmark, proc_list, outgoing,
-                         dotnum, dotmax, set, allocflag, overalloc, stats,
-                         counters, use_ids, local_comm);
+  ierr = Zoltan_RB_Send_Dots(zz, gidpt, lidpt, dotpt, dotmark, proc_list, 
+                         outgoing, dotnum, dotmax, set, allocflag, overalloc, 
+                         stats, counters, use_ids, local_comm);
 
 End:
 
@@ -389,7 +389,7 @@ int Zoltan_RB_Send_Dots(
 {
 /* Routine to send outgoing dots to their new processors. */
 
-  char *yo = "Zoltan_RB_Send_Outgoing";
+  char *yo = "Zoltan_RB_Send_Dots";
   int dotnew;                       /* # of new dots after send/recv */
   int keep, incoming;               /* message exchange counters */
   ZOLTAN_ID_PTR gidbuf = NULL;      /* communication buffer for global IDs. */
@@ -577,12 +577,123 @@ int num_gid_entries = zz->Num_GID;
 /*****************************************************************************/
 /*****************************************************************************/
 
+int Zoltan_RB_Remap(
+  ZZ *zz,                           /* Load-balancing structure. */
+  ZOLTAN_ID_PTR *gidpt,             /* pointer to Global_IDs array. */
+  ZOLTAN_ID_PTR *lidpt,             /* pointer to Local_IDs array.  */
+  struct Dot_Struct **dotpt,        /* pointer to Dots array. */
+  int *dotnum,                      /* number of dots */
+  int *dottop,                      /* index of first dot to import on this 
+                                       processor. */
+  int *dotmax,                      /* max # of dots arrays can hold */
+  int *allocflag,                   /* have to re-allocate space */
+  double overalloc,                 /* amount to overallocate by when realloc
+                                       of dot array must be done.
+                                       1.0 = no extra; 1.5 = 50% extra; etc. */
+  int stats,                        /* Print timing & count summary? */
+  int counters[],                   /* diagnostic counts
+                                       0 = # of median iterations
+                                       1 = # of dots sent
+                                       2 = # of dots received
+                                       3 = most dots this proc ever owns
+                                       4 = most dot memory this proc ever allocs                                       5 = # of times a previous cut is re-used
+                                       6 = # of reallocs of dot array */
+  int use_ids                       /* true if global and local IDs are to be
+                                       kept for RCB or RIB (for LB.Return_Lists 
+                                       or high Debug_Levels).  The IDs must be
+                                       communicated if use_ids is true.  */
+)
+{
+char *yo = "Zoltan_RB_Remap";
+int *old_part = NULL;    /* Array of old partition assignments for dots */
+int *new_part = NULL;    /* Array of new partition assignments for dots;
+                            initially determined by partitioning algorithm;
+                            may be reset by Zoltan_LB_Remap.  */
+int *proc = NULL;        /* Array of processor assignments for dots;
+                            initially set to input processors;
+                            may be reset by Zoltan_LB_Remap to new processors
+                            in Remap. */
+int *proc_list = NULL;   /* Temporary array of destinations for dots to be sent
+                            due to remap. */
+int outgoing;            /* Number of dots to be sent due to remap. */
+int new_map;             /* Flag indicating whether a remap has occurred. */
+int ierr = ZOLTAN_OK;
+int i; 
+
+  old_part = (int *) ZOLTAN_MALLOC(2 * *dotnum * sizeof(int));
+  new_part = old_part + *dotnum;
+  proc = (int *) ZOLTAN_MALLOC(*dotmax * sizeof(int));
+  if (*dotnum && (!old_part || !proc)) {
+    /* Can't do remapping, but decomposition should be OK. */
+    ZOLTAN_PRINT_WARN(zz->Proc, yo, "Memory error.");
+    ierr = ZOLTAN_WARN;
+    goto End;
+  }
+
+  for (i = 0; i < *dotnum; i++) {
+    old_part[i] = (*dotpt)[i].Input_Part;
+    new_part[i] = (*dotpt)[i].Part;
+    proc[i] = (*dotpt)[i].Proc;
+  }
+
+  /* Remap partitions to reduce data movement. */
+  ierr = Zoltan_LB_Remap(zz, &new_map, *dotnum, proc, old_part, new_part, 0);
+  if (ierr < 0) {
+    ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error returned from Zoltan_LB_Remap");
+    goto End;
+  }
+  
+  if (new_map) {
+    /* Partitions are being remapped; need to move the dots to new procs. */
+    for (i = 0; i < *dotnum; i++)
+      (*dotpt)[i].Part = new_part[i];
+
+    if (zz->LB.Return_Lists) {
+      /* Call send dots for all dots.  Zoltan_Comm will handle self messages
+       * for dots not moving.  Use proc for dotmark and Proc for set; this will
+       * cause all dots not remapped to Proc to be sent.
+       */
+      proc_list = (int *) ZOLTAN_MALLOC(*dotnum * sizeof(int));
+      if (*dotnum && !proc_list) {
+        ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Memory Error");
+        goto End;
+      }
+      for (*dottop = 0, outgoing = 0, i = 0; i < *dotnum; i++) 
+        if (proc[i] != zz->Proc)
+          proc_list[outgoing++] = proc[i];
+        else
+          *(dottop)++;
+
+      ierr = Zoltan_RB_Send_Dots(zz, gidpt, lidpt, dotpt, &proc, proc_list,
+                                 outgoing, dotnum, dotmax, zz->Proc, allocflag,
+                                 overalloc, stats, counters, use_ids,
+                                 zz->Communicator);
+      if (ierr < 0) {
+        ZOLTAN_PRINT_ERROR(zz->Proc, yo,
+                           "Error returned from Zoltan_RB_Send_Dots");
+        goto End;
+      }
+    }
+  }
+
+End:
+
+  ZOLTAN_FREE(&old_part);
+  ZOLTAN_FREE(&proc);
+  ZOLTAN_FREE(&proc_list);
+  return ierr;
+}
+
+/*****************************************************************************/
+/*****************************************************************************/
+/*****************************************************************************/
+
 int Zoltan_RB_Return_Arguments(
   ZZ *zz,                            /* Load-balancing structure */
   ZOLTAN_ID_PTR gidpt,               /* pointer to array of global IDs. */
   ZOLTAN_ID_PTR lidpt,               /* pointer to array of local IDs. */
   struct Dot_Struct *dotpt,          /* pointer to array of Dots. */
-  int *num_import,                    /* number of objects to be imported. */
+  int *num_import,                   /* number of objects to be imported. */
   ZOLTAN_ID_PTR *import_global_ids,  /* global IDs of objects to be imported. */
   ZOLTAN_ID_PTR *import_local_ids,   /* local IDs of objects to be imported. */
   int **import_procs,                /* processors from which objects will be 
@@ -601,6 +712,7 @@ int Zoltan_RB_Return_Arguments(
  */
 char *yo = "Zoltan_RB_Return_Arguments";
 int i, j;
+int ierr = ZOLTAN_OK;
 int num_gid_entries = zz->Num_GID;
 int num_lid_entries = zz->Num_LID;
 
@@ -625,16 +737,8 @@ int num_lid_entries = zz->Num_LID;
      || !Zoltan_Special_Malloc(zz, (void **)import_to_part, *num_import,
                                ZOLTAN_SPECIAL_MALLOC_INT)) {
       ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Memory error.");
-      Zoltan_Special_Free(zz, (void **)import_global_ids,
-                          ZOLTAN_SPECIAL_MALLOC_GID);
-      Zoltan_Special_Free(zz, (void **)import_local_ids,
-                          ZOLTAN_SPECIAL_MALLOC_LID);
-      Zoltan_Special_Free(zz, (void **)import_procs,
-                          ZOLTAN_SPECIAL_MALLOC_INT);
-      Zoltan_Special_Free(zz, (void **)import_to_part,
-                          ZOLTAN_SPECIAL_MALLOC_INT);
-      ZOLTAN_TRACE_EXIT(zz, yo);
-      return ZOLTAN_MEMERR;
+      ierr = ZOLTAN_MEMERR;
+      goto End;
     }
 
     for (i = 0, j = 0; j < dotnum; j++) {
@@ -651,7 +755,21 @@ int num_lid_entries = zz->Num_LID;
     }
   }
 
-  return(ZOLTAN_OK);
+
+
+End:
+   if (ierr < 0) {
+     Zoltan_Special_Free(zz, (void **)import_global_ids,
+                         ZOLTAN_SPECIAL_MALLOC_GID);
+     Zoltan_Special_Free(zz, (void **)import_local_ids,
+                         ZOLTAN_SPECIAL_MALLOC_LID);
+     Zoltan_Special_Free(zz, (void **)import_procs,
+                         ZOLTAN_SPECIAL_MALLOC_INT);
+     Zoltan_Special_Free(zz, (void **)import_to_part,
+                         ZOLTAN_SPECIAL_MALLOC_INT);
+   }
+   ZOLTAN_TRACE_EXIT(zz, yo);
+   return(ierr);
 }
 
 /*****************************************************************************/

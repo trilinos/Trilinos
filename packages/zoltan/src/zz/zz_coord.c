@@ -76,7 +76,7 @@ int Zoltan_Get_Coordinates(
 
   /* Get coordinates for object; allocate memory if not already provided. */
 
-  if (num_obj > 0) {
+  if (*num_dim > 0 && num_obj > 0) {
     if (*coords == NULL) {
       alloced_coords = 1;
       *coords = (double *) ZOLTAN_MALLOC(num_obj * (*num_dim) * sizeof(double));
