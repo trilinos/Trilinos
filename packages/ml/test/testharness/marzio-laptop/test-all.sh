@@ -8,37 +8,30 @@
 # MS, last modified on Nov-21
 #
 TRILINOS_HOME=${HOME}/Trilinos
-TEST_HOME=${HOME}/Trilinos/packages/ml/test/testharness/marzio-laptop
+TEST_HOME=${HOME}/Trilinos/packages/ifpack/test/testharness/marzio-laptop
 
 # -f  to configure/build/run
 # -tf to run only
 OPT=-f
 cd ${TRILINOS_HOME}/testharness
 
-# standalone    ML alone (nothing else)
-# epetra        ML with epetra, but without AztecOO
-# basic         only basic trilinos packages (no Teuchos)
-# trilinos      this should be the basic usage of ML within Trilinos
-# parmetis      Epetra + Teuchos + ParMETIS (only MPI)
-# all           My script, with all I have on my machien (only MPI)
-lamboot
-TEST="standalone epetra basic trilinos parmetis all"
+TEST="basic teuchos metis"
 StartTime=`date`
 for t in $TEST
 do
-  echo "--------------------------------"
+  echo "========================="
   echo "Testing $t..."
-  echo "--------------------------------"
+  echo "========================="
   perl test-harness.plx $OPT ${TEST_HOME}/$t-input
-  /bin/rm -rf ${TRILINOS_HOME}/ml-test
-  mkdir ${TRILINOS_HOME}/ml-test
-  cp -r ${TRILINOS_HOME}/testharness/results ${TRILINOS_HOME}/ml-test/$t-results/
+  /bin/rm -rf ${TRILINOS_HOME}/ifpack-test/
+  mkdir ${TRILINOS_HOME}/ifpack-test
+  cp -r ${TRILINOS_HOME}/testharness/results ${TRILINOS_HOME}/ifpack-test/$t-results/
   echo 
   echo "Analyzing results:"
-  echo "1) build error files:"
-  ls -1 ${TRILINOS_HOME}/ml-test/$t-results/ | grep -i error
-  echo "2) test failed files:"
-  ls -1 ${TRILINOS_HOME}/ml-test/$t-results/ | grep -i failed
+  echo "1) build error files (none is fine):"
+  ls -1 ${TRILINOS_HOME}/ifpack-test/$t-results/ | grep -i error
+  echo "2) test failed files (none is fine):"
+  ls -1 ${TRILINOS_HOME}/ifpack-test/$t-results/ | grep -i failed
 done
 EndTime=`date`
 echo "Test started on $StartTime,"

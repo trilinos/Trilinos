@@ -1,9 +1,9 @@
 MACHINE_CONFIG_FILE             = ../../packages/ifpack/test/testharness/marzio-laptop/machine
 MACHINE_MPI_CONFIG_FILE         = ../../packages/ifpack/test/testharness/marzio-laptop/machine-mpi
-TRILINOS_CONFIG_FILE            = ../../packages/ifpack/test/testharness/marzio-laptop/basic-configure
+TRILINOS_CONFIG_FILE            = ../../packages/ifpack/test/testharness/marzio-laptop/metis-configure
 REPORT_METHOD                   = LOCAL_FILESYSTEM
-SERIAL_DIR                      = ifpack-basic-serial
-MPI_DIR                         = ifpack-basic-mpi
+SERIAL_DIR                      = ifpack-metis-serial
+MPI_DIR                         = ifpack-metis-mpi
 HOST_FILE                       = <TRILINOS_DIR>/hostfile
 MPI_STARTUP_CMD                 = 
 MPI_SHUTDOWN_CMD                = 

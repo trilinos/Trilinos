@@ -2,7 +2,8 @@
 --enable-epetra
 --enable-aztecoo
 --enable-triutils
---enable-input
+--enable-teuchos
+--enable-ifpack
 --disable-tests
 --disable-examples
 --enable-ifpack-tests

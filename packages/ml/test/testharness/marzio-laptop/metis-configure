@@ -1,0 +1,14 @@
+--disable-default-packages
+--enable-epetra
+--enable-aztecoo
+--enable-triutils
+--enable-teuchos
+--enable-ifpack
+--disable-tests
+--disable-examples
+--enable-ifpack-tests
+--enable-ifpack-examples
+--enable-ifpack-metis
+--with-incdirs="-I/home/msala/include"
+--with-ldflags="-L/home/msala/lib/LINUX_MPI"
+--with-libs="-lmetis-4.0"
