@@ -221,6 +221,9 @@ bool FiniteElementProblem::setParameter(string label, double value)
     factor = value;
   else if (label == "Left BC")
     leftBC = value;
+  else if (label == "Homotopy Continuation Parameter") {
+    // do nothing for now
+  }
   else {
     cout << "ERROR: FiniteElementProblem::setParameter() - label is invalid "
 	 << "for this problem!" << endl;
