@@ -91,17 +91,17 @@ namespace Anasazi {
     //
     // *this <- alpha * A * B + beta * (*this)
     //
-    void MvTimesMatAddMv ( double alpha, const MultiVec<double>& A, 
-			   const Teuchos::SerialDenseMatrix<int,double>& B, double beta );
+    void MvTimesMatAddMv ( const double alpha, const MultiVec<double>& A, 
+			   const Teuchos::SerialDenseMatrix<int,double>& B, const double beta );
     //
     // *this <- alpha * A + beta * B
     //
-    void MvAddMv ( double alpha, const MultiVec<double>& A, double beta,
+    void MvAddMv ( const double alpha, const MultiVec<double>& A, const double beta,
 		   const MultiVec<double>& B);
     //
     // B <- alpha * A^T * (*this)
     //
-    void MvTransMv ( double alpha, const MultiVec<double>& A, Teuchos::SerialDenseMatrix<int,double>& B ) const;
+    void MvTransMv ( const double alpha, const MultiVec<double>& A, Teuchos::SerialDenseMatrix<int,double>& B ) const;
     //
     // b[i] = A[i]^T * this[i]
     // 
@@ -120,7 +120,7 @@ namespace Anasazi {
     //
     // initializes each element of (*this) with alpha
     //
-    void MvInit ( double alpha ) { assert( PutScalar( alpha ) == 0 ); };
+    void MvInit ( const double alpha ) { assert( PutScalar( alpha ) == 0 ); };
     //
     // print (*this)
     //
@@ -230,8 +230,8 @@ namespace Anasazi {
   //
   //-------------------------------------------------------------
   
-  void EpetraMultiVec::MvTimesMatAddMv ( double alpha, const MultiVec<double>& A, 
-					 const Teuchos::SerialDenseMatrix<int,double>& B, double beta ) 
+  void EpetraMultiVec::MvTimesMatAddMv ( const double alpha, const MultiVec<double>& A, 
+					 const Teuchos::SerialDenseMatrix<int,double>& B, const double beta ) 
   {
     Epetra_LocalMap LocalMap(B.numRows(), 0, Map().Comm());
     Epetra_MultiVector B_Pvec(Copy, LocalMap, B.values(), B.stride(), B.numCols());
@@ -247,8 +247,8 @@ namespace Anasazi {
   //
   //-------------------------------------------------------------
   
-  void EpetraMultiVec::MvAddMv ( double alpha , const MultiVec<double>& A, 
-				 double beta, const MultiVec<double>& B) 
+  void EpetraMultiVec::MvAddMv ( const double alpha , const MultiVec<double>& A, 
+				 const double beta, const MultiVec<double>& B) 
   {
     EpetraMultiVec *A_vec = dynamic_cast<EpetraMultiVec *>(&const_cast<MultiVec<double> &>(A)); assert(A_vec!=NULL);
     EpetraMultiVec *B_vec = dynamic_cast<EpetraMultiVec *>(&const_cast<MultiVec<double> &>(B)); assert(B_vec!=NULL);
@@ -262,7 +262,7 @@ namespace Anasazi {
   //
   //-------------------------------------------------------------
   
-  void EpetraMultiVec::MvTransMv ( double alpha, const MultiVec<double>& A,
+  void EpetraMultiVec::MvTransMv ( const double alpha, const MultiVec<double>& A,
 				   Teuchos::SerialDenseMatrix<int,double>& B) const
   {    
     EpetraMultiVec *A_vec = dynamic_cast<EpetraMultiVec *>(&const_cast<MultiVec<double> &>(A));
@@ -512,9 +512,9 @@ namespace Anasazi {
     static int GetNumberVecs( const Epetra_MultiVector& mv )
     { return mv.NumVectors(); }
     ///
-    static void MvTimesMatAddMv( double alpha, const Epetra_MultiVector& A, 
+    static void MvTimesMatAddMv( const double alpha, const Epetra_MultiVector& A, 
 				 const Teuchos::SerialDenseMatrix<int,double>& B, 
-				 double beta, Epetra_MultiVector& mv )
+				 const double beta, Epetra_MultiVector& mv )
     { 
       Epetra_LocalMap LocalMap(B.numRows(), 0, mv.Map().Comm());
       Epetra_MultiVector B_Pvec(Copy, LocalMap, B.values(), B.stride(), B.numCols());
@@ -522,12 +522,12 @@ namespace Anasazi {
       assert( mv.Multiply( 'N', 'N', alpha, A, B_Pvec, beta ) == 0 );   
     }
     ///
-    static void MvAddMv( double alpha, const Epetra_MultiVector& A, double beta, const Epetra_MultiVector& B, Epetra_MultiVector& mv )
+    static void MvAddMv( const double alpha, const Epetra_MultiVector& A, const double beta, const Epetra_MultiVector& B, Epetra_MultiVector& mv )
     { 
       assert( mv.Update( alpha, A, beta, B, 0.0 ) == 0 );
     }
     ///
-    static void MvTransMv( double alpha, const Epetra_MultiVector& A, const Epetra_MultiVector& mv, Teuchos::SerialDenseMatrix<int,double>& B )
+    static void MvTransMv( const double alpha, const Epetra_MultiVector& A, const Epetra_MultiVector& mv, Teuchos::SerialDenseMatrix<int,double>& B )
     { 
       Epetra_LocalMap LocalMap(B.numRows(), 0, mv.Map().Comm());
       Epetra_MultiVector B_Pvec(View, LocalMap, B.values(), B.stride(), B.numCols());

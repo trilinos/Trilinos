@@ -67,14 +67,15 @@ namespace Anasazi {
     static int GetNumberVecs( const MV& mv )
     { UndefinedMultiVecTraits<ScalarType, MV>::notDefined(); return 0; }     
     ///
-    static void MvTimesMatAddMv( ScalarType alpha, const MV& A, 
-				 const Teuchos::SerialDenseMatrix<int,ScalarType>& B, ScalarType beta, MV& mv )
+    static void MvTimesMatAddMv( const ScalarType alpha, const MV& A, 
+				 const Teuchos::SerialDenseMatrix<int,ScalarType>& B, 
+				 const ScalarType beta, MV& mv )
     { UndefinedMultiVecTraits<ScalarType, MV>::notDefined(); }     
     ///
-    static void MvAddMv( ScalarType alpha, const MV& A, ScalarType beta, const MV& B, MV& mv )
+    static void MvAddMv( const ScalarType alpha, const MV& A, const ScalarType beta, const MV& B, MV& mv )
     { UndefinedMultiVecTraits<ScalarType, MV>::notDefined(); }     
     ///
-    static void MvTransMv( ScalarType alpha, const MV& A, const MV& mv, Teuchos::SerialDenseMatrix<int,ScalarType>& B )
+    static void MvTransMv( const ScalarType alpha, const MV& A, const MV& mv, Teuchos::SerialDenseMatrix<int,ScalarType>& B )
     { UndefinedMultiVecTraits<ScalarType, MV>::notDefined(); }     
     ///
     static void MvDot ( const MV& mv, const MV& A, std::vector<ScalarType>* b ) 
@@ -89,7 +90,7 @@ namespace Anasazi {
     static void MvRandom( MV& mv )
     { UndefinedMultiVecTraits<ScalarType, MV>::notDefined(); }     
     ///
-    static void MvInit( MV& mv, ScalarType alpha = Teuchos::ScalarTraits<ScalarType>::zero() )
+    static void MvInit( MV& mv, const ScalarType alpha = Teuchos::ScalarTraits<ScalarType>::zero() )
     { UndefinedMultiVecTraits<ScalarType, MV>::notDefined(); }     
     ///
     static void MvPrint( const MV& mv, ostream& os )
