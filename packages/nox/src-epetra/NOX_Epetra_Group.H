@@ -85,9 +85,7 @@ A NOX::ParameterList is supplied in the constructor and during calls to the NOX:
 <li> "Scaling" - The scaling of the linear system before it is solved.  The following options are valid:<br>
   <ul>
   <li> "None" - No scaling is used (default).
-  <li> "Point Jacobi" 
   <li> "Row Sum"
-  <li> "Column Sum"
   </ul><br>
  
 <li> "Tolerance" - tolerance used by AztecOO to determine if a linear solve has converged.
