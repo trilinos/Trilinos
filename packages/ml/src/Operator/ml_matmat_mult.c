@@ -860,16 +860,13 @@ int ML_hash_it( int new_val, int hash_list[], int hash_length) {
 
   int index;
 
-  /* this has an overflow/negative problem
-     index = (new_val*1013)%hash_length;
-     index = (index*1013)%hash_length;
-     index = (index*1013)%hash_length;
-  */
-  index = new_val%hash_length;
+  index = new_val<<1;
+  if (index < 0) index = new_val;
+  index = index%hash_length;
 
-     while (( hash_list[index] != new_val) && (hash_list[index] != -1)) {
-       index = (++index)%hash_length;
-     }
+  while (( hash_list[index] != new_val) && (hash_list[index] != -1)) {
+     index = (++index)%hash_length;
+  }
      return(index);
 }
 
