@@ -35,24 +35,15 @@ CHANCONT = chanContinuation
 CHANTP = chanTP
 CHANTPCONT = chanTPContinuation
 CHANHOMOTOPY = chanHomotopy
+CHANTPMOD = chanTP_ModifiedBordering
+CHANTPCONTMOD = chanTPContinuation_ModifiedBordering
 
 endif
 
-noinst_PROGRAMS = $(CHANCONT) $(CHANTP) $(CHANTPCONT) $(CHANHOMOTOPY)
+noinst_PROGRAMS = $(CHANCONT) $(CHANTP) $(CHANTPCONT) $(CHANHOMOTOPY) \
+	          $(CHANTPMOD) $(CHANTPCONTMOD)
 
 chanContinuation_SOURCES = $(srcdir)/ChanContinuation.C \
-		$(srcdir)/ChanProblemInterface.H \
-		$(srcdir)/ChanProblemInterface.C
-
-chanTP_SOURCES = $(srcdir)/ChanTP.C \
-		$(srcdir)/ChanProblemInterface.H \
-		$(srcdir)/ChanProblemInterface.C
-
-chanTPContinuation_SOURCES = $(srcdir)/ChanTPContinuation.C \
-		$(srcdir)/ChanProblemInterface.H \
-		$(srcdir)/ChanProblemInterface.C
-
-chanHomotopy_SOURCES = $(srcdir)/ChanHomotopy.C \
 		$(srcdir)/ChanProblemInterface.H \
 		$(srcdir)/ChanProblemInterface.C
 
@@ -62,23 +53,11 @@ chanContinuation_DEPENDENCIES = \
 	$(top_builddir)/src-loca/src/libloca.a \
         $(top_builddir)/src-loca/src-lapack/liblocalapack.a
 
-chanTP_DEPENDENCIES = $(chanContinuation_DEPENDENCIES)
-
-chanTPContinuation_DEPENDENCIES = $(chanContinuation_DEPENDENCIES)
-
-chanHomotopy_DEPENDENCIES = $(chanContinuation_DEPENDENCIES)
-
 chanContinuation_CXXFLAGS = $(TRILINOS_CXXFLAGS) \
 		   -I$(top_srcdir)/src \
 		   -I$(top_srcdir)/src-lapack \
 		   -I$(top_srcdir)/src-loca/src \
                    -I$(top_srcdir)/src-loca/src-lapack
-
-chanTP_CXXFLAGS = $(chanContinuation_CXXFLAGS)
-
-chanTPContinuation_CXXFLAGS = $(chanContinuation_CXXFLAGS)
-
-chanHomotopy_CXXFLAGS = $(chanContinuation_CXXFLAGS)
 
 chanContinuation_LDADD = \
 		-L$(top_builddir)/src \
@@ -87,8 +66,54 @@ chanContinuation_LDADD = \
                 -L$(top_builddir)/src-loca/src-lapack \
                 -llocalapack -lloca -lnoxlapack -lnox
 
+chanTP_SOURCES = $(srcdir)/ChanTP.C \
+		$(srcdir)/ChanProblemInterface.H \
+		$(srcdir)/ChanProblemInterface.C
+
+chanTP_DEPENDENCIES = $(chanContinuation_DEPENDENCIES)
+
+chanTP_CXXFLAGS = $(chanContinuation_CXXFLAGS)
+
 chanTP_LDADD = $(chanContinuation_LDADD)
+
+chanTPContinuation_SOURCES = $(srcdir)/ChanTPContinuation.C \
+		$(srcdir)/ChanProblemInterface.H \
+		$(srcdir)/ChanProblemInterface.C
+
+chanTPContinuation_DEPENDENCIES = $(chanContinuation_DEPENDENCIES)
+
+chanTPContinuation_CXXFLAGS = $(chanContinuation_CXXFLAGS)
 
 chanTPContinuation_LDADD = $(chanContinuation_LDADD)
 
+chanHomotopy_SOURCES = $(srcdir)/ChanHomotopy.C \
+		$(srcdir)/ChanProblemInterface.H \
+		$(srcdir)/ChanProblemInterface.C
+
+chanHomotopy_DEPENDENCIES = $(chanContinuation_DEPENDENCIES)
+
+chanHomotopy_CXXFLAGS = $(chanContinuation_CXXFLAGS)
+
 chanHomotopy_LDADD = $(chanContinuation_LDADD)
+
+chanTP_ModifiedBordering_SOURCES = $(srcdir)/ChanTP_ModifiedBordering.C \
+		$(srcdir)/ChanProblemInterface.H \
+		$(srcdir)/ChanProblemInterface.C
+
+chanTP_ModifiedBordering_DEPENDENCIES = $(chanContinuation_DEPENDENCIES)
+
+chanTP_ModifiedBordering_CXXFLAGS = $(chanContinuation_CXXFLAGS)
+
+chanTP_ModifiedBordering_LDADD = $(chanContinuation_LDADD)
+
+chanTPContinuation_ModifiedBordering_SOURCES = \
+		$(srcdir)/ChanTPContinuation_ModifiedBordering.C \
+		$(srcdir)/ChanProblemInterface.H \
+		$(srcdir)/ChanProblemInterface.C
+
+chanTPContinuation_ModifiedBordering_DEPENDENCIES = \
+	$(chanContinuation_DEPENDENCIES)
+
+chanTPContinuation_ModifiedBordering_CXXFLAGS = $(chanContinuation_CXXFLAGS)
+
+chanTPContinuation_ModifiedBordering_LDADD = $(chanContinuation_LDADD)
