@@ -20,6 +20,7 @@ typedef struct ML_Aggregate_Options_Struct
   int Nnodes_per_aggregate;
   int local_or_global;
   int reordering_flag;
+  int desired_aggre_per_proc; /* for ParMETIS */
 } ML_Aggregate_Options;
 /*ms*/
 
