@@ -79,9 +79,18 @@ public:
 
   virtual ostream& print(ostream& stream, int indent = 0) const;
 
-protected:
+  //! The finite number test algorithm.  
+  /*! We made this method public so that other objects (solvers, line
+    searches, and directions) can use this test on their own values.
 
+    Return Values:
+    - 0 = Finite Number
+    - -1 = NaN
+    - -2 = Inf
+  */
   virtual int finiteNumberTest(double x) const;
+
+protected:
 
 private:
 
