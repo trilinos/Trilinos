@@ -50,7 +50,7 @@ ifdef NO_NEMESIS
 GDEFINES       += -DLB_NO_NEMESIS
 endif
 
-TARGET		= ../test/zdrive
+TARGET		= zdrive
 LIB_TARGET	= zoltan
 LIB_NAME	= libzoltan.a
 
@@ -249,7 +249,7 @@ SUN_INC_PATH	= -I/Net/local/lang/SC3.0.1/include \
                   -I/Net/local/mpi/build/solaris/ch_p4/include \
 		  $(SUBINCPATH)
 
-SUN_CCOMP	= $(SUN_CC) $(SUN_INC_PATH) $(SUN_OPT_FLAGS)
+SUN_CCOMP	= $(SUN_CC) $(SUN_INC_PATH) $(SUN_DBG_FLAGS)
 
 SUN_PAR_LPATH   = -L$(PARMETISLIB_PATH)/Obj_sun \
                   -L../$(PARMETISLIB_PATH)/Obj_sun 
