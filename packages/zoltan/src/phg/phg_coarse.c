@@ -32,10 +32,12 @@ extern "C" {
 
 int Zoltan_PHG_Coarsening
 ( ZZ *zz,             /* the Zoltan data structure */
-  PHGraph *hg,
-  int    *match,      /* Matching, Packing or Grouping array */
-  PHGraph *c_hg,      /* points to a working copy of hg structure */
-  int    *LevelMap)
+  PHGraph  *hg,
+  int      *match,      /* Matching, Packing or Grouping array */
+  PHGraph  *c_hg,       /* points to a working copy of hg structure */
+  int      *LevelMap,
+  Par_info *par_info,
+  int      *par_count)
 {
   int i, j, k, l, old, vertex, new_vertex, deleted_he, deleted_pins, *hsize=NULL;
   int *sum=NULL, *used_vertices=NULL, *sorted=NULL, *c_hindex=NULL; 
