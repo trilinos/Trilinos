@@ -96,7 +96,6 @@ int Amesos_TestMrhsSolver( Epetra_Comm &Comm, char *matrix_file, int numsolves,
   } else {
     if ( LastFiveBytes == ".triS" ) { 
       // Call routine to read in symmetric Triplet matrix
-	EPETRA_CHK_ERR( 1 ) ; 
       EPETRA_CHK_ERR( Trilinos_Util_ReadTriples2Epetra( matrix_file, true, Comm, readMap, readA, readx, 
 							readb, readxexact) );
     } else {
@@ -104,7 +103,6 @@ int Amesos_TestMrhsSolver( Epetra_Comm &Comm, char *matrix_file, int numsolves,
 	EPETRA_CHK_ERR( Trilinos_Util_ReadMatrixMarket2Epetra( matrix_file, Comm, readMap, 
 							       readA, readx, readb, readxexact) );
       } else {
-	EPETRA_CHK_ERR( 1 ) ; 
 	// Call routine to read in HB problem
 	Trilinos_Util_ReadHb2Epetra( matrix_file, Comm, readMap, readA, readx, 
 						     readb, readxexact) ;
