@@ -1,7 +1,7 @@
 # @HEADER
 # @HEADER
 
---#
+#
 #  Refer to packages/new_package/README for suggestions on 
 #  adding a new package.  
 #
@@ -81,6 +81,11 @@ TAC_ARG_ENABLE_DEFAULT_FEATURE(aztecoo, [Build aztecoo], AZTECOO)
 AM_CONDITIONAL(BUILD_AZTECOO, test "X$ac_cv_use_aztecoo" != "Xno" || 
 	test "X$ac_cv_use_komplex" != "Xno")
 
+AC_ARG_ENABLE(aztecoo-teuchos,
+ [AC_HELP_STRING([--enable-aztecoo-teuchos],[Enable AztecOO Teuchos::ParameterList interface. Default is no. Requires Teuchos package.])],
+ ac_cv_use_aztecoo_teuchos=$enableval, ac_cv_use_aztecoo_teuchos=no)
+
+
 TAC_ARG_ENABLE_FEATURE(belos, [Build belos], BELOS, no)
 AM_CONDITIONAL(BUILD_BELOS, test "X$ac_cv_use_belos" != "Xno")
 
@@ -112,6 +117,7 @@ AM_CONDITIONAL(BUILD_TEUCHOS, test "X$ac_cv_use_teuchos" != "Xno" ||
         test "X$ac_cv_use_loca" != "Xno" ||
  	test "X$ac_cv_use_belos" != "Xno" || 
 	test "X$ac_cv_use_amesos" != "Xno" || 
+	test "X$ac_cv_use_aztecoo_teuchos" != "Xno" || 
 	test "X$ac_cv_use_anasazi" != "Xno") 
 
 TAC_ARG_ENABLE_DEFAULT_FEATURE(ml, [Build ml], ML)
@@ -130,7 +136,7 @@ if test "X$ac_cv_use_teuchos" != "Xno" ||
         test "X$ac_cv_use_loca" != "Xno" ||
 	test "X$ac_cv_use_amesos" != "Xno" || 
  	test "X$ac_cv_use_anasazi" != "Xno" ||
- 	test "X$ac_cv_use_aztecoo" != "Xno" ||
+	test "X$ac_cv_use_aztecoo_teuchos" != "Xno" || 
 	test "X$ac_cv_use_belos" != "Xno"; then
   AC_CONFIG_SUBDIRS([packages/teuchos])
 fi

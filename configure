@@ -833,6 +833,9 @@ Optional Features:
   --enable-komplex        Build komplex (default is no)
   --enable-aztecoo        Build aztecoo (default is yes unless the
                           --disable-default-packages option is used
+  --enable-aztecoo-teuchos
+                          Enable AztecOO Teuchos::ParameterList interface.
+                          Default is no. Requires Teuchos package.
   --enable-belos          Build belos (default is no)
   --enable-anasazi        Build anasazi (default is no)
   --enable-ifpack         Build ifpack (default is yes unless the
@@ -2192,6 +2195,15 @@ else
 fi
 
 
+# Check whether --enable-aztecoo-teuchos or --disable-aztecoo-teuchos was given.
+if test "${enable_aztecoo_teuchos+set}" = set; then
+  enableval="$enable_aztecoo_teuchos"
+  ac_cv_use_aztecoo_teuchos=$enableval
+else
+  ac_cv_use_aztecoo_teuchos=no
+fi;
+
+
 
 # Check whether --enable-belos or --disable-belos was given.
 if test "${enable_belos+set}" = set; then
@@ -2447,6 +2459,7 @@ if test "X$ac_cv_use_teuchos" != "Xno" ||
         test "X$ac_cv_use_loca" != "Xno" ||
  	test "X$ac_cv_use_belos" != "Xno" ||
 	test "X$ac_cv_use_amesos" != "Xno" ||
+	test "X$ac_cv_use_aztecoo_teuchos" != "Xno" ||
 	test "X$ac_cv_use_anasazi" != "Xno"; then
   BUILD_TEUCHOS_TRUE=
   BUILD_TEUCHOS_FALSE='#'
@@ -2538,7 +2551,7 @@ if test "X$ac_cv_use_teuchos" != "Xno" ||
         test "X$ac_cv_use_loca" != "Xno" ||
 	test "X$ac_cv_use_amesos" != "Xno" ||
  	test "X$ac_cv_use_anasazi" != "Xno" ||
- 	test "X$ac_cv_use_aztecoo" != "Xno" ||
+	test "X$ac_cv_use_aztecoo_teuchos" != "Xno" ||
 	test "X$ac_cv_use_belos" != "Xno"; then
 
 
