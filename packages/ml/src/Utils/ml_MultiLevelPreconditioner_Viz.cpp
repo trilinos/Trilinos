@@ -179,11 +179,11 @@ void ML_Epetra::MultiLevelPreconditioner::VizMePleaze()
     // pre-smoother //
     // ============ //
 
-    ptr = ((ml_->SingleLevel[ilevel]).pre_smoother);
+    ptr = ((ml_->SingleLevel[LevelID_[ilevel]]).pre_smoother);
 
     if( ptr != NULL && VizPreSmoother ) {
 
-      RandomAndZero(tmp_sol, tmp_rhs,ml_->Amat[ilevel].outvec_leng);
+      RandomAndZero(tmp_sol, tmp_rhs,ml_->Amat[LevelID_[ilevel]].outvec_leng);
 
       // visualize starting vector
       if( PrintStarting ) {
@@ -207,9 +207,9 @@ void ML_Epetra::MultiLevelPreconditioner::VizMePleaze()
       int old_ntimes = ptr->ntimes;
       ptr->ntimes = NumApplSmoother;
       ML_Smoother_Apply(ptr, 
-			ml_->Amat[ilevel].outvec_leng,
+			ml_->Amat[LevelID_[ilevel]].outvec_leng,
 			tmp_sol,
-			ml_->Amat[ilevel].outvec_leng,
+			ml_->Amat[LevelID_[ilevel]].outvec_leng,
 			tmp_rhs, ML_NONZERO);
       ptr->ntimes = old_ntimes;
 
@@ -234,11 +234,11 @@ void ML_Epetra::MultiLevelPreconditioner::VizMePleaze()
     // post-smoother //
     // ============= //
 
-    ptr = ((ml_->SingleLevel[ilevel]).post_smoother);
+    ptr = ((ml_->SingleLevel[LevelID_[ilevel]]).post_smoother);
     if( ptr != NULL && VizPostSmoother ) {
 
       // random solution and 0 rhs
-      RandomAndZero(tmp_sol, tmp_rhs,ml_->Amat[ilevel].outvec_leng);
+      RandomAndZero(tmp_sol, tmp_rhs,ml_->Amat[LevelID_[ilevel]].outvec_leng);
 
       // visualize starting vector
       if( PrintStarting ) {
@@ -262,9 +262,9 @@ void ML_Epetra::MultiLevelPreconditioner::VizMePleaze()
       int old_ntimes = ptr->ntimes;
       ptr->ntimes = NumApplSmoother;
       ML_Smoother_Apply(ptr, 
-			ml_->Amat[ilevel].outvec_leng,
+			ml_->Amat[LevelID_[ilevel]].outvec_leng,
 			tmp_sol,
-			ml_->Amat[ilevel].outvec_leng,
+			ml_->Amat[LevelID_[ilevel]].outvec_leng,
 			tmp_rhs, ML_ZERO);
       ptr->ntimes = old_ntimes;
 
@@ -293,7 +293,7 @@ void ML_Epetra::MultiLevelPreconditioner::VizMePleaze()
   if( VizCycle ) {
 
     // random solution and zero rhs
-    RandomAndZero(tmp_sol, tmp_rhs,ml_->Amat[0].outvec_leng);
+    RandomAndZero(tmp_sol, tmp_rhs,ml_->Amat[LevelID_[0]].outvec_leng);
 
     // visualize starting vector
     if( PrintStarting ) {
