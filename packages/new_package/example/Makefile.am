@@ -21,8 +21,8 @@ hello_test_DEPENDENCIES = \
 hello_test_CXXFLAGS = -I$(top_srcdir)/src
 
 # REQUIRED CHANGE - Change the name of the library
-hello_test_LDADD = -L$(top_builddir)/src -lnew_package \
-	-L$(top_builddir)/../epetra/src -lepetra \
+hello_test_LDADD = $(top_builddir)/src/libnew_package.a \
+	$(top_builddir)/../epetra/src/libepetra.a \
 	$(BLAS_LIBS) $(FLIBS)
 
 #np# Set "SUBDIRS= (list all subdirectories that are autotool'ed here)"
