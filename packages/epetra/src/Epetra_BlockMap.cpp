@@ -464,11 +464,15 @@ Epetra_BlockMap::Epetra_BlockMap(const Epetra_BlockMap& map)
     MaxElementSize_(map.MaxElementSize_),
     ConstantElementSize_(map.ConstantElementSize_),
     LinearMap_(map.LinearMap_),
-    DistributedGlobal_(map.DistributedGlobal_),
-    LastContiguousGIDLoc_(map.LastContiguousGIDLoc_)
+    DistributedGlobal_(map.DistributedGlobal_)
 #ifdef EPETRA_BLOCKMAP_NEW_LID
     ,
+    LastContiguousGIDLoc_(map.LastContiguousGIDLoc_),
     LIDHash_(new Epetra_HashTable(*map.LIDHash_))
+#else
+    ,
+    LastContiguousGIDLoc_(0),
+    LIDHash_(0)
 #endif
 {
   int i;

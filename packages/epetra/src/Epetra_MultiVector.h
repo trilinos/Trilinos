@@ -905,12 +905,13 @@ class Epetra_MultiVector: public Epetra_DistObject, public Epetra_CompObject, pu
   /*!
     \return Pointer to the array of doubles containing the local values of the ith vector in the multi-vector.
   */
-  double*& operator [] (int i);
+  double*& operator [] (int i) { return Pointers_[i]; }
   //! Vector access function.
   /*!
     \return Pointer to the array of doubles containing the local values of the ith vector in the multi-vector.
   */
-  const double*& operator [] (int i) const;
+//  const double*& operator [] (int i) const;
+  double * const & operator [] (int i) const { return Pointers_[i]; }
 
   //! Vector access function.
   /*!

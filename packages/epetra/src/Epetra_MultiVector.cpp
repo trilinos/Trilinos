@@ -1749,6 +1749,8 @@ int Epetra_MultiVector::ReciprocalMultiply(double ScalarAB, const Epetra_MultiVe
     }
   return(0);
 }
+
+/*
 //=======================================================================
 double*& Epetra_MultiVector::operator [] (int index)  {
   
@@ -1770,6 +1772,7 @@ const double*& Epetra_MultiVector::operator [] (int index) const {
   const double * & temp = (const double * &) (Pointers_[index]);
   return(temp);
 }
+*/
 
 //=======================================================================
 Epetra_Vector *& Epetra_MultiVector::operator () (int index)  {
