@@ -261,7 +261,7 @@ extern  int ML_Smoother_MSR_SGS(void *, int, double *, int, double *);
 extern int ML_Smoother_MSR_SGSnodamping(void *,int ,double *,int , double *);
 extern int ML_Smoother_MSR_GSforwardnodamping(void *sm,int inlen,double x[],
 					      int outlen, double rhs[]);
-exnter int ML_Smoother_MSR_GSbackwardnodamping(void *sm,int inlen,double x[],
+extern int ML_Smoother_MSR_GSbackwardnodamping(void *sm,int inlen,double x[],
 					       int outlen, double rhs[]);
 extern int ML_Smoother_MSR_SGSdamping(void *,int ,double *,int , double *);
 extern void ML_Smoother_Clean_MSR_GS(void *data);
