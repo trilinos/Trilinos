@@ -248,8 +248,8 @@ int LB_sfc(
   }
 
   if (num_local_objects > 0) {
-    global_ids = LB_MALLOC_GID_ARRAY(lb, num_local_objects);
-    local_ids  = LB_MALLOC_LID_ARRAY(lb, num_local_objects);
+    global_ids = ZOLTAN_LB_MALLOC_GID_ARRAY(lb, num_local_objects);
+    local_ids  = ZOLTAN_LB_MALLOC_LID_ARRAY(lb, num_local_objects);
 
     if (!(global_ids) || (lb->Num_LID && !(local_ids))) {
       LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
@@ -556,8 +556,8 @@ int LB_sfc(
   for(i=0;i<num_local_objects;i++) 
     if(sfc_vert_ptr[i].destination_proc != lb->Proc) {
       *((*export_procs)+j) = sfc_vert_ptr[i].destination_proc;
-      LB_SET_GID(lb, (*export_global_ids+j), (global_ids+i));
-      LB_SET_LID(lb, (*export_local_ids+j), (local_ids+i));
+      ZOLTAN_LB_SET_GID(lb, (*export_global_ids+j), (global_ids+i));
+      ZOLTAN_LB_SET_LID(lb, (*export_local_ids+j), (local_ids+i));
       j++;
     }
 

@@ -89,8 +89,8 @@ int LB_Eval (LB *lb, int print_stats,
   if (num_obj>0){
 
     /* Allocate space for object data */
-    global_ids = LB_MALLOC_GID_ARRAY(lb, num_obj);
-    local_ids  = LB_MALLOC_LID_ARRAY(lb, num_obj);
+    global_ids = ZOLTAN_LB_MALLOC_GID_ARRAY(lb, num_obj);
+    local_ids  = ZOLTAN_LB_MALLOC_LID_ARRAY(lb, num_obj);
       
     if ((!global_ids) || (num_lid_entries && !local_ids)){
       LB_FREE(&global_ids);
@@ -168,7 +168,7 @@ int LB_Eval (LB *lb, int print_stats,
     }
 
     /* Allocate edge list space */
-    nbors_global = LB_MALLOC_GID_ARRAY(lb, max_edges);
+    nbors_global = ZOLTAN_LB_MALLOC_GID_ARRAY(lb, max_edges);
     nbors_proc = (int *)LB_MALLOC(max_edges * sizeof(int));
     /* Allocate a proc list for computing nadjacent */
     proc = (int *)LB_MALLOC((lb->Num_Proc)* sizeof(int));

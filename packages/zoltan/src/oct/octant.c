@@ -358,13 +358,13 @@ int LB_Oct_addRegion(LB *lb, pOctant oct, pRegion region) {
     return ZOLTAN_MEMERR;
   }
 
-  entry->Global_ID = LB_MALLOC_GID(lb);
-  entry->Local_ID = LB_MALLOC_LID(lb);
+  entry->Global_ID = ZOLTAN_LB_MALLOC_GID(lb);
+  entry->Local_ID = ZOLTAN_LB_MALLOC_LID(lb);
   /* copy region information into the entry */
   vector_set(entry->Coord, region->Coord);
   entry->Weight = region->Weight;
-  LB_SET_GID(lb, entry->Global_ID, region->Global_ID);
-  LB_SET_LID(lb, entry->Local_ID, region->Local_ID);
+  ZOLTAN_LB_SET_GID(lb, entry->Global_ID, region->Global_ID);
+  ZOLTAN_LB_SET_LID(lb, entry->Local_ID, region->Local_ID);
   entry->Proc = region->Proc;
 
   /* attach region to region list */

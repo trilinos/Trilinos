@@ -250,9 +250,9 @@ int num_gid_entries = lb->Num_GID; /* Number of array entries in a global ID */
    */
 
   if (count == 0)
-    leaf_list = LB_MALLOC_GID(lb);
+    leaf_list = ZOLTAN_LB_MALLOC_GID(lb);
   else
-    leaf_list = LB_MALLOC_GID_ARRAY(lb, count);
+    leaf_list = ZOLTAN_LB_MALLOC_GID_ARRAY(lb, count);
   if (leaf_list == NULL) {
     LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
     return(ZOLTAN_MEMERR);
@@ -309,7 +309,7 @@ int num_gid_entries = lb->Num_GID; /* Number of array entries in a global ID */
    * Gather the request list from all processors
    */
 
-    all_leaflist = LB_MALLOC_GID_ARRAY(lb, sum_reqsize);
+    all_leaflist = ZOLTAN_LB_MALLOC_GID_ARRAY(lb, sum_reqsize);
     if (all_leaflist == NULL) {
       LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
       LB_FREE(&all_leaflist);
@@ -489,9 +489,9 @@ int num_gid_entries = lb->Num_GID;  /* Number of array entries in a global ID */
    */
 
   if (count == 0)
-    leaf_list = LB_MALLOC_GID(lb);
+    leaf_list = ZOLTAN_LB_MALLOC_GID(lb);
   else
-    leaf_list = LB_MALLOC_GID_ARRAY(lb, count);
+    leaf_list = ZOLTAN_LB_MALLOC_GID_ARRAY(lb, count);
   if (leaf_list == NULL) {
     LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
     return(ZOLTAN_MEMERR);
@@ -541,9 +541,9 @@ int num_gid_entries = lb->Num_GID;  /* Number of array entries in a global ID */
    */
 
     if (reqsize+newsize == 0)
-      newlist = LB_MALLOC_GID(lb);
+      newlist = ZOLTAN_LB_MALLOC_GID(lb);
     else
-      newlist = LB_MALLOC_GID_ARRAY(lb, (reqsize+newsize));
+      newlist = ZOLTAN_LB_MALLOC_GID_ARRAY(lb, (reqsize+newsize));
     if (newlist == NULL) {
       LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
       LB_FREE(&leaf_list);
@@ -552,12 +552,12 @@ int num_gid_entries = lb->Num_GID;  /* Number of array entries in a global ID */
     if (myproc < other_proc) {
       for (i=0; i<reqsize; i++) {
         gid_off = i * num_gid_entries;
-        LB_SET_GID(lb, &(newlist[gid_off]),&(leaf_list[gid_off]));
+        ZOLTAN_LB_SET_GID(lb, &(newlist[gid_off]),&(leaf_list[gid_off]));
       }
     }
     else {
       for (i=0; i<reqsize; i++) {
-        LB_SET_GID(lb, &(newlist[(i+newsize)*num_gid_entries]),
+        ZOLTAN_LB_SET_GID(lb, &(newlist[(i+newsize)*num_gid_entries]),
                        &(leaf_list[i*num_gid_entries]));
       }
       my_start += newsize;
@@ -725,9 +725,9 @@ int num_gid_entries = lb->Num_GID; /* Number of array entries in a global ID. */
    */
 
   if (count == 0)
-    leaf_list = LB_MALLOC_GID(lb);
+    leaf_list = ZOLTAN_LB_MALLOC_GID(lb);
   else
-    leaf_list = LB_MALLOC_GID_ARRAY(lb, count);
+    leaf_list = ZOLTAN_LB_MALLOC_GID_ARRAY(lb, count);
   if (leaf_list == NULL) {
     LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
     return(ZOLTAN_MEMERR);
@@ -767,7 +767,7 @@ int num_gid_entries = lb->Num_GID; /* Number of array entries in a global ID. */
    */
 
       if (myproc != comm_loop) {
-        recv_gid = LB_MALLOC_GID_ARRAY(lb, reqsize);
+        recv_gid = ZOLTAN_LB_MALLOC_GID_ARRAY(lb, reqsize);
         if (recv_gid == NULL) {
           LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
           LB_FREE(&leaf_list);
@@ -983,7 +983,7 @@ int j;   /* loop counter */
    */
 
     if (!subroot->assigned_to_me) {
-      LB_SET_GID(lb, &(list[(*count)*lb->Num_GID]),subroot->global_id);
+      ZOLTAN_LB_SET_GID(lb, &(list[(*count)*lb->Num_GID]),subroot->global_id);
       *count += 1;
     }
 
@@ -1237,9 +1237,9 @@ int i;
  * if this is a leaf, put it on the export lists
  */
 
-    LB_SET_GID(lb, &((*export_global_ids)[(*num_export)*lb->Num_GID]),
+    ZOLTAN_LB_SET_GID(lb, &((*export_global_ids)[(*num_export)*lb->Num_GID]),
                subroot->global_id);
-    LB_SET_LID(lb, &((*export_local_ids)[(*num_export)*lb->Num_LID]),
+    ZOLTAN_LB_SET_LID(lb, &((*export_local_ids)[(*num_export)*lb->Num_LID]),
                subroot->local_id);
     (*export_procs)[*num_export] = subroot->partition;
     *num_export += 1;

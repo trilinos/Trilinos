@@ -622,8 +622,8 @@ static void LB_get_bounds(LB *lb, pRegion *ptr1, int *num_objs,
   }
 
   if (*num_objs > 0) {
-    obj_global_ids = LB_MALLOC_GID_ARRAY(lb,(*num_objs));
-    obj_local_ids  = LB_MALLOC_LID_ARRAY(lb,(*num_objs));
+    obj_global_ids = ZOLTAN_LB_MALLOC_GID_ARRAY(lb,(*num_objs));
+    obj_local_ids  = ZOLTAN_LB_MALLOC_LID_ARRAY(lb,(*num_objs));
     obj_wgts       = (float *) LB_MALLOC((*num_objs) * sizeof(float));
     if (!obj_global_ids || (num_lid_entries && !obj_local_ids) || !obj_wgts) {
       fprintf(stderr, "OCT [%d] Error from %s: Insufficient memory\n",lb->Proc,yo);
@@ -760,10 +760,10 @@ static void initialize_region(LB *lb, pRegion *ret, ZOLTAN_ID_PTR global_id,
   char *yo = "initialize_region";
   reg = (pRegion) LB_MALLOC(sizeof(Region));
   *ret = reg;
-  reg->Global_ID = LB_MALLOC_GID(lb);
-  reg->Local_ID = LB_MALLOC_LID(lb);
-  LB_SET_GID(lb, reg->Global_ID, global_id);
-  LB_SET_LID(lb, reg->Local_ID, local_id);
+  reg->Global_ID = ZOLTAN_LB_MALLOC_GID(lb);
+  reg->Local_ID = ZOLTAN_LB_MALLOC_LID(lb);
+  ZOLTAN_LB_SET_GID(lb, reg->Global_ID, global_id);
+  ZOLTAN_LB_SET_LID(lb, reg->Local_ID, local_id);
   reg->Proc = lb->Proc;
   /* reg->Proc = 0; */
   reg->Coord[0] = reg->Coord[1] = reg->Coord[2] = 0.0;

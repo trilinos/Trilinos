@@ -96,8 +96,8 @@ int i, ierr = 0;
   }
 
   *max_obj = (int)(1.5 * *num_obj) + 1;
-  *global_ids = LB_MALLOC_GID_ARRAY(lb, (*max_obj));
-  *local_ids  = LB_MALLOC_LID_ARRAY(lb, (*max_obj));
+  *global_ids = ZOLTAN_LB_MALLOC_GID_ARRAY(lb, (*max_obj));
+  *local_ids  = ZOLTAN_LB_MALLOC_LID_ARRAY(lb, (*max_obj));
   *dots = (struct Dot_Struct *)LB_MALLOC((*max_obj)*sizeof(struct Dot_Struct));
 
   if (!(*global_ids) || (lb->Num_LID && !(*local_ids)) || !(*dots)) {
@@ -338,8 +338,8 @@ int LB_RB_Send_Dots(
     *dotmax = (int) (overalloc * dotnew);
     if (*dotmax < dotnew) *dotmax = dotnew;
     if (use_ids) {
-      *gidpt = LB_REALLOC_GID_ARRAY(lb, *gidpt, *dotmax);
-      *lidpt = LB_REALLOC_LID_ARRAY(lb, *lidpt, *dotmax);
+      *gidpt = ZOLTAN_LB_REALLOC_GID_ARRAY(lb, *gidpt, *dotmax);
+      *lidpt = ZOLTAN_LB_REALLOC_LID_ARRAY(lb, *lidpt, *dotmax);
       if (!*gidpt || (num_lid_entries && !*lidpt)) {
         LB_TRACE_EXIT(lb, yo);
         return ZOLTAN_MEMERR;
@@ -365,8 +365,8 @@ int LB_RB_Send_Dots(
 
   if (outgoing > 0) {
     if (use_ids) {
-      gidbuf = LB_MALLOC_GID_ARRAY(lb, outgoing);
-      lidbuf = LB_MALLOC_LID_ARRAY(lb, outgoing);
+      gidbuf = ZOLTAN_LB_MALLOC_GID_ARRAY(lb, outgoing);
+      lidbuf = ZOLTAN_LB_MALLOC_LID_ARRAY(lb, outgoing);
       if (!gidbuf || (num_lid_entries && !lidbuf)) {
         LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
         LB_FREE(&gidbuf);
@@ -394,9 +394,9 @@ int LB_RB_Send_Dots(
   for (i = 0; i < *dotnum; i++) {
     if (dotmark[i] != set) {
       if (use_ids) {
-        LB_SET_GID(lb, &(gidbuf[outgoing*num_gid_entries]), 
+        ZOLTAN_LB_SET_GID(lb, &(gidbuf[outgoing*num_gid_entries]), 
                        &((*gidpt)[i*num_gid_entries]));
-        LB_SET_LID(lb, &(lidbuf[outgoing*num_lid_entries]), 
+        ZOLTAN_LB_SET_LID(lb, &(lidbuf[outgoing*num_lid_entries]), 
                        &((*lidpt)[i*num_lid_entries]));
       }
       memcpy((char *) &dotbuf[outgoing], (char *) &((*dotpt)[i]), 
@@ -405,9 +405,9 @@ int LB_RB_Send_Dots(
     }
     else {
       if (use_ids) {
-        LB_SET_GID(lb, &((*gidpt)[keep*num_gid_entries]), 
+        ZOLTAN_LB_SET_GID(lb, &((*gidpt)[keep*num_gid_entries]), 
                        &((*gidpt)[i*num_gid_entries]));
-        LB_SET_LID(lb, &((*lidpt)[keep*num_lid_entries]), 
+        ZOLTAN_LB_SET_LID(lb, &((*lidpt)[keep*num_lid_entries]), 
                        &((*lidpt)[i*num_lid_entries]));
       }
       memcpy((char *) &((*dotpt)[keep]), (char *) &((*dotpt)[i]), 
@@ -496,13 +496,13 @@ int num_gid_entries = lb->Num_GID;
   printf("  Assigned objects:\n");
   for (kk = 0; kk < pdotnum; kk++) {
      printf("    Obj:  ");
-     LB_PRINT_GID(lb, &(global_ids[kk*num_gid_entries]));
+     ZOLTAN_LB_PRINT_GID(lb, &(global_ids[kk*num_gid_entries]));
      printf("  Orig: %4d\n", dots[kk].Proc);
   }
   printf("  Non_locals:\n");
   for (kk = 0; kk < num_import; kk++) {
      printf("    Obj:  ");
-     LB_PRINT_GID(lb, &(import_global_ids[kk*num_gid_entries]));
+     ZOLTAN_LB_PRINT_GID(lb, &(import_global_ids[kk*num_gid_entries]));
      printf("     Orig: %4d\n", import_procs[kk]);
   }
   LB_Print_Sync_End(lb->Communicator, TRUE);
@@ -556,9 +556,9 @@ int num_lid_entries = lb->Num_LID;
 
   for (i = 0; i < num_import; i++) {
     ii = i + dottop;
-    LB_SET_GID(lb, &((*import_global_ids)[i*num_gid_entries]),
+    ZOLTAN_LB_SET_GID(lb, &((*import_global_ids)[i*num_gid_entries]),
                &(gidpt[ii*num_gid_entries]));
-    LB_SET_LID(lb, &((*import_local_ids)[i*num_lid_entries]),
+    ZOLTAN_LB_SET_LID(lb, &((*import_local_ids)[i*num_lid_entries]),
                &(lidpt[ii*num_lid_entries]));
     (*import_procs)[i] = dotpt[ii].Proc;
   }

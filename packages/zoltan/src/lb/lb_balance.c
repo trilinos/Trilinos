@@ -316,14 +316,14 @@ int comm[3],gcomm[3];
     printf("ZOLTAN: Objects to be imported to Proc %d\n", lb->Proc);
     for (i = 0; i < *num_import_objs; i++) {
       printf("    Obj: ");
-      LB_PRINT_GID(lb, &((*import_global_ids)[i*lb->Num_GID]));
+      ZOLTAN_LB_PRINT_GID(lb, &((*import_global_ids)[i*lb->Num_GID]));
       printf("  From processor: %4d\n", (*import_procs)[i]);
     }
     printf("\n");
     printf("ZOLTAN: Objects to be exported from Proc %d\n", lb->Proc);
     for (i = 0; i < *num_export_objs; i++) {
       printf("    Obj: ");
-      LB_PRINT_GID(lb, &((*export_global_ids)[i*lb->Num_GID]));
+      ZOLTAN_LB_PRINT_GID(lb, &((*export_global_ids)[i*lb->Num_GID]));
       printf("  Destination: %4d\n", (*export_procs)[i]);
     }
     LB_Print_Sync_End(lb->Communicator, TRUE);

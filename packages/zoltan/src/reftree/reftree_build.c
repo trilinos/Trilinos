@@ -229,8 +229,8 @@ int num_lid_entries = lb->Num_LID;  /* number of array entries in a local ID */
   if (num_obj > 0) {
 
     num_obj += 1; /* allocate one extra spot for the last call to NEXT_OBJ */
-    local_gids = LB_MALLOC_GID_ARRAY(lb, num_obj);
-    local_lids = LB_MALLOC_LID_ARRAY(lb, num_obj);
+    local_gids = ZOLTAN_LB_MALLOC_GID_ARRAY(lb, num_obj);
+    local_lids = ZOLTAN_LB_MALLOC_LID_ARRAY(lb, num_obj);
     assigned   = (int *) LB_MALLOC(num_obj*sizeof(int));
     num_vert   = (int *) LB_MALLOC(num_obj*sizeof(int));
     vertices   = (int *) LB_MALLOC(MAXVERT*num_obj*sizeof(int));
@@ -411,7 +411,7 @@ int num_lid_entries = lb->Num_LID;  /* number of array entries in a local ID */
    * Then get the coarse objects from all processors
    */
 
-  all_gids = LB_MALLOC_GID_ARRAY(lb, sum_num_obj);
+  all_gids = ZOLTAN_LB_MALLOC_GID_ARRAY(lb, sum_num_obj);
   if (all_gids == NULL) {
     LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
     LB_FREE(&local_gids);
@@ -450,7 +450,7 @@ int num_lid_entries = lb->Num_LID;  /* number of array entries in a local ID */
    * elements as given by the user, with processor rank resolving duplicates
    */
 
-  local_gids = LB_REALLOC_GID_ARRAY(lb, local_gids, sum_num_obj);
+  local_gids = ZOLTAN_LB_REALLOC_GID_ARRAY(lb, local_gids, sum_num_obj);
   order = (int *) LB_MALLOC(sum_num_obj*sizeof(int));
   if (local_gids == NULL || order == NULL) {
     LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
@@ -479,7 +479,7 @@ int num_lid_entries = lb->Num_LID;  /* number of array entries in a local ID */
   for (i=0; i<sum_num_obj; i++) {
     found = 0;
     for (j=0; j<total_num_obj && !found; j++) {
-      if (LB_EQ_GID(lb, &(all_gids[i*num_gid_entries]),
+      if (ZOLTAN_LB_EQ_GID(lb, &(all_gids[i*num_gid_entries]),
                     &(local_gids[j*num_gid_entries]))) 
         found = 1;
     }
@@ -490,7 +490,7 @@ int num_lid_entries = lb->Num_LID;  /* number of array entries in a local ID */
       }
     }
     else {
-      LB_SET_GID(lb, &(local_gids[total_num_obj*num_gid_entries]), 
+      ZOLTAN_LB_SET_GID(lb, &(local_gids[total_num_obj*num_gid_entries]), 
                      &(all_gids[i*num_gid_entries]));
       order[total_num_obj] = count;
       count += 1;
@@ -659,9 +659,9 @@ int num_lid_entries = lb->Num_LID;  /* number of array entries in a local ID */
 
     if (num_vert[i] == -1) {
   /* elements not known to this processor have more empty entries */
-      LB_SET_GID(lb, root->children[order[i]].global_id,
+      ZOLTAN_LB_SET_GID(lb, root->children[order[i]].global_id,
                  &(local_gids[i*num_gid_entries]));
-      LB_INIT_LID(lb, root->children[order[i]].local_id);
+      ZOLTAN_LB_INIT_LID(lb, root->children[order[i]].local_id);
       root->children[order[i]].children       = (LB_REFTREE *) NULL;
       root->children[order[i]].num_child      = 0;
       root->children[order[i]].num_vertex     = num_vert[i];
@@ -671,9 +671,9 @@ int num_lid_entries = lb->Num_LID;  /* number of array entries in a local ID */
       root->children[order[i]].partition      = 0;
     }
     else {
-      LB_SET_GID(lb, root->children[order[i]].global_id,
+      ZOLTAN_LB_SET_GID(lb, root->children[order[i]].global_id,
                  &(local_gids[i*num_gid_entries]));
-      LB_SET_LID(lb, root->children[order[i]].local_id,
+      ZOLTAN_LB_SET_LID(lb, root->children[order[i]].local_id,
                  &(local_lids[i*num_lid_entries]));
       root->children[order[i]].children       = (LB_REFTREE *) NULL;
       root->children[order[i]].num_child      = 0;
@@ -858,8 +858,8 @@ int existing;              /* existing child that agrees with GET_CHILD data */
       LB_FREE(&sout_vertex);
       LB_FREE(&svert1);
     }
-    slocal_gids = LB_MALLOC_GID_ARRAY(lb, num_obj);
-    slocal_lids = LB_MALLOC_LID_ARRAY(lb, num_obj);
+    slocal_gids = ZOLTAN_LB_MALLOC_GID_ARRAY(lb, num_obj);
+    slocal_lids = ZOLTAN_LB_MALLOC_LID_ARRAY(lb, num_obj);
     sassigned   = (int *) LB_MALLOC(num_obj*sizeof(int));
     snum_vert   = (int *) LB_MALLOC(num_obj*sizeof(int));
     svertices   = (int *) LB_MALLOC(MAXVERT*num_obj*sizeof(int));
@@ -927,7 +927,7 @@ int existing;              /* existing child that agrees with GET_CHILD data */
       for (i=0; i<num_obj && children_agree; i++) {
         existing = -1;
         for (j=0; j<subroot->num_child && existing==-1; j++) {
-          if (LB_EQ_GID(lb, subroot->children[j].global_id,
+          if (ZOLTAN_LB_EQ_GID(lb, subroot->children[j].global_id,
                         &(slocal_gids[i*num_gid_entries]))) {
             existing = j;
           }
@@ -1133,9 +1133,9 @@ int existing;              /* existing child that agrees with GET_CHILD data */
    * Copy from temporary arrays and set empty defaults
    */
 
-      LB_SET_GID(lb, subroot->children[sorder[i]].global_id,
+      ZOLTAN_LB_SET_GID(lb, subroot->children[sorder[i]].global_id,
                  &(slocal_gids[i*num_gid_entries]));
-      LB_SET_LID(lb, subroot->children[sorder[i]].local_id,
+      ZOLTAN_LB_SET_LID(lb, subroot->children[sorder[i]].local_id,
                  &(slocal_lids[i*num_lid_entries]));
       subroot->children[sorder[i]].children       = (LB_REFTREE *) NULL;
       subroot->children[sorder[i]].num_child      = 0;
@@ -1841,8 +1841,8 @@ char *yo = "alloc_reftree_nodes";
 
 /* allocate memory to be used within the structures */
 
-  gids = LB_MALLOC_GID_ARRAY(lb, num_node);
-  lids = LB_MALLOC_LID_ARRAY(lb, num_node);
+  gids = ZOLTAN_LB_MALLOC_GID_ARRAY(lb, num_node);
+  lids = ZOLTAN_LB_MALLOC_LID_ARRAY(lb, num_node);
   float_mem = (float *) LB_MALLOC(3*wdim*num_node*sizeof(float));
   int_mem   = (int   *) LB_MALLOC(sum_vert*sizeof(int));
 
@@ -2067,8 +2067,8 @@ int num_lid_entries = lb->Num_LID;  /* number of array entries in a local ID */
     }
 
     if (num_obj > 0) {
-      local_gids = LB_MALLOC_GID_ARRAY(lb, num_obj);
-      local_lids = LB_MALLOC_LID_ARRAY(lb, num_obj);
+      local_gids = ZOLTAN_LB_MALLOC_GID_ARRAY(lb, num_obj);
+      local_lids = ZOLTAN_LB_MALLOC_LID_ARRAY(lb, num_obj);
       assigned   = (int *) LB_MALLOC(num_obj*sizeof(int));
       num_vert   = (int *) LB_MALLOC(num_obj*sizeof(int));
       vertices   = (int *) LB_MALLOC(MAXVERT*num_obj*sizeof(int));
@@ -2157,10 +2157,10 @@ int num_lid_entries = lb->Num_LID;  /* number of array entries in a local ID */
    * Get objects via first/next
    */
 
-    slocal_gids = LB_MALLOC_GID(lb);
-    slocal_lids = LB_MALLOC_LID(lb);
-    plocal_gids = LB_MALLOC_GID(lb);
-    plocal_lids = LB_MALLOC_LID(lb);
+    slocal_gids = ZOLTAN_LB_MALLOC_GID(lb);
+    slocal_lids = ZOLTAN_LB_MALLOC_LID(lb);
+    plocal_gids = ZOLTAN_LB_MALLOC_GID(lb);
+    plocal_lids = ZOLTAN_LB_MALLOC_LID(lb);
     vertices = (int *) LB_MALLOC(MAXVERT*sizeof(int));
     if (slocal_gids == NULL || (num_lid_entries > 0 && slocal_lids == NULL) || 
         plocal_gids == NULL || (num_lid_entries > 0 && plocal_lids == NULL) || 
@@ -2210,8 +2210,8 @@ int num_lid_entries = lb->Num_LID;  /* number of array entries in a local ID */
                              tree_node->weight, &ierr);
       }
 
-      LB_SET_GID(lb, plocal_gids, slocal_gids);
-      LB_SET_LID(lb, plocal_lids, slocal_lids);
+      ZOLTAN_LB_SET_GID(lb, plocal_gids, slocal_gids);
+      ZOLTAN_LB_SET_LID(lb, plocal_lids, slocal_lids);
       found = lb->Get_Next_Coarse_Obj(lb->Get_Next_Coarse_Obj_Data,
                                       num_gid_entries, num_lid_entries,
                                       plocal_gids, plocal_lids,
@@ -2240,10 +2240,10 @@ void LB_Reftree_Print(LB *lb, LB_REFTREE *subroot, int level)
   me = lb->Proc;
   printf("\n");
   printf("[%d] refinement tree node with local id ", me);
-  LB_PRINT_LID(lb, subroot->local_id);
+  ZOLTAN_LB_PRINT_LID(lb, subroot->local_id);
   printf(" on level %d\n", level);
   printf("[%d]   Global ID ",me);
-  LB_PRINT_GID(lb, subroot->global_id);
+  ZOLTAN_LB_PRINT_GID(lb, subroot->global_id);
   printf("\n");
   printf("[%d]   first weight %f\n",me,subroot->weight[0]);
   printf("[%d]   first summed weight %f\n",me,subroot->summed_weight[0]);

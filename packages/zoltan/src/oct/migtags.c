@@ -187,8 +187,8 @@ static int tag_regions(LB *lb, pOctant *octs, int *newpids, int nocts,
       LB_FREE(&mtags);
       return ZOLTAN_MEMERR;
     }
-    *export_gids = LB_MALLOC_GID_ARRAY(lb, count);
-    *export_lids = LB_MALLOC_LID_ARRAY(lb, count);
+    *export_gids = ZOLTAN_LB_MALLOC_GID_ARRAY(lb, count);
+    *export_lids = ZOLTAN_LB_MALLOC_LID_ARRAY(lb, count);
     if(!(*export_gids) || (num_lid_entries && !(*export_lids))) {
       LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
       LB_TRACE_EXIT(lb, yo);
@@ -218,8 +218,8 @@ static int tag_regions(LB *lb, pOctant *octs, int *newpids, int nocts,
       LB_FREE(export_lids);
       return ZOLTAN_MEMERR;
     }
-    *prev_gids = LB_MALLOC_GID_ARRAY(lb, count2);
-    *prev_lids = LB_MALLOC_LID_ARRAY(lb, count2);
+    *prev_gids = ZOLTAN_LB_MALLOC_GID_ARRAY(lb, count2);
+    *prev_lids = ZOLTAN_LB_MALLOC_LID_ARRAY(lb, count2);
     if(!(*prev_gids) || (num_lid_entries && !(*prev_lids))) {
       LB_PRINT_ERROR(lb->Proc, yo, "Insufficient Memory.");
       LB_TRACE_EXIT(lb, yo);
@@ -251,8 +251,8 @@ static int tag_regions(LB *lb, pOctant *octs, int *newpids, int nocts,
 	while(regionlist != NULL) {
 	  /* place information in the appropritate array */
 	  mtags[index] = *regionlist;
-          LB_SET_GID(lb, &((*export_gids)[index*num_gid_entries]), regionlist->Global_ID);
-          LB_SET_LID(lb, &((*export_lids)[index*num_lid_entries]), regionlist->Local_ID);
+          ZOLTAN_LB_SET_GID(lb, &((*export_gids)[index*num_gid_entries]), regionlist->Global_ID);
+          ZOLTAN_LB_SET_LID(lb, &((*export_lids)[index*num_lid_entries]), regionlist->Local_ID);
 
 	  ex_load += (float)(regionlist->Weight);
 	  export_pids[index] = newpids[i];
@@ -266,8 +266,8 @@ static int tag_regions(LB *lb, pOctant *octs, int *newpids, int nocts,
 	while(regionlist != NULL) {
 	  if(regionlist->Proc != lb->Proc) {
 	    ptags[index2] = *regionlist;	   /* get region information */
-            LB_SET_GID(lb, &((*prev_gids)[index2*num_gid_entries]), regionlist->Global_ID);
-            LB_SET_LID(lb, &((*prev_lids)[index2*num_lid_entries]), regionlist->Local_ID);
+            ZOLTAN_LB_SET_GID(lb, &((*prev_gids)[index2*num_gid_entries]), regionlist->Global_ID);
+            ZOLTAN_LB_SET_LID(lb, &((*prev_lids)[index2*num_lid_entries]), regionlist->Local_ID);
 
 	    index2++;                                   /* increment counter */
 	  }
@@ -329,8 +329,8 @@ static int malloc_new_objects(LB *lb, int nsentags, pRegion export_tags,
 
   if (nreceives > 0) {
     tmp = (pRegion) LB_MALLOC(nreceives * sizeof(Region));
-    tmp_gids = LB_MALLOC_GID_ARRAY(lb, nreceives);
-    tmp_lids = LB_MALLOC_LID_ARRAY(lb, nreceives);
+    tmp_gids = ZOLTAN_LB_MALLOC_GID_ARRAY(lb, nreceives);
+    tmp_lids = ZOLTAN_LB_MALLOC_LID_ARRAY(lb, nreceives);
     if(tmp == NULL || !tmp_gids || (num_lid_entries && !tmp_lids)) {
       LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
       LB_FREE(&tmp);
@@ -416,8 +416,8 @@ static int malloc_new_objects(LB *lb, int nsentags, pRegion export_tags,
   for (i=0; i<nreceives; i++) {
     if(tmp[i].Proc != lb->Proc) {
       imp[j] = tmp[i];
-      imp[j].Global_ID = LB_MALLOC_GID(lb);
-      imp[j].Local_ID  = LB_MALLOC_LID(lb);
+      imp[j].Global_ID = ZOLTAN_LB_MALLOC_GID(lb);
+      imp[j].Local_ID  = ZOLTAN_LB_MALLOC_LID(lb);
       if (!(imp[j].Global_ID) || (num_lid_entries && !(imp[j].Local_ID))) {
         LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
         LB_TRACE_EXIT(lb, yo);
@@ -426,8 +426,8 @@ static int malloc_new_objects(LB *lb, int nsentags, pRegion export_tags,
         LB_FREE(&tmp_lids);
         return ZOLTAN_MEMERR;
       }
-      LB_SET_GID(lb, imp[j].Global_ID, &(tmp_gids[i*num_gid_entries]));
-      LB_SET_LID(lb, imp[j].Local_ID,  &(tmp_lids[i*num_lid_entries]));
+      ZOLTAN_LB_SET_GID(lb, imp[j].Global_ID, &(tmp_gids[i*num_gid_entries]));
+      ZOLTAN_LB_SET_LID(lb, imp[j].Local_ID,  &(tmp_lids[i*num_lid_entries]));
       j++;
     }
   }
@@ -435,8 +435,8 @@ static int malloc_new_objects(LB *lb, int nsentags, pRegion export_tags,
   if(npimtags > 0) {
     for(i=0; i<npimtags; i++) {
       imp[j] = prev_tags[i];
-      imp[j].Global_ID = LB_MALLOC_GID(lb);
-      imp[j].Local_ID  = LB_MALLOC_LID(lb);
+      imp[j].Global_ID = ZOLTAN_LB_MALLOC_GID(lb);
+      imp[j].Local_ID  = ZOLTAN_LB_MALLOC_LID(lb);
       if (!(imp[j].Global_ID) || (num_lid_entries && !(imp[j].Local_ID))) {
         LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
         LB_TRACE_EXIT(lb, yo);
@@ -445,8 +445,8 @@ static int malloc_new_objects(LB *lb, int nsentags, pRegion export_tags,
         LB_FREE(&tmp_lids);
         return ZOLTAN_MEMERR;
       }
-      LB_SET_GID(lb, imp[j].Global_ID, &(prev_gids[i*num_gid_entries]));
-      LB_SET_LID(lb, imp[j].Local_ID,  &(prev_lids[i*num_lid_entries]));
+      ZOLTAN_LB_SET_GID(lb, imp[j].Global_ID, &(prev_gids[i*num_gid_entries]));
+      ZOLTAN_LB_SET_LID(lb, imp[j].Local_ID,  &(prev_lids[i*num_lid_entries]));
       j++;
     }
   }
@@ -519,9 +519,9 @@ int LB_fix_tags(LB *lb, ZOLTAN_ID_PTR *import_global_ids, ZOLTAN_ID_PTR *import_
 
     /* for each region imported, look at its originating processor */
     for(i=0; i<nrectags; i++) {
-      LB_SET_GID(lb, &((*import_global_ids)[i*num_gid_entries]),
+      ZOLTAN_LB_SET_GID(lb, &((*import_global_ids)[i*num_gid_entries]),
                  import_regs[i].Global_ID);
-      LB_SET_LID(lb, &((*import_local_ids)[i*num_lid_entries]),
+      ZOLTAN_LB_SET_LID(lb, &((*import_local_ids)[i*num_lid_entries]),
                  import_regs[i].Local_ID);
       (*import_procs)[i]      = import_regs[i].Proc;
     }

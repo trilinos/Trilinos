@@ -454,8 +454,8 @@ static int LB_ParMetis_Jostle(
   
   vtxdist = (idxtype *)LB_MALLOC((lb->Num_Proc+1)* sizeof(idxtype));
   if (num_obj>0){
-    global_ids = LB_MALLOC_GID_ARRAY(lb, num_obj);
-    local_ids =  LB_MALLOC_LID_ARRAY(lb, num_obj);
+    global_ids = ZOLTAN_LB_MALLOC_GID_ARRAY(lb, num_obj);
+    local_ids =  ZOLTAN_LB_MALLOC_LID_ARRAY(lb, num_obj);
     if (obj_wgt_dim)
       float_vwgt = (float *)LB_MALLOC(obj_wgt_dim*num_obj * sizeof(float));
     if (!vtxdist || !global_ids || (num_lid_entries && !local_ids) || 
@@ -477,7 +477,7 @@ static int LB_ParMetis_Jostle(
       printf("[%1d] Debug: Global ids = ", lb->Proc);
       for (i99=0; i99<num_obj; i99++) {
         printf("    ");
-        LB_PRINT_GID(lb, &(global_ids[i99*num_gid_entries]));
+        ZOLTAN_LB_PRINT_GID(lb, &(global_ids[i99*num_gid_entries]));
         printf("\n");
       }
     }
@@ -589,7 +589,7 @@ static int LB_ParMetis_Jostle(
        max_proc_list_len = 0;
     
     /* Allocate edge list data */
-    nbors_global = LB_MALLOC_GID_ARRAY(lb, max_edges);
+    nbors_global = ZOLTAN_LB_MALLOC_GID_ARRAY(lb, max_edges);
     nbors_proc = (int *)LB_MALLOC(max_edges * sizeof(int));
     plist = (int *)LB_MALLOC(lb->Num_Proc * sizeof(int));
     if (comm_wgt_dim && max_edges){
@@ -614,7 +614,7 @@ static int LB_ParMetis_Jostle(
           && (max_proc_list_len>=CHUNKSIZE)){
         proc_list = (struct LB_edge_info *) LB_MALLOC(max_proc_list_len *
           sizeof(struct LB_edge_info) );
-        proc_list_nbor = LB_MALLOC_GID_ARRAY(lb, max_proc_list_len);
+        proc_list_nbor = ZOLTAN_LB_MALLOC_GID_ARRAY(lb, max_proc_list_len);
         if (!proc_list || !proc_list_nbor){
           /* Not enough memory, try shorter list */
           LB_FREE(&proc_list);
@@ -681,9 +681,9 @@ static int LB_ParMetis_Jostle(
   
       if (lb->Debug_Level >= LB_DEBUG_ALL) {
         printf("[%1d] Debug: i=%d, gid=", lb->Proc, i);
-        LB_PRINT_GID(lb, &(global_ids[gid_off]));
+        ZOLTAN_LB_PRINT_GID(lb, &(global_ids[gid_off]));
         printf("lid=");
-        LB_PRINT_LID(lb, lid);
+        ZOLTAN_LB_PRINT_LID(lb, lid);
         printf("nedges=%d\n", nedges);
       }
 
@@ -727,7 +727,7 @@ static int LB_ParMetis_Jostle(
             max_proc_list_len += CHUNKSIZE;
             proc_list = (struct LB_edge_info *) LB_REALLOC(proc_list,
                          max_proc_list_len*sizeof(struct LB_edge_info));
-            proc_list_nbor = LB_REALLOC_GID_ARRAY(lb, proc_list_nbor,
+            proc_list_nbor = ZOLTAN_LB_REALLOC_GID_ARRAY(lb, proc_list_nbor,
                               max_proc_list_len);
             if (!proc_list){
               /* Not enough memory */
@@ -740,7 +740,7 @@ static int LB_ParMetis_Jostle(
           ptr->my_gid = &(global_ids[gid_off]);
           ptr->my_gno = hash_lookup(lb, hashtab, 
                                     &(global_ids[gid_off]), num_obj);
-          LB_SET_GID(lb, &(proc_list_nbor[offset*num_gid_entries]),
+          ZOLTAN_LB_SET_GID(lb, &(proc_list_nbor[offset*num_gid_entries]),
                          &(nbors_global[j*num_gid_entries]));
           if (flag)
             ptr->nbor_proc = nbors_proc[j];
@@ -750,7 +750,7 @@ static int LB_ParMetis_Jostle(
 
           if (lb->Debug_Level >= LB_DEBUG_ALL) {
             printf("[%1d] Debug: proc_list[%1d] my_gid=", lb->Proc, offset);
-            LB_PRINT_GID(lb, ptr->my_gid);
+            ZOLTAN_LB_PRINT_GID(lb, ptr->my_gid);
             printf(", my_gno=%d, nbor_proc=%d\n", ptr->my_gno, ptr->nbor_proc);
           }
 
@@ -820,7 +820,7 @@ static int LB_ParMetis_Jostle(
       if (ptr->nbor_proc >= 0){
         if (lb->Debug_Level >= LB_DEBUG_ALL) {
           printf("[%1d] Debug: Sending gid = ", lb->Proc);
-          LB_PRINT_GID(lb, ptr->my_gid);
+          ZOLTAN_LB_PRINT_GID(lb, ptr->my_gid);
           printf(", gno = %d to proc %d\n", ptr->my_gno, ptr->nbor_proc);
         }
         memcpy(&sendbuf[offset], (char *) (ptr->my_gid), gid_size); 
@@ -903,7 +903,7 @@ static int LB_ParMetis_Jostle(
       hashtab[j] = &hash_nodes[i];
       if (lb->Debug_Level >= LB_DEBUG_ALL) {
         printf("[%1d] Debug: Hashed GID ", lb->Proc);
-        LB_PRINT_GID(lb, hash_nodes[i].gid);
+        ZOLTAN_LB_PRINT_GID(lb, hash_nodes[i].gid);
         printf(" to %d, gno = %d\n", j, hash_nodes[i].gno);
       }
     }
@@ -925,7 +925,7 @@ static int LB_ParMetis_Jostle(
         *(proc_list[i].adj) = tmp;
         if (lb->Debug_Level >= LB_DEBUG_ALL) {
           printf("[%1d] Debug: GID ", lb->Proc);
-          LB_PRINT_GID(lb, &(proc_list_nbor[i*num_gid_entries]));
+          ZOLTAN_LB_PRINT_GID(lb, &(proc_list_nbor[i*num_gid_entries]));
           printf(" has global number %d\n", tmp);
         }
       }
@@ -1311,9 +1311,9 @@ static int LB_ParMetis_Jostle(
       j = 0;
       for (i=0; i<num_obj; i++){
         if (part[i] != lb->Proc){
-          LB_SET_GID(lb, &((*exp_gids)[j*num_gid_entries]),
+          ZOLTAN_LB_SET_GID(lb, &((*exp_gids)[j*num_gid_entries]),
                          &(global_ids[i*num_gid_entries]));
-          LB_SET_LID(lb, &((*exp_lids)[j*num_lid_entries]),
+          ZOLTAN_LB_SET_LID(lb, &((*exp_lids)[j*num_lid_entries]),
                          &(local_ids[i*num_lid_entries]));
           (*exp_procs)[j] = part[i];
           j++;
@@ -1590,7 +1590,7 @@ static int hash_lookup (LB *lb, struct LB_hash_node **hashtab, ZOLTAN_ID_PTR key
 
   i = LB_Hash(key, lb->Num_GID, (unsigned int)n);
   for (ptr=hashtab[i]; ptr != NULL; ptr = ptr->next){
-    if (LB_EQ_GID(lb, ptr->gid, key))
+    if (ZOLTAN_LB_EQ_GID(lb, ptr->gid, key))
       return (ptr->gno);
   }
   /* Key not in hash table */

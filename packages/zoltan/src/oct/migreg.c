@@ -51,8 +51,8 @@ static int LB_migreg_migrate_regions(LB *lb, Region *regions,
   *c2 = n_import;
   if (n_import > 0) {
     import_objs = (Region *) LB_MALLOC(n_import * sizeof(Region));
-    import_gids = LB_MALLOC_GID_ARRAY(lb, n_import);
-    import_lids = LB_MALLOC_LID_ARRAY(lb, n_import);
+    import_gids = ZOLTAN_LB_MALLOC_GID_ARRAY(lb, n_import);
+    import_lids = ZOLTAN_LB_MALLOC_LID_ARRAY(lb, n_import);
 
     if (!import_objs || !import_gids || (num_lid_entries && !import_lids)) {
       LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
@@ -272,8 +272,8 @@ int LB_migreg_migrate_orphans(LB *lb, pRegion RegionList, int nregions,
   }
 
   regions2 = (Region *) LB_MALLOC(n * sizeof(Region));
-  gids2 = LB_MALLOC_GID_ARRAY(lb, n);
-  lids2 = LB_MALLOC_LID_ARRAY(lb, n);
+  gids2 = ZOLTAN_LB_MALLOC_GID_ARRAY(lb, n);
+  lids2 = ZOLTAN_LB_MALLOC_LID_ARRAY(lb, n);
   npids2 = (int *) LB_MALLOC(n * sizeof(int));
   
   for(i=0; i<n; i++) {
@@ -284,8 +284,8 @@ int LB_migreg_migrate_orphans(LB *lb, pRegion RegionList, int nregions,
     regions2[i].Local_ID = (num_lid_entries 
                               ? &(lids2[i*num_lid_entries]) 
                               : NULL);
-    LB_SET_GID(lb, &(gids2[i*num_gid_entries]), regions[i]->Global_ID);
-    LB_SET_LID(lb, &(lids2[i*num_lid_entries]), regions[i]->Local_ID);
+    ZOLTAN_LB_SET_GID(lb, &(gids2[i*num_gid_entries]), regions[i]->Global_ID);
+    ZOLTAN_LB_SET_LID(lb, &(lids2[i*num_lid_entries]), regions[i]->Local_ID);
     regions2[i].Proc = regions[i]->Proc;
     regions2[i].attached = 0;
   }
@@ -325,8 +325,8 @@ static int LB_copy_info(LB *lb, pRegion src, pRegion *dest) {
     LB_TRACE_EXIT(lb, yo);
     return ZOLTAN_MEMERR;
   }
-  copy->Global_ID = LB_MALLOC_GID(lb);
-  copy->Local_ID  = LB_MALLOC_LID(lb);
+  copy->Global_ID = ZOLTAN_LB_MALLOC_GID(lb);
+  copy->Local_ID  = ZOLTAN_LB_MALLOC_LID(lb);
   if (copy->Global_ID == NULL || (lb->Num_LID && copy->Local_ID == NULL)) {
     LB_TRACE_EXIT(lb, yo);
     return ZOLTAN_MEMERR;
@@ -338,8 +338,8 @@ static int LB_copy_info(LB *lb, pRegion src, pRegion *dest) {
   /* copy all important information */
   vector_set(copy->Coord, src->Coord);
   copy->Weight = src->Weight;
-  LB_SET_GID(lb, copy->Global_ID, src->Global_ID);
-  LB_SET_LID(lb, copy->Local_ID, src->Local_ID);
+  ZOLTAN_LB_SET_GID(lb, copy->Global_ID, src->Global_ID);
+  ZOLTAN_LB_SET_LID(lb, copy->Local_ID, src->Local_ID);
   copy->Proc = src->Proc;
   copy->attached = 0;
   return ierr;

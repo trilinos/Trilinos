@@ -486,7 +486,7 @@ int ierr = 0;
 
       /* Pack the object's global ID */
       tmp_id = (ZOLTAN_ID_PTR) tmp;
-      LB_SET_GID(lb, tmp_id, &(export_global_ids[i*num_gid_entries]));
+      ZOLTAN_LB_SET_GID(lb, tmp_id, &(export_global_ids[i*num_gid_entries]));
       tmp += id_size;
     
       /* Pack the object's size */
@@ -495,7 +495,7 @@ int ierr = 0;
 
       if (lb->Debug_Level >= LB_DEBUG_ALL){
         printf("[%1d] DEBUG in %s: Packing object with gid ", lb->Proc, yo);
-        LB_PRINT_GID(lb, tmp_id);
+        ZOLTAN_LB_PRINT_GID(lb, tmp_id);
         printf("size = %d bytes\n", sizes[i]); 
       }
 
@@ -639,7 +639,7 @@ int ierr = 0;
 
     if (lb->Debug_Level >= LB_DEBUG_ALL){
       printf("[%1d] DEBUG in %s: Unpacking object with gid ", lb->Proc, yo);
-      LB_PRINT_GID(lb, tmp_id);
+      ZOLTAN_LB_PRINT_GID(lb, tmp_id);
       printf("size = %d bytes\n", size);
     }
 
