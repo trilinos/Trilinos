@@ -44,7 +44,7 @@
 /* Define to 1 if you have the <cstdlib> header file. */
 #undef HAVE_CSTDLIB
 
-/* Define if want to build epetra */
+/* Define if want to build with epetra enabled */
 #undef HAVE_EPETRA
 
 /* Define if want to build examples */
@@ -137,7 +137,7 @@
 /* Define if want to build tpetra-tests */
 #undef HAVE_TPETRA_TESTS
 
-/* Define if want to build triutils */
+/* Define if want to build with triutils enabled */
 #undef HAVE_TRIUTILS
 
 /* Define to 1 if you have the <unistd.h> header file. */
