@@ -119,8 +119,8 @@ Epetra and AztecOO.
 \section{Introduction}
 \label{Section:Introduction}
 The Trilinos Project is an effort to facilitate the design, development,
-integration and ongoing support of mathematical software libraries.
-Trilinos provides a framework and set of tools for document and source code control,
+integration and ongoing support of mathematical software libraries.  Trilinos 
+provides a framework and set of tools for document and source code control,
 software issue tracking, developer and user communication, automatic
 testing, portable configuration and building, and software
 distribution.  Trilinos also provides a set of core utility libraries
@@ -153,6 +153,7 @@ is provided, along with a list of supported computer platforms.
 For a higher-level view of the Trilinos project, please see An Overview
 of the Trilinos Project~\cite{TrilinosOverview}. The current set of
 packages in Trilinos is shown in Figure~\ref{Figure:TrilinosPackages}.
+
 \begin{figure}
 %\begin{center}
 \includegraphics[height=6in,angle=270]{TrilinosPackagesDiagram}
@@ -217,7 +218,7 @@ Via Autoconf and Automake the Trilinos configuration facilities
 provide a great deal of flexibility for configuring and building the
 existing Trilinos packages.  However, unless you have prior experience
 with Autotools, we recommend the following process to build and
-maintain your local builds of Trilinos
+maintain your local builds of Trilinos.
 
 To start, we defined two useful terms:
 \begin{itemize}
@@ -271,7 +272,7 @@ they can be set up anywhere.
 \label{Subsection:ConfiguringTrilinos}
 	To configure from a remote build tree, simply run the configure script 
 in source tree from the root of the build tree.  In the example above, cd to 
-the SERIAL directory and type 
+the SOLARIS\_SERIAL directory and type 
 \DisplayCommand{../configure <options as described below>}
 
 A detailed list of configure options can be seen by typing
@@ -291,8 +292,8 @@ instance, serial or mpi, all of the packages, or just a proper subset.
 
 	For example, to configure for serial libraries, no action is necessary,
 but to configure for parallel libraries, a user must append appropriate 
-arguments to the configure invocation line as described in the "Configure 
-Options" section.
+arguments to the configure invocation line as described in ``Trilinos 
+Configuration Options'', section~\ref{subsect:TrilinosConfigOptions}.
 
 	Also, to build the default set of Trilinos libraries, no action is 
 necessary, but to exclude a default package, komplex for example, a user must 
@@ -363,7 +364,7 @@ are common to all Trilinos packages.  These options DO NOT cover all options
 for all Trilinos packages.
 
 \subsection{Trilinos Configuration Options}
-
+\label{subsect:TrilinosConfigOptions}
 The following options apply to all Trilinos packages unless 
 the option doesn't make sense for a particular package (for example, a 
 package that does not include any Fortran code will not be sensitive to 
