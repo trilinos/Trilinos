@@ -1078,11 +1078,24 @@ class Epetra_VbrMatrix: public Epetra_DistObject, public Epetra_CompObject, publ
   int ReplaceMatDiag(double * A, int LDA, int NumRows, int NumCols, 
 		     double * Diagonal);
 
+  //This BlockRowMultiply accepts Alpha and Beta arguments. It is called
+  //from within the 'solve' methods.
   void BlockRowMultiply(bool TransA, int RowDim, int NumEntries, 
 			int * BlockIndices, int RowOff,
 			int * FirstPointInElementList, int * ElementSizeList,
 			double Alpha, Epetra_SerialDenseMatrix** As,
 			double ** X, double Beta, double ** Y, int NumVectors) const;
+
+  //This BlockRowMultiply doesn't accept Alpha and Beta arguments, instead it
+  //assumes that they are both 1.0. It is called from within the 'Multiply'
+  //methods.
+  void BlockRowMultiply(bool TransA, int RowDim, int NumEntries, 
+			int * BlockIndices, int RowOff,
+			int * FirstPointInElementList,
+			int * ElementSizeList,
+			Epetra_SerialDenseMatrix** As,
+			double ** X, double ** Y, int NumVectors) const;
+
   int InverseSums(bool DoRows, Epetra_Vector& x) const;
   int Scale(bool DoRows, const Epetra_Vector& x);
   void BlockRowNormInf(int RowDim, int NumEntries, 
@@ -1123,8 +1136,6 @@ class Epetra_VbrMatrix: public Epetra_DistObject, public Epetra_CompObject, publ
   
   int NumMyBlockRows_;
 
-  int * NumEntriesPerRow_;
-  int * NumAllocatedEntriesPerRow_;
   Epetra_DataAccess CV_;
 
 

@@ -42,84 +42,71 @@ functions that include the macro:
 #include "Epetra_BLAS.h"
 #include "Epetra_BLAS_wrappers.h"
 
+static int epetra_blas_one = 1;
 
 //=============================================================================
 float Epetra_BLAS::ASUM(int N, float * X) const {
-  int one = 1;
- return(SASUM_F77(&N, X, &one));
+ return(SASUM_F77(&N, X, &epetra_blas_one));
 }
 //=============================================================================
 double Epetra_BLAS::ASUM(int N, double * X) const {
-  int one = 1;
-  return(DASUM_F77(&N, X, &one));
+  return(DASUM_F77(&N, X, &epetra_blas_one));
 }
 //=============================================================================
 float Epetra_BLAS::DOT(int N, float * X, float * Y) const {
-  int one = 1;
-  return(SDOT_F77(&N, X, &one, Y, &one));
+  return(SDOT_F77(&N, X, &epetra_blas_one, Y, &epetra_blas_one));
 }
 //=============================================================================
 double Epetra_BLAS::DOT(int N, double * X, double * Y) const {
-  int one = 1;
-  return(DDOT_F77(&N, X, &one, Y, &one));
+  return(DDOT_F77(&N, X, &epetra_blas_one, Y, &epetra_blas_one));
 }
 //=============================================================================
 float Epetra_BLAS::NRM2(int N, float * X) const {
-  int one = 1;
-  return(SNRM2_F77(&N, X, &one));
+  return(SNRM2_F77(&N, X, &epetra_blas_one));
 }
 //=============================================================================
 double Epetra_BLAS::NRM2(int N, double * X) const {
-  int one = 1;
-  return(DNRM2_F77(&N, X, &one));
+  return(DNRM2_F77(&N, X, &epetra_blas_one));
 }
 //=============================================================================
 void Epetra_BLAS::SCAL(int N, float ALPHA, float * X) const {
-  int one = 1;
-  SSCAL_F77(&N, &ALPHA, X, &one);
+  SSCAL_F77(&N, &ALPHA, X, &epetra_blas_one);
   return;
 }
 //=============================================================================
 void Epetra_BLAS::SCAL(int N, double ALPHA, double * X) const {
-  int one = 1;
-  DSCAL_F77(&N, &ALPHA, X, &one);
+  DSCAL_F77(&N, &ALPHA, X, &epetra_blas_one);
   return;
 }
 //=============================================================================
 int Epetra_BLAS::IAMAX(int N, float * X) const {
-  int one = 1;
-  return(ISAMAX_F77(&N, X, &one)-1);// Note that we return base zero result
+  return(ISAMAX_F77(&N, X, &epetra_blas_one)-1);// Note that we return base zero result
 }
 //=============================================================================
 int Epetra_BLAS::IAMAX(int N, double * X) const {
-  int one = 1;
-  return(IDAMAX_F77(&N, X, &one)-1);// Note that we return base zero result
+  return(IDAMAX_F77(&N, X, &epetra_blas_one)-1);// Note that we return base zero result
 }
 //=============================================================================
 void Epetra_BLAS::AXPY(int N, float ALPHA, float * X, float * Y) const {
-  int one = 1;
-  SAXPY_F77(&N, &ALPHA, X, &one, Y, &one);
+  SAXPY_F77(&N, &ALPHA, X, &epetra_blas_one, Y, &epetra_blas_one);
 }
 //=============================================================================
 void Epetra_BLAS::AXPY(int N, double ALPHA, double * X, double * Y) const {
-  int one = 1;
-  DAXPY_F77(&N, &ALPHA, X, &one, Y, &one);
+  DAXPY_F77(&N, &ALPHA, X, &epetra_blas_one, Y, &epetra_blas_one);
 }
 //=============================================================================
 void Epetra_BLAS::GEMV(char TRANS, int M, int N,
 		      float ALPHA, float * A, int LDA, float * X,
 		      float BETA, float * Y) const {
-  int one = 1;
   SGEMV_F77(CHAR_MACRO(TRANS), &M, &N, &ALPHA,
-	 A, &LDA, X, &one, &BETA, Y, &one);
+	 A, &LDA, X, &epetra_blas_one, &BETA, Y, &epetra_blas_one);
 }
 //=============================================================================
 void Epetra_BLAS::GEMV(char TRANS, int M, int N,
 		      double ALPHA, double * A, int LDA, double * X,
 		      double BETA, double * Y) const {
-  int one = 1;
   DGEMV_F77(CHAR_MACRO(TRANS), &M, &N, &ALPHA,
-	 A, &LDA, X, &one, &BETA, Y, &one);
+	 A, &LDA, X, &epetra_blas_one, &BETA, Y, &epetra_blas_one);
 }
 
 //=============================================================================

@@ -1381,7 +1381,7 @@ int Epetra_VbrMatrix::Multiply(bool TransA, const Epetra_MultiVector& X, Epetra_
       int RowDim = *RowElementSizeList++;
       BlockRowMultiply(TransA, RowDim, NumEntries, BlockRowIndices, yoff, 
 		       ColFirstPointInElementList, ColElementSizeList, 
-		       1.0, BlockRowValues, Xp, 1.0, Yp, NumVectors);
+		       BlockRowValues, Xp, Yp, NumVectors);
     }
     if (Exporter()!=0) {
 			EPETRA_CHK_ERR(Y.Export(*ExportVector_, *Exporter(), Add)); // Fill Y with Values from export vector
@@ -1431,7 +1431,7 @@ int Epetra_VbrMatrix::Multiply(bool TransA, const Epetra_MultiVector& X, Epetra_
       int RowDim = *ColElementSizeList++;
       BlockRowMultiply(TransA, RowDim, NumEntries, BlockRowIndices, xoff, 
 		       RowFirstPointInElementList, RowElementSizeList, 
-		       1.0, BlockRowValues, Xp, 1.0, Yp, NumVectors);
+		       BlockRowValues, Xp, Yp, NumVectors);
     }
 
     if (Importer()!=0) {
@@ -1443,27 +1443,42 @@ int Epetra_VbrMatrix::Multiply(bool TransA, const Epetra_MultiVector& X, Epetra_
   return(0);
 }
 //=============================================================================
-void Epetra_VbrMatrix::BlockRowMultiply(bool TransA, int RowDim, int NumEntries, 
-		      int * BlockIndices, int RowOff,
-		      int * FirstPointInElementList, int * ElementSizeList,
-		      double Alpha, Epetra_SerialDenseMatrix** As,
-		      double ** X, double Beta, double ** Y, int NumVectors) const {
+void Epetra_VbrMatrix::BlockRowMultiply(bool TransA,
+					int RowDim,
+					int NumEntries, 
+					int * BlockIndices,
+					int RowOff,
+					int * FirstPointInElementList,
+					int * ElementSizeList,
+					double Alpha,
+					Epetra_SerialDenseMatrix** As,
+					double ** X,
+					double Beta,
+					double ** Y,
+					int NumVectors) const
+{
+  //This overloading of BlockRowMultiply is the same as the one below, except
+  //that this one accepts Alpha and Beta arguments. This BlockRowMultiply is
+  //called from within the 'solve' methods.
   int j, k;
   if (!TransA) {
     for (j=0; j < NumEntries; j++) {
-      double * A = As[j]->A();
-      int LDA = As[j]->LDA();
+      Epetra_SerialDenseMatrix* Asub = As[j];
+      double * A = Asub->A();
+      int LDA = Asub->LDA();
       int BlockIndex = BlockIndices[j];
       int xoff = FirstPointInElementList[BlockIndex];
       int ColDim = ElementSizeList[BlockIndex];
+
       for (k=0; k<NumVectors; k++) {
 	double * curx = X[k] + xoff;
 	double * cury = Y[k] + RowOff;
+
 	GEMV('N', RowDim, ColDim, Alpha, A, LDA, curx, Beta, cury);
-      }
-    }
+      }//end for(k
+    }//end for(j
   }
-  else {
+  else { //TransA == true
     for (j=0; j < NumEntries; j++) {
       double * A = As[j]->A();
       int LDA = As[j]->LDA();
@@ -1478,7 +1493,120 @@ void Epetra_VbrMatrix::BlockRowMultiply(bool TransA, int RowDim, int NumEntries,
     }
   }
 
-    return;
+  return;
+}
+//=============================================================================
+void Epetra_VbrMatrix::BlockRowMultiply(bool TransA,
+					int RowDim,
+					int NumEntries, 
+					int * BlockIndices,
+					int RowOff,
+					int * FirstPointInElementList,
+					int * ElementSizeList,
+					Epetra_SerialDenseMatrix** As,
+					double ** X,
+					double ** Y,
+					int NumVectors) const
+{
+  //This overloading of BlockRowMultiply is the same as the one above, except
+  //that this one doesn't accept the Alpha and Beta arguments (it assumes that
+  //they are both 1.0) and contains some inlined unrolled code for certain
+  //cases (certain block-sizes) rather than calling GEMV every time. This
+  //BlockRowMultiply is called from within the 'Multiply' methods.
+  //Note: Scott Hutchinson's Aztec method 'dvbr_sparax_basic' was consulted in
+  //the optimizing of this method.
+
+  int j, k;
+  if (!TransA) {
+    for (j=0; j < NumEntries; j++) {
+      Epetra_SerialDenseMatrix* Asub = As[j];
+      double * A = Asub->A();
+      int LDA = Asub->LDA();
+      int BlockIndex = BlockIndices[j];
+      int xoff = FirstPointInElementList[BlockIndex];
+      int ColDim = ElementSizeList[BlockIndex];
+
+      for (k=0; k<NumVectors; k++) {
+	double * x = X[k] + xoff;
+	double * y = Y[k] + RowOff;
+
+	//Call GEMV if sub-block is non-square or if LDA != RowDim.
+	if (LDA != RowDim || ColDim != RowDim) {
+	  GEMV('N', RowDim, ColDim, 1.0, A, LDA, x, 1.0, y);
+	  continue;
+	}
+
+	//It is a big performance win to use inlined, unrolled code for small
+	//common block sizes rather than calling GEMV.
+
+	switch(RowDim) {
+	case 1:
+	  y[0] += A[0]*x[0];
+	  break;
+
+	case 2:
+	  y[0] += A[0]*x[0] + A[2]*x[1];
+	  y[1] += A[1]*x[0] + A[3]*x[1];
+	  break;
+
+	case 3:
+	  y[0] += A[0]*x[0] + A[3]*x[1] + A[6]*x[2];
+	  y[1] += A[1]*x[0] + A[4]*x[1] + A[7]*x[2];
+	  y[2] += A[2]*x[0] + A[5]*x[1] + A[8]*x[2];
+	  break;
+
+	case 4:
+	  y[0] += A[0]*x[0] + A[4]*x[1] + A[8]*x[2] + A[12]*x[3];
+	  y[1] += A[1]*x[0] + A[5]*x[1] + A[9]*x[2] + A[13]*x[3];
+	  y[2] += A[2]*x[0] + A[6]*x[1] + A[10]*x[2] + A[14]*x[3];
+	  y[3] += A[3]*x[0] + A[7]*x[1] + A[11]*x[2] + A[15]*x[3];
+	  break;
+
+	case 5:
+	  y[0] += A[0]*x[0] + A[5]*x[1] + A[10]*x[2] + A[15]*x[3] + A[20]*x[4];
+	  y[1] += A[1]*x[0] + A[6]*x[1] + A[11]*x[2] + A[16]*x[3] + A[21]*x[4];
+	  y[2] += A[2]*x[0] + A[7]*x[1] + A[12]*x[2] + A[17]*x[3] + A[22]*x[4];
+	  y[3] += A[3]*x[0] + A[8]*x[1] + A[13]*x[2] + A[18]*x[3] + A[23]*x[4];
+	  y[4] += A[4]*x[0] + A[9]*x[1] + A[14]*x[2] + A[19]*x[3] + A[24]*x[4];
+	  break;
+
+	case 6:
+	  y[0] += A[0]*x[0] + A[6]*x[1] + A[12]*x[2] + A[18]*x[3] + A[24]*x[4]
+                 + A[30]*x[5];
+	  y[1] += A[1]*x[0] + A[7]*x[1] + A[13]*x[2] + A[19]*x[3] + A[25]*x[4]
+                 + A[31]*x[5];
+	  y[2] += A[2]*x[0] + A[8]*x[1] + A[14]*x[2] + A[20]*x[3] + A[26]*x[4]
+                 + A[32]*x[5];
+	  y[3] += A[3]*x[0] + A[9]*x[1] + A[15]*x[2] + A[21]*x[3] + A[27]*x[4]
+                 + A[33]*x[5];
+	  y[4] += A[4]*x[0] + A[10]*x[1] + A[16]*x[2] + A[22]*x[3] + A[28]*x[4]
+                 + A[34]*x[5];
+	  y[5] += A[5]*x[0] + A[11]*x[1] + A[17]*x[2] + A[23]*x[3] + A[29]*x[4]
+                 + A[35]*x[5];
+	  break;
+
+	default:
+	  GEMV('N', RowDim, ColDim, 1.0, A, LDA, x, 1.0, y);
+	}//end switch
+      }//end for(k
+    }//end for(j
+  }
+  else { //TransA == true
+    for (j=0; j < NumEntries; j++) {
+      double * A = As[j]->A();
+      int LDA = As[j]->LDA();
+      int BlockIndex = BlockIndices[j];
+      int yoff = FirstPointInElementList[BlockIndex];
+      int ColDim = ElementSizeList[BlockIndex];
+      for (k=0; k<NumVectors; k++) {
+	double * x = X[k] + RowOff;
+	double * y = Y[k] + yoff;
+	GEMV('T', RowDim, ColDim, 1.0, A, LDA, x, 1.0, y);
+      }
+    }
+  }
+
+  return;
 }
 //=============================================================================
 int Epetra_VbrMatrix::Solve(bool Upper, bool TransA, bool UnitDiagonal,
