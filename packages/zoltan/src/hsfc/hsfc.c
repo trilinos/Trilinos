@@ -336,8 +336,8 @@ int Zoltan_HSFC(
    for (k = 0; k < zz->LB.Num_Global_Parts; k++) {
       tsum[k] = 0.0;
       d->final_partition[k].index = k;
+      d->final_partition[k].l = 0.0;
       }
-   d->final_partition[zz->LB.Num_Global_Parts-1].r = 1.0;
    actual = desired = total_weight;
    x = 0.0;
    k = 0;
@@ -353,21 +353,22 @@ int Zoltan_HSFC(
          actual  -= tsum[k];
          desired -= target[k];
 
-         if (k+1 < zz->LB.Num_Global_Parts) {
-            d->final_partition[k].l = x;
-            x = d->final_partition[k].r = grand_partition[i].r;
+         if (d->final_partition[k].l == 0.0)
+             d->final_partition[k].l = x;
+         x = d->final_partition[k].r = grand_partition[i].r;
+         if (k+1 < zz->LB.Num_Global_Parts)
             k++;
-            }
          }
       else  {  /* do not include weight of current grand partition in current sum */
          actual  -= tsum[k];
          desired -= target[k];
 
-         if (k+1 < zz->LB.Num_Global_Parts) {
-            d->final_partition[k].l = x;
-            x = d->final_partition[k].r = grand_partition[i].l;
+         if (d->final_partition[k].l == 0.0)
+             d->final_partition[k].l = x;
+         x = d->final_partition[k].r = grand_partition[i].l;
+         if (k+1 < zz->LB.Num_Global_Parts)
             k++;
-            }
+
          tsum[k] += temp_weight[i];
          }
 
@@ -375,9 +376,11 @@ int Zoltan_HSFC(
       correction = ((desired == 0) ? 1.0 : actual/desired);
       }
 
-   /* if last partition(s) is set empty, loop stops w/o setting final_partition(s) */
-   for (i = k; i < zz->LB.Num_Global_Parts; i++)
-      d->final_partition[i].l = x;
+   /* if last partition(s) is empty, loop stops w/o setting final_partition(s) */
+   for (i=1; i < zz->LB.Num_Global_Parts; i++)
+      if (d->final_partition[i].l == 0.0)
+          d->final_partition[i].l = x;
+   d->final_partition[zz->LB.Num_Global_Parts-1].r = 1.0;
 
    out_of_tolerance = 0;
    for (k = 0; k < zz->LB.Num_Global_Parts; k++)
@@ -397,7 +400,8 @@ int Zoltan_HSFC(
           p = (Partition*) bsearch (&dots[i].fsfc, d->final_partition,
            zz->LB.Num_Global_Parts, sizeof(Partition), Zoltan_HSFC_compare);
       if (p == NULL)
-         ZOLTAN_HSFC_ERROR (ZOLTAN_FATAL, "BSEARCH RETURNED ERROR");
+          ZOLTAN_HSFC_ERROR (ZOLTAN_FATAL, "BSEARCH RETURNED ERROR");
+
       dots[i].part = p->index;
       tmp = Zoltan_LB_Part_To_Proc(zz, p->index, gids + i * zz->Num_GID);
       if (dots[i].part != parts[i]  ||  zz->Proc != tmp)
