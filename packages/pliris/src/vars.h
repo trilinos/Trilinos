@@ -28,6 +28,11 @@
 // @HEADER
 */
 
+#ifndef __VARSH__
+#define __VARSH__
+
+#include "defines.h"
+
 int   me;                       /* processor id information */
 
 int   nprocs_cube;		/* num of procs in the allocated cube */
@@ -74,8 +79,10 @@ int   colcnt;			/* number of columns stored for BLAS 3 ops */
 
 
 int  myrow,mycol;
+
 MPI_Comm row_comm,col_comm;
 
 
 /* volatile int   MSPLIT;           ZGEMM splitting parameter */
 
+#endif
