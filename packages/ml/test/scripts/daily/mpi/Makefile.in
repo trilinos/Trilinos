@@ -42,7 +42,7 @@
 # ************************************************************************
 #@HEADER
 
-SOURCES = $(Test2d_Poisson_SOURCES) $(TestMultiLevelPreconditioner_SOURCES)
+SOURCES = $(TestMultiLevelPreconditioner_SOURCES) $(Test_MLExamples_SOURCES)
 
 srcdir = @srcdir@
 top_srcdir = @top_srcdir@
@@ -67,7 +67,7 @@ POST_UNINSTALL = :
 host_triplet = @host@
 @HAVE_MPI_TRUE@noinst_PROGRAMS =  \
 @HAVE_MPI_TRUE@	TestMultiLevelPreconditioner$(EXEEXT) \
-@HAVE_MPI_TRUE@	Test2d_Poisson$(EXEEXT)
+@HAVE_MPI_TRUE@	Test_MLExamples$(EXEEXT)
 subdir = test/scripts/daily/mpi
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -99,25 +99,25 @@ mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/ml_config.h
 CONFIG_CLEAN_FILES =
 PROGRAMS = $(noinst_PROGRAMS)
-am__Test2d_Poisson_SOURCES_DIST = $(srcdir)/Test2d_Poisson
-am_Test2d_Poisson_OBJECTS =
-Test2d_Poisson_OBJECTS = $(am_Test2d_Poisson_OBJECTS)
-Test2d_Poisson_LDADD = $(LDADD)
 am__TestMultiLevelPreconditioner_SOURCES_DIST =  \
 	$(srcdir)/TestMultiLevelPreconditioner
 am_TestMultiLevelPreconditioner_OBJECTS =
 TestMultiLevelPreconditioner_OBJECTS =  \
 	$(am_TestMultiLevelPreconditioner_OBJECTS)
 TestMultiLevelPreconditioner_LDADD = $(LDADD)
+am__Test_MLExamples_SOURCES_DIST = $(srcdir)/Test_MLExamples
+am_Test_MLExamples_OBJECTS =
+Test_MLExamples_OBJECTS = $(am_Test_MLExamples_OBJECTS)
+Test_MLExamples_LDADD = $(LDADD)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/src
 COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
 CCLD = $(CC)
 LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
-SOURCES = $(Test2d_Poisson_SOURCES) \
-	$(TestMultiLevelPreconditioner_SOURCES)
-DIST_SOURCES = $(am__Test2d_Poisson_SOURCES_DIST) \
-	$(am__TestMultiLevelPreconditioner_SOURCES_DIST)
+SOURCES = $(TestMultiLevelPreconditioner_SOURCES) \
+	$(Test_MLExamples_SOURCES)
+DIST_SOURCES = $(am__TestMultiLevelPreconditioner_SOURCES_DIST) \
+	$(am__Test_MLExamples_SOURCES_DIST)
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 ACLOCAL = @ACLOCAL@
 ALTERNATE_AR = @ALTERNATE_AR@
@@ -250,8 +250,8 @@ target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
 @HAVE_MPI_TRUE@TestMultiLevelPreconditioner_SOURCES = $(srcdir)/TestMultiLevelPreconditioner
-@HAVE_MPI_TRUE@Test2d_Poisson_SOURCES = $(srcdir)/Test2d_Poisson
-@HAVE_MPI_FALSE@EXTRA_DIST = TestMultiLevelPreconditioner Test2d_Poisson
+@HAVE_MPI_TRUE@Test_MLExamples_SOURCES = $(srcdir)/Test_MLExamples
+@HAVE_MPI_FALSE@EXTRA_DIST = TestMultiLevelPreconditioner Test_MLExamples
 all: all-am
 
 .SUFFIXES:
@@ -287,12 +287,12 @@ $(ACLOCAL_M4): @MAINTAINER_MODE_TRUE@ $(am__aclocal_m4_deps)
 
 clean-noinstPROGRAMS:
 	-test -z "$(noinst_PROGRAMS)" || rm -f $(noinst_PROGRAMS)
-@HAVE_MPI_FALSE@Test2d_Poisson$(EXEEXT): $(Test2d_Poisson_OBJECTS) $(Test2d_Poisson_DEPENDENCIES) 
-@HAVE_MPI_FALSE@	@rm -f Test2d_Poisson$(EXEEXT)
-@HAVE_MPI_FALSE@	$(LINK) $(Test2d_Poisson_LDFLAGS) $(Test2d_Poisson_OBJECTS) $(Test2d_Poisson_LDADD) $(LIBS)
 @HAVE_MPI_FALSE@TestMultiLevelPreconditioner$(EXEEXT): $(TestMultiLevelPreconditioner_OBJECTS) $(TestMultiLevelPreconditioner_DEPENDENCIES) 
 @HAVE_MPI_FALSE@	@rm -f TestMultiLevelPreconditioner$(EXEEXT)
 @HAVE_MPI_FALSE@	$(LINK) $(TestMultiLevelPreconditioner_LDFLAGS) $(TestMultiLevelPreconditioner_OBJECTS) $(TestMultiLevelPreconditioner_LDADD) $(LIBS)
+@HAVE_MPI_FALSE@Test_MLExamples$(EXEEXT): $(Test_MLExamples_OBJECTS) $(Test_MLExamples_DEPENDENCIES) 
+@HAVE_MPI_FALSE@	@rm -f Test_MLExamples$(EXEEXT)
+@HAVE_MPI_FALSE@	$(LINK) $(Test_MLExamples_LDFLAGS) $(Test_MLExamples_OBJECTS) $(Test_MLExamples_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -422,8 +422,8 @@ uninstall-am: uninstall-info-am
 @HAVE_MPI_TRUE@TestMultiLevelPreconditioner$(EXEEXT): $(srcdir)/TestMultiLevelPreconditioner
 @HAVE_MPI_TRUE@	cp $(srcdir)/TestMultiLevelPreconditioner TestMultiLevelPreconditioner$(EXEEXT) 
 
-@HAVE_MPI_TRUE@Test2d_Poisson$(EXEEXT): $(srcdir)/Test2d_Poisson
-@HAVE_MPI_TRUE@	cp $(srcdir)/Test2d_Poisson Test2d_Poisson$(EXEEXT) 
+@HAVE_MPI_TRUE@Test_MLExamples$(EXEEXT): $(srcdir)/Test_MLExamples
+@HAVE_MPI_TRUE@	cp $(srcdir)/Test_MLExamples Test_MLExamples$(EXEEXT) 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

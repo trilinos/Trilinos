@@ -6,106 +6,100 @@ ML_Aggregate : ordering           = natural.
 ML_Aggregate : min nodes/aggr     = 2
 ML_Aggregate : max neigh selected = 0
 ML_Aggregate : attach scheme      = MAXLINK
-ML_Aggregate : coarsen scheme     = UNCOUPLED
-ML_Aggregate : strong threshold   = 8.000000e-02
+ML_Aggregate : strong threshold   = 1.000000e-03
 ML_Aggregate : P damping factor   = 1.333333e+00
 ML_Aggregate : number of PDEs     = 1
 ML_Aggregate : number of null vec = 1
-ML_Aggregate : smoother drop tol  = 0.000000e+00
+ML_Aggregate : smoother drop tol  = 1.000000e-03
 ML_Aggregate : max coarse size    = 32
 ML_Aggregate : max no. of levels  = 9
 **************************************************************
 ML_Gen_MGHierarchy : applying coarsening 
-ML_Aggregate_Coarsen begins 
+ML_Aggregate_Coarsen (level 8) begins
 ML_Aggregate_CoarsenUncoupled : current level = 8
-ML_Aggregate_CoarsenUncoupled : current eps = 8.000000e-02
+ML_Aggregate_CoarsenUncoupled : current eps = 1.000000e-03
 Aggregation(UVB) : Total nonzeros = 826617 (Nrows=165649)
 Aggregation(UC) : Phase 0 - no. of bdry pts  = 0 
 Aggregation(UC) : Phase 1 - nodes aggregated = 137607 (165649)
 Aggregation(UC) : Phase 1 - total aggregates = 27611 
 Aggregation(UC_Phase2_3) : Phase 1 - nodes aggregated = 137607 
 Aggregation(UC_Phase2_3) : Phase 1 - total aggregates = 27611
-Aggregation(UC_Phase2_3) : Phase 2a- additional aggregates = 199
-Aggregation(UC_Phase2_3) : Phase 2 - total aggregates = 27810
+Aggregation(UC_Phase2_3) : Phase 2a- additional aggregates = 0
+Aggregation(UC_Phase2_3) : Phase 2 - total aggregates = 27611
 Aggregation(UC_Phase2_3) : Phase 2 - boundary nodes   = 0
 Aggregation(UC_Phase2_3) : Phase 3 - leftovers = 0 and singletons = 0
-Gen_Prolongator : max eigen = 1.985517e+00 
 ML_Gen_MGHierarchy : applying coarsening 
 ML_Gen_MGHierarchy : Gen_RAP
 ML_Gen_MGHierarchy : Gen_RAP done
 ML_Gen_MGHierarchy : applying coarsening 
-ML_Aggregate_Coarsen begins 
+ML_Aggregate_Coarsen (level 7) begins
 ML_Aggregate_CoarsenUncoupled : current level = 7
-ML_Aggregate_CoarsenUncoupled : current eps = 4.000000e-02
-Aggregation(UVB) : Total nonzeros = 250972 (Nrows=27810)
+ML_Aggregate_CoarsenUncoupled : current eps = 5.000000e-04
+Aggregation(UVB) : Total nonzeros = 247583 (Nrows=27611)
 Aggregation(UC) : Phase 0 - no. of bdry pts  = 0 
-Aggregation(UC) : Phase 1 - nodes aggregated = 27300 (27810)
-Aggregation(UC) : Phase 1 - total aggregates = 3131 
-Aggregation(UC_Phase2_3) : Phase 1 - nodes aggregated = 27300 
-Aggregation(UC_Phase2_3) : Phase 1 - total aggregates = 3131
-Aggregation(UC_Phase2_3) : Phase 2a- additional aggregates = 65
-Aggregation(UC_Phase2_3) : Phase 2 - total aggregates = 3196
+Aggregation(UC) : Phase 1 - nodes aggregated = 27284 (27611)
+Aggregation(UC) : Phase 1 - total aggregates = 3112 
+Aggregation(UC_Phase2_3) : Phase 1 - nodes aggregated = 27284 
+Aggregation(UC_Phase2_3) : Phase 1 - total aggregates = 3112
+Aggregation(UC_Phase2_3) : Phase 2a- additional aggregates = 0
+Aggregation(UC_Phase2_3) : Phase 2 - total aggregates = 3112
 Aggregation(UC_Phase2_3) : Phase 2 - boundary nodes   = 0
 Aggregation(UC_Phase2_3) : Phase 3 - leftovers = 0 and singletons = 0
-Gen_Prolongator : max eigen = 1.402484e+00 
 ML_Gen_MGHierarchy : applying coarsening 
 ML_Gen_MGHierarchy : Gen_RAP
 ML_Gen_MGHierarchy : Gen_RAP done
 ML_Gen_MGHierarchy : applying coarsening 
-ML_Aggregate_Coarsen begins 
+ML_Aggregate_Coarsen (level 6) begins
 ML_Aggregate_CoarsenUncoupled : current level = 6
-ML_Aggregate_CoarsenUncoupled : current eps = 2.000000e-02
-Aggregation(UVB) : Total nonzeros = 31590 (Nrows=3196)
+ML_Aggregate_CoarsenUncoupled : current eps = 2.500000e-04
+Aggregation(UVB) : Total nonzeros = 29380 (Nrows=3112)
 Aggregation(UC) : Phase 0 - no. of bdry pts  = 0 
-Aggregation(UC) : Phase 1 - nodes aggregated = 3036 (3196)
-Aggregation(UC) : Phase 1 - total aggregates = 376 
-Aggregation(UC_Phase2_3) : Phase 1 - nodes aggregated = 3036 
-Aggregation(UC_Phase2_3) : Phase 1 - total aggregates = 376
-Aggregation(UC_Phase2_3) : Phase 2a- additional aggregates = 1
-Aggregation(UC_Phase2_3) : Phase 2 - total aggregates = 377
+Aggregation(UC) : Phase 1 - nodes aggregated = 3050 (3112)
+Aggregation(UC) : Phase 1 - total aggregates = 372 
+Aggregation(UC_Phase2_3) : Phase 1 - nodes aggregated = 3050 
+Aggregation(UC_Phase2_3) : Phase 1 - total aggregates = 372
+Aggregation(UC_Phase2_3) : Phase 2a- additional aggregates = 0
+Aggregation(UC_Phase2_3) : Phase 2 - total aggregates = 372
 Aggregation(UC_Phase2_3) : Phase 2 - boundary nodes   = 0
 Aggregation(UC_Phase2_3) : Phase 3 - leftovers = 0 and singletons = 0
-Gen_Prolongator : max eigen = 1.538400e+00 
 ML_Gen_MGHierarchy : applying coarsening 
 ML_Gen_MGHierarchy : Gen_RAP
 ML_Gen_MGHierarchy : Gen_RAP done
 ML_Gen_MGHierarchy : applying coarsening 
-ML_Aggregate_Coarsen begins 
+ML_Aggregate_Coarsen (level 5) begins
 ML_Aggregate_CoarsenUncoupled : current level = 5
-ML_Aggregate_CoarsenUncoupled : current eps = 1.000000e-02
-Aggregation(UVB) : Total nonzeros = 4551 (Nrows=377)
+ML_Aggregate_CoarsenUncoupled : current eps = 1.250000e-04
+Aggregation(UVB) : Total nonzeros = 4338 (Nrows=372)
 Aggregation(UC) : Phase 0 - no. of bdry pts  = 0 
-Aggregation(UC) : Phase 1 - nodes aggregated = 335 (377)
-Aggregation(UC) : Phase 1 - total aggregates = 45 
-Aggregation(UC_Phase2_3) : Phase 1 - nodes aggregated = 335 
-Aggregation(UC_Phase2_3) : Phase 1 - total aggregates = 45
-Aggregation(UC_Phase2_3) : Phase 2a- additional aggregates = 1
-Aggregation(UC_Phase2_3) : Phase 2 - total aggregates = 46
+Aggregation(UC) : Phase 1 - nodes aggregated = 324 (372)
+Aggregation(UC) : Phase 1 - total aggregates = 42 
+Aggregation(UC_Phase2_3) : Phase 1 - nodes aggregated = 324 
+Aggregation(UC_Phase2_3) : Phase 1 - total aggregates = 42
+Aggregation(UC_Phase2_3) : Phase 2a- additional aggregates = 0
+Aggregation(UC_Phase2_3) : Phase 2 - total aggregates = 42
 Aggregation(UC_Phase2_3) : Phase 2 - boundary nodes   = 0
 Aggregation(UC_Phase2_3) : Phase 3 - leftovers = 0 and singletons = 0
-Gen_Prolongator : max eigen = 1.534355e+00 
 ML_Gen_MGHierarchy : applying coarsening 
 ML_Gen_MGHierarchy : Gen_RAP
 ML_Gen_MGHierarchy : Gen_RAP done
 ML_Gen_MGHierarchy : applying coarsening 
-ML_Aggregate_Coarsen begins 
+ML_Aggregate_Coarsen (level 4) begins
 ML_Aggregate_CoarsenUncoupled : current level = 4
-ML_Aggregate_CoarsenUncoupled : current eps = 5.000000e-03
-Aggregation(UVB) : Total nonzeros = 816 (Nrows=46)
+ML_Aggregate_CoarsenUncoupled : current eps = 6.250000e-05
+Aggregation(UVB) : Total nonzeros = 558 (Nrows=42)
 Aggregation(UC) : Phase 0 - no. of bdry pts  = 0 
-Aggregation(UC) : Phase 1 - nodes aggregated = 29 (46)
+Aggregation(UC) : Phase 1 - nodes aggregated = 29 (42)
 Aggregation(UC) : Phase 1 - total aggregates = 6 
 Aggregation(UC_Phase2_3) : Phase 1 - nodes aggregated = 29 
 Aggregation(UC_Phase2_3) : Phase 1 - total aggregates = 6
-Aggregation(UC_Phase2_3) : Phase 2a- additional aggregates = 4
-Aggregation(UC_Phase2_3) : Phase 2 - total aggregates = 10
+Aggregation(UC_Phase2_3) : Phase 2a- additional aggregates = 1
+Aggregation(UC_Phase2_3) : Phase 2 - total aggregates = 7
 Aggregation(UC_Phase2_3) : Phase 2 - boundary nodes   = 0
 Aggregation(UC_Phase2_3) : Phase 3 - leftovers = 0 and singletons = 0
-Gen_Prolongator : max eigen = 1.424917e+00 
 ML_Gen_MGHierarchy : applying coarsening 
 ML_Gen_MGHierarchy : Gen_RAP
 ML_Gen_MGHierarchy : Gen_RAP done
-Smoothed Aggregation : operator complexity = 1.348443e+00.
+Smoothed Aggregation : operator complexity = 1.341038e+00.
 Coarse level = 3 
 
 		*******************************************************
@@ -115,16 +109,18 @@ Coarse level = 3
 		*******************************************************
 
                 iter:    0           residual = 1.000000e+00
-                iter:    1           residual = 4.212250e-02
-                iter:    2           residual = 3.910616e-03
-                iter:    3           residual = 2.720604e-04
-                iter:    4           residual = 1.598778e-05
-                iter:    5           residual = 1.242961e-06
-                iter:    6           residual = 1.122613e-07
-                iter:    7           residual = 7.976585e-09
+                iter:    1           residual = 4.216330e-02
+                iter:    2           residual = 3.935853e-03
+                iter:    3           residual = 2.960497e-04
+                iter:    4           residual = 1.993737e-05
+                iter:    5           residual = 1.679576e-06
+                iter:    6           residual = 1.310552e-07
+                iter:    7           residual = 1.031747e-08
+                iter:    8           residual = 8.998409e-10
 
 
-		total iterations: 7
+		Solution time: 5.493448 (sec.)
+		total iterations: 8
 		Flops not available for options[AZ_precond] = 16
 Printing out a few entries of the solution ...
 solution(gid = 7) = 7.0000e+00

@@ -31,14 +31,14 @@ EXEEXT = .exe
 
 EXTRA_DIST= 2d_Poisson.csh baseline1 baseline2 baseline3 baseline5 baseline6 baseline7 ml_inputfile1 ml_inputfile2 ml_inputfile3 ml_inputfile5 ml_inputfile6 ml_inputfile7
 
-noinst_PROGRAMS = 2D_poisson
+noinst_PROGRAMS = 2d_Poisson
 
-2D_poisson_SOURCES = $(top_srcdir)/examples/ml_example2d.c
+2d_Poisson_SOURCES = $(top_srcdir)/examples/ml_example2d.c
 
-2D_poisson$(EXT): $(2D_poisson_SOURCES)
+2d_Poisson$(EXT): $(2d_Poisson_SOURCES)
 
 #copy these files over to the build area
-GetNecessaryFiles:
+GetNecessaryFiles: $(EXTRA_DIST)
 	cp -f $(srcdir)/2d_Poisson.csh .
 	cp -f $(srcdir)/baseline1 .
 	cp -f $(srcdir)/baseline2 .
@@ -53,10 +53,10 @@ GetNecessaryFiles:
 	cp -f $(srcdir)/ml_inputfile6 .
 	cp -f $(srcdir)/ml_inputfile7 .
 
-#2D_poisson$(REALEXT): $(2D_poisson_SOURCES)
+#2d_Poisson$(REALEXT): $(2d_Poisson_SOURCES)
 
 
-2D_poisson_DEPENDENCIES = \
+2d_Poisson_DEPENDENCIES = \
 	$(top_builddir)/src/libml.a \
 	$(top_builddir)/../aztecoo/src/libaztecoo.a \
 	$(top_builddir)/../epetra/src/libepetra.a \
@@ -90,7 +90,7 @@ ml_libs = $(top_builddir)/src/libml.a        \
 
 mllink = $(CXX) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
 
-2D_poisson_CPPFLAGS = ${ml_common_include_locations} -DML_BENCHMARK
-2D_poisson_CXXFLAGS = ${ml_common_include_locations} -DML_BENCHMARK
-2D_poisson_LDADD = ${ml_libs}
-2D_poisson_LINK = ${mllink}
+2d_Poisson_CPPFLAGS = ${ml_common_include_locations} -DML_BENCHMARK
+2d_Poisson_CXXFLAGS = ${ml_common_include_locations} -DML_BENCHMARK
+2d_Poisson_LDADD = ${ml_libs}
+2d_Poisson_LINK = ${mllink}

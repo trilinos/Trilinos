@@ -30,20 +30,20 @@ EXEEXT = .exe
 # Nothing should be done for a serial build
 if  HAVE_MPI
 
-noinst_PROGRAMS = TestMultiLevelPreconditioner Test2d_Poisson
+noinst_PROGRAMS = TestMultiLevelPreconditioner Test_MLExamples
 
 TestMultiLevelPreconditioner_SOURCES = $(srcdir)/TestMultiLevelPreconditioner
 
 TestMultiLevelPreconditioner$(EXEEXT): $(srcdir)/TestMultiLevelPreconditioner
 	cp $(srcdir)/TestMultiLevelPreconditioner TestMultiLevelPreconditioner$(EXEEXT) 
 
-Test2d_Poisson_SOURCES = $(srcdir)/Test2d_Poisson
+Test_MLExamples_SOURCES = $(srcdir)/Test_MLExamples
 
-Test2d_Poisson$(EXEEXT): $(srcdir)/Test2d_Poisson
-	cp $(srcdir)/Test2d_Poisson Test2d_Poisson$(EXEEXT) 
+Test_MLExamples$(EXEEXT): $(srcdir)/Test_MLExamples
+	cp $(srcdir)/Test_MLExamples Test_MLExamples$(EXEEXT) 
 
 else
 
-EXTRA_DIST=TestMultiLevelPreconditioner Test2d_Poisson
+EXTRA_DIST=TestMultiLevelPreconditioner Test_MLExamples
 
 endif
