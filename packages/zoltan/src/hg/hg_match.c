@@ -135,9 +135,17 @@ static int matching_rem (ZZ *zz, Graph *g, Matching match, int limit)
    int i,j,k=0, ii, jj ;
    int *v1, *v2 ;
    int size=0, random ;
+   char *yo = "matching_rem" ;
 
    v1 = (int *) ZOLTAN_MALLOC (sizeof (int) * g->nEdge) ;
    v2 = (int *) ZOLTAN_MALLOC (sizeof (int) * g->nEdge) ;
+   if (v1 == NULL || v2 == NULL)
+      {
+      ZOLTAN_FREE ((void **) &v1) ;
+      ZOLTAN_FREE ((void **) &v2) ;
+      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
+      return ZOLTAN_MEMERR ;
+      }
 
    for (i = 0 ; i < g->nVtx ; i++)
       match[i] = i ;
