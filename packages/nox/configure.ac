@@ -526,7 +526,13 @@ else
   LDFLAGS="${LDFLAGS} ${EXTRA_LDFLAGS}"
 fi
 
+# ------------------------------------------------------------------------
+# ------------------------------------------------------------------------
+TAC_ARG_WITH_LIBS
+
+# ------------------------------------------------------------------------
 # STL bug on solaris.
+# ------------------------------------------------------------------------
 # Solaris requires a const argument in constructing maps. This is wrong
 # according to the standard!  DEC on the other hand fails if it is const
 # so we have to wrap multimap construction with:
@@ -1135,6 +1141,15 @@ if test "X${HAVE_PKG_MPI}" = "Xyes"; then
     ])
   fi
 fi
+
+# ------------------------------------------------------------------------
+# User defined directories 
+# ------------------------------------------------------------------------
+
+# enable use of --with-libdirs="-Llibdir1 -Llibdir2 ..." to prepend to LDFLAGS
+TAC_ARG_WITH_LIBDIRS
+# enable use of --with-incdirs="-Lincdir1 -Lincdir2 ..." to prepend to CPPFLAGS
+TAC_ARG_WITH_INCDIRS
 
 # ------------------------------------------------------------------------
 # Checks for basic libraries for examples and/or lapack support
