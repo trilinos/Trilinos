@@ -989,7 +989,7 @@ int MultiLevelPreconditioner::ComputePreconditioner()
   
   CreateLabel();
   
-  SetPreconditioner();
+  if( SolvingMaxwell_ == false ) SetPreconditioner();
   if( verbose_ ) PrintLine();
 
   sprintf(parameter,"%sprint unused", Prefix_);
