@@ -806,12 +806,12 @@ int ML_Aggregate_CoarsenUncoupledCore(ML_Aggregate *ml_ag, ML_Comm *comm,
    double  printflag;
    int     *randomVector, aggr_cnt_leng, *aggr_cnt_array;
    int     min_nodes_per_aggregate, max_neigh_selected;
+#define newstuff
 #ifndef newstuff
    int     attach_scheme;
 #endif
    ML_Node       *node_head=NULL, *node_tail=NULL, *new_node=NULL;
    ML_SuperNode  *aggr_head=NULL, *aggr_curr=NULL, *supernode=NULL;
-#define newstuff
 #ifndef newstuff
    int *int_buf = NULL, maxcount, mincount, search_flag;
 #endif

@@ -7380,12 +7380,14 @@ int ML_complex_Cheby(void *sm, int inlen, double x[], int outlen, double rhs[])
   double beta_real, beta_img, alpha_real, alpha_img, theta_real, theta_img, delta_real, delta_img, s1_real, s1_img, rhok_real, rhok_img, rhokp1_real, rhokp1_img;
   int             *cols, allocated_space;
 
-  double          *diagonal, *vals, *tdiag, dtemp1_real, dtemp1_img, dtemp2_real, dtemp2_img;
+  double          *vals, *tdiag, dtemp1_real, dtemp1_img, dtemp2_real, dtemp2_img;
   struct ML_Operator_blockmat_data *blockmat;
   double t1, t2, t3, denom, denom_real, denom_img, numer_real, numer_img, ttti, tttipn, *d1, *d2;
   int status;
   double thenorm;
+#ifdef GREG
   double tmp;
+#endif
 
   n = outlen/2;
   widget = (struct MLSthing *) smooth_ptr->smoother->data;

@@ -54,3 +54,17 @@ mystring = ml2_1_0_0
     New norm for convergence of Maxwell solver.  This norm measure and scales
     properly the range space and null space components of the (curl,curl)
     operator.
+
+mystring = ml2_1_0_0-branch
+
+    Tag corresponding to trilinos-release-3-01-branch.
+
+mystring = ml2_1_0_0-branch-patch_1
+
+    1st patch for release ml2_1_0_0 (trilinos-release-3-01-branch).
+    Bug fix for eigenvalue estimate that was causing Alegra sinmag benchmark to
+    fail.
+    Added definitions for make macro CXX in architecture-dependent makefiles
+    in order for Alegra to be able to build epetra interfaces.
+    Minor changes to block matrix (equivalent real form) capabilities.
+    Fixed compiler warnings.

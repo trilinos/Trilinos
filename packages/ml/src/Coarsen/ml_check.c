@@ -138,6 +138,8 @@ int ML_Reitzinger_Check_Hierarchy(ML *ml, ML_Operator **Tmat_array, int incr_or_
   }
   if ( (ML_Get_PrintLevel() > 5) && (ml->comm->ML_mypid == 0) ) printf("\n");
 
+  return 0;
+
 }
 
 /*

@@ -333,15 +333,20 @@ int ML_CG_ComputeEigenvalues(ML_Krylov *data, int length, int scale_by_diag)
    rho = 0.0;
    if ( res_norm == 0.0 ) 
    {
-     if (Nbc != matrix->invec_leng)
+     if (Nbc != matrix->invec_leng) {
        printf("ML_CG_ComputeEigenvalues : cannot compute (res = 0).\n");
-      if (r  != NULL) free(r);
-      if (p  != NULL) free(p);
-      if (ap != NULL) free(ap);
-      data->ML_eigen_max = 1.;
-      data->ML_eigen_min = 1.;
+       data->ML_eigen_max = 1.0;
+       data->ML_eigen_min = 1.0;
+     }
+     else {
+       data->ML_eigen_max = max_row_sum;
+       data->ML_eigen_min = min_row_sum;
+     }
+     if (r  != NULL) free(r);
+     if (p  != NULL) free(p);
+     if (ap != NULL) free(ap);
 
-      return 1;
+     return 1;
    }
 
    /* ----------------------------------------------------------------*/

@@ -98,7 +98,6 @@ int ML_Operator_Init( ML_Operator *mat, ML_Comm *comm)
 
 int ML_Operator_Clean( ML_Operator *mat)
 {
-   int i;
 #ifdef ML_TIMING_DETAILED
    double t1;
 #endif
@@ -150,7 +149,6 @@ int ML_Operator_Clean( ML_Operator *mat)
      ML_free(mat->subspace);
    }
    if ((mat->data_destroy != NULL) && (mat->data != NULL)) {
-		 /*printf("ready to call destroy %u\n",mat->data); */
       mat->data_destroy(mat->data);
       mat->data = NULL;
    }
@@ -1445,4 +1443,6 @@ int ML_Operator_Move2HierarchyAndDestroy_fragile(ML_Operator *newmat,
   hier->getrow->pre_comm = newmat->getrow->pre_comm;
   newmat->getrow->pre_comm = NULL;
   ML_Operator_Destroy(&newmat);
+
+  return 0;
 }

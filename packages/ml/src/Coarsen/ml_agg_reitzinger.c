@@ -1773,11 +1773,9 @@ int ML_Gen_Hierarchy_ComplexMaxwell(ML *ml_edges, ML_Operator **Tmat_array,
 				    ML **new_ml , ML_Operator *originalM)
 {
 
-   int mesh_level, old_mesh_level, i, levels;
-   ML_Operator *original, *blockmat, *mat, *newM, *lastM;
+   int mesh_level, old_mesh_level, levels;
+   ML_Operator *original, *blockmat, *newM, *lastM;
    ML  *block_ml;
-   struct ML_Operator_blockmat_data *ML_Operator_blockmat_data;
-   int scale_fact = 2;
 
    mesh_level = ml_edges->ML_finest_level;
 
