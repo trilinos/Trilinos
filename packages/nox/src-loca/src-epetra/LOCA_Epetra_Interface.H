@@ -68,7 +68,7 @@ public:
   virtual ~Interface() {};
 
   //! Set the parameters in the user's app prior to calling one of the compute functions.
-  virtual bool setParameters(const ParameterVector& p) = 0;
+  virtual void setParameters(const ParameterVector& p) = 0;
 
 };
 } // namespace Epetra

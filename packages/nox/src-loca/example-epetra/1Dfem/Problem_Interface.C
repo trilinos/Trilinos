@@ -46,12 +46,11 @@ bool Problem_Interface::computePreconditioner(const Epetra_Vector& x, Epetra_Ope
   throw 1;
 }
 
-bool Problem_Interface::setParameters(const LOCA::ParameterVector& params)
+void Problem_Interface::setParameters(const LOCA::ParameterVector& params)
 {
   for (int i = 0; i < params.length(); i++ ) {
     problem.setParameter(params.getLabel(i), params.getValue(i)); 
   }
-  return true;
 }
 //-----------------------------------------------------------------------------
 

@@ -141,7 +141,8 @@ liblocalapack_a_SOURCES = $(LOCA_LAPACK) $(LOCA_LAPACK_H)
 
 liblocalapack_a_CXXFLAGS = -I$(top_srcdir)/src-loca/src \
                            -I$(top_srcdir)/src \
-			   -I$(top_srcdir)/src-lapack
+			   -I$(top_srcdir)/src-lapack \
+                           $(TRILINOS_CXXFLAGS) 
 
 
 
@@ -500,7 +501,6 @@ uninstall-am: uninstall-info-am uninstall-libLIBRARIES \
 	uninstall-am uninstall-info-am uninstall-libLIBRARIES \
 	uninstall-pkgincludeHEADERS
 
-                           $(TRILINOS_CXXFLAGS) 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

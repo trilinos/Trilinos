@@ -95,18 +95,21 @@ public:
   //@{
 
   //! Set the bifurcation/continuation parameter list in the group.
-  virtual bool setParams(const ParameterVector& p);
+  virtual void setParams(const ParameterVector& p);
 
   //! Set the bifurcation/continuation parameter list in the group.
-  virtual bool computeParams(const ParameterVector& oldParams,
+  virtual void computeParams(const ParameterVector& oldParams,
 			     const ParameterVector& direction, 
 			     double step);
 
-  virtual bool computeF();
+  virtual NOX::Abstract::Group::ReturnType 
+  computeF();
 
-  virtual bool computeJacobian();
+  virtual NOX::Abstract::Group::ReturnType 
+  computeJacobian();
 
-  virtual bool computeTangent(NOX::Parameter::List& params, int paramId);
+  virtual NOX::Abstract::Group::ReturnType 
+  computeTangent(NOX::Parameter::List& params, int paramId);
 
   //@}
 
@@ -127,7 +130,12 @@ public:
   //! Return the userInterface.
   virtual NOX::Epetra::Interface& getUserInterface();
 
-  virtual bool print() const {}
+  virtual void print() const {}
+
+protected:
+
+  //! resets the isValid flags to false
+  virtual void resetIsValid();
 
 protected:
 

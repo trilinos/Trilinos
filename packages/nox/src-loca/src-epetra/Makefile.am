@@ -39,11 +39,9 @@
 
 LOCA_EPETRA_H = \
 	$(srcdir)/LOCA_Epetra.H \
-	$(srcdir)/LOCA_Epetra_Vector.H \
 	$(srcdir)/LOCA_Epetra_Group.H 
 
 LOCA_EPETRA = \
-	$(srcdir)/LOCA_Epetra_Vector.C \
 	$(srcdir)/LOCA_Epetra_Group.C 
 
 # ------------------------------------------------------------------------

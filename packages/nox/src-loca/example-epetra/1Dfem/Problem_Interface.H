@@ -38,7 +38,7 @@ public:
   bool computePreconditioner(const Epetra_Vector& x, Epetra_Operator& M);
 
   //! Set a parameter in the user's code.
-  bool setParameters(const LOCA::ParameterVector& params);
+  void setParameters(const LOCA::ParameterVector& params);
 
   //! Application Operator: Object that points to the user's evaluation routines.
   /*! This is used to point to the actual routines and to store 

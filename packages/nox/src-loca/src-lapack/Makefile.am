@@ -59,7 +59,7 @@ liblocalapack_a_SOURCES = $(LOCA_LAPACK) $(LOCA_LAPACK_H)
 
 liblocalapack_a_CXXFLAGS = -I$(top_srcdir)/src-loca/src \
                            -I$(top_srcdir)/src \
-			   -I$(top_srcdir)/src-lapack
+			   -I$(top_srcdir)/src-lapack \
                            $(TRILINOS_CXXFLAGS) 
 
 # ------------------------------------------------------------------------

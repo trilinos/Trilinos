@@ -44,9 +44,10 @@ Group::Group(const NOX::Parameter::List& params, Interface& i,
 	     Epetra_Operator& J) :
   NOX::Epetra::Group(params, i, x, J),
   pVectorPtr(new ParameterVector(p)),
-  tangentVecPtr(x.clone()),
+  tangentVecPtr(dynamic_cast<NOX::Epetra::Vector*>(x.clone())),
   tangentVec(*tangentVecPtr),
-  userInterface(i)
+  userInterface(i),
+  isValidTangent(false)
 {
 }
 
@@ -56,19 +57,35 @@ Group::Group(const NOX::Parameter::List& params, Interface& i,
 	     Epetra_Operator& M) :
   NOX::Epetra::Group(params, i, x, J, M),
   pVectorPtr(new ParameterVector(p)),
-  tangentVecPtr(x.clone()),
+  tangentVecPtr(dynamic_cast<NOX::Epetra::Vector*>(x.clone())),
   tangentVec(*tangentVecPtr),
-  userInterface(i)
+  userInterface(i),
+  isValidTangent(false)
 {
 }
 
 Group::Group(const Group& source, NOX::CopyType type) :
   NOX::Epetra::Group(source, type),
   pVectorPtr(new ParameterVector(*(source.pVectorPtr))),
-  tangentVecPtr(source.tangentVecPtr->clone()),
+  tangentVecPtr(dynamic_cast<NOX::Epetra::Vector*>(source.tangentVecPtr->clone())),
   tangentVec(*tangentVecPtr),
   userInterface(source.userInterface)
 {
+  switch (type) {
+    
+  case NOX::DeepCopy:
+    
+    isValidTangent = source.isValidTangent;
+    break;
+
+  case NOX::ShapeCopy:
+    resetIsValid();
+    break;
+
+  default:
+    cerr << "LOCA::LAPACK::Group - invalid CopyType for copy constructor." << endl;
+    throw "LOCA LAPACK Error";
+  }
 }
 
 Group::~Group() 
@@ -95,66 +112,71 @@ Abstract::Group& Group::operator=(const Abstract::Group& source)
 Group& Group::operator=(const Group& source)
 {
   *pVectorPtr = *source.pVectorPtr;
+  *tangentVecPtr = *source.tangentVecPtr;
   NOX::Epetra::Group::operator=(source);
   return *this;
 }
 
-bool Group::setParams(const ParameterVector& p)
+void Group::setParams(const ParameterVector& p)
 {
   *pVectorPtr = p;
   resetIsValid();
-  return true;
 }
 
-bool Group::computeParams(const ParameterVector& oldParams,
+void Group::computeParams(const ParameterVector& oldParams,
 			  const ParameterVector& direction, 
 			  double step)
 {
   *pVectorPtr = oldParams;
   pVectorPtr->update(step, direction, 1.0);
   resetIsValid();
-  return true;
 }
 
 
-bool Group::computeF() 
+NOX::Abstract::Group::ReturnType
+Group::computeF() 
 {
-
-  bool status = false;
   
   // Set the parameters prior to computing F
-  status = userInterface.setParameters(*pVectorPtr);
-
-  if (status == false)
-    return false;
+  userInterface.setParameters(*pVectorPtr);
   
-  return NOX::Epetra::Group::computeF();;
+  return NOX::Epetra::Group::computeF();
 }
 
-bool Group::computeJacobian() 
+NOX::Abstract::Group::ReturnType 
+Group::computeJacobian() 
 {
-  bool status = false;
   
   // Set the parameters prior to computing F
-  status = userInterface.setParameters(*pVectorPtr);
+  userInterface.setParameters(*pVectorPtr);
 
-  if (status == false)
-    return false;
-  
   return NOX::Epetra::Group::computeJacobian();
 }
 
-bool
-LOCA::Abstract::Group::computeTangent(NOX::Parameter::List& params,
-                                      int paramID)
+NOX::Abstract::Group::ReturnType 
+LOCA::Epetra::Group::computeTangent(NOX::Parameter::List& params,
+				    int paramID)
 {
-  bool res = computeJacobian();
+  if (isValidTangent)
+    return NOX::Abstract::Group::Ok;
+
+  NOX::Abstract::Group::ReturnType res = computeJacobian();
+  if (res != NOX::Abstract::Group::Ok)
+    return res;
 
   NOX::Abstract::Vector *dfdpVec = tangentVec.clone(NOX::ShapeCopy);
 
-  res = res && computeDfDp(paramID, *dfdpVec);
+  res = computeDfDp(paramID, *dfdpVec);
+  if (res != NOX::Abstract::Group::Ok)
+    return res;
 
-  res = res && applyJacobianInverse(params, *dfdpVec, tangentVec);
+  res = applyJacobianInverse(params, *dfdpVec, tangentVec);
+  if (res != NOX::Abstract::Group::Ok)
+    return res;
+
+  tangentVec.scale(-1.0);
+
+  isValidTangent = true;
 
   delete dfdpVec;
 
@@ -171,8 +193,14 @@ NOX::Epetra::Interface& Group::getUserInterface()
   return userInterface;
 }
 
-const Vector&
+const NOX::Abstract::Vector&
 LOCA::Epetra::Group::getTangent() const
 {
   return tangentVec;
+}
+
+void
+LOCA::Epetra::Group::resetIsValid() {
+  isValidTangent = false;
+  NOX::Epetra::Group::resetIsValid();
 }
