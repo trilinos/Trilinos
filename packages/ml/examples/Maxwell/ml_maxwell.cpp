@@ -336,6 +336,8 @@ int main(int argc, char *argv[])
   // C L E A N   U P //
   // =============== //
   
+  ML_free(x);
+  ML_free(y);
   delete MLPrec;    // destroy phase prints out some information
   delete Epetra_Kn;
   delete Epetra_Ke;
@@ -776,6 +778,8 @@ void ML_Build_EdgeCoordinates(ML_Operator* Tmat, double *x, double *y,
   for (i = 0; i < Tmat->invec_leng; i++) node_data[i] = 1.;
   ML_Operator_Apply(Tmat, Tmat->invec_leng, node_data,
                Tmat->outvec_leng, edge_sizes);
+
+  ML_free(node_data);
                                                                                 
   for (i = 0 ; i < Tmat->outvec_leng ; ++i) {
     if (edge_sizes[i] == 0.) edge_sizes[i] = 1.;
@@ -793,6 +797,7 @@ void ML_Build_EdgeCoordinates(ML_Operator* Tmat, double *x, double *y,
   for (i = 0 ; i < Tmat->outvec_leng ; ++i) {
     edge_coordinates[i] /= edge_sizes[i];
     edge_coordinates[i+Tmat->outvec_leng] /= edge_sizes[i];
+
 /*
     if ( (edge_coordinates[i] == 0.) ||
 (edge_coordinates[i+Tmat->outvec_leng]==0.) )
@@ -800,7 +805,8 @@ void ML_Build_EdgeCoordinates(ML_Operator* Tmat, double *x, double *y,
           i,edge_coordinates[i],edge_coordinates[i+Tmat->outvec_leng]);
 */
   }
-                                                                                
+
+  ML_free(edge_sizes);
   Tmat->matvec->func_ptr = oldone;
 }
 
