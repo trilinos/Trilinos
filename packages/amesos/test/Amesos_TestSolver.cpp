@@ -176,6 +176,7 @@ int Amesos_TestSolver( Epetra_Comm &Comm, char *matrix_file,
   Epetra_Map map(readMap->NumGlobalElements(), 0, Comm);
 
   Epetra_Export exporter(*readMap, map);
+  Epetra_Export exporter2(*readMap, map);
   Epetra_CrsMatrix A(Copy, map, 0);
   Epetra_CrsMatrix AwithDiag(Copy, map, 0);
 
@@ -208,7 +209,7 @@ int Amesos_TestSolver( Epetra_Comm &Comm, char *matrix_file,
     //
     double zero = 0.0;
 
-    AwithDiag.Export(*serialA, exporter, Add);
+    AwithDiag.Export(*serialA, exporter2, Add);
 
     AwithDiag.SetTracebackMode(0);
     for ( int i = 0 ; i < map.NumGlobalElements(); i++ ) 

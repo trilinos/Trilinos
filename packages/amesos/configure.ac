@@ -810,7 +810,7 @@ fi
 
 if test "X$ac_cv_use_amesos_superlu" != "Xno"; then
 
-  TAC_ARG_WITH_SUB( amesos, superludir, [Set SuperLU serial directory],  ${tac_with_trilinos3pldir}/SuperLU )
+  TAC_ARG_WITH_SUB( amesos, superludir, [Set SuperLU serial directory],  ${tac_with_trilinos3pldir}/SuperLU_3.0 )
   TAC_CHECK_FILE(${tac_with_amesos_superludir})
 
   TAC_ARG_WITH_SUB( amesos, superlulib, [Set SuperLU serial library],  ${tac_with_amesos_superludir}/libsuperlu.a )
