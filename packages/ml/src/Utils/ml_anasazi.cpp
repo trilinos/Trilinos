@@ -518,10 +518,12 @@ int ML_Anasazi_Get_SpectralNorm_Anasazi(ML_Operator * Amat,
   double * evali = MyBlockArnoldi.getiEvals(); 
 
   *LambdaMax = sqrt(pow(evalr[0],2) + pow(evali[0],2));
-
-  double * residuals  = MyBlockArnoldi.getResiduals();
+  
   if( verbose ) {
+    double * residuals  = MyBlockArnoldi.getResiduals();
     cout << "ML_Anasazi : Ritz Residual = " << residuals[0] << endl;
+    delete [] residuals;
+   
   }
   
   delete RowMatrix;

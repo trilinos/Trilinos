@@ -995,7 +995,7 @@ void MultiLevelPreconditioner::SetSmoothers()
     Smoother = List_.get(parameter,Smoother);
 
     char msg[80];
-    sprintf(msg,"%sSmoother (level %d) : ",PrintMsg_.c_str(), LevelID_[level]);
+    sprintf(msg,"Smoother (level %d) : ", LevelID_[level]);
     if( Smoother == "Jacobi" ) {
       if( verbose_ ) cout << msg << "Jacobi (sweeps="
 			 << num_smoother_steps << ",omega=" << omega << ","
@@ -1522,27 +1522,9 @@ void MultiLevelPreconditioner::SetEigenList()
 void MultiLevelPreconditioner::SetSmoothingDamping() 
 {
 
+  Epetra_Time Time(Comm());
+  
   char parameter[80];
-  
-  /* ********************************************************************** */
-  /* For "classical" (with Anasazi) approach to determine lambda_max only.  */
-  /* ********************************************************************** */
-
-  sprintf(parameter,"%seigen-analysis: type", Prefix_);
-  string str = List_.get(parameter,"Anorm");
-  
-  if( str == "cg" )           ML_Aggregate_Set_SpectralNormScheme_Calc(agg_);
-  else if( str == "Anorm" )   ML_Aggregate_Set_SpectralNormScheme_Anorm(agg_);
-  else if( str == "anasazi" ) ML_Aggregate_Set_SpectralNormScheme_Anasazi(agg_);
-  else {
-    if( Comm().MyPID() == 0 ) {
-      cerr << ErrorMsg_ << "parameter `" << parameter << "' has an incorrect value"
-	   << "(" << str << ")" << endl;
-      cerr << ErrorMsg_ << "Using default value..." << endl;
-    }
-  }
-
-#ifndef MARZIO
   
   double DampingFactor = 1.333;
   if( SolvingMaxwell_ ) DampingFactor = 0.0;
@@ -1551,29 +1533,44 @@ void MultiLevelPreconditioner::SetSmoothingDamping()
   DampingFactor = List_.get(parameter, DampingFactor);
   ML_Aggregate_Set_DampingFactor( agg_, DampingFactor );
 
-#else
-
   /* ********************************************************************** */
   /* Strategies to determine the field-of-values.                           */
   /* almost everything here is experimental ;)                              */
   /* ********************************************************************** */
 
-  Epetra_Time Time(Comm());
-  double DampingFactor;
-  
+#ifndef MARZIO
+  string RandPSmoothing = "classic";
+#else
   sprintf(parameter,"%sR and P smoothing: type", Prefix_);
   string RandPSmoothing = List_.get(parameter, "classic");
+#endif
 
-
-  sprintf(parameter,"%seigen-analysis: use symmetric algorithms", Prefix_);
-  bool IsSymmetric = List_.get(parameter,false);
-  
-  if( IsSymmetric ) ML_Aggregate_Set_SpectralNormScheme_Calc(agg_);
-  else              ML_Aggregate_Set_SpectralNormScheme_Anorm(agg_);
-  
   /* start looping over different options */
-  
+
   if( RandPSmoothing == "classic" ) {
+
+    /* ********************************************************************** */
+    /* For "classical" approach to determine lambda_max only.                 */
+    /* ********************************************************************** */
+    
+    sprintf(parameter,"%seigen-analysis: type", Prefix_);
+    string str = List_.get(parameter,"Anorm");
+
+    if( verbose_ ) cout << PrintMsg_ << "Using `" << str << "' scheme for eigen-computations" << endl;
+    
+    if( str == "cg" )                ML_Aggregate_Set_SpectralNormScheme_Calc(agg_);
+    else if( str == "Anorm" )        ML_Aggregate_Set_SpectralNormScheme_Anorm(agg_);
+    else if( str == "anasazi" )      ML_Aggregate_Set_SpectralNormScheme_Anasazi(agg_);
+    else if( str == "power-method" ) ML_Aggregate_Set_SpectralNormScheme_PowerMethod(agg_);
+    else {
+      if( Comm().MyPID() == 0 ) {
+	cerr << ErrorMsg_ << "parameter `" << parameter << "' has an incorrect value"
+	     << "(" << str << ")" << endl;
+	cerr << ErrorMsg_ << "Using default value..." << endl;
+      }
+    }
+    
+  } else if( RandPSmoothing == "classic2" ) {
 
     /* ********************************************************************** */
     /* This is the standard approach followed by ML (R = P^T)                 */
@@ -1779,8 +1776,6 @@ void MultiLevelPreconditioner::SetSmoothingDamping()
     
   }
 
-#endif       
-
 }
 
 // ============================================================================
@@ -1825,7 +1820,7 @@ int ML_Epetra::SetDefaultsDD(ParameterList & List, char * Prefix)
   List.set(parameter,2);
 
   sprintf(parameter,"%soutput", Prefix);
-  List.set(parameter,10);
+  List.set(parameter,8);
   
   sprintf(parameter,"%sincreasing or decreasing", Prefix);
   List.set(parameter,"increasing");
@@ -1905,7 +1900,7 @@ int ML_Epetra::SetDefaultsDD_LU(ParameterList & List, char * Prefix)
   List.set(parameter,2);
 
   sprintf(parameter,"%soutput", Prefix);
-  List.set(parameter,10);
+  List.set(parameter,8);
   
   sprintf(parameter,"%sincreasing or decreasing", Prefix);
   List.set(parameter,"increasing");
@@ -1985,7 +1980,7 @@ int ML_Epetra::SetDefaultsDD_3Levels(ParameterList & List, char * Prefix_)
   List.set(parameter,3);
 
   sprintf(parameter,"%soutput", Prefix_);
-  List.set(parameter,10);
+  List.set(parameter,8);
   
   sprintf(parameter,"%sincreasing or decreasing", Prefix_);
   List.set(parameter,"increasing");
@@ -2144,7 +2139,7 @@ int ML_Epetra::SetDefaultsSA(ParameterList & List, char * Prefix_)
   List.set(parameter,MaxLevels);
 
   sprintf(parameter,"%soutput", Prefix_);
-  List.set(parameter,16);
+  List.set(parameter,8);
   
   sprintf(parameter,"%sPDE equations", Prefix_);
   List.set(parameter,1);
