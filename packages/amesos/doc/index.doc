@@ -2,31 +2,32 @@
 \htmlonly
 \endhtmlonly
 
+\section Developers
+
+Amesos is a Trilinos package, developed by K. Stanley, M. Sala,
+R. Hoekstra, T. Davis, and M. Heroux.
+
 \section intro Introduction 
 Amesos provides an object-oriented interface
-to several direct sparse solvers.  
+to several direct sparse solvers, both sequential and parallel.
 
-<p>Amesos contains four supported classes:
+<p>At this stage of development, Amesos supported the following classes:
 
 <ul> 
 
-<li> SuperludistOO - Interface to Xiaoye Li's SuperLU Distributed memory code with serial input interface.
-<li> Epetra_SLU - Interface to Xiaoye Li's SuperLU Serial. 
+<li> Amesos_Klu - Interface to Tim Davis serial solver KLU (distributed within Amesos). 
+<li> Amesos_Superlu - Interface to Xiaoye Li's SuperLU serial memory code with serial input interface.
+<li> Amesos_Superludist - Interface to Xiaoye Li's SuperLU Distributed memory code with serial input interface (version 2.0 or later).
 <li> Amesos_Dscpack - Interface to Padma Raghavan's DSCPACK
-<li> Amesos_Umfpack - Interface to Tim Davis's UMFPACK
+<li> Amesos_Umfpack - Interface to Tim Davis's UMFPACK (version 4.3 or later)
+<li> Amesos_Mumps - Interface to CERFACS' MUMPS (version 4.3.1 or later)
 </ul>
 
-<p>In addition, Amesos contains a prototype code, Amesos_Mumps, which
-has passed a series of tests on Atlantis, an SGI machine, using 64 bit
-compilers.
+We refer to the Sandia report SAND-2004-2188 for a detailed overview of
+Amesos. A PDF version of this report can be found the
+<tt>Trilinos/packages/amesos/doc/AmesosReferenceGuide/AmesosReferenceGuide.pdf</tt>.
 
-<p>Amesos is migrating toward a base class model: Amesos_BaseSolver.
-All future Amesos classes will implement the base class.
-
-Amesos will soon support the following class:
-<ul> 
-<li> Amesos_Superludist - Interface to Xiaoye Li's SuperLU Distributed memory code with distributed memory input interface. 
-
+<P>Note: Support is under development for an interface to ScaLAPACK.
 
 </ul>
 
@@ -48,8 +49,7 @@ for details.
 
 <p>It is the intent of the SuperLU team to make SuperLU and SuperLUdist
 freely available without any copyright restrictions, i.e. not even GPL
-restrictions.  However, as of the last I checked, they still included
-one or two codes that have more restrictive copyrights.
+restrictions. 
 
 \section comparison  Quick comparison of the Amesos classes
 
@@ -58,8 +58,8 @@ one or two codes that have more restrictive copyrights.
 <td>Features</td>
 <td>Amesos_Dscpack</td>
 <td>Amesos_Umfpack</td>
-<td>Epetra_SLU</td>
-<td>SuperludistOO</td>
+<td>Amesos_Superlu</td>
+<td>Amesos_Superludist</td>
 <td>Amesos_Mumps</td>
 </tr>
 <tr>
@@ -101,8 +101,8 @@ one or two codes that have more restrictive copyrights.
 <td>Testing</td>
 <td>Amesos_Dscpack</td>
 <td>Amesos_Umfpack</td>
-<td>Epetra_SLU</td>
-<td>SuperludistOO</td>
+<td>Amesos_Superlu</td>
+<td>Amesos_Superludist</td>
 <td>Amesos_Mumps</td>
 </tr>
 <tr>
@@ -154,21 +154,6 @@ one or two codes that have more restrictive copyrights.
 <td>not built </td>
 </tr>
 </table>
-
-<p>Notes: 
-<ul> 
-
-<li>MUMPS and SuperLUdist both offer solutions which reduce the serial
-memory requirements.  These will be incorporated into Amesos later.</li>
-
-<li>MUMPS has only been built on one platform: Atlantis, an SGI
-machine running IRIX and using 64-bit compilers.  Since Atlantis does not
-have MPI2 installed on it there is no easy way to convert a C
-communicator to a fortran communicator and hence Amesos_Mumps does not
-at present allow solves on a subset of the processes.  Steve Simonds,
-is willing to install MPI2 on Atlantis if needed.  
-
-</ul>
 
 \section install  Installing Amesos 
 
@@ -361,7 +346,7 @@ large root node problems.  Hence, you will need to obtain a copy of <a
 href="http://www.netlib.org/scalapack">ScaLAPACK</a> and the <a
 href="http://www.netlib.org/blacs">BLACS</a>.  There are pre-built libraries 
 for most architectures.  (Note: MUMPS can be built
-without ScaLAPACK and the BLACS, though I have not done so.)  Use LIBS=" " 
+without ScaLAPACK and the BLACS.)  Use LIBS=" " 
 to link in the ScaLAPACK and BLACS libraries.
 
 <li>Obtain the DSCPACK distribution from <a
@@ -410,8 +395,8 @@ You will need to add three switches to your configure invocation script.
 </ul>
 <li>Enable one of the Amesos classes:
 <ul>
-<li><b>--enable-amesos-slus</b> - Epetra_SLU
-<li><b>--enable-amesos-slud </b> - SuperludistOO
+<li><b>--enable-amesos-superlu</b> - Amesos_Superlu
+<li><b>--enable-amesos-superludist </b> - Amesos_Superludist
 <li><b>--enable-amesos-dscpack </b> -  Amesos_Dscpack
 <li><b>--enable-amesos-umfpack </b> -  Amesos_Umfpack
 </ul>
@@ -422,7 +407,7 @@ You will need to add three switches to your configure invocation script.
 <li><b>--with-amesos-sludlib=/home/somedir/SuperLU_DIST_2.0/libsuperludist.a</b> <br>and <br><b>--with-amesos-sludincdir=/home/somedir/SuperLU_DIST_2.0/SRC</b>
 </ul>
 </ul>
-Amesos is not built with any of the supported classes by default.  You must choose at least one.  
+By default, Amesos is built with KLU support. KLU is distributed with Amesos, and is automatically compiled when you compile Amesos (unless --disable-amesos-klu is specified).
 
 <p>UMFPACK requires two libraries libumfpack.a and libamd.a.  If you
 install UMFPACK in your Trilinos3PL directory using the directory
@@ -524,7 +509,7 @@ amesos/test directory failed.
 \subsection bugs Known bugs
 
 <ul>
-<li> SuperludistOO
+<li> Amesos_Superludist
 <ul>
 <li><b>Superludist_2.0 tar file requires --with-amesos-sluddir=/home/somedir/SuperLU_DIST_2.0</b>.  By default, Amesos configuration assumes that you are using superlu_dist_1.0.tar which installs in SuperLU_DIST.  superlu_dist_2.0.tar installs in SuperLU_DIST_2.0.  
 </ul>
@@ -534,9 +519,9 @@ amesos/test directory failed.
 <p>The official 
 <a href="http://software.sandia.gov/trilinos/packages/amesos/doxygen/html/index.html">Amesos Home Page</a> is kept at Sandia. 
 
-<p>My <a href="http://www.cs.utk.edu/~kstanley/amesos/doc/html/index.html">
+<p>Ken Stanley's <a href="http://www.cs.utk.edu/~kstanley/amesos/doc/html/index.html">
 UTK Amesos home page</a> may be more up-to-date on occasion.
 
-<p>This page last updated 23 July 2003.
+<p>This page last updated 24 May 2004.
 
 */
