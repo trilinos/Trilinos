@@ -1063,6 +1063,7 @@ void AZ_capture_matrix(AZ_MATRIX *Amat, int proc_config[],
   double * x, * y;
   double * val;
   int * indx, * bindx, * rpntr,* cpntr, * bpntr;
+  FILE *AZ_capture_flag;
   /********** execution begins **********/
   { 
     val = Amat->val;
@@ -1072,7 +1073,6 @@ void AZ_capture_matrix(AZ_MATRIX *Amat, int proc_config[],
     cpntr = Amat->cpntr;
     bpntr = Amat->bpntr;
 
-    FILE *AZ_capture_flag;
   AZ_capture_flag = fopen("AZ_write_matrix_now","r");
   if(AZ_capture_flag)
     {
