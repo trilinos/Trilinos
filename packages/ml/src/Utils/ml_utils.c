@@ -2293,6 +2293,7 @@ void ML_random_vec(double u[], int N, ML_Comm *comm)
   /*********************** BEGIN EXECUTION *********************************/
 
   i    = (7+ comm->ML_mypid) * (13 + comm->ML_mypid) * (19 + comm->ML_mypid);
+  i *= seed;
   seed = (int) (ML_srandom1(&i)* (double) seed);
 
   for (i = 0; i < N; i++) u[i] = ML_srandom1(&seed);
