@@ -379,7 +379,7 @@ void crout_ict(
             marker_l[index] = len_l++; /* points into work array */
         }
 #endif
-        norm_l /= (double) len_l;
+        norm_l = (len_l == 0) ? 0.0 : norm_l/((double) len_l);
  
         /* update and scale */
 
