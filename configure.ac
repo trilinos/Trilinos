@@ -72,12 +72,12 @@ TAC_ARG_ENABLE_FEATURE(anasazi, [Build anasazi], ANASAZI, no)
 AM_CONDITIONAL(BUILD_ANASAZI, test "X$ac_cv_use_anasazi" != "Xno")
 
 TAC_ARG_ENABLE_FEATURE(ifpack, [Build ifpack], IFPACK, yes)
-AM_CONDITIONAL(BUILD_IFPACK, test "X$ac_cv_use_ifpack" != "Xno" ||
-	test "X$ac_cv_use_belos" != "Xno")
+AM_CONDITIONAL(BUILD_IFPACK, test "X$ac_cv_use_ifpack" != "Xno")
 
 TAC_ARG_ENABLE_FEATURE(triutils, [Build triutils], TRIUTILS, no)
 AM_CONDITIONAL(BUILD_TRIUTILS, test "X$ac_cv_use_triutils" != "Xno" || 
 	test "X$ac_cv_use_aztecoo" != "Xno" || 
+	test "X$ac_cv_use_anasazi" != "Xno" || 
 	test "X$ac_cv_use_belos" != "Xno" || 
 	test "X$ac_cv_use_amesos" != "Xno")
 
@@ -85,7 +85,9 @@ TAC_ARG_ENABLE_FEATURE(epetraext, [Build epetraext], EPETRAEXT, yes)
 AM_CONDITIONAL(BUILD_EPETRAEXT, test "X$ac_cv_use_epetraext" != "Xno")
 
 TAC_ARG_ENABLE_FEATURE(teuchos, [Build teuchos], TEUCHOS, no)
-AM_CONDITIONAL(BUILD_TEUCHOS, test "X$ac_cv_use_teuchos" != "Xno")
+AM_CONDITIONAL(BUILD_TEUCHOS, test "X$ac_cv_use_teuchos" != "Xno"
+	test "X$ac_cv_use_belos" != "Xno" || 
+	test "X$ac_cv_use_anasazi" != "Xno") 
 
 TAC_ARG_ENABLE_FEATURE(ml, [Build ml], ML, yes)
 AM_CONDITIONAL(BUILD_ML, test "X$ac_cv_use_ml" != "Xno")
@@ -128,13 +130,13 @@ fi
 
 if test "X$ac_cv_use_triutils" != "Xno" ||
 	test "X$ac_cv_use_aztecoo" != "Xno" ||
+	test "X$ac_cv_use_anasazi" != "Xno" ||
 	test "X$ac_cv_use_belos" != "Xno" ||
 	test "X$ac_cv_use_amesos" != "Xno"; then
   AC_CONFIG_SUBDIRS([packages/triutils])
 fi
 
-if test "X$ac_cv_use_ifpack" != "Xno" ||
-	test "X$ac_cv_use_belos" != "Xno"; then
+if test "X$ac_cv_use_ifpack" != "Xno"; then
   AC_CONFIG_SUBDIRS([packages/ifpack])
 fi
 
@@ -195,7 +197,9 @@ if test "X$ac_cv_use_new_package" != "Xno"; then
 fi
 
 ###
-if test "X$ac_cv_use_teuchos" != "Xno"; then
+if test "X$ac_cv_use_teuchos" != "Xno" ||
+	test "X$ac_cv_use_anasazi" != "Xno" ||
+	test "X$ac_cv_use_belos" != "Xno"; then
   AC_CONFIG_SUBDIRS([packages/teuchos])
 fi
 ###
