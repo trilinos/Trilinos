@@ -523,8 +523,10 @@ static int rcb_fn(
     for (j=0; j<wgtdim; j++){
       if (obj_wgt_comp || (weight[j]==0.0))
         wgtscale[j] = 1.0;
-      else
+      else{
         wgtscale[j] = 1.0/weight[j]; /* normalize to make sum 1.0 */
+        weight[j] = 1.0;
+      }
     }
   }
 
@@ -742,10 +744,6 @@ static int rcb_fn(
         }
 
         /* test for better balance */
-        if (zz->Debug_Level >= ZOLTAN_DEBUG_ALL)
-          printf("[%1d] Debug: cut dim=%1d, norm_max=%f, dim_best=%1d, norm_best=%f\n", 
-            proc, dim, norm_max, dim_best, norm_best);
-
         if ((!one_cut_dir) && 
             ((norm_max < norm_best) || (norm_best<0.))){
           norm_best = norm_max; 
@@ -758,6 +756,14 @@ static int rcb_fn(
             dotmark_best[j] = dotmark[j];
           valuehalf_best = valuehalf;
         }
+        if (zz->Debug_Level >= ZOLTAN_DEBUG_ALL){
+          printf("[%1d] Debug: cut dim=%1d, norm_max=%f, dim_best=%1d, norm_best=%f, cut value=%f\n", 
+            proc, dim, norm_max, dim_best, norm_best, valuehalf);
+          if (wgtflag>1)
+            printf("[%1d] Debug: weightlo=(%f,%f), weighthi=(%f,%f)\n",
+              proc, weightlo[0], weightlo[1],  weighthi[0], weighthi[1]);
+        }
+
       }
       if (breakflag) break; /* if one_cut_dir is true */
     }
@@ -780,6 +786,14 @@ static int rcb_fn(
       /* free temp arrays */
       ZOLTAN_FREE(&dotmark0);
       ZOLTAN_FREE(&dotmark_best);
+
+      if (zz->Debug_Level >= ZOLTAN_DEBUG_ALL){
+        printf("[%1d] Debug: BEST dim=%1d, cut value=%f, norm_max=%f \n", 
+          proc, dim, valuehalf, norm_max);
+        if (wgtflag>1)
+          printf("[%1d] Debug: BEST weightlo=(%f,%f), weighthi=(%f,%f)\n",
+            proc, weightlo[0], weightlo[1],  weighthi[0], weighthi[1]);
+      }
     }
 
     if (set)    /* set weight for current partition */
