@@ -17,7 +17,8 @@ extern "C" {
 
 
 #include "zz_const.h"
-#define GLOBAL_GRAPH 2
+#include "hypergraph.h"
+#include "hg.h"
 
 /*****************************************************************************/
 /*****************************************************************************/
@@ -34,7 +35,7 @@ int Zoltan_Generate_Files(ZZ *zz, char *fname, int base_index)
 {
 /*
  *  Generate up to four output files:
- *   a) Current assignment of objects to processors (partitions?)
+ *   a) Current assignment of objects to partitions (and procs?)
  *   b) Geometry of the objects.
  *   c) Graph if graph query functions are available.
  *   d) Hypergraph if hypergraph query functions are available.
@@ -46,6 +47,7 @@ int Zoltan_Generate_Files(ZZ *zz, char *fname, int base_index)
   int error=ZOLTAN_OK;
   ZOLTAN_ID_PTR local_ids = NULL;
   ZOLTAN_ID_PTR global_ids = NULL;
+  ZHG *zhg;
   FILE *fp;
   char full_fname[256];
   int *vtxdist, *xadj, *adjncy, *part;
@@ -55,12 +57,17 @@ int Zoltan_Generate_Files(ZZ *zz, char *fname, int base_index)
   int i, j, k, num_obj, num_geom, num_edges, glob_edges;
   char *yo = "Zoltan_Generate_Files";
 
+  ZOLTAN_TRACE_ENTER(zz, yo);
+
   /* Initialize all local pointers to NULL. This is necessary
    * because we free all non-NULL pointers upon errors.
    */
   vtxdist = xadj = adjncy = vwgt = adjwgt = part = NULL;
   float_vwgt = ewgts = NULL;
   xyz = NULL;
+
+  /* Assign default file name if none was given. */
+  if (fname==NULL) fname = "noname";
 
   /* Zoltan_Get_Obj_List allocates memory for all return lists. */
   error = Zoltan_Get_Obj_List(zz, &num_obj, &global_ids, &local_ids,
@@ -73,7 +80,7 @@ int Zoltan_Generate_Files(ZZ *zz, char *fname, int base_index)
   }
 
   /* Build (ParMetis) graph data structures, or just get vtxdist. */
-  error = Zoltan_Build_Graph(zz, GLOBAL_GRAPH, 1, num_obj,
+  error = Zoltan_Build_Graph(zz, 1, 1, num_obj,
          global_ids, local_ids, zz->Obj_Weight_Dim, zz->Edge_Weight_Dim,
          &vtxdist, &xadj, &adjncy, &ewgts);
   if (error != ZOLTAN_OK && error != ZOLTAN_WARN){
@@ -91,12 +98,19 @@ int Zoltan_Generate_Files(ZZ *zz, char *fname, int base_index)
       zz->Communicator);  
   glob_edges /= 2;
 
-  /* Write to files, serialized. */
+  /* Build hypergraph, if applicable. */
+  if (zz->Get_Num_HG_Edges != NULL && zz->Get_HG_Edge_List != NULL) {
+    error = Zoltan_HG_Build_Hypergraph(zz, &zhg, NULL);
+  }
+
+  /**********************************************************/
+  /* Write to files, serialized.                            */
   /* Note: This will be slow (not scalable) for many procs. */
+  /**********************************************************/
   Zoltan_Print_Sync_Start(zz->Communicator, 0); 
 
   /* Write object assignments to file. */
-  /* Only write proc number, or partition number too?? */
+  /* For now, only write partition number. */
   if (num_obj > 0){
     sprintf(full_fname, "%s.assign", fname);
     if (zz->Proc == 0)
@@ -109,7 +123,8 @@ int Zoltan_Generate_Files(ZZ *zz, char *fname, int base_index)
       goto End;
     }
     for (i=0; i<num_obj; i++)
-      fprintf(fp, "%d\n", zz->Proc);
+      fprintf(fp, "%d\n", part[i]);
+      /* fprintf(fp, "%d\n", zz->Proc); */
     fclose(fp);
   }
 
@@ -186,6 +201,35 @@ int Zoltan_Generate_Files(ZZ *zz, char *fname, int base_index)
       }
       fprintf(fp, "\n");
     }
+    fclose(fp);
+  }
+
+  /* Write hypergraph to file, if applicable. */
+  if (zz->Get_Num_HG_Edges != NULL && zz->Get_HG_Edge_List != NULL) {
+    sprintf(full_fname, "%s.hg", fname);
+    if (zz->Proc == 0)
+      fp = fopen(full_fname, "w");
+    else
+      fp = fopen(full_fname, "a");
+    if (fp==NULL){
+      ZOLTAN_PRINT_WARN(zz->Proc, yo, "Could not open file for writing.\n");
+      error = ZOLTAN_WARN;
+      goto End;
+    }
+
+    /* If proc 0, write first line. */
+    if (zz->Proc == 0){
+      fprintf(fp, "%d %d %1d%1d%1d", vtxdist[zz->Num_Proc], glob_edges, 
+        0, (zz->Obj_Weight_Dim>0), (zz->Edge_Weight_Dim>0));
+      if (zz->Obj_Weight_Dim>1 || zz->Edge_Weight_Dim>1)
+        fprintf(fp, " %d %d", zz->Obj_Weight_Dim, zz->Edge_Weight_Dim);
+      fprintf(fp, "\n");
+    }
+
+    /* Each proc prints its part of the hgraph. */
+    Zoltan_HG_HGraph_Print(zz, zhg, &(zhg->HG), fp);
+
+    fclose(fp);
   }
   
   Zoltan_Print_Sync_End(zz->Communicator, 0); 
@@ -201,6 +245,8 @@ End:
   ZOLTAN_FREE(&vwgt);
   ZOLTAN_FREE(&ewgts);
   ZOLTAN_FREE(&part);
+
+  ZOLTAN_TRACE_EXIT(zz, yo);
   return error;
 }
 

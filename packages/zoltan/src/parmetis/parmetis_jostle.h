@@ -79,8 +79,8 @@ typedef int idxtype;
 
 /* Graph types */
 #define NO_GRAPH     0
-#define LOCAL_GRAPH  1
-#define GLOBAL_GRAPH 2
+#define GLOBAL_GRAPH 1
+#define LOCAL_GRAPH  2
 
 /* Misc. local constants */
 #define CHUNKSIZE 20  /* Number of nodes to allocate in initial chunk. */
