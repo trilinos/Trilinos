@@ -107,5 +107,6 @@ extern void pjostle_init(int *, int *);
 extern void pjostle(int *, int *, int *, int *, int *, int *,
                     int *, int *, int *, int *, int *, int *,
                     int *, int *, int *, double *);
+extern void pjostle_comm(int *);
 
 #endif
