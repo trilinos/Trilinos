@@ -1,0 +1,163 @@
+#!/usr/bin/perl
+# $Id$
+# $Source$
+
+########################################################################
+### NOT PART OF DISTRIBUTION.
+### Automatically generates APPS Makefile.in with correct dependencies
+### for all C files. 
+########################################################################
+
+# Build dependencies - requires three arguments.
+sub build_depends{
+
+    # Copy inputs (@_) into local variables
+    local(*INCDIR,*SRCDIR,$OUTFILE) = @_;
+
+    # Generate a list of all include files (which end in .H) 
+    # from each directory in INCDIR
+    @incfiles = ();
+    foreach $incdir (@INCDIR) {
+	opendir(DIR, $incdir) || die "Can't open $incdir. $!\n";
+	@filenames = readdir(DIR);
+	foreach (@filenames) {
+	    (/.H$/) &&
+		((($incdir =~ /^.$/) && push(@incfiles, "$_")) ||
+		 push(@incfiles, "$incdir/$_"));
+	}
+	closedir(DIR);
+    }
+
+    # Generate a list of all c++ source files (which end in .C)
+    # from each directory in SRCDIR
+    @srcfiles = ();
+    foreach $srcdir (@SRCDIR) {
+	opendir(DIR, $srcdir) || die "Can't open $srcdir. $!\n";
+	@filenames = readdir(DIR);
+	foreach (@filenames) {
+	    (/.C$/) && 
+		((($srcdir =~ /^.$/) && push(@srcfiles, "$_")) ||
+		push(@srcfiles, "$srcdir/$_"))
+	}
+	closedir(DIR);
+    }
+    
+    # For each include file in @incfiles, assemble a list of its 
+    # dependencies in $includes{$incfile}.
+    foreach $incfile (@incfiles) {
+	open(INCFILE, "<$incfile") || die "Can't open $incfile. $!\n";
+	foreach (<INCFILE>) {
+	    if (/^#include\s+"(.*)"/) {
+		@list = grep(/$1$/, @incfiles);
+		if ($#list >= 0) {
+		    $includes{$incfile} .= join(' ', @list) . ' ';
+		}
+	    }
+	}
+	close(INCFILE);
+    }
+    
+    # For each include file in @incfiles, assemble a list of its 
+    # dependencies, including the dependencies in files it includes.
+    foreach $srcfile (@srcfiles) {
+	
+	# Copy source file name, delete the path, and change .C to .o
+	$objfile = $srcfile;
+	$objfile =~ s/(.*)\///;
+	$objfile =~ s/\.C/\.o/;
+	
+	push(@objlist, $objfile);
+
+	# Construct a dependency list, including the dependencies
+	# of each included file (may miss dependencies that are more 
+	# than two deep)
+	$deplist = "";
+	open(SRCFILE, "<$srcfile") || die "Can't open $srcfile. $!\n";
+	foreach (<SRCFILE>) {
+	    if (/^#include\s+"(.*)"/) {
+		@list = grep(/$1$/, @incfiles);
+		foreach (@list) {
+		    $deplist .= $_ . ' ' . $includes{$_} . ' ';
+		}
+	    }
+	}
+	close(SRCFILE);
+	
+	# Sort and remove duplicates
+	$prev = "";
+	@newlist = ($srcfile);
+	foreach (sort split(/\s+/, $deplist)) {
+	    (/^$prev$/) || push(@newlist, $_);
+	    $prev = $_;
+	}
+	
+	# Rejoin the list and add breaks
+	$list = join(' ', @newlist);
+	$list =~ s/^(.{30}\S* )(.+)/\1\\\n\t\2/;
+	while ($list =~ s/(.*\n.{40}\S* )(.+)$/\1\\\n\t\2/){}
+	
+	# Output the compile command for each object file
+	print OUTFILE "$objfile : $list \n";
+	print OUTFILE "\t\$(CXX) -c \$(CXXFLAGS) $srcfile -o \$@\n";
+	print OUTFILE "\n";
+    }
+
+    # Rejoin the object file list and add breaks
+    $list = join(' ', @objlist);
+    $list =~ s/^(.{30}\S* )(.+)/\1\\\n\t\2/;
+    while ($list =~ s/(.*\n.{40}\S* )(.+)$/\1\\\n\t\2/){}
+    
+    print_line(OUTFILE);
+    print OUTFILE "\nNLSPACK_OBJ = $list \n";
+    print OUTFILE "\n";
+    print_line(OUTFILE);
+
+
+    # Rejoin the object file list and add breaks
+    $list = join(' -I', @INCDIR);
+    $list =~ s/^(.{30}\S* )(.+)/\1\\\n\t\2/;
+    while ($list =~ s/(.*\n.{40}\S* )(.+)$/\1\\\n\t\2/){}
+    
+    print_line(OUTFILE);
+    print OUTFILE "\nNLSPACK_INCLUDES = -I$list \n";
+    print OUTFILE "\n";
+    print_line(OUTFILE);
+
+} # End sub build_depends
+
+sub print_line {
+    # Copy inputs (@_) into local variables
+    local($OUTFILE) = @_;
+    $a = 0;
+    while ($a < 72) {
+	print OUTFILE "\#";
+	$a ++;
+    }
+    print OUTFILE "\n";
+}
+
+# list of include directories
+@INCDIR = ("../src","../src/epetra","../src/methods","../src/linesearches");  
+@SRCDIR = @INCDIR;
+
+# Open Makefile
+$FILENAME = "../build/Makefile.ofiles";
+open(OUTFILE,">$FILENAME") || die "Can't open $FILENAME\n";
+
+# Generate Makefile.in
+#print OUTFILE "\# \$Id\$ \n" ;
+#print OUTFILE "\# \$Source\$ \n" ;
+#print OUTFILE "\# \$Name\$ \n" ;
+
+#print OUTFILE "\n";
+
+print_line(OUTFILE);
+print OUTFILE "\#\#\# Object File Rules\n";
+print_line(OUTFILE); 
+
+print OUTFILE "\n";
+
+&build_depends(*INCDIR,*SRCDIR,OUTFILE);
+
+close(OUTFILE);
+
