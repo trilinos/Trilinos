@@ -1,3 +1,11 @@
+<!doctype html public "-//w3c//dtd html 4.0 transitional//en">
+<html>
+<head>
+   <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+   <meta name="GENERATOR" content="Mozilla/4.7 [en] (X11; U; SunOS 5.7 sun4u) [Netscape]">
+   <meta name="sandia.approved" content="SAND99-1376">
+   <meta name="author" content="karen devine, kddevin@sandia.gov">
+   <title> Zoltan Developer's Guide:  Memory Management Package</title>
 <!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
  ! Zoltan Dynamic Load-Balancing Library for Parallel Applications            !
  ! Copyright (c) 2000, Sandia National Laboratories.                          !
@@ -10,30 +18,23 @@
      $Date$
      $Revision$
 >
-
-<!doctype html public "-//w3c//dtd html 4.0 transitional//en">
-<html>
-<head>
-   <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
-   <meta name="GENERATOR" content="Mozilla/4.7 [en] (X11; U; SunOS 5.7 sun4u) [Netscape]">
-   <meta name="sandia.approved" content="SAND99-1376">
-   <meta name="author" content="karen devine, kddevin@sandia.gov">
-   <title> Zoltan Developer's Guide:  Memory Utilities</title>
 </head>
 <body bgcolor="#FFFFFF">
 
-<div ALIGN=right><b><i><a href="dev.html">Zoltan Developer's Guide</a>&nbsp; |&nbsp; <a href="dev_util_params.html">Next</a>&nbsp; |&nbsp; <a href="dev_util.html">Previous</a></i></b></div>
-
+<div align=right><b><i><a href="dev.html">Zoltan Developer's Guide</a>&nbsp;
+|&nbsp; <a href="dev_util_params.html">Next</a>&nbsp; |&nbsp; <a href="dev_util.html">Previous</a></i></b></div>
 
 <h2>
-<a NAME="Memory"></a>Memory Management Utilities</h2>
+<a NAME="Memory"></a>Memory Management Package</h2>
 Several memory allocation and deallocation routines are provided in the
-load-balancing library. They are defined in the file <i>all/all_allo.c</i>;
-their prototypes for inclusion in other files are in <i>all/all_allo_const.h</i>.
-The use of these routines is not mandatory in algorithm development (except
-<b><a href="#LB_Special_Malloc">LB_Special_Malloc</a></b> and <b><a href="#LB_Special_Free">LB_Special_Free</a></b>),
-but the routines provide helpful error-checking and <a href="#Debug_Memory">debugging
-capabilities</a>, and the use of them is strongly suggested.
+load-balancing library. They are defined in the files <i>Utilities/Memory</i>;
+their prototypes for inclusion in other files are in <i>Utilities/Memory/mem_const.h</i>.
+The use of these routines is not mandatory in algorithm development, but
+the routines provide helpful error-checking and <a href="#Debug_Memory">debugging
+capabilities</a>, and the use of them is strongly suggested.&nbsp; For
+allocation and deallocation of memory that is returned by an algorithm
+to the application, see <b><a href="dev_add_memory.html#LB_Special_Malloc">LB_Special_Malloc</a></b>
+and <b><a href="dev_add_memory.html#LB_Special_Free">LB_Special_Free</a></b>.
 <p>The routines included in the utility are listed below.
 <blockquote><b><a href="#LB_Array_Alloc">LB_Array_Alloc</a></b>:&nbsp;
 Allocates arrays of dimension <i>n</i>, <i>n</i>=0,1,...,4
@@ -42,11 +43,7 @@ malloc.
 <br><b><a href="#LB_Realloc">LB_Realloc</a></b>:&nbsp; Wrapper for system
 realloc.
 <br><b><a href="#LB_Free">LB_Free</a></b>:&nbsp; Frees memory and sets
-the pointer to NULL.
-<br><b><a href="#LB_Special_Malloc">LB_Special_Malloc</a></b>:&nbsp; Allocate
-memory for import and export result arrays.
-<br><b><a href="#LB_Special_Free">LB_Special_Free</a></b>:&nbsp; Frees
-memory allocated by LB_Special_Malloc.</blockquote>
+the pointer to NULL.</blockquote>
 
 <hr><a NAME="LB_Array_Alloc"></a>double *<b>LB_Array_Alloc</b>(char *<i>
 file</i>, int <i>line</i>, int <i>n</i>, int <i>d1</i>, int <i>d2</i>,
@@ -145,10 +142,10 @@ or NULL if the allocation fails.</td>
 routine. It allocates a block of memory of size <i>n</i> bytes. The principle
 advantage of using the wrapper is that it allows you to track memory leaks
 via the DEBUG_MEMORY parameter.
-<p>A macro <b>LB_MALLOC</b> is defined in <i>all/all_allo_const.h</i>.
+<p>A macro <b>LB_MALLOC</b> is defined in <i>mem/mem_const.h</i>.
 It takes the argument <i>n</i>, and adds the <i>__FILE__</i> and <i>__LINE__</i>
 macros to the argument list of the <b>LB_Malloc</b> call:
-<blockquote>#define&nbsp;&nbsp;&nbsp; <b>LB_MALLOC</b>(<i>n</i>)&nbsp;&nbsp;&nbsp;
+<blockquote>#define&nbsp;&nbsp;&nbsp; <b>LB_MALLOC</b>(<i>n</i>)&nbsp;&nbsp;
 
 <b>LB_Malloc</b>((<i>n</i>), <i>__FILE__</i>, <i>__LINE__</i>)</blockquote>
 Using this macro, the developer gains the file and line debugging information
@@ -228,11 +225,11 @@ the size of the object pointed to by <i>ptr</i> to <i>n</i> bytes. The
 contents of <i>ptr</i> are unchanged up to a minimum of the old and new
 sizes. Error tests ensuring that <i>n</i> is a positive number and that
 space is available to be allocated are performed.
-<p>A macro <b>LB_REALLOC</b> is defined in <i>all/all_allo_const.h</i>.
+<p>A macro <b>LB_REALLOC</b> is defined in <i>mem/mem_const.h</i>.
 It takes the arguments <i>ptr</i> and <i>n</i>, and adds the <i>__FILE__</i>
 and <i>__LINE__</i> macros to the argument list of the <b>LB_Realloc</b>
 call:
-<blockquote>#define&nbsp;&nbsp;&nbsp; <b>LB_REALLOC</b>(<i>ptr</i>, <i>n</i>)&nbsp;&nbsp;
+<blockquote>#define&nbsp;&nbsp;&nbsp; <b>LB_REALLOC</b>(<i>ptr</i>, <i>n</i>)&nbsp;
 
 <b>LB_Realloc</b>((<i>ptr</i>), (<i>n</i>), <i>__FILE__</i>, <i>__LINE__</i>)</blockquote>
 Using this macro, the developer gains the file and line debugging information
@@ -298,8 +295,7 @@ routine is unsuccessful, NULL is returned and *<i>ptr</i> is unchanged.</td>
 <tr>
 <td VALIGN=TOP></td>
 
-<td>
-<i>int</i> <i>n</i> = <i>sizeof</i>(struct <b>LB_Struct</b>);
+<td><i>int</i> <i>n</i> = <i>sizeof</i>(struct <b>LB_Struct</b>);
 <br><i>int</i> *<i>b</i> = (<i>int </i>*) <b><a href="#LB_Malloc">LB_MALLOC</a></b>
 (<i>n</i>));&nbsp;
 <br><i>b</i> = (<i>int </i>*) <b>LB_REALLOC</b> (<i>b</i>, 2*<i>n</i>);</td>
@@ -323,10 +319,10 @@ call. This allows the pointer being freed to be set to NULL, which can
 help find errors in which a pointer is used after it is deallocated. Error
 checking is performed to prevent attempts to free NULL pointers. When <b>LB_Free</b>
 is used with the DEBUG_MEMORY options, it can help identify memory leaks.
-<p>A macro <b>LB_FREE</b> is defined in <i>all/all_allo_const.h</i>. It
+<p>A macro <b>LB_FREE</b> is defined in <i>mem/mem_const.h</i>. It
 takes the argument <i>ptr</i>, and adds the <i>__FILE__</i> and <i>__LINE__</i>
 macros to the argument list of the <b>LB_Free</b> call:
-<blockquote>#define&nbsp;&nbsp;&nbsp; <b>LB_FREE</b>(<i>ptr</i>)&nbsp;&nbsp;&nbsp;
+<blockquote>#define&nbsp;&nbsp;&nbsp; <b>LB_FREE</b>(<i>ptr</i>)&nbsp;&nbsp;
 
 <b>LB_Free</b>((void **)(<i>ptr</i>), <i>__FILE__</i>, <i>__LINE__</i>)</blockquote>
 Using this macro, the developer gains the file and line debugging information
@@ -364,151 +360,6 @@ is set to NULL.</td>
 
 <td>Frees memory associated with the variable <i>x</i>; upon return, <i>x</i>
 is NULL.</td>
-</tr>
-</table>
-
-<p>
-<hr><a NAME="LB_Special_Malloc"></a>int <b>LB_Special_Malloc</b>(struct
-<b><a href="dev_lb_structs.html#LB_Struct">LB_Struct</a></b> *<i>lb</i>,
-void **<i>array</i>, int <i>size</i>, <b>LB_SPECIAL_MALLOC_TYPE</b> <i>type</i>);&nbsp;
-<hr>
-<p>The <b>LB_Special_Malloc</b> routine allocates memory for result arrays
-like <i>import_global_ids</i>, <i>import_local_ids</i>, <i>import_procs</i>,
-<i>export_global_ids</i>,
-<i>export_local_ids</i> and <i>export_procs</i>. Since these arrays are
-returned to the application, they must be allocated by <b>LB_Special_Malloc</b>
-to insure they are allocated by the same language as the application. Memory
-allocated by <b>LB_Special_Malloc</b> must be deallocated by <b>LB_Special_Free</b>.
-<br>&nbsp;
-<table WIDTH="100%" >
-<tr VALIGN=TOP>
-<td VALIGN=TOP WIDTH="20%"><b>Parameters:</b></td>
-
-<td></td>
-</tr>
-
-<tr>
-<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; lb</i></td>
-
-<td>The load balancing structure currently in use.</td>
-</tr>
-
-<tr>
-<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; array</i></td>
-
-<td>Usually of type int**, <b><a href="../ug_html/ug_usage.html#Macro defs">LB_GID</a></b>**,
-or <b><a href="../ug_html/ug_usage.html#Macro defs">LB_LID</a></b>**. Returned
-as a pointer to the allocated space.</td>
-</tr>
-
-<tr>
-<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; size</i></td>
-
-<td>The number of elements (not bytes) to be allocated.</td>
-</tr>
-
-<tr>
-<td VALIGN=TOP>&nbsp;&nbsp;&nbsp; <i>type</i></td>
-
-<td>The type of array to allocate. Must be one of <b>LB_SPECIAL_MALLOC_INT</b>,
-<b>LB_SPECIAL_MALLOC_GID</b> or <b>LB_SPECIAL_MALLOC_LID</b>.</td>
-</tr>
-
-<tr>
-<td><b>Returned Value:</b></td>
-
-<td></td>
-</tr>
-
-<tr>
-<td VALIGN=TOP>&nbsp;&nbsp; int</td>
-
-<td>1 if the allocation succeeded; 0 if it failed.</td>
-</tr>
-
-<tr>
-<td VALIGN=TOP><b>Example:</b></td>
-
-<td></td>
-</tr>
-
-<tr>
-<td VALIGN=TOP></td>
-
-<td>ierr = <b>LB_Special_Malloc</b>(<i>lb</i>, (void **)<i>import_gid</i>,
-<i>num_import</i>,
-<b>LB_SPECIAL_MALLOC_GID</b>);</td>
-</tr>
-
-<tr>
-<td VALIGN=TOP></td>
-
-<td>Allocates an array with <i>num_import</i> <a href="../ug_html/ug_usage.html#Macro defs"><b>LB_GID</b>s</a>.</td>
-</tr>
-</table>
-
-<p>
-<hr><a NAME="LB_Special_Free"></a>int <b>LB_Special_Free</b>(struct <b><a href="dev_lb_structs.html#LB_Struct">LB_Struct</a></b>
-*<i>lb</i>, void **<i>array</i>,<b> LB_SPECIAL_MALLOC_TYPE</b> <i>type</i>);&nbsp;
-<hr>
-<p><b>LB_Special_Free</b> frees memory allocated by <b>LB_Special_Malloc</b>.
-<br>&nbsp;
-<table WIDTH="100%" >
-<tr VALIGN=TOP>
-<td VALIGN=TOP WIDTH="20%"><b>Parameters:</b></td>
-
-<td></td>
-</tr>
-
-<tr>
-<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; lb</i></td>
-
-<td>The load balancing structure currently in use.</td>
-</tr>
-
-<tr>
-<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; array</i></td>
-
-<td>The array to be freed.</td>
-</tr>
-
-<tr>
-<td VALIGN=TOP>&nbsp;&nbsp;&nbsp; <i>type</i></td>
-
-<td>The type of the array. Must be one of <b>LB_SPECIAL_MALLOC_INT</b>,
-<b>LB_SPECIAL_MALLOC_GID</b> or <b>LB_SPECIAL_MALLOC_LID</b>.</td>
-</tr>
-
-<tr>
-<td><b>Returned Value:</b></td>
-
-<td></td>
-</tr>
-
-<tr>
-<td VALIGN=TOP>&nbsp;&nbsp; int</td>
-
-<td>1 if the deallocation succeeded; 0 if it failed.</td>
-</tr>
-
-<tr>
-<td VALIGN=TOP><b>Example:</b></td>
-
-<td></td>
-</tr>
-
-<tr>
-<td VALIGN=TOP></td>
-
-<td>ierr = <b>LB_Special_Free</b>(<i>lb</i>, (void **)<i>import_gid</i>,
-<b>LB_SPECIAL_MALLOC_GID</b>);</td>
-</tr>
-
-<tr>
-<td VALIGN=TOP></td>
-
-<td>Frees the <b><a href="../ug_html/ug_usage.html#Macro defs">LB_GID</a></b>
-array <i>import_gid</i>.</td>
 </tr>
 </table>
 

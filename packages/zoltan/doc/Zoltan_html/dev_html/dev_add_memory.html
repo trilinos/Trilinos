@@ -21,28 +21,181 @@
 </head>
 <body bgcolor="#FFFFFF">
 
-<div ALIGN=right><b><i><a href="dev.html">Zoltan Developer's Guide</a>&nbsp; |&nbsp; <a href="dev_add_params.html">Next</a>&nbsp; |&nbsp; <a href="dev_add_struct.html">Previous</a></i></b></div>
-
+<div align=right><b><i><a href="dev.html">Zoltan Developer's Guide</a>&nbsp;
+|&nbsp; <a href="dev_add_params.html">Next</a>&nbsp; |&nbsp; <a href="dev_add_struct.html">Previous</a></i></b></div>
 
 <h2>
-Memory Management in Load-Balancing Algorithms in Zoltan</h2>
+Memory Management in Zoltan Load-Balancing Algorithms</h2>
 Zoltan contains a set of <a href="dev_util_mem.html">memory management
 routines</a>. It is strongly recommended that load-balancing algorithm
 developers use <a href="dev_util_mem.html#LB_Malloc"><b>LB_Malloc</b> </a>and
-<a href="dev_util_mem.html#LB_Free"><b>LB_Free</b> </a>instead of the standard
-C routines. A special case is when a dynamic structure needs to be returned
-to the application. The only situation where this happens, is when the
-algorithm builds import or export lists of data to migrate. There are two
-special routines for this purpose, called <b><a href="dev_util_mem.html#LB_Special_Malloc">LB_Special_Malloc</a></b>
-and <b><a href="dev_util_mem.html#LB_Special_Free">LB_Special_Free</a></b>.
-It is required to use these functions. The reason is that the load-balancing
-algorithm does not know which language the application uses, and hence
-cannot allocate memory in a way that is compatible with the application.
+<b><a href="dev_util_mem.html#LB_Free">LB_Free</a></b>instead
+of the standard C routines for most memory management.
+<p>When a dynamic structure needs to be returned to the application, however,
+special memory allocation routines are needed.&nbsp; For example, the import
+and export lists of data to migrate are returned to an application from
+<b><a href="../ug_html/ug_interface_lb.html#LB_Balance">LB_Balance</a></b>.
+There are two special routines for managing memory for such situations,
+called <b><a href="#LB_Special_Malloc">LB_Special_Malloc</a></b> and <b><a href="#LB_Special_Free">LB_Special_Free</a></b>.
+Algorithms must use these functions to maintain compatibility with both
+C and Fortran90 applications; these special routines manage memory in a
+way that is compatible with both languages.
 <p>Some load-balancing algorithms may contain persistent data structures,
 that is, data structures that are preserved between calls to the load-balancing
 routine. The <i>lb</i> structure contains a field<i> lb->Data_Structure</i>
-for this purpose. The developer should write a function that frees this
-data structure.&nbsp; Use <b>LB_RCB_Free_Structure </b>as an example.
+for this purpose, allowing multiple load-balancing structures to preserve
+their own decomposition data. The developer should write a function that
+frees this data structure.&nbsp; Use <b>LB_RCB_Free_Structure </b>as an
+example.
+<p>
+<hr><a NAME="LB_Special_Malloc"></a>int <b>LB_Special_Malloc</b>(struct
+<b><a href="dev_lb_structs.html#LB_Struct">LB_Struct</a></b>
+*<i>lb</i>, void **<i>array</i>, int <i>size</i>, <b>LB_SPECIAL_MALLOC_TYPE</b><i>type</i>);&nbsp;
+<hr>
+<p>The <b>LB_Special_Malloc</b> routine allocates memory for result arrays
+like <i>import_global_ids</i>, <i>import_local_ids</i>, <i>import_procs</i>,
+<i>export_global_ids</i>,
+<i>export_local_ids</i>
+and <i>export_procs</i>. Since these arrays are returned to the application,
+they must be allocated by <b>LB_Special_Malloc</b> to insure they are allocated
+by the same language as the application. Memory allocated by <b>LB_Special_Malloc</b>
+must be deallocated by <b><a href="#LB_Special_Free">LB_Special_Free</a></b>.
+<br>&nbsp;
+<table WIDTH="100%" >
+<tr VALIGN=TOP>
+<td VALIGN=TOP WIDTH="20%"><b>Parameters:</b></td>
+
+<td></td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; lb</i></td>
+
+<td>The load balancing structure currently in use.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; array</i></td>
+
+<td>Usually of type int**, <b><a href="../ug_html/ug_usage.html#Macro defs">LB_GID</a></b>**,
+or <b><a href="../ug_html/ug_usage.html#Macro defs">LB_LID</a></b>**. Returned
+as a pointer to the allocated space.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; size</i></td>
+
+<td>The number of elements (not bytes) to be allocated.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP>&nbsp;&nbsp;&nbsp; <i>type</i></td>
+
+<td>The type of array to allocate. Must be one of <b>LB_SPECIAL_MALLOC_INT</b>,
+<b>LB_SPECIAL_MALLOC_GID</b>
+or <b>LB_SPECIAL_MALLOC_LID</b>.</td>
+</tr>
+
+<tr>
+<td><b>Returned Value:</b></td>
+
+<td></td>
+</tr>
+
+<tr>
+<td VALIGN=TOP>&nbsp;&nbsp; int</td>
+
+<td>1 if the allocation succeeded; 0 if it failed.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><b>Example:</b></td>
+
+<td></td>
+</tr>
+
+<tr>
+<td VALIGN=TOP></td>
+
+<td>ierr = <b>LB_Special_Malloc</b>(<i>lb</i>, (void **)<i>import_gid</i>,
+<i>num_import</i>,
+<b>LB_SPECIAL_MALLOC_GID</b>);</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP></td>
+
+<td>Allocates an array with <i>num_import</i> <a href="../ug_html/ug_usage.html#Macro defs"><b>LB_GID</b>s</a>.</td>
+</tr>
+</table>
+
+<p>
+<hr><a NAME="LB_Special_Free"></a>int <b>LB_Special_Free</b>(struct <b><a href="dev_lb_structs.html#LB_Struct">LB_Struct</a></b>
+*<i>lb</i>, void **<i>array</i>,<b> LB_SPECIAL_MALLOC_TYPE</b> <i>type</i>);&nbsp;
+<hr>
+<p><b>LB_Special_Free</b> frees memory allocated by <b><a href="#LB_Special_Malloc">LB_Special_Malloc</a></b>.
+<br>&nbsp;
+<table WIDTH="100%" >
+<tr VALIGN=TOP>
+<td VALIGN=TOP WIDTH="20%"><b>Parameters:</b></td>
+
+<td></td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; lb</i></td>
+
+<td>The load balancing structure currently in use.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; array</i></td>
+
+<td>The array to be freed.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP>&nbsp;&nbsp;&nbsp; <i>type</i></td>
+
+<td>The type of the array. Must be one of <b>LB_SPECIAL_MALLOC_INT</b>,
+<b>LB_SPECIAL_MALLOC_GID</b>
+or <b>LB_SPECIAL_MALLOC_LID</b>.</td>
+</tr>
+
+<tr>
+<td><b>Returned Value:</b></td>
+
+<td></td>
+</tr>
+
+<tr>
+<td VALIGN=TOP>&nbsp;&nbsp; int</td>
+
+<td>1 if the deallocation succeeded; 0 if it failed.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><b>Example:</b></td>
+
+<td></td>
+</tr>
+
+<tr>
+<td VALIGN=TOP></td>
+
+<td>ierr = <b>LB_Special_Free</b>(<i>lb</i>, (void **)<i>import_gid</i>,
+<b>LB_SPECIAL_MALLOC_GID</b>);</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP></td>
+
+<td>Frees the <b><a href="../ug_html/ug_usage.html#Macro defs">LB_GID</a></b>
+array <i>import_gid</i>.</td>
+</tr>
+</table>
+
+<br>&nbsp;
 <p>
 <hr WIDTH="100%">
 <br>[<a href="dev.html">Table of Contents</a>&nbsp; |&nbsp; <a href="dev_add_params.html">Next:&nbsp;

@@ -21,8 +21,8 @@
 </head>
 <body bgcolor="#FFFFFF">
 
-<div ALIGN=right><b><i><a href="dev.html">Zoltan Developer's Guide</a>&nbsp; |&nbsp; <a href="dev_dist_compile.html">Next</a>&nbsp; |&nbsp; <a href="dev_dist_cvs.html">Previous</a></i></b></div>
-
+<div align=right><b><i><a href="dev.html">Zoltan Developer's Guide</a>&nbsp;
+|&nbsp; <a href="dev_dist_compile.html">Next</a>&nbsp; |&nbsp; <a href="dev_dist_cvs.html">Previous</a></i></b></div>
 
 <h2>
 <a NAME="directories"></a>Layout of Directories</h2>
@@ -46,12 +46,11 @@ and described.
 <td VALIGN=TOP><i>lb</i></td>
 
 <td>Interface definitions (lbi_const.h), user data type definitions (lb_user_const.h),
-load-balancing data structure definitions (lb_const.h), interface
-functions (lb_balance.c, lb_eval.c, lb_init.c, lb_migrate.c, lb_set_fn.c, 
-lb_set_method.c, lb_struct.c), and functions related to the load-balancing 
-interface
-(lb_util.c, lb_util_const.h). See <a href="dev_lb_interface.html">Interface
-Functions</a>, <a href="dev_lb_types.html">Interface Data Types</a>, and
+load-balancing data structure definitions (lb_const.h), interface functions
+(lb_balance.c, lb_eval.c, lb_init.c, lb_migrate.c, lb_set_fn.c, lb_set_method.c,
+lb_struct.c), and functions related to the load-balancing interface (lb_util.c,
+lb_util_const.h). See <a href="dev_lb_interface.html">Interface Functions</a>,
+<a href="dev_lb_types.html">Interface Data Types</a>, and
 <a href="dev_lb_structs.html">Data
 Structures</a>.</td>
 </tr>
@@ -59,22 +58,13 @@ Structures</a>.</td>
 <tr>
 <td VALIGN=TOP><i>all</i></td>
 
-<td><a href="dev_util_mem.html">Memory allocation functions</a> (all_allo.c,
-all_allo_const.h). </td>
-</tr>
-
-<tr>
-<td VALIGN=TOP><i>comm</i></td>
-
-<td>Bruce Hendrickson and Steve Plimpton's <a href="dev_util_comm.html">unstructured
-communication package</a> (comm.c, comm_const.h).&nbsp;</td>
+<td><a href="dev_util_mem.html">Memory allocation functions</a>.&nbsp;</td>
 </tr>
 
 <tr>
 <td VALIGN=TOP><i>par</i></td>
 
-<td><a href="dev_util_parallel.html">Parallel computing utilities</a> (par_const.h,
-par_util.c).</td>
+<td><a href="dev_util_parallel.html">Parallel computing utilities</a>.</td>
 </tr>
 
 <tr>
@@ -126,10 +116,8 @@ algorithm and refinement tree data structure.</td>
 <tr>
 <td VALIGN=TOP><i>ch</i></td>
 
-<td>Routines to read 
-<a href="http://www.cs.sandia.gov/CRF/chac.html">Chaco</a>
-input files and build graphs for the driver
-program <i><a href="dev_driver.html">zdrive.</a></i></td>
+<td>Routines to read <a href="http://www.cs.sandia.gov/CRF/chac.html">Chaco</a>
+input files and build graphs for the driver program <i><a href="dev_driver.html">zdrive.</a></i></td>
 </tr>
 
 <tr>
@@ -142,6 +130,26 @@ program <i><a href="dev_driver.html">zdrive.</a></i></td>
 <td VALIGN=TOP><i>fort</i></td>
 
 <td>William Mitchell's Fortran interface for Zoltan.</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE><i>Utilities/Memory</i></td>
+
+<td VALIGN=TOP NOSAVE><a href="dev_util_mem.html">Memory management package</a></td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE><i>Utilities/Communication</i></td>
+
+<td VALIGN=TOP NOSAVE><a href="dev_util_comm.html">Unstructured communication
+package</a></td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE><i>Utilities/Config</i></td>
+
+<td VALIGN=TOP NOSAVE><a href="dev_dist_compile.html">Platform-specific
+makefile definitions</a> for compiler, library and include-file paths.</td>
 </tr>
 
 <tr>
@@ -172,13 +180,6 @@ program <i><a href="dev_driver.html">zdrive.</a></i></td>
 <td><i>docs/Zoltan_html/dev_html</i></td>
 
 <td><a href="dev.html">Developer's guide</a> in HTML format.</td>
-</tr>
-
-<tr VALIGN=TOP NOSAVE>
-<td NOSAVE><i>Makefiles</i></td>
-
-<td><a href="dev_dist_compile.html">Platform-specific makefiles</a> defining
-compiler, library and include-file paths.</td>
 </tr>
 
 <caption ALIGN=BOTTOM><i>The directory structure of the Zoltan distribution.</i></caption>

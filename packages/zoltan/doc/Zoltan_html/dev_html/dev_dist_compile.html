@@ -29,65 +29,66 @@
 The Zoltan distribution includes a main (top-level) Makefile with targets
 for the Zoltan library and the test driver programs. When the library is
 compiled for a specific target platform, <i>A</i>, the top-level Makefile
-obtains platform-specific values for platform <i>A</i> from the lower-level
-makefile <i>Makefiles/Makefile.A</i>.&nbsp; This lower-level file should
+obtains platform-specific values for platform <i>A</i> from the configuration
+file <i>Utilities/Config/Config.A</i>.&nbsp; This file should
 be edited to reflect the environment of the target platform <i>A</i>.&nbsp;
-Examples of platform-specific makefiles included with the Zoltan distribution
+Examples of platform-specific configuration files 
+included with the Zoltan distribution
 are listed in the <a href="#Architectures table">table</a> below.&nbsp;
 A subdirectory, <i>Obj_A</i>, is created, and Makefile_sub is copied into
 that directory for use by make.
 <br>&nbsp;
 <center><table BORDER WIDTH="90%" NOSAVE >
 <tr>
-<th><a NAME="Architectures table"></a>Target-specific Makefile</th>
+<th><a NAME="Architectures table"></a>Target-specific Configuration file</th>
 
 <th>Architecture</th>
 </tr>
 
 <tr VALIGN=TOP NOSAVE>
-<td NOSAVE>Makefile.generic</td>
+<td NOSAVE>Config.generic</td>
 
-<td>A well-commented template for new lower-level makefiles.</td>
+<td>A well-commented template for new configuration files.</td>
 </tr>
 
 <tr>
-<td VALIGN=TOP>Makefile.smos</td>
+<td VALIGN=TOP>Config.smos</td>
 
 <td>Intel Paragon running SUNMOS (sipapu).</td>
 </tr>
 
 <tr>
-<td VALIGN=TOP>Makefile.tflop</td>
+<td VALIGN=TOP>Config.tflop</td>
 
 <td>Sandia/Intel Teraflops (ASCI Red) computer (janus).</td>
 </tr>
 
 <tr>
-<td VALIGN=TOP>Makefile.solaris</td>
+<td VALIGN=TOP>Config.solaris</td>
 
 <td>Sun workstations running Solaris.</td>
 </tr>
 
 <tr>
-<td>Makefile.cplant</td>
+<td>Config.cplant</td>
 
 <td>CPlant parallel computing system (alaska).</td>
 </tr>
 
 <tr>
-<td VALIGN=TOP>Makefile.nistsun</td>
+<td VALIGN=TOP>Config.nistsun</td>
 
 <td>Sun workstations at NIST running Solaris.</td>
 </tr>
 
 <tr>
-<td VALIGN=TOP>Makefile.nistlinux</td>
+<td VALIGN=TOP>Config.nistlinux</td>
 
 <td>Intel PC workstations at NIST running Linux.</td>
 </tr>
 
-<caption ALIGN=BOTTOM><i>Platform-specific makefiles provided in the Makefiles
-subdirectory of the Zoltan distribution.</i></caption>
+<caption ALIGN=BOTTOM><i>Platform-specific configuration files provided in the 
+Utilities/Config subdirectory of the Zoltan distribution.</i></caption>
 </table></center>
 
 <p>The GNU <i>gmake</i> utility is used
@@ -105,9 +106,9 @@ where the options that can be specified are listed below.
 <td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; ZOLTAN_ARCH=&lt;platform></i></td>
 
 <td>Specify the target architecture for the Zoltan library.&nbsp; A corresponding
-file, <i>Makefiles/Makefile.&lt;platform></i>, containing environment definitions
+file, <i>Utilities/Config/Config.&lt;platform></i>, containing environment definitions
 for <i>&lt;platform</i>>, must be created in the
-<i>Makefiles</i> directory.</td>
+<i>Utilities/Config</i> directory.</td>
 </tr>
 
 <tr>

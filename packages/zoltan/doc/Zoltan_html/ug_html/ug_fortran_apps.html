@@ -42,7 +42,7 @@ of the application (or use symbolic links).
 <P>The Fortran interface is built into the same library file as the rest
 of Zoltan, which is found during the compiler link phase with <I>-lzoltan</I>.
 Thus an example compilation line would be
-<UL>f90 -I&lt;path to Zoltan&gt;/fort application.f90 -lzoltan</UL>
+<UL>f90 -I&lt;path to Zoltan&gt;/fort application.f90 -lzoltan -lzoltan_comm -lzoltan_mem</UL>
 
 
 <P>

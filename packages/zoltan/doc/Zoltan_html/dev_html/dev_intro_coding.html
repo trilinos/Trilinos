@@ -68,17 +68,24 @@ to many different platforms. It will be especially important as the code
 is extended to heterogeneous computing systems.
 
 <P>Some useful communication utilities are provided within the library
-to perform irregular communication and synchronization. See <A HREF="dev_util_comm.html">Irregular
-Communication Library</A> and <A HREF="dev_util_parallel.html">Parallel
+to perform unstructured communication and synchronization. See <A HREF="dev_util_comm.html">Unstructured
+Communication Package</A> and <A HREF="dev_util_parallel.html">Parallel
 Computing</A>.
 <BR>&nbsp;
 <H3>
 <A NAME="memory1"></A>Memory Management</H3>
 It is strongly suggested that all memory allocation in the library is handled
-using the functions supplied in <I>all/all_allo.c</I>. Use of these functions
+using the functions supplied in <I>Utilities/Memory</I>. Use of these functions
 will make debugging and maintenance of the library much easier as the library
-gets larger. See <A HREF="dev_util_mem.html">Memory Management</A> for
-information on the memory management utilities.
+gets larger. See <A HREF="dev_util_mem.html">Memory Management Package</A> for
+information on the memory management utilities.<p>
+
+For memory that is returned by Zoltan to an application, however, special
+memory allocation functions must be used to maintain compatibility with
+both C and Fortran90 applications.  See <a href="dev_add_memory.html">
+Memory Management in Zoltan Load-Balancing Algorithms</a> for more 
+information.
+
 <BR>&nbsp;
 <H3>
 <A NAME="return"></A>Errors &amp; Return Codes</H3>
