@@ -2709,3 +2709,54 @@ int ML_AGG_DinvP(ML_Operator *Ptemp, struct MLSthing *mls_widget,
      return 0;
 }
 
+/******************************************************************************
+Regenerate the multigrid hierarchy using smoothed aggregation reusing the 
+existing aggregates.
+******************************************************************************/
+
+int  ML_Gen_MultiLevelHierarchy_UsingSmoothedAggr_ReuseExistingAgg(ML *ml,
+								   ML_Aggregate *ag)
+{
+   int mesh_level, old_mesh_level;
+   ML_Operator *mat;
+
+   mesh_level = ml->ML_finest_level;
+   if (ag->keep_P_tentative != ML_YES) {
+     printf("ML_Gen_MultiLevelHierarchy_UsingSmoothedAggr_ReuseExistingAgg: must save\n");
+     printf("   aggregation information by setting ML_Aggregate_Set_Reuse(...)\n");
+     exit(-1);
+   }
+
+   while( ml->SingleLevel[mesh_level].Rmat->to != NULL) {
+     old_mesh_level = mesh_level;
+     mesh_level = ml->SingleLevel[mesh_level].Rmat->to->levelnum;
+     /* clean and regenerate P */
+
+     mat = &(ml->Pmat[mesh_level]);
+
+     if (ag->smoothP_damping_factor != 0.0 ) {
+       ML_Operator_Clean(mat);
+       ML_Operator_Init(mat,ml->comm);
+       ML_MultiLevel_Gen_Prolongator(ml, old_mesh_level, mesh_level, (void*) ag);
+     }
+
+     /* clean and regenerate R */
+
+     mat = &(ml->Rmat[old_mesh_level]);
+     if (ag->smoothP_damping_factor != 0.0 ) {
+       ML_Operator_Clean(mat);
+       ML_Operator_Init(mat,ml->comm);
+       ML_MultiLevel_Gen_Restriction(ml, old_mesh_level, mesh_level, (void *)ag);
+     }
+
+     /* clean and regenerate A */
+
+     mat = &(ml->Amat[mesh_level]);
+     ML_Operator_Clean(mat);
+     ML_Operator_Init(mat,ml->comm);
+     ML_Gen_AmatrixRAP(ml, old_mesh_level, mesh_level);
+   }
+
+   return 0;
+}
+
