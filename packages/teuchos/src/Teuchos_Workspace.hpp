@@ -38,8 +38,7 @@ class WorkspaceStore;
 class RawWorkspace;
 
 ///
-/** \defgroup Teuchos_Workspace_grp Set of utilities for allocating
- * temporary workspace.
+/** \defgroup Teuchos_Workspace_grp Set of utilities for allocating temporary workspace.
  *
  * The goal of this set of utilities is to allow the user to create
  * arrays of uninitialized or default initialized objects as automatic
