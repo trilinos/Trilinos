@@ -33,7 +33,7 @@
 #ifndef NOX_STATUS_TEST_H
 #define NOX_STATUS_TEST_H
 
-#include <iostream>
+#include "NOX_Common.H"
 
 namespace NOX {
 
