@@ -1309,6 +1309,28 @@ string ML_toString(const double& x) {
 }
 
 
+/*----------------------------------------------------------------------*
+ |                                                           m.gee 03/05|
+ |                                                                      |
+ | reads an update vector from file and creates an Epetra_Map from it.  |
+ |                                                                      |
+ | the file has the following format:                                   |
+ | first line: <number_global_elements>  <number_of_procs>              |
+ | following lines: <rownumber> <proc_number> -1                        |
+ |                                                                      |
+ | the file has to have <number_global_elements> + 1 rows               |
+ |                                                                      |
+ | Input:  char* filename        name of file to read from              |
+ |         Epetra_Comm& comm     a valid Epetra_Comm                    |
+ |                                                                      |
+ | Output: Epetra_Map*           an allocated Epetra_Map class          |
+ |                               (the calling user is responsible       |
+ |                                for destroying this)                  |
+ |                                                                      |
+ | returns Epetra_Map* on success, NULL otherwise                       |
+ |                                                                      |
+ |                                                                      |
+ *----------------------------------------------------------------------*/
 Epetra_Map* Epetra_ML_readupdatevector(char* filename, Epetra_Comm& comm)
 {
   char  buffer[200];
@@ -1369,9 +1391,6 @@ Epetra_Map* Epetra_ML_readupdatevector(char* filename, Epetra_Comm& comm)
         ++counter;
      }
   }   
-  cout << numeq << endl;
-  cout << counter << endl;  
-  
   delete [] gupdate; gupdate = 0;
   
   map = new Epetra_Map(numeq_total,numeq,update,0,comm);
@@ -1379,6 +1398,31 @@ Epetra_Map* Epetra_ML_readupdatevector(char* filename, Epetra_Comm& comm)
   return map;
 }
 
+/*----------------------------------------------------------------------*
+ |                                                           m.gee 03/05|
+ |                                                                      |
+ | reads a matrix in aztec format                                       |
+ |                                                                      |
+ | the file has the following format:                                   |
+ | first line: <number_global_rows>                                     |
+ | following lines:                                                     |
+ | <globalrownumb> <val_main_diag> <globalcolnumb> <value> ... -1       |
+ |                                                                      |
+ | the file has to have <number_global_rows> + 1 rows                   |
+ |                                                                      |
+ | Input:  char* filename        name of file to read from              |
+ |         Epetra_Map& dmap       a valid Epetra_Map used as RowMap     |
+ |         Epetra_Comm& comm     a valid Epetra_Comm                    |
+ |                                                                      |
+ | Output: Epetra_CrsMatrix*      an allocated Epetra_CrsMatrix class   |
+ |                               (the calling user is responsible       |
+ |                                for destroying this)                  |
+ |                                                                      |
+ | returns Epetra_CrsMatrix* on success, NULL otherwise                 |
+ |                                                                      |
+ |                                                                      |
+ | WARNING/FIXME: works for square matrices only at the moment          |                                                                      |
+ *----------------------------------------------------------------------*/
 Epetra_CrsMatrix* Epetra_ML_readaztecmatrix(char* filename,Epetra_Map& map,Epetra_Comm& comm)
 {
    char  buffer[10000];
@@ -1452,6 +1496,28 @@ Epetra_CrsMatrix* Epetra_ML_readaztecmatrix(char* filename,Epetra_Map& map,Epetr
 
 
 
+/*----------------------------------------------------------------------*
+ |                                                           m.gee 03/05|
+ |                                                                      |
+ | reads a vector in aztec format                                       |
+ |                                                                      |
+ | the file has the following format:                                   |
+ | first line: <number_global_rows>                                     |
+ | following lines:                                                     |
+ | <globalrownumb> <val_> -1                                            |
+ |                                                                      |
+ | the file has to have <number_global_rows> + 1 rows                   |
+ |                                                                      |
+ | Input:  char* filename             name of file to read from         |
+ | Output: Epetra_MultiVector& Vector valid Epetra_MultiVector          |
+ |                                     matching the map                 |
+ | Input:  Epetra_Map& map            a valid Epetra_Map                |
+ |         Epetra_Comm& comm          a valid Epetra_Comm               |
+ |         int ivec                   indice of vector to put values in |
+ |                                                                      |
+ | returns true on success, false otherwise                             |
+ |                                                                      |
+ *----------------------------------------------------------------------*/
 bool Epetra_ML_readaztecvector(char* filename, Epetra_MultiVector& Vector, 
                                Epetra_Map& map,Epetra_Comm& comm, int ivec)
 {
@@ -1522,6 +1588,153 @@ bool Epetra_ML_readaztecvector(char* filename, Epetra_MultiVector& Vector,
 
   return true;
 }                               
+
+
+/*----------------------------------------------------------------------*
+ |                                                           m.gee 03/05|
+ |                                                                      |
+ | reads variable block information                                     |
+ |                                                                      |
+ | the file has the following format:                                   |
+ | first line: <number_global_blocks>                                   |
+ | following lines:                                                     |
+ | <blocksize> <globalrownumber1> <pde_number1>  ...                    |
+ |                                                                      |
+ | the file has to have <number_global_blocks> + 1 rows                 |
+ |                                                                      |
+ | Input:  char* filename             name of file to read from         |
+ |         Epetra_Map& map            a valid Epetra_Map                |
+ |         Epetra_Comm& comm          a valid Epetra_Comm               |
+ | Output  int** blocks               *blocks points to allocated       |
+ |                                    vector matching map holding       |
+ |                                    global block indices              |
+ |         int** block_pde            *block_pde points to allocated    |
+ |                                    vector matching map holding       |
+ |                                    number of pde equation each entry |
+ |                                    in *blocks belongs to             |
+ |                                                                      |
+ |                                                                      |
+ | WARNING: The routine expects the map not to cut a single block onto  |
+ |          several processors! It will return false if otherwise       |
+ |                                                                      |
+ | Returns true and allocated *blocks/*block_pde on success,            |
+ | returns false and *blocks=NULL/*block_pde=NULL otherwise             |
+ |                                                                      |
+ *----------------------------------------------------------------------*/
+bool Epetra_ML_readvariableblocks(char* filename, Epetra_Map& map,
+                                  Epetra_Comm& comm, 
+                                  int**blocks, int** block_pde)
+{
+  char  buffer[1000];
+  char* bptr      = 0;
+
+  int  numeq_total = map.NumGlobalElements();
+  int  numeq       = map.NumMyElements();
+  int  nproc       = comm.NumProc();
+  int  proc        = comm.MyPID();
+
+  FILE *fp = fopen(filename,"r");
+  if (!fp) return false;
+  if (proc) 
+  {
+    fclose(fp);
+    fp = 0;
+  }
+
+  int nblocks = 0;
+  if (proc==0)
+  {
+     fgets(buffer,199,fp);
+     nblocks = strtol(buffer,&bptr,10); // read number of global blocks
+     fclose(fp); fp = 0;
+  }
+  comm.Broadcast(&nblocks,1,0);
+  if (!nblocks) return false;
+
+  *blocks    = new int[numeq];
+  *block_pde = new int[numeq];
+  
+  int block_counter=0;
+  int numeq_counter=0;
+  for (int activeproc=0; activeproc<nproc; activeproc++)
+  {
+     int   ok = 0;
+     FILE *fp = 0;
+     if (activeproc==proc)
+     {
+        fp = fopen(filename,"r");
+        if (fp)
+        {
+           ok = 1;
+           fgets(buffer,999,fp);
+        }
+        else ok = 0;
+     }
+     comm.Broadcast(&ok,1,activeproc);
+     if (!ok)
+     {
+        delete [] *blocks;    *blocks = 0;
+        delete [] *block_pde; *block_pde = 0;
+        return false;
+     }
+     ok = 1;
+     if (activeproc==proc)
+     {
+        for (int i=0; i<nblocks; i++)
+        {
+           fgets(buffer,199,fp);
+           int blocksize = strtol(buffer,&bptr,10);
+           if (!blocksize)
+           {
+              ok = 0;
+              break;
+           }
+           int myblock = 0;
+           for (int j=0; j<blocksize; j++)
+           {
+              int row = strtol(bptr,&bptr,10);
+              int pde = strtol(bptr,&bptr,10);
+              if (map.MyGID(row)==true)
+              {
+                 ++myblock;
+                 (*blocks)[numeq_counter]    = block_counter;
+                 (*block_pde)[numeq_counter] = pde;
+                 ++numeq_counter;
+              }
+              else if (j==0 && map.MyGID(row)==false)
+                 break;
+              else if (j>0 && map.MyGID(row)==false)
+              {
+                 cout << "**ERR** block split among several procs, abort reading\n";
+                 ok = 0;
+                 break;
+              }
+           }
+           if (myblock) ++block_counter;
+        if (!ok) break;
+        }
+        cout << "numeq " << numeq << endl;
+        cout << "numeq_counter " << numeq_counter << endl;
+     }
+     comm.Broadcast(&ok,1,activeproc);
+     if (!ok)
+     {
+        delete [] *blocks;    *blocks = 0;
+        delete [] *block_pde; *block_pde = 0;
+        return false;
+     }
+     comm.Broadcast(&block_counter,1,activeproc);
+  }
+  
+  if (nblocks != block_counter)
+  {
+     cout << "**ERR**  Something went wrong, final number of blocks: " << block_counter << endl
+          << "**ERR** not equal number of blocks from head of file : " << nblocks << endl;
+     throw -1;
+  }
+
+  return true;
+}                                  
 
 #else
 
