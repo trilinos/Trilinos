@@ -372,7 +372,9 @@ int SuperLU_Solve(void *vsolver,int ilen,double *x,int olen,double *rhs)
      solver->PERMspl = (void *) ScalePermstruct;
      solver->LUspl = (void *) LUstruct;
      solver->gridtiles = lugrid_tiles;
+/* rst?
      mygrid = ( gridinfo_t *) malloc( sizeof( gridinfo_t) );
+*/
    } else {
 
      /* Indicate that the factored form of A is supplied. */
@@ -415,9 +417,11 @@ printf("memory usage: fragments %d free: total %d, largest %d, total_used %d\n",
 */
 
    if ( flag == 0 ) {
+/* rst?
       ML_memory_free((void*)&(((NCformat *) A->Store)->rowind));
       ML_memory_free((void*)&(((NCformat *) A->Store)->colptr));
       ML_memory_free((void*)&(((NCformat *) A->Store)->nzval));
+*/
    }
    solver->reuse_flag = 1;
    PStatFree(&stat);
