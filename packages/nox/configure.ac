@@ -987,7 +987,7 @@ AC_ARG_WITH(epetra-libdir,
 
 AC_ARG_WITH(nox-epetraext,
 [AC_HELP_STRING([--with-nox-epetraext],[compile epetraext support into the noxepetra library])],
-[BUILD_NOX_EPETRAEXT_SUPPORT=${enableval}],
+[BUILD_NOX_EPETRAEXT_SUPPORT=${withval}],
 [BUILD_NOX_EPETRAEXT_SUPPORT=no]
 )
 AC_MSG_CHECKING(whether we should build epetraext support into the noxepetra library)
@@ -1003,7 +1003,7 @@ AC_ARG_WITH(epetraext-libdir,
 
 AC_ARG_WITH(nox-epetra-ml,
 [AC_HELP_STRING([--with-nox-epetra-ml],[compile ml support into the noxepetra library])],
-[BUILD_NOX_EPETRA_ML_SUPPORT=${enableval}],
+[BUILD_NOX_EPETRA_ML_SUPPORT=${withval}],
 [BUILD_NOX_EPETRA_ML_SUPPORT=no]
 )
 AC_MSG_CHECKING(whether we should build ml support into the noxepetra library)

@@ -9678,7 +9678,7 @@ fi;
 # Check whether --with-nox-epetraext or --without-nox-epetraext was given.
 if test "${with_nox_epetraext+set}" = set; then
   withval="$with_nox_epetraext"
-  BUILD_NOX_EPETRAEXT_SUPPORT=${enableval}
+  BUILD_NOX_EPETRAEXT_SUPPORT=${withval}
 else
   BUILD_NOX_EPETRAEXT_SUPPORT=no
 
@@ -9706,7 +9706,7 @@ fi;
 # Check whether --with-nox-epetra-ml or --without-nox-epetra-ml was given.
 if test "${with_nox_epetra_ml+set}" = set; then
   withval="$with_nox_epetra_ml"
-  BUILD_NOX_EPETRA_ML_SUPPORT=${enableval}
+  BUILD_NOX_EPETRA_ML_SUPPORT=${withval}
 else
   BUILD_NOX_EPETRA_ML_SUPPORT=no
 
