@@ -189,7 +189,7 @@ class Group : public Abstract::Group {
 
 protected:
   //! Types that define how the  construction of the preconditioner should be handled during a call to createPreconditioner().  
-  /*! Preconditioners are used in two methods: (1) during linear solves in applyJacobianInverse() and (2) for the method applyRightPreconditioner().  For the applyJacobianInverse() the preconditioner is created and destroyed "implicitly" in the linear solver.  The correct operator need only be set in the AztecOO solver and the solver will take care of creation and destruction.  The opposite is true for applyRightPreconditioner(). Here we must force an "explicit" construction and retention of the preconditioner since there will be multple calls to applyRightPreconditioner() that reuses the same preconditioner.  This flag type is used to specify the construction type.
+  /*! Preconditioners are used in two methods: (1) during linear solves in applyJacobianInverse() and (2) for the method applyRightPreconditioner().  For the applyJacobianInverse() the preconditioner is created and destroyed "implicitly" in the linear solver.  The correct operator need only be set in the AztecOO solver and the solver will take care of creation and destruction internally.  The opposite is true for applyRightPreconditioner(). Here we must force an "explicit" construction and retention of the preconditioner since there will be multple calls to applyRightPreconditioner() that reuses the same preconditioner.  This flag type is used to specify the construction type.
    */
   enum PrecConstructionType {ExplicitConstruction, ImplicitConstruction};
 
@@ -199,7 +199,6 @@ protected:
     <li> None - No operator was supplied (used only for preconditioner).
     <li> EpetraOperator - the user implements an Epetra_Operator derived object.
     <li> EpetraRowMatrix - the user implements an Epetra_RowMatrix derived object.
-    <li> IfpackEpetraOperator - Ifpack preconditioner that derives from the Epetra_Operator class.
     <li> NoxOperator - the user implements a NOX::Epetra::Operator derived object.
     <li> NoxFiniteDifferenceRowMatrix - the operator is a NOX::Epetra::FiniteDifference object that is derived from an Epetra_CrsMatrix. The compute() function evaluates the Jacobian using finite differencing.
     <li> NoxMatrixFreeOperator - The operator is a NOX::Epetra::MatrixFree object that derives from the Epetra_Operator class.  The compute() function evaluates the Jacobian.  
@@ -323,7 +322,11 @@ public:
   virtual bool isJacobian() const;
   virtual bool isGradient() const;
   virtual bool isNewton() const;
+
+  //! Returns true if the value of the Norm of the linear model for a full Newton step ||Js + f|| is valid with respect to the current solution vector.
   virtual bool isNormNewtonSolveResidual() const;
+
+  //! Returns true if an explicitly constructed preconditioner exists (i.e. one that is computed and saved for further use in multiple calls to applyRightPreconditioner).  
   virtual bool isPreconditioner() const;
 
   //@}
@@ -374,7 +377,7 @@ protected:
   //! Checks to make sure that the supplied operators are valid for the requested preconditioning options. 
   virtual bool checkOperatorConsistency();
   
-  //! Explicitly forces the allocation, and computation of the preconditioner based on the current solution vector.  It then sets the correct preconditioning object (Operator or Epetra_RowMatrix) in the AztecOO solver object.  The first argument tells the method whether or not to enforce explicit construction of th preconditioner so that it is saved for reuse.
+  //! Computes a precoditioning matrix based on the current solution vector.  It then sets the correct preconditioning object (Operator or Epetra_RowMatrix) in the AztecOO solver object.  The first argument tells the method whether or not to enforce explicit construction of the preconditioner so that it is saved for reuse.
   virtual bool createPreconditioner(PrecConstructionType c, 
 				    Parameter::List& p) const;
   
@@ -476,7 +479,9 @@ protected:
    <li> "None" - no precondtioning is used.
    <li> "AztecOO: Jacobian Matrix" - AztecOO preconditioner is used.  This requires an explicit Jacobian Matrix.  Therefore the Jacobian matrix must be an Epetra_RowMatrix or a NOX_FiniteDifference object.
    <li> "AztecOO: User RowMatrix" - AztecOO preconditioner is used. This requires an explicit Epetra_RowMatrix that is NOT the same as the Jacobian.  This was specifically written for "Matrix-Free" mode when there is no explicit Matrix for the Jacobian.  
-   <li> "User Supplied Preconditioner" - user supplied routine computes preconditioner and applies it to vector.  The user must implement the routine as an Epetra_Operator class such that the Apply() function preconditions the incoming vector. 
+   <li> "IFPACK: Jacobian Matrix" - IFPACK preconditioner is used.  This requires an explicit Jacobian Matrix.  Therefore the Jacobian matrix must be an Epetra_RowMatrix or a NOX_FiniteDifference object.
+   <li> "IFPACK: User RowMatrix" - IFPACK preconditioner is used. This requires an explicit Epetra_RowMatrix that is NOT the same as the Jacobian.  This was specifically written for "Matrix-Free" mode when there is no explicit Matrix for the Jacobian.  
+   <li> "User Supplied Preconditioner" - user supplied routine that computes the preconditioner and applies it to a vector.  The user must implement the routine as an Epetra_Operator class such that the ApplyInverse() function preconditions the incoming vector. 
    </ul>
   */ 
   string preconditioner;
