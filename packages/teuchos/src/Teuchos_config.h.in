@@ -92,6 +92,12 @@
 /* define if the compiler accepts the new for scoping rules */
 #undef HAVE_NEW_FOR_SCOPING
 
+/* Define to 1 if you have the `pow' function. */
+#undef HAVE_POW
+
+/* Define to 1 if you have the `sqrt' function. */
+#undef HAVE_SQRT
+
 /* Define to 1 if you have the <sstream> header file. */
 #undef HAVE_SSTREAM
 

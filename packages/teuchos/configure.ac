@@ -351,7 +351,7 @@ fi
 dnl Replace `main' with a function in -lm:
 #  #np# These lines can be removed if the math lib is not needed.
 AC_SEARCH_LIBS(pow,[m],,AC_MSG_ERROR(Cannot find math library))
-AC_SEARCH_LIBS(sqrt,[m],,AC_MSG_ERROR(Cannot find math library))
+AC_CHECK_FUNCS([pow sqrt])
 
 # #np# - Yet another opportunity to remove code if you aren't
 # using Fortran
