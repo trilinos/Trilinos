@@ -26,13 +26,20 @@ extern "C" {
 #include "zoltan_util.h"
 
 /*****************************************************************************/
-/*****************************************************************************/
+/***   Function prototypes: 
 /*****************************************************************************/
 
 static void Zoltan_Print_Assigned_Param_Vals(PARAM_VARS * );
 
 /*****************************************************************************/
+/***   Local macros:
 /*****************************************************************************/
+#define SET_PARAM_VAL(datatype,len,value) { \
+  for (i=0; i<len; i++) \
+    ((datatype *) param_ptr->ptr)[i] = value; \
+  }
+/*****************************************************************************/
+/***   Function definitions:
 /*****************************************************************************/
 
 int      Zoltan_Assign_Param_Vals(
@@ -47,8 +54,10 @@ int print_proc                  /* processor that should perform printing */
     char      msg[256];
     char     *name;		/* name of parameter being reset */
     char     *val;		/* new value for parameter       */
+    int       index;		/* index of parameter entry      */
     int       found;		/* is name found?                */
     int       ierr;		/* error code                    */
+    int       i;		/* loop variable                 */
     PARAM_VARS *param_ptr;      /* pointer to current param      */
 
     ierr = ZOLTAN_OK;
@@ -57,6 +66,7 @@ int print_proc                  /* processor that should perform printing */
         param_ptr = params;
 	name = change_list->name;
 	val = change_list->new_val;
+	index = change_list->index;
 
 	found = 0;
 	while (param_ptr->name != NULL) {
@@ -79,47 +89,65 @@ int print_proc                  /* processor that should perform printing */
                 ZOLTAN_PRINT_WARN(proc, yo, msg);
              }
           }
-          else {
+
+          /* Check that index is in valid range */
+          if ((index > param_ptr->length) || (index < -1)) {
+             ierr = ZOLTAN_WARN;
+             if (debug_level > 0 && proc == print_proc) {
+                sprintf(msg, "Invalid index %d for parameter %s. "
+                       "Parameter entry ignored.\n", 
+                        index, param_ptr->name);
+                ZOLTAN_PRINT_WARN(proc, yo, msg);
+             }
+          }
+
+          if (ierr == ZOLTAN_OK) { /* OK so far. */
+
+            if (index == 0) 
+              index = 1;                  /* Scalar parameter. */
+            else if (index == -1)
+              index = param_ptr->length;  /* Set all entries in a vector. */
 
 	    /* Figure out what type it is and read value. */
 	    if (!strcmp(param_ptr->type, "INT") || 
                 !strcmp(param_ptr->type, "INTEGER")) {
 		/* First special case if True or False */
 		if (*val == 'T')
-		    *((int *) param_ptr->ptr) = 1;
+		    SET_PARAM_VAL(int, index, 1)
 		else if (*val == 'F')
-		    *((int *) param_ptr->ptr) = 0;
+		    SET_PARAM_VAL(int, index, 0)
 		else {
-		    *((int *) param_ptr->ptr) = atoi(val);
+		    SET_PARAM_VAL(int, index, atoi(val))
 		}
 	    }
 
 	    else if ((!strcmp(param_ptr->type, "FLOAT")) ||
 	             (!strcmp(param_ptr->type, "REAL"))) {
-		*((float *) param_ptr->ptr) = atof(val);
+		SET_PARAM_VAL(float, index, atof(val))
 	    }
 
 	    else if (!strcmp(param_ptr->type, "DOUBLE")) {
-		*((double *) param_ptr->ptr) = atof(val);
+		SET_PARAM_VAL(double, index, atof(val))
 	    }
 
 	    else if (!strcmp(param_ptr->type, "LONG")) {
 		/* First special case if True or False */
 		if (*val == 'T')
-		    *((long *) param_ptr->ptr) = 1;
+		    SET_PARAM_VAL(long, index, 1)
 		else if (*val == 'F')
-		    *((long *) param_ptr->ptr) = 0;
+		    SET_PARAM_VAL(long, index, 0)
 		else {
-		    *((long *) param_ptr->ptr) = atol(val);
+		    SET_PARAM_VAL(long, index, atol(val))
 		}
 	    }
 
-	    else if (!strcmp(param_ptr->type, "STRING")) {
-		strncpy((char *) param_ptr->ptr, val, MAX_PARAM_STRING_LEN);
+	    else if (!strcmp(param_ptr->type, "CHAR")) {
+		SET_PARAM_VAL(char, index, (*val))
 	    }
 
-	    else if (!strcmp(param_ptr->type, "CHAR")) {
-		*((char *) param_ptr->ptr) = *val;
+	    else if (!strcmp(param_ptr->type, "STRING")) {
+                /* String parameters are assumed to be scalar. */
+		strncpy((char *) param_ptr->ptr, val, MAX_PARAM_STRING_LEN);
 	    }
 	}
       }

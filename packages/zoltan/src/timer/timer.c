@@ -46,8 +46,8 @@ int *timer)                     /* output: timer type */
     int index;                  /* index returned from Check_Param */
     int status;
     PARAM_VARS Timer_params[] = {
-        { "TIMER", NULL, "STRING" },
-        { NULL, NULL, NULL }
+        { "TIMER", NULL, "STRING", 0 },
+        { NULL, NULL, NULL, 0 }
     };
     char *yo = "Zoltan_Set_Timer_Param";
 

@@ -37,12 +37,12 @@ extern "C" {
 
 /**********  parameters structure for ordering **********/
 static PARAM_VARS Order_params[] = {
-        { "ORDER_METHOD", NULL, "STRING" },
-        { "ORDER_TYPE", NULL, "STRING" },
-        { "ORDER_START_INDEX", NULL, "INT" },
-        { "REORDER", NULL, "BOOLEAN" },
-        { "USE_ORDER_INFO", NULL, "BOOLEAN" },
-        { NULL, NULL, NULL } };
+        { "ORDER_METHOD", NULL, "STRING", 0 },
+        { "ORDER_TYPE", NULL, "STRING", 0 },
+        { "ORDER_START_INDEX", NULL, "INT", 0 },
+        { "REORDER", NULL, "BOOLEAN", 0 },
+        { "USE_ORDER_INFO", NULL, "BOOLEAN", 0 },
+        { NULL, NULL, NULL, 0 } };
 
 int Zoltan_Order(
   ZZ *zz,               /* Zoltan structure */
@@ -55,7 +55,7 @@ int Zoltan_Order(
                         /* The application must allocate enough space */
   int *rank,            /* rank[i] is the rank of gids[i] */
   int *iperm,           /* inverse permutation of rank */
-  ZOS *order_info	/* Method-specific ordering info */
+  ZOS *order_info	/* Method-specific ordering info. Currently not used. */
 )
 {
 /*

@@ -29,31 +29,31 @@ extern "C" {
 
 /**********  parameters structure for parmetis methods **********/
 static PARAM_VARS Parmetis_params[] = {
-        { "PARMETIS_METHOD", NULL, "STRING" },
-        { "PARMETIS_OUTPUT_LEVEL", NULL, "INT" },
-        { "PARMETIS_SEED", NULL, "INT" },
-        { "PARMETIS_ITR", NULL, "DOUBLE" },
-        { "PARMETIS_USE_OBJ_SIZE", NULL, "INT" },
-        { "PARMETIS_COARSE_ALG", NULL, "INT" },
-        { "PARMETIS_FOLD", NULL, "INT" },
-        { NULL, NULL, NULL } };
+        { "PARMETIS_METHOD", NULL, "STRING", 0 },
+        { "PARMETIS_OUTPUT_LEVEL", NULL, "INT", 0 },
+        { "PARMETIS_SEED", NULL, "INT", 0 },
+        { "PARMETIS_ITR", NULL, "DOUBLE", 0 },
+        { "PARMETIS_USE_OBJ_SIZE", NULL, "INT", 0 },
+        { "PARMETIS_COARSE_ALG", NULL, "INT", 0 },
+        { "PARMETIS_FOLD", NULL, "INT", 0 },
+        { NULL, NULL, NULL, 0 } };
 
 /**********  parameters structure for jostle methods **********/
 static PARAM_VARS Jostle_params[] = {
-        { "JOSTLE_OUTPUT_LEVEL", NULL, "INT" },
-        { "JOSTLE_THRESHOLD", NULL, "INT" },
-        { "JOSTLE_GATHER_THRESHOLD", NULL, "INT" },
-        { "JOSTLE_MATCHING", NULL, "STRING" },
-        { "JOSTLE_REDUCTION", NULL, "STRING" },
-        { "JOSTLE_CONNECT", NULL, "STRING" },
-        { "JOSTLE_SCATTER", NULL, "STRING" },
-        { NULL, NULL, NULL } };
+        { "JOSTLE_OUTPUT_LEVEL", NULL, "INT", 0 },
+        { "JOSTLE_THRESHOLD", NULL, "INT", 0 },
+        { "JOSTLE_GATHER_THRESHOLD", NULL, "INT", 0 },
+        { "JOSTLE_MATCHING", NULL, "STRING", 0 },
+        { "JOSTLE_REDUCTION", NULL, "STRING", 0 },
+        { "JOSTLE_CONNECT", NULL, "STRING", 0 },
+        { "JOSTLE_SCATTER", NULL, "STRING", 0 },
+        { NULL, NULL, NULL, 0 } };
 
 /**********  parameters structure used by both ParMetis and Jostle **********/
 static PARAM_VARS Graph_params[] = {
-        { "CHECK_GRAPH", NULL, "INT" },
-        { "SCATTER_GRAPH", NULL, "INT" },
-        { NULL, NULL, NULL } };
+        { "CHECK_GRAPH", NULL, "INT", 0 },
+        { "SCATTER_GRAPH", NULL, "INT", 0 },
+        { NULL, NULL, NULL, 0 } };
 
 /***************  prototypes for internal functions ********************/
 

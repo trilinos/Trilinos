@@ -35,8 +35,8 @@ extern "C" {
 
 /* This structure is the Zoltan convention for user settable parameters */
 static PARAM_VARS HSFC_params[] =
-   {{"KEEP_CUTS", NULL, "INT"},
-    {NULL,        NULL,  NULL}};
+   {{"KEEP_CUTS", NULL, "INT", 0},
+    {NULL,        NULL,  NULL, 0}};
 
 
 /****************************************************************************/

@@ -66,15 +66,15 @@ static void print_rcb_tree(ZZ *, struct rcb_tree *);
 /*  Parameters structure for RCB method.  Used in  */
 /*  Zoltan_RCB_Set_Param and Zoltan_RCB.                   */
 static PARAM_VARS RCB_params[] = {
-                  { "RCB_OVERALLOC", NULL, "DOUBLE" },
-                  { "RCB_REUSE", NULL, "INT" },
-                  { "CHECK_GEOM", NULL, "INT" },
-                  { "RCB_OUTPUT_LEVEL", NULL, "INT" },
-                  { "KEEP_CUTS", NULL, "INT" },
-                  { "RCB_LOCK_DIRECTIONS", NULL, "INT" },
-                  { "RCB_SET_DIRECTIONS", NULL, "INT" },
-                  { "RCB_RECTILINEAR_BLOCKS", NULL, "INT" },
-                  { NULL, NULL, NULL } };
+                  { "RCB_OVERALLOC", NULL, "DOUBLE", 0 },
+                  { "RCB_REUSE", NULL, "INT", 0 },
+                  { "CHECK_GEOM", NULL, "INT", 0 },
+                  { "RCB_OUTPUT_LEVEL", NULL, "INT", 0 },
+                  { "KEEP_CUTS", NULL, "INT", 0 },
+                  { "RCB_LOCK_DIRECTIONS", NULL, "INT", 0 },
+                  { "RCB_SET_DIRECTIONS", NULL, "INT", 0 },
+                  { "RCB_RECTILINEAR_BLOCKS", NULL, "INT", 0 },
+                  { NULL, NULL, NULL, 0 } };
 
 /*---------------------------------------------------------------------------*/
 /*---------------------------------------------------------------------------*/

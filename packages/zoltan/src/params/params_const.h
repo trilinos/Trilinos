@@ -42,7 +42,8 @@ typedef struct Param_Vars {
   char *name;			/* Parameter variable name (all CAPS) */
   void *ptr;			/* Pointer to parameter variable */
   char *type;			/* type of parameter: */
-				/* INT, DOUBLE, LONG, STRING, or CHAR */
+				/* INT, FLOAT, DOUBLE, LONG, STRING, or CHAR */
+  int length;			/* length of vector; 0 if scalar */
 } PARAM_VARS;
 
 /* string length limit for param val. Allocate space of this + 1 */
@@ -78,6 +79,7 @@ typedef int ZOLTAN_SET_PARAM_VEC_FN(char *, int, char *);
 
 extern int Zoltan_Assign_Param_Vals(PARAM_LIST *, PARAM_VARS *, int, int, int);
 extern int Zoltan_Bind_Param(PARAM_VARS *, char *, void *);
+extern int Zoltan_Bind_Param_Vec(PARAM_VARS *, char *, void *, int);
 extern void Zoltan_Print_Params(PARAM_LIST *ptr);
 extern int Zoltan_Check_Param(char *, char *, PARAM_VARS *,
     PARAM_UTYPE *, int *);

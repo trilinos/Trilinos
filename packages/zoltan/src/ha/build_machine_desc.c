@@ -34,9 +34,9 @@ extern "C" {
 /****** Parameters structure for building machine description. *****/
 
 static PARAM_VARS Mach_params[] = {
-        { "USE_MACHINE_DESC", NULL, "INT" },
-        { "MACHINE_DESC_FILE", NULL, "STRING" },
-        { NULL, NULL, NULL } };
+        { "USE_MACHINE_DESC", NULL, "INT", 0 },
+        { "MACHINE_DESC_FILE", NULL, "STRING", 0 },
+        { NULL, NULL, NULL, 0 } };
 
 /*******************************************************************/
 /*******************************************************************/

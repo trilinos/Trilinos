@@ -59,12 +59,12 @@ static int MINOCTREGIONS = MINOCTREGIONS_DEF;  /* min # of regions per octant */
 /* parameters for the octpart method.  Used in  */
 /* Zoltan_Oct_Set_Param and Zoltan_Octpart          */
 static PARAM_VARS OCT_params[] = {
-  { "OCT_DIM",          NULL, "INT" },
-  { "OCT_METHOD",       NULL, "INT" },
-  { "OCT_MAXOBJECTS",   NULL, "INT" },
-  { "OCT_MINOBJECTS",   NULL, "INT" },
-  { "OCT_OUTPUT_LEVEL", NULL, "INT" },
-  {  NULL,              NULL,  NULL }};
+  { "OCT_DIM",          NULL, "INT", 0 },
+  { "OCT_METHOD",       NULL, "INT", 0 },
+  { "OCT_MAXOBJECTS",   NULL, "INT", 0 },
+  { "OCT_MINOBJECTS",   NULL, "INT", 0 },
+  { "OCT_OUTPUT_LEVEL", NULL, "INT", 0 },
+  {  NULL,              NULL,  NULL, 0 }};
 
 /*****************************************************************************/
 /*****************************************************************************/

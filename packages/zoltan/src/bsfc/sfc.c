@@ -70,12 +70,12 @@ int Zoltan_BSFC_create_bins(ZZ *zz, int num_local_objects, int wgt_dim,
 		    int* num_vert_sent, int max_cuts_in_bin);
 
 static PARAM_VARS BSFC_params[] = {
-  { "BSFC_BINS_PER_PROC", NULL, "INT" },
-  { "BSFC_HASHTABLE_DIVIDER", NULL, "INT" }, 
-  { "BSFC_MAX_CUTS_IN_BIN", NULL, "INT" },
-  { "BSFC_SUBBINS_PER_BIN", NULL, "INT" },
-  { "BSFC_MAX_REFINEMENT_LEVEL", NULL, "INT" },
-  { NULL, NULL, NULL } };
+  { "BSFC_BINS_PER_PROC", NULL, "INT", 0 },
+  { "BSFC_HASHTABLE_DIVIDER", NULL, "INT", 0 }, 
+  { "BSFC_MAX_CUTS_IN_BIN", NULL, "INT", 0 },
+  { "BSFC_SUBBINS_PER_BIN", NULL, "INT", 0 },
+  { "BSFC_MAX_REFINEMENT_LEVEL", NULL, "INT", 0 },
+  { NULL, NULL, NULL, 0 } };
 
 /*---------------------------------------------------------------------------*/
 /*---------------------------------------------------------------------------*/

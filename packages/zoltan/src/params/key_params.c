@@ -27,25 +27,25 @@ extern "C" {
 /*****************************************************************************/
 /*****************************************************************************/
 static PARAM_VARS Key_params[] = {
-  { "IMBALANCE_TOL", NULL, "DOUBLE" },
-  { "AUTO_MIGRATE", NULL, "INT" },
-  { "OBJ_WEIGHT_DIM", NULL, "INT" },
-  { "EDGE_WEIGHT_DIM", NULL, "INT" },
-  { "DEBUG_LEVEL", NULL, "INT" },
-  { "DEBUG_PROCESSOR", NULL, "INT" },
-  { "DETERMINISTIC", NULL, "INT" },
-  { "TIMER", NULL, "STRING" },
-  { "NUM_GID_ENTRIES", NULL, "INT" },
-  { "NUM_LID_ENTRIES", NULL, "INT" },
-  { "RETURN_LISTS", NULL, "STRING" },
-  { "LB_METHOD", NULL, "STRING" },
-  { "TFLOPS_SPECIAL", NULL, "INT" },
-  { "COMM_WEIGHT_DIM", NULL, "INT" }, /* For backward compatibility only. */
-                                      /* Prefer use of EDGE_WEIGHT_DIM.   */
-  { "NUM_GLOBAL_PARTITIONS", NULL, "INT" },
-  { "NUM_LOCAL_PARTITIONS", NULL, "INT" },
-  { "MIGRATE_ONLY_PROC_CHANGES", NULL, "INT" },
-  { NULL, NULL, NULL } };
+  { "IMBALANCE_TOL", NULL, "DOUBLE", 1 },
+  { "AUTO_MIGRATE", NULL, "INT", 0 },
+  { "OBJ_WEIGHT_DIM", NULL, "INT", 0 },
+  { "EDGE_WEIGHT_DIM", NULL, "INT", 0 },
+  { "DEBUG_LEVEL", NULL, "INT", 0 },
+  { "DEBUG_PROCESSOR", NULL, "INT", 0 },
+  { "DETERMINISTIC", NULL, "INT", 0 },
+  { "TIMER", NULL, "STRING", 0 },
+  { "NUM_GID_ENTRIES", NULL, "INT", 0 },
+  { "NUM_LID_ENTRIES", NULL, "INT", 0 },
+  { "RETURN_LISTS", NULL, "STRING", 0 },
+  { "LB_METHOD", NULL, "STRING", 0 },
+  { "TFLOPS_SPECIAL", NULL, "INT", 0 },
+  { "COMM_WEIGHT_DIM", NULL, "INT", 0 }, /* For backward compatibility only. */
+                                         /* Prefer use of EDGE_WEIGHT_DIM.   */
+  { "NUM_GLOBAL_PARTITIONS", NULL, "INT", 0 },
+  { "NUM_LOCAL_PARTITIONS", NULL, "INT", 0 },
+  { "MIGRATE_ONLY_PROC_CHANGES", NULL, "INT", 0 },
+  { NULL, NULL, NULL, 0 } };
 /*****************************************************************************/
 /*****************************************************************************/
 /*****************************************************************************/

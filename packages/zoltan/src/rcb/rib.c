@@ -56,11 +56,11 @@ static void Zoltan_RIB_min_max(double *, double *, int, int, int, MPI_Comm);
 /*  Parameters structure for RIB method.  Used in  */
 /*  Zoltan_RIB_Set_Param and Zoltan_RIB.                      */
 static PARAM_VARS RIB_params[] = {
-               { "RIB_OVERALLOC", NULL, "DOUBLE" },
-               { "CHECK_GEOM", NULL, "INT" },
-               { "RIB_OUTPUT_LEVEL", NULL, "INT" },
-               { "KEEP_CUTS", NULL, "INT" },
-               { NULL, NULL, NULL } };
+               { "RIB_OVERALLOC", NULL, "DOUBLE", 0 },
+               { "CHECK_GEOM", NULL, "INT", 0 },
+               { "RIB_OUTPUT_LEVEL", NULL, "INT", 0 },
+               { "KEEP_CUTS", NULL, "INT", 0 },
+               { NULL, NULL, NULL, 0 } };
 
 /*---------------------------------------------------------------------------*/
 

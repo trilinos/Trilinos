@@ -38,8 +38,8 @@ char *val)			/* value of variable */
     PARAM_UTYPE result;		/* value returned from Check_Param */
     int index;			/* index returned from Check_Param */
     PARAM_VARS malloc_params[] = {
-	{ "DEBUG_MEMORY", NULL, "INT" },
-	{ NULL, NULL, NULL }
+	{ "DEBUG_MEMORY", NULL, "INT", 0 },
+	{ NULL, NULL, NULL, 0 }
     };
 
     status = Zoltan_Check_Param(name, val, malloc_params, &result, &index);

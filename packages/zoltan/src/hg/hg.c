@@ -32,15 +32,15 @@ extern "C" {
 /*  Parameters structure for HG method.  */
 static PARAM_VARS HG_params[] = {
  /* Add parameters here. */
- { "HG_REDUCTION_LIMIT",             NULL, "INT" },
- { "HG_EDGE_WEIGHT_SCALING",         NULL, "INT" },
- { "HG_REDUCTION_METHOD",            NULL, "STRING" },
- { "HG_GLOBAL_PARTITIONING",         NULL, "STRING" },
- { "HG_LOCAL_REFINEMENT",            NULL, "STRING" },
- { "HG_REDUCTION_LOCAL_IMPROVEMENT", NULL, "STRING" },
- { "CHECK_GRAPH",                    NULL, "INT" },
- { "HG_OUTPUT_LEVEL",                NULL, "INT" },
- { NULL, NULL, NULL } };
+ { "HG_REDUCTION_LIMIT",             NULL, "INT", 0 },
+ { "HG_EDGE_WEIGHT_SCALING",         NULL, "INT", 0 },
+ { "HG_REDUCTION_METHOD",            NULL, "STRING", 0 },
+ { "HG_GLOBAL_PARTITIONING",         NULL, "STRING", 0 },
+ { "HG_LOCAL_REFINEMENT",            NULL, "STRING", 0 },
+ { "HG_REDUCTION_LOCAL_IMPROVEMENT", NULL, "STRING", 0 },
+ { "CHECK_GRAPH",                    NULL, "INT", 0 },
+ { "HG_OUTPUT_LEVEL",                NULL, "INT", 0 },
+ { NULL, NULL, NULL, 0 } };
 
 /* prototypes for static functions: */
 static int Zoltan_HG_Initialize_Params(ZZ*, HGPartParams*);
