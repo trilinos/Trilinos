@@ -2,6 +2,9 @@
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
 /* person and disclaimer.                                               */        
 /* ******************************************************************** */
+
+#ifdef HAVE_ML_IFPACK
+
 #include "ml_utils.h"
 #include "ml_epetra_utils.h"
 
@@ -10,7 +13,8 @@
 #include "Epetra_CrsMatrix.h" 
 #include "Epetra_LinearProblem.h"
 #include "Epetra_Time.h"
-#ifdef HAVE_ML_IFPACK
+#include "ml_ifpack.h"
+#include "ml_ifpack_wrap.h"
 
 #include "Epetra_Operator.h"
 
