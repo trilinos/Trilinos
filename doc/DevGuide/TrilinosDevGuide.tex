@@ -904,7 +904,7 @@ runs on Linux, IRIX64, Solaris and DEC/OSF1, but it will eventually run on 5-8
 platforms.  Packages that have not ported to a particular platform can be 
 excluded from the testing process on that platform.  Packages that do not have 
 any tests integrated into the test harness can still benefit by testing that 
-libraries build without errors.  
+libraries build without any errors.  
 
 The second component of the test harness is a script that should be executed 
 by users before checking updates into the repository.  This script is located 
@@ -943,7 +943,7 @@ found on the web at
 
 \begin{minipage}[l]{.6\textwidth}
 
-Bonsai gives a developer the ability to view the changes made to the files in 
+Bonsai gives developers the ability to view the changes made to the files in 
 the repository. Developers can search 
 based on filename, directory, branch, date, user who made the 
 change, or any combination of these criteria.  The differences between any two 
@@ -1175,7 +1175,7 @@ given platform.
 
 \subsection{Respond to All Relevant Configure Options}
 
-The Trilinos top-level configure script accept numerous configuration
+The Trilinos top-level configure script accepts numerous configuration
 options as described in Section~\ref{Subsection:ConfiguringTrilinos}.
 To the extent that each option is appropriate, a package should
 respond to each option.  For example, if a package can be built with
@@ -1334,7 +1334,7 @@ regression test harness are the most important ones.
 
 \begin{enumerate}
 \item {\bf CVS:} The Trilinos CVS repository is the most important
-tool for proper maintenance.  With each Trilinos release a release
+tool for proper maintenance.  With each Trilinos release, a release
 branch of the CVS repository is
 created  that allows simultaneous, independent development on the main
 CVS branch and incremental feature development and
@@ -1372,7 +1372,7 @@ developers to subscribe to the package checkins list.  When subscribed
 to this list, all CVS commits made for the package will be sent in
 email form to the checkins list, and subscribers will see exactly what
 has changed. The other package lists mentioned in 
-Section~\ref{subsect:MailMan} above also facilitate ongoing
+Section~\ref{subsect:MailMan} also facilitate ongoing
 communication between developers, users and clients.
 
 \item {\bf Test Harness:} 
@@ -1400,7 +1400,7 @@ In general, we will be very slow to omit a package, or version of a package,
 that is in use unless there is equivalent interface and functionality support 
 from a new package.
 
-\section{Petra and TSF: Two Special Trilinos Packages}
+\section{Petra and TSF: Two Special Collections of Trilinos Packages}
 \label{Section:EpetraAndTSF}
 In order to understand what Trilinos provides beyond the software
 engineering tools and the
@@ -1609,7 +1609,7 @@ The bootstrap commands should complete without any errors.
 
 \item Test and debug Autoconf and Automake files.
 
-Run \InlineCommand{configure} with the appropriate options in a clean BUILD 
+Run \InlineCommand{configure} with the appropriate options in a clean build 
 directory.  Once the configure process completes successfully, type 
 
 \DisplayCommand{make}
@@ -1621,10 +1621,10 @@ improving efficiency in this step.
 
 \begin{itemize}
 
-\item Consider disabling all of the packages that do not need to be built for 
-the current task.  When debugging the configure.ac script for np, consider 
-configuring at the np level, as libraries that np is dependent on are not 
-needed at the configure stage.  (To do this, make sure to point at the np 
+\item Consider disabling all of the packages that do not need to be built to 
+complete the current task.  When debugging the configure.ac script for np, 
+consider configuring at the np level, as libraries that np is dependent on are 
+not needed at the configure stage.  (To do this, make sure to point at the np 
 configure script from the build directory.)
 
 \item The \InlineCommand{echo} command can be used in configure.ac to 
@@ -1790,7 +1790,7 @@ The diff command works recursively, but optionally accepts options that
 specify specific files and/or directories.  For example, to see the diff's 
 associated only with a file in the current directory named 
 \InlineDirectory{abc.cpp}, as well as all files located (recursively) in the 
-relative directory \InlineDirectory'{examples}, type
+relative directory \InlineDirectory{examples}, type
 
 \DisplayCommand{cvs -q diff abc.cpp examples}
 
@@ -1819,11 +1819,7 @@ removed from the repository using \InlineCommand{cvs remove}.
 \item{\bf Committing Changes:}
 Note that the \InlineDirectory{CVSEDITOR} environment variable denotes which 
 text editor will be used to edit CVS commit logs.  The default value for
-\InlineDirectory{CVSEDITOR} is 
-\begin {verbatim} 
-vi
-\end {verbatim}
-.
+\InlineDirectory{CVSEDITOR} is \InlineCommand{vi}.
 
 Before committing changes, be sure to perform a CVS update.  Any conflicts 
 must be resolved before a commit will complete properly.  Changes are 
@@ -1911,7 +1907,8 @@ It is a good idea to start with a fresh copy of Trilinos.  If an old copy is
 used, various problems can occur.  Most of these problems are beyond the scope 
 of this brief tutorial, but be advised that it will not work to make changes 
 to a local copy of Trilinos and commit those changes directly to 
-a branch.  A developer must checkout a new working copy, create the branch, 
+a branch.  To create a branch for changes that have already been made to a 
+local copy, A developer must checkout a new working copy, create the branch, 
 copy the changes over, and then commit the changes to the branch.  
 
 To checkout a copy of the development branch, type
@@ -1934,8 +1931,8 @@ Trilinos/packages/(package\_name) and type
 
 \item Tag the working copy
 
-We want to tag the working copy to mark the point at which the new branch 
-will diverge from the existing branch.  To do this, cd to the top Trilinos 
+The existing branch is now tagged to mark the point where the new branch 
+will diverge.  To do this, cd to the top Trilinos 
 directory and type
 
 \DisplayCommand{cvs tag <tag\_name>}
@@ -1997,8 +1994,8 @@ should be \InlineDirectory{initial-trilinos-release-XYZ-branch}.
 
 It is a good idea to test the new branch to help make sure that the above 
 process has been completed properly.  As a part of the general release process,
-a many tests need to be run.  This step simply refers to running a few 
-simple sanity tests (for example, configure and build Trilinos and run the 
+many tests need to be run.  This step simply refers to running a few 
+simple sanity checks (for example, configure and build Trilinos and run the 
 checkin-test-harness or a couple of individual regression tests) to work 
 out any obvious problems before the branch is subjected to the more 
 complete test suite.
