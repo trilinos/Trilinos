@@ -1,4 +1,5 @@
 #include "ml_agg_reitzinger.h"
+#include "ml_vampir.h"
 #define ML_NEW_T_PE
 #ifdef GREG
 #define ML_NEW_T_PE
@@ -59,6 +60,14 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
   if (incr_or_decrease != ML_DECREASING)
     pr_error("Hiptmair: Only ML_DECREASING is supported\n");
 
+#ifdef ML_VAMPIR
+  ML_Vampir_Setup();
+#endif
+
+
+#ifdef ML_VAMPIR
+  VT_begin(ml_vt_aggregating_state);
+#endif
 
   if (ag == NULL)
   {
@@ -110,6 +119,9 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
       printf("(level %d) Ke: Global nonzeros = %d, global rows = %d\n",
              fine_level, nz_ptr,i);
   }
+#ifdef ML_VAMPIR
+  VT_end(ml_vt_aggregating_state);
+#endif
 
   /********************************************************************/
   /*                 Build T on the coarse grid.                      */
@@ -118,6 +130,10 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
   /* main loop through grid hierarchy */
   for (grid_level = fine_level-1; grid_level >= coarsest_level ;grid_level--)
   {
+
+#ifdef ML_VAMPIR
+  VT_begin(ml_vt_building_coarse_T_state);
+#endif
      Kn_coarse = &(ml_nodes->Amat[grid_level]);
      Rn_coarse = &(ml_nodes->Rmat[grid_level+1]);
      if (Kn_coarse->getrow->pre_comm != NULL)
@@ -776,6 +792,11 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
      Tcoarse_trans = ML_Operator_Create(ml_edges->comm);
      ML_Operator_Transpose_byrow(Tcoarse, Tcoarse_trans);
      (*Tmat_trans_array)[grid_level] = Tcoarse_trans;
+
+#ifdef ML_VAMPIR
+  VT_end(ml_vt_building_coarse_T_state);
+#endif
+
    
      /********************************************************************/
      /* Here is some code that might work someday to generate Pe without */
@@ -823,6 +844,10 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
      /* Matrix triple product for Pe where result is stuffed into MG     */
      /* hierarchy of the edge system.                                    */
      /*------------------------------------------------------------------*/
+
+#ifdef ML_VAMPIR
+  VT_begin(ml_vt_build_Pe_state);
+#endif
    
      if (Tfine->invec_leng != ml_nodes->Pmat[grid_level].outvec_leng)
      {
@@ -1076,11 +1101,17 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
      ML_Operator_Destroy(&SPn_mat);
 #endif
 
-
+#ifdef ML_VAMPIR
+  VT_end(ml_vt_build_Pe_state);
+#endif
    
       /***************************
       * Smooth edge prolongator. *
       ***************************/
+
+#ifdef ML_VAMPIR
+  VT_begin(ml_vt_smooth_Pe_state);
+#endif
      if (smooth_flag == ML_YES)
      {
         if (Tmat->comm->ML_mypid == 0)
@@ -1126,7 +1157,15 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
 
         Pe->N_nonzeros = nz_ptr;
      }
+
+#ifdef ML_VAMPIR
+  VT_end(ml_vt_smooth_Pe_state);
+#endif
 #ifdef ML_ENRICH
+
+#ifdef ML_VAMPIR
+  VT_begin(ml_vt_enrich_Pe_state);
+#endif
 
      /* ********************************************************************* */
      /* Generate enriched smoothed prolongator                                */
@@ -1165,8 +1204,15 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
      else
        if (ml_nodes->comm->ML_mypid == 0 && 9 < ML_Get_PrintLevel()) {
          printf("\n\nSkipping enriched prolongator\n\n");fflush(stdout);}
+#ifdef ML_VAMPIR
+  VT_end(ml_vt_enrich_Pe_state);
+#endif
 #endif
 
+
+#ifdef ML_VAMPIR
+  VT_begin(ml_vt_make_coarse_A_with_rap_state);
+#endif
 
     if (ag->print_flag < ML_Get_PrintLevel()) {
         Pe = &(ml_edges->Pmat[grid_level]);
@@ -1194,8 +1240,15 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
      }
 
      Tfine = Tcoarse;
+#ifdef ML_VAMPIR
+  VT_end(ml_vt_make_coarse_A_with_rap_state);
+#endif
   } /* Main FOR loop: for grid_level = fine_level-1 ... */
 
+
+#ifdef ML_VAMPIR
+  VT_begin(ml_vt_reitzinger_cleanup_state);
+#endif
   if (ag->print_flag < ML_Get_PrintLevel())
   {
     ML_gsum_scalar_int(&Nnz_allgrids,&j,ml_nodes->comm);
@@ -1212,6 +1265,9 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
   }
 
   if (created_ag_obj == 1) ML_Aggregate_Destroy(&ag);
+#ifdef ML_VAMPIR
+  VT_end(ml_vt_reitzinger_cleanup_state);
+#endif
   return(Nlevels_nodal);
 }
 

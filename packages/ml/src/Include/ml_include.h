@@ -42,6 +42,7 @@
 #include "ml_agg_reitzinger.h"
 #include "ml_aztec_utils.h"
 #include "ml_memory.h"
+#include "ml_vampir.h"
 
 #endif
 
