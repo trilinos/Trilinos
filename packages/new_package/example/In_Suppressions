@@ -1,0 +1,45 @@
+{
+   Param/write/buf/libc_write/mwrite
+   Memcheck:Param
+   write(buf)
+   fun:__GI___libc_write
+   fun:mwrite
+   fun:_cio_kreqfront
+   fun:_cio_kreq
+}
+{
+   Param/writev/vector/vgAllRoadsLeadToRome_writev
+   Memcheck:Param
+   writev(vector[...])
+   fun:vgAllRoadsLeadToRome_writev
+   fun:__writev
+   fun:mwritev
+   fun:_cio_send
+}
+{
+   Param/write/buf/libc_write/mwrite/kreqfront
+   Memcheck:Param
+   write(buf)
+   fun:__GI___libc_write
+   fun:mwrite
+   fun:_cio_kreqfront
+   fun:_cipc_ksrfront
+}
+{
+   Param/writev/vector_/vgAllRoadsLeadToRome_writev
+   Memcheck:Param
+   writev(vector)
+   fun:vgAllRoadsLeadToRome_writev
+   fun:__writev
+   fun:mwritev
+   fun:_cio_send
+}
+{
+   Param/write/buf/libc_write/mwrite/kreqfront/detach
+   Memcheck:Param
+   write(buf)
+   fun:__GI___libc_write
+   fun:mwrite
+   fun:_cio_kreqfront
+   fun:kdetach
+}
