@@ -21,25 +21,28 @@ static char *cvs_chaco_dist_graph_id = "$Id$";
 #include "lbi_const.h"
 #include "all_allo_const.h"
 #include "ch_input_const.h"
+#include "dr_err_const.h"
 
 /*
  * Distribute a graph from one processor to all processors.
  * The ParMetis format is used for the distributed graph.
  * The memory for the graph on the host node is freed
  * and fresh memory is allocated for the distr. graph.
- *
- * Geometry information is not supported in this version.
  */
 
 int chaco_dist_graph(
-  MPI_Comm Comm,		/* MPI Communicator */
+  MPI_Comm comm,		/* MPI Communicator */
   int     host_proc,		/* processor where all the data is initially */
   int     *nvtxs,		/* number of vertices in graph */
   int     **vtxdist, 		/* vertex distribution data */
   int     **xadj,		/* start of edge list for each vertex */
   int     **adjncy,		/* edge list data */
   int     **vwgts,		/* vertex weight list data */
-  float   **ewgts 		/* edge weight list data */
+  float   **ewgts,		/* edge weight list data */
+  int     *ndim,                /* dimension of the geometry */
+  float   **x,                  /* x-coordinates of the vertices */
+  float   **y,                  /* y-coordinates of the vertices */
+  float   **z                   /* z-coordinates of the vertices */
 )
 {
   extern int CHECK_INPUT;	/* print warnings or not? */
@@ -49,12 +52,13 @@ int chaco_dist_graph(
   int nprocs, myproc, i, n, p, nedges, nsend, rest, flag;
   int offset, use_vwgts, use_ewgts;
   int *old_xadj, *old_adjncy, *old_vwgts, *size;
+  float *old_x, *old_y, *old_z;
   float *old_ewgts;
   MPI_Status status;
 
   /* Determine number of processors and my rank. */
-  MPI_Comm_size (Comm, &nprocs );
-  MPI_Comm_rank (Comm, &myproc );
+  MPI_Comm_size (comm, &nprocs );
+  MPI_Comm_rank (comm, &myproc );
 
   if (DEBUG_TRACE > 0) {
     if (myproc==0) printf("<Entering ch_dist_graph>\n");
@@ -68,8 +72,11 @@ int chaco_dist_graph(
   flag = 0;
   if (*vtxdist == NULL){
     if (myproc==host_proc) flag=1;
-    *vtxdist = (int *)LB_SMALLOC((nprocs+1) * sizeof(int));
-    if (*vtxdist == NULL) return 1;
+    *vtxdist = (int *) malloc((nprocs+1) * sizeof(int));
+    if (*vtxdist == NULL) {
+      Gen_Error(0, "fatal: insufficient memory");
+      return 0;
+    }
   }
   if (myproc==host_proc){
     if (flag){
@@ -83,57 +90,109 @@ int chaco_dist_graph(
       }
     }
   }
+
   /* Broadcast vtxdist to all procs */
-  MPI_Bcast( *vtxdist, nprocs+1, MPI_INT, host_proc, Comm);
-  MPI_Bcast( &use_vwgts, 1, MPI_INT, host_proc, Comm);
-  MPI_Bcast( &use_ewgts, 1, MPI_INT, host_proc, Comm);
+  MPI_Bcast( *vtxdist, nprocs+1, MPI_INT, host_proc, comm);
+  MPI_Bcast( &use_vwgts, 1, MPI_INT, host_proc, comm);
+  MPI_Bcast( &use_ewgts, 1, MPI_INT, host_proc, comm);
+  MPI_Bcast( ndim, 1, MPI_INT, host_proc, comm);
   
   /* Store pointers to original data */
   if (myproc == host_proc){
     old_xadj   = *xadj;
     old_adjncy = *adjncy;
+    old_x      = *x;
+    old_y      = *y;
+    old_z      = *z;
   }
 
   /* Allocate space for new distributed graph data */
   n = (*vtxdist)[myproc+1]- (*vtxdist)[myproc]; /* local # of nodes */
   *nvtxs = n;
-  *xadj = (int *)LB_SMALLOC((n+1)*sizeof(int));
-  if (*xadj == NULL) return 1;
+  *xadj = (int *) malloc((n+1)*sizeof(int));
+  if (*xadj == NULL) {
+    Gen_Error(0, "fatal: insufficient memory");
+    return 0;
+  }
   if (use_vwgts){
     old_vwgts = *vwgts;
-    *vwgts = (int *)LB_SMALLOC((n+1)*sizeof(int));
-    if (*vwgts == NULL) return 1;
+    *vwgts = (int *) malloc(n*sizeof(int));
+    if (*vwgts == NULL) {
+      Gen_Error(0, "fatal: insufficient memory");
+      return 0;
+    }
   }
+  if (*ndim > 0) {
+    *x = (float *)  malloc(n*sizeof(float));
+    if (*ndim > 1) {
+      *y = (float *)  malloc(n*sizeof(float));
+      if (*ndim > 2) {
+        *z = (float *)  malloc(n*sizeof(float));
+      }
+    }
+  }
+
 
   /* Distribute graph data to all procs */
 
   /* First send xadj data */
-  if (myproc== host_proc){
-    size = (int *)LB_SMALLOC(nprocs*sizeof(int));
-    if (size == NULL) return 1;
+  if (myproc == host_proc){
+    size = (int *) malloc(nprocs*sizeof(int));
+    if (size == NULL) {
+      Gen_Error(0, "fatal: insufficient memory");
+      return 0;
+    }
     for (p=0; p<nprocs; p++){
-      size[p] = old_xadj[(*vtxdist)[myproc+1]]-old_xadj[(*vtxdist)[myproc]];
-      offset = (*vtxdist)[myproc];
-      nsend = (*vtxdist)[myproc+1] - offset;
+      size[p] = old_xadj[(*vtxdist)[p+1]]-old_xadj[(*vtxdist)[p]];
+      offset = (*vtxdist)[p];
+      nsend = (*vtxdist)[p+1] - offset;
       if (p == myproc){
         /* do a local copy */
         for (i=0; i<=nsend; i++)
           (*xadj)[i] = old_xadj[offset+i];
-        if (use_vwgts)
-          for (i=0; i<nsend; i++)
+        for (i=0; i<nsend; i++) {
+          if (use_vwgts)
             (*vwgts)[i] = old_vwgts[offset+i];
+          if (*ndim > 0) {
+            (*x)[i] = old_x[offset+i];
+            if (*ndim > 1) {
+              (*y)[i] = old_y[offset+i];
+              if (*ndim > 2) {
+                (*z)[i] = old_z[offset+i];
+              }
+            }
+          }
+        }
       }
       else {
-        MPI_Send( &old_xadj[offset], nsend+1, MPI_INT, p, 1, Comm);
+        MPI_Send( &old_xadj[offset], nsend+1, MPI_INT, p, 1, comm);
         if (use_vwgts)
-          MPI_Send( &old_vwgts[offset], nsend, MPI_INT, p, 2, Comm);
+          MPI_Send( &old_vwgts[offset], nsend, MPI_INT, p, 2, comm);
+        if (*ndim > 0) {
+          MPI_Send(&old_x[offset], nsend, MPI_FLOAT, p, 3, comm);
+          if (*ndim > 1) {
+            MPI_Send(&old_y[offset], nsend, MPI_FLOAT, p, 4, comm);
+            if (*ndim > 2) {
+              MPI_Send(&old_z[offset], nsend, MPI_FLOAT, p, 5, comm);
+            }
+          }
+        }
       }
     }
   }
   else {
-    MPI_Recv (*xadj, (*nvtxs)+1, MPI_INT, host_proc, 1, Comm, &status);
+    MPI_Recv (*xadj, (*nvtxs)+1, MPI_INT, host_proc, 1, comm, &status);
     if (use_vwgts)
-      MPI_Recv (*vwgts, *nvtxs, MPI_INT, host_proc, 2, Comm, &status);
+      MPI_Recv (*vwgts, *nvtxs, MPI_INT, host_proc, 2, comm, &status);
+    if (*ndim > 0) {
+      MPI_Recv(*x, *nvtxs,  MPI_FLOAT, host_proc, 3, comm, &status);
+      if (*ndim > 1) {
+        MPI_Recv(*y, *nvtxs, MPI_FLOAT, host_proc, 4, comm, &status);
+        if (*ndim > 2) {
+          MPI_Recv(*z, *nvtxs, MPI_FLOAT, host_proc, 5, comm, &status);
+        }
+      }
+    }
   }
 
   /* Adjust xadj values */
@@ -141,12 +200,18 @@ int chaco_dist_graph(
   for (i=0; i<= *nvtxs; i++)
     (*xadj)[i] -= offset;
   nedges = (*xadj)[ *nvtxs];
-  *adjncy = (int *)LB_SMALLOC(nedges * sizeof (int));
-  if (*adjncy == NULL) return 1;
+  *adjncy = (int *) malloc(nedges * sizeof (int));
+  if (*adjncy == NULL) {
+    Gen_Error(0, "fatal: insufficient memory");
+    return 0;
+  }
   if (use_ewgts){
     old_ewgts = *ewgts;
-    *ewgts = (float *)LB_SMALLOC(nedges * sizeof (float));
-    if (*ewgts == NULL) return 1;
+    *ewgts = (float *) malloc(nedges * sizeof (float));
+    if (*ewgts == NULL) {
+      Gen_Error(0, "fatal: insufficient memory");
+      return 0;
+    }
   }
 
   /* Next send adjncy data */
@@ -162,30 +227,40 @@ int chaco_dist_graph(
             (*ewgts)[i] = old_ewgts[offset+i];
       }
       else {
-        MPI_Send( &old_adjncy[offset], size[p], MPI_INT, p, 3, Comm);
+        MPI_Send( &old_adjncy[offset], size[p], MPI_INT, p, 6, comm);
         if (use_ewgts)
-          MPI_Send( &old_ewgts[offset], size[p], MPI_FLOAT, p, 4, Comm);
+          MPI_Send( &old_ewgts[offset], size[p], MPI_FLOAT, p, 7, comm);
       }
     }
   }
   else {
-    MPI_Recv (*adjncy, nedges, MPI_INT, host_proc, 3, Comm, &status);
+    MPI_Recv (*adjncy, nedges, MPI_INT, host_proc, 6, comm, &status);
     if (use_ewgts)
-      MPI_Recv (*ewgts, nedges, MPI_FLOAT, host_proc, 4, Comm, &status);
+      MPI_Recv (*ewgts, nedges, MPI_FLOAT, host_proc, 7, comm, &status);
   }
 
   /* Free space on host proc */
   if (myproc == host_proc){
-    LB_safe_free((void **) &old_xadj);
-    LB_safe_free((void **) &old_adjncy);
+    free(old_xadj);
+    free(old_adjncy);
     if (use_vwgts)
-      LB_safe_free((void **) &old_vwgts);
+      free(old_vwgts);
     if (use_ewgts)
-      LB_safe_free((void **) &old_ewgts);
+      free(old_ewgts);
+
+    if (*ndim > 0) {
+      free(old_x);
+      if (*ndim > 1) {
+        free(old_y);
+        if (*ndim > 2) {
+          free(old_z);
+        }
+      }
+    }
   }
    
   if (DEBUG_INPUT > 0) {
     if (myproc==0) printf("Done distributing graph \n");
   }
-  return 0;
+  return 1;
 }

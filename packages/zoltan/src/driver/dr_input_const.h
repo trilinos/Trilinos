@@ -24,7 +24,7 @@ static char *cvs_dr_input_const = "$Id$";
 /* Undefine NEMESIS_IO to avoid compiling in Nemesis. */
 #define NEMESIS_IO
 
-/* define the FEM input file types */
+/* define the input file types */
 #define NEMESIS_FILE 0
 #define CHACO_FILE   1
 
@@ -54,7 +54,7 @@ struct Parallel_IO
   /* The subdirectory to write files to */
   char    pdsk_subdir[FILENAME_MAX+1];
 
-  /* The base name of the parallel file. */
+  /* The base name of the input file. */
   char    pexo_fname[FILENAME_MAX+1];
 
 };

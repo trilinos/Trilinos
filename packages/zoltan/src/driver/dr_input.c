@@ -82,13 +82,13 @@ int read_cmd_file(char *filename, PROB_INFO_PTR prob,
       strcpy(inp_copy, inp_line);
       clean_string(inp_line, " \t");
       cptr = strtok(inp_line, "\t=");
-      /****** The FEM file type ******/
-      if (token_compare(cptr, "fem file type")) {
+      /****** The file type ******/
+      if (token_compare(cptr, "file type")) {
         if(pio_info->file_type < 0) {
           cptr = strtok(NULL, "\t=");
           strip_string(cptr, " \t\n");
           if (cptr == NULL || strlen(cptr) == 0) {
-            Gen_Error(0, "fatal: must specify FEM file type");
+            Gen_Error(0, "fatal: must specify file type");
             Gen_Error(0, cmesg);
             return 0;
           }
@@ -106,8 +106,8 @@ int read_cmd_file(char *filename, PROB_INFO_PTR prob,
           }
         }
       }
-      /****** The FEM file name ******/
-      if (token_compare(cptr, "fem file name")) {
+      /****** The file name ******/
+      if (token_compare(cptr, "file name")) {
         if(strlen(pio_info->pexo_fname) == 0)
         {
           cptr = strtok(NULL, "\t=");
@@ -162,7 +162,7 @@ int read_cmd_file(char *filename, PROB_INFO_PTR prob,
         cptr = strtok(NULL, ",");
 
         /*
-         * if number = 0, then the input FEM file(s) is in the
+         * if number = 0, then the input file(s) is in the
          * root directory given by the parallel disk info, or it
          * is in the same directory as the executable if nothing
          * is given for the root infomation. So, no other options
@@ -386,9 +386,24 @@ int check_inp(PROB_INFO_PTR prob, PARIO_INFO_PTR pio_info)
 
   /* check for the parallel Nemesis file for proc 0 */
   if (strlen(pio_info->pexo_fname) <= 0) {
-    Gen_Error(0, "fatal: must specify parallel results file base name");
+    Gen_Error(0, "fatal: must specify file base name");
     return 0;
   }
+
+  /* default file type is nemesis */
+  if (pio_info->file_type < 0) pio_info->file_type = NEMESIS_FILE;
+
+#ifndef NEMESIS_IO
+  /* 
+   * if not compiling with the NEMESIS_IO flag (i.e., linking with 
+   * Nemesis library), can't use NEMESIS_FILE file type.
+   */
+
+  if (pio_info->file_type == NEMESIS_FILE) {
+    Gen_Error(0, "fatal: must compile with NEMESIS_IO for Nemesis file types");
+    return 0;
+  }
+#endif /* NEMESIS_IO */
 
 /*+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
 /*                 Check the parallel IO specifications                      */
@@ -399,9 +414,6 @@ int check_inp(PROB_INFO_PTR prob, PARIO_INFO_PTR pio_info)
 
   /* default is not to have preceeding 0's in the disk names */
   if (pio_info->zeros < 0) pio_info->zeros = 0;
-
-  /* default file type is nemesis */
-  if (pio_info->file_type < 0) pio_info->file_type = NEMESIS_FILE;
 
   /* most systems that we deal with start their files systems with 1 not 0 */
   if (pio_info->pdsk_add_fact < 0) pio_info->pdsk_add_fact = 1;

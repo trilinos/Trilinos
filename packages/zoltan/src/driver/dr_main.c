@@ -192,7 +192,7 @@ int main(int argc, char *argv[])
 /*****************************************************************************/
 /*****************************************************************************/
 /*****************************************************************************/
-/* This function determines which input FEM file type is being used,
+/* This function determines which input file type is being used,
  * and calls the appropriate read function. If a new type of input
  * file is added to the driver, then a section needs to be added for
  * it here.

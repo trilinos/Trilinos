@@ -38,11 +38,13 @@ static char *cvs_dr_chaco_io = "$Id$";
 #include "dr_util_const.h"
 #include "dr_par_util_const.h"
 #include "dr_err_const.h"
+#include "dr_output_const.h"
 #include "ch_input_const.h"
 #include "ch_input.h"
 
-int fill_elements(int, int, ELEM_INFO *, int, int *, int *, int *, int *,
-                  float *);
+static int fill_elements(int, int, PROB_INFO_PTR, ELEM_INFO *, int, int *, 
+                         int *, int *, int *, float *, int, 
+                         float *, float *, float *);
 
 
 int read_chaco_mesh(int Proc,
@@ -53,38 +55,92 @@ int read_chaco_mesh(int Proc,
 {
   /* Local declarations. */
   char   cmesg[256];
+  char   chaco_fname[FILENAME_MAX + 8];
 
   int    i, start_id, nvtxs;
-  int   *start, *adj, *vwgts, *vtxdist;
+  int    ndim = 0;
+  int   *start = NULL, *adj = NULL, *vwgts = NULL, *vtxdist = NULL;
 
-  float *ewgts;
+  float *ewgts = NULL;
+  float *x = NULL, *y = NULL, *z = NULL;
 
   FILE  *fp;
 /***************************** BEGIN EXECUTION ******************************/
 
   if (Proc == 0) {
-    fp = fopen(pio_info->pexo_fname, "r");
+
+    /* Open and read the Chaco graph file. */
+    sprintf(chaco_fname, "%s.graph", pio_info->pexo_fname);   
+    fp = fopen(chaco_fname, "r");
+    if (fp == NULL) {
+      sprintf(cmesg, "fatal:  Could not open Chaco graph file %s",
+              chaco_fname);
+      Gen_Error(0, cmesg);
+      return 0;
+    }
 
     /* read the array in on processor 0 */
-    if (chaco_input_graph(fp, pio_info->pexo_fname, &start, &adj, &nvtxs,
+    if (chaco_input_graph(fp, chaco_fname, &start, &adj, &nvtxs,
                            &vwgts, &ewgts) != 0) {
       Gen_Error(0, "fatal: Error returned from chaco_input_graph");
       return 0;
     }
 
     fclose (fp);
+
+    /* If method requires coordinate info, read Chaco geometry file. */
+    if (prob->read_coord) {
+      sprintf(chaco_fname, "%s.coords", pio_info->pexo_fname);
+      fp = fopen(chaco_fname, "r");
+      if (fp == NULL) {
+        sprintf(cmesg, "fatal:  Could not open Chaco geometry file %s",
+                chaco_fname);
+        Gen_Error(0, cmesg);
+        return 0;
+      }
+
+      /* read the coordinates in on processor 0 */
+      if (chaco_input_geom(fp, chaco_fname, nvtxs, &ndim, &x, &y, &z) != 0) {
+        Gen_Error(0, "fatal: Error returned from chaco_input_geom");
+        return 0;
+      }
+    }
   }
 
   /* Distribute graph */
-  vtxdist = NULL;
-  if (chaco_dist_graph(MPI_COMM_WORLD, 0, &nvtxs, &vtxdist, &start, &adj, 
-                   &vwgts, &ewgts) != 0) {
+  if (!chaco_dist_graph(MPI_COMM_WORLD, 0, &nvtxs, &vtxdist, &start, &adj, 
+                        &vwgts, &ewgts, &ndim, &x, &y, &z) != 0) {
       Gen_Error(0, "fatal: Error returned from chaco_dist_graph");
       return 0;
   }
 
+  /* Initialize Mesh structure for Chaco mesh. */
   Mesh.num_elems = nvtxs;
   Mesh.elem_array_len = Mesh.num_elems + 5;
+  Mesh.num_dims = ndim;
+  Mesh.num_el_blks = 1;
+
+  Mesh.eb_ids = (int *) malloc (4 * Mesh.num_el_blks * sizeof(int));
+  if (!Mesh.eb_ids) {
+    Gen_Error(0, "fatal: insufficient memory");
+    return 0;
+  }
+  Mesh.eb_cnts = Mesh.eb_ids + Mesh.num_el_blks;
+  Mesh.eb_nnodes = Mesh.eb_cnts + Mesh.num_el_blks;
+  Mesh.eb_nattrs = Mesh.eb_nnodes + Mesh.num_el_blks;
+
+  Mesh.eb_names = (char **) malloc (Mesh.num_el_blks * sizeof(char *));
+  if (!Mesh.eb_names) {
+    Gen_Error(0, "fatal: insufficient memory");
+    return 0;
+  }
+
+  /* Each element has only one set of coordinates (i.e., node). */
+  Mesh.eb_ids[0] = 1;
+  Mesh.eb_cnts[0] = nvtxs;
+  Mesh.eb_nnodes[0] = 1;
+  Mesh.eb_nattrs[0] = 0;
+  Mesh.eb_names[0] = "chaco";
 
   /* allocate the element structure array */
   *elements = (ELEM_INFO_PTR) malloc (Mesh.elem_array_len * sizeof(ELEM_INFO));
@@ -104,8 +160,8 @@ int read_chaco_mesh(int Proc,
    * now fill the element structure array with the
    * information from the Chaco file
    */
-  if (!fill_elements(Proc, Num_Proc, *elements, nvtxs, vtxdist, start, adj,
-                     vwgts, ewgts)) {
+  if (!fill_elements(Proc, Num_Proc, prob, *elements, nvtxs, vtxdist, 
+                     start, adj, vwgts, ewgts, ndim, x, y, z)) {
     Gen_Error(0, "fatal: Error returned from fill_elements");
     return 0;
   }
@@ -113,20 +169,30 @@ int read_chaco_mesh(int Proc,
   return 1;
 }
 
-int fill_elements(
+/*****************************************************************************/
+/*****************************************************************************/
+/*****************************************************************************/
+
+static int fill_elements(
   int        Proc,
   int        Num_Proc,
+  PROB_INFO_PTR prob,            /* problem description */
   ELEM_INFO  elem[],             /* array of element information */
   int        nvtxs,              /* number of vertices in graph */
   int       *vtxdist,            /* vertex distribution data */
   int       *start,              /* start of edge list for each vertex */
   int       *adj,                /* edge list data */
   int       *vwgts,              /* vertex weight list data */
-  float     *ewgts               /* edge weight list data */
+  float     *ewgts,              /* edge weight list data */
+  int        ndim,               /* dimension of the geometry */
+  float     *x,                  /* x-coordinates of the vertices */
+  float     *y,                  /* y-coordinates of the vertices */
+  float     *z                   /* z-coordinates of the vertices */
 )
 {
   /* Local declarations. */
   int i, j, k, start_id, elem_id, local_id;
+  char cmesg[256];
 /***************************** BEGIN EXECUTION ******************************/
 
   start_id = vtxdist[Proc];
@@ -135,14 +201,26 @@ int fill_elements(
     elem[i].globalID = start_id + i + 1; /* global ids start at 1 */
     if (vwgts != NULL)
       elem[i].cpu_wgt = vwgts[i];
-    elem[i].cpu_wgt = 0.0;
-    elem[i].elem_blk = 1;        /* only one element block for all vertices */
-    elem[i].coord = NULL;
-    elem[i].connect = NULL;
+    else
+      elem[i].cpu_wgt = 1.0;
+    elem[i].elem_blk = 0;        /* only one element block for all vertices */
+    if (Mesh.num_dims > 0) {
+      /* One set of coords per element. */
+      elem[i].connect = (int *) malloc(sizeof(int));
+      elem[i].connect[0] = elem[i].globalID;
+      elem[i].coord = (float **) malloc(sizeof(float *));
+      elem[i].coord[0] = (float *) malloc(Mesh.num_dims * sizeof(float));  
+      elem[i].coord[0][0] = x[i];
+      if (Mesh.num_dims > 1) {
+        elem[i].coord[0][1] = y[i];
+        if (Mesh.num_dims > 2) {
+          elem[i].coord[0][2] = z[i];
+        }
+      }
+    }
 
     /* now start with the adjacencies */
     elem[i].nadj = start[i+1] - start[i];
-
     if (elem[i].nadj > 0) {
       elem[i].adj_len = elem[i].nadj;
       elem[i].adj = (int *) malloc (elem[i].nadj * sizeof(int));
@@ -166,11 +244,15 @@ int fill_elements(
 
         /* determine which processor the adjacent vertex is on */
         for (k = 0; k < Num_Proc; k++)
-          if (elem_id < vtxdist[k]) break;
+          /* Compare with <= since elem_id is 1-based and vtxdist is 0-based. */
+          if (elem_id <= vtxdist[k+1]) break;
 
         /* sanity check */
         if (k == Num_Proc) {
-          Gen_Error(0, "fatal: adjacent element not in vtxdist array");
+          sprintf(cmesg, 
+                  "fatal:  adjacent element %d not in vtxdist array (%d,%d)",
+                  elem_id, i, j);   
+          Gen_Error(0, cmesg);
           return 0;
         } 
 
@@ -193,5 +275,8 @@ int fill_elements(
     } /* End: "if (elem[i].nadj > 0)" */
   } /* End: "for (i = 0; i < Mesh.num_elems; i++)" */
 
+/*
+  print_distributed_mesh(Proc, Num_Proc, prob, elem);
+*/
   return 1;
 }

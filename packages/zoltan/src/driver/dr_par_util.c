@@ -52,6 +52,7 @@ void print_sync_start(int proc, int do_print_line)
   int        from, flag;
   MPI_Status status;
 
+  MPI_Barrier(MPI_COMM_WORLD);
   if ( proc != 0) {
     from = proc - 1;
     MPI_Recv(NULL, 0, MPI_INT, from, 0, MPI_COMM_WORLD, &status);
