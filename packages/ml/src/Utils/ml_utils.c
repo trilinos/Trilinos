@@ -2489,10 +2489,21 @@ double ML_gmin_double(double val, ML_Comm *comm)
 /* using global ordering.                                               */
 /*                                                                      */
 /* Parameter list:                                                      */
-/* - matrix :           ML_Operator, distributed among the proceses     */
-/* - label :            matrix will be written in MATLAB format on file */
-/*                      label.m. Note that only ONE file will be created*/
-/*                      containing the ENTIRE operator                  */
+/* matrix :             ML_Operator, distributed among the proceses     *
+ *                      If the matrix is rectangular, the user should   *
+ *                      pass in both a global row ordering and a global *
+ *                      column numbering.                               *
+ *
+ * label :              matrix will be written in MATLAB (i,j,k) format *
+ *                      to file "label.m". Note that only ONE file will *
+ *                      be created that contains the ENTIRE operator.   *
+ * global_row_ordering: optional global row numbering.                  *
+ *                      If this is   null, we assume the matrix is      *
+ *                      square and calculate our own global             *
+ *                      numbering, the same for both rows and           *
+ *                      columns.                                        *
+ * global_col_ordering: optional global column numbering                *
+ *                                                                      */
 /* Albuquerque, 30-Oct-03                                               */
 /* ******************************************************************** */
 
@@ -2635,11 +2646,11 @@ int ML_Operator_Print_UsingGlobalOrdering( ML_Operator *matrix,
 }
 
 /* ******************************************************************** */
-/* Create global numbering for a ML_Operator. I suppose that tML uses a */
+/* Create global numbering for a ML_Operator. I suppose that ML uses a  */
 /* linear decomposition among the processes (that is, proc 0 is assigned*/
 /* the first Nrows elements, and so on). This is enough to define the   */
 /* global numbering of local nodes. For the ghost nodes (columns), I use*/
-/* ML_exhcange_bdry.                                                    */
+/* ML_exchange_bdry.                                                    */
 /*                                                                      */
 /* Albuquerque, 30-Oct-03                                               */
 /* ******************************************************************** */
@@ -2660,7 +2671,7 @@ int ML_build_global_numbering( ML_Operator *Amat,
   /* allocate +1 because it is possible that some procs will have
      no rows at all (with ParMETIS) */
 
-  dtemp = (double *) malloc( sizeof(double) * (Nrows+Nghosts+1));
+  dtemp = (double *) ML_allocate( sizeof(double) * (Nrows+Nghosts+1));
   if( dtemp == NULL ) {
     fprintf( stderr,
 	     "*ML*ERR* not enough memory to allocated %d bytes\n"
@@ -2680,16 +2691,16 @@ int ML_build_global_numbering( ML_Operator *Amat,
 #endif
 
   /* global numbering for local nodes. Note that ML always
-     supposes to have continugous local nodes (that is, the
+     supposes to have contiguous local nodes (that is, the
      global set of nodes has been subdivided into contiguous
-     chuncks). This may not be true for the first level
-     (ML uses an order which is not the physical one). So, dont't
+     chunks). This may not be true for the first level
+     (ML uses an order which is not the physical one). So, don't
      be surprised that a tridiagonal matrix (before AZ_transform)
      is no longer tridiagonal, for instance... */
     
   for( i=0 ; i<Nrows ; i++ ) dtemp[i] = 1.0*(i+offset);
 
-  /* I exchange those information using ML_exchange_bdry,
+  /* I exchange this information using ML_exchange_bdry,
      which is coded for double vectors. */
     
   ML_exchange_bdry(dtemp,Amat->getrow->pre_comm,
@@ -2698,7 +2709,7 @@ int ML_build_global_numbering( ML_Operator *Amat,
 
   /* allocates memory for global_ordering (+1 as before) */
   
-  global_numbering = (int *)malloc(sizeof(int)*(Nrows+Nghosts+1));
+  global_numbering = (int *)ML_allocate(sizeof(int)*(Nrows+Nghosts+1));
        
   if( global_numbering == NULL ) {
     fprintf( stderr,
@@ -2723,135 +2734,3 @@ int ML_build_global_numbering( ML_Operator *Amat,
     
 }
 /*ms*/
-
-int dump_greg(ML_Operator *Ke, ML_Operator *Kn, ML_Operator *M_mat,
-	      ML_Operator *T_mat, int Nghost_nodes, int Nghost_edges,
-	      double *x, double *rhs)
-{
-  double *global_edges, *global_Knodes, *global_Tnodes, colVal[15];
-  int    N_edges, N_nodes, node_offset, edge_offset;
-  int colInd[15], i, j, ncnt;
-  char str[80];
-  FILE *fid;
-  ML_Comm *comm;
-  int Nedges_global;
-  
-  comm = Ke->comm;
-
-  if (comm->ML_mypid == 0) printf("DUMPING GREG's MATRICES\n");
-
-  N_nodes = Kn->outvec_leng;
-  N_edges = Ke->outvec_leng;
-
-  node_offset = ML_gpartialsum_int(N_nodes, comm);
-  edge_offset = ML_gpartialsum_int(N_edges, comm);
-  Nedges_global = N_edges;
-  ML_gsum_scalar_int(&Nedges_global, &i, comm);
-
-  global_Knodes =(double *) ML_allocate(sizeof(double)*(N_nodes+Nghost_nodes));
-  global_Tnodes =(double *) ML_allocate(sizeof(double)*(N_nodes+Nghost_nodes));
-  global_edges  =(double *) ML_allocate(sizeof(double)*(N_edges+Nghost_edges));
-
-  for (i = 0 ; i < N_nodes; i++) global_Knodes[i] = (double) (node_offset + i);
-  for (i = 0 ; i < N_nodes; i++) global_Tnodes[i] = (double) (node_offset + i);
-  for (i = 0 ; i < N_edges; i++) global_edges[i] = (double) (edge_offset + i);
-
-  for (i = 0 ; i < Nghost_nodes; i++) global_Knodes[i+N_nodes] = -1;
-  for (i = 0 ; i < Nghost_nodes; i++) global_Tnodes[i+N_nodes] = -1;
-  for (i = 0 ; i < Nghost_edges; i++) global_edges[i+N_edges] = -1;
-
-  ML_exchange_bdry(global_Tnodes,T_mat->getrow->pre_comm, 
- 		 Kn->invec_leng,comm,ML_OVERWRITE,NULL);
-  ML_exchange_bdry(global_Knodes,Kn->getrow->pre_comm, 
- 		 Kn->invec_leng,comm,ML_OVERWRITE,NULL);
-  ML_exchange_bdry(global_edges,Ke->getrow->pre_comm, 
- 		 Ke->invec_leng,comm,ML_OVERWRITE,NULL);
-
-  /* spit out Kn */
-
-  sprintf(str,"Kn.%d",comm->ML_mypid);
-  fid = fopen(str,"w");
-  for (i = 0; i < Kn->outvec_leng; i++) {
-    j = ML_Operator_Getrow(Kn,1,&i,15,colInd,colVal,&ncnt);
-    for (j = 0; j < ncnt; j++) {
-      if (colVal[j] != 0.0) {
-	fprintf(fid,"%5d %5d %20.13e\n",(int) global_Knodes[i]+1,
-		       (int) global_Knodes[colInd[j]]+1, colVal[j]);
-      }
-    }
-  }
-  fclose(fid);
-
-  /* spit out Ke  */
-
-  sprintf(str,"Ke.%d",comm->ML_mypid);
-  fid = fopen(str,"w");
-  for (i = 0; i < Ke->outvec_leng; i++) {
-    j = ML_Operator_Getrow(Ke,1,&i,15,colInd,colVal,&ncnt);
-    for (j = 0; j < ncnt; j++) {
-      if (colVal[j] != 0.0) {
-	fprintf(fid,"%5d %5d %20.13e\n",(int) global_edges[i]+1,
-		       (int) global_edges[colInd[j]]+1, colVal[j]);
-      }
-    }
-  }
-  fclose(fid);
-
-  /* spit out M  */
-
-  sprintf(str,"M.%d",comm->ML_mypid);
-  fid = fopen(str,"w");
-  for (i = 0; i < M_mat->outvec_leng; i++) {
-    j = ML_Operator_Getrow(M_mat,1,&i,15,colInd,colVal,&ncnt);
-    for (j = 0; j < ncnt; j++) {
-      if (colVal[j] != 0.0) {
-	fprintf(fid,"%5d %5d %20.13e\n",(int) global_edges[i]+1,
-		       (int) global_edges[colInd[j]]+1, colVal[j]);
-      }
-    }
-  }
-  fclose(fid);
-
-  /* spit out T */
-
-  sprintf(str,"T.%d",comm->ML_mypid);
-  fid = fopen(str,"w");
-  for (i = 0; i < T_mat->outvec_leng; i++) {
-    j = ML_Operator_Getrow(T_mat,1,&i,15,colInd,colVal,&ncnt);
-    for (j = 0; j < ncnt; j++) {
-      if (colVal[j] != 0.0) {
-	fprintf(fid,"%5d %5d %20.13e\n",(int) global_edges[i]+1,
-		       (int) global_Tnodes[colInd[j]]+1, colVal[j]);
-      }
-    }
-  }
-  fclose(fid);
-
-  /* spit out x */
-
-  sprintf(str,"xxx.%d",comm->ML_mypid);
-  fid = fopen(str,"w");
-  for (i = 0; i < T_mat->outvec_leng; i++) {
-    fprintf(fid,"%5d %20.13e\n",(int) global_edges[i]+1,x[i]);
-    fprintf(fid,"%5d %20.13e\n",(int) global_edges[i]+1 + Nedges_global,
-	    x[i+T_mat->outvec_leng]);
-  }
-  fclose(fid);
-
-  /* spit out rhs */
-
-  sprintf(str,"rhs.%d",comm->ML_mypid);
-  fid = fopen(str,"w");
-  for (i = 0; i < T_mat->outvec_leng; i++) {
-    fprintf(fid,"%5d %20.13e\n",(int) global_edges[i]+1,rhs[i]);
-    fprintf(fid,"%5d %20.13e\n",(int) global_edges[i]+1 + Nedges_global,
-	    rhs[i+T_mat->outvec_leng]);
-  }
-  fclose(fid);
-
-
-  ML_free(global_Knodes);
-  ML_free(global_Tnodes);
-  ML_free(global_edges);
-  return 0;
-}
