@@ -831,9 +831,13 @@ AC_ARG_ENABLE(lapack-examples,
 [BUILD_LAPACK_EXAMPLES=no]
 )
 
+# Cannot build the examples if we don't build the library
+if test X${BUILD_LIBNOXLAPACK} != Xyes; then
+   BUILD_LAPACK_EXAMPLES=no
+fi
+
 AC_MSG_CHECKING(whether we should build the lapack examples)
 AC_MSG_RESULT(${BUILD_LAPACK_EXAMPLES})
-AM_CONDITIONAL(BUILD_LAPACK_EXAMPLES, test X${BUILD_LAPACK_EXAMPLES} = Xyes)
 
 # ------------------------------------------------------------------------
 # Checks for building epetra examples
@@ -1227,6 +1231,7 @@ AC_CONFIG_FILES([
 		src/Makefile
 		example/Makefile
                 src-lapack/Makefile
+		example-lapack/Makefile
 		src-epetra/Makefile 
 		example-epetra/Makefile 
 		example-epetra/DS6.5.1/Makefile
