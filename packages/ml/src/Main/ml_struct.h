@@ -196,6 +196,9 @@ extern int ML_Gen_Smoother_SymGaussSeidel(ML*,int nl,int pre_post,int ntimes,
 		     double omega);
 extern int ML_Gen_Smoother_SymGaussSeidelSequential(ML*,int nl,int pre_post,
                      int ntimes, double omega);
+extern int ML_Gen_Smoother_MLS(ML*,int nl,int pre_post, int ntimes);
+
+
 extern int ML_Gen_Smoother_OrderedSymGaussSeidel(ML *ml , int nl, int pre_or_post,
                      int ntimes, double omega);
 

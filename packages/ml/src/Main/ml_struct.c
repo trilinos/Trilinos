@@ -1726,10 +1726,195 @@ int ML_Gen_Smoother_VBlockMultiplicativeSchwarz(ML *ml , int nl, int pre_or_post
 /* generate the sparse approximate inverse smoother */
 /* ------------------------------------------------------------------------- */
 
+
+
+#include "ml_mls.h"
+
+int ML_MLS_Setup_Coef(void *sm, int deg) 
+{ /* 
+   * Preset the coefficients for MLS smoothing on current level to 
+   * (rho/2)* ( 1-cos((2Pi*k)/(2*deg+1)) )
+   *
+   * Returns: 0 on success.
+   */
+   const int    nSample=20000;
+   double       sample[nSample], gridStep, rho, rho2, ddeg, aux0, aux1; 
+   double       aux_om, om_loc[MLS_MAX_DEG], om2, coord;
+   const double pi=4.e0 * atan(1.e0); /* 3.141592653589793115998e0; */
+   int          i, j, nGrid;
+   int          j_max;
+   double       x_max;
+   ML_Smoother *smooth_ptr = (ML_Smoother *) sm;
+   ML_Operator *Amat = smooth_ptr->my_level->Amat;
+   struct MLSthing *widget = (struct MLSthing *) smooth_ptr->smoother->data;
+
+   printf("@@@@@@@@@@@@@@@@@@@ level: %3d\n", widget->mlsLevel);
+   
+   if (deg > MLS_MAX_DEG) { 
+       return (pr_error("*** value of deg larger than MLS_MAX_DEG !\n"));
+   }
+   rho = Amat->lambda_max;
+   for (i=0; i<MLS_MAX_DEG; i++) widget->mlsOm[i] = 0.e0;
+   ddeg = (double)deg; 
+   aux1 = 1.e0/(2.e0 * ddeg + 1.e0); 
+   for (j=0; j<deg; j++) { 
+	   aux0 = 2.e0 * (double)(j+1) * pi;  
+	   aux_om = rho/2.e0 * (1.e0 - cos(aux0 * aux1));
+	   om_loc[j] = 1.e0/aux_om;
+	   printf(" @@@(D) rho_A=%9.3g om[%2d] :%9.3g\n", rho,  j, om_loc[j]);
+   }
+   widget->mlsCf[0] = + om_loc[0] + om_loc[1] + om_loc[2]+om_loc[3] + om_loc[4];
+   widget->mlsCf[1] = -(om_loc[0]*om_loc[1]   + om_loc[0]*om_loc[2]
+	              + om_loc[0]*om_loc[3]   + om_loc[0]*om_loc[4]
+	              + om_loc[1]*om_loc[2]   + om_loc[1]*om_loc[3]
+	              + om_loc[1]*om_loc[4]   + om_loc[2]*om_loc[3]
+	              + om_loc[2]*om_loc[4]   + om_loc[3]*om_loc[4]);
+   widget->mlsCf[2] = +(om_loc[0]*om_loc[1]*om_loc[2]
+	              + om_loc[0]*om_loc[1]*om_loc[3]
+	              + om_loc[0]*om_loc[1]*om_loc[4]
+	              + om_loc[0]*om_loc[2]*om_loc[3]
+	              + om_loc[0]*om_loc[2]*om_loc[4]
+	              + om_loc[0]*om_loc[3]*om_loc[4]
+	              + om_loc[1]*om_loc[2]*om_loc[3]
+	              + om_loc[1]*om_loc[2]*om_loc[4]
+	              + om_loc[1]*om_loc[3]*om_loc[4]
+	              + om_loc[2]*om_loc[3]*om_loc[4]);
+   widget->mlsCf[3] = -(om_loc[0]*om_loc[1]*om_loc[2]*om_loc[3]
+                      + om_loc[0]*om_loc[1]*om_loc[2]*om_loc[4]
+                      + om_loc[0]*om_loc[1]*om_loc[3]*om_loc[4]
+                      + om_loc[0]*om_loc[2]*om_loc[3]*om_loc[4]
+                      + om_loc[1]*om_loc[2]*om_loc[3]*om_loc[4]);
+   widget->mlsCf[4] = om_loc[0]*om_loc[1]*om_loc[2]*om_loc[3]*om_loc[4];
+
+   gridStep = rho/(double)nSample;
+   nGrid    = (int)min(rint(rho/gridStep)+1, nSample);
+
+   for (j=0; j<nGrid; j++)  {
+	   coord   = (double)(j+1) * gridStep;
+           sample[j] = 1.e0 - om_loc[0] * coord;
+	   for(i=1; i<deg; i++) { 
+		   sample[j] *= sample[j] * coord;
+	   }
+   }
+   rho2  = 0.e0;
+   j_max = 0;
+   x_max = 0.e0;
+
+   for (j=0; j<nGrid; j++) if (sample[j] > rho2) {rho2 = sample[j]; j_max = j;}
+   
+   x_max = (double)j_max * gridStep;
+
+   if (deg < 2) {
+	   widget->mlsBoost = 1.029e0;
+   } else {
+	   widget->mlsBoost = 1.025e0;
+   }
+   rho2 *= widget->mlsBoost;
+   aux_om = rho2/2.e0 * (1.e0 - cos((2.e0 * pi)/3.e0)); 
+   om2    = 1.e0/aux_om;
+   printf(" @@@(D) rhoAS=%9.3g    om2 :%9.3g\n", rho2,om2);
+   
+   widget->mlsOm2 = om2;
+   for (i=0; i<deg; i++) widget->mlsOm[i] = om_loc[i]; // @@@ do this directly above
+	
+   return 0;
+
+}
+
+int ML_Gen_Smoother_MLS(ML *ml, int nl, int pre_or_post, int ntimes)
+{
+   int              start_level, end_level, i, errCode=0;   
+   struct MLSthing *widget;
+   ML_Operator     *Amat;
+   char             str[80];
+#ifdef ML_TIMING
+   double         t0;
+#endif
+
+   if (nl == ML_ALL_LEVELS) { 
+	  start_level = 0; end_level = ml->ML_num_levels-1;}
+   else { start_level = nl; end_level = nl;}
+
+   if (start_level < 0) {
+      printf("ML_Gen_Smoother_MLS: cannot set smoother on level %d\n",
+		      start_level);
+      return 1;
+   }
+	
+   for (i = start_level; i <= end_level; i++) {
+#ifdef ML_TIMING
+     t0 = GetClock();
+#endif
+     Amat = &(ml->Amat[i]);
+
+     if (Amat->matvec->ML_id != ML_EMPTY) {
+
+         widget = (struct MLSthing *) ML_allocate(sizeof(struct MLSthing));
+	 printf("@@@ current level = %d\n", i);
+	 widget->mlsLevel = i; // @@@ wrong notion of level here ...
+	 widget->mlsDeg   = 1;
+	 widget->mlsBoost = 1.1; 
+	 widget->mlsOver  = 1.10e0;
+	 widget->mlsOm[0] = Amat->lambda_max;
+	 widget->mlsOm2   = 1.8;
+	 widget->mlsCf[0] = 2*0.68;
+	 widget->nIsolNod = 0;
+	 widget->pIsolNod = NULL;
+	 widget->res0     = NULL;
+	 widget->res      = NULL;
+	 widget->y        = NULL;
+	 widget->mlsReady = 0;  
+
+//@@@	 if (ML_MLS_Setup_Coef(widget, 1)) { 
+//@@@	     return pr_error("*** MLS setup failed!\n");  
+//@@@	 }
+
+	 if (pre_or_post == ML_PRESMOOTHER) {
+	   ml->pre_smoother[i].data_destroy = ML_Smoother_Destroy_MLS;
+           sprintf(str,"MLS_pre%d",i);
+           errCode=ML_Smoother_Set(&(ml->pre_smoother[i]), ML_INTERNAL, 
+				  (void *) widget, ML_Smoother_MLS_Apply, NULL, 
+				   ntimes, 0.0, str);
+	 }
+	 else if (pre_or_post == ML_POSTSMOOTHER) {
+	   ml->post_smoother[i].data_destroy = ML_Smoother_Destroy_MLS;
+	   sprintf(str,"MLS_post%d",i);
+	   errCode=ML_Smoother_Set(&(ml->post_smoother[i]), ML_INTERNAL, 
+				  (void *) widget, ML_Smoother_MLS_Apply, NULL, 
+				  ntimes, 0.0, str);
+	 }
+	 else if (pre_or_post == ML_BOTH) {
+	   ml->post_smoother[i].data_destroy = ML_Smoother_Destroy_MLS;
+	   sprintf(str,"MLS_pre%d",i);     
+
+	   ML_Smoother_Set(&(ml->pre_smoother[i]), ML_INTERNAL, 
+                        (void *) widget, ML_Smoother_MLS_Apply, NULL, ntimes, 0.0, str);
+	   sprintf(str,"MLS_post%d",i);
+	   errCode = ML_Smoother_Set(&(ml->post_smoother[i]), ML_INTERNAL, 
+               (void *) widget, ML_Smoother_MLS_Apply, NULL, ntimes, 0.0, str);
+	 }
+	 else return(pr_error("Print unknown pre_or_post choice\n"));
+
+	 /* set up the values needed for MLS  */
+	 if (ML_MLS_Setup_Coef(&(ml->post_smoother[i]), 1)) { 
+	     return pr_error("*** MLS setup failed!\n");  
+	 }
+
+#ifdef ML_TIMING
+         if (pre_or_post == ML_PRESMOOTHER)
+	   ml->pre_smoother[i].build_time = GetClock() - t0;
+	 else ml->post_smoother[i].build_time = GetClock() - t0;
+
+         ml->timing->total_build_time   += ml->post_smoother[i].build_time;
+#endif
+     }
+   }
+   return errCode; 
+}
+
 #ifdef PARASAILS
 #include "Matrix.h"
 #include "ParaSails.h"
-
 #endif
 
 int ML_Gen_Smoother_ParaSails(ML *ml, int nl, int pre_or_post, int ntimes,
