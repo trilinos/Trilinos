@@ -280,7 +280,7 @@ static int matching_col_ipm(ZZ *zz, HGraph *hg, Matching match, PHGPartParams *h
                 nadj, MAX_NNZ);
 #endif
             /* Pick random selection of vertices if more than MAX_NNZ. */
-            Zoltan_Rand_Perm_Int(adj, nadj);
+            Zoltan_Rand_Perm_Int(adj, nadj, &(hgc->RNGState_col));
 
             /* Make sure highest value is among the selected vtx. */
             maxip = 0.0; 
@@ -626,7 +626,9 @@ static int matching_ipm (ZZ *zz, HGraph* hg, Matching match, PHGPartParams *hgp)
       count      = edgebuf[i++];    /* count of edges */
       i += count;                   /* skip over count edges */
     }
-    Zoltan_Rand_Perm_Int (permute, nTotal);      /* randomly permute vertices */
+
+    /* randomly permute vertices */
+    Zoltan_Rand_Perm_Int (permute, nTotal, &(hgc->RNGState_col));   
             
     /* for each candidate vertex, compute all local partial inner products */
     kstart = old_kstart = 0;         /* next candidate (of nTotal) to process */

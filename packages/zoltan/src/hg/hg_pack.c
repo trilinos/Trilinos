@@ -148,7 +148,7 @@ char *yo = "packing_rep";
      edges[i] = i;
 
   for (i = hg->nEdge; i > 0  &&  *limit > 0; i--) {
-     edge = edges[random = Zoltan_Rand() % i];
+     edge = edges[random = Zoltan_Rand(NULL) % i];
      edges[random] = edges[i-1];
 
      for (j = hg->hindex[edge]; j < hg->hindex[edge+1]; j++)
@@ -188,7 +188,7 @@ char *yo = "packing_rrp";
      vertices[i] = i;
 
   for (i = hg->nVtx; i > 0  &&  *limit > 0; i--) {
-     vertex = vertices[random = Zoltan_Rand() % i];
+     vertex = vertices[random = Zoltan_Rand(NULL) % i];
      vertices[random] = vertices[i-1];
      if (pack[vertex] != vertex)
         continue;          /* vertex already packed, move on */
@@ -210,7 +210,7 @@ char *yo = "packing_rrp";
      if (count == 0)
         continue;                  /* vertex has no free edges available */
 
-     random = Zoltan_Rand() % count;      /* randomly select from available edges */
+     random = Zoltan_Rand(NULL) % count;      /* randomly select from available edges */
      for (k = hg->vindex[vertex]; k < hg->vindex[vertex+1]; k++) {
         edge = hg->vedge[k];
         if (del_edges[edge] == 0  &&  --count == random) {
@@ -251,7 +251,7 @@ char  *yo = "packing_rhp";
       vertices[i] = i;
 
    for (i = hg->nVtx; i > 0 && (*limit) > 0; i--) {
-      vertex = vertices[number = Zoltan_Rand() % i];
+      vertex = vertices[number = Zoltan_Rand(NULL) % i];
       vertices[number] = vertices[i-1];
       if (pack[vertex] != vertex)
          continue;            /* vertex is already matched, move on */
@@ -278,7 +278,7 @@ char  *yo = "packing_rhp";
          continue;
 
       if (best_neighbors > 1) {
-         random = Zoltan_Rand() % best_neighbors;
+         random = Zoltan_Rand(NULL) % best_neighbors;
          for (j = hg->vindex[vertex]; j < hg->vindex[vertex+1]; j++) {
             edge = hg->vedge[j];
             size = hg->hindex[edge+1] - hg->hindex[edge];

@@ -276,6 +276,9 @@ static int first_time = 1;
     scomm.col_comm = MPI_COMM_SELF;
     scomm.myProc = 0;
     scomm.nProc = 1;
+    scomm.RNGState = Zoltan_Rand(NULL);
+    scomm.RNGState_row = Zoltan_Rand(NULL);
+    scomm.RNGState_col = Zoltan_Rand(NULL);
     first_time = 0;
   }
 

@@ -116,7 +116,6 @@ int Zoltan_PHG_CoarsePartition(
 char *yo = "Zoltan_PHG_CoarsePartition";
 int ierr = ZOLTAN_OK;
 int i, si, j;
-unsigned int tmp;
 static PHGComm scomm;          /* Serial communicator info */
 static int first_time = 1;
 HGraph *shg = NULL;            /* Serial hypergraph gathered from phg */
@@ -169,14 +168,9 @@ float bal, worst_cut;
 
     CoarsePartition = hgp->CoarsePartition;
     if (CoarsePartition == NULL) {
-      static int first_time = 1;
       /* Select a coarse partitioner from the array of coarse partitioners */
       CoarsePartition = CoarsePartitionFns[phg->comm->myProc % 
                                            NUM_COARSEPARTITION_FNS];
-      if (first_time) {
-        Zoltan_Srand(phg->comm->myProc);   /* May need more clever seed. */
-        first_time = 0;
-      }
     }
 
 
@@ -193,6 +187,9 @@ float bal, worst_cut;
         scomm.Communicator = MPI_COMM_SELF;
         scomm.row_comm = MPI_COMM_SELF;
         scomm.col_comm = MPI_COMM_SELF;
+        scomm.RNGState = Zoltan_Rand(NULL);
+        scomm.RNGState_row = Zoltan_Rand(NULL);
+        scomm.RNGState_col = Zoltan_Rand(NULL);
         scomm.myProc = 0;
         scomm.nProc = 1;
         first_time = 0;
@@ -228,8 +225,7 @@ float bal, worst_cut;
     /* Currently, only the best one is used. */
 
     /* Set RNG so different procs compute different parts. */
-    tmp = Zoltan_Rand();
-    Zoltan_Srand(tmp + zz->Proc);
+    Zoltan_Srand(Zoltan_Rand(NULL) + zz->Proc, NULL);
 
     new_cand = 0;
     new_part = spart;
@@ -474,7 +470,7 @@ static int coarse_part_ran (
     }
 
     /* Randomly permute order array */
-    Zoltan_Rand_Perm_Int (order, hg->nVtx);
+    Zoltan_Rand_Perm_Int (order, hg->nVtx, NULL);
         
     /* Call sequence partitioning with random order array. */
     err = seq_part (zz, hg, order, p, part_sizes, part, hgp);
@@ -520,7 +516,7 @@ static int coarse_part_rip (
 
     /* Generate positive random numbers for edges */
     for (j=0; j<hg->nEdge; j++){
-      ran[j] = ((float) Zoltan_Rand())/ZOLTAN_RAND_MAX; 
+      ran[j] = ((float) Zoltan_Rand(NULL))/ZOLTAN_RAND_MAX; 
     }
 
     /* Compute scaled inner products with random vector. */
@@ -600,7 +596,7 @@ static int coarse_part_ripk (
 
     /* Generate positive random numbers for edges */
     for (j=0; j<p*hg->nEdge; j++){
-      ran[j] = ((float) Zoltan_Rand())/ZOLTAN_RAND_MAX; 
+      ran[j] = ((float) Zoltan_Rand(NULL))/ZOLTAN_RAND_MAX; 
     }
 
     /* Compute inner products with the random vectors. */
@@ -970,7 +966,7 @@ static int coarse_part_greedy (
   }
 
   /* Start at random vertex */
-  start = Zoltan_Rand() % (hg->nVtx);
+  start = Zoltan_Rand(NULL) % (hg->nVtx);
 
   /* Call greedy_order. */
   err = greedy_order(zz, hg, order, start, pri_mode, p, part_sizes, part, hgp);

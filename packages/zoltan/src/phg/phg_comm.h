@@ -31,6 +31,8 @@ struct PHGCommStruct {
   int myProc;     /* my processor's rank within Communicator. */
   int nProc;      /* number of proc in Communicator.
                      nProc = nProc_x * nProc_y */
+  unsigned int RNGState;  /* State for random-number generator 
+                              w.r.t. Communicator */
   int nProc_x;    /* number of processors in x-direction of 2D data distrib.  */
   int nProc_y;    /* number of processors in y-direction of 2D data distrib.  */
                   /* nProc_x * nProc_y should equal number of processors!     */
@@ -38,6 +40,10 @@ struct PHGCommStruct {
   int myProc_y;   /* my processor's column block number in [0,nProc_y-1] */
   MPI_Comm row_comm; /* my processor's row communicator */
   MPI_Comm col_comm; /* my processor's column communicator */
+  unsigned int RNGState_row;  /* State for random-number generator w.r.t. 
+                               row_comm */
+  unsigned int RNGState_col;  /* State for random-number generator w.r.t. 
+                               row_comm */
   ZZ  *zz;        /* for debugging purpose */
 };
 

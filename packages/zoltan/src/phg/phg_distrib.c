@@ -413,6 +413,12 @@ int Zoltan_PHG_Redistribute(
             ZOLTAN_PRINT_ERROR(zz->Proc, yo, "MPI_Comm_Split failed");
             return ZOLTAN_FATAL;
         }        
+        Zoltan_Srand_Sync(Zoltan_Rand(NULL), &(ncomm->RNGState_row),
+                          ncomm->row_comm);
+        Zoltan_Srand_Sync(Zoltan_Rand(NULL), &(ncomm->RNGState_col),
+                          ncomm->col_comm);
+        Zoltan_Srand_Sync(Zoltan_Rand(NULL), &(ncomm->RNGState), 
+                          ncomm->Communicator);
     } else {
         ncomm->myProc = ncomm->myProc_x = ncomm->myProc_y = -1;
     }
@@ -421,7 +427,7 @@ int Zoltan_PHG_Redistribute(
     n2Row = (int *) ZOLTAN_MALLOC(ohg->nEdge * sizeof(int));
 
     /* UVC: TODO very simple straight forward partitioning right now;
-       later we can implemet a more "load balanced", or smarter
+       later we can implement a more "load balanced", or smarter
        mechanisms */
     frac = (float) ohg->nVtx / (float) ncomm->nProc_x;
     for (i=0; i<ohg->nVtx; ++i) 

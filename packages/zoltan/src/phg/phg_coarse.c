@@ -458,7 +458,7 @@ int Zoltan_PHG_Coarsening
      we need to check if this is good, if not we need to find a better way */
   MPI_Allreduce(lhash, hash, c_hg->nEdge, MPI_INT, MPI_SUM, hgc->row_comm);
 
-  for (i=0; i < hg->nEdge; ++i)  /* decide where to send */
+  for (i=0; i < c_hg->nEdge; ++i)  /* decide where to send */
       listproc[i] = (int) (hash[i] % hgc->nProc_y);
   
   Zoltan_Comm_Create(&plan, c_hg->nEdge, listproc, hgc->col_comm, PLAN_TAG+10, 

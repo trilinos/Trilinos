@@ -39,7 +39,10 @@ int Zoltan_PHG_Vertex_Visit_Order(
   switch (hgp->visit_order){
     case 1: 
       /* random node visit order */
-      Zoltan_Rand_Perm_Int (order, hg->nVtx);
+      /* Synchronize within column so each column proc visits in same order */
+      Zoltan_Srand_Sync(Zoltan_Rand(NULL), &(hg->comm->RNGState_col),
+                        hg->comm->col_comm);
+      Zoltan_Rand_Perm_Int (order, hg->nVtx, &(hg->comm->RNGState_col));
       break;
 
     case 2: 

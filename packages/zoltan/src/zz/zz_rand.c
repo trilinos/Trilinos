@@ -30,21 +30,67 @@ extern "C" {
  * gave problems on stratus (which assumed 64 bit longs.) 
  */
 
-static unsigned int idum = 123456789U;
+static unsigned int zidum = 123456789U;
 
-unsigned Zoltan_Rand (void) {
-  return idum = (1664525U * idum) + 1013904223U;
+unsigned Zoltan_Rand(unsigned int *myidum) {
+/* 
+ * If myidum is non-NULL, use *myidum as the generator value.  This feature
+ * allows synchronization of the RNG across processors.
+ * If myidum is NULL, use zidum.
+ */
+unsigned int *idum;
+
+  if (myidum) 
+    idum = myidum;
+  else
+    idum = &zidum;
+  *idum = (1664525U * *idum) + 1013904223U;
+  return (*idum);
 }
 
 
 
-void Zoltan_Srand (unsigned int seed) {
-  idum = seed;
+void Zoltan_Srand (unsigned int seed, unsigned int *myidum) {
+/* 
+ * If myidum is non-NULL, set *myidum to the seed.  
+ * If myidum is NULL, set zidum.
+ */
+unsigned int *idum;
+
+  if (myidum) 
+    idum = myidum;
+  else
+    idum = &zidum;
+  *idum = seed;
+}
+
+
+
+void Zoltan_Srand_Sync(
+  unsigned int seed, 
+  unsigned int *myidum,
+  MPI_Comm comm
+)
+{
+/* Synchronize the random number seed across processor within a communicator.
+ * Proc 0's seed is the broadcast seed used by all procs. 
+ * If myidum is non-NULL, set *myidum to the seed.  
+ * If myidum is NULL, set zidum.
+ */
+
+unsigned int *idum;
+
+  if (myidum) 
+    idum = myidum;
+  else
+    idum = &zidum;
+  *idum = seed;
+  MPI_Bcast(idum, 1, MPI_UNSIGNED, 0, comm);
 }
 
 
 /* Randomly permute an array of ints. */
-void Zoltan_Rand_Perm_Int (int *data, int n)
+void Zoltan_Rand_Perm_Int (int *data, int n, unsigned int *myidum)
 {
 int i, number, temp;
 double denom = ZOLTAN_RAND_MAX + 1.0;
@@ -53,7 +99,7 @@ double denom = ZOLTAN_RAND_MAX + 1.0;
  */
 
   for (i = n; i > 0; i--) {
-    number       = (int) ((double) i * (double) Zoltan_Rand() / denom);
+    number       = (int) ((double) i * (double) Zoltan_Rand(myidum) / denom);
     temp         = data[number];
     data[number] = data[i-1];
     data[i-1]    = temp;
