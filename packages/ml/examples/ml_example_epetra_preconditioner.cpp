@@ -63,7 +63,7 @@ int main(int argc, char *argv[])
   ParameterList MLList;
 
   // set defaults for classic smoothed aggregation
-  ML_Epetra::SetDefaults("SA",MLLIst);
+  ML_Epetra::SetDefaults("SA",MLList);
   
   // overwrite some parameters. Please refer to the user's guide
   // for more information

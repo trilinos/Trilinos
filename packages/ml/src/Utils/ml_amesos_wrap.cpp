@@ -19,8 +19,7 @@
 #include "ml_amesos.h"
 #include "ml_amesos_wrap.h"
 #include "Amesos_BaseSolver.h"
-#include "Amesos_Factory.h" 
-#include "AmesosClassType.h"
+#include "Amesos.h" 
 
 #include "ml_amesos_wrap.h"
 
@@ -149,7 +148,7 @@ int ML_Amesos_Gen(ML *ml, int curr_level, int choice,
   }
 
   Amesos_BaseSolver* A_Base;
-  Amesos_Factory A_Factory;
+  Amesos A_Factory;
 
   // I got the impression that small problems are "safer"
   // in other hands than superludist ones.
@@ -167,7 +166,7 @@ int ML_Amesos_Gen(ML *ml, int curr_level, int choice,
       cout << "Amesos (level " << curr_level
 	   << ") : building UMFPACK\n";
 #endif
-    A_Base = A_Factory.Create(AMESOS_UMFPACK, *Amesos_LinearProblem, ParamList );
+    A_Base = A_Factory.Create("Amesos_Klu", *Amesos_LinearProblem);
     assert(A_Base!=0);
     break;
 
@@ -180,7 +179,21 @@ int ML_Amesos_Gen(ML *ml, int curr_level, int choice,
       cout << "Amesos (level " << curr_level
 	   << ") : building SUPERLUDIST\n";
 #endif
-    A_Base = A_Factory.Create( AMESOS_SUPERLUDIST, *Amesos_LinearProblem, ParamList );
+    A_Base = A_Factory.Create("Amesos_Superludist", *Amesos_LinearProblem);
+    
+    assert(A_Base!=0);
+    break;
+
+  case ML_AMESOS_SCALAPACK:
+#ifdef TFLOP
+    if( Amesos_CrsMatrix->Comm().MyPID() == 0 && ML_Get_PrintLevel()>2 )
+      printf("Amesos (level %d) : building SCALAPACK\n",curr_level);
+#else
+    if( Amesos_CrsMatrix->Comm().MyPID() == 0 && ML_Get_PrintLevel()>2 )
+      cout << "Amesos (level " << curr_level
+	   << ") : building SCALAPACK\n";
+#endif
+    A_Base = A_Factory.Create("Amesos_Scalapack", *Amesos_LinearProblem);
     
     assert(A_Base!=0);
     break;
@@ -194,7 +207,7 @@ int ML_Amesos_Gen(ML *ml, int curr_level, int choice,
       cout << "Amesos (level " << curr_level
 	   << ") : building MUMPS\n";
 #endif
-    A_Base = A_Factory.Create(AMESOS_MUMPS, *Amesos_LinearProblem, ParamList );
+    A_Base = A_Factory.Create("Amesos_Mumps", *Amesos_LinearProblem);
     assert(A_Base!=0);
     break;
 
@@ -208,11 +221,12 @@ int ML_Amesos_Gen(ML *ml, int curr_level, int choice,
       cout << "Amesos (level " << curr_level
 	   << ") : building KLU\n";
 #endif
-    A_Base = A_Factory.Create(AMESOS_KLU, *Amesos_LinearProblem, ParamList );
+    A_Base = A_Factory.Create("Amesos_Klu", *Amesos_LinearProblem);
     assert(A_Base!=0);
     break;
   }
 
+  A_Base->SetParameters(ParamList);
 
   Epetra_Time Time(Amesos_CrsMatrix->Comm());
 
