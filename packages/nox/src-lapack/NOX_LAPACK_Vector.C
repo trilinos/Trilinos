@@ -35,7 +35,7 @@
 #include "NOX_BLAS_Wrappers.H"
 
 NOX::LAPACK::Vector::Vector(int n) : 
-  x(n, 0.0)			// initialize a zero vector of length n
+  x(n, 0.0)		       // initialize a zero vector of length n
 {
 }
 
@@ -76,8 +76,10 @@ NOX::Abstract::Vector& NOX::LAPACK::Vector::random(bool useSeed, double seed)
 {
   if (useSeed)
     urand.setSeed(seed);
-  for (int i=0; i<x.size(); i++) 
+
+  for (int i = 0; i < x.size(); i ++) 
     x[i] = urand();
+
   return *this;
 }
 
@@ -208,6 +210,8 @@ double NOX::LAPACK::Vector::norm(const NOX::LAPACK::Vector& weights) const
   for (int i = 0; i < n; i ++)
     value += weights[i] * x[i] * x[i];
 
+  value = sqrt(value);
+
   return value;
 }
 
@@ -219,12 +223,11 @@ double NOX::LAPACK::Vector::dot(const NOX::Abstract::Vector& y) const
 double NOX::LAPACK::Vector::dot(const NOX::LAPACK::Vector& y) const
 {
   if (y.length() != x.size()) {
-    cerr << "NOX::LAPACK::Vector::norm - size mismatch for weights vector" << endl;
+    cerr << "NOX::LAPACK::Vector::dot - size mismatch for y vector" << endl;
     throw "NOX::LAPACK Error";
   }
 
   int n = x.size();		// size of x
-  
   return DDOT_F77(&n, &x[0], &i_one, &y[0], &i_one);
 }
 
