@@ -38,6 +38,8 @@ using namespace MLAPI;
 void GetSmoothedP(Operator A, ParameterList& List, MultiVector& NS,
                   Operator& P, MultiVector& NewNS);
 
+// FIXME: store the structure of the aggregates for all phases.
+// FIXME: set threshold to zero??
 
 class GeneralMultiLevelSA : public BaseOperator, public CompObject, public TimeObject {
 
@@ -208,6 +210,7 @@ public:
 
   }
 
+  // FIXME: name??
   void AdaptedCompute() {
 
     ResetTimer();
@@ -232,6 +235,7 @@ public:
           if (i % NumPDEEqns == j)
             ThisNS(i,j) = 1.0;
     }
+
 
     MultiVector NextNS;     // contains the next-level null space
     
@@ -261,6 +265,12 @@ public:
     MultiVector CandNS(A_[0].GetRangeSpace(),NCand+1);
     CandNS.Random();
 
+    // FIXME: am I necessary??
+    MultiVector FineCandNS(ThisNS.GetVectorSpace(), NCand + 1);
+    for (int j=0; j< NCand; j++)
+      for (int i=0; i< CandNS.GetMyLength(); i++)
+        FineCandNS(i,j) = ThisNS(i,j);
+
     for (int i=0; i< CandNS.GetMyLength(); i++)
       CandNS(i,NCand) = (CandNS(i,NCand)+1.0)/2.0;
     //CandNS = (CandNS + 1.) / 2.0;
@@ -270,8 +280,11 @@ public:
        CandNS(i,j) = ThisNS(i,j);
 
     //  zero out in the new candidate everybody but the (Ncand+1)'th guy
+    cout << "NCand = " << NCand << endl;
+    cout << "NumPDEEqns =  " << NumPDEEqns << endl;
     if (NCand+1 <= NumPDEEqns)
     {
+      cout << "I am zerorooooooing oouttt" << endl;
       for (int i=0; i< CandNS.GetMyLength(); i++)
         if ( (i+1) % (NCand+1) != 0) 
           CandNS(i,NCand) = 0;
@@ -295,10 +308,14 @@ public:
     matlab << b0;
    */
    
-   int Nits = 100;
+   int Nits = 15;
    for (int i=0; i<Nits; i++)
      SolveMultiLevelSA(b0,CopyCandNS,0);
 
+   double NormFirst = CandNS.NormInf(0);
+   CopyCandNS.Scale(NormFirst / CopyCandNS.NormInf());
+
+   cout << "NORM CopyCandNS = " << CopyCandNS.NormInf() << endl;
    /*
     CopyCandNS.SetLabel("xafter");
     matlab << CopyCandNS;
@@ -363,23 +380,44 @@ public:
 
       double MyEnergyBefore = sqrt((C * CopyCandNS) * CopyCandNS);
 
+      cout << "en before = " << MyEnergyBefore << endl;
+      // FIXME scale with something: norm of the matrix, ...;
+      if (MyEnergyBefore < 1e-10) {
+        ++level;
+        break;
+      }
+        
       b0.Reshape(CopyCandNS.GetVectorSpace());
       b0 = 0.;
       
       MultiVector anotherjunk = CopyCandNS;
-      cout << "Nits=" << Nits << endl;
+      cout << "LEVEL = " << level;
+      if (level)
+        Nits = 5;
+      cout << "  Nits=" << Nits << endl;
 
       for (int i=0; i<Nits; i++)
         SolveMultiLevelSA(b0,CopyCandNS,level+1);
 
-      anotherjunk = anotherjunk - CopyCandNS;
-      cout << "Norm of DELTA=" << anotherjunk.Norm2() << endl;
+      // get norm of the first NS component
+      double maxabs = 0.;
+
+      for (int i=0; i<CandNS.GetMyLength(); ++i)
+         if (maxabs < fabs(CandNS(i,0))) maxabs = fabs(CandNS(i,0));
+      cout << "maxabs " << maxabs << endl;
+
+      double MyEnergyAfter = sqrt((C * CopyCandNS) * CopyCandNS);
+
+      // scale the new candidate
+      double max = CopyCandNS.NormInf();
+      cout << "max " << max << endl;
+      CopyCandNS.Scale((maxabs/max));
+      cout << "maxabs/max " << (maxabs/max) << endl;
 
       for (int i=0; i<CopyCandNS.GetMyLength(); i++)
         CandNS(i,NCand) = CopyCandNS(i);
       
       //TODO coarse level
-      double MyEnergyAfter = sqrt((C * CopyCandNS) * CopyCandNS);
       cout << "adaptedCompute: EnergyBefore=" << MyEnergyBefore << endl;
       cout << "adaptedCompute: EnergyAfter =" << MyEnergyAfter << endl;
 
@@ -389,23 +427,28 @@ public:
 
       if (pow(MyEnergyAfter/MyEnergyBefore,1.0/Nits) < 0.1) {
         ++level;
+        cout << "BREAK...." << endl;
         break;
       }
     }
     
     --level;
     //project back to fine level
+    // FIXME: put scaling on every level in here?
     for (int i=level; i>=0 ; i--) {
       cout << i << endl;
       CopyCandNS = P_[i] * CopyCandNS;
     }
+
+    for (int i=0; i<FineCandNS.GetMyLength(); ++i)
+       FineCandNS(i,NCand) = CopyCandNS(i);
    
-    exit(0);
-    //XXX NCand++
+    MATLABStream stream("output.m");
+    stream << FineCandNS;
 
     List_.set("PDE equations", NumPDEEqns);
     // set the newly computed null space into the list
-    List_.set("aggregation: null space", CopyCandNS);
+    List_.set("aggregation: null space", FineCandNS);
 
     // compute a new hierarchy with the new null space.
     Compute();
@@ -720,6 +763,11 @@ MultiVector GetTentativeNullSpace(Operator FineMatrix,
   F = 0.0;
   S[0].Apply(F, NS);
 
+  double norm = NS.NormInf();
+  NS.Scale(1.0 / norm);
+  cout << "# vectors = " << NS.GetNumVectors() << endl;
+  cout << "# norm = " << NS.NormInf() << endl;
+
   //MATLABStream matlab("output.m");
   //matlab << NS;
 
@@ -839,6 +887,7 @@ int main(int argc, char *argv[])
     GeneralMultiLevelSA Prec(A, List);
 
     // create the candNS-hierarchy
+    Prec.AdaptedCompute();
     Prec.AdaptedCompute();
 
     // test the solver
