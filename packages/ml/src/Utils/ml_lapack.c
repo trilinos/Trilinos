@@ -7899,6 +7899,7 @@ tor
 #endif
 
 
+#ifndef ML_DPOTRS_FUNC
 
 /* Subroutine */ int dpotrs_(char *uplo, integer *n, integer *nrhs, 
 	doublereal *a, integer *lda, doublereal *b, integer *ldb, integer *
@@ -7963,7 +7964,7 @@ tor
     static doublereal c_b9 = 1.;
     
     /* System generated locals */
-    integer a_dim1, a_offset, b_dim1, b_offset, i__1;
+    integer i__1;
     /* Local variables */
     extern logical lsame_(char *, char *);
     extern /* Subroutine */ int dtrsm_(char *, char *, char *, char *, 
@@ -8034,8 +8035,10 @@ tor
 /*     End of DPOTRS */
 
 } /* dpotrs_ */
+#endif
 
 
+#ifndef ML_DGELQ2_FUNC
 /* Subroutine */ int dgelq2_(integer *m, integer *n, doublereal *a, integer *
 	lda, doublereal *tau, doublereal *work, integer *info)
 {
@@ -8171,8 +8174,10 @@ tor
 /*     End of DGELQ2 */
 
 } /* dgelq2_ */
+#endif
 
 
+#ifndef ML_DGELQF_FUNC
 /* Subroutine */ int dgelqf_(integer *m, integer *n, doublereal *a, integer *
 	lda, doublereal *tau, doublereal *work, integer *lwork, integer *info)
 {
@@ -8402,7 +8407,9 @@ tor
 /*     End of DGELQF */
 
 } /* dgelqf_ */
+#endif
 
+#ifndef ML_DGELSL_FUNC
 
 /* Subroutine */ int dgels_(char *trans, integer *m, integer *n, integer *
 	nrhs, doublereal *a, integer *lda, doublereal *b, integer *ldb, 
@@ -8867,8 +8874,10 @@ L50:
 /*     End of DGELS */
 
 } /* dgels_ */
+#endif
 
 
+#ifndef ML_DLASCL_FUNC
 
 /* Subroutine */ int dlascl_(char *type, integer *kl, integer *ku, doublereal 
 	*cfrom, doublereal *cto, integer *m, integer *n, doublereal *a, 
@@ -9171,7 +9180,9 @@ L10:
 /*     End of DLASCL */
 
 } /* dlascl_ */
+#endif
 
+#ifndef ML_DLASET_FUNC
 /* Subroutine */ int dlaset_(char *uplo, integer *m, integer *n, doublereal *
 	alpha, doublereal *beta, doublereal *a, integer *lda)
 {
@@ -9296,8 +9307,10 @@ L10:
 /*     End of DLASET */
 
 } /* dlaset_ */
+#endif
 
 
+#ifndef ML_DLASSQ_FUNC
 /* Subroutine */ int dlassq_(integer *n, doublereal *x, integer *incx, 
 	doublereal *scale, doublereal *sumsq)
 {
@@ -9390,7 +9403,9 @@ L10:
 /*     End of DLASSQ */
 
 } /* dlassq_ */
+#endif
 
+#ifndef ML_DLANGE_FUNC
 
 doublereal dlange_(char *norm, integer *m, integer *n, doublereal *a, integer 
 	*lda, doublereal *work)
@@ -9557,6 +9572,9 @@ doublereal dlange_(char *norm, integer *m, integer *n, doublereal *a, integer
 /*     End of DLANGE */
 
 } /* dlange_ */
+#endif
+
+#ifndef ML_DLABAD_FUNC
 
 /* Subroutine */ int dlabad_(doublereal *small, doublereal *large)
 {
@@ -9615,7 +9633,9 @@ doublereal dlange_(char *norm, integer *m, integer *n, doublereal *a, integer
 /*     End of DLABAD */
 
 } /* dlabad_ */
+#endif
 
+#ifndef ML_DORMQR_FUNC
 
 /* Subroutine */ int dormqr_(char *side, char *trans, integer *m, integer *n, 
 	integer *k, doublereal *a, integer *lda, doublereal *tau, doublereal *
@@ -9752,6 +9772,7 @@ doublereal dlange_(char *norm, integer *m, integer *n, doublereal *a, integer
 
 
 
+#undef T
 #define T(I) t[(I)]
 #define WAS(I) was[(I)]
 #define TAU(I) tau[(I)-1]
@@ -9900,8 +9921,10 @@ doublereal dlange_(char *norm, integer *m, integer *n, doublereal *a, integer
 /*     End of DORMQR */
 
 } /* dormqr_ */
+#endif
 
 
+#ifndef ML_DORMLQ_FUNC
 
 /* Subroutine */ int dormlq_(char *side, char *trans, integer *m, integer *n, 
 	integer *k, doublereal *a, integer *lda, doublereal *tau, doublereal *
@@ -10195,8 +10218,10 @@ doublereal dlange_(char *norm, integer *m, integer *n, doublereal *a, integer
 /*     End of DORMLQ */
 
 } /* dormlq_ */
+#endif
 
 
+#ifndef ML_DORM2R_FUNC
 
 
 /* Subroutine */ int dorm2r_(char *side, char *trans, integer *m, integer *n, 
@@ -10404,7 +10429,9 @@ doublereal dlange_(char *norm, integer *m, integer *n, doublereal *a, integer
 /*     End of DORM2R */
 
 } /* dorm2r_ */
+#endif
 
+#ifndef ML_DROML2_FUNC
 
 /* Subroutine */ int dorml2_(char *side, char *trans, integer *m, integer *n, 
 	integer *k, doublereal *a, integer *lda, doublereal *tau, doublereal *
@@ -10606,4 +10633,5 @@ doublereal dlange_(char *norm, integer *m, integer *n, doublereal *a, integer
 /*     End of DORML2 */
 
 } /* dorml2_ */
+#endif
 
