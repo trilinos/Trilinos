@@ -279,11 +279,12 @@ Go on to \ref step2.
   optionally, the Jacobian. Complete details are provided in
   the class decriptions.
 
-\section step2_writing Writing your own instantiation
-
-  In order to link you code to NOX, you make have to write your own
+  In order to link your code to NOX, you have to write your own
   instantiation of the NOX::Abstract::Vector and NOX::Abstract::Group
-  classes. 
+  classes (see \ref step2_writing) or use one of the predefined
+  implementations (see \ref step2_instantiations).
+
+\section step2_writing Writing your own instantiation
 
   We recommend using the NOX::LAPACK framework as a guide.  In this
   case, the underlying vectors of C++ STL vector<double> objects, and
@@ -309,7 +310,8 @@ Go on to \ref step2.
   easy-to-understand example of how one might interface to %NOX.  
   To compile the NOX::LAPACK library and examples, use the
   --enable-nox-lapack and --enable-nox-lapack-examples options to
-  configure; see \ref nox_configuration_options.
+  configure; see \ref nox_configuration_options.  For instructions on 
+  interfacing your code to the lapack implementation see \ref lapack_interface.
   
   <li>
   The NOX::Epetra instantiation is an interface to the Trilinos/Epetra
@@ -321,7 +323,8 @@ Go on to \ref step2.
   then Epetra is included in the distribution.
   To compile the NOX::Epetra library and examples, use the
   --enable-nox-epetra and --enable-nox-epetra-examples options to
-  configure; see \ref nox_configuration_options.
+  configure; see \ref nox_configuration_options.  For instructions on 
+  interfacing your code to the epetra implementation see \ref epetra_interface.
 
   <li>
   The NOX::PETSc instantiation is an interface with the PETSc library. PETSc
@@ -331,7 +334,8 @@ Go on to \ref step2.
   <a href="http://www-fp.mcs.anl.gov/petsc">PETSc Home Page</a>
   To compile the NOX::Petsc library and examples, use the
   --enable-nox-petsc and --enable-nox-petsc-examples options to
-  configure; see \ref nox_configuration_options.
+  configure; see \ref nox_configuration_options.  For instructions on 
+  interfacing your code to the petsc implementation see \ref petsc_interface.
   </ul>
 
 
@@ -1548,6 +1552,40 @@ immediately before the word that is causing the link. For example,
 */
 
 
+/* ************************************************************************ */
+/* ************************************************************************ */
+/* ************************************************************************ */
+
+/*! \page lapack_interface Using the lapack-support interface
+
+    Roger's Job
+
+*/
+
+/* ************************************************************************ */
+/* ************************************************************************ */
+/* ************************************************************************ */
+
+/*! \page epetra_interface Using the epetra-support interface
+
+    Roger's Job
+
+*/
+
+/* ************************************************************************ */
+/* ************************************************************************ */
+/* ************************************************************************ */
+
+/*! \page petsc_interface Using the petsc-support interface
+
+    Russ - put your stuff here!
+
+
+*/
+
+/* ************************************************************************ */
+/* ************************************************************************ */
+/* ************************************************************************ */
 
 /*
 \section ss1 Building the NOX/Epetra Library
