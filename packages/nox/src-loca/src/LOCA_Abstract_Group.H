@@ -83,7 +83,7 @@ namespace Abstract {
   
 */
 
-class Group : public NOX::Abstract::Group {
+class Group : public virtual NOX::Abstract::Group {
 
 public:
   
@@ -108,7 +108,7 @@ public:
     "this". Otherwise, if type is \c ShapeCopy, we need only replicate
     the shape of "this". Returns \c NULL if clone is not supported.
   */
-  virtual Group* clone(NOX::CopyType type = NOX::DeepCopy) const = 0;
+  virtual NOX::Abstract::Group* clone(NOX::CopyType type = NOX::DeepCopy) const = 0;
 
   //! Set the parameter list in the group to p (pVector = p).  
   virtual bool setParams(const ParameterVector& p) = 0;
@@ -120,6 +120,8 @@ public:
 
   //! Return a const reference to the ParameterVector owned by the group. 
   virtual const ParameterVector& getParams() const = 0;
+
+  virtual bool print() const = 0;
 
 };
 } // namespace Abstract
