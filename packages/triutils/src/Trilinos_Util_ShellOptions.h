@@ -3,7 +3,11 @@
 
 #include <iostream>
 #include <string>
+// if STL cannot be used, undefine the line below
+#define TRILINOS_UTIL_SHELL_OPTIONS_WITH_STL
+#ifdef TRILINOS_UTIL_SHELL_OPTIONS_WITH_STL
 #include <map>
+#endif
 
 using namespace std;
 
@@ -43,7 +47,7 @@ public:
 
   bool SetOption(const string input, const string value);
   bool SetOption(const string input, const int value);
-
+    
   // ============= //
   // query and add //
   // ------------- //
@@ -68,9 +72,19 @@ public:
   void    ShowReallyAll() const;
 
 private:
-  
+
+#ifdef TRILINOS_UTIL_SHELL_OPTIONS_WITH_STL
   // map containing the arguments
   map<string,string> OptionDatabase;
+#else
+  // for non-STL, I use a very simple array of strings
+  // for the option names and parameters. The dimension
+  // of the arrays is hardwired
+#define TRILINOS_UTIL_SHELL_OPTIONS_MAX 100
+  string OptionName[TRILINOS_UTIL_SHELL_OPTIONS_MAX];
+  string OptionValue[TRILINOS_UTIL_SHELL_OPTIONS_MAX];
+  int NumOptions;
+#endif
   
 };
 #endif

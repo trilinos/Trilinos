@@ -120,9 +120,18 @@
 Trilinos_Util_ShellOptions::Trilinos_Util_ShellOptions(int argc, char *argv[])
 {
 
-  OptionDatabase["_PROGRAM_NAME_"] = argv[0];
-  OptionDatabase["_N_ARGS_"] = argc;
+#ifndef TRILINOS_UTIL_SHELL_OPTIONS_WITH_STL
+  NumOptions = 0;
+#endif
 
+  string param;
+  string value;
+  param = "_PROGRAM_NAME_";  value = argv[0];
+  SetOption(param,value);
+
+  param = "_N_ARGS_"; value = argc;
+  SetOption(param,value);
+  
   // first, manage possible arguments without specifier
   // (e.g., a.out 12 -nx 10 -ny 20)
   // Those arguments are called _ARGV_1_, ... , _ARGV_N_
@@ -136,10 +145,12 @@ Trilinos_Util_ShellOptions::Trilinos_Util_ShellOptions(int argc, char *argv[])
     if( *(argv[i]) == '-' ) break;
     N_args++;
     sprintf( str, "ARGV_%d", N_args );
-    OptionDatabase[str] = argv[i];
+    param = argv[i];
+    SetOption(param,value);
   }
 
-  OptionDatabase["_N_UNNAMED_ARGS_"] = N_args;
+  param = "_N_UNNAMED_ARGS_", value = N_args;
+  SetOption(param,value);
   
   // now only arguments with a dash (possibly followed by one
   // other specifier)
@@ -150,17 +161,21 @@ Trilinos_Util_ShellOptions::Trilinos_Util_ShellOptions(int argc, char *argv[])
     char * pos = strchr( argv[i], '='); 
     if( pos != NULL ) {
       *pos = '\0';
-      OptionDatabase[argv[i]] = pos+1;
+      param = argv[i], value = pos+1;
+      SetOption(param,value);
     } else if( i<argc-1 ) {
       if( *(argv[i+1]) != '-' ) {
-	OptionDatabase[argv[i]] = argv[i+1];
+	param = argv[i], value = argv[i+1];
+	SetOption(param,value);
 	++i;
       } else {
-	OptionDatabase[argv[i]] = "";
+	param = argv[i], value = "";
+	SetOption(param,value);
       }
     }
     
   }
+
 }
 
 /* ======================================================================== */
@@ -177,11 +192,20 @@ Trilinos_Util_ShellOptions::Trilinos_Util_ShellOptions(int argc, char *argv[])
 int Trilinos_Util_ShellOptions::GetIntOption( const string input )
 {
 
+#ifdef TRILINOS_UTIL_SHELL_OPTIONS_WITH_STL
   for( map<string,string>::const_iterator ci = OptionDatabase.begin();
        ci != OptionDatabase.end() ; ++ci ) {
     if( (*ci).first == input ) 
       return( atoi(OptionDatabase[input].c_str()) );
   }
+#else
+  for( int i=0 ; i<NumOptions ; ++i ) {
+    if( OptionName[i] == input ) {
+      return( atoi(OptionValue[i].c_str()) );
+    }
+  }
+#endif
+  
   return 0;
   
 } /* GetIntOption */
@@ -200,11 +224,19 @@ int Trilinos_Util_ShellOptions::GetIntOption( const string input )
 int Trilinos_Util_ShellOptions::GetIntOption( const string input, const int def_value)
 {
 
+#ifdef TRILINOS_UTIL_SHELL_OPTIONS_WITH_STL
   for( map<string,string>::const_iterator ci = OptionDatabase.begin();
        ci != OptionDatabase.end() ; ++ci ) {
     if( (*ci).first == input ) 
       return( atoi(OptionDatabase[input].c_str()) );
   }
+#else
+  for( int i=0 ; i<NumOptions ; ++i ) {
+    if( OptionName[i] == input ) {
+      return( atoi(OptionValue[i].c_str()) );
+    }
+  }
+#endif
   
   return def_value;
    
@@ -224,11 +256,19 @@ int Trilinos_Util_ShellOptions::GetIntOption( const string input, const int def_
 double Trilinos_Util_ShellOptions::GetDoubleOption( const string input)
 {
 
+#ifdef TRILINOS_UTIL_SHELL_OPTIONS_WITH_STL
   for( map<string,string>::const_iterator ci = OptionDatabase.begin();
        ci != OptionDatabase.end() ; ++ci ) {
     if( (*ci).first == input ) 
       return( atof(OptionDatabase[input].c_str()) );
   }
+#else
+  for( int i=0 ; i<NumOptions ; ++i ) {
+    if( OptionName[i] == input ) {
+      return( atof(OptionValue[i].c_str()) );
+    }
+  }
+#endif
   
   return 0.0;
 
@@ -248,11 +288,19 @@ double Trilinos_Util_ShellOptions::GetDoubleOption( const string input)
 double Trilinos_Util_ShellOptions::GetDoubleOption( const string input, const double def_value)
 {
 
+#ifdef TRILINOS_UTIL_SHELL_OPTIONS_WITH_STL
   for( map<string,string>::const_iterator ci = OptionDatabase.begin();
        ci != OptionDatabase.end() ; ++ci ) {
     if( (*ci).first == input ) 
       return( atof(OptionDatabase[input].c_str()) );
   }
+#else
+  for( int i=0 ; i<NumOptions ; ++i ) {
+    if( OptionName[i] == input ) {
+      return( atof(OptionValue[i].c_str()) );
+    }
+  }
+#endif
   
   return def_value;
 
@@ -272,12 +320,20 @@ double Trilinos_Util_ShellOptions::GetDoubleOption( const string input, const do
 string Trilinos_Util_ShellOptions::GetStringOption( const string input)
 {
 
+#ifdef TRILINOS_UTIL_SHELL_OPTIONS_WITH_STL
   for( map<string,string>::const_iterator ci = OptionDatabase.begin();
        ci != OptionDatabase.end() ; ++ci ) {
     if( (*ci).first == input ) 
       return( OptionDatabase[input] );
   }
-  
+#else
+  for( int i=0 ; i<NumOptions ; ++i ) {
+    if( OptionName[i] == input ) {
+      return( OptionValue[i] );
+    }
+  }
+#endif
+    
   return "";
   
 } /* GetStringOption */
@@ -296,11 +352,19 @@ string Trilinos_Util_ShellOptions::GetStringOption( const string input)
 string Trilinos_Util_ShellOptions::GetStringOption( const string input, const string def_value)
 {
 
+#ifdef TRILINOS_UTIL_SHELL_OPTIONS_WITH_STL
   for( map<string,string>::const_iterator ci = OptionDatabase.begin();
        ci != OptionDatabase.end() ; ++ci ) {
     if( (*ci).first == input ) 
       return( OptionDatabase[input] );
   }
+#else
+  for( int i=0 ; i<NumOptions ; ++i ) {
+    if( OptionName[i] == input ) {
+      return( OptionValue[i] );
+    }
+  }
+#endif
   
   return def_value;
   
@@ -318,12 +382,21 @@ string Trilinos_Util_ShellOptions::GetStringOption( const string input, const st
 
 bool Trilinos_Util_ShellOptions::HaveOption( const string input)
 {
-
+  
+#ifdef TRILINOS_UTIL_SHELL_OPTIONS_WITH_STL
   for( map<string,string>::const_iterator ci = OptionDatabase.begin();
        ci != OptionDatabase.end() ; ++ci ) {
     if( (*ci).first == input ) 
       return true;
   }
+#else
+  for( int i=0 ; i<NumOptions ; ++i ) {
+    if( OptionName[i] == input ) {
+      return( true );
+    }
+  }
+#endif
+    
   return false;
   
 } /* HaveOption */
@@ -338,13 +411,20 @@ bool Trilinos_Util_ShellOptions::HaveOption( const string input)
 void Trilinos_Util_ShellOptions::ShowAll() const 
 {
 
+#ifdef TRILINOS_UTIL_SHELL_OPTIONS_WITH_STL
   cout << "\nTrilinos_Util_ShellOptions :: \n";
   for( map<string,string>::const_iterator ci = OptionDatabase.begin();
        ci != OptionDatabase.end() ; ++ci ) {
     if( (*ci).first.at(0) != '_' ) 
       cout << (*ci).first << " = " << (*ci).second << endl;
   }
-
+#else
+  for( int i=0 ; i<NumOptions ; ++i ) {
+    if( OptionName[i].at(0) != '_' ) 
+      cout << OptionName[i] << " = " << OptionValue[i] << endl;
+  }
+#endif
+  
 } /* ShowAll */
 
 /* ======================================================================== */
@@ -357,12 +437,18 @@ void Trilinos_Util_ShellOptions::ShowAll() const
 void Trilinos_Util_ShellOptions::ShowReallyAll() const 
 {
 
+#ifdef TRILINOS_UTIL_SHELL_OPTIONS_WITH_STL
   cout << "\nTrilinos_Util_ShellOptions :: \n";
   for( map<string,string>::const_iterator ci = OptionDatabase.begin();
        ci != OptionDatabase.end() ; ++ci ) {
     cout << (*ci).first << " = " << (*ci).second << endl;
   }
-
+#else
+  for( int i=0 ; i<NumOptions ; ++i ) {
+    cout << OptionName[i] << " = " << OptionValue[i] << endl;
+  }
+#endif
+  
 } /* ShowReallyAll */
 
 /* ======================================================================== */
@@ -382,8 +468,15 @@ bool Trilinos_Util_ShellOptions::AddOption( const string input, const string val
   // check that "input" has not been already inserted
   if( this->HaveOption(input) == true )
     return false;
-  
+
+#ifdef TRILINOS_UTIL_SHELL_OPTIONS_WITH_STL
   OptionDatabase[input] = value;
+#else
+  OptionName[NumOptions] = input;
+  OptionValue[NumOptions] = value;
+  NumOptions++;
+#endif
+  
   return true;
 
 } /* AddOption */
@@ -401,11 +494,25 @@ bool Trilinos_Util_ShellOptions::AddOption( const string input, const string val
 bool Trilinos_Util_ShellOptions::SetOption( const string input, const string value )
 {
 
-  // check that "input" has not been already inserted
-  if( this->HaveOption(input) == true )
-    return false;
-  
+#ifdef TRILINOS_UTIL_SHELL_OPTIONS_WITH_STL
   OptionDatabase[input] = value;
+#else
+  bool found = false;
+  
+  for( int i=0 ; i<NumOptions ; ++i ) {
+    if( OptionName[i] == input ) {
+      OptionValue[NumOptions] = value;
+      found = true;
+      break;
+    }
+  }
+  if( found == false ) {
+    OptionName[NumOptions] = input;
+    OptionValue[NumOptions] = value;
+    NumOptions++;
+  }
+#endif
+  
   return true;
 
 } /* SetOption */
@@ -419,7 +526,15 @@ bool Trilinos_Util_ShellOptions::SetOption( const string input, const string val
 
 string  Trilinos_Util_ShellOptions::GetProgramName( void )
 {
+#ifdef TRILINOS_UTIL_SHELL_OPTIONS_WITH_STL
   return OptionDatabase["_PROGRAM_NAME_"];
+#else
+  for( int i=0 ; i<NumOptions ; ++i ) {
+    if( OptionName[i] == "_PROGRAM_NAME_" ) 
+      return OptionValue[i];
+  }
+#endif
+  
 }
 
 /* ======================================================================== */
