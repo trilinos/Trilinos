@@ -93,6 +93,8 @@ Amesos_Superludist::~Amesos_Superludist(void) {
   if ( GridCreated_ ) {
     superlu_gridexit(&grid_);
   }
+  if (vecBdistributed_ ) delete vecBdistributed_ ; 
+  if (vecXdistributed_ ) delete vecXdistributed_ ; 
   if (UniformMap_ ) delete UniformMap_ ; 
   if (UniformMatrix_ ) delete UniformMatrix_ ; 
   if (ExportToDist_) delete ExportToDist_ ;
@@ -199,8 +201,6 @@ int Amesos_Superludist::RedistributeA( ) {
   ExportToDist_ = new Epetra_Export( OriginalMap, *UniformMap_);
   if (ImportToDistributed_) delete ImportToDistributed_;
   ImportToDistributed_ = new Epetra_Import( *UniformMap_, OriginalMap);
-
-  // cout << " Here we are redoing ImportToDistributed  203 " << " NumRows = " << NumRows_ << endl ; 
 
   if (ImportBackToOriginal_) delete ImportBackToOriginal_;
   ImportBackToOriginal_ = new Epetra_Import( OriginalMap,*UniformMap_);
@@ -404,6 +404,9 @@ int Amesos_Superludist::Factor( ) {
     int ldx = NumRows_;     //  Should be untouched
     pdgssvx(&options_, &SuperluA_, &ScalePermstruct_, &xValues, ldx, nrhs, &grid_,
 	    &LUstruct_, &SOLVEstruct_, &berr, &stat, &info);
+    if ( options_.SolveInitialized ) {
+      dSolveFinalize(&options_, &SOLVEstruct_ ) ; 
+    }
     EPETRA_CHK_ERR( info ) ; 
 
     PStatFree(&stat);
@@ -500,6 +503,7 @@ int Amesos_Superludist::ReFactor( ) {
       int ldx = NumRows_;     //  Should be untouched
       pdgssvx(&options_, &SuperluA_, &ScalePermstruct_, &xValues, ldx, nrhs, &grid_,
 	      &LUstruct_, &SOLVEstruct_, &berr, &stat, &info);
+      PStatFree(&stat);
       EPETRA_CHK_ERR( info ) ;
     } 
   
@@ -526,10 +530,7 @@ int Amesos_Superludist::SymbolicFactorization() {
 int Amesos_Superludist::NumericFactorization() {
 
 
-  // cout << " Amesos_Superludist.cpp::489 NumericFactorization TOP" << endl ; 
   RowMatrixA_ = dynamic_cast<Epetra_RowMatrix *>(Problem_->GetOperator());
-  // cout << " Amesos_S.cp: RowMatrixA_->NumGlobalRows() = " <<
-  //    RowMatrixA_->NumGlobalRows() << endl ; 
   if( RowMatrixA_ == 0 ) EPETRA_CHK_ERR(-1); 
 
   const Epetra_Comm &Comm_ = RowMatrixA_->Comm();
@@ -542,14 +543,12 @@ int Amesos_Superludist::NumericFactorization() {
     FactorizationOK_ = true;   
 
   }
-  // cout << " Amesos_Superludist.cpp::489 NumericFactorization BOTTOM" << endl ; 
   return 0;
 }
 
 
 int Amesos_Superludist::Solve() { 
 
-  // cout << " Amesos_Superludist.cpp::519 Solve() TOP" << endl ; 
   NRformat_loc *Astore;
   Astore = (NRformat_loc *) SuperluA_.Store;
 
@@ -579,8 +578,6 @@ int Amesos_Superludist::Solve() {
   Epetra_MultiVector* vecXptr; 
   Epetra_MultiVector* vecBptr; 
 
-  // cout << " Amesos_Superludist.cpp::549 Redistribute_ = " << Redistribute_ << endl ; 
-  
   if ( Redistribute_ ) {
     //
     //  I couldn't figure out how to change the number of vectors in a multivector,
@@ -588,30 +585,24 @@ int Amesos_Superludist::Solve() {
     //  delete them and rebuild them.  Ugly, but it isn't all that likely that codes
     //  will change the number of right hand sides repeatedly.
     //
-  // cout << " Amesos_Superludist.cpp::558 Solve() Redistribute" << endl ; 
     if ( vecXdistributed_ != 0 ) {
       assert( vecBdistributed_ != 0 ) ;
-  // cout << " Amesos_Superludist.cpp::562 Solve() Redistribute" << endl ; 
       if ( vecXdistributed_->NumVectors() != nrhs ) {
 	delete vecXdistributed_ ; 
 	delete vecBdistributed_ ; 
 	vecXdistributed_ = 0 ; 
-  // cout << " Amesos_Superludist.cpp::569 Solve() Redistribute" << endl ; 
 	vecBdistributed_ = 0 ; 
       } else {
 	assert(  vecBdistributed_->NumVectors() == nrhs ) ;
-  // cout << " Amesos_Superludist.cpp::575 Solve() Redistribute" << endl ; 
       }
     }
     if ( vecXdistributed_ == 0 ) {
-  // cout << " Amesos_Superludist.cpp::605 Solve() Redistribute" << endl ; 
       vecXdistributed_ = new Epetra_MultiVector( *UniformMap_, nrhs ) ; 
       vecBdistributed_ = new Epetra_MultiVector( *UniformMap_, nrhs ) ; 
     }
 
     vecXdistributed_->Import( *vecX, *ImportToDistributed_, Insert ) ;
     vecBdistributed_->Import( *vecB, *ImportToDistributed_, Insert ) ;
-  // cout << " Amesos_Superludist.cpp::614 Solve() Redistribute" << endl ; 
 
     vecXptr = vecXdistributed_ ; 
     vecBptr = vecBdistributed_ ; 
@@ -619,14 +610,11 @@ int Amesos_Superludist::Solve() {
     vecXptr = vecX ; 
     vecBptr = vecB ; 
   }
-  // cout << " Amesos_Superludist.cpp::599 Solve() HERE" << endl ; 
 
 
   int NumMyElements = vecBptr->MyLength(); 
   EPETRA_CHK_ERR( vecBptr->ExtractView( &bValues, &ldb ) )  ; 
   EPETRA_CHK_ERR( vecXptr->ExtractView( &xValues, &ldx ) ) ; 
-  //  EPETRA_CHK_ERR( ! ( ldx == ldb ) ) ; 
-  //  EPETRA_CHK_ERR( ! ( ldx == NumMyElements ) ) ; 
 
   //
   //  pdgssvx returns x in b, so we copy b into x.  
@@ -654,6 +642,9 @@ int Amesos_Superludist::Solve() {
       for ( int j =0 ; j < nrhs; j++ ) { 
 	pdgssvx(&options_, &SuperluA_, &ScalePermstruct_, &xValues[j*ldx], ldx, 1, &grid_,
 		&LUstruct_, &SOLVEstruct_, &berr[0], &stat, &info);
+	if ( options_.SolveInitialized ) {
+	  dSolveFinalize(&options_, &SOLVEstruct_ ) ; 
+	}
 	EPETRA_CHK_ERR( info ) ;
       }
     } 
@@ -665,6 +656,5 @@ int Amesos_Superludist::Solve() {
     vecX->Import( *vecXptr, *ImportBackToOriginal_, Insert ) ;
   }
 
-  // cout << " Amesos_Superludist.cpp::627 Solve() BOTTOM" << endl ; 
   return(0) ; 
 }

@@ -94,6 +94,13 @@ public:
       <li>Symbolic Factorization will be performed (or marked to be performed) 
       allowing NumericFactorization() and Solve() to be called.
       </ul>
+      
+      bugs:<ul>
+      <li>Construction and destruction of an Amesos_Superludist object leaks 24 bytes 
+      (This happens in superlu_gridinit() but it could be that I am not calling the right
+      destructor.) 
+     </ul>
+
 
     \return Integer error code, set to 0 if successful.
   */

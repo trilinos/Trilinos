@@ -48,6 +48,9 @@ public:
   {}
   
   Amesos_Klu_Pimpl::~Amesos_Klu_Pimpl(void){
+
+    cout << "Here we are cleaning up Klu_Pimpl" << endl ; 
+
     if ( Symbolic_ ) klu_btf_free_symbolic (&Symbolic_) ;
     if ( Numeric_ ) klu_btf_free_numeric (&Numeric_) ;
   }
@@ -63,6 +66,7 @@ public:
     SerialMap_(0), 
     SerialMatrix_(0), 
     TransposeMatrix_(0),
+    UseTranspose_(false),
     Matrix_(0) {
 
 
@@ -77,6 +81,9 @@ Amesos_Klu::~Amesos_Klu(void) {
   if ( SerialCrsMatrixA_ ) delete SerialCrsMatrixA_ ; 
   if ( TransposeMatrix_ ) delete TransposeMatrix_ ; 
   delete PrivateKluData_; 
+
+    cout << "Here we are cleaning up in the Amesos_Klu destructor" << endl ; 
+
 }
 //  See  pre and post conditions in Amesos_Klu.h
 
@@ -247,6 +254,7 @@ int Amesos_Klu::PerformNumericFactorization( ) {
 
     const double tol = 0.001; //  At some point we need to expose this to the user 
 
+    if ( PrivateKluData_->Numeric_ ) klu_btf_free_numeric (&(PrivateKluData_->Numeric_)) ;
     PrivateKluData_->Numeric_ = klu_btf_factor (&Ap[0], &Ai[0], &Aval[0], tol, PrivateKluData_->Symbolic_) ;
     if ( PrivateKluData_->Numeric_ == 0 ) EPETRA_CHK_ERR( 2 ) ; 
     

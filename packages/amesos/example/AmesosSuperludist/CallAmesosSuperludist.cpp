@@ -63,8 +63,8 @@ int SubTest(Epetra_Comm &Comm, AMESOS::Parameter::List ParamList )
   //  have been specified at this point.  
   //  Abase = Afactory.Create( AMESOS_UMFPACK, Problem, ParamList ) ; 
   //  Abase = Afactory.Create( AMESOS_DSCPACK, Problem, ParamList ) ; 
-  //  Abase = Afactory.Create( AMESOS_SUPERLUDIST, Problem, ParamList ) ; 
-  Abase = Afactory.Create( AMESOS_KLU, Problem, ParamList ) ; 
+  Abase = Afactory.Create( AMESOS_SUPERLUDIST, Problem, ParamList ) ; 
+  //  Abase = Afactory.Create( AMESOS_KLU, Problem, ParamList ) ; 
   if ( Abase == 0 ) {
     cout << " AMESOS_SUPERLUDIST not implemented " << endl ; 
     exit(13);
@@ -175,7 +175,7 @@ int SubTest(Epetra_Comm &Comm, AMESOS::Parameter::List ParamList )
 
 
 
-  //#define FACTOR_B
+#define FACTOR_B
 #ifdef FACTOR_B
   //
   //  Now we check to make sure that we can change the problem and 
@@ -187,7 +187,7 @@ int SubTest(Epetra_Comm &Comm, AMESOS::Parameter::List ParamList )
 
 
 
-  const int BNumPoints = NumPoints+0;  // Must be between 2 and 100 (on large matrices,
+  const int BNumPoints = NumPoints;  // Must be between 2 and 100 (on large matrices,
                              // the problem is quite ill-conditioned) 
 
   // Construct a Map that puts approximately the same number of 

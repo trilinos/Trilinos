@@ -36,6 +36,7 @@
 #endif
 #include "Epetra_Object.h"
 
+
 Amesos_BaseSolver* Amesos_Factory::Create( AmesosClassType ClassType, 
 			     const Epetra_LinearProblem& LinearProblem, 
 			     const AMESOS::Parameter::List &ParameterList ) {
@@ -78,3 +79,5 @@ Amesos_BaseSolver* Amesos_Factory::Create( AmesosClassType ClassType,
     return 0 ; 
   }
 }
+
+

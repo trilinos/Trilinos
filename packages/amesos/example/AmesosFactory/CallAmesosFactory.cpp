@@ -116,6 +116,8 @@ int main(int argc, char *argv[])
       cout << " TEST FAILED " << endl ;
   }
 
+  delete Abase;
+
 #ifdef EPETRA_MPI
   MPI_Finalize() ; 
 #endif
