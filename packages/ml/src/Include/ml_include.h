@@ -44,6 +44,7 @@
 #include "ml_memory.h"
 #include "ml_vampir.h"
 #include "ml_amesos.h"
+#include "ml_ifpack.h"
 
 #endif
 
