@@ -1,3 +1,6 @@
+// $Id$ 
+// $Source$ 
+
 #ifdef WITH_PRERELEASE
 //@HEADER
 // ************************************************************************
@@ -17,11 +20,12 @@
 // WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 // Lesser General Public License for more details.
-//                                                                                 
+// 
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
-// USA                                                                                
+// USA
+// 
 // Questions? Contact Tammy Kolda (tgkolda@sandia.gov) or Roger Pawlowski
 // (rppawlo@sandia.gov), Sandia National Laboratories.
 // 
@@ -33,6 +37,7 @@
 
 #include "NOX_Direction_Generic.H" // base class
 #include "NOX_Parameter_List.H"	   // class data element 
+#include "NOX_Abstract_Group.H"    // returnType
 
 // Forward declaration
 namespace NOX {
@@ -53,8 +58,8 @@ namespace Direction {
   (see NOX::Direction::Manager for more information on choosing the
   search direction).  Be aware that the tensor step is not guaranteed
   to be a descent direction on the function.  Thus, not all "basic"
-  line search approaches would be appropriate.  Instead, use the
-  NOX::Solver::TensorBased solver, which approriately handles these
+  line search approaches would be appropriate.  Fortunately, the
+  NOX::Solver::TensorBased solver approriately handles these
   considerations.
 
   This class also computes the curvilinear step, which is a parametric
@@ -85,110 +90,24 @@ public:
   virtual bool compute(NOX::Abstract::Vector& dir, NOX::Abstract::Group& grp, 
 		       const NOX::Solver::Generic& solver);
 
-  // Compute the approximate step 
-  bool compute_step(NOX::Abstract::Vector& dir, NOX::Abstract::Group& grp, 
-		    const NOX::Solver::Generic& solver, const double errTol,
-		    double& error);
-
   //! Compute the curvilinear step dT(lambda) and return in dir.
   bool computeCurvilinearStep(NOX::Abstract::Vector& dir,
-			      NOX::Abstract::Group& grp, 
+			      const NOX::Abstract::Group& soln, 
 			      const NOX::Solver::Generic& solver,
-			      double lambda);
+			      double lambda) const;
 
+  //! Compute the curvilinear step dT(lambda) and return in dir.
+  bool computeCurvilinearStep2(NOX::Abstract::Vector& dir,
+			       const NOX::Abstract::Group& soln, 
+			       const NOX::Solver::Generic& solver,
+			       double lambda) const;
+  
   //! Return the approximate Newton step generated alongside tensor step 
   const NOX::Abstract::Vector& getNewton() const;
 
 protected:
 
 private:
-
-  //! Print an error message
-  void throwError(const string& functionName, const string& errorMsg);
-
-private:
-
-  // Various functions that are taken from C to at least get a tensor
-  // method implemented.  At some point these functions (as well as
-  // the non-abstract vector/matrix data structures) should be
-  // replaced with a class or abstraction layer.  I realize this is
-  // not elegant, but it is quick and dirty and will work okay for the
-  // moment.  The descriptions here are mostly placeholders.
-
-  //!  Allocate storage for a matrix
-  void** allocate_matrix(int rows, int cols, double**& a);
-
-  //!  Allocate storage for a vector of ints
-  void* allocate_vector(int n, int*& x);
-
-  //!  Allocate storage for a vector of doubles
-  void* allocate_vector(int n, double*& x);
-
-  //!  Delete a matrix previosly allocated
-  void delete_matrix(double** A);
-
-  //!  Print a matrix
-  void print_matrix(int rows, int cols, double** A);
-
-  //!  Print a vector of doubles
-  void print_vector(int n, double* x);
-
-  //!  Print a vector of ints
-  void print_vector(int n, int* x);
-
-  //!  Calculate x'*y
-  double inner_product(int n, double* x, double* y);
-
-  //!  Calculate 2-norm of x
-  double norm(int n, double* x);
-
-  //!  Compute Givens sin and cos values
-  void NOX::Direction::Tensor::computeGivens(double a, double b,
-					     double& c, double& s);
-
-  //!  Apply Givens rotations to vector [a; b]
-  void NOX::Direction::Tensor::applyGivens(double c, double s,
-					   double& a, double& b);
-
-  //!  Compute Householder vector
-  void NOX::Direction::Tensor::computeHouseholder(double** a, int j, 
-						  int i1, int i2, double* z);
-
-  //!  Apply Householder rotations to a column vector in a matrix
-  void NOX::Direction::Tensor::applyHouseholder(const double* z, double** a,
-						int j, int i1, int i2);
-
-  //!  Apply Householder rotations to a vector
-  void NOX::Direction::Tensor::applyHouseholder(const double* z, double* a,
-						int i1, int i2);
-
-  //!  Calculate beta by solving the quadratic equation
-  double NOX::Direction::Tensor::calculateBeta(double qa, double qb, double qc,
-					       double& qval, double& lambdaBar,
-					       double dir0xsc = 0,
-					       double normS = 1);
-
-  //!  Calculate norm of local model residual
-  double NOX::Direction::Tensor::getNormModelResidual(
-				       const NOX::Abstract::Vector& dir,
-				       const NOX::Abstract::Group& soln,
-				       const NOX::Solver::Generic& solver,
-				       bool isTensorModel);
-
-  //!  Calculate directional derivative
-  double NOX::Direction::Tensor::getDirectionalDerivative(
-				       const NOX::Abstract::Vector& dir,
-				       const NOX::Abstract::Group& soln);
-
-  //!  Backsolve an upper triangular system Ux=b.
-  double* backsolve(double** U, double* b, int* p, int n, int dim=0,
-		    bool isTranspose=false);
-  
-
-private:
-
-  //! Printing Utilities
-  const NOX::Utils& utils;
 
   //! Types of steps 
   enum stepType {NewtonStep, TensorStep3, TensorStep2, TensorStepFP};
@@ -199,9 +118,137 @@ private:
   //! Types of reorthogonalization
   enum reorthogonalizeType {Never, AsNeeded, Always};
 
+  //! Print an error message
+  void throwError(const string& functionName, const string& errorMsg) const;
+
+  // Compute approximate Newton and tensor steps by solving the local models
+  bool solveModels(NOX::Abstract::Vector& dir, NOX::Abstract::Group& soln, 
+		   const NOX::Solver::Generic& solver, double& error,
+		   double*& yn);
+
+  // Compute the tensor step
+  bool computeTensorStep(const NOX::Abstract::Group& soln, 
+			 const NOX::Solver::Generic& solver,
+			 double lambda) const;
+
+  
+private:
+
+  // Various functions that are taken from C to at least get a tensor
+  // method implemented.  At some point these functions (as well as
+  // the non-abstract vector/matrix data structures) should be
+  // replaced with a class or abstraction layer.  I realize this is
+  // not elegant, but it is quick and dirty and will work okay for the
+  // moment.  The descriptions here are mostly placeholders.
+
+  //!  Allocate storage for a matrix
+  void** allocate_matrix(int rows, int cols, double**& a) const;
+
+  //!  Allocate storage for a vector of ints
+  void* allocate_vector(int n, int*& x) const;
+
+  //!  Allocate storage for a vector of doubles
+  void* allocate_vector(int n, double*& x) const;
+
+  //!  Delete a matrix previosly allocated
+  void delete_matrix(double** A) const;
+
+  //!  Print a matrix
+  void print_matrix(int rows, int cols, double** A) const;
+
+  //!  Print a vector of doubles
+  void print_vector(int n, double* x) const;
+
+  //!  Print a vector of ints
+  void print_vector(int n, int* x) const;
+
+  //!  Calculate x'*y
+  double inner_product(int n, double* x, double* y) const;
+
+  //!  Calculate 2-norm of x
+  double norm(int n, double* x) const;
+
+  //!  Compute Givens sin and cos values
+  void NOX::Direction::Tensor::computeGivens(double a, double b,
+					     double& c, double& s) const;
+
+  //!  Apply Givens rotations to vector [a; b]
+  void NOX::Direction::Tensor::applyGivens(double c, double s,
+					   double& a, double& b) const;
+
+  //!  Compute Householder vector
+  void NOX::Direction::Tensor::computeHouseholder(double** a, int j, 
+						  int i1, int i2,
+						  double* z) const;
+
+  //!  Apply Householder rotations to a column vector in a matrix
+  void NOX::Direction::Tensor::applyHouseholder(const double* z, double** a,
+						int j, int i1, int i2) const;
+
+  //!  Apply Householder rotations to a vector
+  void NOX::Direction::Tensor::applyHouseholder(const double* z, double* a,
+						int i1, int i2) const;
+
+  //!  Find the smallest magnitude minimizer of quartic equation
+  double NOX::Direction::Tensor::minQuartic(double q1, double q2, double q3,
+					    double q4, double q5,
+					    bool chooseGlobal) const;
+  
+  //!  Calculate beta by minimizing quartic equation
+  double NOX::Direction::Tensor::calculateBeta(double* vecg, double* vecq,
+					       double h1, int kk0, int kk,
+					       int pp, double normS);
+
+  //!  Calculate beta by solving the quadratic equation
+  double NOX::Direction::Tensor::calculateBeta(double qa, double qb, double qc,
+					       double& qval, double& lambdaBar,
+					       double normS = 1) const;
+
+  //!  Calculate norm of local model residual
+  double NOX::Direction::Tensor::getNormModelResidual(
+				       const NOX::Abstract::Vector& dir,
+				       const NOX::Abstract::Group& soln,
+				       const NOX::Solver::Generic& solver,
+				       bool isTensorModel) const;
+
+  //!  Calculate directional derivative
+  double NOX::Direction::Tensor::getDirectionalDerivative(
+				       const NOX::Abstract::Vector& dir,
+				       const NOX::Abstract::Group& soln) const;
+
+  //!  Compute residuals and print out information
+  void NOX::Direction::Tensor::printDirectionInfo(char* dirName,
+				       const NOX::Abstract::Vector& dir,
+				       const NOX::Abstract::Group& soln,
+				       const NOX::Solver::Generic& solver,
+				       bool isTensorModel=false) const;
+  
+  //!  Apply the preconditioner to a vector
+  NOX::Abstract::Group::ReturnType
+  NOX::Direction::Tensor::applyPreconditioner(bool useTranspose,
+				      const NOX::Abstract::Group& soln,
+				      NOX::Parameter::List& params,
+				      const NOX::Abstract::Vector& input,
+				      NOX::Abstract::Vector& result,
+				      char* errLocation) const;
+    
+  
+  //!  Backsolve an upper triangular system Ux=b.
+  double* backsolve(double** U, double* b, int* p, int n, int dim=0,
+		    bool isTranspose=false) const;
+  
+
+private:
+
+  //! Printing Utilities
+  const NOX::Utils& utils;
+
   //! Flag for the base direction to compute after the first iteration 
   stepType requestedBaseStep;
 
+  //! Flag for the direction to be computed this iteration 
+  stepType requestedStep;
+  
   //! Flag for type of preconditioning (left/right)
   preconditioningType precondition;
 
@@ -218,6 +265,8 @@ private:
   //! "Linear Solver" sublist inside "Direction"->"Tensor" sublist
   NOX::Parameter::List* localParamsPtr;
   
+  bool isAugmentSubspace;
+
   //! Determined based on "Use Shortcut Method".
   bool useShortcutMethod;
 
@@ -242,6 +291,9 @@ private:
   //! Tensor step
   NOX::Abstract::Vector* dTensor;
 
+  //! Initial guess of the step
+  NOX::Abstract::Vector* dInitial;
+
   //! Curvilinear step at the value lambdaBar
   NOX::Abstract::Vector* dTLambda;
 
@@ -255,16 +307,22 @@ private:
   bool isFreshlyReset;
 
   //! Flag for noting if tensor step has been calculated (for curvilinear step)
-  bool isTensorCalculated;
+  mutable bool isTensorCalculated;
 
   //! Flag for noting whether dt(lambdaBar) and params have been calculated
-  bool isCLParamsCalculated;
+  mutable bool isCLParamsCalculated;
 
   //! Flag for noting whether to augment the subspace with direction sc
   bool isSubspaceAugmented;
 
   //! Flag for noting whether the transpose of the preconditioner is available
   bool isMinvTransAvailable;
+
+  //! Flag for noting whether initial guess is nonzero
+  bool isDir0;
+
+  //! Value of inner product of initial guess and sc
+  double dir0xsc;
 
   //! Problem size
   int probSize;
@@ -278,6 +336,11 @@ private:
   //! Maximum number of starting vectors in initial basis
   int pmax;
 
+  //! Index holding either 0, k, or k+1
+  int k1;
+  int k;
+  int p;
+
   //! Frequency for printing iteration history
   int outputFreq;
 
@@ -286,6 +349,9 @@ private:
 
   //! Threshold tolerance for tensor solve
   double tol;
+
+  //! Absolute threshold tolerance 
+  double errTol;
 
   //! Band Hessenberg matrix from Arnoldi process
   double** hess;
@@ -335,6 +401,9 @@ private:
   //! Vector for calculating the residual error
   double* terrvec; 
 
+  //! Permutation index vector
+  int* pindex; 
+
   //! Number of Arnoldi iterations for last solve
   int iterations;
 
@@ -345,23 +414,48 @@ private:
   double lambdaBar;
 
   //! Parameter for the curvilinear linesearch
-  double stJinvF;
+  double ata;
 
   //! Parameter for the curvilinear linesearch
-  double stJinvA;
+  double atb;
+
+  //! Parameter for the curvilinear linesearch
+  double atc;
+
+  //! Parameter for the curvilinear linesearch
+  double btb;
+
+  //! Parameter for the curvilinear linesearch
+  double btc;
+
+  //! Parameter for the curvilinear linesearch
+  double ctc;
+
+  //! Parameter for the curvilinear linesearch
+  mutable double stJinvF;
+
+  //! Parameter for the curvilinear linesearch
+  mutable double stJinvA;
 
   //! Norm of previous step direction, s = xp - xc
   double normS;
 
   //! Approximate value of s'*dt
-  double beta;
+  mutable double beta;
 
   //! Smallest magnitude root/minimizer of quadratic equation
-  double y1;
+  mutable double y1;
 
+  //! Counter for number of Jacobian-vector products
+  mutable int multsJv;
+  
+  //! Counter for number of Preconditioner-vector products
+  mutable int multsMv;
 };
 } // namespace Direction
 } // namespace NOX
+
+
 #endif
 
 #endif  // WITH_PRERELEASE
