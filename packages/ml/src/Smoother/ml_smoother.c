@@ -804,6 +804,9 @@ int ML_Smoother_Hiptmair(void *sm, int inlen, double x[], int outlen,
 #endif
 
    /* Symmetric GS on edges */
+   /*
+         fun = ML_Smoother_MSR_SGS;
+	 */
    ML_Smoother_SGS(sm, inlen, x, outlen, rhs);
 
 #ifdef ML_SMOOTHER_DEBUG
@@ -1037,6 +1040,8 @@ int ML_Smoother_Hiptmair(void *sm, int inlen, double x[], int outlen,
    fflush(stdout);
 #endif
 
+ML_free(cols);
+ML_free(vals);
    ML_free(res); ML_free(local_x);
 
    } /* for iter = 1... */
@@ -2635,11 +2640,6 @@ void ML_Smoother_Destroy_Hiptmair_Data(void *data)
    ML_Sm_Hiptmair_Data *ml_data;
  
    ml_data = (ML_Sm_Hiptmair_Data *) data;
-   if ( ml_data->Tmat != NULL )
-      ML_Operator_Destroy(ml_data->Tmat);
- 
-   if ( ml_data->Tmat_trans != NULL )
-      ML_Operator_Destroy(ml_data->Tmat_trans);
  
    if ( ml_data->ATmat_trans != NULL )
       ML_Operator_Destroy(ml_data->ATmat_trans);
@@ -3021,7 +3021,6 @@ int ML_Smoother_Gen_Hiptmair_Data(ML_Sm_Hiptmair_Data **data, ML_Operator *Amat,
 
    /* and pick off the diagonal entries. */
    dataptr->TtAT_diag = (double *) malloc( tmpmat->outvec_leng * sizeof(double) );
-   tmpdiag = (double *) malloc( tmpmat->outvec_leng * sizeof(double) );
    ML_Operator_Get_Diag(tmpmat, tmpmat->outvec_leng, &tmpdiag );
    for (i=0; i< tmpmat->outvec_leng; i++)
       if (tmpdiag[i] == 0) dataptr->TtAT_diag[i] = 1.;
