@@ -79,7 +79,7 @@ int main(int argc, char *argv[])
 
 	// read in vectors (b and soln)
   cout << "reading in vector b " << endl;
-  dataFile = fopen("b.data","r");
+  dataFile = fopen("rhs.data","r");
   Petra_RDP_Vector* bptr = readVectorIn(dataFile, Comm);
   fclose(dataFile);
 
