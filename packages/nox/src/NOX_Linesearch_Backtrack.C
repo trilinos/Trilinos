@@ -65,7 +65,7 @@ bool Backtrack::reset(Parameter::List& params)
   else if (tmp == "Two Norm")
     normtype = NOX::Abstract::Vector::TWO;
   else {
-    cout << "NOX::Backtrack::reset - Invalid choice \"" << tmp 
+    cout << "NOX::Linesearch::Backtrack::reset - Invalid choice \"" << tmp 
 	 << "\" for \"Decrease Condition\"" << endl;
     throw "NOX Error";
   }
