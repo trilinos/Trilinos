@@ -84,6 +84,7 @@ int ML_Operator_Init( ML_Operator *mat, ML_Comm *comm)
    mat->data_destroy        = NULL;
    mat->build_time          = 0.0;
    mat->apply_time          = 0.0;
+   mat->ntimes              = 0;
    mat->nflop               = 0;
    mat->label               = NULL;
    mat->comm                = comm;
@@ -138,6 +139,8 @@ int ML_Operator_Clean( ML_Operator *mat)
       t1 = - t1;
       if ( (mat->comm->ML_mypid == 0) && (t1 != 0.0))
          printf(" Apply time for %s (minimum) \t= %e\n",mat->label,t1);
+      if (mat->ntimes != 0) 
+         printf(" Number of Applies for %s \t= %d\n",mat->label,mat->ntimes);
    }
 #endif
 #if defined(ML_FLOPS) || defined(ML_TIMING_DETAILED)
@@ -254,9 +257,10 @@ int ML_Operator_halfClone_Init(ML_Operator *mat,
    mat->sub_matrix          = original->sub_matrix;
    mat->from_an_ml_operator = original->from_an_ml_operator;
    mat->data_destroy        = NULL;
-   mat->build_time          = original->build_time;
-   mat->apply_time          = original->apply_time;
-   mat->nflop               = original->nflop;
+   mat->build_time          = 0.0;
+   mat->apply_time          = 0.0;
+   mat->ntimes              = 0;
+   mat->nflop               = 0;
    /* If operator *mat has built as part of ML_Create, a label has already been
       allocated. */
    if (mat->label != NULL) ML_free(mat->label);
@@ -499,6 +503,7 @@ int ML_Operator_Apply(ML_Operator *Op, int inlen, double din[], int olen,
 
 #if defined(ML_TIMING) || defined(ML_FLOPS)
    Op->apply_time += (GetClock() - t0);
+   Op->ntimes++;
 #endif
 #ifdef ML_FLOPS
    Op->nflop += ML_Operator_GetFlops(Op);
@@ -533,6 +538,7 @@ int ML_Operator_ApplyAndResetBdryPts(ML_Operator *Op, int inlen,
    for ( i = 0; i < length; i++ ) dout[list[i]] = 0.0;
 #if defined(ML_TIMING) || defined(ML_FLOPS)
    Op->apply_time += (GetClock() - t0);
+   Op->ntimes++;
 #endif
 #ifdef ML_FLOPS
    Op->nflop += ML_Operator_GetFlops(Op);
@@ -1597,6 +1603,7 @@ Op->matvec->internal((void*)Op,       inlen, din, olen, dout);
    for ( i = 0; i < length; i++ ) dout[list[i]] = 0.0;
 #if defined(ML_TIMING) || defined(ML_FLOPS)
    Op->apply_time += (GetClock() - t0);
+   Op->ntimes++;
 #endif
 #ifdef ML_FLOPS
    Op->nflop += ML_Operator_GetFlops(Op);
@@ -1655,6 +1662,7 @@ int ML_Operator_Apply(ML_Operator *Op, int inlen, Epetra_MultiVector &ep_din,
    }
 #if defined(ML_TIMING) || defined(ML_FLOPS)
    Op->apply_time += (GetClock() - t0);
+   Op->ntimes++;
 #endif
 #ifdef ML_FLOPS
    Op->nflop += ML_Operator_GetFlops(Op);

@@ -106,7 +106,7 @@ struct ML_Operator_Struct {
    ML_Operator   *sub_matrix;
    ML_BdryPts    *bc;
    double        build_time, apply_time;
-   int           nflop;
+   int           ntimes, nflop;
    char          *label; 
    int           num_PDEs, num_rigid;
    double        lambda_max, lambda_min, lambda_max_img;
@@ -150,7 +150,7 @@ extern "C" {
 #endif
 
 extern int ML_Operator_BlockPartition(ML_Operator *matrix, int nLocalNd, 
-        int *nblk, int *pnode_part, int *ndwts /*=NULL*/, int *egwts/*=NULL*/, int nedges /*= 0*/ );
+        int *nblk, int *pnode_part, int *ndwts /*=NULL*/, int *egwts/*=NULL*/, int nedges /*= 0*/ , int );
 extern ML_Operator *ML_Operator_Create(ML_Comm *comm);
 extern int ML_Operator_Destroy(ML_Operator **);
 
