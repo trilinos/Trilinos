@@ -666,7 +666,7 @@ int agg_offset, vertex_offset;
       /* vertex in the original send_list is in the new send_list */
 
       /* first we need to count things up */
-      nbytes = (Nrows + total_recv_leng*num_PDE_eqns) * sizeof( int );
+      nbytes = (ML_max(Nrows,nvertices) + total_recv_leng*num_PDE_eqns) * sizeof( int );
                /* This needs to be big enough to hold all the receives */
       if ( nbytes > 0 ) ML_memory_alloc((void**) &dof_accounted_for,nbytes,"AGQ");
 
@@ -687,7 +687,7 @@ int agg_offset, vertex_offset;
 
       count3 = 0;
       for ( i = 0; i < N_neighbors; i++ ) {
-         for ( j = nvertices-1; j < nvertices + total_recv_leng*num_PDE_eqns; j++ ) 
+         for (j = nvertices; j < nvertices+total_recv_leng*num_PDE_eqns;j++) 
 	   dof_accounted_for[j] = -1;
          for (j = 0; j < recv_leng[i]; j++) {
             index3 = getrow_obj->pre_comm->neighbors[i].rcv_list[j];
@@ -729,7 +729,7 @@ int agg_offset, vertex_offset;
       count3 = 0;
       for ( i = 0; i < N_neighbors; i++ ) {
 	count = count3;
-	for ( j = nvertices-1; j < nvertices + total_recv_leng*num_PDE_eqns; j++ ) 
+	for ( j = nvertices; j < nvertices + total_recv_leng; j++ ) 
 	  dof_accounted_for[j] = -1;
          for (j = 0; j < recv_leng[i]; j++) {
             index3 = getrow_obj->pre_comm->neighbors[i].rcv_list[j];
