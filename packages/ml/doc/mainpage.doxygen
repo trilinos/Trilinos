@@ -10,6 +10,7 @@
 - \ref ml_desc
 - \ref ml_dev
 - \ref ml_doc
+- \ref ml_examples
 - \ref ml_minitutorial
 - \ref ml_MLP
 - \ref ml_mainstruct
@@ -144,6 +145,21 @@ provided in the Trilinos/packages/ml/examples subdirectories. Users are suggeste
 to compile and run these examples. Often, a copy-and-paste approach is good enough
 to start with ML. This is particularly true for the ML/Epetra interface.
 
+
+\section ml_examples Examples source code
+
+Several examples are distributed within ml. You can browse the source file of the
+following examples:
+- \ref mlguide.c is the simplest ML (serial) example;
+- \ref mlguide_par.c is the parallel counterpart of mlguide.c.
+- \ref ml_aztec_simple.c gives an example of the ML/Aztec C interface;
+- \ref ml_aztec_simple_METIS.c used METIS to create the aggregates;
+- \ref ml_example_MultiLevelOperator.cpp presents the use of the
+  MultiLevelOperator class;
+- \ref ml_example_MultiLevelPreconditioner.cpp details the use of ML as a
+  black-box preconditionerr (see also section \ref ml_minitutorial);
+- \ref ml_example_MultiLevelPreconditioner_2level.cpp describes how to define
+  domain decomposition preconditioners using ML.  
 
 
 \section ml_minitutorial Quick introduction to the ML/Epetra interface
@@ -671,4 +687,39 @@ $ mpirun -np 4 ./ml_example_epetra_operator.exe -problem_type=laplace_3d
 For more options for Trilinos_Util::CrsMatrixGallery, consult the
 Trilinos 4.0 tutorial.
 
+*/
+
+/*! 
+\page mlguide.c 
+\include mlguide.c
+*/
+
+/*!
+\page mlguide_par.c
+\include mlguide_par.c
+*/
+
+/*!
+\page ml_aztec_simple.c
+\include ml_aztec_simple.c
+*/
+
+/*!
+\page ml_aztec_simple_METIS.c
+\include ml_aztec_simple_METIS.c
+*/
+
+/*!
+\page ml_example_MultiLevelOperator.cpp
+\include ml_example_MultiLevelOperator.cpp
+*/
+
+/*!
+\page ml_example_MultiLevelPreconditioner.cpp
+\include ml_example_MultiLevelPreconditioner.cpp
+*/
+
+/*!
+\page ml_example_MultiLevelPreconditioner_2level.cpp
+\include ml_example_MultiLevelPreconditioner_2level.cpp
 */
