@@ -7180,7 +7180,7 @@ int ML_Cheby(void *sm, int inlen, double x[], int outlen, double rhs[])
    ML_Operator     *Amat = smooth_ptr->my_level->Amat;
    struct MLSthing *widget;
    int              deg, i, j, k, n, nn;
-   double          *pAux, *dk;
+   double          *pAux = NULL, *dk = NULL;
    double beta, alpha, theta, delta, s1, rhok, rhokp1;
    int             *cols, allocated_space;
    double          *diagonal, *vals, *tdiag, dtemp1, dtemp2;
@@ -7270,6 +7270,8 @@ int ML_Cheby(void *sm, int inlen, double x[], int outlen, double rhs[])
 
    if ((lambda_min == 1.0) && (lambda_min == lambda_max)) {
      for (i = 0; i < n; i++) x[i] = rhs[i]/diagonal[i];
+     if (pAux != NULL) ML_free(pAux);
+     if (dk   != NULL) ML_free(dk);
      return 0;
    }
 
