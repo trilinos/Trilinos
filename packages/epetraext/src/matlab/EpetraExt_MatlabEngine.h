@@ -39,9 +39,9 @@
 #include "Epetra_SerialComm.h"
 #endif
 #include "Epetra_Comm.h"
-// MATLAB engine declarations:
+// MatlabEngine declarations:
 #include "engine.h"
-//! MATLAB_Engine: 
+//! MatlabEngine: 
 
 /*! The MATLAB_Engine class provides access to MATLAB from Trilinos 
 
@@ -55,15 +55,15 @@
 
 */
 
-using namespace EpetraExt;
+//using namespace EpetraExt;
 namespace EpetraExt {
 //=========================================================================
-class Matlab_Engine {
+class MatlabEngine {
 
   public:
 
   //@{ \name Constructors/destructors.
-  //! Basic MATLAB_Engine constuctor.
+  //! Basic MatlabEngine constuctor.
   /*! Creates a MATLAB_Engine object and fills with default values.  
 
     \param Comm In
@@ -72,11 +72,11 @@ class Matlab_Engine {
     \return  MATLAB_Engine object
 
   */
-  MATLAB_Engine(const Epetra_Comm& Comm);
-  ~MATLAB_Engine();
-  //! MATLAB_Engine copy constructor.  There is no copy...
+  MatlabEngine(const Epetra_Comm& Comm);
+  ~MatlabEngine();
+  //! MatlabEngine copy constructor.  There is no copy...
   
-  // MATLAB_Engine(const MATLAB_Engine& Source);
+  // MatlabEngine(const MATLAB_Engine& Source);
   //@}
   
   //@{ \name LotsHere methods
@@ -97,4 +97,4 @@ class Matlab_Engine {
 
 };
 } // namespace EpetraExt
-#endif /* _MATLAB_ENGINE_H_ */
+

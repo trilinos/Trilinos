@@ -48,7 +48,7 @@ MatlabEngine::MatlabEngine (const Epetra_Comm& Comm):Comm_(Comm) {
 } 
 
 //=============================================================================
-MatlabEngine::~Matlab_Engine (void) {
+MatlabEngine::~MatlabEngine (void) {
 
     // MATLAB engClose, to destruct the MATLAB engine
 
