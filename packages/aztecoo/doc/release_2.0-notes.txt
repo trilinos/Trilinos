@@ -1,0 +1,60 @@
+Aztec Version 2.0 Release Notes
+
+* We have added several new features: 
+    1) ilut preconditioner
+    2) ilu(k), bilu(k), icc(k) for k > 0.
+    2) arbitrary overlap in domain decomposition
+    3) equation reordering for incomplete factorization
+       based on RCM algorithm
+    4) Matrix-free & user-supplied preconditioning interface
+    5) Improved flexability. Solvers can be used as
+       preconditioners. 
+
+*****************  IMPORTANT for Aztec 1.1 USERS   ****************
+*****************  IMPORTANT for Aztec 1.1 USERS   ****************
+*****************  IMPORTANT for Aztec 1.1 USERS   ****************
+
+  The following changes must be made to use Aztec 2.0:
+ 
+    1) references to "params[AZ_fill]" need to be changed
+       to "params[AZ_ilut_fill]".
+
+    2) references such as "option[AZ_precond] = xxx;" where
+       xxx is AZ_ilu, AZ_ilut, AZ_bilu must be changed to 
+          option[AZ_precond] = AZ_dom_decomp;
+          options[AZ_subdomain_solve] = xxx;
+    3) options[AZ_keep_info] must be set to '1' if previous
+       solver information is to be reused.
+    
+   Finally, Aztec 2.0 may give a somewhat different
+   convergence history than Aztec 1.1. The main difference 
+   between the two is that RCM reordering is now the default 
+   when using incomplete factorizations.  If you don't want 
+   this set 
+                   options[AZ_reorder] = 0;
+
+*******************************************************************
+*******************************************************************
+*******************************************************************
+
+* Several new machines have been added to the Makefile
+  including: Cray T3E and Linux boxes.
+
+* A new matrix-free sample program has been included with the
+  distribution.
+    
+* We have fixed a bug in the MPI communication associated with 
+  AZ_transform().
+
+* We have fixed a couple of memory bugs in the domain decomposition.
+
+* Other minor bug fixes.
+
+* IMPORTANT: a few Aztec function parameters have changed. Mostly
+  things like using unsigned integers instead of signed integers.
+  This may generate warnings on some compilers unless you explicitly
+  cast the parameters.
+
+* The User's Guide has been updated to reflect these changes.
+
+-------------------------------------------------------------------------------

@@ -1,0 +1,30 @@
+\documentclass[letterpaper]{book}
+\usepackage{makeidx}
+\usepackage{fancyheadings}
+\usepackage{epsfig}
+\usepackage{float}
+\usepackage{doxygen}
+\makeindex
+\setcounter{tocdepth}{1}
+\setlength{\footrulewidth}{0.4pt}
+\begin{document}
+\begin{titlepage}
+\setlength{\epsfxsize}{\textwidth}
+\epsffile{../komplex.eps}
+\begin{center}
+{\Huge The Komplex Solver Package Reference Manual\\[1ex]\large Version 1.0}\\
+\vspace*{1cm}
+{\large Written by Michael A. Heroux}\\
+\vspace*{0.5cm}
+{\small March 2000}\\
+\copyright Sandia National Laboratories 2000
+\end{center}
+\end{titlepage}
+\clearemptydoublepage
+\pagenumbering{roman}
+\tableofcontents
+\clearemptydoublepage
+\pagenumbering{arabic}
+\chapter{Overview of the Komplex Solver Package}
+\input{index}
+

@@ -1,0 +1,8 @@
+mkdir -p old
+mkdir -p new
+
+foreach f (*.h *.cc *.cpp Makefile makefile)
+  cp $f old
+  sed -f $TRILINOS_HOME/build/Ifpack2NewIfpack.sed $f > new/$f
+  diff $f new/$f
+end

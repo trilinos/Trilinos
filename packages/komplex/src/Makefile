@@ -1,0 +1,46 @@
+include $(TRILINOS_HOME)/build/TRILINOS_TARGET_DEFS
+TRILINOS_TARGET = $(TRILINOS_ARCH).$(TRILINOS_COMM)$(TRILINOS_ID)
+include $(TRILINOS_HOME)/build/makefile.$(TRILINOS_TARGET)
+
+DEFINES= -D$(TRILINOS_ARCH) $(AZTECOO_ARCH_DEFINES) -D$(AZTECOO_COMM)
+
+INCLUDES = $(ARCH_INCLUDES) $(KOMPLEX_INCLUDES) $(AZTECOO_INCLUDES)
+
+CFLAGS=$(ARCH_CFLAGS) $(DEFINES) $(INCLUDES)
+FFLAGS=$(ARCH_FFLAGS) 
+CXXFLAGS=$(ARCH_CXXFLAGS) $(DEFINES) $(INCLUDES)
+
+#=======================================================================
+# KOMPLEX source files
+#=======================================================================
+
+
+KOMPLEX_C = \
+azk_create_linsys.c	azk_create_matrix.c \
+azk_create_precon.c	azk_create_vector.c \
+azk_destroy_linsys.c	azk_destroy_matrix.c \
+azk_destroy_precon.c	azk_destroy_vector.c \
+azk_extract_solution.c	\
+azk_matvec.c		azk_permute_ri.c \
+azk_precon.c		azk_residual_norm.c
+
+#=======================================================================
+# KOMPLEX include files
+#=======================================================================
+
+KOMPLEX_INC = azk_komplex.h
+
+KOMPLEX_OBJ          = $(KOMPLEX_C:.c=.o)
+
+$(LIBKOMPLEX): $(KOMPLEX_OBJ)
+	$(AR) $(ARFLAGS) $(LIBKOMPLEX) $(KOMPLEX_OBJ)
+	$(RANLIB) $(LIBKOMPLEX)
+
+#
+# dependencies for 'f' files (none at this time)
+#
+#include ../../build/depends.komplex
+
+clean:
+	@echo "junk" > dummy.o
+	@rm -f *.o  $(LIBKOMPLEX) *~

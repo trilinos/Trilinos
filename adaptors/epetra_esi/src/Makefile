@@ -1,0 +1,39 @@
+include $(TRILINOS_HOME)/build/TRILINOS_TARGET_DEFS
+TRILINOS_TARGET = $(TRILINOS_ARCH).$(TRILINOS_COMM)$(TRILINOS_ID)
+include $(TRILINOS_HOME)/build/makefile.$(TRILINOS_TARGET)
+
+DEFINES= -D$(TRILINOS_ARCH) $(EPETRA_ARCH_DEFINES) -D$(EPETRA_COMM)
+
+ESI_INC = -I$(TRILINOS_HOME)/external/esi/cxx/include
+EPETRA_INC = -I$(TRILINOS_HOME)/packages/epetra/src
+AZTECOO_INC = -I$(TRILINOS_HOME)/packages/aztecoo/src
+
+INCLUDES = $(ESI_INC) $(EPETRA_INC) $(AZTECOO_INC) $(ARCH_INCLUDES) \
+           $(EPETRA_ESI_INCLUDES)
+
+CFLAGS=$(ARCH_CFLAGS) $(DEFINES) $(INCLUDES)
+FFLAGS=$(ARCH_FFLAGS) 
+CXXFLAGS=$(ARCH_CXXFLAGS) $(DEFINES) $(INCLUDES)
+CCFLAGS=$(CXXFLAGS)
+#=======================================================================
+# EPETRA_ESI source files
+#=======================================================================
+
+
+EPETRA_ESI_SRC = \
+	Epetra_ESI_Argv.cpp \
+	Epetra_ESI_Object.cpp \
+	Trilinos_ESI_Broker.cpp \
+	Epetra_ESI_inst.cpp
+
+EPETRA_ESI_OBJ          = $(EPETRA_ESI_SRC:.cpp=.o)
+
+$(LIBEPETRA_ESI): $(EPETRA_ESI_OBJ)
+	mkdir -p $(TRILINOS_HOME)/lib/$(TRILINOS_TARGET)
+	$(AR) $(ARFLAGS) $(LIBEPETRA_ESI) $(EPETRA_ESI_OBJ)
+	$(RANLIB) $(LIBEPETRA_ESI)
+
+clean:
+	@rm -rf $(TRILINOS_TARGET)
+	@rm -f *.o  $(LIBEPETRA_ESI) *~
+

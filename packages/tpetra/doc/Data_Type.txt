@@ -1,0 +1,168 @@
+
+
+              Proposal for an ESI_Data_Type Class
+
+INTRODUCTION
+
+There is general agreement among members of the ESI Forum that we need
+to support more than just 64 bit real arithmetic, e.g., in ESI Vector, 
+Matrix and Preconditioner classes.  This proposal presents one
+approach for providing this support.
+
+
+SECTION 1:  Background and Motivation for Approach
+
+It is well understood that map classes are useful because a map is the
+set of common structural information used by many other objects, e.g.,
+multiple instances of vectors having the same layout in memory but
+different values.  However, not all objects will have the same map and
+the actual details of the map will vary at run time.  Thus, a fundamental 
+attribute of a vector is its map, and the map is required for the 
+nontrivial construction of a vector.  
+
+This proposal for an ESI_Data_Type acknowledges that the same 
+principals are true for the data type of objects, namely that many,
+but not all, objects in a given code have the same data type and that
+the data type may vary at run time.  Thus, we propose that objects 
+having a data type attribute should have a data type object as an 
+argument passed to the nontrivial constructor.
+
+
+SECTION 2:  ESI_Data_Type Class Overview
+
+Class Name: ESI_Data_Type
+
+Header file:
+
+#ifndef _ESI_DATA_TYPE_H_
+#define _ESI_DATA_TYPE_H_
+
+//
+// This ESI_Data_Type class is a wrapper that encapsulates the type
+// of data that will be used by an object requiring a ESI_Data_Type 
+// object as input to the object's constructor.
+//
+
+//requires:
+//#include "basicTypes.h"
+//#include <iostream.h>
+//#include <stdio.h>
+//#include "ESI_Comm.h"
+
+//#ifndef __cplusplus
+//#define __cplusplus
+//#endif
+
+class ESI_Data_Type : public ESI_Object {
+    
+  public:
+    ESI_Data_Type(ESI_Data_Type_Selection selection);
+
+    ESI_Data_Type(const ESI_Data_Type& data_type); // copy constructor    
+
+    virtual ~ESI_Data_Type(void);  // destructor
+
+    // logical query functions to probe data type
+
+    bool isRealSinglePrecision() const {return(isRealSinglePrecision_);};
+    bool isRealDoublePrecision() const {return(isRealDoublePrecision_);};
+    bool isComplexSinglePrecision() const {return(isComplexSinglePrecision_);};
+    bool isComplexDoublePrecision() const {return(isComplexDoublePrecision_);};
+    bool isRealNativePrecision() const {return(isRealNativePrecision_);};
+    bool isComplexNativePrecision() const {return(isComplexNativePrecision_);};
+
+  private:
+
+    // ESI_Data_Type_Selection is an enum that lists possible data
+    // types supported by this library.
+
+    enum ESI_Data_Type_Selection = {
+    RealSinglePrecision,
+    RealDoublePrecision,
+    ComplexSinglePrecision,
+    ComplexDoublePrecision,
+    RealNativePrecision,
+    ComplexNativePrecision };
+    
+    bool isRealSinglePrecision_;
+    bool isRealDoublePrecision_;
+    bool isComplexSinglePrecision_;
+    bool isComplexDoublePrecision_;
+    bool isRealNativePrecision_;
+    bool isComplexNativePrecision_;
+};
+
+#endif /* _ESI_DATA_TYPE_H_ */
+
+
+
+SECTION 3: Sample Usage of ESI_Data_Type
+
+The following code fragment indicates how the ESI_Data_Type class
+might be used in conjunction with ESI_Comm, ESI_Map and ESI_Vector.
+
+  // Build communicator
+  ESI_Comm& comm = *new ESI_Comm(MPI_COMM_WORLD);
+
+  // Build map
+  ESI_Map& map = *new ESI_Map(numGlobalEquations, numLocalEquations, comm);
+
+  // Select Data Type
+  ESI_Data_Type& = *new ESI_Data_Type(RealNativeDoublePrecision);
+
+  // Construct vector
+  ESI_Vector& x = *new ESI_Multi_Vector(map,data_type);
+
+
+
+
+APPENDIX:  Design Requirements and Use Cases
+
+We view the following as (a subset of) the design requirements for any
+multi-data-type support capabililty in ESI.
+
+1) Data type invariant algorithms:  For algorithms which are 
+   invariant under changes in precision or field, calls to ESI 
+   object methods should not change.
+
+   Example:  
+   The Conjugate Gradient method in single precision
+   real, double precision real, single precision complex and double
+   precision complex.   One should be able to write a single source code
+   with calls to ESI object methods that supports all four data types
+   without modification.
+
+
+2) Mixed data type algorithms: We should be able to have vectors with
+   different data types coexist in a single code.
+
+   Example 1:
+   A dual precision GMRES algorithm with an inner-outer
+   iteration.  This algorithm does the inner iterations in single
+   precision real and outer iterations in double precision real.  
+
+   Example 2:
+   A double precision iteration using a single precision preconditioner.
+
+   Example 3:
+   A complex iteration using a real preconditioner.
+
+
+3) Extensibility:  We should be able to easily introduce new data
+   types without modifications to the generic ESI interfaces.
+
+   Example:
+   Addition of a double precision real interval data type for use with
+   verifiably correct algorithms.
+
+4) Allow leverage of advanced language capabilities:  We should not
+   inhibit possible use of language features such as inheritance, 
+   virtual interfaces and templating.
+
+   Example:
+   Support of multiple data types should not require excessive run time
+   testing for the data type and must allow the implementer to use
+   templates if that is an efficient way to express an algorithm for a
+   set of data types.
+
+

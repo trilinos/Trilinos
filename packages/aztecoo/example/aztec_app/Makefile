@@ -1,0 +1,100 @@
+include $(TRILINOS_HOME)/build/TRILINOS_TARGET_DEFS
+TRILINOS_TARGET = $(TRILINOS_ARCH).$(TRILINOS_COMM)$(TRILINOS_ID)
+include $(TRILINOS_HOME)/etc/makefile.$(TRILINOS_TARGET)
+
+# Aztec communication defines
+AZTEC_COMM_SERIAL          = SERIAL
+AZTEC_COMM_MPI             = AZTEC_MPI
+AZTEC_COMM                 = $(AZTEC_COMM_$(TRILINOS_COMM))
+
+DEFINES= -D$(TRILINOS_ARCH) $(AZTEC_ARCH_DEFINES) -D$(AZTEC_COMM) \
+         -DIFPACK -DSPARSEBLAS
+
+INCLUDES = $(ARCH_INCLUDES) -I$(TRILINOS_HOME)/src/ifpack \
+           -I$(TRILINOS_HOME)/src/aztec $(BLAS_INCLUDES) \
+           $(SPBLAS_INCLUDES)
+
+CFLAGS=$(ARCH_CFLAGS) $(DEFINES) $(INCLUDES)
+FFLAGS=$(ARCH_FFLAGS) $(DEFINES) 
+CXXFLAGS=$(ARCH_CXXFLAGS) $(DEFINES) $(INCLUDES)
+
+
+
+LIB_PATHS= $(LIBAZTEC) $(LIBIFPACK) $(LIBY12M) $(LIBMACHDEP) \
+           $(LIBLAPACK) $(LIBSPBLAS) $(LIBBLAS)
+
+#=======================================================================
+# Aztec test source and include files
+#=======================================================================
+
+# Choose the application you want to run:
+
+# 0) Force user to select options
+#must_select:
+#	@echo "   +++ You must comment these lines out and uncomment +++"
+#	@echo "   +++ one of the test options in the makefile        +++"
+
+#
+# 1) Standard MSR/VBR application
+
+#TEST_C  = az_main.c az_examples.c az_app_utils.c
+#TEST_F = 
+#TEST_INC =
+#TARGET = standard_aztec_driver
+
+#
+# 2) Tutorial application
+#       Choose one of the 3 depending on whether you want to see a "C"  
+#       application, a Fortran application using MPI, or a Fortran
+#       application without MPI.
+#       NOTE: You can only use 'az_tutorial_with_MPI.f' if you have
+#       MPI
+#             and you can not use 'az_tutorial_without_MPI.f' with
+#             MPI.
+#
+# 2a) C Application
+
+#TEST_C  = az_tutorial.c
+#TEST_F = 
+#TEST_INC =
+#TARGET = C_with_mpi
+
+# 2b) Fortran Application
+
+#TEST_C = 
+#TEST_F  = az_tutorial_with_MPI.f
+#TEST_INC =
+#TARGET = fortran_with_mpi
+
+# 2b) Fortran Application w/o MPI
+
+#TEST_C = 
+#TEST_F  = az_tutorial_without_MPI.f
+#TEST_INC =
+#TARGET = fortran_without_mpi
+
+#
+# 3) Matrix free application
+#
+TEST_C  = az_mat_free_main.c az_mat_free_example.c az_mat_free_com.c
+TEST_F  =
+TEST_INC = example_specific.h
+TARGET = mat_free
+
+#=======================================================================
+
+TEST_OBJ          = $(TEST_C:.c=.o) $(TEST_F:.f=.o)
+
+
+$(TARGET): $(TEST_OBJ)
+	$(LINKER) $(ARCH_FLAGS) $(TEST_OBJ) $(LIB_PATHS) $(ARCH_LIBS) \
+	$(LIBMPI) -o $(TARGET)
+
+#
+# dependencies for 'f' files (none at this time)
+#
+#include ../../etc/depends.aztec
+
+clean:
+	@echo "junk" > dummy.o
+	@rm -f *.o  $(TARGET)
