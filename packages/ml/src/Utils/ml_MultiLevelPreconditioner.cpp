@@ -452,7 +452,7 @@ MultiLevelPreconditioner::MultiLevelPreconditioner(const Epetra_RowMatrix & RowM
   
   ParameterList NewList;
   List_ = NewList;
-  ML_Epetra::SetDefaults("DD",List_,Prefix_);
+  ML_Epetra::SetDefaults("SA",List_,(int *)0, (double *)0, Prefix_);
     
   Initialize();
 

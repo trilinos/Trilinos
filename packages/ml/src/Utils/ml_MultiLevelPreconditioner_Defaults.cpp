@@ -70,41 +70,45 @@ using namespace ML_Epetra;
   Aztec smoothers with LU.
 
 */
-int ML_Epetra::SetDefaults(string ProblemType, ParameterList & List, const string Prefix)
+int ML_Epetra::SetDefaults(string ProblemType, ParameterList & List, 
+			   int * options, double * params,
+			   const string Prefix) 
 {
   
-  int rv = 0;
-  
+  // allocate some memory if the user is not passing the vectors.
+  // This is cute, but it may cause memory leaks.
+
+  if( options == NULL ) options = new int[AZ_OPTIONS_SIZE];
+  if( params  == NULL ) params  = new double[AZ_PARAMS_SIZE];
+
   if( ProblemType == "SA" )
-    return( ML_Epetra::SetDefaultsSA(List, Prefix) );
+    return( ML_Epetra::SetDefaultsSA(List, Prefix, options, params) );
   else if( ProblemType == "maxwell" )
-    return( ML_Epetra::SetDefaultsMaxwell(List, Prefix ) );
+    return( ML_Epetra::SetDefaultsMaxwell(List, Prefix, options, params ) );
   else if( ProblemType == "DD-ML" )
-    return( ML_Epetra::SetDefaultsDD_3Levels(List, Prefix ) );
+    return( ML_Epetra::SetDefaultsDD_3Levels(List, Prefix, options, params ) );
   else if( ProblemType == "DD-ML-LU" )
-    return( ML_Epetra::SetDefaultsDD_3Levels_LU(List, Prefix ) );
+    return( ML_Epetra::SetDefaultsDD_3Levels_LU(List, Prefix, options, params ) );
   else if( ProblemType == "DD" )
-    return( ML_Epetra::SetDefaultsDD(List, Prefix ) );
+    return( ML_Epetra::SetDefaultsDD(List, Prefix, options, params ) );
   else if( ProblemType == "DD-LU" )
-    return( ML_Epetra::SetDefaultsDD_LU(List, Prefix ) );
+    return( ML_Epetra::SetDefaultsDD_LU(List, Prefix, options, params ) );
   else {
     cerr << "ERROR: Wrong input parameter in `SetDefaults' ("
 	 << ProblemType << "). Should be: " << endl
 	 << "ERROR: <SA> / <DD> / <DD-ML> / <maxwell>" << endl;
     exit( EXIT_FAILURE );
-    rv = 1;
   }
 
-  EPETRA_CHK_ERR(rv);
-
-  return rv;
+  return 0;
   
   
 }
 
 // ============================================================================
 
-int ML_Epetra::SetDefaultsDD(ParameterList & List, const string Prefix) 
+int ML_Epetra::SetDefaultsDD(ParameterList & List, const string Prefix,
+			     int * options, double * params) 
 {
 
   List.set(Prefix+"default values","DD");
@@ -137,18 +141,14 @@ int ML_Epetra::SetDefaultsDD(ParameterList & List, const string Prefix)
   
   List.set(Prefix+"smoother: type","Aztec");
 
-  // STL should take care of deallocating those objects
-  vector<int>    SmootherOptionsList; SmootherOptionsList.resize(AZ_OPTIONS_SIZE);
-  vector<double> SmootherParamsList;  SmootherParamsList.resize(AZ_PARAMS_SIZE);
+  AZ_defaults(options,params);
+  options[AZ_precond] = AZ_dom_decomp;
+  options[AZ_scaling] = AZ_none;
+  options[AZ_subdomain_solve] = AZ_ilut;
   
-  AZ_defaults(&SmootherOptionsList[0],&SmootherParamsList[0]);
-  SmootherOptionsList[AZ_precond] = AZ_dom_decomp;
-  SmootherOptionsList[AZ_scaling] = AZ_none;
-  SmootherOptionsList[AZ_subdomain_solve] = AZ_ilut;
-  
-  List.set(Prefix+"smoother: Aztec options",&SmootherOptionsList[0]);
+  List.set(Prefix+"smoother: Aztec options",options);
     
-  List.set(Prefix+"smoother: Aztec params",&SmootherParamsList[0]);
+  List.set(Prefix+"smoother: Aztec params",params);
     
   List.set(Prefix+"smoother: Aztec as solver",false);
 
@@ -166,7 +166,8 @@ int ML_Epetra::SetDefaultsDD(ParameterList & List, const string Prefix)
 
 // ============================================================================
 
-int ML_Epetra::SetDefaultsDD_LU(ParameterList & List, const string Prefix) 
+int ML_Epetra::SetDefaultsDD_LU(ParameterList & List, const string Prefix,
+				int * options, double * params) 
 {
 
   List.set(Prefix+"default values","DD-LU");
@@ -199,17 +200,14 @@ int ML_Epetra::SetDefaultsDD_LU(ParameterList & List, const string Prefix)
   
   List.set(Prefix+"smoother: type","Aztec");
 
-  vector<int>    SmootherOptionsList; SmootherOptionsList.resize(AZ_OPTIONS_SIZE);
-  vector<double> SmootherParamsList;  SmootherParamsList.resize(AZ_PARAMS_SIZE);
+  AZ_defaults(options,params);
+  options[AZ_precond] = AZ_dom_decomp;
+  options[AZ_scaling] = AZ_none;
+  options[AZ_subdomain_solve] = AZ_lu;
   
-  AZ_defaults(&SmootherOptionsList[0],&SmootherParamsList[0]);
-  SmootherOptionsList[AZ_precond] = AZ_dom_decomp;
-  SmootherOptionsList[AZ_scaling] = AZ_none;
-  SmootherOptionsList[AZ_subdomain_solve] = AZ_lu;
-  
-  List.set(Prefix+"smoother: Aztec options",&SmootherOptionsList[0]);
+  List.set(Prefix+"smoother: Aztec options",options);
     
-  List.set(Prefix+"smoother: Aztec params",&SmootherParamsList[0]);
+  List.set(Prefix+"smoother: Aztec params",params);
     
   List.set(Prefix+"smoother: Aztec as solver",false);
 
@@ -227,7 +225,8 @@ int ML_Epetra::SetDefaultsDD_LU(ParameterList & List, const string Prefix)
 
 // ============================================================================
 
-int ML_Epetra::SetDefaultsDD_3Levels(ParameterList & List, const string Prefix) 
+int ML_Epetra::SetDefaultsDD_3Levels(ParameterList & List, const string Prefix,
+				     int * options, double * params)
 {
 
   List.set(Prefix+"default values","DD-ML");
@@ -264,17 +263,14 @@ int ML_Epetra::SetDefaultsDD_3Levels(ParameterList & List, const string Prefix)
   
   List.set(Prefix+"smoother: type","Aztec");
   
-  vector<int>    SmootherOptionsList; SmootherOptionsList.resize(AZ_OPTIONS_SIZE);
-  vector<double> SmootherParamsList;  SmootherParamsList.resize(AZ_PARAMS_SIZE);
+  AZ_defaults(options,params);
+  options[AZ_precond] = AZ_dom_decomp;
+  options[AZ_subdomain_solve] = AZ_ilut;
+  options[AZ_overlap] = 0;
 
-  AZ_defaults(&SmootherOptionsList[0],&SmootherParamsList[0]);
-  SmootherOptionsList[AZ_precond] = AZ_dom_decomp;
-  SmootherOptionsList[AZ_subdomain_solve] = AZ_ilut;
-  SmootherOptionsList[AZ_overlap] = 0;
-
-  List.set(Prefix+"smoother: Aztec options (level 0)",&SmootherOptionsList[0]);
+  List.set(Prefix+"smoother: Aztec options (level 0)",options);
     
-  List.set(Prefix+"smoother: Aztec params (level 0)",&SmootherParamsList[0]);
+  List.set(Prefix+"smoother: Aztec params (level 0)",params);
     
   List.set(Prefix+"smoother: Aztec as solver (level 0)",false);
   
@@ -292,7 +288,8 @@ int ML_Epetra::SetDefaultsDD_3Levels(ParameterList & List, const string Prefix)
 
 // ============================================================================
 
-int ML_Epetra::SetDefaultsDD_3Levels_LU(ParameterList & List, const string Prefix) 
+int ML_Epetra::SetDefaultsDD_3Levels_LU(ParameterList & List, const string Prefix,
+					int * options, double * params)
 {
 
   List.set(Prefix+"default values","DD-ML-LU");
@@ -328,19 +325,15 @@ int ML_Epetra::SetDefaultsDD_3Levels_LU(ParameterList & List, const string Prefi
   // --- Aztec --- //
   
   List.set(Prefix+"smoother: type","Aztec");
-  
-  // STL should take care of deallocating those objects
-  vector<int>    SmootherOptionsList; SmootherOptionsList.resize(AZ_OPTIONS_SIZE);
-  vector<double> SmootherParamsList;  SmootherParamsList.resize(AZ_PARAMS_SIZE);
 
-  AZ_defaults(&SmootherOptionsList[0],&SmootherParamsList[0]);
-  SmootherOptionsList[AZ_precond] = AZ_dom_decomp;
-  SmootherOptionsList[AZ_subdomain_solve] = AZ_lu;
-  SmootherOptionsList[AZ_overlap] = 0;
+  AZ_defaults(options,params);
+  options[AZ_precond] = AZ_dom_decomp;
+  options[AZ_subdomain_solve] = AZ_lu;
+  options[AZ_overlap] = 0;
 
-  List.set(Prefix+"smoother: Aztec options (level 0)",&SmootherOptionsList[0]);
+  List.set(Prefix+"smoother: Aztec options (level 0)",options);
     
-  List.set(Prefix+"smoother: Aztec params (level 0)",&SmootherParamsList[0]);
+  List.set(Prefix+"smoother: Aztec params (level 0)",params);
     
   List.set(Prefix+"smoother: Aztec as solver (level 0)",false);
   
@@ -358,7 +351,8 @@ int ML_Epetra::SetDefaultsDD_3Levels_LU(ParameterList & List, const string Prefi
 
 // ============================================================================
 
-int ML_Epetra::SetDefaultsMaxwell(ParameterList & List, const string Prefix) 
+int ML_Epetra::SetDefaultsMaxwell(ParameterList & List, const string Prefix,
+				  int * options, double * params)
 {
 
   List.set(Prefix+"default values","maxwell");
@@ -411,7 +405,8 @@ int ML_Epetra::SetDefaultsMaxwell(ParameterList & List, const string Prefix)
 
 // ============================================================================
 
-int ML_Epetra::SetDefaultsSA(ParameterList & List, const string Prefix) 
+int ML_Epetra::SetDefaultsSA(ParameterList & List, const string Prefix,
+			     int * options, double * params)
 {
 
   List.set(Prefix+"default values","SA");
