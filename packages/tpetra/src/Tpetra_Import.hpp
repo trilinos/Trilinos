@@ -210,7 +210,7 @@ namespace Tpetra {
 #ifdef __sun
 	OrdinalType count = 0;
 	std::count(remoteImageIDs.begin(), remoteImageIDs.end(), negOne, count);
-#elif
+#else
         OrdinalType count = std::count(remoteImageIDs.begin(), remoteImageIDs.end(), negOne); // count = number of occurances of -1 in remoteImageIDs
 #endif
         if(count > Teuchos::OrdinalTraits<OrdinalType>::zero()) {
