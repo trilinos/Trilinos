@@ -118,7 +118,6 @@ int ML_Aggregate_CoarsenMIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
    ML_agg_indx_comm      agg_indx_comm;
    int * graph_decomposition = NULL;
    ML_Aggregate_Viz_Stats * aggr_viz_and_stats;
-   int radius;
 
    /*   int kk, old_upper, nnzs, count2, newptr; */
 
