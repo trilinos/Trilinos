@@ -208,7 +208,7 @@ VPATH		= $(SUBDIRS)
 #  Architecture-independent definitions
 ##############################################################################
 
-ZOLTAN_INC_PATH	= $(SUBINCPATH) $(INC_PATH) $(THIRD_PARTY_INCPATH)
+ZOLTAN_INC_PATH	= $(SUBINCPATH) $(INCLUDE_PATH) $(THIRD_PARTY_INCPATH)
 ZOLTAN_CSRC    += $(LB_CSRC) $(ALL_CSRC) $(RCB_CSRC) $(PAR_CSRC) \
 		  $(COMM_CSRC) $(OCT_CSRC) $(PARAMS_CSRC) $(PARMETIS_CSRC) \
 		  $(TIMER_CSRC) $(HA_CSRC) $(REFTREE_CSRC) $(THIRD_PARTY_CSRC)
