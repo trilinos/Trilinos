@@ -516,9 +516,11 @@ gTAg = sqrt(ML_gdot(Nrows, rhs, rhs, comm));
       gTres = ML_gdot(Nrows, res, g, comm);
       ML_Operator_Apply(Amat, Nrows, g, Nrows, res);
       gTAg = ML_gdot(Nrows, res, g, comm);
+      if (gTAg != 0.) {
       printf("coef is %e  %e   %e\n",gTres,gTAg,gTres/gTAg);
       for (kk = 0; kk < length; kk++) {
 	x[cols[kk]] += (gTres/gTAg)*vals[kk];
+      }
       }
    }
    printf("norm of solution after forward on T %e\n",
@@ -536,9 +538,11 @@ gTAg = sqrt(ML_gdot(Nrows, rhs, rhs, comm));
       gTres = ML_gdot(Nrows, res, g, comm);
       ML_Operator_Apply(Amat, Nrows, g, Nrows, res);
       gTAg = ML_gdot(Nrows, res, g, comm);
+      if (gTAg != 0.) {
       printf("coef is %e  %e   %e\n",gTres,gTAg,gTres/gTAg);
       for (kk = 0; kk < length; kk++) {
 	x[cols[kk]] += (gTres/gTAg)*vals[kk];
+      }
       }
    }
    printf("norm of solution after backward on T %e\n",
