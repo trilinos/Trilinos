@@ -143,8 +143,7 @@ int Zoltan_HG_Matching (
       g.ewgt = new_ewgt;
     }
 /*
-    if (need_graph == 1)
-      sim_check(hg,&g);
+    sim_check(hg,&g);
 */
   }
 
@@ -161,8 +160,30 @@ int Zoltan_HG_Matching (
   if (hgp->matching_opt)
     ierr = hgp->matching_opt (zz,hg,&g,match,limit);
 
-End:
+  /* compare matching weight to an upper bound */
+  if (g.ewgt && zz->Debug_Level>=2)
+  { int i, j;
+    double highest, matching_weight=0.0, upper_bound=0.0;
+    
+    for (i=0; i<g.nVtx; i++)
+    { highest = 0.0;
+      for (j=g.nindex[i]; j<g.nindex[i+1]; j++)
+      { highest = MAX(highest,g.ewgt[j]);
+        if (g.neigh[j] == match[i])
+          if (g.ewgt[j] == FLT_MAX)
+            matching_weight = FLT_MAX;
+          else
+            matching_weight += (g.ewgt[j]);
+      }
+      if (highest < FLT_MAX)
+        upper_bound += highest;
+      else
+        upper_bound = FLT_MAX;
+    }
+    printf("matching/upper_bound ratio:%.3f\n",matching_weight/upper_bound);
+  }
 
+End:
 /* more temporary code while graphs are being replaced by hypergraphs */
 if (need_graph == 1)
 {

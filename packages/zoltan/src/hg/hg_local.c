@@ -244,7 +244,7 @@ static int local_fm (
           printf ("New Partition:%f\n",akt_cutsize);
         no_better_steps = 0;
       }
-      if (zz->Debug_Level > ZOLTAN_DEBUG_LIST)
+      if (zz->Debug_Level > ZOLTAN_DEBUG_LIST+1)
         printf ("%4d %6d %2d->%2d %7.2f %f %f\n",step,vertex,sour,dest,
                 max,akt_cutsize-cutsize,akt_cutsize);
     }
