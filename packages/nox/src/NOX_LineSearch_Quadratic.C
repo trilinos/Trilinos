@@ -240,4 +240,5 @@ bool Quadratic::setOutputParameters() {
   NOX::Parameter::List& outputList = inputList->sublist("Output");
   outputList.setParameter("Total Number of Line Search Iterations", totalNumIterations);
   outputList.setParameter("Total Number of Failed Line Searches", totalNumFailedLineSearches);
+  return true;
 }
