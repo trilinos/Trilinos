@@ -25,7 +25,7 @@ cd ../$DEST
 for i in $DIRECTORIES
 do
    echo $i
-   for j in ../src/$i/*.[ch]
+   for j in ../src/$i/*.*[ch]
    do
      FILE=`echo $j | sed "s,.*/,,"`
      ln -s $j $FILE

@@ -135,3 +135,4 @@ grep "=" etc/makefile.${ARCH} \
 echo "./install_packages" >> .arch_env
 chmod a+x .arch_env
 sh .arch_env
+\rm -f .arch_env
