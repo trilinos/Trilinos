@@ -366,6 +366,19 @@ private:
   int verbose_;
   int debug_;
 
+  bool refactorize_;	    // if true, and if the Symbolic and Numeric
+			    // objects have already been created, then
+			    // attempt to "refactorize" (factor the matrix
+			    // with no changes to the pivot order since the
+			    // last call the klu_btf_factor).
+
+  double rcond_threshold_;  // if we refactorize, the factorization may suffer
+			    // in numeric quality.  We compute rcond =
+			    // min (abs (diag (U))) / max (abs (diag (U))).
+			    // If this ratio is <= rcond_threshold_, then
+			    // the "refactorization" is scrapped, and we factor
+			    // with full partial pivoting instead.
+
   // some timing internal, copied from MUMPS
   double ConTime_;                        // time to convert to KLU format
   double SymTime_;                        // time for symbolic factorization
