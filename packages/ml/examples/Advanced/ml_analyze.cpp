@@ -92,7 +92,8 @@ int main(int argc, char *argv[])
   Epetra_RowMatrix* A = Gallery.GetMatrix();
   Epetra_LinearProblem* Problem = Gallery.GetLinearProblem();
 
-  // As we wish to use AztecOO, we need to construct a solver object for this problem
+  // As we wish to use AztecOO, we need to construct a solver object 
+  // for this problem
   AztecOO solver(*Problem);
 
   // create a parameter list for ML options
@@ -127,6 +128,7 @@ int main(int argc, char *argv[])
   Gallery.GetCartesianCoordinates(x_coord, y_coord, z_coord);
 
   // set parameters for visualization
+  
   MLList.set("viz: enable", true);
   MLList.set("viz: x-coordinates", x_coord);
   MLList.set("viz: y-coordinates", y_coord);
@@ -140,11 +142,12 @@ int main(int argc, char *argv[])
 
   // for 2D Cartesian grid, you can print the stencil of your operator
   // using this simple function.
+  
   MLPrec->PrintStencil2D(16,16);
 
-  // =============== //
-  // A N A L Y S I S //
-  // =============== //
+  // =========================== //
+  // E I G E N - A N A L Y S I S //
+  // =========================== //
 
   if (ProblemSize < 1024 && Comm.NumProc() == 1) {
 
@@ -160,89 +163,46 @@ int main(int argc, char *argv[])
     MLPrec->AnalyzeMatrixEigenvaluesDense("P^{-1}A");
     
   }
-  else {
-    
 
-#ifdef THIS_IS_NOT_DEFINED 
-#undef THIS_IS_NOT_DEFINED 
-#endif
+  // ================================================= //
+  // A N A L Y S I S   O F   T H E   H I E R A R C H Y //
+  // ================================================= //
 
-#ifdef THIS_IS_NOT_DEFINED 
-    // ANASAZI INTERFACE CURRENTLY BROKEN -- Feb-05
-    // on the other hand, "sparse" analysis can be applied to serial and
-    // parallel, of any size, but we cannot get the entire spectrum of the
-    // operators.
-    // NOTE: the eigencomputation can be expensive!
- 
-    MLPrec->AnalyzeSmoothersSparse(5,5);
-    MLPrec->AnalyzeMatrixEigenvaluesSparse("A");
-    MLPrec->AnalyzeMatrixEigenvaluesSparse("P^{-1}A");
-#endif
+  // Method AnalyzeHierarchy() can be used to validate an
+  // already built hierarchy.
+  // - `true' means perform a "cheap" analysis of each level's matrix
+  // - Then, each level's smoothers and the complete cycle are 
+  //   applied to solve the problem
+  //     A e = 0
+  //   with a random initial solution, to get a sense of the effectiveness
+  //   of the smoothers and the cycle itself. The parameters are:
+  //   * NumPreCycles and NumPostCycles specify the number of post
+  //     and pre smoother applications;
+  //   * NumMLCycles specifies the number of applications of the 
+  //     complete cycle.
 
+  MLPrec->AnalyzeHierarchy(true, NumPreCycles, NumPostCycles, NumMLCycles);
 
-  }
+  // ================================================= //
+  // A N A L Y S I S   O F   T H E   S M O O T H E R S //
+  // ================================================= //
 
-  // still to perform:
-  // 1.- a "cheap" analysis of the matrix (mainly, whether it is
-  //     diagonally domimant and well scaled)
-  // 2.- analyze the effect of the ML cycle on a random vector
-  // `5' refers to the application of the ML cycle to a random vector.
-
-  MLPrec->AnalyzeMatrixCheap();
-  MLPrec->AnalyzeCycle(5);
-
-  // Here we set parameters to compare different smoothers.
+  // Method TestSmoothers() can be used to analyze different smoothers
+  // on a given problem. The cycle is built following the parameters
+  // specified in MLTestList.
   // Please refer to the user's guide for more details about the following
   // parameters. Not all smoothers are supported by this testing.
 
   Teuchos::ParameterList MLTestList;
   ML_Epetra::SetDefaults("SA",MLTestList);
   
-  MLTestList.set("test: Jacobi", true);
-  MLTestList.set("test: Gauss-Seidel", true);
-  MLTestList.set("test: symmetric Gauss-Seidel", true);
-  MLTestList.set("test: Aztec", false);
-  MLTestList.set("test: Aztec as solver", false);
-
-  MLTestList.set("test: sweeps", 5);
-
   MLPrec->TestSmoothers(MLTestList);
 
   // =============== //
   // end of analysis //
   // =============== //
 
-  // tell AztecOO to use this preconditioner, then solve
-  solver.SetPrecOperator(MLPrec);
-  
-  solver.SetAztecOption(AZ_solver, AZ_gmres);
-  solver.SetAztecOption(AZ_output, 32);
-
-  // solve with 500 iterations and 1e-12 tolerance  
-  // The problem should converge as follows:
-  //
-  // proc       iterations       condition number
-  //   1             14               1.78
-  //   2             15               2.39
-  //   4             15               2.20
-
-  solver.Iterate(500, 1e-12);
-
   delete MLPrec;
-  
-  // compute the real residual
-
-  double residual, diff;
-  Gallery.ComputeResidual(&residual);
-  Gallery.ComputeDiffBetweenStartingAndExactSolutions(&diff);
-  
-  if( Comm.MyPID()==0 ) {
-    cout << "||b-Ax||_2 = " << residual << endl;
-    cout << "||x_exact - x||_2 = " << diff << endl;
-  }
-
-  if (residual > 1e-5)
-    exit(EXIT_FAILURE);
 
 #ifdef EPETRA_MPI
   MPI_Finalize() ;
