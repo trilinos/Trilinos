@@ -1,19 +1,3 @@
-
-/*************************************************************************************       
-  HAIM: GLOBAL EIGENVALUE CALCULATIONS FOR MULTIGRID           
-  GLOBAL BASIS (GB) METHOD / GENERALIZED GLOBAL BASIS (GGB) METHOD USING ARPACK                      
-**************************************************************************************/     
-/*                                                            
-   THE IDEA:                                                  
-        We want to solve     (STS)*x = lam*x                      
-        S - Smoothing iteration matrix
-	T - Multilevel projector
-		
-        + We solve the problem by supplying ARPACK with the function that
-	  produces Matrix-vector product 
-	+ We use simple non-symmetric ARPACK mode                            
-                                                              
-	*/                                                            
 #ifndef __MLGGB_
 #define __MLGGB_
 
@@ -27,6 +11,8 @@
 #include <stdlib.h>
 #include "ml_common.h"
 #include "ml_mat_formats.h" 
+#include "ml_lapack.h"
+#include "ml_eigf2c.h"
 
 
 struct ML_Eigenvalue_Struct  {
@@ -60,15 +46,10 @@ void  ML_ARPACK_driver(char which[],
 		       int Debug_Flag, int GGB_alp_flag);
 
 
-void ML_GGB_2_CSR (double **eigvec, int nconv, int MatSize, 
-		   struct ML_CSR_MSRdata  *mydata, int Debug_Flag );
-void ML_GGB2CSR (double *v, int nconv, int MatSize, 
+  void ML_GGB2CSR (double *v, int nconv, int MatSize, int proc_id,
 		   struct ML_CSR_MSRdata  *mydata, int Debug_Flag );
 
 
-void  ML_mgs (double *NewVec, int nconv, int nloc2, struct ML_Eigenvalue_Struct 
-	      *eigen_struct,  int Debug_Flag);
-	      
 void  ML_GGBalp (double *NewVec, int nconv, int nloc2, struct ML_Eigenvalue_Struct 
 		   *eigen_struct);
 
@@ -88,16 +69,15 @@ extern double ML_normc(double *real, double *imag,  int leng );
 
 
 
-
-
-
-
-
 void dnaupd_(int *, char *, int *, char *, int *, double *, double *,
 		 int *, double *, int *, int *, int *, double *, double *,
 		 int *, int *);
 
+  void pdnaupd_(int *, int *, char *, int *, char *, int *, double *, double *,
+		int *, double *, int *, int *, int *, double *, double *,
+		int *, int *);
 
+ 
 #ifndef ML_CPP
 #ifdef __cplusplus
 }

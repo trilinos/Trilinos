@@ -13,29 +13,40 @@
 #define TRUE_ (1)
 #include "ml_eigf2c.h"
 
-int ml_c_pdmout__(int *comm, int *lout, int *m, int *n, double *a, 
+#define HAVE_ML_PARPACK
+
+int ml_pdmout__(int *comm, int *lout, int *m, int *n, double *a, 
 		  int *lda, int *idigit)
 {
     /* System generated locals */
     integer a_dim1, a_offset;
 
-/* #ifdef EIGEN_PARALLEL */
-/*      call PDMOUT( comm, */
-/* #else */
     /* Parameter adjustments */
     a_dim1 = *lda;
     a_offset = 1 + a_dim1 * 1;
     a -= a_offset;
 
     /* Function Body */
+#ifdef HAVE_ML_PARPACK
+    pdmout_(comm,
+	    lout, m, n, &a[a_offset], lda, idigit, "Ritz values (Real,Imag) a\
+nd direct residuals", (ftnlen)44);
 
+#else
+    
     dmout_(lout, m, n, &a[a_offset], lda, idigit, "Ritz values (Real,Imag) a\
 nd direct residuals", (ftnlen)44);
-/* #endif */
+   
+       
+#endif
+    
     return 0;
 } /* ml_c_pdmout__ */
 
-int ml_dneupc__(int *ivec, char *howmny, int *celect, double *d__, 
+
+
+int ml_pdneupc__(int *comm,
+		int *ivec, char *howmny, int *celect, double *d__, 
 		double *v, int *ldv, double *workev,  char *bmat, int *n, 
 		char *which, int *nev, double *tol, double *resid, int *ncv, 
 		int *iparam, int *ipntr, double *workd, double *workl, 
@@ -54,20 +65,6 @@ int ml_dneupc__(int *ivec, char *howmny, int *celect, double *d__,
     static doublereal sigma, mu;
     static logical *select;
 
-
-
-/*                         C to Fortran conversion */
-/* THIS IS USED IN RF_EIGENVALUES.mod6   maxn=256, maxnev=12, maxncv=30 */
-
-/*      logical    select(30), rvec */
-/*      character  howmny, bmat, which*2 */
-/*      integer    ivec, celect(30), n, ncv, nev, ldv, */
-/*     &           iparam(11), ipntr(14), lworkl, ierr, i */
-/*      Double precision */
-/*     &           sigma, mu, tol, d(3*30), resid(n), v(ldv,ncv), */
-/*     &           workd(3*256), workl(lworkl), workev(3*30) */
-/*     .. */
-/*     .. Executable statements .. */
     /* Parameter adjustments */
 
     select = (logical *) ML_allocate(sizeof(logical)* (*ncv));
@@ -105,14 +102,32 @@ int ml_dneupc__(int *ivec, char *howmny, int *celect, double *d__,
 	printf("unknown value of howmny %c\n",*howmny);
 	exit(1);
     }
+    
 
-
+#ifdef HAVE_ML_PARPACK
+    
+    pdneupd_(comm,
+	     &rvec, "A", select, &d__[1], &d__[*ncv + 1], &v[v_offset], ldv, &
+	     sigma, &mu, &workev[1], bmat, n, which, nev, tol, &resid[1], ncv, 
+	     &v[v_offset], ldv, &iparam[1], &ipntr[1], &workd[1], &workl[1], 
+	     lworkl, ierr, (ftnlen)1, (ftnlen)1, (ftnlen)2);
+       
+    printf("\n\t\t Parallel arpack iterations\n"); 
+    
+#else
+    
+    
     dneupd_(&rvec, "A", select, &d__[1], &d__[*ncv + 1], &v[v_offset], ldv, &
 	    sigma, &mu, &workev[1], bmat, n, which, nev, tol, &resid[1], ncv, 
 	    &v[v_offset], ldv, &iparam[1], &ipntr[1], &workd[1], &workl[1], 
 	    lworkl, ierr, (ftnlen)1, (ftnlen)1, (ftnlen)2);
+   
+    printf("\n\t\t Serial arpack iterations\n"); 
+
+#endif
 
     ML_free(select);
     return 0;
 } /* ml_dneupc__ */
+
 

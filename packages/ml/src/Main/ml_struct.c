@@ -5733,14 +5733,18 @@ edge_smoother, edge_args, nodal_smoother, nodal_args );
 
 int ML_build_ggb(ML *ml, void *data)
 {
-  ML *ml_ggb;
-  int Nrows, Ncols, Nnz;
-  ML_Operator *Pmat;
-  struct ML_CSR_MSRdata *csr_data, *mydata;
 
+  ML                    *ml_ggb;
+  int                    Nrows, Ncols, Nlocal, Nnz;
+  ML_Operator           *Pmat;
+  struct ML_CSR_MSRdata *csr_data, *mydata;
+  int                   *NeighborList, *IndList;
+  int                    Nneighbors, nprocs, i;
+  char str[80];
+  
   mydata   = (struct ML_CSR_MSRdata *) data;
   csr_data = (struct ML_CSR_MSRdata *) ML_allocate(sizeof(struct ML_CSR_MSRdata));
-
+  
 
   Ncols = mydata->Ncols;
   Nrows = mydata->Nrows;
@@ -5764,51 +5768,86 @@ int ML_build_ggb(ML *ml, void *data)
   ML_Operator_halfClone_Init( &(ml_ggb->Amat[1]),
 			      &(ml->Amat[ml->ML_finest_level]));
 
-
-
-  /* Put in the code that builds the interpolation operator */
-  /* Here is a simple example that put in a single random   */
-  /* vector */
-
-  /*
-      Nnz = Ncols*(ml->Amat[ml->ML_finest_level].invec_leng);
-      Nnz_per_row = Ncols;
-      Nrows = ml->Amat[ml->ML_finest_level].invec_leng;
-
-      csr_data->rowptr  = (int    *) ML_allocate(sizeof(int)*(Nrows+1));
-      csr_data->columns = (int    *) ML_allocate(sizeof(int)*(Nnz+1));
-      csr_data->values  = (double *) ML_allocate(sizeof(double)*(Nnz+1));
-  */
-
-  /* Set up the row pointers.  */
-  /*
-    csr_data->rowptr[0] = 0;
-    for (i = 0; i < Nrows; i++)
-    csr_data->rowptr[i+1] = csr_data->rowptr[i]+ Nnz_per_row;
-  */
-  /* Set up the column indices. In this example there is just */
-  /* one column                                               */
-  /* for (i = 0; i < Nrows; i++)
-     csr_data->columns[i] = 0;
-  */
-  /* Put random data as values */
-
-  /* ML_random_vec(csr_data->values, Nrows, ml->comm); */
-
-
-
+ 
   /* Put sizes and function pointers into ml_ggb */
-
+  
   ML_Operator_Set_1Levels(Pmat, &(ml_ggb->SingleLevel[0]),
 			  &(ml_ggb->SingleLevel[1]));
+
+  
+  /* Only processor 0 has the coarse vector information */
+
   ML_Operator_Set_ApplyFuncData(Pmat, Ncols, Nrows, ML_EMPTY, csr_data,
 				Nrows, NULL, 0);
-
-
+  
+  if (ml_ggb->comm->ML_mypid == 0)     
+    ML_Operator_Set_ApplyFuncData(Pmat, Ncols, Nrows, ML_EMPTY, csr_data,
+				  Nrows, NULL, 0);
+   
+  else 
+    ML_Operator_Set_ApplyFuncData(Pmat, 0, Nrows, ML_EMPTY, csr_data,
+				  Nrows, NULL, 0);
+  
+  
   ML_Operator_Set_Getrow(Pmat, ML_EXTERNAL, Nrows, CSR_getrows);
   ML_Operator_Set_ApplyFunc (Pmat, ML_INTERNAL, CSR_denseserialmatvec);
+  
+  nprocs  = ml_ggb->comm->ML_nprocs;           /* Number of processors */  
+  Nlocal  =  Pmat->invec_leng;                 /* size of coarse grid vector  */
+    
+  NeighborList =  (int *) ML_allocate(sizeof(int)*(nprocs-1));  
+  IndList      =  (int *) ML_allocate(sizeof(int)*Ncols);  
+  
+  /* processor 0  communicates with all the processors, however all the other
+     nodes communicate only with processor 0    */
+  
+  if (ml_ggb->comm->ML_mypid == 0) {
+    
+    /* Construct neighbor list for processor 0  */
+    for (i = 1; i < nprocs; i++)  NeighborList[i-1] = i;    
+    Nneighbors = nprocs-1;
+    
+    /* indices of in-comming vector (coarse vector)   */
+    for (i = 0; i < Ncols; i++) IndList[i] = i;
+    
+    /* set communication for processor 0                 */
+    ML_CommInfoOP_Set_neighbors(&(Pmat->getrow->pre_comm), Nneighbors, 
+				NeighborList,ML_OVERWRITE, NULL, 0);
+    
+    /* information is sent to the other but not recieved  */
+    for (i = 0; i < Nneighbors; i++) 
+      ML_CommInfoOP_Set_exch_info(Pmat->getrow->pre_comm, NeighborList[i],
+				  0,     NULL , Ncols, IndList ); 
+    
+  }
+  else {
+    Nneighbors      = 1;
+    NeighborList[0] = 0;   
+    
+    
+    /* indices of in-comming vector (coarse vector)  */
+    for (i = 0; i < Ncols; i++) IndList[i] = i;
+    
+    /* set communication for all other processors                 */
+    ML_CommInfoOP_Set_neighbors(&(Pmat->getrow->pre_comm), Nneighbors, 
+				NeighborList,ML_OVERWRITE, NULL, 0);
+    
+    /* recieve information from processor 0 */
+    ML_CommInfoOP_Set_exch_info(Pmat->getrow->pre_comm, 0,
+  		 		Ncols,    IndList , 0, NULL );
+ 
+  }
+  
+  /*  Pmat->getrow->pre_comm = ML_CommInfoOP_Create();
+      sprintf(str,"%d:",ml_ggb->comm->ML_mypid);
+      ML_CommInfoOP_Print(Pmat->getrow->pre_comm, str);
+  */
 
-  /*  ML_Operator_Print(Pmat, "Pmat"); */
+  ML_free(NeighborList);
+  ML_free(IndList);
+
+    
+  /* ML_Operator_Print(Pmat, "Pmat"); */
 
   ML_Gen_Restrictor_TransP(ml_ggb, 1, 0);
   /*  ML_Operator_Set_ApplyFunc (&(ml_ggb->Rmat[1]), ML_INTERNAL,
