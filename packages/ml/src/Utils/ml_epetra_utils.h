@@ -22,6 +22,10 @@ class Epetra_Object;
 class Epetra_CrsMatrix;
 class Epetra_RowMatrix;
 class Epetra_LinearProblem;
+class Epetra_SerialDenseMatrix;
+namespace Teuchos {
+  class ParameterList;
+}
 
 #include "ml_common.h"
 
@@ -82,6 +86,14 @@ int Epetra_ML_getrow(ML_Operator *data, int N_requested_rows,
                  int requested_rows[], int allocated_space, int columns[],
                  double values[], int row_lengths[]);
 
+void ML_Set_Filter(Teuchos::ParameterList& List);
+
+int Epetra_ML_matvec_Filter(ML_Operator *data, int in, double *p, 
+                            int out, double *ap);
+
+int Epetra_ML_getrow_Filter(ML_Operator *data, int N_requested_rows,
+                            int requested_rows[], int allocated_space, int columns[],
+                            double values[], int row_lengths[]);
 //! Update vec's ghost node via communication.
 /*! Update vec's ghost node via communication. Note: the length of vec is
   given by N_local + N_ghost where Amat was created via

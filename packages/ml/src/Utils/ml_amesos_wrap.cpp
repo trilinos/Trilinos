@@ -33,8 +33,8 @@ static double MaxError__ = 0.0;
 
 // ================================================ ====== ==== ==== == =
 
-int ML_Amesos_Gen(ML *ml, int curr_level, int choice,
-		  int MaxProcs, void **Amesos_Handle)
+int ML_Amesos_Gen(ML *ml, int curr_level, int choice, int MaxProcs, 
+                  double AddToDiag, void **Amesos_Handle)
 {
 
   ML_Operator *Ke = &(ml->Amat[curr_level]);
@@ -89,6 +89,7 @@ int ML_Amesos_Gen(ML *ml, int curr_level, int choice,
     AmesosList.set("PrintStatus",true);
   }
   AmesosList.set("MaxProcs",MaxProcs);
+  AmesosList.set("AddToDiag", AddToDiag);
 
   // don't use iterative refinement for Superludist only
   Teuchos::ParameterList & SuperludistList = AmesosList.sublist("Superludist");

@@ -393,7 +393,13 @@ MultiLevelPreconditioner(const Epetra_MsrMatrix & EdgeMatrix,
   //! Destroys all structures allocated in \c ComputePreconditioner() if the preconditioner has been computed.
   int DestroyPreconditioner();
 
-  //!  Returns a reference to RowMatrix->Map().
+  //! Returns a reference to the internally stored RowMatrix.
+  const Epetra_RowMatrix& RowMatrix() const
+  {
+    return(*RowMatrix_);
+  }
+
+  //! Returns a reference to RowMatrix->Map().
   const Epetra_BlockMap& Map() const
   {
     return(RowMatrix_->Map());

@@ -80,17 +80,14 @@ extern double ML_WEIGHT_THRES; // defined in ml_agg_METIS.c
 #else
 #include "Epetra_SerialComm.h"
 #endif
-
-//#include <cstring>
 #include "ml_amesos_wrap.h"
 #include "ml_agg_METIS.h"
 #include "ml_epetra_utils.h"
-
 #include "ml_epetra.h"
 #include "ml_MultiLevelPreconditioner.h"
 #include "ml_agg_ParMETIS.h"
-
 #include "ml_anasazi.h"
+#include "ml_FilterType.h"
 
 #ifdef HAVE_ML_TRIUTILS
 #include "Trilinos_Util_CommandLineParser.h"
@@ -675,7 +672,7 @@ ComputePreconditioner(const bool CheckPreconditioner)
 #endif
   }
 
-  if( Label_ ) delete [] Label_;
+  if (Label_) delete[] Label_;
   
   Label_ = new char[80];
   
@@ -737,6 +734,24 @@ ComputePreconditioner(const bool CheckPreconditioner)
     cout << "Number of applications of the ML cycle = " << CycleApplications_ << endl;
   }
 
+  const Epetra_VbrMatrix* VbrMatrix;
+  VbrMatrix = dynamic_cast<const Epetra_VbrMatrix *>(RowMatrix_);
+  if (VbrMatrix == 0) {
+    NumPDEEqns_ = List_.get("PDE equations", 1);
+  }
+  else {
+    int NumBlockRows = VbrMatrix->RowMap().NumGlobalElements();
+    int NumRows = VbrMatrix->RowMap().NumGlobalPoints();
+    if( NumRows % NumBlockRows ) {
+      cerr << "# rows must be a multiple of # block rows ("
+	   << NumRows << "," << NumBlockRows << ")" << endl;
+      exit( EXIT_FAILURE );
+    }
+    NumPDEEqns_ = NumRows/NumBlockRows;
+  }
+
+  if( verbose_ ) cout << "Number of PDE equations = " << NumPDEEqns_ << endl;
+  
 #ifdef HAVE_ML_EPETRAEXT
   // ============================================================== //
   // dump matrix in matrix market format using EpetraExt            //
@@ -801,10 +816,79 @@ ComputePreconditioner(const bool CheckPreconditioner)
     ML_Init_Amatrix(ml_,LevelID_[0],NumMyRows, NumMyRows, (void *) RowMatrix_);
     // set the number of nonzeros
     ml_->Amat[LevelID_[0]].N_nonzeros = RowMatrix_->NumGlobalNonzeros();
-    ML_Set_Amatrix_Getrow(ml_, LevelID_[0], Epetra_ML_getrow,
-			  Epetra_ML_comm_wrapper, NumMyRows+N_ghost);
+
+    ML_Epetra::FilterType FT;
+    FT = List_.get("filter: type", ML_Epetra::ML_NO_FILTER);
+
+    double* Mask = 0;
+    Mask = List_.get("filter: mask", Mask);
+
+    if (FT != ML_Epetra::ML_NO_FILTER) {
+      if (verbose_) {
+        cout << endl;
+        cout << PrintMsg_ << "Using filtering, type = ";
+        switch (FT) {
+        case ML_NO_FILTER:
+          // cannot be
+          cout << "ML_NO_FILTER" << endl;
+          break;
+        case ML_EQN_FILTER:
+          cout << "ML_EQN_FILTER" << endl;
+          break;
+        case ML_THREE_BLOCKS_FILTER:
+          cout << "ML_THREE_BLOCKS_FILTER" << endl;
+          break;
+        case ML_TWO_BLOCKS_FILTER:
+          cout << "ML_TWO_BLOCKS_FILTER" << endl;
+          break;
+        case ML_MASK_FILTER:
+          cout << "ML_MASK_FILTER" << endl;
+          break;
+        }
+        cout << PrintMsg_ << "Threshold = "
+             << List_.get("filter: absolute threshold", 0.0) 
+             << " (absolute), "
+             << List_.get("filter: relative threshold", 1.0) 
+             << " (relative)" << endl;
+        cout << PrintMsg_ << "Dividers = "
+             << List_.get("filter: first divider", 0)
+             << " (first), " 
+             << List_.get("filter: second divider", 0)
+             << " (second), " << endl;
+
+        if (FT == ML_MASK_FILTER) {
+          cout << "Mask is as follows:" << endl;
+          for (int i = 0 ; i < NumPDEEqns_ ; ++i) {
+            for (int j = 0 ; j < NumPDEEqns_ ; ++j) {
+              if (Mask[i * NumPDEEqns_ + j] == 1)
+                cout << " * ";
+              else
+                cout << " . ";
+            }
+            cout << endl;
+          }
+        }
+
+        //cout << "Note: the filter is not applied to matvec(), only getrow()" << endl;
+        cout << endl;
+      }
+      List_.set("filter: equations", NumPDEEqns_);
+
+      ML_Set_Filter(List_);
+      // FIXME // not so sure that Epetra_ML_matvec_Filter is not
+      // FIXME // more appropriate
+      ML_Set_Amatrix_Getrow(ml_, LevelID_[0], Epetra_ML_getrow_Filter,
+                            Epetra_ML_comm_wrapper, NumMyRows+N_ghost);
     
-    ML_Set_Amatrix_Matvec(ml_, LevelID_[0], Epetra_ML_matvec);
+      ML_Set_Amatrix_Matvec(ml_, LevelID_[0], Epetra_ML_matvec_Filter);
+
+    }
+    else {
+      ML_Set_Amatrix_Getrow(ml_, LevelID_[0], Epetra_ML_getrow,
+                            Epetra_ML_comm_wrapper, NumMyRows+N_ghost);
+
+      ML_Set_Amatrix_Matvec(ml_, LevelID_[0], Epetra_ML_matvec);
+    }
 
   } else {
 
@@ -1655,7 +1739,7 @@ ApplyInverse(const Epetra_MultiVector& X,
   // FIXME: the Y.PutScalar(0.0) can probably be skipped.      //
   // ========================================================= //
   
-  if (Y.NumVectors()!=X.NumVectors()) 
+  if (Y.NumVectors() != X.NumVectors()) 
     ML_CHK_ERR(-3);
   if( !IsPreconditionerComputed() ) 
     ML_CHK_ERR(-10);
@@ -1795,6 +1879,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetCoarse()
   string CoarseSolution = List_.get("coarse: type", "Amesos-KLU");
   int NumSmootherSteps = List_.get("coarse: sweeps", 1);
   double Omega = List_.get("coarse: damping factor", 0.67);
+  double AddToDiag = List_.get("coarse: add to diag", 1e-12);
     
   int MaxProcs = List_.get("coarse: max processes", -1);
 
@@ -1814,19 +1899,25 @@ int ML_Epetra::MultiLevelPreconditioner::SetCoarse()
   else if( CoarseSolution == "Amesos-KLU" ) {
     // commented out, Amesos output is already printed on screen
     // cout << "\n\nCreating AMESOS smoother\n\n" << endl;
-    ML_Gen_Smoother_Amesos(ml_ptr, LevelID_[NumLevels_-1], ML_AMESOS_KLU, MaxProcs);
+    ML_Gen_Smoother_Amesos(ml_ptr, LevelID_[NumLevels_-1], 
+                           ML_AMESOS_KLU, MaxProcs, AddToDiag);
   } else if( CoarseSolution == "Amesos-UMFPACK" )
-    ML_Gen_Smoother_Amesos(ml_ptr, LevelID_[NumLevels_-1], ML_AMESOS_UMFPACK, MaxProcs);
+    ML_Gen_Smoother_Amesos(ml_ptr, LevelID_[NumLevels_-1], 
+                           ML_AMESOS_UMFPACK, MaxProcs, AddToDiag);
   else if(  CoarseSolution == "Amesos-Superludist" )
-    ML_Gen_Smoother_Amesos(ml_ptr, LevelID_[NumLevels_-1], ML_AMESOS_SUPERLUDIST, MaxProcs);
+    ML_Gen_Smoother_Amesos(ml_ptr, LevelID_[NumLevels_-1], 
+                           ML_AMESOS_SUPERLUDIST, MaxProcs, AddToDiag);
   else if( CoarseSolution == "Amesos-MUMPS" )
-    ML_Gen_Smoother_Amesos(ml_ptr, LevelID_[NumLevels_-1], ML_AMESOS_MUMPS, MaxProcs);
+    ML_Gen_Smoother_Amesos(ml_ptr, LevelID_[NumLevels_-1], 
+                           ML_AMESOS_MUMPS, MaxProcs, AddToDiag);
   else if( CoarseSolution == "Amesos-ScaLAPACK" )
-    ML_Gen_Smoother_Amesos(ml_ptr, LevelID_[NumLevels_-1], ML_AMESOS_SCALAPACK, MaxProcs);
+    ML_Gen_Smoother_Amesos(ml_ptr, LevelID_[NumLevels_-1], 
+                           ML_AMESOS_SCALAPACK, MaxProcs, AddToDiag);
   else if( CoarseSolution == "do-nothing" ) {
     // do nothing, ML will not use any coarse solver 
   } else {
-    ML_Gen_Smoother_Amesos(ml_ptr, LevelID_[NumLevels_-1], ML_AMESOS_KLU, MaxProcs);
+    ML_Gen_Smoother_Amesos(ml_ptr, LevelID_[NumLevels_-1], 
+                           ML_AMESOS_KLU, MaxProcs, AddToDiag);
     ML_EXIT(-1); // Amesos is only the default...
   }
     

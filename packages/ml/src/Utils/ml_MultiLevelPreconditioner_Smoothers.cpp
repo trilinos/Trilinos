@@ -324,7 +324,8 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
 
       // set these in the case the user wants "partitioner: type" = "user"
       // (if not, these values are ignored).
-      IfpackList.set("partitioner: local parts", NumAggr);
+      if (IfpackList.get("partitioner: type", "user") == "user")
+        IfpackList.set("partitioner: local parts", NumAggr);
       IfpackList.set("partitioner: map", AggrMap);
       double Omega = IfpackList.get("relaxation: damping factor", 1.0);
 

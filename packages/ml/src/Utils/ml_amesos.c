@@ -63,7 +63,7 @@ void ML_Smoother_Clean_Amesos(void *Amesos_Handle)
 
 
 int ML_Gen_Smoother_Amesos(ML *ml, int nl, int AmesosSolver,
-			   int MaxProcs)
+			   int MaxProcs, double AddToDiag)
 {
 #ifdef HAVE_ML_AMESOS
    int            (*fun1)(ML_Smoother *, int, double *, int, double *);
@@ -86,7 +86,8 @@ int ML_Gen_Smoother_Amesos(ML *ml, int nl, int AmesosSolver,
 
      fun1 = ML_Smoother_Amesos;
 
-     status = ML_Amesos_Gen( ml, nl, AmesosSolver, MaxProcs, &Amesos_Handle) ; 
+     status = ML_Amesos_Gen(ml, nl, AmesosSolver, MaxProcs, AddToDiag,
+                            &Amesos_Handle) ; 
      assert( status == 0 ) ; 
 
      switch( AmesosSolver ) {

@@ -24,12 +24,27 @@
 #include "Epetra_SerialDenseMatrix.h"
 #include "Epetra_Import.h"
 #include "Epetra_Time.h"
-
 #ifdef ML_MPI
 #include "Epetra_MpiComm.h"
 #else
 #include "Epetra_SerialComm.h"
 #endif
+#include "ml_FilterType.h"
+#include "Teuchos_ParameterList.hpp"
+
+// ====================================================================== 
+
+typedef struct {
+  ML_Epetra::FilterType Type;
+  double AThresh;
+  double RThresh;
+  double FirstDivider;
+  double SecondDivider;
+  int Eqns;
+  double* Mask;
+} ML_Filter_Data;
+
+static ML_Filter_Data Filter_;
 
 // ====================================================================== 
 
@@ -56,6 +71,36 @@ int Epetra_ML_matvec(ML_Operator *data, int in, double *p, int out, double *ap)
     Epetra_Vector Y(View, A->OperatorRangeMap(), ap);
   
     A->Multiply(false, X, Y);
+  }
+
+  return 1;
+}
+
+// ====================================================================== 
+
+int Epetra_ML_matvec_Filter(ML_Operator *mat_in, int in, double *p, 
+                            int out, double *ap)
+{
+  Epetra_RowMatrix *A = (Epetra_RowMatrix *) ML_Get_MyMatvecData(mat_in);
+  int NumMyRows = A->NumMyRows();
+
+  int row_lengths = 0;
+  int allocated_space = A->MaxNumEntries();
+  vector<int> columns(allocated_space + 1);
+  vector<double> values(allocated_space + 1);
+
+  // FIXME: DOES NOT WORK IN PARALLEL!
+  assert (A->Comm().NumProc() == 1);
+  
+  for (int i = 0 ; i < NumMyRows ; ++i) {
+    ap[i] = 0.0;
+    int ierr;
+    ierr = Epetra_ML_getrow_Filter(mat_in, 1, &i, allocated_space, 
+                                   &columns[0], &values[0], &row_lengths);
+    assert (ierr == 1);
+
+    for (int j = 0 ; j < row_lengths ; ++j)
+      ap[i] += values[j] * p[columns[j]];
   }
 
   return 1;
@@ -184,6 +229,124 @@ int Epetra_ML_getrow(ML_Operator *data, int N_requested_rows, int requested_rows
     delete [] Values;
   }
   
+  return(1);
+}
+
+void ML_Set_Filter(Teuchos::ParameterList& List)
+{
+  Filter_.Type    = List.get("filter: type", ML_Epetra::ML_NO_FILTER);
+  Filter_.AThresh = List.get("filter: absolute threshold", 0.0);
+  Filter_.RThresh = List.get("filter: relative threshold", 1.0);
+  Filter_.Eqns    = List.get("filter: equations", 1);
+  Filter_.FirstDivider  = List.get("filter: first divider", 0);
+  Filter_.SecondDivider = List.get("filter: second divider", 0);
+  Filter_.Mask          = List.get("filter: mask", (double*)0);
+}
+
+// ====================================================================== 
+
+int Epetra_ML_getrow_Filter(ML_Operator *data, int N_requested_rows, 
+                            int requested_rows[], int allocated_space, 
+                            int columns[], double values[], int row_lengths[])
+{
+  int ierr, eqn;
+  ierr = Epetra_ML_getrow(data, N_requested_rows, requested_rows, allocated_space,
+                          columns, values, row_lengths);
+
+  if (ierr == 0)
+    return(0);
+
+  if (N_requested_rows != 1) {
+    cerr << "Only N_requested_rows == 1 currently implemented..." << endl;
+    exit(EXIT_FAILURE);
+  }
+    
+  switch (Filter_.Type) {
+
+  case ML_Epetra::ML_NO_FILTER:
+    return(1);
+
+    break;
+
+  case ML_Epetra::ML_EQN_FILTER:
+
+    for (int i = 0; i < row_lengths[0]; i++) {
+      if (columns[i] % Filter_.Eqns != requested_rows[0] % Filter_.Eqns)
+        values[i] = 0.0;
+    }
+    break;
+
+  case ML_Epetra::ML_TWO_BLOCKS_FILTER:
+
+    eqn = (requested_rows[0] % Filter_.Eqns);
+
+    if (eqn < Filter_.FirstDivider) {
+      // upper block
+      for (int i = 0; i < row_lengths[0]; i++) {
+        if (columns[i] % Filter_.Eqns >= Filter_.FirstDivider)
+          // upper-right block
+          values[i] = 0.0;
+      }
+    }
+    else {
+      // lower block
+      for (int i = 0; i < row_lengths[0]; i++) {
+        if (columns[i] % Filter_.Eqns < Filter_.FirstDivider)
+          // lower-left block
+          values[i] = 0.0;
+      }
+    }
+
+    break;
+
+  case ML_Epetra::ML_THREE_BLOCKS_FILTER:
+
+    eqn = (requested_rows[0] % Filter_.Eqns);
+
+    if (eqn < Filter_.FirstDivider) {
+      for (int i = 0; i < row_lengths[0]; i++) {
+        if (columns[i] % Filter_.Eqns >= Filter_.FirstDivider)
+          values[i] = 0.0;
+      }
+    }
+    else if (eqn < Filter_.SecondDivider) {
+      for (int i = 0; i < row_lengths[0]; i++) {
+        if (columns[i] % Filter_.Eqns <  Filter_.FirstDivider ||
+            columns[i] % Filter_.Eqns >= Filter_.SecondDivider)
+          values[i] = 0.0;
+      }
+    }
+    else {
+      for (int i = 0; i < row_lengths[0]; i++) {
+        if (columns[i] % Filter_.Eqns <  Filter_.SecondDivider)
+          values[i] = 0.0;
+      }
+    }
+
+    break;
+
+  case ML_Epetra::ML_MASK_FILTER:
+
+    eqn = (requested_rows[0] % Filter_.Eqns);
+    for (int i = 0; i < row_lengths[0]; i++) {
+      values[i] *= Filter_.Mask[eqn * Filter_.Eqns + columns[i] % Filter_.Eqns];
+    }
+    break;
+
+  default:
+
+    cerr << "Error, file " << __FILE__ << ", line " << __LINE__ << endl;
+    exit(EXIT_FAILURE);
+  }
+
+  if (Filter_.RThresh != 1.00 && Filter_.AThresh != 0.0) {
+    for (int i = 0; i < row_lengths[0]; i++) {
+      if (columns[i] == requested_rows[0]) {
+        values[i] = Filter_.RThresh * values[i] + Filter_.AThresh * fabs(values[i]);
+        break;
+      }
+    }
+  }
 
   return(1);
 }
@@ -236,7 +399,7 @@ int Epetra2MLMatrix(Epetra_RowMatrix * A, ML_Operator *newMatrix)
                         newMatrix->comm, isize, N_ghost);
 
   ML_Operator_Set_Getrow(newMatrix, newMatrix->outvec_leng,
-                       Epetra_ML_getrow);
+                         Epetra_ML_getrow);
 
   ML_Operator_Set_ApplyFunc (newMatrix, Epetra_ML_matvec);
 

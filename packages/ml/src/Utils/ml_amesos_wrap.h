@@ -70,6 +70,9 @@ extern "C" {
     processes to use in the coarse solution (only for some of the
     supported Amesos solvers);
 
+    \param Amesos (In) : add the specified value to the diagonal
+    elements of the matrix.
+
     \param Amesos_Handle (Out) : it will contain a pointer to the Amesos object (casted
     to void *).
 
@@ -77,8 +80,8 @@ extern "C" {
     a KLU solver. KLU is distributed with Amesos, and is enabled by default.
     
   */
-  int ML_Amesos_Gen(ML *ml, int curr_level, int choice,
-		    int MaxProcs, void **Amesos_Handle);
+  int ML_Amesos_Gen(ML *ml, int curr_level, int choice, int MaxProcs, 
+                    double AddToDiag, void **Amesos_Handle);
 
   /** Solves using Amesos, and the factorization computed by ML_Amesos_Gen. */
   int ML_Amesos_Solve( void *Amesos_Handle, double x[], double rhs[] ) ;

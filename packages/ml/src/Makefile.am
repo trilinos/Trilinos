@@ -153,6 +153,7 @@ $(srcdir)/Utils/ml_epetra.h                            \
 $(srcdir)/Utils/ml_MultiLevelOperator.h                \
 $(srcdir)/Utils/ml_MultiLevelPreconditioner.h          \
 $(srcdir)/Utils/ml_RowMatrix.h                         \
+$(srcdir)/Utils/ml_FilterType.h                        \
 $(srcdir)/Utils/ml_DD_prec.h                           \
 $(srcdir)/Utils/ml_Ifpack_ML.h                         \
 $(srcdir)/Utils/ml_Epetra_wrap_CrsGraph_as_RowMatrix.H \

@@ -267,6 +267,7 @@ ExtractMyRowCopy(int MyRow, int Length, int & NumEntries,
 
   int ierr = ML_Operator_Getrow(Op_,1,&MyRow,Length,
 				Indices,Values,&NumEntries);
+
   if (ierr < 0)
     ML_CHK_ERR(ierr);
   

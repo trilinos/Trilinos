@@ -34,20 +34,24 @@ extern "C" {
   /*! Generates the coarse solver using one of the Amesos supported
     direct solvers.
 
-    \param \inout ml: ML_Structure;
+    \param ml (InOut) - ML_Structure;
 
-    \param \in nl: level for which we have to define the coarse solver;
+    \param nl (In) - level for which we have to define the coarse solver;
 
-    \param \in AmesosSolver: integer variable, that can be ML_AMESOS_KLU,
+    \param AmesosSolver (In) - integer variable, that can be ML_AMESOS_KLU,
     ML_AMESOS_UMFPACK, ML_AMESOS_SUPERLUDIST, ML_AMESOS_MUMPS,
     ML_AMESOS_SCALAPACK;
 
-    \param \in MaxProcs: integer defining the maximum number of
+    \param MaxProcs (In) - integer defining the maximum number of
     processes to use in the coarse solution (only for some of the
     supported Amesos solvers).
+
+    \param AddToDiag (In) - add the specified value to the 
+    diagonals of the matrix.
   */
   
-int ML_Gen_Smoother_Amesos(ML *ml, int nl, int AmesosSolver, int MaxProcs);
+int ML_Gen_Smoother_Amesos(ML *ml, int nl, int AmesosSolver, 
+                           int MaxProcs, double AddToDiag);
 
 
 #ifndef ML_CPP

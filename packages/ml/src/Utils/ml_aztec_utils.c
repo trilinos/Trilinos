@@ -3432,7 +3432,7 @@ int MLAZ_Setup_MLandAggregate( int N_update, int num_PDE_eqns,
   case MLAZ_Amesos:
     amesos_solver = Settings.Level[MLAZ_COARSE_LEVEL].amesos_solver;
     max_procs = Settings.Level[MLAZ_COARSE_LEVEL].max_procs;
-    ML_Gen_Smoother_Amesos( ml, Nlevels-1, amesos_solver, max_procs);    
+    ML_Gen_Smoother_Amesos( ml, Nlevels-1, amesos_solver, max_procs, 0.0);    
     break;
     
   default:
@@ -3756,7 +3756,7 @@ void MLAZ_Direct_Solve_Amesos( double delta_x[], double resid_vector[],
   }
   
 #ifdef HAVE_ML_AMESOS
-  ML_Amesos_Gen(ml,0,choice,max_procs,&Amesos_Handle);
+  ML_Amesos_Gen(ml,0,choice,max_procs,0.0, &Amesos_Handle);
 
   ML_Amesos_Solve(Amesos_Handle, delta_x, resid_vector );
 

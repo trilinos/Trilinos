@@ -36,24 +36,6 @@ int ML_Epetra::MultiLevelPreconditioner::SetNullSpaceMaxwell()
 int ML_Epetra::MultiLevelPreconditioner::SetNullSpace() 
 {
 
-  const Epetra_VbrMatrix* VbrMatrix;
-  VbrMatrix = dynamic_cast<const Epetra_VbrMatrix *>(RowMatrix_);
-  if (VbrMatrix == 0) {
-    NumPDEEqns_ = List_.get("PDE equations", 1);
-  }
-  else {
-    int NumBlockRows = VbrMatrix->RowMap().NumGlobalElements();
-    int NumRows = VbrMatrix->RowMap().NumGlobalPoints();
-    if( NumRows % NumBlockRows ) {
-      cerr << "# rows must be a multiple of # block rows ("
-	   << NumRows << "," << NumBlockRows << ")" << endl;
-      exit( EXIT_FAILURE );
-    }
-    NumPDEEqns_ = NumRows/NumBlockRows;
-  }
-
-  if( verbose_ ) cout << "Number of PDE equations = " << NumPDEEqns_ << endl;
-  
   int NullSpaceDim = NumPDEEqns_;
   double * NullSpacePtr = NULL;
 

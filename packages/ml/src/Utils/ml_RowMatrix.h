@@ -1,5 +1,9 @@
-#ifndef ML_ROW_MATRIX_H
-#define ML_ROW_MATRIX_H
+#ifndef ML_ROWMATRIX_H
+#define ML_ROWMATRIX_H
+
+/*! \file ml_RowMatrix.h
+ *  \brief Wrapper from ML_Operator to Epetra_RowMatrix
+ */
 
 #include "ml_include.h"
 
@@ -22,6 +26,16 @@ class Epetra_Vector;
 class Epetra_Importer;
 
 namespace ML_Epetra {
+
+/*! 
+ * \class RowMatrix
+ *
+ * \brief Basic wrappere fromo ML_Operator to Epetra_RowMatrix.
+ *
+ * \author Marzio Sala, SNL 9214.
+ *
+ * \date Last updated on 15-Mar-05.
+ */
 
 class RowMatrix : public virtual Epetra_RowMatrix {
       
@@ -301,38 +315,56 @@ class RowMatrix : public virtual Epetra_RowMatrix {
 
 private:
 
-  // FIXME: I still do not support rows != cols
+  //! Pointer to the ML_Operator structure that is wrapped.
   ML_Operator* Op_;
-  const Epetra_Comm* Comm_;        // Comm object
-  bool FreeCommObject_;       // free communicator is created by constructor
-  int NumMyRows_;            // number of local rows
-  int NumGlobalRows_;        // number of global rows
-  int NumMyCols_;            // number of local cols
-  int NumGlobalCols_;        // number of global cols
-  Epetra_Map* DomainMap_;    // map for row distribution
-  Epetra_Map* RangeMap_;     // map for row distribution
-  Epetra_Map* ColMap_;       // map for col distribution
-  int MaxNumEntries_;        // maximum number of elements in a row
-
-  vector<double> Diagonal_;  // will contain the diagonal elements
-  vector<int> NumMyRowEntries_; // will contain the nonzero elements in a row
-
+  //! Communicator object, given by the user or allocated here.
+  const Epetra_Comm* Comm_;
+  //! If \c true, the dtor will destroy the communicator.
+  bool FreeCommObject_;
+  //! Number of local rows.
+  int NumMyRows_;
+  //! Number of global rows.
+  int NumGlobalRows_;
+  //! Number of local columns.
+  int NumMyCols_;
+  //! Number of global columns.j
+  int NumGlobalCols_;
+  //! Map for row distribution.
+  Epetra_Map* DomainMap_;
+  //! Map for row distribution.
+  Epetra_Map* RangeMap_;
+  //! Map for column distribution.
+  Epetra_Map* ColMap_;
+  //! Maximum number of elements in a row.
+  int MaxNumEntries_;
+  //! Diagonal elements of the matrix.
+  vector<double> Diagonal_;
+  //! Contains the nonzero elements in a local row.
+  vector<int> NumMyRowEntries_;
+  //! Work vector for getrow().
   mutable int Allocated_;
+  //! Work vector for getrow().
   mutable vector<int> Indices_;
+  //! Work vector for getrow().
   mutable vector<double> Values_;
+  //! Contains the infinity norm of the matrix.
   double NormInf_;
+  //! Number of local nonzeros.
   int NumMyNonzeros_;
+  //! Number of global nonzeros.
   int NumGlobalNonzeros_;
+  //! Number of nonzero local diagonal elements.
   int NumMyDiagonals_;
+  //! Number of nonzero global diagonal elements.
   int NumGlobalDiagonals_;
-
+  //! Importer.
   Epetra_Import* Importer_;
-  
+  //! Label of \c this object.
   char* Label_;
 
-};
+}; // class RowMatrix
 
 } // namespace ML_Epetra
 
 #endif /* HAVE_ML_EPETRA */
-#endif /* ML_ROW_MATRIX_H */
+#endif /* ML_ROWMATRIX_H */

@@ -155,18 +155,20 @@ AnalyzeHierarchy(const bool AnalyzeMatrices,
     ML_print_line("-",80);
   }
 
-  for (int i = 0 ; i < NumLevels_ ; ++i) {
-    char name[80];
-    sprintf(name,"A matrix level %d", LevelID_[i]);
+  if (AnalyzeMatrices) {
+    for (int i = 0 ; i < NumLevels_ ; ++i) {
+      char name[80];
+      sprintf(name,"A matrix level %d", LevelID_[i]);
 #ifdef HAVE_ML_IFPACK
-    RowMatrix wrapper(&(ml_->Amat[LevelID_[i]]), &(Comm()));
-    if (verbose_) cout << endl;
-    wrapper.SetLabel(name);
-    Ifpack_Analyze(wrapper);
-    if (verbose_) cout << endl;
+      ML_Epetra::RowMatrix wrapper(&(ml_->Amat[LevelID_[i]]), &(Comm()));
+      if (verbose_) cout << endl;
+      wrapper.SetLabel(name);
+      Ifpack_Analyze(wrapper, true);
+      if (verbose_) cout << endl;
 #else
-    ML_Operator_Analyze(&(ml_->Amat[LevelID_[i]]), name);
+      ML_Operator_Analyze(&(ml_->Amat[LevelID_[i]]), name);
 #endif
+    }
   }
 
   if (Comm().MyPID() == 0) {
@@ -175,8 +177,8 @@ AnalyzeHierarchy(const bool AnalyzeMatrices,
     cout << "- number of pre-smoother cycle(s)  = " << PreCycles << endl;
     cout << "- number of post-smoother cycle(s) = " << PostCycles << endl;
     cout << "- number of ML cycle(s)            = " << MLCycles << endl;
-    cout << "- all reported data are scaled with their values" << endl
-         << "  before the application of the solver" << endl;
+    cout << "- all reported data are scaled with respect to the corresponding" << endl
+         << "  value before the application of the solver" << endl;
     cout << "  (0 == perfect solution, 1 == no effect)" << endl;
     cout << endl;
     cout.width(40); cout.setf(ios::left); 
