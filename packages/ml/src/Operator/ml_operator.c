@@ -794,6 +794,8 @@ double ML_Operator_MaxNorm(ML_Operator *matrix, int divide_diag)
 /* properly set up the data structure (data).                           */
 /* ******************************************************************** */
 
+extern int ML_USE_EDGE_WEIGHT; /* defined in ml_agg_METIS.c */
+
 int ML_amalg_drop_getrow(ML_Operator *data, int N_requested_rows, int requested_rows[],
    int allocated_space, int columns[], double values[], int row_lengths[])
 {
@@ -824,6 +826,7 @@ int ML_amalg_drop_getrow(ML_Operator *data, int N_requested_rows, int requested_
    tallocated_space = allocated_space*block_size*block_size + 1;
    tcolumns     = (int    *) ML_allocate(sizeof(int)*tallocated_space);
    tvalues      = (double *) ML_allocate(sizeof(double)*tallocated_space);
+
    if (tvalues == NULL) {
       if (tcolumns != NULL) ML_free(tcolumns);
       Amat->data         = temp;
@@ -846,7 +849,10 @@ int ML_amalg_drop_getrow(ML_Operator *data, int N_requested_rows, int requested_
          Amat->outvec_leng /= block_size;
          return(status);
       }
-      if (scaled_diag != NULL) {
+      /* MS * added ML_USE_EDGE_WEIGHT on 03-Dec-04
+       * MS * to support edge weighting with `METIS' and 
+       * MS * dropping with `user' */
+      if (ML_USE_EDGE_WEIGHT == ML_NO && scaled_diag != NULL) {
          count = 0;
          for (j = offset; j < offset + size; j++) {
             tcol = tcolumns[j];
@@ -855,6 +861,17 @@ int ML_amalg_drop_getrow(ML_Operator *data, int N_requested_rows, int requested_
                  tcolumns[offset+count]  = tcolumns[j];
                  tvalues[offset+count++] = tvalues[j];
               }
+            }
+         }
+         size = count;
+      }
+      else if (ML_USE_EDGE_WEIGHT == ML_YES) {
+         count = 0;
+         for (j = offset; j < offset + size; j++) {
+            tcol = tcolumns[j];
+            if (tvalues[j] != 0.0) {
+              tcolumns[offset+count]  = tcolumns[j];
+              tvalues[offset+count++] = tvalues[j] * tvalues[j];
             }
          }
          size = count;
@@ -883,6 +900,22 @@ int ML_amalg_drop_getrow(ML_Operator *data, int N_requested_rows, int requested_
          columns[row_lengths[0]++] = tcol;
       }
    }
+
+   if (ML_USE_EDGE_WEIGHT == ML_YES) {
+     /* store values as well, `METIS' and `user' may use them */
+     for (i = 0 ; i < row_lengths[0] ; ++i)
+       values[i] = 0.0;
+     for (j = 0; j < offset ; ++j) {
+       tcol = temp->blk_inds[tcolumns[j]];
+       for (k = 0; k < row_lengths[0]; k++) 
+         if (tcol == columns[k]) 
+           values[k] += tvalues[j];
+     }
+     for (i = 0 ; i < row_lengths[0] ; ++i) {
+       values[i] = sqrt(values[i]);
+     }
+   }
+
    Amat->data         = temp;
    Amat->getrow       = amalg_getrow;
    Amat->invec_leng  /= block_size;
