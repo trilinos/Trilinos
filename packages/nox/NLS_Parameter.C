@@ -1,3 +1,13 @@
+// $Id$ 
+// $Source$ 
+
+// Nonlinear Solver Package (NLSPACK)
+// COPYRIGHT (2002) Sandia Corporation.
+// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
+// license for use of this work by or on behalf of the U.S. Government.
+// LICENSE & WARRANTY INFORMATION in README.txt and LICENSE.txt.
+// CONTACT T. Kolda (tgkolda@sandia.gov) or R. Pawlowski (rppawlo@sandia.gov)
+
 #include "NLS_Parameter.H"
 
 NLS_Parameter::NLS_Parameter() : 
