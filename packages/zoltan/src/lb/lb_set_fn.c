@@ -60,6 +60,7 @@ int Zoltan_Set_Post_Migrate_Fn(
   return ZOLTAN_OK;
 }
 
+/*****************************************************************************/
 #ifdef __cplusplus
 } /* closing bracket for extern "C" */
 #endif
