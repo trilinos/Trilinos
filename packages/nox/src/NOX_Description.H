@@ -40,8 +40,15 @@
 
   \section started Getting Started
 
-  To configure and compile %NOX, follow the 
-  <A HREF="../configure.html">Configuration and compilation instructions</A>. 
+  See the \ref configuration.
+
+  \section classes Class Overview
+
+  See the \ref overview.
+
+  \section params Parameter Specifications
+
+  See the \ref parameters.
 
   \section bugs Reporting Bugs and Making Enhancement Requests
 
@@ -69,7 +76,229 @@
   development of %NOX and is archived; the second is the mailing list
   to which all CVS commit messages are sent.
 
-  \section classes Class Overview
+*/
+
+/*! \page configuration NOX Configuration and Compliation Instructions
+
+\section section1 Basic Setup
+
+To just compile the basic NOX library, type
+
+\verbatim
+configure
+make
+\endverbatim
+
+This only compiles the library \c libnox.a - it does not build any of the
+examples. See below for more information on compiling the examples.
+
+\section section2  Generating Documentation
+
+After running configure, type 
+\verbatim
+make dox
+\endverbatim
+to generate the documentation.
+
+\section section3 Compiling the Examples
+
+NOX is distributed with a simple set of examples that have no other
+external dependencies besides LAPACK and BLAS. These are primarily useful to
+allow some basic testing of NOX without requiring an interface to a
+more complicated linear algebra system. To enable these examples, type
+
+\verbatim
+configure --enable-examples
+make
+\endverbatim
+
+The compiled examples are located in the \c examples
+subdirectory.  To run each example, follow the instructions given below.
+
+<ol>
+<li>To run a simple 2D example based on the Rosenbrock function, type
+\verbatim
+rosenbrock
+\endverbatim
+</ol>
+
+\section ss1 Building the NOX/Epetra Library
+
+To compile NOX's Epetra library \c libnoxepetra.a, use one
+of the following sets of configuration options.
+
+The following will automatically use the environmental variable 
+\c TRILINOS_HOME
+to find the necessary headers and libraries.
+\verbatim 
+configure --enable-epetra
+\endverbatim
+
+
+The following will automatically search the directory
+\c /home/jdoe/Trilinos to find the necessary headers and
+libraries. 
+\verbatim
+configure --with-trilinos=/home/jdoe/Trilinos
+\endverbatim
+
+More specifically, it will look in the following locations
+for \c Epetra_Vector.h:
+<ul>
+<li>directory optionally specified by \c --with-epetra-include
+<li>\c /home/jdoe/Trilinos/include
+<li>\c /home/jdoe/Trilinos/include/epetra/
+<li>\c /home/jdoe/Trilinos/packages/epetra/src
+</ul>
+
+Similarily, it will look in the following locations
+for \c AztecOO.h:
+<ul>
+<li>directory optionally specified by \c --with-aztecoo-include
+<li>\c /home/jdoe/Trilinos/include
+<li>\c /home/jdoe/Trilinos/include/aztecoo/
+<li>\c /home/jdoe/Trilinos/packages/aztecoo/src
+</ul>
+These include files are used in building \c libnoxepetra.a.
+
+Further, if we are also building the Epetra examples, we will look
+for epetra, aztecoo, and ifpack libraries. For example, we would
+search for \c libepetra.a in the following
+directories:
+<ul>
+<li>directory optionally specified by \c --with-epetra-libdir
+<li>\c /home/jdoe/Trilinos/lib
+<li>\c /home/jdoe/Trilinos/lib/epetra
+<li>\c /home/jdoe/Trilinos/lib/$TRILINOS_TARGET
+</ul>
+In the above, if \c TRILINOS_TARGET is not defined as an
+environmental variable, configure will define it.
+</ul>
+
+\section ss2 Building the NOX/Epetra Examples
+
+To compile the examples for NOX/Epetra, do the following:
+
+\verbatim
+configure --enable-epetra --enable-epetra-examples.
+\endverbatim
+
+\section section5 Using MPI with NOX/Epetra
+
+NOX itself does not call any MPI commands, but some of the NOX/Epetra
+examples do make use of MPI. So, we include some configuration options
+to support MPI.
+
+Most MPI
+packages come with a wrapper to the compiler that specifies the
+correct flags, include files, libraries, and so on to compile with
+MPI. This is often the easiest way to compile with MPI.
+<ul>
+<li>  Use the default MPI C++ compiler (\c mpiCC). 
+\verbatim
+configure --with-mpi-cxx 
+\endverbatim
+<li> Specify the exact name and location of the MPI C++ compiler. This is
+useful if you have multiple installations of MPI or if \c mpiCC
+is not in your default path.
+\verbatim
+configure --with-mpi-cxx=/home/jdoe/mpich-1.2.3/bin/mpiCC
+\endverbatim
+</ul>
+
+An alternative to using \c mpiCC is to specify the
+include directory, library directory, and libraries specifically,
+There are several flags that you can use to do this. These are
+generally incompatible with \c --with-mpi-cxx
+<ul>
+<li> This specifies the general location of the MPI installation. We
+then assume that the headers are located in
+\c /home/jdoe/lam/include, that the libraries are
+located in \c /home/jdoe/lam/lib, and that the
+library is specifed by \c -lmpi.
+\verbatim
+configure --with-mpi=/home/jdoe/lam
+\endverbatim
+
+<li> This is the same as above except that the library to be linked with
+is explicitly specified.
+\verbatim
+configure --with-mpi=/home/jdoe/mpich --with-mpi-libs="-lmpich"
+\endverbatim
+
+<li>
+Specify the exact locations of the MPI include files and the MPI
+libraries. Assumes that the
+library is specifed by \c -lmpi.
+\verbatim
+configure --with-mpi-include="/home/jdoe/lam/include" \
+          --with-mpi-libdir="/home/jdoe/lam/lib"
+\endverbatim
+
+<li>
+This is the same as above except that the library to be linked with
+is explicitly specified.
+\verbatim
+configure --with-mpi-include="/home/jdoe/mpich/include" \
+          --with-mpi-libdir="/home/jdoe/mpich/lib" \
+          --with-mpi-libs="-lmpich"
+\endverbatim
+
+<li> 
+Explicitly specify the MPI library without specifying the library directory.
+
+\verbatim
+configure --with-mpi-include="/home/jdoe/mpich/include" \
+          --with-mpi-libs="/home/jdoe/mpich/lib/libmpich.a"
+\endverbatim
+
+</ul>
+
+\section petsclub Building the NOX/PETSc Library</h5>
+
+To compile the NOX/PETSc library \c libnoxpetsc.a, use 
+the following configuration option.
+
+This will automatically use the environmental variables 
+\c PETSC_DIR and \c PETSC_ARCH 
+to find the necessary headers.
+\verbatim
+configure --enable-petsc
+\endverbatim
+
+For example, to build \c libnoxpetsc.a using a pre-built PETSc
+version 2.1.3 installed in the user's home directory on a linux machine:
+\verbatim
+setenv PETSC_DIR ${HOME}/petsc-2.1.3
+setenv PETSC_ARCH linux
+configure --enable-petsc
+\endverbatim
+
+\section petscexamples Building the NOX/PETSc Examples</h5>
+
+To compile the examples for NOX/PETSc, an additional environment variable,
+\c PETSC_BOPT, must be defined and set to the value of BOPT used to build the 
+user's PETSc installation.  For example, for a debug-enabled C++ PETSc build, 
+BOPT=g_c++ so that PETSC_BOPT=g_c++.  The configure script then allows
+the examples to be built using the following:
+
+\verbatim
+configure --enable-petsc --enable-petsc-examples.
+\endverbatim
+
+
+Depending on the user's PETSc build, dynamically linked libraries may be used.
+If an error occurs when trying to run the example executable, make sure the
+environment variable \c LD_LIBRARY_PATH points to the PETSc library directory.
+From the example above, setting the path would likely require:
+\verbatim
+setenv LD_LIBRARY_PATH ${PETSC_DIR}/lib/lib${PETSC_BOPT}/${PETSC_ARCH}
+\endverbatim
+
+
+*/
+
+/*! \page overview NOX Class Overview
 
   %NOX's flexibility is based on the fact that it does not depend on
   any particular linear algebra package. In order to interface to %NOX,
@@ -106,7 +335,7 @@
   accessed via the NOX::Solver::Manager. The recommended solver is
   NOX::Solver::LineSearchBased, which is a basic nonlinear solver
   based on a line search. Each solver has a number of options that can
-  be specified, as documented in each class.
+  be specified, as documented in each class or on the \ref parameters.
 
   The search directions are in the NOX::Direction namespace and
   accessed via the NOX::Direction::Manager. The default search
@@ -126,12 +355,86 @@
   object. Users are free to create additional status tests that derive
   from the NOX::StatusTest::Generic class.
 
+
+ */
+ 
+/*! \page parameters NOX Parameter Reference Page
+
   All parameters are specified via parameter lists as defined by the
   NOX::Parameter::List class.
 
-  The NOX::Utils class describes some parameters that can be set to
-  control output.
+  Here is the basic hierarchical structure of the top level list that
+  is passed to a NOX::Solver::Manager object constructor reset call.
+
+<ul>
+<li> NOX::Solver::Manager - \e Nonlinear \e Solver
+<li> NOX::Solver::LineSearchBased, NOX::Solver::TrustRegionBased - \b Direction
+     <ul>
+     <li> NOX::Direction::Manager - \e Method
+     <li> NOX::Direction::Newton - \b Linear \b Solver
+          <ul>
+	  <li> NOX::Direction::Newton - Tolerance
+	  </ul>
+     <li> NOX::Direction::Newton - \e Forcing \e Term \e Method
+     <li> NOX::Direction::Newton - \e Forcing \e Term \e Initial \e Tolerance
+     <li> NOX::Direction::Newton - \e Forcing \e Term \e Minimum \e Tolerance
+     <li> NOX::Direction::Newton - \e Forcing \e Term \e Maximum \e Tolerance
+     <li> NOX::Direction::Newton - \e Forcing \e Term \e Alpha
+     <li> NOX::Direction::Newton - \e Forcing \e Term \e Gamma
+     <li> NOX::Direction::SteepestDescent - \e Scaling \e Type
+     <li> NOX::Direction::NonlinearCG - \e Orthogonalize
+     <li> NOX::Direction::NonlinearCG - \e Precondition
+     <li> NOX::Direction::NonlinearCG - \e Restart Frequency
+     </ul>
+<li> NOX::Solver::LineSearchBased - \b Line \b Search
+     <ul>
+     <li> NOX::LineSearch::Manager - \e Method
+     <li> NOX::LineSearch::FullStep - \e Full \e Step
+     <li> NOX::LineSearch::Backtrack, NOX::LineSearch::Polynomial, NOX::LineSearch::Quadratic, NOX::LineSearch::MoreThuente, NOX::LineSearch::Secant - \e Default \e Step
+     <li> NOX::LineSearch::Backtrack, NOX::LineSearch::Polynomial, NOX::LineSearch::Quadratic, NOX::LineSearch::MoreThuente, NOX::LineSearch::Secant   - \e Minimum \e Step
+     <li> NOX::LineSearch::Backtrack, NOX::LineSearch::Polynomial, NOX::LineSearch::Quadratic, NOX::LineSearch::MoreThuente, NOX::LineSearch::Secant   - \e Recovery \e Step
+     <li> NOX::LineSearch::Backtrack, NOX::LineSearch::Polynomial, NOX::LineSearch::Quadratic, NOX::LineSearch::MoreThuente, NOX::LineSearch::Secant  - \e Max \e Iters
+     <li> NOX::LineSearch::Backtrack - \e Decrease \e Condition
+     <li> NOX::LineSearch::Polynomial, NOX::LineSearch::Quadratic - \e Convergence \e Criteria
+     <li> NOX::LineSearch::Polynomial, NOX::LineSearch::Quadratic - \e Alpha \e Factor
+     <li> NOX::LineSearch::Polynomial, NOX::LineSearch::Quadratic - \e Min \e Bounds \e Factor
+     <li> NOX::LineSearch::Polynomial, NOX::LineSearch::Quadratic - \e Max \e Bounds \e Factor
+     <li> NOX::LineSearch::Polynomial, NOX::LineSearch::Quadratic - \b Output
+          <ul>
+	  <li> NOX::LineSearch::Polynomial, NOX::LineSearch::Quadratic - Total Number of Line Search Calls
+	  <li> NOX::LineSearch::Polynomial, NOX::LineSearch::Quadratic - Total Number of Non-trivial Line Searches
+	  <li> NOX::LineSearch::Polynomial, NOX::LineSearch::Quadratic - Total Number of Failed Line Searches
+	  <li> NOX::LineSearch::Polynomial, NOX::LineSearch::Quadratic - Total Number of Line Search Inner Iterations
+	  </ul>
+     <li> NOX::LineSearch::MoreThuente - \e Sufficient \e Decrease
+     <li> NOX::LineSearch::MoreThuente - \e Curvature \e Condition
+     <li> NOX::LineSearch::MoreThuente - \e Interval \e Width
+     <li> NOX::LineSearch::MoreThuente - \e Maximum \e Step
+     </ul>
+<li> NOX::Solver::LineSearchBased, NOX::Solver::TrustRegionBased  - \b Output
+     <ul> 
+     <li> NOX::Solver::LineSearchBased - Nonlinear Iterations
+     <li> NOX::Solver::LineSearchBased - 2-Norm or Residual
+     </ul>
+<li> NOX::Solver::TrustRegionBased - \b Cauchy \b Direction 
+     <ul>
+     <li> (see \b Direction above)
+     </ul>
+<li> NOX::Solver::TrustRegionBased - \e Minimum \e Trust \e Region \e Radius
+<li> NOX::Solver::TrustRegionBased - \e Maximum \e Trust \e Region \e Radius
+<li> NOX::Solver::TrustRegionBased - \e Minimum \e Improvement \e Ratio
+<li> NOX::Solver::TrustRegionBased - \e Contraction \e Trigger \e Ratio
+<li> NOX::Solver::TrustRegionBased - \e Contraction \e Factor
+<li> NOX::Solver::TrustRegionBased - \e Expansion \e Trigger \e Ratio
+<li> NOX::Solver::TrustRegionBased - \e Expansion \e Factor
+<li> NOX::Solver::TrustRegionBased - \e Recovery \e Step
+<li> NOX::Utils - \e MyPID
+<li> NOX::Utils - \e Output \e Information
+<li> NOX::Utils - \e Output \e Processor
+<li> NOX::Utils - \e Output \e Precision
+     
+</ul>
+
+
 
 */
- 
-
