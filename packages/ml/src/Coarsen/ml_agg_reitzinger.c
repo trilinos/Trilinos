@@ -101,6 +101,16 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
   (*Tmat_array)[fine_level] = Tfine;
   (*Tmat_trans_array)[fine_level] = Tmat_trans;
 
+  if (ag->print_flag < ML_Get_PrintLevel()) {
+    Pe = &(ml_edges->Amat[fine_level]);
+    nz_ptr = ML_Comm_GsumInt(ml_edges->comm, Pe->N_nonzeros);
+    i = Pe->outvec_leng;
+    ML_gsum_scalar_int(&i,&j,ml_edges->comm);
+    if (ml_edges->comm->ML_mypid==0)
+      printf("(level %d) Ke: Global nonzeros = %d, global rows = %d\n",
+             fine_level, nz_ptr,i);
+  }
+
   /********************************************************************/
   /*                 Build T on the coarse grid.                      */
   /*------------------------------------------------------------------*/
@@ -1161,9 +1171,10 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
     if (ag->print_flag < ML_Get_PrintLevel()) {
         Pe = &(ml_edges->Pmat[grid_level]);
         nz_ptr = ML_Comm_GsumInt(ml_edges->comm, Pe->N_nonzeros);
+        j = Pe->outvec_leng;
+        i = ML_Comm_GsumInt(ml_edges->comm, j);
         if (Tfine->comm->ML_mypid==0)
-           printf("Pe: Total nonzeros = %d (Nrows = %d)\n", nz_ptr,
-                  Pe->outvec_leng);
+           printf("(level %d) Pe: Global nonzeros = %d, global rows = %d\n", grid_level,nz_ptr, i);
      }
 
      ML_Operator_Set_1Levels(&(ml_edges->Pmat[grid_level]),
@@ -1179,7 +1190,7 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
         i = Pe->outvec_leng;
         ML_gsum_scalar_int(&i,&j,ml_nodes->comm);
         if (Tfine->comm->ML_mypid==0)
-           printf("Ke: Total nonzeros = %d (Nrows = %d)\n", nz_ptr,i);
+           printf("(level %d) Ke: Global nonzeros = %d, global rows = %d\n", grid_level, nz_ptr,i);
      }
 
      Tfine = Tcoarse;
