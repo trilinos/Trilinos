@@ -22,13 +22,6 @@ use lib "lib";      # ended up needing to use a relative address - don't need?
 my %flags;
 my %options;
 
-my $homedir;
-my $frequency;
-my $date; 
-my $cvscmd;
-my $basehostfile; 
-my $hostfile; 
-
 # Host variables
 my $hostos;
 my $machinename;
@@ -42,9 +35,9 @@ my $trilinosCompileError;
 my $testCompileError; 
 
 # File variables        
-my $ERRORS;
-my $WARNINGS;
-my $BODY;
+# ERRORS;
+# WARNINGS;
+# BODY;
 
 # Compile variables   
 my $comm;
@@ -59,11 +52,7 @@ my $testdirectory;
 my @potentialscripts;
 my $potentialscript;
 
-my @subdirs;
-my $numsubdirs;
 my $mpi;
-my $basesubdirfile;
-my $subdirfile;
 
 ################################################################################
 # Execution ####################################################################
@@ -72,15 +61,21 @@ my $subdirfile;
 # Preparation ==================================================================
 
 # Get command line options
-getopts("gsh", \%options);
-if ($options{h}) { printHelp(); }
-if ($options{g}) { genConfigTemp($options{s}); }
+getopts("gshf:", \%flags);
+if ($flags{h}) { printHelp(); }
+if ($flags{g}) { genConfigTemp($flags{s}); }
+if ($flags{s} && !$flags{g}) {
+    print "Error: -s option must be accompanied by the -g option.\n";
+    exit;
+}
+if (!$flags{f}) { 
+    print "Error: must specify a config file using the -f option.\n"; 
+    print "Run test-harness.plx with the -h option for a complete list of options.\n"; 
+    exit;
+} 
 
 # Parse test-harness-config
-# %options = parseConfig();
-
-# Initialize options 
-initOptions();
+%options = parseConfig($flags{f});
 
 # Determine host OS
 getHostOs();
@@ -89,24 +84,21 @@ getHostOs();
 prepFiles();
 
 # Update Trilinos from CVS Repository
-cvsUpdate();
-
-# Determine which build directories to use for tests
-parseSubdirList();
+#cvsUpdate();
 
 # Boot LAM if any tests are parallel
 #   (If mpich is used, comment out this section and the lamhalt section)
 lamboot();
 
 # Find all 'test' directories that may contain scripts that need to be executed
-findTestDirs();
+# findTestDirs();
 
 # Main Execution ===============================================================
 
 # Build and test from bottom up, recording and reporting results as necessary
 
 # Compile the required Trilinos builds for tests determined above
-compile();
+# compile();
 
 # Run tests
 # test();   # currently called by compile()
@@ -114,45 +106,15 @@ compile();
 # Clean Up =====================================================================
 
 # Close filehandles and delete temp files
-cleanupFiles();
+# cleanupFiles();
 
 # Halt LAM if any tests are parallel
 #   (If mpich is used, comment out this section and the lamboot section)
-lamhalt();
+# lamhalt();
 
 ################################################################################
 # Subroutines ##################################################################
 ################################################################################
-
-    ############################################################################
-    # initOptions()
-    #
-    # Initialize basic test-harness options
-    #   - global variables used: yes
-    #   - sends mail: no
-    #   - args: 
-    #   - returns: 
-
-    sub initOptions {    
-        $homedir="$ENV{'HOME'}/Trilinos";
-        $frequency="daily"; #default value
-        chomp($date=`date`);
-        if ($date =~/Sun/) {
-          $frequency="weekly";
-        }
-        
-        # Set proper location of cvscmd if necessary, otherwise leave it at "cvs"
-        $cvscmd="cvs";
-        
-        # (LAM only) name of the file containing the names of the machines to be used for parallel jobs
-        # If this file doesn't exist, parallel jobs will be run on the local machine only
-        $basehostfile='hostfile'; # change filename here if necessary
-        # Location of $basehostfile
-        $hostfile="$homedir/$basehostfile"; # change path here if necessary
-        
-        # permissions needed?
-        #my $permissions=0775;
-    } # initOptions()
 
     ############################################################################
     # getHostOs()
@@ -182,7 +144,12 @@ lamhalt();
                 use lib "/local/homes/jmwille/lib";
                 last SWITCH; };
             if ($hostos=~/^CYGWIN/) {
-                MIME::Lite->send('smtp',"mailgate.sandia.gov"); #doesn't have sendmail
+                
+                # NO MIME::Lite
+                #
+                # MIME::Lite->send('smtp',"mailgate.sandia.gov"); #doesn't have sendmail
+                #
+                
                 use lib "/home/jmwille/lib";
                 last SWITCH; };
             # Fix the rest of the switch statement, currently functional for LINUX only
@@ -202,7 +169,7 @@ lamhalt();
     #   - returns: 
 
     sub prepFiles {
-        chdir"$homedir";
+        chdir "$options{'HOMEDIR'}[0]";
     
         # Doesn't count the actual number of errors, but rather
         # the number of times ERRORS is written to.
@@ -241,11 +208,11 @@ lamhalt();
     #   - returns: 
 
     sub cvsUpdate {    
-        chdir"$homedir";
+        chdir "$options{'HOMEDIR'}[0]";
         
         my $result;
-        print "$cvscmd update -dP > $homedir/updatelog.txt 2>&1\n";
-        $result=system "$cvscmd update -dP > $homedir/updatelog.txt 2>&1";
+        print "$options{'CVS_CMD'}[0] update -dP > $options{'HOMEDIR'}[0]/updatelog.txt 2>&1\n";
+        $result=system "$options{'CVS_CMD'}[0] update -dP > $options{'HOMEDIR'}[0]/updatelog.txt 2>&1";
         if ($result) {
             ++$errorcount;
             ++$updateerror;
@@ -258,57 +225,6 @@ lamhalt();
     } # cvsUpdate()
 
     ############################################################################
-    # parseSubdirList()
-    #
-    # Determines which build directories are to be used in the test process
-    # based on the subdir-list file.
-    #   - global variables used: yes
-    #   - sends mail: no
-    #   - args: 
-    #   - returns: 
-
-    sub parseSubdirList {   
-        chdir"$homedir";
-         
-        $numsubdirs=0;
-        $mpi=0;
-        $basesubdirfile='subdir-list'; 
-        $subdirfile="$homedir/testharness/$basesubdirfile";
-        
-        if (! -f $subdirfile) {
-            ++$warningcount;
-            print WARNINGS "WARNING: $subdirfile does not exist.\n";
-            &useDefaultParameters;
-        } else {
-            open SUBDIRECTORIES, "$subdirfile";
-            chomp(@lines=<SUBDIRECTORIES>);
-            close SUBDIRECTORIES;
-            foreach $line (@lines) {
-                # ignore comment lines (comment lines start with a pound sign)
-                unless ($line=~/^\s*#/ || $line=~/^\s+$/ || $line=~/^$/) {
-            	    print "$line\n";
-            	    $subdirs[$numsubdirs]=$line;
-            	    ++$numsubdirs;
-            	    chdir "$homedir/$line";
-            	    print "$homedir/$line\n";
-            	    open (SCRIPT, "invoke-configure") or die "$! error trying to open file";
-            	    my $commcheck=<SCRIPT>;
-            	    close SCRIPT;
-            	    # Check if the configure script indicates a parallel or serial build
-            	    if ($commcheck=~/--enable-mpi/i) {
-            	        ++$mpi;
-            	    }
-            	} # unless
-            } # foreach
-            if (! $numsubdirs) {
-                ++$warningcount;
-                print WARNINGS "WARNING: No valid parameter sets found in $subdirfile\n";
-                &useDefaultParameters;
-            }
-        } # else
-    } # parseSubdirList()
-
-    ############################################################################
     # lamboot()
     #
     # Check if any tests are parallel tests--if so, do a lamboot.
@@ -318,11 +234,11 @@ lamhalt();
     #   - returns: 
 
     sub lamboot {    
-        chdir"$homedir";
+        chdir "$options{'HOMEDIR'}[0]";
         
         if ($mpi) {
-            unless (! -f $hostfile) {
-                system "lamboot $hostfile -v";
+            unless (! -f $options{'HOST_FILE'}[0]) {
+                system "lamboot $options{'HOST_FILE'}[0] -v";
             } else {
                 system "lamboot"; ## Could need to be another MPI implementation
             }
@@ -339,7 +255,7 @@ lamhalt();
     #   - returns: 
 
     sub findTestDirs {    
-        chdir"$homedir";
+        chdir "$options{'HOMEDIR'}[0]";
         
         system "find packages/ -name test -print > list_of_test_dirs";
         ### May need to append to list_of_test_dirs to account for test
@@ -358,9 +274,10 @@ lamhalt();
     sub compile {    
         $comm="serial";
         $compileFail=0;
-        for (my $i=0; $i<$numsubdirs; $i++) {
-            chdir"$homedir/$subdirs[$i]";
-            open (SCRIPT, "invoke-configure") or die "$! error trying to open file\n$subdirs[$i]/invoke-configure\n";
+        for (my $i=0; $i <= $#{$options{'BUILD_DIRS'}}; $i++) {
+            chdir"$options{'HOMEDIR'}[0]/$options{'BUILD_DIRS'}[$i]";
+            open (SCRIPT, "invoke-configure") 
+                or die "$! error trying to open file\n$options{'BUILD_DIRS'}[$i]/invoke-configure\n";
             $configscript=<SCRIPT>;
             close SCRIPT;
             if ($configscript =~/--enable-mpi/i) {
@@ -370,24 +287,24 @@ lamhalt();
         	}
         	system "make clean";
             #Note that the 'invoke-configure' script must be executable
-        	$compileFail+=system "./invoke-configure >> $homedir/trilinosCompileLog.txt 2>&1";
+        	$compileFail+=system "./invoke-configure >> $options{'HOMEDIR'}[0]/trilinosCompileLog.txt 2>&1";
             if ($compileFail) {
                 # The configure process failed, skip associated tests, report the
         	    # failure
                 ++$errorcount;
                 ++$trilinosCompileError;
                 print ERRORS "Trilinos configure process failed for the";
-                print ERRORS "$subdirs[$i] test.\nWill skip associated tests.\n";
+                print ERRORS "$options{'BUILD_DIRS'}[$i] test.\nWill skip associated tests.\n";
                 # &sendemail; # COMMENTING OUT EMAIL
                 $compileFail=0; # reset so the positive value doesn't trigger
         					    # an error again
             } else {
-        	    $compileFail+=system "make >> $homedir/trilinosCompileLog.txt 2>&1";
+        	    $compileFail+=system "make >> $options{'HOMEDIR'}[0]/trilinosCompileLog.txt 2>&1";
         		if ($compileFail) {
         	  	    # The build process failed, skip associated tests, report the failure
         	  		++$errorcount;
         	  		++$trilinosCompileError;
-        	  		print ERRORS "Trilinos compilation process failed for the $subdirs[$i] test.\nWill skip associated tests.\n";
+        	  		print ERRORS "Trilinos compilation process failed for the $options{'BUILD_DIRS'}[$i] test.\nWill skip associated tests.\n";
         	  		# &sendemail; # COMMENTING OUT EMAIL
         	  		$compileFail=0; # reset so the positive value doesn't trigger an error again
         		} else {
@@ -420,23 +337,23 @@ lamhalt();
 	        # Packages excluded below (jpetra, tpetra, etc) do not yet build
 	        # with autotools
 	        unless ($testdirectory=~/^\s+$/ || $testdirectory=~/^$/ || $testdirectory=~/tpetra/ || $testdirectory=~/jpetra/ ) {
-	            chdir "$homedir/$subdirs[$i]/$testdirectory";
+	            chdir "$options{'HOMEDIR'}[0]/$options{'BUILD_DIRS'}[$i]/$testdirectory";
 
 	            $compileFail=0;
-	            system "find $homedir/$subdirs[$i]/$testdirectory/scripts/$frequency/$comm -type f > list_of_files";
+	            system "find $options{'HOMEDIR'}[0]/$options{'BUILD_DIRS'}[$i]/$testdirectory/scripts/$options{'FREQUENCY'}[0]/$comm -type f > list_of_files";
 	            open FILELIST, "list_of_files";
 	            chomp(@potentialscripts=<FILELIST>);
 	            close FILELIST;
 	            foreach $potentialscript (@potentialscripts) {
                     # Ken Stanley added the following to the checkin-test-harness.  JW copied it here also.  We shouldn't really need
                     # it, but if a script fails to return to the directory it started in, this will fix the problem.
-	                chdir "$homedir/$subdirs[$i]/$testdirectory";
+	                chdir "$options{'HOMEDIR'}[0]/$options{'BUILD_DIRS'}[$i]/$testdirectory";
 		            if (-x $potentialscript ) {
-		                $compileFail+=system "$potentialscript $subdirs[$i] True >> $homedir/testCompileLog.txt 2>&1";
+		                $compileFail+=system "$potentialscript $options{'BUILD_DIRS'}[$i] True >> $options{'HOMEDIR'}[0]/testCompileLog.txt 2>&1";
 		                if ($compileFail) {
 		                    ++$errorcount;
 		                    ++$testCompileError;
-		                    print ERRORS "Trilinos test suite failed for $subdirs[$i] tests.\n\n";
+		                    print ERRORS "Trilinos test suite failed for $options{'BUILD_DIRS'}[$i] tests.\n\n";
 		                }
 		                #
 		                # Create and send an email
@@ -460,7 +377,7 @@ lamhalt();
     #   - returns: 
 
     sub cleanupFiles {    
-        chdir"$homedir";
+        chdir"$options{'HOMEDIR'}[0]";
         
         close BODY;
         close ERRORS;
@@ -478,7 +395,7 @@ lamhalt();
     #   - returns: 
 
     sub lamhalt {    
-        chdir"$homedir";
+        chdir"$options{'HOMEDIR'}[0]";
         
         if ($mpi) {
 	        system "lamhalt"; # Could need to be another MPI implementation 
@@ -496,7 +413,7 @@ lamhalt();
     #   - returns: 
 
     sub sendMail {
-        chdir"$homedir";
+        chdir"$options{'HOMEDIR'}[0]";
         
         #my @addresses = $_[0];
         #my $body = $_[1];
@@ -515,7 +432,7 @@ lamhalt();
         my $testfile2=join("",'log',$ARCH,'.txt');
         my $scriptowner="";
         if ( -f $testfile2) {
-            system "mv $homedir/$testfile2 EmailBody.txt";
+            system "mv $options{'HOMEDIR'}[0]/$testfile2 EmailBody.txt";
             open (OWNER, "EmailBody.txt") or die "$! error trying to open file";
             $scriptowner=<OWNER>;
             close OWNER;
@@ -537,8 +454,8 @@ lamhalt();
 
         print "\n**$mail_to**\n";
 
-        my $testfile="$homedir/logErrors.txt";
-        my $testfile1="$homedir/logMpiErrors.txt";
+        my $testfile="$options{'HOMEDIR'}[0]/logErrors.txt";
+        my $testfile1="$options{'HOMEDIR'}[0]/logMpiErrors.txt";
         
         #construct and send message using MIME-Lite
         open (SUMM, ">>summ.txt") or die "$! error trying to open file";
@@ -573,9 +490,9 @@ lamhalt();
                 print SUMM "\n";
             }
         
-            if ($frequency =~/weekly/) {
+            if ($options{'FREQUENCY'}[0] =~/weekly/) {
                 print SUMM "Results of weekly test:\n";
-            } elsif ($frequency =~/daily/) {
+            } elsif ($options{'FREQUENCY'}[0] =~/daily/) {
                 print SUMM "Results of daily test:\n";
             } else {
                 print SUMM "Warning: Unknown test frequency, results below:\n";
@@ -690,9 +607,9 @@ lamhalt();
                 print SUMM "\n";
             }
     
-            if ($frequency =~/weekly/) {
+            if ($options{'FREQUENCY'}[0] =~/weekly/) {
                 print SUMM "\nResults of weekly tests:\n";
-            } elsif ($frequency =~/daily/) {
+            } elsif ($options{'FREQUENCY'}[0] =~/daily/) {
                 print SUMM "\nResults of daily tests:\n";
             } else {
                 print SUMM "\nWarning: Unknown test frequency, results below:\n";
@@ -726,29 +643,6 @@ lamhalt();
         system "rm -f trilinosCompileLog.txt testCompileLog.txt summ.txt";    
         
     } # sendMail()
-    
-    ############################################################################
-    # useDefaultParameters()
-    #
-    # This subroutine is called when script is forced to try default parameters
-    #   - global variables used: no
-    #   - sends mail: on success
-    #   - args: Array addresses, String body, Array attachments
-    #   - returns: 
-
-    sub useDefaultParameters {
-        chdir"$homedir";
-        
-        ++$warningcount;
-          print WARNINGS "WARNING: trying default parameters.\n";
-          ## maybe should have defaults for each platform some day
-          $subdirs[0]='SERIAL';
-          $subdirs[1]='MPI';
-          ++$mpi;
-          $numsubdirs=2;
-          print WARNINGS "Default subdirectories $subdirs[0] $subdirs[1]\n";
-        
-    } # useDefaultParameters()
 
     ############################################################################
     # printUsage()
@@ -763,9 +657,10 @@ lamhalt();
         print "Test-Harness\n";
         print "\n";
         print "options:\n";
-        print "  -g : generate template configuration file and exit\n";
-        print "  -s : omit comments from generated configuration file\n";
-        print "  -h : print this help page and exit\n";
+        print "  -f FILE : (required) test-harness-config file to use\n";
+        print "  -g      : generate template configuration file (with default values) and exit\n";
+        print "  -s      : omit comments from generated configuration file\n";
+        print "  -h      : print this help page and exit\n";
         exit;
     } # printHelp()
 
@@ -776,31 +671,117 @@ lamhalt();
     # ({VARIABLE_A, [valueA1, valueA2, ...]}, {VARIABLE_B, [valueB1, ...]})
     #   - global variables used: no
     #   - sends mail: no
-    #   - args: 
+    #   - args: String test-harness-config filename
     #   - returns: Hash of Arrays options
 
     sub parseConfig {
+        my $filename = $_[0];
         my %options; # Hash of Arrays
-        my $inFile;
         my $line;
         my $name;
         my $value;
+        my $continue;
         
-        open (inFile, "< test-harness-config")
-            or die "can't open test-harness-config";
+        open (CONFIG, "<$filename")
+            or die "can't open $filename";
             
         while ($line = <inFile>) {
-            chomp($line);
+            chomp($line);       # trim newline
+            $line =~ s/^\s+//;  # trim leading spaces
+            $line =~ s/\s+$//;  # trim trailing spaces
             
-            if ($line =~ m/^[# ]/) {
+            if (!$line || $line =~ m/^[# ]/) {
                 # skip comments and blank lines
             } else {
-                $name =~ m/^\w+/;
-                # parse values and push them into $name's array
-                # must allow for += for appending
-                # must allow for " " for values with spaces
-                # must allow for \ for line continuations
+                if ($continue) {    # previous line ended with a (\) continuation char
+                    $line =~ m/^((\S*?\s*?|".*?"\s*?)*)\s*?(\\?)$/;
+                    $value = $1;
+                    $continue = $3;                    
+                    # print "\$value: $value\n\n"; # debugging   
+                                     
+                } else {            # expecting a $name [+]= $value [$value ...] pair
+                    $line =~ m/^(\S+)\s*?\+?=\s*((\S*?\s*?|".*?"\s*?)*)\s*?(\\?)$/;
+                    $name = $1;
+                    $value = $2;
+                    $continue = $4;                    
+                    # print "\$name: $name, \$value: $value\n\n"; # debugging
+                }
+                
+                if (!exists $options{$name}) {  # if there isn't an option with this $name...
+                    $options{$name} = ();       # add a new one
+                }
+                
+                while ($value) {
+                    $value =~ s/^\s+//;  # trim leading spaces
+                    $value =~ s/\s+$//;  # trim trailing spaces
+                    # print "\$value: $value\n"; # debugging
+                    
+                    $value =~ m/^(".*?"|\S+)/;      # grab leftmost value
+                    my $v = $1;                     # store temporarily in $v
+                    $value =~ s/^$v//;              # remove $v from remaining list 
+                    $v =~ s/"//g;                   # remove any quotes from $v
+                    push (@{$options{$name}}, $v);  # add $v to %options{$name}     
+                }
+            } # else (non-comment/blank)
+        } # while ($line)
+        
+        close CONFIG;
+        
+        # convert psuedo-variables =============================================
+        
+        # convert <USER_HOME_DIR> psuedo-variable
+        if (defined $options{'HOMEDIR'} && defined $options{'HOMEDIR'}[0]) { 
+            $options{'HOMEDIR'}[0] =~ s/<USER_HOME_DIR>/$ENV{'HOME'}/;
+        } else {
+            print "Error: no HOMEDIR defined.\n";
+            exit;
+        }
+        
+        # convert <HOMEDIR> psuedo-variable
+        for my $name (keys %options) {
+            for my $i (0 .. $#{$options{$name}}) {
+                $options{$name}[$i] =~ s/<HOMEDIR>/$options{'HOMEDIR'}[0]/;
+            }         
+        }
+        
+        # convert <BASE_HOST_FILE> psuedo-variable
+        if (defined $options{'HOST_FILE'} && defined $options{'HOST_FILE'}[0]) {
+            if (defined $options{'BASE_HOST_FILE'} && defined $options{'BASE_HOST_FILE'}[0]) { 
+                $options{'HOST_FILE'}[0] =~ s/<BASE_HOST_FILE>/$options{'BASE_HOST_FILE'}[0]/;
             }
+        } 
+        
+        # Validate options =====================================================
+        #     (should we reset bad values to default values or just bail?)
+        
+        # check for valid build directories and check for --enable-mpi
+        if (defined $options{'BUILD_DIRS'} && defined $options{'BUILD_DIRS'}[0]) {
+            for my $i (0 .. $#{$options{'BUILD_DIRS'}}) {
+                chdir "$options{'HOMEDIR'}[0]/$options{'BUILD_DIRS'}[$i]";            
+                print "$options{'HOMEDIR'}[0]/$options{'BUILD_DIRS'}[$i]\n";
+                            
+    	        open (INVOKE_CONFIGURE, "invoke-configure") or die "$! error trying to open file";
+    	        my $file=<INVOKE_CONFIGURE>;
+        	    close INVOKE_CONFIGURE;
+        	    
+        	    # Check if the configure script indicates a parallel or serial build
+        	    if ($file =~ m/--enable-mpi/i) { $mpi = 1; }
+            }
+        } else {
+            $warningcount++;
+            print WARNINGS "WARNING: No valid BUILD_DIRS found in config file.\n";
+            # set default or just bail?
+        }        
+        
+        # print %options # debugging
+        #
+        print "\n\%options:\n\n";
+        for my $name (keys %options) {
+            my $numElements = $#{$options{$name}};
+            print "  $name (".($numElements+1)."): \n";
+            for my $i (0 .. $numElements) {
+                print "    $i = $options{$name}[$i]\n";
+            }         
         }
         
         return %options;        
@@ -823,51 +804,138 @@ lamhalt();
         open (outFile, "> test-harness-config-template")
             or die "can't open test-harness-config-template";
         
-        print outFile "# Test-Harness\n";        
+        print outFile "# test-harness-config\n";  
         print outFile "\n";
 
         if (!$short) {
-            print outFile "# This file describes the settings to be used by the test harness\n";
+            print outFile "################################################################################\n";
+            print outFile "# This file contains the settings to be used by the test-harness\n";
             print outFile "#\n";
             print outFile "# All text after a hash (#) is considered a comment and will be ignored\n";
             print outFile "# The format is:\n";
-            print outFile "#       TAG = value [value, ...]\n";
+            print outFile "#     TAG = value [value ...]\n";
             print outFile "# For lists items can also be appended using:\n";
-            print outFile "#       TAG += value [value, ...]\n";
-            print outFile "# Values that contain spaces should be placed between quotes (\" \")\n";
-            print outFile "# Line continuation characters \\ are allowed\n";
+            print outFile "#     TAG += value [value ...]\n";
+            print outFile "# Values that contain spaces should be placed between double quotes (\"\")\n";
+            print outFile "#     (not in single quotes and double quotes can't be escaped)\n";
+            print outFile "# Line continuation characters (\\) are allowed as an alternative to (+=)\n";
+            print outFile "#     (for adding more values, not for extending a value)\n";
+            print outFile "# Adding duplicate tags with (=) and not (+=) will not block older values, but\n";
+            print outFile "#     will instead simply append the new values, synonymous to (+=)\n";
+            print outFile "################################################################################\n";
             print outFile "\n";
         }
         
-        print outFile "#-------------------------------------------------------------------------------\n";
+        print outFile "#===============================================================================\n";
         print outFile "# General configuration options\n";
-        print outFile "#-------------------------------------------------------------------------------\n";
+        print outFile "#===============================================================================\n";
         print outFile "\n";
         
         if (!$short) {        
+            print outFile "#-------------------------------------------------------------------------------\n";
+            print outFile "#\n";
+            print outFile "# === can't we just use ../? === \n";
+            print outFile "#\n";
+            print outFile "# Location of the directory in which this file is located. Default location is\n";
+            print outFile "# just below user's home directory. The value <USER_HOME_DIR> can be used to \n";
+            print outFile "# indicate the current user's home directory.\n";
+            print outFile "#\n";
+            print outFile "# - multiple values recognized: NO\n";
+            print outFile "# - the HOME system environment variable can be referred to with\n";
+            print outFile "#   the value <USER_HOME_DIR>\n";
+            print outFile "\n";
+        }
+        
+        print outFile "HOMEDIR                = <USER_HOME_DIR>/Trilinos \n";
+        
+        if (!$short) {        
+            print outFile "\n";
+            print outFile "#-------------------------------------------------------------------------------\n";
+            print outFile "# Indicate how often this test should be run.\n";
+            print outFile "# Recognized values include:\n";
+            print outFile "#   DAILY WEEKDAYS WEEKENDS \n";
+            print outFile "#   MONDAY TUESDAY WEDNESDAY THURSDAY FRIDAY SATURDAY SUNDAY.\n";
+            print outFile "# (Use one value from the first row OR any combination of values from the\n";
+            print outFile "# second row)\n";
+            print outFile "#\n";
+            print outFile "# - multiple values recognized: YES\n";
+            print outFile "\n";
+        }
+        
+        print outFile "FREQUENCY              = DAILY \n";
+        
+        if (!$short) {      
+            print outFile "\n";  
+            print outFile "#-------------------------------------------------------------------------------\n";
+            print outFile "# Set location of CVS command on this system.\n";
+            print outFile "#\n";
+            print outFile "# - multiple values recognized: NO\n";
+            print outFile "\n";
+        }
+        
+        print outFile "CVS_CMD                = cvs \n";
+        
+        if (!$short) {       
+            print outFile "\n"; 
+            print outFile "#-------------------------------------------------------------------------------\n";
+            print outFile "#\n";
+            print outFile "# === Unsure about this option ===\n";
+            print outFile "#\n";
+            print outFile "# (LAM only) name of the file containing the names of the machines to be used\n"; 
+            print outFile "# for parallel jobs. If this file doesn't exist, parallel jobs will be run on\n";
+            print outFile "# the local machine only.\n";
+            print outFile "#\n";
+            print outFile "# - multiple values recognized: NO\n";
+            print outFile "# - HOMEDIR can be referred to with the value <HOMEDIR>\n";
+            print outFile "\n";
+        }
+        
+        print outFile "BASE_HOST_FILE         = hostfile \n";
+        
+        if (!$short) {      
+            print outFile "\n";  
+            print outFile "#-------------------------------------------------------------------------------\n";
+            print outFile "#\n";
+            print outFile "# === Unsure about this option ===\n";
+            print outFile "#\n";
+            print outFile "# - multiple values recognized: NO\n";
+            print outFile "# - HOMEDIR can be referred to with the value <HOMEDIR>\n";
+            print outFile "# - BASE_HOST_FILE can be referred to with the value <BASE_HOST_FILE>\n";            
+            print outFile "\n";
+        }
+        
+        print outFile "HOST_FILE              = <HOMEDIR>/<BASE_HOST_FILE> \n";
+        
+        if (!$short) {        
+            print outFile "\n";
+            print outFile "#-------------------------------------------------------------------------------\n";
             print outFile "# List the names of all of the build directories that should be configured,\n";
             print outFile "# compiled and tested for the test harness.  Each build directory must be a\n"; 
             print outFile "# subdirectory of 'Trilinos/'.  One subdirectory per line.  Each directory\n"; 
             print outFile "# listed must contain an \"invoke-configure\" file that contains the options\n";
             print outFile "# that should be passed to configure.\n";
+            print outFile "#\n";
+            print outFile "# - multiple values recognized: YES\n";
             print outFile "\n";
         }
         
-        print outFile "SUBDIR_LIST            = \n";
+        print outFile "BUILD_DIRS             = MPI SERIAL\n";
         
         if (!$short) {        
             print outFile "\n";
+            print outFile "#-------------------------------------------------------------------------------\n";
             print outFile "# List the email addresses to which summaries and error messages will be sent\n";
             print outFile "# by default (i.e. when no script owner exists for a particular test).\n";
+            print outFile "#\n";
+            print outFile "# - multiple values recognized: YES\n";
             print outFile "\n";
         }
         
         print outFile "DEFAULT_EMAILS         = \n";
-
-        print outFile "\n";        
-        print outFile "# etc...\n";
-        print outFile "\n";
         
+        print outFile "\n";
+        print outFile "# end test-harness-config";
+            
         close outFile;
         exit;
     } # genConfigTemp()
