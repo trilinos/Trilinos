@@ -50,5 +50,5 @@ example_CXXFLAGS = -I$(top_srcdir)/src
 
 #np# One LDADD primary can be defined for each exe listed above.  Include any
 #np# LDFLAGS  necessary for building the exe.
-example_LDADD = $(top_builddir)/src/libepetra.a $(BLAS_LIBS) \
-	$(LIBS) $(FLIBS)
+example_LDADD = $(top_builddir)/src/libepetra.a \
+	$(LIBS) $(BLAS_LIBS) $(FLIBS)

@@ -48,7 +48,7 @@ hello_test_CXXFLAGS = -I$(top_srcdir)/src
 #np# List libraries that np is dependent on.
 hello_test_LDADD = $(top_builddir)/src/libnew_package.a \
 	$(top_builddir)/../epetra/src/libepetra.a \
-	$(BLAS_LIBS) $(FLIBS)
+	$(LIBS) $(BLAS_LIBS) $(FLIBS)
 
 #
 #  This is a crude but effective way to move files from the source tree to the build tree
