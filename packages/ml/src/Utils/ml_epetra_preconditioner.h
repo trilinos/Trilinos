@@ -47,24 +47,24 @@ namespace ML_Epetra
 {
 
   //! Sets default parameters for aggregation-based 2-level domain decomposition preconditioners.
-  int SetDefaults(string ProblemType, Teuchos::ParameterList & List, char * Prefix = "");
+  int SetDefaults(string ProblemType, Teuchos::ParameterList & List, const string Prefix = "");
   
   //! Sets default parameters for aggregation-based 2-level domain decomposition preconditioners.
-  int SetDefaultsDD(Teuchos::ParameterList & List, char * Prefix = "");
+  int SetDefaultsDD(Teuchos::ParameterList & List, const string Prefix = "");
   
-  int SetDefaultsDD_LU(Teuchos::ParameterList & List, char * Prefix = "");
+  int SetDefaultsDD_LU(Teuchos::ParameterList & List, const string Prefix = "");
   
   //! Sets default parameters for aggregation-based 3-level domain decomposition preconditioners.  
-  int SetDefaultsDD_3Levels(Teuchos::ParameterList & List, char * Prefix = "");
+  int SetDefaultsDD_3Levels(Teuchos::ParameterList & List, const string Prefix = "");
   
   //! Sets default parameters for aggregation-based 3-level domain decomposition preconditioners with LU.
-  int SetDefaultsDD_3Levels_LU(Teuchos::ParameterList & List, char * Prefix = "");
+  int SetDefaultsDD_3Levels_LU(Teuchos::ParameterList & List, const string Prefix = "");
 
   //! Sets default parameters for Maxwell's equations.
-  int SetDefaultsMaxwell(Teuchos::ParameterList & List, char * Prefix = "");
+  int SetDefaultsMaxwell(Teuchos::ParameterList & List, const string Prefix = "");
   
   //! Sets classical smoothed aggregation.
-  int SetDefaultsSA(Teuchos::ParameterList & List, char * Prefix = "");
+  int SetDefaultsSA(Teuchos::ParameterList & List, const string Prefix = "");
 
 #ifdef HAVE_ML_TRIUTILS
   //! Add values set in Command Line Parser to the internally stored parameter list object.

@@ -68,23 +68,23 @@ using namespace ML_Epetra;
   Aztec smoothers with LU.
 
 */
-int ML_Epetra::SetDefaults(string ProblemType, ParameterList & List, char * Prefix_ )
+int ML_Epetra::SetDefaults(string ProblemType, ParameterList & List, const string Prefix)
 {
   
   int rv = 0;
   
   if( ProblemType == "SA" )
-    return( ML_Epetra::SetDefaultsSA(List, Prefix_) );
+    return( ML_Epetra::SetDefaultsSA(List, Prefix) );
   else if( ProblemType == "maxwell" )
-    return( ML_Epetra::SetDefaultsMaxwell(List, Prefix_ ) );
+    return( ML_Epetra::SetDefaultsMaxwell(List, Prefix ) );
   else if( ProblemType == "DD-ML" )
-    return( ML_Epetra::SetDefaultsDD_3Levels(List, Prefix_ ) );
+    return( ML_Epetra::SetDefaultsDD_3Levels(List, Prefix ) );
   else if( ProblemType == "DD-ML-LU" )
-    return( ML_Epetra::SetDefaultsDD_3Levels_LU(List, Prefix_ ) );
+    return( ML_Epetra::SetDefaultsDD_3Levels_LU(List, Prefix ) );
   else if( ProblemType == "DD" )
-    return( ML_Epetra::SetDefaultsDD(List, Prefix_ ) );
+    return( ML_Epetra::SetDefaultsDD(List, Prefix ) );
   else if( ProblemType == "DD-LU" )
-    return( ML_Epetra::SetDefaultsDD_LU(List, Prefix_ ) );
+    return( ML_Epetra::SetDefaultsDD_LU(List, Prefix ) );
   else {
     cerr << "ERROR: Wrong input parameter in `SetDefaults' ("
 	 << ProblemType << "). Should be: " << endl
@@ -102,54 +102,38 @@ int ML_Epetra::SetDefaults(string ProblemType, ParameterList & List, char * Pref
 
 // ============================================================================
 
-int ML_Epetra::SetDefaultsDD(ParameterList & List, char * Prefix) 
+int ML_Epetra::SetDefaultsDD(ParameterList & List, const string Prefix) 
 {
 
-  char parameter[80];
+  List.set(Prefix+"default values","DD");
 
-  sprintf(parameter,"%sdefault values", Prefix);
-  List.set(parameter,"DD");
+  List.set(Prefix+"max levels",2);
 
-  sprintf(parameter,"%smax levels", Prefix);
-  List.set(parameter,2);
-
-  sprintf(parameter,"%soutput", Prefix);
-  List.set(parameter,8);
+  List.set(Prefix+"output",8);
   
-  sprintf(parameter,"%sincreasing or decreasing", Prefix);
-  List.set(parameter,"increasing");
+  List.set(Prefix+"increasing or decreasing","increasing");
 
-  sprintf(parameter,"%sPDE equations", Prefix);
-  List.set(parameter,1);
+  List.set(Prefix+"PDE equations",1);
 
-  sprintf(parameter,"%saggregation: type",Prefix);
-  List.set(parameter,"METIS");
+  List.set(Prefix+"aggregation: type","METIS");
 
-  sprintf(parameter,"%saggregation: local aggregates",Prefix);
-  List.set(parameter,1);
+  List.set(Prefix+"aggregation: local aggregates",1);
   
-  sprintf(parameter,"%saggregation: damping factor",Prefix);
-  List.set(parameter,1.333);
+  List.set(Prefix+"aggregation: damping factor",1.333);
 
-  sprintf(parameter,"%scoarse: max size",Prefix);
-  List.set(parameter,128);
+  List.set(Prefix+"coarse: max size",128);
 
-  sprintf(parameter,"%saggregation: threshold",Prefix);
-  List.set(parameter,0.0);
+  List.set(Prefix+"aggregation: threshold",0.0);
   
-  sprintf(parameter,"%ssmoother: sweeps",Prefix);
-  List.set(parameter,2);
+  List.set(Prefix+"smoother: sweeps",2);
 
-  sprintf(parameter,"%ssmoother: damping factor",Prefix);
-  List.set(parameter,0.67);
+  List.set(Prefix+"smoother: damping factor",0.67);
 
-  sprintf(parameter,"%ssmoother: pre or post",Prefix);
-  List.set(parameter,"both");
+  List.set(Prefix+"smoother: pre or post","both");
 
   // -- aztec section -- //
   
-  sprintf(parameter,"%ssmoother: type",Prefix);
-  List.set(parameter,"Aztec");
+  List.set(Prefix+"smoother: type","Aztec");
 
   int * SmootherOptionsList = new int[AZ_OPTIONS_SIZE];
   double * SmootherParamsList = new double[AZ_PARAMS_SIZE];
@@ -159,25 +143,19 @@ int ML_Epetra::SetDefaultsDD(ParameterList & List, char * Prefix)
   SmootherOptionsList[AZ_scaling] = AZ_none;
   SmootherOptionsList[AZ_subdomain_solve] = AZ_ilut;
   
-  sprintf(parameter,"%ssmoother: Aztec options",Prefix);
-  List.set(parameter,SmootherOptionsList);
+  List.set(Prefix+"smoother: Aztec options",SmootherOptionsList);
     
-  sprintf(parameter,"%ssmoother: Aztec params",Prefix);
-  List.set(parameter,SmootherParamsList);
+  List.set(Prefix+"smoother: Aztec params",SmootherParamsList);
     
-  sprintf(parameter,"%ssmoother: Aztec as solver",Prefix);
-  List.set(parameter,false);
+  List.set(Prefix+"smoother: Aztec as solver",false);
 
   // --- coarse solver --- ///
   
-  sprintf(parameter,"%scoarse: type",Prefix);
-  List.set(parameter,"Amesos-KLU");
+  List.set(Prefix+"coarse: type","Amesos-KLU");
 
-  sprintf(parameter,"%sprec type",Prefix);
-  List.set(parameter,"MGV");
+  List.set(Prefix+"prec type","MGV");
 
-  sprintf(parameter,"%sprint unused",Prefix);
-  List.set(parameter,-2);
+  List.set(Prefix+"print unused",-2);
 
   return 0;
 
@@ -185,54 +163,38 @@ int ML_Epetra::SetDefaultsDD(ParameterList & List, char * Prefix)
 
 // ============================================================================
 
-int ML_Epetra::SetDefaultsDD_LU(ParameterList & List, char * Prefix) 
+int ML_Epetra::SetDefaultsDD_LU(ParameterList & List, const string Prefix) 
 {
 
-  char parameter[80];
+  List.set(Prefix+"default values","DD-LU");
 
-  sprintf(parameter,"%sdefault values", Prefix);
-  List.set(parameter,"DD-LU");
+  List.set(Prefix+"max levels",2);
 
-  sprintf(parameter,"%smax levels", Prefix);
-  List.set(parameter,2);
-
-  sprintf(parameter,"%soutput", Prefix);
-  List.set(parameter,8);
+  List.set(Prefix+"output",8);
   
-  sprintf(parameter,"%sincreasing or decreasing", Prefix);
-  List.set(parameter,"increasing");
+  List.set(Prefix+"increasing or decreasing","increasing");
 
-  sprintf(parameter,"%sPDE equations", Prefix);
-  List.set(parameter,1);
+  List.set(Prefix+"PDE equations",1);
 
-  sprintf(parameter,"%saggregation: type",Prefix);
-  List.set(parameter,"METIS");
+  List.set(Prefix+"aggregation: type","METIS");
 
-  sprintf(parameter,"%saggregation: local aggregates",Prefix);
-  List.set(parameter,1);
+  List.set(Prefix+"aggregation: local aggregates",1);
   
-  sprintf(parameter,"%saggregation: damping factor",Prefix);
-  List.set(parameter,0.01);
+  List.set(Prefix+"aggregation: damping factor",0.01);
 
-  sprintf(parameter,"%scoarse: max size",Prefix);
-  List.set(parameter,128);
+  List.set(Prefix+"coarse: max size",128);
 
-  sprintf(parameter,"%saggregation: threshold",Prefix);
-  List.set(parameter,0.0);
+  List.set(Prefix+"aggregation: threshold",0.0);
   
-  sprintf(parameter,"%ssmoother: sweeps",Prefix);
-  List.set(parameter,2);
+  List.set(Prefix+"smoother: sweeps",2);
 
-  sprintf(parameter,"%ssmoother: damping factor",Prefix);
-  List.set(parameter,0.67);
+  List.set(Prefix+"smoother: damping factor",0.67);
 
-  sprintf(parameter,"%ssmoother: pre or post",Prefix);
-  List.set(parameter,"both");
+  List.set(Prefix+"smoother: pre or post","both");
 
   // -- aztec section -- //
   
-  sprintf(parameter,"%ssmoother: type",Prefix);
-  List.set(parameter,"Aztec");
+  List.set(Prefix+"smoother: type","Aztec");
 
   int * SmootherOptionsList = new int[AZ_OPTIONS_SIZE];
   double * SmootherParamsList = new double[AZ_PARAMS_SIZE];
@@ -242,25 +204,19 @@ int ML_Epetra::SetDefaultsDD_LU(ParameterList & List, char * Prefix)
   SmootherOptionsList[AZ_scaling] = AZ_none;
   SmootherOptionsList[AZ_subdomain_solve] = AZ_lu;
   
-  sprintf(parameter,"%ssmoother: Aztec options",Prefix);
-  List.set(parameter,SmootherOptionsList);
+  List.set(Prefix+"smoother: Aztec options",SmootherOptionsList);
     
-  sprintf(parameter,"%ssmoother: Aztec params",Prefix);
-  List.set(parameter,SmootherParamsList);
+  List.set(Prefix+"smoother: Aztec params",SmootherParamsList);
     
-  sprintf(parameter,"%ssmoother: Aztec as solver",Prefix);
-  List.set(parameter,false);
+  List.set(Prefix+"smoother: Aztec as solver",false);
 
   // --- coarse solver --- ///
   
-  sprintf(parameter,"%scoarse: type",Prefix);
-  List.set(parameter,"Amesos-KLU");
+  List.set(Prefix+"coarse: type","Amesos-KLU");
 
-  sprintf(parameter,"%sprec type",Prefix);
-  List.set(parameter,"MGV");
+  List.set(Prefix+"prec type","MGV");
 
-  sprintf(parameter,"%sprint unused",Prefix);
-  List.set(parameter,-2);
+  List.set(Prefix+"print unused",-2);
 
   return 0;
 
@@ -268,60 +224,42 @@ int ML_Epetra::SetDefaultsDD_LU(ParameterList & List, char * Prefix)
 
 // ============================================================================
 
-int ML_Epetra::SetDefaultsDD_3Levels(ParameterList & List, char * Prefix_) 
+int ML_Epetra::SetDefaultsDD_3Levels(ParameterList & List, const string Prefix) 
 {
 
-  char parameter[80];
+  List.set(Prefix+"default values","DD-ML");
 
-  sprintf(parameter,"%sdefault values", Prefix_);
-  List.set(parameter,"DD-ML");
+  List.set(Prefix+"max levels",3);
 
-  sprintf(parameter,"%smax levels", Prefix_);
-  List.set(parameter,3);
-
-  sprintf(parameter,"%soutput", Prefix_);
-  List.set(parameter,8);
+  List.set(Prefix+"output",8);
   
-  sprintf(parameter,"%sincreasing or decreasing", Prefix_);
-  List.set(parameter,"increasing");
+  List.set(Prefix+"increasing or decreasing","increasing");
 
-  sprintf(parameter,"%sPDE equations", Prefix_);
-  List.set(parameter,1);
+  List.set(Prefix+"PDE equations",1);
 
-  sprintf(parameter,"%saggregation: type (level 0)",Prefix_);
-  List.set(parameter,"METIS");
+  List.set(Prefix+"aggregation: type (level 0)","METIS");
 
-  sprintf(parameter,"%saggregation: type (level 1)",Prefix_);
-  List.set(parameter,"ParMETIS");
+  List.set(Prefix+"aggregation: type (level 1)","ParMETIS");
 
-  sprintf(parameter,"%saggregation: nodes per aggregate (level 0)",Prefix_);
-  List.set(parameter,512);
+  List.set(Prefix+"aggregation: nodes per aggregate (level 0)",512);
 
-  sprintf(parameter,"%saggregation: nodes per aggregate (level 1)",Prefix_);
-  List.set(parameter,32);
+  List.set(Prefix+"aggregation: nodes per aggregate (level 1)",32);
   
-  sprintf(parameter,"%saggregation: damping factor",Prefix_);
-  List.set(parameter,4.0/3);
+  List.set(Prefix+"aggregation: damping factor",4.0/3);
 
-  sprintf(parameter,"%scoarse: max size",Prefix_);
-  List.set(parameter,128);
+  List.set(Prefix+"coarse: max size",128);
 
-  sprintf(parameter,"%saggregation: threshold",Prefix_);
-  List.set(parameter,0.0);
+  List.set(Prefix+"aggregation: threshold",0.0);
   
-  sprintf(parameter,"%ssmoother: sweeps (level 0)",Prefix_);
-  List.set(parameter,2);
+  List.set(Prefix+"smoother: sweeps (level 0)",2);
 
-  sprintf(parameter,"%ssmoother: damping factor (level 0)",Prefix_);
-  List.set(parameter,0.67);
+  List.set(Prefix+"smoother: damping factor (level 0)",0.67);
 
-  sprintf(parameter,"%ssmoother: pre or post (level 0)",Prefix_);
-  List.set(parameter,"both");
+  List.set(Prefix+"smoother: pre or post (level 0)","both");
 
   // --- Aztec --- //
   
-  sprintf(parameter,"%ssmoother: type",Prefix_);
-  List.set(parameter,"Aztec");
+  List.set(Prefix+"smoother: type","Aztec");
   
   int * SmootherOptionsList = new int[AZ_OPTIONS_SIZE];
   double * SmootherParamsList = new double[AZ_PARAMS_SIZE];
@@ -331,25 +269,19 @@ int ML_Epetra::SetDefaultsDD_3Levels(ParameterList & List, char * Prefix_)
   SmootherOptionsList[AZ_subdomain_solve] = AZ_ilut;
   SmootherOptionsList[AZ_overlap] = 0;
 
-  sprintf(parameter,"%ssmoother: Aztec options (level 0)",Prefix_);
-  List.set(parameter,SmootherOptionsList);
+  List.set(Prefix+"smoother: Aztec options (level 0)",SmootherOptionsList);
     
-  sprintf(parameter,"%ssmoother: Aztec params (level 0)",Prefix_);
-  List.set(parameter,SmootherParamsList);
+  List.set(Prefix+"smoother: Aztec params (level 0)",SmootherParamsList);
     
-  sprintf(parameter,"%ssmoother: Aztec as solver (level 0)",Prefix_);
-  List.set(parameter,false);
+  List.set(Prefix+"smoother: Aztec as solver (level 0)",false);
   
   // --- coarse --- ///
   
-  sprintf(parameter,"%scoarse: type",Prefix_);
-  List.set(parameter,"Amesos-KLU");
+  List.set(Prefix+"coarse: type","Amesos-KLU");
 
-  sprintf(parameter,"%sprec type",Prefix_);
-  List.set(parameter,"MGV");
+  List.set(Prefix+"prec type","MGV");
 
-  sprintf(parameter,"%sprint unused",Prefix_);
-  List.set(parameter,-2);
+  List.set(Prefix+"print unused",-2);
   
   return 0;
 
@@ -357,60 +289,42 @@ int ML_Epetra::SetDefaultsDD_3Levels(ParameterList & List, char * Prefix_)
 
 // ============================================================================
 
-int ML_Epetra::SetDefaultsDD_3Levels_LU(ParameterList & List, char * Prefix_) 
+int ML_Epetra::SetDefaultsDD_3Levels_LU(ParameterList & List, const string Prefix) 
 {
 
-  char parameter[80];
+  List.set(Prefix+"default values","DD-ML-LU");
 
-  sprintf(parameter,"%sdefault values", Prefix_);
-  List.set(parameter,"DD-ML-LU");
+  List.set(Prefix+"max levels",3);
 
-  sprintf(parameter,"%smax levels", Prefix_);
-  List.set(parameter,3);
-
-  sprintf(parameter,"%soutput", Prefix_);
-  List.set(parameter,10);
+  List.set(Prefix+"output",10);
   
-  sprintf(parameter,"%sincreasing or decreasing", Prefix_);
-  List.set(parameter,"increasing");
+  List.set(Prefix+"increasing or decreasing","increasing");
 
-  sprintf(parameter,"%sPDE equations", Prefix_);
-  List.set(parameter,1);
+  List.set(Prefix+"PDE equations",1);
 
-  sprintf(parameter,"%saggregation: type (level 0)",Prefix_);
-  List.set(parameter,"METIS");
+  List.set(Prefix+"aggregation: type (level 0)","METIS");
 
-  sprintf(parameter,"%saggregation: type (level 1)",Prefix_);
-  List.set(parameter,"ParMETIS");
+  List.set(Prefix+"aggregation: type (level 1)","ParMETIS");
 
-  sprintf(parameter,"%saggregation: nodes per aggregate (level 0)",Prefix_);
-  List.set(parameter,512);
+  List.set(Prefix+"aggregation: nodes per aggregate (level 0)",512);
 
-  sprintf(parameter,"%saggregation: nodes per aggregate (level 1)",Prefix_);
-  List.set(parameter,512);
+  List.set(Prefix+"aggregation: nodes per aggregate (level 1)",512);
   
-  sprintf(parameter,"%saggregation: damping factor",Prefix_);
-  List.set(parameter,4.0/3);
+  List.set(Prefix+"aggregation: damping factor",4.0/3);
 
-  sprintf(parameter,"%scoarse: max size",Prefix_);
-  List.set(parameter,128);
+  List.set(Prefix+"coarse: max size",128);
 
-  sprintf(parameter,"%saggregation: threshold",Prefix_);
-  List.set(parameter,0.0);
+  List.set(Prefix+"aggregation: threshold",0.0);
   
-  sprintf(parameter,"%ssmoother: sweeps (level 0)",Prefix_);
-  List.set(parameter,2);
+  List.set(Prefix+"smoother: sweeps (level 0)",2);
 
-  sprintf(parameter,"%ssmoother: damping factor (level 0)",Prefix_);
-  List.set(parameter,0.67);
+  List.set(Prefix+"smoother: damping factor (level 0)",0.67);
 
-  sprintf(parameter,"%ssmoother: pre or post (level 0)",Prefix_);
-  List.set(parameter,"both");
+  List.set(Prefix+"smoother: pre or post (level 0)","both");
 
   // --- Aztec --- //
   
-  sprintf(parameter,"%ssmoother: type",Prefix_);
-  List.set(parameter,"Aztec");
+  List.set(Prefix+"smoother: type","Aztec");
   
   int * SmootherOptionsList = new int[AZ_OPTIONS_SIZE];
   double * SmootherParamsList = new double[AZ_PARAMS_SIZE];
@@ -420,25 +334,19 @@ int ML_Epetra::SetDefaultsDD_3Levels_LU(ParameterList & List, char * Prefix_)
   SmootherOptionsList[AZ_subdomain_solve] = AZ_lu;
   SmootherOptionsList[AZ_overlap] = 0;
 
-  sprintf(parameter,"%ssmoother: Aztec options (level 0)",Prefix_);
-  List.set(parameter,SmootherOptionsList);
+  List.set(Prefix+"smoother: Aztec options (level 0)",SmootherOptionsList);
     
-  sprintf(parameter,"%ssmoother: Aztec params (level 0)",Prefix_);
-  List.set(parameter,SmootherParamsList);
+  List.set(Prefix+"smoother: Aztec params (level 0)",SmootherParamsList);
     
-  sprintf(parameter,"%ssmoother: Aztec as solver (level 0)",Prefix_);
-  List.set(parameter,false);
+  List.set(Prefix+"smoother: Aztec as solver (level 0)",false);
   
   // --- coarse --- ///
   
-  sprintf(parameter,"%scoarse: type",Prefix_);
-  List.set(parameter,"Amesos-KLU");
+  List.set(Prefix+"coarse: type","Amesos-KLU");
 
-  sprintf(parameter,"%sprec type",Prefix_);
-  List.set(parameter,"MGV");
+  List.set(Prefix+"prec type","MGV");
 
-  sprintf(parameter,"%sprint unused",Prefix_);
-  List.set(parameter,-2);
+  List.set(Prefix+"print unused",-2);
   
   return 0;
 
@@ -446,74 +354,52 @@ int ML_Epetra::SetDefaultsDD_3Levels_LU(ParameterList & List, char * Prefix_)
 
 // ============================================================================
 
-int ML_Epetra::SetDefaultsMaxwell(ParameterList & List, char * Prefix_) 
+int ML_Epetra::SetDefaultsMaxwell(ParameterList & List, const string Prefix) 
 {
 
-  // FIXME : here default values for Maxwell
-  
-  char parameter[80];
-  int MaxLevels = 10;
-  
-  sprintf(parameter,"%sdefault values", Prefix_);
-  List.set(parameter,"maxwell");
+  List.set(Prefix+"default values","maxwell");
 
-  sprintf(parameter,"%smax levels", Prefix_);
-  List.set(parameter,MaxLevels);
+  List.set(Prefix+"max levels",10);
 
-  sprintf(parameter,"%soutput", Prefix_);
-  List.set(parameter,10);
+  List.set(Prefix+"output",10);
   
-  sprintf(parameter,"%sPDE equations", Prefix_);
-  List.set(parameter,1);
+  List.set(Prefix+"PDE equations",1);
 
-  sprintf(parameter,"%sincreasing or decreasing", Prefix_);
-  List.set(parameter,"decreasing");
+  List.set(Prefix+"increasing or decreasing","decreasing");
 
   // aggregation: Uncoupled for first levels, then MIS
-  sprintf(parameter,"%saggregation: type",Prefix_);
-  List.set(parameter,"Uncoupled-MIS");
+  List.set(Prefix+"aggregation: type","Uncoupled-MIS");
 
   // optimal value for smoothed aggregation
-  sprintf(parameter,"%saggregation: damping factor",Prefix_);
-  List.set(parameter,1.3333);
+  List.set(Prefix+"aggregation: damping factor",1.3333);
 
   // relative small coarse size
-  sprintf(parameter,"%scoarse: max size",Prefix_);
-  List.set(parameter,16);
+  List.set(Prefix+"coarse: max size",16);
 
   // don't forget any element
-  sprintf(parameter,"%saggregation: threshold",Prefix_);
-  List.set(parameter,0.0);
+  List.set(Prefix+"aggregation: threshold",0.0);
 
   // gauss-seidel for all levels
-  sprintf(parameter,"%ssmoother: sweeps",Prefix_);
-  List.set(parameter,2);
+  List.set(Prefix+"smoother: sweeps",2);
 
-  sprintf(parameter,"%ssmoother: damping factor",Prefix_);
-  List.set(parameter,0.67);
+  List.set(Prefix+"smoother: damping factor",0.67);
 
-  sprintf(parameter,"%ssmoother: type",Prefix_);
-  List.set(parameter,"MLS");
+  List.set(Prefix+"smoother: type","MLS");
 
-  sprintf(parameter,"%ssmoother: MLS polynomial order", Prefix_);
-  List.set(parameter,3);
+  List.set(Prefix+"smoother: MLS polynomial order",3);
   
-  sprintf(parameter,"%ssmoother: pre or post",Prefix_);
-  List.set(parameter,"both");
+  List.set(Prefix+"smoother: pre or post","both");
   
   // simplest solver on coarse problem
-  sprintf(parameter,"%scoarse: type",Prefix_);
-  List.set(parameter,"SuperLU");
+  List.set(Prefix+"coarse: type","SuperLU");
 //  Tim Davis' simple serial LU package.  It's part of Amesos
 //  itself.
-//  List.set(parameter,"Amesos-KLU");
+//  List.set(Prefix,"Amesos-KLU");
 
-  sprintf(parameter,"%sprec type",Prefix_);
-  List.set(parameter,"MGV");
+  List.set(Prefix+"prec type","MGV");
 
-  // print unused parameters on proc 0
-  sprintf(parameter,"%sprint unused",Prefix_);
-  List.set(parameter,-2);
+  // print unused Prefixs on proc 0
+  List.set(Prefix+"print unused",-2);
 
   return 0;
   
@@ -521,66 +407,47 @@ int ML_Epetra::SetDefaultsMaxwell(ParameterList & List, char * Prefix_)
 
 // ============================================================================
 
-int ML_Epetra::SetDefaultsSA(ParameterList & List, char * Prefix_) 
+int ML_Epetra::SetDefaultsSA(ParameterList & List, const string Prefix) 
 {
 
-  char parameter[80];
-  int MaxLevels = 16;
+  List.set(Prefix+"default values","SA");
+
+  List.set(Prefix+"max levels",10);
+
+  List.set(Prefix+"output",8);
   
-  sprintf(parameter,"%sdefault values", Prefix_);
-  List.set(parameter,"SA");
+  List.set(Prefix+"PDE equations",1);
 
-  sprintf(parameter,"%smax levels", Prefix_);
-  List.set(parameter,MaxLevels);
-
-  sprintf(parameter,"%soutput", Prefix_);
-  List.set(parameter,8);
-  
-  sprintf(parameter,"%sPDE equations", Prefix_);
-  List.set(parameter,1);
-
-  sprintf(parameter,"%sincreasing or decreasing", Prefix_);
-  List.set(parameter,"increasing");
+  List.set(Prefix+"increasing or decreasing","increasing");
 
   // aggregation: Uncoupled for first levels, then MIS
-  sprintf(parameter,"%saggregation: type",Prefix_);
-  List.set(parameter,"Uncoupled-MIS");
+  List.set(Prefix+"aggregation: type","Uncoupled-MIS");
   
   // optimal value for smoothed aggregation
-  sprintf(parameter,"%saggregation: damping factor",Prefix_);
-  List.set(parameter,1.3333);
+  List.set(Prefix+"aggregation: damping factor",1.3333);
 
   // relative small coarse size
-  sprintf(parameter,"%scoarse: max size",Prefix_);
-  List.set(parameter,16);
+  List.set(Prefix+"coarse: max size",16);
 
   // don't forget any element
-  sprintf(parameter,"%saggregation: threshold",Prefix_);
-  List.set(parameter,0.0);
+  List.set(Prefix+"aggregation: threshold",0.0);
 
   // guass-seidel for all levels
-  sprintf(parameter,"%ssmoother: sweeps",Prefix_);
-  List.set(parameter,2);
+  List.set(Prefix+"smoother: sweeps",2);
 
-  sprintf(parameter,"%ssmoother: damping factor",Prefix_);
-  List.set(parameter,0.67);
+  List.set(Prefix+"smoother: damping factor",0.67);
 
-  sprintf(parameter,"%ssmoother: type",Prefix_);
-  List.set(parameter,"Gauss-Seidel");
+  List.set(Prefix+"smoother: type","Gauss-Seidel");
   
-  sprintf(parameter,"%ssmoother: pre or post",Prefix_);
-  List.set(parameter,"both");
+  List.set(Prefix+"smoother: pre or post","both");
   
   // simplest solver on coarse problem
-  sprintf(parameter,"%scoarse: type",Prefix_);
-  List.set(parameter,"Amesos-KLU");
+  List.set(Prefix+"coarse: type","Amesos-KLU");
 
-  sprintf(parameter,"%sprec type",Prefix_);
-  List.set(parameter,"MGV");
+  List.set(Prefix+"prec type","MGV");
 
-  // print unused parameters on proc 0
-  sprintf(parameter,"%sprint unused",Prefix_);
-  List.set(parameter,-2);
+  // print unused Prefixs on proc 0
+  List.set(Prefix+"print unused",-2);
   
   return 0;
 
