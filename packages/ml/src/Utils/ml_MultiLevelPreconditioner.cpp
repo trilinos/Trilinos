@@ -295,16 +295,32 @@ void MultiLevelPreconditioner::Destroy_ML_Preconditioner()
   if( ml_edges_ != 0 ) { ML_Destroy(&ml_edges_); ml_edges_ = 0; }
 
   if( TMatrixML_ != 0 ) {
-    // FIXME: do something
+    ML_Operator_Destroy(&TMatrixML_);
+    TMatrixML_ = 0;
   }
 
   if( TMatrixTransposeML_ != 0 ) {
-    // FIXME: do something
+    ML_Operator_Destroy(&TMatrixTransposeML_);
+    TMatrixTransposeML_ = 0;
   }
 
-  // FIXME: how to deal with Tmat_array and Tmat_trans_array ???
-  // are they useful ???
+  if( Tmat_array != 0 ) {
+    ML_MGHierarchy_ReitzingerDestroy(LevelID_[0]-1, &Tmat_array,
+				     &Tmat_trans_array);
+    Tmat_array = 0;
+    Tmat_trans_array = 0;
+  }
+
+  if( nodal_args_ != 0 ) {
+    ML_Smoother_Arglist_Delete(&nodal_args_);
+    nodal_args_ = 0;
+  }
   
+  if( edge_args_  != 0 ) {
+    ML_Smoother_Arglist_Delete(&edge_args_);
+    edge_args_ = 0;
+  }
+
   if( Label_ ) { delete [] Label_; Label_ = 0; }
   
   if( LevelID_ ) { delete [] LevelID_; LevelID_ = 0; }
@@ -335,7 +351,6 @@ void MultiLevelPreconditioner::Destroy_ML_Preconditioner()
   }
   
   for( int i=0 ; i<ML_MEM_SIZE ; ++i ) avg[i] /= Comm().NumProc();
-
 
   if( verbose_ && NumApplications_ ) {
 
@@ -465,6 +480,22 @@ MultiLevelPreconditioner::MultiLevelPreconditioner( const Epetra_RowMatrix & Edg
   RowMatrix_(&EdgeMatrix),
   RowMatrixAllocated_(0)
 {
+
+  // some sanity checks
+  bool ok = true;
+  if( ! TMatrix.OperatorDomainMap().SameAs(NodeMatrix.OperatorRangeMap() ) ) {
+    cerr << ErrorMsg_ << "T.DomainMap != N.RangeMap()..." << endl;
+    ok = false;
+  }
+  if( ! TMatrix.OperatorRangeMap().SameAs(EdgeMatrix.OperatorDomainMap() ) ) {
+    cerr << ErrorMsg_ << "T.RangeMap != E.DomainMap()..." << endl;
+    ok = false;
+  }
+
+  if( ok == false ) {
+    exit( EXIT_FAILURE );
+  }
+
   sprintf(Prefix_,"%s",Prefix);
 
   List_ = List;
@@ -751,6 +782,8 @@ void MultiLevelPreconditioner::Initialize()
   TMatrixTransposeML_ = 0;
   Tmat_array = 0;
   Tmat_trans_array = 0;
+  nodal_args_ = 0;
+  edge_args_ = 0;
   
   // timing
   NumApplications_ = 0;
@@ -1093,6 +1126,7 @@ int MultiLevelPreconditioner::ComputePreconditioner()
   /* ********************************************************************** */
 
   if( SolvingMaxwell_ == false ) SetSmoothingDamping();
+  else ML_Aggregate_Set_DampingFactor( agg_, 0.0);
 
   /* ********************************************************************** */
   /* set null space                                                         */
@@ -1314,18 +1348,25 @@ int MultiLevelPreconditioner::ComputePreconditioner()
       
   } else {
 
-    // convert TMatrix to ML_Operator
-      
-    TMatrixML_ = ML_Operator_Create(ml_edges_->comm);
+    if( TMatrixML_ == 0 ) {
+
+      // convert TMatrix to ML_Operator
+
+      TMatrixML_ = ML_Operator_Create(ml_edges_->comm);
+
+      Epetra2MLMatrix(const_cast<Epetra_RowMatrix*>(TMatrix_),TMatrixML_);
+
+    }
+
     TMatrixTransposeML_ = ML_Operator_Create(ml_edges_->comm);
-    
-    Epetra2MLMatrix(const_cast<Epetra_RowMatrix*>(TMatrix_),TMatrixML_);
     ML_Operator_Transpose_byrow(TMatrixML_,TMatrixTransposeML_);
     
     NumLevels_ = ML_Gen_MGHierarchy_UsingReitzinger(ml_edges_, &ml_nodes_,LevelID_[0],
 						    Direction,agg_,TMatrixML_,TMatrixTransposeML_, 
 						    &Tmat_array,&Tmat_trans_array, 
 						    ML_YES, 1.5); 
+
+
   }
 
   {
@@ -1902,41 +1943,106 @@ void MultiLevelPreconditioner::SetSmoothers()
 void MultiLevelPreconditioner::SetSmoothersMaxwell()
 {
 
-  // Jonathan....
-  
   char parameter[80];
   
-  void ** nodal_args = ML_Smoother_Arglist_Create(2);
-
-  int nodal_its = 1;
-  double nodal_omega = 1.0;
-  
-  int edge_its = 1;
-  double edge_omega = 1.0;
-  
-  ML_Smoother_Arglist_Set(nodal_args, 0, &nodal_its);
-  ML_Smoother_Arglist_Set(nodal_args, 1, &nodal_omega);
-
-  void ** edge_args = ML_Smoother_Arglist_Create(2);
-  ML_Smoother_Arglist_Set(edge_args, 0, &edge_its);
-  ML_Smoother_Arglist_Set(edge_args, 1, &edge_omega);
-
   sprintf(parameter,"%ssmoother: sweeps", Prefix_);
   int num_smoother_sweeps = List_.get(parameter, 1);
 
+  sprintf(parameter,"%ssmoother: type", Prefix_);
+  string SmootherType = List_.get(parameter,"MLS");
+
+  // get user's defined parameters for nodal smoothing
+ 
+  sprintf(parameter,"%ssmoother: node: sweeps", Prefix_);
+  int nodal_its = List_.get(parameter, 1);
+
+  sprintf(parameter,"%ssmoother: node: damping factor", Prefix_);
+  double nodal_omega = List_.get(parameter,1.0);
+
+
+  // get user's defined parameters for edge smoothing
+ 
+  sprintf(parameter,"%ssmoother: edge: sweeps", Prefix_);
+  int edge_its = List_.get(parameter, 1);
+
+  sprintf(parameter,"%ssmoother: edge: damping factor", Prefix_);
+  double edge_omega = List_.get(parameter,1.0);
+
+  // arguments for nodal smoother
+
+  nodal_args_ = ML_Smoother_Arglist_Create(2);
+
   int hiptmair_type = HALF_HIPTMAIR;
-  
+
   int SmootherLevels = (NumLevels_>1)?(NumLevels_-1):1;
     
-  for( int level=0 ; level<SmootherLevels ; ++level ) {
+  // set the smoother (only two choices at this time)
+
+  SmootherType = "Gauss-Seidel";
+
+  if( SmootherType == "MLS" ) {
+#ifdef LATER    
+    int coarsest_level = -1;
+    cout << "FIX COARSEST_LEVEL!!!" << endl;
+    int Ncoarse_edge, Ncoarse_node;
+    double edge_coarsening_rate, node_coarsening_rate;
+    int Nfine_edge, itmp;
+
+    for( int level=0 ; level<SmootherLevels ; ++level ) {
+
+      if (level != coarsest_level) {
+	Ncoarse_edge = Tmat_array[level-1]->outvec_leng;
+	ML_gsum_scalar_int(&Ncoarse_edge, &itmp, ml_edges_->comm);
+	edge_coarsening_rate =  2.*((double) Nfine_edge)/
+                                   ((double) Ncoarse_edge);
+      }
+      else edge_coarsening_rate =  (double) Nfine_edge;
+
+      ML_Smoother_Arglist_Set(edge_args_, 1, &edge_coarsening_rate);
+      Nfine_edge = Ncoarse_edge;
+
+      if (level != coarsest_level) {
+	Ncoarse_node = Tmat_array[level-1]->invec_leng;
+	ML_gsum_scalar_int(&Ncoarse_node, &itmp, ml_edges_->comm);
+	node_coarsening_rate =  2.*((double) Nfine_node)/ 
+                                   ((double) Ncoarse_node);
+      }
+      else node_coarsening_rate = (double) Nfine_node;
+
+      ML_Smoother_Arglist_Set(nodal_args_, 1, &node_coarsening_rate);
+      Nfine_node = Ncoarse_node;
+    }
 
     ML_Gen_Smoother_Hiptmair(ml_edges_, LevelID_[level], ML_BOTH, num_smoother_sweeps,
 			     Tmat_array, Tmat_trans_array, NULL, 
-			     (void *)ML_Gen_Smoother_SymGaussSeidel, edge_args, 
-			     (void *)ML_Gen_Smoother_SymGaussSeidel, nodal_args, hiptmair_type);
+			     (void *)ML_Gen_Smoother_MLS, edge_args, 
+			     (void *)ML_Gen_Smoother_MLS, nodal_args, hiptmair_type);
+#endif
+  } else if( SmootherType == "Gauss-Seidel") {
+
+    ML_Smoother_Arglist_Set(nodal_args_, 0, &nodal_its);
+    ML_Smoother_Arglist_Set(nodal_args_, 1, &nodal_omega);
+
+    // arguments for edge smoother
+    edge_args_ = ML_Smoother_Arglist_Create(2);
+
+    ML_Smoother_Arglist_Set(edge_args_, 0, &edge_its);
+    ML_Smoother_Arglist_Set(edge_args_, 1, &edge_omega);
+
+    for( int level=0 ; level<SmootherLevels ; ++level ) {
+
+      ML_Gen_Smoother_Hiptmair(ml_edges_, LevelID_[level], ML_BOTH, num_smoother_sweeps,
+			       Tmat_array, Tmat_trans_array, NULL, 
+			       (void *)ML_Gen_Smoother_SymGaussSeidel, edge_args_, 
+			       (void *)ML_Gen_Smoother_SymGaussSeidel, nodal_args_, hiptmair_type);
+    }
+  } else {
+    cerr << ErrorMsg_ << "`smoother: type' has an incorrect value (" << SmootherType << ")" << endl
+         << ErrorMsg_ << "For Maxwell, it should be" << endl
+	 << ErrorMsg_ << "<MLS> / <Gauss-Seidel>" << endl;
+    exit( EXIT_FAILURE );
   }
 
-  // FIXME: free nodal_args and edge_args
   return;
 }
 
