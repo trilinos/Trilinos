@@ -344,16 +344,20 @@ void
 dFillRHS(char *trans, int nrhs, double *x, int ldx,
 		SuperMatrix *A, SuperMatrix *B)
 {
-    NCformat *Astore;
-    double   *Aval;
+    /* JJH mod 8/10/01 */
+    /*NCformat *Astore;*/
+    /*double   *Aval;*/
+    /* --JJH */
     DNformat *Bstore;
     double   *rhs;
     double one = 1.0;
     double zero = 0.0;
     int      ldc;
 
-    Astore = A->Store;
-    Aval   = (double *) Astore->nzval;
+    /* JJH mod 8/10/01 */
+    /*Astore = A->Store;*/
+    /*Aval   = (double *) Astore->nzval;*/
+    /* --JJH */
     Bstore = B->Store;
     rhs    = Bstore->nzval;
     ldc    = Bstore->lda;

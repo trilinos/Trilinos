@@ -84,7 +84,9 @@ dreadhb(int *nrow, int *ncol, int *nonz,
 
     register int i, numer_lines, rhscrd = 0;
     int tmp, colnum, colsize, rownum, rowsize, valnum, valsize;
-    char buf[100], type[4], key[10];
+    /* JJH mod 8/10/01 */
+    char buf[100], type[4]/*, key[10]*/;
+    /* --JJH */
     FILE *fp;
 
     fp = stdin;
@@ -165,7 +167,11 @@ dreadhb(int *nrow, int *ncol, int *nonz,
 dDumpLine(FILE *fp)
 {
     register int c;
-    while ((c = fgetc(fp)) != '\n') ;
+    /* JJH mod 8/10/01 */
+    /*while ((c = fgetc(fp)) != '\n') ;*/
+    c = fgetc(fp);
+    while (c != '\n') c = fgetc(fp);
+    /* --JJH */
     return 0;
 }
 

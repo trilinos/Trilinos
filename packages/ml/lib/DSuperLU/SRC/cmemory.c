@@ -578,9 +578,13 @@ void
 void
 cStackCompress(GlobalLU_t *Glu)
 {
-    register int iword, dword, bytes_to_copy, ndim;
+    /* JJH mod 8/10/01 */
+    register int iword, dword, /*bytes_to_copy,*/ ndim;
+    /* --JJH */
     char    *last, *fragment;
-    char     *src, *dest;
+    /* JJH mod 8/10/01 */
+    /*char     *src, *dest;*/
+    /* --JJH */
     int      *ifrom, *ito;
     complex   *dfrom, *dto;
     int      *xlsub, *lsub, *xusub, *usub, *xlusup;

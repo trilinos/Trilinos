@@ -87,7 +87,9 @@ sgstrs (char *trans, SuperMatrix *L, SuperMatrix *U,
 #ifdef _CRAY
     _fcd ftcs1, ftcs2, ftcs3, ftcs4;
 #endif
-    int      incx = 1, incy = 1;
+    /* JJH mod 8/10/01 */
+    /*int      incx = 1, incy = 1;*/
+    /* --JJH */
     float   alpha = 1.0, beta = 1.0;
     DNformat *Bstore;
     float   *Bmat;

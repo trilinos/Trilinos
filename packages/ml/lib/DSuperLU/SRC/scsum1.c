@@ -39,7 +39,9 @@ double scsum1_(int *n, complex *cx, int *incx)
    Parameter adjustments   
        Function Body */
     /* System generated locals */
-    int i__1, i__2;
+    /* JJH mod 8/10/01 */
+    /*int i__1, i__2;*/
+    /* --JJH */
     float ret_val;
     /* Builtin functions */
     double c_abs(complex *);
@@ -63,8 +65,12 @@ double scsum1_(int *n, complex *cx, int *incx)
 /*     CODE FOR INCREMENT NOT EQUAL TO 1 */
 
     nincx = *n * *incx;
+    /* JJH mod 8/10/01 */
+    /*
     i__1 = nincx;
     i__2 = *incx;
+    */
+    /* --JJH */
     for (i = 1; *incx < 0 ? i >= nincx : i <= nincx; i += *incx) {
 
 /*        NEXT LINE MODIFIED. */
@@ -78,7 +84,9 @@ double scsum1_(int *n, complex *cx, int *incx)
 /*     CODE FOR INCREMENT EQUAL TO 1 */
 
 L20:
-    i__2 = *n;
+    /* JJH mod 8/10/01 */
+    /*i__2 = *n;*/
+    /* --JJH */
     for (i = 1; i <= *n; ++i) {
 
 /*        NEXT LINE MODIFIED. */

@@ -43,7 +43,9 @@ izmax1_(int *n, doublecomplex *cx, int *incx)
 */  
 
     /* System generated locals */
-    int ret_val, i__1, i__2;
+    /* JJH mod 8/10/01 */
+    int ret_val/*, i__1, i__2*/;
+    /* --JJH */
     double d__1;
     
     /* Local variables */
@@ -51,6 +53,9 @@ izmax1_(int *n, doublecomplex *cx, int *incx)
     int i, ix;
 
 #define CX(I) cx[(I)-1]
+/* JJH  8/10/01 Added this macro to eliminate a compiler warning on cplant. */
+#define SLU_dabs(x) (((x) > 0.) ? x : (-(x)))
+/* --JJH */
 
     ret_val = 0;
     if (*n < 1) {
@@ -67,17 +72,23 @@ izmax1_(int *n, doublecomplex *cx, int *incx)
 /*     CODE FOR INCREMENT NOT EQUAL TO 1 */
 
     ix = 1;
-    smax = (d__1 = CX(1).r, abs(d__1));
+    smax = (d__1 = CX(1).r, SLU_abs(d__1));
     ix += *incx;
-    i__1 = *n;
+    /* JJH mod 8/10/01 */
+    /*i__1 = *n;*/
+    /* --JJH */
     for (i = 2; i <= *n; ++i) {
-	i__2 = ix;
-	if ((d__1 = CX(ix).r, abs(d__1)) <= smax) {
+    /* JJH mod 8/10/01 */
+	/*i__2 = ix;*/
+    /* --JJH */
+	if ((d__1 = CX(ix).r, SLU_dabs(d__1)) <= smax) {
 	    goto L10;
 	}
 	ret_val = i;
-	i__2 = ix;
-	smax = (d__1 = CX(ix).r, abs(d__1));
+    /* JJH mod 8/10/01 */
+	/*i__2 = ix;*/
+    /* --JJH */
+	smax = (d__1 = CX(ix).r, SLU_dabs(d__1));
 L10:
 	ix += *incx;
 /* L20: */
@@ -87,16 +98,22 @@ L10:
 /*     CODE FOR INCREMENT EQUAL TO 1 */
 
 L30:
-    smax = (d__1 = CX(1).r, abs(d__1));
-    i__1 = *n;
+    smax = (d__1 = CX(1).r, SLU_dabs(d__1));
+    /* JJH mod 8/10/01 */
+    /*i__1 = *n;*/
+    /* --JJH */
     for (i = 2; i <= *n; ++i) {
-	i__2 = i;
-	if ((d__1 = CX(i).r, abs(d__1)) <= smax) {
+    /* JJH mod 8/10/01 */
+	/*i__2 = i;*/
+    /* --JJH */
+	if ((d__1 = CX(i).r, SLU_dabs(d__1)) <= smax) {
 	    goto L40;
 	}
 	ret_val = i;
-	i__2 = i;
-	smax = (d__1 = CX(i).r, abs(d__1));
+    /* JJH mod 8/10/01 */
+	/*i__2 = i;*/
+    /* --JJH */
+	smax = (d__1 = CX(i).r, SLU_dabs(d__1));
 L40:
 	;
     }

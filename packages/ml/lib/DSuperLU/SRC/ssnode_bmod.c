@@ -48,7 +48,13 @@ ssnode_bmod (
 #endif
 
     int            luptr, nsupc, nsupr, nrow;
-    int            isub, irow, i, iptr; 
+/* JJH mod 8/10/01 */
+    /*int            isub, irow, i, iptr; */
+    int            isub, irow;
+#ifndef USE_VENDOR_BLAS
+    int            i, iptr;
+#endif
+/* --JJH */
     register int   ufirst, nextlu;
     int            *lsub, *xlsub;
     float         *lusup;

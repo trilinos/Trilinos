@@ -38,7 +38,9 @@ relax_snode (
  *    the matrix has been reordered according to the postorder of the etree.
  *
  */ 
-    register int i, j, parent;
+    /* JJH mod 8/10/01 */
+    register int /*i,*/ j, parent;
+    /* --JJH */
     register int snode_start;	/* beginning of a snode */
     
     ifill (relax_end, n, EMPTY);

@@ -345,16 +345,20 @@ void
 zFillRHS(char *trans, int nrhs, doublecomplex *x, int ldx,
 		SuperMatrix *A, SuperMatrix *B)
 {
-    NCformat *Astore;
-    doublecomplex   *Aval;
+    /* JJH mod 8/10/01 */
+    /*NCformat *Astore;*/
+    /*doublecomplex   *Aval;*/
+    /* --JJH */
     DNformat *Bstore;
     doublecomplex   *rhs;
     doublecomplex one = {1.0, 0.0};
     doublecomplex zero = {0.0, 0.0};
     int      ldc;
 
-    Astore = A->Store;
-    Aval   = (doublecomplex *) Astore->nzval;
+    /* JJH mod 8/10/01 */
+    /*Astore = A->Store;
+    Aval   = (doublecomplex *) Astore->nzval;*/
+    /* --JJH */
     Bstore = B->Store;
     rhs    = Bstore->nzval;
     ldc    = Bstore->lda;

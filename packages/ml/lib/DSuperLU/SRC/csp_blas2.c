@@ -303,6 +303,9 @@ sp_ctrsv(char *uplo, char *trans, char *diag, SuperMatrix *L,
 
     SuperLUStat.ops[SOLVE] += solve_ops;
     SUPERLU_FREE(work);
+    /* JJH mod 8/10/01 */
+    return 0;
+    /* --JJH */
 }
 
 
@@ -477,6 +480,9 @@ sp_cgemv(char *trans, complex alpha, SuperMatrix *A, complex *x,
 	    ABORT("Not implemented.");
 	}
     }
+    /* JJH mod 8/10/01 */
+    return 0;
+    /* --JJH */
     
 } /* sp_cgemv */
 

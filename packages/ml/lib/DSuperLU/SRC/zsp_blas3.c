@@ -117,5 +117,7 @@ sp_zgemm(char *transa, char *transb, int m, int n, int k,
     for (j = 0; j < n; ++j) {
 	sp_zgemv(transa, alpha, A, &b[ldb*j], incx, beta, &c[ldc*j], incy);
     }
-    
+    /* JJH mod 8/10/01 */
+    return 0; 
+    /* --JJH */
 }

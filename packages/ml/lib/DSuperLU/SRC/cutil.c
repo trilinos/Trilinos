@@ -345,16 +345,20 @@ void
 cFillRHS(char *trans, int nrhs, complex *x, int ldx,
 		SuperMatrix *A, SuperMatrix *B)
 {
-    NCformat *Astore;
-    complex   *Aval;
+    /* JJH mod 8/10/01 */
+    /*NCformat *Astore;*/
+    /*complex   *Aval;*/
+    /* --JJH */
     DNformat *Bstore;
     complex   *rhs;
     complex one = {1.0, 0.0};
     complex zero = {0.0, 0.0};
     int      ldc;
 
-    Astore = A->Store;
-    Aval   = (complex *) Astore->nzval;
+    /* JJH mod 8/10/01 */
+    /*Astore = A->Store;*/
+    /*Aval   = (complex *) Astore->nzval;*/
+    /* --JJH */
     Bstore = B->Store;
     rhs    = Bstore->nzval;
     ldc    = Bstore->lda;

@@ -184,6 +184,9 @@ sp_coletree(
 	SUPERLU_FREE (firstcol);
 	finalize_disjoint_sets ();
 	
+    /* JJH 8/10/01  Added to eliminate compiler warning on cplant. */
+    return 0;
+    /* --JJH */
 }
 
 /*

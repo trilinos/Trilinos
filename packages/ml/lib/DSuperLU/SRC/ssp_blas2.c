@@ -297,6 +297,9 @@ sp_strsv(char *uplo, char *trans, char *diag, SuperMatrix *L,
 
     SuperLUStat.ops[SOLVE] += solve_ops;
     SUPERLU_FREE(work);
+    /* JJH mod 8/10/01 */
+    return 0;
+    /* --JJH */
 }
 
 
@@ -466,6 +469,10 @@ sp_sgemv(char *trans, float alpha, SuperMatrix *A, float *x,
 	}
     }
     
+    /* JJH mod 8/10/01 */
+    return 0;
+    /* --JJH */
+
 } /* sp_sgemv */
 
 

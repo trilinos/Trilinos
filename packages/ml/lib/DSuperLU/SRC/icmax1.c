@@ -49,7 +49,9 @@ int icmax1_(int *n, complex *cx, int *incx)
    Parameter adjustments   
        Function Body */
     /* System generated locals */
-    int ret_val, i__1, i__2;
+    /* JJH mod 8/10/01 */
+    int ret_val/*, i__1, i__2*/;
+    /* --JJH */
     float r__1;
     /* Local variables */
     static float smax;
@@ -76,14 +78,20 @@ int icmax1_(int *n, complex *cx, int *incx)
     ix = 1;
     smax = (r__1 = CX(1).r, fabs(r__1));
     ix += *incx;
-    i__1 = *n;
+    /* JJH mod 8/10/01 */
+    /*i__1 = *n;*/
+    /* --JJH */
     for (i = 2; i <= *n; ++i) {
-	i__2 = ix;
+    /* JJH mod 8/10/01 */
+	/*i__2 = ix;*/
+    /* --JJH */
 	if ((r__1 = CX(ix).r, fabs(r__1)) <= smax) {
 	    goto L10;
 	}
 	ret_val = i;
-	i__2 = ix;
+    /* JJH mod 8/10/01 */
+	/*i__2 = ix;*/
+    /* --JJH */
 	smax = (r__1 = CX(ix).r, fabs(r__1));
 L10:
 	ix += *incx;
@@ -95,14 +103,20 @@ L10:
 
 L30:
     smax = (r__1 = CX(1).r, fabs(r__1));
-    i__1 = *n;
+    /* JJH mod 8/10/01 */
+    /*i__1 = *n;*/
+    /* --JJH */
     for (i = 2; i <= *n; ++i) {
-	i__2 = i;
+    /* JJH mod 8/10/01 */
+	/*i__2 = i;*/
+    /* --JJH */
 	if ((r__1 = CX(i).r, fabs(r__1)) <= smax) {
 	    goto L40;
 	}
 	ret_val = i;
-	i__2 = i;
+    /* JJH mod 8/10/01 */
+	/*i__2 = i;*/
+    /* --JJH */
 	smax = (r__1 = CX(i).r, fabs(r__1));
 L40:
 	;

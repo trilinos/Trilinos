@@ -215,7 +215,9 @@ cgstrf (char *refact, SuperMatrix *A, float diag_pivot_thresh,
     int       m, n, min_mn, jsupno, fsupc, nextlu, nextu;
     int       w_def;	/* upper bound on panel width */
     int       usepr;
-    double    stime;
+    /* JJH mod 8/10/01 */
+    /*double    stime;*/
+    /* --JJH */
     int       nnzL, nnzU;
     extern SuperLUStat_t SuperLUStat;
     int       *panel_histo = SuperLUStat.panel_histo;

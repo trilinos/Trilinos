@@ -95,7 +95,9 @@ zcolumn_bmod (
     doublecomplex      none = {-1.0, 0.0};
     doublecomplex	 comp_temp, comp_temp1;
     int          mem_error;
-    flops_t      sflops;
+    /* JJH mod 8/10/01 */
+    /*flops_t      sflops;*/
+    /* --JJH */
     extern SuperLUStat_t SuperLUStat;
     flops_t  *ops = SuperLUStat.ops;
 

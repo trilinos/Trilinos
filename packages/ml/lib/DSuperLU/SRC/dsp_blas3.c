@@ -117,5 +117,7 @@ sp_dgemm(char *transa, char *transb, int m, int n, int k,
     for (j = 0; j < n; ++j) {
 	sp_dgemv(transa, alpha, A, &b[ldb*j], incx, beta, &c[ldc*j], incy);
     }
-    
+    /* JJH mod 08/10/01 */
+    return 0;
+    /* --JJH */
 }

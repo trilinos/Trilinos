@@ -56,7 +56,9 @@ cPivotGrowth(int ncols, SuperMatrix *A, int *perm_c,
     extern   double slamch_(char *);
     float   smlnum;
     complex   *luval;
-    complex   temp_comp;
+    /* JJH mod 8/10/01 */
+    /*complex   temp_comp;*/
+    /* --JJH */
    
     /* Get machine constants. */
     smlnum = slamch_("S");

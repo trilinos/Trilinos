@@ -44,7 +44,9 @@ spruneL(
  */
     float     utemp;
     int        jsupno, irep, irep1, kmin, kmax, krow, movnum;
-    int        i, k, ktemp, minloc, maxloc;
+    /* JJH mod 8/10/01 */
+    int        i, /*k,*/ ktemp, minloc, maxloc;
+    /* JJH */
     int        do_prune; /* logical variable */
     int        *xsup, *supno;
     int        *lsub, *xlsub;

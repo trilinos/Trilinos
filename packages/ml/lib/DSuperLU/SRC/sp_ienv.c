@@ -55,7 +55,9 @@ sp_ienv(int ispec)
     /* Invalid value for ISPEC */
     i = 1;
     xerbla_("sp_ienv", &i);
-    return;
+    /* JJH mod 8/10/01 */
+    return -1;
+    /* JJH */
 
 } /* sp_ienv_ */
 

@@ -58,7 +58,8 @@ DLUSRC = \
 	dsnode_dfs.o dsnode_bmod.o \
 	dpanel_dfs.o dpanel_bmod.o dreadhb.o \
 	dcolumn_dfs.o dcolumn_bmod.o dpivotL.o dpruneL.o \
-	dmemory.o dutil.o superlu_timer.o
+	dmemory.o dutil.o
+########	dmemory.o dutil.o superlu_timer.o
 
 CLUSRC = \
 	scomplex.o scsum1.o icmax1.o \

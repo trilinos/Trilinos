@@ -379,6 +379,7 @@ print_int_vec(char *what, int n, int *vec)
     return 0;
 }
 
+void
 PrintInt10(char *name, int len, int *x)
 {
     register int i;
