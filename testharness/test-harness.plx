@@ -525,9 +525,9 @@ report($SUMMARY);
                             
                             my $command = "";
                             if (defined $options{'MAKE_FLAGS'} && defined $options{'MAKE_FLAGS'}[0]) {
-                                $command .= "make $options{'MAKE_FLAGS'}[0] clean 2>&1";
+                                $command .= "make $options{'MAKE_FLAGS'}[0] clean &> /dev/null";
                             } else {
-                                $command .= "make clean 2>&1";
+                                $command .= "make clean &> /dev/null";
                             }
                             system $command;        
                                                 
