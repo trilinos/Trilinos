@@ -21,7 +21,8 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
   struct aztec_context *temp;
   */
   int nzctr;
-  int ieqj;
+  /*int totalcnt;*/
+  /*int tflag;*/
 
   if (incr_or_decrease != ML_DECREASING)
     pr_error("Hiptmair: Only ML_DECREASING is supported\n");
@@ -104,33 +105,27 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
             Kn_coarse->invec_leng+Nghost, Kn_coarse->invec_leng);
      #endif /* ifdef DEBUG_T_BUILD */
 
-	 /* I'm not happy with the space allocated here. */
-   
      Tcoarse_bindx =(int *)
-                    ML_allocate((Kn_coarse->N_nonzeros+Kn_coarse->invec_leng
-                                 + 1000)
-                                *sizeof(int) );
+                    ML_allocate( 2*Kn_coarse->N_nonzeros *sizeof(int) );
      Tcoarse_val = (double *)
-                    ML_allocate((Kn_coarse->N_nonzeros+Kn_coarse->invec_leng
-                                 + 1000)
-                                *sizeof(double));
+                    ML_allocate( 2*Kn_coarse->N_nonzeros *sizeof(double) );
      Tcoarse_rowptr= (int *)
                      ML_allocate(Kn_coarse->N_nonzeros *sizeof(int));
      Tcoarse_rowptr[0] = 0;
      counter = 0; nz_ptr = 0;
      nzctr = 0;
-     ieqj = 0;
+     /*totalcnt = 0;*/
      for (i = 0; i < Kn_coarse->outvec_leng; i++)
      {
         ML_get_matrix_row(Kn_coarse,1, &i,&allocated,
                           &bindx,&val,&row_length, 0);
         ML_az_sort(bindx, row_length, NULL, NULL);
         nzctr += row_length;
+        /*tflag = 0;*/
    
         /* Step through unknowns bindx[j] connected to unknown i. */
         for (j = 0; j < row_length; j++)
         {
-          /* if (i != bindx[j]) */
           {
              /* If nodes i and bindx[j] are owned by same processor ... */
              if (node2proc[i] == node2proc[bindx[j]])
@@ -143,6 +138,7 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
                    Tcoarse_val[nz_ptr++]  = -1.;
                    Tcoarse_rowptr[counter+1] = nz_ptr;
                    counter++;
+                   /*tflag += 2;*/
                 }
              }
              /* If node i is owned by a smaller processor than
@@ -155,11 +151,19 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
                 Tcoarse_val[nz_ptr++]  = -1.;
                 Tcoarse_rowptr[counter+1] = nz_ptr;
                 counter++;
+                /*tflag += 2;*/
              }
           }
-          /* else ieqj++; */
             
         }
+/*
+        if (Kn_coarse->comm->ML_mypid == 0 && grid_level == 7)
+        {
+           printf("row_length = %d, nnz(T) owned by proc = %d\n",
+                  row_length,tflag);
+           fflush(stdout);
+        }
+*/
      }
 
      if (nzctr > Kn_coarse->N_nonzeros && Kn_coarse->comm->ML_mypid == 0)
@@ -170,12 +174,20 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
      }
 #ifdef DEBUG_T_BUILD
      else
-        printf("%d (%d): ieqj = %d, expected nnz = %d, "
+        if (Kn_coarse->comm->ML_mypid == 0 && grid_level == 7)
+        printf("%d (%d): ieqj = %d,\n"
+               "Kn_coarse->N_nonzeros = %d, "
+               "expected nnz (calc. from bindx) = %d,\n"
                "actual nnz(Tcoarse) = %d,\n"
-               "\tKn_coarse->N_nonzeros = %d,invec_leng = %d,"
+               " invec_leng = %d,"
                " nghost = %d\n",
-               Kn_coarse->comm->ML_mypid,grid_level, ieqj, nzctr,
-               nz_ptr, Kn_coarse->N_nonzeros, Kn_coarse->invec_leng,
+               Kn_coarse->comm->ML_mypid,
+               grid_level,
+               ieqj,
+               Kn_coarse->N_nonzeros,
+               nzctr,
+               nz_ptr,
+               Kn_coarse->invec_leng,
                Nghost);
      fflush(stdout);
 #endif /* ifdef DEBUG_T_BUILD */
