@@ -245,7 +245,7 @@ int  ML_Operator_Gen_blockmat(ML_Operator *blockmat, ML_Operator *Ke,
 
   blockmat->max_nz_per_row = 30; /* we shouldn't need to set this */
 
-  ML_Operator_blockmat_data = (struct ML_Operator_blockmat_data *) AZ_allocate(
+  ML_Operator_blockmat_data = (struct ML_Operator_blockmat_data *) ML_allocate(
 				       sizeof(struct ML_Operator_blockmat_data));
   ML_Operator_blockmat_data->Ke_diag = NULL;
   ML_Operator_blockmat_data->M_diag  = NULL;
