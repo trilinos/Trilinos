@@ -656,7 +656,7 @@ int main(int argc, char *argv[])
   if (verbose1) cout << A2;
   if (1.0!=A2infNormFloat2) {
     cout << "InfNorm should be = 1, but InfNorm = " << A2infNormFloat2 << endl;
-    EPETRA_TEST_ERR(-43,ierr)
+    EPETRA_TEST_ERR(-43,ierr);
     InvSumsBroke = true;
   }
 
@@ -671,6 +671,73 @@ cout << A2;
     InvSumsBroke = true;
   }
   */
+  if (verbose) cout << "Begin partial sum testing." << endl;
+  // Test with a matrix that has partial sums for a subset of the rows 
+  // on multiple processors. (Except for the serial case, of course.)
+  int NumMyRows3 = 2; // Changing this requires further changes below
+  int myGlobalElements[NumMyRows3];
+  for (int i=0; i<NumMyRows3; i++) myGlobalElements[i] = MyPID+i;
+  int *MGEp = myGlobalElements;
+  Epetra_Map RowMap3(NumProc*2, NumMyRows3, MGEp, 0, Comm);
+  int NumMyElements3 = 5;
+  Epetra_CrsMatrix A3(Copy, RowMap3, NumMyElements3);
+  double Val3[NumMyElements3];
+  double * Values3 = Val3;
+  int Ind3[NumMyElements3];
+  int * Indices3 = Ind3;
+  for (int i=0; i < NumMyElements3; i++) {
+    Values3[i] = (int) (MyPID + (i+1));
+    Indices3[i]=i;
+  }
+  for (int i=0; i<NumMyRows3; i++) {
+    A3.InsertGlobalValues(myGlobalElements[i],NumMyElements3,Values3,Indices3);
+  }
+  Epetra_Map RangeMap3(NumProc+1, 0, Comm);
+  Epetra_Map DomainMap3(NumMyElements3, 0, Comm);
+  EPETRA_TEST_ERR(A3.FillComplete(DomainMap3, RangeMap3),ierr);
+  if (verbose1) cout << A3;
+  Epetra_Vector xRange3(RangeMap3,false);
+  Epetra_Vector xDomain3(DomainMap3,false);
+
+  EPETRA_TEST_ERR(A3.InvRowSums(xRange3),ierr);
+
+  if (verbose1) cout << xRange3;
+  EPETRA_TEST_ERR(A3.LeftScale(xRange3),ierr);
+  float A3infNormFloat = A3.NormInf();
+  if (verbose1) cout << A3;
+  if (1.0!=A3infNormFloat) {
+    cout << "InfNorm should be = 1, but InfNorm = " << A3infNormFloat <<endl;
+    EPETRA_TEST_ERR(-61,ierr);
+    InvSumsBroke = true;
+  }
+  if (verbose) cout << "End partial sum testing" << endl;
+  if (verbose) cout << "Begin replicated testing" << endl;
+
+  // We will now view the shared row as a repliated row, rather than one 
+  // that has partial sums of its entries on mulitple processors.
+  // We will reuse much of the data used for the partial sum tesitng.
+  Epetra_Vector xRow3(RowMap3,false); 
+  Epetra_CrsMatrix A4(Copy, RowMap3, NumMyElements3);
+  for (int i=0; i < NumMyElements3; i++) {
+    Values3[i] = (int)((i*.6)+1.0);
+  }
+  for (int i=0; i<NumMyRows3; i++) {
+    A4.InsertGlobalValues(myGlobalElements[i],NumMyElements3,Values3,Indices3);
+  }
+  EPETRA_TEST_ERR(A4.FillComplete(DomainMap3, RangeMap3),ierr);
+  if (verbose1) cout << A4 << endl;
+  EPETRA_TEST_ERR(A4.InvRowSums(xRow3),ierr);
+                                                                                                                             
+  if (verbose1) cout << xRange3;
+  EPETRA_TEST_ERR(A4.LeftScale(xRow3),ierr);
+  float A4infNormFloat = A4.NormInf();
+  if (verbose1) cout << A4;
+  if (1.0!=A4infNormFloat) {
+    cout << "InfNorm should be = 1, but InfNorm = " << A4infNormFloat <<endl;
+    EPETRA_TEST_ERR(-63,ierr);
+    InvSumsBroke = true;
+  }
+  if (verbose) cout << "End replicated testing" << endl;
 
   if (InvSumsBroke) {
     if (verbose) cout << endl << "InvRowSums tests FAILED" << endl << endl;

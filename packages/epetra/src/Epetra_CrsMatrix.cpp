@@ -1463,36 +1463,48 @@ int Epetra_CrsMatrix::InvRowSums(Epetra_Vector& x) const {
   if (!Filled()) EPETRA_CHK_ERR(-1); // Matrix must be filled.
   int ierr = 0;
   int i, j;
-  bool needExport = false;
   int * NumEntriesPerRow = NumEntriesPerRow_;
   double ** Values = Values_;
+  x.PutScalar(0.0); // Make sure we sum into a vector of zeros.
   double * xp = (double*)x.Values();
-  Epetra_Vector x_tmp(RowMap());
-  if (Graph().RangeMap().SameAs(x.Map())) {
-    if (Exporter() != 0) {
-      needExport = true; //Having this information later avoids a .SameAs
-      xp = (double*)x_tmp.Values();
+  if (Graph().RangeMap().SameAs(x.Map()) && Exporter() != 0) {
+    Epetra_Vector x_tmp(RowMap());
+    x_tmp.PutScalar(0.0);
+    double * x_tmp_p = (double*)x_tmp.Values();
+    for (i=0; i < NumMyRows_; i++) {
+      int      NumEntries = *NumEntriesPerRow++;
+      double * RowValues  = *Values++;
+      for (j=0; j < NumEntries; j++)  x_tmp_p[i] += fabs(RowValues[j]);
+    }
+    EPETRA_CHK_ERR(x.Export(x_tmp, *Exporter(), Add)); //Export partial row sums to x.
+    int myLength = x.MyLength();
+    for (i=0; i<myLength; i++) { 
+      if (xp[i]<Epetra_MinDouble) {
+        if (xp[i]==0.0) ierr = 1; // Set error to 1 to signal that zero rowsum found (supercedes ierr = 2)
+        else if (ierr!=1) ierr = 2;
+        xp[i] = Epetra_MaxDouble;
+      }
+      else
+        xp[i] = 1.0/xp[i];
     }
   }
-  else if (!Graph().RowMap().SameAs(x.Map())) {
-    //EPETRA_CHK_ERR(-2); // The map of x must be the RowMap or RangeMap of A.
-  }
-  for (i=0; i < NumMyRows_; i++) {
-    int      NumEntries = *NumEntriesPerRow++;
-    double * RowValues  = *Values++;
-    double scale = 0.0;
-    for (j=0; j < NumEntries; j++) scale += fabs(RowValues[j]);
-    if (scale<Epetra_MinDouble) {
-      if (scale==0.0) ierr = 1; // Set error to 1 to signal that zero rowsum found (supercedes ierr = 2)
-      else if (ierr!=1) ierr = 2;
-      xp[i] = Epetra_MaxDouble;
+  else if (Graph().RowMap().SameAs(x.Map())) {
+    for (i=0; i < NumMyRows_; i++) {
+      int      NumEntries = *NumEntriesPerRow++;
+      double * RowValues  = *Values++;
+      double scale = 0.0;
+      for (j=0; j < NumEntries; j++) scale += fabs(RowValues[j]);
+      if (scale<Epetra_MinDouble) {
+        if (scale==0.0) ierr = 1; // Set error to 1 to signal that zero rowsum found (supercedes ierr = 2)
+        else if (ierr!=1) ierr = 2;
+        xp[i] = Epetra_MaxDouble;
+      }
+      else
+        xp[i] = 1.0/scale;
     }
-    else
-      xp[i] = 1.0/scale;
   }
-  if(needExport) {
-    x.PutScalar(0.0);
-    EPETRA_CHK_ERR(x.Export(x_tmp, *Exporter(), Insert)); // Fill x with values from temp vector
+  else { // x.Map different than both Graph().RowMap() and Graph().RangeMap()
+    EPETRA_CHK_ERR(-2); // The map of x must be the RowMap or RangeMap of A.
   }
   UpdateFlops(NumGlobalNonzeros());
   EPETRA_CHK_ERR(ierr);
