@@ -97,7 +97,7 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 host_triplet = @host@
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in \
-	$(top_srcdir)/config/swig.am
+	$(srcdir)/__init__.py.in $(top_srcdir)/config/swig.am
 subdir = python/src
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/config/ac_cxx_bool.m4 \
@@ -131,7 +131,7 @@ am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
 mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/Epetra_config.h
-CONFIG_CLEAN_FILES =
+CONFIG_CLEAN_FILES = __init__.py
 SOURCES =
 DIST_SOURCES =
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -281,7 +281,8 @@ tempdir = $(shell $(PYTHON) $(top_srcdir)/../PyTrilinos/pyLocate --temp)
 
 # Define the SWIG interface files and the resulting wrapper files
 INTERFACES = Epetra.i
-WRAPPERS = $(patsubst %.i, $(srcdir)/wrap_%.cpp, $(INTERFACES))
+WRAPPERS = $(patsubst %.i, wrap_%.cpp, $(INTERFACES))
+PROXIES = $(patsubst %.i, %.py      , $(INTERFACES))
 all: all-am
 
 .SUFFIXES:
@@ -314,6 +315,8 @@ $(top_srcdir)/configure: @MAINTAINER_MODE_TRUE@ $(am__configure_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
 $(ACLOCAL_M4): @MAINTAINER_MODE_TRUE@ $(am__aclocal_m4_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
+__init__.py: $(top_builddir)/config.status $(srcdir)/__init__.py.in
+	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
 uninstall-info-am:
 tags: TAGS
 TAGS:
@@ -432,16 +435,16 @@ uninstall-am: uninstall-info-am
 	uninstall-info-am
 
 
-$(srcdir)/%.py: $(srcdir)/wrap_%.cpp
+%.py: wrap_%.cpp
 
 @HAVE_SWIG_TRUE@$(DEPDIR):
 @HAVE_SWIG_TRUE@	mkdir -p $@
 
-@HAVE_SWIG_TRUE@$(srcdir)/wrap_%.cpp: $(srcdir)/%.i $(DEPDIR)
+@HAVE_SWIG_TRUE@wrap_%.cpp: $(srcdir)/%.i $(DEPDIR)
 @HAVE_SWIG_TRUE@	if $(SWIGCOMPILE) -MMD -MF "$(DEPDIR)/$*.Tpi" -o $@ $<; \
 @HAVE_SWIG_TRUE@	then mv -f "$(DEPDIR)/$*.Tpi" "$(DEPDIR)/$*.Pi"; else rm -f "$(DEPDIR)/$*.Tpi"; exit 1; fi
 
-@HAVE_SWIG_FALSE@$(srcdir)/wrap_%.cpp: $(srcdir)/%.i 
+@HAVE_SWIG_FALSE@wrap_%.cpp: $(srcdir)/%.i 
 @HAVE_SWIG_FALSE@	@echo 'Error swig is not enabled and'
 @HAVE_SWIG_FALSE@	@echo '$@ is out-of-date with respect to $<.'
 @HAVE_SWIG_FALSE@	@echo 'Rerun configure with --with-swig=[path-to-swig].'
@@ -482,6 +485,7 @@ clean:
 	$(PYTHON) $(srcdir)/setup.py clean
 	$(RM) setup.txt
 	$(RM) $(WRAPPERS)
+	$(RM) $(PROXIES)
 
 test:
 	cd test && make test

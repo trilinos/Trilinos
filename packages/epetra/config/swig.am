@@ -34,7 +34,7 @@
 
 CLEANFILES = $(DEPDIR)/*.Pi
 
-$(srcdir)/%.py: $(srcdir)/wrap_%.cpp
+%.py: wrap_%.cpp
 
 if HAVE_SWIG
 
@@ -43,13 +43,13 @@ SWIGCOMPILE = $(SWIG) $(SWIG_PYTHON_OPT) $(SWIG_CXXFLAGS)
 $(DEPDIR):
 	mkdir -p $@
 
-$(srcdir)/wrap_%.cpp: $(srcdir)/%.i $(DEPDIR)
+wrap_%.cpp: $(srcdir)/%.i $(DEPDIR)
 	if $(SWIGCOMPILE) -MMD -MF "$(DEPDIR)/$*.Tpi" -o $@ $<; \
 	then mv -f "$(DEPDIR)/$*.Tpi" "$(DEPDIR)/$*.Pi"; else rm -f "$(DEPDIR)/$*.Tpi"; exit 1; fi
 
 else
 
-$(srcdir)/wrap_%.cpp: $(srcdir)/%.i 
+wrap_%.cpp: $(srcdir)/%.i 
 	@echo 'Error swig is not enabled and'
 	@echo '$@ is out-of-date with respect to $<.'
 	@echo 'Rerun configure with --with-swig=[path-to-swig].'

@@ -43,7 +43,8 @@ $(tempdir):
 
 # Define the SWIG interface files and the resulting wrapper files
 INTERFACES = Epetra.i
-WRAPPERS   = $(patsubst %.i, $(srcdir)/wrap_%.cpp, $(INTERFACES))
+WRAPPERS   = $(patsubst %.i, wrap_%.cpp, $(INTERFACES))
+PROXIES    = $(patsubst %.i, %.py      , $(INTERFACES))
 
 # File setup.txt is a way to transfer make variables to the setup.py
 # python script
@@ -70,6 +71,7 @@ clean:
 	$(PYTHON) $(srcdir)/setup.py clean
 	$(RM) setup.txt
 	$(RM) $(WRAPPERS)
+	$(RM) $(PROXIES)
 
 test:
 	cd test && make test

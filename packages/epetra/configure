@@ -7802,9 +7802,11 @@ echo "$as_me: error: failed to find required module Numeric" >&2;}
 
 
   # If user specifies prefix, use it for the PYTHON_PREFIX
-  if test $prefix != $ac_default_prefix; then
-    PYTHON_PREFIX=$prefix
-    PYTHON_EXECPREFIX=$exec_prefix
+  if test @prefix@ != $ac_default_prefix; then
+    PYTHON_PREFIX=@prefix@
+  fi
+  if test @exec_prefix@ != $ac_default_prefix; then
+    PYTHON_EXECPREFIX=@exec_prefix@
   fi
 
 else
@@ -8123,7 +8125,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:8126: \"$ac_link\") >&5
+(eval echo $as_me:8128: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -8201,7 +8203,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:8204: \"$ac_link\") >&5
+(eval echo $as_me:8206: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -11076,7 +11078,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:11079: \"$ac_link\") >&5
+(eval echo $as_me:11081: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -11154,7 +11156,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:11157: \"$ac_link\") >&5
+(eval echo $as_me:11159: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -11370,7 +11372,7 @@ fi
 # Output files
 # ------------------------------------------------------------------------
 ##
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            ac_config_files="$ac_config_files Makefile Makefile.export src/Makefile test/Makefile test/BasicPerfTest/Makefile test/BasicPerfTest/Makefile.include test/BlockMap/Makefile test/BlockMap/Makefile.include test/Comm/Makefile test/Comm/Makefile.include test/CrsGraph/Makefile test/CrsGraph/Makefile.include test/CrsMatrix/Makefile test/CrsMatrix/Makefile.include test/CrsRectMatrix/Makefile test/CrsRectMatrix/Makefile.include test/FECrsGraph/Makefile test/FECrsGraph/Makefile.include test/FECrsMatrix/Makefile test/FECrsMatrix/Makefile.include test/FEVbrMatrix/Makefile test/FEVbrMatrix/Makefile.include test/FEVector/Makefile test/FEVector/Makefile.include test/ImportExport/Makefile test/ImportExport/Makefile.include test/IntSerialDense/Makefile test/IntSerialDense/Makefile.include test/Map/Makefile test/Map/Makefile.include test/MapColoring/Makefile test/MapColoring/Makefile.include test/MultiVector/Makefile test/MultiVector/Makefile.include test/Object/Makefile test/Object/Makefile.include test/SerialDense/Makefile test/SerialDense/Makefile.include test/SerialSpdDense/Makefile test/SerialSpdDense/Makefile.include test/VbrMatrix/Makefile test/VbrMatrix/Makefile.include test/Vector/Makefile test/Vector/Makefile.include test/src/Makefile example/Makefile example/petra_power_method/Makefile example/verySimple/Makefile example/UG_Ex1/Makefile example/UG_ExMaps/Makefile example/my_example/Makefile test/scripts/Makefile test/scripts/daily/Makefile test/scripts/daily/mpi/Makefile test/scripts/daily/serial/Makefile test/scripts/weekly/Makefile test/scripts/weekly/mpi/Makefile test/scripts/weekly/serial/Makefile python/Makefile python/src/Makefile python/test/Makefile python/example/Makefile"
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      ac_config_files="$ac_config_files Makefile Makefile.export src/Makefile test/Makefile test/BasicPerfTest/Makefile test/BasicPerfTest/Makefile.include test/BlockMap/Makefile test/BlockMap/Makefile.include test/Comm/Makefile test/Comm/Makefile.include test/CrsGraph/Makefile test/CrsGraph/Makefile.include test/CrsMatrix/Makefile test/CrsMatrix/Makefile.include test/CrsRectMatrix/Makefile test/CrsRectMatrix/Makefile.include test/FECrsGraph/Makefile test/FECrsGraph/Makefile.include test/FECrsMatrix/Makefile test/FECrsMatrix/Makefile.include test/FEVbrMatrix/Makefile test/FEVbrMatrix/Makefile.include test/FEVector/Makefile test/FEVector/Makefile.include test/ImportExport/Makefile test/ImportExport/Makefile.include test/IntSerialDense/Makefile test/IntSerialDense/Makefile.include test/Map/Makefile test/Map/Makefile.include test/MapColoring/Makefile test/MapColoring/Makefile.include test/MultiVector/Makefile test/MultiVector/Makefile.include test/Object/Makefile test/Object/Makefile.include test/SerialDense/Makefile test/SerialDense/Makefile.include test/SerialSpdDense/Makefile test/SerialSpdDense/Makefile.include test/VbrMatrix/Makefile test/VbrMatrix/Makefile.include test/Vector/Makefile test/Vector/Makefile.include test/src/Makefile example/Makefile example/petra_power_method/Makefile example/verySimple/Makefile example/UG_Ex1/Makefile example/UG_ExMaps/Makefile example/my_example/Makefile test/scripts/Makefile test/scripts/daily/Makefile test/scripts/daily/mpi/Makefile test/scripts/daily/serial/Makefile test/scripts/weekly/Makefile test/scripts/weekly/mpi/Makefile test/scripts/weekly/serial/Makefile python/Makefile python/src/Makefile python/src/__init__.py python/test/Makefile python/example/Makefile"
 
 
 cat >confcache <<\_ACEOF
@@ -12122,6 +12124,7 @@ do
   "test/scripts/weekly/serial/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/scripts/weekly/serial/Makefile" ;;
   "python/Makefile" ) CONFIG_FILES="$CONFIG_FILES python/Makefile" ;;
   "python/src/Makefile" ) CONFIG_FILES="$CONFIG_FILES python/src/Makefile" ;;
+  "python/src/__init__.py" ) CONFIG_FILES="$CONFIG_FILES python/src/__init__.py" ;;
   "python/test/Makefile" ) CONFIG_FILES="$CONFIG_FILES python/test/Makefile" ;;
   "python/example/Makefile" ) CONFIG_FILES="$CONFIG_FILES python/example/Makefile" ;;
   "depfiles" ) CONFIG_COMMANDS="$CONFIG_COMMANDS depfiles" ;;

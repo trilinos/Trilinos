@@ -81,7 +81,7 @@ for lib in libs:
         extraArgs.append(lib)
 
 # Define the strings that refer to the required source files.
-wrapEpetra         = os.path.join(srcDir,"wrap_Epetra.cpp"        )
+wrapEpetra         = "wrap_Epetra.cpp"
 epetraNumPyVector  = os.path.join(srcDir,"Epetra_NumPyVector.cpp" )
 epetraVectorHelper = os.path.join(srcDir,"Epetra_VectorHelper.cpp")
 numPyArray         = os.path.join(srcDir,"NumPyArray.cpp"         )
@@ -94,7 +94,7 @@ _Epetra = Extension("PyTrilinos._Epetra",
                      epetraVectorHelper,
                      numPyArray,
                      numPyWrapper      ],
-                    include_dirs    = [epetraInc],
+                    include_dirs    = [epetraInc, srcDir],
                     library_dirs    = [epetraLibDir],
                     libraries       = [epetraLib] + stdLibs,
                     extra_link_args = extraArgs
@@ -106,7 +106,7 @@ setup(name         = "PyTrilinos.Epetra",
       description  = "Python Interface to Trilinos Package Epetra",
       author       = "Bill Spotz",
       author_email = "wfspotz@sandia.gov",
-      package_dir  = {"PyTrilinos" : srcDir},
+      package_dir  = {"PyTrilinos" : "."},
       packages     = ["PyTrilinos"],
       ext_modules  = [ _Epetra  ]
       )
