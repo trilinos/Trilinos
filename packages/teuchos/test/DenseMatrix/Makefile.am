@@ -48,6 +48,6 @@ DenseMatrix_test_CXXFLAGS = -I$(top_srcdir)/src
 #np# building the exe.
 DenseMatrix_test_LDADD = \
 	$(top_builddir)/src/libteuchos.a \
-	$(LAPACK_LIBS) $(BLAS_LIBS) $(LIBS) $(FLIBS)
+	$(LIBS) $(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS)
 
 

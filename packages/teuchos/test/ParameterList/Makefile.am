@@ -37,6 +37,6 @@ ParameterList_test_DEPENDENCIES =
 ParameterList_test_CXXFLAGS = -I$(top_srcdir)/src
 
 ParameterList_test_LDADD = $(top_builddir)/src/libteuchos.a \
-	$(BLAS_LIBS) $(LIBS) $(FLIBS)
+	$(LIBS) $(BLAS_LIBS) $(FLIBS)
 
 
