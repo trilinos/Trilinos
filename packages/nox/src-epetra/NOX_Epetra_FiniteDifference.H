@@ -199,11 +199,17 @@ class FiniteDifference : public Epetra_RowMatrix {
   //! Compute Jacobian given the specified input vector, x. Returns true if computation was successful.
   virtual bool computeJacobian(const Epetra_Vector& x, Epetra_Operator& Jac);
 
+  //! Compute Jacobian given the specified input vector, x. Returns true if computation was successful.
+  virtual bool computeJacobian(const Epetra_Vector& x);
+
   //! Compute an Epetra_RowMatrix to be used by Aztec preconditioners given the specified input vector, x. Returns true if computation was successful.
   virtual bool computePreconditioner(const Epetra_Vector& x, Epetra_RowMatrix& M);
 
   //! Set the type of perturbation method used (default is Forward)
   virtual void setDifferenceMethod( DifferenceType type );
+
+  //! Set the type of perturbation method used (default is Forward)
+  virtual void Print(ostream&);
 
 protected:
 

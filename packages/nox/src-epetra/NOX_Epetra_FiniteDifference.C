@@ -312,6 +312,11 @@ const Epetra_BlockMap& FiniteDifference::Map() const
   return jacobian->Map();
 }
 
+bool FiniteDifference::computeJacobian(const Epetra_Vector& x)
+{
+  return( computeJacobian(x, *this));
+}
+
 bool FiniteDifference::computeJacobian(const Epetra_Vector& x, Epetra_Operator& Jac)
 {
   // First check to make sure Jac is a NOX::Epetra::FiniteDifference object
@@ -481,4 +486,9 @@ Epetra_CrsMatrix*  FiniteDifference::createGraphAndJacobian(Interface& i,
 void FiniteDifference::setDifferenceMethod(DifferenceType diffType_)
 {
   diffType = diffType_;
+}
+
+void FiniteDifference::Print(ostream& strm)
+{
+  jacobian->Print(strm);
 }
