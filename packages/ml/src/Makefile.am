@@ -251,23 +251,59 @@ COMP =
 #np# package
 #np# - Add packages that this package is dependent on
 #np#   Remove epetra if this package does not need it
-#  
-AM_CPPFLAGS = -I$(top_srcdir)/../epetra/src -I$(top_builddir)/../epetra/src \
-              -I$(top_srcdir)/../aztecoo/src -I$(top_builddir)/../aztecoo/src \
-              -I$(top_srcdir)/../amesos/src -I$(top_builddir)/../amesos/src \
-              -I$(top_srcdir)/../ifpack/src -I$(top_builddir)/../ifpack/src \
-              -I$(top_srcdir)/../teuchos/src -I$(top_builddir)/../teuchos/src \
-              -I$(top_srcdir)/../anasazi/src -I$(top_builddir)/../anasazi/src \
-              -I$(top_srcdir)/../triutils/src -I$(top_builddir)/../triutils/src \
-              -I$(srcdir)/Comm \
-              -I$(srcdir)/Operator \
-              -I$(srcdir)/Smoother \
-              -I$(srcdir)/Coarsen \
-              -I$(srcdir)/Krylov \
-              -I$(srcdir)/Main \
-              -I$(srcdir)/FEGrid \
-              -I$(srcdir)/Utils \
-              -I$(srcdir)/Include
+#
+if ML_USING_AZTECOO
+aztecoo_incdir = -I$(top_srcdir)/../aztecoo/src -I$(top_builddir)/../aztecoo/src
+else
+aztecoo_incdir =
+endif
+if ML_USING_AMESOS
+amesos_incdir = -I$(top_srcdir)/../amesos/src -I$(top_builddir)/../amesos/src
+else
+amesos_incdir =
+endif
+if ML_USING_IFPACK
+ifpack_incdir = -I$(top_srcdir)/../ifpack/src -I$(top_builddir)/../ifpack/src
+else
+ifpack_incdir =
+endif
+if ML_USING_TEUCHOS
+teuchos_incdir = -I$(top_srcdir)/../teuchos/src -I$(top_builddir)/../teuchos/src
+else
+teucho_incdir =
+endif
+if ML_USING_ANASAZI
+anasazi_incdir = -I$(top_srcdir)/../anasazi/src -I$(top_builddir)/../anasazi/src
+else
+anasazi_incdir =
+endif
+if ML_USING_TRIUTILS
+triutils_incdir = -I$(top_srcdir)/../triutils/src -I$(top_builddir)/../triutils/src
+else
+triutils_incdir =
+endif
+if ML_USING_EPETRA
+epetra_incdir = -I$(top_srcdir)/../epetra/src -I$(top_builddir)/../epetra/src
+else
+epetra_incdir =
+endif
+  
+AM_CPPFLAGS = -I$(srcdir)/Comm \
+	-I$(srcdir)/Operator \
+	-I$(srcdir)/Smoother \
+	-I$(srcdir)/Coarsen \
+	-I$(srcdir)/Krylov \
+	-I$(srcdir)/Main \
+	-I$(srcdir)/FEGrid \
+	-I$(srcdir)/Utils \
+	-I$(srcdir)/Include \
+	$(aztecoo_incdir) \
+	$(ifpack_incdir) \
+	$(amesos_incdir) \
+	$(teuchos_incdir) \
+	$(anasazi_incdir) \
+	$(triutils_incdir) \
+	$(epetra_incdir)
 
 
 
