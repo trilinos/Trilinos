@@ -92,7 +92,7 @@ Declaration of C++ code for \texttt{RefCountPtr<>} and supporting functions.}
 \end{figure}
 
 %
-\subsection{Initializing \texttt{RefCountPtr} Objects}
+\subsection{Initializing \texttt{RefCountPtr} objects}
 %
 
 A smart reference counted pointer to a dynammicallly allocated object
@@ -119,7 +119,8 @@ template<class T> RefCountPtr<T> rcp(T* p);
 %
 \noindent{}must be used to initialize a smart pointer.
 The reason for this is somewhat complicated but it is related to
-multiple inheritance and virtual base classes.
+multiple inheritance and virtual base classes (see Appendix
+\ref{rcp:apdx:mivbc}).
 
 \begin{commandment}\label{rcp:cmd:rcp-new}
 Thou shall only call \texttt{new} directly
@@ -201,7 +202,7 @@ to \texttt{false}.
 \end{commandment}
 
 %
-\subsection{Accessing the underlying object in a \texttt{RefCountPtr<>}}
+\subsection{Accessing the underlying object in a \texttt{RefCountPtr<>} object}
 %
 
 Through the magic of the overloaded member operator functions
@@ -243,9 +244,10 @@ if \texttt{a\_ptr1} and \texttt{a\_ptr2} where raw C++ pointers.
 ad different statement as shown above (which breaks Commandment
 \ref{rcp:cmd:rcp-new}) unless you are 100\% sure of what you are
 doing.  Subtle issues with multiple inheritance can result in a
-runtime segmentation fault on certain platforms.  Breaking Commandment
-\ref{rcp:cmd:rcp-new} just increases the likelihood that a programming
-error will occur.
+runtime segmentation fault on certain platforms (see Appendix
+\ref{rcp:apdx:mivbc}).  Breaking Commandment \ref{rcp:cmd:rcp-new}
+just increases the likelihood that a runtime error will occur on some
+platforms.
 
 However, these smart reference counted pointers can not be used
 everywhere a raw pointer can be.  For instance the following
@@ -374,12 +376,11 @@ ToDo: Discuss how multiple clients can add extra data for a \texttt{RefCountPtr<
 and they can not interfer with each other.
 
 %
-\subsection{Customized Deallocation through templated \texttt{Dealloc} Policy Objects}
+\subsection{Customized Deallocation through templated \texttt{Dealloc} policy objects}
 %
 
 ToDo: Discuss an example of a specialized deallocataion (i.e. from an
 object database).
-
 
 %
 \section{The proper use of \texttt{RefCountPtr<>} and other C++ data types}
@@ -444,7 +445,16 @@ type
 & non-transitive \\
 \hline
 non-mutable object (required)
-& \texttt{S s} \{or\} \texttt{const S s} \{or\} \texttt{const S \&s}
+& \begin{minipage}{20ex}
+    \begin{center}
+    .\\
+    \texttt{S s} \\
+    \{or\} \\
+    \texttt{const S s} \\
+    \{or\} \\
+    \texttt{const S \&s}
+    \end{center}
+  \end{minipage}
 & \texttt{const RefCountPtr<const S> \&s} \\
 \hline
 non-mutable object (optional)
