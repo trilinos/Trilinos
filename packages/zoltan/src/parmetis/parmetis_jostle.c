@@ -877,16 +877,18 @@ static int Zoltan_ParMetis_Jostle(
   /* Select the desired ParMetis or Jostle function */
 
 #if (PARMETIS_MAJOR_VERSION >= 3)
-  /* Assume partition sizes are given as input. */
-  if (!part_sizes){
-    ZOLTAN_PARMETIS_ERROR(ZOLTAN_FATAL, "Input parameter part_sizes is NULL.");
-  }
-  if ((zz->Proc == 0) && (zz->Debug_Level >= ZOLTAN_DEBUG_ALL)) {
-    for (i=0; i<num_part; i++){
-      printf("Debug: Size(s) for partition %1d = ", i);
-      for (j=0; j<ncon; j++)
-        printf("%f ", part_sizes[i*ncon+j]);
-      printf("\n");
+  if (!compute_order){ /* ordering does not need partsizes */
+    /* Assume partition sizes are given as input. */
+    if (!part_sizes){
+      ZOLTAN_PARMETIS_ERROR(ZOLTAN_FATAL, "Input parameter part_sizes is NULL.");
+    }
+    if ((zz->Proc == 0) && (zz->Debug_Level >= ZOLTAN_DEBUG_ALL)) {
+      for (i=0; i<num_part; i++){
+        printf("Debug: Size(s) for partition %1d = ", i);
+        for (j=0; j<ncon; j++)
+          printf("%f ", part_sizes[i*ncon+j]);
+        printf("\n");
+      }
     }
   }
 #else /* PARMETIS_MAJOR_VERSION < 3 */
