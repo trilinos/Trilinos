@@ -86,6 +86,7 @@ int Zoltan_HSFC_Box_Assign (
    /* determine intersection of bounding box and dropped box */
    if      (xhi < d->bbox_lo[0])  xintl[0] = xinth[0] = d->bbox_lo[0];
    else if (xlo > d->bbox_hi[0])  xintl[0] = xinth[0] = d->bbox_hi[0];
+
    else {
         xintl[0] = (d->bbox_lo[0] < xlo) ? xlo           : d->bbox_lo[0];
         xinth[0] = (d->bbox_hi[0] < xhi) ? d->bbox_hi[0] : xhi;
@@ -105,7 +106,7 @@ int Zoltan_HSFC_Box_Assign (
         xinth[2] = (d->bbox_hi[2] < zhi) ? d->bbox_hi[2] : zhi;
         }
 
-   for (loop = 0; loop < MAXLOOP; loop++) {
+   for (loop = 0; loop < MAXLOOP; ++loop) {
       oldpartcount = *part_count;
 
       xdelta = (xinth[0] - xintl[0])/ (double) prime[loop + offset];
@@ -116,12 +117,13 @@ int Zoltan_HSFC_Box_Assign (
       if (ydelta < REFINEMENT_LIMIT)  ydelta = 1.0;
       if (zdelta < REFINEMENT_LIMIT)  zdelta = 1.0;
 
+
       /* create regular lattice in given box, then look up associated processors */
       if (d->ndimension == 3) {
         for     (x[0] = xintl[0]; x[0] <= xinth[0]; x[0] += xdelta)
           for   (x[1] = xintl[1]; x[1] <= xinth[1]; x[1] += ydelta)
             for (x[2] = xintl[2]; x[2] <= xinth[2]; x[2] += zdelta)
-               if (Zoltan_HSFC_Point_Assign(zz, x, NULL, &tmp_part) == ZOLTAN_OK)
+                if (Zoltan_HSFC_Point_Assign(zz, x, NULL, &tmp_part) == ZOLTAN_OK)
                    part_array[tmp_part] = 1;
         }
 
@@ -133,9 +135,10 @@ int Zoltan_HSFC_Box_Assign (
          }
 
       /* test for early exit */
+      *part_count = 0;
       for (i = 0; i < zz->LB.Num_Global_Parts; i++)
          if (part_array[i] > 0)
-            *part_count++;
+            (*part_count)++;
       if (*part_count == oldpartcount)
          break;
       }
@@ -172,6 +175,7 @@ fini:
       for (i = 0; i < zz->Num_Proc; i++)
          if (proc_array[i] > 0)
             procs[(*proc_count)++] = i;
+
       }
 
 free:
