@@ -209,8 +209,6 @@ sublist based to the solver.
 
 - "Recovery Step" - Defaults to 1.0.
 
-- "Use Counters" - Boolean.  If set to true, solver statistics will be stored.
-
 - "Use Ared/Pred Ratio Calculation" (boolean) - Defaults to false. If
   set to true, this option replaces the algorithm used to compute the
   improvement ratio, \f$ \rho \f$, as described above.  The improvement
@@ -223,17 +221,27 @@ sublist based to the solver.
 - "Use Cauchy in Newton Direction" - Boolean.  Used only by the
   "Inexact Trust Region" algorithm.  If set to true, the initial guess
   for the Newton direction computation will use the Cauchy direction as
-  the initial guess.
+  the initial guess.  Defaults to false.
 
-- "Write Output Parameters" - Boolean.  If set to true, the solver statistics will be written to the solver parameter list (see Output Parameters).
+- "Use Dogleg Segment Minimization" - Boolean.  Used only by the
+  "Inexact Trust Region" algorithm.  If set to true, the \f$ \tau \f$
+  parameter is minimized over the dogleg line segments instead of 
+  being computed at the trust regioin radius.  Used only by the
+  "Inexact Trust Region" algorithm.  Defaults to false.
+
+- "Use Counters" - Boolean.  If set to true, solver statistics will be stored.  Defaults to true.
+
+- "Write Output Parameters" - Boolean.  If set to true, the solver statistics will be written to the relevant "Output" sublists (see Output Parameters).  Defaults to true.  
 
 <B>Output Paramters</B>
 
-A sublist for output parameters called "Output" will be created and contain the following parameters:
+A sublist called "Output" will be created at the top level of the parameter list and contain the following general solver parameters:
 
 - "Nonlinear Iterations" - Number of nonlinear iterations
 
 - "2-Norm or Residual" - Two-norm of final residual
+
+A sublist called "Output" will be created in the "Trust Region" sublist and contain the following trust region specific output parameters:
 
 - "Number of Cauchy Steps" - Number of cauchy steps taken during the solve.
 
@@ -243,6 +251,10 @@ A sublist for output parameters called "Output" will be created and contain the 
 
 - "Number of Trust Region Inner Iterations" - Number of inner iterations 
   required to adjust the trust region radius.
+
+- "Dogleg Steps: Average Fraction of Newton Step Length" - Average value of the fraction a dogleg step took compared to the full Newton step.  The fractional value is computed as \f$ \mbox{frac} = \frac{\| d \|}{\| n\|} \f$.  
+
+- "Dogleg Steps: Average Fraction Between Cauchy and Newton Direction" -  Average value of the fraction a dogleg step took between the Cauchy and Newton directions.  This is the \f$ \gamma \f$ variable in the standard dogleg algorithm and the \f$ \tau \f$ parameter in the inexact dogleg algorithm.  A value of 0.0 is a full step in the Cauchy direction and a value of 1.0 is a full step in the Newton direction.
 
   \author Tammy Kolda (SNL 8950), Roger Pawlowski (SNL 9233)
 */
@@ -371,6 +383,13 @@ protected:
   //! Extra vector used in computations
   /*! We have both a pointer and a reference because we need to create
     a DERIVED object and then want to have a reference to it. */
+  NOX::Abstract::Vector* residualVecPtr;
+  //! Extra vector
+  NOX::Abstract::Vector& residualVec;
+
+  //! Extra vector used in computations
+  /*! We have both a pointer and a reference because we need to create
+    a DERIVED object and then want to have a reference to it. */
   NOX::Abstract::Vector* aVecPtr;
   //! Extra vector
   NOX::Abstract::Vector& aVec;
@@ -489,14 +508,17 @@ protected:
   //! Number of inner iterations required to adjust the trust region radius.
   int numTrustRegionInnerIterations;
 
-  //! Holds the sum of the fraction of dogleg steps in the Newton direction.
-  /*! Divided by the number of dogleg steps, this will give the average
-    step size of all dogleg steps.
-  */
-  double sumDoglegFractions;
+  //! Hold the sum of the value of the fraction a dogleg step took between the Cauchy and Newton directions.  This is the \f$ \gamma \f$ variable in the standard dogleg algorithm and the \f$ \tau \f$ parameter in the inexact dogleg algorithm.  A value of 0.0 is a full step in the Cauchy direction and a value of 1.0 is a full step in the Newton direction.
+  double sumDoglegFracCauchyToNewton;
+
+  //! Holds the sum of the values of the fraction a dogleg step took compared to the full Newton step.  The fractional value is computed as \f$ \mbox{frac} = \frac{\| d \|}{\| n\|} \f$.
+  double sumDoglegFracNewtonLength;
 
   //! If set to true, the minimum improvement ratio condition uses an Ared/Pred approach. 
   bool useAredPredRatio;
+
+  //! If set to true, the \f$ \tau \f$ parameter is minimized over the dogleg line segments instead of being computed at the trust regioin radius.
+  bool useDoglegMinimization;
 
 };
 } // namespace Solver

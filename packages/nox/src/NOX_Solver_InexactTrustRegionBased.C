@@ -75,6 +75,8 @@ InexactTrustRegionBased(Abstract::Group& grp,
   cauchyVec(*cauchyVecPtr),	// reference to just-created pointer
   rCauchyVecPtr(grp.getX().clone(ShapeCopy)), // create via clone 
   rCauchyVec(*rCauchyVecPtr),		// reference to just-created pointer
+  residualVecPtr(grp.getX().clone(ShapeCopy)), // create via clone 
+  residualVec(*rCauchyVecPtr),		// reference to just-created pointer
   aVecPtr(grp.getX().clone(ShapeCopy)), // create via clone 
   aVec(*aVecPtr),		// reference to just-created pointer
   bVecPtr(grp.getX().clone(ShapeCopy)), // create via clone 
@@ -88,15 +90,17 @@ InexactTrustRegionBased(Abstract::Group& grp,
   radius(0.0),
   userNormPtr(0),
   userMeritFuncPtr(0),
-  useCauchyInNewtonDirection(true),
+  useCauchyInNewtonDirection(false),
   writeOutputParamsToList(true),
   useCounters(true),
   numCauchySteps(0),
   numNewtonSteps(0),
   numDoglegSteps(0),
   numTrustRegionInnerIterations(0),
-  sumDoglegFractions(0.0),
-  useAredPredRatio(false)
+  sumDoglegFracCauchyToNewton(0.0),
+  sumDoglegFracNewtonLength(0.0),
+  useAredPredRatio(false),
+  useDoglegMinimization(false)
 {
   init();
 }
@@ -110,6 +114,7 @@ NOX::Solver::InexactTrustRegionBased::~InexactTrustRegionBased()
   delete cauchyVecPtr;
   delete newtonVecPtr;
   delete rCauchyVecPtr;
+  delete residualVecPtr;
   delete aVecPtr;
   delete bVecPtr;
 }
@@ -201,11 +206,23 @@ void NOX::Solver::InexactTrustRegionBased::init()
     invalid("Recovery Step", recoveryStep);
 
   useCauchyInNewtonDirection = paramsPtr->sublist("Trust Region")
-    .getParameter("Use Cauchy in Newton Direction", true);
+    .getParameter("Use Cauchy in Newton Direction", false);
 
   // Check for the using Homer Walker's Ared/Pred ratio calculation
   useAredPredRatio = paramsPtr->sublist("Trust Region")
     .getParameter("Use Ared/Pred Ratio Calculation", false);
+
+  // Check for dogleg minimization routine (only vaild for inexact algorithm)
+  useDoglegMinimization = paramsPtr->sublist("Trust Region")
+    .getParameter("Use Dogleg Segment Minimization", false);
+
+  // Check for statistics tracking
+  useCounters = paramsPtr->sublist("Trust Region")
+    .getParameter("Use Counters", true);
+
+  // Check for writing statistics to the parameter list
+  useCounters = paramsPtr->sublist("Trust Region")
+    .getParameter("Write Output Parameters", true);
 
   // Check for a user defined Norm
   if (paramsPtr->sublist("Trust Region").
@@ -642,7 +659,16 @@ NOX::Solver::InexactTrustRegionBased::iterateStandard()
       numCauchySteps += 1;
     else if (stepType == InexactTrustRegionBased::Dogleg) {
       numDoglegSteps += 1;
-      sumDoglegFractions += gamma;
+      sumDoglegFracCauchyToNewton += gamma;
+      double tmp = radius/computeNorm(newtonVec);
+      sumDoglegFracNewtonLength += tmp;
+
+      if (utils.isPrintProcessAndType(Utils::Details)) {
+	cout << "    Fraction of Newton Step Length = " << tmp << endl;
+	cout << "    Fraction Between Cauchy and Newton Direction = " 
+	     << gamma << endl; 
+      }
+
     }
   }
 
@@ -687,9 +713,6 @@ NOX::Solver::InexactTrustRegionBased::iterateInexact()
   
   // Copy current soln to the old soln.
   oldSoln = soln;
-  // RPP: Can't just copy over oldf.  Scaling could change between iterations
-  // so user Merit Functions could be out of sync
-  oldF = computeMeritFunction(oldSoln);
 
   // Compute Cauchy direction
   bool ok = cauchy.compute(cauchyVec, oldSoln, *this);
@@ -699,6 +722,10 @@ NOX::Solver::InexactTrustRegionBased::iterateInexact()
     status = StatusTest::Failed;
     return status;
   }
+
+  // RPP: Can't just copy over oldf.  Scaling could change between iterations
+  // so user Merit Functions could be out of sync
+  oldF = computeMeritFunction(oldSoln);
   
   // Compute linear model residual for cauchy direction and tolerance
   oldSoln.applyJacobian(cauchyVec, rCauchyVec);
@@ -770,8 +797,8 @@ NOX::Solver::InexactTrustRegionBased::iterateInexact()
 	  computedNewtonDir = true;
 	}
 
-	// Can we take a Newton step?
-	if (computeNorm(newtonVec) <= radius) {
+	// Can we take a full Newton step?
+	if ((computeNorm(newtonVec) <= radius) && (!useDoglegMinimization)) {
 	  stepType = InexactTrustRegionBased::Newton;
 	  step = 1.0;
 	  dirPtr = &newtonVec;
@@ -797,6 +824,22 @@ NOX::Solver::InexactTrustRegionBased::iterateInexact()
 	    tau = (radius * radius - normS * normS)/
 	      (sDotZ + sqrt(sDotZ * sDotZ + normZ * normZ * 
 			    (radius * radius - normS * normS)));
+
+	  // Adjust tau if using dogleg segment minimization
+	  if (useDoglegMinimization) {
+	    double tauMin = 1.0;
+	    // residualVec = r_sd - r_n where r_i = F + J*s_i
+	    oldSoln.applyJacobian(newtonVec, residualVec);
+	    residualVec.update(1.0, oldSoln.getF(), 1.0);
+	    residualVec.update(1.0, rCauchyVec, -1.0);
+	    double norm = computeNorm(residualVec);
+	    if (userNormPtr != 0) 
+	      tauMin = userNormPtr->dot(rCauchyVec, residualVec) / (norm*norm);
+	    else
+	      tauMin = rCauchyVec.dot(residualVec) / (norm * norm);
+
+	    tau = min(tauMin, tau);
+	  }
 
 	  // Compute dogleg step
 	  doglegVec.update(1.0, cauchyVec, tau, zVec, 0.0);
@@ -938,7 +981,16 @@ NOX::Solver::InexactTrustRegionBased::iterateInexact()
       numCauchySteps += 1;
     else if (stepType == InexactTrustRegionBased::Dogleg) {
       numDoglegSteps += 1;
-      sumDoglegFractions += tau;
+      sumDoglegFracCauchyToNewton += tau;
+      double tmp = radius/computeNorm(newtonVec);
+      sumDoglegFracNewtonLength += tmp;
+
+      if (utils.isPrintProcessAndType(Utils::Details)) {
+	cout << "    Fraction of Newton Step Length = " << tmp << endl;
+	cout << "    Fraction Between Cauchy and Newton Direction = " 
+	     << tau << endl; 
+      }
+
     }
   }
 
@@ -1012,9 +1064,11 @@ NOX::StatusTest::StatusType NOX::Solver::InexactTrustRegionBased::solve()
       trOutputParams.setParameter("Number of Dogleg Steps", numDoglegSteps);
       trOutputParams.setParameter("Number of Trust Region Inner Iterations", 
 				  numTrustRegionInnerIterations);
-      if (numDoglegSteps != 0)
-	trOutputParams.setParameter("Average Fraction for Dogleg Steps", 
-			     (sumDoglegFractions/((double)numDoglegSteps)));
+      if (numDoglegSteps != 0) {
+	trOutputParams.setParameter("Dogleg Steps: Average Fraction of Newton Step Length", (sumDoglegFracNewtonLength/((double)numDoglegSteps)));
+	trOutputParams.setParameter("Dogleg Steps: Average Fraction Between Cauchy and Newton Direction", (sumDoglegFracCauchyToNewton/((double)numDoglegSteps)));
+      }
+
     }
   }
 
@@ -1104,7 +1158,8 @@ void NOX::Solver::InexactTrustRegionBased::resetCounters()
   numNewtonSteps = 0;
   numDoglegSteps = 0;
   numTrustRegionInnerIterations = 0;
-  sumDoglegFractions = 0.0;
+  sumDoglegFracCauchyToNewton = 0.0;
+  sumDoglegFracNewtonLength = 0.0;
   return;
 }
 
