@@ -254,12 +254,9 @@ int AztecOO::SetPrecMatrix(Epetra_RowMatrix * PrecMatrix) {
   int N_ghost = PrecMatrix_->NumMyCols() - PrecMatrix_->NumMyRows();
   AZ_set_MATFREE_getrow(Pmat_, (void *) PrecMatrix_, Epetra_Aztec_getrow,
 			Epetra_Aztec_comm_wrapper,N_ghost,proc_config_);
-     
+    
 
-   Prec_ = 0;      /* When preconditioning structure is NULL, AZ_iterate()  */
-                   /* applies Aztec's preconditioners to the Pmat_ matrix   */
-                   /* (i.e. user does not supply a preconditioning routine  */
-                   /* or an additional matrix for preconditioning.          */
+    Prec_ = AZ_precond_create(Pmat_, AZ_precondition, NULL);
 
 
   return(0);
@@ -501,7 +498,7 @@ int AztecOO::recursiveIterate(int MaxIters, double Tolerance)
   options_[AZ_recursion_level]--;
   if (prec_allocated == 1) {
     AZ_precond_destroy(&Prec_);
-    Prec_ = NULL;
+    Prec_ = 0;
     prec_allocated = 0;
   }
           
@@ -548,7 +545,7 @@ int AztecOO::Iterate(int MaxIters, double Tolerance)
 
   if (prec_allocated == 1) {
     AZ_precond_destroy(&Prec_);
-    Prec_ = NULL;
+    Prec_ = 0;
     prec_allocated = 0;
   }
   
