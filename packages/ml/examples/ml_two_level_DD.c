@@ -43,12 +43,13 @@
 /*                 |             |             |             |               */
 /*                                                                           */
 /*****************************************************************************/
+#include "ml_include.h"
+#if defined(HAVE_ML_AZTEC2_1) || defined(HAVE_ML_AZTECOO)
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
 #include "az_aztec.h"
-#include "ml_include.h"
 #include "ml_aztec_utils.h"
 
 /*****************************************************************************/
@@ -346,3 +347,21 @@ AZ_MATRIX *user_Kn_build(struct user_partition_data *Partition,
   
   return(Kn_mat);
 } 
+
+#else
+
+int main(int argc, char *argv[]) 
+{
+#ifdef ML_MPI
+  MPI_Init(&argc,&argv);
+#endif
+  puts("Please configure ML with --enable-aztecoo to run this example");
+#ifdef ML_MPI
+  MPI_Finalize();
+#endif
+  /* returns ok not to break the test harness */
+  return(EXIT_SUCCESS);
+}
+
+#endif /* HAVE_ML_AZTECOO || HAVE_ML_AZTEC2_1 */
+

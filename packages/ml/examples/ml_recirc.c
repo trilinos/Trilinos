@@ -19,11 +19,13 @@
 #define MATLAB
 */
 
+#include "ml_include.h"
+#if defined(HAVE_ML_AZTEC2_1) || defined(HAVE_ML_AZTECOO)
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
 #include "az_aztec.h"
-#include "ml_include.h"
 #include "ml_read_utils.h"
 
 int    parasails_factorized = 0;
@@ -1585,5 +1587,19 @@ int ml_find_global_row(int i, int proc, int global_nrows, int **whole_glob_map)
 	
 	return(row);
 }
-		
-				 
+#else
+
+int main(int argc, char *argv[]) 
+{
+#ifdef ML_MPI
+  MPI_Init(&argc,&argv);
+#endif
+  puts("Please configure ML with --enable-aztecoo to run this example");
+#ifdef ML_MPI
+  MPI_Finalize();
+#endif
+  /* returns ok not to break the test harness */
+  return(EXIT_SUCCESS);
+}
+
+#endif /* HAVE_ML_AZTECOO || HAVE_ML_AZTEC2_1 */

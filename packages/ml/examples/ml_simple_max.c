@@ -48,16 +48,14 @@
 /* Quantities in () are nodes and the rest are edges.                        */
 /*****************************************************************************/
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <math.h>
+#include "ml_include.h"
+#if defined(HAVE_ML_AZTEC2_1) || defined(HAVE_ML_AZTECOO)
 #ifdef AZTEC
 #undef AxTEC
 #endif
 #ifdef AZTEC
 #include "az_aztec.h"
 #endif
-#include "ml_include.h"
 
 /*****************************************************************************/
 /* All functions/structures starting with the word 'user' denote things that */
@@ -1316,5 +1314,21 @@ int user_update_ghost_nodes(double vector[], void *data)
 
   return 1;
 }
-
 #endif
+
+#else
+
+int main(int argc, char *argv[]) 
+{
+#ifdef ML_MPI
+  MPI_Init(&argc,&argv);
+#endif
+  puts("Please configure ML with --enable-aztecoo to run this example");
+#ifdef ML_MPI
+  MPI_Finalize();
+#endif
+  /* returns ok not to break the test harness */
+  return(EXIT_SUCCESS);
+}
+
+#endif /* HAVE_ML_AZTECOO || HAVE_ML_AZTEC2_1 */

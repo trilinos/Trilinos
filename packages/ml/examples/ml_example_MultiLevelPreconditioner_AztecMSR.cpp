@@ -44,8 +44,7 @@
 #endif
 #include "ml_config.h"
 
-#if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_TEUCHOS)
-
+#if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_TEUCHOS) && defined(HAVE_ML_AZTECOO)
 
 #ifdef HAVE_MPI
 #include "mpi.h"
@@ -307,7 +306,8 @@ AZ_MATRIX *BuildMatrix(struct partition_data *Partition)
 
 int main(int argc, char *argv[])
 {
-  puts("Please configure ML with --enable-epetra --enable-teuchos\nto run this example");
+  puts("Please configure ML with --enable-epetra --enable-teuchos");
+  puts("--enable-aztecoo to run this example");
 
   return 0;
 }

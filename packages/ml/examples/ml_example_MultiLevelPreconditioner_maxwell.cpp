@@ -30,7 +30,7 @@
 // configured with --enable-epetra --enable-teuchos. This example
 // required --enable-triutils (for the definition of the linear systems)
 
-#if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_TEUCHOS) && defined(HAVE_ML_TRIUTILS)
+#if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_TEUCHOS) && defined(HAVE_ML_TRIUTILS) && defined(HAVE_ML_AZTECOO)
 
 #ifdef HAVE_MPI
 #include "mpi.h"
@@ -658,7 +658,8 @@ ML_Operator *user_T_build(struct user_partition *Edge_Partition,
 
 int main(int argc, char *argv[])
 {
-  puts("Please configure ML with --enable-epetra --enable-teuchos --enable-triutils");
+  puts("Please configure ML with --enable-epetra --enable-teuchos");
+  puts("--enable-aztecoo --enable-triutils");
 
   return 0;
 }

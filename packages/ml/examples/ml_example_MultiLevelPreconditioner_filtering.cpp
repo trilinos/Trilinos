@@ -3,7 +3,7 @@
 #endif
 #include "ml_config.h"
 
-#if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_TEUCHOS) && defined(HAVE_ML_TRIUTILS)
+#if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_TEUCHOS) && defined(HAVE_ML_TRIUTILS) && defined(HAVE_ML_AZTECOO)
 
 #include "ml_include.h"
 
@@ -121,7 +121,8 @@ int main(int argc, char *argv[])
 
 int main(int argc, char *argv[])
 {
-  puts("Please configure ML with --enable-epetra --enable-teuchos --enable-triutils");
+  puts("Please configure ML with --enable-epetra --enable-teuchos");
+  puts("--enable-aztecoo --enable-triutils");
   
   return 0;
 }
