@@ -50,9 +50,10 @@ int Zoltan_PHG_Coarsening
   c_hg->ratio = hg->ratio;         /* for "global" recursive bisectioning */
   c_hg->redl  = hg->redl;          /* to stop coarsening near desired count */
     
-  if (!(cmatch = (int*) ZOLTAN_MALLOC (hg->nVtx * sizeof(int)))
-   || !(list   = (int*) ZOLTAN_MALLOC (hg->nVtx * sizeof(int)))
-   || !(displs = (int*) ZOLTAN_MALLOC (hgc->nProc_x * sizeof(int))))  {
+  if (!(cmatch    = (int*) ZOLTAN_MALLOC (hg->nVtx     * sizeof(int)))
+   || !(list      = (int*) ZOLTAN_MALLOC (hg->nVtx     * sizeof(int)))
+   || !(displs    = (int*) ZOLTAN_MALLOC (hgc->nProc_x * sizeof(int)))
+   || !(each_size = (int*) ZOLTAN_MALLOC (hgc->nProc_x * sizeof(int))))  {
      Zoltan_Multifree (__FILE__, __LINE__, 3, &cmatch, displs, list);     
      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
      ZOLTAN_TRACE_EXIT (zz, yo);
@@ -209,18 +210,17 @@ int Zoltan_PHG_Coarsening
       return ZOLTAN_MEMERR;
     }
     c_hg->vedge = NULL;
-    Zoltan_Multifree (__FILE__, __LINE__, 6,  c_hg->vwgt, buffer, rbuffer,
-     &c_ewgt, &c_vindex, &c_vedge);    
-    ZOLTAN_TRACE_EXIT (zz, yo);
-    return Zoltan_PHG_Create_Mirror(zz, c_hg);
-  }
 
-  Zoltan_Multifree (__FILE__, __LINE__, 6, c_hg->vwgt, buffer, rbuffer,
-   &c_ewgt, &c_vindex, &c_vedge);  
-  /* RTHRTH: NOTE removed code per Umit's speedup hack from serial version HERE*/  
-  c_hg->ewgt   = c_ewgt;
-  c_hg->vindex = c_vindex;
-  c_hg->vedge  = c_vedge;
+  }
+  else  {
+    /* RTHRTH: NOTE removed code per Umit's speedup hack from serial version HERE*/  
+    c_hg->ewgt   = c_ewgt;
+    c_hg->vindex = c_vindex;
+    c_hg->vedge  = c_vedge;
+  }
+  
+  Zoltan_Multifree (__FILE__, __LINE__, 10, c_hg->vwgt, buffer, rbuffer,
+   &c_ewgt, &c_vindex, &c_vedge, list, cmatch, displs, each_size);  
 
   ZOLTAN_TRACE_EXIT (zz, yo);
   return Zoltan_PHG_Create_Mirror(zz, c_hg);
