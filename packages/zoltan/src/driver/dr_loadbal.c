@@ -1388,6 +1388,7 @@ int get_num_hg_pins(
   }
   else
 #endif
+
   tmp = mesh->hindex[mesh->nhedges];
 
   STOP_CALLBACK_TIMER;

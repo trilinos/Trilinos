@@ -119,8 +119,12 @@ int read_cmd_file (
           }
         }
       }
-      else if (strcmp(value, "hypergraph") == 0)  {
-        pio_info->file_type       = HYPERGRAPH_FILE;
+      else if ((strcmp(value, "hypergraph") == 0)  
+               || (strcmp(value, "matrixmarket") == 0)) {
+        if (strcmp(value, "hypergraph") == 0)
+          pio_info->file_type       = HYPERGRAPH_FILE;
+        else
+          pio_info->file_type       = MATRIXMARKET_FILE;
         pio_info->init_dist_type  = INITIAL_LINEAR;
         pio_info->init_dist_procs = -1;
         pline = line;
@@ -511,6 +515,7 @@ void brdcst_cmd_info (
     mesh->data_type = MESH;
     break;
   case HYPERGRAPH_FILE:
+  case MATRIXMARKET_FILE:
     mesh->data_type = HYPERGRAPH;
     break;
   }

@@ -48,6 +48,23 @@ static int dist_hyperedges(MPI_Comm comm, PARIO_INFO_PTR, int, int, int, int *,
 /****************************************************************************/
 /****************************************************************************/
 
+/* Read in MatrixMarket file. 
+ * For now, just call the hypergraph routine. 
+ * In the future we may want to allow both graphs and hypergraphs 
+ * to be read in MatrixMarket format.
+ */
+int read_mm_file(
+  int Proc,
+  int Num_Proc,
+  PROB_INFO_PTR prob,
+  PARIO_INFO_PTR pio_info,
+  MESH_INFO_PTR mesh
+)
+{
+  return read_hypergraph_file(Proc, Num_Proc, prob, pio_info, mesh);
+}
+
+/* Read from file and set up hypergraph. */
 int read_hypergraph_file(
   int Proc,
   int Num_Proc,
@@ -96,10 +113,18 @@ int read_hypergraph_file(
   if (Proc == 0) {
 
     /* Open and read the hypergraph file. */
-    /* First try using the filename with the suffix ".hg" */
-    sprintf(filename, "%s.hg", pio_info->pexo_fname);
+    if (pio_info->file_type == HYPERGRAPH_FILE)
+      sprintf(filename, "%s.hg", pio_info->pexo_fname);
+    else if (pio_info->file_type == MATRIXMARKET_FILE)
+      sprintf(filename, "%s.mtx", pio_info->pexo_fname);
+    else {
+        sprintf(cmesg, "fatal:  invalid file type %d", pio_info->file_type);
+        Gen_Error(0, cmesg);
+        return 0;
+    }
+
     if ((fp = fopen(filename, "r")) == NULL){
-      /* If that didn't work, try without the suffix ".hg" */
+      /* If that didn't work, try without any suffix */
       sprintf(filename, "%s", pio_info->pexo_fname);
       fp = fopen(filename, "r");
       if (fp == NULL) {
@@ -110,12 +135,20 @@ int read_hypergraph_file(
     }
 
     /* read the array in on processor 0 */
-    if (Zoltan_HG_Readfile(Proc, fp, &nvtxs, &nhedges, &npins,
-                           &hindex, &hvertex,
-                           &vwgt_dim, &vwgts, &hewgt_dim, &hewgts, &base) != 0){
-      Gen_Error(0, "fatal: Error returned from Zoltan_HG_Readfile");
-      return 0;
-    }
+    if (pio_info->file_type == HYPERGRAPH_FILE)
+      if (HG_readfile(Proc, fp, &nvtxs, &nhedges, &npins,
+                      &hindex, &hvertex, &vwgt_dim, &vwgts, 
+                      &hewgt_dim, &hewgts, &base) != 0){
+        Gen_Error(0, "fatal: Error returned from HG_readfile");
+        return 0;
+      }
+    else if (pio_info->file_type == MATRIXMARKET_FILE)
+      if (MM_readfile(Proc, fp, &nvtxs, &nhedges, &npins,
+                      &hindex, &hvertex, &vwgt_dim, &vwgts, 
+                      &hewgt_dim, &hewgts, &base) != 0){
+        Gen_Error(0, "fatal: Error returned from MM_readfile");
+        return 0;
+      }
 
     fclose(fp);
 

@@ -23,7 +23,11 @@ extern "C" {
 #include <stdio.h>
 
 /* Hypergraph read from file */
-int Zoltan_HG_Readfile (int, FILE*, int*, int*, int*, int**, int**, int*,
+int HG_readfile (int, FILE*, int*, int*, int*, int**, int**, int*,
+ float**, int*, float**, int*);
+
+/* MatrixMarket read from file */
+int MM_readfile (int, FILE*, int*, int*, int*, int**, int**, int*,
  float**, int*, float**, int*);
 
 #ifdef __cplusplus

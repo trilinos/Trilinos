@@ -341,6 +341,12 @@ static int read_mesh(
         return 0;
     }
   }
+  else if (pio_info->file_type == MATRIXMARKET_FILE) {
+    if (!read_mm_file(Proc, Num_Proc, prob, pio_info, mesh)) {
+        Gen_Error(0, "fatal: Error returned from read_mm_file\n");
+        return 0;
+    }
+  }
 #endif
   else if (pio_info->file_type == NO_FILE) {
     if (!create_random_input(Proc, Num_Proc, prob, pio_info, mesh)) {

@@ -22,10 +22,12 @@ extern "C" {
 
 
 /* define the input file types */
-#define NEMESIS_FILE 0
-#define CHACO_FILE   1
-#define HYPERGRAPH_FILE   2
-#define NO_FILE 3
+#define NO_FILE           0
+#define NEMESIS_FILE      1
+#define CHACO_FILE        2
+#define HYPERGRAPH_FILE   3
+#define MATRIXMARKET_FILE 4
+
 #define MAX_INPUT_STR_LN 4096   /* maximum string length for read_string()  */
 
 
@@ -127,6 +129,14 @@ extern int read_chaco_file(
 );
 
 extern int read_hypergraph_file(
+  int Proc,
+  int Num_Proc,
+  PROB_INFO_PTR prob,
+  PARIO_INFO_PTR pio_info,
+  MESH_INFO_PTR mesh
+);
+
+extern int read_mm_file(
   int Proc,
   int Num_Proc,
   PROB_INFO_PTR prob,
