@@ -1080,36 +1080,39 @@ SWIG_Python_LookupTypePointer(swig_type_info ***type_list_handle) {
 #define  SWIGTYPE_p_NOX__Epetra__FiniteDifference swig_types[3] 
 #define  SWIGTYPE_p_Epetra_BlockMap swig_types[4] 
 #define  SWIGTYPE_p_char swig_types[5] 
-#define  SWIGTYPE_p_NOX__Epetra__FiniteDifferenceColoring swig_types[6] 
+#define  SWIGTYPE_p_size_type swig_types[6] 
 #define  SWIGTYPE_p_Epetra_MapColoring swig_types[7] 
-#define  SWIGTYPE_p_double swig_types[8] 
-#define  SWIGTYPE_p_Epetra_MultiVector swig_types[9] 
-#define  SWIGTYPE_p_NOX__Epetra__Vector swig_types[10] 
-#define  SWIGTYPE_p_Epetra_Vector swig_types[11] 
-#define  SWIGTYPE_p_NOX__Abstract__Vector swig_types[12] 
-#define  SWIGTYPE_p_NOX__Parameter__List swig_types[13] 
-#define  SWIGTYPE_size_t swig_types[14] 
-#define  SWIGTYPE_std__size_t swig_types[15] 
-#define  SWIGTYPE_p_std__vectorTEpetra_IntVector_t swig_types[16] 
+#define  SWIGTYPE_p_NOX__Epetra__FiniteDifferenceColoring swig_types[8] 
+#define  SWIGTYPE_p_double swig_types[9] 
+#define  SWIGTYPE_p_Epetra_MultiVector swig_types[10] 
+#define  SWIGTYPE_p_NOX__Epetra__Vector swig_types[11] 
+#define  SWIGTYPE_p_Epetra_Vector swig_types[12] 
+#define  SWIGTYPE_p_NOX__Abstract__Vector swig_types[13] 
+#define  SWIGTYPE_p_NOX__Parameter__List swig_types[14] 
+#define  SWIGTYPE_size_t swig_types[15] 
+#define  SWIGTYPE_std__size_t swig_types[16] 
 #define  SWIGTYPE_p_Epetra_SrcDistObject swig_types[17] 
-#define  SWIGTYPE_p_NOX__Epetra__SharedOperator swig_types[18] 
-#define  SWIGTYPE_p_Epetra_Operator swig_types[19] 
-#define  SWIGTYPE_p_Epetra_Comm swig_types[20] 
-#define  SWIGTYPE_p_Epetra_Map swig_types[21] 
-#define  SWIGTYPE_p_ostream swig_types[22] 
-#define  SWIGTYPE_p_NewType swig_types[23] 
-#define  SWIGTYPE_ptrdiff_t swig_types[24] 
-#define  SWIGTYPE_std__ptrdiff_t swig_types[25] 
-#define  SWIGTYPE_p_Epetra_Import swig_types[26] 
-#define  SWIGTYPE_p_OriginalType swig_types[27] 
-#define  SWIGTYPE_p_Callback swig_types[28] 
-#define  SWIGTYPE_p_NOX__Epetra__Group swig_types[29] 
-#define  SWIGTYPE_p_NOX__Abstract__Group swig_types[30] 
-#define  SWIGTYPE_p_int swig_types[31] 
-#define  SWIGTYPE_p_Epetra_CrsGraph swig_types[32] 
-#define  SWIGTYPE_p_NOX__Epetra__Interface swig_types[33] 
-#define  SWIGTYPE_p_PyInterface swig_types[34] 
-static swig_type_info *swig_types[36];
+#define  SWIGTYPE_p_std__vectorTEpetra_IntVector_t swig_types[18] 
+#define  SWIGTYPE_p_NOX__Epetra__SharedOperator swig_types[19] 
+#define  SWIGTYPE_p_Epetra_Operator swig_types[20] 
+#define  SWIGTYPE_p_Epetra_Comm swig_types[21] 
+#define  SWIGTYPE_p_Epetra_Map swig_types[22] 
+#define  SWIGTYPE_p_ostream swig_types[23] 
+#define  SWIGTYPE_p_NewType swig_types[24] 
+#define  SWIGTYPE_ptrdiff_t swig_types[25] 
+#define  SWIGTYPE_std__ptrdiff_t swig_types[26] 
+#define  SWIGTYPE_p_Epetra_Import swig_types[27] 
+#define  SWIGTYPE_p_OriginalType swig_types[28] 
+#define  SWIGTYPE_p_Callback swig_types[29] 
+#define  SWIGTYPE_p_NOX__Epetra__Group swig_types[30] 
+#define  SWIGTYPE_p_NOX__Abstract__Group swig_types[31] 
+#define  SWIGTYPE_p_value_type swig_types[32] 
+#define  SWIGTYPE_p_difference_type swig_types[33] 
+#define  SWIGTYPE_p_int swig_types[34] 
+#define  SWIGTYPE_p_Epetra_CrsGraph swig_types[35] 
+#define  SWIGTYPE_p_NOX__Epetra__Interface swig_types[36] 
+#define  SWIGTYPE_p_PyInterface swig_types[37] 
+static swig_type_info *swig_types[39];
 
 /* -------- TYPES TABLE (END) -------- */
 
@@ -1234,6 +1237,99 @@ static void SWIG_exception_(int code, const char *msg) {
 
 
 #include <vector>
+
+
+namespace swig {
+  inline size_t
+  check_index(ptrdiff_t i, size_t size, bool insert = false) {
+    if ( i < 0 ) {
+      if ((size_t) (-i) <= size) 
+	return (size_t) (i + size);
+    } else if ( (size_t) i < size ) {
+      return (size_t) i;
+    } else if (insert && ((size_t) i == size)) {
+      return size;
+    }
+    
+    throw std::out_of_range("index out of range");
+  }
+
+  inline size_t
+  slice_index(ptrdiff_t i, size_t size) {
+    if ( i < 0 ) {
+      if ((size_t) (-i) <= size) {
+	return (size_t) (i + size);
+      } else {
+	throw std::out_of_range("index out of range");
+      }
+    } else {
+      return ( (size_t) i < size ) ? ((size_t) i) : size;
+    }
+  }
+
+  template <class Sequence, class Difference>
+  inline typename Sequence::iterator 
+  getpos(Sequence* self, Difference i)  {
+    typename Sequence::iterator pos = self->begin(); 
+    std::advance(pos, check_index(i,self->size()));
+    return pos;
+  }
+
+  template <class Sequence, class Difference>
+  inline typename Sequence::const_iterator 
+  cgetpos(const Sequence* self, Difference i)  {
+    typename Sequence::const_iterator pos = self->begin(); 
+    std::advance(pos, check_index(i,self->size()));
+    return pos;
+  }
+
+  template <class Sequence, class Difference>
+  inline Sequence*
+  getslice(const Sequence* self, Difference i, Difference j) { 
+    typename Sequence::size_type size = self->size();
+    typename Sequence::size_type ii = swig::check_index(i, size);
+    typename Sequence::size_type jj = swig::slice_index(j, size);
+    
+    if (jj > ii) {
+      typename Sequence::const_iterator vb = self->begin();
+      typename Sequence::const_iterator ve = self->begin();
+      std::advance(vb,ii);
+      std::advance(ve,jj);
+      return new Sequence(vb, ve);
+    } else {
+      return new Sequence();
+    }
+  }
+
+  template <class Sequence, class Difference, class InputSeq>
+  inline void
+  setslice(Sequence* self, Difference i, Difference j, const InputSeq& v) {
+    typename Sequence::size_type size = self->size();
+    typename Sequence::size_type ii = swig::check_index(i, size, true);
+    typename Sequence::size_type jj = swig::slice_index(j, size);
+    if (jj < ii) jj = ii;
+    typename Sequence::iterator sb = self->begin();
+    typename InputSeq::const_iterator vmid = v.begin();
+    std::advance(sb,ii);
+    std::advance(vmid, jj - ii);
+    self->insert(std::copy(v.begin(), vmid, sb), vmid, v.end());
+  }
+ 
+  template <class Sequence, class Difference>
+  inline void
+  delslice(Sequence* self, Difference i, Difference j) {
+    typename Sequence::size_type size = self->size();
+    typename Sequence::size_type ii = swig::check_index(i, size, true);
+    typename Sequence::size_type jj = swig::slice_index(j, size);
+    if (jj > ii) {
+      typename Sequence::iterator sb = self->begin();
+      typename Sequence::iterator se = self->begin();
+      std::advance(sb,ii);
+      std::advance(se,jj);
+      self->erase(sb,se);
+    }
+  }
+}
 
 
   /*@/usr/local/swig-1.3.23/share/swig/1.3.23/python/pymacros.swg,66,SWIG_define@*/
@@ -10049,8 +10145,9 @@ static swig_type_info _swigt__p_NOX__Epetra__Scaling[] = {{"_p_NOX__Epetra__Scal
 static swig_type_info _swigt__p_NOX__Epetra__FiniteDifference[] = {{"_p_NOX__Epetra__FiniteDifference", 0, "NOX::Epetra::FiniteDifference *", 0, 0, 0, 0},{"_p_NOX__Epetra__FiniteDifference", 0, 0, 0, 0, 0, 0},{"_p_NOX__Epetra__FiniteDifferenceColoring", _p_NOX__Epetra__FiniteDifferenceColoringTo_p_NOX__Epetra__FiniteDifference, 0, 0, 0, 0, 0},{0, 0, 0, 0, 0, 0, 0}};
 static swig_type_info _swigt__p_Epetra_BlockMap[] = {{"_p_Epetra_BlockMap", 0, "Epetra_BlockMap *", 0, 0, 0, 0},{"_p_Epetra_LocalMap", _p_Epetra_LocalMapTo_p_Epetra_BlockMap, 0, 0, 0, 0, 0},{"_p_Epetra_BlockMap", 0, 0, 0, 0, 0, 0},{"_p_Epetra_Map", _p_Epetra_MapTo_p_Epetra_BlockMap, 0, 0, 0, 0, 0},{0, 0, 0, 0, 0, 0, 0}};
 static swig_type_info _swigt__p_char[] = {{"_p_char", 0, "char *", 0, 0, 0, 0},{"_p_char", 0, 0, 0, 0, 0, 0},{0, 0, 0, 0, 0, 0, 0}};
-static swig_type_info _swigt__p_NOX__Epetra__FiniteDifferenceColoring[] = {{"_p_NOX__Epetra__FiniteDifferenceColoring", 0, "NOX::Epetra::FiniteDifferenceColoring *", 0, 0, 0, 0},{"_p_NOX__Epetra__FiniteDifferenceColoring", 0, 0, 0, 0, 0, 0},{0, 0, 0, 0, 0, 0, 0}};
+static swig_type_info _swigt__p_size_type[] = {{"_p_size_type", 0, "size_type *", 0, 0, 0, 0},{"_p_size_type", 0, 0, 0, 0, 0, 0},{0, 0, 0, 0, 0, 0, 0}};
 static swig_type_info _swigt__p_Epetra_MapColoring[] = {{"_p_Epetra_MapColoring", 0, "Epetra_MapColoring *", 0, 0, 0, 0},{"_p_Epetra_MapColoring", 0, 0, 0, 0, 0, 0},{0, 0, 0, 0, 0, 0, 0}};
+static swig_type_info _swigt__p_NOX__Epetra__FiniteDifferenceColoring[] = {{"_p_NOX__Epetra__FiniteDifferenceColoring", 0, "NOX::Epetra::FiniteDifferenceColoring *", 0, 0, 0, 0},{"_p_NOX__Epetra__FiniteDifferenceColoring", 0, 0, 0, 0, 0, 0},{0, 0, 0, 0, 0, 0, 0}};
 static swig_type_info _swigt__p_double[] = {{"_p_double", 0, "double *", 0, 0, 0, 0},{"_p_double", 0, 0, 0, 0, 0, 0},{0, 0, 0, 0, 0, 0, 0}};
 static swig_type_info _swigt__p_Epetra_MultiVector[] = {{"_p_Epetra_MultiVector", 0, "Epetra_MultiVector *", 0, 0, 0, 0},{"_p_Epetra_MultiVector", 0, 0, 0, 0, 0, 0},{"_p_Epetra_Vector", _p_Epetra_VectorTo_p_Epetra_MultiVector, 0, 0, 0, 0, 0},{"_p_Epetra_NumPyVector", _p_Epetra_NumPyVectorTo_p_Epetra_MultiVector, 0, 0, 0, 0, 0},{0, 0, 0, 0, 0, 0, 0}};
 static swig_type_info _swigt__p_NOX__Epetra__Vector[] = {{"_p_NOX__Epetra__Vector", 0, "NOX::Epetra::Vector *", 0, 0, 0, 0},{"_p_NOX__Epetra__Vector", 0, 0, 0, 0, 0, 0},{0, 0, 0, 0, 0, 0, 0}};
@@ -10059,8 +10156,8 @@ static swig_type_info _swigt__p_NOX__Abstract__Vector[] = {{"_p_NOX__Abstract__V
 static swig_type_info _swigt__p_NOX__Parameter__List[] = {{"_p_NOX__Parameter__List", 0, "NOX::Parameter::List *", 0, 0, 0, 0},{"_p_NOX__Parameter__List", 0, 0, 0, 0, 0, 0},{0, 0, 0, 0, 0, 0, 0}};
 static swig_type_info _swigt__size_t[] = {{"_size_t", 0, "size_t", 0, 0, 0, 0},{"_size_t", 0, 0, 0, 0, 0, 0},{0, 0, 0, 0, 0, 0, 0}};
 static swig_type_info _swigt__std__size_t[] = {{"_std__size_t", 0, "std::size_t", 0, 0, 0, 0},{"_std__size_t", 0, 0, 0, 0, 0, 0},{0, 0, 0, 0, 0, 0, 0}};
-static swig_type_info _swigt__p_std__vectorTEpetra_IntVector_t[] = {{"_p_std__vectorTEpetra_IntVector_t", 0, "std::vector<Epetra_IntVector > *", 0, 0, 0, 0},{"_p_std__vectorTEpetra_IntVector_t", 0, 0, 0, 0, 0, 0},{0, 0, 0, 0, 0, 0, 0}};
 static swig_type_info _swigt__p_Epetra_SrcDistObject[] = {{"_p_Epetra_SrcDistObject", 0, "Epetra_SrcDistObject *", 0, 0, 0, 0},{"_p_Epetra_IntVector", _p_Epetra_IntVectorTo_p_Epetra_SrcDistObject, 0, 0, 0, 0, 0},{"_p_Epetra_CrsGraph", _p_Epetra_CrsGraphTo_p_Epetra_SrcDistObject, 0, 0, 0, 0, 0},{"_p_Epetra_MultiVector", _p_Epetra_MultiVectorTo_p_Epetra_SrcDistObject, 0, 0, 0, 0, 0},{"_p_Epetra_Vector", _p_Epetra_VectorTo_p_Epetra_SrcDistObject, 0, 0, 0, 0, 0},{"_p_Epetra_NumPyVector", _p_Epetra_NumPyVectorTo_p_Epetra_SrcDistObject, 0, 0, 0, 0, 0},{"_p_Epetra_SrcDistObject", 0, 0, 0, 0, 0, 0},{"_p_Epetra_DistObject", _p_Epetra_DistObjectTo_p_Epetra_SrcDistObject, 0, 0, 0, 0, 0},{"_p_Epetra_VbrMatrix", _p_Epetra_VbrMatrixTo_p_Epetra_SrcDistObject, 0, 0, 0, 0, 0},{"_p_Epetra_RowMatrix", _p_Epetra_RowMatrixTo_p_Epetra_SrcDistObject, 0, 0, 0, 0, 0},{"_p_Epetra_CrsMatrix", _p_Epetra_CrsMatrixTo_p_Epetra_SrcDistObject, 0, 0, 0, 0, 0},{"_p_NOX__Epetra__FiniteDifference", _p_NOX__Epetra__FiniteDifferenceTo_p_Epetra_SrcDistObject, 0, 0, 0, 0, 0},{"_p_NOX__Epetra__FiniteDifferenceColoring", _p_NOX__Epetra__FiniteDifferenceColoringTo_p_Epetra_SrcDistObject, 0, 0, 0, 0, 0},{"_p_Epetra_MapColoring", _p_Epetra_MapColoringTo_p_Epetra_SrcDistObject, 0, 0, 0, 0, 0},{0, 0, 0, 0, 0, 0, 0}};
+static swig_type_info _swigt__p_std__vectorTEpetra_IntVector_t[] = {{"_p_std__vectorTEpetra_IntVector_t", 0, "std::vector<Epetra_IntVector > *", 0, 0, 0, 0},{"_p_std__vectorTEpetra_IntVector_t", 0, 0, 0, 0, 0, 0},{0, 0, 0, 0, 0, 0, 0}};
 static swig_type_info _swigt__p_NOX__Epetra__SharedOperator[] = {{"_p_NOX__Epetra__SharedOperator", 0, "NOX::Epetra::SharedOperator *", 0, 0, 0, 0},{"_p_NOX__Epetra__SharedOperator", 0, 0, 0, 0, 0, 0},{0, 0, 0, 0, 0, 0, 0}};
 static swig_type_info _swigt__p_Epetra_Operator[] = {{"_p_Epetra_Operator", 0, "Epetra_Operator *", 0, 0, 0, 0},{"_p_Epetra_Operator", 0, 0, 0, 0, 0, 0},{"_p_Epetra_VbrMatrix", _p_Epetra_VbrMatrixTo_p_Epetra_Operator, 0, 0, 0, 0, 0},{"_p_Epetra_RowMatrix", _p_Epetra_RowMatrixTo_p_Epetra_Operator, 0, 0, 0, 0, 0},{"_p_Epetra_CrsMatrix", _p_Epetra_CrsMatrixTo_p_Epetra_Operator, 0, 0, 0, 0, 0},{"_p_NOX__Epetra__FiniteDifference", _p_NOX__Epetra__FiniteDifferenceTo_p_Epetra_Operator, 0, 0, 0, 0, 0},{"_p_NOX__Epetra__FiniteDifferenceColoring", _p_NOX__Epetra__FiniteDifferenceColoringTo_p_Epetra_Operator, 0, 0, 0, 0, 0},{0, 0, 0, 0, 0, 0, 0}};
 static swig_type_info _swigt__p_Epetra_Comm[] = {{"_p_Epetra_Comm", 0, "Epetra_Comm *", 0, 0, 0, 0},{"_p_Epetra_SerialComm", _p_Epetra_SerialCommTo_p_Epetra_Comm, 0, 0, 0, 0, 0},{"_p_Epetra_Comm", 0, 0, 0, 0, 0, 0},{0, 0, 0, 0, 0, 0, 0}};
@@ -10074,6 +10171,8 @@ static swig_type_info _swigt__p_OriginalType[] = {{"_p_OriginalType", 0, "Origin
 static swig_type_info _swigt__p_Callback[] = {{"_p_Callback", 0, "Callback *", 0, 0, 0, 0},{"_p_Callback", 0, 0, 0, 0, 0, 0},{0, 0, 0, 0, 0, 0, 0}};
 static swig_type_info _swigt__p_NOX__Epetra__Group[] = {{"_p_NOX__Epetra__Group", 0, "NOX::Epetra::Group *", 0, 0, 0, 0},{"_p_NOX__Epetra__Group", 0, 0, 0, 0, 0, 0},{0, 0, 0, 0, 0, 0, 0}};
 static swig_type_info _swigt__p_NOX__Abstract__Group[] = {{"_p_NOX__Abstract__Group", 0, "NOX::Abstract::Group *", 0, 0, 0, 0},{"_p_NOX__Abstract__Group", 0, 0, 0, 0, 0, 0},{"_p_NOX__Epetra__Group", _p_NOX__Epetra__GroupTo_p_NOX__Abstract__Group, 0, 0, 0, 0, 0},{0, 0, 0, 0, 0, 0, 0}};
+static swig_type_info _swigt__p_value_type[] = {{"_p_value_type", 0, "value_type *", 0, 0, 0, 0},{"_p_value_type", 0, 0, 0, 0, 0, 0},{0, 0, 0, 0, 0, 0, 0}};
+static swig_type_info _swigt__p_difference_type[] = {{"_p_difference_type", 0, "difference_type *", 0, 0, 0, 0},{"_p_difference_type", 0, 0, 0, 0, 0, 0},{0, 0, 0, 0, 0, 0, 0}};
 static swig_type_info _swigt__p_int[] = {{"_p_int", 0, "int *", 0, 0, 0, 0},{"_p_int", 0, 0, 0, 0, 0, 0},{0, 0, 0, 0, 0, 0, 0}};
 static swig_type_info _swigt__p_Epetra_CrsGraph[] = {{"_p_Epetra_CrsGraph", 0, "Epetra_CrsGraph *", 0, 0, 0, 0},{"_p_Epetra_CrsGraph", 0, 0, 0, 0, 0, 0},{0, 0, 0, 0, 0, 0, 0}};
 static swig_type_info _swigt__p_NOX__Epetra__Interface[] = {{"_p_NOX__Epetra__Interface", 0, "NOX::Epetra::Interface *", 0, 0, 0, 0},{"_p_NOX__Epetra__Interface", 0, 0, 0, 0, 0, 0},{"_p_PyInterface", _p_PyInterfaceTo_p_NOX__Epetra__Interface, 0, 0, 0, 0, 0},{0, 0, 0, 0, 0, 0, 0}};
@@ -10086,8 +10185,9 @@ _swigt__p_NOX__Epetra__Scaling,
 _swigt__p_NOX__Epetra__FiniteDifference, 
 _swigt__p_Epetra_BlockMap, 
 _swigt__p_char, 
-_swigt__p_NOX__Epetra__FiniteDifferenceColoring, 
+_swigt__p_size_type, 
 _swigt__p_Epetra_MapColoring, 
+_swigt__p_NOX__Epetra__FiniteDifferenceColoring, 
 _swigt__p_double, 
 _swigt__p_Epetra_MultiVector, 
 _swigt__p_NOX__Epetra__Vector, 
@@ -10096,8 +10196,8 @@ _swigt__p_NOX__Abstract__Vector,
 _swigt__p_NOX__Parameter__List, 
 _swigt__size_t, 
 _swigt__std__size_t, 
-_swigt__p_std__vectorTEpetra_IntVector_t, 
 _swigt__p_Epetra_SrcDistObject, 
+_swigt__p_std__vectorTEpetra_IntVector_t, 
 _swigt__p_NOX__Epetra__SharedOperator, 
 _swigt__p_Epetra_Operator, 
 _swigt__p_Epetra_Comm, 
@@ -10111,6 +10211,8 @@ _swigt__p_OriginalType,
 _swigt__p_Callback, 
 _swigt__p_NOX__Epetra__Group, 
 _swigt__p_NOX__Abstract__Group, 
+_swigt__p_value_type, 
+_swigt__p_difference_type, 
 _swigt__p_int, 
 _swigt__p_Epetra_CrsGraph, 
 _swigt__p_NOX__Epetra__Interface, 
