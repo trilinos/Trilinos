@@ -381,7 +381,7 @@ int Ifpack_Analyze(Epetra_RowMatrix& A, const int NumEquations)
     for (j = 0 ; j < Nnz ; ++j) {
       Element = colVal[j];
       if (Element != 0.0) {
-        AbsElement = abs(Element);
+        AbsElement = fabs(Element);
         if ((Element < MyMinElement) && (Element != 0.0))
           MyMinElement = Element;
         if (Element > MyMaxElement) 
@@ -393,7 +393,7 @@ int Ifpack_Analyze(Epetra_RowMatrix& A, const int NumEquations)
         if (colInd[j] == i)
           Diagonal[i] = AbsElement;
         else
-          SumOffDiagonal[i] += abs(Element);
+          SumOffDiagonal[i] += fabs(Element);
         MyFrobeniusNorm += Element*Element;
       }
     }
