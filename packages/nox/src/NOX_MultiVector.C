@@ -173,6 +173,20 @@ NOX::MultiVector::augment(const NOX::MultiVector& source)
   return *this;
 }
 
+NOX::Abstract::Vector*
+NOX::MultiVector::operator [] (int i)
+{
+  checkIndex(i);
+  return vecs[i];
+}
+
+const NOX::Abstract::Vector*
+NOX::MultiVector::operator [] (int i) const
+{
+  checkIndex(i);
+  return vecs[i];
+}
+
 void 
 NOX::MultiVector::copyVector(NOX::Abstract::Vector& vec, int i) const
 {
