@@ -311,7 +311,7 @@ ac_includes_default="\
 # include <unistd.h>
 #endif"
 
-ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS MAINTAINER_MODE_TRUE MAINTAINER_MODE_FALSE MAINT build build_cpu build_vendor build_os host host_cpu host_vendor host_os target target_cpu target_vendor target_os INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA CYGPATH_W PACKAGE VERSION ACLOCAL AUTOCONF AUTOMAKE AUTOHEADER MAKEINFO AMTAR install_sh STRIP ac_ct_STRIP INSTALL_STRIP_PROGRAM mkdir_p AWK SET_MAKE am__leading_dot CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT DEPDIR am__include am__quote AMDEP_TRUE AMDEP_FALSE AMDEPBACKSLASH CCDEPMODE am__fastdepCC_TRUE am__fastdepCC_FALSE CXX CXXFLAGS ac_ct_CXX CXXDEPMODE am__fastdepCXX_TRUE am__fastdepCXX_FALSE F77 FFLAGS ac_ct_F77 RANLIB ac_ct_RANLIB MPI_CXX HAVE_MPI_TRUE HAVE_MPI_FALSE MPI_CXX_EXISTS MPI_CC_EXISTS MPI_F77_EXISTS USE_ALTERNATE_AR_TRUE USE_ALTERNATE_AR_FALSE ALTERNATE_AR CXXCPP EGREP BUILD_TESTS_TRUE BUILD_TESTS_FALSE BUILD_TEUCHOS_TESTS_TRUE BUILD_TEUCHOS_TESTS_FALSE BUILD_EXAMPLES_TRUE BUILD_EXAMPLES_FALSE BUILD_TEUCHOS_EXAMPLES_TRUE BUILD_TEUCHOS_EXAMPLES_FALSE HAVE_TEUCHOS_COMPLEX_TRUE HAVE_TEUCHOS_COMPLEX_FALSE HAVE_TEUCHOS_EXTENDED_TRUE HAVE_TEUCHOS_EXTENDED_FALSE FLIBS BLAS_LIBS LAPACK_LIBS TRILINOS_TEMPLATE_OBJS EXPAT_LIBS EXPAT_INC HAVE_EXPAT_TRUE HAVE_EXPAT_FALSE ac_aux_dir LIBOBJS LTLIBOBJS'
+ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS MAINTAINER_MODE_TRUE MAINTAINER_MODE_FALSE MAINT build build_cpu build_vendor build_os host host_cpu host_vendor host_os target target_cpu target_vendor target_os INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA CYGPATH_W PACKAGE VERSION ACLOCAL AUTOCONF AUTOMAKE AUTOHEADER MAKEINFO AMTAR install_sh STRIP ac_ct_STRIP INSTALL_STRIP_PROGRAM mkdir_p AWK SET_MAKE am__leading_dot CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT DEPDIR am__include am__quote AMDEP_TRUE AMDEP_FALSE AMDEPBACKSLASH CCDEPMODE am__fastdepCC_TRUE am__fastdepCC_FALSE CXX CXXFLAGS ac_ct_CXX CXXDEPMODE am__fastdepCXX_TRUE am__fastdepCXX_FALSE F77 FFLAGS ac_ct_F77 RANLIB ac_ct_RANLIB MPI_TEMP_CXX MPI_CXX HAVE_MPI_TRUE HAVE_MPI_FALSE MPI_CXX_EXISTS MPI_CC_EXISTS MPI_F77_EXISTS USE_ALTERNATE_AR_TRUE USE_ALTERNATE_AR_FALSE ALTERNATE_AR CXXCPP EGREP BUILD_TESTS_TRUE BUILD_TESTS_FALSE BUILD_TEUCHOS_TESTS_TRUE BUILD_TEUCHOS_TESTS_FALSE BUILD_EXAMPLES_TRUE BUILD_EXAMPLES_FALSE BUILD_TEUCHOS_EXAMPLES_TRUE BUILD_TEUCHOS_EXAMPLES_FALSE HAVE_TEUCHOS_COMPLEX_TRUE HAVE_TEUCHOS_COMPLEX_FALSE HAVE_TEUCHOS_EXTENDED_TRUE HAVE_TEUCHOS_EXTENDED_FALSE FLIBS BLAS_LIBS LAPACK_LIBS TRILINOS_TEMPLATE_OBJS EXPAT_LIBS EXPAT_INC HAVE_EXPAT_TRUE HAVE_EXPAT_FALSE ac_aux_dir LIBOBJS LTLIBOBJS'
 ac_subst_files=''
 
 # Initialize some variables set by options.
@@ -903,9 +903,9 @@ Optional Packages:
                           the default that is provided. For example
                           --with-install="/path/install -p"
   --with-mpi-compilers=PATH
-                          use MPI compilers mpicc, mpif77, and mpicxx (or
-                          mpiCC) in the specified path or in the default path
-                          if no path is specified. Enables MPI
+                          use MPI compilers mpicc, mpif77, and mpicxx, mpic++
+                          or mpiCC in the specified path or in the default
+                          path if no path is specified. Enables MPI
   --with-mpi=MPIROOT      use MPI root directory (enables MPI)
   --with-mpi-libs="LIBS"  MPI libraries ["-lmpi"]
   --with-mpi-incdir=DIR   MPI include directory [MPIROOT/include] Do not
@@ -3679,9 +3679,47 @@ if test "${with_mpi_compilers+set}" = set; then
   if test X${withval} != Xno; then
     HAVE_PKG_MPI=yes
     if test X${withval} = Xyes; then
-      # Check for mpicxx, if it does not exist, use mpiCC instead.
+      # Check for mpicxx, if it does not exist, check for mpic++, if it does
+      # not exist, use mpiCC instead.
       # Extract the first word of "mpicxx", so it can be a program name with args.
 set dummy mpicxx; ac_word=$2
+echo "$as_me:$LINENO: checking for $ac_word" >&5
+echo $ECHO_N "checking for $ac_word... $ECHO_C" >&6
+if test "${ac_cv_prog_MPI_TEMP_CXX+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  if test -n "$MPI_TEMP_CXX"; then
+  ac_cv_prog_MPI_TEMP_CXX="$MPI_TEMP_CXX" # Let the user override the test.
+else
+as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+  for ac_exec_ext in '' $ac_executable_extensions; do
+  if $as_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_prog_MPI_TEMP_CXX="mpicxx"
+    echo "$as_me:$LINENO: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+done
+
+  test -z "$ac_cv_prog_MPI_TEMP_CXX" && ac_cv_prog_MPI_TEMP_CXX="no"
+fi
+fi
+MPI_TEMP_CXX=$ac_cv_prog_MPI_TEMP_CXX
+if test -n "$MPI_TEMP_CXX"; then
+  echo "$as_me:$LINENO: result: $MPI_TEMP_CXX" >&5
+echo "${ECHO_T}$MPI_TEMP_CXX" >&6
+else
+  echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+fi
+
+      if test X${MPI_TEMP_CXX} = Xno; then
+	# Extract the first word of "mpic++", so it can be a program name with args.
+set dummy mpic++; ac_word=$2
 echo "$as_me:$LINENO: checking for $ac_word" >&5
 echo $ECHO_N "checking for $ac_word... $ECHO_C" >&6
 if test "${ac_cv_prog_MPI_CXX+set}" = set; then
@@ -3697,7 +3735,7 @@ do
   test -z "$as_dir" && as_dir=.
   for ac_exec_ext in '' $ac_executable_extensions; do
   if $as_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
-    ac_cv_prog_MPI_CXX="mpicxx"
+    ac_cv_prog_MPI_CXX="mpic++"
     echo "$as_me:$LINENO: found $as_dir/$ac_word$ac_exec_ext" >&5
     break 2
   fi
@@ -3716,12 +3754,16 @@ else
 echo "${ECHO_T}no" >&6
 fi
 
+      else
+	MPI_CXX=${MPI_TEMP_CXX}
+      fi
       MPI_CC=mpicc
       MPI_F77=mpif77
     else
-      MPI_TEMP_CXX=${withval}/mpicxx
-      if test -f ${MPI_TEMP_CXX}; then
-        MPI_CXX=${MPI_TEMP_CXX}
+      if test -f ${withval}/mpicxx; then
+        MPI_CXX=${withval}/mpicxx
+      elif test -f ${withval}/mpic++; then
+	MPI_CXX=${withval}/mpi++
       else
         MPI_CXX=${withval}/mpiCC
       fi
@@ -7750,7 +7792,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:7753: \"$ac_link\") >&5
+(eval echo $as_me:7795: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -7828,7 +7870,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:7831: \"$ac_link\") >&5
+(eval echo $as_me:7873: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -10358,7 +10400,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:10361: \"$ac_link\") >&5
+(eval echo $as_me:10403: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -10436,7 +10478,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:10439: \"$ac_link\") >&5
+(eval echo $as_me:10481: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -11579,6 +11621,7 @@ s,@FFLAGS@,$FFLAGS,;t t
 s,@ac_ct_F77@,$ac_ct_F77,;t t
 s,@RANLIB@,$RANLIB,;t t
 s,@ac_ct_RANLIB@,$ac_ct_RANLIB,;t t
+s,@MPI_TEMP_CXX@,$MPI_TEMP_CXX,;t t
 s,@MPI_CXX@,$MPI_CXX,;t t
 s,@HAVE_MPI_TRUE@,$HAVE_MPI_TRUE,;t t
 s,@HAVE_MPI_FALSE@,$HAVE_MPI_FALSE,;t t
