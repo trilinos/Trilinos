@@ -111,7 +111,7 @@ int main(int argc, char *argv[])
 			      true, CPUTime);
 
   // 2.- convert ML_Operator to ML_Epetra::RowMatrix
-  ML_Epetra::RowMatrix* MLMatrix = new ML_Epetra::RowMatrix(ML_Mat,Comm);
+  ML_Epetra::RowMatrix* MLMatrix = new ML_Epetra::RowMatrix(ML_Mat);
 
   // 3.- be sure that the two matrices have the same row map
 

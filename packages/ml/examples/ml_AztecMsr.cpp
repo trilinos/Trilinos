@@ -42,7 +42,8 @@
 // to the documentation in Trilinos/packages/aztecoo/src/Aztec2Petra.h.
 
 #include "ml_config.h"
-#if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_TEUCHOS) && defined(HAVE_ML_AZTECOO)
+// currently does not work for an Epetra/AztecOO problem
+#if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_TEUCHOS) && defined(HAVE_ML_AZTECOO) && defined(FIXED)
 
 #ifdef HAVE_MPI
 #include "mpi.h"

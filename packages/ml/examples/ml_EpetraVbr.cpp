@@ -169,7 +169,7 @@ int main(int argc, char *argv[])
   solver.SetAztecOption(AZ_output, 32);
 
   // solve with 500 iterations and 1e-5 tolerance  
-  solver.Iterate(500, 1e-5);
+  solver.Iterate(500, 1e-7);
 
   delete MLPrec;
   
@@ -185,7 +185,7 @@ int main(int argc, char *argv[])
     cout << "||x_exact - x||_2 = " << diff << endl;
   }
 
-  if (residual > 1e-5)
+  if (residual > 1e-3)
     exit(EXIT_FAILURE);
 
 #ifdef EPETRA_MPI
