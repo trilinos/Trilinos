@@ -347,7 +347,6 @@ namespace Teuchos
   {
     int i, j;
     typename ScalarTraits<ScalarType>::magnitudeType sum, anorm = ScalarTraits<ScalarType>::magnitude(ScalarTraits<ScalarType>::zero());
-    ScalarType* ptr;
     
     for (i = 0; i < numRows_; i++) {
       sum = ScalarTraits<ScalarType>::magnitude(ScalarTraits<ScalarType>::zero());

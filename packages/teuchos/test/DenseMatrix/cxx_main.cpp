@@ -20,7 +20,7 @@ typedef SerialDenseVector<OTYPE, STYPE> DVector;
 int main(int argc, char* argv[]) 
 {
 
-  int i, j, k;
+  int i, j;
   bool verbose = 0;
   if (argc>1) if (argv[1][0]=='-' && argv[1][1]=='v') verbose = true;
 
