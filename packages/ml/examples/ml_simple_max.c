@@ -256,11 +256,13 @@ int main(int argc, char *argv[])
   ML_Init_Amatrix      (ml_edges, MaxMgLevels-1, Edge_Partition.Nlocal,
 			Edge_Partition.Nlocal, &Edge_Partition);
 
-  ML_Set_Amatrix_Getrow(ml_edges, MaxMgLevels-1,  user_Ke_getrow, 
+  MLnew_Set_Amatrix_Getrow(ml_edges, MaxMgLevels-1,  user_Ke_getrow, 
 			user_update_ghost_edges,  
 			Edge_Partition.Nlocal + Edge_Partition.Nghost);
 
-  ML_Set_Amatrix_Matvec(ml_edges, MaxMgLevels-1,  user_Ke_matvec);
+  ML_Operator_Set_ApplyFunc(&(ml_edges->Amat[MaxMgLevels-1]),
+			       ML_INTERNAL, user_Ke_matvec);
+
 
   /* Build Kn directly as an ML matrix.                                  */
 
@@ -277,10 +279,11 @@ int main(int argc, char *argv[])
   user_Tmat_data.Kn   = &(ml_nodes->Amat[MaxMgLevels-1]);
 
   ML_Operator_Set_ApplyFuncData(Tmat, Node_Partition.Nlocal,
-				Edge_Partition.Nlocal, ML_EXTERNAL, 
+				Edge_Partition.Nlocal, ML_INTERNAL, 
 				(void *) &user_Tmat_data, Edge_Partition.Nlocal,
 				  user_T_matvec, 0);
-  ML_Operator_Set_Getrow(Tmat,ML_EXTERNAL,Edge_Partition.Nlocal,user_T_getrow);
+
+  ML_Operator_Set_Getrow(Tmat,ML_INTERNAL,Edge_Partition.Nlocal,user_T_getrow);
 
   ML_CommInfoOP_Generate( &(Tmat->getrow->pre_comm), user_update_ghost_nodes, 
 			    &Node_Partition, ml_edges->comm, Tmat->invec_leng, 
@@ -973,8 +976,10 @@ int user_Ke_matvec(void *data, int Nlocal_edges, double p[], int N_out,
   double dcenter, doff, sigma = .0001, *temp;
   int *id;
   struct user_partition *Edge_Partition;
+  ML_Operator *mat_in;
 
-  Edge_Partition = (struct user_partition *) data;
+  mat_in = (ML_Operator *) data; 
+  Edge_Partition = (struct user_partition *) ML_Get_MyMatvecData(mat_in);
   id = Edge_Partition->my_local_ids;
   nx = (int) sqrt( ((double) Edge_Partition->Nglobal/2) + .00001);
   dcenter  = 2 + 2.*sigma/((double) ( 3 * nx * nx));
@@ -1034,9 +1039,11 @@ int user_Ke_getrow(void *data, int N_requested_rows, int requested_rows[],
   double dcenter, doff, sigma = .0001;
   int *id;
   struct user_partition *Edge_Partition;
+  ML_Operator *mat_in;
 
-  if (allocated_space < 7) return 0;
-  Edge_Partition = (struct user_partition *) data;
+  mat_in = (ML_Operator *) data;
+  if (allocated_space < 7) return 0; 
+  Edge_Partition = (struct user_partition *) ML_Get_MyGetrowData(mat_in);
   id = Edge_Partition->my_local_ids;
   nx = (int) sqrt( ((double) Edge_Partition->Nglobal/2) + .00001);
   dcenter  = 2 + 2.*sigma/((double) ( 3 * nx * nx));
@@ -1135,11 +1142,12 @@ int user_T_getrow(void *data, int N_requested_rows, int requested_rows[],
   struct user_partition *Node_Partition;
   struct user_Tmat_data *user_Tmat_data;
   int *my_local_id;
+  ML_Operator *mat_in;
 
-
+  mat_in = (ML_Operator *) data;
 
   if (allocated_space < 3) return 0;
-  user_Tmat_data = (struct user_Tmat_data *) data;
+  user_Tmat_data = (struct user_Tmat_data *) ML_Get_MyGetrowData(mat_in);
   Node_Partition = user_Tmat_data->node;
   Edge_Partition = user_Tmat_data->edge;
   my_local_id = Node_Partition->my_local_ids;
@@ -1175,8 +1183,10 @@ int user_T_matvec(void *data, int Nlocal_nodes, double p[], int Nlocal_edges, do
   struct user_Tmat_data *user_Tmat_data;
   int *my_local_id;
   double *temp;
+  ML_Operator *mat_in;
 
-  user_Tmat_data = (struct user_Tmat_data *) data;
+  mat_in = (ML_Operator *) data;
+  user_Tmat_data = (struct user_Tmat_data *) ML_Get_MyMatvecData(mat_in);
   Node_Partition = user_Tmat_data->node;
   Edge_Partition = user_Tmat_data->edge;
   my_local_id = Node_Partition->my_local_ids;
