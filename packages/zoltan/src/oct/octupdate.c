@@ -532,8 +532,8 @@ static void initialize_region(LB *lb, pRegion *ret, LB_GID global_id,
 
   reg = (pRegion)malloc(sizeof(Region));
   *ret = reg;
-  reg->Tag.Global_ID = global_id;
-  reg->Tag.Local_ID = local_id;
+  LB_SET_GID(reg->Tag.Global_ID, global_id);
+  LB_SET_LID(reg->Tag.Local_ID, local_id);
   reg->Tag.Proc = LB_Proc;
   /* reg->Proc = 0; */
   reg->Coord[0] = reg->Coord[1] = reg->Coord[2] = 0.0;
