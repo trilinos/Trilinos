@@ -142,6 +142,9 @@ private:
 //! Main subroutine of Rosenbrock.C
 int main()
 {
+  // Print out the NOX code version number
+  cout << "\n" << NOX::version() << endl;
+
   // Set up the problem interface
   Rosenbrock rosenbrock;
   
