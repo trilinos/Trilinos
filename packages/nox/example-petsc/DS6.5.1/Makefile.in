@@ -13,7 +13,7 @@
 
 @SET_MAKE@
 
-# @HEADER
+#@HEADER
 # ************************************************************************
 # 
 #            NOX: An Object-Oriented Nonlinear Solver Package
@@ -40,7 +40,7 @@
 # (rppawlo@sandia.gov).
 # 
 # ************************************************************************
-# @HEADER
+#@HEADER
 
 SHELL = @SHELL@
 
@@ -65,7 +65,7 @@ oldincludedir = /usr/include
 pkgdatadir = $(datadir)/@PACKAGE@
 pkglibdir = $(libdir)/@PACKAGE@
 pkgincludedir = $(includedir)/@PACKAGE@
-top_builddir = ..
+top_builddir = ../..
 
 ACLOCAL = @ACLOCAL@
 AUTOCONF = @AUTOCONF@
@@ -107,55 +107,38 @@ am__include = @am__include@
 am__quote = @am__quote@
 install_sh = @install_sh@
 
-@BUILD_EXAMPLES_TRUE@EXAMPLES_LIBRARY = libnoxexample.a
-@BUILD_EXAMPLES_TRUE@EXAMPLES = rosenbrock
+EXAMPLE = example
 
-noinst_LIBRARIES = $(EXAMPLES_LIBRARY)
-noinst_PROGRAMS = $(EXAMPLES)
+noinst_PROGRAMS = $(EXAMPLE)
 
-# Header files are included here so that they are included in the
-# automatically generated distribution.
-libnoxexample_a_SOURCES = \
-	$(srcdir)/NOX_Example_Vector.H \
-	$(srcdir)/NOX_Example_Vector.C \
-	$(srcdir)/NOX_Example_Matrix.H \
-	$(srcdir)/NOX_Example_Matrix.C \
-	$(srcdir)/NOX_Example_Interface.H \
-	$(srcdir)/NOX_Example_Group.H \
-	$(srcdir)/NOX_Example_Group.C 
+example_SOURCES = $(srcdir)/Example.C \
+	$(srcdir)/DennisSchnabel.C $(srcdir)/DennisSchnabel.H \
+	$(srcdir)/Problem_Interface.C $(srcdir)/Problem_Interface.H
 
 
-libnoxexample_a_CXXFLAGS = -I$(top_srcdir)/src
+example_DEPENDENCIES = $(top_builddir)/src/libnox.a \
+        $(top_builddir)/src-petsc/libnoxpetsc.a
 
-rosenbrock_SOURCES = $(srcdir)/Rosenbrock.C
 
-rosenbrock_DEPENDENCIES = $(top_builddir)/src/libnox.a $(top_builddir)/example/libnoxexample.a 
+example_CXXFLAGS = $(PETSC_CXXFLAGS) \
+	-I$(top_srcdir)/src -I$(top_srcdir)/src-petsc
 
-rosenbrock_CXXFLAGS = -I$(top_srcdir)/src
 
-rosenbrock_LDADD = -L$(top_builddir)/src -L$(top_builddir)/example -lnox -lnoxexample
+example_LDADD = -L$(top_builddir)/src -L$(top_builddir)/src-petsc \
+                -lnox -lnoxpetsc ${PETSC_LIB}
 
-MAINTAINERCLEANFILES = Makefile.in 
-subdir = example
+subdir = example-petsc/DS6.5.1
 mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/NOX_Config.h
 CONFIG_CLEAN_FILES =
-LIBRARIES = $(noinst_LIBRARIES)
-
-libnoxexample_a_AR = $(AR) cru
-libnoxexample_a_LIBADD =
-am_libnoxexample_a_OBJECTS = \
-	libnoxexample_a-NOX_Example_Vector.$(OBJEXT) \
-	libnoxexample_a-NOX_Example_Matrix.$(OBJEXT) \
-	libnoxexample_a-NOX_Example_Group.$(OBJEXT)
-libnoxexample_a_OBJECTS = $(am_libnoxexample_a_OBJECTS)
-@BUILD_EXAMPLES_TRUE@noinst_PROGRAMS = rosenbrock$(EXEEXT)
-@BUILD_EXAMPLES_FALSE@noinst_PROGRAMS =
+noinst_PROGRAMS = example$(EXEEXT)
 PROGRAMS = $(noinst_PROGRAMS)
 
-am_rosenbrock_OBJECTS = rosenbrock-Rosenbrock.$(OBJEXT)
-rosenbrock_OBJECTS = $(am_rosenbrock_OBJECTS)
-rosenbrock_LDFLAGS =
+am_example_OBJECTS = example-Example.$(OBJEXT) \
+	example-DennisSchnabel.$(OBJEXT) \
+	example-Problem_Interface.$(OBJEXT)
+example_OBJECTS = $(am_example_OBJECTS)
+example_LDFLAGS =
 
 DEFS = @DEFS@
 DEFAULT_INCLUDES =  -I. -I$(srcdir) -I$(top_builddir)/src
@@ -163,10 +146,9 @@ CPPFLAGS = @CPPFLAGS@
 LDFLAGS = @LDFLAGS@
 LIBS = @LIBS@
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
-@AMDEP_TRUE@DEP_FILES = $(DEPDIR)/libnoxexample_a-NOX_Example_Group.Po \
-@AMDEP_TRUE@	$(DEPDIR)/libnoxexample_a-NOX_Example_Matrix.Po \
-@AMDEP_TRUE@	$(DEPDIR)/libnoxexample_a-NOX_Example_Vector.Po \
-@AMDEP_TRUE@	$(DEPDIR)/rosenbrock-Rosenbrock.Po
+@AMDEP_TRUE@DEP_FILES = $(DEPDIR)/example-DennisSchnabel.Po \
+@AMDEP_TRUE@	$(DEPDIR)/example-Example.Po \
+@AMDEP_TRUE@	$(DEPDIR)/example-Problem_Interface.Po
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
 CXXLD = $(CXX)
@@ -178,9 +160,9 @@ COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
 CCLD = $(CC)
 LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
-DIST_SOURCES = $(libnoxexample_a_SOURCES) $(rosenbrock_SOURCES)
+DIST_SOURCES = $(example_SOURCES)
 DIST_COMMON = Makefile.am Makefile.in
-SOURCES = $(libnoxexample_a_SOURCES) $(rosenbrock_SOURCES)
+SOURCES = $(example_SOURCES)
 
 all: all-am
 
@@ -188,33 +170,20 @@ all: all-am
 .SUFFIXES: .C .o .obj
 $(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ Makefile.am  $(top_srcdir)/configure.ac $(ACLOCAL_M4)
 	cd $(top_srcdir) && \
-	  $(AUTOMAKE) --foreign  example/Makefile
+	  $(AUTOMAKE) --foreign  example-petsc/DS6.5.1/Makefile
 Makefile: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.in  $(top_builddir)/config.status
 	cd $(top_builddir) && \
 	  CONFIG_HEADERS= CONFIG_LINKS= \
 	  CONFIG_FILES=$(subdir)/$@ $(SHELL) ./config.status
 
-AR = ar
-
-clean-noinstLIBRARIES:
-	-test -z "$(noinst_LIBRARIES)" || rm -f $(noinst_LIBRARIES)
-libnoxexample_a-NOX_Example_Vector.$(OBJEXT): \
-	$(srcdir)/NOX_Example_Vector.C
-libnoxexample_a-NOX_Example_Matrix.$(OBJEXT): \
-	$(srcdir)/NOX_Example_Matrix.C
-libnoxexample_a-NOX_Example_Group.$(OBJEXT): \
-	$(srcdir)/NOX_Example_Group.C
-libnoxexample.a: $(libnoxexample_a_OBJECTS) $(libnoxexample_a_DEPENDENCIES) 
-	-rm -f libnoxexample.a
-	$(libnoxexample_a_AR) libnoxexample.a $(libnoxexample_a_OBJECTS) $(libnoxexample_a_LIBADD)
-	$(RANLIB) libnoxexample.a
-
 clean-noinstPROGRAMS:
 	-test -z "$(noinst_PROGRAMS)" || rm -f $(noinst_PROGRAMS)
-rosenbrock-Rosenbrock.$(OBJEXT): $(srcdir)/Rosenbrock.C
-rosenbrock$(EXEEXT): $(rosenbrock_OBJECTS) $(rosenbrock_DEPENDENCIES) 
-	@rm -f rosenbrock$(EXEEXT)
-	$(CXXLINK) $(rosenbrock_LDFLAGS) $(rosenbrock_OBJECTS) $(rosenbrock_LDADD) $(LIBS)
+example-Example.$(OBJEXT): $(srcdir)/Example.C
+example-DennisSchnabel.$(OBJEXT): $(srcdir)/DennisSchnabel.C
+example-Problem_Interface.$(OBJEXT): $(srcdir)/Problem_Interface.C
+example$(EXEEXT): $(example_OBJECTS) $(example_DEPENDENCIES) 
+	@rm -f example$(EXEEXT)
+	$(CXXLINK) $(example_LDFLAGS) $(example_OBJECTS) $(example_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT) core *.core
@@ -222,10 +191,9 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/libnoxexample_a-NOX_Example_Group.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/libnoxexample_a-NOX_Example_Matrix.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/libnoxexample_a-NOX_Example_Vector.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/rosenbrock-Rosenbrock.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/example-DennisSchnabel.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/example-Example.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/example-Problem_Interface.Po@am__quote@
 
 distclean-depend:
 	-rm -rf $(DEPDIR)
@@ -242,53 +210,41 @@ distclean-depend:
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 	$(CXXCOMPILE) -c -o $@ `cygpath -w $<`
 
-libnoxexample_a-NOX_Example_Vector.o: $(srcdir)/NOX_Example_Vector.C
-@AMDEP_TRUE@	source='$(srcdir)/NOX_Example_Vector.C' object='libnoxexample_a-NOX_Example_Vector.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/libnoxexample_a-NOX_Example_Vector.Po' tmpdepfile='$(DEPDIR)/libnoxexample_a-NOX_Example_Vector.TPo' @AMDEPBACKSLASH@
+example-Example.o: $(srcdir)/Example.C
+@AMDEP_TRUE@	source='$(srcdir)/Example.C' object='example-Example.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/example-Example.Po' tmpdepfile='$(DEPDIR)/example-Example.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnoxexample_a_CXXFLAGS) $(CXXFLAGS) -c -o libnoxexample_a-NOX_Example_Vector.o `test -f $(srcdir)/NOX_Example_Vector.C || echo '$(srcdir)/'`$(srcdir)/NOX_Example_Vector.C
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(example_CXXFLAGS) $(CXXFLAGS) -c -o example-Example.o `test -f $(srcdir)/Example.C || echo '$(srcdir)/'`$(srcdir)/Example.C
 
-libnoxexample_a-NOX_Example_Vector.obj: $(srcdir)/NOX_Example_Vector.C
-@AMDEP_TRUE@	source='$(srcdir)/NOX_Example_Vector.C' object='libnoxexample_a-NOX_Example_Vector.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/libnoxexample_a-NOX_Example_Vector.Po' tmpdepfile='$(DEPDIR)/libnoxexample_a-NOX_Example_Vector.TPo' @AMDEPBACKSLASH@
+example-Example.obj: $(srcdir)/Example.C
+@AMDEP_TRUE@	source='$(srcdir)/Example.C' object='example-Example.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/example-Example.Po' tmpdepfile='$(DEPDIR)/example-Example.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnoxexample_a_CXXFLAGS) $(CXXFLAGS) -c -o libnoxexample_a-NOX_Example_Vector.obj `cygpath -w $(srcdir)/NOX_Example_Vector.C`
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(example_CXXFLAGS) $(CXXFLAGS) -c -o example-Example.obj `cygpath -w $(srcdir)/Example.C`
 
-libnoxexample_a-NOX_Example_Matrix.o: $(srcdir)/NOX_Example_Matrix.C
-@AMDEP_TRUE@	source='$(srcdir)/NOX_Example_Matrix.C' object='libnoxexample_a-NOX_Example_Matrix.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/libnoxexample_a-NOX_Example_Matrix.Po' tmpdepfile='$(DEPDIR)/libnoxexample_a-NOX_Example_Matrix.TPo' @AMDEPBACKSLASH@
+example-DennisSchnabel.o: $(srcdir)/DennisSchnabel.C
+@AMDEP_TRUE@	source='$(srcdir)/DennisSchnabel.C' object='example-DennisSchnabel.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/example-DennisSchnabel.Po' tmpdepfile='$(DEPDIR)/example-DennisSchnabel.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnoxexample_a_CXXFLAGS) $(CXXFLAGS) -c -o libnoxexample_a-NOX_Example_Matrix.o `test -f $(srcdir)/NOX_Example_Matrix.C || echo '$(srcdir)/'`$(srcdir)/NOX_Example_Matrix.C
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(example_CXXFLAGS) $(CXXFLAGS) -c -o example-DennisSchnabel.o `test -f $(srcdir)/DennisSchnabel.C || echo '$(srcdir)/'`$(srcdir)/DennisSchnabel.C
 
-libnoxexample_a-NOX_Example_Matrix.obj: $(srcdir)/NOX_Example_Matrix.C
-@AMDEP_TRUE@	source='$(srcdir)/NOX_Example_Matrix.C' object='libnoxexample_a-NOX_Example_Matrix.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/libnoxexample_a-NOX_Example_Matrix.Po' tmpdepfile='$(DEPDIR)/libnoxexample_a-NOX_Example_Matrix.TPo' @AMDEPBACKSLASH@
+example-DennisSchnabel.obj: $(srcdir)/DennisSchnabel.C
+@AMDEP_TRUE@	source='$(srcdir)/DennisSchnabel.C' object='example-DennisSchnabel.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/example-DennisSchnabel.Po' tmpdepfile='$(DEPDIR)/example-DennisSchnabel.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnoxexample_a_CXXFLAGS) $(CXXFLAGS) -c -o libnoxexample_a-NOX_Example_Matrix.obj `cygpath -w $(srcdir)/NOX_Example_Matrix.C`
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(example_CXXFLAGS) $(CXXFLAGS) -c -o example-DennisSchnabel.obj `cygpath -w $(srcdir)/DennisSchnabel.C`
 
-libnoxexample_a-NOX_Example_Group.o: $(srcdir)/NOX_Example_Group.C
-@AMDEP_TRUE@	source='$(srcdir)/NOX_Example_Group.C' object='libnoxexample_a-NOX_Example_Group.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/libnoxexample_a-NOX_Example_Group.Po' tmpdepfile='$(DEPDIR)/libnoxexample_a-NOX_Example_Group.TPo' @AMDEPBACKSLASH@
+example-Problem_Interface.o: $(srcdir)/Problem_Interface.C
+@AMDEP_TRUE@	source='$(srcdir)/Problem_Interface.C' object='example-Problem_Interface.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/example-Problem_Interface.Po' tmpdepfile='$(DEPDIR)/example-Problem_Interface.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnoxexample_a_CXXFLAGS) $(CXXFLAGS) -c -o libnoxexample_a-NOX_Example_Group.o `test -f $(srcdir)/NOX_Example_Group.C || echo '$(srcdir)/'`$(srcdir)/NOX_Example_Group.C
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(example_CXXFLAGS) $(CXXFLAGS) -c -o example-Problem_Interface.o `test -f $(srcdir)/Problem_Interface.C || echo '$(srcdir)/'`$(srcdir)/Problem_Interface.C
 
-libnoxexample_a-NOX_Example_Group.obj: $(srcdir)/NOX_Example_Group.C
-@AMDEP_TRUE@	source='$(srcdir)/NOX_Example_Group.C' object='libnoxexample_a-NOX_Example_Group.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/libnoxexample_a-NOX_Example_Group.Po' tmpdepfile='$(DEPDIR)/libnoxexample_a-NOX_Example_Group.TPo' @AMDEPBACKSLASH@
+example-Problem_Interface.obj: $(srcdir)/Problem_Interface.C
+@AMDEP_TRUE@	source='$(srcdir)/Problem_Interface.C' object='example-Problem_Interface.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/example-Problem_Interface.Po' tmpdepfile='$(DEPDIR)/example-Problem_Interface.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnoxexample_a_CXXFLAGS) $(CXXFLAGS) -c -o libnoxexample_a-NOX_Example_Group.obj `cygpath -w $(srcdir)/NOX_Example_Group.C`
-
-rosenbrock-Rosenbrock.o: $(srcdir)/Rosenbrock.C
-@AMDEP_TRUE@	source='$(srcdir)/Rosenbrock.C' object='rosenbrock-Rosenbrock.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/rosenbrock-Rosenbrock.Po' tmpdepfile='$(DEPDIR)/rosenbrock-Rosenbrock.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(rosenbrock_CXXFLAGS) $(CXXFLAGS) -c -o rosenbrock-Rosenbrock.o `test -f $(srcdir)/Rosenbrock.C || echo '$(srcdir)/'`$(srcdir)/Rosenbrock.C
-
-rosenbrock-Rosenbrock.obj: $(srcdir)/Rosenbrock.C
-@AMDEP_TRUE@	source='$(srcdir)/Rosenbrock.C' object='rosenbrock-Rosenbrock.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/rosenbrock-Rosenbrock.Po' tmpdepfile='$(DEPDIR)/rosenbrock-Rosenbrock.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(rosenbrock_CXXFLAGS) $(CXXFLAGS) -c -o rosenbrock-Rosenbrock.obj `cygpath -w $(srcdir)/Rosenbrock.C`
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(example_CXXFLAGS) $(CXXFLAGS) -c -o example-Problem_Interface.obj `cygpath -w $(srcdir)/Problem_Interface.C`
 CXXDEPMODE = @CXXDEPMODE@
 uninstall-info-am:
 
@@ -326,7 +282,7 @@ distclean-tags:
 
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 
-top_distdir = ..
+top_distdir = ../..
 distdir = $(top_distdir)/$(PACKAGE)-$(VERSION)
 
 distdir: $(DISTFILES)
@@ -347,7 +303,7 @@ distdir: $(DISTFILES)
 	done
 check-am: all-am
 check: check-am
-all-am: Makefile $(LIBRARIES) $(PROGRAMS)
+all-am: Makefile $(PROGRAMS)
 
 installdirs:
 
@@ -374,11 +330,9 @@ distclean-generic:
 maintainer-clean-generic:
 	@echo "This command is intended for maintainers to use"
 	@echo "it deletes files that may require special tools to rebuild."
-	-test -z "$(MAINTAINERCLEANFILES)" || rm -f $(MAINTAINERCLEANFILES)
 clean: clean-am
 
-clean-am: clean-generic clean-noinstLIBRARIES clean-noinstPROGRAMS \
-	mostlyclean-am
+clean-am: clean-generic clean-noinstPROGRAMS mostlyclean-am
 
 distclean: distclean-am
 
@@ -414,16 +368,18 @@ mostlyclean-am: mostlyclean-compile mostlyclean-generic
 uninstall-am: uninstall-info-am
 
 .PHONY: GTAGS all all-am check check-am clean clean-generic \
-	clean-noinstLIBRARIES clean-noinstPROGRAMS distclean \
-	distclean-compile distclean-depend distclean-generic \
-	distclean-tags distdir dvi dvi-am info info-am install \
-	install-am install-data install-data-am install-exec \
-	install-exec-am install-info install-info-am install-man \
-	install-strip installcheck installcheck-am installdirs \
-	maintainer-clean maintainer-clean-generic mostlyclean \
-	mostlyclean-compile mostlyclean-generic tags uninstall \
-	uninstall-am uninstall-info-am
+	clean-noinstPROGRAMS distclean distclean-compile \
+	distclean-depend distclean-generic distclean-tags distdir dvi \
+	dvi-am info info-am install install-am install-data \
+	install-data-am install-exec install-exec-am install-info \
+	install-info-am install-man install-strip installcheck \
+	installcheck-am installdirs maintainer-clean \
+	maintainer-clean-generic mostlyclean mostlyclean-compile \
+	mostlyclean-generic tags uninstall uninstall-am \
+	uninstall-info-am
 
+
+include ${PETSC_DIR}/bmake/common/base
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

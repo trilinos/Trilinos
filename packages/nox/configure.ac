@@ -474,6 +474,23 @@ AC_MSG_CHECKING(whether we should build the noxepetra library)
 AC_MSG_RESULT(${BUILD_LIBNOXEPETRA})
 
 # ------------------------------------------------------------------------
+# With Petsc
+# ------------------------------------------------------------------------
+
+
+AC_ARG_ENABLE(petsc,
+[  --enable-petsc         compile noxpetsc library],
+[BUILD_LIBNOXPETSC=$enableval],
+[BUILD_LIBNOXPETSC=no]
+)
+
+#PETSC_BOPT=g_c++
+#PETSC_ARCH=linux
+
+AC_MSG_CHECKING(whether we should build the noxpetsc library)
+AC_MSG_RESULT(${BUILD_LIBNOXPETSC})
+
+# ------------------------------------------------------------------------
 # Trilinos include file check for building noxepetra library
 # ------------------------------------------------------------------------
 
@@ -520,6 +537,55 @@ fi
 AC_SUBST(TRILINOS_CXXFLAGS)
 
 # ------------------------------------------------------------------------
+# Petsc include file check for building noxpetsc library
+# ------------------------------------------------------------------------
+
+AC_DEFUN(PETSC_INCLUDE_CHECK,
+[
+  AC_ARG_WITH($1-include,
+  [  --with-$1-include    specify location of $1 header files],
+  [$1_INC=$withval])
+
+  AC_MSG_CHECKING(for $1 include directory)
+  if test -n "${$1_INC}" && test -f ${$1_INC}/$2; then
+    AC_MSG_RESULT([${$1_INC}])
+  elif test -f ${PETSC_DIR}/bmake/${PETSC_ARCH}/$2; then
+    $1_INC=${PETSC_DIR}/bmake/${PETSC_ARCH}
+    AC_MSG_RESULT([${$1_INC}])
+  elif test -f ${PETSC_DIR}/bmake/common/$2; then
+    $1_INC=${PETSC_DIR}/bmake/common
+    AC_MSG_RESULT([${$1_INC}])
+  elif test -f ${PETSC_DIR}/include/$2; then
+    $1_INC=${PETSC_DIR}/include
+    AC_MSG_RESULT([${$1_INC}])
+  else
+    AC_MSG_RESULT(no)
+    AC_MSG_ERROR([Cannot find $1 include directory containing $2. Make sure PETSC_DIR and PETSC_ARCH are defined.])
+  fi
+
+])
+
+if test X${BUILD_LIBNOXPETSC} = Xyes; then
+
+  PETSC_INCLUDE_CHECK(petsc,petsc.h)
+  PETSC_INCLUDE_CHECK(petsccommon,base)
+  PETSC_INCLUDE_CHECK(petscbmake,petscconf.h)
+
+#  if test "X${HAVE_PKG_MPI}" = "Xyes"; then
+#    TRILINOS_COMM="MPI"
+#  else
+#    TRILINOS_COMM="SERIAL"
+#  fi
+#
+  PETSC_CXXFLAGS="-I${petsc_INC} -I${petsccommon_INC} -I${petscbmake_INC}"
+
+  AC_SUBST(PETSC_CXXFLAGS)
+
+fi
+
+#AC_SUBST(PETSC_CXXFLAGS)
+
+# ------------------------------------------------------------------------
 # Checks for building simple examples
 # ------------------------------------------------------------------------
 
@@ -550,6 +616,24 @@ fi
 
 AC_MSG_CHECKING(whether we should build the noxepetra examples)
 AC_MSG_RESULT(${BUILD_EPETRA_EXAMPLES})
+
+# ------------------------------------------------------------------------
+# Checks for building petsc examples
+# ------------------------------------------------------------------------
+
+AC_ARG_ENABLE(petsc-examples,
+[  --enable-petsc-examples     compile petsc examples],
+[BUILD_PETSC_EXAMPLES=${enableval}],
+[BUILD_PETSC_EXAMPLES=no]
+)
+
+# Cannot build the example if we don't build the library
+if test X${BUILD_LIBNOXPETSC} != Xyes; then
+   BUILD_PETSC_EXAMPLES=no
+fi
+
+AC_MSG_CHECKING(whether we should build the noxpetsc examples)
+AC_MSG_RESULT(${BUILD_PETSC_EXAMPLES})
 
 # ------------------------------------------------------------------------
 # Checks for basic libraries for examples
@@ -712,6 +796,59 @@ AM_CONDITIONAL(BUILD_LIBNOXEPETRA, test X${BUILD_LIBNOXEPETRA} = Xyes)
 AM_CONDITIONAL(BUILD_EPETRA_EXAMPLES, test X${BUILD_EPETRA_EXAMPLES} = Xyes)
 
 # ------------------------------------------------------------------------
+# Checks for Petsc libraries
+# ------------------------------------------------------------------------
+
+AC_DEFUN(PETSC_LIB_CHECK,
+[
+  AC_ARG_WITH($1-libdir,
+  [  --with-$1-libdir    specify location of $1 library],
+  [$1_LIBDIR=$withval])
+
+  AC_MSG_CHECKING(whether PETSC_BOPT is defined)
+  if test -n "${PETSC_BOPT}"; then
+     AC_MSG_RESULT([yes (${PETSC_BOPT})])
+  else
+     AC_MSG_ERROR([Cannot find PETSC_BOPT environment variable. Please define.])  fi
+  
+  AC_MSG_CHECKING(whether PETSC_DIR is defined)
+  if test -n "${PETSC_DIR}"; then
+     AC_MSG_RESULT([yes (${PETSC_DIR})])
+  else
+     AC_MSG_ERROR([Cannot find PETSC_DIR environment variable. Please define.])
+  fi
+  
+  AC_MSG_CHECKING(for $1)
+  if test -n "${$1_LIBDIR}" && test -f ${$1_LIBDIR}/lib$1.a; then
+    LDFLAGS="-L${$1_LIBDIR} ${LDFLAGS}"
+    AC_MSG_RESULT(yes)
+  elif test -f ${PETSC_DIR}/lib/lib${PETSC_BOPT}/${PETSC_ARCH}/lib$1.a; then
+    LDFLAGS="-L${PETSC_DIR}/lib/lib${PETSC_BOPT}/${PETSC_ARCH} ${LDFLAGS}"
+    AC_MSG_RESULT(yes)
+  else
+    AC_MSG_RESULT(no)
+    AC_MSG_ERROR([Cannot find $1 library])
+  fi   
+
+  LIBS="-l$1 ${LIBS}"
+    
+])
+    
+if test X${BUILD_PETSC_EXAMPLES} = Xyes; then
+  
+  # Check for petsc
+  PETSC_LIB_CHECK(petsc)
+
+fi
+
+# ------------------------------------------------------------------------
+# Checks for PETSC status 
+# ------------------------------------------------------------------------
+
+AM_CONDITIONAL(BUILD_LIBNOXPETSC, test X${BUILD_LIBNOXPETSC} = Xyes)
+AM_CONDITIONAL(BUILD_PETSC_EXAMPLES, test X${BUILD_PETSC_EXAMPLES} = Xyes)
+
+# ------------------------------------------------------------------------
 # LOCA Stuff
 # ------------------------------------------------------------------------
 AC_ARG_ENABLE(loca,
@@ -801,6 +938,9 @@ AC_CONFIG_FILES([
 		example-epetra/DS6.5.1/Makefile
 		example-epetra/1Dfem_linear/Makefile
 		example-epetra/1Dfem_nonlinear/Makefile
+                src-petsc/Makefile
+                example-petsc/Makefile
+                example-petsc/DS6.5.1/Makefile
 		])
 
 AC_OUTPUT()

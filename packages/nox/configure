@@ -806,8 +806,10 @@ Optional Features:
   --enable-debug          compile with debugging
   --enable-opt            compile with optimization
   --enable-epetra         compile noxepetra library
+  --enable-petsc         compile noxpetsc library
   --enable-examples       compile simple examples
   --enable-epetra-examples     compile epetra examples
+  --enable-petsc-examples     compile petsc examples
   --enable-loca           enable loca
 
 Optional Packages:
@@ -825,10 +827,14 @@ Optional Packages:
                           (uses TRILINOS_HOME if no argument)
   --with-epetra-include    specify location of epetra header files
   --with-aztecoo-include    specify location of aztecoo header files
+  --with-petsc-include    specify location of petsc header files
+  --with-petsccommon-include    specify location of petsccommon header files
+  --with-petscbmake-include    specify location of petscbmake header files
   --with-y12m-libdir      specify location of y12m library
   --with-ifpack-libdir    specify location of ifpack library
   --with-aztecoo-libdir    specify location of aztecoo library
   --with-epetra-libdir    specify location of epetra library
+  --with-petsc-libdir    specify location of petsc library
 
 Some influential environment variables:
   CXX         C++ compiler command
@@ -3260,6 +3266,27 @@ echo "$as_me:$LINENO: result: ${BUILD_LIBNOXEPETRA}" >&5
 echo "${ECHO_T}${BUILD_LIBNOXEPETRA}" >&6
 
 # ------------------------------------------------------------------------
+# With Petsc
+# ------------------------------------------------------------------------
+
+# Check whether --enable-petsc or --disable-petsc was given.
+if test "${enable_petsc+set}" = set; then
+  enableval="$enable_petsc"
+  BUILD_LIBNOXPETSC=$enableval
+else
+  BUILD_LIBNOXPETSC=no
+
+fi;
+
+#PETSC_BOPT=g_c++
+#PETSC_ARCH=linux
+
+echo "$as_me:$LINENO: checking whether we should build the noxpetsc library" >&5
+echo $ECHO_N "checking whether we should build the noxpetsc library... $ECHO_C" >&6
+echo "$as_me:$LINENO: result: ${BUILD_LIBNOXPETSC}" >&5
+echo "${ECHO_T}${BUILD_LIBNOXPETSC}" >&6
+
+# ------------------------------------------------------------------------
 # Trilinos include file check for building noxepetra library
 # ------------------------------------------------------------------------
 
@@ -3338,6 +3365,117 @@ echo "$as_me: error: Cannot find aztecoo include directory containing AztecOO.h"
 fi
 
 # ------------------------------------------------------------------------
+# Petsc include file check for building noxpetsc library
+# ------------------------------------------------------------------------
+
+if test X${BUILD_LIBNOXPETSC} = Xyes; then
+
+# Check whether --with-petsc-include or --without-petsc-include was given.
+if test "${with_petsc_include+set}" = set; then
+  withval="$with_petsc_include"
+  petsc_INC=$withval
+fi;
+
+  echo "$as_me:$LINENO: checking for petsc include directory" >&5
+echo $ECHO_N "checking for petsc include directory... $ECHO_C" >&6
+  if test -n "${petsc_INC}" && test -f ${petsc_INC}/petsc.h; then
+    echo "$as_me:$LINENO: result: ${petsc_INC}" >&5
+echo "${ECHO_T}${petsc_INC}" >&6
+  elif test -f ${PETSC_DIR}/bmake/${PETSC_ARCH}/petsc.h; then
+    petsc_INC=${PETSC_DIR}/bmake/${PETSC_ARCH}
+    echo "$as_me:$LINENO: result: ${petsc_INC}" >&5
+echo "${ECHO_T}${petsc_INC}" >&6
+  elif test -f ${PETSC_DIR}/bmake/common/petsc.h; then
+    petsc_INC=${PETSC_DIR}/bmake/common
+    echo "$as_me:$LINENO: result: ${petsc_INC}" >&5
+echo "${ECHO_T}${petsc_INC}" >&6
+  elif test -f ${PETSC_DIR}/include/petsc.h; then
+    petsc_INC=${PETSC_DIR}/include
+    echo "$as_me:$LINENO: result: ${petsc_INC}" >&5
+echo "${ECHO_T}${petsc_INC}" >&6
+  else
+    echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+    { { echo "$as_me:$LINENO: error: Cannot find petsc include directory containing petsc.h. Make sure PETSC_DIR and PETSC_ARCH are defined." >&5
+echo "$as_me: error: Cannot find petsc include directory containing petsc.h. Make sure PETSC_DIR and PETSC_ARCH are defined." >&2;}
+   { (exit 1); exit 1; }; }
+  fi
+
+# Check whether --with-petsccommon-include or --without-petsccommon-include was given.
+if test "${with_petsccommon_include+set}" = set; then
+  withval="$with_petsccommon_include"
+  petsccommon_INC=$withval
+fi;
+
+  echo "$as_me:$LINENO: checking for petsccommon include directory" >&5
+echo $ECHO_N "checking for petsccommon include directory... $ECHO_C" >&6
+  if test -n "${petsccommon_INC}" && test -f ${petsccommon_INC}/base; then
+    echo "$as_me:$LINENO: result: ${petsccommon_INC}" >&5
+echo "${ECHO_T}${petsccommon_INC}" >&6
+  elif test -f ${PETSC_DIR}/bmake/${PETSC_ARCH}/base; then
+    petsccommon_INC=${PETSC_DIR}/bmake/${PETSC_ARCH}
+    echo "$as_me:$LINENO: result: ${petsccommon_INC}" >&5
+echo "${ECHO_T}${petsccommon_INC}" >&6
+  elif test -f ${PETSC_DIR}/bmake/common/base; then
+    petsccommon_INC=${PETSC_DIR}/bmake/common
+    echo "$as_me:$LINENO: result: ${petsccommon_INC}" >&5
+echo "${ECHO_T}${petsccommon_INC}" >&6
+  elif test -f ${PETSC_DIR}/include/base; then
+    petsccommon_INC=${PETSC_DIR}/include
+    echo "$as_me:$LINENO: result: ${petsccommon_INC}" >&5
+echo "${ECHO_T}${petsccommon_INC}" >&6
+  else
+    echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+    { { echo "$as_me:$LINENO: error: Cannot find petsccommon include directory containing base. Make sure PETSC_DIR and PETSC_ARCH are defined." >&5
+echo "$as_me: error: Cannot find petsccommon include directory containing base. Make sure PETSC_DIR and PETSC_ARCH are defined." >&2;}
+   { (exit 1); exit 1; }; }
+  fi
+
+# Check whether --with-petscbmake-include or --without-petscbmake-include was given.
+if test "${with_petscbmake_include+set}" = set; then
+  withval="$with_petscbmake_include"
+  petscbmake_INC=$withval
+fi;
+
+  echo "$as_me:$LINENO: checking for petscbmake include directory" >&5
+echo $ECHO_N "checking for petscbmake include directory... $ECHO_C" >&6
+  if test -n "${petscbmake_INC}" && test -f ${petscbmake_INC}/petscconf.h; then
+    echo "$as_me:$LINENO: result: ${petscbmake_INC}" >&5
+echo "${ECHO_T}${petscbmake_INC}" >&6
+  elif test -f ${PETSC_DIR}/bmake/${PETSC_ARCH}/petscconf.h; then
+    petscbmake_INC=${PETSC_DIR}/bmake/${PETSC_ARCH}
+    echo "$as_me:$LINENO: result: ${petscbmake_INC}" >&5
+echo "${ECHO_T}${petscbmake_INC}" >&6
+  elif test -f ${PETSC_DIR}/bmake/common/petscconf.h; then
+    petscbmake_INC=${PETSC_DIR}/bmake/common
+    echo "$as_me:$LINENO: result: ${petscbmake_INC}" >&5
+echo "${ECHO_T}${petscbmake_INC}" >&6
+  elif test -f ${PETSC_DIR}/include/petscconf.h; then
+    petscbmake_INC=${PETSC_DIR}/include
+    echo "$as_me:$LINENO: result: ${petscbmake_INC}" >&5
+echo "${ECHO_T}${petscbmake_INC}" >&6
+  else
+    echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+    { { echo "$as_me:$LINENO: error: Cannot find petscbmake include directory containing petscconf.h. Make sure PETSC_DIR and PETSC_ARCH are defined." >&5
+echo "$as_me: error: Cannot find petscbmake include directory containing petscconf.h. Make sure PETSC_DIR and PETSC_ARCH are defined." >&2;}
+   { (exit 1); exit 1; }; }
+  fi
+
+#  if test "X${HAVE_PKG_MPI}" = "Xyes"; then
+#    TRILINOS_COMM="MPI"
+#  else
+#    TRILINOS_COMM="SERIAL"
+#  fi
+#
+  PETSC_CXXFLAGS="-I${petsc_INC} -I${petsccommon_INC} -I${petscbmake_INC}"
+
+fi
+
+#AC_SUBST(PETSC_CXXFLAGS)
+
+# ------------------------------------------------------------------------
 # Checks for building simple examples
 # ------------------------------------------------------------------------
 
@@ -3385,6 +3523,29 @@ echo "$as_me:$LINENO: checking whether we should build the noxepetra examples" >
 echo $ECHO_N "checking whether we should build the noxepetra examples... $ECHO_C" >&6
 echo "$as_me:$LINENO: result: ${BUILD_EPETRA_EXAMPLES}" >&5
 echo "${ECHO_T}${BUILD_EPETRA_EXAMPLES}" >&6
+
+# ------------------------------------------------------------------------
+# Checks for building petsc examples
+# ------------------------------------------------------------------------
+
+# Check whether --enable-petsc-examples or --disable-petsc-examples was given.
+if test "${enable_petsc_examples+set}" = set; then
+  enableval="$enable_petsc_examples"
+  BUILD_PETSC_EXAMPLES=${enableval}
+else
+  BUILD_PETSC_EXAMPLES=no
+
+fi;
+
+# Cannot build the example if we don't build the library
+if test X${BUILD_LIBNOXPETSC} != Xyes; then
+   BUILD_PETSC_EXAMPLES=no
+fi
+
+echo "$as_me:$LINENO: checking whether we should build the noxpetsc examples" >&5
+echo $ECHO_N "checking whether we should build the noxpetsc examples... $ECHO_C" >&6
+echo "$as_me:$LINENO: result: ${BUILD_PETSC_EXAMPLES}" >&5
+echo "${ECHO_T}${BUILD_PETSC_EXAMPLES}" >&6
 
 # ------------------------------------------------------------------------
 # Checks for basic libraries for examples
@@ -3707,7 +3868,7 @@ done
 fi
 
 # Provide some information about the compiler.
-echo "$as_me:3710:" \
+echo "$as_me:3871:" \
      "checking for Fortran 77 compiler version" >&5
 ac_compiler=`set X $ac_compile; echo $2`
 { (eval echo "$as_me:$LINENO: \"$ac_compiler --version </dev/null >&5\"") >&5
@@ -3873,7 +4034,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:3876: \"$ac_link\") >&5
+(eval echo $as_me:4037: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -3945,7 +4106,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:3948: \"$ac_link\") >&5
+(eval echo $as_me:4109: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -4620,6 +4781,83 @@ else
 fi
 
 # ------------------------------------------------------------------------
+# Checks for Petsc libraries
+# ------------------------------------------------------------------------
+
+if test X${BUILD_PETSC_EXAMPLES} = Xyes; then
+
+  # Check for petsc
+
+# Check whether --with-petsc-libdir or --without-petsc-libdir was given.
+if test "${with_petsc_libdir+set}" = set; then
+  withval="$with_petsc_libdir"
+  petsc_LIBDIR=$withval
+fi;
+
+  echo "$as_me:$LINENO: checking whether PETSC_BOPT is defined" >&5
+echo $ECHO_N "checking whether PETSC_BOPT is defined... $ECHO_C" >&6
+  if test -n "${PETSC_BOPT}"; then
+     echo "$as_me:$LINENO: result: yes (${PETSC_BOPT})" >&5
+echo "${ECHO_T}yes (${PETSC_BOPT})" >&6
+  else
+     { { echo "$as_me:$LINENO: error: Cannot find PETSC_BOPT environment variable. Please define." >&5
+echo "$as_me: error: Cannot find PETSC_BOPT environment variable. Please define." >&2;}
+   { (exit 1); exit 1; }; }  fi
+
+  echo "$as_me:$LINENO: checking whether PETSC_DIR is defined" >&5
+echo $ECHO_N "checking whether PETSC_DIR is defined... $ECHO_C" >&6
+  if test -n "${PETSC_DIR}"; then
+     echo "$as_me:$LINENO: result: yes (${PETSC_DIR})" >&5
+echo "${ECHO_T}yes (${PETSC_DIR})" >&6
+  else
+     { { echo "$as_me:$LINENO: error: Cannot find PETSC_DIR environment variable. Please define." >&5
+echo "$as_me: error: Cannot find PETSC_DIR environment variable. Please define." >&2;}
+   { (exit 1); exit 1; }; }
+  fi
+
+  echo "$as_me:$LINENO: checking for petsc" >&5
+echo $ECHO_N "checking for petsc... $ECHO_C" >&6
+  if test -n "${petsc_LIBDIR}" && test -f ${petsc_LIBDIR}/libpetsc.a; then
+    LDFLAGS="-L${petsc_LIBDIR} ${LDFLAGS}"
+    echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6
+  elif test -f ${PETSC_DIR}/lib/lib${PETSC_BOPT}/${PETSC_ARCH}/libpetsc.a; then
+    LDFLAGS="-L${PETSC_DIR}/lib/lib${PETSC_BOPT}/${PETSC_ARCH} ${LDFLAGS}"
+    echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6
+  else
+    echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+    { { echo "$as_me:$LINENO: error: Cannot find petsc library" >&5
+echo "$as_me: error: Cannot find petsc library" >&2;}
+   { (exit 1); exit 1; }; }
+  fi
+
+  LIBS="-lpetsc ${LIBS}"
+
+fi
+
+# ------------------------------------------------------------------------
+# Checks for PETSC status
+# ------------------------------------------------------------------------
+
+if test X${BUILD_LIBNOXPETSC} = Xyes; then
+  BUILD_LIBNOXPETSC_TRUE=
+  BUILD_LIBNOXPETSC_FALSE='#'
+else
+  BUILD_LIBNOXPETSC_TRUE='#'
+  BUILD_LIBNOXPETSC_FALSE=
+fi
+
+if test X${BUILD_PETSC_EXAMPLES} = Xyes; then
+  BUILD_PETSC_EXAMPLES_TRUE=
+  BUILD_PETSC_EXAMPLES_FALSE='#'
+else
+  BUILD_PETSC_EXAMPLES_TRUE='#'
+  BUILD_PETSC_EXAMPLES_FALSE=
+fi
+
+# ------------------------------------------------------------------------
 # LOCA Stuff
 # ------------------------------------------------------------------------
 # Check whether --enable-loca or --disable-loca was given.
@@ -4697,7 +4935,7 @@ fi
 # Output files
 # ------------------------------------------------------------------------
 
-ac_config_files="$ac_config_files Makefile doc/Makefile src/Makefile src-epetra/Makefile example/Makefile example-epetra/Makefile example-epetra/DS6.5.1/Makefile example-epetra/1Dfem_linear/Makefile example-epetra/1Dfem_nonlinear/Makefile"
+ac_config_files="$ac_config_files Makefile doc/Makefile src/Makefile src-epetra/Makefile example/Makefile example-epetra/Makefile example-epetra/DS6.5.1/Makefile example-epetra/1Dfem_linear/Makefile example-epetra/1Dfem_nonlinear/Makefile src-petsc/Makefile example-petsc/Makefile example-petsc/DS6.5.1/Makefile"
 
 cat >confcache <<\_ACEOF
 # This file is a shell script that caches the results of configure
@@ -5183,6 +5421,9 @@ do
   "example-epetra/DS6.5.1/Makefile" ) CONFIG_FILES="$CONFIG_FILES example-epetra/DS6.5.1/Makefile" ;;
   "example-epetra/1Dfem_linear/Makefile" ) CONFIG_FILES="$CONFIG_FILES example-epetra/1Dfem_linear/Makefile" ;;
   "example-epetra/1Dfem_nonlinear/Makefile" ) CONFIG_FILES="$CONFIG_FILES example-epetra/1Dfem_nonlinear/Makefile" ;;
+  "src-petsc/Makefile" ) CONFIG_FILES="$CONFIG_FILES src-petsc/Makefile" ;;
+  "example-petsc/Makefile" ) CONFIG_FILES="$CONFIG_FILES example-petsc/Makefile" ;;
+  "example-petsc/DS6.5.1/Makefile" ) CONFIG_FILES="$CONFIG_FILES example-petsc/DS6.5.1/Makefile" ;;
   "default-1" ) CONFIG_COMMANDS="$CONFIG_COMMANDS default-1" ;;
   "src/NOX_Config.h" ) CONFIG_HEADERS="$CONFIG_HEADERS src/NOX_Config.h:src/NOX_Config.h.in" ;;
   *) { { echo "$as_me:$LINENO: error: invalid argument: $ac_config_target" >&5
@@ -5319,6 +5560,7 @@ s,@USE_ALTERNATE_AR_TRUE@,$USE_ALTERNATE_AR_TRUE,;t t
 s,@USE_ALTERNATE_AR_FALSE@,$USE_ALTERNATE_AR_FALSE,;t t
 s,@ALTERNATE_AR@,$ALTERNATE_AR,;t t
 s,@TRILINOS_CXXFLAGS@,$TRILINOS_CXXFLAGS,;t t
+s,@PETSC_CXXFLAGS@,$PETSC_CXXFLAGS,;t t
 s,@BUILD_EXAMPLES_TRUE@,$BUILD_EXAMPLES_TRUE,;t t
 s,@BUILD_EXAMPLES_FALSE@,$BUILD_EXAMPLES_FALSE,;t t
 s,@F77@,$F77,;t t
@@ -5329,6 +5571,10 @@ s,@BUILD_LIBNOXEPETRA_TRUE@,$BUILD_LIBNOXEPETRA_TRUE,;t t
 s,@BUILD_LIBNOXEPETRA_FALSE@,$BUILD_LIBNOXEPETRA_FALSE,;t t
 s,@BUILD_EPETRA_EXAMPLES_TRUE@,$BUILD_EPETRA_EXAMPLES_TRUE,;t t
 s,@BUILD_EPETRA_EXAMPLES_FALSE@,$BUILD_EPETRA_EXAMPLES_FALSE,;t t
+s,@BUILD_LIBNOXPETSC_TRUE@,$BUILD_LIBNOXPETSC_TRUE,;t t
+s,@BUILD_LIBNOXPETSC_FALSE@,$BUILD_LIBNOXPETSC_FALSE,;t t
+s,@BUILD_PETSC_EXAMPLES_TRUE@,$BUILD_PETSC_EXAMPLES_TRUE,;t t
+s,@BUILD_PETSC_EXAMPLES_FALSE@,$BUILD_PETSC_EXAMPLES_FALSE,;t t
 s,@BUILD_LOCA_TRUE@,$BUILD_LOCA_TRUE,;t t
 s,@BUILD_LOCA_FALSE@,$BUILD_LOCA_FALSE,;t t
 s,@XTRALDADD@,$XTRALDADD,;t t

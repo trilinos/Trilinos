@@ -114,36 +114,31 @@ am__include = @am__include@
 am__quote = @am__quote@
 install_sh = @install_sh@
 
-EPETRA_H = \
-	$(srcdir)/NOX_Epetra.H \
-	$(srcdir)/NOX_Epetra_Vector.H \
-	$(srcdir)/NOX_Epetra_Group.H \
-	$(srcdir)/NOX_Epetra_SharedJacobian.H \
-        $(srcdir)/NOX_Epetra_MatrixFree.H \
-        $(srcdir)/NOX_Epetra_FiniteDifference.H \
-	$(srcdir)/NOX_Epetra_Interface.H \
-	$(srcdir)/NOX_Epetra_Preconditioner.H
+PETSC_H = \
+	$(srcdir)/NOX_Petsc.H \
+	$(srcdir)/NOX_Petsc_Vector.H \
+	$(srcdir)/NOX_Petsc_Group.H \
+	$(srcdir)/NOX_Petsc_SharedJacobian.H \
+	$(srcdir)/NOX_Petsc_Interface.H
 
 
-EPETRA = \
-	$(srcdir)/NOX_Epetra_Vector.C \
-	$(srcdir)/NOX_Epetra_Group.C \
-	$(srcdir)/NOX_Epetra_SharedJacobian.C \
-        $(srcdir)/NOX_Epetra_MatrixFree.C \
-        $(srcdir)/NOX_Epetra_FiniteDifference.C 
+PETSC = \
+	$(srcdir)/NOX_Petsc_Vector.C \
+	$(srcdir)/NOX_Petsc_Group.C \
+	$(srcdir)/NOX_Petsc_SharedJacobian.C
 
 
 
 # ------------------------------------------------------------------------
-# Noxepetra library specifications
+# Noxpetsc library specifications
 # ------------------------------------------------------------------------
-@BUILD_LIBNOXEPETRA_TRUE@NOXEPETRA_LIB = libnoxepetra.a
+@BUILD_LIBNOXPETSC_TRUE@NOXPETSC_LIB = libnoxpetsc.a
 
-NOXEPETRA_H = $(EPETRA_H)
+NOXPETSC_H = $(PETSC_H)
 
-libnoxepetra_a_SOURCES = $(EPETRA)
+libnoxpetsc_a_SOURCES = $(PETSC)
 
-libnoxepetra_a_CXXFLAGS = -I$(top_srcdir)/src $(TRILINOS_CXXFLAGS)
+libnoxpetsc_a_CXXFLAGS = -I$(top_srcdir)/src $(PETSC_CXXFLAGS)
 
 
 # ------------------------------------------------------------------------
@@ -153,46 +148,44 @@ libnoxepetra_a_CXXFLAGS = -I$(top_srcdir)/src $(TRILINOS_CXXFLAGS)
 # SPECIAL NOTE: Why is the "else" there?  For some reason, automake
 # fails to define <lib>_AR of USE_ALTERNATE_AR is false, so we have to
 # define it manually.
-@USE_ALTERNATE_AR_TRUE@libnoxepetra_a_AR = $(ALTERNATE_AR)
-@USE_ALTERNATE_AR_FALSE@libnoxepetra_a_AR = $(AR) cru
+@USE_ALTERNATE_AR_TRUE@libnoxpetsc_a_AR = $(ALTERNATE_AR)
+@USE_ALTERNATE_AR_FALSE@libnoxpetsc_a_AR = $(AR) cru
 
 
 # ------------------------------------------------------------------------
 # Some C++ compilers create extra .o-files for templates. We need to
 # be sure to include these, and this is the hack to do it.
 # ------------------------------------------------------------------------
-libnoxepetra_a_LIBADD = $(XTRALDADD)
+libnoxpetsc_a_LIBADD = $(XTRALDADD)
 
 
 # ------------------------------------------------------------------------
 # List of all libraries to install in $(libexecdir)
 # ------------------------------------------------------------------------
-lib_LIBRARIES = $(NOXEPETRA_LIB)
+lib_LIBRARIES = $(NOXPETSC_LIB)
 
 
 # ------------------------------------------------------------------------
 # List of all headers to install in $(pkgincludedir)
 # ------------------------------------------------------------------------
-pkginclude_HEADERS = $(NOXEPETRA_H)
+pkginclude_HEADERS = $(NOXPETSC_H)
 
 
 # ------------------------------------------------------------------------
 # Files to be deleted by 'make maintainer-clean'
 # ------------------------------------------------------------------------
 MAINTAINERCLEANFILES = Makefile.in 
-subdir = src-epetra
+subdir = src-petsc
 mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/NOX_Config.h
 CONFIG_CLEAN_FILES =
 LIBRARIES = $(lib_LIBRARIES)
 
-libnoxepetra_a_DEPENDENCIES =
-am_libnoxepetra_a_OBJECTS = libnoxepetra_a-NOX_Epetra_Vector.$(OBJEXT) \
-	libnoxepetra_a-NOX_Epetra_Group.$(OBJEXT) \
-	libnoxepetra_a-NOX_Epetra_SharedJacobian.$(OBJEXT) \
-	libnoxepetra_a-NOX_Epetra_MatrixFree.$(OBJEXT) \
-	libnoxepetra_a-NOX_Epetra_FiniteDifference.$(OBJEXT)
-libnoxepetra_a_OBJECTS = $(am_libnoxepetra_a_OBJECTS)
+libnoxpetsc_a_DEPENDENCIES =
+am_libnoxpetsc_a_OBJECTS = libnoxpetsc_a-NOX_Petsc_Vector.$(OBJEXT) \
+	libnoxpetsc_a-NOX_Petsc_Group.$(OBJEXT) \
+	libnoxpetsc_a-NOX_Petsc_SharedJacobian.$(OBJEXT)
+libnoxpetsc_a_OBJECTS = $(am_libnoxpetsc_a_OBJECTS)
 
 DEFS = @DEFS@
 DEFAULT_INCLUDES =  -I. -I$(srcdir) -I$(top_builddir)/src
@@ -200,23 +193,20 @@ CPPFLAGS = @CPPFLAGS@
 LDFLAGS = @LDFLAGS@
 LIBS = @LIBS@
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
-@AMDEP_TRUE@DEP_FILES = \
-@AMDEP_TRUE@	$(DEPDIR)/libnoxepetra_a-NOX_Epetra_FiniteDifference.Po \
-@AMDEP_TRUE@	$(DEPDIR)/libnoxepetra_a-NOX_Epetra_Group.Po \
-@AMDEP_TRUE@	$(DEPDIR)/libnoxepetra_a-NOX_Epetra_MatrixFree.Po \
-@AMDEP_TRUE@	$(DEPDIR)/libnoxepetra_a-NOX_Epetra_SharedJacobian.Po \
-@AMDEP_TRUE@	$(DEPDIR)/libnoxepetra_a-NOX_Epetra_Vector.Po
+@AMDEP_TRUE@DEP_FILES = $(DEPDIR)/libnoxpetsc_a-NOX_Petsc_Group.Po \
+@AMDEP_TRUE@	$(DEPDIR)/libnoxpetsc_a-NOX_Petsc_SharedJacobian.Po \
+@AMDEP_TRUE@	$(DEPDIR)/libnoxpetsc_a-NOX_Petsc_Vector.Po
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
 CXXLD = $(CXX)
 CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
 	-o $@
 CXXFLAGS = @CXXFLAGS@
-DIST_SOURCES = $(libnoxepetra_a_SOURCES)
+DIST_SOURCES = $(libnoxpetsc_a_SOURCES)
 HEADERS = $(pkginclude_HEADERS)
 
 DIST_COMMON = $(pkginclude_HEADERS) Makefile.am Makefile.in
-SOURCES = $(libnoxepetra_a_SOURCES)
+SOURCES = $(libnoxpetsc_a_SOURCES)
 
 all: all-am
 
@@ -224,7 +214,7 @@ all: all-am
 .SUFFIXES: .C .o .obj
 $(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ Makefile.am  $(top_srcdir)/configure.ac $(ACLOCAL_M4)
 	cd $(top_srcdir) && \
-	  $(AUTOMAKE) --foreign  src-epetra/Makefile
+	  $(AUTOMAKE) --foreign  src-petsc/Makefile
 Makefile: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.in  $(top_builddir)/config.status
 	cd $(top_builddir) && \
 	  CONFIG_HEADERS= CONFIG_LINKS= \
@@ -257,19 +247,14 @@ uninstall-libLIBRARIES:
 
 clean-libLIBRARIES:
 	-test -z "$(lib_LIBRARIES)" || rm -f $(lib_LIBRARIES)
-libnoxepetra_a-NOX_Epetra_Vector.$(OBJEXT): \
-	$(srcdir)/NOX_Epetra_Vector.C
-libnoxepetra_a-NOX_Epetra_Group.$(OBJEXT): $(srcdir)/NOX_Epetra_Group.C
-libnoxepetra_a-NOX_Epetra_SharedJacobian.$(OBJEXT): \
-	$(srcdir)/NOX_Epetra_SharedJacobian.C
-libnoxepetra_a-NOX_Epetra_MatrixFree.$(OBJEXT): \
-	$(srcdir)/NOX_Epetra_MatrixFree.C
-libnoxepetra_a-NOX_Epetra_FiniteDifference.$(OBJEXT): \
-	$(srcdir)/NOX_Epetra_FiniteDifference.C
-libnoxepetra.a: $(libnoxepetra_a_OBJECTS) $(libnoxepetra_a_DEPENDENCIES) 
-	-rm -f libnoxepetra.a
-	$(libnoxepetra_a_AR) libnoxepetra.a $(libnoxepetra_a_OBJECTS) $(libnoxepetra_a_LIBADD)
-	$(RANLIB) libnoxepetra.a
+libnoxpetsc_a-NOX_Petsc_Vector.$(OBJEXT): $(srcdir)/NOX_Petsc_Vector.C
+libnoxpetsc_a-NOX_Petsc_Group.$(OBJEXT): $(srcdir)/NOX_Petsc_Group.C
+libnoxpetsc_a-NOX_Petsc_SharedJacobian.$(OBJEXT): \
+	$(srcdir)/NOX_Petsc_SharedJacobian.C
+libnoxpetsc.a: $(libnoxpetsc_a_OBJECTS) $(libnoxpetsc_a_DEPENDENCIES) 
+	-rm -f libnoxpetsc.a
+	$(libnoxpetsc_a_AR) libnoxpetsc.a $(libnoxpetsc_a_OBJECTS) $(libnoxpetsc_a_LIBADD)
+	$(RANLIB) libnoxpetsc.a
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT) core *.core
@@ -277,11 +262,9 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/libnoxepetra_a-NOX_Epetra_FiniteDifference.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/libnoxepetra_a-NOX_Epetra_Group.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/libnoxepetra_a-NOX_Epetra_MatrixFree.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/libnoxepetra_a-NOX_Epetra_SharedJacobian.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/libnoxepetra_a-NOX_Epetra_Vector.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/libnoxpetsc_a-NOX_Petsc_Group.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/libnoxpetsc_a-NOX_Petsc_SharedJacobian.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/libnoxpetsc_a-NOX_Petsc_Vector.Po@am__quote@
 
 distclean-depend:
 	-rm -rf $(DEPDIR)
@@ -298,65 +281,41 @@ distclean-depend:
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 	$(CXXCOMPILE) -c -o $@ `cygpath -w $<`
 
-libnoxepetra_a-NOX_Epetra_Vector.o: $(srcdir)/NOX_Epetra_Vector.C
-@AMDEP_TRUE@	source='$(srcdir)/NOX_Epetra_Vector.C' object='libnoxepetra_a-NOX_Epetra_Vector.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/libnoxepetra_a-NOX_Epetra_Vector.Po' tmpdepfile='$(DEPDIR)/libnoxepetra_a-NOX_Epetra_Vector.TPo' @AMDEPBACKSLASH@
+libnoxpetsc_a-NOX_Petsc_Vector.o: $(srcdir)/NOX_Petsc_Vector.C
+@AMDEP_TRUE@	source='$(srcdir)/NOX_Petsc_Vector.C' object='libnoxpetsc_a-NOX_Petsc_Vector.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/libnoxpetsc_a-NOX_Petsc_Vector.Po' tmpdepfile='$(DEPDIR)/libnoxpetsc_a-NOX_Petsc_Vector.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnoxepetra_a_CXXFLAGS) $(CXXFLAGS) -c -o libnoxepetra_a-NOX_Epetra_Vector.o `test -f $(srcdir)/NOX_Epetra_Vector.C || echo '$(srcdir)/'`$(srcdir)/NOX_Epetra_Vector.C
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnoxpetsc_a_CXXFLAGS) $(CXXFLAGS) -c -o libnoxpetsc_a-NOX_Petsc_Vector.o `test -f $(srcdir)/NOX_Petsc_Vector.C || echo '$(srcdir)/'`$(srcdir)/NOX_Petsc_Vector.C
 
-libnoxepetra_a-NOX_Epetra_Vector.obj: $(srcdir)/NOX_Epetra_Vector.C
-@AMDEP_TRUE@	source='$(srcdir)/NOX_Epetra_Vector.C' object='libnoxepetra_a-NOX_Epetra_Vector.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/libnoxepetra_a-NOX_Epetra_Vector.Po' tmpdepfile='$(DEPDIR)/libnoxepetra_a-NOX_Epetra_Vector.TPo' @AMDEPBACKSLASH@
+libnoxpetsc_a-NOX_Petsc_Vector.obj: $(srcdir)/NOX_Petsc_Vector.C
+@AMDEP_TRUE@	source='$(srcdir)/NOX_Petsc_Vector.C' object='libnoxpetsc_a-NOX_Petsc_Vector.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/libnoxpetsc_a-NOX_Petsc_Vector.Po' tmpdepfile='$(DEPDIR)/libnoxpetsc_a-NOX_Petsc_Vector.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnoxepetra_a_CXXFLAGS) $(CXXFLAGS) -c -o libnoxepetra_a-NOX_Epetra_Vector.obj `cygpath -w $(srcdir)/NOX_Epetra_Vector.C`
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnoxpetsc_a_CXXFLAGS) $(CXXFLAGS) -c -o libnoxpetsc_a-NOX_Petsc_Vector.obj `cygpath -w $(srcdir)/NOX_Petsc_Vector.C`
 
-libnoxepetra_a-NOX_Epetra_Group.o: $(srcdir)/NOX_Epetra_Group.C
-@AMDEP_TRUE@	source='$(srcdir)/NOX_Epetra_Group.C' object='libnoxepetra_a-NOX_Epetra_Group.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/libnoxepetra_a-NOX_Epetra_Group.Po' tmpdepfile='$(DEPDIR)/libnoxepetra_a-NOX_Epetra_Group.TPo' @AMDEPBACKSLASH@
+libnoxpetsc_a-NOX_Petsc_Group.o: $(srcdir)/NOX_Petsc_Group.C
+@AMDEP_TRUE@	source='$(srcdir)/NOX_Petsc_Group.C' object='libnoxpetsc_a-NOX_Petsc_Group.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/libnoxpetsc_a-NOX_Petsc_Group.Po' tmpdepfile='$(DEPDIR)/libnoxpetsc_a-NOX_Petsc_Group.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnoxepetra_a_CXXFLAGS) $(CXXFLAGS) -c -o libnoxepetra_a-NOX_Epetra_Group.o `test -f $(srcdir)/NOX_Epetra_Group.C || echo '$(srcdir)/'`$(srcdir)/NOX_Epetra_Group.C
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnoxpetsc_a_CXXFLAGS) $(CXXFLAGS) -c -o libnoxpetsc_a-NOX_Petsc_Group.o `test -f $(srcdir)/NOX_Petsc_Group.C || echo '$(srcdir)/'`$(srcdir)/NOX_Petsc_Group.C
 
-libnoxepetra_a-NOX_Epetra_Group.obj: $(srcdir)/NOX_Epetra_Group.C
-@AMDEP_TRUE@	source='$(srcdir)/NOX_Epetra_Group.C' object='libnoxepetra_a-NOX_Epetra_Group.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/libnoxepetra_a-NOX_Epetra_Group.Po' tmpdepfile='$(DEPDIR)/libnoxepetra_a-NOX_Epetra_Group.TPo' @AMDEPBACKSLASH@
+libnoxpetsc_a-NOX_Petsc_Group.obj: $(srcdir)/NOX_Petsc_Group.C
+@AMDEP_TRUE@	source='$(srcdir)/NOX_Petsc_Group.C' object='libnoxpetsc_a-NOX_Petsc_Group.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/libnoxpetsc_a-NOX_Petsc_Group.Po' tmpdepfile='$(DEPDIR)/libnoxpetsc_a-NOX_Petsc_Group.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnoxepetra_a_CXXFLAGS) $(CXXFLAGS) -c -o libnoxepetra_a-NOX_Epetra_Group.obj `cygpath -w $(srcdir)/NOX_Epetra_Group.C`
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnoxpetsc_a_CXXFLAGS) $(CXXFLAGS) -c -o libnoxpetsc_a-NOX_Petsc_Group.obj `cygpath -w $(srcdir)/NOX_Petsc_Group.C`
 
-libnoxepetra_a-NOX_Epetra_SharedJacobian.o: $(srcdir)/NOX_Epetra_SharedJacobian.C
-@AMDEP_TRUE@	source='$(srcdir)/NOX_Epetra_SharedJacobian.C' object='libnoxepetra_a-NOX_Epetra_SharedJacobian.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/libnoxepetra_a-NOX_Epetra_SharedJacobian.Po' tmpdepfile='$(DEPDIR)/libnoxepetra_a-NOX_Epetra_SharedJacobian.TPo' @AMDEPBACKSLASH@
+libnoxpetsc_a-NOX_Petsc_SharedJacobian.o: $(srcdir)/NOX_Petsc_SharedJacobian.C
+@AMDEP_TRUE@	source='$(srcdir)/NOX_Petsc_SharedJacobian.C' object='libnoxpetsc_a-NOX_Petsc_SharedJacobian.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/libnoxpetsc_a-NOX_Petsc_SharedJacobian.Po' tmpdepfile='$(DEPDIR)/libnoxpetsc_a-NOX_Petsc_SharedJacobian.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnoxepetra_a_CXXFLAGS) $(CXXFLAGS) -c -o libnoxepetra_a-NOX_Epetra_SharedJacobian.o `test -f $(srcdir)/NOX_Epetra_SharedJacobian.C || echo '$(srcdir)/'`$(srcdir)/NOX_Epetra_SharedJacobian.C
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnoxpetsc_a_CXXFLAGS) $(CXXFLAGS) -c -o libnoxpetsc_a-NOX_Petsc_SharedJacobian.o `test -f $(srcdir)/NOX_Petsc_SharedJacobian.C || echo '$(srcdir)/'`$(srcdir)/NOX_Petsc_SharedJacobian.C
 
-libnoxepetra_a-NOX_Epetra_SharedJacobian.obj: $(srcdir)/NOX_Epetra_SharedJacobian.C
-@AMDEP_TRUE@	source='$(srcdir)/NOX_Epetra_SharedJacobian.C' object='libnoxepetra_a-NOX_Epetra_SharedJacobian.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/libnoxepetra_a-NOX_Epetra_SharedJacobian.Po' tmpdepfile='$(DEPDIR)/libnoxepetra_a-NOX_Epetra_SharedJacobian.TPo' @AMDEPBACKSLASH@
+libnoxpetsc_a-NOX_Petsc_SharedJacobian.obj: $(srcdir)/NOX_Petsc_SharedJacobian.C
+@AMDEP_TRUE@	source='$(srcdir)/NOX_Petsc_SharedJacobian.C' object='libnoxpetsc_a-NOX_Petsc_SharedJacobian.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/libnoxpetsc_a-NOX_Petsc_SharedJacobian.Po' tmpdepfile='$(DEPDIR)/libnoxpetsc_a-NOX_Petsc_SharedJacobian.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnoxepetra_a_CXXFLAGS) $(CXXFLAGS) -c -o libnoxepetra_a-NOX_Epetra_SharedJacobian.obj `cygpath -w $(srcdir)/NOX_Epetra_SharedJacobian.C`
-
-libnoxepetra_a-NOX_Epetra_MatrixFree.o: $(srcdir)/NOX_Epetra_MatrixFree.C
-@AMDEP_TRUE@	source='$(srcdir)/NOX_Epetra_MatrixFree.C' object='libnoxepetra_a-NOX_Epetra_MatrixFree.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/libnoxepetra_a-NOX_Epetra_MatrixFree.Po' tmpdepfile='$(DEPDIR)/libnoxepetra_a-NOX_Epetra_MatrixFree.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnoxepetra_a_CXXFLAGS) $(CXXFLAGS) -c -o libnoxepetra_a-NOX_Epetra_MatrixFree.o `test -f $(srcdir)/NOX_Epetra_MatrixFree.C || echo '$(srcdir)/'`$(srcdir)/NOX_Epetra_MatrixFree.C
-
-libnoxepetra_a-NOX_Epetra_MatrixFree.obj: $(srcdir)/NOX_Epetra_MatrixFree.C
-@AMDEP_TRUE@	source='$(srcdir)/NOX_Epetra_MatrixFree.C' object='libnoxepetra_a-NOX_Epetra_MatrixFree.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/libnoxepetra_a-NOX_Epetra_MatrixFree.Po' tmpdepfile='$(DEPDIR)/libnoxepetra_a-NOX_Epetra_MatrixFree.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnoxepetra_a_CXXFLAGS) $(CXXFLAGS) -c -o libnoxepetra_a-NOX_Epetra_MatrixFree.obj `cygpath -w $(srcdir)/NOX_Epetra_MatrixFree.C`
-
-libnoxepetra_a-NOX_Epetra_FiniteDifference.o: $(srcdir)/NOX_Epetra_FiniteDifference.C
-@AMDEP_TRUE@	source='$(srcdir)/NOX_Epetra_FiniteDifference.C' object='libnoxepetra_a-NOX_Epetra_FiniteDifference.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/libnoxepetra_a-NOX_Epetra_FiniteDifference.Po' tmpdepfile='$(DEPDIR)/libnoxepetra_a-NOX_Epetra_FiniteDifference.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnoxepetra_a_CXXFLAGS) $(CXXFLAGS) -c -o libnoxepetra_a-NOX_Epetra_FiniteDifference.o `test -f $(srcdir)/NOX_Epetra_FiniteDifference.C || echo '$(srcdir)/'`$(srcdir)/NOX_Epetra_FiniteDifference.C
-
-libnoxepetra_a-NOX_Epetra_FiniteDifference.obj: $(srcdir)/NOX_Epetra_FiniteDifference.C
-@AMDEP_TRUE@	source='$(srcdir)/NOX_Epetra_FiniteDifference.C' object='libnoxepetra_a-NOX_Epetra_FiniteDifference.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/libnoxepetra_a-NOX_Epetra_FiniteDifference.Po' tmpdepfile='$(DEPDIR)/libnoxepetra_a-NOX_Epetra_FiniteDifference.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnoxepetra_a_CXXFLAGS) $(CXXFLAGS) -c -o libnoxepetra_a-NOX_Epetra_FiniteDifference.obj `cygpath -w $(srcdir)/NOX_Epetra_FiniteDifference.C`
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnoxpetsc_a_CXXFLAGS) $(CXXFLAGS) -c -o libnoxpetsc_a-NOX_Petsc_SharedJacobian.obj `cygpath -w $(srcdir)/NOX_Petsc_SharedJacobian.C`
 CXXDEPMODE = @CXXDEPMODE@
 uninstall-info-am:
 install-pkgincludeHEADERS: $(pkginclude_HEADERS)
