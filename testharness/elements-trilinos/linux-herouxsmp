@@ -17,6 +17,8 @@
 --enable-amesos
 --enable-amesos-umfpack
 --enable-epetraext
+--enable-loca
+--with-loca-anasazi
 --enable-epetraext-inout
 --enable-epetraext-coloring
 --enable-epetraext-transform
