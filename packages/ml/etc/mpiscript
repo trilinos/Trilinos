@@ -1,0 +1,24 @@
+#!/bin/sh
+#
+# script file for running an mpi job in tuminaro's home directory
+# you might need to change this to your directory. This script 
+# is meant to be used in conjunction with run_benchmarks.
+#
+#
+#PBS -N poisson
+#PBS -l walltime=1:00,mem=320kb,cput=1:00,nodes=4
+#PBS -m be
+#
+PROCS=$1
+if test $# -ge 2
+then
+  echo Usage: mpiscript [\#num_procs]
+  exit
+fi
+if test $# = 0
+then
+  echo Warning: processor information not given. Assume serial.
+  PROCS=1
+fi
+
+/usr/local/mpich/bin/mpirun -np $PROCS -machinefile /home/tuminaro/bin/machinefile /home/tuminaro/newml/ml/Obj/ml_readfile
