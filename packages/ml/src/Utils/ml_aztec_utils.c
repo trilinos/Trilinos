@@ -924,7 +924,6 @@ int az_wrap_solvers(void *data, int in, double x[], int out,
       rhs = global_rhs;
    }
 
-
    for (i = 0; i < n; i++) p2[i] = x[i];
    if (context->prec_or_solver == AZ_ONLY_PRECONDITIONER) {
       context->Amat->matvec(p2,x,context->Amat,context->proc_config);
@@ -944,6 +943,7 @@ int az_wrap_solvers(void *data, int in, double x[], int out,
                   context->status,context->proc_config,context->Amat,
                   context->Prec, context->scaling);
       for (i = 0; i < n; i++) x[i] = p2[i];
+      context->options[AZ_pre_calc] = AZ_reuse;
    }
    AZ_free(p2);
 
@@ -983,7 +983,8 @@ void AZ_ML_SmootherClean(void *data)
 
 
 
-
+   context->options[AZ_keep_info] = 0;
+   context->options[AZ_pre_calc] = AZ_calc;
    AZ_iterate_finish(context->options, context->Amat, context->Prec);
    AZ_free(context->options); 
    AZ_free(context->params);
