@@ -174,7 +174,7 @@ operator()( OriginalTypeRef orig )
  
   // Note: The following call to TransformToLocal is currently necessary because
   //      some global constants that are needed by the Export () are computed in this routine
-  assert(TempTransA1.TransformToLocal()==0);
+  assert(TempTransA1.TransformToLocal(&(orig.OperatorRangeMap()),TransposeRowMap_)==0);
 
   // Now that transpose matrix with shared rows is entered, create a new matrix that will
   // get the transpose with uniquely owned rows (using the same row distribution as A).
