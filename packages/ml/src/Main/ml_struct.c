@@ -3150,6 +3150,94 @@ scales = NULL;
    return 0;
 }
 
+#ifdef ML_SINGLE_LEVEL_PROFILING
+
+/* prototypes for stubs */
+double ML_Cycle_MG_9(ML_1Level *curr, double *sol, double *rhs,
+	int approx_all_zeros, ML_Comm *comm, int res_norm_or_not, ML *ml);
+double ML_Cycle_MG_8(ML_1Level *curr, double *sol, double *rhs,
+	int approx_all_zeros, ML_Comm *comm, int res_norm_or_not, ML *ml);
+double ML_Cycle_MG_7(ML_1Level *curr, double *sol, double *rhs,
+	int approx_all_zeros, ML_Comm *comm, int res_norm_or_not, ML *ml);
+double ML_Cycle_MG_6(ML_1Level *curr, double *sol, double *rhs,
+	int approx_all_zeros, ML_Comm *comm, int res_norm_or_not, ML *ml);
+double ML_Cycle_MG_5(ML_1Level *curr, double *sol, double *rhs,
+	int approx_all_zeros, ML_Comm *comm, int res_norm_or_not, ML *ml);
+double ML_Cycle_MG_4(ML_1Level *curr, double *sol, double *rhs,
+	int approx_all_zeros, ML_Comm *comm, int res_norm_or_not, ML *ml);
+double ML_Cycle_MG_3(ML_1Level *curr, double *sol, double *rhs,
+	int approx_all_zeros, ML_Comm *comm, int res_norm_or_not, ML *ml);
+double ML_Cycle_MG_2(ML_1Level *curr, double *sol, double *rhs,
+	int approx_all_zeros, ML_Comm *comm, int res_norm_or_not, ML *ml);
+double ML_Cycle_MG_1(ML_1Level *curr, double *sol, double *rhs,
+	int approx_all_zeros, ML_Comm *comm, int res_norm_or_not, ML *ml);
+double ML_Cycle_MG_0(ML_1Level *curr, double *sol, double *rhs,
+	int approx_all_zeros, ML_Comm *comm, int res_norm_or_not, ML *ml);
+/* end of stub prototypes */
+
+/* Stub functions.  The include file "ml_v_cycle.c" has the actual source
+   code.  This is the same code as found in function ML_Cycle_MG() below. */
+double ML_Cycle_MG_9(ML_1Level *curr, double *sol, double *rhs,
+	int approx_all_zeros, ML_Comm *comm, int res_norm_or_not, ML *ml)
+{
+#include "ml_v_cycle.c"
+}
+
+double ML_Cycle_MG_8(ML_1Level *curr, double *sol, double *rhs,
+	int approx_all_zeros, ML_Comm *comm, int res_norm_or_not, ML *ml)
+{
+#include "ml_v_cycle.c"
+}
+
+double ML_Cycle_MG_7(ML_1Level *curr, double *sol, double *rhs,
+	int approx_all_zeros, ML_Comm *comm, int res_norm_or_not, ML *ml)
+{
+#include "ml_v_cycle.c"
+}
+
+double ML_Cycle_MG_6(ML_1Level *curr, double *sol, double *rhs,
+	int approx_all_zeros, ML_Comm *comm, int res_norm_or_not, ML *ml)
+{
+#include "ml_v_cycle.c"
+}
+
+double ML_Cycle_MG_5(ML_1Level *curr, double *sol, double *rhs,
+	int approx_all_zeros, ML_Comm *comm, int res_norm_or_not, ML *ml)
+{
+#include "ml_v_cycle.c"
+}
+
+double ML_Cycle_MG_4(ML_1Level *curr, double *sol, double *rhs,
+	int approx_all_zeros, ML_Comm *comm, int res_norm_or_not, ML *ml)
+{
+#include "ml_v_cycle.c"
+}
+
+double ML_Cycle_MG_3(ML_1Level *curr, double *sol, double *rhs,
+	int approx_all_zeros, ML_Comm *comm, int res_norm_or_not, ML *ml)
+{
+#include "ml_v_cycle.c"
+}
+
+double ML_Cycle_MG_2(ML_1Level *curr, double *sol, double *rhs,
+	int approx_all_zeros, ML_Comm *comm, int res_norm_or_not, ML *ml)
+{
+#include "ml_v_cycle.c"
+}
+
+double ML_Cycle_MG_1(ML_1Level *curr, double *sol, double *rhs,
+	int approx_all_zeros, ML_Comm *comm, int res_norm_or_not, ML *ml)
+{
+#include "ml_v_cycle.c"
+}
+
+double ML_Cycle_MG_0(ML_1Level *curr, double *sol, double *rhs,
+	int approx_all_zeros, ML_Comm *comm, int res_norm_or_not, ML *ml)
+{
+#include "ml_v_cycle.c"
+}
+#endif    /* ifdef ML_SINGLE_LEVEL_PROFILING */
+
 /*****************************************************************************/
 /* solve using V-cycle multigrid                                             */
 /*-------------------------------------------------------------------------- */
@@ -3413,9 +3501,71 @@ double ML_Cycle_MG(ML_1Level *curr, double *sol, double *rhs,
       /* --------------------------------------------------------- */
       /* process the next level and transfer back to this level    */
       /* --------------------------------------------------------- */
+#ifdef ML_SINGLE_LEVEL_PROFILING
+      i = curr->levelnum-1;
+      switch(i) {
+         case 9:
+      ML_Cycle_MG_9( Rmat->to, sol2, rhs2, ML_ZERO,comm, ML_NO_RES_NORM, ml);
+      if ( (ml->ML_scheme == ML_MGW) && (Rmat->to->Rmat->to != NULL))
+	ML_Cycle_MG_9( Rmat->to, sol2, rhs2, ML_NONZERO,comm, ML_NO_RES_NORM,ml);
+           break;
+         case 8:
+      ML_Cycle_MG_8( Rmat->to, sol2, rhs2, ML_ZERO,comm, ML_NO_RES_NORM, ml);
+      if ( (ml->ML_scheme == ML_MGW) && (Rmat->to->Rmat->to != NULL))
+	ML_Cycle_MG_8( Rmat->to, sol2, rhs2, ML_NONZERO,comm, ML_NO_RES_NORM,ml);
+           break;
+         case 7:
+      ML_Cycle_MG_7( Rmat->to, sol2, rhs2, ML_ZERO,comm, ML_NO_RES_NORM, ml);
+      if ( (ml->ML_scheme == ML_MGW) && (Rmat->to->Rmat->to != NULL))
+	ML_Cycle_MG_7( Rmat->to, sol2, rhs2, ML_NONZERO,comm, ML_NO_RES_NORM,ml);
+           break;
+         case 6:
+      ML_Cycle_MG_6( Rmat->to, sol2, rhs2, ML_ZERO,comm, ML_NO_RES_NORM, ml);
+      if ( (ml->ML_scheme == ML_MGW) && (Rmat->to->Rmat->to != NULL))
+	ML_Cycle_MG_6( Rmat->to, sol2, rhs2, ML_NONZERO,comm, ML_NO_RES_NORM,ml);
+           break;
+         case 5:
+      ML_Cycle_MG_5( Rmat->to, sol2, rhs2, ML_ZERO,comm, ML_NO_RES_NORM, ml);
+      if ( (ml->ML_scheme == ML_MGW) && (Rmat->to->Rmat->to != NULL))
+	ML_Cycle_MG_5( Rmat->to, sol2, rhs2, ML_NONZERO,comm, ML_NO_RES_NORM,ml);
+           break;
+         case 4:
+      ML_Cycle_MG_4( Rmat->to, sol2, rhs2, ML_ZERO,comm, ML_NO_RES_NORM, ml);
+      if ( (ml->ML_scheme == ML_MGW) && (Rmat->to->Rmat->to != NULL))
+	ML_Cycle_MG_4( Rmat->to, sol2, rhs2, ML_NONZERO,comm, ML_NO_RES_NORM,ml);
+           break;
+         case 3:
+      ML_Cycle_MG_3( Rmat->to, sol2, rhs2, ML_ZERO,comm, ML_NO_RES_NORM, ml);
+      if ( (ml->ML_scheme == ML_MGW) && (Rmat->to->Rmat->to != NULL))
+	ML_Cycle_MG_3( Rmat->to, sol2, rhs2, ML_NONZERO,comm, ML_NO_RES_NORM,ml);
+           break;
+         case 2:
+      ML_Cycle_MG_2( Rmat->to, sol2, rhs2, ML_ZERO,comm, ML_NO_RES_NORM, ml);
+      if ( (ml->ML_scheme == ML_MGW) && (Rmat->to->Rmat->to != NULL))
+	ML_Cycle_MG_2( Rmat->to, sol2, rhs2, ML_NONZERO,comm, ML_NO_RES_NORM,ml);
+           break;
+         case 1:
+      ML_Cycle_MG_1( Rmat->to, sol2, rhs2, ML_ZERO,comm, ML_NO_RES_NORM, ml);
+      if ( (ml->ML_scheme == ML_MGW) && (Rmat->to->Rmat->to != NULL))
+	ML_Cycle_MG_1( Rmat->to, sol2, rhs2, ML_NONZERO,comm, ML_NO_RES_NORM,ml);
+           break;
+         case 0:
+      ML_Cycle_MG_0( Rmat->to, sol2, rhs2, ML_ZERO,comm, ML_NO_RES_NORM, ml);
+      if ( (ml->ML_scheme == ML_MGW) && (Rmat->to->Rmat->to != NULL))
+	ML_Cycle_MG_0( Rmat->to, sol2, rhs2, ML_NONZERO,comm, ML_NO_RES_NORM,ml);
+           break;
+         default:
       ML_Cycle_MG( Rmat->to, sol2, rhs2, ML_ZERO,comm, ML_NO_RES_NORM, ml);
       if ( (ml->ML_scheme == ML_MGW) && (Rmat->to->Rmat->to != NULL))
 	ML_Cycle_MG( Rmat->to, sol2, rhs2, ML_NONZERO,comm, ML_NO_RES_NORM,ml);
+           break;
+   }
+
+#else
+      ML_Cycle_MG( Rmat->to, sol2, rhs2, ML_ZERO,comm, ML_NO_RES_NORM, ml);
+      if ( (ml->ML_scheme == ML_MGW) && (Rmat->to->Rmat->to != NULL))
+	ML_Cycle_MG( Rmat->to, sol2, rhs2, ML_NONZERO,comm, ML_NO_RES_NORM,ml);
+#endif /* ifdef ML_SINGLE_LEVEL_PROFILING */
 
       /* ------------------------------------------------------------ */
       /* transform the data from equation to grid space, do grid      */
