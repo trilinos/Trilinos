@@ -37,6 +37,7 @@ $(srcdir)/Coarsen/ml_agg_user.h \
 $(srcdir)/Coarsen/ml_agg_VBMETIS.h \
 $(srcdir)/Coarsen/ml_agg_Zoltan.h \
 $(srcdir)/Coarsen/ml_agg_ParMETIS.h \
+$(srcdir)/Coarsen/ml_qr_fix.h       \
 $(srcdir)/FEGrid/ml_gridfunc.h \
 $(srcdir)/FEGrid/ml_setup.h \
 $(srcdir)/FEGrid/ml_elementagx.h  $(srcdir)/FEGrid/ml_grid.h \
@@ -82,6 +83,7 @@ $(srcdir)/Coarsen/ml_agg_ParMETIS.c \
 $(srcdir)/Coarsen/ml_aggregate.c \
 $(srcdir)/Coarsen/ml_ggraph.c \
 $(srcdir)/Coarsen/ml_agg_reitzinger.c  \
+$(srcdir)/Coarsen/ml_qr_fix.c \
  \
 $(srcdir)/FEGrid/ml_gridagx.c \
 $(srcdir)/FEGrid/ml_pde.c \

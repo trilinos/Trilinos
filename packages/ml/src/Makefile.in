@@ -96,12 +96,12 @@ am__objects_1 = ml_agg_uncoupled.$(OBJEXT) ml_amg.$(OBJEXT) \
 	ml_agg_VBMETIS.$(OBJEXT) ml_agg_Zoltan.$(OBJEXT) \
 	ml_agg_ParMETIS.$(OBJEXT) ml_aggregate.$(OBJEXT) \
 	ml_ggraph.$(OBJEXT) ml_agg_reitzinger.$(OBJEXT) \
-	ml_gridagx.$(OBJEXT) ml_pde.$(OBJEXT) ml_bdrypts.$(OBJEXT) \
-	ml_grid.$(OBJEXT) ml_gridfunc.$(OBJEXT) ml_setup.$(OBJEXT) \
-	ml_elementagx.$(OBJEXT) ml_get_basis.$(OBJEXT) \
-	ml_mapper.$(OBJEXT) ml_struct.$(OBJEXT) driver.$(OBJEXT) \
-	mli_solver.$(OBJEXT) ml_seg_precond.$(OBJEXT) ml_ggb.$(OBJEXT) \
-	ml_comm.$(OBJEXT) ml_comminfoagx.$(OBJEXT) \
+	ml_qr_fix.$(OBJEXT) ml_gridagx.$(OBJEXT) ml_pde.$(OBJEXT) \
+	ml_bdrypts.$(OBJEXT) ml_grid.$(OBJEXT) ml_gridfunc.$(OBJEXT) \
+	ml_setup.$(OBJEXT) ml_elementagx.$(OBJEXT) \
+	ml_get_basis.$(OBJEXT) ml_mapper.$(OBJEXT) ml_struct.$(OBJEXT) \
+	driver.$(OBJEXT) mli_solver.$(OBJEXT) ml_seg_precond.$(OBJEXT) \
+	ml_ggb.$(OBJEXT) ml_comm.$(OBJEXT) ml_comminfoagx.$(OBJEXT) \
 	ml_comminfoop.$(OBJEXT) ml_exch_row.$(OBJEXT) \
 	ml_csolve.$(OBJEXT) ml_smoother.$(OBJEXT) ml_solver.$(OBJEXT) \
 	ml_superlu.$(OBJEXT) ml_xxt.$(OBJEXT) ml_xyt.$(OBJEXT) \
@@ -226,9 +226,9 @@ am__depfiles_maybe = depfiles
 @AMDEP_TRUE@	./$(DEPDIR)/ml_operator.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/ml_operator_blockmat.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/ml_operatoragx.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/ml_pde.Po ./$(DEPDIR)/ml_rap.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/ml_rap_utils.Po ./$(DEPDIR)/ml_rbm.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/ml_read_utils.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/ml_pde.Po ./$(DEPDIR)/ml_qr_fix.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/ml_rap.Po ./$(DEPDIR)/ml_rap_utils.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/ml_rbm.Po ./$(DEPDIR)/ml_read_utils.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/ml_seg_precond.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/ml_self.Po ./$(DEPDIR)/ml_self_wrap.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/ml_setup.Po ./$(DEPDIR)/ml_smoother.Po \
@@ -425,6 +425,7 @@ $(srcdir)/Coarsen/ml_agg_user.h \
 $(srcdir)/Coarsen/ml_agg_VBMETIS.h \
 $(srcdir)/Coarsen/ml_agg_Zoltan.h \
 $(srcdir)/Coarsen/ml_agg_ParMETIS.h \
+$(srcdir)/Coarsen/ml_qr_fix.h       \
 $(srcdir)/FEGrid/ml_gridfunc.h \
 $(srcdir)/FEGrid/ml_setup.h \
 $(srcdir)/FEGrid/ml_elementagx.h  $(srcdir)/FEGrid/ml_grid.h \
@@ -470,6 +471,7 @@ $(srcdir)/Coarsen/ml_agg_ParMETIS.c \
 $(srcdir)/Coarsen/ml_aggregate.c \
 $(srcdir)/Coarsen/ml_ggraph.c \
 $(srcdir)/Coarsen/ml_agg_reitzinger.c  \
+$(srcdir)/Coarsen/ml_qr_fix.c \
  \
 $(srcdir)/FEGrid/ml_gridagx.c \
 $(srcdir)/FEGrid/ml_pde.c \
@@ -989,6 +991,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_operator_blockmat.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_operatoragx.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_pde.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_qr_fix.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_rap.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_rap_utils.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_rbm.Po@am__quote@
@@ -1298,6 +1301,22 @@ ml_agg_reitzinger.obj: $(srcdir)/Coarsen/ml_agg_reitzinger.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/ml_agg_reitzinger.Po' tmpdepfile='$(DEPDIR)/ml_agg_reitzinger.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o ml_agg_reitzinger.obj `if test -f '$(srcdir)/Coarsen/ml_agg_reitzinger.c'; then $(CYGPATH_W) '$(srcdir)/Coarsen/ml_agg_reitzinger.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Coarsen/ml_agg_reitzinger.c'; fi`
+
+ml_qr_fix.o: $(srcdir)/Coarsen/ml_qr_fix.c
+@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT ml_qr_fix.o -MD -MP -MF "$(DEPDIR)/ml_qr_fix.Tpo" -c -o ml_qr_fix.o `test -f '$(srcdir)/Coarsen/ml_qr_fix.c' || echo '$(srcdir)/'`$(srcdir)/Coarsen/ml_qr_fix.c; \
+@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/ml_qr_fix.Tpo" "$(DEPDIR)/ml_qr_fix.Po"; else rm -f "$(DEPDIR)/ml_qr_fix.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/Coarsen/ml_qr_fix.c' object='ml_qr_fix.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/ml_qr_fix.Po' tmpdepfile='$(DEPDIR)/ml_qr_fix.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o ml_qr_fix.o `test -f '$(srcdir)/Coarsen/ml_qr_fix.c' || echo '$(srcdir)/'`$(srcdir)/Coarsen/ml_qr_fix.c
+
+ml_qr_fix.obj: $(srcdir)/Coarsen/ml_qr_fix.c
+@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT ml_qr_fix.obj -MD -MP -MF "$(DEPDIR)/ml_qr_fix.Tpo" -c -o ml_qr_fix.obj `if test -f '$(srcdir)/Coarsen/ml_qr_fix.c'; then $(CYGPATH_W) '$(srcdir)/Coarsen/ml_qr_fix.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Coarsen/ml_qr_fix.c'; fi`; \
+@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/ml_qr_fix.Tpo" "$(DEPDIR)/ml_qr_fix.Po"; else rm -f "$(DEPDIR)/ml_qr_fix.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/Coarsen/ml_qr_fix.c' object='ml_qr_fix.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/ml_qr_fix.Po' tmpdepfile='$(DEPDIR)/ml_qr_fix.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o ml_qr_fix.obj `if test -f '$(srcdir)/Coarsen/ml_qr_fix.c'; then $(CYGPATH_W) '$(srcdir)/Coarsen/ml_qr_fix.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Coarsen/ml_qr_fix.c'; fi`
 
 ml_gridagx.o: $(srcdir)/FEGrid/ml_gridagx.c
 @am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT ml_gridagx.o -MD -MP -MF "$(DEPDIR)/ml_gridagx.Tpo" -c -o ml_gridagx.o `test -f '$(srcdir)/FEGrid/ml_gridagx.c' || echo '$(srcdir)/'`$(srcdir)/FEGrid/ml_gridagx.c; \
