@@ -425,7 +425,7 @@ LOCA::LAPACK::Group::applyMassMatrix(const NOX::LAPACK::Vector& input,
 		      NOX::LAPACK::Vector& result) const
 {
   // Check validity of the mass matrix
-  if (!isMass()) 
+  if (!isMassMatrix()) 
     return NOX::Abstract::Group::BadDependency;
 
   // Compute result = M * input
@@ -476,7 +476,7 @@ LOCA::LAPACK::Group::applyComplexInverseMulti(
 			       NOX::Abstract::Vector** results_imag,
 			       int nVecs) const
 {
-  if (!isMass()) 
+  if (!isMassMatrix()) 
     return NOX::Abstract::Group::BadDependency;
 
   if (nVecs < 1)
@@ -539,7 +539,7 @@ LOCA::LAPACK::Group::hasMass() const
 }
 
 bool
-LOCA::LAPACK::Group::isMass() const 
+LOCA::LAPACK::Group::isMassMatrix() const 
 {
   return isValidMass && hasMassMatrix;
 }

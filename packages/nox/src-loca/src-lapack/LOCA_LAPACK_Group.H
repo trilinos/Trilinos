@@ -251,6 +251,9 @@ namespace LOCA {
       applyMassMatrix(const NOX::Abstract::Vector& input,
 		      NOX::Abstract::Vector& result) const;
 
+      //! Returns true if mass matrix is valid
+      virtual bool isMassMatrix() const;
+
       //@}
 
       /*! 
@@ -304,9 +307,6 @@ namespace LOCA {
       
       //! Returns true if system has a mass matrix
       bool hasMass() const;
-
-      //! Returns true if mass matrix is valid
-      bool isMass() const;
 
     protected:
 
