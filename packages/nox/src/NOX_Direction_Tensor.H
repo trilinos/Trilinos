@@ -16,14 +16,23 @@ namespace Direction {
   minimizer of the local model
   \f[ M_T(x_c+d) = F_c + Jd + a_c(s^Td)^2. \f]
   
-  To use this direction, specify that the "Method" is "Tensor" in the
-  "Direction" sublist of the parameters that are passed to the solver
+  To use this direction, specify that the "Method" is "%Tensor" in the
+  "%Direction" sublist of the parameters that are passed to the solver
   (see NOX::Direction::Manager for more information on choosing the
   search direction).  Be aware that the tensor step is not guaranteed
   to be a descent direction on the function.  Thus, not all "basic"
   line search approaches would be appropriate.  Instead, use the
   NOX::Solver::TensorBased solver, which approriately handles these
   considerations.
+
+  This class also computes the curvilinear step, which is a parametric
+  step that spans the directions of the tensor step and the %Newton
+  step.  At lambda=1, the curvilinear step equals the full tensor
+  step, and as lambda nears 0, the curvilinear step approaches the
+  %Newton direction.  This step provides a monotonic decrease in the
+  norm of the local tensor model as lambda varies from 0 to 1.
+
+  \author Brett Bader (CU-Boulder) bader&nbsp;\@&nbsp;cs.colorado.edu
 
 */
 
@@ -44,6 +53,7 @@ public:
   virtual bool compute(Abstract::Vector& dir, Abstract::Group& grp, 
 			  const Solver::Generic& solver);
 
+  //! Compute the curvilinear step dT(lambda) and return in dir.
   bool computeCurvilinearStep(Abstract::Vector& dir, Abstract::Group& grp, 
 			      const Solver::Generic& solver, double lambda);
 
@@ -53,20 +63,43 @@ protected:
 private:
 
   // Various functions that are taken from C to at least get a tensor
-  // method implemented.  At some point these functions (as well as the
-  // non-abstract vector/matrix data structures) should be replaced
-  // with a class or abstraction layer.  I realize this is not elegant, but
-  // it is quick and dirty and will work okay for the moment.
+  // method implemented.  At some point these functions (as well as
+  // the non-abstract vector/matrix data structures) should be
+  // replaced with a class or abstraction layer.  I realize this is
+  // not elegant, but it is quick and dirty and will work okay for the
+  // moment.  The descriptions here are mostly placeholders.
+
+  //!  Allocate storage for a matrix
   void** allocate_matrix(int m, int n, double**& a);
+
+  //!  Allocate storage for a vector of ints
   void* allocate_vector(int n, int*& x);
+
+  //!  Allocate storage for a vector of doubles
   void* allocate_vector(int n, double*& x);
+
+  //!  Delete a matrix previosly allocated
   void delete_matrix(double** A);
+
+  //!  Print a matrix
   void print_matrix(int m, int n, double** A);
+
+  //!  Print a vector of doubles
   void print_vector(int n, double* x);
+
+  //!  Print a vector of ints
   void print_vector(int n, int* x);
+
+  //!  Calculate x'*y
   double inner_product(int n, double* x, double* y);
+
+  //!  Calculate 2-norm of x
   double norm(int n, double* x);
+
+  //!  Apply Givens rotations to vector v
   void givapp(double* c, double* s, double* v, int k);
+
+  //!  Backsolve an upper triangular system Ux=b.
   double* backsolve(double** U, double* b, int* p, int n, int dim=0);
   
 private:
@@ -92,9 +125,13 @@ private:
   //! Temporary storage vectors
   Abstract::Vector* vecw;
 
-  //! 3 steps needed for computing the curvilinear step
+  //! Tensor step
   Abstract::Vector* dTensor;
+
+  //! Curvilinear step at the value lambdaBar
   Abstract::Vector* dTLambda;
+
+  //! Newton step
   Abstract::Vector* dNewton;  // maybe get rid of this once dn gets into group
 
   //! Array of orthonormal basis vectors
@@ -132,13 +169,17 @@ private:
 
   //! Matrix of coefficients for Givens rotations
   double** givensC;
+
+  //! Matrix of coefficients for Givens rotations
   double** givensS;
 
   //! Working vector for the new column of Hessenberg matrix
   double* newHessCol;
 
-  //! Projected right hand sides
+  //! Projected right hand side
   double* vecg;
+
+  //! Projected right hand side
   double* vecq;
 
   //! Temporary working vector
@@ -156,8 +197,10 @@ private:
   //! Threshold for a real root in quadratic equation
   double lambdaBar;
 
-  //! Parameters for the curvilinear linesearch
+  //! Parameter for the curvilinear linesearch
   double stJinvF;
+
+  //! Parameter for the curvilinear linesearch
   double stJinvA;
 
   //! Norm of previous step direction, s = xp - xc

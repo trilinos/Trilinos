@@ -17,16 +17,17 @@ namespace Solver {
   \brief Linesearch-based solver that uses tensor methods.
   
   The following parameters are valid for this solver:
-  
-  - "%Direction" - Sublist of the direction parameters, passed to the
-    NOX::Direction::Tensor constructor. Defaults to an empty list.
+<ul>
+<li>   "%Direction" - Sublist of the direction parameters, passed to the
+       NOX::Direction::Tensor constructor. Defaults to an empty list.
 
-  - "Linear %Solver" - Sublist of "Direction" and contains the linear
-    solver parameters, passed to NOX::Abstract::Group::computeNewton()
-    and to NOX::Direction::Tensor::compute().  Valid choices used in
-    tensor step calculation are listed below.  More valid choices are
-    available for the first step when the Newton step is computed by
-    computeNewton().
+<li> "Linear %Solver" - Sublist of "Direction" and contains the linear
+     solver parameters, passed to
+     NOX::Abstract::Group::computeNewton() and to
+     NOX::Direction::Tensor::compute().  Valid choices used in tensor
+     step calculation are listed below.  More valid choices are
+     available for the first step when the Newton step is computed by
+     computeNewton().
 
 <ul>
 <li>    "Max Iterations" - Maximum number of Arnoldi iterations (also 
@@ -35,16 +36,16 @@ namespace Solver {
         [default = 20]
 <li>    "Preconditioning" - Name of preconditioning type.
 <li>    "PreconditioningSide" - Side to apply preconditioning 
-        [None, Left, Right]
+        (None, Left, Right)
 <li>    "Reorthogonalize" - When to reorthogonalize Krylov basis vectors
-        [None, As Needed, Always]
+        (None, As Needed, Always)
 <li>    "Tolerance" - Relative tolerance for solving local model 
         [default = 1e-4]
 </ul>
+<br>
 
-
-  - "Line Search" - Sublist of the line search parameters, passed to
-    the NOX::LineSearch::Manager constructor. Defaults to an empty list.
+<li>   "Line Search" - Sublist of the line search parameters, passed to
+       the NOX::LineSearch::Manager constructor. Defaults to an empty list.
 
     The following parameters can be specified for this line search:
 
@@ -64,8 +65,11 @@ namespace Solver {
      (defaults to value for "Default Step")
 <li> "Max Iters" - maximum number of iterations (i.e., backtracks)
 </ul>
+</ul>
 
-    \author Brett Bader (CU-Boulder) */
+    \author Brett W. Bader (CU-Boulder) bader&nbsp;\@&nbsp;cs.colorado.edu 
+
+*/
 
 class TensorBased : public Generic {
 

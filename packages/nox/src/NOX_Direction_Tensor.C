@@ -1,7 +1,7 @@
 //@HEADER
 //@HEADER
 
-#define DEBUG_LEVEL 1
+#define DEBUG_LEVEL 0
 #undef STORE_HESSENBERG
 #undef CHECK_ORTHOGONALITY
 #define CHECK_RESIDUALS
@@ -66,7 +66,12 @@ Tensor::~Tensor()
 
 bool Tensor::reset(Parameter::List& params)
 {
+  /* 
+   *  This code may not be entirely correct for repeatedly resetting
+   *  the method.  Memory leaks might be an issue here.
+   */
 
+  /*
   // Clean up if this is not a fresh reset....
   if (basisVptr  &&  maxDim > 0) {
     cout << "Non null pointer, must free previously allocated space. \n";
@@ -75,19 +80,16 @@ bool Tensor::reset(Parameter::List& params)
     delete basisVptr;
   }
     
-  /*
     if (hess)       delete_matrix(hess);
     if (givensC)    delete_matrix(givensC);
     if (givensS)    delete_matrix(givensS);
     if (newHessCol) delete newHessCol;
     if (terrvec)    delete terrvec;
     if (vecg)       delete vecg;
-    if (vecq)       delete vecq;
+    if (vecq) delete vecq; 
   */
   
   paramsPtr = &params;
-  //if (!paramsPtr->sublist("Linear Solver").isParameter("Tolerance"))
-  // paramsPtr->sublist("Linear Solver").setParameter("Tolerance", 1.0e-10);
     
   Parameter::List& localParams = paramsPtr->sublist("Linear Solver");
   tol = localParams.getParameter("Tolerance", 1.0e-4);
@@ -922,16 +924,19 @@ bool Tensor::computeCurvilinearStep(Abstract::Vector& dir,
 {
   bool ok = true;
 
-  // If the tensor step has not been computed, then return the Newton 
+  // If the tensor step has not been computed, then return the Newton
   // step because other necessary vectors have not been computed.
+  // This is most certainly the case for the first nonlinear
+  // iteration, where the Newton step is used.
   if (!isTensorCalculated) {
     dir = *dNewton;
     dir.scale(lambda);
     return ok;
   }
 
-  // If the curvilinear step dt(lambdaBar) has not been computed, then
-  // calculate this step and other parameters for future use...
+  // If the curvilinear step dt(lambdaBar) and 2 parameters stJinvF
+  // and stJinvA have not been computed, then calculate this step and
+  // parameters for future use...
   if (!isCLParamsCalculated) {
 
     if (lambdaBar == 1.0) {
@@ -960,7 +965,7 @@ bool Tensor::computeCurvilinearStep(Abstract::Vector& dir,
       for (int i=0; i<iterations; i++)
 	dTLambda->update(yt[i], *basisVptr[i], 1);
 
-      // Precondition the answer, if needed...
+      // Precondition the answer, if preconditioning from the right...
       if (precondition == Right) {
 	*vecw = *dTLambda;
 	ok = soln.applyRightPreconditioning(paramsPtr->
@@ -977,7 +982,10 @@ bool Tensor::computeCurvilinearStep(Abstract::Vector& dir,
       delete pindex;
     }
 
-    // Compute the curvilinear parameters
+    // Compute the 2 curvilinear parameters that are needed later.
+    // The quantities s'*inv(J)*Fc and s'*inv(J)*a are used in the
+    // quadratic formula for calculating beta = s'*dTensor.  Here we
+    // back-calculate these quantities.
     vecw->update(1.0, *dTLambda, -lambdaBar, *dNewton, 0);
     double c = basisVptr[0]->dot(*vecw) * normS;
     stJinvF = -basisVptr[0]->dot(*dNewton) * normS;
@@ -994,16 +1002,26 @@ bool Tensor::computeCurvilinearStep(Abstract::Vector& dir,
     isCLParamsCalculated = true;
   }
 
-  // Compute alpha coefficient, which multiplies the "non-root" vector
+  // When computing the curvilinear step, the step may be broken up
+  // into the following vectors with associated coefficients
+  //   dT(lambda) = lambda*dNewton + betaRatio^2*dQuadratic + alpha*dNonroot 
+  // where betaRatio and alpha are both functions of lambda.  The
+  // computation of this step may be recast in terms of the 3 vectors
+  // dNewton, dTensor, and dTLambda, which have been precomputed.
+  // Computing the coefficients of these three vectors will save
+  // on the computation and storage of dQuadratic and dNonroot.
+
+  // Compute the alpha coefficient, which multiplies the "non-root"
+  // vector.  If lambdaBar < 1, then the tensor step is not a root of
+  // the model and alpha is nonzero if lambda in [lambdaBar, 1].
   double alpha = 0;
   if (lambdaBar < 1.0) {
     double temp = (lambda - lambdaBar) / (1 - lambdaBar);
     alpha = (temp > 0) ? temp : 0;
   }
-  else
-    alpha = 0;
 
-  // Compute betaRatio coefficient, which multiplies the "quadratic" vector
+  // Compute betaRatio coefficient, which multiplies the "quadratic"
+  // correction vector.
   double betaRatio = 0;
   if (lambda > lambdaBar) 
     betaRatio = 1;
