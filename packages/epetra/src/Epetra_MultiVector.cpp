@@ -456,11 +456,20 @@ int Epetra_MultiVector::ExtractCopy(double *A, int MyLDA) const {
       double * to = A + i*MyLDA;
       for (int j=0; j<MyLength_; j++) *to++ = *from++;
     }
-  
+
   return(0);
 }
-      
-      
+
+//=========================================================================
+int Epetra_MultiVector::ReplaceMap(const Epetra_BlockMap& map)
+{
+  if (Map().PointSameAs(map)) {
+    Epetra_DistObject::Map_ = map;
+    return(0);
+  }
+
+  return(-1);  
+}
 
 //=========================================================================
 

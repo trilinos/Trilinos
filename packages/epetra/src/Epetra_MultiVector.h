@@ -877,6 +877,11 @@ class Epetra_MultiVector: public Epetra_DistObject, public Epetra_CompObject, pu
   bool ConstantStride() const {return(ConstantStride_);};
   //@}
 
+  /** Replace map, only if new map has same point-structure as current map.
+      return 0 if map is replaced, -1 if not.
+   */
+  int ReplaceMap(const Epetra_BlockMap& map);
+
   //@{ \name I/O methods
 
   //! Print method
