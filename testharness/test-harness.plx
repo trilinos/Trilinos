@@ -43,8 +43,6 @@ $hostOS =~ s/\s*$//;
 
 # Grab program arguments for use with self-updating functionality (see cvsUpdate())
 my @programArguments = @ARGV;
-
-print "\nTEST - UPDATED VERSION 007\n\n";
         
 ################################################################################
 # Execution ####################################################################
@@ -303,12 +301,7 @@ report($SUMMARY);
                 chdir "$options{'TRILINOS_DIR'}[0]/testharness";
                 $command = "";
                 $command .= "perl $0 -u ";
-                print "\@programArguments: \n@programArguments\n\n";
-                foreach (@programArguments) {
-                    print "    \$_: $_\n";
-                    $command .= "$_ ";
-                }
-                print "\$command: $command\n";
+                foreach (@programArguments) { $command .= "$_ "; }
                 exec $command;
             }
         }
