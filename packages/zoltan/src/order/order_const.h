@@ -30,26 +30,21 @@ struct Zoltan_Order_Struct {
   int *sep_sizes;               /* Optional: Separator sizes. */
 };
 
+typedef struct Zoltan_Order_Struct ZOS;
+
 /*
  * Type definitions for functions that depend on 
  * ordering method or uses the ordering struct.
  */
 
-typedef int ZOLTAN_ORDER_FN(struct Zoltan_Struct *, 
-                         ZOLTAN_ID_PTR *, ZOLTAN_ID_PTR *, 
-                         struct Zoltan_Order_Struct *);
-
-typedef struct Zoltan_Order_Struct ZOS;
+typedef int ZOLTAN_ORDER_FN(ZZ *, 
+                         ZOLTAN_ID_PTR, ZOLTAN_ID_PTR, 
+                         ZOS *);
 
 /*****************************************************************************/
 /* PROTOTYPES */
 
 /* ORDERING FUNCTIONS */
 extern ZOLTAN_ORDER_FN Zoltan_ParMetis_Order;
-
-/* FREE DATA_STRUCTURE FUNCTIONS */
-/* EB: Do we need this for orderings? 
-extern ZOLTAN_LB_FREE_DATA_FN Zoltan_RCB_Free_Structure;
-*/
 
 #endif

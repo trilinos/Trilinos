@@ -92,7 +92,11 @@ int Zoltan_Order(
 
   /*
    *  Get ordering method from parameter list.
+   *  EB: Temporary hack; Assume ParMetis/NodeND.
    */
+
+  method = "PARMETIS";
+
   if (!strcmp(method, "NONE")) {
     if (zz->Proc == zz->Debug_Proc && zz->Debug_Level >= ZOLTAN_DEBUG_PARAMS)
       printf("%s Ordering method selected == NONE; no ordering performed\n",
