@@ -103,6 +103,9 @@ int Zoltan_HSFC(
    start_time = Zoltan_Time(zz->Timer);
    *num_export = *num_import = -1;              /* in case of early error exit */
    MPI_Op_create(&Zoltan_HSFC_mpi_sum_max_min, 1, &mpi_op); /* register method */
+   
+   if (sizeof (int) != 4)
+      ZOLTAN_HSFC_WARNING(zz->Proc, yo, "HSFC tested only for 32 bit integers");
 
    /* allocate persistant storage required by box assign and point assign */
    Zoltan_HSFC_Free_Structure (zz);
