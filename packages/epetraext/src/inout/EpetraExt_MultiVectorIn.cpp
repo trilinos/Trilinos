@@ -72,6 +72,7 @@ int MatrixMarketFileToMultiVector( const char *filename, const Epetra_BlockMap &
   int numMyPoints = map.NumMyPoints();
   int offset;
   map.Comm().ScanSum(&numMyPoints, &offset, 1); // ScanSum will compute offsets for us
+  offset -= numMyPoints; // readjust for my PE
 
   // Now construct vector/multivector
   if (N==1)
