@@ -95,7 +95,8 @@ PARAMS_CSRC	= set_param.c assign_param_vals.c check_param.c print_params.c \
 PARAMS_INC	= params_const.h
 
 
-COMM_CSRC	= comm.c
+COMM_CSRC	= comm_create.c comm_do.c comm_do_reverse.c comm_destroy.c \
+		  invert_map.c
 COMM_INC	= comm.h
 
 PAR_CSRC	= par_util.c
@@ -144,8 +145,8 @@ LIB_SRC_OBJ	= $(LIB_SRC_C:.c=.o)
 #
 # lint defines
 #
-LINT		= alint # SunOs4
-#LINT		= lint
+#LINT		= alint # SunOs4
+LINT		= lint
 LINT_INC_PATH	= -Idriver -Ich -Iall -Ilb -Ipar -Ircb -Iparams\
 		  -Icomm -Ioct -Iparmetis -Itimer \
 		  -I/Net/local/lang/SC3.0.1/include \
