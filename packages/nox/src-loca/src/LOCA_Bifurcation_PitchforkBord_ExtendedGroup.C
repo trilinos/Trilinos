@@ -38,12 +38,71 @@
 #include "LOCA_ErrorCheck.H"
 
 LOCA::Bifurcation::PitchforkBord::ExtendedGroup::ExtendedGroup(
+			      LOCA::Bifurcation::TPBord::AbstractGroup& g,
+			      NOX::Parameter::List& bifParamList)
+  : grpPtr(&g),
+    pfXVec(g.getX(), g.getX(), 0.0, 0.0),
+    pfFVec(g.getX(), g.getX(), 0.0, 0.0),
+    pfNewtonVec(g.getX(), g.getX(), 0.0, 0.0),
+    asymVecPtr(NULL),
+    lengthVecPtr(NULL), 
+    bifParamId(0), 
+    derivResidualParamPtr(NULL), 
+    derivNullResidualParamPtr(NULL), 
+    ownsGroup(false),
+    isValidF(false),
+    isValidJacobian(false),
+    isValidNewton(false)
+{
+  const char *func = "LOCA::Bifurcation::PitchforkBord::ExtendedGroup()";
+
+  if (!bifParamList.isParameter("Bifurcation Parameter")) {
+    LOCA::ErrorCheck::throwError(func,
+				 "\"Bifurcation Parameter\" name is not set!");
+  }
+  string bifParamName = bifParamList.getParameter("Bifurcation Parameter",
+						  "None");
+  const ParameterVector& p = grpPtr->getParams();
+  bifParamId = p.getIndex(bifParamName);
+
+  if (!bifParamList.isParameter("Asymmetric Vector")) {
+    LOCA::ErrorCheck::throwError(func,
+				"\"Asymmetric Vector\" is not set!");
+  }
+  const NOX::Abstract::Vector* asVecPtr = 
+    bifParamList.getAnyPtrParameter<NOX::Abstract::Vector>("Asymmetric Vector");
+
+  if (!bifParamList.isParameter("Length Normalization Vector")) {
+    LOCA::ErrorCheck::throwError(func,
+				"\"Length Normalization Vector\" is not set!");
+  }
+  const NOX::Abstract::Vector* lenVecPtr = 
+    bifParamList.getAnyPtrParameter<NOX::Abstract::Vector>("Length Normalization Vector");
+
+  if (!bifParamList.isParameter("Initial Null Vector")) {
+    LOCA::ErrorCheck::throwError(func,
+				 "\"Initial Null Vector\" is not set!");
+  }
+  const NOX::Abstract::Vector* nullVecPtr = 
+    bifParamList.getAnyConstPtrParameter<NOX::Abstract::Vector>("Initial Null Vector");
+
+  asymVecPtr = asVecPtr->clone(NOX::DeepCopy);
+  lengthVecPtr = lenVecPtr->clone(NOX::DeepCopy);
+  derivResidualParamPtr = lenVecPtr->clone(NOX::ShapeCopy);
+  derivNullResidualParamPtr = lenVecPtr->clone(NOX::ShapeCopy);
+  pfXVec.getNullVec() = *nullVecPtr;
+
+  init();
+}
+
+LOCA::Bifurcation::PitchforkBord::ExtendedGroup::ExtendedGroup(
                          LOCA::Bifurcation::TPBord::AbstractGroup& g,
 			 const NOX::Abstract::Vector& asymVec,
 			 const NOX::Abstract::Vector& lenVec,
+			 const NOX::Abstract::Vector& nullVec,
 			 int paramId)
   : grpPtr(&g), 
-    pfXVec(g.getX(), lenVec, 0.0, 0.0),
+    pfXVec(g.getX(), nullVec, 0.0, 0.0),
     pfFVec(lenVec, lenVec, 0.0, 0.0),
     pfNewtonVec(lenVec, lenVec, 0.0, 0.0),
     asymVecPtr(asymVec.clone(NOX::DeepCopy)),
@@ -63,9 +122,10 @@ LOCA::Bifurcation::PitchforkBord::ExtendedGroup::ExtendedGroup(
                          const LOCA::Bifurcation::TPBord::AbstractGroup& g,
 			 const NOX::Abstract::Vector& asymVec,
 			 const NOX::Abstract::Vector& lenVec,
+			 const NOX::Abstract::Vector& nullVec,
 			 int paramId)
   : grpPtr(dynamic_cast<LOCA::Bifurcation::TPBord::AbstractGroup*>(g.clone())),
-    pfXVec(g.getX(), lenVec, 0.0, 0.0),
+    pfXVec(g.getX(), nullVec, 0.0, 0.0),
     pfFVec(lenVec, lenVec, 0.0, 0.0),
     pfNewtonVec(lenVec, lenVec, 0.0, 0.0),
     asymVecPtr(asymVec.clone(NOX::DeepCopy)),
@@ -142,18 +202,12 @@ LOCA::Bifurcation::PitchforkBord::ExtendedGroup::operator=(
   if (this != &source) {
     NOX::CopyType type = NOX::DeepCopy;
 
-    // Delete old values
-    delete asymVecPtr;
-    delete lengthVecPtr;
-    delete derivResidualParamPtr;
-    delete derivNullResidualParamPtr;
-
     // Copy values
     *grpPtr = *source.grpPtr;
     pfXVec = source.pfXVec;
     pfFVec = source.pfFVec;
     pfNewtonVec = source.pfNewtonVec;
-    asymVecPtr = source.asymVecPtr->clone(type);
+    *asymVecPtr = *source.asymVecPtr;
     *lengthVecPtr = *source.lengthVecPtr;
     *derivResidualParamPtr = *source.derivResidualParamPtr;
     *derivNullResidualParamPtr = *source.derivNullResidualParamPtr;

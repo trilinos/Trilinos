@@ -53,8 +53,10 @@ LOCA::Bifurcation::TPBord::ExtendedGroup::ExtendedGroup(
     isValidJacobian(false),
     isValidNewton(false)
 {
+  const char *func = "LOCA::Bifurcation::TPBord::ExtendedGroup()";
+
   if (!bifParamList.isParameter("Bifurcation Parameter")) {
-    LOCA::ErrorCheck::throwError("LOCA::Bifurcation::TPBord::ExtendedGroup()",
+    LOCA::ErrorCheck::throwError(func,
 				 "\"Bifurcation Parameter\" name is not set!");
   }
   string bifParamName = bifParamList.getParameter("Bifurcation Parameter",
@@ -63,16 +65,14 @@ LOCA::Bifurcation::TPBord::ExtendedGroup::ExtendedGroup(
   bifParamId = p.getIndex(bifParamName);
 
   if (!bifParamList.isParameter("Length Normalization Vector")) {
-    LOCA::ErrorCheck::throwError(
-			   "LOCA::Bifurcation::TPBord::ExtendedGroup()",
+    LOCA::ErrorCheck::throwError(func,
 			   "\"Length Normalization Vector\" is not set!");
   }
-  NOX::Abstract::Vector* lenVecPtr = 
+  const NOX::Abstract::Vector* lenVecPtr = 
     bifParamList.getAnyPtrParameter<NOX::Abstract::Vector>("Length Normalization Vector");
 
   if (!bifParamList.isParameter("Initial Null Vector")) {
-    LOCA::ErrorCheck::throwError(
-			   "LOCA::Bifurcation::TPBord::ExtendedGroup()",
+    LOCA::ErrorCheck::throwError(func,
 			   "\"Initial Null Vector\" is not set!");
   }
   const NOX::Abstract::Vector* nullVecPtr = 

@@ -65,6 +65,12 @@ namespace LOCA {
 	: public LOCA::Bifurcation::TPBord::ExtendedGroup {
 
       public:
+
+	/*! 
+	 * \brief Constructor with initial data passed through parameter lists.
+	 */
+	ModifiedBorderingGroup(LOCA::Bifurcation::TPBord::AbstractGroup& g, 
+			       NOX::Parameter::List& bifParamList);
   
 	/*! 
 	 * \brief Constructor.  See LOCA::Bifurcation::TPBord::ExtendedGroup

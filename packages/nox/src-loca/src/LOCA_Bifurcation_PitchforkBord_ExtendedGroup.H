@@ -86,17 +86,25 @@ namespace LOCA {
 	: public LOCA::Continuation::AbstractGroup,
 	  public LOCA::Extended::AbstractGroup {
       public:
+
+	/*! 
+	 * \brief Constructor with initial data passed through parameter lists.
+	 */
+	ExtendedGroup(LOCA::Bifurcation::TPBord::AbstractGroup& g, 
+		      NOX::Parameter::List& bifParamList);
   
 	//! Constructor to set the base group, bifurcation paramter, length vector.
 	ExtendedGroup(LOCA::Bifurcation::TPBord::AbstractGroup& g, 
 		      const NOX::Abstract::Vector& asymVec,
 		      const NOX::Abstract::Vector& lenVec, 
+		      const NOX::Abstract::Vector& nullVec,
 		      int paramId = 0);
 
 	//! Constructor to set the base group, bifurcation paramter, length vector.
 	ExtendedGroup(const LOCA::Bifurcation::TPBord::AbstractGroup& g, 
 		      const NOX::Abstract::Vector& asymVec,
 		      const NOX::Abstract::Vector& lenVec, 
+		      const NOX::Abstract::Vector& nullVec,
 		      int paramId = 0);
 
 	//! Copy constructor.

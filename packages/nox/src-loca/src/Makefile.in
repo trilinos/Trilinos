@@ -200,7 +200,8 @@ LOCA_BIFURCATION_H = \
 	$(srcdir)/LOCA_Bifurcation_HopfBord_ExtendedVector.H \
 	$(srcdir)/LOCA_Bifurcation_HopfBord_AbstractGroup.H \
 	$(srcdir)/LOCA_Bifurcation_HopfBord_FiniteDifferenceGroup.H \
-	$(srcdir)/LOCA_Bifurcation_HopfBord_ExtendedGroup.H 
+	$(srcdir)/LOCA_Bifurcation_HopfBord_ExtendedGroup.H \
+	$(srcdir)/LOCA_Bifurcation_Manager.H
 
 
 LOCA_BIFURCATION = \
@@ -215,7 +216,8 @@ LOCA_BIFURCATION = \
 	$(srcdir)/LOCA_Bifurcation_HopfBord_ExtendedVector.C \
 	$(srcdir)/LOCA_Bifurcation_HopfBord_AbstractGroup.C \
 	$(srcdir)/LOCA_Bifurcation_HopfBord_FiniteDifferenceGroup.C \
-	$(srcdir)/LOCA_Bifurcation_HopfBord_ExtendedGroup.C
+	$(srcdir)/LOCA_Bifurcation_HopfBord_ExtendedGroup.C \
+	$(srcdir)/LOCA_Bifurcation_Manager.C
 
 
 LOCA_HOMOTOPY_H = \
@@ -433,7 +435,8 @@ am__objects_6 = \
 	libloca_a-LOCA_Bifurcation_HopfBord_ExtendedVector.$(OBJEXT) \
 	libloca_a-LOCA_Bifurcation_HopfBord_AbstractGroup.$(OBJEXT) \
 	libloca_a-LOCA_Bifurcation_HopfBord_FiniteDifferenceGroup.$(OBJEXT) \
-	libloca_a-LOCA_Bifurcation_HopfBord_ExtendedGroup.$(OBJEXT)
+	libloca_a-LOCA_Bifurcation_HopfBord_ExtendedGroup.$(OBJEXT) \
+	libloca_a-LOCA_Bifurcation_Manager.$(OBJEXT)
 am__objects_7 = libloca_a-LOCA_Homotopy_Group.$(OBJEXT)
 am__objects_8 = libloca_a-LOCA_DerivUtils.$(OBJEXT)
 am__objects_9 = libloca_a-LOCA_Utils.$(OBJEXT) \
@@ -478,6 +481,7 @@ am__depfiles_maybe = depfiles
 @AMDEP_TRUE@	./$(DEPDIR)/libloca_a-LOCA_Bifurcation_HopfBord_ExtendedGroup.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/libloca_a-LOCA_Bifurcation_HopfBord_ExtendedVector.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/libloca_a-LOCA_Bifurcation_HopfBord_FiniteDifferenceGroup.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/libloca_a-LOCA_Bifurcation_Manager.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/libloca_a-LOCA_Bifurcation_PitchforkBord_ExtendedGroup.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/libloca_a-LOCA_Bifurcation_PitchforkBord_ExtendedVector.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/libloca_a-LOCA_Bifurcation_TPBord_AbstractGroup.Po \
@@ -630,6 +634,8 @@ libloca_a-LOCA_Bifurcation_HopfBord_FiniteDifferenceGroup.$(OBJEXT): \
 	$(srcdir)/LOCA_Bifurcation_HopfBord_FiniteDifferenceGroup.C
 libloca_a-LOCA_Bifurcation_HopfBord_ExtendedGroup.$(OBJEXT): \
 	$(srcdir)/LOCA_Bifurcation_HopfBord_ExtendedGroup.C
+libloca_a-LOCA_Bifurcation_Manager.$(OBJEXT): \
+	$(srcdir)/LOCA_Bifurcation_Manager.C
 libloca_a-LOCA_Homotopy_Group.$(OBJEXT): $(srcdir)/LOCA_Homotopy_Group.C
 libloca_a-LOCA_DerivUtils.$(OBJEXT): $(srcdir)/LOCA_DerivUtils.C
 libloca_a-LOCA_Utils.$(OBJEXT): $(srcdir)/LOCA_Utils.C
@@ -686,6 +692,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_a-LOCA_Bifurcation_HopfBord_ExtendedGroup.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_a-LOCA_Bifurcation_HopfBord_ExtendedVector.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_a-LOCA_Bifurcation_HopfBord_FiniteDifferenceGroup.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_a-LOCA_Bifurcation_Manager.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_a-LOCA_Bifurcation_PitchforkBord_ExtendedGroup.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_a-LOCA_Bifurcation_PitchforkBord_ExtendedVector.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_a-LOCA_Bifurcation_TPBord_AbstractGroup.Po@am__quote@
@@ -1056,6 +1063,18 @@ libloca_a-LOCA_Bifurcation_HopfBord_ExtendedGroup.obj: $(srcdir)/LOCA_Bifurcatio
 @AMDEP_TRUE@	depfile='$(DEPDIR)/libloca_a-LOCA_Bifurcation_HopfBord_ExtendedGroup.Po' tmpdepfile='$(DEPDIR)/libloca_a-LOCA_Bifurcation_HopfBord_ExtendedGroup.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_a_CXXFLAGS) $(CXXFLAGS) -c -o libloca_a-LOCA_Bifurcation_HopfBord_ExtendedGroup.obj `cygpath -w $(srcdir)/LOCA_Bifurcation_HopfBord_ExtendedGroup.C`
+
+libloca_a-LOCA_Bifurcation_Manager.o: $(srcdir)/LOCA_Bifurcation_Manager.C
+@AMDEP_TRUE@	source='$(srcdir)/LOCA_Bifurcation_Manager.C' object='libloca_a-LOCA_Bifurcation_Manager.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/libloca_a-LOCA_Bifurcation_Manager.Po' tmpdepfile='$(DEPDIR)/libloca_a-LOCA_Bifurcation_Manager.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_a_CXXFLAGS) $(CXXFLAGS) -c -o libloca_a-LOCA_Bifurcation_Manager.o `test -f '$(srcdir)/LOCA_Bifurcation_Manager.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_Bifurcation_Manager.C
+
+libloca_a-LOCA_Bifurcation_Manager.obj: $(srcdir)/LOCA_Bifurcation_Manager.C
+@AMDEP_TRUE@	source='$(srcdir)/LOCA_Bifurcation_Manager.C' object='libloca_a-LOCA_Bifurcation_Manager.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/libloca_a-LOCA_Bifurcation_Manager.Po' tmpdepfile='$(DEPDIR)/libloca_a-LOCA_Bifurcation_Manager.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_a_CXXFLAGS) $(CXXFLAGS) -c -o libloca_a-LOCA_Bifurcation_Manager.obj `cygpath -w $(srcdir)/LOCA_Bifurcation_Manager.C`
 
 libloca_a-LOCA_Homotopy_Group.o: $(srcdir)/LOCA_Homotopy_Group.C
 @AMDEP_TRUE@	source='$(srcdir)/LOCA_Homotopy_Group.C' object='libloca_a-LOCA_Homotopy_Group.o' libtool=no @AMDEPBACKSLASH@

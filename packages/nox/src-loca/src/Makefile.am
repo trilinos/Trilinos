@@ -99,7 +99,8 @@ LOCA_BIFURCATION_H = \
 	$(srcdir)/LOCA_Bifurcation_HopfBord_ExtendedVector.H \
 	$(srcdir)/LOCA_Bifurcation_HopfBord_AbstractGroup.H \
 	$(srcdir)/LOCA_Bifurcation_HopfBord_FiniteDifferenceGroup.H \
-	$(srcdir)/LOCA_Bifurcation_HopfBord_ExtendedGroup.H 
+	$(srcdir)/LOCA_Bifurcation_HopfBord_ExtendedGroup.H \
+	$(srcdir)/LOCA_Bifurcation_Manager.H
 
 LOCA_BIFURCATION = \
         $(srcdir)/LOCA_Bifurcation_TPBord_ExtendedVector.C \
@@ -113,7 +114,8 @@ LOCA_BIFURCATION = \
 	$(srcdir)/LOCA_Bifurcation_HopfBord_ExtendedVector.C \
 	$(srcdir)/LOCA_Bifurcation_HopfBord_AbstractGroup.C \
 	$(srcdir)/LOCA_Bifurcation_HopfBord_FiniteDifferenceGroup.C \
-	$(srcdir)/LOCA_Bifurcation_HopfBord_ExtendedGroup.C
+	$(srcdir)/LOCA_Bifurcation_HopfBord_ExtendedGroup.C \
+	$(srcdir)/LOCA_Bifurcation_Manager.C
 
 LOCA_HOMOTOPY_H = \
 	$(srcdir)/LOCA_Homotopy_AbstractGroup.H \

@@ -60,6 +60,8 @@ LOCA::Stepper::Stepper(LOCA::Continuation::AbstractGroup& initialGuess,
 		       NOX::StatusTest::Generic& t,
 		       NOX::Parameter::List& p) :
   LOCA::Abstract::Iterator(),
+  bifGroupManagerPtr(NULL),
+  bifGroupPtr(NULL),
   conGroupManagerPtr(NULL),
   curGroupPtr(NULL),
   prevGroupPtr(NULL),
@@ -77,6 +79,8 @@ LOCA::Stepper::Stepper(LOCA::Continuation::AbstractGroup& initialGuess,
 
 LOCA::Stepper::Stepper(const LOCA::Stepper& s) :
   LOCA::Abstract::Iterator(s),
+  bifGroupManagerPtr(NULL),
+  bifGroupPtr(NULL),
   conGroupManagerPtr(NULL),
   curGroupPtr(NULL),
   prevGroupPtr(NULL),
@@ -100,6 +104,10 @@ LOCA::Stepper::Stepper(const LOCA::Stepper& s) :
   tangentFactorExponent(s.tangentFactorExponent),
   calcEigenvalues(s.calcEigenvalues)
 { 
+  bifGroupManagerPtr =
+    new LOCA::Bifurcation::Manager(*s.bifGroupManagerPtr);
+  bifGroupPtr =
+    dynamic_cast<LOCA::Continuation::AbstractGroup*>(s.bifGroupPtr->clone());
   conGroupManagerPtr = 
     new LOCA::Continuation::Manager(*s.conGroupManagerPtr);
   curGroupPtr = 
@@ -120,6 +128,8 @@ LOCA::Stepper::Stepper(const LOCA::Stepper& s) :
 
 LOCA::Stepper::~Stepper() 
 { 
+  delete bifGroupManagerPtr;
+  delete bifGroupPtr;
   delete conGroupManagerPtr;
   delete curGroupPtr;
   delete prevGroupPtr;
@@ -135,10 +145,12 @@ LOCA::Stepper::reset(LOCA::Continuation::AbstractGroup& initialGuess,
 		     NOX::StatusTest::Generic& t,
 		     NOX::Parameter::List& p) 
 {
+  delete bifGroupPtr;
   delete curGroupPtr;
   delete prevGroupPtr;
   delete curPredictorPtr;
   delete prevPredictorPtr;
+  delete bifGroupManagerPtr;
   delete conGroupManagerPtr;
   delete predictorManagerPtr;
   delete stepSizeManagerPtr;
@@ -157,6 +169,8 @@ LOCA::Stepper::reset(LOCA::Continuation::AbstractGroup& initialGuess,
   LOCA::Abstract::Iterator::reset(stepperList);
 
   // Reset group, predictor, step-size managers
+  bifGroupManagerPtr =
+    new LOCA::Bifurcation::Manager(LOCA::Utils::getSublist("Bifurcation"));
   conGroupManagerPtr = 
     new LOCA::Continuation::Manager(stepperList);
   predictorManagerPtr = 
@@ -222,11 +236,14 @@ LOCA::Stepper::reset(LOCA::Continuation::AbstractGroup& initialGuess,
       = firstStepParams.sublist("LOCA").sublist("Stepper");
   firstStepperParams.setParameter("Continuation Method", "Natural");
 
+  // Create bifurcation group
+  bifGroupPtr = bifGroupManagerPtr->createBifurcationGroup(initialGuess);
+
   // Reset continuation manager
   conGroupManagerPtr->reset(firstStepperParams);
 
   // Create continuation group
-  curGroupPtr = conGroupManagerPtr->createContinuationGroup(initialGuess);
+  curGroupPtr = conGroupManagerPtr->createContinuationGroup(*bifGroupPtr);
       
   // Set step size
   curGroupPtr->setStepSize(0.0);

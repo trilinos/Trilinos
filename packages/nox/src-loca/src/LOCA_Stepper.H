@@ -33,14 +33,15 @@
 #ifndef LOCA_STEPPER_H
 #define LOCA_STEPPER_H
 
-#include "LOCA_Abstract_Iterator.H"  // base class
-#include "NOX_Parameter_List.H"	     // class data element
-#include "NOX_Solver_Manager.H"	     // class data element
+#include "LOCA_Abstract_Iterator.H"    // base class
+#include "NOX_Parameter_List.H"	       // class data element
+#include "NOX_Solver_Manager.H"	       // class data element
+#include "LOCA_Bifurcation_Manager.H"  // class data element
 #include "LOCA_Continuation_Manager.H" // class data element
-#include "LOCA_Predictor_Manager.H" // class data element
-#include "LOCA_StepSize_Manager.H" // class data element
-#include "NOX_StatusTest_Generic.H"  // for enum StatusType
-#include "NOX_Common.H"              // for <string> class
+#include "LOCA_Predictor_Manager.H"    // class data element
+#include "LOCA_StepSize_Manager.H"     // class data element
+#include "NOX_StatusTest_Generic.H"    // for enum StatusType
+#include "NOX_Common.H"                // for <string> class
 
 // Forward Declarations
 namespace LOCA {
@@ -134,6 +135,12 @@ namespace LOCA {
     virtual bool withinThreshold();
 
   protected:
+
+    //! Bifurcation group manager
+    LOCA::Bifurcation::Manager* bifGroupManagerPtr;
+
+    //! Pointer to bifurcation group
+    LOCA::Continuation::AbstractGroup* bifGroupPtr;
 
     //! Continuation group manager
     LOCA::Continuation::Manager* conGroupManagerPtr;

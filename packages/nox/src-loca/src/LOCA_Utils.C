@@ -126,6 +126,11 @@ void LOCA::Utils::initializeSublistMap(NOX::Parameter::List& p) {
   NOX::Parameter::List& stepperSublist = locaSublist.sublist("Stepper");
   sublistMap["Stepper"] = &stepperSublist;
 
+  // Bifurcation sublist
+  NOX::Parameter::List& bifurcationSublist = 
+    locaSublist.sublist("Bifurcation");
+  sublistMap["Bifurcation"] = &bifurcationSublist;
+
   // Predictor sublist
   NOX::Parameter::List& predictorSublist = locaSublist.sublist("Predictor");
   sublistMap["Predictor"] = &predictorSublist;

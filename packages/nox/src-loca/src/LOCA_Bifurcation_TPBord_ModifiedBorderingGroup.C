@@ -38,6 +38,13 @@
 #include "LOCA_ErrorCheck.H"
 
 LOCA::Bifurcation::TPBord::ModifiedBorderingGroup::ModifiedBorderingGroup(
+			       LOCA::Bifurcation::TPBord::AbstractGroup& g,
+			       NOX::Parameter::List& bifParamList)   
+  : LOCA::Bifurcation::TPBord::ExtendedGroup(g, bifParamList)
+{
+}
+
+LOCA::Bifurcation::TPBord::ModifiedBorderingGroup::ModifiedBorderingGroup(
 			      LOCA::Bifurcation::TPBord::AbstractGroup& g,
 			      const NOX::Abstract::Vector& lenVec,
 			      const NOX::Abstract::Vector& nullVec,

@@ -39,6 +39,76 @@
 
 LOCA::Bifurcation::HopfBord::ExtendedGroup::ExtendedGroup(
 			      LOCA::Bifurcation::HopfBord::AbstractGroup& g,
+			      NOX::Parameter::List& bifParamList)
+  : grpPtr(&g),
+    hopfXVec(g.getX(), g.getX(), g.getX(), 0.0, 0.0),
+    hopfFVec(g.getX(), g.getX(), g.getX(), 0.0, 0.0),
+    hopfNewtonVec(g.getX(), g.getX(), g.getX(), 0.0, 0.0),
+    lengthVecPtr(NULL), 
+    bifParamId(0), 
+    derivResidualParamPtr(NULL), 
+    derivRealEigenResidualParamPtr(NULL),
+    derivImagEigenResidualParamPtr(NULL),
+    massTimesYPtr(NULL),
+    minusMassTimesZPtr(NULL),
+    ownsGroup(false),
+    isValidF(false),
+    isValidJacobian(false),
+    isValidNewton(false)
+{
+  const char *func = "LOCA::Bifurcation::HopfBord::ExtendedGroup()";
+
+  if (!bifParamList.isParameter("Bifurcation Parameter")) {
+    LOCA::ErrorCheck::throwError(func,
+				 "\"Bifurcation Parameter\" name is not set!");
+  }
+  string bifParamName = bifParamList.getParameter("Bifurcation Parameter",
+						  "None");
+  const ParameterVector& p = grpPtr->getParams();
+  bifParamId = p.getIndex(bifParamName);
+
+  if (!bifParamList.isParameter("Length Normalization Vector")) {
+    LOCA::ErrorCheck::throwError(func,
+			   "\"Length Normalization Vector\" is not set!");
+  }
+  NOX::Abstract::Vector* lenVecPtr = 
+    bifParamList.getAnyPtrParameter<NOX::Abstract::Vector>("Length Normalization Vector");
+
+  if (!bifParamList.isParameter("Initial Real Eigenvector")) {
+    LOCA::ErrorCheck::throwError(func,
+			   "\"Initial Real Eigenvector\" is not set!");
+  }
+  const NOX::Abstract::Vector* realEigenVecPtr = 
+    bifParamList.getAnyConstPtrParameter<NOX::Abstract::Vector>("Initial Real Eigenvector");
+
+  if (!bifParamList.isParameter("Initial Imaginary Eigenvector")) {
+    LOCA::ErrorCheck::throwError(func,
+			   "\"Initial Imaginary Eigenvector\" is not set!");
+  }
+  const NOX::Abstract::Vector* imagEigenVecPtr = 
+    bifParamList.getAnyConstPtrParameter<NOX::Abstract::Vector>("Initial Imaginary Eigenvector");
+
+  if (!bifParamList.isParameter("Initial Frequency")) {
+    LOCA::ErrorCheck::throwError(func,
+				 "\"Initial Frequency\" name is not set!");
+  }
+  double frequency = bifParamList.getParameter("Initial Frequency",0.0);
+
+  hopfXVec.getRealEigenVec() = *realEigenVecPtr;
+  hopfXVec.getImagEigenVec() = *imagEigenVecPtr;
+  hopfXVec.getFrequency() = frequency;
+  lengthVecPtr = lenVecPtr;
+  derivResidualParamPtr = lenVecPtr->clone(NOX::ShapeCopy);
+  derivRealEigenResidualParamPtr = lenVecPtr->clone(NOX::ShapeCopy);
+  derivImagEigenResidualParamPtr = lenVecPtr->clone(NOX::ShapeCopy);
+  massTimesYPtr = lenVecPtr->clone(NOX::ShapeCopy);
+  minusMassTimesZPtr = lenVecPtr->clone(NOX::ShapeCopy);
+
+  init();
+}
+
+LOCA::Bifurcation::HopfBord::ExtendedGroup::ExtendedGroup(
+			      LOCA::Bifurcation::HopfBord::AbstractGroup& g,
 			      const NOX::Abstract::Vector& realEigenVec,
 			      const NOX::Abstract::Vector& imaginaryEigenVec,
 			      NOX::Abstract::Vector& lenVec,

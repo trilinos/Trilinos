@@ -87,6 +87,12 @@ namespace LOCA {
 	public LOCA::Extended::AbstractGroup {
 
       public:
+
+	/*! 
+	 * \brief Constructor with initial data passed through parameter lists.
+	 */
+	ExtendedGroup(LOCA::Bifurcation::HopfBord::AbstractGroup& g, 
+		      NOX::Parameter::List& bifParamList);
   
 	//! Constructor to set the base group, bifurcation paramter, length vector.
 	ExtendedGroup(LOCA::Bifurcation::HopfBord::AbstractGroup& g,
