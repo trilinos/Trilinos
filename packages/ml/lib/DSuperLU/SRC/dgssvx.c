@@ -619,6 +619,5 @@ printf("dgssvx: fact=%c, trans=%c, refact=%c, equed=%c\n",
 	SUPERLU_FREE(AA);
     }
 
-    //PrintStat( &SuperLUStat );
     StatFree();
 }

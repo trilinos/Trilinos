@@ -436,7 +436,7 @@ int ML_Operator_BlockPartition(ML_Operator *matrix, int nLocalNd, int *nblk,
     return 0;
   }
 
-  // set 'xadj' & 'adjncy' adjacentcy data
+  /* set 'xadj' & 'adjncy' adjacentcy data */
 
   xadj = (idxtype *) ML_allocate( (nLocalNd+1) * sizeof(idxtype) );
 

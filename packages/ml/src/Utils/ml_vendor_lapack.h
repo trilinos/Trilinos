@@ -44,6 +44,6 @@
 #define ML_DORMQR_FUNC
 #define ML_DORMLQ_FUNC
 #define ML_DORM2R_FUNC
-#define ML_DROML2_FUNC
+#define ML_DORML2_FUNC
 
 #endif
