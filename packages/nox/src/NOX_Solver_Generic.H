@@ -108,6 +108,28 @@ public:
 		     NOX::StatusTest::Generic& tests, 
 		     NOX::Parameter::List& params) = 0;
 
+  /*! 
+    \brief A very DANGEROUS version of reset.  
+  
+    This is a light-weight version of reset that takes no arguments
+    but just resets the counters in the solver.  Therefore, the
+    groups, status tests, and parameters retain their state from the
+    termination of the previous solve!
+
+    This method exists for small transient runs.  It has been found
+    that for very small problems with many time steps, the overhead
+    associated with the recomended reset call: reset(grp, tests,
+    params) is rather large due to reparsing of the parameter list
+    etc.
+
+    If users write their own status tests and use this version of
+    reset, they should automate their status tests to reset
+    themselves.  The easiest way to do this is to get the number of
+    iterations from the solver and if the value is zero reset itself.
+    Otherwise these status tests may not work as intended.
+  */
+  virtual bool reset() = 0;
+
   //! Check current convergence and failure status. 
   virtual NOX::StatusTest::StatusType getStatus() = 0;
 

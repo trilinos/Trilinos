@@ -130,6 +130,12 @@ bool NOX::Solver::LineSearchBased::reset(NOX::Abstract::Group& xGrp,
   return true;
 }
 
+bool NOX::Solver::LineSearchBased::reset()
+{
+  init();
+  return true;
+}
+
 NOX::Solver::LineSearchBased::~LineSearchBased() 
 {
   delete oldSolnPtr;

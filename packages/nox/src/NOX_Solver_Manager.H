@@ -81,6 +81,8 @@ public:
   ~Manager();
 
   bool reset(NOX::Abstract::Group& grp, NOX::StatusTest::Generic &tests, NOX::Parameter::List& params);
+  
+  bool reset();
 
   NOX::StatusTest::StatusType getStatus();
 

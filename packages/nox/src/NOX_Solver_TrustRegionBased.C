@@ -167,6 +167,35 @@ bool TrustRegionBased::reset(Abstract::Group& grp, StatusTest::Generic& t, Param
   return true;
 }
 
+bool TrustRegionBased::reset()
+{
+  // Initialize 
+  nIter = 0;
+  dx = 0;
+  status = StatusTest::Unconverged;
+
+  // Print out initialization information
+  if (utils.isPrintProcessAndType(NOX::Utils::Parameters)) {
+    cout << "\n" << NOX::Utils::fill(72) << "\n";
+    cout << "\n-- Parameters Passed to Nonlinear Solver --\n\n";
+    paramsPtr->print(cout,5);
+  }
+
+  // Compute F of initital guess
+  solnPtr->computeF();
+  newF = 0.5 * solnPtr->getNormF() * solnPtr->getNormF();
+
+  // Test the initial guess
+  status = testPtr->checkStatus(*this);
+
+  if (utils.isPrintProcessAndType(NOX::Utils::Parameters)) {
+    cout << "\n-- Status Tests Passed to Nonlinear Solver --\n\n";
+    testPtr->print(cout, 5);
+    cout <<"\n" << NOX::Utils::fill(72) << "\n";
+  }
+  return true;
+}
+
 TrustRegionBased::~TrustRegionBased() 
 {
   delete oldSolnPtr;

@@ -14,6 +14,9 @@
 // Header files for different solvers
 #include "NOX_Solver_LineSearchBased.H"	 // LineSearch method
 #include "NOX_Solver_TrustRegionBased.H" // Trust region method
+#ifdef WITH_PRERELEASE
+#include "NOX_Solver_TensorBased.H"  // Tensor method
+#endif
 
 NOX::Solver::Manager::Manager(Abstract::Group& grp, StatusTest::Generic &t, Parameter::List& p) :
   method(""),
@@ -68,6 +71,12 @@ bool NOX::Solver::Manager::reset(Abstract::Group& grp,
     {
       ptr = new TrustRegionBased(grp, tests, params);
     } 
+#ifdef WITH_PRERELEASE
+    else if (method == "Tensor Based") 
+    {
+      ptr = new TensorBased(grp, tests, params);
+    } 
+#endif
     else 
     {
       cout << "ERROR: NOX::Solver::Manager::reset - Invalid solver choice" << endl;
@@ -82,6 +91,11 @@ bool NOX::Solver::Manager::reset(Abstract::Group& grp,
 
     return true;
   }
+}
+
+bool NOX::Solver::Manager::reset()
+{
+  return ptr->reset();
 }
 
 // PRIVATE
