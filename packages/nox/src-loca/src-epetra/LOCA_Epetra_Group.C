@@ -462,7 +462,8 @@ LOCA::Epetra::Group::applyBorderedJacobianInverse(bool trans,
   createIfpackPreconditioner(p);
 
   // Get Jacobian, preconditioner operators
-  const Epetra_Operator& cjac = sharedJacobianPtr->getOperator();
+  //const Epetra_Operator& cjac = sharedJacobianPtr->getOperator();
+  const Epetra_Operator& cjac = sharedJacobian.getOperator();
   Epetra_Operator& jac = const_cast<Epetra_Operator&>(cjac);
   Epetra_Operator& prec = *ifpackPreconditioner;
 
