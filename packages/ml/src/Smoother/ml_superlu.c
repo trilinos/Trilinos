@@ -16,10 +16,12 @@
 #ifdef SUPERLU
 #include "dsp_defs.h"
 #include "util.h"
-#elif DSUPERLU
+#else
+#ifdef DSUPERLU
 #include "mpi.h"
 #include <malloc.h>
 #include "superlu_ddefs.h"
+#endif
 #endif
 
 #include "ml_comm.h"
@@ -232,7 +234,8 @@ int ML_SuperLU_Solve(void *vsolver,int ilen,double *x,int olen,double *rhs)
    Destroy_SuperMatrix_Store(&B);
    Destroy_SuperMatrix_Store(&X);
    solver->reuse_flag = 1;
-#elif DSUPERLU
+#else
+#ifdef DSUPERLU
    int                flag, N_local, offset;
    double            *local_rhs;
    ML_Comm           *mlcomm;
@@ -486,6 +489,7 @@ printf("memory usage: fragments %d free: total %d, largest %d, total_used %d\n",
 #else
    printf("ML_SuperLU_Solve : SuperLU not used.\n");
 #endif
+#endif
    return 0;
 }
 
@@ -586,7 +590,8 @@ int ML_CSolve_Clean_SuperLU( void *vsolver, ML_CSolveFunc *func)
       ML_memory_free(  (void**) &(solver->Mat1) );
       solver->Mat1 = NULL;
    }
-#elif DSUPERLU
+#else
+#ifdef DSUPERLU
    SuperMatrix *Amat;
 
    solver = (ML_Solver *) vsolver;
@@ -604,6 +609,7 @@ int ML_CSolve_Clean_SuperLU( void *vsolver, ML_CSolveFunc *func)
    solver = (ML_Solver *) vsolver;
    solver->reuse_flag = -999;
    func->internal( vsolver, 0, NULL, 0, NULL);
+#endif
 #endif
    ML_Solver_Destroy( &solver );
    return 0;
@@ -705,7 +711,8 @@ int ML_Clean_CSolveSuperLU( void *vsolver, ML_CSolveFunc *func)
       ML_memory_free(  (void**) &(solver->Mat1) );
       solver->Mat1 = NULL;
    }
-#elif DSUPERLU
+#else
+#ifdef DSUPERLU
    SuperMatrix *Amat;
 
    solver = (ML_Solver *) vsolver;
@@ -722,6 +729,7 @@ int ML_Clean_CSolveSuperLU( void *vsolver, ML_CSolveFunc *func)
    solver = (ML_Solver *) vsolver;
    solver->reuse_flag = -999;
    func->internal( vsolver, 0, NULL, 0, NULL);
+#endif
 #endif
    ML_Solver_Destroy( &solver );
    return 0;
@@ -998,7 +1006,8 @@ int nblocks = 1, *block_list, old_upper = 0, count, newptr, me, nnzs;
    ml_handle->timing->total_build_time += sl->csolve->build_time;
 #endif
 
-#elif DSUPERLU
+#else
+#ifdef DSUPERLU
    int               i, offset, N_local;
    int               reuse, coarsest_level, flag, space, *cols, nz_ptr;
    int               getrow_flag, osize, *row_ptr, length;
@@ -1278,7 +1287,7 @@ int nblocks = 1, *block_list, old_upper = 0, count, newptr, me, nnzs;
 #else
    printf("ML : SuperLU not linked.\n");
 #endif
-
+#endif
    return 0;
 }
 

@@ -1043,8 +1043,7 @@ void ML_gsum_vec_int(int vals[], int vals2[], int length, ML_Comm *comm)
 
     if (comm->USR_irecvbytes((void *) vals2, length*sizeof(int), &partner, 
 			     &type, comm->USR_comm, &request)) {
-      (void) fprintf(stderr, "%sERROR on node %d\nrecv failed, message "
-                     "type = %d\n", yo, node, type);
+      (void) fprintf(stderr, "%sERROR on node %d\nrecv failed, message type = %d\n", yo, node, type);
       exit(-1);
     }
   }
@@ -1057,8 +1056,7 @@ void ML_gsum_vec_int(int vals[], int vals2[], int length, ML_Comm *comm)
 
     if (comm->USR_sendbytes((void *) vals, length*sizeof(int), partner, type,
 			    comm->USR_comm)) {
-      (void) fprintf(stderr, "%sERROR on node %d\nsend failed, message "
-                     "type = %d\n", yo, node, type);
+      (void) fprintf(stderr, "%sERROR on node %d\nsend failed, message type = %d\n", yo, node, type);
       exit(-1);
     }
   }
@@ -1069,8 +1067,7 @@ void ML_gsum_vec_int(int vals[], int vals2[], int length, ML_Comm *comm)
 
     if (comm->USR_waitbytes((void *) vals2, length*sizeof(int), &partner, &type,
 			    comm->USR_comm, &request) < length*sizeof(int)) {
-      (void) fprintf(stderr, "%sERROR on node %d\nwait failed, message "
-                     "type = %d \n", yo, node, type);
+      (void) fprintf(stderr, "%sERROR on node %d\nwait failed, message type = %d \n", yo, node, type);
       exit(-1);
     }
 
@@ -1087,22 +1084,19 @@ void ML_gsum_vec_int(int vals[], int vals2[], int length, ML_Comm *comm)
 
       if (comm->USR_irecvbytes((void *) vals2, length*sizeof(int), &partner, 
 			       &type, comm->USR_comm, &request)) {
-        (void) fprintf(stderr, "%sERROR on node %d\nrecv failed, message "
-                       "type = %d\n", yo, node, type);
+        (void) fprintf(stderr, "%sERROR on node %d\nrecv failed, message type = %d\n", yo, node, type);
         exit(-1);
       }
 
       if (comm->USR_sendbytes((void *) vals, length*sizeof(int), partner, type,
 				comm->USR_comm)) {
-        (void) fprintf(stderr, "%sERROR on node %d\nsend failed, message "
-                       "type = %d\n", yo, node, type);
+        (void) fprintf(stderr, "%sERROR on node %d\nsend failed, message type = %d\n", yo, node, type);
         exit(-1);
       }
 
       if (comm->USR_waitbytes((void *) vals2, length*sizeof(int), &partner, 
 		       &type, comm->USR_comm, &request) < length*sizeof(int)) {
-        (void) fprintf(stderr, "%sERROR on node %d\nwait failed, message "
-                       "type = %d \n", yo, node, type);
+        (void) fprintf(stderr, "%sERROR on node %d\nwait failed, message type = %d \n", yo, node, type);
         exit(-1);
       }
 
@@ -1116,8 +1110,7 @@ void ML_gsum_vec_int(int vals[], int vals2[], int length, ML_Comm *comm)
   if (node & nprocs_small) {
     if (comm->USR_irecvbytes((void *) vals, length*sizeof(int), &partner, 
 			     &type, comm->USR_comm, &request)) {
-      (void) fprintf(stderr, "%sERROR on node %d\nrecv failed, message "
-                     "type = %d\n", yo, node, type);
+      (void) fprintf(stderr, "%sERROR on node %d\nrecv failed, message type = %d\n", yo, node, type);
       exit(-1);
     }
   }
@@ -1125,8 +1118,7 @@ void ML_gsum_vec_int(int vals[], int vals2[], int length, ML_Comm *comm)
   else if (node+nprocs_small < nprocs ) {
     if (comm->USR_sendbytes((void *) vals, length*sizeof(int), partner, type,
 			    comm->USR_comm)) {
-      (void) fprintf(stderr, "%sERROR on node %d\nsend failed, message "
-                     "type = %d\n", yo, node, type);
+      (void) fprintf(stderr, "%sERROR on node %d\nsend failed, message type = %d\n", yo, node, type);
       exit(-1);
     }
   }
@@ -1134,8 +1126,7 @@ void ML_gsum_vec_int(int vals[], int vals2[], int length, ML_Comm *comm)
   if (node & nprocs_small) {
     if (comm->USR_waitbytes((void *) vals, length*sizeof(int), &partner, &type, 
 			    comm->USR_comm, &request) < length*sizeof(int)) {
-      (void) fprintf(stderr, "%sERROR on node %d\nwait failed, message "
-                     "type = %d \n", yo, node, type);
+      (void) fprintf(stderr, "%sERROR on node %d\nwait failed, message type = %d \n", yo, node, type);
       exit(-1);
     }
   }
@@ -1294,8 +1285,8 @@ void ML_splitup_big_msg(int num_neighbors, char *ibuffer, char *obuffer,
                                     (double) (messg_size_doubles));
 
     if (comm->ML_mypid == 0 && debug == ML_TRUE) {
-      (void) printf("\n\t\tSplitting up messages in splitup_big_msg\n"
-                    "\t\tmax_buffer_size required  (bytes): %d\n",
+      (void) printf("\n\t\tSplitting up messages in splitup_big_msg\n");
+      (void) printf("\t\tmax_buffer_size required  (bytes): %d\n",
                     max_buffer_size*element_size);
       (void) printf("\t\tmax_buffer_size allocated (bytes): %d\n",
                     allowed_buff_size*element_size);
@@ -1438,8 +1429,7 @@ void ML_splitup_big_msg(int num_neighbors, char *ibuffer, char *obuffer,
                              &messg_type, comm->USR_comm, request+n); 
 
           if (length > size) {
-           (void) fprintf(stderr,"%sE4ROR on node %d\nwait failed, message "
-                          "type = %d    %d %d (%d)\n", yo, comm->ML_mypid, 
+           (void) fprintf(stderr,"%sE4ROR on node %d\nwait failed, message type = %d    %d %d (%d)\n", yo, comm->ML_mypid, 
                           messg_type,length,size,messg_from);
            exit(-1);
           }
@@ -1456,8 +1446,7 @@ void ML_splitup_big_msg(int num_neighbors, char *ibuffer, char *obuffer,
                                       &messg_type, comm->USR_comm, request+n); 
 
           if (length > size) {
-           (void) fprintf(stderr,"%sE3ROR on node %d\nwait failed, message "
-                          "type = %d   %d %d  (%d)\n", yo, comm->ML_mypid, 
+           (void) fprintf(stderr,"%sE3ROR on node %d\nwait failed, message type = %d   %d %d  (%d)\n", yo, comm->ML_mypid, 
                           messg_type,length,size,messg_from);
            exit(-1);
           }
@@ -1473,8 +1462,7 @@ void ML_splitup_big_msg(int num_neighbors, char *ibuffer, char *obuffer,
                              &messg_type, comm->USR_comm, request+n); 
 
           if (length > size) {
-           (void) fprintf(stderr,"%sE2ROR on node %d\nwait failed, message "
-                          "type = %d %d %d (%d)\n", yo, comm->ML_mypid, 
+           (void) fprintf(stderr,"%sE2ROR on node %d\nwait failed, message type = %d %d %d (%d)\n", yo, comm->ML_mypid, 
                           messg_type,length,size,messg_from);
            exit(-1);
           }
@@ -1549,8 +1537,7 @@ void ML_splitup_big_msg(int num_neighbors, char *ibuffer, char *obuffer,
         length =  comm->USR_waitbytes((void *) &obuffer[j], size, &messg_from,
                                       &rtype, comm->USR_comm, request+n); 
         if ((length != size) && (size !=0) ) {
-           (void) fprintf(stderr, "%sERROR on node %d\nwait failed, message "
-                          "type = %d    %d %d (%d)\n", yo, comm->ML_mypid, 
+           (void) fprintf(stderr, "%sERROR on node %d\nwait failed, message type = %d    %d %d (%d)\n", yo, comm->ML_mypid, 
                           rtype,length,size,messg_from);
            exit(-1);
         }
@@ -1659,8 +1646,7 @@ double ML_gsum_double(double val, ML_Comm *comm)
 
     if (comm->USR_irecvbytes((void *) &val2, sizeof(double), &partner, &type,
 			     comm->USR_comm, &request)) {
-      (void) fprintf(stderr, "%sERROR on node %d\nrecv failed, message "
-                     "type = %d\n", yo, node, type);
+      (void) fprintf(stderr, "%sERROR on node %d\nrecv failed, message type = %d\n", yo, node, type);
       exit(-1);
     }
   }
@@ -1673,8 +1659,7 @@ double ML_gsum_double(double val, ML_Comm *comm)
 
     if (comm->USR_sendbytes((void *) &val, sizeof(double), partner, type, 
 			    comm->USR_comm)) {
-      (void) fprintf(stderr, "%sERROR on node %d\nwrite failed, message "
-                     "type = %d\n", yo, node, type);
+      (void) fprintf(stderr, "%sERROR on node %d\nwrite failed, message type = %d\n", yo, node, type);
       exit(-1);
     }
   }
@@ -1685,8 +1670,7 @@ double ML_gsum_double(double val, ML_Comm *comm)
 
     if (comm->USR_waitbytes((void *) &val2, sizeof(double), &partner, &type, 
 			    comm->USR_comm, &request) != sizeof(double)) {
-      (void) fprintf(stderr, "%sERROR on node %d\nwait failed, message "
-                     "type = %d\n", yo, node, type);
+      (void) fprintf(stderr, "%sERROR on node %d\nwait failed, message type = %d\n", yo, node, type);
       exit(-1);
     }
 
@@ -1703,22 +1687,19 @@ double ML_gsum_double(double val, ML_Comm *comm)
 
       if (comm->USR_irecvbytes((void *) &val2, sizeof(double), &partner, &type,
 				comm->USR_comm, &request)) {
-        (void) fprintf(stderr, "%sERROR on node %d\nrecv failed, message "
-                       "type = %d\n", yo, node, type);
+        (void) fprintf(stderr, "%sERROR on node %d\nrecv failed, message type = %d\n", yo, node, type);
         exit(-1);
       }
 
       if (comm->USR_sendbytes((void *) &val, sizeof(double), partner, type, 
 			      comm->USR_comm)) {
-        (void) fprintf(stderr, "%sERROR on node %d\nsend failed, message "
-                       "type = %d\n", yo, node, type);
+        (void) fprintf(stderr, "%sERROR on node %d\nsend failed, message type = %d\n", yo, node, type);
         exit(-1);
       }
 
       if (comm->USR_waitbytes((void *) &val2, sizeof(double), &partner, &type, 
 			      comm->USR_comm, &request) != sizeof(double)) {
-        (void) fprintf(stderr, "%sERROR on node %d\nwait failed, message "
-                       "type = %d\n", yo, node, type);
+        (void) fprintf(stderr, "%sERROR on node %d\nwait failed, message type = %d\n", yo, node, type);
         exit(-1);
       }
 
@@ -1732,8 +1713,7 @@ double ML_gsum_double(double val, ML_Comm *comm)
   if (node & nprocs_small) {
     if (comm->USR_irecvbytes((void *) &val, sizeof(double), &partner, &type,
 			     comm->USR_comm, &request)) {
-      (void) fprintf(stderr, "%sERROR on node %d\nrecv failed, message "
-                     "type = %d\n", yo, node, type);
+      (void) fprintf(stderr, "%sERROR on node %d\nrecv failed, message type = %d\n", yo, node, type);
       exit(-1);
     }
   }
@@ -1741,8 +1721,7 @@ double ML_gsum_double(double val, ML_Comm *comm)
   else if (node+nprocs_small < nprocs ) {
     if (comm->USR_sendbytes((void *) &val, sizeof(double), partner, type, 
 			    comm->USR_comm)) {
-      (void) fprintf(stderr, "%sERROR on node %d\nsend failed, message "
-                     "type = %d\n", yo, node, type);
+      (void) fprintf(stderr, "%sERROR on node %d\nsend failed, message type = %d\n", yo, node, type);
       exit(-1);
     }
   }
@@ -1750,8 +1729,7 @@ double ML_gsum_double(double val, ML_Comm *comm)
   if (node & nprocs_small) {
     if (comm->USR_waitbytes((void *) &val, sizeof(double), &partner, &type, 
 			    comm->USR_comm, &request) != sizeof(double)) {
-      (void) fprintf(stderr, "%sERROR on node %d\nwait failed, message "
-                     "type = %d\n", yo, node, type);
+      (void) fprintf(stderr, "%sERROR on node %d\nwait failed, message type = %d\n", yo, node, type);
       exit(-1);
     }
   }
@@ -1817,8 +1795,7 @@ double ML_gmax_double(double val, ML_Comm *comm)
 
     if (comm->USR_irecvbytes((void *) &val2, sizeof(double), &partner, &type,
 			     comm->USR_comm, &request)) {
-      (void) fprintf(stderr, "%sERROR on node %d\nrecv failed, message "
-                     "type = %d\n", yo, node, type);
+      (void) fprintf(stderr, "%sERROR on node %d\nrecv failed, message type = %d\n", yo, node, type);
       exit(-1);
     }
   }
@@ -1831,8 +1808,7 @@ double ML_gmax_double(double val, ML_Comm *comm)
 
     if (comm->USR_sendbytes((void *) &val, sizeof(double), partner, type, 
 			    comm->USR_comm)) {
-      (void) fprintf(stderr, "%sERROR on node %d\nwrite failed, message "
-                     "type = %d\n", yo, node, type);
+      (void) fprintf(stderr, "%sERROR on node %d\nwrite failed, message type = %d\n", yo, node, type);
       exit(-1);
     }
   }
@@ -1843,8 +1819,7 @@ double ML_gmax_double(double val, ML_Comm *comm)
 
     if (comm->USR_waitbytes((void *) &val2, sizeof(double), &partner, &type, 
 			    comm->USR_comm, &request) != sizeof(double)) {
-      (void) fprintf(stderr, "%sERROR on node %d\nwait failed, message "
-                     "type = %d\n", yo, node, type);
+      (void) fprintf(stderr, "%sERROR on node %d\nwait failed, message type = %d\n", yo, node, type);
       exit(-1);
     }
 
@@ -1861,22 +1836,19 @@ double ML_gmax_double(double val, ML_Comm *comm)
 
       if (comm->USR_irecvbytes((void *) &val2, sizeof(double), &partner, &type,
 				comm->USR_comm, &request)) {
-        (void) fprintf(stderr, "%sERROR on node %d\nrecv failed, message "
-                       "type = %d\n", yo, node, type);
+        (void) fprintf(stderr, "%sERROR on node %d\nrecv failed, message type = %d\n", yo, node, type);
         exit(-1);
       }
 
       if (comm->USR_sendbytes((void *) &val, sizeof(double), partner, type, 
 			      comm->USR_comm)) {
-        (void) fprintf(stderr, "%sERROR on node %d\nsend failed, message "
-                       "type = %d\n", yo, node, type);
+        (void) fprintf(stderr, "%sERROR on node %d\nsend failed, message type = %d\n", yo, node, type);
         exit(-1);
       }
 
       if (comm->USR_waitbytes((void *) &val2, sizeof(double), &partner, &type, 
 			      comm->USR_comm, &request) != sizeof(double)) {
-        (void) fprintf(stderr, "%sERROR on node %d\nwait failed, message "
-                       "type = %d\n", yo, node, type);
+        (void) fprintf(stderr, "%sERROR on node %d\nwait failed, message type = %d\n", yo, node, type);
         exit(-1);
       }
 
@@ -1890,8 +1862,7 @@ double ML_gmax_double(double val, ML_Comm *comm)
   if (node & nprocs_small) {
     if (comm->USR_irecvbytes((void *) &val, sizeof(double), &partner, &type,
 			     comm->USR_comm, &request)) {
-      (void) fprintf(stderr, "%sERROR on node %d\nrecv failed, message "
-                     "type = %d\n", yo, node, type);
+      (void) fprintf(stderr, "%sERROR on node %d\nrecv failed, message type = %d\n", yo, node, type);
       exit(-1);
     }
   }
@@ -1899,8 +1870,7 @@ double ML_gmax_double(double val, ML_Comm *comm)
   else if (node+nprocs_small < nprocs ) {
     if (comm->USR_sendbytes((void *) &val, sizeof(double), partner, type, 
 			    comm->USR_comm)) {
-      (void) fprintf(stderr, "%sERROR on node %d\nsend failed, message "
-                     "type = %d\n", yo, node, type);
+      (void) fprintf(stderr, "%sERROR on node %d\nsend failed, message type = %d\n", yo, node, type);
       exit(-1);
     }
   }
@@ -1908,8 +1878,7 @@ double ML_gmax_double(double val, ML_Comm *comm)
   if (node & nprocs_small) {
     if (comm->USR_waitbytes((void *) &val, sizeof(double), &partner, &type, 
 			    comm->USR_comm, &request) != sizeof(double)) {
-      (void) fprintf(stderr, "%sERROR on node %d\nwait failed, message "
-                     "type = %d\n", yo, node, type);
+      (void) fprintf(stderr, "%sERROR on node %d\nwait failed, message type = %d\n", yo, node, type);
       exit(-1);
     }
   }
@@ -1979,8 +1948,7 @@ int ML_gmax_int(int val, ML_Comm *comm)
 
     if (comm->USR_irecvbytes((void *) &val2, sizeof(int), &partner, &type, 
                              comm->USR_comm, &request)) {
-      (void) fprintf(stderr, "%sERROR on node %d\nrecv failed, message "
-                     "type = %d\n", yo, node, type);
+      (void) fprintf(stderr, "%sERROR on node %d\nrecv failed, message type = %d\n", yo, node, type);
       exit(-1);
     }
   }
@@ -1993,8 +1961,7 @@ int ML_gmax_int(int val, ML_Comm *comm)
 
     if (comm->USR_sendbytes((void *) &val, sizeof(int), partner, type, 
 			    comm->USR_comm)) {
-      (void) fprintf(stderr, "%sERROR on node %d\nsend failed, message "
-                     "type = %d\n", yo, node, type);
+      (void) fprintf(stderr, "%sERROR on node %d\nsend failed, message type = %d\n", yo, node, type);
       exit(-1);
     }
   }
@@ -2005,8 +1972,7 @@ int ML_gmax_int(int val, ML_Comm *comm)
 
     if (comm->USR_waitbytes((void *) &val2, sizeof(int), &partner, &type, 
 			    comm->USR_comm, &request) != sizeof(int)) {
-      (void) fprintf(stderr, "%sERROR on node %d\nwait failed, message "
-                     "type = %d\n", yo, node, type);
+      (void) fprintf(stderr, "%sERROR on node %d\nwait failed, message type = %d\n", yo, node, type);
       exit(-1);
     }
 
@@ -2022,22 +1988,19 @@ int ML_gmax_int(int val, ML_Comm *comm)
       partner = node ^ mask;
       if (comm->USR_irecvbytes((void *) &val2, sizeof(int), &partner, &type,
 				comm->USR_comm, &request)) {
-        (void) fprintf(stderr, "%sERROR on node %d\nrecv failed, message "
-                       "type = %d\n", yo, node, type);
+        (void) fprintf(stderr, "%sERROR on node %d\nrecv failed, message type = %d\n", yo, node, type);
         exit(-1);
       }
 
       if (comm->USR_sendbytes((void *) &val, sizeof(int), partner, type, 
 			      comm->USR_comm)) {
-        (void) fprintf(stderr, "%sERROR on node %d\nsend failed, message "
-                       "type = %d\n", yo, node, type);
+        (void) fprintf(stderr, "%sERROR on node %d\nsend failed, message type = %d\n", yo, node, type);
         exit(-1);
       }
 
       if (comm->USR_waitbytes((void *) &val2, sizeof(int), &partner, &type, 
 			      comm->USR_comm, &request) != sizeof(int)) {
-        (void) fprintf(stderr, "%sERROR on node %d\nwait failed, message "
-                       "type = %d\n", yo, node, type);
+        (void) fprintf(stderr, "%sERROR on node %d\nwait failed, message type = %d\n", yo, node, type);
         exit(-1);
       }
 
@@ -2051,8 +2014,7 @@ int ML_gmax_int(int val, ML_Comm *comm)
   if (node & nprocs_small) {
     if (comm->USR_irecvbytes((void *) &val, sizeof(int), &partner, &type, 
 				comm->USR_comm, &request)) {
-      (void) fprintf(stderr, "%sERROR on node %d\nrecv failed, message "
-                     "type = %d\n", yo, node, type);
+      (void) fprintf(stderr, "%sERROR on node %d\nrecv failed, message type = %d\n", yo, node, type);
       exit(-1);
     }
   }
@@ -2060,8 +2022,7 @@ int ML_gmax_int(int val, ML_Comm *comm)
   else if (node+nprocs_small < nprocs ) {
     if (comm->USR_sendbytes((void *) &val, sizeof(int), partner, type, 
 			    comm->USR_comm)) {
-      (void) fprintf(stderr, "%sERROR on node %d\nsend failed, message "
-                     "type = %d\n", yo, node, type);
+      (void) fprintf(stderr, "%sERROR on node %d\nsend failed, message type = %d\n", yo, node, type);
       exit(-1);
     }
   }
@@ -2069,8 +2030,7 @@ int ML_gmax_int(int val, ML_Comm *comm)
   if (node & nprocs_small) {
     if (comm->USR_waitbytes((void *) &val, sizeof(int), &partner, &type,
 			    comm->USR_comm, &request) != sizeof(int)) {
-      (void) fprintf(stderr, "%sERROR on node %d\nwait failed, message "
-                     "type = %d\n", yo, node, type);
+      (void) fprintf(stderr, "%sERROR on node %d\nwait failed, message type = %d\n", yo, node, type);
       exit(-1);
     }
   }

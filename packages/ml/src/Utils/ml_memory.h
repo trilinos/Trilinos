@@ -25,9 +25,7 @@
 #define ML_free(i)        { free(i); i = NULL; }
 #define ML_allocate_check(ptr_to_check) \
                          {if ((ptr_to_check) == NULL) {\
-                            printf("In file %s (line %d): "\
-                                   "memory allocation failed for pointer "\
-                                   #ptr_to_check "\n", __FILE__, __LINE__);\
+                            printf("In file %s (line %d): memory allocation failed for pointer #%u\n", __FILE__, __LINE__,(unsigned int) ptr_to_check);\
                             exit(1);\
                             }\
                          }

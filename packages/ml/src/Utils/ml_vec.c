@@ -392,4 +392,5 @@ int ML_DVector_Print(int length, double *data, char *label, ML_Comm *comm)
       fprintf(fid,"%d      %20.15e\n",i,data[i]);
    }
    fclose(fid);
+   return 0;
 }

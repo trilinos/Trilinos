@@ -1,4 +1,4 @@
-#include "ml_include.h"
+#include "ml_operator.h"
 #ifdef XYT
 #include "xyt.h"
 #endif
@@ -287,8 +287,7 @@ int ML_gpartialsum_int(int val, ML_Comm *comm)
 
     if (comm->USR_irecvbytes((void *) &temp, sizeof(int), &partner,
                              &type, comm->USR_comm, &request)) {
-      (void) fprintf(stderr, "%sERROR on node %d\nrecv failed, message "
-                     "type = %d\n", yo, node, type);
+      (void) fprintf(stderr, "%sERROR on node %d\nrecv failed, message type = %d\n", yo, node, type);
       exit(-1);
     }
   }
@@ -301,8 +300,7 @@ int ML_gpartialsum_int(int val, ML_Comm *comm)
 
     if (comm->USR_sendbytes((void *) &val, sizeof(int), partner, type,
                             comm->USR_comm)) {
-      (void) fprintf(stderr, "%sERROR on node %d\nsend failed, message "
-                     "type = %d\n", yo, node, type);
+      (void) fprintf(stderr, "%sERROR on node %d\nsend failed, message type = %d\n", yo, node, type);
       exit(-1);
     }
   }
@@ -313,8 +311,7 @@ int ML_gpartialsum_int(int val, ML_Comm *comm)
 
     if (comm->USR_waitbytes((void *) &temp, sizeof(int), &partner, &type,
                             comm->USR_comm, &request) < sizeof(int)) {
-      (void) fprintf(stderr, "%sERROR on node %d\nwait failed, message "
-                     "type = %d\n", yo, node, type);
+      (void) fprintf(stderr, "%sERROR on node %d\nwait failed, message type = %d\n", yo, node, type);
       exit(-1);
     }
 
@@ -332,22 +329,19 @@ int ML_gpartialsum_int(int val, ML_Comm *comm)
 
       if (comm->USR_irecvbytes((void *) &temp, sizeof(int), &partner,
                                &type, comm->USR_comm, &request)) {
-        (void) fprintf(stderr, "%sERROR on node %d\nrecv failed, message "
-                       "type = %d\n", yo, node, type);
+        (void) fprintf(stderr, "%sERROR on node %d\nrecv failed, message type = %d\n", yo, node, type);
         exit(-1);
       }
 
       if (comm->USR_sendbytes((void *) &val, sizeof(int), partner, type,
                                 comm->USR_comm)) {
-        (void) fprintf(stderr, "%sERROR on node %d\nsend failed, message "
-                       "type = %d\n", yo, node, type);
+        (void) fprintf(stderr, "%sERROR on node %d\nsend failed, message type = %d\n", yo, node, type);
         exit(-1);
       }
 
       if (comm->USR_waitbytes((void *) &temp, sizeof(int), &partner,
                        &type, comm->USR_comm, &request) < sizeof(int)) {
-        (void) fprintf(stderr, "%sERROR on node %d\nwait failed, message "
-                       "type = %d\n", yo, node, type);
+        (void) fprintf(stderr, "%sERROR on node %d\nwait failed, message type = %d\n", yo, node, type);
         exit(-1);
       }
 
@@ -362,8 +356,7 @@ int ML_gpartialsum_int(int val, ML_Comm *comm)
   if (node & nprocs_small) {
     if (comm->USR_irecvbytes((void *) &val, sizeof(int), &partner,
                              &type, comm->USR_comm, &request)) {
-      (void) fprintf(stderr, "%sERROR on node %d\nrecv failed, message "
-                     "type = %d\n", yo, node, type);
+      (void) fprintf(stderr, "%sERROR on node %d\nrecv failed, message type = %d\n", yo, node, type);
       exit(-1);
     }
   }
@@ -371,8 +364,7 @@ int ML_gpartialsum_int(int val, ML_Comm *comm)
   else if (node+nprocs_small < nprocs ) {
     if (comm->USR_sendbytes((void *) &val, sizeof(int), partner, type,
                             comm->USR_comm)) {
-      (void) fprintf(stderr, "%sERROR on node %d\nsend failed, message "
-                     "type = %d\n", yo, node, type);
+      (void) fprintf(stderr, "%sERROR on node %d\nsend failed, message type = %d\n", yo, node, type);
       exit(-1);
     }
   }
@@ -380,8 +372,7 @@ int ML_gpartialsum_int(int val, ML_Comm *comm)
   if (node & nprocs_small) {
     if (comm->USR_waitbytes((void *) &val, sizeof(int), &partner, &type,
                             comm->USR_comm, &request) < sizeof(int)) {
-      (void) fprintf(stderr, "%sERROR on node %d\nwait failed, message "
-                     "type = %d\n", yo, node, type);
+      (void) fprintf(stderr, "%sERROR on node %d\nwait failed, message type = %d\n", yo, node, type);
       exit(-1);
     }
   }
@@ -432,8 +423,7 @@ if ((sub_mask & partner) == sub_cube) {
     if ( com_ptr->USR_irecvbytes((void *) &(vals[*cur_length]),
                        (total_length - *cur_length) * sizeof(int), &partner,
                        &msgtype, com_ptr->USR_comm, (void *) &Request) ) {
-      (void) fprintf(stderr, "ERROR on node %d\nread failed, message "
-                     "type = %d\n", mypid, msgtype);
+      (void) fprintf(stderr, "ERROR on node %d\nread failed, message type = %d\n", mypid, msgtype);
       exit(-1);
     }
 }
@@ -448,8 +438,7 @@ if ((sub_mask & partner) == sub_cube) {
 if ((sub_mask & partner) == sub_cube) {
     if (com_ptr->USR_sendbytes((void *) vals, (*cur_length)*sizeof(int), 
 			       partner, msgtype, com_ptr->USR_comm)) {
-      (void) fprintf(stderr, "ERROR on node %d\nwrite failed, message "
-                     "type = %d\n", mypid, msgtype);
+      (void) fprintf(stderr, "ERROR on node %d\nwrite failed, message type = %d\n", mypid, msgtype);
       exit(-1);
     }
 }
@@ -476,15 +465,13 @@ if ((sub_mask & partner) == sub_cube) {
       if (com_ptr->USR_irecvbytes((void *) &(vals[*cur_length]),
                         (total_length - *cur_length)*sizeof(int), &partner,
                         &msgtype, com_ptr->USR_comm, (void *) &Request)) {
-        (void) fprintf(stderr, "ERROR on node %d\nread failed, message "
-                       "type = %d\n", mypid, msgtype);
+        (void) fprintf(stderr, "ERROR on node %d\nread failed, message type = %d\n", mypid, msgtype);
         exit(-1);
       }
 
       if (com_ptr->USR_sendbytes((void *) vals, *cur_length*sizeof(int), 
 			partner, msgtype, com_ptr->USR_comm)) {
-        (void) fprintf(stderr, "ERROR on node %d\nwrite failed, message "
-                       "type = %d\n", mypid, msgtype);
+        (void) fprintf(stderr, "ERROR on node %d\nwrite failed, message type = %d\n", mypid, msgtype);
         exit(-1);
       }
 
@@ -503,8 +490,7 @@ if ((sub_mask & partner) == sub_cube) {
 if ((sub_mask & partner) == sub_cube) {
     if (com_ptr->USR_irecvbytes((void *) vals, total_length*sizeof(int),
 			&partner,&msgtype,com_ptr->USR_comm,(void *) &Request)){
-      (void) fprintf(stderr, "ERROR on node %d\nread failed, message "
-                     "type = %d\n", mypid, msgtype);
+      (void) fprintf(stderr, "ERROR on node %d\nread failed, message type = %d\n", mypid, msgtype);
       exit(-1);
     }
 }
@@ -514,8 +500,7 @@ if ((sub_mask & partner) == sub_cube) {
 if ((sub_mask & partner) == sub_cube) {
     if (com_ptr->USR_sendbytes((void *) vals, *cur_length*sizeof(int), partner,
 				msgtype, com_ptr->USR_comm )) {
-      (void) fprintf(stderr, "ERROR on node %d\nwrite failed, message "
-                     "type = %d\n", mypid, msgtype);
+      (void) fprintf(stderr, "ERROR on node %d\nwrite failed, message type = %d\n", mypid, msgtype);
       exit(-1);
     }
 }

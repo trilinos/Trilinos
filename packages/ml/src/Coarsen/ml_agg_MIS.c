@@ -98,7 +98,7 @@ int ML_Aggregate_CoarsenMIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
    int                   *templist, **proclist, *temp_index;
    int                   *temp_leng, *tem2_index, *tempaggr_index = NULL;
    int                   *send_leng = NULL, *recv_leng = NULL;
-   int                   send_count = 0, recv_count = 0, total_nz = 0;
+   int                   total_nz = 0;
    int                   count2;
    ML_agg_indx_comm      agg_indx_comm;
 
@@ -852,9 +852,11 @@ for (i = 0; i < aggr_count ; i++) printf("counts %d %d\n",i,aggr_cnt_array[i]);
    fclose(fp);
    level_count++;
    free(dtemp);
-#elif INPUT_AGGREGATES
+#else
+#ifdef INPUT_AGGREGATES
    agg_offset = ML_gpartialsum_int(aggr_count, comm);
    vertex_offset = ML_gpartialsum_int(nvertices, comm);
+#endif
 #endif /*ifdef ML_AGGR_OUTAGGR*/
 
    /* ============================================================= */

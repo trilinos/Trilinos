@@ -1768,8 +1768,7 @@ file specified by the input argument datafile instead from a file called
             str = (char *) AZ_realloc(str,buf_len*sizeof(char));
 
             if (str == 0) {
-              (void) fprintf(stderr,"ERROR: Not Enough dynamic memory in "
-                             "AZ_input_msr()\n");
+              (void) fprintf(stderr,"ERROR: Not Enough dynamic memory in AZ_input_msr()\n");
               exit(-1);
             }
             if (need_request != 0)  {

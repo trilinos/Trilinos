@@ -66,9 +66,11 @@ extern int AZ_get_MSR_arrays(ML_Operator *, int **bindx, double **val);
 #ifdef SUPERLU
 #include "dsp_defs.h"
 #include "util.h"
-#elif DSUPERLU
+#else
+#ifdef DSUPERLU
 #include "mpi.h"
 #include "superlu_ddefs.h"
+#endif
 #endif
 #endif
 
@@ -3471,25 +3473,25 @@ void *edge_smoother, void **edge_args, void *nodal_smoother, void **nodal_args)
 
    if (Tmat_trans->invec_leng != Mmat->outvec_leng)
    {
-      printf("In ML_Smoother_Gen_BlockHiptmair_Data: Tmat_trans and Mmat\n"
-	         "\tdimensions do not agree:\n"
-			 "\tTmat_trans->invec_leng = %d, Mmat->outvec_leng = %d\n",
+     printf("In ML_Smoother_Gen_BlockHiptmair_Data: Tmat_trans and Mmat\n");
+     printf("\tdimensions do not agree:\n");
+     printf("\tTmat_trans->invec_leng = %d, Mmat->outvec_leng = %d\n",
 			 Tmat_trans->invec_leng, Mmat->outvec_leng);
       exit(1);
    }
    if ( dataptr->Tmat_trans->invec_leng != Mmat->outvec_leng )
    {
-      printf("In ML_Smoother_Gen_BlockHiptmair_Data: Tmat_trans and Mmat\n"
-	         "\tdimensions do not agree:\n"
-			 "\tATmat_trans->invec_leng = %d, Mmat->outvec_leng = %d\n",
+     printf("In ML_Smoother_Gen_BlockHiptmair_Data: Tmat_trans and Mmat\n");
+     printf("\tdimensions do not agree:\n");
+     printf("\tATmat_trans->invec_leng = %d, Mmat->outvec_leng = %d\n",
 			 dataptr->Tmat_trans->invec_leng, Mmat->outvec_leng);
       exit(1);
    }
    if ( Mmat->invec_leng != Tmat->outvec_leng )
    {
-      printf("In ML_Smoother_Gen_BlockHiptmair_Data: Mmat and Tmat\n"
-	         "\tdimensions do not agree:\n"
-			 "\tMmat->invec_leng = %d, Tmat->outvec_leng = %d\n",
+     printf("In ML_Smoother_Gen_BlockHiptmair_Data: Mmat and Tmat\n");
+     printf("\tdimensions do not agree:\n");
+     printf("\tMmat->invec_leng = %d, Tmat->outvec_leng = %d\n",
 			 Mmat->invec_leng, Tmat->outvec_leng);
       exit(1);
    }
@@ -3661,25 +3663,25 @@ void *edge_smoother, void **edge_args, void *nodal_smoother, void **nodal_args)
 
    if (Tmat_trans->invec_leng != Amat->outvec_leng)
    {
-      printf("In ML_Smoother_Gen_Hiptmair_Data: Tmat_trans and Amat\n"
-	         "\tdimensions do not agree:\n"
-			 "\tTmat_trans->invec_leng = %d, Amat->outvec_leng = %d\n",
+      printf("In ML_Smoother_Gen_Hiptmair_Data: Tmat_trans and Amat\n");
+      printf("\tdimensions do not agree:\n");
+      printf("\tTmat_trans->invec_leng = %d, Amat->outvec_leng = %d\n",
 			 Tmat_trans->invec_leng, Amat->outvec_leng);
       exit(1);
    }
    if ( dataptr->Tmat_trans->invec_leng != Amat->outvec_leng )
    {
-      printf("In ML_Smoother_Gen_Hiptmair_Data: Tmat_trans and Amat\n"
-	         "\tdimensions do not agree:\n"
-			 "\tATmat_trans->invec_leng = %d, Amat->outvec_leng = %d\n",
+     printf("In ML_Smoother_Gen_Hiptmair_Data: Tmat_trans and Amat\n");
+     printf("\tdimensions do not agree:\n");
+     printf("\tATmat_trans->invec_leng = %d, Amat->outvec_leng = %d\n",
 			 dataptr->Tmat_trans->invec_leng, Amat->outvec_leng);
       exit(1);
    }
    if ( Amat->invec_leng != Tmat->outvec_leng )
    {
-      printf("In ML_Smoother_Gen_Hiptmair_Data: Amat and Tmat\n"
-	         "\tdimensions do not agree:\n"
-			 "\tAmat->invec_leng = %d, Tmat->outvec_leng = %d\n",
+     printf("In ML_Smoother_Gen_Hiptmair_Data: Amat and Tmat\n");
+     printf("\tdimensions do not agree:\n");
+     printf("\tAmat->invec_leng = %d, Tmat->outvec_leng = %d\n",
 			 Amat->invec_leng, Tmat->outvec_leng);
       exit(1);
    }
@@ -6818,7 +6820,7 @@ int ML_Smoother_HiptmairSubsmoother_Create(ML **ml_subproblem,
 					   ML_Operator *Amat, void *smoother, 
 					   void **args, double default_omega)
 {
-  double omega, *dbl_arg1, *dbl_arg2;
+  double omega, *dbl_arg1;
   int *int_arg1, *int_arg2, *int_arg3;
 
    ML_Create(ml_subproblem,1);
@@ -6937,7 +6939,7 @@ int ML_Cheby(void *sm, int inlen, double x[], int outlen, double rhs[])
    double          *pAux, *dk;
    double beta, alpha, theta, delta, s1, rhok, rhokp1;
    int             *cols, allocated_space;
-   double          *diagonal, *vals, *tdiag, dtemp1, dtemp2, dtemp3;
+   double          *diagonal, *vals, *tdiag, dtemp1, dtemp2;
 
 
    n = outlen;

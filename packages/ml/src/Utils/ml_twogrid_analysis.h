@@ -17,7 +17,8 @@
    extern "C" {
 #endif
 
-#include "ml_include.h"
+#include "ml_defs.h"
+#include "ml_struct.h"
 
 extern double ML_gdot_H0(ML_Operator *Amat, double *vec1, double *vec2);
 extern double ML_gdot_H1(ML_Operator *Amat, double *vec1, double *vec2);

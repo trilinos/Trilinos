@@ -85,8 +85,10 @@ extern int AZ_block_MSR(int **param_bindx, double **param_val,
 
 #if   defined(caps)
 #   define az_set_proc_config_        AZ_SET_PROC_CONFIG
-#elif defined(matched)
+#else
+#if defined(matched)
 #   define az_set_proc_config_        az_set_proc_config
+#endif
 #endif
 
 extern void AZ_set_proc_config(int proc_config[], MPI_AZComm );

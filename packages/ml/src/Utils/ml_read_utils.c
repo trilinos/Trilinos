@@ -310,8 +310,7 @@ int ML_Reader_ReadString(FILE *ifp, char string[], char ch)
   if (new_ch == EOF) return -1;
 
   if (i == MAX_INPUT_STR_LN) {
-    (void) fprintf (stderr, "ML_Reader_ReadString ERROR: scanned %d characters and "
-                    "could not find (%c)\n", MAX_INPUT_STR_LN, ch);
+    (void) fprintf (stderr, "ML_Reader_ReadString ERROR: scanned %d characters and could not find (%c)\n", MAX_INPUT_STR_LN, ch);
     return -1;
   }
 

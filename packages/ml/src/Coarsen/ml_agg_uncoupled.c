@@ -801,13 +801,17 @@ int ML_Aggregate_CoarsenUncoupledCore(ML_Aggregate *ml_ag, ML_Comm *comm,
 {
    int     i, j, k, m, kk, inode, jnode, nbytes, length, Nrows;
    int     select_flag, aggr_count, index, mypid, inode2;
-   int     *aggr_index, search_flag, *itmp_array = NULL, count;
-   int     mincount, *aggr_stat, ordering, maxcount;
+   int     *aggr_index, *itmp_array = NULL, count;
+   int     *aggr_stat, ordering;
    double  printflag;
-   int     *randomVector, *int_buf = NULL, aggr_cnt_leng, *aggr_cnt_array;
+   int     *randomVector, aggr_cnt_leng, *aggr_cnt_array;
    int     min_nodes_per_aggregate, max_neigh_selected, attach_scheme;
    ML_Node       *node_head=NULL, *node_tail=NULL, *new_node=NULL;
    ML_SuperNode  *aggr_head=NULL, *aggr_curr=NULL, *supernode=NULL;
+#define newstuff
+#ifndef newstuff
+   int *int_buf = NULL, maxcount, mincount, search_flag;
+#endif
 
    /* ============================================================= */
    /* get the machine information and matrix references             */
@@ -1086,7 +1090,6 @@ int ML_Aggregate_CoarsenUncoupledCore(ML_Aggregate *ml_ag, ML_Comm *comm,
       printf("Aggregation(UC) : Phase 1 - nodes aggregated = %d (%d)\n",k,m);
       printf("Aggregation(UC) : Phase 1 - total aggregates = %d \n",j);
    }
-#define newstuff
 #ifdef newstuff
    ML_Aggregate_Phase2_3_Cleanup(ml_ag, Amat, &aggr_count, Nrows, aggr_index,
    				 Nrows, comm, NULL, "UC_Phase2_3",NULL);

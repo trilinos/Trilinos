@@ -1868,13 +1868,13 @@ int ML_MLS_Setup_Coef(void *sm, int deg, int symmetrize)
    /* Compute the coefficients of the polynomial      */
    /*    (I - om_loc[0] A) * (I - om_loc[1] A) * ...  */
 
-   widget->mlsCf[0] = + om_loc[0] + om_loc[1] + om_loc[2]+om_loc[3] + om_loc[4];
+   widget->mlsCf[0] =  om_loc[0] + om_loc[1] + om_loc[2]+om_loc[3] + om_loc[4];
    widget->mlsCf[1] = -(om_loc[0]*om_loc[1]   + om_loc[0]*om_loc[2]
 	              + om_loc[0]*om_loc[3]   + om_loc[0]*om_loc[4]
 	              + om_loc[1]*om_loc[2]   + om_loc[1]*om_loc[3]
 	              + om_loc[1]*om_loc[4]   + om_loc[2]*om_loc[3]
 	              + om_loc[2]*om_loc[4]   + om_loc[3]*om_loc[4]);
-   widget->mlsCf[2] = +(om_loc[0]*om_loc[1]*om_loc[2]
+   widget->mlsCf[2] = (om_loc[0]*om_loc[1]*om_loc[2]
 	              + om_loc[0]*om_loc[1]*om_loc[3]
 	              + om_loc[0]*om_loc[1]*om_loc[4]
 	              + om_loc[0]*om_loc[2]*om_loc[3]
@@ -3946,7 +3946,8 @@ int ML_Clean_CSolveSuperLU( void *vsolver, ML_CSolveFunc *func)
       ML_memory_free(  (void**) &(solver->Mat1) );
       solver->Mat1 = NULL;
    }
-#elif DSUPERLU
+#else
+#ifdef DSUPERLU
    SuperMatrix *Amat;
 
    solver = (ML_Solver *) vsolver;
@@ -3963,6 +3964,7 @@ int ML_Clean_CSolveSuperLU( void *vsolver, ML_CSolveFunc *func)
    solver = (ML_Solver *) vsolver;
    solver->reuse_flag = -999;
    func->internal( vsolver, 0, NULL, 0, NULL);
+#endif
 #endif
    ML_Solver_Destroy( &solver );
    return 0;
@@ -4238,8 +4240,8 @@ int nblocks = 1, *block_list, old_upper = 0, count, newptr, me, nnzs;
    sl->csolve->build_time = GetClock() - t0;
    ml_handle->timing->total_build_time += sl->csolve->build_time;
 #endif
-
-#elif DSUPERLU
+#else
+#ifdef DSUPERLU
    int               i, offset, N_local;
    int               reuse, coarsest_level, flag, space, *cols, nz_ptr;
    int               getrow_flag, osize, *row_ptr, length;
@@ -4518,6 +4520,7 @@ int nblocks = 1, *block_list, old_upper = 0, count, newptr, me, nnzs;
    free(csr2_mat);
 #else
    printf("ML : SuperLU not linked.\n");
+#endif
 #endif
 
    return 0;
@@ -4977,8 +4980,7 @@ edge_smoother, edge_args, nodal_smoother, nodal_args );
 #endif
       }
    }
-   else return(pr_error("ML_Gen_Smoother_BlockHiptmair: unknown "
-                        "pre_or_post choice\n"));
+   else return(pr_error("ML_Gen_Smoother_BlockHiptmair: unknown pre_or_post choice\n"));
    return(status);
 }
 
@@ -5103,7 +5105,6 @@ edge_smoother, edge_args, nodal_smoother, nodal_args );
 #endif
       }
    }
-   else return(pr_error("ML_Gen_Smoother_Hiptmair: unknown "
-                        "pre_or_post choice\n"));
+   else return(pr_error("ML_Gen_Smoother_Hiptmair: unknown pre_or_post choice\n"));
    return(status);
 }

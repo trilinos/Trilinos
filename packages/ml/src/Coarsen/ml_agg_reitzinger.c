@@ -27,15 +27,18 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
   int created_ag_obj = 0;
   double *vec, *Tcoarse_vec, *Pn_vec, *Tfine_Pn_vec;
   int i1, old_nzptr, i3, *index;
-  int *encoded_dir_node, *temp_bindx, Npos_dirichlet = 0, Nneg_dirichlet = 0;
+  int Npos_dirichlet = 0, Nneg_dirichlet = 0;
   int Nnondirichlet, Nnz_finegrid, Nnz_allgrids;
-  double *pos_coarse_dirichlet, *neg_coarse_dirichlet, *temp_val, d1, d2;
+  double d1, d2;
   double droptol;
+#ifdef NEW_T_PE
+  int *temp_bindx, *encoded_dir_node;
+  double *temp_val, *pos_coarse_dirichlet, *neg_coarse_dirichlet;
+#endif
 
   ML_CommInfoOP *getrow_comm; 
   int  N_input_vector;
   int  bail_flag;
-  FILE *fid;
 
   int nzctr;
 
@@ -121,11 +124,11 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
                       ML_OVERWRITE,NULL);
    
 #ifdef DEBUG_T_BUILD
-     printf("\n\n%d: Kn_coarse->N_nonzeros = %d "
-            "Kn_coarse->invec_leng+Nghost = %d\n"
-            "Kn_coarse->invec_leng = %d\n\n",
-            Kn_coarse->comm->ML_mypid, Kn_coarse->N_nonzeros,
-            Kn_coarse->invec_leng+Nghost, Kn_coarse->invec_leng);
+     printf("\n\n%d: Kn_coarse->N_nonzeros = %d ",
+            Kn_coarse->comm->ML_mypid, Kn_coarse->N_nonzeros);
+     printf("Kn_coarse->invec_leng+Nghost = %d\n",
+            Kn_coarse->invec_leng+Nghost);
+     printf("Kn_coarse->invec_leng = %d\n\n",Kn_coarse->invec_leng);
 #endif /* ifdef DEBUG_T_BUILD */
 
 #ifdef NEW_T_PE
@@ -168,8 +171,7 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
      pos_coarse_dirichlet = (double *) ML_allocate(sizeof(double)*(Rn_coarse->outvec_leng
 						     +1));
      if (pos_coarse_dirichlet == NULL) {
-        printf("\n\nML_Gen_MGHierarchy_UsingReitzinger: Not enough space"
-               " allocated to check T.\n\n");
+        printf("\n\nML_Gen_MGHierarchy_UsingReitzinger: Not enough space allocated to check T.\n\n");
         exit(1);
      }
      for (i = 0; i < Rn_coarse->invec_leng; i++) vec[i] = 0.;
@@ -188,8 +190,7 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
      neg_coarse_dirichlet = (double *) ML_allocate(sizeof(double)*(Rn_coarse->outvec_leng
 						     +1));
      if (neg_coarse_dirichlet == NULL) {
-        printf("\n\nML_Gen_MGHierarchy_UsingReitzinger: Not enough space"
-               " allocated to check T.\n\n");
+        printf("\n\nML_Gen_MGHierarchy_UsingReitzinger: Not enough space allocated to check T.\n\n");
         exit(1);
      }
      for (i = 0; i < Rn_coarse->invec_leng; i++) vec[i] = 0.;
@@ -262,8 +263,7 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
 
      if (nzctr > Kn_coarse->N_nonzeros && Kn_coarse->comm->ML_mypid == 0)
      {
-        printf("\n\nML_Gen_MGHierarchy_UsingReitzinger: Not enough space"
-               " allocated to build T.\n\n");
+        printf("\n\nML_Gen_MGHierarchy_UsingReitzinger: Not enough space allocated to build T.\n\n");
         exit(1);
      }
 #ifdef NEW_T_PE
@@ -289,21 +289,15 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
 
 #ifdef DEBUG_T_BUILD
      else
-        if (Kn_coarse->comm->ML_mypid == 0 && grid_level == 7)
-        printf("%d (%d): ieqj = %d,\n"
-               "Kn_coarse->N_nonzeros = %d, "
-               "expected nnz (calc. from bindx) = %d,\n"
-               "actual nnz(Tcoarse) = %d,\n"
-               " invec_leng = %d,"
-               " nghost = %d\n",
-               Kn_coarse->comm->ML_mypid,
-               grid_level,
-               ieqj,
-               Kn_coarse->N_nonzeros,
-               nzctr,
-               nz_ptr,
-               Kn_coarse->invec_leng,
-               Nghost);
+       if (Kn_coarse->comm->ML_mypid == 0 && grid_level == 7) {
+	  printf("%d (%d): ieqj = %d,\n", Kn_coarse->comm->ML_mypid,
+		 grid_level, ieqj);
+	  printf("Kn_coarse->N_nonzeros = %d, ", Kn_coarse->N_nonzeros);
+	  printf("expected nnz (calc. from bindx) = %d,\n",nzctr);
+	  printf("actual nnz(Tcoarse) = %d,\n"nz_ptr);
+	  printf(" invec_leng = %d, nghost = %d\n",
+		 Kn_coarse->invec_leng,  Nghost);
+       }
      fflush(stdout);
 #endif /* ifdef DEBUG_T_BUILD */
 
@@ -359,8 +353,7 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
      Tcoarse_vec = (double *) ML_allocate(sizeof(double)*(Tcoarse->outvec_leng
 							  + 1));
      if ((vec == NULL) || (Tcoarse_vec == NULL)) {
-        printf("\n\nML_Gen_MGHierarchy_UsingReitzinger: Not enough space"
-               " allocated to check T.\n\n");
+        printf("\n\nML_Gen_MGHierarchy_UsingReitzinger: Not enough space allocated to check T.\n\n");
         exit(1);
      }
 
@@ -376,8 +369,7 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
      Pn_vec = (double *) ML_allocate(sizeof(double)*(Pn_coarse->outvec_leng
 						     +1));
      if (Pn_vec == NULL) {
-        printf("\n\nML_Gen_MGHierarchy_UsingReitzinger: Not enough space"
-               " allocated to check T.\n\n");
+        printf("\n\nML_Gen_MGHierarchy_UsingReitzinger: Not enough space allocated to check T.\n\n");
         exit(1);
      }
 
@@ -388,8 +380,7 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
      Tfine_Pn_vec = (double *) ML_allocate(sizeof(double)*(Tfine->outvec_leng
 							   +1));
      if (Tfine_Pn_vec == NULL) {
-        printf("\n\nML_Gen_MGHierarchy_UsingReitzinger: Not enough space"
-               " allocated to check T.\n\n");
+        printf("\n\nML_Gen_MGHierarchy_UsingReitzinger: Not enough space allocated to check T.\n\n");
         exit(1);
      }
      ML_Operator_Apply(Tfine, Tfine->invec_leng, Pn_vec,
@@ -490,8 +481,7 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
      if (i==0)
      {
         if (Tcoarse->comm->ML_mypid == 0 && 5 < ML_Get_PrintLevel()) {
-           printf("(%d) Bailing from AMG hierarchy build on level %d of "
-                 " of levels %d down to %d because Tcoarse has zero rows....\n",
+           printf("(%d) Bailing from AMG hierarchy build on level %d of levels %d down to %d because Tcoarse has zero rows....\n",
                  ml_edges->comm->ML_mypid,grid_level,fine_level,coarsest_level);
            fflush(stdout);
         }
@@ -506,8 +496,7 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
         Nlevels_nodal = fine_level - grid_level;
         coarsest_level = grid_level + 1;
         if (Tcoarse->comm->ML_mypid == 0 && 5 < ML_Get_PrintLevel()) {
-           printf("(%d) In ML_Gen_MGHierarchy_UsingReitzinger, "
-               "Nlevels_nodal = %di, fine_level = %d, coarsest_level = %d\n",
+           printf("(%d) In ML_Gen_MGHierarchy_UsingReitzinger, Nlevels_nodal = %di, fine_level = %d, coarsest_level = %d\n",
               ml_nodes->comm->ML_mypid,Nlevels_nodal,fine_level,coarsest_level);
            fflush(stdout);
         }
@@ -566,21 +555,20 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
    
      if (Tfine->invec_leng != ml_nodes->Pmat[grid_level].outvec_leng)
      {
-        printf("In ML_Gen_MGHierarchy_UsingReitzinger: Tmat and Pnodal\n"
-               "\tdimensions on grid level %d do not agree:\n"
-               "\tTmat->invec_leng = %d, Pnodal->outvec_leng = %d\n",
-               grid_level,Tfine->invec_leng,
-               ml_nodes->Pmat[grid_level].outvec_leng);
+       printf("In ML_Gen_MGHierarchy_UsingReitzinger: Tmat and Pnodal\n");
+       printf("\tdimensions on grid level %d do not agree:\n", grid_level);
+       printf("\tTmat->invec_leng = %d, Pnodal->outvec_leng = %d\n",
+               Tfine->invec_leng, ml_nodes->Pmat[grid_level].outvec_leng);
         exit(1);
      }
      if (ml_nodes->Pmat[grid_level].invec_leng != Tcoarse_trans->outvec_leng)
      {
-        printf("In ML_Gen_MGHierarchy_UsingReitzinger:"
-               " Pnodal and Tmat_trans\n"
-               "\tdimensions on grid level %d do not agree:\n"
-               "\tPnodal->invec_leng = %d, Tcoarse_trans->outvec_leng = %d\n",
-               grid_level, ml_nodes->Pmat[grid_level].outvec_leng,
-               Tcoarse_trans->outvec_leng);
+       printf("In ML_Gen_MGHierarchy_UsingReitzinger:");
+       printf(" Pnodal and Tmat_trans\n");
+       printf("\tdimensions on grid level %d do not agree:\n", grid_level);
+       printf("\tPnodal->invec_leng = %d, Tcoarse_trans->outvec_leng = %d\n",
+	      ml_nodes->Pmat[grid_level].outvec_leng,
+	      Tcoarse_trans->outvec_leng);
         exit(1);
      }
 
@@ -608,8 +596,7 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
      if (bail_flag)
      {
         if (Tcoarse->comm->ML_mypid == 0 && 5 < ML_Get_PrintLevel()) {
-           printf("(%d) Bailing from AMG hierarchy build on level %d"
-                  " of levels %d down to %d ........\n",
+           printf("(%d) Bailing from AMG hierarchy build on level %d of levels %d down to %d ........\n",
                   Tcoarse->comm->ML_mypid,grid_level,fine_level,coarsest_level);
            fflush(stdout);
         }
@@ -624,8 +611,7 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
         Nlevels_nodal = fine_level - grid_level;
         coarsest_level = grid_level + 1;
         if (Tcoarse->comm->ML_mypid == 0 && 5 < ML_Get_PrintLevel()) {
-           printf("(%d) In ML_Gen_MGHierarchy_UsingReitzinger, "
-               "Nlevels_nodal = %d fine_level = %d  coarsest_level = %d\n",
+           printf("(%d) In ML_Gen_MGHierarchy_UsingReitzinger, Nlevels_nodal = %d fine_level = %d  coarsest_level = %d\n",
               ml_nodes->comm->ML_mypid,Nlevels_nodal,fine_level,coarsest_level);
            fflush(stdout);
         }
@@ -677,9 +663,8 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
 	   else if (csr_data->values[j] ==  1) csr_data->values[j] = 0;
 	   else if (csr_data->values[j] != 0.0)
 	     {
-	       printf("ML_Gen_MGHierarchy_UsingReitzinger:"
-		      " Error in building Pe.   Found entry %e, expecting"
-		      " either +/-1 or -2.\n",csr_data->values[j]);
+	       printf("ML_Gen_MGHierarchy_UsingReitzinger:");
+	       printf(" Error in building Pe.   Found entry %e, expecting either +/-1 or -2.\n",csr_data->values[j]);
 	       fflush(stdout);
 	     }
 	 }
@@ -911,8 +896,7 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
     if (Tfine->comm->ML_mypid==0 )
     {
       if (Nnz_finegrid == 0) 
-         printf("Number of nonzeros on finest grid not given!"
-               " Complexity not computed!\n");
+         printf("Number of nonzeros on finest grid not given! Complexity not computed!\n");
       else
          printf("Multilevel complexity is %e\n",
                ((double) Nnz_allgrids)/((double) Nnz_finegrid));
@@ -970,7 +954,6 @@ int ML_Gen_SmoothPnodal(ML *ml,int level, int clevel, void *data,
    ML_Operator *Amat, *Pmatrix = NULL, *AGGsmoother = NULL;
    struct      ML_AGG_Matrix_Context widget;
    ML_Krylov   *kdata;
-   char filename[80];
 
    if ( smoothP_damping_factor == 0.0 ) return 0;
 

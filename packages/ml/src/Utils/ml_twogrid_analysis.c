@@ -229,8 +229,7 @@ double ML_GetTwoLevelConvergenceFactor(ML *ml,
    }
    else
    {
-      printf("In ML_GetTwoLevelConvergenceFactor: Could not calculate "
-             "convergence factor\n");
+      printf("In ML_GetTwoLevelConvergenceFactor: Could not calculate convergence factor\n");
       conv_factor = -1.0;
    }
    return conv_factor;

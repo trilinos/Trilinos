@@ -497,7 +497,7 @@ if ((lots_of_space < 4) && (B_allocated > 500)) Bvals = NULL; else
       for (jj = 0; jj < Ncols; jj++ ) {
 	accum_index[*acc_col_ptr] = -1;
 	*acc_col_ptr = col_inds[*acc_col_ptr];
-	*acc_col_ptr++;
+	acc_col_ptr++;
       }
 
       /* empty row. Let's just put a zero in the first column */
@@ -956,8 +956,8 @@ void ML_2matmult(ML_Operator *Mat1, ML_Operator *Mat2,
 
    if (Mat1->invec_leng != Mat2->outvec_leng)
    {
-      printf("In ML_2matmult: matrix dimensions do not agree:\n"
-                       "\tMat1->invec_leng = %d, Mat2->outvec_leng = %d\n",
+     printf("In ML_2matmult: matrix dimensions do not agree:\n");
+     printf("\tMat1->invec_leng = %d, Mat2->outvec_leng = %d\n",
                        Mat1->invec_leng, Mat2->outvec_leng);
       exit(1);
    }
@@ -971,8 +971,7 @@ void ML_2matmult(ML_Operator *Mat1, ML_Operator *Mat2,
    Mat2->getrow->use_loc_glob_map = ML_YES;
 
    if (max_per_proc == 0 && comm->ML_mypid == 0) {
-     printf("\aERROR: In ML_2matmult, maximum number of local unknowns\n"
-            "\a       on any processor (max_per_proc) is zero !\n");
+     printf("ERROR: In ML_2matmult, maximum number of local unknowns\n       on any processor (max_per_proc) is zero !\n");
      exit(1);
    }
 

@@ -14,8 +14,10 @@
 
 #ifndef __MLAGGREITZINGER__
 #define __MLAGGREITZINGER__
-#include "ml_include.h"
-
+#include "ml_defs.h"
+#include "ml_mat_formats.h"
+#include "ml_agg_genP.h"
+#include "ml_op_utils.h"
 /* ******************************************************************** */
 /* ******************************************************************** */
 /*      User Interface Proto-types                                      */

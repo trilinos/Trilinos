@@ -40,10 +40,8 @@ void ML_rap(ML_Operator *Rmat, ML_Operator *Amat,
       for (i = 0; i < getrow_comm->N_neighbors; i++) {
          for (j = 0; j < getrow_comm->neighbors[i].N_send; j++) {
             if (getrow_comm->neighbors[i].send_list[j] >= N_input_vector) {
-              printf("(%d) Error: N_input_vector (%d) argument "
-                     "to rap() is not \n", Amat->comm->ML_mypid,N_input_vector);
-              printf("(%d) Error: larger than %dth element (%d) sent "
-                     "to node %d\n", Amat->comm->ML_mypid,j+1,
+              printf("(%d) Error: N_input_vector (%d) argument to rap() is not \n", Amat->comm->ML_mypid,N_input_vector);
+              printf("(%d) Error: larger than %dth element (%d) sent to node %d\n", Amat->comm->ML_mypid,j+1,
                      getrow_comm->neighbors[i].send_list[j],
                      getrow_comm->neighbors[i].ML_id);
 printf("(%d) Error: Amat(%d,%d)  Rmat(%d,%d)  Pmat(%d,%d)\n",

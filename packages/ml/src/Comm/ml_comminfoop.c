@@ -505,8 +505,7 @@ int ML_CommInfoOP_Set_neighbors(ML_CommInfoOP **c_info, int N_neighbors,
 
   if (*c_info != NULL) 
   {
-     printf("ML_CommInfoOP_Set_neighbors: c_info not NULL! Does "
-            "communication structure already exist?\n");
+     printf("ML_CommInfoOP_Set_neighbors: c_info not NULL! Does communication structure already exist?\n");
      exit(1);
   }
 
@@ -1164,8 +1163,7 @@ void ML_transposed_exchange_bdry(double x[], ML_CommInfoOP *comm_info,
     temp = comm_info->neighbors[i].rcv_list;
 	if (temp == NULL && j != 0)
 	{
-	   printf("In ML_transposed_exchange_bdry: "
-	          "comm_info->neighbors[i].rcv_list cannot be NULL\n");
+	   printf("In ML_transposed_exchange_bdry: comm_info->neighbors[i].rcv_list cannot be NULL\n");
 	   exit(1);
     }
     for (k = 0; k < neighbor->N_rcv; k++) 
