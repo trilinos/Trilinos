@@ -11,19 +11,30 @@
 
 if HAVE_AMESOS_SLUD
 SLUDIST_H = \
-        $(srcdir)/SuperludistOO.h
+	$(srcdir)/SuperludistOO.h
 SLUDIST = \
-        $(srcdir)/SuperludistOO.cpp
+	$(srcdir)/SuperludistOO.cpp
 else
 SLUDIST_H =
 SLUDIST =
 endif
 
+PARAM_H = \
+	$(srcdir)/Amesos_Parameter_List.h \
+	$(srcdir)/Amesos_Parameter_Arbitrary.h \
+	$(srcdir)/Amesos_Parameter_Entry.h
+PARAM = \
+	$(srcdir)/Amesos_Parameter_List.cpp \
+	$(srcdir)/Amesos_Parameter_Entry.cpp
+
+
 if HAVE_AMESOS_DSCPACK
 DSCPACK_H = \
-        $(srcdir)/DscpackOO.h
+	$(srcdir)/DscpackOO.h \
+	$(srcdir)/Amesos_Dscpack.h
 DSCPACK = \
-        $(srcdir)/DscpackOO.cpp
+	$(srcdir)/DscpackOO.cpp \
+	$(srcdir)/Amesos_Dscpack.cpp
 else
 DSCPACK_H =
 DSCPACK =
@@ -31,9 +42,9 @@ endif
 
 if HAVE_AMESOS_SLUD2
 SLUDIST2_H = \
-        $(srcdir)/Superludist2_OO.h
+	$(srcdir)/Superludist2_OO.h
 SLUDIST2 = \
-        $(srcdir)/Superludist2_OO.cpp
+	$(srcdir)/Superludist2_OO.cpp
 else
 SLUDIST2_H =
 SLUDIST2 =
@@ -80,7 +91,7 @@ COMP = \
 #
 #Specify locations of include files within Trilinos, but outside Amesos
 # AM_CPPFLAGS = -I$(top_srcdir)/../epetra/src -I$(top_builddir)/../epetra/src \
-#               -I$(top_srcdir)/../../external/slu -I$(top_srcdir)/src/ksparse
+#	       -I$(top_srcdir)/../../external/slu -I$(top_srcdir)/src/ksparse
 
 # if BUILD_SLUSERIAL
 # SLUSERIAL_CPPFLAGS = -I$(top_srcdir)/../../external/slu
@@ -95,7 +106,7 @@ KUNDERT_CPPFLAGS =
 endif
 
 AM_CPPFLAGS = -I$(top_srcdir)/../epetra/src -I$(top_builddir)/../epetra/src \
-              $(SLUSERIAL_CPPFLAGS) $(KUNDERT_CPPFLAGS)
+	      $(SLUSERIAL_CPPFLAGS) $(KUNDERT_CPPFLAGS)
 
 # ------------------------------------------------------------------------
 # Amesos library specifications
@@ -105,19 +116,21 @@ AMESOS_LIB = libamesos.a
 
 
 AMESOS_H = \
-        $(DSCPACK_H) \
-        $(SLUDIST_H) \
-        $(SLUDIST2_H) \
-        $(SLUSERIAL_H) \
-        $(KUNDERT_H) \
+	$(PARAM_H) \
+	$(DSCPACK_H) \
+	$(SLUDIST_H) \
+	$(SLUDIST2_H) \
+	$(SLUSERIAL_H) \
+	$(KUNDERT_H) \
 	$(COMP_H)
 
 libamesos_a_SOURCES = \
-        $(DSCPACK) \
-        $(SLUDIST) \
-        $(SLUDIST2) \
-        $(SLUSERIAL) \
-        $(KUNDERT) \
+	$(PARAM) \
+	$(DSCPACK) \
+	$(SLUDIST) \
+	$(SLUDIST2) \
+	$(SLUSERIAL) \
+	$(KUNDERT) \
 	$(COMP)
 
 EXTRA_libamesos_a_SOURCES = \

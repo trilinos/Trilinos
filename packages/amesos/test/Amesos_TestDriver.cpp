@@ -4,7 +4,7 @@
 //  usage: 
 //     Amesos_TestDriver.exe Solver InputMatrix MatrixType Special Numsolves Transpose MaxError MaxResid 
 //     Where solver is:  SuperLU, SuperLUdist, SuperLUdist2, 
-//       UMFPACK, KUNDERT, SPOOLES, SPOOLESERIAL or AZTEC 
+//       UMFPACK, KUNDERT, SPOOLES, DSCPACK, DSCPACKOLD, SPOOLESERIAL or AZTEC 
 //     special is, at present, only used in SuperLU, where 0 means dgssv
 //     and 1 means dgssvx 
 //  examples:
@@ -224,6 +224,8 @@ main(int argc, char **argv)
     SparseSolver = Aztec ; 
   else if  ( Sprogram == "KUNDERT" ) 
     SparseSolver = KUNDERT ; 
+  else if  ( Sprogram == "DSCPACKOLD" ) 
+    SparseSolver = DSCPACKOLD ; 
   else if  ( Sprogram == "DSCPACK" ) 
     SparseSolver = DSCPACK ; 
   else if  ( Sprogram == "SuperLUdist" ) 

@@ -260,7 +260,7 @@ PACKAGE_VERSION='0.1'
 PACKAGE_STRING='amesos 0.1'
 PACKAGE_BUGREPORT='ksstanl@sandia.gov'
 
-ac_unique_file="/src/SuperludistOO.cpp"
+ac_unique_file="/src/Amesos_Dscpack.cpp"
 # Factoring default headers for most tests.
 ac_includes_default="\
 #include <stdio.h>

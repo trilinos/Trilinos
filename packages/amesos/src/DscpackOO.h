@@ -27,9 +27,12 @@
 #include "Amesos_ConfigDefs.h"
 #include "Epetra_MpiComm.h"
 
+#ifndef DSC_LBLAS1
+#define DBL_R_NUM
 extern "C" {
 #include "dscmain.h"
 }
+#endif
 
 class Epetra_Comm;
 class Epetra_BlockMap;

@@ -1,4 +1,5 @@
 #include "Amesos_ConfigDefs.h"
+#include "Amesos_Parameter_List.h"
 #include <string>
 #include "Trilinos_Util_ReadTriples2Epetra.h"
 #include "Trilinos_Util_ReadMatrixMarket2Epetra.h"
@@ -30,6 +31,7 @@
 #endif
 #ifdef HAVE_AMESOS_DSCPACK
 #include "DscpackOO.h"
+#include "Amesos_Dscpack.h"
 #endif
 #if 0 
 #include "UmfpackOO.h"
@@ -221,12 +223,18 @@ int Amesos_TestSolver( Epetra_Comm &Comm, char *matrix_file,
    }
 #endif
 #ifdef HAVE_AMESOS_DSCPACK
-  } else if ( SparseSolver == DSCPACK ) {
+  } else if ( SparseSolver == DSCPACKOLD ) {
 
     for ( int i = 0; i < 1+special ; i++ ) { 
       DscpackOO dscpack( Problem ) ; 
       EPETRA_CHK_ERR( dscpack.Solve( true ) ); 
-      cout << " Amesos_TestSolver::after call to DscpackOO " << endl ; 
+   }
+  } else if ( SparseSolver == DSCPACK ) {
+
+    for ( int i = 0; i < 1+special ; i++ ) { 
+      AMESOS::Parameter::List ParamList ;
+      Amesos_Dscpack A_dscpack( Problem, ParamList ) ; 
+      EPETRA_CHK_ERR( A_dscpack.Solve(  ) ); 
    }
 #endif
 #ifdef TEST_SPOOLES

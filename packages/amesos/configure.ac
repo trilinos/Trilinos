@@ -51,7 +51,7 @@ echo "----------------------------------------"
 # This is to protect against accidentally specifying the wrong
 # directory with --srcdir.
 
-AC_CONFIG_SRCDIR(/src/SuperludistOO.cpp)
+AC_CONFIG_SRCDIR(/src/Amesos_Dscpack.cpp)
 
 # Specify directory for auxillary build tools (e.g., install-sh,
 # config.sub, config.guess) and M4 files.

@@ -20,7 +20,7 @@ Amesos contains two supported classes:
 <li> Epetra_SLU - Interface to Xiaoye Li's SuperLU Serial. 
 </ul>
 
-Amesos is migrating toward a base class model.  All future Amesos classes will implement the 
+Amesos is migrating toward a base class model:  Amesos_BaseSolver.  All future Amesos classes will implement the 
 base class.  
 
 Amesos will soon support the following classes:

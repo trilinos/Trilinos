@@ -1,46 +1,48 @@
-#include "DscpackOO.h"
-#ifdef EPETRA_MPI
-#include "Epetra_MpiComm.h"
-#else
-This code cannot be compiled without mpi.h.
-#include "Epetra_Comm.h"
-#endif
+
+/* Copyright (2003) Sandia Corportation. Under the terms of Contract 
+ * DE-AC04-94AL85000, there is a non-exclusive license for use of this 
+ * work by or on behalf of the U.S. Government.  Export of this program
+ * may require a license from the United States Government. */
+
+
+/* NOTICE:  The United States Government is granted for itself and others
+ * acting on its behalf a paid-up, nonexclusive, irrevocable worldwide
+ * license in ths data to reproduce, prepare derivative works, and
+ * perform publicly and display publicly.  Beginning five (5) years from
+ * July 25, 2001, the United States Government is granted for itself and
+ * others acting on its behalf a paid-up, nonexclusive, irrevocable
+ * worldwide license in this data to reproduce, prepare derivative works,
+ * distribute copies to the public, perform publicly and display
+ * publicly, and to permit others to do so.
+ * 
+ * NEITHER THE UNITED STATES GOVERNMENT, NOR THE UNITED STATES DEPARTMENT
+ * OF ENERGY, NOR SANDIA CORPORATION, NOR ANY OF THEIR EMPLOYEES, MAKES
+ * ANY WARRANTY, EXPRESS OR IMPLIED, OR ASSUMES ANY LEGAL LIABILITY OR
+ * RESPONSIBILITY FOR THE ACCURACY, COMPLETENESS, OR USEFULNESS OF ANY
+ * INFORMATION, APPARATUS, PRODUCT, OR PROCESS DISCLOSED, OR REPRESENTS
+ * THAT ITS USE WOULD NOT INFRINGE PRIVATELY OWNED RIGHTS. */
+
+#include "Amesos_Dscpack.h"
 #include "Epetra_Map.h"
-#include "Epetra_LocalMap.h"
-#include "Epetra_Vector.h"
-#include "Epetra_RowMatrix.h"
-#include "Epetra_Operator.h"
 #include "Epetra_Import.h"
 #include "Epetra_Export.h"
 #include "Epetra_CrsMatrix.h"
+#include "Epetra_Vector.h"
 #include "Epetra_Util.h"
-#include <vector>
-#define USE_STL_SORT_NOT
-#ifdef USE_STL_SORT
-#include <algorithm>
-#endif
-
-//  #define DEBUG
-#ifdef DEBUG
-#include "Comm_assert_equal.h"
-#endif
 
 //=============================================================================
-DscpackOO::DscpackOO(const Epetra_LinearProblem &prob ) {
+Amesos_Dscpack::Amesos_Dscpack(const Epetra_LinearProblem &prob, const AMESOS::Parameter::List &ParameterList ) {
+
 
   Problem_ = &prob ; 
   A_and_LU_built = false ; 
   Factored_ = false ; 
   FirstCallToSolve_ = true ; 
-  //
-  //  The following are initialized just on general principle
-  //
+  ParameterList_ = &ParameterList ; 
 }
 
 //=============================================================================
-DscpackOO::~DscpackOO(void) {
-  //  DeleteMemory();
-  //  DeleteAzArrays();
+Amesos_Dscpack::~Amesos_Dscpack(void) {
 
   if ( MyDscRank>=0 && A_and_LU_built ) { 
     DSC_FreeAll( MyDSCObject ) ; 
@@ -50,17 +52,26 @@ DscpackOO::~DscpackOO(void) {
 
 }
 
-//
-//  This operator is used for sorting 
-//
-bool operator< (pair<int, double> const &p1, pair<int, double> const &p2)
-{
-  return p1.first < p2.first;
+bool Amesos_Dscpack::MatrixShapeOK() const { 
+  bool OK =  GetProblem()->IsOperatorSymmetric() ;
+
+  //
+  //  The following test is redundant.  I have left it here in case the 
+  //  IsOperatorSymmetric test turns out not to be reliable.
+  //
+  if ( GetProblem()->GetOperator()->OperatorRangeMap().NumGlobalPoints() != 
+       GetProblem()->GetOperator()->OperatorDomainMap().NumGlobalPoints() ) OK = false;
+  return OK; 
 }
 
 
+int Amesos_Dscpack::SymbolicFactorization() {
+  assert( false ) ;   // Not implemented yet ;
+}
 
-//=============================================================================
+int Amesos_Dscpack::NumericFactorization() {
+  assert( false ) ;   // Not implemented yet ;
+}
 
 //
 //  Solve() uses several intermediate matrices to convert the input matrix
@@ -68,7 +79,9 @@ bool operator< (pair<int, double> const &p1, pair<int, double> const &p2)
 //
 //  Epetra_RowMatrix *RowMatrixA - The input matrix
 //
-int DscpackOO::Solve(bool factor) { 
+int Amesos_Dscpack::Solve() { 
+  //  int Solve() { 
+  bool factor = true; 
   //
   //  I am going to put these here until I determine that I need them in 
   //  DscpackOO.h 
@@ -85,6 +98,8 @@ int DscpackOO::Solve(bool factor) {
     dynamic_cast<Epetra_RowMatrix *>(Problem_->GetOperator());
   
   EPETRA_CHK_ERR( RowMatrixA == 0 ) ; 
+
+#include "Epetra_CrsMatrix.h"
 
   Epetra_CrsMatrix *CastCrsMatrixA = dynamic_cast<Epetra_CrsMatrix*>(RowMatrixA) ; 
 #ifdef EPETRA_CRSMATRIX_CONSTRUCT_FROM_ROWMATRIX
@@ -328,7 +343,6 @@ int DscpackOO::Solve(bool factor) {
 				    //    assert ( MyDscRank >= 0 ) ;
 				    NumLocalCols = 0 ; // This is for those processes not in the Dsc grid
 				    if ( MyDscRank >= 0 ) { 
-				      cout << " numrows = " << numrows << endl ; 
 				      assert( iam == MyDscRank ) ; 
 #ifdef DEBUG
 				      ken_print( numrows, &Ap[0], &Ai[0], &Replicates[0], &Aval[0],  "After Analyze" ) ;  
@@ -360,7 +374,6 @@ int DscpackOO::Solve(bool factor) {
 				    //      }
 				    //      assert( NextRowIndex == NumLocalCols ) ; 
 				    Epetra_Map DscMap( numrows, NumLocalCols, LocalStructOldNum, 0, Comm ) ;
-				    cout << " Below DscMAP " << iam << endl ; 
 
 				    //
 				    //  Import from the CrsMatrix (KEN GXX - can we go straight from the RowMatrix?)
@@ -379,7 +392,6 @@ int DscpackOO::Solve(bool factor) {
 
 				    assert( MyDscRank >= 0 || NumLocalNonz == 0 ) ;
 				    assert( MyDscRank >= 0 || NumLocalCols == 0 ) ;
-				    cout << "NumGlobalCols = " << NumGlobalCols << " numrows = " << numrows << " iam = " << iam << endl ;
 				    assert( MyDscRank >= 0 || NumGlobalCols == 0  ) ; 
 				    MyANonZ.resize( NumLocalNonz ) ; 
 				    int NonZIndex = 0 ; 
@@ -441,17 +453,9 @@ int DscpackOO::Solve(bool factor) {
 				      double **DoubleCompanions = new double*[2] ;
 				      *DoubleCompanions = &mat_values[0] ; 
 				      Epetra_Util sorter;
-				      cout << " sort_indices = " << sort_indices[0] << " " << 
-					sort_indices[1] << " " <<  sort_indices[2] << endl ; 
-				      cout << " mat_values = " <<  mat_values[0] << " " <<
-					mat_values[1] << " " << mat_values[2] << endl ; 
                                       sorter.Sort( true, num_entries_this_row, &sort_indices[0],
 						   1, DoubleCompanions, 0, 0 ) ;
 				      delete[] DoubleCompanions; 
-				      cout << "NOW  sort_indices = " << sort_indices[0] << " " <<
-					sort_indices[1] << " " << sort_indices[2] << endl ; 
-				      cout << " mat_values = " <<  mat_values[0] << " " <<
-					mat_values[1] << " " << mat_values[2] << endl ; 
 #endif
 
 				      for ( int j = 0; j < num_entries_this_row; j++ ) { 
@@ -508,10 +512,8 @@ int DscpackOO::Solve(bool factor) {
 
   if ( iam == 0 ) assert( MyDscRank >= 0 ) ; // Make sure that process 0 has valid data for xValues
 
-  cout << " BEFORE BARRIER iam = " << iam << " numrows = " << numrows << endl ; 
-  Comm.Barrier() ; 
-  cout << " iam = " << iam << " numrows = " << numrows << endl ; 
 #ifdef DEBUG
+  Comm.Barrier() ; 
   assert( Comm_assert_equal( &Comm, numrows ) );
 #endif
   Comm.Broadcast( &xValues[0], numrows, 0 ) ; 
