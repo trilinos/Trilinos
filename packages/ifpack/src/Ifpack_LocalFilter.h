@@ -103,7 +103,7 @@ public:
 
     \return Integer error code, set to 0 if successful.
     */
-  virtual int ExtractMyRowCopy(int MyRow, int Length, int & NumEntries, double *Values, int * Indices) const;
+  virtual inline int ExtractMyRowCopy(int MyRow, int Length, int & NumEntries, double *Values, int * Indices) const;
 
   //! Returns a copy of the main diagonal in a user-provided vector.
   /*! 

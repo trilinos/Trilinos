@@ -15,6 +15,7 @@ Ifpack_LocalFilter::Ifpack_LocalFilter(const Epetra_RowMatrix* Matrix,
   NumRows_(0),
   NumNonzeros_(0),
   MaxNumEntries_(0),
+  MaxNumEntriesA_(0),
   AddToDiag_(AddToDiag),
   Diagonal_(0)
 {
@@ -42,7 +43,11 @@ Ifpack_LocalFilter::Ifpack_LocalFilter(const Epetra_RowMatrix* Matrix,
   Diagonal_ = new Epetra_Vector(*Map_);
   assert (Diagonal_ != 0);
   
-  // tentative value for MaxNumEntries
+  // store this for future access to ExtractMyRowCopy().
+  // This is the # of nonzeros in the non-local matrix
+  MaxNumEntriesA_ = Matrix->MaxNumEntries();
+  // tentative value for MaxNumEntries. This is the number of
+  // nonzeros in the local matrix
   MaxNumEntries_ = Matrix->MaxNumEntries();
 
   // ExtractMyRowCopy() will use these vectors
@@ -80,6 +85,7 @@ Ifpack_LocalFilter::Ifpack_LocalFilter(const Epetra_RowMatrix* Matrix,
 	(*Diagonal_)[i] = Values_[j];
     }
   }
+ 
   MaxNumEntries_ = ActualMaxNumEntries;
 }
 
@@ -108,7 +114,7 @@ ExtractMyRowCopy(int MyRow, int Length, int & NumEntries,
   // This is because I need more space than that given by
   // the user (for the external nodes)
   int Nnz;
-  int ierr = Matrix_->ExtractMyRowCopy(MyRow,MaxNumEntries_,Nnz,
+  int ierr = Matrix_->ExtractMyRowCopy(MyRow,MaxNumEntriesA_,Nnz,
 				       &Values_[0],&Indices_[0]);
 
   IFPACK_CHK_ERR(ierr);
@@ -156,20 +162,15 @@ int Ifpack_LocalFilter::Apply(const Epetra_MultiVector& X,
 	  Epetra_MultiVector& Y) const 
 {
 
-  if (!Map_->SameAs(X.Map())) {
-    IFPACK_CHK_ERR(-1); 
-  }
-
-  if (!Map_->SameAs(Y.Map())) {
-    IFPACK_CHK_ERR(-1); 
-  }
-
-  if (X.NumVectors() != Y.NumVectors()) {
-    IFPACK_CHK_ERR(-2);
-  }
+  // skip expensive checks, I suppose input data are ok
 
   Y.PutScalar(0.0);
   int NumVectors = Y.NumVectors();
+
+  double** X_ptr;
+  double** Y_ptr;
+  X.ExtractView(&X_ptr);
+  Y.ExtractView(&Y_ptr);
 
   for (int i = 0 ; i < NumRows_ ; ++i) {
     
@@ -180,7 +181,7 @@ int Ifpack_LocalFilter::Apply(const Epetra_MultiVector& X,
     for (int j = 0 ; j < Nnz ; ++j) {
       if (Indices_[j] < NumRows_ ) {
 	for (int k = 0 ; k < NumVectors ; ++k)
-	  Y[k][i] = Y[k][i] + Values_[j] * X[k][Indices_[j]];
+	  Y_ptr[k][i] += Values_[j] * X_ptr[k][Indices_[j]];
       }
     }
   }
