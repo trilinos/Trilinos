@@ -609,6 +609,16 @@ MPI_User_function Zoltan_PartDist_MPIOp;
     /* Do not have to change PartDist or Num_Global_Parts. */
     goto End;
   }
+
+  /* Since PartDist is changing, can't reuse old partitions.
+   * Free LB.Data_Structure to prevent reuse. 
+   * Also free LB.PartDist and LB.ProcDist.
+   */
+  if (zz->LB.Free_Structure != NULL)
+    zz->LB.Free_Structure(zz);
+  ZOLTAN_FREE(&(zz->LB.PartDist));
+  ZOLTAN_FREE(&(zz->LB.ProcDist));
+
   zz->LB.Prev_Global_Parts_Param = zz->LB.Num_Global_Parts_Param;
   zz->LB.Prev_Local_Parts_Param = zz->LB.Num_Local_Parts_Param;
 
@@ -622,10 +632,6 @@ MPI_User_function Zoltan_PartDist_MPIOp;
    */
   if ((!global_parts_set || (max_global_parts==num_proc)) && !local_parts_set) {
     /* Number of parts == number of procs, uniformly distributed; */
-    /* do not need PartDist. */
-    /* Free it so that an old PartDist isn't accidentally used. */
-    ZOLTAN_FREE(&(zz->LB.PartDist));
-    ZOLTAN_FREE(&(zz->LB.ProcDist));
     zz->LB.Num_Global_Parts = num_proc;
     zz->LB.Single_Proc_Per_Part = 1;
   }
@@ -667,13 +673,8 @@ MPI_User_function Zoltan_PartDist_MPIOp;
       goto End;
     }
 
-    /* Allocate space for PartDist, if needed. */
-    if (zz->LB.PartDist == NULL)
-      zz->LB.PartDist = (int *) ZOLTAN_MALLOC((max_global_parts+1)*sizeof(int));
-    else if (max_global_parts != zz->LB.Num_Global_Parts)
-      /* New parameter values since last build PartDist; reallocate. */
-      zz->LB.PartDist = (int *) ZOLTAN_REALLOC(zz->LB.PartDist, 
-                                              (max_global_parts+1)*sizeof(int));
+    /* Allocate space for PartDist. */
+    zz->LB.PartDist = (int *) ZOLTAN_MALLOC((max_global_parts+1)*sizeof(int));
     if (zz->LB.PartDist == NULL) {
       ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Memory error.");
       goto End;
@@ -753,9 +754,8 @@ MPI_User_function Zoltan_PartDist_MPIOp;
       ZOLTAN_FREE(&local_parts_params);
     }
 
-    /* Reset Num_Global_Parts.  Free ProcDist since rebuilt PartDist. */
+    /* Reset Num_Global_Parts.  */
     zz->LB.Num_Global_Parts = max_global_parts;
-    ZOLTAN_FREE(&(zz->LB.ProcDist));
 
     if (zz->Debug_Level >= ZOLTAN_DEBUG_ALL && zz->LB.PartDist != NULL) {
       printf("[%1d] Debug: LB.PartDist = ", zz->Proc);
