@@ -163,7 +163,10 @@ char *yo = "initialize_dot";
     dot->Proc = zz->Proc;
     dot->Input_Part = parts[i];
     Zoltan_LB_Proc_To_Part(zz, zz->Proc, &np, &fpart);
-    dot->Part = fpart;
+    if (fpart >= 0)
+      dot->Part = fpart;
+    else
+      dot->Part = 0;
     tmp = i*(*num_geom);
     for (j = 0; j < *num_geom; j++)
       dot->X[j] = geom_vec[tmp + j];
@@ -300,7 +303,7 @@ int Zoltan_RB_Send_To_Part(
  * This situation arises when a processor has zero partitions assigned to
  * it, yet has participated in the parallel partitioning and has, as a result,
  * stored some dots.  
- * (e.g., thre processors, two partitions, NUM_LOCAL_PARTITIONS = 1 on 
+ * (e.g., three processors, two partitions, NUM_LOCAL_PARTITIONS = 1 on 
  * procs 1 and 2.  Procs 0 and 1 are in set 0 during parallel partitioning, so
  * Proc 0 may have some dots after the parallel partitioning.  Those dots 
  * must be sent to proc 1.
