@@ -257,7 +257,7 @@ bool NOX::Direction::Broyden::compute(NOX::Abstract::Vector& dir,
   cnt ++;
   status = oldJacobianGrpPtr->applyJacobianInverse(*lsParamsPtr, soln.getF(), dir);
   if (status != NOX::Abstract::Group::Ok) 
-    throwError("compute", "Unable to apply right preconditioning");
+    throwError("compute", "Unable to apply Jacobian inverse");
   dir.scale(-1.0);
 
   // Apply the Broyden modifications to the old Jacobian (implicitly)
