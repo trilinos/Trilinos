@@ -945,7 +945,11 @@ if (condition_number_one &&
 Probably, the only way to write really portable code, is to test
 extensively on all the desired (and available) architectures. Using
 \verb!g++!, the following flags can be useful to detect non-ANSI
-features: \verb!-ansi -pedantic -Wall!. Flag \verb!-ftrapv! can cause
+features: \verb!-ansi -pedantic -Wall!.
+If you are using \verb!mpich! in conjunction with \verb!-pedantic!, using
+\verb!-Wno-long-long! will disable warnings in the \verb!mpich! include file
+"mpio.h".
+Flag \verb!-ftrapv! can cause
 \ML to crash, as some random functions generate an overflow. Flag
 \verb!-Weffc++! can be very helpful, but recall that system files can
 produce a lot of warnings with this flag.
