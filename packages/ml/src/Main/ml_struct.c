@@ -2188,18 +2188,19 @@ int ML_Gen_Smoother_MLS(ML *ml, int nl, int pre_or_post,
 }
 #endif/*MB_MODIF*/
 
+/********************************************************************
+1-step krylov method for equivalent real forms. This smoother will
+take 1 step of a krylov method applied to D^-1 A where A is in 
+equivalent real form and D is the equivalent real form of the diagonal 
+complex matrix system.
+********************************************************************/
 int ML_Gen_Smoother_ERF_1StepKrylov(ML *ml, int nl, int pre_or_post)
 {
-   int              start_level, end_level, i, j, errCode=0;
-   struct MLSthing *widget;
+   int              start_level, end_level, i, errCode=0;
    ML_Operator     *Amat;
-   double          *tdiag;
    char             str[80];
    int                (*fun)(void *, int, double *, int, double *);
-   int iii, degree;
-   ML_Krylov   *kdata;
    int ntimes = 1;
-   ML_Operator *t2, *t3;
 
 #ifdef ML_TIMING
    double         t0;
@@ -2215,12 +2216,7 @@ int ML_Gen_Smoother_ERF_1StepKrylov(ML *ml, int nl, int pre_or_post)
       return 1;
    }
 
-
-     
-
    fun = ML_DiagScaled_1stepKrylov;
-   iii = 0;
-   degree = 1;
 
    for (i = start_level; i <= end_level; i++) {
 #ifdef ML_TIMING
@@ -2242,11 +2238,10 @@ int ML_Gen_Smoother_ERF_1StepKrylov(ML *ml, int nl, int pre_or_post)
            sprintf(str,"ERF_1STEP_pre%d",i);
 
 	   ML_Smoother_Set(&(ml->pre_smoother[i]), ML_INTERNAL,
-                        (void *) widget, fun, NULL, ntimes,
-			0.0, str);
+			   NULL, fun, NULL, ntimes, 0.0, str);
            sprintf(str,"ERF_1STEP_post%d",i);
 	   errCode = ML_Smoother_Set(&(ml->post_smoother[i]), ML_INTERNAL,
-               (void *) widget, fun, NULL, ntimes, 0.0, str);
+				     NULL, fun, NULL, ntimes, 0.0, str);
 	 }
 	 else return(pr_error("Print unknown pre_or_post choice\n"));
 
