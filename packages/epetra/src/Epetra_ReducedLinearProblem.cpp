@@ -105,15 +105,31 @@ int Epetra_ReducedLinearProblem::Analyze() {
 
   if (AnalysisDone_) EPETRA_CHK_ERR(-1); // Analysis already done once.  Cannot do it again
 
-  // First check for columns with single entries
+  // First check for columns with single entries and find columns with singleton rows
   Epetra_Vector LocalColProfiles(FullMatrixImportMap());
   Epetra_Vector ColProfiles(FullMatrixDomainMap());
 
+  Epetra_Vector LocalColWithSingletonRows(FullMatrixImportMap());
+  Epetra_Vector ColWithSingletonRows(FullMatrixDomainMap());
+
   int NumMyRows = FullMatrix()->NumMyRows();
   int NumMyCols = FullMatrix()->NumMyCols();
+  int IndexBase = FullMatrixRowMap().IndexBase();
+
   int * LocalRowIDs = 0;
+  // LocalRowIDs[j] will contain the local row ID associated with the jth column, if the jth col has a single entry
   if (NumMyCols>0) LocalRowIDs = new int[NumMyCols];
   for (int i=0; i<NumMyCols; i++) LocalRowIDs[i] = -1;
+
+  // The follow two arrays will keep track of any rows and columns that should be eliminated.
+  int * EliminatedRowIDs = 0;
+  int * EliminatedColIDs = 0;
+  if (NumMyRows>0) EliminatedRowIDs = new int[NumMyRows];
+  if (NumMyCols>0) EliminatedColIDs = new int[NumMyCols];
+
+  int NumEliminatedRows = 0;
+  int NumEliminatedCols = 0;
+
   int NumIndices;
   int * Indices;
   for (int i=0; i<NumMyRows; i++) {
@@ -125,133 +141,166 @@ int Epetra_ReducedLinearProblem::Analyze() {
       // will use to identify row to eliminate if column is a singleton
       LocalRowIDs[ColumnIndex] = i;
     }
+    // Now check for rows with single entries and
+    // Add a 1 in columns eliminated by singleton row
+    if (NumIndices==1) {
+      int j = Indices[0];
+      //cout << "i, j = " << i << "  " << j << endl;
+      LocalColWithSingletonRows[j] += 1.0;
+      EliminatedRowIDs[NumEliminatedRows++] = FullMatrixRowMap().GID(i);
+      EliminatedColIDs[NumEliminatedCols++] = FullMatrixImportMap().GID(j);
+      NumRowSingletons_++;
+    }
   }
 
-  // The vector LocalColProfiles has column nonzero counts for each processor's contribution
+  // 1) The vector LocalColProfiles has column nonzero counts for each processor's contribution
   // Combine these to get total column profile information and then redistribute to processors
   // so each can determine if it is the owner of the row associated with the singleton column
+  // 2) The vector LocalColWithSingletonRows[i] contain count of singleton rows  that are associated with 
+  // the ith column on this processor.  Must tell other processors that they should also eliminate these columns
+
+  // Make a copy of LocalColProfiles for later use when detecting columns that disappear locally
+  Epetra_Vector LocalColProfilesCopy(LocalColProfiles);
+
   if (LocalColProfiles.Map().DistributedGlobal()) {
     EPETRA_CHK_ERR(ColProfiles.Export(LocalColProfiles, *FullMatrix()->Importer(), Add));
     EPETRA_CHK_ERR(LocalColProfiles.Import(ColProfiles, *FullMatrix()->Importer(), Insert));
+    EPETRA_CHK_ERR(ColWithSingletonRows.Export(LocalColWithSingletonRows, *FullMatrix()->Importer(), Add));
+    EPETRA_CHK_ERR(LocalColWithSingletonRows.Import(ColWithSingletonRows, *FullMatrix()->Importer(), Insert));
   }
 
   // LocalColProfiles now contains the nonzero column entry count for all columns that have
   // an entry on this processor.
+  // LocalColWithSingletonRows now contains a count of singleton rows associated with the corresponding
+  // local column.
 
-  
-  // Now check for rows with single entries
-  int NumSingletons = 0;
-  // Count singleton rows
-  for (int i=0; i<NumMyRows; i++) {
-    int j = FullMatrix_->NumMyEntries(i);
-    if (j==1) NumSingletons++; 
-  }
-  NumRowSingletons_ = NumSingletons;
 
   // If the ith element of this array is true, then ith row is associated with a column with a singleton
   bool * RowsWithColSingletons = new bool[NumMyRows];
   for (int i=0; i<NumMyRows; i++) RowsWithColSingletons[i] = false; // Init to false
 
+  NumColSingletons_ = 0;
+
   // Count singleton columns (that were not already counted as singleton rows)
-  for (int i=0; i<NumMyCols; i++) {
-    if (LocalRowIDs[i]!=-1) { // Make sure column has an entry on this PE
-      int j = FullMatrix()->NumMyEntries(LocalRowIDs[i]);
-      if (LocalColProfiles[i]==1.0 && j!=1) {
-	int curRow = LocalRowIDs[i];
-	if (RowsWithColSingletons[curRow]) EPETRA_CHK_ERR(-2); // This row has two column singletons, can't handle it.
-	RowsWithColSingletons[curRow] = true;
-	NumSingletons++;
+  for (int j=0; j<NumMyCols; j++) {
+    if (LocalColProfiles[j]==1.0) {
+      int i = LocalRowIDs[j];
+      if (i==-1) { // If column has no row entry on this processor, just eliminate the column
+	EliminatedColIDs[NumEliminatedCols++] = FullMatrixImportMap().GID(j);
       }
+      else { // Check to see if this column already eliminated by the row check above
+	int k = FullMatrix()->NumMyEntries(i);
+	if (k!=1) {
+	  if (RowsWithColSingletons[i]) EPETRA_CHK_ERR(-2); // This row has two column singletons, can't handle it.
+	  RowsWithColSingletons[i] = true;
+	  EliminatedRowIDs[NumEliminatedRows++] = FullMatrixRowMap().GID(i);
+	  EliminatedColIDs[NumEliminatedCols++] = FullMatrixImportMap().GID(j);
+	  NumColSingletons_++;
+	  // If we delete a row, we need to keep track of associated column entries that were also deleted 
+	  // in case all entries in a column are eventually deleted, in which case the column should
+	  // also be deleted.
+	  EPETRA_CHK_ERR(FullMatrix()->Graph().ExtractMyRowView(i, NumIndices, Indices)); // View of current row
+	  for (int jj=0; jj<NumIndices; jj++) LocalColProfilesCopy[Indices[jj]] -= 1.0;
+
+	}
+      }
+    }
+    else if (LocalColWithSingletonRows[j]==1.0) { // Check if some other processor eliminated this column
+      if (LocalRowIDs[j]!=-1) { // If column has no row entry on this processor, just eliminate the column
+	int k = FullMatrix()->NumMyEntries(LocalRowIDs[j]);
+	if (k!=1 && !FullMatrixRowMap().MyLID(j))
+	  EliminatedColIDs[NumEliminatedCols++] = FullMatrixImportMap().GID(j);
+      }
+    }
+    else if (LocalColWithSingletonRows[j]>1.0) {
+      EPETRA_CHK_ERR(-3); // This column has two row singletons, can't handle it.
     }
   }
 
   delete [] RowsWithColSingletons;
 
-  NumColSingletons_ = NumSingletons - NumRowSingletons_;
 
-  int * RowSingletonList = 0;
-  int * ColSingletonList = 0;
-
-  if (NumSingletons>0) {
-    RowSingletonList = new int[NumSingletons];
-    ColSingletonList = new int[NumSingletons];
-  }
-
+  // We will need these arrays for the post-solve phase
   if (NumColSingletons_>0) {
     ColSingletonRowLIDs_ = new int[NumColSingletons_];
     ColSingletonColLIDs_ = new int[NumColSingletons_];
     ColSingletonPivots_ = new double[NumColSingletons_];
   }
-    
-  NumRowSingletons_ = 0;
-  NumColSingletons_ = 0;
-  int ColumnIndex;
-  int * ColumnIndexP = &ColumnIndex;
-  // Register singleton rows
-  for (int i=0; i<NumMyRows; i++) {
-    int j = FullMatrix()->NumMyEntries(i);
-    if (j==1) {
-      EPETRA_CHK_ERR(FullMatrix()->Graph().ExtractMyRowView(i, NumIndices, ColumnIndexP)); // View of current row
-      assert(NumIndices==1); // Sanity test
-      RowSingletonList[NumRowSingletons_] = FullMatrixRowMap().GID(i);
-      ColSingletonList[NumRowSingletons_] = FullMatrixImportMap().GID(*ColumnIndexP);
-      NumRowSingletons_++;
-    }
-  }
-
 
   // Register singleton columns (that were not already counted as singleton rows)
-  for (int i=0; i<NumMyCols; i++) {
-    if (LocalRowIDs[i]!=-1) { // Make sure column has an entry on this PE
-      int j = FullMatrix()->NumMyEntries(LocalRowIDs[i]);
-      if (LocalColProfiles[i]==1.0 && j!=1) {
-	RowSingletonList[NumRowSingletons_+NumColSingletons_] = FullMatrixRowMap().GID(LocalRowIDs[i]);
-	ColSingletonList[NumRowSingletons_+NumColSingletons_] = FullMatrixImportMap().GID(i);
-	ColSingletonRowLIDs_[NumColSingletons_] = LocalRowIDs[i];
-	ColSingletonColLIDs_[NumColSingletons_] = i;
-	NumColSingletons_++;
+  // Check to see if any columns disappeared because all associated rows were eliminated
+  int NumColSingletonstmp = 0;
+  for (int j=0; j<NumMyCols; j++) {
+    if ( LocalColProfiles[j]==1.0) {
+      int i = LocalRowIDs[j];
+      if (i!=-1) { // Make sure column has an entry on this PE
+	int k = FullMatrix()->NumMyEntries(i);
+	if (k!=1) {
+	  ColSingletonRowLIDs_[NumColSingletonstmp] = i;
+	  ColSingletonColLIDs_[NumColSingletonstmp] = j;
+	  NumColSingletonstmp++;
+	}
+      }
+    }
+    else if (LocalColProfilesCopy[j]==0.0 && LocalColWithSingletonRows[j]!=1.0) {
+      if (LocalRowIDs[j]!=-1) { // If column has no row entry on this processor, just eliminate the column
+	int k = FullMatrix()->NumMyEntries(LocalRowIDs[j]);
+	if (k!=1)      
+	  EliminatedColIDs[NumEliminatedCols++] = FullMatrixImportMap().GID(j);
       }
     }
   }
+
+  assert(NumColSingletonstmp==NumColSingletons_); //Sanity check
 
   // Sort ColSingleton LID arrays so that Row LIDs are in ascending order
   Epetra_Util util;
   util.Sort(true, NumColSingletons_, ColSingletonRowLIDs_, 0, 0, 1, &ColSingletonColLIDs_);
 
-  RowEliminateMap_ = new Epetra_Map(-1, NumSingletons, RowSingletonList, 0, FullMatrixImportMap().Comm());
-  ColEliminateMap_ = new Epetra_Map(-1, NumSingletons, ColSingletonList, 0, FullMatrixImportMap().Comm());
+  RowEliminateMap_ = new Epetra_Map(-1, NumEliminatedRows, EliminatedRowIDs, IndexBase, FullMatrixImportMap().Comm());
+  ColEliminateMap_ = new Epetra_Map(-1, NumEliminatedCols, EliminatedColIDs, IndexBase, FullMatrixImportMap().Comm());
+
   if (LocalRowIDs!=0) delete [] LocalRowIDs;
-  if (RowSingletonList!=0) delete [] RowSingletonList;
-  if (ColSingletonList!=0) delete [] ColSingletonList;
+  if (EliminatedRowIDs!=0) delete [] EliminatedRowIDs;
+  if (EliminatedColIDs!=0) delete [] EliminatedColIDs;
 
   int * RowReducedList = 0;
   int * ColReducedList = 0;
 
-  if (NumMyRows - NumSingletons>0) RowReducedList = new int[NumMyRows - NumSingletons];
-  if (NumMyCols - NumSingletons>0) ColReducedList = new int[NumMyCols - NumSingletons];
+  int NumReducedRows = NumMyRows - NumEliminatedRows;
+  int NumReducedCols = NumMyCols - NumEliminatedCols;
 
-  int NumReducedRows = 0;
-  int NumReducedCols = 0;
+
+  if (NumReducedRows>0) RowReducedList = new int[NumReducedRows];
+  if (NumReducedCols>0) ColReducedList = new int[NumReducedCols];
+
+  int NumReducedRowstmp = 0;
+  int NumReducedColstmp = 0;
 
   // Register reduced rows by determining if each row of full matrix is part of RowEliminateMap
   for (int i=0; i<NumMyRows; i++) {
     int curGID = FullMatrixRowMap().GID(i); 
-    if (!RowEliminateMap()->MyGID(curGID)) RowReducedList[NumReducedRows++] = curGID;
+    if (!RowEliminateMap()->MyGID(curGID)) RowReducedList[NumReducedRowstmp++] = curGID;
   }
 
   // Register reduced domain by determining if each column of full matrix is part of ColEliminateMap
   for (int i=0; i<NumMyCols; i++) {
     int curGID = FullMatrixImportMap().GID(i); 
-    if (!ColEliminateMap()->MyGID(curGID)) ColReducedList[NumReducedCols++] = curGID;
+    if (!ColEliminateMap()->MyGID(curGID)) ColReducedList[NumReducedColstmp++] = curGID;
   }
-
-  // Sanity tests
-  if (NumReducedRows!=NumMyRows - NumSingletons) EPETRA_CHK_ERR(-3);
-  if (NumReducedCols!=NumMyCols - NumSingletons) EPETRA_CHK_ERR(-4);
+  //cout << "ColumnEliminateMap = "<< *ColEliminateMap_ << endl;
+  //cout << "Row   EliminateMap = "<< *RowEliminateMap_ << endl;
+  assert(NumReducedRowstmp==NumReducedRows); //Sanity check
+  assert(NumReducedColstmp==NumReducedCols); //Sanity check
 
   // Construct Reduced matrix maps
-  ReducedMatrixRowMap_ = new Epetra_Map(-1, NumReducedRows, RowReducedList, 0, FullMatrixImportMap().Comm());
-  ReducedMatrixDomainMap_ = new Epetra_Map(-1, NumReducedRows, RowReducedList, 0, FullMatrixImportMap().Comm());
+  ReducedMatrixRowMap_ = new Epetra_Map(-1, NumReducedRows, RowReducedList, IndexBase,
+					FullMatrixImportMap().Comm());
+  ReducedMatrixDomainMap_ = new Epetra_Map(-1, NumReducedRows, RowReducedList, IndexBase,
+					   FullMatrixImportMap().Comm());
+  // ReducedMatrixDomainMap_ = new Epetra_Map(-1, NumReducedCols, ColReducedList, IndexBase,
+  //					   FullMatrixImportMap().Comm());
+
 
   // Delete local arrays
   if (RowReducedList!=0) delete [] RowReducedList;
@@ -279,6 +328,9 @@ int Epetra_ReducedLinearProblem::ConstructReducedProblem() {
   // Create storage for temporary X values due to explicit elimination of rows
   Epetra_MultiVector tempExportX(FullMatrixImportMap(), FullLHS->NumVectors());
 
+  //cout << "FullLHS = " << endl << *FullLHS << endl;
+  //cout << "FullRHS = " << endl << *FullRHS << endl;
+  //cout << "tempExportX = " << endl << tempExportX << endl;
 
   int NumMyRows = FullMatrix()->NumMyRows();
   int NumMyCols = FullMatrix()->NumMyCols();
@@ -359,8 +411,12 @@ int Epetra_ReducedLinearProblem::ConstructReducedProblem() {
   //Inject known X values into tempX for purpose of computing tempB = FullMatrix*tempX
   // Also inject into full X since we already know the solution
 
-  EPETRA_CHK_ERR(tempX.Export(tempExportX, *FullMatrix()->Importer(), Insert));
-  EPETRA_CHK_ERR(FullLHS->Export(tempExportX, *FullMatrix()->Importer(), Insert));
+  EPETRA_CHK_ERR(tempX.Export(tempExportX, *FullMatrix()->Importer(), Add));
+  EPETRA_CHK_ERR(FullLHS->Export(tempExportX, *FullMatrix()->Importer(), Add));
+
+  //cout << "tempExportX = " << endl << tempExportX << endl;
+  //cout << "tempX = " << endl << tempX << endl;
+  //cout << "tempB = " << endl << tempB << endl;
 
   EPETRA_CHK_ERR(FullMatrix()->Multiply(false, tempX, tempB));
 
