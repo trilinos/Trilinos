@@ -11,19 +11,21 @@
 #define logical int
 #define FALSE_ (0)
 #define TRUE_ (1)
-#include "ml_lapack.h"
+#include "ml_eigf2c.h"
+    void *dmout_(int *, int *, int *, double *, int *lda, int *idigit,
+		 char *, ftnlen);
+    void dneupd_(int *, char *, int *, double *, double *, double *, 
+		 int *, double *, double *, double *, char *bmat, 
+		 int *n, char *which, int *nev, double *tol, double *, 
+		 int *ncv, double *, int *, int *, int *, double *,
+		 double *, int *, int *, ftnlen, ftnlen, ftnlen);
 
-static integer c__9 = 9;
-static integer c__1 = 1;
 
 int ml_c_pdmout__(int *comm, int *lout, int *m, int *n, double *a, 
 		  int *lda, int *idigit)
 {
     /* System generated locals */
     integer a_dim1, a_offset;
-
-    /* Local variables */
-    extern /* Subroutine */ int dmout_();
 
 /* #ifdef EIGEN_PARALLEL */
 /*      call PDMOUT( comm, */
@@ -34,52 +36,31 @@ int ml_c_pdmout__(int *comm, int *lout, int *m, int *n, double *a,
     a -= a_offset;
 
     /* Function Body */
+
     dmout_(lout, m, n, &a[a_offset], lda, idigit, "Ritz values (Real,Imag) a\
 nd direct residuals", (ftnlen)44);
 /* #endif */
     return 0;
 } /* ml_c_pdmout__ */
 
-/* ccccccccccccccccccccccccc  HAIM FUNCTION DNEUP  cccccccccccccccccccc */
-
-/*      subroutine haim_dneupc(ivec, howmny, celect, d, v, ldv, */
-/*     &     sigma, mu,workev, bmat, n, which, nev, tol, resid, */
-/*     &     ncv, iparam, ipntr, workd, workl, lworkl, ierr) */
-
-/* Subroutine */ int ml_dneupc__(ivec, howmny, celect, d__, v, ldv, workev, 
-	bmat, n, which, nev, tol, resid, ncv, iparam, ipntr, workd, workl, 
-	lworkl, ierr, howmny_len, bmat_len, which_len)
-integer *ivec;
-char *howmny;
-integer *celect;
-doublereal *d__, *v;
-integer *ldv;
-doublereal *workev;
-char *bmat;
-integer *n;
-char *which;
-integer *nev;
-doublereal *tol, *resid;
-integer *ncv, *iparam, *ipntr;
-doublereal *workd, *workl;
-integer *lworkl, *ierr;
-ftnlen howmny_len;
-ftnlen bmat_len;
-ftnlen which_len;
+int ml_dneupc__(int *ivec, char *howmny, int *celect, double *d__, 
+		double *v, int *ldv, double *workev,  char *bmat, int *n, 
+		char *which, int *nev, double *tol, double *resid, int *ncv, 
+		int *iparam, int *ipntr, double *workd, double *workl, 
+		int *lworkl, int *ierr, ftnlen howmny_len, ftnlen bmat_len, 
+		ftnlen which_len)
 {
     /* System generated locals */
     integer v_dim1, v_offset, i__1;
 
     /* Builtin functions */
-    integer s_wsle(), do_lio(), e_wsle();
-    /* Subroutine */ int s_stop();
+    /*    integer s_wsle(), do_lio(), e_wsle(); */
 
     /* Local variables */
     static logical rvec;
     static integer i__;
     static doublereal sigma, mu;
     static logical *select;
-    extern /* Subroutine */ int dneupd_();
 
 
 
@@ -132,6 +113,8 @@ ftnlen which_len;
 	printf("unknown value of howmny %c\n",*howmny);
 	exit(1);
     }
+
+
     dneupd_(&rvec, "A", select, &d__[1], &d__[*ncv + 1], &v[v_offset], ldv, &
 	    sigma, &mu, &workev[1], bmat, n, which, nev, tol, &resid[1], ncv, 
 	    &v[v_offset], ldv, &iparam[1], &ipntr[1], &workd[1], &workl[1], 
