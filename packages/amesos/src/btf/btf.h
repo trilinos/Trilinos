@@ -1,4 +1,15 @@
 /* ========================================================================== */
+/* === BTF package ========================================================== */
+/* ========================================================================== */
+
+/* MAXTRANS:  find a column permutation Q to give A*Q a zero-free diagonal
+ * STRONGCOMP:  find a symmetric permutation P to put P*A*P' into block upper
+ *	triangular form.
+ * BTF_ORDER: do both of the above (maxtrans then strongcomp).
+ */
+
+
+/* ========================================================================== */
 /* === MAXTRANS ============================================================= */
 /* ========================================================================== */
 
@@ -87,8 +98,8 @@
  * TODO: match existing diagonal entries first
  */
 
-#ifndef _MAXTRANS_H
-#define _MAXTRANS_H
+#ifndef _BTF_H
+#define _BTF_H
 
 int maxtrans	    /* returns n if successful, < n if structurally singular */
 (

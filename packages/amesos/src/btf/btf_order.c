@@ -1,5 +1,5 @@
-#include "maxtrans.h"
-#include "maxtrans_internal.h"
+#include "btf.h"
+#include "btf_internal.h"
 
 int btf_order	    /* returns number of blocks found */
 (

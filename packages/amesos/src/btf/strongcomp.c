@@ -4,13 +4,12 @@
 
 /* Finds the strongly connected components of a graph, or equivalently, permutes
  * the matrix into upper block triangular form.  
- * TODO: See maxtrans.h for more details.
- * TODO: rename maxtrans.h and maxtrans_internal.h to something else.
+ * TODO: See btf.h for more details.
  * TODO: check input matrix, Q, for validity
  */
 
-#include "maxtrans.h"
-#include "maxtrans_internal.h"
+#include "btf.h"
+#include "btf_internal.h"
 
 #define UNVISITED (-2)	    /* Flag [j] = UNVISITED if node j not visited yet */
 #define UNASSIGNED (-1)	    /* Flag [j] = UNASSIGNED if node j has been visited,

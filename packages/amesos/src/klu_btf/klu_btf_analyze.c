@@ -2,17 +2,17 @@
 /* === klu_btf_analyze ====================================================== */
 /* ========================================================================== */
 
-/* Order the matrix using BTF, and then AMD on the blocks */
+/* Order the matrix using BTF (or not), and then AMD or COLAMD on the blocks */
 
 #include "klu_btf_internal.h"
 
 /* ========================================================================== */
-/* === klu_btf_analyze2 ===================================================== */
+/* === klu_btf_analyze_worker =============================================== */
 /* ========================================================================== */
 
-/* klu_btf_analyze2 is not-user callable.  See klu_btf_analyze below */
+/* klu_btf_analyze_worker is not-user callable.  See klu_btf_analyze below */
 
-static int klu_btf_analyze2	/* returns KLU_OK or < 0 if error */
+static int klu_btf_analyze_worker	/* returns KLU_OK or < 0 if error */
 (
     /* inputs, not modified */
     int n,		/* A is n-by-n */
@@ -561,7 +561,7 @@ klu_symbolic *klu_btf_analyze	/* returns NULL if error, or a valid
     /* TODO: merge adjacent 1-by-1 blocks into an upper triangular block */
 
     /* ---------------------------------------------------------------------- */
-    /* allocate more workspace, for klu_btf_analyze2 */
+    /* allocate more workspace, for klu_btf_analyze_worker */
     /* ---------------------------------------------------------------------- */
 
     Pamd = (int *) ALLOCATE (maxblock * sizeof (int)) ;
@@ -579,15 +579,16 @@ klu_symbolic *klu_btf_analyze	/* returns NULL if error, or a valid
 	(Pinv != (int *) NULL)) ? KLU_OK : KLU_OUT_OF_MEMORY ;
 
     /* ---------------------------------------------------------------------- */
-    /* order each block of the BTF matrix using AMD */
+    /* order each block of the BTF matrix using AMD or COLAMD */
     /* ---------------------------------------------------------------------- */
 
     if (result == KLU_OK)
     {
-	PRINTF (("calling klu_btf_analyze2\n")) ;
-	result = klu_btf_analyze2 (n, Ap, Ai, nblocks, Pbtf, Qbtf, R, ordering,
-	    P, Q, Lnz, &maxnz, &nzoff, &lnz, Pamd, Cp, Ci, Ep, Ei, Pinv, Info) ;
-	PRINTF (("klu_btf_analyze2 done\n")) ;
+	PRINTF (("calling klu_btf_analyze_worker\n")) ;
+	result = klu_btf_analyze_worker (n, Ap, Ai, nblocks, Pbtf, Qbtf, R,
+	    ordering, P, Q, Lnz, &maxnz, &nzoff, &lnz, Pamd, Cp, Ci, Ep, Ei,
+	    Pinv, Info) ;
+	PRINTF (("klu_btf_analyze_worker done\n")) ;
 	if (!do_btf) ASSERT (nzoff == 0) ;
     }
     Info [KLU_BTF_INFO_STATUS] = result ;

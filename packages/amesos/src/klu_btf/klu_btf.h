@@ -30,7 +30,7 @@ typedef struct
 	nblocks,	/* number of blocks */
 	maxnz,		/* max nz in any block */
 	maxblock,	/* size of largest block */
-	ordering,	/* ordering used (AMD or COLAMD) */
+	ordering,	/* ordering used (AMD, COLAMD, or GIVEN) */
 	do_btf ;	/* whether or not BTF preordering was requested */
 
     /* this info is stored as double, to avoid integer overflow: */
@@ -92,6 +92,7 @@ klu_symbolic *klu_btf_analyze
     int Ap [ ],		/* size n+1, column pointers */
     int Ai [ ],		/* size nz, row indices */
     double Control [ ],
+    /* output: */
     double Info [ ]
 ) ;
 
@@ -107,6 +108,7 @@ klu_numeric *klu_btf_factor
     double Ax [ ],
     klu_symbolic *Symbolic,
     double Control [ ],
+    /* output: */
     double Info [ ]
 ) ;
 
@@ -196,6 +198,7 @@ int klu_btf_refactor	/* returns KLU_OK if OK, < 0 if error */
 #define KLU_BTF_CONTROL_ORDERING 3	    /* AMD: 0, COLAMD: 1. default: AMD*/
 #define KLU_BTF_CONTROL_USE_AMD 0
 #define KLU_BTF_CONTROL_USE_COLAMD 1
+#define KLU_BTF_CONTROL_USE_GIVEN 2
 #define KLU_BTF_CONTROL_ORDERING_DEFAULT KLU_BTF_CONTROL_USE_AMD
 
 /* used in klu_btf_factor */

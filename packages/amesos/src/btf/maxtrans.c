@@ -3,11 +3,11 @@
 /* ========================================================================== */
 
 /* Finds a column permutation that maximizes the number of entries on the
- * diagonal of a sparse matrix.  See maxtrans.h for more information.
+ * diagonal of a sparse matrix.  See btf.h for more information.
  */ 
 
-#include "maxtrans.h"
-#include "maxtrans_internal.h"
+#include "btf.h"
+#include "btf_internal.h"
 
 #ifndef RECURSIVE
 
