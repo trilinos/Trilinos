@@ -397,6 +397,9 @@ LOCA::Bifurcation::PitchforkBord::ExtendedGroup::computeNewton(
   if (res != NOX::Abstract::Group::Ok)
     return res;
 
+  // zero out newton vec -- used as initial guess for some linear solvers
+  pfNewtonVec.init(0.0);
+
   res = applyJacobianInverse(params, pfFVec, pfNewtonVec);
   if (res != NOX::Abstract::Group::Ok)
     return res;

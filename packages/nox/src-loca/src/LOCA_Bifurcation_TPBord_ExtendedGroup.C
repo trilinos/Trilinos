@@ -375,6 +375,9 @@ LOCA::Bifurcation::TPBord::ExtendedGroup::computeNewton(NOX::Parameter::List& pa
   if (res != NOX::Abstract::Group::Ok)
     return res;
 
+  // zero out newton vec -- used as initial guess for some linear solvers
+  tpNewtonVec.init(0.0);
+
   res = applyJacobianInverse(params, tpFVec, tpNewtonVec);
   if (res != NOX::Abstract::Group::Ok)
     return res;

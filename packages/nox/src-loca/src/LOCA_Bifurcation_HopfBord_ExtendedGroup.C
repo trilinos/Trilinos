@@ -437,6 +437,9 @@ LOCA::Bifurcation::HopfBord::ExtendedGroup::computeNewton(
   if (res != NOX::Abstract::Group::Ok)
     return res;
 
+  // zero out newton vec -- used as initial guess for some linear solvers
+  hopfNewtonVec.init(0.0);
+
   res = applyJacobianInverse(params, hopfFVec, hopfNewtonVec);
   if (res != NOX::Abstract::Group::Ok)
     return res;

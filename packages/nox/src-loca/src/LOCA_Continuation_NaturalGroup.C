@@ -251,7 +251,7 @@ LOCA::Continuation::NaturalGroup::computeJacobian()
   if (res != NOX::Abstract::Group::Ok)
     return res;
 
-  res = LOCA::Continuation::ExtendedGroup::grpPtr->computeDfDp(LOCA::Continuation::ExtendedGroup::conParamID, *derivResidualParamPtr);
+//   res = LOCA::Continuation::ExtendedGroup::grpPtr->computeDfDp(LOCA::Continuation::ExtendedGroup::conParamID, *derivResidualParamPtr);
 
   if (res != NOX::Abstract::Group::Ok)
     return res;
@@ -280,6 +280,9 @@ LOCA::Continuation::NaturalGroup::computeNewton(NOX::Parameter::List& params)
   res = computeJacobian();
   if (res != NOX::Abstract::Group::Ok)
     return res;
+
+  // zero out newton vec -- used as initial guess for some linear solvers
+  newtonVec.init(0.0);
 
   res = applyJacobianInverse(params, fVec, newtonVec);
   if (res != NOX::Abstract::Group::Ok)
@@ -363,7 +366,7 @@ LOCA::Continuation::NaturalGroup::applyJacobianInverse(NOX::Parameter::List& par
   else {
     // Compute input_x + result_param*df/dp
     NOX::Abstract::Vector* a = input_x.clone(NOX::DeepCopy);
-    a->update(result_param, *derivResidualParamPtr, 1.0);
+//     a->update(result_param, *derivResidualParamPtr, 1.0);
 
     // solve J*result_x = a
     res = LOCA::Continuation::ExtendedGroup::grpPtr->applyJacobianInverse(params,

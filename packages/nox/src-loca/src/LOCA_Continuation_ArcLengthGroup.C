@@ -318,6 +318,9 @@ LOCA::Continuation::ArcLengthGroup::computeNewton(NOX::Parameter::List& params)
   if (res != NOX::Abstract::Group::Ok)
     return res;
 
+  // zero out newton vec -- used as initial guess for some linear solvers
+  newtonVec.init(0.0);
+
   res = applyJacobianInverse(params, fVec, newtonVec);
   if (res != NOX::Abstract::Group::Ok)
     return res;
