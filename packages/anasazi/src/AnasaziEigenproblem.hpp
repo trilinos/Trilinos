@@ -2,46 +2,49 @@
 #ifndef ANASAZI_EIGENPROBLEM_H
 #define ANASAZI_EIGENPROBLEM_H
 
+#include "AnasaziMatrix.hpp"
 #include "AnasaziMultiVec.hpp"
 #include "AnasaziDenseMatrix.hpp"
 #include "AnasaziOperator.hpp"
 #include "AnasaziReturnType.hpp"
 
+namespace Anasazi {
+
 template<class TYPE>
-class AnasaziEigenproblem {
+class Eigenproblem {
 
     public:
 
 	//@{ \name Constructors/Destructor.
 
-	/*! Empty constructor - allows AnasaziEigenproblem to be described
+	/*! Empty constructor - allows Anasazi::Eigenproblem to be described
 		at a later time through "Set Methods".
 	*/
-	AnasaziEigenproblem(void);
+	Eigenproblem(void);
 
 	//! Standard Eigenvalue Problem Constructor
-	AnasaziEigenproblem( AnasaziMatrix<TYPE>* A, AnasaziMultiVec<TYPE>* Ivec );
+	Eigenproblem( Matrix<TYPE>* A, MultiVec<TYPE>* Ivec );
 
 	//! Standard Eigenvalue Problem Constructor w/ Operator.
-	AnasaziEigenproblem( AnasaziMatrix<TYPE>* A, AnasaziOperator<TYPE>* Op,
-			AnasaziMultiVec<TYPE>* Ivec );
+	Eigenproblem( Matrix<TYPE>* A, Operator<TYPE>* Op,
+			MultiVec<TYPE>* Ivec );
 
 	//! Generalized Eigenvalue Problem Constructor
-	AnasaziEigenproblem( AnasaziOperator<TYPE>* Op , AnasaziMatrix<TYPE>* B,
-			AnasaziMultiVec<TYPE>* Ivec );
+	Eigenproblem( Operator<TYPE>* Op , Matrix<TYPE>* B,
+			MultiVec<TYPE>* Ivec );
 
 	//! Generalized Eigenvalue Problem Constructor with Matrix A
-	AnasaziEigenproblem( AnasaziMatrix<TYPE>* A, AnasaziMatrix<TYPE>* B,
-			AnasaziOperator<TYPE>* Op, AnasaziMultiVec<TYPE>* Ivec );
+	Eigenproblem( Matrix<TYPE>* A, Matrix<TYPE>* B,
+			Operator<TYPE>* Op, MultiVec<TYPE>* Ivec );
 
 	//! Eigenvalue Problem Constructor w/ Operator Only.
-	AnasaziEigenproblem( AnasaziOperator<TYPE>* Op, AnasaziMultiVec<TYPE>* Ivec );
+	Eigenproblem( Operator<TYPE>* Op, MultiVec<TYPE>* Ivec );
 
 	//! Copy Constructor.
-	AnasaziEigenproblem( const AnasaziEigenproblem<TYPE>* Problem );	
+	Eigenproblem( const Eigenproblem<TYPE>* Problem );	
 
 	//! Destructor.
-	virtual ~AnasaziEigenproblem(void);
+	virtual ~Eigenproblem(void);
 	//@}
 
 	//@{ \name Set Methods.
@@ -49,39 +52,39 @@ class AnasaziEigenproblem {
 	/*! Set the initial guess.  This vector is required to create all the space needed 
 	by Anasazi to solve the eigenvalue problem.  Even if an initial guess is not known
 	by the user, an initial vector must be passed in.  Sets the pointer to the input
-	%AnasaziMultiVec, so no copy is made.  
+	%Anasazi::MultiVec, so no copy is made.  
 	*/
-	void SetInitVec( AnasaziMultiVec<TYPE>* Ivec ) { _InitVec = Ivec; };
+	void SetInitVec( MultiVec<TYPE>* Ivec ) { _InitVec = Ivec; };
 
 	/*! Set the operator for which eigenvalues will be computed.  This may be different
 	from the matrix \c A if a spectral transformation is employed, for example.  Sets
-	the operator pointer to the input %AnasaziMultiVec, so no copy is made.
+	the operator pointer to the input %Anasazi::MultiVec, so no copy is made.
 	*/
-	void SetOperator( AnasaziOperator<TYPE>* Op ) { _Op = Op; };
+	void SetOperator( Operator<TYPE>* Op ) { _Op = Op; };
 
 	//! Set the matrix A (stiffness matrix) of the eigenvalue problem AX = BX\lambda.
-	//! Sets the pointer to the input %AnasaziMatrix, so no copy is made.
-	void SetMatrixA( AnasaziMatrix<TYPE>* A ) { _Amat = A; };
+	//! Sets the pointer to the input %Anasazi::Matrix, so no copy is made.
+	void SetMatrixA( Matrix<TYPE>* A ) { _Amat = A; };
 
 	//! Set the matrix B (mass matrix) of the eigenvalue problem AX = BX\lambda.
-	//! Sets the pointer to the input %AnasaziMatrix, so no copy is made.
-	void SetMatrixB( AnasaziMatrix<TYPE>* B ) { _Bmat = B; }
+	//! Sets the pointer to the input %Anasazi::Matrix, so no copy is made.
+	void SetMatrixB( Matrix<TYPE>* B ) { _Bmat = B; }
 
 	//@}
 
 	//@{ \name Accessor Methods.
 
 	//! Get a pointer to the initial vector
-	AnasaziMultiVec<TYPE>* GetInitVec() const { return(_InitVec); };
+	MultiVec<TYPE>* GetInitVec() const { return(_InitVec); };
 
 	//! Get a pointer to the Operator.
-	AnasaziOperator<TYPE>* GetOperator() const { return(_Op); };
+	Operator<TYPE>* GetOperator() const { return(_Op); };
 
 	//! Get a pointer to the stiffness matrix.
-	AnasaziMatrix<TYPE>* GetMatrixA() const { return(_Amat); };
+	Matrix<TYPE>* GetMatrixA() const { return(_Amat); };
 
 	//! Get a pointer to the mass matrix.
-	AnasaziMatrix<TYPE>* GetMatrixB() const { return(_Bmat); };
+	Matrix<TYPE>* GetMatrixB() const { return(_Bmat); };
 
 	//! Get a pointer to the real part of the eigenvalues of the operator.
 	TYPE* GetREvals() { return(_REvals); };
@@ -90,34 +93,34 @@ class AnasaziEigenproblem {
 	TYPE* GetIEvals() { return(_IEvals); };
 
 	//! Get a pointer to the real part of the eigenvectors of the operator.
-	AnasaziMultiVec<TYPE>* GetREvecs() { return(_REvecs); };
+	MultiVec<TYPE>* GetREvecs() { return(_REvecs); };
 
 	//! Get a pointer to the imaginary part of the eigenvectors of the operator.
-	AnasaziMultiVec<TYPE>* GetIEvecs() { return(_IEvecs); };
+	MultiVec<TYPE>* GetIEvecs() { return(_IEvecs); };
 
 	//@}	
 
 	//@{ \name Matrix/Operator Application Method.
 
 	/*! \brief This routine will apply the matrix/operator for this eigenproblem
-	to the %AnasaziMultiVec \c x and the resulting %AnasaziMultiVec is \c y.  If
+	to the %Anasazi::MultiVec \c x and the resulting %Anasazi::MultiVec is \c y.  If
 	the operator is not defined for this eigenproblem, it will apply the matrix A,
 	otherwise it will return undefined.
 	*/
-	Anasazi_ReturnType ApplyOp (const AnasaziMultiVec<TYPE>& X, 
-						AnasaziMultiVec<TYPE>& Y);	
+	ReturnType ApplyOp (const MultiVec<TYPE>& X, 
+						MultiVec<TYPE>& Y);	
 
 	/*! \brief This routine will apply the stiffness matrix (A) to the 
-	%AnasaziMultiVec \c X and the resulting %AnasaziMultiVec is \c Y.
+	%Anasazi::MultiVec \c X and the resulting %Anasazi::MultiVec is \c Y.
 	*/
-	Anasazi_ReturnType ApplyMatrixA (const AnasaziMultiVec<TYPE>& X, 
-						AnasaziMultiVec<TYPE>& Y);
+	ReturnType ApplyMatrixA (const MultiVec<TYPE>& X, 
+						MultiVec<TYPE>& Y);
 
-	/*! \brief This routine will apply the mass matrix (B) to the %AnasaziMultiVec
-	\c X and the resulting %AnasaziMultiVec is \c Y.
+	/*! \brief This routine will apply the mass matrix (B) to the %Anasazi::MultiVec
+	\c X and the resulting %Anasazi::MultiVec is \c Y.
 	*/
-	Anasazi_ReturnType ApplyMatrixB (const AnasaziMultiVec<TYPE>& X, 
-						AnasaziMultiVec<TYPE>& Y);
+	ReturnType ApplyMatrixB (const MultiVec<TYPE>& X, 
+						MultiVec<TYPE>& Y);
 
 	//@}
 	//@{ \name Inner Product Methods.
@@ -126,33 +129,33 @@ class AnasaziEigenproblem {
 
 	\returns  Z = alpha*X^T*A*Y
 	*/
-	Anasazi_ReturnType AInProd( TYPE alpha, const AnasaziMultiVec<TYPE>& X, 
-						const AnasaziMultiVec<TYPE>& Y,
-						AnasaziDenseMatrix<TYPE>& Z );
+	ReturnType AInProd( TYPE alpha, const MultiVec<TYPE>& X, 
+						const MultiVec<TYPE>& Y,
+						DenseMatrix<TYPE>& Z );
 
 	/*! \brief Computes B inner product using definition of ApplyMatrixB.
 
 	\returns  Z = alpha*X^T*B*Y
 	*/
-	Anasazi_ReturnType BInProd( TYPE alpha, const AnasaziMultiVec<TYPE>& X, 
-						const AnasaziMultiVec<TYPE>& Y,
-						AnasaziDenseMatrix<TYPE>& Z );
+	ReturnType BInProd( TYPE alpha, const MultiVec<TYPE>& X, 
+						const MultiVec<TYPE>& Y,
+						DenseMatrix<TYPE>& Z );
 	//@}
 
 	//@{ \name Norm Methods.
-	/*! \brief Computes the B norm of AnasaziMultiVecs.
+	/*! \brief Computes the B norm of MultiVecs.
 	*/
-	Anasazi_ReturnType BMvNorm( AnasaziMultiVec<TYPE>& X, TYPE* normvec );
+	ReturnType BMvNorm( MultiVec<TYPE>& X, TYPE* normvec );
 
 	//@}	
 
     protected:
 
 	TYPE *_REvals, *_IEvals;
-	AnasaziMultiVec<TYPE> *_REvecs, *_IEvecs; 	
-	AnasaziMultiVec<TYPE> *_InitVec;
-	AnasaziMatrix<TYPE> *_Amat, *_Bmat; 
-	AnasaziOperator<TYPE> *_Op;
+	MultiVec<TYPE> *_REvecs, *_IEvecs; 	
+	MultiVec<TYPE> *_InitVec;
+	Matrix<TYPE> *_Amat, *_Bmat; 
+	Operator<TYPE> *_Op;
 };		
 
 //=============================================================================
@@ -160,7 +163,7 @@ class AnasaziEigenproblem {
 //=============================================================================
 
 template<class TYPE>
-AnasaziEigenproblem<TYPE>::AnasaziEigenproblem(void) : 
+Eigenproblem<TYPE>::Eigenproblem(void) : 
 	_Op(0), _Amat(0), _Bmat(0), _InitVec(0),_REvals(0), 
 	_IEvals(0), _REvecs(0), _IEvecs(0)
 {
@@ -169,7 +172,7 @@ AnasaziEigenproblem<TYPE>::AnasaziEigenproblem(void) :
 //=============================================================================
 
 template<class TYPE>
-AnasaziEigenproblem<TYPE>::AnasaziEigenproblem( AnasaziMatrix<TYPE>* A, AnasaziMultiVec<TYPE>* Ivec ) :
+Eigenproblem<TYPE>::Eigenproblem( Matrix<TYPE>* A, MultiVec<TYPE>* Ivec ) :
 	_Op(0), _Amat(A), _Bmat(0), _InitVec(Ivec), _REvals(0), 
 	_IEvals(0), _REvecs(0), _IEvecs(0)
 {
@@ -178,8 +181,8 @@ AnasaziEigenproblem<TYPE>::AnasaziEigenproblem( AnasaziMatrix<TYPE>* A, AnasaziM
 //=============================================================================
 
 template<class TYPE>
-AnasaziEigenproblem<TYPE>::AnasaziEigenproblem( AnasaziMatrix<TYPE>* A, AnasaziOperator<TYPE>* Op,
-			AnasaziMultiVec<TYPE>* Ivec ) :
+Eigenproblem<TYPE>::Eigenproblem( Matrix<TYPE>* A, Operator<TYPE>* Op,
+			MultiVec<TYPE>* Ivec ) :
 	_Op(Op), _Amat(A), _Bmat(0), _InitVec(Ivec), _REvals(0),
 	_IEvals(0), _REvecs(0), _IEvecs(0)
 {
@@ -188,8 +191,8 @@ AnasaziEigenproblem<TYPE>::AnasaziEigenproblem( AnasaziMatrix<TYPE>* A, AnasaziO
 //=============================================================================
 
 template<class TYPE>
-AnasaziEigenproblem<TYPE>::AnasaziEigenproblem( AnasaziOperator<TYPE>* Op , AnasaziMatrix<TYPE>* B,
-			AnasaziMultiVec<TYPE>* Ivec ) :
+Eigenproblem<TYPE>::Eigenproblem( Operator<TYPE>* Op , Matrix<TYPE>* B,
+			MultiVec<TYPE>* Ivec ) :
 	_Op(Op), _Amat(0), _Bmat(B), _InitVec(Ivec), _REvals(0),
 	_IEvals(0), _REvecs(0), _IEvecs(0)
 {
@@ -198,8 +201,8 @@ AnasaziEigenproblem<TYPE>::AnasaziEigenproblem( AnasaziOperator<TYPE>* Op , Anas
 //=============================================================================
 
 template<class TYPE>
-AnasaziEigenproblem<TYPE>::AnasaziEigenproblem( AnasaziMatrix<TYPE>* A, AnasaziMatrix<TYPE>* B,
-			AnasaziOperator<TYPE>* Op, AnasaziMultiVec<TYPE>* Ivec ) :
+Eigenproblem<TYPE>::Eigenproblem( Matrix<TYPE>* A, Matrix<TYPE>* B,
+			Operator<TYPE>* Op, MultiVec<TYPE>* Ivec ) :
 	_Op(Op), _Amat(A), _Bmat(B), _InitVec(Ivec), _REvals(0),
 	_IEvals(0), _REvecs(0), _IEvecs(0)
 {
@@ -208,7 +211,7 @@ AnasaziEigenproblem<TYPE>::AnasaziEigenproblem( AnasaziMatrix<TYPE>* A, AnasaziM
 //=============================================================================
 
 template<class TYPE>
-AnasaziEigenproblem<TYPE>::AnasaziEigenproblem( AnasaziOperator<TYPE>* Op, AnasaziMultiVec<TYPE>* Ivec ) :
+Eigenproblem<TYPE>::Eigenproblem( Operator<TYPE>* Op, MultiVec<TYPE>* Ivec ) :
 	_Op(Op), _Amat(0), _Bmat(0), _InitVec(Ivec), _REvals(0),
 	_IEvals(0), _REvecs(0), _IEvecs(0)
 {
@@ -217,7 +220,7 @@ AnasaziEigenproblem<TYPE>::AnasaziEigenproblem( AnasaziOperator<TYPE>* Op, Anasa
 //=============================================================================
 
 template<class TYPE>
-AnasaziEigenproblem<TYPE>::AnasaziEigenproblem( const AnasaziEigenproblem<TYPE>* Problem ) :
+Eigenproblem<TYPE>::Eigenproblem( const Eigenproblem<TYPE>* Problem ) :
 	_Op(Problem._Op), _Amat(Problem._Amat), _Bmat(Problem._Bmat),
 	_InitVec(Problem._InitVec), _REvals(Problem._REvals),
 	_IEvals(Problem._IEvals), _REvecs(Problem._REvecs),
@@ -228,7 +231,7 @@ AnasaziEigenproblem<TYPE>::AnasaziEigenproblem( const AnasaziEigenproblem<TYPE>*
 //=============================================================================
 
 template<class TYPE>
-AnasaziEigenproblem<TYPE>::~AnasaziEigenproblem(void)
+Eigenproblem<TYPE>::~Eigenproblem(void)
 {
 }
 
@@ -237,8 +240,8 @@ AnasaziEigenproblem<TYPE>::~AnasaziEigenproblem(void)
 //=============================================================================
 
 template<class TYPE>
-Anasazi_ReturnType AnasaziEigenproblem<TYPE>::ApplyOp (const AnasaziMultiVec<TYPE>& X, 
-							AnasaziMultiVec<TYPE>& Y )
+ReturnType Eigenproblem<TYPE>::ApplyOp (const MultiVec<TYPE>& X, 
+							MultiVec<TYPE>& Y )
 { 
 	if (_Op) {
 		return(_Op->ApplyOp( X, Y )); 
@@ -250,8 +253,8 @@ Anasazi_ReturnType AnasaziEigenproblem<TYPE>::ApplyOp (const AnasaziMultiVec<TYP
 }
 
 template<class TYPE>
-Anasazi_ReturnType AnasaziEigenproblem<TYPE>::ApplyMatrixB (const AnasaziMultiVec<TYPE>& X, 
-							AnasaziMultiVec<TYPE>& Y)
+ReturnType Eigenproblem<TYPE>::ApplyMatrixB (const MultiVec<TYPE>& X, 
+							MultiVec<TYPE>& Y)
 { 
 	if (_Bmat) {
 		return(_Bmat->ApplyMatrix( X, Y ));
@@ -259,7 +262,7 @@ Anasazi_ReturnType AnasaziEigenproblem<TYPE>::ApplyMatrixB (const AnasaziMultiVe
 		//
                 // First cast away the const on x.
                 //
-                AnasaziMultiVec<TYPE>& tempX = const_cast<AnasaziMultiVec<TYPE>& >(X);
+                MultiVec<TYPE>& tempX = const_cast<MultiVec<TYPE>& >(X);
                 //
                 // Now create the indexing for copying X into Y.
                 //
@@ -274,8 +277,8 @@ Anasazi_ReturnType AnasaziEigenproblem<TYPE>::ApplyMatrixB (const AnasaziMultiVe
 }
 
 template<class TYPE>
-Anasazi_ReturnType AnasaziEigenproblem<TYPE>::ApplyMatrixA (const AnasaziMultiVec<TYPE>& X, 
-							AnasaziMultiVec<TYPE>& Y)
+ReturnType Eigenproblem<TYPE>::ApplyMatrixA (const MultiVec<TYPE>& X, 
+							MultiVec<TYPE>& Y)
 { 
 	if (_Amat) {
 		return(_Amat->ApplyMatrix( X, Y ));
@@ -289,20 +292,20 @@ Anasazi_ReturnType AnasaziEigenproblem<TYPE>::ApplyMatrixA (const AnasaziMultiVe
 //=============================================================================
 
 template<class TYPE>
-Anasazi_ReturnType AnasaziEigenproblem<TYPE>::AInProd( TYPE alpha, const AnasaziMultiVec<TYPE>& X, 
-						const AnasaziMultiVec<TYPE>& Y,
-						AnasaziDenseMatrix<TYPE>& Z )
+ReturnType Eigenproblem<TYPE>::AInProd( TYPE alpha, const MultiVec<TYPE>& X, 
+						const MultiVec<TYPE>& Y,
+						DenseMatrix<TYPE>& Z )
 {	
 	if (_Amat) {
 		//
                 // First cast away the const on Y.
                 //
-                AnasaziMultiVec<TYPE>& tempX = const_cast<AnasaziMultiVec<TYPE>& >(X);
-                AnasaziMultiVec<TYPE>& tempY = const_cast<AnasaziMultiVec<TYPE>& >(Y);
-		AnasaziMultiVec<TYPE>* AY = tempY.CloneCopy();
+                MultiVec<TYPE>& tempX = const_cast<MultiVec<TYPE>& >(X);
+                MultiVec<TYPE>& tempY = const_cast<MultiVec<TYPE>& >(Y);
+		MultiVec<TYPE>* AY = tempY.CloneCopy();
 
 		// Apply A and check that it returned Ok.
-		Anasazi_ReturnType ret = _Amat->ApplyMatrix( Y, *AY );
+		ReturnType ret = _Amat->ApplyMatrix( Y, *AY );
 		if ( ret != Ok ) { return ret; }
 
 		// Now perform inner product.  Result is stored in Z.
@@ -316,20 +319,20 @@ Anasazi_ReturnType AnasaziEigenproblem<TYPE>::AInProd( TYPE alpha, const Anasazi
 }
 
 template<class TYPE>
-Anasazi_ReturnType AnasaziEigenproblem<TYPE>::BInProd( TYPE alpha, const AnasaziMultiVec<TYPE>& X, 
-						const AnasaziMultiVec<TYPE>& Y,
-						AnasaziDenseMatrix<TYPE>& Z )
+ReturnType Eigenproblem<TYPE>::BInProd( TYPE alpha, const MultiVec<TYPE>& X, 
+						const MultiVec<TYPE>& Y,
+						DenseMatrix<TYPE>& Z )
 {
 	if (_Bmat) {
 		//
-                // First cast away the const on AnasaziMultiVecs.
+                // First cast away the const on MultiVecs.
                 //
-                AnasaziMultiVec<TYPE>& tempX = const_cast<AnasaziMultiVec<TYPE>& >(X);
-                AnasaziMultiVec<TYPE>& tempY = const_cast<AnasaziMultiVec<TYPE>& >(Y);
-		AnasaziMultiVec<TYPE>* BY = tempY.CloneCopy();
+                MultiVec<TYPE>& tempX = const_cast<MultiVec<TYPE>& >(X);
+                MultiVec<TYPE>& tempY = const_cast<MultiVec<TYPE>& >(Y);
+		MultiVec<TYPE>* BY = tempY.CloneCopy();
 
 		// Apply B and check that it returned Ok.
-		Anasazi_ReturnType ret = _Bmat->ApplyMatrix( Y, *BY );
+		ReturnType ret = _Bmat->ApplyMatrix( Y, *BY );
 		if ( ret != Ok ) { return ret; }
 
 		// Now perform inner product.  Result is stored in Z.
@@ -339,8 +342,8 @@ Anasazi_ReturnType AnasaziEigenproblem<TYPE>::BInProd( TYPE alpha, const Anasazi
 		return Ok;				
 	} else {
 		// Perform the inner product, assume B=I.
-                AnasaziMultiVec<TYPE>& tempY = const_cast<AnasaziMultiVec<TYPE>& >(Y);
-                AnasaziMultiVec<TYPE>& tempX = const_cast<AnasaziMultiVec<TYPE>& >(X);
+                MultiVec<TYPE>& tempY = const_cast<MultiVec<TYPE>& >(Y);
+                MultiVec<TYPE>& tempX = const_cast<MultiVec<TYPE>& >(X);
 		tempY.MvTransMv ( alpha, tempX, Z );
 		return Ok;				
 	}
@@ -351,12 +354,12 @@ Anasazi_ReturnType AnasaziEigenproblem<TYPE>::BInProd( TYPE alpha, const Anasazi
 //=============================================================================
 
 template<class TYPE>
-Anasazi_ReturnType AnasaziEigenproblem<TYPE>::BMvNorm( AnasaziMultiVec<TYPE>& X, TYPE* normvec )
+ReturnType Eigenproblem<TYPE>::BMvNorm( MultiVec<TYPE>& X, TYPE* normvec )
 {
 	int IntOne = 1;
 	int numvecs = X.GetNumberVecs();
-	AnasaziDenseMatrix<TYPE> DenseOne(IntOne,IntOne);
-	AnasaziMultiVec<TYPE>* Xj = 0;
+	DenseMatrix<TYPE> DenseOne(IntOne,IntOne);
+	MultiVec<TYPE>* Xj = 0;
 	int *index = new int[IntOne];	
 	TYPE* DOptr = DenseOne.getarray();
 	
@@ -373,6 +376,7 @@ Anasazi_ReturnType AnasaziEigenproblem<TYPE>::BMvNorm( AnasaziMultiVec<TYPE>& X,
 	return Ok;
 }
 
+} // end Anasazi namespace
 #endif
 
 // end AnasaziEigenproblem.hpp

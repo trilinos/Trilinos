@@ -5,7 +5,6 @@
 
 #include "AnasaziLAPACK.hpp"
 #include "AnasaziBLAS.hpp"
-#include "AnasaziMatrix.hpp"
 #include "AnasaziCommon.hpp"
 #include "AnasaziEigenproblem.hpp"
 
@@ -25,7 +24,7 @@ public:
 	//@{ \name Constructor/Destructor.
 
 	//! %Anasazi::BlockArnoldi constructor.
-	BlockArnoldi( AnasaziEigenproblem<TYPE>& problem, const TYPE tol=1.0e-6,
+	BlockArnoldi( Eigenproblem<TYPE>& problem, const TYPE tol=1.0e-6,
 		const int nev=5, const int length=25, const int block=1,
 		const string which="LM", const int step=25, const int restarts=0 );
 	//! %Anasazi::BlockArnoldi destructor.
@@ -49,10 +48,10 @@ public:
 	//@{ \name Solution return methods.
 
 	//! This method puts the real part of the computed eigenvectors in %evecs.
-	void getEvecs(AnasaziMultiVec<TYPE>& evecs); 
+	void getEvecs(MultiVec<TYPE>& evecs); 
 
 	//! This method puts the imaginary part of the computed eigenvectors in %ievecs.
-	void getiEvecs(AnasaziMultiVec<TYPE>& ievecs);
+	void getiEvecs(MultiVec<TYPE>& ievecs);
 
 	//! This method returns the real part of the \c nev computed eigenvalues.
 	TYPE * getEvals();
@@ -98,21 +97,21 @@ public:
 	void currentStatus();
 	//@}
 private:
-	void QRFactorization( AnasaziMultiVec<TYPE>&, AnasaziDenseMatrix<TYPE>& );
-	void SortSchurForm( AnasaziDenseMatrix<TYPE>& H, AnasaziDenseMatrix<TYPE>& Q );
+	void QRFactorization( MultiVec<TYPE>&, DenseMatrix<TYPE>& );
+	void SortSchurForm( DenseMatrix<TYPE>& H, DenseMatrix<TYPE>& Q );
 	void BlockReduction();
 	void BlkOrth( const int j );
 	void BlkOrthSing( const int j );
 	void ComputeResiduals( const bool );
 	void ComputeEvecs();
 	void Restart();
-	void Sort();
+	void SortEvals();
 	void SetInitBlock();
 	void SetBlkTols();
 	void CheckBlkArnRed( const int );
-	AnasaziEigenproblem<TYPE> &_problem; // must be passed in by the user
-	AnasaziMultiVec<TYPE> *_basisvecs, *_evecr, *_eveci;
-	AnasaziDenseMatrix<TYPE>* _hessmatrix;
+	Eigenproblem<TYPE> &_problem; // must be passed in by the user
+	MultiVec<TYPE> *_basisvecs, *_evecr, *_eveci;
+	DenseMatrix<TYPE>* _hessmatrix;
 	const int _nev, _length, _block, _restarts, _step;
 	const TYPE _residual_tolerance;
 	TYPE *_ritzresiduals, *_actualresiduals, *_evalr, *_evali;
@@ -128,7 +127,7 @@ private:
 // Note: I should define a copy constructor and overload = because of the use of new
 //
 template <class TYPE>
-BlockArnoldi<TYPE>::BlockArnoldi(AnasaziEigenproblem<TYPE> & problem, 
+BlockArnoldi<TYPE>::BlockArnoldi(Eigenproblem<TYPE> & problem, 
 				const TYPE tol, const int nev, const int length, const int block,
 				const string which, const int step, const int restarts) : 
 				_problem(problem), _basisvecs(0), _evecr(0), _eveci(0), 
@@ -148,9 +147,9 @@ BlockArnoldi<TYPE>::BlockArnoldi(AnasaziEigenproblem<TYPE> & problem,
 	//
 	_nevblock = _nev/_block + 1;
 	//
-	// Retrieve the initial vector from the AnasaziEigenproblem.
+	// Retrieve the initial vector from the Anasazi::Eigenproblem.
 	//
-	AnasaziMultiVec<TYPE>* ivec = _problem.GetInitVec();
+	MultiVec<TYPE>* ivec = _problem.GetInitVec();
 	assert(ivec!=NULL);
 
 	assert(_length>0); assert(_block>0); assert(_step>0);
@@ -166,7 +165,7 @@ BlockArnoldi<TYPE>::BlockArnoldi(AnasaziEigenproblem<TYPE> & problem,
 	//
 	// Create the rectangular Hessenberg matrix
 	//
-	_hessmatrix = new AnasaziDenseMatrix<TYPE>((_length+1)*_block, _length*_block); 
+	_hessmatrix = new DenseMatrix<TYPE>((_length+1)*_block, _length*_block); 
 	assert(_hessmatrix!=NULL);
 	//
 	// Create the vectors for eigenvalues and their residual errors and
@@ -216,7 +215,7 @@ BlockArnoldi<TYPE>::~BlockArnoldi() {
 }
 
 template <class TYPE>
-void BlockArnoldi<TYPE>::getEvecs(AnasaziMultiVec<TYPE>& evecs) {
+void BlockArnoldi<TYPE>::getEvecs(MultiVec<TYPE>& evecs) {
 	//
 	//  Compute the current eigenvectors if they are not current.
 	//
@@ -235,7 +234,7 @@ void BlockArnoldi<TYPE>::getEvecs(AnasaziMultiVec<TYPE>& evecs) {
 }
  
 template <class TYPE>
-void BlockArnoldi<TYPE>::getiEvecs(AnasaziMultiVec<TYPE>& ievecs) {
+void BlockArnoldi<TYPE>::getiEvecs(MultiVec<TYPE>& ievecs) {
 	//
 	//  Compute the current eigenvectors if they are not current.
 	//
@@ -423,7 +422,7 @@ void BlockArnoldi<TYPE>::SetInitBlock() {
 	// if one is given, else it will fill the block with random vectors.
 
 	if (_initialguess) {
-		AnasaziMultiVec<TYPE>* ivec = _problem.GetInitVec();
+		MultiVec<TYPE>* ivec = _problem.GetInitVec();
 		assert(ivec!=NULL);
 		const int cols = ivec->GetNumberVecs();
 		const int rows = ivec->GetVecLength();
@@ -440,7 +439,7 @@ void BlockArnoldi<TYPE>::SetInitBlock() {
 			for (i=cols; i<_block; i++) {
 				index[i-cols] = i;
 			}
-			AnasaziMultiVec<TYPE>* U_vec = _basisvecs->CloneView(index,_block-cols);
+			MultiVec<TYPE>* U_vec = _basisvecs->CloneView(index,_block-cols);
 			assert(U_vec!=NULL);
 			U_vec->MvRandom();
 			delete U_vec;
@@ -461,7 +460,7 @@ void BlockArnoldi<TYPE>::SetInitBlock() {
 		for (i=0; i<_block; i++) {
          		index[i] = i;
 		}
- 		AnasaziMultiVec<TYPE>* U_vec = _basisvecs->CloneView(index,_block);
+ 		MultiVec<TYPE>* U_vec = _basisvecs->CloneView(index,_block);
 		assert(U_vec!=NULL);
 		U_vec->MvRandom();
 		delete U_vec;		
@@ -487,9 +486,9 @@ void BlockArnoldi<TYPE>::iterate(const int steps) {
 		for ( i=0; i<_block; i++ ) {
 			index[i] = i;
 		}
-		AnasaziMultiVec<TYPE>* U_vec = _basisvecs->CloneView(index,_block);
+		MultiVec<TYPE>* U_vec = _basisvecs->CloneView(index,_block);
 		assert(U_vec!=NULL);
-		AnasaziDenseMatrix<TYPE> G10(_block,_block);
+		DenseMatrix<TYPE> G10(_block,_block);
 		QRFactorization( *U_vec, G10 );
 		delete U_vec;
 		delete [] index;
@@ -567,7 +566,7 @@ void BlockArnoldi<TYPE>::solve () {
 template<class TYPE>
 void BlockArnoldi<TYPE>::BlockReduction () {
 	int i,j;
-	Anasazi_ReturnType ret;
+	ReturnType ret;
 	int *index = new int[ _block ]; assert(index!=NULL);
 	
 	for ( j = _jstart; j < _jend; j++ ) {
@@ -577,7 +576,7 @@ void BlockArnoldi<TYPE>::BlockReduction () {
 		for ( i=0; i<_block; i++ ) {
 			index[i] = j*_block+i;
 		}
-		AnasaziMultiVec<TYPE>* U_vec = _basisvecs->CloneView(index, _block);
+		MultiVec<TYPE>* U_vec = _basisvecs->CloneView(index, _block);
 		assert(U_vec!=NULL);
 		//
 		// Associate (j+1)-st block of ArnoldiVecs with F_vec.
@@ -585,7 +584,7 @@ void BlockArnoldi<TYPE>::BlockReduction () {
 		for ( i=0; i<_block; i++ ) {
 			index[i] = (j+1)*_block+i;
 		}
-		AnasaziMultiVec<TYPE>* F_vec = _basisvecs->CloneView(index, _block);
+		MultiVec<TYPE>* F_vec = _basisvecs->CloneView(index, _block);
 		assert(F_vec!=NULL);
 		//
 		//  Compute F_vec = OP * U_vec
@@ -638,14 +637,14 @@ void BlockArnoldi<TYPE>::BlkOrth( const int j ) {
         int * index = new int[ (_length+1)*_block ]; assert(index!=NULL);
         TYPE * norm1 = new TYPE[_block]; assert(norm1!=NULL);
         TYPE * norm2 = new TYPE[_block]; assert(norm2!=NULL);
-        Anasazi_ReturnType ret; 
+        ReturnType ret; 
         //
         // Associate (j+1)-st block of ArnoldiVecs with F_vec.
         //
         for ( i=0; i<_block; i++ ) {
                         index[i] = (j+1)*_block+i;
         }
-        AnasaziMultiVec<TYPE>* F_vec = _basisvecs->CloneView(index, _block);
+        MultiVec<TYPE>* F_vec = _basisvecs->CloneView(index, _block);
         assert(F_vec!=NULL);
         //
         // Zero out the full block column of the Hessenberg matrix
@@ -669,12 +668,12 @@ void BlockArnoldi<TYPE>::BlkOrth( const int j ) {
         for (i=0; i<num_prev; i++){
                 index[i] = i;
         }
-        AnasaziMultiVec<TYPE>* V_prev = _basisvecs->CloneView(index,num_prev);
+        MultiVec<TYPE>* V_prev = _basisvecs->CloneView(index,num_prev);
         assert(V_prev!=NULL);
         //
         // Create a matrix to store the product trans(V_prev)*B*F_vec
         //
-        AnasaziDenseMatrix<TYPE> dense_mat(num_prev, _block );
+        DenseMatrix<TYPE> dense_mat(num_prev, _block );
         TYPE* ptr_dense = dense_mat.getarray();
         int ld_dense = dense_mat.getld();
         //
@@ -736,7 +735,7 @@ void BlockArnoldi<TYPE>::BlkOrth( const int j ) {
                 // Compute the QR factorization of F_vec
                 //
                 row_offset = (j+1)*_block; col_offset = j*_block;
-                AnasaziDenseMatrix<TYPE> sub_block_hess(*_hessmatrix, row_offset, col_offset,
+                DenseMatrix<TYPE> sub_block_hess(*_hessmatrix, row_offset, col_offset,
                         _block, _block);
                 QRFactorization( *F_vec, sub_block_hess );
         }
@@ -765,14 +764,14 @@ void BlockArnoldi<TYPE>::BlkOrthSing( const int j ) {
         int * index = new int[ (_length+1)*_block ]; assert(index!=NULL);
         TYPE norm1[IntOne];
         TYPE norm2[IntOne];
-	Anasazi_ReturnType ret;
+	ReturnType ret;
         //
         // Associate (j+1)-st block of ArnoldiVecs with F_vec.
         //
         for ( i=0; i<_block; i++ ) {
         	index[i] = (j+1)*_block+i;
         }
-        AnasaziMultiVec<TYPE>* F_vec = _basisvecs->CloneView(index, _block);
+        MultiVec<TYPE>* F_vec = _basisvecs->CloneView(index, _block);
         assert(F_vec!=NULL);
         //
         // Zero out the full block column of the Hessenberg matrix
@@ -788,7 +787,7 @@ void BlockArnoldi<TYPE>::BlkOrthSing( const int j ) {
                 }
         }
         //
-        AnasaziMultiVec<TYPE> *q_vec=0, *Q_vec=0, *tptr=0;
+        MultiVec<TYPE> *q_vec=0, *Q_vec=0, *tptr=0;
         tptr = F_vec->Clone(IntOne); assert(tptr!=NULL);
         //
         // Start a loop to orthogonalize each of the _block
@@ -811,7 +810,7 @@ void BlockArnoldi<TYPE>::BlkOrthSing( const int j ) {
                 //
                 // Create matrix to store product trans(Q_vec)*B*q_vec
                 //
-                AnasaziDenseMatrix<TYPE> dense_mat(num_prev, IntOne);
+                DenseMatrix<TYPE> dense_mat(num_prev, IntOne);
                 TYPE* ptr_dense = dense_mat.getarray();
                 //
                 // Do one step of classical Gram-Schmidt B-orthogonalization
@@ -945,8 +944,8 @@ void BlockArnoldi<TYPE>::BlkOrthSing( const int j ) {
 } // end BlkOrthSing()
 
 template<class TYPE>
-void BlockArnoldi<TYPE>::QRFactorization (AnasaziMultiVec<TYPE>& VecIn, 
-						AnasaziDenseMatrix<TYPE>& FouierR) {
+void BlockArnoldi<TYPE>::QRFactorization (MultiVec<TYPE>& VecIn, 
+						DenseMatrix<TYPE>& FouierR) {
 	int i,j,k;
 	int nb = VecIn.GetNumberVecs(); assert (nb == _block);
 	int ldR = FouierR.getld();
@@ -956,12 +955,12 @@ void BlockArnoldi<TYPE>::QRFactorization (AnasaziMultiVec<TYPE>& VecIn,
 	const TYPE zero=0.0;
 	const TYPE one=1.0;
 	bool addvec = false, flg = false;
-	Anasazi_ReturnType ret;
+	ReturnType ret;
 	//
 	TYPE * R = FouierR.getarray();
 	TYPE norm1[IntOne];
 	TYPE norm2[IntOne];
-	AnasaziMultiVec<TYPE> *qj = 0, *Qj = 0, *tptr = 0;
+	MultiVec<TYPE> *qj = 0, *Qj = 0, *tptr = 0;
 	tptr = _basisvecs->Clone(IntOne); assert(tptr!=NULL);
 	//
     	// Zero out the array that will contain the Fourier coefficients.
@@ -996,7 +995,7 @@ void BlockArnoldi<TYPE>::QRFactorization (AnasaziMultiVec<TYPE>& VecIn,
 			// basis for first j columns of the entering VecIn).
 			//
 			Qj = VecIn.CloneView(index, j);
-			AnasaziDenseMatrix<TYPE> rj(j,1);
+			DenseMatrix<TYPE> rj(j,1);
 			TYPE * result = rj.getarray();
 			_problem.BMvNorm( *qj, norm1 );
 			//
@@ -1074,7 +1073,7 @@ void BlockArnoldi<TYPE>::QRFactorization (AnasaziMultiVec<TYPE>& VecIn,
                                  	// previous vectors in block.
                                  	//
                                      	addvec = true;
-                                 	AnasaziDenseMatrix<TYPE> tj(j,1);
+                                 	DenseMatrix<TYPE> tj(j,1);
                                  	//
                                  	tptr->MvRandom();
                                  	_problem.BMvNorm( *tptr, norm1 );
@@ -1130,8 +1129,8 @@ void BlockArnoldi<TYPE>::ComputeResiduals( bool apply ) {
 	int _nevtemp, _nevtemp2;
 	const TYPE one = 1.0;
 	const TYPE zero = 0.0;
-	AnasaziDenseMatrix<TYPE>* Hj;	
-	AnasaziDenseMatrix<TYPE> Q(n,n);
+	DenseMatrix<TYPE>* Hj;	
+	DenseMatrix<TYPE> Q(n,n);
 	AnasaziLAPACK lapack;
 	AnasaziBLAS blas;
 	if (_jstart < _nevblock) {
@@ -1145,12 +1144,12 @@ void BlockArnoldi<TYPE>::ComputeResiduals( bool apply ) {
 	// will just use a copy of it.
 	//
 	if (apply) {
-		Hj = new AnasaziDenseMatrix<TYPE>(*_hessmatrix, i, j, m, n);		
+		Hj = new DenseMatrix<TYPE>(*_hessmatrix, i, j, m, n);		
 	} else {	
 		// Create a view into the current hessenberg matrix and
 		// make a copy.
-		AnasaziDenseMatrix<TYPE> Hj_temp(*_hessmatrix, i, j, m, n);
-		Hj = new AnasaziDenseMatrix<TYPE>(Hj_temp);
+		DenseMatrix<TYPE> Hj_temp(*_hessmatrix, i, j, m, n);
+		Hj = new DenseMatrix<TYPE>(Hj_temp);
 	}
 	//
 	// Compute the Schur decomposition for the current block upper hessenber
@@ -1168,20 +1167,20 @@ void BlockArnoldi<TYPE>::ComputeResiduals( bool apply ) {
 	//
 	//  Calculate the B matrix for the Krylov-Schur basis F_vec*B^T
 	//
-	AnasaziDenseMatrix<TYPE> sub_block_hess(*_hessmatrix, m, mm1, _block, _block);
+	DenseMatrix<TYPE> sub_block_hess(*_hessmatrix, m, mm1, _block, _block);
 	TYPE *ptr_sbh = sub_block_hess.getarray();
 	int ld_sbh = sub_block_hess.getld();
 	//
-	AnasaziDenseMatrix<TYPE> sub_block_q( Q, mm1, 0, _block, _nevtemp );
+	DenseMatrix<TYPE> sub_block_q( Q, mm1, 0, _block, _nevtemp );
 	TYPE *ptr_sbq = sub_block_q.getarray();
 	int ld_sbq = sub_block_q.getld();
 	//
-	AnasaziDenseMatrix<TYPE> sub_block_b( _block, _nevtemp );
+	DenseMatrix<TYPE> sub_block_b( _block, _nevtemp );
 	TYPE *ptr_sbb = sub_block_b.getarray();
 	char* trans = "N";	
 	blas.GEMM( *trans, *trans, _block, _nevtemp, _block, one, ptr_sbh, ld_sbh, 
 		ptr_sbq, ld_sbq, zero, ptr_sbb, _block );
-	AnasaziDenseMatrix<TYPE> sub_block_b2(sub_block_b, 0, 0, _block, _nevtemp2);
+	DenseMatrix<TYPE> sub_block_b2(sub_block_b, 0, 0, _block, _nevtemp2);
         //
         //  Compute approximate ritzresiduals for each eigenvalue using an approximate
         //  2-norm to scale.
@@ -1198,7 +1197,7 @@ void BlockArnoldi<TYPE>::ComputeResiduals( bool apply ) {
 	//
         //for (i=0; i<_nevtemp ; i++) {
         for (i=_defblock*_block; i<_nevtemp ; i++) {
-        	AnasaziDenseMatrix<TYPE> s(sub_block_b,0,i,_block,1);
+        	DenseMatrix<TYPE> s(sub_block_b,0,i,_block,1);
                 TYPE *ptr_s=s.getarray();
                 _ritzresiduals[i] = blas.NRM2(_block, ptr_s)/_scalefactor;
         }   
@@ -1214,14 +1213,14 @@ void BlockArnoldi<TYPE>::ComputeResiduals( bool apply ) {
 		for (i = 0; i < n; i++ ) {
 			index[i] = i;
 		}
-		AnasaziDenseMatrix<TYPE> Qnev(Q, n, _nevtemp);
-		AnasaziMultiVec<TYPE>* basistemp = _basisvecs->CloneView( index, _nevtemp );
-		AnasaziMultiVec<TYPE>* basistemp2 = _basisvecs->CloneCopy( index, n );
+		DenseMatrix<TYPE> Qnev(Q, n, _nevtemp);
+		MultiVec<TYPE>* basistemp = _basisvecs->CloneView( index, _nevtemp );
+		MultiVec<TYPE>* basistemp2 = _basisvecs->CloneCopy( index, n );
 		basistemp->MvTimesMatAddMv ( one, *basistemp2, Qnev, zero );
 		//
 		// Update the Krylov-Schur form (quasi-triangular matrix).
 		//
-		AnasaziDenseMatrix<TYPE> Hjp1(*_hessmatrix,_nevtemp,0,_block,_nevtemp);
+		DenseMatrix<TYPE> Hjp1(*_hessmatrix,_nevtemp,0,_block,_nevtemp);
 		TYPE* ptr_hjp1 = Hjp1.getarray();
 		int ld_hjp1 = Hjp1.getld();
 		for (i=0; i<_block; i++) {
@@ -1243,16 +1242,16 @@ void BlockArnoldi<TYPE>::ComputeEvecs() {
 	const TYPE zero = 0.0;
 	AnasaziLAPACK lapack;
 	AnasaziBLAS blas;
-	AnasaziMultiVec<TYPE>* basistemp;
-	AnasaziDenseMatrix<TYPE> Q(n,n);
+	MultiVec<TYPE>* basistemp;
+	DenseMatrix<TYPE> Q(n,n);
 	int * index = new int [ n ]; assert(index!=NULL);
 	//  Set the index array.
 	for (k=0; k<n; k++) { index[k] = k; }
 	//
 	//  Get a view into the current Hessenberg matrix.
 	//
-	AnasaziDenseMatrix<TYPE> Hj_temp(*_hessmatrix, i, j, n, n);
-	AnasaziDenseMatrix<TYPE> Hj(Hj_temp);
+	DenseMatrix<TYPE> Hj_temp(*_hessmatrix, i, j, n, n);
+	DenseMatrix<TYPE> Hj(Hj_temp);
 	int ldhj = Hj.getld();
 	TYPE *ptr_hj = Hj.getarray();
 	//
@@ -1266,7 +1265,7 @@ void BlockArnoldi<TYPE>::ComputeEvecs() {
 	  //	
 	  SortSchurForm( Hj, Q );
 	  basistemp = _basisvecs->Clone( n );
-	  AnasaziMultiVec<TYPE>* basistemp2 = _basisvecs->CloneCopy( index, n );
+	  MultiVec<TYPE>* basistemp2 = _basisvecs->CloneCopy( index, n );
 	  basistemp->MvTimesMatAddMv ( one, *basistemp2, Q, zero );
 	} else {
 	  //
@@ -1311,7 +1310,7 @@ void BlockArnoldi<TYPE>::ComputeEvecs() {
 	  //
 	  //  Convert back to approximate eigenvectors of the operator.
 	  //
-	  AnasaziMultiVec<TYPE>* evecstemp = _basisvecs->Clone( n );
+	  MultiVec<TYPE>* evecstemp = _basisvecs->Clone( n );
 	  evecstemp->MvTimesMatAddMv( one, *basistemp, Q, zero );
 	  //
 	  // Sort the eigenvectors.
@@ -1322,7 +1321,7 @@ void BlockArnoldi<TYPE>::ComputeEvecs() {
 
 	  int conjprs=0;
 	  int * indexi = new int [ _nev+1 ];
-	  AnasaziMultiVec<TYPE> *evecstempr, *evecr1;
+	  MultiVec<TYPE> *evecstempr, *evecr1;
 	  i = 0;
 	  while ( i<_nev ) {	
 	    if (_evali[i] != zero) {
@@ -1352,7 +1351,7 @@ void BlockArnoldi<TYPE>::ComputeEvecs() {
 	  // If the last eigenvector has a split conjugate pair, don't set negative imaginary
 	  // part.
 	  if (conjprs) {	
-	    AnasaziMultiVec<TYPE>  *evecstempi, *eveci1;
+	    MultiVec<TYPE>  *evecstempi, *eveci1;
 	    //
 	    // There's a problem when the last eigenvalues is the first of
 	    // a conjugate pair.
@@ -1406,7 +1405,7 @@ void BlockArnoldi<TYPE>::ComputeEvecs() {
 }
 
 template<class TYPE>
-void BlockArnoldi<TYPE>::SortSchurForm( AnasaziDenseMatrix<TYPE>& H, AnasaziDenseMatrix<TYPE>& Q ) {
+void BlockArnoldi<TYPE>::SortSchurForm( DenseMatrix<TYPE>& H, DenseMatrix<TYPE>& Q ) {
         const TYPE one = 1.0;
         const TYPE zero = 0.0;
         AnasaziLAPACK lapack; 
@@ -1464,7 +1463,7 @@ void BlockArnoldi<TYPE>::SortSchurForm( AnasaziDenseMatrix<TYPE>& H, AnasaziDens
 	//
 	//cout<<"Before sorting (Hj):"<<endl;
 	//Hj.print();	  
-	Sort();
+	SortEvals();
 	//
 	// Reorder real Schur factorization, remember to add one to the indices for the
 	// fortran call and determine offset.  The offset is necessary since the TREXC
@@ -1553,7 +1552,7 @@ void BlockArnoldi<TYPE>::Restart() {
 	for (i=0; i<_block; i++) {
 		index[i] = _jstart*_block + i;
 	}
-	AnasaziMultiVec<TYPE>* F_vec = _basisvecs->CloneCopy(index, _block);
+	MultiVec<TYPE>* F_vec = _basisvecs->CloneCopy(index, _block);
 	for (i=0; i<_block; i++) {
 		index[i] = _nevtemp + i;
 	}
@@ -1581,7 +1580,7 @@ void BlockArnoldi<TYPE>::Restart() {
 			cout<<"Number of blocks being deflated : "<<_defblock<<endl;
 		}
 		TYPE zero = 0.0;
-		AnasaziDenseMatrix<TYPE> Hj_temp(*_hessmatrix, _nevtemp, 0, _block, _defblock*_block);
+		DenseMatrix<TYPE> Hj_temp(*_hessmatrix, _nevtemp, 0, _block, _defblock*_block);
 		TYPE *ptr_hj = Hj_temp.getarray();
 		int ld_hj = Hj_temp.getld();
 		for (i=0; i<_block; i++) {
@@ -1602,7 +1601,7 @@ void BlockArnoldi<TYPE>::Restart() {
 }
 
 template<class TYPE>
-void BlockArnoldi<TYPE>::Sort() {
+void BlockArnoldi<TYPE>::SortEvals() {
 	int i, j, tempord;
 	const int n = _jstart*_block;
 	TYPE temp, tempr, tempi;
@@ -1761,12 +1760,12 @@ template<class TYPE>
 void BlockArnoldi<TYPE>::CheckBlkArnRed( const int j ) {
         int i,k,m=(j+1)*_block;
         int *index = new int[m];
-	Anasazi_ReturnType ret;       
+	ReturnType ret;       
          
         for ( i=0; i<_block; i++ ) {
                 index[i] = m+i;
         }
-        AnasaziMultiVec<TYPE>* F_vec = _basisvecs->CloneView(index, _block);
+        MultiVec<TYPE>* F_vec = _basisvecs->CloneView(index, _block);
         assert(F_vec!=NULL);
                         
         TYPE *ptr_norms = new TYPE[m];
@@ -1780,7 +1779,7 @@ void BlockArnoldi<TYPE>::CheckBlkArnRed( const int j ) {
         for ( i=0; i<m; i++ ) {
                 index[i] = i;  
         }
-        AnasaziMultiVec<TYPE>* Vj = _basisvecs->CloneView(index, m);
+        MultiVec<TYPE>* Vj = _basisvecs->CloneView(index, m);
         assert(Vj!=NULL);   
         cout << " " << endl;
         cout << "********Block Arnoldi iteration******** " << j << endl;
@@ -1788,7 +1787,7 @@ void BlockArnoldi<TYPE>::CheckBlkArnRed( const int j ) {
                         
         const TYPE one=1.0;
         const TYPE zero=0.0;
-        AnasaziDenseMatrix<TYPE> VTV(m,m);
+        DenseMatrix<TYPE> VTV(m,m);
 	ret = _problem.BInProd( one, *Vj, *Vj, VTV );
 	if (ret != Ok) { }
         TYPE* ptr=VTV.getarray();
@@ -1807,7 +1806,7 @@ void BlockArnoldi<TYPE>::CheckBlkArnRed( const int j ) {
         }
         cout << " " << endl;
         
-        AnasaziDenseMatrix<TYPE> E(m,_block);
+        DenseMatrix<TYPE> E(m,_block);
         
 	ret = _problem.BInProd( one, *Vj, *F_vec, E );
 	if (ret != Ok) { }
@@ -1824,17 +1823,17 @@ void BlockArnoldi<TYPE>::CheckBlkArnRed( const int j ) {
 	}
         cout << " " << endl;
                  
-        AnasaziMultiVec<TYPE>* AVj = _basisvecs->Clone(m); assert(AVj!=NULL);
+        MultiVec<TYPE>* AVj = _basisvecs->Clone(m); assert(AVj!=NULL);
         ret = _problem.ApplyOp(*Vj,*AVj);
         int row_offset=0;
         int col_offset=0;
-        AnasaziDenseMatrix<TYPE> Hj(*_hessmatrix, row_offset, col_offset, m, m);
+        DenseMatrix<TYPE> Hj(*_hessmatrix, row_offset, col_offset, m, m);
         AVj->MvTimesMatAddMv(-one, *Vj, Hj, one);
         for ( i=0; i<_block; i++ ) {  
                 index[i] = j*_block+i;
         }
 
-        AnasaziMultiVec<TYPE>* Fj = AVj->CloneView(index, _block);
+        MultiVec<TYPE>* Fj = AVj->CloneView(index, _block);
         Fj->MvAddMv(-one, *F_vec, one, *Fj);
 	
         AVj->MvNorm(ptr_norms);

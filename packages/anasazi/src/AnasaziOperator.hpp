@@ -6,7 +6,9 @@
 #include "AnasaziReturnType.hpp"
 #include "AnasaziCommon.hpp"
 
-/*!	\class AnasaziOperator
+namespace Anasazi {
+
+/*!	\class Anasazi::Operator
 
 	\brief Anasazi's templated virtual class for constructing the operator that is
 	used by the eigensolver.
@@ -18,29 +20,29 @@
 */
 
 template <class TYPE>
-class AnasaziOperator {
+class Operator {
 public:
 	//@{ \name Constructor/Destructor.
-	//! %AnasaziOperator constructor.
-	AnasaziOperator() {
+	//! %Anasazi::Operator constructor.
+	Operator() {
 //		cout << "ctor:Anasazi::Operator " << this << endl; 
 	}
 
-	//! %AnasaziOperator destructor.
-	virtual ~AnasaziOperator(void) {
+	//! %Anasazi::Operator destructor.
+	virtual ~Operator(void) {
 //		cout << "dtor:Anasazi::Operator " << this << endl; 
 	};
 	//@}
 
 	//@{ \name Matrix/Operator application method.
 
-	/*! \brief This routine takes the %AnasaziMultiVec \c x and applies the matrix/operator
-	to it resulting in the %AnasaziMultiVec \c y, which is returned.
+	/*! \brief This routine takes the %Anasazi::MultiVec \c x and applies the matrix/operator
+	to it resulting in the %Anasazi::MultiVec \c y, which is returned.
 	*/
-	virtual Anasazi_ReturnType ApplyOp (const AnasaziMultiVec<TYPE>& x, 
-						      AnasaziMultiVec<TYPE>& y ) const = 0;
+	virtual ReturnType ApplyOp (const MultiVec<TYPE>& x, MultiVec<TYPE>& y ) const = 0;
 	//@}
 };
 
+} // end of Anasazi namespace
 #endif
 // end of file AnasaziOperator.hpp

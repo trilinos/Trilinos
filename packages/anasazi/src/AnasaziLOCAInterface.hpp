@@ -12,18 +12,19 @@
 #include "NOX_Parameter_List.H"
 
 namespace Anasazi {
+
 enum DataAccess {Copy, View};
-}
+
 //
 //--------template class AnasaziLOCAMat-----------------------
 //
 template <class TYPE> 
-class AnasaziLOCAMat : public AnasaziMatrix<TYPE> {
+class LOCAMat : public Matrix<TYPE> {
 public:
-	AnasaziLOCAMat( NOX::Parameter::List&, NOX::Abstract::Group& );
-	~AnasaziLOCAMat();
-	Anasazi_ReturnType ApplyMatrix ( const AnasaziMultiVec<TYPE>& x, 
-					AnasaziMultiVec<TYPE>& y ) const;
+	LOCAMat( NOX::Parameter::List&, NOX::Abstract::Group& );
+	~LOCAMat();
+	_ReturnType ApplyMatrix ( const MultiVec<TYPE>& x, 
+					MultiVec<TYPE>& y ) const;
 private:
 	NOX::Parameter::List& locaParams;
 	NOX::Abstract::Group& locaGroup;
@@ -33,45 +34,45 @@ private:
 //--------template class AnasaziLOCAVec-------------------------------------
 //
 template <class TYPE>
-class AnasaziLOCAVec : public AnasaziMultiVec<TYPE> {
+class LOCAVec : public MultiVec<TYPE> {
 public:
-	friend class AnasaziLOCAMat<TYPE>;
+	friend class LOCAMat<TYPE>;
 // constructors
-	AnasaziLOCAVec(const NOX::Abstract::Vector& N_vec, int NumVecs );
-	AnasaziLOCAVec(const vector< NOX::Abstract::Vector *> N_vecPtrs, 
-			Anasazi::DataAccess type = Anasazi::Copy );
-	AnasaziLOCAVec(const AnasaziLOCAVec<TYPE>& source, 
-			Anasazi::DataAccess type = Anasazi::Copy );
-	AnasaziLOCAVec(Anasazi::DataAccess type, const AnasaziLOCAVec<TYPE>& source, 
+	LOCAVec(const NOX::Abstract::Vector& N_vec, int NumVecs );
+	LOCAVec(const vector< NOX::Abstract::Vector *> N_vecPtrs, 
+			DataAccess type = Copy );
+	LOCAVec(const LOCAVec<TYPE>& source, 
+			DataAccess type = Copy );
+	LOCAVec(DataAccess type, const LOCAVec<TYPE>& source, 
 			int index[], int NumVecs); 
 
-	~AnasaziLOCAVec();
+	~LOCAVec();
 	//
-	//  member functions inherited from AnasaziMultiVec
+	//  member functions inherited from MultiVec
 	//
 	//  the following is a virtual copy constructor returning
 	//  a pointer to the pure virtual class. vector values are
 	//  not copied; instead a new MultiVec is created containing
 	//  a non-zero amount of columns.
 	//
-	virtual AnasaziMultiVec<TYPE> * Clone ( const int );
+	virtual MultiVec<TYPE> * Clone ( const int );
 	//
 	//  the following is a virtual copy constructor returning
 	//  a pointer to the pure virtual class. vector values are
 	//  copied and a new stand-alone MultiVector is created.
 	//  (deep copy).
 	//
-	virtual AnasaziMultiVec<TYPE> * CloneCopy ();
+	virtual MultiVec<TYPE> * CloneCopy ();
 	//
 	//  Selective deep copy (or copy) constructor.
 	//
-	virtual AnasaziMultiVec<TYPE> * CloneCopy ( int [], int );
+	virtual MultiVec<TYPE> * CloneCopy ( int [], int );
 	//
 	//  the following is a virtual view constructor returning
 	//  a pointer to the pure virtual class. vector values are 
 	//  shared and hence no memory is allocated for the columns.
 	//
-	virtual AnasaziMultiVec<TYPE> * CloneView ( int [], int );
+	virtual MultiVec<TYPE> * CloneView ( int [], int );
 	//
 	virtual int GetNumberVecs () const;
 	virtual int GetVecLength () const;
@@ -79,23 +80,23 @@ public:
 	//  set a block of this multivec with the multivecs specified by
 	//  the index.
 	//
-	virtual void SetBlock ( AnasaziMultiVec<TYPE>& A, int index[], 
+	virtual void SetBlock ( MultiVec<TYPE>& A, int index[], 
 		int NumVecs ); 
 	//
 	// *this <- alpha * A * B + beta * (*this)
 	//
-	virtual void MvTimesMatAddMv ( TYPE alpha, AnasaziMultiVec<TYPE>& A, 
-		AnasaziDenseMatrix<TYPE>& B, TYPE beta );
+	virtual void MvTimesMatAddMv ( TYPE alpha, MultiVec<TYPE>& A, 
+		DenseMatrix<TYPE>& B, TYPE beta );
 	//
 	// *this <- alpha * A + beta * B
 	//
-	virtual void MvAddMv ( TYPE alpha , AnasaziMultiVec<TYPE>& A, TYPE beta,
-		AnasaziMultiVec<TYPE>& B);
+	virtual void MvAddMv ( TYPE alpha , MultiVec<TYPE>& A, TYPE beta,
+		MultiVec<TYPE>& B);
 	//
 	// B <- alpha * A^T * (*this)
 	//
-	virtual void MvTransMv ( TYPE alpha, AnasaziMultiVec<TYPE>& A, 
-		AnasaziDenseMatrix<TYPE>& B );
+	virtual void MvTransMv ( TYPE alpha, MultiVec<TYPE>& A, 
+		DenseMatrix<TYPE>& B );
 	//
 	// alpha[i] = norm of i-th column of (*this)
 	//
@@ -122,7 +123,7 @@ public:
 private:
 // Data container
  	vector< NOX::Abstract::Vector* > mvPtrs;
-	Anasazi::DataAccess CV;
+	DataAccess CV;
 };
 
 //////////////////////////////////////////////////////////////////////
@@ -130,8 +131,8 @@ private:
 //////////////////////////////////////////////////////////////////////
 
 template<class TYPE>
-AnasaziLOCAVec<TYPE>::AnasaziLOCAVec( const NOX::Abstract::Vector& N_vec, int NumVecs ) :
-					mvPtrs(NumVecs), CV(Anasazi::Copy)
+LOCAVec<TYPE>::LOCAVec( const NOX::Abstract::Vector& N_vec, int NumVecs ) :
+					mvPtrs(NumVecs), CV(Copy)
 {
 	for (int i=0; i<NumVecs; i++) {
 		mvPtrs[i] = N_vec.clone(NOX::ShapeCopy);
@@ -142,12 +143,12 @@ AnasaziLOCAVec<TYPE>::AnasaziLOCAVec( const NOX::Abstract::Vector& N_vec, int Nu
 }
 
 template<class TYPE>
-AnasaziLOCAVec<TYPE>::AnasaziLOCAVec( const vector< NOX::Abstract::Vector *> N_vecPtrs,
-					Anasazi::DataAccess type ) : 
+LOCAVec<TYPE>::LOCAVec( const vector< NOX::Abstract::Vector *> N_vecPtrs,
+					DataAccess type ) : 
 					mvPtrs(N_vecPtrs.size()), CV(type)
 {
 	int i;
-	if (type == Anasazi::Copy) {
+	if (type == Copy) {
 		for ( i=0; i<mvPtrs.size(); i++) {
 			mvPtrs[i] = N_vecPtrs[i]->clone(NOX::DeepCopy);
 		}
@@ -160,13 +161,13 @@ AnasaziLOCAVec<TYPE>::AnasaziLOCAVec( const vector< NOX::Abstract::Vector *> N_v
 }
 
 template<class TYPE>
-AnasaziLOCAVec<TYPE>::AnasaziLOCAVec( const AnasaziLOCAVec<TYPE>& source, 
-			Anasazi::DataAccess type ) : mvPtrs(source.mvPtrs.size()),
+LOCAVec<TYPE>::LOCAVec( const LOCAVec<TYPE>& source, 
+			DataAccess type ) : mvPtrs(source.mvPtrs.size()),
 			CV(type)
 {
 	int i;
 
-	if (type == Anasazi::Copy) {
+	if (type == Copy) {
 		for (i=0; i<mvPtrs.size(); i++) {
 			mvPtrs[i] = source.mvPtrs[i]->clone(NOX::DeepCopy);
 		}
@@ -179,12 +180,12 @@ AnasaziLOCAVec<TYPE>::AnasaziLOCAVec( const AnasaziLOCAVec<TYPE>& source,
 }
 
 template<class TYPE>
-AnasaziLOCAVec<TYPE>::AnasaziLOCAVec( Anasazi::DataAccess type, const AnasaziLOCAVec<TYPE>& source, 
-					int index[], int NumVecs ): mvPtrs(NumVecs), CV(type)
+LOCAVec<TYPE>::LOCAVec( DataAccess type, const LOCAVec<TYPE>& source, 
+			       	int index[], int NumVecs ): mvPtrs(NumVecs), CV(type)
 {
 	int i;
 
-	if (type == Anasazi::Copy) {
+	if (type == Copy) {
 		for ( i=0; i<NumVecs; i++ ) {
 			mvPtrs[i] = source.mvPtrs[ index[i] ]->clone(NOX::DeepCopy);
 //			cout<<"ALV_copy_init "<<i<<"\t"<<
@@ -201,25 +202,25 @@ AnasaziLOCAVec<TYPE>::AnasaziLOCAVec( Anasazi::DataAccess type, const AnasaziLOC
 }
 
 template<class TYPE>
-AnasaziLOCAVec<TYPE>::~AnasaziLOCAVec()
+LOCAVec<TYPE>::~LOCAVec()
 {
-	if (CV == Anasazi::Copy) {
+	if (CV == ::Copy) {
 		for (int i=0; i<mvPtrs.size(); i++) {
 			delete mvPtrs[i];
 		}
 	}
 }
 //
-//  member functions inherited from AnasaziMultiVec
+//  member functions inherited from MultiVec
 //
 //
 //  Simulating a virtual copy constructor. If we could rely on the co-variance
-//  of virtual functions, we could return a pointer to AnasaziLOCAVec<TYPE>
+//  of virtual functions, we could return a pointer to LOCAVec<TYPE>
 //  (the derived type) instead of a pointer to the pure virtual base class.
 //
 template<class TYPE>
-AnasaziMultiVec<TYPE>* AnasaziLOCAVec<TYPE>::Clone ( const int NumVecs ) {
-	AnasaziLOCAVec *ptr_alv = new AnasaziLOCAVec(*(mvPtrs[0]),NumVecs);
+MultiVec<TYPE>* LOCAVec<TYPE>::Clone ( const int NumVecs ) {
+	LOCAVec *ptr_alv = new LOCAVec(*(mvPtrs[0]),NumVecs);
 	return ptr_alv; // safe upcast.
 }
 	//
@@ -228,40 +229,40 @@ AnasaziMultiVec<TYPE>* AnasaziLOCAVec<TYPE>::Clone ( const int NumVecs ) {
 	//  copied.
 	//
 template<class TYPE>
-AnasaziMultiVec<TYPE>* AnasaziLOCAVec<TYPE>::CloneCopy() {
-	AnasaziLOCAVec *ptr_alv = new AnasaziLOCAVec(*this);
+MultiVec<TYPE>* LOCAVec<TYPE>::CloneCopy() {
+	LOCAVec *ptr_alv = new LOCAVec(*this);
 	return ptr_alv; // safe upcast
 }
 
 template<class TYPE>
-AnasaziMultiVec<TYPE>* AnasaziLOCAVec<TYPE>::CloneCopy ( int index[], int NumVecs ) {
+MultiVec<TYPE>* LOCAVec<TYPE>::CloneCopy ( int index[], int NumVecs ) {
 	
-	AnasaziLOCAVec *ptr_alv = new AnasaziLOCAVec( Anasazi::Copy, *this, index, NumVecs );
+	LOCAVec *ptr_alv = new LOCAVec( ::Copy, *this, index, NumVecs );
 	return ptr_alv; // safe upcast.
 }
 
 template<class TYPE>
-AnasaziMultiVec<TYPE>* AnasaziLOCAVec<TYPE>::CloneView ( int index[], int NumVecs ) {
+MultiVec<TYPE>* LOCAVec<TYPE>::CloneView ( int index[], int NumVecs ) {
 	
-	AnasaziLOCAVec *ptr_alv = new AnasaziLOCAVec( Anasazi::View, *this, index, NumVecs );
+	LOCAVec *ptr_alv = new LOCAVec( ::View, *this, index, NumVecs );
 	return ptr_alv; // safe upcast.
 }
 
 template<class TYPE>
-int AnasaziLOCAVec<TYPE>::GetNumberVecs () const {
+int LOCAVec<TYPE>::GetNumberVecs () const {
 	return mvPtrs.size();
 }
 
 template<class TYPE>
-int AnasaziLOCAVec<TYPE>::GetVecLength () const {
+int LOCAVec<TYPE>::GetVecLength () const {
 	return mvPtrs[0]->length();
 }
 
 template<class TYPE>
-void AnasaziLOCAVec<TYPE>::SetBlock( AnasaziMultiVec<TYPE>& A, int index[], int NumVecs ) {
+void LOCAVec<TYPE>::SetBlock( MultiVec<TYPE>& A, int index[], int NumVecs ) {
 
 	int i, ind;
-	AnasaziLOCAVec *A_vec = dynamic_cast<AnasaziLOCAVec *>(&A); assert(A_vec!=NULL);
+	LOCAVec *A_vec = dynamic_cast<LOCAVec *>(&A); assert(A_vec!=NULL);
 	int MyNumVecs = mvPtrs.size();
 	for (i=0; i<NumVecs; i++) {
 		ind = index[i];
@@ -275,16 +276,16 @@ void AnasaziLOCAVec<TYPE>::SetBlock( AnasaziMultiVec<TYPE>& A, int index[], int 
 // *this <- alpha * A * B + beta * (*this)
 //
 template<class TYPE>
-void AnasaziLOCAVec<TYPE>::MvTimesMatAddMv ( TYPE alpha, AnasaziMultiVec<TYPE>& A, 
-						   AnasaziDenseMatrix<TYPE>& B, TYPE beta ) 
+void LOCAVec<TYPE>::MvTimesMatAddMv ( TYPE alpha, MultiVec<TYPE>& A, 
+						   DenseMatrix<TYPE>& B, TYPE beta ) 
 {
 	int i,j;
-	AnasaziLOCAVec *A_vec = dynamic_cast<AnasaziLOCAVec *>(&A); assert(A_vec!=NULL);
+	LOCAVec *A_vec = dynamic_cast<LOCAVec *>(&A); assert(A_vec!=NULL);
 	int m = B.getrows();
 	int n = B.getcols();
 	int ldb = B.getld();
 	TYPE *Bvals = B.getarray();  	
-	AnasaziLOCAVec *temp_vec = new AnasaziLOCAVec(*(mvPtrs[0]),n);
+	LOCAVec *temp_vec = new LOCAVec(*(mvPtrs[0]),n);
 	temp_vec->MvInit(0.0);
 	TYPE one = 1.0;
 //
@@ -302,11 +303,11 @@ void AnasaziLOCAVec<TYPE>::MvTimesMatAddMv ( TYPE alpha, AnasaziMultiVec<TYPE>& 
 // *this <- alpha * A + beta * B
 //
 template<class TYPE>
-void AnasaziLOCAVec<TYPE>::MvAddMv ( TYPE alpha , AnasaziMultiVec<TYPE>& A, 
-						   TYPE beta, AnasaziMultiVec<TYPE>& B) {
+void LOCAVec<TYPE>::MvAddMv ( TYPE alpha , MultiVec<TYPE>& A, 
+						   TYPE beta, MultiVec<TYPE>& B) {
 	const TYPE zero = 0.0;
-	AnasaziLOCAVec *A_vec = dynamic_cast<AnasaziLOCAVec *>(&A); assert(A_vec!=NULL);
-	AnasaziLOCAVec *B_vec = dynamic_cast<AnasaziLOCAVec *>(&B); assert(B_vec!=NULL);
+	LOCAVec *A_vec = dynamic_cast<LOCAVec *>(&A); assert(A_vec!=NULL);
+	LOCAVec *B_vec = dynamic_cast<LOCAVec *>(&B); assert(B_vec!=NULL);
 
 	for (int i=0; i<mvPtrs.size(); i++) {
 		mvPtrs[i]->update(alpha, *(A_vec->mvPtrs[i]), beta, *(B_vec->mvPtrs[i]), zero);
@@ -316,10 +317,10 @@ void AnasaziLOCAVec<TYPE>::MvAddMv ( TYPE alpha , AnasaziMultiVec<TYPE>& A,
 // dense B <- alpha * A^T * (*this)
 //
 template<class TYPE>
-void AnasaziLOCAVec<TYPE>::MvTransMv ( TYPE alpha, AnasaziMultiVec<TYPE>& A,
-						   AnasaziDenseMatrix<TYPE>& B) {
+void LOCAVec<TYPE>::MvTransMv ( TYPE alpha, MultiVec<TYPE>& A,
+						   DenseMatrix<TYPE>& B) {
 	int i,j;
-	AnasaziLOCAVec *A_vec = dynamic_cast<AnasaziLOCAVec *>(&A); assert(A_vec!=NULL);
+	LOCAVec *A_vec = dynamic_cast<LOCAVec *>(&A); assert(A_vec!=NULL);
 	int m = B.getrows();
 	int n = B.getcols();
 	int ldb = B.getld();
@@ -335,7 +336,7 @@ void AnasaziLOCAVec<TYPE>::MvTransMv ( TYPE alpha, AnasaziMultiVec<TYPE>& A,
 // array[i] = norm of i-th column of (*this)
 //
 template<class TYPE>
-void AnasaziLOCAVec<TYPE>::MvNorm ( TYPE * normvec ) 
+void LOCAVec<TYPE>::MvNorm ( TYPE * normvec ) 
 {
 	if (normvec) {
 		for (int i=0; i<mvPtrs.size(); i++) {
@@ -348,7 +349,7 @@ void AnasaziLOCAVec<TYPE>::MvNorm ( TYPE * normvec )
 // random vectors in i-th column of (*this)
 //
 template<class TYPE>
-void AnasaziLOCAVec<TYPE>::MvRandom () 
+void LOCAVec<TYPE>::MvRandom () 
 {
 	for (int i=0; i<mvPtrs.size(); i++) {
 		mvPtrs[i]->random();
@@ -358,7 +359,7 @@ void AnasaziLOCAVec<TYPE>::MvRandom ()
 // initializes each element of (*this) with alpha
 //
 template<class TYPE>
-void AnasaziLOCAVec<TYPE>::MvInit ( TYPE alpha ) 
+void LOCAVec<TYPE>::MvInit ( TYPE alpha ) 
 {
 	for (int i=0; i<mvPtrs.size(); i++) {
 		mvPtrs[i]->init( alpha );
@@ -368,14 +369,14 @@ void AnasaziLOCAVec<TYPE>::MvInit ( TYPE alpha )
 //  print multivectors
 //
 template<class TYPE>
-void AnasaziLOCAVec<TYPE>::MvPrint() {
+void LOCAVec<TYPE>::MvPrint() {
 //	cout << *this << endl;
 }
 //
 //  return individual NOX Vector
 //
 template<class TYPE>
-void AnasaziLOCAVec<TYPE>::GetNOXVector( NOX::Abstract::Vector& Vec, int index ) 
+void LOCAVec<TYPE>::GetNOXVector( NOX::Abstract::Vector& Vec, int index ) 
 {
 	if (index < mvPtrs.size()) { Vec = *(mvPtrs[index]); }
 }
@@ -386,30 +387,30 @@ void AnasaziLOCAVec<TYPE>::GetNOXVector( NOX::Abstract::Vector& Vec, int index )
 //
 ////////////////////////////////////////////////////////////////////
 //
-// AnasaziMatrix constructors
+// Anasazi::Matrix constructors
 //
 template <class TYPE>
-AnasaziLOCAMat<TYPE>::AnasaziLOCAMat(NOX::Parameter::List& params, 
+LOCAMat<TYPE>::LOCAMat(NOX::Parameter::List& params, 
 					NOX::Abstract::Group& group) :
 					locaParams(params), locaGroup(group) {
-//	cout << "ctor:AnasaziLOCAMat " << this << endl;
+//	cout << "ctor:Anasazi::LOCAMat " << this << endl;
 	}
 
 template <class TYPE>
-AnasaziLOCAMat<TYPE>::~AnasaziLOCAMat() {
-//	cout << "dtor:AnasaziLOCAMat " << this << endl;
+LOCAMat<TYPE>::~LOCAMat() {
+//	cout << "dtor:Anasazi::LOCAMat " << this << endl;
 	}
 //
-// AnasaziMatrix matrix multiply
+// Matrix matrix multiply
 //
 template <class TYPE>
-Anasazi_ReturnType AnasaziLOCAMat<TYPE>::ApplyMatrix ( const AnasaziMultiVec<TYPE>& x, 
-					  AnasaziMultiVec<TYPE>& y ) const {
+_ReturnType LOCAMat<TYPE>::ApplyMatrix ( const MultiVec<TYPE>& x, 
+					  MultiVec<TYPE>& y ) const {
 	
 	NOX::Abstract::Group::ReturnType res;
-	AnasaziMultiVec<TYPE> &temp_x = const_cast<AnasaziMultiVec<TYPE> &>(x);
-	AnasaziLOCAVec<TYPE> *x_vec = dynamic_cast<AnasaziLOCAVec<TYPE> *>(&temp_x); assert(x_vec!=NULL);
-	AnasaziLOCAVec<TYPE> *y_vec = dynamic_cast<AnasaziLOCAVec<TYPE> *>(&y); assert(y_vec!=NULL);
+	MultiVec<TYPE> &temp_x = const_cast<MultiVec<TYPE> &>(x);
+	LOCAVec<TYPE> *x_vec = dynamic_cast<LOCAVec<TYPE> *>(&temp_x); assert(x_vec!=NULL);
+	LOCAVec<TYPE> *y_vec = dynamic_cast<LOCAVec<TYPE> *>(&y); assert(y_vec!=NULL);
 
 	int NumVecs = x_vec->GetNumberVecs();
 	for (int i=0; i<NumVecs; i++) {
@@ -424,5 +425,6 @@ Anasazi_ReturnType AnasaziLOCAMat<TYPE>::ApplyMatrix ( const AnasaziMultiVec<TYP
 	}
 }
 
+} // end Anasazi namespace
 #endif 
  // end of file ANASAZI_LOCA_HPP

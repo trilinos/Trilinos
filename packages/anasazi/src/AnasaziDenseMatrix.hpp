@@ -3,7 +3,9 @@
 #define ANASAZI_DENSE_MATRIX_HPP
 #include "AnasaziCommon.hpp"
 
-/*!	\class AnasaziDenseMatrix
+namespace Anasazi {
+
+/*!	\class Anasazi::DenseMatrix
 
 	\brief Anasazi's templated class for constructing Fortran-style dense matrices that
 	are used by the eigensolver.
@@ -12,44 +14,44 @@
 */
 
 template <class TYPE>
-class AnasaziDenseMatrix  {
+class DenseMatrix  {
 public:
 	//@{ \name Constructors/Destructor.
 
-	//! %AnasaziDenseMatrix default constructor, creates nondimensional matrix.
-	AnasaziDenseMatrix();
+	//! %Anasazi::DenseMatrix default constructor, creates nondimensional matrix.
+	DenseMatrix();
 
-	/*! \brief %AnasaziDenseMatrix constructor, creates a dense matrix of 
+	/*! \brief %Anasazi::DenseMatrix constructor, creates a dense matrix of 
 		dimension \c rows by \c cols.  The elements of this matrix are initialized
 		to zero.
 	*/
-	AnasaziDenseMatrix(int rows, int cols);
+	DenseMatrix(int rows, int cols);
 
-	/*! \brief %AnasaziDenseMatrix constructor, creates a dense matrix of 
+	/*! \brief %Anasazi::DenseMatrix constructor, creates a dense matrix of 
 		dimension \c rows by \c cols with \c ld leading dimension.  The leading
 		dimension \c ld is expected to be larger than, or equal to, \c rows.  The
 		elements of this matrix are initialized to zero.
 	*/
-	AnasaziDenseMatrix(int rows, int ld, int cols);
+	DenseMatrix(int rows, int ld, int cols);
 
-	/*! \brief Creates a new %AnasaziDenseMatrix that is an exact replica of \c A.
+	/*! \brief Creates a new %Anasazi::DenseMatrix that is an exact replica of \c A.
 	*/
-	AnasaziDenseMatrix(const AnasaziDenseMatrix<TYPE> & A);
+	DenseMatrix(const DenseMatrix<TYPE> & A);
 
-	/*! \brief Creates a new %AnasaziDenseMatrix of dimension \c rows by \c cols and
+	/*! \brief Creates a new %Anasazi::DenseMatrix of dimension \c rows by \c cols and
 		copies the leading \c rows by \c cols subblock of \c A into it.
 	*/
-	AnasaziDenseMatrix(const AnasaziDenseMatrix<TYPE> & A, int rows, int cols);
+	DenseMatrix(const DenseMatrix<TYPE> & A, int rows, int cols);
 
-	/*! \brief Creates a new %AnasaziDenseMatrix of dimension \c rows by \c cols and
+	/*! \brief Creates a new %Anasazi::DenseMatrix of dimension \c rows by \c cols and
 		copies a selected submatrix from \c A into it.  The first entry of this 
 		submatrix is determined by \c start_rows and \c start_cols.
 	*/
-	AnasaziDenseMatrix(const AnasaziDenseMatrix<TYPE> & A, int start_rows, 
+	DenseMatrix(const DenseMatrix<TYPE> & A, int start_rows, 
 		int start_cols, int rows, int cols);
 
-	//! %AnasaziDenseMatrix destructor.
-	~AnasaziDenseMatrix();
+	//! %Anasazi::DenseMatrix destructor.
+	~DenseMatrix();
 	//@}
 
 	//@{ \name Dimension update methods.		
@@ -109,16 +111,16 @@ private:
 };
 
 template<class TYPE> 
-AnasaziDenseMatrix<TYPE>::AnasaziDenseMatrix(): _rows(0), _ld(0), _cols(0), 
+DenseMatrix<TYPE>::DenseMatrix(): _rows(0), _ld(0), _cols(0), 
 						_created(false), _array(0), _endp1(0) { 
-//	cout << "ctor1:AnasaziDenseMatrix " << this << endl;
+//	cout << "ctor1:Anasazi::DenseMatrix " << this << endl;
 }
 
 template<class TYPE> 
-AnasaziDenseMatrix<TYPE>::AnasaziDenseMatrix(int rows, int cols): 
+DenseMatrix<TYPE>::DenseMatrix(int rows, int cols): 
 							_rows(rows), _ld(rows), _cols(cols), 
 						_created(true), _array(0), _endp1(0) { 
-//	cout << "ctor2:AnasaziDenseMatrix " << this << endl;
+//	cout << "ctor2:Anasazi::DenseMatrix " << this << endl;
 	if (_ld*_cols > 0) {
 		_array = new TYPE[_ld*_cols];
 		_endp1 = _array + _ld*_cols;
@@ -129,10 +131,10 @@ AnasaziDenseMatrix<TYPE>::AnasaziDenseMatrix(int rows, int cols):
 }
 
 template<class TYPE> 
-AnasaziDenseMatrix<TYPE>::AnasaziDenseMatrix(int rows, int ld, int cols): 
+DenseMatrix<TYPE>::DenseMatrix(int rows, int ld, int cols): 
 							_rows(rows), _ld(ld), _cols(cols), 
 						_created(true), _array(0), _endp1(0) { 
-//	cout << "ctor3:AnasaziDenseMatrix " << this << endl;
+//	cout << "ctor3:Anasazi::DenseMatrix " << this << endl;
 	if (_ld*_cols > 0 ) {
 		_array = new TYPE[_ld*_cols];
 		_endp1 = _array + _ld*_cols;
@@ -147,10 +149,10 @@ AnasaziDenseMatrix<TYPE>::AnasaziDenseMatrix(int rows, int ld, int cols):
 // Copy constructor
 //
 template<class TYPE>
-AnasaziDenseMatrix<TYPE>::AnasaziDenseMatrix(const AnasaziDenseMatrix& A):
+DenseMatrix<TYPE>::DenseMatrix(const DenseMatrix& A):
 							_rows(A.getrows()), _ld(A.getrows()), _cols(A.getcols()),
 							_created(true), _array(0), _endp1(0) {
-//	cout << "copy_ctor:AnasaziDenseMatrix " << this << endl;
+//	cout << "copy_ctor:Anasazi::DenseMatrix " << this << endl;
 	if (_ld*_cols > 0 ) {
 		_array = new TYPE[_ld*_cols]; assert(_array!=NULL);
 		_endp1 = _array + _ld*_cols;
@@ -170,10 +172,10 @@ AnasaziDenseMatrix<TYPE>::AnasaziDenseMatrix(const AnasaziDenseMatrix& A):
 
 // create a view
 template<class TYPE>
-AnasaziDenseMatrix<TYPE>::AnasaziDenseMatrix(const AnasaziDenseMatrix& A, int rows, int cols):
+DenseMatrix<TYPE>::DenseMatrix(const DenseMatrix& A, int rows, int cols):
 							_rows(rows), _ld(A.getld()), _cols(cols),
 							_created(false), _array(0), _endp1(0) {
-//	cout << "view_ctor1:AnasaziDenseMatrix " << this << endl;
+//	cout << "view_ctor1:Anasazi::DenseMatrix " << this << endl;
 	if (_rows*_cols > 0 && 
 		_rows <= A.getrows() && 
 		_cols <= A.getcols()) {
@@ -189,11 +191,11 @@ AnasaziDenseMatrix<TYPE>::AnasaziDenseMatrix(const AnasaziDenseMatrix& A, int ro
 
 // create a partial view
 template<class TYPE>
-AnasaziDenseMatrix<TYPE>::AnasaziDenseMatrix(const AnasaziDenseMatrix& A, int start_row, 
+DenseMatrix<TYPE>::DenseMatrix(const DenseMatrix& A, int start_row, 
 											 int start_col, int rows, int cols):
 							_rows(rows), _ld(A.getld()), _cols(cols),
 							_created(false), _array(0), _endp1(0) {
-//	cout << "view_ctor1:AnasaziDenseMatrix " << this << endl;
+//	cout << "view_ctor1:Anasazi::DenseMatrix " << this << endl;
 	// start_col and start_row are zero based, i.e., rows and columns are indexed
 	// from 0.
 	if (_rows*_cols > 0 && 
@@ -212,15 +214,15 @@ AnasaziDenseMatrix<TYPE>::AnasaziDenseMatrix(const AnasaziDenseMatrix& A, int st
 }
 
 template<class TYPE>
-AnasaziDenseMatrix<TYPE>::~AnasaziDenseMatrix() {
+DenseMatrix<TYPE>::~DenseMatrix() {
 	if (_created) { 
 		delete [] _array;
 	}
-//	cout << "dtor:AnasaziDenseMatrix " << this << endl;
+//	cout << "dtor:Anasazi::DenseMatrix " << this << endl;
 }
 
 template<class TYPE>
-void AnasaziDenseMatrix<TYPE>::setrows(const int rows) {
+void DenseMatrix<TYPE>::setrows(const int rows) {
 	if (rows >= 0) {
 		_rows = rows;
 	}
@@ -231,7 +233,7 @@ void AnasaziDenseMatrix<TYPE>::setrows(const int rows) {
 }
 
 template<class TYPE>
-void AnasaziDenseMatrix<TYPE>::setcols(const int cols) {
+void DenseMatrix<TYPE>::setcols(const int cols) {
 	if (cols >= 0) {
 		_cols = cols;
 	}
@@ -242,22 +244,22 @@ void AnasaziDenseMatrix<TYPE>::setcols(const int cols) {
 }
 
 template<class TYPE>
-int AnasaziDenseMatrix<TYPE>::getrows() const {
+int DenseMatrix<TYPE>::getrows() const {
 	return _rows;
 }
 
 template<class TYPE>
-int AnasaziDenseMatrix<TYPE>::getld() const {
+int DenseMatrix<TYPE>::getld() const {
 	return _ld;
 }
 
 template<class TYPE>
-int AnasaziDenseMatrix<TYPE>::getcols() const {
+int DenseMatrix<TYPE>::getcols() const {
 	return _cols;
 }
 
 template<class TYPE>
-TYPE AnasaziDenseMatrix<TYPE>::getfronorm() const {
+TYPE DenseMatrix<TYPE>::getfronorm() const {
 	int i,j;
 	TYPE norm=0.0;
 	for (j=0; j<_cols; j++) {
@@ -270,12 +272,12 @@ TYPE AnasaziDenseMatrix<TYPE>::getfronorm() const {
 }
 
 template<class TYPE>
-TYPE* AnasaziDenseMatrix<TYPE>::getarray() const {
+TYPE* DenseMatrix<TYPE>::getarray() const {
 	return _array;
 }
 
 template<class TYPE>
-void AnasaziDenseMatrix<TYPE>::setvalues(TYPE* array, const int ld) {
+void DenseMatrix<TYPE>::setvalues(TYPE* array, const int ld) {
 	int i,j;
 	for (j=0; j<_cols; j++ ) {
 		for (i=0; i<_rows; i++ ) {
@@ -285,7 +287,7 @@ void AnasaziDenseMatrix<TYPE>::setvalues(TYPE* array, const int ld) {
 }
 
 template<class TYPE>
-void AnasaziDenseMatrix<TYPE>::init( const TYPE value ) {
+void DenseMatrix<TYPE>::init( const TYPE value ) {
 	int i,j;
 	for (j=0; j<_cols; j++ ) {
 		for (i=0; i<_rows; i++ ) {
@@ -295,7 +297,7 @@ void AnasaziDenseMatrix<TYPE>::init( const TYPE value ) {
 }
 
 template<class TYPE>
-void AnasaziDenseMatrix<TYPE>::print() {
+void DenseMatrix<TYPE>::print() {
 	int i,j;
 //	cout.setf(ios::scientific); //use scientific format
 //	cout.precision(4);
@@ -306,6 +308,8 @@ void AnasaziDenseMatrix<TYPE>::print() {
 		cout << endl;
 	}
 }
+
+} //end namespace Anasazi
 #endif
 // End of file AnsaziDenseMatrix.hpp
 
