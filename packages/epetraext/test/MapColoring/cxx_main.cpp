@@ -172,19 +172,39 @@ int main(int argc, char *argv[]) {
   assert(A.TransformToLocal() == 0);
 
   EpetraExt::CrsGraph_MapColoring
-    GreedyMapColoringTransform( EpetraExt::CrsGraph_MapColoring::ALGO_GREEDY,
-		          verbose);
-  Epetra_MapColoring & GreedyColorMap = GreedyMapColoringTransform( A );
+    Greedy0MapColoringTransform( EpetraExt::CrsGraph_MapColoring::ALGO_GREEDY,
+		                verbose, 0 );
+  Epetra_MapColoring & Greedy0ColorMap = Greedy0MapColoringTransform( A );
 
   EpetraExt::CrsGraph_MapColoring
-    LubiMapColoringTransform( EpetraExt::CrsGraph_MapColoring::ALGO_LUBI,
-		          verbose);
-  Epetra_MapColoring & LubiColorMap = LubiMapColoringTransform( A );
+    Greedy1MapColoringTransform( EpetraExt::CrsGraph_MapColoring::ALGO_GREEDY,
+		                verbose, 1 );
+  Epetra_MapColoring & Greedy1ColorMap = Greedy1MapColoringTransform( A );
 
-  int NumColors = GreedyColorMap.NumColors();
-  int * ListOfColors = GreedyColorMap.ListOfColors();
+  EpetraExt::CrsGraph_MapColoring
+    Greedy2MapColoringTransform( EpetraExt::CrsGraph_MapColoring::ALGO_GREEDY,
+		                verbose, 2 );
+  Epetra_MapColoring & Greedy2ColorMap = Greedy2MapColoringTransform( A );
 
-  EpetraExt::CrsGraph_MapColoringIndex MapColoringIndexTransform( GreedyColorMap );
+  EpetraExt::CrsGraph_MapColoring
+    Lubi0MapColoringTransform( EpetraExt::CrsGraph_MapColoring::ALGO_LUBI,
+		               verbose, 0);
+  Epetra_MapColoring & Lubi0ColorMap = Lubi0MapColoringTransform( A );
+
+  EpetraExt::CrsGraph_MapColoring
+    Lubi1MapColoringTransform( EpetraExt::CrsGraph_MapColoring::ALGO_LUBI,
+		               verbose, 1);
+  Epetra_MapColoring & Lubi1ColorMap = Lubi1MapColoringTransform( A );
+
+  EpetraExt::CrsGraph_MapColoring
+    Lubi2MapColoringTransform( EpetraExt::CrsGraph_MapColoring::ALGO_LUBI,
+		               verbose, 2);
+  Epetra_MapColoring & Lubi2ColorMap = Lubi2MapColoringTransform( A );
+
+  int NumColors = Greedy0ColorMap.NumColors();
+  int * ListOfColors = Greedy0ColorMap.ListOfColors();
+
+  EpetraExt::CrsGraph_MapColoringIndex MapColoringIndexTransform( Greedy0ColorMap );
   vector<Epetra_IntVector> & ColIndices = MapColoringIndexTransform( A );
 
   if( verbose )

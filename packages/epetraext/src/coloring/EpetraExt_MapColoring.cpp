@@ -128,28 +128,18 @@ operator()( OriginalTypeRef orig  )
     assert( Adj1.ExtractMyRowView( i, NumAdj1Indices, Adj1Indices ) == 0 );
 
     set<int> Cols;
-
     for( int j = 0; j < NumAdj1Indices; ++j )
     {
       assert( base->ExtractMyRowView( Adj1Indices[j], NumIndices, Indices ) == 0 );
-#if 1
       for( int k = 0; k < NumIndices; ++k )
         if( Indices[k] < nCols ) Cols.insert( Indices[k] );
-#else //old way was very slow
-      int NumLocalIndices = 0;
-      for( int k = 0; k < NumIndices; ++k )
-        if( Indices[k] < nCols ) NumLocalIndices++; 
-      assert( Adj2.InsertMyIndices( i, NumLocalIndices, Indices ) >= 0 );
-#endif
     }
-#if 1
     int nCols2 = Cols.size();
     vector<int> ColVec( nCols2 );
     set<int>::iterator iterIS = Cols.begin();
     set<int>::iterator iendIS = Cols.end();
     for( int j = 0 ; iterIS != iendIS; ++iterIS, ++j ) ColVec[j] = *iterIS;
     assert( Adj2.InsertMyIndices( i, nCols2, &ColVec[0] ) >= 0 );
-#endif
   }
   assert( Adj2.TransformToLocal() == 0 );
   if( verbose_ ) cout << "Adjacency 2 Graph!\n" << Adj2;
@@ -161,44 +151,60 @@ operator()( OriginalTypeRef orig  )
 
   Epetra_MapColoring * ColorMap = new Epetra_MapColoring( ColMap );
 
-  if( algo_ == ALGO_GREEDY )
+  vector<int> rowOrder( nCols );
+  if( reordering_ == 0 || reordering_ == 1 ) 
   {
-    vector<int> rowOrder( nCols );
-    //Simple reordering
+    multimap<int,int> adjMap;
+    typedef multimap<int,int>::value_type adjMapValueType;
+    for( int i = 0; i < nCols; ++i )
+      adjMap.insert( adjMapValueType( Adj2.NumMyIndices(i), i ) );
+    multimap<int,int>::iterator iter = adjMap.begin();
+    multimap<int,int>::iterator end = adjMap.end();
+    if( reordering_ == 0 ) //largest first (less colors)
     {
-      multimap<int,int> adjMap;
-      typedef multimap<int,int>::value_type adjMapValueType;
-      for( int i = 0; i < nCols; ++i )
-        adjMap.insert( adjMapValueType( Adj2.NumMyIndices(i), i ) );
-#ifdef MUST_CONST_STL_MAP_KEY
-//        adjMap.insert( pair<const int,int>( Adj2.NumMyIndices(i), i ) );
-#else
-//        adjMap.insert( pair<int,int>( Adj2.NumMyIndices(i), i ) );
-#endif
-      multimap<int,int>::iterator iter = adjMap.begin();
-      multimap<int,int>::iterator end = adjMap.end();
       for( int i = 1; iter != end; ++iter, ++i )
         rowOrder[ nCols - i ] = (*iter).second;
     }
+    else                  //smallest first (better balance)
+    {
+      for( int i = 0; iter != end; ++iter, ++i )
+        rowOrder[ i ] = (*iter).second;
+    }
+  }
+  else if( reordering_ == 2 ) //random
+  {
+    for( int i = 0; i < nCols; ++i )
+      rowOrder[ i ] = i;
+    random_shuffle( rowOrder.begin(), rowOrder.end() );
+  }
 
 #ifdef EPETRAEXT_TIMING
-    wTime1 = timer.WallTime();
-    cout << "EpetraExt::MapColoring [REORDERING] Time: " << wTime1-wTime2 << endl;
+  wTime1 = timer.WallTime();
+  cout << "EpetraExt::MapColoring [REORDERING] Time: " << wTime1-wTime2 << endl;
 #endif
 
+  if( algo_ == ALGO_GREEDY )
+  {
     //Application of Greedy Algorithm to generate Color Map
-    int Size = Delta * Delta + 1;
-    set<int> allowedColors;
     for( int col = 0; col < nCols; ++col )
     {
-      for( int i = 0; i < Size; ++i ) allowedColors.insert( i+1 ); 
-
       Adj2.ExtractMyRowView( rowOrder[col], NumIndices, Indices );
 
+      set<int> usedColors;
+      int color;
       for( int i = 0; i < NumIndices; ++i )
-        if( (*ColorMap)[ Indices[i] ] > 0 ) allowedColors.erase( (*ColorMap)[ Indices[i] ] );
-
-      (*ColorMap)[ rowOrder[col] ] = *(allowedColors.begin());
+      {
+        color = (*ColorMap)[ Indices[i] ];
+        if( color > 0 ) usedColors.insert( color );
+        color = 0;
+        int testcolor = 1;
+        while( !color )
+        {
+          if( !usedColors.count( testcolor ) ) color = testcolor;
+          ++testcolor;
+        }
+      }
+      (*ColorMap)[ rowOrder[col] ] = color;
     }
 
 #ifdef EPETRAEXT_TIMING
@@ -228,7 +234,9 @@ operator()( OriginalTypeRef orig  )
         NumRemaining = 0;
 
         //zero out everyone less than neighbor
-        for( int col = 0; col < nCols; ++col )
+        for( int i = 0; i < nCols; ++i )
+        {
+          int col = rowOrder[i];
           if( State[col] < 0 )
           {
 #ifdef EPETRAEXT_TEST_LUBI
@@ -236,13 +244,14 @@ operator()( OriginalTypeRef orig  )
 #endif
             Adj2.ExtractMyRowView( col, NumIndices, Indices );
             int MyKey = Keys[col];
-            for( int i = 0; i < NumIndices; ++i )
-              if( col != Indices[i] && State[ Indices[i] ] < 0 )
+            for( int j = 0; j < NumIndices; ++j )
+              if( col != Indices[j] && State[ Indices[j] ] < 0 )
               {
-                if( MyKey > Keys[ Indices[i] ] ) State[ Indices[i] ] = 0;
+                if( MyKey > Keys[ Indices[j] ] ) State[ Indices[j] ] = 0;
                 else                             State[ col ] = 0;
               }
           }
+        }
 
         //assign -1's to current color
         for( int col = 0; col < nCols; ++col )
