@@ -180,18 +180,18 @@ StatusType NormWRMS::checkStatus(const Solver::Generic& problem)
   // Make sure the output parameter list exists
   // If so, get the tolerance from it
   if (p.isParameterSublist("Direction")) {
-    if (p.sublist("Direction").isParameterSublist("Linear Solver")) {
-      if (p.sublist("Direction").sublist("Linear Solver")
-	  .isParameterSublist("Output")) {
+    if (p.sublist("Direction").isParameterSublist("Newton")) {
+      if (p.sublist("Direction").sublist("Newton").isParameterSublist("Linear Solver")) {
+	if (p.sublist("Direction").sublist("Newton").sublist("Linear Solver").isParameterSublist("Output")) {
 	
-	outputListExists = true;
-	printCriteria3Info = true;
+	  outputListExists = true;
+	  printCriteria3Info = true;
 	
-	achievedTol = problem.getParameterList().sublist("Direction").sublist("Linear Solver").sublist("Output").getParameter("Scaled Residual", -1.0);
+	  achievedTol = problem.getParameterList().sublist("Direction").sublist("Newton").sublist("Linear Solver").sublist("Output").getParameter("Scaled Residual", -1.0);
 	
-	if (achievedTol <= beta)
+	  if (achievedTol <= beta)
 	    status3 = Converged;
-	
+	}
       }
     }
   }
