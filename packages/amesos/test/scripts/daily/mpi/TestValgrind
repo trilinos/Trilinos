@@ -70,7 +70,11 @@ echo "xyzxyz"
 echo  $file 
 echo "Date: " `eval date` >>& $file
 echo `uname -a` >>& $file
-foreach f ( TestOptions Test_SuperLU_DIST ) 
+#
+#  I thought that I had Test_Epetra_CrsMatrix working, but now it has a memory error in it.
+#
+#foreach f ( TestOptions Test_SuperLU_DIST Test_Epetra_RowMatrix Test_Epetra_CrsMatrix ) 
+foreach f ( TestOptions Test_SuperLU_DIST Test_Epetra_RowMatrix ) 
    cd $f
 ## Different directory structures will require different setups.
 ## This file assumes a structure like that of epetra - exe's live in 
@@ -99,7 +103,7 @@ foreach f ( TestOptions Test_SuperLU_DIST )
       if( -f TestFailed ) then
       # A test failed.
    	set AnError = True
-	echo "  ***xyzzyx***** Test failed ********" >>& ../$file
+	echo "  ******** Test failed ********" >>& ../$file
 #
 #        This does not seem useful.  Just noisy.  So it is comment3ed out.  
 #        $mpigo 4 valgrind --logfile=valg.out --leak-check=yes --suppressions=../Test_Basic/Suppressions ./TestOptions.exe  -v >> ../$file2

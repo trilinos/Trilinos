@@ -35,7 +35,7 @@ EXTRA_DIST = 662_bus.rsa
 
 #copy these files over to the build area
 GetNecessaryFiles: $(EXTRA_DIST)
-	        cp -f $(srcdir)/662_bus.rsa .
+	        cp -f $(srcdir)/662_bus.rsa 662_bus_out.rsa
 
 if HAVE_AMESOS_TRIUTILS
 TRIUTILS_INCDIR = -I$(top_srcdir)/../triutils/src -I$(top_builddir)/../triutils/src
@@ -127,3 +127,6 @@ compare_solvers_LDADD = $(top_builddir)/src/libamesos.a \
 	$(top_builddir)/../teuchos/src/libteuchos.a \
 	$(LAPACK_LIBS) \
 	$(BLAS_LIBS) $(FLIBS)  $(FLIBS)
+
+clean:
+	rm -f  662_bus_out.rsa
