@@ -734,8 +734,7 @@ static void initialize_region(ZZ *zz, pRegion *ret, ZOLTAN_ID_PTR global_id,
                               int num_dim, double *geom_vec) 
 {
   pRegion reg;
-  int i, ierr = 0;
-  char *yo = "initialize_region";
+  int i;
   reg = (pRegion) ZOLTAN_MALLOC(sizeof(Region));
   *ret = reg;
   reg->Global_ID = ZOLTAN_MALLOC_GID(zz);
