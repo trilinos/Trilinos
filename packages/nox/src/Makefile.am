@@ -118,8 +118,9 @@ UTILS = \
 NOX_LIB = libnox.a
 
 NOX_H = \
-	NOX.H \
-	NOX_Common.H \
+	$(srcdir)/NOX.H \
+	$(srcdir)/NOX_Description.H \
+	$(srcdir)/NOX_Common.H \
 	$(ABSTRACT_H) \
 	$(LINESEARCH_H) \
 	$(DIRECTION_H) \
