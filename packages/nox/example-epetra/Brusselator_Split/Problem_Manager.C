@@ -59,10 +59,10 @@ Problem_Manager::~Problem_Manager()
 
   while( iter != last)
   {
-    delete *MatrixOperatorsIter++;
     delete *SolversIter++;
     delete *GroupsIter++;
 #ifdef HAVE_NOX_EPETRAEXT
+    delete *MatrixOperatorsIter++;
     delete *TmpMapColoringsIter++;
     delete *ColorMapsIter++;
     delete *ColorMapIndexSetsIter++;
@@ -137,11 +137,6 @@ void Problem_Manager::registerComplete()
     if (MyPID == 0)
       printf("\n\tTime to color Jacobian # %d --> %e sec. \n\n",
                   icount++,fillTime.ElapsedTime());
-#else
-    if(MyPID==0)
-      cout << "ERROR: Cannot use EpetraExt with this build !!" << endl;
-    exit(0);
-#endif
     MatrixOperators.push_back(new
       NOX::Epetra::FiniteDifferenceColoring(*Interfaces.back(), 
         (*iter)->getSolution(), (*iter)->getGraph(), *ColorMaps.back(), 
@@ -150,6 +145,12 @@ void Problem_Manager::registerComplete()
     Groups.push_back(new NOX::Epetra::Group(nlParams->sublist("Printing"),
       nlParams->sublist("Direction").sublist("Newton").sublist("Linear Solver"),
       *Interfaces.back(), (*iter)->getSolution(), *MatrixOperators.back()));
+#else
+    if(MyPID==0)
+      cout << "ERROR: Cannot use EpetraExt with this build !!" << endl;
+    exit(0);
+#endif
+
     Groups.back()->computeF(); // Needed to establish convergence state
    
     Solvers.push_back(new NOX::Solver::Manager(*Groups.back(), *statusTest,
