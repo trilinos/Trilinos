@@ -969,15 +969,15 @@ int LB_fw_Balance22(int *addr_lb, int *nbytes, int *changes, int *num_import,
                     );
 }
 
-void LB_fw_Eval(int *addr_lb, int *nbytes, int *print_stats,
-                int *nobj, float *obj_wgt, int *cut_wgt,
-                int *nboundary, int *nadj, int *ierr,
-                int *is_nobj, int *is_obj_wgt, int *is_cut_wgt,
+int LB_fw_Eval(int *addr_lb, int *nbytes, int *print_stats,
+                int *nobj, float *obj_wgt, int ncuts, float *cut_wgt,
+                int *nboundary, int *nadj,
+                int *is_nobj, int *is_obj_wgt, int *is_ncuts, int *is_cut_wgt,
                 int *is_nboundary, int *is_nadj)
 {
    struct LB_Struct *lb;
-   int *loc_nobj, *loc_cut_wgt, *loc_nboundary, *loc_nadj;
-   float *loc_obj_wgt;
+   int *loc_nobj, *loc_ncuts, *loc_nboundary, *loc_nadj;
+   float *loc_obj_wgt, *loc_cut_wgt;
    unsigned char *p;
    int i;
    p = (unsigned char *) &lb;
@@ -989,8 +989,8 @@ void LB_fw_Eval(int *addr_lb, int *nbytes, int *print_stats,
    if (*is_nboundary) {loc_nboundary = nboundary;} else {loc_nboundary = NULL;}
    if (*is_nadj) {loc_nadj = nadj;} else {loc_nadj = NULL;}
 
-   LB_Eval(lb, *print_stats, loc_nobj, loc_obj_wgt, loc_cut_wgt,
-           loc_nboundary, loc_nadj, ierr);
+   return  LB_Eval(lb, *print_stats, loc_nobj, loc_obj_wgt, loc_ncuts, loc_cut_wgt,
+           loc_nboundary, loc_nadj);
 }
 
 int LB_fw_Point_Assign(int *addr_lb, int *nbytes, double *coords, int *proc)

@@ -731,19 +731,20 @@ end interface
 
 interface
 !NAS$ ALIEN "F77 lb_fw_eval"
-subroutine LB_fw_Eval(lb,nbytes,print_stats,nobj,obj_wgt, &
-                      cut_wgt,nboundary,nadj,ierr,is_nobj, &
-                      is_obj_wgt,is_cut_wgt,is_nboundary,is_nadj)
+function LB_fw_Eval(lb,nbytes,print_stats,nobj,obj_wgt, &
+                      ncuts,cut_wgt,nboundary,nadj,is_nobj, &
+                      is_obj_wgt,is_ncuts,is_cut_wgt,is_nboundary,is_nadj)
 use zoltan_types
 use lb_user_const
 implicit none
+integer(LB_INT) :: LB_fw_Eval
 integer(LB_INT), dimension(*) INTENT_IN lb
 integer(LB_INT) INTENT_IN nbytes, print_stats
-integer(LB_INT), intent(out) :: nobj, cut_wgt, nboundary, nadj, ierr
-real(LB_FLOAT), intent(out) :: obj_wgt(*)
-integer(LB_INT), intent(in) :: is_nobj, is_cut_wgt, is_nboundary, is_nadj, &
-                               is_obj_wgt
-end subroutine LB_fw_Eval
+integer(LB_INT), intent(out) :: nobj, ncuts, nboundary, nadj
+real(LB_FLOAT), intent(out) :: obj_wgt(*), cut_wgt(*)
+integer(LB_INT), intent(in) :: is_nobj, is_ncuts, is_cut_wgt, is_nboundary, &
+                               is_nadj, is_obj_wgt
+end function LB_fw_Eval
 end interface
 
 interface
@@ -1655,18 +1656,18 @@ f90LB_Balance22 = LB_fw_Balance22(lb_addr,nbytes,int_changes, &
 changes = .not.(int_changes==0)
 end function f90LB_Balance22
 
-subroutine f90LB_Eval(lb,print_stats,nobj,obj_wgt, &
-                      cut_wgt,nboundary,nadj,ierr)
+function f90LB_Eval(lb,print_stats,nobj,obj_wgt, &
+                      cut_wgt,nboundary,nadj)
+integer(LB_INT), intent(out) :: f90LB_Eval
 type(LB_Struct) INTENT_IN lb
 logical INTENT_IN print_stats
 integer(LB_INT), intent(out), optional :: nobj, cut_wgt, nboundary, nadj
-integer(LB_INT), intent(out) :: ierr
 real(LB_FLOAT), intent(out), optional :: obj_wgt(*)
 integer(LB_INT), dimension(LB_PTR_LENGTH) :: lb_addr
-integer(LB_INT) :: nbytes, i, int_print_stats, dim
-integer(LB_INT) :: loc_nobj, loc_cut_wgt, loc_nboundary, loc_nadj
-real(LB_FLOAT), allocatable :: loc_obj_wgt(:)
-integer(LB_INT) :: is_nobj, is_cut_wgt, is_nboundary, is_nadj, is_obj_wgt
+integer(LB_INT) :: nbytes, i, int_print_stats, dim, edim
+integer(LB_INT) :: loc_nobj, loc_ncuts, loc_nboundary, loc_nadj
+real(LB_FLOAT), allocatable :: loc_obj_wgt(:), loc_cut_wgt(:)
+integer(LB_INT) :: is_nobj, is_ncuts, is_cut_wgt, is_nboundary, is_nadj, is_obj_wgt
 nbytes = LB_PTR_LENGTH
 do i=1,nbytes
    lb_addr(i) = ichar(lb%addr%addr(i:i))
@@ -1681,10 +1682,10 @@ if (present(nobj)) then
 else
    is_nobj = 0
 endif
-if (present(cut_wgt)) then
-   is_cut_wgt = 1
+if (present(ncuts)) then
+   is_ncuts = 1
 else
-   is_cut_wgt = 0
+   is_ncuts = 0
 endif
 if (present(nboundary)) then
    is_nboundary = 1
@@ -1704,20 +1705,33 @@ else
    is_obj_wgt = 0
    allocate(loc_obj_wgt(1))
 endif
+if (present(cut_wgt)) then
+   is_cut_wgt = 1
+   edim = LB_fw_Get_Comm_Dim(lb_addr,nbytes)
+   allocate(loc_cut_wgt(edim))
+else
+   is_cut_wgt = 0
+   allocate(loc_cut_wgt(1))
+endif
 call LB_fw_Eval(lb_addr,nbytes,int_print_stats,loc_nobj,loc_obj_wgt, &
-                loc_cut_wgt,loc_nboundary,loc_nadj,ierr,is_nobj,is_obj_wgt, &
-                is_cut_wgt,is_nboundary,is_nadj)
+                loc_ncuts,loc_cut_wgt,loc_nboundary,loc_nadj,is_nobj, &
+                is_obj_wgt,is_ncuts,is_cut_wgt,is_nboundary,is_nadj)
 if (present(nobj)) nobj = loc_nobj
 if (present(obj_wgt)) then
    do i = 1,dim
       obj_wgt(i) = loc_obj_wgt(i)
    end do
 endif
-if (present(cut_wgt)) cut_wgt = loc_cut_wgt
+if (present(cut_wgt)) then
+   do i = 1,edim
+      cut_wgt(i) = loc_cut_wgt(i)
+   end do
+endif
+if (present(ncuts)) ncuts = loc_ncuts
 if (present(nboundary)) nboundary = loc_nboundary
 if (present(nadj)) nadj = loc_nadj
 deallocate(loc_obj_wgt)
-end subroutine f90LB_Eval
+end function f90LB_Eval
 
 function f90LB_Free_Data11(import_global_ids, import_local_ids,import_procs, &
                          export_global_ids,export_local_ids,export_procs)
