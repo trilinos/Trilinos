@@ -40,8 +40,11 @@ FARG      		=
 MPI_LIB			= 
 MPI_LIBPATH		= 
 
-#PARMETIS_LIBPATH 	= -L../../ParMETIS
-#PARMETIS_INCPATH 	= -I../../ParMETIS
+PARMETIS_LIBPATH 	= -L../../ParMETIS
+PARMETIS_INCPATH 	= -I../../ParMETIS
+
+PATOH_LIBPATH 		= -L../../PaToH/lib
+PATOH_INCPATH 		= -I../../PaToH/src/api
 
 #JOSTLE_LIBPATH 	= -L/Net/proj/zoltan/arch/alpha/lib
 #JOSTLE_INCPATH 	= -I/Net/proj/zoltan/arch/all/src
