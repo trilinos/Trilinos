@@ -57,7 +57,7 @@ namespace LineSearch {
 
   The line search iterates over the computation of \f$ \lambda \f$ until:
   
-  - One of the following "Convergence Criteria" is met: <br>
+  - The "Convergence Criteria" is met (the user has two choices): <br>
   1. "Armijo-Goldstein" conditions: \f$ f(x_{n-1}+ \lambda s) \le f(x_{n-1}) +\alpha \lambda f'(x_{n-1}) \f$ <br>
   2. "Ared/Pred" conditions: \f$ f(x_{n-1}+ \lambda s) \le  f(x_{n-1})(1-\alpha(1-\eta)) \f$ where \f$ \eta \f$ is the linear solve tolerance in the inexact Newton method. <br><br>
 
@@ -76,11 +76,13 @@ namespace LineSearch {
 
   - "Max Iters" - maximum number of iterations (i.e., RHS computations)
 
-  - "Convergence Criteria" - choice of algorithm used to determine if the line search algorithm has converged (defaults to "Ared/Pred")
+  - "Convergence Criteria" - choice of algorithm used to determine if the line search algorithm has converged (defaults to "Armijo-Goldstein")
 
-  - "Alpha Factor" - Scaling factor for the Armijo-Goldstein condition (defaults to 1.0e-4)
+  - "Alpha Factor" - Scaling factor (defaults to 1.0e-4)
 
-  - "Bounds Factor" - Factor that limits the minimum size of the new step based on the previous step (defaults to 0.1)
+  - "Min Bounds Factor" - Factor that limits the minimum size of the new step based on the previous step (defaults to 0.1)
+
+  - "Max Bounds Factor" - Factor that limits the maximum size of the new step based on the previous step (defaults to 0.9)
 
 A sublist for output parameters will be created called "Output" in the parameter list used to instantiate or reset the class.  Valid output parameters are:
 
@@ -88,6 +90,7 @@ A sublist for output parameters will be created called "Output" in the parameter
 
   - "Total Number of Failed Line Searches"
 
+  - "Total Number Steps Requiring Line Search" - The total number of Newton steps that could not take a full step and required the line search algorithm to reduce the F-Norm appropriately.
 */
 
 class Quadratic : public Generic {
@@ -136,10 +139,16 @@ private:
   double alpha;
 
   //! Factor that limits the minimum size of the new step based on the previous step.
-  double boundFactor;
+  double minBoundFactor;
+
+  //! Factor that limits the maximum size of the new step based on the previous step.
+  double maxBoundFactor;
 
   //! Pointer to the input parameter list.  We need this to create an "Output" sublist to store output parameters.  
   NOX::Parameter::List* inputList;
+
+  //! Counter for number of times line searching was needed (i.e. number of Newton steps where we could not take a full step length of 1.0)
+  int totalNumLSSteps;
 
   //! Counter for the total number of line search iterations performed
   int totalNumIterations;

@@ -70,8 +70,8 @@ bool Quadratic::reset(Parameter::List& params)
     }
   }
   else {
-    // default to "Ared/Pred"
-    convCriteria = AredPred;
+    // default to "Armijo-Goldstein"
+    convCriteria = ArmijoGoldstein;
   } 
 
   minStep = params.getParameter("Minimum Step", 1.0e-12);
@@ -79,8 +79,10 @@ bool Quadratic::reset(Parameter::List& params)
   recoveryStep = params.getParameter("Recovery Step", defaultStep);
   maxIters = params.getParameter("Max Iters", 100);
   alpha = params.getParameter("Alpha Factor", 1.0e-4);
-  boundFactor = params.getParameter("Bounds Factor", 0.1);
+  minBoundFactor = params.getParameter("Min Bounds Factor", 0.1);
+  maxBoundFactor = params.getParameter("Max Bounds Factor", 0.9);
   inputList = &params;
+  totalNumLSSteps = 0;
   totalNumIterations = 0;
   totalNumFailedLineSearches = 0;
   return true;
@@ -128,9 +130,13 @@ bool Quadratic::compute(Abstract::Group& newgrp, double& step,
   double convergence = 0.0;
   if (convCriteria == ArmijoGoldstein) {
     convergence = oldf + alpha*step*oldfprime;
+    if (newf >= convergence)
+      totalNumLSSteps += 1;
   }
   else if (convCriteria == AredPred) {
     convergence = oldf*(1.0-alpha*(1-eta));
+    if (newf >= convergence)
+      totalNumLSSteps += 1;
   }
   
   // Iterate until convergence criteria is satisfied
@@ -149,13 +155,18 @@ bool Quadratic::compute(Abstract::Group& newgrp, double& step,
 
     
     //   Enforce bounds on minimum step size
-    if(tempStep < boundFactor) 
-      tempStep = boundFactor;
+    if(tempStep < minBoundFactor) 
+      tempStep = minBoundFactor;
 
-    // Safeguard while loop termination by adjusting eta
+    //   Enforce bounds on maximum step size
+    if(tempStep > maxBoundFactor) 
+      tempStep = maxBoundFactor;
+
+    // Safeguard while loop termination for "Ared/Pred" by adjusting eta
     // the direction also needs to use this eta in the next computation
-    // if using "Type 1" or Type 2" comutation.
+    // if using "Type 1" or Type 2" computation.
     eta = 1.0-tempStep*(1.0-eta);
+
     tempStep *= step;
     previousStep = step;
     prevf = newf; 
@@ -240,5 +251,6 @@ bool Quadratic::setOutputParameters() {
   NOX::Parameter::List& outputList = inputList->sublist("Output");
   outputList.setParameter("Total Number of Line Search Iterations", totalNumIterations);
   outputList.setParameter("Total Number of Failed Line Searches", totalNumFailedLineSearches);
+  outputList.setParameter("Total Number Steps Requiring Line Search", totalNumLSSteps);
   return true;
 }
