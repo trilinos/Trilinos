@@ -79,6 +79,7 @@ int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag,
    /*MS*/
    ML_Aggregate_Viz_Stats * aggr_viz_and_stats;
    int * graph_decomposition;
+   int NumBlockRows;
    /*ms*/
    char *true_bdry;
 #ifdef ML_NEWDROPSCHEME
@@ -121,6 +122,9 @@ int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag,
    vblock_info    = ml_ag->vblock_info;
    printflag      = ml_ag->print_flag;
 
+   /*MS*/
+   NumBlockRows = Nrows / ml_ag->num_PDE_eqns;
+   /*ms*/
    /* ============================================================= */
    /* check that this function is called properly.                  */
    /* ============================================================= */
@@ -531,22 +535,22 @@ int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag,
    
    if( ml_ag->aggr_viz_and_stats != NULL ) {
 
-     graph_decomposition = (int *)ML_allocate(sizeof(int)*(Nrows+1));
+     graph_decomposition = (int *)ML_allocate(sizeof(int)*(NumBlockRows+1));
      if( graph_decomposition == NULL ) {
        fprintf( stderr,
         "*ML*ERR* Not enough memory for %d bytes\n"
         "*ML*ERR* (file %s, line %d)\n",
-        sizeof(int)*Nrows,
+        sizeof(int)*NumBlockRows,
         __FILE__,
           __LINE__ );
        exit( EXIT_FAILURE );
      }
 
-     for( i=0 ; i<Nrows ; i++ ) graph_decomposition[i] = aggr_index[i];
+     for( i=0 ; i<NumBlockRows ; i++ ) graph_decomposition[i] = aggr_index[i];
 
      aggr_viz_and_stats = (ML_Aggregate_Viz_Stats *)(ml_ag->aggr_viz_and_stats);
      aggr_viz_and_stats[ml_ag->cur_level].graph_decomposition = graph_decomposition;
-     aggr_viz_and_stats[ml_ag->cur_level].Nlocal = Nrows;
+     aggr_viz_and_stats[ml_ag->cur_level].Nlocal = NumBlockRows;
      aggr_viz_and_stats[ml_ag->cur_level].Naggregates = aggr_count;
      aggr_viz_and_stats[ml_ag->cur_level].local_or_global = ML_LOCAL_INDICES;
      aggr_viz_and_stats[ml_ag->cur_level].is_filled = ML_YES;
