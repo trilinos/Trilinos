@@ -1871,6 +1871,9 @@ int ML_Gen_Smoother_MLS(ML *ml, int nl, int pre_or_post, int ntimes)
    ML_Operator     *Amat;
    double          *tdiag;
    char             str[80];
+   int                (*fun)(void *, int, double *, int, double *);
+   int iii, jjj, degree;
+
 #ifdef ML_TIMING
    double         t0;
 #endif
@@ -1884,6 +1887,24 @@ int ML_Gen_Smoother_MLS(ML *ml, int nl, int pre_or_post, int ntimes)
 		      start_level);
       return 1;
    }
+
+
+   fun = ML_Smoother_MLS_Apply;
+   iii = 0;
+   degree = 1;
+#ifdef newstuff
+   if (ml->comm->ML_mypid == 0) {
+     printf("Enter -1 to do MLS or k (where k > 0)\n");
+     printf("to do kth degree Cheby over high frequencies\n");
+     scanf("%d",&iii);
+   }
+   ML_gsum_vec_int(&jjj, &iii, 1, ml->comm);
+   if (iii > 0) {
+     fun = ML_Cheby;
+     degree = iii;
+   }
+#endif
+
 	
    for (i = start_level; i <= end_level; i++) {
 #ifdef ML_TIMING
@@ -1901,9 +1922,9 @@ int ML_Gen_Smoother_MLS(ML *ml, int nl, int pre_or_post, int ntimes)
 
      if (Amat->matvec->ML_id != ML_EMPTY) {
 
-         widget = (struct MLSthing *) ML_allocate(sizeof(struct MLSthing));
+	 widget = (struct MLSthing *) ML_allocate(sizeof(struct MLSthing));
 
-	 widget->mlsDeg   = 1;
+	 widget->mlsDeg   = degree;
 	 widget->mlsBoost = 1.0; 
 	 widget->mlsOver  = 1.1e0 ;
 	 /* @@@ widget->mlsOm[0] = Amat->lambda_max; */
@@ -1915,22 +1936,26 @@ int ML_Gen_Smoother_MLS(ML *ml, int nl, int pre_or_post, int ntimes)
 	   ml->pre_smoother[i].data_destroy = ML_Smoother_Destroy_MLS;
            sprintf(str,"MLS_pre%d",i);
            errCode=ML_Smoother_Set(&(ml->pre_smoother[i]), ML_INTERNAL, 
-				  (void *) widget, ML_Smoother_MLS_Apply, NULL, 
+				  (void *) widget, fun, NULL, 
 				   ntimes, 0.0, str);
 	   /* set up the values needed for MLS  */
-	   if (ML_MLS_Setup_Coef(&(ml->pre_smoother[i]), 1)) { 
-	     return pr_error("*** MLS setup failed!\n");  
+	   if (fun == ML_Smoother_MLS_Apply) {
+	     if (ML_MLS_Setup_Coef(&(ml->pre_smoother[i]), 1)) { 
+	       return pr_error("*** MLS setup failed!\n");  
+	     }
 	   }
 	 }
 	 else if (pre_or_post == ML_POSTSMOOTHER) {
 	   ml->post_smoother[i].data_destroy = ML_Smoother_Destroy_MLS;
 	   sprintf(str,"MLS_post%d",i);
 	   errCode=ML_Smoother_Set(&(ml->post_smoother[i]), ML_INTERNAL, 
-				  (void *) widget, ML_Smoother_MLS_Apply, NULL, 
+				  (void *) widget, fun, NULL, 
 				  ntimes, 0.0, str);
 	   /* set up the values needed for MLS  */
-	   if (ML_MLS_Setup_Coef(&(ml->post_smoother[i]), 1)) { 
-	     return pr_error("*** MLS setup failed!\n");  
+	   if (fun == ML_Smoother_MLS_Apply) {
+	     if (ML_MLS_Setup_Coef(&(ml->post_smoother[i]), 1)) { 
+	       return pr_error("*** MLS setup failed!\n");  
+	     }
 	   }
 	 }
 	 else if (pre_or_post == ML_BOTH) {
@@ -1939,14 +1964,19 @@ int ML_Gen_Smoother_MLS(ML *ml, int nl, int pre_or_post, int ntimes)
 	   sprintf(str,"MLS_pre%d",i);     
 
 	   ML_Smoother_Set(&(ml->pre_smoother[i]), ML_INTERNAL, 
-                        (void *) widget, ML_Smoother_MLS_Apply, NULL, ntimes, 
+                        (void *) widget, fun, NULL, ntimes, 
 			0.0, str);
 	   sprintf(str,"MLS_post%d",i);
 	   errCode = ML_Smoother_Set(&(ml->post_smoother[i]), ML_INTERNAL, 
-               (void *) widget, ML_Smoother_MLS_Apply, NULL, ntimes, 0.0, str);
+               (void *) widget, fun, NULL, ntimes, 0.0, str);
+
+
 	   /* set up the values needed for MLS  */
-	   if (ML_MLS_Setup_Coef(&(ml->post_smoother[i]), 1)) { 
-	     return pr_error("*** MLS setup failed!\n");  
+
+	   if (fun == ML_Smoother_MLS_Apply) {
+	     if (ML_MLS_Setup_Coef(&(ml->post_smoother[i]), 1)) { 
+	       return pr_error("*** MLS setup failed!\n");  
+	     }
 	   }
 	 }
 	 else return(pr_error("Print unknown pre_or_post choice\n"));
