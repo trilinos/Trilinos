@@ -256,7 +256,7 @@ target_alias = @target_alias@
 target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
-copyfiles_SOURCES = $(top_srcdir)/test/MatrixMatrix/infiles
+copyfiles_SOURCES = $(top_srcdir)/test/MatrixMatrix/src_infiles
 MatrixMatrix_test_SOURCES = \
   $(srcdir)/cxx_main.cpp \
   $(top_srcdir)/test/epetra_test_err.h

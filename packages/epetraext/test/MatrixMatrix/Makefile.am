@@ -30,7 +30,7 @@ EXEEXT = .exe
 
 noinst_PROGRAMS = copyfiles MatrixMatrix_test
 
-copyfiles_SOURCES=$(top_srcdir)/test/MatrixMatrix/infiles
+copyfiles_SOURCES=$(top_srcdir)/test/MatrixMatrix/src_infiles
 
 MatrixMatrix_test_SOURCES = \
   $(srcdir)/cxx_main.cpp \
