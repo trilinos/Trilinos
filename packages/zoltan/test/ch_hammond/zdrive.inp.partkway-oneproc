@@ -1,0 +1,5 @@
+Decomposition Method 	= parmetis
+Zoltan Parameters	= parmetis_method=partkway, scatter_graph=2
+File Type		= Chaco, initial procs = 1
+File Name		= hammond
+Parallel Disk Info	= number=0
