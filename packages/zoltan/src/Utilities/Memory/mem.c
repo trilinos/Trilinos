@@ -470,12 +470,24 @@ void      LB_Memory_Stats()
         MPI_Comm_rank(MPI_COMM_WORLD, &proc);
 	fprintf(stderr, "Proc %d: Calls to malloc = %d,  Calls to free = %d\n",
 		proc, nmalloc, nfree);
+        if (nmalloc > nfree) 
+          fprintf(stderr, "Proc %d: Possible memory error: "
+                          "# malloc > # free.\n", proc);
+        else if (nfree > nmalloc)
+          fprintf(stderr, "Proc %d: Possible memory error: "
+                          "# free > # malloc.\n", proc);
     }
     else if (DEBUG_MEMORY > 1) {
         MPI_Comm_rank(MPI_COMM_WORLD, &proc);
 	fprintf(stderr, "Proc %d: Calls to malloc = %d,  Calls to free = %d, "
                 "maximum bytes = %d\n",
 		proc, nmalloc, nfree, bytes_max);
+        if (nmalloc > nfree) 
+          fprintf(stderr, "Proc %d: Possible memory error: "
+                          "# malloc > # free.\n", proc);
+        else if (nfree > nmalloc)
+          fprintf(stderr, "Proc %d: Possible memory error: "
+                          "# free > # malloc.\n", proc);
 	if (top != NULL) {
 	    fprintf(stderr, "Proc %d: Remaining allocations:\n", proc);
 	    for (dbptr = top; dbptr != NULL; dbptr = dbptr->next) {
