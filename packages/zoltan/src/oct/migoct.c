@@ -307,6 +307,7 @@ static void malloc_new_objects(int nsentags, pRegion export_tags,
   *c3 = im_load;
 }
 
+/*****************************************************************************/
 /*
  * void fix_tags(LB_TAG **export_tags, int *number_of_sent_tags,
  *               LB_TAG **import_tags, int *number_of_reveived_tags,
@@ -315,39 +316,53 @@ static void malloc_new_objects(int nsentags, pRegion export_tags,
  * fixes the import tags so that region tags that were previously
  * exported aren't counted when imported back.
  */
-void fix_tags(LB_TAG **export_tags, int *nsentags, LB_TAG **import_tags,
-	      int *nrectags, pRegion import_regs, pRegion export_regs) 
+void fix_tags(LB_ID **import_global_ids, LB_ID **import_local_ids,
+              int **import_procs, int nrectags, pRegion import_regs)
 {
-  int index;                              /* index counter */
   int i;                                  /* index counter */
-  LB_TAG *new_import;                     /* modified array of import tags */
-  LB_TAG *new_export;                     /* modified array of export tags */
 
-  /* allocate memory */
-  new_import = (LB_TAG *)malloc(sizeof(LB_TAG) * (*nrectags));
-  new_export = (LB_TAG *)malloc(sizeof(LB_TAG) * (*nsentags));
-  if(((*nrectags) > 0) && (new_import == NULL)) {
-    fprintf(stderr,"ERROR in fix_tags, unable to allocate space\n");
-    abort();
+  if (nrectags == 0) {
+    *import_global_ids = *import_local_ids = NULL;
+    *import_procs = NULL;
   }
+  else {
+
+    /* allocate memory */
+
+    *import_global_ids = (LB_ID *) LB_array_alloc(__FILE__, __LINE__,
+                                                  1, nrectags, sizeof(LB_ID));
+    *import_local_ids  = (LB_ID *) LB_array_alloc(__FILE__, __LINE__,
+                                                  1, nrectags, sizeof(LB_ID));
+    *import_procs      = (int *)   LB_array_alloc(__FILE__, __LINE__,
+                                                  1, nrectags, sizeof(int));
+    if(*import_procs == NULL) {
+      fprintf(stderr,"ERROR in fix_tags, unable to allocate space\n");
+      abort();
+    }
+
+    /* for each region imported, look at its originating processor */
+    for(i=0; i<nrectags; i++) {
+      (*import_global_ids)[i] = import_regs[i].Tag.Global_ID;
+      (*import_local_ids)[i]  = import_regs[i].Tag.Local_ID;
+      (*import_procs)[i]      = import_regs[i].Tag.Proc;
+    }
+  }
+#if 0
+
+  /* KDD -- LB_Compute_Destinations will perform this operation for us.
+  new_export = (LB_TAG *)malloc(sizeof(LB_TAG) * (*nsentags));
   if(((*nsentags) > 0) && (new_export == NULL)) {
     fprintf(stderr,"ERROR in fix_tags, unable to allocate space\n");
     abort();
   }
 
   index = 0;
- /* for each region imported, look at it's origniating processor */
-  for(i=0; i<(*nrectags); i++) {
-    new_import[index++] = import_regs[i].Tag;
-  }
-  /* setup return pointers */
-  *import_tags = new_import;
-  
-  index = 0;
   for(i=0; i<(*nsentags); i++) {
       new_export[index++] = export_regs[i].Tag;
   }
   /* setup return pointers */
   *export_tags = new_export;
+
+#endif
 }
 

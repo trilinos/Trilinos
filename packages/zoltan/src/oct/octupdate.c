@@ -26,7 +26,7 @@ static char *cvs_octupdatec_id = "$Id$";
 #include "all_allo_const.h"
 
 /***************************  PROTOTYPES *************************************/
-static void initialize_region(LB *, pRegion *, int, LB_ID);
+static void initialize_region(LB *, pRegion *, LB_ID, LB_ID);
 
 extern void print_stats(double timetotal, double *timers, int *counters, 
 			float *c, int STAT_TYPE);
@@ -50,13 +50,18 @@ static int MAXOCTREGIONS = 1;
  */
 void lb_oct_init(
   LB *lb,                     /* The load-balancing structure with info for
-                                 the RCB balancer.                           */
-  int *pobjnum,               /* # of objs - decomposition changes it */
-  int *pobjtop,               /* dots >= this index are new */
-  int *num_non_local,         /* Number of non-local objects assigned to this
+                                 the OCTPART balancer.                       */
+  int *num_import,            /* Number of non-local objects assigned to this
                                  processor in the new decomposition.         */
-  LB_TAG **non_local_objs     /* Array of returned non-local obj info for the
-                                 new decomposition.                          */
+  LB_ID **import_global_ids,  /* Returned value:  array of global IDs for
+                                 non-local objects in this processor's new
+                                 decomposition.                              */
+  LB_ID **import_local_ids,   /* Returned value:  array of local IDs for
+                                 non-local objects in this processor's new
+                                 decomposition.                              */
+  int **import_procs          /* Returned value:  array of processor IDs for
+                                 processors owning the non-local objects in
+                                 this processor's new decomposition.         */
 ) 
 {
   LB_TAG *export_tags;             /* array of LB_TAGS being exported */
@@ -157,14 +162,13 @@ void lb_oct_init(
   dfs_migrate(&export_regs, &nsentags, &import_regs, &nrectags, 
 	      &c[2], &c[3], &counters[3], &counters[5]);
 
-  fix_tags(&export_tags, &nsentags, &import_tags, &nrectags, 
-	   import_regs, export_regs);
+  *num_import = nrectags;
+  fix_tags(import_global_ids, import_local_ids, import_procs, nrectags, 
+	   import_regs);
 
   time2 = MPI_Wtime();
   timers[2] = time2 - time1;               /* time took to setup migration */
 
-  *non_local_objs = import_tags;
-  *num_non_local = nrectags;
 
   /* count the number of objects on this processor */
   root = OCT_rootlist;
@@ -177,9 +181,6 @@ void lb_oct_init(
     }
     root = root->next;
   }
-
-  *pobjtop = count - nsentags;
-  *pobjnum = *pobjtop + nrectags;
 
   counters[4] = nsentags;
   MPI_Barrier(MPI_COMM_WORLD);
@@ -194,10 +195,6 @@ void lb_oct_init(
   }
   else
     print_stats(timestop - timestart, timers, counters, c, 1);
-  /*
-   * fprintf(stderr, "%d) non_local %d, count %d, nsent %d, top %d, num %d\n",
-   *	  LB_Proc, *num_non_local, count, nsentags, *pobjtop, *pobjnum);
-   */
 
   free(export_regs);
   free(import_regs);
@@ -253,7 +250,7 @@ void oct_gen_tree_from_input_data(LB *lb, int *c1, int *c2,
 	    "Must register Get_Num_Local_Objects function");
     abort();
   }
-  *c3 = num_objs = lb->Get_Num_Local_Obj(lb->Object_Type);
+  *c3 = num_objs = lb->Get_Num_Local_Obj();
   Region_list = NULL;
   ptr1 = NULL;
   if(num_objs > 0) {
@@ -423,35 +420,38 @@ void get_bounds(LB *lb, pRegion *ptr1, int *num_objs,
 		COORD min, COORD max, float *c0) 
 {
   int max_num_objs;
-  LB_ID *obj_ids;
+  LB_ID *obj_global_ids, *obj_local_ids;
   int i;
   pRegion tmp, ptr;
   COORD global_min, global_max;
   double x;
   double PADDING = 0.0000001;
 
-  *num_objs = lb->Get_Num_Local_Obj(lb->Object_Type);
+  *num_objs = lb->Get_Num_Local_Obj();
 
   /* ATTN: an arbitrary choice, is this necessary? */
   max_num_objs = 2 * (*num_objs); 
 
-  obj_ids = (LB_ID *) LB_array_alloc(__FILE__, __LINE__, 1, (*num_objs),
-                                     sizeof(LB_ID));
+  obj_global_ids = (LB_ID *) LB_array_alloc(__FILE__, __LINE__,
+                                            1, 2 * *num_objs, sizeof(LB_ID));
+  obj_local_ids = (LB_ID *) (obj_global_ids + *num_objs);
+
   if(lb->Get_All_Local_Objs == NULL) {
     fprintf(stderr, "%s:\n\t%s\n", "Error in octree load balance", 
 	    "user must declare function Get_All_Local_Objs.");
     abort();
   }
-  lb->Get_All_Local_Objs(lb->Object_Type, obj_ids);
+
+  lb->Get_All_Local_Objs(obj_global_ids, obj_local_ids);
   if((*num_objs) > 0) {
-    initialize_region(lb, &tmp, 0, obj_ids[0]);
+    initialize_region(lb, &tmp, obj_global_ids[0], obj_local_ids[0]);
     *c0 = (float)tmp->Weight;
     vector_set(min, tmp->Coord);
     vector_set(max, tmp->Coord);
   }
   *ptr1 = tmp;
   for (i = 1; i < (*num_objs); i++) {
-    initialize_region(lb, &(ptr), i, obj_ids[i]);
+    initialize_region(lb, &(ptr), obj_global_ids[i], obj_local_ids[i]);
     *c0 += (float)tmp->Weight;
     /* the following is really a hack, since it has no real basis 
        in vector mathematics.... */
@@ -472,7 +472,7 @@ void get_bounds(LB *lb, pRegion *ptr1, int *num_objs,
 
     ptr = NULL;
   }
-  LB_safe_free((void **) &obj_ids);
+  LB_safe_free((void **) &obj_global_ids);
   
   MPI_Allreduce(&(min[0]), &(global_min[0]), 3, 
 		MPI_DOUBLE, MPI_MIN, MPI_COMM_WORLD);
@@ -504,20 +504,19 @@ void get_bounds(LB *lb, pRegion *ptr1, int *num_objs,
  *  Function that initializes the region data structure.  It uses the 
  *  global ID, coordinates and weight provided by the application.  
  */
-static void initialize_region(LB *lb, pRegion *ret, int local_id,
-                              LB_ID global_id) 
+static void initialize_region(LB *lb, pRegion *ret, LB_ID global_id,
+                              LB_ID local_id) 
 {
   pRegion reg;
-  int object_type = lb->Object_Type;
 
   reg = (pRegion)malloc(sizeof(Region));
   *ret = reg;
-  reg->Tag.Local_ID = local_id;
   reg->Tag.Global_ID = global_id;
+  reg->Tag.Local_ID = local_id;
   reg->Tag.Proc = LB_Proc;
   /* reg->Proc = 0; */
   reg->Coord[0] = reg->Coord[1] = reg->Coord[2] = 0.0;
-  lb->Get_Obj_Geom(global_id, object_type, reg->Coord);
+  lb->Get_Obj_Geom(global_id, local_id, reg->Coord);
 
 #if 0
   LB_print_sync_start(TRUE);
@@ -528,7 +527,7 @@ static void initialize_region(LB *lb, pRegion *ret, int local_id,
 #endif
 
   if (lb->Get_Obj_Weight != NULL)
-    reg->Weight = lb->Get_Obj_Weight(global_id, object_type);
+    reg->Weight = lb->Get_Obj_Weight(global_id, local_id);
   else
     reg->Weight = 1;
   reg->next = NULL;

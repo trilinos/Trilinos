@@ -62,14 +62,15 @@ void print_stats(double timetotal, double *timers, int *counters, float *c,
   int numobj;
   LB *lb;
 
-  obj_ids = (LB_ID *) LB_array_alloc(__FILE__, __LINE__, 1, numobj,
+  obj_global_ids = (LB_ID *) LB_array_alloc(__FILE__, __LINE__, 1, 2 * numobj,
                                      sizeof(LB_ID));
-  lb->Get_All_Local_Objs(lb->Object_Type, obj_ids);
+  obj_local_ids = (LB_ID *) (obj_global_ids + numobj);
+  lb->Get_All_Local_Objs(obj_global_ids, obj_local_ids);
   /* need to get weights of all the objects */
   weight = mweight = tweight = 0.0;
   if(lb->Get_Obj_Weight != NULL)
     for (i = 0; i < numobj; i++) {
-      weight = lb->Get_Obj_Weight(obj_ids[i], lb->Object_Type);
+      weight = lb->Get_Obj_Weight(obj_global_ids[i], obj_local_ids[i]);
       if (weight > mweight)
 	mweight = weight;
       tweight += weight;
