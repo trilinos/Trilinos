@@ -352,6 +352,17 @@ else
       set nem_methods = ( $nem_methods rcb-partlocal2 rcb-partlocal2-ts )
       set nem_methods = ( $nem_methods rcb-partlocal3 rcb-partlocal3-ts )
       set nem_methods = ( $nem_methods rcb-partlocal4 rcb-partlocal4-ts )
+      set nem_methods = ( $nem_methods rcb2 rcb2-ts )
+      set nem_methods = ( $nem_methods rcb2-comparable rcb2-comparable-ts )
+      set nem_methods = ( $nem_methods rcb2-norm2 rcb2-norm2-ts )
+      set nem_methods = ( $nem_methods rcb2-norm3 rcb2-norm3-ts )
+      set nem_methods = ( $nem_methods rcb2-partless rcb2-partless-ts )
+      set nem_methods = ( $nem_methods rcb2-partlocal1 rcb2-partlocal1-ts )
+      set nem_methods = ( $nem_methods rcb2-partlocal2 rcb2-partlocal2-ts )
+      set nem_methods = ( $nem_methods rcb2-partlocal3 rcb2-partlocal3-ts )
+      set nem_methods = ( $nem_methods rcb2-partlocal4 rcb2-partlocal4-ts )
+      set nem_methods = ( $nem_methods rcb2-partmore rcb2-partmore-ts )
+      set nem_methods = ( $nem_methods rcb2-set1 rcb2-set1-ts )
     endif
   endif
   if (! $no_rib) then
