@@ -43,6 +43,11 @@
 
 AC_INIT(ifpack, 2.0, mheroux@cs.sandia.gov)
 
+# Hello World!
+echo "----------------------------------------"
+echo "Running Ifpack Configure Script"
+echo "----------------------------------------"
+
 # This is to protect against accidentally specifying the wrong
 # directory with --srcdir.
 
@@ -298,4 +303,7 @@ AC_CONFIG_FILES([
 
 AC_OUTPUT()
 
-
+# Bye World!
+echo "----------------------------------------"
+echo "Finished Running Ifpack Configure Script"
+echo "----------------------------------------"
