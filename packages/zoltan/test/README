@@ -46,3 +46,16 @@ the suffixes is included below:
   - *-oneproc:         Initial distribution on only one processor.
   - *-cyclic:          Cyclic initial distribution.
   
+
+-------------------------------------------------------------------------
+Notes:
+
+2/26/03 KDD
+Adaptive-repart method in ParMETIS may give different answers on different
+platforms due to differences in qsort between platforms.  On Suns (with
+dynamic linking), different versions of the C library may have different
+implementations, resulting in different results even across multiple Suns.
+(qsort in ParMETIS3.0's SerialRemap function does not have deterministic 
+comparison function, so items to be sorted that are equal may be output in 
+different order on different platforms; i.e., ties are broken differently.)
+
