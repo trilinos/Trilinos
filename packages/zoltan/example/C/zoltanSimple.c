@@ -20,6 +20,19 @@ int main(int argc, char *argv[])
   int rc, me, nprocs;
   float ver;
   struct Zoltan_Struct *zz;
+  int changes;
+  int numGidEntries;
+  int numLidEntries;
+  int numImport;
+  ZOLTAN_ID_PTR importGlobalGids;
+  ZOLTAN_ID_PTR importLocalGids;
+  int *importProcs;
+  int *importToPart;
+  int numExport;
+  ZOLTAN_ID_PTR exportGlobalGids;
+  ZOLTAN_ID_PTR exportLocalGids; 
+  int *exportProcs;
+  int *exportToPart;
 
   MPI_Init(&argc, &argv);
   MPI_Comm_rank(MPI_COMM_WORLD, &me);
@@ -67,20 +80,6 @@ int main(int argc, char *argv[])
   Zoltan_Set_Obj_List_Fn(zz, exGetObjectList, NULL);
   Zoltan_Set_Num_Geom_Fn(zz, exGetObjectSize, NULL);
   Zoltan_Set_Geom_Multi_Fn(zz, exGetObject, NULL);
-
-  int changes;
-  int numGidEntries;
-  int numLidEntries;
-  int numImport;
-  ZOLTAN_ID_PTR importGlobalGids;
-  ZOLTAN_ID_PTR importLocalGids;
-  int *importProcs;
-  int *importToPart;
-  int numExport;
-  ZOLTAN_ID_PTR exportGlobalGids;
-  ZOLTAN_ID_PTR exportLocalGids; 
-  int *exportProcs;
-  int *exportToPart;
 
   rc = Zoltan_LB_Partition(zz, &changes, &numGidEntries, &numLidEntries,
     &numImport, &importGlobalGids, &importLocalGids, &importProcs, &importToPart,
