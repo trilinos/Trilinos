@@ -12,10 +12,6 @@
  * $Revision$
  *
  *====================================================================*/
-#ifndef lint
-static char *cvs_chaco_dist_graph_id = "$Id$";
-#endif
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <mpi.h>

@@ -12,10 +12,6 @@
  * $Revision$
  *
  *====================================================================*/
-#ifndef lint
-static char *cvs_rcbutilc_id = "$Id$";
-#endif
-
 
 #include "lbi_const.h"
 #include "lb_const.h"
@@ -251,8 +247,6 @@ void LB_RCB_Free_Structure(LB *lb)
 /*
  * Deallocate the persistent RCB data structures in lb->Structure.
  */
-char *yo = "LB_RCB_Free_Structure";
-
 RCB_STRUCT *rcb;                      /* Data structure for RCB.             */
 
   rcb = (RCB_STRUCT *) lb->Data_Structure;

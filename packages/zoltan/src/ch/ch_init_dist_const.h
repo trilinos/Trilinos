@@ -17,10 +17,6 @@
 #ifndef CH_INIT_DIST_CONST_H
 #define CH_INIT_DIST_CONST_H
 
-#ifndef lint
-static char *cvs_ch_init_dist_const_id = "$Id$";
-#endif
-
 #include "dr_const.h"
 #include "dr_input_const.h"
 

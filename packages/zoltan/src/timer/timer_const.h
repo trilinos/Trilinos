@@ -16,10 +16,6 @@
 #ifndef TIMER_CONST_H
 #define TIMER_CONST_H
 
-#ifndef lint
-static char *cvs_timerconsth_id = "$Id$";
-#endif
-
 #include <time.h> /* ANSI C; defines clock_t and clock() */
 
 /* Skip advanced timers for now. They give more trouble than

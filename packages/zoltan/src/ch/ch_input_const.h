@@ -16,10 +16,6 @@
 #ifndef __CH_INPUT_CONST_H
 #define __CH_INPUT_CONST_H
 
-#ifndef lint
-static char *cvs_ch_input_const_h = "$Id$";
-#endif
-
 #include <mpi.h>
 #include "dr_const.h"
 #include "dr_input_const.h"
