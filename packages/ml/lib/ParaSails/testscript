@@ -1,0 +1,17 @@
+mpirun -machinefile /home/chow/machines.solaris -np 2 driver 0 1 testpsmattri << EOF
+0 0 0 0
+EOF
+diff M testoutput/M.tri0
+mpirun -machinefile /home/chow/machines.solaris -np 2 driver 0 1 testpsmattri << EOF
+0.003 0 0 0
+EOF
+diff M testoutput/M.tri1
+mpirun -machinefile /home/chow/machines.solaris -np 2 driver 1 1 testpsmatsym << EOF
+0 0 0 0
+EOF
+diff M testoutput/M.sym0
+mpirun -machinefile /home/chow/machines.solaris -np 2 driver 1 1 testpsmatsym << EOF
+0 0 .0035 0
+EOF
+diff M testoutput/M.sym1
+rm M
