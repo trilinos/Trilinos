@@ -33,7 +33,7 @@ Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 #define EPETRA_IMPORT_H
 
 #include "Epetra_Object.h"
-class Epetra_BlockMap;
+#include "Epetra_BlockMap.h"
 class Epetra_Distributor;
 
 //! Epetra_Import: This class builds an import object for efficient importing of off-processor elements.
@@ -266,8 +266,8 @@ for each class is given in the appropriate class documentation.
      return(*this);
    }
 
-  const Epetra_BlockMap & TargetMap_;
-  const Epetra_BlockMap & SourceMap_;
+ Epetra_BlockMap TargetMap_;
+ Epetra_BlockMap SourceMap_;
 
   int  NumSameIDs_;
   int  NumPermuteIDs_;
