@@ -51,6 +51,7 @@ static PARAM_VARS PHG_params[] = {
   {"PHG_FM_MAX_NEG_MOVE",             NULL,  "INT",    0},    
   {"PHG_COARSE_ITERATIONS",           NULL,  "INT",    0},    
   {"PHG_USE_TIMERS",                  NULL,  "INT",    0},    
+  {"EDGE_SIZE_THRESHOLD",             NULL,  "FLOAT",    0},    
   {NULL,                              NULL,  NULL,     0}     
 };
 
@@ -309,6 +310,8 @@ static int Zoltan_PHG_Initialize_Params(
                                  (void*) &hgp->num_coarse_iter);  
   Zoltan_Bind_Param(PHG_params, "PHG_USE_TIMERS",
                                  (void*) &hgp->use_timers);  
+  Zoltan_Bind_Param(PHG_params, "EDGE_SIZE_THRESHOLD",
+                                 (void*) &hgp->EdgeSizeThreshold);  
 
   /* Set default values */
   strncpy(hgp->redm_str,            "ipm",   MAX_PARAM_STRING_LEN);
@@ -337,6 +340,7 @@ static int Zoltan_PHG_Initialize_Params(
   hgp->fm_max_neg_move = 250;  
   hgp->num_coarse_iter = 10;
   hgp->part_sizes = part_sizes;
+  hgp->EdgeSizeThreshold = 1.0;  /* Default (for now) -- keep all edges */
 
   /* Get application values of parameters. */
   Zoltan_Assign_Param_Vals(zz->Params, PHG_params, zz->Debug_Level, zz->Proc,

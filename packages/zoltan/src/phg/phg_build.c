@@ -32,7 +32,7 @@ extern "C" {
 /* Function prototypes */
 
 static int hash_lookup (ZZ*, ZOLTAN_ID_PTR, int, struct Hash_Node**);
-static int Zoltan_PHG_Fill_Hypergraph (ZZ*, ZPHG*, Partition*);
+static int Zoltan_PHG_Fill_Hypergraph (ZZ*, ZPHG*, PHGPartParams *, Partition*);
 
 /*****************************************************************************/
 
@@ -42,7 +42,7 @@ int Zoltan_PHG_Build_Hypergraph(
   Partition *input_parts,            /* Initial partition assignments for
                                         vtxs in 2D distribution; length = 
                                         zoltan_hg->PHG->nVtx.  */
-  PHGPartParams *hgp                 /* Parameters for HG partitioning.*/
+  PHGPartParams *hgp                 /* Parameters for PHG partitioning.*/
 )
 {
 /* allocates and builds hypergraph data structure using callback routines */ 
@@ -79,7 +79,7 @@ char *yo = "Zoltan_PHG_Build_Hypergraph";
      */
     ZOLTAN_TRACE_DETAIL(zz, yo, "Using Hypergraph Callbacks.");
 
-    ierr = Zoltan_PHG_Fill_Hypergraph(zz, zhg, input_parts);
+    ierr = Zoltan_PHG_Fill_Hypergraph(zz, zhg, hgp, input_parts);
     if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
       ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error building hypergraph");
       goto End;
@@ -176,6 +176,7 @@ End:
 static int Zoltan_PHG_Fill_Hypergraph(
   ZZ *zz,
   ZPHG *zhg,      /* Description of hypergraph provided by the application. */
+  PHGPartParams *hgp,                /* Parameters for PHG partitioning.*/
   Partition *input_parts   /* Initial partition assignment of vtxs in 
                               2D data distribution; length = zhg->PHG->nVtx. */
 )
@@ -243,6 +244,7 @@ int nProc = zz->Num_Proc;
 int nRequests;
 ZOLTAN_ID_PTR pin_requests = NULL;
 int *request_gno = NULL;
+int nremove = 0;      /* Number of dense hyperedges removed. */
 int edge_gno, edge_Proc_y;
 int vtx_gno, vtx_Proc_x;
 int *proclist = NULL;
@@ -359,11 +361,16 @@ float *tmpwgts = NULL;
   /* Get hyperedge information from application through query functions. */
   /***********************************************************************/
 
-  ierr = Zoltan_PHG_Hypergraph_Callbacks(zz, &app.nEdge, 
-                                         &app.edge_gids, &app.edge_lids,
-                                         &app.edge_sizes, &app.ewgt,
-                                         &app.nPins, &app.pins, 
-                                         &app.pin_procs);
+  /* KDDKDD For now, do not return info about removed hyperedge.
+   * KDDKDD Will need it later, though, for correct cut size computation.
+   */
+  ierr = Zoltan_HG_Hypergraph_Callbacks(zz, app.GnVtx, hgp->EdgeSizeThreshold,
+                                        0, &app.nEdge, 
+                                        &app.edge_gids, &app.edge_lids,
+                                        &app.edge_sizes, &app.ewgt,
+                                        &app.nPins, &app.pins, 
+                                        &app.pin_procs, &nremove, 
+                                        NULL, NULL, NULL, NULL);
   if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
     ZOLTAN_PRINT_ERROR(zz->Proc, yo,
                        "Error returned from Zoltan_PHG_Hypergraph_Callbacks");

@@ -44,6 +44,7 @@ static PARAM_VARS HG_params[] = {
  { "HG_REDUCTION_LOCAL_IMPROVEMENT", NULL, "STRING", 0 },
  { "CHECK_GRAPH",                    NULL, "INT", 0 },
  { "HG_OUTPUT_LEVEL",                NULL, "INT", 0 },
+ { "EDGE_SIZE_THRESHOLD",            NULL, "FLOAT", 0 },
  { NULL, NULL, NULL, 0 } };
 
 /* prototypes for static functions: */
@@ -367,6 +368,8 @@ static int Zoltan_HG_Initialize_Params(
                               (void*) &hgp->check_graph);
   Zoltan_Bind_Param(HG_params,"HG_REDUCTION_LOCAL_IMPROVEMENT",
                               (void*) hgp->redmo_str);
+  Zoltan_Bind_Param(HG_params,"EDGE_SIZE_THRESHOLD",
+                              (void*) &hgp->EdgeSizeThreshold);
 
   /* Set default values */
   strncpy(hgp->redm_str,   "ipm",  MAX_PARAM_STRING_LEN);
@@ -378,6 +381,7 @@ static int Zoltan_HG_Initialize_Params(
   hgp->bal_tol = zz->LB.Imbalance_Tol[0];
   hgp->redl = zz->LB.Num_Global_Parts;
   hgp->output_level = HG_DEBUG_LIST;
+  hgp->EdgeSizeThreshold = 1.0;   /* Default (for now) -- keep all edges. */
 
 hgp->fmswitch        = -1;
 hgp->noimprove_limit = 0.25;

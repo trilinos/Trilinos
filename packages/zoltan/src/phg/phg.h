@@ -156,6 +156,8 @@ struct PHGPartParamsStruct {
   int num_coarse_iter;  /* Number of coarse partitions to try on each proc. */
   int visit_order;      /* Vertex visit order. */
   int use_timers;       /* Flag indicating whether to time the PHG code. */
+  float EdgeSizeThreshold;  /* % of global vtxs beyond which an edge is 
+                               considered to be dense. */
 };
 
 typedef struct PHGPartParamsStruct PHGPartParams;
@@ -235,11 +237,6 @@ extern int Zoltan_PHG_Build_Hypergraph(ZZ*, ZPHG**, Partition*, PHGPartParams*);
 extern void Zoltan_PHG_HGraph_Print(ZZ*, ZPHG*, HGraph*, Partition, FILE*);
 extern void Zoltan_PHG_Plot(int, int, int, int*, int*, int*, char*);
 extern void Zoltan_PHG_Plot_2D_Distrib(ZZ*, HGraph*);
-
-extern int Zoltan_PHG_Hypergraph_Callbacks(ZZ *, int *, ZOLTAN_ID_PTR *,
-  ZOLTAN_ID_PTR *, int **, float **, int *, ZOLTAN_ID_PTR *, int **);
-
-
 
 
 #ifdef __cplusplus

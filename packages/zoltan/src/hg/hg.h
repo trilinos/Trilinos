@@ -135,6 +135,8 @@ int rthflag;
   int   tiestrategy;          /* 0 -> ignore ties,
                                  1 -> alternate moves via step%2
                                  2 -> move to lighter weight partition on tie */
+  float EdgeSizeThreshold;    /* %-age of vtx beyond which an edge is 
+                                 considered to be dense. */
 };
 typedef struct HGPartParamsStruct HGPartParams;
 
@@ -189,6 +191,11 @@ void Zoltan_HG_Plot(int, int, int, int*, int*, int*, char*);
 
 /* Prototypes */
 extern int Zoltan_HG_Build_Hypergraph (ZZ*, ZHG**, HGPartParams*);
+extern int Zoltan_HG_Hypergraph_Callbacks(ZZ *, int, float, int, 
+  int *, ZOLTAN_ID_PTR *, ZOLTAN_ID_PTR *, int **, float **, int *, 
+  ZOLTAN_ID_PTR *, int **, int *, ZOLTAN_ID_PTR *, ZOLTAN_ID_PTR *,
+  int **, float **);
+
 extern void Zoltan_HG_HGraph_Print(ZZ*, ZHG*,  HGraph*, Partition, FILE*);
 extern int Zoltan_HG_Return_Lists(ZZ*, ZHG*, Partition, int*,
   ZOLTAN_ID_PTR*, ZOLTAN_ID_PTR*, int**, int**);

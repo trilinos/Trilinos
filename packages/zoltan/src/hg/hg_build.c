@@ -25,7 +25,7 @@ extern "C" {
 /* Function prototypes */
 
 static int hash_lookup (ZZ*, ZHG*, ZOLTAN_ID_PTR, int, struct Hash_Node**);
-static int Zoltan_HG_Fill_Hypergraph (ZZ*, ZHG*);
+static int Zoltan_HG_Fill_Hypergraph (ZZ*, ZHG*, HGPartParams*);
 
 /*****************************************************************************/
 
@@ -75,7 +75,7 @@ int get_geom_data=0; /* Current hg methods don't use geometry. */
       goto End;
     }
 
-    ierr = Zoltan_HG_Fill_Hypergraph(zz, zhg);
+    ierr = Zoltan_HG_Fill_Hypergraph(zz, zhg, hgp);
     if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
       ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error building hypergraph");
       goto End;
@@ -163,7 +163,8 @@ End:
 
 static int Zoltan_HG_Fill_Hypergraph(
   ZZ *zz,
-  ZHG *zhg
+  ZHG *zhg,
+  HGPartParams *hgp                  /* Parameters for HG partitioning.*/
 )
 {
 /* Routine to call HG query function and build HG data structure.  */
@@ -188,11 +189,23 @@ int nVtx = hg->nVtx;
 int num_gid_entries = zz->Num_GID;
 static PHGComm scomm;
 static int first_time = 1;
+int nremove;    /* Number of dense hyperedges removed. */
 
-  ierr = Zoltan_PHG_Hypergraph_Callbacks(zz, &(hg->nEdge), 
-                                         &edge_gids, &edge_lids, &edge_sizes,
-                                         &(hg->ewgt), &(hg->nPins), 
-                                         &edge_verts, &edge_procs);
+  /* KDDKDD For now, do not return removed edges; will need them later,
+   * KDDKDD though for correct cutsize computation. 
+   */
+  ierr = Zoltan_HG_Hypergraph_Callbacks(zz, nVtx, hgp->EdgeSizeThreshold,
+                                        0, &(hg->nEdge), 
+                                        &edge_gids, &edge_lids, &edge_sizes,
+                                        &(hg->ewgt), &(hg->nPins), 
+                                        &edge_verts, &edge_procs, 
+                                        &nremove, NULL, NULL, NULL, NULL);
+  if (ierr) {
+    ZOLTAN_PRINT_ERROR(zz->Proc, yo, 
+                       "Error returned from Zoltan_HG_Hypergraph_Callbacks");
+    goto End;
+  }
+
 
   /* Build hg->hindex */
   /* KDD -- should we remove HEdges with size 1 from edge lists here? */
