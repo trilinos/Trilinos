@@ -24,7 +24,11 @@ endif
 
 DEPS=-M
 
-#include $(OBJ_FILES:.o=.d)
+include $(OBJ_FILES:.o=.d)
+
+ifdef MAIN_OBJ
+include $(MAIN_OBJ:.o=.d)
+endif
 
 %.o:	%.c
 	@echo "Compiling $<..."
