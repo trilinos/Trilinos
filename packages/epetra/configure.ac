@@ -41,7 +41,7 @@
 # This must be the first line in configure.ac.
 # Optional 3rd argument is email address for bugs.
 
-AC_INIT(Epetra, 2.0, mheroux@cs.sandia.gov)
+AC_INIT(epetra, 2.0, mheroux@cs.sandia.gov)
 
 # This is to protect against accidentally specifying the wrong
 # directory with --srcdir.
@@ -63,7 +63,7 @@ AC_CANONICAL_TARGET
 
 # Use automake
 
-AM_INIT_AUTOMAKE(Epetra, 2.0)
+AM_INIT_AUTOMAKE(epetra, 2.0)
 
 # Specify required version of autoconf.
 
