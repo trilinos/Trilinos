@@ -122,7 +122,7 @@ TRIUTILS_BUILD_DIRECTORY = $(ML_BUILD_DIRECTORY)/../triutils
 #
 ##########################################################################
 
-TRILINOS_INCLUDES = -I$(TRILINOS_DIR)/include
+ML_TRILINOS_INCLUDES = -I$(TRILINOS_DIR)/include
 
-TRILINOS_LIBS = -L$(TRILINOS_DIR)/lib $(ML_EXPORT_LIBS)
+ML_TRILINOS_LIBS = -L$(TRILINOS_DIR)/lib $(ML_EXPORT_LIBS)
 

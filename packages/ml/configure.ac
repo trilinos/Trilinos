@@ -324,13 +324,14 @@ AC_CXX_STD_SPRINTF
 # Following options are ON by default
 #####################################
 
-TAC_ARG_WITH_PACKAGE(ml_external_mpi_functions, [Use mpi-provided global communication functions (not ml's internal implementation)], ML_EXTERNAL_MPI_FUNCTIONS, yes)
-
  TAC_ARG_ENABLE_OPTION(ml_newtpe, [Enable latest Maxwell prolongator fixes], ML_NEW_T_PE, yes)
 
 #######################################
 # Following options are OFF by default
 #######################################
+TAC_ARG_WITH_PACKAGE(ml_internal_comm_functions, [Use ML's implementation of global communication functions (not the MPI implementation)],
+ML_USE_INTERNAL_COMM_FUNCTIONS, no)
+#
  TAC_ARG_ENABLE_OPTION(ml_enrich, [Enable latest enriched Maxwell prolongator], ML_ENRICH, no)
 #
  TAC_ARG_WITH_PACKAGE(ml_aztec2_1, [Enable Aztec 2.1 support], ML_AZTEC2_1, no)
