@@ -19,8 +19,8 @@ LDFLAGS=$(ARCH_LDFLAGS)
 
 
 LIB_PATHS= $(LIBAZTECOO) $(LIBEPETRA) $(LIBIFPACK) \
-           $(LIBLAPACK) $(LIBBLAS) $(LIBY12M) $(LIBSPBLAS) \
-           $(LIBTRILINOS_UTIL)
+           $(LIBLAPACK) $(LIBBLAS) $(LIBY12M) \
+           $(LIBTRIUTILS)
 
 #=======================================================================
 # Epetra test source files
