@@ -174,15 +174,9 @@ bool NOX::Solver::TensorBased::reset(NOX::Abstract::Group& xGrp,
   // Determine the specific type of direction to compute
   string choice = dirParams.getParameter("Method", "Tensor");
   if (choice == "Tensor")
-  {
     requestedBaseStep = TensorStep;
-  }
   else if (choice == "Newton")
-  {
     requestedBaseStep = NewtonStep;
-    if (utils.isPrintProcessAndType(NOX::Utils::Parameters))
-      cout << "\n\n    **** Newton step is requested ***** \n\n";
-  }
   else
   {
     if (utils.isPrintProcessAndType(NOX::Utils::Error))
@@ -191,6 +185,7 @@ bool NOX::Solver::TensorBased::reset(NOX::Abstract::Group& xGrp,
 	   << "\" is invalid." << endl;
     throw "NOX error";
   }
+
   // Make a reference to the sublist holding the global strategy parameters
   NOX::Parameter::List& teParams = dirParams.sublist(choice);
 
@@ -243,7 +238,7 @@ bool NOX::Solver::TensorBased::reset(NOX::Abstract::Group& xGrp,
   lsParams.setParameter("Submethod", choice);
 
   // Decide what to step to use in case of linesearch failure
-  choice = p.getParameter("Recovery Step Type", "Constant");
+  choice = gsParams.getParameter("Recovery Step Type", "Constant");
   if (choice == "Constant")
     recoveryStepType = Constant;          // Use value in "Recovery Step"
   else if (choice == "Last Computed Step") 
@@ -550,7 +545,7 @@ NOX::Solver::TensorBased::computeTensorDirection(NOX::Abstract::Group& soln,
     tmpVec.scale(-1.0);   // Rewrite to avoid this?
 
     // Compute residual of linear system using initial guess...
-    soln.applyJacobian(tmpVec, *residualVecPtr);
+    soln.applyJacobian(tmpVec, residualVec);
     numJvMults++;
     residualVec.update(1.0, solver.getPreviousSolutionGroup().getF(),-1.0);
     double residualNorm = residualVec.norm();
@@ -595,12 +590,12 @@ NOX::Solver::TensorBased::computeTensorDirection(NOX::Abstract::Group& soln,
     {
       //cout << "  Initial guess is BAD... do not use!\n";
       isInitialGuessGood = false;
-      *residualVecPtr = solver.getPreviousSolutionGroup().getF();
+      residualVec = solver.getPreviousSolutionGroup().getF();
     }
     
     // Compute the term inv(J)*Fp....
     tmpVec.init(0.0);
-    status = soln.applyJacobianInverse(linearParams, *residualVecPtr, tmpVec);
+    status = soln.applyJacobianInverse(linearParams, residualVec, tmpVec);
 
     // If it didn't converge, maybe we can recover. 
     if (status != NOX::Abstract::Group::Ok)
@@ -632,7 +627,7 @@ NOX::Solver::TensorBased::computeTensorDirection(NOX::Abstract::Group& soln,
 
 #if DEBUG_LEVEL > 0
     // Compute residual of linear system with initial guess...
-    soln.applyJacobian(tmpVec, *residualVecPtr);
+    soln.applyJacobian(tmpVec, residualVec);
     numJvMults++;
     residualVec.update(-1.0, solver.getPreviousSolutionGroup().getF(),1.0);
     double residualNorm2 = residualVec.norm();
@@ -680,7 +675,10 @@ NOX::Solver::TensorBased::computeTensorDirection(NOX::Abstract::Group& soln,
   if ((nIter > 0)  &&  (requestedBaseStep == TensorStep))
   {
     // Form the term inv(J)*a...  (note that a is not multiplied by 2)
-    tmpVec.update(1.0, newtonVec, -1.0, sVec, 1.0);
+    // The next line does not work in some implementations for some reason
+    //tmpVec.update(1.0, newtonVec, -1.0, sVec, 1.0);   
+    tmpVec.update(1.0, newtonVec, 1.0);
+    tmpVec.update(-1.0, sVec, 1.0);
     if (sDotS != 0.0)
       tmpVec.scale( 1.0 / (sDotS * sDotS));
 
@@ -780,7 +778,6 @@ double NOX::Solver::TensorBased::calculateBeta(double qa,
       double tmp1 = (-qb + sqrt(discriminant)) / (2*qa);
       double tmp2 = (-qb - sqrt(discriminant)) / (2*qa);
       beta = (fabs(tmp1) < fabs(tmp2)) ? tmp1 : tmp2; // bwb - temporary test
-      //beta = (fabs(dir0xsc + normS*tmp1) < fabs(dir0xsc + normS*tmp2)) ? tmp1 : tmp2;
 #if DEBUG_LEVEL > 1
       if (utils.isPrintProcessAndType(NOX::Utils::Details))
 	cout << "  tmp1 = " << utils.sciformat(tmp1, 6)
@@ -1069,13 +1066,9 @@ NOX::Solver::TensorBased::getNormModelResidual(
   // Compute residual of Tensor model, if requested...
   if (isTensorModel)
   {
-    double beta = sVecPtr->dot(dir);
-    const double dirNorm = dir.norm();
+    double beta = sVec.dot(dir);
     if (utils.isPrintProcessAndType(NOX::Utils::Details))
-    {
       cout << " sc'*dt   = " << utils.sciformat(beta, 6) << endl;
-      cout << " norm(dt) = " << utils.sciformat(dirNorm, 6) << endl;
-    }
     residualPtr->update(beta*beta, *aVecPtr, 1.0);
   }
 
