@@ -69,11 +69,6 @@ int run_test(Epetra_Comm& Comm, const char* filename,
 int test_find_rows(Epetra_Comm& Comm);
 
 int main(int argc, char** argv) {
-  if (argc < 2) {
-    std::cout << "Usage: " << argv[0] << " -i file_name" << std::endl;
-    std::cout << "  (where file_name contains a list of input-files)"<<std::endl;
-    return(-1);
-  }
 
 #ifdef EPETRA_MPI
   MPI_Init(&argc,&argv);
@@ -247,6 +242,7 @@ int read_input_file(Epetra_Comm& Comm,
     ifstream infile(input_file_name);
     if (!infile) {
       std::cout << "ERROR opening file "<<input_file_name << std::endl;
+      std::cout << "Specify an input file using '-i <input-file>'."<< std::endl;
       return(-1);
     }
 
