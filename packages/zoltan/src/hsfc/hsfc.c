@@ -514,8 +514,13 @@ int Zoltan_HSFC(
       printf ("<%d> export count %d, ndots %d\n", zz->Proc, *num_export, ndots);
    if (zz->Debug_Level >= ZOLTAN_DEBUG_LIST)
       for (i = 0; i < ndots; i++) {
-         printf ("<%d> GID: %u  LID: %u  Part: %d  Weight %.1f  HSFC  %.6f\n",
-          zz->Proc, gids[i*zz->Num_GID], lids[i*zz->Num_LID], new_part[i],
+         printf ("<%d> GID: ", zz->Proc);
+         ZOLTAN_PRINT_GID (zz, &gids[i*zz->Num_GID]);
+         if (lids || zz->Num_LID > 0) {
+            printf ("  LID: ");
+            ZOLTAN_PRINT_LID (zz, &lids[i*zz->Num_LID]);
+            }
+         printf ("  Part: %d  Weight %.1f  HSFC  %.6f\n", new_part[i],
           dots[i].weight, dots[i].fsfc);
          printf ("PROC %d DOT %03u\n", p->index, gids[i]);
          }
