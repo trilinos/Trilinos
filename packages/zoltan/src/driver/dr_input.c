@@ -440,9 +440,9 @@ int check_inp(PROB_INFO_PTR prob, PARIO_INFO_PTR pio_info)
   /* default file type is nemesis */
   if (pio_info->file_type < 0) pio_info->file_type = NEMESIS_FILE;
 
-#ifndef LB_NEMESIS
+#ifndef ZOLTAN_NEMESIS
   /* 
-   * if not compiling with the LB_NEMESIS flag (i.e., not linking with 
+   * if not compiling with the ZOLTAN_NEMESIS flag (i.e., not linking with 
    * Nemesis library), can't use NEMESIS_FILE file type.
    */
 
@@ -451,7 +451,7 @@ int check_inp(PROB_INFO_PTR prob, PARIO_INFO_PTR pio_info)
                  "libraries for Nemesis file types");
     return 0;
   }
-#endif /* !LB_NEMESIS */
+#endif /* !ZOLTAN_NEMESIS */
 
 /*+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
 /*                 Check the parallel IO specifications                      */

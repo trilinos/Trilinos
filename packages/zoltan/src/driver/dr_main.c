@@ -56,7 +56,7 @@ static void initialize_mesh(MESH_INFO_PTR);
 int main(int argc, char *argv[])
 {
 /* Local declarations. */
-  struct LB_Struct *lb;
+  struct Zoltan_Struct *zz;
 
   char  *cmd_file;
   char   cmesg[256]; /* for error messages */
@@ -103,8 +103,8 @@ int main(int argc, char *argv[])
   }
 
   /* initialize Zoltan */
-  if ((error = LB_Initialize(argc, argv, &version)) != LB_OK) {
-    sprintf(cmesg, "fatal: LB_Initialize returned error code, %d", error);
+  if ((error = Zoltan_Initialize(argc, argv, &version)) != ZOLTAN_OK) {
+    sprintf(cmesg, "fatal: Zoltan_Initialize returned error code, %d", error);
     Gen_Error(0, cmesg);
     error_report(Proc);
     exit(1);
@@ -151,17 +151,17 @@ int main(int argc, char *argv[])
   /* broadcast the command info to all of the processor */
   brdcst_cmd_info(Proc, &prob, &pio_info);
 
-  LB_Set_Param(NULL, "DEBUG_MEMORY", "1");
+  Zoltan_Set_Param(NULL, "DEBUG_MEMORY", "1");
 
   /*
    *  Create a Zoltan structure.
    */
-  if ((lb = LB_Create(MPI_COMM_WORLD)) == NULL) {
-    Gen_Error(0, "fatal:  NULL returned from LB_Create()\n");
+  if ((zz = Zoltan_Create(MPI_COMM_WORLD)) == NULL) {
+    Gen_Error(0, "fatal:  NULL returned from Zoltan_Create()\n");
     return 0;
   }
 
-  if (!setup_zoltan(lb, Proc, &prob, &mesh)) {
+  if (!setup_zoltan(zz, Proc, &prob, &mesh)) {
     Gen_Error(0, "fatal: Error returned from setup_zoltan\n");
     error_report(Proc);
     exit(1);
@@ -202,7 +202,7 @@ int main(int argc, char *argv[])
      * now run Zoltan to get a new load balance and perform
      * the migration
      */
-    if (!run_zoltan(lb, Proc, &prob, &mesh)) {
+    if (!run_zoltan(zz, Proc, &prob, &mesh)) {
       Gen_Error(0, "fatal: Error returned from run_zoltan\n");
       error_report(Proc);
       exit(1);
@@ -216,9 +216,9 @@ int main(int argc, char *argv[])
 
   } /* End of loop over read and balance */
 
-  LB_Destroy(&lb);
+  Zoltan_Destroy(&zz);
 
-  LB_Memory_Stats();
+  Zoltan_Memory_Stats();
 
   /*
    * output the results

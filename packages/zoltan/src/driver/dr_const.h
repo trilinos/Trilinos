@@ -16,7 +16,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include "lbi_const.h"
+#include "zoltan.h"
 
 /*****************************************************************************
  *  Definitions for the LB library driver program.

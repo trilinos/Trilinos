@@ -27,7 +27,7 @@ void driver_eval(MESH_INFO_PTR mesh)
 {
 /*
  * Function to evaluate a partition.  Largely duplicates functionality
- * of LB_Eval, but provides sanity checking.
+ * of Zoltan_LB_Eval, but provides sanity checking.
  *
  * Currently uses only the first cpu weight.
  */

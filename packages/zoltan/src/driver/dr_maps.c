@@ -287,13 +287,13 @@ static void compare_maps_with_ddirectory_results(
 static const int want_size = 4;
 int num_elems = mesh->num_elems;
 Zoltan_DD_Directory *dd = NULL;
-LB_ID_PTR gids = NULL;
-LB_ID_PTR lids = NULL;
-LB_ID_PTR my_gids = NULL;
-LB_ID_PTR nbor_gids = NULL;
-LB_ID_PTR nbor_lids = NULL;
-LB_ID_PTR i_want = NULL;
-LB_ID_PTR others_want = NULL;
+ZOLTAN_ID_PTR gids = NULL;
+ZOLTAN_ID_PTR lids = NULL;
+ZOLTAN_ID_PTR my_gids = NULL;
+ZOLTAN_ID_PTR nbor_gids = NULL;
+ZOLTAN_ID_PTR nbor_lids = NULL;
+ZOLTAN_ID_PTR i_want = NULL;
+ZOLTAN_ID_PTR others_want = NULL;
 int *ownerlist = NULL;
 int *sindex = NULL;
 int num_nbor = 0;    /* Number of neighboring elements not on this processor. */
@@ -314,7 +314,7 @@ ZOLTAN_COMM_OBJ *comm;
   /* Load array of element globalIDs for elements on this processor. */
   /* Count number of neighboring elements not on this processor.     */
 
-  gids = (LB_ID_PTR) malloc(sizeof(LB_ID_TYPE) * 2 * num_elems);
+  gids = (ZOLTAN_ID_PTR) malloc(sizeof(ZOLTAN_ID_TYPE) * 2 * num_elems);
   if (num_elems > 0 && gids == NULL) {
     Gen_Error(0, "Fatal:  insufficient memory");
     error = 1;
@@ -357,7 +357,7 @@ ZOLTAN_COMM_OBJ *comm;
    * the DDirectory.
    */
 
-  nbor_gids = (LB_ID_PTR) malloc(sizeof(LB_ID_TYPE) * 3 * num_nbor);
+  nbor_gids = (ZOLTAN_ID_PTR) malloc(sizeof(ZOLTAN_ID_TYPE) * 3 * num_nbor);
   if (num_nbor > 0 && nbor_gids == NULL) {
     Gen_Error(0, "Fatal:  insufficient memory");
     error = 1;
@@ -427,7 +427,7 @@ ZOLTAN_COMM_OBJ *comm;
    * is a neighbor of > 1 element on this processor.
    */
 
-  i_want = (LB_ID_PTR) malloc(sizeof(LB_ID_TYPE) * want_size * num_nbor);
+  i_want = (ZOLTAN_ID_PTR) malloc(sizeof(ZOLTAN_ID_TYPE) * want_size * num_nbor);
   if (num_nbor > 0 && i_want == NULL) {
     Gen_Error(0, "Fatal:  insufficient memory");
     return;
@@ -454,13 +454,13 @@ ZOLTAN_COMM_OBJ *comm;
    * This info will determine what is put in this proc's communication maps.
    */
 
-  others_want = (LB_ID_PTR) malloc(sizeof(LB_ID_TYPE)*want_size*(num_others+1));
+  others_want = (ZOLTAN_ID_PTR) malloc(sizeof(ZOLTAN_ID_TYPE)*want_size*(num_others+1));
   if (others_want == NULL) {
     Gen_Error(0, "Fatal:  insufficient memory");
     return;
   }
 
-  ierr = Zoltan_Comm_Do(comm, 757, (char *) i_want, want_size * sizeof(LB_ID_TYPE), 
+  ierr = Zoltan_Comm_Do(comm, 757, (char *) i_want, want_size * sizeof(ZOLTAN_ID_TYPE), 
                     (char *) others_want);
   if (ierr) {
     Gen_Error(0, "Fatal:  Error returned from Zoltan_Comm_Do");

@@ -34,24 +34,24 @@ static int Num_GID = 1, Num_LID = 1;
  *  PROTOTYPES for load-balancer interface functions.
  */
 
-LB_NUM_OBJ_FN get_num_elements;
+ZOLTAN_NUM_OBJ_FN get_num_elements;
 /* not used right now --->
-LB_OBJ_LIST_FN get_elements;
+ZOLTAN_OBJ_LIST_FN get_elements;
 */
-LB_FIRST_OBJ_FN get_first_element;
-LB_NEXT_OBJ_FN get_next_element;
+ZOLTAN_FIRST_OBJ_FN get_first_element;
+ZOLTAN_NEXT_OBJ_FN get_next_element;
 
-LB_NUM_GEOM_FN get_num_geom;
-LB_GEOM_FN get_geom;
+ZOLTAN_NUM_GEOM_FN get_num_geom;
+ZOLTAN_GEOM_FN get_geom;
 
-LB_NUM_EDGES_FN get_num_edges;
-LB_EDGE_LIST_FN get_edge_list;
+ZOLTAN_NUM_EDGES_FN get_num_edges;
+ZOLTAN_EDGE_LIST_FN get_edge_list;
 
 /*****************************************************************************/
 /*****************************************************************************/
 /*****************************************************************************/
 
-int setup_zoltan(struct LB_Struct *lb, int Proc, PROB_INFO_PTR prob,
+int setup_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
                  MESH_INFO_PTR mesh)
 {
 /* Local declarations. */
@@ -65,9 +65,9 @@ int setup_zoltan(struct LB_Struct *lb, int Proc, PROB_INFO_PTR prob,
 
   /* Set the user-specified parameters */
   for (i = 0; i < prob->num_params; i++) {
-    ierr = LB_Set_Param(lb, prob->params[i][0], prob->params[i][1]);
-    if (ierr == LB_FATAL) {
-      sprintf(errmsg,"fatal: error in LB_Set_Param when setting parameter %s\n",
+    ierr = Zoltan_Set_Param(zz, prob->params[i][0], prob->params[i][1]);
+    if (ierr == ZOLTAN_FATAL) {
+      sprintf(errmsg,"fatal: error in Zoltan_Set_Param when setting parameter %s\n",
               prob->params[i][0]);
       Gen_Error(0, errmsg);
       return 0;
@@ -79,8 +79,8 @@ int setup_zoltan(struct LB_Struct *lb, int Proc, PROB_INFO_PTR prob,
   }
 
   /* Set the method */
-  if (LB_Set_Method(lb, prob->method) == LB_FATAL) {
-    Gen_Error(0, "fatal:  error returned from LB_Set_Method()\n");
+  if (Zoltan_LB_Set_Method(zz, prob->method) == ZOLTAN_FATAL) {
+    Gen_Error(0, "fatal:  error returned from Zoltan_LB_Set_Method()\n");
     return 0;
   }
 
@@ -88,47 +88,47 @@ int setup_zoltan(struct LB_Struct *lb, int Proc, PROB_INFO_PTR prob,
    * Set the callback functions
    */
 
-  if (LB_Set_Fn(lb, LB_NUM_OBJ_FN_TYPE, (void (*)()) get_num_elements,
-                (void *) mesh) == LB_FATAL) {
-    Gen_Error(0, "fatal:  error returned from LB_Set_Fn()\n");
+  if (Zoltan_Set_Fn(zz, ZOLTAN_NUM_OBJ_FN_TYPE, (void (*)()) get_num_elements,
+                (void *) mesh) == ZOLTAN_FATAL) {
+    Gen_Error(0, "fatal:  error returned from Zoltan_Set_Fn()\n");
     return 0;
   }
 
-  if (LB_Set_Fn(lb, LB_FIRST_OBJ_FN_TYPE, (void (*)()) get_first_element,
-                (void *) mesh) == LB_FATAL) {
-    Gen_Error(0, "fatal:  error returned from LB_Set_Fn()\n");
+  if (Zoltan_Set_Fn(zz, ZOLTAN_FIRST_OBJ_FN_TYPE, (void (*)()) get_first_element,
+                (void *) mesh) == ZOLTAN_FATAL) {
+    Gen_Error(0, "fatal:  error returned from Zoltan_Set_Fn()\n");
     return 0;
   }
 
-  if (LB_Set_Fn(lb, LB_NEXT_OBJ_FN_TYPE, (void (*)()) get_next_element,
-                (void *) mesh) == LB_FATAL) {
-    Gen_Error(0, "fatal:  error returned from LB_Set_Fn()\n");
-    return 0;
-  }
-
-  /* Functions for geometry based algorithms */
-  if (LB_Set_Fn(lb, LB_NUM_GEOM_FN_TYPE, (void (*)()) get_num_geom,
-                (void *) mesh) == LB_FATAL) {
-    Gen_Error(0, "fatal:  error returned from LB_Set_Fn()\n");
-    return 0;
-  }
-
-  if (LB_Set_Fn(lb, LB_GEOM_FN_TYPE, (void (*)()) get_geom,
-                (void *) mesh) == LB_FATAL) {
-    Gen_Error(0, "fatal:  error returned from LB_Set_Fn()\n");
+  if (Zoltan_Set_Fn(zz, ZOLTAN_NEXT_OBJ_FN_TYPE, (void (*)()) get_next_element,
+                (void *) mesh) == ZOLTAN_FATAL) {
+    Gen_Error(0, "fatal:  error returned from Zoltan_Set_Fn()\n");
     return 0;
   }
 
   /* Functions for geometry based algorithms */
-  if (LB_Set_Fn(lb, LB_NUM_EDGES_FN_TYPE, (void (*)()) get_num_edges,
-                (void *) mesh) == LB_FATAL) {
-    Gen_Error(0, "fatal:  error returned from LB_Set_Fn()\n");
+  if (Zoltan_Set_Fn(zz, ZOLTAN_NUM_GEOM_FN_TYPE, (void (*)()) get_num_geom,
+                (void *) mesh) == ZOLTAN_FATAL) {
+    Gen_Error(0, "fatal:  error returned from Zoltan_Set_Fn()\n");
     return 0;
   }
 
-  if (LB_Set_Fn(lb, LB_EDGE_LIST_FN_TYPE, (void (*)()) get_edge_list,
-                (void *) mesh)== LB_FATAL) {
-    Gen_Error(0, "fatal:  error returned from LB_Set_Fn()\n");
+  if (Zoltan_Set_Fn(zz, ZOLTAN_GEOM_FN_TYPE, (void (*)()) get_geom,
+                (void *) mesh) == ZOLTAN_FATAL) {
+    Gen_Error(0, "fatal:  error returned from Zoltan_Set_Fn()\n");
+    return 0;
+  }
+
+  /* Functions for geometry based algorithms */
+  if (Zoltan_Set_Fn(zz, ZOLTAN_NUM_EDGES_FN_TYPE, (void (*)()) get_num_edges,
+                (void *) mesh) == ZOLTAN_FATAL) {
+    Gen_Error(0, "fatal:  error returned from Zoltan_Set_Fn()\n");
+    return 0;
+  }
+
+  if (Zoltan_Set_Fn(zz, ZOLTAN_EDGE_LIST_FN_TYPE, (void (*)()) get_edge_list,
+                (void *) mesh)== ZOLTAN_FATAL) {
+    Gen_Error(0, "fatal:  error returned from Zoltan_Set_Fn()\n");
     return 0;
   }
 
@@ -140,19 +140,19 @@ int setup_zoltan(struct LB_Struct *lb, int Proc, PROB_INFO_PTR prob,
 /*****************************************************************************/
 /*****************************************************************************/
 
-int run_zoltan(struct LB_Struct *lb, int Proc, PROB_INFO_PTR prob,
+int run_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
                MESH_INFO_PTR mesh)
 {
 /* Local declarations. */
   char *yo = "run_zoltan";
 
   /* Variables returned by Zoltan */
-  LB_ID_PTR import_gids = NULL;  /* Global node nums of nodes to be imported */
-  LB_ID_PTR import_lids = NULL;  /* Pointers to nodes to be imported         */
+  ZOLTAN_ID_PTR import_gids = NULL;  /* Global node nums of nodes to be imported */
+  ZOLTAN_ID_PTR import_lids = NULL;  /* Pointers to nodes to be imported         */
   int   *import_procs = NULL;    /* Proc IDs of procs owning nodes to be
                                     imported.                                */
-  LB_ID_PTR export_gids = NULL;  /* Global node nums of nodes to be exported */
-  LB_ID_PTR export_lids = NULL;  /* Pointers to nodes to be exported         */
+  ZOLTAN_ID_PTR export_gids = NULL;  /* Global node nums of nodes to be exported */
+  ZOLTAN_ID_PTR export_lids = NULL;  /* Pointers to nodes to be exported         */
   int   *export_procs = NULL;    /* Proc IDs of destination procs for nodes
                                     to be exported.                          */
   int num_imported;              /* Number of nodes to be imported.          */
@@ -173,19 +173,19 @@ int run_zoltan(struct LB_Struct *lb, int Proc, PROB_INFO_PTR prob,
   if (Debug_Driver > 0) {
     if (Proc == 0) printf("\nBEFORE load balancing\n");
     driver_eval(mesh);
-    i = LB_Eval(lb, 1, NULL, NULL, NULL, NULL, NULL, NULL);
-    if (i) printf("Warning: LB_Eval returned error code %d\n", i);
+    i = Zoltan_LB_Eval(zz, 1, NULL, NULL, NULL, NULL, NULL, NULL);
+    if (i) printf("Warning: Zoltan_LB_Eval returned error code %d\n", i);
   }
 
   /*
    * Call Zoltan
    */
   stime = MPI_Wtime();
-  if (LB_Balance(lb, &new_decomp, &num_gid_entries, &num_lid_entries,
+  if (Zoltan_LB_Balance(zz, &new_decomp, &num_gid_entries, &num_lid_entries,
                  &num_imported, &import_gids,
                  &import_lids, &import_procs, &num_exported, &export_gids,
-                 &export_lids, &export_procs) == LB_FATAL) {
-    Gen_Error(0, "fatal:  error returned from LB_Balance()\n");
+                 &export_lids, &export_procs) == ZOLTAN_FATAL) {
+    Gen_Error(0, "fatal:  error returned from Zoltan_LB_Balance()\n");
     return 0;
   }
   mytime = MPI_Wtime() - stime;
@@ -197,8 +197,8 @@ int run_zoltan(struct LB_Struct *lb, int Proc, PROB_INFO_PTR prob,
     double x[] = {0.0L, 0.0L, 0.0L} ;
     int proc ;
     int status ;
-    status = LB_Point_Assign (lb, x, &proc) ;
-    if (status != LB_OK) printf ("Point_Assign returned an error\n") ;
+    status = Zoltan_LB_Point_Assign (zz, x, &proc) ;
+    if (status != ZOLTAN_OK) printf ("Point_Assign returned an error\n") ;
   }
 
   if (Proc == 0) {
@@ -210,15 +210,15 @@ int run_zoltan(struct LB_Struct *lb, int Proc, PROB_INFO_PTR prob,
 
     xlo = ylo = zlo = 0.0L ;
     xhi = yhi = zhi = 1.0L ;
-    status = LB_Box_Assign (lb, xlo, ylo, zlo, xhi, yhi, zhi, procs, &count) ;
-    if (status != LB_OK) printf ("Box_Assign returned an error\n") ;
+    status = Zoltan_LB_Box_Assign (zz, xlo, ylo, zlo, xhi, yhi, zhi, procs, &count) ;
+    if (status != ZOLTAN_OK) printf ("Box_Assign returned an error\n") ;
   }
 
   /*
    * Call another routine to perform the migration
    */
   if (new_decomp) {
-    if (!migrate_elements(Proc, mesh, lb, num_gid_entries, num_lid_entries,
+    if (!migrate_elements(Proc, mesh, zz, num_gid_entries, num_lid_entries,
                         num_imported, import_gids, import_lids, import_procs,
                         num_exported, export_gids, export_lids, export_procs)) {
       Gen_Error(0, "fatal:  error returned from migrate_elements()\n");
@@ -230,13 +230,13 @@ int run_zoltan(struct LB_Struct *lb, int Proc, PROB_INFO_PTR prob,
   if (Debug_Driver > 0) {
     if (Proc == 0) printf("\nAFTER load balancing\n");
     driver_eval(mesh);
-    i = LB_Eval(lb, 1, NULL, NULL, NULL, NULL, NULL, NULL);
-    if (i) printf("Warning: LB_Eval returned error code %d\n", i);
+    i = Zoltan_LB_Eval(zz, 1, NULL, NULL, NULL, NULL, NULL, NULL);
+    if (i) printf("Warning: Zoltan_LB_Eval returned error code %d\n", i);
   }
 
 
   /* Clean up */
-  (void) LB_Free_Data(&import_gids, &import_lids, &import_procs,
+  (void) Zoltan_LB_Free_Data(&import_gids, &import_lids, &import_procs,
                       &export_gids, &export_lids, &export_procs);
 
   DEBUG_TRACE_END(Proc, yo);
@@ -251,12 +251,12 @@ int get_num_elements(void *data, int *ierr)
 MESH_INFO_PTR mesh;
 
   if (data == NULL) {
-    *ierr = LB_FATAL;
+    *ierr = ZOLTAN_FATAL;
     return 0;
   }
   mesh = (MESH_INFO_PTR) data;
 
-  *ierr = LB_OK; /* set error code */
+  *ierr = ZOLTAN_OK; /* set error code */
 
   return(mesh->num_elems);
 }
@@ -265,7 +265,7 @@ MESH_INFO_PTR mesh;
 /*****************************************************************************/
 /*****************************************************************************/
 int get_first_element(void *data, int num_gid_entries, int num_lid_entries,
-                      LB_ID_PTR global_id, LB_ID_PTR local_id,
+                      ZOLTAN_ID_PTR global_id, ZOLTAN_ID_PTR local_id,
                       int wdim, float *wgt, int *ierr)
 {
   MESH_INFO_PTR mesh;
@@ -275,10 +275,10 @@ int get_first_element(void *data, int num_gid_entries, int num_lid_entries,
   int gid = num_gid_entries-1;
   int lid = num_lid_entries-1;
 
- *ierr = LB_OK; 
+ *ierr = ZOLTAN_OK; 
 
   if (data == NULL) {
-    *ierr = LB_FATAL;
+    *ierr = ZOLTAN_FATAL;
     return 0;
   }
   
@@ -291,7 +291,7 @@ int get_first_element(void *data, int num_gid_entries, int num_lid_entries,
   elem = mesh->elements;
   current_elem = &elem[0];
   if (num_lid_entries) local_id[lid] = 0;
-  global_id[gid] = (LB_ID_TYPE) current_elem->globalID;
+  global_id[gid] = (ZOLTAN_ID_TYPE) current_elem->globalID;
 
   if (wdim>0){
     for (i=0; i<wdim; i++){
@@ -308,8 +308,8 @@ int get_first_element(void *data, int num_gid_entries, int num_lid_entries,
 /*****************************************************************************/
 /*****************************************************************************/
 int get_next_element(void *data, int num_gid_entries, int num_lid_entries,
-                     LB_ID_PTR global_id, LB_ID_PTR local_id,
-                     LB_ID_PTR next_global_id, LB_ID_PTR next_local_id, 
+                     ZOLTAN_ID_PTR global_id, ZOLTAN_ID_PTR local_id,
+                     ZOLTAN_ID_PTR next_global_id, ZOLTAN_ID_PTR next_local_id, 
                      int wdim, float *next_wgt, int *ierr)
 {
   int found = 0;
@@ -321,7 +321,7 @@ int get_next_element(void *data, int num_gid_entries, int num_lid_entries,
   int lid = num_lid_entries-1;
 
   if (data == NULL) {
-    *ierr = LB_FATAL;
+    *ierr = ZOLTAN_FATAL;
     return 0;
   }
   
@@ -348,7 +348,7 @@ int get_next_element(void *data, int num_gid_entries, int num_lid_entries,
       }
     }
 
-    *ierr = LB_OK; 
+    *ierr = ZOLTAN_OK; 
   }
 
   return(found);
@@ -362,12 +362,12 @@ int get_num_geom(void *data, int *ierr)
   MESH_INFO_PTR mesh;
 
   if (data == NULL) {
-    *ierr = LB_FATAL;
+    *ierr = ZOLTAN_FATAL;
     return 0;
   }
   mesh = (MESH_INFO_PTR) data;
 
-  *ierr = LB_OK; /* set error flag */
+  *ierr = ZOLTAN_OK; /* set error flag */
 
   return(mesh->num_dims);
 }
@@ -376,7 +376,7 @@ int get_num_geom(void *data, int *ierr)
 /*****************************************************************************/
 /*****************************************************************************/
 void get_geom(void *data, int num_gid_entries, int num_lid_entries,
-              LB_ID_PTR global_id, LB_ID_PTR local_id,
+              ZOLTAN_ID_PTR global_id, ZOLTAN_ID_PTR local_id,
               double *coor, int *ierr)
 {
   ELEM_INFO *elem;
@@ -388,7 +388,7 @@ void get_geom(void *data, int num_gid_entries, int num_lid_entries,
   int lid = num_lid_entries-1;
 
   if (data == NULL) {
-    *ierr = LB_FATAL;
+    *ierr = ZOLTAN_FATAL;
     return;
   }
   mesh = (MESH_INFO_PTR) data;
@@ -399,7 +399,7 @@ void get_geom(void *data, int num_gid_entries, int num_lid_entries,
 
   if (mesh->eb_nnodes[current_elem->elem_blk] == 0) {
     /* No geometry info was read. */
-    *ierr = LB_FATAL;
+    *ierr = ZOLTAN_FATAL;
     return;
   }
   
@@ -415,14 +415,14 @@ void get_geom(void *data, int num_gid_entries, int num_lid_entries,
     coor[i] = tmp / mesh->eb_nnodes[current_elem->elem_blk];
   }
 
-  *ierr = LB_OK;
+  *ierr = ZOLTAN_OK;
 }
 
 /*****************************************************************************/
 /*****************************************************************************/
 /*****************************************************************************/
 int get_num_edges(void *data, int num_gid_entries, int num_lid_entries,
-                  LB_ID_PTR global_id, LB_ID_PTR local_id, int *ierr)
+                  ZOLTAN_ID_PTR global_id, ZOLTAN_ID_PTR local_id, int *ierr)
 {
   MESH_INFO_PTR mesh;
   ELEM_INFO *elem, *current_elem;
@@ -431,13 +431,13 @@ int get_num_edges(void *data, int num_gid_entries, int num_lid_entries,
   int idx;
 
   if (data == NULL) {
-    *ierr = LB_FATAL;
+    *ierr = ZOLTAN_FATAL;
     return 0;
   }
   mesh = (MESH_INFO_PTR) data;
   elem = mesh->elements;
 
-  *ierr = LB_OK;
+  *ierr = ZOLTAN_OK;
 
   current_elem = (num_lid_entries 
                     ? &elem[local_id[lid]] 
@@ -450,8 +450,8 @@ int get_num_edges(void *data, int num_gid_entries, int num_lid_entries,
 /*****************************************************************************/
 /*****************************************************************************/
 void get_edge_list (void *data, int num_gid_entries, int num_lid_entries, 
-                   LB_ID_PTR global_id, LB_ID_PTR local_id,
-                   LB_ID_PTR nbor_global_id, int *nbor_procs,
+                   ZOLTAN_ID_PTR global_id, ZOLTAN_ID_PTR local_id,
+                   ZOLTAN_ID_PTR nbor_global_id, int *nbor_procs,
                    int get_ewgts, float *nbor_ewgts, int *ierr)
 {
   MESH_INFO_PTR mesh;
@@ -462,7 +462,7 @@ void get_edge_list (void *data, int num_gid_entries, int num_lid_entries,
   int lid = num_lid_entries-1;
 
   if (data == NULL) {
-    *ierr = LB_FATAL;
+    *ierr = ZOLTAN_FATAL;
     return;
   }
 
@@ -499,7 +499,7 @@ void get_edge_list (void *data, int num_gid_entries, int num_lid_entries,
     j++;
   }
 
-  *ierr = LB_OK;
+  *ierr = ZOLTAN_OK;
 }
 /*****************************************************************************/
 /*****************************************************************************/

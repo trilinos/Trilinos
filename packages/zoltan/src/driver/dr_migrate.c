@@ -52,11 +52,11 @@
 /*
  *  PROTOTYPES for load-balancer interface functions.
  */
-LB_PRE_MIGRATE_FN migrate_pre_process;
-LB_POST_MIGRATE_FN migrate_post_process;
-LB_OBJ_SIZE_FN migrate_elem_size;
-LB_PACK_OBJ_FN migrate_pack_elem;
-LB_UNPACK_OBJ_FN migrate_unpack_elem;
+ZOLTAN_PRE_MIGRATE_FN migrate_pre_process;
+ZOLTAN_POST_MIGRATE_FN migrate_post_process;
+ZOLTAN_OBJ_SIZE_FN migrate_elem_size;
+ZOLTAN_PACK_OBJ_FN migrate_pack_elem;
+ZOLTAN_UNPACK_OBJ_FN migrate_unpack_elem;
 
 /*****************************************************************************/
 /*
@@ -82,16 +82,16 @@ static int Use_Edge_Wgts = 0;         /* Flag indicating whether elements
 int migrate_elements(
   int Proc,
   MESH_INFO_PTR mesh,
-  struct LB_Struct *lb,
+  struct Zoltan_Struct *zz,
   int num_gid_entries, 
   int num_lid_entries,
   int num_imp,
-  LB_ID_PTR imp_gids,
-  LB_ID_PTR imp_lids,
+  ZOLTAN_ID_PTR imp_gids,
+  ZOLTAN_ID_PTR imp_lids,
   int *imp_procs,
   int num_exp,
-  LB_ID_PTR exp_gids,
-  LB_ID_PTR exp_lids,
+  ZOLTAN_ID_PTR exp_gids,
+  ZOLTAN_ID_PTR exp_lids,
   int *exp_procs)
 {
 /* Local declarations. */
@@ -103,40 +103,40 @@ char *yo = "migrate_elements";
   /*
    * register migration functions
    */
-  if (LB_Set_Fn(lb, LB_PRE_MIGRATE_FN_TYPE, (void (*)()) migrate_pre_process,
-                (void *) mesh) == LB_FATAL) {
-    Gen_Error(0, "fatal:  error returned from LB_Set_Fn()\n");
+  if (Zoltan_Set_Fn(zz, ZOLTAN_PRE_MIGRATE_FN_TYPE, (void (*)()) migrate_pre_process,
+                (void *) mesh) == ZOLTAN_FATAL) {
+    Gen_Error(0, "fatal:  error returned from Zoltan_Set_Fn()\n");
     return 0;
   }
 
-  if (LB_Set_Fn(lb, LB_POST_MIGRATE_FN_TYPE, (void (*)()) migrate_post_process,
-                (void *) mesh) == LB_FATAL) {
-    Gen_Error(0, "fatal:  error returned from LB_Set_Fn()\n");
+  if (Zoltan_Set_Fn(zz, ZOLTAN_POST_MIGRATE_FN_TYPE, (void (*)()) migrate_post_process,
+                (void *) mesh) == ZOLTAN_FATAL) {
+    Gen_Error(0, "fatal:  error returned from Zoltan_Set_Fn()\n");
     return 0;
   }
 
-  if (LB_Set_Fn(lb, LB_OBJ_SIZE_FN_TYPE, (void (*)()) migrate_elem_size,
-               (void *) mesh) == LB_FATAL) {
-    Gen_Error(0, "fatal:  error returned from LB_Set_Fn()\n");
+  if (Zoltan_Set_Fn(zz, ZOLTAN_OBJ_SIZE_FN_TYPE, (void (*)()) migrate_elem_size,
+               (void *) mesh) == ZOLTAN_FATAL) {
+    Gen_Error(0, "fatal:  error returned from Zoltan_Set_Fn()\n");
     return 0;
   }
 
-  if (LB_Set_Fn(lb, LB_PACK_OBJ_FN_TYPE, (void (*)()) migrate_pack_elem,
-                (void *) mesh) == LB_FATAL) {
-    Gen_Error(0, "fatal:  error returned from LB_Set_Fn()\n");
+  if (Zoltan_Set_Fn(zz, ZOLTAN_PACK_OBJ_FN_TYPE, (void (*)()) migrate_pack_elem,
+                (void *) mesh) == ZOLTAN_FATAL) {
+    Gen_Error(0, "fatal:  error returned from Zoltan_Set_Fn()\n");
     return 0;
   }
 
-  if (LB_Set_Fn(lb, LB_UNPACK_OBJ_FN_TYPE, (void (*)()) migrate_unpack_elem,
-                (void *) mesh) == LB_FATAL) {
-    Gen_Error(0, "fatal:  error returned from LB_Set_Fn()\n");
+  if (Zoltan_Set_Fn(zz, ZOLTAN_UNPACK_OBJ_FN_TYPE, (void (*)()) migrate_unpack_elem,
+                (void *) mesh) == ZOLTAN_FATAL) {
+    Gen_Error(0, "fatal:  error returned from Zoltan_Set_Fn()\n");
     return 0;
   }
 
-  if (LB_Help_Migrate(lb, 
+  if (Zoltan_Help_Migrate(zz, 
                       num_imp, imp_gids, imp_lids, imp_procs,
-                      num_exp, exp_gids, exp_lids, exp_procs) == LB_FATAL) {
-    Gen_Error(0, "fatal:  error returned from LB_Help_Migrate()\n");
+                      num_exp, exp_gids, exp_lids, exp_procs) == ZOLTAN_FATAL) {
+    Gen_Error(0, "fatal:  error returned from Zoltan_Help_Migrate()\n");
     return 0;
   }
 
@@ -150,10 +150,10 @@ char *yo = "migrate_elements";
 /*****************************************************************************/
 void migrate_pre_process(void *data, int num_gid_entries, int num_lid_entries, 
                                int num_import, 
-                               LB_ID_PTR import_global_ids,
-                               LB_ID_PTR import_local_ids, int *import_procs,
-                               int num_export, LB_ID_PTR export_global_ids,
-                               LB_ID_PTR export_local_ids, int *export_procs,
+                               ZOLTAN_ID_PTR import_global_ids,
+                               ZOLTAN_ID_PTR import_local_ids, int *import_procs,
+                               int num_export, ZOLTAN_ID_PTR export_global_ids,
+                               ZOLTAN_ID_PTR export_local_ids, int *export_procs,
                                int *ierr)
 {
 int i, j, k, idx, maxlen, proc, offset;
@@ -170,10 +170,10 @@ int lid = num_lid_entries-1;
 int gid = num_gid_entries-1;
 char msg[256];
 
-  *ierr = LB_OK;
+  *ierr = ZOLTAN_OK;
 
   if (data == NULL) {
-    *ierr = LB_FATAL;
+    *ierr = ZOLTAN_FATAL;
     return;
   }
   mesh = (MESH_INFO_PTR) data;
@@ -215,7 +215,7 @@ char msg[256];
 
     if (New_Elem_Index == NULL || proc_ids == NULL || change == NULL) {
       Gen_Error(0, "fatal: insufficient memory");
-      *ierr = LB_MEMERR;
+      *ierr = ZOLTAN_MEMERR;
       return;
     }
 
@@ -308,7 +308,7 @@ char msg[256];
     send_vec = (int *) malloc(maxlen * sizeof(int));
     if (send_vec == NULL) {
       Gen_Error(0, "fatal: insufficient memory");
-      *ierr = LB_MEMERR;
+      *ierr = ZOLTAN_MEMERR;
       return;
     }
 
@@ -355,7 +355,7 @@ char msg[256];
               sprintf(msg, "fatal: unable to locate element %d in "
                            "New_Elem_Index", mesh->ecmap_neighids[offset]);
               Gen_Error(0, msg);
-              *ierr = LB_FATAL;
+              *ierr = ZOLTAN_FATAL;
               return;
             }
             elements[bor_elem].adj[k] = idx;
@@ -393,10 +393,10 @@ char msg[256];
 /*****************************************************************************/
 void migrate_post_process(void *data, int num_gid_entries, int num_lid_entries,
                                int num_import, 
-                               LB_ID_PTR import_global_ids,
-                               LB_ID_PTR import_local_ids, int *import_procs,
-                               int num_export, LB_ID_PTR export_global_ids,
-                               LB_ID_PTR export_local_ids, int *export_procs,
+                               ZOLTAN_ID_PTR import_global_ids,
+                               ZOLTAN_ID_PTR import_local_ids, int *import_procs,
+                               int num_export, ZOLTAN_ID_PTR export_global_ids,
+                               ZOLTAN_ID_PTR export_local_ids, int *export_procs,
                                int *ierr)
 {
 MESH_INFO_PTR mesh;
@@ -406,7 +406,7 @@ int i, j, k, last;
 int adj_elem;
 
   if (data == NULL) {
-    *ierr = LB_FATAL;
+    *ierr = ZOLTAN_FATAL;
     return;
   }
   mesh = (MESH_INFO_PTR) data;
@@ -493,7 +493,7 @@ int adj_elem;
 /*****************************************************************************/
 /*****************************************************************************/
 int migrate_elem_size(void *data, int num_gid_entries, int num_lid_entries,
-    LB_ID_PTR elem_gid, LB_ID_PTR elem_lid, int *ierr)
+    ZOLTAN_ID_PTR elem_gid, ZOLTAN_ID_PTR elem_lid, int *ierr)
 /*
  * Function to return size of element information for a single element.
  */
@@ -506,10 +506,10 @@ int gid = num_gid_entries-1;
 int lid = num_lid_entries-1;
 int idx;
 
-  *ierr = LB_OK;
+  *ierr = ZOLTAN_OK;
 
   if (data == NULL) {
-    *ierr = LB_FATAL;
+    *ierr = ZOLTAN_FATAL;
     return 0;
   }
   mesh = (MESH_INFO_PTR) data;
@@ -552,7 +552,7 @@ int idx;
 /*****************************************************************************/
 /*****************************************************************************/
 void migrate_pack_elem(void *data, int num_gid_entries, int num_lid_entries,
-                       LB_ID_PTR elem_gid, LB_ID_PTR elem_lid,
+                       ZOLTAN_ID_PTR elem_gid, ZOLTAN_ID_PTR elem_lid,
                        int mig_proc, int elem_data_size, char *buf, int *ierr)
 {
   MESH_INFO_PTR mesh;
@@ -568,7 +568,7 @@ void migrate_pack_elem(void *data, int num_gid_entries, int num_lid_entries,
   int lid = num_lid_entries-1;
 
   if (data == NULL) {
-    *ierr = LB_FATAL;
+    *ierr = ZOLTAN_FATAL;
     return;
   }
   mesh = (MESH_INFO_PTR) data;
@@ -672,15 +672,15 @@ void migrate_pack_elem(void *data, int num_gid_entries, int num_lid_entries,
    * completed.
    */
   if (size > elem_data_size) 
-    *ierr = LB_WARN;
+    *ierr = ZOLTAN_WARN;
   else
-    *ierr = LB_OK;
+    *ierr = ZOLTAN_OK;
 }
 
 /*****************************************************************************/
 /*****************************************************************************/
 /*****************************************************************************/
-void migrate_unpack_elem(void *data, int num_gid_entries, LB_ID_PTR elem_gid, 
+void migrate_unpack_elem(void *data, int num_gid_entries, ZOLTAN_ID_PTR elem_gid, 
                          int elem_data_size, char *buf, int *ierr)
 {
   MESH_INFO_PTR mesh;
@@ -694,7 +694,7 @@ void migrate_unpack_elem(void *data, int num_gid_entries, LB_ID_PTR elem_gid,
   int gid = num_gid_entries-1;
 
   if (data == NULL) {
-    *ierr = LB_FATAL;
+    *ierr = ZOLTAN_FATAL;
     return;
   }
   mesh = (MESH_INFO_PTR) data;
@@ -705,7 +705,7 @@ void migrate_unpack_elem(void *data, int num_gid_entries, LB_ID_PTR elem_gid,
 
   if ((idx = in_list(elem_gid[gid], New_Elem_Index_Size, New_Elem_Index)) == -1) {
     Gen_Error(0, "fatal: Unable to locate position for element");
-    *ierr = LB_FATAL;
+    *ierr = ZOLTAN_FATAL;
     return;
   }
 
@@ -729,7 +729,7 @@ void migrate_unpack_elem(void *data, int num_gid_entries, LB_ID_PTR elem_gid,
     current_elem->connect = (int *) malloc(num_nodes * sizeof(int));
     if (current_elem->connect == NULL) {
       Gen_Error(0, "fatal: insufficient memory");
-      *ierr = LB_MEMERR;
+      *ierr = ZOLTAN_MEMERR;
       return;
     }
     for (i = 0; i < num_nodes; i++) {
@@ -746,7 +746,7 @@ void migrate_unpack_elem(void *data, int num_gid_entries, LB_ID_PTR elem_gid,
     current_elem->adj_proc = (int *)malloc(current_elem->adj_len * sizeof(int));
     if (current_elem->adj == NULL || current_elem->adj_proc == NULL) {
       Gen_Error(0, "fatal: insufficient memory");
-      *ierr = LB_MEMERR;
+      *ierr = ZOLTAN_MEMERR;
       return;
     }
     for (i =  0; i < current_elem->adj_len; i++) {
@@ -771,7 +771,7 @@ void migrate_unpack_elem(void *data, int num_gid_entries, LB_ID_PTR elem_gid,
                                               * sizeof(float));
       if (current_elem->edge_wgt == NULL) {
         Gen_Error(0, "fatal: insufficient memory");
-        *ierr = LB_MEMERR;
+        *ierr = ZOLTAN_MEMERR;
         return;
       }
       for (i = 0; i < current_elem->adj_len; i++) {
@@ -792,14 +792,14 @@ void migrate_unpack_elem(void *data, int num_gid_entries, LB_ID_PTR elem_gid,
     current_elem->coord = (float **) malloc(num_nodes * sizeof(float *));
     if (current_elem->coord == NULL) {
       Gen_Error(0, "fatal: insufficient memory");
-      *ierr = LB_MEMERR;
+      *ierr = ZOLTAN_MEMERR;
       return;
     }
     for (i = 0; i < num_nodes; i++) {
       current_elem->coord[i] = (float *) malloc(mesh->num_dims * sizeof(float));
       if (current_elem->coord[i] == NULL) {
         Gen_Error(0, "fatal: insufficient memory");
-        *ierr = LB_MEMERR;
+        *ierr = ZOLTAN_MEMERR;
         return;
       }
       for (j = 0; j < mesh->num_dims; j++) {
@@ -816,7 +816,7 @@ void migrate_unpack_elem(void *data, int num_gid_entries, LB_ID_PTR elem_gid,
   mesh->eb_cnts[current_elem->elem_blk]++;
 
   if (size > elem_data_size) 
-    *ierr = LB_WARN;
+    *ierr = ZOLTAN_WARN;
   else
-    *ierr = LB_OK;
+    *ierr = ZOLTAN_OK;
 }
