@@ -896,6 +896,9 @@ static int LB_ParMetis_Jostle(
         else
            vwgt[i] = (int) ceil(float_vwgt[i]*scale);
       }
+      if (lb->Debug_Level >= LB_DEBUG_ALL)
+        printf("[%1d] Debug: First vertex (object) weights are = %d, %d, %d\n",
+          lb->Proc, vwgt[0], vwgt[1], vwgt[2]);
       LB_FREE(&float_vwgt);
     }
 
@@ -966,7 +969,7 @@ static int LB_ParMetis_Jostle(
 
   /* Get ready to call ParMETIS or Jostle */
   edgecut = -1; 
-  wgtflag = 2*(obj_wgt_dim>0) + (comm_wgt_dim>0); /* Multidim wgts not supported yet */
+  wgtflag = 2*(obj_wgt_dim>0) + (comm_wgt_dim>0); 
   numflag = 0;
   part = (idxtype *)LB_MALLOC((tmp_num_obj+1) * sizeof(idxtype));
   if (!part){
@@ -1018,8 +1021,10 @@ static int LB_ParMetis_Jostle(
        NULL, options, &ndims, NULL); 
     LB_TRACE_DETAIL(lb, yo, "Returned from the Jostle library");
 #else
-    /* We don't have Jostle */
-    fprintf(stderr, "Sorry, Jostle is not available on this system.\n");
+    /* We don't know about Jostle */
+    fprintf(stderr, "ZOLTAN ERROR: Sorry, Jostle is not available on this system.\n"
+            " If you have Jostle, please set the JOSTLE_PATH appropriately in the makefile and "
+            "recompile Zoltan. Otherwise, use a different method.\n");
     FREE_MY_MEMORY;
     LB_TRACE_EXIT(lb, yo);
     return LB_FATAL;
@@ -1030,15 +1035,16 @@ static int LB_ParMetis_Jostle(
     if (obj_wgt_dim <= 1)
       ParMETIS_PartKway (vtxdist, xadj, adjncy, vwgt, adjwgt, &wgtflag, 
         &numflag, &num_proc, options, &edgecut, part, &comm);
-    else /* obj_wgt_dim >= 2 */
-      /* Beta version of multiconstraint ParMetis. Interface may change! */
+    else { /* obj_wgt_dim >= 2 */
 #ifdef BETA_PARMETIS
+      /* Beta version of multiconstraint ParMetis. Interface may change! */
       Moc_ParMETIS_PartKway (&obj_wgt_dim, vtxdist, xadj, adjncy, vwgt, adjwgt, &wgtflag, 
         &numflag, &num_proc, imb_tols, options, &edgecut, part, &comm, (lb->Proc +1));
 #else
       fprintf(stderr, "Zoltan error: You need the newest beta version of ParMETIS to use multi-weights."
         "If you have this installed, please define BETA_PARMETIS and recompile Zoltan.\n");
 #endif /* BETA_PARMETIS */
+    }
     LB_TRACE_DETAIL(lb, yo, "Returned from the ParMETIS library");
   }
   else if (strcmp(alg, "PARTGEOMKWAY") == 0){

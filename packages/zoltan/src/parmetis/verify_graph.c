@@ -68,16 +68,17 @@ int LB_verify_graph(MPI_Comm comm, idxtype *vtxdist, idxtype *xadj,
        sum = 0;
        for (k=0; k<vwgt_dim; k++){
          if (vwgt[i*vwgt_dim+k] < 0) {
-            fprintf(stderr, "Zoltan error: Negative object weight of %d in %s\n", 
-                    vwgt[i*vwgt_dim+k], yo);
+            fprintf(stderr, "Zoltan error (proc %d): Negative object weight of %d in %s\n", 
+                    proc, vwgt[i*vwgt_dim+k], yo);
             ierr = LB_FATAL;
             goto barrier1;
          }
          sum += vwgt[i*vwgt_dim+k];
        }
        if (sum == 0){
-          fprintf(stderr, "Zoltan warning: In %s, zero weight sum for object %d (after scaling)\n", 
-                  yo, i);
+          fprintf(stderr, "Zoltan warning (proc %d): In %s, zero weight sum for object %d"
+                  " (after scaling)\n", 
+                  proc, yo, i);
           ierr = LB_WARN;
        }
     }
@@ -90,15 +91,16 @@ int LB_verify_graph(MPI_Comm comm, idxtype *vtxdist, idxtype *xadj,
       sum = 0;
       for (k=0; k<ewgt_dim; k++){
         if (adjwgt[j*ewgt_dim+k] < 0) {
-          fprintf(stderr, "Zoltan error: Negative communication weight of %d in %s\n", 
-          vwgt[j], yo);
+          fprintf(stderr, "Zoltan error (proc %d): Negative communication weight of %d in %s\n", 
+                  proc, vwgt[j], yo);
           ierr = LB_FATAL;
           goto barrier1;
         }
         sum += adjwgt[j*ewgt_dim+k];
       }
       if (sum == 0){
-         fprintf(stderr, "Zoltan warning: Zero communication weight in %s\n", yo);
+         fprintf(stderr, "Zoltan warning (proc %d): Zero communication weight in %s\n", 
+                 proc, yo);
          ierr = LB_WARN;
       }
     }
@@ -115,22 +117,22 @@ int LB_verify_graph(MPI_Comm comm, idxtype *vtxdist, idxtype *xadj,
       global_j = adjncy[ii];
       /* Reasonable vertex value? */
       if ((global_j < vtxdist[0]) || (global_j >= vtxdist[nprocs])){
-        fprintf(stderr, "Zoltan error: Edge to invalid vertex %d detected in %s.\n", 
-                global_j, yo);
+        fprintf(stderr, "Zoltan error (proc %d): Edge to invalid vertex %d detected in %s.\n", 
+                proc, global_j, yo);
         ierr = LB_FATAL;
         goto barrier1;
       }
       /* Self edge? */
       if (global_j == global_i){
-        fprintf(stderr, "Zoltan warning: Self edge for vertex %d detected in %s.\n", 
-                global_i, yo);
+        fprintf(stderr, "Zoltan warning (proc %d): Self edge for vertex %d detected in %s.\n", 
+                proc, global_i, yo);
         ierr = LB_WARN;
       }
       /* Duplicate edge? */
       for (kk=xadj[i]; kk<xadj[i+1]; kk++){
         if ((kk != ii) && (adjncy[kk] == adjncy[ii])){
-          fprintf(stderr, "Zoltan warning: Duplicate edge (%d,%d) detected in %s.\n", 
-                  global_i, global_j, yo);
+          fprintf(stderr, "Zoltan warning (proc %d): Duplicate edge (%d,%d) detected in %s.\n", 
+                  proc, global_i, global_j, yo);
           ierr = LB_WARN;
         }
       }
@@ -153,9 +155,9 @@ int LB_verify_graph(MPI_Comm comm, idxtype *vtxdist, idxtype *xadj,
           }
         }
         if (!flag) {
-          fprintf(stderr, "Zoltan error: Graph is not symmetric in %s. "
+          fprintf(stderr, "Zoltan error (proc %d): Graph is not symmetric in %s. "
                   "Edge (%d,%d) exists, but no edge (%d,%d).\n", 
-                  yo, global_i, global_j, global_j, global_i);
+                  proc, yo, global_i, global_j, global_j, global_i);
           ierr = LB_FATAL;
           goto barrier1;
         }
@@ -191,7 +193,7 @@ barrier1:
     proclist = (int *) LB_MALLOC(cross_edges*sizeof(int));
 
     if (!(sendbuf && recvbuf && proclist)){
-       fprintf(stderr, "Zoltan error: Out of memory in %s\n", yo);
+       fprintf(stderr, "Zoltan error (proc %d): Out of memory in %s\n", proc, yo);
        ierr = LB_MEMERR;
     }
 
@@ -254,18 +256,18 @@ barrier1:
               /* Check weights */
               for (k=0; k<ewgt_dim; k++){
                 if (ptr1[2+k] != ptr2[2+k]){
-                  fprintf(stderr, "Zoltan error: edge weight (%d,%d) is not "
+                  fprintf(stderr, "Zoltan error (proc %d): edge weight (%d,%d) is not "
                           "symmetric: %d != %d\n", 
-                           ptr1[0], ptr1[1], ptr1[2+k], ptr2[2+k]);
+                           proc, ptr1[0], ptr1[1], ptr1[2+k], ptr2[2+k]);
                   ierr = LB_FATAL;
                 }
               }
             }
           }
           if (!flag){
-            fprintf(stderr, "Zoltan error: Graph is not symmetric in %s. "
+            fprintf(stderr, "Zoltan error (proc %d): Graph is not symmetric in %s. "
                     "Edge (%d,%d) exists, but not (%d,%d)\n", 
-                    yo, ptr1[0], ptr1[1], ptr1[1], ptr1[0]);
+                    proc, yo, ptr1[0], ptr1[1], ptr1[1], ptr1[0]);
             ierr = LB_FATAL;
           }
         }
