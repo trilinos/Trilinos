@@ -67,6 +67,9 @@ public :: &
    ZOLTAN_BORDER_OBJ_LIST_FN_TYPE, &
    ZOLTAN_FIRST_BORDER_OBJ_FN_TYPE, &
    ZOLTAN_NEXT_BORDER_OBJ_FN_TYPE, &
+   ZOLTAN_PRE_MIGRATE_PP_FN_TYPE, &
+   ZOLTAN_MID_MIGRATE_PP_FN_TYPE, &
+   ZOLTAN_POST_MIGRATE_PP_FN_TYPE, &
    ZOLTAN_PRE_MIGRATE_FN_TYPE, &
    ZOLTAN_MID_MIGRATE_FN_TYPE, &
    ZOLTAN_POST_MIGRATE_FN_TYPE, &
@@ -126,6 +129,9 @@ public :: &
    Zoltan_Set_First_Coarse_Obj_Fn, Zoltan_Set_Next_Coarse_Obj_Fn, &
    Zoltan_Set_Num_Child_Fn, Zoltan_Set_Child_List_Fn, &
    Zoltan_Set_Child_Weight_Fn, &
+   Zoltan_Set_Obj_Size_Fn, Zoltan_Set_Pack_Obj_Fn, Zoltan_Set_Unpack_Obj_Fn, &
+   Zoltan_Set_Pre_Migrate_PP_Fn, Zoltan_Set_Mid_Migrate_PP_Fn, &
+   Zoltan_Set_Post_Migrate_PP_Fn, &
    Zoltan_Set_Pre_Migrate_Fn, Zoltan_Set_Mid_Migrate_Fn, &
    Zoltan_Set_Post_Migrate_Fn, &
    Zoltan_Set_Obj_Size_Fn, Zoltan_Set_Pack_Obj_Fn, Zoltan_Set_Unpack_Obj_Fn, &
@@ -178,12 +184,12 @@ type(ZOLTAN_FN_TYPEF), parameter :: &
    ZOLTAN_NUM_BORDER_OBJ_FN_TYPE   = ZOLTAN_FN_TYPEF(8_Zoltan_INT), &
    ZOLTAN_FIRST_BORDER_OBJ_FN_TYPE = ZOLTAN_FN_TYPEF(10_Zoltan_INT), &
    ZOLTAN_NEXT_BORDER_OBJ_FN_TYPE  = ZOLTAN_FN_TYPEF(11_Zoltan_INT), &
-   ZOLTAN_OBJ_SIZE_FN_TYPE         = ZOLTAN_FN_TYPEF(15_Zoltan_INT), &
-   ZOLTAN_NUM_COARSE_OBJ_FN_TYPE   = ZOLTAN_FN_TYPEF(18_Zoltan_INT), &
-   ZOLTAN_FIRST_COARSE_OBJ_FN_TYPE = ZOLTAN_FN_TYPEF(20_Zoltan_INT), &
-   ZOLTAN_NEXT_COARSE_OBJ_FN_TYPE  = ZOLTAN_FN_TYPEF(21_Zoltan_INT), &
-   ZOLTAN_NUM_CHILD_FN_TYPE        = ZOLTAN_FN_TYPEF(22_Zoltan_INT), &
-   ZOLTAN_PARTITION_FN_TYPE        = ZOLTAN_FN_TYPEF(28_Zoltan_INT)
+   ZOLTAN_OBJ_SIZE_FN_TYPE         = ZOLTAN_FN_TYPEF(18_Zoltan_INT), &
+   ZOLTAN_NUM_COARSE_OBJ_FN_TYPE   = ZOLTAN_FN_TYPEF(21_Zoltan_INT), &
+   ZOLTAN_FIRST_COARSE_OBJ_FN_TYPE = ZOLTAN_FN_TYPEF(23_Zoltan_INT), &
+   ZOLTAN_NEXT_COARSE_OBJ_FN_TYPE  = ZOLTAN_FN_TYPEF(24_Zoltan_INT), &
+   ZOLTAN_NUM_CHILD_FN_TYPE        = ZOLTAN_FN_TYPEF(25_Zoltan_INT), &
+   ZOLTAN_PARTITION_FN_TYPE        = ZOLTAN_FN_TYPEF(31_Zoltan_INT)
 
 #ifdef SUNSOFT
 ! bug in SunSoft compiler prevents using parameter
@@ -195,17 +201,20 @@ type(ZOLTAN_FN_TYPES), parameter :: &
    ZOLTAN_GEOM_FN_TYPE             = ZOLTAN_FN_TYPES(3_Zoltan_INT), &
    ZOLTAN_OBJ_LIST_FN_TYPE         = ZOLTAN_FN_TYPES(5_Zoltan_INT), &
    ZOLTAN_BORDER_OBJ_LIST_FN_TYPE  = ZOLTAN_FN_TYPES(9_Zoltan_INT), &
-   ZOLTAN_PRE_MIGRATE_FN_TYPE      = ZOLTAN_FN_TYPES(12_Zoltan_INT), &
-   ZOLTAN_MID_MIGRATE_FN_TYPE      = ZOLTAN_FN_TYPES(13_Zoltan_INT), &
-   ZOLTAN_POST_MIGRATE_FN_TYPE     = ZOLTAN_FN_TYPES(14_Zoltan_INT), &
-   ZOLTAN_PACK_OBJ_FN_TYPE         = ZOLTAN_FN_TYPES(16_Zoltan_INT), &
-   ZOLTAN_UNPACK_OBJ_FN_TYPE       = ZOLTAN_FN_TYPES(17_Zoltan_INT), &
-   ZOLTAN_COARSE_OBJ_LIST_FN_TYPE  = ZOLTAN_FN_TYPES(19_Zoltan_INT), &
-   ZOLTAN_CHILD_LIST_FN_TYPE       = ZOLTAN_FN_TYPES(23_Zoltan_INT), &
-   ZOLTAN_CHILD_WEIGHT_FN_TYPE     = ZOLTAN_FN_TYPES(24_Zoltan_INT), &
-   ZOLTAN_OBJ_SIZE_MULTI_FN_TYPE   = ZOLTAN_FN_TYPES(25_Zoltan_INT), &
-   ZOLTAN_PACK_OBJ_MULTI_FN_TYPE   = ZOLTAN_FN_TYPES(26_Zoltan_INT), &
-   ZOLTAN_UNPACK_OBJ_MULTI_FN_TYPE = ZOLTAN_FN_TYPES(27_Zoltan_INT)
+   ZOLTAN_PRE_MIGRATE_PP_FN_TYPE   = ZOLTAN_FN_TYPES(12_Zoltan_INT), &
+   ZOLTAN_MID_MIGRATE_PP_FN_TYPE   = ZOLTAN_FN_TYPES(13_Zoltan_INT), &
+   ZOLTAN_POST_MIGRATE_PP_FN_TYPE  = ZOLTAN_FN_TYPES(14_Zoltan_INT), &
+   ZOLTAN_PRE_MIGRATE_FN_TYPE      = ZOLTAN_FN_TYPES(15_Zoltan_INT), &
+   ZOLTAN_MID_MIGRATE_FN_TYPE      = ZOLTAN_FN_TYPES(16_Zoltan_INT), &
+   ZOLTAN_POST_MIGRATE_FN_TYPE     = ZOLTAN_FN_TYPES(17_Zoltan_INT), &
+   ZOLTAN_PACK_OBJ_FN_TYPE         = ZOLTAN_FN_TYPES(19_Zoltan_INT), &
+   ZOLTAN_UNPACK_OBJ_FN_TYPE       = ZOLTAN_FN_TYPES(20_Zoltan_INT), &
+   ZOLTAN_COARSE_OBJ_LIST_FN_TYPE  = ZOLTAN_FN_TYPES(22_Zoltan_INT), &
+   ZOLTAN_CHILD_LIST_FN_TYPE       = ZOLTAN_FN_TYPES(26_Zoltan_INT), &
+   ZOLTAN_CHILD_WEIGHT_FN_TYPE     = ZOLTAN_FN_TYPES(27_Zoltan_INT), &
+   ZOLTAN_OBJ_SIZE_MULTI_FN_TYPE   = ZOLTAN_FN_TYPES(28_Zoltan_INT), &
+   ZOLTAN_PACK_OBJ_MULTI_FN_TYPE   = ZOLTAN_FN_TYPES(29_Zoltan_INT), &
+   ZOLTAN_UNPACK_OBJ_MULTI_FN_TYPE = ZOLTAN_FN_TYPES(30_Zoltan_INT)
 
 ! Type of refinement used when building a refinement tree
 ! These values must agree with the values in zoltan.h
@@ -704,30 +713,6 @@ end function Zfw_LB_Partition
 end interface
 
 interface
-!NAS$ ALIEN "F77 zfw_balance"
-function Zfw_LB_Balance(zz,nbytes,changes,num_gid_entries,num_lid_entries, &
-                       num_import,import_global_ids, &
-                       import_local_ids,import_procs,num_export, &
-                       export_global_ids,export_local_ids,export_procs)
-use zoltan_types
-use lb_user_const
-use zoltan_user_data
-implicit none
-integer(Zoltan_INT) :: Zfw_LB_Balance
-integer(Zoltan_INT), dimension(*) INTENT_IN zz
-integer(Zoltan_INT) INTENT_IN nbytes
-integer(Zoltan_INT), intent(out) :: changes
-integer(Zoltan_INT), intent(out) :: num_gid_entries, num_lid_entries
-integer(Zoltan_INT), intent(out) :: num_import, num_export
-integer(Zoltan_INT), pointer, dimension(:) :: import_global_ids
-integer(Zoltan_INT), pointer, dimension(:) :: export_global_ids
-integer(Zoltan_INT), pointer, dimension(:) :: import_local_ids, export_local_ids
-integer(Zoltan_INT), pointer, dimension(:) :: import_procs, export_procs
-end function Zfw_LB_Balance
-end interface
-
-
-interface
 !NAS$ ALIEN "F77 zfw_eval"
 function Zfw_LB_Eval(zz,nbytes,print_stats,nobj,obj_wgt, &
                       ncuts,cut_wgt,nboundary,nadj,is_nobj, &
@@ -971,6 +956,9 @@ end interface
 #include "set_borderobjlist.if"
 #include "set_firstborderobj.if"
 #include "set_nextborderobj.if"
+#include "set_premigratepp.if"
+#include "set_midmigratepp.if"
+#include "set_postmigratepp.if"
 #include "set_premigrate.if"
 #include "set_midmigrate.if"
 #include "set_postmigrate.if"
@@ -1493,17 +1481,27 @@ integer(Zoltan_INT), intent(out) :: num_import, num_export
 integer(Zoltan_INT), pointer, dimension(:) :: import_global_ids, export_global_ids
 integer(Zoltan_INT), pointer, dimension(:) :: import_local_ids, export_local_ids
 integer(Zoltan_INT), pointer, dimension(:) :: import_procs, export_procs
+integer(Zoltan_INT), pointer, dimension(:) :: import_to_part, export_to_part
 integer(Zoltan_INT), dimension(Zoltan_PTR_LENGTH) :: zz_addr
 integer(Zoltan_INT) :: nbytes, i, int_changes
+integer :: stat
+stat = 0
 nbytes = Zoltan_PTR_LENGTH
 do i=1,nbytes
    zz_addr(i) = ichar(zz%addr%addr(i:i))
 end do
-Zf90_LB_Balance = Zfw_LB_Balance(zz_addr,nbytes,int_changes, &
+Zf90_LB_Balance = Zfw_LB_Partition(zz_addr,nbytes,int_changes, &
                              num_gid_entries, num_lid_entries, &
                              num_import,import_global_ids,import_local_ids, &
-                             import_procs,num_export,export_global_ids, &
-                             export_local_ids,export_procs)
+                             import_procs,import_to_part, &
+                             num_export,export_global_ids, &
+                             export_local_ids,export_procs,export_to_part)
+
+! Do not return import_to_part, export_to_part.
+! Deallocate them if they were allocated.
+if (associated(import_to_part)) deallocate(import_to_part,stat=stat)
+if (associated(export_to_part)) deallocate(export_to_part,stat=stat)
+
 changes = .not.(int_changes==0)
 end function Zf90_LB_Balance
 
@@ -1786,6 +1784,9 @@ end subroutine Zf90_Reftree_Get_Child_Order
 #include "set_borderobjlist.fn"
 #include "set_firstborderobj.fn"
 #include "set_nextborderobj.fn"
+#include "set_premigratepp.fn"
+#include "set_midmigratepp.fn"
+#include "set_postmigratepp.fn"
 #include "set_premigrate.fn"
 #include "set_midmigrate.fn"
 #include "set_postmigrate.fn"
