@@ -25,6 +25,7 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
   ML_Operator *Kn_coarse, *Rn_coarse, *Tcoarse, *Pn_coarse;
   ML_Operator *Pe, *Tcoarse_trans, *Tfine;
   ML     *ml_nodes;
+  char   str[80];
 /*
   char filename[80];
   FILE *fid2;
@@ -179,6 +180,8 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
   VT_end(ml_vt_aggregating_state);
 #endif
 
+  sprintf(str,"Tmat_%d",fine_level-1); ML_Operator_Set_Label(Tmat,str);
+  sprintf(str,"Ttrans_%d",fine_level-1); ML_Operator_Set_Label(Tmat_trans,str);
   /********************************************************************/
   /*                 Build T on the coarse grid.                      */
   /*------------------------------------------------------------------*/
@@ -712,7 +715,8 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
      new_length = i1;
      ML_free(Nrcv_info);
      ML_free(Nsnd_info);
-     ML_free(request);
+     if (request != NULL) ML_free(request);
+
      ML_free(Tfine_Pn_vec);
      Tfine_Pn_vec = new_Tfine_Pn_vec;
 
@@ -781,11 +785,11 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
      Tcoarse->outvec_leng = counter;
      Tcoarse->getrow->Nrows = counter;
 
-     csr_data->rowptr = (int *) realloc(csr_data->rowptr,
+     csr_data->rowptr = (int *) ML_realloc(csr_data->rowptr,
 					sizeof(int)*(counter+1));
-     csr_data->values = (double *) realloc(csr_data->values,
+     csr_data->values = (double *) ML_realloc(csr_data->values,
 					   sizeof(double)*nz_ptr); 
-     csr_data->columns = (int *) realloc(csr_data->columns,
+     csr_data->columns = (int *) ML_realloc(csr_data->columns,
 					   sizeof(int)*nz_ptr); 
 
      ML_memory_check("L%d Tcoarse realloc",grid_level);
@@ -850,9 +854,13 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
      /*------------------------------------------------------------------*/
 
      ML_Operator_ChangeToSinglePrecision(Tcoarse);
+     sprintf(str,"Tmat_%d",grid_level); ML_Operator_Set_Label( Tcoarse,str);
+
      Tcoarse_trans = ML_Operator_Create(ml_edges->comm);
      ML_Operator_Transpose_byrow(Tcoarse, Tcoarse_trans);
      ML_Operator_ChangeToSinglePrecision(Tmat_trans);
+     sprintf(str,"Ttrans_%d",grid_level);ML_Operator_Set_Label(Tmat_trans,str);
+
      (*Tmat_trans_array)[grid_level] = Tcoarse_trans;
      ML_memory_check("L%d Ttrans end",grid_level);
 
@@ -1855,15 +1863,15 @@ int ml_leastsq_edge_interp(ML_Operator *Pn_mat, ML_Operator *SPn_mat,
 
   Pe_mat->outvec_leng = Tfine_mat->outvec_leng;
 
-  Tcoarse->columns = (int    *) realloc(Tcoarse->columns, sizeof(int)*
+  Tcoarse->columns = (int    *) ML_realloc(Tcoarse->columns, sizeof(int)*
 					(Tcoarse->rowptr[Trowcount] +1));
-  Tcoarse->values  = (double *) realloc(Tcoarse->values, sizeof(double)*
+  Tcoarse->values  = (double *) ML_realloc(Tcoarse->values, sizeof(double)*
 					(Tcoarse->rowptr[Trowcount] +1));
-  Tcoarse->rowptr  = (int    *) realloc(Tcoarse->rowptr, sizeof(int)*
+  Tcoarse->rowptr  = (int    *) ML_realloc(Tcoarse->rowptr, sizeof(int)*
 					(Trowcount+1));
-  Pe->columns      = (int    *) realloc(Pe->columns, sizeof(int)*
+  Pe->columns      = (int    *) ML_realloc(Pe->columns, sizeof(int)*
 					(Pnzcount +1));
-  Pe->values       = (double *) realloc(Pe->values, sizeof(double)*
+  Pe->values       = (double *) ML_realloc(Pe->values, sizeof(double)*
 					(Pnzcount +1));
 
 
