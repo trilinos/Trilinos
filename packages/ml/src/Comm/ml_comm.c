@@ -1305,7 +1305,7 @@ int ML_Comm_ErrorHandlerSet(USR_COMM comm, USR_ERRHANDLER *errhandler)
  Wrapper for registration of MPI error-handling function.
 ------------------------------------------------------------------------------*/
 
-int ML_Comm_ErrorHandlerCreate(void (*fcn)(USR_COMM*,int*),
+int ML_Comm_ErrorHandlerCreate(void (*fcn)(USR_COMM*,int*,...),
 /*int ML_Comm_ErrorHandlerCreate(USR_ERRHANDLER_FUNCTION *fcn,*/
                                USR_ERRHANDLER *errhandler)
 {
@@ -1335,7 +1335,7 @@ int ML_Comm_ErrorHandlerDestroy(USR_ERRHANDLER **errhandler)
  Useful if trying to trap error with a debugger.
 ------------------------------------------------------------------------------*/
 
-void ML_Comm_ErrorHandler(USR_COMM *comm, int *error_code)
+void ML_Comm_ErrorHandler(USR_COMM *comm, int *error_code,...)
 {
 #ifdef ML_MPI
    int message_size;

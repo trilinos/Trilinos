@@ -127,7 +127,7 @@ extern int    ML_Comm_ErrorHandlerCreate(
                  USR_ERRHANDLER_FUNCTION (*HandlerFcn),
                  USR_ERRHANDLER*);
 extern int    ML_Comm_ErrorHandlerDestroy(USR_ERRHANDLER**);
-extern void   ML_Comm_ErrorHandler(USR_COMM*, int*);
+extern void   ML_Comm_ErrorHandler(USR_COMM*, int*,...);
 #endif
 
 #ifndef ML_CPP
