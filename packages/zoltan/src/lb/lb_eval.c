@@ -343,7 +343,7 @@ int LB_Eval (LB *lb, int print_stats,
           }
 
           printf("%s  %s Max = %6d, Min = %6d, Sum = %7d, Imbal. = %5.3f\n",
-            yo2, msg, stats[NUM_STATS+1], 
+            yo2, msg, stats[NUM_STATS+i], 
             stats[3*NUM_STATS+i],
             stats[2*NUM_STATS+i], 
             (stats[2*NUM_STATS+i] > 0 
