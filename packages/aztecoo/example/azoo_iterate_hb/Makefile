@@ -38,11 +38,9 @@ LIB_PATHS= $(LIBAZTECOO) $(LIBEPETRA) $(LIBIFPACK) \
 TEST_CC = 
 TEST_C = \
           main.c \
-          blassm.f \
           create_vbr.c \
           distrib_msr_matrix.c \
           distrib_vbr_matrix.c \
-          formats.f \
           iohb.c \
           read_coo.c \
           read_hb.c \
@@ -50,10 +48,11 @@ TEST_C = \
           scscres.c \
           smsrres.c \
           svbrres.c \
-          unary.f \
           write_vec.c
 
-TEST_F =
+TEST_F = blassm.f \
+          formats.f \
+          unary.f \
 
 #=======================================================================
 # TEST include files

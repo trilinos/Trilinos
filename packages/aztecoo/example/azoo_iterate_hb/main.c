@@ -90,6 +90,7 @@ int main(int argc, char *argv[])
 #endif
   /* Set exact solution to NULL */
   xexact = NULL;
+
 #ifdef AZTEC_MPI
   if (rank==0) {
     printf("Hit any key to continue...\n");
@@ -97,7 +98,6 @@ int main(int argc, char *argv[])
   }
   MPI_Barrier(MPI_COMM_WORLD);
 #endif
-
 
   /* Read matrix file and distribute among processors.  
      Returns with this processor's set of rows */ 
