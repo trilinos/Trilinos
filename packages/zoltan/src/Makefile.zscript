@@ -2,6 +2,7 @@ include /home/u/kddevin/code/Zoltan/Makefiles/Makefile.$(ZOLTAN_ARCH)
 
 
 zoltan:	
+	echo $(AR) $(RANLIB)
 	zoltan_script \
 	  '$(DEFS)' \
 	  '$(CC)' \
@@ -10,4 +11,9 @@ zoltan:
 	  '$(INCLUDE_PATH)' \
 	  '$(PARMETIS_LIBPATH)' \
 	  '$(JOSTLE_LIBPATH)' \
-	  '$(JOSTLE_INCPATH)' 
+	  '$(JOSTLE_INCPATH)' \
+	  '$(AR)' \
+	  '$(RANLIB)' \
+	  '$(ZOLTAN_ARCH)' \
+	  '$(ZOLTAN_LIB_DIR)'
+
