@@ -46,12 +46,11 @@ namespace NOX {
 
 namespace NOX {
 
-//! %NOX %Epetra support.
 namespace Parameter {
 
 //! Derived from NOX::Parameter::Arbitrary class to support a user defined norm that can be passed in throught the parameter list.
 /*!
-This class is used by NOX::Direction::Newton for computing spcialized norms for the adjustable forcing term.
+This class allows the user to write their own norm and pass it into the solver.  Check the documentation for each class to see whether it supports a UserNorm.  Currently it is used by NOX::Direction::Newton for computing spcialized norms for the adjustable forcing term and in the NOX::LineSearch::PolynomialWalker line search.
 */
 class UserNorm : public virtual NOX::Parameter::Arbitrary {
 
@@ -64,10 +63,10 @@ class UserNorm : public virtual NOX::Parameter::Arbitrary {
   ~UserNorm(){};
 
   //! Computes a user defined norm based on the input vector.
-  virtual double computeNorm(const NOX::Abstract::Vector& input) const = 0;
+  virtual double norm(const NOX::Abstract::Vector& input) const = 0;
 
 };
-} // namespace Epetra
+} // namespace Parameter
 } // namespace NOX
 
 #endif
