@@ -1,0 +1,115 @@
+<HTML>
+<TITLE>Configure Instructions for Compiling on Sandia Specific Platforms</TITLE>
+<BODY BGCOLOR="white">
+<H1>NOX Compiling Guidelines</H1>
+
+<H3>Supported platforms</H3>
+<ul>
+<li> ASCI Red (Intel Tflops) 
+<li> ASCI Blue-mountain (SGI)
+<li> ASCI White (IBM w/KCC compiler)
+<li> CPlant (Alpha chips with Red-Hat Linx)
+<li> Linux (primary development platform)
+<li> Solaris
+</ul>
+
+<H3>General Comments</H3>
+<ul>
+<li> The testing on specific platforms is out of date except for ASCI Red, Cplant, and Solaris (RPP 6/25/02).
+</ul>
+
+<H3>ASCI Red (TFLOP)</H3>
+<ul><br>
+With Epetra/Trilinos tested 6/25/02
+<li>
+Cross-compiling for janus.sandia.gov on solaris:
+
+<pre>
+
+% ../configure CXXCPP="iCC -E" CXX=iCC CPPFLAGS="-DTFLOP
+-I/Net/local/share/intel/tflop/R4.2.1/tflops/include/CC/RW" F77="if77
+-I/Net/local/share/intel/tflop/R4.2.1/tflops/include/CC/RW"
+LDFLAGS="-L/Net/local/share/intel/tflop/R4.2.1/tflops/lib/RW
+-L/Net/pecos/rf_crew/Moved_to_806_netapp/people/rppawlo/arch/tflop/lib
+-L/Net/pecos/home1/rppawlo/Trilinos/external/y12m/lib/TFLOP.MPI"
+--with-mpilib=-lmpi
+--with-y12m-libdir="-L/Net/pecos/home1/rppawlo/Trilinos/external/y12m/lib/TFLOP.MPI"
+--enable-epetra
+--disable-examples --host=i686
+
+% make
+</pre> 
+<br>&nbsp;
+</ul>
+
+<H3>SGI</H3>
+<ul><br>
+Out of Date!<br>
+<pre>
+
+% configure CC=cc CXX=CC CFLAGS=-g CXXFLAGS="-g -DSGI64 -LANG:std" \
+            --enable-mpi --with-mpilib=-lmpi \
+            TRILINOS_HOME=/sierra/Stable/Trilinos/2.0b \
+            TRILINOS_ARCH=SGI64 TRILINOS_COMM=MPI
+
+% make SUBDIRS=src NOX_AR="ar rcv"
+
+</pre> 
+<br>&nbsp;
+</ul>
+
+<H3>IBM w/KCC</H3>
+<ul><br>
+Out of date!<br>
+<pre>
+% configure CC=mpcc CXX=mpKCC CFLAGS=-g CXXFLAGS=-g \
+            --enable-mpi TRILINOS_HOME=/sierra/Stable/Trilinos/2.0b \
+            TRILINOS_ARCH=IBMSP TRILINOS_COMM=MPI --host=powerpc
+
+% make SUBDIRS=src NOX_AR="KCC -o"
+</pre> 
+<br>&nbsp;
+</ul>
+
+<H3>CPlant (ross-compile.sandia.gov)</H3>
+<ul><br>
+Out of date!<br>
+<pre>
+% configure CXX=/usr/local/cplant/ross/current/bin/c++ \ 
+            CXXFLAGS="-D__USE_STD_IOSTREAM" \
+            LDFLAGS="-L/home/rppawlo/Trilinos/external/y12m/lib/CPLANT.SERIAL"\
+            --host="alpha-unknown-linux-gnu"
+
+% gmake
+</pre> 
+<br>&nbsp;
+</ul>
+
+
+<H3>Linux</H3>
+<ul><br>
+With Epetra/Trilinos tested 6/25/02.<br>
+<pre>
+% configure --enable-epetra --with-mpi-cxx TRILINOS_HOME=/home/rppawlo/Trilinos TRILINOS_ARCH=TFLOP TRILINOS_COMM=MPI 
+
+% make
+</pre> 
+<br>&nbsp;
+</ul>
+
+
+<H3>Solaris</H3>
+<ul><br>
+With Epetra/Trilinos tested 6/25/02.<br>
+<pre>
+% ../configure --enable-epetra --with-mpi-cxx="/sierra/Stable/MPICH/1.2.1/bin/mpiCC" TRILINOS_HOME=/sierra/Release/Trilinos/2.0c CXXFLAGS="-I/sierra/Release/MPICH/1.2.1/include" LDFLAGS="-L/usr/local/lib -lblas" --with-ar="CC -xar -o" --disable-epetra-examples --enable-debug 
+
+% make
+</pre> 
+<br>&nbsp;
+</ul>
+
+
+</ul>
+</BODY>
+</HTML>

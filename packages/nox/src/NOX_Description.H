@@ -65,6 +65,9 @@
   development of NOX and is archived; the second is the mailing list
   to which all CVS commit messages are sent.
 
+  For examples on configuring and compiling NOX on specaized machines at Sandia National Laboratories, follow the 
+  <A HREF="../../maintenance/html/sandiaSpecificConfigure.html">Sandia Specific configuration and compilation instructions</A>. 
+
   \section classes Class Overview
 
   %NOX's flexibility is based on the fact that it does not depend on
