@@ -54,6 +54,13 @@
 #include "Epetra_LinearProblem.h"
 #include "AztecOO.h"
 
+// Headers needed for FD coloring 
+#include <vector> 
+#ifdef HAVE_NOX_EPETRAEXT       // Use epetraext package in Trilinos
+#include "EDT_CrsGraph_MapColoring.h"
+#include "EDT_CrsGraph_MapColoringIndex.h" 
+#endif
+
 // User's application specific files 
 #include "Problem_Interface.H" // Interface file to NOX
 #include "Brusselator.H"              
@@ -188,6 +195,21 @@ int main(int argc, char *argv[])
   //  A.setDifferenceMethod(NOX::Epetra::FiniteDifference::Backward);
   // 4. Jacobi Preconditioner
   //NOX::Epetra::JacobiPreconditioner Prec(soln);
+  // 5. Finite Difference with Coloring......uncomment the following
+/* -------------- Uncomment this block to use coloring --------------- //
+#ifdef HAVE_NOX_EPETRAEXT 
+  bool verbose = false; 
+  EpetraExt::CrsGraph_MapColoring tmpMapColoring( verbose ); 
+  Epetra_MapColoring* colorMap = &tmpMapColoring(Problem.getGraph());
+  EpetraExt::CrsGraph_MapColoringIndex colorMapIndex(*colorMap);
+  vector<Epetra_IntVector>* columns = &colorMapIndex(Problem.getGraph());
+  NOX::Epetra::FiniteDifferenceColoring A(interface, soln, Problem.getGraph(),
+                                          *colorMap, *columns);//, 1.e-2, 1.e-2);
+#else 
+  cout << "Cannot use Coloring without package epetraext !!!!" << endl;
+  exit(0);
+#endif 
+// -------------- End of block needed to use coloring --------------- */
 
   // Create the Group
   NOX::Epetra::Group grp(printParams, lsParams, interface, soln, A); 
@@ -210,7 +232,7 @@ int main(int argc, char *argv[])
   converged.addStatusTest(relresid);
   converged.addStatusTest(wrms);
   converged.addStatusTest(update);
-  NOX::StatusTest::MaxIters maxiters(100);
+  NOX::StatusTest::MaxIters maxiters(25);
   NOX::StatusTest::Combo combo(NOX::StatusTest::Combo::OR);
   combo.addStatusTest(converged);
   combo.addStatusTest(maxiters);
