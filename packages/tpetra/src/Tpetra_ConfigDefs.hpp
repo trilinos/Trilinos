@@ -5,27 +5,105 @@
 #define __cplusplus
 #endif
 
-// configs from ScalarTraits
+#ifdef HAVE_CONFIG_H
 
-//  If we're using a Sun compiler, version earlier than 5.0,
-//  then complex isn't available.
-#if defined(__SUNPRO_CC) && __SUNPRO_CC < 0x500
-#define NO_COMPLEX
+#ifdef PACKAGE
+#undef PACKAGE
 #endif
 
-//  If we're using the tflops Portland Group compiler, then complex isn't
-//  available. (As of July 21, 2000. abw)
-#if defined(__PGI) && defined(__i386)
-#define NO_COMPLEX
+#ifdef PACKAGE_NAME
+#undef PACKAGE_NAME
 #endif
 
-#if defined(__SUNPRO_CC) && __SUNPRO_CC < 0x500
-#define TYPENAME
+#ifdef PACKAGE_BUGREPORT
+#undef PACKAGE_BUGREPORT
+#endif
+
+#ifdef PACKAGE_STRING
+#undef PACKAGE_STRING
+#endif
+
+#ifdef PACKAGE_TARNAME
+#undef PACKAGE_TARNAME
+#endif
+
+#ifdef PACKAGE_VERSION
+#undef PACKAGE_VERSION
+#endif
+
+#ifdef VERSION
+#undef VERSION
+#endif
+
+#include <Tpetra_config.h>
+
+#ifdef HAVE_MPI
+#ifndef TPETRA_MPI
+#define TPETRA_MPI
+#endif
+#endif
+
+#ifdef HAVE_CSTDLIB
+#include <cstdlib>
 #else
-#define TYPENAME typename
+#include <stdlib.h>
 #endif
 
-// end of ScalarTraits configs
+#ifdef HAVE_CSTDIO
+#include <cstdio>
+#else
+#include <stdio.h>
+#endif
+
+#ifdef HAVE_CASSERT
+#include <cassert>
+#else
+#include <assert.h>
+#endif
+
+#ifdef HAVE_STRING
+#include <string>
+#else
+#include <string.h>
+#endif
+
+#ifdef HAVE_IOSTREAM
+#include <iostream>
+#else
+#include <iostream.h>
+#endif
+
+/* Every line that begins with 'using' should eventually be dependent
+   on some check within the configure script */
+
+
+#ifndef TFLOP
+#ifdef HAVE_CMATH
+#include <cmath>
+#else
+#include <math.h>
+#endif
+using namespace std;
+#else /* TFLOP defined */
+#ifdef HAVE_IOMANIP
+#include <iomanip>
+#else
+#include <iomanip.h>
+#endif
+#ifdef HAVE_STRING
+using std::string;
+#endif
+#ifdef HAVE_IOSTREAM
+using std::istream;
+using std::ostream;
+using std::cerr;
+using std::cout;
+using std::endl;
+#endif
+#endif
+
+
+#else /* HAVE_CONFIG_H is not defined */
 
 #if defined(SGI) || defined(SGI64) || defined(SGI32) || defined(CPLANT)
 
@@ -64,6 +142,16 @@ using namespace std;
 
 #endif // end of SGI || SGI64 || SGI32 || CPLANT
 
+#endif // end of HAVE_CONFIG conditional
+
+#define TPETRA_MAX(x,y) (( (x) > (y) ) ? x : y)     /* max function  */
+#define TPETRA_MIN(x,y) (( (x) < (y) ) ? x : y)     /* min function  */
+#define TPETRA_SGN(x) (((x) < 0.0) ? -1.0 : 1.0)    /* sign function */
+
+const double Tpetra_MinDouble = 1.0E-100;
+const double Tpetra_MaxDouble = 1.0E+100;
+const double Tpetra_Overflow = 1.79E308; // Used to test if equilibration should be done.
+const double Tpetra_Underflow = 2.23E-308;
 
 #ifdef TPETRA_SIMULATE_BOOL
 
@@ -81,17 +169,7 @@ using namespace std;
 #define true 1
 #define false 0
 
-#endif
-
-#define TPETRA_MAX(x,y) (( (x) > (y) ) ? x : y)     /* max function  */
-#define TPETRA_MIN(x,y) (( (x) < (y) ) ? x : y)     /* min function  */
-#define TPETRA_SGN(x) (((x) < 0.0) ? -1.0 : 1.0)  /* sign function */
-
-
-const double Tpetra_MinDouble = 1.0E-100;
-const double Tpetra_MaxDouble = 1.0E+100;
-const double Tpetra_Overflow = 1.79E308; // Used to test if equilibration should be done.
-const double Tpetra_Underflow = 2.23E-308;
+#endif // end of TPETRA_SIMULATE_BOOL
 
 // Delete any previous definition of TPETRA_NO_ERROR_REPORTS
 
