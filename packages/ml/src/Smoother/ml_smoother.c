@@ -3798,6 +3798,7 @@ void *edge_smoother, void **edge_args, void *nodal_smoother, void **nodal_args)
    int *row_ptr, i, j, k;
    double *val_ptr;
    double *dbl_arg1, *diagonal;
+   char   str[80];
 #ifdef ML_TIMING_DETAILED
    double t0;
 
@@ -3913,10 +3914,13 @@ void *edge_smoother, void **edge_args, void *nodal_smoother, void **nodal_args)
 	  }
 	}
       }
-      ML_Operator_ChangeToSinglePrecision(tmpmat);
-      ML_Operator_ImplicitTranspose(Tmat_trans,
-      			    Tmat, ML_FALSE);
    }
+   ML_Operator_ChangeToSinglePrecision(tmpmat);
+   ML_Operator_ImplicitTranspose(Tmat_trans,
+				 Tmat, ML_FALSE);
+   if (Amat->to != NULL) 
+     sprintf(str,"TAT_%d",Amat->to->levelnum); ML_Operator_Set_Label( tmpmat,str);
+
 /*
    kdata = ML_Krylov_Create( tmpmat->comm );
    ML_Krylov_Set_ComputeEigenvalues( kdata );
