@@ -54,7 +54,8 @@
   F(x,p)=0
   \f$
   and their bifurcations, where
-  \f$F:\Re^n\times\Re^m\rightarrow\Re^n\f$.  
+  \f$F:\Re^n\times\Re^m\rightarrow\Re^n\f$.  For %LOCA specific information, 
+  see \ref loca_overview.
 
   \section user_information User Information
 
