@@ -1,5 +1,4 @@
 /*@HEADER
-/*
 ************************************************************************
 
               Epetra: Linear Algebra Services Package 
@@ -27,7 +26,6 @@ Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 ************************************************************************
 */
 //@HEADER
-*/
 
 /* The purpose of this file is to allow for 
 informative error reporting that will not abort a test program after a single
