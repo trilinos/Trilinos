@@ -331,8 +331,8 @@ int Trilinos_Util::CrsMatrixGallery::Set(Trilinos_Util::CommandLineParser & CLP)
 {
   int count;
   
-  string Options[10];
-  
+  string Options[15];
+
   // all options with strings
   count = 0;
   Options[count++] = "problem_type";
@@ -381,7 +381,9 @@ int Trilinos_Util::CrsMatrixGallery::Set(Trilinos_Util::CommandLineParser & CLP)
   Options[7] = "conv";
   Options[8] = "diff";
   Options[9] = "source";
-  for( int i=0 ; i<10 ; i++ ) {
+  Options[10] = "alpha";
+  
+  for( int i=0 ; i<11 ; i++ ) {
     string parameter = "-"+Options[i];
     
     if( CLP.Has(parameter) == true ) {
