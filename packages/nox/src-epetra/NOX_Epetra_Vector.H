@@ -48,6 +48,9 @@ class Vector : public virtual NOX::Abstract::Vector {
 
  public:			
 
+  //! Construct a NOX::Epetra::Vector using the SAME memory location used in the source Epetra_Vector.  WARNING: This is a "View" of the Epetra_Vector!
+  Vector(Epetra_Vector& source);
+
   //! Construct by copying map and/or elements of an Epetra_Vector.
   Vector(const Epetra_Vector& source, NOX::CopyType type = NOX::DeepCopy);
 
@@ -154,6 +157,9 @@ class Vector : public virtual NOX::Abstract::Vector {
   
   //! Pointer to petra vector owned by this object
   Epetra_Vector* epetraVec;
+
+  //! True if *this created (i.e. allocated the memory for) the underlying Epetra_Vector.
+  bool ownsEpetraVector;
 
 };
 } // namespace Epetra

@@ -33,7 +33,14 @@
 #include "NOX_Epetra_Vector.H"
 #include "Epetra_Vector.h"
 
-NOX::Epetra::Vector::Vector(const Epetra_Vector& source, NOX::CopyType type)
+NOX::Epetra::Vector::Vector(Epetra_Vector& source) :
+  ownsEpetraVector(false)
+{
+  epetraVec = &source; 
+}
+
+NOX::Epetra::Vector::Vector(const Epetra_Vector& source, NOX::CopyType type) :
+  ownsEpetraVector(true)
 {
   switch (type) {
 
@@ -50,7 +57,9 @@ NOX::Epetra::Vector::Vector(const Epetra_Vector& source, NOX::CopyType type)
   }
 }
 
-NOX::Epetra::Vector::Vector(const NOX::Epetra::Vector& source, NOX::CopyType type)
+NOX::Epetra::Vector::Vector(const NOX::Epetra::Vector& source, 
+			    NOX::CopyType type) :
+  ownsEpetraVector(true)
 {
 
   switch (type) {
@@ -70,7 +79,8 @@ NOX::Epetra::Vector::Vector(const NOX::Epetra::Vector& source, NOX::CopyType typ
 
 NOX::Epetra::Vector::~Vector()
 {
-  delete epetraVec;
+  if (ownsEpetraVector)
+    delete epetraVec;
 }
 
 NOX::Abstract::Vector& NOX::Epetra::Vector::operator=(const Epetra_Vector& source)
