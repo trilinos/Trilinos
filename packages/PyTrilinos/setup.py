@@ -87,8 +87,8 @@ stdLibs    = stdCXX + swigLib
 # is accomplished by looping over the arguments in FLIB and adding them to the
 # appropriate list.
 extraArgs = swigPath
-flibs = makeInfo['FLIBS'].split()
-for lib in flibs:
+libs = makeInfo['LDFLAGS'].split() + makeInfo['FLIBS'].split()
+for lib in libs:
     if lib[:2] == "-l":
         stdLibs.append(lib[2:])
     else:

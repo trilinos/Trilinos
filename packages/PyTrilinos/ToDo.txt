@@ -85,8 +85,15 @@
     [Done] Change setup.py to look in local Trilinos source
            directories for libraries
     [Done] Get test scripts to work from build directory
-    ------ Check for presence of SWIG
-    ------ Check for proper SWIG version
+    ------ Check for presence and version of python
+    ------ Check for presence and version of Numeric
+    ------ Check for presence and version of SWIG
+    ------ Check for MPI/serial
     ------ Put in hooks for enabling and disabling modules
     [Done] Have Makefile create setup.txt with python dictionary
     [Done] Change setup.py to use FLIBS configure variable
+
+****** Remove SWIG requirement for distribution
+    ------ Save *_wrap.cxx files in repository
+    ------ Compile SWIG runtime library locally and omit requirement
+           of system-installed library

@@ -117,10 +117,14 @@ wrappers:
 	cd src && make
 
 setup.txt:
-	@echo "{"                          >  $@
-	@echo "  'srcdir' : '$(srcdir)',"  >> $@
-	@echo "  'FLIBS'  : '$(FLIBS)'"    >> $@
-	@echo "}"                          >> $@
+	@echo "{"                        	            >  $@
+	@echo "  'srcdir'          : '$(srcdir)',"          >> $@
+	@echo "  'LDFLAGS'         : '$(LDFLAGS)',"         >> $@
+	@echo "  'FLIBS'           : '$(FLIBS)',"           >> $@
+	@echo "  'BUILD_EPETRA'    : '$(BUILD_EPETRA)',"    >> $@
+	@echo "  'BUILD_EPETRAEXT' : '$(BUILD_EPETRAEXT)'," >> $@
+	@echo "  'BUILD_NOX'       : '$(BUILD_NOX)'"        >> $@
+	@echo "}"                                           >> $@
 
 $(tempdir):
 	mkdir -p $@
