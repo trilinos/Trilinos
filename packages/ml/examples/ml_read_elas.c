@@ -449,7 +449,7 @@ double max_diag, min_diag, max_sum, sum;
    old_prec = options[AZ_precond];
    old_sol  = options[AZ_solver];
    old_tol  = params[AZ_tol];
-   params[AZ_tol] = 1.0e-20;
+   params[AZ_tol] = 1.0e-9;
    options[AZ_precond] = AZ_none;
    options[AZ_solver]  = AZ_cg;
    options[AZ_poly_ord] = 1;
@@ -477,7 +477,7 @@ double max_diag, min_diag, max_sum, sum;
 #endif
 #endif
 	
-   options[AZ_solver]   = AZ_gmres;
+   options[AZ_solver]   = AZ_GMRESR;
    options[AZ_scaling]  = AZ_none;
    options[AZ_precond]  = AZ_user_precond;
    options[AZ_conv]     = AZ_r0;
@@ -561,7 +561,7 @@ printf("hey .... should we do something here?\n");
       options[AZ_keep_info] = 1;
       options[AZ_conv] = AZ_noscaled;
       options[AZ_conv] = AZ_r0;
-      params[AZ_tol] = 1.0e-6;
+      params[AZ_tol] = 1.0e-3;
       /* ML_Iterate(ml, xxx, rhs); */
 alpha = sqrt(AZ_gdot(N_update, xxx, xxx, proc_config));
 printf("init guess = %e\n",alpha);
