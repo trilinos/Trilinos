@@ -3,15 +3,19 @@
     \title{Trilinos Developers Guide}
 \SANDsubtitle{}
 
-    \author{Michael A. Heroux \\
-	    James M. Willenbring\\
-      	    Computational Mathematics \& Algorithms \\
-	    Sandia National Laboratories\\
-	    P.O. Box 5800\\
-	    Albuquerque, NM 87185-1110 \\
-	    maherou@sandia.gov \\
-	    jmwille@sandia.gov \\
-	 }
+\author{
+Michael A. Heroux \\
+James M. Willenbring\\
+Computational Mathematics \& Algorithms \\
+Robert Heaphy \\
+Discrete Algorithms and Math Department \\
+Sandia National Laboratories\\
+P.O. Box 5800\\
+Albuquerque, NM 87185-1110 \\
+maherou@sandia.gov \\
+jmwille@sandia.gov \\
+rheaph@sandia.gov \\
+}
 
     % There is a "Printed" date on the title page of a SAND report, so
     % the generic \date should generally be empty.
@@ -20,7 +24,9 @@
 
 \SANDnum{SAND2003-xxxx}
 \SANDprintDate{April 2003}
-\SANDauthor{Michael A. Heroux, James M. Willenbring, Sandia National Laboratories}
+\SANDauthor{
+Michael A. Heroux, James M. Willenbring, Robert Heaphy, 
+Sandia National Laboratories}
 
 
 \SANDreleaseType{Unlimited Release}
@@ -47,7 +53,7 @@ and examples of how those requirements can be met, as well as what
 tools and services are 
 available to Trilinos packages.  Also discussed are some common practices that 
 are followed by many Trilinos package developers.  Finally, a snapshot
-of current Trilinos packages and their iteroperability status
+of current Trilinos packages and their interoperability status
 is provided, along with a list of supported computer platforms.
 
 \end{abstract}
@@ -56,10 +62,11 @@ is provided, along with a list of supported computer platforms.
 \section*{Acknowledgement}
 The authors would like to acknowledge the support of the ASCI and LDRD 
 programs that funded development of Trilinos and recognize all Trilinos 
-contributors: Teri Barth, Roscoe A. Bartlett, David Day, Bob Heaphy, 
-Robert Hoekstra, Jonathan Hu, Tammy Kolda, Richard Lehoucq, Kevin Long, 
-Roger Pawlowski, Andrew Rothfuss, Andrew Salinger, Ken Stanley, Ray 
-Tuminaro and Alan Williams.
+contributors: Teri Barth, Ross Bartlett, David Day, Bob Heaphy, 
+Robert Hoekstra, Jonathan Hu, Tammy Kolda, Richard Lehoucq, Kevin
+Long, Eric Phipps, 
+Roger Pawlowski, Andrew Rothfuss, Andrew Salinger, Paul Sery, Ken
+Stanley, Heidi Thornquist, Ray Tuminaro and Alan Williams.
 
 \clearpage
 \tableofcontents
@@ -71,27 +78,74 @@ Tuminaro and Alan Williams.
 \section*{Nomenclature}
 \addcontentsline{toc}{section}{Nomenclature}
 \begin{itemize}
+
 \item[Package]
 A collection of software focused on one primary class of numerical
 methods.  Also a fundamental, integral unit in the Trilinos framework.
+
 \item[Trilinos]
 The name of the project.  Also a Greek term which,
 loosely translated means ``a string of pearls,'' 
 meant to evoke an image that each Trilinos package is a pearl in its 
 own right, but is even more valuable when combined with other 
 packages.
-\item[Petra]
-A Greek term meaning ``foundation.''  Trilinos has three Petra 
-libraries: Epetra, Tpetra and Jpetra that provide basic classes 
-for constructing and manipulating matrix, graph and vector
-objects.  Epetra is the current production version that is
-split into two packages, one core and one extensions.
+
+\item[new\_package] A sample Trilinos package containing all of the
+infrastructure to install a new package into the Trilinos framework.
+Contains the basic directory structure, a collection of sample
+configuration and build files and a sample ``Hello World'' package.
+
+\item[Anasazi]
+An extensible and interoperable framework for large-scale eigenvalue
+algorithms.The motivation for this framework is to provide a generic
+interface to a collection of algorithms for solving large-scale 
+eigenvalue problems.
+
 \item[AztecOO] 
 Linear solver package based on preconditioned Krylov methods.  A 
 follow-on to the Aztec solver package~\cite{Aztec2.1}.  
 Supports all Aztec 
 interfaces and functionality, but also provides significant new 
 functionality.
+
+\item[Belos] A Greek term meaning ``arrow.'' Belos is the next
+generation of iterative solvers.  Belos solvers are written using
+``generic'' programming techniques.  In other words, Belos is written
+using TSF abstract interfaces and therefore has no explicit dependence
+on any concrete linear algebra library.  Instead, Belos solvers can be
+used with any concrete linear algebra library that implements the TSF
+abstract interfaces. 
+
+\item[Ifpack] 
+Object-oriented algebraic preconditioner, compatible with 
+Epetra and AztecOO.  Supports construction and use of parallel
+distributed memory preconditioners such as overlapping Schwarz domain
+decomposition, Jacobi scaling and local Gauss-Seidel relaxations.
+
+\item[Komplex] 
+Complex linear equation solver using equivalent real 
+formulations~\cite{DayHero2000}, built on top of Epetra and AztecOO.
+
+\item[Meros]
+Segregated preconditioning package.  Provides scalable block
+preconditioning for problems that coupled simultaneous solution
+variables such as Navier-Stokes problems.
+
+\item[ML]
+Algebraic multi-level preconditioner package.  Provides scalable
+preconditioning capabilities for a variety of problem classes.
+
+\item[NOX]
+A collection of nonlinear solvers, designed to be easily integrated
+into an application and used with many different linear solvers.
+
+\item[Petra]
+A Greek term meaning ``foundation.''  Trilinos has three Petra 
+libraries: Epetra, Tpetra and Jpetra that provide basic classes 
+for constructing and manipulating matrix, graph and vector
+objects.  Epetra is the current production version that is
+split into two packages, one core and one extensions.
+
 \item[TSF]
 Composed of several packages.  TSFCore provides 
 a basic collection of abstract interfaces to vectors, linear
@@ -99,20 +153,9 @@ operators, solvers, etc.  These interfaces provide a common
 interface for applications to access one or more packages that
 implement the abstract interface.  These interfaces can also be used
 by other packages in Trilinos to accomplish the same purpose.
-TSF Extensions builds on top of TSFCore, providing implicit
+TSF Extended builds on top of TSFCore, providing implicit
 aggregation capabilities and overloaded operators.
-\item[NOX]
-A collection of nonlinear solvers, designed to be easily integrated
-into an application and used with many different linear solvers.
-\item[ML]
-Algebraic multi-level preconditioner package.  Provides scalable
-preconditioning capabilities for a variety of problem classes.
-\item[Komplex] 
-Complex linear equation solver using equivalent real formulations,
-built on top of Epetra and AztecOO.
-\item[Ifpack] 
-Object-oriented algebraic preconditioner, compatible with 
-Epetra and AztecOO.
+
 \end{itemize}
 
 
@@ -147,7 +190,7 @@ and examples of how those requirements can be met, as well as what
 tools and services are 
 available to Trilinos packages.  Also discussed are some common practices that 
 are followed by many Trilinos package developers.  Finally, a snapshot
-of current Trilinos packages and their iteroperability status
+of current Trilinos packages and their interoperability status
 is provided, along with a list of supported computer platforms.
 
 For a higher-level view of the Trilinos project, please see An Overview
@@ -156,7 +199,7 @@ packages in Trilinos is shown in Figure~\ref{Figure:TrilinosPackages}.
 
 \begin{figure}
 %\begin{center}
-\includegraphics[height=6in,angle=270]{TrilinosPackagesDiagram}
+\includegraphics[height=8in]{TrilinosPackagesDiagram}
 %\end{center}
 \label{Figure:TrilinosPackages}
 \caption{Current collection of Trilinos Packages}
@@ -174,11 +217,11 @@ appropriate reading.
 \item Integration of an existing third-party software: In this case,
 existing software is being imported into the Trilinos framework.  In
 this case, Section~\ref{Section:IntegratingPackages} is particularly
-important, as are Sections~\ref{Section:PackageRequirements},
-~\ref{Section:AvailableServices} and~\ref{Section:EpetraAndTSF}.
+important, as are Sections~\ref{Section:AvailableServices},
+~\ref{Section:PackageRequirements} and~\ref{Section:EpetraAndTSF}.
 \item Ongoing development:  For existing Trilinos package developers,
-Sections~\ref{Section:PackageRequirements}
-and~\ref{Section:AvailableServices} are designed as a reference for
+Sections~\ref{Section:AvailableServices}
+and~\ref{Section:PackageRequirements} are designed as a reference for
 software engineering practices and policies for Trilinos development.
 \end{enumerate}
 
@@ -229,20 +272,35 @@ out a copy of the Trilinos repository.
 as executables are located.  
 \end{itemize}
  
+\begin{minipage}[c]{\textwidth}
+
+\begin{minipage}[l]{.6\textwidth}
+
 Although it is possible to run \InlineCommand{./configure} from the source tree (in 
 the directory where the configure file is located), we recommend that a 
 user have separate build trees.  The greatest advantage to having a separate 
 build tree is that multiple builds of the libraries can be maintained
 from the same source tree, for 
 example, serial and parallel libraries.  A less obvious advantage is that 
-there can be problems with configuring in a 'dirty' directory (one that has 
+this approach eliminates problems with configuring in a 'dirty'
+directory (one that has 
 already been configured in).
+\end{minipage}\hfill
+\framebox{\begin{minipage}[r]{.35\textwidth}{
+{\bf Key Point:}
+$\ldots$ we recommend that a 
+user have separate build trees $\ldots$ multiple builds of the
+libraries can be maintained from the same source tree $\ldots$ 
+eliminates problems with configuring in a 'dirty'
+directory $\ldots$
+}\end{minipage}}
+\end{minipage}
 
-	Setting up a build tree is straight-forward.
+Setting up a build tree is straight-forward.
 Figure~\ref{Figure:TrilinosDirectoryStructure} illustrates the
 \begin{figure}
 \begin{center}
-\includegraphics[width=4in,angle=270]{TrilinosDirectoryStructure}
+\includegraphics[width=4in]{TrilinosDirectoryStructure}
 \end{center}
 \label{Figure:TrilinosDirectoryStructure}
 \caption{Recommended Layout for Trilinos Build Directories}
@@ -315,11 +373,16 @@ rather than trying to configure from a lower level.  To see which packages
 build by default and which ones don't, simply cd to the Trilinos home 
 directory and type \DisplayCommand{./configure --help}
 
-NOTE: Ifpack is divided into old and new portions.  Future ifpack developments 
+
+{\bf NOTES:} 
+\begin{enumerate}
+\item {\bf Ifpack versions:} 
+Ifpack is divided into old and new versions.  Future ifpack developments 
 will replace all of old ifpack, but at this time some users will need to append
 \InlineCommand{--enable-oldifpack} to the configure line.
 
-NOTE: The configure process is set up to detect when a 
+\item {\bf Enabling/Disabling package builds:} 
+The configure process is set up to detect when a 
 \InlineCommand{--disable-<package>} option would break a package dependency.  
 For example, ifpack depends on epetra, so if a user wants to build ifpack, but 
 types \InlineCommand{--disable-epetra}, epetra will be configured and built 
@@ -328,22 +391,26 @@ than the core package.  It is possible that not all of these dependencies have
 been accounted for.  Please submit a bug report for any problems found with 
 this matter.
 
-	To install libraries and header files in a particular location, 
+\item {\bf Installing libraries and header files:}
+To install libraries and header files in a particular location, 
 use \InlineCommand{--prefix=<dir>} on the configure line.  If this option is 
 used, libraries will be located in \InlineDirectory{<dir>/lib} and header files in 
 \InlineDirectory{<dir>/include/<package>}.
 
-	The second important piece of information that a user must provide at 
-this stage is the name and or location of anything that autotools needs and 
+\item {\bf Providing additional information to autotools:}
+Although autotools will attempt to determine all configuration
+information on its own, in some situations the user must provide 
+the name or location, or both, of anything that autotools needs and 
 cannot find on its own.  Also, if autotools selects, for example, the wrong 
-blas library by default, the user must indicate which blas library to use.  
-Other more obscure issues dealing with enjoyable topics such as standard 
-noncompliance are also dealt with here.  If all required libraries (often 
-blas, and lapack) are located in standard places, try configuring with what 
+BLAS library by default, the user must indicate which blas library to use.  
+Other more obscure issues dealing with topics such as standards 
+non-compliance are also dealt with here.  If all required libraries (often 
+BLAS, and LAPACK) are located in standard places, try configuring with what 
 you have.
 
-	For a machine that requires additional configure line options, a good 
-place to start is \InlineDirectory{Trilinos(-3.0.1)/config}.  There are 
+\item {\bf Sample configure invocation scripts:}
+For a machine that requires additional configure line options, a good 
+place to look for examples is \InlineDirectory{Trilinos/config}.  There are 
 configure invocation scripts here for various platforms.  These scripts are 
 named using the following naming convention:
 \InlineCommand{arch\_comm\_machine}.
@@ -362,6 +429,7 @@ and \InlineCommand{CXXFLAGS}.
 Users who create scripts for other machines are encouraged to check them into 
 the repository for the benefit of other users.  Users who do not have access to
 the repository can send their scripts to \InlineCommand{jmwille@sandia.gov}.
+\end{enumerate}
 
 \subsection{Building Trilinos}
 
@@ -852,7 +920,7 @@ submitted to request a new Ifpack preconditioner.  ``Issue'' and ``bug'' are
 used interchangably in the discussion of Bugzilla in this guide.
 
 \subsection{Mailman}
-
+\label{subsect:MailMan}
 Email lists are maintained for Trilinos as a whole and for each package 
 through Mailman~\cite{Mailman}.  This tool can be found on the web at 
 \newline
@@ -1053,10 +1121,14 @@ that are looking for an efficient and useful issue tracking tool are
 encouraged to consider using Bugzilla, which is discussed in 
 Section~\ref{subsect:Bugzilla}.
 
-\section{Suggested Practices}
+\section{Suggested Software Engineering Practices}
 \label{Section:SuggestPractices}
 
-There are many ways to define an effective software process.  As a result, the 
+\begin{minipage}[c]{\textwidth}
+
+\begin{minipage}[l]{.6\textwidth}
+There are many ways to define an effective software engineering
+process.  As a result, the 
 Trilinos project specifies very few {\it requirements}.  At the same time, 
 many software packages do not have well-defined practices to support good 
 software engineering.  In this section, we discuss suggested practices based 
@@ -1064,6 +1136,16 @@ on our experience with some common tools and processes for software
 engineering.  We want to strongly emphasize that these are {\it suggested} 
 practices only and we discuss them here in order to facilitate adoption of 
 practices for packages that have few existing practices in place.
+\end{minipage}\hfill
+\framebox{\begin{minipage}[r]{.35\textwidth}{
+{\bf Key Point:}
+$\ldots$ the 
+Trilinos project specifies very few {\it requirements} $\ldots$ 
+we discuss {\it suggested practices} here in order to facilitate
+adoption of practices for packages that have few existing practices in
+place $\ldots$
+}\end{minipage}}
+\end{minipage}
 
 \subsection{Preliminary Steps}
 
@@ -1139,13 +1221,17 @@ should be kept under source control.
 Package specifications can be done in many ways.  An effective way for 
 object-oriented, e.g., C++ packages is to use documented header files and a 
 documentation tool such as Doxygen~\cite{Doxygen}, and then communicate the 
-generated HTML output to the package development team via the 
+generated HTML output to the package development team via the \newline
 \InlineCommand{package-developers@software.sandia.gov} email list.  If
 appropriate, the clients for this feature should also be included on
 this correspondence.  This
 approach satisfies both the specification and the design requirements
 in the case of object-oriented engineering of mathematical software.
-%Other developers
+
+Also worth noting in this section is that the end of the design and
+early part of the implementation phases is the ideal time to
+write the first set of unit tests.  These tests can be used to confirm
+the interface structure and prepare for incremental implementation testing.
 
 \subsection{Implementation}
 Assuming that the above approach is used to define a documented header
@@ -1161,11 +1247,38 @@ Prior to checking any new code into the Trilinos CVS repository, all
 regression tests for any affected package should be run by the
 developer.  Also, the developer should make a special point of
 confirming that nightly automatic regression tests ran successfully.
+Confirmation is easily done by visiting the archives for the 
+\InlineCommand{trilinos-regression@software.sandia.gov}.  The archives
+contain the results of all Trilinos regression test runs.  
+A developer will also see the results of the regression tests if their 
+email address is explicitly listed in a regression test script.
 
 
 \subsection{Maintenance}
 Trilinos provides a number of tools to facilitate the ongoing
-development and support of packages.  The Trilinos bugzilla site
+development and support of packages.  CVS, Bugzilla, Mailman and the
+regression test harness are the most important ones.
+
+\begin{enumerate}
+\item {\bf CVS:} The Trilinos CVS repository is the most important
+tool for proper maintenance.  With each Trilinos release a release
+branch of the CVS repository is
+created  that allows simultaneous, independent development on the main
+CVS branch and incremental feature development and
+bugfixes on the release branch.  Prior to a release, each package is
+encouraged to stabilize its source on the main development branch, or
+create a tagged version of the package that is stabilized.  At that
+point, the main Trilinos development branch will be tagged and
+branched using the versions of all packages as specified by the
+package leaders.  After the Trilinos tag and branch is complete, 
+package developers are encouraged to continue large scale active
+development on the main development branch, respond to bugfixes in the
+release branch and merge bugfixes from the release branch into the
+development branch.  Further discussion on these topics is in 
+Appendix~\ref{Section:CVS}.  For a full discussion of advanced CVS
+topics, we recommend the book by Fogel and Bar~\cite{FogelBarCVS}.
+
+\item {\bf Bugzilla:} The Trilinos Bugzilla site
 allows users and developers to submit issues against a package.
 Issues may be submitted against the follwing components of a package:
 \begin{enumerate}
@@ -1180,21 +1293,24 @@ request.  When an issue is submitted, the owner, submitter and any
 party that was explicitly listed will be notified upon submission of
 the issue, and when any subsequent update is made to the issue.
 
+\item {\bf Mail lists:} 
 Trilinos mail lists also support ongoing maintenance by allowing
 developers to subscribe to the package checkins list.  When subscribed
 to this list, all CVS commits made for the package will be sent in
 email form to the checkins list, and subscribers will see exactly what
-has changed.
-
-The other package lists mentioned above also facilitate ongoing
+has changed. The other package lists mentioned in 
+Section~\ref{subsect:MailMan} above also facilitate ongoing
 communication between developers, users and clients.
 
+\item {\bf Test Harness:} 
 The Trilinos test harness simplifies code maintenace in two ways.  First, code 
 is tested on a nightly basis on various platforms to help maintain portability.
 Second, developers can execute a check-in version of the test harness before 
 committing changes.  Developers can easily contribute to the coverage of the 
 test harness.  For more information about the test harness see 
 Section~\ref{subsect:TestHarness}.
+}
+
 
 \subsection{Retirement/Replacement}
 To the extent possible checkins to a release branch should not force interface 
@@ -1208,27 +1324,53 @@ from a new package.
 
 \section{Epetra and TSF: Two Special Trilinos Packages}
 \label{Section:EpetraAndTSF}
-In order to understand what Trilinos provides beyond the
+In order to understand what Trilinos provides beyond the software
+engineering tools and the
 contributions of each Trilinos package, we briefly discuss two special
-Trilinos packages: Epetra and TSF.  These two packages are complimentary,
+Trilinos package collections: Petra and TSF.  These two package
+collections are complimentary,
 with TSF providing a common abstract application
-programmer interface (API) for other Trilinos packages and Epetra
+programmer interface (API) for other Trilinos packages and Petra
 providing a common concrete implementation of basic classes used by most
 Trilinos packages.
 
-\subsection{Epetra}
+\subsection{Petra}
 Matrices, vectors and graphs are basic objects used in most solver
 algorithms. Most Trilinos
 packages interact with these kinds of objects via abstract interfaces that
 allow a package to define what services and behaviors are expected from the objects,
-without enforcing a specific implementation.  However, in order to use
-these packages, some concrete
-implementation must be selected.  Epetra (and in the future Tpetra and Jpetra) is a collection of concrete
+without enforcing a specific implementation.   This facilitates
+integration of a Trilinos package into almost any existing
+application.
+
+However, in order to use these packages, some concrete
+implementation of matrix and vector classes must be selected.  
+Petra is an object model for parallel,
+distributed-memory, object-oriented matrix and vector classes.
+Presently there are three Petra libraries: Epetra, Jpetra and Tpetra.
+Of the three, Epetra is the most mature and the one presently used in
+production computing setttings.  Epetra is a collection of concrete
 classes that supports the construction and use of vectors, sparse
 graphs, and dense and sparse matrices.  It provides serial, parallel and
- distributed memory
+distributed memory
 capabilities.  It uses the BLAS and LAPACK where possible, and as a
 result has good performance characteristics.
+
+In addition to providing easy construction and use of matrices,
+vectors and graphs in a parallel distributed memory environment,
+one of the most important aspects of Epetra is that every other
+Trilinos package can accept user data as Epetra objects.  This
+facilitates the use of multiple Trilinos packages in combination.  For
+example, Ifpack objects can be used as preconditioners for AztecOO, as
+can ML or Amesos objects.  Users can also use Trilinos packages in
+sequence such as solving linear and eigen problems with the same
+matrix.
+
+In summary, Epetra provides a common foundation for all other Trilinos
+packages while retaining an open architecture that allows any package
+to be used independently.  Epetra also supports light-weight copyin of
+user data, allowing easy interoperability with other package such as
+PETSc.
 
 \subsection{TSF}
 \label{subsect:InteropTSF}
@@ -1240,7 +1382,8 @@ many details about the problem being solved and the platform on which
 application is being run. However, even though
 there are many different solvers, conceptually, from an abstract view,
 these solvers are providing a similar capability, and it is
-advantageous to utilize this abstract view.
+advantageous to utilize this abstract view.be the coupling of
+linear solvers and eigensolvers in various ways.
 TSF is a collection of abstract classes that provides an application
 programmer interface (API) to perform the most common solver
 operations.  It can provide a single interface to many different
@@ -1248,6 +1391,15 @@ solvers and has powerful compositional mechanisms that support the
 light-weight construction of composite objects from a set of
 existing objects.  As a result, TSF users gain easy access to many
 solvers and can bring multiple solvers to bear on a single problem.
+
+TSF is split into several packages.  The most important user-oriented
+classes are TSFCore and TSFExtended:
+\begin{enumerate}
+\item {\bf TSFCore:}
+\item {\bf TSFExtended:}
+\end{enumerate}
+
+
 
 \section{Integrating a Package into Trilinos}
 \label{Section:IntegratingPackages}
