@@ -28,10 +28,19 @@ include $(TRILINOS_HOME)/build/makefile.$(TRILINOS_ARCH)
 
 MY_COMPILER_FLAGS = -DHAVE_CONFIG_H $(CXXFLAGS) -c -g\
 	            -I$(TRILINOS_LIB)/include/
-		    
+
+# Specify -lteuchos if Trilinos has been configured with 
+# support for Teuchos.
+# You also may need Y12M if AztecOO has been configured
+# with support for Y12M. In this casem you might need to define
+# IFPACK_LIBS as follows:
+# IFPACK_LIBS = -lteuchos -L/home/msala/lib/LINUX_MPI -ly12m
+# (where -L specify the location of Y12m and -l the library name).
+IFPACK_LIBS = -lteuchos
 MY_LINKER_FLAGS = $(LDFLAGS) $(TEST_C_OBJ) \
 	-L$(TRILINOS_LIB)/lib/ \
-	-ltriutils -lifpack -laztecoo -lepetra $(LIB_PATHS) $(ARCH_LIBS) -llapack -lblas
+	-ltriutils -lifpack -laztecoo -lepetra \
+	$(IFPACK_LIBS) $(LIB_PATHS) $(ARCH_LIBS) -llapack -lblas
 
 all: ex1 ex2
 
