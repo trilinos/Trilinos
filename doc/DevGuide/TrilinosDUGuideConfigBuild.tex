@@ -11,8 +11,8 @@ To start, we defined two useful terms:
 \item Source tree - The directory structure where source files are found.  A source 
 tree is obtained by expanding a distribution tar ball, or by checking 
 out a copy of the Trilinos repository.  
-\item Build tree - The directory structure where object and library files, as well 
-as executables are located.  
+\item Build tree - The directory structure where object and library files, as 
+well as executables are located.  
 \end{itemize}
  
 \begin{minipage}[c]{\textwidth}
@@ -389,7 +389,70 @@ If the configure stage completed successfully, just type \DisplayCommand{make}
  and then, if 
 \InlineCommand{--prefix} was specified, \DisplayCommand{make install}
 
-Other important notes about the configure and build processes.
+\subsection{Tips for Making the Configure and Build Processes More Efficient}
+
+Trilinos has grown to become a large piece of software.  Not surprisingly,
+it can take a very long time to configure and build all of Trilinos.  Below 
+are some tips for speeding up the process:
+
+\begin{itemize}
+\item Only build the Trilinos libraries that are necessary.
+
+Know which packages are built by default.  Packages that 
+necessary packages are dependent on will be turned on automatically, so
+don't shy away from disabling all packages that are not used directly.  
+If a package configures and builds that was not enabled explicitly, 
+keep in mind that a package that was enabled probably depends on this package.
+
+\item Consider disabling tests and examples.
+
+The first time Trilinos is built on a machine, it is a good idea to build 
+and run some tests and examples.  After that, disabling tests and examples
+can be considered as a way to speed up the build process.  To disable 
+the tests and examples for all packages, use the 
+\DisplayCommand{--disable-tests}
+
+and
+
+\DisplayCommand{--disable-examples}
+
+options.  The speedup realized by disabling tests and examples will vary based 
+on which packages are enabled; however, a speedup of about 1.6 could be 
+expected for a ``typical'' mix of packages.
+
+\item Decrease build time on some machines by creating multiple jobs.
+
+If \InlineCommand{-j} (jobs) is a valid option for \InlineCommand{make},
+specifing the \InlineCommand{-j} option with a value of two times the number 
+of processors that the machine has will typically result in a faster build 
+process.  For example, on a dual processor machine, try replacing 
+\InlineCommand{make} with 
+
+\DisplayCommand{make -j 4}
+
+during the build step.
+
+On a single processor machine, the speedup is minimal; on a machine with 
+multiple processors, the speedup can be quite significant.  For example, 
+speedups of 1.73 and 2.45 were observed on a dual processor machine and a four 
+processor machine, respectively.  Using two times the number of processors for 
+the argument to the jobs option is only a suggestion based on observed 
+performance; those who are interested in achieving optimal performance are
+encouraged to experiment with various values and to report 
+their findings to \InlineCommand{trilinos-help@software.sandia.gov}.  The 
+\InlineCommand{-j} can also be passed without a corresponding value, in other 
+words
+
+\DisplayCommand{make -j}
+
+When used in this way, the number of jobs created is unlimited.  For machines 
+with a large number of processors this appears to work in some situations, but
+machines with fewer than four processors appear to get bogged down with 
+overhead.
+
+\end{itemize}
+
+Other important notes about the configure and build processes:
 \begin{itemize}
 \item Any code that links to Trilinos should define 
 \InlineCommand{HAVE\_CONFIG\_H}.
