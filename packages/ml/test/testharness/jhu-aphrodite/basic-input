@@ -1,0 +1,28 @@
+# Current revision: $Revision$
+# Branch:           $Branch$
+# Last modified:    $Date$
+# Modified by:      $Author$
+#
+#relative to Trilinos/testharness/elements-machine
+MACHINE_CONFIG_FILE             = ../../packages/ml/test/testharness/jhu-aphrodite/machine
+MACHINE_MPI_CONFIG_FILE         = ../../packages/ml/test/testharness/jhu-aphrodite/machine-mpi
+#relative to Trilinos/testharness/elements-trilinos
+TRILINOS_CONFIG_FILE            = ../../packages/ml/test/testharness/jhu-aphrodite/basic-configure
+#whether to mail results (EMAIL) or write to file
+REPORT_METHOD                   = LOCAL_FILESYSTEM
+#name of serial build directory
+SERIAL_DIR                      = ml-basic-serial
+#name of mpi build directory
+MPI_DIR                         = ml-basic-mpi
+HOST_FILE                       = 
+MPI_STARTUP_CMD                 = 
+MPI_SHUTDOWN_CMD                = 
+MPIGO_CMD                       = "mpirun -np"
+MAKE_FLAGS                      = "-j 2"
+CVS_UPDATE                      = NO
+CVS_CMD                         = cvs
+REPORT_NAMES                    = ORDER
+MAIL_METHOD                     = sendmail
+SUMMARY_EMAIL                   = jhu@sandia.gov
+ALL_EMAILS                      = 
+SEND_TO_DEFAULTS                = NO
