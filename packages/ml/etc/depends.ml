@@ -10,8 +10,8 @@ ml_agg_dd.o : ../Obj/ml_agg_dd.c ../Obj/ml_aggregate.h \
         ../Obj/ml_comm.h ../Obj/ml_defs.h ../Obj/ml_lapack.h ../Obj/ml_memory.h ../Obj/ml_operator.h
 	$(CC) -c $(CFLAGS) ../Obj/ml_agg_dd.c -o $@
 
-ml_agg_genP.o : ../Obj/ml_agg_genP.c ../Obj/ml_agg_genP.h \
-        ../Obj/ml_aggregate.h ../Obj/ml_aztec_utils.h ../Obj/ml_bicgstabl.h ../Obj/ml_cg.h ../Obj/ml_comm.h ../Obj/ml_defs.h ../Obj/ml_elementagx.h ../Obj/ml_gmres.h ../Obj/ml_grid.h ../Obj/ml_gridagx.h ../Obj/ml_gridfunc.h ../Obj/ml_include.h ../Obj/ml_intlist.h ../Obj/ml_krylov.h ../Obj/ml_op_utils.h ../Obj/ml_operator.h ../Obj/ml_operatoragx.h ../Obj/ml_pde.h ../Obj/ml_solver.h ../Obj/ml_struct.h ../Obj/ml_vec.h ../Obj/mli_solver.h
+ml_agg_genP.o : ../Obj/ml_agg_genP.c ../Obj/ml_1level.h ../Obj/ml_agg_genP.h \
+        ../Obj/ml_aggregate.h ../Obj/ml_bdrypts.h ../Obj/ml_comm.h ../Obj/ml_comminfoop.h ../Obj/ml_csolve.h ../Obj/ml_defs.h ../Obj/ml_grid.h ../Obj/ml_gridfunc.h ../Obj/ml_krylov.h ../Obj/ml_mapper.h ../Obj/ml_mat_formats.h ../Obj/ml_op_utils.h ../Obj/ml_operator.h ../Obj/ml_operatoragx.h ../Obj/ml_rap.h ../Obj/ml_smoother.h ../Obj/ml_solver.h ../Obj/ml_struct.h ../Obj/ml_utils.h ../Obj/ml_vec.h
 	$(CC) -c $(CFLAGS) ../Obj/ml_agg_genP.c -o $@
 
 ml_agg_uncoupled.o : ../Obj/ml_agg_uncoupled.c ../Obj/ml_aggregate.h \
@@ -21,6 +21,21 @@ ml_agg_uncoupled.o : ../Obj/ml_agg_uncoupled.c ../Obj/ml_aggregate.h \
 ml_aggregate.o : ../Obj/ml_aggregate.c ../Obj/ml_aggregate.h \
         ../Obj/ml_comm.h ../Obj/ml_defs.h ../Obj/ml_lapack.h ../Obj/ml_memory.h ../Obj/ml_operator.h
 	$(CC) -c $(CFLAGS) ../Obj/ml_aggregate.c -o $@
+
+ml_amg.o : ../Obj/ml_amg.c ../Obj/ml_1level.h ../Obj/ml_amg.h \
+        ../Obj/ml_bdrypts.h ../Obj/ml_comm.h ../Obj/ml_defs.h ../Obj/ml_memory.h ../Obj/ml_operator.h ../Obj/ml_operatoragx.h ../Obj/ml_vec.h
+	$(CC) -c $(CFLAGS) ../Obj/ml_amg.c -o $@
+
+ml_amg_MIS.o : ../Obj/ml_amg_MIS.c ../Obj/ml_1level.h ../Obj/ml_aggregate.h \
+        ../Obj/ml_amg.h ../Obj/ml_bdrypts.h ../Obj/ml_comm.h ../Obj/ml_defs.h ../Obj/ml_lapack.h ../Obj/ml_mat_formats.h ../Obj/ml_memory.h ../Obj/ml_operator.h ../Obj/ml_operatoragx.h ../Obj/ml_vec.h
+	$(CC) -c $(CFLAGS) ../Obj/ml_amg_MIS.c -o $@
+
+ml_amg_comprelax.o : ../Obj/ml_amg_comprelax.c
+	$(CC) -c $(CFLAGS) ../Obj/ml_amg_comprelax.c -o $@
+
+ml_amg_genP.o : ../Obj/ml_amg_genP.c ../Obj/ml_amg.h ../Obj/ml_amg_genP.h \
+        ../Obj/ml_operator.h
+	$(CC) -c $(CFLAGS) ../Obj/ml_amg_genP.c -o $@
 
 ml_check.o : ../Obj/ml_check.c ../Obj/ml_1level.h ../Obj/ml_bdrypts.h \
         ../Obj/ml_check.h ../Obj/ml_comm.h ../Obj/ml_comminfoagx.h ../Obj/ml_comminfoop.h ../Obj/ml_csolve.h ../Obj/ml_defs.h ../Obj/ml_grid.h ../Obj/ml_gridfunc.h ../Obj/ml_krylov.h ../Obj/ml_mapper.h ../Obj/ml_mat_formats.h ../Obj/ml_memory.h ../Obj/ml_operator.h ../Obj/ml_operatoragx.h ../Obj/ml_rap.h ../Obj/ml_smoother.h ../Obj/ml_solver.h ../Obj/ml_struct.h ../Obj/ml_utils.h ../Obj/ml_vec.h
@@ -38,8 +53,7 @@ ml_comminfoagx.o : ../Obj/ml_comminfoagx.c ../Obj/ml_comminfoagx.h \
         ../Obj/ml_defs.h ../Obj/ml_memory.h
 	$(CC) -c $(CFLAGS) ../Obj/ml_comminfoagx.c -o $@
 
-ml_comminfoop.o : ../Obj/ml_comminfoop.c ../Obj/ml_agg_genP.h \
-        ../Obj/ml_aggregate.h ../Obj/ml_aztec_utils.h ../Obj/ml_bicgstabl.h ../Obj/ml_cg.h ../Obj/ml_comm.h ../Obj/ml_defs.h ../Obj/ml_elementagx.h ../Obj/ml_gmres.h ../Obj/ml_grid.h ../Obj/ml_gridagx.h ../Obj/ml_gridfunc.h ../Obj/ml_include.h ../Obj/ml_intlist.h ../Obj/ml_krylov.h ../Obj/ml_operator.h ../Obj/ml_operatoragx.h ../Obj/ml_pde.h ../Obj/ml_solver.h ../Obj/ml_struct.h ../Obj/ml_vec.h ../Obj/mli_solver.h
+ml_comminfoop.o : ../Obj/ml_comminfoop.c ../Obj/ml_comm.h ../Obj/ml_comminfoop.h
 	$(CC) -c $(CFLAGS) ../Obj/ml_comminfoop.c -o $@
 
 ml_exch_row.o : ../Obj/ml_exch_row.c ../Obj/ml_1level.h ../Obj/ml_bdrypts.h \
@@ -75,7 +89,7 @@ ml_mapper.o : ../Obj/ml_mapper.c ../Obj/ml_defs.h ../Obj/ml_mapper.h \
 	$(CC) -c $(CFLAGS) ../Obj/ml_mapper.c -o $@
 
 ml_pde.o : ../Obj/ml_pde.c ../Obj/ml_1level.h ../Obj/ml_bdrypts.h \
-        ../Obj/ml_comm.h ../Obj/ml_comminfoop.h ../Obj/ml_csolve.h ../Obj/ml_defs.h ../Obj/ml_grid.h ../Obj/ml_gridfunc.h ../Obj/ml_include.h ../Obj/ml_krylov.h ../Obj/ml_mapper.h ../Obj/ml_mat_formats.h ../Obj/ml_memory.h ../Obj/ml_operator.h ../Obj/ml_operatoragx.h ../Obj/ml_pde.h ../Obj/ml_rap.h ../Obj/ml_smoother.h ../Obj/ml_solver.h ../Obj/ml_struct.h ../Obj/ml_utils.h ../Obj/ml_vec.h ../Obj/mli_solver.h
+        ../Obj/ml_comm.h ../Obj/ml_comminfoop.h ../Obj/ml_csolve.h ../Obj/ml_defs.h ../Obj/ml_grid.h ../Obj/ml_gridfunc.h ../Obj/ml_krylov.h ../Obj/ml_mapper.h ../Obj/ml_mat_formats.h ../Obj/ml_operator.h ../Obj/ml_operatoragx.h ../Obj/ml_pde.h ../Obj/ml_rap.h ../Obj/ml_smoother.h ../Obj/ml_solver.h ../Obj/ml_struct.h ../Obj/ml_utils.h ../Obj/ml_vec.h ../Obj/mli_solver.h
 	$(CC) -c $(CFLAGS) ../Obj/ml_pde.c -o $@
 
 ml_setup.o : ../Obj/ml_setup.c ../Obj/ml_1level.h ../Obj/ml_bdrypts.h \
@@ -105,23 +119,23 @@ ml_seg_precond.o : ../Obj/ml_seg_precond.c ../Obj/ml_1level.h \
 	$(CC) -c $(CFLAGS) ../Obj/ml_seg_precond.c -o $@
 
 ml_struct.o : ../Obj/ml_struct.c ../Obj/ml_1level.h ../Obj/ml_agg_genP.h \
-        ../Obj/ml_aggregate.h ../Obj/ml_aztec_utils.h ../Obj/ml_bdrypts.h ../Obj/ml_comm.h ../Obj/ml_comminfoop.h ../Obj/ml_csolve.h ../Obj/ml_defs.h ../Obj/ml_grid.h ../Obj/ml_gridfunc.h ../Obj/ml_include.h ../Obj/ml_krylov.h ../Obj/ml_lapack.h ../Obj/ml_mapper.h ../Obj/ml_mat_formats.h ../Obj/ml_memory.h ../Obj/ml_operator.h ../Obj/ml_operatoragx.h ../Obj/ml_rap.h ../Obj/ml_smoother.h ../Obj/ml_solver.h ../Obj/ml_struct.h ../Obj/ml_utils.h ../Obj/ml_vec.h
+        ../Obj/ml_aggregate.h ../Obj/ml_aztec_utils.h ../Obj/ml_bdrypts.h ../Obj/ml_comm.h ../Obj/ml_comminfoop.h ../Obj/ml_csolve.h ../Obj/ml_defs.h ../Obj/ml_grid.h ../Obj/ml_gridfunc.h ../Obj/ml_krylov.h ../Obj/ml_lapack.h ../Obj/ml_mapper.h ../Obj/ml_mat_formats.h ../Obj/ml_memory.h ../Obj/ml_operator.h ../Obj/ml_operatoragx.h ../Obj/ml_rap.h ../Obj/ml_smoother.h ../Obj/ml_solver.h ../Obj/ml_struct.h ../Obj/ml_utils.h ../Obj/ml_vec.h
 	$(CC) -c $(CFLAGS) ../Obj/ml_struct.c -o $@
 
-mli_solver.o : ../Obj/mli_solver.c ../Obj/ml_1level.h ../Obj/ml_bdrypts.h \
-        ../Obj/ml_comm.h ../Obj/ml_comminfoop.h ../Obj/ml_csolve.h ../Obj/ml_defs.h ../Obj/ml_grid.h ../Obj/ml_gridfunc.h ../Obj/ml_include.h ../Obj/ml_krylov.h ../Obj/ml_mapper.h ../Obj/ml_mat_formats.h ../Obj/ml_operator.h ../Obj/ml_operatoragx.h ../Obj/ml_rap.h ../Obj/ml_smoother.h ../Obj/ml_solver.h ../Obj/ml_struct.h ../Obj/ml_utils.h ../Obj/ml_vec.h ../Obj/mli_solver.h
+mli_solver.o : ../Obj/mli_solver.c ../Obj/ml_1level.h ../Obj/ml_aggregate.h \
+        ../Obj/ml_amg.h ../Obj/ml_bdrypts.h ../Obj/ml_comm.h ../Obj/ml_comminfoop.h ../Obj/ml_csolve.h ../Obj/ml_defs.h ../Obj/ml_grid.h ../Obj/ml_gridfunc.h ../Obj/ml_krylov.h ../Obj/ml_mapper.h ../Obj/ml_mat_formats.h ../Obj/ml_operator.h ../Obj/ml_operatoragx.h ../Obj/ml_rap.h ../Obj/ml_smoother.h ../Obj/ml_solver.h ../Obj/ml_struct.h ../Obj/ml_utils.h ../Obj/ml_vec.h ../Obj/mli_solver.h
 	$(CC) -c $(CFLAGS) ../Obj/mli_solver.c -o $@
 
-ml_mat_formats.o : ../Obj/ml_mat_formats.c ../Obj/ml_agg_genP.h \
-        ../Obj/ml_aggregate.h ../Obj/ml_aztec_utils.h ../Obj/ml_bicgstabl.h ../Obj/ml_cg.h ../Obj/ml_comm.h ../Obj/ml_defs.h ../Obj/ml_elementagx.h ../Obj/ml_gmres.h ../Obj/ml_grid.h ../Obj/ml_gridagx.h ../Obj/ml_gridfunc.h ../Obj/ml_include.h ../Obj/ml_intlist.h ../Obj/ml_krylov.h ../Obj/ml_operator.h ../Obj/ml_operatoragx.h ../Obj/ml_pde.h ../Obj/ml_solver.h ../Obj/ml_struct.h ../Obj/ml_vec.h ../Obj/mli_solver.h
+ml_mat_formats.o : ../Obj/ml_mat_formats.c ../Obj/ml_mat_formats.h \
+        ../Obj/ml_operator.h
 	$(CC) -c $(CFLAGS) ../Obj/ml_mat_formats.c -o $@
 
 ml_matmat_mult.o : ../Obj/ml_matmat_mult.c ../Obj/ml_1level.h \
         ../Obj/ml_bdrypts.h ../Obj/ml_comm.h ../Obj/ml_comminfoagx.h ../Obj/ml_comminfoop.h ../Obj/ml_csolve.h ../Obj/ml_defs.h ../Obj/ml_grid.h ../Obj/ml_gridfunc.h ../Obj/ml_krylov.h ../Obj/ml_mapper.h ../Obj/ml_mat_formats.h ../Obj/ml_operator.h ../Obj/ml_operatoragx.h ../Obj/ml_rap.h ../Obj/ml_smoother.h ../Obj/ml_solver.h ../Obj/ml_struct.h ../Obj/ml_utils.h ../Obj/ml_vec.h
 	$(CC) -c $(CFLAGS) ../Obj/ml_matmat_mult.c -o $@
 
-ml_op_utils.o : ../Obj/ml_op_utils.c ../Obj/ml_agg_genP.h \
-        ../Obj/ml_aggregate.h ../Obj/ml_aztec_utils.h ../Obj/ml_bicgstabl.h ../Obj/ml_cg.h ../Obj/ml_comm.h ../Obj/ml_defs.h ../Obj/ml_elementagx.h ../Obj/ml_gmres.h ../Obj/ml_grid.h ../Obj/ml_gridagx.h ../Obj/ml_gridfunc.h ../Obj/ml_include.h ../Obj/ml_intlist.h ../Obj/ml_krylov.h ../Obj/ml_operator.h ../Obj/ml_operatoragx.h ../Obj/ml_pde.h ../Obj/ml_solver.h ../Obj/ml_struct.h ../Obj/ml_vec.h ../Obj/mli_solver.h
+ml_op_utils.o : ../Obj/ml_op_utils.c ../Obj/ml_1level.h ../Obj/ml_bdrypts.h \
+        ../Obj/ml_comm.h ../Obj/ml_comminfoop.h ../Obj/ml_csolve.h ../Obj/ml_defs.h ../Obj/ml_grid.h ../Obj/ml_gridfunc.h ../Obj/ml_krylov.h ../Obj/ml_mapper.h ../Obj/ml_mat_formats.h ../Obj/ml_operator.h ../Obj/ml_operatoragx.h ../Obj/ml_rap.h ../Obj/ml_smoother.h ../Obj/ml_solver.h ../Obj/ml_struct.h ../Obj/ml_utils.h ../Obj/ml_vec.h
 	$(CC) -c $(CFLAGS) ../Obj/ml_op_utils.c -o $@
 
 ml_operator.o : ../Obj/ml_operator.c ../Obj/ml_1level.h ../Obj/ml_bdrypts.h \
@@ -145,11 +159,10 @@ ml_csolve.o : ../Obj/ml_csolve.c ../Obj/ml_1level.h ../Obj/ml_csolve.h \
 	$(CC) -c $(CFLAGS) ../Obj/ml_csolve.c -o $@
 
 ml_smoother.o : ../Obj/ml_smoother.c ../Obj/ml_1level.h ../Obj/ml_aztec_utils.h \
-        ../Obj/ml_defs.h ../Obj/ml_include.h ../Obj/ml_lapack.h ../Obj/ml_memory.h ../Obj/ml_smoother.h
+        ../Obj/ml_comminfoop.h ../Obj/ml_defs.h ../Obj/ml_lapack.h ../Obj/ml_memory.h ../Obj/ml_operator.h ../Obj/ml_smoother.h
 	$(CC) -c $(CFLAGS) ../Obj/ml_smoother.c -o $@
 
-ml_solver.o : ../Obj/ml_solver.c ../Obj/ml_agg_genP.h ../Obj/ml_aggregate.h \
-        ../Obj/ml_aztec_utils.h ../Obj/ml_bicgstabl.h ../Obj/ml_cg.h ../Obj/ml_comm.h ../Obj/ml_defs.h ../Obj/ml_elementagx.h ../Obj/ml_gmres.h ../Obj/ml_grid.h ../Obj/ml_gridagx.h ../Obj/ml_gridfunc.h ../Obj/ml_include.h ../Obj/ml_intlist.h ../Obj/ml_krylov.h ../Obj/ml_operator.h ../Obj/ml_operatoragx.h ../Obj/ml_pde.h ../Obj/ml_solver.h ../Obj/ml_struct.h ../Obj/ml_vec.h ../Obj/mli_solver.h
+ml_solver.o : ../Obj/ml_solver.c ../Obj/ml_defs.h ../Obj/ml_solver.h
 	$(CC) -c $(CFLAGS) ../Obj/ml_solver.c -o $@
 
 ml_superlu.o : ../Obj/ml_superlu.c ../Obj/ml_1level.h ../Obj/ml_bdrypts.h \
@@ -160,8 +173,8 @@ ml_xxt.o : ../Obj/ml_xxt.c ../Obj/ml_agg_genP.h ../Obj/ml_aggregate.h \
         ../Obj/ml_aztec_utils.h ../Obj/ml_bicgstabl.h ../Obj/ml_cg.h ../Obj/ml_comm.h ../Obj/ml_defs.h ../Obj/ml_elementagx.h ../Obj/ml_gmres.h ../Obj/ml_grid.h ../Obj/ml_gridagx.h ../Obj/ml_gridfunc.h ../Obj/ml_include.h ../Obj/ml_intlist.h ../Obj/ml_krylov.h ../Obj/ml_operator.h ../Obj/ml_operatoragx.h ../Obj/ml_pde.h ../Obj/ml_solver.h ../Obj/ml_struct.h ../Obj/ml_vec.h ../Obj/mli_solver.h
 	$(CC) -c $(CFLAGS) ../Obj/ml_xxt.c -o $@
 
-ml_aztec_utils.o : ../Obj/ml_aztec_utils.c ../Obj/ml_agg_genP.h \
-        ../Obj/ml_aggregate.h ../Obj/ml_aztec_utils.h ../Obj/ml_bicgstabl.h ../Obj/ml_cg.h ../Obj/ml_comm.h ../Obj/ml_defs.h ../Obj/ml_elementagx.h ../Obj/ml_gmres.h ../Obj/ml_grid.h ../Obj/ml_gridagx.h ../Obj/ml_gridfunc.h ../Obj/ml_include.h ../Obj/ml_intlist.h ../Obj/ml_krylov.h ../Obj/ml_operator.h ../Obj/ml_operatoragx.h ../Obj/ml_pde.h ../Obj/ml_solver.h ../Obj/ml_struct.h ../Obj/ml_vec.h ../Obj/mli_solver.h
+ml_aztec_utils.o : ../Obj/ml_aztec_utils.c ../Obj/ml_1level.h \
+        ../Obj/ml_aztec_utils.h ../Obj/ml_bdrypts.h ../Obj/ml_comm.h ../Obj/ml_comminfoop.h ../Obj/ml_csolve.h ../Obj/ml_defs.h ../Obj/ml_grid.h ../Obj/ml_gridfunc.h ../Obj/ml_krylov.h ../Obj/ml_mapper.h ../Obj/ml_mat_formats.h ../Obj/ml_operator.h ../Obj/ml_operatoragx.h ../Obj/ml_rap.h ../Obj/ml_smoother.h ../Obj/ml_solver.h ../Obj/ml_struct.h ../Obj/ml_utils.h ../Obj/ml_vec.h
 	$(CC) -c $(CFLAGS) ../Obj/ml_aztec_utils.c -o $@
 
 ml_intlist.o : ../Obj/ml_intlist.c ../Obj/ml_defs.h ../Obj/ml_intlist.h \
@@ -187,9 +200,12 @@ ml_vec.o : ../Obj/ml_vec.c ../Obj/ml_comm.h ../Obj/ml_defs.h \
         ../Obj/ml_memory.h ../Obj/ml_vec.h
 	$(CC) -c $(CFLAGS) ../Obj/ml_vec.c -o $@
 
-ml_read_elas.o : ../examples/ml_read_elas.c ../Obj/ml_agg_genP.h \
-        ../Obj/ml_aggregate.h ../Obj/ml_aztec_utils.h ../Obj/ml_bicgstabl.h ../Obj/ml_cg.h ../Obj/ml_comm.h ../Obj/ml_defs.h ../Obj/ml_elementagx.h ../Obj/ml_gmres.h ../Obj/ml_grid.h ../Obj/ml_gridagx.h ../Obj/ml_gridfunc.h ../Obj/ml_include.h ../Obj/ml_intlist.h ../Obj/ml_krylov.h ../Obj/ml_operator.h ../Obj/ml_operatoragx.h ../Obj/ml_pde.h ../Obj/ml_solver.h ../Obj/ml_struct.h ../Obj/ml_vec.h ../Obj/mli_solver.h
-	$(CC) -c $(CFLAGS) ../examples/ml_read_elas.c -o $@
+ml_reader.o : ../Obj/ml_reader.c ../Obj/ml_reader.h
+	$(CC) -c $(CFLAGS) ../Obj/ml_reader.c -o $@
+
+ml_readfile.o : ../examples/ml_readfile.c ../Obj/ml_agg_genP.h \
+        ../Obj/ml_aggregate.h ../Obj/ml_aztec_utils.h ../Obj/ml_bicgstabl.h ../Obj/ml_cg.h ../Obj/ml_comm.h ../Obj/ml_defs.h ../Obj/ml_elementagx.h ../Obj/ml_gmres.h ../Obj/ml_grid.h ../Obj/ml_gridagx.h ../Obj/ml_gridfunc.h ../Obj/ml_include.h ../Obj/ml_intlist.h ../Obj/ml_krylov.h ../Obj/ml_operator.h ../Obj/ml_operatoragx.h ../Obj/ml_pde.h ../Obj/ml_reader.h ../Obj/ml_solver.h ../Obj/ml_struct.h ../Obj/ml_vec.h ../Obj/mli_solver.h
+	$(CC) -c $(CFLAGS) ../examples/ml_readfile.c -o $@
 
 convertSund2AZdatafile.o : ../examples/convertSund2AZdatafile.c
 	$(CC) -c $(CFLAGS) ../examples/convertSund2AZdatafile.c -o $@
@@ -214,9 +230,17 @@ ml_example3d.o : ../examples/ml_example3d.c ../Obj/ml_agg_genP.h \
         ../Obj/ml_aggregate.h ../Obj/ml_aztec_utils.h ../Obj/ml_bicgstabl.h ../Obj/ml_cg.h ../Obj/ml_comm.h ../Obj/ml_defs.h ../Obj/ml_elementagx.h ../Obj/ml_gmres.h ../Obj/ml_grid.h ../Obj/ml_gridagx.h ../Obj/ml_gridfunc.h ../Obj/ml_include.h ../Obj/ml_intlist.h ../Obj/ml_krylov.h ../Obj/ml_operator.h ../Obj/ml_operatoragx.h ../Obj/ml_pde.h ../Obj/ml_solver.h ../Obj/ml_struct.h ../Obj/ml_vec.h ../Obj/mli_solver.h
 	$(CC) -c $(CFLAGS) ../examples/ml_example3d.c -o $@
 
+ml_read_salsa.o : ../examples/ml_read_salsa.c ../Obj/ml_agg_genP.h \
+        ../Obj/ml_aggregate.h ../Obj/ml_aztec_utils.h ../Obj/ml_bicgstabl.h ../Obj/ml_cg.h ../Obj/ml_comm.h ../Obj/ml_defs.h ../Obj/ml_elementagx.h ../Obj/ml_gmres.h ../Obj/ml_grid.h ../Obj/ml_gridagx.h ../Obj/ml_gridfunc.h ../Obj/ml_include.h ../Obj/ml_intlist.h ../Obj/ml_krylov.h ../Obj/ml_operator.h ../Obj/ml_operatoragx.h ../Obj/ml_pde.h ../Obj/ml_solver.h ../Obj/ml_struct.h ../Obj/ml_vec.h ../Obj/mli_solver.h
+	$(CC) -c $(CFLAGS) ../examples/ml_read_salsa.c -o $@
+
 ml_readex.o : ../examples/ml_readex.c ../Obj/ml_agg_genP.h \
         ../Obj/ml_aggregate.h ../Obj/ml_aztec_utils.h ../Obj/ml_bicgstabl.h ../Obj/ml_cg.h ../Obj/ml_comm.h ../Obj/ml_defs.h ../Obj/ml_elementagx.h ../Obj/ml_gmres.h ../Obj/ml_grid.h ../Obj/ml_gridagx.h ../Obj/ml_gridfunc.h ../Obj/ml_include.h ../Obj/ml_intlist.h ../Obj/ml_krylov.h ../Obj/ml_operator.h ../Obj/ml_operatoragx.h ../Obj/ml_pde.h ../Obj/ml_solver.h ../Obj/ml_struct.h ../Obj/ml_vec.h ../Obj/mli_solver.h
 	$(CC) -c $(CFLAGS) ../examples/ml_readex.c -o $@
+
+ml_recirc.o : ../examples/ml_recirc.c ../Obj/ml_agg_genP.h \
+        ../Obj/ml_aggregate.h ../Obj/ml_aztec_utils.h ../Obj/ml_bicgstabl.h ../Obj/ml_cg.h ../Obj/ml_comm.h ../Obj/ml_defs.h ../Obj/ml_elementagx.h ../Obj/ml_gmres.h ../Obj/ml_grid.h ../Obj/ml_gridagx.h ../Obj/ml_gridfunc.h ../Obj/ml_include.h ../Obj/ml_intlist.h ../Obj/ml_krylov.h ../Obj/ml_operator.h ../Obj/ml_operatoragx.h ../Obj/ml_pde.h ../Obj/ml_solver.h ../Obj/ml_struct.h ../Obj/ml_vec.h ../Obj/mli_solver.h
+	$(CC) -c $(CFLAGS) ../examples/ml_recirc.c -o $@
 
 ml_star2d.o : ../examples/ml_star2d.c ../Obj/ml_agg_genP.h \
         ../Obj/ml_aggregate.h ../Obj/ml_aztec_utils.h ../Obj/ml_bicgstabl.h ../Obj/ml_cg.h ../Obj/ml_comm.h ../Obj/ml_defs.h ../Obj/ml_elementagx.h ../Obj/ml_gmres.h ../Obj/ml_grid.h ../Obj/ml_gridagx.h ../Obj/ml_gridfunc.h ../Obj/ml_include.h ../Obj/ml_intlist.h ../Obj/ml_krylov.h ../Obj/ml_operator.h ../Obj/ml_operatoragx.h ../Obj/ml_pde.h ../Obj/ml_solver.h ../Obj/ml_struct.h ../Obj/ml_vec.h ../Obj/mli_solver.h
@@ -241,12 +265,4 @@ oldml_readex.o : ../examples/oldml_readex.c ../Obj/ml_agg_genP.h \
 seg_readex.o : ../examples/seg_readex.c ../Obj/ml_agg_genP.h \
         ../Obj/ml_aggregate.h ../Obj/ml_aztec_utils.h ../Obj/ml_bicgstabl.h ../Obj/ml_cg.h ../Obj/ml_comm.h ../Obj/ml_defs.h ../Obj/ml_elementagx.h ../Obj/ml_gmres.h ../Obj/ml_grid.h ../Obj/ml_gridagx.h ../Obj/ml_gridfunc.h ../Obj/ml_include.h ../Obj/ml_intlist.h ../Obj/ml_krylov.h ../Obj/ml_operator.h ../Obj/ml_operatoragx.h ../Obj/ml_pde.h ../Obj/ml_solver.h ../Obj/ml_struct.h ../Obj/ml_vec.h ../Obj/mli_solver.h
 	$(CC) -c $(CFLAGS) ../examples/seg_readex.c -o $@
-
-ml_recirc.o : ../examples/ml_recirc.c ../Obj/ml_agg_genP.h \
-        ../Obj/ml_aggregate.h ../Obj/ml_aztec_utils.h ../Obj/ml_bicgstabl.h ../Obj/ml_cg.h ../Obj/ml_comm.h ../Obj/ml_defs.h ../Obj/ml_elementagx.h ../Obj/ml_gmres.h ../Obj/ml_grid.h ../Obj/ml_gridagx.h ../Obj/ml_gridfunc.h ../Obj/ml_include.h ../Obj/ml_intlist.h ../Obj/ml_krylov.h ../Obj/ml_operator.h ../Obj/ml_operatoragx.h ../Obj/ml_pde.h ../Obj/ml_solver.h ../Obj/ml_struct.h ../Obj/ml_vec.h ../Obj/mli_solver.h
-	$(CC) -c $(CFLAGS) ../examples/ml_recirc.c -o $@
-
-ml_read_salsa.o : ../examples/ml_read_salsa.c ../Obj/ml_agg_genP.h \
-        ../Obj/ml_aggregate.h ../Obj/ml_aztec_utils.h ../Obj/ml_bicgstabl.h ../Obj/ml_cg.h ../Obj/ml_comm.h ../Obj/ml_defs.h ../Obj/ml_elementagx.h ../Obj/ml_gmres.h ../Obj/ml_grid.h ../Obj/ml_gridagx.h ../Obj/ml_gridfunc.h ../Obj/ml_include.h ../Obj/ml_intlist.h ../Obj/ml_krylov.h ../Obj/ml_operator.h ../Obj/ml_operatoragx.h ../Obj/ml_pde.h ../Obj/ml_solver.h ../Obj/ml_struct.h ../Obj/ml_vec.h ../Obj/mli_solver.h
-	$(CC) -c $(CFLAGS) ../examples/ml_read_salsa.c -o $@
 
