@@ -182,11 +182,6 @@ struct LB_Struct {
   void *Data_Structure;           /*  Data structure used by the load 
                                       balancer; cast by the method routines
                                       to the appropriate data type.          */
-  LB_OBJ_WEIGHT_FN *Get_Obj_Weight;            /* Fn ptr to get an object's
-                                                  weight.                    */
-  void *Get_Obj_Weight_Data;                   /* Ptr to user defined data
-                                                  to be passed to
-                                                  Get_Obj_Weight()           */
   LB_NUM_EDGES_FN *Get_Num_Edges;              /* Fn ptr to get an object's
                                                   number of edges.           */
   void *Get_Num_Edges_Data;                    /* Ptr to user defined data
