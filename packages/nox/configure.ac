@@ -1256,7 +1256,6 @@ AC_CONFIG_FILES([
                 example-petsc/1Dfd_nonlinear/Makefile
 		src-loca/Makefile
 		src-loca/doc/Makefile
-		src-loca/doc/Doxyfile
 		src-loca/src/Makefile
                 src-loca/src-epetra/Makefile
 		src-loca/src-lapack/Makefile
@@ -1267,10 +1266,6 @@ AC_CONFIG_FILES([
 		src-loca/example-lapack/Chan/Makefile
 		src-loca/example-lapack/1Dfd_pitchfork/Makefile
 		src-loca/example-lapack/Brusselator/Makefile
-		src-loca/example-lapack/ThermoSyphon/Makefile
-		src-loca/example-lapack/ThermoSyphon/therm/Makefile
-		src-loca/example-lapack/ThermoSyphon/therm/in
-		src-loca/example-lapack/ThermoSyphon/therm/oldfile
 		])
 
 AC_OUTPUT
