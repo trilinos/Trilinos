@@ -571,7 +571,7 @@ LOCA::Continuation::ArcLengthGroup::scalePredictor() {
 
   // Adjust step size scaling factor to reflect changes in 
   // arc-length parameterization
-  if (LOCA::Continuation::ExtendedGroup::usedConstantPredictor && isPrevXVec()) {
+  if (LOCA::Continuation::ExtendedGroup::usedConstantPredictor && !isPrevXVec()) {
     stepSizeScaleFactor = 1.0/dpdsNew;
     LOCA::Continuation::ExtendedGroup::usedConstantPredictor = false;
   }

@@ -510,6 +510,11 @@ LOCA::Stepper::postprocess(LOCA::Abstract::Iterator::StepStatus stepStatus)
   if (stepStatus == LOCA::Abstract::Iterator::Unsuccessful)
     return stepStatus;
 
+  // Compute eigenvalues/eigenvectors
+  if (calcEigenvalues) {
+    curGroupPtr->getBaseLevelUnderlyingGroup().computeEigenvalues(*paramListPtr);
+  }
+
   *prevPredictorPtr = *curPredictorPtr;
 
   predictorManagerPtr->compute(*prevGroupPtr, *curGroupPtr, *curPredictorPtr);
@@ -537,10 +542,6 @@ LOCA::Stepper::postprocess(LOCA::Abstract::Iterator::StepStatus stepStatus)
       return LOCA::Abstract::Iterator::Unsuccessful;
 
   }
-
-  // Compute eigenvalues/eigenvectors
-  if (calcEigenvalues)
-    curGroupPtr->getBaseLevelUnderlyingGroup().computeEigenvalues(*paramListPtr);
 
   return stepStatus;
 }
@@ -652,7 +653,7 @@ LOCA::Stepper::printStartStep()
   if (Utils::doPrint(Utils::StepperIteration)) {
     cout.precision(6);
     cout << "\n" << Utils::fill(72, '~') << "\n";
-    cout << "Start of Continuation Step " << stepNumber << endl;
+    cout << "Start of Continuation Step " << stepNumber <<" : ";
     if (stepNumber==0) {
       cout << "Attempting to converge initial guess at initial parameter values." << endl;
     }
@@ -660,10 +661,10 @@ LOCA::Stepper::printStartStep()
       cout << "Attempting to hit final target value " << targetValue << endl;
     }
     else {
-      cout << "Continuation Method: " << conGroupManagerPtr->getMethod() << endl;
-      cout << "Continuation Parameter: " << conGroupManagerPtr->getConParamID()
+      cout << "Parameter: " << conGroupManagerPtr->getConParamID()
   	   << " = " << curGroupPtr->getContinuationParameter() 
            << " from " << prevGroupPtr->getContinuationParameter() << endl;
+      cout << "Continuation Method: " << conGroupManagerPtr->getMethod() << endl;
       cout << "Current step size  = " << stepSize << "   "
 	   << "Previous step size = " << stepSizeManagerPtr->getPrevStepSize() << endl;
     }
@@ -679,8 +680,8 @@ LOCA::Stepper::printEndStep(LOCA::Abstract::Iterator::StepStatus stepStatus)
     // Print results of successful continuation step
     if (Utils::doPrint(Utils::StepperIteration)) {
       cout << "\n" << Utils::fill(72, '~') << "\n";
-      cout << "End of  Continuation Step " << stepNumber << endl;
-      cout << "Continuation Parameter: " << conGroupManagerPtr->getConParamID()
+      cout << "End of Continuation Step " << stepNumber << " : ";
+      cout << "Parameter: " << conGroupManagerPtr->getConParamID()
 	   << " = " << curGroupPtr->getContinuationParameter();
       if (stepNumber != 0) 
         cout << " from " << prevGroupPtr->getContinuationParameter();
