@@ -20,24 +20,16 @@ dnl @author Mike Heroux <mheroux@cs.sandia.gov>
 dnl
 AC_DEFUN([TAC_ARG_CONFIG_MPI],
 [
+
 AC_ARG_ENABLE(mpi,
 [AC_HELP_STRING([--enable-mpi],[MPI support])],
 [HAVE_PKG_MPI=$enableval],
 [HAVE_PKG_MPI=no]
 )
 
-AC_ARG_WITH(mpi,
-[AC_HELP_STRING([--with-mpi=MPIROOT],[use MPI root directory (enables MPI)])],
-[
-  HAVE_PKG_MPI=yes
-  MPI_DIR=${withval}
-  AC_MSG_CHECKING(MPI directory)
-  AC_MSG_RESULT([${MPI_DIR}])
-]
-)
-
 AC_ARG_WITH(mpi-compilers,
-[AC_HELP_STRING([--with-mpi-compilers=PATH],[use MPI C++ compiler mpicxx, or mpiCC (if mpicxx not available), MPI C compiler mpicc and MPI Fortran compiler mpif77 found in PATH (PATH optional).  Enables MPI])],
+[AC_HELP_STRING([--with-mpi-compilers=PATH],
+[use MPI compilers mpicc, mpif77, and mpicxx (or mpiCC) in the specified path or in the default path if no path is specified. Enables MPI])],
 [
   if test X${withval} != Xno; then
     HAVE_PKG_MPI=yes
@@ -60,10 +52,20 @@ AC_ARG_WITH(mpi-compilers,
 ]
 )
 
-AC_ARG_WITH(mpi-include,
-[AC_HELP_STRING([--with-mpi-include],[Obsolete.  Use --with-mpi-incdir=DIR instead.  Do not prefix DIR with '-I'.])],
-[AC_MSG_ERROR([--with-mpi-include is an obsolte option.   Use --with-mpi-incdir=DIR instead.  Do not prefix DIR with '-I'.  For example '--with-mpi-incdir=/usr/lam_path/include'.])]
+AC_ARG_WITH(mpi,
+[AC_HELP_STRING([--with-mpi=MPIROOT],[use MPI root directory (enables MPI)])],
+[
+  HAVE_PKG_MPI=yes
+  MPI_DIR=${withval}
+  AC_MSG_CHECKING(MPI directory)
+  AC_MSG_RESULT([${MPI_DIR}])
+]
 )
+
+#AC_ARG_WITH(mpi-include,
+#[AC_HELP_STRING([--with-mpi-include],[Obsolete.  Use --with-mpi-incdir=DIR instead.  Do not prefix DIR with '-I'.])],
+#[AC_MSG_ERROR([--with-mpi-include is an obsolte option.   Use --with-mpi-incdir=DIR instead.  Do not prefix DIR with '-I'.  For example '--with-mpi-incdir=/usr/lam_path/include'.])]
+#)
 
 AC_ARG_WITH(mpi-libs,
 [AC_HELP_STRING([--with-mpi-libs="LIBS"],[MPI libraries @<:@"-lmpi"@:>@])],
@@ -124,8 +126,8 @@ if test -n "${MPI_CXX}"; then
     echo "-----"
     echo "Cannot find MPI C++ compiler ${MPI_CXX}."
     echo "Specify a path to all mpi compilers with --with-mpi-compilers=PATH"
-    echo "or specify a C++ compiler using CXX="
-    echo "Do not use --with-mpi-compilers if using CXX="
+    echo "or specify a C++ compiler using CXX=<compiler>"
+    echo "Do not use --with-mpi-compilers if using CXX=<compiler>"
     echo "-----"
     AC_MSG_ERROR([MPI C++ compiler (${MPI_CXX}) not found.])
   fi
@@ -144,8 +146,8 @@ if test -n "${MPI_CC}"; then
     echo "-----"
     echo "Cannot find MPI C compiler ${MPI_CC}."
     echo "Specify a path to all mpi compilers with --with-mpi-compilers=PATH"
-    echo "or specify a C compiler using CC="
-    echo "Do not use --with-mpi-compilers if using CC="
+    echo "or specify a C compiler using CC=<compiler>"
+    echo "Do not use --with-mpi-compilers if using CC=<compiler>"
     echo "-----"
     AC_MSG_ERROR([MPI C compiler (${MPI_CC}) not found.])
   fi
@@ -164,8 +166,8 @@ if test -n "${MPI_F77}"; then
     echo "-----"
     echo "Cannot find MPI Fortran compiler ${MPI_F77}."
     echo "Specify a path to all mpi compilers with --with-mpi-compilers=PATH"
-    echo "or specify a Fortran 77 compiler using F77="
-    echo "Do not use --with-mpi-compilers if using F77="
+    echo "or specify a Fortran 77 compiler using F77=<compiler>"
+    echo "Do not use --with-mpi-compilers if using F77=<compiler>"
     echo "-----"
     AC_MSG_ERROR([MPI Fortran 77 compiler (${MPI_F77}) not found.])
   fi
