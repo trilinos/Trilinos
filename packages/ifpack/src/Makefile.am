@@ -11,7 +11,6 @@
 
 #Ifpack_CrsGraph.h
 #Ifpack_CrsRick.h
-#ifp_blas1.h
 #
 #
 #
@@ -66,54 +65,8 @@ LANG_WRAPS_H =
 
 LANG_WRAPS = 
 
-EXTRA_DIST_H = \
-	$(srcdir)/az_ifpack.h \
-	$(srcdir)/ifp_BlockMat.h \
-	$(srcdir)/ifp_BlockVec.h \
-	$(srcdir)/ifp_DenseMat.h \
-	$(srcdir)/ifp_SparseUtil.h \
-	$(srcdir)/ifp_biluk.h \
-	$(srcdir)/ifp_brelax.h \
-	$(srcdir)/ifp_c_wrappers.h \
-	$(srcdir)/ifp_Matrix.h \
-	$(srcdir)/ifp_LocalMat.h \
-	$(srcdir)/ifp_LocalPrecon.h \
-	$(srcdir)/ifp_ifpack.h \
-	$(srcdir)/ifp_blas3.h \
-	$(srcdir)/ifp_lapackd.h \
-	$(srcdir)/ifp_arch.h \
-	$(srcdir)/ifp_GlobalPrecon.h \
-	$(srcdir)/ifp_Precon.h \
-	$(srcdir)/ifp_spblas.h
-
-EXTRA_DIST = \
-	$(srcdir)/az_ifpack_prec_create.c \
-	$(srcdir)/az_ifpack_precon.c  \
-	$(srcdir)/az_ifpack_iterate.c \
-	$(srcdir)/az_ifpack_prec_destroy.c \
-	$(srcdir)/az_ifpack_solve.c \
-	$(srcdir)/ifp_BlockMat.cpp \
-	$(srcdir)/ifp_BlockVec.cpp \
-	$(srcdir)/ifp_DenseMat.cpp \
-	$(srcdir)/ifp_SparseUtil.cpp \
-	$(srcdir)/ifp_biluk.cpp \
-	$(srcdir)/ifp_brelax.cpp \
-	$(srcdir)/ifp_c_wrappers.cpp \
-	$(srcdir)/ifp_spmm.cpp \
-	$(srcdir)/ifp_spsm.cpp 
-
-if BUILD_OLDIFPACK
-
-DIST_H = $(EXTRA_DIST_H) 
-
-DIST = $(EXTRA_DIST)
-
-else
-
 DIST_H = 
 DIST = 
-
-endif
 
 COMP_H = \
 	$(srcdir)/Ifpack_IlukGraph.h \
