@@ -71,7 +71,8 @@ int ML_Gen_MGHierarchy_UsingAMG(ML *ml, int start,
    /* ----------------------------------------------------------------- */
 
    idata = ML_gmax_int(idata, ml->comm);
-   if ( ml->comm->ML_mypid == 0 && ml_amg->print_flag ) ML_AMG_Print(ml_amg);
+   if ( ml->comm->ML_mypid == 0 && ml_amg->print_flag < ML_Get_PrintLevel())
+      ML_AMG_Print(ml_amg);
 #ifdef ML_TIMING
    t0 = GetClock();
 #endif
@@ -95,7 +96,7 @@ int ML_Gen_MGHierarchy_UsingAMG(ML *ml, int start,
    }
 #ifdef ML_TIMING
    t0 = GetClock() - t0;
-   if ( ml->comm->ML_mypid == 0 && ml_amg->print_flag ) 
+   if ( ml->comm->ML_mypid == 0 && ml_amg->print_flag < ML_Get_PrintLevel())
       printf("AMG total setup time = %e\n", t0);
 #endif
 
@@ -111,7 +112,7 @@ int ML_Gen_MGHierarchy_UsingAMG(ML *ml, int start,
    ml_amg->operator_complexity += dnnz;
 
    idata = ML_gmax_int(idata, ml->comm);
-   if ( ml->comm->ML_mypid == 0 && ml_amg->print_flag ) 
+   if ( ml->comm->ML_mypid == 0 && ml_amg->print_flag < ML_Get_PrintLevel())
       ML_AMG_Print_Complexity(ml_amg);
    idata = ML_gmax_int(idata, ml->comm);
 
@@ -155,7 +156,7 @@ int ML_AMG_Gen_MGHierarchy(ML *ml, int fine_level,
 
       ML_Gen_Restrictor_TransP(ml, level, next);
 
-      if ( ml->comm->ML_mypid == 0 && amg->print_flag ) 
+      if ( ml->comm->ML_mypid == 0 && amg->print_flag < ML_Get_PrintLevel())
          printf("ML_AMG : generate Galerkin coarse matrix \n");
 
 #ifdef ML_TIMING
@@ -164,11 +165,11 @@ int ML_AMG_Gen_MGHierarchy(ML *ml, int fine_level,
       ML_Gen_AmatrixRAP(ml, level, next);
 #ifdef ML_TIMING
       t0 = GetClock() - t0;
-      if ( ml->comm->ML_mypid == 0 && amg->print_flag ) 
+      if ( ml->comm->ML_mypid == 0 && amg->print_flag < ML_Get_PrintLevel())
          printf("AMG RAP time at level %3d = %e\n", level, t0);
 #endif
 
-      if ( ml->comm->ML_mypid == 0 && amg->print_flag ) 
+      if ( ml->comm->ML_mypid == 0 && amg->print_flag < ML_Get_PrintLevel())
       {
          printf("ML_AMG : coarse matrix generated \n");
          printf("-----------------------------------------------\n");
@@ -207,12 +208,12 @@ int ML_AMG_Gen_Prolongator(ML *ml,int level, int clevel, void *data,
    Nfine    = Amat->outvec_leng;
    gNfine   = ML_Comm_GsumInt( ml->comm, Nfine);
    ML_AMG_Set_CurrentLevel( amg, level );
-   if ( ml->comm->ML_mypid == 0 && amg->print_flag >= 1) 
+   if ( ml->comm->ML_mypid == 0 && amg->print_flag  < ML_Get_PrintLevel())
       printf("+++++++++++++++++++++++++++++++++++++++++++++++\n");
    Pmatrix = ML_Operator_Create(ml->comm);
    Ncoarse  = ML_AMG_Coarsen(amg, Amat, &Pmatrix, ml->comm);
    gNcoarse = ML_Comm_GsumInt( ml->comm, Ncoarse);
-   if ( ml->comm->ML_mypid == 0 && amg->print_flag > 1) 
+   if ( ml->comm->ML_mypid == 0 && amg->print_flag < ML_Get_PrintLevel()) 
       printf("AMG at level %2d = %d\n", level, gNcoarse);
    if ( gNcoarse == 0 || (1.0*gNfine)/(1.0*gNcoarse+0.1) < 1.05 )
    {

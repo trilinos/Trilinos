@@ -100,7 +100,7 @@ int ML_AMG_Destroy( ML_AMG **amg )
 /* set output level                                                     */
 /* ------------------------------------------------------------------------- */
 
-int ML_AMG_Set_OutputLevel( ML_AMG *amg, int level )
+int ML_AMG_Set_OutputLevel( ML_AMG *amg, double level )
 {
    if ( amg->ML_id != ML_ID_AMG ) 
    {
@@ -262,7 +262,8 @@ int ML_AMG_Coarsen(ML_AMG *amg,ML_Operator *Amatrix,ML_Operator **Pmatrix,
    }
 
    mypid = comm->ML_mypid;
-   if (mypid == 0 && amg->print_flag) printf("ML_AMG_Coarsen begins ...\n");
+   if (mypid == 0 && amg->print_flag < ML_Get_PrintLevel())
+      printf("ML_AMG_Coarsen begins ...\n");
 
    Amatrix->num_PDEs = amg->num_PDE_eqns;
    switch ( amg->coarsen_scheme )
@@ -278,7 +279,7 @@ int ML_AMG_Coarsen(ML_AMG *amg,ML_Operator *Amatrix,ML_Operator **Pmatrix,
 #ifdef ML_AMG_DEBUG
    i = 0;
    i = ML_gmax_int(i, comm);
-   if ( mypid == 0 && amg->print_flag ) printf("ML_AMG_Coarsen ends.\n");
+   if ( mypid == 0 && amg->print_flag < ML_Get_PrintLevel()) printf("ML_AMG_Coarsen ends.\n");
 #endif
 #ifdef ML_TIMING
    t0 = GetClock() - t0;

@@ -63,7 +63,7 @@ int ML_Gen_MGHierarchy_UsingAggregation(ML *ml, int start,
 
    idata = 0;
    idata = ML_gmax_int(idata, ml->comm);
-   if ( ml->comm->ML_mypid == 0 && ml_ag->print_flag ) 
+   if ( ml->comm->ML_mypid == 0 && ml_ag->print_flag < ML_Get_PrintLevel()) 
       ML_Aggregate_Print( ml_ag );
 #ifdef ML_TIMING
    t0 = GetClock();
@@ -110,7 +110,7 @@ int ML_Gen_MGHierarchy_UsingAggregation(ML *ml, int start,
    }
 #ifdef ML_TIMING
    t0 = GetClock() - t0;
-   if ( ml->comm->ML_mypid == 0 && ml_ag->print_flag ) 
+   if ( ml->comm->ML_mypid == 0 && ml_ag->print_flag < ML_Get_PrintLevel()) 
       printf("Aggregation total setup time = %e seconds\n", t0);
 #endif
 
@@ -126,7 +126,7 @@ int ML_Gen_MGHierarchy_UsingAggregation(ML *ml, int start,
    ml_ag->operator_complexity += dnnz;
 
    idata = ML_gmax_int(idata, ml->comm);
-   if ( ml->comm->ML_mypid == 0 && ml_ag->print_flag ) 
+   if ( ml->comm->ML_mypid == 0 && ml_ag->print_flag < ML_Get_PrintLevel()) 
       ML_Aggregate_Print_Complexity( ml_ag );
    idata = ML_gmax_int(idata, ml->comm);
 
@@ -166,7 +166,7 @@ int ML_Gen_MGHierarchy(ML *ml, int fine_level,
 
    while (next >= 0) 
    {
-      if ( ml->comm->ML_mypid == 0 && ag->print_flag ) 
+      if ( ml->comm->ML_mypid == 0 && ag->print_flag < ML_Get_PrintLevel()) 
          printf("ML_Gen_MGHierarchy : applying coarsening \n");
 
       if (internal_or_external == ML_INTERNAL)
@@ -179,11 +179,11 @@ int ML_Gen_MGHierarchy(ML *ml, int fine_level,
          flag = user_gen_prolongator(ml, level, next, data, ag);
       }
       if (flag < 0) break;
-      if ( ml->comm->ML_mypid == 0 && ag->print_flag ) 
+      if ( ml->comm->ML_mypid == 0 && ag->print_flag < ML_Get_PrintLevel()) 
          printf("ML_Gen_MGHierarchy : applying coarsening \n");
       ML_Gen_Restrictor_TransP(ml, level, next);
 
-      if ( ml->comm->ML_mypid == 0 && ag->print_flag ) 
+      if ( ml->comm->ML_mypid == 0 && ag->print_flag < ML_Get_PrintLevel()) 
          printf("ML_Gen_MGHierarchy : Gen_RAP\n");
 
 #ifdef ML_TIMING
@@ -192,11 +192,11 @@ int ML_Gen_MGHierarchy(ML *ml, int fine_level,
       ML_Gen_AmatrixRAP(ml, level, next);
 #ifdef ML_TIMING
       t0 = GetClock() - t0;
-      if ( ml->comm->ML_mypid == 0 && ag->print_flag ) 
+      if ( ml->comm->ML_mypid == 0 && ag->print_flag < ML_Get_PrintLevel()) 
          printf("RAP time for level %2d = %e\n", level, t0);
 #endif
 
-      if ( ml->comm->ML_mypid == 0 && ag->print_flag ) 
+      if ( ml->comm->ML_mypid == 0 && ag->print_flag < ML_Get_PrintLevel()) 
          printf("ML_Gen_MGHierarchy : Gen_RAP done\n");
 
       level = next;
@@ -348,7 +348,7 @@ int ML_AGG_Gen_Prolongator(ML *ml,int level, int clevel, void *data,
             printf("Gen_Prolongator warning : max eigen <= 0.0 \n");
             max_eigen = 1.0;
          }
-         if ( ml->comm->ML_mypid == 0 && ag->print_flag ) 
+         if ( ml->comm->ML_mypid == 0 && ag->print_flag < ML_Get_PrintLevel()) 
             printf("Gen_Prolongator : max eigen = %e \n", max_eigen);
 
          widget.omega  = ag->smoothP_damping_factor / max_eigen;
@@ -754,7 +754,7 @@ int ML_AGG_Gen_DDProlongator(ML *ml,int level, int clevel, void *data,
    /* coarsen local smoothed aggregation method                         */
    /* ----------------------------------------------------------------- */
 
-   if ( ml->comm->ML_mypid == 0 && ag->print_flag ) 
+   if ( ml->comm->ML_mypid == 0 && ag->print_flag < ML_Get_PrintLevel()) 
       printf("Aggregation : building multilevel hierarchy at level %d\n",level);
    widget.near_bdry = NULL; 
    Amat     = (ML_Operator *) data;
@@ -792,7 +792,7 @@ int ML_AGG_Gen_DDProlongator(ML *ml,int level, int clevel, void *data,
    /* setup local smoothed aggregation method                           */
    /* ----------------------------------------------------------------- */
 
-   if ( ml->comm->ML_mypid == 0 && ag->print_flag ) 
+   if ( ml->comm->ML_mypid == 0 && ag->print_flag < ML_Get_PrintLevel()) 
       printf("Aggregation : setting up diagonal block at level %d\n",level);
 
    newNlevels = 15;
@@ -837,7 +837,7 @@ ML_Aggregate_Set_DampingFactor( newag, 0.0/3.0 );
    /* set up Krylov solver to compute eigenvalues                       */
    /* ----------------------------------------------------------------- */
 
-   if ( ml->comm->ML_mypid == 0 && ag->print_flag ) 
+   if ( ml->comm->ML_mypid == 0 && ag->print_flag < ML_Get_PrintLevel()) 
       printf("Aggregation : computing max eigenvalues at level %d\n",level);
 
 /*
@@ -881,7 +881,7 @@ ML_Aggregate_Set_DampingFactor( newag, 0.0/3.0 );
 
    i = 1;
    j = ML_gmax_int(i, ml->comm );
-   if ( ml->comm->ML_mypid == 0 && ag->print_flag ) 
+   if ( ml->comm->ML_mypid == 0 && ag->print_flag < ML_Get_PrintLevel()) 
       printf("Aggregation : computing tentative prolongators at level %d\n",level);
 
    /* ----------------------------------------------------------------- */
@@ -964,7 +964,7 @@ for (i = 0; i < Nfine; i++) darray[i] = 1.0/sqrt((double) Nfine);
    {
       i = 1;
       j = ML_gmax_int(i, ml->comm );
-      if ( ml->comm->ML_mypid == 0 && ag->print_flag ) 
+      if ( ml->comm->ML_mypid == 0 && ag->print_flag < ML_Get_PrintLevel()) 
          printf("Aggregation : computing comm pattern of A*tentP at level %d\n",
               level);
 
@@ -974,7 +974,7 @@ for (i = 0; i < Nfine; i++) darray[i] = 1.0/sqrt((double) Nfine);
  
       i = 1;
       j = ML_gmax_int(i, ml->comm );
-      if ( ml->comm->ML_mypid == 0 && ag->print_flag ) 
+      if ( ml->comm->ML_mypid == 0 && ag->print_flag < ML_Get_PrintLevel()) 
          printf("Aggregation : computing prolongators at level %d\n",level);
 
       ML_Set_MaxIterations(newml, 10);
@@ -1069,7 +1069,7 @@ for (i = 0; i < Nfine; i++) darray[i] = 1.0/sqrt((double) Nfine);
 
    i = 1;
    j = ML_gmax_int(i, ml->comm );
-   if ( ml->comm->ML_mypid == 0 && ag->print_flag ) 
+   if ( ml->comm->ML_mypid == 0 && ag->print_flag < ML_Get_PrintLevel()) 
       printf("Aggregation : building P complete at level %d\n",level);
 
 /*

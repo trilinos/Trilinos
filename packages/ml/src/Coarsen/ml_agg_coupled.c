@@ -58,12 +58,12 @@ int ML_Aggregate_Form_Aggregates(char phaseID, int phaseAFlag, int Nrows,
            int **aggr_cnt_array_in, int max_row_nnz, int min_agg_size, 
            int max_neigh_selected, int N_neighbors, int *neighbors, 
            int *send_leng, int *send_list, int *recv_leng, int *recv_list, 
-           int *sendlist_proc, ML_Comm *comm, int printflag);
+           int *sendlist_proc, ML_Comm *comm, double printflag);
 int ML_Aggregate_PutInto_Aggregates(char phaseID, int attach_scheme, 
            int *mat_indx, int *aggr_index, int *aggr_stat, 
            int *aggr_count_in, int **aggr_cnt_array_in, int max_row_nnz, 
            int N_neighbors, int *neighbors, int *send_leng, int *send_list, 
-           int *recv_leng, int *recv_list, ML_Comm *comm, int printflag);
+           int *recv_leng, int *recv_list, ML_Comm *comm, double printflag);
 int ML_Graph_CreateFromMatrix(ML_Aggregate *ml_ag, ML_Operator *Amatrix,
            int **mat_indx_out, ML_Comm *comm, double epsilon, int *nrows,
            int **bc_array);
@@ -96,7 +96,8 @@ int ML_Aggregate_CoarsenCoupled( ML_Aggregate *ml_ag,
    int     total_recv_leng, total_send_leng, msgtype, mypid, new_N_send;
    int     *new_send_neighbors, *new_send_list, *new_send_leng;
    int     new_N_recv, *new_recv_leng, *new_recv_neighbors, *int_buf;
-   int     *int_buf2, *recv_list, nprocs, printflag;
+   int     *int_buf2, *recv_list, nprocs;
+   double  printflag;
    int     aggr_count, *aggr_index, *aggr_index2;
    int     *aggr_cnt_array, max_agg_size, **rows_in_aggs;
    int     Ncoarse, exp_Ncoarse, *new_ia, *new_ja, new_Nrows;
@@ -131,7 +132,7 @@ int ML_Aggregate_CoarsenCoupled( ML_Aggregate *ml_ag,
    epsilon = ml_ag->curr_threshold;
    ml_ag->curr_threshold *= 0.5;
 
-   if ( mypid == 0 && printflag )
+   if ( mypid == 0 && printflag < ML_Get_PrintLevel())
    {
       printf("ML_Aggregate_CoarsenCoupled : current level = %d\n",
                            ml_ag->cur_level);
@@ -904,7 +905,8 @@ int ML_Aggregate_CoarsenCoupledCore(ML_Aggregate *ml_ag, ML_Comm *comm,
    int     *aggr_stat, aggr_cnt_leng, *aggr_cnt_array;
    int     seed_node, *node_type, *node_dist, node_left, *dist_array;
    int     exp_Nrows, max_dist, *sendlist_proc;
-   int     phaseAFlag, printflag;
+   int     phaseAFlag;
+   double  printflag;
    int     max_length=0;
    int     min_agg_size, max_neigh_selected;
    ML_Node       *node_head, *node_tail, *new_node;
@@ -1971,7 +1973,7 @@ int ML_Aggregate_Form_Aggregates(char phaseID, int phaseAFlag, int Nrows,
         int **aggr_cnt_array_in, int max_row_nnz, int min_agg_size, 
         int max_neigh_selected, int N_neighbors, int *neighbors, 
         int *send_leng, int *send_list, int *recv_leng, int *recv_list, 
-        int *sendlist_proc, ML_Comm *comm, int printflag)
+        int *sendlist_proc, ML_Comm *comm, double printflag)
 {
    int           i, j, k, index, inode, inode2, jnode, mdiff, count;
    int           mypid, msgtype, procnum, *com_buf, *com_buf2, nready;
@@ -2367,7 +2369,7 @@ printf("\n");
          nwaiting = 0;
          for (i = 0; i < Nrows; i++) if (aggr_stat[i] >= 0) nwaiting++;
          total_nwaiting = ML_Comm_GsumInt( comm, nwaiting );
-         if ( mypid == 0 && printflag )
+         if ( mypid == 0 && printflag < ML_Get_PrintLevel() )
          {
             printf("Aggregation(CC) : Phase %cA - Iteration        = %d\n",
                    phaseID, loop_flag);
@@ -2520,7 +2522,7 @@ printf("\n");
    total_nselected = ML_Comm_GsumInt( comm, nselected);
    total_Nrows = ML_Comm_GsumInt( comm, Nrows);
    total_aggr_count = ML_Comm_GsumInt( comm, aggr_count );
-   if ( mypid == 0 && printflag )
+   if ( mypid == 0 && printflag < ML_Get_PrintLevel())
    {
       printf("Aggregation(CC) : Phase %cB - nodes aggregated = %d(%d)\n",
              phaseID, total_nselected, total_Nrows);
@@ -2551,7 +2553,7 @@ int ML_Aggregate_PutInto_Aggregates(char phaseID, int attach_scheme,
         int *mat_indx, int *aggr_index, int *aggr_stat, int *aggr_count_in, 
         int **aggr_cnt_array_in, int max_row_nnz, int N_neighbors, 
         int *neighbors, int *send_leng, int *send_list, int *recv_leng, 
-        int *recv_list, ML_Comm *comm, int printflag )
+        int *recv_list, ML_Comm *comm, double printflag )
 {
    int          i, k, m, inode, jnode, index, mincount, select_flag;
    int          length, *int_array, *int_array2, *com_buf;
@@ -2702,7 +2704,7 @@ int ML_Aggregate_PutInto_Aggregates(char phaseID, int attach_scheme,
    total_nselected = ML_Comm_GsumInt( comm, nselected);
    total_Nrows = ML_Comm_GsumInt( comm, Nrows);
    total_aggr_count = ML_Comm_GsumInt( comm, aggr_count );
-   if ( mypid == 0 && printflag )
+   if ( mypid == 0 && printflag < ML_Get_PrintLevel())
    {
       printf("Aggregation(CC) : Phase %c  - nodes aggregated = %d(%d)\n",
              phaseID, total_nselected, total_Nrows);
@@ -2839,7 +2841,7 @@ int ML_Graph_CreateFromMatrix(ML_Aggregate *ml_ag, ML_Operator *Amatrix,
    k = ML_Comm_GsumInt( comm, Nrows);
    m = ML_Comm_GsumInt( comm, count);
 
-   if ( comm->ML_mypid == 0 && ml_ag->print_flag )
+   if ( comm->ML_mypid == 0 && ml_ag->print_flag < ML_Get_PrintLevel())
       printf("Aggregation(CVB) : Total nnz = %d (Nrows=%d)\n",m,k);
 
    if ( ml_ag->operator_complexity == 0.0 )

@@ -53,7 +53,8 @@ int ML_AMG_CoarsenMIS( ML_AMG *ml_amg, ML_Operator *Amatrix,
    int     num_PDE_eqns, Nrows, exp_Nrows, Ncoarse, exp_Ncoarse, total_nnz;
    int     *rowptr, *column, *new_ia=NULL, *new_ja=NULL, *short_list;
    int     *CF_array, *sort_array, sortleng, bitindex,intindex, short_leng;
-   int     printflag, sizeint, logsizeint, offnrows, *offibuffer, *offmap;
+   double  printflag;
+   int     sizeint, logsizeint, offnrows, *offibuffer, *offmap;
    int     *offmap2, *offlengths, numCi, *Ci_array,/* *int_array,*/ *int_buf;
    int     allocated=0, *rowi_col=NULL, rowi_N, nnz_per_row, *sys_array;
    int     msgtype, mypid, *send_leng=NULL, *recv_leng=NULL;
@@ -114,7 +115,7 @@ int ML_AMG_CoarsenMIS( ML_AMG *ml_amg, ML_Operator *Amatrix,
       printf(" of num_PDE_eqns.\n");
       exit(1);
    }
-   if ( mypid == 0 && printflag )
+   if ( mypid == 0 && printflag < ML_Get_PrintLevel())
    {
       printf("ML_AMG_CoarsenMIS : current level = %d\n", ml_amg->cur_level);
       printf("ML_AMG_CoarsenMIS : current eps   = %e\n", epsilon);
@@ -228,7 +229,7 @@ int ML_AMG_CoarsenMIS( ML_AMG *ml_amg, ML_Operator *Amatrix,
       if ( bdry[i] == 'T' ) nbdry++;
    }
    m = ML_Comm_GsumInt( comm, nbdry );
-   if ( mypid == 0 && printflag )
+   if ( mypid == 0 && printflag < ML_Get_PrintLevel())
       printf("AMG Phase 1  - total number of bndry points  = %6d \n",m); 
 
    /* ============================================================= */
@@ -356,7 +357,7 @@ int ML_AMG_CoarsenMIS( ML_AMG *ml_amg, ML_Operator *Amatrix,
 
    m = ML_Comm_GsumInt( comm, Nrows );
    k = ML_Comm_GsumInt( comm, A_nnz );
-   if ( mypid == 0 && printflag )
+   if ( mypid == 0 && printflag < ML_Get_PrintLevel())
    {
       printf("AMG Phase 1 begins, total_nrows, total_nnz   = %d %d\n", m, k); 
       fflush(stdout);
@@ -372,9 +373,9 @@ int ML_AMG_CoarsenMIS( ML_AMG *ml_amg, ML_Operator *Amatrix,
    Ncoarse = 0;
    for (i = 0; i < Nrows ; i++) if ( state[i] == 'S' ) Ncoarse++;
    m = ML_Comm_GsumInt( comm, Ncoarse );
-   if ( mypid == 0 && printflag )
+   if ( mypid == 0 && printflag < ML_Get_PrintLevel())
       printf("AMG Phase 1  - total number of coarse points = %6d (%3d)\n",m,k); 
-   if ( printflag > 1 )
+   if ( printflag < ML_Get_PrintLevel() )
    {
       printf("%4d : Phase 1 - number of coarse points = %6d\n",mypid,Ncoarse); 
       fflush(stdout);
@@ -616,7 +617,7 @@ for ( i = 0; i < Nrows; i++ )
       } /* if CF_array[i] < 0 - i a F point */ 
    } 
    m = ML_Comm_GsumInt( comm, Ncoarse );
-   if ( mypid == 0 && printflag )
+   if ( mypid == 0 && printflag < ML_Get_PrintLevel())
    {
       printf("AMG Phase 2a - total number of coarse points = %6d\n", m); 
    }
@@ -846,11 +847,11 @@ for ( i = 0; i < Nrows; i++ )
    } 
 #endif
    m = ML_Comm_GsumInt( comm, Ncoarse );
-   if ( mypid == 0 && printflag )
+   if ( mypid == 0 && printflag < ML_Get_PrintLevel())
    {
       printf("AMG Phase 2b - total number of coarse points = %6d\n", m); 
    }
-   if ( printflag > 1 )
+   if ( printflag < ML_Get_PrintLevel())
    {
       printf("%4d : Phase 2 - number of coarse points = %6d\n",mypid,Ncoarse); 
       fflush(stdout);
@@ -901,7 +902,7 @@ for ( i = 0; i < Nrows; i++ )
       }
    }
    k = ML_Comm_GsumInt( comm, count );
-   if ( mypid == 0 && printflag )
+   if ( mypid == 0 && printflag < ML_Get_PrintLevel())
    {
       printf("AMG Coarsen  - total number of bad points    = %6d\n", k); 
    }
@@ -915,7 +916,7 @@ for ( i = 0; i < Nrows; i++ )
 */
 
    m = ML_Comm_GsumInt( comm, Ncoarse );
-   if ( mypid == 0 && printflag )
+   if ( mypid == 0 && printflag < ML_Get_PrintLevel())
    {
       printf("AMG Phase 2c - total number of coarse points = %6d\n", m); 
    }
@@ -956,7 +957,7 @@ for ( i = 0; i < Nrows; i++ )
          A_Nneigh, A_neigh, A_rcvleng, A_sndleng, msgtype, ML_INT, comm);
       if ( int_buf != NULL ) free(int_buf);
       m = ML_Comm_GsumInt( comm, Ncoarse );
-      if ( mypid == 0 && printflag )
+      if ( mypid == 0 && printflag < ML_Get_PrintLevel())
       {
          printf("AMG Phase 2d - total number of coarse points = %6d\n", m); 
       }

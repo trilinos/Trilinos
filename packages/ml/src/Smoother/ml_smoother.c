@@ -793,13 +793,14 @@ int ML_Smoother_SGS(void *sm,int inlen,double x[],int outlen, double rhs[])
 
    return 0;
 #ifdef ML_DEBUG_SMOOTHER
-  #undef ML_DEBUG_SMOOTHER
+#undef ML_DEBUG_SMOOTHER
 #endif
 }
 
 /* ************************************************************************* */
 /* Hiptmair smoother with matrix products                                    */
 /* ------------------------------------------------------------------------- */
+#define USE_MSR_SGSDAMPING
 
 #ifdef MatrixProductHiptmair
 int ML_Smoother_Hiptmair(void *sm, int inlen, double x[], int outlen, 
@@ -832,12 +833,6 @@ int ML_Smoother_Hiptmair(void *sm, int inlen, double x[], int outlen,
    Tmat = (ML_Operator *) dataptr->Tmat;
    Tmat_trans  = (ML_Operator *) dataptr->Tmat_trans;
    TtATmat = (ML_Operator *) dataptr->TtATmat;
-
-/*
-   max_eig = (double) dataptr->max_eig;
-   printf("max_eig = %e, ntimes = %d, omega = %d\n",
-           max_eig, smooth_ptr->ntimes, smooth_ptr->omega);
-*/
 
    res_edge = (double *) dataptr->res_edge;
    edge_update = (double *) dataptr->edge_update;
@@ -879,6 +874,8 @@ int ML_Smoother_Hiptmair(void *sm, int inlen, double x[], int outlen,
          where N is the number of Hiptmair sweeps. */
       ntimes = smooth_ptr->ntimes;
       smooth_ptr->ntimes = 1;
+
+
 #ifndef NoDampingFactor
       omega = smooth_ptr->omega;
       smooth_ptr->omega = dataptr->omega;
@@ -888,14 +885,10 @@ int ML_Smoother_Hiptmair(void *sm, int inlen, double x[], int outlen,
       ML_Smoother_Jacobi(sm, inlen, x, outlen, rhs);
 #elif defined(USESGSSequential)
       ML_Smoother_SGSSequential(sm, inlen, x, outlen, rhs);
-#else
-
-#define SPECIAL
-#ifdef SPECIAL
+#elif defined(USE_MSR_SGSDAMPING)
       ML_Smoother_MSR_SGSdamping(sm, inlen, x, outlen, rhs);
 #else
       ML_Smoother_SGS(sm, inlen, x, outlen, rhs);
-#endif
 #endif
  
       /* Reset ntimes and omega for Hiptmair smoother. */
@@ -920,18 +913,6 @@ int ML_Smoother_Hiptmair(void *sm, int inlen, double x[], int outlen,
              sqrt(ML_gdot(Nrows, x, x, Tmat_trans->comm)));
       printf("\t%d: ||res|| = %15.10e\n", Tmat_trans->comm->ML_mypid,
              sqrt(ML_gdot(Nrows,res_edge,res_edge,Tmat_trans->comm)));
-
-      if (Ke_mat->invec_leng < 200)
-      {
-      printf("*** xvec ***\n");
-      for (i=0; i<Ke_mat->invec_leng; i++)
-         printf("(%d) %15.10e\n",i,x[i]);
-      printf("********************\n\n\n");
-      }
-      if (Ke_mat->invec_leng < 75)
-      {
-         ML_Operator_Print(Ke_mat,"Ke_mat");
-      }
 #endif
    
       /****************************
@@ -959,17 +940,12 @@ int ML_Smoother_Hiptmair(void *sm, int inlen, double x[], int outlen,
 #elif defined(USESGSSequential)
       ML_Smoother_SGSSequential(dataptr->sm_nodal, TtATmat->invec_leng, x_nodal,
                                 TtATmat->outvec_leng, rhs_nodal);
-#else
-#ifdef SPECIAL
-#undef SPECIAL
-#endif
-#ifdef SPECIAL
+#elif defined(USE_MSR_SGSDAMPING)
       ML_Smoother_MSR_SGSdamping(dataptr->sm_nodal, TtATmat->invec_leng,
                       x_nodal, TtATmat->outvec_leng, rhs_nodal);
 #else
       ML_Smoother_SGS(dataptr->sm_nodal, TtATmat->invec_leng, x_nodal,
                       TtATmat->outvec_leng, rhs_nodal);
-#endif
 #endif
 
 #ifdef ML_DEBUG_SMOOTHER
@@ -1003,14 +979,10 @@ int ML_Smoother_Hiptmair(void *sm, int inlen, double x[], int outlen,
    } /*for (iter = 0; ...*/
 
    ML_Comm_Envelope_Destroy(envelope);
-
-#ifdef ML_DEBUG_SMOOTHER
-  #undef ML_DEBUG_SMOOTHER
-#endif
    return 0;
 }
-#ifdef SPECIAL
-#undef SPECIAL
+#ifdef ML_DEBUG_SMOOTHER
+#undef ML_DEBUG_SMOOTHER
 #endif
 #endif /* ifdef MatrixProductHiptmair */
 
@@ -1377,7 +1349,7 @@ vals = &(ATmat_trans_val[ATmat_trans_rowptr[i]]);
 
    return 0;
 #ifdef ML_DEBUG_SMOOTHER
-  #undef ML_DEBUG_SMOOTHER
+#undef ML_DEBUG_SMOOTHER
 #endif
 }
 #endif /*ifdef MatrixFreeHiptmair*/
@@ -2737,7 +2709,7 @@ int ML_Smoother_Create_Hiptmair_Data(ML_Sm_Hiptmair_Data **data)
    ml_data->edge_update = NULL;
    ml_data->max_eig = 0.0;
    ml_data->omega = 1.0;
-   ml_data->print = 0;
+   ml_data->output_level = 2;
    return(0);
 }
  
@@ -3041,15 +3013,15 @@ void ML_Smoother_Destroy_Schwarz_Data(void *data)
 int ML_Smoother_Gen_Hiptmair_Data(ML_Sm_Hiptmair_Data **data, ML_Operator *Amat,
                                  ML_Operator *Tmat, ML_Operator *Tmat_trans,
                                  ML_Operator *Tmat_bc, int BClength,
-                                 int *BCindices, double omega,int print)
+                                 int *BCindices, double omega)
 {
    ML_Sm_Hiptmair_Data *dataptr;
    ML_Operator *tmpmat, *tmpmat2;
    ML_1Level *mylevel;
    ML_Krylov   *kdata;
    struct ML_CSR_MSRdata *matdata;
-   int *row_ptr, /* *bindx,*/ i, j, k;
-   double *val_ptr /* ,*vals=NULL*/;
+   int *row_ptr, i, j, k;
+   double *val_ptr;
 #ifdef ML_TIMING_DETAILED
    double t0;
 
@@ -3059,7 +3031,7 @@ int ML_Smoother_Gen_Hiptmair_Data(ML_Sm_Hiptmair_Data **data, ML_Operator *Amat,
    dataptr = *data;
    dataptr->Tmat_trans = Tmat_trans;
    dataptr->Tmat = Tmat;
-   dataptr->print = print;
+   dataptr->output_level = 2.0;
 
    /* Get maximum eigenvalue for damping parameter. */
 
@@ -3074,7 +3046,8 @@ int ML_Smoother_Gen_Hiptmair_Data(ML_Sm_Hiptmair_Data **data, ML_Operator *Amat,
       dataptr->max_eig = ML_Krylov_Get_MaxEigenvalue(kdata);
       dataptr->omega = 1.0 / dataptr->max_eig;
       ML_Krylov_Destroy(&kdata);
-      if (Amat->comm->ML_mypid == 0 && dataptr->print == 1)
+      if (Amat->comm->ML_mypid == 0
+          && dataptr->output_level < ML_Get_PrintLevel())
       {
          printf("Ke: Total nonzeros = %d (Nrows = %d)\n",Amat->N_nonzeros,
                                                      Amat->invec_leng);
@@ -3085,8 +3058,9 @@ int ML_Smoother_Gen_Hiptmair_Data(ML_Sm_Hiptmair_Data **data, ML_Operator *Amat,
    }
    else
    {
-      if (Amat->comm->ML_mypid == 0 && dataptr->print == 1)
-         printf("Using user-provided Hiptmair damping factor of %f.\n",omega);
+      if (Amat->comm->ML_mypid == 0
+          && dataptr->output_level < ML_Get_PrintLevel())
+          printf("Using user-provided Hiptmair damping factor of %f.\n",omega);
       dataptr->max_eig = 1.0;
       dataptr->omega = omega;
    }
@@ -3133,7 +3107,6 @@ int ML_Smoother_Gen_Hiptmair_Data(ML_Sm_Hiptmair_Data **data, ML_Operator *Amat,
       ML_2matmult(Amat,Tmat_bc,tmpmat2);
       matdata = (struct ML_CSR_MSRdata *) (tmpmat2->data);
       row_ptr = matdata->rowptr;
-      /*bindx = matdata->columns;*/
       val_ptr = matdata->values;
 
       for (i=0; i < BClength; i++)
@@ -3148,7 +3121,7 @@ int ML_Smoother_Gen_Hiptmair_Data(ML_Sm_Hiptmair_Data **data, ML_Operator *Amat,
    }
    else
    {
-      ML_rap(Tmat_trans, Amat, Tmat, tmpmat, ML_CSR_MATRIX);
+      ML_rap(Tmat_trans, Amat, Tmat, tmpmat, ML_MSR_MATRIX);
    }
 #ifdef notready
       tmpmat_data  = (struct ML_CSR_MSRdata *) tmpmat->data;
@@ -3220,7 +3193,8 @@ extern double *xxx;
 #endif
 
 int ML_Smoother_Gen_Hiptmair_Data(ML_Sm_Hiptmair_Data **data, ML_Operator *Amat,
-                                 ML_Operator *Tmat, ML_Operator *Tmat_trans)
+                                 ML_Operator *Tmat, ML_Operator *Tmat_trans,
+                                 double print)
 {
    ML_Sm_Hiptmair_Data *dataptr;
    ML_Operator *tmpmat, *eyemat;

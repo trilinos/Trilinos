@@ -19,6 +19,12 @@
 #include "mpi.h"
 #endif
 
+/* ************************************************************************* *
+ * Structure to hold user-selected ML output level.                          *
+ * ************************************************************************* */
+
+ML_PrintControl ML_PrintLevel;
+
 /* ************************************************************************* */
 /* create and initialize a ML object                                         */
 /* ------------------------------------------------------------------------- */
@@ -203,6 +209,25 @@ int ML_Destroy(ML **ml_ptr)
 int ML_Set_OutputLevel(ML *ml, int output_level)
 {
   ml->output_level  = output_level;
+  return(1);
+}
+
+/* ************************************************************************* */
+/* Get print output level.                                                   */
+/* ------------------------------------------------------------------------- */
+
+int ML_Get_PrintLevel()
+{
+  return(ML_PrintLevel.output_level);
+}
+
+/* ************************************************************************* */
+/* Set print output level.                                                   */
+/* ------------------------------------------------------------------------- */
+
+int ML_Set_PrintLevel(int print_level)
+{
+  ML_PrintLevel.output_level = print_level;
   return(1);
 }
 
@@ -4669,7 +4694,7 @@ int ML_Gen_CoarseSolverAggregation(ML *ml_handle, int level, ML_Aggregate *ag)
 
 int ML_Gen_Smoother_Hiptmair( ML *ml , int nl, int pre_or_post, int ntimes,
 			      double omega, ML_Operator **Tmat_array, ML_Operator
-				  **Tmat_trans_array, ML_Operator *Tmat_bc, int print)
+				  **Tmat_trans_array, ML_Operator *Tmat_bc)
 {
    ML_Sm_Hiptmair_Data *data;
    int (*fun)(void *, int, double *, int, double *);
@@ -4707,7 +4732,7 @@ int ML_Gen_Smoother_Hiptmair( ML *ml , int nl, int pre_or_post, int ntimes,
          ML_Smoother_Create_Hiptmair_Data(&data);
 	     ML_Smoother_Gen_Hiptmair_Data(&data, &(ml->Amat[i]),
 			          Tmat_array[i], Tmat_trans_array[i], Tmat_bc,
-                      BClength, BClist, omega,print);
+                      BClength, BClist, omega);
 	     ml->pre_smoother[i].data_destroy = ML_Smoother_Destroy_Hiptmair_Data;
          sprintf(str,"Hiptmair_pre%d",i);
          status = ML_Smoother_Set(&(ml->pre_smoother[i]), ML_INTERNAL, 
@@ -4746,7 +4771,7 @@ int ML_Gen_Smoother_Hiptmair( ML *ml , int nl, int pre_or_post, int ntimes,
          ML_Smoother_Create_Hiptmair_Data(&data);
 	     ML_Smoother_Gen_Hiptmair_Data(&data, &(ml->Amat[i]),
 			          Tmat_array[i], Tmat_trans_array[i], Tmat_bc,
-                      BClength, BClist, omega, print);
+                      BClength, BClist, omega);
 	     ml->post_smoother[i].data_destroy =
 			                            ML_Smoother_Destroy_Hiptmair_Data;
          sprintf(str,"Hiptmair_pre%d",i);

@@ -51,7 +51,7 @@
 typedef struct ML_AMG_Struct
 {
    int    ML_id;
-   int    print_flag;
+   double print_flag;
    int    max_coarse_size;             /* maximum size of coarsest grid */
    double threshold;                   /* for pruning matrix            */ 
    double curr_threshold;              /* adjusted for levels           */
@@ -114,7 +114,7 @@ extern "C"
 extern int  ML_AMG_Create( ML_AMG ** );
 extern int  ML_AMG_Destroy( ML_AMG ** );
 
-extern int  ML_AMG_Set_OutputLevel( ML_AMG *amg, int outputlevel );
+extern int  ML_AMG_Set_OutputLevel( ML_AMG *amg, double outputlevel );
 
 extern int  ML_AMG_Set_MaxLevels( ML_AMG *amg, int level );
 extern int  ML_AMG_Set_CurrentLevel( ML_AMG *amg, int level );

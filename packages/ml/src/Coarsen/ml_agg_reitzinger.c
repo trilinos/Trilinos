@@ -408,7 +408,7 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
         ML_AGG_Gen_Prolongator(ml_edges,grid_level+1,grid_level,
                                (void *) &(ml_edges->Amat[grid_level+1]), ag);
      }
-     if (Tfine->comm->ML_mypid==0 && ag->print_flag)
+     if (Tfine->comm->ML_mypid==0 && ag->print_flag < ML_Get_PrintLevel())
      {
         printf("Pe: Total nonzeros = %d (Nrows = %d)\n",
                ml_edges->Pmat[grid_level].N_nonzeros,

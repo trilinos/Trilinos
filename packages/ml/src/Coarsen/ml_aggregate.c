@@ -153,7 +153,7 @@ int ML_Aggregate_Set_MinNodesPerAggregate( ML_Aggregate *ag, int nnodes )
 /* set output level                                                          */
 /* ------------------------------------------------------------------------- */
 
-int ML_Aggregate_Set_OutputLevel( ML_Aggregate *ag, int level )
+int ML_Aggregate_Set_OutputLevel( ML_Aggregate *ag, double level )
 {
    if ( ag->ML_id != ML_ID_AGGRE ) 
    {
@@ -695,7 +695,7 @@ int ML_Aggregate_Coarsen( ML_Aggregate *ag, ML_Operator *Amatrix,
       exit(-1);
    }
 
-   if (mypid == 0 && ag->print_flag) 
+   if (mypid == 0 && ag->print_flag < ML_Get_PrintLevel()) 
       printf("ML_Aggregate_Coarsen begins \n");
 
 /* #### moved this somewhere else ?? */
@@ -772,7 +772,7 @@ int ML_Aggregate_Coarsen( ML_Aggregate *ag, ML_Operator *Amatrix,
 #ifdef ML_DEBUG
    i = 0;
    i = ML_gmax_int(i, comm);
-   if ( mypid == 0 && ag->print_flag ) 
+   if ( mypid == 0 && ag->print_flag  < ML_Get_PrintLevel()) 
       printf("ML_Aggregate_Coarsen ends.\n");
 #endif
 #ifdef ML_TIMING

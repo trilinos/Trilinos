@@ -37,6 +37,8 @@ Number of DOF per node       = 1
 Parallel Partitioning File   = myfile  
 Output Frequency             = 2       
 Tolerance                    = 1.0e-11
+Print Level                  = 1
+#                              [0,1,...]
 
 -----------------------------------------------
       Solution Specifications
@@ -72,6 +74,7 @@ Spectral norm calculation    = Anorm
  *****************************************************************************/
 /*****************************************************************************/
 #include "ml_read_utils.h"
+#include "ml_struct.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -128,6 +131,7 @@ void ML_Reader_GetGeneralSpecs(FILE *ifp, struct reader_context *context)
 
   char        input[MAX_INPUT_STR_LN], *c_srch;
   static char yo[] = "get_general_specs";
+  int         output_level;
 
   c_srch = "general problem specifications";
   if (!ML_Reader_LookFor(ifp, c_srch, input, '=')) {
@@ -192,6 +196,20 @@ void ML_Reader_GetGeneralSpecs(FILE *ifp, struct reader_context *context)
     }
   }
 
+  /* Determine the amount of information that ML should print out. */
+
+  c_srch = "print level";
+  if (!ML_Reader_LookFor(ifp, c_srch, input, '='))
+    output_level = 3;       /* Defaults to 3 */
+  else {
+    ML_Reader_ReadString(ifp, input, '\n');
+    if (sscanf(input, "%d", &output_level) != 1) {
+      fprintf(stderr, "%s ERROR: can\'t interp int while looking for \"%s\"\n",
+              yo, c_srch);
+      exit(-1);
+    }
+  }
+  ML_Set_PrintLevel(output_level);
 
 }
 

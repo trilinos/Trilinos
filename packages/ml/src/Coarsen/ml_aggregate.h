@@ -23,7 +23,7 @@
 typedef struct ML_Aggregate_Struct
 {
    int    ML_id;
-   int    print_flag;
+   double print_flag;
    int    max_coarse_size;             /* maximum size of coarsest grid */
    int    ordering;                    /* natural, random, graph        */
    int    min_nodes_per_aggregate;     /* aggregate size control        */
@@ -121,7 +121,7 @@ extern "C"
 int ML_Aggregate_Create( ML_Aggregate ** );
 int ML_Aggregate_Destroy( ML_Aggregate ** );
 
-int ML_Aggregate_Set_OutputLevel( ML_Aggregate *, int level );
+int ML_Aggregate_Set_OutputLevel( ML_Aggregate *, double level );
 int ML_Aggregate_Set_Reuse(ML_Aggregate *ag);
 
 int ML_Aggregate_Set_MaxLevels( ML_Aggregate *, int level );

@@ -60,7 +60,8 @@ int ML_Aggregate_CoarsenMIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
 {
   unsigned int nbytes, length;
    int     i, j, jj, k, m, Nrows, exp_Nrows;
-   int     N_neighbors, *neighbors = NULL, printflag, diff_level;
+   int     N_neighbors, *neighbors = NULL, diff_level;
+   double  printflag;
    int     *Asqrd_rcvleng= NULL, *Asqrd_sndleng= NULL, *send_list = NULL;
    int     total_recv_leng = 0, total_send_leng = 0, offset, msgtype;
    int     aggr_count, index, mypid, num_PDE_eqns;
@@ -189,7 +190,7 @@ extern int ML_gpartialsum_int(int val, ML_Comm *comm);
    epsilon = ml_ag->curr_threshold;
    ml_ag->curr_threshold *= 0.5;
 
-   if ( mypid == 0 && printflag )
+   if ( mypid == 0 && printflag < ML_Get_PrintLevel())
    {
       printf("ML_Aggregate_CoarsenMIS : current level = %d\n",
                                             ml_ag->cur_level);
@@ -449,7 +450,7 @@ extern int ML_gpartialsum_int(int val, ML_Comm *comm);
    total_nz = ML_Comm_GsumInt( comm, total_nz);
    i = ML_Comm_GsumInt( comm, nvertices);
 
-   if ( mypid == 0 && printflag )
+   if ( mypid == 0 && printflag < ML_Get_PrintLevel())
       printf("Aggregation(MIS) : Total nonzeros = %d (Nrows=%d)\n",total_nz,i);
 
    if ( ml_ag->operator_complexity == 0.0 ) {
@@ -567,13 +568,13 @@ extern int ML_gpartialsum_int(int val, ML_Comm *comm);
    }
 
    phase_one_aggregated = ML_Comm_GsumInt( comm, phase_one_aggregated);
-   if ( mypid == 0 && printflag )
+   if ( mypid == 0 && printflag < ML_Get_PrintLevel())
    {
       printf("Aggregation(MIS) : Phase 1 - nodes aggregated = %d \n",
              phase_one_aggregated);
       printf("Aggregation(MIS) : Phase 1 - total aggregates = %d\n",total_aggs);
    }
-   if ( printflag ) {
+   if ( printflag < ML_Get_PrintLevel()) {
       i = aggr_count - old_agg_count;
       i = ML_Comm_GsumInt( comm, i);
       if ( mypid == 0 ) {
@@ -617,7 +618,7 @@ extern int ML_gpartialsum_int(int val, ML_Comm *comm);
    }
    free(aggr_cnt_array);
 
-   if (printflag) {
+   if (printflag < ML_Get_PrintLevel()) {
      total_aggs = ML_Comm_GsumInt( comm, aggr_count);
      j = 0;
      for (i = 0; i < nvertices; i++) if (bdry[i] == 'T') j++;

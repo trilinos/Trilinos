@@ -67,7 +67,8 @@ int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag,
    int     mypid, Nrows, nvblocks, *vblock_info, *vblock_info2;
    int     i, j, k, m, nullspace_dim, *col_ind, aggr_count, nvblockflag;
    int     nbytes, Ncoarse, *mat_indx=NULL,*aggr_index,nz_cnt, diff_level;
-   int     *new_ia = NULL, *new_ja = NULL, maxnnz_per_row=500, printflag;
+   int     *new_ia = NULL, *new_ja = NULL, maxnnz_per_row=500;
+   double  printflag;
    int     *amal_mat_indx=NULL, amal_count, **rows_in_aggs = NULL,ibeg;
    int     lwork, *agg_sizes = NULL, row, level, new_cnt, max_agg_size;
    int     zerodiag_cnt, offset, jnode, *agg_sizes_cum=NULL, index, info;
@@ -115,7 +116,7 @@ int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag,
    }
 */
 
-   if ( mypid == 0 && printflag )
+   if ( mypid == 0 && printflag  < ML_Get_PrintLevel())
    {
       printf("ML_Aggregate_CoarsenUncoupled : current level = %d\n", 
                            ml_ag->cur_level);
@@ -195,7 +196,7 @@ int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag,
    k = ML_Comm_GsumInt( comm, Nrows);
    m = ML_Comm_GsumInt( comm, nz_cnt);
 
-   if ( mypid == 0 && printflag ) 
+   if ( mypid == 0 && printflag  < ML_Get_PrintLevel()) 
       printf("Aggregation(UVB) : Total nonzeros = %d (Nrows=%d)\n",m,k);
 
    if ( ml_ag->operator_complexity == 0.0 )
@@ -325,7 +326,7 @@ int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag,
    }
    free(col_entered);
 
-   if ( mypid == 0 && printflag ) 
+   if ( mypid == 0 && printflag  < ML_Get_PrintLevel()) 
       printf("Aggregation(UVB) : Amalgamated matrix done \n");
 
    /* ============================================================= */
@@ -741,7 +742,8 @@ int ML_Aggregate_CoarsenUncoupledCore(ML_Aggregate *ml_ag, ML_Comm *comm,
    int     i, j, k, m, kk, inode, jnode, nbytes, length, Nrows;
    int     select_flag, aggr_count, index, mypid, inode2;
    int     *aggr_index, search_flag, *itmp_array = NULL, count;
-   int     mincount, *aggr_stat, ordering, maxcount, printflag;
+   int     mincount, *aggr_stat, ordering, maxcount;
+   double  printflag;
    int     *randomVector, *int_buf = NULL, aggr_cnt_leng, *aggr_cnt_array;
    int     min_nodes_per_aggregate, max_neigh_selected, attach_scheme;
    ML_Node       *node_head=NULL, *node_tail=NULL, *new_node=NULL;
@@ -789,7 +791,7 @@ int ML_Aggregate_CoarsenUncoupledCore(ML_Aggregate *ml_ag, ML_Comm *comm,
       }
    }
    k = ML_Comm_GsumInt( comm, m);
-   if ( mypid == 0 && printflag ) 
+   if ( mypid == 0 && printflag  < ML_Get_PrintLevel()) 
    {
       printf("Aggregation(UC) : Phase 0 - no. of bdry pts  = %d \n",k);
    }
@@ -1010,7 +1012,7 @@ int ML_Aggregate_CoarsenUncoupledCore(ML_Aggregate *ml_ag, ML_Comm *comm,
    for ( i = 0; i < Nrows; i++ ) 
       if ( aggr_stat[i] == ML_AGGR_READY ) m++;
    k = ML_Comm_GsumInt( comm, m);
-   if ( k > 0 && mypid == 0 && printflag )
+   if ( k > 0 && mypid == 0 && printflag  < ML_Get_PrintLevel())
       printf("Aggregation(UC) : Phase 1 (WARNING) - %d READY nodes left\n",k);
    m = 0;
    for ( i = 0; i < Nrows; i++ ) 
@@ -1019,7 +1021,7 @@ int ML_Aggregate_CoarsenUncoupledCore(ML_Aggregate *ml_ag, ML_Comm *comm,
    m = ML_Comm_GsumInt( comm, Nrows);
    j = ML_Comm_GsumInt( comm, aggr_count );
 
-   if ( mypid == 0 && printflag ) 
+   if ( mypid == 0 && printflag  < ML_Get_PrintLevel()) 
    {
       printf("Aggregation(UC) : Phase 1 - nodes aggregated = %d (%d)\n",k,m);
       printf("Aggregation(UC) : Phase 1 - total aggregates = %d \n",j);
@@ -1142,7 +1144,7 @@ int ML_Aggregate_CoarsenUncoupledCore(ML_Aggregate *ml_ag, ML_Comm *comm,
    m = ML_Comm_GsumInt( comm, Nrows);
    j = ML_Comm_GsumInt( comm, aggr_count );
 
-   if ( mypid == 0 && printflag) 
+   if ( mypid == 0 && printflag < ML_Get_PrintLevel()) 
    {
       printf("Aggregation(UC) : Phase 2 - nodes aggregated = %d (%d)\n",k,m);
       printf("Aggregation(UC) : Phase 2 - total aggregates = %d \n",j);
@@ -1239,7 +1241,7 @@ aggr_stat[jnode] = ML_AGGR_BDRY;
    m = ML_Comm_GsumInt( comm, Nrows);
    j = ML_Comm_GsumInt( comm, aggr_count );
 
-   if ( mypid == 0 && printflag) 
+   if ( mypid == 0 && printflag < ML_Get_PrintLevel()) 
    {
       printf("Aggregation(UC) : Phase 3 - nodes aggregated = %d (%d)\n",k,m);
       printf("Aggregation(UC) : Phase 3 - total aggregates = %d \n",j);
