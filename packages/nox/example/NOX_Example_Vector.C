@@ -181,6 +181,7 @@ double Vector::norm(Abstract::Vector::NormType type) const
     value = 0;
     for (i = 0; i < n; i ++)
       value += x[i] * x[i];
+    value = sqrt(value);
    break;
   }
 
