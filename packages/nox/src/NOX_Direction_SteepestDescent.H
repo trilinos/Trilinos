@@ -70,7 +70,7 @@ namespace Direction {
     <ul>
     <li>"2-Norm" - \f$ \gamma = \displaystyle\frac{1}{\|d\|_2} \f$ [default]
 
-    <li>"Quadratic Model Min" - \f$ \gamma = \displaystyle\frac{\|d\|_2}{d^T J^T J d} \f$
+    <li>"Quadratic Model Min" - \f$ \gamma = \displaystyle\frac{\|d\|_2^2}{d^T J^T J d} \f$
 
     <li>"F 2-Norm" - \f$ \gamma = \displaystyle\frac{1}{\|F(x)\|_2} \f$
 
