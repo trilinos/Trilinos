@@ -194,6 +194,7 @@ int main(int argc, char *argv[]) {
     ML_Epetra::SetDefaults("SA",MLList);
     iters = TestMultiLevelPreconditioner("SA", MLList, *Problem, TotalErrorResidual, TotalErrorExactSol );
 
+#ifdef HAVE_ML_AMESOS
     // expected iterations
     switch( NumProcs ) {
     case 1:
@@ -214,6 +215,7 @@ int main(int argc, char *argv[]) {
       break;
     }
   }
+#endif
   
   // ============================== //
   // default options for SA, Jacobi //
@@ -229,6 +231,7 @@ int main(int argc, char *argv[]) {
 
     iters = TestMultiLevelPreconditioner("SA", MLList, *Problem, TotalErrorResidual, TotalErrorExactSol );
 
+#ifdef HAVE_ML_AMESOS
     // expected iterations
     switch( NumProcs ) {
     case 1:
@@ -249,6 +252,7 @@ int main(int argc, char *argv[]) {
       break;
     }
   }
+#endif
 
   // =========================== //
   // default options for SA, MLS //
@@ -264,6 +268,7 @@ int main(int argc, char *argv[]) {
 
     iters = TestMultiLevelPreconditioner("SA", MLList, *Problem, TotalErrorResidual, TotalErrorExactSol );
 
+#ifdef HAVE_ML_AMESOS
     // expected iterations
     switch( NumProcs ) {
     case 1:
@@ -284,31 +289,31 @@ int main(int argc, char *argv[]) {
       break;
     }
   }
+#endif
 
-
-
-
-
-
-  
   // ===================== //
   // print out total error //
   // ===================== //
-  
+
   if( Comm.MyPID() == 0 ) {
     cout << endl;
     cout << "......Total error for residual        = " << TotalErrorResidual << endl;
     cout << "......Total error for exact solution  = " << TotalErrorExactSol << endl;
     cout << "......Total # of failed tests         = " << TotalFailed << endl;
     cout << endl;
- }
-  
+  }
+
 #ifdef HAVE_MPI
   MPI_Finalize();
 #endif
 
+#ifdef HAVE_ML_AMESOS
   if( TotalFailed ) return( EXIT_FAILURE );
   else              return( EXIT_SUCCESS );
+#else
+  if( TotalErrorResidual < 1e-10 ) return(EXIT_SUCCESS );
+  else return( EXIT_FAILURE );
+#endif
 
 }
 
@@ -320,7 +325,7 @@ int main(int argc, char *argv[]) {
 int main(int argc, char *argv[])
 {
   puts("Please configure ML with --with-ml_epetra --with-ml_teuchos --with-ml_triutils");
-  
+
   return 0;
 }
 
