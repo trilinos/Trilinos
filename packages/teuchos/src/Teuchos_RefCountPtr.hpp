@@ -78,18 +78,31 @@ public:
 	bool has_ownership() const {
 		return has_ownership_;
 	}
-	void set_extra_data( const any &extra_data, const std::string& name, bool force_unique );
+	void set_extra_data( const any &extra_data, const std::string& name, bool force_unique, EPrePostDestruction destroy_when );
 	any& get_extra_data( const std::string& type_name, const std::string& name );
 	const any& get_extra_data( const std::string& type_name, const std::string& name ) const {
 		return const_cast<RefCountPtr_node*>(this)->get_extra_data(type_name,name);
 	}
+protected:
+  void pre_delete_extra_data() {
+    if(extra_data_map_) impl_pre_delete_extra_data();
+  }
 private:
-	typedef Teuchos::map<std::string,any>  extra_data_map_t;
+  struct extra_data_entry_t {
+    extra_data_entry_t() : destroy_when(POST_DESTROY) {}
+    extra_data_entry_t( const any &_extra_data, EPrePostDestruction _destroy_when )
+      : extra_data(_extra_data), destroy_when(_destroy_when) {}
+    any extra_data;
+    EPrePostDestruction destroy_when;
+  };  
+	typedef Teuchos::map<std::string,extra_data_entry_t> extra_data_map_t;
 	int                 count_;
 	bool                has_ownership_;
 	extra_data_map_t    *extra_data_map_;
-	// This is made a pointer to reduce overhead for the general case
+	// Above is made a pointer to reduce overhead for the general case
 	// where this is not used
+  void impl_pre_delete_extra_data();
+  // Not defined and not to be called
 	RefCountPtr_node();
 	RefCountPtr_node(const RefCountPtr_node&);
 	RefCountPtr_node& operator=(const RefCountPtr_node&);
@@ -110,6 +123,7 @@ public:
 	const Dealloc_T& get_dealloc() const { return dealloc_; }
 	//
 	~RefCountPtr_node_tmpl() {
+    this->pre_delete_extra_data();
 		if( has_ownership() )
 			dealloc_.free(ptr_);
 	}
@@ -370,10 +384,10 @@ Teuchos::rcp_dynamic_cast(const RefCountPtr<T1>& p1)
 
 template<class T1, class T2>
 REFCOUNTPTR_INLINE
-void Teuchos::set_extra_data( const T1 &extra_data, const std::string& name, Teuchos::RefCountPtr<T2> *p, bool force_unique )
+void Teuchos::set_extra_data( const T1 &extra_data, const std::string& name, Teuchos::RefCountPtr<T2> *p, bool force_unique, EPrePostDestruction destroy_when )
 {
 	*(*p); // Assert not NULL
-	p->access_node()->set_extra_data( extra_data, name, force_unique );
+	p->access_node()->set_extra_data( extra_data, name, force_unique, destroy_when );
 }
 
 template<class T1, class T2>

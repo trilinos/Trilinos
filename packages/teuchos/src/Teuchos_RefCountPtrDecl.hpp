@@ -86,6 +86,9 @@ namespace PrivateUtilityPack {
 /// Used to initialize a <tt>RefCountPtr</tt> object to NULL using an implicit conversion!
 enum ENull { null };
 
+/// Used to specify a pre or post destruction of extra data
+enum EPrePostDestruction { PRE_DESTROY, POST_DESTROY };
+
 ///
 template<class T>
 class DeallocDelete
@@ -95,6 +98,17 @@ public:
 	typedef T ptr_t;
 	/// Deallocates a pointer <tt>ptr</tt> using <tt>delete ptr</tt> (required).
 	void free( T* ptr ) { if(ptr) delete ptr; }
+};
+
+///
+template<class T>
+class DeallocArrayDelete
+{
+public:
+	/// Gives the type (required)
+	typedef T ptr_t;
+	/// Deallocates a pointer <tt>ptr</tt> using <tt>delete [] ptr</tt> (required).
+	void free( T* ptr ) { if(ptr) delete [] ptr; }
 };
 
 ///
@@ -439,6 +453,13 @@ RefCountPtr<T2> rcp_dynamic_cast(const RefCountPtr<T1>& p1);
  *               in which case if an object with this same type and name
  *               already exists, then an exception will be thrown.
  *               The default is <tt>true</tt> for safety.
+ * @param  destroy_when
+ *               [in] Determines when <tt>extra_data</tt> will be destoryed
+ *               in relation to the underlying reference-counted object.
+ *               If <tt>destroy_when==PRE_DESTROY</tt> then <tt>extra_data</tt>
+ *               will be deleted before the underlying reference-counted object.
+ *               If <tt>destroy_when==POST_DESTROY</tt> (the default) then <tt>extra_data</tt>
+ *               will be deleted after the underlying reference-counted object.
  *
  * If there is a call to this function with the same type of extra
  * data <tt>T1</tt> and same arguments <tt>p</tt> and <tt>name</tt>
@@ -450,14 +471,21 @@ RefCountPtr<T2> rcp_dynamic_cast(const RefCountPtr<T1>& p1);
  * helps to minimize the chance that clients will unexpectedly
  * overwrite data by accident.
  *
- * When the last <tt>RefcountPtr</tt> object is removed the underlying
- * reference-counted object is deleted before any of the extra data
- * that has been associated with this object.  The extra data objects
- * will then be destoried in a first-in basis.  In other words, the
+ * When the last <tt>RefcountPtr</tt> object is removed and the
+ * reference-count node is deleted, then objects are deleted in the
+ * following order: (1) All of the extra data that where added with
+ * <tt>destroy_when==PRE_DESTROY</tt> are first, (2) then the
+ * underlying reference-counted object is deleted, and (3) the rest of
+ * the extra data that was added with
+ * <tt>destroy_when==PRE_DESTROY</tt> is then deleted.  The extra data
+ * objects will then be destroyed in a first-in basis.  In other
+ * words, within each set of pre- and post-destruction objects, the
  * first extra data object added will be deleted first, the second
  * extra data object will be deleted second and so on.  This must be
  * considered when multiple pieces of extra data are being added if
- * the order of distruction is significant.
+ * the order of distruction is significant.  In general, clients should
+ * be careful not to add extra data that has deletion dependancies (instead
+ * consider using nested RefCountPtr objects as extra data).
  *
  * Preconditions:<ul>
  * <li> <tt>p->get() != NULL</tt> (throws <tt>std::logic_error</tt>)
@@ -473,13 +501,20 @@ RefCountPtr<T2> rcp_dynamic_cast(const RefCountPtr<T1>& p1);
 template<class T1, class T2>
 void set_extra_data( const T1 &extra_data, const std::string& name, RefCountPtr<T2> *p, bool force_unique
 #ifndef __sun
-	 = true
+                     = true
+#endif
+                     ,EPrePostDestruction destroy_when
+#ifndef __sun
+                     = POST_DESTROY
 #endif
 	);
 #ifdef __sun
 template<class T1, class T2>
 inline void set_extra_data( const T1 &extra_data, const std::string& name, RefCountPtr<T2> *p )
-{ set_extra_data( extra_data, name, p, true ); }
+{ set_extra_data( extra_data, name, p, true, POST_DESTROY ); }
+template<class T1, class T2>
+inline void set_extra_data( const T1 &extra_data, const std::string& name, RefCountPtr<T2> *p, bool force_unique )
+{ set_extra_data( extra_data, name, p, force_unique, POST_DESTROY ); }
 #endif
 
 ///

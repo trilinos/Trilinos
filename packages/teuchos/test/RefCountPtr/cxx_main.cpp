@@ -77,7 +77,7 @@ class A {
 	int A_g_, A_f_;
 public:
 	A() : A_g_(A_g_return), A_f_(A_f_return) {}
-	virtual ~A() {}
+	virtual ~A() { A_g_ = -1; A_f_ = -1; }
 	virtual int A_g() { return A_g_; }
 	virtual int A_f() const { return A_f_; }
 };
@@ -86,6 +86,7 @@ class B1 : virtual public A {
 	int B1_g_, B1_f_;
 public:
 	B1() : B1_g_(B1_g_return), B1_f_(B1_f_return) {}
+	~B1() { B1_g_ = -1; B1_f_ = -1; }
 	virtual int B1_g() { return B1_g_; }
 	virtual int B1_f() const { return B1_f_; }
 };
@@ -94,6 +95,7 @@ class B2 : virtual public A {
 	int B2_g_, B2_f_;
 public:
 	B2() : B2_g_(B2_g_return), B2_f_(B2_f_return) {}
+	~B2() { B2_g_ = -1; B2_f_ = -1; }
 	virtual int B2_g() { return B2_g_; }
 	virtual int B2_f() const { return B2_f_; }
 };
@@ -103,9 +105,19 @@ class C : virtual public B1, virtual public B2
 	int C_g_, C_f_;
 public:
 	C() : C_g_(C_g_return), C_f_(C_f_return) {}
+	~C() { C_g_ = -1; C_f_ = -1; }
 	virtual int C_g() { return C_g_; }
 	virtual int C_f() const { return C_f_; }
 	
+};
+
+class Get_A_f_return {
+  const A *a_;
+  int *a_f_return_;
+  Get_A_f_return();
+public:
+  Get_A_f_return( const A *a, int *a_f_return ) : a_(a), a_f_return_(a_f_return) {}
+  ~Get_A_f_return() { *a_f_return_ = a_->A_f(); }
 };
 
 /*
@@ -426,9 +438,15 @@ int main( int argc, char* argv[] ) {
 		assert( get_extra_data<RefCountPtr<B1> >(a_ptr1,"B1")->B1_f() == B1_f_return );
 		assert( get_extra_data<int>(const_cast<const RefCountPtr<A>&>(a_ptr1),"int") == -5 ); // test const version
 
+    // Test pre-destruction of extra data
+    int a_f_return = -1;
+    set_extra_data( Teuchos::rcp(new Get_A_f_return(&*a_ptr1,&a_f_return)), "a_f_return", &a_ptr1, true, Teuchos::PRE_DESTROY );
+
 		// Set pointers to null to force releasing any owned memory
 		a_ptr1 = Teuchos::null;
 		d_ptr1 = Teuchos::null;
+
+    assert( a_f_return == A_f_return ); // Should be been called in destructor of a_ptr1 but before the A object is destroyed!
 
 		if(verbose)
 			std::cout << "RefCountPtr<...> seems to check out!\n";

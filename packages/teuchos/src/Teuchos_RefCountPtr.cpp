@@ -41,7 +41,7 @@ void PrivateUtilityPack::throw_null( const std::string &type_name )
 
 namespace PrivateUtilityPack {
 
-void RefCountPtr_node::set_extra_data( const any &extra_data, const std::string& name, bool force_unique )
+void RefCountPtr_node::set_extra_data( const any &extra_data, const std::string& name, bool force_unique, EPrePostDestruction destroy_when )
 {
 	if(extra_data_map_==NULL) {
 		extra_data_map_ = new extra_data_map_t;
@@ -53,7 +53,7 @@ void RefCountPtr_node::set_extra_data( const any &extra_data, const std::string&
 			itr != extra_data_map_->end(), std::invalid_argument
 			,"Error, the type:name pair \'" << type_and_name << "\' already exists and force_unique==true!" );
 	}
-	(*extra_data_map_)[type_and_name] = extra_data; // This may add or replace!
+	(*extra_data_map_)[type_and_name] = extra_data_entry_t(extra_data,destroy_when); // This may add or replace!
 }
 
 any& RefCountPtr_node::get_extra_data( const std::string& type_name, const std::string& name )
@@ -66,7 +66,16 @@ any& RefCountPtr_node::get_extra_data( const std::string& type_name, const std::
 	TEST_FOR_EXCEPTION(
 		itr == extra_data_map_->end(), std::invalid_argument
 		,"Error, the type:name pair \'" << type_and_name << "\' is not found!" );
-	return (*itr).second;
+	return (*itr).second.extra_data;
+}
+
+void RefCountPtr_node::impl_pre_delete_extra_data()
+{
+  for( extra_data_map_t::iterator itr = extra_data_map_->begin(); itr != extra_data_map_->end(); ++itr ) {
+    extra_data_map_t::value_type &entry = *itr;
+    if(entry.second.destroy_when == PRE_DESTROY)
+      entry.second.extra_data = any();
+  }
 }
 
 } // namespace PrivateUtilityPack
