@@ -30,9 +30,7 @@
 class Epetra_Comm;
 class Epetra_Directory;
 
-#ifdef EPETRA_BLOCKMAP_NEW_LID
 class Epetra_HashTable;
-#endif
 
 
 //! Epetra_BlockMap: A class for partitioning block element vectors and matrices.
@@ -503,10 +501,8 @@ class Epetra_BlockMap: public Epetra_Object {
   bool LinearMap_;
   bool DistributedGlobal_;
 
-#ifdef EPETRA_BLOCKMAP_NEW_LID
   int LastContiguousGIDLoc_;
   Epetra_HashTable * LIDHash_;
-#endif
 
 };
 

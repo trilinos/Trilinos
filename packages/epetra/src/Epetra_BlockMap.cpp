@@ -27,9 +27,7 @@
 #include "Epetra_Comm.h"
 #include "Epetra_Directory.h"
 
-#ifdef EPETRA_BLOCKMAP_NEW_LID
 #include "Epetra_HashTable.h"
-#endif
 
 
 //==============================================================================
@@ -51,12 +49,9 @@ Epetra_BlockMap::Epetra_BlockMap(int NumGlobalElements, int ElementSize, int Ind
     MinElementSize_(ElementSize),
     MaxElementSize_(ElementSize),
     ConstantElementSize_(true),
-    LinearMap_(true)
-#ifdef EPETRA_BLOCKMAP_NEW_LID
-    ,
+    LinearMap_(true),
     LastContiguousGIDLoc_(0),
     LIDHash_(0)
-#endif
     
 {
   // Each processor gets roughly numGlobalPoints/p points
@@ -118,12 +113,9 @@ Epetra_BlockMap::Epetra_BlockMap(int NumGlobalElements, int NumMyElements,
     MinElementSize_(ElementSize),
     MaxElementSize_(ElementSize),
     ConstantElementSize_(true),
-    LinearMap_(true)
-#ifdef EPETRA_BLOCKMAP_NEW_LID
-    ,
+    LinearMap_(true),
     LastContiguousGIDLoc_(0),
     LIDHash_(0)
-#endif
 {
   // Each processor gets NumMyElements points
   
@@ -215,12 +207,9 @@ Epetra_BlockMap::Epetra_BlockMap(int NumGlobalElements, int NumMyElements, int *
     MinElementSize_(ElementSize),
     MaxElementSize_(ElementSize),
     ConstantElementSize_(true),
-    LinearMap_(false)
-#ifdef EPETRA_BLOCKMAP_NEW_LID
-    ,
+    LinearMap_(false),
     LastContiguousGIDLoc_(0),
     LIDHash_(0)
-#endif
 {
   int i;
   // Each processor gets NumMyElements points
@@ -328,12 +317,9 @@ Epetra_BlockMap::Epetra_BlockMap(int NumGlobalElements, int NumMyElements, int *
     Comm_(&Comm),
     Directory_(0),
     ConstantElementSize_(false),
-    LinearMap_(false)
-#ifdef EPETRA_BLOCKMAP_NEW_LID
-    ,
+    LinearMap_(false),
     LastContiguousGIDLoc_(0),
     LIDHash_(0)
-#endif
 {
   int i;
   // Each processor gets NumMyElements points
@@ -478,12 +464,9 @@ Epetra_BlockMap::Epetra_BlockMap(const Epetra_BlockMap& map)
     MaxElementSize_(map.MaxElementSize_),
     ConstantElementSize_(map.ConstantElementSize_),
     LinearMap_(map.LinearMap_),
-    DistributedGlobal_(map.DistributedGlobal_)
-#ifdef EPETRA_BLOCKMAP_NEW_LID
-    ,
+    DistributedGlobal_(map.DistributedGlobal_),
     LastContiguousGIDLoc_(map.LastContiguousGIDLoc_),
     LIDHash_(new Epetra_HashTable(*map.LIDHash_))
-#endif
 {
   int i;
 
@@ -533,9 +516,7 @@ Epetra_BlockMap::~Epetra_BlockMap(void)  {
   if (LID_ !=0 && NumMyElements_>0) delete [] LID_;
   LID_ = 0;
 
-#ifdef EPETRA_BLOCKMAP_NEW_LID
   if( LIDHash_ ) delete LIDHash_;
-#endif
 }
 
 
