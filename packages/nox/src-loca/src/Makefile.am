@@ -254,7 +254,8 @@ LOCA_ANASAZI_H = \
 	$(srcdir)/LOCA_AnasaziOperator_Cayley.H \
 	$(srcdir)/LOCA_AnasaziOperator_Manager.H \
 	$(srcdir)/Anasazi_LOCA_MultiVec.H \
-	$(srcdir)/Anasazi_LOCA_Matrix.H 
+	$(srcdir)/Anasazi_LOCA_Matrix.H \
+	$(srcdir)/Anasazi_LOCA_Sort.H
 
 LOCA_ANASAZI = \
 	$(srcdir)/LOCA_AnasaziOperator_JacobianInverse.C \

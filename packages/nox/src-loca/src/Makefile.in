@@ -129,7 +129,7 @@ am__libloca_la_SOURCES_DIST = $(srcdir)/LOCA.H \
 	$(srcdir)/LOCA_AnasaziOperator_Cayley.H \
 	$(srcdir)/LOCA_AnasaziOperator_Manager.H \
 	$(srcdir)/Anasazi_LOCA_MultiVec.H \
-	$(srcdir)/Anasazi_LOCA_Matrix.H \
+	$(srcdir)/Anasazi_LOCA_Matrix.H $(srcdir)/Anasazi_LOCA_Sort.H \
 	$(srcdir)/LOCA_SingularJacobianSolve_Generic.H \
 	$(srcdir)/LOCA_SingularJacobianSolve_Manager.H \
 	$(srcdir)/LOCA_SingularJacobianSolve_Default.H \
@@ -474,7 +474,7 @@ am__include_HEADERS_DIST = $(srcdir)/LOCA.H \
 	$(srcdir)/LOCA_AnasaziOperator_Cayley.H \
 	$(srcdir)/LOCA_AnasaziOperator_Manager.H \
 	$(srcdir)/Anasazi_LOCA_MultiVec.H \
-	$(srcdir)/Anasazi_LOCA_Matrix.H \
+	$(srcdir)/Anasazi_LOCA_Matrix.H $(srcdir)/Anasazi_LOCA_Sort.H \
 	$(srcdir)/LOCA_SingularJacobianSolve_Generic.H \
 	$(srcdir)/LOCA_SingularJacobianSolve_Manager.H \
 	$(srcdir)/LOCA_SingularJacobianSolve_Default.H \
@@ -961,7 +961,8 @@ LOCA_STATUSTEST = \
 @BUILD_LOCAANASAZI_TRUE@	$(srcdir)/LOCA_AnasaziOperator_Cayley.H \
 @BUILD_LOCAANASAZI_TRUE@	$(srcdir)/LOCA_AnasaziOperator_Manager.H \
 @BUILD_LOCAANASAZI_TRUE@	$(srcdir)/Anasazi_LOCA_MultiVec.H \
-@BUILD_LOCAANASAZI_TRUE@	$(srcdir)/Anasazi_LOCA_Matrix.H 
+@BUILD_LOCAANASAZI_TRUE@	$(srcdir)/Anasazi_LOCA_Matrix.H \
+@BUILD_LOCAANASAZI_TRUE@	$(srcdir)/Anasazi_LOCA_Sort.H
 
 @BUILD_LOCAANASAZI_FALSE@LOCA_ANASAZI = 
 @BUILD_LOCAANASAZI_TRUE@LOCA_ANASAZI = \
