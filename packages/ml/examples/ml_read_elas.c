@@ -71,7 +71,7 @@ int allocated, *newbindx, offset, current, *block_list = NULL,  k, block;
 double *newval;
 #ifdef ML_partition
    FILE *fp2;
-   int *block_list, count, k;
+   int count;
 
    if (argc != 2) {
      printf("Usage: ml_read_elas num_processors\n");
