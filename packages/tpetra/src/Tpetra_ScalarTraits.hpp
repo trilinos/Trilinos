@@ -7,6 +7,10 @@
 04-Dec-2002 Moved configs to Tpetra_ConfigDefs.h.
 */
 
+// Kris
+// 06.18.03 -- Minor formatting changes
+//          -- Changed calls to LAPACK objects to use new <OType, SType> templates
+
 #ifndef _TPETRA_SCALARTRAITS_HPP_
 #define _TPETRA_SCALARTRAITS_HPP_
 
