@@ -165,7 +165,7 @@ struct map_list_head {
             Gen_Error(0, "Fatal:  insufficient memory");
             return 0;
           }
-        }       
+        }
         tmp = mesh->ecmap_cnt[indx];
         map->glob_id[tmp] = elem->globalID;
         map->elem_id[tmp] = i;

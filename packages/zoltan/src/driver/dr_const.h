@@ -141,5 +141,8 @@ extern int Chaco_In_Assign_Inv;
 #define DEBUG_TRACE_END(proc,yo) \
   if ((proc) == 0 && Debug_Driver > 1) \
     printf("DRIVER LEAVING %s\n", yo);
+#define DEBUG_TRACE_DETAIL(proc,yo,str) \
+  if (Debug_Driver > 2) \
+    printf("%d DRIVER %s: %s\n", proc,yo, str);
 
 #endif /* _DR_CONST_H */

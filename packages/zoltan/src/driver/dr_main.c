@@ -46,6 +46,7 @@ int Chaco_In_Assign_Inv = 0;
 
 static int read_mesh(int, int, PROB_INFO_PTR, PARIO_INFO_PTR, MESH_INFO_PTR);
 static void print_input_info(FILE *fp, int Num_Proc, PROB_INFO_PTR prob);
+static void initialize_mesh(MESH_INFO_PTR);
 
 /****************************************************************************/
 /****************************************************************************/
@@ -109,25 +110,7 @@ int main(int argc, char *argv[])
   }
 
   /* initialize some variables */
-  mesh.num_elems = mesh.num_nodes 
-                 = mesh.num_dims
-                 = mesh.num_el_blks
-                 = mesh.num_node_sets
-                 = mesh.num_side_sets
-                 = mesh.necmap
-                 = mesh.elem_array_len
-                 = 0;
-  mesh.eb_names			= NULL;
-  mesh.eb_ids			= NULL;
-  mesh.eb_cnts			= NULL;
-  mesh.eb_nnodes		= NULL;
-  mesh.eb_nattrs		= NULL;
-  mesh.ecmap_id 		= NULL;
-  mesh.ecmap_cnt 		= NULL;
-  mesh.ecmap_elemids 		= NULL;
-  mesh.ecmap_sideids 		= NULL;
-  mesh.ecmap_neighids 		= NULL;
-  mesh.elements                 = NULL;
+  initialize_mesh(&mesh);
 
   pio_info.dsk_list_cnt		= -1;
   pio_info.num_dsk_ctrlrs	= -1;
@@ -184,6 +167,7 @@ int main(int argc, char *argv[])
   }
 
   /* Loop over read and balance for a number of iterations */
+  /* (Useful for testing REUSE parameters in Zoltan.) */
   for (iteration = 1; iteration <= Number_Iterations; iteration++) {
 
     /*
@@ -216,6 +200,12 @@ int main(int argc, char *argv[])
       Gen_Error(0, "fatal: Error returned from run_zoltan\n");
       error_report(Proc);
       exit(1);
+    }
+
+    /* Reset the mesh data structure for next iteration. */
+    if (iteration < Number_Iterations) {
+      free_mesh_arrays(&mesh);
+      initialize_mesh(&mesh);
     }
 
   } /* End of loop over read and balance */
@@ -288,4 +278,30 @@ int i;
     fprintf(fp, "\t\t%s %s\n", prob->params[i][0], prob->params[i][1]);
 
   fprintf(fp, "##########################################################\n");
+}
+/*****************************************************************************/
+/*****************************************************************************/
+static void initialize_mesh(MESH_INFO_PTR mesh)
+{
+/* Initializes mesh variables */
+
+  mesh->num_elems = mesh->num_nodes
+                  = mesh->num_dims
+                  = mesh->num_el_blks
+                  = mesh->num_node_sets
+                  = mesh->num_side_sets
+                  = mesh->necmap
+                  = mesh->elem_array_len
+                  = 0;
+  mesh->eb_names                 = NULL;
+  mesh->eb_ids                   = NULL;
+  mesh->eb_cnts                  = NULL;
+  mesh->eb_nnodes                = NULL;
+  mesh->eb_nattrs                = NULL;
+  mesh->ecmap_id                 = NULL;
+  mesh->ecmap_cnt                = NULL;
+  mesh->ecmap_elemids            = NULL;
+  mesh->ecmap_sideids            = NULL;
+  mesh->ecmap_neighids           = NULL;
+  mesh->elements                 = NULL;
 }
