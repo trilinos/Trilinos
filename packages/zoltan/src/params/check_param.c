@@ -21,11 +21,7 @@ extern "C" {
 #include <stdio.h>
 #include <stdlib.h>
 #include <ctype.h>
-#ifdef __STDC__
 #include <string.h>
-#else
-#include <strings.h>
-#endif  /* __STDC__ */
 #include "params_const.h"
 #include "zoltan_util.h"
 

@@ -22,7 +22,7 @@ extern "C" {
 
 #include "zz_const.h"
 
-extern int Zoltan_Set_Key_Param(ZZ *, char *, char *);
+extern int Zoltan_Set_Key_Param(ZZ *, char *, char *, int);
 extern void Zoltan_Print_Key_Params(ZZ *);
 
 #ifdef __cplusplus

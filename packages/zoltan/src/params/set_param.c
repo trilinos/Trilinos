@@ -19,11 +19,7 @@ extern "C" {
 
 
 #include <stdio.h>
-#ifdef __STDC__
 #include <string.h>
-#else
-#include <strings.h>
-#endif  /* __STDC__ */
 #include "key_params.h"
 #include "zz_util_const.h"
 #include "params_const.h"
@@ -46,8 +42,8 @@ extern "C" {
 #include "hg_const.h"
 #endif
 
-static int add_param(ZZ *, char *, char *);
-static int remove_param(ZZ *, char *);
+static int add_param(ZZ *, char *, char *, int);
+static int remove_param(ZZ *, char *, int);
 
 /* List of set_parameter functions to be called */
 static ZOLTAN_SET_PARAM_FN * Param_func[] = {
@@ -78,6 +74,16 @@ ZZ *zz,				/* Zoltan structure */
 char *name1,			/* parameter name */
 char *val1)			/* value to set this parameter to */
 {
+    return Zoltan_Set_Param_Vec(zz, name1, val1, -1);
+}
+
+int Zoltan_Set_Param_Vec(
+ZZ *zz,				/* Zoltan structure */
+char *name1,			/* parameter name */
+char *val1,			/* value to set this parameter to */
+int index			/* index of vector parameter; -1 if scalar */
+)
+{
 /*
  *  Function to set a parameter value.
  *  On output:
@@ -87,7 +93,7 @@ char *val1)			/* value to set this parameter to */
  *    ZOLTAN_FATAL signals something more serious.
  */
 
-    char     *yo = "Zoltan_Set_Param";
+    char     *yo = "Zoltan_Set_Param_Vec";
     char      msg[256];
     char     *name, *val;	/* clean versions of name1, val1 */
     int       flag;		/* return value from function */
@@ -112,7 +118,8 @@ char *val1)			/* value to set this parameter to */
     }
 
     /* Call the key parameter routine. This one is Zoltan-specific. */
-    status = Zoltan_Set_Key_Param(zz, name, val);
+    /* Currently, only Set_Key_Param allows vector parameters. */
+    status = Zoltan_Set_Key_Param(zz, name, val, index);
 
     /* Now call all the other parameter setting routines. */
     for (func = Param_func; (status == 1) && (*func != NULL); func++) {
@@ -130,13 +137,13 @@ char *val1)			/* value to set this parameter to */
     }
     else {
         if (!strcmp(val, "DEFAULT")){
-	    remove_param(zz, name);	/* Remove parameter from list */
+	    remove_param(zz, name, index); /* Remove parameter from list */
             status = 0; 		/* "DEFAULT" is always valid */
     	    ZOLTAN_FREE(&name);
     	    ZOLTAN_FREE(&val);
         }
         else if (status == 0){		/* Parameter OK */
-    	    add_param(zz, name, val); 	/* Add parameter to list */
+    	    add_param(zz, name, val, index); 	/* Add parameter to list */
         }
         else { 				/* Parameter not OK. Don't add.  */
     	    ZOLTAN_FREE(&name);             /* (It may be used to set values */
@@ -158,7 +165,9 @@ char *val1)			/* value to set this parameter to */
 static int add_param(
 ZZ *zz,				/* Zoltan structure */
 char *name,			/* parameter name */
-char *val)			/* value to set this parameter to */
+char *val,			/* value to set this parameter to */
+int index			/* index of vector parameter; -1 if scalar */
+)
 {
 /*
  * Parameter checked out OK.  Add it to linked list of param values.
@@ -171,7 +180,8 @@ char *val)			/* value to set this parameter to */
 
     ptr = zz->Params;
     while (ptr != NULL) {
-	if (!strcmp(name, ptr->name)) {	/* string match */
+	if (!strcmp(name, ptr->name) && (index == ptr->index)){	
+	    /* string and index match */
 	    ZOLTAN_FREE(&(ptr->new_val));
 	    ptr->new_val = val;
 	    return (ZOLTAN_OK);
@@ -190,6 +200,7 @@ char *val)			/* value to set this parameter to */
     zz->Params = param;
     param->next = ptr;
     param->name = name;
+    param->index = index;
     param->new_val = val;
 
     return (ZOLTAN_OK);
@@ -197,7 +208,8 @@ char *val)			/* value to set this parameter to */
 
 static int remove_param(
 ZZ *zz,				/* Zoltan structure */
-char *name 			/* parameter name */
+char *name,			/* parameter name */
+int index 			/* index for vector param; -1 for scalars */
 )
 {
 /*
@@ -209,7 +221,8 @@ char *name 			/* parameter name */
     oldptr = NULL;
     ptr = zz->Params;
     while (ptr != NULL) {
-	if (!strcmp(name, ptr->name)) {	/* string match */
+	if (!strcmp(name, ptr->name) && (index == ptr->index)){
+	    /* string and index match */
             /* Remove parameter from list */
             if (oldptr == NULL)
                zz->Params = ptr->next;

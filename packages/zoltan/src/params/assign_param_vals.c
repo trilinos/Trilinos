@@ -20,11 +20,7 @@ extern "C" {
 
 #include <stdio.h>
 #include <stdlib.h>
-#ifdef __STDC__
 #include <string.h>
-#else
-#include <strings.h>
-#endif  /* __STDC__ */
 #include "params_const.h"
 #include "zoltan_types.h"
 #include "zoltan_util.h"
@@ -96,6 +92,11 @@ int print_proc                  /* processor that should perform printing */
 		else {
 		    *((int *) param_ptr->ptr) = atoi(val);
 		}
+	    }
+
+	    else if ((!strcmp(param_ptr->type, "FLOAT")) ||
+	             (!strcmp(param_ptr->type, "REAL"))) {
+		*((float *) param_ptr->ptr) = atof(val);
 	    }
 
 	    else if (!strcmp(param_ptr->type, "DOUBLE")) {

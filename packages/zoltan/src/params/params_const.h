@@ -48,10 +48,11 @@ typedef struct Param_Vars {
 /* string length limit for param val. Allocate space of this + 1 */
 #define MAX_PARAM_STRING_LEN 50
 
-/* Universal parameter value struct */
+/* Universal parameter value struct. (This can be a C union to save space.) */
 typedef struct Param_Utype {
   int def;   /* default flag */
   int ival;
+  float fval;
   double dval;
   long lval;
   char sval[MAX_PARAM_STRING_LEN + 1];
@@ -64,12 +65,14 @@ typedef struct Param_Utype {
 
 typedef struct Param_List {
   char *name;
+  int index;
   char *new_val;
   struct Param_List *next;
 } PARAM_LIST;
 
 /* API for general parameter setting functions */
 typedef int ZOLTAN_SET_PARAM_FN(char *, char *); 
+typedef int ZOLTAN_SET_PARAM_VEC_FN(char *, int, char *);
 
 /* function declarations for parameter modification routines */
 

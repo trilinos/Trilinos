@@ -56,7 +56,9 @@ static PARAM_VARS Key_params[] = {
 int Zoltan_Set_Key_Param(
 ZZ *zz,                         /* Zoltan structure */
 char *name,			/* name of variable */
-char *val)			/* value of variable */
+char *val,			/* value of variable */
+int  idx 			/* index of vector param, -1 if scalar */
+)
 {
     char *yo = "Zoltan_Set_Key_Param";
     char msg[256];

@@ -20,11 +20,7 @@ extern "C" {
 
 #include <stdio.h>
 #include <stdlib.h>
-#ifdef __STDC__
 #include <string.h>
-#else
-#include <strings.h>
-#endif  /* __STDC__ */
 #include "zz_util_const.h"
 #include "params_const.h"
 #include "zoltan_mem.h"
