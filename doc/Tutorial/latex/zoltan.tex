@@ -34,7 +34,7 @@ distribution (layout) is important. Poor data distribution can both
 cause high communication between processes and also load imbalance,
 that is, some processes have more work than others. 
 
-The Zoltan library \cite{ZoltanUG} was developed at Sandia to assist
+The Zoltan library \cite{zoltan2002,ZoltanUG} was developed at Sandia to assist
 scientific computing applications with load balancing and parallel
 data management. Zoltan is not a Trilinos package, and must be
 obtained separately. The Trilinos package EpetraExt provides
@@ -49,7 +49,7 @@ distribute the matrices. The vectors are often distributed to conform
 with the appropriate matrices, though not always. Matrices can
 be partitioned either along rows, columns, or by a 2-dimensional
 block decomposition. We limit our discussion to 1-dimensional data
-distributions (which are supported in Epetra). In this case, 
+distributions (which are best supported in Epetra). In this case, 
 partitioning dense matrices is easy.
 For a matrix with $n$ rows and with $p$ processes, simply give
 each process $n/p$  rows. For sparse matrices, the situation
@@ -71,13 +71,14 @@ graph partitioning is NP-hard to solve exactly, there are
 several fast algorithms that work well in practice. Zoltan
 provides a common interface to graph partitioners (and other algorithms).
 At present, the most widely used software for graph partitioning,
-are the METIS and ParMETIS \cite{} packages from University of Minnesota.
+are the METIS and ParMETIS \cite{Metis,KarypisK99} packages from University 
+of Minnesota.
 
-In recent years, it has been shown \cite{Aykanat} that hypergraph partitioning 
+Recently, it has been shown \cite{CatAyk99} that hypergraph partitioning 
 is a more accurate model for parallel matrix-vector communication cost.
 Work is currently underway to provide such advanced partitioning capability
 in future versions of Zoltan and EpetraExt. Hypergraph partitioning
-also applies to rectangular matrices.
+also applies to rectangular matrices, not just square matrices.
 
 \subsection{Installing Zoltan and Configuration}
 Zoltaan is not a Trilinos package and must be obtained separately.
@@ -102,7 +103,7 @@ library installed.
 If you don't have it already, there should be a copy bundled
 with Zoltan. It is also possible that you got ParMetis with
 the ML package in Trilinos. If you can't find it anywhere, 
-download ParMetis from \texttt{http://www-users.cs.umn.edu/~karypis/metis/parmetis}. Version 3.1 is recommended, though other versions will work, too.
+download ParMetis from \texttt{http://www-users.cs.umn.edu/$\sim$karypis/metis/parmetis}. Version 3.1 is recommended, though other versions will work, too.
 It is a good idea to put the ParMetis library in the \verb!TRILINOS_3PL!
 as well. You should not build more than one version of ParMetis; multiple versions may cause problems. After building ParMetis, you need to put
 the correct path (for your system) in the relevant Zoltan configuration file
@@ -138,6 +139,8 @@ In order to redistribute data, one needs the map of the load-balanced
 graph. This can be used to create an importer or exporter. 
 
 For example, say we have a Epetra\_CrsMatrix that we want to load-balance.
+(The same procedure should work with VBR matrices, since only the graph 
+is used for load balancing.)
 First create a transform:
 \begin{verbatim}
   EpetraExt::Zoltan_CrsGraph ZoltanTrans;
@@ -159,23 +162,24 @@ to the new distribution:
 \end{verbatim}
 
 For a complete example, see \TriExe{epetraext/ex1.cpp}.
-There are higher-level ways to do the data repartitioning. For example,
+There are other (higher-level) ways to do the data rebalancing. For example,
 if you have a LinearProblem, use \verb!EpetraExt::LinearProblem_GraphTrans!.
 
 Note that currently the only load-balancing method in Zoltan supported
-by the EpetraExt is graph partitioning via ParMetis. More
-options may be added in the future if there is demand. Also,
-there is no Epetraext/Zoltan transform for Epetra\_CrsMatrix yet.
+by the EpetraExt is graph partitioning via ParMETIS. More
+options may be added in the future.
+% Also, there is no Epetraext/Zoltan transform for Epetra\_CrsMatrix yet.
 
 \subsection{Load-balancing with Zoltan in other ways}
 
 Many applications use Zoltan for load-balancing directly, without
 going through EpetraExt. This allows a full choice of algorithms
 and options, while the EpetraExt interface only supports
-Zoltan with ParMetis graph partitioning. Zoltan is written in ANSI C,
+Zoltan with ParMETIS graph partitioning. Zoltan is written in ANSI C,
 and a light-weight C++ interface will be included in future Zoltan
-releases.  There is a fairly sophisticated
+releases.  For Trilinos users, there is already a fairly sophisticated
 C++ interface to Zoltan in EpetraExt. The relevant classes
 are \verb!Zoltan::LoadBalance!, \verb!Zoltan::QueryObject!,
-and \verb!Zoltan::MigrationObject!. 
+and \verb!Zoltan::MigrationObject!. See the doxygen documentation 
+in EpetraExt for a description on how to use these classes.
 
