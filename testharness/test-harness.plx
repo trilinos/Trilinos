@@ -276,8 +276,7 @@ report($SUMMARY);
     sub cvsUpdate {    
     
         if ($options{'CVS_UPDATE'}[0] =~ m/YES/i) {
-            chdir "$options{'TRILINOS_DIR'}[0]";
-            
+            chdir "$options{'TRILINOS_DIR'}[0]";       
             my $command = "";
             $command .= "$options{'CVS_CMD'}[0] update -dP > $options{'TRILINOS_DIR'}[0]";
             $command .= "/testharness/temp/update_log.txt 2>&1";
@@ -583,7 +582,19 @@ report($SUMMARY);
                 # locate all test dirs under Trilinos/packages        
                 chdir "$options{'TRILINOS_DIR'}[0]/$buildDir[$j]";        
                 my @testDirs = `find packages/ -name test -print`; 
-                
+		# Figure out how to run an mpi job.
+		my $result;       # success=0, failure=nonzero
+
+		$result = $ENV{"HOSTNAME"};
+		if (!$result) {
+		  $result = $ENV{"HOST"};
+		}
+		if ($result =~ /stratus/) {
+		  $ENV{'TRILINOS_TEST_HARNESS_MPIGO_COMMAND'} = "prun -n 3 "
+		} else {
+		  $ENV{'TRILINOS_TEST_HARNESS_MPIGO_COMMAND'} = "mpirun -np 3 "
+		}
+ 
                 # run all tests 
                 foreach my $testDir (@testDirs) {
                     $testDir =~ s/\s*$//;  # trim trailing whitespace
@@ -932,7 +943,7 @@ report($SUMMARY);
     sub test {    
         my $buildDir = $_[0];   
         my $script = $_[1];
-        
+ 
         # run test script
         my $command = "";
         $command .= "$script $buildDir True >> $options{'TRILINOS_DIR'}[0]";
