@@ -56,7 +56,10 @@ struct ML_Struct {
    int            id;
    int            ML_init_flag;    /* indicate initialization done */
    int            ML_scheme;       /* which ML scheme to pick      */
-   int            ML_num_levels;   /* number of levels             */
+   int            ML_num_levels;   /* number of levels available   */
+   int            ML_num_actual_levels; 
+                                   /* number of levels actually used */
+                                   /* by the multigrid method.       */
    int            ML_num_transfers;/* number of transfers  */
    int            ML_finest_level, ML_coarsest_level;
    int            output_level;
@@ -213,7 +216,8 @@ extern int ML_Gen_Smoother_VBlockMultiplicativeSchwarz(ML *,int nl,
 extern int ML_Gen_Smoother_GSextra( ML *ml , int nl, int pre_or_post,
 		     int ntimes, double omega, int Nextra, int extra[]);
 extern int ML_Set_Smoother(ML *, int nl , int pre_post, void *obj, 
-                     int (*func)(void *, int, double *, int, double *));
+                     int (*func)(void *, int, double *, int, double *),
+                     char *);
 
 extern int ML_Gen_CoarseSolverSuperLU(ML *ml_handle, int level);
 extern int ML_Set_CoarseSolver(ML *ml, int level, int leng,
