@@ -1,36 +1,83 @@
 #ifndef ML_SPACE_H
 #define ML_SPACE_H
-#include "ml_config.h"
-#include <iostream>
-#include "Epetra_Comm.h"
+#include "ml_include.h"
+#include "ml_comm.h"
+#include "MLAPI_Workspace.h"
+#include "Teuchos_RefCountPtr.hpp"
+#include "Epetra_IntSerialDenseVector.h"
 
 namespace MLAPI {
 
 class Space {
 public:
-  Space(int NumMyElements, const Epetra_Comm& Comm) :
-    Comm_(&Comm),
-    NumGlobalElements_(-1),
-    NumMyElements_(NumMyElements)
+  Space()
   {
-    Comm.SumAll(&NumMyElements_,&NumGlobalElements_,1);
-    Comm.ScanSum(&NumMyElements_,&Offset_,1);
-    Offset_ -= NumMyElements_;
+    NumMyElements_ = 0;
+    NumGlobalElements_ = 0;
+    IsLinear_ = false;
+    Offset_ = 0;
   }
 
-  const Epetra_Comm& Comm() const {
-    return(*Comm_);
+  Space(int NumMyElements)
+  {
+    NumMyElements_ = NumMyElements;
+    NumGlobalElements_ = ML_Comm_GsumInt(GetMLComm(),NumMyElements);
+    Offset_ = ML_gpartialsum_int(NumMyElements,GetMLComm());
+    IsLinear_ = true;
+  }
+
+  Space(int NumMyElements, const int* MyGlobalElements)
+  {
+    NumMyElements_ = NumMyElements;
+    NumGlobalElements_ = ML_Comm_GsumInt(GetMLComm(),NumMyElements);
+    Offset_ = ML_gpartialsum_int(NumMyElements,GetMLComm());
+    MyGlobalElements_ = Teuchos::rcp(new Epetra_IntSerialDenseVector);
+    MyGlobalElements_->Resize(NumMyElements);
+    for (int i = 0 ; i < NumMyElements ; ++i)
+      (*MyGlobalElements_)[i] = MyGlobalElements[i];
+    IsLinear_ = false;
   }
 
   Space(const Space& RHS)
   {
-    Comm_ = &RHS.Comm();
     NumMyElements_ = RHS.NumMyElements();
     NumGlobalElements_ = RHS.NumGlobalElements();
     Offset_ = RHS.Offset();
+    IsLinear_ = RHS.IsLinear();
+    MyGlobalElements_ = RHS.MyGlobalElements();
   }
 
   ~Space() {};
+
+  Space& operator=(const Space& RHS)
+  {
+    NumMyElements_ = RHS.NumMyElements();
+    NumGlobalElements_ = RHS.NumGlobalElements();
+    Offset_ = RHS.Offset();
+    IsLinear_ = RHS.IsLinear();
+    MyGlobalElements_ = RHS.MyGlobalElements();
+  }
+
+  void Reshape(int NumMyElements)
+  {
+    NumMyElements_ = NumMyElements;
+    NumGlobalElements_ = ML_Comm_GsumInt(GetMLComm(),NumMyElements);
+    Offset_ = ML_gpartialsum_int(NumMyElements,GetMLComm());
+    IsLinear_ = false;
+    MyGlobalElements_ = Teuchos::null;
+  }
+
+  void Reshape(int NumMyElements, const int* MyGlobalElements)
+  {
+    NumMyElements_ = NumMyElements;
+    NumGlobalElements_ = ML_Comm_GsumInt(GetMLComm(),NumMyElements);
+    Offset_ = ML_gpartialsum_int(NumMyElements,GetMLComm());
+    MyGlobalElements_ = Teuchos::rcp(new Epetra_IntSerialDenseVector);
+    MyGlobalElements_->Resize(NumMyElements);
+    for (int i = 0 ; i < NumMyElements ; ++i)
+      (*MyGlobalElements_)[i] = MyGlobalElements[i];
+    IsLinear_ = false;
+  }
 
   int NumMyElements() const
   {
@@ -42,36 +89,62 @@ public:
     return(NumGlobalElements_);
   }
 
-  int GID(int i) const
-  {
-    return(i + Offset_);
-  }
-
-  int Offset() const
+  //! 
+  inline int Offset() const
   {
     return(Offset_);
   }
 
-  bool operator== (const Space& rhs) const
+  inline bool operator== (const Space& RHS) const
   {
-    bool ok = true;
-    if (NumGlobalElements_ != rhs.NumGlobalElements())
-      ok = false;
-    if (NumMyElements_ != rhs.NumMyElements())
-      ok = false;
-    return(ok);
+    if (IsLinear() != RHS.IsLinear())
+      return(false);
+    if (NumGlobalElements() != RHS.NumGlobalElements())
+      return(false);
+    if (NumMyElements() != RHS.NumMyElements())
+      return(false);
+
+    return(true);
   }
 
-  bool operator!= (const Space& rhs) const
+  inline bool operator!= (const Space& RHS) const
   {
-    return(!(*this != rhs));
+    return(!(*this != RHS));
+  }
+
+  //! Returns \c true if the decomposition among processors is linear.
+  inline bool IsLinear() const
+  {
+    return(IsLinear_);
+  }
+
+  //! Returns a pointer to the list of global nodes.
+  inline const Teuchos::RefCountPtr<Epetra_IntSerialDenseVector> 
+    MyGlobalElements() const
+  {
+    return(MyGlobalElements_);
+  }
+
+  //! Returns the global ID of local element \c i.
+  inline int operator() (int i) const
+  {
+    if (IsLinear())
+      return(i + Offset_);
+    else
+      return((*MyGlobalElements_)[i]);
   }
 
 private:
+  //! Number of elements assigned to the calling processor.
   int NumMyElements_;
+  //! Total number of elements.
   int NumGlobalElements_;
+  //! If \c true, the decomposition among processors is linear.
+  bool IsLinear_;
+  //! GID of the first local element (for linear decompositions only).
   int Offset_;
-  const Epetra_Comm* Comm_;
+  //! Container of global numbering of local elements.
+  Teuchos::RefCountPtr<Epetra_IntSerialDenseVector> MyGlobalElements_;
 };
 
 } // namespace MLAPI

@@ -1,7 +1,6 @@
 #ifndef MLAPI_EPETRAPRECONDITIONER_H
 #define MLAPI_EPETRAPRECONDITIONER_H
 
-#include "ml_config.h"
 #include "Epetra_Operator.h"
 
 class Epetra_MultiVector;
@@ -33,15 +32,15 @@ public:
 
     assert (LHS.NumVectors() == 1);
 
-    Vector LHS2(Prec_.DomainSpace(),&(LHS[0][0]));
+    DoubleVector LHS2(Prec_.DomainSpace(),&(LHS[0][0]));
     // need additional vector for AztecOO
-    Vector RHS2(Prec_.RangeSpace());
+    DoubleVector RHS2(Prec_.RangeSpace());
 
     ML_CHK_ERR(Prec_.Solve(LHS2,RHS2));
     
     // copy back the result
     for (int i = 0 ; i < Map_.NumMyElements() ; ++i) {
-      RHS[0][i] = RHS2[i];
+      RHS[0][i] = RHS2(i);
     }
 
     return(0);

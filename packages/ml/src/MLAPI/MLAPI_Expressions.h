@@ -1,18 +1,49 @@
 #ifndef ML_EXPRESSIONS_H
 #define ML_EXPRESSIONS_H
 
-#include "ml_config.h"
+#include "ml_include.h"
 #include "ml_epetra.h"
 #include <iostream>
 #include "MLAPI_Space.h"
-#include "MLAPI_Vector.h"
+#include "MLAPI_DoubleVector.h"
 #include "MLAPI_Operator.h"
 #include "MLAPI_Smoother.h"
 
 namespace MLAPI {
 
-Vector&
-operator/(const Smoother& left, const Vector& right) {
+Operator operator+(const Operator& A, const Operator& B)
+{
+  assert (A.DomainSpace() == B.DomainSpace());
+  assert (A.RangeSpace() == B.RangeSpace());
+
+  ML_Operator* ML_AplusB = ML_Operator_Create(GetMLComm());
+  ML_Operator_Add(A.GetOperator(),B.GetOperator(),ML_AplusB,MatrixType,1.);
+  Operator AplusB(A.DomainSpace(),A.RangeSpace(), ML_AplusB,true);
+  return(AplusB);
+}
+
+Operator operator-(const Operator& A, const Operator& B)
+{
+  assert (A.DomainSpace() == B.DomainSpace());
+  assert (A.RangeSpace() == B.RangeSpace());
+
+  ML_Operator* ML_AplusB = ML_Operator_Create(GetMLComm());
+  ML_Operator_Add(A.GetOperator(),B.GetOperator(),ML_AplusB,MatrixType,-1.);
+  Operator AplusB(A.DomainSpace(),A.RangeSpace(), ML_AplusB,true);
+  return(AplusB);
+}
+
+Operator operator*(const Operator& A, const Operator& B)
+{
+  // FIXME check on spaces
+  ML_Operator* ML_AtimesB = ML_Operator_Create(GetMLComm());
+  ML_2matmult(A.GetOperator(), B.GetOperator(), ML_AtimesB, MatrixType);
+  Operator AtimesB(B.DomainSpace(),A.RangeSpace(), ML_AtimesB,true);
+  return(AtimesB);
+}
+
+DoubleVector&
+operator/(const Smoother& left, const DoubleVector& right) {
   return(left.ApplyInverse(right));
 }
 
@@ -23,20 +54,28 @@ public:
   BaseObjectSum(const Left& lhs, const Right& rhs)
     : left(lhs), right(rhs) {}
 
-  double operator[] (size_t i) const {
-    return left[i] + right[i];
+  double operator() (size_t i) const {
+    return(left(i) + right(i));
+  }
+  const Space& VectorSpace() const
+  {
+    return(left.VectorSpace());
   }
 };
 
 template<>
-class BaseObjectSum<Vector,double> {
-  const Vector& left; const double right;
+class BaseObjectSum<DoubleVector,double> {
+  const DoubleVector& left; const double right;
 public:
-  BaseObjectSum(const Vector& lhs, const double rhs)
+  BaseObjectSum(const DoubleVector& lhs, const double rhs)
     : left(lhs), right(rhs) {}
 
-  double operator[] (size_t i) const {
-    return(left[i] + right);
+  double operator() (size_t i) const {
+    return(left(i) + right);
+  }
+  const Space& VectorSpace() const
+  {
+    return(left.VectorSpace());
   }
 };
 
@@ -47,20 +86,28 @@ public:
   BaseObjectDiff(const Left& lhs, const Right& rhs)
     : left(lhs), right(rhs) {}
 
-  double operator[] (size_t i) const {
-    return(left[i] - right[i]);
+  double operator() (size_t i) const {
+    return(left(i) - right(i));
+  }
+  const Space& VectorSpace() const
+  {
+    return(left.VectorSpace());
   }
 };
 
 template<>
-class BaseObjectDiff<Vector,double> {
-  const Vector& left; const double right;
+class BaseObjectDiff<DoubleVector,double> {
+  const DoubleVector& left; const double right;
 public:
-  BaseObjectDiff(const Vector& lhs, const double rhs)
+  BaseObjectDiff(const DoubleVector& lhs, const double rhs)
     : left(lhs), right(rhs) {}
 
-  double operator[] (size_t i) const {
-    return(left[i] - right);
+  double operator() (size_t i) const {
+    return(left(i) - right);
+  }
+  const Space& VectorSpace() const
+  {
+    return(left.VectorSpace());
   }
 };
 
@@ -71,20 +118,110 @@ public:
   BaseObjectMult(const Left& lhs, const Right& rhs)
     : left(lhs), right(rhs) {}
 
-  double operator[] (size_t i) const {
-    return left[i] * right[i];
+  double operator() (size_t i) const {
+    return left(i) * right(i);
+  }
+
+  const Left& GetLeft() const
+  {
+    return(left);
+  }
+
+  const Right& GetRight() const
+  {
+    return(right);
+  }
+
+  const Space& VectorSpace() const
+  {
+    return(left.VectorSpace());
+  }
+    
+};
+
+Operator operator-(const Operator& A, const BaseObjectMult<double,Operator>& B)
+{
+  assert (A.DomainSpace() == B.GetRight().DomainSpace());
+  assert (A.RangeSpace() == B.GetRight().RangeSpace());
+
+  ML_Operator* ML_AplusB = ML_Operator_Create(GetMLComm());
+  ML_Operator_Add(A.GetOperator(),B.GetRight().GetOperator(),
+                  ML_AplusB,MatrixType, - B.GetLeft());
+  Operator AplusB(A.DomainSpace(),A.RangeSpace(), ML_AplusB,true);
+  return(AplusB);
+}
+
+Operator operator+(const Operator& A, const BaseObjectMult<double,Operator>& B)
+{
+  assert (A.DomainSpace() == B.GetRight().DomainSpace());
+  assert (A.RangeSpace() == B.GetRight().RangeSpace());
+
+  ML_Operator* ML_AplusB = ML_Operator_Create(GetMLComm());
+  ML_Operator_Add(A.GetOperator(),B.GetRight().GetOperator(),
+                  ML_AplusB,MatrixType, B.GetLeft());
+  Operator AplusB(A.DomainSpace(),A.RangeSpace(), ML_AplusB,true);
+  return(AplusB);
+}
+
+Operator operator+(const BaseObjectMult<double,Operator>& A, 
+                    const BaseObjectMult<double,Operator>& B)
+{
+  assert (A.GetRight().DomainSpace() == B.GetRight().DomainSpace());
+  assert (A.GetRight().RangeSpace() == B.GetRight().RangeSpace());
+
+  ML_Operator* ML_AplusB = ML_Operator_Create(GetMLComm());
+  ML_Operator_Add2(A.GetRight().GetOperator(),B.GetRight().GetOperator(),
+                   ML_AplusB,MatrixType, A.GetLeft(),B.GetLeft());
+  Operator AplusB(A.GetRight().DomainSpace(), A.GetRight().RangeSpace(),
+                  ML_AplusB,true);
+  return(AplusB);
+}
+
+Operator operator-(const BaseObjectMult<double,Operator>& A, 
+                    const BaseObjectMult<double,Operator>& B)
+{
+  assert (A.GetRight().DomainSpace() == B.GetRight().DomainSpace());
+  assert (A.GetRight().RangeSpace() == B.GetRight().RangeSpace());
+
+  ML_Operator* ML_AplusB = ML_Operator_Create(GetMLComm());
+  ML_Operator_Add2(A.GetRight().GetOperator(),B.GetRight().GetOperator(),
+                   ML_AplusB,MatrixType, A.GetLeft(),-B.GetLeft());
+  Operator AplusB(A.GetRight().DomainSpace(), A.GetRight().RangeSpace(),
+                  ML_AplusB,true);
+  return(AplusB);
+}
+
+template<>
+class BaseObjectMult<double,DoubleVector> {
+  const double left; const DoubleVector& right;
+public:
+  BaseObjectMult(const double lhs, const DoubleVector& rhs)
+    : left(lhs), right(rhs) {}
+
+  double operator() (size_t i) const {
+    return left * right(i);
+  }
+
+  const Space& VectorSpace() const
+  {
+    return(right.VectorSpace());
   }
 };
 
 template<>
-class BaseObjectMult<Vector,double> {
-  const Vector& left; const double right;
+class BaseObjectMult<DoubleVector,double> {
+  const DoubleVector& left; const double right;
 public:
-  BaseObjectMult(const Vector& lhs, const double rhs)
+  BaseObjectMult(const DoubleVector& lhs, const double rhs)
     : left(lhs), right(rhs) {}
 
-  double operator[] (size_t i) const {
-    return left[i] * right;
+  double operator() (size_t i) const {
+    return(left(i) * right);
+  }
+
+  const Space& VectorSpace() const
+  {
+    return(left.VectorSpace());
   }
 };
 
@@ -95,86 +232,118 @@ public:
   BaseObjectDiv(const Left& lhs, const Right& rhs)
     : left(lhs), right(rhs) {}
 
-  double operator[] (size_t i) const {
-    return left[i] / right[i];
+  double operator() (size_t i) const {
+    return left(i) / right(i);
+  }
+
+  const Space& VectorSpace() const
+  {
+    return(left.VectorSpace());
   }
 };
 
 template<>
-class BaseObjectDiv<Vector,double> {
-  const Vector& left; const double right;
+class BaseObjectDiv<DoubleVector,double> {
+  const DoubleVector& left; const double right;
 public:
-  BaseObjectDiv(const Vector& lhs, const double rhs)
+  BaseObjectDiv(const DoubleVector& lhs, const double rhs)
     : left(lhs), right(rhs) {}
 
-  double operator[] (size_t i) const {
-    return left[i] / right;
+  double operator() (size_t i) const {
+    return left(i) / right;
+  }
+
+  const Space& VectorSpace() const
+  {
+    return(left.VectorSpace());
   }
 };
 
-Vector& 
-operator* (const Operator& Op, const Vector& V)
+template<>
+class BaseObjectDiv<double,DoubleVector> {
+  const double left;
+  const DoubleVector& right;
+public:
+  BaseObjectDiv(const double lhs, const DoubleVector& rhs)
+    : left(lhs), right(rhs) {}
+
+  double operator() (size_t i) const {
+    return left / right(i);
+  }
+
+  const Space& VectorSpace() const
+  {
+    return(right.VectorSpace());
+  }
+};
+
+DoubleVector& 
+operator* (const Operator& Op, const DoubleVector& V)
 {
   return(Op.Apply(V));
 }
 
 double
-operator* (const Vector& Left, const Vector& Right)
+operator* (const DoubleVector& Left, const DoubleVector& Right)
 {
   return(Left.DotProduct(Right));
 }
 
 template<>
-class BaseObjectMult<Operator,Vector> {
-  const Operator& left; const Vector& right;
+class BaseObjectMult<Operator,DoubleVector> {
+  const Operator& left; const DoubleVector& right;
 public:
-  BaseObjectMult(const Operator& lhs, const Vector& rhs)
+  BaseObjectMult(const Operator& lhs, const DoubleVector& rhs)
     : left(lhs), right(rhs) {}
 
-  double operator[] (size_t i) const {
-    std::cout << "IN MATVEC" << std::endl;
+  double operator() (size_t i) const {
     ML_EXIT(0);
     return(0.0);
   }
 };
 
 // operator+ just stores references
-inline BaseObjectSum<Vector,double>
-operator+(const Vector& left, double right) {
-  return(BaseObjectSum<Vector,double>(left,right));
+inline BaseObjectSum<DoubleVector,double>
+operator+(const DoubleVector& left, double right) {
+  return(BaseObjectSum<DoubleVector,double>(left,right));
 }
 
 // operator+ just stores references
-inline BaseObjectDiff<Vector,double>
-operator-(const Vector& left, double right) {
-  return(BaseObjectDiff<Vector,double>(left,right));
+inline BaseObjectDiff<DoubleVector,double>
+operator-(const DoubleVector& left, double right) {
+  return(BaseObjectDiff<DoubleVector,double>(left,right));
 }
 
-inline BaseObjectMult<Vector,double>
-operator*(const Vector& left, double right) {
-  return(BaseObjectMult<Vector,double>(left,right));
+inline BaseObjectMult<DoubleVector,double>
+operator*(const DoubleVector& left, double right) {
+  return(BaseObjectMult<DoubleVector,double>(left,right));
 }
 
-inline BaseObjectDiv<Vector,double>
-operator/(const Vector& left, double right) {
-  return(BaseObjectDiv<Vector,double>(left,right));
+inline BaseObjectDiv<DoubleVector,double>
+operator/(const DoubleVector& left, double right) {
+  return(BaseObjectDiv<DoubleVector,double>(left,right));
+}
+
+inline BaseObjectDiv<double,DoubleVector>
+operator/(double left, const DoubleVector& right) {
+  return(BaseObjectDiv<double,DoubleVector>(left,right));
 }
 
 
-inline BaseObjectSum<Vector,Vector>
-operator+(const Vector& left, const Vector& right) {
-  return(BaseObjectSum<Vector,Vector>(left,right));
+inline BaseObjectSum<DoubleVector,DoubleVector>
+operator+(const DoubleVector& left, const DoubleVector& right) {
+  return(BaseObjectSum<DoubleVector,DoubleVector>(left,right));
 }
 
-inline BaseObjectDiff<Vector,Vector>
-operator-(const Vector& left, const Vector& right) {
-  return(BaseObjectDiff<Vector,Vector>(left,right));
+inline BaseObjectDiff<DoubleVector,DoubleVector>
+operator-(const DoubleVector& left, const DoubleVector& right) {
+  return(BaseObjectDiff<DoubleVector,DoubleVector>(left,right));
 }
 
 template<class Left, class Right>
-inline BaseObjectMult<BaseObjectMult<Left,Right>,Vector>
-operator*(const BaseObjectMult<Left,Right>& left,const Vector& right) {
-  return(BaseObjectMult<BaseObjectMult<Left,Right>,Vector>(left, right));
+inline BaseObjectMult<BaseObjectMult<Left,Right>,DoubleVector>
+operator*(const BaseObjectMult<Left,Right>& left,const DoubleVector& right) {
+  return(BaseObjectMult<BaseObjectMult<Left,Right>,DoubleVector>(left, right));
 }
 
 template<class Left, class Right>
@@ -184,9 +353,9 @@ operator*(const BaseObjectMult<Left,Right>& left,const BaseObjectMult<Left,Right
 }
 
 template<class Left, class Right>
-inline BaseObjectSum<BaseObjectSum<Left,Right>,Vector>
-operator+(const BaseObjectSum<Left,Right>& left,const Vector& right) {
-  return(BaseObjectSum<BaseObjectSum<Left,Right>,Vector>(left, right));
+inline BaseObjectSum<BaseObjectSum<Left,Right>,DoubleVector>
+operator+(const BaseObjectSum<Left,Right>& left,const DoubleVector& right) {
+  return(BaseObjectSum<BaseObjectSum<Left,Right>,DoubleVector>(left, right));
 }
 
 template<class Left, class Right>
@@ -219,12 +388,11 @@ operator*(const Left& left, const Right& right) {
   return(BaseObjectMult<Left,Right>(left, right));
 }
 
-
 // =====
-std::ostream& operator<< (std::ostream& os, const Vector& v) 
+std::ostream& operator<< (std::ostream& os, const DoubleVector& v) 
 {
   for (size_t i = 0 ; i < v.VectorSpace().NumMyElements() ; ++i)
-    os << v[i] << ' ';
+    os << v(i) << ' ';
   os << std::endl;
   return(os);
 }
@@ -238,9 +406,56 @@ std::ostream& operator<< (std::ostream& os, const Space& v)
 
   os << "ProcID\t\tLID\t\tGID" << std::endl;
   for (size_t i = 0 ; i < v.NumMyElements() ; ++i)
-    os << 0 << "\t\t" << i << "\t\t" << v.GID(i) << std::endl;
+    os << 0 << "\t\t" << i << "\t\t" << v(i) << std::endl;
   os << std::endl;
   return(os);
+}
+
+std::ostream& operator<< (std::ostream& os, const Operator& Op) 
+{
+  int    *bindx;
+  double *val;
+  int    allocated, row_length;
+  ML_Operator* matrix = Op.GetOperator();
+
+  if (matrix->getrow == NULL) 
+    throw("getrow not set");
+
+  allocated = 100;
+  bindx = (int    *)  ML_allocate(allocated*sizeof(int   ));
+  val   = (double *)  ML_allocate(allocated*sizeof(double));
+
+  int NumGlobalRows = Op.DomainSpace().NumGlobalElements();
+  int NumGlobalCols = Op.RangeSpace().NumGlobalElements();
+
+  for (int iproc = 0 ; iproc < NumProc() ; ++iproc) {
+
+    if (iproc == 0) {
+      os << "Operator `" << Op.Name() << "'" << endl;
+      os << "ProcID\tGlobal Row\tGlobal Col\tValue" << endl;
+      os << endl;
+    }
+
+    if (MyPID() == iproc) {
+
+      for (int i = 0 ; i < matrix->getrow->Nrows; i++) {
+        ML_get_matrix_row(matrix, 1, &i, &allocated, &bindx, &val,
+                          &row_length, 0);
+        for  (int j = 0; j < row_length; j++) {
+          int GlobalRow = Op.DomainSpace()(i);
+          int GlobalCol = Op.ColumnSpace()(bindx[j]);
+          os << iproc << "\t" << GlobalRow << "\t" << GlobalCol << "\t" << val[j] << endl;
+        }
+      }
+    }
+#ifdef HAVE_MPI
+    MPI_Barrier(MPI_COMM_WORLD);
+#endif
+  }
+
+  ML_free(val);
+  ML_free(bindx);
+  return (os);
 }
 
 } // namespace MLAPI

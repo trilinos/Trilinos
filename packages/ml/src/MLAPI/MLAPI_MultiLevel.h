@@ -1,17 +1,19 @@
 #ifndef MLAPI_MULTILEVEL_H
 #define MLAPI_MULTILEVEL_H
 
-#include "ml_config.h"
+#include "ml_include.h"
+#include "Teuchos_ParameterList.hpp"
 #include "MLAPI_Operator.h"
-#include "MLAPI_Vector.h"
+#include "MLAPI_DoubleVector.h"
 #include "MLAPI_Smoother.h"
-#include "MLAPI_JacobiSmoother.h"
-#include "MLAPI_SGSSmoother.h"
-#include "MLAPI_AmesosSmoother.h"
 #include "MLAPI_Expressions.h"
 #include "MLAPI_Preconditioner.h"
-#include "MLAPI_SingleLevel.h"
-#include "MLAPI_Utils.h"
+#include "MLAPI_Container.h"
+#include "MLAPI_Workspace.h"
+
+#include "ml_agg_genP.h"
+
+static int MLAPI_count = 0;
 
 namespace MLAPI {
 
@@ -19,93 +21,127 @@ class MultiLevel : public Preconditioner {
 
 public:
 
-  MultiLevel(const Operator* FineMatrix,
-             Teuchos::ParameterList& MLList) :
-    FineMatrix_(*FineMatrix)
+  MultiLevel(const Operator FineMatrix,
+             Teuchos::ParameterList& MLList)
   {
 
+    FineMatrix_ = FineMatrix;
+
+    double Damping = MLList.get("aggregation: damping factor", 1.333);
+    string EigenAnalysis = MLList.get("eigen-analysis: type", "Anorm");
+
     MaxLevels_ = MLList.get("max levels",2);
-    Hierarchy_ = new SingleLevel[10];
+    H_ = new Container[10];
 
-    Hierarchy_[0].SetA(FineMatrix);
+    H_[0].SetA(FineMatrix);
 
-    int i;
-    for (i = 0 ; i < MaxLevels_ - 1 ; ++i) {
-      const Operator* Amat = Hierarchy_[i].A();
-      Operator* Pmat = BuildP(*Amat,MLList);
-      Operator* Rmat = BuildTranspose(*Pmat);
-      Operator* Cmat = RAP(*Rmat,*Amat,*Pmat);
+    double LambdaMax;
+    Operator A;
+    Operator C;
+    Operator R;
+    Operator P;
+    Operator Ptent;
+    Operator IminusA;
+    Smoother S;
+
+    int level;
+    for (level = 0 ; level < MaxLevels_ - 1 ; ++level) 
+    {
+      if (PrintLevel()) {
+        cout << endl;
+        cout << "Building level " << level << "..." << endl;
+        cout << endl;
+      }
+
+      A = H_[level].A();
+      Ptent = BuildP(A,MLList);
+      LambdaMax = A.LambdaMax(EigenAnalysis,true);
+
+      if (PrintLevel()) {
+        cout << endl;
+        cout << "Prolongator/Restriction smoother (level " << level 
+          << ") : damping factor = " << Damping / LambdaMax << endl;
+        cout << "Prolongator/Restriction smoother (level " << level
+          << ") : (= " << Damping << " / " << LambdaMax << ")" << endl;
+        cout << endl;
+      }
+
+#if 0
+      DoubleVector Diag(A.DomainSpace());
+      Diag = Diagonal(A);
+      cout << MLAPI_count << endl;
+      ++MLAPI_count;
+      Diag = (Damping / LambdaMax) / Diag;
+      Operator Dinv = Diagonal(A.DomainSpace(),A.RangeSpace(),Diag);
+      Operator I = Identity(A.DomainSpace(),A.RangeSpace());
+      Operator DinvA = Dinv * A;
+      //Operator IminusA = I - (Damping / LambdaMax) * DinvA;
+      Operator IminusA = I - DinvA;
+#else
+      struct ML_AGG_Matrix_Context widget = {0};
+      IminusA = JacobiIterationOperator(A,Damping,LambdaMax,&widget);
+#endif
+
+      P = IminusA * Ptent;
+
+      R = Transpose(P);
+      C = RAP(R,A,P);
       // build smoothers
-      Smoother* PreSmoother = new SGSSmoother(*Amat,MLList);
-      Smoother* PostSmoother = new SGSSmoother(*Amat,MLList);
+      S.Reshape(A,"SGS",MLList);
       // put operators in hierarchy
-      Hierarchy_[i].SetR(Rmat);
-      Hierarchy_[i].SetP(Pmat);
-      Hierarchy_[i+1].SetA(Cmat);
+      H_[level].SetR(R);
+      H_[level].SetP(P);
+      H_[level + 1].SetA(C);
       // put smoothers in hierarchy
-      Hierarchy_[i].SetPreSmoother(PreSmoother);
-      Hierarchy_[i].SetPostSmoother(PostSmoother);
+      H_[level].SetS(S);
+
       // break if coarse matrix is below specified tolerance
-      if (Cmat->DomainSpace().NumGlobalElements() < 128)
+      if (C.DomainSpace().NumGlobalElements() < 32) {
+        ++level;
         break;
+      }
     }
+
     // set coarse solver
-    Smoother* PostSmoother = new AmesosSmoother(*(Hierarchy_[i].A()),MLList);
-    Hierarchy_[i].SetPostSmoother(PostSmoother);
-    MaxLevels_ = i + 1;
+    S.Reshape(H_[level].A(),"Amesos",MLList);
+    H_[level].SetS(S);
+    MaxLevels_ = level + 1;
   }
 
   ~MultiLevel()
   {
-    delete Hierarchy_;
+    delete H_;
   }
 
-  int Solve(const Vector& b_f, Vector& x_f) const
+  int Solve(const DoubleVector& b_f, DoubleVector& x_f) const
   {
     SolveMultiLevel(b_f,x_f,0);
     return(0);
   }
 
-  int SolveMultiLevel(const Vector& b_f,Vector& x_f, int level) const 
+  int SolveMultiLevel(const DoubleVector& b_f,DoubleVector& x_f, int level) const 
   {
-    const Smoother* Spre = Hierarchy_[level].PreSmoother();
-    const Smoother* Spost = Hierarchy_[level].PostSmoother();
-
     if (level == MaxLevels_ - 1) {
-      x_f = (*Spost) / b_f;
-#ifdef CHECK
-      const Operator* A_f = Hierarchy_[level].A();
-      Vector xxx(A_f->DomainSpace());
-      xxx = b_f - (*A_f) * x_f;
-      cout << xxx * xxx << endl;
-#endif
+      x_f = S(level) / b_f;
       return(0);
     }
 
-    const Operator* A = Hierarchy_[level].A();
-    const Operator* R = Hierarchy_[level].R();
-    const Operator* P = Hierarchy_[level].P();
+    DoubleVector r_f(P(level).RangeSpace());
+    DoubleVector r_c(P(level).DomainSpace());
+    DoubleVector z_c(P(level).DomainSpace());
 
-    Vector r_f(P->RangeSpace());
-    Vector r_c(P->DomainSpace());
-    Vector z_c(P->DomainSpace());
-
-    // apply post-smoother
-    if (Spre != 0)
-      x_f = (*Spre) / b_f;
-    else
-      x_f = b_f;
+    // apply pre-smoother
+    x_f = S(level) / b_f;
     // new residual
-    r_f = b_f - (*A) * x_f;
+    r_f = b_f - A(level) * x_f;
     // restrict to coarse
-    r_c = (*R) * r_f;
+    r_c = R(level) * r_f;
     // solve coarse problem
     SolveMultiLevel(r_c,z_c,level + 1);
     // prolongate back and add to solution
-    x_f = x_f + (*P) * z_c;
+    x_f = x_f + P(level) * z_c;
     // apply post-smoother
-    if (Spost != 0)
-      Spost->ApplyInverse(b_f,x_f);
+    S(level).ApplyInverse(b_f,x_f); 
 
     return(0);
   }
@@ -118,12 +154,33 @@ public:
     return(FineMatrix_.RangeSpace());
   }
 
+  const Operator& R(const int i) const
+  {
+    return(H_[i].R());
+  }
+
+  const Operator& A(const int i) const
+  {
+    return(H_[i].A());
+  }
+
+  const Operator& P(const int i) const
+  {
+    return(H_[i].P());
+  }
+
+  const Smoother& S(const int i) const
+  {
+    return(H_[i].S());
+  }
+
 private:
-  const Operator& FineMatrix_;
-  SingleLevel* Hierarchy_;
+  Operator FineMatrix_;
+  Container* H_;
   int MaxLevels_;
 
 };
+
 } // namespace MLAPI
 
 #endif

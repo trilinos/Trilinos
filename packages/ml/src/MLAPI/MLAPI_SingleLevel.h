@@ -1,100 +1,56 @@
 #ifndef MLAPI_SINGLELEVEL_H
 #define MLAPI_SINGLELEVEL_H
 
-#include "ml_config.h"
+#include "ml_include.h"
+#include "Teuchos_ParameterList.hpp"
+#include "MLAPI_Operator.h"
+#include "MLAPI_DoubleVector.h"
+#include "MLAPI_Smoother.h"
+#include "MLAPI_JacobiSmoother.h"
+#include "MLAPI_SGSSmoother.h"
+#include "MLAPI_AmesosSmoother.h"
+#include "MLAPI_Preconditioner.h"
+#include "MLAPI_Workspace.h"
 
 namespace MLAPI {
 
-class Operator;
-class Smoother;
+class SingleLevel : public Preconditioner {
 
-class SingleLevel
-{
 public:
-  SingleLevel(int LevelID = 0) :
-    LevelID_(LevelID),
-    A_(0),
-    P_(0),
-    R_(0),
-    Spre_(0),
-    Spost_(0)
+
+  SingleLevel(const Operator* FineMatrix,
+              Teuchos::ParameterList& MLList) :
+    FineMatrix_(*FineMatrix),
+    Smoother_(0)
   {
-    LevelID_ = LevelID;
+
+    Smoother_ = new SGSSmoother(*FineMatrix,MLList);
   }
 
-  SingleLevel(int LevelID, const Operator* A, const Operator* P, const Operator* R, 
-              const Smoother* Spre, const Smoother* Spost)
+  ~SingleLevel()
   {
-    A_ = A;
-    P_ = P;
-    R_ = R;
-    Spre_ = Spre;
-    Spost_ = Spost;
-    LevelID_ = LevelID;
+    if (Smoother_)
+      delete Smoother_;
   }
 
-  void SetA(const Operator* A)
+  int Solve(const DoubleVector& b_f, DoubleVector& x_f) const
   {
-    A_ = A;
+    Smoother& S = *Smoother_;
+    x_f = S / b_f;
+    return(0);
   }
 
-  void SetP(const Operator* P)
-  {
-    P_ = P;
+  const Space& DomainSpace() const {
+    return(FineMatrix_.DomainSpace());
   }
 
-  void SetR(const Operator* R)
-  {
-    R_ = R;
-  }
-
-  void SetPreSmoother(const Smoother* Spre)
-  {
-    Spre_ = Spre;
-  }
-
-  void SetPostSmoother(const Smoother* Spost)
-  {
-    Spost_ = Spost;
-  }
-
-  const Operator* A() const
-  {
-    return(A_);
-  }
-
-  const Operator* P() const
-  {
-    return(P_);
-  }
-
-  const Operator* R() const
-  {
-    return(R_);
-  }
-
-  const Smoother* PreSmoother() const
-  {
-    return(Spre_);
-  }
-
-  const Smoother* PostSmoother() const
-  {
-    return(Spost_);
-  }
-
-  int LevelID() const
-  {
-    return(LevelID_);
+  const Space& RangeSpace() const {
+    return(FineMatrix_.RangeSpace());
   }
 
 private:
-  const Operator* A_;
-  const Operator* P_;
-  const Operator* R_;
-  const Smoother* Spre_;
-  const Smoother* Spost_;
-  int LevelID_;
+  const Operator& FineMatrix_;
+  Smoother* Smoother_;
 
 };
 } // namespace MLAPI
