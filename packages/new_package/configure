@@ -3126,7 +3126,7 @@ if test "${enable_mpi+set}" = set; then
   enableval="$enable_mpi"
 
 HAVE_PKG_MPI=$enableval
-#MPI_CXX=mpiCC
+MPI_CXX=mpiCC
 
 else
   HAVE_PKG_MPI=no

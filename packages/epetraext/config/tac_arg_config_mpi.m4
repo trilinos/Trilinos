@@ -20,83 +20,95 @@ dnl
 AC_DEFUN([TAC_ARG_CONFIG_MPI],
 [
 AC_ARG_ENABLE(mpi,
-AC_HELP_STRING([--enable-mpi],[enable MPI using mpiCC C++ compiler]),
+[AC_HELP_STRING([--enable-mpi],[MPI support])],
 [
-HAVE_PKG_MPI=yes
+HAVE_PKG_MPI=$enableval
 MPI_CXX=mpiCC
-MPI_CC=mpicc
-MPI_F77=mpif77
 ],
 [HAVE_PKG_MPI=no]
 )
 
 AC_ARG_WITH(mpi,
-AC_HELP_STRING([--with-mpi],[specify root directory of MPI installation]),
+[AC_HELP_STRING([--with-mpi=MPIROOT],[use MPI root directory (enables MPI)])],
 [
-HAVE_PKG_MPI=yes
-MPI_DIR=${withval}
-AC_MSG_CHECKING(MPI directory)
-AC_MSG_RESULT([${MPI_DIR}])
+  HAVE_PKG_MPI=yes
+  MPI_DIR=${withval}
+  AC_MSG_CHECKING(MPI directory)
+  AC_MSG_RESULT([${MPI_DIR}])
 ]
 )
 
 AC_ARG_WITH(mpi-cxx,
-AC_HELP_STRING([--with-mpi-cxx],[specify MPI C++ compiler]),
+[AC_HELP_STRING([--with-mpi-cxx],[use MPI C++ compiler (enables MPI) @<:@mpiCC@:>@])],
 [
-HAVE_PKG_MPI=yes 
-MPI_CXX=${withval}
-AC_MSG_CHECKING(user-defined MPI C++ compiler)
-AC_MSG_RESULT([${MPI_CXX}])
+  HAVE_PKG_MPI=yes 
+  if test X${withval} = Xyes; then
+    MPI_CXX=mpiCC
+  else
+    MPI_CXX=${withval}
+  fi
+  AC_MSG_CHECKING(user-defined MPI C++ compiler)
+  AC_MSG_RESULT([${MPI_CXX}])
 ]
 )
 
 AC_ARG_WITH(mpi-cc,
-AC_HELP_STRING([--with-mpi-cc],[specify MPI C compiler]),
+[AC_HELP_STRING([--with-mpi-cc],[use MPI C compiler (enables MPI) @<:@mpicc@:>@])],
 [
-HAVE_PKG_MPI=yes 
-MPI_CC=${withval}
-AC_MSG_CHECKING(user-defined MPI C compiler)
-AC_MSG_RESULT([${MPI_CC}])
+  HAVE_PKG_MPI=yes 
+  if test X${withval} = Xyes; then
+    MPI_CC=mpicc
+  else
+    MPI_CC=${withval}
+  fi
+  AC_MSG_CHECKING(user-defined MPI C compiler)
+  AC_MSG_RESULT([${MPI_CC}])
 ]
 )
 
 AC_ARG_WITH(mpi-f77,
-AC_HELP_STRING([--with-mpi-f77],[specify MPI Fortran 77 compiler]),
+[AC_HELP_STRING([--with-mpi-f77],[use MPI Fortran 77 compiler (enables MPI) @<:@mpicc@:>@])],
 [
-HAVE_PKG_MPI=yes 
-MPI_F77=${withval}
+  HAVE_PKG_MPI=yes 
+  if test X${withval} = Xyes; then
+    MPI_F77=mpif77
+  else
+    MPI_F77=${withval}
+  fi
 AC_MSG_CHECKING(user-defined MPI Fortran 77 compiler)
 AC_MSG_RESULT([${MPI_F77}])
 ]
 )
 
 AC_ARG_WITH(mpi-include,
-AC_HELP_STRING([--with-mpi-include],[specify include directory for MPI]),
-[
-HAVE_PKG_MPI=yes
-MPI_INC=${withval}
-AC_MSG_CHECKING(user-defined MPI includes)
-AC_MSG_RESULT([${MPI_INC}])
-]
+[AC_HELP_STRING([--with-mpi-include],[Obsolete.  Use --with-mpi-incdir=DIR instead.  Do not prefix DIR with '-I'.])],
+[AC_MSG_ERROR([--with-mpi-include is an obsolte option.   Use --with-mpi-incdir=DIR instead.  Do not prefix DIR with '-I'.  For example '--with-mpi-incdir=/usr/lam_path/include'.])]
 )
 
 AC_ARG_WITH(mpi-libs,
-AC_HELP_STRING([--with-mpi-libs],[specify MPI libraries]),
+[AC_HELP_STRING([--with-mpi-libs="LIBS"],[MPI libraries @<:@"-lmpi"@:>@])],
 [
-HAVE_PKG_MPI=yes
-MPI_LIBS=${withval}
-AC_MSG_CHECKING(user-defined MPI libraries)
-AC_MSG_RESULT([${MPI_LIBS}])
+  MPI_LIBS=${withval}
+  AC_MSG_CHECKING(user-defined MPI libraries)
+  AC_MSG_RESULT([${MPI_LIBS}])
+]
+)
+
+AC_ARG_WITH(mpi-incdir,
+[AC_HELP_STRING([--with-mpi-incdir=DIR],[MPI include directory @<:@MPIROOT/include@:>@  Do not use -I])],
+[
+  MPI_INC=${withval}
+  AC_MSG_CHECKING(user-defined MPI includes)
+  AC_MSG_RESULT([${MPI_INC}])
 ]
 )
 
 AC_ARG_WITH(mpi-libdir,
-AC_HELP_STRING([--with-mpi-libdir],[specify location of MPI libraries]),
+[AC_HELP_STRING([--with-mpi-libdir=DIR],[MPI library directory @<:@MPIROOT/lib@:>@  Do not use -L])],
 [
-HAVE_PKG_MPI=yes
-MPI_LIBDIR=${withval}
-AC_MSG_CHECKING(user-defined MPI libraries)
-AC_MSG_RESULT([${MPI_LIBS}])
+  MPI_LIBDIR=${withval}
+  AC_MSG_CHECKING(user-defined MPI library directory)
+  AC_MSG_RESULT([${MPI_LIBDIR}])
 ]
 )
 

@@ -603,7 +603,7 @@ AC_ARG_ENABLE(mpi,
 [AC_HELP_STRING([--enable-mpi],[MPI support])],
 [
 HAVE_PKG_MPI=$enableval
-#MPI_CXX=mpiCC
+MPI_CXX=mpiCC
 ],
 [HAVE_PKG_MPI=no]
 )
