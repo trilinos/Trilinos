@@ -231,7 +231,7 @@ class AztecOO {
 
   //! AztecOO Label Matrix for Aztec
   /*! This is used to label individual matrices within Aztec. This might
-    be useful if several Aztec invokations are involved corresponding
+    be useful if several Aztec invocations are involved corresponding
     to different matrices.
   */
   int  SetMatrixName(int label);

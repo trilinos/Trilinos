@@ -22,7 +22,7 @@ AztecOO contains a number of classes.  They are:
      object.  The solver options and parameters can be set using SetAztecOption() and SetAztecParam()
      methods on an AztecOO object.
 
-<li> Aztec2Petra() - Utility function to convert from Aztec date structures to Epetra objects.  This function
+<li> Aztec2Petra() - Utility function to convert from Aztec data structures to Epetra objects.  This function
      can be useful when migrating from Aztec to AztecOO.  It is used internally by the AZOO_iterate
      function.
 
