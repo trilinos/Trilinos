@@ -709,7 +709,7 @@ fi
 # ------------------------------------------------------------------------
 
 AC_ARG_ENABLE(loca-anasazi,
-[AC_HELP_STRING([--enable-loca-anaszi],[compile anasazi support into liblocaepetra])],
+[AC_HELP_STRING([--enable-loca-anasazi],[compile anasazi support into liblocaepetra])],
 [BUILD_LOCA_ANASAZI_SUPPORT=${enableval}],
 [BUILD_LOCA_ANASAZI_SUPPORT=no]
 )
@@ -832,7 +832,7 @@ AC_ARG_WITH(anasazi-libdir,
 [anasazi_LIBDIR=$withval])
 
 AC_ARG_WITH(anasaziutils-libdir,
-[AC_HELP_STRING([--with-anasazi-libdir],[specify location of anasaziutils library])],
+[AC_HELP_STRING([--with-anasaziutils-libdir],[specify location of anasaziutils library])],
 [anasaziutils_LIBDIR=$withval])
 
 AC_ARG_WITH(y12m-libdir,
