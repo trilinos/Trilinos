@@ -91,16 +91,37 @@ class Epetra_MultiVector;
 #include <stdio.h>
 #endif
 
+#ifdef HAVE_IOSTREAM
+#include <iostream>
+#else
+#include <iostream.h>
+#endif
+
+#ifdef HAVE_STRING
+#include <string>
+#else
+#include <string.h>
+#endif
+
 #ifdef HAVE_CMATH
 #include <cmath>
 #else
 #include <math.h>
 #endif
 
+#ifdef HAVE_MAP
+#include <map>
+#else
+#include <map.h>
+#endif
+
 #else /*HAVE_CONFIG_H*/
 
+#include <iostream.h>
+#include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <map>
 #include <math.h>
 
 #endif /*HAVE_CONFIG_H*/

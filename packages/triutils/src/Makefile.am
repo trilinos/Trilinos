@@ -61,7 +61,8 @@ CORE = \
 	$(srcdir)/Trilinos_Util_coocsr.cpp \
 	$(srcdir)/Trilinos_Util_ReadHb2Epetra.cpp \
 	$(srcdir)/Trilinos_Util_ReadHpc2Epetra.cpp \
-	$(srcdir)/Trilinos_Util_ReadHb2EpetraVbr.cpp
+	$(srcdir)/Trilinos_Util_ReadHb2EpetraVbr.cpp \
+	$(srcdir)/Trilinos_Util_ShellOptions.cpp
 
 
 AM_CPPFLAGS = -I$(top_srcdir)/../epetra/src -I$(top_builddir)/../epetra/src

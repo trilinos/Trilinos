@@ -137,8 +137,8 @@ TAC_ARG_CHECK_MPI
 # Checks for header files
 # ------------------------------------------------------------------------
 
-AC_CHECK_HEADERS([cstdlib stdlib.h cstdio stdio.h],,,)
-AC_CHECK_HEADERS([cmath math.h string string.h],,,)
+AC_CHECK_HEADERS([cstdlib stdlib.h cstdio stdio.h iostream iostream.h],,,)
+AC_CHECK_HEADERS([cmath math.h string string.h map map.h],,,)
 AC_CHECK_HEADERS([malloc.h],,,)
 
 if test "X$ac_cv_header_cstdlib" != "Xyes" && test "X$ac_cv_header_stdlib_h" != "Xyes"; then
@@ -151,6 +151,14 @@ fi
 
 if test "X$ac_cv_header_string" != "Xyes" && test "X$ac_cv_header_string_h" != "Xyes"; then
   AC_MSG_ERROR([[Cannot find string or string.h.  Triutils requires at least one or the other.]])
+fi
+
+if test "X$ac_cv_header_iostream" != "Xyes" && test "X$ac_cv_header_iostream_h" != "Xyes"; then
+  AC_MSG_ERROR([[Cannot find iostream or iostream.h.  Triutils requires at least one or the other.]])
+fi
+
+if test "X$ac_cv_header_map" != "Xyes" && test "X$ac_cv_header_map_h" != "Xyes"; then
+  AC_MSG_ERROR([[Cannot find map or map.h.  Triutils requires at least one or the other.]])
 fi
 
 if test "X$ac_cv_header_cmath" != "Xyes" && test "X$ac_cv_header_math_h" != "Xyes"; then

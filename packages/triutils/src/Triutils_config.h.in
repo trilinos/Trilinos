@@ -29,12 +29,24 @@
 /* Define to 1 if you have the <inttypes.h> header file. */
 #undef HAVE_INTTYPES_H
 
+/* Define to 1 if you have the <iostream> header file. */
+#undef HAVE_IOSTREAM
+
+/* Define to 1 if you have the <iostream.h> header file. */
+#undef HAVE_IOSTREAM_H
+
 /* Define to 1 if your system has a GNU libc compatible `malloc' function, and
    to 0 otherwise. */
 #undef HAVE_MALLOC
 
 /* Define to 1 if you have the <malloc.h> header file. */
 #undef HAVE_MALLOC_H
+
+/* Define to 1 if you have the <map> header file. */
+#undef HAVE_MAP
+
+/* Define to 1 if you have the <map.h> header file. */
+#undef HAVE_MAP_H
 
 /* Define to 1 if you have the <math.h> header file. */
 #undef HAVE_MATH_H
