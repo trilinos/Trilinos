@@ -38,7 +38,6 @@ static char *cvs_lbiconsth_id = "$Id$";
  */
 
 enum LB_Fn_Type {
-  LB_OBJ_WEIGHT_FN_TYPE = 0,
   LB_NUM_EDGES_FN_TYPE,
   LB_EDGE_LIST_FN_TYPE,
   LB_NUM_GEOM_FN_TYPE,
@@ -88,29 +87,20 @@ struct LB_Struct;
 #define DLB_FATAL  -1
 #define DLB_MEMERR -2
 
+/* DLB_ should be replaced with LB_ to be consistent with 
+ * the rest of Zoltan. For now, keep both sets of definitions.
+ */
+#define LB_OK      0
+#define LB_WARN    1
+#define LB_FATAL  -1
+#define LB_MEMERR -2
+
 /*****************************************************************************/
 /*****************************************************************************/
 /**********************  Functions to query application  *********************/
 /*****************************************************************************/
 /*****************************************************************************/
 
-/* 
- *  Function to return the weight of the object with a given ID.
- *  
- *  Input:  
- *    void *data                --  pointer to user defined data structure
- *    LB_GID global_id          --  the Global ID for the object
- *    LB_LID local_id           --  the Local ID for the object
- *  Output:
- *    int *ierr                 --  error code
- *  Returned value:
- *    float                     --  the weight for the object.
- */
-
-typedef float LB_OBJ_WEIGHT_FN(void *data, LB_GID global_id, LB_LID local_id,
-                                int *ierr);
-
-/*****************************************************************************/
 /*
  *  Function to return, for the object with a given ID,
  *  the object's number of edges (i.e., the number of objects with which
@@ -137,17 +127,20 @@ typedef int LB_NUM_EDGES_FN(void *data, LB_GID global_id, LB_LID local_id,
  *    void *data                --  pointer to user defined data structure
  *    LB_GID global_id          --  the Global ID for the object
  *    LB_LID local_id           --  the Local ID for the object
- *    int    get_ewgts          --  1 if one wants edge weights, 0 otherwise
+ *    int    wdim               --  dimension of edge weights, or 0 if
+ *                                  edge weights are not sought.
  *  Output:
  *    LB_GID *nbor_global_ids   --  Array of Global IDs of neighboring objects.
  *    int    *nbor_procs        --  Array of neighboring procs.
- *    int    *nbor_ewgts        --  If get_ewgts==1, an array of edge weights
+ *    int    *nbor_ewgts        --  Array of edge weights, where 
+ *                                  nbor_ewgts[i*wdim:(i+1)*wdim-1]
+ *                                  corresponds to the weight of edge i
  *    int *ierr                 --  error code
  */
 
 typedef void LB_EDGE_LIST_FN(void *data, LB_GID global_id, LB_LID local_id,
                              LB_GID *nbor_global_id, int *nbor_procs,
-                             int get_ewgts, int *nbor_ewgts, int *ierr);
+                             int wdim, int *nbor_ewgts, int *ierr);
 
 /*****************************************************************************/
 /*
@@ -200,16 +193,20 @@ typedef int LB_NUM_OBJ_FN(void *data, int *ierr);
  *  Function to return a list of all local objects on a processor.
  *  Input:  
  *    void *data                --  pointer to user defined data structure
+ *    int wdim                  --  dimension of object weights, or 0 if
+ *                                  object weights are not sought. 
  *  Output:
  *    LB_GID *global_ids        --  array of Global IDs of all objects on the
  *                                  processor.
  *    LB_LID *local_ids         --  array of Local IDs of all objects on the
  *                                  processor.
+ *    float *objwgts            --  objwgts[i*wdim:(i+1)*wdim-1] correponds
+ *                                  to the weight of object i 
  *    int *ierr                 --  error code
  */
 
 typedef void LB_OBJ_LIST_FN(void *data, LB_GID *global_ids, LB_LID *local_ids,
-                            int *ierr);
+                            int wdim, float *objwgts, int *ierr);
 
 /*****************************************************************************/
 /*
@@ -217,11 +214,15 @@ typedef void LB_OBJ_LIST_FN(void *data, LB_GID *global_ids, LB_LID *local_ids,
  *  the processor.  This function should be used with LB_NEXT_OBJ_FN.
  *  Input:
  *    void *data                --  pointer to user defined data structure
+ *    int wdim                  --  dimension of object weight, or 0 if
+ *                                  the weight is not sought.
  *  Output:
  *    LB_GID *first_global_id   --  Global ID of the first object; NULL if no
  *                                  objects.
  *    LB_LID *first_local_id    --  Local ID of the first object; NULL if no
  *                                  objects.
+ *    float *first_obj_wgt      --  weight vector for first object
+ *                                  (undefined if wdim=0)
  *    int *ierr                 --  error code
  *  Returned value:
  *    int                       --  1 if a valid object is returned; 0 if
@@ -229,7 +230,8 @@ typedef void LB_OBJ_LIST_FN(void *data, LB_GID *global_ids, LB_LID *local_ids,
  */
 
 typedef int LB_FIRST_OBJ_FN(void *data, LB_GID *first_global_id,
-                            LB_LID *first_local_id, int *ierr);
+                            LB_LID *first_local_id, 
+                            int wdim, float *first_obj_wgt, int *ierr);
 
 /*****************************************************************************/
 /*
@@ -239,11 +241,15 @@ typedef int LB_FIRST_OBJ_FN(void *data, LB_GID *first_global_id,
  *    void *data                --  pointer to user defined data structure
  *    LB_GID global_id          --  Global ID of the previous object.
  *    LB_LID local_id           --  Local ID of the previous object.
+ *    int wdim                  --  dimension of object weight, or 0 if
+ *                                  the weight is not sought.
  *  Output:
  *    LB_GID *next_global_id    --  Global ID of the next object; NULL if no
  *                                  more objects.
  *    LB_LID *next_local_id     --  Local ID of the next object; NULL if no
  *                                  more objects.
+ *    float *next_obj_wgt       --  weight vector for the next object
+ *                                  (undefined if wdim=0)
  *    int *ierr                 --  error code
  *  Returned value:
  *    int                       --  1 if a valid object is returned; 0 if
@@ -253,7 +259,7 @@ typedef int LB_FIRST_OBJ_FN(void *data, LB_GID *first_global_id,
 
 typedef int LB_NEXT_OBJ_FN(void *data, LB_GID global_id, LB_LID local_id,
                            LB_GID *next_global_id, LB_LID *next_local_id,
-                           int *ierr);
+                           int wdim, float *next_obj_wgt, int *ierr);
 
 /*****************************************************************************/
 /*
@@ -277,6 +283,8 @@ typedef int LB_NUM_BORDER_OBJ_FN(void *data, int nbor_proc, int *ierr);
  *  Input:  
  *    void *data                --  pointer to user defined data structure
  *    int nbor_proc             --  processor ID of the neighboring processor.
+ *    int wdim                  --  dimension of object weight, or 0 if
+ *                                  the weights are not sought.
  *  Output:
  *    LB_GID *global_ids        --  array of Global IDs of all objects on the
  *                                  processor border with the given neighboring
@@ -284,12 +292,15 @@ typedef int LB_NUM_BORDER_OBJ_FN(void *data, int nbor_proc, int *ierr);
  *    LB_LID *local_ids         --  array of Local IDs of all objects on the 
  *                                  processor border with the given neighboring 
  *                                  processor.
+ *    float *objwgts            --  objwgts[i*wdim:(i+1)*wdim-1] correponds
+ *                                  to the weight of object i 
+ *                                  (objwgts is undefined if wdim=0)
  *    int *ierr                 --  error code
  */
 
 typedef void LB_BORDER_OBJ_LIST_FN(void *data, int nbor_proc,
                                    LB_GID *global_ids, LB_LID *local_ids,
-                                   int *ierr);
+                                   int wdim, float *objwgts, int *ierr);
 
 /*****************************************************************************/
 /*
@@ -298,11 +309,15 @@ typedef void LB_BORDER_OBJ_LIST_FN(void *data, int nbor_proc,
  *  Input:  
  *    void *data                --  pointer to user defined data structure
  *    int nbor_proc             --  processor ID of the neighboring processor.
+ *    int wdim                  --  dimension of object weight, or 0 if
+ *                                  the weight is not sought.
  *  Output:
- *    LB_GID *first_global_id   --  Global ID of the next object; NULL if no
+ *    LB_GID *first_global_id   --  Global ID of the first object; NULL if no
  *                                  objects.
- *    LB_LID *first_local_id    --  Local ID of the next object; NULL if no 
+ *    LB_LID *first_local_id    --  Local ID of the first object; NULL if no 
  *                                  objects.
+ *    float *first_obj_wgt      --  weight vector for the first object
+ *                                  (undefined if wdim=0)
  *    int *ierr                 --  error code
  *  Returned value:
  *    int                       --  1 if a valid object is returned; 0 if
@@ -312,7 +327,9 @@ typedef void LB_BORDER_OBJ_LIST_FN(void *data, int nbor_proc,
 
 typedef int LB_FIRST_BORDER_OBJ_FN(void *data, int nbor_proc,
                                    LB_GID *first_global_id,
-                                   LB_LID *first_local_id, int *ierr);
+                                   LB_LID *first_local_id, 
+                                   int wdim, float *first_obj_wgt,
+                                   int *ierr);
 
 /*****************************************************************************/
 /*
@@ -323,11 +340,15 @@ typedef int LB_FIRST_BORDER_OBJ_FN(void *data, int nbor_proc,
  *    LB_GID global_id          --  Global ID of the previous object.
  *    LB_LID local_id           --  Local ID of the previous object.
  *    int nbor_proc             --  processor ID of the neighboring processor.
+ *    int wdim                  --  dimension of object weight, or 0 if
+ *                                  the weight is not sought.
  *  Output:
  *    LB_GID *next_global_id    --  Global ID of the next object; NULL if no
  *                                  more objects.
  *    LB_LID *next_local_id     --  Local ID of the next object; NULL if no 
  *                                  more objects.
+ *    float *next_obj_wgt       --  weight vector for the next object
+ *                                  (undefined if wdim=0)
  *    int *ierr                 --  error code
  *  Returned value:
  *    int                       --  1 if a valid object is returned; 0 if
@@ -338,7 +359,9 @@ typedef int LB_FIRST_BORDER_OBJ_FN(void *data, int nbor_proc,
 typedef int LB_NEXT_BORDER_OBJ_FN(void *data, LB_GID global_id,
                                   LB_LID local_id, int nbor_proc,
                                   LB_GID *next_global_id,
-                                  LB_LID *next_local_id, int *ierr);
+                                  LB_LID *next_local_id, 
+                                  int wdim, float *next_obj_wgt,
+                                  int *ierr);
 
 /*****************************************************************************/
 /*
