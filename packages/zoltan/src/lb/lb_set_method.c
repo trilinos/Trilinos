@@ -74,6 +74,7 @@ int Zoltan_LB_Set_LB_Method(ZZ *zz, char *method_name)
     zz->LB.Method = RCB;
     zz->LB.LB_Fn = Zoltan_RCB;
     zz->LB.Free_Structure = Zoltan_RCB_Free_Structure;
+    zz->LB.Copy_Structure = Zoltan_RCB_Copy_Structure;
     zz->LB.Point_Assign = Zoltan_RB_Point_Assign;
     zz->LB.Box_Assign = Zoltan_RB_Box_Assign;
   }
@@ -82,6 +83,7 @@ int Zoltan_LB_Set_LB_Method(ZZ *zz, char *method_name)
     zz->LB.Method = OCTPART;
     zz->LB.LB_Fn = Zoltan_Octpart;
     zz->LB.Free_Structure = Zoltan_Oct_Free_Structure;
+    zz->LB.Copy_Structure = NULL;
     zz->LB.Point_Assign = NULL;
     zz->LB.Box_Assign = NULL;
 #else
@@ -96,6 +98,7 @@ int Zoltan_LB_Set_LB_Method(ZZ *zz, char *method_name)
     zz->LB.Method = PARMETIS;
     zz->LB.LB_Fn = Zoltan_ParMetis;
     zz->LB.Free_Structure = NULL;
+    zz->LB.Copy_Structure = NULL;
     zz->LB.Point_Assign = NULL;
     zz->LB.Box_Assign = NULL;
   }
@@ -103,6 +106,7 @@ int Zoltan_LB_Set_LB_Method(ZZ *zz, char *method_name)
     zz->LB.Method = JOSTLE;
     zz->LB.LB_Fn = Zoltan_Jostle;
     zz->LB.Free_Structure = NULL;
+    zz->LB.Copy_Structure = NULL;
     zz->LB.Point_Assign = NULL;
     zz->LB.Box_Assign = NULL;
   }
@@ -110,6 +114,7 @@ int Zoltan_LB_Set_LB_Method(ZZ *zz, char *method_name)
     zz->LB.Method = REFTREE;
     zz->LB.LB_Fn = Zoltan_Reftree_Part;
     zz->LB.Free_Structure = Zoltan_Reftree_Free_Structure;
+    zz->LB.Copy_Structure = NULL;
     zz->LB.Point_Assign = NULL;
     zz->LB.Box_Assign = NULL;
   }
@@ -117,6 +122,7 @@ int Zoltan_LB_Set_LB_Method(ZZ *zz, char *method_name)
     zz->LB.Method = RIB;
     zz->LB.LB_Fn = Zoltan_RIB;
     zz->LB.Free_Structure = Zoltan_RIB_Free_Structure;
+    zz->LB.Copy_Structure = Zoltan_RIB_Copy_Structure;
     zz->LB.Point_Assign = Zoltan_RB_Point_Assign;
     zz->LB.Box_Assign = Zoltan_RB_Box_Assign;
   }
@@ -124,6 +130,7 @@ int Zoltan_LB_Set_LB_Method(ZZ *zz, char *method_name)
     zz->LB.Method = HSFC;
     zz->LB.LB_Fn = Zoltan_HSFC;
     zz->LB.Free_Structure = Zoltan_HSFC_Free_Structure;
+    zz->LB.Copy_Structure = Zoltan_HSFC_Copy_Structure;
     zz->LB.Point_Assign = Zoltan_HSFC_Point_Assign;
     zz->LB.Box_Assign = Zoltan_HSFC_Box_Assign;
   }
@@ -132,6 +139,7 @@ int Zoltan_LB_Set_LB_Method(ZZ *zz, char *method_name)
     zz->LB.Method = HG;
     zz->LB.LB_Fn = Zoltan_HG;
     zz->LB.Free_Structure = Zoltan_HG_Free_Structure;
+    zz->LB.Copy_Structure = NULL;
     zz->LB.Point_Assign = NULL;
     zz->LB.Box_Assign = NULL;
 #else
@@ -147,6 +155,7 @@ int Zoltan_LB_Set_LB_Method(ZZ *zz, char *method_name)
     zz->LB.Method = PHG;
     zz->LB.LB_Fn = Zoltan_PHG;
     zz->LB.Free_Structure = Zoltan_PHG_Free_Structure;
+    zz->LB.Copy_Structure = NULL;
     zz->LB.Point_Assign = NULL;
     zz->LB.Box_Assign = NULL;
 #else
@@ -162,6 +171,7 @@ int Zoltan_LB_Set_LB_Method(ZZ *zz, char *method_name)
     zz->LB.Method = PATOH;
     zz->LB.LB_Fn = Zoltan_HG;
     zz->LB.Free_Structure = Zoltan_HG_Free_Structure;
+    zz->LB.Copy_Structure = NULL;
     zz->LB.Point_Assign = NULL;
     zz->LB.Box_Assign = NULL;
 #else
@@ -176,6 +186,7 @@ int Zoltan_LB_Set_LB_Method(ZZ *zz, char *method_name)
     zz->LB.Method = NONE;
     zz->LB.LB_Fn = NULL;
     zz->LB.Free_Structure = NULL;
+    zz->LB.Copy_Structure = NULL;
     zz->LB.Point_Assign = NULL;
     zz->LB.Box_Assign = NULL;
   }
