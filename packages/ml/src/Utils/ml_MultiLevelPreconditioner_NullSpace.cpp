@@ -86,6 +86,9 @@ void MultiLevelPreconditioner::SetNullSpace()
   sprintf(parameter,"%snull space: type", Prefix_);
   string option = List_.get(parameter, "default vectors");
 
+  // to save time, the 1-level case will always use "default vectors"
+  if( NumLevels_ == 1 ) option = "default vectors";
+  
   // Null space can be obtained in 3 ways:
   // 1. default vectors, one constant vector for each physical unknown
   // 2. precomputed, the user is furnishing a pointer to a double vector,
@@ -291,6 +294,15 @@ void MultiLevelPreconditioner::SetNullSpace()
     exit( EXIT_FAILURE );
   }
   
+  // May need to scale the null space ??
+
+  sprintf(parameter,"%snull space: scaling", Prefix_);
+  double * NullSpaceScaling = List_.get(parameter, (double *)0);
+
+  if( NullSpaceScaling != 0 ) {
+    if( verbose_ ) cout << PrintMsg_ << "Scaling Null Space..." << endl;
+    ML_Aggregate_Scale_NullSpace(agg_,NullSpaceScaling,RowMatrix_->RowMatrixRowMap().NumMyElements());
+  } 
 }
 
 // ================================================ ====== ==== ==== == =
