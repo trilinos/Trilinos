@@ -100,12 +100,12 @@ int check(Epetra_CrsGraph& L, Epetra_CrsGraph& U, Ifpack_IlukGraph& LU,
   int NumMyPoints = Map.NumMyPoints();
 
   Epetra_CrsGraph A(Copy, Map, 5);
-  Epetra_CrsGraph L0(Copy, Map, 2);
-  Epetra_CrsGraph U0(Copy, Map, 2);
-  Epetra_CrsGraph L1(Copy, Map, 3);
-  Epetra_CrsGraph U1(Copy, Map, 3);
-  Epetra_CrsGraph L2(Copy, Map, 4);
-  Epetra_CrsGraph U2(Copy, Map, 4);
+  Epetra_CrsGraph L0(Copy, Map, Map, 2);
+  Epetra_CrsGraph U0(Copy, Map, Map, 2);
+  Epetra_CrsGraph L1(Copy, Map, Map, 3);
+  Epetra_CrsGraph U1(Copy, Map, Map, 3);
+  Epetra_CrsGraph L2(Copy, Map, Map, 4);
+  Epetra_CrsGraph U2(Copy, Map, Map, 4);
   
   // Add  rows one-at-a-time
 
@@ -346,27 +346,31 @@ int check(Epetra_CrsGraph& L, Epetra_CrsGraph& U, Ifpack_IlukGraph& LU,
 
   for (i=0; i<LU.NumMyRows(); i++) {
 
-    L.ExtractMyRowView(i, NumIndices, Indices);
-    L1.ExtractMyRowView(i, NumIndices1, Indices1);
+    assert(L.ExtractMyRowView(i, NumIndices, Indices)==0);
+    assert(L1.ExtractMyRowView(i, NumIndices1, Indices1)==0);
+    assert(NumIndices==NumIndices1);
     for (j=0; j<NumIndices1; j++) {
       if (debug &&(Indices[j]!=Indices1[j])) {
 	int MyPID = L.RowMap().Comm().MyPID();
 	cout << "Proc " << MyPID
-	     << "Indices["<< j <<"]  = " << Indices[j]
-	     << "Indices1["<< j <<"] = " << Indices1[j] << endl;
+	     << " Local Row = " << i
+	     << "  L.Indices["<< j <<"]  = " << Indices[j]
+	     << " L1.Indices["<< j <<"] = " << Indices1[j] << endl;
       }
       assert(Indices[j]==Indices1[j]);
     }
     Nout += (NumIndices-NumIndices1);
 
-    U.ExtractMyRowView(i, NumIndices, Indices);
-    U1.ExtractMyRowView(i, NumIndices1, Indices1);
+    assert(U.ExtractMyRowView(i, NumIndices, Indices)==0);
+    assert(U1.ExtractMyRowView(i, NumIndices1, Indices1)==0);
+    assert(NumIndices==NumIndices1);
     for (j=0; j<NumIndices1; j++)  {
       if (debug &&(Indices[j]!=Indices1[j])) {
 	int MyPID = L.RowMap().Comm().MyPID();
 	cout << "Proc " << MyPID
-	     << "Indices["<< j <<"]  = " << Indices[j]
-	     << "Indices1["<< j <<"] = " << Indices1[j] << endl;
+	     << " Local Row = " << i
+	     << "  U.Indices["<< j <<"]  = " << Indices[j]
+	     << " U1.Indices["<< j <<"] = " << Indices1[j] << endl;
       }
       assert(Indices[j]==Indices1[j]);
     }
