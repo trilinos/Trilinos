@@ -178,13 +178,14 @@ Epetra_Export::Epetra_Export( const Epetra_BlockMap &  SourceMap, const Epetra_B
     
     if (NumRemoteIDs_>0) RemoteLIDs_ = new int[NumRemoteIDs_]; // Allocate space for LIDs in target that are
     // going to get something from off-processor.
-    int * RemoteGIDs = 0; //Do will alloc memory for this object
-    int LenRemoteGIDs = 0;
+    char * cRemoteGIDs = 0; //Do will alloc memory for this object
+    int LenCRemoteGIDs = 0;
     ierr = Distor_->Do(reinterpret_cast<char *> (ExportGIDs), 
 		sizeof( int ),
-		LenRemoteGIDs,
-		reinterpret_cast<char *&> (RemoteGIDs));
+		LenCRemoteGIDs,
+		cRemoteGIDs);
     if (ierr) throw ReportError("Error in Epetra_Distributor.Do()", ierr);
+    int * RemoteGIDs = reinterpret_cast<int*>(cRemoteGIDs);
 
     // Remote IDs come in as GIDs, convert to LIDs
     for (i=0; i< NumRemoteIDs_; i++) {
@@ -194,7 +195,7 @@ Epetra_Export::Epetra_Export( const Epetra_BlockMap &  SourceMap, const Epetra_B
     }
 
     if (NumExportIDs_>0) delete [] ExportGIDs;
-    if (LenRemoteGIDs>0) delete [] RemoteGIDs;
+    if (LenCRemoteGIDs>0) delete [] cRemoteGIDs;
   }
   if (NumTargetIDs>0) delete [] TargetGIDs;
   if (NumSourceIDs>0) delete [] SourceGIDs;

@@ -183,6 +183,7 @@ int Epetra_BasicDirectory::Generate(const Epetra_BlockMap& Map)
   if (Map_NumMyElements>0) delete [] send_procs;
 
   int * export_elements = 0;
+  char * c_import_elements = 0;
   int * import_elements = 0;
   int len_import_elements = 0;
   int * ElementSizeList = 0;
@@ -209,7 +210,8 @@ int Epetra_BasicDirectory::Generate(const Epetra_BlockMap& Map)
   EPETRA_CHK_ERR(Distor->Do(reinterpret_cast<char *> (export_elements), 
 		  packetSize * sizeof( int ),
                   len_import_elements,
-		  reinterpret_cast<char *&> (import_elements) ));
+		  c_import_elements ));
+  import_elements = reinterpret_cast<int *>(c_import_elements);
   
   //bool MYPID = (Map.Comm().MyPID()==0);
   int curr_LID;
@@ -225,7 +227,7 @@ int Epetra_BasicDirectory::Generate(const Epetra_BlockMap& Map)
     if (!SizeIsConst_) SizeList_[ curr_LID ] = *ptr++;
   }
 
-  if (len_import_elements!=0) delete [] import_elements;
+  if (len_import_elements!=0) delete [] c_import_elements;
   if (export_elements!=0) delete [] export_elements;
   
   delete Distor;
@@ -340,6 +342,7 @@ int Epetra_BasicDirectory::GetDirectoryEntries( const Epetra_BlockMap& Map,
 						       Size_num_sends, Size_send_gids, Size_send_procs ));
 	
 	int * Size_exports = 0;
+	char * c_Size_imports = 0;
 	int * Size_imports = 0;
 	if (Size_num_sends>0) {
 	  Size_exports = new int[ 2 * Size_num_sends ];
@@ -358,7 +361,8 @@ int Epetra_BasicDirectory::GetDirectoryEntries( const Epetra_BlockMap& Map,
 	EPETRA_CHK_ERR(Size_Distor->Do( reinterpret_cast<char*> (Size_exports),
                                         2 * sizeof( int ),
                                         len_Size_imports,
-                                        reinterpret_cast<char*&> (Size_imports)));
+                                        c_Size_imports));
+	Size_imports = reinterpret_cast<int*>(c_Size_imports);
 	
 	for( i = 0; i < NumEntries; i++ )
 	  {
@@ -380,7 +384,7 @@ int Epetra_BasicDirectory::GetDirectoryEntries( const Epetra_BlockMap& Map,
 	if( Size_send_gids != 0 ) delete [] Size_send_gids;
 	if( Size_send_procs != 0 ) delete [] Size_send_procs;
 	
-	if( len_Size_imports != 0 ) delete [] Size_imports;
+	if( len_Size_imports != 0 ) delete [] c_Size_imports;
 	if( Size_exports != 0 ) delete [] Size_exports;
 	
 	delete Size_Distor;
@@ -442,6 +446,7 @@ int Epetra_BasicDirectory::GetDirectoryEntries( const Epetra_BlockMap& Map,
 
   int curr_LID;
   int * exports = 0;
+  char * c_imports = 0;
   int * imports = 0;
   int len_imports = 0;
   if (num_sends>0) {
@@ -463,7 +468,8 @@ int Epetra_BasicDirectory::GetDirectoryEntries( const Epetra_BlockMap& Map,
   EPETRA_CHK_ERR(Distor->Do(reinterpret_cast<char*> (exports),
                             PacketSize * sizeof( int ),
                             len_imports,
-                            reinterpret_cast<char*&> (imports)));
+                            c_imports));
+  imports = reinterpret_cast<int*>(c_imports);
 
   int * ptr = imports;
   for( i = 0; i < NumRecv; i++ ) {
@@ -480,7 +486,7 @@ int Epetra_BasicDirectory::GetDirectoryEntries( const Epetra_BlockMap& Map,
   if( send_gids ) delete [] send_gids;
   if( send_procs ) delete [] send_procs;
   
-  if( len_imports ) delete [] imports;
+  if( len_imports ) delete [] c_imports;
   if( exports ) delete [] exports;
 
   delete Distor;

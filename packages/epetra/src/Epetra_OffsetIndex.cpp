@@ -231,13 +231,15 @@ void Epetra_OffsetIndex::GenerateRemoteOffsets_( const Epetra_CrsGraph & SourceG
   }
 
   //Push to Target
+  char * cRecvArray = 0;
   int * RecvArray = 0;
   int RecvArraySize = 0;
   Distor.Do( reinterpret_cast<char *>(SourceArray),
              sizeof(int),
              Sizes,
              RecvArraySize,
-             reinterpret_cast<char *&>(RecvArray) );
+             cRecvArray );
+  RecvArray = reinterpret_cast<int*>(cRecvArray);
 
   //Construct RemoteOffsets
   if( NumRemote_ > 0 ) RemoteOffsets_ = new int*[NumRemote_];
@@ -264,7 +266,7 @@ void Epetra_OffsetIndex::GenerateRemoteOffsets_( const Epetra_CrsGraph & SourceG
   if( GlobalMaxNumIndices>0 ) delete [] Indices;
   if( Sizes ) delete [] Sizes;
   if( SourceArray ) delete [] SourceArray;
-  if( RecvArray ) delete [] RecvArray;
+  if( RecvArraySize ) delete [] cRecvArray;
 }
 
 //=============================================================================

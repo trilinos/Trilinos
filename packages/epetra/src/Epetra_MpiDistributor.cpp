@@ -454,7 +454,7 @@ int Epetra_MpiDistributor::ComputeSends_( int num_imports,
 
   int * proc_list = 0;
   int * import_objs = 0;
-  int * export_objs = 0;
+  char * c_export_objs = 0;
 
   if( num_imports > 0 )
   {
@@ -483,11 +483,12 @@ int Epetra_MpiDistributor::ComputeSends_( int num_imports,
     export_procs = 0;
   }
 
-  int len_export_objs = 0;
+  int len_c_export_objs = 0;
   assert(tmp_plan.Do(reinterpret_cast<char *> (import_objs), 
                      2 * sizeof( int ), 
-                     len_export_objs,
-                     reinterpret_cast<char *> (export_objs))==0);
+                     len_c_export_objs,
+                     c_export_objs)==0);
+  int * export_objs = reinterpret_cast<int *>(c_export_objs);
 
   for( i = 0; i < num_exports; i++ ) {
     export_ids[i] = export_objs[2*i];
@@ -496,7 +497,7 @@ int Epetra_MpiDistributor::ComputeSends_( int num_imports,
 
   if( proc_list != 0 ) delete [] proc_list;
   if( import_objs != 0 ) delete [] import_objs;
-  if( len_export_objs != 0 ) delete [] export_objs;
+  if( len_c_export_objs != 0 ) delete [] c_export_objs;
 
   return(0);
 
