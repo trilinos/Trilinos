@@ -628,16 +628,32 @@ static int rcb_fn(
     if (stats || (zz->Debug_Level >= ZOLTAN_DEBUG_ATIME)) 
       time2 = Zoltan_Time(zz->Timer);
 
-    if (!Zoltan_RB_find_median(
-                zz->Tflops_Special, coord, wgts, dotmark, dotnum, proc, 
-                fractionlo, local_comm, &valuehalf, first_guess, &(counters[0]),
-                nprocs, old_nprocs, proclower, old_nparts, 
-                wgtflag, rcbbox->lo[dim], rcbbox->hi[dim], 
-                weight[0], weightlo, weighthi,
-                dotlist, rectilinear_blocks)) {
-      ZOLTAN_PRINT_ERROR(proc, yo,"Error returned from Zoltan_RB_find_median.");
-      ierr = ZOLTAN_FATAL;
-      goto End;
+    if (wgtflag <= 1){
+      if (!Zoltan_RB_find_median(
+             zz->Tflops_Special, coord, wgts, dotmark, dotnum, proc, 
+             fractionlo, local_comm, &valuehalf, first_guess, &(counters[0]),
+             nprocs, old_nprocs, proclower, old_nparts, 
+             wgtflag, rcbbox->lo[dim], rcbbox->hi[dim], 
+             weight[0], weightlo, weighthi,
+             dotlist, rectilinear_blocks)) {
+        ZOLTAN_PRINT_ERROR(proc, yo,"Error returned from Zoltan_RB_find_median.");
+        ierr = ZOLTAN_FATAL;
+        goto End;
+      }
+    }
+    else {
+      if (Zoltan_RB_find_bisector(
+             zz->Tflops_Special, coord, wgts, dotmark, dotnum, proc, 
+             wgtflag, 1, &fractionlo, zz->LB.Imbalance_Tol, local_comm, 
+             &valuehalf, first_guess, counters,
+             nprocs, old_nprocs, proclower, old_nparts, 
+             wgtflag, rcbbox->lo[dim], rcbbox->hi[dim], 
+             weight, weightlo, weighthi,
+             dotlist, rectilinear_blocks) != ZOLTAN_OK) {
+        ZOLTAN_PRINT_ERROR(proc, yo,"Error returned from Zoltan_RB_find_bisector.");
+        ierr = ZOLTAN_FATAL;
+        goto End;
+      }
     }
 
     if (set)    /* set weight for current partition */
