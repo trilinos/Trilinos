@@ -36,6 +36,7 @@
 #include "NOX_Parameter_List.H"
 #include "NOX_Epetra_MatrixFree.H"
 #include "NOX_Epetra_FiniteDifference.H"
+#include "NOX_Epetra_FiniteDifferenceColoring.H"
 #include "NOX_Epetra_Operator.H"
 
 // External include files - linking to Aztec00 and Epetra in Trilinos
