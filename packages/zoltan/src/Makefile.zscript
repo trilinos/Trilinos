@@ -2,7 +2,6 @@ include /home/u/kddevin/code/Zoltan/Makefiles/Makefile.$(ZOLTAN_ARCH)
 
 
 zoltan:	
-	echo $(AR) $(RANLIB)
 	zoltan_script \
 	  '$(DEFS)' \
 	  '$(CC)' \
