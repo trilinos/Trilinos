@@ -26,10 +26,15 @@
 # ************************************************************************
 #@HEADER
 
-if HAVE_TEUCHOS_EXTENDED
-CONTAINERS_SUBDIR = Containers
-XML_SUBDIR = XML
-endif
-STANDARD_SUBDIRS = scripts BLAS DenseMatrix dyn_cast LAPACK ParameterList RefCountPtr Time Workspace
+EXEEXT = .exe
 
-SUBDIRS = $(STANDARD_SUBDIRS) $(CONTAINERS_SUBDIR) $(XML_SUBDIR)
+noinst_PROGRAMS = workspace_test
+
+workspace_test_SOURCES = $(srcdir)/cxx_main.cpp
+
+workspace_test_DEPENDENCIES = $(top_builddir)/src/libteuchos.a
+
+workspace_test_CXXFLAGS = -I$(top_srcdir)/src
+
+workspace_test_LDADD = -L$(top_builddir)/src \
+	$(top_builddir)/src/libteuchos.a $(FLIBS)

@@ -420,12 +420,12 @@ int main( int argc, char* argv[] ) {
 	catch( const std::exception &excpt ) {
 		if(verbose)
 			std::cerr << "*** Caught standard exception : " << excpt.what() << std::endl;
-		return -1;
+		return 1;
 	}
 	catch( ... ) {
 		if(verbose)
-			std::cerr << "*** Caught an unknow exception\n";
-		return -1;
+			std::cerr << "*** Caught an unknown exception\n";
+		return 1;
 	}
 
 	return 0;

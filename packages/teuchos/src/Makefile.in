@@ -124,7 +124,7 @@ am__libteuchos_a_SOURCES_DIST =  \
 	$(srcdir)/Teuchos_ScalarTraits.cpp \
 	$(srcdir)/Teuchos_TestForException.cpp \
 	$(srcdir)/Teuchos_Time.cpp $(srcdir)/Teuchos_TimeMonitor.cpp \
-	$(srcdir)/Teuchos_Utils.cpp \
+	$(srcdir)/Teuchos_Utils.cpp $(srcdir)/Teuchos_Workspace.cpp \
 	$(srcdir)/Teuchos_ExpatHandlerAdapter.cpp \
 	$(srcdir)/Teuchos_FileInputSource.cpp \
 	$(srcdir)/Teuchos_FileInputStream.cpp \
@@ -145,7 +145,8 @@ am__objects_1 = Teuchos_CommandLineProcessor.$(OBJEXT) \
 	Teuchos_ParameterList.$(OBJEXT) Teuchos_RefCountPtr.$(OBJEXT) \
 	Teuchos_ScalarTraits.$(OBJEXT) \
 	Teuchos_TestForException.$(OBJEXT) Teuchos_Time.$(OBJEXT) \
-	Teuchos_TimeMonitor.$(OBJEXT) Teuchos_Utils.$(OBJEXT)
+	Teuchos_TimeMonitor.$(OBJEXT) Teuchos_Utils.$(OBJEXT) \
+	Teuchos_Workspace.$(OBJEXT)
 am__objects_2 =
 @HAVE_MPI_TRUE@am__objects_3 = $(am__objects_2)
 am__objects_4 = Teuchos_ExpatHandlerAdapter.$(OBJEXT) \
@@ -188,6 +189,7 @@ am__depfiles_maybe = depfiles
 @AMDEP_TRUE@	./$(DEPDIR)/Teuchos_TimeMonitor.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/Teuchos_TreeBuildingXMLHandler.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/Teuchos_Utils.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/Teuchos_Workspace.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/Teuchos_XMLInputSource.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/Teuchos_XMLInputStream.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/Teuchos_XMLObject.Po \
@@ -230,8 +232,8 @@ am__include_HEADERS_DIST = $(srcdir)/Teuchos_any.hpp \
 	$(srcdir)/Teuchos_StandardMemberCompositionMacros.hpp \
 	$(srcdir)/Teuchos_TestForException.hpp \
 	$(srcdir)/Teuchos_Time.hpp $(srcdir)/Teuchos_TimeMonitor.hpp \
-	$(srcdir)/Teuchos_Utils.hpp $(srcdir)/Teuchos_Version.hpp \
-	$(srcdir)/Teuchos_Array.hpp \
+	$(srcdir)/Teuchos_Utils.hpp $(srcdir)/Teuchos_Workspace.hpp \
+	$(srcdir)/Teuchos_Version.hpp $(srcdir)/Teuchos_Array.hpp \
 	$(srcdir)/Teuchos_ExpatHandlerAdapter.hpp \
 	$(srcdir)/Teuchos_FileInputSource.hpp \
 	$(srcdir)/Teuchos_FileInputStream.hpp \
@@ -419,7 +421,8 @@ CORE_H = \
 	$(srcdir)/Teuchos_TestForException.hpp \
 	$(srcdir)/Teuchos_Time.hpp \
 	$(srcdir)/Teuchos_TimeMonitor.hpp \
-	$(srcdir)/Teuchos_Utils.hpp
+	$(srcdir)/Teuchos_Utils.hpp \
+	$(srcdir)/Teuchos_Workspace.hpp
 
 CORE = \
 	$(srcdir)/Teuchos_CommandLineProcessor.cpp \
@@ -434,7 +437,8 @@ CORE = \
 	$(srcdir)/Teuchos_TestForException.cpp \
 	$(srcdir)/Teuchos_Time.cpp \
 	$(srcdir)/Teuchos_TimeMonitor.cpp \
-	$(srcdir)/Teuchos_Utils.cpp
+	$(srcdir)/Teuchos_Utils.cpp \
+	$(srcdir)/Teuchos_Workspace.cpp
 
 EXTRA_EXTENDED_H = \
 	$(srcdir)/Teuchos_Array.hpp \
@@ -722,6 +726,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Teuchos_TimeMonitor.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Teuchos_TreeBuildingXMLHandler.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Teuchos_Utils.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Teuchos_Workspace.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Teuchos_XMLInputSource.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Teuchos_XMLInputStream.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Teuchos_XMLObject.Po@am__quote@
@@ -951,6 +956,22 @@ Teuchos_Utils.obj: $(srcdir)/Teuchos_Utils.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Teuchos_Utils.Po' tmpdepfile='$(DEPDIR)/Teuchos_Utils.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Teuchos_Utils.obj `if test -f '$(srcdir)/Teuchos_Utils.cpp'; then $(CYGPATH_W) '$(srcdir)/Teuchos_Utils.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Teuchos_Utils.cpp'; fi`
+
+Teuchos_Workspace.o: $(srcdir)/Teuchos_Workspace.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Teuchos_Workspace.o -MD -MP -MF "$(DEPDIR)/Teuchos_Workspace.Tpo" -c -o Teuchos_Workspace.o `test -f '$(srcdir)/Teuchos_Workspace.cpp' || echo '$(srcdir)/'`$(srcdir)/Teuchos_Workspace.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Teuchos_Workspace.Tpo" "$(DEPDIR)/Teuchos_Workspace.Po"; else rm -f "$(DEPDIR)/Teuchos_Workspace.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Teuchos_Workspace.cpp' object='Teuchos_Workspace.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Teuchos_Workspace.Po' tmpdepfile='$(DEPDIR)/Teuchos_Workspace.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Teuchos_Workspace.o `test -f '$(srcdir)/Teuchos_Workspace.cpp' || echo '$(srcdir)/'`$(srcdir)/Teuchos_Workspace.cpp
+
+Teuchos_Workspace.obj: $(srcdir)/Teuchos_Workspace.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Teuchos_Workspace.obj -MD -MP -MF "$(DEPDIR)/Teuchos_Workspace.Tpo" -c -o Teuchos_Workspace.obj `if test -f '$(srcdir)/Teuchos_Workspace.cpp'; then $(CYGPATH_W) '$(srcdir)/Teuchos_Workspace.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Teuchos_Workspace.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Teuchos_Workspace.Tpo" "$(DEPDIR)/Teuchos_Workspace.Po"; else rm -f "$(DEPDIR)/Teuchos_Workspace.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Teuchos_Workspace.cpp' object='Teuchos_Workspace.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Teuchos_Workspace.Po' tmpdepfile='$(DEPDIR)/Teuchos_Workspace.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Teuchos_Workspace.obj `if test -f '$(srcdir)/Teuchos_Workspace.cpp'; then $(CYGPATH_W) '$(srcdir)/Teuchos_Workspace.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Teuchos_Workspace.cpp'; fi`
 
 Teuchos_ExpatHandlerAdapter.o: $(srcdir)/Teuchos_ExpatHandlerAdapter.cpp
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Teuchos_ExpatHandlerAdapter.o -MD -MP -MF "$(DEPDIR)/Teuchos_ExpatHandlerAdapter.Tpo" -c -o Teuchos_ExpatHandlerAdapter.o `test -f '$(srcdir)/Teuchos_ExpatHandlerAdapter.cpp' || echo '$(srcdir)/'`$(srcdir)/Teuchos_ExpatHandlerAdapter.cpp; \

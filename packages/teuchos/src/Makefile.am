@@ -76,7 +76,8 @@ CORE_H = \
 	$(srcdir)/Teuchos_TestForException.hpp \
 	$(srcdir)/Teuchos_Time.hpp \
 	$(srcdir)/Teuchos_TimeMonitor.hpp \
-	$(srcdir)/Teuchos_Utils.hpp
+	$(srcdir)/Teuchos_Utils.hpp \
+	$(srcdir)/Teuchos_Workspace.hpp
 
 CORE = \
 	$(srcdir)/Teuchos_CommandLineProcessor.cpp \
@@ -91,7 +92,8 @@ CORE = \
 	$(srcdir)/Teuchos_TestForException.cpp \
 	$(srcdir)/Teuchos_Time.cpp \
 	$(srcdir)/Teuchos_TimeMonitor.cpp \
-	$(srcdir)/Teuchos_Utils.cpp
+	$(srcdir)/Teuchos_Utils.cpp \
+	$(srcdir)/Teuchos_Workspace.cpp
 
 EXTRA_EXTENDED_H = \
 	$(srcdir)/Teuchos_Array.hpp \

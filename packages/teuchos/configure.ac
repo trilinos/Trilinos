@@ -509,6 +509,7 @@ AC_CONFIG_FILES([
 		test/Time/Makefile
 		test/RefCountPtr/Makefile
 		test/XML/Makefile
+		test/Workspace/Makefile
 		test/scripts/Makefile
 		test/scripts/daily/Makefile
 		test/scripts/daily/serial/Makefile
