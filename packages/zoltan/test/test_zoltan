@@ -130,7 +130,7 @@ else
 endif
 
 # Set up log file
-if ( -e $logfile ) mv $logfile ${logfile}.old
+if ( -e $logfile ) /bin/mv $logfile ${logfile}.old
 echo "Tests run on `date`" > $logfile
 echo " " >> $logfile
 
@@ -153,7 +153,7 @@ if (! $no_chaco ) then
     endif
 
     # Save input file 
-    if (-e zdrive.inp ) mv zdrive.inp zdrive.inp.bak
+    if (-e zdrive.inp ) /bin/mv zdrive.inp zdrive.inp.bak
 
     # Loop over all methods
     foreach mtd ( $ch_methods )
@@ -174,7 +174,7 @@ if (! $no_chaco ) then
 
         # Check input file
         if (-e zdrive.inp.${mtd} ) then
-          cp zdrive.inp.${mtd} zdrive.inp
+          /bin/cp zdrive.inp.${mtd} zdrive.inp
     
           # Run the driver
           $run $np ../$zdrive
@@ -182,7 +182,7 @@ if (! $no_chaco ) then
           # Save and compare output files 
           @ i = 0
           while ( $i < $np )
-            mv ${ch_name[1]}.out.$np.$i  ${outdir}/${ch_name[1]}.$mtd.$np.$i
+            /bin/mv ${ch_name[1]}.out.$np.$i  ${outdir}/${ch_name[1]}.$mtd.$np.$i
             diff -c ${outdir}/${ch_name[1]}.$mtd.$np.$i ${answers}/${ch_name[1]}.$mtd.$np.$i >> ../$logfile
             if ( $status ) then 
               @ fail = 1
@@ -208,7 +208,7 @@ if (! $no_chaco ) then
     end # foreach method
 
     # Restore zdrive.inp
-    if (-e zdrive.inp.bak ) mv zdrive.inp.bak zdrive.inp
+    if (-e zdrive.inp.bak ) /bin/mv zdrive.inp.bak zdrive.inp
 
     # Shift arguments and return to original directory
     shift ch_name
@@ -245,7 +245,7 @@ if (! $no_nemesis ) then
     endif
 
     # Save input file 
-    if (-e zdrive.inp ) mv zdrive.inp zdrive.inp.bak
+    if (-e zdrive.inp ) /bin/mv zdrive.inp zdrive.inp.bak
 
     # Loop over all methods
     foreach mtd ( $nem_methods )
@@ -257,7 +257,7 @@ if (! $no_nemesis ) then
 
         # Check input file
         if (-e zdrive.inp.${mtd} ) then
-          cp zdrive.inp.${mtd} zdrive.inp
+          /bin/cp zdrive.inp.${mtd} zdrive.inp
     
           # Run the driver
           $run $np ../$zdrive
@@ -271,7 +271,7 @@ if (! $no_nemesis ) then
             else
                set pdir = pio_${pdirno}
             endif
-            mv ${pdir}/${nem_name[1]}-m${np}-r.par.out.$np.$i  ${outdir}/${nem_name[1]}.$mtd.$np.$i
+            /bin/mv ${pdir}/${nem_name[1]}-m${np}-r.par.out.$np.$i  ${outdir}/${nem_name[1]}.$mtd.$np.$i
             diff -c ${outdir}/${nem_name[1]}.$mtd.$np.$i ${answers}/${nem_name[1]}.$mtd.$np.$i >> ../$logfile
             if ( $status ) then 
               @ fail = 1
@@ -300,7 +300,7 @@ if (! $no_nemesis ) then
     end # foreach method
 
     # Restore zdrive.inp
-    if (-e zdrive.inp.bak ) mv zdrive.inp.bak zdrive.inp
+    if (-e zdrive.inp.bak ) /bin/mv zdrive.inp.bak zdrive.inp
 
     # Shift list arguments and return to original directory
     shift nem_name
