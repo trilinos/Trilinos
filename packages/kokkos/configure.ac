@@ -143,7 +143,7 @@ TAC_ARG_CHECK_MPI
 # Checks for header files - used in Kokkos_ConfigDefs.h 
 # ------------------------------------------------------------------------
 
-AC_CHECK_HEADERS([ctime sys/time.h time.h], [break],)
+AC_CHECK_HEADERS([sys/time.h time.h ctime], [break],)
 AC_CHECK_HEADERS([string string.h], [break],)
 AC_CHECK_HEADERS([cassert assert.h], [break],)
 AC_CHECK_HEADERS([iostream iostream.h], [break],)
