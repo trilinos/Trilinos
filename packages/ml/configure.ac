@@ -308,22 +308,22 @@ AM_CONDITIONAL(ML_BENCHMARKING, test "X$ac_cv_use_ml_benchmarking" != "Xno")
 #  AC_MSG_ERROR([[Cannot find cstdlib or stdlib.h.  ml requires at least one or the other.]])
 #fi
 
-TAC_ARG_WITH_PACKAGE(ml_metis, [Enable METIS support.  Note 1: METIS is a third party library.  As such, configure assumes that it has already been built.  Note 2: You must also specify the location of the METIS headers and libraries like so: configure --with-libs="<other libraries> -lmetis" --with-ldflags="-L<METIS-library-path>" and --with-incdirs="<METIS-include-path>".], ML_METIS, no)
+TAC_ARG_WITH_PACKAGE(ml_metis, [Enable METIS support.  METIS can be used to create aggregates using graph-decomposition algorithsm. Note 1: METIS is a third party library.  As such, configure assumes that it has already been built.  Note 2: You must also specify the location of headers and libraries like, for instance: configure --with-libs="<other libraries> -lmetis" --with-ldflags="-L<METIS-library-path>" and --with-incdirs="<METIS-include-path>".], ML_METIS, no)
 #
-TAC_ARG_WITH_PACKAGE(ml_parmetis2x, [Enable ParMETIS support, version 2.x.  Note
-1: ParMETIS is a third party library.  As such, configure assumes that it has
-already been built.  Note 2: You must also specify the location of the ParMETIS headers and libraries like so:  configure --with-libs="<other libraries> -lparmetis" --with-ldflags="-L<ParMETIS-library-path>" and --with-incdirs="-I<ParMETIS-include-directory>".], ML_PARMETIS_2x, no) 
+TAC_ARG_WITH_PACKAGE(ml_parmetis2x, [Enable ParMETIS support, version 2.x. See notes for --with-ml_metis.], ML_PARMETIS_2x, no) 
 #
-TAC_ARG_WITH_PACKAGE(ml_parmetis3x, [Enable ParMETIS support, version 3.x.  Note
-1: ParMETIS is a third party library.  As such, configure assumes that it has
-already been built.  Note 2: You must also specify the location of the ParMETIS headers and libraries like so:  configure --with-libs="<other libraries> -lparmetis" --with-ldflags="-L<METIS-library-path>" --with-incdirs="-I<ParMETIS-include-directory>". Note 3: You also need to specify --with-ml_metis, and the location of the METIS library (after that of the ParMETIS one).], ML_PARMETIS_3x, no) 
+TAC_ARG_WITH_PACKAGE(ml_parmetis3x, [Enable ParMETIS support, version 3.x. See notes for --with-ml_metis.], ML_PARMETIS_3x, no) 
 #
-TAC_ARG_WITH_PACKAGE(ml_amesos, [Enable AMESOS support.  Note 1: Amesos is a third party library (part of the Trilinos framework).  As such, configure assumes that it has already been built.  Note 2: You may need to specify the location of the Amesos headers and libraries like so: configure --with-libs="<other libraries> -lamesos" --with-ldflags="-L<Amesos-library-path>" and --with-incdirs="<Amesos-include-path>". Note 3: Amesos requires --with-ml_epetra], ML_AMESOS, no)
+TAC_ARG_WITH_PACKAGE(ml_amesos, [Enable AMESOS support. Amesos, a Trilinos package, can be used to interface ML with various direct solvers, such as SuperLU, MUMPS, UMFPACK, KLU, and other. Amesos requires --with-ml_epetra. See notes for --enable-ml_metis.], ML_AMESOS, no)
 #
-TAC_ARG_WITH_PACKAGE(ml_ifpack, [Enable IFPACK support.  Note 1: Ifpack is a third party library (part of the Trilinos framework).  As such, configure assumes that it has already been built.  Note 2: You may need to specify the location of the Ifpack headers and libraries like so: configure --with-libs="<other libraries> -lifpack" --with-ldflags="-L<Ifpack-library-path>" and --with-incdirs="<Ifpack-include-path>". Note 3: Ifpack requires --with-ml_epetra], ML_IFPACK, no)
+TAC_ARG_WITH_PACKAGE(ml_ifpack, [Enable IFPACK support. Ifpack, a Trilinos package, can provide incomplete factorization smoothers to ML. Ifpack requires --with-ml_epetra. See notes for --enable-ml_metis.], ML_IFPACK, no)
 #
-TAC_ARG_WITH_PACKAGE(ml_teuchos, [Enable TEUCHOS support.  Note 1: Ifpack is a third party library (part of the Trilinos framework).  As such, configure assumes that it has already been built.  Note 2: You may need to specify the location of the Teuchos headers and libraries like so: configure --with-libs="<other libraries> -lteuchos" --with-ldflags="-L<Ifpack-library-path>" and --with-incdirs="<teuchos-include-path>". Note 3: teuchos requires --with-ml_epetra], ML_TEUCHOS, no)
-
+TAC_ARG_WITH_PACKAGE(ml_teuchos, [Enable TEUCHOS support. Teuchos, a Trilinos package, is required by the class Epetra_ML_Preconditioner. Teuchos requires --with-ml_epetra. See notes for --enable-ml_metis.], ML_TEUCHOS, no)
+#
+TAC_ARG_WITH_PACKAGE(ml_anasazi, [Enable ANASAZI support. Anasazi, a Trilinos package, can be used for eigenvalue estimates. Anasazi requires --with-ml_epetra and --with-ml_teuchos.], ML_ANASAZI, no)
+#
+TAC_ARG_WITH_PACKAGE(ml_triutils, [Enable TRIUTILS support. Triutils, a Trilinos package, is used if some ML examples to construct the linear system. Triutils requires --with-ml_epetra.], ML_TRIUTILS, no)
+#
 AC_ARG_WITH(ml-64bit-integer,
 [AC_HELP_STRING([--with-ml-64bit-integer],[Support for 64-bit integers; required if ML used
 with MPSalsa.  Examples: --with-ml-64bit-integer="long long" for LINUX, TFLOP, IRIXN32"; --with-ml-64bit-integer="long" for IRIX64, ALPHA (Cplant)])],

@@ -969,33 +969,27 @@ Optional Packages:
                           Note 3: You also need to specify --with-ml_metis,
                           and the location of the METIS library (after that of
                           the ParMETIS one). (default is no)
-  --with-ml_amesos        Enable AMESOS support. Note 1: Amesos is a third
-                          party library (part of the Trilinos framework). As
-                          such, configure assumes that it has already been
-                          built. Note 2: You may need to specify the location
-                          of the Amesos headers and libraries like so:
-                          configure --with-libs="<other libraries> -lamesos"
-                          --with-ldflags="-L<Amesos-library-path>" and
-                          --with-incdirs="<Amesos-include-path>". Note 3:
-                          Amesos requires --with-ml_epetra (default is no)
-  --with-ml_ifpack        Enable IFPACK support. Note 1: Ifpack is a third
-                          party library (part of the Trilinos framework). As
-                          such, configure assumes that it has already been
-                          built. Note 2: You may need to specify the location
-                          of the Ifpack headers and libraries like so:
-                          configure --with-libs="<other libraries> -lifpack"
-                          --with-ldflags="-L<Ifpack-library-path>" and
-                          --with-incdirs="<Ifpack-include-path>". Note 3:
-                          Ifpack requires --with-ml_epetra (default is no)
-  --with-ml_teuchos       Enable TEUCHOS support. Note 1: Ifpack is a third
-                          party library (part of the Trilinos framework). As
-                          such, configure assumes that it has already been
-                          built. Note 2: You may need to specify the location
-                          of the Teuchos headers and libraries like so:
-                          configure --with-libs="<other libraries> -lteuchos"
-                          --with-ldflags="-L<Ifpack-library-path>" and
-                          --with-incdirs="<teuchos-include-path>". Note 3:
-                          teuchos requires --with-ml_epetra (default is no)
+  --with-ml_amesos        Enable AMESOS support. Amesos, a Trilinos package,
+                          can be used to interface ML with various direct
+                          solvers, such as SuperLU, MUMPS, UMFPACK, KLU, and
+                          other. Amesos requires --with-ml_epetra. See notes
+                          for --enable-ml_metis. (default is no)
+  --with-ml_ifpack        Enable IFPACK support. Ifpack, a Trilinos package,
+                          can provide incomplete factorization smoothers to
+                          ML. Ifpack requires --with-ml_epetra. See notes for
+                          --enable-ml_metis. (default is no)
+  --with-ml_teuchos       Enable TEUCHOS support. Teuchos, a Trilinos package,
+                          is required by class Epetra_ML_Preconditioner.
+                          Teuchos requires --with-ml_epetra. See notes for
+                          --enable-ml_metis. (default is no)
+  --with-ml_anasazi       Enable ANASAZI support. Anasazi, a Trilinos package,
+                          can be used for eigenvalue estimates. Anasazi
+                          requires --with-ml_epetra and --with-ml_teuchos
+                          (default is no)
+  --with-ml_triutils      Enable TRIUTILS support. Triutils, a Trilinos
+                          package, is used if some ML examples to construct
+                          the linear system. Triutils requires
+                          --with-ml_epetra (default is no)
   --with-ml-64bit-integer Support for 64-bit integers; required if ML used
                           with MPSalsa. Examples:
                           --with-ml-64bit-integer="long long" for LINUX,
@@ -3625,7 +3619,7 @@ fi
 
 
 # Provide some information about the compiler.
-echo "$as_me:3628:" \
+echo "$as_me:3622:" \
      "checking for Fortran 77 compiler version" >&5
 ac_compiler=`set X $ac_compile; echo $2`
 { (eval echo "$as_me:$LINENO: \"$ac_compiler --version </dev/null >&5\"") >&5
@@ -6295,6 +6289,60 @@ else
 echo "${ECHO_T}no" >&6
 fi
 
+#
+
+
+# Check whether --with-ml_anasazi or --without-ml_anasazi was given.
+if test "${with_ml_anasazi+set}" = set; then
+  withval="$with_ml_anasazi"
+  ac_cv_use_ml_anasazi=$withval
+else
+  ac_cv_use_ml_anasazi=no
+fi;
+
+echo "$as_me:$LINENO: checking whether to use ml_anasazi" >&5
+echo $ECHO_N "checking whether to use ml_anasazi... $ECHO_C" >&6
+
+if test "X$ac_cv_use_ml_anasazi" != "Xno"; then
+  echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_ML_ANASAZI
+_ACEOF
+
+else
+  echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+fi
+
+#
+
+
+# Check whether --with-ml_triutils or --without-ml_triutils was given.
+if test "${with_ml_triutils+set}" = set; then
+  withval="$with_ml_triutils"
+  ac_cv_use_ml_triutils=$withval
+else
+  ac_cv_use_ml_triutils=no
+fi;
+
+echo "$as_me:$LINENO: checking whether to use ml_triutils" >&5
+echo $ECHO_N "checking whether to use ml_triutils... $ECHO_C" >&6
+
+if test "X$ac_cv_use_ml_triutils" != "Xno"; then
+  echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_ML_TRIUTILS
+_ACEOF
+
+else
+  echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+fi
+
 
 
 # Check whether --with-ml-64bit-integer or --without-ml-64bit-integer was given.
@@ -6456,7 +6504,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:6459: \"$ac_link\") >&5
+(eval echo $as_me:6507: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -6536,7 +6584,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:6539: \"$ac_link\") >&5
+(eval echo $as_me:6587: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -8967,7 +9015,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:8970: \"$ac_link\") >&5
+(eval echo $as_me:9018: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -9047,7 +9095,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:9050: \"$ac_link\") >&5
+(eval echo $as_me:9098: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
