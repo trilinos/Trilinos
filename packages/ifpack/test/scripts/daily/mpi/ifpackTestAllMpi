@@ -34,6 +34,17 @@
 # $2 - Indicates if the test is an automated nightly test.  No action required
 #      by script owner.
 
+## Some machines use a command different than mpirun to run mpi jobs.  The
+## test-harness.plx script sets the environment variable
+## "TRILINOS_TEST_HARNESS_MPIGO_COMMAND".  We test for
+## this value below.  If not set, we set it to a default value.
+
+set mpigo = `printenv TRILINOS_TEST_HARNESS_MPIGO_COMMAND`
+                                                                                  
+if ("$mpigo" == "") then
+    set mpigo = "mpirun -np "
+endif
+
 set error = None
 set AnError = False
 set printexitvalue
@@ -92,13 +103,13 @@ foreach f (CrsRiluk IlukGraph SetParameters)
 	foreach g(*.exe)
 		echo "############" $g "##############" >>& ../$file
 		if( "$2" == "True" ) then
-		    ( mpirun -np 3 $g > ../$file3 ) >>& ../$file4
+		    ( $mpigo 3 ./$g > ../$file3 ) >>& ../$file4
 		    if(! -z ../$file4 ) then
 		    # A test failed.
 			set AnError = True
 			echo "  ******** Test failed ********" >>& ../$file
 			echo "############" $g "##############" >>& ../$file2
-			mpirun -np 3 $g -v >>& ../$file2
+			$mpigo 3 ./$g -v >>& ../$file2
 			cat ../$file4 >> ../$file
 			rm -f ../$file4
 		    else
@@ -108,7 +119,7 @@ foreach f (CrsRiluk IlukGraph SetParameters)
 		    endif
 		else
 		# This is not an automated test.
-		    mpirun -np 3 $g -v >>& ../$file
+		    $mpigo 3 ./$g -v >>& ../$file
 		endif
 	end
 	cd ..
