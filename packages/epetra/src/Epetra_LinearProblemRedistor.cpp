@@ -267,6 +267,7 @@ int Epetra_LinearProblemRedistor::UpdateRedistProblemValues(Epetra_LinearProblem
 }
 
 //=========================================================================
+// NOTE: This method should be removed and replaced with calls to Epetra_Util_ExtractHbData()
 int Epetra_LinearProblemRedistor::ExtractHbData(int & M, int & N, int & nz, int * & ptr, 
 																								int * & ind, double * & val, int & Nrhs, 
 																								double * & rhs, int & ldrhs, 
@@ -306,6 +307,7 @@ int Epetra_LinearProblemRedistor::ExtractHbData(int & M, int & N, int & nz, int 
 		ptr_[0] = 0;
 		for (int i=0; i<M; i++) ptr_[i+1] = ptr_[i] + RedistGraph.NumMyIndices(i);
 	}
+	ptr = ptr_;
 	
   return(0);
 }

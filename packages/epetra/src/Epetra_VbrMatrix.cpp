@@ -1199,7 +1199,7 @@ int Epetra_VbrMatrix::ReplaceMatDiag(double * A, int LDA, int NumRows, int NumCo
 
   for (i=0; i<ndiags; i++) {
     ptr2 = A + i*LDA+i;
-    *ptr2++ = *ptr1;
+    *ptr2 = *ptr1++;
   }
   return(0);
 }
