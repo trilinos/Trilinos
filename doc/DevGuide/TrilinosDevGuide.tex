@@ -215,12 +215,12 @@ Libtool in the future).  However, use of these tools is not required.
 
 Package developers who are not currently using autotools, but would like
 to, can get a jump start by using a Trilinos package called 
-new_package.  This trivial package exists for one primary 
-purpose.  It walks a developer through the process of setting up a 
-package to configure and build using autotools.  General instructions for
-how to get started can be found in Trilinos/packages/new_package/README.  
-Please note that new_package is a work in progess, suggestions and 
-contributions are welcome, especially for FAQ's.
+``new\_package''.  This trivial package exists for one primary purpose.  
+It walks a developer through the process of setting up a package to 
+configure and build using autotools.  General instructions for how to get 
+started can be found in Trilinos/packages/new\_package/README.  Please note 
+that new\_package is a work in progess, suggestions and contributions are 
+welcome, especially for FAQ's.
 
 Trilinos provides a set of M4~\cite{M4} macros that can be used by any other
 package that wants to use Autoconf and Automake for configuring and
@@ -254,24 +254,24 @@ errors.  Integrating existing tests into the testharness is not difficult.
 The process is discussed in Trilinos/testharness/HowToAddToTestHarness.  
 Please note that this document is a work in progress.
 
-\subsection CVS Repository
+\subsection{CVS Repository}
 Trilinos source code is maintained in a CVS~\cite{CVS} repository.  It is 
 very easy to add new packages to the repository.  Packages that already use 
 CVS can even rettain their CVS history!  To access the repository, one must 
 have an account on software.sandia.gov.  Once an account has been granted, 
-set the following two environment variables (replace ``your_user_name'' 
+set the following two environment variables (replace ``your\_user\_name'' 
 with your user name on software):
 
 \begin{verbatim}
-CVSROOT :ext:your_user_name@software.sandia.gov:/space/CVS
-CVS_RSH ssh
+CVSROOT :ext:your\_user\_name@software.sandia.gov:/space/CVS
+CVS\_RSH ssh
 \end{verbatim}
 
 For those not familiar with CVS, below is a brief discussion covering some 
 of the most common CVS commands.  For more information, see the Gnu CVS Home
 Page~\cite{CVS}.
 
-\bullet Checking Out a Working Copy
+Checking Out a Working Copy
 
 To get started, checkout a copy of the development branch of the repository.
 (Releases branches can be obtained by by checking out the appropriate 
@@ -281,7 +281,7 @@ tagged version of the repository.)
 cvs checkout Trilinos
 \end{verbatim}
 
-\bullet Updating a Woring Copy
+Updating a Woring Copy
 To update after a version has been obtained use the ``update'' command.  
 First, cd to the directory that is to be updated (usually the Trilinos root 
 directory).  Then type:
@@ -303,7 +303,7 @@ option for every CVS update.
 
 ... Decide if this subsection is worth it, or if people should read the doc.  If eexpanded, add info about when to check in, and which branch...
 
-\subsection Bonsai
+\subsection{Bonsai}
 A lot of useful information related to CVS history is accessible via a
 web-based interface package called Bonsai~\cite{Bonsai}.  This tool can be 
 found on the web at ``http://software.sandia.gov/bonsai''.  Bonsai gives a 
@@ -315,7 +315,7 @@ change, or any combination of these criteria.  The entire revision histories of
 individual files returned in a search can be utilized in finding the source of 
 bugs.  The differences between any two versions of a file may be viewed.  
 
-\subsection Bugzilla
+\subsection{Bugzilla}
 
 Features and bug reports are tracked using Bugzilla~\cite{Bugzilla}.  Bugzilla 
 can be found on the web at ``http://software.sandia.gov/bugzilla''.  A 
@@ -337,7 +337,7 @@ should be submitted to Bugzilla to report a segmentation fault that occurs
 when using an existing Ifpack preconditioner, and a bug report should also be
 submitted to request a new Ifpack preconditioner.
 
-\subsection Mailman
+\subsection{Mailman}
 
 Email lists are maintained for Trilinos as a whole and for each package 
 through Mailman~\cite{Mailman}.  This tool can be found on the web at 
@@ -354,7 +354,7 @@ with the name of the package.  For example the list for Trilnos users is
 called Trilinos-Users and the email address is 
 \begin{verbatim}trilinos-users@software.sandia.gov\end{verbatim}.  The list 
 for Epetra users is called Epetra-Users and the associated email address is 
-\begin{verbatim}epetra_users@software.sandia.gov\end{verbatim}.
+\begin{verbatim}epetra-users@software.sandia.gov\end{verbatim}.
 
 TIP: While those who use Epetra (or any other Trilinos package) are also
 ``Trilinos users'', the lists are not set up to recognize this.  In other 
@@ -362,19 +362,19 @@ words, those who subscribe to the Epetra-Users mailing list do not necessarily
 form a subset of those who subscribe to the Trilinos-Users mailing list.  This 
 is also true of all other list types.  Keep this in mind when subscribing and 
 posting to lists.
-
-\bullet Trilinos-Announce 
+\begin{itemize}
+\item Trilinos-Announce 
 \begin{verbatim}trilinos-announce@software.sandia.gov\end{verbatim}
 
 All Trilinos release announcements and other major news.
 
-\bullet Trilinos-Checkins 
+\item Trilinos-Checkins 
 \begin{verbatim}trilinos-checkins@software.sandia.gov\end{verbatim}
 
 CVS commit log messages that are releated to Trilinos in general or packages 
 that have not had separate lists established.
 
-\bullet Trilinos-Developers 
+\item Trilinos-Developers 
 \begin{verbatim}trilinos-developers@software.sandia.gov\end{verbatim}
 
 All discussions releated to Trilinos-specific development (not specific to a 
@@ -384,22 +384,22 @@ should also be posted to this list (or to the appropriate package list).
 By doing this, the list archive can provide a record explaining why various 
 changes were made over time.
 
-\bullet Trilinos-regression 
+\item Trilinos-regression 
 \begin{verbatim}trilinos-regression@software.sandia.gov\end{verbatim}
 
 All regression test output that is not specific to a package. 
 
-\bullet Trilinos-Users 
+\item Trilinos-Users 
 \begin{verbatim}trilinos-users@software.sandia.gov\end{verbatim}
 
 List for Trilinos Users.  General discussions about the use of Trilinos.
 
-\bullet Trilinos-Leaders
+\item Trilinos-Leaders
 \begin{verbatim}trilinos-leaders@software.sandia.gov\end{verbatim}
 
 Mailing list for representatives for each Trilinos package.  There are no 
 leaders lists for individual packages.
-
+\end{itemize}
 
 All 
 tools are accessible from the main Trilinos website~\cite{Trilinos-home-page}.
@@ -435,7 +435,7 @@ other packages.
 	\section{Getting Started}
 	**(How to configure and build Trilinos)**
 	**(Need intro! - also include examples!)**
-\subsection Trilinos Configuration Options
+\subsection{Trilinos Configuration Options}
 
 The following options apply to all Trilinos packages unless 
 the option doesn't make sense for a particular package (for example, a 
@@ -446,117 +446,125 @@ are not included.  For options specific to individual package, 'cd' to the
 home directory of the source code of the individual package and type 
 ``configure --help'' (without quotes).
 
-\bullet Basic Options
+Basic Options
 
-\bullet --enable-debug 
+\begin{itemize}
+\item --enable-debug 
 
 (Nox only.)  This turns on compiler debugger flags. It has 
 not been fully tested. As an alternate, specify CXXFLAGS on the 
                  configure line.
 
-\bullet --enable-opt
+\item --enable-opt
 
 (Nox only.)  This turns on compiler optimization flags. It 
 has not been fully tested. As an alternate, specify CXXFLAGS on the 
                  configure line. 
 
-\bullet --with-cppflags 
+\item --with-cppflags 
 
 Specify additional preprocessor flags (e.g., "-Dflag -Idir") 
 
-\bullet --with-cxxflags 
+\item --with-cxxflags 
 
 Specify additional C++ flags 
 
-\bullet --with-ldflags 
+\item --with-ldflags 
+
 Specify additional linker flags (e.g., "-Ldir") 
 
-\bullet --with-ar 
+\item --with-ar 
+
 Specify a special archiver command, the default is "ar cru". 
+\end{itemize}
 
-\bullet Influential Environmental Variables
+ Influential Environmental Variables
 
-\bullet CC 
+\begin{itemize}
+\item CC 
 
 C compiler command.
 
-\bullet CFLAGS 
+\item CFLAGS 
 
 C compiler flags.
 
-\bullet CXX 
+\item CXX 
 
 C++ compiler command.
 
-\bullet CXXFLAGS 
+\item CXXFLAGS 
 
 C++ compiler flags.
 
-\bullet LDFLAGS 
+\item LDFLAGS 
 
 Specify linker flags.
 
-\bullet CPPFLAGS 
+\item CPPFLAGS 
 
 C/C++ preprocessor flags.
 
-\bullet CXXCPP 
+\item CXXCPP 
 
 C++ preprocessor.
 
-\bullet F77 
+\item F77 
 
 Fortran 77 compiler command.
 
-\bullet FFLAGS 
+\item FFLAGS 
 
 Fortran 77 compiler flags.
+\end{itemize}
 
-\bullet MPI-Related Options
+MPI-Related Options
 
-\bullet --enable-mpi 
+\begin{itemize}
+\item --enable-mpi 
 
-Enables MPI mode. Defines HAVE_MPI in the (Package)_Config.h file. Will test 
+Enables MPI mode. Defines HAVE\_MPI in the (Package)\_Config.h file. Will test 
 for the ability to preprocess the MPI header file and may test ability to link 
 with MPI.
 
-\bullet --with-mpi-cxx 
+\item --with-mpi-cxx 
 
 If no argument is specified, uses "mpiCC". Otherwise, uses specified MPI C++
 compiler. Automatically enables MPI mode. 
 
-\bullet --with-mpi=MPIROOT 
+\item --with-mpi=MPIROOT 
 
 Specify the MPI root directory. Automatically enables MPI mode. 
 
-\bullet --with-mpi-libs="LIBS" 
+\item --with-mpi-libs="LIBS" 
 
 Specify the MPI libraries. Defaults to "-lmpi" if either --with-mpi or 
 --with-mpi-libdir is specified.
 
-\bullet --with-mpi-incdir=DIR
+\item --with-mpi-incdir=DIR
 
 Specify the MPI include files location. Defaults to MPIROOT/include if 
 --with-mpi is specified. If multiple directories  must be specified, try 
 --with-cppflags="-I<dir1> -I<dir2>" instead.
 
-\bullet --with-mpi-libdir=DIR 
+\item --with-mpi-libdir=DIR 
 
 Specify the MPI libraries location. Defaults to MPIROOT/lib if --with-mpi 
 is specified. If multiple directories must be specified, try 
 --with-ldflags="-L<dir1> -L<dir2>" instead. 
 
-   Developer-Related Options
+Developer-Related Options
 
-\bullet --enable-maintainer-mode 
+\item --enable-maintainer-mode 
 
 Enable make rules and dependencies not useful (and sometimes confusing) to 
 the casual installer.
 
-\bullet Other important notes about the configure/build process.
+\item Other important notes about the configure/build process.
 
-\bullet Any code that links to Trilinos should define 'HAVE_CONFIG_H' (without
+\item Any code that links to Trilinos should define 'HAVE\_CONFIG\_H' (without
 quotes).
+\end{itemize}
 
 	\section{Interoperability Status for Existing Trilinos Packages}
 
