@@ -151,6 +151,7 @@ int main(int argc, char *argv[]) {
     else cout << "Error code: "<< ierr << endl;
 
   assert(ierr==0);
+  Epetra_BlockMap * Map3 = new Epetra_BlockMap(*Map);// A map to test the SameAs method later
 
   delete Map;
 
@@ -159,7 +160,7 @@ int main(int argc, char *argv[]) {
   int NumGlobalEquations = 0;
   for (i = 0; i<NumMyElements; i++) 
     {
-      ElementSizeList[i] = i%6+2; // blocksizes go from 2 to 7
+      ElementSizeList[i] = i%6+2; // elementsizes go from 2 to 7
       NumMyEquations += ElementSizeList[i];
     }
   ElementSize = 7; // Set to maximum for use in checkmap
@@ -188,6 +189,34 @@ int main(int argc, char *argv[]) {
 
   // Test Copy constructor
   Epetra_BlockMap * Map1 = new Epetra_BlockMap(*Map);
+
+  // Test SameAs() method
+  bool same = Map1->SameAs(*Map);
+  assert(same==true);// should return true since Map1 is a copy of Map
+
+  Epetra_BlockMap * Map2 = new Epetra_BlockMap(NumGlobalElements,NumMyElements,MyGlobalElements,ElementSizeList,IndexBase,Comm);
+  same = Map2->SameAs(*Map);
+  assert(same==true); // Map and Map2 were created with the same sets of parameters
+  delete Map2;
+
+  // now test SameAs() on some maps that are different
+
+  Map2 = new Epetra_BlockMap(NumGlobalElements,NumMyElements,MyGlobalElements,ElementSizeList,IndexBase-1,Comm);
+  same = Map2->SameAs(*Map);
+  assert(same==false); // IndexBases are different
+  delete Map2;
+
+  int *ElementSizeList1 = new int[NumMyElements];
+  for (i=0; i<NumMyElements; i++) ElementSizeList1[i] = i%5 + 2; // element sizes go from 2 to 6
+  Map2 = new Epetra_BlockMap(NumGlobalElements,NumMyElements,MyGlobalElements,ElementSizeList1,IndexBase,Comm);
+  same = Map2->SameAs(*Map);
+  assert(same==false); // ElementSizes are different
+  delete Map2;
+
+  same = Map3->SameAs(*Map);
+  assert(same==false); // Map3 saved from an earlier test
+  delete Map3;
+
 
   if (verbose) cout << "Checking Epetra_BlockMap(*Map)" << endl;
   ierr = checkmap(*Map1, NumGlobalElements, NumMyElements, MyGlobalElements, ElementSize, ElementSizeList,

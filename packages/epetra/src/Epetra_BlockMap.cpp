@@ -528,10 +528,12 @@ bool Epetra_BlockMap::SameAs(const Epetra_BlockMap & Map) const
     int MySameMap = 1; // Assume not needed
     if (NumMyElements_!=Map.NumMyElements()) MySameMap = 0;
     
-    if (MySameMap==1) 
-      for (int i=0; i<NumMyElements_; i++) 
+    if (MySameMap==1) {
+      for (int i=0; i<NumMyElements_; i++) {
 	if (GID(i) != Map.GID(i)) MySameMap = 0;
-
+	if (ElementSizeList_[i] != Map.ElementSizeList_[i]) MySameMap=0;
+      }
+    }
     // Now get min of MySameMap across all processors
 
     int GlobalSameMap = 0;
