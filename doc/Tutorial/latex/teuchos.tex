@@ -29,53 +29,378 @@
 \section{The Teuchos Utility Classes}
 \label{chap:teuchos}
 
-Teuchos is a collection of high-level C++ classes, meant to 
-help the development of scientific codes. Teuchos (pronounced
-``te-fos'') contains a large number of classes, and only a subset of
-them will be presented in this Chapter. For more details, we refer to
-the Teuchos documentation.
+Teuchos (pronounced ``te-fos'') is a collection of portable C++ tools
+that facilitate the development of scientific codes.  Only a few of the many
+tools in Teuchos are mentioned in this section.
+For more details on all of the capabilities provided by Teuchos, please 
+refer to the online documentation (\verb!http://software.sandia.gov/trilinos/packages/teuchos!).
 
-Teuchos classed have been divided between a "standard" build and an
-"extended" build. The "standard" build has shown to be a portable subset
-of the Teuchos tools and is built by default when Teuchos is enabled \newline
-(\verb!--enable-teuchos!). The "extended" build is also portable, but
-contains more special purpose tools like XML parsing and communicators
-(\verb!--enable-teuchos-extended!).
-
-Standard classes in the Teuchos namespace include low-level math
-functions (BLAS and LAPACK, thin layers of C++ code wrapping BLAS and
-LAPACK routines), serial dense matrix classes (for basic operations like
-addition, multiplication, scaling, logical comparison, norms, etc. This
-class also provides support for a dense matrix that needs to be
-replicated across processors in a parallel application), a parameters'
-list (ParameterList), a memory management class (RefCountPtr),
-performance monitoring classes (TimeMonitor and Flops),
-and exception handling macro (TEST\_FOR\_EXCEPTION).
-
-Extended classes include a templated array class
-(Array), XML utils ({XMLObject},
-{FileInputSource} and { StringInputSource}),
-and MPI wrappers (MPISession, MPIComm
-and ContainerComm).
+Teuchos classes have been divided between a``standard'' build and an
+``extended'' build. The ``standard'' build contains the general purpose
+templated tools like BLAS/LAPACK wrappers, parameter lists, a command-line parser,
+serial dense matrices, timers, flop counters, and a reference-counted pointer class.  
+These tools are built by default when Teuchos is enabled using the 
+configure option \verb!--enable-teuchos!. 
+The ``extended'' build contains more special purpose tools like 
+XML parsing and MPI communicators, which can be included in the Teuchos
+library by using the configure option \verb!--enable-teuchos-extended!.
 
 \medskip
 
-In this Chapter, we will present the following classes:
+In this Chapter, we will present the following ``standard'' build classes:
 \begin{itemize}
-\item \verb!Teuchos::ParameterList! class. ParameterList is a very handy
-  container, that can be used to group all the parameters required by a
-  given piece of code (in Section~\ref{sec:teuchos:ParameterList});
-\item \verb!Teuchos::RefCountPtr! class, a smart reference-counted
-  pointer class, which provides functionalities similar to the garbage
-  collector of Java (in Section~\ref{sec:teuchos:RefCountPtr});
-\item \verb!Teuchos::TimeMonitor! is briefly described in
-  Section~\ref{sec:teuchos:TimeMonitor};
-\item \verb!Teuchos::LAPACK! is introduced in
-  Section~\ref{sec:teuchos:LAPACK};
-\item \verb!Teuchos::CommandLineParser!, a parser for command line
-  options (detailed in Section~\ref{sec:teuchos:CLP}).
+
+\item \verb!Teuchos::ScalarTraits! class (Section~\ref{sec:teuchos:ScalarTraits}):
+  The ScalarTraits class provides a basic interface to scalar types (float, double, 
+  complex$<$float$>$, complex$<$double$>$) that is used by the templated computational
+  classes within Teuchos.  It is the mechanism by which Teuchos' capabilities 
+  can be extended to support arbitrary precisions.
+
+\item \verb!Teuchos::SerialDenseMatrix! class (Section~\ref{sec:teuchos:SDM}): 
+  The SerialDenseMatrix is a templated version of the \verb!Epetra_SerialDenseMatrix! class
+  that is most often used to interface with the templated BLAS/LAPACK wrappers.
+
+\item \verb!Teuchos::BLAS! class (Section~\ref{sec:teuchos:BLAS}):
+  The BLAS class provides templated wrappers
+  for the native BLAS library and can be extended to provide arbitrary precision
+  computations.  
+
+\item \verb!Teuchos::LAPACK! class (Section~\ref{sec:teuchos:LAPACK}):
+  The LAPACK class provides templated wrappers for the native LAPACK library.
+
+\item \verb!Teuchos::ParameterList! class (Section~\ref{sec:teuchos:ParameterList}):
+  ParameterList is a container that can be used to group all the parameters required by a
+  given piece of code.
+
+\item \verb!Teuchos::RefCountPtr! class (Section~\ref{sec:teuchos:RefCountPtr}):
+  RefCountPtr is a smart reference-counted pointer class, which provides a functionality
+  similar to the garbage collector of Java. 
+
+\item \verb!Teuchos::TimeMonitor! class (Section~\ref{sec:teuchos:TimeMonitor}):
+  TimeMonitor is a timing class that starts a timer when it is initialized and
+  stops it when the destructor is called on the class.
+
+\item \verb!Teuchos::CommandLineProcessor! class (Section~\ref{sec:teuchos:CLP}): 
+  CommandLineProcessor is a class that helps parse command line input arguments from 
+  \verb!(argc,argv[])!.   
 \end{itemize}
 
+%%%
+%%%
+%%%
+
+\subsection{Teuchos::ScalarTraits}
+\label{sec:teuchos:ScalarTraits}
+
+The ScalarTraits class provides a basic interface to scalar types (float, double, 
+complex$<$float$>$, complex$<$double$>$) that is used by the templated 
+computational classes within Teuchos.  This interface includes a definition of
+the magnitude type and methods for obtaining random numbers, representations of 
+zero and one, the square root, and machine-specific parameters.  
+The Teuchos classes that utilize this scalar traits mechanism are 
+\verb!Teuchos::SerialDenseMatrix!, \verb!Teuchos::BLAS!, and \verb!Teuchos::LAPACK!.  
+
+ScalarTraits enables the extension of Teuchos' computational
+capabilities to any scalar type that can support its basic interface.  In particular, 
+this interface can be used for arbitrary precision scalar types.  An interface to the
+arbitrary precision library ARPREC \cite{arprec:02} is available if Teuchos
+is configured with \verb!--enable-teuchos-arprec!. Teuchos must also be configured
+with the local ARPREC library paths (\verb!--with-libs!, \verb!--with-incdirs!, and 
+\verb!--with-libdirs!).  To obtain more information on ARPREC or download the 
+source code, see {\tt http://crd.lbl.gov/$\sim$dhbailey/mpdist/}.
+
+\begin{remark} To enable complex arithmetic (complex$<$float$>$ or complex$<$double$>$) 
+support in ScalarTraits or any dependent classes, configure Teuchos with {\tt --enable-teuchos-complex}.
+\end{remark}
+
+%%%
+%%%
+%%%
+
+\subsection{Teuchos::SerialDenseMatrix}
+\label{sec:teuchos:SDM}
+
+\verb!Teuchos::SerialDenseMatrix! is a templated version of the SerialDenseMatrix class in \verb!Epetra!
+(Chapter \ref{chap:epetra_mat}).  It is most useful for interfacing with the templated BLAS and 
+LAPACK wrappers, which will be discussed in Sections \ref{sec:teuchos:BLAS} and \ref{sec:teuchos:LAPACK}.  
+However, by enabling the simple construction and manipulation of small dense matrices, 
+the SerialDenseMatrix class has also been used as an independent tool in many 
+Trilinos packages.
+
+\verb!Teuchos::SerialDenseMatrix! provides a serial interface to a small dense matrix
+of templated scalar type.  This means a SerialDenseMatrix object can be created for any scalar type 
+supported by Teuchos::ScalarTraits (Section \ref{sec:teuchos:ScalarTraits}).  To use the 
+Teuchos::SerialDenseMatrix class, include the header:
+
+{\small 
+\begin{verbatim}
+#include "Teuchos_SerialDenseMatrix.hpp"
+\end{verbatim}}
+Creating a double-precision matrix can be done in several ways:
+{\small 
+\begin{verbatim}
+// Create an empty matrix with no dimension
+Teuchos::SerialDenseMatrix<int,double> Empty_Matrix;
+// Create an empty 3x4 matrix
+Teuchos::SerialDenseMatrix<int,double> My_Matrix( 3, 4 );
+// Basic copy of My_Matrix
+Teuchos::SerialDenseMatrix<int,double> My_Copy1( My_Matrix ),
+// (Deep) Copy of principle 3x3 submatrix of My_Matrix
+                  My_Copy2( Teuchos::Copy, My_Matrix, 3, 3 ),
+// (Shallow) Copy of 2x3 submatrix of My_Matrix
+                  My_Copy3( Teuchos::View, My_Matrix, 3, 4, 1, 1 );
+\end{verbatim}}
+The matrix dimensions and strided storage information can be obtained:
+{\small
+\begin{verbatim}
+int rows = My_Copy3.numRows();  // number of rows
+int cols = My_Copy3.numCols();  // number of columns
+int stride = My_Copy3.stride(); // storage stride
+\end{verbatim}}
+Matrices can change dimension:
+{\small
+\begin{verbatim}
+Empty_Matrix.size( 3, 3 );      // size non-dimensional matrices
+My_Matrix.resize( 3, 3 );       // resize matrices and save values
+\end{verbatim}}
+Filling matrices with numbers can be done in several ways:
+{\small 
+\begin{verbatim}
+My_Matrix.random();             // random numbers
+My_Copy1.putScalar( 1.0 );      // every entry is 1.0
+My_Copy2(1,1) = 10.0;           // individual element access
+Empty_Matrix = My_Matrix;       // copy My_Matrix to Empty_Matrix 
+\end{verbatim}}
+Basic matrix arithmetic can be performed:
+{\small
+\begin{verbatim}
+Teuchos::SerialDenseMatrix<int,double> My_Prod( 3, 2 );
+// Matrix multiplication ( My_Prod = 1.0*My_Matrix*My_Copy^T )
+My_Prod.multiply( Teuchos::NO_TRANS, Teuchos::TRANS, 
+                  1.0, My_Matrix, 1.0, My_Copy3, 0.0 );
+My_Copy2 += My_Matrix;         // Matrix addition
+My_Copy2.scale( 0.5 );         // Matrix scaling
+\end{verbatim}}
+The pointer to the array of matrix values can be obtained:
+{\small
+\begin{verbatim}
+double* My_Array = My_Matrix.values();   // pointer to matrix values
+double* My_Column = My_Matrix[2];        // pointer to third column values
+\end{verbatim}}
+The norm of a matrix can be computed:
+{\small
+\begin{verbatim}
+double norm_one = My_Array.normOne();        // one norm
+double norm_inf = My_Array.normInf();        // infinity norm
+double norm_fro = My_Array.normFrobenius();  // frobenius norm
+\end{verbatim}}
+Matrices can be compared:
+{\small
+\begin{verbatim}
+// Check if the matrices are equal in dimension and values
+if (Empty_Matrix == My_Matrix) {
+  cout<< "The matrices are the same!" <<endl;
+}
+// Check if the matrices are different in dimension or values
+if (My_Copy2 != My_Matrix) {
+  cout<< "The matrices are different!" <<endl;
+}
+\end{verbatim}}
+A matrix can be sent to the output stream:
+{\small
+\begin{verbatim}
+cout<< My_Matrix << endl;
+\end{verbatim}}
+This section presents examples of all the methods in the 
+{\tt Teuchos::SerialDenseMatrix} class and can be found in
+\TriExe{teuchos/ex1.cpp}.  There is also a specialization of
+this class for serial dense vectors that includes additional creation, accessor, 
+arithmetic, and norm methods ({\tt Teuchos::SerialDenseVector}).
+
+%%%
+%%%
+%%%
+
+\subsection{Teuchos::BLAS}
+\label{sec:teuchos:BLAS}
+
+The \verb!Teuchos::BLAS! class provides templated wrappers for the native BLAS library.
+This class has been written to facilitate the interface between C++ codes and BLAS,
+which are written in Fortran.  Unfortunately, the interface between C++ and Fortran
+function calls is not standard across all computer platforms.  The \verb!Teuchos::BLAS!
+class provides C++ wrappers the BLAS kernels that are specialized during the Teuchos
+configuration.  This insulates the rest of Teuchos and its users from the details of
+the Fortran to C++ translation.
+
+The \verb!Teuchos::BLAS! provides these C++ wrappers for a substantial subset of the 
+BLAS kernels (Figure \ref{blas_kernels}).
+The native BLAS library implementations of those kernels
+will be used for the standard scalar types (float, double, complex$<$float$>$, complex$<$double$>$).  
+However, \verb!Teuchos::BLAS! also has a
+templated version of each of these kernels.  Paired with \verb!Teuchos::ScalarTraits! 
+(Section \ref{sec:teuchos:ScalarTraits}), the \verb!Teuchos::BLAS! class can be extended 
+to provide arbitrary precision computations.  
+To use the \verb!Teuchos::BLAS! class, 
+include the header:
+{\small 
+\begin{verbatim}
+#include "Teuchos_BLAS.hpp"
+\end{verbatim}}
+Creating an instance of the BLAS class for double-precision kernels looks like:
+{\small 
+\begin{verbatim}
+Teuchos::BLAS<int, double> blas;
+\end{verbatim}}
+This instance provides the access to all the BLAS kernels listed in Figure \ref{blas_kernels}:
+{\small
+\begin{verbatim}
+const int n = 10;
+double alpha = 2.0;
+double x[ n ];
+for ( int i=0; i<n; i++ ) { x[i] = i; }
+blas.SCAL( n, alpha, x, 1 );
+int max_idx = blas.IAMAX( n, x, 1 );
+cout<< "The index of the maximum magnitude entry of x[] is : "
+    << max_idx << endl;
+\end{verbatim}}
+This is a small usage example, but its purpose is to illustrate that any of the supported 
+BLAS kernels is a method of the {\tt Teuchos::BLAS} class.  
+This example can be found in \TriExe{teuchos/ex2.cpp}.  
+
+\begin{figure}[hbt]\centerline{\small{
+\begin{tabular}{|l||l|}\hline
+\bf{BLAS Kernel} & \bf{Description} \\\hline\hline
+\_ROTG & Computes a Givens plane rotation \\\hline
+\_SCAL & Scale a vector by a constant \\\hline
+\_COPY & Copy one vector to another \\\hline
+\_AXPY & Add one scaled vector to another \\\hline
+\_ASUM & Sum the absolute values of the vector entries \\\hline
+\_DOT  & Compute the dot product of two vectors \\\hline
+\_NRM2 & Compute the 2-norm of a vector \\\hline
+\_IAMAX & Determine the index of the largest magnitude entry of a vector \\\hline
+\_GEMV & Add a scaled matrix-vector product to another scaled vector \\\hline
+\_TRMV & Replaces a vector with its upper/lower-triangular matrix-vector product \\\hline
+\_GER  & Updates a matrix with a scaled, rank-one outer product \\\hline
+\_GEMM & Add a scaled matrix-matrix product to another scaled matrix \\\hline
+\_SYMM & Add a scaled symmetric matrix-matrix product to another scaled matrix \\\hline
+\_TRMM & Add a scaled upper/lower-triangular matrix-matrix product to another scaled matrix \\\hline
+\_TRSM & Solves an upper/lower-triangular linear system with multiple right-hand sides \\\hline
+\end{tabular}}}
+\caption{BLAS kernels supported by Teuchos::BLAS}\label{blas_kernels}
+\end{figure}
+
+%%%
+%%%
+%%%
+
+\subsection{Teuchos::LAPACK}
+\label{sec:teuchos:LAPACK}
+
+The \verb!Teuchos::LAPACK! class provides templated wrappers for the native LAPACK library.
+This class has been written to facilitate the interface between C++ codes and BLAS,
+which are written in Fortran.  Unfortunately, the interface between C++ and Fortran
+function calls is not standard across all computer platforms.  The \verb!Teuchos::LAPACK!
+class provides C++ wrappers the LAPACK routines that are specialized during the Teuchos
+configuration.  This insulates the rest of Teuchos and its users from the details of
+the Fortran to C++ translation.
+
+\verb!Teuchos::LAPACK! is a serial interface only, as LAPACK functions
+are. Users interested in the parallel counterpart of LAPACK, ScaLAPACK,
+can use the Amesos package; see Chapter~\ref{chap:amesos}.
+
+The \verb!Teuchos::LAPACK! provides these C++ wrappers for a substantial subset of the 
+LAPACK routines (Figure \ref{lapack_routines}).
+The native LAPACK library implementations of those kernels
+will be used for the standard scalar types (float, double, complex$<$float$>$, complex$<$double$>$).  
+\verb!Teuchos::LAPACK! does not have a templated version of these routines at this time, unlike
+\verb!Teuchos::BLAS!, so it cannot offer arbitrary precision computations.
+
+To use the \verb!Teuchos::LAPACK! class, include the header:
+{\small 
+\begin{verbatim}
+#include "Teuchos_LAPACK.hpp"
+\end{verbatim}}
+Creating an instance of the LAPACK class for double-precision routines looks like:
+{\small 
+\begin{verbatim}
+Teuchos::LAPACK<int, double> lapack;
+\end{verbatim}}
+This instance provides the access to all the LAPACK routines listed in Figure \ref{lapack_routines}:
+{\small
+\begin{verbatim}
+Teuchos::SerialDenseMatrix<int,double> My_Matrix(4,4);
+Teuchos::SerialDenseVector<int,double> My_Vector(4);
+My_Matrix.random();
+My_Vector.random();
+
+// Perform an LU factorization of this matrix. 
+int ipiv[4], info;
+lapack.GETRF( 4, 4, My_Matrix.values(), My_Matrix.stride(), ipiv, &info ); 
+
+// Solve the linear system.
+lapack.GETRS( Teuchos::NO_TRANS, 4, 1, My_Matrix.values(), 
+              My_Matrix.stride(), ipiv, My_Vector.values(), 
+              My_Vector.stride(), &info );
+\end{verbatim}}
+
+This small example illustrates how easy it is to use the {\tt Teuchos::LAPACK}
+class.  Furthermore, it also exhibits the compatibility of the {\tt Teuchos::SerialDenseMatrix} 
+and {\tt Teuchos::SerialDenseVector} classes with the {\tt Teuchos::LAPACK} class.  
+This example can be found in \TriExe{teuchos/ex3.cpp}.  
+
+\begin{figure}[hbt]\centerline{\footnotesize{
+\begin{tabular}{|l||l|}\hline
+\bf{LAPACK Routine} & \bf{Description} \\\hline\hline
+\_POTRF & Computes Cholesky factorization of a real symmetric positive definite (SPD) matrix. \\\hline
+\_POTRS & Solves a system of linear equations where the matrix has been factored by POTRF. \\\hline
+\_POTRI & Computes the inverse of a real SPD matrix after its been factored by POTRF. \\\hline
+\_POCON & Estimates the reciprocal of the condition number (1-norm) of a real SPD matrix \\
+ & after its been factored by POTRF. \\\hline
+\_POSV  & Computes the solution to a real system of linear equations where the matrix is SPD. \\\hline
+\_POEQU & Computes row and column scaling or equilibrating a SPD matrix and reduce \\
+ & its condition number. \\\hline
+\_PORFS & Improves the computed solution to a system of linear equations where the matrix is SPD. \\\hline
+\_POSVX & Expert SPD driver:  Uses POTRF/POTRS to compute the solution to a real system of \\
+ & linear equations where the matrix is SPD.  The system can be equilibrated (POEQU) or \\
+ & iteratively refined (PORFS) also.\\\hline
+\_GELS & Solves and over/underdetermined real linear system. \\\hline
+\_GETRF & Computes an LU factorization of a general matrix using partial pivoting. \\\hline
+\_GETRS & Solves a system of linear equations using the LU factorization computed by GETRF. \\\hline
+\_GETRI & Computes the inverse of a matrix using the LU factorization computed by GETRF. \\\hline
+\_GECON & Estimates the reciprocal of the condition number of a general matrix in either \\
+ & the 1-norm or $\infty$-norm using the LU factorization computed by GETRF. \\\hline
+\_GESV  & Computes the solution of a linear system of equations. \\\hline
+\_GEEQU & Computes row and column scaling for equilibrating a linear system, reducing its \\
+ & condition number. \\\hline
+\_GERFS & Improves the computes solution to a system of linear equations and provides error \\
+ & bounds and backward error estimates for the solution [ Use after GETRF/GETRS ].\\\hline
+\_GESVX & Expert driver:  Uses GETRF/GETRS to compute the solution to a real system of linear \\
+ & equations, returning error bounds on the solution and a condition estimate. \\\hline
+\_GEHRD & Reduces a real general matrix to upper Hessenber form by orthogonal similarity \\
+ & transformations \\\hline
+\_HSEQR & Compute the eigenvalues of a real upper Hessenberg matrix and, optionally, the \\
+ & Schur decomposition. \\\hline
+\_GEES & Computes the real Schur form, eigenvalues, and Schur vectors of a real nonsymmetric \\
+ & matrix. \\\hline
+\_GEEV & Computes the eigenvalues and, optionally, the left and/or right eigenvectors \\
+ & of a real nonsymmetric matrix. \\\hline
+\_ORGHR & Generates a real orthogonal matrix which is the product of the elementary reflectors \\
+ & computed by GEHRD. \\\hline
+\_ORMHR & Overwrites the general real matrix with the product of itself and the elementary \\
+ & reflectors computed by GEHRD. \\\hline
+\_TREVC & Computes some or all of the right and/or left eigenvectors of a real upper \\
+ & quasi-triangular matrix. \\\hline
+\_TREXC & Reorders the real Schur factorization of a real matrix via orthogonal similarity \\
+ & transformations. \\\hline
+\_LARND & Returns a random number from a uniform or normal distribution. \\\hline
+\_LARNV & Returns a vector of random numbers from a chosen distribution. \\\hline
+\_LAMCH & Determines machine parameters for floating point characteristics. \\\hline
+\_LAPY2 & Computes $x^2$ + $y^2$ safely, to avoid overflow. \\\hline
+\end{tabular}}}
+\caption{LAPACK routines supported by Teuchos::LAPACK}\label{lapack_routines}
+\end{figure}
+
+\clearpage
 %%%
 %%%
 %%%
@@ -289,50 +614,10 @@ TimeMonitor::summarize();
 %%%
 %%%
 
-\subsection{Teuchos::LAPACK}
-\label{sec:teuchos:LAPACK}
-
-\verb!Teuchos::LAPACK! is a wrapper to LAPACK routines. This class has
-been written to facilitate the interface between C++ codes and LAPACK,
-written in Fortran. Unfortunately, the interface between C++ and Fortran
-is not standard across all computer platforms. The Teuchos::LAPACK class
-provides C++ wrappers for the LAPACK kernels in order to insulate the
-rest of Teuchos from the details of C++ to Fortran translation.
-
-\verb!Teuchos::LAPACK! is a serial interface only, as LAPACK functions
-are. Users interested in the parallel counterpart of LAPACK, ScaLAPACK,
-can use the Amesos package; see Chapter~\ref{chap:amesos}.
-
-\verb!Teuchos::LAPACK! is a templated class for float, double and
-complex arithmetics (the latter only available if Teuchos has been
-configured with \verb!--enable-teuchos-complex!).  Note: These templates
-are specialized to use the Fortran LAPACK routines for scalar types
-float and double.
-
-A very basic example is reported in file \TriExe{teuchos/ex2.cpp}. The
-file defines a dense matrix and a dense vector (locally on the calling
-process)  as
-\begin{verbatim}
-Teuchos::SerialDenseMatrix<int,float> Matrix(4,4);
-Teuchos::SerialDenseVector<int,float> Vector(4);
-\end{verbatim}
-and populate them using method \verb!random()!. Then, after set up of
-LAPACK parameters, it invokes GETRF:
-\begin{verbatim}
-int ipiv[4], info;
-Teuchos::LAPACK<int,float> L;
-L.GETRF(4,4,Matrix.values(),4,ipiv,&info); 
-cout << Matrix;
-\end{verbatim}
-
-%%%
-%%%
-%%%
-
-\subsection{Teuchos::CommandLineParser}
+\subsection{Teuchos::CommandLineProcessor}
 \label{sec:teuchos:CLP}
 
-\verb!Teuchos::CommandLineParser! is a class that helps to parse command
+\verb!Teuchos::CommandLineProcessor! is a class that helps to parse command
 line input arguments and set runtime options. An example of use can be
 found in \TriExe{teuchos/ex3.cpp}, and it is detailed here.
 
@@ -389,42 +674,42 @@ Usage: ./ex3.exe [options]
 %%%
 %%%
 
-\subsection{Teuchos::XMLObject}
-\label{sec:teuchos:XML}
+%\subsection{Teuchos::XMLObject}
+%\label{sec:teuchos:XML}
 
-Teuchos contains few classes to parse a subset of the XML syntax. Users
-can easily create XML objects, as reported in file
-\TriExe{teuchos/ex4.cpp}. 
-As internal data, XML objects can be view as an alternative the
-Teuchos::ParameterList. Another use of XML parser is to read input file.
+%Teuchos contains few classes to parse a subset of the XML syntax. Users
+%can easily create XML objects, as reported in file
+%\TriExe{teuchos/ex4.cpp}. 
+%As internal data, XML objects can be view as an alternative the
+%Teuchos::ParameterList. Another use of XML parser is to read input file.
 
-Let us start from the definition of an internal XML object to setup a
-linear system solver:
-\begin{verbatim}
-XMLObject solver("solver");
-XMLObject prec("preconditioner");
+%Let us start from the definition of an internal XML object to setup a
+%linear system solver:
+%\begin{verbatim}
+%XMLObject solver("solver");
+%XMLObject prec("preconditioner");
 
-solver.addAttribute("krylov method", "gmres");
-solver.addInt("iterations", 1000);
-solver.addDouble("tolerance", 1.0e-10);
+%solver.addAttribute("krylov method", "gmres");
+%solver.addInt("iterations", 1000);
+%solver.addDouble("tolerance", 1.0e-10);
 
-solver.addChild(prec);
-prec.addAttribute("type", "smoothed aggregation");
-prec.addInt("max levels", 4);
-\end{verbatim}
-The content of the XML object can be printed out as
-\begin{verbatim}
-string str = solver.toString();
-cout << str << endl;
-\end{verbatim}
-An XML object can be queries using a variety of methods, like
-\verb!hasAttribute()!, \verb!getAttribute()!, \verb!getRequiredInt()!,
-\verb!getRequiredDouble()!, \verb!getChild()!.
+%solver.addChild(prec);
+%prec.addAttribute("type", "smoothed aggregation");
+%prec.addInt("max levels", 4);
+%\end{verbatim}
+%The content of the XML object can be printed out as
+%\begin{verbatim}
+%string str = solver.toString();
+%cout << str << endl;
+%\end{verbatim}
+%An XML object can be queries using a variety of methods, like
+%\verb!hasAttribute()!, \verb!getAttribute()!, \verb!getRequiredInt()!,
+%\verb!getRequiredDouble()!, \verb!getChild()!.
 
-XML can be read from file in the following way. This example, reported
-in file \TriExe{teuchos/ex5.cpp}, requires option \verb!--with-expat!.
+%XML can be read from file in the following way. This example, reported
+%in file \TriExe{teuchos/ex5.cpp}, requires option \verb!--with-expat!.
 
-\begin{remark}
-  \verb!Teuchos::StrUtils! is another class offered by Teuchos to read
-  ASCII files.
-\end{remark}
+%\begin{remark}
+%  \verb!Teuchos::StrUtils! is another class offered by Teuchos to read
+%  ASCII files.
+%\end{remark}
