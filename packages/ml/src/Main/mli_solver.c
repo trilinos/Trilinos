@@ -168,7 +168,6 @@ int MLI_CSRExchBdry(double *vec, void *obj)
 int MLI_CSRMatVec(void *obj, int leng1, double p[], int leng2, double ap[])
 {
     MLI_Context    *context;
-    MPI_Comm       comm;
     MLI_CSRMatrix  *Amat;
 
     int    i, j, length, nRows, ibeg, iend, k;
@@ -177,7 +176,6 @@ int MLI_CSRMatVec(void *obj, int leng1, double p[], int leng2, double ap[])
     double *values;
 
     context = (MLI_Context *) obj;
-    comm    = context->comm;
     Amat    = (MLI_CSRMatrix*) context->Amat;
     nRows = Amat->Nrows;
     rowptr  = Amat->rowptr;

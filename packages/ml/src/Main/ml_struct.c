@@ -3494,7 +3494,7 @@ int ML_Solve_ProjectedAMGV( ML *ml , double *din, double *dout)
       /* see man page for description of arguments */
       MLFORTRAN(dgetrf)(&dimV,&dimV,VAV,&dimV,pivots,&info);
       if (info < 0) {
-        printf("ML_Solve_ProjectedAMGV: %dth argument to dgetrf has ");
+        printf("ML_Solve_ProjectedAMGV: %dth argument to dgetrf has ",-info);
         printf("illegal value\n");
         abort();
       }
@@ -3504,7 +3504,7 @@ int ML_Solve_ProjectedAMGV( ML *ml , double *din, double *dout)
         abort();
       }
 
-      Amat->subspace->VAVdone == 1;
+      Amat->subspace->VAVdone = 1;
 
    } /* if Amat->subspace->VAVdone == 0 */
 
@@ -3520,7 +3520,7 @@ int ML_Solve_ProjectedAMGV( ML *ml , double *din, double *dout)
    strcpy(trans,"N");
    MLFORTRAN(dgetrs)(trans,&dimV,&nrhs,VAV,&dimV,pivots,rhs,&dimV,&info,itmp);
    if (info < 0) {
-     printf("ML_Solve_ProjectedAMGV: %dth argument to dgetrs has ");
+     printf("ML_Solve_ProjectedAMGV: %dth argument to dgetrs has ",-info);
      printf("illegal value\n");
      abort();
    }
@@ -3576,7 +3576,7 @@ int ML_Solve_ProjectedAMGV( ML *ml , double *din, double *dout)
    /* see man page for description of arguments */
    MLFORTRAN(dgetrs)(trans,&dimV,&nrhs,VAV,&dimV,pivots,rhs,&dimV,&info,itmp);
    if (info < 0) {
-     printf("ML_Solve_ProjectedAMGV: %dth argument to dgetrs has ");
+     printf("ML_Solve_ProjectedAMGV: %dth argument to dgetrs has ",-info);
      printf("illegal value\n");
      abort();
    }

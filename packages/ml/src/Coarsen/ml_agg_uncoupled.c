@@ -805,7 +805,10 @@ int ML_Aggregate_CoarsenUncoupledCore(ML_Aggregate *ml_ag, ML_Comm *comm,
    int     *aggr_stat, ordering;
    double  printflag;
    int     *randomVector, aggr_cnt_leng, *aggr_cnt_array;
-   int     min_nodes_per_aggregate, max_neigh_selected, attach_scheme;
+   int     min_nodes_per_aggregate, max_neigh_selected;
+#ifndef newstuff
+   int     attach_scheme;
+#endif
    ML_Node       *node_head=NULL, *node_tail=NULL, *new_node=NULL;
    ML_SuperNode  *aggr_head=NULL, *aggr_curr=NULL, *supernode=NULL;
 #define newstuff
@@ -821,7 +824,9 @@ int ML_Aggregate_CoarsenUncoupledCore(ML_Aggregate *ml_ag, ML_Comm *comm,
    min_nodes_per_aggregate = ml_ag->min_nodes_per_aggregate;
    max_neigh_selected      = ml_ag->max_neigh_already_selected;
    ordering                = ml_ag->ordering;
+#ifndef newstuff
    attach_scheme           = ml_ag->attach_scheme;
+#endif
    printflag               = ml_ag->print_flag;
    Nrows                   = mat_indx[0] - 1;
 

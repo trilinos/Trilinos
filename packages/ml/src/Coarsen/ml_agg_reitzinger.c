@@ -637,7 +637,9 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
      /* MG grid hierarchy.                                               */
      /*------------------------------------------------------------------*/
    
+#ifdef NEW_T_PE
      Nnondirichlet = Pe->invec_leng - Npos_dirichlet - Nneg_dirichlet;
+#endif
      for (i = 0; i < Pe->outvec_leng ; i++) {
 #ifdef NEW_T_PE
        if (encoded_dir_node[i] > 0) {
@@ -950,7 +952,7 @@ int ML_Gen_SmoothPnodal(ML *ml,int level, int clevel, void *data,
 			   ML_Operator *SPn_mat)
 
 {
-  int         Ncoarse, Nfine;
+   int         Nfine;
    double      max_eigen = -1.;
    ML_Operator *Amat, *Pmatrix = NULL, *AGGsmoother = NULL;
    struct      ML_AGG_Matrix_Context widget;
@@ -962,7 +964,6 @@ int ML_Gen_SmoothPnodal(ML *ml,int level, int clevel, void *data,
    Nfine    = Amat->outvec_leng;
    Pmatrix =  &(ml->Pmat[clevel]);
 
-   Ncoarse = Pmatrix->invec_leng;
 
    kdata = ML_Krylov_Create( ml->comm );
    ML_Krylov_Set_PrintFreq( kdata, 0 );
@@ -1137,7 +1138,7 @@ int ml_leastsq_edge_interp(ML_Operator *Pn_mat, ML_Operator *SPn_mat,
   double thesign;
   int left,leftagg, right, rightagg;
   int coef_count, coef_cols[100], jcoef_count, k;
-  double alpha0, beta0, alpha_m, beta_m, coef_vals[100];
+  double alpha0, beta_m, coef_vals[100];
   int Trowcount = 0, Tnzcount = 0, Pnzcount = 0;
   int *SPn_columns, *SPn_rowptr, *Tfine_columns, *Pn_columns, *Pn_rowptr;
   int *Tfine_rowptr;
@@ -1280,7 +1281,7 @@ int ml_leastsq_edge_interp(ML_Operator *Pn_mat, ML_Operator *SPn_mat,
 	      coef_vals[coef_count++] = SPn_values[j];
 	    }
 	    }
-        else beta0 = SPn_values[j];
+        /* else beta0 = SPn_values[j]; */
       }
 
       ml_comp_Pe_entries(coef_cols, coef_vals, coef_count, leftagg, 
@@ -1289,20 +1290,25 @@ int ml_leastsq_edge_interp(ML_Operator *Pn_mat, ML_Operator *SPn_mat,
 	coef_count = 0;
       }
       else {
-	alpha_m = 0.; alpha0 = 0.;
-	beta_m = 0.; beta0 = 0.;
+	/* alpha_m = 0.; */ alpha0 = 0.;
+	beta_m = 0.; /* beta0 = 0.; */
 	/* case 2 */
 
 	/* copy alpha into coef */
 
 	for (j = SPn_rowptr[left]; j < SPn_rowptr[left+1]; j++) {
+	  /*
 	  if (SPn_columns[j] == leftagg)
 	    alpha_m = SPn_values[j];
 	  else if (SPn_columns[j] == rightagg)
-	    alpha0 = SPn_values[j];
-	  else {
-	    coef_cols[coef_count  ] = SPn_columns[j];
-	    coef_vals[coef_count++] = -SPn_values[j];
+	  */
+	  if (SPn_columns[j] != leftagg) {
+	    if (SPn_columns[j] == rightagg)
+	      alpha0 = SPn_values[j];
+	    else {
+	      coef_cols[coef_count  ] = SPn_columns[j];
+	      coef_vals[coef_count++] = -SPn_values[j];
+	    }
 	  }
 	}
 	ml_comp_Pe_entries(coef_cols, coef_vals, coef_count, leftagg,
@@ -1314,9 +1320,12 @@ int ml_leastsq_edge_interp(ML_Operator *Pn_mat, ML_Operator *SPn_mat,
 	for (j = SPn_rowptr[right]; j < SPn_rowptr[right+1]; j++) {
 	  if (SPn_columns[j] == leftagg)
 	    beta_m = SPn_values[j];
+	  /*
 	  else if (SPn_columns[j] == rightagg)
 	    beta0 = SPn_values[j];
 	  else {
+	  */
+	  else if (SPn_columns[j] != rightagg) {
 	    coef_cols[coef_count  ] = SPn_columns[j];
 	    coef_vals[coef_count++] = SPn_values[j];
 	  }
@@ -1460,18 +1469,6 @@ int ML_Gen_Hierarchy_ComplexMaxwell(ML *ml_edges, ML_Operator **Tmat_array,
    blockmat = &(block_ml->Amat[mesh_level]);
    ML_Operator_Gen_blockmat(blockmat, original , originalM );
    blockmat->sub_matrix1 = originalM;
-   /* ML_Operator_Print(blockmat,"Ablock"); */
-
-   /* rst: I'm not sure ... but something like the following */
-   /* should work for T if needed?                           */
-   /*
-   original = &(Tmat_array[mesh_level]);
-   blockmat = &(blk_Tmat_array[mesh_level]);
-   ML_Operator_Gen_blockmat(blockmat, original);
-   original = &(Tmat_trans_array[mesh_level]);
-   blockmat = &(blk_Tmat_trans_array[mesh_level]);
-   ML_Operator_Gen_blockmat(blockmat, original);
-   */
 
    lastM = originalM;
    while( ml_edges->SingleLevel[mesh_level].Rmat->to != NULL) {

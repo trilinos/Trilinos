@@ -27,9 +27,9 @@
 int ML_PDE_GenMat(MLI_Solver *solver, int N_nodes) 
 {
    int    i, j, k, m, nprocs, nprocs_1d, mypid, mypid_x, mypid_y;
-   int    nodeoffset, xoffset, yoffset, index, nbytes, diag_index;
+   int    nodeoffset, xoffset, yoffset, index, nbytes;
    int    nnode_1d, nnode_local, nnode_part_1d, **square;
-   int    avg_nonzeros_per_row = 5, total_nz, rowcount, poffset;
+   int    avg_nonzeros_per_row = 5, total_nz, rowcount;
    int    *mat_ia, *mat_ja;
    double alpha=1000.0, diag_sum, *mat_aa, *rhs;
    MPI_Comm comm;
@@ -108,7 +108,6 @@ int ML_PDE_GenMat(MLI_Solver *solver, int N_nodes)
            mat_aa[index] = -1; index++; diag_sum += 1;}
          mat_ja[index] = square[yoffset+k][xoffset+m];
          mat_aa[index] = 2 * alpha + 2.0;
-         diag_index = index;
          index++;
          if ( m < nnode_part_1d-1 || mypid_x < nprocs_1d-1 ) 
          { mat_ja[index] = square[yoffset+k][xoffset+m+1];
@@ -117,10 +116,8 @@ int ML_PDE_GenMat(MLI_Solver *solver, int N_nodes)
          { mat_ja[index] = square[yoffset+k+1][xoffset+m];
            mat_aa[index] = -alpha; index++; diag_sum += alpha;}
          mat_ia[rowcount++] = index;
-         /*mat_aa[diag_index] = diag_sum;*/
       }
    }
-   poffset = square[nnode_part_1d][nnode_part_1d];
 
    for ( i = 0; i < nnode_part_1d*3; i++ )
       ML_memory_free((void*) &(square[i]));
