@@ -49,8 +49,8 @@ if test `expr $yes_or_no` = 'yess'
 then
    GOT_EPETRA=yes
    PACKAGES=`${echo} $PACKAGES -DML_WITH_EPETRA` 
-   rm -f Obj/Makefile
-   cat etc/flat_Makefile | sed "s/LINKER/CXX/" | sed "s/\#ML_CPP/ML_CPP/" > Obj/Makefile
+   rm -f Obj/classicMakefile
+   cat etc/flat_Makefile | sed "s/LINKER/CXX/" | sed "s/\#ML_CPP/ML_CPP/" > Obj/classicMakefile
 else
    GOT_EPETRA=no
 fi
@@ -427,9 +427,9 @@ ${echo} "Now trying to make the ml library with a sample program ..."
 cd Obj
 if test `expr $GOT_EPETRA` = 'yes'
 then
-make ARCH=${ARCH}
+make -f classicMakefile ARCH=${ARCH}
 else
-make ARCH=${ARCH}
+make -f classicMakefile ARCH=${ARCH}
 fi
 
 temp=`${echo} ${1}s`
@@ -455,18 +455,18 @@ ${echo} "setenv ARCH " $ARCH
 ${echo} ${chdir_command}
 if test `expr $GOT_EPETRA` = 'yes'
 then
-   ${echo} "make"
+   ${echo} "make -f classicMakefile"
 else
-   ${echo} "make"
+   ${echo} "make -f classicMakefile"
 fi
 ${echo}
 ${echo} "or just"
 ${echo} ${chdir_command}
 if test `expr $GOT_EPETRA` = 'yes'
 then
-   ${echo} "make ARCH=${ARCH}"
+   ${echo} "make -f classicMakefile ARCH=${ARCH}"
 else
-   ${echo} "make ARCH=${ARCH}"
+   ${echo} "make -f classicMakefile ARCH=${ARCH}"
 fi
 cd ..
 \rm -f .arch_env etc/a.out
