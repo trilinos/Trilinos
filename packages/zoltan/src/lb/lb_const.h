@@ -85,13 +85,15 @@ typedef enum Zoltan_LB_Method {
 
 struct Zoltan_LB_Struct {
   int Num_Global_Parts;           /*  The total number of partitions.
+                                      Set in Zoltan_LB_Build_PartDist.       */
+  int Num_Global_Parts_Param;     /*  The number of global partitions specified.
                                       If parameter NUM_LOCAL_PARTITIONS or 
                                       NUM_GLOBAL_PARTITIONS is not set,
-                                      Num_Global_Parts == zz->Num_Proc.      */
-  int Num_Local_Parts;            /*  The number of partitions for this proc.
+                                      Num_Global_Parts_Param == Num_Proc.    */
+  int Num_Local_Parts_Param;      /*  The number of local partitions specified.
                                       If parameter NUM_LOCAL_PARTITIONS or 
                                       NUM_GLOBAL_PARTITIONS is not set,
-                                      Num_Local_Parts == 1.                */
+                                      Num_Local_Parts_Param == -1.           */
   int Return_Lists;               /*  Flag indicating which lists (if any)
                                       should be returned by Zoltan_LB_Balance.*/
   int *PartDist;                  /*  Array describing distribution of 

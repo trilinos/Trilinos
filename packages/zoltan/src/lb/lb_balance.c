@@ -114,9 +114,12 @@ int *export_to_part = NULL;    /* Array used as dummy arg in partitioning. */
 
   ZOLTAN_TRACE_ENTER(zz, yo);
 
-  if (zz->LB.Num_Global_Parts != zz->Num_Proc) {
+  /* Determine whether partition parameters were set.  Report error if
+   * values are unreasonable. */
+  if ((zz->LB.Num_Global_Parts_Param != zz->Num_Proc) ||
+      (zz->LB.Num_Local_Parts_Param != -1)) {
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, 
-      "Number of requested partitions != Number of processors; "
+      "Number of partitions specified != Number of processors; "
       "use Zoltan_LB_Partition.");
     ierr = ZOLTAN_FATAL;
     goto End;
@@ -529,7 +532,6 @@ int comm[3],gcomm[3];
 static int Zoltan_LB_Build_PartDist(ZZ *zz)
 {
 char *yo = "Zoltan_LB_Build_PartDist";
-int *tmp;
 int ierr = ZOLTAN_OK;
 int inflag[3], outflag[3];
 int global_parts_set = 0;   /* flag indicating that NUM_GLOBAL_PARTITIONS 
@@ -537,11 +539,17 @@ int global_parts_set = 0;   /* flag indicating that NUM_GLOBAL_PARTITIONS
 int local_parts_set = 0;    /* flag indicating that NUM_LOCAL_PARTITIONS 
                                parameter was used on some processor. */
 int max_global_parts = 0;   /* Max value of Num_Global_Parts on all procs. */
+int num_proc = zz->Num_Proc;
+int *pdist;
+int local_parts = 0;
+int *local_parts_per_proc = NULL;
+int i, j, cnt;
+int frac, mod;
 
   /* Check whether global parts or local parts parameters were used. */
-  inflag[0] = (zz->LB.Num_Global_Parts != zz->Num_Proc); 
-  inflag[1] = (zz->LB.Num_Local_Parts != 1); 
-  inflag[2] = zz->LB.Num_Global_Parts;
+  inflag[0] = (zz->LB.Num_Global_Parts_Param != zz->Num_Proc); 
+  inflag[1] = (zz->LB.Num_Local_Parts_Param != -1); 
+  inflag[2] = zz->LB.Num_Global_Parts_Param;
 
   MPI_Allreduce(inflag, outflag, 3, MPI_INT, MPI_MAX, zz->Communicator);
 
@@ -549,36 +557,67 @@ int max_global_parts = 0;   /* Max value of Num_Global_Parts on all procs. */
   local_parts_set = outflag[1];
   max_global_parts = outflag[2];
 
-  if (!global_parts_set && !local_parts_set) {
-    /* No need to build the PartDist array. */
-    zz->LB.PartDist = NULL;
-  }
-  else {
-    /*  KDD:  This approach works only when # globalparts >= # procs */
-    if (global_parts_set) {
-      if (max_global_parts != zz->LB.Num_Global_Parts) {
-        ZOLTAN_PRINT_ERROR(zz->Proc, yo, 
-        "Max NUM_GLOBAL_PARTITIONS != NUM_GLOBAL_PARTITIONS "
-        "on this processor.");
-        ierr = ZOLTAN_FATAL;
-        goto End;
-      }
-      /* Compute Num_Local_Parts; distribute evenly among processors. */
-      zz->LB.Num_Local_Parts = zz->LB.Num_Global_Parts / zz->Num_Proc;
-      if (zz->Num_Proc - zz->Proc <= zz->LB.Num_Global_Parts % zz->Num_Proc) 
-        zz->LB.Num_Local_Parts++;
-    }
+  /* Check whether any parameters were set;
+   * No need to build the PartDist array if not. 
+   */
+  if ((global_parts_set && (max_global_parts != num_proc)) || local_parts_set) {
+    /* Do extensive error checking. */
+
+    /* Allocate space for PartDist, if needed. */
+    if (zz->LB.PartDist == NULL)
+      zz->LB.PartDist = (int *) ZOLTAN_MALLOC((max_global_parts+1)*sizeof(int));
+    else if (max_global_parts != zz->LB.Num_Global_Parts)
+      zz->LB.PartDist = (int *) ZOLTAN_REALLOC(zz->LB.PartDist, 
+                                              (max_global_parts+1)*sizeof(int));
     if (zz->LB.PartDist == NULL) {
-      tmp = zz->LB.PartDist 
-          = (int *) ZOLTAN_MALLOC((zz->Num_Proc+1)*sizeof(int));
-      if (tmp == NULL) {
-        ierr = ZOLTAN_MEMERR;
-        ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient Memory");
-        goto End;
+      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Memory error.");
+      goto End;
+    }
+
+    pdist = zz->LB.PartDist;
+ 
+    /* Compute the PartDist array. */
+    if (max_global_parts > num_proc) {
+
+      if (local_parts_set) {
+        local_parts_per_proc = (int *) ZOLTAN_MALLOC(num_proc * sizeof(int));
+        /* All_Gather(local_parts_per_proc); */
+        for (cnt = 0, i = 0; i < num_proc; i++)
+          for (j = 0; j < local_parts_per_proc[i]; j++)
+            pdist[cnt++] = i;
+        pdist[cnt] = num_proc;
+        ZOLTAN_FREE(&local_parts_per_proc);
+      }
+      else {
+        /* Even distribution of partitions to processors. */
+        frac = max_global_parts / num_proc;
+        mod  = max_global_parts % num_proc;
+
+        for (cnt = 0, i = 0; i < num_proc; i++) {
+          local_parts = frac + ((num_proc - i) <= mod);
+          for (j = 0; j < local_parts; j++)
+            pdist[cnt++] = i;
+        }
+        pdist[cnt] = num_proc;
       }
     }
-    else
-      tmp = zz->LB.PartDist;
+    else { /* num_proc < max_global_parts */
+      /* Even distribution of processors to partitions. */
+      /* NUM_LOCAL_PARTITIONS specification is not valid. */
+      pdist[0] = 0;
+      frac = num_proc / max_global_parts;
+      mod  = num_proc % max_global_parts;
+      for (i = 1; i < max_global_parts; i++)
+        pdist[i] = pdist[i-1] + frac + ((max_global_parts - i) <= mod);
+      pdist[max_global_parts] = num_proc;
+    }
+    zz->LB.Num_Global_Parts = max_global_parts;
+  }
+
+
+
+#ifdef KDD_OLD_JUNK
+
 
     MPI_Scan (&(zz->LB.Num_Local_Parts), tmp, 1, MPI_INT, MPI_SUM, 
               zz->Communicator);
@@ -591,10 +630,11 @@ int max_global_parts = 0;   /* Max value of Num_Global_Parts on all procs. */
       zz->LB.Num_Global_Parts = tmp[zz->Num_Proc];
   }
 
+#endif
   if (zz->Debug_Level >= ZOLTAN_DEBUG_ALL && zz->LB.PartDist != NULL) {
     int i99;
     printf("[%1d] Debug: LB.PartDist = ", zz->Proc);
-    for (i99=0; i99<=zz->Num_Proc; i99++)
+    for (i99=0; i99<=zz->LB.Num_Global_Parts; i99++)
       printf("%d ", zz->LB.PartDist[i99]);
     printf("\n");
   }

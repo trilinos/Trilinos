@@ -24,25 +24,22 @@ extern "C" {
 /*****************************************************************************/
 /*****************************************************************************/
 
-static int part_compare(const void *, const void *);
-
-/*****************************************************************************/
-/*****************************************************************************/
-/*****************************************************************************/
-
 int Zoltan_LB_Part_To_Proc(ZZ *zz, int part)
 {
 /* Routine that maps partitions to processors.
- * Assumption:  Given Num_Local_Parts for each processor, assign 
- * 0 to Num_Local_Parts(0)-1 to Proc 0,
- * Num_Local_Parts(0) to Sum[i=0,1:Num_Local_Parts(i)]-1 to Proc 1,
- * ...
- * Sum[i=0,Num_Proc-2:Num_Local_Parts(i)] to
- *     Sum[i=0,Num_Proc-1:Num_Local_Parts(i)]-1 to Proc Num_Proc-1.
+ * If a partition is entirely within a processor, that processor's rank is
+ * returned.
+ * If a partition is spread across several processors, find the range of
+ * processors.  If zz->Proc is one of them, return zz->Proc.  Otherwise,
+ * return a random processor in the range of processors.
+ * (This random feature should be replaced by something smarter to reduce
+ * data movement. KDD)
  */
 char *yo = "Zoltan_LB_Part_To_Proc";
 int proc;
-int *parray = zz->LB.PartDist;    /* Temporary variable */
+int *pdist = zz->LB.PartDist;    /* Temporary variable */
+static int first_time = 1;
+int num_procs_for_part;
 
   if (zz->LB.Num_Global_Parts == zz->Num_Proc) {
     /*  number of parts == number of procs. return input part. */
@@ -56,26 +53,23 @@ int *parray = zz->LB.PartDist;    /* Temporary variable */
     }
     else {
 
-      /* Check if part is on this proc; often likely; avoid the bsearch */
-      if (part >= parray[zz->Proc] && part < parray[zz->Proc+1])
+      num_procs_for_part = pdist[part+1] - pdist[part];
+      if (num_procs_for_part <= 1)
+        proc = pdist[part];
+      else if (zz->Proc >= pdist[part] && zz->Proc < pdist[part+1])
         proc = zz->Proc;
-      else
-        proc = ((int *)bsearch((void *)&part, parray, zz->Num_Proc+1, 
-                                sizeof(int), part_compare)) - parray;
+      else {
+        if (first_time) {
+          srand(zz->Proc);
+          first_time = 0;
+        }
+        proc = (rand() % num_procs_for_part) + pdist[part];
+      }
     }
   }
   return proc;
 }
 
-/*****************************************************************************/
-static int part_compare(const void *key, const void *arr)
-{
-  if (*((int *)key) < *((int *)arr))
-    return -1;
-  if (*((int *)key) >= *((int *)(arr)+1))
-    return 1;
-  return 0;
-}
 
 /*****************************************************************************/
 

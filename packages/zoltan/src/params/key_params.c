@@ -244,23 +244,20 @@ char *val)			/* value of variable */
             ZOLTAN_PRINT_WARN(zz->Proc, yo, msg);
             result.ival = zz->Num_Proc;
         }
-        zz->LB.Num_Global_Parts = result.ival;
-        zz->LB.Num_Local_Parts = 1;  /* Reset Num_Local_Parts to default */
+        zz->LB.Num_Global_Parts_Param = result.ival;
         status = 3;
         break;
 
       case 15:          /* Num_Local_Partitions */
         if (result.def)
-            result.ival = 1;
-        if (result.ival < 1) {
+            result.ival = -1;
+        if (result.ival < -1) {
 	    sprintf(msg, "Invalid Num_Local_Partitions value (%d); "
-		"being set to %d.", result.ival,1);
+		"being set to %d.", result.ival,-1);
             ZOLTAN_PRINT_WARN(zz->Proc, yo, msg);
-            result.ival = 1;
+            result.ival = -1;
         }
-        zz->LB.Num_Local_Parts = result.ival;
-        zz->LB.Num_Global_Parts = zz->Num_Proc;  /* Reset Num_Global_Parts */
-                                                 /* to default */
+        zz->LB.Num_Local_Parts_Param = result.ival;
         status = 3;
         break;
 
@@ -329,9 +326,9 @@ void Zoltan_Print_Key_Params(ZZ *zz)
   if (zz->Tflops_Special)   /* print only if set */
      printf("ZOLTAN Parameter %s = %s\n", Key_params[12].name, "TRUE");
   printf("ZOLTAN Parameter %s = %d\n", Key_params[14].name, 
-         zz->LB.Num_Global_Parts);
+         zz->LB.Num_Global_Parts_Param);
   printf("ZOLTAN Parameter %s = %d\n", Key_params[15].name, 
-         zz->LB.Num_Local_Parts);
+         zz->LB.Num_Local_Parts_Param);
 }
 
 #ifdef __cplusplus
