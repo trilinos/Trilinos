@@ -1187,6 +1187,8 @@ where \verb!Comm! is an \verb!ML_Comm! structure;
 \begin{verbatim}
 $ export ML_BREAK_FOR_DEBUGGER=1
 \end{verbatim}
+\item Alternatively, if using class MultiLevelPreconditioner, create a file
+called \verb!ML_debug_now! in the working directory.
 \item Run the code as required,
 \begin{verbatim}
 $ mpirun -np 2 ./mlguide.exe
@@ -1233,6 +1235,115 @@ int orig_comm;
 orig_comm = comm->USR_comm;
 // now orig_comm can be used as MPI_COMM_WORLD
 \end{verbatim}
+
+%%%
+%%%
+%%%
+
+\subsection{Sparsity Pattern of an {\tt ML\_Operator}}
+\label{sec:sparsity}
+
+Function \verb!ML_Operator_PrintSparsity()! can be used to visualize the 
+sparsity pattern of an ML\_Operator. The function, that can be used for
+both serial and parallel run, has the following syntax:
+\begin{verbatim}
+int ML_Operator_PrintSparsity(ML_Operator* Op, char* title,
+                              char* FileName, int PrintDecomposition,
+                              int NumPDEEqns);
+\end{verbatim}
+\verb!Op! is a pointer to the ML\_Operator, \verb!title! is a character array
+that will be inserted in the postscript file, \verb!FileName! a valid file
+name. If \verb!PrintDecomposition! is set to \verb!ML_YES!, the postscript
+file will contain horizontal an vertical lines, corresponding to the division
+of the rows and columns among the processors. Finally, \verb!NumPDEEqns!
+defines the number of PDE equations. If greater than 1, only the sparsity
+pattern of the block matrix will be plotted.
+
+Two example of output are reported in Figure~\ref{fig:sparsity-pattern}.
+
+\begin{figure}[ht]
+\centering
+\includegraphics[width=6cm]{sparsity_Amat.ps} \hspace{0.5cm}
+\includegraphics[width=6cm]{sparsity_Rmat.ps}
+\caption{Sparsity pattern of two ML\_Operators: the fine-level matrix (left)
+  and the (non-smoothed) restriction operator from finest to coarsest level.
+  The finest-level matrix has size 60, and
+  corresponds to a 1D Laplacian on a Cartesian grid. 
+  The lines in the matrix show the division of rows and columns among the (two) processors.}
+\label{fig:sparsity-pattern}
+\end{figure}
+
+%%%
+%%%
+%%%
+
+\section{Visualization Capabilities}
+\label{sec:viz}
+
+\ML\ supports limited capabilities for the visualization of and statistical
+information for aggregates, with an interface to OpenDX.
+Currently, only {\tt Uncoupled,
+METIS} and {\tt ParMETIS} aggregation routines can dump files in OpenDX
+format.
+
+The procedure to create the OpenDX input files is as follows:
+\begin{enumerate}
+\item Add the following line after the creation of the ML\_Aggregate object
+\begin{verbatim}
+   ML_Aggregate_VizAndStats_Setup( ag, MaxMgLevels );
+\end{verbatim}
+  where \verb!MaxMgLevels! is the maximum number of levels (this is the
+  same value used to create the \ML\ object).
+\item Create the multilevel hierarchy;
+\item Write OpenDX file using the instruction
+%\begin{verbatim}
+%   ML_Aggregate_Visualize( ml, ag, MaxMgLevels, x, y, z, option, filename);
+%\end{verbatim}
+\begin{verbatim}
+   ML_Aggregate_VizAndStats_Compute( ml, ag, MaxMgLevels, x, y, z,
+                                     option, filename);
+\end{verbatim}
+   where \verb!ml! is the \ML\ object, \verb!ag! the ML\_Aggregation object, 
+   and \verb!x,y,z! are double vectors, whose size
+   equals the number of local nodes in the fine grid, containing the coordinates
+   of fine grids nodes. \verb!option! is an integer value defined so
+   that:
+   \begin{itemize}
+   \item option = 1 : solution of 1D problem ({\tt y} and {\tt z} can be
+     {\tt NULL});
+   \item option = 2 : solution of 2D problems ({\tt z} can be {\tt NULL});
+   \item option = 3 : solution of 3D problems.
+   \end{itemize}
+   Processor X will write its own file, \verb!filename_levelY_procX!, where
+   \verb!Y! is the level. \verb!filename! can be set to {\tt NULL} (default value of
+   \verb!.graph! will be used in this case).
+   
+   Note that in AMG there is no mesh associated with coarser
+   levels. Therefore \newline {\sf ML\_Aggregate\_VizAndStats\_Compute} needs to
+   assign a set of coordinates  to each aggregate.
+   This is done by computing the center
+   of gravity of each aggregate (starting from the fine grid and finishing
+   at the coarsest level).
+
+   \verb!ML_Aggregate_VizAndStats_Compute!
+   will also write statistical
+   information to the screen.
+
+\item Deallocate memory using
+\begin{verbatim}
+  ML_Aggregate_VizAndStats_Clean( ag, MaxMgLevels ).
+\end{verbatim}
+\end{enumerate}
+
+At this point, one should copy file \verb!viz_aggre.net! and
+\verb!viz_aggre.cfg! (located in \verb!$ML_HOME/util/!) in the directory
+where the output files are located, and run OpendDX with the instruction
+\begin{verbatim}
+% dx -edit viz_aggre.net
+\end{verbatim}
+Other instructions are reported in file
+\verb!$ML_HOME/util/viz_aggre.README!. An example of code can be found in
+file \verb!$ML_HOME/examples/ml_aztec_simple_METIS.c!.
 
 %%%
 %%%
