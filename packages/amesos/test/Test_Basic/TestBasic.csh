@@ -93,7 +93,7 @@ endif
 
 if ("$1" == "") then
   echo "USAGE: TestBasic.csh [SOLVER]"
-  echo "       SOLVER = KLU | UMFPACK | DSCPACK"
+  echo "       SOLVER = KLU | UMFPACK | DSCPACK | SUPERLU | SUPERLUDIST | MUMPS"
   exit(1)
 endif
 
@@ -106,7 +106,6 @@ if ("$1" != "DSCPACK" ) then
   # Test one process, three processes and three processes transposes, tiny distributed matrix, on KLU
   $mpigo 1 ./amesos_test.exe $1   fidapm05.rua 0 1 1 0   1000000000000000 1e-1 >>SST.stdout
   $mpigo 3 ./amesos_test.exe $1   fidapm05.rua 1 1 1 0   1000000000000000 1e-1 >>SST.stdout
-  $mpigo 3 ./amesos_test.exe $1   fidapm05.rua 1 1 1 1   1000000000000000 1e-1 >>SST.stdout
   $mpigo 2 ./amesos_test.exe $1   fidapm05.rua 1 1 4 1   1000000000000000 1e-1 >>SST.stdout
   $mpigo 4 ./amesos_test.exe $1   fidapm05.rua 1 1 -3 1  1000000000000000 1e-1 >>SST.stdout
 

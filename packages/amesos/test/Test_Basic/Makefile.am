@@ -69,7 +69,6 @@ Matrices: $(srcdir)/662_bus.rsa
 	cp  $(srcdir)/In_bcsstk01.mtx bcsstk01.mtx                              
 	cp  $(srcdir)/In_bcsstk02.mtx bcsstk02.mtx                              
 	cp  $(srcdir)/In_bcsstk04.mtx bcsstk04.mtx                              
-	cp  $(srcdir)/In_bcsstk08.mtx bcsstk08.mtx                              
 	cp  $(srcdir)/In_nos1.mtx nos1.mtx                                      
 	cp  $(srcdir)/In_nos1.mtx nos1.mtx                                      
 	cp  $(srcdir)/In_nos5.mtx nos5.mtx                                      
@@ -127,7 +126,6 @@ EXTRA_DIST = $(srcdir)/662_bus.rsa \
         $(srcdir)/In_bcsstk01.mtx \
         $(srcdir)/In_bcsstk02.mtx \
         $(srcdir)/In_bcsstk04.mtx \
-        $(srcdir)/In_bcsstk08.mtx \
         $(srcdir)/In_nos1.mtx \
         $(srcdir)/In_nos5.mtx \
         $(srcdir)/In_FourByFour.mtx \
