@@ -66,6 +66,18 @@ in the <A HREF="#Architectures table">table</A> below.
 <TD>CPlant parallel computing system (alaska).</TD>
 </TR>
 
+<TR>
+<TD VALIGN=TOP>nistsun</TD>
+
+<TD>Sun workstations at NIST running Solaris.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP>nistlinux</TD>
+
+<TD>Intel PC workstations at NIST running Linux.</TD>
+</TR>
+
 <CAPTION ALIGN=BOTTOM><I>Targets and architectures currently supported
 in the Makefiles of the Zoltan distribution.</I></CAPTION>
 </TABLE></CENTER>
@@ -95,6 +107,16 @@ libraries are needed when the application is linking.&nbsp; Otherwise,
 a <A HREF="../ug_html/ug_alg_parmetis.html">ParMETIS</A> library path must
 be specified to <A HREF="../ug_html/ug_usage.html#Building Applications">build
 the application</A>.</TD>
+</TR>
+<TR>
+<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; YES_FORTRAN=1</I></TD>
+
+<TD>Include Fortran support in the Zoltan library.&nbsp;  By default, the
+Zoltan library is built without the interface that allows use from Fortran
+applications.&nbsp; If this option is specified, then the
+<A HREF="ug_fortran.html">Fortran interface</A>
+is compiled and included in the library.&nbsp;  Use of this option requires that
+a Fortran 90 (or 95, or later) compiler is available.</TD>
 </TR>
 </TABLE>
 After compilation, the library <I>libzoltan.a</I> is stored in the appropriate

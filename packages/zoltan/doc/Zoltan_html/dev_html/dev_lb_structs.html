@@ -74,6 +74,13 @@ printed by the load-balancing library.</TD>
 </TR>
 
 <TR>
+<TD VALIGN=TOP>int <I>Fortran</I></TD>
+
+<TD>A flag indicating whether or not the object was created by a
+call from Fortran.</TD>
+</TR>
+
+<TR>
 <TD VALIGN=TOP>LB_METHOD <I>Method</I></TD>
 
 <TD>An enumerated type designating which load-balancing algorithm should
@@ -104,6 +111,18 @@ for different LB objects to have different parameter settings.</TD>
 of 1.1 implies a 10% imbalance is acceptable, i.e. that the maximum load
 over the average should be no more than 1.1. Set via a call to
 <B><A HREF="dev_util_params.html#LB_Set_Param">LB_Set_Param</A></B>.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP>int <I> Obj_Weight_Dim</I></TD>
+
+<TD>Dimension of the object weights, usually 0 (no weights) or 1.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP>int <I> Comm_Weight_Dim</I></TD>
+
+<TD>Dimension of the communication weights, usually 0 (no weights) or 1.</TD>
 </TR>
 
 <TR>
@@ -421,6 +440,14 @@ pointed to by <I>Unpack_Obj</I>. Set in <B><A HREF="../ug_html/ug_interface_init
 <CAPTION ALIGN=BOTTOM><I>Fields of the </I><B>LB_Migrate</B><I> data structure.</I></CAPTION>
 </TABLE></CENTER>
 &nbsp;
+
+<P>For each pointer to an application registered function in the
+<B>LB_Struct</B> and <B>LB_Migrate</B> data structures there is also a pointer
+to a Fortran application registered function, of the form
+LB_FUNCNAME_FORT_FN *<I>Get_Funcname_Fort</I>.  These are for use within
+the Fortran interface.  The load-balancing routines should invoke the
+usual application registered function regardless of whether the load
+balancing object was created from C or Fortran.
 
 <P>The <B>LB_Tag_Struct</B> is provided to simplify the mechanics of storing
 both the global and local IDs (see <A HREF="#Tag_Struct">table</A> below).

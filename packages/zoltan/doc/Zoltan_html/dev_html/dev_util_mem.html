@@ -24,7 +24,8 @@
 Several memory allocation and deallocation routines are provided in the
 load-balancing library. They are defined in the file <I>all/all_allo.c</I>;
 their prototypes for inclusion in other files are in <I>all/all_allo_const.h</I>.
-The use of these routines is not mandatory in algorithm development, but
+The use of these routines is not mandatory in algorithm development
+(except LB_Special_Malloc and LB_Special_Free), but
 the routines provide helpful error-checking and <A HREF="#Debug_Memory">debugging
 capabilities</A>, and the use of them is strongly suggested.
 
@@ -36,7 +37,12 @@ malloc.
 <BR><B><A HREF="#LB_Realloc">LB_Realloc</A></B>:&nbsp; Wrapper for system
 realloc.
 <BR><B><A HREF="#LB_Free">LB_Free</A></B>:&nbsp; Frees memory and sets
-the pointer to NULL.</BLOCKQUOTE>
+the pointer to NULL.
+<BR><B><A HREF="#LB_Special_Malloc">LB_Special_Malloc</A></B>:&nbsp; Allocate
+memory for import and export result arrays.
+<BR><B><A HREF="#LB_Special_Free">LB_Special_Free</A></B>:&nbsp; Frees memory
+allocated by LB_Special_Malloc.
+</BLOCKQUOTE>
 
 <HR><A NAME="LB_Array_Alloc"></A>double *<B>LB_Array_Alloc</B>(char *<I>
 file</I>, int <I>line</I>, int <I>n</I>, int <I>d1</I>, int <I>d2</I>,
@@ -355,7 +361,156 @@ is set to NULL.</TD>
 is NULL.</TD>
 </TR>
 </TABLE>
+&nbsp;
 
+<P>
+<HR><A NAME="LB_Special_Malloc"></A>int <B>LB_Special_Malloc</B>(struct
+LB_Struct *<I>lb</I>, void **<I>array</I>, int <I>size</I>,
+LB_SPECIAL_MALLOC_TYPE <I>type</I>);&nbsp;
+<HR>
+
+<P>The <B>LB_Special_Malloc</B> routine allocates memory for result arrays
+like <I>import_global_ids</I>, <I>import_local_ids</I>, <I>import_procs</I>,
+<I>export_global_ids</I>, <I>export_local_ids</I> and <I>export_procs</I>.
+Since these arrays are returned to the application, they must be allocated
+by <B>LB_Special_Malloc</B> to insure they are allocated by the same
+language as the application.  Memory allocated by <B>LB_Special_Malloc</B>
+must be deallocated by <B>LB_Special_Free</B>.
+<BR>&nbsp;
+<TABLE WIDTH="100%" >
+<TR VALIGN=TOP>
+<TD VALIGN=TOP WIDTH="20%"><B>Parameters:</B></TD>
+
+<TD></TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; lb</I></TD>
+
+<TD>The load balancing object currently in use.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; array</I></TD>
+
+<TD>Usually of type int**, LB_GID**, or LB_LID**.  Returned as a pointer
+to the allocated space.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; size</I></TD>
+
+<TD>The number of elements (not bytes) to be allocated.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP>&nbsp;&nbsp;&nbsp; <I>type</I></TD>
+
+<TD>The type of array to allocate.  Must be one of LB_SPECIAL_MALLOC_INT,
+LB_SPECIAL_MALLOC_GID or LB_SPECIAL_MALLOC_LID.</TD>
+</TR>
+
+<TR>
+<TD><B>Returned Value:</B></TD>
+
+<TD></TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP>&nbsp;&nbsp; int</TD>
+
+<TD>1 if the allocation succeeded; 0 if it failed.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><B>Example:</B></TD>
+
+<TD></TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP></TD>
+
+<TD>ierr = <B>LB_Special_Malloc</B>(<I>lb</I>, (void **)<I>import_gid</I>,
+<I>num_import</I>, LB_SPECIAL_MALLOC_GID);</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP></TD>
+
+<TD>Allocates an array with <I>num_import</I> LB_GIDs.</TD>
+</TR>
+</TABLE>
+&nbsp;
+
+<P>
+<HR><A NAME="LB_Special_Free"></A>int <B>LB_Special_Free</B>(struct
+LB_Struct *<I>lb</I>, void **<I>array</I>,
+LB_SPECIAL_MALLOC_TYPE <I>type</I>);&nbsp;
+<HR>
+
+<P><B>LB_Special_Free</B> frees memory allocated by <B>LB_Special_Malloc</B>.
+<BR>&nbsp;
+<TABLE WIDTH="100%" >
+<TR VALIGN=TOP>
+<TD VALIGN=TOP WIDTH="20%"><B>Parameters:</B></TD>
+
+<TD></TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; lb</I></TD>
+
+<TD>The load balancing object currently in use.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; array</I></TD>
+
+<TD>The array to be freed.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP>&nbsp;&nbsp;&nbsp; <I>type</I></TD>
+
+<TD>The type of the array.  Must be one of LB_SPECIAL_MALLOC_INT,
+LB_SPECIAL_MALLOC_GID or LB_SPECIAL_MALLOC_LID.</TD>
+</TR>
+
+<TR>
+<TD><B>Returned Value:</B></TD>
+
+<TD></TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP>&nbsp;&nbsp; int</TD>
+
+<TD>1 if the deallocation succeeded; 0 if it failed.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><B>Example:</B></TD>
+
+<TD></TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP></TD>
+
+<TD>ierr = <B>LB_Special_Free</B>(<I>lb</I>, (void **)<I>import_gid</I>,
+LB_SPECIAL_MALLOC_GID);</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP></TD>
+
+<TD>Frees the LB_GID array <I>import_gid</I>.
+</TR>
+</TABLE>
+&nbsp;
+
+<P>
 <HR><A NAME="Debug_Memory"></A>
 <H3>
 <B>Debugging Memory Errors</B></H3>
