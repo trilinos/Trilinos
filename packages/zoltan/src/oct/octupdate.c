@@ -80,7 +80,9 @@ void oct_init(LB *lb,         /* The load-balancing structure with info for
   export_tags = NULL;
   import_tags = NULL;
   count = nsentags = nrectags = 0;
+
   msg_init();
+
   if(lb->Params != NULL) {
     POC_init(msg_mypid, lb->Params[0]);
     set_method(lb->Params[1]);
@@ -92,6 +94,7 @@ void oct_init(LB *lb,         /* The load-balancing structure with info for
 
   /* create the octree structure */
   time1 = MPI_Wtime();
+
   oct_gen_tree_from_input_data(lb, &counters[3], &counters[4]);
   time2 = MPI_Wtime();
   timers[0] = time2 - time1;                 /* time took to create octree */
@@ -204,6 +207,7 @@ void oct_gen_tree_from_input_data(LB *lb, int *c3, int *c4) {
   if(num_objs > 0) {
     /* Need A Function To Get The Bounds Of The Local Objects */
     get_bounds(lb, &ptr1, &num_objs, min, max, c4);
+
     vector_set(gmin, min);
     vector_set(gmax, max);
     
@@ -339,7 +343,9 @@ void oct_gen_tree_from_input_data(LB *lb, int *c3, int *c4) {
    */  
   num_extra = oct_fix(lb, ptr1, num_objs);
 
-  fprintf(stderr,"(%d) number of extra regions %d\n", msg_mypid, num_extra);
+/* 
+ * fprintf(stderr,"(%d) number of extra regions %d\n", msg_mypid, num_extra);
+ */
   migreg_migrate_orphans(ptr1, num_extra, level, array);
   
   free(array);
@@ -356,7 +362,7 @@ void get_bounds(LB *lb, pRegion *ptr1, int *num_objs,
   LB_ID *obj_ids;
   int i;
   pRegion tmp, ptr;
-  double gmin, gmax;
+  double global_min[3], global_max[3];
   double x;
   double PADDING = 0.0000001;
 
@@ -397,18 +403,22 @@ void get_bounds(LB *lb, pRegion *ptr1, int *num_objs,
       max[2] = ptr->Coord[2];
     tmp->next = ptr;
     tmp = tmp->next;
+
     ptr = NULL;
   }
   LB_safe_free((void **) &obj_ids);
   
-  for(i=0; i<3; i++) {
-    x = min[i];
-    MPI_Allreduce(&x,&gmin,1,MPI_DOUBLE,MPI_MIN,MPI_COMM_WORLD);
-    min[i] = gmin;
-    x = max[i];
-    MPI_Allreduce(&x,&gmax,1,MPI_DOUBLE,MPI_MAX,MPI_COMM_WORLD);
-    max[i] = gmax;
-  }
+  MPI_Allreduce(&(min[0]), &(global_min[0]), 3, 
+		MPI_DOUBLE, MPI_MIN, MPI_COMM_WORLD);
+  MPI_Allreduce(&(max[0]), &(global_max[0]), 3,
+		MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
+
+  max[0] = global_max[0];
+  max[1] = global_max[1];
+  max[2] = global_max[2];
+  min[0] = global_min[0];
+  min[1] = global_min[1];
+  min[2] = global_min[2];
   
   /* hack used for sample program since working in 2D -- */
   /* causes problems for refining the octree */
