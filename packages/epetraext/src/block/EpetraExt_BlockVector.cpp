@@ -95,11 +95,6 @@ void BlockVector::DeleteBlocks_(void)
 //=========================================================================
 int BlockVector::ExtractBlockValues(Epetra_Vector & BaseVector, int GlobalBlockRow) const
 {
-
-   if (! BaseMap_.SameAs(BaseVector.Map())) {
-     cout << "Error in  BlockVector::GetBlock: Map compare failed" << endl;
-     return -1;
-   }
    int IndexOffset = GlobalBlockRow * Offset_;
    int localIndex=0;
 
@@ -121,10 +116,6 @@ int BlockVector::ExtractBlockValues(Epetra_Vector & BaseVector, int GlobalBlockR
 //=========================================================================
 int BlockVector::LoadBlockValues(Epetra_Vector & BaseVector, int GlobalBlockRow) 
 {
-   if (! BaseMap_.SameAs(BaseVector.Map())) {
-     cout << "Error in  BlockVector::GetBlock: Map compare failed" << endl;
-     return -1;
-   }
    int IndexOffset = GlobalBlockRow * Offset_;
    int localIndex=0;
 
