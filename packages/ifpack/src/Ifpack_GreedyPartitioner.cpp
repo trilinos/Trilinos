@@ -13,19 +13,17 @@
 //==============================================================================
 int Ifpack_GreedyPartitioner::ComputePartitions()
 {
-  vector<int> ElementsPerPart;
-  ElementsPerPart.resize(NumLocalParts());
-
-  vector<int> count;
-  count.resize(NumLocalParts());
+  vector<int> ElementsPerPart(NumLocalParts());
+  vector<int> Count(NumLocalParts());
+  for (int i = 0 ; i < NumLocalParts() ; ++i)
+    Count[i] = 0;
 
   // define how many nodes have to be put on each part
-
   int div = NumMyRows() / NumLocalParts();
   int mod = NumMyRows() % NumLocalParts();
 
   for (int i = 0 ; i < NumLocalParts() ; ++i) {
-    count[i] = 0;
+    Count[i] = 0;
     ElementsPerPart[i] = div;
     if (i < mod) ElementsPerPart[i]++;
   }
@@ -34,74 +32,58 @@ int Ifpack_GreedyPartitioner::ComputePartitions()
     Partition_[i] = -1;
   }
 
-  int CrsNumEntries;
-
-  int CurrentPart = 0;
-  vector<int> Indices;
-  Indices.resize(MaxNumEntries());
+  int NumEntries;
+  vector<int> Indices(MaxNumEntries());
   
-  bool ok = true;
+  // load root node for partition 0
+  vector<int> ThisLevel(1);
+  ThisLevel[0] = RootNode_;
+  int CurrentPartition = 0;
+  int TotalCount = 0;
 
-  // pick up a root node. Check that this is not a Dirichlet node.
+  while (ThisLevel.size()) {
 
-  int RootNode = RootNode_;
+    vector<int> NextLevel;
 
-  // start from row 0, assigned to domain 0
-  Partition_[RootNode] = 0;      
+    for (unsigned int i = 0 ; i < ThisLevel.size() ; ++i) {
 
-  // cycle over all non-Dirichlet nodes to perform the aggregation.
+      int CurrentNode = ThisLevel[i];
+      int ierr = Graph_->ExtractMyRowCopy(CurrentNode, MaxNumEntries(),
+                                          NumEntries, &Indices[0]);
+      IFPACK_CHK_ERR(ierr);
 
-  while (ok == true) {
+      for (int j = 0 ; j < NumEntries ; ++j) {
 
-    int ierr = Graph_->ExtractMyRowCopy(RootNode, MaxNumEntries(),
-				CrsNumEntries, &Indices[0]);
-
-    IFPACK_CHK_ERR(ierr);
-
-    ok = false;
-
-    for (int j = 0 ; j < CrsNumEntries ; ++j) {
-
-      // go to the next indices if Dirichlet node
-      // or off-processor one.
-
-      if (Indices[j] >= NumMyRows()) 
-	continue;
-
-      // filter for Dirichlet
-      int col = Indices[j];
-
-      if (count[CurrentPart] == ElementsPerPart[CurrentPart]) {
-	CurrentPart++;
+        int NextNode = Indices[j];
+        if (Partition_[NextNode] == -1) {
+          // this is a free node
+          Partition_[NextNode] = CurrentPartition;
+          ++Count[CurrentPartition];
+          ++TotalCount;
+          NextLevel.push_back(NextNode);
+        }
       }
+    } // for (i)
 
-      if (Partition_[col] == -1) {
-	Partition_[col] = CurrentPart;
-	if (ok == false) {
-	  ok = true;
-	  RootNode = col;
-	}
-	count[CurrentPart]++;
-      }
-    }
+    // check whether change partition or not
+    if (Count[CurrentPartition] >= ElementsPerPart[CurrentPartition])
+      ++CurrentPartition;
 
-    // if ok == false, it means that no neighboring node
-    // was included in the previous part. This may signify that all
-    // neighboring nodes are already assigned, or that the graph is
-    // disconnected. In both cases, we look for a new root node, starting from
-    // 0. 
+    // swap next and this
+    ThisLevel.resize(0);
+    for (unsigned int i = 0 ; i < NextLevel.size() ; ++i)
+      ThisLevel.push_back(NextLevel[i]);
 
-    if (ok == false) {
-      for (int j = 0 ; j < NumMyRows() ; ++j) {
-
-	if (Partition_[j] == -1 ) {
-	  RootNode = j;
-	  ok = true;
-	  break;
-	}
+    if (ThisLevel.size() == 0 && (TotalCount != NumMyRows())) {
+      // need to look for new RootNode, do this in a simple way
+      for (int i = 0 ; i < NumMyRows() ; ++i) {
+        if (Partition_[i] == -1)
+          ThisLevel.push_back(i);
+        break;
       }
     }
-  }
+
+  } // while (ok)
 
   return(0);
 }
