@@ -999,6 +999,7 @@ AC_CONFIG_FILES([
 		example-epetra/DS6.5.1/Makefile
 		example-epetra/1Dfem_linear/Makefile
 		example-epetra/1Dfem_nonlinear/Makefile
+		example-epetra/1Dfem_nonlinearColoring/Makefile
 		example-epetra/1Dtransfem_nonlinear/Makefile
                 src-petsc/Makefile
                 example-petsc/Makefile

@@ -7274,12 +7274,6 @@ fi
 # ------------------------------------------------------------------------
 
 # ------------------------------------------------------------------------
-# Pointer to correct version of NOX_Config.h
-# ------------------------------------------------------------------------
-
-DEFS="$DEFS -DTOP_BUILD_DIR=\$(top_build_dir)"
-
-# ------------------------------------------------------------------------
 # Perform substitutions in output files
 # ------------------------------------------------------------------------
 
@@ -7287,7 +7281,7 @@ DEFS="$DEFS -DTOP_BUILD_DIR=\$(top_build_dir)"
 # Output files
 # ------------------------------------------------------------------------
 
-ac_config_files="$ac_config_files Makefile doc/Makefile src/Makefile src-epetra/Makefile example/Makefile example-epetra/Makefile example-epetra/DS6.5.1/Makefile example-epetra/1Dfem_linear/Makefile example-epetra/1Dfem_nonlinear/Makefile example-epetra/1Dtransfem_nonlinear/Makefile src-petsc/Makefile example-petsc/Makefile example-petsc/DS6.5.1/Makefile src-loca/Makefile src-loca/src-epetra/Makefile"
+ac_config_files="$ac_config_files Makefile doc/Makefile src/Makefile src-epetra/Makefile example/Makefile example-epetra/Makefile example-epetra/DS6.5.1/Makefile example-epetra/1Dfem_linear/Makefile example-epetra/1Dfem_nonlinear/Makefile example-epetra/1Dfem_nonlinearColoring/Makefile example-epetra/1Dtransfem_nonlinear/Makefile src-petsc/Makefile example-petsc/Makefile example-petsc/DS6.5.1/Makefile src-loca/Makefile src-loca/src-epetra/Makefile"
 
 cat >confcache <<\_ACEOF
 # This file is a shell script that caches the results of configure
@@ -7773,6 +7767,7 @@ do
   "example-epetra/DS6.5.1/Makefile" ) CONFIG_FILES="$CONFIG_FILES example-epetra/DS6.5.1/Makefile" ;;
   "example-epetra/1Dfem_linear/Makefile" ) CONFIG_FILES="$CONFIG_FILES example-epetra/1Dfem_linear/Makefile" ;;
   "example-epetra/1Dfem_nonlinear/Makefile" ) CONFIG_FILES="$CONFIG_FILES example-epetra/1Dfem_nonlinear/Makefile" ;;
+  "example-epetra/1Dfem_nonlinearColoring/Makefile" ) CONFIG_FILES="$CONFIG_FILES example-epetra/1Dfem_nonlinearColoring/Makefile" ;;
   "example-epetra/1Dtransfem_nonlinear/Makefile" ) CONFIG_FILES="$CONFIG_FILES example-epetra/1Dtransfem_nonlinear/Makefile" ;;
   "src-petsc/Makefile" ) CONFIG_FILES="$CONFIG_FILES src-petsc/Makefile" ;;
   "example-petsc/Makefile" ) CONFIG_FILES="$CONFIG_FILES example-petsc/Makefile" ;;
