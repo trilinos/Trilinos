@@ -83,7 +83,7 @@ int main(int argc, char *argv[])
   
   int NumPDEEqns = 5;
 
-  VbrMatrixGallery Gallery("laplace_2d_9pt", Comm);
+  VbrMatrixGallery Gallery("laplace_2d", Comm);
   Gallery.Set("problem_size", 900);
 
   // retrive pointers for linear system matrix and linear problem
@@ -121,8 +121,9 @@ int main(int argc, char *argv[])
   // and they are here reported for the sake of clarity
   
   // maximum number of levels
-  MLList.set("max levels",5);
+  MLList.set("max levels",3);
   MLList.set("increasing or decreasing","increasing");
+  MLList.set("smoother: type", "Gauss-Seidel");
 
   // aggregation scheme set to Uncoupled. Note that MIS can be
   // visualized only for serial runs, while Uncoupled, METIS and
@@ -132,13 +133,28 @@ int main(int argc, char *argv[])
   // ============== visualization with OpenDX. ==================
   // - set "viz: enable" to `false' to disable visualization and
   //   statistics.
-  // - "viz: dimensions" is the number of dimensions, from 1 to 3
-  // - "viz: z-coordinates" can be used for 3D problems.
+  // - set "viz: x-coordinates" to the pointer of x-coor
+  // - set "viz: cycle" to visualize the effect of the ML cycle
+  //   on a random vector (whose components are between 0.5 and 1.0),
+  //   the output is the ratio between the final vector and the 
+  //   starting one);
+  // - set "viz: presmoothed" to visualize the effect of the
+  //   presmoother (for each level) on a random vector;
+  // - set "viz: postsmoother" to visualize the effect of postsmoother
+  // - set "viz: equation to plot" to the number of equation to 
+  //   be plotted (for vector problems only)
+  //
+  // NOTE: the options above work only for "viz: output format" == "xyz"
+  // (default value). If "viz: output format" == "dx", the user
+  // can only plot the aggregates. However, "xyz" works in 2D only.
 
   MLList.set("viz: enable", true);
-  MLList.set("viz: dimensions", 2);
   MLList.set("viz: x-coordinates", x_coord);
   MLList.set("viz: y-coordinates", y_coord);
+  MLList.set("viz: cycle", true);
+  MLList.set("viz: presmoother", true);
+  MLList.set("viz: postsmoother", true);
+  MLList.set("viz: equation to plot", 1);
 
   // ============== end of visualization parameters =============
 
@@ -155,7 +171,7 @@ int main(int argc, char *argv[])
   solver.SetAztecOption(AZ_output, 32);
 
   // solve with 500 iterations and 1e-12 tolerance  
-  //solver.Iterate(500, 1e-12);
+  solver.Iterate(500, 1e-12);
 
   delete MLPrec;
   
