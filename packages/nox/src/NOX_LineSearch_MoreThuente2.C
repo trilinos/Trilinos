@@ -99,12 +99,12 @@ bool NOX::LineSearch::MoreThuente2::compute(Abstract::Group& grp, double& step,
 			  const Abstract::Vector& dir,
 			  const Solver::Generic& s) 
 {
-  counter.increaseNumLineSearches();
+  counter.incrementNumLineSearches();
   const Abstract::Group& oldGrp = s.getPreviousSolutionGroup();
   int info = cvsrch(grp, step, oldGrp, dir, s);
 
   if (step != 1.0)
-    counter.increaseNumNonTrivialLineSearches();    
+    counter.incrementNumNonTrivialLineSearches();    
 
   counter.setValues(*paramsPtr);
 
@@ -295,7 +295,7 @@ int NOX::LineSearch::MoreThuente2::cvsrch(Abstract::Group& newgrp, double& stp,
       if (info != 1) 		// Line search failed 
       {
 	// RPP add
-	counter.increaseNumFailedLineSearches();
+	counter.incrementNumFailedLineSearches();
 
 	stp = recoverystep;
 	newgrp.computeX(oldgrp, dir, stp);
@@ -329,7 +329,7 @@ int NOX::LineSearch::MoreThuente2::cvsrch(Abstract::Group& newgrp, double& stp,
     print.printStep(nfev, stp, finit, f, message);
 
     // RPP add
-    counter.increaseNumIterations();
+    counter.incrementNumIterations();
 
     // In the first stage we seek a step for which the modified
     // function has a nonpositive value and nonnegative derivative.
