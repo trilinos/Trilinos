@@ -105,12 +105,11 @@ if (out_level > 2) print_plan("BEFORE RESIZE", plan, my_proc);
 
 	if (my_send_data.sizes != NULL) {
 if (out_level > 1) printf("%d: About to call comm_resize\n", my_proc);
-	    LB_Comm_Resize(plan, my_send_data.sizes, 43);
-	    LB_Comm_Resize(plan, NULL, 43);
-	    LB_Comm_Resize(plan, my_send_data.sizes, 43);
+	    LB_Comm_Resize(plan, my_send_data.sizes, 43, NULL);
+	    LB_Comm_Resize(plan, NULL, 43, NULL);
+	    LB_Comm_Resize(plan, my_send_data.sizes, 43, NULL);
 if (out_level > 2) print_plan("AFTER RESIZE", plan, my_proc);
 	}
-
 
 	if (my_send_data.sizes == NULL) nbytes = my_send_data.same_size * sizeof(float);
 	else nbytes = sizeof(float);
@@ -163,6 +162,7 @@ if (out_level > 1) printf("%d: Comm_Do_Reverse returned error code %d\n", my_pro
     }
 
     LB_Memory_Stats();
+    MPI_Finalize();
 
     return(0);
 }
@@ -476,7 +476,7 @@ int my_proc)
 End:
     MPI_Reduce(&err, &i, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
     if (my_proc == 0) {
-	if (i == 0) printf(">> Right answer for foward communication!\n");
+	if (i == 0) printf(">> Right answer for forward communication!\n");
         else printf(">> Wrong answer for forward communication on %d procs\n", i);
     }
 }
