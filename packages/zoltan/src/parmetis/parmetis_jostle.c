@@ -758,8 +758,10 @@ static int Zoltan_ParMetis_Jostle(
     /* Get edge weights if needed */
     if (get_graph_data)
        num_edges = xadj[num_obj];
-    else
+    else {
        num_edges = 0;
+       edge_wgt_dim = 0;
+    }
 
     if (edge_wgt_dim){
       adjwgt = (idxtype *)ZOLTAN_MALLOC(edge_wgt_dim * num_edges
