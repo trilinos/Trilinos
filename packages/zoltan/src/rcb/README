@@ -1,13 +1,21 @@
 
-RCB DIRECTORY -- Plimpton's implementation of Recursive Coordinate Bisection.
+RCB DIRECTORY -- Implementation of Recursive Coordinate Bisection.
 -----------------------------------------------------------------------------
 
 rcb_const.h   -- Data structure definitions needed for RCB (RCB_Struct, rcb_rtn,
                  rcb_box, rcb_median, rcb_tree, rcb_dot).  Prototypes for
                  external functions in rcb_util.c.
 
-rcb.c         -- Plimpton's RCB code with few modifications.
+rcb.c         -- Implementation of RCB.
 
 rcb_util.c    -- Functions that call the load-balancing query routines to
-                 build the data structures needed for Plimpton's RCB algorithm.
+                 build the data structures needed for RCB algorithm.
                  (initialize_dot, rcb_build_data_structure)
+
+point_assign.c -- Given a geometric decomposition constructed via RCB,
+		 this routine determines which processor a particular
+		 geometric point is assigned to.
+
+box_assign.c  -- Given a geometric decomposition constructed via RCB,
+		 this routine determines which processors an axis-aligned
+		 box intersects.
