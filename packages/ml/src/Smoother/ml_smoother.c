@@ -3020,8 +3020,8 @@ int ML_Smoother_Gen_Hiptmair_Data(ML_Sm_Hiptmair_Data **data, ML_Operator *Amat,
    ML_1Level *mylevel;
    ML_Krylov   *kdata;
    struct ML_CSR_MSRdata *matdata;
-   int *row_ptr, *bindx, i, j, k;
-   double *val_ptr, *vals=NULL;
+   int *row_ptr, /* *bindx,*/ i, j, k;
+   double *val_ptr, /* *vals=NULL*/;
 #ifdef ML_TIMING_DETAILED
    double t0;
 
@@ -3102,7 +3102,7 @@ int ML_Smoother_Gen_Hiptmair_Data(ML_Sm_Hiptmair_Data **data, ML_Operator *Amat,
       ML_2matmult(Amat,Tmat_bc,tmpmat2);
       matdata = (struct ML_CSR_MSRdata *) (tmpmat2->data);
       row_ptr = matdata->rowptr;
-      bindx = matdata->columns;
+      /*bindx = matdata->columns;*/
       val_ptr = matdata->values;
 
       for (i=0; i < BClength; i++)
