@@ -1,0 +1,6 @@
+#!/bin/sh
+# This is the crontab script that runs benchmarks on puffin on a regular basis.
+MAILTO=jhu@ca.sandia.gov,tuminaro@ca.sandia.gov
+# run at 22:30, Sunday through Thursday
+#30 22 * * 0-4     /home/jhu/BENCHMARK/ml/etc/ml_bench_master
+*/05 * * * *     /home/jhu/BENCHMARK/ml/etc/ml_bench_master

@@ -1,0 +1,54 @@
+#!/bin/sh
+#
+# This script is part of ML's benchmarking facility.  It is one of the scripts
+# that allows benchmarking to run under the pbs batch scheduling software.
+# qbench is called from the script "run_one". 
+#
+# This script submits the script SCRIPTNAME to the pbs batch system.  The
+# script will not finish until the job has completed.
+#
+# usage: qbench [number_of_processors] 
+#
+# The value of number_of_processors defaults to one if a value is not supplied.
+#
+# Note:   It is assumed that number_of_processors is either one or an even
+#         number.
+#
+################################################################################
+SCRIPTNAME="mpibench.pbs"
+WALLTIME='1:00:00'
+################################################################################
+#
+rm -f nproc_file
+temp=`echo xx$1xx | sed "s/ *//g"`
+#if test `expr ${temp}` = 'xxxx'
+if test `expr ${temp}` = 'xxxx' -o \
+        `expr ${temp}` = 'xx1xx'
+then
+  NNODES=1
+  echo ${NNODES} > nproc_file
+else
+  echo $1 > nproc_file
+  NNODES=`expr $1 / 2`
+fi
+SESSARGS="-l nodes=${NNODES}:ppn=2 -l walltime=${WALLTIME} ${SCRIPT_DIRECTORY}/${SCRIPTNAME}"
+#echo "session args: ${SESSARGS}"
+echo ">>>>> qsub ${SESSARGS}"
+JOBID=`qsub ${SESSARGS}`
+touch ${JOBID}
+#echo "qsub has returned"
+while test -e ${JOBID}
+    do
+    sleep 15
+done
+#echo "job has finished"
+sleep 5
+rm -f nproc_file
+temp=`echo ${JOBID} | sed "s/.puffin.ca.sandia.gov//g"`
+cat ${SCRIPTNAME}.o${temp} | grep -v "Warning: no access" > xxxxxxx
+rm -f ${SCRIPTNAME}.o${temp}
+cat xxxxxxx | grep -v "Thus no job" > ${SCRIPTNAME}.o${temp}
+rm -f xxxxxxx
+SCRATCH_SUBDIR=`cat scratch_subdirectory`
+mv ${SCRIPTNAME}.o${temp} ${SCRATCH_SUBDIR}/xxxxxx${ttt}
+mv ${SCRIPTNAME}.e${temp} ${SCRATCH_SUBDIR}/

@@ -1,0 +1,39 @@
+#!/bin/sh
+#
+# This script is called from "run_benchmark_cronscript".  This script kicks
+# off the script "run_benchmark".   The ml and mlbench libraries are first
+# updated (if necessary) via cvs.
+################################################################################
+HOME=/home/jhu
+#BENCHMARK=Benchmark
+################################################################################
+#
+CVSROOT=:ext:jhu@146.246.245.133:/home/tuminaro/CVS
+CVS_RSH=/usr/bin/ssh
+export CVSROOT
+export CVS_RSH
+#
+#cd ${HOME} 
+#if test -e ${BENCHMARK}
+#then
+#  :
+#else
+#  mkdir ${BENCHMARK}
+#fi
+##
+#cd ${BENCHMARK}
+#if test -e ml
+#then
+#  cvs update ml
+#else
+#  cvs checkout ml
+#fi
+#if test -e mlbench
+#then
+#  cvs update mlbench
+#else
+#  cvs checkout mlbench
+#fi
+#
+cd ${HOME}/${BENCHMARK}/ml/etc
+./run_benchmarks
