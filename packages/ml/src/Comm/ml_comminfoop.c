@@ -90,7 +90,7 @@ int ML_CommInfoOP_Generate(ML_CommInfoOP **comm_info,
    /* figure out the number of neighbors that we send to */
 
    for (i = 0; i < N_rcv_procs; i++) procs[rcv_neighbors[i]] = 1;
-   ML_gsum_vec_int(procs, tempo, ml_comm->ML_nprocs, ml_comm);
+   ML_gsum_vec_int(&procs, &tempo, ml_comm->ML_nprocs, ml_comm);
    N_send_procs = procs[proc_id];
    ML_free(tempo);
    ML_free(procs);

@@ -713,7 +713,7 @@ int ML_Aggregate_Coarsen( ML_Aggregate *ag, ML_Operator *Amatrix,
 
    ndofs = Amatrix->outvec_leng;
    if ( ndofs < 2 ) ndofs = 0; else ndofs = 1;
-   ML_gsum_vec_int(&ndofs, &i, 1, comm);
+   ML_gsum_scalar_int(&ndofs, &i, comm);
    /*
    gmin = ML_gmax_double((double) (-1.0 * Amatrix->outvec_leng) , comm);
    if (comm->ML_mypid == 0)

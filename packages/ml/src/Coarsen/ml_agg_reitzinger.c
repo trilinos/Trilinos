@@ -83,7 +83,7 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
 
   coarsest_level = fine_level - Nlevels_nodal + 1; 
   i = ml_nodes->Amat[coarsest_level].invec_leng;
-  ML_gsum_vec_int(&i,&j,1,ml_nodes->comm);
+  ML_gsum_scalar_int(&i,&j,ml_nodes->comm);
   if (i <= 1) {  /* no edges so cut out last level */
     Nlevels_nodal--;
     coarsest_level = fine_level - Nlevels_nodal + 1; 
@@ -512,7 +512,7 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
      Nneighbors_snd /= 2;
 
      /* Figure out how many neighbors we will recieve from */     
-     ML_gsum_vec_int(num_msgs,tmp_msgs,Tfine->comm->ML_nprocs,Tfine->comm);
+     ML_gsum_vec_int(&num_msgs,&tmp_msgs,Tfine->comm->ML_nprocs,Tfine->comm);
      Nneighbors_rcv = num_msgs[Tfine->comm->ML_mypid];
      ML_free(tmp_msgs);
      ML_free(num_msgs);
@@ -733,7 +733,7 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
      /* Check that both dimensions of T are strictly greater than 0. 
         If not, clean up & break from main loop. */
      i = Tcoarse->outvec_leng;
-     ML_gsum_vec_int(&i,&j,1,ml_nodes->comm);
+     ML_gsum_scalar_int(&i,&j,ml_nodes->comm);
      if (i==0)
      {
         if (Tcoarse->comm->ML_mypid == 0 && 5 < ML_Get_PrintLevel()) {
@@ -853,7 +853,7 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
         }
      }
      /* If check has failed, clean up current level & break from main loop. */
-     ML_gsum_vec_int(&bail_flag,&j,1,ml_nodes->comm);
+     ML_gsum_scalar_int(&bail_flag,&j,ml_nodes->comm);
      if (bail_flag)
      {
         if (Tcoarse->comm->ML_mypid == 0 && 5 < ML_Get_PrintLevel()) {
@@ -1177,7 +1177,7 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
         Pe = &(ml_edges->Amat[grid_level]);
         nz_ptr = ML_Comm_GsumInt(ml_edges->comm, Pe->N_nonzeros);
         i = Pe->outvec_leng;
-        ML_gsum_vec_int(&i,&j,1,ml_nodes->comm);
+        ML_gsum_scalar_int(&i,&j,ml_nodes->comm);
         if (Tfine->comm->ML_mypid==0)
            printf("Ke: Total nonzeros = %d (Nrows = %d)\n", nz_ptr,i);
      }
@@ -1187,8 +1187,8 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
 
   if (ag->print_flag < ML_Get_PrintLevel())
   {
-    ML_gsum_vec_int(&Nnz_allgrids,&j,1,ml_nodes->comm);
-    ML_gsum_vec_int(&Nnz_finegrid,&j,1,ml_nodes->comm);
+    ML_gsum_scalar_int(&Nnz_allgrids,&j,ml_nodes->comm);
+    ML_gsum_scalar_int(&Nnz_finegrid,&j,ml_nodes->comm);
 
     if (Tfine->comm->ML_mypid==0 )
     {

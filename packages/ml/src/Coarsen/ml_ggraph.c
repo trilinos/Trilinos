@@ -377,7 +377,8 @@ int ML_GGraph_Gen_NodeGraph(ML_GGraph *ml_gg,void *grid,void (*gf),
       ML_memory_alloc( (void **) &inttmp, nbytes, "gg3" );
       for ( i = 0; i < nprocs; i++ ) proc_array[i] = 0;
       proc_array[mypid] = count;
-      ML_Comm_GsumVecInt( comm, proc_array, inttmp, nprocs );
+      /*ML_Comm_GsumVecInt( comm, proc_array, inttmp, nprocs );*/
+      ML_gsum_vec_int( &proc_array, &inttmp, nprocs, comm );
       ML_memory_free( (void **) &inttmp );
       total_count = 0;
       for ( i = 0; i < nprocs; i++ )
@@ -506,7 +507,8 @@ int ML_GGraph_Gen_NodeGraph(ML_GGraph *ml_gg,void *grid,void (*gf),
       }
       nbytes = nprocs * sizeof( int );
       ML_memory_alloc( (void **) &inttmp, nbytes, "ggd" );
-      ML_Comm_GsumVecInt( comm, proc_array, inttmp, nprocs );
+      /*ML_Comm_GsumVecInt( comm, proc_array, inttmp, nprocs );*/
+      ML_gsum_vec_int( &proc_array, &inttmp, nprocs, comm );
       recv_cnt = proc_array[mypid];
       msgtype = 539;
       for ( i = 0; i < nprocs; i++ ) inttmp[i] = 0;

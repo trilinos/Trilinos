@@ -969,6 +969,150 @@ void ML_az_dsort2(double dlist[], int N, int list2[])
 
 }
 
+/******************************************************************************/
+
+void ML_gsum_scalar_int(int vals[], int vals2[], ML_Comm *comm)
+{
+
+  /* local variables */
+
+  int   type;             /* type of next message */
+  int   partner;          /* processor I exchange with */
+  int   mask;             /* bit pattern identifying partner */
+  int   hbit;             /* largest nonzero bit in nprocs */
+  int   nprocs_small;     /* largest power of 2 <= nprocs */
+  int   k;
+  int   node, nprocs;
+  char *yo = "ML_gsum_vec_int: ";
+  int   length = 1;
+
+  USR_REQ     request;  /* Message handle */
+#ifdef ML_USEMPIFUNCTIONS
+    int i;
+#endif
+
+  /*********************** first executable statment *****************/
+
+#ifdef ML_USEMPIFUNCTIONS
+  MPI_Allreduce((void *) vals,(void *) vals2, length, MPI_INT, MPI_SUM,
+                MPI_COMM_WORLD);
+  *vals = *vals2;
+  return;
+#endif
+
+  node   = comm->ML_mypid;
+  nprocs = comm->ML_nprocs;
+
+  type            = 1998;
+
+  /* Find next lower power of 2. */
+
+  for (hbit = 0; (nprocs >> hbit) != 1; hbit++);
+
+  nprocs_small = 1 << hbit;
+
+  if (nprocs_small * 2 == nprocs) {
+    nprocs_small *= 2;
+    hbit++;
+  }
+
+  partner = node ^ nprocs_small;
+  if (node+nprocs_small < nprocs) {
+
+    /* post receives on the hypercube portion of the machine partition */
+
+    if (comm->USR_irecvbytes((void *) vals2, length*sizeof(int), &partner, 
+			     &type, comm->USR_comm, &request)) {
+      (void) fprintf(stderr, "%sERROR on node %d\nrecv failed, message type = %d\n", yo, node, type);
+      exit(-1);
+    }
+  }
+  else if (node & nprocs_small) {
+
+    /*
+     * Send messages from the portion of the machine partition "above" the
+     * largest hypercube to the hypercube portion.
+     */
+
+    if (comm->USR_sendbytes((void *) vals, length*sizeof(int), partner, type,
+			    comm->USR_comm)) {
+      (void) fprintf(stderr, "%sERROR on node %d\nsend failed, message type = %d\n", yo, node, type);
+      exit(-1);
+    }
+  }
+
+  if (node+nprocs_small < nprocs) {
+
+    /* wait to receive the messages */
+
+    if (comm->USR_waitbytes((void *) vals2, length*sizeof(int), &partner, &type,
+			    comm->USR_comm, &request) < length*sizeof(int)) {
+      (void) fprintf(stderr, "%sERROR on node %d\nwait failed, message type = %d \n", yo, node, type);
+      exit(-1);
+    }
+
+    /* sum values */
+
+    for (k = 0; k < length; k++) vals[k] += vals2[k];
+  }
+
+  /* Now do a binary exchange on nprocs_small nodes. */
+
+  if (!(node & nprocs_small)) {
+    for (mask = nprocs_small >> 1; mask; mask >>= 1) {
+      partner = node ^ mask;
+
+      if (comm->USR_irecvbytes((void *) vals2, length*sizeof(int), &partner, 
+			       &type, comm->USR_comm, &request)) {
+        (void) fprintf(stderr, "%sERROR on node %d\nrecv failed, message type = %d\n", yo, node, type);
+        exit(-1);
+      }
+
+      if (comm->USR_sendbytes((void *) vals, length*sizeof(int), partner, type,
+				comm->USR_comm)) {
+        (void) fprintf(stderr, "%sERROR on node %d\nsend failed, message type = %d\n", yo, node, type);
+        exit(-1);
+      }
+
+      if (comm->USR_waitbytes((void *) vals2, length*sizeof(int), &partner, 
+		       &type, comm->USR_comm, &request) < length*sizeof(int)) {
+        (void) fprintf(stderr, "%sERROR on node %d\nwait failed, message type = %d \n", yo, node, type);
+        exit(-1);
+      }
+
+      for (k = 0; k < length; k++) vals[k] += vals2[k];
+    }
+  }
+
+  /* Finally, send message from lower half to upper half. */
+
+  partner = node ^ nprocs_small;
+  if (node & nprocs_small) {
+    if (comm->USR_irecvbytes((void *) vals, length*sizeof(int), &partner, 
+			     &type, comm->USR_comm, &request)) {
+      (void) fprintf(stderr, "%sERROR on node %d\nrecv failed, message type = %d\n", yo, node, type);
+      exit(-1);
+    }
+  }
+
+  else if (node+nprocs_small < nprocs ) {
+    if (comm->USR_sendbytes((void *) vals, length*sizeof(int), partner, type,
+			    comm->USR_comm)) {
+      (void) fprintf(stderr, "%sERROR on node %d\nsend failed, message type = %d\n", yo, node, type);
+      exit(-1);
+    }
+  }
+
+  if (node & nprocs_small) {
+    if (comm->USR_waitbytes((void *) vals, length*sizeof(int), &partner, &type, 
+			    comm->USR_comm, &request) < length*sizeof(int)) {
+      (void) fprintf(stderr, "%sERROR on node %d\nwait failed, message type = %d \n", yo, node, type);
+      exit(-1);
+    }
+  }
+
+} /* ML_gsum_scalar_int */
+
 /*************************************************************************/
 /*************************************************************************/
 /*************************************************************************/
@@ -1003,7 +1147,7 @@ void ML_az_dsort2(double dlist[], int N, int list2[])
 
 **************************************************************************/
 
-void ML_gsum_vec_int(int vals[], int vals2[], int length, ML_Comm *comm)
+void ML_gsum_vec_int(int **tvals, int **tvals2, int length, ML_Comm *comm)
 {
 
   /* local variables */
@@ -1019,15 +1163,20 @@ void ML_gsum_vec_int(int vals[], int vals2[], int length, ML_Comm *comm)
 
   USR_REQ     request;  /* Message handle */
 #ifdef ML_USEMPIFUNCTIONS
-    int i;
+  int *tmpptr;
+#else
+  int  *vals = *tvals;
+  int  *vals2 = *tvals2;
 #endif
 
   /*********************** first executable statment *****************/
 
 #ifdef ML_USEMPIFUNCTIONS
-  MPI_Allreduce((void *) vals,(void *) vals2, length, MPI_INT, MPI_SUM,
+  MPI_Allreduce((void *) *tvals,(void *) *tvals2, length, MPI_INT, MPI_SUM,
                 MPI_COMM_WORLD);
-  for (i=0; i<length; i++) vals[i] = vals2[i];
+  tmpptr = *tvals;
+  *tvals = *tvals2;
+  *tvals2 = tmpptr;
   return;
 #endif
 
@@ -2253,7 +2402,7 @@ void ML_PauseForDebugger(ML_Comm *comm)
   char go = ' ';
 
   i = (int) getenv("ML_BREAK_FOR_DEBUGGER");
-  ML_gsum_vec_int(&i, &j, 1, comm);
+  ML_gsum_scalar_int(&i, &j, comm);
   if (i != 0)
   {
     if (mypid == 0) printf("Host and Process Ids for tasks\n");

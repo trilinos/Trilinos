@@ -665,11 +665,6 @@ int ML_Comm_GsumVecInt(ML_Comm *com_ptr, int *idata, int *itmp, int leng)
    int     i, j, k, nprocs, mypid;
    USR_REQ Request;
 
-#ifdef ML_USEMPIFUNCTIONS
-   ML_gsum_vec_int(idata, itmp, leng, com_ptr);
-   return 0;
-#endif
-
    /* ----------------------------------------------------------------- */
    /* check validity of the communication                               */
    /* ----------------------------------------------------------------- */

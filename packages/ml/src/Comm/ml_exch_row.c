@@ -1164,7 +1164,7 @@ void ML_set_message_info(int N_external, int external[], int max_per_proc,
 
   /* sum over all processors all the neighbors arrays */
 
-  ML_gsum_vec_int(neighbors, tempneigh, comm->ML_nprocs, comm);
+  ML_gsum_vec_int(&neighbors, &tempneigh, comm->ML_nprocs, comm);
 
   /* decode the combined 'neighbors' array from all the processors */
 

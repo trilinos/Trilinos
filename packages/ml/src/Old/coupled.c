@@ -2217,7 +2217,8 @@ int ML_Aggregate_ComposeRecvInfo(int nprocs, int mypid, int new_N_send,
       int_buf2 = (int *) malloc(nprocs * sizeof(int));
       for (i = 0; i < nprocs; i++) int_buf[i] = 0;
       for (i = 0; i < new_N_send; i++) int_buf[new_send_neighbors[i]] = 1;
-      ML_Comm_GsumVecInt(comm, int_buf, int_buf2, nprocs);
+      /*ML_Comm_GsumVecInt(comm, int_buf, int_buf2, nprocs);*/
+      ML_gsum_vec_int(&int_buf, &int_buf2, nprocs, comm);
       free( int_buf2 );
       new_N_rcv = int_buf[mypid];
       free( int_buf );

@@ -419,12 +419,12 @@ int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag,
       itmp_array2 = (int *) ML_allocate( nprocs * sizeof(int));
       for ( i = 0; i < nprocs; i++ ) itmp_array[i] = 0;
       itmp_array[mypid] = Nrows;
-      ML_gsum_vec_int(itmp_array, itmp_array2, nprocs, comm);
+      ML_gsum_vec_int(&itmp_array, &itmp_array2, nprocs, comm);
       Nrows_offset = 0;
       for ( i = 0; i < mypid; i++ ) Nrows_offset += itmp_array[i];
       for ( i = 0; i < nprocs; i++ ) itmp_array[i] = 0;
       itmp_array[mypid] = count;
-      ML_gsum_vec_int(itmp_array, itmp_array2, nprocs, comm);
+      ML_gsum_vec_int(&itmp_array, &itmp_array2, nprocs, comm);
       naggr_offset = 0;
       for ( i = 0; i < mypid; i++ ) naggr_offset += itmp_array[i];
       ML_free(itmp_array);
@@ -435,8 +435,8 @@ int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag,
       for ( i = 0; i < Nrows; i++ )
          fprintf(zfp, "%d \n", ml_ag->aggr_info[level][i]+naggr_offset);
       fclose(zfp);
-      ML_gsum_vec_int(&i, &j, 1, comm);
-      ML_gsum_vec_int(&i, &j, 1, comm);
+      ML_gsum_scalar_int(&i, &j, comm);
+      ML_gsum_scalar_int(&i, &j, comm);
       exit(1);
    }
    if ( ml_ag->cur_level == ml_ag->max_levels-1 && nprocs == 1 )

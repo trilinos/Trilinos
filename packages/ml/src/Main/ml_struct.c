@@ -1982,7 +1982,7 @@ int ML_Gen_Smoother_MLS(ML *ml, int nl, int pre_or_post,
      scanf("%d",&iii);
      iii = deg;
    }
-   ML_gsum_vec_int(&jjj, &iii, 1, ml->comm);
+   ML_gsum_scalar_int(&jjj, &iii, ml->comm);
    */
    iii = deg;
    if (iii >= 0) {
@@ -2552,8 +2552,8 @@ int ML_Gen_Solver(ML *ml, int scheme, int finest_level, int coarsest_level)
       if (temp != NULL) {
          t1 = current_level->Amat->outvec_leng;
          t2 = temp->Amat->outvec_leng;
-         ML_gsum_vec_int(&t1, &j, 1, ml->comm);
-         ML_gsum_vec_int(&t2, &j, 1, ml->comm);
+         ML_gsum_scalar_int(&t1, &j, ml->comm);
+         ML_gsum_scalar_int(&t2, &j, ml->comm);
          if (t2 >= t1) {
             if (ml->comm->ML_mypid == 0) 
                pr_error("Error: Grid %d (where finest = 0) has %d unknowns \
@@ -4069,7 +4069,8 @@ int ML_Gen_Amatrix_Global(ML_Matrix_DCSR *inmat, ML_Matrix_DCSR *outmat,
    ML_memory_alloc( (void**) &itmp, nprocs * sizeof(int), "KLB" );
    for ( i = 0; i < nprocs; i++ ) proc_array[i] = 0;
    proc_array[mypid] = N_internal;
-   ML_Comm_GsumVecInt(comm, proc_array, itmp, nprocs);
+   /*ML_Comm_GsumVecInt(comm, proc_array, itmp, nprocs);*/
+   ML_gsum_vec_int(&proc_array, &itmp, nprocs, comm);
    for ( i = nprocs-1; i >= 1; i-- ) proc_array[i] = proc_array[i-1];
    proc_array[0] = 0;
    for ( i = 1; i < nprocs; i++ ) proc_array[i] += proc_array[i-1];

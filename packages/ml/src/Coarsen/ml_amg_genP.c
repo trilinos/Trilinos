@@ -253,7 +253,7 @@ int ML_AMG_Increment_Level(ML *ml, int current_level, ML_Operator *Amat,
    if (current_level == ml->ML_num_levels-1) return(-1);
 
    total_size = Amat->invec_leng;
-   ML_gsum_vec_int(&total_size, &temp, 1, ml->comm);
+   ML_gsum_scalar_int(&total_size, &temp,ml->comm);
    if ( total_size <= amg->max_coarse_size ) return(-1);
 
    return(current_level+1);
@@ -272,7 +272,7 @@ int ML_AMG_Decrement_Level(ML *ml, int current_level, ML_Operator *Amat,
    if (current_level == 0 ) return(-1);
 
    total_size = Amat->invec_leng;
-   ML_gsum_vec_int(&total_size, &temp, 1, ml->comm);
+   ML_gsum_scalar_int(&total_size, &temp, ml->comm);
    if ( total_size <= amg->max_coarse_size ) return(-1);
 
    return(current_level-1);

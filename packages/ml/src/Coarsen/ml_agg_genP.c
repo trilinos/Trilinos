@@ -240,7 +240,7 @@ int ML_Gen_MGHierarchy(ML *ml, int fine_level,
       }
       /* If check has failed on any processor, clean up current level & break
          from main loop. */
-      ML_gsum_vec_int(&bail_flag,&j,1,ml->comm);
+      ML_gsum_scalar_int(&bail_flag,&j,ml->comm);
       if (bail_flag)
       {
          if (Pmat->comm->ML_mypid == 0 && 5 < ML_Get_PrintLevel()) {
@@ -773,7 +773,7 @@ int ML_AGG_Increment_Level(ML *ml, int current_level, ML_Operator *Amat,
    if (current_level == ml->ML_num_levels-1) return(-1);
 
    total_size = Amat->invec_leng;
-   ML_gsum_vec_int(&total_size, &temp, 1, ml->comm);
+   ML_gsum_scalar_int(&total_size, &temp, ml->comm);
    if ( total_size <= ag->max_coarse_size ) return(-1);
 
    return(current_level+1);
@@ -792,7 +792,7 @@ int ML_AGG_Decrement_Level(ML *ml, int current_level, ML_Operator *Amat,
    if (current_level == 0 ) return(-1);
 
    total_size = Amat->invec_leng;
-   ML_gsum_vec_int(&total_size, &temp, 1, ml->comm);
+   ML_gsum_scalar_int(&total_size, &temp, ml->comm);
    if ( total_size <= ag->max_coarse_size ) return(-1);
 
    return(current_level-1);

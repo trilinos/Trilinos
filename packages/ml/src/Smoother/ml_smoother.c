@@ -4276,7 +4276,7 @@ int ML_Smoother_ComposeOverlappedMatrix(ML_Operator *Amat, ML_Comm *comm,
    proc_array2 = (int *) ML_allocate(nprocs * sizeof(int) );
    for ( i = 0; i < nprocs; i++ ) proc_array[i] = 0;
    proc_array[mypid] = Nrows;
-   ML_gsum_vec_int(proc_array, proc_array2, nprocs, comm);
+   ML_gsum_vec_int(&proc_array, &proc_array2, nprocs, comm);
    NrowsOffset = 0;
    for (i = 0; i < mypid; i++) NrowsOffset += proc_array[i];
    for (i = 1; i < nprocs; i++) proc_array[i] += proc_array[i-1];

@@ -94,7 +94,8 @@
 
    void   ML_az_sort(int list[], int N, int list2[], double list3[]);
    void   ML_az_dsort(double list[], int N);
-   void   ML_gsum_vec_int(int vals[], int vals2[], int, ML_Comm *comm);
+   void   ML_gsum_scalar_int(int vals[], int vals2[], ML_Comm *comm);
+   void   ML_gsum_vec_int(int *vals[], int *vals2[], int, ML_Comm *comm);
    void   ML_rm_duplicates(int array[], int *N);
    void   ML_splitup_big_msg(int, char *, char *, unsigned int, int *,
                              int *, int *, int *, int , int *, ML_Comm *);

@@ -191,7 +191,7 @@ int ML_CG_ComputeEigenvalues(ML_Krylov *data, int length, int scale_by_diag)
    itmp_array   = (int *) ML_allocate(nprocs * sizeof(int));
    for ( i = 0; i < nprocs; i++ ) offset_array[i] = 0;
    offset_array[mypid] = length;
-   ML_gsum_vec_int(offset_array, itmp_array, nprocs, comm);
+   ML_gsum_vec_int(&offset_array, &itmp_array, nprocs, comm);
    ML_free(itmp_array);
    myoffset = 0;
    for ( i = 0; i < mypid; i++ ) myoffset += offset_array[i];

@@ -74,7 +74,7 @@ void setup_henry(ML *my_ml, int grid0, int **imapper, int **separator,
    /* This is an over estimate of what we really need */
 
    total_rows = Nrows;
-   ML_gsum_vec_int(&total_rows, &j, 1, my_ml->comm);
+   ML_gsum_scalar_int(&total_rows, &j, my_ml->comm);
    sep_space = (int) (10.*sqrt( (double) total_rows ));
    sep_space += Nrows;
 
