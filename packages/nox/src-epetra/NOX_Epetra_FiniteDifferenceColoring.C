@@ -142,17 +142,30 @@ bool FiniteDifferenceColoring::computeJacobian(const Epetra_Vector& x, Epetra_Op
   int myMin = map.MinMyGID(); // Minimum Local ID value
   int myMax = map.MaxMyGID(); // Maximum Local ID value
 
-  // Compute the RHS at the initial solution
-  interface.computeF(x, fo, Interface::Jacobian);
+  // We need to loop over the largest number of colors on a processor, and
+  // we determine that number here
+  int maxGlobalNumColors = numColors;
+  x.Comm().MaxAll(&numColors, &maxGlobalNumColors, 1);
 
+  // Use the overlap (column-space) version of the solution
   xCol_perturb->Import(x, *rowColImporter, Insert);
-
+    
+  // Compute the RHS at the initial solution
+  interface.computeF(*xCol_perturb, fo, Interface::FiniteDifferenceF);
+   
   // loop over each color in the colorGraph
-  for (int k = 0; k < numColors; k++) {
-
+  for (int k = 0; k < maxGlobalNumColors; k++) {
+  
+    // For processors not having this many colors, set a flag signaling
+    // not to use bogus info in filling the FDC Jacobian 
+    bool skipIt = false;
+    if( k >= numColors ) skipIt = true;
+ 
     // Perturb the solution vector using coloring
     
     // ----- First create color map and assoc perturbation vectors
+    int color = -1;
+    if( !skipIt ) color = colorList[k];
     cMap = colorMap->GenerateMap(colorList[k]);
     colorVect = new Epetra_Vector(*cMap);
     betaColorVect = new Epetra_Vector(*cMap);
@@ -195,24 +208,26 @@ bool FiniteDifferenceColoring::computeJacobian(const Epetra_Vector& x, Epetra_Op
     }
     
     // Insert nonzero column entries into the jacobian    
-    for (int j = myMin; j < myMax+1; j++) {
-      int globalColumnID = columns->operator[](k)[map.LID(j)];
-      if( globalColumnID >= 0) { 
-
-        // Now complete the approximation to the derivative by dividing by
-        // the appropriate perturbation
-        if ( diffType != Centered ) 
-          Jc[map.LID(j)] /= 
-            (scaleFactor * mappedColorVect[columnMap->LID(globalColumnID)]);
-        else
-          Jc[map.LID(j)] /= 
-            (2.0 * mappedColorVect[columnMap->LID(globalColumnID)]);
-
-	int err = jac.ReplaceGlobalValues(j,1,&Jc[map.LID(j)],&globalColumnID);
-        if(err) {
-          cout << "ERROR (" << map.Comm().MyPID() << ") : "
-               << "Inserting global value with indices (" << j << ","
-               << globalColumnID << ") = " << Jc[map.LID(j)] << endl;
+    if( !skipIt ) {
+      for (int j = myMin; j < myMax+1; j++) {
+        int globalColumnID = columns->operator[](k)[map.LID(j)];
+        if( globalColumnID >= 0) { 
+  
+          // Now complete the approximation to the derivative by dividing by
+          // the appropriate perturbation
+          if ( diffType != Centered ) 
+            Jc[map.LID(j)] /= 
+              (scaleFactor * mappedColorVect[columnMap->LID(globalColumnID)]);
+          else
+            Jc[map.LID(j)] /= 
+              (2.0 * mappedColorVect[columnMap->LID(globalColumnID)]);
+  
+  	int err = jac.ReplaceGlobalValues(j,1,&Jc[map.LID(j)],&globalColumnID);
+          if(err) {
+            cout << "ERROR (" << map.Comm().MyPID() << ") : "
+                 << "Inserting global value with indices (" << j << ","
+                 << globalColumnID << ") = " << Jc[map.LID(j)] << endl;
+          }
         }
       }
     }
@@ -226,6 +241,9 @@ bool FiniteDifferenceColoring::computeJacobian(const Epetra_Vector& x, Epetra_Op
     // Unperturb the solution vector
     xCol_perturb->Import(x, *rowColImporter, Insert);
   }
+
+  // Use a barrier to be safe
+  x.Comm().Barrier();
 
   jac.TransformToLocal();
 
