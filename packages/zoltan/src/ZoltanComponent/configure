@@ -2936,10 +2936,10 @@ if test "$with_ZoltanHome" = _need_to_find ; then
 
    # Where should I search for this file by default ?
    curr_dir=`pwd`;
-   sys_dirs="/usr/local/Zoltan /usr/local/packages/Zoltan"
    hdir=$HOME
-   hdirs=" $hdir/Zoltan $hdir/packages/Zoltan $curr_dir/../"
-   search_path=" $sys_dirs $hdirs "
+   hdirs=" $curr_dir/../ $hdir/Zoltan $hdir/packages/Zoltan "
+   sys_dirs="/usr/local/Zoltan /usr/local/packages/Zoltan"
+   search_path=" $hdirs $sys_dirs "
 
    ac_find_file_strict_dir="not_found"
    for dir in ""$search_path "" ; do
