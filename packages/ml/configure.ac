@@ -123,7 +123,9 @@ AC_ARG_WITH( ml_multiple_rhs,
              AC_HELP_STRING([--with-ml_multiple_rhs],[Enables blocked code
                 for multiple right hand sides.  Example:
                 --with-ml_multiple_rhs=4 for a blocking factor of 4.
-                (default is no)]),
+                NOTE:  With the icc compiler, you may need to add
+                CFLAGS="-x c++" to the configure line, in order for it to
+                interpret *.c files as c++ files.  (default is no)]),
              [ac_cv_use_ml_multiple_rhs=${withval}],
              [ac_cv_use_ml_multiple_rhs=no])
 
