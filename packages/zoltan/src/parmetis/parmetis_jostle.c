@@ -1032,16 +1032,22 @@ static int LB_ParMetis_Jostle(
     /* Special error checks to avoid certain death in ParMETIS */
     if (xadj[tmp_num_obj] == 0){
       /* No edges on a proc is a fatal error in ParMETIS 2.0
-         but fine with Jostle.                                */
-      if (strcmp(alg, "JOSTLE")){
+       * and in Jostle 1.2. This error test should be removed
+       * when the bugs in ParMETIS and Jostle have been fixed.
+       */
+      if (strcmp(alg, "JOSTLE") == 0){
         LB_PRINT_ERROR(lb->Proc, yo, "No edges on this proc; "
-                      "ParMETIS 2.0 will crash. "
+                      "Jostle will likely crash. "
                       "Please use a different load balancing method.");
-        ierr = LB_FATAL;
-        FREE_MY_MEMORY; 
-        LB_TRACE_EXIT(lb, yo);
-        return (ierr);
+      } else { /* ParMETIS */
+        LB_PRINT_ERROR(lb->Proc, yo, "No edges on this proc; "
+                      "ParMETIS will likely crash. "
+                      "Please use a different load balancing method.");
       }
+      ierr = LB_FATAL;
+      FREE_MY_MEMORY; 
+      LB_TRACE_EXIT(lb, yo);
+      return (ierr);
     }
   }
   
