@@ -33,7 +33,7 @@ LB_REFTREE* LB_Reftree_hash_lookup (LB *lb,
   int i;
   struct LB_reftree_hash_node *ptr;
 
-  i = LB_Hash(key, n, lb->Num_GID);
+  i = LB_Hash(key, lb->Num_GID, n);
   for (ptr=hashtab[i]; ptr != NULL; ptr = ptr->next){
     if (LB_EQ_GID(lb, ptr->gid, key))
       return (ptr->reftree_node);
@@ -59,7 +59,7 @@ void LB_Reftree_Hash_Insert(LB *lb, LB_REFTREE *reftree_node,
 int i;
 struct LB_reftree_hash_node *new_entry;
 
-  i = LB_Hash(reftree_node->global_id, size, lb->Num_GID);
+  i = LB_Hash(reftree_node->global_id, lb->Num_GID, size);
 
   new_entry = (struct LB_reftree_hash_node *)
               LB_MALLOC(sizeof(struct LB_reftree_hash_node));

@@ -78,10 +78,11 @@ void LB_Get_Obj_List(LB *lb, LB_ID_PTR global_ids, LB_ID_PTR local_ids,
 /*****************************************************************************/
 /*****************************************************************************/
 
-/* LB_Hash is a hash function for global ids. 
+/* LB_Hash is a hash function for Zoltan ids (local or global). 
  *
  * Input:
  *   key: a key to hash of type LB_ID_PTR
+ *   num_id_entries: the number of (LB_ID_TYPE-sized) entries of the key to use
  *   n: the range of the hash function is 0..n-1
  *
  * Return value:
@@ -101,7 +102,7 @@ void LB_Get_Obj_List(LB *lb, LB_ID_PTR global_ids, LB_ID_PTR local_ids,
  */
 
 
-unsigned int LB_Hash(LB_ID_PTR key, int n, int num_id_entries)
+unsigned int LB_Hash(LB_ID_PTR key, int num_id_entries, int n)
 {
   unsigned int h, rest, *p;
   char *byteptr;
@@ -123,7 +124,8 @@ unsigned int LB_Hash(LB_ID_PTR key, int n, int num_id_entries)
   }
 
   /* Merge the two parts */
-  h = (h*2654435761U) ^ rest;
+  if (rest)
+    h = (h*2654435761U) ^ rest;
 
   /* Return h mod n */
   h = h%n;

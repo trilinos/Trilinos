@@ -569,7 +569,7 @@ static int LB_ParMetis_Jostle(
 
     for (i=0; i< num_obj; i++){
       /* insert hashed elements into hash table */
-      j = LB_Hash(&(global_ids[i*num_gid_entries]), num_obj, num_gid_entries);
+      j = LB_Hash(&(global_ids[i*num_gid_entries]), num_gid_entries, num_obj);
       hash_nodes[i].next = hashtab[j];
       hashtab[j] = &hash_nodes[i];
     }
@@ -868,7 +868,7 @@ static int LB_ParMetis_Jostle(
   
     /* Insert nodes into hash table */
     for (i=0; i< nrecv; i++){
-      j = LB_Hash(hash_nodes[i].gid, nrecv, num_gid_entries);
+      j = LB_Hash(hash_nodes[i].gid, num_gid_entries, nrecv);
       hash_nodes[i].next = hashtab[j];
       hashtab[j] = &hash_nodes[i];
       if (lb->Debug_Level >= LB_DEBUG_ALL) {
@@ -1294,6 +1294,7 @@ static int scale_round_weights(float *fwgts, idxtype *iwgts, int n, int dim,
   int i, j, tmp, ierr, proc; 
   int *nonint, *nonint_local; 
   float *scale, *sum_wgt_local, *sum_wgt, *max_wgt_local, *max_wgt;
+  char msg[256];
   static char *yo = "scale_round_weights";
 
   ierr = LB_OK;
@@ -1362,7 +1363,15 @@ static int scale_round_weights(float *fwgts, idxtype *iwgts, int n, int dim,
         scale[j] = 1.;
         /* Scale unless all weights are integers (not all zero) */
         if (nonint[j] || (max_wgt[j] <= EPSILON) || (sum_wgt[j] > max_wgt_sum)){
-          scale[j] = max_wgt_sum/sum_wgt[j];
+          if (sum_wgt[j] == 0){
+            ierr = LB_WARN;
+            if (proc == 0){
+              sprintf(msg, "All weights are zero in component %1d", j);
+              LB_PRINT_WARN(proc, yo, msg);
+            }
+          }
+          else /* sum_wgt[j] != 0) */
+            scale[j] = max_wgt_sum/sum_wgt[j];
         }
       }
 
@@ -1504,7 +1513,7 @@ static int hash_lookup (LB *lb, struct LB_hash_node **hashtab, LB_ID_PTR key,
   int i;
   struct LB_hash_node *ptr;
 
-  i = LB_Hash(key, n, lb->Num_GID);
+  i = LB_Hash(key, lb->Num_GID, n);
   for (ptr=hashtab[i]; ptr != NULL; ptr = ptr->next){
     if (LB_EQ_GID(lb, ptr->gid, key))
       return (ptr->gno);
