@@ -338,21 +338,22 @@ AC_F77_LIBRARY_LDFLAGS
 #         DEC/CPLANT and see if template-related errors occur)
 
 # -- DEC CXX --
-#case $target in
-#  alpha*)
-#    if test $CXX = cxx; then
-#      TRILINOS_TEMPLATE_OBJS="cxx_repository/*.o"
-#    fi
-#  ;;
-#esac
-
-#AC_MSG_CHECKING([for template-specific object files to be linked])
 #if test "X$TRILINOS_TEMPLATE_OBJS" = "X"; then
+#  case $target in
+#    alpha*)
+#      if test $CXX = cxx; then
+#        TRILINOS_TEMPLATE_OBJS="cxx_repository/*.o"
+#      fi
+#    ;;
+#  esac
+#fi
+                                                                  
+#AC_MSG_CHECKING([for template-specific object files to be linked])if test "X$TRILINOS_TEMPLATE_OBJS" = "X"; then
 # AC_MSG_RESULT(none)
 #else
 # AC_MSG_RESULT($TRILINOS_TEMPLATE_OBJS)
 #fi
-
+                                                                  
 #AC_SUBST(TRILINOS_TEMPLATE_OBJS)
 
 # ------------------------------------------------------------------------
