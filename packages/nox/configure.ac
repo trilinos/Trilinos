@@ -38,7 +38,7 @@
 # This must be the first line in configure.ac.
 # Optional 3rd argument is email address for bugs.
 
-AC_INIT([nox],[3.1a-dev],[nox-developers@software.sandia.gov])
+AC_INIT([nox],[4.0-dev],[nox-developers@software.sandia.gov])
 
 # Hello World!
 echo "----------------------------------------"
@@ -1582,6 +1582,10 @@ if test X${ADDON_epetra_EXAMPLES} = Xyes ||
    test X${ADDON_epetra_TESTS} = Xyes; then
 
   TRILINOS_LIB_CHECK(epetra,epetra,src)
+  TAC_ARG_ENABLE_CAN_USE_PACKAGE(amesos, [Test for enabled amesos.], NOX_AMESOS)
+  if test "X$ac_cv_use_amesos" = "Xyes"; then
+    TRILINOS_LIB_CHECK(amesos,amesos,src)
+  fi
   TRILINOS_LIB_CHECK(ifpack,ifpack,src)
   TRILINOS_LIB_CHECK(aztecoo,aztecoo,src)
 
@@ -1595,18 +1599,6 @@ fi
 if test X${BUILD_NOX_EPETRA_ML_SUPPORT} = Xyes; then
   TRILINOS_LIB_CHECK(ml,ml,src)
   AC_DEFINE(HAVE_NOX_ML_EPETRA,1,[define that ml is activated in nox])
-
-  if test X${ADDON_epetra_EXAMPLES} = Xyes ||
-     test X${ADDON_epetra_TESTS} = Xyes; then
-
-    # Check to see if amesos is enabled since ml will require libamesos.a at
-    # link-time
-    TAC_ARG_ENABLE_CAN_USE_PACKAGE(amesos, [Test for enabled amesos.], NOX_AMESOS)
-    if test "X$ac_cv_use_amesos" = "Xyes"; then
-      TRILINOS_LIB_CHECK(amesos,amesos,src)
-    fi
-  fi
-
 fi
 
 if test X${BUILD_LOCA_ANASAZI_SUPPORT} = Xyes; then
