@@ -605,6 +605,9 @@ int MSR_matvec(void *Amat_in, int ilen, double p[], int olen, double ap[])
    if (getrow_comm != NULL) {
       p2 = (double *) ML_allocate((Nrows+getrow_comm->minimum_vec_size+1)*
                                   sizeof(double));
+      if (p2 == NULL) 
+	pr_error("MSR_matvec(%d): out of space\n",Amat->comm->ML_mypid);
+
       for (i = 0; i < Nrows; i++) p2[i] = p[i];
       ML_exchange_bdry(p2,getrow_comm, Nrows, comm, ML_OVERWRITE,NULL);
    }
@@ -678,6 +681,8 @@ int CSR_matvec(void *Amat_in, int ilen, double p[], int olen, double ap[])
    if (getrow_comm != NULL) {
      p2 = (double *) ML_allocate((getrow_comm->minimum_vec_size+ilen+1)*
                                   sizeof(double));
+     if (p2 == NULL) 
+       pr_error("CSR_matvec(%d): out of space\n",Amat->comm->ML_mypid);
      for (i = 0; i < ilen; i++) p2[i] = p[i];
 
      ML_exchange_bdry(p2,getrow_comm, ilen, comm, ML_OVERWRITE,NULL);
@@ -690,6 +695,8 @@ int CSR_matvec(void *Amat_in, int ilen, double p[], int olen, double ap[])
       i = Nstored+getrow_comm->minimum_vec_size + 1;
       if (getrow_comm->remap_max+1 > i) i = getrow_comm->remap_max+1;
       ap2 = (double *) ML_allocate(i* sizeof(double));
+      if (ap2 == NULL) 
+	pr_error("CSR_matvec(%d): out of space\n",Amat->comm->ML_mypid);
    }
    else ap2 = ap;
 
@@ -745,6 +752,9 @@ int sCSR_trans_matvec(void *Amat_in, int ilen, double p[], int olen, double ap[]
    if (getrow_comm != NULL) {
      p2 = (double *) ML_allocate((getrow_comm->minimum_vec_size+ilen+1)*
                                   sizeof(double));
+     if (p2 == NULL) 
+       pr_error("sCSR_trans_matvec(%d): out of space\n",Amat->comm->ML_mypid);
+
      for (i = 0; i < ilen; i++) p2[i] = p[i];
 
      ML_exchange_bdry(p2,getrow_comm, ilen, comm, ML_OVERWRITE,NULL);
@@ -757,6 +767,9 @@ int sCSR_trans_matvec(void *Amat_in, int ilen, double p[], int olen, double ap[]
       i = Nstored+getrow_comm->minimum_vec_size + 1;
       if (getrow_comm->remap_max+1 > i) i = getrow_comm->remap_max+1;
       ap2 = (double *) ML_allocate(i* sizeof(double));
+      if (ap2 == NULL) 
+	pr_error("sCSR_trans_matvec(%d): out of space\n",Amat->comm->ML_mypid);
+
       for (k = 0; k < i; k++) ap2[k] = 0.;
    }
    else {
@@ -814,6 +827,9 @@ int cCSR_trans_matvec(void *Amat_in, int ilen, double p[], int olen, double ap[]
    if (getrow_comm != NULL) {
      p2 = (double *) ML_allocate((getrow_comm->minimum_vec_size+ilen+1)*
                                   sizeof(double));
+     if (p2 == NULL) 
+       pr_error("cCSR_trans_matvec(%d): out of space\n",Amat->comm->ML_mypid);
+
      for (i = 0; i < ilen; i++) p2[i] = p[i];
 
      ML_exchange_bdry(p2,getrow_comm, ilen, comm, ML_OVERWRITE,NULL);
@@ -826,6 +842,9 @@ int cCSR_trans_matvec(void *Amat_in, int ilen, double p[], int olen, double ap[]
       i = Nstored+getrow_comm->minimum_vec_size + 1;
       if (getrow_comm->remap_max+1 > i) i = getrow_comm->remap_max+1;
       ap2 = (double *) ML_allocate(i* sizeof(double));
+      if (ap2 == NULL) 
+	pr_error("cCSR_trans_matvec(%d): out of space\n",Amat->comm->ML_mypid);
+
       for (k = 0; k < i; k++) ap2[k] = 0.;
    }
    else {
@@ -883,6 +902,9 @@ int sCSR_matvec(void *Amat_in, int ilen, double p[], int olen, double ap[])
    if (getrow_comm != NULL) {
      p2 = (double *) ML_allocate((getrow_comm->minimum_vec_size+ilen+1)*
                                   sizeof(double));
+     if (p2 == NULL) 
+       pr_error("sCSR_matvec(%d): out of space\n",Amat->comm->ML_mypid);
+
      for (i = 0; i < ilen; i++) p2[i] = p[i];
 
      ML_exchange_bdry(p2,getrow_comm, ilen, comm, ML_OVERWRITE,NULL);
@@ -895,6 +917,9 @@ int sCSR_matvec(void *Amat_in, int ilen, double p[], int olen, double ap[])
       i = Nstored+getrow_comm->minimum_vec_size + 1;
       if (getrow_comm->remap_max+1 > i) i = getrow_comm->remap_max+1;
       ap2 = (double *) ML_allocate(i* sizeof(double));
+      if (ap2 == NULL) 
+	pr_error("sCSR_matvec(%d): out of space\n",Amat->comm->ML_mypid);
+
    }
    else ap2 = ap;
 
@@ -953,6 +978,9 @@ int cCSR_matvec(void *Amat_in, int ilen, double p[], int olen, double ap[])
    if (getrow_comm != NULL) {
      p2 = (double *) ML_allocate((getrow_comm->minimum_vec_size+ilen+1)*
                                   sizeof(double));
+     if (p2 == NULL) 
+       pr_error("cCSR_matvec(%d): out of space\n",Amat->comm->ML_mypid);
+
      for (i = 0; i < ilen; i++) p2[i] = p[i];
 
      ML_exchange_bdry(p2,getrow_comm, ilen, comm, ML_OVERWRITE,NULL);
@@ -965,6 +993,9 @@ int cCSR_matvec(void *Amat_in, int ilen, double p[], int olen, double ap[])
       i = Nstored+getrow_comm->minimum_vec_size + 1;
       if (getrow_comm->remap_max+1 > i) i = getrow_comm->remap_max+1;
       ap2 = (double *) ML_allocate(i* sizeof(double));
+      if (ap2 == NULL) 
+	pr_error("cCSR_matvec(%d): out of space\n",Amat->comm->ML_mypid);
+
    }
    else ap2 = ap;
 
@@ -1020,6 +1051,9 @@ int CSR_denseserialmatvec(void *Amat_in, int ilen, double p[], int olen, double 
    if (getrow_comm != NULL) {
      p2 = (double *) ML_allocate((getrow_comm->minimum_vec_size+ilen+1)*
                                   sizeof(double));
+     if (p2 == NULL) 
+       pr_error("CSR_dense_serial_matvec(%d): out of space\n",Amat->comm->ML_mypid);
+
      for (i = 0; i < ilen; i++) p2[i] = p[i];
 
      ML_exchange_bdry(p2,getrow_comm, ilen, comm, ML_OVERWRITE,NULL);
@@ -1032,6 +1066,9 @@ int CSR_denseserialmatvec(void *Amat_in, int ilen, double p[], int olen, double 
       i = Nstored+getrow_comm->minimum_vec_size + 1;
       if (getrow_comm->remap_max+1 > i) i = getrow_comm->remap_max+1;
       ap2 = (double *) ML_allocate(i* sizeof(double));
+      if (ap2 == NULL) 
+	pr_error("CSR_dense_serial_matvec(%d): out of space\n",Amat->comm->ML_mypid);
+
    }
    else ap2 = ap;
 
@@ -1090,6 +1127,9 @@ int CSR_ones_matvec(void *Amat_in, int ilen, double p[], int olen, double ap[])
    if (getrow_comm != NULL) {
      p2 = (double *) ML_allocate((getrow_comm->minimum_vec_size+ilen+1)*
                                   sizeof(double));
+     if (p2 == NULL) 
+       pr_error("CSR_ones_matvec(%d): out of space\n",Amat->comm->ML_mypid);
+
      for (i = 0; i < ilen; i++) p2[i] = p[i];
 
      ML_exchange_bdry(p2,getrow_comm, ilen, comm, ML_OVERWRITE,NULL);
@@ -1102,6 +1142,9 @@ int CSR_ones_matvec(void *Amat_in, int ilen, double p[], int olen, double ap[])
       i = Nstored+getrow_comm->minimum_vec_size + 1;
       if (getrow_comm->remap_max+1 > i) i = getrow_comm->remap_max+1;
       ap2 = (double *) ML_allocate(i* sizeof(double));
+      if (ap2 == NULL) 
+	pr_error("CSR_ones_matvec(%d): out of space\n",Amat->comm->ML_mypid);
+
    }
    else ap2 = ap;
 

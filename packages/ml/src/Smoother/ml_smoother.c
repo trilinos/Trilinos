@@ -1206,9 +1206,13 @@ int ML_Smoother_Hiptmair(void *sm, int inlen, double x[], int outlen,
       ML_Comm_Envelope_Increment_Tag(envelope);
    
       /* calculate initial residual */ 
-      res_edge = (double *) ML_allocate(Ke_mat->outvec_leng * sizeof(double));
+      res_edge = (double *) ML_allocate((Ke_mat->outvec_leng+1) * sizeof(double));
+      if (res_edge == NULL)
+	pr_error("ML_Smoother_Hiptmair(%d): Out of space\n",Ke_mat->comm->ML_mypid);
+
       ML_Operator_Apply(Ke_mat, Ke_mat->invec_leng,
                         x, Ke_mat->outvec_leng,res_edge);
+
       for (kk = 0; kk < Nrows; kk++) res_edge[kk] = rhs[kk] - res_edge[kk];
    
 #ifdef ML_DEBUG_SMOOTHER
@@ -1224,13 +1228,21 @@ int ML_Smoother_Hiptmair(void *sm, int inlen, double x[], int outlen,
       ****************************/
       ML_Comm_Envelope_Increment_Tag(envelope);
 
-      rhs_nodal = (double *) ML_allocate(Tmat_trans->outvec_leng *
+      rhs_nodal = (double *) ML_allocate((Tmat_trans->outvec_leng+1) *
                                          sizeof(double));
+      if (rhs_nodal == NULL)
+	pr_error("ML_Smoother_Hiptmair(%d): Out of space\n",Ke_mat->comm->ML_mypid);
+
+
       ML_Operator_Apply(Tmat_trans, Tmat_trans->invec_leng,
                         res_edge, Tmat_trans->outvec_leng,rhs_nodal);
+
       ML_free(res_edge);
 
-      x_nodal = (double *) ML_allocate(TtATmat->invec_leng * sizeof(double));
+      x_nodal = (double *) ML_allocate((TtATmat->invec_leng+1) * sizeof(double));
+      if (x_nodal == NULL)
+	pr_error("ML_Smoother_Hiptmair(%d): Out of space\n",Ke_mat->comm->ML_mypid);
+
       for (kk = 0; kk < TtATmat->invec_leng; kk++) x_nodal[kk] = 0.;
 #ifdef ML_DEBUG_SMOOTHER
       printf("Before SGS on nodes\n");
@@ -1262,7 +1274,10 @@ int ML_Smoother_Hiptmair(void *sm, int inlen, double x[], int outlen,
       * Update edge solution. *
       ************************/
       ML_Comm_Envelope_Increment_Tag(envelope);
-      edge_update = (double *)ML_allocate(Ke_mat->outvec_leng * sizeof(double));
+      edge_update = (double *)ML_allocate((Ke_mat->outvec_leng+1) * sizeof(double));
+      if (edge_update == NULL)
+	pr_error("ML_Smoother_Hiptmair(%d): Out of space\n",Ke_mat->comm->ML_mypid);
+
       ML_Operator_Apply(Tmat, Tmat->invec_leng,
                         x_nodal, Tmat->outvec_leng,edge_update);
       ML_free(x_nodal);
