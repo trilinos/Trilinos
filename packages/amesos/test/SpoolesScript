@@ -53,7 +53,7 @@
 #
 #
 #  A typical call to cxx_AME_mpi.exe is:
-#COMMENT       mpirun -np 1 cxx_AME_mpi.exe SPOOLES SuperLU.rua 0 1 1 0 1e-14 1e-14
+#COMMENT       $mpigo 1 ./cxx_AME_mpi.exe SPOOLES SuperLU.rua 0 1 1 0 1e-14 1e-14
 #  where:
 #     SPOOLES SuperLU.rua - The solver to use and the matrix to solve
 #     0 1 1 0                 - MatrixType, Special, NumSolves, Transpose
@@ -67,6 +67,18 @@
 #   NumSolves < 0 means use multiple right hand sides
 #   NumSolves > 1 means use blocked right hand sides
 #
+
+## Some machines use a command different than mpirun to run mpi jobs.  The
+## test-harness.plx script sets the environment variable
+## "TRILINOS_TEST_HARNESS_MPIGO_COMMAND".  We test for
+## this value below.  If not set, we set it to a default value.
+
+set mpigo = `printenv TRILINOS_TEST_HARNESS_MPIGO_COMMAND`
+
+if ("$mpigo" == "") then
+    set mpigo = "mpirun -np "
+endif
+
 touch SST.summary
 cat >>AME.summary <SST.summary 
 echo "COMMENT Start TestSpooles.csh, the Direct Sparse Solver Regresion Test" > SST.summary 
@@ -94,85 +106,85 @@ echo "COMMENT column 17+ - summary " >> SST.summary
 #
 #  Test one process, three processes and three processes transpose, tiny serial matrix, on SPOOLES
 #
-mpirun -np 1 cxx_AME_mpi.exe SPOOLES SuperLU.rua 0 1 1 0 1e-14 1e-14 >>SST.stdout
-mpirun -np 3 cxx_AME_mpi.exe SPOOLES SuperLU.rua 0 1 1 0 1e-14 1e-14  >>SST.stdout
-mpirun -np 3 cxx_AME_mpi.exe SPOOLES SuperLU.rua 0 1 1 1 1e-14 1e-14  >>SST.stdout
+$mpigo 1 ./cxx_AME_mpi.exe SPOOLES SuperLU.rua 0 1 1 0 1e-14 1e-14 >>SST.stdout
+$mpigo 3 ./cxx_AME_mpi.exe SPOOLES SuperLU.rua 0 1 1 0 1e-14 1e-14  >>SST.stdout
+$mpigo 3 ./cxx_AME_mpi.exe SPOOLES SuperLU.rua 0 1 1 1 1e-14 1e-14  >>SST.stdout
 #
 #  Test one process, three processes and three processes transposes, tiny distributed matrix, on SPOOLES
 #
-mpirun -np 1 cxx_AME_mpi.exe SPOOLES   fidapm05.rua 0 1 1 0 1000 1e-12 >>SST.stdout
+$mpigo 1 ./cxx_AME_mpi.exe SPOOLES   fidapm05.rua 0 1 1 0 1000 1e-12 >>SST.stdout
 #
 #  Test some more small matrices
 #
-mpirun -np 1 cxx_AME_mpi.exe SPOOLES   ImpcolA.rua 0 1 1 0 1e-11 1e-12 >>SST.stdout
-mpirun -np 3 cxx_AME_mpi.exe SPOOLES   ImpcolA.rua 0 1 1 0 1e-11 1e-12  >>SST.stdout
-mpirun -np 3 cxx_AME_mpi.exe SPOOLES   ImpcolA.rua 0 1 1 1 1e-11 1e-12  >>SST.stdout
-mpirun -np 1 cxx_AME_mpi.exe SPOOLES   ImpcolB.rua 0 1 1 0 1e-11 1e-13 >>SST.stdout
-mpirun -np 3 cxx_AME_mpi.exe SPOOLES   ImpcolB.rua 0 1 1 0 1e-10 1e-14  >>SST.stdout
-mpirun -np 1 cxx_AME_mpi.exe SPOOLES   ImpcolC.rua 0 1 1 0 1e-13 1e-13 >>SST.stdout
-mpirun -np 3 cxx_AME_mpi.exe SPOOLES   ImpcolC.rua 0 1 1 0 1e-13 1e-13  >>SST.stdout
-mpirun -np 1 cxx_AME_mpi.exe SPOOLES   ImpcolD.rua 0 1 1 0 1e-12 1e-13 >>SST.stdout
-mpirun -np 3 cxx_AME_mpi.exe SPOOLES   ImpcolD.rua 0 1 1 0 1e-12 1e-13  >>SST.stdout
-mpirun -np 1 cxx_AME_mpi.exe SPOOLES   ImpcolE.rua 0 1 1 0 1e-11 1e-11 >>SST.stdout
-mpirun -np 3 cxx_AME_mpi.exe SPOOLES   ImpcolE.rua 0 1 1 0 1e-11 1e-11  >>SST.stdout
+$mpigo 1 ./cxx_AME_mpi.exe SPOOLES   ImpcolA.rua 0 1 1 0 1e-11 1e-12 >>SST.stdout
+$mpigo 3 ./cxx_AME_mpi.exe SPOOLES   ImpcolA.rua 0 1 1 0 1e-11 1e-12  >>SST.stdout
+$mpigo 3 ./cxx_AME_mpi.exe SPOOLES   ImpcolA.rua 0 1 1 1 1e-11 1e-12  >>SST.stdout
+$mpigo 1 ./cxx_AME_mpi.exe SPOOLES   ImpcolB.rua 0 1 1 0 1e-11 1e-13 >>SST.stdout
+$mpigo 3 ./cxx_AME_mpi.exe SPOOLES   ImpcolB.rua 0 1 1 0 1e-10 1e-14  >>SST.stdout
+$mpigo 1 ./cxx_AME_mpi.exe SPOOLES   ImpcolC.rua 0 1 1 0 1e-13 1e-13 >>SST.stdout
+$mpigo 3 ./cxx_AME_mpi.exe SPOOLES   ImpcolC.rua 0 1 1 0 1e-13 1e-13  >>SST.stdout
+$mpigo 1 ./cxx_AME_mpi.exe SPOOLES   ImpcolD.rua 0 1 1 0 1e-12 1e-13 >>SST.stdout
+$mpigo 3 ./cxx_AME_mpi.exe SPOOLES   ImpcolD.rua 0 1 1 0 1e-12 1e-13  >>SST.stdout
+$mpigo 1 ./cxx_AME_mpi.exe SPOOLES   ImpcolE.rua 0 1 1 0 1e-11 1e-11 >>SST.stdout
+$mpigo 3 ./cxx_AME_mpi.exe SPOOLES   ImpcolE.rua 0 1 1 0 1e-11 1e-11  >>SST.stdout
 #
 #  Test mid sized matrices on 1 and 4 processes, half of them starting out serial, 
 #  half starting out distributed.  (OK, distributed has little meaning on one process, but ...)
 #
 #  NOTE:  Spooles does not handle distributed matrices at present
 #
-mpirun -np 1 cxx_AME_mpi.exe SPOOLES   bcsstk24.rsa 0 1 1 0 1e-6  1e-1 >>SST.stdout
-# Comment DISTRIBUTED MATRIX mpirun -np 4 cxx_AME_mpi.exe SPOOLES   bcsstk24.rsa 1 1 1 0 1e-6  1e-1 >>SST.stdout
-# Comment DISTRIBUTED MATRIX mpirun -np 1 cxx_AME_mpi.exe SPOOLES   bcsstk18.rsa 1 1 1 0 1e-9 1e-4  >>SST.stdout
-mpirun -np 4 cxx_AME_mpi.exe SPOOLES   bcsstk18.rsa 0 1 1 0 1e-9 1e-4  >>SST.stdout
+$mpigo 1 ./cxx_AME_mpi.exe SPOOLES   bcsstk24.rsa 0 1 1 0 1e-6  1e-1 >>SST.stdout
+# Comment DISTRIBUTED MATRIX $mpigo 4 ./cxx_AME_mpi.exe SPOOLES   bcsstk24.rsa 1 1 1 0 1e-6  1e-1 >>SST.stdout
+# Comment DISTRIBUTED MATRIX $mpigo 1 ./cxx_AME_mpi.exe SPOOLES   bcsstk18.rsa 1 1 1 0 1e-9 1e-4  >>SST.stdout
+$mpigo 4 ./cxx_AME_mpi.exe SPOOLES   bcsstk18.rsa 0 1 1 0 1e-9 1e-4  >>SST.stdout
 
 #
 #  Test some tranpose solves
 #
-mpirun -np 4 cxx_AME_mpi.exe SPOOLES   ImpcolB.rua 0 1 1 1 1e-10 1e-12  >>SST.stdout
-# Comment DISTRIBUTED MATRIX  mpirun -np 4 cxx_AME_mpi.exe SPOOLES   ImpcolA.rua 1 1 1 1 1e-11 1e-12  >>SST.stdout
+$mpigo 4 ./cxx_AME_mpi.exe SPOOLES   ImpcolB.rua 0 1 1 1 1e-10 1e-12  >>SST.stdout
+# Comment DISTRIBUTED MATRIX  $mpigo 4 ./cxx_AME_mpi.exe SPOOLES   ImpcolA.rua 1 1 1 1 1e-11 1e-12  >>SST.stdout
 
 
 #
 #  Test blocked right hand sides
 #
-# Comment Spooles does not handle BRHS yet  - mpirun  -np 1 cxx_AME_mpi.exe SPOOLES   ImpcolA.rua 0 1 2 0 1e-11 1e-12 >>SST.stdout
-# Comment Spooles does not handle BRHS yet  - mpirun  -np 5 cxx_AME_mpi.exe SPOOLES   ImpcolB.rua 0 1 4 0 1e-11 1e-14  >>SST.stdout
-# Comment Spooles does not handle BRHS yet  - mpirun  -np 2 cxx_AME_mpi.exe SPOOLES   ImpcolE.rua 0 1 6 0 1e-12 1e-11  >>SST.stdout
-# Comment Spooles does not handle BRHS yet  - mpirun  -np 4 cxx_AME_mpi.exe SPOOLES   bcsstk24.rsa 0 1 3 0 1e-6  1e-1 >>SST.stdout
-# Comment Spooles does not handle BRHS yet  - mpirun  -np 1 cxx_AME_mpi.exe SPOOLES   bcsstk18.rsa 0 1 5 0 1e-9 1e-4  >>SST.stdout
-# Comment Spooles does not handle BRHS yet  - mpirun  -np 4 cxx_AME_mpi.exe SPOOLES   bcsstk18.rsa 0 1 32 0 1e-9 1e-4  >>SST.stdout
+# Comment Spooles does not handle BRHS yet  - $mpigo 1 ./cxx_AME_mpi.exe SPOOLES   ImpcolA.rua 0 1 2 0 1e-11 1e-12 >>SST.stdout
+# Comment Spooles does not handle BRHS yet  - $mpigo 5 ./cxx_AME_mpi.exe SPOOLES   ImpcolB.rua 0 1 4 0 1e-11 1e-14  >>SST.stdout
+# Comment Spooles does not handle BRHS yet  - $mpigo 2 ./cxx_AME_mpi.exe SPOOLES   ImpcolE.rua 0 1 6 0 1e-12 1e-11  >>SST.stdout
+# Comment Spooles does not handle BRHS yet  - $mpigo 4 ./cxx_AME_mpi.exe SPOOLES   bcsstk24.rsa 0 1 3 0 1e-6  1e-1 >>SST.stdout
+# Comment Spooles does not handle BRHS yet  - $mpigo 1 ./cxx_AME_mpi.exe SPOOLES   bcsstk18.rsa 0 1 5 0 1e-9 1e-4  >>SST.stdout
+# Comment Spooles does not handle BRHS yet  - $mpigo 4 ./cxx_AME_mpi.exe SPOOLES   bcsstk18.rsa 0 1 32 0 1e-9 1e-4  >>SST.stdout
 #
 #  Test multiple right hand sides
 #
-# Comment Spooles does not handle MRHS yet - mpirun -np 1 cxx_AME_mpi.exe SPOOLES   ImpcolC.rua 0 1 -1 0 1e-13 1e-13 >>SST.stdout
-# Comment Spooles does not handle MRHS yet - mpirun -np 5 cxx_AME_mpi.exe SPOOLES   ImpcolD.rua 0 1 -2 0 1e-13 1e-13  >>SST.stdout
-# Comment Spooles does not handle MRHS yet - mpirun -np 2 cxx_AME_mpi.exe SPOOLES   ImpcolE.rua 0 1 -3 0 1e-12 1e-11  >>SST.stdout
-# Comment Spooles does not handle MRHS yet - mpirun -np 4 cxx_AME_mpi.exe SPOOLES   bcsstk24.rsa 0 1 -4 0 1e-6  1e-1 >>SST.stdout
-# Comment Spooles does not handle MRHS yet - mpirun -np 1 cxx_AME_mpi.exe SPOOLES   bcsstk18.rsa 0 1 -5 0 1e-9 1e-4  >>SST.stdout
-# Comment Spooles does not handle MRHS yet - mpirun -np 4 cxx_AME_mpi.exe SPOOLES   bcsstk18.rsa 0 1 -3 0 1e-9 1e-4  >>SST.stdout
+# Comment Spooles does not handle MRHS yet - $mpigo 1 ./cxx_AME_mpi.exe SPOOLES   ImpcolC.rua 0 1 -1 0 1e-13 1e-13 >>SST.stdout
+# Comment Spooles does not handle MRHS yet - $mpigo 5 ./cxx_AME_mpi.exe SPOOLES   ImpcolD.rua 0 1 -2 0 1e-13 1e-13  >>SST.stdout
+# Comment Spooles does not handle MRHS yet - $mpigo 2 ./cxx_AME_mpi.exe SPOOLES   ImpcolE.rua 0 1 -3 0 1e-12 1e-11  >>SST.stdout
+# Comment Spooles does not handle MRHS yet - $mpigo 4 ./cxx_AME_mpi.exe SPOOLES   bcsstk24.rsa 0 1 -4 0 1e-6  1e-1 >>SST.stdout
+# Comment Spooles does not handle MRHS yet - $mpigo 1 ./cxx_AME_mpi.exe SPOOLES   bcsstk18.rsa 0 1 -5 0 1e-9 1e-4  >>SST.stdout
+# Comment Spooles does not handle MRHS yet - $mpigo 4 ./cxx_AME_mpi.exe SPOOLES   bcsstk18.rsa 0 1 -3 0 1e-9 1e-4  >>SST.stdout
 
 #
 #  Test some triplet files
 #  The .triU files are unsymmatric, the .triS files are symmetric, providing 
 #  either the upper or lower triangular part.
 #
-mpirun -np 1 cxx_AME_mpi.exe SPOOLES SuperLU.triU 0 1 1 0 1e-14 1e-14 >>SST.stdout
-mpirun -np 3 cxx_AME_mpi.exe SPOOLES SuperLU.triU 0 1 1 0 1e-14 1e-14 >>SST.stdout
+$mpigo 1 ./cxx_AME_mpi.exe SPOOLES SuperLU.triU 0 1 1 0 1e-14 1e-14 >>SST.stdout
+$mpigo 3 ./cxx_AME_mpi.exe SPOOLES SuperLU.triU 0 1 1 0 1e-14 1e-14 >>SST.stdout
 
-mpirun -np 1 cxx_AME_mpi.exe SPOOLES K4989.triS 0 1 1 0 1e-10 1e-8 >>SST.stdout
-mpirun -np 2 cxx_AME_mpi.exe SPOOLES K4989.triS 0 1 1 0 1e-10 1e-8 >>SST.stdout
+$mpigo 1 ./cxx_AME_mpi.exe SPOOLES K4989.triS 0 1 1 0 1e-10 1e-8 >>SST.stdout
+$mpigo 2 ./cxx_AME_mpi.exe SPOOLES K4989.triS 0 1 1 0 1e-10 1e-8 >>SST.stdout
 
-mpirun -np 1 cxx_AME_mpi.exe SPOOLES K5000.triS 0 1 1 0 1e-10 1e-8 >>SST.stdout
-mpirun -np 6 cxx_AME_mpi.exe SPOOLES K5000.triS 0 1 1 0 1e-10 1e-8 >>SST.stdout
+$mpigo 1 ./cxx_AME_mpi.exe SPOOLES K5000.triS 0 1 1 0 1e-10 1e-8 >>SST.stdout
+$mpigo 6 ./cxx_AME_mpi.exe SPOOLES K5000.triS 0 1 1 0 1e-10 1e-8 >>SST.stdout
 
 
-mpirun -np 1 cxx_AME_mpi.exe SPOOLES Khead.triS 0 1 1 0 1e-13 1e-9 >>SST.stdout
+$mpigo 1 ./cxx_AME_mpi.exe SPOOLES Khead.triS 0 1 1 0 1e-13 1e-9 >>SST.stdout
 
 #
 #  Spooles completes, but returns a permuted answer for Khead.triS
 #
-mpirun -np 4 cxx_AME_mpi.exe SPOOLES Khead.triS 0 1 1 0 -2    -2 >>SST.stdout
+$mpigo 4 ./cxx_AME_mpi.exe SPOOLES Khead.triS 0 1 1 0 -2    -2 >>SST.stdout
 
 
 echo "\nCOMMENT End TestSpooles.csh" >> SST.summary 
@@ -180,7 +192,7 @@ echo "\nCOMMENT End TestSpooles.csh" >> SST.summary
 #
 #  Make sure that the tests ran 
 #
-set expected_lines = `grep mpirun TestSpooles.csh | grep -v COMMENT | wc`
+set expected_lines = `grep $mpigo TestSpooles.csh | grep -v COMMENT | wc`
 set results = `grep OK SST.summary | wc`
 if ($results[1] != $expected_lines[1] ) then
     echo 'I expected ' $expected_lines[1] ' correct test results, but only saw: ' $results[1] 

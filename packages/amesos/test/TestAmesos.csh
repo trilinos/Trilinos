@@ -55,7 +55,7 @@
 #
 #
 #  A typical call to cxx_AME_mpi.exe is:
-#COMMENT       mpirun -np 1 cxx_AME_mpi.exe SuperLUdist SuperLU.rua 0 1 1 0 1e-14 1e-14
+#COMMENT       $mpigo 1 ./cxx_AME_mpi.exe SuperLUdist SuperLU.rua 0 1 1 0 1e-14 1e-14
 #  where:
 #     SuperLUdist SuperLU.rua - The solver to use and the matrix to solve
 #     0 1 1 0                 - MatrixType, Special, NumSolves, Transpose
@@ -69,6 +69,18 @@
 #   NumSolves < 0 means use multiple right hand sides
 #   NumSolves > 1 means use blocked right hand sides
 #
+
+## Some machines use a command different than mpirun to run mpi jobs.  The
+## test-harness.plx script sets the environment variable
+## "TRILINOS_TEST_HARNESS_MPIGO_COMMAND".  We test for
+## this value below.  If not set, we set it to a default value.
+
+set mpigo = `printenv TRILINOS_TEST_HARNESS_MPIGO_COMMAND`
+ 
+if ("$mpigo" == "") then
+    set mpigo = "mpirun -np "
+endif
+
 touch SST.summary
 cat >>AME.summary <SST.summary 
 echo "COMMENT Start TestAmesos.csh, the Direct Sparse Solver Regresion Test" > SST.summary 
@@ -96,89 +108,89 @@ echo "COMMENT column 17+ - summary " >> SST.summary
 #
 #  Test one process, three processes and three processes transpose, tiny serial matrix, on SuperLUdist
 #
-mpirun -np 1 cxx_AME_mpi.exe SuperLUdist SuperLU.rua 0 1 1 0 1e-14 1e-14 >>SST.stdout
-#  COMMENT fails on atlantis, sometimes janus    mpirun -np 3 cxx_AME_mpi.exe SuperLUdist SuperLU.rua 0 1 1 0 1e-15 1e-14  >>SST.stdout
-#  COMMENT fails on atlantis, sometimes janus    mpirun -np 3 cxx_AME_mpi.exe SuperLUdist SuperLU.rua 0 1 1 1 1e-15 1e-14  >>SST.stdout
+$mpigo 3 ./cxx_AME_mpi.exe SuperLUdist SuperLU.rua 0 1 1 0 1e-14 1e-14 >>SST.stdout
+#  COMMENT fails on atlantis, sometimes janus    $mpigo 3 ./cxx_AME_mpi.exe SuperLUdist SuperLU.rua 0 1 1 0 1e-15 1e-14  >>SST.stdout
+#  COMMENT fails on atlantis, sometimes janus    $mpigo 3 ./cxx_AME_mpi.exe SuperLUdist SuperLU.rua 0 1 1 1 1e-15 1e-14  >>SST.stdout
 #
 #  Test one process, three processes and three processes transposes, tiny distributed matrix, on SuperLUdist
 #
-mpirun -np 1 cxx_AME_mpi.exe SuperLUdist   fidapm05.rua 0 1 1 0 100000000 1 >>SST.stdout
-mpirun -np 3 cxx_AME_mpi.exe SuperLUdist   fidapm05.rua 1 1 1 0 100000000 1  >>SST.stdout
-mpirun -np 3 cxx_AME_mpi.exe SuperLUdist   fidapm05.rua 1 1 1 1 100000000 1  >>SST.stdout
+$mpigo 1 ./cxx_AME_mpi.exe SuperLUdist   fidapm05.rua 0 1 1 0 100000000 1 >>SST.stdout
+$mpigo 3 ./cxx_AME_mpi.exe SuperLUdist   fidapm05.rua 1 1 1 0 100000000 1  >>SST.stdout
+$mpigo 3 ./cxx_AME_mpi.exe SuperLUdist   fidapm05.rua 1 1 1 1 100000000 1  >>SST.stdout
 #
 #  Test some more small matrices
 #
-mpirun -np 1 cxx_AME_mpi.exe SuperLUdist   ImpcolA.rua 0 1 1 0 1e-11 1e-12 >>SST.stdout
-mpirun -np 3 cxx_AME_mpi.exe SuperLUdist   ImpcolA.rua 0 1 1 0 1e-11 1e-12  >>SST.stdout
-mpirun -np 3 cxx_AME_mpi.exe SuperLUdist   ImpcolA.rua 0 1 1 1 1e-11 1e-12  >>SST.stdout
-mpirun -np 1 cxx_AME_mpi.exe SuperLUdist   ImpcolB.rua 0 1 1 0 1e-11 1e-13 >>SST.stdout
-mpirun -np 3 cxx_AME_mpi.exe SuperLUdist   ImpcolB.rua 0 1 1 0 1e-11 1e-14  >>SST.stdout
-mpirun -np 1 cxx_AME_mpi.exe SuperLUdist   ImpcolC.rua 0 1 1 0 1e-13 1e-13 >>SST.stdout
-mpirun -np 3 cxx_AME_mpi.exe SuperLUdist   ImpcolC.rua 0 1 1 0 1e-13 1e-13  >>SST.stdout
-mpirun -np 1 cxx_AME_mpi.exe SuperLUdist   ImpcolD.rua 0 1 1 0 1e-13 1e-13 >>SST.stdout
-mpirun -np 3 cxx_AME_mpi.exe SuperLUdist   ImpcolD.rua 0 1 1 0 1e-13 1e-13  >>SST.stdout
-mpirun -np 1 cxx_AME_mpi.exe SuperLUdist   ImpcolE.rua 0 1 1 0 1e-12 1e-11 >>SST.stdout
-mpirun -np 3 cxx_AME_mpi.exe SuperLUdist   ImpcolE.rua 0 1 1 0 1e-12 1e-11  >>SST.stdout
+$mpigo 1 ./cxx_AME_mpi.exe SuperLUdist   ImpcolA.rua 0 1 1 0 1e-11 1e-12 >>SST.stdout
+$mpigo 3 ./cxx_AME_mpi.exe SuperLUdist   ImpcolA.rua 0 1 1 0 1e-11 1e-12  >>SST.stdout
+$mpigo 3 ./cxx_AME_mpi.exe SuperLUdist   ImpcolA.rua 0 1 1 1 1e-11 1e-12  >>SST.stdout
+$mpigo 1 ./cxx_AME_mpi.exe SuperLUdist   ImpcolB.rua 0 1 1 0 1e-11 1e-13 >>SST.stdout
+$mpigo 3 ./cxx_AME_mpi.exe SuperLUdist   ImpcolB.rua 0 1 1 0 1e-11 1e-14  >>SST.stdout
+$mpigo 1 ./cxx_AME_mpi.exe SuperLUdist   ImpcolC.rua 0 1 1 0 1e-13 1e-13 >>SST.stdout
+$mpigo 3 ./cxx_AME_mpi.exe SuperLUdist   ImpcolC.rua 0 1 1 0 1e-13 1e-13  >>SST.stdout
+$mpigo 1 ./cxx_AME_mpi.exe SuperLUdist   ImpcolD.rua 0 1 1 0 1e-13 1e-13 >>SST.stdout
+$mpigo 3 ./cxx_AME_mpi.exe SuperLUdist   ImpcolD.rua 0 1 1 0 1e-13 1e-13  >>SST.stdout
+$mpigo 1 ./cxx_AME_mpi.exe SuperLUdist   ImpcolE.rua 0 1 1 0 1e-12 1e-11 >>SST.stdout
+$mpigo 3 ./cxx_AME_mpi.exe SuperLUdist   ImpcolE.rua 0 1 1 0 1e-12 1e-11  >>SST.stdout
 #
 #  Test mid sized matrices on 1 and 4 processes, half of them starting out serial, 
 #  half starting out distributed.  (OK, distributed has little meaning on one process, but ...)
 #
-mpirun -np 1 cxx_AME_mpi.exe SuperLUdist   bcsstk24.rsa 0 1 1 0 1e-6  1e-1 >>SST.stdout
-mpirun -np 4 cxx_AME_mpi.exe SuperLUdist   bcsstk24.rsa 1 1 1 0 1e-6  1e-1 >>SST.stdout
-mpirun -np 1 cxx_AME_mpi.exe SuperLUdist   bcsstk18.rsa 1 1 1 0 1e-9 1e-4  >>SST.stdout
-mpirun -np 4 cxx_AME_mpi.exe SuperLUdist   bcsstk18.rsa 0 1 1 0 1e-9 1e-4  >>SST.stdout
+$mpigo 1 ./cxx_AME_mpi.exe SuperLUdist   bcsstk24.rsa 0 1 1 0 1e-6  1e-1 >>SST.stdout
+$mpigo 4 ./cxx_AME_mpi.exe SuperLUdist   bcsstk24.rsa 1 1 1 0 1e-6  1e-1 >>SST.stdout
+$mpigo 1 ./cxx_AME_mpi.exe SuperLUdist   bcsstk18.rsa 1 1 1 0 1e-9 1e-4  >>SST.stdout
+$mpigo 4 ./cxx_AME_mpi.exe SuperLUdist   bcsstk18.rsa 0 1 1 0 1e-9 1e-4  >>SST.stdout
 
 #
 #  Test some tranpose solves
 #
-mpirun -np 4 cxx_AME_mpi.exe SuperLUdist   ImpcolB.rua 0 1 1 1 1e-11 1e-12  >>SST.stdout
-mpirun -np 4 cxx_AME_mpi.exe SuperLUdist   ImpcolA.rua 1 1 1 1 1e-11 1e-12  >>SST.stdout
+$mpigo 4 ./cxx_AME_mpi.exe SuperLUdist   ImpcolB.rua 0 1 1 1 1e-11 1e-12  >>SST.stdout
+$mpigo 4 ./cxx_AME_mpi.exe SuperLUdist   ImpcolA.rua 1 1 1 1 1e-11 1e-12  >>SST.stdout
 
 
 #
 #  Test blocked right hand sides
 #
-mpirun -np 1 cxx_AME_mpi.exe SuperLUdist   ImpcolA.rua 0 1 2 0 1e-11 1e-12 >>SST.stdout
-mpirun -np 5 cxx_AME_mpi.exe SuperLUdist   ImpcolB.rua 0 1 4 0 1e-11 1e-14  >>SST.stdout
-mpirun -np 2 cxx_AME_mpi.exe SuperLUdist   ImpcolE.rua 0 1 6 0 1e-12 1e-11  >>SST.stdout
-mpirun -np 4 cxx_AME_mpi.exe SuperLUdist   bcsstk24.rsa 0 1 3 0 1e-6  1e-1 >>SST.stdout
-mpirun -np 1 cxx_AME_mpi.exe SuperLUdist   bcsstk18.rsa 0 1 5 0 1e-9 1e-4  >>SST.stdout
-mpirun -np 4 cxx_AME_mpi.exe SuperLUdist   bcsstk18.rsa 0 1 32 0 1e-9 1e-4  >>SST.stdout
+$mpigo 1 ./cxx_AME_mpi.exe SuperLUdist   ImpcolA.rua 0 1 2 0 1e-11 1e-12 >>SST.stdout
+$mpigo 5 ./cxx_AME_mpi.exe SuperLUdist   ImpcolB.rua 0 1 4 0 1e-11 1e-14  >>SST.stdout
+$mpigo 2 ./cxx_AME_mpi.exe SuperLUdist   ImpcolE.rua 0 1 6 0 1e-12 1e-11  >>SST.stdout
+$mpigo 4 ./cxx_AME_mpi.exe SuperLUdist   bcsstk24.rsa 0 1 3 0 1e-6  1e-1 >>SST.stdout
+$mpigo 1 ./cxx_AME_mpi.exe SuperLUdist   bcsstk18.rsa 0 1 5 0 1e-9 1e-4  >>SST.stdout
+$mpigo 4 ./cxx_AME_mpi.exe SuperLUdist   bcsstk18.rsa 0 1 32 0 1e-9 1e-4  >>SST.stdout
 #
 #  Test multiple right hand sides
 #
-mpirun -np 1 cxx_AME_mpi.exe SuperLUdist   ImpcolC.rua 0 1 -1 0 1e-13 1e-13 >>SST.stdout
-mpirun -np 5 cxx_AME_mpi.exe SuperLUdist   ImpcolD.rua 0 1 -2 0 1e-13 1e-13  >>SST.stdout
-mpirun -np 2 cxx_AME_mpi.exe SuperLUdist   ImpcolE.rua 0 1 -3 0 1e-12 1e-11  >>SST.stdout
-mpirun -np 4 cxx_AME_mpi.exe SuperLUdist   bcsstk24.rsa 0 1 -4 0 1e-6  1e-1 >>SST.stdout
-mpirun -np 1 cxx_AME_mpi.exe SuperLUdist   bcsstk18.rsa 0 1 -5 0 1e-9 1e-4  >>SST.stdout
-mpirun -np 4 cxx_AME_mpi.exe SuperLUdist   bcsstk18.rsa 0 1 -3 0 1e-9 1e-4  >>SST.stdout
+$mpigo 1 ./cxx_AME_mpi.exe SuperLUdist   ImpcolC.rua 0 1 -1 0 1e-13 1e-13 >>SST.stdout
+$mpigo 5 ./cxx_AME_mpi.exe SuperLUdist   ImpcolD.rua 0 1 -2 0 1e-13 1e-13  >>SST.stdout
+$mpigo 2 ./cxx_AME_mpi.exe SuperLUdist   ImpcolE.rua 0 1 -3 0 1e-12 1e-11  >>SST.stdout
+$mpigo 4 ./cxx_AME_mpi.exe SuperLUdist   bcsstk24.rsa 0 1 -4 0 1e-6  1e-1 >>SST.stdout
+$mpigo 1 ./cxx_AME_mpi.exe SuperLUdist   bcsstk18.rsa 0 1 -5 0 1e-9 1e-4  >>SST.stdout
+$mpigo 4 ./cxx_AME_mpi.exe SuperLUdist   bcsstk18.rsa 0 1 -3 0 1e-9 1e-4  >>SST.stdout
 
 #
 #  Test some solves on Aztec
 #
-#  COMMENT - I can't build this on atlantis today    mpirun -np 1 cxx_AME_mpi.exe AZTEC   SuperLU.rua  0 1 1 0 1e-14 1e-13 >>SST.stdout
-#  COMMENT - I can't build this on atlantis today    mpirun -np 1 cxx_AME_mpi.exe AZTEC   ImpcolA.rua  0 1 1 0 1e30 1e30 >>&SST.stdout
-#  COMMENT - I can't build this on atlantis today    mpirun -np 1 cxx_AME_mpi.exe AZTEC   bcsstk18.rsa 0 1 1 0 1e30 1e30  >>SST.stdout
-#  COMMENT - I can't build this on atlantis today    mpirun -np 1 cxx_AME_mpi.exe AZTEC   bcsstk24.rsa 1 1 1 0 1e30 1e30  >>SST.stdout
+#  COMMENT - I can't build this on atlantis today    $mpigo 1 ./cxx_AME_mpi.exe AZTEC   SuperLU.rua  0 1 1 0 1e-14 1e-13 >>SST.stdout
+#  COMMENT - I can't build this on atlantis today    $mpigo 1 ./cxx_AME_mpi.exe AZTEC   ImpcolA.rua  0 1 1 0 1e30 1e30 >>&SST.stdout
+#  COMMENT - I can't build this on atlantis today    $mpigo 1 ./cxx_AME_mpi.exe AZTEC   bcsstk18.rsa 0 1 1 0 1e30 1e30  >>SST.stdout
+#  COMMENT - I can't build this on atlantis today    $mpigo 1 ./cxx_AME_mpi.exe AZTEC   bcsstk24.rsa 1 1 1 0 1e30 1e30  >>SST.stdout
 
 #
 #  Test some triplet files
 #  The .triU files are unsymmatric, the .triS files are symmetric, providing 
 #  either the upper or lower triangular part.
 #
-mpirun -np 1 cxx_AME_mpi.exe SuperLUdist SuperLU.triU 0 1 1 0 1e-14 1e-14 >>SST.stdout
-mpirun -np 3 cxx_AME_mpi.exe SuperLUdist SuperLU.triU 0 1 1 0 1e-14 1e-14 >>SST.stdout
+$mpigo 1 ./cxx_AME_mpi.exe SuperLUdist SuperLU.triU 0 1 1 0 1e-14 1e-14 >>SST.stdout
+$mpigo 3 ./cxx_AME_mpi.exe SuperLUdist SuperLU.triU 0 1 1 0 1e-14 1e-14 >>SST.stdout
 
-mpirun -np 1 cxx_AME_mpi.exe SuperLUdist K4989.triS 0 1 1 0 1e-10 1e-8 >>SST.stdout
-mpirun -np 2 cxx_AME_mpi.exe SuperLUdist K4989.triS 0 1 1 0 1e-10 1e-8 >>SST.stdout
+$mpigo 1 ./cxx_AME_mpi.exe SuperLUdist K4989.triS 0 1 1 0 1e-10 1e-8 >>SST.stdout
+$mpigo 2 ./cxx_AME_mpi.exe SuperLUdist K4989.triS 0 1 1 0 1e-10 1e-8 >>SST.stdout
 
-mpirun -np 1 cxx_AME_mpi.exe SuperLUdist K5000.triS 0 1 1 0 1e-10 1e-8 >>SST.stdout
-mpirun -np 6 cxx_AME_mpi.exe SuperLUdist K5000.triS 0 1 1 0 1e-10 1e-8 >>SST.stdout
+$mpigo 1 ./cxx_AME_mpi.exe SuperLUdist K5000.triS 0 1 1 0 1e-10 1e-8 >>SST.stdout
+$mpigo 6 ./cxx_AME_mpi.exe SuperLUdist K5000.triS 0 1 1 0 1e-10 1e-8 >>SST.stdout
 
 
-mpirun -np 1 cxx_AME_mpi.exe SuperLUdist Khead.triS 0 1 1 0 1e-13 1e-9 >>SST.stdout
-mpirun -np 4 cxx_AME_mpi.exe SuperLUdist Khead.triS 0 1 1 0 1e-13 1e-9 >>SST.stdout
+$mpigo 1 ./cxx_AME_mpi.exe SuperLUdist Khead.triS 0 1 1 0 1e-13 1e-9 >>SST.stdout
+$mpigo 4 ./cxx_AME_mpi.exe SuperLUdist Khead.triS 0 1 1 0 1e-13 1e-9 >>SST.stdout
 
 
 echo "\nCOMMENT End TestAmesos.csh" >> SST.summary 
@@ -186,7 +198,7 @@ echo "\nCOMMENT End TestAmesos.csh" >> SST.summary
 #
 #  Make sure that the tests ran 
 #
-set expected_lines = `grep mpirun TestAmesos.csh | grep -v COMMENT | wc`
+set expected_lines = `grep $mpigo TestAmesos.csh | grep -v COMMENT | wc`
 set results = `grep OK SST.summary | wc`
 if ($results[1] != $expected_lines[1] ) then
     echo 'I expected ' $expected_lines[1] ' correct test results, but only saw: ' $results[1] 

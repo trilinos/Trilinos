@@ -46,7 +46,7 @@
 #  More detailed logging information can be found in SST.log
 #
 #  A typical call to amesos_test.exe is:
-#COMMENT       mpirun -np 1 amesos_test.exe SUPERLUDIST SuperLU.rua 0 1 1 0 1e-14 1e-14
+#COMMENT       $mpigo 1 ./amesos_test.exe SUPERLUDIST SuperLU.rua 0 1 1 0 1e-14 1e-14
 #  where:
 #     SUPERLUDIST SuperLU.rua - The solver to use and the matrix to solve
 #     0 1 1 0                 - MatrixType, Special, NumSolves, Transpose
@@ -59,6 +59,18 @@
 #   NumSolves < 0 means use multiple right hand sides
 #   NumSolves > 1 means use blocked right hand sides
 #
+
+## Some machines use a command different than mpirun to run mpi jobs.  The
+## test-harness.plx script sets the environment variable
+## "TRILINOS_TEST_HARNESS_MPIGO_COMMAND".  We test for
+## this value below.  If not set, we set it to a default value.
+
+set mpigo = `printenv TRILINOS_TEST_HARNESS_MPIGO_COMMAND`
+
+if ("$mpigo" == "") then
+    set mpigo = "mpirun -np 2 "
+endif
+
 touch SST.summary
 cat >>AME.summary <SST.summary 
 echo "COMMENT Start Timings.exe, the Direct Sparse Solver Regresion Test" > SST.summary 
@@ -86,65 +98,65 @@ echo "COMMENT column 17+ - summary " >> SST.summary
 #
 #  Test 7 matrices on one process, one right hand side 
 #
-mpirun -np 1 amesos_test.exe SUPERLUDIST af23560.rua 0 0 -10 0 1e-12 5e-11 >>SST.stdout
-mpirun -np 1 amesos_test.exe SUPERLUDIST bbmat.rua 0 0 -10 0 2e-10 1e-14 >>SST.stdout
-mpirun -np 1 amesos_test.exe SUPERLUDIST ex11.rua 0 0 -10 0 10 .2 >>SST.stdout
-mpirun -np 1 amesos_test.exe SUPERLUDIST fidapm11.rua 0 0 -10 0 1000 1 >>SST.stdout
-# COMMENT fails on atlantis and stratus on UMFPACK also - yet this is quoted in Li & Demmel mpirun -np 1 amesos_test.exe SUPERLUDIST rma10.rua 0 0 -10 0 1e-14 1e-14 >>SST.stdout
-mpirun -np 1 amesos_test.exe SUPERLUDIST twotone.rua 0 0 -10 0 1e-9 5e-10 >>SST.stdout
-mpirun -np 1 amesos_test.exe SUPERLUDIST wang4.rua 0 0 -10 0 1e-9 1e-10 >>SST.stdout
+$mpigo 1 ./amesos_test.exe SUPERLUDIST af23560.rua 0 0 -10 0 1e-12 5e-11 >>SST.stdout
+$mpigo 1 ./amesos_test.exe SUPERLUDIST bbmat.rua 0 0 -10 0 2e-10 1e-14 >>SST.stdout
+$mpigo 1 ./amesos_test.exe SUPERLUDIST ex11.rua 0 0 -10 0 10 .2 >>SST.stdout
+$mpigo 1 ./amesos_test.exe SUPERLUDIST fidapm11.rua 0 0 -10 0 1000 1 >>SST.stdout
+# COMMENT fails on atlantis and stratus on UMFPACK also - yet this is quoted in Li & Demmel $mpigo 1 ./amesos_test.exe SUPERLUDIST rma10.rua 0 0 -10 0 1e-14 1e-14 >>SST.stdout
+$mpigo 1 ./amesos_test.exe SUPERLUDIST twotone.rua 0 0 -10 0 1e-9 5e-10 >>SST.stdout
+$mpigo 1 ./amesos_test.exe SUPERLUDIST wang4.rua 0 0 -10 0 1e-9 1e-10 >>SST.stdout
 
 
-mpirun -np 1 amesos_test.exe SUPERLUDIST cavity21.rua 0 0 -10 0 1e-9 1e-10 >>SST.stdout
-mpirun -np 1 amesos_test.exe SUPERLUDIST cavity24.rua 0 0 -10 0 1e-9 1e-10 >>SST.stdout
-mpirun -np 1 amesos_test.exe SUPERLUDIST cavity18.rua 0 0 -10 0 1e-9 1e-10 >>SST.stdout
-mpirun -np 1 amesos_test.exe SUPERLUDIST memplus.rua 0 0 -10 0 1e-9 1e-10 >>SST.stdout
-mpirun -np 1 amesos_test.exe SUPERLUDIST mhd4800a.rua 0 0 -10 0 1e-9 1e-10 >>SST.stdout
-mpirun -np 1 amesos_test.exe SUPERLUDIST psmigr_1.rua 0 0 -10 0 1e-9 1e-10 >>SST.stdout
-mpirun -np 1 amesos_test.exe SUPERLUDIST bcsstk16.rsa 0 0 -10 0 1e-9 1e-10 >>SST.stdout
-mpirun -np 1 amesos_test.exe SUPERLUDIST bcsstk17.rsa 0 0 -10 0 1e-9 1e-10 >>SST.stdout
-mpirun -np 1 amesos_test.exe SUPERLUDIST s3rmq4m1.dat  0 0 -10 0 1e-9 1e-10 >>SST.stdout
-mpirun -np 1 amesos_test.exe SUPERLUDIST s3rmt3m3.dat  0 0 -10 0 1e-9 1e-10 >>SST.stdout
+$mpigo 1 ./amesos_test.exe SUPERLUDIST cavity21.rua 0 0 -10 0 1e-9 1e-10 >>SST.stdout
+$mpigo 1 ./amesos_test.exe SUPERLUDIST cavity24.rua 0 0 -10 0 1e-9 1e-10 >>SST.stdout
+$mpigo 1 ./amesos_test.exe SUPERLUDIST cavity18.rua 0 0 -10 0 1e-9 1e-10 >>SST.stdout
+$mpigo 1 ./amesos_test.exe SUPERLUDIST memplus.rua 0 0 -10 0 1e-9 1e-10 >>SST.stdout
+$mpigo 1 ./amesos_test.exe SUPERLUDIST mhd4800a.rua 0 0 -10 0 1e-9 1e-10 >>SST.stdout
+$mpigo 1 ./amesos_test.exe SUPERLUDIST psmigr_1.rua 0 0 -10 0 1e-9 1e-10 >>SST.stdout
+$mpigo 1 ./amesos_test.exe SUPERLUDIST bcsstk16.rsa 0 0 -10 0 1e-9 1e-10 >>SST.stdout
+$mpigo 1 ./amesos_test.exe SUPERLUDIST bcsstk17.rsa 0 0 -10 0 1e-9 1e-10 >>SST.stdout
+$mpigo 1 ./amesos_test.exe SUPERLUDIST s3rmq4m1.dat  0 0 -10 0 1e-9 1e-10 >>SST.stdout
+$mpigo 1 ./amesos_test.exe SUPERLUDIST s3rmt3m3.dat  0 0 -10 0 1e-9 1e-10 >>SST.stdout
 
-mpirun -np 1 amesos_test.exe SUPERLUDIST af23560.rua 0 0 -10 0 1e-12 5e-11 >>SST.stdout
-mpirun -np 1 amesos_test.exe SUPERLUDIST bbmat.rua 0 0 -10 0 2e-10 1e-14 >>SST.stdout
-mpirun -np 1 amesos_test.exe SUPERLUDIST ex11.rua 0 0 -10 0 10 .2 >>SST.stdout
-mpirun -np 1 amesos_test.exe SUPERLUDIST fidapm11.rua 0 0 -10 0 1000 1 >>SST.stdout
-# COMMENT fails on atlantis and stratus on UMFPACK also - yet this is quoted in Li & Demmel mpirun -np 1 amesos_test.exe SUPERLUDIST rma10.rua 0 0 -10 0 1e-14 1e-14 >>SST.stdout
-mpirun -np 1 amesos_test.exe SUPERLUDIST twotone.rua 0 0 -10 0 1e-9 5e-10 >>SST.stdout
-mpirun -np 1 amesos_test.exe SUPERLUDIST wang4.rua 0 0 -10 0 1e-9 1e-10 >>SST.stdout
-
-
-mpirun -np 1 amesos_test.exe SUPERLUDIST cavity21.rua 0 0 -10 0 1e-9 1e-10 >>SST.stdout
-mpirun -np 1 amesos_test.exe SUPERLUDIST cavity24.rua 0 0 -10 0 1e-9 1e-10 >>SST.stdout
-mpirun -np 1 amesos_test.exe SUPERLUDIST cavity18.rua 0 0 -10 0 1e-9 1e-10 >>SST.stdout
-mpirun -np 1 amesos_test.exe SUPERLUDIST memplus.rua 0 0 -10 0 1e-9 1e-10 >>SST.stdout
-mpirun -np 1 amesos_test.exe SUPERLUDIST mhd4800a.rua 0 0 -10 0 1e-9 1e-10 >>SST.stdout
-mpirun -np 1 amesos_test.exe SUPERLUDIST psmigr_1.rua 0 0 -10 0 1e-9 1e-10 >>SST.stdout
-mpirun -np 1 amesos_test.exe SUPERLUDIST bcsstk16.rsa 0 0 -10 0 1e-9 1e-10 >>SST.stdout
-mpirun -np 1 amesos_test.exe SUPERLUDIST bcsstk17.rsa 0 0 -10 0 1e-9 1e-10 >>SST.stdout
-mpirun -np 1 amesos_test.exe SUPERLUDIST s3rmq4m1.dat  0 0 -10 0 1e-9 1e-10 >>SST.stdout
-mpirun -np 1 amesos_test.exe SUPERLUDIST s3rmt3m3.dat  0 0 -10 0 1e-9 1e-10 >>SST.stdout
-
-mpirun -np 1 amesos_test.exe UMFPACK af23560.rua 0 0 -10 0 1e-12 5e-11 >>SST.stdout
-mpirun -np 1 amesos_test.exe UMFPACK bbmat.rua 0 0 -10 0 2e-10 1e-14 >>SST.stdout
-mpirun -np 1 amesos_test.exe UMFPACK ex11.rua 0 0 -10 0 10 .2 >>SST.stdout
-mpirun -np 1 amesos_test.exe UMFPACK fidapm11.rua 0 0 -10 0 1000 1 >>SST.stdout
-# COMMENT fails on atlantis and stratus on UMFPACK also - yet this is quoted in Li & Demmel mpirun -np 1 amesos_test.exe UMFPACK rma10.rua 0 0 -10 0 1e-14 1e-14 >>SST.stdout
-mpirun -np 1 amesos_test.exe UMFPACK twotone.rua 0 0 -10 0 1e-9 5e-10 >>SST.stdout
-mpirun -np 1 amesos_test.exe UMFPACK wang4.rua 0 0 -10 0 1e-9 1e-10 >>SST.stdout
+$mpigo 1 ./amesos_test.exe SUPERLUDIST af23560.rua 0 0 -10 0 1e-12 5e-11 >>SST.stdout
+$mpigo 1 ./amesos_test.exe SUPERLUDIST bbmat.rua 0 0 -10 0 2e-10 1e-14 >>SST.stdout
+$mpigo 1 ./amesos_test.exe SUPERLUDIST ex11.rua 0 0 -10 0 10 .2 >>SST.stdout
+$mpigo 1 ./amesos_test.exe SUPERLUDIST fidapm11.rua 0 0 -10 0 1000 1 >>SST.stdout
+# COMMENT fails on atlantis and stratus on UMFPACK also - yet this is quoted in Li & Demmel $mpigo 1 ./amesos_test.exe SUPERLUDIST rma10.rua 0 0 -10 0 1e-14 1e-14 >>SST.stdout
+$mpigo 1 ./amesos_test.exe SUPERLUDIST twotone.rua 0 0 -10 0 1e-9 5e-10 >>SST.stdout
+$mpigo 1 ./amesos_test.exe SUPERLUDIST wang4.rua 0 0 -10 0 1e-9 1e-10 >>SST.stdout
 
 
-mpirun -np 4 amesos_test.exe SUPERLUDIST cavity21.rua 1 0 -10 0 1e-9 1e-10 >>SST.stdout
-mpirun -np 4 amesos_test.exe SUPERLUDIST cavity24.rua 1 0 -10 0 1e-9 1e-10 >>SST.stdout
-mpirun -np 4 amesos_test.exe SUPERLUDIST cavity18.rua 1 0 -10 0 1e-9 1e-10 >>SST.stdout
-mpirun -np 4 amesos_test.exe SUPERLUDIST memplus.rua 1 0 -10 0 1e-9 1e-10 >>SST.stdout
-mpirun -np 4 amesos_test.exe SUPERLUDIST mhd4800a.rua 1 0 -10 0 1e-9 1e-10 >>SST.stdout
-mpirun -np 4 amesos_test.exe SUPERLUDIST psmigr_1.rua 1 0 -10 0 1e-9 1e-10 >>SST.stdout
-mpirun -np 4 amesos_test.exe SUPERLUDIST bcsstk16.rsa 1 0 -10 0 1e-9 1e-10 >>SST.stdout
-mpirun -np 4 amesos_test.exe SUPERLUDIST bcsstk17.rsa 1 0 -10 0 1e-9 1e-10 >>SST.stdout
-mpirun -np 4 amesos_test.exe SUPERLUDIST s3rmq4m1.dat  1 0 -10 0 1e-9 1e-10 >>SST.stdout
-mpirun -np 4 amesos_test.exe SUPERLUDIST s3rmt3m3.dat  1 0 -10 0 1e-9 1e-10 >>SST.stdout
+$mpigo 1 ./amesos_test.exe SUPERLUDIST cavity21.rua 0 0 -10 0 1e-9 1e-10 >>SST.stdout
+$mpigo 1 ./amesos_test.exe SUPERLUDIST cavity24.rua 0 0 -10 0 1e-9 1e-10 >>SST.stdout
+$mpigo 1 ./amesos_test.exe SUPERLUDIST cavity18.rua 0 0 -10 0 1e-9 1e-10 >>SST.stdout
+$mpigo 1 ./amesos_test.exe SUPERLUDIST memplus.rua 0 0 -10 0 1e-9 1e-10 >>SST.stdout
+$mpigo 1 ./amesos_test.exe SUPERLUDIST mhd4800a.rua 0 0 -10 0 1e-9 1e-10 >>SST.stdout
+$mpigo 1 ./amesos_test.exe SUPERLUDIST psmigr_1.rua 0 0 -10 0 1e-9 1e-10 >>SST.stdout
+$mpigo 1 ./amesos_test.exe SUPERLUDIST bcsstk16.rsa 0 0 -10 0 1e-9 1e-10 >>SST.stdout
+$mpigo 1 ./amesos_test.exe SUPERLUDIST bcsstk17.rsa 0 0 -10 0 1e-9 1e-10 >>SST.stdout
+$mpigo 1 ./amesos_test.exe SUPERLUDIST s3rmq4m1.dat  0 0 -10 0 1e-9 1e-10 >>SST.stdout
+$mpigo 1 ./amesos_test.exe SUPERLUDIST s3rmt3m3.dat  0 0 -10 0 1e-9 1e-10 >>SST.stdout
+
+$mpigo 1 ./amesos_test.exe UMFPACK af23560.rua 0 0 -10 0 1e-12 5e-11 >>SST.stdout
+$mpigo 1 ./amesos_test.exe UMFPACK bbmat.rua 0 0 -10 0 2e-10 1e-14 >>SST.stdout
+$mpigo 1 ./amesos_test.exe UMFPACK ex11.rua 0 0 -10 0 10 .2 >>SST.stdout
+$mpigo 1 ./amesos_test.exe UMFPACK fidapm11.rua 0 0 -10 0 1000 1 >>SST.stdout
+# COMMENT fails on atlantis and stratus on UMFPACK also - yet this is quoted in Li & Demmel $mpigo 1 ./amesos_test.exe UMFPACK rma10.rua 0 0 -10 0 1e-14 1e-14 >>SST.stdout
+$mpigo 1 ./amesos_test.exe UMFPACK twotone.rua 0 0 -10 0 1e-9 5e-10 >>SST.stdout
+$mpigo 1 ./amesos_test.exe UMFPACK wang4.rua 0 0 -10 0 1e-9 1e-10 >>SST.stdout
+
+
+$mpigo 4 ./amesos_test.exe SUPERLUDIST cavity21.rua 1 0 -10 0 1e-9 1e-10 >>SST.stdout
+$mpigo 4 ./amesos_test.exe SUPERLUDIST cavity24.rua 1 0 -10 0 1e-9 1e-10 >>SST.stdout
+$mpigo 4 ./amesos_test.exe SUPERLUDIST cavity18.rua 1 0 -10 0 1e-9 1e-10 >>SST.stdout
+$mpigo 4 ./amesos_test.exe SUPERLUDIST memplus.rua 1 0 -10 0 1e-9 1e-10 >>SST.stdout
+$mpigo 4 ./amesos_test.exe SUPERLUDIST mhd4800a.rua 1 0 -10 0 1e-9 1e-10 >>SST.stdout
+$mpigo 4 ./amesos_test.exe SUPERLUDIST psmigr_1.rua 1 0 -10 0 1e-9 1e-10 >>SST.stdout
+$mpigo 4 ./amesos_test.exe SUPERLUDIST bcsstk16.rsa 1 0 -10 0 1e-9 1e-10 >>SST.stdout
+$mpigo 4 ./amesos_test.exe SUPERLUDIST bcsstk17.rsa 1 0 -10 0 1e-9 1e-10 >>SST.stdout
+$mpigo 4 ./amesos_test.exe SUPERLUDIST s3rmq4m1.dat  1 0 -10 0 1e-9 1e-10 >>SST.stdout
+$mpigo 4 ./amesos_test.exe SUPERLUDIST s3rmt3m3.dat  1 0 -10 0 1e-9 1e-10 >>SST.stdout
 
 echo "" >> SST.summary 
 echo "COMMENT End Timings.exe" >> SST.summary 
@@ -152,7 +164,7 @@ echo "COMMENT End Timings.exe" >> SST.summary
 #
 #  Make sure that the tests ran 
 #
-set expected_lines = `grep mpirun Timings.exe | grep -v COMMENT | wc`
+set expected_lines = `grep $mpigo Timings.exe | grep -v COMMENT | wc`
 set results = `grep OK SST.summary | wc`
 if ($results[1] != $expected_lines[1] ) then
     echo 'I expected ' $expected_lines[1] ' correct test results, but only saw: ' $results[1] 
