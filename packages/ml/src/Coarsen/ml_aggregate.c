@@ -1050,10 +1050,12 @@ int ML_Aggregate_Coarsen( ML_Aggregate *ag, ML_Operator *Amatrix,
       else if (coarsen_scheme == ML_AGGR_HYBRIDUM) 
          coarsen_scheme = ML_AGGR_MIS;
 /*MS*/
-      else if (coarsen_scheme == ML_AGGR_METIS) 
+      else if (coarsen_scheme == ML_AGGR_METIS)
          coarsen_scheme = ML_AGGR_METIS;
-      else if (coarsen_scheme == ML_AGGR_PARMETIS) 
+      else if (coarsen_scheme == ML_AGGR_PARMETIS)
 	coarsen_scheme = ML_AGGR_PARMETIS;
+      else if (coarsen_scheme == ML_AGGR_ZOLTAN)
+	coarsen_scheme = ML_AGGR_ZOLTAN;
 /*ms*/
       else
       {
@@ -2203,15 +2205,17 @@ int ML_Aggregate_Set_NodalCoordinates(ML* ml, ML_Aggregate *ag, double *ptr)
 {
   int i;
   int MaxLevels = ml->ML_num_levels;
+  assert (MaxLevels);
   assert (ptr != 0);
 
   if (ag->nodal_coord)
     ML_free(ag->nodal_coord);
 
-  ag->nodal_coord = (double*) ML_allocate((sizeof(double*) * (MaxLevels)));
+  ag->nodal_coord = (double**) ML_allocate((sizeof(double*) * (MaxLevels)));
   assert (ag->nodal_coord != NULL);
   for (i = 0 ; i < MaxLevels ; ++i)
     ag->nodal_coord[i] = NULL;
+
   /* NOTE: fine-grid is ALWAYS at position 0.
    * ML_DECREASING can be handle by passing relative level number */
   ag->nodal_coord[0] = ptr;
