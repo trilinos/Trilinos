@@ -27,6 +27,10 @@
  
 /* Static variables */
 static int Timer = LB_TIME_WALL;
+static PARAM_VARS Timer_params[] = {
+        { "TIMER", &Timer, "STRING" },
+        { NULL, NULL, NULL }
+};
 
 /* Interpret and set timer parameters */
 
@@ -37,16 +41,11 @@ char *val)                      /* value of variable */
     PARAM_UTYPE result;         /* value returned from Check_Param */
     int index;                  /* index returned from Check_Param */
     int status;
-    PARAM_VARS timer_params[] = {
-        { "TIMER", &Timer, "STRING" },
-        { NULL, NULL, NULL }
-    };
 
-    status = LB_Check_Param(name, val, timer_params, &result, &index);
+    status = LB_Check_Param(name, val, Timer_params, &result, &index);
 
     if (status == 0 && index == 0) {
-        status = 3; /* Don't add to params list */
-        if (strcmp(result.sval, "WALL")==0)
+        if (result.def || (!strcmp(result.sval, "WALL")))
           Timer = LB_TIME_WALL;
         else if (strcmp(result.sval, "CPU")==0) {
 #if (defined(_CLOCK_T) && ! defined(SMOS))
@@ -76,7 +75,7 @@ char *val)                      /* value of variable */
 #endif
         }
         else{
-          fprintf(stderr, "LB_Set_Timer_Param warning: Unknown timer option "
+          fprintf(stderr, "Zoltan warning: Unknown timer option "
                           "%s\n", result.sval);
           status = 2; /* Illegal parameter */
         }
