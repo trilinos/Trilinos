@@ -238,6 +238,7 @@ End:
     double cutn;   /* Net cuts:  sum_over_edges((nparts>1)*ewgt) */
     double remcutl;   /* Connnectivity cuts of removed edges */
     double remcutn;   /* Net cuts of removed edges */
+    int gnremove;
 
     cutl= Zoltan_PHG_Compute_ConCut(hg->comm, hg, parts,
                                     zz->LB.Num_Global_Parts, &err);
@@ -247,9 +248,13 @@ End:
     if (!err) {
      
       /* Add in cut contributions from removed edges */
-      err = Zoltan_PHG_Removed_Cuts(zz, zoltan_hg, &remcutl, &remcutn);
-      cutl += remcutl;
-      cutn += remcutn;
+      MPI_Allreduce(&(zoltan_hg->nRemove), &gnremove, 1, MPI_INT, MPI_SUM,
+                    zz->Communicator);
+      if (gnremove) {
+        err = Zoltan_PHG_Removed_Cuts(zz, zoltan_hg, &remcutl, &remcutn);
+        cutl += remcutl;
+        cutn += remcutn;
+      }
   
       cutlsum += cutl;
       if (cutl > cutlmax) cutlmax = cutl;

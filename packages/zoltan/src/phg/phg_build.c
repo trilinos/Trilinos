@@ -78,60 +78,11 @@ char *yo = "Zoltan_PHG_Build_Hypergraph";
   phgraph->comm = &hgp->globalcomm;
 
   /* Use callback functions to build the hypergraph. */
-  if (zz->Get_Num_HG_Edges && zz->Get_HG_Edge_List && zz->Get_HG_Edge_Info){
-    /* 
-     * Hypergraph callback functions exist; 
-     * call them and build the HG directly.
-     */
-    ZOLTAN_TRACE_DETAIL(zz, yo, "Using Hypergraph Callbacks.");
 
-    ierr = Zoltan_PHG_Fill_Hypergraph(zz, zhg, hgp, input_parts);
-    if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
-      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error building hypergraph");
-      goto End;
-    }
-  }
-
-  else if ((zz->Get_Num_Edges != NULL || zz->Get_Num_Edges_Multi != NULL) &&
-           (zz->Get_Edge_List != NULL || zz->Get_Edge_List_Multi != NULL)) {
-    /* 
-     * Hypergraph callback functions don't exist, but graph functions do;
-     * call the graph callback, build a graph, and convert it to a hypergraph. 
-     */
-    Graph graph;             /* Temporary graph. */
-
-    ZOLTAN_TRACE_DETAIL(zz, yo, "Using Graph Callbacks.");
-
-    ZOLTAN_PRINT_WARN(zz->Proc, yo, "GRAPH TO HGRAPH CONVERSION MAY NOT BE "
-                      "CORRECT IN PARALLEL YET -- KDD KDDKDD");
-
-    Zoltan_HG_Graph_Init(&graph);
-    ierr = Zoltan_Get_Obj_List(zz, &(graph.nVtx), &(zhg->GIDs),
-      &(zhg->LIDs), zz->Obj_Weight_Dim, &(graph.vwgt), &(zhg->Input_Parts));
-    if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
-      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error getting object data");
-      Zoltan_HG_Graph_Free(&graph);
-      goto End;
-    }
-
-    ierr = Zoltan_Build_Graph(zz, 1, hgp->check_graph, graph.nVtx,
-     zhg->GIDs, zhg->LIDs, zz->Obj_Weight_Dim, zz->Edge_Weight_Dim,
-     &(graph.vtxdist), &(graph.nindex), &(graph.neigh), &(graph.ewgt));
-    if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
-      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error building graph");
-      Zoltan_HG_Graph_Free(&graph);
-      goto End;
-    }
- 
-    graph.nEdge = graph.nindex[graph.nVtx];
-    ierr = Zoltan_HG_Graph_to_HGraph(zz, &graph, phgraph);
-    if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
-      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error converting graph to hypergraph");
-      Zoltan_HG_Graph_Free(&graph);
-      goto End;
-    }
-
-    Zoltan_HG_Graph_Free(&graph);
+  ierr = Zoltan_PHG_Fill_Hypergraph(zz, zhg, hgp, input_parts);
+  if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
+    ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error building hypergraph");
+    goto End;
   }
 
 #ifdef KDDKDD_NO_COORDINATES_FOR_NOW
@@ -189,8 +140,6 @@ static int Zoltan_PHG_Fill_Hypergraph(
 {
 /* Routine to call HG query function and build HG data structure. 
  * Assumes (for now) that input is given as follows from application:
- *  - Application already provided list of objects (vertices) assigned
- *    to proc.  (KDD -- perhaps move that call here).
  *  - Application gives hyperedges it owns; it knows GIDs and processor owner
  *    of all vertices of each owned hyperedge.
  *  - Application gives each hyperedge only once (KDDKDD -- MAY REMOVE THIS
@@ -364,17 +313,35 @@ float *tmpwgts = NULL;
   /* Get hyperedge information from application through query functions. */
   /***********************************************************************/
 
-  ierr = Zoltan_HG_Hypergraph_Callbacks(zz, zhg,
-                                        app.GnVtx, hgp->EdgeSizeThreshold,
-                                        hgp->final_output, &app.nEdge, 
-                                        &app.egids, &app.elids,
-                                        &app.esizes, &app.ewgt,
-                                        &app.nPins, &app.pins, 
-                                        &app.pin_procs);
+  if (zz->Get_Num_HG_Edges && zz->Get_HG_Edge_List && zz->Get_HG_Edge_Info)
+    ierr = Zoltan_HG_Hypergraph_Callbacks(zz, zhg,
+                                          app.GnVtx, hgp->EdgeSizeThreshold,
+                                          hgp->final_output, &app.nEdge, 
+                                          &app.egids, &app.elids,
+                                          &app.esizes, &app.ewgt,
+                                          &app.nPins, &app.pins, 
+                                          &app.pin_procs);
+
+  else if ((zz->Get_Num_Edges != NULL || zz->Get_Num_Edges_Multi != NULL) &&
+           (zz->Get_Edge_List != NULL || zz->Get_Edge_List_Multi != NULL)) 
+    ierr = Zoltan_HG_Graph_Callbacks(zz, zhg,
+                                     app.GnVtx, hgp->EdgeSizeThreshold,
+                                     hgp->final_output, &app.nEdge, 
+                                     &app.egids, &app.elids,
+                                     &app.esizes, &app.ewgt,
+                                     &app.nPins, &app.pins, 
+                                     &app.pin_procs);
+
+  else {
+    /* Partition without edge information?  Or return an error? */
+    app.nEdge = 0;
+    app.nPins = 0;
+    app.GnEdge = 0;
+  }
 
   if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
     ZOLTAN_PRINT_ERROR(zz->Proc, yo,
-                       "Error returned from Zoltan_PHG_Hypergraph_Callbacks");
+                       "Error returned from Callbacks");
     goto End;
   }
 
@@ -796,7 +763,7 @@ int Zoltan_PHG_Removed_Cuts(
  */
 static char *yo = "Zoltan_PHG_Removed_Cuts";
 int ierr = ZOLTAN_OK;
-int i, j, cnt, nparts;
+int i, j, k, cnt, ncnt, nparts;
 struct Hash_Node *hash_nodes = NULL;  /* Hash table variables for mapping   */
 struct Hash_Node **hash_tab = NULL;   /* GIDs to global numbering system.   */
 int npins = 0;                   /* # of pins in removed hyperedges */
@@ -827,16 +794,86 @@ double ewgt;
 
   for (i = 0; i < zhg->nRemove; i++) npins += zhg->Remove_Esize[i];
 
-  if (npins) {
-    pins = ZOLTAN_MALLOC_GID_ARRAY(zz, npins);
-    pin_procs = (int *) ZOLTAN_MALLOC(npins * sizeof(int));
-    if (!pins || !pin_procs) MEMORY_ERROR;
-
-    ierr = zz->Get_HG_Edge_List(zz->Get_HG_Edge_List_Data,
-                                num_gid_entries, num_lid_entries, zhg->nRemove,
-                                zhg->Remove_EGIDs, zhg->Remove_ELIDs,
-                                zhg->Remove_Esize, pins, pin_procs);
-
+  if (zhg->nRemove) {
+    if (zz->Get_HG_Edge_List) {
+      /* Hypergraph callbacks used to build hypergraph */
+      pins = ZOLTAN_MALLOC_GID_ARRAY(zz, npins);
+      pin_procs = (int *) ZOLTAN_MALLOC(npins * sizeof(int));
+      if (!pins || !pin_procs) MEMORY_ERROR;
+    
+      ierr = zz->Get_HG_Edge_List(zz->Get_HG_Edge_List_Data,
+                                  num_gid_entries, num_lid_entries, 
+                                  zhg->nRemove,
+                                  zhg->Remove_EGIDs, zhg->Remove_ELIDs,
+                                  zhg->Remove_Esize, pins, pin_procs);
+   
+      if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
+        ZOLTAN_PRINT_ERROR(zz->Proc, yo,
+                           "Error returned from getting HG_Edge_Lists");
+        goto End;
+      }
+    }
+    else { 
+      /* Graph callbacks used to build hypergraph */
+      ZOLTAN_ID_PTR lid;
+      int ewgtdim = zz->Edge_Weight_Dim;
+      float *gewgts = NULL;   /* Graph edge weights */
+  
+      pins = ZOLTAN_MALLOC_GID_ARRAY(zz, (npins + zhg->nRemove));
+      pin_procs = (int *) ZOLTAN_MALLOC((npins + zhg->nRemove) * sizeof(int));
+      if (ewgtdim)
+        gewgts = (float *) ZOLTAN_MALLOC(npins * ewgtdim * sizeof(float));
+      if (!pins || !pin_procs || (ewgtdim && !gewgts)) MEMORY_ERROR;
+  
+      if (zz->Get_Edge_List_Multi) 
+        zz->Get_Edge_List_Multi(zz->Get_Edge_List_Multi_Data,
+                          num_gid_entries, num_lid_entries, zhg->nRemove,
+                          zhg->Remove_EGIDs, zhg->Remove_ELIDs,
+                          zhg->Remove_Esize, pins, pin_procs, ewgtdim, 
+                          gewgts, &ierr);
+      else {
+        cnt = 0;
+        for (i = 0; i < zhg->nRemove; i++) {
+          lid = (num_lid_entries ? &(zhg->Remove_ELIDs[i*num_lid_entries])
+                                 : NULL);
+          zz->Get_Edge_List(zz->Get_Edge_List_Data,
+                            num_gid_entries, num_lid_entries,
+                            &(zhg->Remove_EGIDs[i*num_gid_entries]), lid,
+                            &(pins[cnt]), &(pin_procs[cnt]),
+                            ewgtdim, &(gewgts[cnt*ewgtdim]),
+                            &ierr);
+          cnt += zhg->Remove_Esize[i];
+        }
+      }
+      if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
+        ZOLTAN_PRINT_ERROR(zz->Proc, yo,
+                           "Error returned from getting Edge_Lists");
+        goto End;
+      }
+  
+      /* Post-process edges to add vgid[i] to hedge i. */
+      cnt = npins;
+      npins += zhg->nRemove;  /* Will add egid to hyperedge */
+      ncnt = npins;
+      for (i = zhg->nRemove-1; i >= 0; i--) {
+        /* Copy the existing pins for the edge */
+        for (j = 0; j < zhg->Remove_Esize[i]; j++) {
+          cnt--;
+          ncnt--;
+          ZOLTAN_SET_GID(zz, &(pins[ncnt]), &(pins[cnt]));
+          pin_procs[ncnt] = pin_procs[cnt];
+          for (k = 0; k < ewgtdim; k++)   /* sum the graph-edge wgts? */
+            zhg->Remove_Ewgt[i*ewgtdim + k] += gewgts[cnt*ewgtdim + k];
+        }
+        /* Add egid[i] */
+        ncnt--;
+        ZOLTAN_SET_GID(zz, &(pins[ncnt]),
+                           &(zhg->Remove_EGIDs[i*num_gid_entries]));
+        pin_procs[ncnt] = zz->Proc;
+        zhg->Remove_Esize[i]++;
+      }
+      ZOLTAN_FREE(&gewgts);
+    }
   }
 
   /* Communicate Output_Part info for off-processor pins */
