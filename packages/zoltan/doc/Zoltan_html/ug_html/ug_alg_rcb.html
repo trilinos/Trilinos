@@ -165,7 +165,11 @@ expected time in phase j (measured in seconds), set this parameter to
       </td>
       <td style="vertical-align: top;">Norm used in multicriteria
 algorithm; this determines how to balance the different weight
-constraints. Valid values are 1,2,3. Try a different value if you're
+constraints. Valid values are 1,2, and 3. Roughly, if the weights
+correspond to different phases, then the value 1 (1-norm) tries to
+minimize the&nbsp; total time (sum over all phases) while the value 3
+(max-norm) attempts to minimize the worst imbalance in any phase. The
+2-norm does something in between. Try a different value if you're
 not happy with the balance. <br>
       </td>
     </tr>
@@ -173,7 +177,7 @@ not happy with the balance. <br>
       <td style="vertical-align: top;"><span style="font-style: italic;">RCB_MAX_ASPECT_RATIO</span><br>
       </td>
       <td style="vertical-align: top;">Maximum allowed ratio between
-the largest and smallest side of a subdomain.<br>
+the largest and smallest side of a subdomain. Must be &gt; 1. <br>
       </td>
     </tr>
     <tr>
