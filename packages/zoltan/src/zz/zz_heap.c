@@ -15,11 +15,13 @@ extern "C" {
 
 /* This module implements a binary (max-) heap.
  * Three arrays are associated with a heap:
- *   ele   - the elements (ints between 0 and n; for example, 
- *           vertex numbers) that are stored in the heap. 
- *   pos   - gives the current position in the heap for each element
+ *   ele   - ele[0] is the max element in the heap, ele[1] and
+ *           ele[2] are its children, and so on.
+ *   pos   - gives the current position in the heap for each element,
+ *           where the elements are usually integers from 0 to n,
+ *           for example, vertex numbers.
  *   value - key values (floats) by which the heap are arranged.
- *           Not in arranged order.
+ *           Not in (heap) arranged order.
  */
 
 static void heapify (HEAP*, int);
@@ -72,8 +74,9 @@ int heap_check (HEAP *h)
 }
 
 /* heap_input adds one item to the heap but does NOT
- * rearrange the heap! We need a function heap_insert
- * to add an item and preserve the heap property. 
+ * rearrange the heap! Constant time.
+ * We might want to write a function heap_insert
+ * that adds an item and preserves the heap property. 
  */
 int heap_input (HEAP *h, int element, float value)
 {
@@ -154,8 +157,11 @@ int heap_change_value (HEAP *h, int element, float value)
    time O(log(n)).
 */
 int heap_extract_max (HEAP *h)
-{ int max = h->ele[0];
+{ int max;
 
+  if (h->n==0) return -1; /* No elements in heap. */
+
+  max = h->ele[0];
   h->value[max] = 0.0;
   h->pos[max] = -1;
   h->pos[h->ele[0]=h->ele[--(h->n)]] = 0;

@@ -292,6 +292,9 @@ static int bfs_order (
       if (part_sum-cutoff > cutoff-old_sum){
         part[vtx]++;
         part_sum = old_sum; 
+        if (zz->Debug_Level >= ZOLTAN_DEBUG_ALL)
+          printf("GLOBAL_PART vtx=%2d, bfsnum=%2d, part[%2d]=%2d\n",
+               vtx,bfsnumber-1,vtx,part[vtx]);
       }
       weight_sum -= part_sum;
       cutoff = weight_sum/(p-pnumber);
@@ -636,7 +639,7 @@ cutoff);
     printf("Starting new ordering at vertex %d, part=%2d\n", start_vtx, p); 
 
   /* Initialize heap. */
-  gain[start_vtx] = 1.0; /* highest priority */
+  gain[start_vtx] = 1.0;           /* Make it highest value in heap. */
   heap_init(zz, &(h[0]), hg->nVtx);
   heap_init(zz, &(h[1]), 0);       /* Dummy heap, not used. */
   for(i=0; i<hg->nVtx; i++)
@@ -647,6 +650,13 @@ cutoff);
   
     /* Get next vertex from heap */
     vtx = heap_extract_max(h);
+
+    if (vtx<0){
+      /* This should never happen. */
+      ZOLTAN_PRINT_ERROR(-1, yo, "Internal error: No vertices in heap.");
+      ierr = ZOLTAN_FATAL;
+      goto error;
+    }
     if (rank[vtx]<0){
       order[bfsnumber] = vtx;
       rank[vtx] = bfsnumber++;
@@ -676,20 +686,26 @@ rank[vtx]);
       if (part_sum-cutoff > cutoff-old_sum){
         part[vtx]++;
         part_sum = old_sum; 
+        if (zz->Debug_Level >= ZOLTAN_DEBUG_ALL)
+          printf("GLOBAL_PART vtx=%2d, bfsnum=%2d, part[%2d]=%2d\n",
+               vtx,bfsnumber-1,vtx,part[vtx]);
       }
       weight_sum -= part_sum;
       cutoff = weight_sum/(p-pnumber);
-      if (part[vtx] == pnumber)
+      if (part[vtx] == pnumber){
         part_sum = hg->vwgt?hg->vwgt[vtx]:1.0;
-      else
+        j = -1;
+      }
+      else { /* part[vtx] == pnumber-1 */
         part_sum = 0.0;
+        j = heap_peek_max(h); /* j will be the first vertex in the next part. */
+      }
       if (zz->Debug_Level >= ZOLTAN_DEBUG_ALL)
         printf("GLOBAL_PART initializing for partition %2d, cutoff = %f\n", 
                pnumber, cutoff);
 
       if (priority_mode>0){
         /* Reset all gain values (but one). */
-        j = heap_peak_max(h);
         for (i=0; i<hg->nVtx; i++){
           if (i != j) gain[i] = 0.0;
           if (rank[i] <0) heap_change_value(h, i, gain[i]);
@@ -708,38 +724,41 @@ rank[vtx]);
       move_vertex(hg, vtx, 0, 1, visited, cut, gain, h);
     } 
     else {
-      for (j=hg->vindex[vtx]; j<hg->vindex[vtx+1]; j++){
-        edge = hg->vedge[j];
-        esize = hg->hindex[edge+1] - hg->hindex[edge];
-        if (vtx_count) vtx_count[edge]++;
-        for (i=hg->hindex[edge]; i<hg->hindex[edge+1]; i++){
-          nbor = hg->hvertex[i];
-          if (rank[nbor] <0){
-             switch (priority_mode){
-             case 1:
-             case 2:
-               /* Absorption metric. */
-               delta = (hg->ewgt?hg->ewgt[edge]:1.0)/(esize-1);
-               break;
-             case 3:
-             case 4:
-               damp_factor = 0.5; /* Choose a value between 0 and 1. */
-               /* gain contribution from current edge will be
-                  hg->ewgt[edge]*pow(damp_factor, esize-vtx_count[edge]-1) */
-               if (vtx_count[edge]==1)
-                 delta = (hg->ewgt?hg->ewgt[edge]:1.0)*
-                   pow(damp_factor, (double) (esize-2));
+      if (part[vtx]==pnumber){
+        /* Don't update if vtx was the last in a partition. */
+        for (j=hg->vindex[vtx]; j<hg->vindex[vtx+1]; j++){
+          edge = hg->vedge[j];
+          esize = hg->hindex[edge+1] - hg->hindex[edge];
+          if (vtx_count) vtx_count[edge]++;
+          for (i=hg->hindex[edge]; i<hg->hindex[edge+1]; i++){
+            nbor = hg->hvertex[i];
+            if (rank[nbor] <0){
+               switch (priority_mode){
+               case 1:
+               case 2:
+                 /* Absorption metric. */
+                 delta = (hg->ewgt?hg->ewgt[edge]:1.0)/(esize-1);
+                 break;
+               case 3:
+               case 4:
+                 damp_factor = 0.5; /* Choose a value between 0 and 1. */
+                 /* gain contribution from current edge will be
+                    hg->ewgt[edge]*pow(damp_factor, esize-vtx_count[edge]-1) */
+                 if (vtx_count[edge]==1)
+                   delta = (hg->ewgt?hg->ewgt[edge]:1.0)*
+                     pow(damp_factor, (double) (esize-2));
+                 else
+                   delta = (hg->ewgt?hg->ewgt[edge]:1.0)*(1.0-damp_factor)*
+                     pow(damp_factor, (double) (esize-vtx_count[edge]-1));
+                 break;
+               }
+               if (priority_mode&1)
+                 gain[nbor] += delta;
                else
-                 delta = (hg->ewgt?hg->ewgt[edge]:1.0)*(1.0-damp_factor)*
-                   pow(damp_factor, (double) (esize-vtx_count[edge]-1));
-               break;
-             }
-             if (priority_mode&1)
-               gain[nbor] += delta;
-             else
-               gain[nbor] += delta/edge_sum[nbor];
-  
-             heap_change_value(h, nbor, gain[nbor]);
+                 gain[nbor] += delta/edge_sum[nbor];
+    
+               heap_change_value(h, nbor, gain[nbor]);
+            }
           }
         }
       }

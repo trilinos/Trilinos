@@ -239,10 +239,11 @@ typedef struct
   int *pos;
   float *value;
 } HEAP;
+
 #define heap_empty(H)         (((H)->n)==0)
 #define heap_not_empty(H)     (((H)->n)!=0)
 #define heap_max_value(H)     ((H)->value[(H)->ele[0]])
-#define heap_peak_max(H)      ((H)->ele[0])
+#define heap_peek_max(H)      ((H)->ele[0])
 int  heap_init         (ZZ *, HEAP*, int);
 void heap_free         (HEAP*);
 int  heap_check        (HEAP*);
@@ -250,7 +251,7 @@ int  heap_input        (HEAP*, int, float);
 int  heap_make         (HEAP*);
 int  heap_change_value (HEAP*, int, float);
 int  heap_extract_max  (HEAP*);
-int move_vertex     (HGraph *, int, int, int, int *, int **, float *, HEAP *);
+int  move_vertex   (HGraph *, int, int, int, int *, int **, float *, HEAP *);
 
 #ifdef __cplusplus
 } /* closing bracket for extern "C" */

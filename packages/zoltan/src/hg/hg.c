@@ -65,7 +65,7 @@ int Zoltan_HG(
 {
 char *yo = "Zoltan_HG";
 struct Zoltan_HGraph *zoltan_hg = NULL;
-int ierr = ZOLTAN_OK;
+int i, ierr = ZOLTAN_OK;
 int nVtx;                       /* Temporary variable for base graph. */
 
 HGPartParams hgp;               /* Hypergraph parameters. */
