@@ -630,6 +630,9 @@ int ML_AGG_Gen_Prolongator(ML *ml,int level, int clevel, void *data)
      else Ncoarse = Pmatrix->invec_leng;
    }
    gNcoarse = ML_Comm_GsumInt( ml->comm, Ncoarse);
+/* the next two lines added to prevent breakdown in adaptive SA */
+   gNcoarse = gNcoarse / Pmatrix->num_PDEs;
+   gNfine = gNfine / Amat->num_PDEs;
    if ( gNcoarse == 0 || ((1.0*gNfine)/(1.0*gNcoarse+0.1) < 1.05) )
    {
      if (( Pmatrix != NULL ) && (ag->smoothP_damping_factor != 0.0))
