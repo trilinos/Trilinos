@@ -192,8 +192,8 @@ used to terminate the linear solve:
   \f]
 
 NOX::Direction::Newton will set a boolean parameter called "Using
-Adjustable Forcing Term" in the "%Linear %Solver" sublist of the
-"%Newton" direction sublist.  This parameter will be set to \b true if
+Adjustable Forcing Term" in the "Linear %Solver" sublist of the
+"Newton" direction sublist.  This parameter will be set to \b true if
 the "Forcing Term Method" is set to "Type 1" or "Type 2".  It is set
 to \b false if the "Forcing Term Method" is set to "Constant".  A
 linear solver can check this parameter and thus adjust it's

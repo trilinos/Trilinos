@@ -57,7 +57,7 @@
 
   \section license License
 
-  Our intention is to make NOX available for download under the terms
+  Our intention is to make %NOX available for download under the terms
   of the <a href="http://www.gnu.org/copyleft/lesser.html">GNU Lesser
   General Public License</a>.
 
@@ -82,7 +82,7 @@
   and use the following instructions.
       <UL>
       <LI>Click on "Enter a new bug report"
-      <LI>Choose "%NOX"
+      <LI>Choose "NOX"
       <LI>Either login or create a new account
       <LI>Submit your bug report
       </UL>
@@ -94,16 +94,16 @@
 <li><a href="http://software.sandia.gov/mailman/listinfo/nox-announce">NOX-Announce Mailing List</a> - 
 Low-volume, primarily for release announcements. (Highly Recommended)
 <li><a href="http://software.sandia.gov/mailman/listinfo/nox-users">NOX-Users Mailing List</a> - 
-Discussion forum for users of NOX. (Recommended)
+Discussion forum for users of %NOX. (Recommended)
 <li><a href="http://software.sandia.gov/mailman/listinfo/nox-developers">NOX-Developers Mailing List</a> - 
-Discussion forum for NOX developers. (Developers)
+Discussion forum for %NOX developers. (Developers)
 <li><a href="http://software.sandia.gov/mailman/listinfo/nox-checkins">NOX-Checkins Mailing List</a> - 
 CVS Commit Message (Active  Developers)
 </ul>
 
 \section contributors NOX Contributors
 
-The following people have contributed code to NOX:
+The following people have contributed code to %NOX:
 
 <ul>
 <li> Russ Hooper, Sandia National Labs, rhoope@sandia.gov
@@ -414,7 +414,7 @@ configure --enable-epetra --enable-epetra-examples.
 
 \section section5 Using MPI with NOX/Epetra
 
-NOX itself does not call any MPI commands, but some of the NOX/Epetra
+%NOX itself does not call any MPI commands, but some of the %NOX/Epetra
 examples do make use of MPI. So, we include some configuration options
 to support MPI.
 
@@ -483,9 +483,9 @@ configure --with-mpi-include="/home/jdoe/mpich/include" \
 
 </ul>
 
-\section petsclub Building the NOX/PETSc Library</h5>
+\section petsclub Building the %NOX/PETSc Library</h5>
 
-To compile the NOX/PETSc library \c libnoxpetsc.a, use 
+To compile the %NOX/PETSc library \c libnoxpetsc.a, use 
 the following configuration option.
 
 This will automatically use the environmental variables 
@@ -503,9 +503,9 @@ setenv PETSC_ARCH linux
 configure --enable-petsc
 \endverbatim
 
-\section petscexamples Building the NOX/PETSc Examples</h5>
+\section petscexamples Building the %NOX/PETSc Examples</h5>
 
-To compile the examples for NOX/PETSc, an additional environment variable,
+To compile the examples for %NOX/PETSc, an additional environment variable,
 \c PETSC_BOPT, must be defined and set to the value of BOPT used to build the 
 user's PETSc installation.  For example, for a debug-enabled C++ PETSc build, 
 BOPT=g_c++ so that PETSC_BOPT=g_c++.  The configure script then allows
@@ -533,7 +533,7 @@ setenv LD_LIBRARY_PATH ${PETSC_DIR}/lib/lib${PETSC_BOPT}/${PETSC_ARCH}
 
 /*! \page devinfo NOX Developer's Information
 
-To become a NOX developer, contact Tammy Kolda (tgkolda@sandia.gov) or
+To become a %NOX developer, contact Tammy Kolda (tgkolda@sandia.gov) or
 Roger Pawlowski (rppawlo@sandia.gov).
 
 The following pages are relevant to developers.
@@ -1111,7 +1111,7 @@ Here's a more complicated example to produce a two-tiered list.
      &lt;ul&gt; 
      &lt;li&gt; "Full Step" (NOX::Linesearch::FullStep)
      &lt;li&gt; "Interval %Halving" (NOX::Linesearch::Halving)
-     &lt;li&gt; "%Polynomial" (NOX::Linesearch::Polynomial)
+     &lt;li&gt; "Polynomial" (NOX::Linesearch::Polynomial)
      &lt;li&gt; "More'-Thuente" (NOX::Linesearch::MoreThuente)
      &lt;/ul&gt;
    &lt;/ul&gt;
@@ -1251,7 +1251,7 @@ immediately before the word that is causing the link. For example,
 
 	  <ul>
 
-	  <li> "%Linear Solver" sublist, passed to
+	  <li> "Linear Solver" sublist, passed to
 	       NOX::Abstract::Group::computeNewton() by
 	       NOX::Direction::Newton
 
