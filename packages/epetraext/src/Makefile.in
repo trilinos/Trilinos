@@ -167,7 +167,10 @@ am__libepetraext_a_SOURCES_DIST =  \
 	$(srcdir)/matlab/EpetraExt_MatlabEngine.cpp \
 	$(srcdir)/matlab/EpetraExt_PutMultiVector.cpp \
 	$(srcdir)/matlab/EpetraExt_PutRowMatrix.cpp \
-	$(srcdir)/matlab/EpetraExt_PutBlockMap.cpp
+	$(srcdir)/matlab/EpetraExt_PutBlockMap.cpp \
+	$(srcdir)/block/EpetraExt_BlockCrsMatrix.cpp \
+	$(srcdir)/block/EpetraExt_BlockMultiVector.cpp \
+	$(srcdir)/block/EpetraExt_BlockUtility.cpp
 am__objects_1 = EpetraExt_MatrixMatrix.$(OBJEXT)
 am__objects_2 = EpetraExt_Permutation.$(OBJEXT) \
 	EpetraExt_LPTrans_From_GraphTrans.$(OBJEXT) \
@@ -229,9 +232,13 @@ am__objects_14 = EpetraExt_MatlabEngine.$(OBJEXT) \
 	EpetraExt_PutRowMatrix.$(OBJEXT) \
 	EpetraExt_PutBlockMap.$(OBJEXT)
 @BUILD_MATLAB_TRUE@am__objects_15 = $(am__objects_14)
+am__objects_16 = EpetraExt_BlockCrsMatrix.$(OBJEXT) \
+	EpetraExt_BlockMultiVector.$(OBJEXT) \
+	EpetraExt_BlockUtility.$(OBJEXT)
+@BUILD_BLOCK_TRUE@am__objects_17 = $(am__objects_16)
 am_libepetraext_a_OBJECTS = $(am__objects_1) $(am__objects_4) \
 	$(am__objects_6) $(am__objects_8) $(am__objects_11) \
-	$(am__objects_13) $(am__objects_15)
+	$(am__objects_13) $(am__objects_15) $(am__objects_17)
 libepetraext_a_OBJECTS = $(am_libepetraext_a_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I.
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
@@ -240,9 +247,12 @@ am__depfiles_maybe = depfiles
 @AMDEP_TRUE@	./$(DEPDIR)/EpetraExt_BTF_CrsGraph.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/EpetraExt_BTF_CrsMatrix.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/EpetraExt_BTF_LinearProblem.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/EpetraExt_BlockCrsMatrix.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/EpetraExt_BlockJacobi_LinearProblem.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/EpetraExt_BlockMapIn.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/EpetraExt_BlockMapOut.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/EpetraExt_BlockMultiVector.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/EpetraExt_BlockUtility.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/EpetraExt_CrsMatrixIn.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/EpetraExt_CrsSingletonFilter_LinearProblem.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/EpetraExt_LPTrans_From_GraphTrans.Po \
@@ -346,7 +356,10 @@ am__include_HEADERS_DIST = $(srcdir)/EpetraExt_ConfigDefs.h \
 	$(srcdir)/matlab/EpetraExt_MatlabEngine.h \
 	$(srcdir)/matlab/EpetraExt_PutMultiVector.h \
 	$(srcdir)/matlab/EpetraExt_PutRowMatrix.h \
-	$(srcdir)/matlab/EpetraExt_PutBlockMap.h
+	$(srcdir)/matlab/EpetraExt_PutBlockMap.h \
+	$(srcdir)/block/EpetraExt_BlockCrsMatrix.h \
+	$(srcdir)/block/EpetraExt_BlockMultiVector.h \
+	$(srcdir)/block/EpetraExt_BlockUtility.h
 includeHEADERS_INSTALL = $(INSTALL_HEADER)
 nodist_execincludeHEADERS_INSTALL = $(INSTALL_HEADER)
 HEADERS = $(include_HEADERS) $(nodist_execinclude_HEADERS)
@@ -363,6 +376,8 @@ AUTOHEADER = @AUTOHEADER@
 AUTOMAKE = @AUTOMAKE@
 AWK = @AWK@
 BLAS_LIBS = @BLAS_LIBS@
+BUILD_BLOCK_FALSE = @BUILD_BLOCK_FALSE@
+BUILD_BLOCK_TRUE = @BUILD_BLOCK_TRUE@
 BUILD_BTF_FALSE = @BUILD_BTF_FALSE@
 BUILD_BTF_TRUE = @BUILD_BTF_TRUE@
 BUILD_COLORING_FALSE = @BUILD_COLORING_FALSE@
@@ -701,6 +716,24 @@ EXTRA_MATLAB = \
 @BUILD_MATLAB_TRUE@MATLAB = \
 @BUILD_MATLAB_TRUE@   $(EXTRA_MATLAB)
 
+EXTRA_BLOCK_H = \
+    $(srcdir)/block/EpetraExt_BlockCrsMatrix.h \
+    $(srcdir)/block/EpetraExt_BlockMultiVector.h \
+    $(srcdir)/block/EpetraExt_BlockUtility.h
+
+EXTRA_BLOCK = \
+    $(srcdir)/block/EpetraExt_BlockCrsMatrix.cpp \
+    $(srcdir)/block/EpetraExt_BlockMultiVector.cpp \
+    $(srcdir)/block/EpetraExt_BlockUtility.cpp
+
+@BUILD_BLOCK_FALSE@BLOCK_H = 
+@BUILD_BLOCK_TRUE@BLOCK_H = \
+@BUILD_BLOCK_TRUE@   $(EXTRA_BLOCK_H)
+
+@BUILD_BLOCK_FALSE@BLOCK = 
+@BUILD_BLOCK_TRUE@BLOCK = \
+@BUILD_BLOCK_TRUE@   $(EXTRA_BLOCK)
+
 
 # ------------------------------------------------------------------------
 # EpetraExt inout library specifications
@@ -712,7 +745,8 @@ libepetraext_a_SOURCES = \
      $(INOUT) \
      $(ZOLTAN) \
      $(COLORING) \
-     $(MATLAB)
+     $(MATLAB) \
+     $(BLOCK)
 
 
 #If these are not listed, the files will not be included in
@@ -728,7 +762,8 @@ EPETRAEXT_H = \
      $(INOUT_H) \
      $(ZOLTAN_H) \
      $(COLORING_H) \
-     $(MATLAB_H)
+     $(MATLAB_H) \
+     $(BLOCK_H)
 
 
 #We need the following to support separate build directories
@@ -748,9 +783,12 @@ AM_CPPFLAGS = \
      -I$(top_builddir)/../epetraext/src/coloring \
      -I$(top_srcdir)/../epetraext/src/coloring \
      -I$(top_builddir)/../epetraext/src/matlab \
-     -I$(top_srcdir)/../epetraext/src/matlab
+     -I$(top_srcdir)/../epetraext/src/matlab \
+     -I$(top_builddir)/../epetraext/src/block \
+     -I$(top_srcdir)/../epetraext/src/block
 
 @USE_ALTERNATE_AR_FALSE@libepetraext_a_AR = $(AR) cru
+
 # ------------------------------------------------------------------------
 # For using a special archiver
 # ------------------------------------------------------------------------
@@ -892,9 +930,12 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/EpetraExt_BTF_CrsGraph.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/EpetraExt_BTF_CrsMatrix.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/EpetraExt_BTF_LinearProblem.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/EpetraExt_BlockCrsMatrix.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/EpetraExt_BlockJacobi_LinearProblem.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/EpetraExt_BlockMapIn.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/EpetraExt_BlockMapOut.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/EpetraExt_BlockMultiVector.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/EpetraExt_BlockUtility.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/EpetraExt_CrsMatrixIn.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/EpetraExt_CrsSingletonFilter_LinearProblem.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/EpetraExt_LPTrans_From_GraphTrans.Po@am__quote@
@@ -1738,6 +1779,54 @@ EpetraExt_PutBlockMap.obj: $(srcdir)/matlab/EpetraExt_PutBlockMap.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o EpetraExt_PutBlockMap.obj `if test -f '$(srcdir)/matlab/EpetraExt_PutBlockMap.cpp'; then $(CYGPATH_W) '$(srcdir)/matlab/EpetraExt_PutBlockMap.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/matlab/EpetraExt_PutBlockMap.cpp'; fi`
 
+EpetraExt_BlockCrsMatrix.o: $(srcdir)/block/EpetraExt_BlockCrsMatrix.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT EpetraExt_BlockCrsMatrix.o -MD -MP -MF "$(DEPDIR)/EpetraExt_BlockCrsMatrix.Tpo" -c -o EpetraExt_BlockCrsMatrix.o `test -f '$(srcdir)/block/EpetraExt_BlockCrsMatrix.cpp' || echo '$(srcdir)/'`$(srcdir)/block/EpetraExt_BlockCrsMatrix.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/EpetraExt_BlockCrsMatrix.Tpo" "$(DEPDIR)/EpetraExt_BlockCrsMatrix.Po"; else rm -f "$(DEPDIR)/EpetraExt_BlockCrsMatrix.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/block/EpetraExt_BlockCrsMatrix.cpp' object='EpetraExt_BlockCrsMatrix.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/EpetraExt_BlockCrsMatrix.Po' tmpdepfile='$(DEPDIR)/EpetraExt_BlockCrsMatrix.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o EpetraExt_BlockCrsMatrix.o `test -f '$(srcdir)/block/EpetraExt_BlockCrsMatrix.cpp' || echo '$(srcdir)/'`$(srcdir)/block/EpetraExt_BlockCrsMatrix.cpp
+
+EpetraExt_BlockCrsMatrix.obj: $(srcdir)/block/EpetraExt_BlockCrsMatrix.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT EpetraExt_BlockCrsMatrix.obj -MD -MP -MF "$(DEPDIR)/EpetraExt_BlockCrsMatrix.Tpo" -c -o EpetraExt_BlockCrsMatrix.obj `if test -f '$(srcdir)/block/EpetraExt_BlockCrsMatrix.cpp'; then $(CYGPATH_W) '$(srcdir)/block/EpetraExt_BlockCrsMatrix.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/block/EpetraExt_BlockCrsMatrix.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/EpetraExt_BlockCrsMatrix.Tpo" "$(DEPDIR)/EpetraExt_BlockCrsMatrix.Po"; else rm -f "$(DEPDIR)/EpetraExt_BlockCrsMatrix.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/block/EpetraExt_BlockCrsMatrix.cpp' object='EpetraExt_BlockCrsMatrix.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/EpetraExt_BlockCrsMatrix.Po' tmpdepfile='$(DEPDIR)/EpetraExt_BlockCrsMatrix.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o EpetraExt_BlockCrsMatrix.obj `if test -f '$(srcdir)/block/EpetraExt_BlockCrsMatrix.cpp'; then $(CYGPATH_W) '$(srcdir)/block/EpetraExt_BlockCrsMatrix.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/block/EpetraExt_BlockCrsMatrix.cpp'; fi`
+
+EpetraExt_BlockMultiVector.o: $(srcdir)/block/EpetraExt_BlockMultiVector.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT EpetraExt_BlockMultiVector.o -MD -MP -MF "$(DEPDIR)/EpetraExt_BlockMultiVector.Tpo" -c -o EpetraExt_BlockMultiVector.o `test -f '$(srcdir)/block/EpetraExt_BlockMultiVector.cpp' || echo '$(srcdir)/'`$(srcdir)/block/EpetraExt_BlockMultiVector.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/EpetraExt_BlockMultiVector.Tpo" "$(DEPDIR)/EpetraExt_BlockMultiVector.Po"; else rm -f "$(DEPDIR)/EpetraExt_BlockMultiVector.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/block/EpetraExt_BlockMultiVector.cpp' object='EpetraExt_BlockMultiVector.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/EpetraExt_BlockMultiVector.Po' tmpdepfile='$(DEPDIR)/EpetraExt_BlockMultiVector.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o EpetraExt_BlockMultiVector.o `test -f '$(srcdir)/block/EpetraExt_BlockMultiVector.cpp' || echo '$(srcdir)/'`$(srcdir)/block/EpetraExt_BlockMultiVector.cpp
+
+EpetraExt_BlockMultiVector.obj: $(srcdir)/block/EpetraExt_BlockMultiVector.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT EpetraExt_BlockMultiVector.obj -MD -MP -MF "$(DEPDIR)/EpetraExt_BlockMultiVector.Tpo" -c -o EpetraExt_BlockMultiVector.obj `if test -f '$(srcdir)/block/EpetraExt_BlockMultiVector.cpp'; then $(CYGPATH_W) '$(srcdir)/block/EpetraExt_BlockMultiVector.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/block/EpetraExt_BlockMultiVector.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/EpetraExt_BlockMultiVector.Tpo" "$(DEPDIR)/EpetraExt_BlockMultiVector.Po"; else rm -f "$(DEPDIR)/EpetraExt_BlockMultiVector.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/block/EpetraExt_BlockMultiVector.cpp' object='EpetraExt_BlockMultiVector.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/EpetraExt_BlockMultiVector.Po' tmpdepfile='$(DEPDIR)/EpetraExt_BlockMultiVector.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o EpetraExt_BlockMultiVector.obj `if test -f '$(srcdir)/block/EpetraExt_BlockMultiVector.cpp'; then $(CYGPATH_W) '$(srcdir)/block/EpetraExt_BlockMultiVector.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/block/EpetraExt_BlockMultiVector.cpp'; fi`
+
+EpetraExt_BlockUtility.o: $(srcdir)/block/EpetraExt_BlockUtility.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT EpetraExt_BlockUtility.o -MD -MP -MF "$(DEPDIR)/EpetraExt_BlockUtility.Tpo" -c -o EpetraExt_BlockUtility.o `test -f '$(srcdir)/block/EpetraExt_BlockUtility.cpp' || echo '$(srcdir)/'`$(srcdir)/block/EpetraExt_BlockUtility.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/EpetraExt_BlockUtility.Tpo" "$(DEPDIR)/EpetraExt_BlockUtility.Po"; else rm -f "$(DEPDIR)/EpetraExt_BlockUtility.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/block/EpetraExt_BlockUtility.cpp' object='EpetraExt_BlockUtility.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/EpetraExt_BlockUtility.Po' tmpdepfile='$(DEPDIR)/EpetraExt_BlockUtility.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o EpetraExt_BlockUtility.o `test -f '$(srcdir)/block/EpetraExt_BlockUtility.cpp' || echo '$(srcdir)/'`$(srcdir)/block/EpetraExt_BlockUtility.cpp
+
+EpetraExt_BlockUtility.obj: $(srcdir)/block/EpetraExt_BlockUtility.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT EpetraExt_BlockUtility.obj -MD -MP -MF "$(DEPDIR)/EpetraExt_BlockUtility.Tpo" -c -o EpetraExt_BlockUtility.obj `if test -f '$(srcdir)/block/EpetraExt_BlockUtility.cpp'; then $(CYGPATH_W) '$(srcdir)/block/EpetraExt_BlockUtility.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/block/EpetraExt_BlockUtility.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/EpetraExt_BlockUtility.Tpo" "$(DEPDIR)/EpetraExt_BlockUtility.Po"; else rm -f "$(DEPDIR)/EpetraExt_BlockUtility.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/block/EpetraExt_BlockUtility.cpp' object='EpetraExt_BlockUtility.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/EpetraExt_BlockUtility.Po' tmpdepfile='$(DEPDIR)/EpetraExt_BlockUtility.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o EpetraExt_BlockUtility.obj `if test -f '$(srcdir)/block/EpetraExt_BlockUtility.cpp'; then $(CYGPATH_W) '$(srcdir)/block/EpetraExt_BlockUtility.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/block/EpetraExt_BlockUtility.cpp'; fi`
+
 .f.o:
 	$(F77COMPILE) -c -o $@ $<
 
@@ -1898,7 +1987,7 @@ distclean-tags:
 	-rm -f TAGS ID GTAGS GRTAGS GSYMS GPATH tags
 
 distdir: $(DISTFILES)
-	$(mkdir_p) $(distdir)/btf $(distdir)/coloring $(distdir)/inout $(distdir)/matlab $(distdir)/transform $(distdir)/zoltan
+	$(mkdir_p) $(distdir)/block $(distdir)/btf $(distdir)/coloring $(distdir)/inout $(distdir)/matlab $(distdir)/transform $(distdir)/zoltan
 	@srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`; \
 	topsrcdirstrip=`echo "$(top_srcdir)" | sed 's|.|.|g'`; \
 	list='$(DISTFILES)'; for file in $$list; do \

@@ -310,6 +310,32 @@ MATLAB =
 
 endif
 
+EXTRA_BLOCK_H = \
+    $(srcdir)/block/EpetraExt_BlockCrsMatrix.h \
+    $(srcdir)/block/EpetraExt_BlockMultiVector.h \
+    $(srcdir)/block/EpetraExt_BlockUtility.h
+
+EXTRA_BLOCK = \
+    $(srcdir)/block/EpetraExt_BlockCrsMatrix.cpp \
+    $(srcdir)/block/EpetraExt_BlockMultiVector.cpp \
+    $(srcdir)/block/EpetraExt_BlockUtility.cpp
+
+if BUILD_BLOCK
+
+BLOCK_H = \
+   $(EXTRA_BLOCK_H)
+
+BLOCK = \
+   $(EXTRA_BLOCK)
+
+else
+
+BLOCK_H =
+
+BLOCK =
+
+endif
+
 # ------------------------------------------------------------------------
 # EpetraExt inout library specifications
 # ------------------------------------------------------------------------
@@ -321,7 +347,8 @@ libepetraext_a_SOURCES = \
      $(INOUT) \
      $(ZOLTAN) \
      $(COLORING) \
-     $(MATLAB)
+     $(MATLAB) \
+     $(BLOCK)
 
 #If these are not listed, the files will not be included in
 #the distribution tarball.
@@ -337,7 +364,8 @@ EPETRAEXT_H = \
      $(INOUT_H) \
      $(ZOLTAN_H) \
      $(COLORING_H) \
-     $(MATLAB_H)
+     $(MATLAB_H) \
+     $(BLOCK_H)
 
 #We need the following to support separate build directories
 AM_CPPFLAGS = \
@@ -356,7 +384,10 @@ AM_CPPFLAGS = \
      -I$(top_builddir)/../epetraext/src/coloring \
      -I$(top_srcdir)/../epetraext/src/coloring \
      -I$(top_builddir)/../epetraext/src/matlab \
-     -I$(top_srcdir)/../epetraext/src/matlab
+     -I$(top_srcdir)/../epetraext/src/matlab \
+     -I$(top_builddir)/../epetraext/src/block \
+     -I$(top_srcdir)/../epetraext/src/block
+
 # ------------------------------------------------------------------------
 # For using a special archiver
 # ------------------------------------------------------------------------

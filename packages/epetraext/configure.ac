@@ -310,6 +310,9 @@ AM_CONDITIONAL(BUILD_BTF, [test "X$ac_cv_use_epetraext_btf" != "Xno"])
 TAC_ARG_ENABLE_FEATURE_SUB( epetraext, matlab, [Enable EpetraExt Matlab subpkg], MATLAB, no)
 AM_CONDITIONAL(BUILD_MATLAB, [test "X$ac_cv_use_epetraext_matlab" != "Xno"])
 
+TAC_ARG_ENABLE_FEATURE_SUB( epetraext, block, [Enable EpetraExt Block subpkg], BLOCK, yes)
+AM_CONDITIONAL(BUILD_BLOCK, [test "X$ac_cv_use_epetraext_block" != "Xno"])
+
 # ------------------------------------------------------------------------
 # Checks if tests should be built
 # ------------------------------------------------------------------------
