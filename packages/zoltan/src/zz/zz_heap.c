@@ -11,7 +11,16 @@ extern "C" {
 
 #include "hypergraph.h"
 
-#define INT_CHANGE(A,B)         {int    _C_=(A);(A)=(B);(B)=_C_;}
+#define INT_SWAP(A,B)         {int    _C_=(A);(A)=(B);(B)=_C_;}
+
+/* This module implements a binary (max-) heap.
+ * Three arrays are associated with a heap:
+ *   ele   - the elements (ints between 0 and n; for example, 
+ *           vertex numbers) that are stored in the heap. 
+ *   pos   - gives the current position in the heap for each element
+ *   value - key values (floats) by which the heap are arranged.
+ *           Not in arranged order.
+ */
 
 int heap_init (HEAP *h, int space)
 { char *yo = "heap_init";
@@ -31,27 +40,41 @@ void heap_free (HEAP *h)
 { ZOLTAN_FREE ((void **) &(h->ele));
   ZOLTAN_FREE ((void **) &(h->pos));
   ZOLTAN_FREE ((void **) &(h->value));
+  h->space = 0;
+  h->n = 0;
 }
 
 int heap_check (HEAP *h)
 { int i, left, right;
+  static char * yo = "heap_check";
 
   for (i=0; i<h->n; i++)
   { left = 2*i+1;
     right = 2*i+2;
     if ((left <h->n && h->value[h->ele[left ]]>h->value[h->ele[i]]) ||
         (right<h->n && h->value[h->ele[right]]>h->value[h->ele[i]]))
-    { printf("ERROR...no heap property!\n");
+    { ZOLTAN_PRINT_ERROR(0, yo, "No heap property!\n");
       return ZOLTAN_FATAL;
   } }
   return ZOLTAN_OK;
 }
 
-void heap_input (HEAP *h, int element, float value)
+int heap_input (HEAP *h, int element, float value)
 {
+  static char *yo = "heap_input";
+
+  if (element >= h->space){
+    ZOLTAN_PRINT_ERROR(0, yo, "Inserted heap element out of range!\n");
+    return ZOLTAN_FATAL;
+  }
+  if (h->n >= h->space){
+    ZOLTAN_PRINT_ERROR(0, yo, "Heap is full!\n");
+    return ZOLTAN_FATAL;
+  }
   h->value[element] = value;
   h->pos[element] = h->n;
   h->ele[(h->n)++] = element;
+  return ZOLTAN_OK;
 }
 
 void heap_make (HEAP *h)
@@ -71,7 +94,7 @@ void heapify (HEAP *h, int root)
   if (largest != root)
   { h->pos[h->ele[root]] = largest;
     h->pos[h->ele[largest]] = root;
-    INT_CHANGE(h->ele[root],h->ele[largest]);
+    INT_SWAP(h->ele[root],h->ele[largest]);
     heapify(h,largest);
   }
 }
@@ -89,7 +112,7 @@ void heap_change_value (HEAP *h, int element, float value)
     while (position>0 && h->value[element]>h->value[h->ele[father]])
     { h->pos[h->ele[position]] = father;
       h->pos[h->ele[father]] = position;
-      INT_CHANGE(h->ele[father],h->ele[position]);
+      INT_SWAP(h->ele[father],h->ele[position]);
       position = father;
       father = (father-1)/2;
   } }

@@ -302,7 +302,6 @@ static int bfs_order (
         mark_edge[edge] = 1;
         for (i=hg->hindex[edge]; i<hg->hindex[edge+1]; i++){
           nbor = hg->hvertex[i];
-          /* if (vtx==3) printf("debug: vtx=%2d, nbor=%2d, rank[nbor] = %2d\n", vtx, nbor, rank[nbor]); */
           if (rank[nbor] == -1){
             order[last++] = nbor;
             if (last > hg->nVtx) {
@@ -323,12 +322,6 @@ static int bfs_order (
       if (order[rank[i]] != i)
          ZOLTAN_PRINT_WARN(0, yo, "Arrays order and rank are inconsistent.");
   }
-
-  /*
-  printf("BFS order = ");
-  for (i=0; i<hg->nVtx; i++) printf("%3d ", order[i]);
-  printf("\n");
-  */
 
 error:
   ZOLTAN_FREE ((void **) &rank);
