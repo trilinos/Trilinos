@@ -27,7 +27,7 @@
 #@HEADER
 
 EXEEXT = .exe
-EXAMPLE = example_AmesosFactory example_AmesosFactory_HB example_AmesosFactory_Tridiag
+EXAMPLE = example_AmesosFactory example_AmesosFactory_HB example_AmesosFactory_Tridiag compare_solvers
 
 noinst_PROGRAMS = $(EXAMPLE)
 
@@ -109,3 +109,21 @@ example_AmesosFactory_HB_LDADD = $(top_builddir)/src/libamesos.a \
 	$(LAPACK_LIBS) \
 	$(BLAS_LIBS) $(FLIBS)  $(FLIBS)
 
+compare_solvers_SOURCES = $(srcdir)/compare_solvers.cpp
+
+compare_solvers_DEPENDENCIES = \
+	$(top_builddir)/../epetra/src/libepetra.a \
+	$(top_builddir)/src/libamesos.a \
+	$(top_builddir)/../teuchos/src/libteuchos.a \
+	${TRIUTILS_LIBS}
+
+compare_solvers_CXXFLAGS = -I$(top_srcdir)/src \
+				 ${TRIUTILS_INCDIR}
+
+compare_solvers_LDADD = $(top_builddir)/src/libamesos.a \
+	$(AMESOS_LIBS) \
+	$(TRIUTILS_LIBS) \
+	$(top_builddir)/../epetra/src/libepetra.a \
+	$(top_builddir)/../teuchos/src/libteuchos.a \
+	$(LAPACK_LIBS) \
+	$(BLAS_LIBS) $(FLIBS)  $(FLIBS)
