@@ -14,6 +14,7 @@
 /*   Date   : April, 1998                                               */
 /* ******************************************************************** */
 #include <stdlib.h>
+#include "ml_common.h"
 #ifdef SUPERLU
 #include "dsp_defs.h"
 #include "util.h"
