@@ -1044,6 +1044,7 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
 
      if (8 < ML_Get_PrintLevel())  {
        d1 = sqrt(ML_gdot(Tfine->outvec_leng, Tfine_Pn_vec,Tfine_Pn_vec, Pe->comm));
+     if (ml_edges->comm->ML_mypid == 0 )
        printf("\n\nML_agg_reitzinger:  ||Th Pn v|| = %15.10e\n\n",d1);
      }
      d1 = sqrt(ML_gdot(Pe->outvec_leng, vec,vec, Pe->comm));
