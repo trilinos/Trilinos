@@ -89,7 +89,7 @@ bool NOX::Direction::Manager::reset(NOX::Parameter::List& params)
     ptr = new SteepestDescent(utils, params);
 #ifdef WITH_PRERELEASE
   else if (method == "Tensor")
-    ptr = new Tensor(params);
+    ptr = new Tensor(utils, params);
   else if (method == "Modified-Newton")
     ptr = new ModifiedNewton(params);
   else if (method == "Quasi-Newton")
