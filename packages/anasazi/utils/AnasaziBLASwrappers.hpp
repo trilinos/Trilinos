@@ -1,11 +1,11 @@
 /* These BLAS wrappers were originally from Epetra, they will be customized for Anasazi */
 
-#ifndef ANASAZI_BLAS_WRAPPERS_H
-#define ANASAZI_BLAS_WRAPPERS_H
+#ifndef ANASAZI_BLAS_WRAPPERS_HPP
+#define ANASAZI_BLAS_WRAPPERS_HPP
 
 #include <stdio.h>
 #include <string.h>
-#include "Anasazi_config.h"
+#include "AnasaziCommon.hpp"
 
 /* Define fcd (Fortran Anasazi_fcd descriptor) for non-standard situations */
 
@@ -217,4 +217,4 @@ void PREFIX XERBLA_F77(Anasazi_fcd, int *info);
 }
 #endif
 
-#endif /* ANASAZI_BLAS_WRAPPERS_H */
+#endif /* ANASAZI_BLAS_WRAPPERS_HPP */

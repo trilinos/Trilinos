@@ -129,8 +129,8 @@ AnasaziLOCAVec<TYPE>::AnasaziLOCAVec( const NOX::Abstract::Vector& N_vec, int Nu
 	for (int i=0; i<NumVecs; i++) {
 		mvPtrs[i] = N_vec.clone(NOX::ShapeCopy);
 		mvPtrs[i]->init(0.0);
-//		std::cout<<"nox_vec_init "<<i<<"\t"<<
-//			typeid(*(mvPtrs[i])).name()<<std::endl;
+//		cout<<"nox_vec_init "<<i<<"\t"<<
+//			typeid(*(mvPtrs[i])).name()<<endl;
 	}
 }
 
@@ -180,15 +180,15 @@ AnasaziLOCAVec<TYPE>::AnasaziLOCAVec( Anasazi::DataAccess type, const AnasaziLOC
 	if (type == Anasazi::Copy) {
 		for ( i=0; i<NumVecs; i++ ) {
 			mvPtrs[i] = source.mvPtrs[ index[i] ]->clone(NOX::DeepCopy);
-//			std::cout<<"ALV_copy_init "<<i<<"\t"<<
-//				typeid(*(mvPtrs[i])).name()<<std::endl;
+//			cout<<"ALV_copy_init "<<i<<"\t"<<
+//				typeid(*(mvPtrs[i])).name()<<endl;
 		}
 	} 
 	else {
 		for ( i=0; i<NumVecs; i++ ) {
 			mvPtrs[i] = source.mvPtrs[ index[i] ];
-//			std::cout<<"ALV_view_init "<<i<<"\t"<<
-//				typeid(*(mvPtrs[i])).name()<<std::endl;
+//			cout<<"ALV_view_init "<<i<<"\t"<<
+//				typeid(*(mvPtrs[i])).name()<<endl;
 		}
 	}
 }
@@ -332,7 +332,7 @@ void AnasaziLOCAVec<TYPE>::MvNorm ( TYPE * normvec )
 {
 	if (normvec) {
 		for (int i=0; i<mvPtrs.size(); i++) {
-//			std::cout<<i<<"\t"<<typeid(*(mvPtrs[i])).name()<<std::endl;
+//			cout<<i<<"\t"<<typeid(*(mvPtrs[i])).name()<<endl;
 			normvec[i] = mvPtrs[i]->norm();
 		}
 	}
@@ -362,7 +362,7 @@ void AnasaziLOCAVec<TYPE>::MvInit ( TYPE alpha )
 //
 template<class TYPE>
 void AnasaziLOCAVec<TYPE>::MvPrint() {
-//	std::cout << *this << std::endl;
+//	cout << *this << endl;
 }
 
 ///////////////////////////////////////////////////////////////
@@ -377,12 +377,12 @@ template <class TYPE>
 AnasaziLOCAMat<TYPE>::AnasaziLOCAMat(NOX::Parameter::List& params, 
 					NOX::Abstract::Group& group) :
 					locaParams(params), locaGroup(group) {
-//	std::cout << "ctor:AnasaziLOCAMat " << this << std::endl;
+//	cout << "ctor:AnasaziLOCAMat " << this << endl;
 	}
 
 template <class TYPE>
 AnasaziLOCAMat<TYPE>::~AnasaziLOCAMat() {
-//	std::cout << "dtor:AnasaziLOCAMat " << this << std::endl;
+//	cout << "dtor:AnasaziLOCAMat " << this << endl;
 	}
 //
 // AnasaziMatrix matrix multiply
@@ -402,7 +402,7 @@ void AnasaziLOCAMat<TYPE>::ApplyMatrix ( const AnasaziMultiVec<TYPE>& x,
 						*(y_vec->mvPtrs[i])); 
 //		res = locaGroup.applyJacobian(*(x_vec->mvPtrs[i]), *(y_vec->mvPtrs[i])); 
 		if (res != NOX::Abstract::Group::Ok)
-			std::cout << "Error in applyJacobianInverse "<<std::endl;
+			cout << "Error in applyJacobianInverse "<<endl;
 	}
 }
 

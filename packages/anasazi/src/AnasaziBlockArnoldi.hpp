@@ -124,7 +124,7 @@ BlockArnoldi<TYPE>::BlockArnoldi(AnasaziMatrix<TYPE> & mat, AnasaziMultiVec<TYPE
 				_issym(false), _nconv(0), _schurerror(1.0), dep_flg(false),
 				_dep_tol(0), _sing_tol(0), _blk_tol(0), _def_tol(0), 
 				exit_flg(false), _isevecscurrent(false), _isdecompcurrent(false) {
-	//	std::cout << "ctor:BlockArnoldi " << this << std::endl;
+	//	cout << "ctor:BlockArnoldi " << this << endl;
 	//
 	// Determine _nevblock : how many blocks it will take to contain the _nev eigenvalues/vectors
 	//
@@ -170,7 +170,7 @@ BlockArnoldi<TYPE>::BlockArnoldi(AnasaziMatrix<TYPE> & mat, AnasaziMultiVec<TYPE
 		SetBlkTols();  
 	}
 	else {
-		std::cout << "BlockArnoldi:ctor " << _length << _block << _basisvecs << std::endl;
+		cout << "BlockArnoldi:ctor " << _length << _block << _basisvecs << endl;
 		exit(-1);
 	}
 }
@@ -190,7 +190,7 @@ void BlockArnoldi<TYPE>::SetBlkTols() {
 
 template <class TYPE>
 BlockArnoldi<TYPE>::~BlockArnoldi() {
-	//	std::cout << "dtor:BlockArnoldi " << this << std::endl;
+	//	cout << "dtor:BlockArnoldi " << this << endl;
 	if (_basisvecs) delete _basisvecs;
 	if (_evecr) delete _evecr;
 	if (_eveci) delete _eveci;
@@ -282,26 +282,26 @@ void BlockArnoldi<TYPE>::setSymmetric( const bool sym ) {
 template <class TYPE>
 void BlockArnoldi<TYPE>::currentStatus() {
 	int i;
-	std::cout<<" "<<std::endl;
-	std::cout<<"********************CURRENT STATUS********************"<<std::endl;
-	std::cout<<"Iteration\t"<<_iter<<" of\t"<< _length+_restarts*(_length-_nevblock)<<std::endl;
-	std::cout<<"Restart \t"<<_restartiter<<" of\t"<< _restarts<<std::endl;
-	std::cout<<"Requested Eigenvalues : "<<_nev<<std::endl;
-	std::cout<<"Requested Ordering : "<<_which<<std::endl;
-	std::cout<<"Residual Tolerance : "<<_residual_tolerance<<std::endl;	
-	std::cout<<"Error for the partial Schur decomposition is : "<< _schurerror <<std::endl;
+	cout<<" "<<endl;
+	cout<<"********************CURRENT STATUS********************"<<endl;
+	cout<<"Iteration\t"<<_iter<<" of\t"<< _length+_restarts*(_length-_nevblock)<<endl;
+	cout<<"Restart \t"<<_restartiter<<" of\t"<< _restarts<<endl;
+	cout<<"Requested Eigenvalues : "<<_nev<<endl;
+	cout<<"Requested Ordering : "<<_which<<endl;
+	cout<<"Residual Tolerance : "<<_residual_tolerance<<endl;	
+	cout<<"Error for the partial Schur decomposition is : "<< _schurerror <<endl;
 	//
 	//  Determine status of solver and output information correctly.
 	//
 	if ( _schurerror < _residual_tolerance ) {
-		std::cout<<"------------------------------------------------------"<<std::endl;
-		std::cout<<"Computed Eigenvalues: "<<std::endl;
+		cout<<"------------------------------------------------------"<<endl;
+		cout<<"Computed Eigenvalues: "<<endl;
 	} else {
 		if (exit_flg && _iter != _length+_restarts*(_length-_nevblock)) {
-			std::cout<<"ERROR: Complete orthogonal basis could not be computed"<<std::endl;
+			cout<<"ERROR: Complete orthogonal basis could not be computed"<<endl;
 		}
-		std::cout<<"------------------------------------------------------"<<std::endl;
-		std::cout<<"Current Eigenvalue Estimates: "<<std::endl;
+		cout<<"------------------------------------------------------"<<endl;
+		cout<<"Current Eigenvalue Estimates: "<<endl;
 	}
 	//
 	//  Print out current computed eigenvalues.  If we don't have all the requested
@@ -311,24 +311,24 @@ void BlockArnoldi<TYPE>::currentStatus() {
 	if (_jstart < _nevblock) { _nevtemp = _jstart*_block; }
 	//
 	if (_issym) {
-		std::cout<<"Eigenvalue \t Ritz Residual"<<std::endl;
-		std::cout<<"------------------------------------------------------"<<std::endl;
+		cout<<"Eigenvalue \t Ritz Residual"<<endl;
+		cout<<"------------------------------------------------------"<<endl;
 		for (i=0; i<_nevtemp; i++) {
-			std::cout.width(10);
-			std::cout<<_evalr[i]<<"\t"<<_ritzresiduals[i]<<std::endl;
+			cout.width(10);
+			cout<<_evalr[i]<<"\t"<<_ritzresiduals[i]<<endl;
 		}
-		std::cout<<"------------------------------------------------------"<<std::endl;
+		cout<<"------------------------------------------------------"<<endl;
 		} else {
-		std::cout<<"Real Part \t Imag Part \t Ritz Residual"<<std::endl;
-		std::cout<<"------------------------------------------------------"<<std::endl;
+		cout<<"Real Part \t Imag Part \t Ritz Residual"<<endl;
+		cout<<"------------------------------------------------------"<<endl;
 		for (i=0; i<_nevtemp; i++) {
-			std::cout.width(10);
-			std::cout<<_evalr[i]<<"\t"<<_evali[i]<<"\t"<<_ritzresiduals[i]<<std::endl;
+			cout.width(10);
+			cout<<_evalr[i]<<"\t"<<_evali[i]<<"\t"<<_ritzresiduals[i]<<endl;
 		}
-		std::cout<<"------------------------------------------------------"<<std::endl;
-		std::cout<<" "<<std::endl;
+		cout<<"------------------------------------------------------"<<endl;
+		cout<<" "<<endl;
 	}
-	std::cout<<"******************************************************"<<std::endl;
+	cout<<"******************************************************"<<endl;
 }	
 
 template <class TYPE>
@@ -450,7 +450,7 @@ void BlockArnoldi<TYPE>::iterate(const int steps) {
 	//
 	// Compute the current eigenvalue estimates before returning.
 	//
-	//std::cout<<"Upper Hessenberg matrix as of iteration :"<<_iter<<std::endl<<std::endl;
+	//cout<<"Upper Hessenberg matrix as of iteration :"<<_iter<<endl<<endl;
 	//_hessmatrix->print();
 
 	// Output current information if necessary
@@ -621,9 +621,9 @@ void BlockArnoldi<TYPE>::BlkOrth( const int j ) {
                 if (norm2[i] < norm1[i] * _blk_tol) {
                         dep_flg = true;
                         if (_debuglevel > 2 ){
-                           std::cout << "Col " << num_prev+i << " is dependent on previous "
-                                    << "Arnoldi vectors in V_prev" << std::endl;
-                           std::cout << endl;
+                           cout << "Col " << num_prev+i << " is dependent on previous "
+                                    << "Arnoldi vectors in V_prev" << endl;
+                           cout << endl;
                         }
                 }
         } // end for (i=0;...)
@@ -767,8 +767,8 @@ void BlockArnoldi<TYPE>::BlkOrthSing( const int j ) {
                 //
                 if (norm2[0] < norm1[0] * _sing_tol) {
                         if (_debuglevel > 2) {
-                           std::cout << "Column " << num_prev << " of _basisvecs is dependent" 
-				<< std::endl<<std::endl;
+                           cout << "Column " << num_prev << " of _basisvecs is dependent" 
+				<< endl<<endl;
                         }
                         //
                         // Create a random vector and orthogonalize it against all
@@ -835,8 +835,8 @@ void BlockArnoldi<TYPE>::BlkOrthSing( const int j ) {
         } // end for (i=0;...)
         //
         if (_debuglevel > 2){
-                std::cout << "Checking Orthogonality after BlkOrthSing()"
-                            << " Iteration: " << j << std::endl<<std::endl;
+                cout << "Checking Orthogonality after BlkOrthSing()"
+                            << " Iteration: " << j << endl<<endl;
                 CheckBlkArnRed(j);
         }
         //
@@ -957,7 +957,7 @@ void BlockArnoldi<TYPE>::QRFactorization (AnasaziMultiVec<TYPE>& VecIn,
         			//
         			if (norm2[0] < norm1[0] * _blk_tol) {
             				if (_debuglevel > 2) {
-               					std::cout << "Column " << j << " of current block is dependent"<<std::endl;
+               					cout << "Column " << j << " of current block is dependent"<<endl;
 	                		}
         	    			dep_flg = true;
             				delete qj; delete Qj; delete tptr;
@@ -1055,7 +1055,7 @@ void BlockArnoldi<TYPE>::ComputeResiduals( bool apply ) {
 	//---------------------------------------------------
 	//
 	AnasaziDenseMatrix<TYPE> Q(n,n);
-	int sdim; 
+	int sdim = 0; 
 	int lwork = 4*n;
 	int ldhj = Hj->getld();
 	int ldq = Q.getld();
@@ -1074,9 +1074,9 @@ void BlockArnoldi<TYPE>::ComputeResiduals( bool apply ) {
 	// Sort the eigenvalues, this also sorts the _order vector so we know
 	// which ones we want. 
 	//
-//	std::cout<<"Before sorting (Hj):"<<std::endl;
+//	cout<<"Before sorting (Hj):"<<endl;
 //	Hj->print();
-//	std::cout<<"Before sorting (Q):"<<std::endl;
+//	cout<<"Before sorting (Q):"<<endl;
 //	Q.print();
 
 	Sort( true );
@@ -1106,15 +1106,15 @@ void BlockArnoldi<TYPE>::ComputeResiduals( bool apply ) {
 		lapack.TREXC( *compq, n, ptr_hj, ldhj, ptr_q, ldq, _order[i]+1+offset[i], 
 				1, work, &info );
 		assert(info==0);
-//		std::cout<<"Moving "<<_order[i]+1+offset[i]<<" to "<<1<<std::endl;
+//		cout<<"Moving "<<_order[i]+1+offset[i]<<" to "<<1<<endl;
 
 //		for (j=0; j<n; j++) {
-//	  		std::cout<<j<<"\t"<<ptr_hj[j*ldhj + j]<<std::endl;
+//	  		cout<<j<<"\t"<<ptr_hj[j*ldhj + j]<<endl;
 //		}
 	}
-//	std::cout<<"After sorting and reordering (Hj):"<<std::endl;
+//	cout<<"After sorting and reordering (Hj):"<<endl;
 //	Hj->print();
-//	std::cout<<"After sorting and reordering(Q):"<<std::endl;
+//	cout<<"After sorting and reordering(Q):"<<endl;
 //	Q.print();
 	//
 	// Check the residual error for the Krylov-Schur decomposition.
@@ -1267,8 +1267,8 @@ void BlockArnoldi<TYPE>::ComputeEvecs() {
 				i++;
 			}
 		}
-		std::cout<< "There are "<< conjprs <<" conjugate pairs of eigenvalues"
-			<<std::endl;
+		cout<< "There are "<< conjprs <<" conjugate pairs of eigenvalues"
+			<<endl;
 		AnasaziMultiVec<TYPE>* evecstemp2 = evecstemp->CloneView( _orderr, _nev );
 		_evecr->SetBlock( *evecstemp2, index, _nev );
 		delete evecstempi, evecstemp2;
@@ -1318,8 +1318,8 @@ void BlockArnoldi<TYPE>::Restart() {
 	//
 	if (_defblock > 0) {
 		if (_debuglevel > 2) {
-			std::cout<<"Deflating blocks with eigenvalue residuals below : "<<_def_tol<<std::endl;
-			std::cout<<"Number of blocks being deflated : "<<_defblock<<std::endl;
+			cout<<"Deflating blocks with eigenvalue residuals below : "<<_def_tol<<endl;
+			cout<<"Number of blocks being deflated : "<<_defblock<<endl;
 		}
 		TYPE zero = 0.0;
 		AnasaziDenseMatrix<TYPE> Hj_temp(*_hessmatrix, _nevtemp, 0, _block, _defblock*_block);
@@ -1366,9 +1366,9 @@ void BlockArnoldi<TYPE>::CheckBlkArnRed( const int j ) {
         }
         AnasaziMultiVec<TYPE>* Vj = _basisvecs->CloneView(index, m);
         assert(Vj);   
-        std::cout << " " << std::endl;
-        std::cout << "********Block Arnoldi iteration******** " << j << std::endl;
-        std::cout << " " << std::endl;
+        cout << " " << endl;
+        cout << "********Block Arnoldi iteration******** " << j << endl;
+        cout << " " << endl;
                         
         const TYPE one=1.0;
         const TYPE zero=0.0;
@@ -1385,10 +1385,10 @@ void BlockArnoldi<TYPE>::CheckBlkArnRed( const int j ) {
                         }
                         column_sum += ptr[i];
                 }
-                std::cout <<  " V^T*V-I " << "for column " << k << " is " << fabs(column_sum) << std::endl;
+                cout <<  " V^T*V-I " << "for column " << k << " is " << fabs(column_sum) << endl;
                 ptr += m;
         }
-        std::cout << " " << std::endl;
+        cout << " " << endl;
         
         AnasaziDenseMatrix<TYPE> E(m,_block);
         
@@ -1402,9 +1402,9 @@ void BlockArnoldi<TYPE>::CheckBlkArnRed( const int j ) {
                 }
                 ptr_Ej += m;
                 if (ptr_norms[k]) column_sum = column_sum/ptr_norms[k];
-                std::cout << " Orthogonality with F " << "for column " << k << " is " << fabs(column_sum) << std::endl;
+                cout << " Orthogonality with F " << "for column " << k << " is " << fabs(column_sum) << endl;
 }
-        std::cout << " " << std::endl;
+        cout << " " << endl;
                  
         AnasaziMultiVec<TYPE>* AVj = _basisvecs->Clone(m); assert(AVj);
         _amat.ApplyMatrix(*Vj,*AVj);
@@ -1423,9 +1423,9 @@ void BlockArnoldi<TYPE>::CheckBlkArnRed( const int j ) {
         AVj->MvNorm(ptr_norms);
         
         for ( i=0; i<m; i++ ) { 
-                std::cout << " Arnoldi relation " << "for column " << i << " is " << fabs(ptr_norms[i]) << std::endl;        
+                cout << " Arnoldi relation " << "for column " << i << " is " << fabs(ptr_norms[i]) << endl;        
 	}
-        std::cout << " " << std::endl;
+        cout << " " << endl;
                 
         delete F_vec;
         delete Fj;

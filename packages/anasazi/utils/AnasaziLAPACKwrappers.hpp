@@ -1,11 +1,11 @@
 /* These LAPACK wrappers were originally from Epetra, they will be customized for Anasazi */
 
-#ifndef ANASAZI_LAPACK_WRAPPERS_H
-#define ANASAZI_LAPACK_WRAPPERS_H
+#ifndef ANASAZI_LAPACK_WRAPPERS_HPP
+#define ANASAZI_LAPACK_WRAPPERS_HPP
 
 #include <stdio.h>
 #include <string.h>
-#include "Anasazi_config.h"
+#include "AnasaziCommon.hpp"
 
 #if defined(CRAY_T3X) || defined(INTEL_CXML) || defined(INTEL_MKL)
 
@@ -384,4 +384,4 @@ double PREFIX DLAPY2_F77(double * x, double * y);
 }
 #endif
 
-#endif /* ANASAZI_LAPACK_WRAPPERS_H */
+#endif /* ANASAZI_LAPACK_WRAPPERS_HPP */

@@ -22,11 +22,11 @@ public:
 	//@{ \name Constructor/Destructor.
 	//! %AnasaziMatrix constructor.
 	AnasaziMatrix() {
-//		std::cout << "ctor:AnasaziMatrix " << this << std::endl; 
+//		cout << "ctor:AnasaziMatrix " << this << endl; 
 	}
 	//! %AnasaziMatrix destructor.
 	virtual ~AnasaziMatrix() {
-//		std::cout << "dtor:AnasaziMatrix " << this << std::endl; 
+//		cout << "dtor:AnasaziMatrix " << this << endl; 
 	};
 	//@}
 	
