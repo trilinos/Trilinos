@@ -19,9 +19,11 @@
 
 #ifdef __cplusplus
 
-#include "zoltanCPP.h"
-#define ZOLTAN_STRUCT Zoltan::Zoltan_Object &
-extern "C" {
+  #include "zoltan_cpp.h"
+
+  #define ZOLTAN_STRUCT Zoltan_Object &
+
+  extern "C" {
 
 #else
 

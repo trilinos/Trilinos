@@ -17,25 +17,28 @@
 #include "dr_err_const.h"
 #include "dr_dd.h"
 
-#include "zoltanCPP.h"
+#include "zoltan_dd_cpp.h"
 
-using namespace Zoltan;
+static Zoltan_DD *dd = NULL;
 
 /****************************************************************************/
 int build_elem_dd(MESH_INFO_PTR mesh) 
 {
-/* Create a distributed directory of the elements so we can track their
- * processor assignment after migrations.
- */
+  destroy_elem_dd();
 
-  if (Zoltan_Object::DD_Create(&(mesh->dd), MPI_COMM_WORLD, 1, 0, 0, 0, 0) != 0) {
-    Gen_Error(0, "fatal:  NULL returned from Zoltan_Object::DD_Create()\n");
-    return 0;
-  }
+  dd = new Zoltan_DD(MPI_COMM_WORLD, 1, 0, 0, 0, 0);
 
   return update_elem_dd(mesh);
 }
-
+/****************************************************************************/
+void destroy_elem_dd()
+{
+  if (dd)
+    {
+    delete dd;
+    dd = NULL;
+    }
+}
 /****************************************************************************/
 int update_elem_dd(MESH_INFO_PTR mesh)
 {
@@ -59,8 +62,8 @@ int update_elem_dd(MESH_INFO_PTR mesh)
 
   int rc = 1;
 
-  if (Zoltan_Object::DD_Update(mesh->dd, gids, NULL,NULL, parts, mesh->num_elems)!=0) {
-    Gen_Error(0, "fatal:  NULL returned from Zoltan_Object::DD_Update()\n");
+  if (dd->Update(gids, NULL,NULL, parts, mesh->num_elems)!=0) {
+    Gen_Error(0, "fatal:  NULL returned from Zoltan_DD::Update()\n");
     rc = 0;
   }
 
@@ -70,14 +73,13 @@ int update_elem_dd(MESH_INFO_PTR mesh)
   return rc;
 }
 
-
 /****************************************************************************/
 int update_hvertex_proc(MESH_INFO_PTR mesh)
 {
-  if (Zoltan_Object::DD_Find(mesh->dd, (ZOLTAN_ID_TYPE *)mesh->hvertex, 
+  if (dd->Find((ZOLTAN_ID_TYPE *)mesh->hvertex, 
                      NULL, NULL, NULL, 
                      mesh->hindex[mesh->nhedges], mesh->hvertex_proc) != 0) {
-    Gen_Error(0, "fatal:  NULL returned from Zoltan_Object::DD_Find()\n");
+    Gen_Error(0, "fatal:  NULL returned from Zoltan_DD::Find()\n");
     return 0;
   }
   return 1;

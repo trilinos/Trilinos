@@ -18,11 +18,10 @@
 #include "dr_par_util_const.h"
 
 // This is a partial port to C++, only changing the code to use
-// the C++ bindings for MPI and for Zoltan.
+// the C++ bindings for Zoltan.
 
-#include "zoltanCPP.h"
-
-using namespace Zoltan;
+#include "zoltan_dd_cpp.h"
+#include "zoltan_comm_cpp.h"
 
 #define MAP_ALLOC 10
 
@@ -294,7 +293,7 @@ static void compare_maps_with_ddirectory_results(
  */
 static const int want_size = 4;
 int num_elems = mesh->num_elems;
-Zoltan_DD_Directory *dd = NULL;   // Should probably be a class (C++ wishlist)
+Zoltan_DD *dd = NULL;
 ZOLTAN_ID_PTR gids = NULL;
 ZOLTAN_ID_PTR lids = NULL;
 ZOLTAN_ID_PTR my_gids = NULL;
@@ -316,7 +315,7 @@ int nbor_proc;
 int i, j, k, ierr, error = 0, gerror = 0;
 ELEM_INFO_PTR current;
 struct map_list_head map;
-ZOLTAN_COMM_OBJ *comm;
+Zoltan_Comm *comm;
 
 
   /* Load array of element globalIDs for elements on this processor. */
@@ -345,15 +344,12 @@ ZOLTAN_COMM_OBJ *comm;
    * Create DDirectory and register all owned elements. 
    */
 
-  ierr = Zoltan_Object::DD_Create(&dd, MPI_COMM_WORLD, 1, 1, 0, 0, 0);
-  if (ierr) {
-    Gen_Error(0, "Fatal:  Error returned by Zoltan_Object::DD_Create");
-    error = 1;
-  }
+  dd = new Zoltan_DD(MPI_COMM_WORLD, 1, 1, 0, 0, 0);
 
-  ierr = Zoltan_Object::DD_Update(dd, gids, lids, NULL, NULL, num_elems);
+  ierr = dd->Update(gids, lids, NULL, NULL, num_elems);
+
   if (ierr) {
-    Gen_Error(0, "Fatal:  Error returned by Zoltan_Object::DD_Update");
+    Gen_Error(0, "Fatal:  Error returned by Zoltan_DD::Update");
     error = 1;
   }
 
@@ -397,14 +393,14 @@ ZOLTAN_COMM_OBJ *comm;
     error = 1;
   }
 
-  ierr = Zoltan_Object::DD_Find(dd, nbor_gids, nbor_lids,
-                        NULL, NULL, num_nbor, ownerlist);
+  ierr = dd->Find( nbor_gids, nbor_lids, NULL, NULL, num_nbor, ownerlist);
+
   if (ierr) {
-    Gen_Error(0, "Fatal:  Error returned by Zoltan_Object::DD_Find");
+    Gen_Error(0, "Fatal:  Error returned by Zoltan_DD::Find");
     error = 1;
   }
- 
-  Zoltan_Object::DD_Destroy(&dd);
+
+  delete dd;
 
   /*
    * Check for errors 
@@ -450,12 +446,8 @@ ZOLTAN_COMM_OBJ *comm;
     i_want[j++] = my_gids[i];
   }
 
-  ierr = Zoltan_Object::Comm_Create(&comm, num_nbor, ownerlist, MPI_COMM_WORLD, 747, 
+  comm = new Zoltan_Comm(num_nbor, ownerlist, MPI_COMM_WORLD, 747, 
                         &num_others);
-  if (ierr) {
-    Gen_Error(0, "Fatal:  Error returned from Zoltan_Object::Comm_Create");
-    return;
-  }
 
   /* 
    * Do communication to determine which of this proc's data is wanted by 
@@ -469,19 +461,16 @@ ZOLTAN_COMM_OBJ *comm;
     return;
   }
 
-  ierr = Zoltan_Object::Comm_Do(comm, 757, (char *) i_want, want_size * sizeof(ZOLTAN_ID_TYPE), 
+  ierr = comm->Do(757, (char *) i_want, want_size * sizeof(ZOLTAN_ID_TYPE), 
                     (char *) others_want);
   if (ierr) {
-    Gen_Error(0, "Fatal:  Error returned from Zoltan_Object::Comm_Do");
+    Gen_Error(0, "Fatal:  Error returned from Zoltan_Comm::Do");
     return;
   }
 
   free(i_want);
-  ierr = Zoltan_Object::Comm_Destroy(&comm);
-  if (ierr) {
-    Gen_Error(0, "Fatal:  Error returned from Zoltan_Object::Comm_Destroy");
-    return;
-  }
+
+  delete comm;
 
   /*  
    * Find number of maps and the size of the largest map. 

@@ -24,10 +24,7 @@
 #include "dr_maps_const.h"
 #include "dr_dd.h"
 
-#include "zoltanCPP.h"
-
-using namespace Zoltan;
-using namespace std;
+#include "zoltan_cpp.h"
 
 /*
  *  PROTOTYPES for load-balancer interface functions.
@@ -69,7 +66,7 @@ static int Use_Edge_Wgts = 0;         /* Flag indicating whether elements
 int migrate_elements(
   int Proc,
   MESH_INFO_PTR mesh,
-  Zoltan::Zoltan_Object &zz,
+  Zoltan_Object &zz,
   int num_gid_entries, 
   int num_lid_entries,
   int num_imp,
@@ -98,13 +95,13 @@ const char *yo = "migrate_elements";
      */
     if (zz.Set_Pre_Migrate_PP_Fn(migrate_pre_process,
                       (void *) mesh) == ZOLTAN_FATAL) {
-      Gen_Error(0, "fatal:  error returned from zz.Set_Pre_Migrate_PP_Fn()\n");
+      Gen_Error(0, "fatal:  error returned from Set_Pre_Migrate_PP_Fn()\n");
       return 0;
     }
 
     if (zz.Set_Post_Migrate_PP_Fn(migrate_post_process,
                       (void *) mesh) == ZOLTAN_FATAL) {
-      Gen_Error(0, "fatal:  error returned from zz.Set_Post_Migrate_PP_Fn()\n");
+      Gen_Error(0, "fatal:  error returned from Set_Post_Migrate_PP_Fn()\n");
       return 0;
     }
   }
@@ -112,38 +109,38 @@ const char *yo = "migrate_elements";
   if (Test.Multi_Callbacks) {
     if (zz.Set_Obj_Size_Multi_Fn(migrate_elem_size_multi,
                       (void *) mesh) == ZOLTAN_FATAL) {
-      Gen_Error(0, "fatal:  error returned from zz.Set_Obj_Size_Multi_Fn()\n");
+      Gen_Error(0, "fatal:  error returned from Set_Obj_Size_Multi_Fn()\n");
       return 0;
     }
 
     if (zz.Set_Pack_Obj_Multi_Fn(migrate_pack_elem_multi,
                       (void *) mesh) == ZOLTAN_FATAL) {
-      Gen_Error(0, "fatal:  error returned from zz.Set_Pack_Obj_Multi_Fn()\n");
+      Gen_Error(0, "fatal:  error returned from Set_Pack_Obj_Multi_Fn()\n");
       return 0;
     }
   
     if (zz.Set_Unpack_Obj_Multi_Fn(migrate_unpack_elem_multi,
                       (void *) mesh) == ZOLTAN_FATAL) {
-      Gen_Error(0, "fatal:  error returned from zz.Set_Unpack_Obj_Multi_Fn()\n");
+      Gen_Error(0, "fatal:  error returned from Set_Unpack_Obj_Multi_Fn()\n");
       return 0;
     }
   }
   else {
     if (zz.Set_Obj_Size_Fn(migrate_elem_size,
                       (void *) mesh) == ZOLTAN_FATAL) {
-      Gen_Error(0, "fatal:  error returned from zz.Set_Obj_Size_Fn()\n");
+      Gen_Error(0, "fatal:  error returned from Set_Obj_Size_Fn()\n");
       return 0;
     }
 
     if (zz.Set_Pack_Obj_Fn(migrate_pack_elem,
                       (void *) mesh) == ZOLTAN_FATAL) {
-      Gen_Error(0, "fatal:  error returned from zz.Set_Pack_Obj_Fn()\n");
+      Gen_Error(0, "fatal:  error returned from Set_Pack_Obj_Fn()\n");
       return 0;
     }
 
     if (zz.Set_Unpack_Obj_Fn(migrate_unpack_elem,
                       (void *) mesh) == ZOLTAN_FATAL) {
-      Gen_Error(0, "fatal:  error returned from zz.Set_Unpack_Obj_Fn()\n");
+      Gen_Error(0, "fatal:  error returned from Set_Unpack_Obj_Fn()\n");
       return 0;
     }
   }
@@ -153,7 +150,7 @@ const char *yo = "migrate_elements";
     if (zz.Migrate(num_imp, imp_gids, imp_lids, imp_procs, imp_to_part,
                    num_exp, exp_gids, exp_lids, exp_procs, exp_to_part)
                    == ZOLTAN_FATAL) {
-      Gen_Error(0, "fatal:  error returned from zz.Migrate()\n");
+      Gen_Error(0, "fatal:  error returned from Migrate()\n");
       return 0;
     }
   }
@@ -169,7 +166,7 @@ const char *yo = "migrate_elements";
       if (zz.Migrate(-1, NULL, NULL, NULL, NULL,
                      num_exp, exp_gids, exp_lids, exp_procs, exp_to_part)
                      == ZOLTAN_FATAL) {
-        Gen_Error(0, "fatal:  error returned from zz.Migrate()\n");
+        Gen_Error(0, "fatal:  error returned from Migrate()\n");
         return 0;
       }
     }
@@ -177,7 +174,7 @@ const char *yo = "migrate_elements";
       if (zz.Migrate(num_imp, imp_gids, imp_lids, imp_procs, imp_to_part,
                     -1, NULL, NULL, NULL, NULL)
                     == ZOLTAN_FATAL) {
-        Gen_Error(0, "fatal:  error returned from zz.Migrate()\n");
+        Gen_Error(0, "fatal:  error returned from Migrate()\n");
         return 0;
       }
     }
@@ -622,7 +619,7 @@ int idx = 0;
   int size = sizeof(ELEM_INFO);
  
   /* Add space to correct alignment so casts work in (un)packing. */
-  size = Zoltan_Object::Align(size);
+  size = Zoltan_Align(size);
 
   /* Add space for connect table. */
   if (mesh->num_dims > 0)
@@ -634,12 +631,12 @@ int idx = 0;
   /* Assume if one element has edge wgts, all elements have edge wgts. */
   if (Use_Edge_Wgts) {
     /* Add space to correct alignment so casts work in (un)packing. */
-    size = Zoltan_Object::Align(size);
+    size = Zoltan_Align(size);
     size += current_elem->adj_len * sizeof(float);
   }
 
   /* Add space for coordinate info */
-  size = Zoltan_Object::Align(size);
+  size = Zoltan_Align(size);
   size += num_nodes * mesh->num_dims * sizeof(float);
   
   return (size);
@@ -687,7 +684,7 @@ void migrate_pack_elem(void *data, int num_gid_entries, int num_lid_entries,
 
   /* Pad the buffer so the following casts will work.  */
   
-  size = Zoltan_Object::Align(size);
+  size = Zoltan_Align(size);
 
   int *buf_int = (int *) (buf + size);
 
@@ -723,7 +720,7 @@ void migrate_pack_elem(void *data, int num_gid_entries, int num_lid_entries,
   if (Use_Edge_Wgts) {
 
     /* Pad the buffer so the following casts will work.  */
-    size = Zoltan_Object::Align(size);
+    size = Zoltan_Align(size);
     buf_float = (float *) (buf + size);
 
     for (int i = 0; i < current_elem->adj_len; i++) {
@@ -734,7 +731,7 @@ void migrate_pack_elem(void *data, int num_gid_entries, int num_lid_entries,
   }
 
   /* Pad the buffer so the following casts will work.  */
-  size = Zoltan_Object::Align(size);
+  size = Zoltan_Align(size);
   buf_float = (float *) (buf + size);
 
   /* copy coordinate data */
@@ -810,7 +807,7 @@ void migrate_unpack_elem(void *data, int num_gid_entries, ZOLTAN_ID_PTR elem_gid
    */
 
   /* Pad the buffer so the following casts will work.  */
-  size = Zoltan_Object::Align(size);
+  size = Zoltan_Align(size);
   int *buf_int = (int *) (buf + size);
 
   /* copy the connect table */
@@ -861,7 +858,7 @@ void migrate_unpack_elem(void *data, int num_gid_entries, ZOLTAN_ID_PTR elem_gid
     if (Use_Edge_Wgts) {
 
       /* Pad the buffer so the following casts will work.  */
-      size = Zoltan_Object::Align(size);
+      size = Zoltan_Align(size);
       buf_float = (float *) (buf + size);
 
       current_elem->edge_wgt = (float *) malloc(current_elem->adj_len 
@@ -883,7 +880,7 @@ void migrate_unpack_elem(void *data, int num_gid_entries, ZOLTAN_ID_PTR elem_gid
   if (num_nodes > 0) {
 
     /* Pad the buffer so the following casts will work.  */
-    size = Zoltan_Object::Align(size);
+    size = Zoltan_Align(size);
     buf_float = (float *) (buf + size);
 
     current_elem->coord = (float **) malloc(num_nodes * sizeof(float *));

@@ -98,10 +98,11 @@ typedef struct Element_Description *ELEM_INFO_PTR;
 /*
  * structure for general mesh information
  */
-/* Structure used to store information about the mesh */
+/*pStructure used to store information about the mesh */
 struct Mesh_Description
 {
-  struct Zoltan_DD_Struct *dd;  /* Distributed directory for elt globalIDs */
+  struct Zoltan_DD_Struct *dd;  /* Only used C and Fortran test driver */
+
   enum DATA_TYPE data_type;     /* Type of data stored in this data structure,
                                    based on input file type.
                                    Valid types are MESH, GRAPH, or HYPERGRAPH.*/

@@ -22,9 +22,8 @@
 #include "dr_elem_util_const.h"
 #include "dr_dd.h"
 
-#include "zoltanCPP.h"
+#include "zoltan_cpp.h"
 
-using namespace Zoltan;
 using namespace std;
 
 int Debug_Driver = 1;
@@ -128,8 +127,8 @@ int main(int argc, char *argv[])
    *  MPI functions.)
    */
 
-  Zoltan::Zoltan_Object *zz = NULL;
-  zz = new Zoltan::Zoltan_Object();
+  Zoltan_Object *zz = NULL;
+  zz = new Zoltan_Object();
 
   /* initialize some variables */
   MESH_INFO  mesh;
@@ -285,9 +284,12 @@ int main(int argc, char *argv[])
 
 End:
   
-  if (mesh.dd) zz->DD_Destroy(&(mesh.dd));
+  if (mesh.data_type == HYPERGRAPH)
+    {
+    destroy_elem_dd();
+    }
 
-  Zoltan_Object::Memory_Stats();
+  Zoltan_Memory_Stats();
 
   /*
    * output the results

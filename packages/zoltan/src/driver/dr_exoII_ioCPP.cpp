@@ -33,8 +33,7 @@
 #include "dr_elem_util_const.h"
 #include "zoltan_comm.h"
 
-#include "zoltanCPP.h"
-using namespace Zoltan;
+#include "zoltan_comm_cpp.h"
 
 #define LIST_ALLOC 10
 
@@ -755,7 +754,7 @@ static int read_comm_map_info(int pexoid, int Proc, PROB_INFO_PTR prob,
   int  msg = 200;
   int  sid;
   ELEM_INFO_PTR elements = mesh->elements;
-  ZOLTAN_COMM_OBJ *comm_obj;
+  Zoltan_Comm *comm_obj;
 
   E_Type etype;
 
@@ -857,15 +856,10 @@ static int read_comm_map_info(int pexoid, int Proc, PROB_INFO_PTR prob,
    * for the adjacent elements in this communication map.
    */
 
-  ierr = Zoltan_Object::Comm_Create(&comm_obj, max_len, proc_ids, MPI_COMM_WORLD, 
-                            msg, &nrecv);
-  if (ierr != ZOLTAN_OK) {
-    Gen_Error(0, "fatal: Error returned from Zoltan_Object::Comm_Create");
-    return 0;
-  }
+  comm_obj = new Zoltan_Comm(max_len, proc_ids, MPI_COMM_WORLD, msg, &nrecv);
+  
   if (nrecv != max_len) {
-    /* Sanity check; this should never happen. */
-    Gen_Error(0, "fatal: Error returned from Zoltan_Object::Comm_Create");
+    Gen_Error(0, "fatal: Error returned from Zoltan_Comm constructor");
     return 0;
   }
 
@@ -873,7 +867,7 @@ static int read_comm_map_info(int pexoid, int Proc, PROB_INFO_PTR prob,
    * Assuming messages will be stored in order of processor number in 
    * ecmap_neighids. 
    */
-  ierr = Zoltan_Object::Comm_Do(comm_obj, msg+1, (char *) gids, sizeof(int), 
+  ierr = comm_obj->Do(msg+1, (char *) gids, sizeof(int), 
                         (char *) (mesh->ecmap_neighids));
 
   /* Exchange sanity check information. 
@@ -881,15 +875,15 @@ static int read_comm_map_info(int pexoid, int Proc, PROB_INFO_PTR prob,
    * processor number.
    */
   if (ierr == ZOLTAN_OK)
-    ierr = Zoltan_Object::Comm_Do(comm_obj, msg+2, (char *) my_procs, sizeof(int), 
+    ierr = comm_obj->Do(msg+2, (char *) my_procs, sizeof(int), 
                           (char *) recv_procs);
 
   if (ierr != ZOLTAN_OK) {
-    Gen_Error(0, "fatal: Error returned from Zoltan_Object::Comm_Do");
+    Gen_Error(0, "fatal: Error returned from Zoltan_Comm::Do");
     return 0;
   }
 
-  ierr = Zoltan_Object::Comm_Destroy(&comm_obj);
+  delete comm_obj;
 
   /* Sanity check: messages stored in order of processor number. */
   for (ielem = 0; ielem < max_len; ielem++) {
