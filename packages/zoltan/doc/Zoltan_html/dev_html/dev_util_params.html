@@ -46,20 +46,16 @@ list of new parameters which is maintained by the load-balancing structure.
 When a partitioning method is invoked on a load-balancing structure, it
 scans through this linked list using the <b><a href="#LB_Assign_Param_Vals">LB_Assign_Param_Vals</a></b>
 function, resetting parameter values which are appropriate to the method.
-<p>
-In addition to the method-specific parameters, Zoltan also has a set of
-so-called&nbsp;<a NAME="key_params"></a><b>key parameters</b>. These are normally
-stored in the load balance structure and may be accessed by any part of
-the Zoltan code (including all the methods). A list of the 
-<A HREF="../ug_html/ug_alg.html#General_Parameters">
-key parameters currently used in Zoltan</A> can be found 
-in the User's Guide.
-
-<p>The routines that control parameter setting are listed below.
-Note that these routines have been written to be as independent of
-Zoltan as possible. Only a few minor changes would be required to use
-these routines as a separate library.
-
+<p>In addition to the method-specific parameters, Zoltan also has a set
+of so-called&nbsp;<a NAME="key_params"></a><b>key parameters</b>. These
+are normally stored in the load balance structure and may be accessed by
+any part of the Zoltan code (including all the methods). A list of the
+<a href="../ug_html/ug_alg.html#General_Parameters">key
+parameters currently used in Zoltan</a> can be found in the User's Guide.
+<p>The routines that control parameter setting are listed below. Note that
+these routines have been written to be as independent of Zoltan as possible.
+Only a few minor changes would be required to use these routines as a separate
+library.
 <blockquote><b><a href="#LB_Set_Param">LB_Set_Param</a></b>:&nbsp; User
 interface function which calls a set of method-specific routines.
 <br><b><a href="#LB_Check_Param">LB_Check_Param</a></b>:&nbsp; Routine
@@ -71,7 +67,7 @@ Scans list of parameter names &amp; values, setting relevant parameters
 accordingly.
 <br><b><a href="#LB_Free_Params">LB_Free_Params</a></b>: Frees a parameter
 list.</blockquote>
-<p>See also <a href="dev_add_params.html">Adding new parameters in Zoltan.
+See also <a href="dev_add_params.html">Adding new parameters in Zoltan.
 <hr><a NAME="LB_Set_Param"></a></a>int <b>LB_Set_Param</b>(struct <b>LB_Struct</b>
 * <i>lb</i>, char * <i>param_name</i>, char * <i>new_val</i>);
 <br>
@@ -229,7 +225,7 @@ array <i>params</i> with a variable pointed to by <i>var</i>.
 the pointer should be typecasted to a void pointer. <b>LB_Bind_Param</b>
 must be called before <b>LB_Assign_Param_Vals</b>, where the actual assignment
 of values takes place.
-<table WIDTH="100%" >
+<table WIDTH="100%" NOSAVE >
 <tr VALIGN=TOP>
 <td VALIGN=TOP WIDTH="20%"><b>Parameters:</b></td>
 
@@ -258,13 +254,15 @@ The array is terminated by an item consisting of three NULL fields.&nbsp;</td>
 <td>A capitalized string containing the name of the parameter being modified.</td>
 </tr>
 
-<tr>
+<tr VALIGN=TOP NOSAVE>
 <td>&nbsp;&nbsp; <i>var</i></td>
 
-<td>A pointer to the variable&nbsp; you wish to associate with the parameter
-name <i>name.</i>&nbsp; The pointer should be type cast to a void pointer.
-The user is responsible for ensuring that the pointer really points to
-a variable of appropriate type.&nbsp;</td>
+<td NOSAVE>A pointer to the variable&nbsp; you wish to associate with the
+parameter name <i>name.</i>&nbsp; The pointer should be type cast to a
+void pointer. The user is responsible for ensuring that the pointer really
+points to a variable of appropriate type.&nbsp; A NULL pointer may be used
+to "unbind" a variable such that it will not be assigned a value upon future
+calls to <b>LB_Assign_Param_Vals.</b></td>
 </tr>
 
 <tr>
@@ -273,10 +271,10 @@ a variable of appropriate type.&nbsp;</td>
 <td></td>
 </tr>
 
-<tr>
+<tr VALIGN=TOP NOSAVE>
 <td>&nbsp;&nbsp; int</td>
 
-<td><a href="../ug_html/ug_interface.html#Error Codes">Error code.</a></td>
+<td NOSAVE><a href="../ug_html/ug_interface.html#Error Codes">Error code.</a></td>
 </tr>
 </table>
 
