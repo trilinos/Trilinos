@@ -92,7 +92,6 @@ int main(int argc, char *argv[])
 
   ML           *ml;          
   ML_Aggregate *ag;
-  int          level, coarsest_level;
   double       *rhs, *xxx;
   struct       user_partition_data Partition = {NULL, NULL,0,0,NULL,0,0,0};
 
@@ -102,7 +101,7 @@ int main(int argc, char *argv[])
   AZ_PRECOND   *Pmat = NULL;
   int          proc_config[AZ_PROC_SIZE], options[AZ_OPTIONS_SIZE];
   double       params[AZ_PARAMS_SIZE], status[AZ_STATUS_SIZE];
-  double *x = NULL, *y = NULL, *z = NULL;
+  double *x = NULL, *y = NULL;
   
   int       smoother_options[AZ_OPTIONS_SIZE];
   double    smoother_params[AZ_PARAMS_SIZE], smoother_status[AZ_STATUS_SIZE];

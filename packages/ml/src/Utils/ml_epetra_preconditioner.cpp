@@ -93,14 +93,15 @@ double ML_DD_Hybrid(ML_1Level *curr, double *sol, double *rhs,
 {
 
   ML_Operator *Amat, *Rmat;
-  ML_Smoother *pre,  *post;
-  ML_CSolve   *csolve;
+  ML_Smoother  *post;
+  //  ML_Smoother  *pre;
+  //  ML_CSolve   *csolve;
   
   Amat     = curr->Amat;
   Rmat     = curr->Rmat;
-  pre      = curr->pre_smoother;
+  //  pre      = curr->pre_smoother;
   post     = curr->post_smoother;
-  csolve   = curr->csolve;
+  // csolve   = curr->csolve;
   int lengf    = Amat->outvec_leng;
   int lengc    = Rmat->outvec_leng;
 
@@ -155,13 +156,13 @@ double ML_DD_Hybrid_2(ML_1Level *curr, double *sol, double *rhs,
 {
   ML_Operator *Amat, *Rmat;
   ML_Smoother *pre,  *post;
-  ML_CSolve   *csolve;
+  // ML_CSolve   *csolve;
   
   Amat     = curr->Amat;
   Rmat     = curr->Rmat;
   pre      = curr->pre_smoother;
   post     = curr->post_smoother;
-  csolve   = curr->csolve;
+  // csolve   = curr->csolve;
   int lengf    = Amat->outvec_leng;
   int lengc    = Rmat->outvec_leng;
 
@@ -228,7 +229,7 @@ double ML_DD_Hybrid_2(ML_1Level *curr, double *sol, double *rhs,
 #include "Epetra_SerialComm.h"
 #endif
 
-#include <cstring>
+//#include <cstring>
 #include "ml_amesos_wrap.h"
 #include "ml_ifpack_wrap.h"
 #include "ml_agg_METIS.h"
