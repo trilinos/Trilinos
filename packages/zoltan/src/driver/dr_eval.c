@@ -28,6 +28,8 @@ void driver_eval(MESH_INFO_PTR mesh)
 /*
  * Function to evaluate a partition.  Largely duplicates functionality
  * of LB_Eval, but provides sanity checking.
+ *
+ * Currently uses only the first cpu weight.
  */
 int i;
 int proc;
@@ -44,7 +46,7 @@ float gsumload, gmaxload, gminload;
   }
   
   for (i = 0; i < mesh->num_elems; i++) {
-    load += mesh->elements[i].cpu_wgt;
+    load += mesh->elements[i].cpu_wgt[0];
   }
 
   MPI_Allreduce(&cuts, &gsumcuts, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);

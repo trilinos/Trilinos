@@ -34,7 +34,7 @@
 
 static int fill_elements(int, int, PROB_INFO_PTR, 
                          MESH_INFO_PTR, int, int, int *, 
-                         int *, float *, float *, int, 
+                         int *, int, float *, int, float *, int, 
                          float *, float *, float *);
 
 /****************************************************************************/
@@ -53,6 +53,7 @@ int read_chaco_mesh(int Proc,
   char   chaco_fname[FILENAME_MAX + 8];
 
   int    i, nvtxs, gnvtxs;
+  int    vwgt_dim=0, ewgt_dim=0;
   int    ndim = 0;
   int   *start = NULL, *adj = NULL;
   int    no_geom = FALSE;
@@ -79,7 +80,7 @@ int read_chaco_mesh(int Proc,
 
     /* read the array in on processor 0 */
     if (chaco_input_graph(fp, chaco_fname, &start, &adj, &nvtxs,
-                           &vwgts, &ewgts) != 0) {
+                           &vwgt_dim, &vwgts, &ewgt_dim, &ewgts) != 0) {
       Gen_Error(0, "fatal: Error returned from chaco_input_graph");
       return 0;
     }
@@ -104,9 +105,9 @@ int read_chaco_mesh(int Proc,
   }
 
   /* Distribute graph */
-  if (!chaco_dist_graph(MPI_COMM_WORLD, pio_info, 0, 
-                        &gnvtxs, &nvtxs, &start, &adj, 
-                        &vwgts, &ewgts, &ndim, &x, &y, &z) != 0) {
+  if (!chaco_dist_graph(MPI_COMM_WORLD, pio_info, 0, &gnvtxs, &nvtxs, 
+             &start, &adj, &vwgt_dim, &vwgts, &ewgt_dim, &ewgts, 
+             &ndim, &x, &y, &z) != 0) {
       Gen_Error(0, "fatal: Error returned from chaco_dist_graph");
       return 0;
   }
@@ -172,7 +173,8 @@ int read_chaco_mesh(int Proc,
    * information from the Chaco file
    */
   if (!fill_elements(Proc, Num_Proc, prob, mesh, gnvtxs, nvtxs,
-                     start, adj, vwgts, ewgts, ndim, x, y, z)) {
+                     start, adj, vwgt_dim, vwgts, ewgt_dim, ewgts, 
+                     ndim, x, y, z)) {
     Gen_Error(0, "fatal: Error returned from fill_elements");
     return 0;
   }
@@ -202,7 +204,9 @@ static int fill_elements(
   int        nvtxs,              /* number of vertices in local graph */
   int       *start,              /* start of edge list for each vertex */
   int       *adj,                /* edge list data */
+  int        vwgt_dim,           /* # of weights per vertex */
   float     *vwgts,              /* vertex weight list data */
+  int        ewgt_dim,           /* # of weights per edge */
   float     *ewgts,              /* edge weight list data */
   int        ndim,               /* dimension of the geometry */
   float     *x,                  /* x-coordinates of the vertices */
@@ -225,10 +229,13 @@ static int fill_elements(
 
   for (i = 0; i < num_vtx; i++) {
     mesh->elements[i].globalID = vtx_list[i]+1;  /* GlobalIDs are 1-based */
-    if (vwgts != NULL)
-      mesh->elements[i].cpu_wgt = vwgts[i];
+    if (vwgts != NULL){
+      for (j=0; j<vwgt_dim; j++) {
+        mesh->elements[i].cpu_wgt[j] = vwgts[i*vwgt_dim+j];
+      }
+    }
     else
-      mesh->elements[i].cpu_wgt = 1.0;
+      mesh->elements[i].cpu_wgt[0] = 1.0;
     mesh->elements[i].elem_blk = 0; /* only one elem block for all vertices */
     if (mesh->num_dims > 0) {
       /* One set of coords per element. */

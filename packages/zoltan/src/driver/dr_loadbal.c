@@ -232,6 +232,7 @@ int get_first_element(void *data, LB_GID *global_id, LB_LID *local_id,
 {
   MESH_INFO_PTR mesh;
   ELEM_INFO *elem;
+  int i;
 
  *ierr = LB_OK; 
 
@@ -251,11 +252,13 @@ int get_first_element(void *data, LB_GID *global_id, LB_LID *local_id,
   *local_id = 0;
   *global_id = elem[*local_id].globalID;
 
-  if (wdim>0)
-    *wgt = elem[*local_id].cpu_wgt;
-
-  if (wdim>1)
-    *ierr = LB_WARN; /* we didn't expect multidimensional weights */
+  if (wdim>0){
+    for (i=0; i<wdim; i++){
+      *wgt++ = elem[*local_id].cpu_wgt[i];
+      /* printf("Debug: In query function, object = %d, weight no. %1d = %f\n",
+             *global_id, i, elem[*local_id].cpu_wgt[i]); */
+    }
+  }
 
   return 1;
 }
@@ -270,6 +273,7 @@ int get_next_element(void *data, LB_GID global_id, LB_LID local_id,
   int found = 0;
   ELEM_INFO *elem;
   MESH_INFO_PTR mesh;
+  int i;
 
   if (data == NULL) {
     *ierr = LB_FATAL;
@@ -284,13 +288,15 @@ int get_next_element(void *data, LB_GID global_id, LB_LID local_id,
     *next_local_id = local_id + 1;
     *next_global_id = elem[*next_local_id].globalID;
 
-    if (wdim>0)
-      *next_wgt = elem[*next_local_id].cpu_wgt;
+    if (wdim>0){
+      for (i=0; i<wdim; i++){
+        *next_wgt++ = elem[*next_local_id].cpu_wgt[i];
+        /* printf("Debug: In query function, object = %d, weight no. %1d = %f\n",
+          *next_global_id, i, elem[*next_local_id].cpu_wgt[i]); */
+      }
+    }
 
-    if (wdim>1)
-      *ierr = LB_WARN; /* we didn't expect multidimensional weights */
-    else
-      *ierr = LB_OK; 
+    *ierr = LB_OK; 
   }
 
   return(found);

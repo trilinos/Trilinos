@@ -32,7 +32,8 @@
 #endif
 
 #define MAX_NP_ELEM	27 /* max nodes per element */
-#define MAX_DIM		3  /* max number of dimensions */
+#define MAX_DIM		 3 /* max number of coordinate dimensions */
+#define MAX_CPU_WGTS	10 /* max number of cpu weights */
 
 /*
  * Structure used to describe an element. Each processor will
@@ -44,7 +45,7 @@ struct Element_Description
   int      globalID;	/* Global ID of this element, the local ID is the
 			   position in the array of elements              */
   int      elem_blk;    /* element block number which this element is in */
-  float    cpu_wgt;	/* the computational weight associated with the elem */
+  float    cpu_wgt[MAX_CPU_WGTS]; /* the computational weight(s) associated with the elem */
   float    mem_wgt;	/* the memory weight associated with the elem */
   float  **coord;	/* array for the coordinates of the element.
                              for Nemesis meshes, nodal coordinates are stored;

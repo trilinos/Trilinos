@@ -69,7 +69,7 @@ ELEM_INFO_PTR current_elem;
   printf("\nElement connect table, weights and coordinates:\n");
   for (i = 0; i < mesh->num_elems; i++) {
     current_elem = &(mesh->elements[i]);
-    printf("%d (%f):\n", current_elem->globalID, current_elem->cpu_wgt);
+    printf("%d (%f):\n", current_elem->globalID, current_elem->cpu_wgt[0]);
     for (j = 0; j < mesh->eb_nnodes[current_elem->elem_blk]; j++) {
       printf("\t%d |", current_elem->connect[j]);
       for (k = 0; k < mesh->num_dims; k++) {

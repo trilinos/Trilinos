@@ -301,7 +301,7 @@ static int read_elem_info(int pexoid, int Proc, PROB_INFO_PTR prob,
         elements[iplace].nadj = 0;
         elements[iplace].adj_len = 0;
         /* weights are 1 for now */
-        elements[iplace].cpu_wgt = 1.0;
+        elements[iplace].cpu_wgt[0] = 1.0;
         elements[iplace].mem_wgt = 1.0;
 
         /* allocate space for the connect list and the coordinates */

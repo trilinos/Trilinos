@@ -26,13 +26,16 @@
 
 void initialize_element(ELEM_INFO *elem)
 {
+  int i; /* loop counter */
+
 /*
  * Initializes all fields of an element.
  */
   elem->globalID = -1;
   elem->border = 0;
   elem->elem_blk = -1;
-  elem->cpu_wgt = 0;
+  for (i=0; i<MAX_CPU_WGTS; i++)
+    elem->cpu_wgt[i] = 0;
   elem->mem_wgt = 0;
   elem->nadj = 0;
   elem->adj_len = 0;
@@ -68,7 +71,8 @@ int j;
   elem->nadj = 0;
   elem->adj_len = 0;
   elem->elem_blk = -1;
-  elem->cpu_wgt = 0;
+  for (j=0; j<MAX_CPU_WGTS; j++)
+    elem->cpu_wgt[j] = 0;
   elem->mem_wgt = 0;
 }
 

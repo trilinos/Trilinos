@@ -451,7 +451,8 @@ int adj_elem;
     elements[last].nadj = 0;
     elements[last].adj_len = 0;
     elements[last].elem_blk = -1;
-    elements[last].cpu_wgt = 0;
+    for (k=0; k<MAX_CPU_WGTS; k++)
+      elements[last].cpu_wgt[k] = 0;
     elements[last].mem_wgt = 0;
     elements[last].coord = NULL;
     elements[last].connect = NULL;
