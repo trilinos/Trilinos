@@ -89,6 +89,13 @@ unsigned int *idum;
 }
 
 
+unsigned int Zoltan_Rand_InRange (unsigned int *myidum, unsigned int n)
+{
+  double denom = ZOLTAN_RAND_MAX + 1.0;
+
+  return (int) ((double) n * (double) Zoltan_Rand(myidum) / denom);
+}
+    
 /* Randomly permute an array of ints. */
 void Zoltan_Rand_Perm_Int (int *data, int n, unsigned int *myidum)
 {

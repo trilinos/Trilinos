@@ -23,6 +23,7 @@ extern "C" {
 #define ZOLTAN_RAND_MAX 0xffffffff
 
 extern unsigned int Zoltan_Rand (unsigned int *);
+extern unsigned int Zoltan_Rand_InRange (unsigned int *, unsigned int);
 extern void         Zoltan_Srand (unsigned int, unsigned int *);
 extern void         Zoltan_Rand_Perm_Int (int*, int, unsigned int *);
 extern void         Zoltan_Srand_Sync (unsigned int, unsigned int *, MPI_Comm);
