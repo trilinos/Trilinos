@@ -6298,6 +6298,7 @@ int ML_Cheby(void *sm, int inlen, double x[], int outlen, double rhs[])
    widget = (struct MLSthing *) smooth_ptr->smoother->data;
 
    deg    = widget->mlsDeg;
+   if (deg == 0) return 0;
 
    pAux  = (double *) ML_allocate((n+1)*sizeof(double));
    dk     = (double *) ML_allocate((n+1)*sizeof(double));
