@@ -33,10 +33,11 @@ if  HAVE_MPI
 
 noinst_PROGRAMS = noxTestAllMpi
 
-noxTestAllMpi_SOURCES = $(srcdir)/noxTestAllMpi
+noxTestAllMpi_SOURCES = noxTestAllMpi
 
-noxTestAllMpi$(EXEEXT): $(srcdir)/noxTestAllMpi
-	cp $(srcdir)/noxTestAllMpi noxTestAllMpi$(EXEEXT) 
+noxTestAllMpi$(EXEEXT): noxTestAllMpi
+	cp noxTestAllMpi noxTestAllMpi$(EXEEXT) 
+	chmod +x noxTestAllMpi$(EXEEXT) 
 
 else
 

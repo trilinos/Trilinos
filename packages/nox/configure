@@ -465,7 +465,7 @@ ac_includes_default="\
 # include <unistd.h>
 #endif"
 
-ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS MAINTAINER_MODE_TRUE MAINTAINER_MODE_FALSE MAINT build build_cpu build_vendor build_os host host_cpu host_vendor host_os target target_cpu target_vendor target_os INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA CYGPATH_W PACKAGE VERSION ACLOCAL AUTOCONF AUTOMAKE AUTOHEADER MAKEINFO AMTAR install_sh STRIP ac_ct_STRIP INSTALL_STRIP_PROGRAM mkdir_p AWK SET_MAKE am__leading_dot MPI_TEMP_CXX MPI_CXX MPI_CXX_EXISTS MPI_CC_EXISTS MPI_F77_EXISTS CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT DEPDIR am__include am__quote AMDEP_TRUE AMDEP_FALSE AMDEPBACKSLASH CCDEPMODE am__fastdepCC_TRUE am__fastdepCC_FALSE CXX CXXFLAGS ac_ct_CXX CXXDEPMODE am__fastdepCXX_TRUE am__fastdepCXX_FALSE CXXCPP F77 FFLAGS ac_ct_F77 AR ac_ct_AR RANLIB ac_ct_RANLIB HAVE_DOXYGEN_DOT USE_ALTERNATE_AR_TRUE USE_ALTERNATE_AR_FALSE ALTERNATE_AR HAVE_MPI_TRUE HAVE_MPI_FALSE EGREP BUILD_LIBNOXLAPACK_TRUE BUILD_LIBNOXLAPACK_FALSE BUILD_LAPACK_EXAMPLES_TRUE BUILD_LAPACK_EXAMPLES_FALSE BUILD_LIBNOXEPETRA_TRUE BUILD_LIBNOXEPETRA_FALSE BUILD_EPETRA_EXAMPLES_TRUE BUILD_EPETRA_EXAMPLES_FALSE BUILD_LIBNOXPETSC_TRUE BUILD_LIBNOXPETSC_FALSE BUILD_PETSC_EXAMPLES_TRUE BUILD_PETSC_EXAMPLES_FALSE BUILD_LIBNOXTSF_TRUE BUILD_LIBNOXTSF_FALSE BUILD_TSF_EXAMPLES_TRUE BUILD_TSF_EXAMPLES_FALSE BUILD_LIBNOXBELOS_TRUE BUILD_LIBNOXBELOS_FALSE BUILD_BELOS_EXAMPLES_TRUE BUILD_BELOS_EXAMPLES_FALSE BUILD_LIBLOCA_TRUE BUILD_LIBLOCA_FALSE BUILD_PYTHON_TRUE BUILD_PYTHON_FALSE SWIG SWIG_LIB PYTHON PYTHON_VERSION PYTHON_PREFIX PYTHON_EXEC_PREFIX PYTHON_PLATFORM pythondir pkgpythondir pyexecdir pkgpyexecdir PYTHON_CPPFLAGS PYTHON_LDFLAGS PYTHON_SITE_PKG PYTHON_EXTRA_LIBS SWIG_PYTHON_OPT SWIG_PYTHON_CPPFLAGS IMPORT_LAPACK IMPORT_EPETRA LN_S ECHO CPP LIBTOOL BUILD_NOX_MULTIVECS_TRUE BUILD_NOX_MULTIVECS_FALSE HAVE_NOX_MULTIVECS_SUBST BUILD_NOX_ANY_TRUE BUILD_NOX_ANY_FALSE HAVE_NOX_ANY_SUBST BUILD_LIBLOCALAPACK_TRUE BUILD_LIBLOCALAPACK_FALSE BUILD_LOCA_LAPACK_EXAMPLES_TRUE BUILD_LOCA_LAPACK_EXAMPLES_FALSE BUILD_LIBLOCAEPETRA_TRUE BUILD_LIBLOCAEPETRA_FALSE BUILD_LOCA_EPETRA_EXAMPLES_TRUE BUILD_LOCA_EPETRA_EXAMPLES_FALSE BUILD_LAPACK_TESTS_TRUE BUILD_LAPACK_TESTS_FALSE BUILD_LOCA_LAPACK_TESTS_TRUE BUILD_LOCA_LAPACK_TESTS_FALSE BUILD_EPETRA_TESTS_TRUE BUILD_EPETRA_TESTS_FALSE BUILD_LOCA_EPETRA_TESTS_TRUE BUILD_LOCA_EPETRA_TESTS_FALSE BUILD_PETSC_TESTS_TRUE BUILD_PETSC_TESTS_FALSE BUILD_LOCA_PETSC_TESTS_TRUE BUILD_LOCA_PETSC_TESTS_FALSE BUILD_LOCAANASAZI_TRUE BUILD_LOCAANASAZI_FALSE BUILD_LIBLOCAMF_TRUE BUILD_LIBLOCAMF_FALSE FLIBS BLAS_LIBS LAPACK_LIBS MF_INCDIR TRILINOS_CXXFLAGS MF_LIBDIR PETSC_CXXFLAGS CXXREPOS BUILD_PRERELEASE_TRUE BUILD_PRERELEASE_FALSE WITH_PRERELEASE_SUBST ac_aux_dir abs_builddir abs_top_builddir MPI_LIBS LIBOBJS LTLIBOBJS'
+ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS MAINTAINER_MODE_TRUE MAINTAINER_MODE_FALSE MAINT build build_cpu build_vendor build_os host host_cpu host_vendor host_os target target_cpu target_vendor target_os INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA CYGPATH_W PACKAGE VERSION ACLOCAL AUTOCONF AUTOMAKE AUTOHEADER MAKEINFO AMTAR install_sh STRIP ac_ct_STRIP INSTALL_STRIP_PROGRAM mkdir_p AWK SET_MAKE am__leading_dot MPI_TEMP_CXX MPI_CXX MPI_CXX_EXISTS MPI_CC_EXISTS MPI_F77_EXISTS CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT DEPDIR am__include am__quote AMDEP_TRUE AMDEP_FALSE AMDEPBACKSLASH CCDEPMODE am__fastdepCC_TRUE am__fastdepCC_FALSE CXX CXXFLAGS ac_ct_CXX CXXDEPMODE am__fastdepCXX_TRUE am__fastdepCXX_FALSE CXXCPP F77 FFLAGS ac_ct_F77 AR ac_ct_AR RANLIB ac_ct_RANLIB HAVE_DOXYGEN_DOT USE_ALTERNATE_AR_TRUE USE_ALTERNATE_AR_FALSE ALTERNATE_AR HAVE_MPI_TRUE HAVE_MPI_FALSE EGREP BUILD_LIBNOXLAPACK_TRUE BUILD_LIBNOXLAPACK_FALSE BUILD_LAPACK_EXAMPLES_TRUE BUILD_LAPACK_EXAMPLES_FALSE BUILD_LIBNOXEPETRA_TRUE BUILD_LIBNOXEPETRA_FALSE BUILD_EPETRA_EXAMPLES_TRUE BUILD_EPETRA_EXAMPLES_FALSE BUILD_LIBNOXPETSC_TRUE BUILD_LIBNOXPETSC_FALSE BUILD_PETSC_EXAMPLES_TRUE BUILD_PETSC_EXAMPLES_FALSE BUILD_LIBNOXTSF_TRUE BUILD_LIBNOXTSF_FALSE BUILD_TSF_EXAMPLES_TRUE BUILD_TSF_EXAMPLES_FALSE BUILD_LIBNOXBELOS_TRUE BUILD_LIBNOXBELOS_FALSE BUILD_BELOS_EXAMPLES_TRUE BUILD_BELOS_EXAMPLES_FALSE BUILD_LIBLOCA_TRUE BUILD_LIBLOCA_FALSE BUILD_PYTHON_TRUE BUILD_PYTHON_FALSE SWIG SWIG_LIB PYTHON PYTHON_VERSION PYTHON_PREFIX PYTHON_EXEC_PREFIX PYTHON_PLATFORM pythondir pkgpythondir pyexecdir pkgpyexecdir PYTHON_CPPFLAGS PYTHON_LDFLAGS PYTHON_SITE_PKG PYTHON_EXTRA_LIBS SWIG_PYTHON_OPT SWIG_PYTHON_CPPFLAGS IMPORT_LAPACK IMPORT_EPETRA LN_S ECHO CPP LIBTOOL BUILD_NOX_MULTIVECS_TRUE BUILD_NOX_MULTIVECS_FALSE HAVE_NOX_MULTIVECS_SUBST BUILD_NOX_ANY_TRUE BUILD_NOX_ANY_FALSE HAVE_NOX_ANY_SUBST BUILD_LIBLOCALAPACK_TRUE BUILD_LIBLOCALAPACK_FALSE BUILD_LOCA_LAPACK_EXAMPLES_TRUE BUILD_LOCA_LAPACK_EXAMPLES_FALSE BUILD_LIBLOCAEPETRA_TRUE BUILD_LIBLOCAEPETRA_FALSE BUILD_LOCA_EPETRA_EXAMPLES_TRUE BUILD_LOCA_EPETRA_EXAMPLES_FALSE BUILD_LAPACK_TESTS_TRUE BUILD_LAPACK_TESTS_FALSE BUILD_LOCA_LAPACK_TESTS_TRUE BUILD_LOCA_LAPACK_TESTS_FALSE ADDON_lapack_TESTS ADDON_loca_lapack_TESTS BUILD_EPETRA_TESTS_TRUE BUILD_EPETRA_TESTS_FALSE BUILD_LOCA_EPETRA_TESTS_TRUE BUILD_LOCA_EPETRA_TESTS_FALSE ADDON_epetra_TESTS ADDON_loca_epetra_TESTS BUILD_PETSC_TESTS_TRUE BUILD_PETSC_TESTS_FALSE BUILD_LOCA_PETSC_TESTS_TRUE BUILD_LOCA_PETSC_TESTS_FALSE ADDON_petsc_TESTS ADDON_loca_petsc_TESTS BUILD_PYTHON_TESTS_TRUE BUILD_PYTHON_TESTS_FALSE BUILD_LOCA_PYTHON_TESTS_TRUE BUILD_LOCA_PYTHON_TESTS_FALSE ADDON_python_TESTS ADDON_loca_python_TESTS BUILD_LOCAANASAZI_TRUE BUILD_LOCAANASAZI_FALSE BUILD_LIBLOCAMF_TRUE BUILD_LIBLOCAMF_FALSE FLIBS BLAS_LIBS LAPACK_LIBS MF_INCDIR TRILINOS_CXXFLAGS MF_LIBDIR PETSC_CXXFLAGS CXXREPOS BUILD_PRERELEASE_TRUE BUILD_PRERELEASE_FALSE WITH_PRERELEASE_SUBST ac_aux_dir abs_builddir abs_top_builddir MPI_LIBS LIBOBJS LTLIBOBJS'
 ac_subst_files=''
 
 # Initialize some variables set by options.
@@ -6605,15 +6605,15 @@ fi
 # Check whether --enable-python or --disable-python was given.
 if test "${enable_python+set}" = set; then
   enableval="$enable_python"
-  ADDON_PYTHON=$enableval
+  ADDON_python=$enableval
 else
-  ADDON_PYTHON=no
+  ADDON_python=no
 
 fi;
 
 echo "$as_me:$LINENO: checking whether we should build the python support" >&5
 echo $ECHO_N "checking whether we should build the python support... $ECHO_C" >&6
-if test X${ADDON_PYTHON} = Xyes; then
+if test X${ADDON_python} = Xyes; then
   BUILD_PYTHON=yes
   echo "$as_me:$LINENO: result: yes" >&5
 echo "${ECHO_T}yes" >&6
@@ -22177,6 +22177,8 @@ else
 fi
 
 
+
+
   # epetra testing
 
     echo "$as_me:$LINENO: checking whether we should build the nox epetra regression tests" >&5
@@ -22235,6 +22237,8 @@ else
 fi
 
 
+
+
   # petsc testing
 
     echo "$as_me:$LINENO: checking whether we should build the nox petsc regression tests" >&5
@@ -22291,6 +22295,68 @@ else
   BUILD_LOCA_PETSC_TESTS_TRUE='#'
   BUILD_LOCA_PETSC_TESTS_FALSE=
 fi
+
+
+
+
+  # python testing
+
+    echo "$as_me:$LINENO: checking whether we should build the nox python regression tests" >&5
+echo $ECHO_N "checking whether we should build the nox python regression tests... $ECHO_C" >&6
+    if test X${ADDON_TESTS} = Xyes && test X${ADDON_python} = Xyes; then
+      echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6
+      ADDON_python_TESTS=yes
+
+      echo "$as_me:$LINENO: checking whether we should build the loca python regression tests" >&5
+echo $ECHO_N "checking whether we should build the loca python regression tests... $ECHO_C" >&6
+      if test X${BUILD_LIBLOCA} = Xyes; then
+	ADDON_loca_python_TESTS=yes
+        echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6
+      else
+	ADDON_loca_python_TESTS=no
+        echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+      fi
+
+    else
+      echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+      ADDON_python_TESTS=no
+      echo "$as_me:$LINENO: checking whether we should build the loca python regression tests" >&5
+echo $ECHO_N "checking whether we should build the loca python regression tests... $ECHO_C" >&6
+      echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+      ADDON_loca_python_TESTS=no
+    fi
+
+    if test X${ADDON_python_TESTS} = Xyes; then
+      BUILD_ANY_EXAMPLES=yes
+    fi
+
+
+
+
+if test X${ADDON_python_TESTS} = Xyes; then
+  BUILD_PYTHON_TESTS_TRUE=
+  BUILD_PYTHON_TESTS_FALSE='#'
+else
+  BUILD_PYTHON_TESTS_TRUE='#'
+  BUILD_PYTHON_TESTS_FALSE=
+fi
+
+
+
+if test X${ADDON_loca_python_TESTS} = Xyes; then
+  BUILD_LOCA_PYTHON_TESTS_TRUE=
+  BUILD_LOCA_PYTHON_TESTS_FALSE='#'
+else
+  BUILD_LOCA_PYTHON_TESTS_TRUE='#'
+  BUILD_LOCA_PYTHON_TESTS_FALSE=
+fi
+
+
 
 
 # ------------------------------------------------------------------------
@@ -22501,7 +22567,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:22504: \"$ac_link\") >&5
+(eval echo $as_me:22570: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -22579,7 +22645,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:22582: \"$ac_link\") >&5
+(eval echo $as_me:22648: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -23578,7 +23644,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:23581: \"$ac_link\") >&5
+(eval echo $as_me:23647: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -23656,7 +23722,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:23659: \"$ac_link\") >&5
+(eval echo $as_me:23725: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -34970,7 +35036,7 @@ echo "${ECHO_T}$WITH_PRERELEASE" >&6
 # Output files
 # ------------------------------------------------------------------------
 
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            ac_config_files="$ac_config_files Makefile doc/Makefile doc/Doxyfile src/Makefile src-lapack/Makefile example-lapack/Makefile src-tsf/Makefile example-tsf/Makefile src-epetra/Makefile example-epetra/Makefile example-epetra/DS6.5.1/Makefile example-epetra/1Dfem_linear/Makefile example-epetra/1Dfem_nonlinear/Makefile example-epetra/1Dfem_nonlinearColoring/Makefile example-epetra/1Dtransfem_nonlinear/Makefile example-epetra/Brusselator/Makefile example-epetra/Brusselator_Split/Makefile example-epetra/Brusselator_EpetraNew/Makefile example-epetra/Suite/Makefile src-petsc/Makefile example-petsc/Makefile example-petsc/DS6.5.1/Makefile example-petsc/1Dfd_nonlinear/Makefile src-belos/Makefile example-belos/Makefile example-belos/epetra/Makefile example-belos/epetra/1Dfem_nonlinear/Makefile python/Makefile python/__init__.py src-loca/Makefile src-loca/doc/Makefile src-loca/src/Makefile src-loca/src-epetra/Makefile src-loca/src-lapack/Makefile src-loca/src-mf/Makefile src-loca/example-epetra/Makefile src-loca/example-epetra/1Dfem/Makefile src-loca/example-epetra/Tcubed/Makefile src-loca/example-epetra/Tcubed_epetra_new/Makefile src-loca/example-epetra/Brusselator_xyzt/Makefile src-loca/example-lapack/Makefile src-loca/example-lapack/Chan/Makefile src-loca/example-lapack/1Dfd_pitchfork/Makefile src-loca/example-lapack/Brusselator/Makefile src-loca/python/Makefile src-loca/python/__init__.py test/Makefile test/scripts/Makefile test/scripts/daily/Makefile test/scripts/daily/serial/Makefile test/scripts/daily/mpi/Makefile test/utils/Makefile test/lapack/Makefile test/lapack/NOX/Makefile test/lapack/NOX_NewTest/Makefile test/lapack/NOX_Group/Makefile test/lapack/LOCA_NewTest/Makefile test/lapack/LOCA_Group/Makefile test/lapack/LOCA_ChanProblem/Makefile test/lapack/LOCA_python/Makefile test/lapack/LOCA_python/setpath.py test/epetra/Makefile test/epetra/NOX_NewTest/Makefile test/epetra/NOX_Vector/Makefile test/epetra/NOX_Group/Makefile test/epetra/LOCA_NewTest/Makefile test/epetra/LOCA_Group/Makefile test/epetra/1Dfem/Makefile test/epetra/MultiPhysics/Makefile test/petsc/Makefile"
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                ac_config_files="$ac_config_files Makefile doc/Makefile doc/Doxyfile src/Makefile src-lapack/Makefile example-lapack/Makefile src-tsf/Makefile example-tsf/Makefile src-epetra/Makefile example-epetra/Makefile example-epetra/DS6.5.1/Makefile example-epetra/1Dfem_linear/Makefile example-epetra/1Dfem_nonlinear/Makefile example-epetra/1Dfem_nonlinearColoring/Makefile example-epetra/1Dtransfem_nonlinear/Makefile example-epetra/Brusselator/Makefile example-epetra/Brusselator_Split/Makefile example-epetra/Brusselator_EpetraNew/Makefile example-epetra/Suite/Makefile src-petsc/Makefile example-petsc/Makefile example-petsc/DS6.5.1/Makefile example-petsc/1Dfd_nonlinear/Makefile src-belos/Makefile example-belos/Makefile example-belos/epetra/Makefile example-belos/epetra/1Dfem_nonlinear/Makefile python/Makefile python/__init__.py src-loca/Makefile src-loca/doc/Makefile src-loca/src/Makefile src-loca/src-epetra/Makefile src-loca/src-lapack/Makefile src-loca/src-mf/Makefile src-loca/example-epetra/Makefile src-loca/example-epetra/1Dfem/Makefile src-loca/example-epetra/Tcubed/Makefile src-loca/example-epetra/Tcubed_epetra_new/Makefile src-loca/example-epetra/Brusselator_xyzt/Makefile src-loca/example-lapack/Makefile src-loca/example-lapack/Chan/Makefile src-loca/example-lapack/1Dfd_pitchfork/Makefile src-loca/example-lapack/Brusselator/Makefile src-loca/python/Makefile src-loca/python/__init__.py test/Makefile test/scripts/Makefile test/scripts/daily/Makefile test/scripts/daily/serial/Makefile test/scripts/daily/serial/noxTestAll test/scripts/daily/mpi/Makefile test/scripts/daily/mpi/noxTestAllMpi test/utils/Makefile test/lapack/Makefile test/lapack/NOX/Makefile test/lapack/NOX_NewTest/Makefile test/lapack/NOX_Group/Makefile test/lapack/LOCA_NewTest/Makefile test/lapack/LOCA_Group/Makefile test/lapack/LOCA_ChanProblem/Makefile test/lapack/LOCA_python/Makefile test/lapack/LOCA_python/setpath.py test/epetra/Makefile test/epetra/NOX_NewTest/Makefile test/epetra/NOX_Vector/Makefile test/epetra/NOX_Group/Makefile test/epetra/LOCA_NewTest/Makefile test/epetra/LOCA_Group/Makefile test/epetra/1Dfem/Makefile test/epetra/MultiPhysics/Makefile test/petsc/Makefile"
 
 
 cat >confcache <<\_ACEOF
@@ -35320,6 +35386,20 @@ if test -z "${BUILD_LOCA_PETSC_TESTS_TRUE}" && test -z "${BUILD_LOCA_PETSC_TESTS
   { { echo "$as_me:$LINENO: error: conditional \"BUILD_LOCA_PETSC_TESTS\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
 echo "$as_me: error: conditional \"BUILD_LOCA_PETSC_TESTS\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+if test -z "${BUILD_PYTHON_TESTS_TRUE}" && test -z "${BUILD_PYTHON_TESTS_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"BUILD_PYTHON_TESTS\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"BUILD_PYTHON_TESTS\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+if test -z "${BUILD_LOCA_PYTHON_TESTS_TRUE}" && test -z "${BUILD_LOCA_PYTHON_TESTS_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"BUILD_LOCA_PYTHON_TESTS\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"BUILD_LOCA_PYTHON_TESTS\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
@@ -35838,7 +35918,9 @@ do
   "test/scripts/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/scripts/Makefile" ;;
   "test/scripts/daily/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/scripts/daily/Makefile" ;;
   "test/scripts/daily/serial/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/scripts/daily/serial/Makefile" ;;
+  "test/scripts/daily/serial/noxTestAll" ) CONFIG_FILES="$CONFIG_FILES test/scripts/daily/serial/noxTestAll" ;;
   "test/scripts/daily/mpi/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/scripts/daily/mpi/Makefile" ;;
+  "test/scripts/daily/mpi/noxTestAllMpi" ) CONFIG_FILES="$CONFIG_FILES test/scripts/daily/mpi/noxTestAllMpi" ;;
   "test/utils/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/utils/Makefile" ;;
   "test/lapack/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/lapack/Makefile" ;;
   "test/lapack/NOX/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/lapack/NOX/Makefile" ;;
@@ -36087,14 +36169,26 @@ s,@BUILD_LAPACK_TESTS_TRUE@,$BUILD_LAPACK_TESTS_TRUE,;t t
 s,@BUILD_LAPACK_TESTS_FALSE@,$BUILD_LAPACK_TESTS_FALSE,;t t
 s,@BUILD_LOCA_LAPACK_TESTS_TRUE@,$BUILD_LOCA_LAPACK_TESTS_TRUE,;t t
 s,@BUILD_LOCA_LAPACK_TESTS_FALSE@,$BUILD_LOCA_LAPACK_TESTS_FALSE,;t t
+s,@ADDON_lapack_TESTS@,$ADDON_lapack_TESTS,;t t
+s,@ADDON_loca_lapack_TESTS@,$ADDON_loca_lapack_TESTS,;t t
 s,@BUILD_EPETRA_TESTS_TRUE@,$BUILD_EPETRA_TESTS_TRUE,;t t
 s,@BUILD_EPETRA_TESTS_FALSE@,$BUILD_EPETRA_TESTS_FALSE,;t t
 s,@BUILD_LOCA_EPETRA_TESTS_TRUE@,$BUILD_LOCA_EPETRA_TESTS_TRUE,;t t
 s,@BUILD_LOCA_EPETRA_TESTS_FALSE@,$BUILD_LOCA_EPETRA_TESTS_FALSE,;t t
+s,@ADDON_epetra_TESTS@,$ADDON_epetra_TESTS,;t t
+s,@ADDON_loca_epetra_TESTS@,$ADDON_loca_epetra_TESTS,;t t
 s,@BUILD_PETSC_TESTS_TRUE@,$BUILD_PETSC_TESTS_TRUE,;t t
 s,@BUILD_PETSC_TESTS_FALSE@,$BUILD_PETSC_TESTS_FALSE,;t t
 s,@BUILD_LOCA_PETSC_TESTS_TRUE@,$BUILD_LOCA_PETSC_TESTS_TRUE,;t t
 s,@BUILD_LOCA_PETSC_TESTS_FALSE@,$BUILD_LOCA_PETSC_TESTS_FALSE,;t t
+s,@ADDON_petsc_TESTS@,$ADDON_petsc_TESTS,;t t
+s,@ADDON_loca_petsc_TESTS@,$ADDON_loca_petsc_TESTS,;t t
+s,@BUILD_PYTHON_TESTS_TRUE@,$BUILD_PYTHON_TESTS_TRUE,;t t
+s,@BUILD_PYTHON_TESTS_FALSE@,$BUILD_PYTHON_TESTS_FALSE,;t t
+s,@BUILD_LOCA_PYTHON_TESTS_TRUE@,$BUILD_LOCA_PYTHON_TESTS_TRUE,;t t
+s,@BUILD_LOCA_PYTHON_TESTS_FALSE@,$BUILD_LOCA_PYTHON_TESTS_FALSE,;t t
+s,@ADDON_python_TESTS@,$ADDON_python_TESTS,;t t
+s,@ADDON_loca_python_TESTS@,$ADDON_loca_python_TESTS,;t t
 s,@BUILD_LOCAANASAZI_TRUE@,$BUILD_LOCAANASAZI_TRUE,;t t
 s,@BUILD_LOCAANASAZI_FALSE@,$BUILD_LOCAANASAZI_FALSE,;t t
 s,@BUILD_LIBLOCAMF_TRUE@,$BUILD_LIBLOCAMF_TRUE,;t t

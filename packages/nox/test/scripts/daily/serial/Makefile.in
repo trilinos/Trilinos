@@ -68,7 +68,8 @@ POST_UNINSTALL = :
 host_triplet = @host@
 @HAVE_MPI_FALSE@noinst_PROGRAMS = noxTestAll$(EXEEXT)
 subdir = test/scripts/daily/serial
-DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
+DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in \
+	$(srcdir)/noxTestAll.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/config/ac_cxx_namespaces.m4 \
 	$(top_srcdir)/config/ac_cxx_stl_map_key_const.m4 \
@@ -83,9 +84,9 @@ am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
 mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/NOX_Config.h
-CONFIG_CLEAN_FILES =
+CONFIG_CLEAN_FILES = noxTestAll
 PROGRAMS = $(noinst_PROGRAMS)
-am__noxTestAll_SOURCES_DIST = $(srcdir)/noxTestAll
+am__noxTestAll_SOURCES_DIST = noxTestAll
 am_noxTestAll_OBJECTS =
 noxTestAll_OBJECTS = $(am_noxTestAll_OBJECTS)
 noxTestAll_LDADD = $(LDADD)
@@ -102,6 +103,14 @@ SOURCES = $(noxTestAll_SOURCES)
 DIST_SOURCES = $(am__noxTestAll_SOURCES_DIST)
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 ACLOCAL = @ACLOCAL@
+ADDON_epetra_TESTS = @ADDON_epetra_TESTS@
+ADDON_lapack_TESTS = @ADDON_lapack_TESTS@
+ADDON_loca_epetra_TESTS = @ADDON_loca_epetra_TESTS@
+ADDON_loca_lapack_TESTS = @ADDON_loca_lapack_TESTS@
+ADDON_loca_petsc_TESTS = @ADDON_loca_petsc_TESTS@
+ADDON_loca_python_TESTS = @ADDON_loca_python_TESTS@
+ADDON_petsc_TESTS = @ADDON_petsc_TESTS@
+ADDON_python_TESTS = @ADDON_python_TESTS@
 ALTERNATE_AR = @ALTERNATE_AR@
 AMDEP_FALSE = @AMDEP_FALSE@
 AMDEP_TRUE = @AMDEP_TRUE@
@@ -152,6 +161,8 @@ BUILD_LOCA_LAPACK_TESTS_FALSE = @BUILD_LOCA_LAPACK_TESTS_FALSE@
 BUILD_LOCA_LAPACK_TESTS_TRUE = @BUILD_LOCA_LAPACK_TESTS_TRUE@
 BUILD_LOCA_PETSC_TESTS_FALSE = @BUILD_LOCA_PETSC_TESTS_FALSE@
 BUILD_LOCA_PETSC_TESTS_TRUE = @BUILD_LOCA_PETSC_TESTS_TRUE@
+BUILD_LOCA_PYTHON_TESTS_FALSE = @BUILD_LOCA_PYTHON_TESTS_FALSE@
+BUILD_LOCA_PYTHON_TESTS_TRUE = @BUILD_LOCA_PYTHON_TESTS_TRUE@
 BUILD_NOX_ANY_FALSE = @BUILD_NOX_ANY_FALSE@
 BUILD_NOX_ANY_TRUE = @BUILD_NOX_ANY_TRUE@
 BUILD_NOX_MULTIVECS_FALSE = @BUILD_NOX_MULTIVECS_FALSE@
@@ -163,6 +174,8 @@ BUILD_PETSC_TESTS_TRUE = @BUILD_PETSC_TESTS_TRUE@
 BUILD_PRERELEASE_FALSE = @BUILD_PRERELEASE_FALSE@
 BUILD_PRERELEASE_TRUE = @BUILD_PRERELEASE_TRUE@
 BUILD_PYTHON_FALSE = @BUILD_PYTHON_FALSE@
+BUILD_PYTHON_TESTS_FALSE = @BUILD_PYTHON_TESTS_FALSE@
+BUILD_PYTHON_TESTS_TRUE = @BUILD_PYTHON_TESTS_TRUE@
 BUILD_PYTHON_TRUE = @BUILD_PYTHON_TRUE@
 BUILD_TSF_EXAMPLES_FALSE = @BUILD_TSF_EXAMPLES_FALSE@
 BUILD_TSF_EXAMPLES_TRUE = @BUILD_TSF_EXAMPLES_TRUE@
@@ -301,7 +314,7 @@ target_alias = @target_alias@
 target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
-@HAVE_MPI_FALSE@noxTestAll_SOURCES = $(srcdir)/noxTestAll
+@HAVE_MPI_FALSE@noxTestAll_SOURCES = noxTestAll
 all: all-am
 
 .SUFFIXES:
@@ -334,6 +347,8 @@ $(top_srcdir)/configure: @MAINTAINER_MODE_TRUE@ $(am__configure_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
 $(ACLOCAL_M4): @MAINTAINER_MODE_TRUE@ $(am__aclocal_m4_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
+noxTestAll: $(top_builddir)/config.status $(srcdir)/noxTestAll.in
+	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
 
 clean-noinstPROGRAMS:
 	@list='$(noinst_PROGRAMS)'; for p in $$list; do \
@@ -483,8 +498,9 @@ uninstall-am: uninstall-info-am
 	uninstall uninstall-am uninstall-info-am
 
 
-@HAVE_MPI_FALSE@noxTestAll$(EXEEXT): $(srcdir)/noxTestAll
-@HAVE_MPI_FALSE@	cp $(srcdir)/noxTestAll noxTestAll$(EXEEXT) 
+@HAVE_MPI_FALSE@noxTestAll$(EXEEXT): noxTestAll
+@HAVE_MPI_FALSE@	cp noxTestAll noxTestAll$(EXEEXT) 
+@HAVE_MPI_FALSE@	chmod +x noxTestAll$(EXEEXT) 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

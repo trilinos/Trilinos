@@ -34,9 +34,10 @@ else
 
 noinst_PROGRAMS = noxTestAll
 
-noxTestAll_SOURCES = $(srcdir)/noxTestAll
+noxTestAll_SOURCES = noxTestAll
 
-noxTestAll$(EXEEXT): $(srcdir)/noxTestAll
-	cp $(srcdir)/noxTestAll noxTestAll$(EXEEXT) 
+noxTestAll$(EXEEXT): noxTestAll
+	cp noxTestAll noxTestAll$(EXEEXT) 
+	chmod +x noxTestAll$(EXEEXT) 
 
 endif

@@ -109,6 +109,14 @@ GZIP_ENV = --best
 distuninstallcheck_listfiles = find . -type f -print
 distcleancheck_listfiles = find . -type f -print
 ACLOCAL = aclocal -I config
+ADDON_epetra_TESTS = @ADDON_epetra_TESTS@
+ADDON_lapack_TESTS = @ADDON_lapack_TESTS@
+ADDON_loca_epetra_TESTS = @ADDON_loca_epetra_TESTS@
+ADDON_loca_lapack_TESTS = @ADDON_loca_lapack_TESTS@
+ADDON_loca_petsc_TESTS = @ADDON_loca_petsc_TESTS@
+ADDON_loca_python_TESTS = @ADDON_loca_python_TESTS@
+ADDON_petsc_TESTS = @ADDON_petsc_TESTS@
+ADDON_python_TESTS = @ADDON_python_TESTS@
 ALTERNATE_AR = @ALTERNATE_AR@
 AMDEP_FALSE = @AMDEP_FALSE@
 AMDEP_TRUE = @AMDEP_TRUE@
@@ -159,6 +167,8 @@ BUILD_LOCA_LAPACK_TESTS_FALSE = @BUILD_LOCA_LAPACK_TESTS_FALSE@
 BUILD_LOCA_LAPACK_TESTS_TRUE = @BUILD_LOCA_LAPACK_TESTS_TRUE@
 BUILD_LOCA_PETSC_TESTS_FALSE = @BUILD_LOCA_PETSC_TESTS_FALSE@
 BUILD_LOCA_PETSC_TESTS_TRUE = @BUILD_LOCA_PETSC_TESTS_TRUE@
+BUILD_LOCA_PYTHON_TESTS_FALSE = @BUILD_LOCA_PYTHON_TESTS_FALSE@
+BUILD_LOCA_PYTHON_TESTS_TRUE = @BUILD_LOCA_PYTHON_TESTS_TRUE@
 BUILD_NOX_ANY_FALSE = @BUILD_NOX_ANY_FALSE@
 BUILD_NOX_ANY_TRUE = @BUILD_NOX_ANY_TRUE@
 BUILD_NOX_MULTIVECS_FALSE = @BUILD_NOX_MULTIVECS_FALSE@
@@ -170,6 +180,8 @@ BUILD_PETSC_TESTS_TRUE = @BUILD_PETSC_TESTS_TRUE@
 BUILD_PRERELEASE_FALSE = @BUILD_PRERELEASE_FALSE@
 BUILD_PRERELEASE_TRUE = @BUILD_PRERELEASE_TRUE@
 BUILD_PYTHON_FALSE = @BUILD_PYTHON_FALSE@
+BUILD_PYTHON_TESTS_FALSE = @BUILD_PYTHON_TESTS_FALSE@
+BUILD_PYTHON_TESTS_TRUE = @BUILD_PYTHON_TESTS_TRUE@
 BUILD_PYTHON_TRUE = @BUILD_PYTHON_TRUE@
 BUILD_TSF_EXAMPLES_FALSE = @BUILD_TSF_EXAMPLES_FALSE@
 BUILD_TSF_EXAMPLES_TRUE = @BUILD_TSF_EXAMPLES_TRUE@
@@ -487,7 +499,7 @@ distclean-tags:
 distdir: $(DISTFILES)
 	$(am__remove_distdir)
 	mkdir $(distdir)
-	$(mkdir_p) $(distdir)/config $(distdir)/doc $(distdir)/python $(distdir)/src-loca/python $(distdir)/test/lapack/LOCA_python
+	$(mkdir_p) $(distdir)/config $(distdir)/doc $(distdir)/python $(distdir)/src-loca/python $(distdir)/test/lapack/LOCA_python $(distdir)/test/scripts/daily/mpi $(distdir)/test/scripts/daily/serial
 	@srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`; \
 	topsrcdirstrip=`echo "$(top_srcdir)" | sed 's|.|.|g'`; \
 	list='$(DISTFILES)'; for file in $$list; do \

@@ -781,12 +781,12 @@ AM_CONDITIONAL(BUILD_LIBLOCA, test X${BUILD_LIBLOCA} = Xyes)
 # ------------------------------------------------------------------------
 AC_ARG_ENABLE(python,
  [AC_HELP_STRING([--enable-python],[enable Python support])],
- [ADDON_PYTHON=$enableval],
- [ADDON_PYTHON=no]
+ [ADDON_python=$enableval],
+ [ADDON_python=no]
 )
 
 AC_MSG_CHECKING(whether we should build the python support)
-if test X${ADDON_PYTHON} = Xyes; then
+if test X${ADDON_python} = Xyes; then
   BUILD_PYTHON=yes
   AC_MSG_RESULT(yes)
   AM_CONDITIONAL(BUILD_PYTHON, true)
@@ -1021,16 +1021,29 @@ fi
   NOX_TESTING(lapack)
   AM_CONDITIONAL(BUILD_LAPACK_TESTS, test X${ADDON_lapack_TESTS} = Xyes)
   AM_CONDITIONAL(BUILD_LOCA_LAPACK_TESTS, test X${ADDON_loca_lapack_TESTS} = Xyes)
+  AC_SUBST(ADDON_lapack_TESTS)
+  AC_SUBST(ADDON_loca_lapack_TESTS)
  
   # epetra testing
   NOX_TESTING(epetra)
   AM_CONDITIONAL(BUILD_EPETRA_TESTS, test X${ADDON_epetra_TESTS} = Xyes)
   AM_CONDITIONAL(BUILD_LOCA_EPETRA_TESTS, test X${ADDON_loca_epetra_TESTS} = Xyes)
+  AC_SUBST(ADDON_epetra_TESTS)
+  AC_SUBST(ADDON_loca_epetra_TESTS)
 
   # petsc testing
   NOX_TESTING(petsc)
   AM_CONDITIONAL(BUILD_PETSC_TESTS, test X${ADDON_petsc_TESTS} = Xyes)
   AM_CONDITIONAL(BUILD_LOCA_PETSC_TESTS, test X${ADDON_loca_petsc_TESTS} = Xyes)
+  AC_SUBST(ADDON_petsc_TESTS)
+  AC_SUBST(ADDON_loca_petsc_TESTS)
+
+  # python testing
+  NOX_TESTING(python)
+  AM_CONDITIONAL(BUILD_PYTHON_TESTS, test X${ADDON_python_TESTS} = Xyes)
+  AM_CONDITIONAL(BUILD_LOCA_PYTHON_TESTS, test X${ADDON_loca_python_TESTS} = Xyes)
+  AC_SUBST(ADDON_python_TESTS)
+  AC_SUBST(ADDON_loca_python_TESTS)
 
 # ------------------------------------------------------------------------
 # LOCA-Anasazi support
@@ -1762,7 +1775,9 @@ AC_CONFIG_FILES([
                 test/scripts/Makefile
                 test/scripts/daily/Makefile
                 test/scripts/daily/serial/Makefile
+		test/scripts/daily/serial/noxTestAll
                 test/scripts/daily/mpi/Makefile
+		test/scripts/daily/mpi/noxTestAllMpi
                 test/utils/Makefile
                 test/lapack/Makefile
 		test/lapack/NOX/Makefile

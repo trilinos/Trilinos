@@ -38,19 +38,20 @@
 # $2 - Indicates if the test is an automated nightly test.  No action required
 #      by script owner.
 
-set error = None
+set error = 0
 set AnError = False
-set printexitvalue
+### maybe should pass $homedir and package name to script
+#set printexitvalue
 if( "$2" == "True" ) then # $2 is an optional parameter indicating if 
 			  # this is an automated test or not
     # file2 is the log that is created and put into a results email if 
     # errors occur.
-    set file2 = ../../../../logMpiErrors.txt
+    set file2 = ../../../../logErrors.txt
     rm -f $file2
     # Echo some important information into the log file to help developers
     # figure out which tests failed.
 ## List the Trilinos package being tested on the following line
-    echo "Package being tested: Epetra  " >>& $file2
+    echo "Package being tested: NOX " >>& $file2
     echo "Name of subdirectory: " $1 >>& $file2
     echo "Date: " `eval date` >>& $file2
     echo `uname -a` >>& $file2
@@ -63,17 +64,11 @@ if( "$2" == "True" ) then # $2 is an optional parameter indicating if
     echo "nox-regression@software.sandia.gov" >>& $file
     echo "Script owner(s) is listed on the previous line." >>& $file
 ## List the Trilinos package being tested on the following line
-    echo "Package being tested: NOX  " >>& $file
+    echo "Package being tested: NOX " >>& $file
     echo "Name of subdirectory: " $1 >>& $file
-    # tempfile and tempfile2 (file3 and file4) are used only in the creation 
-    #of the longer log file (file2).
-    set file3 = tempfile
-    rm -f $file3
-    set file4 = tempfile2
-    rm -f $file4
 else
     cd ../../../
-    set file = log_mpi_`eval date +%d%b%Y_%H%M%S`
+    set file = log.`eval date +%d%b%Y_%H%M%S`
     rm -f $file
 endif
 echo $file
@@ -91,15 +86,38 @@ echo `uname -a` >>& $file
 
 ## List the subdirectories of 'test' containing test exe's in the foreach loop
 ## if directory structure is like that of epetra.
-set tests_lapack = 
-set tests_epetra = (NOX_NewTest NOX_Vector NOX_Group 1Dfem \
-                    LOCA_NewTest LOCA_Group)
-set tests_petsc =
- 
-## testscript returns an error since petsc and lapack are empty so I commented
+set run_lapack_tests = @ADDON_lapack_TESTS@
+set run_loca_lapack_tests = @ADDON_loca_lapack_TESTS@
+set run_epetra_tests = @ADDON_epetra_TESTS@
+set run_loca_epetra_tests = @ADDON_loca_epetra_TESTS@
+set run_petsc_tests = @ADDON_petsc_TESTS@
+set run_loca_petsc_tests = @ADDON_loca_petsc_TESTS@
+set run_python_tests = @ADDON_python_TESTS@
+set run_loca_python_tests = @ADDON_loca_python_TESTS@
+set tests_lapack =
+set tests_epetra =
+set tests_petsc = 
+if ($run_lapack_tests == yes) then
+    set tests_lapack = ($tests_lapack NOX_NewTest NOX_Group)
+endif
+if ($run_loca_lapack_tests == yes) then
+    set tests_lapack = ($tests_lapack LOCA_NewTest LOCA_Group)
+endif
+if ($run_loca_python_tests == yes) then
+    set tests_lapack = ($tests_lapack LOCA_python)
+endif
+
+if ($run_epetra_tests == yes) then
+    set tests_epetra = ($tests_epetra NOX_NewTest NOX_Vector NOX_Group 1Dfem)
+endif
+if ($run_loca_epetra_tests == yes) then
+    set tests_epetra = ($tests_epetra LOCA_NewTest LOCA_Group)
+endif
+
+## testscript returns an error since petsc is empty so I commented 
 ## it out for now
 ##foreach h (lapack epetra petsc)
-foreach h (epetra)
+foreach h (lapack epetra)
     cd $h
 
     if ($h == lapack) then
@@ -113,39 +131,34 @@ foreach h (epetra)
     endif 
 
     foreach f ($TESTS)
-	    cd $f
-	    foreach g(*.exe)
-		    echo "############" $h ":" $f ":" $g "##############" >>& ../../$file
-		    if( "$2" == "True" ) then
-			( mpirun -np 5 $g > ../../$file3 ) >>& ../../$file4
-			if(! -z ../$file4 ) then
-			# A test failed.
-			    set AnError = True
-			    echo "  ******** Test failed ********" >>& ../../$file
-			    echo "############" $h ":" $f ":" $g "##############" >>& ../../$file2
-			    mpirun -np 5 $g -v >>& ../../$file2
-			    cat ../../$file4 >> ../../$file
-			    rm -f ../../$file4
-			else
-			# Tests passed
-			    echo "******** Test passed ********" >>& ../../$file
-			endif
+	cd $f
+	foreach g(*.exe *_exe)
+		echo "############" $h ":" $f ":" $g "##############" >>& ../../$file
+		if( "$2" == "True" ) then
+		    ./$g >>& ../../$file
+		    if( "$status" != "0" ) then
+		    # A test failed.
+			set AnError = True
+			echo "  ******** Test failed ********" >>& ../../$file
+			echo "############" $h ":" $f ":" $g "##############" >>& ../../$file2
+			./$g -v >>& ../../$file2
 		    else
-		    # This is not an automated test.
-			mpirun -np 5 $g -v >>& ../../$file
+		    # Tests passed
+			echo "******** Test passed ********" >>& ../../$file
 		    endif
-	    end
-	    cd ..
+		else
+		# This is not an automated test.
+		    ./$g -v >>& ../../$file
+		endif
+	end
+	cd ..
     end
     cd ..
 end
 ## At this point, it is assumed that the current directory is
 ## 'package_name/test'
-if ( "$2" == "True" ) then
-    rm $file3
-    if( "$AnError" != "True" ) then
-	rm -f $file2
-    endif
+if( "$AnError" != "True" && "$2" == "True" ) then
+    rm -f $file2
 endif
 
 if ( "$AnError" == "True" ) then
