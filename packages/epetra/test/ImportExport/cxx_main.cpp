@@ -2,6 +2,7 @@
 #include "Epetra_Time.h"
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_Vector.h"
+#include "Epetra_IntVector.h"
 #include "Epetra_Import.h"
 #include "Epetra_Export.h"
 #ifdef EPETRA_MPI
@@ -389,7 +390,58 @@ int main(int argc, char *argv[])
     }
   EPETRA_TEST_ERR(forierr,ierr);
 
-  if (verbose) cout << "Matrix Export Check OK" << endl;
+  if (verbose) cout << "Matrix Export Check OK" << endl << endl;
+
+  bool passed;
+  Epetra_IntVector v1(StandardMap); v1.PutValue(2);
+  Epetra_IntVector v2(StandardMap); v2.PutValue(3);
+
+  Epetra_Export identExporter(StandardMap,StandardMap); // Identity exporter
+  EPETRA_TEST_ERR(!(v2.Export(v1, identExporter, Insert)==0),ierr);
+  passed = (v2.MinValue()==2);
+  EPETRA_TEST_ERR(!passed,ierr);
+
+  v1.PutValue(1);
+  Epetra_Import identImporter(StandardMap,StandardMap); // Identity importer
+  EPETRA_TEST_ERR(!(v2.Import(v1, identExporter, Insert)==0),ierr);
+  passed = passed && (v2.MaxValue()==1);
+  EPETRA_TEST_ERR(!passed,ierr);
+
+  if (verbose) {
+    if (passed) cout << "Identity Import/Export Check OK" << endl << endl;
+    else cout << "Identity Import/Export Check Failed" << endl << endl;
+  }
+
+  int NumSubMapElements = StandardMap.NumMyElements()/2;
+  int SubStart = Comm.MyPID();
+  NumSubMapElements = EPETRA_MIN(NumSubMapElements,StandardMap.NumMyElements()-SubStart);
+  Epetra_Map SubMap(-1, NumSubMapElements, StandardMyGlobalElements+SubStart, 0, Comm);
+
+  Epetra_IntVector v3(View, SubMap, SubMap.MyGlobalElements()); // Fill v3 with GID values for variety
+  Epetra_Export subExporter(SubMap, StandardMap); // Export to a subset of indices of standard map
+  EPETRA_TEST_ERR(!(v2.Export(v3,subExporter,Insert)==0),ierr);
+
+  forierr = 0;
+  for (i=0; i<SubMap.NumMyElements(); i++) {
+    int i1 = StandardMap.LID(SubMap.GID(i));
+    forierr += !(v3[i]==v2[i1]);
+  }
+  EPETRA_TEST_ERR(forierr,ierr);
+
+  Epetra_Import subImporter(StandardMap, SubMap); // Import to a subset of indices of standard map
+  EPETRA_TEST_ERR(!(v1.Import(v3,subImporter,Insert)==0),ierr);
+
+  for (i=0; i<SubMap.NumMyElements(); i++) {
+    int i1 = StandardMap.LID(SubMap.GID(i));
+    forierr += !(v3[i]==v1[i1]);
+  }
+  EPETRA_TEST_ERR(forierr,ierr);
+
+  if (verbose) {
+    if (forierr==0) cout << "SubMap Import/Export Check OK" << endl << endl;
+    else cout << "SubMap Import/Export Check Failed" << endl << endl;
+  }
+
   // Release all objects
 
   delete [] SourceMyGlobalElements;

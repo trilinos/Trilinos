@@ -133,8 +133,13 @@ Epetra_Export::Epetra_Export( const Epetra_BlockMap &  SourceMap, const Epetra_B
       for( i = 0; i < NumExportIDs_; ++i )
 	if( ExportPIDs_[i] == -1 ) ++cnt;
       if( cnt ) {
-	int * NewExportGIDs = new int[NumExportIDs_-cnt];
-	int * NewExportPIDs = new int[NumExportIDs_-cnt];
+	int * NewExportGIDs = 0;
+	int * NewExportPIDs = 0;
+	int cnt1 = NumExportIDs_-cnt;
+	if (cnt1) {
+	  NewExportGIDs = new int[cnt1];
+	  NewExportPIDs = new int[cnt1];
+	}
 	cnt = 0;
 	for( i = 0; i < NumExportIDs_; ++i )
 	  if( ExportPIDs_[i] != -1 ) {
@@ -142,6 +147,7 @@ Epetra_Export::Epetra_Export( const Epetra_BlockMap &  SourceMap, const Epetra_B
 	    NewExportPIDs[cnt] = ExportPIDs_[i];
 	    ++cnt;
           }
+	assert(cnt==cnt1); // Sanity test
 	NumExportIDs_ = cnt;
 	delete [] ExportGIDs;
 	delete [] ExportPIDs_;

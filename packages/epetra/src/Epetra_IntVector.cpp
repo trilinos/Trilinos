@@ -121,15 +121,17 @@ int Epetra_IntVector::ExtractView(int **V) const
 
 //=============================================================================
 int Epetra_IntVector::PutValue(int Value) {
-  for (int i=0; i<MyLength_; i++) Values_[i] = Value;
+  int iend = MyLength();
+  for (int i=0; i<iend; i++) Values_[i] = Value;
   return(0);
 }
 //=============================================================================
 int Epetra_IntVector::MaxValue() {
 
   int result = -2000000000; // Negative 2 billion is close to smallest 32 bit int
-  if (MyLength_>0) result = Values_[0];
-  for (int i=0; i<MyLength_; i++) result = EPETRA_MAX(result, Values_[i]);
+  int iend = MyLength();
+  if (iend>0) result = Values_[0];
+  for (int i=0; i<iend; i++) result = EPETRA_MAX(result, Values_[i]);
   int globalResult;
   this->Comm().MaxAll(&result, &globalResult, 1);
   return(globalResult);
@@ -138,8 +140,9 @@ int Epetra_IntVector::MaxValue() {
 int Epetra_IntVector::MinValue() {
 
   int result = 2000000000; // 2 billion is close to largest 32 bit int
-  if (MyLength_>0) result = Values_[0];
-  for (int i=0; i<MyLength_; i++) result = EPETRA_MIN(result, Values_[i]);
+  int iend = MyLength();
+  if (iend>0) result = Values_[0];
+  for (int i=0; i<iend; i++) result = EPETRA_MIN(result, Values_[i]);
   int globalResult;
   this->Comm().MinAll(&result, &globalResult, 1);
   return(globalResult);

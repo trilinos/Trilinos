@@ -251,8 +251,6 @@ class Epetra_IntVector : public Epetra_DistObject {
 		       char * Imports, int & SizeOfPacket, 
 		       Epetra_Distributor & Distor, Epetra_CombineMode CombineMode );
   int * Values_;
-  int MyLength_;
-  int GlobalLength_;
   bool UserAllocated_;
   bool Allocated_;
 };
