@@ -74,6 +74,7 @@ if BUILD_PRERELEASE
 
 nodist_pkginclude_HEADERS = \
 	$(srcdir)/NOX_Direction_Tensor.H \
+	$(srcdir)/NOX_Solver_InexactTrustRegionBased.H \
 	$(srcdir)/NOX_Solver_TensorBased.H \
 	$(srcdir)/NOX_LineSearch_Quadratic.H \
 	$(srcdir)/NOX_LineSearch_PolynomialWalker.H \
@@ -87,6 +88,7 @@ nodist_pkginclude_HEADERS = \
 
 nodist_libnox_a_SOURCES = \
 	$(srcdir)/NOX_Direction_Tensor.C \
+	$(srcdir)/NOX_Solver_InexactTrustRegionBased.C \
 	$(srcdir)/NOX_Solver_TensorBased.C \
 	$(srcdir)/NOX_LineSearch_Quadratic.C \
 	$(srcdir)/NOX_LineSearch_PolynomialWalker.C \

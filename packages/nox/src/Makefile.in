@@ -156,6 +156,7 @@ pkginclude_HEADERS = \
 # ------------------------------------------------------------------------
 @BUILD_PRERELEASE_TRUE@nodist_pkginclude_HEADERS = \
 @BUILD_PRERELEASE_TRUE@	$(srcdir)/NOX_Direction_Tensor.H \
+@BUILD_PRERELEASE_TRUE@	$(srcdir)/NOX_Solver_InexactTrustRegionBased.H \
 @BUILD_PRERELEASE_TRUE@	$(srcdir)/NOX_Solver_TensorBased.H \
 @BUILD_PRERELEASE_TRUE@	$(srcdir)/NOX_LineSearch_Quadratic.H \
 @BUILD_PRERELEASE_TRUE@	$(srcdir)/NOX_LineSearch_PolynomialWalker.H \
@@ -169,6 +170,7 @@ pkginclude_HEADERS = \
 
 @BUILD_PRERELEASE_TRUE@nodist_libnox_a_SOURCES = \
 @BUILD_PRERELEASE_TRUE@	$(srcdir)/NOX_Direction_Tensor.C \
+@BUILD_PRERELEASE_TRUE@	$(srcdir)/NOX_Solver_InexactTrustRegionBased.C \
 @BUILD_PRERELEASE_TRUE@	$(srcdir)/NOX_Solver_TensorBased.C \
 @BUILD_PRERELEASE_TRUE@	$(srcdir)/NOX_LineSearch_Quadratic.C \
 @BUILD_PRERELEASE_TRUE@	$(srcdir)/NOX_LineSearch_PolynomialWalker.C \
@@ -376,6 +378,7 @@ am_libnox_a_OBJECTS = NOX_Abstract_Vector.$(OBJEXT) \
 	NOX_Random.$(OBJEXT)
 @BUILD_PRERELEASE_TRUE@nodist_libnox_a_OBJECTS = \
 @BUILD_PRERELEASE_TRUE@	NOX_Direction_Tensor.$(OBJEXT) \
+@BUILD_PRERELEASE_TRUE@	NOX_Solver_InexactTrustRegionBased.$(OBJEXT) \
 @BUILD_PRERELEASE_TRUE@	NOX_Solver_TensorBased.$(OBJEXT) \
 @BUILD_PRERELEASE_TRUE@	NOX_LineSearch_Quadratic.$(OBJEXT) \
 @BUILD_PRERELEASE_TRUE@	NOX_LineSearch_PolynomialWalker.$(OBJEXT) \
@@ -420,6 +423,7 @@ depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 @AMDEP_TRUE@	$(DEPDIR)/NOX_Parameter_Entry.Po \
 @AMDEP_TRUE@	$(DEPDIR)/NOX_Parameter_List.Po \
 @AMDEP_TRUE@	$(DEPDIR)/NOX_Random.Po \
+@AMDEP_TRUE@	$(DEPDIR)/NOX_Solver_InexactTrustRegionBased.Po \
 @AMDEP_TRUE@	$(DEPDIR)/NOX_Solver_LineSearchBased.Po \
 @AMDEP_TRUE@	$(DEPDIR)/NOX_Solver_Manager.Po \
 @AMDEP_TRUE@	$(DEPDIR)/NOX_Solver_TensorBased.Po \
@@ -550,6 +554,8 @@ NOX_StatusTest_Stagnation.$(OBJEXT): \
 NOX_Utils.$(OBJEXT): $(srcdir)/NOX_Utils.C
 NOX_Random.$(OBJEXT): $(srcdir)/NOX_Random.C
 NOX_Direction_Tensor.$(OBJEXT): $(srcdir)/NOX_Direction_Tensor.C
+NOX_Solver_InexactTrustRegionBased.$(OBJEXT): \
+	$(srcdir)/NOX_Solver_InexactTrustRegionBased.C
 NOX_Solver_TensorBased.$(OBJEXT): $(srcdir)/NOX_Solver_TensorBased.C
 NOX_LineSearch_Quadratic.$(OBJEXT): $(srcdir)/NOX_LineSearch_Quadratic.C
 NOX_LineSearch_PolynomialWalker.$(OBJEXT): \
@@ -602,6 +608,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/NOX_Parameter_Entry.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/NOX_Parameter_List.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/NOX_Random.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/NOX_Solver_InexactTrustRegionBased.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/NOX_Solver_LineSearchBased.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/NOX_Solver_Manager.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/NOX_Solver_TensorBased.Po@am__quote@
@@ -977,6 +984,18 @@ NOX_Direction_Tensor.obj: $(srcdir)/NOX_Direction_Tensor.C
 @AMDEP_TRUE@	depfile='$(DEPDIR)/NOX_Direction_Tensor.Po' tmpdepfile='$(DEPDIR)/NOX_Direction_Tensor.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_Direction_Tensor.obj `cygpath -w $(srcdir)/NOX_Direction_Tensor.C`
+
+NOX_Solver_InexactTrustRegionBased.o: $(srcdir)/NOX_Solver_InexactTrustRegionBased.C
+@AMDEP_TRUE@	source='$(srcdir)/NOX_Solver_InexactTrustRegionBased.C' object='NOX_Solver_InexactTrustRegionBased.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/NOX_Solver_InexactTrustRegionBased.Po' tmpdepfile='$(DEPDIR)/NOX_Solver_InexactTrustRegionBased.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_Solver_InexactTrustRegionBased.o `test -f $(srcdir)/NOX_Solver_InexactTrustRegionBased.C || echo '$(srcdir)/'`$(srcdir)/NOX_Solver_InexactTrustRegionBased.C
+
+NOX_Solver_InexactTrustRegionBased.obj: $(srcdir)/NOX_Solver_InexactTrustRegionBased.C
+@AMDEP_TRUE@	source='$(srcdir)/NOX_Solver_InexactTrustRegionBased.C' object='NOX_Solver_InexactTrustRegionBased.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/NOX_Solver_InexactTrustRegionBased.Po' tmpdepfile='$(DEPDIR)/NOX_Solver_InexactTrustRegionBased.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_Solver_InexactTrustRegionBased.obj `cygpath -w $(srcdir)/NOX_Solver_InexactTrustRegionBased.C`
 
 NOX_Solver_TensorBased.o: $(srcdir)/NOX_Solver_TensorBased.C
 @AMDEP_TRUE@	source='$(srcdir)/NOX_Solver_TensorBased.C' object='NOX_Solver_TensorBased.o' libtool=no @AMDEPBACKSLASH@
