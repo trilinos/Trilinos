@@ -75,7 +75,6 @@ extern void ML_sum_duplicates(int accum_col[],double accum_val[],int *Ncols);
 #define ML_allocate(i)    malloc((i))
 #define ML_free(i)        { free(i); i = NULL; }
 
-#define ML_MAX_NEIGHBORS       250
 #define ML_matrix_type         0
 #define ML_N_internal          1
 #define ML_N_border            2
@@ -94,9 +93,6 @@ extern void ML_sum_duplicates(int accum_col[],double accum_val[],int *Ncols);
 #define ML_send_list           (12 + 3*ML_MAX_NEIGHBORS)
 #define ML_FALSE               0
 #define ML_TRUE                1
-#ifndef ML_MAX_MSG_BUFF_SIZE
-#define ML_MAX_MSG_BUFF_SIZE 100000    /* max usable message buffer size      */
-#endif
 
 #ifdef __cplusplus
 extern "C"
