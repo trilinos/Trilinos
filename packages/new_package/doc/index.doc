@@ -1,0 +1,28 @@
+/*! \mainpage Trilinos/packages/new_package
+\htmlonly
+\endhtmlonly
+
+\section intro Introduction 
+The Trilinos/packages/new_package package was created as a tool for developers
+wishing to utilize the Autotools configure/build process for a new or existing
+package.  Before beginning this process, approval must be obtained from the
+Trilinos Project Leader.
+
+See packages/new_package/README for more details
+
+\section startup Overview of new_package
+
+new_package contains two classes:
+
+<ul> 
+
+<li> Newp_Hello 
+<li> Newp_Jambo (only if configured with --enable-newp_swahili)
+
+
+</ul>
+
+This documentations should not be taken as a guide.  I made it work
+with doxygen and illustrated one or two features.  Nothing more.
+
+*/

@@ -127,6 +127,7 @@ For new_package, we added the following files in the config directory:
    cvs add tac_arg_with_compiler.m4 tac_arg_with_flags.m4 
    cvs add tac_arg_with_incdirs.m4 tac_arg_with_lapacklib.m4
    cvs add tac_arg_with_libdirs.m4 tac_arg_with_package.m4
+   cvs add config.guess config.sub install-sh missing mkinstalldirs 
 
 For new_package, we added the following automake and autoconf generated
 files to the CVS repository
