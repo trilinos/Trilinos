@@ -66,13 +66,21 @@ SUBDIRS = C CPP lib
 #                 LIBRARIES
 ############################################################################
 #
+LIBDIR = -L../lib -L$(ZOLTAN_LIB_DIR) $(MPI_LIBPATH)
+
+THIRD_PARTY_LIBS=
+
 ifdef PARMETIS_LIBPATH
-  PARMETIS_LIBS = -lparmetis -lmetis
+  THIRD_PARTY_LIBS += -lparmetis -lmetis
+  LIBDIR += $(PARMETIS_LIBPATH)
 endif
 
-LIBDIR = -L../lib -L$(ZOLTAN_LIB_DIR) $(PARMETIS_LIBPATH) $(MPI_LIBPATH) 
+ifdef JOSTLE_LIBPATH
+  THIRD_PARTY_LIBS += -ljostle
+  LIBDIR += $(JOSTLE_LIBPATH)
+endif
 
-LIBS = -lexzoltan -lzoltan $(PARMETIS_LIBS) $(MPI_LIB) -lm
+LIBS = -lexzoltan -lzoltan $(THIRD_PARTY_LIBS) $(MPI_LIB) -lm
 
 ZOLTAN_INCLUDE= -I$(ZUTIL)/Communication \
                 -I$(ZUTIL)/DDirectory \
