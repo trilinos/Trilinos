@@ -1,3 +1,11 @@
+<!doctype html public "-//w3c//dtd html 4.0 transitional//en">
+<html>
+<head>
+   <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+   <meta name="GENERATOR" content="Mozilla/4.7 [en] (X11; U; SunOS 5.6 sun4m) [Netscape]">
+   <meta name="sandia.approved" content="SAND99-1377">
+   <meta name="author" content="karen devine, kddevin@sandia.gov">
+   <title>Zoltan User's Guide:  Initialization Interface</title>
 <!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
  ! Zoltan Dynamic Load-Balancing Library for Parallel Applications            !
  ! Copyright (c) 2000, Sandia National Laboratories.                          !
@@ -11,248 +19,235 @@
      $Date$
      $Revision$
 >
+</head>
+<body bgcolor="#FFFFFF">
 
-<HTML>
-<HEAD>
-   <META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-1">
-   <META NAME="GENERATOR" CONTENT="Mozilla/4.04 [en] (X11; U; SunOS 4.1.3_U1 sun4m) [Netscape]">
-   <META NAME="sandia.approved" CONTENT="SAND99-1377">
-   <META NAME="author" CONTENT="karen devine, kddevin@sandia.gov">
+<div align=right><b><i><a href="ug.html">Zoltan User's Guide</a>&nbsp;
+|&nbsp; <a href="ug_interface_lb.html">Next</a>&nbsp; |&nbsp; <a href="ug_interface.html">Previous</a></i></b></div>
 
-   <TITLE>Zoltan User's Guide:  Initialization Interface</TITLE>
-</HEAD>
-<BODY BGCOLOR="#FFFFFF">
+<h2>
+<a NAME="Initialization Functions"></a>Initialization Functions</h2>
+Functions used to initialize the library and load-balancing data structures
+are described below:
+<ul><a href="#LB_Initialize">LB_Initialize</a>
+<br><a href="#LB_Create">LB_Create</a>
+<br><a href="#LB_Set_Fn">LB_Set_Fn</a></ul>
 
-<div ALIGN=right><b><i><a href="ug.html">Zoltan User's Guide</a>&nbsp; |&nbsp; <a href="ug_interface_lb.html">Next</a>&nbsp; |&nbsp; <a href="ug_interface.html">Previous</a></i></b></div>
+<hr WIDTH="100%">
+<table WIDTH="100%" NOSAVE >
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>C:</td>
 
+<td><a NAME="LB_Initialize"></a>int <b>LB_Initialize</b>(int <i>argc</i>,
+char **<i> argv</i>, float *<i> ver</i>);</td>
+</tr>
 
-<H2>
-<A NAME="Initialization Functions"></A>Initialization Functions</H2>
-Functions used to initialize the library and load-balancing data structures are
-described below:
-<UL><A HREF="#LB_Initialize">LB_Initialize</A>
-<BR><A HREF="#LB_Create">LB_Create</A>
-<BR><A HREF="#LB_Set_Fn">LB_Set_Fn</A></UL>
+<tr NOSAVE>
+<td VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</td>
 
-<HR WIDTH="100%">
-<TABLE WIDTH="100%" NOSAVE >
-<TR NOSAVE>
-<TD VALIGN=TOP NOSAVE>C:</TD>
+<td>FUNCTION <b>LB_Initialize</b>( <i>argc</i>, <i>argv</i>,
+<i>ver</i>)&nbsp;
+<br>INTEGER(LB_INT) :: LB_Initialize&nbsp;
+<br>INTEGER(LB_INT), INTENT(IN), OPTIONAL :: argc&nbsp;
+<br>CHARACTER(LEN=*), DIMENSION(*), INTENT(IN), OPTIONAL :: argv&nbsp;
+<br>REAL(LB_FLOAT), INTENT(OUT) :: ver&nbsp;</td>
+</tr>
+</table>
 
-<TD><A NAME="LB_Initialize"></A>int <B>LB_Initialize</B>(int <I>argc</I>,
-char **<I> argv</I>, float *<I> ver</I>);
-<BR>&nbsp;</TD>
-</TR>
-
-<TR NOSAVE>
-<TD VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</TD>
-
-<TD> FUNCTION <B>LB_Initialize</B>( <I>argc</I>, <I>argv</I>,
-<I>ver</I>)&nbsp;
-<BR>INTEGER(LB_INT) :: LB_Initialize&nbsp;
-<BR>INTEGER(LB_INT), INTENT(IN), OPTIONAL :: argc&nbsp;
-<BR>CHARACTER(LEN=*), DIMENSION(*), INTENT(IN), OPTIONAL :: argv&nbsp;
-<BR>REAL(LB_FLOAT), INTENT(OUT) :: ver&nbsp;</TD>
-</TR>
-</TABLE>
-
-<HR WIDTH="100%">The <B>LB_Initialize</B> function initializes values needed
-in the load-balancing tools. This function must be called with the <I>argc</I>
-and <I>argv</I> command-line arguments from the main program. If the application
-uses MPI, this function should be called after calling <B>MPI_Init</B>.
-If the application does not use MPI, this function calls <B>MPI_Init</B>
+<hr WIDTH="100%">The <b>LB_Initialize</b> function initializes values needed
+in the load-balancing tools. This function must be called with the <i>argc</i>
+and <i>argv</i> command-line arguments from the main program. If the application
+uses MPI, this function should be called after calling <b>MPI_Init</b>.
+If the application does not use MPI, this function calls <b>MPI_Init</b>
 for use by the load balancer. It also returns the version of the dynamic
 load-balancing library so that users can verify which version of the library
-their application is linked to.
-<BR>From Fortran, if one of <I>argc</I> or <I>argv</I> is omitted, they
-must both be omitted. If they are omitted, <I>ver</I> does NOT have to
-be passed as a keyword argument.
-<BR>&nbsp;
-<TABLE WIDTH="100%" >
-<TR>
-<TD WIDTH="20%"><B>Parameters:</B></TD>
+their application is linked to. From C,&nbsp; if <b>MPI_Init</b> has already
+been called, the <i>argc</i> and <i>argv</i> arguments may have any value
+because their values will be ignored.&nbsp; From Fortran, if one of <i>argc</i>
+or <i>argv</i> is omitted, they must both be omitted. If they are omitted,
+<i>ver</i> does NOT have to be passed as a keyword argument.
+<br>&nbsp;
+<table WIDTH="100%" >
+<tr>
+<td WIDTH="20%"><b>Parameters:</b></td>
 
-<TD>&nbsp;</TD>
-</TR>
+<td>&nbsp;</td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; argc</I></TD>
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; argc</i></td>
 
-<TD>The number of command-line arguments to the application.</TD>
-</TR>
+<td>The number of command-line arguments to the application.</td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; argv</I></TD>
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; argv</i></td>
 
-<TD>An array of strings containing the command-line arguments to the application.</TD>
-</TR>
+<td>An array of strings containing the command-line arguments to the application.</td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; ver</I></TD>
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; ver</i></td>
 
-<TD>The version number of the library.</TD>
-</TR>
+<td>The version number of the library.</td>
+</tr>
 
-<TR>
-<TD><B>Returned Value:</B></TD>
+<tr>
+<td><b>Returned Value:</b></td>
 
-<TD></TD>
-</TR>
+<td></td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP>&nbsp;&nbsp;&nbsp; int</TD>
+<tr>
+<td VALIGN=TOP>&nbsp;&nbsp;&nbsp; int</td>
 
-<TD VALIGN=TOP><A HREF="ug_interface.html#Error Codes">Error code</A>.</TD>
-</TR>
-</TABLE>
-&nbsp;
+<td VALIGN=TOP><a href="ug_interface.html#Error Codes">Error code</a>.</td>
+</tr>
+</table>
 
-<P>
-<HR WIDTH="100%">
-<TABLE WIDTH="100%" NOSAVE >
-<TR NOSAVE>
-<TD VALIGN=TOP NOSAVE>C:</TD>
+<p>
+<hr WIDTH="100%">
+<table WIDTH="100%" NOSAVE >
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>C:</td>
 
-<TD><A NAME="LB_Create"></A>struct <B>LB_Struct</B> *<B>LB_Create</B>(MPI_Comm
-<I>communicator</I>);&nbsp;
-<BR>&nbsp;</TD>
-</TR>
+<td><a NAME="LB_Create"></a>struct <b>LB_Struct</b> *<b>LB_Create</b>(MPI_Comm
+<i>communicator</i>);&nbsp;</td>
+</tr>
 
-<TR NOSAVE>
-<TD VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</TD>
+<tr NOSAVE>
+<td VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</td>
 
-<TD>FUNCTION <B>LB_Create</B>(<I>communicator</I>)&nbsp;
-<BR>TYPE(LB_Struct), pointer :: LB_Create&nbsp;
-<BR>INTEGER, INTENT(IN) :: communicator&nbsp;</TD>
-</TR>
-</TABLE>
+<td>FUNCTION <b>LB_Create</b>(<i>communicator</i>)&nbsp;
+<br>TYPE(LB_Struct), pointer :: LB_Create&nbsp;
+<br>INTEGER, INTENT(IN) :: communicator&nbsp;</td>
+</tr>
+</table>
 
-<HR WIDTH="100%">The <B>LB_Create</B> function allocates memory
-for storage of load-balancing information to be used by the load-balancing
-library and sets the default values for the load- balancing information.
-The pointer returned by this function is passed to many subsequent load-balancing
-functions. An application may allocate more than one <B>LB_Struct</B> data
-structure if, say, it uses different decompositions with different 
-load-balancing techniques.
-<BR>&nbsp;
-<TABLE WIDTH="100%" >
-<TR>
-<TD WIDTH="20%"><B>Parameters:</B></TD>
+<hr WIDTH="100%">The <b>LB_Create</b> function allocates memory for storage
+of load-balancing information to be used by the load-balancing library
+and sets the default values for the load- balancing information. The pointer
+returned by this function is passed to many subsequent load-balancing functions.
+An application may allocate more than one <b>LB_Struct</b> data structure
+if, say, it uses different decompositions with different load-balancing
+techniques.
+<br>&nbsp;
+<table WIDTH="100%" >
+<tr>
+<td WIDTH="20%"><b>Parameters:</b></td>
 
-<TD></TD>
-</TR>
+<td></td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; communicator</I></TD>
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; communicator</i></td>
 
-<TD>The MPI communicator to be used for this load-balancing structure. Only
-those processors included in the communicator participate in load balancing.
-If all processors currently used by the application are to participate
-in load balancing, communicator should be <B>MPI_COMM_WORLD</B> .</TD>
-</TR>
+<td>The MPI communicator to be used for this load-balancing structure.
+Only those processors included in the communicator participate in load
+balancing. If all processors currently used by the application are to participate
+in load balancing, communicator should be <b>MPI_COMM_WORLD</b> .</td>
+</tr>
 
-<TR>
-<TD><B>Returned Value:&nbsp;</B></TD>
+<tr>
+<td><b>Returned Value:&nbsp;</b></td>
 
-<TD></TD>
-</TR>
+<td></td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP>&nbsp;&nbsp;&nbsp; struct <B>LB_Struct</B> *</TD>
+<tr>
+<td VALIGN=TOP>&nbsp;&nbsp;&nbsp; struct <b>LB_Struct</b> *</td>
 
-<TD>Pointer to memory for storage of load-balancing information. If an
+<td>Pointer to memory for storage of load-balancing information. If an
 error occurs, NULL will be returned in C, or the result will be a nullified
 pointer in Fortran. Any error that occurs in this function is assumed to
-be fatal.</TD>
-</TR>
-</TABLE>
-&nbsp;
-<BR>
-<HR WIDTH="100%">
-<TABLE WIDTH="100%" NOSAVE >
-<TR NOSAVE>
-<TD VALIGN=TOP NOSAVE>C:</TD>
+be fatal.</td>
+</tr>
+</table>
 
-<TD><A NAME="LB_Set_Fn"></A>int <B>LB_Set_Fn</B> (struct <B>LB_Struct </B>*
-<I>lb, </I><B>LB_FN_TYPE</B> <I>fn_type</I>, void *<I>fn_ptr</I>, void
-*<I>data</I>);
-<BR>&nbsp;</TD>
-</TR>
+<p>
+<hr WIDTH="100%">
+<table WIDTH="100%" NOSAVE >
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>C:</td>
 
-<TR NOSAVE>
-<TD VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</TD>
+<td><a NAME="LB_Set_Fn"></a>int <b>LB_Set_Fn</b> (struct <b>LB_Struct </b>*
+<i>lb,
+</i><b>LB_FN_TYPE</b> <i>fn_type</i>, void *<i>fn_ptr</i>, void *<i>data</i>);</td>
+</tr>
 
-<TD>FUNCTION <B>LB_Set_Fn</B>(<I>lb, fn_type, fn_ptr, data</I>)&nbsp;
-<BR>INTEGER(LB_INT) :: LB_Set_Fn&nbsp;
-<BR>TYPE(LB_Struct), INTENT(IN) :: lb&nbsp;
-<BR>TYPE(LB_Fn_Type), INTENT(IN) :: fn_type&nbsp;
-<BR>EXTERNAL :: fn_ptr&nbsp;
-<BR>&lt;<I>type-data</I>>, OPTIONAL :: data&nbsp;
+<tr NOSAVE>
+<td VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</td>
 
-<P>&lt;<I>type-data</I>> can be any of INTEGER(LB_INT), DIMENSION(*) or
-REAL(LB_FLOAT), DIMENSION(*) or REAL(LB_DOUBLE), DIMENSION(*) or TYPE(LB_User_Data_<I>x</I>)
-where <I>x</I> is 1, 2, 3 or 4. See the section on
-<A HREF="ug_fortran_api.html#fortran ug api query"> Fortran query functions</A>
-for an explanation.&nbsp;</TD>
-</TR>
-</TABLE>
+<td>FUNCTION <b>LB_Set_Fn</b>(<i>lb, fn_type, fn_ptr, data</i>)&nbsp;
+<br>INTEGER(LB_INT) :: LB_Set_Fn&nbsp;
+<br>TYPE(LB_Struct), INTENT(IN) :: lb&nbsp;
+<br>TYPE(LB_Fn_Type), INTENT(IN) :: fn_type&nbsp;
+<br>EXTERNAL :: fn_ptr&nbsp;
+<br>&lt;<i>type-data</i>>, OPTIONAL :: data&nbsp;
+<p>&lt;<i>type-data</i>> can be any of INTEGER(LB_INT), DIMENSION(*) or
+REAL(LB_FLOAT), DIMENSION(*) or REAL(LB_DOUBLE), DIMENSION(*) or TYPE(LB_User_Data_<i>x</i>)
+where <i>x</i> is 1, 2, 3 or 4. See the section on
+<a href="ug_fortran_api.html#fortran ug api query">Fortran
+query functions</a> for an explanation.&nbsp;</td>
+</tr>
+</table>
 
-<HR WIDTH="100%"><B>LB_Set_Fn</B> registers an application-supplied query
+<hr WIDTH="100%"><b>LB_Set_Fn</b> registers an application-supplied query
 function in the load-balancing library. Both load-balancing and migration-help
-functions are registered through calls to <B>LB_Set_Fn</B> .
-<BR>&nbsp;
-<TABLE WIDTH="100%" >
-<TR>
-<TD VALIGN=TOP WIDTH="20%"><B>Parameters:</B></TD>
+functions are registered through calls to <b>LB_Set_Fn</b> .
+<br>&nbsp;
+<table WIDTH="100%" >
+<tr>
+<td VALIGN=TOP WIDTH="20%"><b>Parameters:</b></td>
 
-<TD></TD>
-</TR>
+<td></td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; lb</I></TD>
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; lb</i></td>
 
-<TD>Pointer to the load-balancing structure created by
-<B><A HREF="#LB_Create">LB_Create</A></B>.</TD>
-</TR>
+<td>Pointer to the load-balancing structure created by
+<b><a href="#LB_Create">LB_Create</a></b>.</td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; fn_type</I></TD>
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; fn_type</i></td>
 
-<TD>The type of function being registered; see <A HREF="ug_query.html#Application-Registered Query Functions">Application-Registered
-Query Functions</A> for possible function types.</TD>
-</TR>
+<td>The type of function being registered; see <a href="ug_query.html#Application-Registered Query Functions">Application-Registered
+Query Functions</a> for possible function types.</td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; fn_ptr</I></TD>
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; fn_ptr</i></td>
 
-<TD>A pointer to the application-supplied query function being registered.</TD>
-</TR>
+<td>A pointer to the application-supplied query function being registered.</td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; data</I></TD>
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; data</i></td>
 
-<TD>A pointer to user defined data that will be passed, as an argument,
+<td>A pointer to user defined data that will be passed, as an argument,
 to the function pointed to by fn_ptr . In C it may be NULL. In Fortran
-it may be omitted.</TD>
-</TR>
+it may be omitted.</td>
+</tr>
 
-<TR>
-<TD><B>Returned Value:</B></TD>
+<tr>
+<td><b>Returned Value:</b></td>
 
-<TD></TD>
-</TR>
+<td></td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP>&nbsp;&nbsp;&nbsp; int</TD>
+<tr>
+<td VALIGN=TOP>&nbsp;&nbsp;&nbsp; int</td>
 
-<TD><A HREF="ug_interface.html#Error Codes">Error code</A>.</TD>
-</TR>
-</TABLE>
-&nbsp;
+<td><a href="ug_interface.html#Error Codes">Error code</a>.</td>
+</tr>
+</table>
 
-<P>
-<HR WIDTH="100%">[<A HREF="ug.html">Table of Contents</A>&nbsp; |&nbsp;
-<A HREF="ug_interface_lb.html">Next:&nbsp; Load-Balancing Functions</A>&nbsp;
-|&nbsp; <A HREF="ug_interface.html">Previous:&nbsp; Zoltan Interface Functions</A>]
-</BODY>
-</HTML>
+<p>
+<hr WIDTH="100%">[<a href="ug.html">Table of Contents</a>&nbsp; | 
+<a href="ug_interface_lb.html">Next:&nbsp;
+Load-Balancing Functions</a>&nbsp; |&nbsp; <a href="ug_interface.html">Previous:&nbsp;
+Zoltan Interface Functions</a>]
+</body>
+</html>
