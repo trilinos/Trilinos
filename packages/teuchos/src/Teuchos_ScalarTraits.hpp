@@ -97,7 +97,7 @@ namespace Teuchos {
     static inline int one()   { return 1; };
     static inline int random() { return rand(); };
     static inline const char * name() { return "int"; };
-    static inline int squareroot(int x) { return (int) sqrt(x); };
+    static inline int squareroot(int x) { return (int) sqrt((double) x); };
   };
   
   
