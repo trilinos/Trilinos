@@ -73,7 +73,9 @@ extern char *ML_realloc(void *vptr, unsigned int new_size);
 extern void ML_spit_it_out();
 #endif
 
+#ifdef ML_JANUS
 extern void ML_mchk(char *ptr,int line);
+#endif
 
 
 #ifndef ML_CPP
