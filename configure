@@ -274,6 +274,7 @@ ac_subdirs_all="$ac_subdirs_all packages/TSFCoreUtils"
 ac_subdirs_all="$ac_subdirs_all packages/amesos"
 ac_subdirs_all="$ac_subdirs_all packages/epetraext"
 ac_subdirs_all="$ac_subdirs_all packages/belos"
+ac_subdirs_all="$ac_subdirs_all packages/anasazi"
 ac_subdirs_all="$ac_subdirs_all packages/meros"
 ac_subdirs_all="$ac_subdirs_all packages/new_package"
 
@@ -804,6 +805,7 @@ Optional Features:
   --enable-komplex        Build komplex (default is yes)
   --enable-aztecoo        Build aztecoo (default is yes)
   --enable-belos          Build belos (default is no)
+  --enable-anasazi        Build anasazi (default is no)
   --enable-ifpack         Build ifpack (default is yes)
   --enable-oldifpack      Build ifpack and old ifpack (default is no)
   --enable-triutils       Build triutils (default is yes)
@@ -1929,6 +1931,41 @@ else
 fi
 
 
+# Check whether --enable-anasazi or --disable-anasazi was given.
+if test "${enable_anasazi+set}" = set; then
+  enableval="$enable_anasazi"
+  ac_cv_use_anasazi=$enableval
+else
+  ac_cv_use_anasazi=no
+fi;
+
+echo "$as_me:$LINENO: checking whether to use anasazi" >&5
+echo $ECHO_N "checking whether to use anasazi... $ECHO_C" >&6
+
+if test "X$ac_cv_use_anasazi" != "Xno"; then
+  echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_ANASAZI
+_ACEOF
+
+else
+  echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+fi
+
+
+
+if test "X$ac_cv_use_anasazi" != "Xno"; then
+  BUILD_ANASAZI_TRUE=
+  BUILD_ANASAZI_FALSE='#'
+else
+  BUILD_ANASAZI_TRUE='#'
+  BUILD_ANASAZI_FALSE=
+fi
+
+
 # Check whether --enable-ifpack or --disable-ifpack was given.
 if test "${enable_ifpack+set}" = set; then
   enableval="$enable_ifpack"
@@ -2138,6 +2175,7 @@ if test "X$ac_cv_use_epetra" != "Xno" ||
 	test "X$ac_cv_use_aztecoo" != "Xno" ||
 	test "X$ac_cv_use_komplex" != "Xno" ||
 	test "X$ac_cv_use_belos" != "Xno" ||
+	test "X$ac_cv_use_anasazi" != "Xno" ||
 	test "X$ac_cv_use_new_package" != "Xno" ||
         test "X$ac_cv_use_epetraext" != "Xno"  ||
         test "X$ac_cv_use_meros" != "Xno"; then
@@ -2252,6 +2290,13 @@ if test "X$ac_cv_use_belos" != "Xno"; then
 
 
 subdirs="$subdirs packages/belos"
+
+fi
+
+if test "X$ac_cv_use_anasazi" != "Xno"; then
+
+
+subdirs="$subdirs packages/anasazi"
 
 fi
 
@@ -2877,6 +2922,8 @@ s,@BUILD_AZTECOO_TRUE@,$BUILD_AZTECOO_TRUE,;t t
 s,@BUILD_AZTECOO_FALSE@,$BUILD_AZTECOO_FALSE,;t t
 s,@BUILD_BELOS_TRUE@,$BUILD_BELOS_TRUE,;t t
 s,@BUILD_BELOS_FALSE@,$BUILD_BELOS_FALSE,;t t
+s,@BUILD_ANASAZI_TRUE@,$BUILD_ANASAZI_TRUE,;t t
+s,@BUILD_ANASAZI_FALSE@,$BUILD_ANASAZI_FALSE,;t t
 s,@BUILD_IFPACK_TRUE@,$BUILD_IFPACK_TRUE,;t t
 s,@BUILD_IFPACK_FALSE@,$BUILD_IFPACK_FALSE,;t t
 s,@BUILD_TRIUTILS_TRUE@,$BUILD_TRIUTILS_TRUE,;t t

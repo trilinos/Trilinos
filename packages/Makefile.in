@@ -125,6 +125,8 @@ AUTOMAKE_OPTIONS = foreign
 
 @BUILD_BELOS_TRUE@BELOS_SUBDIR = belos
 
+@BUILD_ANASAZI_TRUE@ANASAZI_SUBDIR = anasazi
+
 @BUILD_NEW_PACKAGE_TRUE@NEW_PACKAGE_SUBDIR = new_package
 
 @BUILD_NOX_TRUE@NOX_SUBDIR = nox
@@ -148,7 +150,7 @@ SUBDIRS = $(EPETRA_SUBDIR) $(TRIUTILS_SUBDIR) $(IFPACK_SUBDIR) \
 	  $(AZTECOO_SUBDIR) $(KOMPLEX_SUBDIR) $(NOX_SUBDIR) \
 	  $(TSFCOREUTILS_SUBDIR) $(TSFCORE_SUBDIR) $(TSF_SUBDIR) \
 	  $(AMESOS_SUBDIR) $(EPETRAEXT_SUBDIR) $(BELOS_SUBDIR) \
-	  $(MEROS_SUBDIR) $(NEW_PACKAGE_SUBDIR)
+	  $(MEROS_SUBDIR) $(NEW_PACKAGE_SUBDIR) $(ANASAZI_SUBDIR)
 
 subdir = packages
 mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs
@@ -162,7 +164,7 @@ RECURSIVE_TARGETS = info-recursive dvi-recursive install-info-recursive \
 	uninstall-recursive check-recursive installcheck-recursive
 DIST_COMMON = Makefile.am Makefile.in
 DIST_SUBDIRS = epetra triutils ifpack aztecoo komplex nox TSFCoreUtils \
-	TSFCore TSF amesos epetraext belos meros new_package
+	TSFCore TSF amesos epetraext belos meros new_package anasazi
 all: all-recursive
 
 .SUFFIXES:
