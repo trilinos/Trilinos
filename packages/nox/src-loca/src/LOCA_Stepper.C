@@ -115,7 +115,7 @@ LOCA::Stepper::Stepper(const LOCA::Stepper& s) :
 
 LOCA::Stepper::~Stepper() 
 { 
-  paramListPtr->print(cout);
+  //paramListPtr->print(cout);
 
   delete conGroupManagerPtr;
   delete curGroupPtr;
