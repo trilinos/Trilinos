@@ -149,9 +149,9 @@ int unitTests(bool const verbose, bool const debug, int const myImageID, int con
   directory.getDirectoryEntries(allGIDs, imageIDs);
   if(debug) {
     if(verbose) cout << endl;
-    outputData(myImageID, numImages, "GIDs: " + toString(allGIDs));
-    outputData(myImageID, numImages, "imageIDs: " + toString(imageIDs));
-    outputData(myImageID, numImages, "Expected: " + toString(expectedImageIDs));
+    outputData(myImageID, numImages, "GIDs: " + Tpetra::toString(allGIDs));
+    outputData(myImageID, numImages, "imageIDs: " + Tpetra::toString(imageIDs));
+    outputData(myImageID, numImages, "Expected: " + Tpetra::toString(expectedImageIDs));
     if(verbose) cout << "getDirectoryEntries(imageIDs only) test ";
   }
   if(imageIDs != expectedImageIDs) {
@@ -186,9 +186,9 @@ int unitTests(bool const verbose, bool const debug, int const myImageID, int con
   directory.getDirectoryEntries(allGIDs, imageIDs, LIDs);
   if(debug) {
     if(verbose) cout << endl;
-    outputData(myImageID, numImages, "GIDs: " + toString(allGIDs));
-    outputData(myImageID, numImages, "LIDs: " + toString(LIDs));
-    outputData(myImageID, numImages, "Expected: " + toString(expectedLIDs));
+    outputData(myImageID, numImages, "GIDs: " + Tpetra::toString(allGIDs));
+    outputData(myImageID, numImages, "LIDs: " + Tpetra::toString(LIDs));
+    outputData(myImageID, numImages, "Expected: " + Tpetra::toString(expectedLIDs));
     if(verbose) cout << "getDirectoryEntries(imageIDs and LIDs) test ";
   }
   if(LIDs != expectedLIDs) {

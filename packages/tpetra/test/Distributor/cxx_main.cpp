@@ -141,8 +141,8 @@ int unitTests(bool verbose, bool debug, int myImageID, int numImages) {
   distributorS->createFromSends(numExportIDs, exportImageIDs, true, numRemoteIDs);
   if(debug) {
     if(verbose) cout << endl;
-    outputData(myImageID, numImages, "exportImageIDs: " + toString(exportImageIDs));
-    outputData(myImageID, numImages, "numRemoteIDs: " + toString(numRemoteIDs));
+    outputData(myImageID, numImages, "exportImageIDs: " + Tpetra::toString(exportImageIDs));
+    outputData(myImageID, numImages, "numRemoteIDs: " + Tpetra::toString(numRemoteIDs));
     if(verbose) cout << "[  All  ] Expected: " << numExportIDs << endl; // should be same on all images
     if(verbose) cout << "createFromSends test ";
   }
@@ -180,10 +180,10 @@ int unitTests(bool verbose, bool debug, int myImageID, int numImages) {
   generateColumn(expectedGIDs, myImageID, numImages);
   if(debug) {
     if(verbose) cout << endl;
-    outputData(myImageID, numImages, "remoteGIDs: " + toString(remoteGIDs));
-    outputData(myImageID, numImages, "numExportIDs: " + toString(numExportIDs) + " Expected: " + toString(numRemoteIDs));
-    outputData(myImageID, numImages, "exportGIDs: " + toString(exportGIDs) + " Expected: " + toString(expectedGIDs));
-    outputData(myImageID, numImages, "exportImageIDs: " + toString(exportImageIDs) + " Expected: " + toString(remoteImageIDs));
+    outputData(myImageID, numImages, "remoteGIDs: " + Tpetra::toString(remoteGIDs));
+    outputData(myImageID, numImages, "numExportIDs: " + Tpetra::toString(numExportIDs) + " Expected: " + Tpetra::toString(numRemoteIDs));
+    outputData(myImageID, numImages, "exportGIDs: " + Tpetra::toString(exportGIDs) + " Expected: " + Tpetra::toString(expectedGIDs));
+    outputData(myImageID, numImages, "exportImageIDs: " + Tpetra::toString(exportImageIDs) + " Expected: " + Tpetra::toString(remoteImageIDs));
     if(verbose) cout << "createFromRecvs test ";
   }
   if(numExportIDs != numRemoteIDs)
@@ -217,16 +217,16 @@ int unitTests(bool verbose, bool debug, int myImageID, int numImages) {
   exportObjs = reinterpret_cast<char*>(&exports.front());
   if(debug) {
     if(verbose) cout << endl;
-    outputData(myImageID, numImages, "exports: " + toString(exports));
-    outputData(myImageID, numImages, "objectSize: " + toString(objectSize));
+    outputData(myImageID, numImages, "exports: " + Tpetra::toString(exports));
+    outputData(myImageID, numImages, "objectSize: " + Tpetra::toString(objectSize));
   }
   distributorS->doPostsAndWaits(exportObjs, objectSize, lenImportObjs, importObjs);
   if(debug) {
-    outputData(myImageID, numImages, "lenImportObjs: " + toString(lenImportObjs));
+    outputData(myImageID, numImages, "lenImportObjs: " + Tpetra::toString(lenImportObjs));
     PacketType* imports = reinterpret_cast<PacketType*>(importObjs);
     std::string importString = "{";
     for(OrdinalType i = 0; i < (lenImportObjs / Tpetra::PacketTraits<PacketType>::packetSize()); i++) {
-      importString += toString(*imports++);
+      importString += Tpetra::toString(*imports++);
       importString += " ";
     }
     importString += "}";

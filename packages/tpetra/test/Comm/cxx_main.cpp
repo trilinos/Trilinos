@@ -131,13 +131,13 @@ int unitTests(bool const verbose, bool const debug, int const myImageID, int con
   generateColumn(myVals, myImageID, length); // set myVals
   if(debug) {
     if(verbose) cout << endl;
-    outputData(myImageID, numImages, "Values prior to broadcast: " + toString(myVals));
+    outputData(myImageID, numImages, "Values prior to broadcast: " + Tpetra::toString(myVals));
   }
   comm.broadcast(&myVals.front(), length, root);
   generateColumn(expected, root, length);
   if(debug) {
-    outputData(myImageID, numImages, "Values after broadcast:    " + toString(myVals));
-    if(verbose) cout << "[  All  ] Expected values:           " << toString(expected) << endl;
+    outputData(myImageID, numImages, "Values after broadcast:    " + Tpetra::toString(myVals));
+    if(verbose) cout << "[  All  ] Expected values:           " << Tpetra::toString(expected) << endl;
     if(verbose) cout << "Broadcast test ";
   }
   if(myVals != expected) {
@@ -157,9 +157,9 @@ int unitTests(bool const verbose, bool const debug, int const myImageID, int con
   generateMultipleColumns(expected, 0, (numImages-1), length);
   if(debug) {
     if(verbose) cout << endl;
-    outputData(myImageID, numImages, "myVals:   " + toString(myVals));
-    outputData(myImageID, numImages, "allVals:  " + toString(allVals));
-    if(verbose) cout << "[  All  ] Expected: " << toString(expected) << endl;
+    outputData(myImageID, numImages, "myVals:   " + Tpetra::toString(myVals));
+    outputData(myImageID, numImages, "allVals:  " + Tpetra::toString(allVals));
+    if(verbose) cout << "[  All  ] Expected: " << Tpetra::toString(expected) << endl;
     if(verbose) cout << "GatherAll test ";
   }
   if(allVals != expected) {
@@ -178,9 +178,9 @@ int unitTests(bool const verbose, bool const debug, int const myImageID, int con
   generateRowSums(expected, 0, numImages-1, length);
   if(debug) {
     if(verbose) cout << endl;
-    outputData(myImageID, numImages, "localSums:  " + toString(myVals));
-    outputData(myImageID, numImages, "globalSums: " + toString(allVals));
-    if(verbose) cout << "[  All  ] Expected:   " << toString(expected) << endl;
+    outputData(myImageID, numImages, "localSums:  " + Tpetra::toString(myVals));
+    outputData(myImageID, numImages, "globalSums: " + Tpetra::toString(allVals));
+    if(verbose) cout << "[  All  ] Expected:   " << Tpetra::toString(expected) << endl;
     if(verbose) cout << "SumAll test ";
   }
   if(allVals != expected) {
@@ -198,9 +198,9 @@ int unitTests(bool const verbose, bool const debug, int const myImageID, int con
   generateRowMaxs(expected, 0, numImages-1, length);
   if(debug) {
     if(verbose) cout << endl;
-    outputData(myImageID, numImages, "localMaxs:  " + toString(myVals));
-    outputData(myImageID, numImages, "globalMaxs: " + toString(allVals));
-    if(verbose) cout << "[  All  ] Expected:   " << toString(expected) << endl;
+    outputData(myImageID, numImages, "localMaxs:  " + Tpetra::toString(myVals));
+    outputData(myImageID, numImages, "globalMaxs: " + Tpetra::toString(allVals));
+    if(verbose) cout << "[  All  ] Expected:   " << Tpetra::toString(expected) << endl;
     if(verbose) cout << "MaxAll test ";
   }
   if(allVals != expected) {
@@ -219,9 +219,9 @@ int unitTests(bool const verbose, bool const debug, int const myImageID, int con
   if(debug) {
     if(verbose) cout << endl;
     comm.barrier();
-    outputData(myImageID, numImages, "localMins:  " + toString(myVals));
-    outputData(myImageID, numImages, "globalMins: " + toString(allVals));
-    if(verbose) cout << "[  All  ] Expected:   " << toString(expected) << endl;
+    outputData(myImageID, numImages, "localMins:  " + Tpetra::toString(myVals));
+    outputData(myImageID, numImages, "globalMins: " + Tpetra::toString(allVals));
+    if(verbose) cout << "[  All  ] Expected:   " << Tpetra::toString(expected) << endl;
     comm.barrier();
     if(verbose) cout << "MinAll test ";
   }
@@ -240,9 +240,9 @@ int unitTests(bool const verbose, bool const debug, int const myImageID, int con
   generateRowSums(expected, 0, myImageID, length);
   if(debug) {
     if(verbose) cout << endl;
-    outputData(myImageID, numImages, "localScanSums:  " + toString(myVals));
-    outputData(myImageID, numImages, "globalScanSums: " + toString(allVals));
-    outputData(myImageID, numImages, "Expected:  " + toString(expected));
+    outputData(myImageID, numImages, "localScanSums:  " + Tpetra::toString(myVals));
+    outputData(myImageID, numImages, "globalScanSums: " + Tpetra::toString(allVals));
+    outputData(myImageID, numImages, "Expected:  " + Tpetra::toString(expected));
     if(verbose) cout << "ScanSum test ";
   }
   if(allVals != expected) {

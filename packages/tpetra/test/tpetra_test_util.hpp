@@ -61,12 +61,6 @@ void mpiBreakpoint(int myImageID) {
 #endif
 }
 
-//! global namespace shim to toString method in Tpetra::Util
-template <typename T>
-inline std::string toString(T const& x) {
-  return Tpetra::toString(x);
-}
-
 //======================================================================
 // convenience functions for building up values in test suites.
 // this way we don't have to use any literals.
