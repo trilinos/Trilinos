@@ -14,7 +14,8 @@ NLSPACK_LINESEARCH_OBJS = NOX_Linesearch_Halving.o NOX_Linesearch_Manager.o \
 
 NLSPACK_SOLVER_OBJS = NOX_Solver_Newton.o
 
-NLSPACK_STATUS_OBJS = NOX_Status_AbsResid.o
+NLSPACK_STATUS_OBJS = NOX_Status_AbsResid.o NOX_Status_MaxResid.o \
+	NOX_Status_RelResid.o NOX_Status_Combo.o
 
 NLSPACK_EPETRA_OBJS = NOX_Epetra_SharedJacobian.o NOX_Epetra_Vector.o \
 	NOX_Epetra_Group.o

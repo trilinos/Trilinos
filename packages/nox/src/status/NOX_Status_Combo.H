@@ -8,14 +8,17 @@
 // LICENSE & WARRANTY INFORMATION in README.txt and LICENSE.txt.
 // CONTACT T. Kolda (tgkolda@sandia.gov) or R. Pawlowski (rppawlo@sandia.gov)
 
-#ifndef _NOX_STATUS_BASE_H
-#ifndef _NOX_STATUS_BASE_H
+#ifndef _NOX_STATUS_COMBO_H
+#define _NOX_STATUS_COMBO_H
 
-#include "NOX_Status_Base.H"	// base class
+#include "NOX_Status_Test.H"	// base class
+#include "NOX_Solver_Generic.H"
+#include <vector>
 
 namespace NOX {
 namespace Status {
 
+  //! Combination of tests.
 class Combo : public Test {
 
 public:
@@ -26,27 +29,30 @@ public:
 
   //! Constructor with a single test.
   Combo(Test& a, ComboType t = OR);
-  //! Constructor with two tests.
-  Combo(Test& a, Test& b, ComboType t = OR);
 
-  //! Add a new test/
-  virtual AddTest(Test& a);
+  //! Add another test to this combination.
+  virtual Combo& addTest(Test& a);
 
   //! Destructor
   virtual ~Combo();
 
-
-  virtual StopType operator()(const Solver::Base& problem);
+  virtual StatusType operator()(const Solver::Generic& problem) const;
 
   virtual ostream& print(ostream& stream, int indent = 0) const;
   
-private:
+protected:
+
+  virtual StatusType orOp(const Solver::Generic& problem) const;
+  virtual StatusType andOp(const Solver::Generic& problem) const;
+
+  //! Check for repeaters.
+  bool isSafe(Test& a);
 
   //! Type of test
   ComboType type;
 
   //! Vector of tests
-  vector<Test*> tptr;
+  vector<Test*> tests;
 
 };
 

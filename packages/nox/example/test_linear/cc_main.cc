@@ -26,7 +26,7 @@
 // NOX Objects
 #include <NOX_Epetra_Group.H>
 #include <NOX_Solver_Newton.H>
-#include <NOX_Status_AbsResid.H>
+#include <NOX_Status_All_Tests.H>
 
 // User specific files 
 #include <Problem_Interface.h>
@@ -157,12 +157,16 @@ int main(int argc, char *argv[])
 
   // Create the Groups 
   NOX::Epetra::Group grp(soln, shareda, interface);  
+  grp.computeRHS();
 
   // Create the convergence tests
-  NOX::Status::AbsResid test1(1.0e-6);
+  NOX::Status::AbsResid absresid(1.0e-6);
+  NOX::Status::RelResid relresid(grp.getNormRHS(), 1.0e-2);
+  NOX::Status::Combo combo(absresid, NOX::Status::Combo::OR);
+  combo.addTest(relresid);
 
   // Create the method
-  NOX::Solver::Newton newton(grp, test1, nlParams);
+  NOX::Solver::Newton newton(grp, combo, nlParams);
   NOX::Status::StatusType status = newton.solve();
 
   // End Nonlinear Solver **************************************
