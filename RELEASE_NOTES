@@ -22,6 +22,17 @@ The limited release contains an additional 5 packages that are available in
 special situations by request. These are: Belos, Claps, Jpetra, Meros, and 
 Tpetra. 
 
+Some of the significant new features:
+
+- Four new packages: Anasazi (Eigensolvers), Didasko (Tutorial), Pliris
+  (Distributed dense solvers), PyTrilinos (Python interface to Trilinos
+  libraries).
+- Trilinos tutorial delivered as part of a new package called Didasko.
+- Kernel performance in Epetra substantially improved, especially for
+  multiple rights.
+- Initial kernel support for vector architectures in Epetra.
+- Significant improvements and enhancements in most existing packages.
+
 More information:
 
 Trilinos website: http://software.sandia.gov/trilinos 
