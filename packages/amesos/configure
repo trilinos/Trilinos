@@ -7078,13 +7078,13 @@ if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
 else
   echo "$as_me: failed program was:" >&5
 cat conftest.$ac_ext >&5
-{ { echo "$as_me:$LINENO: error: Cannot find SuperLU serial library, specify a location using --with-amesos-sluslib, (ex. --with-amesos-sluslib=/home/kstanley/Trilinos3PL/SuperLU/libsuperlu.a)" >&5
-echo "$as_me: error: Cannot find SuperLU serial library, specify a location using --with-amesos-sluslib, (ex. --with-amesos-sluslib=/home/kstanley/Trilinos3PL/SuperLU/libsuperlu.a)" >&2;}
+{ { echo "$as_me:$LINENO: error: Cannot find SuperLU serial library, specify a location using --with-amesos-sluslib, (ex. --with-amesos-sluslib=/home/kstanley/Trilinos3PL/SuperLU/superlu.a)" >&5
+echo "$as_me: error: Cannot find SuperLU serial library, specify a location using --with-amesos-sluslib, (ex. --with-amesos-sluslib=/home/kstanley/Trilinos3PL/SuperLU/superlu.a)" >&2;}
    { (exit 1); exit 1; }; }
 fi
 rm -f conftest.$ac_objext conftest$ac_exeext conftest.$ac_ext
     LIBS="${SAVE_LIBS}"
-  amesos_libs="${amesos_libs} ${tac_with_amesos_sluslib}"
+  amesos_libs=" ${tac_with_amesos_sluslib} ${amesos_libs}"
 
 
 

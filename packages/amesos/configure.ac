@@ -422,9 +422,9 @@ if test "X$ac_cv_use_amesos_slus" != "Xno"; then
     SAVE_LIBS="${LIBS}"
     LIBS="${tac_with_amesos_sluslib} ${MPI_LIBS} ${LIBS}"
      AC_TRY_LINK_FUNC(SuperLU_timer_,,
-      AC_MSG_ERROR([[Cannot find SuperLU serial library, specify a location using --with-amesos-sluslib, (ex. --with-amesos-sluslib=/home/kstanley/Trilinos3PL/SuperLU/libsuperlu.a)]]))  
+      AC_MSG_ERROR([[Cannot find SuperLU serial library, specify a location using --with-amesos-sluslib, (ex. --with-amesos-sluslib=/home/kstanley/Trilinos3PL/SuperLU/superlu.a)]]))  
     LIBS="${SAVE_LIBS}"
-  amesos_libs="${amesos_libs} ${tac_with_amesos_sluslib}"
+  amesos_libs=" ${tac_with_amesos_sluslib} ${amesos_libs}"
 
   AM_CONDITIONAL(HAVE_AMESOS_SLUS, true ) 
 else

@@ -215,7 +215,7 @@ int Amesos_TestMultiSolver( Epetra_Comm &Comm, char *matrix_file, int numsolves,
 #endif
   } else { 
     SparseDirectTimingVars::log_file << "Solver not implemented yet" << endl ;
-    cerr << "\n\n####################  Requested solver not available on this platform #####################\n" << endl ;
+    cerr << "\n\n####################  Requested solver not available (Or not tested with blocked RHS) on this platform #####################\n" << endl ;
   }
 
   SparseDirectTimingVars::SS_Result.Set_Total_Time( TotalTime.ElapsedTime() ); 
