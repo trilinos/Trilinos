@@ -191,7 +191,8 @@ PARAMS_INC	= params_const.h
 PAR_CSRC	= par_median.c par_sync.c par_stats.c
 PAR_INC		= par_const.h par_median_const.h
 
-PARMETIS_CSRC	= parmetis_jostle.c verify_graph.c scatter_graph.c
+PARMETIS_CSRC	= parmetis_jostle.c build_graph.c verify_graph.c \
+                  scatter_graph.c
 PARMETIS_INC	= parmetis_jostle_const.h
 
 TIMER_CSRC	= timer.c
