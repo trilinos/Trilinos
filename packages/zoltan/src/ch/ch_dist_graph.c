@@ -271,6 +271,7 @@ int chaco_dist_graph(
       }
     }
   }
+  if (size != NULL) free(size);
    
   if (DEBUG_INPUT > 0) {
     if (myproc==0) printf("Done distributing graph \n");

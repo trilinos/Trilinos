@@ -324,6 +324,8 @@ void LB_comm_destroy(struct Comm_Obj **plan)
   LB_Free((void **) &((*plan)->lengths_to));
   LB_Free((void **) &((*plan)->lengths_from));
   LB_Free((void **) &((*plan)->indices_to));
+  LB_Free((void **) &((*plan)->request));
+  LB_Free((void **) &((*plan)->status));
 
 /* free plan itself */
 

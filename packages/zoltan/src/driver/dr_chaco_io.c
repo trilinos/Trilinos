@@ -156,8 +156,14 @@ int read_chaco_mesh(int Proc,
    * intialize all of the element structs as unused by
    * setting the globalID to -1
    */
-  for (i = 0; i < Mesh.elem_array_len; i++)
+  for (i = 0; i < Mesh.elem_array_len; i++) {
     (*elements)[i].globalID = -1;
+    (*elements)[i].coord = NULL;
+    (*elements)[i].connect = NULL;
+    (*elements)[i].adj = NULL;
+    (*elements)[i].adj_proc = NULL;
+    (*elements)[i].edge_wgt = NULL;
+  }
 
   /*
    * now fill the element structure array with the
@@ -169,6 +175,14 @@ int read_chaco_mesh(int Proc,
     return 0;
   }
 
+  if (adj != NULL) free(adj);
+  if (vwgts != NULL) free(vwgts);
+  if (ewgts != NULL) free(ewgts);
+  if (start != NULL) free(start);
+  if (vtxdist != NULL) free(vtxdist);
+  if (x != NULL) free(x);
+  if (y != NULL) free(y);
+  if (z != NULL) free(z);
   return 1;
 }
 

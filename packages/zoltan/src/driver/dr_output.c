@@ -154,6 +154,7 @@ int output_results(int Proc,
     fprintf(fp, "%d\n", global_ids[i]);
 
   fclose(fp);
+  free(global_ids);
 
   return 1;
 }

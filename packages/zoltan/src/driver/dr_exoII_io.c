@@ -178,8 +178,14 @@ int read_exoII_mesh(int Proc,
    * intialize all of the element structs as unused by
    * setting the globalID to -1
    */
-  for (i = 0; i < Mesh.elem_array_len; i++)
+  for (i = 0; i < Mesh.elem_array_len; i++) {
     (*elements)[i].globalID = -1;
+    (*elements)[i].coord = NULL;
+    (*elements)[i].connect = NULL;
+    (*elements)[i].adj = NULL;
+    (*elements)[i].adj_proc = NULL;
+    (*elements)[i].edge_wgt = NULL;
+  }
 
   /* read the information for the individual elements */
   if (!read_elem_info(pexoid, Proc, prob, *elements)) {

@@ -61,7 +61,7 @@ int main(int argc, char *argv[])
   float  version;
 
   int    Proc, Num_Proc;
-  int    error, i;
+  int    error, i, j;
 
   PARIO_INFO    pio_info;
   ELEM_INFO_PTR elements;
@@ -182,6 +182,21 @@ int main(int argc, char *argv[])
       exit(1);
   }
 
+  if (elements != NULL) {
+    for (i = 0; i < Mesh.elem_array_len; i++) {
+      if (elements[i].coord != NULL) {
+        for (j = 0; j < Mesh.eb_nnodes[elements[i].elem_blk]; j++) 
+          if (elements[i].coord[j] != NULL) free(elements[i].coord[j]);
+        free(elements[i].coord);
+      }
+      if (elements[i].connect != NULL) free(elements[i].connect);
+      if (elements[i].adj != NULL) free(elements[i].adj);
+      if (elements[i].adj_proc != NULL) free(elements[i].adj_proc);
+      if (elements[i].edge_wgt != NULL) free(elements[i].edge_wgt);
+    }
+    free(elements);
+  }
+  if (prob.params != NULL) free(prob.params);
   MPI_Finalize();
 
   return 0;
