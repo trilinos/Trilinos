@@ -26,8 +26,8 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef _EPETRA_SUPERLUDIST_H_
-#define _EPETRA_SUPERLUDIST_H_
+#ifndef _AMESOS_SUPERLUDIST_H_
+#define _AMESOS_SUPERLUDIST_H_
 
 #include "Amesos_ConfigDefs.h"
 #include "Amesos_BaseSolver.h"
@@ -290,4 +290,4 @@ public:
   const AMESOS::Parameter::List * ParameterList_ ; 
 
 };  // End of  class Amesos_Superludist  
-#endif /* _EPETRA_SUPERLUDIST_H_ */
+#endif /* _AMESOS_SUPERLUDIST_H_ */

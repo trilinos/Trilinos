@@ -34,6 +34,16 @@
 # the list of all source and any other header files.
 # ------------------------------------------------------------------------
 
+if HAVE_AMESOS_SUPERLU
+SUPERLU_H = \
+	$(srcdir)/Amesos_Superlu.h
+SUPERLU = \
+	$(srcdir)/Amesos_Superlu.cpp
+else
+SUPERLU_H =
+SUPERLU =
+endif
+
 if HAVE_AMESOS_SUPERLUDIST
 SUPERLUDIST_H = \
 	$(srcdir)/Amesos_Superludist.h
@@ -99,6 +109,16 @@ UMFPACK = \
 else
 UMFPACK_H =
 UMFPACK =
+endif
+
+if HAVE_AMESOS_SCALAPACK
+SCALAPACK_H = \
+	$(srcdir)/Amesos_Scalapack.h
+SCALAPACK = \
+	$(srcdir)/Amesos_Scalapack.cpp
+else
+SCALAPACK_H =
+SCALAPACK =
 endif
 
 #
@@ -247,9 +267,11 @@ AMESOS_H = \
 	$(PARAM_H) \
 	$(DSCPACK_H) \
 	$(UMFPACK_H) \
+	$(SCALAPACK_H) \
 	$(KLU_H) \
 	$(MUMPS_H) \
 	$(FACTORY_H) \
+	$(SUPERLU_H) \
 	$(SUPERLUDIST_H) \
 	$(SLUDIST_H) \
 	$(SLUDIST2_H) \
@@ -265,8 +287,10 @@ libamesos_a_SOURCES = \
 	$(DSCPACK) \
 	$(KLU) \
 	$(UMFPACK) \
+	$(SCALAPACK) \
 	$(MUMPS) \
 	$(FACTORY) \
+	$(SUPERLU) \
 	$(SUPERLUDIST) \
 	$(SLUDIST) \
 	$(SLUDIST2) \

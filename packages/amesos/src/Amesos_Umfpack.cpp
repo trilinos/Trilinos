@@ -197,6 +197,50 @@ int Amesos_Umfpack::PerformNumericFactorization( ) {
 				     &Control[0], 
 				     &Info[0]) ;
     Rcond_ = Info[UMFPACK_RCOND]; 
+
+#if 0
+    cout << " Rcond_ = " << Rcond_ << endl ; 
+
+    int lnz1 = 1000 ;
+    int unz1 = 1000 ;
+    int n = 4;
+    int * Lp = (int *) malloc ((n+1) * sizeof (int)) ;
+    int * Lj = (int *) malloc (lnz1 * sizeof (int)) ;
+    double * Lx = (double *) malloc (lnz1 * sizeof (double)) ;
+    int * Up = (int *) malloc ((n+1) * sizeof (int)) ;
+    int * Ui = (int *) malloc (unz1 * sizeof (int)) ;
+    double * Ux = (double *) malloc (unz1 * sizeof (double)) ;
+    int * P = (int *) malloc (n * sizeof (int)) ;
+    int * Q = (int *) malloc (n * sizeof (int)) ;
+    double * Dx = (double *) NULL ;	/* D vector not requested */
+    double * Rs  = (double *) malloc (n * sizeof (double)) ;
+    if (!Lp || !Lj || !Lx || !Up || !Ui || !Ux || !P || !Q || !Rs)
+    {
+      assert( false ) ; 
+    }
+    int do_recip;
+    status = umfpack_di_get_numeric (Lp, Lj, Lx, Up, Ui, Ux,
+	P, Q, Dx, &do_recip, Rs, Numeric) ;
+    if (status < 0)
+    {
+      assert( false ) ; 
+    }
+
+    printf ("\nL (lower triangular factor of C): ") ;
+    (void) umfpack_di_report_matrix (n, n, Lp, Lj, Lx, 0, &Control[0]) ;
+    printf ("\nU (upper triangular factor of C): ") ;
+    (void) umfpack_di_report_matrix (n, n, Up, Ui, Ux, 1, &Control[0]) ;
+    printf ("\nP: ") ;
+    (void) umfpack_di_report_perm (n, P, &Control[0]) ;
+    printf ("\nQ: ") ;
+    (void) umfpack_di_report_perm (n, Q, &Control[0]) ;
+    printf ("\nScale factors: row i of A is to be ") ;
+
+#endif
+
+
+
+
     assert( status == 0 ) ; 
   }
   

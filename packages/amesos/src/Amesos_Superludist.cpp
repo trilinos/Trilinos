@@ -184,9 +184,14 @@ int Amesos_Superludist::RedistributeA( ) {
   assert ( nprow_ * npcol_ == NumberOfProcesses ) ; 
 
   //
-  //  Compute a cannonical uniform distribution:
-  //    MyFirstElement - The first element which this processor would have
-  //    NumExpectedElemetns - The number of elements which this processor would have
+  //  Compute a cannonical uniform distribution: MyFirstElement - The
+  //  first element which this processor would have
+  //  NumExpectedElemetns - The number of elements which this
+  //  processor would have
+  //
+  //
+  //  This is the same distribution that Epetra_Map( NumRows_, 0, Comm ) 
+  //  would give by default, when NumberOfProcesses = Comm_.NumProc() ; 
   //
   int m_per_p = NumRows_ / NumberOfProcesses ;
   int remainder = NumRows_ - ( m_per_p * NumberOfProcesses );
@@ -225,7 +230,9 @@ int Amesos_Superludist::RedistributeA( ) {
   
   UniformMatrix_->FillComplete() ; 
   
-  UniformMatrix_->Export( *RowMatrixA_, *ExportToDist_, Insert ); 
+  //  I can't imagine that the following line is necessary:
+  //  Commented out:  Feb 28th, 2004
+  //  UniformMatrix_->Export( *RowMatrixA_, *ExportToDist_, Insert ); 
   
   return 0;
 }
@@ -385,18 +392,26 @@ int Amesos_Superludist::Factor( ) {
 #else
     set_default_options_dist(&options_);
 #endif
+    options_.PrintStat = NO;
+    assert( options_.PrintStat != YES ) ; 
+
     int numcols = RowMatrixA_->NumGlobalCols() ; 
     if( NumRows_ != numcols ) EPETRA_CHK_ERR(-3) ; 
+
+
 
     dCreate_CompRowLoc_Matrix_dist( &SuperluA_, NumRows_, numcols, 
 				    nnz_loc, NumMyElements, MyActualFirstElement,
 				    &Aval_[0], &Ai_[0], &Ap_[0], 
 				    SLU_NR_loc, SLU_D, SLU_GE );
+
     FactorizationDone_ = true;   // i.e. clean up Superlu data structures in the destructor
 
     ScalePermstructInit(NumRows_, numcols, &ScalePermstruct_);
     LUstructInit(NumRows_, numcols, &LUstruct_);
     
+    assert( options_.PrintStat != YES ) ; 
+
     assert( options_.Fact == DOFACT );  
     options_.Fact = DOFACT ;       
     
@@ -411,8 +426,11 @@ int Amesos_Superludist::Factor( ) {
     double xValues;  //  Should be untouched
     int nrhs = 0 ;   //  Prevents forward and back solves
     int ldx = NumRows_;     //  Should be untouched
+
+    assert( options_.PrintStat != YES ) ; 
     pdgssvx(&options_, &SuperluA_, &ScalePermstruct_, &xValues, ldx, nrhs, &grid_,
 	    &LUstruct_, &SOLVEstruct_, &berr, &stat, &info);
+
     if ( options_.SolveInitialized ) {
       dSolveFinalize(&options_, &SOLVEstruct_ ) ; 
     }

@@ -299,8 +299,14 @@ TAC_ARG_ENABLE_FEATURE_SUB( amesos, slud2, [Enable Amesos interface support for 
 TAC_ARG_ENABLE_FEATURE_SUB( amesos, dscpack, [Enable Amesos interface support for DSCPACK], 
 		AMESOS_DSCPACK, no)
 
+TAC_ARG_ENABLE_FEATURE_SUB( amesos, scalapack, [Enable Amesos interface support for SCALAPACK], 
+		AMESOS_SCALAPACK, no)
+
 TAC_ARG_ENABLE_FEATURE_SUB( amesos, umfpack, [Enable Amesos interface support for UMFPACK], 
 		AMESOS_UMFPACK, no)
+
+TAC_ARG_ENABLE_FEATURE_SUB( amesos, superlu, [Enable Amesos interface support for SUPERLU], 
+		AMESOS_SUPERLU, yes)
 
 TAC_ARG_ENABLE_FEATURE_SUB( amesos, klu, [Enable Amesos interface support for KLU], 
 		AMESOS_KLU, yes)
@@ -314,24 +320,6 @@ TAC_ARG_ENABLE_FEATURE_SUB( amesos, slus, [Enable Amesos interface support for S
 TAC_ARG_ENABLE_FEATURE_SUB( amesos, kundert, [Enable Amesos interface support for Kundert], 
 		AMESOS_KUNDERT, no)
 
-# ------------------------------------------------------------------------
-# Make sure that at least one package is included
-# ------------------------------------------------------------------------
-if test "X$ac_cv_use_amesos_slud" = "Xno"; then
-   if test "X$ac_cv_use_amesos_slus" = "Xno"; then
-      if test "X$ac_cv_use_amesos_dscpack" = "Xno"; then
-         if test "X$ac_cv_use_amesos_umfpack" = "Xno"; then
-            if test "X$ac_cv_use_amesos_klu" = "Xno"; then
-               if test "X$ac_cv_use_amesos_mumps" = "Xno"; then
-   	          if test "X$ac_cv_use_amesos_kundert" = "Xno"; then
-                 AC_MSG_ERROR([Must specify at least one third party library, e.g. --with-amesos-slud.  See http://software.sandia.gov/trilinos/packages/amesos/ for details])
-                  fi
-               fi
-            fi
-         fi				 
-      fi				 
-   fi
-fi
 AM_CONDITIONAL(NEED_PARAMETER_LIST, false ) 
 
 #
@@ -638,6 +626,37 @@ fi
 
 
 
+#
+#  Look for scalapack and blacs libraries 
+#    if --enable-amesos-scalapack or --enable-amesos-mumps
+#
+if test "X$ac_cv_use_amesos_scalapack" != "Xno" || 
+   test "X$ac_cv_use_amesos_mumps" != "Xno"; then
+      TAC_ARG_WITH_SUB( amesos, scalapackdir, [Set scalapack directory],  ${tac_with_trilinos3pldir}/scalapack )
+      TAC_CHECK_FILE(${tac_with_amesos_scalapackdir})
+
+      TAC_ARG_WITH_SUB( amesos, scalapacklib, [Set scalapack library],  ${tac_with_amesos_scalapackdir}/libscalapack.a )
+      TAC_CHECK_FILE(${tac_with_amesos_scalapacklib})
+
+      TAC_ARG_WITH_SUB( amesos, blacsdir, [Set blacs directory],  ${tac_with_trilinos3pldir}/blacs )
+      TAC_CHECK_FILE(${tac_with_amesos_blacsdir})
+
+      TAC_ARG_WITH_SUB( amesos, blacslib, [Set blacs library],  ${tac_with_amesos_blacsdir}/libblacs.a )
+      TAC_CHECK_FILE(${tac_with_amesos_blacslib})
+
+      AM_CONDITIONAL(HAVE_AMESOS_SCALAPACK, true ) 
+      AM_CONDITIONAL(NEED_PARAMETER_LIST, true ) 
+      amesos_libs="${amesos_libs} ${tac_with_amesos_scalapacklib} ${tac_with_amesos_blacslib}"
+
+    SAVE_LIBS="${LIBS}"
+    LIBS="${tac_with_amesos_scalapacklib} ${tac_with_amesos_blacslib} ${BLAS_LIBS} ${MPI_LIBS} ${FLIBS} ${LIBS}"
+     AC_TRY_LINK_FUNC(pdgetrf_,,
+      AC_MSG_ERROR([[Cannot find scalapack library, specify a location using --with-amesos-scalapacklib, (ex. --with-amesos-scalapacklib=/home/kstanley/Trilinos3PL/SuperLU_DIST_2.0/libsuperludist.a).  See http://software.sandia.gov/trilinos/packages/amesos/ for details.]]))  
+    LIBS="${SAVE_LIBS}"
+
+else
+  AM_CONDITIONAL(HAVE_AMESOS_SCALAPACK, false ) 
+fi
 
 
 
@@ -665,15 +684,6 @@ if test "X$ac_cv_use_amesos_mumps" != "Xno"; then
     TAC_ARG_WITH_SUB( amesos, mumpspordlib, [Set MUMPS PORD library],  ${tac_with_amesos_mumpsdir}/lib/libpord.a )
     TAC_CHECK_FILE(${tac_with_amesos_mumpspordlib})
 
-#
-#  We don't support amesos-scalapacklib or amesos-blacslib yet.  Too many unknowns right now.  
-#  For now, use LIBS=" " 
-#
-#    TAC_ARG_WITH_SUB( amesos, scalapacklib, [Set ScaLAPACK library],  ${tac_with_trilinos3pldir}/ScaLAPACK/libscalpack.a )
-#    TAC_CHECK_FILE(${tac_with_amesos_scalapacklib})
-#
-#    TAC_ARG_WITH_SUB( amesos, blacslib, [Set BLACS library],  ${tac_with_trilinos3pldir}/BLACS/libblacs.a )
-#    TAC_CHECK_FILE(${tac_with_amesos_scalapacklib})
 
   TAC_ARG_WITH_SUB( amesos, mumpsincdir, [Set MUMPS include directory],  ${tac_with_amesos_mumpsdir}include )
   TAC_CHECK_FILE(${tac_with_amesos_mumpsincdir})
@@ -715,7 +725,7 @@ if test "X$ac_cv_use_amesos_mumps" != "Xno"; then
 #
   AM_CONDITIONAL(HAVE_AMESOS_MUMPS, true ) 
   AM_CONDITIONAL(NEED_PARAMETER_LIST, true ) 
-  amesos_libs="${amesos_libs} ${tac_with_amesos_mumpslib} ${tac_with_amesos_mumpspordlib}"
+  amesos_libs="${amesos_libs} ${tac_with_amesos_mumpslib} ${tac_with_amesos_mumpspordlib} ${tac_with_amesos_mumpslib} ${tac_with_amesos_scalapacklib}"
 else
   AM_CONDITIONAL(HAVE_AMESOS_MUMPS, false ) 
 fi
@@ -770,6 +780,58 @@ if test "X$ac_cv_use_amesos_slus" != "Xno"; then
   AM_CONDITIONAL(HAVE_AMESOS_SLUS, true ) 
 else
   AM_CONDITIONAL(HAVE_AMESOS_SLUS, false ) 
+fi
+
+
+
+
+#
+#  --enable-amesos-superlu, --with-amesos-superludir, --with-amesos-superlulib, 
+#    --with-amesos-superluincdir
+#
+#
+#  Test to see if everything is where it ought to be:
+#    Make sure that supermatrix.h is in the SuperLU serial include directory
+#    Make sure that SuperLU_timer is in the SuperLU serial library
+#
+
+if test "X$ac_cv_use_amesos_superlu" != "Xno"; then
+
+  TAC_ARG_WITH_SUB( amesos, superludir, [Set SuperLU serial directory],  ${tac_with_trilinos3pldir}/SuperLU )
+  TAC_CHECK_FILE(${tac_with_amesos_superludir})
+
+  TAC_ARG_WITH_SUB( amesos, superlulib, [Set SuperLU serial library],  ${tac_with_amesos_superludir}/libsuperlu.a )
+  TAC_CHECK_FILE(${tac_with_amesos_superlulib})
+
+  TAC_ARG_WITH_SUB( amesos, superluincdir, [Set SuperLU serial include directory],  ${tac_with_amesos_superludir}/SRC )
+  TAC_CHECK_FILE(${tac_with_amesos_superluincdir})
+
+#
+# This is a bad way to check for supermatrix.h, it won't pick supermatrix.h up if
+# it is in the include path, i.e. /usr/include - see tac_arg_check_mpi for a better way
+#
+
+
+  TAC_CHECK_FILE(${tac_with_amesos_superluincdir}/supermatrix.h)
+
+  TAC_CHECK_FILE(${tac_with_amesos_superluincdir}/supermatrix.h,,
+    AC_MSG_ERROR([[Cannot find supermatrix.h in ${tac_with_amesos_superluincdir} , specify a location using --with-amesos-superluincdir, --with-amesos-superludir or --with-trilinos3pldir.  See http://software.sandia.gov/trilinos/packages/amesos/ for details.]] ))
+
+
+##  LDFLAGS="${tac_with_amesos_superlulib} ${LDFLAGS}"
+
+  CXXFLAGS="-I${tac_with_amesos_superluincdir} ${CXXFLAGS}"
+
+    SAVE_LIBS="${LIBS}"
+    LIBS="${tac_with_amesos_superlulib} ${BLAS_LIBS} ${MPI_LIBS} ${FLIBS} ${LIBS}"
+     AC_TRY_LINK_FUNC(SuperLU_timer_,,
+      AC_MSG_ERROR([[Cannot find SuperLU serial library, specify a location using --with-amesos-superlulib, (ex. --with-amesos-superlulib=/home/kstanley/Trilinos3PL/SuperLU/libsuperlu.a).  See http://software.sandia.gov/trilinos/packages/amesos/ for details.]]))  
+    LIBS="${SAVE_LIBS}"
+  amesos_libs=" ${tac_with_amesos_superlulib} ${amesos_libs}"
+
+  AM_CONDITIONAL(HAVE_AMESOS_SUPERLU, true ) 
+else
+  AM_CONDITIONAL(HAVE_AMESOS_SUPERLU, false ) 
 fi
 
 
@@ -901,6 +963,7 @@ AC_CONFIG_FILES([
 		example/AmesosDscpack/Makefile
 		example/AmesosFactory/Makefile
 		example/AmesosSuperludist/Makefile
+		test/TestOptions/Makefile
 		test/scripts/Makefile
 		test/scripts/daily/Makefile
 		test/scripts/daily/mpi/Makefile

@@ -230,7 +230,7 @@ int Amesos_Dscpack::PerformNumericFactorization() {
     EPETRA_CHK_ERR( DscMat.Import( *CastCrsMatrixA, ImportToDsc, Insert) );
     EPETRA_CHK_ERR( DscMat.TransformToLocal() ) ; 
 
-    cout << "Amesos_Dscpack.cpp:: DscMat = " << DscMat << endl ; 
+    //    cout << "Amesos_Dscpack.cpp:: DscMat = " << DscMat << endl ; 
 
 
     //    assert( DscGraph_ == 0 ) ; 

@@ -42,6 +42,9 @@
 #include "DscpackOO.h"
 #include "Amesos_Dscpack.h"
 #endif
+#ifdef HAVE_AMESOS_SCALAPACK
+#include "Amesos_Scalapack.h"
+#endif
 #ifdef HAVE_AMESOS_UMFPACK
 #include "Amesos_Umfpack.h"
 #endif
@@ -56,6 +59,9 @@
 #endif
 #ifdef HAVE_AMESOS_SLUD
 #include "SuperludistOO.h"
+#endif
+#ifdef HAVE_AMESOS_SUPERLU
+#include "Amesos_Superlu.h"
 #endif
 #ifdef HAVE_AMESOS_SUPERLUDIST
 #include "Amesos_Superludist.h"
@@ -367,6 +373,34 @@ int Amesos_TestMrhsSolver( Epetra_Comm &Comm, char *matrix_file, int numsolves,
 
       }
 #endif
+#ifdef HAVE_AMESOS_SUPERLU
+    } else if ( SparseSolver == SUPERLU ) { 
+      AMESOS::Parameter::List ParamList ;
+      Amesos_Superlu superlu( Problem, ParamList ) ; 
+      EPETRA_CHK_ERR( superlu.SetUseTranspose( transpose ) ); 
+
+      bool factor = true; 
+      EPETRA_CHK_ERR( superlu.SymbolicFactorization(  ) ); 
+      EPETRA_CHK_ERR( superlu.NumericFactorization(  ) ); 
+      for ( int i= 0 ; i < numsolves ; i++ ) { 
+	//    set up to sovle A X[:,i] = B[:,i]
+	Epetra_Vector *passb_i = (*passb)(i) ;
+	Epetra_Vector *passx_i = (*passx)(i) ;
+	Problem.SetLHS( dynamic_cast<Epetra_MultiVector *>(passx_i) ) ;
+	Problem.SetRHS( dynamic_cast<Epetra_MultiVector *>(passb_i) );
+	EPETRA_CHK_ERR( superlu.Solve( ) ); 
+	factor = false; 
+	if ( i == 0 ) 
+	  SparseDirectTimingVars::SS_Result.Set_First_Time( TotalTime.ElapsedTime() ); 
+	else { 
+	  if ( i < numsolves-1 ) 
+	    SparseDirectTimingVars::SS_Result.Set_Middle_Time( TotalTime.ElapsedTime() ); 
+	  else
+	    SparseDirectTimingVars::SS_Result.Set_Last_Time( TotalTime.ElapsedTime() ); 
+	}
+
+      }
+#endif
 #ifdef HAVE_AMESOS_KLU
     } else if ( SparseSolver == KLU ) { 
       AMESOS::Parameter::List ParamList ;
@@ -383,6 +417,34 @@ int Amesos_TestMrhsSolver( Epetra_Comm &Comm, char *matrix_file, int numsolves,
 	Problem.SetLHS( dynamic_cast<Epetra_MultiVector *>(passx_i) ) ;
 	Problem.SetRHS( dynamic_cast<Epetra_MultiVector *>(passb_i) );
 	EPETRA_CHK_ERR( klu.Solve( ) ); 
+	factor = false; 
+	if ( i == 0 ) 
+	  SparseDirectTimingVars::SS_Result.Set_First_Time( TotalTime.ElapsedTime() ); 
+	else { 
+	  if ( i < numsolves-1 ) 
+	    SparseDirectTimingVars::SS_Result.Set_Middle_Time( TotalTime.ElapsedTime() ); 
+	  else
+	    SparseDirectTimingVars::SS_Result.Set_Last_Time( TotalTime.ElapsedTime() ); 
+	}
+
+      }
+#endif
+#ifdef HAVE_AMESOS_SCALAPACK
+    } else if ( SparseSolver == SCALAPACK ) { 
+      AMESOS::Parameter::List ParamList ;
+      Amesos_Scalapack scalapack( Problem, ParamList ) ; 
+      EPETRA_CHK_ERR( scalapack.SetUseTranspose( transpose ) ); 
+
+      bool factor = true; 
+      EPETRA_CHK_ERR( scalapack.SymbolicFactorization(  ) ); 
+      EPETRA_CHK_ERR( scalapack.NumericFactorization(  ) ); 
+      for ( int i= 0 ; i < numsolves ; i++ ) { 
+	//    set up to sovle A X[:,i] = B[:,i]
+	Epetra_Vector *passb_i = (*passb)(i) ;
+	Epetra_Vector *passx_i = (*passx)(i) ;
+	Problem.SetLHS( dynamic_cast<Epetra_MultiVector *>(passx_i) ) ;
+	Problem.SetRHS( dynamic_cast<Epetra_MultiVector *>(passb_i) );
+	EPETRA_CHK_ERR( scalapack.Solve( ) ); 
 	factor = false; 
 	if ( i == 0 ) 
 	  SparseDirectTimingVars::SS_Result.Set_First_Time( TotalTime.ElapsedTime() ); 

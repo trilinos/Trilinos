@@ -13,6 +13,10 @@ TestOptions_SOURCES = $(srcdir)/TestOptions.cpp  \
 	$(srcdir)/TestOptions.h \
 	$(srcdir)/TestSuperludist.cpp \
 	$(srcdir)/TestSuperludist.h \
+	$(srcdir)/TestAllClasses.cpp \
+	$(srcdir)/TestAllClasses.h \
+	$(srcdir)/PerformOneSolveAndTest.cpp \
+	$(srcdir)/PerformOneSolveAndTest.h \
 	$(srcdir)/TripleSolve.cpp \
 	$(srcdir)/TripleSolve.h \
 	$(srcdir)/TestOtherClasses.cpp \

@@ -57,11 +57,17 @@
 #ifdef HAVE_AMESOS_KLU
 #include "Amesos_Klu.h"
 #endif
+#ifdef HAVE_AMESOS_SCALAPACK
+#include "Amesos_Scalapack.h"
+#endif
 #ifdef HAVE_AMESOS_MUMPS
 #include "Amesos_Mumps.h"
 #endif
 #ifdef HAVE_AMESOS_SUPERLUDIST
 #include "Amesos_Superludist.h"
+#endif
+#ifdef HAVE_AMESOS_SUPERLU
+#include "Amesos_Superlu.h"
 #endif
 #ifdef TEST_SPOOLES
 #include "SpoolesOO.h"
@@ -301,6 +307,16 @@ int Amesos_TestMultiSolver( Epetra_Comm &Comm, char *matrix_file, int numsolves,
       EPETRA_CHK_ERR( klu.NumericFactorization(  ) ); 
       EPETRA_CHK_ERR( klu.Solve( ) ); 
 #endif
+#ifdef HAVE_AMESOS_SCALAPACK
+    } else if ( SparseSolver == SCALAPACK ) { 
+      AMESOS::Parameter::List ParamList ;
+      Amesos_Scalapack scalapack( Problem, ParamList ) ; 
+      EPETRA_CHK_ERR( scalapack.SetUseTranspose( transpose ) ); 
+    
+      EPETRA_CHK_ERR( scalapack.SymbolicFactorization(  ) ); 
+      EPETRA_CHK_ERR( scalapack.NumericFactorization(  ) ); 
+      EPETRA_CHK_ERR( scalapack.Solve( ) ); 
+#endif
 #ifdef HAVE_AMESOS_MUMPS
     } else if ( SparseSolver == MUMPS ) { 
       AMESOS::Parameter::List ParamList ;
@@ -318,6 +334,16 @@ int Amesos_TestMultiSolver( Epetra_Comm &Comm, char *matrix_file, int numsolves,
       EPETRA_CHK_ERR( superludist.SymbolicFactorization(  ) ); 
       EPETRA_CHK_ERR( superludist.NumericFactorization(  ) ); 
       EPETRA_CHK_ERR( superludist.Solve( ) ); 
+#endif
+#ifdef HAVE_AMESOS_SUPERLU
+    } else if ( SparseSolver == SUPERLU ) { 
+      AMESOS::Parameter::List ParamList ;
+      Amesos_Superlu superlu( Problem, ParamList ) ; 
+      EPETRA_CHK_ERR( superlu.SetUseTranspose( transpose ) ); 
+    
+      EPETRA_CHK_ERR( superlu.SymbolicFactorization(  ) ); 
+      EPETRA_CHK_ERR( superlu.NumericFactorization(  ) ); 
+      EPETRA_CHK_ERR( superlu.Solve( ) ); 
 #endif
 #ifdef TEST_SPOOLESSERIAL 
     } else if ( SparseSolver == SPOOLESSERIAL ) { 

@@ -27,8 +27,8 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef _EPETRA_UMFPACK_H_
-#define _EPETRA_UMFPACK_H_
+#ifndef _AMESOS_UMFPACK_H_
+#define _AMESOS_UMFPACK_H_
 
 #include "Amesos_ConfigDefs.h"
 #include "Amesos_BaseSolver.h"
@@ -288,4 +288,4 @@ public:
 
   double Rcond_;  // Reciprocal condition number estimate 
 };  // End of  class Amesos_Umfpack  
-#endif /* _EPETRA_UMFPACK_H_ */
+#endif /* _AMESOS_UMFPACK_H_ */

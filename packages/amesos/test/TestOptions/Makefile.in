@@ -76,6 +76,8 @@ am__EXEEXT_1 = TestOptions$(EXEEXT)
 PROGRAMS = $(noinst_PROGRAMS)
 am_TestOptions_OBJECTS = TestOptions-TestOptions.$(OBJEXT) \
 	TestOptions-TestSuperludist.$(OBJEXT) \
+	TestOptions-TestAllClasses.$(OBJEXT) \
+	TestOptions-PerformOneSolveAndTest.$(OBJEXT) \
 	TestOptions-TripleSolve.$(OBJEXT) \
 	TestOptions-TestOtherClasses.$(OBJEXT)
 TestOptions_OBJECTS = $(am_TestOptions_OBJECTS)
@@ -83,7 +85,10 @@ am__DEPENDENCIES_1 =
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/src
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
-@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/TestOptions-TestOptions.Po \
+@AMDEP_TRUE@DEP_FILES =  \
+@AMDEP_TRUE@	./$(DEPDIR)/TestOptions-PerformOneSolveAndTest.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/TestOptions-TestAllClasses.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/TestOptions-TestOptions.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/TestOptions-TestOtherClasses.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/TestOptions-TestSuperludist.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/TestOptions-TripleSolve.Po
@@ -143,6 +148,8 @@ HAVE_AMESOS_KUNDERT_FALSE = @HAVE_AMESOS_KUNDERT_FALSE@
 HAVE_AMESOS_KUNDERT_TRUE = @HAVE_AMESOS_KUNDERT_TRUE@
 HAVE_AMESOS_MUMPS_FALSE = @HAVE_AMESOS_MUMPS_FALSE@
 HAVE_AMESOS_MUMPS_TRUE = @HAVE_AMESOS_MUMPS_TRUE@
+HAVE_AMESOS_SCALAPACK_FALSE = @HAVE_AMESOS_SCALAPACK_FALSE@
+HAVE_AMESOS_SCALAPACK_TRUE = @HAVE_AMESOS_SCALAPACK_TRUE@
 HAVE_AMESOS_SLUD2_FALSE = @HAVE_AMESOS_SLUD2_FALSE@
 HAVE_AMESOS_SLUD2_TRUE = @HAVE_AMESOS_SLUD2_TRUE@
 HAVE_AMESOS_SLUD_FALSE = @HAVE_AMESOS_SLUD_FALSE@
@@ -151,6 +158,8 @@ HAVE_AMESOS_SLUS_FALSE = @HAVE_AMESOS_SLUS_FALSE@
 HAVE_AMESOS_SLUS_TRUE = @HAVE_AMESOS_SLUS_TRUE@
 HAVE_AMESOS_SUPERLUDIST_FALSE = @HAVE_AMESOS_SUPERLUDIST_FALSE@
 HAVE_AMESOS_SUPERLUDIST_TRUE = @HAVE_AMESOS_SUPERLUDIST_TRUE@
+HAVE_AMESOS_SUPERLU_FALSE = @HAVE_AMESOS_SUPERLU_FALSE@
+HAVE_AMESOS_SUPERLU_TRUE = @HAVE_AMESOS_SUPERLU_TRUE@
 HAVE_AMESOS_UMFPACK_FALSE = @HAVE_AMESOS_UMFPACK_FALSE@
 HAVE_AMESOS_UMFPACK_TRUE = @HAVE_AMESOS_UMFPACK_TRUE@
 HAVE_MPI_FALSE = @HAVE_MPI_FALSE@
@@ -245,6 +254,10 @@ TestOptions_SOURCES = $(srcdir)/TestOptions.cpp  \
 	$(srcdir)/TestOptions.h \
 	$(srcdir)/TestSuperludist.cpp \
 	$(srcdir)/TestSuperludist.h \
+	$(srcdir)/TestAllClasses.cpp \
+	$(srcdir)/TestAllClasses.h \
+	$(srcdir)/PerformOneSolveAndTest.cpp \
+	$(srcdir)/PerformOneSolveAndTest.h \
 	$(srcdir)/TripleSolve.cpp \
 	$(srcdir)/TripleSolve.h \
 	$(srcdir)/TestOtherClasses.cpp \
@@ -311,6 +324,8 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/TestOptions-PerformOneSolveAndTest.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/TestOptions-TestAllClasses.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/TestOptions-TestOptions.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/TestOptions-TestOtherClasses.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/TestOptions-TestSuperludist.Po@am__quote@
@@ -363,6 +378,38 @@ TestOptions-TestSuperludist.obj: $(srcdir)/TestSuperludist.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/TestOptions-TestSuperludist.Po' tmpdepfile='$(DEPDIR)/TestOptions-TestSuperludist.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(TestOptions_CXXFLAGS) $(CXXFLAGS) -c -o TestOptions-TestSuperludist.obj `if test -f '$(srcdir)/TestSuperludist.cpp'; then $(CYGPATH_W) '$(srcdir)/TestSuperludist.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/TestSuperludist.cpp'; fi`
+
+TestOptions-TestAllClasses.o: $(srcdir)/TestAllClasses.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(TestOptions_CXXFLAGS) $(CXXFLAGS) -MT TestOptions-TestAllClasses.o -MD -MP -MF "$(DEPDIR)/TestOptions-TestAllClasses.Tpo" -c -o TestOptions-TestAllClasses.o `test -f '$(srcdir)/TestAllClasses.cpp' || echo '$(srcdir)/'`$(srcdir)/TestAllClasses.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/TestOptions-TestAllClasses.Tpo" "$(DEPDIR)/TestOptions-TestAllClasses.Po"; else rm -f "$(DEPDIR)/TestOptions-TestAllClasses.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/TestAllClasses.cpp' object='TestOptions-TestAllClasses.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/TestOptions-TestAllClasses.Po' tmpdepfile='$(DEPDIR)/TestOptions-TestAllClasses.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(TestOptions_CXXFLAGS) $(CXXFLAGS) -c -o TestOptions-TestAllClasses.o `test -f '$(srcdir)/TestAllClasses.cpp' || echo '$(srcdir)/'`$(srcdir)/TestAllClasses.cpp
+
+TestOptions-TestAllClasses.obj: $(srcdir)/TestAllClasses.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(TestOptions_CXXFLAGS) $(CXXFLAGS) -MT TestOptions-TestAllClasses.obj -MD -MP -MF "$(DEPDIR)/TestOptions-TestAllClasses.Tpo" -c -o TestOptions-TestAllClasses.obj `if test -f '$(srcdir)/TestAllClasses.cpp'; then $(CYGPATH_W) '$(srcdir)/TestAllClasses.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/TestAllClasses.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/TestOptions-TestAllClasses.Tpo" "$(DEPDIR)/TestOptions-TestAllClasses.Po"; else rm -f "$(DEPDIR)/TestOptions-TestAllClasses.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/TestAllClasses.cpp' object='TestOptions-TestAllClasses.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/TestOptions-TestAllClasses.Po' tmpdepfile='$(DEPDIR)/TestOptions-TestAllClasses.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(TestOptions_CXXFLAGS) $(CXXFLAGS) -c -o TestOptions-TestAllClasses.obj `if test -f '$(srcdir)/TestAllClasses.cpp'; then $(CYGPATH_W) '$(srcdir)/TestAllClasses.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/TestAllClasses.cpp'; fi`
+
+TestOptions-PerformOneSolveAndTest.o: $(srcdir)/PerformOneSolveAndTest.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(TestOptions_CXXFLAGS) $(CXXFLAGS) -MT TestOptions-PerformOneSolveAndTest.o -MD -MP -MF "$(DEPDIR)/TestOptions-PerformOneSolveAndTest.Tpo" -c -o TestOptions-PerformOneSolveAndTest.o `test -f '$(srcdir)/PerformOneSolveAndTest.cpp' || echo '$(srcdir)/'`$(srcdir)/PerformOneSolveAndTest.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/TestOptions-PerformOneSolveAndTest.Tpo" "$(DEPDIR)/TestOptions-PerformOneSolveAndTest.Po"; else rm -f "$(DEPDIR)/TestOptions-PerformOneSolveAndTest.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/PerformOneSolveAndTest.cpp' object='TestOptions-PerformOneSolveAndTest.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/TestOptions-PerformOneSolveAndTest.Po' tmpdepfile='$(DEPDIR)/TestOptions-PerformOneSolveAndTest.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(TestOptions_CXXFLAGS) $(CXXFLAGS) -c -o TestOptions-PerformOneSolveAndTest.o `test -f '$(srcdir)/PerformOneSolveAndTest.cpp' || echo '$(srcdir)/'`$(srcdir)/PerformOneSolveAndTest.cpp
+
+TestOptions-PerformOneSolveAndTest.obj: $(srcdir)/PerformOneSolveAndTest.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(TestOptions_CXXFLAGS) $(CXXFLAGS) -MT TestOptions-PerformOneSolveAndTest.obj -MD -MP -MF "$(DEPDIR)/TestOptions-PerformOneSolveAndTest.Tpo" -c -o TestOptions-PerformOneSolveAndTest.obj `if test -f '$(srcdir)/PerformOneSolveAndTest.cpp'; then $(CYGPATH_W) '$(srcdir)/PerformOneSolveAndTest.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/PerformOneSolveAndTest.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/TestOptions-PerformOneSolveAndTest.Tpo" "$(DEPDIR)/TestOptions-PerformOneSolveAndTest.Po"; else rm -f "$(DEPDIR)/TestOptions-PerformOneSolveAndTest.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/PerformOneSolveAndTest.cpp' object='TestOptions-PerformOneSolveAndTest.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/TestOptions-PerformOneSolveAndTest.Po' tmpdepfile='$(DEPDIR)/TestOptions-PerformOneSolveAndTest.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(TestOptions_CXXFLAGS) $(CXXFLAGS) -c -o TestOptions-PerformOneSolveAndTest.obj `if test -f '$(srcdir)/PerformOneSolveAndTest.cpp'; then $(CYGPATH_W) '$(srcdir)/PerformOneSolveAndTest.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/PerformOneSolveAndTest.cpp'; fi`
 
 TestOptions-TripleSolve.o: $(srcdir)/TripleSolve.cpp
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(TestOptions_CXXFLAGS) $(CXXFLAGS) -MT TestOptions-TripleSolve.o -MD -MP -MF "$(DEPDIR)/TestOptions-TripleSolve.Tpo" -c -o TestOptions-TripleSolve.o `test -f '$(srcdir)/TripleSolve.cpp' || echo '$(srcdir)/'`$(srcdir)/TripleSolve.cpp; \

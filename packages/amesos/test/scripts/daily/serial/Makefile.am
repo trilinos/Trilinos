@@ -26,6 +26,9 @@
 # ************************************************************************
 #@HEADER
 
+#
+#  Codes which cannot be compiled without MPI are not represented here.
+#
 EXEEXT = .exe
 
 if HAVE_AMESOS_SLUS
@@ -46,7 +49,13 @@ else
 KLU_TEST = 
 endif
 
-noinst_PROGRAMS = $(SLUS_TEST) $(UMFPACK_TEST) $(KLU_TEST)
+if HAVE_AMESOS_SUPERLU
+SUPERLU_TEST = TestSuperluSerial
+else
+SUPERLU_TEST = 
+endif
+
+noinst_PROGRAMS = $(SLUS_TEST) $(UMFPACK_TEST) $(KLU_TEST) $(SUPERLU_TEST)
 
 if HAVE_AMESOS_SLUS
 TestAmesosSerial_SOURCES = $(srcdir)/TestAmesosSerial
@@ -67,6 +76,13 @@ TestKluSerial_SOURCES = $(srcdir)/TestKluSerial
 
 TestKluSerial$(EXEEXT): $(srcdir)/TestKluSerial
 	cp $(srcdir)/TestKluSerial TestKluSerial$(EXEEXT) 
+endif
+
+if HAVE_AMESOS_SUPERLU
+TestSuperluSerial_SOURCES = $(srcdir)/TestSuperluSerial
+
+TestSuperluSerial$(EXEEXT): $(srcdir)/TestSuperluSerial
+	cp $(srcdir)/TestSuperluSerial TestSuperluSerial$(EXEEXT) 
 endif
 
 

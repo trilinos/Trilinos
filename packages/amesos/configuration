@@ -20,7 +20,16 @@ test/AmesosKluShort -
 test/AmesosKluSerial -  
 test/scripts/daily/serial/TestKluSerial -  
 test/scripts/daily/serial/Makefile.am -  
-test/scripts/daily/mpi/TestKlu -  
-test/scripts/daily/mpi/Makefile.am -  
+test/scripts/daily/mpi/TestKlu - 
+test/scripts/daily/mpi/Makefile.am - 
 
 TrilinosWeb/version2/packages/amesos/doxygen/index.html - last 
+
+
+
+Three strategies for dealing with CrsMatrices versus RowMatrices:
+
+1)  AmesosKlu.cpp (compile time option - ugh)
+2)  AmesosMumps.cpp - Marzio's solution
+3)  Amesos_Superludist - My solution 
+

@@ -46,6 +46,8 @@ noinst_PROGRAMS = amesos_test AmesosShellScript AmesosDscpack AmesosDscpackShort
 	AmesosJanusScript SpoolesJanusScript SpoolesScript AmesosSuperLUserial \
 	AmesosUmfpack AmesosUmfpackShort AmesosUmfpackSerial AmesosMumps \
 	AmesosKlu AmesosKluShort AmesosKluSerial \
+	AmesosScalapack \
+	Amesos_Superlu Amesos_SuperluSerial \
 	AmesosSuperludist AmesosSuperludistShort \
 	AmesosSuperludistJanus AmesosUmfpackJanus AmesosKluJanus \
 	A_Superludist  B_Superludist  C_Superludist Timings DscpackTiming 
@@ -61,9 +63,12 @@ AmesosMumps_SOURCES = $(srcdir)/AmesosMumps
 AmesosUmfpack_SOURCES = $(srcdir)/AmesosUmfpack
 AmesosUmfpackShort_SOURCES = $(srcdir)/AmesosUmfpackShort
 AmesosUmfpackSerial_SOURCES = $(srcdir)/AmesosUmfpackSerial
+AmesosScalapack_SOURCES = $(srcdir)/AmesosScalapack
 AmesosKlu_SOURCES = $(srcdir)/AmesosKlu
 AmesosKluShort_SOURCES = $(srcdir)/AmesosKluShort
 AmesosKluSerial_SOURCES = $(srcdir)/AmesosKluSerial
+Amesos_Superlu_SOURCES = $(srcdir)/Amesos_Superlu
+Amesos_SuperluSerial_SOURCES = $(srcdir)/Amesos_SuperluSerial
 AmesosSuperludist_SOURCES = $(srcdir)/AmesosSuperludist
 AmesosSuperludistShort_SOURCES = $(srcdir)/AmesosSuperludistShort
 AmesosShortSuperLU_SOURCES = $(srcdir)/AmesosShortSuperLU
@@ -111,6 +116,9 @@ AmesosUmfpackShort$(EXEEXT): $(srcdir)/AmesosUmfpackShort
 AmesosUmfpackSerial$(EXEEXT): $(srcdir)/AmesosUmfpackSerial
 	cp  $(srcdir)/AmesosUmfpackSerial  AmesosUmfpackSerial$(EXEEXT)
 
+AmesosScalapack$(EXEEXT): $(srcdir)/AmesosScalapack
+	cp  $(srcdir)/AmesosScalapack  AmesosScalapack$(EXEEXT)
+
 AmesosKlu$(EXEEXT): $(srcdir)/AmesosKlu
 	cp  $(srcdir)/AmesosKlu  AmesosKlu$(EXEEXT)
 
@@ -119,6 +127,12 @@ AmesosKluShort$(EXEEXT): $(srcdir)/AmesosKluShort
 
 AmesosKluSerial$(EXEEXT): $(srcdir)/AmesosKluSerial
 	cp  $(srcdir)/AmesosKluSerial  AmesosKluSerial$(EXEEXT)
+
+Amesos_Superlu$(EXEEXT): $(srcdir)/Amesos_Superlu
+	cp  $(srcdir)/Amesos_Superlu  Amesos_Superlu$(EXEEXT)
+
+Amesos_SuperluSerial$(EXEEXT): $(srcdir)/Amesos_SuperluSerial
+	cp  $(srcdir)/Amesos_SuperluSerial  Amesos_SuperluSerial$(EXEEXT)
 
 AmesosSuperludist$(EXEEXT): $(srcdir)/AmesosSuperludist
 	cp  $(srcdir)/AmesosSuperludist  AmesosSuperludist$(EXEEXT)
@@ -227,6 +241,6 @@ amesos_test_LDADD = $(top_builddir)/src/libamesos.a \
 #np# in a subdirectory of this directory, use the Makefile.am located in
 #np# example1/ rather than this file.
 # SUBDIRS = example1
-SUBDIRS = scripts 
-# SUBDIRS = scripts TestOptions
+# SUBDIRS = scripts 
+SUBDIRS = scripts TestOptions
 

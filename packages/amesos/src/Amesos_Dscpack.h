@@ -26,8 +26,8 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef _EPETRA_DSCPACK_H_
-#define _EPETRA_DSCPACK_H_
+#ifndef _AMESOS_DSCPACK_H_
+#define _AMESOS_DSCPACK_H_
 
 #include "Amesos_ConfigDefs.h"
 #include "Amesos_BaseSolver.h"
@@ -228,4 +228,4 @@ public:
 
 
 };  // End of  class Amesos_Dscpack  
-#endif /* _EPETRA_DSCPACK_H_ */
+#endif /* _AMESOS_DSCPACK_H_ */

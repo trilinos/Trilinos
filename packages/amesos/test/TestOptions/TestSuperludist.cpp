@@ -1,497 +1,320 @@
+#include "Epetra_Comm.h"
+#include "Amesos_Parameter_List.h"
+#include "Amesos_Factory.h"
+#include "Epetra_CrsMatrix.h"
+#include "Epetra_Map.h"
+#include "Epetra_Vector.h"
+#include "Epetra_LinearProblem.h"
+#include "PerformOneSolveAndTest.h"
+
+
 //
 //  Returns the number of failures.
-//  Note:  If AMESOS_SUPERLUDIST is not supported, SubTest() will 
+//  Note:  If AMESOS_SUPERLUDIST is not supported, PerformOneSolveAndTest() will 
 //  always return 0
-// 
-int SubTest( Epetra_Comm &Comm, bool transpose, 
-	     AMESOS::Parameter::List ParamList, 
-	     Epetra_CrsMatrix *& Amat, 
-	     double maxrelresidual )
-{
-	
-  int iam = Comm.MyPID() ; 
-  int errors = 0 ; 
-  bool verbose = false; 
+//
+//  Still have to decide where we are going to check the residual.  
+//
+//  The following table shows the variable names that we use for 
+//  each of the three phases:  
+//     compute - which computes the correct value of b
+//     solve - which solves for x in  A' A' A x = b 
+//     check - which computes bcheck = A' A' A x 
+//
+//  For ill-conditioned matrices we restrict the test to one or two 
+//  solves, by setting Levels to 1 or 2 on input to this routine.
+//  When Levels is less than 3, some of the transformations
+//  shown in the table as "->" and "<-" are not performed, instead 
+//  a direct copy is made.
+//
+//  In the absence of roundoff, each item in a given column should 
+//  be identical.  
+//
+//  If Levels = 3, we compute and solve A' A' A x = b and hence all 
+//  of the transformations are performed
+//
+//  If Levels = 2, the transformations shown in the first column of 
+//  transformations (labelled Levels>=3) are replaced by a direct copy.
+//
+//  If Levels = 1, only the transformations shown in the third column
+//  are performed, the others being replaced by direct copies.
+//  
+//                           Levels>=3    Levels>=2
+//                              A'         A'            A
+//  compute             xexact  ->  cAx    ->     cAAx   ->       b 
+//  solve               x       <-  sAx    <-     sAAx   <-       b
+//  check               x       ->  kAx    ->     kAAx   ->  bcheck
+//
+//  Note that since Levels 2 and 3 use the same A, there is no need to 
+//  call NumericFactorization() between the second and third call to Solve. 
+//   
 
-  Epetra_Map *Map = Amat->RowMap() ; 
+
+int TestSuperludist( Epetra_CrsMatrix *& Amat, 
+		     bool transpose, 
+		     bool verbose, 
+		     int Levels,
+		     const double Rcond,
+		     double &maxrelerror, 
+		     double &maxrelresidual,
+		     int &NumTests ) {
+
+  int NumErrors = 0 ;
+  maxrelerror = 0.0;
+  maxrelresidual = 0.0;
+  const Epetra_Comm& Comm = Amat->Comm();
+  double relerror;
+  double relresidual;
+   
+
+  {
+    AMESOS::Parameter::List ParamList ;
+    ParamList.setParameter( "Redistribute", true );
+    ParamList.setParameter( "AddZeroToDiag", true );
+    AMESOS::Parameter::List& SuperludistParams = ParamList.sublist("Superludist") ;
+    SuperludistParams.setParameter( "ReuseSymbolic", true );
+    SuperludistParams.setParameter( "MaxProcesses", 2 );
+    //  ParamList.print( cerr, 10 ) ; 
+    
+    NumErrors += PerformOneSolveAndTest(AMESOS_SUPERLUDIST,
+					Comm, 
+					transpose, 
+					verbose,
+					ParamList, 
+					Amat, 
+					Levels,
+					Rcond, 
+					relerror, 
+					relresidual ) ; 
+    maxrelerror = EPETRA_MAX( relerror, maxrelerror ) ; 
+    maxrelresidual = EPETRA_MAX( relresidual, maxrelresidual ) ; 
+    NumTests++ ; 
+    
+    if (verbose) cout << " TestSuperludist relresidual = " <<relresidual << endl ; 
+    if (verbose) cout << " TestSuperludist relerror = " << relerror << endl ; 
+    if (verbose) cout << " TestSuperludist maxrelresidual = " << maxrelresidual << endl ; 
+    if (verbose) cout << " TestSuperludist maxrelerror = " << maxrelerror << endl ; 
+    
+  }
   
-  Epetra_Vector x2(*Map), x1(*Map), x(*Map), b(*Map), residual(*Map), temp(*Map);
+  {
+    AMESOS::Parameter::List ParamList ;
+    ParamList.setParameter( "Redistribute", true );
+    ParamList.setParameter( "AddZeroToDiag", true );
+    AMESOS::Parameter::List& SuperludistParams = ParamList.sublist("Superludist") ;
+    SuperludistParams.setParameter( "ReuseSymbolic", false );
+    SuperludistParams.setParameter( "MaxProcesses", 2 );
+    //  ParamList.print( cerr, 10 ) ; 
+   
+    NumErrors += PerformOneSolveAndTest(AMESOS_SUPERLUDIST,
+					Comm, 
+					transpose, 
+					verbose,
+					ParamList, 
+					Amat, 
+					Levels,
+					Rcond, 
+					relerror, 
+					relresidual ) ; 
+    maxrelerror = EPETRA_MAX( relerror, maxrelerror ) ; 
+    maxrelresidual = EPETRA_MAX( relresidual, maxrelresidual ) ; 
+    NumTests++ ; 
 
-  //
-  //  Solve Ax = b using Amesos_SUPERLUDIST via the Amesos_Factory interface
-  //
-  Epetra_LinearProblem Problem;
-  Amesos_BaseSolver* Abase ; 
-  Amesos_Factory Afactory;
-  Abase = Afactory.Create( AMESOS_SUPERLUDIST, Problem, ParamList ) ; 
-  if ( Abase != 0 ) {
-
-    //
-    //  Factor A
-    //
-    Problem.SetOperator( &Amat );
-    EPETRA_CHK_ERR( Abase->SymbolicFactorization(  ) ); 
-    EPETRA_CHK_ERR( Abase->NumericFactorization(  ) ); 
-
-    b.Random();
-    b.PutScalar(1.0);
-    //
-    //  Solve A x = b 
-    //
-    Problem.SetLHS( &x );
-    Problem.SetRHS( &b );
-    EPETRA_CHK_ERR( Abase->Solve(  ) ); 
-
-
-    //  if (verbose) cout << " x = " << x << endl ; 
-    //
-    int ind[1];
-    double val[1];
-    ind[0] = 0;
-    val[0] = 1 ; 
-    if ( A.MyGRID( 0 ) )
-      A.SumIntoMyValues( 0, 1, val, ind ) ; 
-
-    //  if (verbose) cout << " A' = " << A << endl ; 
-    EPETRA_CHK_ERR( Abase->NumericFactorization(  ) ); 
-
-    //
-    //  Solve A' x1 = x 
-    //
-    Problem.SetLHS( &x1 );
-    Problem.SetRHS( &x );
-    EPETRA_CHK_ERR( Abase->Solve(  ) ); 
-
-    //  if (verbose) cout << " x1 = " << x1 << endl ; 
-
-    if ( A.MyGRID( 0 ) )
-      A.SumIntoMyValues( 0, 1, val, ind ) ; 
-
-    //  if (verbose) cout << " A'' = " << A << endl ; 
-    EPETRA_CHK_ERR( Abase->NumericFactorization(  ) ); 
-
-    //
-    //  Solve A" x2 = x1
-    //
-    Problem.SetLHS( &x2 );
-    Problem.SetRHS( &x1 );
-    EPETRA_CHK_ERR( Abase->Solve(  ) ); 
-
-    //  if (verbose) cout << " x2 = " << x2 << endl ; 
-
-    //
-    //  Compute the residual: A A' A" x2 - b
-    //
-
-    A.Multiply( false, x2, temp ) ; //  temp = A x2
-
-    //  if (verbose) cout << " temp = " << temp << endl ; 
-
-    val[0] = -val[0] ; 
-    if ( A.MyGRID( 0 ) )
-      A.SumIntoMyValues( 0, 1, val, ind ) ; 
-    A.Multiply( false, temp, x2 ) ; //  x2 = A' A" x2
-
-
-
-    //  if (verbose) cout << " x2 = " << x2 << endl ; 
-
-
-    if ( A.MyGRID( 0 ) )
-      A.SumIntoMyValues( 0, 1, val, ind ) ; 
-    A.Multiply( false, x2, temp ) ; //  temp = A A' A'' x2
-
-
-    //  if (verbose) cout << " temp = " << temp << endl ; 
-    //  if (verbose) cout << " b = " << b << endl ; 
-
-
-
-
-    residual.Update( 1.0, temp, -1.0, b, 0.0 ) ;
-    //  if (verbose) cout << " residual = " << residual << endl ; 
-
-    double norm_residual ;
-    residual.Norm2( &norm_residual ) ; 
-
-    if (iam == 0 ) {
-      if (verbose) cout << " norm2(A A' A'' x-b) = " << norm_residual << endl ; 
-      //
-      //  This is an ill-conditioned problem
-      //
-      if ( norm_residual < (1e-15)*(1.0*NumPoints*NumPoints*NumPoints*
-				    NumPoints*NumPoints*NumPoints) ) {
-	if (verbose) cout << " Test Passed " << endl ;
-      } else {
-	if (verbose) cout << " TEST FAILED " << endl ;
-	errors += 1 ; 
-      }
-    }
-
-
-
-
-    // #define FACTOR_B
-#ifdef FACTOR_B
-    //
-    //  Now we check to make sure that we can change the problem and 
-    //  re-factorize.  
-    //
-
-
-
-
-
-
-    const int BNumPoints = NumPoints;  // Must be between 2 and 100 (on large matrices,
-    // the problem is quite ill-conditioned) 
-
-    // Construct a Map that puts approximately the same number of 
-    // equations on each processor.
-    Epetra_Map BMap(BNumPoints, 0, Comm);
-
-    //  Create an empty EpetraCrsMatrix 
-    Epetra_CrsMatrix B(Copy, BMap, 0);
-
-    //
-    //  Populate A with a [-1,2,-1] tridiagonal matrix WITH -1 in the
-    //  off diagonal corners.
-    //  See CreateTridi.cpp in this directory 
-    CreateTridiPlus( B ) ; 
-
-    Epetra_Vector Bx2(BMap), Bx1(BMap), Bx(BMap), Bb(BMap), Bresidual(BMap), Btemp(BMap);
-
-    //
-
-
-    //
-    //  Factor B
-    //
-    Problem.SetOperator( &B );
-    EPETRA_CHK_ERR( Abase->SymbolicFactorization(  ) ); 
-    EPETRA_CHK_ERR( Abase->NumericFactorization(  ) ); 
-
-    Bb.Random();
-    Bb.PutScalar(1.0);
-    //
-    //  Solve B x = b 
-    //
-    Problem.SetLHS( &Bx );
-    Problem.SetRHS( &Bb );
-    EPETRA_CHK_ERR( Abase->Solve(  ) ); 
-
-
-    //  if (verbose) cout << " b = " << b << endl ; 
-    //  if (verbose) cout << " x = " << x << endl ; 
-    //
-    ind[0] = 0;
-    val[0] = 1 ; 
-    if ( B.MyGRID( 0 ) )
-      B.SumIntoMyValues( 0, 1, val, ind ) ; 
-
-    //  if (verbose) cout << " B' = " << B << endl ; 
-    EPETRA_CHK_ERR( Abase->NumericFactorization(  ) ); 
-
-    //
-    //  Solve B' x1 = x 
-    //
-    Problem.SetLHS( &Bx1 );
-    Problem.SetRHS( &Bx );
-    EPETRA_CHK_ERR( Abase->Solve(  ) ); 
-
-    //  if (verbose) cout << " x1 = " << x1 << endl ; 
-
-    if ( B.MyGRID( 0 ) )
-      B.SumIntoMyValues( 0, 1, val, ind ) ; 
-
-    //  if (verbose) cout << " B'' = " << B << endl ; 
-    EPETRA_CHK_ERR( Abase->NumericFactorization(  ) ); 
-
-    //
-    //  Solve B" x2 = x1
-    //
-    Problem.SetLHS( &Bx2 );
-    Problem.SetRHS( &Bx1 );
-    EPETRA_CHK_ERR( Abase->Solve(  ) ); 
-
-    //  if (verbose) cout << " x2 = " << x2 << endl ; 
-
-    //
-    //  Compute the residual: B B' B" x2 - b
-    //
-
-    B.Multiply( false, Bx2, Btemp ) ; //  temp = B x2
-
-    //  if (verbose) cout << " temp = " << temp << endl ; 
-
-    val[0] = -val[0] ; 
-    if ( B.MyGRID( 0 ) )
-      B.SumIntoMyValues( 0, 1, val, ind ) ; 
-    B.Multiply( false, Btemp, Bx2 ) ; //  x2 = B' B" x2
-
-
-
-    //  if (verbose) cout << " x2 = " << x2 << endl ; 
-
-
-    if ( B.MyGRID( 0 ) )
-      B.SumIntoMyValues( 0, 1, val, ind ) ; 
-    B.Multiply( false, Bx2, Btemp ) ; //  temp = B B' B'' x2
-
-
-    //  if (verbose) cout << " temp = " << temp << endl ; 
-    //  if (verbose) cout << " b = " << b << endl ; 
-
-
-
-
-    Bresidual.Update( 1.0, Btemp, -1.0, Bb, 0.0 ) ;
-    //  if (verbose) cout << " residual = " << residual << endl ; 
-
-    Bresidual.Norm2( &norm_residual ) ; 
-
-    if (iam == 0 ) {
-      if (verbose) cout << " norm2(B B' B'' x-b) = " << norm_residual << endl ; 
-      //
-      //  This is an ill-conditioned problem
-      //
-      if ( norm_residual < (1e-15)*(1.0*NumPoints*NumPoints*NumPoints*
-				    NumPoints*NumPoints*NumPoints) ) {
-	if (verbose) cout << " Test Passed " << endl ;
-      } else {
-	if (verbose) cout << " TEST FAILED " << endl ;
-	errors += 1 ; 
-      }
-    }
-#endif
-
-    delete Abase;
   }
 
-  return errors;
-  
-}
-
-
-int TestSuperludist( EpetraCrsMatrix *& Amat, bool transpose, 
-		     double &error, double &residual ) {
-
-{
-   AMESOS::Parameter::List ParamList ;
-   ParamList.setParameter( "Redistribute", true );
-   ParamList.setParameter( "AddZeroToDiag", true );
-   AMESOS::Parameter::List& SuperludistParams = ParamList.sublist("Superludist") ;
-   SuperludistParams.setParameter( "ReuseSymbolic", true );
-   SuperludistParams.setParameter( "MaxProcesses", 2 );
-   //  ParamList.print( cerr, 10 ) ; 
-   
-   errors += SubTest( Comm, transpose, ParamList, Amat ) ; 
- }
-  
 #if 0
- {
-   AMESOS::Parameter::List ParamList ;
-   ParamList.setParameter( "Redistribute", true );
-   ParamList.setParameter( "AddZeroToDiag", true );
-   AMESOS::Parameter::List& SuperludistParams = ParamList.sublist("Superludist") ;
-   SuperludistParams.setParameter( "ReuseSymbolic", false );
-   SuperludistParams.setParameter( "MaxProcesses", 2 );
-   //  ParamList.print( cerr, 10 ) ; 
+  {
+    AMESOS::Parameter::List ParamList ;
+    ParamList.setParameter( "Redistribute", true );
+    ParamList.setParameter( "AddZeroToDiag", true );
+    AMESOS::Parameter::List& SuperludistParams = ParamList.sublist("Superludist") ;
+    SuperludistParams.setParameter( "ReuseSymbolic", true );
+    SuperludistParams.setParameter( "MaxProcesses", 1 );
+    //  ParamList.print( cerr, 10 ) ; 
    
-   errors += SubTest( Comm, ParamList ) ; 
- }
-
- {
-   AMESOS::Parameter::List ParamList ;
-   ParamList.setParameter( "Redistribute", true );
-   ParamList.setParameter( "AddZeroToDiag", true );
-   AMESOS::Parameter::List& SuperludistParams = ParamList.sublist("Superludist") ;
-   SuperludistParams.setParameter( "ReuseSymbolic", true );
-   SuperludistParams.setParameter( "MaxProcesses", 1 );
-   //  ParamList.print( cerr, 10 ) ; 
+    NumErrors += PerformOneSolveAndTest( Comm, ParamList ) ; 
+  }
+  
+  {
+    AMESOS::Parameter::List ParamList ;
+    ParamList.setParameter( "Redistribute", true );
+    ParamList.setParameter( "AddZeroToDiag", true );
+    AMESOS::Parameter::List& SuperludistParams = ParamList.sublist("Superludist") ;
+    SuperludistParams.setParameter( "ReuseSymbolic", false );
+    SuperludistParams.setParameter( "MaxProcesses", 1 );
+    //  ParamList.print( cerr, 10 ) ; 
    
-   errors += SubTest( Comm, ParamList ) ; 
- }
+    NumErrors += PerformOneSolveAndTest( Comm, ParamList ) ; 
+  }
   
- {
-   AMESOS::Parameter::List ParamList ;
-   ParamList.setParameter( "Redistribute", true );
-   ParamList.setParameter( "AddZeroToDiag", true );
-   AMESOS::Parameter::List& SuperludistParams = ParamList.sublist("Superludist") ;
-   SuperludistParams.setParameter( "ReuseSymbolic", false );
-   SuperludistParams.setParameter( "MaxProcesses", 1 );
-   //  ParamList.print( cerr, 10 ) ; 
+  
+  {
+    AMESOS::Parameter::List ParamList ;
+    ParamList.setParameter( "Redistribute", true );
+    ParamList.setParameter( "AddZeroToDiag", true );
+    AMESOS::Parameter::List& SuperludistParams = ParamList.sublist("Superludist") ;
+    SuperludistParams.setParameter( "ReuseSymbolic", false );
+    SuperludistParams.setParameter( "MaxProcesses", 2 );
+    //  ParamList.print( cerr, 10 ) ; 
    
-   errors += SubTest( Comm, ParamList ) ; 
- }
+    NumErrors += PerformOneSolveAndTest( Comm, ParamList ) ; 
+  }
   
   
- {
-   AMESOS::Parameter::List ParamList ;
-   ParamList.setParameter( "Redistribute", true );
-   ParamList.setParameter( "AddZeroToDiag", true );
-   AMESOS::Parameter::List& SuperludistParams = ParamList.sublist("Superludist") ;
-   SuperludistParams.setParameter( "ReuseSymbolic", false );
-   SuperludistParams.setParameter( "MaxProcesses", 2 );
-   //  ParamList.print( cerr, 10 ) ; 
+  {
+    AMESOS::Parameter::List ParamList ;
+    ParamList.setParameter( "Redistribute", true );
+    ParamList.setParameter( "AddZeroToDiag", false );
+    AMESOS::Parameter::List& SuperludistParams = ParamList.sublist("Superludist") ;
+    SuperludistParams.setParameter( "ReuseSymbolic", true );
+    SuperludistParams.setParameter( "MaxProcesses", 1 );
+    //  ParamList.print( cerr, 10 ) ; 
    
-   errors += SubTest( Comm, ParamList ) ; 
- }
+    NumErrors += PerformOneSolveAndTest( Comm, ParamList ) ; 
+  }
   
   
- {
-   AMESOS::Parameter::List ParamList ;
-   ParamList.setParameter( "Redistribute", true );
-   ParamList.setParameter( "AddZeroToDiag", false );
-   AMESOS::Parameter::List& SuperludistParams = ParamList.sublist("Superludist") ;
-   SuperludistParams.setParameter( "ReuseSymbolic", true );
-   SuperludistParams.setParameter( "MaxProcesses", 1 );
-   //  ParamList.print( cerr, 10 ) ; 
+  {
+    AMESOS::Parameter::List ParamList ;
+    ParamList.setParameter( "Redistribute", true );
+    ParamList.setParameter( "AddZeroToDiag", false );
+    AMESOS::Parameter::List& SuperludistParams = ParamList.sublist("Superludist") ;
+    SuperludistParams.setParameter( "ReuseSymbolic", true );
+    SuperludistParams.setParameter( "MaxProcesses", 2 );
+    //  ParamList.print( cerr, 10 ) ; 
    
-   errors += SubTest( Comm, ParamList ) ; 
- }
+    NumErrors += PerformOneSolveAndTest( Comm, ParamList ) ; 
+  }
   
   
- {
-   AMESOS::Parameter::List ParamList ;
-   ParamList.setParameter( "Redistribute", true );
-   ParamList.setParameter( "AddZeroToDiag", false );
-   AMESOS::Parameter::List& SuperludistParams = ParamList.sublist("Superludist") ;
-   SuperludistParams.setParameter( "ReuseSymbolic", true );
-   SuperludistParams.setParameter( "MaxProcesses", 2 );
-   //  ParamList.print( cerr, 10 ) ; 
+  {
+    AMESOS::Parameter::List ParamList ;
+    ParamList.setParameter( "Redistribute", true );
+    ParamList.setParameter( "AddZeroToDiag", false );
+    AMESOS::Parameter::List& SuperludistParams = ParamList.sublist("Superludist") ;
+    SuperludistParams.setParameter( "ReuseSymbolic", false );
+    SuperludistParams.setParameter( "MaxProcesses", 1 );
+    //  ParamList.print( cerr, 10 ) ; 
    
-   errors += SubTest( Comm, ParamList ) ; 
- }
+    NumErrors += PerformOneSolveAndTest( Comm, ParamList ) ; 
+  }
   
   
- {
-   AMESOS::Parameter::List ParamList ;
-   ParamList.setParameter( "Redistribute", true );
-   ParamList.setParameter( "AddZeroToDiag", false );
-   AMESOS::Parameter::List& SuperludistParams = ParamList.sublist("Superludist") ;
-   SuperludistParams.setParameter( "ReuseSymbolic", false );
-   SuperludistParams.setParameter( "MaxProcesses", 1 );
-   //  ParamList.print( cerr, 10 ) ; 
+  {
+    AMESOS::Parameter::List ParamList ;
+    ParamList.setParameter( "Redistribute", true );
+    ParamList.setParameter( "AddZeroToDiag", false );
+    AMESOS::Parameter::List& SuperludistParams = ParamList.sublist("Superludist") ;
+    SuperludistParams.setParameter( "ReuseSymbolic", false );
+    SuperludistParams.setParameter( "MaxProcesses", 2 );
+    //  ParamList.print( cerr, 10 ) ; 
    
-   errors += SubTest( Comm, ParamList ) ; 
- }
-  
-  
- {
-   AMESOS::Parameter::List ParamList ;
-   ParamList.setParameter( "Redistribute", true );
-   ParamList.setParameter( "AddZeroToDiag", false );
-   AMESOS::Parameter::List& SuperludistParams = ParamList.sublist("Superludist") ;
-   SuperludistParams.setParameter( "ReuseSymbolic", false );
-   SuperludistParams.setParameter( "MaxProcesses", 2 );
-   //  ParamList.print( cerr, 10 ) ; 
-   
-   errors += SubTest( Comm, ParamList ) ; 
- }
+    NumErrors += PerformOneSolveAndTest( Comm, ParamList ) ; 
+  }
   
 
- {
-   AMESOS::Parameter::List ParamList ;
-   ParamList.setParameter( "Redistribute", false );
-   ParamList.setParameter( "AddZeroToDiag", true );
-   AMESOS::Parameter::List& SuperludistParams = ParamList.sublist("Superludist") ;
-   SuperludistParams.setParameter( "ReuseSymbolic", true );
-   SuperludistParams.setParameter( "MaxProcesses", 1 );
-   //  ParamList.print( cerr, 10 ) ; 
+  {
+    AMESOS::Parameter::List ParamList ;
+    ParamList.setParameter( "Redistribute", false );
+    ParamList.setParameter( "AddZeroToDiag", true );
+    AMESOS::Parameter::List& SuperludistParams = ParamList.sublist("Superludist") ;
+    SuperludistParams.setParameter( "ReuseSymbolic", true );
+    SuperludistParams.setParameter( "MaxProcesses", 1 );
+    //  ParamList.print( cerr, 10 ) ; 
    
-   errors += SubTest( Comm, ParamList ) ; 
- }
+    NumErrors += PerformOneSolveAndTest( Comm, ParamList ) ; 
+  }
   
- {
-   AMESOS::Parameter::List ParamList ;
-   ParamList.setParameter( "Redistribute", false );
-   ParamList.setParameter( "AddZeroToDiag", true );
-   AMESOS::Parameter::List& SuperludistParams = ParamList.sublist("Superludist") ;
-   SuperludistParams.setParameter( "ReuseSymbolic", true );
-   SuperludistParams.setParameter( "MaxProcesses", 2 );
-   //  ParamList.print( cerr, 10 ) ; 
+  {
+    AMESOS::Parameter::List ParamList ;
+    ParamList.setParameter( "Redistribute", false );
+    ParamList.setParameter( "AddZeroToDiag", true );
+    AMESOS::Parameter::List& SuperludistParams = ParamList.sublist("Superludist") ;
+    SuperludistParams.setParameter( "ReuseSymbolic", true );
+    SuperludistParams.setParameter( "MaxProcesses", 2 );
+    //  ParamList.print( cerr, 10 ) ; 
    
-   errors += SubTest( Comm, ParamList ) ; 
- }
+    NumErrors += PerformOneSolveAndTest( Comm, ParamList ) ; 
+  }
   
   
- {
-   AMESOS::Parameter::List ParamList ;
-   ParamList.setParameter( "Redistribute", false );
-   ParamList.setParameter( "AddZeroToDiag", true );
-   AMESOS::Parameter::List& SuperludistParams = ParamList.sublist("Superludist") ;
-   SuperludistParams.setParameter( "ReuseSymbolic", false );
-   SuperludistParams.setParameter( "MaxProcesses", 1 );
-   //  ParamList.print( cerr, 10 ) ; 
+  {
+    AMESOS::Parameter::List ParamList ;
+    ParamList.setParameter( "Redistribute", false );
+    ParamList.setParameter( "AddZeroToDiag", true );
+    AMESOS::Parameter::List& SuperludistParams = ParamList.sublist("Superludist") ;
+    SuperludistParams.setParameter( "ReuseSymbolic", false );
+    SuperludistParams.setParameter( "MaxProcesses", 1 );
+    //  ParamList.print( cerr, 10 ) ; 
    
-   errors += SubTest( Comm, ParamList ) ; 
- }
+    NumErrors += PerformOneSolveAndTest( Comm, ParamList ) ; 
+  }
   
   
- {
-   AMESOS::Parameter::List ParamList ;
-   ParamList.setParameter( "Redistribute", false );
-   ParamList.setParameter( "AddZeroToDiag", true );
-   AMESOS::Parameter::List& SuperludistParams = ParamList.sublist("Superludist") ;
-   SuperludistParams.setParameter( "ReuseSymbolic", false );
-   SuperludistParams.setParameter( "MaxProcesses", 2 );
-   //  ParamList.print( cerr, 10 ) ; 
+  {
+    AMESOS::Parameter::List ParamList ;
+    ParamList.setParameter( "Redistribute", false );
+    ParamList.setParameter( "AddZeroToDiag", true );
+    AMESOS::Parameter::List& SuperludistParams = ParamList.sublist("Superludist") ;
+    SuperludistParams.setParameter( "ReuseSymbolic", false );
+    SuperludistParams.setParameter( "MaxProcesses", 2 );
+    //  ParamList.print( cerr, 10 ) ; 
    
-   errors += SubTest( Comm, ParamList ) ; 
- }
+    NumErrors += PerformOneSolveAndTest( Comm, ParamList ) ; 
+  }
   
   
- {
-   AMESOS::Parameter::List ParamList ;
-   ParamList.setParameter( "Redistribute", false );
-   ParamList.setParameter( "AddZeroToDiag", false );
-   AMESOS::Parameter::List& SuperludistParams = ParamList.sublist("Superludist") ;
-   SuperludistParams.setParameter( "ReuseSymbolic", true );
-   SuperludistParams.setParameter( "MaxProcesses", 1 );
-   //  ParamList.print( cerr, 10 ) ; 
+  {
+    AMESOS::Parameter::List ParamList ;
+    ParamList.setParameter( "Redistribute", false );
+    ParamList.setParameter( "AddZeroToDiag", false );
+    AMESOS::Parameter::List& SuperludistParams = ParamList.sublist("Superludist") ;
+    SuperludistParams.setParameter( "ReuseSymbolic", true );
+    SuperludistParams.setParameter( "MaxProcesses", 1 );
+    //  ParamList.print( cerr, 10 ) ; 
    
-   errors += SubTest( Comm, ParamList ) ; 
- }
+    NumErrors += PerformOneSolveAndTest( Comm, ParamList ) ; 
+  }
   
   
- {
-   AMESOS::Parameter::List ParamList ;
-   ParamList.setParameter( "Redistribute", false );
-   ParamList.setParameter( "AddZeroToDiag", false );
-   AMESOS::Parameter::List& SuperludistParams = ParamList.sublist("Superludist") ;
-   SuperludistParams.setParameter( "ReuseSymbolic", true );
-   SuperludistParams.setParameter( "MaxProcesses", 2 );
-   //  ParamList.print( cerr, 10 ) ; 
+  {
+    AMESOS::Parameter::List ParamList ;
+    ParamList.setParameter( "Redistribute", false );
+    ParamList.setParameter( "AddZeroToDiag", false );
+    AMESOS::Parameter::List& SuperludistParams = ParamList.sublist("Superludist") ;
+    SuperludistParams.setParameter( "ReuseSymbolic", true );
+    SuperludistParams.setParameter( "MaxProcesses", 2 );
+    //  ParamList.print( cerr, 10 ) ; 
    
-   errors += SubTest( Comm, ParamList ) ; 
- }
+    NumErrors += PerformOneSolveAndTest( Comm, ParamList ) ; 
+  }
   
   
- {
-   AMESOS::Parameter::List ParamList ;
-   ParamList.setParameter( "Redistribute", false );
-   ParamList.setParameter( "AddZeroToDiag", false );
-   AMESOS::Parameter::List& SuperludistParams = ParamList.sublist("Superludist") ;
-   SuperludistParams.setParameter( "ReuseSymbolic", false );
-   SuperludistParams.setParameter( "MaxProcesses", 1 );
-   //  ParamList.print( cerr, 10 ) ; 
+  {
+    AMESOS::Parameter::List ParamList ;
+    ParamList.setParameter( "Redistribute", false );
+    ParamList.setParameter( "AddZeroToDiag", false );
+    AMESOS::Parameter::List& SuperludistParams = ParamList.sublist("Superludist") ;
+    SuperludistParams.setParameter( "ReuseSymbolic", false );
+    SuperludistParams.setParameter( "MaxProcesses", 1 );
+    //  ParamList.print( cerr, 10 ) ; 
    
-   errors += SubTest( Comm, ParamList ) ; 
- }
+    NumErrors += PerformOneSolveAndTest( Comm, ParamList ) ; 
+  }
   
   
- {
-   AMESOS::Parameter::List ParamList ;
-   ParamList.setParameter( "Redistribute", false );
-   ParamList.setParameter( "AddZeroToDiag", false );
-   AMESOS::Parameter::List& SuperludistParams = ParamList.sublist("Superludist") ;
-   SuperludistParams.setParameter( "ReuseSymbolic", false );
-   SuperludistParams.setParameter( "MaxProcesses", 2 );
-   //  ParamList.print( cerr, 10 ) ; 
+  {
+    AMESOS::Parameter::List ParamList ;
+    ParamList.setParameter( "Redistribute", false );
+    ParamList.setParameter( "AddZeroToDiag", false );
+    AMESOS::Parameter::List& SuperludistParams = ParamList.sublist("Superludist") ;
+    SuperludistParams.setParameter( "ReuseSymbolic", false );
+    SuperludistParams.setParameter( "MaxProcesses", 2 );
+    //  ParamList.print( cerr, 10 ) ; 
    
-   errors += SubTest( Comm, ParamList ) ; 
- }
- #endif
+    NumErrors += PerformOneSolveAndTest( Comm, ParamList ) ; 
+  }
+#endif
   
+  return NumErrors; 
 }

@@ -26,8 +26,8 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef _EPETRA_MUMPS_H_
-#define _EPETRA_MUMPS_H_
+#ifndef _AMESOS_MUMPS_H_
+#define _AMESOS_MUMPS_H_
 
 class Epetra_Import;
 class Epetra_CrsMatrix;
@@ -414,4 +414,4 @@ private:
   
 };  // End of  class Amesos_Mumps
 
-#endif /* _EPETRA_MUMPS_H_ */
+#endif /* _AMESOS_MUMPS_H_ */

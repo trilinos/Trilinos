@@ -48,6 +48,18 @@ else
 UMFPACK_TEST = 
 endif
 
+if HAVE_AMESOS_SCALAPACK
+SCALAPACK_TEST = TestScalapack
+else
+SCALAPACK_TEST = 
+endif
+
+if HAVE_AMESOS_SUPERLU
+SUPERLU_TEST = Test_Superlu
+else
+SUPERLU_TEST = 
+endif
+
 if HAVE_AMESOS_KLU
 KLU_TEST = TestKlu
 else
@@ -68,7 +80,7 @@ endif
 
 
 noinst_PROGRAMS = $(SLUDIST_TEST) $(DSCPACK_TEST) $(UMFPACK_TEST) \
-	$(MUMPS_TEST) $(KLU_TEST) $(SUPERLUDIST_TEST) 
+	$(MUMPS_TEST) $(KLU_TEST) $(SUPERLUDIST_TEST) $(SCALAPACK_TEST)
 
 if HAVE_AMESOS_SLUD
 TestOldSuperludist_SOURCES = $(srcdir)/TestOldSuperludist
@@ -89,6 +101,13 @@ TestUmfpack_SOURCES = $(srcdir)/TestUmfpack
 
 TestUmfpack$(EXEEXT): $(srcdir)/TestUmfpack
 	cp $(srcdir)/TestUmfpack TestUmfpack$(EXEEXT) 
+endif
+
+if HAVE_AMESOS_SCALAPACK
+TestScalapack_SOURCES = $(srcdir)/TestScalapack
+
+TestScalapack$(EXEEXT): $(srcdir)/TestScalapack
+	cp $(srcdir)/TestScalapack TestScalapack$(EXEEXT) 
 endif
 
 if HAVE_AMESOS_KLU
