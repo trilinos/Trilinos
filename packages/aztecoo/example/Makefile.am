@@ -10,6 +10,7 @@
 # Triutils, the example is built only if Triutils is built.
 if BUILD_TRIUTILS
 USER_OP_USER_MAT_SUBDIR=AztecOO_UserOpUserMat
+AZTECOO_SUBDIR=AztecOO
 endif
 
-SUBDIRS = $(USER_OP_USER_MAT_SUBDIR) simple_epetra_aztecoo
+SUBDIRS = $(AZTECOO_SUBDIR) $(USER_OP_USER_MAT_SUBDIR) simple_epetra_aztecoo

@@ -138,18 +138,6 @@ TAC_ARG_WITH_AR
 TAC_ARG_CHECK_MPI
 
 # ------------------------------------------------------------------------
-# Special check for case of running on TFLOP
-# ------------------------------------------------------------------------
-
-AC_MSG_CHECKING([if host is TFLOP (and therefore needs special TFLOP define statement)])
-if test "X${host}" = "Xtflop"; then
-  AC_MSG_RESULT(yes)
-  AC_DEFINE(TFLOP,,[define if compiling for ASCI Red, aka TFLOP])
-else
-  AC_MSG_RESULT(no)
-fi
-
-# ------------------------------------------------------------------------
 # Checks for header files
 # ------------------------------------------------------------------------
 
@@ -212,6 +200,21 @@ AC_CXX_STD_SPRINTF
 TAC_ARG_ENABLE_FEATURE(oldifpack, [Enable old ifpack interface support], OLDIFPACK, no)
 AM_CONDITIONAL(BUILD_OLDIFPACK, test "X$ac_cv_use_oldifpack" != "Xno")
 
+# The following section is required to decide if the AZ_lu preconditioner
+# should be built.  If not, y12m is not necessary.
+AC_ARG_ENABLE(aztecoo-azlu,
+ [AC_HELP_STRING([--enable-aztecoo-azlu],[Enable az-lu preconditioner.  Default is no.  Requires y12m.])],
+ ac_cv_use_aztecoo_azlu=$enableval, ac_cv_use_aztecoo_azlu=no)
+
+AC_MSG_CHECKING(whether to use aztecoo-azlu)
+
+if test "X$ac_cv_use_aztecoo_azlu" != "Xno"; then
+  AC_MSG_RESULT(yes)
+  AC_DEFINE([HAVE_AZLU],,[Define if you want to build AZ_lu])
+else
+  AC_MSG_RESULT(no)
+fi
+
 dnl THIS NEEDS TO BE FILLED IN!!!
 
 # ------------------------------------------------------------------------
@@ -226,18 +229,20 @@ TAC_ARG_WITH_INCDIRS
 TAC_ARG_ENABLE_FEATURE(triutils, [Build triutils], TRIUTILS, yes)
 AM_CONDITIONAL(BUILD_TRIUTILS, test "X$ac_cv_use_triutils" != "Xno")
 
-TAC_ARG_ENABLE_FEATURE(referencey12m, [Build y12m lib included in the distribution], Y12M, no)
-AM_CONDITIONAL(BUILD_Y12M, test "X$ac_cv_use_referencey12m" != "Xno")
+# y12m is needed only when AZ_lu is enabled
+if test "X$ac_cv_use_aztecoo_azlu" != "Xno"; then
+  TAC_ARG_ENABLE_FEATURE(referencey12m, [Build y12m lib included in the distribution], Y12M, no)
+  AM_CONDITIONAL(BUILD_Y12M, test "X$ac_cv_use_referencey12m" != "Xno")
 # y12m library needed
-if test "X$ac_cv_use_referencey12m" = "Xno"; then
-  # Find a valid y12m
-  AC_LANG_SAVE
-  AC_LANG_FORTRAN77
-  AC_SEARCH_LIBS(y12mae,[y12m],,
-  AC_MSG_ERROR([[Cannot find y12m library, please specify additional locations using --with-libdirs or type --enable-referencey12m on the configure line in the Trilinos level directory to use the y12m library included with the distribution]]))
-  AC_LANG_RESTORE
+  if test "X$ac_cv_use_referencey12m" = "Xno"; then
+    # Find a valid y12m
+    AC_LANG_SAVE
+    AC_LANG_FORTRAN77
+    AC_SEARCH_LIBS(y12mae,[y12m],,
+    AC_MSG_ERROR([[Cannot find y12m library, please specify additional locations using --with-libdirs or type --enable-referencey12m on the configure line in the Trilinos level directory to use the y12m library included with the distribution]]))
+    AC_LANG_RESTORE
+  fi
 fi
-
 # Checks for library functions.
 AC_SEARCH_LIBS(pow,[m],,AC_MSG_ERROR(Cannot find math library))
 #Removed the following line because it caused problems on janus.
@@ -303,7 +308,6 @@ AC_SUBST(ac_aux_dir)
 # even more critical
 
 #
-#                example/AztecOO/Makefile
 #                example/IfpackAztecOO/Makefile
 #                example/azoo_iterate_hb/Makefile
 #                example/aztec_app/Makefile
@@ -315,6 +319,7 @@ AC_CONFIG_FILES([
 		example/Makefile
                 example/simple_epetra_aztecoo/Makefile
                 example/AztecOO_UserOpUserMat/Makefile
+                example/AztecOO/Makefile
 		test/Makefile
 		test/AztecOO_UserOpUserMat/Makefile
 		test/scripts/Makefile

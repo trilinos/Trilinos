@@ -487,7 +487,7 @@ int AZ_check_options(int options[], int az_proc, int data_org[], int az_nprocs,
       return 0;
     }
 #else
-    fprintf(stderr,"AZ_lu unavailable: configure with --enable-y12m to make available\n");
+    fprintf(stderr,"AZ_lu unavailable: configure with --enable-aztecoo-azlu to make available\n");
     exit(1);
 #endif
     break;

@@ -113,9 +113,6 @@
 /* Define to 1 if you have the ANSI C header files. */
 #undef STDC_HEADERS
 
-/* define if compiling for ASCI Red, aka TFLOP */
-#undef TFLOP
-
 /* Version number of package */
 #undef VERSION
 

@@ -364,7 +364,7 @@ void AZ_factor_subdomain(struct context *context, int N, int N_nz,
            AZ_free(rnr);
            AZ_free(aflag);
 #else
-	   fprintf(stderr,"AZ_lu unavailable: configure with --enable-y12m to make available\n");
+	   fprintf(stderr,"AZ_lu unavailable: configure with --enable-aztecoo-azlu to make available\n");
 	   exit(1);
 #endif
            break;
@@ -490,7 +490,7 @@ void AZ_hold_space(struct context *context, int N)
 
         if (context->space_holder == NULL) AZ_perror("Out of space in lu.\n");
 #else
-	fprintf(stderr,"AZ_lu unavailable: configure with --enable-y12m to make available\n");
+	fprintf(stderr,"AZ_lu unavailable: configure with --enable-aztecoo-azlu to make available\n");
 	exit(1);
 #endif
       break;
@@ -686,7 +686,7 @@ int  t1, t2, t3, i, t4, t5 = 0;
                       &ifail, &(context->N_nz_factors),
 		      &N, &N);
 #else
-    fprintf(stderr,"AZ_lu unavailable: configure with --enable-y12m to make available\n");
+    fprintf(stderr,"AZ_lu unavailable: configure with --enable-aztecoo-azlu to make available\n");
     exit(1);
 #endif
       break;

@@ -28,11 +28,6 @@
 
 #ifdef HAVE_CONFIG_H
 
-/* Temporary fix for HAVE_AZLU */
-
-#define HAVE_AZLU
-
-
 /*
  * The macros PACKAGE, PACKAGE_NAME, etc, get defined for each package and need to
  * be undef'd here to avoid warnings when this file is included from another package.
