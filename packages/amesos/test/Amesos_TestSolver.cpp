@@ -84,12 +84,6 @@ int Amesos_TestSolver( Epetra_Comm &Comm, char *matrix_file,
 
 
 
-  if ( iam == 0 ) {
-    cout << " SparseSolver == " << SparseSolver << 
-      " UMFPACK = " <<   UMFPACK << 
-      " SUPERLUDIST = " <<   SUPERLUDIST << endl ;
-  }
-    
 
   //  int whatever;
   //  if ( iam == 0 )  cin >> whatever ; 
@@ -225,11 +219,6 @@ int Amesos_TestSolver( Epetra_Comm &Comm, char *matrix_file,
 
   for ( int i = 0; i < 1+special ; i++ ) { 
     Epetra_Time TotalTime( Comm ) ; 
-  if ( false && iam == 0 ) {
-    cout << " Here we are::  SparseSolver == " << SparseSolver << 
-      " UMFPACK = " <<   UMFPACK << 
-      " SUPERLUDIST = " <<   SUPERLUDIST << endl ;
-  }
     
     if ( false ) { 
       //  TEST_UMFPACK is never set by configure
