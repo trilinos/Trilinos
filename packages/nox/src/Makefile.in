@@ -130,10 +130,6 @@ libnox_a_SOURCES = \
 	$(UTILS) 
 
 
-nodist_libnox_a_SOURCES = \
-	$(PRERELEASE)
-
-
 
 # ------------------------------------------------------------------------
 # List of all headers to install in $(pkgincludedir)
@@ -148,6 +144,18 @@ pkginclude_HEADERS = \
 	$(SOLVER_H) \
 	$(STATUSTEST_H) \
 	$(UTILS_H) 
+
+
+
+# ------------------------------------------------------------------------
+# Parts of the code that are not ready to be included in nightly release
+# ------------------------------------------------------------------------
+@BUILD_PRERELEASE_TRUE@nodist_pkginclude_HEADERS = \
+@BUILD_PRERELEASE_TRUE@	$(srcdir)/NOX_Direction_QuasiNewton.H 
+
+
+@BUILD_PRERELEASE_TRUE@nodist_libnox_a_SOURCES = \
+@BUILD_PRERELEASE_TRUE@	$(srcdir)/NOX_Direction_QuasiNewton.C
 
 
 
@@ -169,18 +177,6 @@ EXTRA_DIST = \
 # special.
 pkgexecincludedir = $(exec_prefix)/include/nox
 nodist_pkgexecinclude_HEADERS = NOX_Config.h
-
-
-# ------------------------------------------------------------------------
-# Parts of the code that are not ready to be included in nightly release
-# ------------------------------------------------------------------------
-@BUILD_PRERELEASE_TRUE@PRERELEASE_H = \
-@BUILD_PRERELEASE_TRUE@	$(srcdir)/NOX_Direction_QuasiNewton.H
-
-
-@BUILD_PRERELEASE_TRUE@PRERELEASE = \
-@BUILD_PRERELEASE_TRUE@	$(srcdir)/NOX_Direction_QuasiNewton.C
-
 
 
 # ------------------------------------------------------------------------
@@ -392,7 +388,8 @@ CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
 	-o $@
 CXXFLAGS = @CXXFLAGS@
 DIST_SOURCES = $(libnox_a_SOURCES)
-HEADERS = $(nodist_pkgexecinclude_HEADERS) $(pkginclude_HEADERS)
+HEADERS = $(nodist_pkgexecinclude_HEADERS) $(nodist_pkginclude_HEADERS) \
+	$(pkginclude_HEADERS)
 
 DIST_COMMON = $(pkginclude_HEADERS) ./stamp-h.in Makefile.am \
 	Makefile.in NOX_Config.h.in
@@ -908,6 +905,23 @@ uninstall-nodist_pkgexecincludeHEADERS:
 	  echo " rm -f $(DESTDIR)$(pkgexecincludedir)/$$f"; \
 	  rm -f $(DESTDIR)$(pkgexecincludedir)/$$f; \
 	done
+install-nodist_pkgincludeHEADERS: $(nodist_pkginclude_HEADERS)
+	@$(NORMAL_INSTALL)
+	$(mkinstalldirs) $(DESTDIR)$(pkgincludedir)
+	@list='$(nodist_pkginclude_HEADERS)'; for p in $$list; do \
+	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
+	  f="`echo $$p | sed -e 's|^.*/||'`"; \
+	  echo " $(INSTALL_HEADER) $$d$$p $(DESTDIR)$(pkgincludedir)/$$f"; \
+	  $(INSTALL_HEADER) $$d$$p $(DESTDIR)$(pkgincludedir)/$$f; \
+	done
+
+uninstall-nodist_pkgincludeHEADERS:
+	@$(NORMAL_UNINSTALL)
+	@list='$(nodist_pkginclude_HEADERS)'; for p in $$list; do \
+	  f="`echo $$p | sed -e 's|^.*/||'`"; \
+	  echo " rm -f $(DESTDIR)$(pkgincludedir)/$$f"; \
+	  rm -f $(DESTDIR)$(pkgincludedir)/$$f; \
+	done
 install-pkgincludeHEADERS: $(pkginclude_HEADERS)
 	@$(NORMAL_INSTALL)
 	$(mkinstalldirs) $(DESTDIR)$(pkgincludedir)
@@ -985,7 +999,7 @@ check: check-am
 all-am: Makefile $(LIBRARIES) $(HEADERS) NOX_Config.h
 
 installdirs:
-	$(mkinstalldirs) $(DESTDIR)$(libdir) $(DESTDIR)$(pkgexecincludedir) $(DESTDIR)$(pkgincludedir)
+	$(mkinstalldirs) $(DESTDIR)$(libdir) $(DESTDIR)$(pkgexecincludedir) $(DESTDIR)$(pkgincludedir) $(DESTDIR)$(pkgincludedir)
 
 install: install-am
 install-exec: install-exec-am
@@ -1029,7 +1043,8 @@ info: info-am
 
 info-am:
 
-install-data-am: install-pkgincludeHEADERS
+install-data-am: install-nodist_pkgincludeHEADERS \
+	install-pkgincludeHEADERS
 
 install-exec-am: install-libLIBRARIES \
 	install-nodist_pkgexecincludeHEADERS
@@ -1050,7 +1065,7 @@ mostlyclean-am: mostlyclean-compile mostlyclean-generic
 
 uninstall-am: uninstall-info-am uninstall-libLIBRARIES \
 	uninstall-nodist_pkgexecincludeHEADERS \
-	uninstall-pkgincludeHEADERS
+	uninstall-nodist_pkgincludeHEADERS uninstall-pkgincludeHEADERS
 
 .PHONY: GTAGS all all-am check check-am clean clean-generic \
 	clean-libLIBRARIES distclean distclean-compile distclean-depend \
@@ -1058,13 +1073,14 @@ uninstall-am: uninstall-info-am uninstall-libLIBRARIES \
 	dvi-am info info-am install install-am install-data \
 	install-data-am install-exec install-exec-am install-info \
 	install-info-am install-libLIBRARIES install-man \
-	install-nodist_pkgexecincludeHEADERS install-pkgincludeHEADERS \
+	install-nodist_pkgexecincludeHEADERS \
+	install-nodist_pkgincludeHEADERS install-pkgincludeHEADERS \
 	install-strip installcheck installcheck-am installdirs \
 	maintainer-clean maintainer-clean-generic mostlyclean \
 	mostlyclean-compile mostlyclean-generic tags uninstall \
 	uninstall-am uninstall-info-am uninstall-libLIBRARIES \
 	uninstall-nodist_pkgexecincludeHEADERS \
-	uninstall-pkgincludeHEADERS
+	uninstall-nodist_pkgincludeHEADERS uninstall-pkgincludeHEADERS
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

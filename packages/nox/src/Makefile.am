@@ -50,9 +50,6 @@ libnox_a_SOURCES = \
 	$(STATUSTEST) \
 	$(UTILS) 
 
-nodist_libnox_a_SOURCES = \
-	$(PRERELEASE)
-
 # ------------------------------------------------------------------------
 # List of all headers to install in $(pkgincludedir)
 # ------------------------------------------------------------------------
@@ -67,6 +64,22 @@ pkginclude_HEADERS = \
 	$(SOLVER_H) \
 	$(STATUSTEST_H) \
 	$(UTILS_H) 
+
+# ------------------------------------------------------------------------
+# Parts of the code that are not ready to be included in nightly release
+# ------------------------------------------------------------------------
+
+
+if BUILD_PRERELEASE
+
+nodist_pkginclude_HEADERS = \
+	$(srcdir)/NOX_Direction_QuasiNewton.H 
+
+nodist_libnox_a_SOURCES = \
+	$(srcdir)/NOX_Direction_QuasiNewton.C
+
+endif
+
 
 # ------------------------------------------------------------------------
 # Extra stuff to be included in the distribution
@@ -86,21 +99,6 @@ EXTRA_DIST = \
 
 pkgexecincludedir = $(exec_prefix)/include/nox
 nodist_pkgexecinclude_HEADERS = NOX_Config.h
-
-# ------------------------------------------------------------------------
-# Parts of the code that are not ready to be included in nightly release
-# ------------------------------------------------------------------------
-
-if BUILD_PRERELEASE
-
-PRERELEASE_H = \
-	$(srcdir)/NOX_Direction_QuasiNewton.H
- 
-
-PRERELEASE = \
-	$(srcdir)/NOX_Direction_QuasiNewton.C
-
-endif
 
 # ------------------------------------------------------------------------
 # For each category, create two variables - NAME and NAME_H. The
