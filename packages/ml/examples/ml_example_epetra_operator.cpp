@@ -40,7 +40,7 @@ using namespace Trilinos_Util;
 // MAIN DRIVER -- example of use of ML_Epetra::MultiLevelOperator
 //
 // from the command line, you may try something like that:
-// $ mpirun -np 4 ./ml_example_epetra_operator.exe -problem_type=laplace_3d \
+// $ mpirun -np 4 ./ml_example_epetra_operator.exe -problem_type=laplace_3d 
 //          -problem_size=1000
 //
 // For more options for Trilinos_Util::CrsMatrixGallery, consult the
@@ -112,7 +112,6 @@ int main(int argc, char *argv[])
 
   // set up some smoothers. Here we suppose a symmetric problem
   int nits = 1;
-  double dampingFactor = 0.8;
   for(int level = maxMgLevels-1; level > coarsestLevel; level--)
     ML_Gen_Smoother_MLS(ml_handle, level, ML_BOTH, 30., 3);
 

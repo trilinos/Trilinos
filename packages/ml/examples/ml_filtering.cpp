@@ -54,8 +54,6 @@ int main(int argc, char *argv[])
   Epetra_RowMatrix * A = Gallery.GetMatrix();
   Epetra_LinearProblem * Problem = Gallery.GetLinearProblem();
 
-  Epetra_MultiVector * RHS = Gallery.GetRHS();
-
   // Construct a solver object for this problem
   AztecOO solver(*Problem);
 
