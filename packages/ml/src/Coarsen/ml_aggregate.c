@@ -86,6 +86,8 @@ int ML_Aggregate_Create( ML_Aggregate **ag )
    (*ag)->keep_P_tentative           = ML_NO;
    (*ag)->smooth_existing_P_tentative = ML_NO;
    (*ag)->P_tentative                = NULL;
+   (*ag)->use_transpose              = ML_FALSE;
+   (*ag)->Restriction_smoothagg_transpose = ML_FALSE;
 
 #if defined(AZTEC) && defined(ML_AGGR_READINFO)
    ML_Aggregate_AztecRead(*ag);
