@@ -1310,7 +1310,8 @@ int ML_Operator_Analyze(ML_Operator * Op, char* name)
   Diagonal = (double*)ML_allocate(sizeof(double)*NumMyRows);
   SumOffDiagonal = (double*)ML_allocate(sizeof(double)*NumMyRows);
   
-  for (i=0 ; i<NumMyRows ; ++i) {
+  for (i = 0 ; i < NumMyRows ; ++i) {
+    Diagonal[i] = 0.0;
     SumOffDiagonal[i] = 0.0;
   }
  
@@ -1396,19 +1397,27 @@ int ML_Operator_Analyze(ML_Operator * Op, char* name)
      * - diagonal element;
      * - sum off abs off-diagonal elements;
      * Here I compute the local ones, with prefix `My'. The global
-     * ones (without prefix will be computed later
+     * ones (without prefix) will be computed later
      */
-    for( j=0 ; j<NumNonzeros ; ++j ) {
-      Element = colVal[j];
-      AbsElement = ML_dabs(Element);
-      if( Element<MyMinElement ) MyMinElement = Element;
-      if( Element>MyMaxElement ) MyMaxElement = Element;
-      if( AbsElement<MyMinAbsElement ) MyMinAbsElement = AbsElement;
-      if( AbsElement>MyMaxAbsElement ) MyMaxAbsElement = AbsElement;
-      if( colInd[j] == i ) Diagonal[i] = AbsElement;
-      else
-	SumOffDiagonal[i] += ML_dabs(Element);
-      MyFrobeniusNorm += Element*Element;
+
+    for (j = 0 ; j < NumGivenNonzeros ; ++j) {
+      if (colVal[j] != 0.0) {
+	Element = colVal[j];
+	AbsElement = ML_dabs(Element);
+	if ((Element < MyMinElement) && (Element != 0.0))
+	  MyMinElement = Element;
+	if (Element > MyMaxElement) 
+	  MyMaxElement = Element;
+	if ((AbsElement < MyMinAbsElement) && (AbsElement != 0.0))
+	  MyMinAbsElement = AbsElement;
+	if (AbsElement > MyMaxAbsElement) 
+	  MyMaxAbsElement = AbsElement;
+	if (colInd[j] == i)
+	  Diagonal[i] = AbsElement;
+	else
+	  SumOffDiagonal[i] += ML_dabs(Element);
+	MyFrobeniusNorm += Element*Element;
+      }
     }
   } /* for over all matrix rows */
 
@@ -1435,10 +1444,10 @@ int ML_Operator_Analyze(ML_Operator * Op, char* name)
   NumMyDiagonallyDominant = 0;
   NumMyWeaklyDiagonallyDominant = 0;
 
-  for( i=0 ; i<NumMyRows ; ++i ) {
-    if( Diagonal[i]>SumOffDiagonal[i] ) 
+  for (i = 0 ; i < NumMyRows ; ++i) {
+    if (Diagonal[i] > SumOffDiagonal[i]) 
       ++NumMyDiagonallyDominant;
-    else if( Diagonal[i]==SumOffDiagonal[i] ) 
+    else if (Diagonal[i] == SumOffDiagonal[i]) 
       ++NumMyWeaklyDiagonallyDominant;
     /* else nothing to track */
   }
@@ -1503,8 +1512,12 @@ int ML_Operator_Analyze(ML_Operator * Op, char* name)
 
   MyMin = DBL_MAX, MyMax = 0.0;
   for( i=0 ; i<NumMyRows ; ++i ) {
-    if( Diagonal[i]<MyMin ) MyMin = Diagonal[i];
-    if( Diagonal[i]>MyMax ) MyMax = Diagonal[i];
+    if (Diagonal[i] < MyMin ) {
+      if (Diagonal[i] != 0.0) 
+	MyMin = Diagonal[i];
+    }
+    if (Diagonal[i] > MyMax) 
+      MyMax = Diagonal[i];
   }
   Min = - ML_Comm_GmaxDouble(Op->comm, -MyMin);
   Max =   ML_Comm_GmaxDouble(Op->comm, MyMax);
@@ -1521,10 +1534,14 @@ int ML_Operator_Analyze(ML_Operator * Op, char* name)
   /* Analyze elements off diagonal for the entire matrix */
 
   MyMin = DBL_MAX, MyMax = 0.0;
-  for( i=0 ; i<NumMyRows ; ++i ) {
-    if( SumOffDiagonal[i]<MyMin ) MyMin = SumOffDiagonal[i];
-    if( SumOffDiagonal[i]>MyMax ) MyMax = SumOffDiagonal[i];
+  for (i = 0 ; i < NumMyRows ; ++i) {
+    if (SumOffDiagonal[i] < MyMin ) 
+      if (SumOffDiagonal[i] != 0.0) 
+	MyMin = SumOffDiagonal[i];
+    if (SumOffDiagonal[i] > MyMax) 
+      MyMax = SumOffDiagonal[i];
   }
+
   Min = - ML_Comm_GmaxDouble(Op->comm, -MyMin);
   Max =   ML_Comm_GmaxDouble(Op->comm, MyMax);
 
@@ -1548,19 +1565,23 @@ int ML_Operator_Analyze(ML_Operator * Op, char* name)
 
       MyMin = DBL_MAX, MyMax = 0.0;
       for( i=Equation ; i<NumMyRows ; i+=Op->num_PDEs ) {
-	if( Diagonal[i]<MyMin ) MyMin = Diagonal[i];
-	if( Diagonal[i]>MyMax ) MyMax = Diagonal[i];
+	if (Diagonal[i] < MyMin) {
+	  if (Diagonal[i] != 0.0)
+	    MyMin = Diagonal[i];
+	}
+	if (Diagonal[i] > MyMax) 
+	  MyMax = Diagonal[i];
       }
       Min = - ML_Comm_GmaxDouble(Op->comm, -MyMin);
       Max =   ML_Comm_GmaxDouble(Op->comm, MyMax);
 
       if( MyPID == 0 ) {
 
-	printf("\t(Eq %d) %-50s = %f\n",
+	printf("\t(Eq %2d) %-42s = %f\n",
 	       Equation,
 	       "Min_i ( abs(a(i,i)) )", 
 	       Min);
-	printf("\t(Eq %d) %-50s = %f\n",
+	printf("\t(Eq %2d) %-42s = %f\n",
 	       Equation,
 	       "Max_i ( abs(a(i,i)) )", 
 	       Max);
