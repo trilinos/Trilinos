@@ -42,7 +42,7 @@ DLDPERM = dldperm.o mc64ad.o fd05.o mc21.o
 #
 # Routines literally taken from SuperLU
 #
-DSLUSRC	= dlamch.o slamch.o dlangs.o dgsequ.o dlaqgs.o dutil.o \
+DSLUSRC	= slamch.o dlangs.o dgsequ.o dlaqgs.o dutil.o \
 	  dmemory.o dsp_blas2.o dsp_blas3.o dreadhb.o dmyblas2.o
 ZSLUSRC	= dcomplex.o dlamch.o slamch.o zlangs.o zgsequ.o zlaqgs.o \
 	  zmemory.o zsp_blas2.o zsp_blas3.o zreadhb.o zutil.o
@@ -72,8 +72,8 @@ complex16: $(ZSLUSRC) $(ZPLUSRC) $(ALLAUX)
 ##################################
 # Do not optimize these routines #
 ##################################
-slamch.o: slamch.c ; $(CC) -c $(NOOPTS) $<
-dlamch.o: dlamch.c ; $(CC) -c $(NOOPTS) $<
+#slamch.o: slamch.c ; $(CC) -c $(NOOPTS) $<
+#dlamch.o: dlamch.c ; $(CC) -c $(NOOPTS) $<
 superlu_timer.o: superlu_timer.c ; $(CC) -c $(NOOPTS) $<
 
 
