@@ -13,6 +13,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include "zz_const.h"
 #include "par_bisect_const.h"
 
 /* EB: The following constants, structs, and function prototypes should probably
@@ -60,7 +61,7 @@ static double Zoltan_norm(int norm, int n, double *x, double *scal);
 static void Zoltan_daxpy(int n, double a, double *x, double *y, double *z);
 
 /*****************************************************************************/
-/***  Main routine:  Zoltan_find_bisector()                                ***/
+/***  Main routine:  Zoltan_RB_find_bisector()                             ***/
 /***                                                                       ***/
 /***  Finds a bisector (cut) that partitions the set of "dots"             ***/
 /***  such that the norms of the weights of the dots in the two            ***/
@@ -69,10 +70,10 @@ static void Zoltan_daxpy(int n, double a, double *x, double *y, double *z);
 /***  to allow for different balancing conditions for each weight.         ***/
 /***  Several different norms (1,2, inf) are supported.                    ***/
 /***                                                                       ***/
-/***  Note: Zoltan_find_bisector generalizes Zoltan_find_median().         ***/
+/***  Note: Zoltan_RB_find_bisector generalizes Zoltan_RB_find_median().   ***/
 /*****************************************************************************/
 
-int Zoltan_find_bisector(
+int Zoltan_RB_find_bisector(
   int Tflops_Special,   /* Flag indicating whether Tflops_Special handling 
                            of communicators should be done (to avoid memory
                            leaks in tflops' Comm_Dup and Comm_Split).        */
@@ -95,8 +96,7 @@ int Zoltan_find_bisector(
   int nprocs,           /* Total number of processors (Tflops_Special)       */
   int num_procs,        /* Number of procs in partition (Tflops_Special)     */
   int proclower,        /* Lowest numbered proc in partition (Tflops_Special)*/
-  int num_parts,        /* Number of partitions in set (Tflops_Special) */
-  int wgtflag,          /* True if user supplied weights */
+  int num_parts,        /* Number of partitions in set (Tflops_Special)      */
   double valuemin,      /* minimum value in partition (input) */
   double valuemax,      /* maximum value in partition (input) */
   double *weight,       /* weight of entire partition (input) */
@@ -122,6 +122,7 @@ int Zoltan_find_bisector(
   double  eps;                       /* tolerance for imbalance */
   double  temp;                      /* temp variable */
 
+  int     ierr = ZOLTAN_OK;          /* error code */
   int     i, j, k, wtflag = 0, numlist;
   int     structsize;                /* size of bisector struct, including all weights */
   int     indexlo, indexhi;          /* indices of dot closest to bisector */
@@ -156,7 +157,8 @@ int Zoltan_find_bisector(
       sprintf(msg, "Invalid value for input parameter fraclo[%1d], %lf", 
               j, fraclo[j]);
       ZOLTAN_PRINT_ERROR(proc, yo, msg);
-      return ZOLTAN_FATAL;
+      ierr = ZOLTAN_FATAL;
+      goto End;
     }
   }
 
@@ -164,20 +166,23 @@ int Zoltan_find_bisector(
     /* Put all dots in upper half */
     for (i = 0; i < dotnum; i++)
        dotmark[i] = 1;
-    return ZOLTAN_OK;
+    ierr = ZOLTAN_OK;
+    goto End;
   }
   else if (k == nwgts){
     /* Put all dots in lower half */
     for (i = 0; i < dotnum; i++)
        dotmark[i] = 0;
-    return ZOLTAN_OK;
+    ierr = ZOLTAN_OK;
+    goto End;
   }
 
   /* Normal case: Initialize invfraclo,hi and go to main section. */
   invfraclo = (double *) ZOLTAN_MALLOC(2*nwgts*sizeof(double));
   if (!invfraclo){
     ZOLTAN_PRINT_ERROR(proc, yo, "Insufficient memory.");
-    return ZOLTAN_MEMERR;
+    ierr = ZOLTAN_MEMERR;
+    goto End;
   }
   invfrachi = &invfraclo[nwgts];
   for (j=0; j<nwgts; j++){
@@ -192,14 +197,16 @@ int Zoltan_find_bisector(
     /* check for illegal NULL pointers */
     if ((!dots) || (!dotmark)){
       ZOLTAN_PRINT_ERROR(proc, yo, "Required input is NULL.");
-      return ZOLTAN_FATAL;
+      ierr = ZOLTAN_FATAL;
+      goto End;
     }
 
     /* allocate memory */
     dotlist = (int *) ZOLTAN_MALLOC(dotnum*sizeof(int));
     if (!dotlist) {
       ZOLTAN_PRINT_ERROR(proc, yo, "Insufficient memory.");
-      return ZOLTAN_MEMERR;
+      ierr = ZOLTAN_MEMERR;
+      goto End;
     }
 
     /*
@@ -215,14 +222,14 @@ int Zoltan_find_bisector(
         wgts = (double *) ZOLTAN_MALLOC(dotnum*sizeof(double));
         if (!wgts) {
           ZOLTAN_PRINT_ERROR(proc, yo, "Insufficient memory.");
-          ZOLTAN_FREE(&dotlist);
-          return ZOLTAN_MEMERR;
+          ierr = ZOLTAN_MEMERR;
+          goto End;
         }
       }
       else { /* nwgts >= 1 */
         ZOLTAN_PRINT_ERROR(proc, yo, "No weights provided.");
-        ZOLTAN_FREE(&dotlist);
-        return ZOLTAN_FATAL;
+        ierr = ZOLTAN_FATAL;
+        goto End;
       }
     }
   } /* if (dotnum > 0) */
@@ -233,21 +240,16 @@ int Zoltan_find_bisector(
   medme = (struct bisector *) ZOLTAN_MALLOC(structsize);
   if ((!med) || (!medme)){
     ZOLTAN_PRINT_ERROR(proc, yo, "Insufficient memory.");
-    ZOLTAN_FREE(&dotlist);
-    ZOLTAN_FREE(&med);
-    ZOLTAN_FREE(&medme);
-    return ZOLTAN_MEMERR;
+    ierr = ZOLTAN_MEMERR;
+    goto End;
   }
   
   /* Allocate space for various weight arrays in a single malloc */
   localsum = (double *)ZOLTAN_MALLOC(7*nwgts*sizeof(double));
   if (!localsum){
     ZOLTAN_PRINT_ERROR(proc, yo, "Insufficient memory.");
-    ZOLTAN_FREE(&dotlist);
-    ZOLTAN_FREE(&med);
-    ZOLTAN_FREE(&medme);
-    ZOLTAN_FREE(&localsum);
-    return ZOLTAN_MEMERR;
+    ierr = ZOLTAN_MEMERR;
+    goto End;
   }
   /* Set pointers to point to distinct sections of the allocated space */
   wtsum  = &(localsum[nwgts]);
@@ -309,12 +311,8 @@ int Zoltan_find_bisector(
      tmp = (double *) ZOLTAN_MALLOC(nprocs*sizeof(double));
      if (!tmp) {
         ZOLTAN_PRINT_ERROR(proc, yo, "Insufficient memory.");
-        ZOLTAN_FREE(&dotlist);
-        ZOLTAN_FREE(&wgts);
-        ZOLTAN_FREE(&med);
-        ZOLTAN_FREE(&medme);
-        ZOLTAN_FREE(&localsum);
-        return ZOLTAN_MEMERR;
+        ierr = ZOLTAN_MEMERR;
+        goto End;
      }
 
 /* EBEB  Remove section below. Assume valuemin/max, wtsum are given as input. */
@@ -678,6 +676,7 @@ int Zoltan_find_bisector(
   /* found bisector */
   *valuehalf = tmp_half;
 
+End:
   /* free all memory */
   ZOLTAN_FREE(&dotlist);
   ZOLTAN_FREE(&med);
@@ -693,7 +692,7 @@ int Zoltan_find_bisector(
   printf("[%3d] Debug: Exiting Zoltan_find_bisection\n", proc);
 #endif
 
-  return ZOLTAN_OK;
+  return ierr;
 
 }
 

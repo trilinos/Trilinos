@@ -81,8 +81,8 @@ int Zoltan_RB_find_median(
   double valuemin,      /* minimum value in partition (input) */
   double valuemax,      /* maximum value in partition (input) */
   double weight,        /* weight of entire partition (input) */
-  double *wtlo,         /* weight of lower partition (output) */
-  double *wthi,         /* weight of upper partition (output) */
+  double *wgtlo,        /* weight of lower partition (output) */
+  double *wgthi,        /* weight of upper partition (output) */
   int    *dotlist,      /* list of active dots */
   int rectilinear_blocks/* if set all dots with same value on same side of cut*/
 )
@@ -432,8 +432,8 @@ int Zoltan_RB_find_median(
 
   /* found median */
   *valuehalf = tmp_half;
-  *wtlo = weightlo;
-  *wthi = weighthi;
+  *wgtlo = weightlo;
+  *wgthi = weighthi;
 
   MPI_Type_free(&med_type);
   if (!Tflops_Special)

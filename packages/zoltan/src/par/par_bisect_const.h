@@ -25,8 +25,8 @@ extern "C" {
 
 extern int Zoltan_RB_find_bisector(int, double *, double *, int *,
   int, int, int, int, double *, double *, MPI_Comm,
-  double *, int, int *, int, int,
-  int, int, int, double, double, 
+  double *, int, int *, 
+  int, int, int, int, double, double, 
   double *, double *, double *, int *, int);
 
 /* Note: This number should be >= RB_MAX_WEIGHTS in RCB. */

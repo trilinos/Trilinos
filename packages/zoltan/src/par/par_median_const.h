@@ -12,8 +12,8 @@
  ****************************************************************************/
 
 
-#ifndef __PAR_UTIL_CONST_H
-#define __PAR_UTIL_CONST_H
+#ifndef __PAR_MEDIAN_CONST_H
+#define __PAR_MEDIAN_CONST_H
 
 #ifdef __cplusplus
 /* if C++, define the rest of this header file as extern C */
