@@ -28,7 +28,9 @@ using namespace std;
 
 void setTraceFile(string);
 void cleanupTraceFile();
+#ifdef NOX_FILEOUTPUT 
 streambuf* holdbuf = 0;
+#endif
 ofstream* outFile = 0;
 void outputResults(NOX::Solver::Manager& solver, NOX::Parameter::List& print);
 
@@ -170,7 +172,6 @@ int main(int argc, char *argv[])
 
   dirParams.setParameter("Method", "NonlinearCG");
     nlcgParams.setParameter("Restart Frequency", 10*NumGlobalElements);
-    //lsParams = picardParams.sublist("Linear Solver");
   NOX::Parameter::List& searchParams = nlParams.sublist("Line Search");
   searchParams.setParameter("Method", "NonlinearCG");
 
@@ -268,16 +269,33 @@ void outputResults(NOX::Solver::Manager& solver,
 
 void setTraceFile(string fileBase)
 {
+
+#ifdef NOX_FILEOUTPUT
+  // To allow Suite to write output to trace files, NOX must be built with
+  //  the appropriate define set using --with-cppflags="-DNOX_FILEOUTPUT" 
+
   string traceFile = fileBase + ".trace";
   outFile = new ofstream(traceFile.c_str());
   // Redirect cout buffer to file
   holdbuf = cout.rdbuf(outFile->rdbuf());
+  return;
+
+#else
+  return; // Default is to do nothing (ie leave cout alone)
+#endif
+  
 }
 
 void cleanupTraceFile()
 {
+#ifdef NOX_FILEOUTPUT
   // Restore original buffer to cout
   cout.rdbuf(holdbuf);
   outFile->close();
   delete outFile; outFile = 0;
+  return;
+
+#else
+  return; // Default is to do nothing (ie leave cout alone)
+#endif
 }
