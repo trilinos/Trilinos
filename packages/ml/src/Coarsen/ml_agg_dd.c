@@ -40,7 +40,7 @@ int ML_Aggregate_CoarsenDomainDecomp( ML_Aggregate *ml_ag,
    int     nprocs;
    int     aggr_count, *aggr_index;
    int     *aggr_cnt_array, max_agg_size, **rows_in_aggs;
-   int     Ncoarse, exp_Ncoarse, *new_ia, *new_ja, new_Nrows;
+   int     Ncoarse, *new_ia, *new_ja, new_Nrows;
    int     num_PDE_eqns, nullspace_dim, lwork, info;
    double  *col_val, *diagonal=NULL, dcompare1, dcompare2, *new_val=NULL;
    double  epsilon, *nullspace_vect=NULL, *qr_tmp=NULL;
@@ -248,7 +248,7 @@ int ML_Aggregate_CoarsenDomainDecomp( ML_Aggregate *ml_ag,
    {
       if ( aggr_index[i] >= Ncoarse )
          printf("WARNING : index out of bound %d = %d(%d)\n",i,aggr_index[i],
-                exp_Ncoarse);
+                Ncoarse);
    }
    nbytes = ( new_Nrows + 1 ) * sizeof(int);
    ML_memory_alloc((void**)&(new_ia), nbytes, "ACO");
