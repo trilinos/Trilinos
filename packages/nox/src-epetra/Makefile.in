@@ -155,11 +155,34 @@ EPETRA = \
 	$(srcdir)/NOX_Epetra_Operator_JacobiPrec.C
 
 
+EPETRANEW_H = \
+	$(srcdir)/NOX_EpetraNew_Group.H \
+	$(srcdir)/NOX_EpetraNew_Interface_Required.H \
+	$(srcdir)/NOX_EpetraNew_Interface_Jacobian.H \
+	$(srcdir)/NOX_EpetraNew_Interface_Preconditioner.H \
+	$(srcdir)/NOX_EpetraNew_LinearSystem.H \
+	$(srcdir)/NOX_EpetraNew_LinearSystemAztecOO.H \
+	$(srcdir)/NOX_EpetraNew_FiniteDifference.H \
+	$(srcdir)/NOX_EpetraNew_FiniteDifferenceColoring.H \
+	$(srcdir)/NOX_EpetraNew_MatrixFree.H \
+	$(srcdir)/NOX_EpetraNew_Scaling.H \
+	$(srcdir)/NOX_EpetraNew_Operator.H
+
+
+EPETRANEW = \
+	$(srcdir)/NOX_EpetraNew_Group.C \
+	$(srcdir)/NOX_EpetraNew_LinearSystemAztecOO.C \
+	$(srcdir)/NOX_EpetraNew_FiniteDifference.C \
+	$(srcdir)/NOX_EpetraNew_FiniteDifferenceColoring.C \
+	$(srcdir)/NOX_EpetraNew_MatrixFree.C \
+	$(srcdir)/NOX_EpetraNew_Scaling.C
+
+
 
 # ------------------------------------------------------------------------
 # Noxepetra library specifications
 # ------------------------------------------------------------------------
-libnoxepetra_a_SOURCES = $(EPETRA) $(EPETRA_H)
+libnoxepetra_a_SOURCES = $(EPETRA) $(EPETRA_H) $(EPETRANEW) $(EPETRANEW_H)
 
 libnoxepetra_a_CXXFLAGS = -I$(top_srcdir)/src $(TRILINOS_CXXFLAGS)
 
@@ -220,7 +243,14 @@ am__objects_1 = libnoxepetra_a-NOX_Epetra_Vector.$(OBJEXT) \
 	libnoxepetra_a-NOX_Epetra_Scaling.$(OBJEXT) \
 	libnoxepetra_a-NOX_Epetra_Operator_JacobiPrec.$(OBJEXT)
 am__objects_2 =
-am_libnoxepetra_a_OBJECTS = $(am__objects_1) $(am__objects_2)
+am__objects_3 = libnoxepetra_a-NOX_EpetraNew_Group.$(OBJEXT) \
+	libnoxepetra_a-NOX_EpetraNew_LinearSystemAztecOO.$(OBJEXT) \
+	libnoxepetra_a-NOX_EpetraNew_FiniteDifference.$(OBJEXT) \
+	libnoxepetra_a-NOX_EpetraNew_FiniteDifferenceColoring.$(OBJEXT) \
+	libnoxepetra_a-NOX_EpetraNew_MatrixFree.$(OBJEXT) \
+	libnoxepetra_a-NOX_EpetraNew_Scaling.$(OBJEXT)
+am_libnoxepetra_a_OBJECTS = $(am__objects_1) $(am__objects_2) \
+	$(am__objects_3) $(am__objects_2)
 libnoxepetra_a_OBJECTS = $(am_libnoxepetra_a_OBJECTS)
 
 DEFS = @DEFS@
@@ -231,6 +261,12 @@ LIBS = @LIBS@
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
 @AMDEP_TRUE@DEP_FILES = \
+@AMDEP_TRUE@	./$(DEPDIR)/libnoxepetra_a-NOX_EpetraNew_FiniteDifference.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/libnoxepetra_a-NOX_EpetraNew_FiniteDifferenceColoring.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/libnoxepetra_a-NOX_EpetraNew_Group.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/libnoxepetra_a-NOX_EpetraNew_LinearSystemAztecOO.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/libnoxepetra_a-NOX_EpetraNew_MatrixFree.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/libnoxepetra_a-NOX_EpetraNew_Scaling.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/libnoxepetra_a-NOX_Epetra_FiniteDifference.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/libnoxepetra_a-NOX_Epetra_FiniteDifferenceColoring.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/libnoxepetra_a-NOX_Epetra_Group.Po \
@@ -312,6 +348,18 @@ libnoxepetra_a-NOX_Epetra_Scaling.$(OBJEXT): \
 	$(srcdir)/NOX_Epetra_Scaling.C
 libnoxepetra_a-NOX_Epetra_Operator_JacobiPrec.$(OBJEXT): \
 	$(srcdir)/NOX_Epetra_Operator_JacobiPrec.C
+libnoxepetra_a-NOX_EpetraNew_Group.$(OBJEXT): \
+	$(srcdir)/NOX_EpetraNew_Group.C
+libnoxepetra_a-NOX_EpetraNew_LinearSystemAztecOO.$(OBJEXT): \
+	$(srcdir)/NOX_EpetraNew_LinearSystemAztecOO.C
+libnoxepetra_a-NOX_EpetraNew_FiniteDifference.$(OBJEXT): \
+	$(srcdir)/NOX_EpetraNew_FiniteDifference.C
+libnoxepetra_a-NOX_EpetraNew_FiniteDifferenceColoring.$(OBJEXT): \
+	$(srcdir)/NOX_EpetraNew_FiniteDifferenceColoring.C
+libnoxepetra_a-NOX_EpetraNew_MatrixFree.$(OBJEXT): \
+	$(srcdir)/NOX_EpetraNew_MatrixFree.C
+libnoxepetra_a-NOX_EpetraNew_Scaling.$(OBJEXT): \
+	$(srcdir)/NOX_EpetraNew_Scaling.C
 libnoxepetra.a: $(libnoxepetra_a_OBJECTS) $(libnoxepetra_a_DEPENDENCIES) 
 	-rm -f libnoxepetra.a
 	$(libnoxepetra_a_AR) libnoxepetra.a $(libnoxepetra_a_OBJECTS) $(libnoxepetra_a_LIBADD)
@@ -323,6 +371,12 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libnoxepetra_a-NOX_EpetraNew_FiniteDifference.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libnoxepetra_a-NOX_EpetraNew_FiniteDifferenceColoring.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libnoxepetra_a-NOX_EpetraNew_Group.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libnoxepetra_a-NOX_EpetraNew_LinearSystemAztecOO.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libnoxepetra_a-NOX_EpetraNew_MatrixFree.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libnoxepetra_a-NOX_EpetraNew_Scaling.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libnoxepetra_a-NOX_Epetra_FiniteDifference.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libnoxepetra_a-NOX_Epetra_FiniteDifferenceColoring.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libnoxepetra_a-NOX_Epetra_Group.Po@am__quote@
@@ -442,6 +496,78 @@ libnoxepetra_a-NOX_Epetra_Operator_JacobiPrec.obj: $(srcdir)/NOX_Epetra_Operator
 @AMDEP_TRUE@	depfile='$(DEPDIR)/libnoxepetra_a-NOX_Epetra_Operator_JacobiPrec.Po' tmpdepfile='$(DEPDIR)/libnoxepetra_a-NOX_Epetra_Operator_JacobiPrec.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnoxepetra_a_CXXFLAGS) $(CXXFLAGS) -c -o libnoxepetra_a-NOX_Epetra_Operator_JacobiPrec.obj `cygpath -w $(srcdir)/NOX_Epetra_Operator_JacobiPrec.C`
+
+libnoxepetra_a-NOX_EpetraNew_Group.o: $(srcdir)/NOX_EpetraNew_Group.C
+@AMDEP_TRUE@	source='$(srcdir)/NOX_EpetraNew_Group.C' object='libnoxepetra_a-NOX_EpetraNew_Group.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/libnoxepetra_a-NOX_EpetraNew_Group.Po' tmpdepfile='$(DEPDIR)/libnoxepetra_a-NOX_EpetraNew_Group.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnoxepetra_a_CXXFLAGS) $(CXXFLAGS) -c -o libnoxepetra_a-NOX_EpetraNew_Group.o `test -f '$(srcdir)/NOX_EpetraNew_Group.C' || echo '$(srcdir)/'`$(srcdir)/NOX_EpetraNew_Group.C
+
+libnoxepetra_a-NOX_EpetraNew_Group.obj: $(srcdir)/NOX_EpetraNew_Group.C
+@AMDEP_TRUE@	source='$(srcdir)/NOX_EpetraNew_Group.C' object='libnoxepetra_a-NOX_EpetraNew_Group.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/libnoxepetra_a-NOX_EpetraNew_Group.Po' tmpdepfile='$(DEPDIR)/libnoxepetra_a-NOX_EpetraNew_Group.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnoxepetra_a_CXXFLAGS) $(CXXFLAGS) -c -o libnoxepetra_a-NOX_EpetraNew_Group.obj `cygpath -w $(srcdir)/NOX_EpetraNew_Group.C`
+
+libnoxepetra_a-NOX_EpetraNew_LinearSystemAztecOO.o: $(srcdir)/NOX_EpetraNew_LinearSystemAztecOO.C
+@AMDEP_TRUE@	source='$(srcdir)/NOX_EpetraNew_LinearSystemAztecOO.C' object='libnoxepetra_a-NOX_EpetraNew_LinearSystemAztecOO.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/libnoxepetra_a-NOX_EpetraNew_LinearSystemAztecOO.Po' tmpdepfile='$(DEPDIR)/libnoxepetra_a-NOX_EpetraNew_LinearSystemAztecOO.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnoxepetra_a_CXXFLAGS) $(CXXFLAGS) -c -o libnoxepetra_a-NOX_EpetraNew_LinearSystemAztecOO.o `test -f '$(srcdir)/NOX_EpetraNew_LinearSystemAztecOO.C' || echo '$(srcdir)/'`$(srcdir)/NOX_EpetraNew_LinearSystemAztecOO.C
+
+libnoxepetra_a-NOX_EpetraNew_LinearSystemAztecOO.obj: $(srcdir)/NOX_EpetraNew_LinearSystemAztecOO.C
+@AMDEP_TRUE@	source='$(srcdir)/NOX_EpetraNew_LinearSystemAztecOO.C' object='libnoxepetra_a-NOX_EpetraNew_LinearSystemAztecOO.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/libnoxepetra_a-NOX_EpetraNew_LinearSystemAztecOO.Po' tmpdepfile='$(DEPDIR)/libnoxepetra_a-NOX_EpetraNew_LinearSystemAztecOO.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnoxepetra_a_CXXFLAGS) $(CXXFLAGS) -c -o libnoxepetra_a-NOX_EpetraNew_LinearSystemAztecOO.obj `cygpath -w $(srcdir)/NOX_EpetraNew_LinearSystemAztecOO.C`
+
+libnoxepetra_a-NOX_EpetraNew_FiniteDifference.o: $(srcdir)/NOX_EpetraNew_FiniteDifference.C
+@AMDEP_TRUE@	source='$(srcdir)/NOX_EpetraNew_FiniteDifference.C' object='libnoxepetra_a-NOX_EpetraNew_FiniteDifference.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/libnoxepetra_a-NOX_EpetraNew_FiniteDifference.Po' tmpdepfile='$(DEPDIR)/libnoxepetra_a-NOX_EpetraNew_FiniteDifference.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnoxepetra_a_CXXFLAGS) $(CXXFLAGS) -c -o libnoxepetra_a-NOX_EpetraNew_FiniteDifference.o `test -f '$(srcdir)/NOX_EpetraNew_FiniteDifference.C' || echo '$(srcdir)/'`$(srcdir)/NOX_EpetraNew_FiniteDifference.C
+
+libnoxepetra_a-NOX_EpetraNew_FiniteDifference.obj: $(srcdir)/NOX_EpetraNew_FiniteDifference.C
+@AMDEP_TRUE@	source='$(srcdir)/NOX_EpetraNew_FiniteDifference.C' object='libnoxepetra_a-NOX_EpetraNew_FiniteDifference.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/libnoxepetra_a-NOX_EpetraNew_FiniteDifference.Po' tmpdepfile='$(DEPDIR)/libnoxepetra_a-NOX_EpetraNew_FiniteDifference.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnoxepetra_a_CXXFLAGS) $(CXXFLAGS) -c -o libnoxepetra_a-NOX_EpetraNew_FiniteDifference.obj `cygpath -w $(srcdir)/NOX_EpetraNew_FiniteDifference.C`
+
+libnoxepetra_a-NOX_EpetraNew_FiniteDifferenceColoring.o: $(srcdir)/NOX_EpetraNew_FiniteDifferenceColoring.C
+@AMDEP_TRUE@	source='$(srcdir)/NOX_EpetraNew_FiniteDifferenceColoring.C' object='libnoxepetra_a-NOX_EpetraNew_FiniteDifferenceColoring.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/libnoxepetra_a-NOX_EpetraNew_FiniteDifferenceColoring.Po' tmpdepfile='$(DEPDIR)/libnoxepetra_a-NOX_EpetraNew_FiniteDifferenceColoring.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnoxepetra_a_CXXFLAGS) $(CXXFLAGS) -c -o libnoxepetra_a-NOX_EpetraNew_FiniteDifferenceColoring.o `test -f '$(srcdir)/NOX_EpetraNew_FiniteDifferenceColoring.C' || echo '$(srcdir)/'`$(srcdir)/NOX_EpetraNew_FiniteDifferenceColoring.C
+
+libnoxepetra_a-NOX_EpetraNew_FiniteDifferenceColoring.obj: $(srcdir)/NOX_EpetraNew_FiniteDifferenceColoring.C
+@AMDEP_TRUE@	source='$(srcdir)/NOX_EpetraNew_FiniteDifferenceColoring.C' object='libnoxepetra_a-NOX_EpetraNew_FiniteDifferenceColoring.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/libnoxepetra_a-NOX_EpetraNew_FiniteDifferenceColoring.Po' tmpdepfile='$(DEPDIR)/libnoxepetra_a-NOX_EpetraNew_FiniteDifferenceColoring.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnoxepetra_a_CXXFLAGS) $(CXXFLAGS) -c -o libnoxepetra_a-NOX_EpetraNew_FiniteDifferenceColoring.obj `cygpath -w $(srcdir)/NOX_EpetraNew_FiniteDifferenceColoring.C`
+
+libnoxepetra_a-NOX_EpetraNew_MatrixFree.o: $(srcdir)/NOX_EpetraNew_MatrixFree.C
+@AMDEP_TRUE@	source='$(srcdir)/NOX_EpetraNew_MatrixFree.C' object='libnoxepetra_a-NOX_EpetraNew_MatrixFree.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/libnoxepetra_a-NOX_EpetraNew_MatrixFree.Po' tmpdepfile='$(DEPDIR)/libnoxepetra_a-NOX_EpetraNew_MatrixFree.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnoxepetra_a_CXXFLAGS) $(CXXFLAGS) -c -o libnoxepetra_a-NOX_EpetraNew_MatrixFree.o `test -f '$(srcdir)/NOX_EpetraNew_MatrixFree.C' || echo '$(srcdir)/'`$(srcdir)/NOX_EpetraNew_MatrixFree.C
+
+libnoxepetra_a-NOX_EpetraNew_MatrixFree.obj: $(srcdir)/NOX_EpetraNew_MatrixFree.C
+@AMDEP_TRUE@	source='$(srcdir)/NOX_EpetraNew_MatrixFree.C' object='libnoxepetra_a-NOX_EpetraNew_MatrixFree.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/libnoxepetra_a-NOX_EpetraNew_MatrixFree.Po' tmpdepfile='$(DEPDIR)/libnoxepetra_a-NOX_EpetraNew_MatrixFree.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnoxepetra_a_CXXFLAGS) $(CXXFLAGS) -c -o libnoxepetra_a-NOX_EpetraNew_MatrixFree.obj `cygpath -w $(srcdir)/NOX_EpetraNew_MatrixFree.C`
+
+libnoxepetra_a-NOX_EpetraNew_Scaling.o: $(srcdir)/NOX_EpetraNew_Scaling.C
+@AMDEP_TRUE@	source='$(srcdir)/NOX_EpetraNew_Scaling.C' object='libnoxepetra_a-NOX_EpetraNew_Scaling.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/libnoxepetra_a-NOX_EpetraNew_Scaling.Po' tmpdepfile='$(DEPDIR)/libnoxepetra_a-NOX_EpetraNew_Scaling.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnoxepetra_a_CXXFLAGS) $(CXXFLAGS) -c -o libnoxepetra_a-NOX_EpetraNew_Scaling.o `test -f '$(srcdir)/NOX_EpetraNew_Scaling.C' || echo '$(srcdir)/'`$(srcdir)/NOX_EpetraNew_Scaling.C
+
+libnoxepetra_a-NOX_EpetraNew_Scaling.obj: $(srcdir)/NOX_EpetraNew_Scaling.C
+@AMDEP_TRUE@	source='$(srcdir)/NOX_EpetraNew_Scaling.C' object='libnoxepetra_a-NOX_EpetraNew_Scaling.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/libnoxepetra_a-NOX_EpetraNew_Scaling.Po' tmpdepfile='$(DEPDIR)/libnoxepetra_a-NOX_EpetraNew_Scaling.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnoxepetra_a_CXXFLAGS) $(CXXFLAGS) -c -o libnoxepetra_a-NOX_EpetraNew_Scaling.obj `cygpath -w $(srcdir)/NOX_EpetraNew_Scaling.C`
 CXXDEPMODE = @CXXDEPMODE@
 uninstall-info-am:
 includeHEADERS_INSTALL = $(INSTALL_HEADER)

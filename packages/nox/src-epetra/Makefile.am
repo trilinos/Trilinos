@@ -60,11 +60,31 @@ EPETRA = \
 	$(srcdir)/NOX_Epetra_Scaling.C \
 	$(srcdir)/NOX_Epetra_Operator_JacobiPrec.C
 
+EPETRANEW_H = \
+	$(srcdir)/NOX_EpetraNew_Group.H \
+	$(srcdir)/NOX_EpetraNew_Interface_Required.H \
+	$(srcdir)/NOX_EpetraNew_Interface_Jacobian.H \
+	$(srcdir)/NOX_EpetraNew_Interface_Preconditioner.H \
+	$(srcdir)/NOX_EpetraNew_LinearSystem.H \
+	$(srcdir)/NOX_EpetraNew_LinearSystemAztecOO.H \
+	$(srcdir)/NOX_EpetraNew_FiniteDifference.H \
+	$(srcdir)/NOX_EpetraNew_FiniteDifferenceColoring.H \
+	$(srcdir)/NOX_EpetraNew_MatrixFree.H \
+	$(srcdir)/NOX_EpetraNew_Scaling.H
+
+EPETRANEW = \
+	$(srcdir)/NOX_EpetraNew_Group.C \
+	$(srcdir)/NOX_EpetraNew_LinearSystemAztecOO.C \
+	$(srcdir)/NOX_EpetraNew_FiniteDifference.C \
+	$(srcdir)/NOX_EpetraNew_FiniteDifferenceColoring.C \
+	$(srcdir)/NOX_EpetraNew_MatrixFree.C \
+	$(srcdir)/NOX_EpetraNew_Scaling.C
+
 # ------------------------------------------------------------------------
 # Noxepetra library specifications
 # ------------------------------------------------------------------------
 
-libnoxepetra_a_SOURCES = $(EPETRA) $(EPETRA_H)
+libnoxepetra_a_SOURCES = $(EPETRA) $(EPETRA_H) $(EPETRANEW) $(EPETRANEW_H)
 
 libnoxepetra_a_CXXFLAGS = -I$(top_srcdir)/src $(TRILINOS_CXXFLAGS)
 

@@ -39,3 +39,15 @@
 #include "NOX_Epetra_Operator.H"
 #include "NOX_Epetra_Operator_JacobiPrec.H"
 #include "NOX_Epetra_Scaling.H"
+//NOX::EpetraNew Objects
+#include "NOX_EpetraNew_FiniteDifference.H"
+#include "NOX_EpetraNew_FiniteDifferenceColoring.H"
+#include "NOX_EpetraNew_Group.H"
+#include "NOX_EpetraNew_Interface_Jacobian.H"
+#include "NOX_EpetraNew_Interface_Preconditioner.H"
+#include "NOX_EpetraNew_Interface_Required.H"
+#include "NOX_EpetraNew_LinearSystem.H"
+#include "NOX_EpetraNew_LinearSystemAztecOO.H"
+#include "NOX_EpetraNew_MatrixFree.H"
+#include "NOX_EpetraNew_Scaling.H"
+
