@@ -241,7 +241,7 @@ static int matching_col_ipm(ZZ *zz, HGraph *hg, Matching match)
              
 static int matching_ipm (ZZ *zz, HGraph *hg, Matching match)
 {
-  int i, j, lno, loop, vertex, *psums, *tsums;
+  int i, j, lno, loop, vertex, *psums, *tsums, *order;
   int count, size, *ip, bestv, bestsum, edgecount, pins, *cmatch;
   int ncandidates, nloop;
   int *select, pselect;
@@ -255,24 +255,29 @@ static int matching_ipm (ZZ *zz, HGraph *hg, Matching match)
   char  *yo = "matching_ipm";
     
   nloop = hg->dist_x[hgc->nProc_x] > 100 ? 15 : 2;
-  ncandidates = MAX (1, hg->nVtx / (2 * nloop)) ;
+  ncandidates = MAX (1, hg->nVtx / (2 * nloop)) ; /* match impacts 2 vertices */
        
-  /* local slice of global matching array.  It uses local numbering (zero-based)
-   * initially, match[i] = i.  After matching, match[i]=i indicates an unmatched
-   * vertex. A matching between vertices i & j is indicated by match[i] = j &
-   * match [j] = i.  NOTE: a match to an off processor vertex is indicated my a
-   * negative number, -(gno+1), which must use global numbers (gno's).        */
-  for (i = 0; i < hg->nVtx; i++)
-     match[i] = i;
-          
   psums = tsums = select = cmatch = each_size = displs = NULL;
   if (hg->nVtx > 0 && (
       !(psums     = (int*) ZOLTAN_CALLOC (hg->nVtx,  sizeof(int)))
+   || !(order     = (int*) ZOLTAN_MALLOC (hg->nVtx * sizeof(int)))
    || !(tsums     = (int*) ZOLTAN_CALLOC (hg->nVtx,  sizeof(int)))
    || !(cmatch    = (int*) ZOLTAN_MALLOC (hg->nVtx * sizeof(int)))))     {
      ZOLTAN_PRINT_ERROR (zz->Proc, yo, "Insufficient memory.");
      return ZOLTAN_MEMERR;
   }
+  
+  /* match[] is local slice of global matching array.  It uses local numbering 
+   * (zero-based) initially, match[i] = i.  After matching, match[i]=i indicates
+   * an unmatched vertex. A matching between vertices i & j is indicated by 
+   * match[i] = j & match [j] = i.  NOTE: a match to an off processor vertex is
+   * indicated my a negative number, -(gno+1), which must use global numbers
+   * (gno's).        */
+  /* order[] is used to impliemnet alternative vertex selection algorithms:
+   * natural (lno), random, weight order, vertex size, etc. */
+  for (i = 0; i < hg->nVtx; i++)
+     order[i] = match[i] = i;
+     
   if (hgc->nProc_x > 0 && (
       !(select    = (int*) ZOLTAN_MALLOC (ncandidates  * sizeof(int)))
    || !(each_size = (int*) ZOLTAN_MALLOC (hgc->nProc_x * sizeof(int)))
@@ -282,12 +287,12 @@ static int matching_ipm (ZZ *zz, HGraph *hg, Matching match)
      return ZOLTAN_MEMERR;
   }
   
+  /* need to determine global total of ncandidates to allocate storage */
   MPI_Allgather (&ncandidates, 1, MPI_INT, each_count, 1, MPI_INT, hgc->row_comm);
      
   total_count= 0;
   for (i = 0; i < hgc->nProc_x; i++)
     total_count += each_count[i];
-
   m_vedge = m_vindex = m_gno = m_bestsum = m_bestv = b_gno = b_bestsum = 0;
   if (hg->nPins > 0 && 
    !(m_vedge   = (int*) ZOLTAN_MALLOC  (hg->nPins * 3 * sizeof(int))))  {
@@ -302,6 +307,7 @@ static int matching_ipm (ZZ *zz, HGraph *hg, Matching match)
      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
      return ZOLTAN_MEMERR;
      }
+     
   if (hg->nVtx > 0 && (
       !(b_gno     = (int*) ZOLTAN_MALLOC  (hg->nVtx * sizeof(int)))
    || !(b_bestsum = (int*) ZOLTAN_MALLOC  (hg->nVtx * sizeof(int)))))  {
@@ -320,16 +326,13 @@ static int matching_ipm (ZZ *zz, HGraph *hg, Matching match)
      
      /************************ PHASE 1: ***************************************/
      
-     /* Select next ncandidates unmatched vertices to globally match.  Alternative
-      * selection algorithms: sequential, random, weight order, vertex size, etc.
-      * This version uses sequential: pick ncandidates unmatched vertices in lno order */
-      
+     /* Select next ncandidates unmatched vertices to globally match. */      
      for (i = 0; i < hg->nVtx; i++)
        cmatch[i] = match[i];                                         
      for (count = 0; count < ncandidates && pselect < hg->nVtx; pselect++)
-       if (cmatch[pselect] == pselect)  {  /* unmatched */
-         cmatch[pselect] = -1;             /* pending match */
-         select[count++] = pselect;        /* select it */
+       if (cmatch[order[pselect]] == order[pselect])  {  /* unmatched */
+         select[count++] = order[pselect];       /* select it */       
+         cmatch[order[pselect]] = -1;            /* mark it as a pending match */
        }
      if (count < ncandidates)   {          /* what if we have a short count? */
        for (i = 0; i < hg->nVtx; i++)      /* find an unmatched vertex  */
@@ -337,7 +340,7 @@ static int matching_ipm (ZZ *zz, HGraph *hg, Matching match)
            break;
        if (i < hg->nVtx)
          cmatch[i] = -1;                  
-       while (count < ncandidates)         /* fill the rest of the array with it */
+       while (count < ncandidates)       /* fill the rest of the array with it */
          select[count++] = (i == hg->nVtx) ? i-1 : i;
      }
                 
@@ -345,7 +348,7 @@ static int matching_ipm (ZZ *zz, HGraph *hg, Matching match)
      size = 0;
      for (i = 0; i < ncandidates; i++)
        size += (hg->vindex[select[i]+1] - hg->vindex[select[i]]); 
-     size += (2 * ncandidates);             /* append size of vtx and counts headers */
+     size += (2 * ncandidates);       /* append size of vtx and counts headers */
                     
      MPI_Allgather (&size, 1, MPI_INT, each_size, 1, MPI_INT, hgc->row_comm);  
 
@@ -467,21 +470,14 @@ static int matching_ipm (ZZ *zz, HGraph *hg, Matching match)
      Zoltan_Multifree (__FILE__, __LINE__, 2, &buffer, &rbuffer);
      
      /************************ PHASE 4: ***************************************/
-     size = 2 * ncandidates;
+     displs[0] = 0;
      for (i = 0; i < hgc->nProc_x; i++)
-       each_size[i] = displs[i] = 0;
-       
-     MPI_Allgather (&size, 1, MPI_INT, each_size, 1, MPI_INT, hgc->row_comm);
-     
-     size = displs[0] = 0;
-     for (i = 0; i < hgc->nProc_x; i++)
-        size += each_size[i];
+        each_size[i] =  2 * each_count[i];
      for (i = 1; i < hgc->nProc_x; i++)
         displs[i] = displs[i-1] + each_size[i-1];
           
-     if (size > 0 && (    
-         !(buffer  = (char*) ZOLTAN_MALLOC (2 * ncandidates * sizeof(int)))
-      || !(rbuffer = (char*) ZOLTAN_MALLOC (2 * total_count * sizeof(int)))))  {
+     if (!(buffer  = (char*) ZOLTAN_MALLOC (2 * ncandidates * sizeof(int)))
+      || !(rbuffer = (char*) ZOLTAN_MALLOC (2 * total_count * sizeof(int))))  {
          ZOLTAN_PRINT_ERROR (zz->Proc, yo, "Insufficient memory.");
          return ZOLTAN_MEMERR;
      }  
@@ -497,7 +493,7 @@ static int matching_ipm (ZZ *zz, HGraph *hg, Matching match)
       MPI_INT, hgc->row_comm);
      
      ip = (int*) rbuffer;                   
-     for (i = 0; i < size/2; i++)  {
+     for (i = 0; i < total_count; i++)  {
        bestv  = *ip++;
        vertex = *ip++; 
                 
