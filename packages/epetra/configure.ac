@@ -340,6 +340,7 @@ AC_CONFIG_FILES([
 		test/VbrMatrix/Makefile
 		test/Vector/Makefile
 		test/Comm/Makefile
+		test/BasicPerfTest/Makefile
 		example/Makefile 
 		example/petra_power_method/Makefile
 		example/verySimple/Makefile
