@@ -1024,7 +1024,7 @@ void CLOP_solver::factor_coarse_stiff()
     ffout.close();
     */
 
-    Kc_fac = new sparse_lu();
+    Kc_fac = new CLAPS_sparse_lu();
     if (ncdof <= ndof_global_red)
       Kc_fac->factor(ncdof, nnz_KC, rowbeg_KC, colidx_KC, KC);
     delete [] rowbeg_KC;

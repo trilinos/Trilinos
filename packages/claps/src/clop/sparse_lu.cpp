@@ -1,27 +1,27 @@
 #include "sparse_lu.hpp"
 #include "my_feti_sparse_solver.hpp"
 
-sparse_lu::sparse_lu()
+CLAPS_sparse_lu::CLAPS_sparse_lu()
 {
   XSUPER = 0; XLINDX = 0; LINDX = 0; XLNZ = 0; PERM = 0; INVP = 0;
   IPROW = 0;  IPCOL = 0; DEF = 0; LNZ = 0; NS = 0;
 }
 
-sparse_lu::~sparse_lu()
+CLAPS_sparse_lu::~CLAPS_sparse_lu()
 {
   delete [] XSUPER; delete [] XLINDX; delete [] LINDX; delete [] XLNZ; 
   delete [] PERM; delete [] INVP; delete [] IPROW; delete [] IPCOL;
   delete [] DEF; delete [] LNZ; delete [] NS;
 }
 
-void sparse_lu::cleanup()
+void CLAPS_sparse_lu::cleanup()
 {
   delete [] XSUPER; delete [] XLINDX; delete [] LINDX; delete [] XLNZ;
   delete [] PERM; delete [] INVP; delete [] IPROW; delete [] IPCOL;
   delete [] DEF; delete [] LNZ; delete [] NS;
 }
 
-int sparse_lu::factor(int N_, int NNZ, int COLPTR[], int ROWIDX[], 
+int CLAPS_sparse_lu::factor(int N_, int NNZ, int COLPTR[], int ROWIDX[], 
 		      double ANZ[])
 {
   //
@@ -120,7 +120,7 @@ int sparse_lu::factor(int N_, int NNZ, int COLPTR[], int ROWIDX[],
   if (order_opt == 1) {
     ORDMMD2_F77(N,XLINDX,LINDX,INVP,PERM,IWSIZE,IWORK,NSUB,IFLAG);
     if (IFLAG != 0) {
-      cout << "error in call to ordmmd2 in sparse_lu::factor" << endl;
+      cout << "error in call to ordmmd2 in CLAPS_sparse_lu::factor" << endl;
       cout << "ORDMMD2 IFLAG=" << IFLAG << endl;
       return -1;
     }
@@ -139,7 +139,7 @@ int sparse_lu::factor(int N_, int NNZ, int COLPTR[], int ROWIDX[],
   SFINIT_F77(N,NADJ,XADJ,ADJ,PERM,INVP,MAXSUP,DEFBLK,COLCNT,
 	     NNZL,NSUB,NSUPER,XSUPER,SNODE,IWSIZE,IWORK,IFLAG);
   if (IFLAG != 0) {
-    cout << "error in call to sfinit in sparse_lu::factor" << endl;
+    cout << "error in call to sfinit in CLAPS_sparse_lu::factor" << endl;
     cout << "SFINIT IFLAG=" << IFLAG << endl;
     return -1;
   }
@@ -154,7 +154,7 @@ int sparse_lu::factor(int N_, int NNZ, int COLPTR[], int ROWIDX[],
   SYMFCT_F77(N,NADJ,XADJ,ADJ,PERM,INVP,COLCNT,NSUPER,XSUPER,
 	     SNODE,NSUB,XLINDX,LINDX,XLNZ,IWSIZE,IWORK,IFLAG);
   if (IFLAG != 0) {
-    cout << "error in call to symfct in sparse_lu::factor" << endl;
+    cout << "error in call to symfct in CLAPS_sparse_lu::factor" << endl;
     cout << "SYMFCT IFLAG=" << IFLAG << endl;
     return -1;
   }
@@ -190,7 +190,7 @@ int sparse_lu::factor(int N_, int NNZ, int COLPTR[], int ROWIDX[],
 	     LBDEF,DEF,TOL,IPROW,IPCOL,TMPSIZ,TMPVEC,IWSIZE,IWORK,
 	     RWSIZE,RWORK,IFLAG);
   if (IFLAG != 0) {
-    cout << "error in call to blkldl in sparse_lu::factor" << endl;
+    cout << "error in call to blkldl in CLAPS_sparse_lu::factor" << endl;
     cout << "BLKLDL IFLAG=" << IFLAG << endl;
     return -1;
   }
@@ -230,7 +230,7 @@ int sparse_lu::factor(int N_, int NNZ, int COLPTR[], int ROWIDX[],
   return 0;
 }
 
-int sparse_lu::sol(int NRHS, double RHS[], double SOL[], double TEMP[])
+int CLAPS_sparse_lu::sol(int NRHS, double RHS[], double SOL[], double TEMP[])
 {
   //
   // numerical solution
@@ -250,7 +250,7 @@ int sparse_lu::sol(int NRHS, double RHS[], double SOL[], double TEMP[])
   return 0;
 }
 
-void sparse_lu::getnrm(int n, int colptr[], int rowidx[], 
+void CLAPS_sparse_lu::getnrm(int n, int colptr[], int rowidx[], 
 		       double values[], double &anorm)
 {
   int i,j;
@@ -263,7 +263,7 @@ void sparse_lu::getnrm(int n, int colptr[], int rowidx[],
   }
 }
 
-void sparse_lu::inpnv(int &n , int colptr[], int rowidx[], double values[], 
+void CLAPS_sparse_lu::inpnv(int &n , int colptr[], int rowidx[], double values[], 
 		      int perm[], int invp [], int &nsuper, int xsuper[], 
 		      int xlindx[], int lindx[], int xlnz[], double lnz[],
 		      int offset[])
@@ -299,7 +299,7 @@ void sparse_lu::inpnv(int &n , int colptr[], int rowidx[], double values[],
   }
 }
 
-int sparse_lu::small_factor(int rowbeg[], int colidx[], double vals[])
+int CLAPS_sparse_lu::small_factor(int rowbeg[], int colidx[], double vals[])
 {
   int i, j, INFO, col;
   LNZ = new double[N*N]; for (i=0; i<N*N; i++) LNZ[i] = 0;
@@ -314,7 +314,7 @@ int sparse_lu::small_factor(int rowbeg[], int colidx[], double vals[])
   return INFO;
 }
 
-int sparse_lu::small_solve(int NRHS, double RHS[], double SOL[])
+int CLAPS_sparse_lu::small_solve(int NRHS, double RHS[], double SOL[])
 {
   int INFO;
   char TRANS = 'N';

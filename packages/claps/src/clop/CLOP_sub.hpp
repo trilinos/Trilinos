@@ -43,7 +43,7 @@ class CLOP_sub {
   const Epetra_Comm *Comm;
   int ndof, csdim, csdim_max, ndim, atype, INFO, MyPID;
   double xcent, ycent, zcent, *x, *y, *z, *Edof, *Phi;
-  sparse_lu *A_sub;
+  CLAPS_sparse_lu *A_sub;
   int *jpvt, *subdofs, *locdof;
 };
   

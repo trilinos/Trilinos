@@ -115,5 +115,5 @@ class CLOP_solver
   double *VV, *HH, *RR, *zz, *cc, *ss, *norms, *gmres_vec, *gmres_sum;
   ofstream fout;
   CLOP_sub *Asub;
-  sparse_lu *Kc_fac;
+  CLAPS_sparse_lu *Kc_fac;
 };

@@ -291,11 +291,14 @@ void SCLOP_solver::determine_ownership()
 
   StandardMap = new Epetra_Map(-1, ndof_mine, sub_gdof, 0, *Comm);
   ConStandard = new Epetra_CrsMatrix(Copy, *StandardMap, 0);
-  ConSubdomain.FillComplete(RowMapCon, *StandardMap);
+  ierr = ConSubdomain.FillComplete(RowMapCon, *StandardMap);
+  assert (ierr == 0);
   Epetra_Export Exporter(*SubMap, *StandardMap);
-  ConStandard->Export(ConSubdomain, Exporter, Add);
+  ierr = ConStandard->Export(ConSubdomain, Exporter, Add);
+  assert (ierr == 0);
   //  ConStandard->Export(ConSubdomain, Exporter, Insert);
-  ConStandard->FillComplete(RowMapCon, *StandardMap);
+  ierr = ConStandard->FillComplete(RowMapCon, *StandardMap);
+  assert (ierr == 0);
   //  cout << *ConStandard << endl;
 
   delete [] count1; delete [] con1; delete [] con2; delete [] coef;

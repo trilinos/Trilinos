@@ -7,10 +7,10 @@ extern "C"{
   void metis_nodend(int* N,int XADJ[],int ADJD[],int* numflag,
 		    int OPTIONS[],int PERM[],int INVP[]);
 }
-class sparse_lu {
+class CLAPS_sparse_lu {
  public:
-  sparse_lu();
-  ~sparse_lu();
+  CLAPS_sparse_lu();
+  ~CLAPS_sparse_lu();
   void cleanup();
   int factor(int N_, int NNZ_, int COLPTR[], int ROWIDX[], double ANZ[]);
   int sol(int NRHS, double RHS[], double SOL[], double TEMP[]);
