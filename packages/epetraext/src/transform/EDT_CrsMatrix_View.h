@@ -8,7 +8,6 @@ class Epetra_CrsGraph;
 class Epetra_CrsMatrix;
 
 namespace EpetraExt {
-namespace Transform {
 
 class CrsMatrix_View : public ViewTransform<Epetra_CrsMatrix> {
 
@@ -29,6 +28,6 @@ class CrsMatrix_View : public ViewTransform<Epetra_CrsMatrix> {
 
 };
 
-} //namespace Epetra_Transform
+} //namespace EpetraExt
 
 #endif //EDT_CRSMATRIX_VIEW_H

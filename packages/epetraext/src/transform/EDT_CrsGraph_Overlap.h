@@ -7,7 +7,6 @@
 class Epetra_CrsGraph;
 
 namespace EpetraExt {
-namespace Transform {
 
 class CrsGraph_Overlap : public SameTypeTransform<Epetra_CrsGraph> {
 
@@ -28,7 +27,6 @@ class CrsGraph_Overlap : public SameTypeTransform<Epetra_CrsGraph> {
 
 };
 
-} //namespace Transform
 } //namespace EpetraExt
 
 #endif //EDT_CRSGRAPH_OVERLAP_H

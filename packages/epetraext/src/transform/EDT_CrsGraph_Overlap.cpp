@@ -5,10 +5,7 @@
 #include <Epetra_CrsGraph.h>
 #include <Epetra_Map.h>
 
-namespace EpetraExt {
-namespace Transform {
-
-NewTypePtr CrsGraph_Overlap::operator()( OriginalTypeRef original )
+EpetraExt::CrsGraph_Overlap::NewTypePtr EpetraExt::CrsGraph_Overlap::operator()( EpetraExt::CrsGraph_Overlap::OriginalTypeRef original )
 {
   int err;
 
@@ -48,5 +45,3 @@ NewTypePtr CrsGraph_Overlap::operator()( OriginalTypeRef original )
   return OverlapGraph;
 }
 
-} //namespace Transform
-} //namespace EpetraExt

@@ -12,7 +12,6 @@ class Epetra_CrsMatrix;
 class Epetra_Export;
 
 namespace EpetraExt {
-namespace Transform {
 
 class LinearProblem_StaticCondensation : public SameTypeTransform<Epetra_LinearProblem>
 {
@@ -119,7 +118,6 @@ class LinearProblem_StaticCondensation : public SameTypeTransform<Epetra_LinearP
   bool rvs();
 };
 
-} //namespace Transform 
 } //namespace EpetraExt
 
 #endif //EDT_LINEARPROBLEM_STATICCONDENSATION_H

@@ -8,10 +8,7 @@
 
 using std::vector;
 
-namespace EpetraExt {
-namespace Transform {
-
-NewTypePtr CrsGraph_View::operator()( OriginalTypeRef original )
+EpetraExt::CrsGraph_View::NewTypePtr EpetraExt::CrsGraph_View::operator()( EpetraExt::CrsGraph_View::OriginalTypeRef original )
 {
   //Error, must be local indices
   if( original.IndicesAreGlobal() ) return NewTypePtr(0);
@@ -50,10 +47,10 @@ NewTypePtr CrsGraph_View::operator()( OriginalTypeRef original )
     }
   }
 
-  std::auto_ptr<Epetra_CrsGraph> newGraph( new Epetra_CrsGraph( View,
-                                                                *NewRowMap_,
-                                                                *NewColMap_,
-                                                                &numIndices[0] ) );
+  Epetra_CrsGraph * newGraph( new Epetra_CrsGraph( View,
+                                                   *NewRowMap_,
+                                                   *NewColMap_,
+                                                   &numIndices[0] ) );
 
   //insert views of row indices
   for( int i = 0; i < nNumRows; ++i )
@@ -64,4 +61,3 @@ NewTypePtr CrsGraph_View::operator()( OriginalTypeRef original )
   return newGraph;
 }
 
-} //namespace Epetra_Transform

@@ -8,7 +8,6 @@ class Epetra_CrsGraph;
 class Epetra_BlockMap;
 
 namespace EpetraExt {
-namespace Transform {
 
 class CrsGraph_View : public ViewTransform<Epetra_CrsGraph> {
 
@@ -29,7 +28,6 @@ class CrsGraph_View : public ViewTransform<Epetra_CrsGraph> {
 
 };
 
-} //namespace Transform
 } //namespace EpetraExt
 
 #endif //EDT_CRSGRAPH_VIEW_H

@@ -2,6 +2,10 @@
 #ifndef EPETRA_ZOLTANQUERY_H
 #define EPETRA_ZOLTANQUERY_H
 
+#ifdef HAVE_CONFIG_H
+#include <EpetraExt_config.h>
+#endif
+
 #include <Zoltan_QueryObject.h>
 
 #include <vector>

@@ -3,11 +3,10 @@
 #define EPETRA_TRANSFORM_H
 
 #ifdef HAVE_CONFIG_H
-#include "EpetraExt_Config.h"
+#include <EpetraExt_config.h>
 #endif
 
 namespace EpetraExt {
-namespace Transform {
 
 template<typename T, typename U>
 struct Transform
@@ -70,7 +69,6 @@ struct ViewTransform : public SameTypeTransform<T>
   virtual ~ViewTransform() {}
 };
 
-} //namespace Transform
 } //namespace EpetraExt
   
 #endif //EPETRA_TRANSFORM_H

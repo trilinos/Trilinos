@@ -7,7 +7,6 @@
 class Epetra_CrsGraph;
 
 namespace EpetraExt {
-namespace Transform {
 
 class CrsGraph_Transpose : public SameTypeTransform<Epetra_CrsGraph> {
 
@@ -27,7 +26,6 @@ class CrsGraph_Transpose : public SameTypeTransform<Epetra_CrsGraph> {
   bool rvs();
 };
 
-} //namespace Tranform
 } //namespace EpetraExt
 
 #endif //EDT_CRSGRAPH_TRANSPOSE_H

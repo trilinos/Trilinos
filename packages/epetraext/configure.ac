@@ -41,26 +41,26 @@
 # This must be the first line in configure.ac.
 # Optional 3rd argument is email address for bugs.
 
-AC_INIT(epetra, 2.0, mheroux@cs.sandia.gov)
+AC_INIT(epetraext, 2.0, mheroux@cs.sandia.gov)
 
 # Hello World!
 echo "----------------------------------------"
-echo "Running Epetra Configure Script"
+echo "Running EpetraExt Configure Script"
 echo "----------------------------------------"
 
 # This is to protect against accidentally specifying the wrong
 # directory with --srcdir.
 
-AC_CONFIG_SRCDIR(/src/Epetra_SerialComm.cpp)
+AC_CONFIG_SRCDIR(/src/transform/EDT_CrsGraph_View.cpp)
 
 # Specify directory for auxillary build tools (e.g., install-sh,
 # config.sub, config.guess) and M4 files.
 
 AC_CONFIG_AUX_DIR(config)
 
-# Configure should create src/Epetra_config.h from src/Epetra_config.h.in
+# Configure should create src/EpetraExt_config.h from src/EpetraExt_config.h.in
 
-AM_CONFIG_HEADER(src/Epetra_config.h:src/Epetra_config.h.in)
+AM_CONFIG_HEADER(src/EpetraExt_config.h:src/EpetraExt_config.h.in)
 
 # AM_MAINTAINER_MODE turns off maintainer-only makefile targets by
 # default, and changes configure to understand a
@@ -79,7 +79,7 @@ AC_CANONICAL_TARGET
 
 # Use automake
 
-AM_INIT_AUTOMAKE(epetra, 2.0)
+AM_INIT_AUTOMAKE(epetraext, 2.0)
 
 # Specify required version of autoconf.
 
@@ -308,38 +308,12 @@ AC_SUBST(ac_aux_dir)
 AC_CONFIG_FILES([
 		Makefile 
 		src/Makefile
-		test/Makefile
-		test/BlockMap/Makefile
-		test/CrsGraph/Makefile
-		test/CrsMatrix/Makefile
-		test/CrsRectMatrix/Makefile
-		test/FECrsMatrix/Makefile
-		test/FEVector/Makefile
-		test/ImportExport/Makefile
-		test/Map/Makefile
-		test/MapColoring/Makefile
-		test/MultiVector/Makefile
-		test/Object/Makefile
-		test/SerialDense/Makefile
-		test/SerialSpdDense/Makefile
-		test/VbrMatrix/Makefile
-		test/Vector/Makefile
-		test/Comm/Makefile
-		example/Makefile 
-		example/petra_power_method/Makefile
-		example/verySimple/Makefile
-		test/scripts/Makefile
-		test/scripts/daily/Makefile
-		test/scripts/daily/mpi/Makefile
-		test/scripts/daily/serial/Makefile
-		test/scripts/weekly/Makefile
-		test/scripts/weekly/mpi/Makefile
-		test/scripts/weekly/serial/Makefile
+		src/transform/Makefile
 		])
 
 AC_OUTPUT()
 
 # Bye World!
 echo "----------------------------------------"
-echo "Finished Running Epetra Configure Script"
+echo "Finished Running EpetraExt Configure Script"
 echo "----------------------------------------"

@@ -4,10 +4,7 @@
 
 #include <EDT_CrsMatrix_View.h>
 
-namespace EpetraExt {
-namespace Transform {
-
-NewTypePtr CrsMatrix_View::operator()( OriginalTypeRef original )
+EpetraExt::CrsMatrix_View::NewTypePtr EpetraExt::CrsMatrix_View::operator()( EpetraExt::CrsMatrix_View::OriginalTypeRef original )
 {
   if( original.IndicesAreGlobal() ) cout << "EDT_CrsMatrix_View: Indices must be LOCAL!\n";
   assert( !original.IndicesAreGlobal() );
@@ -43,5 +40,3 @@ NewTypePtr CrsMatrix_View::operator()( OriginalTypeRef original )
   return newMatrix;
 }
 
-} //namespace Transform
-} //namespace EpetraExt

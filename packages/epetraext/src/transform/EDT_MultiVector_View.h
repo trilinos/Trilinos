@@ -8,7 +8,6 @@ class Epetra_MultiVector;
 class Epetra_BlockMap;
 
 namespace EpetraExt {
-namespace Transform {
 
 class MultiVector_View : public ViewTransform<Epetra_MultiVector> {
 
@@ -33,7 +32,6 @@ class MultiVector_View : public ViewTransform<Epetra_MultiVector> {
 
 };
 
-} //namespace Transform
 } //namespace EpetraExt
 
 #endif //EDT_MULTIVECTOR_VIEW_H

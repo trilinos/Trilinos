@@ -9,10 +9,7 @@
 
 using std::vector;
 
-namespace EpetraExt {
-namespace Transform {
-
-NewTypePtr CrsGraph_Transpose::operator()( OriginalTypeRef original )
+EpetraExt::CrsGraph_Transpose::NewTypePtr EpetraExt::CrsGraph_Transpose::operator()( EpetraExt::CrsGraph_Transpose::OriginalTypeRef original )
 {
   int err;
 
@@ -96,18 +93,15 @@ NewTypePtr CrsGraph_Transpose::operator()( OriginalTypeRef original )
   return TransposeGraph;
 }
 
-bool EDT_CrsGraph_Transpose::fwd()
+bool EpetraExt::CrsGraph_Transpose::fwd()
 {
-  cout << "EDT_CrsGraph_Transpose::fwd() NOT IMPLEMENTED YET!\n";
+  cout << "EpetraExt::CrsGraph_Transpose::fwd() NOT IMPLEMENTED YET!\n";
   return false;
 }
 
-bool EDT_CrsGraph_Transpose::rvs()
+bool EpetraExt::CrsGraph_Transpose::rvs()
 {
-  cout << "EDT_CrsGraph_Transpose::rvs() NOT IMPLEMENTED YET!\n";
+  cout << "EpetraExt::CrsGraph_Transpose::rvs() NOT IMPLEMENTED YET!\n";
   return false;
 }
-
-} //namespace Transform
-} //namespace EpetraExt
 

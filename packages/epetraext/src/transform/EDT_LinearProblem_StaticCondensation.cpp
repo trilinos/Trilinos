@@ -15,9 +15,7 @@
 #include <Epetra_Map.h>
 #include <Epetra_Comm.h>
 
-namespace Epetra_Transform {
-
-LinearProblem_StaticCondensation::~LinearProblem_StaticCondensation()
+EpetraExt::LinearProblem_StaticCondensation::~LinearProblem_StaticCondensation()
 {
   if( Exporter_ ) delete Exporter_;
 
@@ -59,8 +57,8 @@ LinearProblem_StaticCondensation::~LinearProblem_StaticCondensation()
   if( LMap_ ) delete LMap_;
 }
 
-std::auto_ptr<Epetra_LinearProblem> LinearProblem_StaticCondensation::operator()
-	( Epetra_LinearProblem & original )
+EpetraExt::LinearProblem_StaticCondensation::NewTypePtr EpetraExt::LinearProblem_StaticCondensation::operator()
+	( EpetraExt::LinearProblem_StaticCondensation::OriginalTypeRef original )
 {
   int ierr = 0;
 
@@ -306,10 +304,10 @@ cout << "LExporter:\n" << *LExporter_;
 
   NewProblem_ = new Epetra_LinearProblem( RRMatrix_, RLHS_, RRHS_ );
 
-  return std::auto_ptr<Epetra_LinearProblem>(NewProblem_);
+  return NewProblem_;
 }
 
-bool LinearProblem_StaticCondensation::fwd()
+bool EpetraExt::LinearProblem_StaticCondensation::fwd()
 {
   ULHS_->Export( *OldLHS_, *LExporter_, Insert );
   RLHS_->Export( *OldLHS_, *RExporter_, Insert );
@@ -346,7 +344,7 @@ bool LinearProblem_StaticCondensation::fwd()
   return true;
 }
 
-bool LinearProblem_StaticCondensation::rvs()
+bool EpetraExt::LinearProblem_StaticCondensation::rvs()
 {
   Epetra_Vector UUpdate( *UMap_ );
   URMatrix_->Multiply( false, *RLHS_, UUpdate );
@@ -368,4 +366,3 @@ bool LinearProblem_StaticCondensation::rvs()
   return true;
 }
 
-}
