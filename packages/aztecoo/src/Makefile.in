@@ -404,7 +404,9 @@ WITH_CPP = \
 
 
 ### end option 
-UTIL_H = 
+UTIL_H = \
+	$(srcdir)/AztecOO_Version.h 
+
 UTIL = \
 	$(srcdir)/az_check.c \
 	$(srcdir)/az_flop_cnt.c \

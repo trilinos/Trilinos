@@ -89,7 +89,8 @@ WITH_CPP = \
         $(srcdir)/AztecOO_StatusTestResNorm.cpp
 
 ### end option 
-UTIL_H = 
+UTIL_H = \
+	$(srcdir)/AztecOO_Version.h 
 
 UTIL = \
 	$(srcdir)/az_check.c \

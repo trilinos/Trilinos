@@ -45,6 +45,7 @@
 #include "AztecOO_StatusTestMaxIters.h"
 #include "AztecOO_StatusTestResNorm.h"
 #include "AztecOO_StatusTestCombo.h"
+#include "AztecOO_Version.h"
 
 #define perror(str) { fprintf(stderr,"%s\n",str);   exit(-1); }
 #define perror1(str,ierr) { fprintf(stderr,"%s %d\n",str,ierr);   exit(-1); }
@@ -90,6 +91,9 @@ int main(int argc, char *argv[])
 #else
   Epetra_SerialComm comm;
 #endif
+
+  if (comm.MyPID()==0)
+	cout << AztecOO_Version() << endl << endl;
 
   printf("proc %d of %d is alive\n",
       comm.MyPID(),comm.NumProc());

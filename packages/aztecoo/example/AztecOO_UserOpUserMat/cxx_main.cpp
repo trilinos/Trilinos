@@ -27,6 +27,7 @@
 //@HEADER
 
 #include "AztecOO.h"
+#include "AztecOO_Version.h"
 #ifdef EPETRA_MPI
 #include "Epetra_MpiComm.h"
 #include "mpi.h"
@@ -53,6 +54,9 @@ int main(int argc, char *argv[])
 #else
   Epetra_SerialComm comm;
 #endif
+
+  if (comm.MyPID()==0)
+    cout << AztecOO_Version() << endl << endl;
 
   if (argc!=3) {
     cerr << "Usage: " << argv[0] << " nx ny" << endl;

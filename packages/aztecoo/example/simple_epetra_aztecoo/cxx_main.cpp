@@ -27,6 +27,7 @@
 //@HEADER
 
 #include "AztecOO.h"
+#include "AztecOO_Version.h"
 
 /* The next two ifdefs should be removed when when the revision of
  az_aztec_defs.h is complete. */
@@ -66,11 +67,15 @@ int main(int argc, char *argv[])
   // Initialize MPI
   MPI_Init(&argc,&argv);
   Epetra_MpiComm Comm( MPI_COMM_WORLD );
-  cout << Comm <<endl;
 #else
   Epetra_SerialComm Comm;
 #endif
   int NumMyElements = 1000;
+
+  if (Comm.MyPID()==0)
+    cout << AztecOO_Version() << endl << endl;
+
+  cout << Comm <<endl;
 
   // Construct a Map that puts same number of equations on each processor
   Epetra_Map Map(-1, NumMyElements, 0, Comm);

@@ -27,6 +27,7 @@
 // @HEADER
 
 #include "AztecOO_config.h"
+#include "AztecOO_Version.h"
 #ifdef HAVE_MPI
 #include "mpi.h"
 #include "Epetra_MpiComm.h"
@@ -46,6 +47,9 @@ int main(int argc, char *argv[]) {
 #else
   Epetra_SerialComm Comm;
 #endif
+  if (Comm.MyPID()==0)
+    cout << AztecOO_Version() << endl << endl;
+
   cout << Comm <<endl;
 
   int NumMyElements = 100;
