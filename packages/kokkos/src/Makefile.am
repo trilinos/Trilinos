@@ -51,10 +51,13 @@ CORE =
 
 UTIL_H = \
 	$(srcdir)/Kokkos_Flops.hpp \
-	$(srcdir)/Kokkos_Time.hpp
+	$(srcdir)/Kokkos_Time.hpp \
+	$(srcdir)/Kokkos_Fortran_wrappers.hpp \
+	$(srcdir)/Kokkos_f77func.hpp 
 
 UTIL = \
-	$(srcdir)/Kokkos_Version.cpp
+	$(srcdir)/Kokkos_Version.cpp \
+	$(srcdir)/Kokkos_dcrsmv.f 
 
 ENUM_H = 
 

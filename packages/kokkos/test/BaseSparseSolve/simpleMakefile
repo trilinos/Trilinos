@@ -7,12 +7,14 @@ TARGET=BaseSparseSolve.exe
 SRC=cxx_main.cpp scsrmm2a5.f
 OBJ_EXT=o
 #OBJ=$(SRC:.cpp=.$(OBJ_EXT)) $(SRC:.f=.$(OBJ_EXT))
-OBJ=cxx_main.o scsrmm2a5.o
+OBJ=cxx_main.o scsrmm2a5.o Kokkos_dcrsmv.o
 
 $(TARGET): $(OBJ)
 	$(CXX) -o $(TARGET) $(OBJ) -lblas_fast -lg2c -lm
 
 cxx_main.o: cxx_main.cpp ../BaseSparseMultiply/GenerateHbProblem.hpp $(SRCDIR)/*.hpp
+Kokkos_dcrsmv.o: $(SRCDIR)/Kokkos_dcrsmv.f
+	$(FC) -c $(FFLAGS) -o Kokkos_dcrsmv.o $(SRCDIR)/Kokkos_dcrsmv.f
 
 clean:
 	rm -rf $(OBJ) $(TARGET) *~

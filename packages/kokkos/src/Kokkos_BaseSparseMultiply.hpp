@@ -33,12 +33,7 @@
 #include "Kokkos_Permutation.hpp"
 #include "Kokkos_CisMatrix.hpp" 
 #include "Kokkos_SparseOperation.hpp" 
-/* extern "C" {
-void scsrmm2_(const int *, const int *, const double *,const int *, const int *, 
-	      const double *, const double *, const int *);
-void daxpy_(const int *, const double *, const double *, const int *, const double *, const int *);
-
-} */
+#include "Kokkos_Fortran_wrappers.hpp"
 
 namespace Kokkos {
 
@@ -212,6 +207,8 @@ namespace Kokkos {
     bool haveStructure_;
     bool haveValues_;
     bool hasUnitDiagonal_;
+    bool hasClassicHbStructure_;
+    bool hasClassicHbValues_;
   
     OrdinalType numRows_;
     OrdinalType numCols_;
@@ -240,6 +237,8 @@ namespace Kokkos {
       haveStructure_(false),
       haveValues_(false),
       hasUnitDiagonal_(false),
+      hasClassicHbStructure_(false),
+      hasClassicHbValues_(false),
       numRows_(0),
       numCols_(0),
       numRC_(0),
@@ -265,6 +264,8 @@ namespace Kokkos {
       haveStructure_(source.haveStructure_),
       haveValues_(source.haveValues_),
       hasUnitDiagonal_(source.hasUnitDiagonal_),
+      hasClassicHbStructure_(source.ClassicHbStructure_),
+      hasClassicHbValues_(sourceClassicHbValues._),
       numRows_(source.numRows_),
       numCols_(source.numCols_),
       numRC_(source.numRC_),
@@ -310,6 +311,7 @@ namespace Kokkos {
 	  copyOrdinals(profiles_[i], tmp_indices_[i], indices_[i]);
 	  offset += profiles_[i];
 	}
+	hasClassicHbStructure_ = true;
       }
     }
     return;
@@ -333,6 +335,7 @@ namespace Kokkos {
 	  copyScalars(profiles_[i], tmp_values_[i], values_[i]);
 	  offset += profiles_[i];
 	}
+	hasClassicHbValues_ = true;
       }
     }
     return;
@@ -400,7 +403,6 @@ namespace Kokkos {
 
 
     if (haveStructure_) return(-1); // Can only call this one time!
-
     matrixForStructure_ = const_cast<CisMatrix<OrdinalType, ScalarType> *> (&A);
     OrdinalType i, j;
     willKeepStructure_ = willKeepStructure;
@@ -418,11 +420,14 @@ namespace Kokkos {
     OrdinalType * indicesRC;
 
     if (willKeepStructure) {
+      hasClassicHbStructure_ = true; // Assume packed storage, turn it off below if not
       for (i=0; i<numRC_; i++) {
 	int ierr = A.getIndices(i, numRCEntries, indicesRC);
 	if (ierr<0) return(ierr);
 	profile_[i] = numRCEntries;
 	indices_[i] = indicesRC;
+	if (i>0) 
+	  if (indicesRC - indices_[i-1] !=profile_[i-1]) hasClassicHbStructure_ = false;
       }
     }
     else { // If user will not keep structure, we must copy it
@@ -438,6 +443,7 @@ namespace Kokkos {
 	copyOrdinals(numRCEntries, indicesRC, indices_[i]);
 	offset += numRCEntries;
       }
+      hasClassicHbStructure_ = true; // True by construction
     }
 
     costOfMatVec_ = 2.0 * ((double) numEntries_);
@@ -463,10 +469,13 @@ namespace Kokkos {
     ScalarType * valuesRC;
 
     if (willKeepValues_) {
+      hasClassicHbValues_ = true; // Assume packed storage, turn it off below if not
       for (i=0; i<numRC_; i++) {
 	int ierr = A.getValues(i, valuesRC);
 	if (ierr<0) return(ierr);
 	values_[i] = valuesRC;
+	if (i>0) 
+	  if (valuesRC - values_[i-1] !=profile_[i-1]) hasClassicHbValues_ = false;
       }
     }
     else { // If user will not keep values, we must copy it
@@ -479,6 +488,7 @@ namespace Kokkos {
 	copyScalars(profile_[i], valuesRC, values_[i]);
 	offset += profile_[i];
       }
+      hasClassicHbValues_ = true; // True by construction
     }
     haveValues_ = true;
 
@@ -552,6 +562,77 @@ namespace Kokkos {
 	curValues  = *values++;
 	for(j = 0; j < curNumEntries; j++)
 	  yp[curIndices[j]] += curValues[j] * xp[i];
+      }
+    }
+    updateFlops(costOfMatVec_);
+    return(0);
+  }
+
+
+  //==============================================================================
+  template<>
+  int BaseSparseMultiply<int, double>::apply(const Vector<int, double>& x, 
+						    Vector<int, double> & y,
+						    bool transA, bool conjA) const {
+
+    if (!haveValues_) return(-1); // Can't compute without values!
+    if (conjA) return(-2); // Unsupported at this time
+    if (x.getLength()!=numCols_) return(-3); // Number of cols in A not same as number of rows in x
+    if (y.getLength()!=numRows_) return(-4); // Number of rows in A not same as number of rows in x
+
+    int i, j, curNumEntries;
+    int * curIndices;
+    double * curValues;
+
+    int * profile = profile_;
+    int ** indices = indices_;
+    double ** values = values_;
+
+    double * xp = x.getValues();
+    double * yp = y.getValues();
+    
+    // Special case of classic HB matrix
+    if (hasClassicHbStructure_ && hasClassicHbValues_) {
+      int itrans = 1;
+      if ((isRowOriented_ && !transA) ||
+	  (!isRowOriented_ && transA)) itrans = 0;
+      int udiag = 0;
+      if (hasUnitDiagonal_) udiag = 1;
+      KOKKOS_DCRSMV_F77(&itrans, &udiag, &numRows_, &numCols_, *values, *indices, profile, xp, yp);
+    }
+    else {// General case
+      
+      if ((isRowOriented_ && !transA) ||
+	  (!isRowOriented_ && transA)) {
+	
+	for(i = 0; i < numRC_; i++) {
+	  curNumEntries = *profile++;
+	  curIndices = *indices++;
+	  curValues  = *values++;
+	  double sum = 0.0;
+	  if (hasUnitDiagonal_) 
+	    sum = xp[i];
+	  for(j = 0; j < curNumEntries; j++)
+	    sum += curValues[j] * xp[curIndices[j]];
+	  yp[i] = sum;
+	}
+      }
+      else {
+	
+	if (hasUnitDiagonal_) 
+	  for(i = 0; i < numRC_; i++)
+	    yp[i] = xp[i]; // Initialize y for transpose multiply
+	else
+	  for(i = 0; i < numRC_; i++)
+	    yp[i] = 0.0; // Initialize y for transpose multiply
+	
+	for(i = 0; i < numRC_; i++) {
+	  curNumEntries = *profile++;
+	  curIndices = *indices++;
+	  curValues  = *values++;
+	  for(j = 0; j < curNumEntries; j++)
+	    yp[curIndices[j]] += curValues[j] * xp[i];
+	}
       }
     }
     updateFlops(costOfMatVec_);

@@ -35,6 +35,7 @@
 #include "Kokkos_Time.hpp"
 #include "Kokkos_Flops.hpp"
 #include "GenerateHbProblem.hpp"
+#include <cmath>
 
 using namespace std;
 using namespace Kokkos;
@@ -310,7 +311,7 @@ int compareMultiVecs(const DMultiVector & v1, const DMultiVector & v2, bool verb
   }
   
   if (verbose) cout << "Difference between exact and computed multivectors = " << sum << endl;
-  if (!(abs(sum)<1.0E-4)) {
+  if (!(fabs(sum)<1.0E-4)) {
     if (verbose) cout << "********** Difference too large **********" << endl;
     return(1); 
   }
@@ -325,7 +326,7 @@ int compareVecs(const DVector & v1, const DVector & v2, bool verbose) {
   for (OTYPE i=0; i < v1.getLength(); i++) sum += v1v[i] - v2v[i];
 
   if (verbose) cout << "Difference between exact and computed vectors = " << sum << endl;  
-  if (!(abs(sum)<1.0E-4)) {
+  if (!(fabs(sum)<1.0E-4)) {
     if (verbose) cout << "********** Difference too large **********" << endl;
     return(1); 
   }
