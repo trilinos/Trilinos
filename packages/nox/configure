@@ -2118,7 +2118,6 @@ echo "$as_me: error: MPI Fortran 77 compiler (${MPI_F77}) not found." >&2;}
    { (exit 1); exit 1; }; }
   fi
 fi
-])
 
 # ------------------------------------------------------------------------
 # Checks for programs
