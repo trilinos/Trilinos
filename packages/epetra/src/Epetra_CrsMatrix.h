@@ -345,7 +345,7 @@ class Epetra_CrsMatrix: public Epetra_DistObject, public Epetra_CompObject, publ
     \param Out
 	   Values - Extracted values for this row.
     \param Out
-	   Indices - Extracted global column indices for the corresponding values.
+	   Indices - Extracted local column indices for the corresponding values.
 	  
     \return Integer error code, set to 0 if successful.
   */
