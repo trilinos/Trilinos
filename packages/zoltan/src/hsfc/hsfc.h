@@ -55,7 +55,7 @@ static const int MAX_LOOPS = 16;
 
 
 /* The following are used in determining the max/min hsfc coordinates in
-/* a bin, if bin empty */
+   a bin, if bin empty */
 static const double  DEFAULT_BIN_MAX = -2.0;
 static const double  DEFAULT_BIN_MIN =  2.0;
 

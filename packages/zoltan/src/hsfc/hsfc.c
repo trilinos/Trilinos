@@ -103,63 +103,6 @@ int Zoltan_HSFC(
    *num_export = *num_import = -1;              /* in case of early error exit */
    MPI_Op_create(&Zoltan_HSFC_mpi_sum_max_min, 1, &mpi_op); /* register method */
 
-#ifdef RTHRTH
-if (zz->Proc == 0)
-{
-double x[3], f;
-int i, j;
-for (i = 0; i <= 4; i++)
-   for (j = 0; j <= 4; j++)
-         {
-         x[0] = i * 0.25;
-         x[1] = j * 0.25;
-         f = Zoltan_HSFC_InvHilbert2d(zz, x);
-         printf ("RTHRTH: z %.6f,  x[0] %.6f, x[1] %.6f\n", f, x[0], x[1]);
-         }
-}
-#endif
-
-#ifdef RTHRRTH
-if (zz->Proc == 0)
-{
-double x[3], f;
-int i, j, k;
-for (i = 0; i <= 4; i++)
-   for (j = 0; j <= 4; j++)
-      for (k = 0; k <= 4; k++)
-         {
-         x[0] = i * 0.25;
-         x[1] = j * 0.25;
-         x[2] = k * 0.25;
-         f = Zoltan_HSFC_InvHilbert3d(zz, x);
-         printf ("RTHRTH: z %.6f,  x (%.6f, %.6f, %.6f)\n", f, x[0], x[1], x[2]);
-         }
-}
-#endif
-
-#ifdef RTHRTH
-for (i = 0; i < 21; i++)
-  {
-  double fsfc, xdelta, xx[3];
-  fsfc = 0.05 * i;
-  Zoltan_HSFC_Hilbert3d (zz, xx, fsfc);
-  xdelta = Zoltan_HSFC_InvHilbert3d (zz, xx);
-  if (zz->Proc == 0)
-     printf ("RTHRTH: 3dTEST: %.6f   %.6f  %9.6f %.6f %.6f %.6f\n", fsfc, xdelta, fsfc-xdelta, xx[0],xx[1],xx[2]);
-  }
-
-for (i = 0; i < 21; i++)
-  {
-  double fsfc, xdelta, xx[3];
-  fsfc = 0.05 * i;
-  Zoltan_HSFC_Hilbert2d (zz, xx, fsfc);
-  xdelta = Zoltan_HSFC_InvHilbert2d (zz, xx);
-  if (zz->Proc == 0)
-     printf ("RTHRTH: 2dTEST: %.6f   %.6f  %9.6f\n", fsfc, xdelta, fsfc-xdelta);
-  }
-
-#endif
-
   /* Check for needed query functions. */
   /* Check only for coordinates; Zoltan_Get_Obj_List will check for others. */
   if (zz->Get_Num_Geom == NULL || zz->Get_Geom == NULL)

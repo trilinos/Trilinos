@@ -66,32 +66,31 @@ static unsigned const int IMAX = ~(0U);
 
 
 
-static unsigned const int data2d[] =  /* 2 dimension to nkey conversion */
+static unsigned const int idata2d[] =  /* 2 dimension to nkey conversion */
  {0, 3, 1, 2,
   0, 1, 3, 2,
   2, 3, 1, 0,
   2, 1, 3, 0};
 
-static unsigned const int state2d[] = /* 2 dimension to nkey state transitions */
+static unsigned const int istate2d[] = /* 2 dimension to nkey state transitions */
  {1, 2, 0, 0,
   0, 1, 3, 1,
   2, 0, 2, 3,
   3, 3, 1, 2};
 
-static unsigned const int idata2d[] = /* nkey to 2 dimension conversion */
+static unsigned const int data2d[] = /* nkey to 2 dimension conversion */
  {0, 2, 3, 1,
   0, 1, 3, 2,
   3, 2, 0, 1,
   3, 1, 0, 2};
 
-static unsigned const int istate2d[] = /* nkey to 2 dimension state transitions */
+static unsigned const int state2d[] = /* nkey to 2 dimension state transitions */
  {1, 0, 0, 2,
   0, 1, 1, 3,
   3, 2, 2, 0,
   2, 3, 3, 1};
 
-
-static unsigned const idata3d [] = {
+static unsigned const data3d [] = {  /* nkey to 3 dimension conversion */
  0,  4,  6,  2,  3,  7,  5,  1,
  0,  1,  3,  2,  6,  7,  5,  4,
  0,  4,  5,  1,  3,  7,  6,  2,
@@ -117,7 +116,7 @@ static unsigned const idata3d [] = {
  6,  4,  0,  2,  3,  1,  5,  7,
  6,  4,  5,  7,  3,  1,  0,  2};
 
-static unsigned const istate3d [] = {
+static unsigned const state3d [] = { /* nkey to 3 dimension state transitions */
     1,  2,  0,  3,  4,  0,  5,  6,
     0,  7,  1,  8,  5,  1,  4,  9,
    15,  0,  2, 22, 20,  2, 19, 23,
@@ -143,7 +142,7 @@ static unsigned const istate3d [] = {
     4, 23, 22,  6,  1, 22, 11,  3,
    21, 22, 23,  0,  9, 23, 14,  2};
 
-static unsigned const data3d [] = {
+static unsigned const idata3d [] = {   /* 3 dimension to nkey conversion */
  0,  7,  3,  4,  1,  6,  2,  5,
  0,  1,  3,  2,  7,  6,  4,  5,
  0,  3,  7,  4,  1,  2,  6,  5,
@@ -169,7 +168,7 @@ static unsigned const data3d [] = {
  2,  5,  3,  4,  1,  6,  0,  7,
  6,  5,  7,  4,  1,  2,  0,  3};
 
-static unsigned const state3d [] = {
+static unsigned const istate3d [] ={ /* 2 dimension to nkey state transitions */
  1,  6,  3,  4,  2,  5,  0,  0,
  0,  7,  8,  1,  9,  4,  5,  1,
 15, 22, 23, 20,  0,  2, 19,  2,

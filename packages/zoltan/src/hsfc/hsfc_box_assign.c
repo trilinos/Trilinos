@@ -91,7 +91,7 @@ int Zoltan_HSFC_Box_Assign (
    else if (xinth[1] > 1.0-FUZZY)   xinth[1] = 1.0-FUZZY;
 
    /* application programs need to add "dots" even if query box doesn't actually
-   /* intersect unit cube.  FUZZY forces closest virtual overlap. */
+   ** intersect unit cube.  FUZZY forces closest virtual overlap. */
    if (xinth[0] - xintl[0] < FUZZY)  {
        xintl[0] -= (FUZZY/2.0);
        xinth[0] += (FUZZY/2.0);
@@ -220,9 +220,11 @@ static double next_query_2d (ZZ *zz, double *lquerybox, double *hquerybox,
    unsigned int intersect_hi, intersect_lo;
    double t;
    int level, quadrant, i;                    /* loop counters */
-   static const unsigned *dk[] = {idata2d,  idata2d  +4, idata2d  +8, idata2d  +12};
-   static const unsigned *st[] = {istate2d, istate2d +4, istate2d +8, istate2d +12};
-   static const MAXLEVEL = 28;  /* only 56 significant bits, 28 per dimension */
+   static const unsigned int *dk[]
+    = {data2d,  data2d  +4, data2d  +8, data2d  +12};
+   static const unsigned int *st[]
+    = {state2d, state2d +4, state2d +8, state2d +12};
+   static const int MAXLEVEL = 28;  /* only 56 significant bits, 28 per dimension */
 
    /* convert floating normalized, intersected query box corners to integers */
    qlox = (unsigned int) (lquerybox[0] * (double) IMAX);
@@ -346,22 +348,22 @@ static double next_query_3d (ZZ *zz, double *lquerybox, double *hquerybox,
    double t;
    int level, quadrant, i;
    static const unsigned int *dk[] =
-      {idata3d,      idata3d +8,   idata3d +16,  idata3d +24,
-       idata3d +32,  idata3d +40,  idata3d +48,  idata3d +56,
-       idata3d +64,  idata3d +72,  idata3d +80,  idata3d +88,
-       idata3d +96,  idata3d +104, idata3d +112, idata3d +120,
-       idata3d +128, idata3d +136, idata3d +144, idata3d +152,
-       idata3d +160, idata3d +168, idata3d +176, idata3d +184};
+      {data3d,      data3d +8,   data3d +16,  data3d +24,
+       data3d +32,  data3d +40,  data3d +48,  data3d +56,
+       data3d +64,  data3d +72,  data3d +80,  data3d +88,
+       data3d +96,  data3d +104, data3d +112, data3d +120,
+       data3d +128, data3d +136, data3d +144, data3d +152,
+       data3d +160, data3d +168, data3d +176, data3d +184};
 
    static const unsigned int *st[] =
-      {istate3d,      istate3d +8,   istate3d +16,  istate3d +24,
-       istate3d +32,  istate3d +40,  istate3d +48,  istate3d +56,
-       istate3d +64,  istate3d +72,  istate3d +80,  istate3d +88,
-       istate3d +96,  istate3d +104, istate3d +112, istate3d +120,
-       istate3d +128, istate3d +136, istate3d +144, istate3d +152,
-       istate3d +160, istate3d +168, istate3d +176, istate3d +184};
+      {state3d,      state3d +8,   state3d +16,  state3d +24,
+       state3d +32,  state3d +40,  state3d +48,  state3d +56,
+       state3d +64,  state3d +72,  state3d +80,  state3d +88,
+       state3d +96,  state3d +104, state3d +112, state3d +120,
+       state3d +128, state3d +136, state3d +144, state3d +152,
+       state3d +160, state3d +168, state3d +176, state3d +184};
 
-   static const MAXLEVEL = 18;  /* only 56 significant bits, 18 per dimension */
+   static const int MAXLEVEL = 18;  /* only 56 significant bits, 18 per dimension */
 
    /* convert floating query box corners to integers */
    qlox = (unsigned int) (lquerybox[0] * (double) IMAX);
