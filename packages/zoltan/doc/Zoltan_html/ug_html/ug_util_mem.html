@@ -76,6 +76,8 @@ libmpi.a.
 Allocates arrays of dimension <i>n</i>, <i>n</i>=0,1,...,4
 <br><b><a href="#Zoltan_Malloc">Zoltan_Malloc</a></b>:&nbsp; Wrapper for system
 malloc.
+<br><b><a href="#Zoltan_Calloc">Zoltan_Calloc</a></b>:&nbsp; Wrapper for system
+calloc.
 <br><b><a href="#Zoltan_Realloc">Zoltan_Realloc</a></b>:&nbsp; Wrapper for system
 realloc.
 <br><b><a href="#Zoltan_Free">Zoltan_Free</a></b>:&nbsp; Frees memory and sets
@@ -86,6 +88,9 @@ the <a href="#Debug_Memory">description</a> below.
 <br><b><a href="#Zoltan_Memory_Stats">Zoltan_Memory_Stats</a></b>:&nbsp; Prints 
 <a href="#Debug_Memory">memory debugging</a> statistics, such as memory
 leak information.
+<br><b><a href="#Zoltan_Memory_Usage">Zoltan_Memory_Usage</a></b>:&nbsp; Returns
+user specified information about memory usage (i.e. maximum memory used, total
+memory currently allocated).
 </blockquote>
 </td>
 </tr>
@@ -96,12 +101,12 @@ leak information.
 The memory management utility routines are used extensively in Zoltan and
 in some individual algorithms.  Zoltan developers use these routines
 directly for most memory management, taking advantage of the error checking
-and <a href="#Debug_Memory">debugging capabilities</a> of the library.  
+and <a href="#Debug_Memory">debugging capabilities</a> of the library.
 <p>
 Rather than call <a href="#Zoltan_Set_Memory_Debug"><b>Zoltan_Set_Memory_Debug</b></a>
-directly, applications using Zoltan can set the 
-<a href="#Debug_Memory"><b>DEBUG_MEMORY</b></a> parameter 
-used by this utility through calls to 
+directly, applications using Zoltan can set the
+<a href="#Debug_Memory"><b>DEBUG_MEMORY</b></a> parameter
+used by this utility through calls to
 <a href="../ug_html/ug_interface_init.html#Zoltan_Set_Param"><b>Zoltan_Set_Param</b></a>.
 </blockquote>
 </td>
@@ -292,6 +297,99 @@ returned if <i>n</i> = 0 or the routine is unsuccessful.</td>
 
 <!------------------------------------------------------------------------->
 <hr>
+<a NAME="Zoltan_Calloc"></a>
+<hr>
+double *<b>Zoltan_Calloc</b>(int <i>num</i>, int <i>size</i>, char
+*<i> file</i>, int <i>line</i>);&nbsp;
+<hr>
+The <b>Zoltan_Calloc</b> function is a wrapper around the standard C calloc
+routine. It allocates a block of memory of size <i>num * size </i> bytes. The principle
+advantage of using the wrapper is that it allows memory leaks to be tracked
+via the DEBUG_MEMORY variable (set in <a href="#Zoltan_Set_Memory_Debug"><b>Zoltan_Set_Memory_Debug</b></a>).
+<p>A macro <b>ZOLTAN_CALLOC</b> is defined in <i>zoltan_mem.h</i>.
+It takes the arguments <i>num</i> and <i>size</i>, and adds the <i>__FILE__</i> and <i>__LINE__</i>
+macros to the argument list of the <b>Zoltan_Calloc</b> call:
+<blockquote>#define&nbsp;&nbsp;&nbsp; <b>ZOLTAN_CALLOC</b>(<i>num</i>, <i>size</i>)&nbsp;&nbsp;
+
+<b>Zoltan_Calloc</b>((<i>num</i>), (<i>size</i>), <i>__FILE__</i>, <i>__LINE__</i>)</blockquote>
+Using this macro, the developer gains the file and line debugging information
+without having to type file and line information in each memory allocation
+call.
+<br>&nbsp;
+<table WIDTH="100%" >
+<tr VALIGN=TOP>
+<td VALIGN=TOP WIDTH="20%"><b>Arguments:</b></td>
+
+<td WIDTH="80%"></td>
+</tr>
+
+<tr>
+<td VALIGN=TOP>&nbsp;&nbsp;&nbsp;<i> num</i></td>
+
+<td>The number of elements of the following <i>size</i> to allocate</td>
+</tr>
+<tr>
+<td VALIGN=TOP>&nbsp;&nbsp;&nbsp;<i> size</i></td>
+
+<td>The size of each element <i>size</i> to allocate.  Hence the total allocation
+is <i>num</i> * <i>size</i> bytes.</td>
+</tr>
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; file</i></td>
+
+<td>A string containing the name of the file calling the function. The
+<i>__FILE__</i>
+macro can be passed as this argument. This argument is useful for debugging
+memory allocation problems.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; line</i></td>
+
+<td>The line number within <i>file</i> of the call to the function. The
+<i>__LINE__</i>
+macro can be passed as this argument. This argument is useful for debugging
+memory allocation problems.</td>
+</tr>
+
+<tr>
+<td><b>Returned Value:</b></td>
+
+<td></td>
+</tr>
+
+<tr>
+<td VALIGN=TOP>&nbsp;&nbsp; double *</td>
+
+<td>A pointer to the starting address of memory allocated.&nbsp; NULL is
+returned if <i>n</i> = 0 or the routine is unsuccessful.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><b>Example:</b></td>
+
+<td></td>
+</tr>
+
+<tr>
+<td VALIGN=TOP></td>
+
+<td>struct <b>Zoltan_Struct</b> *<i>b</i> = (struct <b>Zoltan_Struct</b> *) <b>ZOLTAN_CALLOC</b>(
+<i>1</i>, <i>sizeof</i>(struct
+<b>Zoltan_Struct</b>));</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP></td>
+
+<td>Allocates memory for one <b>Zoltan_Struct</b> data structure.&nbsp;</td>
+</tr>
+</table>
+
+<p>
+
+<!------------------------------------------------------------------------->
+<hr>
 <a NAME="Zoltan_Realloc"></a>
 <hr>
 double *<b>Zoltan_Realloc</b>(void *<i>ptr</i>,
@@ -458,7 +556,9 @@ about memory allocation and deallocation are stored, depending on the debug leve
 through a call to <a href="#Zoltan_Set_Memory_Debug"><b>Zoltan_Set_Memory_Debug</b></a>.&nbsp This information is printed either when an error or
 warning occurs, or when <a href="#Zoltan_Memory_Stats"><b>Zoltan_Memory_Stats</b></a> is called.&nbsp
 We have found values of one and two to
-be very helpful in our development efforts.&nbsp;
+be very helpful in our development efforts.&nbsp;  The routine <a href="Zoltan_Memory_Usage">
+<b>Zoltan_Memory_Usage</b></a> can be called to return user specified information about memory
+utilization to the user's program.
 <p>
 
 
@@ -485,14 +585,14 @@ be used.
 <blockquote>
 0 -- No debugging.
 <br>
-1 -- The number of calls to <a href="#Zoltan_Malloc"><b>Zoltan_Malloc</b></a> and 
+1 -- The number of calls to <a href="#Zoltan_Malloc"><b>Zoltan_Malloc</b></a> and
 <a href="#Zoltan_Free"><b>Zoltan_Free</b></a>
 are tallied, and can be printed by a call to <a href="#Zoltan_Memory_Stats"><b>Zoltan_Memory_Stats</b></a>.
 <br>
 2 -- A list of
-all calls to <a href="#Zoltan_Malloc"><b>Zoltan_Malloc</b></a> which have 
+all calls to <a href="#Zoltan_Malloc"><b>Zoltan_Malloc</b></a> which have
 not yet been freed is kept. This list
-is printed by <a href="#Zoltan_Memory_Stats"><b>Zoltan_Memory_Stats</b></a> 
+is printed by <a href="#Zoltan_Memory_Stats"><b>Zoltan_Memory_Stats</b></a>
 (useful for detecting memory leaks).
 Any calls to <a href="#Zoltan_Free"><b>Zoltan_Free</b></a> with addresses
 not in this list trigger warning messages. (Note that allocations that
@@ -542,6 +642,65 @@ debug level set through a call to <a href="#Zoltan_Set_Memory_Debug"><b>Zoltan_S
 <td>None.</td>
 </tr>
 </table>
+
+<!------------------------------------------------------------------------->
+<hr>
+<a NAME="Zoltan_Memory_Usage"></a>
+<hr>
+int <b>Zoltan_Memory_Usage</b>(int <i>type</i>);
+<hr>
+The <b>Zoltan_Memory_Usage</b> function returns information about memory
+utilization. <br>&nbsp;
+<table WIDTH="100%" >
+<tr VALIGN=TOP>
+<td VALIGN=TOP WIDTH="20%"><b>Arguments:</b></td>
+
+<td WIDTH="80%"></td>
+</tr>
+
+<tr>
+<td VALIGN=TOP>&nbsp;&nbsp;&nbsp; <i>type</i></td>
+
+<td>Integer to request type of information required.&nbsp These integers
+are defined symbolically in <b> zoltan_mem.h</b>.  Valid options include:
+<blockquote>
+ZOLTAN_MEM_STAT_TOTAL -- The function will return the current total memory
+allocated via Zoltan's memory allocation routines.
+<br>
+ZOLTAN_MEM_STAT_MAXIMUM -- The function will return the maximum total memory
+allocated via Zoltan's memory allocation routines upto this point.
+</blockquote>
+</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><b>Default:</b></td>
+
+<td></td>
+</tr>
+
+<tr>
+<td VALIGN=TOP></td>
+
+<td>none</td>
+</tr>
+
+<td><b>Returned Value:</b></td>
+<td></td>
+<tr>
+<tr>
+<td VALIGN=TOP>&nbsp;&nbsp; int </td>
+<td>The number in bytes of the specific requested memory statistic.</td>
+</tr>
+<tr>
+<td VALIGN=top><b>Example:</b></td>
+<td></td>
+</tr>
+<tr>
+<td VALIGN=TOP></td>
+<td> total = <b>Zoltan_Memory_Usage</b> (<i>ZOLTAN_MEM_STAT_TOTAL</i>);</td></tr>
+</table>
+<p>
 
 <hr WIDTH="100%">
 <br>[<a href="ug.html">Table of Contents</a>&nbsp; |&nbsp; <a href="ug_util_comm.html">Next:&nbsp;
