@@ -948,8 +948,8 @@ class Epetra_MultiVector: public Epetra_DistObject, public Epetra_CompObject, pu
   int AllocateForCopy(void);
   int DoCopy(void);
   inline void UpdateDoubleTemp() const {if (DoubleTemp_==0) DoubleTemp_=new double[NumVectors_]; return;}
-  inline void UpdateVectors()  const {if (Vectors_==0) Vectors_ = new Epetra_Vector *[NumVectors_]; 
-    for (int i=0; i<NumVectors_; i++) Vectors_[i] = 0;
+  inline void UpdateVectors()  const {if (Vectors_==0) { Vectors_ = new Epetra_Vector *[NumVectors_]; 
+    for (int i=0; i<NumVectors_; i++) Vectors_[i] = 0;}
     return;
   }
 
