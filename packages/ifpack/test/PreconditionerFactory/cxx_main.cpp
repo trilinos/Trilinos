@@ -77,12 +77,11 @@ int TestPreconditioner(string PrecType, Epetra_LinearProblem* Problem,
 
   assert(Prec != 0);
 
-  List.set("level-of-fill", OverlapLevel);
+  List.set("fact: level-of-fill", OverlapLevel);
   List.set("partitioner: local parts", 74);
   List.set("partitioner: type", "METIS");
-  List.set("partitioner: overlap", 2);
+  List.set("partitioner: overlap", 0);
   List.set("schwarz: use RCM reordering", true);
-  List.set("level-of-fill",10);
   IFPACK_CHK_ERR(Prec->SetParameters(List));
   IFPACK_CHK_ERR(Prec->Initialize());
   IFPACK_CHK_ERR(Prec->Compute());
@@ -147,19 +146,14 @@ int main(int argc, char *argv[])
   Gallery.Set("problem_size", NumPoints);
   Gallery.Set("map_type", "linear");
 
-  // The following methods of CrsMatrixGallery are used to get pointers
-  // to internally stored Epetra_RowMatrix and Epetra_LinearProblem.
-  Epetra_RowMatrix* A = Gallery.GetMatrix();
-  Epetra_CrsMatrix* CrsA = dynamic_cast<Epetra_CrsMatrix*>(A);
   Epetra_LinearProblem* Problem = Gallery.GetLinearProblem();
 
   // test the preconditioner
   int TestPassed = true;
   for (int overlap = 0 ; overlap < 5 ; overlap++) {
-    if (TestPreconditioner("RILUK",Problem,overlap))
+    if (TestPreconditioner("block Jacobi",Problem,overlap))
       TestPassed = false;
   }
-  
 
 #ifdef HAVE_MPI
   MPI_Finalize() ; 
