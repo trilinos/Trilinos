@@ -103,7 +103,6 @@ int Amesos_TestSolver( Epetra_Comm &Comm, char *matrix_file,
 	EPETRA_CHK_ERR( Trilinos_Util_ReadMatrixMarket2Epetra( matrix_file, Comm, readMap, 
 							       readA, readx, readb, readxexact) );
       } else {
-	EPETRA_CHK_ERR( 1 ) ; 
 	// Call routine to read in HB problem
 	Trilinos_Util_ReadHb2Epetra( matrix_file, Comm, readMap, readA, readx, 
 						     readb, readxexact) ;
