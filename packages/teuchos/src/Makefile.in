@@ -156,6 +156,7 @@ EXTRA_EXPERIMENTAL_H = \
 	$(srcdir)/Teuchos_Hashtable.hpp \
 	$(srcdir)/Teuchos_HashUtils.hpp \
 	$(srcdir)/Teuchos_MPIComm.hpp \
+	$(srcdir)/Teuchos_MPIContainerComm.hpp \
 	$(srcdir)/Teuchos_MPISession.hpp \
 	$(srcdir)/Teuchos_MPITraits.hpp \
 	$(srcdir)/Teuchos_RefCountPtr.hpp \
@@ -166,7 +167,6 @@ EXTRA_EXPERIMENTAL_H = \
 	$(srcdir)/Teuchos_StrUtils.hpp \
 	$(srcdir)/Teuchos_TimeMonitor.hpp\
 	$(srcdir)/Teuchos_TreeBuildingXMLHandler.hpp\
-	$(srcdir)/Teuchos_WriterBase.hpp\
 	$(srcdir)/Teuchos_XMLInputSource.hpp\
 	$(srcdir)/Teuchos_XMLInputStream.hpp\
 	$(srcdir)/Teuchos_XMLObject.hpp\
