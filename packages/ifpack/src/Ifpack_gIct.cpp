@@ -48,8 +48,9 @@
 Ifpack_gIct::Ifpack_gIct(Epetra_RowMatrix* A) :
   A_(*A),
   Comm_(A->Comm()),
-  IsInitialized_(false),
-  IsComputed_(false),
+  U_(0),
+  D_(0),
+  UseTranspose_(false),
   Condest_(-1.0),
   Athresh_(0.0),
   Rthresh_(1.0),
@@ -58,8 +59,16 @@ Ifpack_gIct::Ifpack_gIct(Epetra_RowMatrix* A) :
   Aict_(0),
   Lict_(0),
   Ldiag_(0),
-  U_(0),
-  D_(0)
+  IsInitialized_(false),
+  IsComputed_(false),
+  NumInitialize_(0),
+  NumCompute_(0),
+  NumApplyInverse_(0),
+  InitializeTime_(0.0),
+  ComputeTime_(0),
+  ApplyInverseTime_(0),
+  ComputeFlops_(0),
+  ApplyInverseFlops_(0)
 {
 #ifdef HAVE_IFPACK_TEUCHOS
   Teuchos::ParameterList List;
@@ -137,8 +146,10 @@ int Ifpack_gIct::ComputeSetup()
 
   int ierr = 0;
   int i, j;
-  int * InI=0, * LI=0, * UI = 0;
-  double * InV=0, * LV=0, * UV = 0;
+  int* InI;
+  int* UI;
+  double* InV;
+  double* UV;
   int NumIn, NumL, NumU;
   bool DiagFound;
   int NumNonzeroDiags = 0;
@@ -320,10 +331,6 @@ int Ifpack_gIct::Apply(const Epetra_MultiVector& X,
 
   if (X.NumVectors() != Y.NumVectors()) 
     IFPACK_CHK_ERR(-1); // Return error: X and Y not the same size
-
-  bool Upper = true;
-  bool Lower = false;
-  bool UnitDiagonal = true;
 
   Epetra_MultiVector * X1 = (Epetra_MultiVector *) &X;
   Epetra_MultiVector * Y1 = (Epetra_MultiVector *) &Y;

@@ -49,21 +49,23 @@
 Ifpack_vRiluk::Ifpack_vRiluk(const Epetra_RowMatrix* A) :
   A_(*A),
   Comm_(Comm()),
-  Time_(Comm()),
-  IsInitialized_(false),
-  IsComputed_(false),
-  Condest_(-1.0),
-  LevelOfFill_(0),
   L_(0),
   U_(0),
+  Condest_(-1.0),
+  Athresh_(0.0),
+  Rthresh_(0.0),
+  LevelOfFill_(0),
+  IsInitialized_(false),
+  IsComputed_(false),
+  UseTranspose_(false),
+  NumMyRows_(-1),
   NumInitialize_(0),
   NumCompute_(0),
   NumApplyInverse_(0),
   InitializeTime_(0.0),
   ComputeTime_(0.0),
   ApplyInverseTime_(0.0),
-  Athresh_(0.0),
-  Rthresh_(0.0)
+  Time_(Comm())
 {
 }
 
@@ -71,21 +73,21 @@ Ifpack_vRiluk::Ifpack_vRiluk(const Epetra_RowMatrix* A) :
 Ifpack_vRiluk::Ifpack_vRiluk(const Ifpack_vRiluk& rhs) :
   A_(rhs.Matrix()),
   Comm_(Comm()),
-  Time_(Comm()),
-  IsInitialized_(rhs.IsInitialized()),
-  IsComputed_(rhs.IsComputed()),
-  Condest_(rhs.Condest()),
-  LevelOfFill_(rhs.LevelOfFill()),
   L_(0),
   U_(0),
+  Condest_(rhs.Condest()),
+  Athresh_(rhs.AbsoluteThreshold()),
+  Rthresh_(rhs.RelativeThreshold()),
+  LevelOfFill_(rhs.LevelOfFill()),
+  IsInitialized_(rhs.IsInitialized()),
+  IsComputed_(rhs.IsComputed()),
   NumInitialize_(rhs.NumInitialize()),
   NumCompute_(rhs.NumCompute()),
   NumApplyInverse_(rhs.NumApplyInverse()),
   InitializeTime_(rhs.InitializeTime()),
   ComputeTime_(rhs.ComputeTime()),
   ApplyInverseTime_(rhs.ApplyInverseTime()),
-  Athresh_(rhs.AbsoluteThreshold()),
-  Rthresh_(rhs.RelativeThreshold())
+  Time_(Comm())
 {
   L_ = new Epetra_CrsMatrix(rhs.L());
   U_ = new Epetra_CrsMatrix(rhs.U());
@@ -239,11 +241,11 @@ int Ifpack_vRiluk::Compute() {
     IFPACK_CHK_ERR(-1);
 
   // insert first row in U_
-  IFPACK_CHK_ERR(U_->InsertGlobalValues(0,U_size[0],
+  IFPACK_CHK_ERR(U_->InsertGlobalValues(0,(int)U_size[0],
                                         &(UV[0][0]), &(UI[0][0])));
 
   // FIXME
-  double threshold_ = 0e-6;
+  //double threshold_ = 0e-6;
   double rel_threshold_ = 1e-1;
 
   // ===================== //
@@ -261,18 +263,14 @@ int Ifpack_vRiluk::Compute() {
   double old_l_cutoff = 1.0;
   double old_u_cutoff = 1.0;
 
-  double time_fact = 0.0;
-  double time_sort = 0.0;
-  double time_insert = 0.0;
-
   // cycle over all rows 
   for (int i = 1 ; i < NumMyRows_ ; ++i) {
 
     // populate tmp with nonzeros of this row
-    for (int j = 0 ; j < L_size[i] ; ++j) {
+    for (int j = 0 ; j < (int)L_size[i] ; ++j) {
       tmp[LI[i][j]] = LV[i][j];
     }
-    for (int j = 0 ; j < U_size[i] ; ++j) {
+    for (int j = 0 ; j < (int)U_size[i] ; ++j) {
       tmp[UI[i][j]] = UV[i][j];
     }
 
@@ -297,7 +295,7 @@ int Ifpack_vRiluk::Compute() {
 
       tmp[k] /= UV[k][0];
 
-      for (int j = 0 ; j < U_size[k] ; ++j) {
+      for (int j = 0 ; j < (int)U_size[k] ; ++j) {
         int col = UI[k][j];
         if (col <= k)
           continue;
@@ -384,9 +382,9 @@ int Ifpack_vRiluk::Compute() {
     // reset the number in processed row
     L_size[i] = L_count;
     U_size[i] = U_count;
-    if (L_size[i] > LI[i].size())
+    if (L_size[i] > (int)LI[i].size())
       IFPACK_CHK_ERR(-1);
-    if (U_size[i] > UI[i].size())
+    if (U_size[i] > (int)UI[i].size())
       IFPACK_CHK_ERR(-1);
 
     old_l_cutoff = l_cutoff / abs_diag;
@@ -403,7 +401,7 @@ int Ifpack_vRiluk::Compute() {
   // insert computed elements in L_
   for (int i = 1 ; i < NumMyRows_ ; ++i) {
 #ifdef IFPACK_DEBUG
-    for (int j = 0 ; j < L_size[i] ; ++j) {
+    for (int j = 0 ; j < (int)L_size[i] ; ++j) {
       if (LI[i][j] >= NumMyRows_) {
         cerr << "ERROR: LI[" << i << "][" << j << "] = "
           << LI[i][j] << " and NumMyRows = " << NumMyRows_ << endl;
@@ -412,7 +410,7 @@ int Ifpack_vRiluk::Compute() {
       }
     }
 #endif
-    IFPACK_CHK_ERR(L_->InsertGlobalValues(i,L_size[i],
+    IFPACK_CHK_ERR(L_->InsertGlobalValues(i,(int)L_size[i],
                                           &(LV[i][0]), &(LI[i][0])));
     LI[i].resize(0);
     LV[i].resize(0);
@@ -421,7 +419,7 @@ int Ifpack_vRiluk::Compute() {
   // insert computed elements in U_
   for (int i = 1 ; i < NumMyRows_ ; ++i) {
 #ifdef IFPACK_DEBUG
-    for (int j = 0 ; j < U_size[i] ; ++j) {
+    for (int j = 0 ; j < (int)U_size[i] ; ++j) {
       if (UI[i][j] >= NumMyRows_) {
         cerr << "ERROR: UI[" << i << "][" << j << "] = "
           << UI[i][j] << " and NumMyRows = " << NumMyRows_ << endl;
@@ -430,7 +428,7 @@ int Ifpack_vRiluk::Compute() {
       }
     }
 #endif
-    IFPACK_CHK_ERR(U_->InsertGlobalValues(i,U_size[i],
+    IFPACK_CHK_ERR(U_->InsertGlobalValues(i,(int)U_size[i],
                                           &(UV[i][0]), &(UI[i][0])));
     UI[i].resize(0);
     UV[i].resize(0);
@@ -466,6 +464,8 @@ int Ifpack_vRiluk::ApplyInverse(const Epetra_MultiVector& X,
   ++NumApplyInverse_;
   ApplyInverseTime_ += Time_.ElapsedTime();
 
+  return(0);
+
 }
 //=============================================================================
 // This function finds X such that LDU Y = X or U(trans) D L(trans) Y = X for multiple RHS
@@ -475,10 +475,6 @@ int Ifpack_vRiluk::Apply(const Epetra_MultiVector& X,
 
   if (X.NumVectors() != Y.NumVectors()) 
     IFPACK_CHK_ERR(-1); // Return error: X and Y not the same size
-
-  bool Upper = true;
-  bool Lower = false;
-  bool UnitDiagonal = true;
 
 #ifdef FIXME
   Epetra_MultiVector * X1 = (Epetra_MultiVector *) &X;

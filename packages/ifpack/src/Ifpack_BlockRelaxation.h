@@ -10,6 +10,7 @@
 #include "Ifpack_METISPartitioner.h"
 #include "Ifpack_Graph_Epetra_RowMatrix.h"
 #include "Ifpack_DenseContainer.h" 
+#include "Ifpack_Utils.h" 
 #include "Teuchos_ParameterList.hpp"
 #include "Epetra_RowMatrix.h"
 #include "Epetra_MultiVector.h"
@@ -21,19 +22,77 @@ static const int IFPACK_GS = 1;
 static const int IFPACK_SGS = 2;
 
 
-//! Ifpack_BlockRelaxation: a class to define block preconditioners preconditioners of Epetra_RowMatrix's.
+//! Ifpack_BlockRelaxation: a class to define block relaxation preconditioners of Epetra_RowMatrix's.
 
 /*! The Ifpack_BlockRelaxation class enables the construction of
-  block-preconditioners
-  preconditioners of an Epetra_RowMatrix. The blocks can have arbitrary
-  sizes. Ifpack_Partitioner is used to create the blocks (that is, to
-  partition the graph of the local matrix). 
-
-  \author Marzio Sala, SNL 9214.
-
- \date Last modified: Oct-04.
+  block relaxation
+  preconditioners of an Epetra_RowMatrix. Ifpack_PointRelaxation 
+  is derived from 
+  the Ifpack_Preconditioner class, which is derived from Epetra_Operator.
+  Therefore this object can be used as preconditioner everywhere an
+  ApplyInverse() method is required in the preconditioning step.
+ 
+  The class currently support:
+  - block Jacobi;
+  - block Gauss-Seidel;
+  - symmetric block Gauss-Seidel.
   
- */
+  The idea of block relaxation method is to extend their point relaxation
+  counterpart (implemented in Ifpack_PointRelaxation), by working on a
+  group of equation simulteneously. Generally, larger blocks result
+  in better convergence and increased robusteness.
+
+  The user can decide:
+  - the number of blocks (say, NumBlocks). If NumBlocks is equal to the
+    number of rows, then the resulting scheme is equivalent to
+    a point relaxation scheme;
+  - how to apply the inverse of each diagonal block, by choosing a dense
+    container or a sparse container. The implementation of
+    block relaxation schemes requires the application of the
+    inverse of each diagonal block. This can be done using LAPACK (dense 
+    container), or any Ifpack_Preconditioner derived class (sparse
+    container);
+  - blocks can be defined using a linear decomposition, by a simple greedy
+    algorithm, or by resorting to METIS.
+
+The following is an example of usage of this preconditioner with dense
+containers. First, we include the header files:
+\code
+#include "Ifpack_AdditiveSchwarz.h"
+#include "Ifpack_BlockPreconditioner.h"
+#include "Ifpack_DenseContainer.h"
+\endcode
+
+Then, we declare the preconditioner. Note that this is done through
+the class Ifpack_AdditiveSchwarz (see note below in this section).
+\code
+// A is an Epetra_RowMatrix
+// List is a Teuchos::ParameterList
+Ifpack_AdditiveSchwarz<Ifpack_BlockRelaxation<Ifpack_DenseContainer> > > Prec(A);
+IFPACK_CHK_ERR(Prec.SetParameters(List));
+IFPACK_CHK_ERR(Prec.Initialize());
+IFPACK_CHK_ERR(Prec.Compute());
+
+// action of the preconditioner is given by ApplyInverse()
+// Now use it in AztecOO, solver is an AztecOO object
+solver.SetPrecOperator(&Prec);
+\endcode
+
+<P>The complete list of supported parameters is reported in page \ref ifp_params. For a presentation of basic relaxation schemes, please refer to page
+\ref Ifpack_PointRelaxation.
+
+\note The ApplyInverse() implementation of this class is \e not AztecOO
+complaint, as it does assume that the two input vectors X and Y actually
+refer to two different memory location. In fact, this case is handled
+by class Ifpack_AdditiveSchwarz, which takes care of calling methods ApplyInverse()
+of Ifpack_BlockRelaxation with two vectors pointing to different memory
+locations.
+
+\author Marzio Sala, SNL 9214.
+
+\date Last modified: Nov-04.
+  
+*/
 template<typename T>
 class Ifpack_BlockRelaxation : public Ifpack_Preconditioner {
 
@@ -177,6 +236,10 @@ public:
     else if (PT == "symmetric Gauss-Seidel") {
       KeepNonFactoredMatrix_ = true;
       PrecType_ = IFPACK_SGS;
+    } else {
+      cerr << "Option `block: type' has an incorrect value ("
+           << PT << "'" << endl;
+      exit(EXIT_FAILURE);
     }
 
     SetNumSweeps(List.get("block: sweeps",NumSweeps()));
@@ -408,8 +471,7 @@ protected:
   virtual int ApplyInverseSGS(const Epetra_MultiVector& X, 
                               Epetra_MultiVector& Y) const;
 
-  virtual int ApplyInverseSGS2(Epetra_MultiVector& X, 
-                             Epetra_MultiVector& Y) const;
+  virtual int ApplyInverseSGS2(Epetra_MultiVector& X) const;
 
   int ExtractSubmatrices();
 
@@ -476,20 +538,22 @@ private:
 template<typename T>
 Ifpack_BlockRelaxation<T>::
 Ifpack_BlockRelaxation(const Epetra_RowMatrix* Matrix) :
+  Partitioner_(0),
+  PartitionerType_("greedy"),
+  ZeroStartingSolution_(true),
+  Graph_(0),
+  W_(0),
+  KeepNonFactoredMatrix_(false),
+  OverlapLevel_(0),
   Matrix_(Matrix),
   NumSweeps_(1),
   DampingFactor_(1.0),
   NumLocalBlocks_(1),
-  Partitioner_(0),
-  Graph_(0),
-  W_(0),
+  IsInitialized_(false),
+  IsComputed_(false),
   PrintFrequency_(0),
-  ZeroStartingSolution_(true),
-  PartitionerType_("greedy"),
-  KeepNonFactoredMatrix_(false),
-  OverlapLevel_(0),
-  PrecType_(IFPACK_JACOBI),
-  Time_(0)
+  Time_(0),
+  PrecType_(IFPACK_JACOBI)
 {
 }
 
@@ -497,20 +561,22 @@ Ifpack_BlockRelaxation(const Epetra_RowMatrix* Matrix) :
 template<typename T>
 Ifpack_BlockRelaxation<T>::
 Ifpack_BlockRelaxation(const Ifpack_BlockRelaxation& rhs) :
+  PartitionerType_("greedy"),
+  Partitioner_(0),
+  ZeroStartingSolution_(true),
+  Graph_(0),
+  W_(0),
+  KeepNonFactoredMatrix_(false),
+  OverlapLevel_(0),
   Matrix_(&rhs.Matrix()),
   NumSweeps_(1),
   DampingFactor_(1.0),
   NumLocalBlocks_(1),
-  Partitioner_(0),
-  Graph_(0),
-  W_(0),
+  IsInitialized_(false),
+  IsComputed_(false),
   PrintFrequency_(0),
-  ZeroStartingSolution_(true),
-  PartitionerType_("greedy"),
-  KeepNonFactoredMatrix_(false),
-  OverlapLevel_(0),
-  PrecType_(IFPACK_JACOBI),
-  Time_(0)
+  Time_(0),
+  PrecType_(IFPACK_JACOBI)
 {
   if (rhs.IsInitialized())
     Initialize();
@@ -671,9 +737,13 @@ ApplyInverseJacobi(const Epetra_MultiVector& X,
   // ------------ //
   // single sweep //
   // ------------ //
+  // this will not work with AztecOO if used
+  // outside Ifpack_AdditiveSchwarz and OverlapLevel_ != 0
 
   if (NumSweeps_ == 1 && ZeroStartingSolution_
       && (PrintFrequency_ == 0)) {
+    if (OverlapLevel_)
+      Y.PutScalar(0.0);
     IFPACK_CHK_ERR(ApplyInverseJacobi2(X,Y));
     return(0);
   }
@@ -719,27 +789,54 @@ int Ifpack_BlockRelaxation<T>::
 ApplyInverseJacobi2(const Epetra_MultiVector& X, 
                     Epetra_MultiVector& Y) const
 {
-  // cycle over all local subdomains
-  for (int i = 0 ; i < NumLocalBlocks() ; ++i) {
+  if ((NumSweeps_ == 1) && OverlapLevel_ == 0) {
 
-    int LID, GID;
+    for (int i = 0 ; i < NumLocalBlocks() ; ++i) {
+      int LID;
 
-    // extract RHS from X
-    for (int j = 0 ; j < Partitioner_->NumRowsInPart(i) ; ++j) {
-      LID = Containers_[i]->ID(j);
-      for (int k = 0 ; k < X.NumVectors() ; ++k) {
-        Containers_[i]->RHS(j,k) = X[k][LID];
+      // extract RHS from X
+      for (int j = 0 ; j < Partitioner_->NumRowsInPart(i) ; ++j) {
+        LID = Containers_[i]->ID(j);
+        for (int k = 0 ; k < X.NumVectors() ; ++k) {
+          Containers_[i]->RHS(j,k) = X[k][LID];
+        }
+      }
+
+      // apply the inverse of each block
+      IFPACK_CHK_ERR(Containers_[i]->ApplyInverse());
+
+      // copy back into solution vector Y
+      for (int j = 0 ; j < Partitioner_->NumRowsInPart(i) ; ++j) {
+        LID = Containers_[i]->ID(j);
+        for (int k = 0 ; k < Y.NumVectors() ; ++k) {
+          Y[k][LID] = DampingFactor() * Containers_[i]->LHS(j,k);
+        }
       }
     }
+  }
+  else {
 
-    // apply the inverse of each block
-    IFPACK_CHK_ERR(Containers_[i]->ApplyInverse());
+    for (int i = 0 ; i < NumLocalBlocks() ; ++i) {
 
-    // copy back into solution vector Y
-    for (int j = 0 ; j < Partitioner_->NumRowsInPart(i) ; ++j) {
-      LID = Containers_[i]->ID(j);
-      for (int k = 0 ; k < Y.NumVectors() ; ++k) {
-        Y[k][LID] = Y[k][LID] + DampingFactor() * (*W_)[LID] * Containers_[i]->LHS(j,k);
+      int LID;
+
+      // extract RHS from X
+      for (int j = 0 ; j < Partitioner_->NumRowsInPart(i) ; ++j) {
+        LID = Containers_[i]->ID(j);
+        for (int k = 0 ; k < X.NumVectors() ; ++k) {
+          Containers_[i]->RHS(j,k) = (*W_)[LID] * X[k][LID];
+        }
+      }
+
+      // apply the inverse of each block
+      IFPACK_CHK_ERR(Containers_[i]->ApplyInverse());
+
+      // copy back into solution vector Y
+      for (int j = 0 ; j < Partitioner_->NumRowsInPart(i) ; ++j) {
+        LID = Containers_[i]->ID(j);
+        for (int k = 0 ; k < Y.NumVectors() ; ++k) {
+          Y[k][LID] = Y[k][LID] + DampingFactor() * (*W_)[LID] * Containers_[i]->LHS(j,k);
+        }
       }
     }
   }
@@ -759,7 +856,8 @@ ApplyInverseGS(const Epetra_MultiVector& X,
 
   if ((NumSweeps_ == 1) && ZeroStartingSolution_
       && (PrintFrequency_ == 0)) {
-    IFPACK_CHK_ERR(ApplyInverseGS2(X,Y));
+    Epetra_MultiVector Xtmp(X);
+    IFPACK_CHK_ERR(ApplyInverseGS2(Xtmp,Y));
     return(0);
   }
 
@@ -813,18 +911,15 @@ ApplyInverseGS2(const Epetra_MultiVector& X,
   // cycle over all local subdomains
 
   int Length = Matrix().MaxNumEntries();
-  vector<int> Indices;
-  vector<double> Values;
-  Indices.resize(Length);
-  Values.resize(Length);
+  vector<int> Indices(Length);
+  vector<double> Values(Length);
 
+  int NumVectors = X.NumVectors();
   int NumMyRows = Matrix().NumMyRows();
-
-// DELETE  Y.PutScalar(0.0);
 
   for (int i = 0 ; i < NumLocalBlocks() ; ++i) {
 
-    int LID, GID;
+    int LID;
 
     // update from previous block
 
@@ -841,7 +936,7 @@ ApplyInverseGS2(const Epetra_MultiVector& X,
           continue;
 
         if ((*Partitioner_)(col) < i) {
-          for (int kk = 0 ; kk < Y.NumVectors() ; ++kk) {
+          for (int kk = 0 ; kk < NumVectors ; ++kk) {
             X[kk][LID] -= Values[k] * Y[kk][col];
           }
         }
@@ -852,7 +947,7 @@ ApplyInverseGS2(const Epetra_MultiVector& X,
 
     for (int j = 0 ; j < Partitioner_->NumRowsInPart(i) ; ++j) {
       LID = Containers_[i]->ID(j);
-      for (int k = 0 ; k < Y.NumVectors() ; ++k) {
+      for (int k = 0 ; k < NumVectors ; ++k) {
         Containers_[i]->RHS(j,k) = X[k][LID];
       }
     }
@@ -861,8 +956,8 @@ ApplyInverseGS2(const Epetra_MultiVector& X,
 
     for (int j = 0 ; j < Partitioner_->NumRowsInPart(i) ; ++j) {
       LID = Containers_[i]->ID(j);
-      for (int k = 0 ; k < Y.NumVectors() ; ++k) {
-        Y[k][LID] += Containers_[i]->LHS(j,k);
+      for (int k = 0 ; k < NumVectors ; ++k) {
+        Y[k][LID] = Containers_[i]->LHS(j,k);
       }
     }
   }
@@ -883,73 +978,61 @@ ApplyInverseSGS(const Epetra_MultiVector& X,
 
   if (NumSweeps_ == 1 && ZeroStartingSolution_
       && (PrintFrequency_ == 0)) {
-    Epetra_MultiVector Xtmp(X);
-    Y.PutScalar(0.0);
-    IFPACK_CHK_ERR(ApplyInverseSGS2(Xtmp,Y));
+    IFPACK_CHK_ERR(ApplyInverseSGS2(Y));
     return(0);
   }
 
   // --------------------- //
   // general case (solver) //
   // --------------------- //
-
+  
+  Epetra_MultiVector AX(X);
   Epetra_MultiVector Xtmp(X);
-  if (PrintFrequency())
-    Ifpack_PrintResidual(Label(),Matrix(),Y,Xtmp);
-
-  // starting solution
-  Epetra_MultiVector AX(Xtmp);
-  Epetra_MultiVector Ynew(Y);
 
   if (ZeroStartingSolution_)
     Y.PutScalar(0.0);
 
+  if (PrintFrequency())
+    Ifpack_PrintResidual(Label(),Matrix(),Y,Xtmp);
+  
   for (int j = 0; j < NumSweeps() ; j++) {
 
-    // compute the residual, I can skip first iteration
-    // if starting solution is zero
-    if (j || !ZeroStartingSolution_) {
-      IFPACK_CHK_ERR(Apply(Y,AX));
-      AX.Update(1.0,Xtmp,-1.0);
-    }
+    // compute the residual
+    IFPACK_CHK_ERR(Apply(Y,AX));
+    AX.Update(1.0,Xtmp,-1.0);
 
-    // apply the block diagonal of A and update the residual
-    ApplyInverseSGS2(AX,Ynew);
+    // apply the lower triangular part of A
+    IFPACK_CHK_ERR(ApplyInverseSGS2(AX));
 
-    Y.Update(DampingFactor(),Ynew,1.0);
+    // update the residual
+    Y.Update(DampingFactor(), AX, 1.0);
 
     if (PrintFrequency() && (j != 0) && (j % PrintFrequency() == 0))
       Ifpack_PrintResidual(j,Matrix(),Y,Xtmp);
-
+    
   }
 
   if (PrintFrequency())
     Ifpack_PrintResidual(NumSweeps(),Matrix(),Y,Xtmp);
 
   return(0);
-
 }
 
 //==============================================================================
 template<typename T>
 int Ifpack_BlockRelaxation<T>::
-ApplyInverseSGS2(Epetra_MultiVector& X, 
-                 Epetra_MultiVector& Y) const
+ApplyInverseSGS2(Epetra_MultiVector& X) const
 {
 
   // Y : in input, previous solution
   //     in output, update solution
-  // X : tmp vector containing in input the rhs. It will be
-  //     overwritten by temporary data
 
-  // cycle over all local subdomains
+  int NumVectors = X.NumVectors();
   int Length = Matrix().MaxNumEntries();
   vector<int> Indices;
   vector<double> Values;
   Indices.resize(Length);
   Values.resize(Length);
-
-  int NumMyRows = Matrix().NumMyRows();
 
   // ================== //
   // apply (D - E)^{-1} //
@@ -957,7 +1040,7 @@ ApplyInverseSGS2(Epetra_MultiVector& X,
 
   for (int i = 0 ; i < NumLocalBlocks() ; ++i) {
 
-    int LID, GID;
+    int LID;
 
     // update from previous block
 
@@ -970,12 +1053,10 @@ ApplyInverseSGS2(Epetra_MultiVector& X,
 
       for (int k = 0 ; k < NumEntries ; ++k) {
         int col = Indices[k];
-        if (col >= NumMyRows ) 
-          continue;
 
         if ((*Partitioner_)(col) < i) {
-          for (int kk = 0 ; kk < Y.NumVectors() ; ++kk) {
-            X[kk][LID] -= Values[k] * Y[kk][col];
+          for (int kk = 0 ; kk < NumVectors ; ++kk) {
+            X[kk][LID] -= Values[k] * X[kk][col];
           }
         }
       }
@@ -985,7 +1066,7 @@ ApplyInverseSGS2(Epetra_MultiVector& X,
 
     for (int j = 0 ; j < Partitioner_->NumRowsInPart(i) ; ++j) {
       LID = Containers_[i]->ID(j);
-      for (int k = 0 ; k < Y.NumVectors() ; ++k) {
+      for (int k = 0 ; k < NumVectors ; ++k) {
         Containers_[i]->RHS(j,k) = X[k][LID];
       }
     }
@@ -994,24 +1075,24 @@ ApplyInverseSGS2(Epetra_MultiVector& X,
 
     for (int j = 0 ; j < Partitioner_->NumRowsInPart(i) ; ++j) {
       LID = Containers_[i]->ID(j);
-      for (int k = 0 ; k < Y.NumVectors() ; ++k) {
-        Y[k][LID] = Containers_[i]->LHS(j,k);
+      for (int k = 0 ; k < NumVectors ; ++k) {
+        X[k][LID] = Containers_[i]->LHS(j,k);
       }
     }
   }
 
   // ============ //
-  // apply D to Y //
+  // apply D to X //
   // ============ //
 
   for (int i = 0 ; i < NumLocalBlocks() ; ++i) {
 
-    int LID, GID;
+    int LID;
 
     for (int j = 0 ; j < Partitioner_->NumRowsInPart(i) ; ++j) {
       LID = Containers_[i]->ID(j);
-      for (int k = 0 ; k < Y.NumVectors() ; ++k) {
-        Containers_[i]->RHS(j,k) = Y[k][LID];
+      for (int k = 0 ; k < NumVectors ; ++k) {
+        Containers_[i]->LHS(j,k) = X[k][LID];
       }
     }
 
@@ -1019,13 +1100,11 @@ ApplyInverseSGS2(Epetra_MultiVector& X,
 
     for (int j = 0 ; j < Partitioner_->NumRowsInPart(i) ; ++j) {
       LID = Containers_[i]->ID(j);
-      for (int k = 0 ; k < Y.NumVectors() ; ++k) {
-        Y[k][LID] = Containers_[i]->LHS(j,k);
+      for (int k = 0 ; k < NumVectors ; ++k) {
+        X[k][LID] = Containers_[i]->RHS(j,k);
       }
     }
   }
-
-  X = Y;
 
   // ================== //
   // apply (D - F)^{-1} //
@@ -1033,7 +1112,7 @@ ApplyInverseSGS2(Epetra_MultiVector& X,
 
   for (int i = NumLocalBlocks() - 1; i >=0 ; --i) {
 
-    int LID, GID;
+    int LID;
 
     // update from previous block
 
@@ -1046,12 +1125,10 @@ ApplyInverseSGS2(Epetra_MultiVector& X,
 
       for (int k = 0 ; k < NumEntries ; ++k) {
         int col = Indices[k];
-        if (col >= NumMyRows ) 
-          continue;
 
         if ((*Partitioner_)(col) > i) {
-          for (int kk = 0 ; kk < Y.NumVectors() ; ++kk) {
-            X[kk][LID] -= Values[k] * Y[kk][col];
+          for (int kk = 0 ; kk < NumVectors ; ++kk) {
+            X[kk][LID] -= Values[k] * X[kk][col];
           }
         }
       }
@@ -1061,7 +1138,7 @@ ApplyInverseSGS2(Epetra_MultiVector& X,
 
     for (int j = 0 ; j < Partitioner_->NumRowsInPart(i) ; ++j) {
       LID = Containers_[i]->ID(j);
-      for (int k = 0 ; k < Y.NumVectors() ; ++k) {
+      for (int k = 0 ; k < NumVectors ; ++k) {
         Containers_[i]->RHS(j,k) = X[k][LID];
       }
     }
@@ -1070,11 +1147,12 @@ ApplyInverseSGS2(Epetra_MultiVector& X,
 
     for (int j = 0 ; j < Partitioner_->NumRowsInPart(i) ; ++j) {
       LID = Containers_[i]->ID(j);
-      for (int k = 0 ; k < Y.NumVectors() ; ++k) {
-        Y[k][LID] = Containers_[i]->LHS(j,k);
+      for (int k = 0 ; k < NumVectors ; ++k) {
+        X[k][LID] = Containers_[i]->LHS(j,k);
       }
     }
   }
+
   return(0);
 }
 

@@ -317,7 +317,6 @@ class Ifpack_vIct: public Ifpack_Preconditioner {
   double Athresh_;
   double Rthresh_;
   int LevelOfFill_;
-
   
   char Label_[160];
 

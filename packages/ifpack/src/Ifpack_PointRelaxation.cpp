@@ -20,56 +20,56 @@ static const int IFPACK_SSOR = 4;
 //==============================================================================
 Ifpack_PointRelaxation::
 Ifpack_PointRelaxation(const Epetra_RowMatrix* Matrix) :
-  Matrix_(Matrix),
-  UseTranspose_(false),
-  NumSweeps_(1),
-  DampingFactor_(1.0),
-  PrintFrequency_(0),
   Diagonal_(0),
+  ZeroStartingSolution_(true),
   IsInitialized_(false),
   IsComputed_(false),
-  Condest_(-1.0),
-  ZeroStartingSolution_(true),
-  PrecType_(IFPACK_JACOBI),
+  NumSweeps_(1),
+  DampingFactor_(1.0),
   NumMyRows_(0),
-  MinDiagonalValue_(1e-9),
+  Matrix_(Matrix),
+  UseTranspose_(false),
+  PrintFrequency_(0),
+  Condest_(-1.0),
   NumInitialize_(0),
   NumCompute_(0),
   NumApplyInverse_(0),
   InitializeTime_(0.0),
   ComputeTime_(0.0),
   ApplyInverseTime_(0.0),
+  Time_(0),
   ComputeFlops_(0),
   ApplyInverseFlops_(0),
-  Time_(0)
+  PrecType_(IFPACK_JACOBI),
+  MinDiagonalValue_(0.0)
 {
 }
 
 //==============================================================================
 Ifpack_PointRelaxation::
 Ifpack_PointRelaxation(const Ifpack_PointRelaxation& rhs) :
-  Matrix_(&rhs.Matrix()),
-  UseTranspose_(rhs.UseTranspose()),
-  NumSweeps_(rhs.NumSweeps()),
-  DampingFactor_(rhs.DampingFactor()),
-  PrintFrequency_(rhs.PrintFrequency()),
   Diagonal_(0),
+  ZeroStartingSolution_(rhs.ZeroStartingSolution()),
   IsInitialized_(rhs.IsInitialized()),
   IsComputed_(rhs.IsComputed()),
-  Condest_(rhs.Condest()),
-  ZeroStartingSolution_(rhs.ZeroStartingSolution()),
-  PrecType_(rhs.PrecType()),
+  NumSweeps_(rhs.NumSweeps()),
+  DampingFactor_(rhs.DampingFactor()),
   NumMyRows_(Matrix_->NumMyRows()),
-  MinDiagonalValue_(rhs.MinDiagonalValue()),
+  Matrix_(&rhs.Matrix()),
+  UseTranspose_(rhs.UseTranspose()),
+  PrintFrequency_(rhs.PrintFrequency()),
+  Condest_(rhs.Condest()),
   NumInitialize_(rhs.NumInitialize()),
   NumCompute_(rhs.NumCompute()),
   NumApplyInverse_(rhs.NumApplyInverse()),
   InitializeTime_(rhs.InitializeTime()),
   ComputeTime_(rhs.ComputeTime()),
   ApplyInverseTime_(rhs.ApplyInverseTime()),
+  Time_(0),
   ComputeFlops_(rhs.ComputeFlops()),
   ApplyInverseFlops_(rhs.ApplyInverseFlops()),
-  Time_(0)
+  PrecType_(rhs.PrecType()),
+  MinDiagonalValue_(rhs.MinDiagonalValue())
 {
   Diagonal_ = new Epetra_Vector((*rhs.Diagonal()));
 }
@@ -116,6 +116,7 @@ Ifpack_PointRelaxation::operator=(const Ifpack_PointRelaxation& rhs)
   ComputeFlops_ = rhs.ComputeFlops();
   ApplyInverseFlops_ = rhs.ApplyInverseFlops();
 
+  return(*this);
 }
 
 //==============================================================================
@@ -250,14 +251,14 @@ int Ifpack_PointRelaxation::Compute()
   // check diagonal elements, replace zeros with 1.0
   for (int i = 0 ; i < NumMyRows_ ; ++i) {
     double diag = (*Diagonal_)[i];
-    if (diag < MinDiagonalValue_)
+    if (IFPACK_ABS(diag) < MinDiagonalValue_)
       (*Diagonal_)[i] = MinDiagonalValue_;
   }
 
   // some methods require the inverse of the diagonal, compute it
   // now
-  if ((PrecType_ == IFPACK_JACOBI) || (PrecType_ == IFPACK_GS) ||
-      (PrecType_ == IFPACK_SGS)) {
+  if ((PrecType_ == IFPACK_JACOBI) || (PrecType_ == IFPACK_GS) 
+      || (PrecType_ == IFPACK_SOR)) {
     Diagonal_->Reciprocal(*Diagonal_);
   }
 
@@ -322,13 +323,13 @@ void Ifpack_PointRelaxation::SetLabel()
   else if (PrecType_ == IFPACK_GS)
     PT = "Gauss-Seidel";
   else if (PrecType_ == IFPACK_SGS)
-    PT = "symmetric Gauss-Seidel";
+    PT = "sym Gauss-Seidel";
   else if (PrecType_ == IFPACK_SOR)
     PT = "SOR";
   else if (PrecType_ == IFPACK_SSOR)
     PT = "SSOR";
 
-  sprintf(Label_, "IFPACK %s, sweeps = %d, damping = %e",
+  sprintf(Label_, "IFPACK %s (sweeps=%d, damping=%f)",
           PT.c_str(), NumSweeps(), DampingFactor());
 }
 
@@ -384,6 +385,12 @@ ApplyInverseJacobi(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
   // --------------------- //
   // general case (solver) //
   // --------------------- //
+  // NOTE: I suppose that X and Y do NOT point to the same
+  // memory. This means that this method will not work
+  // directly with AztecOO. Users are not supposed to use
+  // this class directly, but only through Ifpack_AdditiveSchwarz
+  // (which handles the case of X and Y pointing to the same
+  // memory space).
 
   Epetra_MultiVector AX(X);
 
@@ -400,8 +407,9 @@ ApplyInverseJacobi(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
       IFPACK_CHK_ERR(Apply(Y,AX));
       AX.Update(1.0,X,-1.0);
     }
-    else 
+    else {
       AX = X;
+    }
 
     // apply the inverse of the diagonal
     AX.Multiply(1.0, AX, *Diagonal_, 0.0);
@@ -521,11 +529,9 @@ int Ifpack_PointRelaxation::
 ApplyInverseSGS(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
 {
 
-  int NumVectors = X.NumVectors();
-
-  // ---------------- //
-  // single sweep can //
-  // ---------------- //
+  // ------------ //
+  // single sweep //
+  // ------------ //
  
   if ((NumSweeps() == 1) && ZeroStartingSolution_
       && (PrintFrequency() != 0)) {
@@ -542,7 +548,7 @@ ApplyInverseSGS(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
 
   if (ZeroStartingSolution_)
     Y.PutScalar(0.0);
-  
+
   if (PrintFrequency())
     Ifpack_PrintResidual(Label(),Matrix(),Y,Xtmp);
   
@@ -556,7 +562,7 @@ ApplyInverseSGS(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
     IFPACK_CHK_ERR(ApplyInverseSGS2(AX));
 
     // update the residual
-    Y.Update(1.0, AX, 1.0);
+    Y.Update(DampingFactor(), AX, 1.0);
 
     if (PrintFrequency() && (j != 0) && (j % PrintFrequency() == 0))
       Ifpack_PrintResidual(j,Matrix(),Y,Xtmp);
@@ -574,7 +580,6 @@ ApplyInverseSGS(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
 int Ifpack_PointRelaxation::
 ApplyInverseSGS2(Epetra_MultiVector& X) const
 {
-
   int NumVectors = X.NumVectors();
   int Length = Matrix().MaxNumEntries();
   vector<int> Indices;
@@ -582,13 +587,13 @@ ApplyInverseSGS2(Epetra_MultiVector& X) const
   Indices.resize(Length);
   Values.resize(Length);
 
-  // Apply (D - E)^{-1}
+  // Apply (D - \omega E)^{-1}
 
   for (int i = 0 ; i < NumMyRows_ ; ++i) {
 
     int NumEntries;
     int col;
-    double diag;
+    double diag = 1.0;
     double dtemp = 0.0;
 
     IFPACK_CHK_ERR(Matrix().ExtractMyRowCopy(i, Length,NumEntries,
@@ -609,6 +614,7 @@ ApplyInverseSGS2(Epetra_MultiVector& X) const
       }
 
       X[m][i] = (X[m][i] - dtemp) / diag;
+
     }
   }
 
@@ -616,13 +622,12 @@ ApplyInverseSGS2(Epetra_MultiVector& X) const
 
   X.Multiply(1.0,X,*Diagonal_,0.0);
 
-  // Apply (D - F)^{-1}
+  // Apply (D - \omega F)^{-1}
 
   for (int i = NumMyRows_  - 1 ; i > -1 ; --i) {
 
     int NumEntries;
     int col;
-    double diag;
     double dtemp = 0.0;
 
     IFPACK_CHK_ERR(Matrix().ExtractMyRowCopy(i, Length,NumEntries,
@@ -645,6 +650,7 @@ ApplyInverseSGS2(Epetra_MultiVector& X) const
     }
   }
   return(0);
+
 }
 
 //==============================================================================
@@ -712,8 +718,6 @@ int Ifpack_PointRelaxation::
 ApplyInverseSSOR(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
 {
 
-  int NumVectors = X.NumVectors();
-
   // ---------------- //
   // single sweep can //
   // ---------------- //
@@ -779,7 +783,6 @@ ApplyInverseSSOR2(Epetra_MultiVector& X) const
 
     int NumEntries;
     int col;
-    double diag;
     double dtemp = 0.0;
 
     IFPACK_CHK_ERR(Matrix().ExtractMyRowCopy(i, Length,NumEntries,
@@ -790,16 +793,13 @@ ApplyInverseSSOR2(Epetra_MultiVector& X) const
       for (int k = 0 ; k < NumEntries ; ++k) {
 
 	col = Indices[k];
-	if (col > i) 
+	if (col >= i) 
 	  continue;
 
-	if (col == i) 
-	  diag = Values[k];
-	else
-	  dtemp += Values[k] * X[m][col];
+        dtemp += Values[k] * X[m][col];
       }
 
-      X[m][i] = (X[m][i] - DampingFactor() * dtemp) / diag;
+      X[m][i] = (X[m][i] - DampingFactor() * dtemp) / (*Diagonal_)[i];
 
     }
   }
@@ -814,7 +814,6 @@ ApplyInverseSSOR2(Epetra_MultiVector& X) const
 
     int NumEntries;
     int col;
-    double diag;
     double dtemp = 0.0;
 
     IFPACK_CHK_ERR(Matrix().ExtractMyRowCopy(i, Length,NumEntries,

@@ -11,12 +11,12 @@
 Ifpack_LocalFilter::Ifpack_LocalFilter(const Epetra_RowMatrix* Matrix,
 				       const double AddToDiag) :
   Matrix_(Matrix),
-  NumRows_(0),
   Map_(0),
-  Diagonal_(0),
-  MaxNumEntries_(0),
+  NumRows_(0),
   NumNonzeros_(0),
-  AddToDiag_(AddToDiag)
+  MaxNumEntries_(0),
+  AddToDiag_(AddToDiag),
+  Diagonal_(0)
 {
   sprintf(Label_,"Ifpack_LocalFilter");
 

@@ -221,12 +221,12 @@ Ifpack_SparseContainer(const int NumRows, const int NumVectors) :
   NumVectors_(NumVectors),
   Map_(0),
   Matrix_(0),
-  Inverse_(0),
   LHS_(0),
   RHS_(0),
   IsInitialized_(false),
   IsComputed_(false),
-  SerialComm_(0)
+  SerialComm_(0),
+  Inverse_(0)
 {
 
 #ifdef HAVE_MPI
@@ -245,12 +245,12 @@ Ifpack_SparseContainer(const Ifpack_SparseContainer<T>& rhs) :
   NumVectors_(rhs.NumVectors()),
   Map_(0),
   Matrix_(0),
-  Inverse_(0),
   LHS_(0),
   RHS_(0),
   IsInitialized_(rhs.IsInitialized()),
   IsComputed_(rhs.IsComputed()),
-  SerialComm_(0)
+  SerialComm_(0),
+  Inverse_(0)
 {
 
 #ifdef HAVE_MPI

@@ -21,9 +21,9 @@ extern "C" {
 
 //==============================================================================
 Ifpack_METISReordering::Ifpack_METISReordering() :
+  UseSymmetricGraph_(false),
   NumMyRows_(0),
-  IsComputed_(false),
-  UseSymmetricGraph_(false)
+  IsComputed_(false)
 { }
 
 //==============================================================================
@@ -42,10 +42,6 @@ int Ifpack_METISReordering::Compute(const Ifpack_Graph& Graph)
   InvReorder_.resize(NumMyRows_);
 
   int ierr;
-  int nbytes = 0;
-  int nbytes_min;
-  int nbytes_max;
-  int edgecut;
 
   Epetra_CrsGraph* SymGraph = 0;
   Epetra_Map* SymMap = 0;

@@ -36,8 +36,6 @@ int Ifpack_METISPartitioner::ComputePartitions()
 
   int ierr;
   int nbytes = 0;
-  int nbytes_min;
-  int nbytes_max;
   int edgecut;
 
   Epetra_CrsGraph* SymGraph = 0;

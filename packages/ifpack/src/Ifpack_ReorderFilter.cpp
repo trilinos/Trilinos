@@ -14,8 +14,8 @@ Ifpack_ReorderFilter::Ifpack_ReorderFilter(Epetra_RowMatrix* Matrix,
                                            Ifpack_Reordering* Reordering) :
   A_(Matrix),
   Reordering_(Reordering),
-  MaxNumEntries_(Matrix->MaxNumEntries()),
-  NumMyRows_(Matrix->NumMyRows())
+  NumMyRows_(Matrix->NumMyRows()),
+  MaxNumEntries_(Matrix->MaxNumEntries())
 {
 }
 
@@ -23,8 +23,8 @@ Ifpack_ReorderFilter::Ifpack_ReorderFilter(Epetra_RowMatrix* Matrix,
 Ifpack_ReorderFilter::Ifpack_ReorderFilter(const Ifpack_ReorderFilter& RHS) :
   A_(&RHS.Matrix()),
   Reordering_(&RHS.Reordering()),
-  MaxNumEntries_(RHS.MaxNumEntries()),
-  NumMyRows_(RHS.NumMyRows())
+  NumMyRows_(RHS.NumMyRows()),
+  MaxNumEntries_(RHS.MaxNumEntries())
 {
   strcpy(Label_,RHS.Label());
 }

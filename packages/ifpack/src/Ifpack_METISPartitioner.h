@@ -32,7 +32,7 @@ public:
   {}
 
   //! Destructor.
-  ~Ifpack_METISPartitioner() {};
+  virtual ~Ifpack_METISPartitioner() {};
 
   //! Sets all the parameters for the partitioner (none at moment).
   int SetPartitionParameters(Teuchos::ParameterList& List)

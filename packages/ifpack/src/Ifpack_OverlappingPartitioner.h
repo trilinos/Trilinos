@@ -45,7 +45,7 @@ public:
   Ifpack_OverlappingPartitioner(const Ifpack_Graph* Graph);
 
   //! Destructor.
-  ~Ifpack_OverlappingPartitioner();
+  virtual ~Ifpack_OverlappingPartitioner();
 
   //! Returns the number of computed local partitions.
   int NumLocalParts() const 
@@ -81,7 +81,7 @@ public:
     if ((i < 0) || (i >= NumLocalParts()))
       IFPACK_CHK_ERR(-1);
 
-    if ((j < 0) || (j > Parts_[i].size()))
+    if ((j < 0) || (j > (int)Parts_[i].size()))
       IFPACK_CHK_ERR(-2);
 
     return(Parts_[i][j]);

@@ -44,9 +44,9 @@
 
 //==============================================================================
 Ifpack_gRiluk::Ifpack_gRiluk(Epetra_RowMatrix* Matrix) :
+  A_(Matrix),
   Graph_(0),
   CrsGraph_(0),
-  A_(Matrix),
   IlukRowMap_(0),
   IlukDomainMap_(0),
   IlukRangeMap_(0),
@@ -61,8 +61,8 @@ Ifpack_gRiluk::Ifpack_gRiluk(Epetra_RowMatrix* Matrix) :
   RelaxValue_(0.0),
   Athresh_(0.0),
   Rthresh_(1.0),
-  LevelOfFill_(0),
   Condest_(-1.0),
+  LevelOfFill_(0),
   IsInitialized_(false),
   IsComputed_(false)
 {

@@ -17,19 +17,19 @@ Ifpack_Amesos::Ifpack_Amesos(Epetra_RowMatrix* Matrix) :
   Matrix_(Matrix),
   Solver_(0),
   Problem_(0),
+  Label_("Amesos_Klu"),
   IsInitialized_(false),
   IsComputed_(false),
-  Condest_(-1.0),
-  Label_("Amesos_Klu"),
   NumInitialize_(0),
   NumCompute_(0),
   NumApplyInverse_(0),
   InitializeTime_(0.0),
   ComputeTime_(0.0),
   ApplyInverseTime_(0.0),
+  Time_(0),
   ComputeFlops_(0),
   ApplyInverseFlops_(0),
-  Time_(0)
+  Condest_(-1.0)
 {
   Problem_ = new Epetra_LinearProblem;
 }
@@ -39,19 +39,19 @@ Ifpack_Amesos::Ifpack_Amesos(const Ifpack_Amesos& rhs) :
   Matrix_(&rhs.Matrix()),
   Solver_(0),
   Problem_(0),
+  Label_(rhs.Label()),
   IsInitialized_(false),
   IsComputed_(false),
-  Condest_(rhs.Condest()),
-  Label_(rhs.Label()),
   NumInitialize_(rhs.NumInitialize()),
   NumCompute_(rhs.NumCompute()),
   NumApplyInverse_(rhs.NumApplyInverse()),
   InitializeTime_(rhs.InitializeTime()),
   ComputeTime_(rhs.ComputeTime()),
   ApplyInverseTime_(rhs.ApplyInverseTime()),
+  Time_(0),
   ComputeFlops_(rhs.ComputeFlops()),
   ApplyInverseFlops_(rhs.ApplyInverseFlops()),
-  Time_(0)
+  Condest_(rhs.Condest())
 {
 
   Problem_ = new Epetra_LinearProblem;

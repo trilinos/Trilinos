@@ -24,7 +24,7 @@ public:
   {}
 
   //! Destructor.
-  ~Ifpack_LinearPartitioner() {};
+  virtual ~Ifpack_LinearPartitioner() {};
 
   //! Sets all the parameters for the partitioner (none for linear partioning).
   int SetPartitionParameters(Teuchos::ParameterList& List)

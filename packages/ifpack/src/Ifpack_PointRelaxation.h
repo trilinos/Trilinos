@@ -14,10 +14,11 @@ class Epetra_Time;
 class Epetra_Vector;
 class Epetra_RowMatrix;
 
-//! Ifpack_PointRelaxation: a class to define point preconditioners of Ifpack_Preconditioner's.
+//! Ifpack_PointRelaxation: a class to define point relaxation preconditioners of Ifpack_Preconditioner's.
 
 /*! 
   The Ifpack_PointRelaxation class enables the construction of point
+  relaxation
   preconditioners of an Epetra_RowMatrix. Ifpack_PointRelaxation 
   is derived from 
   the Ifpack_Preconditioner class, which is derived from Epetra_Operator.
@@ -70,23 +71,18 @@ P_{GS}^{-1} = (D - E)^{-1}.
 Clearly, the role of E and F can be interchanged. However,
 Ifpack_GaussSeidel does not consider backward Gauss-Seidel methods.
 
-\note
-Ifpack_PointRelaxation is \e not supposed to be used as stand-alone
-preconditioner, but rather as a template for the construction
-of Ifpack_AdditiveSchwarz objects. 
+<P>For a list of supported parameters, please refer to page \ref ifp_params.
 
-<P>The following parameters are recognized by Ifpack_PointRelaxation:
-- \c "point: sweeps" [int, default = 1]: number of sweeps;
-- \c "point: damping factor" [double, default = 1.0]: dampig parameter;
-- \c "point: print frequency" [int, default = 0]: if different from zero, every specified
-  number of sweeps the class computed the true residual, and prints on
-  cout. As the computation of the residual is an expensive operation,
-  this parameter should be considered for debugging purposed only;
-- \c "point: min diagonal value" [double, default = 1e-9]: replace
-  diagonal values below this value with this value.
+\note The ApplyInverse() implementation of this class is \e not AztecOO
+complaint, as it does assume that the two input vectors X and Y actually
+refer to two different memory location. In fact, this case is handled
+by class Ifpack_AdditiveSchwarz, which takes care of calling methods ApplyInverse()
+of Ifpack_PointRelaxation with two vectors pointing to different memory
+locations.
+
 \author Marzio Sala, SNL 9214.
 
-\date Last modified: Oct-04.
+\date Last modified: Nov-04.
   
 */
 class Ifpack_PointRelaxation : public Ifpack_Preconditioner {
@@ -375,9 +371,6 @@ protected:
   {
     return(PrintFrequency_);
   }
-
-  //! Sets the label.
-
 
   //@}
 

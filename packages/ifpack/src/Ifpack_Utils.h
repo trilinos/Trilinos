@@ -84,6 +84,7 @@ public:
       return(true);
     else if (rhs.Index() < Index())
         return(true);
+    return(false);
   }
 
 private:

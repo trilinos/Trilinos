@@ -278,11 +278,6 @@ int Ifpack_Analyze(Epetra_RowMatrix& A, const int NumEquations)
   double MinAbsElement = DBL_MAX;
   double MyMaxAbsElement = 0.0; 
   double MaxAbsElement = 0.0;
-  int Nonzeros; /* nonzero elements in a row */
-  int MyMinNonzeros = INT_MAX;
-  int MyMaxNonzeros = 0;
-  int MinNonzeros = INT_MAX;
-  int MaxNonzeros = 0;
   int NumMyRows = 0, NumGlobalRows = 0;
   
   int MyPID;
@@ -570,11 +565,11 @@ int Ifpack_PrintSparsity(const Epetra_RowMatrix& A, char* title,
 
   int m,nc,nr,maxdim,ltit;
   double lrmrgn,botmrgn,xtit,ytit,ytitof,fnstit,siz;
-  double xl,xr, yb,yt, scfct,u2dot,frlw,delt,paperx,xx,yy;
+  double xl,xr, yb,yt, scfct,u2dot,frlw,delt,paperx;
   bool square = false;
   /*change square to .true. if you prefer a square frame around
     a rectangular matrix */
-  double haf = 0.5, zero = 0.0, conv = 2.54;
+  double conv = 2.54;
   char munt = 'E'; /* put 'E' for centimeters, 'U' for inches */
   int ptitle = 0; /* position of the title, 0 under the drawing,
                      else above */

@@ -369,13 +369,13 @@ Ifpack_AdditiveSchwarz(Epetra_RowMatrix* Matrix,
   IsInitialized_(false),
   IsComputed_(false),
   Inverse_(0),
-  OverlapLevel_(OverlapLevel),
   IsOverlapping_(false),
+  OverlapLevel_(OverlapLevel),
   CombineMode_(Zero),
   Condest_(-1.0),
   UseReordering_(false),
-  ReorderedLocalizedMatrix_(0),
   Reordering_(0),
+  ReorderedLocalizedMatrix_(0),
   UseFilter_(false),
   FilterSingletons_(false),
   FilteredMatrix_(0),
@@ -410,13 +410,13 @@ Ifpack_AdditiveSchwarz(const Ifpack_AdditiveSchwarz& RHS) :
   IsInitialized_(false),
   IsComputed_(false),
   Inverse_(0),
-  OverlapLevel_(RHS.OverlapLevel()),
   IsOverlapping_(RHS.IsOverlapping()),
+  OverlapLevel_(RHS.OverlapLevel()),
   CombineMode_(Zero),
   Condest_(-1.0),
   UseReordering_(false),
-  ReorderedLocalizedMatrix_(0),
   Reordering_(0),
+  ReorderedLocalizedMatrix_(0),
   UseFilter_(false),
   FilterSingletons_(false),
   FilteredMatrix_(0),
@@ -526,6 +526,8 @@ int Ifpack_AdditiveSchwarz<T>::Setup()
       cerr << "reordering type not correct (" << ReorderingType_ << ")" << endl;
       exit(EXIT_FAILURE);
     }
+    assert (Reordering_ != 0);
+
     IFPACK_CHK_ERR(Reordering_->SetParameters(List_));
     IFPACK_CHK_ERR(Reordering_->Compute(*MatrixPtr));
 
@@ -749,6 +751,7 @@ ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
 
   Epetra_MultiVector* OverlappingX;
   Epetra_MultiVector* OverlappingY;
+  Epetra_MultiVector* Xtmp = 0;
 
   // process overlap, may need to create vectors and import data
   if (IsOverlapping()) {
@@ -763,7 +766,8 @@ ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
     IFPACK_CHK_ERR(OverlappingMatrix_->ImportMultiVector(X,*OverlappingX,Insert));
   }
   else {
-    OverlappingX = (Epetra_MultiVector*)&X;
+    Xtmp = new Epetra_MultiVector(X);
+    OverlappingX = (Epetra_MultiVector*)Xtmp;
     OverlappingY = &Y;
   }
 
@@ -810,6 +814,9 @@ ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
     delete OverlappingX;
     delete OverlappingY;
   }
+
+  if (Xtmp)
+    delete Xtmp;
 
   ++NumApplyInverse_;
   ApplyInverseTime_ += Time_->ElapsedTime();

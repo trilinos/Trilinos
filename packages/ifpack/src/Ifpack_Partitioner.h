@@ -121,7 +121,7 @@ class Ifpack_Partitioner {
 public:
 
   //! Destructor.
-  ~Ifpack_Partitioner() {};
+  virtual ~Ifpack_Partitioner() {};
 
   //! Returns the number of computed local partitions.
   virtual int NumLocalParts() const = 0;

@@ -25,7 +25,7 @@ public:
   {}
 
   //! Destructor.
-  ~Ifpack_GreedyPartitioner() {};
+  virtual ~Ifpack_GreedyPartitioner() {};
 
   //! Sets all the parameters for the partitioner (root node).
   int SetPartitionParameters(Teuchos::ParameterList& List)

@@ -9,8 +9,8 @@
 //==============================================================================
 Ifpack_RCMReordering::
 Ifpack_RCMReordering() :
-  NumMyRows_(0),
   RootNode_(0),
+  NumMyRows_(0),
   IsComputed_(false)
 {
 }
@@ -18,8 +18,8 @@ Ifpack_RCMReordering() :
 //==============================================================================
 Ifpack_RCMReordering::
 Ifpack_RCMReordering(const Ifpack_RCMReordering& RHS) :
-  NumMyRows_(RHS.NumMyRows()),
   RootNode_(RHS.RootNode()),
+  NumMyRows_(RHS.NumMyRows()),
   IsComputed_(RHS.IsComputed())
 {
   Reorder_.resize(NumMyRows());
@@ -128,7 +128,7 @@ int Ifpack_RCMReordering::Compute(const Ifpack_Graph& Graph)
 
     // for each node in the previous level, look for non-marked
     // neighbors. 
-    for (int i = 0 ; i < tmp.size() ; ++i) {
+    for (int i = 0 ; i < (int)tmp.size() ; ++i) {
       int NumEntries;
       IFPACK_CHK_ERR(Graph.ExtractMyRowCopy(tmp[i], Length,
 					     NumEntries, &Indices[0]));

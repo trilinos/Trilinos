@@ -75,16 +75,18 @@ public:
   Ifpack_DenseContainer(const int NumRows, const int NumVectors = 1) :
     NumRows_(NumRows),
     NumVectors_(NumVectors),
-    IsComputed_(false),
-    KeepNonFactoredMatrix_(false)
+    KeepNonFactoredMatrix_(false),
+    IsInitialized_(false),
+    IsComputed_(false)
   {}
 
   //! Copy constructor
   Ifpack_DenseContainer(const Ifpack_DenseContainer& rhs) :
     NumRows_(rhs.NumRows()),
     NumVectors_(rhs.NumVectors()),
-    IsComputed_(rhs.IsComputed()),
-    KeepNonFactoredMatrix_(rhs.KeepNonFactoredMatrix())
+    KeepNonFactoredMatrix_(rhs.KeepNonFactoredMatrix()),
+    IsInitialized_(rhs.IsInitialized()),
+    IsComputed_(rhs.IsComputed())
   {
     Matrix_ = rhs.Matrix();
     if (KeepNonFactoredMatrix_)
@@ -463,6 +465,9 @@ int Ifpack_DenseContainer::Compute(const Epetra_RowMatrix& Matrix)
   // extract local rows and columns
   IFPACK_CHK_ERR(Extract(Matrix));
 
+  if (KeepNonFactoredMatrix_)
+    NonFactoredMatrix_ = Matrix_;
+
   // factorize the matrix using LAPACK
   IFPACK_CHK_ERR(Solver_.Factor());
 
@@ -482,6 +487,7 @@ int Ifpack_DenseContainer::Apply()
   }
   else
     IFPACK_CHK_ERR(RHS_.Multiply('N','N', 1.0,Matrix_,LHS_,0.0));
+
   return(0);
 }
 

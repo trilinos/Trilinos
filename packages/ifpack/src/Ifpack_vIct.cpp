@@ -49,20 +49,24 @@
 Ifpack_vIct::Ifpack_vIct(const Epetra_RowMatrix* A) :
   A_(*A),
   Comm_(Comm()),
-  Time_(Comm()),
+  H_(0),
+  Condest_(-1.0),
+  Relax_(1.0),
+  Threshold_(0.0),
+  Athresh_(0.0),
+  Rthresh_(0.0),
+  LevelOfFill_(0),
   IsInitialized_(false),
   IsComputed_(false),
-  Condest_(-1.0),
-  LevelOfFill_(0),
-  H_(0),
+  UseTranspose_(false),
+  NumMyRows_(0),
   NumInitialize_(0),
   NumCompute_(0),
   NumApplyInverse_(0),
   InitializeTime_(0.0),
   ComputeTime_(0.0),
   ApplyInverseTime_(0.0),
-  Athresh_(0.0),
-  Rthresh_(0.0)
+  Time_(Comm())
 {
 }
 
@@ -70,20 +74,20 @@ Ifpack_vIct::Ifpack_vIct(const Epetra_RowMatrix* A) :
 Ifpack_vIct::Ifpack_vIct(const Ifpack_vIct& rhs) :
   A_(rhs.Matrix()),
   Comm_(Comm()),
-  Time_(Comm()),
+  H_(0),
+  Condest_(rhs.Condest()),
+  Athresh_(rhs.AbsoluteThreshold()),
+  Rthresh_(rhs.RelativeThreshold()),
+  LevelOfFill_(rhs.LevelOfFill()),
   IsInitialized_(rhs.IsInitialized()),
   IsComputed_(rhs.IsComputed()),
-  Condest_(rhs.Condest()),
-  LevelOfFill_(rhs.LevelOfFill()),
-  H_(0),
   NumInitialize_(rhs.NumInitialize()),
   NumCompute_(rhs.NumCompute()),
   NumApplyInverse_(rhs.NumApplyInverse()),
   InitializeTime_(rhs.InitializeTime()),
   ComputeTime_(rhs.ComputeTime()),
   ApplyInverseTime_(rhs.ApplyInverseTime()),
-  Athresh_(rhs.AbsoluteThreshold()),
-  Rthresh_(rhs.RelativeThreshold())
+  Time_(Comm())
 {
   H_ = new Epetra_CrsMatrix(rhs.H());
 }
@@ -348,7 +352,7 @@ int Ifpack_vIct::Compute() {
 	RowEntries.push_back(Element);
       }
 
-      if (RowEntries.size() > LOF) {
+      if ((int)RowEntries.size() > LOF) {
 	// sort in ascending order the entries for this row
 	sort(RowEntries.begin(),RowEntries.end());
       }
@@ -357,7 +361,7 @@ int Ifpack_vIct::Compute() {
       // NOTE: here level-of-fill refers to the number of
       // *off-diagonal* elements. If zero, no off-diagonal elements
       // will be mantained.
-      for (int k = 0 ; k < EPETRA_MIN(LOF,RowEntries.size()) ; ++k) {
+      for (int k = 0 ; k < EPETRA_MIN(LOF,(int)RowEntries.size()) ; ++k) {
 	int col_k = RowEntries[k].Index();
 	if (col_k >= row_i)
 	  continue;
@@ -409,6 +413,7 @@ int Ifpack_vIct::ApplyInverse(const Epetra_MultiVector& X,
   ++NumApplyInverse_;
   ApplyInverseTime_ += Time_.ElapsedTime();
 
+  return(0);
 }
 //=============================================================================
 // This function finds X such that LDU Y = X or U(trans) D L(trans) Y = X for multiple RHS
@@ -418,10 +423,6 @@ int Ifpack_vIct::Apply(const Epetra_MultiVector& X,
 
   if (X.NumVectors() != Y.NumVectors()) 
     IFPACK_CHK_ERR(-1); // Return error: X and Y not the same size
-
-  bool Upper = true;
-  bool Lower = false;
-  bool UnitDiagonal = true;
 
 #ifdef FIXME
   Epetra_MultiVector * X1 = (Epetra_MultiVector *) &X;
@@ -435,7 +436,7 @@ int Ifpack_vIct::Apply(const Epetra_MultiVector& X,
   Y1->Update(1.0, Y1temp, 1.0); // (account for implicit unit diagonal)
   return(0);
 #endif
-  return(-1);
+  IFPACK_CHK_ERR(-1);
 }
 
 //=============================================================================

@@ -151,7 +151,7 @@ int Ifpack_OverlappingPartitioner::ComputeOverlappingPartitions()
 
     for (int part = 0 ; part < NumLocalParts_ ; ++part) {
 
-      for (int i = 0; i < Parts_[part].size() ; ++i) {  
+      for (int i = 0; i < (int)Parts_[part].size() ; ++i) {  
 
 	int LRID = Parts_[part][i];
 	int NumIndices;
@@ -177,7 +177,7 @@ int Ifpack_OverlappingPartitioner::ComputeOverlappingPartitions()
     // now I convert the STL vectors into Epetra_IntSerialDenseVectors.
     for (int i = 0 ; i < NumLocalParts_ ; ++i) {
       Parts_[i].resize(tmp[i].size());
-      for (int j = 0 ; j < tmp[i].size() ; ++j)
+      for (int j = 0 ; j < (int)tmp[i].size() ; ++j)
 	Parts_[i][j] = tmp[i][j];
     }
   }

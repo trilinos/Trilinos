@@ -10,13 +10,13 @@
 Ifpack_OverlappingRowMatrix::
 Ifpack_OverlappingRowMatrix(const Epetra_RowMatrix* Matrix,
                             int OverlapLevel)  :
-  Matrix_(Matrix),
-  OverlapLevel_(OverlapLevel),
   Map_(0),
   Importer_(0),
+  Matrix_(Matrix),
   ExtMatrix_(0),
   ExtMap_(0),
-  ExtImporter_(0)
+  ExtImporter_(0),
+  OverlapLevel_(OverlapLevel)
 {
   // should not be here if no overlap
   if (OverlapLevel == 0)
@@ -96,7 +96,7 @@ Ifpack_OverlappingRowMatrix(const Epetra_RowMatrix* Matrix,
   vector<int> list(NumMyRowsA_ + ExtElements.size());
   for (int i = 0 ; i < NumMyRowsA_ ; ++i)
     list[i] = A().RowMatrixRowMap().GID(i);
-  for (int i = 0 ; i < ExtElements.size() ; ++i)
+  for (int i = 0 ; i < (int)ExtElements.size() ; ++i)
     list[i + NumMyRowsA_] = ExtElements[i];
 
   Map_ = new Epetra_Map(-1, NumMyRowsA_ + ExtElements.size(),

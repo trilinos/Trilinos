@@ -368,9 +368,9 @@ int Ifpack_CrsIct::Multiply(bool Trans, const Epetra_MultiVector& X,
 
   if (X.NumVectors()!=Y.NumVectors()) EPETRA_CHK_ERR(-1); // Return error: X and Y not the same size
 
-  bool Upper = true;
-  bool Lower = false;
-  bool UnitDiagonal = true;
+  //bool Upper = true;
+  //bool Lower = false;
+  //bool UnitDiagonal = true;
 
   Epetra_MultiVector * X1 = (Epetra_MultiVector *) &X;
   Epetra_MultiVector * Y1 = (Epetra_MultiVector *) &Y;
