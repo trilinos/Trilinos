@@ -3,6 +3,7 @@ NOTE: new_package is under construction!!
 Useful Terminology:
 	new package - A package to be added to the Trilinos Autotools
 			configure/build process.
+
 	new_package - The directory structure that this README file resides in.
 			new_package serves as a guide for adding new packages
 			to the Trilinos Autotools configure/build process.
@@ -10,13 +11,15 @@ Useful Terminology:
 	np - The generic name for a new package that is used 
 			throughout this README.  The source code for np will be
 			located in Trilinos/packages/np.  
-	autotool'ed
+
+	autotool'ed - A package that has been autotool'ed can use autotools
+			for configuring and building.
 
 BUGS
 ====
 
 make distclean may not work
-the test directory has not been autotool'd
+the test directory has not been autotool'ed
 
 
 CONTENTS of new_package
@@ -25,23 +28,16 @@ CONTENTS of new_package
 new_package contains both static and dynamic examples of what should
 be included in a new package.  The src and example directories are
 dynamic examples - they can be bootstrapped, configured, compiled and
-run.  And, they demonstrate the use of two switches: 1) --enable-mpi,
+run.  They also demonstrate the use of two switches: 1) --enable-mpi,
 a switch which most packages should support and 2)
 --enable-newp_swahili, a switch used only with new_pacakge.  The test
 directory is a static example.  It demonstrates what a complete
-package should include, but has not yet been autotool'd.  
+package should include, but has not yet been autotool'ed.  
 
 The Trilinos/packages/new_package package was created as a tool for developers
 wishing to utilize the Autotools configure/build process for a new or existing
 Trilinos package.  Before beginning this process, approval must be obtained 
 from the Trilinos Project Leader.
-
-GETTING STARTED
-===============
-
-To build new_package, uncomment the lines below #np# in
-Trilinos/configure.ac and Trilinos/packages/Makefile.am and follow the 
-instructions in section 2 below.
 
 ADDING A NEW PACKAGE
 ====================
