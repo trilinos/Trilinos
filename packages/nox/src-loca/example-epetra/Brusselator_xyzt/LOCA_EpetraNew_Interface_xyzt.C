@@ -39,8 +39,8 @@ using namespace  LOCA::EpetraNew::Interface;
 xyzt::xyzt(LOCA::EpetraNew::Interface::Required &iReq_,
        NOX::EpetraNew::Interface::Jacobian &iJac_,
        LOCA::EpetraNew::Interface::MassMatrix &iMass_,
-       Epetra_Vector &splitVec_, Epetra_CrsMatrix &splitJac_,
-       Epetra_CrsMatrix &splitMass_, Epetra_MpiComm &globalComm_,
+       Epetra_Vector &splitVec_, Epetra_RowMatrix &splitJac_,
+       Epetra_RowMatrix &splitMass_, Epetra_MpiComm &globalComm_,
        int replica_, int timeStepsPerProc_)
        : iReq(iReq_), iJac(iJac_), iMass(iMass_), splitVec(splitVec_),
        splitJac(splitJac_), splitMass(splitMass_), globalComm(globalComm_),
@@ -65,7 +65,7 @@ xyzt::xyzt(LOCA::EpetraNew::Interface::Required &iReq_,
      (*rowIndex).push_back(i + replica*timeStepsPerProc);
    }
 
-   jacobian = new EpetraExt::BlockCrsMatrix(splitJac.Graph(), *rowStencil, *rowIndex, globalComm);
+   jacobian = new EpetraExt::BlockCrsMatrix(splitJac, *rowStencil, *rowIndex, globalComm);
 
    // Construct global solution vector, the overlap vector, and importer between them
    solution = new EpetraExt::BlockVector(splitVec.Map(), jacobian->RowMap());

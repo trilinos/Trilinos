@@ -41,6 +41,7 @@
 #include <iostream>
 #include "Epetra_Vector.h"
 #include "Epetra_Operator.h"
+#include "Epetra_RowMatrix.h"
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_DistObject.h"
 #include "Epetra_Import.h"
@@ -79,7 +80,7 @@ public:
   //! Constructor
   xyzt(LOCA::EpetraNew::Interface::Required &iReq, NOX::EpetraNew::Interface::Jacobian &iJac,
        LOCA::EpetraNew::Interface::MassMatrix &iMass, Epetra_Vector &splitVec,
-       Epetra_CrsMatrix &splitJac, Epetra_CrsMatrix &splitMass, 
+       Epetra_RowMatrix &splitJac, Epetra_RowMatrix &splitMass, 
        Epetra_MpiComm &globalComm, int replica, int timeStepsPerProc);
 
   //! Destructor
@@ -112,8 +113,8 @@ private:
   NOX::EpetraNew::Interface::Jacobian &iJac;
   LOCA::EpetraNew::Interface::MassMatrix &iMass;
   Epetra_Vector& splitVec;
-  Epetra_CrsMatrix& splitJac;
-  Epetra_CrsMatrix& splitMass; // can be same object as splitJac
+  Epetra_RowMatrix& splitJac;
+  Epetra_RowMatrix& splitMass; // can be same object as splitJac
   Epetra_MpiComm& globalComm;
   int replica;
   int timeStepsPerProc;
