@@ -49,13 +49,6 @@
 using namespace Teuchos;
 using namespace ML_Epetra;
 
-#ifdef MARZIO_GGB
-extern "C" {
-  extern int ML_ggb_Set_SymmetricCycle(int flag);
-  extern int ML_ggb_Set_CoarseSolver(int flag);
-}
-#endif
-
 #ifdef HAVE_ML_AZTECOO
 #include "AztecOO.h"
 #endif
@@ -85,8 +78,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetFiltering()
 #ifdef MARZIO_GGB
   sprintf(parameter,"%sfiltering: use symmetric cycle", Prefix_);
   bool FltUseSym = List_.get(parameter,false);
-  if( FltUseSym == true ) ML_ggb_Set_SymmetricCycle(1);
-  else                    ML_ggb_Set_SymmetricCycle(0);
+  cerr << "ERROR THIS TO BE DONE..." << endl;
 #endif
 
   int restarts = List_.get(Pre+"eigen-analysis: restart", 50);
