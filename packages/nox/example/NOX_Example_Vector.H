@@ -38,7 +38,19 @@
 
 namespace NOX {
 
-//! Used to create a simple example.
+//! Used to create simple examples for testing independent of other packages..
+/*!
+  We have created a very simple Example::Vector and Example::Group
+  interfaces for simple testing independent of other packages.
+
+  To use these classes with your own problems, you must define a class
+  that derives from Example::Interface and instantiate it. That
+  instantiation should then be passed to the Example::Group
+  constructor.
+
+  Follow the examples in Rosenbrock.C, Broyden.C, and Linear.C.
+*/
+
 namespace Example {
 
 //! Implementation of NOX::Abstract::Vector for vector<double>

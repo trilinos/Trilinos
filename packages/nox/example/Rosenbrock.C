@@ -30,29 +30,66 @@
 // ************************************************************************
 //@HEADER
 
-/* 
-   This is an example of using NOX with the NOX::Example group and
-   vector classes. These are very basic classes intended only to
-   illustrate and test NOX. They are based on LAPACK.
+/*!
+   \file Rosenbrock.C
+   \brief A simple 2D example using %Rosenbrock's function based on NOX::Example
 
-   This example is the "Rosenbrock function" from Jorge J. More',
+   This is an example of using %NOX with the NOX::Example::Group and
+   NOX::Example::Vector classes. These are very basic classes intended
+   only to illustrate and test NOX. They are based on a combination of
+   C++ STL and LAPACK.
+
+   This example is the "%Rosenbrock function" from Jorge J. More',
    Burton S. Garbow, and Kenneth E. Hillstrom, Testing Unconstrained
    Optimization Software, ACM TOMS, Vol. 7, No. 1, March 1981,
    pp. 14-41.
 
-   It comes originally from H. H. Rosenbrock, An Automatic Method for
+   It comes originally from H. H. %Rosenbrock, An Automatic Method for
    Finding the Greatest or Least Value of a Function, J. Comput.
    3(1960):175-184.
+
+   The function is defined as
+   \f[
+   F(x) = \left[
+   \begin{array}{c}
+   10 (x[2] - x[1]^2) \\
+   1 - x[1]
+   \end{array}
+   \right]
+   \f]
+
+   The initial guess is given by
+   \f[
+   x_0 = \left[
+   \begin{array}{c}
+   -1.2\\
+   1
+   \end{array}
+   \right]
+   \f]
+
+   The solution is
+   \f[
+   x_* = \left[
+   \begin{array}{c}
+   1\\
+   1
+   \end{array}
+   \right]
+   \f]
+
 */
 
 
 #include "NOX.H"
 #include "NOX_Example_Group.H"
 
+//! An interface to the example described in Rosenbrock.C
 class Rosenbrock : public NOX::Example::Interface {
 
 public:
  
+  //! Constructor
   Rosenbrock() : 
     initialGuess(2),
     solution(2)
@@ -63,6 +100,7 @@ public:
     solution(1) = 1;
   };
 
+  //! Destructor
   ~Rosenbrock() {};
 
   const NOX::Example::Vector& getInitialGuess()
@@ -93,11 +131,14 @@ public:
 
 private:
 
+  //! Initial guess
   NOX::Example::Vector initialGuess;
+  //! Correct solution
   NOX::Example::Vector solution;
 
 };
 
+//! Main subroutine of Rosenbrock.C
 int main()
 {
   // Set up the problem interface
