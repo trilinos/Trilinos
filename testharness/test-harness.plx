@@ -227,7 +227,7 @@ report($SUMMARY);
 
         # grab flabs
         use Getopt::Std;
-        getopts("f:p:g:snthuekw", \%flags);
+        getopts("f:p:g:snthurkw", \%flags);
         
         # print help and exit
         if ($flags{h}) { 
@@ -497,7 +497,7 @@ report($SUMMARY);
                             }
                         
                             # remove broken package (in recover mode only)
-                            if (!$flags{e}) {                            
+                            if ($flags{r}) {                            
                                 system "rm -rf $options{'TRILINOS_DIR'}[0]/$buildDir[$j]/packages/$dirNames{$brokenPackage}";
                             }
                         }
@@ -523,7 +523,7 @@ report($SUMMARY);
                         
                         # running in short-circuit mode
                         # configure failed, exit with non-zero exit code
-                        if ($flags{e}) {
+                        if (!$flags{r}) {
                             printEvent("short-circuit mode: configure failure, quitting.\n");
                             report($SUMMARY);
                             cleanUp();
@@ -585,7 +585,7 @@ report($SUMMARY);
                                 chdir"$options{'TRILINOS_DIR'}[0]/$buildDir[$j]";                           
                                 
                                 # remove broken package (in recover mode only)
-                                if (!$flags{e}) {                            
+                                if ($flags{r}) {                            
                                     system "rm -rf $options{'TRILINOS_DIR'}[0]/$buildDir[$j]/packages/$dirNames{$brokenPackage}";
                                 }
                             }
@@ -614,7 +614,7 @@ report($SUMMARY);
                         
                             # running in short-circuit mode
                             # build failed, exit with non-zero exit code
-                            if ($flags{e}) {
+                            if (!$flags{r}) {
                                 printEvent("short-circuit mode: build failure, quitting.\n");
                                 report($SUMMARY);
                                 cleanUp();
@@ -690,7 +690,7 @@ report($SUMMARY);
                                                 
                                         # running in short-circuit mode
                                         # test failed, exit with non-zero exit code
-                                        if ($flags{e}) {
+                                        if (!$flags{r}) {
                                             printEvent("short-circuit mode: test failure, quitting.\n");
                                             report($SUMMARY);
                                             cleanUp();
@@ -1875,16 +1875,15 @@ report($SUMMARY);
         print "\n";
         print "Options:\n";
         print "  -f FILE  : Run test harness normally with given test harness config file\n";
-        print "\n";
-        print "  -ef FILE : Run test harness in short-circuit (early-fail) mode.\n";
         print "             When run this way, if there is any error, the test harness\n";
         print "             will exit with a non-zero exit code. If everything\n";
         print "             successfully configures, builds, and tests, the test harness\n";
-        print "             will return an exit code of 0. No special reporting will be\n";
-        print "             done--most likely, you will want to set REPORT_METHOD to\n";
-        print "             LOCAL_FILESYSTEM, in which case you will see reports in\n";
-        print "             Trilinos/testharness/results (by default--see RESULTS_DIR\n";
-        print "             option to change this).\n";
+        print "             will return an exit code of 0.\n";
+        print "\n";
+        print "  -rf FILE : Run test harness in recovery mode. When run this way, if a\n";
+        print "             configure or build error occurs, the test harness will try to\n";
+        print "             recover from the error and continue to configure and build\n";
+        print "             the remaining packages.\n";
         print "\n";
         print "  -wf FILE : Run tests in PACKAGE/test/scripts/weekly instead of the\n";
         print "             default, PACKAGE/test/scripts/daily.\n";
@@ -1918,9 +1917,9 @@ report($SUMMARY);
         print "  -h       : Print this help page and exit\n";
         print "\n";
         print "Notes:\n";
-        print "  - Some sensible combinations of flags will work: \"-ewf FILE\",\n";
-        print "    \"-twf FILE\", \"-kwf FILE\", \"-tkf FILE\", \"-ekf FILE\",\n";
-        print "    \"-ekwf FILE\", etc.\n";
+        print "  - Some sensible combinations of flags will work: \"-rwf FILE\",\n";
+        print "    \"-twf FILE\", \"-kwf FILE\", \"-tkf FILE\", \"-rkf FILE\",\n";
+        print "    \"-rkwf FILE\", etc.\n";
         print "  - Options with FILE require a filename--absolute or relative to\n";
         print "    Trilinos/testharness.\n";
         print "  - For more information, see README in Trilinos/testharness\n";
