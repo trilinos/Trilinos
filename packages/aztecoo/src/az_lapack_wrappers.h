@@ -32,8 +32,6 @@
 #define DGETRS_F77  F77_FUNC(sgetrs,SGETRS)
 #define DPOTRF_F77  F77_FUNC(spotrf,SPOTRF)
 #define DGETRI_F77  F77_FUNC(sgetri,SGETRI)
-#define DLASWP_F77  F77_FUNC(slaswp,SLASWP)
-#define DLAIC1_F77  F77_FUNC(slaic1,SLAIC1)
 
 #else
 
@@ -41,8 +39,6 @@
 #define DGETRS_F77  F77_FUNC(dgetrs,DGETRS)
 #define DPOTRF_F77  F77_FUNC(dpotrf,DPOTRF)
 #define DGETRI_F77  F77_FUNC(dgetri,DGETRI)
-#define DLASWP_F77  F77_FUNC(dlaswp,DLASWP)
-#define DLAIC1_F77  F77_FUNC(dlaic1,DLAIC1)
 
 #endif
 
@@ -51,14 +47,6 @@ extern "C" {
 #include <stdio.h>
 #endif
 
-void PREFIX DLASWP_F77(int *, double *, int *, int *, int *, int *, int *);
-
-void PREFIX DLAIC1_F77(int * , int *, double *, double *, double *, double *,
-			  double *, double *, double *);
-void PREFIX SLASWP_F77(int *, float *, int *, int *, int *, int *, int *);
-
-void PREFIX SLAIC1_F77(int * , int *, float *, float *, float *, float *,
-			  float *, float *, float *);
 
   /* Double precision LAPACK linear solvers */
 void PREFIX DGETRF_F77(int* m, int* n, double* a, int* lda, int* ipiv, int* info); 

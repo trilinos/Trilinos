@@ -484,7 +484,7 @@ double one = 1.0;
                   &ione, &one, &d3_inv[d_ival], &m1, &(b[rpntr[iblk_row]]), &m1);
           DTRMM_F77( CHAR_MACRO(Left[0]), CHAR_MACRO(Lower[0]), CHAR_MACRO(None[0]), CHAR_MACRO(Unit[0]), &m1, &ione,
                   &one, &d3_inv[d_ival], &m1, &(b[rpntr[iblk_row]]), &m1);
-          DLASWP_F77( &ione, &(b[rpntr[iblk_row]]), &m1, &ione, &m1, &(ipiv[rpntr[iblk_row]]), &iminus_one );
+          AZ_DLASWP_F77( &ione, &(b[rpntr[iblk_row]]), &m1, &ione, &m1, &(ipiv[rpntr[iblk_row]]), &iminus_one );
 
        }
     }

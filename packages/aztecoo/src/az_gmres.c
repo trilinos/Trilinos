@@ -332,12 +332,12 @@ void AZ_pgmres (double b[], double x[],double weight[], int options[],
         for (k = 0; k < i; k++) vectmp[k] = hh[k][i];
         vectmp[i] = dble_tmp;
         ijob = 1;
-        DLAIC1_F77(&ijob, &i, svbig, &big, vectmp, &vectmp[i], &sestpr, &ss, &cc);
+        AZ_DLAIC1_F77(&ijob, &i, svbig, &big, vectmp, &vectmp[i], &sestpr, &ss, &cc);
         big = sestpr;
         DSCAL_F77(&i, &ss, svbig, &one);
         svbig[i] = cc;
         ijob = 2;
-        DLAIC1_F77(&ijob, &i, svsml, &small, vectmp, &vectmp[i], &sestpr, &ss,
+        AZ_DLAIC1_F77(&ijob, &i, svsml, &small, vectmp, &vectmp[i], &sestpr, &ss,
                    &cc);
         small = sestpr;
         DSCAL_F77(&i, &ss, svsml, &one);

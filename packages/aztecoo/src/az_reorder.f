@@ -3,14 +3,14 @@ C     This stuff comes from George & Liu. It basically corresponds
 C     to computing a Reverse Cuthill-McKee Ordering corresponding
 C     to the graph of a matrix.
 C
-      subroutine rcm(root,xadj,adjncy,mask,perm,ccsize,deg)
+      subroutine az_rcm(root,xadj,adjncy,mask,perm,ccsize,deg)
 C-----------------------------------------------------------------
 C-----------------------------------------------------------------
       integer adjncy(1),deg(1),mask(1),perm(1),xadj(1)
       integer ccsize,fnbr,i,j,jstop,jstrt,k,l,lbegin
      .,              lnbr,lperm,lvlend,nbr,node,root
 C
-      call degree(root,xadj,adjncy,mask,deg,ccsize,perm)
+      call az_degree(root,xadj,adjncy,mask,deg,ccsize,perm)
 C
       mask(root) = 0
       if(ccsize.le.1) return
@@ -70,7 +70,7 @@ C
 C
       return
       end
-      subroutine degree(root,xadj,adjncy,mask,deg,ccsize,ls)
+      subroutine az_degree(root,xadj,adjncy,mask,deg,ccsize,ls)
 C------------------------------------------------------------------
 C------------------------------------------------------------------
       integer adjncy(1),deg(1),ls(1),mask(1),xadj(1)
@@ -117,14 +117,14 @@ C
 C
       return
       end
-      subroutine fnroot(root,xadj,adjncy,mask,nlvl,xls,ls)
+      subroutine az_fnroot(root,xadj,adjncy,mask,nlvl,xls,ls)
 C---------------------------------------------------------------------
 C---------------------------------------------------------------------
       integer adjncy(1),ls(1),mask(1),xls(1),xadj(1)
       integer ccsize,j,jstrt,k,kstop,kstrt,mindeg,nabor,ndeg
      .,                                nlvl,node,nunlvl,root
 C
-      call rootls(root,xadj,adjncy,mask,nlvl,xls,ls)
+      call az_rootls(root,xadj,adjncy,mask,nlvl,xls,ls)
 C
       ccsize = xls(nlvl + 1) - 1
       if(nlvl.eq.1 .or.nlvl.eq.ccsize)return
@@ -151,7 +151,7 @@ C
       mindeg   = ndeg
 300   continue
 C
-400   call rootls(root,xadj,adjncy,mask,nunlvl,xls,ls)
+400   call az_rootls(root,xadj,adjncy,mask,nunlvl,xls,ls)
 C
       if(nunlvl.le.nlvl) return
       nlvl = nunlvl
@@ -160,7 +160,7 @@ C
 C
       return
       end
-      subroutine rootls(root,xadj,adjncy,mask,nlvl,xls,ls)
+      subroutine az_rootls(root,xadj,adjncy,mask,nlvl,xls,ls)
 C----------------------------------------------------------------------
 C----------------------------------------------------------------------
       integer adjncy(1) ,ls(1),mask(1),xls(1),xadj(1)

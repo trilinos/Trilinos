@@ -546,9 +546,9 @@ extern void AZ_fortransolve(double x[], double b[], int options[],
  * subroutine call. In this section we take these into account.
  */
 
-#   define FNROOT_F77                    F77_FUNC(fnroot,FNROOT)
+#   define AZ_FNROOT_F77                 F77_FUNC_(az_fnroot,AZ_FNROOT)
 #   define MC64AD_F77                    F77_FUNC(mc64ad,MC64AD)
-#   define RCM_F77                       F77_FUNC(rcm,RCM)
+#   define AZ_RCM_F77                    F77_FUNC_(az_rcm,AZ_RCM)
 #   define AZ_BROADCAST_F77              F77_FUNC_(az_broadcast,AZ_BROADCAST)
 #   define AZ_CHECK_INPUT_F77            F77_FUNC_(az_check_input,AZ_CHECK_INPUT)
 #   define AZ_CHECK_MSR_F77              F77_FUNC_(az_check_msr,AZ_CHECK_MSR)
@@ -594,6 +594,18 @@ extern void AZ_fortransolve(double x[], double b[], int options[],
 #   define AZ_SOLVE_F77                  F77_FUNC_(az_solve,AZ_SOLVE)
 #   define AZ_TRANSFORM_F77              F77_FUNC_(az_transform,AZ_TRANSFORM)
 
+#if defined(CRAY_T3X)
+
+#define AZ_DLASWP_F77  F77_FUNC_(az_slaswp,AZ_SLASWP)
+#define AZ_DLAIC1_F77  F77_FUNC_(az_slaic1,AZ_SLAIC1)
+
+#else
+
+#define AZ_DLASWP_F77  F77_FUNC_(az_dlaswp,AZ_DLASWP)
+#define AZ_DLAIC1_F77  F77_FUNC_(az_dlaic1,AZ_DLAIC1)
+
+#endif
+
 #ifndef FSUB_TYPE
 #define  FSUB_TYPE void
 #endif
@@ -602,6 +614,15 @@ extern void AZ_fortransolve(double x[], double b[], int options[],
 #include <stdio.h>
 extern "C" {
 #endif
+
+void PREFIX AZ_DLASWP_F77(int *, double *, int *, int *, int *, int *, int *);
+
+void PREFIX AZ_DLAIC1_F77(int * , int *, double *, double *, double *, double *,
+			  double *, double *, double *);
+void PREFIX AZ_SLASWP_F77(int *, float *, int *, int *, int *, int *, int *);
+
+void PREFIX AZ_SLAIC1_F77(int * , int *, float *, float *, float *, float *,
+			  float *, float *, float *);
 
   /* Aztec function prototypes that can be called by the user */
 
@@ -1426,13 +1447,13 @@ extern unsigned int md_mpi_write(void *, unsigned int ,int , int , int *,int *);
 /*                    Auxilliary fortran rroutines needed by Aztec           */
 /*****************************************************************************/
 
-extern void FNROOT_F77(int *,int *,int *,int *, int *, int *, int *);
+extern void AZ_FNROOT_F77(int *,int *,int *,int *, int *, int *, int *);
 
 extern void MC64AD_F77(int *, int *, int *, int *, int *, double*,
                     int *, int *, int *, int *, int *, double*,
                     int *, int *);
 
-extern void RCM_F77(int *, int *,int *, int *,int *, int *, int *);
+extern void AZ_RCM_F77(int *, int *,int *, int *,int *, int *, int *);
 
 /*****************************************************************************/
 /*                    Auxilliary routines available to users                 */

@@ -473,9 +473,9 @@ void AZ_find_MSR_ordering(int bindx2[],int **ordering,int N,
    for (i = 0 ; i < N ; i++ ) mask[i] = 1;
    root = 1;
    while (total != N ) {
-      FNROOT_F77(&root,bindx2,&(bindx2[N+1]),mask, &nlvl, 
+      AZ_FNROOT_F77(&root,bindx2,&(bindx2[N+1]),mask, &nlvl, 
               &((*ordering)[total]), *inv_ordering);
-      RCM_F77(&root,bindx2,&(bindx2[N+1]),mask,&((*ordering)[total]),
+      AZ_RCM_F77(&root,bindx2,&(bindx2[N+1]),mask,&((*ordering)[total]),
            &ccsize, *inv_ordering);
 
       if ( ccsize != N) {

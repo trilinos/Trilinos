@@ -164,6 +164,7 @@ UTIL = \
 	$(srcdir)/az_matrix_util.c \
 	$(srcdir)/az_pad_utils.c \
 	$(srcdir)/az_tools.c \
+	$(srcdir)/az_f_util.f \
 	$(srcdir)/az_util.c
 
 
@@ -262,10 +263,12 @@ DIST = \
 	$(srcdir)/az_poly.c \
 	$(srcdir)/az_qmrcgs.c \
 	$(srcdir)/az_rilu.c \
-	$(srcdir)/az_subdomain_solver.c \
-	$(srcdir)/az_xyce_gmres.c
+	$(srcdir)/az_subdomain_solver.c 
 
 
+
+#There is no evidence that this file is used by anyone
+#	$(srcdir)/az_xyce_gmres.c
 COMP_H = 
 
 COMP = \
@@ -274,8 +277,6 @@ COMP = \
 	$(srcdir)/az_old_matvec_mult.c \
 	$(srcdir)/az_precond.c \
 	$(srcdir)/az_reorder.f \
-	$(srcdir)/dlaic1.f \
-	$(srcdir)/dlaswp.f \
 	$(srcdir)/az_scaling.c \
 	$(srcdir)/az_solve.c \
 	$(srcdir)/az_sort.c 
@@ -379,23 +380,21 @@ libaztecoo_a_DEPENDENCIES =
 @HAVE_MPI_TRUE@	az_check.$(OBJEXT) az_flop_cnt.$(OBJEXT) \
 @HAVE_MPI_TRUE@	az_ilu_util.$(OBJEXT) az_interface.$(OBJEXT) \
 @HAVE_MPI_TRUE@	az_matrix_util.$(OBJEXT) az_pad_utils.$(OBJEXT) \
-@HAVE_MPI_TRUE@	az_tools.$(OBJEXT) az_util.$(OBJEXT) \
-@HAVE_MPI_TRUE@	az_fortran_wrap.$(OBJEXT) az_bilu.$(OBJEXT) \
-@HAVE_MPI_TRUE@	az_cg.$(OBJEXT) az_cgs.$(OBJEXT) \
-@HAVE_MPI_TRUE@	az_cgstab.$(OBJEXT) az_converge.$(OBJEXT) \
-@HAVE_MPI_TRUE@	az_dd_overlap.$(OBJEXT) az_dgemv2.$(OBJEXT) \
-@HAVE_MPI_TRUE@	az_dgemv3.$(OBJEXT) az_domain_decomp.$(OBJEXT) \
-@HAVE_MPI_TRUE@	az_fix_pt.$(OBJEXT) az_gmres.$(OBJEXT) \
-@HAVE_MPI_TRUE@	az_gmresr.$(OBJEXT) az_gsumd_puma.$(OBJEXT) \
-@HAVE_MPI_TRUE@	az_icc.$(OBJEXT) az_ilut.$(OBJEXT) \
-@HAVE_MPI_TRUE@	az_lu_y12.$(OBJEXT) az_poly.$(OBJEXT) \
-@HAVE_MPI_TRUE@	az_qmrcgs.$(OBJEXT) az_rilu.$(OBJEXT) \
-@HAVE_MPI_TRUE@	az_subdomain_solver.$(OBJEXT) \
-@HAVE_MPI_TRUE@	az_xyce_gmres.$(OBJEXT) az_colperm.$(OBJEXT) \
-@HAVE_MPI_TRUE@	az_matvec_mult.$(OBJEXT) \
+@HAVE_MPI_TRUE@	az_tools.$(OBJEXT) az_f_util.$(OBJEXT) \
+@HAVE_MPI_TRUE@	az_util.$(OBJEXT) az_fortran_wrap.$(OBJEXT) \
+@HAVE_MPI_TRUE@	az_bilu.$(OBJEXT) az_cg.$(OBJEXT) \
+@HAVE_MPI_TRUE@	az_cgs.$(OBJEXT) az_cgstab.$(OBJEXT) \
+@HAVE_MPI_TRUE@	az_converge.$(OBJEXT) az_dd_overlap.$(OBJEXT) \
+@HAVE_MPI_TRUE@	az_dgemv2.$(OBJEXT) az_dgemv3.$(OBJEXT) \
+@HAVE_MPI_TRUE@	az_domain_decomp.$(OBJEXT) az_fix_pt.$(OBJEXT) \
+@HAVE_MPI_TRUE@	az_gmres.$(OBJEXT) az_gmresr.$(OBJEXT) \
+@HAVE_MPI_TRUE@	az_gsumd_puma.$(OBJEXT) az_icc.$(OBJEXT) \
+@HAVE_MPI_TRUE@	az_ilut.$(OBJEXT) az_lu_y12.$(OBJEXT) \
+@HAVE_MPI_TRUE@	az_poly.$(OBJEXT) az_qmrcgs.$(OBJEXT) \
+@HAVE_MPI_TRUE@	az_rilu.$(OBJEXT) az_subdomain_solver.$(OBJEXT) \
+@HAVE_MPI_TRUE@	az_colperm.$(OBJEXT) az_matvec_mult.$(OBJEXT) \
 @HAVE_MPI_TRUE@	az_old_matvec_mult.$(OBJEXT) \
 @HAVE_MPI_TRUE@	az_precond.$(OBJEXT) az_reorder.$(OBJEXT) \
-@HAVE_MPI_TRUE@	dlaic1.$(OBJEXT) dlaswp.$(OBJEXT) \
 @HAVE_MPI_TRUE@	az_scaling.$(OBJEXT) az_solve.$(OBJEXT) \
 @HAVE_MPI_TRUE@	az_sort.$(OBJEXT) md_timer_mpi.$(OBJEXT) \
 @HAVE_MPI_TRUE@	md_wrap_mpi_c.$(OBJEXT)
@@ -409,8 +408,8 @@ libaztecoo_a_DEPENDENCIES =
 @HAVE_MPI_FALSE@	az_check.$(OBJEXT) az_flop_cnt.$(OBJEXT) \
 @HAVE_MPI_FALSE@	az_ilu_util.$(OBJEXT) az_interface.$(OBJEXT) \
 @HAVE_MPI_FALSE@	az_matrix_util.$(OBJEXT) az_pad_utils.$(OBJEXT) \
-@HAVE_MPI_FALSE@	az_tools.$(OBJEXT) az_util.$(OBJEXT) \
-@HAVE_MPI_FALSE@	md_timer_generic.$(OBJEXT) \
+@HAVE_MPI_FALSE@	az_tools.$(OBJEXT) az_f_util.$(OBJEXT) \
+@HAVE_MPI_FALSE@	az_util.$(OBJEXT) md_timer_generic.$(OBJEXT) \
 @HAVE_MPI_FALSE@	md_wrap_scalar_c.$(OBJEXT) \
 @HAVE_MPI_FALSE@	az_fortran_wrap.$(OBJEXT) az_bilu.$(OBJEXT) \
 @HAVE_MPI_FALSE@	az_cg.$(OBJEXT) az_cgs.$(OBJEXT) \
@@ -423,11 +422,9 @@ libaztecoo_a_DEPENDENCIES =
 @HAVE_MPI_FALSE@	az_lu_y12.$(OBJEXT) az_poly.$(OBJEXT) \
 @HAVE_MPI_FALSE@	az_qmrcgs.$(OBJEXT) az_rilu.$(OBJEXT) \
 @HAVE_MPI_FALSE@	az_subdomain_solver.$(OBJEXT) \
-@HAVE_MPI_FALSE@	az_xyce_gmres.$(OBJEXT) az_colperm.$(OBJEXT) \
-@HAVE_MPI_FALSE@	az_matvec_mult.$(OBJEXT) \
+@HAVE_MPI_FALSE@	az_colperm.$(OBJEXT) az_matvec_mult.$(OBJEXT) \
 @HAVE_MPI_FALSE@	az_old_matvec_mult.$(OBJEXT) \
 @HAVE_MPI_FALSE@	az_precond.$(OBJEXT) az_reorder.$(OBJEXT) \
-@HAVE_MPI_FALSE@	dlaic1.$(OBJEXT) dlaswp.$(OBJEXT) \
 @HAVE_MPI_FALSE@	az_scaling.$(OBJEXT) az_solve.$(OBJEXT) \
 @HAVE_MPI_FALSE@	az_sort.$(OBJEXT)
 libaztecoo_a_OBJECTS = $(am_libaztecoo_a_OBJECTS)
@@ -465,7 +462,6 @@ depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 @AMDEP_TRUE@	$(DEPDIR)/az_solve.Po $(DEPDIR)/az_sort.Po \
 @AMDEP_TRUE@	$(DEPDIR)/az_subdomain_solver.Po \
 @AMDEP_TRUE@	$(DEPDIR)/az_tools.Po $(DEPDIR)/az_util.Po \
-@AMDEP_TRUE@	$(DEPDIR)/az_xyce_gmres.Po \
 @AMDEP_TRUE@	$(DEPDIR)/md_timer_generic.Po \
 @AMDEP_TRUE@	$(DEPDIR)/md_timer_mpi.Po \
 @AMDEP_TRUE@	$(DEPDIR)/md_wrap_mpi_c.Po \
@@ -575,6 +571,7 @@ az_interface.$(OBJEXT): $(srcdir)/az_interface.c
 az_matrix_util.$(OBJEXT): $(srcdir)/az_matrix_util.c
 az_pad_utils.$(OBJEXT): $(srcdir)/az_pad_utils.c
 az_tools.$(OBJEXT): $(srcdir)/az_tools.c
+az_f_util.$(OBJEXT): $(srcdir)/az_f_util.f
 az_util.$(OBJEXT): $(srcdir)/az_util.c
 az_fortran_wrap.$(OBJEXT): $(srcdir)/az_fortran_wrap.c
 az_bilu.$(OBJEXT): $(srcdir)/az_bilu.c
@@ -597,14 +594,11 @@ az_poly.$(OBJEXT): $(srcdir)/az_poly.c
 az_qmrcgs.$(OBJEXT): $(srcdir)/az_qmrcgs.c
 az_rilu.$(OBJEXT): $(srcdir)/az_rilu.c
 az_subdomain_solver.$(OBJEXT): $(srcdir)/az_subdomain_solver.c
-az_xyce_gmres.$(OBJEXT): $(srcdir)/az_xyce_gmres.c
 az_colperm.$(OBJEXT): $(srcdir)/az_colperm.c
 az_matvec_mult.$(OBJEXT): $(srcdir)/az_matvec_mult.c
 az_old_matvec_mult.$(OBJEXT): $(srcdir)/az_old_matvec_mult.c
 az_precond.$(OBJEXT): $(srcdir)/az_precond.c
 az_reorder.$(OBJEXT): $(srcdir)/az_reorder.f
-dlaic1.$(OBJEXT): $(srcdir)/dlaic1.f
-dlaswp.$(OBJEXT): $(srcdir)/dlaswp.f
 az_scaling.$(OBJEXT): $(srcdir)/az_scaling.c
 az_solve.$(OBJEXT): $(srcdir)/az_solve.c
 az_sort.$(OBJEXT): $(srcdir)/az_sort.c
@@ -668,7 +662,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/az_subdomain_solver.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/az_tools.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/az_util.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/az_xyce_gmres.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/md_timer_generic.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/md_timer_mpi.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/md_wrap_mpi_c.Po@am__quote@
@@ -1049,18 +1042,6 @@ az_subdomain_solver.obj: $(srcdir)/az_subdomain_solver.c
 @AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o az_subdomain_solver.obj `cygpath -w $(srcdir)/az_subdomain_solver.c`
 
-az_xyce_gmres.o: $(srcdir)/az_xyce_gmres.c
-@AMDEP_TRUE@	source='$(srcdir)/az_xyce_gmres.c' object='az_xyce_gmres.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/az_xyce_gmres.Po' tmpdepfile='$(DEPDIR)/az_xyce_gmres.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o az_xyce_gmres.o `test -f $(srcdir)/az_xyce_gmres.c || echo '$(srcdir)/'`$(srcdir)/az_xyce_gmres.c
-
-az_xyce_gmres.obj: $(srcdir)/az_xyce_gmres.c
-@AMDEP_TRUE@	source='$(srcdir)/az_xyce_gmres.c' object='az_xyce_gmres.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/az_xyce_gmres.Po' tmpdepfile='$(DEPDIR)/az_xyce_gmres.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o az_xyce_gmres.obj `cygpath -w $(srcdir)/az_xyce_gmres.c`
-
 az_colperm.o: $(srcdir)/az_colperm.c
 @AMDEP_TRUE@	source='$(srcdir)/az_colperm.c' object='az_colperm.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@	depfile='$(DEPDIR)/az_colperm.Po' tmpdepfile='$(DEPDIR)/az_colperm.TPo' @AMDEPBACKSLASH@
@@ -1309,23 +1290,17 @@ CXXDEPMODE = @CXXDEPMODE@
 .f.obj:
 	$(F77COMPILE) -c -o $@ `cygpath -w $<`
 
+az_f_util.o: $(srcdir)/az_f_util.f
+	$(F77) $(AM_FFLAGS) $(FFLAGS) -c -o az_f_util.o `test -f $(srcdir)/az_f_util.f || echo '$(srcdir)/'`$(srcdir)/az_f_util.f
+
+az_f_util.obj: $(srcdir)/az_f_util.f
+	$(F77) $(AM_FFLAGS) $(FFLAGS) -c -o az_f_util.obj `cygpath -w $(srcdir)/az_f_util.f`
+
 az_reorder.o: $(srcdir)/az_reorder.f
 	$(F77) $(AM_FFLAGS) $(FFLAGS) -c -o az_reorder.o `test -f $(srcdir)/az_reorder.f || echo '$(srcdir)/'`$(srcdir)/az_reorder.f
 
 az_reorder.obj: $(srcdir)/az_reorder.f
 	$(F77) $(AM_FFLAGS) $(FFLAGS) -c -o az_reorder.obj `cygpath -w $(srcdir)/az_reorder.f`
-
-dlaic1.o: $(srcdir)/dlaic1.f
-	$(F77) $(AM_FFLAGS) $(FFLAGS) -c -o dlaic1.o `test -f $(srcdir)/dlaic1.f || echo '$(srcdir)/'`$(srcdir)/dlaic1.f
-
-dlaic1.obj: $(srcdir)/dlaic1.f
-	$(F77) $(AM_FFLAGS) $(FFLAGS) -c -o dlaic1.obj `cygpath -w $(srcdir)/dlaic1.f`
-
-dlaswp.o: $(srcdir)/dlaswp.f
-	$(F77) $(AM_FFLAGS) $(FFLAGS) -c -o dlaswp.o `test -f $(srcdir)/dlaswp.f || echo '$(srcdir)/'`$(srcdir)/dlaswp.f
-
-dlaswp.obj: $(srcdir)/dlaswp.f
-	$(F77) $(AM_FFLAGS) $(FFLAGS) -c -o dlaswp.obj `cygpath -w $(srcdir)/dlaswp.f`
 uninstall-info-am:
 install-nodist_pkgexecincludeHEADERS: $(nodist_pkgexecinclude_HEADERS)
 	@$(NORMAL_INSTALL)

@@ -79,6 +79,7 @@ UTIL = \
 	$(srcdir)/az_matrix_util.c \
 	$(srcdir)/az_pad_utils.c \
 	$(srcdir)/az_tools.c \
+	$(srcdir)/az_f_util.f \
 	$(srcdir)/az_util.c
 
 ENUM_H = 
@@ -178,8 +179,10 @@ DIST = \
 	$(srcdir)/az_poly.c \
 	$(srcdir)/az_qmrcgs.c \
 	$(srcdir)/az_rilu.c \
-	$(srcdir)/az_subdomain_solver.c \
-	$(srcdir)/az_xyce_gmres.c
+	$(srcdir)/az_subdomain_solver.c 
+
+#There is no evidence that this file is used by anyone
+#	$(srcdir)/az_xyce_gmres.c
 
 COMP_H = 
 
@@ -189,8 +192,6 @@ COMP = \
 	$(srcdir)/az_old_matvec_mult.c \
 	$(srcdir)/az_precond.c \
 	$(srcdir)/az_reorder.f \
-	$(srcdir)/dlaic1.f \
-	$(srcdir)/dlaswp.f \
 	$(srcdir)/az_scaling.c \
 	$(srcdir)/az_solve.c \
 	$(srcdir)/az_sort.c 
