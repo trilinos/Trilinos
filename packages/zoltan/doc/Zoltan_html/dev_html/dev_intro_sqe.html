@@ -1,0 +1,197 @@
+<!-----------------------------------------------------------------------------
+ ! Zoltan Library for Parallel Applications            !
+ ! Copyright (c) 2000,2001,2002, Sandia National Laboratories.                !
+ ! This document is released under the GNU Lesser General Public License.     !
+ ! For more info, see the README file in the top-level Zoltan directory.      !
+ !----------------------------------------------------------------------------!
+-->
+<!-- CVS File Information
+     $RCSfile$
+     $Author$
+     $Date$
+     $Revision$
+-->
+
+
+<HTML>
+<HEAD>
+   <META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-1">
+   <META NAME="GENERATOR" CONTENT="Mozilla/4.04 [en] (X11; U; SunOS 4.1.3_U1 sun4m) [Netscape]">
+   <META NAME="sandia.approved" CONTENT="SAND99-1376">
+   <META NAME="author" CONTENT="karen devine, kddevin@sandia.gov">
+   <TITLE>Zoltan Quality Program</TITLE>
+</HEAD>
+<BODY BGCOLOR="#FFFFFF">
+
+<div ALIGN=right><b><i><a href="dev.html">Zoltan Developer's Guide</a> |
+<a href="dev_dist.html">Next</a> | <a href="dev_intro_coding.html">Previous</a></i></b></div>
+
+
+<H2>
+<A NAME="SQE"></A>Zoltan Quality Assurance</H2>
+This document describes the Software Quality Assurance (SQA)
+policies and procedures used in the Zoltan project.  Zoltan developers
+at Sandia and under contract to Sandia are required to follow these
+software development policies.
+<blockquote>
+<a href="#Quality_Policy">Quality Policy</a>
+<br><a href="#Quality_Definition">Quality Definition</a>
+<br><A href="#Defect_Classification">Classification of Defects</a>
+<br><A href="#Release_Policy">Release Policy</a>
+<br><A href="#Quality_Tools">Software Quality Tools</a>
+<br><A href="#Quality_Processes">Software Quality Processes</a>
+</blockquote>
+
+
+
+<H3>
+<A NAME="Quality_Policy"></A>Quality Policy
+</H3>
+The Zoltan project has been funded by a variety of DOE programs
+(MICS, CSRF, ASCI, and LDRD).
+Thus, Zoltan is simultaneously under the umbrella of multiple quality
+programs including that of the Accelerated Strategic Computing 
+Initiative (ASCI). 
+Fortunately, all of these quality programs derive from the DOE/AL Quality 
+Criteria (QC-1). 
+Therefore, the Zoltan project is committed to a program of quality improvement 
+targeting the QC-1 standard.  
+The Zoltan team leader is the owner of the Zoltan quality program.
+<p>
+The entire delivered Zoltan product will be considered
+a &quot;class A&quot; program under ASCI program guidelines.
+Modules created before the ASCI guidelines had no formal QA
+program and will lack ASCI SQA artifacts (objective evidence). 
+<p>
+The  Zoltan team shall participate in all ASCI reporting processes as
+directed by ASCI management. 
+The Zoltan team will evaluate new practices to reflect ASCI Program Office 
+process revisions. 
+FY2004 money has been committed for quality improvement. 
+<p>
+Research software will follow the guidelines of QC-1 which allow specific 
+relaxations in the QA rigor for research activities.  
+<p>
+
+
+
+<H3><A NAME="Quality_Definition"></A>Quality Definition</H3>
+<p>
+The Zoltan project accepts the following definition of quality:
+&quot;the totality of characteristics of a product or service that bear on
+its ability to satisfy stated or implied needs.&quot; 
+This is known as the &quot;fitness for use&quot; definition of quality (ANSI/ASQC A8402-1994).
+<p>
+
+
+
+<H3><A NAME="Defect_Classification"></A>Classification of Defects</H3>
+The Zoltan project accepts the following system of classification of
+defects:
+<BLOCKQUOTE>
+<b>Critical:</b>  A defect that could lead to loss of life,
+significant environmental damage, or substantial financial loss.
+<br><b>Major:</b>  A non critical defect that significantly
+impacts  Zoltan's fitness for use.
+<br><b>Minor:</b>  A (non critical, non major) defect that
+reasonably impacts Zoltan's fitness for use.
+<br><b>Incidental:</b>  Any other defect which does not
+reasonably reduce Zoltan's fitness for use.
+</BLOCKQUOTE>
+<p>
+
+
+
+
+<H3><A NAME="Release_Policy"></A>Release Policy</H3>
+<p>
+Only the Zoltan team leader may authorize a release. 
+The Zoltan team leader shall not release software with 
+any known critical or major defects. 
+User registration shall allow the Zoltan team to 
+notify all Sandia and ASCI users and recall their
+defective software if a critical or major defect 
+is discovered after release. 
+The Zoltan team leader may determine that it is
+acceptable to release software with known minor or incidental defects.
+<p>
+
+
+
+
+<H3><A NAME="Quality_Tools"></A>Software Quality Tools</H3>
+<p> 
+Because of the small scale of the Zoltan Project, only a few, simple tools
+are required for use by developers:
+<BLOCKQUOTE> 
+<b>CVS:</b>  maintains code, documentation, meeting
+notes, emails, and QA program artifacts;
+<br><b>Purify, PureCoverage, Quantify (Rational):</b> 
+for code testing, coverage measurements, and performance analysis;
+<br><b>Bugzilla:</b>  tracks bugs and requests for changes
+and enhancements (deployment in FY2004);
+<br><b>Mailman:</b>  creates email lists to automatically
+notify users by area(s) of interest (deployment in FY2004);
+<br><b>Quality Function Deployment (QFD):</b>  tracks
+user requirements through implementation and testing 
+(phased-in deployment in FY2004 in which one pilot project will use QFD);
+<br><b>Makefiles:</b>  ensures proper compilation and linking
+for all supported platforms;
+<br><b>Zoltan Test Script:</b> runs 
+integration, regression, release and acceptance testing; and 
+<br><b>Kanban:</b>  Team Leader's white board displays
+all outstanding issues, schedules, and assignments.
+</BLOCKQUOTE>
+
+
+
+
+<H3><A NAME="Quality_Processes"></A>Software Quality Processes</H3>
+<p> 
+The Zoltan's software quality process defines how work may be performed,
+including
+process ownership, authorization to perform, activities and their sequence
+(if sequencing is required), process instructions, metrics, and checklists
+(with places to identify who performed each activity). 
+The only source for a process is Zoltan's CVS repository. 
+Currently the following processes are defined:
+
+<BLOCKQUOTE>
+<b>Meeting:</b> defines the process of calling
+and documenting meetings;
+<br><b>Development:</b> (not currently used) defines the software development 
+process including
+requirements, design, implementation, testing, reviews, and approvals;
+<br><b>Request:</b> defines the process of
+capturing user requests for new features;
+<br><b>Requirement:</b>  the process of capturing user comments that
+may become requirements after review and approval; 
+<br><b>Review:</b>  defines the materials reviewed prior to acceptance 
+for Zoltan release; and 
+<br><b>Release:</b> defines the release process
+including testing requirements and creation of the release product;
+</BLOCKQUOTE>
+
+<p>
+A Zoltan developer initiates a process by obtaining the
+current CVS version of the process, renaming it to reflect its usage, and
+committing the renamed process back into CVS in an appropriate directory 
+(on the same day to ensure that it is the current version). 
+As a policy, the process may continue under this committed version even if its
+original process is later superceded. 
+After one or more activities are completed, the renamed process is updated to
+reflect the results and committed back to CVS (with appropriate comments.) 
+A process is completed when all required activities are completed 
+including reviews
+and approvals (as necessary), and committed to CVS. 
+The final CVS comment should indicate that the process is complete.
+
+
+
+<HR WIDTH="100%">
+<BR>[<A HREF="dev.html">Table of Contents</A> | <A HREF="dev_dist.html">Next:
+Zoltan Distribution</A> | <A HREF="dev_intro_coding.html">Previous:
+Coding Principles in Zoltan</A>]
+</body>
+
+</html>
