@@ -1,37 +1,44 @@
+###############################################################################
+#                                                                             #
+# Trilinos README                                                             #
+#                                                                             #
+###############################################################################
 
-Sample build scripts for various platforms can be found in:
-Trilinos/sampleScripts
+Trilinos Website: http://software.sandia.gov/trilinos
 
-Please note that these sample scripts are only a starting 
-point for you to develop a script that works for your own platform.
-If you encounter difficulties, please consult the following 
-documentation.
+-------------------------------------------------------------------------------
 
+- Note that a simple "configure ; make ; make install" will typically not
+  provide the set of features you want from Trilinos. In particular, no
+  MPI support will be built this way. Trilinos is a complex collection of
+  interoperable packages and may require careful configuration.
 
-All Trilinos documentation can be found at the Trilinos website:
+- See one or more of the following publications for assistance with
+  installing and using Trilinos:
 
-http://software.sandia.gov/trilinos
+      Trilinos Overview       a broad overview
+      Trilinos Tutorial       in-depth tutorial for new users
+      Trilinos User Guide     concise guide for new users
+      Installation Manual     quick reference for experienced users
+      Configuration Manual    quick reference for experienced users
 
-More specifically, see 
+  These can all be found at:
 
-http://software.sandia.gov/trilinos/publications.html
+      http://software.sandia.gov/trilinos/publications.html
 
-for the following documents:
+- For help with a particular package, see the website and accompanying
+  documentation for that package. Links to these can be found down the
+  right side of any page on the website and at:
 
-	Trilinos Overview
-	Trilinos User Guide
-	Trilinos Installation Manual
-	Trilinos Configuration Manual
+      http://software.sandia.gov/trilinos/packages
 
-Also see,
+- Sample build scripts for various platforms can be found in:
 
+      Trilinos/sampleScripts
 
-http://software.sandia.gov/trilinos/developer/publications.html
+  Please note that these sample scripts are only a starting point for you
+  to develop a script that works for your own platform.
 
-for the Trilinos Developer Guide.
+- If you are having problems, visit:
 
-Package level documentation can be found at:
-
-http://software.sandia.gov/trilinos/packages.html
-
-
+      http://software.sandia.gov/trilinos/help.html
