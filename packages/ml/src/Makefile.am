@@ -150,28 +150,28 @@ $(srcdir)/Utils/ml_MultiLevelPreconditioner.h \
 $(srcdir)/Utils/ml_RowMatrix.h \
 $(srcdir)/Utils/ml_DD_prec.h \
 $(srcdir)/MLAPI/MLAPI.h                \
-$(srcdir)/MLAPI_Aggregation.h          \
-$(srcdir)/MLAPI_BaseObject.h           \
-$(srcdir)/MLAPI_BaseOperator.h         \
-$(srcdir)/MLAPI_CompObject.h           \
-$(srcdir)/MLAPI_Defaults.h             \
-$(srcdir)/MLAPI_Eig.h                  \
-$(srcdir)/MLAPI_EpetraBaseOperator.h   \
-$(srcdir)/MLAPI_Expressions.h          \
-$(srcdir)/MLAPI_Gallery.h              \
-$(srcdir)/MLAPI_InverseOperator.h      \
-$(srcdir)/MLAPI_Krylov.h               \
-$(srcdir)/MLAPI_MATLABStream.h         \
-$(srcdir)/MLAPI_Matrix.h               \
-$(srcdir)/MLAPI_MultiLevelSA.h         \
-$(srcdir)/MLAPI_MultiVector.h          \
-$(srcdir)/MLAPI_MultiVector_Utils.h    \
-$(srcdir)/MLAPI_Operator_Box.h         \
-$(srcdir)/MLAPI_Operator.h             \
-$(srcdir)/MLAPI_Operator_Utils.h       \
-$(srcdir)/MLAPI_Space.h                \
-$(srcdir)/MLAPI_TimeObject.h           \
-$(srcdir)/MLAPI_Workspace.h
+$(srcdir)/MLAPI/MLAPI_Aggregation.h          \
+$(srcdir)/MLAPI/MLAPI_BaseObject.h           \
+$(srcdir)/MLAPI/MLAPI_BaseOperator.h         \
+$(srcdir)/MLAPI/MLAPI_CompObject.h           \
+$(srcdir)/MLAPI/MLAPI_Defaults.h             \
+$(srcdir)/MLAPI/MLAPI_Eig.h                  \
+$(srcdir)/MLAPI/MLAPI_EpetraBaseOperator.h   \
+$(srcdir)/MLAPI/MLAPI_Expressions.h          \
+$(srcdir)/MLAPI/MLAPI_Gallery.h              \
+$(srcdir)/MLAPI/MLAPI_InverseOperator.h      \
+$(srcdir)/MLAPI/MLAPI_Krylov.h               \
+$(srcdir)/MLAPI/MLAPI_MATLABStream.h         \
+$(srcdir)/MLAPI/MLAPI_Matrix.h               \
+$(srcdir)/MLAPI/MLAPI_MultiLevelSA.h         \
+$(srcdir)/MLAPI/MLAPI_MultiVector.h          \
+$(srcdir)/MLAPI/MLAPI_MultiVector_Utils.h    \
+$(srcdir)/MLAPI/MLAPI_Operator_Box.h         \
+$(srcdir)/MLAPI/MLAPI_Operator.h             \
+$(srcdir)/MLAPI/MLAPI_Operator_Utils.h       \
+$(srcdir)/MLAPI/MLAPI_Space.h                \
+$(srcdir)/MLAPI/MLAPI_TimeObject.h           \
+$(srcdir)/MLAPI/MLAPI_Workspace.h
 
 UTIL = \
 $(srcdir)/Utils/ml_rbm.c \
