@@ -74,7 +74,7 @@ else
     rm -f $file
 endif
 echo $file
-echo "Date: " `eval date` >>& $file
+echo "Date: " `eval date` > $file
 echo `uname -a` >>& $file
 ## Different directory structures will require different setups.
 ## This file assumes a structure like that of epetra - exe's live in 
@@ -88,7 +88,7 @@ echo `uname -a` >>& $file
 
 ## List the subdirectories of 'test' containing test exe's in the foreach loop
 ## if directory structure is like that of epetra.
-foreach f (BTF Composite MapColoring Overlap Singletonfilter SymmRCM View Zoltan)
+foreach f (BTF Composite MapColoring Overlap Permutation SingletonFilter SymmRCM View Zoltan)
 	cd $f
 	foreach g(*.exe)
 		echo "############" $g "##############" >>& ../$file

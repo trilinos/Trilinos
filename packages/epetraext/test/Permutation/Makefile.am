@@ -26,16 +26,28 @@
 # ************************************************************************
 #@HEADER
 
-if BUILD_TRANSFORM_TESTS
+EXEEXT = .exe
 
-if HAVE_MPI
+noinst_PROGRAMS = Permutation_test
 
-SUBDIRS = BTF Composite MapColoring Permutation SingletonFilter SymmRCM View Overlap Zoltan scripts
+Permutation_test_SOURCES = \
+  $(srcdir)/cxx_main.cpp \
+  $(top_srcdir)/test/epetra_test_err.h
 
-else
+Permutation_test_DEPENDENCIES = \
+  $(top_builddir)/src/transform/libepetraext_trans.a \
+  $(top_builddir)/../epetra/src/libepetra.a
 
-SUBDIRS = BTF Composite MapColoring Permutation SingletonFilter SymmRCM View scripts
+Permutation_test_CXXFLAGS = -I$(top_srcdir)/src/transform \
+                                -I$(top_builddir)/src \
+                                -I$(top_srcdir)/../epetra/src \
+                                -I$(top_builddir)/../epetra/src
 
-endif
+Permutation_test_LDADD = \
+  $(top_builddir)/src/transform/libepetraext_trans.a \
+  $(top_builddir)/../epetra/src/libepetra.a \
+  $(BLAS_LIBS) \
+  $(LIBS) \
+  $(FLIBS)
 
-endif
+

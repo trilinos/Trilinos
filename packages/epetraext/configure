@@ -8865,7 +8865,7 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 # Output files
 # ------------------------------------------------------------------------
 ##
-                                                                                                                                                                                              ac_config_files="$ac_config_files Makefile src/Makefile src/transform/Makefile test/Makefile test/BTF/Makefile test/Composite/Makefile test/MapColoring/Makefile test/Overlap/Makefile test/SingletonFilter/Makefile test/SymmRCM/Makefile test/View/Makefile test/Zoltan/Makefile test/scripts/Makefile test/scripts/daily/Makefile test/scripts/daily/serial/Makefile test/scripts/daily/mpi/Makefile test/scripts/weekly/Makefile test/scripts/weekly/serial/Makefile test/scripts/weekly/mpi/Makefile"
+ac_config_files="$ac_config_files Makefile src/Makefile src/transform/Makefile test/Makefile test/BTF/Makefile test/Composite/Makefile test/MapColoring/Makefile test/Overlap/Makefile test/Permutation/Makefile test/SingletonFilter/Makefile test/SymmRCM/Makefile test/View/Makefile test/Zoltan/Makefile test/scripts/Makefile test/scripts/daily/Makefile test/scripts/daily/serial/Makefile test/scripts/daily/mpi/Makefile test/scripts/weekly/Makefile test/scripts/weekly/serial/Makefile test/scripts/weekly/mpi/Makefile"
 
 
 cat >confcache <<\_ACEOF
@@ -9480,6 +9480,7 @@ do
   "test/Composite/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/Composite/Makefile" ;;
   "test/MapColoring/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/MapColoring/Makefile" ;;
   "test/Overlap/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/Overlap/Makefile" ;;
+  "test/Permutation/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/Permutation/Makefile" ;;
   "test/SingletonFilter/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/SingletonFilter/Makefile" ;;
   "test/SymmRCM/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/SymmRCM/Makefile" ;;
   "test/View/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/View/Makefile" ;;

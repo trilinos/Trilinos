@@ -53,6 +53,8 @@ class Transform_Composite : public SameTypeTransform<T>
  public:
 
   typedef SameTypeTransform<T> * TransformTypePtr;
+  typedef typename SameTypeTransform<T>::NewTypeRef NewTypeRef;
+  typedef typename SameTypeTransform<T>::OriginalTypeRef OriginalTypeRef;
 
   ///
   /** Default Constructor
@@ -126,8 +128,8 @@ class Transform_Composite : public SameTypeTransform<T>
 
  protected:
 
-  typedef std::list<TransformTypePtr>::iterator         TransListIter;
-  typedef std::list<TransformTypePtr>::reverse_iterator TransListRvsIter;
+  typedef typename std::list<TransformTypePtr>::iterator         TransListIter;
+  typedef typename std::list<TransformTypePtr>::reverse_iterator TransListRvsIter;
 
   std::list<TransformTypePtr> transList_;
 
@@ -151,7 +153,7 @@ addTransform( TransformTypePtr new_trans )
 }
 
 template<typename T>
-Transform_Composite<T>::NewTypeRef
+typename Transform_Composite<T>::NewTypeRef
 Transform_Composite<T>::
 operator()( OriginalTypeRef orig )
 {

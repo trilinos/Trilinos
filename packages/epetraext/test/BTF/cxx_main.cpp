@@ -28,6 +28,8 @@
 
 // CrsGraph_BTF Test routine
 
+#include <Epetra_ConfigDefs.h>
+
 #ifdef EPETRA_MPI
 #include "Epetra_MpiComm.h"
 #include <mpi.h>
@@ -38,6 +40,7 @@
 #include "Epetra_CrsGraph.h"
 #include "EDT_CrsGraph_BTF.h"
 #include "../epetra_test_err.h"
+
 
 int main(int argc, char *argv[]) {
 
@@ -86,7 +89,9 @@ int main(int argc, char *argv[]) {
   int NumMyElements = 3;
   int NumGlobalElements = NumMyElements;
   int IndexBase = 0;
-  
+ 
+  cout << "MyPID: " << MyPID << ", NumMyElements: " << NumMyElements << endl;
+
   Epetra_Map Map( NumMyElements, 0, Comm );
   cout << Map << endl;
   

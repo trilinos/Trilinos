@@ -350,6 +350,7 @@ AC_CONFIG_FILES([
                 test/Composite/Makefile
                 test/MapColoring/Makefile
                 test/Overlap/Makefile
+                test/Permutation/Makefile
                 test/SingletonFilter/Makefile
                 test/SymmRCM/Makefile
                 test/View/Makefile

@@ -27,6 +27,7 @@
 //@HEADER
 
 // CrsMatrix_MapColoring Test routine
+#include <Epetra_ConfigDefs.h>
 
 #ifdef EPETRA_MPI
 #include "Epetra_MpiComm.h"
@@ -79,9 +80,10 @@ int main(int argc, char *argv[]) {
   if(argv[loc][0]=='-' && argv[loc][1]=='v')
   { verbose = true; ++loc; }
 
-  int nx = atoi( argv[loc++] );
+  int nx = 5;
+  if (loc < argc) nx = atoi( argv[loc++] );
   int ny = 1;
-  if( argc == (loc+1) ) ny = atoi( argv[loc] );
+  if( loc < argc) ny = atoi( argv[loc] );
 
 #ifdef EPETRA_MPI
   Epetra_MpiComm Comm(MPI_COMM_WORLD);

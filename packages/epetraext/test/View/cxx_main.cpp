@@ -27,6 +27,7 @@
 //@HEADER
 
 // CrsGraph_View Test routine
+#include <Epetra_ConfigDefs.h>
 
 #ifdef EPETRA_MPI
 #include "Epetra_MpiComm.h"
