@@ -40,8 +40,9 @@ my $SUMMARY = 8;                      # test-harness summary
 # Host Operating System Variable
 chomp (my $hostOS=`uname`);
 $hostOS =~ s/\s*$//; 
-    
-print "\nTEST - UPDATED VERSION\n\n";
+
+print "\nTEST - UPDATED VERSION 001\n\n";    
+print "\@ARGV: \n@ARGV\n\n\$0: \n$0\n\n";
         
 ################################################################################
 # Execution ####################################################################
@@ -298,7 +299,13 @@ report($SUMMARY);
                 # Finished updating.
                 # Replace ourself with the new, updated version of ourselves.
                 chdir "$options{'TRILINOS_DIR'}[0]/testharness";
-                exec ("perl", $0, "-u", @ARGV);
+                $command = "";
+                $command .= "perl $0 -u ";
+                foreach my $arg (@ARGV) {
+                    $command .= "$arg ";
+                }
+                print $command;
+                exec $command;
             }
         }
         
