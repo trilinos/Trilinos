@@ -59,8 +59,8 @@
 
 #include <vector>
 #ifdef HAVE_NOX_EPETRAEXT 	// Use epetraext package in Trilinos
-#include "EDT_CrsGraph_MapColoring.h"
-#include "EDT_CrsGraph_MapColoringIndex.h"
+#include "EpetraExt_MapColoring.h"
+#include "EpetraExt_MapColoringIndex.h"
 #else  // Otherwise use the local version of the needed coloring files
 #include "nox_EDT_CrsGraph_MapColoring.H"
 #include "nox_EDT_CrsGraph_MapColoringIndex.H"

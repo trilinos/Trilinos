@@ -37,8 +37,8 @@
 #include "GenericEpetraProblem.H"
 
 #ifdef HAVE_NOX_EPETRAEXT       // Use epetraext package in Trilinos
-#include "EDT_CrsGraph_MapColoring.h"
-#include "EDT_CrsGraph_MapColoringIndex.h"
+#include "EpetraExt_MapColoring.h"
+#include "EpetraExt_MapColoringIndex.h"
 #endif  
 
 //Forward declarations

@@ -86,8 +86,8 @@
 // Headers needed for FD coloring 
 #include <vector> 
 #ifdef HAVE_NOX_EPETRAEXT       // Use epetraext package in Trilinos
-#include "EDT_CrsGraph_MapColoring.h"
-#include "EDT_CrsGraph_MapColoringIndex.h" 
+#include "EpetraExt_MapColoring.h"
+#include "EpetraExt_MapColoringIndex.h" 
 #endif
 
 // User's application specific files 

@@ -1143,8 +1143,14 @@ if test X${ADDON_epetra} = Xyes; then
   fi
 
   if test X${BUILD_NOX_EPETRAEXT_SUPPORT} = Xyes; then
+    TRILINOS_HEADER(epetraext,EpetraExt_ConfigDefs.h,src)
+    TRILINOS_HEADER(epetraext,EpetraExt_Transform.h,src/transform)
     TRILINOS_HEADER(epetraext,EpetraExt_config.h,src)
-    TRILINOS_HEADER(epetraext,Epetra_Transform.h,src/transform)
+    TRILINOS_CXXFLAGS="${REL_TRILINOS_CPPFLAGS}"
+  fi
+
+  if test X${BUILD_NOX_EPETRAEXT_SUPPORT} = Xyes; then
+    TRILINOS_HEADER(epetraext,EpetraExt_MapColoring.h,src/coloring)
   fi
 
   TRILINOS_CXXFLAGS="${REL_TRILINOS_CPPFLAGS}"
@@ -1233,7 +1239,7 @@ if test X${ADDON_epetra_EXAMPLES} = Xyes ||
   fi
 
   if test X${BUILD_NOX_EPETRAEXT_SUPPORT} = Xyes; then
-    TRILINOS_LIB_CHECK(epetraext_trans,epetraext,src/transform)
+    TRILINOS_LIB_CHECK(epetraext,epetraext,src)
     AC_DEFINE(HAVE_NOX_EPETRAEXT,1,[define that epetraext is activated in nox])
   fi
 

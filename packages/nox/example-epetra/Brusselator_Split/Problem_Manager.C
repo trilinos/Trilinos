@@ -49,8 +49,8 @@
 // Headers needed for Coloring
 #ifdef HAVE_NOX_EPETRAEXT       // Use epetraext package in Trilinos
 #include "Epetra_MapColoring.h"
-#include "EDT_CrsGraph_MapColoring.h"
-#include "EDT_CrsGraph_MapColoringIndex.h"
+#include "EpetraExt_MapColoring.h"
+#include "EpetraExt_MapColoringIndex.h"
 #endif
 
 // Header for Timing info
