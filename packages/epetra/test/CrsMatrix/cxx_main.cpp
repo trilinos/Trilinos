@@ -616,7 +616,14 @@ cout << A2;
 
   Comm.Barrier();
 
-  if (verbose) cout << "\n\n*****Testing InvRowSums" << endl << endl;
+  if (verbose) cout << "\n\n*****Testing InvRowMaxs and InvColMaxs" << endl << endl;
+
+  cout << A2 << endl;
+  EPETRA_TEST_ERR(A2.InvRowMaxs(xRow),ierr);
+  EPETRA_TEST_ERR(A2.InvRowMaxs(xRange),ierr);
+  cout << xRow <<endl << xRange << endl;
+
+  if (verbose) cout << "\n\n*****Testing InvRowSums and InvColSums" << endl << endl;
   bool InvSumsBroke = false;
 // Works!
   EPETRA_TEST_ERR(A2.InvRowSums(xRow),ierr);
@@ -682,10 +689,7 @@ delete [] Indices2;
 
 /* end main
 */
-if (ierr >= 0)
-  return 0; //Test Harness requires a return code of 0 to indicate "pass".
-else 
-  return ierr;
+return ierr ;
 }
 
 int power_method(bool TransA, Epetra_CrsMatrix& A, Epetra_Vector& q, Epetra_Vector& z, 
