@@ -1182,7 +1182,7 @@ int ML_MGHierarchy_ReitzingerDestroy(int finest_level, int coarsest_level,
 
     if (*Tmat_array != NULL)
     {
-       for (level = finest_level; level >= coarsest_level; level--)
+       for (level = finest_level; level >= 0; level--)
        {
           ML_Operator_Destroy((*Tmat_array)+level);
           (*Tmat_array)[level] = NULL;
@@ -1193,7 +1193,7 @@ int ML_MGHierarchy_ReitzingerDestroy(int finest_level, int coarsest_level,
 
     if (*Tmat_trans_array != NULL)
     {
-       for (level = finest_level; level >= coarsest_level; level--)
+       for (level = finest_level; level >= 0; level--)
        {
           ML_Operator_Destroy((*Tmat_trans_array)+level);
           (*Tmat_trans_array)[level] = NULL;
