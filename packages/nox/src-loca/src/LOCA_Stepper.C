@@ -315,7 +315,7 @@ LOCA::Stepper::start() {
    LOCA::Continuation::AbstractGroup& solnGrp = 
      const_cast<LOCA::Continuation::AbstractGroup&>(constSolnGrp);
   curGroupPtr = 
-    conGroupManagerPtr->createContinuationGroup(solnGrp, paramListPtr->sublist("NOX").sublist("Direction").sublist("Linear Solver"));
+    conGroupManagerPtr->createContinuationGroup(solnGrp, paramListPtr->sublist("NOX").sublist("Direction").sublist("Newton").sublist("Linear Solver"));
 
   // Do printing (stepNumber==0 case) after continuation group set up
   if (solverStatus == NOX::StatusTest::Failed) 
@@ -404,7 +404,7 @@ LOCA::Stepper::finish(LOCA::Abstract::Iterator::IteratorStatus iteratorStatus)
     // Get new continuation group
     delete curGroupPtr;
 
-    curGroupPtr = conGroupManagerPtr->createContinuationGroup(underlyingGroup, lastStepParams.sublist("NOX").sublist("Direction").sublist("Linear Solver"));
+    curGroupPtr = conGroupManagerPtr->createContinuationGroup(underlyingGroup, lastStepParams.sublist("NOX").sublist("Direction").sublist("Newton").sublist("Linear Solver"));
       
     // Set step size
     stepSize = targetValue - value;
@@ -597,7 +597,7 @@ LOCA::Stepper::computeStepSize(LOCA::Abstract::Iterator::StepStatus stepStatus,
   if (res == NOX::Abstract::Group::Failed)
     return LOCA::Abstract::Iterator::Unsuccessful;
 
-  stepSize *= pow(tangentFactor, tangentFactorExponent);
+  stepSize *= pow(fabs(tangentFactor), tangentFactorExponent);
   
   // Cap the con parameter so we don't go past bounds
   double prevValue = curGroupPtr->getContinuationParameter();
@@ -631,6 +631,7 @@ LOCA::Stepper::getParameterList() const
 void 
 LOCA::Stepper::printInitializationInfo()
 {  
+  cout.precision(6);
   if (Utils::doPrint(Utils::StepperIteration)) {
     cout << endl << Utils::fill(72, '~') << endl;
     cout << "Beginning Continuation Run \n" 
@@ -648,6 +649,7 @@ void
 LOCA::Stepper::printStartStep()
 {  
   if (Utils::doPrint(Utils::StepperIteration)) {
+    cout.precision(6);
     cout << "\n" << Utils::fill(72, '~') << "\n";
     cout << "Start of Continuation Step " << stepNumber << endl;
     if (stepNumber==0) {
@@ -671,6 +673,7 @@ LOCA::Stepper::printStartStep()
 void 
 LOCA::Stepper::printEndStep(LOCA::Abstract::Iterator::StepStatus stepStatus)
 {
+  cout.precision(6);
   if (stepStatus == LOCA::Abstract::Iterator::Successful) {
     // Print results of successful continuation step
     if (Utils::doPrint(Utils::StepperIteration)) {

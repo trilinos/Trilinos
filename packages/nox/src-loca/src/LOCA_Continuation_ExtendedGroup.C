@@ -185,6 +185,9 @@ LOCA::Continuation::ExtendedGroup::computeTangent() {
   
   // Solve J*tanX = -df/dp
   res = grpPtr->applyJacobianInverse(linearSolverParams, *dfdpVec, tanX);
+  // Unconverged linear solve is OK, hope predictor is OK anyway
+  if (res == NOX::Abstract::Group::NotConverged)
+     res = NOX::Abstract::Group::Ok;
   if (res != NOX::Abstract::Group::Ok)
     return res;
 
