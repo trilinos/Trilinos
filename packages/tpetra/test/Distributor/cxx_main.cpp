@@ -1,11 +1,11 @@
 // Tpetra Distributor tester
-// Modified: 23-Nov-2002
+// Modified: 21-Jan-2003
 
 #define PACKETTYPE float
 #define ORDINALTYPE int
 
 
-#include "Tpetra_SerialDistributor.h"
+#include "Tpetra_SerialDistributor.hpp"
 
 int main(int argc, char* argv[]) {
 	bool verbose = false;

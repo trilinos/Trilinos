@@ -2,15 +2,16 @@
 03-August-2002 BES tester. Initial writeup.
 18-Oct-2002 Modified.
 22-Oct-2002 Changed to test out BES/BESData friend wrinkles.
+21-Jan-2003 Updated for .hpp
 */
 
 #define ORDINALTYPE int
 
 #include <iostream>
 #include <iomanip>
-#include "Tpetra_SerialPlatform.h" 
-#include "Tpetra_ElementSpace.h"
-#include "Tpetra_BlockElementSpace.h"
+#include "Tpetra_SerialPlatform.hpp" 
+#include "Tpetra_ElementSpace.hpp"
+#include "Tpetra_BlockElementSpace.hpp"
 
 int main(int argc, char* argv[]) {
 

@@ -2,10 +2,11 @@
 16-July-2002 CommTester.
 21-Sept-2002 Updated for Comm/Platform split.
 12-Nov-2002 Updated for new templating scheme (no changes).
+21-Jan-2003 Updated for .hpp
 */
 
 #include <iostream>
-#include "Tpetra_SerialComm.h"
+#include "Tpetra_SerialComm.hpp"
 
 // function prototypes
 template<typename PacketType, typename OrdinalType> void setRandom(PacketType& vals, OrdinalType count);

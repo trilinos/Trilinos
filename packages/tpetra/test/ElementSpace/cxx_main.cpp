@@ -1,13 +1,13 @@
 // Tpetra ElementSpace tester
-// Modified: 14-Oct-2002
+// Modified: 21-Jan-2003
 // Paul says: I'll get around to making this a more thorough tester real soon now.
 
 #define ORDINALTYPE int
 
 #include <iostream>
 #include <iomanip>
-#include "Tpetra_SerialPlatform.h" 
-#include "Tpetra_ElementSpace.h"
+#include "Tpetra_SerialPlatform.hpp" 
+#include "Tpetra_ElementSpace.hpp"
 
 void platformTester(bool verbose, bool debug);
 void esTester(bool verbose, bool debug);

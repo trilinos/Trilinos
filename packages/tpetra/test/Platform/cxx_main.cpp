@@ -1,14 +1,14 @@
 // Tpetra Platform tester
-// Modified: 12-Nov-2002
+// Modified: 21-Jan-2003
 
 #define SCALARTYPE float
 #define ORDINALTYPE int
 
 #ifdef TPETRA_MPI
-#include "Tpetra_MpiPlatform.h" 
+#include "Tpetra_MpiPlatform.hpp" 
 #include <mpi.h>
 #else
-#include "Tpetra_SerialPlatform.h"
+#include "Tpetra_SerialPlatform.hpp"
 #endif
 
 int main(int argc, char* argv[]) {
