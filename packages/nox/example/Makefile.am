@@ -52,14 +52,16 @@ libnoxexample_a_SOURCES = \
 
 libnoxexample_a_CXXFLAGS = -I$(top_srcdir)/src
 
+libnoxexample_a_LIBADD = $(CXXREPOS)
+
 rosenbrock_SOURCES = $(srcdir)/Rosenbrock.C
 
 rosenbrock_DEPENDENCIES = $(top_builddir)/example/libnoxexample.a $(top_builddir)/src/libnox.a 
 
 rosenbrock_CXXFLAGS = -I$(top_srcdir)/src
 
-# Order matters here!
-rosenbrock_LDADD = $(CXXREPOS) -L$(top_builddir)/src -L$(top_builddir)/example -lnoxexample -lnox 
+# Be sure to specify the **exact** library you want since others may be elsewhere in the path
+rosenbrock_LDADD = $(top_builddir)/example/libnoxexample.a $(top_builddir)/src/libnox.a 
 
 # ------------------------------------------------------------------------
 # For using a special archiver

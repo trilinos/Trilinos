@@ -127,14 +127,16 @@ libnoxexample_a_SOURCES = \
 
 libnoxexample_a_CXXFLAGS = -I$(top_srcdir)/src
 
+libnoxexample_a_LIBADD = $(CXXREPOS)
+
 rosenbrock_SOURCES = $(srcdir)/Rosenbrock.C
 
 rosenbrock_DEPENDENCIES = $(top_builddir)/example/libnoxexample.a $(top_builddir)/src/libnox.a 
 
 rosenbrock_CXXFLAGS = -I$(top_srcdir)/src
 
-# Order matters here!
-rosenbrock_LDADD = $(CXXREPOS) -L$(top_builddir)/src -L$(top_builddir)/example -lnoxexample -lnox 
+# Be sure to specify the **exact** library you want since others may be elsewhere in the path
+rosenbrock_LDADD = $(top_builddir)/example/libnoxexample.a $(top_builddir)/src/libnox.a 
 
 
 # ------------------------------------------------------------------------
@@ -156,7 +158,7 @@ CONFIG_HEADER = $(top_builddir)/src/NOX_Config.h
 CONFIG_CLEAN_FILES =
 LIBRARIES = $(noinst_LIBRARIES)
 
-libnoxexample_a_LIBADD =
+libnoxexample_a_DEPENDENCIES =
 am_libnoxexample_a_OBJECTS = \
 	libnoxexample_a-NOX_Example_Vector.$(OBJEXT) \
 	libnoxexample_a-NOX_Example_Matrix.$(OBJEXT) \

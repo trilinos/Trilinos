@@ -45,7 +45,7 @@ example_DEPENDENCIES = $(top_builddir)/src/libnox.a \
 example_CXXFLAGS = $(TRILINOS_CXXFLAGS) \
 	-I$(top_srcdir)/src -I$(top_srcdir)/src-epetra
 
-example_LDADD = -L$(top_builddir)/src -L$(top_builddir)/src-epetra \
-                -lnox -lnoxepetra 
+example_LDADD = $(top_builddir)/src/libnox.a \
+        $(top_builddir)/src-epetra/libnoxepetra.a
 
 
