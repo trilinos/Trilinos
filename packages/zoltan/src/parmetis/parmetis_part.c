@@ -91,6 +91,21 @@ int LB_ParMetis(
   *imp_procs = NULL;
   */
 
+  /* Initialize all local pointers to NULL. This is necessary
+   * because we free all non-NULL pointers upon errors.
+   */
+  destproc = nbors_proc = NULL;
+  vtxdist = xadj = adjncy = adjptr = vwgt = adjwgt = part = NULL;
+  float_vwgt = xyz = NULL;
+  proc_list = NULL;
+  ptr = new = NULL;
+  hashtab = NULL;
+  hash_nodes = NULL;
+  sendbuf = recvbuf = NULL;
+  plan = NULL;
+  request = NULL;
+  status = NULL;
+
   /* Set parameters */
   strcpy(alg, "PartKway");
   vwgt_dim = 0;
@@ -163,6 +178,7 @@ int LB_ParMetis(
     printf("[%1d] Debug: num_obj =%d\n", lb->Proc, num_obj);
 #endif
   
+  vtxdist = (idxtype *)LB_MALLOC((lb->Num_Proc+1)* sizeof(idxtype));
   global_ids = (LB_GID *) LB_MALLOC(num_obj * sizeof(LB_GID) );
   local_ids = (LB_LID *) LB_MALLOC(num_obj * sizeof(LB_LID) );
   if (vwgt_dim)
@@ -172,7 +188,7 @@ int LB_ParMetis(
     vwgt = NULL;
   }
 
-  if (!global_ids || !local_ids || (vwgt_dim && !float_vwgt)){
+  if (!vtxdist || !global_ids || !local_ids || (vwgt_dim && !float_vwgt)){
     /* Not enough memory */
     return LB_MEMERR;
   }
@@ -182,12 +198,27 @@ int LB_ParMetis(
 #ifdef LB_DEBUG
     printf("[%1d] Error: LB_Get_Obj_List failed!\n", lb->Proc);
 #endif
+    return LB_FATAL;
   }
 
 #ifdef LB_DEBUG
     printf("[%1d] Debug: Global ids = ", lb->Proc);
     for (i99=0; i99<num_obj; i99++) printf("%d ", global_ids[i99]);
     printf("\n");
+#endif
+  
+  /* The vtxdist array is required by all ParMetis routines */
+  /* Scan over all procs to determine the number range for each proc */
+  MPI_Scan (&num_obj, vtxdist, 1, IDX_DATATYPE, MPI_SUM, lb->Communicator);
+  MPI_Allgather (&vtxdist[0], 1, IDX_DATATYPE, 
+                 &vtxdist[1], 1, IDX_DATATYPE, lb->Communicator);
+  vtxdist[0] = 0;
+  
+#ifdef LB_DEBUG
+  printf("[%1d] Debug: vtxdist = ", lb->Proc);
+  for (i99=0; i99<=lb->Num_Proc; i99++)
+    printf("%d ", vtxdist[i99]);
+  printf("\n");
 #endif
   
   if (get_graph_data){
@@ -207,7 +238,6 @@ int LB_ParMetis(
 #endif
   
     /* Allocate space for ParMETIS data structs */
-    vtxdist= (idxtype *)LB_MALLOC((lb->Num_Proc+1)* sizeof(idxtype));
     xadj   = (idxtype *)LB_MALLOC((num_obj+1)* sizeof(idxtype));
     adjncy = (idxtype *)LB_MALLOC(sum_edges * sizeof(idxtype));
     if (ewgt_dim) 
@@ -215,7 +245,7 @@ int LB_ParMetis(
     else
       adjwgt = NULL;
   
-    if (!vtxdist || !xadj || !adjncy || (ewgt_dim && !adjwgt)){
+    if (!xadj || !adjncy || (ewgt_dim && !adjwgt)){
       /* Not enough memory */
       return LB_MEMERR;
     }
@@ -225,19 +255,6 @@ int LB_ParMetis(
   
     /* Construct ParMETIS graph */
     /* First compute a global dense numbering of the objects/vertices */
-  
-    /* Scan over all procs to determine the number range for each proc */
-    MPI_Scan (&num_obj, vtxdist, 1, IDX_DATATYPE, MPI_SUM, lb->Communicator);
-    MPI_Allgather (&vtxdist[0], 1, IDX_DATATYPE, 
-                   &vtxdist[1], 1, IDX_DATATYPE, lb->Communicator);
-    vtxdist[0] = 0;
-  
-#ifdef LB_DEBUG
-    printf("[%1d] Debug: vtxdist = ", lb->Proc);
-    for (i99=0; i99<=lb->Num_Proc; i99++)
-      printf("%d ", vtxdist[i99]);
-    printf("\n");
-#endif
   
     /* Construct local hash table */
     hash_nodes = (struct LB_hash_node *)LB_MALLOC(num_obj *
@@ -500,6 +517,7 @@ int LB_ParMetis(
     xyz = (float *) LB_MALLOC(ndims*num_obj * sizeof(float));
     if (!xyz){
       /* Not enough space */
+      return LB_MEMERR;
     }
     /* Get the geometry data */
     for (i=0; i<num_obj; i++){
@@ -513,14 +531,18 @@ int LB_ParMetis(
     }
   }
 
-  /* Get a time here */
-  if (get_times) times[1] = MPI_Wtime();
-
-  /* Call ParMETIS */
+  /* Get ready to call ParMETIS */
   wgtflag = 2*(vwgt_dim>0) + (ewgt_dim>0); /* Multidim wgts not supported yet */
   numflag = 0;
   part = (idxtype *)LB_MALLOC(num_obj * sizeof(idxtype));
+  if (!part){
+    /* Not enough memory */
+    return LB_MEMERR;
+  }
   
+  /* Get a time here */
+  if (get_times) times[1] = MPI_Wtime();
+
   /* Select the desired ParMetis function */
 #ifdef LB_DEBUG
     printf("[%1d] Debug: Calling ParMETIS partitioner ...\n", lb->Proc);
@@ -565,7 +587,7 @@ int LB_ParMetis(
   /* Get a time here */
   if (get_times) times[2] = MPI_Wtime();
 
-#ifdef LB_DEBUG
+#ifdef LB_DEBUG 
     printf("[%1d] Debug: Returned from ParMETIS partitioner with edgecut= %d\n", lb->Proc, edgecut);
 #endif
 
@@ -662,9 +684,10 @@ int LB_ParMetis(
     printf("\n");
 #endif
 
-    /* Free buffers */
+    /* Free comm buffers */
     LB_Free((void **) &sendbuf);
     LB_Free((void **) &recvbuf);
+    LB_Free((void **) &plan);
 
   } /* end if (flag>0) */
 
@@ -672,15 +695,11 @@ int LB_ParMetis(
   LB_Free((void **) &part);
   LB_Free((void **) &local_ids);
   LB_Free((void **) &global_ids);
-  if (get_graph_data){
-    LB_Free((void **) &destproc);
-    LB_Free((void **) &vtxdist);
-    LB_Free((void **) &xadj);
-    LB_Free((void **) &adjncy);
-  }
-  if (get_geom_data){
-    LB_Free((void **) &xyz);
-  }
+  LB_Free((void **) &destproc);
+  LB_Free((void **) &vtxdist);
+  LB_Free((void **) &xadj);
+  LB_Free((void **) &adjncy);
+  LB_Free((void **) &xyz);
 
   /* Get a time here */
   if (get_times) times[3] = MPI_Wtime();
