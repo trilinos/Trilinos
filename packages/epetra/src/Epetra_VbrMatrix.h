@@ -80,7 +80,7 @@ class Epetra_VbrMatrix: public Epetra_DistObject, public Epetra_CompObject, publ
     \param In
            CV - A Epetra_DataAccess enumerated type set to Copy or View.
     \param In 
-           RowMap - A Epetra_BlockMap.
+           RowMap - A Epetra_BlockMap listing the block rows that this processor will contribute to.
     \param In
            NumBlockEntriesPerRow - An integer array of length NumRows
 	   such that NumBlockEntriesPerRow[i] indicates the (approximate) number of Block entries in the ith row.
@@ -93,13 +93,44 @@ class Epetra_VbrMatrix: public Epetra_DistObject, public Epetra_CompObject, publ
     \param In
            CV - A Epetra_DataAccess enumerated type set to Copy or View.
     \param In 
-           RowMap - A Epetra_BlockMap.
+           RowMap - An Epetra_BlockMap listing the block rows that this processor will contribute to.
     \param In
            NumBlockEntriesPerRow - An integer that indicates the (approximate) number of Block entries in the each Block row.
 	   Note that it is possible to use 0 for this value and let fill occur during the insertion phase.
 	   
   */
   Epetra_VbrMatrix(Epetra_DataAccess CV, const Epetra_BlockMap& RowMap, int NumBlockEntriesPerRow);
+
+  //! Epetra_VbrMatrix constuctor with variable number of indices per row.
+  /*! Creates a Epetra_VbrMatrix object and allocates storage.  
+    
+    \param In
+           CV - A Epetra_DataAccess enumerated type set to Copy or View.
+    \param In 
+           RowMap - A Epetra_BlockMap listing the block rows that this processor will contribute to.
+    \param In 
+           ColMap - A Epetra_BlockMap.
+    \param In
+           NumBlockEntriesPerRow - An integer array of length NumRows
+	   such that NumBlockEntriesPerRow[i] indicates the (approximate) number of Block entries in the ith row.
+  */
+  Epetra_VbrMatrix(Epetra_DataAccess CV, const Epetra_BlockMap& RowMap, const Epetra_BlockMap& ColMap, int *NumBlockEntriesPerRow);
+  
+  //! Epetra_VbrMatrix constuctor with fixed number of indices per row.
+  /*! Creates a Epetra_VbrMatrix object and allocates storage.  
+    
+    \param In
+           CV - A Epetra_DataAccess enumerated type set to Copy or View.
+    \param In 
+           RowMap - A Epetra_BlockMap listing the block rows that this processor will contribute to.
+    \param In 
+           ColMap - An Epetra_BlockMap listing the block columns that this processor will contribute to.
+    \param In
+           NumBlockEntriesPerRow - An integer that indicates the (approximate) number of Block entries in the each Block row.
+	   Note that it is possible to use 0 for this value and let fill occur during the insertion phase.
+	   
+  */
+  Epetra_VbrMatrix(Epetra_DataAccess CV, const Epetra_BlockMap& RowMap, const Epetra_BlockMap& ColMap, int NumBlockEntriesPerRow);
 
   //! Construct a matrix using an existing Epetra_CrsGraph object.
   /*! Allows the nonzero structure from another matrix, or a structure that was
@@ -812,16 +843,10 @@ class Epetra_VbrMatrix: public Epetra_DistObject, public Epetra_CompObject, publ
     const Epetra_BlockMap & RowMap() const {return((Epetra_BlockMap &)Graph_->RowMap());};
 
     //! Returns the Epetra_BlockMap object associated with columns of this matrix.
-    const Epetra_BlockMap & ColMap() const {return((Epetra_BlockMap &)Graph_->RowMap());};
-
-    //! Returns the Epetra_BlockMap object that describes the import vector for distributed operations.
-    const Epetra_BlockMap & ImportMap() const {return((Epetra_BlockMap &) Graph_->ImportMap());};
+    const Epetra_BlockMap & ColMap() const {return((Epetra_BlockMap &)Graph_->ColMap());};
 
     //! Returns the Epetra_Import object that contains the import operations for distributed operations.
     const Epetra_Import * Importer() const {return(Graph_->Importer());};
-
-    //! Returns the Epetra_BlockMap object that describes the export vector for distributed operations.
-    const Epetra_BlockMap & ExportMap() const {return((Epetra_BlockMap &) Graph_->ExportMap());};
 
     //! Returns the Epetra_Export object that contains the export operations for distributed operations.
     const Epetra_Export * Exporter() const {return(Graph_->Exporter());};
@@ -835,8 +860,8 @@ class Epetra_VbrMatrix: public Epetra_DistObject, public Epetra_CompObject, publ
     //! Returns the RowMap object as an Epetra_BlockMap (the Epetra_Map base class) needed for implementing Epetra_RowMatrix.
     const Epetra_BlockMap & BlockRowMap() const {return((Epetra_BlockMap &)Graph_->RowMap());};
 
-    //! Returns the Import object as an Epetra_BlockMap (the Epetra_Map base class) needed for implementing Epetra_RowMatrix.
-    const Epetra_BlockMap & BlockImportMap() const {return((Epetra_BlockMap &)Graph_->ImportMap());};
+    //! Returns the ColMap as an Epetra_BlockMap (the Epetra_Map base class) needed for implementing Epetra_RowMatrix.
+    const Epetra_BlockMap & BlockColMap() const {return((Epetra_BlockMap &)Graph_->ColMap());};
 
     //! Fills a matrix with rows from a source matrix based on the specified importer.
 
@@ -978,6 +1003,12 @@ class Epetra_VbrMatrix: public Epetra_DistObject, public Epetra_CompObject, publ
     \return Integer error code, set to 0 if successful.
   */
     int NumMyRowEntries(int MyRow, int & NumEntries) const;
+  //@}
+
+  //@{ \name Deprecated methods:  These methods still work, but will be removed in a future version.
+
+    //! Use BlockColMap() instead. 
+    const Epetra_BlockMap & BlockImportMap() const {return((Epetra_BlockMap &)Graph_->ColMap());};
   //@}
 
  protected:

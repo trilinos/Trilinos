@@ -63,6 +63,39 @@ Epetra_CrsMatrix::Epetra_CrsMatrix(Epetra_DataAccess CV, const Epetra_Map& RowMa
   int ierr = Allocate();
 }
 //==============================================================================
+Epetra_CrsMatrix::Epetra_CrsMatrix(Epetra_DataAccess CV, const Epetra_Map& RowMap, 
+				   const Epetra_Map& ColMap, int *NumEntriesPerRow) 
+  : Epetra_DistObject(RowMap, "Epetra::CrsMatrix"),
+    Epetra_CompObject(),
+    Epetra_BLAS(),
+    Graph_(0),
+    Allocated_(false),
+    StaticGraph_(false),
+    NumMyRows_(RowMap.NumMyPoints()),
+    CV_(CV)
+{
+  Graph_ = new Epetra_CrsGraph(CV, RowMap, ColMap, NumEntriesPerRow);
+  InitializeDefaults();
+  int ierr = Allocate();
+}
+
+//==============================================================================
+Epetra_CrsMatrix::Epetra_CrsMatrix(Epetra_DataAccess CV, const Epetra_Map& RowMap, 
+				   const Epetra_Map& ColMap, int NumEntriesPerRow) 
+  : Epetra_DistObject(RowMap, "Epetra::CrsMatrix"),
+    Epetra_CompObject(),
+    Epetra_BLAS(),
+    Graph_(0),
+    Allocated_(false),
+    StaticGraph_(false),
+    NumMyRows_(RowMap.NumMyPoints()),
+    CV_(CV)
+{
+  Graph_ = new Epetra_CrsGraph(CV, RowMap, ColMap,  NumEntriesPerRow);
+  InitializeDefaults();
+  int ierr = Allocate();
+}
+//==============================================================================
 Epetra_CrsMatrix::Epetra_CrsMatrix(Epetra_DataAccess CV, const Epetra_CrsGraph & Graph) 
   : Epetra_DistObject(Graph.Map(), "Epetra::CrsMatrix"),
     Epetra_CompObject(),
@@ -355,10 +388,10 @@ int Epetra_CrsMatrix::TransformToLocal() {
 //==========================================================================
 int Epetra_CrsMatrix::TransformToLocal(Epetra_BlockMap *DomainMap, Epetra_BlockMap *RangeMap) {
   
-  if (!StaticGraph()) Graph_->MakeIndicesLocal(*DomainMap, *RangeMap);
+  if (!StaticGraph()) EPETRA_CHK_ERR(Graph_->MakeIndicesLocal(*DomainMap, *RangeMap));
   SortEntries();  // Sort column entries from smallest to largest
   MergeRedundantEntries(); // Get rid of any redundant index values
-  if (!StaticGraph()) Graph_->TransformToLocal(DomainMap, RangeMap);
+  if (!StaticGraph()) EPETRA_CHK_ERR(Graph_->TransformToLocal(DomainMap, RangeMap));
 
 
   return(0);

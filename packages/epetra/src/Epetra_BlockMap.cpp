@@ -51,7 +51,8 @@ Epetra_BlockMap::Epetra_BlockMap(int NumGlobalElements, int ElementSize, int Ind
     ConstantElementSize_(true),
     LinearMap_(true),
     LastContiguousGIDLoc_(0),
-    LIDHash_(0)
+    LIDHash_(0),
+    NumReferences_(1)
     
 {
   // Each processor gets roughly numGlobalPoints/p points
@@ -115,7 +116,8 @@ Epetra_BlockMap::Epetra_BlockMap(int NumGlobalElements, int NumMyElements,
     ConstantElementSize_(true),
     LinearMap_(true),
     LastContiguousGIDLoc_(0),
-    LIDHash_(0)
+    LIDHash_(0),
+    NumReferences_(1)
 {
   // Each processor gets NumMyElements points
   
@@ -209,7 +211,8 @@ Epetra_BlockMap::Epetra_BlockMap(int NumGlobalElements, int NumMyElements, int *
     ConstantElementSize_(true),
     LinearMap_(false),
     LastContiguousGIDLoc_(0),
-    LIDHash_(0)
+    LIDHash_(0),
+    NumReferences_(1)
 {
   int i;
   // Each processor gets NumMyElements points
@@ -319,7 +322,8 @@ Epetra_BlockMap::Epetra_BlockMap(int NumGlobalElements, int NumMyElements, int *
     ConstantElementSize_(false),
     LinearMap_(false),
     LastContiguousGIDLoc_(0),
-    LIDHash_(0)
+    LIDHash_(0),
+    NumReferences_(1)
 {
   int i;
   // Each processor gets NumMyElements points
@@ -471,11 +475,13 @@ Epetra_BlockMap::Epetra_BlockMap(const Epetra_BlockMap& map)
 #ifdef EPETRA_BLOCKMAP_NEW_LID
     ,
     LastContiguousGIDLoc_(map.LastContiguousGIDLoc_),
-    LIDHash_(new Epetra_HashTable(*map.LIDHash_))
+    LIDHash_(new Epetra_HashTable(*map.LIDHash_)),
+    NumReferences_(1)
 #else
     ,
     LastContiguousGIDLoc_(0),
-    LIDHash_(0)
+    LIDHash_(0),
+    NumReferences_(1)
 #endif
 {
   int i;
@@ -508,25 +514,31 @@ Epetra_BlockMap::Epetra_BlockMap(const Epetra_BlockMap& map)
 //==============================================================================
 Epetra_BlockMap::~Epetra_BlockMap(void)  {
 
-  if (MyGlobalElements_ != 0 && NumMyElements_>0) delete [] MyGlobalElements_;
-  MyGlobalElements_ = 0;
-  
-  if (FirstPointInElementList_ != 0 && NumMyElements_>0) delete [] FirstPointInElementList_;
-  FirstPointInElementList_ = 0;
-  
-  if (ElementSizeList_ != 0 && NumMyElements_>0) delete [] ElementSizeList_;
-  ElementSizeList_ = 0;
 
-  if (PointToElementList_ != 0 && NumMyPoints_>0) delete [] PointToElementList_;
-  PointToElementList_ = 0;
+  NumReferences_--; // Decrement reference counter
 
-  if (Directory_ !=0) delete Directory_;
-  Directory_ = 0;
-
-  if (LID_ !=0 && NumMyElements_>0) delete [] LID_;
-  LID_ = 0;
-
-  if( LIDHash_ ) delete LIDHash_;
+  // If no more references, delete data
+  if (NumReferences_==0) {
+    if (MyGlobalElements_ != 0 && NumMyElements_>0) delete [] MyGlobalElements_;
+    MyGlobalElements_ = 0;
+    
+    if (FirstPointInElementList_ != 0 && NumMyElements_>0) delete [] FirstPointInElementList_;
+    FirstPointInElementList_ = 0;
+    
+    if (ElementSizeList_ != 0 && NumMyElements_>0) delete [] ElementSizeList_;
+    ElementSizeList_ = 0;
+    
+    if (PointToElementList_ != 0 && NumMyPoints_>0) delete [] PointToElementList_;
+    PointToElementList_ = 0;
+    
+    if (Directory_ !=0) delete Directory_;
+    Directory_ = 0;
+    
+    if (LID_ !=0 && NumMyElements_>0) delete [] LID_;
+    LID_ = 0;
+    
+    if( LIDHash_ ) delete LIDHash_;
+  }
 }
 
 

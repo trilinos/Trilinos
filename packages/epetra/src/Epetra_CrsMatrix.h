@@ -82,7 +82,7 @@ class Epetra_CrsMatrix: public Epetra_DistObject, public Epetra_CompObject, publ
     \param In
            CV - A Epetra_DataAccess enumerated type set to Copy or View.
     \param In 
-           RowMap - A Epetra_Map.
+           RowMap - An Epetra_Map listing the rows that this processor will contribute to.
     \param In
            NumEntriesPerRow - An integer array of length NumRows
 	   such that NumEntriesPerRow[i] indicates the (approximate) number of entries in the ith row.
@@ -95,13 +95,44 @@ class Epetra_CrsMatrix: public Epetra_DistObject, public Epetra_CompObject, publ
     \param In
            CV - A Epetra_DataAccess enumerated type set to Copy or View.
     \param In 
-           RowMap - A Epetra_Map.
+           RowMap - An Epetra_Map listing the rows that this processor will contribute to.
     \param In
            NumEntriesPerRow - An integer that indicates the (approximate) number of entries in the each row.
 	   Note that it is possible to use 0 for this value and let fill occur during the insertion phase.
 	   
   */
   Epetra_CrsMatrix(Epetra_DataAccess CV, const Epetra_Map& RowMap, int NumEntriesPerRow);
+
+  //! Epetra_CrsMatrix constuctor with variable number of indices per row.
+  /*! Creates a Epetra_CrsMatrix object and allocates storage.  
+    
+    \param In
+           CV - A Epetra_DataAccess enumerated type set to Copy or View.
+    \param In 
+           RowMap - An Epetra_Map listing the rows that this processor will contribute to.
+    \param In 
+           ColMap - An Epetra_Map listing the columns that this processor will contribute to.
+    \param In
+           NumEntriesPerRow - An integer array of length NumRows
+	   such that NumEntriesPerRow[i] indicates the (approximate) number of entries in the ith row.
+  */
+  Epetra_CrsMatrix(Epetra_DataAccess CV, const Epetra_Map& RowMap, const Epetra_Map& ColMap, int *NumEntriesPerRow);
+  
+  //! Epetra_CrsMatrix constuctor with fixed number of indices per row.
+  /*! Creates a Epetra_CrsMatrix object and allocates storage.  
+    
+    \param In
+           CV - A Epetra_DataAccess enumerated type set to Copy or View.
+    \param In 
+           RowMap - An Epetra_Map listing the rows that this processor will contribute to.
+    \param In 
+           ColMap - An Epetra_Map listing the columns that this processor will contribute to.
+    \param In
+           NumEntriesPerRow - An integer that indicates the (approximate) number of entries in the each row.
+	   Note that it is possible to use 0 for this value and let fill occur during the insertion phase.
+	   
+  */
+  Epetra_CrsMatrix(Epetra_DataAccess CV, const Epetra_Map& RowMap, const Epetra_Map& ColMap, int NumEntriesPerRow);
 
   //! Construct a matrix using an existing Epetra_CrsGraph object.
   /*! Allows the nonzero structure from another matrix, or a structure that was
@@ -604,14 +635,11 @@ class Epetra_CrsMatrix: public Epetra_DistObject, public Epetra_CompObject, publ
     //! Returns the Epetra_Map object associated with the rows of this matrix.
     const Epetra_Map & RowMap() const {return((Epetra_Map &)Graph_->RowMap());};
 
-    //! Returns the Epetra_Map object that describes the import vector for distributed operations.
-    const Epetra_Map & ImportMap() const {return((Epetra_Map &) Graph_->ImportMap());};
+    //! Returns the Epetra_Map object that describes the column distribution across processors.
+    const Epetra_Map & ColMap() const {return((Epetra_Map &) Graph_->ColMap());};
 
     //! Returns the Epetra_Import object that contains the import operations for distributed operations.
     const Epetra_Import * Importer() const {return(Graph_->Importer());};
-
-    //! Returns the Epetra_Map object that describes the export vector for distributed operations.
-    const Epetra_Map & ExportMap() const {return((Epetra_Map &) Graph_->ExportMap());};
 
     //! Returns the Epetra_Export object that contains the export operations for distributed operations.
     const Epetra_Export * Exporter() const {return(Graph_->Exporter());};
@@ -735,6 +763,14 @@ class Epetra_CrsMatrix: public Epetra_DistObject, public Epetra_CompObject, publ
   */
     int NumMyRowEntries(int MyRow, int & NumEntries) const;
   //@}
+
+  //@{ \name Deprecated methods:  These methods still work, but will be removed in a future version.
+
+
+    //! Use ColMap() instead. 
+    const Epetra_Map & ImportMap() const {return((Epetra_Map &) Graph_->ImportMap());};
+  //@}
+
 
  protected:
     bool Allocated() const {return(Allocated_);};

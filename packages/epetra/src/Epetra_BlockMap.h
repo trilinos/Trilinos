@@ -465,6 +465,10 @@ class Epetra_BlockMap: public Epetra_Object {
   const Epetra_Comm& Comm() const {return(*Comm_);};
   //@}
 
+  //@{ \name Expert Users and Developers Only
+  Epetra_BlockMap * NewReference() const { NumReferences_++; return((Epetra_BlockMap *) this);};
+  //@}
+
   friend class Epetra_Directory;
   friend class Epetra_LocalMap;
   
@@ -503,6 +507,7 @@ class Epetra_BlockMap: public Epetra_Object {
 
   int LastContiguousGIDLoc_;
   Epetra_HashTable * LIDHash_;
+  mutable int NumReferences_;
 
 };
 

@@ -69,7 +69,8 @@ class Epetra_CrsGraph: public Epetra_DistObject {
     \param In
            CV - A Epetra_DataAccess enumerated type set to Copy or View.
     \param In 
-           RowMap - A Epetra_BlockMap (or Epetra_Map or Epetra_LocalMap).
+           RowMap - An Epetra_BlockMap (or Epetra_Map or Epetra_LocalMap) listing the rows that this 
+	   processor will contribute to.
     \param In
            NumIndicesPerRow - An integer array of length NumMyRows
 	   such that NumIndicesPerRow[i] indicates the (approximate) number of entries in the ith row.
@@ -82,13 +83,51 @@ class Epetra_CrsGraph: public Epetra_DistObject {
     \param In
            CV - A Epetra_DataAccess enumerated type set to Copy or View.
     \param In 
-           RowMap - A Epetra_BlockMap (or Epetra_Map or Epetra_LocalMap).
+           RowMap - An Epetra_BlockMap (or Epetra_Map or Epetra_LocalMap) listing the rows that this 
+	   processor will contribute to.
     \param In
            NumIndicesPerRow - An integer that indicates the (approximate) number of entries in the each row.
 	   Note that it is possible to use 0 for this value and let fill occur during the insertion phase.
 	   
   */
   Epetra_CrsGraph(Epetra_DataAccess CV, const Epetra_BlockMap& RowMap, int NumIndicesPerRow);
+  
+  //! Epetra_CrsGraph constuctor with variable number of indices per row.
+  /*! Creates a Epetra_CrsGraph object and allocates storage.  
+    
+    \param In
+           CV - A Epetra_DataAccess enumerated type set to Copy or View.
+    \param In 
+           RowMap - An Epetra_BlockMap (or Epetra_Map or Epetra_LocalMap) listing the rows that this 
+	   processor will contribute to.
+    \param In 
+           ColMap - An Epetra_BlockMap (or Epetra_Map or Epetra_LocalMap) listing the columns that this 
+	   processor will contribute to.
+    \param In
+           NumIndicesPerRow - An integer array of length NumMyRows
+	   such that NumIndicesPerRow[i] indicates the (approximate) number of entries in the ith row.
+  */
+  Epetra_CrsGraph(Epetra_DataAccess CV, const Epetra_BlockMap& RowMap, 
+		  const Epetra_BlockMap& ColMap, int *NumIndicesPerRow);
+  
+  //! Epetra_CrsGraph constuctor with fixed number of indices per row.
+  /*! Creates a Epetra_CrsGraph object and allocates storage.  
+    
+    \param In
+           CV - A Epetra_DataAccess enumerated type set to Copy or View.
+    \param In 
+           RowMap - An Epetra_BlockMap (or Epetra_Map or Epetra_LocalMap) listing the rows that this 
+	   processor will contribute to.
+    \param In 
+           ColMap - An Epetra_BlockMap (or Epetra_Map or Epetra_LocalMap) listing the columns that this 
+	   processor will contribute to.
+    \param In
+           NumIndicesPerRow - An integer that indicates the (approximate) number of entries in the each row.
+	   Note that it is possible to use 0 for this value and let fill occur during the insertion phase.
+	   
+  */
+  Epetra_CrsGraph(Epetra_DataAccess CV, const Epetra_BlockMap& RowMap, 
+		  const Epetra_BlockMap& ColMap, int NumIndicesPerRow);
   
   //! Copy constructor.
   Epetra_CrsGraph(const Epetra_CrsGraph & Graph);
@@ -370,28 +409,17 @@ class Epetra_CrsGraph: public Epetra_DistObject {
     //! Returns the RowMap associated with this matrix.
     const Epetra_BlockMap& RowMap() const {return(Epetra_DistObject::Map());};
     
+    //! Returns the Column Map associated with this matrix.
+    const Epetra_BlockMap& ColMap() const {return(*ColMap_);};
+    
     //! Returns the DomainMap associated with this matrix.
     const Epetra_BlockMap& DomainMap() const {return(*DomainMap_);};
     
     //! Returns the RangeMap associated with this matrix.
     const Epetra_BlockMap& RangeMap() const {return(*RangeMap_);};
 
-    //! Returns the ImportMap associated with this matrix.
-    /*! ImportMap is the a map of global indices that are needed for column access by this graph.
-        This information will be used by the matrix classes for distributed matrix operations.
-     */
-    const Epetra_BlockMap& ImportMap() const 
-      {if (ImportMap_==0) return (RowMap()); else return(*ImportMap_);};
-
     //! Returns the Importer associated with this matrix.
     const Epetra_Import * Importer() const {return(Importer_);};
-
-    //! Returns the ExportMap associated with this matrix.
-    /*! ExportMap is the a map of global indices that are needed for updating elements in the
-        range of this graph that are computed on this processor but not owned by this processor.
-        This information will be used by the matrix classes for distributed matrix operations.
-     */
-    const Epetra_BlockMap& ExportMap() const {return(*ExportMap_);};
 
     //! Returns the Exporter associated with this matrix.
     const Epetra_Export * Exporter() const {return(Exporter_);};
@@ -409,10 +437,10 @@ class Epetra_CrsGraph: public Epetra_DistObject {
     int GRID( int LRID) const {return(RowMap().GID(LRID));};
 
     //! Returns the local column index for given global column index, returns -1 if no local column for this global column.
-    int LCID( int GCID) const;
+    int LCID( int GCID) const {if (ColMap_==0) return(-1); else return(ColMap().LID(GCID));};
 
     //! Returns the global column index for give local column index, returns IndexBase-1 if we don't have this local column.
-    int GCID( int LCID) const;
+    int GCID( int LCID) const {if (ColMap_==0) return(-1); else return(ColMap().GID(LCID));};
  
     //! Returns true if the GRID passed in belongs to the calling processor in this map, otherwise returns false.
     bool  MyGRID(int GRID) const {return(LRID(GRID)!=-1);};
@@ -431,6 +459,12 @@ class Epetra_CrsGraph: public Epetra_DistObject {
 
   //! Print method
   virtual void Print(ostream & os) const;
+  //@}
+  //@{ \name Deprecated methods:  These methods still work, but will be removed in a future version.
+
+
+    //! Use ColMap() instead. 
+    const Epetra_BlockMap& ImportMap() const {return(*ColMap_);};
   //@}
 
     
@@ -460,6 +494,8 @@ class Epetra_CrsGraph: public Epetra_DistObject {
     friend class Epetra_VbrMatrix;
 
  private:
+    int MakeColMap(const Epetra_BlockMap & DomainMap, const Epetra_BlockMap & RangeMap);
+    int MakeImportExport();
     void InitializeDefaults();
     int Allocate(int * NumIndicesPerRow, int Inc );
     int ComputeGlobalConstants();
@@ -491,9 +527,8 @@ class Epetra_CrsGraph: public Epetra_DistObject {
   // Defined by TransformToLocal and related
   Epetra_BlockMap * DomainMap_;
   Epetra_BlockMap * RangeMap_;
-  Epetra_BlockMap * ImportMap_;
+  Epetra_BlockMap * ColMap_;
   Epetra_Import * Importer_;
-  Epetra_BlockMap * ExportMap_;
   Epetra_Export * Exporter_;
 
   bool Filled_;
