@@ -1,0 +1,8 @@
+CPPFLAGS="-D__USE_STD_IOSTREAM"
+CXXFLAGS="-O3 -DMPICH_SKIP_MPICXX"
+TRILINOS_TEMPLATE_OBJS=cxx_repository/*.o
+CFLAGS=-O3
+FFLAGS=-O3
+--with-amesos-dscpacklib=/usr/users/jmwille/Trilinos3PL/DSCPACK1.0/DSC_LIB/dsclibdbl.a
+--with-amesos-dscpackdir=/usr/users/jmwille/Trilinos3PL/DSCPACK1.0
+--with-trilinos3pldir=/usr/users/jmwille/Trilinos3PL
