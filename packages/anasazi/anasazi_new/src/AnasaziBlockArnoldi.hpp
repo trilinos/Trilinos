@@ -140,7 +140,6 @@ namespace Anasazi {
     void BlkOrthSing( MultiVec<TYPE>& Vec_in, const int j );
     void ComputeEvecs();
     void Restart();
-    void SetInitBlock();
     void SetBlkTols();
     void CheckBlkArnRed( const int j );
     void CheckSchurVecs( const int j ); 
@@ -157,7 +156,7 @@ namespace Anasazi {
     int *_order;
     int _restartiter, _iter, _jstart, _jend, _nevblock;
     int _offset, _maxoffset;
-    bool _initialguess, _isdecompcurrent, _isevecscurrent, _exit_flg, _dep_flg;
+    bool _isdecompcurrent, _isevecscurrent, _exit_flg, _dep_flg;
     TYPE _schurerror, _scalefactor, _dep_tol, _blk_tol, _sing_tol, _def_tol;
 
     // Information obtained from the eigenproblem
@@ -197,7 +196,6 @@ namespace Anasazi {
     _nevblock(0),
     _offset(0),
     _maxoffset(0),
-    _initialguess(true), 
     _isdecompcurrent(false),
     _isevecscurrent(false),
     _exit_flg(false),
@@ -350,62 +348,6 @@ namespace Anasazi {
       cout<<"******************************************************"<<endl;
     }	
   }
-
-  template <class TYPE>
-  void BlockArnoldi<TYPE>::SetInitBlock() {
-    int i;
-    int *index = new int[ _block ]; assert(index!=NULL);
-    
-    // This method will set the first block of _basisvecs to the initial guess,
-    // if one is given, else it will fill the block with random vectors.
-    
-    if (_initialguess) {
-      MultiVec<TYPE>* ivec = _problem.GetInitVec();
-      assert(ivec!=NULL);
-      const int cols = ivec->GetNumberVecs();
-      if (cols < _block) {
-	
-	// Copy the given vectors in the first positions in the block
-	// and fill the rest with random vectors.
-	for (i=0; i<cols; i++) {
-	  index[i] = i;
-	}
-	_basisvecs->SetBlock( *ivec, index, cols );			
-	
-	// Initialize the rest of the block with random vectors
-	for (i=cols; i<_block; i++) {
-	  index[i-cols] = i;
-	}
-	MultiVec<TYPE>* U_vec = _basisvecs->CloneView(index,_block-cols);
-	assert(U_vec!=NULL);
-	U_vec->MvRandom();
-	delete U_vec;
-      }
-      else {
-	// Copy the first _block of the given vectors into the first _block
-	// of _basisvecs, any additional vectors will be ignored.
-	
-	for (i=0; i<_block; i++) {
-	  index[i] = i;
-	}
-	_basisvecs->SetBlock( *ivec, index, _block );
-      }
-    }
-    else {
-      // No initial guess is given, so initialize block with random vectors
-      
-      for (i=0; i<_block; i++) {
-	index[i] = i;
-      }
-      MultiVec<TYPE>* U_vec = _basisvecs->CloneView(index,_block);
-      assert(U_vec!=NULL);
-      U_vec->MvRandom();
-      delete U_vec;		
-    }
-    
-    // Clean up
-    delete [] index;
-  }
   
   template <class TYPE>
   void BlockArnoldi<TYPE>::solve () {
@@ -432,14 +374,21 @@ namespace Anasazi {
     // If this is the first steps of Block Arnoldi, initialize the first block of _basisvecs
     //
     if (!_iter) {
-      SetInitBlock();
-      int *index = new int[ (_length+1)*_block ]; assert(index!=NULL);
-      for ( i=0; i<_block; i++ ) {
+      int *index = new int[ _block ]; assert(index!=NULL);
+      for (i=0; i<_block; i++) {
 	index[i] = i;
       }
-      MultiVec<TYPE>* U_vec = _basisvecs->CloneView(index,_block);
+      //
+      // Copy the first _block of the initial vectors into the first _block
+      // of _basisvecs, any additional vectors will be ignored.
+      //
+      _basisvecs->SetBlock( *(_problem.GetInitVec()), index, _block );
+      //
+      // Orthogonalize the first block of vectors.
+      //      
+      MultiVec<TYPE>* U_vec = _basisvecs->CloneView( index,_block );
       assert(U_vec!=NULL);
-      Teuchos::SerialDenseMatrix<int,TYPE> G10(_block,_block);
+      Teuchos::SerialDenseMatrix<int,TYPE> G10( _block,_block );
       QRFactorization( *U_vec, G10 );
       delete U_vec;
       delete [] index;
@@ -1264,7 +1213,7 @@ namespace Anasazi {
     //
     SortSchurForm( *Hj, Q );
     //
-    if (apply) {
+    if (_nevblock <= _jstart || apply ) {
       //
       // Necessary variables.
       //
@@ -1273,22 +1222,55 @@ namespace Anasazi {
       int _nevtemp, numimag;
       //
       // Determine new offset depending upon placement of conjugate pairs.	
-      // 
-      _offset = _maxoffset;
-      for (i=0; i<_maxoffset; i++) {
-	numimag = 0;
-	for (j=0; j<(_nevblock+i)*_block; j++) { 
-	  if (_ritzvals_i[j]!=zero) { numimag++; }; 
+      // ( if we are restarting, determine the new offset ) 
+      if (apply) {
+	_offset = _maxoffset;
+	for (i=0; i<_maxoffset; i++) {
+	  numimag = 0;
+	  for (j=0; j<(_nevblock+i)*_block; j++) { 
+	    if (_ritzvals_i[j]!=zero) { numimag++; }; 
+	  }
+	  if (!(numimag % 2)) { _offset = i; break; }
 	}
-	if (!(numimag % 2)) { _offset = i; break; }
       }
       _nevtemp = n;
       if (_jstart > _nevblock+_offset)
 	_nevtemp = (_nevblock+_offset)*_block;
       //
-      //  We are going to restart, so update the Krylov-Schur decomposition.
+      Teuchos::SerialDenseMatrix<int,TYPE> sub_block_hess(Teuchos::View, _hessmatrix, _block, _block, m, mm1);
+      Teuchos::SerialDenseMatrix<int,TYPE> sub_block_q(Teuchos::View, Q, _block, _nevtemp, mm1 );
+      Teuchos::SerialDenseMatrix<int,TYPE> sub_block_b( _block, _nevtemp );
+      blas.GEMM( Teuchos::NO_TRANS, Teuchos::NO_TRANS, _block, _nevtemp, _block, one, 
+		 sub_block_hess.values(), sub_block_hess.stride(), sub_block_q.values(), 
+		 sub_block_q.stride(), zero, sub_block_b.values(), _block );
       //
-      if (apply) {	
+      //---------------------------------------------------
+      // Compute Schur decomposition error
+      //
+      // The residual for the Schur decomposition A(VQ) = (VQ)T + FB_m^TQ
+      // where HQ = QT is || FB_m^TQ || = || H_{m+1,m}*B_m^TQ ||.
+      //
+      // We are only interested in the partial Krylov-Schur decomposition corresponding
+      // to the _nev eigenvalues of interest or the _nevblock*_block number of
+      // eigenvalues we're keeping.
+      // NOTE:  The Schur error is not updated if the Schur decomposition is
+      //        not large enough to compute _nev eigenvalues, else we could accidently
+      //        satisfy a condition for convergence.
+      //---------------------------------------------------
+      //
+      if (_nevblock <= _jstart ) {
+	//
+	Teuchos::SerialDenseMatrix<int,TYPE> sub_block_b2(Teuchos::View, sub_block_b, _block, _nev);
+	_schurerror = sub_block_b2.normFrobenius()/_scalefactor;
+	//
+	// Determine whether we need to continue with the computations.
+	//
+	if (_schurerror < _residual_tolerance )
+	  _exit_flg = true;
+      }
+      if (apply) {
+	//
+	//  We are going to restart, so update the Krylov-Schur decomposition.
 	//
 	// Update the Krylov-Schur basis.  
 	//	
@@ -1304,12 +1286,6 @@ namespace Anasazi {
 	// Update the Krylov-Schur quasi-triangular matrix.
 	//
 	Teuchos::SerialDenseMatrix<int,TYPE> Hjp1(Teuchos::View, _hessmatrix,_block,_nevtemp, _nevtemp );
-	Teuchos::SerialDenseMatrix<int,TYPE> sub_block_hess(Teuchos::View, _hessmatrix, _block, _block, m, mm1);
-	Teuchos::SerialDenseMatrix<int,TYPE> sub_block_q(Teuchos::View, Q, _block, _nevtemp, mm1 );
-	Teuchos::SerialDenseMatrix<int,TYPE> sub_block_b( _block, _nevtemp );
-	blas.GEMM( Teuchos::NO_TRANS, Teuchos::NO_TRANS, _block, _nevtemp, _block, one, 
-		   sub_block_hess.values(), sub_block_hess.stride(), sub_block_q.values(), 
-		   sub_block_q.stride(), zero, sub_block_b.values(), _block );
 	for (i=0; i<_block; i++) {
 	  for (j=0; j<_nevtemp; j++) {
 	    Hjp1(i, j) = sub_block_b(i, j);
@@ -1321,19 +1297,14 @@ namespace Anasazi {
 	delete basistemp;
 	delete basistemp2;
 	delete [] index;
-      }			
+      }
     }
-    //
-    // Determine whether we need to continue with the computations.
-    //
-    if (_schurerror < _residual_tolerance )
-      _exit_flg = true;
     //
     // Clean up.
     //
     delete Hj;
   }
-
+  
   template<class TYPE>
   void BlockArnoldi<TYPE>::SortSchurForm( Teuchos::SerialDenseMatrix<int,TYPE>& H, Teuchos::SerialDenseMatrix<int,TYPE>& Q ) {
     const TYPE zero = Teuchos::ScalarTraits<TYPE>::zero();
@@ -1444,17 +1415,16 @@ namespace Anasazi {
       char howmny = 'A';
       int mm, ldvl = 1;
       TYPE *vl = new TYPE[ ldvl ];
-      Teuchos::SerialDenseMatrix<int,TYPE> H_temp( H );
       Teuchos::SerialDenseMatrix<int,TYPE> Q_temp( n, n );
       Teuchos::SerialDenseMatrix<int,TYPE> S( _block, n );
-      lapack.TREVC( side, howmny, select, n, H_temp.values(), H_temp.stride(), vl, ldvl,
+      lapack.TREVC( side, howmny, select, n, H.values(), H.stride(), vl, ldvl,
 		  Q_temp.values(), Q_temp.stride(), n, &mm, work, &info );
       assert(info==0);
       delete [] vl;
       //
       // Compute H_{m+1,m}*B_m^T*S where the i-th column of S is 's' for the i-th Ritz-value
       //
-      blas.GEMM( Teuchos::NO_TRANS, Teuchos::NO_TRANS, _block, n, _block, one, 
+      blas.GEMM( Teuchos::NO_TRANS, Teuchos::NO_TRANS, _block, n, n, one, 
 		 sub_block_b.values(), sub_block_b.stride(), Q_temp.values(), 
 		 Q_temp.stride(), zero, S.values(), S.stride() );
       TYPE* s_ptr = S.values();
@@ -1486,38 +1456,6 @@ namespace Anasazi {
     ( n > _nev ? blas.COPY( _nev, _ritzvals_r, 1, _evalr, 1 ) : blas.COPY( n, _ritzvals_r, 1, _evalr, 1 ) );
     if (!_problem.IsSymmetric() )
       ( n > _nev ? blas.COPY( _nev, _ritzvals_i, 1, _evali, 1 ) : blas.COPY( n, _ritzvals_i, 1, _evali, 1 ) );
-    //---------------------------------------------------
-    // Compute Schur decomposition error
-    //
-    // The residual for the Schur decomposition A(VQ) = (VQ)T + FB_m^TQ
-    // where HQ = QT is || FB_m^TQ || = || H_{m+1,m}*B_m^TQ ||.
-    // NOTE:  At this point 'sub_block_b' holds this matrix!
-    //
-    // We are only interested in the partial Krylov-Schur decomposition corresponding
-    // to the _nev eigenvalues of interest or the _nevblock*_block number of
-    // eigenvalues we're keeping.
-    // NOTE:  The Schur error is not updated if the Schur decomposition is
-    //        not large enough to compute _nev eigenvalues, else we could accidently
-    //        satisfy a condition for convergence.
-    //---------------------------------------------------
-    //
-    if (_nevblock <= _jstart ) {
-      //
-      _schurerror = zero;
-      if (_problem.IsSymmetric()) {
-	for (i=0; i<_nev; i++) {
-	  _schurerror += _ritzresiduals[i]*_ritzresiduals[i];
-	}
-	_schurerror = Teuchos::ScalarTraits<TYPE>::squareroot( _schurerror );
-      } else {
-	TYPE temp = zero;
-	for (i=0; i<_nev; i++) {
-	  temp = blas.NRM2(_block, b_ptr + i*_block, 1);
-	  _schurerror += temp*temp;
-	}
-	_schurerror = Teuchos::ScalarTraits<TYPE>::squareroot( _schurerror )/_scalefactor;
-      }
-    }
     //
     //---------------------------------------------------
     // Reorder real Schur factorization, remember to add one to the indices for the

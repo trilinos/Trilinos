@@ -229,8 +229,8 @@ int main(int argc, char *argv[]) {
 	double tol = 1.0e-8;
 	string which="SM";
 	int restarts = 300;
-	int step = 1;
-	//int step = restarts*length*block;
+	//int step = 1;
+	int step = restarts*length*block;
 
 	// Create a PetraAnasaziVec. Note that the decision to make a view or
 	// or copy is determined by the petra constructor called by Anasazi::PetraVec.
@@ -282,19 +282,23 @@ int main(int argc, char *argv[]) {
 	// Obtain results directly
 	double* evalr = MyProblem.GetREvals();
 	double* evali = MyProblem.GetIEvals();
+	Anasazi::PetraVec *evecr=0, *eveci=0;
 
 	// Retrieve eigenvectors
 	// The size of the eigenvector storage is nev + block, but the eigenvectors are stored in the first nev vectors.
-	Anasazi::PetraVec* evecr = dynamic_cast<Anasazi::PetraVec*>(MyProblem.GetREvecs());
-	Anasazi::PetraVec* eveci = dynamic_cast<Anasazi::PetraVec*>(MyProblem.GetIEvecs());
+	int* index = new int[ nev ];
+	for (i=0; i<nev; i++)
+	  index[i] = i;
+	evecr = dynamic_cast<Anasazi::PetraVec*>((MyProblem.GetREvecs()->CloneView( index, nev )));
+	if (!MyProblem.IsSymmetric())
+	  eveci = dynamic_cast<Anasazi::PetraVec*>((MyProblem.GetIEvecs()->CloneView( index, nev )));
 
 	// Output results to screen
 	MyBlockArnoldi.currentStatus();
 	
 	// Compute residuals.
 	Teuchos::LAPACK<int,double> lapack;
-	Anasazi::PetraVec tempevecr(Map,nev), tempAevec(Map,nev);
-	Anasazi::PetraVec tempeveci(Map,nev);
+	Anasazi::PetraVec tempAevec(Map,nev);
 	Teuchos::SerialDenseMatrix<int,double> Breal(nev,nev), Breal2(nev,nev);
 	Teuchos::SerialDenseMatrix<int,double> Bimag(nev,nev), Bimag2(nev,nev);
 	double* normA = new double[nev];
@@ -304,20 +308,18 @@ int main(int argc, char *argv[]) {
 	Breal.putScalar(0.0); 
 	if (!MyProblem.IsSymmetric())
 	  Bimag.putScalar(0.0);
-	int* index = new int[ nev ];
 	for (i=0; i<nev; i++) { 
-	  index[i] = i;
 	  normA[i] = 0.0;
 	  Breal(i,i) = evalr[i]; 
 	  if (!MyProblem.IsSymmetric())
 	    Bimag(i,i) = evali[i]; 
 	}
-	Amat.Apply( *(evecr->CloneView( index, nev )), tempAevec );
-	tempAevec.MvTimesMatAddMv( -1.0, *(evecr->CloneView( index, nev )) , Breal, 1.0 );
+	Amat.Apply( *evecr, tempAevec );
+	tempAevec.MvTimesMatAddMv( -1.0, *evecr, Breal, 1.0 );
 	if (!MyProblem.IsSymmetric()) {
 	  tempAevec.MvTimesMatAddMv( 1.0, *eveci, Bimag, 1.0 );
 	  tempAevec.MvNorm( normA );
-	  Amat.Apply( *(eveci->CloneView( index, nev )), tempAevec );
+	  Amat.Apply( *eveci, tempAevec );
 	  tempAevec.MvTimesMatAddMv( -1.0, *evecr, Bimag, 1.0 );
 	  tempAevec.MvTimesMatAddMv( -1.0, *eveci, Breal, 1.0 );
 	}
@@ -360,6 +362,9 @@ int main(int argc, char *argv[]) {
 
 
 	// Release all objects
+        if (eveci) delete eveci;
+	if (evecr) delete evecr;
+
 	delete [] NumNz;
 	delete [] Values;
 	delete [] Indices;

@@ -78,7 +78,7 @@ namespace Anasazi {
       by the user, an initial vector must be passed in.  Sets the pointer to the input
       %Anasazi::MultiVec, so no copy is made.  
     */
-    void SetInitVec( MultiVec<TYPE>* Ivec ) { _InitVec = Ivec; };
+    void SetInitVec( MultiVec<TYPE>* Ivec ) { _InitVec = Ivec; _augInitVec = false; };
     
     /*! \brief Set the operator for which eigenvalues will be computed.  This may be different
       from the matrix \c A if a spectral transformation is employed, for example.  Sets
@@ -216,13 +216,15 @@ namespace Anasazi {
     
   protected:
     
+    void CheckInitVec();
+
     Operator<TYPE> *_A, *_B; 
     Operator<TYPE> *_Op, *_Prec;
     MultiVec<TYPE> *_InitVec;
     TYPE *_REvals, *_IEvals;
     MultiVec<TYPE> *_REvecs, *_IEvecs; 	
     int _nev, _blocksize;
-    bool _isSym;
+    bool _isSym, _augInitVec;
   };		
   
   //=============================================================================
@@ -232,7 +234,8 @@ namespace Anasazi {
   template<class TYPE>
   Eigenproblem<TYPE>::Eigenproblem(void) : 
     _A(0), _B(0), _Op(0), _Prec(0), _InitVec(0),_REvals(0), 
-    _IEvals(0), _REvecs(0), _IEvecs(0), _nev(1), _blocksize(1), _isSym(false)
+    _IEvals(0), _REvecs(0), _IEvecs(0), _nev(1), _blocksize(1), 
+    _isSym(false), _augInitVec(false)
   {
   }
   
@@ -242,7 +245,8 @@ namespace Anasazi {
   Eigenproblem<TYPE>::Eigenproblem( Operator<TYPE>* A, MultiVec<TYPE>* Ivec, 
 				    Operator<TYPE>* Op ) :    
     _A(A), _B(0), _Op(Op), _Prec(0), _InitVec(Ivec), _REvals(0),
-    _IEvals(0), _REvecs(0), _IEvecs(0), _nev(1), _blocksize(1), _isSym(false)
+    _IEvals(0), _REvecs(0), _IEvecs(0), _nev(1), _blocksize(1), 
+    _isSym(false), _augInitVec(false)
   {
   }
   
@@ -252,7 +256,8 @@ namespace Anasazi {
   Eigenproblem<TYPE>::Eigenproblem( Operator<TYPE>* A, Operator<TYPE>* B,
 				    MultiVec<TYPE>* Ivec, Operator<TYPE>* Op ) :
     _A(A), _B(B), _Op(Op), _Prec(0), _InitVec(Ivec), _REvals(0),
-    _IEvals(0), _REvecs(0), _IEvecs(0), _nev(1), _blocksize(1), _isSym(false)
+    _IEvals(0), _REvecs(0), _IEvecs(0), _nev(1), _blocksize(1), 
+    _isSym(false), _augInitVec(false)
   {
   }
 
@@ -264,7 +269,7 @@ namespace Anasazi {
     _InitVec(Problem._InitVec), _REvals(Problem._REvals),
     _IEvals(Problem._IEvals), _REvecs(Problem._REvecs),
     _IEvecs(Problem._IEvecs), _nev(Problem._nev), _blocksize(Problem._blocksize),
-    _isSym(Problem._isSym)
+    _isSym(Problem._isSym), _augInitVec(Problem._augInitVec)
   {
   }
   
@@ -277,6 +282,7 @@ namespace Anasazi {
     if (_REvals) delete [] _REvals;
     if (_IEvecs) delete _IEvecs;
     if (_IEvals) delete [] _IEvals;
+    if (_augInitVec) delete _InitVec;
   }
   
   //=============================================================================
@@ -294,6 +300,7 @@ namespace Anasazi {
 
     // If there is no initial vector, then we don't have anything to clone workspace from.
     if (!_InitVec) { return Failed; }
+    else { CheckInitVec(); }
 
     // If we don't need any eigenvalues, we don't need to continue.
     if (_nev == 0) { return Failed; }
@@ -487,6 +494,46 @@ namespace Anasazi {
     delete [] index;
     
     return Ok;
+  }
+
+  template<class TYPE>
+  void Eigenproblem<TYPE>::CheckInitVec()
+  {
+    //
+    // Create index array for CloneViews of initial vector.
+    //
+    int i;
+    int *index = new int[ _blocksize ]; assert(index!=NULL);    
+    for (i=0; i<_blocksize; i++) {
+      index[i] = i;
+    }
+    //
+    const int cols = _InitVec->GetNumberVecs();
+    if (cols < _blocksize) {
+      MultiVec<TYPE>* oldInitVec = _InitVec->CloneCopy();
+      _InitVec = oldInitVec->Clone( _blocksize );
+      //
+      // Copy the given vectors in the first positions in the block
+      // and fill the rest with random vectors.
+      _InitVec->SetBlock( *oldInitVec, index, cols );			
+      
+      // Initialize the rest of the block with random vectors
+      for (i=cols; i<_blocksize; i++) {
+	index[i-cols] = i;
+      }
+      MultiVec<TYPE>* tempvec = _InitVec->CloneView(index,_blocksize-cols);
+      assert(tempvec!=NULL);
+      tempvec->MvRandom();
+      //
+      // Set the flag _augInitVec to true since we augmented the initial vector.
+      _augInitVec = true;
+	
+      delete oldInitVec;
+      delete tempvec;     
+    }
+    
+    // Clean up
+    delete [] index;
   }
   
 } // end Anasazi namespace

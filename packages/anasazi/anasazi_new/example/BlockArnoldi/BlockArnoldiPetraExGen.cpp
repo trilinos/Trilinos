@@ -189,7 +189,6 @@ int main(int argc, char *argv[]) {
         //
         if (Lfill > -1) {
                 ICT = new Ifpack_CrsIct(A, dropTol, Lfill);
-
                 ICT->SetAbsoluteThreshold(Athresh);
                 ICT->SetRelativeThreshold(Rthresh);
                 int initerr = ICT->InitValues(A);
@@ -314,12 +313,12 @@ int main(int argc, char *argv[]) {
 
 	// retrieve real and imaginary parts of the eigenvectors
 	// The size of the eigenvector storage is nev + block, but the eigenvectors are stored in the first nev vectors.
-	Anasazi::PetraVec* evecr = dynamic_cast<Anasazi::PetraVec*>(MyProblem.GetREvecs());
-
 	int* index = new int[ nev ];
 	for (i=0; i<nev; i++) { index[i] = i; }
+	Anasazi::PetraVec* evecr = dynamic_cast<Anasazi::PetraVec*>(MyProblem.GetREvecs()->CloneView( index, nev ));
+
 	Teuchos::SerialDenseMatrix<int,double> dmatr(nev,nev);
-	MyProblem.AInProd( one, *(evecr->CloneView( index, nev )), *(evecr->CloneView( index, nev )), dmatr );
+	MyProblem.AInProd( one, *evecr, *evecr, dmatr );
 	double compeval;
 
 	cout<<"Actual Eigenvalues (obtained by Rayleigh quotient) : "<<endl;
@@ -336,6 +335,9 @@ int main(int argc, char *argv[]) {
 
 
 	// Release all objects
+	if (ICT) delete ICT;
+	if (evecr) delete evecr;
+
 	delete [] MyGlobalElements;
 	delete [] NumNz;
 	delete [] index;
