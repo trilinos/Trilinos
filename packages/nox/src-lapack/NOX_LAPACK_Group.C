@@ -99,7 +99,7 @@ void NOX::LAPACK::Group::resetIsValid() //private
 
 NOX::Abstract::Group* NOX::LAPACK::Group::clone(NOX::CopyType type) const 
 {
-  Group* newgrp = new Group(*this, type);
+  NOX::Abstract::Group* newgrp = new NOX::LAPACK::Group(*this, type);
   return newgrp;
 }
 
