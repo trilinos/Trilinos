@@ -364,7 +364,7 @@ LOCA::EpetraNew::Group::augmentJacobianForHomotopy(double conParamValue)
   const Epetra_CrsMatrix* constTestCrs = 0;
   Epetra_CrsMatrix* testCrs = 0;
   constTestCrs = dynamic_cast<const Epetra_CrsMatrix*>
-    (&(sharedLinearSystemPtr->getObject(this).getJacobianOperator()));
+    (&(sharedLinearSystem.getObject(this).getJacobianOperator()));
   if (constTestCrs != 0) {
     testCrs = const_cast<Epetra_CrsMatrix*>(constTestCrs);
     testCrs->Scale(conParamValue);
@@ -379,7 +379,7 @@ LOCA::EpetraNew::Group::augmentJacobianForHomotopy(double conParamValue)
   const Epetra_VbrMatrix* constTestVbr = 0;
   Epetra_VbrMatrix* testVbr = 0;
   constTestVbr = dynamic_cast<const Epetra_VbrMatrix*>
-    (&(sharedLinearSystemPtr->getObject(this).getJacobianOperator()));
+    (&(sharedLinearSystem.getObject(this).getJacobianOperator()));
   if (testVbr != 0) {
     testVbr = const_cast<Epetra_VbrMatrix*>(constTestVbr);
     testVbr->Scale(conParamValue);
