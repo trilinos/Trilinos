@@ -45,6 +45,9 @@ namespace NOX {
     class Matrix {
 
     public:
+      //! Create an empty matrix
+      Matrix();
+
       //! Create a m x n matrix with all entries zero
       Matrix(int m, int n);
 
@@ -71,6 +74,12 @@ namespace NOX {
 
       //! Prints out the matrix to the cout stream. 
       bool print() const;
+
+      //! Returns the number of rows in the matrix
+      int numRows() const;
+
+      //! Returns the number of columns in the matrix
+      int numCols() const;
 
     private:
 

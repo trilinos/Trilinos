@@ -35,6 +35,12 @@
 using namespace NOX;
 using namespace NOX::LAPACK;
 
+Matrix::Matrix() :
+  p(0), q(0),			
+  entries()			
+{
+}
+
 Matrix::Matrix(int m, int n) :
   p(m), q(n),			// set the size of the square matrix
   entries(m*n)			// create an array of n*n entries
@@ -87,4 +93,14 @@ bool Matrix::print() const
 {
   cout << *this << endl;
   return true;
+}
+
+int Matrix::numRows() const
+{
+  return p;
+}
+
+int Matrix::numCols() const
+{
+  return q;
 }
