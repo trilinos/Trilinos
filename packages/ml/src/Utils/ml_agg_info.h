@@ -17,10 +17,11 @@ extern "C" {
 #endif
 #endif
 
-  extern int ML_Aggregate_VizAndStats_Setup( ML_Aggregate *ag, int MaxLevels );
-  extern int ML_Aggregate_VizAndStats_Clean( ML_Aggregate *ag, int MaxLevels );
+  /* function ML_Aggregate_VizAndStats_Setup and ML_Aggregate_VizAndStats_Clean
+     are declared in ml_aggregate.h */
+     
   extern void ML_Aggregate_ComputeRadius( ML_Aggregate_Viz_Stats finer_level,
-					  ML_Aggregate_Viz_Stats coarser_level,
+ 					  ML_Aggregate_Viz_Stats coarser_level,
 					  double R[] );
   extern void ML_Aggregate_ComputeBox( ML_Aggregate_Viz_Stats finer_level,int,
 				       double R[], int,ML_Comm * comm );

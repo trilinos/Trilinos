@@ -45,8 +45,8 @@ int ML_Aggregate_VizAndStats_Setup( ML_Aggregate *ag, int MaxLevels )
       exit(-1);
     }
 
-  ML_memory_alloc((void *)&info,
-		  sizeof(ML_Aggregate_Viz_Stats)*(MaxLevels+1), "INFO");
+  info = (ML_Aggregate_Viz_Stats *) ML_allocate(sizeof(ML_Aggregate_Viz_Stats)*(MaxLevels+1) );
+  
   if( info == NULL ) {
     fprintf( stderr,
 	     "*ML*ERR* not enough memory for %d bytes\n"
@@ -116,8 +116,6 @@ int ML_Aggregate_VizAndStats_Clean( ML_Aggregate *ag, int MaxLevels )
 
   ML_free( ag->aggr_viz_and_stats );  ag->aggr_viz_and_stats = NULL;
 
-  ML_memory_free((void*)&info); info = NULL;
-    
   return 0;
   
 } /* ML_Aggregate_VizAndStats_Clean */
@@ -929,8 +927,22 @@ int ML_Aggregate_VizAndStats_Compute( ML *ml, ML_Aggregate *ag,
 	for( i=0 ; i<Naggregates_global ; i++ ) itemp[i] = 0;
 	
 	for( i=0 ; i<Nlocal ; i++ ) {
+
 	  iaggre = info[ilevel].graph_decomposition[i]+offset;
-	  itemp[iaggre] = itemp[iaggre]+1;
+
+	  if( iaggre >= Naggregates_global ) {
+	    fprintf(stderr,
+		    "*ML*ERR* error : %d >= %d\n"
+		    "*ML*ERR* (file %s, line %d\n",
+		    iaggre,
+		    Naggregates_global,
+		    __FILE__,
+		    __LINE__ );
+	    exit( EXIT_FAILURE );
+	  }
+	  itemp[iaggre]++;
+
+
 	}
 	
 #ifdef ML_MPI

@@ -283,10 +283,11 @@ int ML_Aggregate_VisualizeWithOpenDX( ML_Aggregate_Viz_Stats info,
   /* ******************************************************************** */
 
   shuffle = 1;
-  
-  if( shuffle == 1 ) {
 
-    reorder = (int *) malloc( sizeof(int) * Naggregates );
+  reorder = (int *) malloc( sizeof(int) * Naggregates );
+
+  if( shuffle == 1 ) { /* now always reordering */
+    
     if( reorder == NULL ) {
       fprintf( stderr,
 	       "*ML*ERR* not enough memory for %d bytes\n"
@@ -316,7 +317,11 @@ int ML_Aggregate_VisualizeWithOpenDX( ML_Aggregate_Viz_Stats info,
 
     }
 
-  } /* if  */
+  } else {
+
+    for( i=0 ; i<Naggregates ; ++i ) reorder[i] = i;
+    
+  }
 
   if( local_or_global == ML_LOCAL_INDICES ) {
     
@@ -332,7 +337,8 @@ int ML_Aggregate_VisualizeWithOpenDX( ML_Aggregate_Viz_Stats info,
       values[i] = reorder[graph_decomposition[i]];
     }
   }
-  
+
+  ML_free(reorder);
   
   for( irow=0 ; irow<Nrows ; irow++ ) 
     fprintf( fp,
