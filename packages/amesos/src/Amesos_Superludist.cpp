@@ -26,6 +26,10 @@
 // ***********************************************************************
 // @HEADER
 
+
+// TO DO: use Stat structure to print statistics???
+// allow users to specify usermap ???
+
 #include "Amesos_Superludist.h"
 #include "Epetra_Map.h"
 #include "Epetra_Import.h"
@@ -58,7 +62,7 @@ int Superludist_NumProcRows( int NumProcs ) {
 
   //=============================================================================
   Amesos_Superludist::Amesos_Superludist(const Epetra_LinearProblem &prob, 
-				 const AMESOS::Parameter::List &ParameterList ) :  
+				 const Teuchos::ParameterList &ParameterList ) :  
 
     GridCreated_(0), 
     FactorizationDone_(0), 
@@ -75,6 +79,13 @@ int Superludist_NumProcRows( int NumProcs ) {
     vecXdistributed_(0),
     nprow_(0),
     npcol_(0),
+    PrintStat_(true),
+    ColPerm_("MMD_AT_PLUS_A"),
+    RowPerm_("NATURAL"),
+    perm_c_(0),
+    perm_r_(0),
+    IterRefine_("NO"),
+    ReplaceTinyPivot_(false),
     FactorizationOK_(false), 
     UseTranspose_(false)
 {
@@ -124,22 +135,53 @@ int Amesos_Superludist::ReadParameterList() {
   //  We have to set these to their defaults here because user codes 
   //  are not guaranteed to have a "Superludist" parameter list.
   //
-  MaxProcesses_ = - 1; 
   Redistribute_ = true;
   AddZeroToDiag_ = false;
   FactOption_ = SamePattern_SameRowPerm ;
   ReuseSymbolic_ = false ; 
 
+  MaxProcesses_ = - 1; 
+  nprow_ = 0;
+  npcol_ = 0;
+  Equil_ = true;
+  ColPerm_ = "MMD_AT_PLUS_A";
+  perm_c_ = 0;
+  RowPerm_ = "LargeDiag";
+  perm_r_ = 0;
+  IterRefine_ = "DOUBLE";
+  ReplaceTinyPivot_ = true;
+  
+  PrintStat_ = true;
+  
+  // parameters for all packages
+  
   Redistribute_ = ParameterList_->getParameter("Redistribute",Redistribute_);
   AddZeroToDiag_ = ParameterList_->getParameter("AddZeroToDiag",AddZeroToDiag_);
-
+  
+  // parameters for Superludist only
+  
   if (ParameterList_->isParameterSublist("Superludist") ) {
-    AMESOS::Parameter::List SuperludistParams = ParameterList_->sublist("Superludist") ;
+    Teuchos::ParameterList SuperludistParams = ParameterList_->sublist("Superludist") ;
     ReuseSymbolic_ = SuperludistParams.getParameter("ReuseSymbolic",ReuseSymbolic_);
-    FactOption_ = (fact_t) SuperludistParams.
-      getParameter("Options.Fact",
-		   (int) FactOption_);
+    string FactOption = SuperludistParams. getParameter("Fact", "SamePattern_SameRowPerm");
+    if( FactOption == "SamePattern_SameRowPerm" ) FactOption_ = SamePattern_SameRowPerm;
+    else if( FactOption == "DOFACT" ) FactOption_ = DOFACT;
+    else if( FactOption == "SamePattern" ) FactOption_ = SamePattern;
+    else if( FactOption == "FACTORED" ) FactOption_ = FACTORED;
+    
     MaxProcesses_ = SuperludistParams.getParameter("MaxProcesses",MaxProcesses_);
+    nprow_ = SuperludistParams.getParameter("nprow",MaxProcesses_);
+    npcol_ = SuperludistParams.getParameter("npcol",MaxProcesses_);
+    Equil_ = SuperludistParams.getParameter("Equil",true);
+    ColPerm_ = SuperludistParams.getParameter("ColPerm","MMD_AT_PLUS_A");
+    if( ColPerm_ == "MY_PERMC" ) perm_c_ = SuperludistParams.getParameter("perm_c",perm_c_);
+    RowPerm_ = SuperludistParams.getParameter("RowPerm","LargeDiag");
+    if( RowPerm_ == "MY_PERMR" ) perm_r_ = SuperludistParams.getParameter("perm_r",perm_r_);
+    IterRefine_ = SuperludistParams.getParameter("IterRefine","DOUBLE");
+    ReplaceTinyPivot_ = SuperludistParams.getParameter("ReplaceTinyPivot",true);
+
+    PrintStat_ = SuperludistParams.getParameter("PrintStat",true);
+
   } 
 
   
@@ -290,7 +332,9 @@ int Amesos_Superludist::Factor( ) {
     RedistributeA() ; 
     SuperluMat_ = UniformMatrix_ ;
 
-  } else {
+  } else if( !( nprow_ && npcol_ ) ) {
+    // compute unless the used specified them in parameter list
+
     //  Revision 1.7 Oct 29, 2003 has a detailed check for cannonical distribution
     if( ! ( RowMatrixA_->RowMatrixRowMap().LinearMap())  ) EPETRA_CHK_ERR(-2);
 
@@ -409,11 +453,44 @@ int Amesos_Superludist::Factor( ) {
 
     ScalePermstructInit(NumRows_, numcols, &ScalePermstruct_);
     LUstructInit(NumRows_, numcols, &LUstruct_);
+
+    // stick options from ParameterList to options_ structure
+    // Here we follow the same order of the SuperLU_dist 2.0 manual (pag 55/56)
+
     
-    assert( options_.PrintStat != YES ) ; 
+//    assert( options_.PrintStat != YES ) ; 
 
     assert( options_.Fact == DOFACT );  
     options_.Fact = DOFACT ;       
+
+    if( Equil_ ) options_.Equil = (yes_no_t)YES;
+    else         options_.Equil = NO;
+
+    if( ColPerm_ == "NATURAL" ) options_.ColPerm = NATURAL;
+    else if( ColPerm_ == "MMD_AT_PLUS_A" ) options_.ColPerm = MMD_AT_PLUS_A;
+    else if( ColPerm_ == "MMD_ATA" ) options_.ColPerm = MMD_ATA;
+    else if( ColPerm_ == "COLAMD" ) options_.ColPerm = COLAMD;
+    else if( ColPerm_ == "MY_PERMC" ) {
+      options_.ColPerm = MY_PERMC;
+      ScalePermstruct_.perm_c = perm_c_;
+    }
+
+    if( RowPerm_ == "NATURAL" ) options_.RowPerm = (rowperm_t)NATURAL;
+    if( RowPerm_ == "LargeDiag" ) options_.RowPerm = LargeDiag;
+    else if( ColPerm_ == "MY_PERMR" ) {
+      options_.RowPerm = MY_PERMR;
+      ScalePermstruct_.perm_r = perm_r_;
+    }
+
+    if( ReplaceTinyPivot_ ) options_.ReplaceTinyPivot = (yes_no_t)YES;
+    else                    options_.ReplaceTinyPivot = NO;
+
+    if( IterRefine_ == "NO" ) options_.IterRefine = (IterRefine_t)NO;
+    else if( IterRefine_ == "DOUBLE" ) options_.IterRefine = DOUBLE;
+    else if( IterRefine_ == "EXTRA" ) options_.IterRefine = EXTRA;
+
+    if( PrintStat_ ) options_.PrintStat = (yes_no_t)YES;
+    else             options_.PrintStat = NO;
     
     SuperLUStat_t stat;
     PStatInit(&stat);    /* Initialize the statistics variables. */

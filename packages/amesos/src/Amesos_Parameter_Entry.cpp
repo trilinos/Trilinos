@@ -29,8 +29,9 @@
 // ***********************************************************************
 // @HEADER
 
-#include "Amesos_Parameter_Entry.h" // class definition
-#include "Amesos_Parameter_List.h"	 // for sublists
+#ifdef OLDLIST
+
+#include "Teuchos_ParameterList.hpp" 
 
 using namespace AMESOS::Parameter;
 
@@ -349,3 +350,4 @@ ostream& operator<<(ostream& stream, const Entry& e)
 }
 
 
+#endif

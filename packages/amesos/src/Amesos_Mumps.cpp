@@ -54,7 +54,7 @@
 //=============================================================================
 
 Amesos_Mumps::Amesos_Mumps(const Epetra_LinearProblem &prob,
-			   const AMESOS::Parameter::List &ParameterList ) :
+			   const Teuchos::ParameterList &ParameterList ) :
   Amesos_EpetraBaseSolver(prob,ParameterList),
   SymbolicFactorizationOK_(false), 
   NumericFactorizationOK_(false),
@@ -80,7 +80,11 @@ Amesos_Mumps::Amesos_Mumps(const Epetra_LinearProblem &prob,
   OldMatrix_(0),
   Redistor_(0),
   TargetVector_(0),
-  verbose_(0)
+  verbose_(0),
+  AddZeroToDiag_(false),
+  PrintTiming_(true),
+  PrintStatistics_(true),
+  Threshold_(0.0)
 {
   // -777 is for me. It means : never called MUMPS, so
   // SymbolicFactorization will not call Destroy();
@@ -172,16 +176,19 @@ int Amesos_Mumps::ConvertToTriplet()
 
   for( int LocalBlockRow=0; LocalBlockRow<NumMyBlockRows() ; ++LocalBlockRow ) {
 
+    bool FoundDiagonal = false;
+  
     GetRow(LocalBlockRow,NumIndices,RowIndices,ColIndices,MatrixValues);
 
     for( int i=0 ; i<NumIndices ; ++i ) {
-      // following if : please test me................................
-      //      if( MatrixValues[i] != 0.0 ) {
+      if( abs(MatrixValues[i]) >= Threshold_ ) {
+	if( RowIndices[i] == ColIndices[i] ) FoundDiagonal = true;
 	(*Row)[NumMyMUMPSNonzeros_] = RowIndices[i]+diff;
 	(*Col)[NumMyMUMPSNonzeros_] = ColIndices[i]+diff;
 	(*Val)[NumMyMUMPSNonzeros_] = MatrixValues[i];
 	NumMyMUMPSNonzeros_++;
-	//      }
+      }
+      // to add: zero on diagonal
     }
   }
 
@@ -236,6 +243,10 @@ int Amesos_Mumps::ConvertToTriplet()
     NumMUMPSNonzeros_ = NumMyMUMPSNonzeros_;
 
   }
+
+  if( PrintTiming_ && Comm().MyPID() == 0 )
+    cout << "Amesos_Mumps : Time to convert matrix to MUMPS format = "
+	 << Time.ElapsedTime() << " (s)" << endl;
   
   AddToConvTime(Time.ElapsedTime());  
   
@@ -292,10 +303,10 @@ int Amesos_Mumps::ConvertToTripletValues()
   }
 
   if( NumMUMPSNonzerosValues != NumMyMUMPSNonzeros_ ) {
-     cerr << "Amesos:ERROR: it appears that matrix has changed\n"
-          << "Amesos:ERROR: its structure since SymbolicFactorization() has\n"
-	  << "Amesos:ERROR: called. # nonzeros (sym) = " << NumMyMUMPSNonzeros_ << endl
-	  << "Amesos:ERROR: called. # nonzeros (num) = " << NumMUMPSNonzerosValues << endl;
+     cerr << "Amesos_Mumps ERROR : it appears that matrix has changed\n"
+          << "Amesos_Mumps ERROR : its structure since SymbolicFactorization() has\n"
+	  << "Amesos_Mumps ERROR : called. # nonzeros (sym) = " << NumMyMUMPSNonzeros_ << endl
+	  << "Amesos_Mumps ERROR : called. # nonzeros (num) = " << NumMUMPSNonzerosValues << endl;
      return -2;
   }  
     
@@ -333,6 +344,10 @@ int Amesos_Mumps::ConvertToTripletValues()
 
   }
 
+  if( PrintTiming_ && Comm().MyPID() == 0 )
+    cout << "Amesos_Mumps : Time to convert matrix values to MUMPS format = "
+	 << Time.ElapsedTime() << " (s)" << endl;
+  
   AddToConvTime(Time.ElapsedTime());  
  
   return 0;
@@ -428,14 +443,70 @@ int Amesos_Mumps::ReadParameterList()
 {
 
   if( ParameterList_ == NULL ) return 0;
-/*  
-  bool value = -1;
-  value = ParameterList_->getParameter("print information",value);
-  if( value != -1 ) verbose_ = 1;
-  else        verbose_ = 0;
-*/  
-  if (ParameterList_->isParameterSublist("Mumps") ) {
-    AMESOS::Parameter::List MumpsParams = ParameterList_->sublist("Mumps") ;
+
+  // retrive general parameters
+
+  if( ParameterList_->getParameter("UseTranspose",false) )
+    SetUseTranspose(true);
+
+  Threshold_ = ParameterList_->getParameter("Threshold", 0.0);
+
+  AddZeroToDiag_ = ParameterList_->getParameter("AddZeroToDiag", false);
+  if( AddZeroToDiag_ && Comm().MyPID() == 0 ) {
+    cerr << "Amesos_Mumps Warning: AddZeroToDiag not yet implemented." << endl;
+  }
+  
+  PrintTiming_ = ParameterList_->getParameter("PrintTiming", true);
+
+  PrintStatistics_ = ParameterList_->getParameter("PrintStatistics", true);
+
+  // retrive MUMPS' parameters
+  
+  if (ParameterList_->isParameterSublist("mumps") ) {
+    Teuchos::ParameterList MumpsParams = ParameterList_->sublist("mumps") ;
+    // integer array of parameters
+    if( MumpsParams.isParameter("ICNTL") ) {
+      int * ICNTL = NULL;
+      ICNTL = MumpsParams.getParameter("ICNTL", ICNTL);
+      SetICNTL(ICNTL);
+    }
+    // double array of parameters
+    if( MumpsParams.isParameter("CNTL") ) {
+      double * CNTL = NULL;
+      CNTL = MumpsParams.getParameter("CNTL", CNTL);
+      SetCNTL(CNTL);
+    }
+    // ordering
+     if( MumpsParams.isParameter("PermIn") ) {
+      int * PermIn = NULL;
+      PermIn = MumpsParams.getParameter("PermIn", PermIn);
+      SetOrdering(PermIn);
+    }
+     // Maxis
+     if( MumpsParams.isParameter("Maxis") ) {
+       int Maxis = 0;
+       Maxis = MumpsParams.getParameter("Maxis", Maxis);
+       SetMaxis(Maxis);
+     }
+     // Maxs
+     if( MumpsParams.isParameter("Maxs") ) {
+       int Maxs = 0;
+       Maxs = MumpsParams.getParameter("Maxs", Maxs);
+       SetMaxs(Maxs);
+     }
+     // Col scaling
+     if( MumpsParams.isParameter("ColScaling") ) {
+       double * ColSca = NULL;
+       ColSca = MumpsParams.getParameter("ColScaling", ColSca);
+       SetColScaling(ColSca);
+     }
+     // Row scaling
+     if( MumpsParams.isParameter("RowScaling") ) {
+       double * RowSca = NULL;
+       RowSca = MumpsParams.getParameter("RowScaling", RowSca);
+       SetRowScaling(RowSca);
+     }
+     // that's all folks
   }  
   return 0;
 }
@@ -525,6 +596,10 @@ int Amesos_Mumps::PerformSymbolicFactorization()
   if( MDS.INFOG(1)!=0 && verbose_ ) 
   EPETRA_CHK_ERR( MDS.INFOG(1) );
   if( MDS.INFOG(1) ) return( MDS.INFOG(1) );
+
+  if( PrintTiming_ && Comm().MyPID() == 0 )
+    cout << "Amesos_Mumps : Time for symbolic factorization = "
+	 << Time.ElapsedTime() << " (s)" << endl;
   
   AddToSymFactTime(Time.ElapsedTime());  
 
@@ -558,6 +633,10 @@ int Amesos_Mumps::PerformNumericFactorization( )
   // infog(1) is zereo
   EPETRA_CHK_ERR( MDS.INFOG(1) );
   if( MDS.INFOG(1) ) return( MDS.INFOG(1) );
+
+  if( PrintTiming_ && Comm().MyPID() == 0 )
+    cout << "Amesos_Mumps : Time for numeric factorization = "
+	 << Time.ElapsedTime() << " (s)" << endl;
   
   AddToNumFactTime(Time.ElapsedTime());
   
@@ -651,6 +730,9 @@ int Amesos_Mumps::Solve()
   if( verbose_ == 3 ) cout << "Entering `Solve'" << endl;
 
   ReadParameterList();
+
+  double RedistorTime = 0.0;
+  Epetra_Time TimeForRedistor(Comm());
   
   Epetra_RowMatrix * Matrix = GetMatrix();
   assert( Matrix != NULL );
@@ -687,8 +769,8 @@ int Amesos_Mumps::Solve()
   
   Epetra_Time Time(Comm());
 
-  Epetra_MultiVector   *vecX = GetLHS() ; 
-  Epetra_MultiVector   *vecB = GetRHS() ;
+  Epetra_MultiVector * vecX = GetLHS() ; 
+  Epetra_MultiVector * vecB = GetRHS() ;
 
   // create redistor the first time enters here. I suppose that LHS and RHS
   // (all of them) have the same map.
@@ -700,13 +782,13 @@ int Amesos_Mumps::Solve()
   //  Compute the number of right hands sides (and check that X and B have the same shape) 
 
   if( vecB == NULL || vecX == NULL ) {
-    if( Comm().MyPID() == 0 ) cout << "Amesos:ERROR: LHS or RHS not set" << endl;
+    if( Comm().MyPID() == 0 ) cout << "Amesos_Mumps ERROR : LHS or RHS not set" << endl;
     return -1;
   }
 
   int nrhs = vecX->NumVectors() ;
   if( nrhs != vecB->NumVectors() ) {
-    if( Comm().MyPID() == 0 ) cout << "Amesos:ERROR: multivectors LHS or RHS have different sizes" << endl;
+    if( Comm().MyPID() == 0 ) cout << "Amesos_Mumps ERROR : multivectors LHS or RHS have different sizes" << endl;
     return -2;
   }
 
@@ -737,8 +819,10 @@ int Amesos_Mumps::Solve()
     }
   } else {
 
+    TimeForRedistor.ResetStartTime();
     Redistor_->TargetImport( *vecB, *TargetVector_ ) ;
-
+    RedistorTime += TimeForRedistor.ElapsedTime();
+    
     for ( int j =0 ; j < nrhs; j++ ) { 
       if ( Comm().MyPID() == 0 ) {
 	MDS.rhs = (*TargetVector_)[j];
@@ -751,17 +835,53 @@ int Amesos_Mumps::Solve()
       if( MDS.INFOG(1) ) return( MDS.INFOG(1) );
     }
 
+    TimeForRedistor.ResetStartTime();
     Redistor_->SourceImport( *vecX, *TargetVector_ ) ;
-    
+    RedistorTime += TimeForRedistor.ElapsedTime();
+
   }
   
   EPETRA_CHK_ERR( UpdateLHS() );
+
+  if( PrintTiming_ && Comm().MyPID() == 0 ) {
+     cout << "Amesos_Mumps : Time for gather B and scatter X = "
+	 << RedistorTime << " (s)" << endl;
+    cout << "Amesos_Mumps : Time for solve = "
+	 << Time.ElapsedTime() << " (s)" << endl;
+  }
   
   AddToSolTime(Time.ElapsedTime());
-  
+
+  // compute vector norms
+  if( ParameterList_->getParameter("ComputeVectorNorms",false) ) {
+    double NormLHS, NormRHS;
+    for( int i=0 ; i<nrhs ; ++i ) {
+      assert((*vecX)(i)->Norm2(&NormLHS)==0);
+      assert((*vecB)(i)->Norm2(&NormRHS)==0);
+      if( Comm().MyPID() == 0 ) {
+	cout << "Amesos_Mumps : vector " << i << ", ||x|| = " << NormLHS
+	     << ", ||b|| = " << NormRHS << endl;
+      }
+    }
+  }
+
+  // compute true residual
+  if( ParameterList_->getParameter("ComputeTrueResidual",false) ) {
+    double Norm;
+    Epetra_Vector Ax(vecB->Map());
+    for( int i=0 ; i<nrhs ; ++i ) {
+      assert(GetMatrix()->Multiply(UseTranspose(), *((*vecX)(i)), Ax)==0);
+      assert(Ax.Update(1.0, *((*vecB)(i)), -1.0)==0);
+      assert(Ax.Norm2(&Norm)==0);
+      if( Comm().MyPID() == 0 ) {
+	cout << "Amesos_Mumps : vector " << i << ", ||Ax - b|| = " << Norm << endl;
+      }
+    }
+  }
+
   //  ParameterList_->setParameter("solution time",GetSolTime());
 			      
-  if( verbose_ ) PrintInformation();
+  if( ParameterList_->getParameter("PrintStatistics",true) ) PrintInformation();
   
   return(0) ; 
 }
@@ -887,3 +1007,16 @@ int Amesos_Mumps::PrintInformation()
   return 0;
   
 }
+
+int Amesos_Mumps::SetICNTL(int * icntl)
+{
+  for( int i=0 ; i<40 ; ++i ) icntl_[i] = icntl[i];
+  return 0;
+}
+
+int Amesos_Mumps::SetCNTL(double * cntl)  
+{
+  for( int i=0 ; i<5 ; ++i ) cntl_[i] = cntl[i];
+  return 0;
+}
+ 

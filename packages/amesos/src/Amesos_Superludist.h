@@ -73,7 +73,7 @@ public:
       Epetra_RowMatrix.
 
   */
-  Amesos_Superludist(const Epetra_LinearProblem& LinearProblem, const AMESOS::Parameter::List &ParameterList );
+  Amesos_Superludist(const Epetra_LinearProblem& LinearProblem, const Teuchos::ParameterList &ParameterList );
 
   //! Amesos_Superludist Destructor.
   /*! Completely deletes an Amesos_Superludist object.  
@@ -183,7 +183,7 @@ public:
   const Epetra_LinearProblem *GetProblem() const { return(Problem_); };
 
   //! Get a pointer to the ParameterList.
-  const AMESOS::Parameter::List *GetParameterList() const { return(ParameterList_); };
+  const Teuchos::ParameterList *GetParameterList() const { return(ParameterList_); };
 
   //! Returns true if SUPERLUDIST can handle this matrix shape 
   /*! Returns true if the matrix shape is one that SUPERLUDIST can
@@ -280,6 +280,15 @@ public:
   int npcol_;
   gridinfo_t grid_;                 // SuperLU's grid information
   superlu_options_t options_;
+
+  bool PrintStat_;
+  string ColPerm_;
+  int * perm_c_;
+  string RowPerm_;
+  int * perm_r_;
+  string IterRefine_;
+  bool ReplaceTinyPivot_;
+  bool Equil_;
   
   bool FactorizationOK_ ;           // True if the matrix factorization has
                                     // been performed more recently than the
@@ -287,7 +296,7 @@ public:
 
   bool UseTranspose_;      // Set by SetUseTranpose() 
   const Epetra_LinearProblem * Problem_;
-  const AMESOS::Parameter::List * ParameterList_ ; 
+  const Teuchos::ParameterList * ParameterList_ ; 
 
 };  // End of  class Amesos_Superludist  
 #endif /* _AMESOS_SUPERLUDIST_H_ */

@@ -48,6 +48,6 @@ class Amesos_Factory {
 public: 
   Amesos_BaseSolver *Create( AmesosClassType ClassType, 
 			     const Epetra_LinearProblem& LinearProblem, 
-			     const AMESOS::Parameter::List &ParameterList );
+			     const Teuchos::ParameterList &ParameterList );
 };  // End of  class Amesos_Factory  
 #endif /* _AMESOS_FACTORY_H_ */

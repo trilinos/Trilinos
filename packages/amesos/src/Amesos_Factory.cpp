@@ -46,7 +46,7 @@
 
 Amesos_BaseSolver* Amesos_Factory::Create( AmesosClassType ClassType, 
 			     const Epetra_LinearProblem& LinearProblem, 
-			     const AMESOS::Parameter::List &ParameterList ) {
+			     const Teuchos::ParameterList &ParameterList ) {
 
   switch( ClassType ) {
   case AMESOS_MUMPS:

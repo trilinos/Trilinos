@@ -101,7 +101,7 @@ public:
       Epetra_RowMatrix.
 
   */
-  Amesos_Mumps(const Epetra_LinearProblem& LinearProblem, const AMESOS::Parameter::List &ParameterList );
+  Amesos_Mumps(const Epetra_LinearProblem& LinearProblem, const Teuchos::ParameterList &ParameterList );
 
   //! Amesos_Mumps Destructor.
   /*! Completely deletes an Amesos_Mumps object.  
@@ -194,7 +194,7 @@ public:
 #endif
     
   //! Get a pointer to the ParameterList.
-  const AMESOS::Parameter::List *GetParameterList() const { return(ParameterList_); };
+  const Teuchos::ParameterList *GetParameterList() const { return(ParameterList_); };
 
   //! Returns true if MUMPS can handle this matrix shape 
   /*! Returns true if the matrix shape is one that MUMPS can
@@ -250,6 +250,18 @@ public:
     return 0;
   }
 
+  int SetRowScaling(double * RowSca )
+  {
+    RowSca_ = RowSca;
+    return 0;
+  }
+
+  int SetColScaling(double * ColSca )
+  {
+    ColSca_ = ColSca;
+    return 0;
+  }
+
   //! Set ordering.
   /*! Use integer vectors of size N (global dimension of the matrix) as
       given ordering. \c PermIn must be defined on the host
@@ -302,8 +314,13 @@ public:
     KeepMatrixDistributed_ = flag;
     return 0;
   }
+
+  int SetICNTL(int * ictnl);
   
   int SetICNTL(int pos, int value);
+
+  int SetCNTL(double * ctnl);
+  
   int SetCNTL(int pos, double value);
   
   int PrintInformation();
@@ -391,6 +408,11 @@ private:
   int ErrorMsgLevel_;                     // output level 
   
   bool UseTranspose_;
+  bool AddZeroToDiag_;
+  bool PrintTiming_;
+  bool PrintStatistics_;
+
+  double Threshold_;
   
   int icntl_[40];                         // to allow users overwrite default settings
   double cntl_[5];                        // as specified by Amesos

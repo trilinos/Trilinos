@@ -107,7 +107,7 @@ public:
       Epetra_RowMatrix.
 
   */
-  Amesos_Klu(const Epetra_LinearProblem& LinearProblem, const AMESOS::Parameter::List &ParameterList );
+  Amesos_Klu(const Epetra_LinearProblem& LinearProblem, const Teuchos::ParameterList &ParameterList );
 
   //! Amesos_Klu Destructor.
   /*! Completely deletes an Amesos_Klu object.  
@@ -202,7 +202,7 @@ public:
   const Epetra_LinearProblem *GetProblem() const { return(Problem_); };
 
   //! Get a pointer to the ParameterList.
-  const AMESOS::Parameter::List *GetParameterList() const { return(ParameterList_); };
+  const Teuchos::ParameterList *GetParameterList() const { return(ParameterList_); };
 
   //! Returns true if KLU can handle this matrix shape 
   /*! Returns true if the matrix shape is one that KLU can
@@ -340,7 +340,7 @@ public:
 
   bool UseTranspose_;      //  Set by 
   const Epetra_LinearProblem * Problem_;
-  const AMESOS::Parameter::List * ParameterList_ ; 
+  const Teuchos::ParameterList * ParameterList_ ; 
 
 };  // End of  class Amesos_Klu  
 #endif /* _AMESOS_KLU_H_ */

@@ -42,11 +42,12 @@
 #include "Epetra_Vector.h"
 #include "Epetra_SerialDenseMatrix.h"
 #include "Amesos_EpetraBaseSolver.h"
+#include "Teuchos_ParameterList.hpp"
 
 //=============================================================================
 
 Amesos_EpetraBaseSolver::Amesos_EpetraBaseSolver(const Epetra_LinearProblem & Problem,
-					         const AMESOS::Parameter::List &ParameterList) :
+					         const Teuchos::ParameterList &ParameterList) :
   RowIndices_(0),
   ColIndices_(0),
   Values_(0),

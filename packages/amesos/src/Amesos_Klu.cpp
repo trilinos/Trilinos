@@ -63,7 +63,7 @@ public:
 
   //=============================================================================
   Amesos_Klu::Amesos_Klu(const Epetra_LinearProblem &prob, 
-				 const AMESOS::Parameter::List &ParameterList ) :  
+				 const Teuchos::ParameterList &ParameterList ) :  
     PrivateKluData_( new Amesos_Klu_Pimpl() ),
     SerialCrsMatrixA_(0), 
     SerialMap_(0), 
@@ -234,7 +234,7 @@ int Amesos_Klu::ConvertToKluCRS(bool firsttime){
 
 int Amesos_Klu::ReadParameterList() {
   if (ParameterList_->isParameterSublist("Klu") ) {
-    AMESOS::Parameter::List KluParams = ParameterList_->sublist("Klu") ;
+    Teuchos::ParameterList KluParams = ParameterList_->sublist("Klu") ;
   }  
   return 0;
 }

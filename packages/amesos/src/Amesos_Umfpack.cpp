@@ -53,7 +53,7 @@ extern "C" {
 
   //=============================================================================
   Amesos_Umfpack::Amesos_Umfpack(const Epetra_LinearProblem &prob, 
-				 const AMESOS::Parameter::List &ParameterList ) :  
+				 const Teuchos::ParameterList &ParameterList ) :  
     Rcond_(0.0), 
     Symbolic(0),
     Numeric(0),
@@ -163,7 +163,7 @@ int Amesos_Umfpack::ConvertToUmfpackCRS(){
 
 int Amesos_Umfpack::ReadParameterList() {
   if (ParameterList_->isParameterSublist("Umfpack") ) {
-    AMESOS::Parameter::List UmfpackParams = ParameterList_->sublist("Umfpack") ;
+    Teuchos::ParameterList UmfpackParams = ParameterList_->sublist("Umfpack") ;
   }  
   return 0;
 }

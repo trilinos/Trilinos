@@ -29,6 +29,8 @@
 // ***********************************************************************
 // @HEADER
 
+#ifdef OLDLIST
+
 #include "Amesos_Parameter_List.h"	// class definition
 
 /* NOTE: ASCI Red (TFLOP) does not support the i-> funtion for iterators 
@@ -471,3 +473,4 @@ const Entry& List::entry(ConstIterator i) const
 
 #endif
 
+#endif

@@ -34,9 +34,13 @@
 //  #include "NOX_Common.h"		// class data element (string)
 #include <string>
 #include <vector>
-#include "Amesos_Parameter_Arbitrary.h"
+#include "Teuchos_ParameterList.hpp"
+
+//#include "Amesos_Parameter_Arbitrary.h"
 
 namespace AMESOS {
+
+#ifdef OLDLIST
 
 //! %AMESOS %Parameter support.
 namespace Parameter {
@@ -196,9 +200,14 @@ private:
 };
 
 } // namespace Parameter
+
+#endif
+
 } // namespace AMESOS
 
+#ifdef OLD_LIST
 //! Output the parameter. Relies of leftshift operator defined in the class.
 ostream& operator<<(ostream& stream, const AMESOS::Parameter::Entry& e);
+#endif
 
 #endif

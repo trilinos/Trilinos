@@ -29,6 +29,8 @@
 // ***********************************************************************
 // @HEADER
 
+#ifdef OLDLIST
+
 #ifndef AMESOS_PARAMETER_LIST_H
 #define AMESOS_PARAMETER_LIST_H
 
@@ -199,3 +201,4 @@ private:
 #endif
 
 
+#endif

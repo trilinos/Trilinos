@@ -74,7 +74,7 @@ public:
       Epetra_RowMatrix.
 
   */
-  Amesos_Dscpack(const Epetra_LinearProblem& LinearProblem, const AMESOS::Parameter::List &ParameterList );
+  Amesos_Dscpack(const Epetra_LinearProblem& LinearProblem, const Teuchos::ParameterList &ParameterList );
 
   //! Amesos_Dscpack Destructor.
   /*! Completely deletes an Amesos_Dscpack object.  
@@ -169,7 +169,7 @@ public:
   const Epetra_LinearProblem *GetProblem() const { return(Problem_); };
 
   //! Get a pointer to the ParameterList.
-  const AMESOS::Parameter::List *GetParameterList() const { return(ParameterList_); };
+  const Teuchos::ParameterList *GetParameterList() const { return(ParameterList_); };
 
   //! Returns true if DSCPACK can handle this matrix shape 
   /*! Returns true if the matrix shape is one that DSCPACK can
@@ -206,7 +206,7 @@ public:
 
   bool UseTranspose_;
   const Epetra_LinearProblem * Problem_;
-  const AMESOS::Parameter::List * ParameterList_ ; 
+  const Teuchos::ParameterList * ParameterList_ ; 
 
   DSC_Solver	MyDSCObject;
   MPI_Comm MPIC ; 

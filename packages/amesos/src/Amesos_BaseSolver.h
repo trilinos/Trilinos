@@ -32,7 +32,7 @@
 #ifndef _AMESOS_BASESOLVER_H_
 #define _AMESOS_BASESOLVER_H_
 
-#include "Amesos_Parameter_List.h"
+#include "Teuchos_ParameterList.hpp"
 #include "Epetra_LinearProblem.h"
 class Epetra_LinearProblem;
 class Epetra_MultiVector;
@@ -342,7 +342,7 @@ class Amesos_BaseSolver {
     virtual const Epetra_LinearProblem* GetProblem() const = 0;
 
     //! Returns the parameter list
-    virtual const AMESOS::Parameter::List* GetParameterList() const = 0;
+    virtual const Teuchos::ParameterList* GetParameterList() const = 0;
 
 #if 0
     //! Returns a character string describing the operator
