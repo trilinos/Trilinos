@@ -29,7 +29,7 @@
   int SuperLU_permc ; 
 
 // #undef HAVE_TIME_H
-// #undef HAVE_SYSUTSNAME_H
+#undef HAVE_SYS_UTSNAME_H
 
 #ifdef HAVE_TIME_H
 #include <time.h>
@@ -101,7 +101,9 @@ main(int argc, char **argv)
   int exit_value = 0 ; 
   const int MAXNAMELENGTH = 800;
 
+#ifdef HAVE_SYS_UTSNAME_H
   utsname uname_buf; 
+#endif
   char timebuffer[MAXNAMELENGTH];
 
   string Sprogram ;

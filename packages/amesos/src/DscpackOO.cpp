@@ -1,3 +1,4 @@
+#define DBL_R_NUM
 #include "DscpackOO.h"
 #ifdef EPETRA_MPI
 #include "Epetra_MpiComm.h"
@@ -16,7 +17,7 @@ This code cannot be compiled without mpi.h.
 #include <vector>
 #include <algorithm>
 
-#define DEBUG
+//  #define DEBUG
 #ifdef DEBUG
 #include "Comm_assert_equal.h"
 #endif
@@ -39,7 +40,7 @@ DscpackOO::~DscpackOO(void) {
   //  DeleteMemory();
   //  DeleteAzArrays();
 
-  if ( A_and_LU_built ) { 
+  if ( MyDscRank>=0 && A_and_LU_built ) { 
     DSC_FreeAll( MyDSCObject ) ; 
     DSC_Close0( MyDSCObject ) ; 
     DSC_End( MyDSCObject ) ; 
@@ -314,7 +315,10 @@ int DscpackOO::Solve(bool factor) {
 				    NumGlobalCols = 0 ; 
 				    NumLocalNonz = 0 ; 
 				    assert( numprocs == Comm.NumProc() ) ; 
+
+#ifdef DEBUG
 				    ken_print( numrows, &Ap[0], &Ai[0], &Replicates[0], &Aval[0],  "After ReadMatrixMarket" ) ;  
+#endif
 				    int maxprocs = EPETRA_MIN( numprocs, 
 							       DSC_Analyze( numrows, &Ap[0], &Ai[0], &Replicates[0] ) ) ; 
 				    while ( DscNumProcs * 2 <= maxprocs ) DscNumProcs *= 2 ;
@@ -325,7 +329,9 @@ int DscpackOO::Solve(bool factor) {
 				    if ( MyDscRank >= 0 ) { 
 				      cout << " numrows = " << numrows << endl ; 
 				      assert( iam == MyDscRank ) ; 
+#ifdef DEBUG
 				      ken_print( numrows, &Ap[0], &Ai[0], &Replicates[0], &Aval[0],  "After Analyze" ) ;  
+#endif
 				      EPETRA_CHK_ERR( DSC_Order ( MyDSCObject, OrderCode, numrows, &Ap[0], &Ai[0], 
 								  &Replicates[0], &NumGlobalCols, &NumLocalStructs, 
 								  &NumLocalCols, &NumLocalNonz, 
@@ -337,9 +343,11 @@ int DscpackOO::Solve(bool factor) {
 
 				    for ( int procnum = 0 ; procnum < DscNumProcs ; procnum++ ) { 
 				      if ( MyDscRank == procnum ) { 
+#ifdef DEBUG
 					ken_print_out( numrows, NumGlobalCols, NumLocalStructs, NumLocalCols, 
 						       NumLocalNonz, GlobalStructNewColNum, GlobalStructNewNum, 
 						       GlobalStructOwner, LocalStructOldNum ) ; 
+#endif
 				      }
 				      Comm.Barrier(); 
 				    }
@@ -478,7 +486,9 @@ int DscpackOO::Solve(bool factor) {
   cout << " BEFORE BARRIER iam = " << iam << " numrows = " << numrows << endl ; 
   Comm.Barrier() ; 
   cout << " iam = " << iam << " numrows = " << numrows << endl ; 
+#ifdef DEBUG
   assert( Comm_assert_equal( &Comm, numrows ) );
+#endif
   Comm.Broadcast( &xValues[0], numrows, 0 ) ; 
 
   //
