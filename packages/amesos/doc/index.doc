@@ -12,21 +12,22 @@ arguments via Epetra matrix and vector classes.
 
 \section startup Overview of Amesos.
 
-Amesos contains two supported classes:
+Amesos contains four supported classes:
 
 <ul> 
 
 <li> SuperludistOO - Interface to Xiaoye Li's SuperLU Distributed memory code with serial input interface.
 <li> Epetra_SLU - Interface to Xiaoye Li's SuperLU Serial. 
+<li> Amesos_Dscpack - Interface to Padma Raghavan's DSCPACK
+<li> Amesos_Umfpack - Interface to Tim Davis's UMFPACK
 </ul>
 
 Amesos is migrating toward a base class model:  Amesos_BaseSolver.  All future Amesos classes will implement the 
 base class.  
 
-Amesos will soon support the following classes:
+Amesos will soon support the following class:
 <ul> 
 <li> Amesos_Superludist - Interface to Xiaoye Li's SuperLU Distributed memory code with distributed memory input interface. 
-<li> Amesos_Dscpack - Interface to Padma Raghavan's DSCPACK
 
 
 </ul>
@@ -137,6 +138,22 @@ included one or two codes that have more restrictive copyrights.
 
 </ul>
 
+<li>UMFPACK
+<ul>
+<li>Obtain the UMFPACK distribution from <a href="http://www.cise.ufl.edu/research/sparse/umfpack/">Tim Davis's web site</a>
+<li>Untar the UMFPACK code in your Trilinos3PL directory.
+<li>Building UMFPACK
+<ul>
+<li>Edit UMFPACKv4.1/AMD/Make/Make.include (Trilinos3PL/config/UMFPACKv4.1 contains the Make.include files that I used)
+<li>cd UMFPACKv4.1/UMFPACK; make lib
+</ul>
+<li>Check the results: 
+<ul>
+<li>cd UMFPACKv4.1/UMFPACK/Demo; diff my_umfpack_dl_demo.out umfpack_dl_demo.out
+<li>Roughly a dozen lines should be different.  Look for the maxnorm of residual which is typically  near machine precision (1e-14 or better).
+</ul>
+</ul>
+
 <li>DSCPACK 
 <ul>
 <li>Obtain the DSCPACK distribution from <a
@@ -144,6 +161,7 @@ href="http://www.cse.psu.edu/~raghavan/Dscpack">Padma Raghavan's DSCPACK
 web site</a>.  You will have to submit a form asking for a password.
 Dr. Raghavan typically answers within a day - if she does not, let me
 know (kstanley@cs.utk.edu).  
+<li>Untar the DSCPACK code in your Trilinos3PL directory.
 
 <li> Building DSCPACK
 <p>This is quoted verbatim from the DSCPACK/Readme file:
@@ -220,8 +238,10 @@ You will need to add three switches to your configure invocation script.
 </ul>
 <li>Enable one of the Amesos classes:
 <ul>
-<li><b>--enable-amesos-slus</b> - SuperLU serial
-<li><b>--enable-amesos-slud </b> - SuperLU distributes
+<li><b>--enable-amesos-slus</b> - Epetra_SLU
+<li><b>--enable-amesos-slud </b> - SuperludistOO
+<li><b>--enable-amesos-dscpack </b> -  Amesos_Dscpack
+<li><b>--enable-amesos-umfpack </b> -  Amesos_Umfpack
 </ul>
 <li>Specify where to find the third party code in one of the following ways:
 <ul>
@@ -230,8 +250,14 @@ You will need to add three switches to your configure invocation script.
 <li><b>--with-amesos-sludlib=/home/somedir/SuperLU_DIST_2.0/libsuperludist.a</b> <br>and <br><b>--with-amesos-sludincdir=/home/somedir/SuperLU_DIST_2.0/SRC</b>
 </ul>
 </ul>
-Amesos is not built with either of the two supported classes by default.  You must choose one.
-At present, you cannot configure with both  SuperLU serial and SuperLU dist because of name conflicts between the two.
+Amesos is not built with any of the supported classes by default.  You must choose at least one.  
+
+<p>UMFPACK requires two libraries libumfpack.a and libamd.a.  If you
+install UMFPACK in your Trilinos3PL directory using the directory
+structure provided by UMFPACK, "--with-trilinos3pldir=" is sufficient.  If you 
+install these libraries in other directories, you can use --with-amesos-umfpacklib= and  --with-amesos-umfpackamblib= to specify those libraries. 
+
+
 
 \subsection testsuperludist  Testing Amesos with SuperLU distributed
 
@@ -312,6 +338,6 @@ superlu_dist_2.0.tar for consistency.
 href="http://www.cs.utk.edu/~kstanley/amesos/doc/html/index.html">
 UTK Amesos home page</a> may be more up-to-date on occasion.
 
-<p>This page last updated 30 May 2003.
+<p>This page last updated 11 July 2003.
 
 */

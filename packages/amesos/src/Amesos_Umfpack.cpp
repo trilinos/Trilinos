@@ -158,7 +158,7 @@ int Amesos_Umfpack::PerformSymbolicFactorization() {
 
   double *Control = (double *) NULL, *Info = (double *) NULL ;
   
-  //    if ( Symbolic ) umfpack_di_free_symbolic (&Symbolic) ;
+  if ( Symbolic ) umfpack_di_free_symbolic (&Symbolic) ;
   if ( iam== 0 ) {
     (void) umfpack_di_symbolic (NumGlobalElements_, NumGlobalElements_, &Ap[0], 
 				&Ai[0], &Aval[0], 

@@ -16,6 +16,6 @@ Here are the results for some other tests:
 The failures on herouxsmp adn paunchy are in bcsstk18.  The failures in stratus are in 
 bcsstk18 (except for a couple fidapm15 errors with errors slightly too large).  
   AmesosDist works on herouxsmp, paunchy, stratus and my laptop running cygwin, but exhibits
-frou failures on atlantis.
+four failures on atlantis.
 
 Refer to the other .summary files for details.
