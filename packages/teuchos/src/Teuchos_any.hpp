@@ -36,7 +36,7 @@
 
 namespace Teuchos {
 
-  ///
+///
 /** The "any" class.
  *
  * ToDo: Finish documentatioin!
@@ -47,50 +47,50 @@ public:
 
 	any()
 		: content(0)
-  {}
+		{}
 
 	template<typename ValueType>
 	any(const ValueType & value)
 		: content(new holder<ValueType>(value))
-  {}
+		{}
 
 	any(const any & other)
 		: content(other.content ? other.content->clone() : 0)
-  {}
+		{}
 
 	~any()
-  {
-    delete content;
-  }
+		{
+			delete content;
+		}
 
 	any & swap(any & rhs)
-  {
-    std::swap(content, rhs.content);
-    return *this;
-  }
+		{
+			std::swap(content, rhs.content);
+			return *this;
+		}
 	
 	template<typename ValueType>
 	any & operator=(const ValueType & rhs)
-  {
-    any(rhs).swap(*this);
-    return *this;
-  }
+		{
+			any(rhs).swap(*this);
+			return *this;
+		}
 	
 	any & operator=(const any & rhs)
-  {
-    any(rhs).swap(*this);
-    return *this;
-  }
+		{
+			any(rhs).swap(*this);
+			return *this;
+		}
 	
 	bool empty() const
-  {
-    return !content;
-  }
+		{
+			return !content;
+		}
 	
 	const std::type_info & type() const
-  {
-    return content ? content->type() : typeid(void);
-  }
+		{
+			return content ? content->type() : typeid(void);
+		}
 
 	/** @name Private??? types */
 	//@{
@@ -115,13 +115,13 @@ public:
 		///
 		holder(const ValueType & value)
 			: held(value)
-    {}
+			{}
 		///
 		virtual const std::type_info & type() const
-    { return typeid(ValueType); }
+			{ return typeid(ValueType); }
 		///
 		virtual placeholder * clone() const
-    { return new holder(held); }
+			{ return new holder(held); }
 		///
 		ValueType held;
 	};
@@ -138,13 +138,13 @@ private:
 public:
 	// Danger: This is made public to allow any_cast to be non-friend
 	placeholder* access_content()
-  { return content; }
+		{ return content; }
 	const placeholder* access_content() const
-  { return content; }
+		{ return content; }
 	
 };
 
-  ///
+///
 class bad_any_cast : public std::runtime_error
 {
 public:
@@ -159,11 +159,11 @@ ValueType& any_cast(any &operand)
 	if( operand.type() == typeid(ValueType) )
 		result = &dynamic_cast<any::holder<ValueType>*>(operand.access_content())->held;
 	TEST_FOR_EXCEPTION(
-                     result==NULL, bad_any_cast
-                     ,"any_cast<" << typeid(ValueType).name() << "(operand): Error, cast to type \'"
-                     << typeid(any::holder<ValueType>).name() << "\' failed since the actual underlying type is \'"
-                     << typeid(*operand.access_content()).name() << "!"
-                     );
+		result==NULL, bad_any_cast
+		,"any_cast<" << typeid(ValueType).name() << "(operand): Error, cast to type \'"
+		<< typeid(any::holder<ValueType>).name() << "\' failed since the actual underlying type is \'"
+		<< typeid(*operand.access_content()).name() << "!"
+		);
 	return *result;
 }
 
