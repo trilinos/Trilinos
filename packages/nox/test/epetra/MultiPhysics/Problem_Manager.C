@@ -472,8 +472,8 @@ bool Problem_Manager::solveMF()
   }
 
   // Extract and use final solutions
-  const NOX::Epetra::Group& finalGroup =
-    dynamic_cast<const NOX::Epetra::Group&>(solver.getSolutionGroup());
+  const NOX::EpetraNew::Group& finalGroup =
+    dynamic_cast<const NOX::EpetraNew::Group&>(solver.getSolutionGroup());
   const Epetra_Vector& finalSolution =
     (dynamic_cast<const NOX::Epetra::Vector&>(finalGroup.getX())).getEpetraVector();
   
@@ -506,6 +506,9 @@ bool Problem_Manager::evaluate(
   else {
     fillMatrix = true;
   }
+
+  // Note that incoming matrix is no longer used.  Instead, the problem
+  // should own the matrix to be filled into.
 
   GenericEpetraProblem &problemA = *Problems[0],
                        &problemB = *Problems[1];
@@ -545,7 +548,7 @@ bool Problem_Manager::evaluate(
 
   if (fillMatrix) {
     
-    Epetra_CrsMatrix* Matrix = dynamic_cast<Epetra_CrsMatrix*>(matrix);
+    Epetra_CrsMatrix* Matrix = dynamic_cast<Epetra_CrsMatrix*>(A);
     Matrix->PutScalar(0.0);
     
     // Create a timer for performance
@@ -572,9 +575,9 @@ bool Problem_Manager::evaluate(
     const Epetra_Operator& jacOpA = linearSystemA.getJacobianOperator();
     const Epetra_Operator& jacOpB = linearSystemB.getJacobianOperator();
 
-    if ( dynamic_cast<const NOX::Epetra::FiniteDifference*>(&jacOpA) )
+    if ( dynamic_cast<const NOX::EpetraNew::FiniteDifference*>(&jacOpA) )
       matrixAPtr = const_cast<Epetra_CrsMatrix*>(
-        &dynamic_cast<const NOX::Epetra::FiniteDifference&>
+        &dynamic_cast<const NOX::EpetraNew::FiniteDifference&>
           (jacOpA).getUnderlyingMatrix());
     else if ( dynamic_cast<const Epetra_CrsMatrix*>(&jacOpA) )
       // NOTE: We are getting the matrix from the problem.  This SHOULD be
@@ -590,9 +593,9 @@ bool Problem_Manager::evaluate(
       exit(0);
     }
 
-    if ( dynamic_cast<const NOX::Epetra::FiniteDifference*>(&jacOpB) )
+    if ( dynamic_cast<const NOX::EpetraNew::FiniteDifference*>(&jacOpB) )
       matrixAPtr = const_cast<Epetra_CrsMatrix*>(
-        &dynamic_cast<const NOX::Epetra::FiniteDifference&>
+        &dynamic_cast<const NOX::EpetraNew::FiniteDifference&>
           (jacOpB).getUnderlyingMatrix());
     else if ( dynamic_cast<const Epetra_CrsMatrix*>(&jacOpB) )
       // NOTE: We are getting the matrix from the problem.  This SHOULD be

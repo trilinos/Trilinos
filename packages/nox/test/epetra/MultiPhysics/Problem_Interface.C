@@ -59,8 +59,8 @@ bool Problem_Interface::computePrecMatrix(const Epetra_Vector& x)
 bool Problem_Interface::computePreconditioner(const Epetra_Vector& x, 
                        NOX::Parameter::List* precParams)
 {
-  cout << "ERROR: Problem_Interface::preconditionVector() - Use Explicit Jacobian only for this test problem!" << endl;
-  throw 1;
+  // Pass through to let the Problem fill its owned matrix
+  return problem.evaluate(NOX::EpetraNew::Interface::Required::Jac, &x, 0, 0);
 }
 //-----------------------------------------------------------------------------
 
