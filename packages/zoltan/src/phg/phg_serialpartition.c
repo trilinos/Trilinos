@@ -25,15 +25,15 @@ extern "C" {
  */
 #define NUM_COARSEPARTITION_FNS 9
 
-static ZOLTAN_PHG_COARSEPARTITION_FN coarse_part_ran;
-static ZOLTAN_PHG_COARSEPARTITION_FN coarse_part_lin;
-static ZOLTAN_PHG_COARSEPARTITION_FN coarse_part_rip;
-static ZOLTAN_PHG_COARSEPARTITION_FN coarse_part_rip2;
 static ZOLTAN_PHG_COARSEPARTITION_FN coarse_part_gr0;
 static ZOLTAN_PHG_COARSEPARTITION_FN coarse_part_gr1;
 static ZOLTAN_PHG_COARSEPARTITION_FN coarse_part_gr2;
 static ZOLTAN_PHG_COARSEPARTITION_FN coarse_part_gr3;
 static ZOLTAN_PHG_COARSEPARTITION_FN coarse_part_gr4;
+static ZOLTAN_PHG_COARSEPARTITION_FN coarse_part_ran;
+static ZOLTAN_PHG_COARSEPARTITION_FN coarse_part_lin;
+static ZOLTAN_PHG_COARSEPARTITION_FN coarse_part_rip;
+static ZOLTAN_PHG_COARSEPARTITION_FN coarse_part_rip2;
 
 static ZOLTAN_PHG_COARSEPARTITION_FN* CoarsePartitionFns[] = 
                                       {&coarse_part_gr0,
@@ -50,7 +50,7 @@ static ZOLTAN_PHG_COARSEPARTITION_FN* CoarsePartitionFns[] =
 static int local_coarse_partitioner(ZZ *, HGraph *, int, float *, Partition,
   PHGPartParams *, ZOLTAN_PHG_COARSEPARTITION_FN *);
 
-static void pick_best(ZZ *, PHGComm *, HGraph *, int, int *);
+static void pick_best(ZZ *, PHGComm *, HGraph *, int, int, int *);
 
 /****************************************************************************/
 
@@ -108,9 +108,6 @@ int Zoltan_PHG_CoarsePartition(
  * It computes a different partition on each processor
  * using different random numbers (and possibly also
  * different algorithms) and selects the best.
- *
- * EBEB Future: We could compute several partitionings on each
- * processors and select best. Helpful for small no. of procs.
  */
 char *yo = "Zoltan_PHG_CoarsePartition";
 int ierr = ZOLTAN_OK;
@@ -199,25 +196,31 @@ int i, si;
        * and partition shg.
        */
       if (shg->nVtx) {
-        spart = (int *) ZOLTAN_MALLOC(shg->nVtx * sizeof(int));
+        spart = (int *) ZOLTAN_MALLOC(shg->nVtx * hgp->num_coarse_tries *
+                                      sizeof(int));
         if (!spart) {
           ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Memory error.");
           ierr = ZOLTAN_MEMERR;
           goto End;
         }
       
+        /* Compute several coarse partitionings. */
         /* KDDKDD Set RNG so different procs compute different parts. */
+        /* KDDKDD For now, use same seed everywhere for debugging. */
 
-        ierr = CoarsePartition(zz, shg, numPart, part_sizes, spart, hgp);
-        if (ierr < 0) {
-          ZOLTAN_PRINT_ERROR(zz->Proc, yo, 
+        for (i=0; i<hgp->num_coarse_tries; i++){
+          ierr = CoarsePartition(zz, shg, numPart, part_sizes, 
+                   spart+i*(shg->nVtx), hgp);
+          if (ierr < 0) {
+            ZOLTAN_PRINT_ERROR(zz->Proc, yo, 
                              "Error returned from CoarsePartition.");
-          goto End;
+            goto End;
+          }
         }
 
         /* Evaluate and select the best */
 
-        pick_best(zz, phg->comm, shg, numPart, spart);
+        pick_best(zz, phg->comm, shg, numPart, hgp->num_coarse_tries, spart);
     
         /* Map gathered partition back to 2D distribution */
         for (i = 0; i < phg->nVtx; i++) {
@@ -287,8 +290,8 @@ int rootnpins, rootrank;
    first weight is used in computing the partition.
 
    Note: This is a quick heuristic. We could alternatively use
-   a more expensive but optimal algorithm, see e.g. Ali Pinar's thesis, 
-   but for our purposes it is not worth the effort.
+   a more expensive but optimal algorithm, see e.g. Ali Pinar's 
+   PhD thesis (UIUC), but for our purpose it is not worth the effort.
 
 */
 
@@ -297,7 +300,7 @@ static int seq_part (
   HGraph *hg,         /* the hypergraph, containing vertex weights */
   int *order,         /* the ordering of the vertices */
   int p,              /* desired number of partitions */
-  float *tpweights,   /* Target partition sizes */
+  float *part_sizes,  /* target partition sizes */
   Partition part,     /* Output: partition numbers */
   PHGPartParams *hgp  /* misc hypergraph parameters */
 )
@@ -305,7 +308,17 @@ static int seq_part (
   int i, j, pnumber;
   int vwgtdim = hg->VtxWeightDim;
   double weight_sum = 0.0, part_sum = 0.0, old_sum, cutoff;
-  float tpsum = 0.0;
+  float psize_sum = 0.0;
+
+  if (part_sizes==NULL){
+    /* part_sizes should always exist, even with uniform partitions */
+    return ZOLTAN_FATAL;
+  }
+
+  if (p<1){
+    /* should never happen */
+    return ZOLTAN_FATAL;
+  }
 
   /* Sum up all the vertex weights. */
   for (i=0; i<hg->nVtx; i++)
@@ -313,16 +326,12 @@ static int seq_part (
 
   /* Sum up all the target partition weights. */
   /* Only use first vweight for now. */
-  if (tpweights==NULL)
-    tpsum = p;
-  else {
-    for (i=0; i<p; i++)
-      tpsum += tpweights[i*vwgtdim];
-  }
+  for (i=0; i<p; i++)
+    psize_sum += part_sizes[i*vwgtdim];
 
   pnumber = 0; /* Assign next vertex to partition no. pnumber */
   /* Set cutoff for current partition */
-  cutoff = weight_sum*(tpweights ? tpweights[0] : 1.0)/tpsum;  
+  cutoff = weight_sum*(part_sizes ? part_sizes[0] : 1.0)/psize_sum;  
 
   /* Loop through all vertices in specified order, and assign
      partition numbers.  */                                        
@@ -336,10 +345,8 @@ static int seq_part (
     if ((pnumber+1) < p && part_sum > cutoff) {
       pnumber++; /* Increase current part number */
       /* Decide if current vertex should be moved to the next partition */
-      if (tpweights  
-         ? ((part_sum-cutoff)/tpweights[pnumber] > 
-           (cutoff-old_sum)/tpweights[pnumber-1]) 
-         : (part_sum-cutoff > cutoff-old_sum)) {
+        if ((part_sum-cutoff)/part_sizes[pnumber] > 
+            (cutoff-old_sum)/part_sizes[pnumber-1]) { 
         part[j]++;
         part_sum = old_sum;
       }
@@ -349,8 +356,8 @@ static int seq_part (
       else
         part_sum = 0.0;
       /* Update cutoff. */
-      tpsum -= (tpweights ? tpweights[pnumber-1] : 1.0);
-      cutoff = weight_sum*(tpweights ? tpweights[pnumber] : 1.0)/tpsum;
+      psize_sum -= part_sizes[pnumber-1];
+      cutoff = weight_sum*part_sizes[pnumber]/psize_sum;
     }
     if (hgp->output_level >= PHG_DEBUG_ALL)
       printf("COARSE_PART i=%2d, part[%2d] = %2d, part_sum=%f, cutoff=%f\n", 
@@ -917,6 +924,7 @@ static void pick_best(
   PHGComm *phg_comm,
   HGraph *shg, 
   int numPart,
+  int numCandidates,
   int *spart
 )
 {
@@ -928,10 +936,32 @@ struct {
   int rank;
 } local[2], global[2];
 
-  local[0].val = Zoltan_PHG_Compute_Balance(zz, shg, numPart, spart),
+int i, mybest;
+float cut, bal;
+
+  /* find best local partition */
+
+  mybest = 0;
+  local[0].val = Zoltan_PHG_Compute_Balance(zz, shg, numPart, spart);
   local[1].val = Zoltan_PHG_hcut_size_links(shg->comm, shg, spart, numPart);
   local[0].rank = local[1].rank = phg_comm->myProc;
+
+  /* What do we say is "best"?   For now, say lowest cut size. */
+  for (i=1; i<numCandidates; i++){
+    bal = Zoltan_PHG_Compute_Balance(zz, shg, numPart, spart+i*(shg->nVtx)); 
+    cut = Zoltan_PHG_hcut_size_links(shg->comm, shg, 
+             spart+i*(shg->nVtx), numPart);
+    if (cut < local[1].val){
+      mybest = i;
+      local[0].val = bal;
+      local[1].val = cut;
+    }
+  }
   
+  /* copy best partition to beginning of spart */
+  for (i=0; i<shg->nVtx; i++)
+    spart[i] = spart[mybest*(shg->nVtx)+i];
+
   /* KDDKDD DEBUGGING */
 /*
   printf("%d KDDB %f %f\n", zz->Proc, local[0].val, local[1].val);
