@@ -297,30 +297,31 @@ void MultiLevelPreconditioner::Destroy_ML_Preconditioner()
   
   if( LevelID_ != 0 ) delete [] LevelID_;
   
+  // stick data in OutputList
+
+  sprintf(parameter,"%stime: total", Prefix_);
+  OutputList_.set(parameter, FirstApplicationTime_+ApplicationTime_);
+
+  sprintf(parameter,"%stime: first application", Prefix_);
+  OutputList_.set(parameter, FirstApplicationTime_);
+
+  sprintf(parameter,"%stime: construction", Prefix_);
+  OutputList_.set(parameter, ConstructionTime_);
+
+  sprintf(parameter,"%snumber of applications", Prefix_);
+  OutputList_.set(parameter,NumApplications_);
+    
   if( verbose_ && NumApplications_ ) {
 
-    // stick data in OutputList
-
-    sprintf(parameter,"%stime: total application", Prefix_);
-    OutputList_.set(parameter, FirstApplicationTime_+ApplicationTime_);
-
-    sprintf(parameter,"%stime: first application", Prefix_);
-    OutputList_.set(parameter, FirstApplicationTime_);
-
-    sprintf(parameter,"%stime: construction", Prefix_);
-    OutputList_.set(parameter, ConstructionTime_);
-
-    sprintf(parameter,"%snumber of applications", Prefix_);
-    OutputList_.set(parameter,NumApplications_);
-    
     // print on screen
     
     PrintLine();
     double TotalTime = FirstApplicationTime_ + ApplicationTime_;
-    cout << PrintMsg_ << "Time for all applications = " << TotalTime << " (s)" << endl;
-    cout << PrintMsg_ << "Time for first application = " << FirstApplicationTime_ << " (s)" << endl;
+    cout << PrintMsg_ << "Construction time             = " << ConstructionTime_ << " (s)" << endl;
+    cout << PrintMsg_ << "Time for all applications     = " << TotalTime << " (s)" << endl;
+    cout << PrintMsg_ << "Time for first application    = " << FirstApplicationTime_ << " (s)" << endl;
     cout << PrintMsg_ << "Each of " << NumApplications_
-	 << " applications took  " << TotalTime/NumApplications_ << " (s)" << endl;
+	 << " applications took " << TotalTime/NumApplications_ << " (s)" << endl;
     PrintLine();
   }
 
@@ -401,7 +402,7 @@ MultiLevelPreconditioner::MultiLevelPreconditioner( const Epetra_RowMatrix & Edg
 
 // ================================================ ====== ==== ==== == =
 
-MultiLevelPreconditioner::MultiLevelPreconditioner( ML_Operator * Operator,
+MultiLevelPreconditioner::MultiLevelPreconditioner( const ML_Operator * Operator,
 						    const ParameterList & List, const bool ComputePrec,
 						    const char Prefix[] )
 {
@@ -445,62 +446,64 @@ MultiLevelPreconditioner::MultiLevelPreconditioner(const Epetra_RowMatrix & RowM
   /* Parse command line to get main options                                 */
   /* ********************************************************************** */
 
-  if( CLP.Has("-defaults") )
+  if( CLP.Has("-ml_defaults") )
     SetDefaults(CLP.Get("-defaults","DD"),List_);
 
   // general
-  if( CLP.Has("-num_levels") )
-    List_.set("max levels",CLP.Get("-num_levels",2));
-  if( CLP.Has("-incr_or_decr" ) )
-      List_.set("increasing or decreasing",CLP.Get("-incr_or_decr","increasing"));
-
+  if( CLP.Has("-ml_num_levels") )
+    List_.set("max levels",CLP.Get("-ml_num_levels",2));
+  if( CLP.Has("-ml_incr_or_decr" ) )
+      List_.set("increasing or decreasing",CLP.Get("-ml_incr_or_decr","increasing"));
+  if( CLP.Has("-ml_output" ) )
+      List_.set("output",CLP.Get("-ml_output",10));
+  
   // smoother
-  if( CLP.Has("-smoother_type") )
-    List_.set("smoother: type", CLP.Get("-smoother_type","Gauss-Seidel"));
-  if( CLP.Has("-smoother_sweeps") )
-    List_.set("smoother: sweeps", CLP.Get("-smoother_sweeps",1));
-  if( CLP.Has("-smoother_pre_or_post") )
-    List_.set("smoother: pre or post", CLP.Get("-smoother_pre_or_post","both"));
-  if( CLP.Has("-smoother_damping_factor") )
-    List_.set("smoother: damping factor", CLP.Get("-smoother_damping_factor",1.0));
+  if( CLP.Has("-ml_smoother_type") )
+    List_.set("smoother: type", CLP.Get("-ml_smoother_type","Gauss-Seidel"));
+  if( CLP.Has("-ml_smoother_sweeps") )
+    List_.set("smoother: sweeps", CLP.Get("-ml_smoother_sweeps",1));
+  if( CLP.Has("-ml_smoother_pre_or_post") )
+    List_.set("smoother: pre or post", CLP.Get("-ml_smoother_pre_or_post","both"));
+  if( CLP.Has("-ml_smoother_damping_factor") )
+    List_.set("smoother: damping factor", CLP.Get("-ml_smoother_damping_factor",1.0));
 
   // smoother-advanced
-  if( CLP.Has("-RP_smoothing") )
-    List_.set("R and P smoothing: type", CLP.Get("-RP_smoothing","classic"));
-  if( CLP.Has("-RP_damping") )
-    List_.set("R and P smoothing: damping", CLP.Get("-RP_damping","classic"));
+  if( CLP.Has("-ml_RP_smoothing") )
+    List_.set("R and P smoothing: type", CLP.Get("-ml_RP_smoothing","classic"));
+  if( CLP.Has("-ml_RP_damping") )
+    List_.set("R and P smoothing: damping", CLP.Get("-ml_RP_damping","classic"));
 
   // aggregation
-  if( CLP.Has("-num_nodes_per_aggr") )
-    List_.set("aggregation: nodes per aggregate", CLP.Get("-num_nodes_per_aggr",512));
-  if( CLP.Has("-num_local_aggr") )
-    List_.set("aggregation: local aggregates", CLP.Get("-num_local_aggr",512));
-  if( CLP.Has("-aggr_scheme") )
-    List_.set("aggregation: type", CLP.Get("-aggr_scheme","Uncoupled"));
-  if( CLP.Has("-aggr_damping_factor") )
-    List_.set("aggregation: damping factor", CLP.Get("-aggr_damping_factor",1.333));
-  if( CLP.Has("-compute_field_of_values") )
+  if( CLP.Has("-ml_num_nodes_per_aggr") )
+    List_.set("aggregation: nodes per aggregate", CLP.Get("-ml_num_nodes_per_aggr",512));
+  if( CLP.Has("-ml_num_local_aggr") )
+    List_.set("aggregation: local aggregates", CLP.Get("-ml_num_local_aggr",512));
+  if( CLP.Has("-ml_aggr_scheme") )
+    List_.set("aggregation: type", CLP.Get("-ml_aggr_scheme","Uncoupled"));
+  if( CLP.Has("-ml_aggr_damping_factor") )
+    List_.set("aggregation: damping factor", CLP.Get("-ml_aggr_damping_factor",1.333));
+  if( CLP.Has("-ml_compute_field_of_values") )
     List_.set("aggregation: compute field of values", true);
-  if( CLP.Has("-compute_field_of_values_non_scaled") )
+  if( CLP.Has("-ml_compute_field_of_values_non_scaled") )
     List_.set("aggregation: compute field of values for non-scaled", true);
   
   // coarse
-  if( CLP.Has("-coarse_type") )
-    List_.set("coarse: type", CLP.Get("-coarse_type","Amesos-KLU"));
-  if( CLP.Has("-coarse_max_procs") ) 
-    List_.set("coarse: max processes", CLP.Get("-coarse_max_procs",4));
+  if( CLP.Has("-ml_coarse_type") )
+    List_.set("coarse: type", CLP.Get("-ml_coarse_type","Amesos-KLU"));
+  if( CLP.Has("-ml_coarse_max_procs") ) 
+    List_.set("coarse: max processes", CLP.Get("-ml_coarse_max_procs",4));
 
   // eigen-analysis
-  if( CLP.Has("-eigen_analysis_type") )
-    List_.set("eigen-analysis: type", CLP.Get("-eigen_analysis_type","Anorm"));
-  if( CLP.Has("-eigen_analysis_tol") )
-    List_.set("eigen-analysis: tolerance", CLP.Get("-eigen_analysis_tol",1e-2));
-  if( CLP.Has("-compute_null_space") )
-    List_.set("compute null space", CLP.Has("-compute_null_space"));
-  if( CLP.Has("-null_space_dim") )
-    List_.set("null space dimension", CLP.Get("-null_space_dim",1));
-  if( CLP.Has("-add_default_null_space") )
-    List_.set("add default null space", CLP.Has("-add_default_null_space"));
+  if( CLP.Has("-ml_eigen_analysis_type") )
+    List_.set("eigen-analysis: type", CLP.Get("-ml_eigen_analysis_type","Anorm"));
+  if( CLP.Has("-ml_eigen_analysis_tol") )
+    List_.set("eigen-analysis: tolerance", CLP.Get("-ml_eigen_analysis_tol",1e-2));
+  if( CLP.Has("-ml_compute_null_space") )
+    List_.set("compute null space", CLP.Has("-ml_compute_null_space"));
+  if( CLP.Has("-ml_null_space_dim") )
+    List_.set("null space dimension", CLP.Get("-ml_null_space_dim",1));
+  if( CLP.Has("-ml_add_default_null_space") )
+    List_.set("add default null space", CLP.Has("-ml_add_default_null_space"));
   
   /* ********************************************************************** */
   /* back to normal initialization                                          */
@@ -827,7 +830,12 @@ int MultiLevelPreconditioner::ComputePreconditioner()
 						    &Tmat_array,&Tmat_trans_array, 
 						    ML_YES, 1.5); 
   }
-  
+
+  {
+    int NL2 = OutputList_.get("max number of levels", 0);
+    OutputList_.set("max number of levels", NL2+NumLevels_);
+  }
+
   if( verbose_ ) cout << PrintMsg_ << "Number of actual levels : " << NumLevels_ << endl;
 
   /* ********************************************************************** */
@@ -957,7 +965,7 @@ int MultiLevelPreconditioner::CreateLabel()
   if( SolvingMaxwell_ == false ) 
     sprintf(Label_,"%d level SA (%s, %s)", ml_->ML_num_actual_levels, finest, coarsest);
   else
-    sprintf(Label_,"%d level Maxwell (%s, %s)", ml_ptr->ML_num_actual_levels, finest, coarsest);
+    sprintf(Label_,"%d level MW (%s, %s)", ml_ptr->ML_num_actual_levels, finest, coarsest);
   
   return 0;
     

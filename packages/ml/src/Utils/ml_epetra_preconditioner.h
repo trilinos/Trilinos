@@ -64,7 +64,7 @@ public:
 
   //! Constructs an MultiLevelPreconditioner from an ML_Operator. Retrives parameters from \c List.
   
-  MultiLevelPreconditioner( ML_Operator * Operator,
+  MultiLevelPreconditioner( const ML_Operator * Operator,
 			    const Teuchos::ParameterList & List,
 			    const bool ComputePrec=true,
 			    const char Prefix[]="" );
@@ -103,7 +103,7 @@ public:
     return List_;
   }
 
-  Teuchos::ParameterList & GetOutputList() 
+  Teuchos::ParameterList GetOutputList() 
   {
     return OutputList_;
   }
