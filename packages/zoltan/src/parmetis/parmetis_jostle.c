@@ -50,10 +50,10 @@ static PARAM_VARS Graph_params[] = {
 
 #if (defined(LB_JOSTLE) || defined(LB_PARMETIS))
 
-static int LB_ParMetis_Jostle(LB *lb, int *num_imp, LB_GID **imp_gids,
-  LB_LID **imp_lids, int **imp_procs, int *num_exp, LB_GID **exp_gids,
-  LB_LID **exp_lids, int **exp_procs, char *alg, int  *options);
-static int hash_lookup (struct LB_hash_node **hashtab, LB_GID key, int n);
+static int LB_ParMetis_Jostle(LB *lb, int *num_imp, LB_ID_PTR *imp_gids,
+  LB_ID_PTR *imp_lids, int **imp_procs, int *num_exp, LB_ID_PTR *exp_gids,
+  LB_ID_PTR *exp_lids, int **exp_procs, char *alg, int  *options);
+static int hash_lookup (LB *, struct LB_hash_node **, LB_ID_PTR, int);
 static int scale_round_weights(float *fwgts, idxtype *iwgts, int n, int dim, 
                  int mode, int max_wgt_sum, int debug_level, MPI_Comm comm);
 
@@ -66,15 +66,15 @@ static int scale_round_weights(float *fwgts, idxtype *iwgts, int n, int dim,
 /**********************************************************/
 
 int LB_ParMetis(
-  LB *lb,             /* load balancing structure */
-  int *num_imp,       /* number of objects to be imported */
-  LB_GID **imp_gids,  /* global ids of objects to be imported */
-  LB_LID **imp_lids,  /* local  ids of objects to be imported */
-  int **imp_procs,    /* list of processors to import from */
-  int *num_exp,       /* number of objects to be exported */
-  LB_GID **exp_gids,  /* global ids of objects to be exported */
-  LB_LID **exp_lids,  /* local  ids of objects to be exported */
-  int **exp_procs     /* list of processors to export to */
+  LB *lb,               /* load balancing structure */
+  int *num_imp,         /* number of objects to be imported */
+  LB_ID_PTR *imp_gids,  /* global ids of objects to be imported */
+  LB_ID_PTR *imp_lids,  /* local  ids of objects to be imported */
+  int **imp_procs,      /* list of processors to import from */
+  int *num_exp,         /* number of objects to be exported */
+  LB_ID_PTR *exp_gids,  /* global ids of objects to be exported */
+  LB_ID_PTR *exp_lids,  /* local  ids of objects to be exported */
+  int **exp_procs       /* list of processors to export to */
 )
 {
 #ifndef LB_PARMETIS
@@ -140,15 +140,15 @@ int LB_ParMetis(
 /**********************************************************/
 
 int LB_Jostle(
-  LB *lb,             /* load balancing structure */
-  int *num_imp,       /* number of objects to be imported */
-  LB_GID **imp_gids,  /* global ids of objects to be imported */
-  LB_LID **imp_lids,  /* local  ids of objects to be imported */
-  int **imp_procs,    /* list of processors to import from */
-  int *num_exp,       /* number of objects to be exported */
-  LB_GID **exp_gids,  /* global ids of objects to be exported */
-  LB_LID **exp_lids,  /* local  ids of objects to be exported */
-  int **exp_procs     /* list of processors to export to */
+  LB *lb,               /* load balancing structure */
+  int *num_imp,         /* number of objects to be imported */
+  LB_ID_PTR *imp_gids,  /* global ids of objects to be imported */
+  LB_ID_PTR *imp_lids,  /* local  ids of objects to be imported */
+  int **imp_procs,      /* list of processors to import from */
+  int *num_exp,         /* number of objects to be exported */
+  LB_ID_PTR *exp_gids,  /* global ids of objects to be exported */
+  LB_ID_PTR *exp_lids,  /* local  ids of objects to be exported */
+  int **exp_procs       /* list of processors to export to */
 )
 {
 #ifndef LB_JOSTLE
@@ -287,21 +287,21 @@ int LB_Jostle(
   LB_FREE(&hash_nodes); LB_FREE(&hashtab); \
   LB_FREE(&nbors_proc); LB_FREE(&nbors_global); \
   LB_FREE(&local_ids); LB_FREE(&global_ids); \
-  LB_FREE(&proc_list); LB_FREE(&plist); \
+  LB_FREE(&proc_list); LB_FREE(&proc_list_nbor); LB_FREE(&plist); \
   }
 
 static int LB_ParMetis_Jostle(
-  LB *lb,             /* load balancing structure */
-  int *num_imp,       /* number of objects to be imported */
-  LB_GID **imp_gids,  /* global ids of objects to be imported */
-  LB_LID **imp_lids,  /* local  ids of objects to be imported */
-  int **imp_procs,    /* list of processors to import from */
-  int *num_exp,       /* number of objects to be exported */
-  LB_GID **exp_gids,  /* global ids of objects to be exported */
-  LB_LID **exp_lids,  /* local  ids of objects to be exported */
-  int **exp_procs,    /* list of processors to export to */
-  char *alg,          /* algorithm to use */
-  int  *options       /* option array */
+  LB *lb,               /* load balancing structure */
+  int *num_imp,         /* number of objects to be imported */
+  LB_ID_PTR *imp_gids,  /* global ids of objects to be imported */
+  LB_ID_PTR *imp_lids,  /* local  ids of objects to be imported */
+  int **imp_procs,      /* list of processors to import from */
+  int *num_exp,         /* number of objects to be exported */
+  LB_ID_PTR *exp_gids,  /* global ids of objects to be exported */
+  LB_ID_PTR *exp_lids,  /* local  ids of objects to be exported */
+  int **exp_procs,      /* list of processors to export to */
+  char *alg,            /* algorithm to use */
+  int  *options         /* option array */
 )
 {
   static char *yo = "LB_ParMetis_Jostle";
@@ -315,14 +315,31 @@ static int LB_ParMetis_Jostle(
   int tmp_num_obj;
   float *float_vwgt, *ewgt, *xyz, *imb_tols, *eptr; 
   double geom_vec[6];
-  struct LB_edge_info  *proc_list, *ptr;
+  struct LB_edge_info *ptr;
+  struct LB_edge_info *proc_list;   /* Edge information; contains global IDs
+                                       of objects with off-processor nbors. */
+  LB_ID_PTR proc_list_nbor;         /* Global IDs of neighbors of proc_list 
+                                       entries.  This array is separate from
+                                       proc_list to prevent individual mallocs
+                                       for nbor global IDs.   */
   struct LB_hash_node **hashtab, *hash_nodes;
-  LB_LID *local_ids;
-  LB_GID *global_ids, *nbors_global;
-  char *sendbuf, *recvbuf;
+  LB_ID_PTR local_ids;
+  LB_ID_PTR global_ids;     /* Do not deallocate while still using the hash
+                               table with num_obj (LB_hash_node) or 
+                               proc_list (LB_edge_info); these data structures
+                               point to global IDs in this array. */
+  LB_ID_PTR nbors_global;
+  char *sendbuf; 
+  char *recvbuf;            /* Do not deallocate while still using the hash
+                               table with nrecv; the hash_nodes point to 
+                               global IDs in this array. */
   struct Comm_Obj *comm_plan;
   double times[5];
   char msg[256];
+  int num_gid_entries = lb->Num_GID;
+  int num_lid_entries = lb->Num_LID;
+  int gid_size = num_gid_entries * sizeof(LB_ID_TYPE);
+  int gid_off, lid_off;
   int num_proc = lb->Num_Proc;     /* Temporary variables whose addresses are */
                                    /* passed to Jostle and ParMETIS.  Don't   */
   MPI_Comm comm = lb->Communicator;/* want to risk letting external packages  */
@@ -348,6 +365,7 @@ static int LB_ParMetis_Jostle(
   global_ids = NULL;
   float_vwgt = ewgt = xyz = imb_tols = NULL;
   ptr = proc_list = NULL;
+  proc_list_nbor = NULL;
   hashtab = NULL;
   hash_nodes = NULL;
   sendbuf = recvbuf = NULL;
@@ -432,8 +450,8 @@ static int LB_ParMetis_Jostle(
   
   vtxdist = (idxtype *)LB_MALLOC((lb->Num_Proc+1)* sizeof(idxtype));
   if (num_obj>0){
-    global_ids = (LB_GID *) LB_MALLOC(num_obj * sizeof(LB_GID) );
-    local_ids = (LB_LID *) LB_MALLOC(num_obj * sizeof(LB_LID) );
+    global_ids = LB_MALLOC_GID_ARRAY(lb, num_obj);
+    local_ids =  LB_MALLOC_LID_ARRAY(lb, num_obj);
     if (obj_wgt_dim)
       float_vwgt = (float *)LB_MALLOC(obj_wgt_dim*num_obj * sizeof(float));
     if (!vtxdist || !global_ids || !local_ids || (obj_wgt_dim && !float_vwgt)){
@@ -452,8 +470,11 @@ static int LB_ParMetis_Jostle(
   
     if (lb->Debug_Level >= LB_DEBUG_ALL) {
       printf("[%1d] Debug: Global ids = ", lb->Proc);
-      for (i99=0; i99<num_obj; i99++) printf("%d ", global_ids[i99]);
-      printf("\n");
+      for (i99=0; i99<num_obj; i99++) {
+        printf("    ");
+        LB_PRINT_GID(lb, &(global_ids[i99*num_gid_entries]));
+        printf("\n");
+      }
     }
   }
   
@@ -482,8 +503,10 @@ static int LB_ParMetis_Jostle(
     num_edges = 0;
     max_edges = 0;
     for (i=0; i< num_obj; i++){
-      nedges = lb->Get_Num_Edges(lb->Get_Edge_List_Data, global_ids[i], 
-               local_ids[i], &ierr);
+      nedges = lb->Get_Num_Edges(lb->Get_Edge_List_Data, 
+                                 num_gid_entries, num_lid_entries,
+                                 &(global_ids[i*num_gid_entries]), 
+                                 &(local_ids[i*num_lid_entries]), &ierr);
       if (ierr){
         /* Return error */
         FREE_MY_MEMORY;
@@ -497,7 +520,7 @@ static int LB_ParMetis_Jostle(
       printf("[%1d] Debug: num_edges = %d\n", lb->Proc, num_edges);
 
     if (check_graph >= 1){
-       ierr = MPI_Reduce(&nedges, &tmp, 1, MPI_INT, MPI_SUM, 0, lb->Communicator);
+       ierr = MPI_Reduce(&num_edges, &tmp, 1, MPI_INT, MPI_SUM, 0, lb->Communicator);
        if ((lb->Proc ==0) && (tmp==0))
           LB_PRINT_WARN(lb->Proc, yo, "No edges in graph.");
     }
@@ -536,14 +559,13 @@ static int LB_ParMetis_Jostle(
     
     for (i=0; i< num_obj; i++){
       hashtab[i] = NULL;
-      /* hash_nodes[i].gid = global_ids[i]; */
-      LB_SET_GID(hash_nodes[i].gid,global_ids[i]);
+      hash_nodes[i].gid = &(global_ids[i*num_gid_entries]);
       hash_nodes[i].gno = vtxdist[lb->Proc]+i;
     }
-  
+
     for (i=0; i< num_obj; i++){
       /* insert hashed elements into hash table */
-      j = LB_Hash(global_ids[i], num_obj);
+      j = LB_Hash(&(global_ids[i*num_gid_entries]), num_obj, num_gid_entries);
       hash_nodes[i].next = hashtab[j];
       hashtab[j] = &hash_nodes[i];
     }
@@ -567,14 +589,14 @@ static int LB_ParMetis_Jostle(
        max_proc_list_len = 0;
     
     /* Allocate edge list data */
-    nbors_global = (LB_GID *)LB_MALLOC(max_edges * sizeof(LB_GID));
+    nbors_global = LB_MALLOC_GID_ARRAY(lb, max_edges);
     nbors_proc = (int *)LB_MALLOC(max_edges * sizeof(int));
     plist = (int *)LB_MALLOC(lb->Num_Proc * sizeof(int));
     if (comm_wgt_dim && num_edges)
       ewgt = (float *)LB_MALLOC(comm_wgt_dim * num_edges * sizeof(float));
 
     if ((max_edges && ((!nbors_global) || (!nbors_proc))) || (!plist)
-                       || (comm_wgt_dim && !ewgt)){
+                       || (comm_wgt_dim && num_edges && !ewgt)){
       /* Not enough memory */
       FREE_MY_MEMORY;
       LB_TRACE_EXIT(lb, yo);
@@ -585,11 +607,15 @@ static int LB_ParMetis_Jostle(
   
     if (max_proc_list_len){
       /* Allocate space for processor list */
-      while ((proc_list==NULL) && (max_proc_list_len>=CHUNKSIZE)){
+      while ((proc_list==NULL || proc_list_nbor == NULL)
+          && (max_proc_list_len>=CHUNKSIZE)){
         proc_list = (struct LB_edge_info *) LB_MALLOC(max_proc_list_len *
           sizeof(struct LB_edge_info) );
-        if (!proc_list){
+        proc_list_nbor = LB_MALLOC_GID_ARRAY(lb, max_proc_list_len);
+        if (!proc_list || !proc_list_nbor){
           /* Not enough memory, try shorter list */
+          LB_FREE(&proc_list);
+          LB_FREE(&proc_list_nbor);
           if (lb->Debug_Level >= LB_DEBUG_ALL) {
             printf("[%1d] Debug: Could not allocate %d list nodes, "
                    "trying %d instead.\n", lb->Proc,
@@ -598,7 +624,7 @@ static int LB_ParMetis_Jostle(
           max_proc_list_len /= 2;
         }
       }
-      if (!proc_list){
+      if (!proc_list || !proc_list_nbor){
         /* Not enough memory */
         FREE_MY_MEMORY;
         LB_TRACE_EXIT(lb, yo);
@@ -607,9 +633,11 @@ static int LB_ParMetis_Jostle(
     }
 
     /* proc_list[i] will contain a struct with data to send
-     * to another processor. We don't know yet the total number
-     * of inter-proc edges so we may have to adjust the size of 
-     * proc_list through REALLOC.  We add a chunk of space at a time.
+     * to another processor.  proc_list_nbor[i*num_gid_entries] contains
+     * the global ID of the neighboring object.
+     * We don't know yet the total number
+     * of inter-proc edges so we may have to adjust the size of proc_list and
+     * proc_list_nbor through REALLOC.  We add a chunk of space at a time.
      * The motivation for this design is to reduce the number of calls
      * to REALLOC.  We could have reduced it into a single MALLOC 
      * if we were willing to call the query function get_edge_list 
@@ -628,13 +656,19 @@ static int LB_ParMetis_Jostle(
     jj = 0;
   
     for (i=0; i< num_obj; i++){
-      nedges = lb->Get_Num_Edges(lb->Get_Edge_List_Data, global_ids[i], 
-               local_ids[i], &ierr);
+      gid_off = i * num_gid_entries;
+      lid_off = i * num_lid_entries;
+      nedges = lb->Get_Num_Edges(lb->Get_Edge_List_Data, 
+                                 num_gid_entries, num_lid_entries,
+                                 &(global_ids[gid_off]), &(local_ids[lid_off]),
+                                 &ierr);
       xadj[i+1] = xadj[i] + nedges;
       if (comm_wgt_dim)
           eptr = &ewgt[jj*comm_wgt_dim];
-      lb->Get_Edge_List(lb->Get_Edge_List_Data, global_ids[i], local_ids[i],
-          nbors_global, nbors_proc, comm_wgt_dim, eptr, &ierr);
+      lb->Get_Edge_List(lb->Get_Edge_List_Data,
+                        num_gid_entries, num_lid_entries,
+                        &(global_ids[gid_off]), &(local_ids[lid_off]),
+                        nbors_global, nbors_proc, comm_wgt_dim, eptr, &ierr);
       if (ierr){
         /* Return error */
         FREE_MY_MEMORY;
@@ -643,15 +677,19 @@ static int LB_ParMetis_Jostle(
       }
   
       if (lb->Debug_Level >= LB_DEBUG_ALL) {
-        printf("[%1d] Debug: i=%d, gid=%d, lid=%d, nedges=%d\n", lb->Proc, i, 
-          global_ids[i], local_ids[i], nedges);
+        printf("[%1d] Debug: i=%d, gid=", lb->Proc, i);
+        LB_PRINT_GID(lb, &(global_ids[gid_off]));
+        printf("lid=");
+        LB_PRINT_LID(lb, &(local_ids[lid_off]));
+        printf("nedges=%d\n", nedges);
       }
 
       /* Separate inter-processor edges from the local ones */
       for (j=0; j<nedges; j++, jj++){
         if (nbors_proc[j] == lb->Proc){
           /* local edge */
-          adjncy[jj] = hash_lookup(hashtab, nbors_global[j], num_obj);
+          adjncy[jj] = hash_lookup(lb, hashtab, 
+                                   &(nbors_global[j*num_gid_entries]), num_obj);
         } else {
           /* Inter-processor edge. */
           /* Check if we already have gid[i] in proc_list with */
@@ -674,6 +712,8 @@ static int LB_ParMetis_Jostle(
             max_proc_list_len += CHUNKSIZE;
             proc_list = (struct LB_edge_info *) LB_REALLOC(proc_list,
                          max_proc_list_len*sizeof(struct LB_edge_info));
+            proc_list_nbor = LB_REALLOC_GID_ARRAY(lb, proc_list_nbor,
+                              max_proc_list_len);
             if (!proc_list){
               /* Not enough memory */
               FREE_MY_MEMORY;
@@ -682,20 +722,22 @@ static int LB_ParMetis_Jostle(
             }
           }
           ptr = &proc_list[offset];
-          /* ptr->my_gid = global_ids[i]; */
-          LB_SET_GID (ptr->my_gid, global_ids[i]);
-          ptr->my_gno = hash_lookup(hashtab, global_ids[i], num_obj);
-          ptr->nbor_gid = nbors_global[j];
+          ptr->my_gid = &(global_ids[gid_off]);
+          ptr->my_gno = hash_lookup(lb, hashtab, 
+                                    &(global_ids[gid_off]), num_obj);
+          LB_SET_GID(lb, &(proc_list_nbor[offset*num_gid_entries]),
+                         &(nbors_global[j*num_gid_entries]));
           if (flag)
             ptr->nbor_proc = nbors_proc[j];
           else
             ptr->nbor_proc = -1;
           ptr->adj = &adjncy[jj];
 
-          if (lb->Debug_Level >= LB_DEBUG_ALL)
-            printf("[%1d] Debug: proc_list[%1d] my_gid=%d, my_gno=%d, "
-                   "nbor_proc=%d\n",
-                   lb->Proc, offset, ptr->my_gid, ptr->my_gno, ptr->nbor_proc);
+          if (lb->Debug_Level >= LB_DEBUG_ALL) {
+            printf("[%1d] Debug: proc_list[%1d] my_gid=", lb->Proc, offset);
+            LB_PRINT_GID(lb, ptr->my_gid);
+            printf(", my_gno=%d, nbor_proc=%d\n", ptr->my_gno, ptr->nbor_proc);
+          }
 
           adjncy[jj] = -1; /* We need to come back here later */
           offset++;
@@ -722,7 +764,7 @@ static int LB_ParMetis_Jostle(
      */
 
     /* Allocate send buffer */
-    packet_size = sizeof(LB_GID) + sizeof(int);
+    packet_size = gid_size + sizeof(int);
     sendbuf = (char *) LB_MALLOC(nsend * packet_size);
     plist = (int *) LB_MALLOC(nsend * sizeof(int));
 
@@ -741,11 +783,13 @@ static int LB_ParMetis_Jostle(
     j = 0;
     for (i=0, ptr=proc_list; i<cross_edges; i++, ptr++){
       if (ptr->nbor_proc >= 0){
-        if (lb->Debug_Level >= LB_DEBUG_ALL)
-          printf("[%1d] Debug: Sending (%d,%d) to proc %d\n", lb->Proc, 
-            ptr->my_gid, ptr->my_gno, ptr->nbor_proc);
-        memcpy(&sendbuf[offset], (char *) &(ptr->my_gid), sizeof(LB_GID)); 
-        offset += sizeof(LB_GID);
+        if (lb->Debug_Level >= LB_DEBUG_ALL) {
+          printf("[%1d] Debug: Sending (", lb->Proc);
+          LB_PRINT_GID(lb, ptr->my_gid);
+          printf(",%d) to proc %d\n", ptr->my_gno, ptr->nbor_proc);
+        }
+        memcpy(&sendbuf[offset], (char *) (ptr->my_gid), gid_size); 
+        offset += gid_size;
         memcpy(&sendbuf[offset], (char *) &(ptr->my_gno), sizeof(int)); 
         offset += sizeof(int);
         plist[j++] = ptr->nbor_proc;
@@ -812,29 +856,29 @@ static int LB_ParMetis_Jostle(
     /* Copy data from recvbuf into hash table nodes */
     for (i=0; i< nrecv; i++){
       hashtab[i] = NULL;
-      hash_nodes[i].gid = *((LB_GID *)&recvbuf[i*packet_size]);
-      hash_nodes[i].gno = *((int *)&recvbuf[i*packet_size+sizeof(LB_GID)]);
+      hash_nodes[i].gid = (LB_ID_PTR) &(recvbuf[i*packet_size]);
+      hash_nodes[i].gno = *((int *)&recvbuf[i*packet_size+gid_size]);
       /* Do we need to pad for byte alignment? */
     }
   
     /* Insert nodes into hash table */
     for (i=0; i< nrecv; i++){
-      j = LB_Hash(hash_nodes[i].gid, nrecv);
+      j = LB_Hash(hash_nodes[i].gid, nrecv, num_gid_entries);
       hash_nodes[i].next = hashtab[j];
       hashtab[j] = &hash_nodes[i];
-      if (lb->Debug_Level >= LB_DEBUG_ALL)
-        printf("[%1d] Debug: Hashed GID %d to %d, gno = %d\n",
-               lb->Proc, hash_nodes[i].gid, j, hash_nodes[i].gno);
+      if (lb->Debug_Level >= LB_DEBUG_ALL) {
+        printf("[%1d] Debug: Hashed GID ", lb->Proc);
+        LB_PRINT_GID(lb, hash_nodes[i].gid);
+        printf(" to %d, gno = %d\n", j, hash_nodes[i].gno);
+      }
     }
 
     for (i=0; i<cross_edges; i++){
       /* Look up unresolved global_ids */
-      if ((tmp=hash_lookup(hashtab, proc_list[i].nbor_gid, nrecv)) <0){
+      if ((tmp=hash_lookup(lb, hashtab, &(proc_list_nbor[i*num_gid_entries]), 
+                           nrecv)) <0){
         /* Error. This should never happen! */
-        sprintf(msg, "Internal error; "
-               "Off-proc global ID %d is not in hash table.", 
-               proc_list[i].nbor_gid);
-        LB_PRINT_ERROR(lb->Proc, yo, msg);
+        LB_PRINT_ERROR(lb->Proc, yo,"Off-proc global ID is not in hash table.");
         FREE_MY_MEMORY;
         LB_TRACE_EXIT(lb, yo);
         return LB_FATAL;
@@ -842,9 +886,11 @@ static int LB_ParMetis_Jostle(
       else{
         /* Insert the global number into adjncy vector */
         *(proc_list[i].adj) = tmp;
-        if (lb->Debug_Level >= LB_DEBUG_ALL)
-          printf("[%1d] Debug: GID %d has global number %d\n",
-            lb->Proc, proc_list[i].nbor_gid, tmp);
+        if (lb->Debug_Level >= LB_DEBUG_ALL) {
+          printf("[%1d] Debug: GID ", lb->Proc);
+          LB_PRINT_GID(lb, &(proc_list_nbor[i*num_gid_entries]));
+          printf(" has global number %d\n", tmp);
+        }
       }
       
     }
@@ -853,6 +899,7 @@ static int LB_ParMetis_Jostle(
     LB_FREE(&sendbuf);
     LB_FREE(&recvbuf);
     LB_FREE(&proc_list);
+    LB_FREE(&proc_list_nbor);
     LB_FREE(&plist);
     LB_FREE(&hash_nodes);
     LB_FREE(&hashtab);
@@ -912,8 +959,11 @@ static int LB_ParMetis_Jostle(
     }
     /* Get the geometry data */
     for (i=0; i<num_obj; i++){
-      lb->Get_Geom(lb->Get_Geom_Data, global_ids[i], local_ids[i], 
-        geom_vec, &ierr);
+      lb->Get_Geom(lb->Get_Geom_Data, 
+                   num_gid_entries, num_lid_entries,
+                   &(global_ids[i*num_gid_entries]), 
+                   &(local_ids[i*num_lid_entries]), 
+                   geom_vec, &ierr);
       if (ierr) {
         /* Return error code */
         FREE_MY_MEMORY;
@@ -1124,7 +1174,9 @@ static int LB_ParMetis_Jostle(
     LB_FREE(&adjwgt);
   }
 
-  /* If we have been using a scattered graph, convert partition result back to original distribution */
+  /* If we have been using a scattered graph, convert partition result back to 
+   * original distribution 
+   */
   if (scatter){
     /* Allocate space for partition array under original distribution */
     part2 = (idxtype *) LB_MALLOC(num_obj*sizeof(idxtype)); 
@@ -1133,17 +1185,22 @@ static int LB_ParMetis_Jostle(
       LB_TRACE_EXIT(lb, yo);
       return LB_MEMERR;
     }
-    /* Use reverse communication to compute the partition array under the original distribution */
-    ierr = LB_Comm_Do_Reverse(comm_plan, TAG3, (char *) part, sizeof(idxtype), NULL,
-                              (char *) part2);
+    /* Use reverse communication to compute the partition array under the 
+     * original distribution 
+     */
+    ierr = LB_Comm_Do_Reverse(comm_plan, TAG3, (char *) part, sizeof(idxtype), 
+                              NULL, (char *) part2);
     if ((ierr == COMM_FATAL) || (ierr == COMM_MEMERR)){
       FREE_MY_MEMORY;
       LB_TRACE_EXIT(lb, yo);
       return (ierr == COMM_MEMERR ? LB_MEMERR : LB_FATAL);
     }
     LB_Comm_Destroy(&comm_plan); /* Destroy the comm. plan */
-    LB_FREE(&part); /* We don't need the partition array with the scattered distribution any more */
-    part = part2;   /* part is now the partition array under the original distribution */
+    /* We don't need the partition array with the scattered distribution 
+     * any more */
+    LB_FREE(&part); 
+    /* part is now the partition array under the original distribution */
+    part = part2;   
   }
  
   /* Determine number of objects to export */
@@ -1175,10 +1232,10 @@ static int LB_ParMetis_Jostle(
     j = 0;
     for (i=0; i<num_obj; i++){
       if (part[i] != lb->Proc){
-        /* (*exp_gids)[j] = global_ids[i]; */
-        LB_SET_GID((*exp_gids)[j],global_ids[i]);
-        /* (*exp_lids)[j] = local_ids[i]; */
-        LB_SET_LID((*exp_lids)[j],local_ids[i]);
+        LB_SET_GID(lb, &((*exp_gids)[j*num_gid_entries]),
+                       &(global_ids[i*num_gid_entries]));
+        LB_SET_LID(lb, &((*exp_lids)[j*num_lid_entries]),
+                       &(local_ids[i*num_lid_entries]));
         (*exp_procs)[j] = part[i];
         j++;
       }
@@ -1413,7 +1470,7 @@ char *val)                      /* value of variable */
  *
  * Input:
  *   hashtab, pointer to the hash table
- *   key, a key to look up of type LB_GID (any data type)
+ *   key, a key to look up of type LB_ID_PTR (any data type)
  *   n,   dimension of the hash table
  *
  * Return value:
@@ -1422,14 +1479,15 @@ char *val)                      /* value of variable */
  *
  *******************************************************************/
 
-static int hash_lookup (struct LB_hash_node **hashtab, LB_GID key, int n)
+static int hash_lookup (LB *lb, struct LB_hash_node **hashtab, LB_ID_PTR key,
+                        int n)
 {
   int i;
   struct LB_hash_node *ptr;
 
-  i = LB_Hash(key, n);
+  i = LB_Hash(key, n, lb->Num_GID);
   for (ptr=hashtab[i]; ptr != NULL; ptr = ptr->next){
-    if (LB_EQ_GID(ptr->gid, key))
+    if (LB_EQ_GID(lb, ptr->gid, key))
       return (ptr->gno);
   }
   /* Key not in hash table */
