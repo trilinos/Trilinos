@@ -105,6 +105,7 @@ int Ifpack_Amesos::Initialize()
   if (Matrix_ == 0)
     IFPACK_CHK_ERR(-1);
 
+#if 0
   // better to avoid strange games with maps, this class should be
   // used for Ifpack_LocalFilter'd matrices only
   if (Comm().NumProc() != 1) {
@@ -113,6 +114,7 @@ int Ifpack_Amesos::Initialize()
     cout << "Ifpack_AdditiveSchwarz<Ifpack_Amesos> APrec(Matrix)" << endl;
     exit(EXIT_FAILURE);
   }
+#endif
 
   // only square matrices
   if (Matrix_->NumMyRows() != Matrix_->NumMyCols())
