@@ -48,29 +48,27 @@
 #			only methods that are acceptable are:
 #				rcb - Reverse Coordinate Bisection
 #				octpart - Octree/Space Filling Curve
-#	tol=<tolerance> OPTIONAL. This is is the tolerance that
-#			Zoltan is attempting to attain while determining
-#			a partition. It is passed to LD_Set_Tolerance().
-#			Default = 1.0
 #-----------------------------------------------------------------------------
-Decomposition Info	= method=rcb, tol=0.9
+Decomposition Info	= method=rcb
 
 #+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # Zoltan Parameters = <options>
 #
-# This line is OPTIONAL. If it is not included, then default parameters
+# This line is OPTIONAL. If it is not included, no user-defined parameters
 # will be passed to Zoltan.
 #
-# This line is used to to specify parameter values to overwrite the values
-# returned from Zoltan by LB_Initialize_Params_Array(), that will be passed
-# to LB_Set_Method(). Parameters are set by a series of entries that
-# look like "<parameter #>=<parameter value>". So, if you want to set
-# the fourth parameter in the array to 0.01, you would have an entry
-# on this line of "4=0.01". The parameter entries should be seperated
-# by commas. The number of parameters is defined by LB_MARAMS_MAX_SIZE
-# in lib_const.h.
+# This line is used to to specify parameter values to overwrite the default
+# parameter values used in Zoltan.  These parameters will be passed to Zoltan
+# through calls to LB_Set_Param(). Parameters are set by entries consisting
+# of pairs of strings "<parameter string>=<value string>". 
+# The <parameter string> should be a string that is recognized by the
+# particular load-balancing method being used.
+# The parameter entries should be separated by commas. 
+# When many parameters must be specified, multiple
+# "Zoltan Parameters" lines may be included in the input file.
 #-----------------------------------------------------------------------------
-Zoltan Parameters	= 0=3.0, 1=0.05
+Zoltan Parameters	= RCB_WGTFLAG=0,RCB_OVERALLOC=1.0
+Zoltan Parameters	= RCB_REUSE=0
 
 #+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # File Type = <file type>
