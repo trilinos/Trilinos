@@ -1,2 +1,5 @@
 --with-cxxflags=-DLAM_BUILDING
+CXX=/usr/local/bin/g++
+CC=/usr/local/bin/gcc
+F77=/usr/local/bin/g77
 --with-lapack=/space/Trilinos3PL/liblapack.a
