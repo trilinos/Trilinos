@@ -194,9 +194,8 @@ int main(int argc, char *argv[]) {
   Epetra_SerialComm Comm;
 #endif
 
-  bool verbose = false ; 
-  if ( argc > 1 && argv[1][0] == '-' &&  argv[1][1] == 'v' ) verbose = true ; 
-
+  bool verbose = true ; 
+  if ( argc > 1 && argv[1][0] == '-' &&  argv[1][1] == 'q' ) verbose = false ; 
 
   int retvalue = sub_main(verbose, Comm) ; 
 
@@ -224,8 +223,11 @@ int main(int argc, char *argv[])
   MPI_Init(&argc, &argv);
 #endif
 
-  puts("Please configure AMESOS with --enable-amesos-superludist");
-  puts("to run this example");
+  bool verbose = true ; 
+  if ( argc > 1 && argv[1][0] == '-' &&  argv[1][1] == 'q' ) verbose = false ; 
+
+  if ( verbose ) puts("Please configure AMESOS with --enable-amesos-superludist");
+  if ( verbose ) puts("to run this example");
 
 #ifdef HAVE_MPI
   MPI_Finalize();

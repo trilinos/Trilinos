@@ -117,7 +117,7 @@ foreach f ( Test_Epetra_RowMatrix Test_SuperLU_DIST TestOptions )
       if( "$2" == "True" ) then
         /bin/rm -f Amesos_FAILED
         /bin/rm -f ../$file4
-        $mpigo 1 ./$g >>& ../$file4
+        $mpigo 1 ./$g -q >>& ../$file4
 #        /bin/rm -f ../$file4 ; touch ../$file4
         # ================== #
         # run with 1 process #		    
@@ -142,7 +142,7 @@ foreach f ( Test_Epetra_RowMatrix Test_SuperLU_DIST TestOptions )
         # run with 4 processes #		    
         # ==================== #
         /bin/rm -f Amesos_FAILED
-        $mpigo 4 ./$g >>& ../$file4
+        $mpigo 4 ./$g -q >>& ../$file4
         if( $status != 0 || -f Amesos_FAILED  || ! -z ../$file4  ) then
           # A test failed.
           set AnError = True
