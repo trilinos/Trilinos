@@ -1,6 +1,10 @@
 To compile ml ...
 
-There are two scripts 'installer' and 'etc/ml_install'.
+I.  Use the configure/make method.
+
+or ...
+
+II.  There are two scripts 'installer' and 'etc/ml_install'.
 
 1) The first script is interactive and prompts you for input. To use this,
    type 'installer' from the 'ml/' directory.
