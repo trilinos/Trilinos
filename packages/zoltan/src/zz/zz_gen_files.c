@@ -52,7 +52,7 @@ int Zoltan_Generate_Files(ZZ *zz, char *fname, int base_index)
   int *vwgt, *adjwgt;
   float *float_vwgt, *ewgts;
   double *xyz;
-  int i, j, num_obj, num_geom, num_edges, glob_edges;
+  int i, j, k, num_obj, num_geom, num_edges, glob_edges;
   char *yo = "Zoltan_Generate_Files";
 
   /* Initialize all local pointers to NULL. This is necessary
@@ -165,13 +165,24 @@ int Zoltan_Generate_Files(ZZ *zz, char *fname, int base_index)
 
     /* If proc 0, write first line. */
     if (zz->Proc == 0){
-      fprintf(fp, "%d %d %d\n", vtxdist[zz->Num_Proc], glob_edges, 0);
+      fprintf(fp, "%d %d %1d%1d%1d", vtxdist[zz->Num_Proc], glob_edges, 
+        0, (zz->Obj_Weight_Dim>0), (zz->Edge_Weight_Dim>0));
+      if (zz->Obj_Weight_Dim>1 || zz->Edge_Weight_Dim>1)
+        fprintf(fp, " %d %d", zz->Obj_Weight_Dim, zz->Edge_Weight_Dim);
+      fprintf(fp, "\n");
     }
 
     /* Print edge list for each node (object). */
     for (i=0; i<num_obj; i++){
+      /* First print object weight, if any. */
+      for (k=0; k<zz->Obj_Weight_Dim; k++)
+        fprintf(fp, "%f ", float_vwgt[i*(zz->Obj_Weight_Dim)+k]);
+      /* Then print neighbor list */
       for (j=xadj[i]; j<xadj[i+1]; j++){
         fprintf(fp, "%d ", adjncy[j]+base_index);
+        /* Also print edge weight, if any. */
+        for (k=0; k<zz->Edge_Weight_Dim; k++)
+          fprintf(fp, "%f ", ewgts[j*(zz->Edge_Weight_Dim)+k]);
       }
       fprintf(fp, "\n");
     }
@@ -187,6 +198,8 @@ End:
   ZOLTAN_FREE(&global_ids);
   ZOLTAN_FREE(&local_ids);
   ZOLTAN_FREE(&float_vwgt);
+  ZOLTAN_FREE(&vwgt);
+  ZOLTAN_FREE(&ewgts);
   ZOLTAN_FREE(&part);
   return error;
 }
