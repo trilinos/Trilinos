@@ -226,18 +226,21 @@ int NOX::LineSearch::MoreThuente2::cvsrch(Abstract::Group& newgrp, double& stp,
 
     double f = 0.5 * newgrp.getNormF() * newgrp.getNormF();
 
-    rtype = newgrp.computeJacobian();
-    if (rtype != NOX::Abstract::Group::Ok) 
-    {
-      cerr << "NOX::LineSearch::MoreThuente::cvrch - Unable to compute Jacobian" << endl;
-      throw "NOX Error";
-    }
+    if (!useOptimizedSlopeCalc) {
 
-    rtype = newgrp.computeGradient();
-    if (rtype != NOX::Abstract::Group::Ok) 
-    {
-      cerr << "NOX::LineSearch::MoreThuente::cvrch - Unable to compute Gradient" << endl;
-      throw "NOX Error";
+      rtype = newgrp.computeJacobian();
+      if (rtype != NOX::Abstract::Group::Ok) 
+	{
+	  cerr << "NOX::LineSearch::MoreThuente::cvrch - Unable to compute Jacobian" << endl;
+	  throw "NOX Error";
+	}
+
+      rtype = newgrp.computeGradient();
+      if (rtype != NOX::Abstract::Group::Ok) 
+	{
+	  cerr << "NOX::LineSearch::MoreThuente::cvrch - Unable to compute Gradient" << endl;
+	  throw "NOX Error";
+	}
     }
 
     nfev ++;
