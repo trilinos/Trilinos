@@ -2,5 +2,5 @@ Decomposition Method 	= rcb
 Zoltan Parameters       = keep_cuts=1
 File Type		= random, size=100
 Parallel Disk Info	= number=0
-Test Drops		= 1
-Number of Iterations	= 10
+#Test Drops		= 1
+#Number of Iterations	= 10
