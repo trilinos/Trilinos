@@ -238,6 +238,8 @@ AM_CPPFLAGS = -I$(top_srcdir)/../epetra/src -I$(top_builddir)/../epetra/src \
               -I$(top_srcdir)/../amesos/src -I$(top_builddir)/../amesos/src \
               -I$(top_srcdir)/../ifpack/src -I$(top_builddir)/../ifpack/src \
               -I$(top_srcdir)/../teuchos/src -I$(top_builddir)/../teuchos/src \
+              -I$(top_srcdir)/../anasazi/src -I$(top_builddir)/../anasazi/src \
+              -I$(top_srcdir)/../triutils/src -I$(top_builddir)/../triutils/src \
               -I$(srcdir)/Comm \
               -I$(srcdir)/Operator \
               -I$(srcdir)/Smoother \
