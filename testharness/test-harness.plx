@@ -6,7 +6,8 @@
 # 
 # Jim Willenbring, Mike Phenow, Ken Stanley
 #
-# For more information, see Trilinos/testharness/README.
+# For more information see Trilinos/testharness/README or visit 
+#   http://software.sandia.gov/trilinos/developer/test_harness.html
 ################################################################################
 
 use strict;
@@ -25,7 +26,6 @@ my %dependencies;           # package dependencies
 my %dirNames;               # lowercaseName/directoryName pairs
 my %emails;                 # packageDirName/regressionEmailPrefix pairs
 my %codes;                  # strings corresponding to error code constants
-my $exitCode = 0;           # exit code
 
 # Constants
 my $SUCCESS = "0000";                    # success/no error
@@ -254,7 +254,6 @@ report($SUMMARY);
         # print help and exit
         if ($flags{h}) { 
             printHelp();
-            $exitCode = 7;
             exit;
         }
         
@@ -498,8 +497,10 @@ report($SUMMARY);
                                 system $command;
                             }
                         
-                            # remove broken package
-                            system "rm -rf $options{'TRILINOS_DIR'}[0]/$buildDir[$j]/packages/$dirNames{$brokenPackage}";
+                            # remove broken package (in recover mode only)
+                            if (!$flags{e}) {                            
+                                system "rm -rf $options{'TRILINOS_DIR'}[0]/$buildDir[$j]/packages/$dirNames{$brokenPackage}";
+                            }
                         }
 
                         # quit if error fixing invoke-configure
@@ -526,6 +527,7 @@ report($SUMMARY);
                         if ($flags{e}) {
                             printEvent("short-circuit mode: configure failure, quitting.\n");
                             report($SUMMARY);
+                            cleanUp();
                             exit 1;
                         }
                         
@@ -583,8 +585,10 @@ report($SUMMARY);
                                 # return to build dir
                                 chdir"$options{'TRILINOS_DIR'}[0]/$buildDir[$j]";                           
                                 
-                                # remove broken package                            
-                                system "rm -rf $options{'TRILINOS_DIR'}[0]/$buildDir[$j]/packages/$dirNames{$brokenPackage}";
+                                # remove broken package (in recover mode only)
+                                if (!$flags{e}) {                            
+                                    system "rm -rf $options{'TRILINOS_DIR'}[0]/$buildDir[$j]/packages/$dirNames{$brokenPackage}";
+                                }
                             }
                             
                             # quit if error fixing invoke-configure
@@ -614,6 +618,7 @@ report($SUMMARY);
                             if ($flags{e}) {
                                 printEvent("short-circuit mode: build failure, quitting.\n");
                                 report($SUMMARY);
+                                cleanUp();
                                 exit 1;
                             }
                             
@@ -689,6 +694,7 @@ report($SUMMARY);
                                         if ($flags{e}) {
                                             printEvent("short-circuit mode: test failure, quitting.\n");
                                             report($SUMMARY);
+                                            cleanUp();
                                             exit 1;
                                         }
                                         
@@ -704,7 +710,7 @@ report($SUMMARY);
                     } # unless (unsupported)
                 } # foreach $testDir
                 
-                $ENV{'TRILINOS_TEST_HARNESS_MPIGO_COMMAND'} = "";
+                delete $ENV{'TRILINOS_TEST_HARNESS_MPIGO_COMMAND'};
                 
             } # if (!-n)
             
@@ -1279,7 +1285,7 @@ report($SUMMARY);
         my $email;
         if ($options{'REPORT_METHOD'}[0] eq "EMAIL") {   
             $email=MIME::Lite->new(
-                From =>     'Trilinos test-harness <trilinos-regression@software.sandia.gov>',
+                From =>     'Trilinos test harness <trilinos-regression@software.sandia.gov>',
                 To =>       $mailTo,
                 Subject =>  $subject,
                 Type =>     'multipart/mixed'
@@ -1304,6 +1310,9 @@ report($SUMMARY);
         if (defined $tag) {
             $body .= "\n";
             $body .= "Tag:              $tag\n";}
+        if (defined $options{'TRILINOS_DIR'}[0]) {
+            $body .= "\n";
+            $body .= "Directory:        $options{'TRILINOS_DIR'}[0]\n";}
         if (defined $comm) {
             $body .= "\n";
             $body .= "Comm:             $comm\n";}
@@ -1837,6 +1846,19 @@ report($SUMMARY);
         print "$event";
     
     } # printEvent()
+    
+    ############################################################################
+    # cleanUp()
+    #
+    # Cleans up environment variables, temp files, etc.
+    #   - global variables used: yes
+    #   - sends mail: no
+    #   - args:
+    #   - returns: 
+
+    sub cleanUp {
+        delete $ENV{'TRILINOS_TEST_HARNESS_MPIGO_COMMAND'};    
+    } # cleanUp()
 
     ############################################################################
     # printHelp()
@@ -1848,9 +1870,9 @@ report($SUMMARY);
     #   - returns: 
 
     sub printHelp {
-        print "Trilinos Test-Harness\n";
+        print "Trilinos Test Harness\n";
         print "\n";
-        print "Usage:  ./testharness.plx -f FILENAME\n";
+        print "Usage:  perl test-harness.plx -f FILENAME\n";
         print "\n";
         print "Options:\n";
         print "  -f FILE  : Run test harness normally with given test harness config file\n";
@@ -1895,9 +1917,9 @@ report($SUMMARY);
         print "Notes:\n";
         print "  - Options with FILE require a filename--absolute or relative to\n";
         print "    Trilinos/testharness.\n";
-        print "  - On some systems, \"./testharness.plx\" will not work; try\n";
-        print "    \"perl testharness.plx\" instead.\n";
-        print "  - See README in Trilinos/testharness for more information.\n";
+        print "  - For more information, see README in Trilinos/testharness\n";
+        print "    or visit http://software.sandia.gov/trilinos/developer/\n";
+        print "    test_harness.html.\n";
         print "\n";
     } # printHelp()
     
@@ -2093,17 +2115,12 @@ report($SUMMARY);
             }         
         }         
         
-        # if MPIGO_CMD is specified, enforce one and only one trailing space
+        # if MPIGO_CMD is specified, enforce one and only one trailing space and
+        # set environment variable so scripts can access it
         if (defined $options{'MPIGO_CMD'} && defined $options{'MPIGO_CMD'}[0]) {
             $options{'MPIGO_CMD'}[0] =~ s/\s*$//;  # trim trailing spaces
             $options{'MPIGO_CMD'}[0] .= " ";       # append trailing space 
-        } 
-                
-        # Resolve MPIGO_CMD		
-		# use config-file-supplied option if present, else, guess.		
-		if (defined $options{'TRILINOS_TEST_HARNESS_MPIGO_COMMAND'} && 
-		    defined $options{'TRILINOS_TEST_HARNESS_MPIGO_COMMAND'}[0]) {		    
-		    $ENV{'TRILINOS_TEST_HARNESS_MPIGO_COMMAND'} = "$options{'MPIGO_CMD'}[0]";		    
+            $ENV{'TRILINOS_TEST_HARNESS_MPIGO_COMMAND'} = "$options{'MPIGO_CMD'}[0]";		    
 		} else {        
     		# Figure out how to run an mpi job.
     		my $result = "";
