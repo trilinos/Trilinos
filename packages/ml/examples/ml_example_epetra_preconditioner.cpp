@@ -28,6 +28,7 @@
 #include "Trilinos_Util_CrsMatrixGallery.h"
 
 using namespace Teuchos;
+using namespace Trilinos_Util;
 
 int main(int argc, char *argv[])
 {
@@ -41,12 +42,12 @@ int main(int argc, char *argv[])
 
   Epetra_Time Time(Comm);
 
-  // Create the linear problem using the class `Trilinos_Util_CrsMatrixGallery.'
+  // Create the linear problem using the class `Trilinos_Util::CrsMatrixGallery.'
   // Various matrix examples are supported; please refer to file
   // $TRILINOS_HOME/packages/triutils/src/Trilinos_Util_CrsMatrixGallery.h
   // for more details.
   
-  Trilinos_Util_CrsMatrixGallery Gallery("laplace_2d", Comm);
+  CrsMatrixGallery Gallery("laplace_2d", Comm);
   Gallery.Set("problem_size", 10000);
   
   // retrive pointers for linear system matrix and linear problem
@@ -55,10 +56,6 @@ int main(int argc, char *argv[])
 
   // Construct a solver object for this problem
   AztecOO solver(*Problem);
-
-  // AZTEC settings
-  solver.SetAztecOption(AZ_solver, AZ_gmres);
-  solver.SetAztecOption(AZ_output, 32);
 
   // =========================== begin of ML part ===========================
   
@@ -71,7 +68,7 @@ int main(int argc, char *argv[])
   MLList.set("increasing or decreasing","decreasing");
 
   MLList.set("aggregation: type", "METIS");
-  MLList.set("smoother: type","aztec");
+  MLList.set("smoother: type","Aztec");
   MLList.set("aggregation: nodes per aggregate", 16);
   MLList.set("smoother: pre or post", "both");
   MLList.set("coarse: type","Amesos_KLU");
@@ -84,8 +81,8 @@ int main(int argc, char *argv[])
   AZ_defaults(options,params);
   options[AZ_precond] = AZ_dom_decomp;
   options[AZ_subdomain_solve] = AZ_icc;
-  MLList.set("smoother: aztec options", options);
-  MLList.set("smoother: aztec params", params);
+  MLList.set("smoother: Aztec options", options);
+  MLList.set("smoother: Aztec params", params);
 
   // create the preconditioner object and compute hierarchy
   ML_Epetra::MultiLevelPreconditioner * MLPrec = new ML_Epetra::MultiLevelPreconditioner(*A, MLList, true);
@@ -101,6 +98,7 @@ int main(int argc, char *argv[])
   double rthresh = 1.4;
   solver.SetAztecParam(AZ_rthresh, rthresh);
   solver.SetAztecOption(AZ_solver, AZ_cg_condnum);
+  solver.SetAztecOption(AZ_output, 32);
   double athresh = 10.0;
   solver.SetAztecParam(AZ_athresh, athresh);
   solver.SetAztecParam(AZ_ill_cond_thresh, 1.0e200);
