@@ -168,6 +168,9 @@ int ML_Gen_MGHierarchy(ML *ml, int fine_level,
    int m,i,j,row,k, bsize;
    double s;
 #endif
+#ifdef USE_AT
+   char str[80];
+#endif
 
    if (ag->nullspace_corrupted == ML_YES) {
      printf("Can not reuse aggregate object when the fine grid operator\n");
@@ -188,7 +191,7 @@ int ML_Gen_MGHierarchy(ML *ml, int fine_level,
    {
       if ( ml->comm->ML_mypid == 0 && ag->print_flag < ML_Get_PrintLevel()) 
          printf("ML_Gen_MGHierarchy : applying coarsening \n");
-#ifdef newstuff
+#ifdef USE_AT
       /*
         Here is the idea:
         1) build an interpolation operator based on A^T. Save the
@@ -202,6 +205,11 @@ int ML_Gen_MGHierarchy(ML *ml, int fine_level,
         ml->symmetrize_matrix = ML_TRUE;
         ag->keep_P_tentative = ML_YES;
         ag->use_transpose = ML_TRUE;
+	if (1 == 1) {  // rst: new new stuff
+	  ml->symmetrize_matrix = ML_FALSE;
+	  printf(" what is this %e\n",ml->Amat[level].lambda_max);
+	  ml->Amat[level].lambda_max = 2.;
+	}
       }
 #endif
 
@@ -254,10 +262,14 @@ int ML_Gen_MGHierarchy(ML *ml, int fine_level,
          printf("ML_Gen_MGHierarchy : applying coarsening \n");
       ML_Gen_Restrictor_TransP(ml, level, next);
 
-#ifdef newstuff
+#ifdef USE_AT
       if (ag->Restriction_smoothagg_transpose == ML_TRUE ) {
         ag->use_transpose = ML_FALSE;
         ML_Operator_Clean( &(ml->Pmat[next]) );
+        ML_Operator_Init( &(ml->Pmat[next]), ml->comm );
+	ML_Operator_Set_1Levels(&(ml->Pmat[next]), &(ml->SingleLevel[next]), NULL);
+	ML_Operator_Set_BdryPts(&(ml->Pmat[next]), NULL);
+	sprintf(str,"Pmat_%d",next); ML_Operator_Set_Label( &(ml->Pmat[next]),str);
 
         if (internal_or_external == ML_INTERNAL)
           flag = user_gen_prolongator(ml, level, next,
@@ -339,7 +351,7 @@ int ML_AGG_Gen_Prolongator(ML *ml,int level, int clevel, void *data,
    ML_Operator **prev_P_tentatives;
    struct      ML_AGG_Matrix_Context widget;
    ML_Krylov   *kdata;
-   ML_Operator *t2, *t3;
+   ML_Operator *t2 = NULL, *t3 = NULL;
 
 #ifdef GEOMETRIC_2D
    int nx, nxcoarse, ii, coarse_me, fine_me, *rowptr, *bindx, k,free_ptr,start;
@@ -363,6 +375,8 @@ int ML_AGG_Gen_Prolongator(ML *ml,int level, int clevel, void *data,
    Amat     = (ML_Operator *) data;
    Amat->num_PDEs = ag->num_PDE_eqns;
    prev_P_tentatives = (ML_Operator **) ag->P_tentative;
+   max_eigen = Amat->lambda_max;
+
    /*
    widget.near_bdry = (char *) ML_allocate(sizeof(char)*Amat->outvec_leng);
    ML_AGG_Compute_Near_Bdry(Amat, widget.near_bdry);
@@ -580,11 +594,15 @@ int ML_AGG_Gen_Prolongator(ML *ml,int level, int clevel, void *data,
      ML_Operator_Transpose_byrow(Amat,t2);
      t3 = ML_Operator_Create(Amat->comm);
      ML_Operator_Add(Amat,t2,t3,ML_CSR_MATRIX,1.);
+     max_eigen = t3->lambda_max;
 #else
-#ifdef newstuff
+#ifdef USE_AT
      if (ag->use_transpose == ML_TRUE) {
        t3 = ML_Operator_Create(Amat->comm);
        ML_Operator_Transpose_byrow(Amat,t3);
+       t3->lambda_max = 1.5;
+       max_eigen = t3->lambda_max;
+       printf("A^T lambda_max is settttttt\n");
      }
      else
 #endif
@@ -593,8 +611,11 @@ int ML_AGG_Gen_Prolongator(ML *ml,int level, int clevel, void *data,
        ML_Operator_Transpose_byrow(Amat,t2);
        t3 = ML_Operator_Create(Amat->comm);
        ML_Operator_Add(Amat,t2,t3,ML_CSR_MATRIX,1.);
+       max_eigen = t3->lambda_max;
      }
 #endif
+    if ((max_eigen < -666.) && (max_eigen > -667)) {
+
       if ( ag->spectral_radius_scheme == 1 ) /* compute it using CG */
       {
          kdata = ML_Krylov_Create( ml->comm );
@@ -603,7 +624,7 @@ int ML_AGG_Gen_Prolongator(ML *ml,int level, int clevel, void *data,
 #ifdef SYMMETRIZE
          ML_Krylov_Set_Amatrix(kdata, t3);
 #else
-#ifdef newstuff
+#ifdef USE_AT
          if (ag->use_transpose ==ML_TRUE) ML_Krylov_Set_Amatrix(kdata, t3);
          else
 #endif
@@ -632,6 +653,11 @@ int ML_AGG_Gen_Prolongator(ML *ml,int level, int clevel, void *data,
          widget.omega  = ag->smoothP_damping_factor / max_eigen;
          ml->spectral_radius[level] = max_eigen;
       }
+    }
+    else { /* no need to compute eigenvalue .... we already have it */
+      widget.omega  = ag->smoothP_damping_factor / max_eigen;
+      ml->spectral_radius[level] = max_eigen;
+    }
    }
    else  /* damping fact = 0 ==> no need to compute spectral radius */
    {
@@ -645,7 +671,7 @@ int ML_AGG_Gen_Prolongator(ML *ml,int level, int clevel, void *data,
 #ifdef SYMMETRIZE
      widget.Amat   = t3;
 #else
-#ifdef newstuff
+#ifdef USE_AT
      if (ag->use_transpose == ML_TRUE) widget.Amat   = t3;
      else
 #endif
