@@ -70,6 +70,7 @@ int ML_Gen_Smoother_Amesos(ML *ml, int nl, int AmesosSolver,
 
    void *Amesos_Handle ;
    int status;
+   char str[80];
 
 #ifdef ML_TIMING
    double         t0;
@@ -88,8 +89,27 @@ int ML_Gen_Smoother_Amesos(ML *ml, int nl, int AmesosSolver,
      status = ML_Amesos_Gen( ml, nl, AmesosSolver, MaxProcs, &Amesos_Handle) ; 
      assert( status == 0 ) ; 
 
+     switch( AmesosSolver ) {
+     case ML_AMESOS_KLU:
+       sprintf( str, "Amesos_KLU_%d", nl );
+       break;
+     case ML_AMESOS_UMFPACK:
+       sprintf( str, "Amesos_UMFPACK_%d", nl );
+       break;
+     case ML_AMESOS_SUPERLUDIST:
+       sprintf( str, "Amesos_SUPERLUDIST_%d", nl );
+       break;
+     case ML_AMESOS_MUMPS:
+       sprintf( str, "Amesos_MUMPS_%d", nl );
+       break;
+     default:
+      sprintf( str, "Amesos_%d", nl );
+      break;
+
+     } 
+
      status = ML_Smoother_Set(&(ml->post_smoother[nl]), ML_INTERNAL,
-			      (void *) Amesos_Handle, fun1, NULL, 1, 0.0,NULL);
+			      (void *) Amesos_Handle, fun1, NULL, 1, 0.0,str);
      assert( status == 0 ) ; 
      ml->post_smoother[nl].data_destroy = ML_Smoother_Clean_Amesos;
 
