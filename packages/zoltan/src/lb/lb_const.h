@@ -126,6 +126,7 @@ struct LB_Migrate_Struct {
   LB_PRE_MIGRATE_FN *Pre_Process;      /* Function that performs application
                                           specific pre-processing.  Optional
                                           for help-migration.                */
+  LB_PRE_MIGRATE_FORT_FN *Pre_Process_Fort; /* Fortran version               */
   void *Pre_Process_Data;              /* Ptr to user defined data to be
                                           passed to Pre_Process()            */
   LB_POST_MIGRATE_FN *Post_Process;    /* Function that performs application
@@ -137,16 +138,19 @@ struct LB_Migrate_Struct {
                                           contiguous memory needed to store
                                           the data for a single object for
                                           migration.                         */
+  LB_OBJ_SIZE_FORT_FN *Get_Obj_Size_Fort; /* Fortran version                 */
   void *Get_Obj_Size_Data;             /* Ptr to user defined data to be
                                           passed to Get_Obj_Size()           */
   LB_PACK_OBJ_FN *Pack_Obj;            /* Routine that packs object data for
                                           a given object into contiguous 
                                           memory for migration.              */
+  LB_PACK_OBJ_FORT_FN *Pack_Obj_Fort;  /* Fortran version                    */
   void *Pack_Obj_Data;                 /* Ptr to user defined data to be
                                           passed to Pack_Obj()               */
   LB_UNPACK_OBJ_FN *Unpack_Obj;        /* Routine that unpacks object data for
                                           a given object from contiguous 
                                           memory after migration.            */
+  LB_UNPACK_OBJ_FORT_FN *Unpack_Obj_Fort; /* Fortran version                 */
   void *Unpack_Obj_Data;               /* Ptr to user defined data to be
                                           passed to Unpack_Obj()             */
 };
@@ -172,6 +176,7 @@ struct LB_Struct {
                                       Communicator.                          */
   int Debug;                      /*  Debug level for this instance of
                                       load balancing.                        */
+  int Fortran;                    /*  1 if created from Fortran, 0 otherwise */
   LB_METHOD Method;               /*  Method to be used for load balancing.  */
   LB_FN *LB_Fn;                   /*  Pointer to the function that performs
                                       the load balancing; this ptr is set
@@ -185,65 +190,77 @@ struct LB_Struct {
                                       to the appropriate data type.          */
   LB_NUM_EDGES_FN *Get_Num_Edges;              /* Fn ptr to get an object's
                                                   number of edges.           */
+  LB_NUM_EDGES_FORT_FN *Get_Num_Edges_Fort;    /* Fortran version            */
   void *Get_Num_Edges_Data;                    /* Ptr to user defined data
                                                   to be passed to
                                                   Get_Num_Edges()            */
   LB_EDGE_LIST_FN *Get_Edge_List;              /* Fn ptr to get an object's
                                                   edge list.                 */
+  LB_EDGE_LIST_FORT_FN *Get_Edge_List_Fort;    /* Fortran version            */
   void *Get_Edge_List_Data;                    /* Ptr to user defined data
                                                   to be passed to
                                                   Get_Edge_List()            */
   LB_NUM_GEOM_FN *Get_Num_Geom;                /* Fn ptr to get an object's
                                                   number of geometry values. */
+  LB_NUM_GEOM_FORT_FN *Get_Num_Geom_Fort;      /* Fortran version            */
   void *Get_Num_Geom_Data;                     /* Ptr to user defined data
                                                   to be passed to
                                                   Get_Num_Geom()             */
   LB_GEOM_FN *Get_Geom;                        /* Fn ptr to get an object's
                                                   geometry values.           */
+  LB_GEOM_FORT_FN *Get_Geom_Fort;              /* Fortran version            */
   void *Get_Geom_Data;                         /* Ptr to user defined data
                                                   to be passed to
                                                   Get_Geom()                 */
   LB_NUM_OBJ_FN *Get_Num_Obj;                  /* Fn ptr to get a proc's  
                                                   number of local objects.   */
+  LB_NUM_OBJ_FORT_FN *Get_Num_Obj_Fort;        /* Fortran version            */
   void *Get_Num_Obj_Data;                      /* Ptr to user defined data
                                                   to be passed to
                                                   Get_Num_Obj()              */
   LB_OBJ_LIST_FN *Get_Obj_List;                /* Fn ptr to get all local
                                                   objects on a proc.         */
+  LB_OBJ_LIST_FORT_FN *Get_Obj_List_Fort;      /* Fortran version            */
   void *Get_Obj_List_Data;                     /* Ptr to user defined data
                                                   to be passed to
                                                   Get_Obj_List()             */
   LB_FIRST_OBJ_FN *Get_First_Obj;              /* Fn ptr to get the first   
                                                   local obj on a proc.       */
+  LB_FIRST_OBJ_FORT_FN *Get_First_Obj_Fort;    /* Fortran version            */
   void *Get_First_Obj_Data;                    /* Ptr to user defined data
                                                   to be passed to
                                                   Get_First_Obj()            */
   LB_NEXT_OBJ_FN *Get_Next_Obj;                /* Fn ptr to get the next   
                                                   local obj on a proc.       */
+  LB_NEXT_OBJ_FORT_FN *Get_Next_Obj_Fort;      /* Fortran version            */
   void *Get_Next_Obj_Data;                     /* Ptr to user defined data
                                                   to be passed to
                                                   Get_Next_Obj()             */
   LB_NUM_BORDER_OBJ_FN *Get_Num_Border_Obj;    /* Fn ptr to get a proc's 
                                                   number of border objs wrt
                                                   a given processor.         */
+  LB_NUM_BORDER_OBJ_FORT_FN *Get_Num_Border_Obj_Fort; /* Fortran version     */ 
   void *Get_Num_Border_Obj_Data;               /* Ptr to user defined data
                                                   to be passed to
                                                   Get_Num_Border_Obj()       */
   LB_BORDER_OBJ_LIST_FN *Get_Border_Obj_List;  /* Fn ptr to get all objects
                                                   sharing a border with a
                                                   given processor.           */
+  LB_BORDER_OBJ_LIST_FORT_FN *Get_Border_Obj_List_Fort; /* Fortran version  */
   void *Get_Border_Obj_List_Data;              /* Ptr to user defined data
                                                   to be passed to
                                                   Get_Border_Obj_List()      */
   LB_FIRST_BORDER_OBJ_FN *Get_First_Border_Obj;/* Fn ptr to get the first 
                                                   object sharing a border 
                                                   with a given processor.    */
+  LB_FIRST_BORDER_OBJ_FORT_FN *Get_First_Border_Obj_Fort; /* Fortran version */
   void *Get_First_Border_Obj_Data;             /* Ptr to user defined data
                                                   to be passed to
                                                   Get_First_Border_Obj()     */
   LB_NEXT_BORDER_OBJ_FN *Get_Next_Border_Obj;  /* Fn ptr to get the next 
                                                   object sharing a border 
                                                   with a given processor.    */
+  LB_NEXT_BORDER_OBJ_FORT_FN *Get_Next_Border_Obj_Fort; /* Fortran version   */
   void *Get_Next_Border_Obj_Data;              /* Ptr to user defined data
                                                   to be passed to
                                                   Get_Next_Border_Obj()      */

@@ -103,6 +103,9 @@ struct LB_Struct;
 typedef int LB_NUM_EDGES_FN(void *data, LB_GID global_id, LB_LID local_id,
                             int *ierr);
 
+typedef int LB_NUM_EDGES_FORT_FN(void *data, LB_GID *global_id,
+                                 LB_LID *local_id, int *ierr);
+
 /*****************************************************************************/
 /*
  *  Function to return, for the object with a given ID, 
@@ -127,6 +130,11 @@ typedef void LB_EDGE_LIST_FN(void *data, LB_GID global_id, LB_LID local_id,
                              LB_GID *nbor_global_id, int *nbor_procs,
                              int wdim, int *nbor_ewgts, int *ierr);
 
+typedef void LB_EDGE_LIST_FORT_FN(void *data, LB_GID *global_id,
+                                  LB_LID *local_id, LB_GID *nbor_global_id,
+                                  int *nbor_procs, int *wdim, int *nbor_ewgts,
+                                  int *ierr);
+
 /*****************************************************************************/
 /*
  *  Function to return
@@ -141,6 +149,8 @@ typedef void LB_EDGE_LIST_FN(void *data, LB_GID global_id, LB_LID local_id,
  */
 
 typedef int LB_NUM_GEOM_FN(void *data, int *ierr);
+
+typedef int LB_NUM_GEOM_FORT_FN(void *data, int *ierr);
 
 /*****************************************************************************/
 /*
@@ -159,6 +169,9 @@ typedef int LB_NUM_GEOM_FN(void *data, int *ierr);
 typedef void LB_GEOM_FN(void *data, LB_GID global_id, LB_LID local_id,
                         double *geom_vec, int *ierr);
 
+typedef void LB_GEOM_FORT_FN(void *data, LB_GID *global_id, LB_LID *local_id,
+                             double *geom_vec, int *ierr);
+
 /*****************************************************************************/
 /*
  *  Function to return, for the calling processor, the number of objects 
@@ -172,6 +185,8 @@ typedef void LB_GEOM_FN(void *data, LB_GID global_id, LB_LID local_id,
  */
 
 typedef int LB_NUM_OBJ_FN(void *data, int *ierr);
+
+typedef int LB_NUM_OBJ_FORT_FN(void *data, int *ierr);
 
 /*****************************************************************************/
 /*
@@ -192,6 +207,10 @@ typedef int LB_NUM_OBJ_FN(void *data, int *ierr);
 
 typedef void LB_OBJ_LIST_FN(void *data, LB_GID *global_ids, LB_LID *local_ids,
                             int wdim, float *objwgts, int *ierr);
+
+typedef void LB_OBJ_LIST_FORT_FN(void *data, LB_GID *global_ids,
+                                 LB_LID *local_ids, int *wdim, float *objwgts,
+                                 int *ierr);
 
 /*****************************************************************************/
 /*
@@ -217,6 +236,10 @@ typedef void LB_OBJ_LIST_FN(void *data, LB_GID *global_ids, LB_LID *local_ids,
 typedef int LB_FIRST_OBJ_FN(void *data, LB_GID *first_global_id,
                             LB_LID *first_local_id, 
                             int wdim, float *first_obj_wgt, int *ierr);
+
+typedef int LB_FIRST_OBJ_FORT_FN(void *data, LB_GID *first_global_id,
+                                 LB_LID *first_local_id, int *wdim,
+                                 float *first_obj_wgt, int *ierr);
 
 /*****************************************************************************/
 /*
@@ -246,6 +269,10 @@ typedef int LB_NEXT_OBJ_FN(void *data, LB_GID global_id, LB_LID local_id,
                            LB_GID *next_global_id, LB_LID *next_local_id,
                            int wdim, float *next_obj_wgt, int *ierr);
 
+typedef int LB_NEXT_OBJ_FORT_FN(void *data, LB_GID *global_id, LB_LID *local_id,
+                                LB_GID *next_global_id, LB_LID *next_local_id,
+                                int *wdim, float *next_obj_wgt, int *ierr);
+
 /*****************************************************************************/
 /*
  *  Function to return, for the calling processor, the number of objects 
@@ -260,6 +287,8 @@ typedef int LB_NEXT_OBJ_FN(void *data, LB_GID global_id, LB_LID local_id,
  */
 
 typedef int LB_NUM_BORDER_OBJ_FN(void *data, int nbor_proc, int *ierr);
+
+typedef int LB_NUM_BORDER_OBJ_FORT_FN(void *data, int *nbor_proc, int *ierr);
 
 /*****************************************************************************/
 /*
@@ -286,6 +315,10 @@ typedef int LB_NUM_BORDER_OBJ_FN(void *data, int nbor_proc, int *ierr);
 typedef void LB_BORDER_OBJ_LIST_FN(void *data, int nbor_proc,
                                    LB_GID *global_ids, LB_LID *local_ids,
                                    int wdim, float *objwgts, int *ierr);
+
+typedef void LB_BORDER_OBJ_LIST_FORT_FN(void *data, int *nbor_proc,
+                                        LB_GID *global_ids, LB_LID *local_ids,
+                                        int *wdim, float *objwgts, int *ierr);
 
 /*****************************************************************************/
 /*
@@ -315,6 +348,12 @@ typedef int LB_FIRST_BORDER_OBJ_FN(void *data, int nbor_proc,
                                    LB_LID *first_local_id, 
                                    int wdim, float *first_obj_wgt,
                                    int *ierr);
+
+typedef int LB_FIRST_BORDER_OBJ_FORT_FN(void *data, int *nbor_proc,
+                                        LB_GID *first_global_id,
+                                        LB_LID *first_local_id, 
+                                        int *wdim, float *first_obj_wgt,
+                                        int *ierr);
 
 /*****************************************************************************/
 /*
@@ -348,6 +387,13 @@ typedef int LB_NEXT_BORDER_OBJ_FN(void *data, LB_GID global_id,
                                   int wdim, float *next_obj_wgt,
                                   int *ierr);
 
+typedef int LB_NEXT_BORDER_OBJ_FORT_FN(void *data, LB_GID *global_id,
+                                       LB_LID *local_id, int *nbor_proc,
+                                       LB_GID *next_global_id,
+                                       LB_LID *next_local_id, 
+                                       int *wdim, float *next_obj_wgt,
+                                       int *ierr);
+
 /*****************************************************************************/
 /*
  *  Function to return the size (in bytes) of data to be migrated.
@@ -363,6 +409,8 @@ typedef int LB_NEXT_BORDER_OBJ_FN(void *data, LB_GID global_id,
  */
 
 typedef int LB_OBJ_SIZE_FN(void *data, int *ierr);
+
+typedef int LB_OBJ_SIZE_FORT_FN(void *data, int *ierr);
 
 /*****************************************************************************/
 /*
@@ -391,6 +439,13 @@ typedef void LB_PRE_MIGRATE_FN(void *data, int num_import,
                                int num_export, LB_GID *export_global_ids,
                                LB_LID *export_local_ids, int *export_procs,
                                int *ierr);
+
+typedef void LB_PRE_MIGRATE_FORT_FN(void *data, int *num_import,
+                                    LB_GID *import_global_ids,
+                                    LB_LID *import_local_ids, int *import_procs,
+                                    int *num_export, LB_GID *export_global_ids,
+                                    LB_LID *export_local_ids, int *export_procs,
+                                    int *ierr);
 
 /*****************************************************************************/
 /*
@@ -445,6 +500,10 @@ typedef void LB_POST_MIGRATE_FN(void *data, int num_import,
 typedef void LB_PACK_OBJ_FN(void *data, LB_GID global_id, LB_LID local_id,
                             int dest_proc, int size, char *buf, int *ierr);
 
+typedef void LB_PACK_OBJ_FORT_FN(void *data, LB_GID *global_id,
+                                 LB_LID *local_id, int *dest_proc, int *size,
+                                 char *buf, int *ierr);
+
 /*****************************************************************************/
 /*
  *  Function to unpack data for an object migrated to a new processor.
@@ -464,6 +523,9 @@ typedef void LB_PACK_OBJ_FN(void *data, LB_GID global_id, LB_LID local_id,
 
 typedef void LB_UNPACK_OBJ_FN(void *data, LB_GID global_id, int size,
                               char *buf, int *ierr);
+
+typedef void LB_UNPACK_OBJ_FORT_FN(void *data, LB_GID *global_id, int *size,
+                                   char *buf, int *ierr);
 
 /*****************************************************************************/
 /*****************************************************************************/

@@ -126,6 +126,7 @@ int flag;
   lb->Method = RCB;    
   lb->LB_Fn = LB_rcb;
   lb->Debug = 0;
+  lb->Fortran = 0;
   lb->Params = NULL;
   lb->Tolerance = 0.9;
   lb->Data_Structure = NULL;
@@ -143,6 +144,19 @@ int flag;
   lb->Get_First_Border_Obj = NULL;
   lb->Get_Next_Border_Obj = NULL;
 
+  lb->Get_Num_Edges_Fort = NULL;
+  lb->Get_Edge_List_Fort = NULL;
+  lb->Get_Num_Geom_Fort = NULL;
+  lb->Get_Geom_Fort = NULL;
+  lb->Get_Num_Obj_Fort = NULL;
+  lb->Get_Obj_List_Fort = NULL;
+  lb->Get_First_Obj_Fort = NULL;
+  lb->Get_Next_Obj_Fort = NULL;
+  lb->Get_Num_Border_Obj_Fort = NULL;
+  lb->Get_Border_Obj_List_Fort = NULL;
+  lb->Get_First_Border_Obj_Fort = NULL;
+  lb->Get_Next_Border_Obj_Fort = NULL;
+
   lb->Migrate.Help_Migrate = FALSE;
   lb->Migrate.Pre_Process = NULL;
   lb->Migrate.Post_Process = NULL;
@@ -150,6 +164,11 @@ int flag;
   lb->Migrate.Unpack_Obj = NULL;
   lb->Migrate.Get_Obj_Size = NULL;
   
+  lb->Migrate.Pre_Process_Fort = NULL;
+  lb->Migrate.Pack_Obj_Fort = NULL;
+  lb->Migrate.Unpack_Obj_Fort = NULL;
+  lb->Migrate.Get_Obj_Size_Fort = NULL;
+
   return(lb);
 }
 
