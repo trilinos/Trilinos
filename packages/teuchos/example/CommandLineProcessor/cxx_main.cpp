@@ -1,6 +1,9 @@
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_Version.hpp"
 
+// Enum for the speed option
+enum ESpeed { SPEED_SLOW=-1, SPEED_MEDIUM=0, SPEED_FAST=+1 };
+
 int main(int argc, char* argv[])
 {
   cout << Teuchos::Teuchos_Version() << endl << endl;
@@ -27,7 +30,6 @@ int main(int argc, char* argv[])
   My_CLP.setOption("precondition","no-precondition",
 		   &Precondition,"Preconditioning flag");
 	// Set an enumeration command line option
-	enum ESpeed { SPEED_SLOW=-1, SPEED_MEDIUM=0, SPEED_FAST=+1 };
 	const int    num_speed_values  = 3;
 	const ESpeed speed_opt_values[] = { SPEED_SLOW, SPEED_MEDIUM, SPEED_FAST };
 	const char*  speed_opt_names[]  = { "slow",     "medium",     "fast"     };

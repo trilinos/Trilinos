@@ -633,7 +633,7 @@ namespace Teuchos
   }
   
   template<typename OrdinalType>
-  void LAPACK<OrdinalType,float>::GETRS(const char TRANS, const OrdinalType n, const OrdinalType nrhs, const float* A, const OrdinalType lda, const OrdinalType* IPIV, float* B, const OrdinalType ldb, OrdinalType* info) const
+  void LAPACK<OrdinalType,float>::GETRS(const char TRANS, const OrdinalType n, const OrdinalType nrhs, const float* A, const OrdinalType lda, const OrdinalType* IPIV, float* X, const OrdinalType ldx, OrdinalType* info) const
   {
     SGETRS_F77(CHAR_MACRO(TRANS), &n, &nrhs, A, &lda, IPIV, X, &ldx, info);
   }
@@ -1210,7 +1210,7 @@ namespace Teuchos
   }
   
   template<typename OrdinalType>
-  void LAPACK<OrdinalType,complex<float> >::GETRS(const char TRANS, const OrdinalType n, const OrdinalType nrhs, const complex<float>* A, const OrdinalType lda, const OrdinalType* IPIV, complex<float>* B, const OrdinalType ldb, OrdinalType* info) const
+  void LAPACK<OrdinalType,complex<float> >::GETRS(const char TRANS, const OrdinalType n, const OrdinalType nrhs, const complex<float>* A, const OrdinalType lda, const OrdinalType* IPIV, complex<float>* X, const OrdinalType ldx, OrdinalType* info) const
   {
     CGETRS_F77(CHAR_MACRO(TRANS), &n, &nrhs, A, &lda, IPIV, X, &ldx, info);
   }
@@ -1436,7 +1436,7 @@ namespace Teuchos
   }
   
   template<typename OrdinalType>
-  void LAPACK<OrdinalType,complex<double> >::GETRS(const char TRANS, const OrdinalType n, const OrdinalType nrhs, const complex<double>* A, const OrdinalType lda, const OrdinalType* IPIV, complex<double>* B, const OrdinalType ldb, OrdinalType* info) const
+  void LAPACK<OrdinalType,complex<double> >::GETRS(const char TRANS, const OrdinalType n, const OrdinalType nrhs, const complex<double>* A, const OrdinalType lda, const OrdinalType* IPIV, complex<double>* X, const OrdinalType ldx, OrdinalType* info) const
   {
     ZGETRS_F77(CHAR_MACRO(TRANS), &n, &nrhs, A, &lda, IPIV, X, &ldx, info);
   }

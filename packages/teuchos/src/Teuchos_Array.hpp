@@ -58,12 +58,12 @@ namespace Teuchos
     Array(int n, const T& t);
 
     //! Add a new entry at the end of the array. Resize to allow space for the new entry.
-    inline Array<T>& append(const T& entry) {push_back(entry); return *this;}
+    inline Array<T>& append(const T& entry) {this->push_back(entry); return *this;}
 
     /*! \brief Return number of elements in the array. 
      *	Equivalent to size(), but included for backwards compatibility.
      */
-    int length() const {return size();}
+    int length() const {return this->size();}
 
     //! Read/Write access to a the i-th element, with optional boundschecking.
     inline T& operator[](int i);

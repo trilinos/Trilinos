@@ -156,7 +156,7 @@ namespace Teuchos {
 
   //@{ \name Attribute methods.
     //! Returns the length of this vector.
-    int length() const {return(numRows_);};
+    int length() const {return(this->numRows_);};
   //@}
 
   //@{ \name I/O methods.
@@ -193,14 +193,14 @@ namespace Teuchos {
   bool SerialDenseVector<OrdinalType, ScalarType>::operator == (const SerialDenseVector<OrdinalType, ScalarType> &Operand) 
   {
     bool result = 1;
-    if(numRows_ != Operand.numRows_)
+    if(this->numRows_ != Operand.numRows_)
       {
 	result = 0;
       }
     else
       {
 	int i;
-	for(i = 0; i < numRows_; i++) {
+	for(i = 0; i < this->numRows_; i++) {
 	  if((*this)(i) != Operand(i))
 	    {
 	      return 0;
@@ -220,15 +220,15 @@ namespace Teuchos {
   void SerialDenseVector<OrdinalType, ScalarType>::print(ostream& os) const
   {
     os << endl;
-    if(valuesCopied_)
+    if(this->valuesCopied_)
       os << "Values_copied : yes" << endl;
     else
       os << "Values_copied : no" << endl;
-      os << "Length : " << numRows_ << endl;
-    if(numRows_ == 0) {
+      os << "Length : " << this->numRows_ << endl;
+    if(this->numRows_ == 0) {
       os << "(vector is empty, no values to display)" << endl;
     } else {
-      for(int i = 0; i < numRows_; i++) {
+      for(int i = 0; i < this->numRows_; i++) {
 	  os << (*this)(i) << " ";
       }
       os << endl;
@@ -245,7 +245,7 @@ namespace Teuchos {
 #ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
     checkIndex( index );
 #endif
-    return(values_[index]);
+    return(this->values_[index]);
   }
   
   template<typename OrdinalType, typename ScalarType>
@@ -254,7 +254,7 @@ namespace Teuchos {
 #ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
     checkIndex( index );
 #endif
-    return(values_[index]);
+    return(this->values_[index]);
   }
   
   template<typename OrdinalType, typename ScalarType>
@@ -263,7 +263,7 @@ namespace Teuchos {
 #ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
     checkIndex( index );
 #endif
-    return(values_[index]);
+    return(this->values_[index]);
   }
   
   template<typename OrdinalType, typename ScalarType>
@@ -272,7 +272,7 @@ namespace Teuchos {
 #ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
     checkIndex( index );
 #endif
-    return(values_[index]);
+    return(this->values_[index]);
   }
 
 } // namespace Teuchos

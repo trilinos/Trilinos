@@ -68,33 +68,33 @@ public:
 
 	// 27.6.2.5 Formatted output:
 	// 27.6.2.5.3  basic_ostream::operator<<
-	__ostream_type& operator<<(__ostream_type& (*__pf)(__ostream_type&)) { *this; }
-	__ostream_type& operator<<(__ios_type& (*__pf)(__ios_type&)) { *this; }
-	__ostream_type& operator<<(std::ios_base& (*__pf) (std::ios_base&)) { *this; }
+	__ostream_type& operator<<(__ostream_type& (*__pf)(__ostream_type&)) { return *this; }
+	__ostream_type& operator<<(__ios_type& (*__pf)(__ios_type&)) { return *this; }
+	__ostream_type& operator<<(std::ios_base& (*__pf) (std::ios_base&)) { return *this; }
 
 	// 27.6.2.5.2 Arithmetic Inserters
-	__ostream_type& operator<<(long __n) { *this; }
-	__ostream_type& operator<<(unsigned long __n) { *this; }
-    __ostream_type& operator<<(bool __n) { *this; }
-	__ostream_type& operator<<(short __n) { *this; }
-	__ostream_type& operator<<(unsigned short __n) { *this; }
-	__ostream_type& operator<<(int __n) { *this; }
-	__ostream_type& operator<<(unsigned int __n) { *this; }
-	__ostream_type& operator<<(double __f) { *this; }
-	__ostream_type& operator<<(float __f) { *this; }
-	__ostream_type& operator<<(long double __f) { *this; }
-	__ostream_type& operator<<(const void* __p) { *this; }
-	__ostream_type& operator<<(__streambuf_type* __sb) { *this; }
+	__ostream_type& operator<<(long __n) { return *this; }
+	__ostream_type& operator<<(unsigned long __n) { return *this; }
+    __ostream_type& operator<<(bool __n) { return *this; }
+	__ostream_type& operator<<(short __n) { return *this; }
+	__ostream_type& operator<<(unsigned short __n) { return *this; }
+	__ostream_type& operator<<(int __n) { return *this; }
+	__ostream_type& operator<<(unsigned int __n) { return *this; }
+	__ostream_type& operator<<(double __f) { return *this; }
+	__ostream_type& operator<<(float __f) { return *this; }
+	__ostream_type& operator<<(long double __f) { return *this; }
+	__ostream_type& operator<<(const void* __p) { return *this; }
+	__ostream_type& operator<<(__streambuf_type* __sb) { return *this; }
 
 	// Unformatted output:
-	__ostream_type& put(char_type __c) { *this; }
-	__ostream_type& write(const char_type* __s, std::streamsize __n) { *this; }
-	__ostream_type& flush() { *this; }
+	__ostream_type& put(char_type __c) { return *this; }
+	__ostream_type& write(const char_type* __s, std::streamsize __n) { return *this; }
+	__ostream_type& flush() { return *this; }
 
 	// Seeks:
 	pos_type tellp() { return 0; }
-	__ostream_type& seekp(pos_type) { *this; }
-	__ostream_type& seekp(off_type, std::ios_base::seekdir) { *this; }
+	__ostream_type& seekp(pos_type) { return *this; }
+	__ostream_type& seekp(off_type, std::ios_base::seekdir) { return *this; }
 
 }; // end class basic_oblackholestream
 

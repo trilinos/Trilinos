@@ -315,6 +315,7 @@ int main( int argc, char* argv[] ) {
 			rcp_dynamic_cast<const E>( cd_ptr1 )->E_f();  // This should not compile since D and E are not polymophic
 #endif
 
+#ifndef _INTEL
 			try {
 				// Try to cast form one interface to another that is not supported (B2 -> B1).
 				// The RefCountPtr<B1> returned from rcp_dynamic_cast<...> should be null!
@@ -326,6 +327,7 @@ int main( int argc, char* argv[] ) {
 			}
 			catch( const std::logic_error )
 			{}
+#endif
 
 			// Manually clean up some memory
 
