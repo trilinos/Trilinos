@@ -30,10 +30,6 @@ static ZOLTAN_HG_GLOBAL_PART_FN global_gr1;
 static ZOLTAN_HG_GLOBAL_PART_FN global_gr2;
 static ZOLTAN_HG_GLOBAL_PART_FN global_gr3;
 static ZOLTAN_HG_GLOBAL_PART_FN global_gr4;
-static ZOLTAN_HG_GLOBAL_PART_FN global_gr5;
-static ZOLTAN_HG_GLOBAL_PART_FN global_gr6;
-static ZOLTAN_HG_GLOBAL_PART_FN global_gr7;
-static ZOLTAN_HG_GLOBAL_PART_FN global_gr8;
 
 
 /****************************************************************************/
@@ -51,10 +47,6 @@ ZOLTAN_HG_GLOBAL_PART_FN *Zoltan_HG_Set_Global_Part_Fn(char *str)
   else if (!strcasecmp(str, "gr2")) return global_gr2;
   else if (!strcasecmp(str, "gr3")) return global_gr3;
   else if (!strcasecmp(str, "gr4")) return global_gr4;
-  else if (!strcasecmp(str, "gr5")) return global_gr5;
-  else if (!strcasecmp(str, "gr6")) return global_gr6;
-  else if (!strcasecmp(str, "gr7")) return global_gr7;
-  else if (!strcasecmp(str, "gr8")) return global_gr8;
   else                              return NULL;
 }
 
@@ -559,10 +551,11 @@ static int greedy_order (
 )
 {
   int i, j, vtx, edge, bfsnumber, pnumber, nbor, *rank; 
-  int esize1, *vtx_count=NULL, *visited=NULL, *cut[2];
+  int esize, *vtx_count=NULL, *visited=NULL, *cut[2];
   int ierr=ZOLTAN_OK;
-  float weight_sum= 0.0, part_sum= 0.0, old_sum, cutoff;
+  float weight_sum= 0.0, part_sum= 0.0, old_sum, cutoff, delta;
   float *gain = NULL, *edge_sum = NULL;
+  double damp_factor;
   char msg[128];
   HEAP h[2];
   static char *yo = "greedy_order";
@@ -717,37 +710,32 @@ rank[vtx]);
     else {
       for (j=hg->vindex[vtx]; j<hg->vindex[vtx+1]; j++){
         edge = hg->vedge[j];
-        esize1 = hg->hindex[edge+1] - hg->hindex[edge] -1; /* Edge size -1 */
+        esize = hg->hindex[edge+1] - hg->hindex[edge];
         if (vtx_count) vtx_count[edge]++;
         for (i=hg->hindex[edge]; i<hg->hindex[edge+1]; i++){
           nbor = hg->hvertex[i];
           if (rank[nbor] <0){
              switch (priority_mode){
              case 1:
-               gain[nbor] += (hg->ewgt ? hg->ewgt[edge] : 1.0)/esize1;
-               break;
              case 2:
-               gain[nbor] += (hg->ewgt ? hg->ewgt[edge] : 1.0)/(edge_sum[nbor]*esize1);
+               /* Absorption metric. */
+               delta = (hg->ewgt?hg->ewgt[edge]:1.0)/(esize-1);
                break;
              case 3:
-               gain[nbor] += (hg->ewgt ? hg->ewgt[edge] : 1.0)*pow((double) 0.5, (double) (esize1-vtx_count[edge]));
-               break;
              case 4:
-               gain[nbor] += (hg->ewgt ? hg->ewgt[edge] : 1.0)*pow((double) 0.5, (double) (esize1-vtx_count[edge]))/edge_sum[nbor];
-               break;
-             case 5:
-               gain[nbor] += (hg->ewgt ? hg->ewgt[edge] : 1.0)*pow((double) 0.5, (double) (esize1-vtx_count[edge]))/esize1;
-               break;
-             case 6:
-               gain[nbor] += (hg->ewgt ? hg->ewgt[edge] : 1.0)*pow((double) 0.5, (double) (esize1-vtx_count[edge]))/(edge_sum[nbor]*esize1);
-               break;
-             case 7:
-               gain[nbor] += (hg->ewgt ? hg->ewgt[edge] : 1.0)*pow((double) 0.8, (double) (esize1-vtx_count[edge]))/esize1;
-               break;
-             case 8:
-               gain[nbor] += (hg->ewgt ? hg->ewgt[edge] : 1.0)*pow((double) 0.8, (double) (esize1-vtx_count[edge]))/(edge_sum[nbor]*esize1);
+               damp_factor = 0.5; /* Choose a value between 0 and 1. */
+               if (vtx_count[edge]==1)
+                 delta = (hg->ewgt?hg->ewgt[edge]:1.0)*
+                   pow(damp_factor, (double) (esize-2));
+               else
+                 delta = (hg->ewgt?hg->ewgt[edge]:1.0)*(1.0-damp_factor)*
+                   pow(damp_factor, (double) (esize-vtx_count[edge]-1));
                break;
              }
+             if (priority_mode&1)
+               gain[nbor] += delta;
+             else
+               gain[nbor] += delta/edge_sum[nbor];
   
              heap_change_value(h, nbor, gain[nbor]);
           }
@@ -778,7 +766,10 @@ error:
 /*****************************************************************/
 
 /* Generic greedy ordering. 
- * Priority function 1: 
+ *
+ * Priority function 0:  
+ *    gain = cut size improvement (from FM)
+ * Priority function 1:  [absorption]
  *    gain(v,S) = \sum_e wgt(e) * |e \intersect S| / |e|
  * Priority function 2: 
  *    gain(v,S) = \sum_e wgt(e)/edge_sum(v) * |e \intersect S| / |e|
@@ -849,26 +840,6 @@ static int global_gr3 (ZZ *zz, HGraph *hg, int p, Partition part)
 static int global_gr4 (ZZ *zz, HGraph *hg, int p, Partition part)
 { 
   return global_greedy(zz, hg, p, part, 4);
-}
-
-static int global_gr5 (ZZ *zz, HGraph *hg, int p, Partition part)
-{ 
-  return global_greedy(zz, hg, p, part, 5);
-}
-
-static int global_gr6 (ZZ *zz, HGraph *hg, int p, Partition part)
-{ 
-  return global_greedy(zz, hg, p, part, 6);
-}
-
-static int global_gr7 (ZZ *zz, HGraph *hg, int p, Partition part)
-{ 
-  return global_greedy(zz, hg, p, part, 7);
-}
-
-static int global_gr8 (ZZ *zz, HGraph *hg, int p, Partition part)
-{ 
-  return global_greedy(zz, hg, p, part, 8);
 }
 
 #ifdef __cplusplus
