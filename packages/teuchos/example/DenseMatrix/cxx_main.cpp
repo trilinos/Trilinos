@@ -1,7 +1,10 @@
 #include "Teuchos_SerialDenseMatrix.hpp"
+#include "Teuchos_Version.hpp"
 
 int main(int argc, char* argv[])
 {
+  cout << Teuchos::Teuchos_Version() << endl << endl;
+
   // Creating a double-precision matrix can be done in several ways:
   // Create an empty matrix with no dimension
   Teuchos::SerialDenseMatrix<int,double> Empty_Matrix;

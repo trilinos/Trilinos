@@ -1,4 +1,5 @@
 #include "Teuchos_TimeMonitor.hpp"
+#include "Teuchos_Version.hpp"
 
 #ifdef HAVE_MPI
 #include <mpi.h>
@@ -18,6 +19,8 @@ double factFunc( int x );
 
 int main(int argc, char* argv[])
 {
+  cout << Teuchos::Teuchos_Version() << endl << endl;
+
   int i;
   double x;
 

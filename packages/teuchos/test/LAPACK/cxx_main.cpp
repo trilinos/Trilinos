@@ -28,9 +28,12 @@
 
 #include <iostream>
 #include "Teuchos_LAPACK.hpp"
+#include "Teuchos_Version.hpp"
 
 int main()
 {
+  cout << Teuchos::Teuchos_Version() << endl << endl;
+
 #if 0
   double* Ad = new double[16];
   double* xd = new double[4];

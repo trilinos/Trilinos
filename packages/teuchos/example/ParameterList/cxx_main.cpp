@@ -1,7 +1,10 @@
 #include "Teuchos_ParameterList.hpp"
+#include "Teuchos_Version.hpp"
 
 int main(int argc, char* argv[])
 {
+  cout << Teuchos::Teuchos_Version() << endl << endl;
+
   // Creating an empty parameter list looks like:
   Teuchos::ParameterList My_List;
 

@@ -28,6 +28,7 @@
 
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
+#include "Teuchos_Version.hpp"
 
 using namespace Teuchos;
 
@@ -44,6 +45,9 @@ int main(int argc, char *argv[])
   clp.setOption( "v", "q", &verbose, "Set if output is printed or not." );
   CommandLineProcessor::EParseCommandLineReturn parse_return = clp.parse(argc,argv);
   if( parse_return != CommandLineProcessor::PARSE_SUCCESSFUL ) return parse_return;
+
+  if (verbose)
+    cout << Teuchos::Teuchos_Version() << endl << endl;
 
   //-----------------------------------------------------------
   // Create Main Parameter List / Sublist Structure

@@ -29,6 +29,7 @@
 #include "Teuchos_ConfigDefs.hpp"
 #include "Teuchos_TimeMonitor.hpp"
 #include "Teuchos_ScalarTraits.hpp"
+#include "Teuchos_Version.hpp"
 
 #ifdef HAVE_MPI
 #include <mpi.h>
@@ -51,6 +52,8 @@ static Time& exceptTimer() {static RefCountPtr<Time> t = TimeMonitor::getNewTime
 
 int main(int argc, char* argv[])
 {
+  cout << Teuchos::Teuchos_Version() << endl << endl;
+
   try
     {
 #ifdef HAVE_MPI 

@@ -1,9 +1,12 @@
 #include "Teuchos_LAPACK.hpp"
 #include "Teuchos_SerialDenseMatrix.hpp"
 #include "Teuchos_SerialDenseVector.hpp"
+#include "Teuchos_Version.hpp"
 
 int main(int argc, char* argv[])
 {
+  cout << Teuchos::Teuchos_Version() << endl << endl;
+
   // Creating an instance of the LAPACK class for double-precision routines looks like:
   Teuchos::LAPACK<int, double> lapack;
 

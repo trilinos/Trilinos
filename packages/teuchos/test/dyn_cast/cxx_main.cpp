@@ -28,12 +28,16 @@
 
 #include "Teuchos_dyn_cast.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
+#include "Teuchos_Version.hpp"
 
 class A { public: virtual ~A(){} };
 class B : public A {};
 class C : public A {};
 
 int main( int argc, char* argv[] ) {
+
+  std::cout << Teuchos::Teuchos_Version() << std::endl << std::endl;
+
   std::cout
     << "\n*******************************************"
     << "\n*** Basic test of Teuchos::dyn_cast<>() ***"

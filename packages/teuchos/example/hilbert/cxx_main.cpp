@@ -60,6 +60,7 @@
 
 #include "Teuchos_ConfigDefs.hpp"
 #include "Teuchos_BLAS.hpp"
+#include "Teuchos_Version.hpp"
 
 #ifdef HAVE_TEUCHOS_ARPREC
 #include "mp/mpreal.h"
@@ -104,6 +105,8 @@ void PrintArrayAsMatrix(mp_real*, int, int);
 #endif
 
 int main(int argc, char *argv[]) {
+
+cout << Teuchos::Teuchos_Version() << endl << endl;
 
 #ifdef HAVE_TEUCHOS_ARPREC
   mp::mp_init(PRECISION);

@@ -31,7 +31,7 @@
 #include "Teuchos_MPISession.hpp"
 #include "Teuchos_StringInputSource.hpp"
 #include "Teuchos_FileInputSource.hpp"
-
+#include "Teuchos_Version.hpp"
 
 
 using namespace Teuchos;
@@ -41,6 +41,8 @@ using std::string;
 
 int main(int argc, void** argv)
 {
+  cout << Teuchos::Teuchos_Version() << endl << endl;
+
   try
     {
       MPISession::init(&argc, &argv);

@@ -1,7 +1,10 @@
 #include "Teuchos_BLAS.hpp"
+#include "Teuchos_Version.hpp"
 
 int main(int argc, char* argv[])
 {
+  cout << Teuchos::Teuchos_Version() << endl << endl;
+
   // Creating an instance of the BLAS class for double-precision kernels looks like:
   Teuchos::BLAS<int, double> blas;
 

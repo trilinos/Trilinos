@@ -30,6 +30,7 @@
 #include "Teuchos_Hashtable.hpp"
 #include "Teuchos_HashSet.hpp"
 #include "Teuchos_StrUtils.hpp"
+#include "Teuchos_Version.hpp"
 
 using namespace Teuchos;
 using std::string;
@@ -38,6 +39,8 @@ using std::string;
 
 int main(int argc, char** argv)
 {
+  cout << Teuchos::Teuchos_Version() << endl << endl;
+
   try
     {
 
