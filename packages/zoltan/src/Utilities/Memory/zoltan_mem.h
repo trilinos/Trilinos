@@ -45,6 +45,9 @@ extern "C" {
 #define ZOLTAN_REALLOC(a, b) Zoltan_Realloc((a), (b), __FILE__, __LINE__)
 #define ZOLTAN_FREE(a) Zoltan_Free((void **) (a), __FILE__, __LINE__)
 
+#define ZOLTAN_MEM_STAT_TOTAL   0
+#define ZOLTAN_MEM_STAT_MAXIMUM 1
+
 /* function declarations for dynamic array allocation */
 
 #ifdef __STDC__
@@ -58,7 +61,7 @@ extern void Zoltan_Free(void **ptr, char *file, int lineno);
 extern double *Zoltan_Malloc(int n, char *file, int lineno);
 extern double *Zoltan_Realloc(void *ptr, int n, char *filename, int lineno);
 extern void Zoltan_Memory_Stats();
-extern int Zoltan_Memory_Num();
+extern int Zoltan_Memory_Usage(int);
 
 #ifdef __STDC__
 extern void Zoltan_Multifree(char *, int, int n, ...);
