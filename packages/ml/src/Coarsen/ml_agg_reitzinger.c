@@ -1,7 +1,7 @@
 #include "ml_agg_reitzinger.h"
-#define NEW_T_PE
+#define ML_NEW_T_PE
 #ifdef GREG
-#define NEW_T_PE
+#define ML_NEW_T_PE
 #endif
 
 extern int ML_Gen_SmoothPnodal(ML *ml,int level, int clevel, void *data,
@@ -29,10 +29,11 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
 #ifdef LEASTSQ_SERIAL
   ML_Operator *SPn_mat;
 #endif
-#ifdef ENRICH
+#ifdef ML_ENRICH
   ML_Operator *TTtransPe;
   ML_Operator *newPe;
-  double dtemp, beta = 2./3.;
+  double dtemp;
+  double beta = 2./3.;
 #endif
   struct ML_CSR_MSRdata *csr_data;
   int Nlevels_nodal, grid_level;
@@ -48,7 +49,7 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
   double *new_Tfine_Pn_vec;
   USR_REQ         *request;
   int t1,t2,t3;
-#ifdef NEW_T_PE
+#ifdef ML_NEW_T_PE
   int    *encoded_dir_node, Pn_ghost = 0;
   double *pos_coarse_dirichlet, *neg_coarse_dirichlet, *edge_type;
 #endif
@@ -149,7 +150,7 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
      printf("Kn_coarse->invec_leng = %d\n\n",Kn_coarse->invec_leng);
 #endif /* ifdef DEBUG_T_BUILD */
 
-#ifdef NEW_T_PE
+#ifdef ML_NEW_T_PE
      /* let's figure out who corresponds to a Dirichlet point */
 
      allocated = 100;
@@ -295,7 +296,7 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
         exit(1);
      }
      Nnondirichlet = counter;
-#ifdef NEW_T_PE
+#ifdef ML_NEW_T_PE
      for (i = 0; i < Rn_coarse->outvec_leng; i++) {
        if (pos_coarse_dirichlet[i] != 0) {
 	 Tcoarse_bindx[nz_ptr] = i;
@@ -746,7 +747,7 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
         }
         /*Don't delete Tcoarse because it is necessary for eigenvalue estimate
           in Hiptmair setup.*/
-#ifdef NEW_T_PE
+#ifdef ML_NEW_T_PE
         ML_free(encoded_dir_node);
 #endif
         /* Current level "grid_level" cannot be used b/c Tcoarse_trans
@@ -866,7 +867,7 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
         }
         ML_Operator_Destroy(&Tcoarse_trans);
         (*Tmat_trans_array)[grid_level] = NULL;
-#ifdef NEW_T_PE
+#ifdef ML_NEW_T_PE
         ML_free(encoded_dir_node);
 #endif
         /* Current level "grid_level" cannot be used b/c Tcoarse_trans
@@ -900,7 +901,7 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
      /* MG grid hierarchy.                                               */
      /*------------------------------------------------------------------*/
    
-#ifdef NEW_T_PE
+#ifdef ML_NEW_T_PE
      i = 0;
      if (Pe->getrow->pre_comm != NULL) {
        ML_CommInfoOP_Compute_TotalRcvLength(Pe->getrow->pre_comm);
@@ -924,7 +925,7 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
      }
 #endif
      for (i = 0; i < Pe->outvec_leng ; i++) {
-#ifdef NEW_T_PE
+#ifdef ML_NEW_T_PE
        if (encoded_dir_node[i] > 0) {
 	 for (j = csr_data->rowptr[i]; j < csr_data->rowptr[i+1] ; j++) {
            if (edge_type[csr_data->columns[j]] != 1.0 ) {
@@ -953,11 +954,11 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
 	       fflush(stdout);
 	     }
 	 }
-#ifdef NEW_T_PE
+#ifdef ML_NEW_T_PE
        }
 #endif
      }
-#ifdef NEW_T_PE
+#ifdef ML_NEW_T_PE
      ML_free(encoded_dir_node);
      ML_free(edge_type);
 #endif
@@ -1070,43 +1071,6 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
 
 
    
-#ifdef postprocessscheck
-      printf("Checking product Pe * e_i\n");
-      yyy = (double *) ML_allocate( Pe->outvec_leng*sizeof(double));
-      fido = (double *) ML_allocate( Pe->invec_leng*sizeof(double));
-      /*
-      printf("%d: Pe->invec_leng = %d\n",Pe->comm->ML_mypid,Pe->invec_leng);
-      printf("%d: Tcoarse->outvec_leng = %d\n",Tcoarse->comm->ML_mypid,
-             Tcoarse->outvec_leng);
-      exit(1);
-      */
-   
-      printf("Pe->invec_leng = %d\n",Pe->invec_leng);
-      for (i=0; i< 137; i++)
-      {
-         for (j=0; j< Pe->invec_leng; j++) fido[j] = 0.;
-         if (Pe->comm->ML_nprocs == 1)
-            fido[i] = 1;
-         else
-         {
-            /* This is for debugging a 2 process run.  The indices will
-               be split between 2 processes;  here, split occurs at 120. */
-            if ((Pe->comm->ML_mypid == 0) && (i < 120))
-               fido[i] = 1;
-            else if (Pe->comm->ML_mypid == 1 && i >= 120)
-               fido[i-120] = 1;
-         }
-   
-         ML_Operator_Apply(Pe, Pe->invec_leng, fido,
-                           Pe->outvec_leng,yyy);
-         dtemp = ML_gdot(Pe->outvec_leng, yyy, yyy, Pe->comm);
-         printf("norm(P(:,%d)) = %e\n",i,dtemp); 
-      }
-   
-     fflush(stdout);
-     exit(1);
-#endif /*postprocesscheck*/
-
       /***************************
       * Smooth edge prolongator. *
       ***************************/
@@ -1155,30 +1119,33 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
 
         Pe->N_nonzeros = nz_ptr;
      }
-#ifdef ENRICH
+#ifdef ML_ENRICH
 
-     /* ************************************************************************* */
-     /* Generate enriched smoothed prolongator                                    */
-     /* The idea is that we want to smooth the enriched prolongator:              */
-     /*      =  (I + alpha inv(diag(S))*S) * (I + beta inv(diag(T*T'))*(T*T'))    */
-     /*      =  (I + alpha inv(diag(S))*S + beta inv(diag(T*T'))*(T*T'))          */
-     /*      =  (I + alpha inv(diag(S))*S + T*T'*beta/2)                          */
-     /* ------------------------------------------------------------------------- */
+     /* ********************************************************************* */
+     /* Generate enriched smoothed prolongator                                */
+     /* The idea is that we want to smooth the enriched prolongator:          */
+     /*  =  (I + alpha inv(diag(S))*S) * (I + beta inv(diag(T*T'))*(T*T'))    */
+     /*  =  (I + alpha inv(diag(S))*S + beta inv(diag(T*T'))*(T*T'))          */
+     /*  =  (I + alpha inv(diag(S))*S + T*T'*beta/2)                          */
+     /* --------------------------------------------------------------------- */
 
      if (beta != 0.0) {
-       if (ml_nodes->comm->ML_mypid == 0) 
-	 { printf("\n\nDoing enriched prolongator\n\n");fflush(stdout);}
+       if (ml_nodes->comm->ML_mypid == 0 && 9 < ML_Get_PrintLevel()) {
+         printf("\n\nDoing enriched prolongator");
+         printf("    *******  beta = %e *******\n\n",beta);
+         fflush(stdout);
+       }
 
        TTtransPe = ML_Operator_Create(Pn_coarse->comm);
        ML_rap((*Tmat_array)[grid_level+1], (*Tmat_trans_array)[grid_level+1], 
-	      Pe,TTtransPe,ML_CSR_MATRIX);
+          Pe,TTtransPe,ML_CSR_MATRIX);
 
        /* scale TTtransPe by -beta/2 */
 
        dtemp = -beta/2;
        csr_data = (struct ML_CSR_MSRdata *) TTtransPe->data;
        for (i = 0; i < csr_data->rowptr[TTtransPe->outvec_leng]; i++)
-	 csr_data->values[i] *= dtemp;
+         csr_data->values[i] *= dtemp;
 
        newPe = ML_Operator_Create(ml_edges->comm);
        ML_Operator_Add(Pe, TTtransPe, newPe, ML_CSR_MATRIX,1.);
@@ -1186,9 +1153,11 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
        ML_Operator_Destroy(&TTtransPe);
 
        ML_Operator_Move2HierarchyAndDestroy_fragile(newPe,
-						    &(ml_edges->Pmat[grid_level]));
+                            &(ml_edges->Pmat[grid_level]));
      }
-
+     else
+       if (ml_nodes->comm->ML_mypid == 0 && 9 < ML_Get_PrintLevel()) {
+         printf("\n\nSkipping enriched prolongator\n\n");fflush(stdout);}
 #endif
 
 
