@@ -25,7 +25,7 @@ static char *cvs_parmetis_part_id = "$Id$";
 void LB_ParMETIS_part(LB *lb, int *num_imp, LB_GID** imp_gids, 
                        LB_LID** imp_lids, int **imp_procs)
 {
-  int i, j, ierr, size_pair, flag, wgtflag, offset, hi;
+  int i, j, ierr, size, flag, wgtflag, offset, hi;
   int num_obj, nedges, sum_edges, max_edges, cross_edges, edgecut;
   int nsend, nrecv;
   int options[4], *destproc;
@@ -155,6 +155,7 @@ void LB_ParMETIS_part(LB *lb, int *num_imp, LB_GID** imp_gids,
     }
     /* Separate inter-processor edges from the local ones */
     cross_edges = 0;
+    nsend = 0;
     for (j=0; j<nedges; j++){
       if (nbors_proc[j] == lb->proc){
         /* local edge */
@@ -165,10 +166,12 @@ void LB_ParMETIS_part(LB *lb, int *num_imp, LB_GID** imp_gids,
         /* Add it to list */
         new = (struct LB_vtx_list *) LB_SMALLOC (sizeof((struct LB_vtx_list));
         new->next = proc_list[nbors_proc[j]];
-        if (new->next == NULL)
+        if (new->next == NULL){
           new->length = 1;
-        else 
+          nsend ++;
+        } else {
           new->length = (new->next)->length+1;
+        }
         new->my_gid = global_ids[i];
         new->my_gno = LB_hash_lookup(hashtab, num_obj, global_ids[i]);
         new->nbor_gid = nbors_global[j];
@@ -182,16 +185,20 @@ void LB_ParMETIS_part(LB *lb, int *num_imp, LB_GID** imp_gids,
 
   /* Exchange info between processors to resolve global_number */
   /* Allocate buffers */
-  size_pair = sizeof(LB_GID) + sizeof(int);
-  sendbuf = (char *) LB_SMALLOC(max_edges*size_pair);
-  recvbuf = (char *) LB_SMALLOC(sum_edges*size_pair);
+  size = sizeof(LB_GID) + sizeof(int);
+  sendbuf = (char *) LB_SMALLOC(max_edges*size);
+  recvbuf = (char *) LB_SMALLOC(sum_edges*size);
+  request = (MPI_Request *) LB_SMALLOC(nsend*sizeof(MPI_Request));
+  status  = (MPI_Status *) LB_SMALLOC(nsend*sizeof(MPI_Status));
   /* Issue the recvs */
   offset = 0;
+  j = 0;
   for (i=0; i<lb->Num_Proc; i++){
     if (proc_list[i] != NULL){
-      MPI_Irecv(&recvbuf[offset], proc_list[i]->length *size_pair,
-        MPI_BYTE, i, 1, lb->Communicator, &request);
-      offset += proc_list[i]->length * size_pair);
+      MPI_Irecv(&recvbuf[offset], proc_list[i]->length *size,
+        MPI_BYTE, i, 1, lb->Communicator, &request[j]);
+      offset += proc_list[i]->length * size);
+      j++;
     }
   }
   /* Barrier */
@@ -207,12 +214,13 @@ void LB_ParMETIS_part(LB *lb, int *num_imp, LB_GID** imp_gids,
         memcpy(&sendbuf[offset], &(ptr->my_gno), sizeof(int)); 
         offset += sizeof(int);
       }
-      MPI_Rsend(sendbuf, proc_list[i]->length *size_pair,
+      MPI_Rsend(sendbuf, proc_list[i]->length *size,
         MPI_BYTE, i, 1, lb->Communicator);
     }
   }
-  /* Wait all */
-  MPI_Waitall();
+  /* Wait for all */
+  MPI_Waitall(nsend, request, status);
+
   /* Unpack data into ParMETIS struct */
   /* Resolve off-proc global_ids. */
   for (i=0; i<lb->Num_Proc; i++){
@@ -220,8 +228,8 @@ void LB_ParMETIS_part(LB *lb, int *num_imp, LB_GID** imp_gids,
     for (ptr = proc_list[i]; ptr != NULL; ptr = ptr->next){
       /* Look for matching global_id in recvbuf */
       flag = 0;
-      hi = offset + (proc_list[i]->length)*size_pair;
-      for (j=offset; j<hi; j += size_pair){
+      hi = offset + (proc_list[i]->length)*size;
+      for (j=offset; j<hi; j += size){
         if (LB_EQ_GID((LB_GID *)&recvbuf[j], ptr->gid)){
           /* Found match. Amend adjcny array. */
           flag = 1;
@@ -241,6 +249,8 @@ void LB_ParMETIS_part(LB *lb, int *num_imp, LB_GID** imp_gids,
   LB_safe_free((void **) &hash_nodes);
   LB_safe_free((void **) &sendbuf);
   LB_safe_free((void **) &recvbuf);
+  LB_safe_free((void **) &request);
+  LB_safe_free((void **) &status);
 
   /* Call ParMETIS */
   options[0] = 0; /* No options for now */
@@ -263,9 +273,9 @@ void LB_ParMETIS_part(LB *lb, int *num_imp, LB_GID** imp_gids,
     }
   }
   nsend = j;
-  size_pair = sizeof(LB_GID) + sizeof(LB_LID) + sizeof(int);
+  size = sizeof(LB_GID) + sizeof(LB_LID) + sizeof(int);
   sendbuf = (char *)LB_array_alloc(__FILE__, __LINE__,
-             1, nsend, size_pair);
+             1, nsend, size);
   j = 0;
   for (i=0; i<num_obj; i++){
     if (part[i] != lb->Proc){
@@ -284,7 +294,7 @@ void LB_ParMETIS_part(LB *lb, int *num_imp, LB_GID** imp_gids,
 
   /* Allocate enough space for receive buffer */
   recvbuf = (char *)LB_array_alloc(__FILE__, __LINE__,
-             1, nrecv, size_pair);
+             1, nrecv, size);
 
   /* Do the communication */
   LB_comm_do(plan, sendbuf, nrecv, recvbuf);
