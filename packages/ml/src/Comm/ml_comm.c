@@ -39,7 +39,13 @@ int ML_Comm_Create( ML_Comm ** com )
    com_ptr->USR_irecvbytes = ML_Comm_Irecv;
    com_ptr->USR_waitbytes  = ML_Comm_Wait;
    com_ptr->USR_comm       = MPI_COMM_WORLD;
+#ifdef ML_CATCH_MPI_ERRORS_IN_DEBUGGER
+   /* register the error handling function */
+   ML_Comm_ErrorHandlerCreate(ML_Comm_ErrorHandler, &(com_ptr->USR_errhandler));
+   /* associate the error handling function with the communicator */
+   ML_Comm_ErrorHandlerSet(com_ptr->USR_comm, com_ptr->USR_errhandler);
 #endif
+#endif /*ifdef ML_MPI*/
 
    return 0;
 }
@@ -58,6 +64,7 @@ int ML_Comm_Destroy( ML_Comm ** com )
          return -1;
       }
       (*com)->ML_id = -1;
+      ML_Comm_ErrorHandlerDestroy(&((*com)->USR_errhandler));
       ML_memory_free( (void **) com );
    }
    return 0;
@@ -80,6 +87,7 @@ int ML_Comm_Check( ML_Comm *com_ptr )
    if ( com_ptr->USR_irecvbytes == NULL ) ready_flag = 0;
    if ( com_ptr->USR_sendbytes  == NULL ) ready_flag = 0;
    if ( com_ptr->USR_waitbytes  == NULL ) ready_flag = 0;
+   if ( com_ptr->USR_errhandler == NULL ) ready_flag = 0;
    if ( com_ptr->ML_mypid  < 0 )          ready_flag = 0;
    if ( com_ptr->ML_nprocs < 0 )          ready_flag = 0;
    if ( com_ptr->USR_comm == 0 )          ready_flag = 0;
@@ -177,6 +185,10 @@ int ML_Comm_GmaxInt(ML_Comm *com_ptr, int idata)
    int     mask, partner, hbit, msgtype, msgbase=245, nprocs, mypid;
    int     i, k, indata, outdata;
    USR_REQ Request;
+
+#ifdef ML_USEMPIFUNCTIONS
+   return ML_gmax_int(idata, com_ptr);
+#endif
 
    /* ----------------------------------------------------------------- */
    /* check validity of the communication                               */
@@ -277,6 +289,12 @@ int ML_Comm_GsumInt(ML_Comm *com_ptr, int idata)
    int     i, k, indata, outdata, nprocs, mypid;
    USR_REQ Request;
 
+#ifdef ML_USEMPIFUNCTIONS
+  MPI_Allreduce((void *) &idata,(void *) &i, 1, MPI_INT, MPI_SUM,
+                MPI_COMM_WORLD);
+  return i;
+#endif
+
    /* ----------------------------------------------------------------- */
    /* check validity of the communication                               */
    /* ----------------------------------------------------------------- */
@@ -374,6 +392,9 @@ double ML_Comm_GsumDouble(ML_Comm *com_ptr, double ddata)
    int     i, k, nprocs, mypid;
    double  indata, outdata;
    USR_REQ Request;
+#ifdef ML_USEMPIFUNCTIONS
+   return ML_gsum_double(ddata, com_ptr);
+#endif
 
    /* ----------------------------------------------------------------- */
    /* check validity of the communication                               */
@@ -473,6 +494,10 @@ double ML_Comm_GmaxDouble(ML_Comm *com_ptr, double ddata)
    double  indata, outdata;
    USR_REQ Request;
 
+#ifdef ML_USEMPIFUNCTIONS
+   return ML_gmax_double(ddata, com_ptr);
+#endif
+
    /* ----------------------------------------------------------------- */
    /* check validity of the communication                               */
    /* ----------------------------------------------------------------- */
@@ -569,6 +594,11 @@ int ML_Comm_GsumVecInt(ML_Comm *com_ptr, int *idata, int *itmp, int leng)
    int     mask, partner, hbit, msgtype, msgbase=247;
    int     i, j, k, nprocs, mypid;
    USR_REQ Request;
+
+#ifdef ML_USEMPIFUNCTIONS
+   ML_gsum_vec_int(idata, itmp, leng, com_ptr);
+   return 0;
+#endif
 
    /* ----------------------------------------------------------------- */
    /* check validity of the communication                               */
@@ -905,3 +935,88 @@ int ML_Comm_Send(void* buf, unsigned int count, int dest, int mid,
    return err;
 }
 
+/*------------------------------------------------------------------------------
+ 
+ Briefly, this function associates *errhandler with the communicator comm.
+
+ Sets the behavior of message-passing error trapping.  For MPI, the default
+ behavior is to exit if an error is detected.   This can be changed
+ to pass errors back to the calling function via return code, or to use a
+ user-defined error handling function.
+
+ input:
+    comm            communicator (for MPI, type MPI_Comm)
+    errhandler      specifies how errors should be handled
+                    (for MPI, type MPI_Errhandler)
+
+ output:
+    err             error code
+
+
+ MPI-specific options for errhandler:
+
+    MPI_ERRORS_ARE_FATAL        (default)
+    MPI_ERRORS_RETURN
+
+    MPE_Errors_call_dbx_in_xterm (mpich only)
+    MPE_Signals_call_debugger    (mpich only)
+
+ Note!  There may very well be other implementation-specific options for
+ errhandler.
+
+------------------------------------------------------------------------------*/
+
+int ML_Comm_ErrorHandlerSet(USR_COMM comm, USR_ERRHANDLER *errhandler)
+{
+   int err = 0;
+#ifdef ML_MPI
+   err = MPI_Errhandler_set(comm, *errhandler);
+#endif
+   return err;
+}
+
+/*------------------------------------------------------------------------------
+ Wrapper for registration of MPI error-handling function.
+------------------------------------------------------------------------------*/
+
+int ML_Comm_ErrorHandlerCreate(void (*fcn)(USR_COMM*,int*),
+                               USR_ERRHANDLER *errhandler)
+{
+   int err = 0;
+#ifdef ML_MPI
+   err = MPI_Errhandler_create(fcn, errhandler);
+#endif
+   return err;
+}
+
+/*------------------------------------------------------------------------------
+ Wrapper for destruction of handle to MPI error-handling function.
+------------------------------------------------------------------------------*/
+
+int ML_Comm_ErrorHandlerDestroy(USR_ERRHANDLER **errhandler)
+{
+  int err = 0;
+#ifdef ML_MPI
+  err = MPI_Errhandler_free(*errhandler);
+#endif
+  *errhandler = NULL;
+  return err;
+}
+
+/*------------------------------------------------------------------------------
+ ML's very own error-handling routine for MPI.
+ Useful if trying to trap error with a debugger.
+------------------------------------------------------------------------------*/
+
+void ML_Comm_ErrorHandler(USR_COMM *comm, int *error_code)
+{
+#ifdef ML_MPI
+   int message_size;
+   char message[MPI_MAX_ERROR_STRING];
+
+   MPI_Error_string(*error_code,message,&message_size);
+   fprintf(stderr,"(In ML_Comm_ErrorHandler) MPI error: %s\n",message);
+#endif
+   /* we call abort so we can trap the error with a debugger */
+   abort();
+}

@@ -25,9 +25,13 @@
 #include <mpi.h>
 #define USR_COMM MPI_Comm
 #define USR_REQ  MPI_Request
+#define USR_ERRHANDLER MPI_Errhandler
+#define USR_ERRHANDLER_FUNCTION MPI_Handler_function
 #else
 #define USR_COMM int
 #define USR_REQ  int
+#define USR_ERRHANDLER int
+#define USR_ERRHANDLER_FUNCTION void
 #endif
 
 /* ******************************************************************** */
@@ -43,6 +47,7 @@ typedef struct ML_Comm_Struct
    int      (*USR_sendbytes)(void*,unsigned int,int,int,USR_COMM);
    int      (*USR_irecvbytes)(void*,unsigned int,int*,int*,USR_COMM,USR_REQ*);
    int      (*USR_waitbytes)(void*,unsigned int,int*,int*,USR_COMM,USR_REQ*);
+   USR_ERRHANDLER *USR_errhandler;
 
 } ML_Comm;
 
@@ -79,6 +84,12 @@ extern int    ML_Comm_GappendDouble(ML_Comm*,double *dvec,int *lleng,int tleng);
 extern int    ML_Comm_Irecv(void*,unsigned int,int *,int *,USR_COMM,USR_REQ*);
 extern int    ML_Comm_Wait (void*,unsigned int,int *,int *,USR_COMM,USR_REQ*);
 extern int    ML_Comm_Send (void*,unsigned int,int,  int,  USR_COMM );
+
+extern int    ML_Comm_ErrorHandlerSet(USR_COMM, USR_ERRHANDLER*);
+extern int    ML_Comm_ErrorHandlerCreate( void (*HandlerFcn)(USR_COMM*,int*),
+                 USR_ERRHANDLER*);
+extern int    ML_Comm_ErrorHandlerDestroy(USR_ERRHANDLER**);
+extern void   ML_Comm_ErrorHandler(USR_COMM*, int*);
 
 #ifdef __cplusplus
 }
