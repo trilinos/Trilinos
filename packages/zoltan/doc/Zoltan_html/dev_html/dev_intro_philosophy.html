@@ -7,7 +7,7 @@
    <meta name="author" content="karen devine, kddevin@sandia.gov">
    <title> Zoltan Developer's Guide:  Philosophy</title>
 <!-----------------------------------------------------------------------------
- ! Zoltan Dynamic Load-Balancing Library for Parallel Applications            !
+ ! Zoltan Library for Parallel Applications            !
  ! Copyright (c) 2000, Sandia National Laboratories.                          !
  ! This document is released under the GNU Lesser General Public License.     !
  ! For more info, see the README file in the top-level Zoltan directory.      !
@@ -28,116 +28,26 @@
 
 <h2>
 <a NAME="philosophy"></a>Philosophy of Zoltan</h2>
-The Zoltan load-balancing library is designed to be a general-purpose tool-kit
-providing a variety of dynamic load-balancing algorithms to a wide range
+The Zoltan library is designed to be a general-purpose tool-kit
+providing a variety of parallel data management services to a wide range
 of scientific applications (see the <a href="../ug_html/ug.html">Zoltan
 User's Guide</a>). To enable general use of the library, the library does
 not directly access the data structures of an application. Instead, the
-library obtains information it needs to perform load balancing through
-an object-oriented interface between the load-balancing library and the
+library obtains information it needs through
+an object-oriented interface between Zoltan and the
 application.
 This interface uses call-back query functions to gather information. An
 application developer must write and register these query functions before
-using the load-balancing library. The intent, however, is that the number
+using Zoltan. The intent, however, is that the number
 and complexity of these query functions are low, allowing applications
-to easily interface with the library. In addition, new load-balancing algorithm
+to easily interface with the library. In addition, new algorithm
 development would use the same query functions as previous algorithms,
 enabling applications to use new algorithms without changes to the query
 functions.
-<p>An example of the interaction between an application and the load-balancing
-library is shown in the <a href="#lb_interaction.gif">figure</a> below. An
-application creates a load-balancing data structure <i>zz</i> through a
-call to
-<b><a href="../ug_html/ug_interface_init.html#Zoltan_Create">Zoltan_Create</a></b>.
-This Zoltan structure stores pointers to registered functions and
-data structures for a particular instance of load balancing. The application
-selects the load-balancing method for <i>zz</i> through a call to <b><a href="../ug_html/ug_interface_lb.html#Zoltan_LB_Set_Method">Zoltan_LB_Set_Method</a></b>.
-Through calls to <b><a href="../ug_html/ug_interface_init.html#Zoltan_Set_Fn">Zoltan_Set_Fn</a></b>,&nbsp;
-the application registers the application query functions <i>user_return_coords_fn</i>,
-<i>user_return_num_elems_fn</i>, and <i>user_return_elem_list_fn</i> to
-return the coordinates of an object, the number of objects, and a list
-of objects, respectively. The application then calls <b><a href="../ug_html/ug_interface_lb.html#Zoltan_LB_Balance">Zoltan_LB_Balance</a></b>
-to compute a new decomposition. The load-balancing library follows pointers
-to the registered functions to build the data structures it needs to perform
-load balancing. It follows the <i>zz->Get_Num_Obj</i> pointer to <i>user_return_num_elems_fn</i>
-to obtain the number of objects assigned to the processor. It then follows
-the <i>zz->Get_Obj_List</i> pointer to <i>user_return_elem_list_fn</i>
-to get a list of the objects. For each object, it follows the <i>zz->Get_Geom</i>
-pointer to <i>user_return_coords_fn</i> to get the coordinates of the object.
-After gathering this data, the load-balancing library can perform the desired
-load balancing.
-<br>&nbsp;
-<br>&nbsp;
+<p>An <a href="../ug_html/ug_intro.html#lb_interaction.gif">example</a> of the interaction between an application and the load-balancing
+library is shown in the <a href="../ug_html/ug.html">Zoltan User's Guide</a>.
 
-<table WIDTH="100%" NOSAVE >
-<tr NOSAVE>
-<td NOSAVE><a NAME="lb_interaction.gif"></a>Application&nbsp;
-<table BORDER=2 WIDTH="80%" NOSAVE >
-<tr>
-<td>.<tt>..</tt>
-<br><tt>/* <i>Register method and application query functions</i> */</tt>
-<br><tt>zz = Zoltan_Create(MPI_COMM_WORLD);</tt>
-<br><tt>Zoltan_LB_Set_Method(zz, "RCB");</tt>
-<br><tt>Zoltan_Set_Fn(zz,ZOLTAN_GEOM_FN_TYPE,</tt>
-<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; (void (*)())user_return_coords_fn,NULL);</tt>
-<br><tt>Zoltan_Set_Fn(zz,ZOLTAN_NUM_OBJ_FN_TYPE,</tt>
-<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; (void (*)())user_return_num_elems_fn,NULL);</tt>
-<br><tt>Zoltan_Set_Fn(zz,ZOLTAN_OBJ_LIST_FN_TYPE,</tt>
-<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; (void (*)())user_return_elem_list_fn,NULL);</tt>
-<br><tt>...</tt>
-<br><tt>/* <i>Call the load balancer</i> */</tt>
-<br><tt>Zoltan_LB_Balance(zz,&amp;new,&amp;num_gid,&amp;num_lid,</tt>
-<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &amp;num_imp,&amp;imp_glob_ids,&amp;imp_loc_ids,&amp;imp_procs,</tt>
-<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &amp;num_exp,&amp;exp_glob_ids,&amp;exp_loc_ids,&amp;exp_procs);</tt></td>
-</tr>
-</table>
-&nbsp;</td>
-</tr>
-
-<tr>
-<td>
-<center><img SRC="figures/arrow.gif" height=48 width=112></center>
-</td>
-</tr>
-
-<tr>
-<td>
-<div align=right>Dynamic Load Balancer</div>
-&nbsp;
-<div ALIGN=right><table BORDER=2 WIDTH="80%" NOSAVE >
-<tr>
-<td><tt>...</tt>
-<br><tt>/* <i>call registered functions to build </i> */</tt>
-<br><tt>/* <i>load-balancing data structures</i> */</tt>
-<br><tt>num_objs = zz->Get_Num_Obj(zz->Get_Num_Obj_Data, </tt>
-<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-&amp;ierr);&nbsp;</tt>
-<br><tt>/* <i>allocate memory for global and local IDs </i>*/</tt>
-<br><tt>...</tt>
-<br><tt>/* <i>call query functions to obtain object data</i>*/</tt>
-<br><tt>zz->Get_Obj_List(zz->Get_Obj_List_Data,</tt>
-<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; num_gid, num_lid,</tt>
-<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; global_ids, local_ids,</tt>
-<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0, NULL, &amp;ierr);&nbsp;</tt>
-<br><tt>for (i = 0; i &lt; num_objs; i++) {</tt>
-<br><tt>&nbsp;&nbsp; ZOLTAN_SET_GID(zz, zz->Data[i].Global_Tag, &amp;global_ids[i]);</tt>
-<br><tt>&nbsp;&nbsp; ZOLTAN_SET_LID(zz, zz->Data[i].Local_Tag, &amp;local_ids[i]);</tt>
-<br><tt>&nbsp;&nbsp; zz->Get_Geom(zz->Get_Geom_Data, num_gid, num_lid,</tt>
-<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &amp;global_ids[i], &amp;local_ids[i],&nbsp;</tt>
-<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; zz->Data[i].Coords, &amp;ierr);</tt>
-<br><tt>}</tt>
-<br><tt>/* <i>perform balancing on zz->Data</i> */</tt>
-<br><tt>...</tt></td>
-</tr>
-</table></div>
-&nbsp;</td>
-</tr>
-
-<caption ALIGN=BOTTOM><i>Example of interaction between the application
-and the load balancer.</i></caption>
-</table>
-
-<p>In developing new load-balancing algorithms for the library, the developer
+<p>In developing new algorithms for Zoltan, the developer
 must write the code that calls the query functions to build the needed
 data structures for the algorithm. However, the application need not change
 its query functions. Thus, new algorithms can be added to the library and

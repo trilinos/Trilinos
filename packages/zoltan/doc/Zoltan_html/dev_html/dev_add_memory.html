@@ -7,7 +7,7 @@
    <meta name="author" content="karen devine, kddevin@sandia.gov">
    <title> Zoltan Developer's Guide:  Adding Algorithms: How to handle memory</title>
 <!-----------------------------------------------------------------------------
- ! Zoltan Dynamic Load-Balancing Library for Parallel Applications            !
+ ! Zoltan Library for Parallel Applications            !
  ! Copyright (c) 2000, Sandia National Laboratories.                          !
  ! This document is released under the GNU Lesser General Public License.     !
  ! For more info, see the README file in the top-level Zoltan directory.      !
@@ -27,10 +27,10 @@
 |&nbsp; <a href="dev_add_params.html">Next</a>&nbsp; |&nbsp; <a href="dev_add_struct.html">Previous</a></i></b></div>
 
 <h2>
-Memory Management in Zoltan Load-Balancing Algorithms</h2>
+Memory Management in Zoltan Algorithms</h2>
 Zoltan uses a <a href="dev_util_mem.html">memory management
 package</a> to simplify debugging of memory problems. 
-It is strongly recommended that load-balancing algorithm
+It is strongly recommended that algorithm
 developers use the routines in this package, such as 
 <a href="dev_util_mem.html#Zoltan_Malloc"><b>ZOLTAN_MALLOC</b> </a>and
 <b><a href="dev_util_mem.html#Zoltan_Free">ZOLTAN_FREE</a></b>, instead
@@ -54,8 +54,8 @@ C and Fortran90 applications; these special routines manage memory in a
 way that is compatible with both languages.
 <p>Some load-balancing algorithms may contain persistent data structures,
 that is, data structures that are preserved between calls to the load-balancing
-routine. The <i>zz</i> structure contains a field 
-<a href="dev_add_struct.html"><i>zz->Data_Structure</i></a>
+routine. The <a href="dev_lb_structs.html"><b>Zoltan_Struct</b></a> structure contains a field 
+<a href="dev_add_struct.html"><i>LB.Data_Structure</i></a>
 for this purpose, allowing multiple Zoltan structures to preserve
 their own decomposition data. The developer should write a function that
 frees this data structure.&nbsp; Use <b>Zoltan_RCB_Free_Structure </b>as an
@@ -65,16 +65,12 @@ example.
 <b><a href="dev_lb_structs.html#Zoltan_Struct">Zoltan_Struct</a></b>
 *<i>zz</i>, void **<i>array</i>, int <i>size</i>, <b>ZOLTAN_SPECIAL_MALLOC_TYPE</b><i>type</i>);&nbsp;
 <hr>
-<p>The <b>Zoltan_Special_Malloc</b> routine allocates memory for the result arrays
+<p>The <b>Zoltan_Special_Malloc</b> routine allocates memory to be returned to the application by Zoltan (e.g., the result arrays
 of 
 <b><a href="../ug_html/ug_interface_lb.html#Zoltan_LB_Balance">Zoltan_LB_Balance</a></b>
 and 
-<b><a href="../ug_html/ug_interface_mig.html#Zoltan_Compute_Destinations">Zoltan_Compute_Destinations</a></b>:
-<i>import_global_ids</i>, <i>import_local_ids</i>, <i>import_procs</i>,
-<i>export_global_ids</i>,
-<i>export_local_ids</i>
-and <i>export_procs</i>. Since these arrays are returned to the application,
-they must be allocated by <b>Zoltan_Special_Malloc</b> to insure they are allocated
+<b><a href="../ug_html/ug_interface_mig.html#Zoltan_Compute_Destinations">Zoltan_Compute_Destinations</a></b>).
+Returned memory must be allocated by <b>Zoltan_Special_Malloc</b> to insure it is allocated
 by the same language as the application. Memory allocated by <b>Zoltan_Special_Malloc</b>
 must be deallocated by <b><a href="#Zoltan_Special_Free">Zoltan_Special_Free</a></b>.
 <br>&nbsp;

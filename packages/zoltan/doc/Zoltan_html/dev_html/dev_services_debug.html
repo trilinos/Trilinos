@@ -1,5 +1,5 @@
 <!-----------------------------------------------------------------------------
- ! Zoltan Dynamic Load-Balancing Library for Parallel Applications            !
+ ! Zoltan Library for Parallel Applications            !
  ! Copyright (c) 2000, Sandia National Laboratories.                          !
  ! This document is released under the GNU Lesser General Public License.     !
  ! For more info, see the README file in the top-level Zoltan directory.      !
@@ -33,7 +33,7 @@ parameters or by the Zoltan key parameter <a href="../ug_html/ug_alg.html#Debug 
 The value of the <i>Debug_Level</i> field of the <b><a href="dev_lb_structs.html#Zoltan_Struct">Zoltan_Struct</a></b>
 structure can be tested to determine whether the user desires debugging
 information.&nbsp; Several constants (<b>ZOLTAN_DEBUG_*</b>) are defined in
-<i>lb/lb_const.h</i>; the <i>Debug_Level</i> field should be compared to
+<i>zz/zz_const.h</i>; the <i>Debug_Level</i> field should be compared to
 these values so that future changes to the debugging levels can be made
 easily.&nbsp; An <a href="#Debug Example">example</a> is included below.
 <p>Several macros for common debugging operations are provided.&nbsp; The
@@ -45,7 +45,7 @@ of a function.
 <br><a href="#ZOLTAN_TRACE_DETAIL">ZOLTAN_TRACE_DETAIL</a></blockquote>
 These macros produce output depending upon the value of the <a href="../ug_html/ug_alg.html#Debug Levels in Zoltan">DEBUG_LEVEL</a>
 parameter set in Zoltan by a call to <b><a href="../ug_html/ug_interface_lb.html#Zoltan_Set_Param">Zoltan_Set_Param</a></b>.&nbsp;&nbsp;
-The macros are defined in <i>lb/lb_const.h.</i>
+The macros are defined in <i>zz/zz_const.h.</i>
 <p><a href="#Debug Example">Examples</a> of the use of these macros can
 be found <a href="#Debug Example">below</a> and in <i>lb/lb_balance.c</i> 
 and <i>rcb/rcb.c.</i>
@@ -73,8 +73,8 @@ parameter set in Zoltan by a call to <b><a href="../ug_html/ug_interface_lb.html
 <tr>
 <td VALIGN=TOP>&nbsp;&nbsp;&nbsp; <i>zz</i></td>
 
-<td>Pointer to the Zoltan structure used in the invocation of the
-load-balancing routines.</td>
+<td>Pointer to a Zoltan structure.
+</td>
 </tr>
 
 <tr VALIGN=TOP NOSAVE>
@@ -121,8 +121,8 @@ parameter set in Zoltan by a call to <b><a href="../ug_html/ug_interface_lb.html
 <tr>
 <td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; zz</i></td>
 
-<td>Pointer to the Zoltan structure used in the invocation of the
-load-balancing routines.</td>
+<td>Pointer to a Zoltan structure.
+</td>
 </tr>
 
 <tr VALIGN=TOP NOSAVE>
@@ -170,8 +170,8 @@ parameter set in Zoltan by a call to <b><a href="../ug_html/ug_interface_lb.html
 <tr>
 <td VALIGN=TOP>&nbsp;&nbsp;&nbsp; <i>zz</i></td>
 
-<td>Pointer to the Zoltan structure used in the invocation of the
-load-balancing routines.</td>
+<td>Pointer to a Zoltan structure.
+</td>
 </tr>
 
 <tr VALIGN=TOP NOSAVE>
@@ -206,7 +206,7 @@ load-balancing routines.</td>
 <br><b>Example:</b>
 <br>An example using the debugging macros in shown below.
 <tt>
-<ul>#include "lb/lb_const.h"
+<ul>#include "zoltan.h"
 <br>void example(struct <b><a href="dev_lb_structs.html#Zoltan_Struct">Zoltan_Struct</a></b>
 *zz)
 <br>{

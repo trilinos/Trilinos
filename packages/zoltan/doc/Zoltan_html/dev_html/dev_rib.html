@@ -1,5 +1,5 @@
 <!-----------------------------------------------------------------------------
- ! Zoltan Dynamic Load-Balancing Library for Parallel Applications            !
+ ! Zoltan Library for Parallel Applications            !
  ! Copyright (c) 2000, Sandia National Laboratories.                          !
  ! This document is released under the GNU Lesser General Public License.     !
  ! For more info, see the README file in the top-level Zoltan directory.      !
@@ -64,7 +64,7 @@ the center of mass to the cutting plane have to be saved.
 Data Structure Definitions</H3>
 
 <P>There are three major data structures in RIB and they are defined in
-<i>rcb/rib_const.h</i> and <i>rcb/shared_const.h</i>.  The points which are being load balanced are represented as a
+<i>rcb/rib.h</i> and <i>rcb/shared.h</i>.  The points which are being load balanced are represented as a
 structure <i>Dot_Struct</i> which contains the location of the point, its weight, and
 the originating processor's number.  The nodes on the decomposition tree are
 represented by the structure <i>rib_tree</i> which contains the position of the cut,
@@ -83,7 +83,7 @@ Parameters</H3>
 
 <P>The parameters used by RIB and their default values are described in the
 <a href="../ug_html/ug_alg_rib.html">RIB</a> section of the <B><A HREF="../ug_html/ug.html">Zoltan User's
-Guide</A></B>.  These can be set by use of the <b>Zoltan_Set_RIB_Param</b> subroutine
+Guide</A></B>.  These can be set by use of the <b>Zoltan_RIB_Set_Param</b> subroutine
 in the file <i>rcb/rib.c</i>.
  
 <BR>&nbsp;

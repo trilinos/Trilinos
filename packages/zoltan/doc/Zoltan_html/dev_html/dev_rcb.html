@@ -1,5 +1,5 @@
 <!-----------------------------------------------------------------------------
- ! Zoltan Dynamic Load-Balancing Library for Parallel Applications            !
+ ! Zoltan Library for Parallel Applications            !
  ! Copyright (c) 2000, Sandia National Laboratories.                          !
  ! This document is released under the GNU Lesser General Public License.     !
  ! For more info, see the README file in the top-level Zoltan directory.      !
@@ -126,7 +126,7 @@ The normal RCB algorithm is then applied to this new initial condition.
 Data Structure Definitions</H3>
 
 <P>There are three major data structures in RCB and they are defined in
-<i>rcb/rcb_const.h</i> and <i>rcb/shared_const.h</i>.  The points which are being load balanced are represented as a
+<i>rcb/rcb.h</i> and <i>rcb/shared.h</i>.  The points which are being load balanced are represented as a
 structure <i>Dot_Struct</i> which contains the location of the point, its weight, and
 its originating processor number.  The nodes on the decomposition tree are
 represented by the structure <i>rcb_tree</i> which contains the position of the cut,
@@ -144,7 +144,7 @@ Parameters</H3>
 
 <P>The parameters used by RCB and their default values are described in the
 <a href="../ug_html/ug_alg_rcb.html">RCB section</a> of the <B><A HREF="../ug_html/ug.html">Zoltan User's
-Guide</A></B>.  These can be set by use of the <b>Zoltan_Set_RCB_Param</b> subroutine
+Guide</A></B>.  These can be set by use of the <b>Zoltan_RCB_Set_Param</b> subroutine
 in the file <i>rcb/rcb.c</i>.
  
 <BR>&nbsp;

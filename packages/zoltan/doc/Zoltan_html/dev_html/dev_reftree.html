@@ -7,7 +7,7 @@
    <meta name="author" content="william mitchell, william.mitchell@nist.gov">
    <title> Zoltan Developer's Guide:  Refinement Tree</title>
 <!-----------------------------------------------------------------------------
- ! Zoltan Dynamic Load-Balancing Library for Parallel Applications            !
+ ! Zoltan Library for Parallel Applications            !
  ! Copyright (c) 2000, Sandia National Laboratories.                          !
  ! This document is released under the GNU Lesser General Public License.     !
  ! For more info, see the README file in the top-level Zoltan directory.      !
@@ -92,8 +92,8 @@ constructs the export list.
 <h3>
 Data structures</h3>
 The implementation of the refinement tree algorithm uses three data
-structures which are contained in <i>reftree/reftree_const.h</i>.  <i>Zoltan_Reftree_data_struct</i>
-is the structure pointed to by <i>zz->Data_Structure</i>.  It contains a pointer
+structures which are contained in <i>reftree/reftree.h</i>.  <i>Zoltan_Reftree_data_struct</i>
+is the structure pointed to by <i>zz->LB.Data_Structure</i>.  It contains a pointer
 to the refinement tree root and a pointer to the hash table.
 <i>Zoltan_Reftree_hash_node</i> is an entry in the hash table.  It consists of a global ID,
 a pointer to a refinement tree node, and a "next" pointer from which
@@ -106,7 +106,7 @@ assigned to this processor, and the new partition number.
 <h3>
 Parameters</h3>
 There is one parameter, <a href="../ug_html/ug_alg_reftree.html">REFTREE_HASH_SIZE</a>, which determines the size of
-the hash table and is set by <b>Zoltan_Set_Reftree_Param</b>.
+the hash table and is set by <b>Zoltan_Reftree_Set_Param</b>.
 <h3>
 Main routine</h3>
 The main routine is <b>Zoltan_Reftree_Part</b> in file <i>reftree/reftree_part.c</i>.

@@ -1,5 +1,5 @@
 <!-----------------------------------------------------------------------------
- ! Zoltan Dynamic Load-Balancing Library for Parallel Applications            !
+ ! Zoltan Library for Parallel Applications            !
  ! Copyright (c) 2000, Sandia National Laboratories.                          !
  ! This document is released under the GNU Lesser General Public License.     !
  ! For more info, see the README file in the top-level Zoltan directory.      !
@@ -27,7 +27,7 @@
 
 
 <H2>
-<A NAME="RCB"></A>Appendix: Hilbert Space Filling Curve (HSFC)</H2>
+<A NAME="HSFC"></A>Appendix: Hilbert Space Filling Curve (HSFC)</H2>
 &nbsp;
 
 <H3>
@@ -42,13 +42,13 @@ First, the weights and inverse Hilbert coordinates for each object
 are determined. If the objects do not have weights, unit weights are assigned.
 If the objects have multidimensional weights, only the first dimension of
 weight is used.  The smallest axis-aligned box is found that contains
-all objects using their 2 or 3 dimensional coordinates.
+all objects using their two or three dimensional coordinates.
 This bounding box is slightly expanded to insure that all objects are strictly
 interior to the boundary surface. The bounding box is necessary to calculate
 the inverse Hilbert Space Filling curve coordinate. The inverse Hilbert
 coordinate is calculated, scaled to the unit interval [0,1] and stored as a
 double precision floating point value for each object. This code works on problems
-with 1 to 3 dimensions (the 1-D Inverse Hilbert coordinate is simply the problem
+with one, two or three dimensions (the 1-D Inverse Hilbert coordinate is simply the problem
 coordinate itself.)
 <p>
 The algorithm seeks to cut the unit interval into P segments containing equal
@@ -58,7 +58,7 @@ of the total weight to be assigned to each interval. Note, 0 prevents any object
 being assigned to the corresponding interval. When Zoltan has a mechanism to allow
 the user to input a vector user parameter, this can be finished.)
 The unit interval is divided into N bins. (N=k(P-1)+1, where k is a
-small positive constant. Currently k is 8.)  Each bin has an left and right endpoint
+small positive constant.)  Each bin has an left and right endpoint
 specifying the half-open interval [l,r) associated with the bin. The bins form a
 non-overlapping cover of [0,1] with the right endpoint of the last bin forced to include 1.
 For the first loop, the bins are equal size.
@@ -78,7 +78,7 @@ satisfy the weight required by each partition.
 Before starting the next loop, the P intervals are again divided into N bins. The
 P-1 "overflow" bins are each subdivided into k-1 equal bins.  The
 intervals before and after these new bins determine the remaining bins.  This process
-maintains a fixed number of bins. No bin is "privileged".  Specifically, any bin is
+maintains a fixed number of bins. No bin is "privileged."  Specifically, any bin is
 subject to later refinement, as necessary, on future loops.
 <p>
 The loop terminates when there is no need to further divide any "overflow" bin. A slightly
@@ -95,22 +95,24 @@ for the next partition.  This correction fixes the subsequent partitions when
 a "massive" weight object is on the border of a cut and its assignment creates an
 excessive imbalance.
 <p>
-Generally, the number of loops is small (proportional to log(number of objects))
-and averages less than 4 for the Zoltan test suite.  A maximum of MAX_LOOPS is
+Generally, the number of loops is small (proportional to log(number of objects)).
+A maximum of MAX_LOOPS is
 used to prevent an infinite looping condition due to a programming error.  A user-defined
 function is used in the MPI_Allreduce call in order to simultaneously determine the
 sum, maximum, and minimum of each bin.  The message length in the MPI_Allreduce is
-proportional to the P, the number of partitions. (The message is 3 doubles
-for each of the N=k(P-1)+1 bins.)
+proportional to the P, the number of partitions. 
 <p>
 Note, when a bin is encountered that satisfies more than two partitions, that bin is refined
 into a multiple of k-1 intervals which maintains a total of N bins.
 
 <BR>&nbsp;
 <h3>Point Assign</h3>
-The user can use the point assign function to add a new point to the
-appropriate partition.  The LB_Struct maintains the bounding box coordinates,
-the final partition, and other related information. The extended bounded box is
+The user can use 
+<a href="../ug_html/ug_interface_augment.html#Zoltan_LB_Point_Assign"><b>Zoltan_LB_Point_Assign</b></a> 
+to add a new point to the
+appropriate partition.  The bounding box coordinates,
+the final partition, and other related information persist after partitioning.
+The extended bounded box is
 used to compute the new point's inverse Hilbert coordinate.  Then the
 routine performs a binary search on the final partition to determine the partition (interval) which
 includes the point. The routine returns the partition number assigned to that
@@ -118,28 +120,27 @@ interval.
 
 <BR>&nbsp;
 <h3>Box Assign</h3>
-The user can use the box assign function to determine the partitions whose
-corresponding 1 to 3 dimensional space intersects the user's box.  Currently,
+The user can use 
+<a href="../ug_html/ug_interface_augment.html#Zoltan_LB_Box_Assign"><b>Zoltan_LB_Box_Assign</b></a> 
+to determine the partitions whose
+corresponding subdomains intersect the user's box.  Currently,
 this algorithm creates a regular lattice of points filling the user's box.
 The point assign function is called repeatedly to determine the partition
 for each lattice point.  The function then refines the lattice and repeats
 the process until the same list of partitions is obtained.  This list is
 returned to the user.
 <p>
-The Zoltan implementation of HSFC has one parameter that can be modified
-by the <b><a href="ug_interface_lb.html#LB_Set_Param">LB_Set_Param</a></b>
-function.
 
 <BR>&nbsp;
 
 <H3>Data Structure Definitions</H3>
-The data structures are defined in <i>hsfc/hsfc.c</i>.  The objects being load balanced
+The data structures are defined in <i>hsfc/hsfc.h</i>.  The objects being load balanced
 are represented by the <i>Dots</i> Structure which holds the objects spacial coordinates,
 the corresponding inverse Hilbert coordinate, the processor owning the object,
 and the object's weight(s).  The <i>Partition</i> structure holds the left and right
 endpoints of the interval represented by this element of the partition and the index
-to the processor owning this element of the partition.  The structure <i>HSFC_Data</i> in
-<i>LB_Struct</i> holds the "persistant" data
+to the processor owning this element of the partition.  The structure <i>HSFC_Data</i> 
+holds the "persistant" data
 needed by the point assign and box assign routines.  This includes the bounding box,
 the number of loops necessary for load balancing, the number of dimensions for the problem,
 a pointer to the function that returns the inverse Hilbert Space-Filling Curve
@@ -152,15 +153,15 @@ Parameters</H3>
 
 <P>The parameters used by HSFC and their default values are described in the
 <a href="../ug_html/ug_alg_hsfc.html">HSFC section</a> of the <B><A HREF="../ug_html/ug.html">Zoltan User's
-Guide</A></B>.  These can be set by use of the <b>LB_Set_RCB_Param</b> subroutine
-in the file <i>rcb/rcb.c</i>.
+Guide</A></B>.  These can be set by use of the <b>Zoltan_HSFC_Set_Param</b> subroutine
+in the file <i>hsfc/hsfc.c</i>.
 
 <BR>&nbsp;
 
 <H3>
 Main Routine</H3>
 
-<P>The main routine for HSFC is <b>zz_hsfc</b> in the file <i>hsfc/hsfc.c</i>.
+<P>The main routine for HSFC is <b>Zoltan_HSFC</b> in the file <i>hsfc/hsfc.c</i>.
 
 <BR>&nbsp;
 <BR>&nbsp;

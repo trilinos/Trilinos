@@ -7,7 +7,7 @@
    <meta name="author" content="karen devine, kddevin@sandia.gov">
    <title> Zoltan Developer's Guide:  Directory Layout</title>
 <!-----------------------------------------------------------------------------
- ! Zoltan Dynamic Load-Balancing Library for Parallel Applications            !
+ ! Zoltan Library for Parallel Applications            !
  ! Copyright (c) 2000, Sandia National Laboratories.                          !
  ! This document is released under the GNU Lesser General Public License.     !
  ! For more info, see the README file in the top-level Zoltan directory.      !
@@ -29,7 +29,7 @@
 <h2>
 <a NAME="directories"></a>Layout of Directories</h2>
 The source code is organized into several subdirectories within the Zoltan
-main directory. Load-balancing interface routines are stored
+main directory. General interface routines are stored
 in a single directory. Communication and memory allocation utilities available
 to all algorithms are in separate directories. Each load-balancing method
 (or family of methods) should be stored in its own directory. 
@@ -52,14 +52,20 @@ and described.
 <tr>
 <td VALIGN=TOP><i>zz</i></td>
 
-<td>Interface definitions (lbi_const.h),
-load-balancing data structure definitions (lb_const.h), interface functions
-(lb_balance.c, lb_eval.c, lb_init.c, lb_migrate.c, lb_set_fn.c, lb_set_method.c,
-lb_struct.c), and functions related to the load-balancing interface (lb_util.c,
-lb_util_const.h). See <a href="dev_lb_interface.html">Interface Functions</a>,
-<a href="dev_lb_types.html">ID Data Types</a>, and
-<a href="dev_lb_structs.html">Data
-Structures</a>.</td>
+<td>General Interface definitions,
+Zoltan data structure definitions, interface functions
+and functions related to the interface 
+See <a href="dev_lb_interface.html">Interface Functions</a>,
+<a href="dev_lb_types.html">ID Data Types</a>, and 
+<a href="dev_lb_structs.html">Data Structures</a>.
+</td>
+</tr>
+<tr>
+<td VALIGN=TOP><i>lb</i></td>
+
+<td>Load-Balancing interface routines,
+and load-balancing data structure definitions.
+</td>
 </tr>
 
 <tr>
@@ -93,6 +99,21 @@ partitioning libraries.</td>
 
 <td><a href="../ug_html/ug_alg_rcb.html">Recursive Coordinate Bisection (RCB)</a> and 
 <a href="../ug_html/ug_alg_rib.html">Recursive Inertial Bisection (RIB)</a> algorithms.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>hsfc</i></td>
+
+<td><a href="../ug_html/ug_alg_hsfc.html">Hilbert Space-Filling Curve partitioning</a> 
+algorithm.
+</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>bsfc</i></td>
+
+<td>Binned Space-Filling Curve partitioning algorithm.
+</td>
 </tr>
 
 <tr>
@@ -135,6 +156,14 @@ input files and build graphs for the driver program <i><a href="dev_driver.html"
 </tr>
 
 <tr NOSAVE>
+<td VALIGN=TOP NOSAVE><i>Utilities/shared</i></td>
+
+<td VALIGN=TOP NOSAVE>Simple functions and utilities shared by Zoltan and
+other Zoltan Utilities.
+</td>
+</tr>
+
+<tr NOSAVE>
 <td VALIGN=TOP NOSAVE><i>Utilities/Memory</i></td>
 
 <td VALIGN=TOP NOSAVE><a href="dev_util_mem.html">Memory management utilities</a></td>
@@ -144,6 +173,13 @@ input files and build graphs for the driver program <i><a href="dev_driver.html"
 <td VALIGN=TOP NOSAVE><i>Utilities/Communication</i></td>
 
 <td VALIGN=TOP NOSAVE><a href="dev_util_comm.html">Unstructured communication
+utilities</a></td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE><i>Utilities/DDirectory</i></td>
+
+<td VALIGN=TOP NOSAVE><a href="dev_util_dd.html">Distributed Data Directory
 utilities</a></td>
 </tr>
 
@@ -187,6 +223,12 @@ makefile definitions</a> for compiler, library and include-file paths.</td>
 <td VALIGN=TOP NOSAVE><i>docs/Zoltan_pdf</i></td>
 
 <td>PDF versions of the Zoltan User's Guide and Developer's Guide.</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE><i>docs/internal</i></td>
+
+<td>SQA documents for the Zoltan project.</td>
 </tr>
 
 <caption ALIGN=BOTTOM><i>The directory structure of the Zoltan distribution.</i></caption>

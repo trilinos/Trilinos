@@ -1,5 +1,5 @@
 <!-----------------------------------------------------------------------------
- ! Zoltan Dynamic Load-Balancing Library for Parallel Applications            !
+ ! Zoltan Library for Parallel Applications            !
  ! Copyright (c) 2000, Sandia National Laboratories.                          !
  ! This document is released under the GNU Lesser General Public License.     !
  ! For more info, see the README file in the top-level Zoltan directory.      !
@@ -40,30 +40,30 @@
 
 <H3>
 <A NAME="include"></A>Include files</H3>
-Include files should be used for function prototypes, static global variable definitions,
+Include files should be used for function prototypes, macro definitions,
 and data structure definitions. The convention used is that external function
 prototypes and data structure definitions
-required by more than one source file are stored in include files named
-<I>*_const.h</I> (e.g., <I>lb/lb_const.h</I>). Include files with static
-function prototypes, static global variable declarations, or static data structure
-definitions (i.e., files that are included in only one source file) are
-named <I>*.h</I> (e.g.,<I> lb/lb.h</I>).
+required by more than one module are stored in include files named
+<I>*_const.h</I> (e.g., <I>zz/zz_const.h</I>). Include files with static
+function prototypes or static data structure
+definitions (i.e., files that are included in only one module) are
+named <I>*.h</I> (e.g.,<I> rcb/rcb.h</I>).
 
-<P>The include file <I>lb/lbi_const.h</I> contains the load-balancing library
+<P>The include file <I>include/zoltan.h</I> contains the Zoltan
 interface; it should be included by application source files that call
-the load-balancing library. The include file <I>lb/lb_const.h</I> describes
-the principle load-balancing data structures. As these data structures
-are used heavily by the load-balancing algorithms, <I>lb/lb_const.h</I>
-should be included in most source files of the load-balancing library.
+Zoltan. The include file <I>zz/zz_const.h</I> describes
+the principle Zoltan data structures. As these data structures
+are used heavily by the algorithms in Zoltan, <I>zz/zz_const.h</I>
+should be included in most source files of Zoltan.
 <BR>&nbsp;
 <H3>
 <A NAME="global"></A>Global variables</H3>
-The use of global variables is highly discouraged in the load-balancing
-library. In limited cases, static global variables can be tolerated within
+The use of global variables is highly discouraged in Zoltan.
+In limited cases, static global variables can be tolerated within
 a source file of an algorithm. However, developers should keep in mind
 that several Zoltan structures may be used by an application, with
 each structure using the same algorithm. Thus, global variables set by one
-instance of load balancing may be reset by other instances, causing errors
+invocation of a routine may be reset by other invocations, causing errors
 in the algorithms. Global variable names may also conflict with variables
 used elsewhere in the library or application, causing unintended side-effects
 and complicating debugging. For greatest robustness, developers are asked
@@ -73,10 +73,13 @@ Structures</A> for ideas on avoiding the use of global variables.
 <H3>
 <A NAME="functions"></A>Function Names</H3>
 In order to avoid name conflicts with applications and other libraries,
-all non-static functions should be prepended with <B>Zoltan_</B><I>.</I>&nbsp; As a general
+all non-static functions should be prepended with <B>Zoltan_</B><I>.</I>&nbsp; 
+Moreover, function names should, in general, include their module names; e.g., 
+<b>Zoltan_HSFC_Box_Assign</b> is part of the HSFC module of Zoltan.
+As a general
 rule, each new word in a function name should be capitalized (for example,
 <b>Zoltan_Help_Migrate</b>). 
-Internal Zoltan functions do not have to follow these rules.
+Static Zoltan functions do not have to follow these rules.
 
 <H3>
 <A NAME="par_comm"></A>Parallel Communication</H3>
@@ -101,7 +104,7 @@ more information on these utilities.<p>
 For memory that is returned by Zoltan to an application, however, special
 memory allocation functions must be used to maintain compatibility with
 both C and Fortran90 applications.  See <a href="dev_add_memory.html">
-Memory Management in Zoltan Load-Balancing Algorithms</a> for more 
+Memory Management in Zoltan Algorithms</a> for more 
 information. <p>
 
 One of the few data types specified for use in the Zoltan interface is the
@@ -121,7 +124,7 @@ all memory allocated in the current function should be freed, and
 an <a href="../ug_html/ug_interface.html#Error Codes">error code</a> should be returned. 
 The Zoltan library should never "exit";
 control should always be returned to the application with an error code.
-The <a href="../ug_html/ug_interface.html#Error Codes">error codes</a> are defined in <i>lb/lbi_const.h</i>.
+The <a href="../ug_html/ug_interface.html#Error Codes">error codes</a> are defined in <i>include/zoltan_types.h</i>.
 <p>
 Currently, this philosophy is not strictly followed in all portions
 of Zoltan.
@@ -133,7 +136,7 @@ rule in all future development.
 <b>ZOLTAN_PRINT_WARN</b>(int <i>processor_number</i>, char *<i>function_name</i>, char *<i>message</i>)<br>
 <hr>
 Macros for printing error and warning messages in Zoltan.  The macros are
-defined in <i>lb/lb_const.h</i>.
+defined in <i>Utilities/shared/zoltan_util.h</i>.
 <TABLE WIDTH="100%" NOSAVE>
 <TR>
 <TD VALIGN=TOP WIDTH="20%"><b>Arguments:</b></TD>
@@ -141,7 +144,7 @@ defined in <i>lb/lb_const.h</i>.
 </TR>
 <TR>
 <TD VALIGN=TOP>&nbsp;&nbsp;&nbsp;&nbsp;<i>processor_number</i></TD>
-<TD ALIGN=LEFT> The processor's rank in the load-balancing communicator. The value -1 can be used if the rank is not available.</td>
+<TD ALIGN=LEFT> The processor's rank in the Zoltan communicator. The value -1 can be used if the rank is not available.</td>
 </TR>
 <TR>
 <TD VALIGN=TOP>&nbsp;&nbsp;&nbsp;&nbsp;<i>function_name</i></TD>

@@ -7,7 +7,7 @@
    <meta name="author" content="karen devine, kddevin@sandia.gov">
    <title> Zoltan Developer's Guide:  Load Balancing Data Structures</title>
 <!-----------------------------------------------------------------------------
- ! Zoltan Dynamic Load-Balancing Library for Parallel Applications            !
+ ! Zoltan Library for Parallel Applications            !
  ! Copyright (c) 2000, Sandia National Laboratories.                          !
  ! This document is released under the GNU Lesser General Public License.     !
  ! For more info, see the README file in the top-level Zoltan directory.      !
@@ -29,18 +29,18 @@
 <h2>
 <a NAME="interface_structs"></a>Data Structures</h2>
 The <b>Zoltan_Struct</b> data structure is the main data structure for interfacing
-between the load-balancing library and the application. The application
+between Zoltan and the application. The application
 creates an <b>Zoltan_Struct</b> data structure through a call to <b><a href="../ug_html/ug_interface_init.html#Zoltan_Create">Zoltan_Create</a></b>.
 Fields of the data structure are then set through calls from the application
-to load-balancing interface routines such as <b><a href="../ug_html/ug_interface_lb.html#Zoltan_LB_Set_Method">Zoltan_LB_Set_Method</a></b>
+to interface routines such as <b><a href="../ug_html/ug_interface_lb.html#Zoltan_Set_Param">Zoltan_Set_Param</a></b>
 and <b><a href="../ug_html/ug_interface_init.html#Zoltan_Set_Fn">Zoltan_Set_Fn</a></b>.
 The fields of the <b>Zoltan_Struct</b> data structure are listed and described
 in the <a href="#Zoltan_Struct">table</a> below. See the <a href="../ug_html/ug.html">Zoltan
 User's Guide</a> for descriptions of the function types used in the <b>Zoltan_Struct</b>.
 <p>An <b>Zoltan_Struct</b> data structure <i>zz</i> is passed from the application
-to the load-balancing library in the call to <b><a href="../ug_html/ug_interface_lb.html#Zoltan_LB_Balance">Zoltan_LB_Balance</a></b>.
+to Zoltan in the call to <b><a href="../ug_html/ug_interface_lb.html#Zoltan_LB_Balance">Zoltan_LB_Balance</a></b>.
 This data structure is passed to the individual load-balancing routines.
-The <i>zz->Data_Structure</i> pointer field should point to the main data
+The <i>zz->LB.Data_Structure</i> pointer field should point to the main data
 structures of the particular load-balancing algorithm so that the data
 structures may be preserved for future calls to <b><a href="../ug_html/ug_interface_lb.html#Zoltan_LB_Balance">Zoltan_LB_Balance</a></b>
 and so that separate instances of the same load-balancing algorithm (with
@@ -99,7 +99,7 @@ for <a href="../ug_html/ug_alg.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>.
 <td VALIGN=TOP>int <i><a href="../ug_html/ug_alg.html#Debug Levels in Zoltan">Debug_Level</a></i></td>
 
 <td>A flag indicating the amount of debugging information that should be
-printed by the load-balancing library.</td>
+printed by Zoltan.</td>
 </tr>
 
 <tr>
@@ -110,36 +110,13 @@ from Fortran.</td>
 </tr>
 
 <tr>
-<td VALIGN=TOP>ZOLTAN_LB_METHOD <i>Method</i></td>
-
-<td>An enumerated type designating which load-balancing algorithm should
-be used with this Zoltan structure; set by <b><a href="../ug_html/ug_interface_lb.html#Zoltan_LB_Set_Method">Zoltan_LB_Set_Method</a></b>.</td>
-</tr>
-
-<tr>
-<td VALIGN=TOP>LB_FN *<i> LB_Fn</i></td>
-
-<td>A pointer to the load-balancing function specified by <i>Method</i>;
-set in <b><a href="../ug_html/ug_interface_lb.html#Zoltan_LB_Set_Method">Zoltan_LB_Set_Method</a></b>.</td>
-</tr>
-
-<tr>
-<td VALIGN=TOP>ZOLTAN_PARAM *<i> Params</i></td>
+<td VALIGN=TOP>PARAM_LIST *<i> Params</i></td>
 
 <td>A linked list of string pairs. The first item in each pair is the name
 of a modifiable parameter. The second string is the new value the parameter
-should adopt. These string pairs are read upon invocation of a load balancing
+should adopt. These string pairs are read upon invocation of a Zoltan
 algorithm and the appropriate parameter changes are made. This design allows
-for different LB structures to have different parameter settings.</td>
-</tr>
-
-<tr>
-<td VALIGN=TOP>double <i>Imbalance_Tol</i></td>
-
-<td>The degree of load balance which is considered acceptable.
-Set via a call to
-<b><a href="dev_services_params.html#Zoltan_Set_Param">Zoltan_Set_Param</a></b>
-for <a href="../ug_html/ug_alg.html#IMBALANCE_TOL">IMBALANCE_TOL</a>.</td>
+for different Zoltan structures to have different parameter settings.</td>
 </tr>
 
 <tr VALIGN=TOP NOSAVE>
@@ -154,28 +131,19 @@ for <a href="../ug_html/ug_alg.html#DETERMINISTIC">DETERMINISTIC</a>.</td>
 <tr>
 <td VALIGN=TOP>int <i>Obj_Weight_Dim</i></td>
 
-<td>Number of weights per object to be used in load balancing.
+<td>Number of weights per object.
 &nbsp; Set via a call to
 <b><a href="dev_services_params.html#Zoltan_Set_Param">Zoltan_Set_Param</a></b>
 for <a href="../ug_html/ug_alg.html#OBJ_WEIGHT_DIM">OBJ_WEIGHT_DIM</a>.</td>
 </tr>
 
 <tr>
-<td VALIGN=TOP>int <i>Comm_Weight_Dim</i></td>
+<td VALIGN=TOP>int <i>Edge_Weight_Dim</i></td>
 
-<td>For graph algorithms, number of weights per edge to be used in load
-balancing.  Set via a call to
-<b><a href="dev_services_params.html#Zoltan_Set_Param">Zoltan_Set_Param</a></b>
-for <a href="../ug_html/ug_alg.html#EDGE_WEIGHT_DIM">EDGE_WEIGHT_DIM</a>.</td>
-</tr>
-<tr>
-<td VALIGN=TOP>int <i>Return_Lists</i></td>
-
-<td>A flag indicating whether the application wants import and/or export
-lists returned by <a href="../ug_html/ug_interface_lb.html#Zoltan_LB_Balance"><b>Zoltan_LB_Balance</b></a>.
+<td>For graph algorithms, number of weights per edge. 
 Set via a call to
 <b><a href="dev_services_params.html#Zoltan_Set_Param">Zoltan_Set_Param</a></b>
-for <a href="../ug_html/ug_alg.html#RETURN_LISTS">RETURN_LISTS</a>.</td>
+for <a href="../ug_html/ug_alg.html#EDGE_WEIGHT_DIM">EDGE_WEIGHT_DIM</a>.</td>
 </tr>
 
 <tr>
@@ -185,12 +153,6 @@ for <a href="../ug_html/ug_alg.html#RETURN_LISTS">RETURN_LISTS</a>.</td>
 Set via a call to
 <b><a href="dev_services_params.html#Zoltan_Set_Param">Zoltan_Set_Param</a></b>
 for <a href="../ug_html/ug_alg.html#TIMER">TIMER</a>.</td>
-</tr>
-<tr>
-<td VALIGN=TOP>void *<i> Data_Structure</i></td>
-
-<td>The <a href="dev_add_struct.html">data structure</a> used by the selected load-balancing algorithm; this
-pointer is cast by the algorithm to the appropriate data type.</td>
 </tr>
 
 <tr>
@@ -528,6 +490,68 @@ or <b><a href="../ug_html/ug_interface_init.html#Zoltan_Set_Specific_Fn">Zoltan_
 </tr>
 
 <tr>
+<td VALIGN=TOP><a href="../ug_html/ug_query_mig.html#ZOLTAN_OBJ_SIZE_FN">ZOLTAN_OBJ_SIZE_FN</a>
+*<i> Get_Obj_Size</i></td>
+
+<td>A pointer to an application-registered function that returns the size
+(in bytes) of data objects to be migrated. Called by <b><a href="../ug_html/ug_interface_mig.html#Zoltan_Help_Migrate">Zoltan_Help_Migrate</a></b>.&nbsp;
+Set in <b><a href="../ug_html/ug_interface_init.html#Zoltan_Set_Fn">Zoltan_Set_Fn</a></b>
+or <b><a href="../ug_html/ug_interface_init.html#Zoltan_Set_Specific_Fn">Zoltan_Set_Obj_Size_Fn</a></b>.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP>void <i>*Get_Obj_Size_Data</i></td>
+
+<td>A pointer to data provided by the user that will be passed to the function
+pointed to by <i>Get_Obj_Size</i>.&nbsp; Set in <b><a href="../ug_html/ug_interface_init.html#Zoltan_Set_Fn">Zoltan_Set_Fn</a></b>
+or <b><a href="../ug_html/ug_interface_init.html#Zoltan_Set_Specific_Fn">Zoltan_Set_Obj_Size_Fn</a></b>.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><a href="../ug_html/ug_query_mig.html#ZOLTAN_PACK_OBJ_FN">ZOLTAN_PACK_OBJ_FN</a>
+*<i> Pack_Obj</i></td>
+
+<td>A pointer to an application-registered function that packs all data
+for a given object into a communication buffer provided by the migration
+tools in preparation for data-migration communication. Called by <b><a href="../ug_html/ug_interface_mig.html#Zoltan_Help_Migrate">Zoltan_Help_Migrate</a></b>
+for each object to be exported.&nbsp; Set in <b><a href="../ug_html/ug_interface_init.html#Zoltan_Set_Fn">Zoltan_Set_Fn</a></b>
+or <b><a href="../ug_html/ug_interface_init.html#Zoltan_Set_Specific_Fn">Zoltan_Set_Pack_Obj_Fn</a></b>.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP>void <i>*Pack_Obj_Data</i></td>
+
+<td>A pointer to data provided by the user that will be passed to the function
+pointed to by <i>Pack_Obj</i>. Set in <b><a href="../ug_html/ug_interface_init.html#Zoltan_Set_Fn">Zoltan_Set_Fn</a></b>
+or <b><a href="../ug_html/ug_interface_init.html#Zoltan_Set_Specific_Fn">Zoltan_Set_Pack_Obj_Fn</a></b>.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><a href="../ug_html/ug_query_mig.html#ZOLTAN_UNPACK_OBJ_FN">ZOLTAN_UNPACK_OBJ_FN</a>
+*<i> Unpack_Obj</i></td>
+
+<td>A pointer to an application-registered function that unpacks all data
+for a given object from a communication buffer after the communication
+for data migration is completed. Called by <b><a href="../ug_html/ug_interface_mig.html#Zoltan_Help_Migrate">Zoltan_Help_Migrate</a></b>
+for each imported object.&nbsp; Set in <b><a href="../ug_html/ug_interface_init.html#Zoltan_Set_Fn">Zoltan_Set_Fn</a></b>
+or <b><a href="../ug_html/ug_interface_init.html#Zoltan_Set_Specific_Fn">Zoltan_Set_Unpack_Obj_Fn</a></b>.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP>void <i>*Unpack_Obj_Data</i></td>
+
+<td>A pointer to data provided by the user that will be passed to the function
+pointed to by <i>Unpack_Obj</i>. Set in <b><a href="../ug_html/ug_interface_init.html#Zoltan_Set_Fn">Zoltan_Set_Fn</a></b>
+or <b><a href="../ug_html/ug_interface_init.html#Zoltan_Set_Specific_Fn">Zoltan_Set_Unpack_Obj_Fn</a></b>.</td>
+</tr>
+<tr>
+<td VALIGN=TOP>ZOLTAN_LB <i>LB</i></td>
+
+<td>A structure with data used by the load-balancing tools. See the <a href="#LB_Fields">table</a>
+below.</td>
+</tr>
+
+<tr>
 <td VALIGN=TOP>ZOLTAN_MIGRATE <i>Migrate</i></td>
 
 <td>A structure with data used by the migration tools. See the <a href="#Migrate_Fields">table</a>
@@ -537,10 +561,92 @@ below.</td>
 <caption ALIGN=BOTTOM><i>Fields of the </i><b>Zoltan_Struct</b><i> data structure.</i></caption>
 </table></center>
 
-<p>Each <b>Zoltan_Struct</b> data structure has an <b>ZOLTAN_MIGRATE</b> sub-structure.
+<p>Each <b>Zoltan_Struct</b> data structure has a <b>ZOLTAN_LB</b> sub-structure.
+The <b>ZOLTAN_LB</b> structure contains data used by the load-balancing tools,
+including pointers to specific load-balancing methods and load-balancing data
+structures. 
+The fields of the <b>ZOLTAN_LB</b> structure are listed and described
+in in the following <a href="#LB_Fields">table</a>.
+<br>&nbsp;
+<center><table BORDER WIDTH="90%" NOSAVE >
+<tr>
+<th><a NAME="LB_Fields"></a>Fields of ZOLTAN_LB</th>
+
+<th>Description</th>
+</tr>
+
+<tr>
+<td VALIGN=TOP>void *<i> Data_Structure</i></td>
+
+<td>The <a href="dev_add_struct.html">data structure</a> used by the selected load-balancing algorithm; this
+pointer is cast by the algorithm to the appropriate data type.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP>double <i>Imbalance_Tol</i></td>
+
+<td>The degree of load balance which is considered acceptable.
+Set via a call to
+<b><a href="dev_services_params.html#Zoltan_Set_Param">Zoltan_Set_Param</a></b>
+for <a href="../ug_html/ug_alg.html#IMBALANCE_TOL">IMBALANCE_TOL</a>.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP>int <i>Return_Lists</i></td>
+
+<td>A flag indicating whether the application wants import and/or export
+lists returned by <a href="../ug_html/ug_interface_lb.html#Zoltan_LB_Balance"><b>Zoltan_LB_Balance</b></a>.
+Set via a call to
+<b><a href="dev_services_params.html#Zoltan_Set_Param">Zoltan_Set_Param</a></b>
+for <a href="../ug_html/ug_alg.html#RETURN_LISTS">RETURN_LISTS</a>.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP>ZOLTAN_LB_METHOD <i>Method</i></td>
+
+<td>An enumerated type designating which load-balancing algorithm should
+be used with this Zoltan structure; 
+set in <b><a href="../ug_html/ug_interface_lb.html#Zoltan_LB_Set_Method">Zoltan_LB_Set_Method</a></b>.
+</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP>LB_FN *<i> LB_Fn</i></td>
+
+<td>A pointer to the load-balancing function specified by <i>Method</i>;
+set in <b><a href="../ug_html/ug_interface_lb.html#Zoltan_LB_Set_Method">Zoltan_LB_Set_Method</a></b>.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP>ZOLTAN_LB_FREE_DATA_FN <i>*Free_Structure</i></td>
+<td> Pointer to a function that frees the Data_Structure memory.
+Set in <b><a href="../ug_html/ug_interface_lb.html#Zoltan_LB_Set_Method">Zoltan_LB_Set_Method</a></b>.
+</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP>ZOLTAN_LB_POINT_ASSIGN_FN <i>*Point_Assign</i></td>
+<td> Pointer to the function that performs 
+<a href="../ug_html/ug_interface_augment.html#Zoltan_LB_Point_Assign">Zoltan_LB_Point_Assign</a> for the particular load-balancing method.  
+Set in <b><a href="../ug_html/ug_interface_lb.html#Zoltan_LB_Set_Method">Zoltan_LB_Set_Method</a></b>.
+</td>
+</tr>
+
+<td VALIGN=TOP>ZOLTAN_LB_BOX_ASSIGN_FN <i>*Box_Assign</i></td>
+<td> Pointer to the function that performs 
+<a href="../ug_html/ug_interface_augment.html#Zoltan_LB_Box_Assign">Zoltan_LB_Box_Assign</a> for the particular load-balancing method.  
+Set in <b><a href="../ug_html/ug_interface_lb.html#Zoltan_LB_Set_Method">Zoltan_LB_Set_Method</a></b>.
+</td>
+</tr>
+
+<caption ALIGN=BOTTOM><i>Fields of the </i><b>ZOLTAN_LB</b><i> data structure.</i></caption>
+</table></center>
+
+
+<p>Each <b>Zoltan_Struct</b> data structure has a <b>ZOLTAN_MIGRATE</b> sub-structure.
 The <b>ZOLTAN_MIGRATE</b> structure contains data used by the migration tools,
-including pointers to object packing and unpacking routines. These pointers
-are set through the load-balancing interface routine <b><a href="../ug_html/ug_interface_init.html#Zoltan_Set_Fn">Zoltan_Set_Fn</a></b>
+including pointers to pre- and post-processing routines. These pointers
+are set through the interface routine <b><a href="../ug_html/ug_interface_init.html#Zoltan_Set_Fn">Zoltan_Set_Fn</a></b>
 and are used in <b><a href="../ug_html/ug_interface_mig.html#Zoltan_Help_Migrate">Zoltan_Help_Migrate</a></b>.
 The fields of the <b>ZOLTAN_MIGRATE</b> structure are listed and described
 in in the following <a href="#Migrate_Fields">table</a>.
@@ -555,8 +661,8 @@ in in the following <a href="#Migrate_Fields">table</a>.
 <tr>
 <td VALIGN=TOP>int <i>Auto_Migrate</i></td>
 
-<td>A flag indicating whether the load-balancing library should perform
-auto-migration for the application. If true, the load-balancing library
+<td>A flag indicating whether Zoltan should perform
+auto-migration for the application. If true, Zoltan
 calls <b><a href="../ug_html/ug_interface_mig.html#Zoltan_Help_Migrate">Zoltan_Help_Migrate</a></b>
 to move objects to their new processors; if false, data migration is left
 to the user. Set in <b><a href="dev_services_params.html#Zoltan_Set_Param">Zoltan_Set_Param</a></b>
@@ -617,61 +723,6 @@ pointed to by <i>Post_Migrate</i>.&nbsp; Set in <b><a href="../ug_html/ug_interf
 or <b><a href="../ug_html/ug_interface_init.html#Zoltan_Set_Specific_Fn">Zoltan_Set_Post_Migrate_Fn</a></b>.&nbsp;</td>
 </tr>
 
-<tr>
-<td VALIGN=TOP><a href="../ug_html/ug_query_mig.html#ZOLTAN_OBJ_SIZE_FN">ZOLTAN_OBJ_SIZE_FN</a>
-*<i> Get_Obj_Size</i></td>
-
-<td>A pointer to an application-registered function that returns the size
-(in bytes) of data objects to be migrated. Called by <b><a href="../ug_html/ug_interface_mig.html#Zoltan_Help_Migrate">Zoltan_Help_Migrate</a></b>.&nbsp;
-Set in <b><a href="../ug_html/ug_interface_init.html#Zoltan_Set_Fn">Zoltan_Set_Fn</a></b>
-or <b><a href="../ug_html/ug_interface_init.html#Zoltan_Set_Specific_Fn">Zoltan_Set_Obj_Size_Fn</a></b>.</td>
-</tr>
-
-<tr>
-<td VALIGN=TOP>void <i>*Get_Obj_Size_Data</i></td>
-
-<td>A pointer to data provided by the user that will be passed to the function
-pointed to by <i>Get_Obj_Size</i>.&nbsp; Set in <b><a href="../ug_html/ug_interface_init.html#Zoltan_Set_Fn">Zoltan_Set_Fn</a></b>
-or <b><a href="../ug_html/ug_interface_init.html#Zoltan_Set_Specific_Fn">Zoltan_Set_Obj_Size_Fn</a></b>.</td>
-</tr>
-
-<tr>
-<td VALIGN=TOP><a href="../ug_html/ug_query_mig.html#ZOLTAN_PACK_OBJ_FN">ZOLTAN_PACK_OBJ_FN</a>
-*<i> Pack_Obj</i></td>
-
-<td>A pointer to an application-registered function that packs all data
-for a given object into a communication buffer provided by the migration
-tools in preparation for data-migration communication. Called by <b><a href="../ug_html/ug_interface_mig.html#Zoltan_Help_Migrate">Zoltan_Help_Migrate</a></b>
-for each object to be exported.&nbsp; Set in <b><a href="../ug_html/ug_interface_init.html#Zoltan_Set_Fn">Zoltan_Set_Fn</a></b>
-or <b><a href="../ug_html/ug_interface_init.html#Zoltan_Set_Specific_Fn">Zoltan_Set_Pack_Obj_Fn</a></b>.</td>
-</tr>
-
-<tr>
-<td VALIGN=TOP>void <i>*Pack_Obj_Data</i></td>
-
-<td>A pointer to data provided by the user that will be passed to the function
-pointed to by <i>Pack_Obj</i>. Set in <b><a href="../ug_html/ug_interface_init.html#Zoltan_Set_Fn">Zoltan_Set_Fn</a></b>
-or <b><a href="../ug_html/ug_interface_init.html#Zoltan_Set_Specific_Fn">Zoltan_Set_Pack_Obj_Fn</a></b>.</td>
-</tr>
-
-<tr>
-<td VALIGN=TOP><a href="../ug_html/ug_query_mig.html#ZOLTAN_UNPACK_OBJ_FN">ZOLTAN_UNPACK_OBJ_FN</a>
-*<i> Unpack_Obj</i></td>
-
-<td>A pointer to an application-registered function that unpacks all data
-for a given object from a communication buffer after the communication
-for data migration is completed. Called by <b><a href="../ug_html/ug_interface_mig.html#Zoltan_Help_Migrate">Zoltan_Help_Migrate</a></b>
-for each imported object.&nbsp; Set in <b><a href="../ug_html/ug_interface_init.html#Zoltan_Set_Fn">Zoltan_Set_Fn</a></b>
-or <b><a href="../ug_html/ug_interface_init.html#Zoltan_Set_Specific_Fn">Zoltan_Set_Unpack_Obj_Fn</a></b>.</td>
-</tr>
-
-<tr>
-<td VALIGN=TOP>void <i>*Unpack_Obj_Data</i></td>
-
-<td>A pointer to data provided by the user that will be passed to the function
-pointed to by <i>Unpack_Obj</i>. Set in <b><a href="../ug_html/ug_interface_init.html#Zoltan_Set_Fn">Zoltan_Set_Fn</a></b>
-or <b><a href="../ug_html/ug_interface_init.html#Zoltan_Set_Specific_Fn">Zoltan_Set_Unpack_Obj_Fn</a></b>.</td>
-</tr>
 
 <caption ALIGN=BOTTOM><i>Fields of the </i><b>ZOLTAN_MIGRATE</b><i> data structure.</i></caption>
 </table></center>
@@ -680,7 +731,7 @@ or <b><a href="../ug_html/ug_interface_init.html#Zoltan_Set_Specific_Fn">Zoltan_
 <b>Zoltan_Struct</b>
 and <b>ZOLTAN_MIGRATE</b> data structures there is also a pointer to a Fortran
 application registered function, of the form ZOLTAN_FUNCNAME_FORT_FN *<i>Get_Funcname_Fort</i>.
-These are for use within the Fortran interface. The load-balancing routines
+These are for use within the Fortran interface. The Zoltan routines 
 should invoke the usual application registered function regardless of whether
 the Zoltan structure was created from C or Fortran.
 

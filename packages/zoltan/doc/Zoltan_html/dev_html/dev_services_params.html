@@ -1,5 +1,5 @@
 <!-----------------------------------------------------------------------------
- ! Zoltan Dynamic Load-Balancing Library for Parallel Applications            !
+ ! Zoltan Library for Parallel Applications            !
  ! Copyright (c) 2000, Sandia National Laboratories.                          !
  ! This document is released under the GNU Lesser General Public License.     !
  ! For more info, see the README file in the top-level Zoltan directory.      !
@@ -52,7 +52,7 @@ scans through this linked list using the <b><a href="#Zoltan_Assign_Param_Vals">
 function, resetting parameter values that are appropriate to the method.
 <p>In addition to the method-specific parameters, Zoltan also has a set
 of so-called&nbsp;<a NAME="key_params"></a><b>key parameters</b>. These
-are normally stored in the load balance structure and may be accessed by
+are normally stored in the Zoltan structure and may be accessed by
 any part of the Zoltan code (including all the methods). A list of the
 <a href="../ug_html/ug_alg.html#General_Parameters">key
 parameters currently used in Zoltan</a> can be found in the User's Guide.
@@ -82,10 +82,10 @@ Zoltan</a>.
 <p>The <b>Zoltan_Set_Param</b> function is the <a href="../ug_html/ug_interface_lb.html#Zoltan_Set_Param">user
 interface for parameter setting</a>. Its principle purpose is to call a
 sequence of more domain-specific routines for setting domain-specific parameters
-(e.g., <b>Zoltan_Set_RCB_Param</b>). If you are adding algorithms to Zoltan,
+(e.g., <b>Zoltan_RCB_Set_Param</b>). If you are adding algorithms to Zoltan,
 you must write one of these domain-specific parameter routines and modify
 <b>Zoltan_Set_Param</b>
-to call it. <b>Zoltan_Set_RCB_Param</b> can serve as a template for this task.
+to call it. <b>Zoltan_RCB_Set_Param</b> can serve as a template for this task.
 The arguments to this routine are two strings <i>param_name</i> and <i>new_val</i>.
 The domain-specific routines return an integer value with the following
 meaning.
@@ -150,7 +150,7 @@ int *<i>matched_index</i>);
 own domain-specific parameter setting function. <b>Zoltan_Check_Param</b> compares
 the <i>param_name</i> string against a list of strings that you provide,
 and if a match is found it extracts the new value from the <i>new_val</i>
-string. See <b>Zoltan_Set_RCB_Param</b> for an example of how to use this routine.
+string. See <b>Zoltan_RCB_Set_Param</b> for an example of how to use this routine.
 <table WIDTH="100%" >
 <tr VALIGN=TOP>
 <td VALIGN=TOP WIDTH="20%"><b>Arguments:</b></td>
@@ -185,7 +185,7 @@ parameter from the first field. Currently supported types are "INT", "INTEGER",
 "DOUBLE", "LONG", "STRING" and "CHAR". It is easy to add additional types
 by simple modifications to <b>Zoltan_Check_Param</b> and <b><a href="#Zoltan_Assign_Param_Vals">Zoltan_Assign_Param_Vals</a></b>.
 The array is terminated by an item consisting of three NULL fields. See
-<b>Zoltan_Set_RCB_Param</b>
+<b>Zoltan_RCB_Set_Param</b>
 for an example of how to set up this data structure.&nbsp;</td>
 </tr>
 
@@ -294,7 +294,7 @@ calls to <b><a href="#Zoltan_Assign_Param_Vals">Zoltan_Assign_Param_Vals</a>.</b
 
 <p>
 <hr>
-<hr><a NAME="Zoltan_Assign_Param_Vals"></a>int&nbsp; <b>Zoltan_Assign_Param_Vals</b>(<b>ZOLTAN_PARAM</b>
+<hr><a NAME="Zoltan_Assign_Param_Vals"></a>int&nbsp; <b>Zoltan_Assign_Param_Vals</b>(<b>PARAM_LIST</b>
 *<i>change_list</i>, <b>PARAM_VARS</b> *<i>params,
 </i>int<i> debug_level,</i>
 int <i>my_proc,</i> int <i>debug_proc</i>);
@@ -318,7 +318,7 @@ as appropriate. See <b>Zoltan_RCB</b> for a template.
 <td>The linked list of parameter names and values which is constructed
 by <b><a href="#Zoltan_Set_Param">Zoltan_Set_Param</a></b> and is a field of an
 <b><a href="dev_lb_structs.html#Zoltan_Struct">Zoltan_Struct</a></b>
-data structure (defined in <i>lb/lb_const.h</i>).&nbsp;</td>
+data structure (defined in <i>params/param_const.h</i>).&nbsp;</td>
 </tr>
 
 <tr>
@@ -384,7 +384,7 @@ values to zero in the function call.
 <p>
 <hr WIDTH="100%">
 <hr>
-<a NAME="Zoltan_Free_Params"></a>void <b>Zoltan_Free_Params </b>(<b>ZOLTAN_PARAM</b>
+<a NAME="Zoltan_Free_Params"></a>void <b>Zoltan_Free_Params </b>(<b>PARAM_LIST</b>
 **<i>param_list</i> );
 <hr WIDTH="100%">
 <br>This routine frees the parameters in the list pointed to by <i>param_list</i>.
@@ -399,8 +399,8 @@ values to zero in the function call.
 <tr>
 <td VALIGN=TOP>&nbsp;&nbsp; <i>param_list</i></td>
 
-<td>A pointer to a list (array) of parameters to be freed.&nbsp; <b>ZOLTAN_PARAM</b>
-is defined in <i>lb/lb_const.h</i>.</td>
+<td>A pointer to a list (array) of parameters to be freed.&nbsp; <b>PARAM_LIST</b>
+is defined in <i>params/param_const.h</i>.</td>
 </tr>
 </table>
 

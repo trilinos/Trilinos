@@ -1,5 +1,5 @@
 <!-----------------------------------------------------------------------------
- ! Zoltan Dynamic Load-Balancing Library for Parallel Applications            !
+ ! Zoltan Library for Parallel Applications            !
  ! Copyright (c) 2000, Sandia National Laboratories.                          !
  ! This document is released under the GNU Lesser General Public License.     !
  ! For more info, see the README file in the top-level Zoltan directory.      !
@@ -30,10 +30,10 @@
 <A NAME="Salsa"></A>Appendix: Testing in MPSalsa</H2>
 The Zoltan library was tested in MPSalsa, a 3D unstructured finite element
 code for simulating chemically reacting flow [<A HREF="dev_refs.html#MPSalsa">MPSalsa
-User's Guide</A>]. Currently, calls to the load-balancing library are included
+User's Guide</A>]. Currently, calls to Zoltan are included
 in the steady-state solver. A test problem is solved using the original
 decomposition provided by nem_slice. A new decomposition is then computed
-through a call to the load-balancing library (<I>call_load_balancing</I>
+through a call to Zoltan (<I>call_load_balancing</I>
 function in MPSalsa's <I>rf/rf_dlb.c</I>). The simulation is run again
 using the new decomposition and the solution from the previous solve as
 the initial guess for the new solve. Thus, in MPSalsa's output, the initial
@@ -47,7 +47,7 @@ is the steady-state solution, only one (or perhaps, two) Newton steps should
 be required in the new solve; any greater number probably indicates a problem
 with migration of the solution vector.
 
-<P>After the second solve, the load-balancing library is invoked again
+<P>After the second solve, Zoltan is invoked again
 after registering an <B><A HREF="../ug_html/ug_query_lb.html#ZOLTAN_OBJ_WEIGHT_FN">ZOLTAN_OBJ_WEIGHT_FN</A></B>
 query function. Thus, load-balancing is performed this time using object
 weights. In the current implementation, nodal weights are determined arbitrarily
@@ -62,7 +62,7 @@ the node's row of the matrix, can (and probably should) be implemented.
 are implemented in <I>rf/rf_dlb.c</I> and <I>rf/rf_dlb_const.h</I>. Data
 types for global and local object IDs are defined in <I>rf/rf_dzoltan_user_data.h</I>;
 this file should be copied to <I>lb/zoltan_user_data.h</I> before compiling
-the load-balancing library. Global IDs are integers representing global
+Zoltan. Global IDs are integers representing global
 node or element numbers. Local IDs are pointers to nodes or elements. Calls
 to load-balancing library functions are currently in <I>rf/rf_salsa.c</I>
 (for initialization) and <I>rf/rf_solve.c </I>(to register weight functions).
@@ -78,7 +78,7 @@ set paths to the load-balancing interface files. In the top-level MPSalsa
 Makefile, the standard MPSalsa distribution from CVS has
 <BLOCKQUOTE>SUBVPATH=../rf ../el ../md ../ps ../pe ../ds
 <BR>SUBINCPATH=-I../rf -I../el -I../md -I../ps -I../pe -I../ds</BLOCKQUOTE>
-Assuming the load-balancing library's CVS distribution is in a directory
+Assuming Zoltan's CVS distribution is in a directory
 named <I>DLB</I> in the same directory as MPSalsa's CVS distribution, these
 lines should be changed to
 <BLOCKQUOTE>SUBVPATH=../rf ../el ../md ../ps ../pe ../ds ../../DLB/lb
@@ -117,7 +117,7 @@ The string <I>NONE</I> is a valid option on this line if no balancing is
 desired.
 
 <P>The second data line contains the floating-point parameters to be passed
-to the load-balancing library in <B><A HREF="../ug_html/ug_interface_lb.html#Zoltan_LB_Set_Method">Zoltan_LB_Set_Method</A></B>.
+to Zoltan in <B><A HREF="../ug_html/ug_interface_lb.html#Zoltan_LB_Set_Method">Zoltan_LB_Set_Method</A></B>.
 These parameters must be listed in the order that the load-balancing method
 would expect them. If a <I>FLOAT</I> <I>FN_DATA</I> line is not included,
 the default load-balancing parameters are used.
@@ -126,7 +126,7 @@ the default load-balancing parameters are used.
 the amount of debugging information MPSalsa prints during load balancing
 and data migration. Higher values of this integer produce greater amounts
 of debugging output. The second integer enables MPSalsa to test the use
-of different MPI communicators in the load-balancing library. If the integer
+of different MPI communicators in Zoltan. If the integer
 is 0, all processors participate in load balancing. If the integer is 1,
 only processors with rank less than or equal to <I>N/2</I> participate,
 where <I>N</I> is the number of processors. If the integer is 2, two separate

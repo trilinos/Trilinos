@@ -1,5 +1,5 @@
 <!-----------------------------------------------------------------------------
- ! Zoltan Dynamic Load-Balancing Library for Parallel Applications            !
+ ! Zoltan Library for Parallel Applications            !
  ! Copyright (c) 2000, Sandia National Laboratories.                          !
  ! This document is released under the GNU Lesser General Public License.     !
  ! For more info, see the README file in the top-level Zoltan directory.      !
@@ -43,7 +43,7 @@ int <I>do_print_line</I>);&nbsp;
 
 <P>The <B>Zoltan_Print_Sync_Start</B> function is adapted from work of John
 Shadid for the MPSalsa project at Sandia National Laboratories. With <B><A HREF="#Zoltan_Print_Sync_End">Zoltan_Print_Sync_End</A></B>,
-it provides synchronization so that one processor in the load-balancing
+it provides synchronization so that one processor in the Zoltan
 communicator can complete its I/O before the next processor begins its
 I/O. This synchronization utility is useful for debugging algorithms, as
 it allows the output from processors to be produced in an organized manner.
@@ -66,8 +66,8 @@ See the <A HREF="#print_sync_example">example</A> below for usage of <B>Zoltan_P
 <TR>
 <TD VALIGN=TOP>&nbsp;&nbsp;&nbsp; <I>zz</I></TD>
 
-<TD>The load-balancing data structure used in the invocation of the load-balancing
-routines.</TD>
+<TD>The Zoltan data structure.
+</TD>
 </TR>
 
 <TR>
@@ -89,7 +89,7 @@ int <I>do_print_line</I>);&nbsp;
 
 <P>The <B>Zoltan_Print_Sync_End </B>function is adapted from work of John Shadid
 for the MPSalsa project at Sandia National Laboratories. With <B><A HREF="#Zoltan_Print_Sync_Start">Zoltan_Print_Sync_Start</A></B>,
-it provides synchronization so that one processor in the load-balancing
+it provides synchronization so that one processor in the Zoltan
 communicator can complete its I/O before the next processor begins its
 I/O. This synchronization utility is useful for debugging algorithms, as
 it allows the output from processors to be produced in an organized manner.
@@ -113,8 +113,8 @@ See the <A HREF="#print_sync_example">example</A> below for usage of <B>Zoltan_P
 <TR>
 <TD VALIGN=TOP>&nbsp;&nbsp;&nbsp; <I>zz</I></TD>
 
-<TD>The load-balancing data structure used in the invocation of the load-balancing
-routines.</TD>
+<TD>The Zoltan data structure.
+</TD>
 </TR>
 
 <TR>
@@ -131,7 +131,7 @@ double <i>x</i>, char <i>*msg</i>);
 <BR>
 <HR WIDTH="100%">
 <BR>Zoltan_Print_Stats is a very simple routine that computes the maximum and
-sum of the variable <I>x</I> over all processors associated with the load-balancing
+sum of the variable <I>x</I> over all processors associated with the Zoltan
 structure <I>zz</I>. It also computes and prints the imbalance
 of <I>x</I>, that is, the maximum value divided by the average minus one.
 If <I>x </I>has the same value on all processors, the imbalance is zero.

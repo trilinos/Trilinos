@@ -1,5 +1,5 @@
 <!-----------------------------------------------------------------------------
- ! Zoltan Dynamic Load-Balancing Library for Parallel Applications            !
+ ! Zoltan Library for Parallel Applications            !
  ! Copyright (c) 2000, Sandia National Laboratories.                          !
  ! This document is released under the GNU Lesser General Public License.     !
  ! For more info, see the README file in the top-level Zoltan directory.      !
@@ -23,7 +23,7 @@
 </HEAD>
 <BODY BGCOLOR="#FFFFFF">
 
-<div ALIGN=right><b><i><a href="dev.html">Zoltan Developer's Guide</a>&nbsp; |&nbsp; <a href="dev_future.html">Next</a>&nbsp; |&nbsp; <a href="dev_mig.html">Previous</a></i></b></div>
+<div ALIGN=right><b><i><a href="dev.html">Zoltan Developer's Guide</a>&nbsp; |&nbsp; <a href="dev_refs.html">Next</a>&nbsp; |&nbsp; <a href="dev_mig.html">Previous</a></i></b></div>
 
 
 <H2>
@@ -147,7 +147,7 @@ uppercase (<B>ZFW_LB_POINT_ASSIGN</B>),</LI>
 lowercase with underscore (<B>zfw_lb_point_assign_</B>), and</LI>
 
 <LI>
-lower case with double underscore (<B>lb_fw_point_assign__</B> but the
+lower case with double underscore (<B>zfw_point_assign__</B> but the
 second underscore is appended only if the name already contains an underscore,
 which will always be the case for names starting with <B>Zfw_</B>).</LI>
 </UL>
@@ -163,7 +163,7 @@ to call-by-value conversions).</LI>
 <A NAME="fortran dev query"></A>Query functions</H3>
 If a query function is added, deleted or changed, modifications must be
 made to <I>fort/fwrap.fpp</I> and <I>fort/cwrap.c</I>, similar to the modifications
-for interface functions, and possibly also<I> lb/lb_const.h</I> and <I>lb/lbi_const.h</I>.
+for interface functions, and possibly also<I> include/zoltan.h</I> and <I>zz/zz_const.h</I>.
 
 <P>Here are the places query functions appear in <I>fwrap.fpp</I>:
 <UL>
@@ -191,9 +191,9 @@ for an example.</LI>
 <B>Zfw_Set_Fn</B>: This has a switch based on the value of the <B><A HREF="dev_lb_interface.html#interface_fns">ZOLTAN_FN_TYPE</A></B>
 argument to set the Fortran query function and wrapper in the <B><A HREF="dev_lb_structs.html#Zoltan_Struct">Zoltan_Struct</A></B>.</LI>
 </UL>
-In <I>lb/lb_const.h</I>, if a new field is added to the structures for
+In <I>zz/zz_const.h</I>, if a new field is added to the structures for
 a new query function, it should be added in both C and Fortran forms. In
-<I>lb/lbi_const.h</I>, if a new typedef for a query function is added,
+<I>include/zoltan.h</I>, if a new typedef for a query function is added,
 it should be added in both C and Fortran forms. See these files for examples.
 <H3>
 <A NAME="fortran dev enum"></A>Enumerated types and defined constants</H3>
@@ -202,8 +202,8 @@ value for an arguments must be placed in<I> fwrap.fpp</I> with the same
 value. See <B><A HREF="../ug_html/ug_interface.html#Error Codes">ZOLTAN_OK</A></B>
 for an example.&nbsp;
 <HR WIDTH="100%">
-<BR>[<A HREF="dev.html">Table of Contents</A>&nbsp; |&nbsp; <A HREF="dev_future.html">Next:&nbsp;
-Plan for Future Development</A>&nbsp; |&nbsp; <A HREF="dev_mig.html">Previous:&nbsp;
+<BR>[<A HREF="dev.html">Table of Contents</A>&nbsp; |&nbsp; <A HREF="dev_refs.html">Next:&nbsp;
+References</A>&nbsp; |&nbsp; <A HREF="dev_mig.html">Previous:&nbsp;
 Migration Tools</A>]
 </BODY>
 </HTML>

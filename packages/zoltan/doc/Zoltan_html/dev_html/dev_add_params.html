@@ -1,5 +1,5 @@
 <!-----------------------------------------------------------------------------
- ! Zoltan Dynamic Load-Balancing Library for Parallel Applications            !
+ ! Zoltan Library for Parallel Applications            !
  ! Copyright (c) 2000, Sandia National Laboratories.                          !
  ! This document is released under the GNU Lesser General Public License.     !
  ! For more info, see the README file in the top-level Zoltan directory.      !
@@ -49,7 +49,7 @@ invoked.</li>
 
 <li>
 Update the parameter function for the method in question. This routine
-is typically called <b>Zoltan_Set_</b><i>Method</i><b>_Param</b><i>. </i>This
+is typically called <b>Zoltan_</b><i>Method</i><b>_Set_Param</b><i>. </i>This
 routine checks if a given string is a valid parameter for that method.
 It may also verify the values.</li>
 </ul>
@@ -57,7 +57,7 @@ When you add a new method to Zoltan, you also need to:
 <ul>
 <li>
 Write a parameter function for your method that checks whether a given
-string and value is a valid parameter pair for your method. See <b>Zoltan_Set_RCB_Param</b>
+string and value is a valid parameter pair for your method. See <b>Zoltan_RCB_Set_Param</b>
 in <i>rcb/rcb.c</i> for an example.</li>
 
 <li>

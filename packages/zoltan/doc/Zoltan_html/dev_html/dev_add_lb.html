@@ -1,5 +1,5 @@
 <!-----------------------------------------------------------------------------
- ! Zoltan Dynamic Load-Balancing Library for Parallel Applications            !
+ ! Zoltan Library for Parallel Applications            !
  ! Copyright (c) 2000, Sandia National Laboratories.                          !
  ! This document is released under the GNU Lesser General Public License.     !
  ! For more info, see the README file in the top-level Zoltan directory.      !
@@ -50,7 +50,7 @@ int&nbsp;*<I>num_export</I>,
 int&nbsp;**<I>export_procs</I>);&nbsp;
 <HR>
 <BR>The <B>LB_FN</B> function type describes the arguments passed to a
-load-balancing function. The input to the function is an <B><A HREF="dev_lb_structs.html#Zoltan_Struct">Zoltan_Struct</A></B>
+load-balancing function. The input to the function is a <B><A HREF="dev_lb_structs.html#Zoltan_Struct">Zoltan_Struct</A></B>
 containing pointers to application-registered functions to be used in the
 load-balancing algorithm. The remaining arguments are output parameters
 listing the objects to be imported or exported to the processor in the

@@ -7,7 +7,7 @@
    <meta name="author" content="karen devine, kddevin@sandia.gov">
    <title> Zoltan Developer's Guide:  Adding Data Structures</title>
 <!-----------------------------------------------------------------------------
- ! Zoltan Dynamic Load-Balancing Library for Parallel Applications            !
+ ! Zoltan Library for Parallel Applications            !
  ! Copyright (c) 2000, Sandia National Laboratories.                          !
  ! This document is released under the GNU Lesser General Public License.     !
  ! For more info, see the README file in the top-level Zoltan directory.      !
@@ -29,7 +29,7 @@
 <h2>
 <a NAME="new_data_structs"></a>Data Structures</h2>
 The main data structures for the algorithm should be pointed to by the
-<i>Data_Structure</i>
+<i>LB.Data_Structure</i>
 field of the <b><a href="dev_lb_structs.html#Zoltan_Struct">Zoltan_Struct</a></b>.
 This requirement allows reuse of data structures from one invocation of
 the new load-balancing algorithm to the next. It also prevents the use
@@ -49,9 +49,9 @@ in the <a href="#RCB_example">figure</a> below.
 first;
 <br>&nbsp;* the other fields can be reused.
 <br>&nbsp;*/
-<br>if (zz->Data_Structure == NULL) {
+<br>if (zz->LB.Data_Structure == NULL) {
 <br>&nbsp;&nbsp; rcb = (RCB_STRUCT *) <a href="dev_util_mem.html#Zoltan_Malloc">ZOLTAN_MALLOC</a>(sizeof(RCB_STRUCT));
-<br>&nbsp;&nbsp; zz->Data_Structure = (void *) rcb;
+<br>&nbsp;&nbsp; zz->LB.Data_Structure = (void *) rcb;
 <br>&nbsp;&nbsp; rcb->Tree_Ptr = (struct rcb_tree *)&nbsp;
 <br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 <a href="dev_util_mem.html#Zoltan_Malloc">ZOLTAN_MALLOC</a>(zz->Num_Proc*sizeof(struct
@@ -60,7 +60,7 @@ rcb_tree));
 rcb_box));
 <br>}
 <br>else {
-<br>&nbsp;&nbsp; rcb = (RCB_STRUCT *) zz->Data_Structure;
+<br>&nbsp;&nbsp; rcb = (RCB_STRUCT *) zz->LB.Data_Structure;
 <br>&nbsp;&nbsp; <a href="dev_util_mem.html#Zoltan_Free">ZOLTAN_FREE</a>(&amp;(rcb->Dots));
 <br>}
 </tt>
@@ -170,12 +170,11 @@ built for the RCB algorithm.&nbsp; (Taken from rcb/shared.c.)</i></caption>
 </table></center>
 
 <p>
-The data structures pointed to by <i>zz->Data_Structure</i> must also be freed.
-A function that frees these structures and resets <i>zz->Data_Structure</i>
+The data structures pointed to by <i>zz->LB.Data_Structure</i> must also be freed.
+A function that frees these structures and resets <i>zz->LB.Data_Structure</i>
 to NULL should be written.  The function should be called when the load-balancing
 algorithm exits, either normally or due to an error condition.
-A call to this function should also be included in
-<b>Zoltan_Free_Structure</b> in <i>all/free_structure.c</i>.  The function
+The function
 <b>Zoltan_RCB_Free_Structure</b> in <i>rcb/rcb_util.c</i> may be used as an example.
 <hr WIDTH="100%">
 <br>[<a href="dev.html">Table of Contents</a>&nbsp; |&nbsp; <a href="dev_add_memory.html">Next:&nbsp;
