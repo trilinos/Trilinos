@@ -27,9 +27,7 @@
 #@HEADER
 
 
-if BUILD_TEUCHOS_EXAMPLES
 STANDARD_SUBDIRS = BLAS CommandLineProcessor DenseMatrix hilbert LAPACK ParameterList RefCountPtr TimeMonitor
-endif
 
 SUBDIRS = $(STANDARD_SUBDIRS)
 

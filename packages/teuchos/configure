@@ -311,7 +311,7 @@ ac_includes_default="\
 # include <unistd.h>
 #endif"
 
-ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS MAINTAINER_MODE_TRUE MAINTAINER_MODE_FALSE MAINT build build_cpu build_vendor build_os host host_cpu host_vendor host_os target target_cpu target_vendor target_os INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA CYGPATH_W PACKAGE VERSION ACLOCAL AUTOCONF AUTOMAKE AUTOHEADER MAKEINFO AMTAR install_sh STRIP ac_ct_STRIP INSTALL_STRIP_PROGRAM mkdir_p AWK SET_MAKE am__leading_dot CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT DEPDIR am__include am__quote AMDEP_TRUE AMDEP_FALSE AMDEPBACKSLASH CCDEPMODE am__fastdepCC_TRUE am__fastdepCC_FALSE CXX CXXFLAGS ac_ct_CXX CXXDEPMODE am__fastdepCXX_TRUE am__fastdepCXX_FALSE F77 FFLAGS ac_ct_F77 RANLIB ac_ct_RANLIB MPI_TEMP_CXX MPI_CXX HAVE_MPI_TRUE HAVE_MPI_FALSE MPI_CXX_EXISTS MPI_CC_EXISTS MPI_F77_EXISTS USE_ALTERNATE_AR_TRUE USE_ALTERNATE_AR_FALSE ALTERNATE_AR CXXCPP EGREP BUILD_TESTS_TRUE BUILD_TESTS_FALSE BUILD_TEUCHOS_TESTS_TRUE BUILD_TEUCHOS_TESTS_FALSE BUILD_EXAMPLES_TRUE BUILD_EXAMPLES_FALSE BUILD_TEUCHOS_EXAMPLES_TRUE BUILD_TEUCHOS_EXAMPLES_FALSE HAVE_TEUCHOS_COMPLEX_TRUE HAVE_TEUCHOS_COMPLEX_FALSE HAVE_TEUCHOS_EXTENDED_TRUE HAVE_TEUCHOS_EXTENDED_FALSE FLIBS BLAS_LIBS LAPACK_LIBS TRILINOS_TEMPLATE_OBJS EXPAT_LIBS EXPAT_INC HAVE_EXPAT_TRUE HAVE_EXPAT_FALSE ac_aux_dir LIBOBJS LTLIBOBJS'
+ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS MAINTAINER_MODE_TRUE MAINTAINER_MODE_FALSE MAINT build build_cpu build_vendor build_os host host_cpu host_vendor host_os target target_cpu target_vendor target_os INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA CYGPATH_W PACKAGE VERSION ACLOCAL AUTOCONF AUTOMAKE AUTOHEADER MAKEINFO AMTAR install_sh STRIP ac_ct_STRIP INSTALL_STRIP_PROGRAM mkdir_p AWK SET_MAKE am__leading_dot CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT DEPDIR am__include am__quote AMDEP_TRUE AMDEP_FALSE AMDEPBACKSLASH CCDEPMODE am__fastdepCC_TRUE am__fastdepCC_FALSE CXX CXXFLAGS ac_ct_CXX CXXDEPMODE am__fastdepCXX_TRUE am__fastdepCXX_FALSE F77 FFLAGS ac_ct_F77 RANLIB ac_ct_RANLIB MPI_TEMP_CXX MPI_CXX HAVE_MPI_TRUE HAVE_MPI_FALSE MPI_CXX_EXISTS MPI_CC_EXISTS MPI_F77_EXISTS USE_ALTERNATE_AR_TRUE USE_ALTERNATE_AR_FALSE ALTERNATE_AR CXXCPP EGREP BUILD_TESTS_TRUE BUILD_TESTS_FALSE BUILD_EXAMPLES_TRUE BUILD_EXAMPLES_FALSE HAVE_TEUCHOS_COMPLEX_TRUE HAVE_TEUCHOS_COMPLEX_FALSE HAVE_TEUCHOS_EXTENDED_TRUE HAVE_TEUCHOS_EXTENDED_FALSE FLIBS BLAS_LIBS LAPACK_LIBS TRILINOS_TEMPLATE_OBJS EXPAT_LIBS EXPAT_INC HAVE_EXPAT_TRUE HAVE_EXPAT_FALSE ac_aux_dir LIBOBJS LTLIBOBJS'
 ac_subst_files=''
 
 # Initialize some variables set by options.
@@ -878,12 +878,15 @@ Optional Features:
   --enable-tests          Build tests for all Trilinos packages (not all
                           packages are sensitive to this option) (default is
                           yes)
-  --enable-teuchos-tests  Build Teuchos tests (default is yes)
+
+  --enable-teuchos-tests  Build Teuchos tests (default is yes if
+                          --disable-tests is not specified)
   --enable-examples       Build examples for all Trilinos packages (not all
                           packages are sensitive to this option) (default is
                           yes)
   --enable-teuchos-examples
-                          Build Teuchos examples (default is yes)
+                          Build Teuchos examples (default is yes if
+                          --disable-examples is not specified)
   --enable-teuchos-abc    Enable array bounds checking (default is no)
   --enable-teuchos-complex
                           Enable Teuchos complex code (default is no)
@@ -3431,7 +3434,7 @@ fi
 
 
 # Provide some information about the compiler.
-echo "$as_me:3434:" \
+echo "$as_me:3437:" \
      "checking for Fortran 77 compiler version" >&5
 ac_compiler=`set X $ac_compile; echo $2`
 { (eval echo "$as_me:$LINENO: \"$ac_compiler --version </dev/null >&5\"") >&5
@@ -6990,23 +6993,20 @@ echo "${ECHO_T}no" >&6
 fi
 
 
-
-if test "X$ac_cv_use_tests" != "Xno"; then
-  BUILD_TESTS_TRUE=
-  BUILD_TESTS_FALSE='#'
+# Check whether --enable-tests or --disable-tests was given.
+if test "${enable_tests+set}" = set; then
+  enableval="$enable_tests"
+  ac_cv_use_tests=$enableval
 else
-  BUILD_TESTS_TRUE='#'
-  BUILD_TESTS_FALSE=
-fi
-
-
+  ac_cv_use_tests=yes
+fi;
 
 # Check whether --enable-teuchos-tests or --disable-teuchos-tests was given.
 if test "${enable_teuchos_tests+set}" = set; then
   enableval="$enable_teuchos_tests"
   ac_cv_use_teuchos_tests=$enableval
 else
-  ac_cv_use_teuchos_tests=yes
+  ac_cv_use_teuchos_tests=${ac_cv_use_tests}
 fi;
 
 echo "$as_me:$LINENO: checking whether to use teuchos-tests" >&5
@@ -7027,12 +7027,12 @@ fi
 
 
 
-if test "X$ac_cv_use_teuchos_tests" != "Xno"; then
-  BUILD_TEUCHOS_TESTS_TRUE=
-  BUILD_TEUCHOS_TESTS_FALSE='#'
+if test "X$ac_cv_use_teuchos_tests" != "Xno" ; then
+  BUILD_TESTS_TRUE=
+  BUILD_TESTS_FALSE='#'
 else
-  BUILD_TEUCHOS_TESTS_TRUE='#'
-  BUILD_TEUCHOS_TESTS_FALSE=
+  BUILD_TESTS_TRUE='#'
+  BUILD_TESTS_FALSE=
 fi
 
 
@@ -7066,23 +7066,20 @@ echo "${ECHO_T}no" >&6
 fi
 
 
-
-if test "X$ac_cv_use_examples" != "Xno"; then
-  BUILD_EXAMPLES_TRUE=
-  BUILD_EXAMPLES_FALSE='#'
+# Check whether --enable-examples or --disable-examples was given.
+if test "${enable_examples+set}" = set; then
+  enableval="$enable_examples"
+  ac_cv_use_examples=$enableval
 else
-  BUILD_EXAMPLES_TRUE='#'
-  BUILD_EXAMPLES_FALSE=
-fi
-
-
+  ac_cv_use_examples=yes
+fi;
 
 # Check whether --enable-teuchos-examples or --disable-teuchos-examples was given.
 if test "${enable_teuchos_examples+set}" = set; then
   enableval="$enable_teuchos_examples"
   ac_cv_use_teuchos_examples=$enableval
 else
-  ac_cv_use_teuchos_examples=yes
+  ac_cv_use_teuchos_examples=${ac_cv_use_examples}
 fi;
 
 echo "$as_me:$LINENO: checking whether to use teuchos-examples" >&5
@@ -7104,11 +7101,11 @@ fi
 
 
 if test "X$ac_cv_use_teuchos_examples" != "Xno"; then
-  BUILD_TEUCHOS_EXAMPLES_TRUE=
-  BUILD_TEUCHOS_EXAMPLES_FALSE='#'
+  BUILD_EXAMPLES_TRUE=
+  BUILD_EXAMPLES_FALSE='#'
 else
-  BUILD_TEUCHOS_EXAMPLES_TRUE='#'
-  BUILD_TEUCHOS_EXAMPLES_FALSE=
+  BUILD_EXAMPLES_TRUE='#'
+  BUILD_EXAMPLES_FALSE=
 fi
 
 
@@ -7792,7 +7789,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:7795: \"$ac_link\") >&5
+(eval echo $as_me:7792: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -7870,7 +7867,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:7873: \"$ac_link\") >&5
+(eval echo $as_me:7870: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -10400,7 +10397,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:10403: \"$ac_link\") >&5
+(eval echo $as_me:10400: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -10478,7 +10475,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:10481: \"$ac_link\") >&5
+(eval echo $as_me:10478: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -10962,24 +10959,10 @@ echo "$as_me: error: conditional \"BUILD_TESTS\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
-if test -z "${BUILD_TEUCHOS_TESTS_TRUE}" && test -z "${BUILD_TEUCHOS_TESTS_FALSE}"; then
-  { { echo "$as_me:$LINENO: error: conditional \"BUILD_TEUCHOS_TESTS\" was never defined.
-Usually this means the macro was only invoked conditionally." >&5
-echo "$as_me: error: conditional \"BUILD_TEUCHOS_TESTS\" was never defined.
-Usually this means the macro was only invoked conditionally." >&2;}
-   { (exit 1); exit 1; }; }
-fi
 if test -z "${BUILD_EXAMPLES_TRUE}" && test -z "${BUILD_EXAMPLES_FALSE}"; then
   { { echo "$as_me:$LINENO: error: conditional \"BUILD_EXAMPLES\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
 echo "$as_me: error: conditional \"BUILD_EXAMPLES\" was never defined.
-Usually this means the macro was only invoked conditionally." >&2;}
-   { (exit 1); exit 1; }; }
-fi
-if test -z "${BUILD_TEUCHOS_EXAMPLES_TRUE}" && test -z "${BUILD_TEUCHOS_EXAMPLES_FALSE}"; then
-  { { echo "$as_me:$LINENO: error: conditional \"BUILD_TEUCHOS_EXAMPLES\" was never defined.
-Usually this means the macro was only invoked conditionally." >&5
-echo "$as_me: error: conditional \"BUILD_TEUCHOS_EXAMPLES\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
@@ -11635,12 +11618,8 @@ s,@CXXCPP@,$CXXCPP,;t t
 s,@EGREP@,$EGREP,;t t
 s,@BUILD_TESTS_TRUE@,$BUILD_TESTS_TRUE,;t t
 s,@BUILD_TESTS_FALSE@,$BUILD_TESTS_FALSE,;t t
-s,@BUILD_TEUCHOS_TESTS_TRUE@,$BUILD_TEUCHOS_TESTS_TRUE,;t t
-s,@BUILD_TEUCHOS_TESTS_FALSE@,$BUILD_TEUCHOS_TESTS_FALSE,;t t
 s,@BUILD_EXAMPLES_TRUE@,$BUILD_EXAMPLES_TRUE,;t t
 s,@BUILD_EXAMPLES_FALSE@,$BUILD_EXAMPLES_FALSE,;t t
-s,@BUILD_TEUCHOS_EXAMPLES_TRUE@,$BUILD_TEUCHOS_EXAMPLES_TRUE,;t t
-s,@BUILD_TEUCHOS_EXAMPLES_FALSE@,$BUILD_TEUCHOS_EXAMPLES_FALSE,;t t
 s,@HAVE_TEUCHOS_COMPLEX_TRUE@,$HAVE_TEUCHOS_COMPLEX_TRUE,;t t
 s,@HAVE_TEUCHOS_COMPLEX_FALSE@,$HAVE_TEUCHOS_COMPLEX_FALSE,;t t
 s,@HAVE_TEUCHOS_EXTENDED_TRUE@,$HAVE_TEUCHOS_EXTENDED_TRUE,;t t

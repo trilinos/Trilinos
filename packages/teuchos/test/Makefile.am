@@ -26,13 +26,11 @@
 # ************************************************************************
 #@HEADER
 
-if BUILD_TEUCHOS_TESTS
 if HAVE_TEUCHOS_EXTENDED
 CONTAINERS_SUBDIR = Containers
 XML_SUBDIR = XML
 endif
 STANDARD_SUBDIRS = scripts BLAS DenseMatrix dyn_cast LAPACK ParameterList RefCountPtr Time
-endif
 
 SUBDIRS = $(STANDARD_SUBDIRS) $(CONTAINERS_SUBDIR) $(XML_SUBDIR)
 

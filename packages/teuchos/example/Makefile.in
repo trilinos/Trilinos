@@ -81,6 +81,7 @@ am__aclocal_m4_deps = $(top_srcdir)/config/ac_cxx_bool.m4 \
 	$(top_srcdir)/config/tac_arg_config_mpi.m4 \
 	$(top_srcdir)/config/tac_arg_enable_feature.m4 \
 	$(top_srcdir)/config/tac_arg_enable_feature_sub.m4 \
+	$(top_srcdir)/config/tac_arg_enable_feature_sub_check.m4 \
 	$(top_srcdir)/config/tac_arg_with_ar.m4 \
 	$(top_srcdir)/config/tac_arg_with_flags.m4 \
 	$(top_srcdir)/config/tac_arg_with_incdirs.m4 \
@@ -102,8 +103,7 @@ RECURSIVE_TARGETS = all-recursive check-recursive dvi-recursive \
 	uninstall-recursive
 ETAGS = etags
 CTAGS = ctags
-DIST_SUBDIRS = BLAS CommandLineProcessor DenseMatrix hilbert LAPACK \
-	ParameterList RefCountPtr TimeMonitor
+DIST_SUBDIRS = $(SUBDIRS)
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 ACLOCAL = @ACLOCAL@
 ALTERNATE_AR = @ALTERNATE_AR@
@@ -119,10 +119,6 @@ BUILD_EXAMPLES_FALSE = @BUILD_EXAMPLES_FALSE@
 BUILD_EXAMPLES_TRUE = @BUILD_EXAMPLES_TRUE@
 BUILD_TESTS_FALSE = @BUILD_TESTS_FALSE@
 BUILD_TESTS_TRUE = @BUILD_TESTS_TRUE@
-BUILD_TEUCHOS_EXAMPLES_FALSE = @BUILD_TEUCHOS_EXAMPLES_FALSE@
-BUILD_TEUCHOS_EXAMPLES_TRUE = @BUILD_TEUCHOS_EXAMPLES_TRUE@
-BUILD_TEUCHOS_TESTS_FALSE = @BUILD_TEUCHOS_TESTS_FALSE@
-BUILD_TEUCHOS_TESTS_TRUE = @BUILD_TEUCHOS_TESTS_TRUE@
 CC = @CC@
 CCDEPMODE = @CCDEPMODE@
 CFLAGS = @CFLAGS@
@@ -231,7 +227,7 @@ target_alias = @target_alias@
 target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
-@BUILD_TEUCHOS_EXAMPLES_TRUE@STANDARD_SUBDIRS = BLAS CommandLineProcessor DenseMatrix hilbert LAPACK ParameterList RefCountPtr TimeMonitor
+STANDARD_SUBDIRS = BLAS CommandLineProcessor DenseMatrix hilbert LAPACK ParameterList RefCountPtr TimeMonitor
 SUBDIRS = $(STANDARD_SUBDIRS)
 all: all-recursive
 
@@ -410,7 +406,7 @@ distdir: $(DISTFILES)
 	    || exit 1; \
 	  fi; \
 	done
-	list='$(DIST_SUBDIRS)'; for subdir in $$list; do \
+	list='$(SUBDIRS)'; for subdir in $$list; do \
 	  if test "$$subdir" = .; then :; else \
 	    test -d "$(distdir)/$$subdir" \
 	    || mkdir "$(distdir)/$$subdir" \
