@@ -3164,6 +3164,9 @@ int MLAZ_Setup_MLandAggregate( int N_update, int num_PDE_eqns,
 	   Settings.req_aggre_per_proc);
   }
 
+  /* set to norm for nonsymmetric problem (FIXME: add an option) */
+  ML_Aggregate_Set_SpectralNormScheme_Anorm(ag);
+
   /************************************************************************/
   /* Build hierarchy using smoothed aggregation.                          */
   /* NOTE: the first level is 0. This means that I have Nevels, the last  */
