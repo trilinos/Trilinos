@@ -89,13 +89,11 @@ int Amesos_TestSolver( Epetra_Comm &Comm, char *matrix_file,
   string LastFourBytes = FileName.substr( EPETRA_MAX(0,FN_Size-4), FN_Size );
   if ( LastFiveBytes == ".triU" ) { 
     // Call routine to read in unsymmetric Triplet matrix
-	EPETRA_CHK_ERR( 1 ) ; 
     EPETRA_CHK_ERR( Trilinos_Util_ReadTriples2Epetra( matrix_file, false, Comm, readMap, readA, readx, 
 						      readb, readxexact) );
   } else {
     if ( LastFiveBytes == ".triS" ) { 
       // Call routine to read in symmetric Triplet matrix
-	EPETRA_CHK_ERR( 1 ) ; 
       EPETRA_CHK_ERR( Trilinos_Util_ReadTriples2Epetra( matrix_file, true, Comm, readMap, readA, readx, 
 							readb, readxexact) );
     } else {

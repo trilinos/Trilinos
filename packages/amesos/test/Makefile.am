@@ -42,6 +42,15 @@ AmesosShellScript$(EXEEXT): $(srcdir)/AmesosShellScript
 	cp  $(srcdir)/In_SuperLU.triU  SuperLU.triU
 	cp  $(srcdir)/In_Khead.triS  Khead.triS
 	cp  $(srcdir)/In_bcsstk01.mtx bcsstk01.mtx 
+	cp  $(srcdir)/In_bcsstk02.mtx bcsstk02.mtx 
+	cp  $(srcdir)/In_bcsstk04.mtx bcsstk04.mtx 
+	cp  $(srcdir)/In_bcsstk08.mtx bcsstk08.mtx 
+	cp  $(srcdir)/In_bcsstk13.mtx bcsstk13.mtx 
+	cp  $(srcdir)/In_nos1.mtx nos1.mtx 
+	cp  $(srcdir)/In_nos5.mtx nos5.mtx 
+	cp  $(srcdir)/In_Diagonal.mtx Diagonal.mtx 
+	cp  $(srcdir)/In_KheadK.mtx KheadK.mtx 
+	cp  $(srcdir)/In_KheadSorted.mtx KheadSorted.mtx 
 
 
 
