@@ -1220,7 +1220,7 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
 
        ML_Operator_Destroy(&TTtransPe);
 
-       ML_Operator_Move2HierarchyAndDestroy_fragile(newPe,
+       ML_Operator_Move2HierarchyAndDestroy(newPe,
                             &(ml_edges->Pmat[grid_level]));
      }
      else
@@ -1330,7 +1330,7 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
      ML_free(v); /*ML_free(w);*/ ML_free(Pv); ML_free(WPv);
      if (randvec != NULL) ML_free(randvec);
 
-     ML_Operator_Move2HierarchyAndDestroy_fragile(newPe,
+     ML_Operator_Move2HierarchyAndDestroy(newPe,
                             &(ml_edges->Pmat[grid_level]));
 #endif /*ML_NEW_ENRICH*/
 
