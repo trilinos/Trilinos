@@ -33,6 +33,7 @@
 
 // ----------   User Defined Includes   ----------
 #include "DennisSchnabel.H"
+using namespace std;
 
 //-----------------------------------------------------------------------------
 Problem_Interface::Problem_Interface(DennisSchnabel& Problem) :

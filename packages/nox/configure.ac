@@ -1325,6 +1325,9 @@ AC_DEFUN(PETSC_INCLUDE_CHECK,
   elif test -f ${PETSC_DIR}/include/$2; then
     $1_INC=${PETSC_DIR}/include
     AC_MSG_RESULT([${$1_INC}])
+  elif test -f ${PETSC_DIR}/src/sys/src/mpiuni/$2; then
+    $1_INC=${PETSC_DIR}/src/sys/src/mpiuni
+    AC_MSG_RESULT([${$1_INC}])
   else
     AC_MSG_RESULT(no)
     AC_MSG_ERROR([Cannot find $1 include directory containing $2. Make sure PETSC_DIR and PETSC_ARCH are defined.])
@@ -1337,8 +1340,14 @@ if test X${ADDON_petsc} = Xyes; then
   PETSC_INCLUDE_CHECK(petsc,petsc.h)
   PETSC_INCLUDE_CHECK(petsccommon,base)
   PETSC_INCLUDE_CHECK(petscbmake,petscconf.h)
+  if test "X${HAVE_PKG_MPI}" = "Xno"; then
+    PETSC_INCLUDE_CHECK(mpiuni,mpi.h)
+  fi
 
   PETSC_CXXFLAGS="-I${petsc_INC} -I${petsccommon_INC} -I${petscbmake_INC}"
+  if test "X${HAVE_PKG_MPI}" = "Xno"; then
+    PETSC_CXXFLAGS=" ${PETSC_CXXFLAGS} -I${mpiuni_INC}"
+  fi
 
   AC_SUBST(PETSC_CXXFLAGS)
 

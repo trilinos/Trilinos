@@ -33,6 +33,7 @@
 
 // ----------   User Defined Includes   ----------
 #include "FiniteDifference.H"
+using namespace std;
 
 //-----------------------------------------------------------------------------
 Problem_Interface::Problem_Interface(FiniteDifference& Problem) :

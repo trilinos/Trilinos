@@ -39,8 +39,8 @@ DennisSchnabel::DennisSchnabel(int numGlobalElements) :
 
   // Commonly used variables
   int i, ierr;
-  ierr = MPI_Comm_rank(PETSC_COMM_WORLD,&MyPID);CHKERRQ(ierr);// Process ID
-  ierr = MPI_Comm_size(PETSC_COMM_WORLD,&NumProc);CHKERRQ(ierr);// # Procs 
+  ierr = MPI_Comm_rank(PETSC_COMM_WORLD,&MyPID);//CHKERRQ(ierr);// Process ID
+  ierr = MPI_Comm_size(PETSC_COMM_WORLD,&NumProc);//CHKERRQ(ierr);// # Procs 
 
   // Construct a Source Map that puts approximately the same 
   // Number of equations on each processor in uniform global ordering
@@ -76,13 +76,13 @@ DennisSchnabel::DennisSchnabel(int numGlobalElements) :
 
   // Construct Linear Objects  
   initialSolution = new Vec;
-  ierr = VecCreate(PETSC_COMM_WORLD, initialSolution);CHKERRQ(ierr);
-  ierr = VecSetSizes(*initialSolution, PETSC_DECIDE, 2);CHKERRQ(ierr);
-  ierr = VecSetFromOptions(*initialSolution);CHKERRQ(ierr);
+  ierr = VecCreate(PETSC_COMM_WORLD, initialSolution);//CHKERRQ(ierr);
+  ierr = VecSetSizes(*initialSolution, PETSC_DECIDE, 2);//CHKERRQ(ierr);
+  ierr = VecSetFromOptions(*initialSolution);//CHKERRQ(ierr);
 
   A = new Mat;
-  MatCreate(PETSC_COMM_WORLD, PETSC_DECIDE, PETSC_DECIDE, 2, 2, A);CHKERRQ(ierr);
-  ierr = MatSetFromOptions(*A);CHKERRQ(ierr);
+  MatCreate(PETSC_COMM_WORLD, PETSC_DECIDE, PETSC_DECIDE, 2, 2, A);//CHKERRQ(ierr);
+  ierr = MatSetFromOptions(*A);//CHKERRQ(ierr);
 
   // Create Mapping for overlap solution vector using Petsc IS
   overlapSolution = new Vec;

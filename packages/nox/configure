@@ -17343,6 +17343,10 @@ echo "${ECHO_T}${petsc_INC}" >&6
     petsc_INC=${PETSC_DIR}/include
     echo "$as_me:$LINENO: result: ${petsc_INC}" >&5
 echo "${ECHO_T}${petsc_INC}" >&6
+  elif test -f ${PETSC_DIR}/src/sys/src/mpiuni/petsc.h; then
+    petsc_INC=${PETSC_DIR}/src/sys/src/mpiuni
+    echo "$as_me:$LINENO: result: ${petsc_INC}" >&5
+echo "${ECHO_T}${petsc_INC}" >&6
   else
     echo "$as_me:$LINENO: result: no" >&5
 echo "${ECHO_T}no" >&6
@@ -17368,6 +17372,10 @@ echo "${ECHO_T}${petsccommon_INC}" >&6
 echo "${ECHO_T}${petsccommon_INC}" >&6
   elif test -f ${PETSC_DIR}/include/base; then
     petsccommon_INC=${PETSC_DIR}/include
+    echo "$as_me:$LINENO: result: ${petsccommon_INC}" >&5
+echo "${ECHO_T}${petsccommon_INC}" >&6
+  elif test -f ${PETSC_DIR}/src/sys/src/mpiuni/base; then
+    petsccommon_INC=${PETSC_DIR}/src/sys/src/mpiuni
     echo "$as_me:$LINENO: result: ${petsccommon_INC}" >&5
 echo "${ECHO_T}${petsccommon_INC}" >&6
   else
@@ -17397,6 +17405,10 @@ echo "${ECHO_T}${petscbmake_INC}" >&6
     petscbmake_INC=${PETSC_DIR}/include
     echo "$as_me:$LINENO: result: ${petscbmake_INC}" >&5
 echo "${ECHO_T}${petscbmake_INC}" >&6
+  elif test -f ${PETSC_DIR}/src/sys/src/mpiuni/petscconf.h; then
+    petscbmake_INC=${PETSC_DIR}/src/sys/src/mpiuni
+    echo "$as_me:$LINENO: result: ${petscbmake_INC}" >&5
+echo "${ECHO_T}${petscbmake_INC}" >&6
   else
     echo "$as_me:$LINENO: result: no" >&5
 echo "${ECHO_T}no" >&6
@@ -17406,8 +17418,44 @@ echo "$as_me: error: Cannot find petscbmake include directory containing petscco
   fi
 
 
+  if test "X${HAVE_PKG_MPI}" = "Xno"; then
+
+  echo "$as_me:$LINENO: checking for mpiuni include directory" >&5
+echo $ECHO_N "checking for mpiuni include directory... $ECHO_C" >&6
+  if test -n "${mpiuni_INC}" && test -f ${mpiuni_INC}/mpi.h; then
+    echo "$as_me:$LINENO: result: ${mpiuni_INC}" >&5
+echo "${ECHO_T}${mpiuni_INC}" >&6
+  elif test -f ${PETSC_DIR}/bmake/${PETSC_ARCH}/mpi.h; then
+    mpiuni_INC=${PETSC_DIR}/bmake/${PETSC_ARCH}
+    echo "$as_me:$LINENO: result: ${mpiuni_INC}" >&5
+echo "${ECHO_T}${mpiuni_INC}" >&6
+  elif test -f ${PETSC_DIR}/bmake/common/mpi.h; then
+    mpiuni_INC=${PETSC_DIR}/bmake/common
+    echo "$as_me:$LINENO: result: ${mpiuni_INC}" >&5
+echo "${ECHO_T}${mpiuni_INC}" >&6
+  elif test -f ${PETSC_DIR}/include/mpi.h; then
+    mpiuni_INC=${PETSC_DIR}/include
+    echo "$as_me:$LINENO: result: ${mpiuni_INC}" >&5
+echo "${ECHO_T}${mpiuni_INC}" >&6
+  elif test -f ${PETSC_DIR}/src/sys/src/mpiuni/mpi.h; then
+    mpiuni_INC=${PETSC_DIR}/src/sys/src/mpiuni
+    echo "$as_me:$LINENO: result: ${mpiuni_INC}" >&5
+echo "${ECHO_T}${mpiuni_INC}" >&6
+  else
+    echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+    { { echo "$as_me:$LINENO: error: Cannot find mpiuni include directory containing mpi.h. Make sure PETSC_DIR and PETSC_ARCH are defined." >&5
+echo "$as_me: error: Cannot find mpiuni include directory containing mpi.h. Make sure PETSC_DIR and PETSC_ARCH are defined." >&2;}
+   { (exit 1); exit 1; }; }
+  fi
+
+
+  fi
 
   PETSC_CXXFLAGS="-I${petsc_INC} -I${petsccommon_INC} -I${petscbmake_INC}"
+  if test "X${HAVE_PKG_MPI}" = "Xno"; then
+    PETSC_CXXFLAGS=" ${PETSC_CXXFLAGS} -I${mpiuni_INC}"
+  fi
 
 
 

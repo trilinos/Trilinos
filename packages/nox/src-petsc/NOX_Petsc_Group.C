@@ -293,7 +293,7 @@ Abstract::Group::ReturnType Group::computeNewton(NOX::Parameter::List& p)
 
   SLES sles;
 
-  int ierr = SLESCreate(PETSC_COMM_WORLD,&sles);CHKERRQ(ierr);
+  int ierr = SLESCreate(PETSC_COMM_WORLD,&sles);//CHKERRQ(ierr);
 
   //ierr = SLESGetKSP(sles, &ksp);CHKERRQ(ierr);
   //ierr = SLESGetPC(sles, &pc);CHKERRQ(ierr);
@@ -306,13 +306,13 @@ Abstract::Group::ReturnType Group::computeNewton(NOX::Parameter::List& p)
      also serves as the preconditioning matrix.
   */
   ierr = SLESSetOperators(sles,Jacobian,Jacobian,
-                       DIFFERENT_NONZERO_PATTERN);CHKERRQ(ierr);
+                       DIFFERENT_NONZERO_PATTERN);//CHKERRQ(ierr);
 
   /*
      Set runtime options (e.g., -ksp_type <type> -pc_type <type>)
   */
 
-  ierr = SLESSetFromOptions(sles);CHKERRQ(ierr);
+  ierr = SLESSetFromOptions(sles);//CHKERRQ(ierr);
 
   /*
      Solve linear system.  Here we explicitly call SLESSetUp() for more
@@ -322,11 +322,11 @@ Abstract::Group::ReturnType Group::computeNewton(NOX::Parameter::List& p)
      called already.
   */
   ierr = SLESSetUp(sles,RHSVector.getPetscVector(),
-                        NewtonVector.getPetscVector());CHKERRQ(ierr);
+                        NewtonVector.getPetscVector());//CHKERRQ(ierr);
   int its = 0;
   // Need to put a check on ierr.
   ierr = SLESSolve(sles,RHSVector.getPetscVector(),
-                        NewtonVector.getPetscVector(),&its);CHKERRQ(ierr);
+                        NewtonVector.getPetscVector(),&its);//CHKERRQ(ierr);
 
   // Scale soln by -1
   NewtonVector.scale(-1.0);
@@ -387,7 +387,7 @@ Group::applyRightPreconditioning(const Vector& input, Vector& result) const
   // Set up preconditioner context
   PC pc;
 
-  int ierr = PCCreate(PETSC_COMM_WORLD,&pc);CHKERRQ(ierr);
+  int ierr = PCCreate(PETSC_COMM_WORLD,&pc);//CHKERRQ(ierr);
 
   // Here a default to jacobi (jacobian-diagonal-inverse) is established
   // but can be overridden via specification of pc_type in .petscrc
@@ -395,21 +395,21 @@ Group::applyRightPreconditioning(const Vector& input, Vector& result) const
 
   // This allows more general preconditioning via specification of -pc_type 
   // in .petscrc
-  ierr = PCSetFromOptions(pc);CHKERRQ(ierr);
+  ierr = PCSetFromOptions(pc);//CHKERRQ(ierr);
 
   /*
      Set operators and vector. Here the matrix that defines the linear system
      also serves as the preconditioning matrix.
   */
   ierr = PCSetOperators(pc,Jacobian,Jacobian,
-                       DIFFERENT_NONZERO_PATTERN);CHKERRQ(ierr);
-  ierr = PCSetVector(pc,r);CHKERRQ(ierr);
+                       DIFFERENT_NONZERO_PATTERN);//CHKERRQ(ierr);
+  ierr = PCSetVector(pc,r);//CHKERRQ(ierr);
 
   // Apply the preconditioner
-  ierr = PCApply(pc,input.getPetscVector(),r, PC_RIGHT);CHKERRQ(ierr);
+  ierr = PCApply(pc,input.getPetscVector(),r, PC_RIGHT);//CHKERRQ(ierr);
 
   // Cleanup
-  ierr = PCDestroy(pc);CHKERRQ(ierr);
+  ierr = PCDestroy(pc);//CHKERRQ(ierr);
 
   return Abstract::Group::Ok;
 }
