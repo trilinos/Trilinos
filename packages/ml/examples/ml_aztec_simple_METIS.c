@@ -204,7 +204,7 @@ int main(int argc, char *argv[])
   options[AZ_solver]   = AZ_cg;
   params[AZ_tol]       = tolerance;
   options[AZ_conv]     = AZ_noscaled;
-  options[AZ_max_iter] = 1550
+  options[AZ_max_iter] = 1550;
   
   AZ_set_ML_preconditioner(&Pmat, Kn_mat, ml, options); 
   AZ_iterate(xxx, rhs, options, params, status, proc_config, Kn_mat, Pmat, NULL);
