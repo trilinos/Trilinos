@@ -113,9 +113,10 @@ am__objects_2 = ml_rbm.$(OBJEXT) ml_aztec_utils.$(OBJEXT) \
 	ml_epetra_utils.$(OBJEXT) ml_utils.$(OBJEXT) \
 	ml_intlist.$(OBJEXT) ml_vec.$(OBJEXT) ml_memory.$(OBJEXT) \
 	ml_eigf2c.$(OBJEXT) ml_agg_info.$(OBJEXT) \
-	ml_viz_opendx.$(OBJEXT) ml_amesos.$(OBJEXT) \
-	ml_amesos_wrap.$(OBJEXT) ml_ifpack.$(OBJEXT) \
-	ml_ifpack_wrap.$(OBJEXT) ml_MultiLevelPreconditioner.$(OBJEXT) \
+	ml_viz_opendx.$(OBJEXT) ml_viz_xyz.$(OBJEXT) \
+	ml_amesos.$(OBJEXT) ml_amesos_wrap.$(OBJEXT) \
+	ml_ifpack.$(OBJEXT) ml_ifpack_wrap.$(OBJEXT) \
+	ml_MultiLevelPreconditioner.$(OBJEXT) \
 	ml_MultiLevelPreconditioner_Filtering.$(OBJEXT) \
 	ml_MultiLevelPreconditioner_NullSpace.$(OBJEXT) \
 	ml_MultiLevelPreconditioner_Defaults.$(OBJEXT) \
@@ -125,7 +126,8 @@ am__objects_2 = ml_rbm.$(OBJEXT) ml_aztec_utils.$(OBJEXT) \
 	ml_MultiLevelPreconditioner_Test.$(OBJEXT) \
 	ml_MultiLevelPreconditioner_CLP.$(OBJEXT) ml_anasazi.$(OBJEXT) \
 	ml_MultiLevelOperator.$(OBJEXT) \
-	ml_MultiLevelPreconditioner.$(OBJEXT) ml_RowMatrix.$(OBJEXT)
+	ml_MultiLevelPreconditioner.$(OBJEXT) ml_RowMatrix.$(OBJEXT) \
+	ml_DD_prec.$(OBJEXT)
 am__objects_3 =
 @HAVE_MPI_TRUE@am__objects_4 = $(am__objects_3)
 am_libml_a_OBJECTS = $(am__objects_1) $(am__objects_2) \
@@ -136,6 +138,7 @@ DEFAULT_INCLUDES = -I. -I$(srcdir) -I.
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
 @AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/driver.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/ml_DD_prec.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/ml_MultiLevelOperator.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/ml_MultiLevelPreconditioner.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/ml_MultiLevelPreconditioner_Analyze.Po \
@@ -196,7 +199,8 @@ am__depfiles_maybe = depfiles
 @AMDEP_TRUE@	./$(DEPDIR)/ml_superlu.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/ml_twogrid_analysis.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/ml_utils.Po ./$(DEPDIR)/ml_vec.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/ml_viz_opendx.Po ./$(DEPDIR)/ml_xxt.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/ml_viz_opendx.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/ml_viz_xyz.Po ./$(DEPDIR)/ml_xxt.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/ml_xyt.Po ./$(DEPDIR)/mli_solver.Po
 COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
@@ -468,6 +472,7 @@ $(srcdir)/Utils/ml_utils.h \
 $(srcdir)/Utils/ml_eigf2c.h \
 $(srcdir)/Utils/ml_vampir.h \
 $(srcdir)/Utils/ml_viz_opendx.h \
+$(srcdir)/Utils/ml_viz_xyz.h \
 $(srcdir)/Utils/ml_amesos.h \
 $(srcdir)/Utils/ml_amesos_wrap.h \
 $(srcdir)/Utils/ml_ifpack.h \
@@ -477,7 +482,8 @@ $(srcdir)/Utils/ml_anasazi.h \
 $(srcdir)/Utils/ml_epetra.h \
 $(srcdir)/Utils/ml_MultiLevelOperator.h \
 $(srcdir)/Utils/ml_MultiLevelPreconditioner.h \
-$(srcdir)/Utils/ml_RowMatrix.h
+$(srcdir)/Utils/ml_RowMatrix.h \
+$(srcdir)/Utils/ml_DD_prec.h
 
 UTIL = \
 $(srcdir)/Utils/ml_rbm.c \
@@ -489,6 +495,7 @@ $(srcdir)/Utils/ml_vec.c \
 $(srcdir)/Utils/ml_memory.c            $(srcdir)/Utils/ml_eigf2c.c \
 $(srcdir)/Utils/ml_agg_info.c \
 $(srcdir)/Utils/ml_viz_opendx.c \
+$(srcdir)/Utils/ml_viz_xyz.c \
 $(srcdir)/Utils/ml_amesos.c \
 $(srcdir)/Utils/ml_amesos_wrap.cpp \
 $(srcdir)/Utils/ml_ifpack.c \
@@ -505,7 +512,8 @@ $(srcdir)/Utils/ml_MultiLevelPreconditioner_CLP.cpp \
 $(srcdir)/Utils/ml_anasazi.cpp \
 $(srcdir)/Utils/ml_MultiLevelOperator.cpp \
 $(srcdir)/Utils/ml_MultiLevelPreconditioner.cpp \
-$(srcdir)/Utils/ml_RowMatrix.cpp
+$(srcdir)/Utils/ml_RowMatrix.cpp \
+$(srcdir)/Utils/ml_DD_prec.cpp
 
 ENUM_H = 
 UNIPROC_H = 
@@ -752,6 +760,7 @@ distclean-compile:
 	-rm -f *.tab.c
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/driver.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_DD_prec.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_MultiLevelOperator.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_MultiLevelPreconditioner.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_MultiLevelPreconditioner_Analyze.Po@am__quote@
@@ -826,6 +835,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_utils.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_vec.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_viz_opendx.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_viz_xyz.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_xxt.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_xyt.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mli_solver.Po@am__quote@
@@ -1822,6 +1832,22 @@ ml_viz_opendx.obj: $(srcdir)/Utils/ml_viz_opendx.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o ml_viz_opendx.obj `if test -f '$(srcdir)/Utils/ml_viz_opendx.c'; then $(CYGPATH_W) '$(srcdir)/Utils/ml_viz_opendx.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Utils/ml_viz_opendx.c'; fi`
 
+ml_viz_xyz.o: $(srcdir)/Utils/ml_viz_xyz.c
+@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT ml_viz_xyz.o -MD -MP -MF "$(DEPDIR)/ml_viz_xyz.Tpo" -c -o ml_viz_xyz.o `test -f '$(srcdir)/Utils/ml_viz_xyz.c' || echo '$(srcdir)/'`$(srcdir)/Utils/ml_viz_xyz.c; \
+@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/ml_viz_xyz.Tpo" "$(DEPDIR)/ml_viz_xyz.Po"; else rm -f "$(DEPDIR)/ml_viz_xyz.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/Utils/ml_viz_xyz.c' object='ml_viz_xyz.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/ml_viz_xyz.Po' tmpdepfile='$(DEPDIR)/ml_viz_xyz.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o ml_viz_xyz.o `test -f '$(srcdir)/Utils/ml_viz_xyz.c' || echo '$(srcdir)/'`$(srcdir)/Utils/ml_viz_xyz.c
+
+ml_viz_xyz.obj: $(srcdir)/Utils/ml_viz_xyz.c
+@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT ml_viz_xyz.obj -MD -MP -MF "$(DEPDIR)/ml_viz_xyz.Tpo" -c -o ml_viz_xyz.obj `if test -f '$(srcdir)/Utils/ml_viz_xyz.c'; then $(CYGPATH_W) '$(srcdir)/Utils/ml_viz_xyz.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Utils/ml_viz_xyz.c'; fi`; \
+@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/ml_viz_xyz.Tpo" "$(DEPDIR)/ml_viz_xyz.Po"; else rm -f "$(DEPDIR)/ml_viz_xyz.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/Utils/ml_viz_xyz.c' object='ml_viz_xyz.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/ml_viz_xyz.Po' tmpdepfile='$(DEPDIR)/ml_viz_xyz.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o ml_viz_xyz.obj `if test -f '$(srcdir)/Utils/ml_viz_xyz.c'; then $(CYGPATH_W) '$(srcdir)/Utils/ml_viz_xyz.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Utils/ml_viz_xyz.c'; fi`
+
 ml_amesos.o: $(srcdir)/Utils/ml_amesos.c
 @am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT ml_amesos.o -MD -MP -MF "$(DEPDIR)/ml_amesos.Tpo" -c -o ml_amesos.o `test -f '$(srcdir)/Utils/ml_amesos.c' || echo '$(srcdir)/'`$(srcdir)/Utils/ml_amesos.c; \
 @am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/ml_amesos.Tpo" "$(DEPDIR)/ml_amesos.Po"; else rm -f "$(DEPDIR)/ml_amesos.Tpo"; exit 1; fi
@@ -2109,6 +2135,22 @@ ml_RowMatrix.obj: $(srcdir)/Utils/ml_RowMatrix.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ml_RowMatrix.Po' tmpdepfile='$(DEPDIR)/ml_RowMatrix.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ml_RowMatrix.obj `if test -f '$(srcdir)/Utils/ml_RowMatrix.cpp'; then $(CYGPATH_W) '$(srcdir)/Utils/ml_RowMatrix.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Utils/ml_RowMatrix.cpp'; fi`
+
+ml_DD_prec.o: $(srcdir)/Utils/ml_DD_prec.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ml_DD_prec.o -MD -MP -MF "$(DEPDIR)/ml_DD_prec.Tpo" -c -o ml_DD_prec.o `test -f '$(srcdir)/Utils/ml_DD_prec.cpp' || echo '$(srcdir)/'`$(srcdir)/Utils/ml_DD_prec.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ml_DD_prec.Tpo" "$(DEPDIR)/ml_DD_prec.Po"; else rm -f "$(DEPDIR)/ml_DD_prec.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Utils/ml_DD_prec.cpp' object='ml_DD_prec.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ml_DD_prec.Po' tmpdepfile='$(DEPDIR)/ml_DD_prec.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ml_DD_prec.o `test -f '$(srcdir)/Utils/ml_DD_prec.cpp' || echo '$(srcdir)/'`$(srcdir)/Utils/ml_DD_prec.cpp
+
+ml_DD_prec.obj: $(srcdir)/Utils/ml_DD_prec.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ml_DD_prec.obj -MD -MP -MF "$(DEPDIR)/ml_DD_prec.Tpo" -c -o ml_DD_prec.obj `if test -f '$(srcdir)/Utils/ml_DD_prec.cpp'; then $(CYGPATH_W) '$(srcdir)/Utils/ml_DD_prec.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Utils/ml_DD_prec.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ml_DD_prec.Tpo" "$(DEPDIR)/ml_DD_prec.Po"; else rm -f "$(DEPDIR)/ml_DD_prec.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Utils/ml_DD_prec.cpp' object='ml_DD_prec.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ml_DD_prec.Po' tmpdepfile='$(DEPDIR)/ml_DD_prec.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ml_DD_prec.obj `if test -f '$(srcdir)/Utils/ml_DD_prec.cpp'; then $(CYGPATH_W) '$(srcdir)/Utils/ml_DD_prec.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Utils/ml_DD_prec.cpp'; fi`
 uninstall-info-am:
 install-includeHEADERS: $(include_HEADERS)
 	@$(NORMAL_INSTALL)

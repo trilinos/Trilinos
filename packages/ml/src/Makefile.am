@@ -131,6 +131,7 @@ $(srcdir)/Utils/ml_utils.h \
 $(srcdir)/Utils/ml_eigf2c.h \
 $(srcdir)/Utils/ml_vampir.h \
 $(srcdir)/Utils/ml_viz_opendx.h \
+$(srcdir)/Utils/ml_viz_xyz.h \
 $(srcdir)/Utils/ml_amesos.h \
 $(srcdir)/Utils/ml_amesos_wrap.h \
 $(srcdir)/Utils/ml_ifpack.h \
@@ -140,7 +141,8 @@ $(srcdir)/Utils/ml_anasazi.h \
 $(srcdir)/Utils/ml_epetra.h \
 $(srcdir)/Utils/ml_MultiLevelOperator.h \
 $(srcdir)/Utils/ml_MultiLevelPreconditioner.h \
-$(srcdir)/Utils/ml_RowMatrix.h
+$(srcdir)/Utils/ml_RowMatrix.h \
+$(srcdir)/Utils/ml_DD_prec.h
 
 UTIL = \
 $(srcdir)/Utils/ml_rbm.c \
@@ -152,6 +154,7 @@ $(srcdir)/Utils/ml_vec.c \
 $(srcdir)/Utils/ml_memory.c            $(srcdir)/Utils/ml_eigf2c.c \
 $(srcdir)/Utils/ml_agg_info.c \
 $(srcdir)/Utils/ml_viz_opendx.c \
+$(srcdir)/Utils/ml_viz_xyz.c \
 $(srcdir)/Utils/ml_amesos.c \
 $(srcdir)/Utils/ml_amesos_wrap.cpp \
 $(srcdir)/Utils/ml_ifpack.c \
@@ -168,8 +171,8 @@ $(srcdir)/Utils/ml_MultiLevelPreconditioner_CLP.cpp \
 $(srcdir)/Utils/ml_anasazi.cpp \
 $(srcdir)/Utils/ml_MultiLevelOperator.cpp \
 $(srcdir)/Utils/ml_MultiLevelPreconditioner.cpp \
-$(srcdir)/Utils/ml_RowMatrix.cpp
-
+$(srcdir)/Utils/ml_RowMatrix.cpp \
+$(srcdir)/Utils/ml_DD_prec.cpp
 
 ENUM_H = 
 
