@@ -87,7 +87,7 @@ static PARAM_VARS RCB_params[] = {
                   { "RCB_RECTILINEAR_BLOCKS", NULL, "INT", 0 },
                   { "OBJ_WEIGHTS_COMPARABLE", NULL, "INT", 0 },
                   { "RCB_MULTICRITERIA_NORM", NULL, "INT", 0 },
-                  { "RCB_MAX_ASPECT_RATIO", NULL, "INT", 0 },
+                  { "RCB_MAX_ASPECT_RATIO", NULL, "DOUBLE", 0 },
                   { NULL, NULL, NULL, 0 } };
 /*****************************************************************************/
 
@@ -192,7 +192,7 @@ int Zoltan_RCB(
     rectilinear_blocks = 0;
     obj_wgt_comp = 0;     
     mcnorm = 1; 
-    max_aspect_ratio = 100.;
+    max_aspect_ratio = 10.;
 
     Zoltan_Assign_Param_Vals(zz->Params, RCB_params, zz->Debug_Level, zz->Proc,
                          zz->Debug_Proc);
